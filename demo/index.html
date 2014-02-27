@@ -18,8 +18,8 @@ Arithmetic {
            | '+'.sign PriExpr.e          {pos}
            | '-'.sign PriExpr.e          {neg}
            | number
-  number  == number.n digit.d            {rec}
-           | digit
+  number  == digit+ ('.' digit+)?
+           | '.' digit+
 }
 
     </script>
@@ -50,9 +50,7 @@ var interpret = {
   'PriExpr-paren':  function(open, e, close) { return e },
   'PriExpr-pos':    function(sign, e)        { return e },
   'PriExpr-neg':    function(sign, e)        { return -e },
-  number:           function(value)          { return value },
-  'number-rec':     function(n, d)           { return n * 10 + d },
-  digit:            function(value)          { return value.charCodeAt(0) - '0'.charCodeAt(0) }
+  number:           function(value)          { return parseFloat(this.interval.contents()) }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -69,9 +67,7 @@ var parse = {
   'PriExpr-paren':  function(open, e, close) { return e },
   'PriExpr-pos':    function(sign, e)        { return e },
   'PriExpr-neg':    function(sign, e)        { return ['neg', e] },
-  number:           function(value)          { return value },
-  'number-rec':     function(n, d)           { return n * 10 + d },
-  digit:            function(value)          { return value.charCodeAt(0) - '0'.charCodeAt(0) }
+  number:           function(value)          { return this.interval.contents() }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -97,9 +93,7 @@ var toHTML = {
   'PriExpr-paren':  function(open, e, close) { return makeElement('paren', open, e, close) },
   'PriExpr-pos':    function(sign, e)        { return makeElement('pos', sign, e) },
   'PriExpr-neg':    function(sign, e)        { return makeElement('neg', sign, e) },
-  number:           function(value)          { return makeElement('number', this.interval.contents()) },
-  'number-rec':     function(n, d)           { },
-  digit:            function(value)          { }
+  number:           function(value)          { return makeElement('number', this.interval.contents()) }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
