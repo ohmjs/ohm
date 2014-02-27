@@ -1,0 +1,68 @@
+body {
+  font-family: Monaco;
+  font-size: 14pt;
+}
+
+#input {
+  width: 100%;
+  display: block;
+  font-size: 14pt;
+  outline: none;
+  border: none;
+  border-bottom: 2px solid slateblue;
+  padding: 4pt 0pt 4pt 4pt;
+}
+
+#input.error {
+  border-bottom: 2px solid red;
+}
+
+#value:before, #lisp:before, #tree:before {
+  color: lightgray;
+  vertical-align: top;
+}
+
+#value:before {
+  content: 'value = ';
+}
+
+#lisp:before {
+  content: 'lisp = ';
+}
+
+#tree:before {
+  content: 'tree = ';
+}
+
+#value, #lisp, #tree {
+  padding: 8pt 0;
+}
+
+#tree *:before {
+  display: block;
+  font-size: 8pt;
+  color: slateblue;
+  border-bottom: 1pt solid slateblue;
+}
+
+#tree * {
+  display: inline-block;
+  font-size: 18pt;
+  margin: 2pt 2pt 0 2pt;
+  text-align: center;
+  vertical-align: bottom;
+}
+
+expr:before    { content: 'expr'; }
+addExpr:before { content: 'addExpr'; }
+plus:before    { content: 'plus'; }
+minus:before   { content: 'minus'; }
+mulExpr:before { content: 'mulExpr'; }
+times:before   { content: 'times'; }
+divide:before  { content: 'divide'; }
+priExpr:before { content: 'priExpr'; }
+paren:before   { content: 'paren'; }
+pos:before     { content: 'pos'; }
+neg:before     { content: 'neg'; }
+number:before  { content: 'number'; }
+

@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+  <head>
+    <title>ohm/js</title>
+    <link href="demo.css" rel="stylesheet"></style>
+    <script src="lib.js"></script>
+    <script type="text/ohm-js" id="arithmetic">
+
+Arithmetic {
+  Expr    == AddExpr
+  AddExpr == AddExpr.x '+'.op MulExpr.y  {plus}
+           | AddExpr.x '-'.op MulExpr.y  {minus}
+           | MulExpr
+  MulExpr == MulExpr.x '*'.op PriExpr.y  {times}
+           | MulExpr.x '/'.op PriExpr.y  {divide}
+           | PriExpr
+  PriExpr == '('.open Expr.e ')'.close   {paren}
+           | '+'.sign PriExpr.e          {pos}
+           | '-'.sign PriExpr.e          {neg}
+           | number
+  number  == number.n digit.d            {rec}
+           | digit
+}
+
+    </script>
+  </head>
+  <body>
+    <input type="text" id="input"></input>
+    <div id="value"></div>
+    <div id="lisp"></div>
+    <div id="tree"></div>
+    <script src="../dist/ohm.js"></script>
+    <script>
+
+var g = ohm.namespace('test')
+           .loadGrammarsFromScriptElement(document.getElementById('arithmetic'))
+           .getGrammar('Arithmetic')
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+var interpret = {
+  Expr:             function(value)          { return value },
+  AddExpr:          function(value)          { return value },
+  'AddExpr-plus':   function(x, op, y)       { return x + y },
+  'AddExpr-minus':  function(x, op, y)       { return x - y },
+  MulExpr:          function(value)          { return value },
+  'MulExpr-times':  function(x, op, y)       { return x * y },
+  'MulExpr-divide': function(x, op, y)       { return x / y },
+  PriExpr:          function(value)          { return value },
+  'PriExpr-paren':  function(open, e, close) { return e },
+  'PriExpr-pos':    function(sign, e)        { return e },
+  'PriExpr-neg':    function(sign, e)        { return -e },
+  number:           function(value)          { return value },
+  'number-rec':     function(n, d)           { return n * 10 + d },
+  digit:            function(value)          { return value.charCodeAt(0) - '0'.charCodeAt(0) }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+var parse = {
+  Expr:             function(value)          { return value },
+  AddExpr:          function(value)          { return value },
+  'AddExpr-plus':   function(x, op, y)       { return ['+', x, y] },
+  'AddExpr-minus':  function(x, op, y)       { return ['-', x, y] },
+  MulExpr:          function(value)          { return value },
+  'MulExpr-times':  function(x, op, y)       { return ['*', x, y] },
+  'MulExpr-divide': function(x, op, y)       { return ['/', x, y] },
+  PriExpr:          function(value)          { return value },
+  'PriExpr-paren':  function(open, e, close) { return e },
+  'PriExpr-pos':    function(sign, e)        { return e },
+  'PriExpr-neg':    function(sign, e)        { return ['neg', e] },
+  number:           function(value)          { return value },
+  'number-rec':     function(n, d)           { return n * 10 + d },
+  digit:            function(value)          { return value.charCodeAt(0) - '0'.charCodeAt(0) }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+function makeElement(tagName) {
+  var element = document.createElement(tagName)
+  for (var idx = 1; idx < arguments.length; idx++) {
+    var child = typeof arguments[idx] === 'string' ?  document.createTextNode(arguments[idx]) : arguments[idx]
+    element.appendChild(child)
+  }
+  return element
+}
+
+var toHTML = {
+  Expr:             function(value)          { return makeElement('expr', value) },
+  AddExpr:          function(value)          { return makeElement('addExpr', value) },
+  'AddExpr-plus':   function(x, op, y)       { return makeElement('plus', x, op, y) },
+  'AddExpr-minus':  function(x, op, y)       { return makeElement('minus', x, op, y) },
+  MulExpr:          function(value)          { return makeElement('mulExpr', value) },
+  'MulExpr-times':  function(x, op, y)       { return makeElement('times', x, op, y) },
+  'MulExpr-divide': function(x, op, y)       { return makeElement('divide', x, op, y) },
+  PriExpr:          function(value)          { return makeElement('priExpr', value) },
+  'PriExpr-paren':  function(open, e, close) { return makeElement('paren', open, e, close) },
+  'PriExpr-pos':    function(sign, e)        { return makeElement('pos', sign, e) },
+  'PriExpr-neg':    function(sign, e)        { return makeElement('neg', sign, e) },
+  number:           function(value)          { return makeElement('number', this.interval.contents()) },
+  'number-rec':     function(n, d)           { },
+  digit:            function(value)          { }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+document.getElementById('input').oninput = function() {
+  var thunk = g.matchContents(this.value, 'Expr')
+  if (thunk) {
+    this.className = undefined
+    show('value', thunk(interpret))
+    show('lisp', thunk(parse))
+    show('tree', thunk(toHTML))
+  } else {
+    this.className = 'error'
+    if (this.value.length === 0) {
+      show('value', '')
+      show('lisp', '')
+      show('tree', '')
+    }
+  }
+}
+
+    </script>
+    
+  </body>
+</html>
+

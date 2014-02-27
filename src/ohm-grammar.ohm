@@ -1,0 +1,64 @@
+Ohm {
+  space        += '//' (~'\n' _)* '\n'
+                | '/*' (~'*/' _)* '*/'
+
+  _name         == nameFirst nameRest*
+  nameFirst    == '_' | letter
+  nameRest     == '_' | alnum
+
+  name         == ~namedConst _name.n
+
+  namedConst   == 'undefined' ~nameRest {undefined}
+                | 'null' ~nameRest {null}
+                | 'true' ~nameRest {true}
+                | 'false' ~nameRest {false}
+
+  string       == '\'' sChar*.cs '\''
+  sChar        == '\\x' hexDigit hexDigit
+                | '\\u' hexDigit hexDigit hexDigit hexDigit
+                | '\\' _
+                | ~'\'' _
+
+  regexp       == '/' reCharClass.e '/'
+  reCharClass  == '[' ('\\]' | ~']' _)* ']'
+
+  number       == '-'? digit+
+
+  Alt          == Term.x '|' Alt.y {rec}
+                | Term
+  Term         == Seq.x '{' _name.n '}' {inline}
+                | Seq
+  Seq          == Factor*
+
+  Factor       == Iter.x '.' name.n {bind}
+                | Iter
+  Iter         == Pred.x '*' {star}
+                | Pred.x '+' {plus}
+                | Pred.x '?' {opt}
+                | Pred
+  Pred         == '~' Base.x {not}
+                | '&' Base.x {lookahead}
+                | Base
+  Base         == name.ruleName ~('==' | ':=' | '+=') {application}
+                | (namedConst | string | regexp | number).x {prim}
+                | '[' Alt.x ']' {lst}
+                | '"' Alt.x '"' {str}
+                | '(' Alt.x ')' {paren}
+                | '{' '...'?.lenient '}' {obj}
+                | '{' Props.ps (',' '...')?.lenient '}' {objWithProps}
+  Props        == Prop.p ',' Props.ps {rec}
+                | Prop.p {base}
+  Prop         == (_name | string).n ':' Factor.p
+
+  Rule         == RuleName.n '==' Alt.b {define}
+                | RuleName.n ':=' Alt.b {override}
+                | RuleName.n '+=' Alt.b {extend}
+  RuleName     == name
+  SuperGrammar == '<:' name.ns '.' name.n {qualified}
+                | '<:' name.n {unqualified}
+
+  Grammar      == GrammarName.n SuperGrammar?.s '{' Rule*.rs '}'
+  Grammars     == Grammar*
+  GrammarName  == name
+}
+

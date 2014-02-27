@@ -1,0 +1,45 @@
+{
+  "name": "ohm",
+  "version": "0.0.0",
+  "description": "an object-oriented language for parsing and pattern matching",
+  "keywords": [
+    "parser",
+    "compiler",
+    "pattern matching",
+    "pattern-matching",
+    "ometa",
+    "ometa/js",
+    "ometa-js",
+    "ometajs",
+    "rapid",
+    "prototyping"
+  ],
+  "homepage": "http://tinlizzie.org/ohm",
+  "bugs": "http://github.com/alexwarth/ohm/issues",
+  "main": "src/ohm.js",
+  "bin": "src/ohm-cmd.js",
+  "scripts": {
+    "clean": "rm -f dist/ohm.js dist/ohm.min.js",
+    "build-debug": "browserify src/ohm.js -d -s ohm -o dist/ohm.js",
+    "build-min": "browserify src/ohm.js -s ohm -t uglifyify -o dist/ohm.min.js",
+    "build": "npm run build-debug && npm run build-min",
+    "watch": "watchify src/ohm.js -d -s ohm -o dist/ohm.js",
+    "test": "jasmine-node test",
+    "test-watch": "jasmine-node test --autotest --watch src",
+    "build-ohm-grammar": "npm test && npm run unsafe-build-ohm-grammar && npm test",
+    "unsafe-build-ohm-grammar": "cp dist/ohm-grammar.js dist/ohm-grammar.js.old; (cat src/ohm-grammar-prelude.txt; node src/ohm-cmd.js src/ohm-grammar.ohm) > dist/ohm-grammar.js.new && mv dist/ohm-grammar.js.new dist/ohm-grammar.js",
+    "prepublish": "npm test && npm run build && npm run unsafe-build-ohm-grammar"
+  },
+  "license": "MIT",
+  "author": "Alex Warth <alexwarth@gmail.com> (http://tinlizzie.org/~awarth)",
+  "dependencies": {
+    "awlib": "~0.0.0"
+  },
+  "devDependencies": {
+    "watchify": "^0.6.1",
+    "uglify-js": "^2.4.12",
+    "browserify": "^3.30.4",
+    "uglifyify": "^1.2.3",
+    "jasmine-node": "^1.13.1"
+  }
+}
