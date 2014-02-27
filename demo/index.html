@@ -18,7 +18,7 @@ Arithmetic {
            | '+'.sign PriExpr.e          {pos}
            | '-'.sign PriExpr.e          {neg}
            | number
-  number  == digit+ ('.' digit+)?
+  number  == digit+ ('.' digit*)?
            | '.' digit+
 }
 
