@@ -98,7 +98,11 @@ var toHTML = {
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-document.getElementById('input').oninput = function() {
+var input = document.getElementById('input')
+
+input.value = ''
+
+input.oninput = function() {
   var thunk = g.matchContents(this.value, 'Expr')
   if (thunk) {
     this.className = undefined

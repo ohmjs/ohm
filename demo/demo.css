@@ -18,21 +18,17 @@ body {
 }
 
 #value:before, #lisp:before, #tree:before {
-  color: lightgray;
+  display: inline-block;
+  margin-right: 20pt;
+  min-width: 50pt;
+  text-align: right;
   vertical-align: top;
+  color: lightgray;
 }
 
-#value:before {
-  content: 'value = ';
-}
-
-#lisp:before {
-  content: 'lisp = ';
-}
-
-#tree:before {
-  content: 'tree = ';
-}
+#value:before { content: 'value '; }
+#lisp:before  { content: 'lisp '; }
+#tree:before  { content: 'tree '; }
 
 #value, #lisp, #tree {
   padding: 8pt 0;
