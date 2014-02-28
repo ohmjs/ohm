@@ -496,6 +496,7 @@ describe("Ohm", function() {
           "M {",
           "  number == digit+",
           "  digits == digit*",
+          "  sss == &number.x number.y",
           "}"])
       })
 
@@ -521,6 +522,14 @@ describe("Ohm", function() {
           number: function(value) { return ['digits', value] },
           digit: function(value) { return ['digit', value] }
         })).toEqual(['digits', [['digit', '1'], ['digit', '2'], ['digit', '3'], ['digit', '4']]])
+      })
+
+      it("stingy on semantic actions", function() {
+        var f = m.matchContents('123', 'sss')
+        var a = buildTreeNodeWithUniqueId()
+        var t = ['id', 3, 'number', [[ 'id', 0, 'digit', '1'], ['id', 1, 'digit', '2'], ['id', 2, 'digit', '3']]]
+        expect(f(a)).toEqual(['id', 4, 'sss', t, t])
+        expect(a._getNextId()).toEqual(5)
       })
     })
 
@@ -844,6 +853,7 @@ describe("Ohm", function() {
             "  mulExpr == mulExprRec | priExpr",
             "  mulExprRec == mulExpr.x '*' priExpr.y",
             "  priExpr == /[0-9]/",
+            "  sss == &addExpr.x addExpr.y",
             "}"])
         })
 
@@ -890,9 +900,9 @@ describe("Ohm", function() {
         })
 
         it("stingy on semantic actions", function() {
-          var f = m.matchContents('1*2+3+4*5', 'addExpr')
+          var f = m.matchContents('1*2+3+4*5', 'sss')
           var a = buildTreeNodeWithUniqueId()
-          expect(f(a)).toEqual(
+          var t = 
             ['id', 16, 'addExpr',
               ['id', 15, 'addExprRec',
                 ['id', 9, 'addExpr',
@@ -909,8 +919,9 @@ describe("Ohm", function() {
                   ['id', 13, 'mulExprRec',
                     ['id', 11, 'mulExpr',
                       ['id', 10, 'priExpr', '4']],
-                    ['id', 12, 'priExpr', '5']]]]])
-          expect(a._getNextId()).toEqual(17)
+                    ['id', 12, 'priExpr', '5']]]]]
+          expect(f(a)).toEqual(['id', 17, 'sss', t, t])
+          expect(a._getNextId()).toEqual(18)
         })
       })
 

@@ -2,8 +2,6 @@
 
 TODO:
 
-* Throw away the parser written in OMeta.
-
 * Think about improving the implementation of syntactic rules' automatic space skipping:
   -- Could keep track of the current rule name by modifying the code (in Apply.eval) where enter and exit methods
      are called. (Would also want to keep track of whether the rule is syntactic to avoid re-doing that work
@@ -229,7 +227,8 @@ ListInputStream.prototype = objectUtils.objectThatDelegatesTo(InputStream.protot
 
 function PosInfo(pos) {
   this.pos = pos
-  this.activeRules = {}
+  this.ruleStack = []
+  this.activeRules = {}  // redundant data (could be generated from ruleStack), exists for performance reasons
   this.memo = {}
 }
 
@@ -239,11 +238,21 @@ PosInfo.prototype = {
   },
 
   enter: function(ruleName) {
+    this.ruleStack.push(ruleName)
     this.activeRules[ruleName] = true
   },
 
-  exit: function(ruleName, pos) {
+  exit: function(ruleName) {
+    this.ruleStack.pop()
     this.activeRules[ruleName] = false
+  },
+
+  shouldUseMemoizedResult: function(memoRec) {
+    var involvedRules = memoRec.involvedRules
+    for (var ruleName in involvedRules)
+      if (involvedRules[ruleName] && this.activeRules[ruleName])
+        return false
+    return true
   },
 
   getCurrentLeftRecursion: function() {
@@ -253,11 +262,25 @@ PosInfo.prototype = {
   startLeftRecursion: function(ruleName) {
     if (!this.leftRecursionStack)
       this.leftRecursionStack = []
-    this.leftRecursionStack.push({name: ruleName, value: fail, pos: -1})
+    this.leftRecursionStack.push({name: ruleName, value: fail, pos: -1, involvedRules: {}})
+    this.updateInvolvedRules()
   },
 
   endLeftRecursion: function(ruleName) {
     this.leftRecursionStack.pop()
+  },
+
+  updateInvolvedRules: function() {
+    var currentLeftRecursion = this.getCurrentLeftRecursion()
+    var involvedRules = currentLeftRecursion.involvedRules
+    var lrRuleName = currentLeftRecursion.name
+    var idx = this.ruleStack.length - 1
+    while (true) {
+      var ruleName = this.ruleStack[idx--]
+      if (ruleName === lrRuleName)
+        break
+      involvedRules[ruleName] = true
+    }
   }
 }
 
@@ -288,7 +311,10 @@ Interval.prototype = {
 // Thunks
 // --------------------------------------------------------------------
 
+var nextThunkId = 0
+
 function RuleThunk(ruleName, source, startIdx, endIdx, value, bindings) {
+  this.id = nextThunkId++
   this.ruleName = ruleName
   this.source = source
   this.startIdx = startIdx
@@ -298,20 +324,22 @@ function RuleThunk(ruleName, source, startIdx, endIdx, value, bindings) {
 }
 
 RuleThunk.prototype = {
-  force: function(actionDict) {
+  force: function(actionDict, memo) {
+    if (memo.hasOwnProperty(this.id))
+      return memo[this.id]
     var action = this.lookupAction(actionDict)
     var addlInfo = this.createAddlInfo()
     if (this.bindings.length === 0)
-      return action.call(addlInfo, this.value.force(actionDict))
+      return memo[this.id] = action.call(addlInfo, this.value.force(actionDict, memo))
     else {
       var argDict = {}
       for (var idx = 0; idx < this.bindings.length; idx += 2)
         argDict[this.bindings[idx]] = this.bindings[idx + 1]
       var formals = objectUtils.formals(action)
       var args = formals.length == 0 ?
-        objectUtils.values(argDict).map(function(arg) { return arg.force(actionDict) }) :
-        formals.map(function(name) { return argDict[name].force(actionDict) })
-      return action.apply(addlInfo, args)
+        objectUtils.values(argDict).map(function(arg) { return arg.force(actionDict, memo) }) :
+        formals.map(function(name) { return argDict[name].force(actionDict, memo) })
+      return memo[this.id] = action.apply(addlInfo, args)
     }
   },
 
@@ -333,12 +361,16 @@ RuleThunk.prototype = {
 }
 
 function ListThunk(thunks) {
+  this.id = nextThunkId++
   this.thunks = thunks
 }
 
 ListThunk.prototype = {
-  force: function(actionDict) {
-    return this.thunks.map(function(thunk) { return thunk.force(actionDict) })
+  force: function(actionDict, memo) {
+    if (memo.hasOwnProperty(this.id))
+      return memo[this.id]
+    else
+      return memo[this.id] = this.thunks.map(function(thunk) { return thunk.force(actionDict, memo) })
   }
 }
 
@@ -347,7 +379,7 @@ function ValueThunk(value) {
 }
 
 ValueThunk.prototype = {
-  force: function(actionDict) {
+  force: function(actionDict, memo) {
     return this.value
   }
 }
@@ -932,12 +964,13 @@ Apply.prototype = objectUtils.objectThatDelegatesTo(Pattern.prototype, {
     var ruleName = this.ruleName
     var origPosInfo = inputStream.getCurrentPosInfo()
     var memoRec = origPosInfo.memo[ruleName]
-    if (memoRec) {
+    if (memoRec && origPosInfo.shouldUseMemoizedResult(memoRec)) {
       inputStream.pos = memoRec.pos
       return memoRec.value
     } else if (origPosInfo.isActive(ruleName)) {
       var currentLeftRecursion = origPosInfo.getCurrentLeftRecursion()
       if (currentLeftRecursion && currentLeftRecursion.name === ruleName) {
+        origPosInfo.updateInvolvedRules()
         inputStream.pos = currentLeftRecursion.pos
         return currentLeftRecursion.value
       } else {
@@ -952,12 +985,13 @@ Apply.prototype = objectUtils.objectThatDelegatesTo(Pattern.prototype, {
       if (currentLeftRecursion) {
         if (currentLeftRecursion.name === ruleName) {
           value = this.handleLeftRecursion(body, ruleDict, inputStream, origPosInfo.pos, currentLeftRecursion, value)
+          origPosInfo.memo[ruleName] =
+            {pos: inputStream.pos, value: value, involvedRules: currentLeftRecursion.involvedRules}
           origPosInfo.endLeftRecursion(ruleName)
-        }
+        } else if (!currentLeftRecursion.involvedRules[ruleName])
+          // Only memoize if this rule is not involved in the current left recursion
+          origPosInfo.memo[ruleName] = {pos: inputStream.pos, value: value}
       } else
-        // Only memoizing non-left recursive rules for now.
-        // TODO: should be ok to memoize the head rule, as long as it can pretend not to be memoized when
-        // involved rules are called as heads of new left recursions. Come up with an efficient way to do this.
         origPosInfo.memo[ruleName] = {pos: inputStream.pos, value: value}
       origPosInfo.exit(ruleName)
       return value
@@ -1078,7 +1112,7 @@ Grammar.prototype = {
       false :
       function(actionDict) {
         assertSemanticActionNamesMatch(actionDict)
-        return thunk.force(actionDict)
+        return thunk.force(actionDict, {})
       }
   },
 
