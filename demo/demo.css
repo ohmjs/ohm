@@ -18,9 +18,11 @@ body {
 }
 
 #value:before, #lisp:before, #tree:before {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12pt;
   display: inline-block;
   margin-right: 20pt;
-  min-width: 50pt;
+  min-width: 40pt;
   text-align: right;
   vertical-align: top;
   color: lightgray;
@@ -35,8 +37,9 @@ body {
 }
 
 #tree *:before {
+  font-family: Arial, Helvetica, sans-serif;
   display: block;
-  font-size: 8pt;
+  font-size: 10pt;
   color: slateblue;
   border-bottom: 1pt solid slateblue;
 }
