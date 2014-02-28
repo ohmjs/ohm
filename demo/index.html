@@ -11,13 +11,17 @@ Arithmetic {
   AddExpr == AddExpr.x '+'.op MulExpr.y  {plus}
            | AddExpr.x '-'.op MulExpr.y  {minus}
            | MulExpr
-  MulExpr == MulExpr.x '*'.op PriExpr.y  {times}
-           | MulExpr.x '/'.op PriExpr.y  {divide}
+  MulExpr == MulExpr.x '*'.op ExpExpr.y  {times}
+           | MulExpr.x '/'.op ExpExpr.y  {divide}
+           | ExpExpr
+  ExpExpr == PriExpr.x '^'.op ExpExpr.y  {power}
            | PriExpr
   PriExpr == '('.open Expr.e ')'.close   {paren}
            | '+'.sign PriExpr.e          {pos}
            | '-'.sign PriExpr.e          {neg}
+           | ident
            | number
+  ident   == letter alnum*
   number  == digit+ ('.' digit*)?
            | '.' digit+
 }
@@ -38,6 +42,7 @@ var g = ohm.namespace('test')
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+var env = {pi: Math.PI, e: Math.E}
 var interpret = {
   Expr:             function(value)          { return value },
   AddExpr:          function(value)          { return value },
@@ -46,10 +51,13 @@ var interpret = {
   MulExpr:          function(value)          { return value },
   'MulExpr-times':  function(x, op, y)       { return x * y },
   'MulExpr-divide': function(x, op, y)       { return x / y },
+  ExpExpr:          function(value)          { return value },
+  'ExpExpr-power':  function(x, op, y)       { return Math.pow(x, y) },
   PriExpr:          function(value)          { return value },
   'PriExpr-paren':  function(open, e, close) { return e },
   'PriExpr-pos':    function(sign, e)        { return e },
   'PriExpr-neg':    function(sign, e)        { return -e },
+  ident:            function()               { return env[this.interval.contents()] },
   number:           function(value)          { return parseFloat(this.interval.contents()) }
 }
 
@@ -63,10 +71,13 @@ var parse = {
   MulExpr:          function(value)          { return value },
   'MulExpr-times':  function(x, op, y)       { return ['*', x, y] },
   'MulExpr-divide': function(x, op, y)       { return ['/', x, y] },
+  ExpExpr:          function(value)          { return value },
+  'ExpExpr-power':  function(x, op, y)       { return ['pow', x, y] },
   PriExpr:          function(value)          { return value },
   'PriExpr-paren':  function(open, e, close) { return e },
   'PriExpr-pos':    function(sign, e)        { return e },
   'PriExpr-neg':    function(sign, e)        { return ['neg', e] },
+  ident:            function()               { return this.interval.contents() },
   number:           function(value)          { return this.interval.contents() }
 }
 
@@ -89,10 +100,13 @@ var toHTML = {
   MulExpr:          function(value)          { return makeElement('mulExpr', value) },
   'MulExpr-times':  function(x, op, y)       { return makeElement('times', x, op, y) },
   'MulExpr-divide': function(x, op, y)       { return makeElement('divide', x, op, y) },
+  ExpExpr:          function(value)          { return makeElement('expExpr', value) },
+  'ExpExpr-power':  function(x, op, y)       { return makeElement('power', x, op, y) },
   PriExpr:          function(value)          { return makeElement('priExpr', value) },
   'PriExpr-paren':  function(open, e, close) { return makeElement('paren', open, e, close) },
   'PriExpr-pos':    function(sign, e)        { return makeElement('pos', sign, e) },
   'PriExpr-neg':    function(sign, e)        { return makeElement('neg', sign, e) },
+  ident:            function()               { return makeElement('ident', this.interval.contents()) },
   number:           function(value)          { return makeElement('number', this.interval.contents()) }
 }
 

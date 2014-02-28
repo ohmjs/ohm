@@ -59,9 +59,12 @@ minus:before   { content: 'minus'; }
 mulExpr:before { content: 'mulExpr'; }
 times:before   { content: 'times'; }
 divide:before  { content: 'divide'; }
+expExpr:before { content: 'expExpr'; }
+power:before   { content: 'power'; }
 priExpr:before { content: 'priExpr'; }
 paren:before   { content: 'paren'; }
 pos:before     { content: 'pos'; }
 neg:before     { content: 'neg'; }
+ident:before   { content: 'ident'; }
 number:before  { content: 'number'; }
 
