@@ -3,7 +3,9 @@ ohm._ohmGrammarFactory =
 (function(ohm, optNamespace) {
   var b = ohm.builder()
   b.setName('Ohm')
-  b.extend('space', b.alt(b.seq(b._('//'), b.many(b.seq(b.not(b._('\n')), b.app('_')), 0), b._('\n')), b.seq(b._('/*'), b.many(b.seq(b.not(b._('*/')), b.app('_')), 0), b._('*/'))))
+  b.inline('space-singleLine', b.seq(b._('//'), b.many(b.seq(b.not(b._('\n')), b.app('_')), 0), b._('\n')))
+  b.inline('space-multiLine', b.seq(b._('/*'), b.many(b.seq(b.not(b._('*/')), b.app('_')), 0), b._('*/')))
+  b.extend('space', b.alt(b.app('space-singleLine'), b.app('space-multiLine')))
   b.define('_name', b.seq(b.app('nameFirst'), b.many(b.app('nameRest'), 0)))
   b.define('nameFirst', b.alt(b._('_'), b.app('letter')))
   b.define('nameRest', b.alt(b._('_'), b.app('alnum')))

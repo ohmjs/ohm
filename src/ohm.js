@@ -336,7 +336,7 @@ RuleThunk.prototype = {
       for (var idx = 0; idx < this.bindings.length; idx += 2)
         argDict[this.bindings[idx]] = this.bindings[idx + 1]
       var formals = objectUtils.formals(action)
-      var args = formals.length == 0 ?
+      var args = formals.length === 0 ?
         objectUtils.values(argDict).map(function(arg) { return arg.force(actionDict, memo) }) :
         formals.map(function(name) { return argDict[name].force(actionDict, memo) })
       return memo[this.id] = action.apply(addlInfo, args)
@@ -397,17 +397,12 @@ function Pattern() {
 }
 
 Pattern.prototype = {
-  semanticActionArgNames: function() {
-    // TODO: think about this, it doesn't seem right.
-    // E.g., suppose you have:
-    //   rule == ~foo bar | ~baz qux
-    // Both choices are seqs, and therefore have no value. But the rule's semantic action will require one.
-    var names = this.getBindingNames()
-    return names.length > 0 ? names : ['value']
-  },
-
   getBindingNames: function() {
     return []
+  },
+
+  producesValue: function() {
+    return true
   },
 
   assertNoDuplicateBindings: abstract,
@@ -535,6 +530,13 @@ Alt.prototype = objectUtils.objectThatDelegatesTo(Pattern.prototype, {
     return this.terms.length === 0 ? [] : this.terms[0].getBindingNames()
   },
 
+  producesValue: function() {
+    for (var idx = 0; idx < this.terms.length; idx++)
+      if (!this.terms[idx].producesValue())
+        return false
+    return true
+  },
+
   assertNoDuplicateBindings: function(ruleName) {
     for (var idx = 0; idx < this.terms.length; idx++)
       this.terms[idx].assertNoDuplicateBindings(ruleName)
@@ -583,16 +585,15 @@ Seq.prototype = objectUtils.objectThatDelegatesTo(Pattern.prototype, {
     return valuelessThunk
   },
 
-  semanticActionArgNames: function() {
-    // Override Pattern's implementation, which would return ['value'] when there are no bindings.
-    return this.getBindingNames()
-  },
-
   getBindingNames: function() {
     var names = []
     for (var idx = 0; idx < this.factors.length; idx++)
       names = names.concat(this.factors[idx].getBindingNames())
     return names.sort()
+  },
+
+  producesValue: function() {
+    return false
   },
 
   assertNoDuplicateBindings: function(ruleName) {
@@ -743,9 +744,8 @@ Not.prototype = objectUtils.objectThatDelegatesTo(Pattern.prototype, {
     }
   },
 
-  semanticActionArgNames: function() {
-    // Override Pattern's implementation, which would return ['value'] instead.
-    return []
+  producesValue: function() {
+    return false
   },
 
   assertNoDuplicateBindings: function(ruleName) {
@@ -1063,6 +1063,10 @@ _Expand.prototype = objectUtils.objectThatDelegatesTo(Pattern.prototype, {
     return this.expansion().getBindingNames()
   },
 
+  producesValue: function() {
+    return this.expansion().producesValue()
+  },
+
   assertNoDuplicateBindings: function(ruleName) {
     this.expansion().assertNoDuplicateBindings(ruleName)
   },
@@ -1117,13 +1121,14 @@ Grammar.prototype = {
   },
 
   assertSemanticActionNamesMatch: function(actionDict) {
+    var self = this
     var ruleDict = this.ruleDict
     var ok = true
-    objectUtils.keysAndValuesDo(ruleDict, function(ruleName, body) {
+    objectUtils.keysDo(ruleDict, function(ruleName) {
       if (actionDict[ruleName] === undefined)
         return
       var actual = objectUtils.formals(actionDict[ruleName]).sort()
-      var expected = body.semanticActionArgNames()
+      var expected = self.semanticActionArgNames(ruleName)
       if (!equals.equals(actual, expected)) {
         ok = false
         console.log('semantic action for rule', ruleName, 'has the wrong argument names')
@@ -1133,6 +1138,21 @@ Grammar.prototype = {
     })
     if (!ok)
       browser.error('one or more semantic actions have the wrong argument names -- see console for details')
+  },
+
+  semanticActionArgNames: function(ruleName) {
+    if (this.superGrammar && this.superGrammar.ruleDict[ruleName])
+      return this.superGrammar.semanticActionArgNames(ruleName)
+    else {
+      var body = this.ruleDict[ruleName]
+      var names = body.getBindingNames()
+      if (names.length > 0)
+        return names
+      else if (body.producesValue())
+        return ['value']
+      else
+        return []
+    }
   },
 
   toRecipe: function() {
@@ -1216,10 +1236,16 @@ Override.prototype = objectUtils.objectThatDelegatesTo(RuleDecl.prototype, {
   kind: 'override',
 
   performChecks: function() {
-    if (!this.superGrammar.ruleDict[this.name])
+    var overridden = this.superGrammar.ruleDict[this.name]
+    if (!overridden)
       browser.error('cannot override rule', this.name, 'because it does not exist in the super-grammar.',
                     '(try define instead.)')
-      this.performCommonChecks(this.name, this.body)
+    if (overridden.getBindingNames().length === 0 && overridden.producesValue() && !this.body.producesValue())
+      browser.error('the body of rule', this.name,
+                    'must produce a value, because the rule it\'s overriding also produces a value')
+    // TODO: add unit test for this!
+    // (if rule being overridden has no bindings but its body produces a value, this must produce a value too.)
+    this.performCommonChecks(this.name, this.body)
   }
 })
 
@@ -1253,9 +1279,15 @@ Extend.prototype = objectUtils.objectThatDelegatesTo(RuleDecl.prototype, {
   kind: 'extend',
 
   performChecks: function() {
-    if (!this.superGrammar.ruleDict[this.name])
+    var extended = this.superGrammar.ruleDict[this.name]
+    if (!extended)
       browser.error('cannot extend rule', this.name, 'because it does not exist in the super-grammar.',
                     '(try define instead.)')
+    if (extended.getBindingNames().length === 0 && extended.producesValue() && !this.body.producesValue())
+      browser.error('the body of rule', this.name,
+                    'must produce a value, because the rule it\'s extending also produces a value')
+    // TODO: add unit test for this!
+    // (if the rule being extended has no bindings but its body produces a value, this must produce a value too.)
     this.performCommonChecks(this.name, this.expandedBody)
   },
 
@@ -1332,7 +1364,7 @@ Builder.prototype = {
       else
         terms.push(arg)
     }
-    return terms.length == 1 ? terms[0] : new Alt(terms)
+    return terms.length === 1 ? terms[0] : new Alt(terms)
   },
   seq: function(/* factor1, factor2, ... */) {
     var factors = []
@@ -1343,7 +1375,7 @@ Builder.prototype = {
       else
         factors.push(arg)
     }
-    return factors.length == 1 ? factors[0] : new Seq(factors)
+    return factors.length === 1 ? factors[0] : new Seq(factors)
   },
   bind: function(expr, name) { return new Bind(expr, name) },
   many: function(expr, minNumMatches) { return new Many(expr, minNumMatches) },
@@ -1395,6 +1427,8 @@ function makeGrammarActionDict(optNamespace) {
   var builder
   return {
     space: function(value) {},
+    'space-multiLine': function() {},
+    'space-singleLine': function() {},
 
     _name: function() { return this.interval.contents() },
     nameFirst: function(value) {},
@@ -1409,7 +1443,7 @@ function makeGrammarActionDict(optNamespace) {
     'namedConst-false': function() { return false },
 
     string: function(cs) { return cs.map(function(c) { return stringUtils.unescapeChar(c) }).join('') },
-    sChar: function(value) { return this.interval.contents() },
+    sChar: function() { return this.interval.contents() },
     regexp: function(e) { return new RegExp(e) },
     reCharClass: function() { return this.interval.contents() },
     number: function() { return parseInt(this.interval.contents()) },
@@ -1459,7 +1493,7 @@ function makeGrammarActionDict(optNamespace) {
     RuleName: function(value) { builder.currentRuleName = value; return value },
 
     SuperGrammar: function(value) { builder.setSuperGrammar(value) },
-    'SuperGrammar-qualified': function(ns, n) { return ohm.namespace(ns).getGrammar(n) },
+    'SuperGrammar-qualified': function(ns, n) { return thisModule.namespace(ns).getGrammar(n) },
     'SuperGrammar-unqualified': function(n) { return optNamespace.getGrammar(n) },
 
     Grammar: function(n, s, rs) {

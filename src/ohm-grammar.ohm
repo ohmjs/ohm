@@ -1,6 +1,6 @@
 Ohm {
-  space        += '//' (~'\n' _)* '\n'
-                | '/*' (~'*/' _)* '*/'
+  space        += '//' (~'\n' _)* '\n' {singleLine}
+                | '/*' (~'*/' _)* '*/' {multiLine}
 
   _name         == nameFirst nameRest*
   nameFirst    == '_' | letter

@@ -1045,6 +1045,26 @@ describe("Ohm", function() {
           }).toThrow()
         })
 
+        it("should make sure the semantic action signature is preserved", function() {
+          // If the rule being overridden has no bindings but its body produces a value, the overridding version must
+          // also produce a value. This is to ensure the semantic action "API" doesn't change.
+          console.log('\nNote: the following error message is actually supposed to be there')
+          expect(function() {
+            makeGrammar("M1 { foo == 'foo' }", "inheritance-override")
+            makeGrammar("M2 <: M1 { foo := bar baz }", "inheritance-override")
+          }).toThrow()
+
+          // It should be ok to override a rule that has no bindings and whose body does not produce a value, even
+          // when the overriding definition actually produce a value. When this happens, the semantic action method should
+          // still take no arguments.
+          makeGrammar("M3 { foo == digit digit }", 'inheritance-override')
+          makeGrammar("M4 <: M3 { foo := digit }", 'inheritance-override')
+          ohm.namespace('inheritance-override').getGrammar('M4').matchContents('5', 'foo')({
+            digit: function(value) { },
+            foo: function() { }
+          })
+        })
+
         it("recognition", function() {
           expect(m1.matchContents('1234', 'number')).toBeTruthy()
           expect(m1.matchContents('hello', 'number')).toEqual(false)
@@ -1070,18 +1090,18 @@ describe("Ohm", function() {
           if (m1 && m2)
             return
           else {
-            m1 = makeGrammar("G1 { foo == 'aaa'.x 'bbb'.y }", 'inheritance-extend')
-            m2 = makeGrammar("G2 <: G1 { foo += '111'.x '222'.y }", 'inheritance-extend')
+            m1 = makeGrammar("G1 { foo == 'aaa'.x 'bbb'.y }", 'inheritanceExtend')
+            m2 = makeGrammar("G2 <: inheritanceExtend.G1 { foo += '111'.x '222'.y }", 'inheritanceExtend2')
           }
         })
 
         it("to recipe and back", function() {
           var m1Prime = eval(m1.toRecipe())(ohm, ohm.namespace('inheritance-extend-prime'))
-          m1Prime.namespaceName = 'inheritance-extend'
+          m1Prime.namespaceName = 'inheritanceExtend'
           expect(m1).toEqual(m1Prime)
 
           var m2Prime = eval(m2.toRecipe())(ohm, ohm.namespace('inheritance-extend-prime'))
-          m2Prime.namespaceName = 'inheritance-extend'
+          m2Prime.namespaceName = 'inheritanceExtend2'
           expect(m2).toEqual(m2Prime)
         })
 
@@ -1097,6 +1117,26 @@ describe("Ohm", function() {
           expect(function() {
             makeGrammar("G3 <: G1 { foo += '111'.x '222'.z }", 'inheritance-extend')
           }).toThrow()
+        })
+
+        it("should make sure the semantic action signature is preserved", function() {
+          // If the rule being extended has no bindings but its body produces a value, the overridding version must
+          // also produce a value. This is to ensure the semantic action "API" doesn't change.
+          console.log('\nNote: the following error message is actually supposed to be there')
+          expect(function() {
+            makeGrammar("M1 { foo == 'foo' }", "inheritanceExtend3")
+            makeGrammar("M2 <: M1 { foo += bar baz }", "inheritanceExtend3")
+          }).toThrow()
+
+          // It should be ok to extend a rule that has no bindings and whose body does not produce a value, even
+          // when the extending case(s) actually produce a value. When this happens, the semantic action method should
+          // still take no arguments.
+          makeGrammar("M3 { foo == digit digit }", 'inheritanceExtend3')
+          makeGrammar("M4 <: M3 { foo += digit }", 'inheritanceExtend3')
+          ohm.namespace('inheritanceExtend3').getGrammar('M4').matchContents('5', 'foo')({
+            digit: function(value) { },
+            foo: function() { }
+          })
         })
 
         it("recognition", function() {
@@ -1346,8 +1386,6 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        // TODO: replace this w/ proper unit tests for toRecipe() -- make sure there is at least one test for
-        // grammar inheritance.
         var gPrime = g.matchContents(ohmGrammarSource, 'Grammar')(ohm._makeGrammarActionDict())
         expect(eval(gPrime.toRecipe())(ohm)).toEqual(gPrime)
       })

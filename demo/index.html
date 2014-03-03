@@ -58,7 +58,7 @@ var interpret = {
   'PriExpr-pos':    function(sign, e)        { return e },
   'PriExpr-neg':    function(sign, e)        { return -e },
   ident:            function()               { return env[this.interval.contents()] },
-  number:           function(value)          { return parseFloat(this.interval.contents()) }
+  number:           function()               { return parseFloat(this.interval.contents()) }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -78,7 +78,7 @@ var parse = {
   'PriExpr-pos':    function(sign, e)        { return e },
   'PriExpr-neg':    function(sign, e)        { return ['neg', e] },
   ident:            function()               { return this.interval.contents() },
-  number:           function(value)          { return this.interval.contents() }
+  number:           function()               { return this.interval.contents() }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -107,7 +107,7 @@ var toHTML = {
   'PriExpr-pos':    function(sign, e)        { return makeElement('pos', sign, e) },
   'PriExpr-neg':    function(sign, e)        { return makeElement('neg', sign, e) },
   ident:            function()               { return makeElement('ident', this.interval.contents()) },
-  number:           function(value)          { return makeElement('number', this.interval.contents()) }
+  number:           function()               { return makeElement('number', this.interval.contents()) }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
