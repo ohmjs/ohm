@@ -17,7 +17,7 @@ body {
   border-bottom: 2px solid red;
 }
 
-#value:before, #lisp:before, #tree:before {
+#value:before, #lisp:before, #tree:before, #twoD:before {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 12pt;
   display: inline-block;
@@ -31,17 +31,10 @@ body {
 #value:before { content: 'value '; }
 #lisp:before  { content: 'lisp '; }
 #tree:before  { content: 'tree '; }
+#twoD:before  { content: '2-D '; }
 
-#value, #lisp, #tree {
+#value, #lisp, #tree, #twoD {
   padding: 8pt 0;
-}
-
-#tree *:before {
-  font-family: Arial, Helvetica, sans-serif;
-  display: block;
-  font-size: 10pt;
-  color: slateblue;
-  border-bottom: 1pt solid slateblue;
 }
 
 #tree * {
@@ -52,19 +45,77 @@ body {
   vertical-align: bottom;
 }
 
-expr:before    { content: 'expr'; }
-addExpr:before { content: 'addExpr'; }
-plus:before    { content: 'plus'; }
-minus:before   { content: 'minus'; }
-mulExpr:before { content: 'mulExpr'; }
-times:before   { content: 'times'; }
-divide:before  { content: 'divide'; }
-expExpr:before { content: 'expExpr'; }
-power:before   { content: 'power'; }
-priExpr:before { content: 'priExpr'; }
-paren:before   { content: 'paren'; }
-pos:before     { content: 'pos'; }
-neg:before     { content: 'neg'; }
-ident:before   { content: 'ident'; }
-number:before  { content: 'number'; }
+#tree *:before {
+  font-family: Arial, Helvetica, sans-serif;
+  display: block;
+  font-size: 10pt;
+  color: slateblue;
+  border-bottom: 1pt solid slateblue;
+}
+
+#tree expr:before    { content: 'expr'; }
+#tree addExpr:before { content: 'addExpr'; }
+#tree plus:before    { content: 'plus'; }
+#tree minus:before   { content: 'minus'; }
+#tree mulExpr:before { content: 'mulExpr'; }
+#tree times:before   { content: 'times'; }
+#tree divide:before  { content: 'divide'; }
+#tree expExpr:before { content: 'expExpr'; }
+#tree power:before   { content: 'power'; }
+#tree priExpr:before { content: 'priExpr'; }
+#tree paren:before   { content: 'paren'; }
+#tree pos:before     { content: 'pos'; }
+#tree neg:before     { content: 'neg'; }
+#tree ident:before   { content: 'ident'; }
+#tree number:before  { content: 'number'; }
+
+#twoD {
+  font-family: Times, "Times New Roman", serif;
+  font-size: 18pt;
+}
+
+#twoD ident {
+  font-style: italic;
+}
+
+#twoD paren {
+  display: inline-block;
+  border-image: url('parens.png') 0 93 round stretch;
+  border-width: 0 4pt;
+  margin: 2px;
+}
+
+#twoD power > exponent > paren,
+#twoD fraction > numerator > paren,
+#twoD fraction > denominator > paren {
+  border-image: none;
+}
+
+#twoD operator {
+  margin: 0 4pt;
+}
+
+#twoD fraction {
+  display: inline-block;
+  text-align: center;
+  vertical-align: middle;
+}
+
+#twoD numerator {
+  display: block;
+  border-bottom: 1px solid black;
+}
+
+#twoD numerator > * {
+  padding: 0 2pt;
+}
+
+#twoD denominator {
+  display: block;
+}
+
+#twoD exponent {
+  font-size: 70%;
+  vertical-align: super;
+}
 

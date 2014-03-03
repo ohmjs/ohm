@@ -1,3 +1,12 @@
+function makeElement(tagName) {
+  var element = document.createElement(tagName)
+  for (var idx = 1; idx < arguments.length; idx++) {
+    var child = typeof arguments[idx] === 'string' ?  document.createTextNode(arguments[idx]) : arguments[idx]
+    element.appendChild(child)
+  }
+  return element
+}
+
 function show(divId, what) {
   if (!(what instanceof Node))
     what = document.createTextNode('' + what)
@@ -5,12 +14,5 @@ function show(divId, what) {
   while (div.firstChild)
     div.removeChild(div.firstChild)
   div.appendChild(what)
-}
-
-Array.prototype.toString = function() {
-  var parts = []
-  for (var idx = 0; idx < this.length; idx++)
-    parts.push(this[idx].toString())
-  return ['(', parts.join(' '), ')'].join('')
 }
 

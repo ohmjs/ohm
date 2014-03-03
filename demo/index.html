@@ -33,6 +33,7 @@ Arithmetic {
     <div id="value"></div>
     <div id="lisp"></div>
     <div id="tree"></div>
+    <div id="twoD"></div>
     <script src="../dist/ohm.js"></script>
     <script>
 
@@ -63,8 +64,18 @@ var interpret = {
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+function toLisp(x) {
+  if (x instanceof Array) {
+    var parts = []
+    for (var idx = 0; idx < x.length; idx++)
+      parts.push(toLisp(x[idx]))
+    return ['(', parts.join(' '), ')'].join('')
+  } else
+    return x.toString()
+}
+
 var parse = {
-  Expr:             function(value)          { return value },
+  Expr:             function(value)          { return toLisp(value) },
   AddExpr:          function(value)          { return value },
   'AddExpr-plus':   function(x, op, y)       { return ['+', x, y] },
   'AddExpr-minus':  function(x, op, y)       { return ['-', x, y] },
@@ -83,16 +94,7 @@ var parse = {
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-function makeElement(tagName) {
-  var element = document.createElement(tagName)
-  for (var idx = 1; idx < arguments.length; idx++) {
-    var child = typeof arguments[idx] === 'string' ?  document.createTextNode(arguments[idx]) : arguments[idx]
-    element.appendChild(child)
-  }
-  return element
-}
-
-var toHTML = {
+var toTree = {
   Expr:             function(value)          { return makeElement('expr', value) },
   AddExpr:          function(value)          { return makeElement('addExpr', value) },
   'AddExpr-plus':   function(x, op, y)       { return makeElement('plus', x, op, y) },
@@ -112,6 +114,33 @@ var toHTML = {
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+var toTwoD = {
+  Expr:             function(value)          { return value },
+  AddExpr:          function(value)          { return value },
+  'AddExpr-plus':   function(x, op, y)       { var operator = makeElement('operator', op)
+                                               return makeElement('plus', x, operator, y) },
+  'AddExpr-minus':  function(x, op, y)       { var operator = makeElement('operator', '\u2212')
+                                               return makeElement('minus', x, operator, y) },
+  MulExpr:          function(value)          { return value },
+  'MulExpr-times':  function(x, op, y)       { var operator = makeElement('operator', '\u00D7')
+                                               return makeElement('times', x, operator, y) },
+  'MulExpr-divide': function(x, op, y)       { var numerator = makeElement('numerator', x)
+                                               var denominator = makeElement('denominator', y)
+                                               return makeElement('fraction', numerator, denominator) },
+  ExpExpr:          function(value)          { return value },
+  'ExpExpr-power':  function(x, op, y)       { var base = makeElement('base', x)
+                                               var exponent = makeElement('exponent', y)
+                                               return makeElement('power', base, exponent) },
+  PriExpr:          function(value)          { return value },
+  'PriExpr-paren':  function(open, e, close) { return makeElement('paren', e) },
+  'PriExpr-pos':    function(sign, e)        { return makeElement('pos', sign, e) },
+  'PriExpr-neg':    function(sign, e)        { return makeElement('neg', sign, e) },
+  ident:            function()               { return makeElement('ident', this.interval.contents()) },
+  number:           function()               { return makeElement('number', this.interval.contents()) }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 var input = document.getElementById('input')
 
 input.value = ''
@@ -122,19 +151,20 @@ input.oninput = function() {
     this.className = undefined
     show('value', thunk(interpret))
     show('lisp', thunk(parse))
-    show('tree', thunk(toHTML))
+    show('tree', thunk(toTree))
+    show('twoD', thunk(toTwoD))
   } else {
     this.className = 'error'
     if (this.value.length === 0) {
       show('value', '')
       show('lisp', '')
       show('tree', '')
+      show('twoD', '')
     }
   }
 }
 
     </script>
-    
   </body>
 </html>
 
