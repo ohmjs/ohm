@@ -81,7 +81,7 @@ body {
 #twoD paren {
   display: inline-block;
   border-image: url('parens.png') 0 93 round stretch;
-  border-width: 0 4pt;
+  border-width: 0 7pt;
   margin: 2px;
 }
 
