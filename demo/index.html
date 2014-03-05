@@ -135,7 +135,8 @@ var toTwoD = {
   'PriExpr-paren':  function(open, e, close) { return makeElement('paren', e) },
   'PriExpr-pos':    function(sign, e)        { return makeElement('pos', sign, e) },
   'PriExpr-neg':    function(sign, e)        { return makeElement('neg', sign, e) },
-  ident:            function()               { return makeElement('ident', this.interval.contents()) },
+  ident:            function()               { var text = this.interval.contents()
+                                               return makeElement('ident', text === 'pi' ? '\u03C0' : text) },
   number:           function()               { return makeElement('number', this.interval.contents()) }
 }
 
