@@ -311,10 +311,17 @@ Interval.prototype = {
 // Thunks
 // --------------------------------------------------------------------
 
+function Thunk() {}
+
 var nextThunkId = 0
+Thunk.prototype = {
+  init: function() {
+    this.id = nextThunkId++
+  }
+}
 
 function RuleThunk(ruleName, source, startIdx, endIdx, value, bindings) {
-  this.id = nextThunkId++
+  this.init()
   this.ruleName = ruleName
   this.source = source
   this.startIdx = startIdx
@@ -323,32 +330,23 @@ function RuleThunk(ruleName, source, startIdx, endIdx, value, bindings) {
   this.bindings = bindings
 }
 
-RuleThunk.prototype = {
+RuleThunk.prototype = objectUtils.objectThatDelegatesTo(Thunk.prototype, {
   force: function(actionDict, memo) {
-    if (memo.hasOwnProperty(this.id))
-      return memo[this.id]
-    var action = this.lookupAction(actionDict)
-    var addlInfo = this.createAddlInfo()
-    if (this.bindings.length === 0)
-      return memo[this.id] = action.call(addlInfo, this.value.force(actionDict, memo))
-    else {
-      var argDict = {}
-      for (var idx = 0; idx < this.bindings.length; idx += 2)
-        argDict[this.bindings[idx]] = this.bindings[idx + 1]
-      var formals = objectUtils.formals(action)
-      var args = formals.length === 0 ?
-        objectUtils.values(argDict).map(function(arg) { return arg.force(actionDict, memo) }) :
-        formals.map(function(name) { return argDict[name].force(actionDict, memo) })
-      return memo[this.id] = action.apply(addlInfo, args)
+    if (!memo.hasOwnProperty(this.id)) {
+      var action = this.lookupAction(actionDict)
+      var addlInfo = this.createAddlInfo()
+      var env = this.makeEnv(actionDict, memo)
+      memo[this.id] = action.call(addlInfo, env)
     }
+    return memo[this.id]
   },
 
   lookupAction: function(actionDict) {
     var ruleName = this.ruleName
     var action = actionDict[ruleName]
     if (action === undefined && actionDict._default !== undefined)
-      action = function() {
-        return actionDict._default.apply(this, [ruleName].concat(Array.prototype.slice.call(arguments)))
+      action = function(env) {
+        return actionDict._default.call(this, ruleName, env)
       }
     return action || browser.error('missing semantic action for', ruleName)
   },
@@ -357,32 +355,53 @@ RuleThunk.prototype = {
     return {
       interval: new Interval(this.source, this.startIdx, this.endIdx)
     }
+  },
+
+  makeEnv: function(actionDict, memo) {
+    var bindings = this.bindings.length === 0 ? ['value', this.value] : this.bindings
+    var env = {}
+    for (var idx = 0; idx < bindings.length; idx += 2) {
+      var name = bindings[idx]
+      var thunk = bindings[idx + 1]
+      this.addBinding(env, name, thunk, actionDict, memo)
+    }
+    return env
+  },
+
+  addBinding: function(env, name, value, actionDict, memo) {
+    Object.defineProperty(env, name, {
+      get: function() {
+        if (value instanceof Thunk)
+          value = value.force(actionDict, memo)
+        return value
+      },
+      enumerable: true
+    })
   }
-}
+})
 
 function ListThunk(thunks) {
-  this.id = nextThunkId++
+  this.init()
   this.thunks = thunks
 }
 
-ListThunk.prototype = {
+ListThunk.prototype = objectUtils.objectThatDelegatesTo(Thunk.prototype, {
   force: function(actionDict, memo) {
-    if (memo.hasOwnProperty(this.id))
-      return memo[this.id]
-    else
-      return memo[this.id] = this.thunks.map(function(thunk) { return thunk.force(actionDict, memo) })
+    if (!memo.hasOwnProperty(this.id))
+      memo[this.id] = this.thunks.map(function(thunk) { return thunk.force(actionDict, memo) })
+    return memo[this.id]
   }
-}
+})
 
 function ValueThunk(value) {
   this.value = value
 }
 
-ValueThunk.prototype = {
+ValueThunk.prototype = objectUtils.objectThatDelegatesTo(Thunk.prototype, {
   force: function(actionDict, memo) {
     return this.value
   }
-}
+})
 
 var valuelessThunk = new ValueThunk(undefined)
 
@@ -1146,12 +1165,7 @@ Grammar.prototype = {
     else {
       var body = this.ruleDict[ruleName]
       var names = body.getBindingNames()
-      if (names.length > 0)
-        return names
-      else if (body.producesValue())
-        return ['value']
-      else
-        return []
+      return names.length > 0 || body.producesValue() ? ['env'] : []
     }
   },
 
@@ -1422,87 +1436,97 @@ Namespace.prototype = {
 function makeGrammarActionDict(optNamespace) {
   var builder
   return {
-    space: function(value) {},
-    'space-multiLine': function() {},
-    'space-singleLine': function() {},
+    space:                      function(env) {},
+    'space-multiLine':          function() {},
+    'space-singleLine':         function() {},
 
-    _name: function() { return this.interval.contents() },
-    nameFirst: function(value) {},
-    nameRest: function(value) {},
+    _name:                      function() { return this.interval.contents() },
+    nameFirst:                  function(env) {},
+    nameRest:                   function(env) {},
 
-    name: function(n) { return n },
+    name:                       function(env) { return env.n },
 
-    namedConst: function(value) { return value },
-    'namedConst-undefined': function() { return undefined },
-    'namedConst-null': function() { return null },
-    'namedConst-true': function() { return true },
-    'namedConst-false': function() { return false },
+    namedConst:                 function(env) { return env.value },
+    'namedConst-undefined':     function() { return undefined },
+    'namedConst-null':          function() { return null },
+    'namedConst-true':          function() { return true },
+    'namedConst-false':         function() { return false },
 
-    string: function(cs) { return cs.map(function(c) { return stringUtils.unescapeChar(c) }).join('') },
-    sChar: function() { return this.interval.contents() },
-    regexp: function(e) { return new RegExp(e) },
-    reCharClass: function() { return this.interval.contents() },
-    number: function() { return parseInt(this.interval.contents()) },
+    string:                     function(env) {
+                                  return env.cs.map(function(c) { return stringUtils.unescapeChar(c) }).join('')
+                                },
+    sChar:                      function() { return this.interval.contents() },
+    regexp:                     function(env) { return new RegExp(env.e) },
+    reCharClass:                function() { return this.interval.contents() },
+    number:                     function() { return parseInt(this.interval.contents()) },
 
-    Alt: function(value) { return value },
-    'Alt-rec': function(x, y) { return builder.alt(x, y) },
+    Alt:                        function(env) { return env.value },
+    'Alt-rec':                  function(env) { return builder.alt(env.x, env.y) },
 
-    Term: function(value) { return value },
-    'Term-inline': function(x, n) { return builder.inline(builder.currentRuleName + '-' + n, x) },
+    Term:                       function(env) { return env.value },
+    'Term-inline':              function(env) { return builder.inline(builder.currentRuleName + '-' + env.n, env.x) },
 
-    Seq: function(value) { return builder.seq.apply(builder, value) },
+    Seq:                        function(env) { return builder.seq.apply(builder, env.value) },
 
-    Factor: function(value) { return value },
-    'Factor-bind': function(x, n) { return builder.bind(x, n) },
+    Factor:                     function(env) { return env.value },
+    'Factor-bind':              function(env) { return builder.bind(env.x, env.n) },
 
-    Iter: function(value) { return value },
-    'Iter-star': function(x) { return builder.many(x, 0) },
-    'Iter-plus': function(x) { return builder.many(x, 1) },
-    'Iter-opt': function(x) { return builder.opt(x) },
+    Iter:                       function(env) { return env.value },
+    'Iter-star':                function(env) { return builder.many(env.x, 0) },
+    'Iter-plus':                function(env) { return builder.many(env.x, 1) },
+    'Iter-opt':                 function(env) { return builder.opt(env.x) },
 
-    Pred: function(value) { return value },
-    'Pred-not': function(x) { return builder.not(x) },
-    'Pred-lookahead': function(x) { return builder.la(x) },
+    Pred:                       function(env) { return env.value },
+    'Pred-not':                 function(env) { return builder.not(env.x) },
+    'Pred-lookahead':           function(env) { return builder.la(env.x) },
 
-    Base: function(value) { return value },
-    'Base-undefined': function() { return builder._(undefined) },
-    'Base-null': function() { return builder._(null) },
-    'Base-true': function() { return builder._(true) },
-    'Base-false': function() { return builder._(false) },
-    'Base-application': function(ruleName) { return builder.app(ruleName) },
-    'Base-prim': function(x) { return builder._(x) },
-    'Base-lst': function(x) { return builder.lst(x) },
-    'Base-str': function(x) { return builder.str(x) },
-    'Base-paren': function(x) { return x },
-    'Base-obj': function(lenient) { return builder.obj([], lenient) },
-    'Base-objWithProps': function(ps, lenient) { return builder.obj(ps, lenient) },
+    Base:                       function(env) { return env.value },
+    'Base-undefined':           function() { return builder._(undefined) },
+    'Base-null':                function() { return builder._(null) },
+    'Base-true':                function() { return builder._(true) },
+    'Base-false':               function() { return builder._(false) },
+    'Base-application':         function(env) { return builder.app(env.ruleName) },
+    'Base-prim':                function(env) { return builder._(env.x) },
+    'Base-lst':                 function(env) { return builder.lst(env.x) },
+    'Base-str':                 function(env) { return builder.str(env.x) },
+    'Base-paren':               function(env) { return env.x },
+    'Base-obj':                 function(env) { return builder.obj([], env.lenient) },
+    'Base-objWithProps':        function(env) { return builder.obj(env.ps, env.lenient) },
 
-    Props: function(value) { return value },
-    'Props-base': function(p) { return [p] },
-    'Props-rec': function(p, ps) { return [p].concat(ps) },
-    Prop: function(n, p) { return {name: n, pattern: p} },
+    Props:                      function(env) { return env.value },
+    'Props-base':               function(env) { return [env.p] },
+    'Props-rec':                function(env) { return [env.p].concat(env.ps) },
+    Prop:                       function(env) { return {name: env.n, pattern: env.p} },
 
-    Rule: function(value) {},
-    'Rule-define': function(n, b) { return builder.define(n, b) },
-    'Rule-override': function(n, b) { return builder.override(n, b) },
-    'Rule-extend': function(n, b) { return builder.extend(n, b) },
-    RuleName: function(value) { builder.currentRuleName = value; return value },
+    Rule:                       function(env) { return env.value },
+    'Rule-define':              function(env) {
+                                  builder.currentRuleName = env.n
+                                  return builder.define(env.n, env.b)
+                                },
+    'Rule-override':            function(env) {
+                                  builder.currentRuleName = env.n
+                                  return builder.override(env.n, env.b)
+                                },
+    'Rule-extend':              function(env) {
+                                  builder.currentRuleName = env.n
+                                  return builder.extend(env.n, env.b)
+                                },
 
-    SuperGrammar: function(value) { builder.setSuperGrammar(value) },
-    'SuperGrammar-qualified': function(ns, n) { return thisModule.namespace(ns).getGrammar(n) },
-    'SuperGrammar-unqualified': function(n) { return optNamespace.getGrammar(n) },
+    SuperGrammar:               function(env) { builder.setSuperGrammar(env.value) },
+    'SuperGrammar-qualified':   function(env) { return thisModule.namespace(env.ns).getGrammar(env.n) },
+    'SuperGrammar-unqualified': function(env) { return optNamespace.getGrammar(env.n) },
 
-    Grammar: function(n, s, rs) {
-      return builder.build(optNamespace)
-    },
-    Grammars: function(value) {
-      return value
-    },
-    GrammarName: function(value) { builder = new Builder(); builder.setName(value); return value }
+    Grammar:                    function(env) {
+                                  builder = new Builder()
+                                  builder.setName(env.n)
+                                  env.s  // force evaluation
+                                  env.rs  // force evaluation
+                                  return builder.build(optNamespace)
+                                },
+    Grammars:                   function(env) { return env.value }
   }
 }
 
-var first = true
 function compileAndLoad(source, whatItIs, optNamespace) {
   var thunk = thisModule._ohmGrammar.matchContents(source, whatItIs)
   if (thunk)

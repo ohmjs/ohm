@@ -50,15 +50,13 @@ Ohm {
                 | Prop.p {base}
   Prop         == (_name | string).n ':' Factor.p
 
-  Rule         == RuleName.n '==' Alt.b {define}
-                | RuleName.n ':=' Alt.b {override}
-                | RuleName.n '+=' Alt.b {extend}
-  RuleName     == name
+  Rule         == name.n '==' Alt.b {define}
+                | name.n ':=' Alt.b {override}
+                | name.n '+=' Alt.b {extend}
   SuperGrammar == '<:' name.ns '.' name.n {qualified}
                 | '<:' name.n {unqualified}
 
-  Grammar      == GrammarName.n SuperGrammar?.s '{' Rule*.rs '}'
+  Grammar      == name.n SuperGrammar?.s '{' Rule*.rs '}'
   Grammars     == Grammar*
-  GrammarName  == name
 }
 

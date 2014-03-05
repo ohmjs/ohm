@@ -45,21 +45,21 @@ var g = ohm.namespace('test')
 
 var env = {pi: Math.PI, e: Math.E}
 var interpret = {
-  Expr:             function(value)          { return value },
-  AddExpr:          function(value)          { return value },
-  'AddExpr-plus':   function(x, op, y)       { return x + y },
-  'AddExpr-minus':  function(x, op, y)       { return x - y },
-  MulExpr:          function(value)          { return value },
-  'MulExpr-times':  function(x, op, y)       { return x * y },
-  'MulExpr-divide': function(x, op, y)       { return x / y },
-  ExpExpr:          function(value)          { return value },
-  'ExpExpr-power':  function(x, op, y)       { return Math.pow(x, y) },
-  PriExpr:          function(value)          { return value },
-  'PriExpr-paren':  function(open, e, close) { return e },
-  'PriExpr-pos':    function(sign, e)        { return e },
-  'PriExpr-neg':    function(sign, e)        { return -e },
-  ident:            function()               { return env[this.interval.contents()] },
-  number:           function()               { return parseFloat(this.interval.contents()) }
+  Expr:             function(env) { return env.value },
+  AddExpr:          function(env) { return env.value },
+  'AddExpr-plus':   function(env) { return env.x + env.y },
+  'AddExpr-minus':  function(env) { return env.x - env.y },
+  MulExpr:          function(env) { return env.value },
+  'MulExpr-times':  function(env) { return env.x * env.y },
+  'MulExpr-divide': function(env) { return env.x / env.y },
+  ExpExpr:          function(env) { return env.value },
+  'ExpExpr-power':  function(env) { return Math.pow(env.x, env.y) },
+  PriExpr:          function(env) { return env.value },
+  'PriExpr-paren':  function(env) { return env.e },
+  'PriExpr-pos':    function(env) { return env.e },
+  'PriExpr-neg':    function(env) { return -env.e },
+  ident:            function()    { return env[this.interval.contents()] },
+  number:           function()    { return parseFloat(this.interval.contents()) }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -75,69 +75,69 @@ function toLisp(x) {
 }
 
 var parse = {
-  Expr:             function(value)          { return toLisp(value) },
-  AddExpr:          function(value)          { return value },
-  'AddExpr-plus':   function(x, op, y)       { return ['+', x, y] },
-  'AddExpr-minus':  function(x, op, y)       { return ['-', x, y] },
-  MulExpr:          function(value)          { return value },
-  'MulExpr-times':  function(x, op, y)       { return ['*', x, y] },
-  'MulExpr-divide': function(x, op, y)       { return ['/', x, y] },
-  ExpExpr:          function(value)          { return value },
-  'ExpExpr-power':  function(x, op, y)       { return ['pow', x, y] },
-  PriExpr:          function(value)          { return value },
-  'PriExpr-paren':  function(open, e, close) { return e },
-  'PriExpr-pos':    function(sign, e)        { return e },
-  'PriExpr-neg':    function(sign, e)        { return ['neg', e] },
-  ident:            function()               { return this.interval.contents() },
-  number:           function()               { return this.interval.contents() }
+  Expr:             function(env) { return toLisp(env.value) },
+  AddExpr:          function(env) { return env.value },
+  'AddExpr-plus':   function(env) { return ['+', env.x, env.y] },
+  'AddExpr-minus':  function(env) { return ['-', env.x, env.y] },
+  MulExpr:          function(env) { return env.value },
+  'MulExpr-times':  function(env) { return ['*', env.x, env.y] },
+  'MulExpr-divide': function(env) { return ['/', env.x, env.y] },
+  ExpExpr:          function(env) { return env.value },
+  'ExpExpr-power':  function(env) { return ['pow', env.x, env.y] },
+  PriExpr:          function(env) { return env.value },
+  'PriExpr-paren':  function(env) { return env.e },
+  'PriExpr-pos':    function(env) { return env.e },
+  'PriExpr-neg':    function(env) { return ['neg', env.e] },
+  ident:            function()    { return this.interval.contents() },
+  number:           function()    { return this.interval.contents() }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 var toTree = {
-  Expr:             function(value)          { return makeElement('expr', value) },
-  AddExpr:          function(value)          { return makeElement('addExpr', value) },
-  'AddExpr-plus':   function(x, op, y)       { return makeElement('plus', x, op, y) },
-  'AddExpr-minus':  function(x, op, y)       { return makeElement('minus', x, op, y) },
-  MulExpr:          function(value)          { return makeElement('mulExpr', value) },
-  'MulExpr-times':  function(x, op, y)       { return makeElement('times', x, op, y) },
-  'MulExpr-divide': function(x, op, y)       { return makeElement('divide', x, op, y) },
-  ExpExpr:          function(value)          { return makeElement('expExpr', value) },
-  'ExpExpr-power':  function(x, op, y)       { return makeElement('power', x, op, y) },
-  PriExpr:          function(value)          { return makeElement('priExpr', value) },
-  'PriExpr-paren':  function(open, e, close) { return makeElement('paren', open, e, close) },
-  'PriExpr-pos':    function(sign, e)        { return makeElement('pos', sign, e) },
-  'PriExpr-neg':    function(sign, e)        { return makeElement('neg', sign, e) },
-  ident:            function()               { return makeElement('ident', this.interval.contents()) },
-  number:           function()               { return makeElement('number', this.interval.contents()) }
+  Expr:             function(env) { return makeElement('expr', env.value) },
+  AddExpr:          function(env) { return makeElement('addExpr', env.value) },
+  'AddExpr-plus':   function(env) { return makeElement('plus', env.x, env.op, env.y) },
+  'AddExpr-minus':  function(env) { return makeElement('minus', env.x, env.op, env.y) },
+  MulExpr:          function(env) { return makeElement('mulExpr', env.value) },
+  'MulExpr-times':  function(env) { return makeElement('times', env.x, env.op, env.y) },
+  'MulExpr-divide': function(env) { return makeElement('divide', env.x, env.op, env.y) },
+  ExpExpr:          function(env) { return makeElement('expExpr', env.value) },
+  'ExpExpr-power':  function(env) { return makeElement('power', env.x, env.op, env.y) },
+  PriExpr:          function(env) { return makeElement('priExpr', env.value) },
+  'PriExpr-paren':  function(env) { return makeElement('paren', env.open, env.e, env.close) },
+  'PriExpr-pos':    function(env) { return makeElement('pos', env.sign, env.e) },
+  'PriExpr-neg':    function(env) { return makeElement('neg', env.sign, env.e) },
+  ident:            function()    { return makeElement('ident', this.interval.contents()) },
+  number:           function()    { return makeElement('number', this.interval.contents()) }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 var toTwoD = {
-  Expr:             function(value)          { return value },
-  AddExpr:          function(value)          { return value },
-  'AddExpr-plus':   function(x, op, y)       { var operator = makeElement('operator', op)
-                                               return makeElement('plus', x, operator, y) },
-  'AddExpr-minus':  function(x, op, y)       { var operator = makeElement('operator', '\u2212')
-                                               return makeElement('minus', x, operator, y) },
-  MulExpr:          function(value)          { return value },
-  'MulExpr-times':  function(x, op, y)       { var operator = makeElement('operator', '\u00D7')
-                                               return makeElement('times', x, operator, y) },
-  'MulExpr-divide': function(x, op, y)       { var numerator = makeElement('numerator', x)
-                                               var denominator = makeElement('denominator', y)
-                                               return makeElement('fraction', numerator, denominator) },
-  ExpExpr:          function(value)          { return value },
-  'ExpExpr-power':  function(x, op, y)       { var base = makeElement('base', x)
-                                               var exponent = makeElement('exponent', y)
-                                               return makeElement('power', base, exponent) },
-  PriExpr:          function(value)          { return value },
-  'PriExpr-paren':  function(open, e, close) { return makeElement('paren', e) },
-  'PriExpr-pos':    function(sign, e)        { return makeElement('pos', sign, e) },
-  'PriExpr-neg':    function(sign, e)        { return makeElement('neg', sign, e) },
-  ident:            function()               { var text = this.interval.contents()
-                                               return makeElement('ident', text === 'pi' ? '\u03C0' : text) },
-  number:           function()               { return makeElement('number', this.interval.contents()) }
+  Expr:             function(env) { return env.value },
+  AddExpr:          function(env) { return env.value },
+  'AddExpr-plus':   function(env) { var operator = makeElement('operator', env.op)
+                                    return makeElement('plus', env.x, operator, env.y) },
+  'AddExpr-minus':  function(env) { var operator = makeElement('operator', '\u2212')
+                                    return makeElement('minus', env.x, operator, env.y) },
+  MulExpr:          function(env) { return env.value },
+  'MulExpr-times':  function(env) { var operator = makeElement('operator', '\u00D7')
+                                    return makeElement('times', env.x, operator, env.y) },
+  'MulExpr-divide': function(env) { var numerator = makeElement('numerator', env.x)
+                                    var denominator = makeElement('denominator', env.y)
+                                    return makeElement('fraction', numerator, denominator) },
+  ExpExpr:          function(env) { return env.value },
+  'ExpExpr-power':  function(env) { var base = makeElement('base', env.x)
+                                    var exponent = makeElement('exponent', env.y)
+                                    return makeElement('power', base, exponent) },
+  PriExpr:          function(env) { return env.value },
+  'PriExpr-paren':  function(env) { return makeElement('paren', env.e) },
+  'PriExpr-pos':    function(env) { return makeElement('pos', env.sign, env.e) },
+  'PriExpr-neg':    function(env) { return makeElement('neg', env.sign, env.e) },
+  ident:            function()    { var text = this.interval.contents()
+                                    return makeElement('ident', text === 'pi' ? '\u03C0' : text) },
+  number:           function()    { return makeElement('number', this.interval.contents()) }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

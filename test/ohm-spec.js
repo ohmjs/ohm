@@ -26,10 +26,10 @@ describe("Ohm", function() {
     function buildTreeNodeWithUniqueId() {
       var nextId = 0
       return {
-        _default: function(ruleName) {
+        _default: function(ruleName, env) {
           var ans = ['id', nextId++, ruleName]
-          for (var idx = 1; idx < arguments.length; idx++)
-            ans.push(arguments[idx])
+          for (var p in env)
+            ans.push(env[p])
           return ans
         },
         _getNextId: function() {
@@ -56,8 +56,8 @@ describe("Ohm", function() {
           })
 
           it("semantic actions", function() {
-            expect(m.match(5, '_')({_: function(value) { return value }})).toEqual(5)
-            expect(m.match(null, '_')({_: function(value) { return value }})).toEqual(null)
+            expect(m.match(5, '_')({_: function(env) { return env.value }})).toEqual(5)
+            expect(m.match(null, '_')({_: function(env) { return env.value }})).toEqual(null)
           })
         })
 
@@ -68,7 +68,7 @@ describe("Ohm", function() {
           })
 
           it("semantic actions", function() {
-            expect(m.matchContents('5', '_')({_: function(value) { return value }})).toEqual('5')
+            expect(m.matchContents('5', '_')({_: function(env) { return env.value }})).toEqual('5')
           })
         })
 
@@ -80,7 +80,7 @@ describe("Ohm", function() {
           })
 
           it("semantic actions", function() {
-            expect(m.matchContents(['123'], '_')({_: function(value) { return value }})).toEqual('123')
+            expect(m.matchContents(['123'], '_')({_: function(env) { return env.value }})).toEqual('123')
           })
         })
       })
@@ -161,11 +161,13 @@ describe("Ohm", function() {
           })
 
           it("semantic actions", function() {
-            expect(m.match(5, 'five')({five: function(value) { return value }})).toEqual(5)
-            expect(m.match(true, '_true')({_true: function(value) { return value }})).toEqual(true)
-            expect(m.match(false, '_false')({_false: function(value) { return value }})).toEqual(false)
-            expect(m.match(null, '_null')({_null: function(value) { return value }})).toEqual(null)
-            expect(m.match(undefined, '_undefined')({_undefined: function(value) { return value }})).toEqual(undefined)
+            expect(m.match(5, 'five')({five: function(env) { return env.value }})).toEqual(5)
+            expect(m.match(true, '_true')({_true: function(env) { return env.value }})).toEqual(true)
+            expect(m.match(false, '_false')({_false: function(env) { return env.value }})).toEqual(false)
+            expect(m.match(null, '_null')({_null: function(env) { return env.value }})).toEqual(null)
+            expect(m.match(undefined, '_undefined')({
+              _undefined: function(env) { return env.value }
+            })).toEqual(undefined)
           })
         })
 
@@ -202,7 +204,7 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var thunk = m.matchContents([5], 'five')
-            expect(thunk({five: function(value) { return value }})).toEqual(5)
+            expect(thunk({five: function(env) { return env.value }})).toEqual(5)
           })
         })
       })
@@ -227,7 +229,7 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var thunk = m.match('!', 'bang')
-            expect(thunk({bang: function(value) { return value }})).toEqual('!')
+            expect(thunk({bang: function(env) { return env.value }})).toEqual('!')
           })
         })
 
@@ -240,7 +242,7 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var thunk = m.matchContents('!', 'bang')
-            expect(thunk({bang: function(value) { return value }})).toEqual('!')
+            expect(thunk({bang: function(env) { return env.value }})).toEqual('!')
           })
         })
 
@@ -255,7 +257,7 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var thunk = m.matchContents(['!'], 'bang')
-            expect(thunk({bang: function(value) { return value }})).toEqual('!')
+            expect(thunk({bang: function(env) { return env.value }})).toEqual('!')
           })
         })
       })
@@ -280,7 +282,7 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var thunk = m.match('foo', 'foo')
-            expect(thunk({foo: function(value) { return value }})).toEqual('foo')
+            expect(thunk({foo: function(env) { return env.value }})).toEqual('foo')
           })
         })
 
@@ -293,7 +295,7 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var thunk = m.matchContents('foo', 'foo')
-            expect(thunk({foo: function(value) { return value }})).toEqual('foo')
+            expect(thunk({foo: function(env) { return env.value }})).toEqual('foo')
           })
         })
 
@@ -309,7 +311,7 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var thunk = m.matchContents(['foo'], 'foo')
-            expect(thunk({foo: function(value) { return value }})).toEqual('foo')
+            expect(thunk({foo: function(env) { return env.value }})).toEqual('foo')
           })
         })
       })
@@ -347,7 +349,7 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var thunk = m.matchContents('4', 'myDigit')
-            expect(thunk({myDigit: function(value) { return value }})).toEqual('4')
+            expect(thunk({myDigit: function(env) { return env.value }})).toEqual('4')
           })
         })
 
@@ -384,8 +386,8 @@ describe("Ohm", function() {
       })
 
       it("semantic actions", function() {
-        expect(m.matchContents('a', 'altTest')({altTest: function(value) { return value }})).toEqual('a')
-        expect(m.matchContents('b', 'altTest')({altTest: function(value) { return value }})).toEqual('b')
+        expect(m.matchContents('a', 'altTest')({altTest: function(env) { return env.value }})).toEqual('a')
+        expect(m.matchContents('b', 'altTest')({altTest: function(env) { return env.value }})).toEqual('b')
       })
     })
 
@@ -411,7 +413,7 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var f = m.matchContents('abcz', 'start')
           expect(f({
-            start: function(value) { return value }
+            start: function(env) { return env.value }
           })).toEqual([undefined])
         })
       })
@@ -432,7 +434,7 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var f = m.matchContents('abcz', 'start')
           expect(f({
-            start: function(value) { return value },
+            start: function(env) { return env.value },
           })).toEqual([undefined])
         })
       })
@@ -453,7 +455,7 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var f = m.matchContents('abcz', 'start')
           expect(f({
-            start: function(value) { return value }
+            start: function(env) { return env.value }
           })).toEqual([undefined])
         })
       })
@@ -484,8 +486,8 @@ describe("Ohm", function() {
       })
 
       it("semantic actions", function() {
-        expect(m.matchContents('abc', 'start')({start: function(x, y) { return [x, y] }})).toEqual(['a', 'c'])
-        expect(m.matchContents('123', 'start')({start: function(x, y) { return [x, y] }})).toEqual(['1', '3'])
+        expect(m.matchContents('abc', 'start')({start: function(env) { return [env.x, env.y] }})).toEqual(['a', 'c'])
+        expect(m.matchContents('123', 'start')({start: function(env) { return [env.x, env.y] }})).toEqual(['1', '3'])
       })
     })
 
@@ -519,16 +521,16 @@ describe("Ohm", function() {
       it("semantic actions", function() {
         var f = m.matchContents('1234', 'number')
         expect(f({
-          number: function(value) { return ['digits', value] },
-          digit: function(value) { return ['digit', value] }
+          number: function(env) { return ['digits', env.value] },
+          digit: function(env) { return ['digit', env.value] }
         })).toEqual(['digits', [['digit', '1'], ['digit', '2'], ['digit', '3'], ['digit', '4']]])
       })
 
-      it("stingy on semantic actions", function() {
+      it("semantic actions are evaluated lazily", function() {
         var f = m.matchContents('123', 'sss')
         var a = buildTreeNodeWithUniqueId()
-        var t = ['id', 3, 'number', [[ 'id', 0, 'digit', '1'], ['id', 1, 'digit', '2'], ['id', 2, 'digit', '3']]]
-        expect(f(a)).toEqual(['id', 4, 'sss', t, t])
+        var t = ['id', 1, 'number', [[ 'id', 2, 'digit', '1'], ['id', 3, 'digit', '2'], ['id', 4, 'digit', '3']]]
+        expect(f(a)).toEqual(['id', 0, 'sss', t, t])
         expect(a._getNextId()).toEqual(5)
       })
     })
@@ -550,7 +552,7 @@ describe("Ohm", function() {
       })
 
       it("semantic actions", function() {
-        var actionDict = {name: function(title, last) { return [title, last] }}
+        var actionDict = {name: function(env) { return [env.title, env.last] }}
         expect(m.matchContents('drwarth', 'name')(actionDict)).toEqual([['dr'], 'warth'])
         expect(m.matchContents('warth', 'name')(actionDict)).toEqual([undefined, 'warth'])
       })
@@ -573,7 +575,7 @@ describe("Ohm", function() {
 
       it("semantic actions", function() {
         expect(m.matchContents('yello world', 'start')({
-            start: function(x) { return x }
+            start: function(env) { return env.x }
         })).toEqual(undefined)
       })
     })
@@ -594,7 +596,7 @@ describe("Ohm", function() {
       })
 
       it("semantic actions", function() {
-        expect(m.matchContents('hello world', 'start')({start: function(x) { return x }})).toEqual('hello')
+        expect(m.matchContents('hello world', 'start')({start: function(env) { return env.x }})).toEqual('hello')
       })
     })
 
@@ -616,7 +618,7 @@ describe("Ohm", function() {
 
       it("semantic actions", function() {
         expect(m.matchContents(['abc', 'd', 'ef'], 'start')({
-          start: function(x) { return x }
+          start: function(env) { return env.x }
         })).toEqual('abc')
       })
     })
@@ -642,7 +644,7 @@ describe("Ohm", function() {
 
       it("semantic actions", function() {
         expect(m.matchContents(['abc', ['d'], 'ef'], 'start')({
-          start: function(x) { return x }
+          start: function(env) { return env.x }
         })).toEqual(['d'])
       })
     })
@@ -673,7 +675,7 @@ describe("Ohm", function() {
 
         it("semantic actions", function() {
           expect(m.match({x: 1, y: 2}, 'strict')({
-            strict: function(a, b) { return [a, b] }
+            strict: function(env) { return [env.a, env.b] }
           })).toEqual([1, 2])
         })
       })
@@ -690,7 +692,7 @@ describe("Ohm", function() {
 
         it("semantic actions", function() {
           expect(m.match({x: 1, y: 2}, 'lenient')({
-            lenient: function(a, b) { return [a, b] }
+            lenient: function(env) { return [env.a, env.b] }
           })).toEqual([1, 2])
         })
       })
@@ -726,8 +728,8 @@ describe("Ohm", function() {
 
         it("semantic actions", function() {
           expect(m.matchContents('foo', 'easy')({
-            easy: function(value) { return ['easy', value] },
-            foo: function(value) { return ['foo', value] }
+            easy: function(env) { return ['easy', env.value] },
+            foo: function(env) { return ['foo', env.value] }
           })).toEqual(['easy', ['foo', 'foo']])
         })
       })
@@ -757,14 +759,14 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var f = m.matchContents('1234', 'number')
           expect(f({
-            number: function(value) { return value },
-            numberRec: function(n, d) { return n * 10 + d },
-            digit: function(value) { return value.charCodeAt(0) - '0'.charCodeAt(0) }
+            number: function(env) { return env.value },
+            numberRec: function(env) { return env.n * 10 + env.d },
+            digit: function(env) { return env.value.charCodeAt(0) - '0'.charCodeAt(0) }
           })).toEqual(1234)
           expect(f({
-            number: function(value) { return ['number', value] },
-            numberRec: function(n, d) { return ['numberRec', n, d] },
-            digit: function(value) { return value }
+            number: function(env) { return ['number', env.value] },
+            numberRec: function(env) { return ['numberRec', env.n, env.d] },
+            digit: function(env) { return env.value }
           })).toEqual(
             ['number',
               ['numberRec',
@@ -802,8 +804,8 @@ describe("Ohm", function() {
 
         it("semantic actions", function() {
           expect(m.matchContents('x+y+x', 'add')({
-            addRec: function(x, y) { return [x, '+', y] },
-            _default: function(ruleName, value) { return value }
+            addRec: function(env) { return [env.x, '+', env.y] },
+            _default: function(ruleName, env) { return env.value }
           })).toEqual([['x', '+', 'y'], '+', 'x'])
         })
       })
@@ -837,8 +839,8 @@ describe("Ohm", function() {
 
         it("semantic actions", function() {
           expect(m.matchContents('1234', 'number')({
-            numberRec: function(n, d) { return [n, d] },
-            _default: function(ruleName, x) { return x }
+            numberRec: function(env) { return [env.n, env.d] },
+            _default: function(ruleName, env) { return env.value }
           })).toEqual([[['1', '2'], '3'], '4'])
         })
       })
@@ -872,11 +874,11 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var f = m.matchContents('1*2+3+4*5', 'addExpr')
           expect(f({
-            addExpr: function(value) { return ['addExpr', value] },
-            addExprRec: function(x, y) { return ['addExprRec', x, y] },
-            mulExpr: function(value) { return ['mulExpr', value] },
-            mulExprRec: function(x, y) { return ['mulExprRec', x, y] },
-            priExpr: function(value) { return value }
+            addExpr: function(env) { return ['addExpr', env.value] },
+            addExprRec: function(env) { return ['addExprRec', env.x, env.y] },
+            mulExpr: function(env) { return ['mulExpr', env.value] },
+            mulExprRec: function(env) { return ['mulExprRec', env.x, env.y] },
+            priExpr: function(env) { return env.value }
           })).toEqual(
             ['addExpr',
               ['addExprRec',
@@ -886,41 +888,41 @@ describe("Ohm", function() {
                     ['mulExpr', '3']]],
                 ['mulExpr', ['mulExprRec', ['mulExpr', '4'], '5']]]])
           expect(f({
-            addExpr: function(value) { return value },
-            addExprRec: function(x, y) { return x + y },
-            mulExpr: function(value) { return value },
-            mulExprRec: function(x, y) { return x * y },
-            priExpr: function(value) { return parseInt(value) }
+            addExpr: function(env) { return env.value },
+            addExprRec: function(env) { return env.x + env.y },
+            mulExpr: function(env) { return env.value },
+            mulExprRec: function(env) { return env.x * env.y },
+            priExpr: function(env) { return parseInt(env.value) }
           })).toEqual(25)
           expect(f({
-            addExprRec: function(x, y) { return '(' + x + '+' + y + ')' },
-            mulExprRec: function(x, y) { return '(' + x + '*' + y + ')' },
-            _default: function(ruleName, x) { return x }
+            addExprRec: function(env) { return '(' + env.x + '+' + env.y + ')' },
+            mulExprRec: function(env) { return '(' + env.x + '*' + env.y + ')' },
+            _default: function(ruleName, env) { return env.value }
           })).toEqual('(((1*2)+3)+(4*5))')
         })
 
-        it("stingy on semantic actions", function() {
+        it("semantic actions are evaluated lazily", function() {
           var f = m.matchContents('1*2+3+4*5', 'sss')
           var a = buildTreeNodeWithUniqueId()
           var t = 
-            ['id', 16, 'addExpr',
-              ['id', 15, 'addExprRec',
-                ['id', 9, 'addExpr',
-                  ['id', 8, 'addExprRec',
+            ['id', 1, 'addExpr',
+              ['id', 2, 'addExprRec',
+                ['id', 3, 'addExpr',
+                  ['id', 4, 'addExprRec',
                     ['id', 5, 'addExpr',
-                      ['id', 4, 'mulExpr',
-                        ['id', 3, 'mulExprRec',
-                          ['id', 1, 'mulExpr',
-                            ['id', 0, 'priExpr', '1']],
-                          ['id', 2, 'priExpr', '2']]]],
-                    ['id', 7, 'mulExpr',
-                      ['id', 6, 'priExpr', '3']]]],
-                ['id', 14, 'mulExpr',
-                  ['id', 13, 'mulExprRec',
+                      ['id', 6, 'mulExpr',
+                        ['id', 7, 'mulExprRec',
+                          ['id', 8, 'mulExpr',
+                            ['id', 9, 'priExpr', '1']],
+                          ['id', 10, 'priExpr', '2']]]],
                     ['id', 11, 'mulExpr',
-                      ['id', 10, 'priExpr', '4']],
-                    ['id', 12, 'priExpr', '5']]]]]
-          expect(f(a)).toEqual(['id', 17, 'sss', t, t])
+                      ['id', 12, 'priExpr', '3']]]],
+                ['id', 13, 'mulExpr',
+                  ['id', 14, 'mulExprRec',
+                    ['id', 15, 'mulExpr',
+                      ['id', 16, 'priExpr', '4']],
+                    ['id', 17, 'priExpr', '5']]]]]
+          expect(f(a)).toEqual(['id', 0, 'sss', t, t])
           expect(a._getNextId()).toEqual(18)
         })
       })
@@ -960,9 +962,9 @@ describe("Ohm", function() {
 
         it("semantic actions", function() {
           expect(m.matchContents('7+8*9+0', 'addExpr')({
-            addExprRec: function(x, y) { return [x, '+', y] },
-            mulExprRec: function(x, y) { return [x, '*', y] },
-            _default: function(ruleName, x) { return x }
+            addExprRec: function(env) { return [env.x, '+', env.y] },
+            mulExprRec: function(env) { return [env.x, '*', env.y] },
+            _default: function(ruleName, env) { return env.value }
           })).toEqual([['7', '+', ['8', '*', '9']], '+', '0'])
         })
       })
@@ -991,12 +993,12 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var f = m.matchContents('1234', 'tricky')
           expect(f({
-            tricky: function(x) { return ['tricky', x] },
-            foo: function(value) { return ['foo', value] },
-            fooRec: function(x, y) { return ['fooRec', x, y] },
-            bar: function(value) { return ['bar', value] },
-            barRec: function(x, y) { return ['barRec', x, y] },
-            digit: function(value) { return value }
+            tricky: function(env) { return ['tricky', env.x] },
+            foo: function(env) { return ['foo', env.value] },
+            fooRec: function(env) { return ['fooRec', env.x, env.y] },
+            bar: function(env) { return ['bar', env.value] },
+            barRec: function(env) { return ['barRec', env.x, env.y] },
+            digit: function(env) { return env.value }
           })).toEqual(
             ['tricky', ['bar', ['barRec', ['foo', ['fooRec', ['bar', ['barRec', ['foo', '1'], '2']], '3']], '4']]])
         })
@@ -1045,7 +1047,7 @@ describe("Ohm", function() {
           }).toThrow()
         })
 
-        it("should make sure the semantic action signature is preserved", function() {
+        it("should make sure the environment's bindings are preserved", function() {
           // If the rule being overridden has no bindings but its body produces a value, the overridding version must
           // also produce a value. This is to ensure the semantic action "API" doesn't change.
           console.log('\nNote: the following error message is actually supposed to be there')
@@ -1055,12 +1057,12 @@ describe("Ohm", function() {
           }).toThrow()
 
           // It should be ok to override a rule that has no bindings and whose body does not produce a value, even
-          // when the overriding definition actually produce a value. When this happens, the semantic action method should
-          // still take no arguments.
+          // when the overriding definition actually produces a value. When this happens, the semantic action method
+          // should still take no arguments.
           makeGrammar("M3 { foo == digit digit }", 'inheritance-override')
           makeGrammar("M4 <: M3 { foo := digit }", 'inheritance-override')
           ohm.namespace('inheritance-override').getGrammar('M4').matchContents('5', 'foo')({
-            digit: function(value) { },
+            digit: function(env) { },
             foo: function() { }
           })
         })
@@ -1077,8 +1079,8 @@ describe("Ohm", function() {
 
         it("semantic actions", function() {
           expect(m2.matchContents('abcd', 'number')({
-            number: function(value) { return ['number', value] },
-            digit: function(value) { return ['digit', value] }
+            number: function(env) { return ['number', env.value] },
+            digit: function(env) { return ['digit', env.value] }
           })).toEqual(['number', [['digit', 'a'], ['digit', 'b'], ['digit', 'c'], ['digit', 'd']]])
         })
       })
@@ -1119,7 +1121,7 @@ describe("Ohm", function() {
           }).toThrow()
         })
 
-        it("should make sure the semantic action signature is preserved", function() {
+        it("should make sure the environment's bindings are preserved", function() {
           // If the rule being extended has no bindings but its body produces a value, the overridding version must
           // also produce a value. This is to ensure the semantic action "API" doesn't change.
           console.log('\nNote: the following error message is actually supposed to be there')
@@ -1134,7 +1136,7 @@ describe("Ohm", function() {
           makeGrammar("M3 { foo == digit digit }", 'inheritanceExtend3')
           makeGrammar("M4 <: M3 { foo += digit }", 'inheritanceExtend3')
           ohm.namespace('inheritanceExtend3').getGrammar('M4').matchContents('5', 'foo')({
-            digit: function(value) { },
+            digit: function(env) { },
             foo: function() { }
           })
         })
@@ -1148,8 +1150,12 @@ describe("Ohm", function() {
         })
 
         it("semantic actions", function() {
-          expect(m2.matchContents('aaabbb', 'foo')({foo: function(x, y) { return [x, y] }})).toEqual(['aaa', 'bbb'])
-          expect(m2.matchContents('111222', 'foo')({foo: function(x, y) { return [x, y] }})).toEqual(['111', '222'])
+          expect(m2.matchContents('aaabbb', 'foo')({
+            foo: function(env) { return [env.x, env.y] }
+          })).toEqual(['aaa', 'bbb'])
+          expect(m2.matchContents('111222', 'foo')({
+            foo: function(env) { return [env.x, env.y] }
+          })).toEqual(['111', '222'])
         })
       })
     })
@@ -1171,7 +1177,7 @@ describe("Ohm", function() {
         makeGrammar("G { foo == 'a'.x 'b'.y | 'b'.y 'a'.x }")
       })
 
-      it("semantic action's formals determine evaluation order", function() {
+      it("bindings are evaluated lazily", function() {
         var g = makeGrammar([
           "G {",
           "  foo == bar.x baz.y",
@@ -1181,16 +1187,16 @@ describe("Ohm", function() {
 
         var id = 0
         expect(g.matchContents('ab', 'foo')({
-          foo: function(x, y) { return {x: x, y: y} },
-          bar: function(value) { return ['bar', value, id++] },
-          baz: function(value) { return ['baz', value, id++] }
+          foo: function(env) { var x = env.x; var y = env.y; return {x: x, y: y} },
+          bar: function(env) { return ['bar', env.value, id++] },
+          baz: function(env) { return ['baz', env.value, id++] }
         })).toEqual({x: ['bar', 'a', 0], y: ['baz', 'b', 1]})
 
         var id = 0
         expect(g.matchContents('ab', 'foo')({
-          foo: function(y, x) { return {x: x, y: y} },
-          bar: function(value) { return ['bar', value, id++] },
-          baz: function(value) { return ['baz', value, id++] }
+          foo: function(env) { var y = env.y; var x = env.x; return {x: x, y: y} },
+          bar: function(env) { return ['bar', env.value, id++] },
+          baz: function(env) { return ['baz', env.value, id++] }
         })).toEqual({x: ['bar', 'a', 1], y: ['baz', 'b', 0]})
       })
     })
@@ -1211,26 +1217,34 @@ describe("Ohm", function() {
 
       it("semantic actions", function() {
         expect(m.matchContents('10*(2+123)-4/5', 'expr')({
-          expr: function(value) { return value },
-          addExpr: function(value) { return value },
-          'addExpr-plus': function(x, op, y) { return x + y },
-          'addExpr-minus': function(x, op, y) { return x - y },
-          mulExpr: function(value) { return value },
-          'mulExpr-times': function(x, op, y) { return x * y },
-          'mulExpr-divide': function(x, op, y) { return x / y },
-          priExpr: function(value) { return value },
-          'priExpr-paren': function(oparen, e, cparen) { return e },
-          number: function(value) { return value },
-          'number-rec': function(n, d) { return n * 10 + d },
-          digit: function(value) { return value.charCodeAt(0) - '0'.charCodeAt(0) }
+          expr: function(env) { return env.value },
+          addExpr: function(env) { return env.value },
+          'addExpr-plus': function(env) { return env.x + env.y },
+          'addExpr-minus': function(env) { return env.x - env.y },
+          mulExpr: function(env) { return env.value },
+          'mulExpr-times': function(env) { return env.x * env.y },
+          'mulExpr-divide': function(env) { return env.x / env.y },
+          priExpr: function(env) { return env.value },
+          'priExpr-paren': function(env) { return env.e },
+          number: function(env) { return env.value },
+          'number-rec': function(env) { return env.n * 10 + env.d },
+          digit: function(env) { return env.value.charCodeAt(0) - '0'.charCodeAt(0) }
         })).toEqual(1249.2)
       })
 
-      it("can't override/replace existing inline rule", function() {
-        console.log('\nNote: the following error message is actually supposed to be there')
+      it("can't be overridden/replaced", function() {
         ohm.namespace('inlineRuleTest1').install('M', m)
+
+        console.log('\nNote: the following error message is actually supposed to be there')
         expect(function() {
+          makeGrammar("N <: M { addExpr := addExpr.x '~' mulExpr.y {minus} }", 'inlineRuleTest1')
+        }).toThrow()
+
+        console.log('\nNote: the following error message is actually supposed to be there')
+        expect(function() {
+console.log('YYY', 
           makeGrammar("N <: M { addExpr += addExpr.x '~' mulExpr.y {minus} }", 'inlineRuleTest1')
+)
         }).toThrow()
       })
     })
@@ -1333,9 +1347,9 @@ describe("Ohm", function() {
           var m = ns.getGrammar('O')
           expect(m).toBeTruthy()
           expect(m.matchContents('1234', 'number')({
-            number: function(value) { return value },
-            'number-rec': function(n, d) { return n * 10 + d },
-            digit: function(value) { return value.charCodeAt(0) - '0'.charCodeAt(0) }
+            number: function(env) { return env.value },
+            'number-rec': function(env) { return env.n * 10 + env.d },
+            digit: function(env) { return env.value.charCodeAt(0) - '0'.charCodeAt(0) }
           })).toEqual(1234)
         })
       })
@@ -1364,18 +1378,18 @@ describe("Ohm", function() {
         var gPrime = g.matchContents(ohmGrammarSource, 'Grammar')(ohm._makeGrammarActionDict())
         var a = gPrime.matchContents(arithmeticGrammarSource, 'Grammar')(ohm._makeGrammarActionDict())
         expect(a.matchContents('10*(2+123)-4/5', 'expr')({
-          expr: function(value) { return value },
-          addExpr: function(value) { return value },
-          'addExpr-plus': function(x, op, y) { return x + y },
-          'addExpr-minus': function(x, op, y) { return x - y },
-          mulExpr: function(value) { return value },
-          'mulExpr-times': function(x, op, y) { return x * y },
-          'mulExpr-divide': function(x, op, y) { return x / y },
-          priExpr: function(value) { return value },
-          'priExpr-paren': function(oparen, e, cparen) { return e },
-          number: function(value) { return value },
-          'number-rec': function(n, d) { return n * 10 + d },
-          digit: function(value) { return value.charCodeAt(0) - '0'.charCodeAt(0) }
+          expr: function(env) { return env.value },
+          addExpr: function(env) { return env.value },
+          'addExpr-plus': function(env) { return env.x + env.y },
+          'addExpr-minus': function(env) { return env.x - env.y },
+          mulExpr: function(env) { return env.value },
+          'mulExpr-times': function(env) { return env.x * env.y },
+          'mulExpr-divide': function(env) { return env.x / env.y },
+          priExpr: function(env) { return env.value },
+          'priExpr-paren': function(env) { return env.e },
+          number: function(env) { return env.value },
+          'number-rec': function(env) { return env.n * 10 + env.d },
+          digit: function(env) { return env.value.charCodeAt(0) - '0'.charCodeAt(0) }
         })).toEqual(1249.2)
       })
 
