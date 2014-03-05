@@ -1243,8 +1243,6 @@ Override.prototype = objectUtils.objectThatDelegatesTo(RuleDecl.prototype, {
     if (overridden.getBindingNames().length === 0 && overridden.producesValue() && !this.body.producesValue())
       browser.error('the body of rule', this.name,
                     'must produce a value, because the rule it\'s overriding also produces a value')
-    // TODO: add unit test for this!
-    // (if rule being overridden has no bindings but its body produces a value, this must produce a value too.)
     this.performCommonChecks(this.name, this.body)
   }
 })
@@ -1286,8 +1284,6 @@ Extend.prototype = objectUtils.objectThatDelegatesTo(RuleDecl.prototype, {
     if (extended.getBindingNames().length === 0 && extended.producesValue() && !this.body.producesValue())
       browser.error('the body of rule', this.name,
                     'must produce a value, because the rule it\'s extending also produces a value')
-    // TODO: add unit test for this!
-    // (if the rule being extended has no bindings but its body produces a value, this must produce a value too.)
     this.performCommonChecks(this.name, this.expandedBody)
   },
 
