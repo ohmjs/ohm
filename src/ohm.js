@@ -1486,7 +1486,7 @@ function makeGrammarActionDict(optNamespace) {
     'Base-true':                function() { return builder._(true) },
     'Base-false':               function() { return builder._(false) },
     'Base-application':         function(env) { return builder.app(env.ruleName) },
-    'Base-prim':                function(env) { return builder._(env.x) },
+    'Base-prim':                function(env) { return builder._(env.value) },
     'Base-lst':                 function(env) { return builder.lst(env.x) },
     'Base-str':                 function(env) { return builder.str(env.x) },
     'Base-paren':               function(env) { return env.x },

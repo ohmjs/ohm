@@ -35,7 +35,7 @@ ohm._ohmGrammarFactory =
   b.inline('Pred-lookahead', b.seq(b._('&'), b.bind(b.app('Base'), 'x')))
   b.define('Pred', b.alt(b.app('Pred-not'), b.app('Pred-lookahead'), b.app('Base')))
   b.inline('Base-application', b.seq(b.bind(b.app('name'), 'ruleName'), b.not(b.alt(b._('=='), b._(':='), b._('+=')))))
-  b.inline('Base-prim', b.bind(b.alt(b.app('namedConst'), b.app('string'), b.app('regexp'), b.app('number')), 'x'))
+  b.inline('Base-prim', b.alt(b.app('namedConst'), b.app('string'), b.app('regexp'), b.app('number')))
   b.inline('Base-lst', b.seq(b._('['), b.bind(b.app('Alt'), 'x'), b._(']')))
   b.inline('Base-str', b.seq(b._('"'), b.bind(b.app('Alt'), 'x'), b._('"')))
   b.inline('Base-paren', b.seq(b._('('), b.bind(b.app('Alt'), 'x'), b._(')')))
