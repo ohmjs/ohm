@@ -116,7 +116,6 @@ body {
 
 #twoD exponent {
   font-size: 70%;
-  position: relative;
-  top: -10pt;
+  vertical-align: text-top;
 }
 
