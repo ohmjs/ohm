@@ -2,7 +2,7 @@ Ohm {
   space        += '//' (~'\n' _)* '\n' {singleLine}
                 | '/*' (~'*/' _)* '*/' {multiLine}
 
-  _name         == nameFirst nameRest*
+  _name        == nameFirst nameRest*
   nameFirst    == '_' | letter
   nameRest     == '_' | alnum
 
