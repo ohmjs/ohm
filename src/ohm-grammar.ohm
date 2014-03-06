@@ -1,6 +1,6 @@
 Ohm {
-  space        += '//' (~'\n' _)* '\n' {singleLine}
-                | '/*' (~'*/' _)* '*/' {multiLine}
+  space        += '//' (~'\n' _)* '\n'  {singleLine}
+                | '/*' (~'*/' _)* '*/'  {multiLine}
 
   _name        == nameFirst nameRest*
   nameFirst    == '_' | letter
@@ -8,10 +8,10 @@ Ohm {
 
   name         == ~namedConst _name.n
 
-  namedConst   == 'undefined' ~nameRest {undefined}
-                | 'null' ~nameRest {null}
-                | 'true' ~nameRest {true}
-                | 'false' ~nameRest {false}
+  namedConst   == 'undefined' ~nameRest  {undefined}
+                | 'null' ~nameRest       {null}
+                | 'true' ~nameRest       {true}
+                | 'false' ~nameRest      {false}
 
   string       == '\'' sChar*.cs '\''
   sChar        == '\\x' hexDigit hexDigit
@@ -24,37 +24,37 @@ Ohm {
 
   number       == '-'? digit+
 
-  Alt          == Term.x '|' Alt.y {rec}
+  Alt          == Term.x '|' Alt.y  {rec}
                 | Term
-  Term         == Seq.x '{' _name.n '}' {inline}
+  Term         == Seq.x '{' _name.n '}'  {inline}
                 | Seq
   Seq          == Factor*
 
-  Factor       == Iter.x '.' name.n {bind}
+  Factor       == Iter.x '.' name.n  {bind}
                 | Iter
-  Iter         == Pred.x '*' {star}
-                | Pred.x '+' {plus}
-                | Pred.x '?' {opt}
+  Iter         == Pred.x '*'  {star}
+                | Pred.x '+'  {plus}
+                | Pred.x '?'  {opt}
                 | Pred
-  Pred         == '~' Base.x {not}
-                | '&' Base.x {lookahead}
+  Pred         == '~' Base.x  {not}
+                | '&' Base.x  {lookahead}
                 | Base
-  Base         == name.ruleName ~('==' | ':=' | '+=') {application}
-                | (namedConst | string | regexp | number).x {prim}
-                | '[' Alt.x ']' {lst}
-                | '"' Alt.x '"' {str}
-                | '(' Alt.x ')' {paren}
-                | '{' '...'?.lenient '}' {obj}
-                | '{' Props.ps (',' '...')?.lenient '}' {objWithProps}
-  Props        == Prop.p ',' Props.ps {rec}
-                | Prop.p {base}
+  Base         == name.ruleName ~('==' | ':=' | '+=')      {application}
+                | (namedConst | string | regexp | number)  {prim}
+                | '[' Alt.x ']'                            {lst}
+                | '"' Alt.x '"'                            {str}
+                | '(' Alt.x ')'                            {paren}
+                | '{' '...'?.lenient '}'                   {obj}
+                | '{' Props.ps (',' '...')?.lenient '}'    {objWithProps}
+  Props        == Prop.p ',' Props.ps  {rec}
+                | Prop.p               {base}
   Prop         == (_name | string).n ':' Factor.p
 
-  Rule         == name.n '==' Alt.b {define}
-                | name.n ':=' Alt.b {override}
-                | name.n '+=' Alt.b {extend}
-  SuperGrammar == '<:' name.ns '.' name.n {qualified}
-                | '<:' name.n {unqualified}
+  Rule         == name.n '==' Alt.b  {define}
+                | name.n ':=' Alt.b  {override}
+                | name.n '+=' Alt.b  {extend}
+  SuperGrammar == '<:' name.ns '.' name.n  {qualified}
+                | '<:' name.n              {unqualified}
 
   Grammar      == name.n SuperGrammar?.s '{' Rule*.rs '}'
   Grammars     == Grammar*
