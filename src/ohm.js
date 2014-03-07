@@ -1189,6 +1189,54 @@ Grammar.prototype = {
     ws.nextPutAll('  return b.build(optNamespace)\n')
     ws.nextPutAll('})')
     return ws.contents()
+  },
+
+  populateSemanticActionTemplateDictionary: function(dict) {
+    var self = this
+    objectUtils.keysAndValuesDo(this.ruleDict, function(ruleName, body) {
+      var sb = new objectUtils.StringBuffer()
+      sb.nextPutAll('function(')
+      sb.nextPutAll(self.semanticActionArgNames(ruleName).join(', '))
+      sb.nextPutAll(') {')
+      var bindings = body.getBindingNames()
+      if (bindings.length > 0) {
+        sb.nextPutAll(' /* ')
+        sb.nextPutAll(bindings.join(', '))
+        sb.nextPutAll(' */ ')
+      }
+      sb.nextPutAll('}')
+      dict[ruleName] = sb.contents()
+    })
+  },
+
+  toSemanticActionTemplate: function(/* entryPoint1, entryPoint2, ... */) {
+    // TODO: add the super-grammar's templates at the right place, e.g., a case for AddExpr-plus should appear next to
+    // other cases of Add-Expr.
+    // TODO: if the caller supplies entry points, only include templates for rules that are reachable in the call graph.
+    var dict = {}
+    this.populateSemanticActionTemplateDictionary(dict)
+    if (this.superGrammar)
+      this.superGrammar.populateSemanticActionTemplateDictionary(dict)
+    var sb = new objectUtils.StringBuffer()
+    sb.nextPutAll('{\n')
+    var first = true
+    objectUtils.keysAndValuesDo(dict, function(ruleName, template) {
+      if (first)
+        first = false
+      else
+        sb.nextPutAll(',\n')
+      sb.nextPutAll('  ')
+      if (ruleName.indexOf('-') >= 0) {
+        sb.nextPutAll("'")
+        sb.nextPutAll(ruleName)
+        sb.nextPutAll("'")
+      } else
+        sb.nextPutAll(ruleName)
+      sb.nextPutAll(': ')
+      sb.nextPutAll(template)
+    })
+    sb.nextPutAll('\n}')
+    return sb.contents()
   }
 }
 
