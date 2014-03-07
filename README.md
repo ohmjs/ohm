@@ -1,7 +1,7 @@
 What is this thing?
 ===================
 
-Ohm is a new object-oriented language for pattern matching. Like its older sibling [OMeta](https://github.com/alexwarth/ometa-js), it is based on [Parsing Expression Grammars (PEGs)](http://en.wikipedia.org/wiki/Parsing_expression_grammar), and [supports pattern matching on arbitrary data structures](http://tinlizzie.org/~awarth/papers/dls07.pdf), i.e., strings, lists, even JSON *(new)*.
+Ohm is a new object-oriented language for pattern matching. Like its older sibling [OMeta](https://github.com/alexwarth/ometa-js), it is based on [Parsing Expression Grammars (PEGs)](http://en.wikipedia.org/wiki/Parsing_expression_grammar), and [supports pattern matching on arbitrary data structures](http://tinlizzie.org/~awarth/papers/dls07.pdf), e.g., strings, lists, even JSON *(new)*.
 
 One feature that distinguishes Ohm from OMeta and other parsing DSLs / frameworks is that it completely separates grammars from semantic actions. A grammar defines a language, and semantic actions specify what to do with valid inputs in that language. The benefits of this separation of concerns include:
 
