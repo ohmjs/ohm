@@ -1170,7 +1170,7 @@ Grammar.prototype = {
   },
 
   toRecipe: function() {
-    var ws = new objectUtils.StringBuffer()
+    var ws = objectUtils.stringBuffer()
     ws.nextPutAll('(function(ohm, optNamespace) {\n')
     ws.nextPutAll('  var b = ohm.builder()\n')
     ws.nextPutAll('  b.setName('); ws.nextPutAll(stringUtils.printString(this.name)); ws.nextPutAll(')\n')
@@ -1194,7 +1194,7 @@ Grammar.prototype = {
   populateSemanticActionTemplateDictionary: function(dict) {
     var self = this
     objectUtils.keysAndValuesDo(this.ruleDict, function(ruleName, body) {
-      var sb = new objectUtils.StringBuffer()
+      var sb = objectUtils.stringBuffer()
       sb.nextPutAll('function(')
       sb.nextPutAll(self.semanticActionArgNames(ruleName).join(', '))
       sb.nextPutAll(') {')
@@ -1217,7 +1217,7 @@ Grammar.prototype = {
     this.populateSemanticActionTemplateDictionary(dict)
     if (this.superGrammar)
       this.superGrammar.populateSemanticActionTemplateDictionary(dict)
-    var sb = new objectUtils.StringBuffer()
+    var sb = objectUtils.stringBuffer()
     sb.nextPutAll('{\n')
     var first = true
     objectUtils.keysAndValuesDo(dict, function(ruleName, template) {
