@@ -1200,7 +1200,8 @@ Grammar.prototype = {
     buffer.nextPutAll('{')
 
     var first = true
-    objectUtils.keysAndValuesDo(this.ruleDict, function(ruleName, body) {
+    for (var ruleName in this.ruleDict) {
+      var body = this.ruleDict[ruleName]
       if (first)
         first = false
       else
@@ -1209,7 +1210,7 @@ Grammar.prototype = {
       buffer.nextPutAll('  ')
       buffer.newColumn()
       self.addSemanticActionTemplate(ruleName, body, buffer)
-    })
+    }
 
     buffer.newLine()
     buffer.nextPutAll('}')
