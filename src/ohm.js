@@ -1170,7 +1170,7 @@ Grammar.prototype = {
   toRecipe: function() {
     var ws = objectUtils.stringBuffer()
     ws.nextPutAll('(function(ohm, optNamespace) {\n')
-    ws.nextPutAll('  var b = ohm.builder()\n')
+    ws.nextPutAll('  var b = ohm._builder()\n')
     ws.nextPutAll('  b.setName('); ws.nextPutAll(stringUtils.printString(this.name)); ws.nextPutAll(')\n')
     if (this.superGrammar.name && this.superGrammar.namespaceName) {
       ws.nextPutAll('  b.setSuperGrammar(ohm.namespace(')
@@ -1474,6 +1474,10 @@ Namespace.prototype = {
     browser.sanityCheck('script tag\'s type attribute must be "text/ohm-js"', element.type === 'text/ohm-js')
     makeGrammars(element.innerHTML, this)
     return this
+  },
+
+  make: function(recipe) {
+    return recipe(thisModule, this)
   }
 }
 
@@ -1604,13 +1608,16 @@ thisModule.namespace = function(name) {
   return namespaces[name]
 }
 
+thisModule.make = function(recipe) {
+  return recipe(thisModule)
+}
+
 thisModule.makeGrammar = makeGrammar
 thisModule.makeGrammars = makeGrammars
 
 // Stuff that's only useful for bootstrapping, testing, etc.
 
-// TODO: rename to _builder
-thisModule.builder = function() {
+thisModule._builder = function() {
   return new Builder()
 }
 

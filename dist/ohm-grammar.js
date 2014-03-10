@@ -1,7 +1,7 @@
 var ohm = require('../src/ohm.js')
 ohm._ohmGrammarFactory =
 (function(ohm, optNamespace) {
-  var b = ohm.builder()
+  var b = ohm._builder()
   b.setName('Ohm')
   b.inline('space-singleLine', b.seq(b._('//'), b.many(b.seq(b.not(b._('\n')), b.app('_')), 0), b._('\n')))
   b.inline('space-multiLine', b.seq(b._('/*'), b.many(b.seq(b.not(b._('*/')), b.app('_')), 0), b._('*/')))

@@ -46,7 +46,7 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(eval(m.toRecipe())(ohm)).toEqual(m)
+          expect(ohm.make(eval(m.toRecipe()))).toEqual(m)
         })
 
         describe("direct match, no stream", function() {
@@ -99,7 +99,7 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(eval(m.toRecipe())(ohm)).toEqual(m)
+          expect(ohm.make(eval(m.toRecipe()))).toEqual(m)
         })
 
         describe("direct match, no stream", function() {
@@ -216,7 +216,7 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(eval(m.toRecipe())(ohm))
+          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
         })
 
         describe("direct match, no stream", function() {
@@ -269,7 +269,7 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(eval(m.toRecipe())(ohm))
+          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
         })
 
         describe("direct match, no stream", function() {
@@ -323,7 +323,7 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(eval(m.toRecipe())(ohm))
+          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
         })
 
         describe("direct match, no stream", function() {
@@ -375,7 +375,7 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(eval(m.toRecipe())(ohm))
+        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
       })
 
       it("recognition", function() {
@@ -394,7 +394,7 @@ describe("Ohm", function() {
     describe("seq", function() {
       it("to recipe and back", function() {
         var m = makeGrammar("M { start == 'a' 'bc' 'z' }")
-        expect(m).toEqual(eval(m.toRecipe())(ohm))
+        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
       })
 
       describe("without bindings", function() {
@@ -475,7 +475,7 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(eval(m.toRecipe())(ohm))
+        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
       })
 
       it("recognition", function() {
@@ -503,7 +503,7 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(eval(m.toRecipe())(ohm))
+        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
       })
 
       it("recognition", function() {
@@ -542,7 +542,7 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(eval(m.toRecipe())(ohm))
+        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
       })
 
       it("recognition", function() {
@@ -565,7 +565,7 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(eval(m.toRecipe())(ohm))
+        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
       })
 
       it("recognition", function() {
@@ -587,7 +587,7 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(eval(m.toRecipe())(ohm))
+        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
       })
 
       it("recognition", function() {
@@ -607,7 +607,7 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(eval(m.toRecipe())(ohm))
+        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
       })
 
       it("recognition", function() {
@@ -630,7 +630,7 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(eval(m.toRecipe())(ohm))
+        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
       })
 
       it("recognition", function() {
@@ -660,7 +660,7 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(eval(m.toRecipe())(ohm))
+        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
       })
 
       describe("strict", function() {
@@ -717,7 +717,7 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(eval(m.toRecipe())(ohm))
+          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
         })
 
         it("recognition", function() {
@@ -745,7 +745,7 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(eval(m.toRecipe())(ohm))
+          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
         })
 
         it("recognition", function() {
@@ -795,7 +795,7 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(eval(m.toRecipe())(ohm))
+          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
         })
 
         it("recognition", function() {
@@ -826,7 +826,7 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(eval(m.toRecipe())(ohm))
+          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
         })
 
         it("recognition", function() {
@@ -860,7 +860,7 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(eval(m.toRecipe())(ohm))
+          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
         })
 
         it("recognition", function() {
@@ -949,7 +949,7 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(eval(m.toRecipe())(ohm))
+          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
         })
 
         it("recognition", function() {
@@ -983,7 +983,7 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(eval(m.toRecipe())(ohm))
+          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
         })
 
         it("recognition", function() {
@@ -1031,11 +1031,11 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          var m1Prime = eval(m1.toRecipe())(ohm, ohm.namespace('inheritance-override-prime'))
+          var m1Prime = ohm.namespace('inheritance-override-prime').make(eval(m1.toRecipe()))
           m1Prime.namespaceName = 'inheritance-override'
           expect(m1).toEqual(m1Prime)
 
-          var m2Prime = eval(m2.toRecipe())(ohm, ohm.namespace('inheritance-override-prime'))
+          var m2Prime = ohm.namespace('inheritance-override-prime').make(eval(m2.toRecipe()))
           m2Prime.namespaceName = 'inheritance-override'
           expect(m2).toEqual(m2Prime)
         })
@@ -1098,11 +1098,11 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          var m1Prime = eval(m1.toRecipe())(ohm, ohm.namespace('inheritance-extend-prime'))
+          var m1Prime = ohm.namespace('inheritance-extend-prime').make(eval(m1.toRecipe()))
           m1Prime.namespaceName = 'inheritanceExtend'
           expect(m1).toEqual(m1Prime)
 
-          var m2Prime = eval(m2.toRecipe())(ohm, ohm.namespace('inheritance-extend-prime'))
+          var m2Prime = ohm.namespace('inheritance-extend-prime').make(eval(m2.toRecipe()))
           m2Prime.namespaceName = 'inheritanceExtend2'
           expect(m2).toEqual(m2Prime)
         })
@@ -1163,7 +1163,7 @@ describe("Ohm", function() {
     describe("bindings", function() {
       it("to recipe and back", function() {
         var m = makeGrammar("G { foo == 'a'.x 'b'.y | 'b'.y 'a'.x }")
-        expect(m).toEqual(eval(m.toRecipe())(ohm))
+        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
       })
 
       it("inconsistent bindings in alts are errors", function() {
@@ -1208,7 +1208,7 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(eval(m.toRecipe())(ohm))
+        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
       })
 
       it("recognition", function() {
@@ -1401,7 +1401,7 @@ console.log('YYY',
 
       it("to recipe and back", function() {
         var gPrime = g.matchContents(ohmGrammarSource, 'Grammar')(ohm._makeGrammarActionDict())
-        expect(eval(gPrime.toRecipe())(ohm)).toEqual(gPrime)
+        expect(ohm.make(eval(gPrime.toRecipe()))).toEqual(gPrime)
       })
     })
   })
