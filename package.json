@@ -21,7 +21,7 @@
   "scripts": {
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
     "build-debug": "./node_modules/.bin/browserify src/ohm.js -d -s ohm -o dist/ohm.js",
-    "build-min": "./node_modules/.bin/browserify src/ohm.js -s ohm -t uglifyify -o dist/ohm.min.js",
+    "build-min": "./node_modules/.bin/browserify src/ohm.js -s ohm -o dist/_ohm.js && ./node_modules/.bin/uglifyjs dist/_ohm.js -o dist/ohm.min.js && rm dist/_ohm.js",
     "build": "npm run build-debug && npm run build-min",
     "watch": "./node_modules/.bin/watchify src/ohm.js -d -s ohm -o dist/ohm.js",
     "test": "./node_modules/.bin/mocha",
@@ -39,7 +39,6 @@
     "watchify": "^0.6.1",
     "uglify-js": "^2.4.12",
     "browserify": "^3.30.4",
-    "uglifyify": "^1.2.3",
     "mocha": "^1.17.1",
     "expect.js": "^0.3.1"
   }
