@@ -1,7 +1,7 @@
 What is this thing?
 ===================
 
-Ohm is a new object-oriented language for pattern matching. Like its older sibling [OMeta](https://github.com/alexwarth/ometa-js), it is based on [Parsing Expression Grammars (PEGs)](http://en.wikipedia.org/wiki/Parsing_expression_grammar), and [supports pattern matching on arbitrary data structures](http://tinlizzie.org/~awarth/papers/dls07.pdf), e.g., strings, lists, even JSON *(new)*.
+Ohm is a new object-oriented language for pattern matching. Like its older sibling [OMeta](https://github.com/alexwarth/ometa-js), it is based on [Parsing Expression Grammars (PEGs)](http://en.wikipedia.org/wiki/Parsing_expression_grammar), and [supports pattern matching on arbitrary data structures](http://tinlizzie.org/~awarth/papers/dls07.pdf), e.g., strings, lists, even JSON *(new in Ohm)*.
 
 One feature that distinguishes Ohm from OMeta and other parsing DSLs / frameworks is that it completely separates grammars from semantic actions. A grammar defines a language, and semantic actions specify what to do with valid inputs in that language. The benefits of this separation of concerns include:
 
@@ -14,7 +14,7 @@ One feature that distinguishes Ohm from OMeta and other parsing DSLs / framework
 * __Better error reporting__ *(coming soon)*
     - A purely declarative grammar should be able to do a good job of generating error messages, e.g., explain what kind of input was expected when a match failure happens.
 
-Another interesting aspect of Ohm is that it applies semantic actions *lazily*, i.e., a semantic action is only applied if and when its result is required, and never more than once (i.e., results are cached). The benefits of laziness are:
+Another interesting aspect of Ohm is that it applies semantic actions *lazily*, i.e., a semantic action is only applied if and when its result is required, and never more than once. The benefits of laziness are:
 
 * __A more sensible programming model__
     - When writing semantic actions, programmers don't have to worry about backtracking. This is particularly nice when you're writing side-effectful semantic actions.
@@ -58,5 +58,6 @@ Some useful scripts
 -------------------
 
 * `npm test` runs the unit tests
+* `npm test-watch` runs the unit tests every time a file changes
 * `npm run build` builds `dist/ohm.js` and `dist/ohm.min.js`, which are stand-alone "binaries" that can be included in a webpage. (The latter is just a minified version of the former.)
 * `npm run build-ohm-grammar` generates `dist/ohm-grammar.js` from `src/ohm-grammar.ohm`
