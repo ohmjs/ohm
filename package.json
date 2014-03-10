@@ -20,12 +20,12 @@
   "bin": "src/ohm-cmd.js",
   "scripts": {
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
-    "build-debug": "browserify src/ohm.js -d -s ohm -o dist/ohm.js",
-    "build-min": "browserify src/ohm.js -s ohm -t uglifyify -o dist/ohm.min.js",
+    "build-debug": "./node_modules/.bin/browserify src/ohm.js -d -s ohm -o dist/ohm.js",
+    "build-min": "./node_modules/.bin/browserify src/ohm.js -s ohm -t uglifyify -o dist/ohm.min.js",
     "build": "npm run build-debug && npm run build-min",
-    "watch": "watchify src/ohm.js -d -s ohm -o dist/ohm.js",
-    "test": "jasmine-node test",
-    "test-watch": "jasmine-node test --autotest --watch src",
+    "watch": "./node_modules/.bin/watchify src/ohm.js -d -s ohm -o dist/ohm.js",
+    "test": "./node_modules/.bin/mocha",
+    "test-watch": "./node_modules/.bin/mocha -w",
     "build-ohm-grammar": "npm test && npm run unsafe-build-ohm-grammar && npm test",
     "unsafe-build-ohm-grammar": "cp dist/ohm-grammar.js dist/ohm-grammar.js.old; (cat src/ohm-grammar-prelude.txt; node src/ohm-cmd.js src/ohm-grammar.ohm) > dist/ohm-grammar.js.new && mv dist/ohm-grammar.js.new dist/ohm-grammar.js",
     "prepublish": "npm test && npm run build && npm run unsafe-build-ohm-grammar"
@@ -40,6 +40,7 @@
     "uglify-js": "^2.4.12",
     "browserify": "^3.30.4",
     "uglifyify": "^1.2.3",
-    "jasmine-node": "^1.13.1"
+    "mocha": "^1.17.1",
+    "expect.js": "^0.3.1"
   }
 }

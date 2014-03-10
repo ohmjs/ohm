@@ -1,9 +1,6 @@
+var expect = require('expect.js')
 var fs = require('fs')
 var ohm = require('../src/ohm.js')
-var awlib = require('awlib')
-var objectUtils = awlib.objectUtils
-var stringUtils = awlib.stringUtils
-var equals = awlib.equals
 
 function makeGrammar(source, optNamespaceName) {
   if (source instanceof Array)
@@ -46,41 +43,41 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(ohm.make(eval(m.toRecipe()))).toEqual(m)
+          expect(ohm.make(eval(m.toRecipe()))).to.eql(m)
         })
 
         describe("direct match, no stream", function() {
           it("recognition", function() {
-            expect(m.match(5, '_')).toBeTruthy()
-            expect(m.match(null, '_')).toBeTruthy()
+            expect(m.match(5, '_')).to.be.ok()
+            expect(m.match(null, '_')).to.be.ok()
           })
 
           it("semantic actions", function() {
-            expect(m.match(5, '_')({_: function(env) { return env.value }})).toEqual(5)
-            expect(m.match(null, '_')({_: function(env) { return env.value }})).toEqual(null)
+            expect(m.match(5, '_')({_: function(env) { return env.value }})).to.equal(5)
+            expect(m.match(null, '_')({_: function(env) { return env.value }})).to.equal(null)
           })
         })
 
         describe("match in string stream", function() {
           it("recognition", function() {
-            expect(m.matchContents('5', '_')).toBeTruthy()
-            expect(m.matchContents('', '_')).toEqual(false)
+            expect(m.matchContents('5', '_')).to.be.ok()
+            expect(m.matchContents('', '_')).to.equal(false)
           })
 
           it("semantic actions", function() {
-            expect(m.matchContents('5', '_')({_: function(env) { return env.value }})).toEqual('5')
+            expect(m.matchContents('5', '_')({_: function(env) { return env.value }})).to.equal('5')
           })
         })
 
         describe("match in list stream", function() {
           it("recognition", function() {
-            expect(m.matchContents(['123'], '_')).toBeTruthy()
-            expect(m.matchContents(['123', 4], '_')).toEqual(false)
-            expect(m.matchContents([], '_')).toEqual(false)
+            expect(m.matchContents(['123'], '_')).to.be.ok()
+            expect(m.matchContents(['123', 4], '_')).to.equal(false)
+            expect(m.matchContents([], '_')).to.equal(false)
           })
 
           it("semantic actions", function() {
-            expect(m.matchContents(['123'], '_')({_: function(env) { return env.value }})).toEqual('123')
+            expect(m.matchContents(['123'], '_')({_: function(env) { return env.value }})).to.equal('123')
           })
         })
       })
@@ -99,88 +96,88 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(ohm.make(eval(m.toRecipe()))).toEqual(m)
+          expect(ohm.make(eval(m.toRecipe()))).to.eql(m)
         })
 
         describe("direct match, no stream", function() {
           it("recognition", function() {
-            expect(m.match(5, 'five')).toBeTruthy()
-            expect(m.match(2, 'five')).toEqual(false)
-            expect(m.match('a', 'five')).toEqual(false)
-            expect(m.match('5', 'five')).toEqual(false)
-            expect(m.match('true', 'five')).toEqual(false)
-            expect(m.match(true, 'five')).toEqual(false)
-            expect(m.match('false', 'five')).toEqual(false)
-            expect(m.match(false, 'five')).toEqual(false)
-            expect(m.match(null, 'five')).toEqual(false)
-            expect(m.match(undefined, 'five')).toEqual(false)
+            expect(m.match(5, 'five')).to.be.ok()
+            expect(m.match(2, 'five')).to.equal(false)
+            expect(m.match('a', 'five')).to.equal(false)
+            expect(m.match('5', 'five')).to.equal(false)
+            expect(m.match('true', 'five')).to.equal(false)
+            expect(m.match(true, 'five')).to.equal(false)
+            expect(m.match('false', 'five')).to.equal(false)
+            expect(m.match(false, 'five')).to.equal(false)
+            expect(m.match(null, 'five')).to.equal(false)
+            expect(m.match(undefined, 'five')).to.equal(false)
 
-            expect(m.match(5, '_true')).toEqual(false)
-            expect(m.match(2, '_true')).toEqual(false)
-            expect(m.match('a', '_true')).toEqual(false)
-            expect(m.match('5', '_true')).toEqual(false)
-            expect(m.match('true', '_true')).toEqual(false)
-            expect(m.match(true, '_true')).toBeTruthy()
-            expect(m.match('false', '_true')).toEqual(false)
-            expect(m.match(false, '_true')).toEqual(false)
-            expect(m.match(null, '_true')).toEqual(false)
-            expect(m.match(undefined, '_true')).toEqual(false)
+            expect(m.match(5, '_true')).to.equal(false)
+            expect(m.match(2, '_true')).to.equal(false)
+            expect(m.match('a', '_true')).to.equal(false)
+            expect(m.match('5', '_true')).to.equal(false)
+            expect(m.match('true', '_true')).to.equal(false)
+            expect(m.match(true, '_true')).to.be.ok()
+            expect(m.match('false', '_true')).to.equal(false)
+            expect(m.match(false, '_true')).to.equal(false)
+            expect(m.match(null, '_true')).to.equal(false)
+            expect(m.match(undefined, '_true')).to.equal(false)
 
-            expect(m.match(5, '_false')).toEqual(false)
-            expect(m.match(2, '_false')).toEqual(false)
-            expect(m.match('a', '_false')).toEqual(false)
-            expect(m.match('5', '_false')).toEqual(false)
-            expect(m.match('true', '_false')).toEqual(false)
-            expect(m.match(true, '_false')).toEqual(false)
-            expect(m.match('false', '_false')).toEqual(false)
-            expect(m.match(false, '_false')).toBeTruthy()
-            expect(m.match(null, '_false')).toEqual(false)
-            expect(m.match(undefined, '_false')).toEqual(false)
+            expect(m.match(5, '_false')).to.equal(false)
+            expect(m.match(2, '_false')).to.equal(false)
+            expect(m.match('a', '_false')).to.equal(false)
+            expect(m.match('5', '_false')).to.equal(false)
+            expect(m.match('true', '_false')).to.equal(false)
+            expect(m.match(true, '_false')).to.equal(false)
+            expect(m.match('false', '_false')).to.equal(false)
+            expect(m.match(false, '_false')).to.be.ok()
+            expect(m.match(null, '_false')).to.equal(false)
+            expect(m.match(undefined, '_false')).to.equal(false)
 
-            expect(m.match(5, '_null')).toEqual(false)
-            expect(m.match(2, '_null')).toEqual(false)
-            expect(m.match('a', '_null')).toEqual(false)
-            expect(m.match('5', '_null')).toEqual(false)
-            expect(m.match('true', '_null')).toEqual(false)
-            expect(m.match(true, '_null')).toEqual(false)
-            expect(m.match('false', '_null')).toEqual(false)
-            expect(m.match(false, '_null')).toEqual(false)
-            expect(m.match(null, '_null')).toBeTruthy()
-            expect(m.match(undefined, '_null')).toEqual(false)
+            expect(m.match(5, '_null')).to.equal(false)
+            expect(m.match(2, '_null')).to.equal(false)
+            expect(m.match('a', '_null')).to.equal(false)
+            expect(m.match('5', '_null')).to.equal(false)
+            expect(m.match('true', '_null')).to.equal(false)
+            expect(m.match(true, '_null')).to.equal(false)
+            expect(m.match('false', '_null')).to.equal(false)
+            expect(m.match(false, '_null')).to.equal(false)
+            expect(m.match(null, '_null')).to.be.ok()
+            expect(m.match(undefined, '_null')).to.equal(false)
 
-            expect(m.match(5, '_undefined')).toEqual(false)
-            expect(m.match(2, '_undefined')).toEqual(false)
-            expect(m.match('a', '_undefined')).toEqual(false)
-            expect(m.match('5', '_undefined')).toEqual(false)
-            expect(m.match('true', '_undefined')).toEqual(false)
-            expect(m.match(true, '_undefined')).toEqual(false)
-            expect(m.match('false', '_undefined')).toEqual(false)
-            expect(m.match(false, '_undefined')).toEqual(false)
-            expect(m.match(null, '_undefined')).toEqual(false)
-            expect(m.match(undefined, '_undefined')).toBeTruthy()
+            expect(m.match(5, '_undefined')).to.equal(false)
+            expect(m.match(2, '_undefined')).to.equal(false)
+            expect(m.match('a', '_undefined')).to.equal(false)
+            expect(m.match('5', '_undefined')).to.equal(false)
+            expect(m.match('true', '_undefined')).to.equal(false)
+            expect(m.match(true, '_undefined')).to.equal(false)
+            expect(m.match('false', '_undefined')).to.equal(false)
+            expect(m.match(false, '_undefined')).to.equal(false)
+            expect(m.match(null, '_undefined')).to.equal(false)
+            expect(m.match(undefined, '_undefined')).to.be.ok()
           })
 
           it("semantic actions", function() {
-            expect(m.match(5, 'five')({five: function(env) { return env.value }})).toEqual(5)
-            expect(m.match(true, '_true')({_true: function(env) { return env.value }})).toEqual(true)
-            expect(m.match(false, '_false')({_false: function(env) { return env.value }})).toEqual(false)
-            expect(m.match(null, '_null')({_null: function(env) { return env.value }})).toEqual(null)
+            expect(m.match(5, 'five')({five: function(env) { return env.value }})).to.equal(5)
+            expect(m.match(true, '_true')({_true: function(env) { return env.value }})).to.equal(true)
+            expect(m.match(false, '_false')({_false: function(env) { return env.value }})).to.equal(false)
+            expect(m.match(null, '_null')({_null: function(env) { return env.value }})).to.equal(null)
             expect(m.match(undefined, '_undefined')({
               _undefined: function(env) { return env.value }
-            })).toEqual(undefined)
+            })).to.equal(undefined)
           })
         })
 
         describe("match in string stream", function() {
           it("recognition", function() {
-            expect(m.matchContents('!', 'five')).toEqual(false)
-            expect(m.matchContents('5', 'five')).toEqual(false)
-            expect(m.matchContents('2', 'five')).toEqual(false)
-            expect(m.matchContents('', 'five')).toEqual(false)
-            expect(m.matchContents('true', '_true')).toEqual(false)
-            expect(m.matchContents('false', '_false')).toEqual(false)
-            expect(m.matchContents('null', '_null')).toEqual(false)
-            expect(m.matchContents('undefined', '_undefined')).toEqual(false)
+            expect(m.matchContents('!', 'five')).to.equal(false)
+            expect(m.matchContents('5', 'five')).to.equal(false)
+            expect(m.matchContents('2', 'five')).to.equal(false)
+            expect(m.matchContents('', 'five')).to.equal(false)
+            expect(m.matchContents('true', '_true')).to.equal(false)
+            expect(m.matchContents('false', '_false')).to.equal(false)
+            expect(m.matchContents('null', '_null')).to.equal(false)
+            expect(m.matchContents('undefined', '_undefined')).to.equal(false)
           })
 
           it("semantic actions", function() {
@@ -190,21 +187,21 @@ describe("Ohm", function() {
 
         describe("match in list stream", function() {
           it("recognition", function() {
-            expect(m.matchContents(['!'], 'five')).toEqual(false)
-            expect(m.matchContents(['5'], 'five')).toEqual(false)
-            expect(m.matchContents([2], 'five')).toEqual(false)
-            expect(m.matchContents([5], 'five')).toBeTruthy()
-            expect(m.matchContents([5, 'a'], 'five')).toEqual(false)
-            expect(m.matchContents([''], 'five')).toEqual(false)
-            expect(m.matchContents([], 'five')).toEqual(false)
-            expect(m.matchContents([true], '_true')).toBeTruthy()
-            expect(m.matchContents([false], '_false')).toBeTruthy()
-            expect(m.matchContents([undefined], '_undefined')).toBeTruthy()
+            expect(m.matchContents(['!'], 'five')).to.equal(false)
+            expect(m.matchContents(['5'], 'five')).to.equal(false)
+            expect(m.matchContents([2], 'five')).to.equal(false)
+            expect(m.matchContents([5], 'five')).to.be.ok()
+            expect(m.matchContents([5, 'a'], 'five')).to.equal(false)
+            expect(m.matchContents([''], 'five')).to.equal(false)
+            expect(m.matchContents([], 'five')).to.equal(false)
+            expect(m.matchContents([true], '_true')).to.be.ok()
+            expect(m.matchContents([false], '_false')).to.be.ok()
+            expect(m.matchContents([undefined], '_undefined')).to.be.ok()
           })
 
           it("semantic actions", function() {
             var thunk = m.matchContents([5], 'five')
-            expect(thunk({five: function(env) { return env.value }})).toEqual(5)
+            expect(thunk({five: function(env) { return env.value }})).to.equal(5)
           })
         })
       })
@@ -216,48 +213,48 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+          expect(m).to.eql(ohm.make(eval(m.toRecipe())))
         })
 
         describe("direct match, no stream", function() {
           it("recognition", function() {
-            expect(m.match('!', 'bang')).toBeTruthy()
-            expect(m.match('!a', 'bang')).toEqual(false)
-            expect(m.match(5, 'bang')).toEqual(false)
-            expect(m.match('', 'bang')).toEqual(false)
+            expect(m.match('!', 'bang')).to.be.ok()
+            expect(m.match('!a', 'bang')).to.equal(false)
+            expect(m.match(5, 'bang')).to.equal(false)
+            expect(m.match('', 'bang')).to.equal(false)
           })
 
           it("semantic actions", function() {
             var thunk = m.match('!', 'bang')
-            expect(thunk({bang: function(env) { return env.value }})).toEqual('!')
+            expect(thunk({bang: function(env) { return env.value }})).to.equal('!')
           })
         })
 
         describe("match in string stream", function() {
           it("recognition", function() {
-            expect(m.matchContents('!', 'bang')).toBeTruthy()
-            expect(m.matchContents('a', 'bang')).toEqual(false)
-            expect(m.matchContents('', 'bang')).toEqual(false)
+            expect(m.matchContents('!', 'bang')).to.be.ok()
+            expect(m.matchContents('a', 'bang')).to.equal(false)
+            expect(m.matchContents('', 'bang')).to.equal(false)
           })
 
           it("semantic actions", function() {
             var thunk = m.matchContents('!', 'bang')
-            expect(thunk({bang: function(env) { return env.value }})).toEqual('!')
+            expect(thunk({bang: function(env) { return env.value }})).to.equal('!')
           })
         })
 
         describe("match in list stream", function() {
           it("recognition", function() {
-            expect(m.matchContents(['!'], 'bang')).toBeTruthy()
-            expect(m.matchContents(['a'], 'bang')).toEqual(false)
-            expect(m.matchContents(['!', 'a'], 'bang')).toEqual(false)
-            expect(m.matchContents([''], 'bang')).toEqual(false)
-            expect(m.matchContents([], 'bang')).toEqual(false)
+            expect(m.matchContents(['!'], 'bang')).to.be.ok()
+            expect(m.matchContents(['a'], 'bang')).to.equal(false)
+            expect(m.matchContents(['!', 'a'], 'bang')).to.equal(false)
+            expect(m.matchContents([''], 'bang')).to.equal(false)
+            expect(m.matchContents([], 'bang')).to.equal(false)
           })
 
           it("semantic actions", function() {
             var thunk = m.matchContents(['!'], 'bang')
-            expect(thunk({bang: function(env) { return env.value }})).toEqual('!')
+            expect(thunk({bang: function(env) { return env.value }})).to.equal('!')
           })
         })
       })
@@ -269,49 +266,49 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+          expect(m).to.eql(ohm.make(eval(m.toRecipe())))
         })
 
         describe("direct match, no stream", function() {
           it("recognition", function() {
-            expect(m.match('foo', 'foo')).toBeTruthy()
-            expect(m.match('foo1', 'foo')).toEqual(false)
-            expect(m.match('bar', 'foo')).toEqual(false)
-            expect(m.match(null, 'foo')).toEqual(false)
+            expect(m.match('foo', 'foo')).to.be.ok()
+            expect(m.match('foo1', 'foo')).to.equal(false)
+            expect(m.match('bar', 'foo')).to.equal(false)
+            expect(m.match(null, 'foo')).to.equal(false)
           })
 
           it("semantic actions", function() {
             var thunk = m.match('foo', 'foo')
-            expect(thunk({foo: function(env) { return env.value }})).toEqual('foo')
+            expect(thunk({foo: function(env) { return env.value }})).to.equal('foo')
           })
         })
 
         describe("match in string stream", function() {
           it("recognition", function() {
-            expect(m.matchContents('foo', 'foo')).toBeTruthy()
-            expect(m.matchContents('foo1', 'foo')).toEqual(false)
-            expect(m.matchContents('bar', 'foo')).toEqual(false)
+            expect(m.matchContents('foo', 'foo')).to.be.ok()
+            expect(m.matchContents('foo1', 'foo')).to.equal(false)
+            expect(m.matchContents('bar', 'foo')).to.equal(false)
           })
 
           it("semantic actions", function() {
             var thunk = m.matchContents('foo', 'foo')
-            expect(thunk({foo: function(env) { return env.value }})).toEqual('foo')
+            expect(thunk({foo: function(env) { return env.value }})).to.equal('foo')
           })
         })
 
         describe("match in list stream", function() {
           it("recognition", function() {
-            expect(m.matchContents(['foo'], 'foo')).toBeTruthy()
-            expect(m.matchContents(['foo1'], 'foo')).toEqual(false)
-            expect(m.matchContents(['foo', '1'], 'foo')).toEqual(false)
-            expect(m.matchContents(['foo', 'foo'], 'foo')).toEqual(false)
-            expect(m.matchContents([''], 'foo')).toEqual(false)
-            expect(m.matchContents([], 'foo')).toEqual(false)
+            expect(m.matchContents(['foo'], 'foo')).to.be.ok()
+            expect(m.matchContents(['foo1'], 'foo')).to.equal(false)
+            expect(m.matchContents(['foo', '1'], 'foo')).to.equal(false)
+            expect(m.matchContents(['foo', 'foo'], 'foo')).to.equal(false)
+            expect(m.matchContents([''], 'foo')).to.equal(false)
+            expect(m.matchContents([], 'foo')).to.equal(false)
           })
 
           it("semantic actions", function() {
             var thunk = m.matchContents(['foo'], 'foo')
-            expect(thunk({foo: function(env) { return env.value }})).toEqual('foo')
+            expect(thunk({foo: function(env) { return env.value }})).to.equal('foo')
           })
         })
       })
@@ -323,16 +320,16 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+          expect(m).to.eql(ohm.make(eval(m.toRecipe())))
         })
 
         describe("direct match, no stream", function() {
           it("recognition", function() {
-            expect(m.match(/[0-9]/, 'myDigit')).toEqual(false)
-            expect(m.match('4', 'myDigit')).toEqual(false)
-            expect(m.match(4, 'myDigit')).toEqual(false)
-            expect(m.match('a', 'myDigit')).toEqual(false)
-            expect(m.match('a4', 'myDigit')).toEqual(false)
+            expect(m.match(/[0-9]/, 'myDigit')).to.equal(false)
+            expect(m.match('4', 'myDigit')).to.equal(false)
+            expect(m.match(4, 'myDigit')).to.equal(false)
+            expect(m.match('a', 'myDigit')).to.equal(false)
+            expect(m.match('a4', 'myDigit')).to.equal(false)
           })
 
           it("semantic actions", function() {
@@ -342,23 +339,23 @@ describe("Ohm", function() {
 
         describe("match in string stream", function() {
           it("recognition", function() {
-            expect(m.matchContents('4', 'myDigit')).toBeTruthy()
-            expect(m.matchContents('a', 'myDigit')).toEqual(false)
-            expect(m.matchContents('a4', 'myDigit')).toEqual(false)
+            expect(m.matchContents('4', 'myDigit')).to.be.ok()
+            expect(m.matchContents('a', 'myDigit')).to.equal(false)
+            expect(m.matchContents('a4', 'myDigit')).to.equal(false)
           })
 
           it("semantic actions", function() {
             var thunk = m.matchContents('4', 'myDigit')
-            expect(thunk({myDigit: function(env) { return env.value }})).toEqual('4')
+            expect(thunk({myDigit: function(env) { return env.value }})).to.equal('4')
           })
         })
 
         describe("match in list stream", function() {
           it("recognition", function() {
-            expect(m.matchContents(['4'], 'myDigit')).toEqual(false)
-            expect(m.matchContents([/[0-9]/], 'myDigit')).toEqual(false)
-            expect(m.matchContents([''], 'myDigit')).toEqual(false)
-            expect(m.matchContents([], 'myDigit')).toEqual(false)
+            expect(m.matchContents(['4'], 'myDigit')).to.equal(false)
+            expect(m.matchContents([/[0-9]/], 'myDigit')).to.equal(false)
+            expect(m.matchContents([''], 'myDigit')).to.equal(false)
+            expect(m.matchContents([], 'myDigit')).to.equal(false)
           })
 
           it("semantic actions", function() {
@@ -375,26 +372,26 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+        expect(m).to.eql(ohm.make(eval(m.toRecipe())))
       })
 
       it("recognition", function() {
-        expect(m.matchContents('', 'altTest')).toEqual(false)
-        expect(m.matchContents('a', 'altTest')).toBeTruthy()
-        expect(m.matchContents('b', 'altTest')).toBeTruthy()
-        expect(m.matchContents('ab', 'altTest')).toEqual(false)
+        expect(m.matchContents('', 'altTest')).to.equal(false)
+        expect(m.matchContents('a', 'altTest')).to.be.ok()
+        expect(m.matchContents('b', 'altTest')).to.be.ok()
+        expect(m.matchContents('ab', 'altTest')).to.equal(false)
       })
 
       it("semantic actions", function() {
-        expect(m.matchContents('a', 'altTest')({altTest: function(env) { return env.value }})).toEqual('a')
-        expect(m.matchContents('b', 'altTest')({altTest: function(env) { return env.value }})).toEqual('b')
+        expect(m.matchContents('a', 'altTest')({altTest: function(env) { return env.value }})).to.equal('a')
+        expect(m.matchContents('b', 'altTest')({altTest: function(env) { return env.value }})).to.equal('b')
       })
     })
 
     describe("seq", function() {
       it("to recipe and back", function() {
         var m = makeGrammar("M { start == 'a' 'bc' 'z' }")
-        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+        expect(m).to.eql(ohm.make(eval(m.toRecipe())))
       })
 
       describe("without bindings", function() {
@@ -404,17 +401,17 @@ describe("Ohm", function() {
         })
   
         it("recognition", function() {
-          expect(m.matchContents('a', 'start')).toEqual(false)
-          expect(m.matchContents('bc', 'start')).toEqual(false)
-          expect(m.matchContents('abcz', 'start')).toBeTruthy()
-          expect(m.matchContents('abbz', 'start')).toEqual(false)
+          expect(m.matchContents('a', 'start')).to.equal(false)
+          expect(m.matchContents('bc', 'start')).to.equal(false)
+          expect(m.matchContents('abcz', 'start')).to.be.ok()
+          expect(m.matchContents('abbz', 'start')).to.equal(false)
         })
 
         it("semantic actions", function() {
           var f = m.matchContents('abcz', 'start')
           expect(f({
             start: function(env) { return env.value }
-          })).toEqual([undefined])
+          })).to.eql([undefined])
         })
       })
 
@@ -425,17 +422,17 @@ describe("Ohm", function() {
         })
   
         it("recognition", function() {
-          expect(m.matchContents('a', 'start')).toEqual(false)
-          expect(m.matchContents('bc', 'start')).toEqual(false)
-          expect(m.matchContents('abcz', 'start')).toBeTruthy()
-          expect(m.matchContents('abbz', 'start')).toEqual(false)
+          expect(m.matchContents('a', 'start')).to.equal(false)
+          expect(m.matchContents('bc', 'start')).to.equal(false)
+          expect(m.matchContents('abcz', 'start')).to.be.ok()
+          expect(m.matchContents('abbz', 'start')).to.equal(false)
         })
 
         it("semantic actions", function() {
           var f = m.matchContents('abcz', 'start')
           expect(f({
             start: function(env) { return env.value },
-          })).toEqual([undefined])
+          })).to.eql([undefined])
         })
       })
 
@@ -446,17 +443,17 @@ describe("Ohm", function() {
         })
   
         it("recognition", function() {
-          expect(m.matchContents('a', 'start')).toEqual(false)
-          expect(m.matchContents('bc', 'start')).toEqual(false)
-          expect(m.matchContents('abcz', 'start')).toBeTruthy()
-          expect(m.matchContents('abbz', 'start')).toEqual(false)
+          expect(m.matchContents('a', 'start')).to.equal(false)
+          expect(m.matchContents('bc', 'start')).to.equal(false)
+          expect(m.matchContents('abcz', 'start')).to.be.ok()
+          expect(m.matchContents('abbz', 'start')).to.equal(false)
         })
 
         it("semantic actions", function() {
           var f = m.matchContents('abcz', 'start')
           expect(f({
             start: function(env) { return env.value }
-          })).toEqual([undefined])
+          })).to.eql([undefined])
         })
       })
 
@@ -464,7 +461,7 @@ describe("Ohm", function() {
         console.log('\nNote: the following error message is actually supposed to be there')
         expect(function() {
           m = makeGrammar("M { start == ('a'.x 'bc' 'z'.x)? }")
-        }).toThrow()
+        }).to.throwException()
       })
     })
 
@@ -475,19 +472,19 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+        expect(m).to.eql(ohm.make(eval(m.toRecipe())))
       })
 
       it("recognition", function() {
-        expect(m.matchContents('ab', 'start')).toEqual(false)
-        expect(m.matchContents('12', 'start')).toEqual(false)
-        expect(m.matchContents('abc', 'start')).toBeTruthy()
-        expect(m.matchContents('123', 'start')).toBeTruthy()
+        expect(m.matchContents('ab', 'start')).to.equal(false)
+        expect(m.matchContents('12', 'start')).to.equal(false)
+        expect(m.matchContents('abc', 'start')).to.be.ok()
+        expect(m.matchContents('123', 'start')).to.be.ok()
       })
 
       it("semantic actions", function() {
-        expect(m.matchContents('abc', 'start')({start: function(env) { return [env.x, env.y] }})).toEqual(['a', 'c'])
-        expect(m.matchContents('123', 'start')({start: function(env) { return [env.x, env.y] }})).toEqual(['1', '3'])
+        expect(m.matchContents('abc', 'start')({start: function(env) { return [env.x, env.y] }})).to.eql(['a', 'c'])
+        expect(m.matchContents('123', 'start')({start: function(env) { return [env.x, env.y] }})).to.eql(['1', '3'])
       })
     })
 
@@ -503,19 +500,19 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+        expect(m).to.eql(ohm.make(eval(m.toRecipe())))
       })
 
       it("recognition", function() {
-        expect(m.matchContents('1234a', 'number')).toEqual(false)
-        expect(m.matchContents('1234', 'number')).toBeTruthy()
-        expect(m.matchContents('5', 'number')).toBeTruthy()
-        expect(m.matchContents('', 'number')).toEqual(false)
+        expect(m.matchContents('1234a', 'number')).to.equal(false)
+        expect(m.matchContents('1234', 'number')).to.be.ok()
+        expect(m.matchContents('5', 'number')).to.be.ok()
+        expect(m.matchContents('', 'number')).to.equal(false)
 
-        expect(m.matchContents('1234a', 'digits')).toEqual(false)
-        expect(m.matchContents('1234', 'digits')).toBeTruthy()
-        expect(m.matchContents('5', 'digits')).toBeTruthy()
-        expect(m.matchContents('', 'digits')).toBeTruthy()
+        expect(m.matchContents('1234a', 'digits')).to.equal(false)
+        expect(m.matchContents('1234', 'digits')).to.be.ok()
+        expect(m.matchContents('5', 'digits')).to.be.ok()
+        expect(m.matchContents('', 'digits')).to.be.ok()
       })
 
       it("semantic actions", function() {
@@ -523,15 +520,15 @@ describe("Ohm", function() {
         expect(f({
           number: function(env) { return ['digits', env.value] },
           digit: function(env) { return ['digit', env.value] }
-        })).toEqual(['digits', [['digit', '1'], ['digit', '2'], ['digit', '3'], ['digit', '4']]])
+        })).to.eql(['digits', [['digit', '1'], ['digit', '2'], ['digit', '3'], ['digit', '4']]])
       })
 
       it("semantic actions are evaluated lazily", function() {
         var f = m.matchContents('123', 'sss')
         var a = buildTreeNodeWithUniqueId()
         var t = ['id', 1, 'number', [[ 'id', 2, 'digit', '1'], ['id', 3, 'digit', '2'], ['id', 4, 'digit', '3']]]
-        expect(f(a)).toEqual(['id', 0, 'sss', t, t])
-        expect(a._getNextId()).toEqual(5)
+        expect(f(a)).to.eql(['id', 0, 'sss', t, t])
+        expect(a._getNextId()).to.equal(5)
       })
     })
 
@@ -542,19 +539,19 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+        expect(m).to.eql(ohm.make(eval(m.toRecipe())))
       })
 
       it("recognition", function() {
-        expect(m.matchContents('drwarth', 'name')).toBeTruthy()
-        expect(m.matchContents('warth', 'name')).toBeTruthy()
-        expect(m.matchContents('mrwarth', 'name')).toEqual(false)
+        expect(m.matchContents('drwarth', 'name')).to.be.ok()
+        expect(m.matchContents('warth', 'name')).to.be.ok()
+        expect(m.matchContents('mrwarth', 'name')).to.equal(false)
       })
 
       it("semantic actions", function() {
         var actionDict = {name: function(env) { return [env.title, env.last] }}
-        expect(m.matchContents('drwarth', 'name')(actionDict)).toEqual([['dr'], 'warth'])
-        expect(m.matchContents('warth', 'name')(actionDict)).toEqual([undefined, 'warth'])
+        expect(m.matchContents('drwarth', 'name')(actionDict)).to.eql([['dr'], 'warth'])
+        expect(m.matchContents('warth', 'name')(actionDict)).to.eql([undefined, 'warth'])
       })
     })
 
@@ -565,18 +562,18 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+        expect(m).to.eql(ohm.make(eval(m.toRecipe())))
       })
 
       it("recognition", function() {
-        expect(m.matchContents('yello world', 'start')).toBeTruthy()
-        expect(m.matchContents('hello world', 'start')).toEqual(false)
+        expect(m.matchContents('yello world', 'start')).to.be.ok()
+        expect(m.matchContents('hello world', 'start')).to.equal(false)
       })
 
       it("semantic actions", function() {
         expect(m.matchContents('yello world', 'start')({
             start: function(env) { return env.x }
-        })).toEqual(undefined)
+        })).to.equal(undefined)
       })
     })
 
@@ -587,16 +584,16 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+        expect(m).to.eql(ohm.make(eval(m.toRecipe())))
       })
 
       it("recognition", function() {
-        expect(m.matchContents('hello world', 'start')).toBeTruthy()
-        expect(m.matchContents('hell! world', 'start')).toEqual(false)
+        expect(m.matchContents('hello world', 'start')).to.be.ok()
+        expect(m.matchContents('hell! world', 'start')).to.equal(false)
       })
 
       it("semantic actions", function() {
-        expect(m.matchContents('hello world', 'start')({start: function(env) { return env.x }})).toEqual('hello')
+        expect(m.matchContents('hello world', 'start')({start: function(env) { return env.x }})).to.equal('hello')
       })
     })
 
@@ -607,19 +604,19 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+        expect(m).to.eql(ohm.make(eval(m.toRecipe())))
       })
 
       it("recognition", function() {
-        expect(m.matchContents(['abc', 'd', 'ef'], 'start')).toBeTruthy()
-        expect(m.matchContents(['pbc', 'd', 'ef'], 'start')).toBeTruthy()
-        expect(m.matchContents(['abcd', 'd', 'ef'], 'start')).toEqual(false)
+        expect(m.matchContents(['abc', 'd', 'ef'], 'start')).to.be.ok()
+        expect(m.matchContents(['pbc', 'd', 'ef'], 'start')).to.be.ok()
+        expect(m.matchContents(['abcd', 'd', 'ef'], 'start')).to.equal(false)
       })
 
       it("semantic actions", function() {
         expect(m.matchContents(['abc', 'd', 'ef'], 'start')({
           start: function(env) { return env.x }
-        })).toEqual('abc')
+        })).to.equal('abc')
       })
     })
 
@@ -630,22 +627,22 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+        expect(m).to.eql(ohm.make(eval(m.toRecipe())))
       })
 
       it("recognition", function() {
-        expect(m.matchContents(['abc', ['d'], 'ef'], 'start')).toBeTruthy()
-        expect(m.matchContents(['abc', ['d', 'e'], 'ef'], 'start')).toEqual(false)
-        expect(m.matchContents(['abc', ['e'], 'ef'], 'start')).toEqual(false)
-        expect(m.matchContents(['abc', [5], 'ef'], 'start')).toEqual(false)
-        expect(m.matchContents(['abc', [], 'ef'], 'start')).toEqual(false)
-        expect(m.matchContents(['abc', 5, 'ef'], 'start')).toEqual(false)
+        expect(m.matchContents(['abc', ['d'], 'ef'], 'start')).to.be.ok()
+        expect(m.matchContents(['abc', ['d', 'e'], 'ef'], 'start')).to.equal(false)
+        expect(m.matchContents(['abc', ['e'], 'ef'], 'start')).to.equal(false)
+        expect(m.matchContents(['abc', [5], 'ef'], 'start')).to.equal(false)
+        expect(m.matchContents(['abc', [], 'ef'], 'start')).to.equal(false)
+        expect(m.matchContents(['abc', 5, 'ef'], 'start')).to.equal(false)
       })
 
       it("semantic actions", function() {
         expect(m.matchContents(['abc', ['d'], 'ef'], 'start')({
           start: function(env) { return env.x }
-        })).toEqual(['d'])
+        })).to.eql(['d'])
       })
     })
 
@@ -660,40 +657,40 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+        expect(m).to.eql(ohm.make(eval(m.toRecipe())))
       })
 
       describe("strict", function() {
         it("recognition", function() {
-          expect(m.match('foo', 'strict')).toEqual(false)
-          expect(m.match([], 'strict')).toEqual(false)
-          expect(m.match({y: 2}, 'strict')).toEqual(false)
-          expect(m.match({x: 1, y: 2}, 'strict')).toBeTruthy()
-          expect(m.match({y: 2, x: 1}, 'strict')).toBeTruthy()
-          expect(m.match({x: 1, y: 2, z: 3}, 'strict')).toEqual(false)
+          expect(m.match('foo', 'strict')).to.equal(false)
+          expect(m.match([], 'strict')).to.equal(false)
+          expect(m.match({y: 2}, 'strict')).to.equal(false)
+          expect(m.match({x: 1, y: 2}, 'strict')).to.be.ok()
+          expect(m.match({y: 2, x: 1}, 'strict')).to.be.ok()
+          expect(m.match({x: 1, y: 2, z: 3}, 'strict')).to.equal(false)
         })
 
         it("semantic actions", function() {
           expect(m.match({x: 1, y: 2}, 'strict')({
             strict: function(env) { return [env.a, env.b] }
-          })).toEqual([1, 2])
+          })).to.eql([1, 2])
         })
       })
 
       describe("lenient", function() {
         it("recognition", function() {
-          expect(m.match('foo', 'lenient')).toEqual(false)
-          expect(m.match([], 'lenient')).toEqual(false)
-          expect(m.match({y: 2}, 'lenient')).toEqual(false)
-          expect(m.match({x: 1, y: 2}, 'lenient')).toBeTruthy()
-          expect(m.match({y: 2, x: 1}, 'lenient')).toBeTruthy()
-          expect(m.match({x: 1, y: 2, z: 3}, 'lenient')).toBeTruthy()
+          expect(m.match('foo', 'lenient')).to.equal(false)
+          expect(m.match([], 'lenient')).to.equal(false)
+          expect(m.match({y: 2}, 'lenient')).to.equal(false)
+          expect(m.match({x: 1, y: 2}, 'lenient')).to.be.ok()
+          expect(m.match({y: 2, x: 1}, 'lenient')).to.be.ok()
+          expect(m.match({x: 1, y: 2, z: 3}, 'lenient')).to.be.ok()
         })
 
         it("semantic actions", function() {
           expect(m.match({x: 1, y: 2}, 'lenient')({
             lenient: function(env) { return [env.a, env.b] }
-          })).toEqual([1, 2])
+          })).to.eql([1, 2])
         })
       })
 
@@ -701,7 +698,7 @@ describe("Ohm", function() {
         console.log('\nNote: the following error message is actually supposed to be there')
         expect(function() {
           m = ohm.makeGrammar("M { duh == {x: 1.a, y: 2.a, ...} }")
-        }).toThrow()
+        }).to.throwException()
       })
     })
 
@@ -717,20 +714,20 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+          expect(m).to.eql(ohm.make(eval(m.toRecipe())))
         })
 
         it("recognition", function() {
-          expect(m.matchContents('fo', 'easy')).toEqual(false)
-          expect(m.matchContents('foo', 'easy')).toBeTruthy()
-          expect(m.matchContents('fooo', 'easy')).toEqual(false)
+          expect(m.matchContents('fo', 'easy')).to.equal(false)
+          expect(m.matchContents('foo', 'easy')).to.be.ok()
+          expect(m.matchContents('fooo', 'easy')).to.equal(false)
         })
 
         it("semantic actions", function() {
           expect(m.matchContents('foo', 'easy')({
             easy: function(env) { return ['easy', env.value] },
             foo: function(env) { return ['foo', env.value] }
-          })).toEqual(['easy', ['foo', 'foo']])
+          })).to.eql(['easy', ['foo', 'foo']])
         })
       })
 
@@ -745,15 +742,15 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+          expect(m).to.eql(ohm.make(eval(m.toRecipe())))
         })
 
         it("recognition", function() {
-          expect(m.matchContents('', 'number')).toEqual(false)
-          expect(m.matchContents('a', 'number')).toEqual(false)
-          expect(m.matchContents('1', 'number')).toBeTruthy()
-          expect(m.matchContents('123', 'number')).toBeTruthy()
-          expect(m.matchContents('7276218173', 'number')).toBeTruthy()
+          expect(m.matchContents('', 'number')).to.equal(false)
+          expect(m.matchContents('a', 'number')).to.equal(false)
+          expect(m.matchContents('1', 'number')).to.be.ok()
+          expect(m.matchContents('123', 'number')).to.be.ok()
+          expect(m.matchContents('7276218173', 'number')).to.be.ok()
         })
 
         it("semantic actions", function() {
@@ -762,12 +759,12 @@ describe("Ohm", function() {
             number: function(env) { return env.value },
             numberRec: function(env) { return env.n * 10 + env.d },
             digit: function(env) { return env.value.charCodeAt(0) - '0'.charCodeAt(0) }
-          })).toEqual(1234)
+          })).to.equal(1234)
           expect(f({
             number: function(env) { return ['number', env.value] },
             numberRec: function(env) { return ['numberRec', env.n, env.d] },
             digit: function(env) { return env.value }
-          })).toEqual(
+          })).to.eql(
             ['number',
               ['numberRec',
                 ['number',
@@ -795,18 +792,18 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+          expect(m).to.eql(ohm.make(eval(m.toRecipe())))
         })
 
         it("recognition", function() {
-          expect(m.matchContents('x+y+x', 'add')).toBeTruthy()
+          expect(m.matchContents('x+y+x', 'add')).to.be.ok()
         })
 
         it("semantic actions", function() {
           expect(m.matchContents('x+y+x', 'add')({
             addRec: function(env) { return [env.x, '+', env.y] },
             _default: function(ruleName, env) { return env.value }
-          })).toEqual([['x', '+', 'y'], '+', 'x'])
+          })).to.eql([['x', '+', 'y'], '+', 'x'])
         })
       })
 
@@ -826,22 +823,22 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+          expect(m).to.eql(ohm.make(eval(m.toRecipe())))
         })
 
         it("recognition", function() {
-          expect(m.matchContents('', 'number')).toEqual(false)
-          expect(m.matchContents('a', 'number')).toEqual(false)
-          expect(m.matchContents('1', 'number')).toBeTruthy()
-          expect(m.matchContents('123', 'number')).toBeTruthy()
-          expect(m.matchContents('7276218173', 'number')).toBeTruthy()
+          expect(m.matchContents('', 'number')).to.equal(false)
+          expect(m.matchContents('a', 'number')).to.equal(false)
+          expect(m.matchContents('1', 'number')).to.be.ok()
+          expect(m.matchContents('123', 'number')).to.be.ok()
+          expect(m.matchContents('7276218173', 'number')).to.be.ok()
         })
 
         it("semantic actions", function() {
           expect(m.matchContents('1234', 'number')({
             numberRec: function(env) { return [env.n, env.d] },
             _default: function(ruleName, env) { return env.value }
-          })).toEqual([[['1', '2'], '3'], '4'])
+          })).to.eql([[['1', '2'], '3'], '4'])
         })
       })
 
@@ -860,15 +857,15 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+          expect(m).to.eql(ohm.make(eval(m.toRecipe())))
         })
 
         it("recognition", function() {
-          expect(m.matchContents('1', 'addExpr')).toBeTruthy()
-          expect(m.matchContents('2+3', 'addExpr')).toBeTruthy()
-          expect(m.matchContents('4+', 'addExpr')).toEqual(false)
-          expect(m.matchContents('5*6', 'addExpr')).toBeTruthy()
-          expect(m.matchContents('7*8+9+0', 'addExpr')).toBeTruthy()
+          expect(m.matchContents('1', 'addExpr')).to.be.ok()
+          expect(m.matchContents('2+3', 'addExpr')).to.be.ok()
+          expect(m.matchContents('4+', 'addExpr')).to.equal(false)
+          expect(m.matchContents('5*6', 'addExpr')).to.be.ok()
+          expect(m.matchContents('7*8+9+0', 'addExpr')).to.be.ok()
         })
 
         it("semantic actions", function() {
@@ -879,7 +876,7 @@ describe("Ohm", function() {
             mulExpr: function(env) { return ['mulExpr', env.value] },
             mulExprRec: function(env) { return ['mulExprRec', env.x, env.y] },
             priExpr: function(env) { return env.value }
-          })).toEqual(
+          })).to.eql(
             ['addExpr',
               ['addExprRec',
                 ['addExpr',
@@ -893,12 +890,12 @@ describe("Ohm", function() {
             mulExpr: function(env) { return env.value },
             mulExprRec: function(env) { return env.x * env.y },
             priExpr: function(env) { return parseInt(env.value) }
-          })).toEqual(25)
+          })).to.equal(25)
           expect(f({
             addExprRec: function(env) { return '(' + env.x + '+' + env.y + ')' },
             mulExprRec: function(env) { return '(' + env.x + '*' + env.y + ')' },
             _default: function(ruleName, env) { return env.value }
-          })).toEqual('(((1*2)+3)+(4*5))')
+          })).to.equal('(((1*2)+3)+(4*5))')
         })
 
         it("semantic actions are evaluated lazily", function() {
@@ -922,8 +919,8 @@ describe("Ohm", function() {
                     ['id', 15, 'mulExpr',
                       ['id', 16, 'priExpr', '4']],
                     ['id', 17, 'priExpr', '5']]]]]
-          expect(f(a)).toEqual(['id', 0, 'sss', t, t])
-          expect(a._getNextId()).toEqual(18)
+          expect(f(a)).to.eql(['id', 0, 'sss', t, t])
+          expect(a._getNextId()).to.equal(18)
         })
       })
 
@@ -949,15 +946,15 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+          expect(m).to.eql(ohm.make(eval(m.toRecipe())))
         })
 
         it("recognition", function() {
-          expect(m.matchContents('1', 'addExpr')).toBeTruthy()
-          expect(m.matchContents('2+3', 'addExpr')).toBeTruthy()
-          expect(m.matchContents('4+', 'addExpr')).toEqual(false)
-          expect(m.matchContents('5*6', 'addExpr')).toBeTruthy()
-          expect(m.matchContents('7+8*9+0', 'addExpr')).toBeTruthy()
+          expect(m.matchContents('1', 'addExpr')).to.be.ok()
+          expect(m.matchContents('2+3', 'addExpr')).to.be.ok()
+          expect(m.matchContents('4+', 'addExpr')).to.equal(false)
+          expect(m.matchContents('5*6', 'addExpr')).to.be.ok()
+          expect(m.matchContents('7+8*9+0', 'addExpr')).to.be.ok()
         })
 
         it("semantic actions", function() {
@@ -965,7 +962,7 @@ describe("Ohm", function() {
             addExprRec: function(env) { return [env.x, '+', env.y] },
             mulExprRec: function(env) { return [env.x, '*', env.y] },
             _default: function(ruleName, env) { return env.value }
-          })).toEqual([['7', '+', ['8', '*', '9']], '+', '0'])
+          })).to.eql([['7', '+', ['8', '*', '9']], '+', '0'])
         })
       })
 
@@ -983,11 +980,11 @@ describe("Ohm", function() {
         })
 
         it("to recipe and back", function() {
-          expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+          expect(m).to.eql(ohm.make(eval(m.toRecipe())))
         })
 
         it("recognition", function() {
-          expect(m.matchContents('1234', 'tricky')).toBeTruthy()
+          expect(m.matchContents('1234', 'tricky')).to.be.ok()
         })
 
         it("semantic actions", function() {
@@ -999,7 +996,7 @@ describe("Ohm", function() {
             bar: function(env) { return ['bar', env.value] },
             barRec: function(env) { return ['barRec', env.x, env.y] },
             digit: function(env) { return env.value }
-          })).toEqual(
+          })).to.eql(
             ['tricky', ['bar', ['barRec', ['foo', ['fooRec', ['bar', ['barRec', ['foo', '1'], '2']], '3']], '4']]])
         })
       })
@@ -1014,7 +1011,7 @@ describe("Ohm", function() {
               "G1 { foo == 'foo' }",
               "G2 <: G1 { foo == 'bar' }"
             ], 'inheritance-define')
-          }).toThrow()
+          }).to.throwException()
         })
       })
 
@@ -1033,18 +1030,18 @@ describe("Ohm", function() {
         it("to recipe and back", function() {
           var m1Prime = ohm.namespace('inheritance-override-prime').make(eval(m1.toRecipe()))
           m1Prime.namespaceName = 'inheritance-override'
-          expect(m1).toEqual(m1Prime)
+          expect(m1).to.eql(m1Prime)
 
           var m2Prime = ohm.namespace('inheritance-override-prime').make(eval(m2.toRecipe()))
           m2Prime.namespaceName = 'inheritance-override'
-          expect(m2).toEqual(m2Prime)
+          expect(m2).to.eql(m2Prime)
         })
 
         it("should check that rule exists in super-grammar", function() {
           console.log('\nNote: the following error message is actually supposed to be there')
           expect(function() {
             makeGrammar("G3 <: G1 { foo := 'foo' }", 'inheritance-override')
-          }).toThrow()
+          }).to.throwException()
         })
 
         it("should make sure the environment's bindings are preserved", function() {
@@ -1054,7 +1051,7 @@ describe("Ohm", function() {
           expect(function() {
             makeGrammar("M1 { foo == 'foo' }", "inheritance-override")
             makeGrammar("M2 <: M1 { foo := bar baz }", "inheritance-override")
-          }).toThrow()
+          }).to.throwException()
 
           // It should be ok to override a rule that has no bindings and whose body does not produce a value, even
           // when the overriding definition actually produces a value. When this happens, the semantic action method
@@ -1068,20 +1065,20 @@ describe("Ohm", function() {
         })
 
         it("recognition", function() {
-          expect(m1.matchContents('1234', 'number')).toBeTruthy()
-          expect(m1.matchContents('hello', 'number')).toEqual(false)
-          expect(m1.matchContents('h3llo', 'number')).toEqual(false)
+          expect(m1.matchContents('1234', 'number')).to.be.ok()
+          expect(m1.matchContents('hello', 'number')).to.equal(false)
+          expect(m1.matchContents('h3llo', 'number')).to.equal(false)
 
-          expect(m2.matchContents('1234', 'number')).toEqual(false)
-          expect(m2.matchContents('hello', 'number')).toBeTruthy()
-          expect(m2.matchContents('h3llo', 'number')).toEqual(false)
+          expect(m2.matchContents('1234', 'number')).to.equal(false)
+          expect(m2.matchContents('hello', 'number')).to.be.ok()
+          expect(m2.matchContents('h3llo', 'number')).to.equal(false)
         })
 
         it("semantic actions", function() {
           expect(m2.matchContents('abcd', 'number')({
             number: function(env) { return ['number', env.value] },
             digit: function(env) { return ['digit', env.value] }
-          })).toEqual(['number', [['digit', 'a'], ['digit', 'b'], ['digit', 'c'], ['digit', 'd']]])
+          })).to.eql(['number', [['digit', 'a'], ['digit', 'b'], ['digit', 'c'], ['digit', 'd']]])
         })
       })
 
@@ -1100,25 +1097,25 @@ describe("Ohm", function() {
         it("to recipe and back", function() {
           var m1Prime = ohm.namespace('inheritance-extend-prime').make(eval(m1.toRecipe()))
           m1Prime.namespaceName = 'inheritanceExtend'
-          expect(m1).toEqual(m1Prime)
+          expect(m1).to.eql(m1Prime)
 
           var m2Prime = ohm.namespace('inheritance-extend-prime').make(eval(m2.toRecipe()))
           m2Prime.namespaceName = 'inheritanceExtend2'
-          expect(m2).toEqual(m2Prime)
+          expect(m2).to.eql(m2Prime)
         })
 
         it("should check that rule exists in super-grammar", function() {
           console.log('\nNote: the following error message is actually supposed to be there')
           expect(function() {
             makeGrammar("G3 <: G1 { bar += 'bar' }", 'inheritance-extend')
-          }).toThrow()
+          }).to.throwException()
         })
 
         it("should check that binding names are consistent", function() {
           console.log('\nNote: the following error message is actually supposed to be there')
           expect(function() {
             makeGrammar("G3 <: G1 { foo += '111'.x '222'.z }", 'inheritance-extend')
-          }).toThrow()
+          }).to.throwException()
         })
 
         it("should make sure the environment's bindings are preserved", function() {
@@ -1128,7 +1125,7 @@ describe("Ohm", function() {
           expect(function() {
             makeGrammar("M1 { foo == 'foo' }", "inheritanceExtend3")
             makeGrammar("M2 <: M1 { foo += bar baz }", "inheritanceExtend3")
-          }).toThrow()
+          }).to.throwException()
 
           // It should be ok to extend a rule that has no bindings and whose body does not produce a value, even
           // when the extending case(s) actually produce a value. When this happens, the semantic action method should
@@ -1142,20 +1139,20 @@ describe("Ohm", function() {
         })
 
         it("recognition", function() {
-          expect(m1.matchContents('aaabbb', 'foo')).toBeTruthy()
-          expect(m1.matchContents('111222', 'foo')).toEqual(false)
+          expect(m1.matchContents('aaabbb', 'foo')).to.be.ok()
+          expect(m1.matchContents('111222', 'foo')).to.equal(false)
 
-          expect(m2.matchContents('aaabbb', 'foo')).toBeTruthy()
-          expect(m2.matchContents('111222', 'foo')).toBeTruthy()
+          expect(m2.matchContents('aaabbb', 'foo')).to.be.ok()
+          expect(m2.matchContents('111222', 'foo')).to.be.ok()
         })
 
         it("semantic actions", function() {
           expect(m2.matchContents('aaabbb', 'foo')({
             foo: function(env) { return [env.x, env.y] }
-          })).toEqual(['aaa', 'bbb'])
+          })).to.eql(['aaa', 'bbb'])
           expect(m2.matchContents('111222', 'foo')({
             foo: function(env) { return [env.x, env.y] }
-          })).toEqual(['111', '222'])
+          })).to.eql(['111', '222'])
         })
       })
     })
@@ -1163,14 +1160,14 @@ describe("Ohm", function() {
     describe("bindings", function() {
       it("to recipe and back", function() {
         var m = makeGrammar("G { foo == 'a'.x 'b'.y | 'b'.y 'a'.x }")
-        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+        expect(m).to.eql(ohm.make(eval(m.toRecipe())))
       })
 
       it("inconsistent bindings in alts are errors", function() {
         console.log('\nNote: the following error message is actually supposed to be there')
         expect(function() {
           makeGrammar("G { foo == 'a'.x | 'b'.y }")
-        }).toThrow()
+        }).to.throwException()
       })
 
       it("binding order shouldn't matter", function() {
@@ -1190,14 +1187,14 @@ describe("Ohm", function() {
           foo: function(env) { var x = env.x; var y = env.y; return {x: x, y: y} },
           bar: function(env) { return ['bar', env.value, id++] },
           baz: function(env) { return ['baz', env.value, id++] }
-        })).toEqual({x: ['bar', 'a', 0], y: ['baz', 'b', 1]})
+        })).to.eql({x: ['bar', 'a', 0], y: ['baz', 'b', 1]})
 
         var id = 0
         expect(g.matchContents('ab', 'foo')({
           foo: function(env) { var y = env.y; var x = env.x; return {x: x, y: y} },
           bar: function(env) { return ['bar', env.value, id++] },
           baz: function(env) { return ['baz', env.value, id++] }
-        })).toEqual({x: ['bar', 'a', 1], y: ['baz', 'b', 0]})
+        })).to.eql({x: ['bar', 'a', 1], y: ['baz', 'b', 0]})
       })
     })
 
@@ -1208,11 +1205,11 @@ describe("Ohm", function() {
       })
 
       it("to recipe and back", function() {
-        expect(m).toEqual(ohm.make(eval(m.toRecipe())))
+        expect(m).to.eql(ohm.make(eval(m.toRecipe())))
       })
 
       it("recognition", function() {
-        expect(m.matchContents('1*(2+3)-4/5', 'expr')).toBeTruthy()
+        expect(m.matchContents('1*(2+3)-4/5', 'expr')).to.be.ok()
       })
 
       it("semantic actions", function() {
@@ -1229,7 +1226,7 @@ describe("Ohm", function() {
           number: function(env) { return env.value },
           'number-rec': function(env) { return env.n * 10 + env.d },
           digit: function(env) { return env.value.charCodeAt(0) - '0'.charCodeAt(0) }
-        })).toEqual(1249.2)
+        })).to.equal(1249.2)
       })
 
       it("can't be overridden/replaced", function() {
@@ -1238,30 +1235,30 @@ describe("Ohm", function() {
         console.log('\nNote: the following error message is actually supposed to be there')
         expect(function() {
           makeGrammar("N <: M { addExpr := addExpr.x '~' mulExpr.y {minus} }", 'inlineRuleTest1')
-        }).toThrow()
+        }).to.throwException()
 
         console.log('\nNote: the following error message is actually supposed to be there')
         expect(function() {
 console.log('YYY', 
           makeGrammar("N <: M { addExpr += addExpr.x '~' mulExpr.y {minus} }", 'inlineRuleTest1')
 )
-        }).toThrow()
+        }).to.throwException()
       })
     })
 
     describe("lexical vs. syntactic rules", function() {
       it("lexical rules don't skip spaces implicitly", function() {
         var g = makeGrammar("G { start == 'foo' 'bar' }")
-        expect(g.matchContents('foobar', 'start')).toBeTruthy()
-        expect(g.matchContents('foo bar', 'start')).toEqual(false)
-        expect(g.matchContents(' foo bar   ', 'start')).toEqual(false)
+        expect(g.matchContents('foobar', 'start')).to.be.ok()
+        expect(g.matchContents('foo bar', 'start')).to.equal(false)
+        expect(g.matchContents(' foo bar   ', 'start')).to.equal(false)
       })
 
       it("syntactic rules skip spaces implicitly", function() {
         var g = makeGrammar("G { Start == 'foo' 'bar' }")
-        expect(g.matchContents('foobar', 'Start')).toBeTruthy()
-        expect(g.matchContents('foo bar', 'Start')).toBeTruthy()
-        expect(g.matchContents(' foo bar   ', 'Start')).toBeTruthy()
+        expect(g.matchContents('foobar', 'Start')).to.be.ok()
+        expect(g.matchContents('foo bar', 'Start')).to.be.ok()
+        expect(g.matchContents(' foo bar   ', 'Start')).to.be.ok()
       })
 
       it("mixing lexical and syntactic rules works as expected", function() {
@@ -1271,9 +1268,9 @@ console.log('YYY',
           "  bar == 'bar'",
           "  Start == foo bar",
           "}"])
-        expect(g.matchContents('foobar', 'Start')).toBeTruthy()
-        expect(g.matchContents('foo bar', 'Start')).toBeTruthy()
-        expect(g.matchContents(' foo bar   ', 'Start')).toBeTruthy()
+        expect(g.matchContents('foobar', 'Start')).to.be.ok()
+        expect(g.matchContents('foo bar', 'Start')).to.be.ok()
+        expect(g.matchContents(' foo bar   ', 'Start')).to.be.ok()
       })
     })
 
@@ -1288,8 +1285,8 @@ console.log('YYY',
 
         it("actually installs a grammar in a namespace", function() {
           var m = ohm.makeGrammar("aaa { foo == 'foo' }", ns1)
-          expect(ns1.getGrammar('aaa')).toEqual(m)
-          expect(m.matchContents('foo', 'foo')).toBeTruthy()
+          expect(ns1.getGrammar('aaa')).to.eql(m)
+          expect(m.matchContents('foo', 'foo')).to.be.ok()
         })
 
         it("detects duplicates", function() {
@@ -1297,16 +1294,16 @@ console.log('YYY',
           expect(function() {
             ohm.makeGrammar("ccc { foo == 'foo' }", ns1)
             ohm.makeGrammar("ccc { bar == 'bar' }", ns1)
-          }).toThrow()
+          }).to.throwException()
         })
 
         it("allows same-name grammars to be installed in different namespaces", function() {
           var m1 = ohm.makeGrammar("bbb { foo == 'foo' }", ns1)
           var m2 = ohm.makeGrammar("bbb { bar == 'bar' }", ns2)
 
-          expect(ns1.getGrammar('bbb')).toEqual(m1)
-          expect(ns2.getGrammar('bbb')).toEqual(m2)
-          expect(m1 !== m2).toBeTruthy()
+          expect(ns1.getGrammar('bbb')).to.eql(m1)
+          expect(ns2.getGrammar('bbb')).to.eql(m2)
+          expect(m1 !== m2).to.be.ok()
         })
       })
     })
@@ -1332,25 +1329,25 @@ console.log('YYY',
           expect(function() {
             console.log('\nNote: the following error message is actually supposed to be there')
             ns.getGrammar('M')
-          }).toThrow()
+          }).to.throwException()
           expect(function() {
             console.log('\nNote: the following error message is actually supposed to be there')
             ns.getGrammar('N')
-          }).toThrow()
-          expect(ns.getGrammar('O')).toBeTruthy()
-          expect(ns.getGrammar('O').matchContents('1234', 'number')).toBeTruthy()
+          }).to.throwException()
+          expect(ns.getGrammar('O')).to.be.ok()
+          expect(ns.getGrammar('O').matchContents('1234', 'number')).to.be.ok()
         })
 
         it("semantic actions", function() {
           var ns = ohm.namespace('aaa2')
           ns.loadGrammarsFromScriptElement(scriptTag)
           var m = ns.getGrammar('O')
-          expect(m).toBeTruthy()
+          expect(m).to.be.ok()
           expect(m.matchContents('1234', 'number')({
             number: function(env) { return env.value },
             'number-rec': function(env) { return env.n * 10 + env.d },
             digit: function(env) { return env.value.charCodeAt(0) - '0'.charCodeAt(0) }
-          })).toEqual(1234)
+          })).to.equal(1234)
         })
       })
     })
@@ -1362,16 +1359,16 @@ console.log('YYY',
       })
 
       it("can recognize arithmetic grammar", function() {
-        expect(g.matchContents(arithmeticGrammarSource, 'Grammar')).toBeTruthy()
+        expect(g.matchContents(arithmeticGrammarSource, 'Grammar')).to.be.ok()
       })
 
       it("can recognize itself", function() {
-        expect(g.matchContents(ohmGrammarSource, 'Grammar')).toBeTruthy()
+        expect(g.matchContents(ohmGrammarSource, 'Grammar')).to.be.ok()
       })
 
       it("can produce a grammar that will recognize itself", function() {
         var gPrime = g.matchContents(ohmGrammarSource, 'Grammar')(ohm._makeGrammarActionDict())
-        expect(gPrime.matchContents(ohmGrammarSource, 'Grammar')).toBeTruthy()
+        expect(gPrime.matchContents(ohmGrammarSource, 'Grammar')).to.be.ok()
       })
 
       it("can produce a grammar that works", function() {
@@ -1390,18 +1387,18 @@ console.log('YYY',
           number: function(env) { return env.value },
           'number-rec': function(env) { return env.n * 10 + env.d },
           digit: function(env) { return env.value.charCodeAt(0) - '0'.charCodeAt(0) }
-        })).toEqual(1249.2)
+        })).to.equal(1249.2)
       })
 
       it("full bootstrap!", function() {
         var gPrime = g.matchContents(ohmGrammarSource, 'Grammar')(ohm._makeGrammarActionDict())
         var gPrimePrime = gPrime.matchContents(ohmGrammarSource, 'Grammar')(ohm._makeGrammarActionDict())
-        expect(gPrime).toEqual(gPrimePrime)
+        expect(gPrime).to.eql(gPrimePrime)
       })
 
       it("to recipe and back", function() {
         var gPrime = g.matchContents(ohmGrammarSource, 'Grammar')(ohm._makeGrammarActionDict())
-        expect(ohm.make(eval(gPrime.toRecipe()))).toEqual(gPrime)
+        expect(ohm.make(eval(gPrime.toRecipe()))).to.eql(gPrime)
       })
     })
   })
