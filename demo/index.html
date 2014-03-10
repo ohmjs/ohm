@@ -58,8 +58,8 @@ var interpret = {
   'PriExpr-paren':  function(env) { return env.e },
   'PriExpr-pos':    function(env) { return env.e },
   'PriExpr-neg':    function(env) { return -env.e },
-  ident:            function()    { return env[this.interval.contents()] },
-  number:           function()    { return parseFloat(this.interval.contents()) }
+  ident:            function()    { return env[this.interval.contents] },
+  number:           function()    { return parseFloat(this.interval.contents) }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -88,8 +88,8 @@ var parse = {
   'PriExpr-paren':  function(env) { return env.e },
   'PriExpr-pos':    function(env) { return env.e },
   'PriExpr-neg':    function(env) { return ['neg', env.e] },
-  ident:            function()    { return this.interval.contents() },
-  number:           function()    { return this.interval.contents() }
+  ident:            function()    { return this.interval.contents },
+  number:           function()    { return this.interval.contents }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -108,8 +108,8 @@ var toTree = {
   'PriExpr-paren':  function(env) { return makeElement('paren', env.open, env.e, env.close) },
   'PriExpr-pos':    function(env) { return makeElement('pos', env.sign, env.e) },
   'PriExpr-neg':    function(env) { return makeElement('neg', env.sign, env.e) },
-  ident:            function()    { return makeElement('ident', this.interval.contents()) },
-  number:           function()    { return makeElement('number', this.interval.contents()) }
+  ident:            function()    { return makeElement('ident', this.interval.contents) },
+  number:           function()    { return makeElement('number', this.interval.contents) }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -135,9 +135,9 @@ var toTwoD = {
   'PriExpr-paren':  function(env) { return makeElement('paren', env.e) },
   'PriExpr-pos':    function(env) { return makeElement('pos', env.sign, env.e) },
   'PriExpr-neg':    function(env) { return makeElement('neg', env.sign, env.e) },
-  ident:            function()    { var text = this.interval.contents()
+  ident:            function()    { var text = this.interval.contents
                                     return makeElement('ident', text === 'pi' ? '\u03C0' : text) },
-  number:           function()    { return makeElement('number', this.interval.contents()) }
+  number:           function()    { return makeElement('number', this.interval.contents) }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

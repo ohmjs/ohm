@@ -294,18 +294,16 @@ function Interval(source, startIdx, endIdx) {
   this.endIdx = endIdx
 }
 
-Interval.prototype = {
-  contents: function() {
-    return InputStream.newFor(this.source).interval(this.startIdx, this.endIdx)
-  },
-
-  onlyElement: function() {
-    if (this.startIdx + 1 !== this.endIdx)
-      browser.error('interval', this, 'was expected to contain only one element')
-    else
-      return this.source[this.startIdx]
+Object.defineProperties(Interval.prototype, {
+  'contents': {
+    get: function() {
+      if (this._contents === undefined)
+        this._contents = InputStream.newFor(this.source).interval(this.startIdx, this.endIdx)
+      return this._contents
+    },
+    enumerable: true
   }
-}
+})
 
 // --------------------------------------------------------------------
 // Thunks
@@ -1490,7 +1488,7 @@ function makeGrammarActionDict(optNamespace) {
     'space-multiLine':          function() {},
     'space-singleLine':         function() {},
 
-    _name:                      function() { return this.interval.contents() },
+    _name:                      function() { return this.interval.contents },
     nameFirst:                  function(env) {},
     nameRest:                   function(env) {},
 
@@ -1505,10 +1503,10 @@ function makeGrammarActionDict(optNamespace) {
     string:                     function(env) {
                                   return env.cs.map(function(c) { return stringUtils.unescapeChar(c) }).join('')
                                 },
-    sChar:                      function() { return this.interval.contents() },
+    sChar:                      function() { return this.interval.contents },
     regexp:                     function(env) { return new RegExp(env.e) },
-    reCharClass:                function() { return this.interval.contents() },
-    number:                     function() { return parseInt(this.interval.contents()) },
+    reCharClass:                function() { return this.interval.contents },
+    number:                     function() { return parseInt(this.interval.contents) },
 
     Alt:                        function(env) { return env.value },
     'Alt-rec':                  function(env) { return builder.alt(env.x, env.y) },
