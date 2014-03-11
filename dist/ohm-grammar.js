@@ -1,4 +1,4 @@
-var ohm = require('../src/ohm.js')
+var ohm = require('../src/main.js')
 ohm._ohmGrammarFactory =
 (function(ohm, optNamespace) {
   var b = ohm._builder()

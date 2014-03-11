@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
-var ohm = require('./ohm.js')
+var ohm = require('./main.js')
 var fs = require('fs')
+
 var grammars = []
 process.argv.slice(2).forEach(function(filename) {
   var source

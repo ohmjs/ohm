@@ -1,6 +1,6 @@
 var expect = require('expect.js')
 var fs = require('fs')
-var ohm = require('../src/ohm.js')
+var ohm = require('../src/main.js')
 
 function makeGrammar(source, optNamespaceName) {
   if (source instanceof Array)
