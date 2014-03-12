@@ -8,8 +8,6 @@ var InputStream = require('./InputStream.js')
 
 var awlib = require('awlib')
 var objectThatDelegatesTo = awlib.objectUtils.objectThatDelegatesTo
-var printString = awlib.stringUtils.printString
-var equals = awlib.equals.equals
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -28,9 +26,7 @@ PExpr.prototype = {
 
   producesValue: function() {
     return true
-  },
-
-  outputRecipe: common.abstract
+  }
 }
 
 // Anything
@@ -44,10 +40,6 @@ var anything = objectThatDelegatesTo(PExpr.prototype, {
       return common.fail
     else
       return new thunks.ValueThunk(value)
-  },
-
-  outputRecipe: function(ws) {
-    // no-op
   }
 })
 
@@ -69,12 +61,6 @@ Prim.prototype = objectThatDelegatesTo(PExpr.prototype, {
 
   match: function(inputStream) {
     return inputStream.matchExactly(this.obj)
-  },
-
-  outputRecipe: function(ws) {
-    ws.nextPutAll('b._(')
-    ws.nextPutAll(printString(this.obj))
-    ws.nextPutAll(')')
   }
 })
 
@@ -142,16 +128,6 @@ Alt.prototype = objectThatDelegatesTo(PExpr.prototype, {
       if (!this.terms[idx].producesValue())
         return false
     return true
-  },
-
-  outputRecipe: function(ws) {
-    ws.nextPutAll('b.alt(')
-    for (var idx = 0; idx < this.terms.length; idx++) {
-      if (idx > 0)
-        ws.nextPutAll(', ')
-      this.terms[idx].outputRecipe(ws)
-    }
-    ws.nextPutAll(')')
   }
 })
 
@@ -183,16 +159,6 @@ Seq.prototype = objectThatDelegatesTo(PExpr.prototype, {
 
   producesValue: function() {
     return false
-  },
-
-  outputRecipe: function(ws) {
-    ws.nextPutAll('b.seq(')
-    for (var idx = 0; idx < this.factors.length; idx++) {
-      if (idx > 0)
-        ws.nextPutAll(', ')
-      this.factors[idx].outputRecipe(ws)
-    }
-    ws.nextPutAll(')')
   }
 })
 
@@ -213,14 +179,6 @@ Bind.prototype = objectThatDelegatesTo(PExpr.prototype, {
 
   getBindingNames: function() {
     return [this.name]
-  },
-
-  outputRecipe: function(ws) {
-    ws.nextPutAll('b.bind(')
-    this.expr.outputRecipe(ws)
-    ws.nextPutAll(', ')
-    ws.nextPutAll(printString(this.name))
-    ws.nextPutAll(')')
   }
 })
 
@@ -244,14 +202,6 @@ Many.prototype = objectThatDelegatesTo(PExpr.prototype, {
         matches.push(value)
     }
     return matches.length < this.minNumMatches ?  common.fail : new thunks.ListThunk(matches)
-  },
-
-  outputRecipe: function(ws) {
-    ws.nextPutAll('b.many(')
-    this.expr.outputRecipe(ws)
-    ws.nextPutAll(', ')
-    ws.nextPutAll(this.minNumMatches)
-    ws.nextPutAll(')')
   }
 })
 
@@ -268,12 +218,6 @@ Opt.prototype = objectThatDelegatesTo(PExpr.prototype, {
       return thunks.valuelessThunk
     } else
       return new thunks.ListThunk([value])
-  },
-
-  outputRecipe: function(ws) {
-    ws.nextPutAll('b.opt(')
-    this.expr.outputRecipe(ws)
-    ws.nextPutAll(')')
   }
 })
 
@@ -297,12 +241,6 @@ Not.prototype = objectThatDelegatesTo(PExpr.prototype, {
 
   producesValue: function() {
     return false
-  },
-
-  outputRecipe: function(ws) {
-    ws.nextPutAll('b.not(')
-    this.expr.outputRecipe(ws)
-    ws.nextPutAll(')')
   }
 })
 
@@ -323,12 +261,6 @@ Lookahead.prototype = objectThatDelegatesTo(PExpr.prototype, {
 
   getBindingNames: function() {
     return this.expr.getBindingNames()
-  },
-
-  outputRecipe: function(ws) {
-    ws.nextPutAll('b.la(')
-    this.expr.outputRecipe(ws)
-    ws.nextPutAll(')')
   }
 })
 
@@ -353,12 +285,6 @@ Str.prototype = objectThatDelegatesTo(PExpr.prototype, {
 
   getBindingNames: function() {
     return this.expr.getBindingNames()
-  },
-
-  outputRecipe: function(ws) {
-    ws.nextPutAll('b.str(')
-    this.expr.outputRecipe(ws)
-    ws.nextPutAll(')')
   }
 })
 
@@ -383,12 +309,6 @@ List.prototype = objectThatDelegatesTo(PExpr.prototype, {
 
   getBindingNames: function() {
     return this.expr.getBindingNames()
-  },
-
-  outputRecipe: function(ws) {
-    ws.nextPutAll('b.lst(')
-    this.expr.outputRecipe(ws)
-    ws.nextPutAll(')')
   }
 })
 
@@ -435,26 +355,6 @@ Obj.prototype = objectThatDelegatesTo(PExpr.prototype, {
     for (var idx = 0; idx < this.properties.length; idx++)
       names = names.concat(this.properties[idx].pattern.getBindingNames())
     return names.sort()
-  },
-
-  outputRecipe: function(ws) {
-    function outputPropertyRecipe(prop) {
-      ws.nextPutAll('{name: ')
-      ws.nextPutAll(printString(prop.name))
-      ws.nextPutAll(', pattern: ')
-      prop.pattern.outputRecipe(ws)
-      ws.nextPutAll('}')
-    }
-
-    ws.nextPutAll('b.obj([')
-    for (var idx = 0; idx < this.properties.length; idx++) {
-      if (idx > 0)
-        ws.nextPutAll(', ')
-      outputPropertyRecipe(this.properties[idx])
-    }
-    ws.nextPutAll('], ')
-    ws.nextPutAll(printString(!!this.isLenient))
-    ws.nextPutAll(')')
   }
 })
 
@@ -532,12 +432,6 @@ Apply.prototype = objectThatDelegatesTo(PExpr.prototype, {
       }
     }
     return value
-  },
-
-  outputRecipe: function(ws) {
-    ws.nextPutAll('b.app(')
-    ws.nextPutAll(printString(this.ruleName))
-    ws.nextPutAll(')')
   }
 })
 
@@ -567,10 +461,6 @@ Expand.prototype = objectThatDelegatesTo(PExpr.prototype, {
 
   producesValue: function() {
     return this.expansion().producesValue()
-  },
-
-  outputRecipe: function(ws) {
-    // no-op
   }
 })
 
@@ -610,4 +500,5 @@ exports.Expand = Expand
 // --------------------------------------------------------------------
 
 require('./pexprs-checks.js')
+require('./pexprs-outputRecipe.js')
 
