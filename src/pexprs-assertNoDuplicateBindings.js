@@ -5,9 +5,6 @@
 var common = require('./common.js')
 var pexprs = require('./pexprs.js')
 
-var awlib = require('awlib')
-var equals = awlib.equals.equals
-
 // --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
