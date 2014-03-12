@@ -30,9 +30,6 @@ PExpr.prototype = {
     return true
   },
 
-  assertNoDuplicateBindings: common.abstract,
-  assertChoicesHaveUniformBindings: common.abstract,
-
   outputRecipe: common.abstract
 }
 
@@ -48,9 +45,6 @@ var anything = objectThatDelegatesTo(PExpr.prototype, {
     else
       return new thunks.ValueThunk(value)
   },
-
-  assertNoDuplicateBindings: function(ruleName) {},
-  assertChoicesHaveUniformBindings: function(ruleName) {},
 
   outputRecipe: function(ws) {
     // no-op
@@ -76,9 +70,6 @@ Prim.prototype = objectThatDelegatesTo(PExpr.prototype, {
   match: function(inputStream) {
     return inputStream.matchExactly(this.obj)
   },
-
-  assertNoDuplicateBindings: function(ruleName) {},
-  assertChoicesHaveUniformBindings: function(ruleName) {},
 
   outputRecipe: function(ws) {
     ws.nextPutAll('b._(')
@@ -153,24 +144,6 @@ Alt.prototype = objectThatDelegatesTo(PExpr.prototype, {
     return true
   },
 
-  assertNoDuplicateBindings: function(ruleName) {
-    for (var idx = 0; idx < this.terms.length; idx++)
-      this.terms[idx].assertNoDuplicateBindings(ruleName)
-  },
-
-  assertChoicesHaveUniformBindings: function(ruleName) {
-    if (this.terms.length === 0)
-      return
-    var names = this.terms[0].getBindingNames()
-    for (var idx = 0; idx < this.terms.length; idx++) {
-      var term = this.terms[idx]
-      term.assertChoicesHaveUniformBindings()
-      var otherNames = term.getBindingNames()
-      if (!equals(names, otherNames))
-        browser.error('rule', ruleName, 'has an alt with inconsistent bindings:', names, 'vs', otherNames)
-    }
-  },
-
   outputRecipe: function(ws) {
     ws.nextPutAll('b.alt(')
     for (var idx = 0; idx < this.terms.length; idx++) {
@@ -212,20 +185,6 @@ Seq.prototype = objectThatDelegatesTo(PExpr.prototype, {
     return false
   },
 
-  assertNoDuplicateBindings: function(ruleName) {
-    for (var idx = 0; idx < this.factors.length; idx++)
-      this.factors[idx].assertNoDuplicateBindings(ruleName)
-
-    var duplicates = common.getDuplicates(this.getBindingNames())
-    if (duplicates.length > 0)
-      browser.error('rule', ruleName, 'has duplicate bindings:', duplicates)
-  },
-
-  assertChoicesHaveUniformBindings: function(ruleName) {
-    for (var idx = 0; idx < this.factors.length; idx++)
-      this.factors[idx].assertChoicesHaveUniformBindings(ruleName)
-  },
-
   outputRecipe: function(ws) {
     ws.nextPutAll('b.seq(')
     for (var idx = 0; idx < this.factors.length; idx++) {
@@ -254,14 +213,6 @@ Bind.prototype = objectThatDelegatesTo(PExpr.prototype, {
 
   getBindingNames: function() {
     return [this.name]
-  },
-
-  assertNoDuplicateBindings: function(ruleName) {
-    this.expr.assertNoDuplicateBindings(ruleName)
-  },
-
-  assertChoicesHaveUniformBindings: function(ruleName) {
-    return this.expr.assertChoicesHaveUniformBindings(ruleName)
   },
 
   outputRecipe: function(ws) {
@@ -295,14 +246,6 @@ Many.prototype = objectThatDelegatesTo(PExpr.prototype, {
     return matches.length < this.minNumMatches ?  common.fail : new thunks.ListThunk(matches)
   },
 
-  assertNoDuplicateBindings: function(ruleName) {
-    this.expr.assertNoDuplicateBindings(ruleName)
-  },
-
-  assertChoicesHaveUniformBindings: function(ruleName) {
-    return this.expr.assertChoicesHaveUniformBindings(ruleName)
-  },
-
   outputRecipe: function(ws) {
     ws.nextPutAll('b.many(')
     this.expr.outputRecipe(ws)
@@ -325,14 +268,6 @@ Opt.prototype = objectThatDelegatesTo(PExpr.prototype, {
       return thunks.valuelessThunk
     } else
       return new thunks.ListThunk([value])
-  },
-
-  assertNoDuplicateBindings: function(ruleName) {
-    this.expr.assertNoDuplicateBindings(ruleName)
-  },
-
-  assertChoicesHaveUniformBindings: function(ruleName) {
-    return this.expr.assertChoicesHaveUniformBindings(ruleName)
   },
 
   outputRecipe: function(ws) {
@@ -364,14 +299,6 @@ Not.prototype = objectThatDelegatesTo(PExpr.prototype, {
     return false
   },
 
-  assertNoDuplicateBindings: function(ruleName) {
-    this.expr.assertNoDuplicateBindings(ruleName)
-  },
-
-  assertChoicesHaveUniformBindings: function(ruleName) {
-    return this.expr.assertChoicesHaveUniformBindings(ruleName)
-  },
-
   outputRecipe: function(ws) {
     ws.nextPutAll('b.not(')
     this.expr.outputRecipe(ws)
@@ -396,14 +323,6 @@ Lookahead.prototype = objectThatDelegatesTo(PExpr.prototype, {
 
   getBindingNames: function() {
     return this.expr.getBindingNames()
-  },
-
-  assertNoDuplicateBindings: function(ruleName) {
-    this.expr.assertNoDuplicateBindings(ruleName)
-  },
-
-  assertChoicesHaveUniformBindings: function(ruleName) {
-    return this.expr.assertChoicesHaveUniformBindings(ruleName)
   },
 
   outputRecipe: function(ws) {
@@ -436,14 +355,6 @@ Str.prototype = objectThatDelegatesTo(PExpr.prototype, {
     return this.expr.getBindingNames()
   },
 
-  assertNoDuplicateBindings: function(ruleName) {
-    this.expr.assertNoDuplicateBindings(ruleName)
-  },
-
-  assertChoicesHaveUniformBindings: function(ruleName) {
-    return this.expr.assertChoicesHaveUniformBindings(ruleName)
-  },
-
   outputRecipe: function(ws) {
     ws.nextPutAll('b.str(')
     this.expr.outputRecipe(ws)
@@ -472,14 +383,6 @@ List.prototype = objectThatDelegatesTo(PExpr.prototype, {
 
   getBindingNames: function() {
     return this.expr.getBindingNames()
-  },
-
-  assertNoDuplicateBindings: function(ruleName) {
-    this.expr.assertNoDuplicateBindings(ruleName)
-  },
-
-  assertChoicesHaveUniformBindings: function(ruleName) {
-    return this.expr.assertChoicesHaveUniformBindings(ruleName)
   },
 
   outputRecipe: function(ws) {
@@ -532,20 +435,6 @@ Obj.prototype = objectThatDelegatesTo(PExpr.prototype, {
     for (var idx = 0; idx < this.properties.length; idx++)
       names = names.concat(this.properties[idx].pattern.getBindingNames())
     return names.sort()
-  },
-
-  assertNoDuplicateBindings: function(ruleName) {
-    for (var idx = 0; idx < this.properties.length; idx++)
-      this.properties[idx].pattern.assertNoDuplicateBindings(ruleName)
-
-    var duplicates = common.getDuplicates(this.getBindingNames())
-    if (duplicates.length > 0)
-      browser.error('rule', ruleName, 'has an object pattern with duplicate bindings:', duplicates)
-  },
-
-  assertChoicesHaveUniformBindings: function(ruleName) {
-    for (var idx = 0; idx < this.properties.length; idx++)
-      this.properties[idx].pattern.assertChoicesHaveUniformBindings(ruleName)
   },
 
   outputRecipe: function(ws) {
@@ -645,9 +534,6 @@ Apply.prototype = objectThatDelegatesTo(PExpr.prototype, {
     return value
   },
 
-  assertNoDuplicateBindings: function(ruleName) {},
-  assertChoicesHaveUniformBindings: function(ruleName) {},
-
   outputRecipe: function(ws) {
     ws.nextPutAll('b.app(')
     ws.nextPutAll(printString(this.ruleName))
@@ -681,14 +567,6 @@ Expand.prototype = objectThatDelegatesTo(PExpr.prototype, {
 
   producesValue: function() {
     return this.expansion().producesValue()
-  },
-
-  assertNoDuplicateBindings: function(ruleName) {
-    this.expansion().assertNoDuplicateBindings(ruleName)
-  },
-
-  assertChoicesHaveUniformBindings: function(ruleName) {
-    this.expansion().assertChoicesHaveUniformBindings(ruleName)
   },
 
   outputRecipe: function(ws) {
@@ -726,4 +604,10 @@ exports.List = List
 exports.Obj = Obj
 exports.Apply = Apply
 exports.Expand = Expand
+
+// --------------------------------------------------------------------
+// Extensions
+// --------------------------------------------------------------------
+
+require('./pexprs-checks.js')
 
