@@ -499,6 +499,7 @@ exports.Expand = Expand
 // Extensions
 // --------------------------------------------------------------------
 
-require('./pexprs-checks.js')
+require('./pexprs-assertNoDuplicateBindings.js')
+require('./pexprs-assertChoicesHaveUniformBindings.js')
 require('./pexprs-outputRecipe.js')
 
