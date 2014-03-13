@@ -400,7 +400,7 @@ describe("Ohm", function() {
       describe("without bindings", function() {
         var m;
         beforeEach(function() {
-          m = makeGrammar("M { start == ('a' 'bc' 'z')? }");
+          m = makeGrammar("M { start == 'a' 'bc' 'z' }");
         });
   
         it("recognition", function() {
@@ -413,15 +413,15 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var f = m.matchContents('abcz', 'start');
           expect(f({
-            start: function(env) { return env.value; }
-          })).to.eql([undefined]);
+            start: function() {}
+          })).to.eql(undefined);
         });
       });
 
       describe("with exactly one binding", function() {
         var m;
         beforeEach(function() {
-          m = makeGrammar("M { start == ('a'.x 'bc' 'z')? }");
+          m = makeGrammar("M { start == 'a'.x 'bc' 'z' }");
         });
   
         it("recognition", function() {
@@ -434,15 +434,15 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var f = m.matchContents('abcz', 'start');
           expect(f({
-            start: function(env) { return env.value; },
-          })).to.eql([undefined]);
+            start: function(env) { return env.x; },
+          })).to.eql('a');
         });
       });
 
       describe("with more than one binding", function() {
         var m;
         beforeEach(function() {
-          m = makeGrammar("M { start == ('a'.x 'bc' 'z'.y)? }");
+          m = makeGrammar("M { start == 'a'.x 'bc' 'z'.y }");
         });
   
         it("recognition", function() {
@@ -455,8 +455,8 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var f = m.matchContents('abcz', 'start');
           expect(f({
-            start: function(env) { return env.value; }
-          })).to.eql([undefined]);
+            start: function(env) { return [env.x, env.y]; }
+          })).to.eql(['a', 'z']);
         });
       });
 
@@ -533,6 +533,13 @@ describe("Ohm", function() {
         expect(f(a)).to.eql(['id', 0, 'sss', t, t]);
         expect(a._getNextId()).to.equal(5);
       });
+
+      it("useless bindings are detected", function() {
+        console.log('\nNote: the following error message is actually supposed to be there');
+        expect(function() {
+          makeGrammar("M { foo == (bar.x)* }");
+        }).to.throwException();
+      });
     });
 
     describe("opt", function() {
@@ -556,6 +563,13 @@ describe("Ohm", function() {
         expect(m.matchContents('drwarth', 'name')(actionDict)).to.eql([['dr'], 'warth']);
         expect(m.matchContents('warth', 'name')(actionDict)).to.eql([undefined, 'warth']);
       });
+
+      it("useless bindings are detected", function() {
+        console.log('\nNote: the following error message is actually supposed to be there');
+        expect(function() {
+          makeGrammar("M { foo == (bar.x)? }");
+        }).to.throwException();
+      });
     });
 
     describe("not", function() {
@@ -577,6 +591,13 @@ describe("Ohm", function() {
         expect(m.matchContents('yello world', 'start')({
           start: function(env) { return env.x; }
         })).to.equal(undefined);
+      });
+
+      it("useless bindings are detected", function() {
+        console.log('\nNote: the following error message is actually supposed to be there');
+        expect(function() {
+          makeGrammar("M { foo == ~(bar.x) }");
+        }).to.throwException();
       });
     });
 

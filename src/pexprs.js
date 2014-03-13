@@ -189,6 +189,7 @@ exports.Expand = Expand;
 // --------------------------------------------------------------------
 
 require('./pexprs-assertNoDuplicateBindings.js');
+require('./pexprs-assertNoUselessBindings.js');
 require('./pexprs-assertChoicesHaveUniformBindings.js');
 require('./pexprs-getBindingNames.js');
 require('./pexprs-eval.js');

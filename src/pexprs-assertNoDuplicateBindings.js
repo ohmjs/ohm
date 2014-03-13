@@ -5,6 +5,9 @@
 var common = require('./common.js');
 var pexprs = require('./pexprs.js');
 
+var awlib = require('awlib');
+var browser = awlib.browser;
+
 // --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------

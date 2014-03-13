@@ -7,6 +7,7 @@ var InputStream = require('./InputStream.js');
 var pexprs = require('./pexprs.js');
 
 var awlib = require('awlib');
+var browser = awlib.browser;
 var keysDo = awlib.objectUtils.keysDo;
 var formals = awlib.objectUtils.formals;
 var makeStringBuffer = awlib.objectUtils.stringBuffer;

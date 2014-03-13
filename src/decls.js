@@ -22,6 +22,7 @@ RuleDecl.prototype = {
 
   performCommonChecks: function(name, body) {
     body.assertNoDuplicateBindings(name);
+    body.assertNoUselessBindings(name);
     body.assertChoicesHaveUniformBindings(name);
   },
 
