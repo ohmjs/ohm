@@ -16,7 +16,7 @@ ohm._ohmGrammarFactory =
   b.inline('namedConst_false', b.seq(b._('false'), b.not(b.app('nameRest'))));
   b.define('namedConst', b.alt(b.app('namedConst_undefined'), b.app('namedConst_null'), b.app('namedConst_true'), b.app('namedConst_false')));
   b.define('string', b.seq(b._("'"), b.bind(b.many(b.app('sChar'), 0), 'cs'), b._("'")));
-  b.define('sChar', b.alt(b.seq(b._('\\x'), b.app('hexDigit'), b.app('hexDigit')), b.seq(b._('\\u'), b.app('hexDigit'), b.app('hexDigit'), b.app('hexDigit'), b.app('hexDigit')), b.seq(b._('\\'), b.app('_')), b.seq(b.not(b._("'")), b.app('_'))));
+  b.define('sChar', b.alt(b.seq(b._('\\x'), b.app('hexDigit'), b.app('hexDigit')), b.seq(b._('\\u'), b.app('hexDigit'), b.app('hexDigit'), b.app('hexDigit'), b.app('hexDigit')), b.seq(b._('\\'), b.app('_')), b.seq(b.not(b._("'")), b.not(b._('\n')), b.app('_'))));
   b.define('regexp', b.seq(b._('/'), b.bind(b.app('reCharClass'), 'e'), b._('/')));
   b.define('reCharClass', b.seq(b._('['), b.many(b.alt(b._('\\]'), b.seq(b.not(b._(']')), b.app('_'))), 0), b._(']')));
   b.define('number', b.seq(b.opt(b._('-')), b.many(b.app('digit'), 1)));

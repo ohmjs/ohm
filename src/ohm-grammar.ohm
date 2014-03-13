@@ -17,7 +17,7 @@ Ohm {
   sChar        == '\\x' hexDigit hexDigit
                 | '\\u' hexDigit hexDigit hexDigit hexDigit
                 | '\\' _
-                | ~'\'' _
+                | ~'\'' ~'\n' _
 
   regexp       == '/' reCharClass.e '/'
   reCharClass  == '[' ('\\]' | ~']' _)* ']'
