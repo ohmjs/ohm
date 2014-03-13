@@ -675,8 +675,8 @@ describe("Ohm", function() {
       beforeEach(function() {
         m = makeGrammar([
           'M {',
-            '  strict  == {x: 1.a, y: 2.b}',
-            '  lenient == {x: 1.a, y: 2.b, ...}',
+          '  strict  == {x: 1.a, y: 2.b}',
+          '  lenient == {x: 1.a, y: 2.b, ...}',
           '}']);
       });
 
