@@ -5,6 +5,7 @@
 var Interval = require('./Interval.js');
 
 var awlib = require('awlib');
+var browser = awlib.browser
 var objectThatDelegatesTo = awlib.objectUtils.objectThatDelegatesTo;
 
 // --------------------------------------------------------------------

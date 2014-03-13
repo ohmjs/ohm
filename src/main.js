@@ -124,84 +124,84 @@ function makeGrammarActionDict(optNamespace) {
   var builder;
   return {
     space:                      function(env) {},
-    'space-multiLine':          function() {},
-    'space-singleLine':         function() {},
+    space_multiLine:            function()    {},
+    space_singleLine:           function()    {},
 
-    _name:                      function() { return this.interval.contents; },
+    _name:                      function()    { return this.interval.contents; },
     nameFirst:                  function(env) {},
     nameRest:                   function(env) {},
 
     name:                       function(env) { return env.n; },
 
     namedConst:                 function(env) { return env.value; },
-    'namedConst-undefined':     function() { return undefined; },
-    'namedConst-null':          function() { return null; },
-    'namedConst-true':          function() { return true; },
-    'namedConst-false':         function() { return false; },
+    namedConst_undefined:       function()    { return undefined; },
+    namedConst_null:            function()    { return null; },
+    namedConst_true:            function()    { return true; },
+    namedConst_false:           function()    { return false; },
 
     string:                     function(env) {
                                   return env.cs.map(function(c) { return unescapeChar(c); }).join('');
                                 },
-    sChar:                      function() { return this.interval.contents; },
+    sChar:                      function()    { return this.interval.contents; },
     regexp:                     function(env) { return new RegExp(env.e); },
-    reCharClass:                function() { return this.interval.contents; },
-    number:                     function() { return parseInt(this.interval.contents); },
+    reCharClass:                function()    { return this.interval.contents; },
+    number:                     function()    { return parseInt(this.interval.contents); },
 
     Alt:                        function(env) { return env.value; },
-    'Alt-rec':                  function(env) { return builder.alt(env.x, env.y); },
+    Alt_rec:                    function(env) { return builder.alt(env.x, env.y); },
 
     Term:                       function(env) { return env.value; },
-    'Term-inline':              function(env) { return builder.inline(builder.currentRuleName + '-' + env.n, env.x); },
+    Term_inline:                function(env) { return builder.inline(builder.currentRuleName + '_' + env.n, env.x); },
 
     Seq:                        function(env) { return builder.seq.apply(builder, env.value); },
 
     Factor:                     function(env) { return env.value; },
-    'Factor-bind':              function(env) { return builder.bind(env.x, env.n); },
+    Factor_bind:                function(env) { return builder.bind(env.x, env.n); },
 
     Iter:                       function(env) { return env.value; },
-    'Iter-star':                function(env) { return builder.many(env.x, 0); },
-    'Iter-plus':                function(env) { return builder.many(env.x, 1); },
-    'Iter-opt':                 function(env) { return builder.opt(env.x); },
+    Iter_star:                  function(env) { return builder.many(env.x, 0); },
+    Iter_plus:                  function(env) { return builder.many(env.x, 1); },
+    Iter_opt:                   function(env) { return builder.opt(env.x); },
 
     Pred:                       function(env) { return env.value; },
-    'Pred-not':                 function(env) { return builder.not(env.x); },
-    'Pred-lookahead':           function(env) { return builder.la(env.x); },
+    Pred_not:                   function(env) { return builder.not(env.x); },
+    Pred_lookahead:             function(env) { return builder.la(env.x); },
 
     Base:                       function(env) { return env.value; },
-    'Base-undefined':           function() { return builder._(undefined); },
-    'Base-null':                function() { return builder._(null); },
-    'Base-true':                function() { return builder._(true); },
-    'Base-false':               function() { return builder._(false); },
-    'Base-application':         function(env) { return builder.app(env.ruleName); },
-    'Base-prim':                function(env) { return builder._(env.value); },
-    'Base-lst':                 function(env) { return builder.lst(env.x); },
-    'Base-str':                 function(env) { return builder.str(env.x); },
-    'Base-paren':               function(env) { return env.x; },
-    'Base-obj':                 function(env) { return builder.obj([], env.lenient); },
-    'Base-objWithProps':        function(env) { return builder.obj(env.ps, env.lenient); },
+    Base_undefined:             function()    { return builder._(undefined); },
+    Base_null:                  function()    { return builder._(null); },
+    Base_true:                  function()    { return builder._(true); },
+    Base_false:                 function()    { return builder._(false); },
+    Base_application:           function(env) { return builder.app(env.ruleName); },
+    Base_prim:                  function(env) { return builder._(env.value); },
+    Base_lst:                   function(env) { return builder.lst(env.x); },
+    Base_str:                   function(env) { return builder.str(env.x); },
+    Base_paren:                 function(env) { return env.x; },
+    Base_obj:                   function(env) { return builder.obj([], env.lenient); },
+    Base_objWithProps:          function(env) { return builder.obj(env.ps, env.lenient); },
 
     Props:                      function(env) { return env.value; },
-    'Props-base':               function(env) { return [env.p]; },
-    'Props-rec':                function(env) { return [env.p].concat(env.ps); },
+    Props_base:                 function(env) { return [env.p]; },
+    Props_rec:                  function(env) { return [env.p].concat(env.ps); },
     Prop:                       function(env) { return {name: env.n, pattern: env.p}; },
 
     Rule:                       function(env) { return env.value; },
-    'Rule-define':              function(env) {
+    Rule_define:                function(env) {
                                   builder.currentRuleName = env.n;
                                   return builder.define(env.n, env.b);
                                 },
-    'Rule-override':            function(env) {
+    Rule_override:              function(env) {
                                   builder.currentRuleName = env.n;
                                   return builder.override(env.n, env.b);
                                 },
-    'Rule-extend':              function(env) {
+    Rule_extend:                function(env) {
                                   builder.currentRuleName = env.n;
                                   return builder.extend(env.n, env.b);
                                 },
 
     SuperGrammar:               function(env) { builder.setSuperGrammar(env.value); },
-    'SuperGrammar-qualified':   function(env) { return thisModule.namespace(env.ns).getGrammar(env.n); },
-    'SuperGrammar-unqualified': function(env) { return optNamespace.getGrammar(env.n); },
+    SuperGrammar_qualified:     function(env) { return thisModule.namespace(env.ns).getGrammar(env.n); },
+    SuperGrammar_unqualified:   function(env) { return optNamespace.getGrammar(env.n); },
 
     Grammar:                    function(env) {
                                   builder = new Builder();

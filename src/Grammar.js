@@ -137,13 +137,7 @@ Grammar.prototype = {
   },
 
   addSemanticActionTemplate: function(ruleName, body, buffer) {
-    if (ruleName.indexOf('-') >= 0) {
-      buffer.nextPutAll("'");
-      buffer.nextPutAll(ruleName);
-      buffer.nextPutAll("'");
-    } else {
-      buffer.nextPutAll(ruleName);
-    }
+    buffer.nextPutAll(ruleName);
     buffer.nextPutAll(': ');
     buffer.newColumn();
     buffer.nextPutAll('function(');
