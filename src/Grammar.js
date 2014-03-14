@@ -38,23 +38,32 @@ Grammar.prototype = {
     hexDigit: pexprs.makePrim(/[0-9a-fA-F]/)
   },
 
-  match: function(obj, startRule) {
-    return this.matchContents([obj], startRule);
+  match: function(obj, startRule, optThrowOnFail) {
+    return this.matchContents([obj], startRule, optThrowOnFail);
   },
 
-  matchContents: function(obj, startRule) {
+  matchContents: function(obj, startRule, optThrowOnFail) {
     var inputStream = InputStream.newFor(obj);
     var thunk = new pexprs.Apply(startRule).eval(undefined, this.ruleDict, inputStream, undefined);
     if (common.isSyntactic(startRule)) {
       skipSpaces(this.ruleDict, inputStream);
     }
     var assertSemanticActionNamesMatch = this.assertSemanticActionNamesMatch.bind(this);
-    return thunk === common.fail || !inputStream.atEnd() ?
-      false :
-      function(actionDict) {
+    if (thunk === common.fail || !inputStream.atEnd()) {
+      if (optThrowOnFail) {
+        throw {
+          toString: function() { return 'match failed'; },
+          pos: inputStream.getMaxPosSeen()
+        };
+      } else {
+        return false;
+      }
+    } else {
+      return function(actionDict) {
         assertSemanticActionNamesMatch(actionDict);
         return thunk.force(actionDict, {});
-      }
+      };
+    }
   },
 
   assertSemanticActionNamesMatch: function(actionDict) {
@@ -170,8 +179,9 @@ Grammar.prototype = {
     buffer.nextPutAll('{');
 
     var envProperties = body.getBindingNames();
-    if (envProperties.length === 0 && body.producesValue())
+    if (envProperties.length === 0 && body.producesValue()) {
       envProperties = ['value'];
+    }
     if (envProperties.length > 0) {
       buffer.nextPutAll(' /* ');
       buffer.nextPutAll(envProperties.join(', '));

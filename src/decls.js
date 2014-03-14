@@ -6,6 +6,7 @@ var common = require('./common.js');
 var pexprs = require('./pexprs.js');
 
 var awlib = require('awlib');
+var browser = awlib.browser;
 var objectThatDelegatesTo = awlib.objectUtils.objectThatDelegatesTo;
 var printString = awlib.stringUtils.printString;
 

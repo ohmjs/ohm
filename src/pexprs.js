@@ -5,6 +5,7 @@
 var common = require('./common.js');
 
 var awlib = require('awlib');
+var browser = awlib.browser;
 var objectThatDelegatesTo = awlib.objectUtils.objectThatDelegatesTo;
 
 // --------------------------------------------------------------------

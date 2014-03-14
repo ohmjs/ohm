@@ -30,6 +30,7 @@ InputStream.prototype = {
   init: function(source) {
     this.source = source;
     this.pos = 0;
+    this.maxPosSeen = -1;
     this.posInfos = [];
   },
 
@@ -44,7 +45,14 @@ InputStream.prototype = {
   },
 
   next: function() {
-    return this.atEnd() ? common.fail : this.source[this.pos++];
+    if (this.pos > this.maxPosSeen) {
+      this.maxPosSeen = this.pos;
+    }
+    if (this.atEnd()) {
+      return common.fail;
+    } else {
+      return this.source[this.pos++];
+    }
   },
 
   matchExactly: function(x) {
@@ -53,6 +61,10 @@ InputStream.prototype = {
 
   interval: function(startIdx, endIdx) {
     return this.source.slice(startIdx, endIdx);
+  },
+
+  getMaxPosSeen: function() {
+    return this.maxPosSeen;
   }
 };
 

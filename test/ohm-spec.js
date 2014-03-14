@@ -461,7 +461,7 @@ describe("Ohm", function() {
       });
 
       it("with duplicate binding", function() {
-        console.log('\nNote: the following error message is actually supposed to be there');
+        console.log('\nNote: the following duplicate-bindings error is ok');
         expect(function() {
           m = makeGrammar("M { start == ('a'.x 'bc' 'z'.x)? }");
         }).to.throwException();
@@ -535,7 +535,7 @@ describe("Ohm", function() {
       });
 
       it("useless bindings are detected", function() {
-        console.log('\nNote: the following error message is actually supposed to be there');
+        console.log('\nNote: the following useless-bindings error is ok');
         expect(function() {
           makeGrammar("M { foo == (bar.x)* }");
         }).to.throwException();
@@ -565,7 +565,7 @@ describe("Ohm", function() {
       });
 
       it("useless bindings are detected", function() {
-        console.log('\nNote: the following error message is actually supposed to be there');
+        console.log('\nNote: the following useless-bindings error is ok');
         expect(function() {
           makeGrammar("M { foo == (bar.x)? }");
         }).to.throwException();
@@ -594,7 +594,7 @@ describe("Ohm", function() {
       });
 
       it("useless bindings are detected", function() {
-        console.log('\nNote: the following error message is actually supposed to be there');
+        console.log('\nNote: the following useless-bindings error is ok');
         expect(function() {
           makeGrammar("M { foo == ~(bar.x) }");
         }).to.throwException();
@@ -719,7 +719,14 @@ describe("Ohm", function() {
       });
 
       it("duplicate property names are not allowed", function() {
-        console.log('\nNote: the following error message is actually supposed to be there');
+        console.log('\nNote: the following duplicate-property-names error is ok');
+        expect(function() {
+          m = ohm.makeGrammar("M { duh == {x: 1, x: 2, y: 3, ...} }");
+        }).to.throwException();
+      });
+
+      it("duplicate bindings are not allowed", function() {
+        console.log('\nNote: the following duplicate-bindings error is ok');
         expect(function() {
           m = ohm.makeGrammar("M { duh == {x: 1.a, y: 2.a, ...} }");
         }).to.throwException();
@@ -1029,7 +1036,7 @@ describe("Ohm", function() {
     describe("inheritance", function() {
       describe("define", function() {
         it("should check that rule does not already exist in super-grammar", function() {
-          console.log('\nNote: the following error message is actually supposed to be there')
+          console.log('\nNote: the following rule-already-exists-in-super-grammar error is ok');
           expect(function() {
             makeGrammars([
               "G1 { foo == 'foo' }",
@@ -1062,7 +1069,7 @@ describe("Ohm", function() {
         });
 
         it("should check that rule exists in super-grammar", function() {
-          console.log('\nNote: the following error message is actually supposed to be there');
+          console.log('\nNote: the following rule-does-not-exist-in-super-grammar error is ok');
           expect(function() {
             makeGrammar("G3 <: G1 { foo := 'foo' }", 'inheritance-override');
           }).to.throwException();
@@ -1071,7 +1078,7 @@ describe("Ohm", function() {
         it("should make sure the environment's bindings are preserved", function() {
           // If the rule being overridden has no bindings but its body produces a value, the overridding version must
           // also produce a value. This is to ensure the semantic action "API" doesn't change.
-          console.log('\nNote: the following error message is actually supposed to be there');
+          console.log('\nNote: the following rule-must-produce-a-value error is ok');
           expect(function() {
             makeGrammar("M1 { foo == 'foo' }", "inheritance-override");
             makeGrammar("M2 <: M1 { foo := bar baz }", "inheritance-override");
@@ -1129,23 +1136,23 @@ describe("Ohm", function() {
         });
 
         it("should check that rule exists in super-grammar", function() {
-          console.log('\nNote: the following error message is actually supposed to be there');
+          console.log('\nNote: the following rule-does-not-exist-in-super-grammar error is ok');
           expect(function() {
-            makeGrammar("G3 <: G1 { bar += 'bar' }", 'inheritance-extend');
+            makeGrammar("G3 <: G1 { bar += 'bar' }", 'inheritanceExtend');
           }).to.throwException();
         });
 
         it("should check that binding names are consistent", function() {
-          console.log('\nNote: the following error message is actually supposed to be there');
+          console.log('\nNote: the following inconsistent-bindings error is ok');
           expect(function() {
-            makeGrammar("G3 <: G1 { foo += '111'.x '222'.z }", 'inheritance-extend');
+            makeGrammar("G3 <: G1 { foo += '111'.x '222'.z }", 'inheritanceExtend');
           }).to.throwException();
         });
 
         it("should make sure the environment's bindings are preserved", function() {
           // If the rule being extended has no bindings but its body produces a value, the overridding version must
           // also produce a value. This is to ensure the semantic action "API" doesn't change.
-          console.log('\nNote: the following error message is actually supposed to be there');
+          console.log('\nNote: the following rule-must-produce-a-value error is ok');
           expect(function() {
             makeGrammar("M1 { foo == 'foo' }", "inheritanceExtend3");
             makeGrammar("M2 <: M1 { foo += bar baz }", "inheritanceExtend3");
@@ -1188,7 +1195,7 @@ describe("Ohm", function() {
       });
 
       it("inconsistent bindings in alts are errors", function() {
-        console.log('\nNote: the following error message is actually supposed to be there');
+        console.log('\nNote: the following inconsistent-bindings error is ok');
         expect(function() {
           makeGrammar("G { foo == 'a'.x | 'b'.y }");
         }).to.throwException();
@@ -1256,12 +1263,12 @@ describe("Ohm", function() {
       it("can't be overridden/replaced", function() {
         ohm.namespace('inlineRuleTest1').install('M', m);
 
-        console.log('\nNote: the following error message is actually supposed to be there');
+        console.log('\nNote: the following cannot-define-existing-rule error is ok');
         expect(function() {
           makeGrammar("N <: M { addExpr := addExpr.x '~' mulExpr.y {minus} }", 'inlineRuleTest1');
         }).to.throwException();
 
-        console.log('\nNote: the following error message is actually supposed to be there');
+        console.log('\nNote: the following cannot-define-existing-rule error is ok');
         expect(function() {
           makeGrammar("N <: M { addExpr += addExpr.x '~' mulExpr.y {minus} }", 'inlineRuleTest1');
         }).to.throwException();
@@ -1312,7 +1319,7 @@ describe("Ohm", function() {
         });
 
         it("detects duplicates", function() {
-          console.log('\nNote: the following error message is actually supposed to be there');
+          console.log('\nNote: the following duplicate-grammar-in-namespace error is ok');
           expect(function() {
             ohm.makeGrammar("ccc { foo == 'foo' }", ns1);
             ohm.makeGrammar("ccc { bar == 'bar' }", ns1);
@@ -1349,12 +1356,8 @@ describe("Ohm", function() {
           var ns = ohm.namespace('aaa1');
           ns.loadGrammarsFromScriptElement(scriptTag);
           expect(function() {
-            console.log('\nNote: the following error message is actually supposed to be there');
+            console.log('\nNote: the following grammar-does-not-exist error is ok');
             ns.getGrammar('M');
-          }).to.throwException();
-          expect(function() {
-            console.log('\nNote: the following error message is actually supposed to be there');
-            ns.getGrammar('N');
           }).to.throwException();
           expect(ns.getGrammar('O')).to.be.ok();
           expect(ns.getGrammar('O').matchContents('1234', 'number')).to.be.ok();
@@ -1370,6 +1373,28 @@ describe("Ohm", function() {
             number_rec: function(env) { return env.n * 10 + env.d; },
             digit:      function(env) { return env.value.charCodeAt(0) - '0'.charCodeAt(0); }
           })).to.equal(1234);
+        });
+      });
+    });
+
+    describe("throw on fail", function() {
+      it("match", function() {
+        var g = makeGrammar('G { start == 5 }');
+        expect(function() {
+          g.match(42, 'start', true);
+        }).to.throwException(function(e) {
+          expect(e.toString()).to.equal('match failed');
+          expect(e.pos).to.equal(0);
+        });
+      });
+
+      it("matchContents", function() {
+        var g = makeGrammar("G { start == 'a' 'b' 'c' 'd' }");
+        expect(function() {
+          g.matchContents('ab', 'start', true);
+        }).to.throwException(function(e) {
+          expect(e.toString()).to.equal('match failed');
+          expect(e.pos).to.equal(2);
         });
       });
     });
