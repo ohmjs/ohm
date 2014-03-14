@@ -188,6 +188,7 @@ exports.Expand = Expand;
 // Extensions
 // --------------------------------------------------------------------
 
+require('./pexprs-addRulesThatNeedSemanticAction.js');
 require('./pexprs-assertNoDuplicateBindings.js');
 require('./pexprs-assertNoUselessBindings.js');
 require('./pexprs-assertChoicesHaveUniformBindings.js');

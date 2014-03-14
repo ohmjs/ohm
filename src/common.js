@@ -1,10 +1,4 @@
 // --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-var pexprs = require('./pexprs.js');
-
-// --------------------------------------------------------------------
 // Exports
 // --------------------------------------------------------------------
 
@@ -28,10 +22,5 @@ exports.fail = {};
 exports.isSyntactic = function(ruleName) {
   var firstChar = ruleName[0];
   return 'A' <= firstChar && firstChar <= 'Z';
-};
-
-var _applySpaces = new pexprs.Apply('spaces');
-exports.skipSpaces = function(ruleDict, inputStream) {
-  _applySpaces.eval(false, ruleDict, inputStream, undefined);
 };
 

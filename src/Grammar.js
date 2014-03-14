@@ -5,6 +5,7 @@
 var common = require('./common.js');
 var InputStream = require('./InputStream.js');
 var pexprs = require('./pexprs.js');
+var skipSpaces = require('./skipSpaces.js');
 
 var awlib = require('awlib');
 var browser = awlib.browser;
@@ -45,7 +46,7 @@ Grammar.prototype = {
     var inputStream = InputStream.newFor(obj);
     var thunk = new pexprs.Apply(startRule).eval(undefined, this.ruleDict, inputStream, undefined);
     if (common.isSyntactic(startRule)) {
-      common.skipSpaces(this.ruleDict, inputStream);
+      skipSpaces(this.ruleDict, inputStream);
     }
     var assertSemanticActionNamesMatch = this.assertSemanticActionNamesMatch.bind(this);
     return thunk === common.fail || !inputStream.atEnd() ?
@@ -111,15 +112,36 @@ Grammar.prototype = {
   },
 
   toSemanticActionTemplate: function(/* entryPoint1, entryPoint2, ... */) {
+    var entryPoints = arguments.length > 0 ? arguments : Object.keys(this.ruleDict);
+
+    var rulesToBeIncluded = {};
+    for (var idx = 0; idx < entryPoints.length; idx++) {
+      var ruleName = entryPoints[idx];
+      if (this.ruleDict[ruleName] === undefined) {
+        browser('undefined rule', ruleName);
+      } else {
+        rulesToBeIncluded[ruleName] = true;
+      }
+    }
+
+    var done = false;
+    while (!done) {
+      done = true;
+      for (var ruleName in rulesToBeIncluded) {
+        var addedNewRule = this.ruleDict[ruleName].addRulesThatNeedSemanticAction(rulesToBeIncluded, true);
+        done &= !addedNewRule;
+      }
+    }
+
     // TODO: add the super-grammar's templates at the right place, e.g., a case for AddExpr-plus should appear next to
     // other cases of Add-Expr.
-    // TODO: if the caller supplies entry points, only include templates for rules that are reachable in the call graph.
+
     var self = this;
     var buffer = makeColumnStringBuffer();
     buffer.nextPutAll('{');
 
     var first = true;
-    for (var ruleName in this.ruleDict) {
+    for (var ruleName in rulesToBeIncluded) {
       var body = this.ruleDict[ruleName];
       if (first) {
         first = false;
@@ -147,10 +169,12 @@ Grammar.prototype = {
     buffer.newColumn();
     buffer.nextPutAll('{');
 
-    var bindings = body.getBindingNames();
-    if (bindings.length > 0) {
+    var envProperties = body.getBindingNames();
+    if (envProperties.length === 0 && body.producesValue())
+      envProperties = ['value'];
+    if (envProperties.length > 0) {
       buffer.nextPutAll(' /* ');
-      buffer.nextPutAll(bindings.join(', '));
+      buffer.nextPutAll(envProperties.join(', '));
       buffer.nextPutAll(' */ ');
     }
     buffer.nextPutAll('}');

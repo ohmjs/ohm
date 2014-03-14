@@ -5,6 +5,7 @@
 var common = require('./common.js');
 var thunks = require('./thunks.js');
 var pexprs = require('./pexprs.js');
+var skipSpaces = require('./skipSpaces.js');
 var InputStream = require('./InputStream.js');
 
 var awlib = require('awlib');
@@ -18,7 +19,7 @@ pexprs.PExpr.prototype.eval = common.abstract;
 
 pexprs.anything.eval = function(syntactic, ruleDict, inputStream, bindings) {
   if (syntactic) {
-    common.skipSpaces(ruleDict, inputStream);
+    skipSpaces(ruleDict, inputStream);
   }
   var value = inputStream.next();
   if (value === common.fail) {
@@ -30,7 +31,7 @@ pexprs.anything.eval = function(syntactic, ruleDict, inputStream, bindings) {
 
 pexprs.Prim.prototype.eval = function(syntactic, ruleDict, inputStream, bindings) {
   if (syntactic) {
-    common.skipSpaces(ruleDict, inputStream);
+    skipSpaces(ruleDict, inputStream);
   }
   if (this.match(inputStream) === common.fail) {
     return common.fail;
@@ -49,7 +50,7 @@ pexprs.StringPrim.prototype.match = function(inputStream) {
 
 pexprs.RegExpPrim.prototype.eval = function(syntactic, ruleDict, inputStream, bindings) {
   if (syntactic) {
-    common.skipSpaces(ruleDict, inputStream);
+    skipSpaces(ruleDict, inputStream);
   }
   var origPos = inputStream.pos;
   if (inputStream.matchRegExp(this.obj) === common.fail) {
@@ -64,7 +65,7 @@ pexprs.Alt.prototype.eval = function(syntactic, ruleDict, inputStream, bindings)
   var origNumBindings = bindings.length;
   for (var idx = 0; idx < this.terms.length; idx++) {
     if (syntactic) {
-      common.skipSpaces(ruleDict, inputStream);
+      skipSpaces(ruleDict, inputStream);
     }
     var value = this.terms[idx].eval(syntactic, ruleDict, inputStream, bindings);
     if (value !== common.fail) {
@@ -85,7 +86,7 @@ pexprs.Alt.prototype.eval = function(syntactic, ruleDict, inputStream, bindings)
 pexprs.Seq.prototype.eval = function(syntactic, ruleDict, inputStream, bindings) {
   for (var idx = 0; idx < this.factors.length; idx++) {
     if (syntactic) {
-      common.skipSpaces(ruleDict, inputStream);
+      skipSpaces(ruleDict, inputStream);
     }
     var factor = this.factors[idx];
     var value = factor.eval(syntactic, ruleDict, inputStream, bindings);
@@ -154,7 +155,7 @@ pexprs.Lookahead.prototype.eval = function(syntactic, ruleDict, inputStream, bin
 
 pexprs.Str.prototype.eval = function(syntactic, ruleDict, inputStream, bindings) {
   if (syntactic) {
-    common.skipSpaces(ruleDict, inputStream);
+    skipSpaces(ruleDict, inputStream);
   }
   var string = inputStream.next();
   if (typeof string === 'string') {
@@ -168,7 +169,7 @@ pexprs.Str.prototype.eval = function(syntactic, ruleDict, inputStream, bindings)
 
 pexprs.List.prototype.eval = function(syntactic, ruleDict, inputStream, bindings) {
   if (syntactic) {
-    common.skipSpaces(ruleDict, inputStream);
+    skipSpaces(ruleDict, inputStream);
   }
   var list = inputStream.next();
   if (list instanceof Array) {
@@ -182,7 +183,7 @@ pexprs.List.prototype.eval = function(syntactic, ruleDict, inputStream, bindings
 
 pexprs.Obj.prototype.eval = function(syntactic, ruleDict, inputStream, bindings) {
   if (syntactic) {
-    common.skipSpaces(ruleDict, inputStream);
+    skipSpaces(ruleDict, inputStream);
   }
   var obj = inputStream.next();
   if (obj !== common.fail && obj && (typeof obj === 'object' || typeof obj === 'function')) {
