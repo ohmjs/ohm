@@ -107,7 +107,7 @@ function Extend(name, body, superGrammar) {
     throw new errors.UndeclaredRuleError(name, superGrammar.name);
   }
   this.body = body;
-  this.extendedBody = new pexprs.ExtendAlt([this.body, this.base]);
+  this.extendedBody = new pexprs.ExtendAlt(this.body, this.base);
   this.superGrammar = superGrammar;
 }
 

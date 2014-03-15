@@ -52,8 +52,8 @@ Alt.prototype = objectThatDelegatesTo(PExpr.prototype);
 
 // ExtendAlt is an implementation detail of rule extension
 
-function ExtendAlt(terms) {
-  this.terms = terms;
+function ExtendAlt(extensions, base) {
+  this.terms = [extensions, base];
 }
 
 ExtendAlt.prototype = objectThatDelegatesTo(Alt.prototype);
