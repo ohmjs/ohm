@@ -122,28 +122,10 @@ Grammar.prototype = {
 
   toSemanticActionTemplate: function(/* entryPoint1, entryPoint2, ... */) {
     var entryPoints = arguments.length > 0 ? arguments : Object.keys(this.ruleDict);
-
-    var rulesToBeIncluded = {};
-    for (var idx = 0; idx < entryPoints.length; idx++) {
-      var ruleName = entryPoints[idx];
-      if (this.ruleDict[ruleName] === undefined) {
-        throw new errors.UndeclaredRuleError(ruleName, this.name);
-      } else {
-        rulesToBeIncluded[ruleName] = true;
-      }
-    }
-
-    var done = false;
-    while (!done) {
-      done = true;
-      for (var ruleName in rulesToBeIncluded) {
-        var addedNewRule = this.ruleDict[ruleName].addRulesThatNeedSemanticAction(rulesToBeIncluded, true);
-        done &= !addedNewRule;
-      }
-    }
-
-    // TODO: add the super-grammar's templates at the right place, e.g., a case for AddExpr-plus should appear next to
-    // other cases of Add-Expr.
+    var rulesToBeIncluded = this.rulesThatNeedSemanticAction(entryPoints);
+    
+    // TODO: add the super-grammar's templates at the right place, e.g., a case for AddExpr_plus should appear next to
+    // other cases of AddExpr.
 
     var self = this;
     var buffer = makeColumnStringBuffer();
@@ -188,6 +170,29 @@ Grammar.prototype = {
       buffer.nextPutAll(' */ ');
     }
     buffer.nextPutAll('}');
+  },
+
+  rulesThatNeedSemanticAction: function(entryPoints) {
+    var rules = {};
+    for (var idx = 0; idx < entryPoints.length; idx++) {
+      var ruleName = entryPoints[idx];
+      if (this.ruleDict[ruleName] === undefined) {
+        throw new errors.UndeclaredRuleError(ruleName, this.name);
+      } else {
+        rules[ruleName] = true;
+      }
+    }
+
+    var done = false;
+    while (!done) {
+      done = true;
+      for (var ruleName in rules) {
+        var addedNewRule = this.ruleDict[ruleName].addRulesThatNeedSemanticAction(rules, true);
+        done &= !addedNewRule;
+      }
+    }
+
+    return rules;
   }
 };
 
