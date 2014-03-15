@@ -4,9 +4,7 @@
 
 var common = require('./common.js');
 var pexprs = require('./pexprs.js');
-
-var awlib = require('awlib');
-var browser = awlib.browser;
+var errors = require('./errors.js');
 
 // --------------------------------------------------------------------
 // Operations
@@ -15,7 +13,7 @@ var browser = awlib.browser;
 function assertNoBindings(ruleName, expr) {
   var bindings = expr.getBindingNames();
   if (bindings.length > 0) {
-    browser.error('rule', ruleName, 'has useless bindings:', bindings);
+    throw new errors.UselessBindingsError(ruleName, bindings);
   }
 }
 
@@ -82,7 +80,7 @@ pexprs.Apply.prototype.assertNoUselessBindings = function(ruleName) {
   // no-op
 };
 
-pexprs.Expand.prototype.assertNoUselessBindings = function(ruleName) {
-  this.expansion().assertNoUselessBindings(ruleName)
+pexprs.ExtendBody.prototype.assertNoUselessBindings = function(ruleName) {
+  return this.body.assertNoUselessBindings(ruleName);
 };
 

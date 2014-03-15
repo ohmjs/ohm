@@ -127,7 +127,7 @@ Grammar.prototype = {
     for (var idx = 0; idx < entryPoints.length; idx++) {
       var ruleName = entryPoints[idx];
       if (this.ruleDict[ruleName] === undefined) {
-        browser('undefined rule', ruleName);
+        throw new errors.UndeclaredRuleError(ruleName, this.name);
       } else {
         rulesToBeIncluded[ruleName] = true;
       }

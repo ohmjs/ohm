@@ -1,6 +1,7 @@
 var expect = require('expect.js');
 var fs = require('fs');
 var ohm = require('../src/main.js');
+var errors = require('../src/errors.js');
 
 function makeGrammar(source, optNamespaceName) {
   if (source instanceof Array) {
@@ -461,10 +462,13 @@ describe("Ohm", function() {
       });
 
       it("with duplicate binding", function() {
-        console.log('\nNote: the following duplicate-bindings error is ok');
         expect(function() {
           m = makeGrammar("M { start == ('a'.x 'bc' 'z'.x)? }");
-        }).to.throwException();
+        }).to.throwException(function(e) {
+          expect(e).to.be.a(errors.DuplicateBindingsError);
+          expect(e.ruleName).to.equal('start');
+          expect(e.duplicates).to.eql(['x']);
+        });
       });
     });
 
@@ -535,10 +539,13 @@ describe("Ohm", function() {
       });
 
       it("useless bindings are detected", function() {
-        console.log('\nNote: the following useless-bindings error is ok');
         expect(function() {
           makeGrammar("M { foo == (bar.x)* }");
-        }).to.throwException();
+        }).to.throwException(function(e) {
+          expect(e).to.be.a(errors.UselessBindingsError);
+          expect(e.ruleName).to.equal('foo');
+          expect(e.useless).to.eql(['x']);
+        });
       });
     });
 
@@ -565,10 +572,13 @@ describe("Ohm", function() {
       });
 
       it("useless bindings are detected", function() {
-        console.log('\nNote: the following useless-bindings error is ok');
         expect(function() {
           makeGrammar("M { foo == (bar.x)? }");
-        }).to.throwException();
+        }).to.throwException(function(e) {
+          expect(e).to.be.a(errors.UselessBindingsError);
+          expect(e.ruleName).to.equal('foo');
+          expect(e.useless).to.eql(['x']);
+        });
       });
     });
 
@@ -594,10 +604,13 @@ describe("Ohm", function() {
       });
 
       it("useless bindings are detected", function() {
-        console.log('\nNote: the following useless-bindings error is ok');
         expect(function() {
           makeGrammar("M { foo == ~(bar.x) }");
-        }).to.throwException();
+        }).to.throwException(function(e) {
+          expect(e).to.be.a(errors.UselessBindingsError);
+          expect(e.ruleName).to.equal('foo');
+          expect(e.useless).to.eql(['x']);
+        });
       });
     });
 
@@ -719,17 +732,22 @@ describe("Ohm", function() {
       });
 
       it("duplicate property names are not allowed", function() {
-        console.log('\nNote: the following duplicate-property-names error is ok');
         expect(function() {
           m = ohm.makeGrammar("M { duh == {x: 1, x: 2, y: 3, ...} }");
-        }).to.throwException();
+        }).to.throwException(function(e) {
+          expect(e).to.be.a(errors.DuplicatePropertyNamesError);
+          expect(e.duplicates).to.eql(['x']);
+        });
       });
 
       it("duplicate bindings are not allowed", function() {
-        console.log('\nNote: the following duplicate-bindings error is ok');
         expect(function() {
           m = ohm.makeGrammar("M { duh == {x: 1.a, y: 2.a, ...} }");
-        }).to.throwException();
+        }).to.throwException(function(e) {
+          expect(e).to.be.a(errors.DuplicateBindingsError);
+          expect(e.ruleName).to.equal('duh');
+          expect(e.duplicates).to.eql(['a']);
+        });
       });
     });
 
@@ -1034,15 +1052,40 @@ describe("Ohm", function() {
     });
 
     describe("inheritance", function() {
+      describe("super-grammar does not exist", function() {
+        it("in namespace", function() {
+          expect(function() {
+            makeGrammar("G2 <: G1 {}", 'inheritance-oops');
+          }).to.throwException(function(e) {
+            expect(e).to.be.a(errors.UndeclaredGrammarError);
+            expect(e.grammarName).to.equal('G1');
+            expect(e.namespaceName).to.equal('inheritance-oops');
+          });
+        });
+
+        it("no namespace", function() {
+          expect(function() {
+            makeGrammar("G2 <: G1 {}");
+          }).to.throwException(function(e) {
+            expect(e).to.be.a(errors.UndeclaredGrammarError);
+            expect(e.grammarName).to.equal('G1');
+            expect(e.namespaceName).to.be(undefined);
+          });
+        });
+      });
+
       describe("define", function() {
         it("should check that rule does not already exist in super-grammar", function() {
-          console.log('\nNote: the following rule-already-exists-in-super-grammar error is ok');
           expect(function() {
             makeGrammars([
               "G1 { foo == 'foo' }",
               "G2 <: G1 { foo == 'bar' }"
             ], 'inheritance-define');
-          }).to.throwException();
+          }).to.throwException(function(e) {
+            expect(e).to.be.an(errors.DuplicateRuleDeclarationError);
+            expect(e.ruleName).to.equal('foo');
+            expect(e.grammarName).to.equal('G1');
+          });
         });
       });
 
@@ -1069,20 +1112,26 @@ describe("Ohm", function() {
         });
 
         it("should check that rule exists in super-grammar", function() {
-          console.log('\nNote: the following rule-does-not-exist-in-super-grammar error is ok');
           expect(function() {
             makeGrammar("G3 <: G1 { foo := 'foo' }", 'inheritance-override');
-          }).to.throwException();
+          }).to.throwException(function(e) {
+            expect(e).to.be.an(errors.UndeclaredRuleError);
+            expect(e.ruleName).to.equal('foo');
+            expect(e.grammarName).to.equal('G1');
+          });
         });
 
         it("should make sure the environment's bindings are preserved", function() {
           // If the rule being overridden has no bindings but its body produces a value, the overridding version must
           // also produce a value. This is to ensure the semantic action "API" doesn't change.
-          console.log('\nNote: the following rule-must-produce-a-value error is ok');
           expect(function() {
             makeGrammar("M1 { foo == 'foo' }", "inheritance-override");
             makeGrammar("M2 <: M1 { foo := bar baz }", "inheritance-override");
-          }).to.throwException();
+          }).to.throwException(function(e) {
+            expect(e).to.be.an(errors.RuleMustProduceValueError);
+            expect(e.ruleName).to.equal('foo');
+            expect(e.why).to.equal('overriding');
+          });
 
           // It should be ok to override a rule that has no bindings and whose body does not produce a value, even
           // when the overriding definition actually produces a value. When this happens, the semantic action method
@@ -1136,27 +1185,37 @@ describe("Ohm", function() {
         });
 
         it("should check that rule exists in super-grammar", function() {
-          console.log('\nNote: the following rule-does-not-exist-in-super-grammar error is ok');
           expect(function() {
             makeGrammar("G3 <: G1 { bar += 'bar' }", 'inheritanceExtend');
-          }).to.throwException();
+          }).to.throwException(function(e) {
+            expect(e).to.be.an(errors.UndeclaredRuleError);
+            expect(e.ruleName).to.equal('bar');
+            expect(e.grammarName).to.equal('G1');
+          });
         });
 
         it("should check that binding names are consistent", function() {
-          console.log('\nNote: the following inconsistent-bindings error is ok');
           expect(function() {
             makeGrammar("G3 <: G1 { foo += '111'.x '222'.z }", 'inheritanceExtend');
-          }).to.throwException();
+          }).to.throwException(function(e) {
+            expect(e).to.be.a(errors.InconsistentBindingsError);
+            expect(e.ruleName).to.equal('foo');
+            expect(e.expected).to.eql(['x', 'y']);
+            expect(e.actual).to.eql(['x', 'z']);
+          });
         });
 
         it("should make sure the environment's bindings are preserved", function() {
           // If the rule being extended has no bindings but its body produces a value, the overridding version must
           // also produce a value. This is to ensure the semantic action "API" doesn't change.
-          console.log('\nNote: the following rule-must-produce-a-value error is ok');
           expect(function() {
             makeGrammar("M1 { foo == 'foo' }", "inheritanceExtend3");
             makeGrammar("M2 <: M1 { foo += bar baz }", "inheritanceExtend3");
-          }).to.throwException();
+          }).to.throwException(function(e) {
+            expect(e).to.be.an(errors.RuleMustProduceValueError);
+            expect(e.ruleName).to.equal('foo');
+            expect(e.why).to.equal('extending');
+          });
 
           // It should be ok to extend a rule that has no bindings and whose body does not produce a value, even
           // when the extending case(s) actually produce a value. When this happens, the semantic action method should
@@ -1195,10 +1254,14 @@ describe("Ohm", function() {
       });
 
       it("inconsistent bindings in alts are errors", function() {
-        console.log('\nNote: the following inconsistent-bindings error is ok');
         expect(function() {
           makeGrammar("G { foo == 'a'.x | 'b'.y }");
-        }).to.throwException();
+        }).to.throwException(function(e) {
+          expect(e).to.be.a(errors.InconsistentBindingsError);
+          expect(e.ruleName).to.equal('foo');
+          expect(e.expected).to.eql(['x']);
+          expect(e.actual).to.eql(['y']);
+        });
       });
 
       it("binding order shouldn't matter", function() {
@@ -1261,17 +1324,23 @@ describe("Ohm", function() {
       });
 
       it("can't be overridden/replaced", function() {
-        ohm.namespace('inlineRuleTest1').install('M', m);
+        ohm.namespace('inlineRuleTest1').install('Expr', m);
 
-        console.log('\nNote: the following cannot-define-existing-rule error is ok');
         expect(function() {
-          makeGrammar("N <: M { addExpr := addExpr.x '~' mulExpr.y {minus} }", 'inlineRuleTest1');
-        }).to.throwException();
+          makeGrammar("N <: Expr { addExpr := addExpr.x '~' mulExpr.y {minus} }", 'inlineRuleTest1');
+        }).to.throwException(function(e) {
+          expect(e).to.be.an(errors.DuplicateRuleDeclarationError);
+          expect(e.ruleName).to.equal('addExpr_minus');
+          expect(e.grammarName).to.equal('Expr');
+        });
 
-        console.log('\nNote: the following cannot-define-existing-rule error is ok');
         expect(function() {
-          makeGrammar("N <: M { addExpr += addExpr.x '~' mulExpr.y {minus} }", 'inlineRuleTest1');
-        }).to.throwException();
+          makeGrammar("N <: Expr { addExpr += addExpr.x '~' mulExpr.y {minus} }", 'inlineRuleTest1');
+        }).to.throwException(function(e) {
+          expect(e).to.be.an(errors.DuplicateRuleDeclarationError);
+          expect(e.ruleName).to.equal('addExpr_minus');
+          expect(e.grammarName).to.equal('Expr');
+        });
       });
     });
 
@@ -1319,11 +1388,14 @@ describe("Ohm", function() {
         });
 
         it("detects duplicates", function() {
-          console.log('\nNote: the following duplicate-grammar-in-namespace error is ok');
           expect(function() {
             ohm.makeGrammar("ccc { foo == 'foo' }", ns1);
             ohm.makeGrammar("ccc { bar == 'bar' }", ns1);
-          }).to.throwException();
+          }).to.throwException(function(e) {
+            expect(e).to.be.an(errors.DuplicateGrammarDeclarationError);
+            expect(e.grammarName).to.equal('ccc');
+            expect(e.namespaceName).to.equal('ns1');
+          });
         });
 
         it("allows same-name grammars to be installed in different namespaces", function() {
@@ -1356,9 +1428,12 @@ describe("Ohm", function() {
           var ns = ohm.namespace('aaa1');
           ns.loadGrammarsFromScriptElement(scriptTag);
           expect(function() {
-            console.log('\nNote: the following grammar-does-not-exist error is ok');
             ns.getGrammar('M');
-          }).to.throwException();
+          }).to.throwException(function(e) {
+            expect(e).to.be.an(errors.UndeclaredGrammarError);
+            expect(e.grammarName).to.equal('M');
+            expect(e.namespaceName).to.equal('aaa1');
+          });
           expect(ns.getGrammar('O')).to.be.ok();
           expect(ns.getGrammar('O').matchContents('1234', 'number')).to.be.ok();
         });

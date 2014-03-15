@@ -3,6 +3,7 @@
 // --------------------------------------------------------------------
 
 var ohm = require('./main.js');
+var errors = require('./errors.js');
 
 var awlib = require('awlib');
 var browser = awlib.browser;
@@ -19,7 +20,7 @@ function Namespace(name) {
 Namespace.prototype = {
   install: function(name, grammar) {
     if (this.grammars[name]) {
-      browser.error('duplicate declaration of grammar', name, 'in namespace', this.name);
+      throw new errors.DuplicateGrammarDeclarationError(name, this.name);
     } else {
       this.grammars[name] = grammar;
     }
@@ -27,7 +28,11 @@ Namespace.prototype = {
   },
 
   getGrammar: function(name) {
-    return this.grammars[name] || browser.error('ohm namespace', this.name, 'has no grammar called', name);
+    if (this.grammars[name]) {
+      return this.grammars[name];
+    } else {
+      throw new errors.UndeclaredGrammarError(name, this.name);
+    }
   },
 
   loadGrammarsFromScriptElement: function(element) {

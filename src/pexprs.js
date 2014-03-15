@@ -3,9 +3,9 @@
 // --------------------------------------------------------------------
 
 var common = require('./common.js');
+var errors = require('./errors.js');
 
 var awlib = require('awlib');
-var browser = awlib.browser;
 var objectThatDelegatesTo = awlib.objectUtils.objectThatDelegatesTo;
 
 // --------------------------------------------------------------------
@@ -118,7 +118,7 @@ function Obj(properties, isLenient) {
   var names = properties.map(function(property) { return property.name; });
   var duplicates = common.getDuplicates(names);
   if (duplicates.length > 0) {
-    browser.error('object pattern has duplicate property names:', duplicates);
+    throw new errors.DuplicatePropertyNamesError(duplicates);
   } else {
     this.properties = properties;
     this.isLenient = isLenient;
@@ -135,22 +135,20 @@ function Apply(ruleName) {
 
 Apply.prototype = objectThatDelegatesTo(PExpr.prototype);
 
-// Rule expansion -- an implementation detail of rule extension
+// The following an implementation detail of rule extension
 
-function Expand(ruleName, grammar) {
-  if (grammar.ruleDict[ruleName] === undefined) {
-    browser.error('grammar', grammar.name, 'does not have a rule called', ruleName);
+function ExtendBody(body, ruleName, superGrammar) {
+  if (superGrammar.ruleDict[ruleName] === undefined) {
+    throw new errors.UndeclaredRuleError(ruleName, superGrammar.name);
   } else {
+    this.body = body;
     this.ruleName = ruleName;
-    this.grammar = grammar;
+    this.superGrammar = superGrammar;
+    this.expansion = new Alt([this.body, this.superGrammar.ruleDict[this.ruleName]]);
   }
 }
 
-Expand.prototype = objectThatDelegatesTo(PExpr.prototype, {
-  expansion: function() {
-    return this.grammar.ruleDict[this.ruleName];
-  }
-});
+ExtendBody.prototype = objectThatDelegatesTo(PExpr.prototype);
 
 // --------------------------------------------------------------------
 // Exports
@@ -183,7 +181,7 @@ exports.Str = Str;
 exports.List = List;
 exports.Obj = Obj;
 exports.Apply = Apply;
-exports.Expand = Expand;
+exports.ExtendBody = ExtendBody;
 
 // --------------------------------------------------------------------
 // Extensions

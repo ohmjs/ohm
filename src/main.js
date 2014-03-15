@@ -12,7 +12,7 @@ TODO:
 
 * Think about a better way to deal with lists
   -- Built-in list operator?
-  -- Parameterized rules?
+  -- Parameterized rules? (But they're not so great for readability, and could be tricky for semantic action dicts.)
 
 * Improve test coverage
   -- Add tests for scoping, e.g., "foo:a [bar:b baz:c]:d" should have 4 bindings.
@@ -109,6 +109,7 @@ require('../dist/ohm-grammar.js');
 
 var Builder = require('./Builder.js');
 var Namespace = require('./Namespace.js');
+var errors = require('./errors.js');
 
 var awlib = require('awlib');
 var unescapeChar = awlib.stringUtils.unescapeChar;
@@ -201,7 +202,13 @@ function makeGrammarActionDict(optNamespace) {
 
     SuperGrammar:               function(env) { builder.setSuperGrammar(env.value); },
     SuperGrammar_qualified:     function(env) { return thisModule.namespace(env.ns).getGrammar(env.n); },
-    SuperGrammar_unqualified:   function(env) { return optNamespace.getGrammar(env.n); },
+    SuperGrammar_unqualified:   function(env) {
+                                  if (optNamespace) {
+                                    return optNamespace.getGrammar(env.n);
+                                  } else {
+                                    throw new errors.UndeclaredGrammarError(env.n);
+                                  }
+                                },
 
     Grammar:                    function(env) {
                                   builder = new Builder();

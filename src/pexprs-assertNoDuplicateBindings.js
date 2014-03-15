@@ -4,9 +4,7 @@
 
 var common = require('./common.js');
 var pexprs = require('./pexprs.js');
-
-var awlib = require('awlib');
-var browser = awlib.browser;
+var errors = require('./errors.js');
 
 // --------------------------------------------------------------------
 // Operations
@@ -31,7 +29,7 @@ pexprs.Seq.prototype.assertNoDuplicateBindings = function(ruleName) {
 
   var duplicates = common.getDuplicates(this.getBindingNames());
   if (duplicates.length > 0) {
-    browser.error('rule', ruleName, 'has duplicate bindings:', duplicates);
+    throw new errors.DuplicateBindingsError(ruleName, duplicates);
   }
 };
 
@@ -70,13 +68,13 @@ pexprs.Obj.prototype.assertNoDuplicateBindings = function(ruleName) {
 
   var duplicates = common.getDuplicates(this.getBindingNames());
   if (duplicates.length > 0) {
-    browser.error('rule', ruleName, 'has an object pattern with duplicate bindings:', duplicates);
+    throw new errors.DuplicateBindingsError(ruleName, duplicates);
   }
 };
 
 pexprs.Apply.prototype.assertNoDuplicateBindings = function(ruleName) {};
 
-pexprs.Expand.prototype.assertNoDuplicateBindings = function(ruleName) {
-  this.expansion().assertNoDuplicateBindings(ruleName);
+pexprs.ExtendBody.prototype.assertNoDuplicateBindings = function(ruleName) {
+  this.body.assertNoDuplicateBindings(ruleName);
 };
 

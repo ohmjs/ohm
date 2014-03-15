@@ -3,6 +3,7 @@
 // --------------------------------------------------------------------
 
 var common = require('./common.js');
+var errors = require('./errors.js');
 var thunks = require('./thunks.js');
 var pexprs = require('./pexprs.js');
 var skipSpaces = require('./skipSpaces.js');
@@ -227,7 +228,10 @@ pexprs.Apply.prototype.eval = function(syntactic, ruleDict, inputStream, binding
       return common.fail;
     }
   } else {
-    var body = ruleDict[ruleName] || browser.error('undefined rule', ruleName);
+    var body = ruleDict[ruleName]
+    if (!body) {
+      throw new errors.UndeclaredRuleError(ruleName);
+    }
     origPosInfo.enter(ruleName);
     var value = this.evalOnce(body, ruleDict, inputStream);
     var currentLR = origPosInfo.getCurrentLeftRecursion();
@@ -281,7 +285,7 @@ pexprs.Apply.prototype.handleLeftRecursion = function(body, ruleDict, inputStrea
   return value;
 };
 
-pexprs.Expand.prototype.eval = function(syntactic, ruleDict, inputStream, bindings) {
-  return this.expansion().eval(syntactic, ruleDict, inputStream, bindings);
+pexprs.ExtendBody.prototype.eval = function(syntactic, ruleDict, inputStream, bindings) {
+  return this.expansion.eval(syntactic, ruleDict, inputStream, bindings);
 };
 

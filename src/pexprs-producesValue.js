@@ -29,7 +29,7 @@ pexprs.Not.prototype.producesValue = function() {
   return false;
 };
 
-pexprs.Expand.prototype.producesValue = function() {
-  return this.expansion().producesValue();
+pexprs.ExtendBody.prototype.producesValue = function() {
+  return this.expansion.producesValue();
 };
 

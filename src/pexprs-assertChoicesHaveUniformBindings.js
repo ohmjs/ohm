@@ -4,9 +4,9 @@
 
 var common = require('./common.js');
 var pexprs = require('./pexprs.js');
+var errors = require('./errors.js');
 
 var awlib = require('awlib');
-var browser = awlib.browser;
 var equals = awlib.equals.equals;
 
 // --------------------------------------------------------------------
@@ -29,7 +29,7 @@ pexprs.Alt.prototype.assertChoicesHaveUniformBindings = function(ruleName) {
     term.assertChoicesHaveUniformBindings();
     var otherNames = term.getBindingNames();
     if (!equals(names, otherNames)) {
-      browser.error('rule', ruleName, 'has an alt with inconsistent bindings:', names, 'vs', otherNames);
+      throw new errors.InconsistentBindingsError(ruleName, names, otherNames);
     }
   }
 };
@@ -76,7 +76,12 @@ pexprs.Obj.prototype.assertChoicesHaveUniformBindings = function(ruleName) {
 
 pexprs.Apply.prototype.assertChoicesHaveUniformBindings = function(ruleName) {};
 
-pexprs.Expand.prototype.assertChoicesHaveUniformBindings = function(ruleName) {
-  this.expansion().assertChoicesHaveUniformBindings(ruleName);
+pexprs.ExtendBody.prototype.assertChoicesHaveUniformBindings = function(ruleName) {
+  this.body.assertChoicesHaveUniformBindings(ruleName);
+  var names = this.body.getBindingNames();
+  var otherNames = this.superGrammar.ruleDict[this.ruleName].getBindingNames();
+  if (!equals(names, otherNames)) {
+    throw new errors.InconsistentBindingsError(ruleName, otherNames, names);
+  }
 };
 

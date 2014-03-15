@@ -119,7 +119,7 @@ pexprs.Apply.prototype.outputRecipe = function(ws) {
   ws.nextPutAll(')');
 };
 
-pexprs.Expand.prototype.outputRecipe = function(ws) {
+pexprs.ExtendBody.prototype.outputRecipe = function(ws) {
   // no-op
 };
 
