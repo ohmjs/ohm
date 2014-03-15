@@ -34,6 +34,15 @@ pexprs.Alt.prototype.assertChoicesHaveUniformBindings = function(ruleName) {
   }
 };
 
+pexprs.ExtendAlt.prototype.assertChoicesHaveUniformBindings = function(ruleName) {
+  // Only has two terms, the second of which has the expected bindings.
+  var names = this.terms[1].getBindingNames();
+  var otherNames = this.terms[0].getBindingNames();
+  if (!equals(names, otherNames)) {
+    throw new errors.InconsistentBindingsError(ruleName, names, otherNames);
+  }
+};
+
 pexprs.Seq.prototype.assertChoicesHaveUniformBindings = function(ruleName) {
   for (var idx = 0; idx < this.factors.length; idx++) {
     this.factors[idx].assertChoicesHaveUniformBindings(ruleName);
@@ -75,13 +84,4 @@ pexprs.Obj.prototype.assertChoicesHaveUniformBindings = function(ruleName) {
 };
 
 pexprs.Apply.prototype.assertChoicesHaveUniformBindings = function(ruleName) {};
-
-pexprs.ExtendBody.prototype.assertChoicesHaveUniformBindings = function(ruleName) {
-  this.body.assertChoicesHaveUniformBindings(ruleName);
-  var names = this.body.getBindingNames();
-  var otherNames = this.superGrammar.ruleDict[this.ruleName].getBindingNames();
-  if (!equals(names, otherNames)) {
-    throw new errors.InconsistentBindingsError(ruleName, otherNames, names);
-  }
-};
 

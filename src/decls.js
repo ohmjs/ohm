@@ -102,8 +102,12 @@ Inline.prototype = objectThatDelegatesTo(RuleDecl.prototype, {
 
 function Extend(name, body, superGrammar) {
   this.name = name;
+  this.base = superGrammar.ruleDict[name];
+  if (!this.base) {
+    throw new errors.UndeclaredRuleError(name, superGrammar.name);
+  }
   this.body = body;
-  this.realBody = new pexprs.ExtendBody(body, name, superGrammar);
+  this.extendedBody = new pexprs.ExtendAlt([this.body, this.base]);
   this.superGrammar = superGrammar;
 }
 
@@ -111,18 +115,14 @@ Extend.prototype = objectThatDelegatesTo(RuleDecl.prototype, {
   kind: 'extend',
 
   performChecks: function() {
-    var extended = this.superGrammar.ruleDict[this.name];
-    if (!extended) {
-      throw new errors.UndeclaredRule(this.name, this.superGrammar.name);
-    }
-    if (extended.getBindingNames().length === 0 && extended.producesValue() && !this.body.producesValue()) {
+    if (this.base.getBindingNames().length === 0 && this.base.producesValue() && !this.body.producesValue()) {
       throw new errors.RuleMustProduceValueError(this.name, 'extending');
     }
-    this.performCommonChecks(this.name, this.realBody);
+    this.performCommonChecks(this.name, this.extendedBody);
   },
 
   install: function(ruleDict) {
-    ruleDict[this.name] = this.realBody;
+    ruleDict[this.name] = this.extendedBody;
   }
 });
 

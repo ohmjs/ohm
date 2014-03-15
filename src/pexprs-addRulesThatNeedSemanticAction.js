@@ -77,8 +77,3 @@ pexprs.Apply.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequ
   }
 };
 
-pexprs.ExtendBody.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
-  return this.body.addRulesThatNeedSemanticAction(dict, valueRequired) ||
-         this.superGrammar.ruleDict[ruleName].addRulesThatNeedSemanticAction(dict, valueRequired);
-};
-

@@ -49,7 +49,3 @@ pexprs.Obj.prototype.getBindingNames = function() {
   return names.sort();
 };
 
-pexprs.ExtendBody.prototype.getBindingNames = function() {
-  return this.body.getBindingNames();
-};
-

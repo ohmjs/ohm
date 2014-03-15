@@ -74,7 +74,3 @@ pexprs.Obj.prototype.assertNoDuplicateBindings = function(ruleName) {
 
 pexprs.Apply.prototype.assertNoDuplicateBindings = function(ruleName) {};
 
-pexprs.ExtendBody.prototype.assertNoDuplicateBindings = function(ruleName) {
-  this.body.assertNoDuplicateBindings(ruleName);
-};
-

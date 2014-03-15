@@ -50,6 +50,14 @@ function Alt(terms) {
 
 Alt.prototype = objectThatDelegatesTo(PExpr.prototype);
 
+// ExtendAlt is an implementation detail of rule extension
+
+function ExtendAlt(terms) {
+  this.terms = terms;
+}
+
+ExtendAlt.prototype = objectThatDelegatesTo(Alt.prototype);
+
 // Sequences
 
 function Seq(factors) {
@@ -135,21 +143,6 @@ function Apply(ruleName) {
 
 Apply.prototype = objectThatDelegatesTo(PExpr.prototype);
 
-// The following an implementation detail of rule extension
-
-function ExtendBody(body, ruleName, superGrammar) {
-  if (superGrammar.ruleDict[ruleName] === undefined) {
-    throw new errors.UndeclaredRuleError(ruleName, superGrammar.name);
-  } else {
-    this.body = body;
-    this.ruleName = ruleName;
-    this.superGrammar = superGrammar;
-    this.expansion = new Alt([this.body, this.superGrammar.ruleDict[this.ruleName]]);
-  }
-}
-
-ExtendBody.prototype = objectThatDelegatesTo(PExpr.prototype);
-
 // --------------------------------------------------------------------
 // Exports
 // --------------------------------------------------------------------
@@ -171,6 +164,7 @@ exports.Prim = Prim;
 exports.StringPrim = StringPrim;
 exports.RegExpPrim = RegExpPrim;
 exports.Alt = Alt;
+exports.ExtendAlt = ExtendAlt;
 exports.Seq = Seq;
 exports.Bind = Bind;
 exports.Many = Many;
@@ -181,7 +175,6 @@ exports.Str = Str;
 exports.List = List;
 exports.Obj = Obj;
 exports.Apply = Apply;
-exports.ExtendBody = ExtendBody;
 
 // --------------------------------------------------------------------
 // Extensions

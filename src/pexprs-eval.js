@@ -285,7 +285,3 @@ pexprs.Apply.prototype.handleLeftRecursion = function(body, ruleDict, inputStrea
   return value;
 };
 
-pexprs.ExtendBody.prototype.eval = function(syntactic, ruleDict, inputStream, bindings) {
-  return this.expansion.eval(syntactic, ruleDict, inputStream, bindings);
-};
-

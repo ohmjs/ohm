@@ -80,7 +80,3 @@ pexprs.Apply.prototype.assertNoUselessBindings = function(ruleName) {
   // no-op
 };
 
-pexprs.ExtendBody.prototype.assertNoUselessBindings = function(ruleName) {
-  return this.body.assertNoUselessBindings(ruleName);
-};
-
