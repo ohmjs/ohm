@@ -1372,6 +1372,55 @@ describe("Ohm", function() {
       });
     });
 
+    describe("semantic action templates", function() {
+      var g1;
+      var g2;
+      beforeEach(function() {
+        if (g1 && g2) {
+          return;
+        } else {
+          makeGrammars([
+            "G1 {",
+            "  foo == bar",
+            "  bar == baz",
+            "  baz == qux",
+            "  qux == quux",
+            "  quux == 42",
+            "  aaa == 'duh'",
+            "  bbb == ~aaa qux.x {blah}",
+            "}",
+            "G2 <: G1 {",
+            "  qux := 100",
+            "}"
+          ], 'semantic-action-templates');
+          g1 = ohm.namespace('semantic-action-templates').getGrammar('G1');
+          g2 = ohm.namespace('semantic-action-templates').getGrammar('G2');
+        }
+      });
+
+      it("rules that need semantic action", function() {
+        expect(g1.rulesThatNeedSemanticAction([])).to.eql({});
+        expect(g1.rulesThatNeedSemanticAction(['foo'])).to.eql(
+          {foo: true, bar: true, baz: true, qux: true, quux: true}
+        );
+        expect(g1.rulesThatNeedSemanticAction(['aaa'])).to.eql({aaa: true});
+        expect(g1.rulesThatNeedSemanticAction(['bbb'])).to.eql({bbb: true, bbb_blah: true, qux: true, quux: true});
+        expect(g1.rulesThatNeedSemanticAction(['aaa', 'bbb'])).to.eql(
+          {aaa: true, bbb: true, bbb_blah: true, qux: true, quux: true}
+        );
+
+        expect(g2.rulesThatNeedSemanticAction([])).to.eql({});
+        expect(g2.rulesThatNeedSemanticAction(['foo'])).to.eql(
+          {foo: true, bar: true, baz: true, qux: true}
+        );
+        expect(g2.rulesThatNeedSemanticAction(['aaa'])).to.eql({aaa: true});
+        expect(g2.rulesThatNeedSemanticAction(['bbb'])).to.eql({bbb: true, bbb_blah: true, qux: true});
+        expect(g2.rulesThatNeedSemanticAction(['aaa', 'bbb'])).to.eql(
+          {aaa: true, bbb: true, bbb_blah: true, qux: true}
+        );
+      });
+    });
+
     describe("namespaces", function() {
       describe("install", function() {
         var ns1;

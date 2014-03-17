@@ -3,6 +3,7 @@
 // --------------------------------------------------------------------
 
 var common = require('./common.js');
+var errors = require('./errors.js');
 var InputStream = require('./InputStream.js');
 var pexprs = require('./pexprs.js');
 var skipSpaces = require('./skipSpaces.js');
@@ -173,21 +174,27 @@ Grammar.prototype = {
   },
 
   rulesThatNeedSemanticAction: function(entryPoints) {
+    var self = this;
+    function getBody(ruleName) {
+      if (self.ruleDict[ruleName] === undefined) {
+        throw new errors.UndeclaredRuleError(ruleName, self.name);
+      } else {
+        return self.ruleDict[ruleName];
+      }
+    }
+
     var rules = {};
     for (var idx = 0; idx < entryPoints.length; idx++) {
       var ruleName = entryPoints[idx];
-      if (this.ruleDict[ruleName] === undefined) {
-        throw new errors.UndeclaredRuleError(ruleName, this.name);
-      } else {
-        rules[ruleName] = true;
-      }
+      getBody(ruleName);  // to make sure the rule exists
+      rules[ruleName] = true;
     }
 
     var done = false;
     while (!done) {
       done = true;
       for (var ruleName in rules) {
-        var addedNewRule = this.ruleDict[ruleName].addRulesThatNeedSemanticAction(rules, true);
+        var addedNewRule = getBody(ruleName).addRulesThatNeedSemanticAction(rules, true);
         done &= !addedNewRule;
       }
     }
