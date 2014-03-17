@@ -117,5 +117,10 @@ body {
 #twoD exponent {
   font-size: 70%;
   vertical-align: text-top;
+  line-height: 0;
+}
+
+#twoD exponent > * {
+  line-height: 100%;
 }
 
