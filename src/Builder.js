@@ -71,7 +71,7 @@ Builder.prototype = {
     return grammar;
   },
 
-  _: function(x) { return pexprs.makePrim(x); },
+  prim: function(x) { return pexprs.makePrim(x); },
   alt: function(/* term1, term1, ... */) {
     var terms = [];
     for (var idx = 0; idx < arguments.length; idx++) {

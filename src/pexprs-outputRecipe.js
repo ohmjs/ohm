@@ -19,7 +19,7 @@ pexprs.anything.outputRecipe = function(ws) {
 };
 
 pexprs.Prim.prototype.outputRecipe = function(ws) {
-  ws.nextPutAll('b._(');
+  ws.nextPutAll('b.prim(');
   ws.nextPutAll(printString(this.obj));
   ws.nextPutAll(')');
 };
