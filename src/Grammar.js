@@ -27,10 +27,13 @@ function Grammar(ruleDict) {
 
 Grammar.prototype = {
   ruleDict: {
+    empty: new pexprs.Seq([]),
     _: pexprs.anything,
     end: new pexprs.Not(pexprs.anything),
     space: pexprs.makePrim(/[\s]/),
-    spaces: new pexprs.Many(new pexprs.Apply('space'), 0),
+    spaces: new pexprs.Alt([
+              new pexprs.Seq([new pexprs.Apply('spaces'), new pexprs.Apply('space')]),
+              new pexprs.Seq([])]),
     alnum: pexprs.makePrim(/[0-9a-zA-Z]/),
     letter: pexprs.makePrim(/[a-zA-Z]/),
     lower: pexprs.makePrim(/[a-z]/),
