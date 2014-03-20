@@ -63,10 +63,12 @@ Grammar.prototype = {
         return false;
       }
     } else {
-      return function(actionDict) {
+      var ans = function(actionDict) {
         assertSemanticActionNamesMatch(actionDict);
         return thunk.force(actionDict, {});
       };
+      ans.toString = function() { return '[ohm thunk]'; };
+      return ans;
     }
   },
 
