@@ -5,12 +5,14 @@
 var common = require('./common.js');
 var errors = require('./errors.js');
 var InputStream = require('./InputStream.js');
+var MatchFailure = require('./MatchFailure.js');
 var pexprs = require('./pexprs.js');
 var skipSpaces = require('./skipSpaces.js');
 
 var awlib = require('awlib');
 var browser = awlib.browser;
 var keysDo = awlib.objectUtils.keysDo;
+var valuesDo = awlib.objectUtils.valuesDo;
 var formals = awlib.objectUtils.formals;
 var makeStringBuffer = awlib.objectUtils.stringBuffer;
 var makeColumnStringBuffer = awlib.objectUtils.columnStringBuffer;
@@ -55,10 +57,7 @@ Grammar.prototype = {
     var assertSemanticActionNamesMatch = this.assertSemanticActionNamesMatch.bind(this);
     if (thunk === common.fail || !inputStream.atEnd()) {
       if (optThrowOnFail) {
-        throw {
-          toString: function() { return 'match failed'; },
-          pos: inputStream.getMaxPosSeen()
-        };
+        throw new MatchFailure(inputStream.getMaxPosSeen());
       } else {
         return false;
       }

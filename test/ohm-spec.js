@@ -1507,8 +1507,8 @@ describe("Ohm", function() {
         expect(function() {
           g.match(42, 'start', true);
         }).to.throwException(function(e) {
-          expect(e.toString()).to.equal('match failed');
-          expect(e.pos).to.equal(0);
+          expect(e.toString()).to.equal('[ohm match failure]');
+          expect(e.getPos()).to.equal(0);
         });
       });
 
@@ -1517,8 +1517,8 @@ describe("Ohm", function() {
         expect(function() {
           g.matchContents('ab', 'start', true);
         }).to.throwException(function(e) {
-          expect(e.toString()).to.equal('match failed');
-          expect(e.pos).to.equal(2);
+          expect(e.toString()).to.equal('[ohm match failure]');
+          expect(e.getPos()).to.equal(2);
         });
       });
     });

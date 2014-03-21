@@ -5,11 +5,18 @@
 var pexprs = require('./pexprs.js');
 
 // --------------------------------------------------------------------
-// Exports
+// Private stuff
 // --------------------------------------------------------------------
 
 var _applySpaces = new pexprs.Apply('spaces');
-module.exports = function(ruleDict, inputStream) {
+
+function skipSpaces(ruleDict, inputStream) {
   _applySpaces.eval(false, ruleDict, inputStream, undefined);
-};
+}
+
+// --------------------------------------------------------------------
+// Exports
+// --------------------------------------------------------------------
+
+module.exports = skipSpaces;
 
