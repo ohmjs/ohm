@@ -13,8 +13,6 @@ One feature that distinguishes Ohm from OMeta and other parsing DSLs / framework
     - The same grammar can be used with different semantic actions to (for instance) parse, syntax highlight, and compile programs. In fact, Ohm lets you do all of these things *without making multiple passes over the input*.
 * __Portability__
     - The same Ohm grammar can be used, without modification, with Ohm implementations that run on top of different languages, e.g., Ohm/JS and Ohm/Scheme. (Note that semantic actions are still language-dependent.)
-* __Better error reporting__ *(coming soon)*
-    - A purely declarative grammar should be able to do a good job of generating error messages, e.g., explain what kind of input was expected when a match failure happens.
 
 Another interesting aspect of Ohm is that it applies semantic actions *lazily*, i.e., a semantic action is only applied if and when its result is required, and never more than once. The benefits of laziness are:
 
