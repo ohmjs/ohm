@@ -126,7 +126,7 @@ pexprs.Opt.prototype.eval = function(syntactic, ruleDict, inputStream, bindings)
   var value = this.expr.eval(syntactic, ruleDict, inputStream, []);
   if (value === common.fail) {
     inputStream.pos = origPos;
-    return thunks.valuelessThunk;
+    return new thunks.ListThunk([]);
   } else {
     return new thunks.ListThunk([value]);
   }
