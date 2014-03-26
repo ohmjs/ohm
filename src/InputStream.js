@@ -30,7 +30,7 @@ InputStream.prototype = {
   init: function(source) {
     this.source = source;
     this.pos = 0;
-    this.maxPosSeen = -1;
+    this.maxFailurePos = -1;
     this.posInfos = [];
   },
 
@@ -45,8 +45,8 @@ InputStream.prototype = {
   },
 
   next: function() {
-    if (this.pos > this.maxPosSeen) {
-      this.maxPosSeen = this.pos;
+    if (this.pos > this.maxFailurePos) {
+      this.maxFailurePos = this.pos;
     }
     if (this.atEnd()) {
       return common.fail;
@@ -63,8 +63,8 @@ InputStream.prototype = {
     return this.source.slice(startIdx, endIdx);
   },
 
-  getMaxPosSeen: function() {
-    return this.maxPosSeen;
+  getMaxFailurePos: function() {
+    return this.maxFailurePos;
   }
 };
 

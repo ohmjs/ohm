@@ -54,14 +54,14 @@ Grammar.prototype = {
     if (common.isSyntactic(startRule)) {
       skipSpaces(this.ruleDict, inputStream);
     }
-    var assertSemanticActionNamesMatch = this.assertSemanticActionNamesMatch.bind(this);
     if (thunk === common.fail || !inputStream.atEnd()) {
       if (optThrowOnFail) {
-        throw new MatchFailure(inputStream.getMaxPosSeen());
+        throw new MatchFailure(inputStream.getMaxFailurePos());
       } else {
         return false;
       }
     } else {
+      var assertSemanticActionNamesMatch = this.assertSemanticActionNamesMatch.bind(this);
       var ans = function(actionDict) {
         assertSemanticActionNamesMatch(actionDict);
         return thunk.force(actionDict, {});
