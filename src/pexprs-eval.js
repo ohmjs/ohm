@@ -232,12 +232,13 @@ pexprs.Apply.prototype.eval = function(syntactic, ruleDict, inputStream, binding
     if (!body) {
       throw new errors.UndeclaredRuleError(ruleName);
     }
+    var origPos = inputStream.pos;
     origPosInfo.enter(ruleName);
     var value = this.evalOnce(body, ruleDict, inputStream);
     var currentLR = origPosInfo.getCurrentLeftRecursion();
     if (currentLR) {
       if (currentLR.name === ruleName) {
-        value = this.handleLeftRecursion(body, ruleDict, inputStream, origPosInfo.pos, currentLR, value);
+        value = this.handleLeftRecursion(body, ruleDict, inputStream, origPos, currentLR, value);
         origPosInfo.memo[ruleName] =
           {pos: inputStream.pos, value: value, involvedRules: currentLR.involvedRules};
         origPosInfo.endLeftRecursion(ruleName);

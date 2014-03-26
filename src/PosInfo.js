@@ -8,8 +8,7 @@ var common = require('./common.js');
 // Private stuff
 // --------------------------------------------------------------------
 
-function PosInfo(pos) {
-  this.pos = pos;
+function PosInfo() {
   this.ruleStack = [];
   this.activeRules = {};  // redundant (could be generated from ruleStack) but useful for performance reasons
   this.memo = {};
@@ -75,7 +74,5 @@ PosInfo.prototype = {
 // Exports
 // --------------------------------------------------------------------
 
-module.exports = function(pos) {
-  return new PosInfo(pos);
-};
+module.exports = PosInfo;
 
