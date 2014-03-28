@@ -2,16 +2,21 @@
 // Imports
 // --------------------------------------------------------------------
 
+var common = require('./common.js');
 var pexprs = require('./pexprs.js');
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
-var _applySpaces = new pexprs.Apply('spaces');
-
 function skipSpaces(ruleDict, inputStream) {
-  _applySpaces.eval(false, ruleDict, inputStream, undefined);
+  while (true) {
+    var origPos = inputStream.pos;
+    if (ruleDict.space.eval(false, false, ruleDict, inputStream, []) === common.fail) {
+      inputStream.pos = origPos;
+      break;
+    }
+  }
 }
 
 // --------------------------------------------------------------------

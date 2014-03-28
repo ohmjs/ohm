@@ -32,8 +32,13 @@ Builder.prototype = {
     this.superGrammar = grammar;
   },
 
+  setRuleDescription: function(text) {
+    this.ruleDescription = text;
+  },
+
   define: function(ruleName, body) {
-    this.ruleDecls.push(new decls.Define(ruleName, body, this.superGrammar));
+    this.ruleDecls.push(new decls.Define(ruleName, body, this.superGrammar, this.ruleDescription));
+    this.ruleDescription = undefined;
   },
 
   override: function(ruleName, body) {

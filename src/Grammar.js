@@ -28,21 +28,27 @@ function Grammar(ruleDict) {
 }
 
 Grammar.prototype = {
-  ruleDict: {
-    empty: new pexprs.Seq([]),
-    _: pexprs.anything,
-    end: new pexprs.Not(pexprs.anything),
-    space: pexprs.makePrim(/[\s]/),
-    spaces: new pexprs.Alt([
-              new pexprs.Seq([new pexprs.Apply('spaces'), new pexprs.Apply('space')]),
-              new pexprs.Seq([])]),
-    alnum: pexprs.makePrim(/[0-9a-zA-Z]/),
-    letter: pexprs.makePrim(/[a-zA-Z]/),
-    lower: pexprs.makePrim(/[a-z]/),
-    upper: pexprs.makePrim(/[A-Z]/),
-    digit: pexprs.makePrim(/[0-9]/),
-    hexDigit: pexprs.makePrim(/[0-9a-fA-F]/)
-  },
+  ruleDict: new (function() {
+    this._ = pexprs.anything;
+    this.end = new pexprs.Not(pexprs.anything);
+    this.space = pexprs.makePrim(/[\s]/);
+    this.space.description = 'space';
+    this.spaces = new pexprs.Alt([
+        new pexprs.Seq([new pexprs.Apply('spaces'), new pexprs.Apply('space')]),
+        new pexprs.Seq([])]);
+    this.alnum = pexprs.makePrim(/[0-9a-zA-Z]/);
+    this.space.description = 'alpha-numeric character';
+    this.letter = pexprs.makePrim(/[a-zA-Z]/);
+    this.letter.description = 'letter';
+    this.lower = pexprs.makePrim(/[a-z]/);
+    this.lower.description = 'lower-case letter';
+    this.upper = pexprs.makePrim(/[A-Z]/);
+    this.upper.description = 'upper-case letter';
+    this.digit = pexprs.makePrim(/[0-9]/);
+    this.digit.description = 'digit';
+    this.hexDigit = pexprs.makePrim(/[0-9a-fA-F]/);
+    this.hexDigit.description = 'hexadecimal digit';
+  })(),
 
   match: function(obj, startRule, optThrowOnFail) {
     return this.matchContents([obj], startRule, optThrowOnFail);
@@ -50,17 +56,20 @@ Grammar.prototype = {
 
   matchContents: function(obj, startRule, optThrowOnFail) {
     var inputStream = InputStream.newFor(obj);
-    var thunk = new pexprs.Apply(startRule).eval(undefined, this.ruleDict, inputStream, undefined);
-    if (common.isSyntactic(startRule)) {
-      skipSpaces(this.ruleDict, inputStream);
-    }
-    if (thunk === common.fail || !inputStream.atEnd()) {
-      if (optThrowOnFail) {
-        throw new MatchFailure(inputStream.getMaxFailurePos());
-      } else {
-        return false;
-      }
+    var thunk = new pexprs.Apply(startRule).eval(optThrowOnFail, undefined, this.ruleDict, inputStream, undefined);
+
+    var succeeded;
+    if (thunk === common.fail) {
+      succeeded = false;
     } else {
+      // This match only succeeded if the start rule consumed all of the input.
+      if (common.isSyntactic(startRule)) {
+        skipSpaces(this.ruleDict, inputStream);
+      }
+      succeeded = pexprs.end.eval(optThrowOnFail, false, this.ruleDict, inputStream, undefined) !== common.fail;
+    }
+
+    if (succeeded) {
       var assertSemanticActionNamesMatch = this.assertSemanticActionNamesMatch.bind(this);
       var ans = function(actionDict) {
         assertSemanticActionNamesMatch(actionDict);
@@ -68,6 +77,10 @@ Grammar.prototype = {
       };
       ans.toString = function() { return '[ohm thunk]'; };
       return ans;
+    } else if (optThrowOnFail) {
+      throw new MatchFailure(inputStream, this.ruleDict);
+    } else {
+      return false;
     }
   },
 

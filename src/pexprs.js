@@ -22,6 +22,10 @@ function PExpr() {
 
 var anything = objectThatDelegatesTo(PExpr.prototype);
 
+// End
+
+var end = objectThatDelegatesTo(PExpr.prototype);
+
 // Primitives
 
 function Prim(obj) {
@@ -160,6 +164,7 @@ exports.makePrim = function(obj) {
 
 exports.PExpr = PExpr;
 exports.anything = anything;
+exports.end = end;
 exports.Prim = Prim;
 exports.StringPrim = StringPrim;
 exports.RegExpPrim = RegExpPrim;
@@ -188,4 +193,5 @@ require('./pexprs-getBindingNames.js');
 require('./pexprs-eval.js');
 require('./pexprs-outputRecipe.js');
 require('./pexprs-producesValue.js');
+require('./pexprs-toExpected.js');
 

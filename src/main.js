@@ -6,11 +6,11 @@ require('../dist/ohm-grammar.js');
 
 var Builder = require('./Builder.js');
 var Namespace = require('./Namespace.js');
+var MatchFailure = require('./MatchFailure.js');
 var errors = require('./errors.js');
 
 var awlib = require('awlib');
 var unescapeChar = awlib.stringUtils.unescapeChar;
-var browser = awlib.browser;
 
 var thisModule = exports;
 
@@ -25,23 +25,26 @@ function makeGrammarActionDict(optNamespace) {
     space_multiLine:            function()    {},
     space_singleLine:           function()    {},
 
-    _name:                      function()    { return this.interval.contents; },
+    ruleDescr:                  function(env) { builder.setRuleDescription(env.t); },
+    ruleDescrText:              function(env) { return this.interval.contents; },
+
+    name:                       function()    { return this.interval.contents; },
     nameFirst:                  function(env) {},
     nameRest:                   function(env) {},
 
-    name:                       function(env) { return env.n; },
+    ident:                      function(env) { return env.n; },
 
-    namedConst:                 function(env) { return env.value; },
-    namedConst_undefined:       function()    { return undefined; },
-    namedConst_null:            function()    { return null; },
-    namedConst_true:            function()    { return true; },
-    namedConst_false:           function()    { return false; },
+    keyword:                    function(env) { return env.value; },
+    keyword_undefined:          function()    { return undefined; },
+    keyword_null:               function()    { return null; },
+    keyword_true:               function()    { return true; },
+    keyword_false:              function()    { return false; },
 
     string:                     function(env) {
                                   return env.cs.map(function(c) { return unescapeChar(c); }).join('');
                                 },
     sChar:                      function()    { return this.interval.contents; },
-    regexp:                     function(env) { return new RegExp(env.e); },
+    regExp:                     function(env) { return new RegExp(env.e); },
     reCharClass:                function()    { return this.interval.contents; },
     number:                     function()    { return parseInt(this.interval.contents); },
 
@@ -86,14 +89,17 @@ function makeGrammarActionDict(optNamespace) {
     Rule:                       function(env) { return env.value; },
     Rule_define:                function(env) {
                                   builder.currentRuleName = env.n;
+                                  env.d;  // force evaluation
                                   return builder.define(env.n, env.b);
                                 },
     Rule_override:              function(env) {
                                   builder.currentRuleName = env.n;
+                                  env.d;  // force evaluation
                                   return builder.override(env.n, env.b);
                                 },
     Rule_extend:                function(env) {
                                   builder.currentRuleName = env.n;
+                                  env.d;  // force evaluation
                                   return builder.extend(env.n, env.b);
                                 },
 
@@ -119,12 +125,14 @@ function makeGrammarActionDict(optNamespace) {
 }
 
 function compileAndLoad(source, whatItIs, optNamespace) {
-  var thunk = thisModule._ohmGrammar.matchContents(source, whatItIs);
-  if (thunk) {
+  try {
+    var thunk = thisModule._ohmGrammar.matchContents(source, whatItIs, true);
     return thunk(makeGrammarActionDict(optNamespace));
-  } else {
-    // TODO: improve error message (show what part of the input is wrong, what was expected, etc.)
-    browser.error('invalid input in:', source);
+  } catch (e) {
+    if (e instanceof MatchFailure) {
+      console.log('\n' + e.getExtendedErrorMessage());
+    }
+    throw e;
   }
 }
 

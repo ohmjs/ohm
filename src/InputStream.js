@@ -4,6 +4,7 @@
 
 var common = require('./common.js');
 var PosInfo = require('./PosInfo.js');
+var Grammar = require('./Grammar.js');
 
 var awlib = require('awlib');
 var objectThatDelegatesTo = awlib.objectUtils.objectThatDelegatesTo;
@@ -30,8 +31,18 @@ InputStream.prototype = {
   init: function(source) {
     this.source = source;
     this.pos = 0;
-    this.maxFailurePos = -1;
     this.posInfos = [];
+    this.failures = null;
+    this.failuresPos = -1;
+  },
+
+  recordFailure: function(pos, expr) {
+    if (pos > this.failuresPos) {
+      this.failures = {expr: expr, next: null};
+      this.failuresPos = pos;
+    } else if (pos === this.failuresPos) {
+      this.failures = {expr: expr, next: this.failures};
+    }
   },
 
   getCurrentPosInfo: function() {
@@ -45,9 +56,6 @@ InputStream.prototype = {
   },
 
   next: function() {
-    if (this.pos > this.maxFailurePos) {
-      this.maxFailurePos = this.pos;
-    }
     if (this.atEnd()) {
       return common.fail;
     } else {
@@ -63,8 +71,8 @@ InputStream.prototype = {
     return this.source.slice(startIdx, endIdx);
   },
 
-  getMaxFailurePos: function() {
-    return this.maxFailurePos;
+  getFailuresPos: function() {
+    return this.failuresPos;
   }
 };
 

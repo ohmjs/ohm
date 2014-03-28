@@ -13,41 +13,35 @@ var makeStringBuffer = awlib.objectUtils.stringBuffer;
 // Operations
 // --------------------------------------------------------------------
 
-pexprs.PExpr.prototype.toExpected = common.abstract;
+pexprs.PExpr.prototype.toExpected = function(ruleDict) {
+  return undefined;
+};
 
-pexprs.anything.toExpected = function() {
+pexprs.anything.toExpected = function(ruleDict) {
   return "any object";
 };
 
-pexprs.end.toExpected = function() {
+pexprs.end.toExpected = function(ruleDict) {
   return "end of input";
 };
 
-pexprs.Prim.prototype.toExpected = function() {
+pexprs.Prim.prototype.toExpected = function(ruleDict) {
   return printString(this.obj);
 };
 
-pexprs.Not.prototype.toExpected = function() {
-  return "not " + this.expr.toExpected();
+pexprs.Not.prototype.toExpected = function(ruleDict) {
+  return "no " + this.expr.toExpected();
 };
 
-// TODO
-pexprs.Str.prototype.toExpected = function() {
-  return "a string";
-};
+// TODO: think about Str, List, and Obj
 
-// TODO
-pexprs.List.prototype.toExpected = function() {
-  return "a list";
-};
-
-// TODO
-pexprs.Obj.prototype.toExpected = function() {
-  return "an object";
-};
-
-pexprs.Apply.prototype.toExpected = function() {
-  var article = /[aeiouAEIOU]/.test(this.ruleName.charAt(0)) ? "an" : "a";
-  return article + " " + this.ruleName;
+pexprs.Apply.prototype.toExpected = function(ruleDict) {
+  var description = ruleDict[this.ruleName].description;
+  if (description) {
+    return description;
+  } else {
+    var article = /^[aeiouAEIOU]/.test(this.ruleName) ? "an" : "a";
+    return article + " " + this.ruleName;
+  }
 };
 

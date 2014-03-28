@@ -15,9 +15,17 @@ var equals = awlib.equals.equals;
 
 pexprs.PExpr.prototype.assertChoicesHaveUniformBindings = common.abstract;
 
-pexprs.anything.assertChoicesHaveUniformBindings = function(ruleName) {};
+pexprs.anything.assertChoicesHaveUniformBindings = function(ruleName) {
+  // no-op
+};
 
-pexprs.Prim.prototype.assertChoicesHaveUniformBindings = function(ruleName) {};
+pexprs.end.assertChoicesHaveUniformBindings = function(ruleName) {
+  // no-op
+};
+
+pexprs.Prim.prototype.assertChoicesHaveUniformBindings = function(ruleName) {
+  // no-op
+};
 
 pexprs.Alt.prototype.assertChoicesHaveUniformBindings = function(ruleName) {
   if (this.terms.length === 0) {
@@ -83,5 +91,7 @@ pexprs.Obj.prototype.assertChoicesHaveUniformBindings = function(ruleName) {
   }
 };
 
-pexprs.Apply.prototype.assertChoicesHaveUniformBindings = function(ruleName) {};
+pexprs.Apply.prototype.assertChoicesHaveUniformBindings = function(ruleName) {
+  // no-op
+};
 

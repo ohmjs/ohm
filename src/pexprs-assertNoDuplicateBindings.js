@@ -12,9 +12,17 @@ var errors = require('./errors.js');
 
 pexprs.PExpr.prototype.assertNoDuplicateBindings = common.abstract;
 
-pexprs.anything.assertNoDuplicateBindings = function(ruleName) {};
+pexprs.anything.assertNoDuplicateBindings = function(ruleName) {
+  // no-op
+};
 
-pexprs.Prim.prototype.assertNoDuplicateBindings = function(ruleName) {};
+pexprs.end.assertNoDuplicateBindings = function(ruleName) {
+  // no-op
+};
+
+pexprs.Prim.prototype.assertNoDuplicateBindings = function(ruleName) {
+  // no-op
+};
 
 pexprs.Alt.prototype.assertNoDuplicateBindings = function(ruleName) {
   for (var idx = 0; idx < this.terms.length; idx++) {
@@ -72,5 +80,7 @@ pexprs.Obj.prototype.assertNoDuplicateBindings = function(ruleName) {
   }
 };
 
-pexprs.Apply.prototype.assertNoDuplicateBindings = function(ruleName) {};
+pexprs.Apply.prototype.assertNoDuplicateBindings = function(ruleName) {
+  // no-op
+};
 

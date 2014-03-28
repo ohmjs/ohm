@@ -15,6 +15,10 @@ pexprs.anything.addRulesThatNeedSemanticAction = function() {
   // no-op
 };
 
+pexprs.end.addRulesThatNeedSemanticAction = function() {
+  // no-op
+};
+
 pexprs.Prim.prototype.addRulesThatNeedSemanticAction = function() {
   // no-op
 };

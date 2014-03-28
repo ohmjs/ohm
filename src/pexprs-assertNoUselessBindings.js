@@ -23,6 +23,10 @@ pexprs.anything.assertNoUselessBindings = function(ruleName) {
   // no-op
 };
 
+pexprs.end.assertNoUselessBindings = function(ruleName) {
+  // no-op
+};
+
 pexprs.Prim.prototype.assertNoUselessBindings = function(ruleName) {
   // no-op
 };

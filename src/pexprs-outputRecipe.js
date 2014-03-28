@@ -18,6 +18,10 @@ pexprs.anything.outputRecipe = function(ws) {
   // no-op
 };
 
+pexprs.end.outputRecipe = function(ws) {
+  // no-op
+};
+
 pexprs.Prim.prototype.outputRecipe = function(ws) {
   ws.nextPutAll('b.prim(');
   ws.nextPutAll(printString(this.obj));

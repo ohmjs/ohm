@@ -7,23 +7,36 @@
     <script type="text/ohm-js" id="arithmetic">
 
 Arithmetic {
-  Expr    == AddExpr
-  AddExpr == AddExpr.x '+'.op MulExpr.y  {plus}
-           | AddExpr.x '-'.op MulExpr.y  {minus}
-           | MulExpr
-  MulExpr == MulExpr.x '*'.op ExpExpr.y  {times}
-           | MulExpr.x '/'.op ExpExpr.y  {divide}
-           | ExpExpr
-  ExpExpr == PriExpr.x '^'.op ExpExpr.y  {power}
-           | PriExpr
-  PriExpr == '('.open Expr.e ')'.close   {paren}
-           | '+'.sign PriExpr.e          {pos}
-           | '-'.sign PriExpr.e          {neg}
-           | ident
-           | number
-  ident   == letter alnum*
-  number  == digit+ ('.' digit*)?
-           | '.' digit+
+  Expr
+    == AddExpr
+
+  AddExpr
+    == AddExpr.x '+'.op MulExpr.y  {plus}
+     | AddExpr.x '-'.op MulExpr.y  {minus}
+     | MulExpr
+
+  MulExpr
+    == MulExpr.x '*'.op ExpExpr.y  {times}
+     | MulExpr.x '/'.op ExpExpr.y  {divide}
+     | ExpExpr
+
+  ExpExpr
+    == PriExpr.x '^'.op ExpExpr.y  {power}
+     | PriExpr
+
+  PriExpr
+    == '('.open Expr.e ')'.close   {paren}
+     | '+'.sign PriExpr.e          {pos}
+     | '-'.sign PriExpr.e          {neg}
+     | ident
+     | number
+
+  ident  -- identifier
+    == letter alnum*
+
+  number  -- number
+     == digit+ ('.' digit*)?
+      | '.' digit+
 }
 
     </script>

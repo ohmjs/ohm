@@ -14,6 +14,16 @@ var printString = awlib.stringUtils.printString;
 // Private stuff
 // --------------------------------------------------------------------
 
+function outputRecipe(decl, ws) {
+  ws.nextPutAll('b.');
+  ws.nextPutAll(decl.kind);
+  ws.nextPutAll('(');
+  ws.nextPutAll(printString(decl.name));
+  ws.nextPutAll(', ');
+  decl.body.outputRecipe(ws);
+  ws.nextPutAll(')');
+}
+
 function RuleDecl() {
   throw 'RuleDecl cannot be instantiated -- it\'s abstract';
 }
@@ -27,25 +37,16 @@ RuleDecl.prototype = {
     body.assertChoicesHaveUniformBindings(name);
   },
 
-  install: function(ruleDict) {
-    ruleDict[this.name] = this.body;
-  },
+  install: common.abstract,
 
-  outputRecipe: function(ws) {
-    ws.nextPutAll('b.');
-    ws.nextPutAll(this.kind);
-    ws.nextPutAll('(');
-    ws.nextPutAll(printString(this.name));
-    ws.nextPutAll(', ');
-    this.body.outputRecipe(ws);
-    ws.nextPutAll(')');
-  }
+  outputRecipe: function(ws) { outputRecipe(this, ws); }
 };
 
-function Define(name, body, superGrammar) {
+function Define(name, body, superGrammar, description) {
   this.name = name;
   this.body = body;
   this.superGrammar = superGrammar;
+  this.description = description;
 }
 
 Define.prototype = objectThatDelegatesTo(RuleDecl.prototype, {
@@ -56,6 +57,18 @@ Define.prototype = objectThatDelegatesTo(RuleDecl.prototype, {
       throw new errors.DuplicateRuleDeclarationError(this.name, this.superGrammar.name);
     }
     this.performCommonChecks(this.name, this.body);
+  },
+
+  outputRecipe: function(ws) {
+    ws.nextPutAll('b.setRuleDescription(');
+    ws.nextPutAll(printString(this.description));
+    ws.nextPutAll('); ');
+    outputRecipe(this, ws);
+  },
+
+  install: function(ruleDict) {
+    this.body.description = this.description;
+    ruleDict[this.name] = this.body;
   }
 });
 
@@ -77,6 +90,11 @@ Override.prototype = objectThatDelegatesTo(RuleDecl.prototype, {
       throw new errors.RuleMustProduceValueError(this.name, 'overriding');
     }
     this.performCommonChecks(this.name, this.body);
+  },
+
+  install: function(ruleDict) {
+    this.body.description = this.superGrammar.ruleDict[this.name].description;
+    ruleDict[this.name] = this.body;
   }
 });
 
@@ -97,6 +115,10 @@ Inline.prototype = objectThatDelegatesTo(RuleDecl.prototype, {
       throw new errors.DuplicateRuleDeclarationError(this.name, this.superGrammar.name);
     }
     this.performCommonChecks(this.name, this.body);
+  },
+
+  install: function(ruleDict) {
+    ruleDict[this.name] = this.body;
   }
 });
 
@@ -122,6 +144,7 @@ Extend.prototype = objectThatDelegatesTo(RuleDecl.prototype, {
   },
 
   install: function(ruleDict) {
+    this.extendedBody.description = this.superGrammar.ruleDict[this.name].description;
     ruleDict[this.name] = this.extendedBody;
   }
 });
