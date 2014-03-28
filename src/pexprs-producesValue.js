@@ -25,6 +25,10 @@ pexprs.Seq.prototype.producesValue = function() {
   return false;
 };
 
+pexprs.Many.prototype.producesValue = function() {
+  return this.expr.producesValue();
+};
+
 pexprs.Not.prototype.producesValue = function() {
   return false;
 };

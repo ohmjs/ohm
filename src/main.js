@@ -25,7 +25,7 @@ function makeGrammarActionDict(optNamespace) {
     space_singleLine:           function()    {},
 
     ruleDescr:                  function(env) { builder.setRuleDescription(env.t); },
-    ruleDescrText:              function(env) { return this.interval.contents; },
+    ruleDescrText:              function()    { return this.interval.contents; },
 
     name:                       function()    { return this.interval.contents; },
     nameFirst:                  function(env) {},

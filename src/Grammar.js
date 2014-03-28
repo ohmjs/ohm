@@ -32,9 +32,6 @@ Grammar.prototype = {
     this.end = new pexprs.Not(pexprs.anything);
     this.space = pexprs.makePrim(/[\s]/);
     this.space.description = 'space';
-    this.spaces = new pexprs.Alt([
-        new pexprs.Seq([new pexprs.Apply('spaces'), new pexprs.Apply('space')]),
-        new pexprs.Seq([])]);
     this.alnum = pexprs.makePrim(/[0-9a-zA-Z]/);
     this.space.description = 'alpha-numeric character';
     this.letter = pexprs.makePrim(/[a-zA-Z]/);

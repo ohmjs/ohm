@@ -132,7 +132,8 @@ pexprs.Bind.prototype.eval = function(recordFailures, syntactic, ruleDict, input
 };
 
 pexprs.Many.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
-  var matches = [];
+  var numMatches = 0;
+  var matches = this.expr.producesValue() ? [] : undefined;
   while (true) {
     var backtrackPos = inputStream.pos;
     var value = this.expr.eval(recordFailures, syntactic, ruleDict, inputStream, []);
@@ -140,10 +141,17 @@ pexprs.Many.prototype.eval = function(recordFailures, syntactic, ruleDict, input
       inputStream.pos = backtrackPos;
       break;
     } else {
-      matches.push(value);
+      numMatches++;
+      if (matches) {
+        matches.push(value);
+      }
     }
   }
-  return matches.length < this.minNumMatches ?  common.fail : new thunks.ListThunk(matches);
+  if (numMatches < this.minNumMatches) {
+    return common.fail;
+  } else {
+    return matches ? new thunks.ListThunk(matches) : thunks.valuelessThunk;
+  }
 };
 
 pexprs.Opt.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
