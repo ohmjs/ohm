@@ -13,7 +13,7 @@ var errors = require('./errors.js');
 function assertNoBindings(ruleName, expr) {
   var bindings = expr.getBindingNames();
   if (bindings.length > 0) {
-    throw new errors.UselessBindingsError(ruleName, bindings);
+    throw new errors.UselessBindings(ruleName, bindings);
   }
 }
 

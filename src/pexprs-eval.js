@@ -257,7 +257,7 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, ruleDict, inpu
   } else {
     var body = ruleDict[ruleName];
     if (!body) {
-      throw new errors.UndeclaredRuleError(ruleName);
+      throw new errors.UndeclaredRule(ruleName);
     }
     var origPos = inputStream.pos;
     origPosInfo.enter(ruleName);

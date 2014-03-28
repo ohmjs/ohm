@@ -5,7 +5,6 @@
 var common = require('./common.js');
 var errors = require('./errors.js');
 var InputStream = require('./InputStream.js');
-var MatchFailure = require('./MatchFailure.js');
 var pexprs = require('./pexprs.js');
 var skipSpaces = require('./skipSpaces.js');
 
@@ -78,7 +77,7 @@ Grammar.prototype = {
       ans.toString = function() { return '[ohm thunk]'; };
       return ans;
     } else if (optThrowOnFail) {
-      throw new MatchFailure(inputStream, this.ruleDict);
+      throw new errors.MatchFailure(inputStream, this.ruleDict);
     } else {
       return false;
     }
@@ -194,7 +193,7 @@ Grammar.prototype = {
     var self = this;
     function getBody(ruleName) {
       if (self.ruleDict[ruleName] === undefined) {
-        throw new errors.UndeclaredRuleError(ruleName, self.name);
+        throw new errors.UndeclaredRule(ruleName, self.name);
       } else {
         return self.ruleDict[ruleName];
       }

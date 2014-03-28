@@ -20,7 +20,7 @@ function Namespace(name) {
 Namespace.prototype = {
   install: function(name, grammar) {
     if (this.grammars[name]) {
-      throw new errors.DuplicateGrammarDeclarationError(name, this.name);
+      throw new errors.DuplicateGrammarDeclaration(name, this.name);
     } else {
       this.grammars[name] = grammar;
     }
@@ -31,7 +31,7 @@ Namespace.prototype = {
     if (this.grammars[name]) {
       return this.grammars[name];
     } else {
-      throw new errors.UndeclaredGrammarError(name, this.name);
+      throw new errors.UndeclaredGrammar(name, this.name);
     }
   },
 

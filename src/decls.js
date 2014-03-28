@@ -54,7 +54,7 @@ Define.prototype = objectThatDelegatesTo(RuleDecl.prototype, {
 
   performChecks: function() {
     if (this.superGrammar.ruleDict[this.name]) {
-      throw new errors.DuplicateRuleDeclarationError(this.name, this.superGrammar.name);
+      throw new errors.DuplicateRuleDeclaration(this.name, this.superGrammar.name);
     }
     this.performCommonChecks(this.name, this.body);
   },
@@ -84,10 +84,10 @@ Override.prototype = objectThatDelegatesTo(RuleDecl.prototype, {
   performChecks: function() {
     var overridden = this.superGrammar.ruleDict[this.name];
     if (!overridden) {
-      throw new errors.UndeclaredRuleError(this.name, this.superGrammar.name);
+      throw new errors.UndeclaredRule(this.name, this.superGrammar.name);
     }
     if (overridden.getBindingNames().length === 0 && overridden.producesValue() && !this.body.producesValue()) {
-      throw new errors.RuleMustProduceValueError(this.name, 'overriding');
+      throw new errors.RuleMustProduceValue(this.name, 'overriding');
     }
     this.performCommonChecks(this.name, this.body);
   },
@@ -112,7 +112,7 @@ Inline.prototype = objectThatDelegatesTo(RuleDecl.prototype, {
     // an override. But only if the inline rule that's being overridden is nested inside the nesting rule that
     // we're overriding? Hopefully there's a much less complicated way to do this :)
     if (this.superGrammar.ruleDict[this.name]) {
-      throw new errors.DuplicateRuleDeclarationError(this.name, this.superGrammar.name);
+      throw new errors.DuplicateRuleDeclaration(this.name, this.superGrammar.name);
     }
     this.performCommonChecks(this.name, this.body);
   },
@@ -126,7 +126,7 @@ function Extend(name, body, superGrammar) {
   this.name = name;
   this.base = superGrammar.ruleDict[name];
   if (!this.base) {
-    throw new errors.UndeclaredRuleError(name, superGrammar.name);
+    throw new errors.UndeclaredRule(name, superGrammar.name);
   }
   this.body = body;
   this.extendedBody = new pexprs.ExtendAlt(this.body, this.base);
@@ -138,7 +138,7 @@ Extend.prototype = objectThatDelegatesTo(RuleDecl.prototype, {
 
   performChecks: function() {
     if (this.base.getBindingNames().length === 0 && this.base.producesValue() && !this.body.producesValue()) {
-      throw new errors.RuleMustProduceValueError(this.name, 'extending');
+      throw new errors.RuleMustProduceValue(this.name, 'extending');
     }
     this.performCommonChecks(this.name, this.extendedBody);
   },

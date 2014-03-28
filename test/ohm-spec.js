@@ -465,7 +465,7 @@ describe("Ohm", function() {
         expect(function() {
           m = makeGrammar("M { start = ('a':x 'bc' 'z':x)? }");
         }).to.throwException(function(e) {
-          expect(e).to.be.a(errors.DuplicateBindingsError);
+          expect(e).to.be.a(errors.DuplicateBindings);
           expect(e.ruleName).to.equal('start');
           expect(e.duplicates).to.eql(['x']);
         });
@@ -542,7 +542,7 @@ describe("Ohm", function() {
         expect(function() {
           makeGrammar("M { foo = (bar:x)* }");
         }).to.throwException(function(e) {
-          expect(e).to.be.a(errors.UselessBindingsError);
+          expect(e).to.be.a(errors.UselessBindings);
           expect(e.ruleName).to.equal('foo');
           expect(e.useless).to.eql(['x']);
         });
@@ -575,7 +575,7 @@ describe("Ohm", function() {
         expect(function() {
           makeGrammar("M { foo = (bar:x)? }");
         }).to.throwException(function(e) {
-          expect(e).to.be.a(errors.UselessBindingsError);
+          expect(e).to.be.a(errors.UselessBindings);
           expect(e.ruleName).to.equal('foo');
           expect(e.useless).to.eql(['x']);
         });
@@ -607,7 +607,7 @@ describe("Ohm", function() {
         expect(function() {
           makeGrammar("M { foo = ~(bar:x) }");
         }).to.throwException(function(e) {
-          expect(e).to.be.a(errors.UselessBindingsError);
+          expect(e).to.be.a(errors.UselessBindings);
           expect(e.ruleName).to.equal('foo');
           expect(e.useless).to.eql(['x']);
         });
@@ -735,7 +735,7 @@ describe("Ohm", function() {
         expect(function() {
           m = ohm.makeGrammar("M { duh = {x: 1, x: 2, y: 3, ...} }");
         }).to.throwException(function(e) {
-          expect(e).to.be.a(errors.DuplicatePropertyNamesError);
+          expect(e).to.be.a(errors.DuplicatePropertyNames);
           expect(e.duplicates).to.eql(['x']);
         });
       });
@@ -744,7 +744,7 @@ describe("Ohm", function() {
         expect(function() {
           m = ohm.makeGrammar("M { duh = {x: (1:a), y: (2:a), ...} }");
         }).to.throwException(function(e) {
-          expect(e).to.be.a(errors.DuplicateBindingsError);
+          expect(e).to.be.a(errors.DuplicateBindings);
           expect(e.ruleName).to.equal('duh');
           expect(e.duplicates).to.eql(['a']);
         });
@@ -1057,7 +1057,7 @@ describe("Ohm", function() {
           expect(function() {
             makeGrammar("G2 <: G1 {}", 'inheritance-oops');
           }).to.throwException(function(e) {
-            expect(e).to.be.a(errors.UndeclaredGrammarError);
+            expect(e).to.be.a(errors.UndeclaredGrammar);
             expect(e.grammarName).to.equal('G1');
             expect(e.namespaceName).to.equal('inheritance-oops');
           });
@@ -1067,7 +1067,7 @@ describe("Ohm", function() {
           expect(function() {
             makeGrammar("G2 <: G1 {}");
           }).to.throwException(function(e) {
-            expect(e).to.be.a(errors.UndeclaredGrammarError);
+            expect(e).to.be.a(errors.UndeclaredGrammar);
             expect(e.grammarName).to.equal('G1');
             expect(e.namespaceName).to.be(undefined);
           });
@@ -1082,7 +1082,7 @@ describe("Ohm", function() {
               "G2 <: G1 { foo = 'bar' }"
             ], 'inheritance-define');
           }).to.throwException(function(e) {
-            expect(e).to.be.an(errors.DuplicateRuleDeclarationError);
+            expect(e).to.be.an(errors.DuplicateRuleDeclaration);
             expect(e.ruleName).to.equal('foo');
             expect(e.grammarName).to.equal('G1');
           });
@@ -1115,7 +1115,7 @@ describe("Ohm", function() {
           expect(function() {
             makeGrammar("G3 <: G1 { foo := 'foo' }", 'inheritance-override');
           }).to.throwException(function(e) {
-            expect(e).to.be.an(errors.UndeclaredRuleError);
+            expect(e).to.be.an(errors.UndeclaredRule);
             expect(e.ruleName).to.equal('foo');
             expect(e.grammarName).to.equal('G1');
           });
@@ -1128,7 +1128,7 @@ describe("Ohm", function() {
             makeGrammar("M1 { foo = 'foo' }", "inheritance-override");
             makeGrammar("M2 <: M1 { foo := bar baz }", "inheritance-override");
           }).to.throwException(function(e) {
-            expect(e).to.be.an(errors.RuleMustProduceValueError);
+            expect(e).to.be.an(errors.RuleMustProduceValue);
             expect(e.ruleName).to.equal('foo');
             expect(e.why).to.equal('overriding');
           });
@@ -1188,7 +1188,7 @@ describe("Ohm", function() {
           expect(function() {
             makeGrammar("G3 <: G1 { bar += 'bar' }", 'inheritanceExtend');
           }).to.throwException(function(e) {
-            expect(e).to.be.an(errors.UndeclaredRuleError);
+            expect(e).to.be.an(errors.UndeclaredRule);
             expect(e.ruleName).to.equal('bar');
             expect(e.grammarName).to.equal('G1');
           });
@@ -1198,7 +1198,7 @@ describe("Ohm", function() {
           expect(function() {
             makeGrammar("G3 <: G1 { foo += '111':x '222':z }", 'inheritanceExtend');
           }).to.throwException(function(e) {
-            expect(e).to.be.a(errors.InconsistentBindingsError);
+            expect(e).to.be.a(errors.InconsistentBindings);
             expect(e.ruleName).to.equal('foo');
             expect(e.expected).to.eql(['x', 'y']);
             expect(e.actual).to.eql(['x', 'z']);
@@ -1212,7 +1212,7 @@ describe("Ohm", function() {
             makeGrammar("M1 { foo = 'foo' }", "inheritanceExtend3");
             makeGrammar("M2 <: M1 { foo += bar baz }", "inheritanceExtend3");
           }).to.throwException(function(e) {
-            expect(e).to.be.an(errors.RuleMustProduceValueError);
+            expect(e).to.be.an(errors.RuleMustProduceValue);
             expect(e.ruleName).to.equal('foo');
             expect(e.why).to.equal('extending');
           });
@@ -1257,7 +1257,7 @@ describe("Ohm", function() {
         expect(function() {
           makeGrammar("G { foo = 'a':x | 'b':y }");
         }).to.throwException(function(e) {
-          expect(e).to.be.a(errors.InconsistentBindingsError);
+          expect(e).to.be.a(errors.InconsistentBindings);
           expect(e.ruleName).to.equal('foo');
           expect(e.expected).to.eql(['x']);
           expect(e.actual).to.eql(['y']);
@@ -1329,7 +1329,7 @@ describe("Ohm", function() {
         expect(function() {
           makeGrammar("N <: Expr { addExpr := addExpr:x '~' mulExpr:y {minus} }", 'inlineRuleTest1');
         }).to.throwException(function(e) {
-          expect(e).to.be.an(errors.DuplicateRuleDeclarationError);
+          expect(e).to.be.an(errors.DuplicateRuleDeclaration);
           expect(e.ruleName).to.equal('addExpr_minus');
           expect(e.grammarName).to.equal('Expr');
         });
@@ -1337,7 +1337,7 @@ describe("Ohm", function() {
         expect(function() {
           makeGrammar("N <: Expr { addExpr += addExpr:x '~' mulExpr:y {minus} }", 'inlineRuleTest1');
         }).to.throwException(function(e) {
-          expect(e).to.be.an(errors.DuplicateRuleDeclarationError);
+          expect(e).to.be.an(errors.DuplicateRuleDeclaration);
           expect(e.ruleName).to.equal('addExpr_minus');
           expect(e.grammarName).to.equal('Expr');
         });
@@ -1441,7 +1441,7 @@ describe("Ohm", function() {
             ohm.makeGrammar("ccc { foo = 'foo' }", ns1);
             ohm.makeGrammar("ccc { bar = 'bar' }", ns1);
           }).to.throwException(function(e) {
-            expect(e).to.be.an(errors.DuplicateGrammarDeclarationError);
+            expect(e).to.be.an(errors.DuplicateGrammarDeclaration);
             expect(e.grammarName).to.equal('ccc');
             expect(e.namespaceName).to.equal('ns1');
           });
@@ -1479,7 +1479,7 @@ describe("Ohm", function() {
           expect(function() {
             ns.getGrammar('M');
           }).to.throwException(function(e) {
-            expect(e).to.be.an(errors.UndeclaredGrammarError);
+            expect(e).to.be.an(errors.UndeclaredGrammar);
             expect(e.grammarName).to.equal('M');
             expect(e.namespaceName).to.equal('aaa1');
           });

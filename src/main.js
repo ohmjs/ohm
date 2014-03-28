@@ -6,7 +6,6 @@ require('../dist/ohm-grammar.js');
 
 var Builder = require('./Builder.js');
 var Namespace = require('./Namespace.js');
-var MatchFailure = require('./MatchFailure.js');
 var errors = require('./errors.js');
 
 var awlib = require('awlib');
@@ -109,7 +108,7 @@ function makeGrammarActionDict(optNamespace) {
                                   if (optNamespace) {
                                     return optNamespace.getGrammar(env.n);
                                   } else {
-                                    throw new errors.UndeclaredGrammarError(env.n);
+                                    throw new errors.UndeclaredGrammar(env.n);
                                   }
                                 },
 
@@ -129,8 +128,8 @@ function compileAndLoad(source, whatItIs, optNamespace) {
     var thunk = thisModule._ohmGrammar.matchContents(source, whatItIs, true);
     return thunk(makeGrammarActionDict(optNamespace));
   } catch (e) {
-    if (e instanceof MatchFailure) {
-      console.log('\n' + e.getExtendedErrorMessage());
+    if (e instanceof errors.MatchFailure) {
+      console.log('\n' + e.getMessage());
     }
     throw e;
   }

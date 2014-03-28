@@ -37,7 +37,7 @@ pexprs.Alt.prototype.assertChoicesHaveUniformBindings = function(ruleName) {
     term.assertChoicesHaveUniformBindings();
     var otherNames = term.getBindingNames();
     if (!equals(names, otherNames)) {
-      throw new errors.InconsistentBindingsError(ruleName, names, otherNames);
+      throw new errors.InconsistentBindings(ruleName, names, otherNames);
     }
   }
 };
@@ -47,7 +47,7 @@ pexprs.ExtendAlt.prototype.assertChoicesHaveUniformBindings = function(ruleName)
   var names = this.terms[1].getBindingNames();
   var otherNames = this.terms[0].getBindingNames();
   if (!equals(names, otherNames)) {
-    throw new errors.InconsistentBindingsError(ruleName, names, otherNames);
+    throw new errors.InconsistentBindings(ruleName, names, otherNames);
   }
 };
 

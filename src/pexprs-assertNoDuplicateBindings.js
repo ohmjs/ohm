@@ -37,7 +37,7 @@ pexprs.Seq.prototype.assertNoDuplicateBindings = function(ruleName) {
 
   var duplicates = common.getDuplicates(this.getBindingNames());
   if (duplicates.length > 0) {
-    throw new errors.DuplicateBindingsError(ruleName, duplicates);
+    throw new errors.DuplicateBindings(ruleName, duplicates);
   }
 };
 
@@ -76,7 +76,7 @@ pexprs.Obj.prototype.assertNoDuplicateBindings = function(ruleName) {
 
   var duplicates = common.getDuplicates(this.getBindingNames());
   if (duplicates.length > 0) {
-    throw new errors.DuplicateBindingsError(ruleName, duplicates);
+    throw new errors.DuplicateBindings(ruleName, duplicates);
   }
 };
 
