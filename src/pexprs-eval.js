@@ -255,21 +255,33 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, ruleDict, inpu
       return common.fail;
     }
   } else {
-    var body = ruleDict[ruleName]
+    var body = ruleDict[ruleName];
     if (!body) {
       throw new errors.UndeclaredRuleError(ruleName);
     }
-    if (body.description && common.isSyntactic(ruleName)) {
-      skipSpaces(ruleDict, inputStream);
-    }
+    var ruleIsSyntactic = common.isSyntactic(ruleName);
+
+    // TODO: consider what happens b/c of this whitespace-skipping when there is mutual left recursion in which
+    // the involved set contains both syntactic and lexical rules, e.g.,
+    //
+    //   foo = Bar digit | digit
+    //   Bar = foo digit | digit
+    //
+    //  and
+    //
+    //   Foo = Bar digit | digit
+    //   bar = foo digit | digit
+    //
+    //  where foo and Bar are the start rules of the examples above, resp.
+
     var origPos = inputStream.pos;
     origPosInfo.enter(ruleName);
     var rf = recordFailures && !body.description;
-    var value = this.evalOnce(body, rf, syntactic, ruleDict, inputStream);
+    var value = this.evalOnce(body, rf, ruleIsSyntactic, ruleDict, inputStream);
     var currentLR = origPosInfo.getCurrentLeftRecursion();
     if (currentLR) {
       if (currentLR.name === ruleName) {
-        value = this.handleLeftRecursion(body, rf, syntactic, ruleDict, inputStream, origPos, currentLR, value);
+        value = this.handleLeftRecursion(body, rf, ruleIsSyntactic, ruleDict, inputStream, origPos, currentLR, value);
         origPosInfo.memo[ruleName] =
           {pos: inputStream.pos, value: value, involvedRules: currentLR.involvedRules};
         origPosInfo.endLeftRecursion(ruleName);
@@ -282,7 +294,15 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, ruleDict, inpu
     }
     origPosInfo.exit(ruleName);
     if (value === common.fail && recordFailures && body.description) {
-      inputStream.recordFailure(origPos, this);
+      var errorPos;
+      if (body.description && ruleIsSyntactic) {
+        inputStream.pos = origPos;
+        skipSpaces(ruleDict, inputStream);
+        errorPos = inputStream.pos;
+      } else {
+        errorPos = origPos;
+      }
+      inputStream.recordFailure(errorPos, this);
     }
     return value;
   }
@@ -291,24 +311,7 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, ruleDict, inpu
 pexprs.Apply.prototype.evalOnce = function(expr, recordFailures, syntactic, ruleDict, inputStream) {
   var origPos = inputStream.pos;
   var bindings = [];
-
-  // Save inputStream's info about the current rule application
-  var oldRuleName = inputStream.currentRuleName;
-  var oldRuleIsSyntactic = syntactic;
-  var oldApplyPos = inputStream.currentApplyPos;
-
-  // Set inputStream's info about the current rule application
-  inputStream.currentRuleName = this.ruleName;
-  syntactic = common.isSyntactic(this.ruleName);
-  inputStream.currentApplyPos = origPos;
-
   var value = expr.eval(recordFailures, syntactic, ruleDict, inputStream, bindings);
-
-  // Restore inputStream's info about the old rule application
-  inputStream.currentRuleName = oldRuleName;
-  syntactic = oldRuleIsSyntactic;
-  inputStream.currentApplyPos = oldApplyPos;
-
   if (value === common.fail) {
     return common.fail;
   } else {
