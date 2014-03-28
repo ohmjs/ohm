@@ -3,18 +3,55 @@ body {
   font-size: 14pt;
 }
 
-#input {
+#input, #arrow {
+  font-family: Monaco;
   width: 100%;
   display: block;
   font-size: 14pt;
   outline: none;
   border: none;
+}
+
+#input {
   border-bottom: 2px solid slateblue;
-  padding: 4pt 0pt 4pt 4pt;
+  padding: 4pt 0 4pt 4pt;
 }
 
 #input.error {
-  border-bottom: 2px solid red;
+  border-bottom: 2px solid maroon;
+}
+
+#arrow {
+  color: maroon;
+  padding: 0 0 0 4pt;
+}
+
+#error {
+  position: absolute;
+  z-index: 2000;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12pt;
+  bottom: 8pt;
+  right: 8pt;
+  padding: 4pt;
+  background: #FDFD96;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  max-width: 250px;
+  box-shadow: 2px 2px 10px 0px #ccc;
+  color: #822;
+}
+
+#arrow.visible, #error.visible {
+  visibility: visible;
+  opacity: 1;
+  transition: visibility 0s 2s, opacity .25s 2s linear;
+}
+
+#arrow.hidden, #error.hidden {
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0s 0.1s, opacity 0.1s linear;
 }
 
 #value:before, #lisp:before, #tree:before, #twoD:before {
