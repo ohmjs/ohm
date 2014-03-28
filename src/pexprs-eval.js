@@ -39,7 +39,7 @@ pexprs.end.eval = function(recordFailures, syntactic, ruleDict, inputStream, bin
     skipSpaces(ruleDict, inputStream);
   }
   if (inputStream.atEnd()) {
-    return thunks.valuelessThunk;
+    return thunks.undefinedThunk;
   } else {
     if (recordFailures) {
       inputStream.recordFailure(inputStream.pos, this);
@@ -120,7 +120,7 @@ pexprs.Seq.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
       return common.fail;
     }
   }
-  return thunks.valuelessThunk;
+  return thunks.undefinedThunk;
 };
 
 pexprs.Bind.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
@@ -150,7 +150,7 @@ pexprs.Many.prototype.eval = function(recordFailures, syntactic, ruleDict, input
   if (numMatches < this.minNumMatches) {
     return common.fail;
   } else {
-    return matches ? new thunks.ListThunk(matches) : thunks.valuelessThunk;
+    return matches ? new thunks.ListThunk(matches) : thunks.undefinedThunk;
   }
 };
 
@@ -159,9 +159,9 @@ pexprs.Opt.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
   var value = this.expr.eval(recordFailures, syntactic, ruleDict, inputStream, []);
   if (value === common.fail) {
     inputStream.pos = origPos;
-    return new thunks.ListThunk([]);
+    return thunks.undefinedThunk;
   } else {
-    return new thunks.ListThunk([value]);
+    return this.expr.producesValue() ? value : thunks.trueThunk;
   }
 };
 
@@ -175,7 +175,7 @@ pexprs.Not.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
     return common.fail;
   } else {
     inputStream.pos = origPos;
-    return thunks.valuelessThunk;
+    return thunks.undefinedThunk;
   }
 };
 

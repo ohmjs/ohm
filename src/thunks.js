@@ -116,5 +116,6 @@ ValueThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
 exports.RuleThunk = RuleThunk;
 exports.ListThunk = ListThunk;
 exports.ValueThunk = ValueThunk;
-exports.valuelessThunk = new ValueThunk(undefined);
+exports.undefinedThunk = new ValueThunk(undefined);
+exports.trueThunk = new ValueThunk(true);
 

@@ -567,8 +567,8 @@ describe("Ohm", function() {
 
       it("semantic actions", function() {
         var actionDict = {name: function(env) { return [env.title, env.last]; }};
-        expect(m.matchContents('drwarth', 'name')(actionDict)).to.eql([['dr'], 'warth']);
-        expect(m.matchContents('warth', 'name')(actionDict)).to.eql([[], 'warth']);
+        expect(m.matchContents('drwarth', 'name')(actionDict)).to.eql(['dr', 'warth']);
+        expect(m.matchContents('warth', 'name')(actionDict)).to.eql([undefined, 'warth']);
       });
 
       it("useless bindings are detected", function() {

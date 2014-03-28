@@ -77,8 +77,8 @@ function makeGrammarActionDict(optNamespace) {
     Base_lst:                   function(env) { return builder.lst(env.x); },
     Base_str:                   function(env) { return builder.str(env.x); },
     Base_paren:                 function(env) { return env.x; },
-    Base_obj:                   function(env) { return builder.obj([], env.lenient.length > 0); },
-    Base_objWithProps:          function(env) { return builder.obj(env.ps, env.lenient.length > 0); },
+    Base_obj:                   function(env) { return builder.obj([], env.lenient); },
+    Base_objWithProps:          function(env) { return builder.obj(env.ps, env.lenient); },
 
     Props:                      function(env) { return env.value; },
     Props_base:                 function(env) { return [env.p]; },
