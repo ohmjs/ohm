@@ -30,14 +30,12 @@ body {
   position: absolute;
   z-index: 2000;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 12pt;
   bottom: 8pt;
   right: 8pt;
   padding: 4pt;
   background: #FDFD96;
   border: 1px solid #ccc;
   border-radius: 2px;
-  max-width: 250px;
   box-shadow: 2px 2px 10px 0px #ccc;
   color: #822;
 }

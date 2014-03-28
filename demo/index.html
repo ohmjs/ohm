@@ -164,6 +164,7 @@ input.value = '';
 hideError();
 
 input.oninput = function() {
+  hideError();
   try {
     var thunk = g.matchContents(this.value, 'Expr', true);
     this.className = undefined;
@@ -171,16 +172,14 @@ input.oninput = function() {
     show('lisp', thunk(parse));
     show('tree', thunk(toTree));
     show('twoD', thunk(toTwoD));
-    hideError();
   } catch (e) {
-    this.className = 'error';
     if (this.value.length === 0) {
       show('value', '');
       show('lisp', '');
       show('tree', '');
       show('twoD', '');
-      hideError();
     } else {
+      this.className = 'error';
       showError(e);
     }
   }
