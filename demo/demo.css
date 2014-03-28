@@ -29,7 +29,6 @@ body {
 #error {
   position: absolute;
   z-index: 2000;
-  font-family: Arial, Helvetica, sans-serif;
   bottom: 8pt;
   right: 8pt;
   padding: 4pt;
