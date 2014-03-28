@@ -8,35 +8,35 @@
 
 Arithmetic {
   Expr
-    == AddExpr
+    = AddExpr
 
   AddExpr
-    == AddExpr.x '+'.op MulExpr.y  {plus}
-     | AddExpr.x '-'.op MulExpr.y  {minus}
-     | MulExpr
+    = AddExpr.x '+'.op MulExpr.y  {plus}
+    | AddExpr.x '-'.op MulExpr.y  {minus}
+    | MulExpr
 
   MulExpr
-    == MulExpr.x '*'.op ExpExpr.y  {times}
-     | MulExpr.x '/'.op ExpExpr.y  {divide}
-     | ExpExpr
+    = MulExpr.x '*'.op ExpExpr.y  {times}
+    | MulExpr.x '/'.op ExpExpr.y  {divide}
+    | ExpExpr
 
   ExpExpr
-    == PriExpr.x '^'.op ExpExpr.y  {power}
-     | PriExpr
+    = PriExpr.x '^'.op ExpExpr.y  {power}
+    | PriExpr
 
   PriExpr
-    == '('.open Expr.e ')'.close   {paren}
-     | '+'.sign PriExpr.e          {pos}
-     | '-'.sign PriExpr.e          {neg}
-     | ident
-     | number
+    = '('.open Expr.e ')'.close   {paren}
+    | '+'.sign PriExpr.e          {pos}
+    | '-'.sign PriExpr.e          {neg}
+    | ident
+    | number
 
   ident  -- identifier
-    == letter alnum*
+    = letter alnum*
 
   number  -- number
-     == digit+ ('.' digit*)?
-      | '.' digit+
+    = digit+ ('.' digit*)?
+    | '.' digit+
 }
 
     </script>

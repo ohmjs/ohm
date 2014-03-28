@@ -1,108 +1,109 @@
 Ohm {
 
   Grammars
-    == Grammar*
+    = Grammar*
 
   Grammar
-    == ident.n SuperGrammar?.s '{' Rule*.rs '}'
+    = ident.n SuperGrammar?.s '{' Rule*.rs '}'
 
   SuperGrammar
-     == '<:' ident.ns '.' ident.n  {qualified}
-      | '<:' ident.n               {unqualified}
+    = '<:' ident.ns '.' ident.n  {qualified}
+    | '<:' ident.n               {unqualified}
 
   Rule
-    == ident.n ruleDescr?.d '==' Alt.b  {define}
-     | ident.n              ':=' Alt.b  {override}
-     | ident.n              '+=' Alt.b  {extend}
+    = ident.n ruleDescr?.d '='  Alt.b  {define}
+    | ident.n              ':=' Alt.b  {override}
+    | ident.n              '+=' Alt.b  {extend}
 
   Alt
-    == Term.x '|' Alt.y  {rec}
-     | Term
+    = Term.x '|' Alt.y  {rec}
+    | Term
 
   Term
-    == Seq.x '{' name.n '}'  {inline}
-     | Seq
+    = Seq.x '{' name.n '}'  {inline}
+    | Seq
 
   Seq
-    == Factor*
+    = Factor*
 
   Factor
-    == Iter.x '.' ident.n  {bind}
-     | Iter
+    = Iter.x '.' ident.n  {bind}
+    | Iter
 
   Iter
-    == Pred.x '*'  {star}
-     | Pred.x '+'  {plus}
-     | Pred.x '?'  {opt}
-     | Pred
+    = Pred.x '*'  {star}
+    | Pred.x '+'  {plus}
+    | Pred.x '?'  {opt}
+    | Pred
 
   Pred
-    == '~' Base.x  {not}
-     | '&' Base.x  {lookahead}
-     | Base
+    = '~' Base.x  {not}
+    | '&' Base.x  {lookahead}
+    | Base
 
   Base
-    == ident.ruleName ~(ruleDescr? '==' | ':=' | '+=')  {application}
-     | (keyword | string | regExp | number)             {prim}
-     | '[' Alt.x ']'                                    {lst}
-     | '"' Alt.x '"'                                    {str}
-     | '(' Alt.x ')'                                    {paren}
-     | '{' '...'?.lenient '}'                           {obj}
-     | '{' Props.ps (',' '...')?.lenient '}'            {objWithProps}
+    = ident.ruleName ~(ruleDescr? '=' | ':=' | '+=')  {application}
+    | (keyword | string | regExp | number)            {prim}
+    | '[' Alt.x ']'                                   {lst}
+    | '"' Alt.x '"'                                   {str}
+    | '(' Alt.x ')'                                   {paren}
+    | '{' '...'?.lenient '}'                          {obj}
+    | '{' Props.ps (',' '...')?.lenient '}'           {objWithProps}
 
   Prop
-     == (name | string).n ':' Factor.p
+    = (name | string).n ':' Factor.p
 
   Props
-    == Prop.p ',' Props.ps  {rec}
-     | Prop.p               {base}
+    = Prop.p ',' Props.ps  {rec}
+    | Prop.p               {base}
 
   ruleDescr  -- rule description for use in error messages
-    == '--' ruleDescrText.t '\n'
+    = '--' ruleDescrText.t '\n'
 
   ruleDescrText
-    == (~'\n' _)*
+    = (~'\n' _)*
 
   space
-    += '//' (~'\n' _)* '\n'  {singleLine}
-     | '/*' (~'*/' _)* '*/'  {multiLine}
+   += '//' (~'\n' _)* '\n'  {singleLine}
+    | '/*' (~'*/' _)* '*/'  {multiLine}
 
   name  -- name
-    == nameFirst nameRest*
+    = nameFirst nameRest*
 
   nameFirst
-    == '_'
-     | letter
+    = '_'
+    | letter
 
   nameRest
-    == '_' | alnum
+    = '_'
+    | alnum
 
   ident  -- identifier
-    == ~keyword name.n
+    = ~keyword name.n
 
   keyword
-    == 'undefined' ~nameRest  {undefined}
-     | 'null' ~nameRest       {null}
-     | 'true' ~nameRest       {true}
-     | 'false' ~nameRest      {false}
+    = 'undefined' ~nameRest  {undefined}
+    | 'null' ~nameRest       {null}
+    | 'true' ~nameRest       {true}
+    | 'false' ~nameRest      {false}
 
   string  -- string literal
-    == '\'' sChar*.cs '\''
+    = '\'' sChar*.cs '\''
 
   sChar
-    == '\\x' hexDigit hexDigit
-     | '\\u' hexDigit hexDigit hexDigit hexDigit
-     | '\\' _
-     | ~'\'' ~'\n' _
+    = '\\x' hexDigit hexDigit
+    | '\\u' hexDigit hexDigit hexDigit hexDigit
+    | '\\' _
+    | ~'\'' ~'\n' _
 
   regExp  -- regular expression
-    == '/' reCharClass.e '/'
+    = '/' reCharClass.e '/'
 
   reCharClass
-    == '[' ('\\]' | ~']' _)* ']'
+    = '[' ('\\]' | ~']' _)* ']'
 
   number  -- number
-    == '-'? digit+
+    = '-'? digit+
 
 }
 
