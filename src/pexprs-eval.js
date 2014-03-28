@@ -259,24 +259,10 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, ruleDict, inpu
     if (!body) {
       throw new errors.UndeclaredRuleError(ruleName);
     }
-    var ruleIsSyntactic = common.isSyntactic(ruleName);
-
-    // TODO: consider what happens b/c of this whitespace-skipping when there is mutual left recursion in which
-    // the involved set contains both syntactic and lexical rules, e.g.,
-    //
-    //   foo = Bar digit | digit
-    //   Bar = foo digit | digit
-    //
-    //  and
-    //
-    //   Foo = Bar digit | digit
-    //   bar = foo digit | digit
-    //
-    //  where foo and Bar are the start rules of the examples above, resp.
-
     var origPos = inputStream.pos;
     origPosInfo.enter(ruleName);
     var rf = recordFailures && !body.description;
+    var ruleIsSyntactic = common.isSyntactic(ruleName);
     var value = this.evalOnce(body, rf, ruleIsSyntactic, ruleDict, inputStream);
     var currentLR = origPosInfo.getCurrentLeftRecursion();
     if (currentLR) {
