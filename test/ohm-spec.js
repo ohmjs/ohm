@@ -422,7 +422,7 @@ describe("Ohm", function() {
       describe("with exactly one binding", function() {
         var m;
         beforeEach(function() {
-          m = makeGrammar("M { start = 'a'.x 'bc' 'z' }");
+          m = makeGrammar("M { start = 'a':x 'bc' 'z' }");
         });
   
         it("recognition", function() {
@@ -443,7 +443,7 @@ describe("Ohm", function() {
       describe("with more than one binding", function() {
         var m;
         beforeEach(function() {
-          m = makeGrammar("M { start = 'a'.x 'bc' 'z'.y }");
+          m = makeGrammar("M { start = 'a':x 'bc' 'z':y }");
         });
   
         it("recognition", function() {
@@ -463,7 +463,7 @@ describe("Ohm", function() {
 
       it("with duplicate binding", function() {
         expect(function() {
-          m = makeGrammar("M { start = ('a'.x 'bc' 'z'.x)? }");
+          m = makeGrammar("M { start = ('a':x 'bc' 'z':x)? }");
         }).to.throwException(function(e) {
           expect(e).to.be.a(errors.DuplicateBindingsError);
           expect(e.ruleName).to.equal('start');
@@ -475,7 +475,7 @@ describe("Ohm", function() {
     describe("alts and seqs together", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { start = 'a'.x 'b' 'c'.y | '1'.x '2' '3'.y }");
+        m = makeGrammar("M { start = 'a':x 'b' 'c':y | '1':x '2' '3':y }");
       });
 
       it("to recipe and back", function() {
@@ -502,7 +502,7 @@ describe("Ohm", function() {
           "M {",
           "  number = digit+",
           "  digits = digit*",
-          "  sss = &number.x number.y",
+          "  sss = &number:x number:y",
           "}"]);
       });
 
@@ -540,7 +540,7 @@ describe("Ohm", function() {
 
       it("useless bindings are detected", function() {
         expect(function() {
-          makeGrammar("M { foo = (bar.x)* }");
+          makeGrammar("M { foo = (bar:x)* }");
         }).to.throwException(function(e) {
           expect(e).to.be.a(errors.UselessBindingsError);
           expect(e.ruleName).to.equal('foo');
@@ -552,7 +552,7 @@ describe("Ohm", function() {
     describe("opt", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { name = 'dr'?.title 'warth'.last }");
+        m = makeGrammar("M { name = 'dr'?:title 'warth':last }");
       });
 
       it("to recipe and back", function() {
@@ -573,7 +573,7 @@ describe("Ohm", function() {
 
       it("useless bindings are detected", function() {
         expect(function() {
-          makeGrammar("M { foo = (bar.x)? }");
+          makeGrammar("M { foo = (bar:x)? }");
         }).to.throwException(function(e) {
           expect(e).to.be.a(errors.UselessBindingsError);
           expect(e.ruleName).to.equal('foo');
@@ -585,7 +585,7 @@ describe("Ohm", function() {
     describe("not", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { start = ~'hello'.x _* }");
+        m = makeGrammar("M { start = ~'hello':x _* }");
       });
 
       it("to recipe and back", function() {
@@ -605,7 +605,7 @@ describe("Ohm", function() {
 
       it("useless bindings are detected", function() {
         expect(function() {
-          makeGrammar("M { foo = ~(bar.x) }");
+          makeGrammar("M { foo = ~(bar:x) }");
         }).to.throwException(function(e) {
           expect(e).to.be.a(errors.UselessBindingsError);
           expect(e.ruleName).to.equal('foo');
@@ -617,7 +617,7 @@ describe("Ohm", function() {
     describe("lookahead", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { start = &'hello'.x _* }");
+        m = makeGrammar("M { start = &'hello':x _* }");
       });
 
       it("to recipe and back", function() {
@@ -637,7 +637,7 @@ describe("Ohm", function() {
     describe("str", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { start = \"/[a-z]/ 'bc'\".x 'd' 'ef' }");
+        m = makeGrammar("M { start = \"/[a-z]/ 'bc'\":x 'd' 'ef' }");
       });
 
       it("to recipe and back", function() {
@@ -660,7 +660,7 @@ describe("Ohm", function() {
     describe("lst", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { start = 'abc' ['d'].x 'ef' }");
+        m = makeGrammar("M { start = 'abc' ['d']:x 'ef' }");
       });
 
       it("to recipe and back", function() {
@@ -688,8 +688,8 @@ describe("Ohm", function() {
       beforeEach(function() {
         m = makeGrammar([
           'M {',
-          '  strict  = {x: 1.a, y: 2.b}',
-          '  lenient = {x: 1.a, y: 2.b, ...}',
+          '  strict  = {x: (1:a), y: (2:b)}',
+          '  lenient = {x: (1:a), y: (2:b), ...}',
           '}']);
       });
 
@@ -742,7 +742,7 @@ describe("Ohm", function() {
 
       it("duplicate bindings are not allowed", function() {
         expect(function() {
-          m = ohm.makeGrammar("M { duh = {x: 1.a, y: 2.a, ...} }");
+          m = ohm.makeGrammar("M { duh = {x: (1:a), y: (2:a), ...} }");
         }).to.throwException(function(e) {
           expect(e).to.be.a(errors.DuplicateBindingsError);
           expect(e.ruleName).to.equal('duh');
@@ -786,7 +786,7 @@ describe("Ohm", function() {
           m = makeGrammar([
             "M {",
             "  number = numberRec | digit",
-            "  numberRec = number.n digit.d",
+            "  numberRec = number:n digit:d",
             "}"]);
         });
 
@@ -833,7 +833,7 @@ describe("Ohm", function() {
           m = makeGrammar([
             "M {",
             "  add = addRec | pri",
-            "  addRec = add.x '+' pri.y",
+            "  addRec = add:x '+' pri:y",
             "  pri = priX | priY",
             "  priX = 'x'",
             "  priY = 'y'",
@@ -867,7 +867,7 @@ describe("Ohm", function() {
             "  baz = qux",
             "  qux = quux",
             "  quux = numberRec",
-            "  numberRec = number.n digit.d",
+            "  numberRec = number:n digit:d",
             "}"]);
         });
 
@@ -897,11 +897,11 @@ describe("Ohm", function() {
           m = makeGrammar([
             "M {",
             "  addExpr = addExprRec | mulExpr",
-            "  addExprRec = addExpr.x '+' mulExpr.y",
+            "  addExprRec = addExpr:x '+' mulExpr:y",
             "  mulExpr = mulExprRec | priExpr",
-            "  mulExprRec = mulExpr.x '*' priExpr.y",
+            "  mulExprRec = mulExpr:x '*' priExpr:y",
             "  priExpr = /[0-9]/",
-            "  sss = &addExpr.x addExpr.y",
+            "  sss = &addExpr:x addExpr:y",
             "}"]);
         });
 
@@ -981,7 +981,7 @@ describe("Ohm", function() {
             "  addExpr = a | c",
             "  a = b",
             "  b = addExprRec",
-            "  addExprRec = addExpr.x '+' mulExpr.y",
+            "  addExprRec = addExpr:x '+' mulExpr:y",
             "  c = d",
             "  d = mulExpr",
             "  mulExpr = e | g",
@@ -989,7 +989,7 @@ describe("Ohm", function() {
             "  f = mulExprRec",
             "  g = h",
             "  h = priExpr",
-            "  mulExprRec = mulExpr.x '*' priExpr.y",
+            "  mulExprRec = mulExpr:x '*' priExpr:y",
             "  priExpr = /[0-9]/",
             "}"]);
         });
@@ -1020,11 +1020,11 @@ describe("Ohm", function() {
         beforeEach(function() {
           m = makeGrammar([
             "G {",
-            "  tricky = &foo bar.x",
+            "  tricky = &foo bar:x",
             "  foo = fooRec | digit",
-            "  fooRec = bar.x digit.y",
+            "  fooRec = bar:x digit:y",
             "  bar = barRec | digit",
-            "  barRec = foo.x digit.y",
+            "  barRec = foo:x digit:y",
             "}"]);
         });
 
@@ -1169,8 +1169,8 @@ describe("Ohm", function() {
           if (m1 && m2) {
             return;
           } else {
-            m1 = makeGrammar("G1 { foo = 'aaa'.x 'bbb'.y }", 'inheritanceExtend');
-            m2 = makeGrammar("G2 <: inheritanceExtend.G1 { foo += '111'.x '222'.y }", 'inheritanceExtend2');
+            m1 = makeGrammar("G1 { foo = 'aaa':x 'bbb':y }", 'inheritanceExtend');
+            m2 = makeGrammar("G2 <: inheritanceExtend.G1 { foo += '111':x '222':y }", 'inheritanceExtend2');
           }
         });
 
@@ -1196,7 +1196,7 @@ describe("Ohm", function() {
 
         it("should check that binding names are consistent", function() {
           expect(function() {
-            makeGrammar("G3 <: G1 { foo += '111'.x '222'.z }", 'inheritanceExtend');
+            makeGrammar("G3 <: G1 { foo += '111':x '222':z }", 'inheritanceExtend');
           }).to.throwException(function(e) {
             expect(e).to.be.a(errors.InconsistentBindingsError);
             expect(e.ruleName).to.equal('foo');
@@ -1249,13 +1249,13 @@ describe("Ohm", function() {
 
     describe("bindings", function() {
       it("to recipe and back", function() {
-        var m = makeGrammar("G { foo = 'a'.x 'b'.y | 'b'.y 'a'.x }");
+        var m = makeGrammar("G { foo = 'a':x 'b':y | 'b':y 'a':x }");
         expect(m).to.eql(ohm.make(eval(m.toRecipe())));
       });
 
       it("inconsistent bindings in alts are errors", function() {
         expect(function() {
-          makeGrammar("G { foo = 'a'.x | 'b'.y }");
+          makeGrammar("G { foo = 'a':x | 'b':y }");
         }).to.throwException(function(e) {
           expect(e).to.be.a(errors.InconsistentBindingsError);
           expect(e.ruleName).to.equal('foo');
@@ -1265,13 +1265,13 @@ describe("Ohm", function() {
       });
 
       it("binding order shouldn't matter", function() {
-        makeGrammar("G { foo = 'a'.x 'b'.y | 'b'.y 'a'.x }");
+        makeGrammar("G { foo = 'a':x 'b':y | 'b':y 'a':x }");
       });
 
       it("bindings are evaluated lazily", function() {
         var g = makeGrammar([
           "G {",
-          "  foo = bar.x baz.y",
+          "  foo = bar:x baz:y",
           "  bar = 'a'",
           "  baz = 'b'",
           "}"]);
@@ -1327,7 +1327,7 @@ describe("Ohm", function() {
         ohm.namespace('inlineRuleTest1').install('Expr', m);
 
         expect(function() {
-          makeGrammar("N <: Expr { addExpr := addExpr.x '~' mulExpr.y {minus} }", 'inlineRuleTest1');
+          makeGrammar("N <: Expr { addExpr := addExpr:x '~' mulExpr:y {minus} }", 'inlineRuleTest1');
         }).to.throwException(function(e) {
           expect(e).to.be.an(errors.DuplicateRuleDeclarationError);
           expect(e.ruleName).to.equal('addExpr_minus');
@@ -1335,7 +1335,7 @@ describe("Ohm", function() {
         });
 
         expect(function() {
-          makeGrammar("N <: Expr { addExpr += addExpr.x '~' mulExpr.y {minus} }", 'inlineRuleTest1');
+          makeGrammar("N <: Expr { addExpr += addExpr:x '~' mulExpr:y {minus} }", 'inlineRuleTest1');
         }).to.throwException(function(e) {
           expect(e).to.be.an(errors.DuplicateRuleDeclarationError);
           expect(e.ruleName).to.equal('addExpr_minus');
@@ -1387,7 +1387,7 @@ describe("Ohm", function() {
             "  qux = quux",
             "  quux = 42",
             "  aaa = 'duh'",
-            "  bbb = ~aaa qux.x {blah}",
+            "  bbb = ~aaa qux:x {blah}",
             "}",
             "G2 <: G1 {",
             "  qux := 100",
@@ -1466,7 +1466,7 @@ describe("Ohm", function() {
             type: 'text/ohm-js',
             innerHTML: [
               "O {",
-              "  number = number.n digit.d {rec}",
+              "  number = number:n digit:d {rec}",
               "         | digit",
               "}"
             ].join('\n')

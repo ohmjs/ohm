@@ -17,7 +17,7 @@ ohm._ohmGrammarFactory =
   b.inline('Term_inline', b.seq(b.bind(b.app('Seq'), 'x'), b.prim('{'), b.bind(b.app('name'), 'n'), b.prim('}')));
   b.setRuleDescription(undefined); b.define('Term', b.alt(b.app('Term_inline'), b.app('Seq')));
   b.setRuleDescription(undefined); b.define('Seq', b.many(b.app('Factor'), 0));
-  b.inline('Factor_bind', b.seq(b.bind(b.app('Iter'), 'x'), b.prim('.'), b.bind(b.app('ident'), 'n')));
+  b.inline('Factor_bind', b.seq(b.bind(b.app('Iter'), 'x'), b.prim(':'), b.bind(b.app('ident'), 'n')));
   b.setRuleDescription(undefined); b.define('Factor', b.alt(b.app('Factor_bind'), b.app('Iter')));
   b.inline('Iter_star', b.seq(b.bind(b.app('Pred'), 'x'), b.prim('*')));
   b.inline('Iter_plus', b.seq(b.bind(b.app('Pred'), 'x'), b.prim('+')));
@@ -34,7 +34,7 @@ ohm._ohmGrammarFactory =
   b.inline('Base_obj', b.seq(b.prim('{'), b.bind(b.opt(b.prim('...')), 'lenient'), b.prim('}')));
   b.inline('Base_objWithProps', b.seq(b.prim('{'), b.bind(b.app('Props'), 'ps'), b.bind(b.opt(b.seq(b.prim(','), b.prim('...'))), 'lenient'), b.prim('}')));
   b.setRuleDescription(undefined); b.define('Base', b.alt(b.app('Base_application'), b.app('Base_prim'), b.app('Base_lst'), b.app('Base_str'), b.app('Base_paren'), b.app('Base_obj'), b.app('Base_objWithProps')));
-  b.setRuleDescription(undefined); b.define('Prop', b.seq(b.bind(b.alt(b.app('name'), b.app('string')), 'n'), b.prim(':'), b.bind(b.app('Factor'), 'p')));
+  b.setRuleDescription(undefined); b.define('Prop', b.seq(b.bind(b.alt(b.app('name'), b.app('string')), 'n'), b.prim(':'), b.bind(b.app('Base'), 'p')));
   b.inline('Props_rec', b.seq(b.bind(b.app('Prop'), 'p'), b.prim(','), b.bind(b.app('Props'), 'ps')));
   b.inline('Props_base', b.bind(b.app('Prop'), 'p'));
   b.setRuleDescription(undefined); b.define('Props', b.alt(b.app('Props_rec'), b.app('Props_base')));

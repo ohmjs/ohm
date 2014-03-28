@@ -3,21 +3,21 @@ Expr {
     = addExpr
 
   addExpr
-    = addExpr.x '+'.op mulExpr.y   {plus}
-    | addExpr.x '-'.op mulExpr.y   {minus}
+    = addExpr:x '+':op mulExpr:y   {plus}
+    | addExpr:x '-':op mulExpr:y   {minus}
     | mulExpr
 
   mulExpr
-    = mulExpr.x '*'.op priExpr.y   {times}
-    | mulExpr.x '/'.op priExpr.y   {divide}
+    = mulExpr:x '*':op priExpr:y   {times}
+    | mulExpr:x '/':op priExpr:y   {divide}
     | priExpr
 
   priExpr
-    = '('.oparen expr.e ')'.cparen {paren}
+    = '(':oparen expr:e ')':cparen {paren}
     | number
 
   number  -- number
-    = number.n digit.d             {rec}
+    = number:n digit:d             {rec}
     | digit
 }
 
