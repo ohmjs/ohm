@@ -133,15 +133,13 @@ body {
   display: inline-block;
   text-align: center;
   vertical-align: middle;
+  padding: 0 4pt;
 }
 
 #twoD numerator {
   display: block;
-  border-bottom: 1px solid black;
-}
-
-#twoD numerator > * {
-  padding: 0 2pt;
+  border-bottom: 2px solid black;
+  padding: 0 4pt;
 }
 
 #twoD denominator {
