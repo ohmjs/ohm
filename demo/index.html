@@ -44,7 +44,7 @@ Arithmetic {
   <body>
     <div id="error">this is the error's text</div>
     <input type="text" id="input"></input>
-    <input type="error" id="arrow"></input>
+    <div id="arrow"></div>
     <div id="value"></div>
     <div id="lisp"></div>
     <div id="tree"></div>
@@ -190,9 +190,11 @@ function hideError() {
 }
 
 function showError(e) {
-  error.innerText = 'Expected: ' + e.getExpectedText();
-  arrow.value = repeat(' ', e.getPos()) + '^';
-  error.className = arrow.className = 'visible';
+  setTimeout(function() {
+    error.innerText = 'Expected: ' + e.getExpectedText();
+    arrow.innerText = repeat(' ', e.getPos()) + '^';
+    error.className = arrow.className = 'visible';
+  }, 0);
 }
 
 function repeat(s, n) {

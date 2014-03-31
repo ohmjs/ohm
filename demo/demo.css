@@ -8,11 +8,11 @@ body {
   width: 100%;
   display: block;
   font-size: 14pt;
-  outline: none;
   border: none;
 }
 
 #input {
+  outline: none;
   border-bottom: 2px solid slateblue;
   padding: 4pt 0 4pt 4pt;
 }
@@ -22,8 +22,11 @@ body {
 }
 
 #arrow {
+  display: inline-block;
+  white-space: pre;
   color: maroon;
   padding: 0 0 0 4pt;
+  
 }
 
 #error {
@@ -32,11 +35,11 @@ body {
   bottom: 8pt;
   right: 8pt;
   padding: 4pt;
-  background: #FDFD96;
+  background: #FCF68B;
   border: 1px solid #ccc;
   border-radius: 2px;
   box-shadow: 2px 2px 10px 0px #ccc;
-  color: #822;
+  color: #928F63;
 }
 
 #arrow.visible, #error.visible {
@@ -48,7 +51,6 @@ body {
 #arrow.hidden, #error.hidden {
   visibility: hidden;
   opacity: 0;
-  transition: visibility 0s 0.1s, opacity 0.1s linear;
 }
 
 #value:before, #lisp:before, #tree:before, #twoD:before {
