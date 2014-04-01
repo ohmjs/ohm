@@ -200,7 +200,7 @@ function hideError() {
 function showError(e) {
   setTimeout(function() {
     // Position the error bubble to line up with the offending input
-    spaces.innerText = repeat(' ', e.getPos());
+    spaces.innerHTML = repeat(' ', e.getPos());
 
     // Set up the details, i.e., what input was expected at that position
     removeChildren(errorDetails);
