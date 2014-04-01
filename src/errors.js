@@ -253,7 +253,7 @@ MatchFailure.prototype.getLineAndColText = function() {
 
 MatchFailure.prototype.getExpectedText = function() {
   var text = makeStringBuffer();
-  var expected = this.getExpectedExprs();
+  var expected = this.getExpected();
   for (var idx = 0; idx < expected.length; idx++) {
     if (idx > 0) {
       if (idx === expected.length - 1) {
@@ -267,7 +267,7 @@ MatchFailure.prototype.getExpectedText = function() {
   return text.contents();
 };
 
-MatchFailure.prototype.getExpectedExprs = function() {
+MatchFailure.prototype.getExpected = function() {
   var expected = {};
   for (var failure = this.inputStream.failures; failure !== null; failure = failure.next) {
     expected[failure.expr.toExpected(this.ruleDict)] = true;

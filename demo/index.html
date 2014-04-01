@@ -42,9 +42,13 @@ Arithmetic {
     </script>
   </head>
   <body>
-    <div id="error">this is the error's text</div>
     <input type="text" id="input"></input>
-    <div id="arrow"></div>
+    <div id="errorDiv">
+      <div id="spaces"></div>
+      <wrapperWrapper><wrapper>
+        <div id="error"><label>Expected: </label><span id="errorDetails"></span></div>
+      </wrapper></wrapperWrapper>
+    </div>
     <div id="value"></div>
     <div id="lisp"></div>
     <div id="tree"></div>
@@ -158,7 +162,11 @@ var toTwoD = {
 // ---------------------------------------------------------------------------------------------------------------------
 
 var input = document.getElementById('input');
+var spaces = document.getElementById('spaces');
 var error = document.getElementById('error');
+console.log(error);
+var errorDetails = document.getElementById('errorDetails');
+console.log(errorDetails);
 
 input.value = '';
 hideError();
@@ -186,23 +194,36 @@ input.oninput = function() {
 };
 
 function hideError() {
-  error.className = arrow.className = 'hidden';
+  errorDiv.className = errorDiv.className = 'hidden';
 }
 
 function showError(e) {
   setTimeout(function() {
-    error.innerText = 'Expected: ' + e.getExpectedText();
-    arrow.innerText = repeat(' ', e.getPos()) + '^';
-    error.className = arrow.className = 'visible';
+    // Position the error bubble to line up with the offending input
+    spaces.innerText = repeat(' ', e.getPos());
+
+    // Set up the details, i.e., what input was expected at that position
+    removeChildren(errorDetails);
+    e.getExpected().forEach(function(text, idx, expected) {
+      var element = createExpectedElement(text);
+      if (idx > 0) {
+        errorDetails.appendChild(makeElement('light', idx === expected.length - 1 ? ', or ' : ', '));
+      }
+      errorDetails.appendChild(element);
+    });
+
+    // Show error
+    errorDiv.className = 'visible';
   }, 0);
 }
 
-function repeat(s, n) {
-  var arr = [];
-  while (n--) {
-    arr.push(s);
+function createExpectedElement(s) {
+  if (s.charAt(0) === '"' && s.charAt(s.length - 1) === '"' ||
+      s.charAt(0) === "'" && s.charAt(s.length - 1) === "'") {
+    return makeElement('light', '"', makeElement('literal', s.substr(1, s.length - 2)), '"');
+  } else {
+    return makeElement('description', s);
   }
-  return arr.join('');
 }
 
     </script>

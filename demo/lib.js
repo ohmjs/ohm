@@ -7,6 +7,12 @@ function makeElement(tagName) {
   return element
 }
 
+function removeChildren(element) {
+  while (element.firstChild) {
+    element.removeChild(element.firstChild);
+  }
+}
+
 function show(divId, what) {
   if (!(what instanceof Node))
     what = document.createTextNode('' + what)
@@ -14,5 +20,13 @@ function show(divId, what) {
   while (div.firstChild)
     div.removeChild(div.firstChild)
   div.appendChild(what)
+}
+
+function repeat(s, n) {
+  var arr = [];
+  while (n--) {
+    arr.push(s);
+  }
+  return arr.join('');
 }
 
