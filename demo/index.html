@@ -220,7 +220,10 @@ function showError(e) {
 function createExpectedElement(s) {
   if (s.charAt(0) === '"' && s.charAt(s.length - 1) === '"' ||
       s.charAt(0) === "'" && s.charAt(s.length - 1) === "'") {
-    return makeElement('light', '"', makeElement('literal', s.substr(1, s.length - 2)), '"');
+    return makeElement('literal',
+      makeElement('light', '"'),
+      makeElement('code', s.substr(1, s.length - 2)),
+      makeElement('light', '"'));
   } else {
     return makeElement('description', s);
   }

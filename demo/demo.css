@@ -108,6 +108,11 @@ wrapper {
 }
 
 #error literal {
+  white-space: nowrap;
+}
+
+#error code {
+  opacity: 1;
   color: maroon;
   font-family: Monaco, "Lucida Console", monospace;
 }
