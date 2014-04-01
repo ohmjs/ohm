@@ -14,7 +14,7 @@ ohm._ohmGrammarFactory =
   b.setRuleDescription(undefined); b.define('Rule', b.alt(b.app('Rule_define'), b.app('Rule_override'), b.app('Rule_extend')));
   b.inline('Alt_rec', b.seq(b.bind(b.app('Term'), 'x'), b.prim('|'), b.bind(b.app('Alt'), 'y')));
   b.setRuleDescription(undefined); b.define('Alt', b.alt(b.app('Alt_rec'), b.app('Term')));
-  b.inline('Term_inline', b.seq(b.bind(b.app('Seq'), 'x'), b.prim('{'), b.bind(b.app('name'), 'n'), b.prim('}')));
+  b.inline('Term_inline', b.seq(b.bind(b.app('Seq'), 'x'), b.bind(b.app('caseName'), 'n')));
   b.setRuleDescription(undefined); b.define('Term', b.alt(b.app('Term_inline'), b.app('Seq')));
   b.setRuleDescription(undefined); b.define('Seq', b.many(b.app('Factor'), 0));
   b.inline('Factor_bind', b.seq(b.bind(b.app('Iter'), 'x'), b.prim(':'), b.bind(b.app('ident'), 'n')));
@@ -40,6 +40,7 @@ ohm._ohmGrammarFactory =
   b.setRuleDescription(undefined); b.define('Props', b.alt(b.app('Props_rec'), b.app('Props_base')));
   b.setRuleDescription(' rule description for use in error messages'); b.define('ruleDescr', b.seq(b.prim('--'), b.bind(b.app('ruleDescrText'), 't'), b.prim('\n')));
   b.setRuleDescription(undefined); b.define('ruleDescrText', b.many(b.seq(b.not(b.prim('\n')), b.app('_')), 0));
+  b.setRuleDescription(undefined); b.define('caseName', b.seq(b.prim('--'), b.many(b.seq(b.not(b.prim('\n')), b.app('space')), 0), b.bind(b.app('name'), 'n'), b.many(b.seq(b.not(b.prim('\n')), b.app('space')), 0), b.alt(b.prim('\n'), b.la(b.prim('}')))));
   b.inline('space_singleLine', b.seq(b.prim('//'), b.many(b.seq(b.not(b.prim('\n')), b.app('_')), 0), b.prim('\n')));
   b.inline('space_multiLine', b.seq(b.prim('/*'), b.many(b.seq(b.not(b.prim('*/')), b.app('_')), 0), b.prim('*/')));
   b.extend('space', b.alt(b.app('space_singleLine'), b.app('space_multiLine')));

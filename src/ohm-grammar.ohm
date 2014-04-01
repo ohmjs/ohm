@@ -7,55 +7,55 @@ Ohm {
     = ident:n SuperGrammar?:s '{' Rule*:rs '}'
 
   SuperGrammar
-    = '<:' ident:ns '.' ident:n  {qualified}
-    | '<:' ident:n               {unqualified}
+    = '<:' ident:ns '.' ident:n  -- qualified
+    | '<:' ident:n               -- unqualified
 
   Rule
-    = ident:n ruleDescr?:d '='  Alt:b  {define}
-    | ident:n              ':=' Alt:b  {override}
-    | ident:n              '+=' Alt:b  {extend}
+    = ident:n ruleDescr?:d '='  Alt:b  -- define
+    | ident:n              ':=' Alt:b  -- override
+    | ident:n              '+=' Alt:b  -- extend
 
   Alt
-    = Term:x '|' Alt:y  {rec}
+    = Term:x '|' Alt:y  -- rec
     | Term
 
   Term
-    = Seq:x '{' name:n '}'  {inline}
+    = Seq:x caseName:n -- inline
     | Seq
 
   Seq
     = Factor*
 
   Factor
-    = Iter:x ':' ident:n  {bind}
+    = Iter:x ':' ident:n  -- bind
     | Iter
 
   Iter
-    = Pred:x '*'  {star}
-    | Pred:x '+'  {plus}
-    | Pred:x '?'  {opt}
+    = Pred:x '*'  -- star
+    | Pred:x '+'  -- plus
+    | Pred:x '?'  -- opt
     | Pred
 
   Pred
-    = '~' Base:x  {not}
-    | '&' Base:x  {lookahead}
+    = '~' Base:x  -- not
+    | '&' Base:x  -- lookahead
     | Base
 
   Base
-    = ident:ruleName ~(ruleDescr? '=' | ':=' | '+=')  {application}
-    | (keyword | string | regExp | number)            {prim}
-    | '[' Alt:x ']'                                   {lst}
-    | '"' Alt:x '"'                                   {str}
-    | '(' Alt:x ')'                                   {paren}
-    | '{' '...'?:lenient '}'                          {obj}
-    | '{' Props:ps (',' '...')?:lenient '}'           {objWithProps}
+    = ident:ruleName ~(ruleDescr? '=' | ':=' | '+=')  -- application
+    | (keyword | string | regExp | number)            -- prim
+    | '[' Alt:x ']'                                   -- lst
+    | '"' Alt:x '"'                                   -- str
+    | '(' Alt:x ')'                                   -- paren
+    | '{' '...'?:lenient '}'                          -- obj
+    | '{' Props:ps (',' '...')?:lenient '}'           -- objWithProps
 
   Prop
     = (name | string):n ':' Base:p
 
   Props
-    = Prop:p ',' Props:ps  {rec}
-    | Prop:p               {base}
+    = Prop:p ',' Props:ps  -- rec
+    | Prop:p               -- base
 
   ruleDescr  -- rule description for use in error messages
     = '--' ruleDescrText:t '\n'
@@ -63,9 +63,12 @@ Ohm {
   ruleDescrText
     = (~'\n' _)*
 
+  caseName
+    = '--' (~'\n' space)* name:n (~'\n' space)* ('\n' | &'}')
+
   space
-   += '//' (~'\n' _)* '\n'  {singleLine}
-    | '/*' (~'*/' _)* '*/'  {multiLine}
+   += '//' (~'\n' _)* '\n'  -- singleLine
+    | '/*' (~'*/' _)* '*/'  -- multiLine
 
   name  -- name
     = nameFirst nameRest*
@@ -82,10 +85,10 @@ Ohm {
     = ~keyword name:n
 
   keyword
-    = 'undefined' ~nameRest  {undefined}
-    | 'null' ~nameRest       {null}
-    | 'true' ~nameRest       {true}
-    | 'false' ~nameRest      {false}
+    = 'undefined' ~nameRest  -- undefined
+    | 'null' ~nameRest       -- null
+    | 'true' ~nameRest       -- true
+    | 'false' ~nameRest      -- false
 
   string  -- string literal
     = '\'' sChar*:cs '\''

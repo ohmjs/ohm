@@ -1327,7 +1327,7 @@ describe("Ohm", function() {
         ohm.namespace('inlineRuleTest1').install('Expr', m);
 
         expect(function() {
-          makeGrammar("N <: Expr { addExpr := addExpr:x '~' mulExpr:y {minus} }", 'inlineRuleTest1');
+          makeGrammar("N <: Expr { addExpr := addExpr:x '~' mulExpr:y  -- minus }", 'inlineRuleTest1');
         }).to.throwException(function(e) {
           expect(e).to.be.an(errors.DuplicateRuleDeclaration);
           expect(e.ruleName).to.equal('addExpr_minus');
@@ -1335,7 +1335,7 @@ describe("Ohm", function() {
         });
 
         expect(function() {
-          makeGrammar("N <: Expr { addExpr += addExpr:x '~' mulExpr:y {minus} }", 'inlineRuleTest1');
+          makeGrammar("N <: Expr { addExpr += addExpr:x '~' mulExpr:y  -- minus }", 'inlineRuleTest1');
         }).to.throwException(function(e) {
           expect(e).to.be.an(errors.DuplicateRuleDeclaration);
           expect(e.ruleName).to.equal('addExpr_minus');
@@ -1387,7 +1387,7 @@ describe("Ohm", function() {
             "  qux = quux",
             "  quux = 42",
             "  aaa = 'duh'",
-            "  bbb = ~aaa qux:x {blah}",
+            "  bbb = ~aaa qux:x  -- blah",
             "}",
             "G2 <: G1 {",
             "  qux := 100",
@@ -1466,7 +1466,7 @@ describe("Ohm", function() {
             type: 'text/ohm-js',
             innerHTML: [
               "O {",
-              "  number = number:n digit:d {rec}",
+              "  number = number:n digit:d  -- rec",
               "         | digit",
               "}"
             ].join('\n')

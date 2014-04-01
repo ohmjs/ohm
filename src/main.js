@@ -27,6 +27,8 @@ function makeGrammarActionDict(optNamespace) {
     ruleDescr:                  function(env) { builder.setRuleDescription(env.t); },
     ruleDescrText:              function()    { return this.interval.contents; },
 
+    caseName:                   function(env) { return env.n },
+
     name:                       function()    { return this.interval.contents; },
     nameFirst:                  function(env) {},
     nameRest:                   function(env) {},
