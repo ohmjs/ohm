@@ -40,10 +40,13 @@ body {
 
 wrapperWrapper {
   position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
 }
 
 wrapper {
-  width: 300px;
+  width: 800px;
   position: absolute;
 }
 
@@ -53,7 +56,6 @@ wrapper {
 }
 
 #error {
-  max-width: 300px;
   margin: 10px -5px;
   font-family: "PT Sans", Arial, Helvetica, sans-serif;
   display: inline-block;
