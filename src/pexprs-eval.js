@@ -188,29 +188,15 @@ pexprs.Lookahead.prototype.eval = function(recordFailures, syntactic, ruleDict, 
   return value;
 };
 
-pexprs.Str.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
+pexprs.Listy.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
   if (syntactic) {
     skipSpaces(ruleDict, inputStream);
   }
-  var string = inputStream.next();
-  if (typeof string === 'string') {
-    var stringInputStream = InputStream.newFor(string);
-    var value = this.expr.eval(recordFailures, syntactic, ruleDict, stringInputStream, bindings);
-    return value !== common.fail && stringInputStream.atEnd() ?  new thunks.ValueThunk(string) : common.fail;
-  } else {
-    return common.fail;
-  }
-};
-
-pexprs.List.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
-  if (syntactic) {
-    skipSpaces(ruleDict, inputStream);
-  }
-  var list = inputStream.next();
-  if (list instanceof Array) {
-    var listInputStream = InputStream.newFor(list);
-    var value = this.expr.eval(recordFailures, syntactic, ruleDict, listInputStream, bindings);
-    return value !== common.fail && listInputStream.atEnd() ?  new thunks.ValueThunk(list) : common.fail;
+  var obj = inputStream.next();
+  if (obj instanceof Array || typeof obj === 'string') {
+    var objInputStream = InputStream.newFor(obj);
+    var value = this.expr.eval(recordFailures, syntactic, ruleDict, objInputStream, bindings);
+    return value !== common.fail && objInputStream.atEnd() ?  new thunks.ValueThunk(obj) : common.fail;
   } else {
     return common.fail;
   }

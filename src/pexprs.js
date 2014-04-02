@@ -108,21 +108,13 @@ function Lookahead(expr) {
 
 Lookahead.prototype = objectThatDelegatesTo(PExpr.prototype);
 
-// String decomposition
+// Listy object decomposition
 
-function Str(expr) {
+function Listy(expr) {
   this.expr = expr;
 }
 
-Str.prototype = objectThatDelegatesTo(PExpr.prototype);
-
-// List decomposition
-
-function List(expr) {
-  this.expr = expr;
-}
-
-List.prototype = objectThatDelegatesTo(PExpr.prototype);
+Listy.prototype = objectThatDelegatesTo(PExpr.prototype);
 
 // Object decomposition
 
@@ -176,8 +168,7 @@ exports.Many = Many;
 exports.Opt = Opt;
 exports.Not = Not;
 exports.Lookahead = Lookahead;
-exports.Str = Str;
-exports.List = List;
+exports.Listy = Listy;
 exports.Obj = Obj;
 exports.Apply = Apply;
 

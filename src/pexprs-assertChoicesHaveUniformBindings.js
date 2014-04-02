@@ -77,11 +77,7 @@ pexprs.Lookahead.prototype.assertChoicesHaveUniformBindings = function(ruleName)
   this.expr.assertChoicesHaveUniformBindings(ruleName);
 };
 
-pexprs.Str.prototype.assertChoicesHaveUniformBindings = function(ruleName) {
-  this.expr.assertChoicesHaveUniformBindings(ruleName);
-};
-
-pexprs.List.prototype.assertChoicesHaveUniformBindings = function(ruleName) {
+pexprs.Listy.prototype.assertChoicesHaveUniformBindings = function(ruleName) {
   this.expr.assertChoicesHaveUniformBindings(ruleName);
 };
 

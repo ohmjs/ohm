@@ -106,8 +106,7 @@ Builder.prototype = {
   opt: function(expr) { return new pexprs.Opt(expr); },
   not: function(expr) { return new pexprs.Not(expr); },
   la: function(expr) { return new pexprs.Lookahead(expr); },
-  str: function(expr) { return new pexprs.Str(expr); },
-  lst: function(expr) { return new pexprs.List(expr); },
+  listy: function(expr) { return new pexprs.Listy(expr); },
   obj: function(properties, isLenient) { return new pexprs.Obj(properties, !!isLenient); },
   app: function(ruleName) { return new pexprs.Apply(ruleName); }
 };

@@ -33,11 +33,7 @@ pexprs.Lookahead.prototype.getBindingNames = function() {
   return this.expr.getBindingNames();
 };
 
-pexprs.Str.prototype.getBindingNames = function() {
-  return this.expr.getBindingNames();
-};
-
-pexprs.List.prototype.getBindingNames = function() {
+pexprs.Listy.prototype.getBindingNames = function() {
   return this.expr.getBindingNames();
 };
 

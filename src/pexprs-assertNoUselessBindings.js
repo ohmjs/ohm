@@ -66,11 +66,7 @@ pexprs.Lookahead.prototype.assertNoUselessBindings = function(ruleName) {
   this.expr.assertNoUselessBindings(ruleName);
 };
 
-pexprs.Str.prototype.assertNoUselessBindings = function(ruleName) {
-  this.expr.assertNoUselessBindings(ruleName);
-};
-
-pexprs.List.prototype.assertNoUselessBindings = function(ruleName) {
+pexprs.Listy.prototype.assertNoUselessBindings = function(ruleName) {
   this.expr.assertNoUselessBindings(ruleName);
 };
 

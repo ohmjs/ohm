@@ -634,10 +634,10 @@ describe("Ohm", function() {
       });
     });
 
-    describe("str", function() {
+    describe("listy", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { start = \"/[a-z]/ 'bc'\":x 'd' 'ef' }");
+        m = makeGrammar("M { start = 'abc' ['d':x 'ef']:y 'g' }");
       });
 
       it("to recipe and back", function() {
@@ -645,41 +645,20 @@ describe("Ohm", function() {
       });
 
       it("recognition", function() {
-        expect(m.matchContents(['abc', 'd', 'ef'], 'start')).to.be.ok();
-        expect(m.matchContents(['pbc', 'd', 'ef'], 'start')).to.be.ok();
-        expect(m.matchContents(['abcd', 'd', 'ef'], 'start')).to.equal(false);
+        expect(m.matchContents(['abc', ['d', 'ef'], 'g'], 'start')).to.be.ok();
+        expect(m.matchContents(['abc', ['def'], 'g'], 'start')).to.equal(false);
+        expect(m.matchContents(['abc', 'def', 'g'], 'start')).to.be.ok();
+        expect(m.matchContents(['abc', ['d', 'ef', 'oops'], 'g'], 'start')).to.equal(false);
+        expect(m.matchContents(['abc', ['d', 'ef'], 'gh'], 'start')).to.equal(false);
+        expect(m.matchContents(['abc', [5], 'g'], 'start')).to.equal(false);
+        expect(m.matchContents(['abc', [], 'g'], 'start')).to.equal(false);
+        expect(m.matchContents(['abc', 5, 'g'], 'start')).to.equal(false);
       });
 
       it("semantic actions", function() {
-        expect(m.matchContents(['abc', 'd', 'ef'], 'start')({
-          start: function(env) { return env.x; }
-        })).to.equal('abc');
-      });
-    });
-
-    describe("lst", function() {
-      var m;
-      beforeEach(function() {
-        m = makeGrammar("M { start = 'abc' ['d']:x 'ef' }");
-      });
-
-      it("to recipe and back", function() {
-        expect(m).to.eql(ohm.make(eval(m.toRecipe())));
-      });
-
-      it("recognition", function() {
-        expect(m.matchContents(['abc', ['d'], 'ef'], 'start')).to.be.ok();
-        expect(m.matchContents(['abc', ['d', 'e'], 'ef'], 'start')).to.equal(false);
-        expect(m.matchContents(['abc', ['e'], 'ef'], 'start')).to.equal(false);
-        expect(m.matchContents(['abc', [5], 'ef'], 'start')).to.equal(false);
-        expect(m.matchContents(['abc', [], 'ef'], 'start')).to.equal(false);
-        expect(m.matchContents(['abc', 5, 'ef'], 'start')).to.equal(false);
-      });
-
-      it("semantic actions", function() {
-        expect(m.matchContents(['abc', ['d'], 'ef'], 'start')({
-          start: function(env) { return env.x; }
-        })).to.eql(['d']);
+        expect(m.matchContents(['abc', ['d', 'ef'], 'g'], 'start')({
+          start: function(env) { return [env.x, env.y]; }
+        })).to.eql(['d', ['d', 'ef']]);
       });
     });
 

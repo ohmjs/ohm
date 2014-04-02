@@ -33,7 +33,7 @@ pexprs.Not.prototype.toExpected = function(ruleDict) {
   return "no " + this.expr.toExpected();
 };
 
-// TODO: think about Str, List, and Obj
+// TODO: think about Listy and Obj
 
 pexprs.Apply.prototype.toExpected = function(ruleDict) {
   var description = ruleDict[this.ruleName].description;

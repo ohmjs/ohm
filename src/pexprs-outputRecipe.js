@@ -84,14 +84,8 @@ pexprs.Lookahead.prototype.outputRecipe = function(ws) {
   ws.nextPutAll(')');
 };
 
-pexprs.Str.prototype.outputRecipe = function(ws) {
-  ws.nextPutAll('b.str(');
-  this.expr.outputRecipe(ws);
-  ws.nextPutAll(')');
-};
-
-pexprs.List.prototype.outputRecipe = function(ws) {
-  ws.nextPutAll('b.lst(');
+pexprs.Listy.prototype.outputRecipe = function(ws) {
+  ws.nextPutAll('b.listy(');
   this.expr.outputRecipe(ws);
   ws.nextPutAll(')');
 };

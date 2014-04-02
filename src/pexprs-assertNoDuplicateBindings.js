@@ -61,11 +61,7 @@ pexprs.Lookahead.prototype.assertNoDuplicateBindings = function(ruleName) {
   this.expr.assertNoDuplicateBindings(ruleName);
 };
 
-pexprs.Str.prototype.assertNoDuplicateBindings = function(ruleName) {
-  this.expr.assertNoDuplicateBindings(ruleName);
-};
-
-pexprs.List.prototype.assertNoDuplicateBindings = function(ruleName) {
+pexprs.Listy.prototype.assertNoDuplicateBindings = function(ruleName) {
   this.expr.assertNoDuplicateBindings(ruleName);
 };
 
