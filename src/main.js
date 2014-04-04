@@ -126,7 +126,7 @@ function makeGrammarActionDict(optNamespace) {
 
 function compileAndLoad(source, whatItIs, optNamespace) {
   try {
-    var thunk = thisModule._ohmGrammar.matchContents(source, whatItIs, true);
+    var thunk = thisModule.ohmGrammar.matchContents(source, whatItIs, true);
     return thunk(makeGrammarActionDict(optNamespace));
   } catch (e) {
     if (e instanceof errors.MatchFailure) {
@@ -174,7 +174,7 @@ exports._builder = function() {
 exports._makeGrammarActionDict = makeGrammarActionDict;
 
 var ohmGrammar;
-Object.defineProperty(exports, '_ohmGrammar', {
+Object.defineProperty(exports, 'ohmGrammar', {
   get: function() {
     if (!ohmGrammar) {
       ohmGrammar = this._ohmGrammarFactory(this);
