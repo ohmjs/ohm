@@ -2,7 +2,7 @@
 <html>
   <head>
     <title>ohm/js demo</title>
-    <link href="demo.css" rel="stylesheet"></style>
+    <link href="demo.css" rel="stylesheet"></link>
     <script src="lib.js"></script>
     <script type="text/ohm-js" id="arithmetic">
 
@@ -62,7 +62,7 @@ var g = ohm.namespace('test')
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-var env = {pi: Math.PI, e: Math.E};
+var constants = {pi: Math.PI, e: Math.E};
 var interpret = {
   Expr:           function(env) { return env.value; },
   AddExpr:        function(env) { return env.value; },
@@ -77,7 +77,7 @@ var interpret = {
   PriExpr_paren:  function(env) { return env.e; },
   PriExpr_pos:    function(env) { return env.e; },
   PriExpr_neg:    function(env) { return -env.e; },
-  ident:          function()    { return env[this.interval.contents]; },
+  ident:          function()    { return constants[this.interval.contents]; },
   number:         function()    { return parseFloat(this.interval.contents); }
 };
 
