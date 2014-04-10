@@ -1,0 +1,379 @@
+<!doctype html>
+<html>
+  <head>
+    <title>ohm/js grammar viz demo</title>
+    <link href="viz.css" rel="stylesheet"></style>
+    <script src="lib.js"></script>
+    <script src="../dist/ohm.js"></script>
+    <link href="viz.css" rels="stylesheet"></link>
+    <style>
+
+#source {
+  display: inline-block;
+  position: relative;
+  height: 700px;
+  vertical-align: top;
+  font-family: Monaco;
+  font-size: 11pt;
+  outline: none;
+  border: none;
+  border-right: 2px dashed black;
+  margin-right: 5pt;
+  resize: none;
+}
+
+#source.error {
+  border-right: 2px dashed red;
+}
+
+#source.error::after {
+  position: absolute;
+  right: 4pt;
+  font-size: 64pt;
+  content: 'error!';
+}
+
+#vizDiv {
+  display: inline-block;
+  width: 600px;
+  height: 700px;
+  overflow: scroll;
+  margin-left: 5pt;
+}
+
+    </style>
+  </head>
+  <body>
+    <textarea id="source" cols="60" autofocus="true" spellcheck="false">
+Arithmetic {
+  Expr = AddExpr
+
+  AddExpr
+    = AddExpr:x '+':op MulExpr:y  -- plus
+    | AddExpr:x '-':op MulExpr:y  -- minus
+    | MulExpr
+
+  MulExpr
+    = MulExpr:x '*':op ExpExpr:y  -- times
+    | MulExpr:x '/':op ExpExpr:y  -- divide
+    | ExpExpr
+
+  ExpExpr
+    = PriExpr:x '^':op ExpExpr:y  -- power
+    | PriExpr
+
+  PriExpr
+    = '(':open Expr:e ')':close   -- paren
+    | '+':sign PriExpr:e          -- pos
+    | '-':sign PriExpr:e          -- neg
+    | ident
+    | number
+
+  ident  -- identifier
+    = letter alnum*
+
+  number  -- number literal
+    = digit+ ('.' digit*)?
+    | '.' digit+
+}
+
+    </textarea>
+    <div id="vizDiv"></div>
+    <script>
+
+var curr = document.getElementById('vizDiv');
+
+function enter(tag) {
+  var child = makeElement(tag);
+  curr.appendChild(child);
+  curr = child;
+}
+
+function leave() {
+  curr = curr.parentElement;
+}
+
+function addNode(node) {
+  curr.appendChild(node);
+}
+
+function add(/* tagName, child1, child2, ... */) {
+  addNode(makeElement.apply(this, arguments));
+}
+
+var viz = {
+  Grammar:                  function(env) {
+                              /* n, rs, s */
+                              enter('grammar');
+                                add('name', env.n);
+                                env.s;  // force evaluation
+                                enter('rules');
+                                  env.rs;  // force evaluation
+                                leave();
+                              leave();
+                            },
+  SuperGrammar:             function(env) {
+                              /* value */
+                              enter('super');
+                                env.value;  // force evaluation
+                              leave();
+                            },
+  SuperGrammar_qualified:   function(env) {
+                              /* n, ns */
+                              add('name', env.ns + '.' + env.n);
+                            },      
+  SuperGrammar_unqualified: function(env) {
+                              /* n */
+                              add('name', env.n);
+                            },      
+  Rule:                     function(env) {
+                              /* value */
+                              enter('rule');
+                                env.value;  // force evaluation
+                              leave();
+                            },
+  Rule_define:              function(env) {
+                              /* b, d, n */
+                              add('name', env.n);
+                              env.d;  // force evaluation
+                              enter('ruleDefineBody');
+                                env.b;  // force evaluation
+                              leave();
+                            },      
+  Rule_override:            function(env) {
+                              /* b, n */
+                              add('name', env.n);
+                              enter('ruleOverrideBody');
+                                env.b;  // force evaluation
+                              leave();
+                            },
+  Rule_extend:              function(env) {
+                              /* b, n */
+                              add('name', env.n);
+                              enter('ruleExtendBody');
+                                env.b;  // force evaluation
+                              leave();
+                            },
+  ruleDescr:                function(env) {
+                              /* t */
+                              add('description', env.t);
+                            },
+  ruleDescrText:            function()    {
+                              return this.interval.contents;
+                            },
+  Alt:                      function(env) {
+                              /* value */
+                              env.value;  // force evaluation
+                            },
+  Alt_rec:                  function(env) {
+                              /* x, y */
+                              enter('alt');
+                                enter('choice');
+                                  env.x;  // force evaluation
+                                leave();
+                                enter('choice');
+                                  env.y;  // force evaluation
+                                leave();
+                                if (curr.lastChild.children.length === 1 && curr.lastChild.firstChild.tagName === 'ALT') {
+                                  var alt = curr.lastChild.firstChild;
+                                  curr.removeChild(curr.lastChild);
+                                  while (alt.firstChild) {
+                                    addNode(alt.firstChild);
+                                  }
+                                }
+                              leave();
+                            },
+  Term:                     function(env) {
+                              /* value */
+                              env.value;  // force evaluation
+                            },
+  Term_inline:              function(env) {
+                              /* n, x */
+                              env.x;  // force evaluation
+                              env.n;  // force evaluation
+                            },       
+  caseName:                 function(env) {
+                              /* n */
+                              add('description', env.n);
+                            },          
+  Seq:                      function(env) {
+                              /* value */
+                              enter('seq');
+                                env.value;  // force evaluation
+                              leave();
+                            },
+  Factor:                   function(env) {
+                              /* value */
+                              env.value;  // force evaluation
+                            },
+  Factor_bind:              function(env) {
+                              /* n, x */
+                              enter('bind');
+                                env.x;  // force evaluation
+                                add('name', env.n);
+                              leave();
+                            },       
+  Iter:                     function(env) {
+                              /* value */
+                              env.value;  // force evaluation
+                            },
+  Iter_star:                function(env) {
+                              /* x */
+                              enter('star');
+                                env.x;  // force evaluation
+                              leave();
+                            },          
+  Iter_plus:                function(env) {
+                              /* x */
+                              enter('plus');
+                                env.x;  // force evaluation
+                              leave();
+                            },          
+  Iter_opt:                 function(env) {
+                              /* x */
+                              enter('opt');
+                                env.x;  // force evaluation
+                              leave();
+                            },          
+  Pred:                     function(env) {
+                              /* value */
+                              env.value;  // force evaluation
+                            },
+  Pred_not:                 function(env) {
+                              /* x */
+                              enter('not');
+                                env.x;  // force evaluation
+                              leave();
+                            },          
+  Pred_lookahead:           function(env) {
+                              /* x */
+                              enter('lookahead');
+                                env.x;  // force evaluation
+                              leave();
+                            },          
+  Base:                     function(env) {
+                              /* value */
+                              env.value;  // force evaluation
+                            },
+  Base_application:         function(env) {
+                              /* ruleName */
+                              add('app', env.ruleName);
+                            },   
+  Base_prim:                function(env) {
+                              /* value */
+                              env.value;  // force evaluation
+                            },   
+  Base_paren:               function(env) {
+                              /* x */
+                              enter('paren');
+                                env.x;  // force evaluation
+                              leave();
+                            },          
+  Base_listy:               function(env) {
+                              /* x */
+                              enter('listy');
+                                env.x;  // force evaluation
+                              leave();
+                            },          
+  Base_obj:                 function(env) {
+                              /* x */
+                              throw 'TODO';
+                            },          
+  Base_objWithProps:        function(env) {
+                              /* x */
+                              throw 'TODO';
+                            },          
+  Props:                    function(env) {
+                              /* value */
+                              throw 'TODO';
+                            },
+  ident:                    function(env) {
+                              /* n */
+                              return env.n;
+                            },
+  name:                     function()    {
+                              return this.interval.contents;
+                            },
+  string:                   function(env) {
+                              /* cs */
+                              add('string', escape(eval(this.interval.contents)));
+                            },
+  regExp:                   function(env) {
+                              /* e */
+                              env.e;  // force evaluation
+                            },          
+  reCharClass:              function()    {
+                              add('charClass', this.interval.contents);
+                            },                   
+  number:                   function()    {
+                              add('prim', this.interval.contents);
+                            },                   
+  keyword:                  function(env) {
+                              /* value */
+                              env.value;  // force evaluation
+                            },
+  keyword_undefined:        function()    {
+                              add('prim', 'undefined');
+                            },                   
+  keyword_null:             function()    {
+                              add('prim', 'null');
+                            },                   
+  keyword_true:             function()    {
+                              add('prim', 'true');
+                            },                   
+  keyword_false:            function()    {
+                              add('prim', 'false');
+                            },                   
+  sChar:                    function()    {},                   
+  Props_rec:                function(env) { /* p, ps */ },      
+  Props_base:               function(env) { /* p */ },          
+  Prop:                     function(env) { /* n, p */ }        
+};
+
+function escape(str) {
+  var node = document.createElement('span');
+  for (var idx = 0; idx < str.length; idx++) {
+    if (str.charCodeAt(idx) < 32) {
+      var c;
+      switch (str.charAt(idx)) {
+        case '\r':
+          c = '\\r';
+          break;
+        case '\n':
+          c = '\\n';
+          break;
+        case '\t':
+          c = '\\t';
+          break;
+        default:
+          c = '(ascii ' + str.charCodeAt(idx) + ')';
+      }
+      node.appendChild(makeElement('specialChar', c));
+    } else {
+      node.appendChild(document.createTextNode(str.charAt(idx)));
+    }
+  }
+  return node;
+}
+
+var source = document.getElementById('source');
+var vizDiv = document.getElementById('vizDiv');
+
+source.oninput = function() {
+  try {
+    var thunk = ohm.ohmGrammar.matchContents(source.value, 'Grammar', true);
+    removeChildren(vizDiv);
+    thunk(viz);
+    source.className = undefined;
+  } catch (e) {
+    console.log(e);
+    source.className = 'error';
+  }
+};
+
+source.oninput();
+
+    </script>
+  </body>
+</html>
+

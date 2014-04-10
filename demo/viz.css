@@ -1,0 +1,251 @@
+body {
+  font-family: "PT Sans", Arial, Helvetica, sans-serif;
+  font-size: 12pt;
+}
+
+super::before {
+  opacity: .25;
+  content: '\25C1';
+  padding-left: 3pt;
+  padding-right: 3pt;
+}
+
+grammar {
+  display: block;
+}
+
+grammar > name {
+  font-weight: bold;
+}
+
+grammar > rules::before {
+  content: ' {';
+  opacity: .25;
+}
+
+grammar > rules::after {
+  display: block;
+  content: '}';
+  opacity: .25;
+}
+
+rule {
+  display: block;
+  margin-left: 10pt;
+}
+
+rule > name {
+  color: maroon;
+}
+
+description {
+  opacity: .25;
+  font-style: italic;
+}
+
+description::before {
+  content: '\2014';
+  padding-left: 10pt;
+  padding-right: 4pt;
+}
+
+rule {
+  margin-top: 12pt;
+  margin-bottom: 12pt;
+}
+
+ruleDefineBody,
+ruleOverrideBody,
+ruleExtendBody {
+  display: block;
+}
+
+ruleDefineBody > alt,
+ruleOverrideBody > alt,
+ruleExtendBody > alt {
+  display: table;
+  border-collapse: collapse;
+}
+
+ruleDefineBody > alt > choice,
+ruleOverrideBody > alt > choice,
+ruleExtendBody > alt > choice {
+  display: table-row;
+}
+
+choice {
+  display: inline-block;
+}
+
+ruleDefineBody > alt > choice > *,
+ruleOverrideBody > alt > choice > *,
+ruleExtendBody > alt > choice > * {
+  display: table-cell;
+}
+
+description {
+  display: inline-block;
+}
+
+ruleDefineBody > alt::before,
+ruleOverrideBody > alt::before,
+ruleExtendBody > alt::before {
+  display: none;
+}
+
+ruleDefineBody > *::before,
+ruleOverrideBody > *::before,
+ruleExtendBody > *::before,
+ruleDefineBody > alt > choice:first-child::before,
+ruleOverrideBody > alt > choice:first-child::before,
+ruleExtendBody > alt > choice:first-child::before {
+  display: inline-block;
+  font-family: Monaco;
+  text-align: right;
+  width: 20pt;
+  margin-right: 6pt;
+}
+
+ruleDefineBody > *::before,
+ruleDefineBody > alt > choice:first-child::before {
+  content: '=';
+}
+
+ruleOverrideBody > *::before,
+ruleOverrideBody > alt > choice:first-child::before {
+  content: ':=';
+}
+
+ruleExtendBody > *::before,
+ruleExtendBody > alt > choice:first-child::before {
+  content: '+=';
+}
+
+ruleDefineBody > alt > choice::before,
+ruleOverrideBody > alt > choice::before,
+ruleExtendBody > alt > choice::before {
+  display: inline-block;
+  text-align: right;
+  width: 20pt;
+  margin-left: 0;
+  margin-right: 6pt;
+}
+
+choice:first-child::before {
+  content: '';
+  margin-left: 0;
+  margin-right: 0;
+}
+
+choice::before {
+  content: '|';
+  margin-left: 2pt;
+  margin-right: 2pt;
+}
+
+bind > name {
+  margin-left: 1pt;
+  vertical-align: sub;
+  font-size: 75%;
+  opacity: .25; 
+}
+
+app {
+}
+
+seq > * {
+  margin-left: 2pt;
+  margin-right: 2pt;
+}
+
+seq > *::first-child {
+  margin-left: 0;
+}
+
+seq > *::last-child {
+  margin-right: 0;
+}
+
+star::after {
+  content: '*';
+}
+
+plus::after {
+  font-size: 75%;
+  vertical-align: super;
+  content: '+';
+}
+
+lookahead::before {
+  content: '&';
+}
+
+not::before {
+  content: '~';
+}
+
+paren::before,
+paren::after {
+}
+
+paren::before {
+  content: '(';
+}
+
+paren::after {
+  content: ')';
+}
+
+listy::before,
+listy::after {
+  font-family: Monaco;
+}
+
+listy::before {
+  content: '[';
+}
+
+listy::after {
+  content: ']';
+}
+
+prim {
+  font-family: Monaco;
+  _font-size: 85%;
+}
+
+string::before,
+string::after {
+  font-family: "PT Sans", Arial, Helvetica, sans-serif;
+  opacity: .25;
+}
+
+string::before {
+  content: '"';
+}
+
+string::after {
+  content: '"';
+}
+
+string {
+  font-family: Monaco;
+}
+
+specialChar {
+  color: slateblue;
+}
+
+charClass {
+  font-family: Monaco;
+  _font-size: 85%;
+}
+
+charClass::after {
+  font-family: "PT Sans", Arial, Helvetica, sans-serif;
+  font-size: 50%;
+  font-style: italic;
+  vertical-align: super;
+  content: 'RE';
+}
+

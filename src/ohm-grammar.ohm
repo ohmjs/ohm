@@ -44,8 +44,8 @@ Ohm {
   Base
     = ident:ruleName ~(ruleDescr? '=' | ':=' | '+=')  -- application
     | (keyword | string | regExp | number)            -- prim
-    | '[' Alt:x ']'                                   -- listy
     | '(' Alt:x ')'                                   -- paren
+    | '[' Alt:x ']'                                   -- listy
     | '{' '...'?:lenient '}'                          -- obj
     | '{' Props:ps (',' '...')?:lenient '}'           -- objWithProps
 
