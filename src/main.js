@@ -20,107 +20,193 @@ var thisModule = exports;
 function makeGrammarActionDict(optNamespace) {
   var builder;
   return {
-    space:                      function(env) {},
-    space_multiLine:            function()    {},
-    space_singleLine:           function()    {},
+    Grammars: function(expr) {
+      return expr.value;
+    },
 
-    ruleDescr:                  function(env) { builder.setRuleDescription(env.t); },
-    ruleDescrText:              function()    { return this.interval.contents; },
+    Grammar: function(n, s, rs) {
+      builder = new Builder();
+      builder.setName(n.value);
+      s.value;  // force evaluation
+      rs.value;  // force evaluation
+      return builder.build(optNamespace);
+    },
 
-    caseName:                   function(env) { return env.n },
+    SuperGrammar: function(expr) {
+      builder.setSuperGrammar(expr.value);
+    },
+    SuperGrammar_qualified: function(ns, n) {
+      return thisModule.namespace(ns.value).getGrammar(n.value);
+    },
+    SuperGrammar_unqualified: function(n) {
+      if (optNamespace) {
+        return optNamespace.getGrammar(n.value);
+      } else {
+        throw new errors.UndeclaredGrammar(n.value);
+      }
+    },
 
-    name:                       function()    { return this.interval.contents; },
-    nameFirst:                  function(env) {},
-    nameRest:                   function(env) {},
+    Rule: function(expr) {
+      return expr.value;
+    },
+    Rule_define: function(n, d, b) {
+      builder.currentRuleName = n.value;
+      d.value;  // force evaluation
+      return builder.define(n.value, b.value);
+    },
+    Rule_override: function(n, b) {
+      builder.currentRuleName = n.value;
+      return builder.override(n.value, b.value);
+    },
+    Rule_extend: function(n, b) {
+      builder.currentRuleName = n.value;
+      return builder.extend(n.value, b.value);
+    },
 
-    ident:                      function(env) { return env.n; },
+    Alt: function(expr) {
+      return expr.value;
+    },
+    Alt_rec: function(x, y) {
+      return builder.alt(x.value, y.value);
+    },
 
-    keyword:                    function(env) { return env.value; },
-    keyword_undefined:          function()    { return undefined; },
-    keyword_null:               function()    { return null; },
-    keyword_true:               function()    { return true; },
-    keyword_false:              function()    { return false; },
+    Term: function(expr) {
+      return expr.value;
+    },
+    Term_inline: function(x, n) {
+      return builder.inline(builder.currentRuleName + '_' + n.value, x.value);
+    },
 
-    string:                     function(env) {
-                                  return env.cs.map(function(c) { return unescapeChar(c); }).join('');
-                                },
-    sChar:                      function()    { return this.interval.contents; },
-    regExp:                     function(env) { return new RegExp(env.e); },
-    reCharClass:                function()    { return this.interval.contents; },
-    number:                     function()    { return parseInt(this.interval.contents); },
+    Seq: function(expr) {
+      return builder.seq.apply(builder, expr.value);
+    },
 
-    Alt:                        function(env) { return env.value; },
-    Alt_rec:                    function(env) { return builder.alt(env.x, env.y); },
+    Factor: function(expr) {
+      return expr.value;
+    },
+    Factor_bind: function(x, n) {
+      return builder.bind(x.value, n.value);
+    },
 
-    Term:                       function(env) { return env.value; },
-    Term_inline:                function(env) { return builder.inline(builder.currentRuleName + '_' + env.n, env.x); },
+    Iter: function(expr) {
+      return expr.value;
+    },
+    Iter_star: function(x) {
+      return builder.many(x.value, 0);
+    },
+    Iter_plus: function(x) {
+      return builder.many(x.value, 1);
+    },
+    Iter_opt: function(x) {
+      return builder.opt(x.value);
+    },
 
-    Seq:                        function(env) { return builder.seq.apply(builder, env.value); },
+    Pred: function(expr) {
+      return expr.value;
+    },
+    Pred_not: function(x) {
+      return builder.not(x.value);
+    },
+    Pred_lookahead: function(x) {
+      return builder.la(x.value);
+    },
 
-    Factor:                     function(env) { return env.value; },
-    Factor_bind:                function(env) { return builder.bind(env.x, env.n); },
+    Base: function(expr) {
+      return expr.value;
+    },
+    Base_application: function(ruleName) {
+      return builder.app(ruleName.value);
+    },
+    Base_prim: function(expr) {
+      return builder.prim(expr.value);
+    },
+    Base_paren: function(x) {
+      return x.value;
+    },
+    Base_listy: function(x) {
+      return builder.listy(x.value);
+    },
+    Base_obj: function(lenient) {
+      return builder.obj([], lenient.value);
+    },
+    Base_objWithProps: function(ps, lenient) {
+      return builder.obj(ps.value, lenient.value);
+    },
 
-    Iter:                       function(env) { return env.value; },
-    Iter_star:                  function(env) { return builder.many(env.x, 0); },
-    Iter_plus:                  function(env) { return builder.many(env.x, 1); },
-    Iter_opt:                   function(env) { return builder.opt(env.x); },
+    Props: function(expr) {
+      return expr.value;
+    },
+    Props_rec: function(p, ps) {
+      return [p.value].concat(ps.value);
+    },
+    Props_base: function(p) {
+      return [p.value];
+    },
+    Prop: function(n, p) {
+      return {name: n.value, pattern: p.value};
+    },
 
-    Pred:                       function(env) { return env.value; },
-    Pred_not:                   function(env) { return builder.not(env.x); },
-    Pred_lookahead:             function(env) { return builder.la(env.x); },
+    ruleDescr: function(t) {
+      builder.setRuleDescription(t.value);
+      return t.value;
+    },
+    ruleDescrText: function() {
+      return this.interval.contents;
+    },
 
-    Base:                       function(env) { return env.value; },
-    Base_undefined:             function()    { return builder.prim(undefined); },
-    Base_null:                  function()    { return builder.prim(null); },
-    Base_true:                  function()    { return builder.prim(true); },
-    Base_false:                 function()    { return builder.prim(false); },
-    Base_application:           function(env) { return builder.app(env.ruleName); },
-    Base_prim:                  function(env) { return builder.prim(env.value); },
-    Base_listy:                 function(env) { return builder.listy(env.x); },
-    Base_paren:                 function(env) { return env.x; },
-    Base_obj:                   function(env) { return builder.obj([], env.lenient); },
-    Base_objWithProps:          function(env) { return builder.obj(env.ps, env.lenient); },
+    caseName: function(n) {
+      return n.value
+    },
 
-    Props:                      function(env) { return env.value; },
-    Props_base:                 function(env) { return [env.p]; },
-    Props_rec:                  function(env) { return [env.p].concat(env.ps); },
-    Prop:                       function(env) { return {name: env.n, pattern: env.p}; },
+    name: function() {
+      return this.interval.contents;
+    },
+    nameFirst: function(expr) {},
+    nameRest: function(expr) {},
 
-    Rule:                       function(env) { return env.value; },
-    Rule_define:                function(env) {
-                                  builder.currentRuleName = env.n;
-                                  env.d;  // force evaluation
-                                  return builder.define(env.n, env.b);
-                                },
-    Rule_override:              function(env) {
-                                  builder.currentRuleName = env.n;
-                                  env.d;  // force evaluation
-                                  return builder.override(env.n, env.b);
-                                },
-    Rule_extend:                function(env) {
-                                  builder.currentRuleName = env.n;
-                                  env.d;  // force evaluation
-                                  return builder.extend(env.n, env.b);
-                                },
+    ident: function(n) {
+      return n.value;
+    },
 
-    SuperGrammar:               function(env) { builder.setSuperGrammar(env.value); },
-    SuperGrammar_qualified:     function(env) { return thisModule.namespace(env.ns).getGrammar(env.n); },
-    SuperGrammar_unqualified:   function(env) {
-                                  if (optNamespace) {
-                                    return optNamespace.getGrammar(env.n);
-                                  } else {
-                                    throw new errors.UndeclaredGrammar(env.n);
-                                  }
-                                },
+    keyword: function(expr) {
+      return expr.value;
+    },
+    keyword_undefined: function() {
+      return undefined;
+    },
+    keyword_null: function() {
+      return null;
+    },
+    keyword_true: function() {
+      return true;
+    },
+    keyword_false: function() {
+      return false;
+    },
 
-    Grammar:                    function(env) {
-                                  builder = new Builder();
-                                  builder.setName(env.n);
-                                  env.s;  // force evaluation
-                                  env.rs;  // force evaluation
-                                  return builder.build(optNamespace);
-                                },
-    Grammars:                   function(env) { return env.value; }
+    string: function(cs) {
+      return cs.value.map(function(c) { return unescapeChar(c); }).join('');
+    },
+
+    sChar: function() {
+      return this.interval.contents;
+    },
+
+    regExp: function(e) {
+      return new RegExp(e.value);
+    },
+
+    reCharClass: function() {
+      return this.interval.contents;
+    },
+
+    number: function() {
+      return parseInt(this.interval.contents);
+    },
+
+    space: function(expr) {},
+    space_multiLine: function() {},
+    space_singleLine: function() {}
   };
 }
 

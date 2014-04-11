@@ -26,7 +26,7 @@ pexprs.Seq.prototype.getBindingNames = function() {
 };
 
 pexprs.Bind.prototype.getBindingNames = function() {
-  return [this.name];
+  return [this.name].concat(this.expr.getBindingNames()).sort();
 };
 
 pexprs.Lookahead.prototype.getBindingNames = function() {

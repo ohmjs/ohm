@@ -49,12 +49,12 @@ Ohm {
     | '{' '...'?:lenient '}'                          -- obj
     | '{' Props:ps (',' '...')?:lenient '}'           -- objWithProps
 
-  Prop
-    = (name | string):n ':' Base:p
-
   Props
     = Prop:p ',' Props:ps  -- rec
     | Prop:p               -- base
+
+  Prop
+    = (name | string):n ':' Base:p
 
   ruleDescr  -- rule description for use in error messages
     = '--' ruleDescrText:t '\n'
@@ -64,10 +64,6 @@ Ohm {
 
   caseName
     = '--' (~'\n' space)* name:n (~'\n' space)* ('\n' | &'}')
-
-  space
-   += '//' (~'\n' _)* '\n'  -- singleLine
-    | '/*' (~'*/' _)* '*/'  -- multiLine
 
   name  -- name
     = nameFirst nameRest*
@@ -106,6 +102,10 @@ Ohm {
 
   number  -- number
     = '-'? digit+
+
+  space
+   += '//' (~'\n' _)* '\n'  -- singleLine
+    | '/*' (~'*/' _)* '*/'  -- multiLine
 
 }
 

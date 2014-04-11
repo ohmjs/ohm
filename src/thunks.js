@@ -6,7 +6,8 @@ var Interval = require('./Interval.js');
 
 var awlib = require('awlib');
 var browser = awlib.browser
-var objectThatDelegatesTo = awlib.objectUtils.objectThatDelegatesTo;
+var objectUtils = awlib.objectUtils
+var objectThatDelegatesTo = objectUtils.objectThatDelegatesTo;
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -35,21 +36,47 @@ function RuleThunk(ruleName, source, startIdx, endIdx, value, bindings) {
 
 RuleThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
   force: function(actionDict, memo) {
-    if (!memo.hasOwnProperty(this.id)) {
-      var action = this.lookupAction(actionDict);
-      var addlInfo = this.createAddlInfo();
-      var env = this.makeEnv(actionDict, memo);
-      memo[this.id] = action.call(addlInfo, env);
+    function makeBinding(thunk) {
+      var binding = {}
+      Object.defineProperty(binding, 'value', {
+        get: function() {
+          return thunk.force(actionDict, memo);
+        }
+      });
+      return binding;
     }
-    return memo[this.id];
+
+    if (memo.hasOwnProperty(this.id)) {
+      return memo[this.id];
+    }
+
+    var action = this.lookupAction(actionDict);
+    var addlInfo = this.createAddlInfo();
+    if (this.bindings.length === 0) {
+      // This rule may or may not produce a value. If it doesn't, this.value === undefinedThunk so it's ok to force it
+      // unconditionally.
+      return memo[this.id] = action.call(addlInfo, makeBinding(this.value));
+    } else {
+      // The shape of this.bindings is [name1, value1, name2, value2, ...]
+      var argDict = {};
+      for (var idx = 0; idx < this.bindings.length; idx += 2) {
+        argDict[this.bindings[idx]] = this.bindings[idx + 1];
+      }
+      var formals = objectUtils.formals(action);
+      var isDefaultAction = formals.length === 0;
+      var args = isDefaultAction ?
+        objectUtils.values(argDict).map(function(arg) { return makeBinding(arg); }) :
+        formals.map(function(name) { return makeBinding(argDict[name]); });
+      return memo[this.id] = action.apply(addlInfo, args);
+    }
   },
 
   lookupAction: function(actionDict) {
     var ruleName = this.ruleName;
     var action = actionDict[ruleName];
     if (action === undefined && actionDict._default !== undefined) {
-      action = function(env) {
-        return actionDict._default.call(this, ruleName, env);
+      action = function() {
+        return actionDict._default.call(this, ruleName, Array.prototype.slice.call(arguments));
       };
     }
     return action || browser.error('missing semantic action for', ruleName);
@@ -59,29 +86,6 @@ RuleThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
     return {
       interval: new Interval(this.source, this.startIdx, this.endIdx)
     };
-  },
-
-  makeEnv: function(actionDict, memo) {
-    var bindings = this.bindings.length === 0 ? ['value', this.value] : this.bindings;
-    var env = {};
-    for (var idx = 0; idx < bindings.length; idx += 2) {
-      var name = bindings[idx];
-      var thunk = bindings[idx + 1];
-      this.addBinding(env, name, thunk, actionDict, memo);
-    }
-    return env;
-  },
-
-  addBinding: function(env, name, value, actionDict, memo) {
-    Object.defineProperty(env, name, {
-      get: function() {
-        if (value instanceof Thunk) {
-          value = value.force(actionDict, memo);
-        }
-        return value;
-      },
-      enumerable: true
-    });
   }
 });
 

@@ -8,6 +8,10 @@
     <link href="viz.css" rels="stylesheet"></link>
     <style>
 
+nowrap {
+  white-space: nowrap;
+}
+
 #source {
   display: inline-block;
   position: relative;
@@ -44,7 +48,8 @@
     </style>
   </head>
   <body>
-    <textarea id="source" cols="60" autofocus="true" spellcheck="false">
+    <nowrap>
+      <textarea id="source" cols="60" autofocus="true" spellcheck="false">
 Arithmetic {
   Expr = AddExpr
 
@@ -77,8 +82,9 @@ Arithmetic {
     | '.' digit+
 }
 
-    </textarea>
-    <div id="vizDiv"></div>
+      </textarea>
+      <div id="vizDiv"></div>
+    </nowrap>
     <script>
 
 var curr = document.getElementById('vizDiv');
@@ -102,79 +108,69 @@ function add(/* tagName, child1, child2, ... */) {
 }
 
 var viz = {
-  Grammar:                  function(env) {
-                              /* n, rs, s */
+  Grammar:                  function(n, rs, s) {
                               enter('grammar');
-                                add('name', env.n);
-                                env.s;  // force evaluation
+                                add('name', n.value);
+                                s.value;  // force evaluation
                                 enter('rules');
-                                  env.rs;  // force evaluation
+                                  rs.value;  // force evaluation
                                 leave();
                               leave();
                             },
-  SuperGrammar:             function(env) {
-                              /* value */
+  SuperGrammar:             function(expr) {
                               enter('super');
-                                env.value;  // force evaluation
+                                expr.value;  // force evaluation
                               leave();
                             },
-  SuperGrammar_qualified:   function(env) {
-                              /* n, ns */
-                              add('name', env.ns + '.' + env.n);
+  SuperGrammar_qualified:   function(n, ns) {
+                              add('name', ns.value + '.' + n.value);
                             },      
-  SuperGrammar_unqualified: function(env) {
-                              /* n */
-                              add('name', env.n);
+  SuperGrammar_unqualified: function(n) {
+                              add('name', n.value);
                             },      
-  Rule:                     function(env) {
-                              /* value */
+  Rule:                     function(expr) {
                               enter('rule');
-                                env.value;  // force evaluation
+                                expr.value;  // force evaluation
                               leave();
                             },
-  Rule_define:              function(env) {
-                              /* b, d, n */
-                              add('name', env.n);
-                              env.d;  // force evaluation
+  Rule_define:              function(b, d, n) {
+                              add('name', n.value);
+                              d.value;  // force evaluation
                               enter('ruleDefineBody');
-                                env.b;  // force evaluation
+                                b.value;  // force evaluation
                               leave();
                             },      
-  Rule_override:            function(env) {
-                              /* b, n */
-                              add('name', env.n);
+  Rule_override:            function(b, n) {
+                              add('name', n.value);
                               enter('ruleOverrideBody');
-                                env.b;  // force evaluation
+                                b.value;  // force evaluation
                               leave();
                             },
-  Rule_extend:              function(env) {
-                              /* b, n */
-                              add('name', env.n);
+  Rule_extend:              function(b, n) {
+                              add('name', n.value);
                               enter('ruleExtendBody');
-                                env.b;  // force evaluation
+                                b.value;  // force evaluation
                               leave();
                             },
-  ruleDescr:                function(env) {
-                              /* t */
-                              add('description', env.t);
+  ruleDescr:                function(t) {
+                              add('description', t.value);
                             },
-  ruleDescrText:            function()    {
+  ruleDescrText:            function() {
                               return this.interval.contents;
                             },
-  Alt:                      function(env) {
-                              /* value */
-                              env.value;  // force evaluation
+  Alt:                      function(expr) {
+                              expr.value;  // force evaluation
                             },
-  Alt_rec:                  function(env) {
-                              /* x, y */
+  Alt_rec:                  function(x, y) {
                               enter('alt');
                                 enter('choice');
-                                  env.x;  // force evaluation
+                                  x.value;  // force evaluation
                                 leave();
                                 enter('choice');
-                                  env.y;  // force evaluation
+                                  y.value;  // force evaluation
                                 leave();
-                                if (curr.lastChild.children.length === 1 && curr.lastChild.firstChild.tagName === 'ALT') {
+                                if (curr.lastChild.children.length === 1 &&
+                                    curr.lastChild.firstChild.tagName === 'ALT') {
                                   var alt = curr.lastChild.firstChild;
                                   curr.removeChild(curr.lastChild);
                                   while (alt.firstChild) {
@@ -183,151 +179,126 @@ var viz = {
                                 }
                               leave();
                             },
-  Term:                     function(env) {
-                              /* value */
-                              env.value;  // force evaluation
+  Term:                     function(expr) {
+                              expr.value;  // force evaluation
                             },
-  Term_inline:              function(env) {
-                              /* n, x */
-                              env.x;  // force evaluation
-                              env.n;  // force evaluation
+  Term_inline:              function(n, x) {
+                              x.value;  // force evaluation
+                              n.value;  // force evaluation
                             },       
-  caseName:                 function(env) {
-                              /* n */
-                              add('description', env.n);
+  caseName:                 function(n) {
+                              add('description', n.value);
                             },          
-  Seq:                      function(env) {
-                              /* value */
+  Seq:                      function(expr) {
                               enter('seq');
-                                env.value;  // force evaluation
+                                expr.value;  // force evaluation
                               leave();
                             },
-  Factor:                   function(env) {
-                              /* value */
-                              env.value;  // force evaluation
+  Factor:                   function(expr) {
+                              expr.value;  // force evaluation
                             },
-  Factor_bind:              function(env) {
-                              /* n, x */
+  Factor_bind:              function(n, x) {
                               enter('bind');
-                                env.x;  // force evaluation
-                                add('name', env.n);
+                                x.value;  // force evaluation
+                                add('name', n.value);
                               leave();
                             },       
-  Iter:                     function(env) {
-                              /* value */
-                              env.value;  // force evaluation
+  Iter:                     function(expr) {
+                              expr.value;  // force evaluation
                             },
-  Iter_star:                function(env) {
-                              /* x */
+  Iter_star:                function(x) {
                               enter('star');
-                                env.x;  // force evaluation
+                                x.value;  // force evaluation
                               leave();
                             },          
-  Iter_plus:                function(env) {
-                              /* x */
+  Iter_plus:                function(x) {
                               enter('plus');
-                                env.x;  // force evaluation
+                                x.value;  // force evaluation
                               leave();
                             },          
-  Iter_opt:                 function(env) {
-                              /* x */
+  Iter_opt:                 function(x) {
                               enter('opt');
-                                env.x;  // force evaluation
+                                x.value;  // force evaluation
                               leave();
                             },          
-  Pred:                     function(env) {
-                              /* value */
-                              env.value;  // force evaluation
+  Pred:                     function(expr) {
+                              expr.value;  // force evaluation
                             },
-  Pred_not:                 function(env) {
-                              /* x */
+  Pred_not:                 function(x) {
                               enter('not');
-                                env.x;  // force evaluation
+                                x.value;  // force evaluation
                               leave();
                             },          
-  Pred_lookahead:           function(env) {
-                              /* x */
+  Pred_lookahead:           function(x) {
                               enter('lookahead');
-                                env.x;  // force evaluation
+                                x.value;  // force evaluation
                               leave();
                             },          
-  Base:                     function(env) {
-                              /* value */
-                              env.value;  // force evaluation
+  Base:                     function(expr) {
+                              expr.value;  // force evaluation
                             },
-  Base_application:         function(env) {
-                              /* ruleName */
-                              add('app', env.ruleName);
+  Base_application:         function(ruleName) {
+                              add('app', ruleName.value);
                             },   
-  Base_prim:                function(env) {
-                              /* value */
-                              env.value;  // force evaluation
+  Base_prim:                function(expr) {
+                              expr.value;  // force evaluation
                             },   
-  Base_paren:               function(env) {
-                              /* x */
+  Base_paren:               function(x) {
                               enter('paren');
-                                env.x;  // force evaluation
+                                x.value;  // force evaluation
                               leave();
                             },          
-  Base_listy:               function(env) {
-                              /* x */
+  Base_listy:               function(x) {
                               enter('listy');
-                                env.x;  // force evaluation
+                                x.value;  // force evaluation
                               leave();
                             },          
-  Base_obj:                 function(env) {
-                              /* x */
+  Base_obj:                 function(lenient) {
                               throw 'TODO';
                             },          
-  Base_objWithProps:        function(env) {
-                              /* x */
+  Base_objWithProps:        function(ps, lenient) {
                               throw 'TODO';
                             },          
-  Props:                    function(env) {
-                              /* value */
+  Props:                    function(expr) {
                               throw 'TODO';
                             },
-  ident:                    function(env) {
-                              /* n */
-                              return env.n;
+  ident:                    function(n) {
+                              return n.value;
                             },
-  name:                     function()    {
+  name:                     function() {
                               return this.interval.contents;
                             },
-  string:                   function(env) {
-                              /* cs */
+  string:                   function(cs) {
                               add('string', escape(eval(this.interval.contents)));
                             },
-  regExp:                   function(env) {
-                              /* e */
-                              env.e;  // force evaluation
+  regExp:                   function(e) {
+                              e.value;  // force evaluation
                             },          
-  reCharClass:              function()    {
+  reCharClass:              function() {
                               add('charClass', this.interval.contents);
                             },                   
-  number:                   function()    {
+  number:                   function() {
                               add('prim', this.interval.contents);
                             },                   
-  keyword:                  function(env) {
-                              /* value */
-                              env.value;  // force evaluation
+  keyword:                  function(expr) {
+                              expr.value;  // force evaluation
                             },
-  keyword_undefined:        function()    {
+  keyword_undefined:        function() {
                               add('prim', 'undefined');
                             },                   
-  keyword_null:             function()    {
+  keyword_null:             function() {
                               add('prim', 'null');
                             },                   
-  keyword_true:             function()    {
+  keyword_true:             function() {
                               add('prim', 'true');
                             },                   
-  keyword_false:            function()    {
+  keyword_false:            function() {
                               add('prim', 'false');
                             },                   
-  sChar:                    function()    {},                   
-  Props_rec:                function(env) { /* p, ps */ },      
-  Props_base:               function(env) { /* p */ },          
-  Prop:                     function(env) { /* n, p */ }        
+  sChar:                    function() {},                   
+  Props_rec:                function(p, ps) {},
+  Props_base:               function(p) {},
+  Prop:                     function(n, p) {},
 };
 
 function escape(str) {

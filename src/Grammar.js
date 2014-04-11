@@ -14,7 +14,6 @@ var keysDo = awlib.objectUtils.keysDo;
 var valuesDo = awlib.objectUtils.valuesDo;
 var formals = awlib.objectUtils.formals;
 var makeStringBuffer = awlib.objectUtils.stringBuffer;
-var makeColumnStringBuffer = awlib.objectUtils.columnStringBuffer;
 var printString = awlib.stringUtils.printString;
 var equals = awlib.equals.equals;
 
@@ -93,7 +92,7 @@ Grammar.prototype = {
       if (!equals(actual, expected)) {
         ok = false;
         console.log('semantic action for rule', ruleName, 'has the wrong argument names');
-        console.log('  expected', expected);
+        console.log('  expected', expected, '(in any order)');
         console.log('    actual', actual);
       }
     });
@@ -108,7 +107,11 @@ Grammar.prototype = {
     } else {
       var body = this.ruleDict[ruleName];
       var names = body.getBindingNames();
-      return names.length > 0 || body.producesValue() ? ['env'] : [];
+      if (names.length > 0) {
+        return names;
+      } else {
+        return body.producesValue() ? ['expr'] : [];
+      }
     }
   },
 
@@ -142,7 +145,7 @@ Grammar.prototype = {
     // other cases of AddExpr.
 
     var self = this;
-    var buffer = makeColumnStringBuffer();
+    var buffer = makeStringBuffer();
     buffer.nextPutAll('{');
 
     var first = true;
@@ -153,37 +156,21 @@ Grammar.prototype = {
       } else {
         buffer.nextPutAll(',');
       }
-      buffer.newLine();
+      buffer.nextPutAll('\n');
       buffer.nextPutAll('  ');
-      buffer.newColumn();
       self.addSemanticActionTemplate(ruleName, body, buffer);
     }
 
-    buffer.newLine();
-    buffer.nextPutAll('}');
+    buffer.nextPutAll('\n}');
     return buffer.contents();
   },
 
   addSemanticActionTemplate: function(ruleName, body, buffer) {
     buffer.nextPutAll(ruleName);
-    buffer.nextPutAll(': ');
-    buffer.newColumn();
-    buffer.nextPutAll('function(');
+    buffer.nextPutAll(': function(');
     buffer.nextPutAll(this.semanticActionArgNames(ruleName).join(', '));
-    buffer.nextPutAll(') ');
-    buffer.newColumn();
-    buffer.nextPutAll('{');
-
-    var envProperties = body.getBindingNames();
-    if (envProperties.length === 0 && body.producesValue()) {
-      envProperties = ['value'];
-    }
-    if (envProperties.length > 0) {
-      buffer.nextPutAll(' /* ');
-      buffer.nextPutAll(envProperties.join(', '));
-      buffer.nextPutAll(' */ ');
-    }
-    buffer.nextPutAll('}');
+    buffer.nextPutAll(') {\n');
+    buffer.nextPutAll('  }');
   },
 
   rulesThatNeedSemanticAction: function(entryPoints) {
