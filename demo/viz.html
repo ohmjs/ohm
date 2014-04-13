@@ -1,28 +1,45 @@
-<!doctype html>
 <html>
   <head>
     <title>ohm/js grammar viz demo</title>
     <link href="viz.css" rel="stylesheet"></style>
     <script src="lib.js"></script>
     <script src="../dist/ohm.js"></script>
-    <link href="viz.css" rels="stylesheet"></link>
     <style>
 
-nowrap {
-  white-space: nowrap;
+body {
+  position: relative;
+}
+
+col1,
+col2 {
+  display: inline-block;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  overflow: scroll;
+}
+
+col1 {
+  left: 0;
+  right: 45%;
+}
+
+col2 {
+  left: 55%;
+  right: 0;
 }
 
 #source {
-  display: inline-block;
-  position: relative;
-  height: 700px;
-  vertical-align: top;
+  width: 100%;
+  height: 100%;
   font-family: Monaco;
   font-size: 11pt;
   outline: none;
-  border: none;
+  _border: none;
+  border: 0;
   border-right: 2px dashed black;
-  margin-right: 5pt;
+  margin: 0;
+  _margin-right: 5pt;
   resize: none;
 }
 
@@ -30,26 +47,15 @@ nowrap {
   border-right: 2px dashed red;
 }
 
-#source.error::after {
-  position: absolute;
-  right: 4pt;
-  font-size: 64pt;
-  content: 'error!';
-}
-
 #vizDiv {
-  display: inline-block;
-  width: 600px;
-  height: 700px;
-  overflow: scroll;
   margin-left: 5pt;
 }
 
     </style>
   </head>
   <body>
-    <nowrap>
-      <textarea id="source" cols="60" autofocus="true" spellcheck="false">
+    <col1>
+      <textarea id="source" cols="60" autofocus="true" spellcheck="false" wrap="off">
 Arithmetic {
   Expr = AddExpr
 
@@ -83,8 +89,10 @@ Arithmetic {
 }
 
       </textarea>
+    </col1>
+    <col2>
       <div id="vizDiv"></div>
-    </nowrap>
+    </col2>
     <script>
 
 var curr = document.getElementById('vizDiv');
