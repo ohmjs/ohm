@@ -17,6 +17,10 @@ body {
   padding: 4pt 0 4pt 8pt;
 }
 
+#input::-webkit-input-placeholder {
+  font-family: "PT Sans", Arial, Helvetica, sans-serif;
+}
+
 #input.error {
   border-bottom: 2px solid maroon;
 }
