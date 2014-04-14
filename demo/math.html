@@ -126,7 +126,7 @@ var toTree = {
   ExpExpr:        function(expr)           { return makeElement('expExpr', expr.value); },
   ExpExpr_power:  function(x, op, y)       { return makeElement('power', x.value, op.value, y.value); },
   PriExpr:        function(expr)           { return makeElement('priExpr', expr.value); },
-  PriExpr_paren:  function(open, e, close) { return makeElement('paren', open.value, e.value, env.close); },
+  PriExpr_paren:  function(open, e, close) { return makeElement('paren', open.value, e.value, close.value); },
   PriExpr_pos:    function(sign, e)        { return makeElement('pos', sign.value, e.value); },
   PriExpr_neg:    function(sign, e)        { return makeElement('neg', sign.value, e.value); },
   ident:          function()               { return makeElement('ident', this.interval.contents); },
