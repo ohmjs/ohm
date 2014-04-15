@@ -4,7 +4,7 @@ body {
 }
 
 super::before {
-  opacity: .25;
+  opacity: .30;
   content: '\25C1';
   padding-left: 3pt;
   padding-right: 3pt;
@@ -20,13 +20,13 @@ grammar > name {
 
 grammar > rules::before {
   content: ' {';
-  opacity: .25;
+  opacity: .30;
 }
 
 grammar > rules::after {
   display: block;
   content: '}';
-  opacity: .25;
+  opacity: .30;
 }
 
 rule {
@@ -39,7 +39,7 @@ rule > name {
 }
 
 description {
-  opacity: .25;
+  opacity: .30;
   font-style: italic;
 }
 
@@ -153,7 +153,7 @@ bind > name {
   margin-left: 1pt;
   vertical-align: sub;
   font-size: 75%;
-  opacity: .25; 
+  opacity: .30; 
 }
 
 app {
@@ -223,7 +223,7 @@ prim {
 string::before,
 string::after {
   font-family: "PT Sans", Arial, Helvetica, sans-serif;
-  opacity: .25;
+  opacity: .30;
 }
 
 string::before {
