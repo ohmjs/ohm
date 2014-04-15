@@ -93,9 +93,9 @@ ruleExtendBody > alt::before {
   display: none;
 }
 
-ruleDefineBody > *::before,
-ruleOverrideBody > *::before,
-ruleExtendBody > *::before,
+ruleDefineBody > *:first-child::before,
+ruleOverrideBody > *:first-child::before,
+ruleExtendBody > *:first-child::before,
 ruleDefineBody > alt > choice:first-child::before,
 ruleOverrideBody > alt > choice:first-child::before,
 ruleExtendBody > alt > choice:first-child::before {
@@ -106,17 +106,23 @@ ruleExtendBody > alt > choice:first-child::before {
   margin-right: 6pt;
 }
 
-ruleDefineBody > *::before,
+ruleDefineBody > alt:first-child::before,
+ruleOverrideBody > alt:first-child::before,
+ruleExtendBody > alt:first-child::before {
+  display: none;
+}
+
+ruleDefineBody > *:first-child::before,
 ruleDefineBody > alt > choice:first-child::before {
   content: '=';
 }
 
-ruleOverrideBody > *::before,
+ruleOverrideBody > *:first-child::before,
 ruleOverrideBody > alt > choice:first-child::before {
   content: ':=';
 }
 
-ruleExtendBody > *::before,
+ruleExtendBody > *:first-child::before,
 ruleExtendBody > alt > choice:first-child::before {
   content: '+=';
 }
