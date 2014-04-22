@@ -32,7 +32,7 @@ Notes for users
 Installation
 ------------
 
-    git clone https://<your-username>@bitbucket.org/alexwarth/ohm.git
+    git clone git@gitlab.com:cdg/ohm.git
     npm install -g ohm
 
 **Note:** As soon as the language is a little more mature and I get around to writing some documentation, I'll publish the npm module so that people won't have to clone this repository.
@@ -50,7 +50,7 @@ Notes for contributors
 To get started
 --------------
 
-    git clone https://<your-username>@bitbucket.org/alexwarth/ohm.git
+    git clone git@gitlab.com:cdg/ohm.git
     cd ohm
     npm install .   # this will install the required dependencies
 
