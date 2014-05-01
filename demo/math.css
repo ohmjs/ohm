@@ -79,7 +79,7 @@ wrapper {
   color: #928F63;
 }
 
-#error:after, #error:before {
+#error::after, #error::before {
   bottom: 100%;
   left: 20px;
   border: solid transparent;
@@ -90,14 +90,14 @@ wrapper {
   pointer-events: none;
 }
 
-#error:after {
+#error::after {
   border-color: #FCF68B00;
   border-bottom-color: #FCF68B;
   border-width: 7px;
   margin-left: -7px;
 }
 
-#error:before {
+#error::before {
   border-color: #ccc0;
   border-bottom-color: #ccc;
   border-width: 8px;
@@ -127,7 +127,7 @@ wrapper {
   font-family: Monaco, "Lucida Console", monospace;
 }
 
-#value:before, #lisp:before, #tree:before, #twoD:before {
+#value::before, #lisp::before, #tree::before, #twoD::before {
   font-family: "PT Sans", Arial, Helvetica, sans-serif;
   font-size: 12pt;
   display: inline-block;
@@ -138,10 +138,10 @@ wrapper {
   color: lightgray;
 }
 
-#value:before { content: 'value '; }
-#lisp:before  { content: 'lisp '; }
-#tree:before  { content: 'tree '; }
-#twoD:before  { content: '2-D '; }
+#value::before { content: 'value '; }
+#lisp::before  { content: 'lisp '; }
+#tree::before  { content: 'tree '; }
+#twoD::before  { content: '2-D '; }
 
 #value, #lisp, #tree, #twoD {
   padding: 8pt 0;
@@ -155,7 +155,7 @@ wrapper {
   vertical-align: bottom;
 }
 
-#tree *:before {
+#tree *::before {
   font-family: "PT Sans", Arial, Helvetica, sans-serif;
   display: block;
   font-size: 10pt;
@@ -163,21 +163,21 @@ wrapper {
   border-bottom: 1pt solid slateblue;
 }
 
-#tree expr:before    { content: 'expr'; }
-#tree addExpr:before { content: 'addExpr'; }
-#tree plus:before    { content: 'plus'; }
-#tree minus:before   { content: 'minus'; }
-#tree mulExpr:before { content: 'mulExpr'; }
-#tree times:before   { content: 'times'; }
-#tree divide:before  { content: 'divide'; }
-#tree expExpr:before { content: 'expExpr'; }
-#tree power:before   { content: 'power'; }
-#tree priExpr:before { content: 'priExpr'; }
-#tree paren:before   { content: 'paren'; }
-#tree pos:before     { content: 'pos'; }
-#tree neg:before     { content: 'neg'; }
-#tree ident:before   { content: 'ident'; }
-#tree number:before  { content: 'number'; }
+#tree expr::before    { content: 'expr'; }
+#tree addExpr::before { content: 'addExpr'; }
+#tree plus::before    { content: 'plus'; }
+#tree minus::before   { content: 'minus'; }
+#tree mulExpr::before { content: 'mulExpr'; }
+#tree times::before   { content: 'times'; }
+#tree divide::before  { content: 'divide'; }
+#tree expExpr::before { content: 'expExpr'; }
+#tree power::before   { content: 'power'; }
+#tree priExpr::before { content: 'priExpr'; }
+#tree paren::before   { content: 'paren'; }
+#tree pos::before     { content: 'pos'; }
+#tree neg::before     { content: 'neg'; }
+#tree ident::before   { content: 'ident'; }
+#tree number::before  { content: 'number'; }
 
 #twoD {
   font-family: Times, "Times New Roman", serif;
@@ -209,6 +209,9 @@ wrapper {
   display: inline-block;
   text-align: center;
   vertical-align: middle;
+}
+
+#twoD numerator, #twoD denominator {
   padding: 0 4pt;
 }
 

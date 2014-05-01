@@ -83,11 +83,11 @@ var interpret = {
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-function toLisp(x) {
+function stringify(x) {
   if (x instanceof Array) {
     var parts = [];
     for (var idx = 0; idx < x.length; idx++) {
-      parts.push(toLisp(x[idx]));
+      parts.push(stringify(x[idx]));
     }
     return ['(', parts.join(' '), ')'].join('');
   } else {
@@ -95,8 +95,8 @@ function toLisp(x) {
   }
 }
 
-var parse = {
-  Expr:           function(expr)           { return toLisp(expr.value); },
+var toLisp = {
+  Expr:           function(expr)           { return stringify(expr.value); },
   AddExpr:        function(expr)           { return expr.value; },
   AddExpr_plus:   function(x, op, y)       { return ['+', x.value, y.value]; },
   AddExpr_minus:  function(x, op, y)       { return ['-', x.value, y.value]; },
@@ -177,7 +177,7 @@ input.oninput = function() {
     var thunk = g.matchContents(this.value, 'Expr', true);
     this.className = undefined;
     show('value', thunk(interpret));
-    show('lisp', thunk(parse));
+    show('lisp', thunk(toLisp));
     show('tree', thunk(toTree));
     show('twoD', thunk(toTwoD));
   } catch (e) {
