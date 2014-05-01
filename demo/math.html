@@ -149,7 +149,7 @@ var toTwoD = {
                                              var denominator = makeElement('denominator', y.value);
                                              return makeElement('fraction', numerator, denominator); },
   ExpExpr:        function(expr)           { return expr.value; },
-  ExpExpr_power:  function(x, op, y)       { var base = makeElement('base', x.value);
+  ExpExpr_power:  function(x, op, y)       { var base = makeElement('theBase', x.value);
                                              var exponent = makeElement('exponent', y.value);
                                              return makeElement('power', base, exponent); },
   PriExpr:        function(expr)           { return expr.value; },

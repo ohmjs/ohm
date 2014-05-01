@@ -21,6 +21,10 @@ body {
   font-family: "PT Sans", Arial, Helvetica, sans-serif;
 }
 
+#input::-moz-placeholder {
+  font-family: "PT Sans", Arial, Helvetica, sans-serif;
+}
+
 #input.error {
   border-bottom: 2px solid maroon;
 }
