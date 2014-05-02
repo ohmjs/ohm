@@ -19,17 +19,23 @@ function Thunk() {
 
 var nextThunkId = 0;
 Thunk.prototype = {
-  init: function() {
+  init: function(source, startIdx, endIdx) {
     this.id = nextThunkId++;
+    this._source = source;
+    this._startIdx = startIdx;
+    this._endIdx = endIdx;
   }
 };
 
+Object.defineProperty(Thunk.prototype, 'interval', {
+  get: function() {
+    return this._interval || (this._interval = new Interval(this._source, this._startIdx, this._endIdx));
+  }
+});
+
 function RuleThunk(ruleName, source, startIdx, endIdx, value, bindings) {
-  this.init();
+  this.init(source, startIdx, endIdx);
   this.ruleName = ruleName;
-  this.source = source;
-  this.startIdx = startIdx;
-  this.endIdx = endIdx;
   this.value = value;
   this.bindings = bindings;
 }
@@ -37,7 +43,7 @@ function RuleThunk(ruleName, source, startIdx, endIdx, value, bindings) {
 RuleThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
   force: function(actionDict, memo) {
     function makeBinding(thunk) {
-      var binding = {}
+      var binding = {interval: thunk.interval};
       Object.defineProperty(binding, 'value', {
         get: function() {
           return thunk.force(actionDict, memo);
@@ -53,7 +59,7 @@ RuleThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
     var action = this.lookupAction(actionDict);
     var addlInfo = this.createAddlInfo();
     if (this.bindings.length === 0) {
-      // This rule may or may not produce a value. If it doesn't, this.value === undefinedThunk so it's ok to force it
+      // This rule may or may not produce a value. If it doesn't, this.value is a value thunk w/ a value of undefined, so it's ok to force it
       // unconditionally.
       return memo[this.id] = action.call(addlInfo, makeBinding(this.value));
     } else {
@@ -84,13 +90,13 @@ RuleThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
 
   createAddlInfo: function() {
     return {
-      interval: new Interval(this.source, this.startIdx, this.endIdx)
+      interval: this.interval
     };
   }
 });
 
-function ListThunk(thunks) {
-  this.init();
+function ListThunk(thunks, source, startIdx, endIdx) {
+  this.init(source, startIdx, endIdx);
   this.thunks = thunks;
 }
 
@@ -103,7 +109,8 @@ ListThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
   }
 });
 
-function ValueThunk(value) {
+function ValueThunk(value, source, startIdx, endIdx) {
+  this.init(source, startIdx, endIdx);
   this.value = value;
 }
 
@@ -120,6 +127,4 @@ ValueThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
 exports.RuleThunk = RuleThunk;
 exports.ListThunk = ListThunk;
 exports.ValueThunk = ValueThunk;
-exports.undefinedThunk = new ValueThunk(undefined);
-exports.trueThunk = new ValueThunk(true);
 

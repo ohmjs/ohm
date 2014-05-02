@@ -30,7 +30,7 @@ pexprs.anything.eval = function(recordFailures, syntactic, ruleDict, inputStream
     }
     return common.fail;
   } else {
-    return new thunks.ValueThunk(value);
+    return new thunks.ValueThunk(value, inputStream.source, origPos, inputStream.pos);
   }
 };
 
@@ -39,7 +39,7 @@ pexprs.end.eval = function(recordFailures, syntactic, ruleDict, inputStream, bin
     skipSpaces(ruleDict, inputStream);
   }
   if (inputStream.atEnd()) {
-    return thunks.undefinedThunk;
+    return new thunks.ValueThunk(undefined, inputStream.source, inputStream.pos, inputStream.pos);
   } else {
     if (recordFailures) {
       inputStream.recordFailure(inputStream.pos, this);
@@ -59,7 +59,7 @@ pexprs.Prim.prototype.eval = function(recordFailures, syntactic, ruleDict, input
     }
     return common.fail;
   } else {
-    return new thunks.ValueThunk(this.obj);
+    return new thunks.ValueThunk(this.obj, inputStream.source, origPos, inputStream.pos);
   }
 };
 
@@ -82,7 +82,7 @@ pexprs.RegExpPrim.prototype.eval = function(recordFailures, syntactic, ruleDict,
     }
     return common.fail;
   } else {
-    return new thunks.ValueThunk(inputStream.source[origPos]);
+    return new thunks.ValueThunk(inputStream.source[origPos], inputStream.source, origPos, inputStream.pos);
   }
 };
 
@@ -110,8 +110,12 @@ pexprs.Alt.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
 };
 
 pexprs.Seq.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
+  if (syntactic) {
+    skipSpaces(ruleDict, inputStream);
+  }
+  var origPos = inputStream.pos;
   for (var idx = 0; idx < this.factors.length; idx++) {
-    if (syntactic) {
+    if (idx > 0 && syntactic) {
       skipSpaces(ruleDict, inputStream);
     }
     var factor = this.factors[idx];
@@ -120,7 +124,7 @@ pexprs.Seq.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
       return common.fail;
     }
   }
-  return thunks.undefinedThunk;
+  return new thunks.ValueThunk(undefined, inputStream.source, origPos, inputStream.pos);
 };
 
 pexprs.Bind.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
@@ -134,6 +138,7 @@ pexprs.Bind.prototype.eval = function(recordFailures, syntactic, ruleDict, input
 pexprs.Many.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
   var numMatches = 0;
   var matches = this.expr.producesValue() ? [] : undefined;
+  var origPos = inputStream.pos;
   while (true) {
     var backtrackPos = inputStream.pos;
     var value = this.expr.eval(recordFailures, syntactic, ruleDict, inputStream, []);
@@ -150,7 +155,9 @@ pexprs.Many.prototype.eval = function(recordFailures, syntactic, ruleDict, input
   if (numMatches < this.minNumMatches) {
     return common.fail;
   } else {
-    return matches ? new thunks.ListThunk(matches) : thunks.undefinedThunk;
+    return matches ?
+      new thunks.ListThunk(matches, inputStream.source, origPos, inputStream.pos) :
+      new thunks.ValueThunk(undefined, inputStream.source, origPos, inputStream.pos);
   }
 };
 
@@ -159,9 +166,9 @@ pexprs.Opt.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
   var value = this.expr.eval(recordFailures, syntactic, ruleDict, inputStream, []);
   if (value === common.fail) {
     inputStream.pos = origPos;
-    return thunks.undefinedThunk;
+    return new thunks.ValueThunk(undefined, inputStream.source, origPos, origPos);
   } else {
-    return this.expr.producesValue() ? value : thunks.trueThunk;
+    return this.expr.producesValue() ? value : new thunks.ValueThunk(true, inputStream.source, origPos, inputStream.pos);
   }
 };
 
@@ -175,7 +182,7 @@ pexprs.Not.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
     return common.fail;
   } else {
     inputStream.pos = origPos;
-    return thunks.undefinedThunk;
+    return new thunks.ValueThunk(undefined, inputStream.source, origPos, origPos);
   }
 };
 
@@ -196,7 +203,7 @@ pexprs.Listy.prototype.eval = function(recordFailures, syntactic, ruleDict, inpu
   if (obj instanceof Array || typeof obj === 'string') {
     var objInputStream = InputStream.newFor(obj);
     var value = this.expr.eval(recordFailures, syntactic, ruleDict, objInputStream, bindings);
-    return value !== common.fail && objInputStream.atEnd() ?  new thunks.ValueThunk(obj) : common.fail;
+    return value !== common.fail && objInputStream.atEnd() ?  new thunks.ValueThunk(obj, inputStream.source, inputStream.pos - 1, inputStream.pos) : common.fail;
   } else {
     return common.fail;
   }
@@ -224,7 +231,7 @@ pexprs.Obj.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
       }
     }
     return this.isLenient || numOwnPropertiesMatched === Object.keys(obj).length ?
-        new thunks.ValueThunk(obj) :
+        new thunks.ValueThunk(obj, inputStream.source, inputStream.pos - 1, inputStream.pos) :
         common.fail;
   } else {
     return common.fail;
