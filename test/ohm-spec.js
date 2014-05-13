@@ -2,6 +2,7 @@ var expect = require('expect.js');
 var fs = require('fs');
 var ohm = require('../src/main.js');
 var errors = require('../src/errors.js');
+var Interval = require('../src/Interval.js');
 
 function makeGrammar(source, optNamespaceName) {
   if (source instanceof Array) {
@@ -34,6 +35,121 @@ describe("Ohm", function() {
         }
       };
     }
+
+    describe("helper stuff", function() {
+      describe("intervals", function() {
+        describe("collapsing", function() {
+          it("left", function() {
+            var interval = new Interval('hello world', 0, 5);
+            var collapsed = interval.collapsedLeft();
+
+            // Original interval shouldn't change
+            expect(interval.startIdx).to.equal(0);
+            expect(interval.endIdx).to.equal(5);
+            expect(interval.source).to.equal('hello world');
+            expect(interval.contents).to.equal('hello');
+
+            expect(collapsed.startIdx).to.equal(0);
+            expect(collapsed.endIdx).to.equal(0);
+            expect(collapsed.source).to.equal('hello world');
+            expect(collapsed.contents).to.equal('');
+          });
+
+          it("right", function() {
+            var interval = new Interval('hello world', 0, 5);
+            var collapsed = interval.collapsedRight();
+
+            // Original interval shouldn't change
+            expect(interval.startIdx).to.equal(0);
+            expect(interval.endIdx).to.equal(5);
+            expect(interval.source).to.equal('hello world');
+            expect(collapsed.contents).to.equal('');
+
+            expect(collapsed.startIdx).to.equal(5);
+            expect(collapsed.endIdx).to.equal(5);
+            expect(collapsed.source).to.equal('hello world');
+            expect(collapsed.contents).to.equal('');
+          });
+        });
+
+        describe("coverage", function() {
+          it("one interval", function() {
+            var interval = new Interval('hello world', 0, 5);
+            var ans = Interval.coverage(interval);
+
+            expect(ans.startIdx).to.equal(0);
+            expect(ans.endIdx).to.equal(5);
+            expect(ans.source).to.equal('hello world');
+            expect(ans.contents).to.equal('hello');
+          });
+
+          it("two adjacent intervals", function() {
+            var interval1 = new Interval('hello world', 2, 5);
+            var interval2 = new Interval('hello world', 0, 2);
+            var ans = Interval.coverage(interval1, interval2);
+
+            expect(ans.startIdx).to.equal(0);
+            expect(ans.endIdx).to.equal(5);
+            expect(ans.source).to.equal('hello world');
+            expect(ans.contents).to.equal('hello');
+          });
+
+          it("two non-adjacent intervals", function() {
+            var interval1 = new Interval('hello world', 0, 2);
+            var interval2 = new Interval('hello world', 4, 5);
+            var ans = Interval.coverage(interval1, interval2);
+
+            expect(ans.startIdx).to.equal(0);
+            expect(ans.endIdx).to.equal(5);
+            expect(ans.source).to.equal('hello world');
+            expect(ans.contents).to.equal('hello');
+          });
+
+          it("nested intervals", function() {
+            var interval1 = new Interval('hello world', 0, 5);
+            var interval2 = new Interval('hello world', 3, 4);
+            var ans = Interval.coverage(interval1, interval2);
+
+            expect(ans.startIdx).to.equal(0);
+            expect(ans.endIdx).to.equal(5);
+            expect(ans.source).to.equal('hello world');
+            expect(ans.contents).to.equal('hello');
+          });
+
+          it("more intervals", function() {
+            var interval1 = new Interval('hello world', 0, 2);
+            var interval2 = new Interval('hello world', 3, 4);
+            var interval3 = new Interval('hello world', 6, 10);
+            var ans = Interval.coverage(interval1, interval2, interval3);
+
+            expect(ans.startIdx).to.equal(0);
+            expect(ans.endIdx).to.equal(10);
+            expect(ans.source).to.equal('hello world');
+            expect(ans.contents).to.equal('hello worl');
+          });
+
+          it("brotha from anotha motha", function() {
+            var interval1 = new Interval('abc', 0, 3);
+            var interval2 = new Interval('xyz', 1, 2);
+            expect(function() { Interval.coverage(interval1, interval2); }).to.throwException(function(e) {
+              expect(e).to.be.a(errors.IntervalSourcesDontMatch);
+            });
+          });
+
+          it("coverageWith (same method as above but as a method of an interval)", function() {
+            var interval1 = new Interval('hello world', 0, 2);
+            var interval2 = new Interval('hello world', 3, 4);
+            var interval3 = new Interval('hello world', 6, 10);
+            var ans = interval1.coverageWith(interval2, interval3);
+
+            expect(ans.startIdx).to.equal(0);
+            expect(ans.endIdx).to.equal(10);
+            expect(ans.source).to.equal('hello world');
+            expect(ans.contents).to.equal('hello worl');
+          });
+        });
+      });
+    });
 
     describe("primitive patterns", function() {
       describe("anything", function() {

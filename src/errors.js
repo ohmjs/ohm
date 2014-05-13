@@ -34,6 +34,16 @@ Error.prototype.toString = function() {
   return this.getShortMessage();
 };
 
+// ----------------- errors about intervals -----------------
+
+function IntervalSourcesDontMatch() {}
+
+IntervalSourcesDontMatch.prototype = objectThatDelegatesTo(Error.prototype);
+
+IntervalSourcesDontMatch.prototype.getMessage = function() {
+  return 'interval sources don\'t match';
+};
+
 // ----------------- errors about grammars -----------------
 
 // Undeclarated grammar
@@ -279,6 +289,7 @@ MatchFailure.prototype.getExpected = function() {
 // Exports
 // --------------------------------------------------------------------
 
+exports.IntervalSourcesDontMatch = IntervalSourcesDontMatch;
 exports.UndeclaredGrammar = UndeclaredGrammar;
 exports.DuplicateGrammarDeclaration = DuplicateGrammarDeclaration;
 exports.UndeclaredRule = UndeclaredRule;
