@@ -42,7 +42,7 @@ Arithmetic {
     </script>
   </head>
   <body>
-    <input type="text" id="input" placeholder="Enter an arithmetic expression..." autofocus="true"></input>
+    <input type="text" id="input" placeholder="Enter an arithmetic expression..." size="80"></input>
     <div id="errorDiv">
       <div id="spaces"></div>
       <wrapperWrapper><wrapper>
@@ -228,9 +228,6 @@ function createExpectedElement(s) {
     return makeElement('description', s);
   }
 }
-
-input.value = '6*7';
-input.oninput();
 
     </script>
   </body>

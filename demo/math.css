@@ -1,20 +1,18 @@
 body {
   font-family: Monaco, "Lucida Console", monospace;
   font-size: 14pt;
-}
-
-#input, #errorDiv {
-  font-family: Monaco, "Lucida Console", monospace;
-  width: 100%;
-  display: block;
-  font-size: 14pt;
-  border: none;
+  padding: 10pt;
 }
 
 #input {
+  display: block;
+  background: azure;
   outline: none;
-  border-bottom: 2px solid slateblue;
-  padding: 4pt 0 4pt 8pt;
+  border: 1px solid rgba(0, 0, 255, .2);
+  padding: 8pt;
+  box-shadow: 2px 2px 16px 0px rgba(0, 0, 0, .5);
+  font-family: Monaco, "Lucida Console", monospace;
+  font-size: 14pt;
 }
 
 #input::-webkit-input-placeholder {
@@ -26,12 +24,13 @@ body {
 }
 
 #input.error {
-  border-bottom: 2px solid maroon;
+  border: 1px solid rgba(255, 0, 0, .3);
 }
 
 #errorDiv {
   display: block;
   color: maroon;
+  margin-top: -4pt;
   padding: 0 0 0 8pt;
 }
 
