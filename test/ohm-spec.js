@@ -1363,7 +1363,7 @@ describe("Ohm", function() {
         makeGrammar("G { foo = 'a':x 'b':y | 'b':y 'a':x }");
       });
 
-      it("bindings are evaluated lazily", function() {
+      it("by default, bindings are evaluated lazily", function() {
         var g = makeGrammar([
           "G {",
           "  foo = bar:x baz:y",
@@ -1378,12 +1378,54 @@ describe("Ohm", function() {
           baz: function(expr) { return ['baz', expr.value, id++]; }
         })).to.eql({x: ['bar', 'a', 0], y: ['baz', 'b', 1]});
 
-        var id = 0;
+        id = 0;
         expect(g.matchContents('ab', 'foo')({
           foo: function(x, y) { var yv = y.value; var xv = x.value; return {x: xv, y: yv}; },
           bar: function(expr) { return ['bar', expr.value, id++]; },
           baz: function(expr) { return ['baz', expr.value, id++]; }
         })).to.eql({x: ['bar', 'a', 1], y: ['baz', 'b', 0]});
+      });
+
+      it("eager evaluation mode works, too", function() {
+        var g = makeGrammar([
+          "G {",
+          "  foo = bar:x baz:y",
+          "  bar = 'a'",
+          "  baz = 'b'",
+          "}"]);
+
+        var id = 0;
+        var ddd = {};
+        expect(g.matchContents('ab', 'foo')({
+          foo: function(x, y) { ddd.foo = id++; },
+          bar: function(expr) { ddd.bar = id++; },
+          baz: function(expr) { ddd.baz = id++; }
+        }, 'eager')).to.equal(undefined);
+        expect(ddd).to.eql({bar: 0, baz: 1, foo: 2});
+
+        id = 0;
+        ddd = {};
+        expect(g.matchContents('ab', 'foo')({
+          // Note: in eager evaluation mode, it's ok to leave some semantic actions out (they'll just return undefined
+          // by default, and the sub-expressions of the associated rule will be evaluated anyway).
+          bar: function(expr) { ddd.bar = id++; },
+          baz: function(expr) { ddd.baz = id++; }
+        }, 'eager')).to.equal(undefined);
+        expect(ddd).to.eql({bar: 0, baz: 1});
+
+        id = 0;
+        expect(g.matchContents('ab', 'foo')({
+          foo: function(x, y) { var xv = x.value; var yv = y.value; return {x: xv, y: yv}; },
+          bar: function(expr) { return ['bar', expr.value, id++]; },
+          baz: function(expr) { return ['baz', expr.value, id++]; }
+        }, 'eager')).to.eql({x: ['bar', 'a', 0], y: ['baz', 'b', 1]});
+
+        id = 0;
+        expect(g.matchContents('ab', 'foo')({
+          foo: function(x, y) { var yv = y.value; var xv = x.value; return {x: xv, y: yv}; },
+          bar: function(expr) { return ['bar', expr.value, id++]; },
+          baz: function(expr) { return ['baz', expr.value, id++]; }
+        }, 'eager')).to.eql({x: ['bar', 'a', 0], y: ['baz', 'b', 1]});
       });
     });
 

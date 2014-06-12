@@ -66,9 +66,17 @@ Grammar.prototype = {
 
     if (succeeded) {
       var assertSemanticActionNamesMatch = this.assertSemanticActionNamesMatch.bind(this);
-      var ans = function(actionDict) {
+      var ans = function(actionDict, optEvaluationStrategy) {
         assertSemanticActionNamesMatch(actionDict);
-        return thunk.force(actionDict, {});
+        var lazy;
+        if (optEvaluationStrategy === undefined || optEvaluationStrategy === 'lazy') {
+          lazy = true;
+        } else if (optEvaluationStrategy === 'eager') {
+          lazy = false;
+        } else {
+          throw new errors.InvalidEvaluationStrategy(optEvaluationStrategy);
+        }
+        return thunk.force(actionDict, {}, lazy);
       };
       ans.toString = function() { return '[ohm thunk]'; };
       return ans;

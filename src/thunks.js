@@ -41,12 +41,12 @@ function RuleThunk(ruleName, source, startIdx, endIdx, value, bindings) {
 }
 
 RuleThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
-  force: function(actionDict, memo) {
+  force: function(actionDict, memo, lazy) {
     function makeBinding(thunk) {
       var binding = {interval: thunk.interval};
       Object.defineProperty(binding, 'value', {
         get: function() {
-          return thunk.force(actionDict, memo);
+          return thunk.force(actionDict, memo, lazy);
         }
       });
       return binding;
@@ -56,11 +56,19 @@ RuleThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
       return memo[this.id];
     }
 
-    var action = this.lookupAction(actionDict);
     var addlInfo = this.createAddlInfo();
+    var action = this.lookupAction(actionDict);
+    if (!action) {
+      if (lazy) {
+        browser.error('missing semantic action for', ruleName);
+      } else {
+        action = function() {};
+      }
+    }
+
     if (this.bindings.length === 0) {
-      // This rule may or may not produce a value. If it doesn't, this.value is a value thunk w/ a value of undefined, so it's ok to force it
-      // unconditionally.
+      // This rule may or may not produce a value. If it doesn't, this.value is a value thunk w/ a value of undefined,
+      // in which case it's ok to force it unconditionally.
       return memo[this.id] = action.call(addlInfo, makeBinding(this.value));
     } else {
       // The shape of this.bindings is [name1, value1, name2, value2, ...]
@@ -73,6 +81,10 @@ RuleThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
       var args = isDefaultAction ?
         objectUtils.values(argDict).map(function(arg) { return makeBinding(arg); }) :
         formals.map(function(name) { return makeBinding(argDict[name]); });
+      if (!lazy) {
+        // Force all bindings before applying this rule's semantic action.
+        args.map(function(arg) { arg.value; });
+      }
       return memo[this.id] = action.apply(addlInfo, args);
     }
   },
@@ -85,7 +97,7 @@ RuleThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
         return actionDict._default.call(this, ruleName, Array.prototype.slice.call(arguments));
       };
     }
-    return action || browser.error('missing semantic action for', ruleName);
+    return action;
   },
 
   createAddlInfo: function() {
@@ -101,9 +113,9 @@ function ListThunk(thunks, source, startIdx, endIdx) {
 }
 
 ListThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
-  force: function(actionDict, memo) {
+  force: function(actionDict, memo, lazy) {
     if (!memo.hasOwnProperty(this.id)) {
-      memo[this.id] = this.thunks.map(function(thunk) { return thunk.force(actionDict, memo); });
+      memo[this.id] = this.thunks.map(function(thunk) { return thunk.force(actionDict, memo, lazy); });
     }
     return memo[this.id];
   }
@@ -115,7 +127,7 @@ function ValueThunk(value, source, startIdx, endIdx) {
 }
 
 ValueThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
-  force: function(actionDict, memo) {
+  force: function(actionDict, memo, lazy) {
     return this.value;
   }
 });
