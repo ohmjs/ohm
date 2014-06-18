@@ -33,7 +33,7 @@ Installation
 ------------
 
     git clone git@gitlab.com:cdg/ohm.git
-    npm install -g ohm
+    npm install -g --ignore-scripts ohm/.
 
 **Note:** As soon as the language is a little more mature and I get around to writing some documentation, I'll publish the npm module so that people won't have to clone this repository.
 
