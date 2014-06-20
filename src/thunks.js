@@ -60,7 +60,7 @@ RuleThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
     var action = this.lookupAction(actionDict);
     if (!action) {
       if (lazy) {
-        browser.error('missing semantic action for', ruleName);
+        browser.error('missing semantic action for', this.ruleName);
       } else {
         action = function() {};
       }
