@@ -98,7 +98,8 @@ Ohm {
     = '/' reCharClass:e '/'
 
   reCharClass
-    = '[' ('\\]' | ~']' _)* ']'
+    = '\\p{' /[A-Za-z]/+:unicodeClass '}'    -- unicode
+    | '[' ('\\]' | ~']' _)* ']'              -- ordinary
 
   number  -- number
     = '-'? digit+

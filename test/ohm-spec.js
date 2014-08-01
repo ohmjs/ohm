@@ -432,7 +432,7 @@ describe("Ohm", function() {
       describe("regexp", function() {
         var m;
         beforeEach(function() {
-          m = makeGrammar('M { myDigit = /[0-9]/ }');
+          m = makeGrammar('M { myDigit = /[0-9]/ myLetter = /\\p{L}/ }');
         });
 
         it("to recipe and back", function() {
@@ -476,6 +476,21 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             // N/A
+          });
+        });
+
+        describe("unicode match in string stream", function() {
+          it("recognition", function() {
+            expect(m.matchContents('4', 'myLetter')).to.equal(false);
+            expect(m.matchContents('a', 'myLetter')).to.be.ok();
+            expect(m.matchContents('a4', 'myLetter')).to.equal(false);
+            expect(m.matchContents('\u03e6', 'myLetter')).to.be.ok();
+            expect(m.matchContents('\u226a', 'myLetter')).to.equal(false);
+          });
+
+          it("semantic actions", function() {
+            var thunk = m.matchContents('a', 'myLetter');
+            expect(thunk({myLetter: function(expr) { return expr.value; }})).to.equal('a');
           });
         });
       });
