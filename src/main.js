@@ -11,6 +11,8 @@ var errors = require('./errors.js');
 var awlib = require('awlib');
 var unescapeChar = awlib.stringUtils.unescapeChar;
 
+var UnicodeCategories = require("./unicode.js").UnicodeCategories;
+
 var thisModule = exports;
 
 // --------------------------------------------------------------------
@@ -198,6 +200,20 @@ function makeGrammarActionDict(optNamespace) {
 
     reCharClass: function() {
       return this.interval.contents;
+    },
+
+    regExp: function(e) {
+      return e.value;
+    },
+
+    reCharClass: function(expr) {
+      return expr.value;
+    },
+    reCharClass_unicode: function(unicodeClass) {
+      return UnicodeCategories[unicodeClass.value];
+    },
+    reCharClass_ordinary: function() {
+      return new RegExp(this.interval.contents);
     },
 
     number: function() {
