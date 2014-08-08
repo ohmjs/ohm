@@ -67,9 +67,13 @@ RuleThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
     }
 
     if (this.bindings.length === 0) {
-      // This rule may or may not produce a value. If it doesn't, this.value is a value thunk w/ a value of undefined,
-      // in which case it's ok to force it unconditionally.
-      return memo[this.id] = action.call(addlInfo, makeBinding(this.value));
+      var binding = makeBinding(this.value);
+      if (!lazy) {
+        // This rule may or may not produce a value. If it doesn't, this.value is a value thunk w/ a value of undefined,
+        // in which case it's ok to force it unconditionally.
+        binding.value;
+      }
+      return memo[this.id] = action.call(addlInfo, binding);
     } else {
       // The shape of this.bindings is [name1, value1, name2, value2, ...]
       var argDict = {};
@@ -83,7 +87,7 @@ RuleThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
         formals.map(function(name) { return makeBinding(argDict[name]); });
       if (!lazy) {
         // Force all bindings before applying this rule's semantic action.
-        args.map(function(arg) { arg.value; });
+        args.forEach(function(arg) { arg.value; });
       }
       return memo[this.id] = action.apply(addlInfo, args);
     }

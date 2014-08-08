@@ -1404,6 +1404,7 @@ describe("Ohm", function() {
       it("eager evaluation mode works, too", function() {
         var g = makeGrammar([
           "G {",
+          "  start = foo",  // rule that produces a value, but doesn't have bindings
           "  foo = bar:x baz:y",
           "  bar = 'a'",
           "  baz = 'b'",
@@ -1411,7 +1412,7 @@ describe("Ohm", function() {
 
         var id = 0;
         var ddd = {};
-        expect(g.matchContents('ab', 'foo')({
+        expect(g.matchContents('ab', 'start')({
           foo: function(x, y) { ddd.foo = id++; },
           bar: function(expr) { ddd.bar = id++; },
           baz: function(expr) { ddd.baz = id++; }
@@ -1420,7 +1421,7 @@ describe("Ohm", function() {
 
         id = 0;
         ddd = {};
-        expect(g.matchContents('ab', 'foo')({
+        expect(g.matchContents('ab', 'start')({
           // Note: in eager evaluation mode, it's ok to leave some semantic actions out (they'll just return undefined
           // by default, and the sub-expressions of the associated rule will be evaluated anyway).
           bar: function(expr) { ddd.bar = id++; },
@@ -1429,18 +1430,22 @@ describe("Ohm", function() {
         expect(ddd).to.eql({bar: 0, baz: 1});
 
         id = 0;
-        expect(g.matchContents('ab', 'foo')({
-          foo: function(x, y) { var xv = x.value; var yv = y.value; return {x: xv, y: yv}; },
-          bar: function(expr) { return ['bar', expr.value, id++]; },
-          baz: function(expr) { return ['baz', expr.value, id++]; }
-        }, 'eager')).to.eql({x: ['bar', 'a', 0], y: ['baz', 'b', 1]});
+        ddd = {};
+        expect(g.matchContents('ab', 'start')({
+          foo: function(x, y) { x.value; y.value; },
+          bar: function(expr) { ddd.bar = id++; },
+          baz: function(expr) { ddd.baz = id++; },
+        }, 'eager')).to.eql(undefined);
+        expect(ddd).to.eql({bar:  0, baz: 1});
 
         id = 0;
-        expect(g.matchContents('ab', 'foo')({
-          foo: function(x, y) { var yv = y.value; var xv = x.value; return {x: xv, y: yv}; },
-          bar: function(expr) { return ['bar', expr.value, id++]; },
-          baz: function(expr) { return ['baz', expr.value, id++]; }
-        }, 'eager')).to.eql({x: ['bar', 'a', 0], y: ['baz', 'b', 1]});
+        ddd = {};
+        expect(g.matchContents('ab', 'start')({
+          foo: function(x, y) { y.value; x.value; },
+          bar: function(expr) { ddd.bar = id++; },
+          baz: function(expr) { ddd.baz = id++; },
+        }, 'eager')).to.eql(undefined);
+        expect(ddd).to.eql({bar:  0, baz: 1});
       });
     });
 
