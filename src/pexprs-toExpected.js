@@ -30,7 +30,11 @@ pexprs.Prim.prototype.toExpected = function(ruleDict) {
 };
 
 pexprs.Not.prototype.toExpected = function(ruleDict) {
-  return "no " + this.expr.toExpected();
+  if (this.expr === pexprs.anything) {
+    return "nothing";
+  } else {
+    return "no " + this.expr.toExpected();
+  }
 };
 
 // TODO: think about Listy and Obj
