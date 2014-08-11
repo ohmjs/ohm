@@ -1680,7 +1680,7 @@ describe("Ohm", function() {
         expect(function() {
           g.matchContents('abcde', 'start', true);
         }).to.throwException(function(e) {
-          expect(e.toString()).to.equal("Line 1, col 5: expected end of input");
+          expect(e.toString()).to.equal("Line 1, col 5: expected the end of the input");
           expect(e.getPos()).to.equal(4);
         });
       });

@@ -22,7 +22,7 @@ pexprs.anything.toExpected = function(ruleDict) {
 };
 
 pexprs.end.toExpected = function(ruleDict) {
-  return "end of input";
+  return "the end of the input";
 };
 
 pexprs.Prim.prototype.toExpected = function(ruleDict) {
@@ -33,7 +33,7 @@ pexprs.Not.prototype.toExpected = function(ruleDict) {
   if (this.expr === pexprs.anything) {
     return "nothing";
   } else {
-    return "no " + this.expr.toExpected();
+    return "not " + this.expr.toExpected(ruleDict);
   }
 };
 
@@ -48,4 +48,3 @@ pexprs.Apply.prototype.toExpected = function(ruleDict) {
     return article + " " + this.ruleName;
   }
 };
-
