@@ -432,7 +432,7 @@ describe("Ohm", function() {
       describe("regexp", function() {
         var m;
         beforeEach(function() {
-          m = makeGrammar('M { myDigit = /[0-9]/ myLetter = /\\p{L}/ }');
+          m = makeGrammar('M { myDigit = /[0-9]/ myLetter = /\\p{L}/ myLF = /\\p{LF}/ }');
         });
 
         it("to recipe and back", function() {
@@ -486,6 +486,8 @@ describe("Ohm", function() {
             expect(m.matchContents('a4', 'myLetter')).to.equal(false);
             expect(m.matchContents('\u03e6', 'myLetter')).to.be.ok();
             expect(m.matchContents('\u226a', 'myLetter')).to.equal(false);
+	    expect(m.matchContents('\n', 'myLF')).to.be.ok();
+	    expect(m.matchContents('x', 'myLF')).to.equal(false);
           });
 
           it("semantic actions", function() {

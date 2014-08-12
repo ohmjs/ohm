@@ -210,7 +210,7 @@ function makeGrammarActionDict(optNamespace) {
       return expr.value;
     },
     reCharClass_unicode: function(unicodeClass) {
-      return UnicodeCategories[unicodeClass.value];
+      return UnicodeCategories[unicodeClass.value.join('')];
     },
     reCharClass_ordinary: function() {
       return new RegExp(this.interval.contents);
