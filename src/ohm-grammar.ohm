@@ -4,66 +4,62 @@ Ohm {
     = Grammar*
 
   Grammar
-    = ident:n SuperGrammar?:s '{' Rule*:rs '}'
+    = ident SuperGrammar? '{' Rule* '}'
 
   SuperGrammar
-    = '<:' ident:ns '.' ident:n  -- qualified
-    | '<:' ident:n               -- unqualified
+    = '<:' ident '.' ident  -- qualified
+    | '<:' ident            -- unqualified
 
   Rule
-    = ident:n ruleDescr?:d '='  Alt:b  -- define
-    | ident:n              ':=' Alt:b  -- override
-    | ident:n              '+=' Alt:b  -- extend
+    = ident ruleDescr? '='  Alt  -- define
+    | ident            ':=' Alt  -- override
+    | ident            '+=' Alt  -- extend
 
   Alt
-    = Term:x '|' Alt:y  -- rec
+    = Term '|' Alt  -- rec
     | Term
 
   Term
-    = Seq:x caseName:n -- inline
+    = Seq caseName -- inline
     | Seq
 
   Seq
-    = Factor*
-
-  Factor
-    = Iter:x ':' ident:n  -- bind
-    | Iter
+    = Iter*
 
   Iter
-    = Pred:x '*'  -- star
-    | Pred:x '+'  -- plus
-    | Pred:x '?'  -- opt
+    = Pred '*'  -- star
+    | Pred '+'  -- plus
+    | Pred '?'  -- opt
     | Pred
 
   Pred
-    = '~' Base:x  -- not
-    | '&' Base:x  -- lookahead
+    = '~' Base  -- not
+    | '&' Base  -- lookahead
     | Base
 
   Base
-    = ident:ruleName ~(ruleDescr? '=' | ':=' | '+=')  -- application
-    | (keyword | string | regExp | number)            -- prim
-    | '(' Alt:x ')'                                   -- paren
-    | '[' Alt:x ']'                                   -- listy
-    | '{' '...'?:lenient '}'                          -- obj
-    | '{' Props:ps (',' '...')?:lenient '}'           -- objWithProps
+    = ident ~(ruleDescr? '=' | ':=' | '+=')  -- application
+    | (keyword | string | regExp | number)   -- prim
+    | '(' Alt ')'                            -- paren
+    | '[' Alt ']'                            -- listy
+    | '{' '...'? '}'                         -- obj
+    | '{' Props (',' '...')? '}'             -- objWithProps
 
   Props
-    = Prop:p ',' Props:ps  -- rec
-    | Prop:p               -- base
+    = Prop ',' Props  -- rec
+    | Prop            -- base
 
   Prop
-    = (name | string):n ':' Base:p
+    = (name | string) ':' Base
 
   ruleDescr  -- rule description for use in error messages
-    = '--' ruleDescrText:t '\n'
+    = '--' ruleDescrText '\n'
 
   ruleDescrText
     = (~'\n' _)*
 
   caseName
-    = '--' (~'\n' space)* name:n (~'\n' space)* ('\n' | &'}')
+    = '--' (~'\n' space)* name (~'\n' space)* ('\n' | &'}')
 
   name  -- name
     = nameFirst nameRest*
@@ -77,7 +73,7 @@ Ohm {
     | alnum
 
   ident  -- identifier
-    = ~keyword name:n
+    = ~keyword name
 
   keyword
     = 'undefined' ~nameRest  -- undefined
@@ -86,20 +82,20 @@ Ohm {
     | 'false' ~nameRest      -- false
 
   string  -- string literal
-    = '\'' sChar*:cs '\''
+    = '\'' sChar* '\''
 
   sChar
-    = '\\x' hexDigit hexDigit
-    | '\\u' hexDigit hexDigit hexDigit hexDigit
-    | '\\' _
+    = '\\x' hexDigit hexDigit                    -- hexEscape
+    | '\\u' hexDigit hexDigit hexDigit hexDigit  -- unicodeEscape
+    | '\\' _                                     -- escape
     | ~'\'' ~'\n' _
 
   regExp  -- regular expression
-    = '/' reCharClass:e '/'
+    = '/' reCharClass '/'
 
   reCharClass
-    = '\\p{' /[A-Za-z]/+:unicodeClass '}'    -- unicode
-    | '[' ('\\]' | ~']' _)* ']'              -- ordinary
+    = '\\p{' /[A-Za-z]/+ '}'    -- unicode
+    | '[' ('\\]' | ~']' _)* ']' -- ordinary
 
   number  -- number
     = '-'? digit+

@@ -41,10 +41,6 @@ pexprs.Seq.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequir
   return ans;
 };
 
-pexprs.Bind.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
-  return this.expr.addRulesThatNeedSemanticAction(dict, true);
-};
-
 pexprs.Many.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
   return this.expr.addRulesThatNeedSemanticAction(dict, valueRequired);
 };

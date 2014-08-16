@@ -32,9 +32,7 @@ RuleDecl.prototype = {
   performChecks: common.abstract,
 
   performCommonChecks: function(name, body) {
-    body.assertNoDuplicateBindings(name);
-    body.assertNoUselessBindings(name);
-    body.assertChoicesHaveUniformBindings(name);
+    body.assertChoicesHaveUniformArity(name);
   },
 
   install: common.abstract,
@@ -86,8 +84,8 @@ Override.prototype = objectThatDelegatesTo(RuleDecl.prototype, {
     if (!overridden) {
       throw new errors.UndeclaredRule(this.name, this.superGrammar.name);
     }
-    if (overridden.getBindingNames().length === 0 && overridden.producesValue() && !this.body.producesValue()) {
-      throw new errors.RuleMustProduceValue(this.name, 'overriding');
+    if (overridden.getArity() !== this.body.getArity()) {
+      throw new errors.RefinementMustBeCompatible(this.name, overridden.getArity(), 'overriding');
     }
     this.performCommonChecks(this.name, this.body);
   },
@@ -137,10 +135,11 @@ Extend.prototype = objectThatDelegatesTo(RuleDecl.prototype, {
   kind: 'extend',
 
   performChecks: function() {
-    if (this.base.getBindingNames().length === 0 && this.base.producesValue() && !this.body.producesValue()) {
-      throw new errors.RuleMustProduceValue(this.name, 'extending');
+    var expectedArity = this.base.getArity();
+    if (this.body.getArity() !== expectedArity) {
+      throw new errors.RefinementMustBeCompatible(this.name, expectedArity, 'extending');
     }
-    this.performCommonChecks(this.name, this.extendedBody);
+    this.performCommonChecks(this.name, this.body);
   },
 
   install: function(ruleDict) {

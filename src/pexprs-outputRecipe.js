@@ -50,14 +50,6 @@ pexprs.Seq.prototype.outputRecipe = function(ws) {
   ws.nextPutAll(')');
 };
 
-pexprs.Bind.prototype.outputRecipe = function(ws) {
-  ws.nextPutAll('b.bind(');
-  this.expr.outputRecipe(ws);
-  ws.nextPutAll(', ');
-  ws.nextPutAll(printString(this.name));
-  ws.nextPutAll(')');
-};
-
 pexprs.Many.prototype.outputRecipe = function(ws) {
   ws.nextPutAll('b.many(');
   this.expr.outputRecipe(ws);

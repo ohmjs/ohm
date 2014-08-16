@@ -70,15 +70,6 @@ function Seq(factors) {
 
 Seq.prototype = objectThatDelegatesTo(PExpr.prototype);
 
-// Bindings
-
-function Bind(expr, name) {
-  this.expr = expr;
-  this.name = name;
-}
-
-Bind.prototype = objectThatDelegatesTo(PExpr.prototype);
-
 // Iterators and optionals
 
 function Many(expr, minNumMatches) {
@@ -163,7 +154,6 @@ exports.RegExpPrim = RegExpPrim;
 exports.Alt = Alt;
 exports.ExtendAlt = ExtendAlt;
 exports.Seq = Seq;
-exports.Bind = Bind;
 exports.Many = Many;
 exports.Opt = Opt;
 exports.Not = Not;
@@ -177,12 +167,9 @@ exports.Apply = Apply;
 // --------------------------------------------------------------------
 
 require('./pexprs-addRulesThatNeedSemanticAction.js');
-require('./pexprs-assertNoDuplicateBindings.js');
-require('./pexprs-assertNoUselessBindings.js');
-require('./pexprs-assertChoicesHaveUniformBindings.js');
-require('./pexprs-getBindingNames.js');
+require('./pexprs-assertChoicesHaveUniformArity.js');
+require('./pexprs-getArity.js');
 require('./pexprs-eval.js');
 require('./pexprs-outputRecipe.js');
-require('./pexprs-producesValue.js');
 require('./pexprs-toExpected.js');
 

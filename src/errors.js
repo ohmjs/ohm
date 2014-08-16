@@ -118,64 +118,39 @@ DuplicateRuleDeclaration.prototype.getMessage = function() {
 
 // Rule must produce value
 
-function RuleMustProduceValue(ruleName, why) {
+function RefinementMustBeCompatible(ruleName, expectedArity, why) {
   this.ruleName = ruleName;
+  this.expectedArity = expectedArity;
   this.why = why;
 };
 
-RuleMustProduceValue.prototype = objectThatDelegatesTo(Error.prototype);
+RefinementMustBeCompatible.prototype = objectThatDelegatesTo(Error.prototype);
 
-RuleMustProduceValue.prototype.getMessage = function() {
+RefinementMustBeCompatible.prototype.getMessage = function() {
   return [
-    'rule', this.ruleName, 'must produce a value',
-    'because the rule it is', this.why, 'also produces a value'
+    'rule', this.ruleName, 'must have arity', this.expectedArity,
+    'because the rule it is', this.why, 'also has arity', this.expectedArity
   ].join(' ');
 };
 
-// ----------------- bindings -----------------
+// ----------------- arity -----------------
 
-// Inconsistent bindings
+// Inconsistent arity
 
-function InconsistentBindings(ruleName, expected, actual) {
+function InconsistentArity(ruleName, expected, actual) {
   this.ruleName = ruleName;
   this.expected = expected;
   this.actual = actual;
 };
 
-InconsistentBindings.prototype = objectThatDelegatesTo(Error.prototype);
+InconsistentArity.prototype = objectThatDelegatesTo(Error.prototype);
 
-InconsistentBindings.prototype.getMessage = function() {
+InconsistentArity.prototype.getMessage = function() {
   return [
-    'rule', this.ruleName, 'has inconsistent bindings.',
+    'rule', this.ruleName, 'involves an alternation which has inconsistent arity.',
     'expected:', this.expected,
     'got:', this.actual
   ].join(' ');
-};
-
-// Duplicate bindings
-
-function DuplicateBindings(ruleName, duplicates) {
-  this.ruleName = ruleName;
-  this.duplicates = duplicates;
-};
-
-DuplicateBindings.prototype = objectThatDelegatesTo(Error.prototype);
-
-DuplicateBindings.prototype.getMessage = function() {
-  return ['rule', this.ruleName, 'has duplicate bindings:', this.duplicates].join(' ');
-};
-
-// Useless bindings
-
-function UselessBindings(ruleName, useless) {
-  this.ruleName = ruleName;
-  this.useless = useless;
-};
-
-UselessBindings.prototype = objectThatDelegatesTo(Error.prototype);
-
-UselessBindings.prototype.getMessage = function() {
-  return ['rule', this.ruleName, 'has useless bindings:', this.useless].join(' ');
 };
 
 // ----------------- properties -----------------
@@ -307,10 +282,8 @@ exports.UndeclaredGrammar = UndeclaredGrammar;
 exports.DuplicateGrammarDeclaration = DuplicateGrammarDeclaration;
 exports.UndeclaredRule = UndeclaredRule;
 exports.DuplicateRuleDeclaration = DuplicateRuleDeclaration;
-exports.RuleMustProduceValue = RuleMustProduceValue;
-exports.InconsistentBindings = InconsistentBindings;
-exports.DuplicateBindings = DuplicateBindings;
-exports.UselessBindings = UselessBindings;
+exports.RefinementMustBeCompatible = RefinementMustBeCompatible;
+exports.InconsistentArity = InconsistentArity;
 exports.DuplicatePropertyNames = DuplicatePropertyNames;
 exports.MatchFailure = MatchFailure;
 

@@ -12,7 +12,7 @@ var pexprs = require('./pexprs.js');
 function skipSpaces(ruleDict, inputStream) {
   while (true) {
     var origPos = inputStream.pos;
-    if (ruleDict.space.eval(false, false, ruleDict, inputStream, []) === common.fail) {
+    if (!ruleDict.space.eval(false, false, ruleDict, inputStream, [])) {
       inputStream.pos = origPos;
       break;
     }

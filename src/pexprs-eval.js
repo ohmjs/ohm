@@ -28,9 +28,10 @@ pexprs.anything.eval = function(recordFailures, syntactic, ruleDict, inputStream
     if (recordFailures) {
       inputStream.recordFailure(origPos, this);
     }
-    return common.fail;
+    return false;
   } else {
-    return new thunks.ValueThunk(value, inputStream.source, origPos, inputStream.pos);
+    bindings.push(new thunks.ValueThunk(value, inputStream.source, origPos, inputStream.pos));
+    return true;
   }
 };
 
@@ -39,12 +40,13 @@ pexprs.end.eval = function(recordFailures, syntactic, ruleDict, inputStream, bin
     skipSpaces(ruleDict, inputStream);
   }
   if (inputStream.atEnd()) {
-    return new thunks.ValueThunk(undefined, inputStream.source, inputStream.pos, inputStream.pos);
+    bindings.push(new thunks.ValueThunk(undefined, inputStream.source, inputStream.pos, inputStream.pos));
+    return true;
   } else {
     if (recordFailures) {
       inputStream.recordFailure(inputStream.pos, this);
     }
-    return common.fail;
+    return false;
   }
 };
 
@@ -57,9 +59,10 @@ pexprs.Prim.prototype.eval = function(recordFailures, syntactic, ruleDict, input
     if (recordFailures) {
       inputStream.recordFailure(origPos, this);
     }
-    return common.fail;
+    return false;
   } else {
-    return new thunks.ValueThunk(this.obj, inputStream.source, origPos, inputStream.pos);
+    bindings.push(new thunks.ValueThunk(this.obj, inputStream.source, origPos, inputStream.pos));
+    return true;
   }
 };
 
@@ -80,9 +83,10 @@ pexprs.RegExpPrim.prototype.eval = function(recordFailures, syntactic, ruleDict,
     if (recordFailures) {
       inputStream.recordFailure(origPos, this);
     }
-    return common.fail;
+    return false;
   } else {
-    return new thunks.ValueThunk(inputStream.source[origPos], inputStream.source, origPos, inputStream.pos);
+    bindings.push(new thunks.ValueThunk(inputStream.source[origPos], inputStream.source, origPos, inputStream.pos));
+    return true;
   }
 };
 
@@ -93,9 +97,8 @@ pexprs.Alt.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
     if (syntactic) {
       skipSpaces(ruleDict, inputStream);
     }
-    var value = this.terms[idx].eval(recordFailures, syntactic, ruleDict, inputStream, bindings);
-    if (value !== common.fail) {
-      return value;
+    if (this.terms[idx].eval(recordFailures, syntactic, ruleDict, inputStream, bindings)) {
+      return true;
     } else {
       inputStream.pos = origPos;
       // Note: while the following assignment could be done unconditionally, only doing it when necessary is
@@ -106,7 +109,7 @@ pexprs.Alt.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
       }
     }
   }
-  return common.fail;
+  return false;
 };
 
 pexprs.Seq.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
@@ -119,80 +122,81 @@ pexprs.Seq.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
       skipSpaces(ruleDict, inputStream);
     }
     var factor = this.factors[idx];
-    var value = factor.eval(recordFailures, syntactic, ruleDict, inputStream, bindings);
-    if (value === common.fail) {
-      return common.fail;
+    if (!factor.eval(recordFailures, syntactic, ruleDict, inputStream, bindings)) {
+      return false;
     }
   }
-  return new thunks.ValueThunk(undefined, inputStream.source, origPos, inputStream.pos);
-};
-
-pexprs.Bind.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
-  var value = this.expr.eval(recordFailures, syntactic, ruleDict, inputStream, bindings);
-  if (value !== common.fail) {
-    bindings.push(this.name, value);
-  }
-  return value;
+  return true;
 };
 
 pexprs.Many.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
+  var arity = this.getArity();
+  if (arity === 0) {
+    // TODO: make this a static check w/ a nice error message, then remove the dynamic check.
+    throw 'fix me!';
+  }
+
+  var columns = common.repeatFn(function() { return []; }, arity);
   var numMatches = 0;
-  var matches = this.expr.producesValue() ? [] : undefined;
   var origPos = inputStream.pos;
   while (true) {
     var backtrackPos = inputStream.pos;
-    var value = this.expr.eval(recordFailures, syntactic, ruleDict, inputStream, []);
-    if (value === common.fail) {
+    var row = [];
+    if (!this.expr.eval(recordFailures, syntactic, ruleDict, inputStream, row)) {
       inputStream.pos = backtrackPos;
       break;
     } else {
       numMatches++;
-      if (matches) {
-        matches.push(value);
+      for (var idx = 0; idx < row.length; idx++) {
+        columns[idx].push(row[idx]);
       }
     }
   }
   if (numMatches < this.minNumMatches) {
-    return common.fail;
+    return false;
   } else {
-    return matches ?
-      new thunks.ListThunk(matches, inputStream.source, origPos, inputStream.pos) :
-      new thunks.ValueThunk(undefined, inputStream.source, origPos, inputStream.pos);
+    for (var idx = 0; idx < columns.length; idx++) {
+      bindings.push(new thunks.ListThunk(columns[idx], inputStream.source, origPos, inputStream.pos));
+    }
+    return true;
   }
 };
 
 pexprs.Opt.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
   var origPos = inputStream.pos;
-  var value = this.expr.eval(recordFailures, syntactic, ruleDict, inputStream, []);
-  if (value === common.fail) {
+  var row = [];
+  if (!this.expr.eval(recordFailures, syntactic, ruleDict, inputStream, row)) {
     inputStream.pos = origPos;
-    return new thunks.ValueThunk(undefined, inputStream.source, origPos, origPos);
-  } else {
-    return this.expr.producesValue() ? value : new thunks.ValueThunk(true, inputStream.source, origPos, inputStream.pos);
+    var arity = this.getArity();
+    row = common.repeat(new thunks.ValueThunk(undefined, inputStream.source, origPos, inputStream.pos), arity);
   }
+  for (var idx = 0; idx < arity; idx++) {
+    bindings.push(row[idx]);
+  }
+  return true;
 };
 
 pexprs.Not.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
   var origPos = inputStream.pos;
-  var value = this.expr.eval(false, syntactic, ruleDict, inputStream, []);
-  if (value !== common.fail) {
+  if (this.expr.eval(false, syntactic, ruleDict, inputStream, [])) {
     if (recordFailures) {
       inputStream.recordFailure(origPos, this);
     }
-    return common.fail;
+    return false;
   } else {
     inputStream.pos = origPos;
-    return new thunks.ValueThunk(undefined, inputStream.source, origPos, origPos);
+    return true;
   }
 };
 
 pexprs.Lookahead.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
   var origPos = inputStream.pos;
-  var value = this.expr.eval(recordFailures, syntactic, ruleDict, inputStream, []);
-  if (value !== common.fail) {
+  if (this.expr.eval(recordFailures, syntactic, ruleDict, inputStream, bindings)) {
     inputStream.pos = origPos;
+    return true;
+  } else {
+    return false;
   }
-  return value;
 };
 
 pexprs.Listy.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
@@ -202,14 +206,14 @@ pexprs.Listy.prototype.eval = function(recordFailures, syntactic, ruleDict, inpu
   var obj = inputStream.next();
   if (obj instanceof Array || typeof obj === 'string') {
     var objInputStream = InputStream.newFor(obj);
-    var value = this.expr.eval(recordFailures, syntactic, ruleDict, objInputStream, bindings);
-    return value !== common.fail && objInputStream.atEnd() ?  new thunks.ValueThunk(obj, inputStream.source, inputStream.pos - 1, inputStream.pos) : common.fail;
+    return this.expr.eval(recordFailures, syntactic, ruleDict, objInputStream, bindings) && objInputStream.atEnd();
   } else {
-    return common.fail;
+    return false;
   }
 };
 
 pexprs.Obj.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
+  var origPos = inputStream.pos;
   if (syntactic) {
     skipSpaces(ruleDict, inputStream);
   }
@@ -218,42 +222,63 @@ pexprs.Obj.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
     var numOwnPropertiesMatched = 0;
     for (var idx = 0; idx < this.properties.length; idx++) {
       var property = this.properties[idx];
+      if (!Object.hasOwnProperty(obj, property.name)) {
+        return false;
+      }
       var value = obj[property.name];
       var valueInputStream = InputStream.newFor([value]);
       var matched =
-          property.pattern.eval(recordFailures, syntactic, ruleDict, valueInputStream, bindings) !== common.fail &&
+          property.pattern.eval(recordFailures, syntactic, ruleDict, valueInputStream, bindings) &&
           valueInputStream.atEnd();
       if (!matched) {
-        return common.fail;
+        return false;
       }
-      if (obj.hasOwnProperty(property.name)) {
-        numOwnPropertiesMatched++;
-      }
+      numOwnPropertiesMatched++;
     }
-    return this.isLenient || numOwnPropertiesMatched === Object.keys(obj).length ?
-        new thunks.ValueThunk(obj, inputStream.source, inputStream.pos - 1, inputStream.pos) :
-        common.fail;
+    if (this.isLenient) {
+      var remainder = {};
+      for (var p in obj) {
+        if (Object.hasOwnProperty(obj, p) && this.properties.indexOf(p) < 0) {
+          remainder[p] = obj[p];
+        }
+      }
+      bindings.push(new thunks.ValueThunk(remainder, inputStream.source, origPos, inputStream.pos));
+      return true;
+    } else {
+      return numOwnPropertiesMatched === Object.keys(obj).length;
+    }
   } else {
-    return common.fail;
+    return false;
   }
 };
 
 pexprs.Apply.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
+  function useMemoizedResult(memoRecOrLR) {
+    inputStream.pos = memoRecOrLR.pos;
+    if (memoRecOrLR.value) {
+      bindings.push(memoRecOrLR.value);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   var ruleName = this.ruleName;
   var origPosInfo = inputStream.getCurrentPosInfo();
+
+console.log('applying', ruleName, 'at', inputStream.pos, 'where memo entry is', origPosInfo.memo[ruleName]);
+
   var memoRec = origPosInfo.memo[ruleName];
   if (memoRec && origPosInfo.shouldUseMemoizedResult(memoRec)) {
-    inputStream.pos = memoRec.pos;
-    return memoRec.value;
+    return useMemoizedResult(memoRec);
   } else if (origPosInfo.isActive(ruleName)) {
     var currentLR = origPosInfo.getCurrentLeftRecursion();
     if (currentLR && currentLR.name === ruleName) {
       origPosInfo.updateInvolvedRules();
-      inputStream.pos = currentLR.pos;
-      return currentLR.value;
+      return useMemoizedResult(currentLR);
     } else {
       origPosInfo.startLeftRecursion(ruleName);
-      return common.fail;
+      return false;
     }
   } else {
     var body = ruleDict[ruleName];
@@ -265,8 +290,10 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, ruleDict, inpu
     var rf = recordFailures && !body.description;
     var ruleIsSyntactic = common.isSyntactic(ruleName);
     var value = this.evalOnce(body, rf, ruleIsSyntactic, ruleDict, inputStream);
+console.log('value', value);
     var currentLR = origPosInfo.getCurrentLeftRecursion();
     if (currentLR) {
+console.log('currentLR', currentLR);
       if (currentLR.name === ruleName) {
         value = this.handleLeftRecursion(body, rf, ruleIsSyntactic, ruleDict, inputStream, origPos, currentLR, value);
         origPosInfo.memo[ruleName] =
@@ -280,41 +307,46 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, ruleDict, inpu
       origPosInfo.memo[ruleName] = {pos: inputStream.pos, value: value};
     }
     origPosInfo.exit(ruleName);
-    if (value === common.fail && recordFailures && body.description) {
-      var errorPos;
-      if (body.description && ruleIsSyntactic) {
-        inputStream.pos = origPos;
-        skipSpaces(ruleDict, inputStream);
-        errorPos = inputStream.pos;
-      } else {
-        errorPos = origPos;
+    if (value) {
+      bindings.push(value);
+      return true;
+    } else {
+      if (recordFailures && body.description) {
+        var errorPos;
+        if (body.description && ruleIsSyntactic) {
+          inputStream.pos = origPos;
+          skipSpaces(ruleDict, inputStream);
+          errorPos = inputStream.pos;
+        } else {
+          errorPos = origPos;
+        }
+        inputStream.recordFailure(errorPos, this);
       }
-      inputStream.recordFailure(errorPos, this);
+      return false;
     }
-    return value;
   }
 };
 
 pexprs.Apply.prototype.evalOnce = function(expr, recordFailures, syntactic, ruleDict, inputStream) {
   var origPos = inputStream.pos;
   var bindings = [];
-  var value = expr.eval(recordFailures, syntactic, ruleDict, inputStream, bindings);
-  if (value === common.fail) {
-    return common.fail;
+  if (expr.eval(recordFailures, syntactic, ruleDict, inputStream, bindings)) {
+    return new thunks.RuleThunk(this.ruleName, inputStream.source, origPos, inputStream.pos, bindings);
   } else {
-    return new thunks.RuleThunk(this.ruleName, inputStream.source, origPos, inputStream.pos, value, bindings);
+    return false;
   }
 };
 
 pexprs.Apply.prototype.handleLeftRecursion = function(body, recordFailures, syntactic, ruleDict, inputStream, origPos, currentLR, seedValue) {
   var value = seedValue;
-  if (seedValue !== common.fail) {
+  if (seedValue) {
     currentLR.value = seedValue;
     currentLR.pos = inputStream.pos;
     while (true) {
+console.log('left recursion stuff!');
       inputStream.pos = origPos;
       value = this.evalOnce(body, recordFailures, syntactic, ruleDict, inputStream);
-      if (value !== common.fail && inputStream.pos > currentLR.pos) {
+      if (value && inputStream.pos > currentLR.pos) {
         currentLR.value = value;
         currentLR.pos = inputStream.pos;
       } else {

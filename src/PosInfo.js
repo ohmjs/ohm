@@ -47,7 +47,7 @@ PosInfo.prototype = {
     if (!this.leftRecursionStack) {
       this.leftRecursionStack = [];
     }
-    this.leftRecursionStack.push({name: ruleName, value: common.fail, pos: -1, involvedRules: {}});
+    this.leftRecursionStack.push({name: ruleName, value: false, pos: -1, involvedRules: {}});
     this.updateInvolvedRules();
   },
 

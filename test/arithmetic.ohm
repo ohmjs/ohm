@@ -3,21 +3,21 @@ Expr {
     = addExpr
 
   addExpr
-    = addExpr:x '+':op mulExpr:y    -- plus
-    | addExpr:x '-':op mulExpr:y    -- minus
+    = addExpr '+' mulExpr  -- plus
+    | addExpr '-' mulExpr  -- minus
     | mulExpr
 
   mulExpr
-    = mulExpr:x '*':op priExpr:y    -- times
-    | mulExpr:x '/':op priExpr:y    -- divide
+    = mulExpr '*' priExpr  -- times
+    | mulExpr '/' priExpr  -- divide
     | priExpr
 
   priExpr
-    = '(':oparen expr:e ')':cparen  -- paren
+    = '(' expr ')'         -- paren
     | number
 
   number  -- number
-    = number:n digit:d              -- rec
+    = number digit         -- rec
     | digit
 }
 

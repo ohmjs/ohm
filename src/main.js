@@ -83,13 +83,6 @@ function makeGrammarActionDict(optNamespace) {
       return builder.seq.apply(builder, expr.value);
     },
 
-    Factor: function(expr) {
-      return expr.value;
-    },
-    Factor_bind: function(x, n) {
-      return builder.bind(x.value, n.value);
-    },
-
     Iter: function(expr) {
       return expr.value;
     },

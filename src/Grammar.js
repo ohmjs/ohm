@@ -51,23 +51,22 @@ Grammar.prototype = {
 
   matchContents: function(obj, startRule, optThrowOnFail) {
     var inputStream = InputStream.newFor(obj);
-    var thunk = new pexprs.Apply(startRule).eval(optThrowOnFail, undefined, this.ruleDict, inputStream, undefined);
-
-    var succeeded;
-    if (thunk === common.fail) {
-      succeeded = false;
-    } else {
+    var bindings = [];
+    var succeeded = new pexprs.Apply(startRule).eval(optThrowOnFail, undefined, this.ruleDict, inputStream, bindings);
+    
+    if (succeeded) {
       // This match only succeeded if the start rule consumed all of the input.
       if (common.isSyntactic(startRule)) {
         skipSpaces(this.ruleDict, inputStream);
       }
-      succeeded = pexprs.end.eval(optThrowOnFail, false, this.ruleDict, inputStream, undefined) !== common.fail;
+      succeeded = pexprs.end.eval(optThrowOnFail, false, this.ruleDict, inputStream, []);
     }
 
     if (succeeded) {
-      var assertSemanticActionNamesMatch = this.assertSemanticActionNamesMatch.bind(this);
+      var thunk = bindings[0];
+      var assertSemanticActionNamesAndAritiesMatch = this.assertSemanticActionNamesAndAritiesMatch.bind(this);
       var ans = function(actionDict, optEvaluationStrategy) {
-        assertSemanticActionNamesMatch(actionDict);
+        assertSemanticActionNamesAndAritiesMatch(actionDict);
         var lazy;
         if (optEvaluationStrategy === undefined || optEvaluationStrategy === 'lazy') {
           lazy = true;
@@ -87,7 +86,7 @@ Grammar.prototype = {
     }
   },
 
-  assertSemanticActionNamesMatch: function(actionDict) {
+  assertSemanticActionNamesAndAritiesMatch: function(actionDict) {
     var self = this;
     var ruleDict = this.ruleDict;
     var ok = true;
@@ -95,31 +94,26 @@ Grammar.prototype = {
       if (actionDict[ruleName] === undefined) {
         return;
       }
-      var actual = formals(actionDict[ruleName]).sort();
-      var expected = self.semanticActionArgNames(ruleName);
-      if (!equals(actual, expected)) {
+      var actual = actionDict[ruleName].length;
+      var expected = self.semanticActionArity(ruleName);
+      if (actual !== expected) {
         ok = false;
-        console.log('semantic action for rule', ruleName, 'has the wrong argument names');
-        console.log('  expected', expected, '(in any order)');
+        console.log('semantic action for rule', ruleName, 'has the wrong arity');
+        console.log('  expected', expected);
         console.log('    actual', actual);
       }
     });
     if (!ok) {
-      browser.error('one or more semantic actions have the wrong argument names -- see console for details');
+      browser.error('one or more semantic actions have the wrong arity -- see console for details');
     }
   },
 
-  semanticActionArgNames: function(ruleName) {
+  semanticActionArity: function(ruleName) {
     if (this.superGrammar && this.superGrammar.ruleDict[ruleName]) {
-      return this.superGrammar.semanticActionArgNames(ruleName);
+      return this.superGrammar.semanticActionArity(ruleName);
     } else {
       var body = this.ruleDict[ruleName];
-      var names = body.getBindingNames();
-      if (names.length > 0) {
-        return names;
-      } else {
-        return body.producesValue() ? ['expr'] : [];
-      }
+      return body.getArity();
     }
   },
 
@@ -176,7 +170,8 @@ Grammar.prototype = {
   addSemanticActionTemplate: function(ruleName, body, buffer) {
     buffer.nextPutAll(ruleName);
     buffer.nextPutAll(': function(');
-    buffer.nextPutAll(this.semanticActionArgNames(ruleName).join(', '));
+    var arity = this.semanticActionArity(ruleName);
+    buffer.nextPutAll(common.repeat('_', arity).join(', '));
     buffer.nextPutAll(') {\n');
     buffer.nextPutAll('  }');
   },

@@ -101,7 +101,6 @@ Builder.prototype = {
     }
     return factors.length === 1 ? factors[0] : new pexprs.Seq(factors);
   },
-  bind: function(expr, name) { return new pexprs.Bind(expr, name); },
   many: function(expr, minNumMatches) { return new pexprs.Many(expr, minNumMatches); },
   opt: function(expr) { return new pexprs.Opt(expr); },
   not: function(expr) { return new pexprs.Not(expr); },
