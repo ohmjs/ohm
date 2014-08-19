@@ -14,7 +14,7 @@ var objectThatDelegatesTo = awlib.objectUtils.objectThatDelegatesTo;
 // --------------------------------------------------------------------
 
 function InputStream() {
-  throw 'InputStream cannot be instantiated -- it\'s abstract';
+  throw new Error('InputStream cannot be instantiated -- it\'s abstract');
 }
 
 InputStream.newFor = function(obj) {
@@ -23,7 +23,7 @@ InputStream.newFor = function(obj) {
   } else if (obj instanceof Array) {
     return new ListInputStream(obj);
   } else {
-    throw 'cannot make input stream for ' + obj;
+    throw new Error('cannot make input stream for ' + obj);
   }
 };
 

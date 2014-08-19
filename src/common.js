@@ -3,7 +3,7 @@
 // --------------------------------------------------------------------
 
 exports.abstract = function() {
-  throw 'this method is abstract!';
+  throw new Error('this method is abstract!');
 };
 
 exports.repeatFn = function(fn, n) {

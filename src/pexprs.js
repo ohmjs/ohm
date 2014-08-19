@@ -15,7 +15,7 @@ var objectThatDelegatesTo = awlib.objectUtils.objectThatDelegatesTo;
 // General stuff
 
 function PExpr() {
-  throw 'PExpr cannot be instantiated -- it\'s abstract';
+  throw new Error('PExpr cannot be instantiated -- it\'s abstract');
 }
 
 // Anything

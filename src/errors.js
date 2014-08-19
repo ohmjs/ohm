@@ -12,8 +12,10 @@ var makeStringBuffer = awlib.objectUtils.stringBuffer;
 // Private stuff
 // --------------------------------------------------------------------
 
+var BuiltinError = Error;
+
 function Error() {
-  throw 'Error cannot be instantiated -- it\'s abstract';
+  throw new BuiltinError('Error cannot be instantiated -- it\'s abstract');
 }
 
 Error.prototype.getMessage = common.abstract;

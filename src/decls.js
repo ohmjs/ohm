@@ -25,7 +25,7 @@ function outputRecipe(decl, ws) {
 }
 
 function RuleDecl() {
-  throw 'RuleDecl cannot be instantiated -- it\'s abstract';
+  throw new Error('RuleDecl cannot be instantiated -- it\'s abstract');
 }
 
 RuleDecl.prototype = {

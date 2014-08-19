@@ -14,7 +14,7 @@ var objectThatDelegatesTo = objectUtils.objectThatDelegatesTo;
 // --------------------------------------------------------------------
 
 function Thunk() {
-  throw 'Thunk cannot be instantiated -- it\'s abstract';
+  throw new Error('Thunk cannot be instantiated -- it\'s abstract');
 }
 
 var nextThunkId = 0;
@@ -64,7 +64,7 @@ RuleThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
     var action = this.lookupAction(actionDict);
     if (!action) {
       if (lazy) {
-        browser.error('missing semantic action for', this.ruleName);
+        throw new Error('missing semantic action for ' + this.ruleName);
       } else {
         return memo[this.id] = undefined;
       }
