@@ -22,11 +22,11 @@ var thisModule = exports;
 function makeGrammarActionDict(optNamespace) {
   var builder;
   return {
-    Grammars: function(expr) {
-      return expr.value;
+    Grammars: function(exprs) {
+      return exprs.value;
     },
 
-    Grammar: function(n, s, rs) {
+    Grammar: function(n, s, _, rs, _) {
       builder = new Builder();
       builder.setName(n.value);
       s.value;  // force evaluation
@@ -37,10 +37,10 @@ function makeGrammarActionDict(optNamespace) {
     SuperGrammar: function(expr) {
       builder.setSuperGrammar(expr.value);
     },
-    SuperGrammar_qualified: function(ns, n) {
+    SuperGrammar_qualified: function(_, ns, _, n) {
       return thisModule.namespace(ns.value).getGrammar(n.value);
     },
-    SuperGrammar_unqualified: function(n) {
+    SuperGrammar_unqualified: function(_, n) {
       if (optNamespace) {
         return optNamespace.getGrammar(n.value);
       } else {
@@ -51,16 +51,16 @@ function makeGrammarActionDict(optNamespace) {
     Rule: function(expr) {
       return expr.value;
     },
-    Rule_define: function(n, d, b) {
+    Rule_define: function(n, d, _, b) {
       builder.currentRuleName = n.value;
       d.value;  // force evaluation
       return builder.define(n.value, b.value);
     },
-    Rule_override: function(n, b) {
+    Rule_override: function(n, _, b) {
       builder.currentRuleName = n.value;
       return builder.override(n.value, b.value);
     },
-    Rule_extend: function(n, b) {
+    Rule_extend: function(n, _, b) {
       builder.currentRuleName = n.value;
       return builder.extend(n.value, b.value);
     },
@@ -68,7 +68,7 @@ function makeGrammarActionDict(optNamespace) {
     Alt: function(expr) {
       return expr.value;
     },
-    Alt_rec: function(x, y) {
+    Alt_rec: function(x, _, y) {
       return builder.alt(x.value, y.value);
     },
 
@@ -86,23 +86,23 @@ function makeGrammarActionDict(optNamespace) {
     Iter: function(expr) {
       return expr.value;
     },
-    Iter_star: function(x) {
+    Iter_star: function(x, _) {
       return builder.many(x.value, 0);
     },
-    Iter_plus: function(x) {
+    Iter_plus: function(x, _) {
       return builder.many(x.value, 1);
     },
-    Iter_opt: function(x) {
+    Iter_opt: function(x, _) {
       return builder.opt(x.value);
     },
 
     Pred: function(expr) {
       return expr.value;
     },
-    Pred_not: function(x) {
+    Pred_not: function(_, x) {
       return builder.not(x.value);
     },
-    Pred_lookahead: function(x) {
+    Pred_lookahead: function(_, x) {
       return builder.la(x.value);
     },
 
@@ -115,45 +115,45 @@ function makeGrammarActionDict(optNamespace) {
     Base_prim: function(expr) {
       return builder.prim(expr.value);
     },
-    Base_paren: function(x) {
+    Base_paren: function(_, x, _) {
       return x.value;
     },
-    Base_listy: function(x) {
+    Base_listy: function(_, x, _) {
       return builder.listy(x.value);
     },
-    Base_obj: function(lenient) {
+    Base_obj: function(_, lenient, _) {
       return builder.obj([], lenient.value);
     },
-    Base_objWithProps: function(ps, lenient) {
+    Base_objWithProps: function(_, ps, _, lenient, _) {
       return builder.obj(ps.value, lenient.value);
     },
 
     Props: function(expr) {
       return expr.value;
     },
-    Props_rec: function(p, ps) {
+    Props_rec: function(p, _, ps) {
       return [p.value].concat(ps.value);
     },
     Props_base: function(p) {
       return [p.value];
     },
-    Prop: function(n, p) {
+    Prop: function(n, _, p) {
       return {name: n.value, pattern: p.value};
     },
 
-    ruleDescr: function(t) {
+    ruleDescr: function(_, t, _) {
       builder.setRuleDescription(t.value);
       return t.value;
     },
-    ruleDescrText: function() {
+    ruleDescrText: function(_) {
       return this.interval.contents;
     },
 
-    caseName: function(n) {
+    caseName: function(_, _, n, _, _) {
       return n.value
     },
 
-    name: function() {
+    name: function(_, _) {
       return this.interval.contents;
     },
     nameFirst: function(expr) {},
@@ -166,56 +166,48 @@ function makeGrammarActionDict(optNamespace) {
     keyword: function(expr) {
       return expr.value;
     },
-    keyword_undefined: function() {
+    keyword_undefined: function(_) {
       return undefined;
     },
-    keyword_null: function() {
+    keyword_null: function(_) {
       return null;
     },
-    keyword_true: function() {
+    keyword_true: function(_) {
       return true;
     },
-    keyword_false: function() {
+    keyword_false: function(_) {
       return false;
     },
 
-    string: function(cs) {
+    string: function(_, cs, _) {
       return cs.value.map(function(c) { return unescapeChar(c); }).join('');
     },
 
-    sChar: function() {
+    sChar: function(_) {
       return this.interval.contents;
     },
 
-    regExp: function(e) {
-      return new RegExp(e.value);
-    },
-
-    reCharClass: function() {
-      return this.interval.contents;
-    },
-
-    regExp: function(e) {
+    regExp: function(_, e, _) {
       return e.value;
     },
 
     reCharClass: function(expr) {
       return expr.value;
     },
-    reCharClass_unicode: function(unicodeClass) {
+    reCharClass_unicode: function(_, unicodeClass, _) {
       return UnicodeCategories[unicodeClass.value.join('')];
     },
-    reCharClass_ordinary: function() {
+    reCharClass_ordinary: function(_, _, _) {
       return new RegExp(this.interval.contents);
     },
 
-    number: function() {
+    number: function(_, _) {
       return parseInt(this.interval.contents);
     },
 
     space: function(expr) {},
-    space_multiLine: function() {},
-    space_singleLine: function() {}
+    space_multiLine: function(_, _, _) {},
+    space_singleLine: function(_, _, _) {}
   };
 }
 
