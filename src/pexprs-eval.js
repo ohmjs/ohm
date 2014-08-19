@@ -222,7 +222,7 @@ pexprs.Obj.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
     var numOwnPropertiesMatched = 0;
     for (var idx = 0; idx < this.properties.length; idx++) {
       var property = this.properties[idx];
-      if (!Object.hasOwnProperty(obj, property.name)) {
+      if (!obj.hasOwnProperty(property.name)) {
         return false;
       }
       var value = obj[property.name];
@@ -238,7 +238,7 @@ pexprs.Obj.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
     if (this.isLenient) {
       var remainder = {};
       for (var p in obj) {
-        if (Object.hasOwnProperty(obj, p) && this.properties.indexOf(p) < 0) {
+        if (obj.hasOwnProperty(p) && this.properties.indexOf(p) < 0) {
           remainder[p] = obj[p];
         }
       }
