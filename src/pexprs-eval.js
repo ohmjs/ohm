@@ -266,8 +266,6 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, ruleDict, inpu
   var ruleName = this.ruleName;
   var origPosInfo = inputStream.getCurrentPosInfo();
 
-console.log('applying', ruleName, 'at', inputStream.pos, 'where memo entry is', origPosInfo.memo[ruleName]);
-
   var memoRec = origPosInfo.memo[ruleName];
   if (memoRec && origPosInfo.shouldUseMemoizedResult(memoRec)) {
     return useMemoizedResult(memoRec);
@@ -290,10 +288,8 @@ console.log('applying', ruleName, 'at', inputStream.pos, 'where memo entry is', 
     var rf = recordFailures && !body.description;
     var ruleIsSyntactic = common.isSyntactic(ruleName);
     var value = this.evalOnce(body, rf, ruleIsSyntactic, ruleDict, inputStream);
-console.log('value', value);
     var currentLR = origPosInfo.getCurrentLeftRecursion();
     if (currentLR) {
-console.log('currentLR', currentLR);
       if (currentLR.name === ruleName) {
         value = this.handleLeftRecursion(body, rf, ruleIsSyntactic, ruleDict, inputStream, origPos, currentLR, value);
         origPosInfo.memo[ruleName] =
@@ -343,7 +339,6 @@ pexprs.Apply.prototype.handleLeftRecursion = function(body, recordFailures, synt
     currentLR.value = seedValue;
     currentLR.pos = inputStream.pos;
     while (true) {
-console.log('left recursion stuff!');
       inputStream.pos = origPos;
       value = this.evalOnce(body, recordFailures, syntactic, ruleDict, inputStream);
       if (value && inputStream.pos > currentLR.pos) {

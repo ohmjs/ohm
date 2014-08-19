@@ -94,9 +94,6 @@ RuleThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
 });
 
 function ListThunk(thunks, source, startIdx, endIdx) {
-console.log('ListThunk.proto', this.__proto__);
-console.log('Thunk.proto', Thunk.prototype);
-console.log('init', this.init);
   this.init(source, startIdx, endIdx);
   this.thunks = thunks;
 }
