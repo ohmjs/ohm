@@ -543,7 +543,7 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var f = m.matchContents('abcz', 'start');
           expect(f({
-            start: function() {}
+            start: function(_, _, _) {}
           })).to.eql(undefined);
         });
       });
@@ -551,7 +551,7 @@ describe("Ohm", function() {
       describe("with exactly one binding", function() {
         var m;
         beforeEach(function() {
-          m = makeGrammar("M { start = 'a':x 'bc' 'z' }");
+          m = makeGrammar("M { start = 'a' 'bc' 'z' }");
         });
   
         it("recognition", function() {
@@ -564,7 +564,7 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var f = m.matchContents('abcz', 'start');
           expect(f({
-            start: function(x) { return x.value; },
+            start: function(x, _, _) { return x.value; },
           })).to.eql('a');
         });
       });
@@ -572,7 +572,7 @@ describe("Ohm", function() {
       describe("with more than one binding", function() {
         var m;
         beforeEach(function() {
-          m = makeGrammar("M { start = 'a':x 'bc' 'z':y }");
+          m = makeGrammar("M { start = 'a' 'bc' 'z' }");
         });
   
         it("recognition", function() {
@@ -585,18 +585,8 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var f = m.matchContents('abcz', 'start');
           expect(f({
-            start: function(x, y) { return [x.value, y.value]; }
+            start: function(x, _, y) { return [x.value, y.value]; }
           })).to.eql(['a', 'z']);
-        });
-      });
-
-      it("with duplicate binding", function() {
-        expect(function() {
-          m = makeGrammar("M { start = ('a':x 'bc' 'z':x)? }");
-        }).to.throwException(function(e) {
-          expect(e).to.be.a(errors.DuplicateBindings);
-          expect(e.ruleName).to.equal('start');
-          expect(e.duplicates).to.eql(['x']);
         });
       });
     });
@@ -604,7 +594,7 @@ describe("Ohm", function() {
     describe("alts and seqs together", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { start = 'a':x 'b' 'c':y | '1':x '2' '3':y }");
+        m = makeGrammar("M { start = 'a' 'b' 'c' | '1' '2' '3' }");
       });
 
       it("to recipe and back", function() {
@@ -619,9 +609,9 @@ describe("Ohm", function() {
       });
 
       it("semantic actions", function() {
-        expect(m.matchContents('abc', 'start')({start: function(x, y) { return [x.value, y.value] }}))
+        expect(m.matchContents('abc', 'start')({start: function(x, _, y) { return [x.value, y.value] }}))
           .to.eql(['a', 'c']);
-        expect(m.matchContents('123', 'start')({start: function(x, y) { return [x.value, y.value] }}))
+        expect(m.matchContents('123', 'start')({start: function(x, _, y) { return [x.value, y.value] }}))
           .to.eql(['1', '3']);
       });
     });
@@ -633,7 +623,7 @@ describe("Ohm", function() {
           "M {",
           "  number = digit+",
           "  digits = digit*",
-          "  sss = &number:x number:y",
+          "  sss = &number number",
           "}"]);
       });
 
@@ -668,22 +658,12 @@ describe("Ohm", function() {
         expect(f(a)).to.eql(['id', 0, 'sss', t, t]);
         expect(a._getNextId()).to.equal(5);
       });
-
-      it("useless bindings are detected", function() {
-        expect(function() {
-          makeGrammar("M { foo = (bar:x)* }");
-        }).to.throwException(function(e) {
-          expect(e).to.be.a(errors.UselessBindings);
-          expect(e.ruleName).to.equal('foo');
-          expect(e.useless).to.eql(['x']);
-        });
-      });
     });
 
     describe("opt", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { name = 'dr'?:title 'warth':last }");
+        m = makeGrammar("M { name = 'dr'? 'warth' }");
       });
 
       it("to recipe and back", function() {
@@ -701,22 +681,12 @@ describe("Ohm", function() {
         expect(m.matchContents('drwarth', 'name')(actionDict)).to.eql(['dr', 'warth']);
         expect(m.matchContents('warth', 'name')(actionDict)).to.eql([undefined, 'warth']);
       });
-
-      it("useless bindings are detected", function() {
-        expect(function() {
-          makeGrammar("M { foo = (bar:x)? }");
-        }).to.throwException(function(e) {
-          expect(e).to.be.a(errors.UselessBindings);
-          expect(e.ruleName).to.equal('foo');
-          expect(e.useless).to.eql(['x']);
-        });
-      });
     });
 
     describe("not", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { start = ~'hello':x _* }");
+        m = makeGrammar("M { start = ~'hello' _* }");
       });
 
       it("to recipe and back", function() {
@@ -730,25 +700,15 @@ describe("Ohm", function() {
 
       it("semantic actions", function() {
         expect(m.matchContents('yello world', 'start')({
-          start: function(x) { return x.value; }
-        })).to.equal(undefined);
-      });
-
-      it("useless bindings are detected", function() {
-        expect(function() {
-          makeGrammar("M { foo = ~(bar:x) }");
-        }).to.throwException(function(e) {
-          expect(e).to.be.a(errors.UselessBindings);
-          expect(e.ruleName).to.equal('foo');
-          expect(e.useless).to.eql(['x']);
-        });
+          start: function(x) { return x.interval.contents; }
+        })).to.equal('yello world');
       });
     });
 
     describe("lookahead", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { start = &'hello':x _* }");
+        m = makeGrammar("M { start = &'hello' _* }");
       });
 
       it("to recipe and back", function() {
@@ -761,14 +721,14 @@ describe("Ohm", function() {
       });
 
       it("semantic actions", function() {
-        expect(m.matchContents('hello world', 'start')({start: function(x) { return x.value }})).to.equal('hello');
+        expect(m.matchContents('hello world', 'start')({start: function(x, _) { return x.value }})).to.equal('hello');
       });
     });
 
     describe("listy", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { start = 'abc' ['d':x 'ef']:y 'g' }");
+        m = makeGrammar("M { start = 'abc' &_ ['d' 'ef'] 'g' }");
       });
 
       it("to recipe and back", function() {
@@ -788,7 +748,8 @@ describe("Ohm", function() {
 
       it("semantic actions", function() {
         expect(m.matchContents(['abc', ['d', 'ef'], 'g'], 'start')({
-          start: function(x, y) { return [x.value, y.value]; }
+	  _: function (expr) { return expr.value; },
+          start: function(_, y, x, _, _) { return [x.value, y.value]; }
         })).to.eql(['d', ['d', 'ef']]);
       });
     });
@@ -798,8 +759,8 @@ describe("Ohm", function() {
       beforeEach(function() {
         m = makeGrammar([
           'M {',
-          '  strict  = {x: (1:a), y: (2:b)}',
-          '  lenient = {x: (1:a), y: (2:b), ...}',
+          '  strict  = {x: 1, y: (2)}',
+          '  lenient = {x: 1, y: (2), ...}',
           '}']);
       });
 
@@ -820,6 +781,9 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           expect(m.match({x: 1, y: 2}, 'strict')({
             strict: function(a, b) { return [a.value, b.value]; }
+          }))
+          expect(m.match({y: 2, x: 1}, 'strict')({
+            strict: function(a, b) { return [a.value, b.value]; }
           })).to.eql([1, 2]);
         });
       });
@@ -836,7 +800,10 @@ describe("Ohm", function() {
 
         it("semantic actions", function() {
           expect(m.match({x: 1, y: 2}, 'lenient')({
-            lenient: function(a, b) { return [a.value, b.value]; }
+            lenient: function(a, b, _) { return [a.value, b.value]; }
+          })).to.eql([1, 2]);
+          expect(m.match({y: 2, x: 1}, 'lenient')({
+            lenient: function(a, b, _) { return [a.value, b.value]; }
           })).to.eql([1, 2]);
         });
       });
@@ -847,16 +814,6 @@ describe("Ohm", function() {
         }).to.throwException(function(e) {
           expect(e).to.be.a(errors.DuplicatePropertyNames);
           expect(e.duplicates).to.eql(['x']);
-        });
-      });
-
-      it("duplicate bindings are not allowed", function() {
-        expect(function() {
-          m = ohm.makeGrammar("M { duh = {x: (1:a), y: (2:a), ...} }");
-        }).to.throwException(function(e) {
-          expect(e).to.be.a(errors.DuplicateBindings);
-          expect(e.ruleName).to.equal('duh');
-          expect(e.duplicates).to.eql(['a']);
         });
       });
     });
@@ -896,7 +853,7 @@ describe("Ohm", function() {
           m = makeGrammar([
             "M {",
             "  number = numberRec | digit",
-            "  numberRec = number:n digit:d",
+            "  numberRec = number digit",
             "}"]);
         });
 
@@ -943,7 +900,7 @@ describe("Ohm", function() {
           m = makeGrammar([
             "M {",
             "  add = addRec | pri",
-            "  addRec = add:x '+' pri:y",
+            "  addRec = add '+' pri",
             "  pri = priX | priY",
             "  priX = 'x'",
             "  priY = 'y'",
@@ -960,7 +917,7 @@ describe("Ohm", function() {
 
         it("semantic actions", function() {
           expect(m.matchContents('x+y+x', 'add')({
-            addRec:   function(x, y) { return [x.value, '+', y.value]; },
+            addRec:   function(x, _, y) { return [x.value, '+', y.value]; },
             _default: function(ruleName, args) {
               return args[0].value;
             }
@@ -979,7 +936,7 @@ describe("Ohm", function() {
             "  baz = qux",
             "  qux = quux",
             "  quux = numberRec",
-            "  numberRec = number:n digit:d",
+            "  numberRec = number digit",
             "}"]);
         });
 
@@ -1009,11 +966,11 @@ describe("Ohm", function() {
           m = makeGrammar([
             "M {",
             "  addExpr = addExprRec | mulExpr",
-            "  addExprRec = addExpr:x '+' mulExpr:y",
+            "  addExprRec = addExpr '+' mulExpr",
             "  mulExpr = mulExprRec | priExpr",
-            "  mulExprRec = mulExpr:x '*' priExpr:y",
+            "  mulExprRec = mulExpr '*' priExpr",
             "  priExpr = /[0-9]/",
-            "  sss = &addExpr:x addExpr:y",
+            "  sss = &addExpr addExpr",
             "}"]);
         });
 
@@ -1032,11 +989,11 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var f = m.matchContents('1*2+3+4*5', 'addExpr');
           expect(f({
-            addExpr:    function(expr) { return ['addExpr', expr.value]; },
-            addExprRec: function(x, y) { return ['addExprRec', x.value, y.value]; },
-            mulExpr:    function(expr) { return ['mulExpr', expr.value]; },
-            mulExprRec: function(x, y) { return ['mulExprRec', x.value, y.value] },
-            priExpr:    function(expr) { return expr.value; }
+            addExpr:    function(expr)    { return ['addExpr', expr.value]; },
+            addExprRec: function(x, _, y) { return ['addExprRec', x.value, y.value]; },
+            mulExpr:    function(expr)    { return ['mulExpr', expr.value]; },
+            mulExprRec: function(x, _, y) { return ['mulExprRec', x.value, y.value] },
+            priExpr:    function(expr)    { return expr.value; }
           })).to.eql(
             ['addExpr',
               ['addExprRec',
@@ -1046,15 +1003,15 @@ describe("Ohm", function() {
                     ['mulExpr', '3']]],
                 ['mulExpr', ['mulExprRec', ['mulExpr', '4'], '5']]]]);
           expect(f({
-            addExpr:    function(expr) { return expr.value; },
-            addExprRec: function(x, y) { return x.value + y.value; },
-            mulExpr:    function(expr) { return expr.value; },
-            mulExprRec: function(x, y) { return x.value * y.value; },
-            priExpr:    function(expr) { return parseInt(expr.value); }
+            addExpr:    function(expr)    { return expr.value; },
+            addExprRec: function(x, _, y) { return x.value + y.value; },
+            mulExpr:    function(expr)    { return expr.value; },
+            mulExprRec: function(x, _, y) { return x.value * y.value; },
+            priExpr:    function(expr)    { return parseInt(expr.value); }
           })).to.equal(25);
           expect(f({
-            addExprRec: function(x, y) { return '(' + x.value + '+' + y.value + ')'; },
-            mulExprRec: function(x, y) { return '(' + x.value + '*' + y.value + ')'; },
+            addExprRec: function(x, _, y) { return '(' + x.value + '+' + y.value + ')'; },
+            mulExprRec: function(x, _, y) { return '(' + x.value + '*' + y.value + ')'; },
             _default:   function(ruleName, args) { return args[0].value; }
           })).to.equal('(((1*2)+3)+(4*5))');
         });
@@ -1071,14 +1028,14 @@ describe("Ohm", function() {
                       ['id', 6, 'mulExpr',
                         ['id', 7, 'mulExprRec',
                           ['id', 8, 'mulExpr',
-                            ['id', 9, 'priExpr', '1']],
-                          ['id', 10, 'priExpr', '2']]]],
+                            ['id', 9, 'priExpr', '1']], '*',
+                          ['id', 10, 'priExpr', '2']]]], '+',
                     ['id', 11, 'mulExpr',
-                      ['id', 12, 'priExpr', '3']]]],
+                      ['id', 12, 'priExpr', '3']]]], '+',
                 ['id', 13, 'mulExpr',
                   ['id', 14, 'mulExprRec',
                     ['id', 15, 'mulExpr',
-                      ['id', 16, 'priExpr', '4']],
+                      ['id', 16, 'priExpr', '4']], '*',
                     ['id', 17, 'priExpr', '5']]]]];
           expect(f(a)).to.eql(['id', 0, 'sss', t, t]);
           expect(a._getNextId()).to.equal(18);
@@ -1093,7 +1050,7 @@ describe("Ohm", function() {
             "  addExpr = a | c",
             "  a = b",
             "  b = addExprRec",
-            "  addExprRec = addExpr:x '+' mulExpr:y",
+            "  addExprRec = addExpr '+' mulExpr",
             "  c = d",
             "  d = mulExpr",
             "  mulExpr = e | g",
@@ -1101,7 +1058,7 @@ describe("Ohm", function() {
             "  f = mulExprRec",
             "  g = h",
             "  h = priExpr",
-            "  mulExprRec = mulExpr:x '*' priExpr:y",
+            "  mulExprRec = mulExpr '*' priExpr",
             "  priExpr = /[0-9]/",
             "}"]);
         });
@@ -1120,8 +1077,8 @@ describe("Ohm", function() {
 
         it("semantic actions", function() {
           expect(m.matchContents('7+8*9+0', 'addExpr')({
-            addExprRec: function(x, y) { return [x.value, '+', y.value]; },
-            mulExprRec: function(x, y) { return [x.value, '*', y.value]; },
+            addExprRec: function(x, _, y) { return [x.value, '+', y.value]; },
+            mulExprRec: function(x, _, y) { return [x.value, '*', y.value]; },
             _default:   function(ruleName, args) { return args[0].value; }
           })).to.eql([['7', '+', ['8', '*', '9']], '+', '0']);
         });
@@ -1132,11 +1089,11 @@ describe("Ohm", function() {
         beforeEach(function() {
           m = makeGrammar([
             "G {",
-            "  tricky = &foo bar:x",
+            "  tricky = &foo bar",
             "  foo = fooRec | digit",
-            "  fooRec = bar:x digit:y",
+            "  fooRec = bar digit",
             "  bar = barRec | digit",
-            "  barRec = foo:x digit:y",
+            "  barRec = foo digit",
             "}"]);
         });
 
@@ -1151,7 +1108,7 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var f = m.matchContents('1234', 'tricky');
           expect(f({
-            tricky: function(x) { return ['tricky', x.value]; },
+            tricky: function(_, x) { return ['tricky', x.value]; },
             foo:    function(expr) { return ['foo', expr.value]; },
             fooRec: function(x, y) { return ['fooRec', x.value, y.value]; },
             bar:    function(expr) { return ['bar', expr.value]; },
@@ -1233,27 +1190,30 @@ describe("Ohm", function() {
           });
         });
 
-        it("should make sure the environment's bindings are preserved", function() {
-          // If the rule being overridden has no bindings but its body produces a value, the overridding version must
-          // also produce a value. This is to ensure the semantic action "API" doesn't change.
+        it("should make sure rule arities are compatible", function() {
+          // An overriding rule must produce the same number of values
+	  // as the overridden rule. This is to ensure the semantic
+	  // action "API" doesn't change.
+
+	  // Too many:
           expect(function() {
             makeGrammar("M1 { foo = 'foo' }", "inheritance-override");
             makeGrammar("M2 <: M1 { foo := bar baz }", "inheritance-override");
           }).to.throwException(function(e) {
-            expect(e).to.be.an(errors.RuleMustProduceValue);
+            expect(e).to.be.an(errors.RefinementMustBeCompatible);
             expect(e.ruleName).to.equal('foo');
             expect(e.why).to.equal('overriding');
           });
 
-          // It should be ok to override a rule that has no bindings and whose body does not produce a value, even
-          // when the overriding definition actually produces a value. When this happens, the semantic action method
-          // should still take no arguments.
-          makeGrammar("M3 { foo = digit digit }", 'inheritance-override');
-          makeGrammar("M4 <: M3 { foo := digit }", 'inheritance-override');
-          ohm.namespace('inheritance-override').getGrammar('M4').matchContents('5', 'foo')({
-            digit: function(expr) {},
-            foo:   function()    {}
-          });
+	  // Too few:
+	  expect(function() {
+            makeGrammar("M3 { foo = digit digit }", 'inheritance-override');
+            makeGrammar("M4 <: M3 { foo := digit }", 'inheritance-override');
+	  }).to.throwException(function (e) {
+            expect(e).to.be.an(errors.RefinementMustBeCompatible);
+            expect(e.ruleName).to.equal('foo');
+            expect(e.why).to.equal('overriding');
+	  });
         });
 
         it("recognition", function() {
@@ -1281,8 +1241,8 @@ describe("Ohm", function() {
           if (m1 && m2) {
             return;
           } else {
-            m1 = makeGrammar("G1 { foo = 'aaa':x 'bbb':y }", 'inheritanceExtend');
-            m2 = makeGrammar("G2 <: inheritanceExtend.G1 { foo += '111':x '222':y }", 'inheritanceExtend2');
+            m1 = makeGrammar("G1 { foo = 'aaa' 'bbb' }", 'inheritanceExtend');
+            m2 = makeGrammar("G2 <: inheritanceExtend.G1 { foo += '111' '222' }", 'inheritanceExtend2');
           }
         });
 
@@ -1306,38 +1266,30 @@ describe("Ohm", function() {
           });
         });
 
-        it("should check that binding names are consistent", function() {
-          expect(function() {
-            makeGrammar("G3 <: G1 { foo += '111':x '222':z }", 'inheritanceExtend');
-          }).to.throwException(function(e) {
-            expect(e).to.be.a(errors.InconsistentBindings);
-            expect(e.ruleName).to.equal('foo');
-            expect(e.expected).to.eql(['x', 'y']);
-            expect(e.actual).to.eql(['x', 'z']);
-          });
-        });
+        it("should make sure rule arities are compatible", function() {
+          // An extending rule must produce the same number of values
+	  // as the underlying rule. This is to ensure the semantic
+	  // action "API" doesn't change.
 
-        it("should make sure the environment's bindings are preserved", function() {
-          // If the rule being extended has no bindings but its body produces a value, the overridding version must
-          // also produce a value. This is to ensure the semantic action "API" doesn't change.
+	  // Too many:
           expect(function() {
             makeGrammar("M1 { foo = 'foo' }", "inheritanceExtend3");
             makeGrammar("M2 <: M1 { foo += bar baz }", "inheritanceExtend3");
           }).to.throwException(function(e) {
-            expect(e).to.be.an(errors.RuleMustProduceValue);
+            expect(e).to.be.an(errors.RefinementMustBeCompatible);
             expect(e.ruleName).to.equal('foo');
             expect(e.why).to.equal('extending');
           });
 
-          // It should be ok to extend a rule that has no bindings and whose body does not produce a value, even
-          // when the extending case(s) actually produce a value. When this happens, the semantic action method should
-          // still take no arguments.
-          makeGrammar("M3 { foo = digit digit }", 'inheritanceExtend3');
-          makeGrammar("M4 <: M3 { foo += digit }", 'inheritanceExtend3');
-          ohm.namespace('inheritanceExtend3').getGrammar('M4').matchContents('5', 'foo')({
-            digit: function(expr) {},
-            foo:   function()    {}
-          });
+	  // Too few:
+	  expect(function() {
+            makeGrammar("M3 { foo = digit digit }", 'inheritanceExtend3');
+            makeGrammar("M4 <: M3 { foo += digit }", 'inheritanceExtend3');
+	  }).to.throwException(function(e) {
+            expect(e).to.be.an(errors.RefinementMustBeCompatible);
+            expect(e.ruleName).to.equal('foo');
+            expect(e.why).to.equal('extending');
+	  });
         });
 
         it("recognition", function() {
@@ -1361,29 +1313,25 @@ describe("Ohm", function() {
 
     describe("bindings", function() {
       it("to recipe and back", function() {
-        var m = makeGrammar("G { foo = 'a':x 'b':y | 'b':y 'a':x }");
+        var m = makeGrammar("G { foo = 'a' 'b' | 'b' 'a' }");
         expect(m).to.eql(ohm.make(eval(m.toRecipe())));
       });
 
-      it("inconsistent bindings in alts are errors", function() {
+      it("inconsistent arity in alts is an error", function() {
         expect(function() {
-          makeGrammar("G { foo = 'a':x | 'b':y }");
+          makeGrammar("G { foo = 'a' 'c' | 'b' }");
         }).to.throwException(function(e) {
-          expect(e).to.be.a(errors.InconsistentBindings);
+          expect(e).to.be.a(errors.InconsistentArity);
           expect(e.ruleName).to.equal('foo');
-          expect(e.expected).to.eql(['x']);
-          expect(e.actual).to.eql(['y']);
+          expect(e.expected).to.eql(2);
+          expect(e.actual).to.eql(1);
         });
-      });
-
-      it("binding order shouldn't matter", function() {
-        makeGrammar("G { foo = 'a':x 'b':y | 'b':y 'a':x }");
       });
 
       it("by default, bindings are evaluated lazily", function() {
         var g = makeGrammar([
           "G {",
-          "  foo = bar:x baz:y",
+          "  foo = bar baz",
           "  bar = 'a'",
           "  baz = 'b'",
           "}"]);
@@ -1407,7 +1355,7 @@ describe("Ohm", function() {
         var g = makeGrammar([
           "G {",
           "  start = foo",  // rule that produces a value, but doesn't have bindings
-          "  foo = bar:x baz:y",
+          "  foo = bar baz",
           "  bar = 'a'",
           "  baz = 'b'",
           "}"]);
@@ -1486,7 +1434,7 @@ describe("Ohm", function() {
         ohm.namespace('inlineRuleTest1').install('Expr', m);
 
         expect(function() {
-          makeGrammar("N <: Expr { addExpr := addExpr:x '~' mulExpr:y  -- minus }", 'inlineRuleTest1');
+          makeGrammar("N <: Expr { addExpr := addExpr '~' mulExpr  -- minus }", 'inlineRuleTest1');
         }).to.throwException(function(e) {
           expect(e).to.be.an(errors.DuplicateRuleDeclaration);
           expect(e.ruleName).to.equal('addExpr_minus');
@@ -1494,7 +1442,7 @@ describe("Ohm", function() {
         });
 
         expect(function() {
-          makeGrammar("N <: Expr { addExpr += addExpr:x '~' mulExpr:y  -- minus }", 'inlineRuleTest1');
+          makeGrammar("N <: Expr { addExpr += addExpr '~' mulExpr  -- minus }", 'inlineRuleTest1');
         }).to.throwException(function(e) {
           expect(e).to.be.an(errors.DuplicateRuleDeclaration);
           expect(e.ruleName).to.equal('addExpr_minus');
@@ -1546,7 +1494,7 @@ describe("Ohm", function() {
             "  qux = quux",
             "  quux = 42",
             "  aaa = 'duh'",
-            "  bbb = ~aaa qux:x  -- blah",
+            "  bbb = ~aaa qux  -- blah",
             "}",
             "G2 <: G1 {",
             "  qux := 100",
@@ -1625,7 +1573,7 @@ describe("Ohm", function() {
             type: 'text/ohm-js',
             innerHTML: [
               "O {",
-              "  number = number:n digit:d  -- rec",
+              "  number = number digit  -- rec",
               "         | digit",
               "}"
             ].join('\n')
