@@ -36,7 +36,7 @@ pexprs.Seq.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequir
   var ans = false;
   for (var idx = 0; idx < this.factors.length; idx++) {
     var factor = this.factors[idx];
-    ans |= factor.addRulesThatNeedSemanticAction(dict, false);
+    ans |= factor.addRulesThatNeedSemanticAction(dict, valueRequired);
   }
   return ans;
 };
@@ -58,11 +58,11 @@ pexprs.Lookahead.prototype.addRulesThatNeedSemanticAction = function(dict, value
 };
 
 pexprs.Listy.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
-  return this.expr.addRulesThatNeedSemanticAction(dict, false);
+  return this.expr.addRulesThatNeedSemanticAction(dict, valueRequired);
 };
 
 pexprs.Obj.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
-  return this.expr.addRulesThatNeedSemanticAction(dict, false);
+  return this.expr.addRulesThatNeedSemanticAction(dict, valueRequired);
 };
 
 pexprs.Apply.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
