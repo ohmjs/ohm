@@ -165,9 +165,9 @@ pexprs.Many.prototype.eval = function(recordFailures, syntactic, ruleDict, input
 pexprs.Opt.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
   var origPos = inputStream.pos;
   var row = [];
+  var arity = this.getArity();
   if (!this.expr.eval(recordFailures, syntactic, ruleDict, inputStream, row)) {
     inputStream.pos = origPos;
-    var arity = this.getArity();
     row = common.repeat(new thunks.ValueThunk(undefined, inputStream.source, origPos, inputStream.pos), arity);
   }
   for (var idx = 0; idx < arity; idx++) {
