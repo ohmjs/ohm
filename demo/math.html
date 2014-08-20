@@ -11,23 +11,23 @@ Arithmetic {
     = AddExpr
 
   AddExpr
-    = AddExpr:x '+':op MulExpr:y  -- plus
-    | AddExpr:x '-':op MulExpr:y  -- minus
+    = AddExpr '+' MulExpr  -- plus
+    | AddExpr '-' MulExpr  -- minus
     | MulExpr
 
   MulExpr
-    = MulExpr:x '*':op ExpExpr:y  -- times
-    | MulExpr:x '/':op ExpExpr:y  -- divide
+    = MulExpr '*' ExpExpr  -- times
+    | MulExpr '/' ExpExpr  -- divide
     | ExpExpr
 
   ExpExpr
-    = PriExpr:x '^':op ExpExpr:y  -- power
+    = PriExpr '^' ExpExpr  -- power
     | PriExpr
 
   PriExpr
-    = '(':open Expr:e ')':close   -- paren
-    | '+':sign PriExpr:e          -- pos
-    | '-':sign PriExpr:e          -- neg
+    = '(' Expr ')'  -- paren
+    | '+' PriExpr   -- pos
+    | '-' PriExpr   -- neg
     | ident
     | number
 
@@ -35,8 +35,8 @@ Arithmetic {
     = letter alnum*
 
   number  -- number
-    = digit+ ('.' digit*)?
-    | '.' digit+
+    = digit+ ('.' digit*)?  -- integerAndFract
+    | '.' digit+            -- onlyFract
 }
 
     </script>
@@ -64,21 +64,21 @@ var g = ohm.namespace('test')
 
 var constants = {pi: Math.PI, e: Math.E};
 var interpret = {
-  Expr:           function(expr)           { return expr.value; },
-  AddExpr:        function(expr)           { return expr.value; },
-  AddExpr_plus:   function(x, op, y)       { return x.value + y.value; },
-  AddExpr_minus:  function(x, op, y)       { return x.value - y.value; },
-  MulExpr:        function(expr)           { return expr.value; },
-  MulExpr_times:  function(x, op, y)       { return x.value * y.value; },
-  MulExpr_divide: function(x, op, y)       { return x.value / y.value; },
-  ExpExpr:        function(expr)           { return expr.value; },
-  ExpExpr_power:  function(x, op, y)       { return Math.pow(x.value, y.value); },
-  PriExpr:        function(expr)           { return expr.value; },
-  PriExpr_paren:  function(open, e, close) { return e.value; },
-  PriExpr_pos:    function(sign, e)        { return e.value; },
-  PriExpr_neg:    function(sign, e)        { return -e.value; },
-  ident:          function()               { return constants[this.interval.contents]; },
-  number:         function()               { return parseFloat(this.interval.contents); }
+  Expr:           function(e)       { return e.value; },
+  AddExpr:        function(e)       { return e.value; },
+  AddExpr_plus:   function(x, _, y) { return x.value + y.value; },
+  AddExpr_minus:  function(x, _, y) { return x.value - y.value; },
+  MulExpr:        function(e)       { return e.value; },
+  MulExpr_times:  function(x, _, y) { return x.value * y.value; },
+  MulExpr_divide: function(x, _, y) { return x.value / y.value; },
+  ExpExpr:        function(e)       { return e.value; },
+  ExpExpr_power:  function(x, _, y) { return Math.pow(x.value, y.value); },
+  PriExpr:        function(e)       { return e.value; },
+  PriExpr_paren:  function(_, e, _) { return e.value; },
+  PriExpr_pos:    function(_, e)    { return e.value; },
+  PriExpr_neg:    function(_, e)    { return -e.value; },
+  ident:          function(_, _)    { return constants[this.interval.contents]; },
+  number:         function(_)       { return parseFloat(this.interval.contents); }
 };
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -96,69 +96,69 @@ function stringify(x) {
 }
 
 var toLisp = {
-  Expr:           function(expr)           { return stringify(expr.value); },
-  AddExpr:        function(expr)           { return expr.value; },
-  AddExpr_plus:   function(x, op, y)       { return ['+', x.value, y.value]; },
-  AddExpr_minus:  function(x, op, y)       { return ['-', x.value, y.value]; },
-  MulExpr:        function(expr)           { return expr.value; },
-  MulExpr_times:  function(x, op, y)       { return ['*', x.value, y.value]; },
-  MulExpr_divide: function(x, op, y)       { return ['/', x.value, y.value]; },
-  ExpExpr:        function(expr)           { return expr.value; },
-  ExpExpr_power:  function(x, op, y)       { return ['pow', x.value, y.value]; },
-  PriExpr:        function(expr)           { return expr.value; },
-  PriExpr_paren:  function(open, e, close) { return e.value; },
-  PriExpr_pos:    function(sign, e)        { return e.value; },
-  PriExpr_neg:    function(sign, e)        { return ['neg', e.value]; },
-  ident:          function()               { return this.interval.contents; },
-  number:         function()               { return this.interval.contents; }
+  Expr:           function(e)       { return stringify(e.value); },
+  AddExpr:        function(e)       { return e.value; },
+  AddExpr_plus:   function(x, _, y) { return ['+', x.value, y.value]; },
+  AddExpr_minus:  function(x, _, y) { return ['-', x.value, y.value]; },
+  MulExpr:        function(e)       { return e.value; },
+  MulExpr_times:  function(x, _, y) { return ['*', x.value, y.value]; },
+  MulExpr_divide: function(x, _, y) { return ['/', x.value, y.value]; },
+  ExpExpr:        function(e)       { return e.value; },
+  ExpExpr_power:  function(x, _, y) { return ['pow', x.value, y.value]; },
+  PriExpr:        function(e)       { return e.value; },
+  PriExpr_paren:  function(_, e, _) { return e.value; },
+  PriExpr_pos:    function(_, e)    { return e.value; },
+  PriExpr_neg:    function(_, e)    { return ['neg', e.value]; },
+  ident:          function(_, _)    { return this.interval.contents; },
+  number:         function(_)       { return this.interval.contents; }
 };
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 var toTree = {
-  Expr:           function(expr)           { return makeElement('expr', expr.value); },
-  AddExpr:        function(expr)           { return makeElement('addExpr', expr.value); },
+  Expr:           function(e)              { return makeElement('expr', e.value); },
+  AddExpr:        function(e)              { return makeElement('addExpr', e.value); },
   AddExpr_plus:   function(x, op, y)       { return makeElement('plus', x.value, op.value, y.value); },
   AddExpr_minus:  function(x, op, y)       { return makeElement('minus', x.value, op.value, y.value); },
-  MulExpr:        function(expr)           { return makeElement('mulExpr', expr.value); },
+  MulExpr:        function(e)              { return makeElement('mulExpr', e.value); },
   MulExpr_times:  function(x, op, y)       { return makeElement('times', x.value, op.value, y.value); },
   MulExpr_divide: function(x, op, y)       { return makeElement('divide', x.value, op.value, y.value); },
-  ExpExpr:        function(expr)           { return makeElement('expExpr', expr.value); },
+  ExpExpr:        function(e)              { return makeElement('expExpr', e.value); },
   ExpExpr_power:  function(x, op, y)       { return makeElement('power', x.value, op.value, y.value); },
-  PriExpr:        function(expr)           { return makeElement('priExpr', expr.value); },
+  PriExpr:        function(e)              { return makeElement('priExpr', e.value); },
   PriExpr_paren:  function(open, e, close) { return makeElement('paren', open.value, e.value, close.value); },
   PriExpr_pos:    function(sign, e)        { return makeElement('pos', sign.value, e.value); },
   PriExpr_neg:    function(sign, e)        { return makeElement('neg', sign.value, e.value); },
-  ident:          function()               { return makeElement('ident', this.interval.contents); },
-  number:         function()               { return makeElement('number', this.interval.contents); }
+  ident:          function(_, _)           { return makeElement('ident', this.interval.contents); },
+  number:         function(_)              { return makeElement('number', this.interval.contents); }
 };
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 var toTwoD = {
-  Expr:           function(expr)           { return expr.value; },
-  AddExpr:        function(expr)           { return expr.value; },
-  AddExpr_plus:   function(x, op, y)       { var operator = makeElement('operator', op.value);
-                                             return makeElement('plus', x.value, operator, y.value); },
-  AddExpr_minus:  function(x, op, y)       { var operator = makeElement('operator', '\u2212');
-                                             return makeElement('minus', x.value, operator, y.value); },
-  MulExpr:        function(expr)           { return expr.value; },
-  MulExpr_times:  function(x, op, y)       { var operator = makeElement('operator', '\u00D7');
-                                             return makeElement('times', x.value, operator, y.value); },
-  MulExpr_divide: function(x, op, y)       { var numerator = makeElement('numerator', x.value);
-                                             var denominator = makeElement('denominator', y.value);
-                                             return makeElement('fraction', numerator, denominator); },
-  ExpExpr:        function(expr)           { return expr.value; },
-  ExpExpr_power:  function(x, op, y)       { var base = makeElement('theBase', x.value);
-                                             var exponent = makeElement('exponent', y.value);
-                                             return makeElement('power', base, exponent); },
-  PriExpr:        function(expr)           { return expr.value; },
-  PriExpr_paren:  function(open, e, close) { return makeElement('paren', e.value); },
-  PriExpr_pos:    function(sign, e)        { return makeElement('pos', sign.value, e.value); },
-  PriExpr_neg:    function(sign, e)        { return makeElement('neg', sign.value, e.value); },
-  ident:          function()               { var text = this.interval.contents;
-                                             return makeElement('ident', text === 'pi' ? '\u03C0' : text); },
-  number:         function()               { return makeElement('number', this.interval.contents); }
+  Expr:           function(e)        { return e.value; },
+  AddExpr:        function(e)        { return e.value; },
+  AddExpr_plus:   function(x, op, y) { var operator = makeElement('operator', op.value);
+                                       return makeElement('plus', x.value, operator, y.value); },
+  AddExpr_minus:  function(x, op, y) { var operator = makeElement('operator', '\u2212');
+                                       return makeElement('minus', x.value, operator, y.value); },
+  MulExpr:        function(e)        { return e.value; },
+  MulExpr_times:  function(x, op, y) { var operator = makeElement('operator', '\u00D7');
+                                       return makeElement('times', x.value, operator, y.value); },
+  MulExpr_divide: function(x, op, y) { var numerator = makeElement('numerator', x.value);
+                                       var denominator = makeElement('denominator', y.value);
+                                       return makeElement('fraction', numerator, denominator); },
+  ExpExpr:        function(e)        { return e.value; },
+  ExpExpr_power:  function(x, op, y) { var base = makeElement('theBase', x.value);
+                                       var exponent = makeElement('exponent', y.value);
+                                       return makeElement('power', base, exponent); },
+  PriExpr:        function(e)        { return e.value; },
+  PriExpr_paren:  function(_, e, _)  { return makeElement('paren', e.value); },
+  PriExpr_pos:    function(sign, e)  { return makeElement('pos', sign.value, e.value); },
+  PriExpr_neg:    function(sign, e)  { return makeElement('neg', sign.value, e.value); },
+  ident:          function(_, _)     { var text = this.interval.contents;
+                                       return makeElement('ident', text === 'pi' ? '\u03C0' : text); },
+  number:         function(_)        { return makeElement('number', this.interval.contents); }
 };
 
 // ---------------------------------------------------------------------------------------------------------------------
