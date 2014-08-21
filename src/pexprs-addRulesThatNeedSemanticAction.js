@@ -11,15 +11,15 @@ var pexprs = require('./pexprs.js');
 
 pexprs.PExpr.prototype.addRulesThatNeedSemanticAction = common.abstract;
 
-pexprs.anything.addRulesThatNeedSemanticAction = function() {
+pexprs.anything.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
   // no-op
 };
 
-pexprs.end.addRulesThatNeedSemanticAction = function() {
+pexprs.end.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
   // no-op
 };
 
-pexprs.Prim.prototype.addRulesThatNeedSemanticAction = function() {
+pexprs.Prim.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
   // no-op
 };
 
