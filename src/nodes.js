@@ -34,11 +34,9 @@ Object.defineProperty(Node.prototype, 'interval', {
   }
 });
 
-// TODO: change these constructors so that (source, startIdx, endIdx) always come last.
-
 // Rule nodes
 
-function RuleNode(ctorName, source, startIdx, endIdx, args) {
+function RuleNode(ctorName, args, source, startIdx, endIdx) {
   this.init(source, startIdx, endIdx);
   this.ctorName = ctorName;
   this.args = args;
