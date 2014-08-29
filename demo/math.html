@@ -64,23 +64,18 @@ var g = ohm.namespace('test')
 // ---------------------------------------------------------------------------------------------------------------------
 
 var constants = {pi: Math.PI, e: Math.E};
-var interpret = {
-  Expr:           function(e)       { return e.value; },
-  AddExpr:        function(e)       { return e.value; },
-  AddExpr_plus:   function(x, _, y) { return x.value + y.value; },
-  AddExpr_minus:  function(x, _, y) { return x.value - y.value; },
-  MulExpr:        function(e)       { return e.value; },
-  MulExpr_times:  function(x, _, y) { return x.value * y.value; },
-  MulExpr_divide: function(x, _, y) { return x.value / y.value; },
-  ExpExpr:        function(e)       { return e.value; },
-  ExpExpr_power:  function(x, _, y) { return Math.pow(x.value, y.value); },
-  PriExpr:        function(e)       { return e.value; },
-  PriExpr_paren:  function(_, e, _) { return e.value; },
-  PriExpr_pos:    function(_, e)    { return e.value; },
-  PriExpr_neg:    function(_, e)    { return -e.value; },
+var interpret = g.attribute({
+  AddExpr_plus:   function(x, _, y) { return interpret(x) + interpret(y); },
+  AddExpr_minus:  function(x, _, y) { return interpret(x) - interpret(y); },
+  MulExpr_times:  function(x, _, y) { return interpret(x) * interpret(y); },
+  MulExpr_divide: function(x, _, y) { return interpret(x) / interpret(y); },
+  ExpExpr_power:  function(x, _, y) { return Math.pow(interpret(x), interpret(y)); },
+  PriExpr_paren:  function(_, e, _) { return interpret(e); },
+  PriExpr_pos:    function(_, e)    { return interpret(e); },
+  PriExpr_neg:    function(_, e)    { return interpret(-e); },
   ident:          function(_, _)    { return constants[this.interval.contents]; },
   number:         function(_)       { return parseFloat(this.interval.contents); }
-};
+});
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -96,71 +91,62 @@ function stringify(x) {
   }
 }
 
-var toLisp = {
-  Expr:           function(e)       { return stringify(e.value); },
-  AddExpr:        function(e)       { return e.value; },
-  AddExpr_plus:   function(x, _, y) { return ['+', x.value, y.value]; },
-  AddExpr_minus:  function(x, _, y) { return ['-', x.value, y.value]; },
-  MulExpr:        function(e)       { return e.value; },
-  MulExpr_times:  function(x, _, y) { return ['*', x.value, y.value]; },
-  MulExpr_divide: function(x, _, y) { return ['/', x.value, y.value]; },
-  ExpExpr:        function(e)       { return e.value; },
-  ExpExpr_power:  function(x, _, y) { return ['pow', x.value, y.value]; },
-  PriExpr:        function(e)       { return e.value; },
-  PriExpr_paren:  function(_, e, _) { return e.value; },
-  PriExpr_pos:    function(_, e)    { return e.value; },
-  PriExpr_neg:    function(_, e)    { return ['neg', e.value]; },
+var toLisp = g.attribute({
+  Expr:           function(e)       { return stringify(toLisp(e)); },
+  AddExpr_plus:   function(x, _, y) { return ['+', toLisp(x), toLisp(y)]; },
+  AddExpr_minus:  function(x, _, y) { return ['-', toLisp(x), toLisp(y)]; },
+  MulExpr_times:  function(x, _, y) { return ['*', toLisp(x), toLisp(y)]; },
+  MulExpr_divide: function(x, _, y) { return ['/', toLisp(x), toLisp(y)]; },
+  ExpExpr_power:  function(x, _, y) { return ['pow', toLisp(x), toLisp(y)]; },
+  PriExpr_paren:  function(_, e, _) { return toLisp(e); },
+  PriExpr_pos:    function(_, e)    { return toLisp(e); },
+  PriExpr_neg:    function(_, e)    { return ['neg', toLisp(e)]; },
   ident:          function(_, _)    { return this.interval.contents; },
   number:         function(_)       { return this.interval.contents; }
-};
+});
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-var toTree = {
-  Expr:           function(e)              { return makeElement('expr', e.value); },
-  AddExpr:        function(e)              { return makeElement('addExpr', e.value); },
-  AddExpr_plus:   function(x, op, y)       { return makeElement('plus', x.value, op.value, y.value); },
-  AddExpr_minus:  function(x, op, y)       { return makeElement('minus', x.value, op.value, y.value); },
-  MulExpr:        function(e)              { return makeElement('mulExpr', e.value); },
-  MulExpr_times:  function(x, op, y)       { return makeElement('times', x.value, op.value, y.value); },
-  MulExpr_divide: function(x, op, y)       { return makeElement('divide', x.value, op.value, y.value); },
-  ExpExpr:        function(e)              { return makeElement('expExpr', e.value); },
-  ExpExpr_power:  function(x, op, y)       { return makeElement('power', x.value, op.value, y.value); },
-  PriExpr:        function(e)              { return makeElement('priExpr', e.value); },
-  PriExpr_paren:  function(open, e, close) { return makeElement('paren', open.value, e.value, close.value); },
-  PriExpr_pos:    function(sign, e)        { return makeElement('pos', sign.value, e.value); },
-  PriExpr_neg:    function(sign, e)        { return makeElement('neg', sign.value, e.value); },
+var toTree = g.attribute({
+  Expr:           function(e)              { return makeElement('expr', toTree(e)); },
+  AddExpr:        function(e)              { return makeElement('addExpr', toTree(e)); },
+  AddExpr_plus:   function(x, op, y)       { return makeElement('plus', toTree(x), toTree(op), toTree(y)); },
+  AddExpr_minus:  function(x, op, y)       { return makeElement('minus', toTree(x), toTree(op), toTree(y)); },
+  MulExpr:        function(e)              { return makeElement('mulExpr', toTree(e)); },
+  MulExpr_times:  function(x, op, y)       { return makeElement('times', toTree(x), toTree(op), toTree(y)); },
+  MulExpr_divide: function(x, op, y)       { return makeElement('divide', toTree(x), toTree(op), toTree(y)); },
+  ExpExpr:        function(e)              { return makeElement('expExpr', toTree(e)); },
+  ExpExpr_power:  function(x, op, y)       { return makeElement('power', toTree(x), toTree(op), toTree(y)); },
+  PriExpr:        function(e)              { return makeElement('priExpr', toTree(e)); },
+  PriExpr_paren:  function(open, e, close) { return makeElement('paren', toTree(open), toTree(e), toTree(close)); },
+  PriExpr_pos:    function(sign, e)        { return makeElement('pos', toTree(sign), toTree(e)); },
+  PriExpr_neg:    function(sign, e)        { return makeElement('neg', toTree(sign), toTree(e)); },
   ident:          function(_, _)           { return makeElement('ident', this.interval.contents); },
   number:         function(_)              { return makeElement('number', this.interval.contents); }
-};
+});
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-var toTwoD = {
-  Expr:           function(e)        { return e.value; },
-  AddExpr:        function(e)        { return e.value; },
-  AddExpr_plus:   function(x, op, y) { var operator = makeElement('operator', op.value);
-                                       return makeElement('plus', x.value, operator, y.value); },
+var toTwoD = g.attribute({
+  AddExpr_plus:   function(x, op, y) { var operator = makeElement('operator', toTwoD(op));
+                                       return makeElement('plus', toTwoD(x), operator, toTwoD(y)); },
   AddExpr_minus:  function(x, op, y) { var operator = makeElement('operator', '\u2212');
-                                       return makeElement('minus', x.value, operator, y.value); },
-  MulExpr:        function(e)        { return e.value; },
+                                       return makeElement('minus', toTwoD(x), operator, toTwoD(y)); },
   MulExpr_times:  function(x, op, y) { var operator = makeElement('operator', '\u00D7');
-                                       return makeElement('times', x.value, operator, y.value); },
-  MulExpr_divide: function(x, op, y) { var numerator = makeElement('numerator', x.value);
-                                       var denominator = makeElement('denominator', y.value);
+                                       return makeElement('times', toTwoD(x), operator, toTwoD(y)); },
+  MulExpr_divide: function(x, op, y) { var numerator = makeElement('numerator', toTwoD(x));
+                                       var denominator = makeElement('denominator', toTwoD(y));
                                        return makeElement('fraction', numerator, denominator); },
-  ExpExpr:        function(e)        { return e.value; },
-  ExpExpr_power:  function(x, op, y) { var base = makeElement('theBase', x.value);
-                                       var exponent = makeElement('exponent', y.value);
+  ExpExpr_power:  function(x, op, y) { var base = makeElement('theBase', toTwoD(x));
+                                       var exponent = makeElement('exponent', toTwoD(y));
                                        return makeElement('power', base, exponent); },
-  PriExpr:        function(e)        { return e.value; },
-  PriExpr_paren:  function(_, e, _)  { return makeElement('paren', e.value); },
-  PriExpr_pos:    function(sign, e)  { return makeElement('pos', sign.value, e.value); },
-  PriExpr_neg:    function(sign, e)  { return makeElement('neg', sign.value, e.value); },
+  PriExpr_paren:  function(_, e, _)  { return makeElement('paren', toTwoD(e)); },
+  PriExpr_pos:    function(sign, e)  { return makeElement('pos', toTwoD(sign), toTwoD(e)); },
+  PriExpr_neg:    function(sign, e)  { return makeElement('neg', toTwoD(sign), toTwoD(e)); },
   ident:          function(_, _)     { var text = this.interval.contents;
                                        return makeElement('ident', text === 'pi' ? '\u03C0' : text); },
   number:         function(_)        { return makeElement('number', this.interval.contents); }
-};
+});
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -175,12 +161,12 @@ hideError();
 input.oninput = function() {
   hideError();
   try {
-    var thunk = g.matchContents(this.value, 'Expr', true);
+    var cst = g.matchContents(this.value, 'Expr', true);
     this.className = undefined;
-    show('value', thunk(interpret));
-    show('lisp', thunk(toLisp));
-    show('tree', thunk(toTree));
-    show('twoD', thunk(toTwoD));
+    show('value', interpret(cst));
+    show('lisp', toLisp(cst));
+    show('tree', toTree(cst));
+    show('twoD', toTwoD(cst));
   } catch (e) {
     if (this.value.length === 0) {
       show('value', '');

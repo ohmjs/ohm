@@ -116,67 +116,67 @@ function add(/* tagName, child1, child2, ... */) {
   addNode(makeElement.apply(this, arguments));
 }
 
-var viz = {
+var viz = ohm.ohmGrammar.attribute({
   Grammar:                  function(n, s, _, rs, _) {
                               enter('grammar');
-                                add('name', n.value);
-                                s.value;  // force evaluation
+                                add('name', viz(n));
+                                viz(s);  // force evaluation
                                 enter('rules');
-                                  rs.value;  // force evaluation
+                                  viz(rs);  // force evaluation
                                 leave();
                               leave();
                             },
   SuperGrammar:             function(expr) {
                               enter('super');
-                                expr.value;  // force evaluation
+                                viz(expr);  // force evaluation
                               leave();
                             },
   SuperGrammar_qualified:   function(_, ns, _, n) {
-                              add('name', ns.value + '.' + n.value);
+                              add('name', viz(ns) + '.' + viz(n));
                             },
   SuperGrammar_unqualified: function(_, n) {
-                              add('name', n.value);
+                              add('name', viz(n));
                             },
   Rule:                     function(expr) {
                               enter('rule');
-                                expr.value;  // force evaluation
+                                viz(expr);  // force evaluation
                               leave();
                             },
   Rule_define:              function(n, d, _, b) {
-                              add('name', n.value);
-                              d.value;  // force evaluation
+                              add('name', viz(n));
+                              viz(d);  // force evaluation
                               enter('ruleDefineBody');
-                                b.value;  // force evaluation
+                                viz(b);  // force evaluation
                               leave();
                             },
   Rule_override:            function(n, _, b) {
-                              add('name', n.value);
+                              add('name', viz(n));
                               enter('ruleOverrideBody');
-                                b.value;  // force evaluation
+                                viz(b);  // force evaluation
                               leave();
                             },
   Rule_extend:              function(n, _, b) {
-                              add('name', n.value);
+                              add('name', viz(n));
                               enter('ruleExtendBody');
-                                b.value;  // force evaluation
+                                viz(b);  // force evaluation
                               leave();
                             },
   ruleDescr:                function(_, t, _) {
-                              add('description', t.value);
+                              add('description', viz(t));
                             },
   ruleDescrText:            function(_) {
                               return this.interval.contents;
                             },
   Alt:                      function(expr) {
-                              expr.value;  // force evaluation
+                              viz(expr);  // force evaluation
                             },
   Alt_rec:                  function(x, _, y) {
                               enter('alt');
                                 enter('choice');
-                                  x.value;  // force evaluation
+                                  viz(x);  // force evaluation
                                 leave();
                                 enter('choice');
-                                  y.value;  // force evaluation
+                                  viz(y);  // force evaluation
                                 leave();
                                 if (curr.lastChild.children.length === 1 &&
                                     curr.lastChild.firstChild.tagName === 'ALT') {
@@ -189,68 +189,68 @@ var viz = {
                               leave();
                             },
   Term:                     function(expr) {
-                              expr.value;  // force evaluation
+                              viz(expr);  // force evaluation
                             },
   Term_inline:              function(x, n) {
-                              x.value;  // force evaluation
-                              n.value;  // force evaluation
+                              viz(x);  // force evaluation
+                              viz(n);  // force evaluation
                             },
   caseName:                 function(_, _, n, _, _) {
-                              add('description', n.value);
+                              add('description', viz(n));
                             },
   Seq:                      function(expr) {
                               enter('seq');
-                                expr.value;  // force evaluation
+                                viz(expr);  // force evaluation
                               leave();
                             },
   Iter:                     function(expr) {
-                              expr.value;  // force evaluation
+                              viz(expr);  // force evaluation
                             },
   Iter_star:                function(x, _) {
                               enter('star');
-                                x.value;  // force evaluation
+                                viz(x);  // force evaluation
                               leave();
                             },
   Iter_plus:                function(x, _) {
                               enter('plus');
-                                x.value;  // force evaluation
+                                viz(x);  // force evaluation
                               leave();
                             },
   Iter_opt:                 function(x, _) {
                               enter('opt');
-                                x.value;  // force evaluation
+                                viz(x);  // force evaluation
                               leave();
                             },
   Pred:                     function(expr) {
-                              expr.value;  // force evaluation
+                              viz(expr);  // force evaluation
                             },
   Pred_not:                 function(_, x) {
                               enter('not');
-                                x.value;  // force evaluation
+                                viz(x);  // force evaluation
                               leave();
                             },
   Pred_lookahead:           function(_, x) {
                               enter('lookahead');
-                                x.value;  // force evaluation
+                                viz(x);  // force evaluation
                               leave();
                             },
   Base:                     function(expr) {
-                              expr.value;  // force evaluation
+                              viz(expr);  // force evaluation
                             },
   Base_application:         function(ruleName) {
-                              add('app', ruleName.value);
+                              add('app', viz(ruleName));
                             },
   Base_prim:                function(expr) {
-                              expr.value;  // force evaluation
+                              viz(expr);  // force evaluation
                             },
   Base_paren:               function(_, x, _) {
                               enter('paren');
-                                x.value;  // force evaluation
+                                viz(x);  // force evaluation
                               leave();
                             },
   Base_listy:               function(_, x, _) {
                               enter('listy');
-                                x.value;  // force evaluation
+                                viz(x);  // force evaluation
                               leave();
                             },
   Base_obj:                 function(_, lenient, _) {
@@ -263,7 +263,7 @@ var viz = {
                               throw 'TODO';
                             },
   ident:                    function(n) {
-                              return n.value;
+                              return viz(n);
                             },
   name:                     function(_, _) {
                               return this.interval.contents;
@@ -272,7 +272,7 @@ var viz = {
                               add('string', escape(eval(this.interval.contents)));
                             },
   regExp:                   function(_, e, _) {
-                              e.value;  // force evaluation
+                              viz(e);  // force evaluation
                             },
   reCharClass:              function(_) {
                               add('charClass', this.interval.contents);
@@ -281,7 +281,7 @@ var viz = {
                               add('prim', this.interval.contents);
                             },
   keyword:                  function(expr) {
-                              expr.value;  // force evaluation
+                              viz(expr);  // force evaluation
                             },
   keyword_undefined:        function(_) {
                               add('prim', 'undefined');
@@ -299,7 +299,7 @@ var viz = {
   Props_rec:                function(p, _, ps) {},
   Props_base:               function(p) {},
   Prop:                     function(n, _, p) {},
-};
+});
 
 function escape(str) {
   var node = document.createElement('span');
@@ -332,9 +332,9 @@ var vizDiv = document.getElementById('vizDiv');
 
 source.oninput = function() {
   try {
-    var thunk = ohm.ohmGrammar.matchContents(source.value, 'Grammar', true);
+    var cst = ohm.ohmGrammar.matchContents(source.value, 'Grammar', true);
     removeChildren(vizDiv);
-    thunk(viz);
+    viz(cst);
     source.className = undefined;
   } catch (e) {
     console.log(e);
