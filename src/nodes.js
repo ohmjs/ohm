@@ -14,11 +14,11 @@ var objectThatDelegatesTo = objectUtils.objectThatDelegatesTo;
 // Private stuff
 // --------------------------------------------------------------------
 
-function Thunk() {
-  throw new Error('Thunk cannot be instantiated -- it\'s abstract');
+function Node() {
+  throw new Error('Node cannot be instantiated -- it\'s abstract');
 }
 
-Thunk.prototype = {
+Node.prototype = {
   init: function(source, startIdx, endIdx) {
     this._source = source;
     this._startIdx = startIdx;
@@ -28,24 +28,23 @@ Thunk.prototype = {
   computeAttribute: common.abstract
 };
 
-Object.defineProperty(Thunk.prototype, 'interval', {
+Object.defineProperty(Node.prototype, 'interval', {
   get: function() {
     return this._interval || (this._interval = new Interval(this._source, this._startIdx, this._endIdx));
   }
 });
 
 // TODO: change these constructors so that (source, startIdx, endIdx) always come last.
-// TODO: rename thunk to node everywhere (including this file name).
 
-// Rule thunks
+// Rule nodes
 
-function RuleThunk(ctorName, source, startIdx, endIdx, args) {
+function RuleNode(ctorName, source, startIdx, endIdx, args) {
   this.init(source, startIdx, endIdx);
   this.ctorName = ctorName;
   this.args = args;
 }
 
-RuleThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
+RuleNode.prototype = objectThatDelegatesTo(Node.prototype, {
   accept: function(actionDict) {
     var result;
 
@@ -84,14 +83,14 @@ RuleThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
   }
 });
 
-// List thunks
+// List nodes
 
-function ListThunk(values, source, startIdx, endIdx) {
+function ListNode(values, source, startIdx, endIdx) {
   this.init(source, startIdx, endIdx);
   this.values = values;
 }
 
-ListThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
+ListNode.prototype = objectThatDelegatesTo(Node.prototype, {
   accept: function(actionDict) {
     return this.values.map(function(thunk) { return thunk.accept(actionDict); });
   },
@@ -101,14 +100,14 @@ ListThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
   }
 });
 
-// Value thunks
+// Value nodes
 
-function ValueThunk(value, source, startIdx, endIdx) {
+function ValueNode(value, source, startIdx, endIdx) {
   this.init(source, startIdx, endIdx);
   this.value = value;
 }
 
-ValueThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
+ValueNode.prototype = objectThatDelegatesTo(Node.prototype, {
   accept: function(actionDict) {
     return this.value;
   },
@@ -122,7 +121,7 @@ ValueThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
 // Exports
 // --------------------------------------------------------------------
 
-exports.RuleThunk = RuleThunk;
-exports.ListThunk = ListThunk;
-exports.ValueThunk = ValueThunk;
+exports.RuleNode = RuleNode;
+exports.ListNode = ListNode;
+exports.ValueNode = ValueNode;
 

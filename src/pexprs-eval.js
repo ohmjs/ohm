@@ -4,7 +4,7 @@
 
 var common = require('./common.js');
 var errors = require('./errors.js');
-var thunks = require('./thunks.js');
+var nodes = require('./nodes.js');
 var pexprs = require('./pexprs.js');
 var skipSpaces = require('./skipSpaces.js');
 var InputStream = require('./InputStream.js');
@@ -30,7 +30,7 @@ pexprs.anything.eval = function(recordFailures, syntactic, ruleDict, inputStream
     }
     return false;
   } else {
-    bindings.push(new thunks.ValueThunk(value, inputStream.source, origPos, inputStream.pos));
+    bindings.push(new nodes.ValueNode(value, inputStream.source, origPos, inputStream.pos));
     return true;
   }
 };
@@ -40,7 +40,7 @@ pexprs.end.eval = function(recordFailures, syntactic, ruleDict, inputStream, bin
     skipSpaces(ruleDict, inputStream);
   }
   if (inputStream.atEnd()) {
-    bindings.push(new thunks.ValueThunk(undefined, inputStream.source, inputStream.pos, inputStream.pos));
+    bindings.push(new nodes.ValueNode(undefined, inputStream.source, inputStream.pos, inputStream.pos));
     return true;
   } else {
     if (recordFailures) {
@@ -61,7 +61,7 @@ pexprs.Prim.prototype.eval = function(recordFailures, syntactic, ruleDict, input
     }
     return false;
   } else {
-    bindings.push(new thunks.ValueThunk(this.obj, inputStream.source, origPos, inputStream.pos));
+    bindings.push(new nodes.ValueNode(this.obj, inputStream.source, origPos, inputStream.pos));
     return true;
   }
 };
@@ -85,7 +85,7 @@ pexprs.RegExpPrim.prototype.eval = function(recordFailures, syntactic, ruleDict,
     }
     return false;
   } else {
-    bindings.push(new thunks.ValueThunk(inputStream.source[origPos], inputStream.source, origPos, inputStream.pos));
+    bindings.push(new nodes.ValueNode(inputStream.source[origPos], inputStream.source, origPos, inputStream.pos));
     return true;
   }
 };
@@ -156,7 +156,7 @@ pexprs.Many.prototype.eval = function(recordFailures, syntactic, ruleDict, input
     return false;
   } else {
     for (var idx = 0; idx < columns.length; idx++) {
-      bindings.push(new thunks.ListThunk(columns[idx], inputStream.source, origPos, inputStream.pos));
+      bindings.push(new nodes.ListNode(columns[idx], inputStream.source, origPos, inputStream.pos));
     }
     return true;
   }
@@ -168,7 +168,7 @@ pexprs.Opt.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
   var arity = this.getArity();
   if (!this.expr.eval(recordFailures, syntactic, ruleDict, inputStream, row)) {
     inputStream.pos = origPos;
-    row = common.repeat(new thunks.ValueThunk(undefined, inputStream.source, origPos, inputStream.pos), arity);
+    row = common.repeat(new nodes.ValueNode(undefined, inputStream.source, origPos, inputStream.pos), arity);
   }
   for (var idx = 0; idx < arity; idx++) {
     bindings.push(row[idx]);
@@ -242,7 +242,7 @@ pexprs.Obj.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
           remainder[p] = obj[p];
         }
       }
-      bindings.push(new thunks.ValueThunk(remainder, inputStream.source, origPos, inputStream.pos));
+      bindings.push(new nodes.ValueNode(remainder, inputStream.source, origPos, inputStream.pos));
       return true;
     } else {
       return numOwnPropertiesMatched === Object.keys(obj).length;
@@ -327,7 +327,7 @@ pexprs.Apply.prototype.evalOnce = function(expr, recordFailures, syntactic, rule
   var origPos = inputStream.pos;
   var bindings = [];
   if (expr.eval(recordFailures, syntactic, ruleDict, inputStream, bindings)) {
-    return new thunks.RuleThunk(this.ruleName, inputStream.source, origPos, inputStream.pos, bindings);
+    return new nodes.RuleNode(this.ruleName, inputStream.source, origPos, inputStream.pos, bindings);
   } else {
     return false;
   }

@@ -266,7 +266,6 @@ MatchFailure.prototype.getExpected = function() {
 // Exports
 // --------------------------------------------------------------------
 
-exports.InvalidEvaluationStrategy = InvalidEvaluationStrategy;
 exports.IntervalSourcesDontMatch = IntervalSourcesDontMatch;
 exports.UndeclaredGrammar = UndeclaredGrammar;
 exports.DuplicateGrammarDeclaration = DuplicateGrammarDeclaration;
