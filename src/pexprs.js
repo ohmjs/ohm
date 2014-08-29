@@ -5,9 +5,6 @@
 var common = require('./common.js');
 var errors = require('./errors.js');
 
-var awlib = require('awlib');
-var objectThatDelegatesTo = awlib.objectUtils.objectThatDelegatesTo;
-
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
@@ -20,11 +17,11 @@ function PExpr() {
 
 // Anything
 
-var anything = objectThatDelegatesTo(PExpr.prototype);
+var anything = Object.create(PExpr.prototype);
 
 // End
 
-var end = objectThatDelegatesTo(PExpr.prototype);
+var end = Object.create(PExpr.prototype);
 
 // Primitives
 
@@ -32,19 +29,19 @@ function Prim(obj) {
   this.obj = obj;
 }
 
-Prim.prototype = objectThatDelegatesTo(PExpr.prototype);
+Prim.prototype = Object.create(PExpr.prototype);
 
 function StringPrim(obj) {
   this.obj = obj;
 }
 
-StringPrim.prototype = objectThatDelegatesTo(Prim.prototype);
+StringPrim.prototype = Object.create(Prim.prototype);
 
 function RegExpPrim(obj) {
   this.obj = obj;
 }
 
-RegExpPrim.prototype = objectThatDelegatesTo(Prim.prototype);
+RegExpPrim.prototype = Object.create(Prim.prototype);
 
 // Alternation
 
@@ -52,7 +49,7 @@ function Alt(terms) {
   this.terms = terms;
 }
 
-Alt.prototype = objectThatDelegatesTo(PExpr.prototype);
+Alt.prototype = Object.create(PExpr.prototype);
 
 // ExtendAlt is an implementation detail of rule extension
 
@@ -60,7 +57,7 @@ function ExtendAlt(extensions, base) {
   this.terms = [extensions, base];
 }
 
-ExtendAlt.prototype = objectThatDelegatesTo(Alt.prototype);
+ExtendAlt.prototype = Object.create(Alt.prototype);
 
 // Sequences
 
@@ -68,7 +65,7 @@ function Seq(factors) {
   this.factors = factors;
 }
 
-Seq.prototype = objectThatDelegatesTo(PExpr.prototype);
+Seq.prototype = Object.create(PExpr.prototype);
 
 // Iterators and optionals
 
@@ -77,13 +74,13 @@ function Many(expr, minNumMatches) {
   this.minNumMatches = minNumMatches;
 }
 
-Many.prototype = objectThatDelegatesTo(PExpr.prototype);
+Many.prototype = Object.create(PExpr.prototype);
 
 function Opt(expr) {
   this.expr = expr;
 }
 
-Opt.prototype = objectThatDelegatesTo(PExpr.prototype);
+Opt.prototype = Object.create(PExpr.prototype);
 
 // Predicates
 
@@ -91,13 +88,13 @@ function Not(expr) {
   this.expr = expr;
 }
 
-Not.prototype = objectThatDelegatesTo(PExpr.prototype);
+Not.prototype = Object.create(PExpr.prototype);
 
 function Lookahead(expr) {
   this.expr = expr;
 }
 
-Lookahead.prototype = objectThatDelegatesTo(PExpr.prototype);
+Lookahead.prototype = Object.create(PExpr.prototype);
 
 // Listy object decomposition
 
@@ -105,7 +102,7 @@ function Listy(expr) {
   this.expr = expr;
 }
 
-Listy.prototype = objectThatDelegatesTo(PExpr.prototype);
+Listy.prototype = Object.create(PExpr.prototype);
 
 // Object decomposition
 
@@ -120,7 +117,7 @@ function Obj(properties, isLenient) {
   }
 }
 
-Obj.prototype = objectThatDelegatesTo(PExpr.prototype);
+Obj.prototype = Object.create(PExpr.prototype);
 
 // Rule application
 
@@ -128,7 +125,7 @@ function Apply(ruleName) {
   this.ruleName = ruleName;
 }
 
-Apply.prototype = objectThatDelegatesTo(PExpr.prototype);
+Apply.prototype = Object.create(PExpr.prototype);
 
 // --------------------------------------------------------------------
 // Exports

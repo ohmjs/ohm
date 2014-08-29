@@ -6,9 +6,6 @@ var Grammar = require('./Grammar.js');
 var decls = require('./decls.js');
 var pexprs = require('./pexprs.js');
 
-var awlib = require('awlib');
-var objectThatDelegatesTo = awlib.objectUtils.objectThatDelegatesTo;
-
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
@@ -56,7 +53,7 @@ Builder.prototype = {
 
   build: function(optNamespace) {
     var superGrammar = this.superGrammar;
-    var ruleDict = objectThatDelegatesTo(superGrammar.ruleDict);
+    var ruleDict = Object.create(superGrammar.ruleDict);
     this.ruleDecls.forEach(function(ruleDecl) {
       ruleDecl.performChecks();
       ruleDecl.install(ruleDict);

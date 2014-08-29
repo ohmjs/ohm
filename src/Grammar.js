@@ -11,15 +11,12 @@ var skipSpaces = require('./skipSpaces.js');
 var Symbol = this.Symbol || require('symbol');
 
 var awlib = require('awlib');
-var browser = awlib.browser;
 var keysDo = awlib.objectUtils.keysDo;
 var valuesDo = awlib.objectUtils.valuesDo;
 var formals = awlib.objectUtils.formals;
 var makeStringBuffer = awlib.objectUtils.stringBuffer;
 var printString = awlib.stringUtils.printString;
 var equals = awlib.equals.equals;
-var objectUtils = awlib.objectUtils
-var objectThatDelegatesTo = objectUtils.objectThatDelegatesTo;
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -110,7 +107,7 @@ Grammar.prototype = {
       }
     });
     if (!ok) {
-      browser.error('one or more semantic actions have the wrong arity -- see console for details');
+      throw new Error('one or more semantic actions have the wrong arity -- see console for details');
     }
   },
 

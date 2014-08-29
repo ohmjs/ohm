@@ -5,7 +5,6 @@
 var common = require('./common.js');
 
 var awlib = require('awlib');
-var objectThatDelegatesTo = awlib.objectUtils.objectThatDelegatesTo;
 var makeStringBuffer = awlib.objectUtils.stringBuffer;
 
 // --------------------------------------------------------------------
@@ -40,7 +39,7 @@ Error.prototype.toString = function() {
 
 function IntervalSourcesDontMatch() {}
 
-IntervalSourcesDontMatch.prototype = objectThatDelegatesTo(Error.prototype);
+IntervalSourcesDontMatch.prototype = Object.create(Error.prototype);
 
 IntervalSourcesDontMatch.prototype.getMessage = function() {
   return 'interval sources don\'t match';
@@ -55,7 +54,7 @@ function UndeclaredGrammar(grammarName, optNamespaceName) {
   this.namespaceName = optNamespaceName;
 };
 
-UndeclaredGrammar.prototype = objectThatDelegatesTo(Error.prototype);
+UndeclaredGrammar.prototype = Object.create(Error.prototype);
 
 UndeclaredGrammar.prototype.getMessage = function() {
   return this.namespaceName ?
@@ -70,7 +69,7 @@ function DuplicateGrammarDeclaration(grammarName, namespaceName) {
   this.namespaceName = namespaceName;
 };
 
-DuplicateGrammarDeclaration.prototype = objectThatDelegatesTo(Error.prototype);
+DuplicateGrammarDeclaration.prototype = Object.create(Error.prototype);
 
 DuplicateGrammarDeclaration.prototype.getMessage = function() {
   return ['grammar', this.grammarName, 'is already declared in namespace', this.namespaceName].join(' ');
@@ -85,7 +84,7 @@ function UndeclaredRule(ruleName, optGrammarName) {
   this.grammarName = optGrammarName;
 };
 
-UndeclaredRule.prototype = objectThatDelegatesTo(Error.prototype);
+UndeclaredRule.prototype = Object.create(Error.prototype);
 
 UndeclaredRule.prototype.getMessage = function() {
   return this.grammarName ?
@@ -100,7 +99,7 @@ function DuplicateRuleDeclaration(ruleName, grammarName) {
   this.grammarName = grammarName;
 };
 
-DuplicateRuleDeclaration.prototype = objectThatDelegatesTo(Error.prototype);
+DuplicateRuleDeclaration.prototype = Object.create(Error.prototype);
 
 DuplicateRuleDeclaration.prototype.getMessage = function() {
   return ['rule', this.ruleName, 'is already declared in grammar', this.grammarName].join(' ');
@@ -114,7 +113,7 @@ function RefinementMustBeCompatible(ruleName, expectedArity, why) {
   this.why = why;
 };
 
-RefinementMustBeCompatible.prototype = objectThatDelegatesTo(Error.prototype);
+RefinementMustBeCompatible.prototype = Object.create(Error.prototype);
 
 RefinementMustBeCompatible.prototype.getMessage = function() {
   return [
@@ -133,7 +132,7 @@ function InconsistentArity(ruleName, expected, actual) {
   this.actual = actual;
 };
 
-InconsistentArity.prototype = objectThatDelegatesTo(Error.prototype);
+InconsistentArity.prototype = Object.create(Error.prototype);
 
 InconsistentArity.prototype.getMessage = function() {
   return [
@@ -151,7 +150,7 @@ function DuplicatePropertyNames(duplicates) {
   this.duplicates = duplicates;
 };
 
-DuplicatePropertyNames.prototype = objectThatDelegatesTo(Error.prototype);
+DuplicatePropertyNames.prototype = Object.create(Error.prototype);
 
 DuplicatePropertyNames.prototype.getMessage = function() {
   return ['object pattern has duplicate property names:', this.duplicates].join(' ');
@@ -194,7 +193,7 @@ function MatchFailure(inputStream, ruleDict) {
   this.ruleDict = ruleDict;
 }
 
-MatchFailure.prototype = objectThatDelegatesTo(Error.prototype);
+MatchFailure.prototype = Object.create(Error.prototype);
 
 MatchFailure.prototype.getPos = function() {
   return this.inputStream.failuresPos;

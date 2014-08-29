@@ -6,9 +6,6 @@ var common = require('./common.js');
 var PosInfo = require('./PosInfo.js');
 var Grammar = require('./Grammar.js');
 
-var awlib = require('awlib');
-var objectThatDelegatesTo = awlib.objectUtils.objectThatDelegatesTo;
-
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
@@ -80,20 +77,24 @@ function StringInputStream(source) {
   this.init(source);
 }
 
-StringInputStream.prototype = objectThatDelegatesTo(InputStream.prototype, {
-  matchString: function(s) {
-    for (var idx = 0; idx < s.length; idx++) {
-      if (this.matchExactly(s[idx]) === common.fail) {
-        return common.fail;
+StringInputStream.prototype = Object.create(InputStream.prototype, {
+  matchString: {
+    value: function(s) {
+      for (var idx = 0; idx < s.length; idx++) {
+        if (this.matchExactly(s[idx]) === common.fail) {
+          return common.fail;
+        }
       }
+      return true;
     }
-    return true;
   },
 
-  matchRegExp: function(e) {
-    // IMPORTANT: e must be a non-global, one-character expression, e.g., /./ and /[0-9]/
-    var c = this.next();
-    return c !== common.fail && e.test(c) ? true : common.fail;
+  matchRegExp: {
+    value: function(e) {
+      // IMPORTANT: e must be a non-global, one-character expression, e.g., /./ and /[0-9]/
+      var c = this.next();
+      return c !== common.fail && e.test(c) ? true : common.fail;
+    }
   }
 });
 
@@ -101,13 +102,17 @@ function ListInputStream(source) {
   this.init(source);
 }
 
-ListInputStream.prototype = objectThatDelegatesTo(InputStream.prototype, {
-  matchString: function(s) {
-    return this.matchExactly(s);
+ListInputStream.prototype = Object.create(InputStream.prototype, {
+  matchString: {
+    value: function(s) {
+      return this.matchExactly(s);
+    }
   },
 
-  matchRegExp: function(e) {
-    return this.matchExactly(e);
+  matchRegExp: {
+    value: function(e) {
+      return this.matchExactly(e);
+    }
   }
 });
 

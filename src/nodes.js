@@ -5,10 +5,6 @@
 var Interval = require('./Interval.js');
 
 var common = require('./common.js');
-var awlib = require('awlib');
-var browser = awlib.browser
-var objectUtils = awlib.objectUtils
-var objectThatDelegatesTo = objectUtils.objectThatDelegatesTo;
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -42,42 +38,46 @@ function RuleNode(ctorName, args, source, startIdx, endIdx) {
   this.args = args;
 }
 
-RuleNode.prototype = objectThatDelegatesTo(Node.prototype, {
-  accept: function(actionDict) {
-    var result;
+RuleNode.prototype = Object.create(Node.prototype, {
+  accept: {
+    value: function(actionDict) {
+      var result;
 
-    if (actionDict._pre) {
-      var haveResult = false;
-      function resultis(v) {
-        haveResult = true;
-        result = v;
+      if (actionDict._pre) {
+        var haveResult = false;
+        function resultis(v) {
+          haveResult = true;
+          result = v;
+        }
+
+        actionDict._pre.call(this, resultis);
+        if (haveResult) {
+          return result;
+        }
       }
 
-      actionDict._pre.call(this, resultis);
-      if (haveResult) {
-        return result;
+      if (actionDict[this.ctorName]) {
+        result = actionDict[this.ctorName].apply(this, this.args);
+      } else if (actionDict._default) {
+        result = actionDict._default.call(this);
+      } else {
+        throw new Error('missing semantic action for ' + this.ctorName);
       }
-    }
 
-    if (actionDict[this.ctorName]) {
-      result = actionDict[this.ctorName].apply(this, this.args);
-    } else if (actionDict._default) {
-      result = actionDict._default.call(this);
-    } else {
-      throw new Error('missing semantic action for ' + this.ctorName);
-    }
+      if (actionDict._post) {
+        return actionDict._post.call(this, result);
+      }
 
-    if (actionDict._post) {
-      return actionDict._post.call(this, result);
+      return result;
     }
-
-    return result;
   },
 
-  toJSON: function() {
-    var r = {};
-    r[this.ctorName] = this.args;
-    return r;
+  toJSON: {
+    value: function() {
+      var r = {};
+      r[this.ctorName] = this.args;
+      return r;
+    }
   }
 });
 
@@ -88,13 +88,17 @@ function ListNode(values, source, startIdx, endIdx) {
   this.values = values;
 }
 
-ListNode.prototype = objectThatDelegatesTo(Node.prototype, {
-  accept: function(actionDict) {
-    return this.values.map(function(node) { return node.accept(actionDict); });
+ListNode.prototype = Object.create(Node.prototype, {
+  accept: {
+    value: function(actionDict) {
+      return this.values.map(function(node) { return node.accept(actionDict); });
+    }
   },
 
-  toJSON: function() {
-    return this.values;
+  toJSON: {
+    value: function() {
+      return this.values;
+    }
   }
 });
 
@@ -105,13 +109,17 @@ function ValueNode(value, source, startIdx, endIdx) {
   this.value = value;
 }
 
-ValueNode.prototype = objectThatDelegatesTo(Node.prototype, {
-  accept: function(actionDict) {
-    return this.value;
+ValueNode.prototype = Object.create(Node.prototype, {
+  accept: {
+    value: function(actionDict) {
+      return this.value;
+    }
   },
 
-  toJSON: function() {
-    return this.value;
+  toJSON: {
+    value: function() {
+      return this.value;
+    }
   }
 });
 

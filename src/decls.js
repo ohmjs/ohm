@@ -7,7 +7,6 @@ var pexprs = require('./pexprs.js');
 var errors = require('./errors.js');
 
 var awlib = require('awlib');
-var objectThatDelegatesTo = awlib.objectUtils.objectThatDelegatesTo;
 var printString = awlib.stringUtils.printString;
 
 // --------------------------------------------------------------------
@@ -47,26 +46,34 @@ function Define(name, body, superGrammar, description) {
   this.description = description;
 }
 
-Define.prototype = objectThatDelegatesTo(RuleDecl.prototype, {
-  kind: 'define',
+Define.prototype = Object.create(RuleDecl.prototype, {
+  kind: {
+    value: 'define'
+  },
 
-  performChecks: function() {
-    if (this.superGrammar.ruleDict[this.name]) {
-      throw new errors.DuplicateRuleDeclaration(this.name, this.superGrammar.name);
+  performChecks: {
+    value: function() {
+      if (this.superGrammar.ruleDict[this.name]) {
+        throw new errors.DuplicateRuleDeclaration(this.name, this.superGrammar.name);
+      }
+      this.performCommonChecks(this.name, this.body);
     }
-    this.performCommonChecks(this.name, this.body);
   },
 
-  outputRecipe: function(ws) {
-    ws.nextPutAll('b.setRuleDescription(');
-    ws.nextPutAll(printString(this.description));
-    ws.nextPutAll('); ');
-    outputRecipe(this, ws);
+  outputRecipe: {
+    value: function(ws) {
+      ws.nextPutAll('b.setRuleDescription(');
+      ws.nextPutAll(printString(this.description));
+      ws.nextPutAll('); ');
+      outputRecipe(this, ws);
+    }
   },
 
-  install: function(ruleDict) {
-    this.body.description = this.description;
-    ruleDict[this.name] = this.body;
+  install: {
+    value: function(ruleDict) {
+      this.body.description = this.description;
+      ruleDict[this.name] = this.body;
+    }
   }
 });
 
@@ -76,23 +83,29 @@ function Override(name, body, superGrammar) {
   this.superGrammar = superGrammar;
 }
 
-Override.prototype = objectThatDelegatesTo(RuleDecl.prototype, {
-  kind: 'override',
-
-  performChecks: function() {
-    var overridden = this.superGrammar.ruleDict[this.name];
-    if (!overridden) {
-      throw new errors.UndeclaredRule(this.name, this.superGrammar.name);
-    }
-    if (overridden.getArity() !== this.body.getArity()) {
-      throw new errors.RefinementMustBeCompatible(this.name, overridden.getArity(), 'overriding');
-    }
-    this.performCommonChecks(this.name, this.body);
+Override.prototype = Object.create(RuleDecl.prototype, {
+  kind: {
+    value: 'override'
   },
 
-  install: function(ruleDict) {
-    this.body.description = this.superGrammar.ruleDict[this.name].description;
-    ruleDict[this.name] = this.body;
+  performChecks: {
+    value: function() {
+      var overridden = this.superGrammar.ruleDict[this.name];
+      if (!overridden) {
+        throw new errors.UndeclaredRule(this.name, this.superGrammar.name);
+      }
+      if (overridden.getArity() !== this.body.getArity()) {
+        throw new errors.RefinementMustBeCompatible(this.name, overridden.getArity(), 'overriding');
+      }
+      this.performCommonChecks(this.name, this.body);
+    }
+  },
+
+  install: {
+    value: function(ruleDict) {
+      this.body.description = this.superGrammar.ruleDict[this.name].description;
+      ruleDict[this.name] = this.body;
+    }
   }
 });
 
@@ -102,21 +115,27 @@ function Inline(name, body, superGrammar) {
   this.superGrammar = superGrammar;
 }
 
-Inline.prototype = objectThatDelegatesTo(RuleDecl.prototype, {
-  kind: 'inline',
-
-  performChecks: function() {
-    // TODO: consider relaxing this check, e.g., make it ok to override an inline rule if the nesting rule is
-    // an override. But only if the inline rule that's being overridden is nested inside the nesting rule that
-    // we're overriding? Hopefully there's a much less complicated way to do this :)
-    if (this.superGrammar.ruleDict[this.name]) {
-      throw new errors.DuplicateRuleDeclaration(this.name, this.superGrammar.name);
-    }
-    this.performCommonChecks(this.name, this.body);
+Inline.prototype = Object.create(RuleDecl.prototype, {
+  kind: {
+    value: 'inline'
   },
 
-  install: function(ruleDict) {
-    ruleDict[this.name] = this.body;
+  performChecks: {
+    value: function() {
+      // TODO: consider relaxing this check, e.g., make it ok to override an inline rule if the nesting rule is
+      // an override. But only if the inline rule that's being overridden is nested inside the nesting rule that
+      // we're overriding? Hopefully there's a much less complicated way to do this :)
+      if (this.superGrammar.ruleDict[this.name]) {
+        throw new errors.DuplicateRuleDeclaration(this.name, this.superGrammar.name);
+      }
+      this.performCommonChecks(this.name, this.body);
+    }
+  },
+
+  install: {
+    value: function(ruleDict) {
+      ruleDict[this.name] = this.body;
+    }
   }
 });
 
@@ -131,20 +150,26 @@ function Extend(name, body, superGrammar) {
   this.superGrammar = superGrammar;
 }
 
-Extend.prototype = objectThatDelegatesTo(RuleDecl.prototype, {
-  kind: 'extend',
-
-  performChecks: function() {
-    var expectedArity = this.base.getArity();
-    if (this.body.getArity() !== expectedArity) {
-      throw new errors.RefinementMustBeCompatible(this.name, expectedArity, 'extending');
-    }
-    this.performCommonChecks(this.name, this.body);
+Extend.prototype = Object.create(RuleDecl.prototype, {
+  kind: {
+    value: 'extend'
   },
 
-  install: function(ruleDict) {
-    this.extendedBody.description = this.superGrammar.ruleDict[this.name].description;
-    ruleDict[this.name] = this.extendedBody;
+  performChecks: {
+    value: function() {
+      var expectedArity = this.base.getArity();
+      if (this.body.getArity() !== expectedArity) {
+        throw new errors.RefinementMustBeCompatible(this.name, expectedArity, 'extending');
+      }
+      this.performCommonChecks(this.name, this.body);
+    }
+  },
+
+  install: {
+    value: function(ruleDict) {
+      this.extendedBody.description = this.superGrammar.ruleDict[this.name].description;
+      ruleDict[this.name] = this.extendedBody;
+    }
   }
 });
 
