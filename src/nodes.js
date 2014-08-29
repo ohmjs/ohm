@@ -92,7 +92,7 @@ function ListNode(values, source, startIdx, endIdx) {
 
 ListNode.prototype = objectThatDelegatesTo(Node.prototype, {
   accept: function(actionDict) {
-    return this.values.map(function(thunk) { return thunk.accept(actionDict); });
+    return this.values.map(function(node) { return node.accept(actionDict); });
   },
 
   toJSON: function() {
