@@ -20,8 +20,7 @@ Node.prototype = {
     this._startIdx = startIdx;
     this._endIdx = endIdx;
   },
-
-  computeAttribute: common.abstract
+  accept: common.abstract
 };
 
 Object.defineProperty(Node.prototype, 'interval', {
