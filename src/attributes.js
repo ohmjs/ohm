@@ -43,9 +43,33 @@ function makeAttribute(actionDict, optDoNotMemoize) {
   return attribute;
 }
 
+var parentStack = [undefined];
+var parent = makeAttribute({
+  _default: function() {
+    parentStack.push(this);
+    this.args.forEach(function(arg) { parent(arg); });
+    parentStack.pop();
+    return parentStack[parentStack.length - 1];
+  }
+});
+
+function doBottomUp(attribute) {
+  return function(node) {
+    var postOrder = attribute.grammar.attribute({
+      _default: function() {
+        this.args.forEach(postOrder);
+        return attribute(this);
+      }
+    });
+    return postOrder(node);
+  };
+}
+
 // --------------------------------------------------------------------
 // Exports
 // --------------------------------------------------------------------
 
 exports.makeAttribute = makeAttribute;
+exports.parent = parent;
+exports.doBottomUp = doBottomUp;
 
