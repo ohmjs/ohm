@@ -18,9 +18,9 @@ var browser = awlib.browser;
 
 pexprs.PExpr.prototype.eval = common.abstract;
 
-pexprs.anything.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
+pexprs.anything.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   if (syntactic) {
-    skipSpaces(ruleDict, inputStream);
+    skipSpaces(grammar, inputStream);
   }
   var origPos = inputStream.pos;
   var value = inputStream.next();
@@ -35,9 +35,9 @@ pexprs.anything.eval = function(recordFailures, syntactic, ruleDict, inputStream
   }
 };
 
-pexprs.end.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
+pexprs.end.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   if (syntactic) {
-    skipSpaces(ruleDict, inputStream);
+    skipSpaces(grammar, inputStream);
   }
   if (inputStream.atEnd()) {
     bindings.push(new nodes.ValueNode(undefined, inputStream.source, inputStream.pos, inputStream.pos));
@@ -50,9 +50,9 @@ pexprs.end.eval = function(recordFailures, syntactic, ruleDict, inputStream, bin
   }
 };
 
-pexprs.Prim.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
+pexprs.Prim.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   if (syntactic) {
-    skipSpaces(ruleDict, inputStream);
+    skipSpaces(grammar, inputStream);
   }
   var origPos = inputStream.pos;
   if (this.match(inputStream) === common.fail) {
@@ -74,9 +74,9 @@ pexprs.StringPrim.prototype.match = function(inputStream) {
   return inputStream.matchString(this.obj);
 };
 
-pexprs.RegExpPrim.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
+pexprs.RegExpPrim.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   if (syntactic) {
-    skipSpaces(ruleDict, inputStream);
+    skipSpaces(grammar, inputStream);
   }
   var origPos = inputStream.pos;
   if (inputStream.matchRegExp(this.obj) === common.fail) {
@@ -90,14 +90,14 @@ pexprs.RegExpPrim.prototype.eval = function(recordFailures, syntactic, ruleDict,
   }
 };
 
-pexprs.Alt.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
+pexprs.Alt.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   var origPos = inputStream.pos;
   var origNumBindings = bindings.length;
   for (var idx = 0; idx < this.terms.length; idx++) {
     if (syntactic) {
-      skipSpaces(ruleDict, inputStream);
+      skipSpaces(grammar, inputStream);
     }
-    if (this.terms[idx].eval(recordFailures, syntactic, ruleDict, inputStream, bindings)) {
+    if (this.terms[idx].eval(recordFailures, syntactic, grammar, inputStream, bindings)) {
       return true;
     } else {
       inputStream.pos = origPos;
@@ -112,24 +112,24 @@ pexprs.Alt.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
   return false;
 };
 
-pexprs.Seq.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
+pexprs.Seq.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   if (syntactic) {
-    skipSpaces(ruleDict, inputStream);
+    skipSpaces(grammar, inputStream);
   }
   var origPos = inputStream.pos;
   for (var idx = 0; idx < this.factors.length; idx++) {
     if (idx > 0 && syntactic) {
-      skipSpaces(ruleDict, inputStream);
+      skipSpaces(grammar, inputStream);
     }
     var factor = this.factors[idx];
-    if (!factor.eval(recordFailures, syntactic, ruleDict, inputStream, bindings)) {
+    if (!factor.eval(recordFailures, syntactic, grammar, inputStream, bindings)) {
       return false;
     }
   }
   return true;
 };
 
-pexprs.Many.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
+pexprs.Many.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   var arity = this.getArity();
   if (arity === 0) {
     // TODO: make this a static check w/ a nice error message, then remove the dynamic check.
@@ -142,7 +142,7 @@ pexprs.Many.prototype.eval = function(recordFailures, syntactic, ruleDict, input
   while (true) {
     var backtrackPos = inputStream.pos;
     var row = [];
-    if (!this.expr.eval(recordFailures, syntactic, ruleDict, inputStream, row)) {
+    if (!this.expr.eval(recordFailures, syntactic, grammar, inputStream, row)) {
       inputStream.pos = backtrackPos;
       break;
     } else {
@@ -162,11 +162,11 @@ pexprs.Many.prototype.eval = function(recordFailures, syntactic, ruleDict, input
   }
 };
 
-pexprs.Opt.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
+pexprs.Opt.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   var origPos = inputStream.pos;
   var row = [];
   var arity = this.getArity();
-  if (!this.expr.eval(recordFailures, syntactic, ruleDict, inputStream, row)) {
+  if (!this.expr.eval(recordFailures, syntactic, grammar, inputStream, row)) {
     inputStream.pos = origPos;
     row = common.repeat(new nodes.ValueNode(undefined, inputStream.source, origPos, inputStream.pos), arity);
   }
@@ -176,9 +176,9 @@ pexprs.Opt.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
   return true;
 };
 
-pexprs.Not.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
+pexprs.Not.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   var origPos = inputStream.pos;
-  if (this.expr.eval(false, syntactic, ruleDict, inputStream, [])) {
+  if (this.expr.eval(false, syntactic, grammar, inputStream, [])) {
     if (recordFailures) {
       inputStream.recordFailure(origPos, this);
     }
@@ -189,9 +189,9 @@ pexprs.Not.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
   }
 };
 
-pexprs.Lookahead.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
+pexprs.Lookahead.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   var origPos = inputStream.pos;
-  if (this.expr.eval(recordFailures, syntactic, ruleDict, inputStream, bindings)) {
+  if (this.expr.eval(recordFailures, syntactic, grammar, inputStream, bindings)) {
     inputStream.pos = origPos;
     return true;
   } else {
@@ -199,23 +199,23 @@ pexprs.Lookahead.prototype.eval = function(recordFailures, syntactic, ruleDict, 
   }
 };
 
-pexprs.Listy.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
+pexprs.Listy.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   if (syntactic) {
-    skipSpaces(ruleDict, inputStream);
+    skipSpaces(grammar, inputStream);
   }
   var obj = inputStream.next();
   if (obj instanceof Array || typeof obj === 'string') {
     var objInputStream = InputStream.newFor(obj);
-    return this.expr.eval(recordFailures, syntactic, ruleDict, objInputStream, bindings) && objInputStream.atEnd();
+    return this.expr.eval(recordFailures, syntactic, grammar, objInputStream, bindings) && objInputStream.atEnd();
   } else {
     return false;
   }
 };
 
-pexprs.Obj.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
+pexprs.Obj.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   var origPos = inputStream.pos;
   if (syntactic) {
-    skipSpaces(ruleDict, inputStream);
+    skipSpaces(grammar, inputStream);
   }
   var obj = inputStream.next();
   if (obj !== common.fail && obj && (typeof obj === 'object' || typeof obj === 'function')) {
@@ -228,7 +228,7 @@ pexprs.Obj.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
       var value = obj[property.name];
       var valueInputStream = InputStream.newFor([value]);
       var matched =
-          property.pattern.eval(recordFailures, syntactic, ruleDict, valueInputStream, bindings) &&
+          property.pattern.eval(recordFailures, syntactic, grammar, valueInputStream, bindings) &&
           valueInputStream.atEnd();
       if (!matched) {
         return false;
@@ -252,7 +252,7 @@ pexprs.Obj.prototype.eval = function(recordFailures, syntactic, ruleDict, inputS
   }
 };
 
-pexprs.Apply.prototype.eval = function(recordFailures, syntactic, ruleDict, inputStream, bindings) {
+pexprs.Apply.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   function useMemoizedResult(memoRecOrLR) {
     inputStream.pos = memoRecOrLR.pos;
     if (memoRecOrLR.value) {
@@ -279,7 +279,7 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, ruleDict, inpu
       return false;
     }
   } else {
-    var body = ruleDict[ruleName];
+    var body = grammar.ruleDict[ruleName];
     if (!body) {
       throw new errors.UndeclaredRule(ruleName);
     }
@@ -287,11 +287,11 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, ruleDict, inpu
     origPosInfo.enter(ruleName);
     var rf = recordFailures && !body.description;
     var ruleIsSyntactic = common.isSyntactic(ruleName);
-    var value = this.evalOnce(body, rf, ruleIsSyntactic, ruleDict, inputStream);
+    var value = this.evalOnce(body, rf, ruleIsSyntactic, grammar, inputStream);
     var currentLR = origPosInfo.getCurrentLeftRecursion();
     if (currentLR) {
       if (currentLR.name === ruleName) {
-        value = this.handleLeftRecursion(body, rf, ruleIsSyntactic, ruleDict, inputStream, origPos, currentLR, value);
+        value = this.handleLeftRecursion(body, rf, ruleIsSyntactic, grammar, inputStream, origPos, currentLR, value);
         origPosInfo.memo[ruleName] =
           {pos: inputStream.pos, value: value, involvedRules: currentLR.involvedRules};
         origPosInfo.endLeftRecursion(ruleName);
@@ -311,7 +311,7 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, ruleDict, inpu
         var errorPos;
         if (body.description && ruleIsSyntactic) {
           inputStream.pos = origPos;
-          skipSpaces(ruleDict, inputStream);
+          skipSpaces(grammar, inputStream);
           errorPos = inputStream.pos;
         } else {
           errorPos = origPos;
@@ -323,24 +323,24 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, ruleDict, inpu
   }
 };
 
-pexprs.Apply.prototype.evalOnce = function(expr, recordFailures, syntactic, ruleDict, inputStream) {
+pexprs.Apply.prototype.evalOnce = function(expr, recordFailures, syntactic, grammar, inputStream) {
   var origPos = inputStream.pos;
   var bindings = [];
-  if (expr.eval(recordFailures, syntactic, ruleDict, inputStream, bindings)) {
-    return new nodes.RuleNode(this.ruleName, bindings, inputStream.source, origPos, inputStream.pos);
+  if (expr.eval(recordFailures, syntactic, grammar, inputStream, bindings)) {
+    return new nodes.RuleNode(this.grammar, this.ruleName, bindings, inputStream.source, origPos, inputStream.pos);
   } else {
     return false;
   }
 };
 
-pexprs.Apply.prototype.handleLeftRecursion = function(body, recordFailures, syntactic, ruleDict, inputStream, origPos, currentLR, seedValue) {
+pexprs.Apply.prototype.handleLeftRecursion = function(body, recordFailures, syntactic, grammar, inputStream, origPos, currentLR, seedValue) {
   var value = seedValue;
   if (seedValue) {
     currentLR.value = seedValue;
     currentLR.pos = inputStream.pos;
     while (true) {
       inputStream.pos = origPos;
-      value = this.evalOnce(body, recordFailures, syntactic, ruleDict, inputStream);
+      value = this.evalOnce(body, recordFailures, syntactic, grammar, inputStream);
       if (value && inputStream.pos > currentLR.pos) {
         currentLR.value = value;
         currentLR.pos = inputStream.pos;

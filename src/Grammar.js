@@ -53,14 +53,14 @@ Grammar.prototype = {
   matchContents: function(obj, startRule, optThrowOnFail) {
     var inputStream = InputStream.newFor(obj);
     var bindings = [];
-    var succeeded = new pexprs.Apply(startRule).eval(optThrowOnFail, undefined, this.ruleDict, inputStream, bindings);
+    var succeeded = new pexprs.Apply(startRule).eval(optThrowOnFail, undefined, this, inputStream, bindings);
     
     if (succeeded) {
       // This match only succeeded if the start rule consumed all of the input.
       if (common.isSyntactic(startRule)) {
-        skipSpaces(this.ruleDict, inputStream);
+        skipSpaces(this, inputStream);
       }
-      succeeded = pexprs.end.eval(optThrowOnFail, false, this.ruleDict, inputStream, []);
+      succeeded = pexprs.end.eval(optThrowOnFail, false, this, inputStream, []);
     }
 
     if (succeeded) {
@@ -85,6 +85,7 @@ Grammar.prototype = {
         return node[value];
       }
     };
+    ans.grammar = this;
     ans.toString = function() { return '[ohm attribute]'; };
     return ans;
   },

@@ -9,10 +9,12 @@ var pexprs = require('./pexprs.js');
 // Private stuff
 // --------------------------------------------------------------------
 
-function skipSpaces(ruleDict, inputStream) {
+// TODO: make this a method to grammar and nuke this file.
+
+function skipSpaces(grammar, inputStream) {
   while (true) {
     var origPos = inputStream.pos;
-    if (!ruleDict.space.eval(false, false, ruleDict, inputStream, [])) {
+    if (!grammar.ruleDict.space.eval(false, false, grammar, inputStream, [])) {
       inputStream.pos = origPos;
       break;
     }

@@ -32,8 +32,9 @@ Object.defineProperty(Node.prototype, 'interval', {
 
 // Rule nodes
 
-function RuleNode(ctorName, args, source, startIdx, endIdx) {
+function RuleNode(grammar, ctorName, args, source, startIdx, endIdx) {
   this.init(source, startIdx, endIdx);
+  this.grammar = grammar;
   this.ctorName = ctorName;
   this.args = args;
 }
@@ -41,34 +42,13 @@ function RuleNode(ctorName, args, source, startIdx, endIdx) {
 RuleNode.prototype = Object.create(Node.prototype, {
   accept: {
     value: function(actionDict) {
-      var result;
-
-      if (actionDict._pre) {
-        var haveResult = false;
-        function resultis(v) {
-          haveResult = true;
-          result = v;
-        }
-
-        actionDict._pre.call(this, resultis);
-        if (haveResult) {
-          return result;
-        }
-      }
-
       if (actionDict[this.ctorName]) {
-        result = actionDict[this.ctorName].apply(this, this.args);
+        return actionDict[this.ctorName].apply(this, this.args);
       } else if (actionDict._default) {
-        result = actionDict._default.call(this);
+        return actionDict._default.call(this);
       } else {
         throw new Error('missing semantic action for ' + this.ctorName);
       }
-
-      if (actionDict._post) {
-        return actionDict._post.call(this, result);
-      }
-
-      return result;
     }
   },
 
