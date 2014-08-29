@@ -53,7 +53,7 @@ Grammar.prototype = {
     var inputStream = InputStream.newFor(obj);
     var bindings = [];
     var succeeded = new pexprs.Apply(startRule).eval(optThrowOnFail, undefined, this, inputStream, bindings);
-    
+
     if (succeeded) {
       // This match only succeeded if the start rule consumed all of the input.
       if (common.isSyntactic(startRule)) {
