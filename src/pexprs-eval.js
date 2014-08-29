@@ -6,7 +6,6 @@ var common = require('./common.js');
 var errors = require('./errors.js');
 var nodes = require('./nodes.js');
 var pexprs = require('./pexprs.js');
-var skipSpaces = require('./skipSpaces.js');
 var InputStream = require('./InputStream.js');
 
 var awlib = require('awlib');
@@ -20,7 +19,7 @@ pexprs.PExpr.prototype.eval = common.abstract;
 
 pexprs.anything.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   if (syntactic) {
-    skipSpaces(grammar, inputStream);
+    grammar.skipSpaces(inputStream);
   }
   var origPos = inputStream.pos;
   var value = inputStream.next();
@@ -37,7 +36,7 @@ pexprs.anything.eval = function(recordFailures, syntactic, grammar, inputStream,
 
 pexprs.end.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   if (syntactic) {
-    skipSpaces(grammar, inputStream);
+    grammar.skipSpaces(inputStream);
   }
   if (inputStream.atEnd()) {
     bindings.push(new nodes.ValueNode(undefined, inputStream.source, inputStream.pos, inputStream.pos));
@@ -52,7 +51,7 @@ pexprs.end.eval = function(recordFailures, syntactic, grammar, inputStream, bind
 
 pexprs.Prim.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   if (syntactic) {
-    skipSpaces(grammar, inputStream);
+    grammar.skipSpaces(inputStream);
   }
   var origPos = inputStream.pos;
   if (this.match(inputStream) === common.fail) {
@@ -76,7 +75,7 @@ pexprs.StringPrim.prototype.match = function(inputStream) {
 
 pexprs.RegExpPrim.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   if (syntactic) {
-    skipSpaces(grammar, inputStream);
+    grammar.skipSpaces(inputStream);
   }
   var origPos = inputStream.pos;
   if (inputStream.matchRegExp(this.obj) === common.fail) {
@@ -95,7 +94,7 @@ pexprs.Alt.prototype.eval = function(recordFailures, syntactic, grammar, inputSt
   var origNumBindings = bindings.length;
   for (var idx = 0; idx < this.terms.length; idx++) {
     if (syntactic) {
-      skipSpaces(grammar, inputStream);
+      grammar.skipSpaces(inputStream);
     }
     if (this.terms[idx].eval(recordFailures, syntactic, grammar, inputStream, bindings)) {
       return true;
@@ -114,12 +113,12 @@ pexprs.Alt.prototype.eval = function(recordFailures, syntactic, grammar, inputSt
 
 pexprs.Seq.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   if (syntactic) {
-    skipSpaces(grammar, inputStream);
+    grammar.skipSpaces(inputStream);
   }
   var origPos = inputStream.pos;
   for (var idx = 0; idx < this.factors.length; idx++) {
     if (idx > 0 && syntactic) {
-      skipSpaces(grammar, inputStream);
+      grammar.skipSpaces(inputStream);
     }
     var factor = this.factors[idx];
     if (!factor.eval(recordFailures, syntactic, grammar, inputStream, bindings)) {
@@ -201,7 +200,7 @@ pexprs.Lookahead.prototype.eval = function(recordFailures, syntactic, grammar, i
 
 pexprs.Listy.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   if (syntactic) {
-    skipSpaces(grammar, inputStream);
+    grammar.skipSpaces(inputStream);
   }
   var obj = inputStream.next();
   if (obj instanceof Array || typeof obj === 'string') {
@@ -215,7 +214,7 @@ pexprs.Listy.prototype.eval = function(recordFailures, syntactic, grammar, input
 pexprs.Obj.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   var origPos = inputStream.pos;
   if (syntactic) {
-    skipSpaces(grammar, inputStream);
+    grammar.skipSpaces(inputStream);
   }
   var obj = inputStream.next();
   if (obj !== common.fail && obj && (typeof obj === 'object' || typeof obj === 'function')) {
@@ -311,7 +310,7 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, grammar, input
         var errorPos;
         if (body.description && ruleIsSyntactic) {
           inputStream.pos = origPos;
-          skipSpaces(grammar, inputStream);
+          grammar.skipSpaces(inputStream);
           errorPos = inputStream.pos;
         } else {
           errorPos = origPos;

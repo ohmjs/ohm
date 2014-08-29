@@ -6,7 +6,6 @@ var common = require('./common.js');
 var errors = require('./errors.js');
 var InputStream = require('./InputStream.js');
 var pexprs = require('./pexprs.js');
-var skipSpaces = require('./skipSpaces.js');
 
 var Symbol = this.Symbol || require('symbol');
 
@@ -58,7 +57,7 @@ Grammar.prototype = {
     if (succeeded) {
       // This match only succeeded if the start rule consumed all of the input.
       if (common.isSyntactic(startRule)) {
-        skipSpaces(this, inputStream);
+        this.skipSpaces(inputStream);
       }
       succeeded = pexprs.end.eval(optThrowOnFail, false, this, inputStream, []);
     }
@@ -69,6 +68,16 @@ Grammar.prototype = {
       throw new errors.MatchFailure(inputStream, this.ruleDict);
     } else {
       return false;
+    }
+  },
+
+  skipSpaces: function(inputStream) {
+    while (true) {
+      var origPos = inputStream.pos;
+      if (!this.ruleDict.space.eval(false, false, this, inputStream, [])) {
+        inputStream.pos = origPos;
+        break;
+      }
     }
   },
 
