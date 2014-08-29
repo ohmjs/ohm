@@ -6,8 +6,7 @@ var common = require('./common.js');
 var errors = require('./errors.js');
 var InputStream = require('./InputStream.js');
 var pexprs = require('./pexprs.js');
-
-var Symbol = this.Symbol || require('symbol');
+var attributes = require('./attributes.js');
 
 var awlib = require('awlib');
 var keysDo = awlib.objectUtils.keysDo;
@@ -83,40 +82,9 @@ Grammar.prototype = {
 
   attribute: function(actionDict, optDoNotMemoize) {
     this.assertSemanticActionNamesAndAritiesMatch(actionDict);
-
-    var nodeVisitor = {
-      visitRule: function(r) {
-	if (actionDict[r.ctorName]) {
-          return actionDict[r.ctorName].apply(r, r.args);
-	} else if (actionDict._default) {
-          return actionDict._default.call(r);
-	} else {
-          throw new Error('missing semantic action for ' + r.ctorName);
-	}
-      },
-      visitList: function(l) {
-	return l.values.map(function(node) { return node.accept(nodeVisitor) });
-      },
-      visitValue: function(v) {
-	return v.value;
-      }
-    };
-
-    var value = Symbol();
-    var ans = function(node) {
-      if (optDoNotMemoize) {
-        return node.accept(nodeVisitor);
-      } else {
-        if (!(node.hasOwnProperty(value))) {
-          node[value] = node.accept(nodeVisitor);
-        }
-        return node[value];
-      }
-    };
-    ans.grammar = this;
-    ans.toString = function() { return '[ohm attribute]'; };
-
-    return ans;
+    var attribute = attributes.makeAttribute(actionDict, optDoNotMemoize);
+    attribute.grammar = this;
+    return attribute;
   },
 
   assertSemanticActionNamesAndAritiesMatch: function(actionDict) {
