@@ -4,6 +4,7 @@
 
 var Interval = require('./Interval.js');
 
+var common = require('./common.js');
 var awlib = require('awlib');
 var browser = awlib.browser
 var objectUtils = awlib.objectUtils
@@ -17,14 +18,14 @@ function Thunk() {
   throw new Error('Thunk cannot be instantiated -- it\'s abstract');
 }
 
-var nextThunkId = 0;
 Thunk.prototype = {
   init: function(source, startIdx, endIdx) {
-    this.id = nextThunkId++;
     this._source = source;
     this._startIdx = startIdx;
     this._endIdx = endIdx;
-  }
+  },
+
+  computeAttribute: common.abstract
 };
 
 Object.defineProperty(Thunk.prototype, 'interval', {
@@ -33,79 +34,74 @@ Object.defineProperty(Thunk.prototype, 'interval', {
   }
 });
 
-function RuleThunk(ruleName, source, startIdx, endIdx, bindings) {
+// TODO: change these constructors so that (source, startIdx, endIdx) always come last.
+// TODO: rename thunk to node everywhere (including this file name).
+
+// Rule thunks
+
+function RuleThunk(ctorName, source, startIdx, endIdx, args) {
   this.init(source, startIdx, endIdx);
-  this.ruleName = ruleName;
-  this.bindings = bindings;
+  this.ctorName = ctorName;
+  this.args = args;
 }
 
 RuleThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
-  force: function(actionDict, memo, lazy) {
-    function makeBinding(thunk) {
-      var binding = {interval: thunk.interval};
-      Object.defineProperty(binding, 'value', {
-        get: function() {
-          return thunk.force(actionDict, memo, lazy);
-        }
-      });
-      return binding;
-    }
+  accept: function(actionDict) {
+    var result;
 
-    if (memo.hasOwnProperty(this.id)) {
-      return memo[this.id];
-    }
+    if (actionDict._pre) {
+      var haveResult = false;
+      function resultis(v) {
+        haveResult = true;
+        result = v;
+      }
 
-    var args = this.bindings.map(makeBinding);
-    if (!lazy) {
-      // Force all bindings before applying this rule's semantic action.
-      args.forEach(function(arg) { arg.value; });
-    }
-
-    var action = this.lookupAction(actionDict);
-    if (!action) {
-      if (lazy) {
-        throw new Error('missing semantic action for ' + this.ruleName);
-      } else {
-        return memo[this.id] = undefined;
+      actionDict._pre.call(this, resultis);
+      if (haveResult) {
+        return result;
       }
     }
-    
-    var addlInfo = this.createAddlInfo();
-    return memo[this.id] = action.apply(addlInfo, args);
-  },
 
-  lookupAction: function(actionDict) {
-    var ruleName = this.ruleName;
-    var action = actionDict[ruleName];
-    if (action === undefined && actionDict._default !== undefined) {
-      action = function() {
-        return actionDict._default.call(this, ruleName, Array.prototype.slice.call(arguments));
-      };
-      action.__isDefault__ = true;
+    if (actionDict[this.ctorName]) {
+      result = actionDict[this.ctorName].apply(this, this.args);
+    } else if (actionDict._default) {
+      result = actionDict._default.call(this);
+    } else {
+      throw new Error('missing semantic action for ' + this.ctorName);
     }
-    return action;
+
+    if (actionDict._post) {
+      return actionDict._post.call(this, result);
+    }
+
+    return result;
   },
 
-  createAddlInfo: function() {
-    return {
-      interval: this.interval
-    };
+  toJSON: function() {
+    var r = {};
+    r[this.ctorName] = this.args;
+    return r;
   }
 });
 
-function ListThunk(thunks, source, startIdx, endIdx) {
+// List thunks
+
+function ListThunk(values, source, startIdx, endIdx) {
   this.init(source, startIdx, endIdx);
-  this.thunks = thunks;
+  this.values = values;
 }
 
 ListThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
-  force: function(actionDict, memo, lazy) {
-    if (!memo.hasOwnProperty(this.id)) {
-      memo[this.id] = this.thunks.map(function(thunk) { return thunk.force(actionDict, memo, lazy); });
-    }
-    return memo[this.id];
+  accept: function(actionDict) {
+    return this.values.map(function(thunk) { return thunk.accept(actionDict); });
+  },
+
+  toJSON: function() {
+    return this.values;
   }
 });
+
+// Value thunks
 
 function ValueThunk(value, source, startIdx, endIdx) {
   this.init(source, startIdx, endIdx);
@@ -113,7 +109,11 @@ function ValueThunk(value, source, startIdx, endIdx) {
 }
 
 ValueThunk.prototype = objectThatDelegatesTo(Thunk.prototype, {
-  force: function(actionDict, memo, lazy) {
+  accept: function(actionDict) {
+    return this.value;
+  },
+
+  toJSON: function() {
     return this.value;
   }
 });

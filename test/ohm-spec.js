@@ -543,8 +543,8 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var f = m.matchContents('abcz', 'start');
           expect(f({
-            start: function(_, _, _) {}
-          })).to.eql(undefined);
+            start: function(x, y, z) { return [x.interval.contents, y.interval.contents, z.interval.contents]; }
+          })).to.eql(['a', 'bc', 'z']);
         });
       });
 
@@ -1651,37 +1651,38 @@ describe("Ohm", function() {
       });
 
       it("can produce a grammar that will recognize itself", function() {
-        var gPrime = g.matchContents(ohmGrammarSource, 'Grammar')(ohm._makeGrammarActionDict());
+        var gPrime = ohm._makeGrammarBuilder()(g.matchContents(ohmGrammarSource, 'Grammar'));
         expect(gPrime.matchContents(ohmGrammarSource, 'Grammar')).to.be.ok();
       });
 
       it("can produce a grammar that works", function() {
-        var gPrime = g.matchContents(ohmGrammarSource, 'Grammar')(ohm._makeGrammarActionDict());
-        var a = gPrime.matchContents(arithmeticGrammarSource, 'Grammar')(ohm._makeGrammarActionDict());
-        expect(a.matchContents('10*(2+123)-4/5', 'expr')({
-          expr:           function(expr) { return expr.value; },
-          addExpr:        function(expr) { return expr.value; },
-          addExpr_plus:   function(x, op, y) { return x.value + y.value; },
-          addExpr_minus:  function(x, op, y) { return x.value - y.value; },
-          mulExpr:        function(expr) { return expr.value; },
-          mulExpr_times:  function(x, op, y) { return x.value * y.value; },
-          mulExpr_divide: function(x, op, y) { return x.value / y.value; },
-          priExpr:        function(expr) { return expr.value; },
-          priExpr_paren:  function(oparen, e, cparen) { return e.value; },
-          number:         function(expr) { return expr.value; },
-          number_rec:     function(n, d) { return n.value * 10 + d.value; },
-          digit:          function(expr) { return expr.value.charCodeAt(0) - '0'.charCodeAt(0); }
-        })).to.equal(1249.2);
+        var gPrime = ohm._makeGrammarBuilder()(g.matchContents(ohmGrammarSource, 'Grammar'));
+        var a = ohm._makeGrammarBuilder()(gPrime.matchContents(arithmeticGrammarSource, 'Grammar'));
+        var eval = a.attribute({
+          expr:           function(expr) { return eval(expr); },
+          addExpr:        function(expr) { return eval(expr); },
+          addExpr_plus:   function(x, op, y) { return eval(x) + eval(y); },
+          addExpr_minus:  function(x, op, y) { return eval(x) - eval(y); },
+          mulExpr:        function(expr) { return eval(expr); },
+          mulExpr_times:  function(x, op, y) { return eval(x) * eval(y); },
+          mulExpr_divide: function(x, op, y) { return eval(x) / eval(y); },
+          priExpr:        function(expr) { return eval(expr); },
+          priExpr_paren:  function(oparen, e, cparen) { return eval(e); },
+          number:         function(expr) { return eval(expr); },
+          number_rec:     function(n, d) { return eval(n) * 10 + eval(d); },
+          digit:          function(expr) { return eval(expr).charCodeAt(0) - '0'.charCodeAt(0); }
+        });
+        expect(eval(a.matchContents('10*(2+123)-4/5', 'expr'))).to.equal(1249.2);
       });
 
       it("full bootstrap!", function() {
-        var gPrime = g.matchContents(ohmGrammarSource, 'Grammar')(ohm._makeGrammarActionDict());
-        var gPrimePrime = gPrime.matchContents(ohmGrammarSource, 'Grammar')(ohm._makeGrammarActionDict());
+        var gPrime = ohm._makeGrammarBuilder()(g.matchContents(ohmGrammarSource, 'Grammar'));
+        var gPrimePrime = ohm._makeGrammarBuilder()(gPrime.matchContents(ohmGrammarSource, 'Grammar'));
         expect(gPrime).to.eql(gPrimePrime);
       });
 
       it("to recipe and back", function() {
-        var gPrime = g.matchContents(ohmGrammarSource, 'Grammar')(ohm._makeGrammarActionDict());
+        var gPrime = ohm._makeGrammarBuilder()(g.matchContents(ohmGrammarSource, 'Grammar'));
         expect(ohm.make(eval(gPrime.toRecipe()))).to.eql(gPrime);
       });
     });

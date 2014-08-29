@@ -8,6 +8,8 @@ var InputStream = require('./InputStream.js');
 var pexprs = require('./pexprs.js');
 var skipSpaces = require('./skipSpaces.js');
 
+var Symbol = this.Symbol || require('symbol');
+
 var awlib = require('awlib');
 var browser = awlib.browser;
 var keysDo = awlib.objectUtils.keysDo;
@@ -16,6 +18,8 @@ var formals = awlib.objectUtils.formals;
 var makeStringBuffer = awlib.objectUtils.stringBuffer;
 var printString = awlib.stringUtils.printString;
 var equals = awlib.equals.equals;
+var objectUtils = awlib.objectUtils
+var objectThatDelegatesTo = objectUtils.objectThatDelegatesTo;
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -63,27 +67,29 @@ Grammar.prototype = {
     }
 
     if (succeeded) {
-      var thunk = bindings[0];
-      var assertSemanticActionNamesAndAritiesMatch = this.assertSemanticActionNamesAndAritiesMatch.bind(this);
-      var ans = function(actionDict, optEvaluationStrategy) {
-        assertSemanticActionNamesAndAritiesMatch(actionDict);
-        var lazy;
-        if (optEvaluationStrategy === undefined || optEvaluationStrategy === 'lazy') {
-          lazy = true;
-        } else if (optEvaluationStrategy === 'eager') {
-          lazy = false;
-        } else {
-          throw new errors.InvalidEvaluationStrategy(optEvaluationStrategy);
-        }
-        return thunk.force(actionDict, {}, lazy);
-      };
-      ans.toString = function() { return '[ohm thunk]'; };
-      return ans;
+      return bindings[0];
     } else if (optThrowOnFail) {
       throw new errors.MatchFailure(inputStream, this.ruleDict);
     } else {
       return false;
     }
+  },
+
+  attribute: function(actionDict, optDoNotMemoize) {
+    this.assertSemanticActionNamesAndAritiesMatch(actionDict);
+    var value = Symbol();
+    var ans = function(node) {
+      if (optDoNotMemoize) {
+        return node.accept(actionDict);
+      } else {
+        if (!(node.hasOwnProperty(value))) {
+          node[value] = node.accept(actionDict);
+        }
+        return node[value];
+      }
+    };
+    ans.toString = function() { return '[ohm attribute]'; };
+    return ans;
   },
 
   assertSemanticActionNamesAndAritiesMatch: function(actionDict) {

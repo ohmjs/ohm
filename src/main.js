@@ -19,138 +19,138 @@ var thisModule = exports;
 // Private stuff
 // --------------------------------------------------------------------
 
-function makeGrammarActionDict(optNamespace) {
+function makeGrammarBuilder(optNamespace) {
   var builder;
-  return {
+  var value = exports.ohmGrammar.attribute({
     Grammars: function(exprs) {
-      return exprs.value;
+      return value(exprs);
     },
 
     Grammar: function(n, s, _, rs, _) {
       builder = new Builder();
-      builder.setName(n.value);
-      s.value;  // force evaluation
-      rs.value;  // force evaluation
+      builder.setName(value(n));
+      value(s);  // force evaluation
+      value(rs);  // force evaluation
       return builder.build(optNamespace);
     },
 
     SuperGrammar: function(expr) {
-      builder.setSuperGrammar(expr.value);
+      builder.setSuperGrammar(value(expr));
     },
     SuperGrammar_qualified: function(_, ns, _, n) {
-      return thisModule.namespace(ns.value).getGrammar(n.value);
+      return thisModule.namespace(value(ns)).getGrammar(value(n));
     },
     SuperGrammar_unqualified: function(_, n) {
       if (optNamespace) {
-        return optNamespace.getGrammar(n.value);
+        return optNamespace.getGrammar(value(n));
       } else {
-        throw new errors.UndeclaredGrammar(n.value);
+        throw new errors.UndeclaredGrammar(value(n));
       }
     },
 
     Rule: function(expr) {
-      return expr.value;
+      return value(expr);
     },
     Rule_define: function(n, d, _, b) {
-      builder.currentRuleName = n.value;
-      d.value;  // force evaluation
-      return builder.define(n.value, b.value);
+      builder.currentRuleName = value(n);
+      value(d);  // force evaluation
+      return builder.define(value(n), value(b));
     },
     Rule_override: function(n, _, b) {
-      builder.currentRuleName = n.value;
-      return builder.override(n.value, b.value);
+      builder.currentRuleName = value(n);
+      return builder.override(value(n), value(b));
     },
     Rule_extend: function(n, _, b) {
-      builder.currentRuleName = n.value;
-      return builder.extend(n.value, b.value);
+      builder.currentRuleName = value(n);
+      return builder.extend(value(n), value(b));
     },
 
     Alt: function(expr) {
-      return expr.value;
+      return value(expr);
     },
     Alt_rec: function(x, _, y) {
-      return builder.alt(x.value, y.value);
+      return builder.alt(value(x), value(y));
     },
 
     Term: function(expr) {
-      return expr.value;
+      return value(expr);
     },
     Term_inline: function(x, n) {
-      return builder.inline(builder.currentRuleName + '_' + n.value, x.value);
+      return builder.inline(builder.currentRuleName + '_' + value(n), value(x));
     },
 
     Seq: function(expr) {
-      return builder.seq.apply(builder, expr.value);
+      return builder.seq.apply(builder, value(expr));
     },
 
     Iter: function(expr) {
-      return expr.value;
+      return value(expr);
     },
     Iter_star: function(x, _) {
-      return builder.many(x.value, 0);
+      return builder.many(value(x), 0);
     },
     Iter_plus: function(x, _) {
-      return builder.many(x.value, 1);
+      return builder.many(value(x), 1);
     },
     Iter_opt: function(x, _) {
-      return builder.opt(x.value);
+      return builder.opt(value(x));
     },
 
     Pred: function(expr) {
-      return expr.value;
+      return value(expr);
     },
     Pred_not: function(_, x) {
-      return builder.not(x.value);
+      return builder.not(value(x));
     },
     Pred_lookahead: function(_, x) {
-      return builder.la(x.value);
+      return builder.la(value(x));
     },
 
     Base: function(expr) {
-      return expr.value;
+      return value(expr);
     },
     Base_application: function(ruleName) {
-      return builder.app(ruleName.value);
+      return builder.app(value(ruleName));
     },
     Base_prim: function(expr) {
-      return builder.prim(expr.value);
+      return builder.prim(value(expr));
     },
     Base_paren: function(_, x, _) {
-      return x.value;
+      return value(x);
     },
     Base_listy: function(_, x, _) {
-      return builder.listy(x.value);
+      return builder.listy(value(x));
     },
     Base_obj: function(_, lenient, _) {
-      return builder.obj([], lenient.value);
+      return builder.obj([], value(lenient));
     },
     Base_objWithProps: function(_, ps, _, lenient, _) {
-      return builder.obj(ps.value, lenient.value);
+      return builder.obj(value(ps), value(lenient));
     },
 
     Props: function(expr) {
-      return expr.value;
+      return value(expr);
     },
     Props_rec: function(p, _, ps) {
-      return [p.value].concat(ps.value);
+      return [value(p)].concat(value(ps));
     },
     Props_base: function(p) {
-      return [p.value];
+      return [value(p)];
     },
     Prop: function(n, _, p) {
-      return {name: n.value, pattern: p.value};
+      return {name: value(n), pattern: value(p)};
     },
 
     ruleDescr: function(_, t, _) {
-      builder.setRuleDescription(t.value);
-      return t.value;
+      builder.setRuleDescription(value(t));
+      return value(t);
     },
     ruleDescrText: function(_) {
       return this.interval.contents;
     },
 
     caseName: function(_, _, n, _, _) {
-      return n.value
+      return value(n)
     },
 
     name: function(_, _) {
@@ -160,11 +160,11 @@ function makeGrammarActionDict(optNamespace) {
     nameRest: function(expr) {},
 
     ident: function(n) {
-      return n.value;
+      return value(n);
     },
 
     keyword: function(expr) {
-      return expr.value;
+      return value(expr);
     },
     keyword_undefined: function(_) {
       return undefined;
@@ -180,7 +180,7 @@ function makeGrammarActionDict(optNamespace) {
     },
 
     string: function(_, cs, _) {
-      return cs.value.map(function(c) { return unescapeChar(c); }).join('');
+      return value(cs).map(function(c) { return unescapeChar(c); }).join('');
     },
 
     sChar: function(_) {
@@ -188,14 +188,14 @@ function makeGrammarActionDict(optNamespace) {
     },
 
     regExp: function(_, e, _) {
-      return e.value;
+      return value(e);
     },
 
     reCharClass: function(expr) {
-      return expr.value;
+      return value(expr);
     },
     reCharClass_unicode: function(_, unicodeClass, _) {
-      return UnicodeCategories[unicodeClass.value.join('')];
+      return UnicodeCategories[value(unicodeClass).join('')];
     },
     reCharClass_ordinary: function(_, _, _) {
       return new RegExp(this.interval.contents);
@@ -208,13 +208,14 @@ function makeGrammarActionDict(optNamespace) {
     space: function(expr) {},
     space_multiLine: function(_, _, _) {},
     space_singleLine: function(_, _, _) {}
-  };
+  });
+  return value;
 }
 
 function compileAndLoad(source, whatItIs, optNamespace) {
   try {
-    var thunk = thisModule.ohmGrammar.matchContents(source, whatItIs, true);
-    return thunk(makeGrammarActionDict(optNamespace));
+    var node = thisModule.ohmGrammar.matchContents(source, whatItIs, true);
+    return makeGrammarBuilder(optNamespace)(node);
   } catch (e) {
     if (e instanceof errors.MatchFailure) {
       console.log('\n' + e.getMessage());
@@ -258,7 +259,7 @@ exports._builder = function() {
   return new Builder();
 };
 
-exports._makeGrammarActionDict = makeGrammarActionDict;
+exports._makeGrammarBuilder = makeGrammarBuilder;
 
 var ohmGrammar;
 Object.defineProperty(exports, 'ohmGrammar', {

@@ -36,18 +36,6 @@ Error.prototype.toString = function() {
   return this.getShortMessage();
 };
 
-// ----------------- errors about thunks -----------------
-
-function InvalidEvaluationStrategy(name) {
-  this.name = name;
-}
-
-InvalidEvaluationStrategy.prototype = objectThatDelegatesTo(Error.prototype);
-
-InvalidEvaluationStrategy.prototype.getMessage = function() {
-  return ['invalid evaluation strategy "', this.name, '" (try "lazy" or "eager")'];
-};
-
 // ----------------- errors about intervals -----------------
 
 function IntervalSourcesDontMatch() {}
