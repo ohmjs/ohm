@@ -15,6 +15,11 @@ function makeAttribute(actionDict, optDoNotMemoize) {
         return actionDict[r.ctorName].apply(r, r.args);
       } else if (actionDict._default) {
         return actionDict._default.call(r);
+      } else if (r.args.length === 1) {
+	// We special-case unary rules here, since a very common case
+	// when writing actionDicts is to simply tail-recur
+	// immediately on the sole child.
+	return attribute(r.args[0]);
       } else {
         throw new Error('missing semantic action for ' + r.ctorName);
       }
