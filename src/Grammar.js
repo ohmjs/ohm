@@ -6,8 +6,7 @@ var common = require('./common.js');
 var errors = require('./errors.js');
 var InputStream = require('./InputStream.js');
 var pexprs = require('./pexprs.js');
-
-var Symbol = this.Symbol || require('symbol');
+var attributes = require('./attributes.js');
 
 var awlib = require('awlib');
 var keysDo = awlib.objectUtils.keysDo;
@@ -82,21 +81,7 @@ Grammar.prototype = {
   },
 
   attribute: function(actionDict, optDoNotMemoize) {
-    this.assertSemanticActionNamesAndAritiesMatch(actionDict);
-    var value = Symbol();
-    var ans = function(node) {
-      if (optDoNotMemoize) {
-        return node.accept(actionDict);
-      } else {
-        if (!(node.hasOwnProperty(value))) {
-          node[value] = node.accept(actionDict);
-        }
-        return node[value];
-      }
-    };
-    ans.grammar = this;
-    ans.toString = function() { return '[ohm attribute]'; };
-    return ans;
+    return attributes.makeAttribute(this, actionDict, optDoNotMemoize);
   },
 
   assertSemanticActionNamesAndAritiesMatch: function(actionDict) {

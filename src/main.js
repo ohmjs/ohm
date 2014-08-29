@@ -7,6 +7,7 @@ require('../dist/ohm-grammar.js');
 var Builder = require('./Builder.js');
 var Namespace = require('./Namespace.js');
 var errors = require('./errors.js');
+var attributes = require('./attributes.js');
 
 var awlib = require('awlib');
 var unescapeChar = awlib.stringUtils.unescapeChar;
@@ -252,6 +253,8 @@ exports.make = function(recipe) {
 
 exports.makeGrammar = makeGrammar;
 exports.makeGrammars = makeGrammars;
+
+exports.attributes = attributes;
 
 // Stuff that's only here for bootstrapping, testing, etc.
 
