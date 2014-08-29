@@ -40,14 +40,8 @@ function RuleNode(grammar, ctorName, args, source, startIdx, endIdx) {
 
 RuleNode.prototype = Object.create(Node.prototype, {
   accept: {
-    value: function(actionDict) {
-      if (actionDict[this.ctorName]) {
-        return actionDict[this.ctorName].apply(this, this.args);
-      } else if (actionDict._default) {
-        return actionDict._default.call(this);
-      } else {
-        throw new Error('missing semantic action for ' + this.ctorName);
-      }
+    value: function(visitor) {
+      return visitor.visitRule(this);
     }
   },
 
@@ -69,8 +63,8 @@ function ListNode(values, source, startIdx, endIdx) {
 
 ListNode.prototype = Object.create(Node.prototype, {
   accept: {
-    value: function(actionDict) {
-      return this.values.map(function(node) { return node.accept(actionDict); });
+    value: function(visitor) {
+      return visitor.visitList(this);
     }
   },
 
@@ -90,8 +84,8 @@ function ValueNode(value, source, startIdx, endIdx) {
 
 ValueNode.prototype = Object.create(Node.prototype, {
   accept: {
-    value: function(actionDict) {
-      return this.value;
+    value: function(visitor) {
+      return visitor.visitValue(this);
     }
   },
 

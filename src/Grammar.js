@@ -83,19 +83,39 @@ Grammar.prototype = {
 
   attribute: function(actionDict, optDoNotMemoize) {
     this.assertSemanticActionNamesAndAritiesMatch(actionDict);
+
+    var nodeVisitor = {
+      visitRule: function(r) {
+	if (actionDict[r.ctorName]) {
+          return actionDict[r.ctorName].apply(r, r.args);
+	} else if (actionDict._default) {
+          return actionDict._default.call(r);
+	} else {
+          throw new Error('missing semantic action for ' + r.ctorName);
+	}
+      },
+      visitList: function(l) {
+	return l.values.map(function(node) { return node.accept(nodeVisitor) });
+      },
+      visitValue: function(v) {
+	return v.value;
+      }
+    };
+
     var value = Symbol();
     var ans = function(node) {
       if (optDoNotMemoize) {
-        return node.accept(actionDict);
+        return node.accept(nodeVisitor);
       } else {
         if (!(node.hasOwnProperty(value))) {
-          node[value] = node.accept(actionDict);
+          node[value] = node.accept(nodeVisitor);
         }
         return node[value];
       }
     };
     ans.grammar = this;
     ans.toString = function() { return '[ohm attribute]'; };
+
     return ans;
   },
 
