@@ -22,7 +22,7 @@ var thisModule = exports;
 
 function makeGrammarBuilder(optNamespace) {
   var builder;
-  var value = exports.ohmGrammar.attribute({
+  var value = exports.ohmGrammar.synthesizedAttribute({
     Grammars: function(exprs) {
       return value(exprs);
     },

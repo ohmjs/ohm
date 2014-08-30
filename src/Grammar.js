@@ -62,7 +62,18 @@ Grammar.prototype = {
     }
 
     if (succeeded) {
-      return bindings[0];
+      var node = bindings[0];
+      var stack = [undefined];
+      var setParents = this.synthesizedAttribute({
+        _default: function() {
+          stack.push(this);
+          this.args.forEach(function(arg) { setParents(arg); });
+          stack.pop();
+          this.parent = stack[stack.length - 1];
+        }
+      }, false);
+      setParents(node);
+      return node;
     } else if (optThrowOnFail) {
       throw new errors.MatchFailure(inputStream, this.ruleDict);
     } else {
@@ -80,9 +91,16 @@ Grammar.prototype = {
     }
   },
 
-  attribute: function(actionDict, optDoNotMemoize) {
+  synthesizedAttribute: function(actionDict, optDoNotMemoize) {
     this.assertSemanticActionNamesAndAritiesMatch(actionDict);
-    var attribute = attributes.makeAttribute(actionDict, optDoNotMemoize);
+    var attribute = attributes.makeSynthesizedAttribute(actionDict, optDoNotMemoize);
+    attribute.grammar = this;
+    return attribute;
+  },
+
+  inheritedAttribute: function(actionDict) {
+    this.assertSemanticActionNamesAndAritiesMatch(actionDict);
+    var attribute = attributes.makeInheritedAttribute(actionDict);
     attribute.grammar = this;
     return attribute;
   },
