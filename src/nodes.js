@@ -20,7 +20,8 @@ Node.prototype = {
     this._startIdx = startIdx;
     this._endIdx = endIdx;
   },
-  accept: common.abstract
+  accept: common.abstract,
+  setParent: common.abstract
 };
 
 Object.defineProperty(Node.prototype, 'interval', {
@@ -32,16 +33,24 @@ Object.defineProperty(Node.prototype, 'interval', {
 // Rule nodes
 
 function RuleNode(grammar, ctorName, args, source, startIdx, endIdx) {
+  var self = this;
   this.init(source, startIdx, endIdx);
   this.grammar = grammar;
   this.ctorName = ctorName;
   this.args = args;
+  this.args.forEach(function (n) { n.setParent(self) });
 }
 
 RuleNode.prototype = Object.create(Node.prototype, {
   accept: {
     value: function(visitor) {
       return visitor.visitRule(this);
+    }
+  },
+
+  setParent: {
+    value: function(n) {
+      this.parent = n;
     }
   },
 
@@ -68,6 +77,13 @@ ListNode.prototype = Object.create(Node.prototype, {
     }
   },
 
+  setParent: {
+    value: function(n) {
+      this.parent = n;
+      this.values.forEach(function (m) { m.setParent(n) });
+    }
+  },
+
   toJSON: {
     value: function() {
       return this.values;
@@ -86,6 +102,12 @@ ValueNode.prototype = Object.create(Node.prototype, {
   accept: {
     value: function(visitor) {
       return visitor.visitValue(this);
+    }
+  },
+
+  setParent: {
+    value: function(n) {
+      this.parent = n;
     }
   },
 

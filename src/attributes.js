@@ -48,16 +48,6 @@ function makeAttribute(actionDict, optDoNotMemoize) {
   return attribute;
 }
 
-var parentStack = [undefined];
-var parent = makeAttribute({
-  _default: function() {
-    parentStack.push(this);
-    this.args.forEach(function(arg) { parent(arg); });
-    parentStack.pop();
-    return parentStack[parentStack.length - 1];
-  }
-});
-
 function doBottomUp(attribute) {
   return function(node) {
     var postOrder = attribute.grammar.attribute({
@@ -75,6 +65,5 @@ function doBottomUp(attribute) {
 // --------------------------------------------------------------------
 
 exports.makeAttribute = makeAttribute;
-exports.parent = parent;
 exports.doBottomUp = doBottomUp;
 
