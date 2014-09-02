@@ -100,6 +100,11 @@ Grammar.prototype = {
 
   inheritedAttribute: function(actionDict) {
     this.assertSemanticActionNamesAndAritiesMatch(actionDict);
+    if (!actionDict._base) {
+      throw new Error('inherited attribute missing base case');
+    } else if (actionDict._base.length !== 1) {
+      throw new Error('inherited attribute\'s base case must take exactly one argument');
+    }
     var attribute = attributes.makeInheritedAttribute(actionDict);
     attribute.grammar = this;
     return attribute;
