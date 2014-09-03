@@ -34,7 +34,7 @@ RuleDecl.prototype = {
     body.assertChoicesHaveUniformArity(name);
   },
 
-  install: common.abstract,
+  installInto: common.abstract,
 
   outputRecipe: function(ws) { outputRecipe(this, ws); }
 };
@@ -69,7 +69,7 @@ Define.prototype = Object.create(RuleDecl.prototype, {
     }
   },
 
-  install: {
+  installInto: {
     value: function(ruleDict) {
       this.body.description = this.description;
       ruleDict[this.name] = this.body;
@@ -101,7 +101,7 @@ Override.prototype = Object.create(RuleDecl.prototype, {
     }
   },
 
-  install: {
+  installInto: {
     value: function(ruleDict) {
       this.body.description = this.superGrammar.ruleDict[this.name].description;
       ruleDict[this.name] = this.body;
@@ -132,7 +132,7 @@ Inline.prototype = Object.create(RuleDecl.prototype, {
     }
   },
 
-  install: {
+  installInto: {
     value: function(ruleDict) {
       ruleDict[this.name] = this.body;
     }
@@ -165,7 +165,7 @@ Extend.prototype = Object.create(RuleDecl.prototype, {
     }
   },
 
-  install: {
+  installInto: {
     value: function(ruleDict) {
       this.extendedBody.description = this.superGrammar.ruleDict[this.name].description;
       ruleDict[this.name] = this.extendedBody;

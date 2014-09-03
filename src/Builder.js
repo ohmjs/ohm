@@ -56,7 +56,7 @@ Builder.prototype = {
     var ruleDict = Object.create(superGrammar.ruleDict);
     this.ruleDecls.forEach(function(ruleDecl) {
       ruleDecl.performChecks();
-      ruleDecl.install(ruleDict);
+      ruleDecl.installInto(ruleDict);
     });
 
     var grammar = new Grammar(ruleDict);
