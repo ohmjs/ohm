@@ -143,3 +143,18 @@ pexprs.Obj.prototype.check = function(vals) {
   return pos;
 };
 
+pexprs.Apply.prototype.check = function(vals) {
+  if (!(vals[0] instanceof nodes.RuleNode
+	&& vals[0].grammar === this.grammar
+	&& vals[0].ctorName === this.ruleName)) {
+    return false;
+  }
+
+  var result = this.grammar.ruleDict[this.ruleName].check(vals[0].args);
+  if (result !== vals[0].args.length) {
+    return false;
+  }
+
+  return 1;
+};
+
