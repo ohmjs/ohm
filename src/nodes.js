@@ -15,24 +15,16 @@ function Node() {
 }
 
 Node.prototype = {
-  init: function(source, startIdx, endIdx) {
-    this._source = source;
-    this._startIdx = startIdx;
-    this._endIdx = endIdx;
+  init: function(interval) {
+    this.interval = interval;
   },
   accept: common.abstract,
 };
 
-Object.defineProperty(Node.prototype, 'interval', {
-  get: function() {
-    return this._interval || (this._interval = new Interval(this._source, this._startIdx, this._endIdx));
-  }
-});
-
 // Rule nodes
 
-function RuleNode(grammar, ctorName, args, source, startIdx, endIdx) {
-  this.init(source, startIdx, endIdx);
+function RuleNode(grammar, ctorName, args, interval) {
+  this.init(interval);
   this.grammar = grammar;
   this.ctorName = ctorName;
   this.args = args;
@@ -56,8 +48,8 @@ RuleNode.prototype = Object.create(Node.prototype, {
 
 // List nodes
 
-function ListNode(values, source, startIdx, endIdx) {
-  this.init(source, startIdx, endIdx);
+function ListNode(values, interval) {
+  this.init(interval);
   this.values = values;
 }
 
@@ -77,8 +69,8 @@ ListNode.prototype = Object.create(Node.prototype, {
 
 // Value nodes
 
-function ValueNode(value, source, startIdx, endIdx) {
-  this.init(source, startIdx, endIdx);
+function ValueNode(value, interval) {
+  this.init(interval);
   this.value = value;
 }
 

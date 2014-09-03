@@ -5,6 +5,7 @@
 var common = require('./common.js');
 var PosInfo = require('./PosInfo.js');
 var Grammar = require('./Grammar.js');
+var Interval = require('./Interval.js');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -19,6 +20,8 @@ InputStream.newFor = function(obj) {
     return new StringInputStream(obj);
   } else if (obj instanceof Array) {
     return new ListInputStream(obj);
+  } else if (obj instanceof InputStream) {
+    return obj;
   } else {
     throw new Error('cannot make input stream for ' + obj);
   }
@@ -64,8 +67,12 @@ InputStream.prototype = {
     return this.next() === x ? true : common.fail;
   },
 
-  interval: function(startIdx, endIdx) {
+  sourceSlice: function(startIdx, endIdx) {
     return this.source.slice(startIdx, endIdx);
+  },
+
+  intervalFrom: function(startIdx) {
+    return new Interval(this, startIdx, this.pos);
   },
 
   getFailuresPos: function() {

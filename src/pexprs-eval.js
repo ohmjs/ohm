@@ -29,7 +29,7 @@ pexprs.anything.eval = function(recordFailures, syntactic, grammar, inputStream,
     }
     return false;
   } else {
-    bindings.push(new nodes.ValueNode(value, inputStream.source, origPos, inputStream.pos));
+    bindings.push(new nodes.ValueNode(value, inputStream.intervalFrom(origPos)));
     return true;
   }
 };
@@ -39,7 +39,7 @@ pexprs.end.eval = function(recordFailures, syntactic, grammar, inputStream, bind
     grammar.skipSpaces(inputStream);
   }
   if (inputStream.atEnd()) {
-    bindings.push(new nodes.ValueNode(undefined, inputStream.source, inputStream.pos, inputStream.pos));
+    bindings.push(new nodes.ValueNode(undefined, inputStream.intervalFrom(inputStream.pos)));
     return true;
   } else {
     if (recordFailures) {
@@ -60,7 +60,7 @@ pexprs.Prim.prototype.eval = function(recordFailures, syntactic, grammar, inputS
     }
     return false;
   } else {
-    bindings.push(new nodes.ValueNode(this.obj, inputStream.source, origPos, inputStream.pos));
+    bindings.push(new nodes.ValueNode(this.obj, inputStream.intervalFrom(origPos)));
     return true;
   }
 };
@@ -84,7 +84,7 @@ pexprs.RegExpPrim.prototype.eval = function(recordFailures, syntactic, grammar, 
     }
     return false;
   } else {
-    bindings.push(new nodes.ValueNode(inputStream.source[origPos], inputStream.source, origPos, inputStream.pos));
+    bindings.push(new nodes.ValueNode(inputStream.source[origPos], inputStream.intervalFrom(origPos)));
     return true;
   }
 };
@@ -156,7 +156,7 @@ pexprs.Many.prototype.eval = function(recordFailures, syntactic, grammar, inputS
     return false;
   } else {
     for (var idx = 0; idx < columns.length; idx++) {
-      bindings.push(new nodes.ListNode(columns[idx], inputStream.source, origPos, inputStream.pos));
+      bindings.push(new nodes.ListNode(columns[idx], inputStream.intervalFrom(origPos)));
     }
     return true;
   }
@@ -168,7 +168,7 @@ pexprs.Opt.prototype.eval = function(recordFailures, syntactic, grammar, inputSt
   var arity = this.getArity();
   if (!this.expr.eval(recordFailures, syntactic, grammar, inputStream, row)) {
     inputStream.pos = origPos;
-    row = common.repeat(new nodes.ValueNode(undefined, inputStream.source, origPos, inputStream.pos), arity);
+    row = common.repeat(new nodes.ValueNode(undefined, inputStream.intervalFrom(origPos)), arity);
   }
   for (var idx = 0; idx < arity; idx++) {
     bindings.push(row[idx]);
@@ -242,7 +242,7 @@ pexprs.Obj.prototype.eval = function(recordFailures, syntactic, grammar, inputSt
           remainder[p] = obj[p];
         }
       }
-      bindings.push(new nodes.ValueNode(remainder, inputStream.source, origPos, inputStream.pos));
+      bindings.push(new nodes.ValueNode(remainder, inputStream.intervalFrom(origPos)));
       return true;
     } else {
       return numOwnPropertiesMatched === Object.keys(obj).length;
@@ -327,7 +327,7 @@ pexprs.Apply.prototype.evalOnce = function(expr, recordFailures, syntactic, gram
   var origPos = inputStream.pos;
   var bindings = [];
   if (expr.eval(recordFailures, syntactic, grammar, inputStream, bindings)) {
-    return new nodes.RuleNode(this.grammar, this.ruleName, bindings, inputStream.source, origPos, inputStream.pos);
+    return new nodes.RuleNode(this.grammar, this.ruleName, bindings, inputStream.intervalFrom(origPos));
   } else {
     return false;
   }
