@@ -47,7 +47,7 @@ IntervalSourcesDontMatch.prototype.getMessage = function() {
 
 // ----------------- errors about grammars -----------------
 
-// Undeclarated grammar
+// Undeclared grammar
 
 function UndeclaredGrammar(grammarName, optNamespaceName) {
   this.grammarName = grammarName;
@@ -261,6 +261,24 @@ MatchFailure.prototype.getExpected = function() {
   return Object.keys(expected).reverse();
 };
 
+// ----------------- constructors -----------------
+
+// Type error
+
+function InvalidConstructorCall(grammar, ctorName, args) {
+  this.grammar = grammar;
+  this.ctorName = ctorName;
+  this.args = args;
+}
+
+InvalidConstructorCall.prototype = Object.create(Error.prototype);
+
+InvalidConstructorCall.prototype.getMessage = function() {
+  return ('Attempt to invoke constructor '
+	  + this.ctorName
+	  + ' with invalid or unexpected arguments');
+};
+
 // --------------------------------------------------------------------
 // Exports
 // --------------------------------------------------------------------
@@ -274,4 +292,4 @@ exports.RefinementMustBeCompatible = RefinementMustBeCompatible;
 exports.InconsistentArity = InconsistentArity;
 exports.DuplicatePropertyNames = DuplicatePropertyNames;
 exports.MatchFailure = MatchFailure;
-
+exports.InvalidConstructorCall = InvalidConstructorCall;

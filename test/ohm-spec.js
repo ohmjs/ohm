@@ -26,6 +26,25 @@ function makeInterval(thing, startIdx, endIdx) {
   return new Interval(InputStream.newFor(thing), startIdx, endIdx);
 }
 
+function compareGrammars(expected, actual) {
+  // The other property on grammars is "constructors", which contains
+  // closures which cause spurious test failures if we compare
+  // them. So we ignore that property here, concentrating on ruleDict
+  // and other "real" properties of each grammar.
+
+  expect(typeof actual).to.be(typeof expected);
+  // ^ e.g. when one is undefined and the other isn't
+
+  if (expected && actual) {
+    compareGrammars(expected.superGrammar, actual.superGrammar);
+    // In the list below, we exclude superGrammar (just tested above)
+    // and constructors (for reasons given above).
+    ["namespaceName", "name", "ruleDecls", "ruleDict"].forEach(function (prop) {
+      expect(actual[prop]).to.eql(expected[prop]);
+    });
+  }
+}
+
 describe("Ohm", function() {
   describe("unit tests", function() {
 
@@ -39,6 +58,36 @@ describe("Ohm", function() {
       attr._getNextId = function() { return nextId; };
       return attr;
     }
+
+    describe("grammar constructors dictionary", function() {
+      var m;
+      beforeEach(function() {
+        m = ohm.makeGrammar(arithmeticGrammarSource);
+      });
+
+      it("exists", function() {
+	expect(m.constructors).to.be.ok();
+      });
+
+      it("has an entry for each of a few carefully chosen rules", function () {
+	expect(m.constructors.addExpr).to.be.ok();
+	expect(m.constructors.addExpr_minus).to.be.ok();
+	expect(m.constructors.priExpr).to.be.ok();
+	expect(m.constructors.digit).to.be.ok();
+	expect(m.constructors._).to.be.ok();
+      });
+
+      it("entries work when called", function () {
+	var n = m.matchContents('1+2*3', 'addExpr');
+	expect(n.ctorName).to.equal('addExpr');
+	var n2 = m.constructors.addExpr(n.args[0]);
+
+	var p = n.args[0];
+	expect(p.ctorName).to.equal('addExpr_plus');
+	expect(p.args.length).to.equal(3);
+	var p2 = m.constructors.addExpr_plus(p.args[0], p.args[1], p.args[2]);
+      });
+    });
 
     describe("helper stuff", function() {
       describe("intervals", function() {
@@ -163,7 +212,7 @@ describe("Ohm", function() {
         });
 
         it("to recipe and back", function() {
-          expect(ohm.make(eval(m.toRecipe()))).to.eql(m);
+	  compareGrammars(m, ohm.make(eval(m.toRecipe())));
         });
 
         describe("direct match, no stream", function() {
@@ -216,7 +265,7 @@ describe("Ohm", function() {
         });
 
         it("to recipe and back", function() {
-          expect(ohm.make(eval(m.toRecipe()))).to.eql(m);
+	  compareGrammars(m, ohm.make(eval(m.toRecipe())));
         });
 
         describe("direct match, no stream", function() {
@@ -331,7 +380,7 @@ describe("Ohm", function() {
         });
 
         it("to recipe and back", function() {
-          expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	  compareGrammars(m, ohm.make(eval(m.toRecipe())));
         });
 
         describe("direct match, no stream", function() {
@@ -384,7 +433,7 @@ describe("Ohm", function() {
         });
 
         it("to recipe and back", function() {
-          expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	  compareGrammars(m, ohm.make(eval(m.toRecipe())));
         });
 
         describe("direct match, no stream", function() {
@@ -438,7 +487,7 @@ describe("Ohm", function() {
         });
 
         it("to recipe and back", function() {
-          expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	  compareGrammars(m, ohm.make(eval(m.toRecipe())));
         });
 
         describe("direct match, no stream", function() {
@@ -507,7 +556,7 @@ describe("Ohm", function() {
       });
 
       it("to recipe and back", function() {
-        expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	compareGrammars(m, ohm.make(eval(m.toRecipe())));
       });
 
       it("recognition", function() {
@@ -526,7 +575,7 @@ describe("Ohm", function() {
     describe("seq", function() {
       it("to recipe and back", function() {
         var m = makeGrammar("M { start = 'a' 'bc' 'z' }");
-        expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	compareGrammars(m, ohm.make(eval(m.toRecipe())));
       });
 
       describe("without bindings", function() {
@@ -600,7 +649,7 @@ describe("Ohm", function() {
       });
 
       it("to recipe and back", function() {
-        expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	compareGrammars(m, ohm.make(eval(m.toRecipe())));
       });
 
       it("recognition", function() {
@@ -630,7 +679,7 @@ describe("Ohm", function() {
       });
 
       it("to recipe and back", function() {
-        expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	compareGrammars(m, ohm.make(eval(m.toRecipe())));
       });
 
       it("recognition", function() {
@@ -669,7 +718,7 @@ describe("Ohm", function() {
       });
 
       it("to recipe and back", function() {
-        expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	compareGrammars(m, ohm.make(eval(m.toRecipe())));
       });
 
       it("recognition", function() {
@@ -692,7 +741,7 @@ describe("Ohm", function() {
       });
 
       it("to recipe and back", function() {
-        expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	compareGrammars(m, ohm.make(eval(m.toRecipe())));
       });
 
       it("recognition", function() {
@@ -714,7 +763,7 @@ describe("Ohm", function() {
       });
 
       it("to recipe and back", function() {
-        expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	compareGrammars(m, ohm.make(eval(m.toRecipe())));
       });
 
       it("recognition", function() {
@@ -734,7 +783,7 @@ describe("Ohm", function() {
       });
 
       it("to recipe and back", function() {
-        expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	compareGrammars(m, ohm.make(eval(m.toRecipe())));
       });
 
       it("recognition", function() {
@@ -767,7 +816,7 @@ describe("Ohm", function() {
       });
 
       it("to recipe and back", function() {
-        expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	compareGrammars(m, ohm.make(eval(m.toRecipe())));
       });
 
       describe("strict", function() {
@@ -832,7 +881,7 @@ describe("Ohm", function() {
         });
 
         it("to recipe and back", function() {
-          expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	  compareGrammars(m, ohm.make(eval(m.toRecipe())));
         });
 
         it("recognition", function() {
@@ -861,7 +910,7 @@ describe("Ohm", function() {
         });
 
         it("to recipe and back", function() {
-          expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	  compareGrammars(m, ohm.make(eval(m.toRecipe())));
         });
 
         it("recognition", function() {
@@ -911,7 +960,7 @@ describe("Ohm", function() {
         });
 
         it("to recipe and back", function() {
-          expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	  compareGrammars(m, ohm.make(eval(m.toRecipe())));
         });
 
         it("recognition", function() {
@@ -942,7 +991,7 @@ describe("Ohm", function() {
         });
 
         it("to recipe and back", function() {
-          expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	  compareGrammars(m, ohm.make(eval(m.toRecipe())));
         });
 
         it("recognition", function() {
@@ -976,7 +1025,7 @@ describe("Ohm", function() {
         });
 
         it("to recipe and back", function() {
-          expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	  compareGrammars(m, ohm.make(eval(m.toRecipe())));
         });
 
         it("recognition", function() {
@@ -1066,7 +1115,7 @@ describe("Ohm", function() {
         });
 
         it("to recipe and back", function() {
-          expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	  compareGrammars(m, ohm.make(eval(m.toRecipe())));
         });
 
         it("recognition", function() {
@@ -1100,7 +1149,7 @@ describe("Ohm", function() {
         });
 
         it("to recipe and back", function() {
-          expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	  compareGrammars(m, ohm.make(eval(m.toRecipe())));
         });
 
         it("recognition", function() {
@@ -1176,11 +1225,11 @@ describe("Ohm", function() {
         it("to recipe and back", function() {
           var m1Prime = ohm.namespace('inheritance-override-prime').make(eval(m1.toRecipe()));
           m1Prime.namespaceName = 'inheritance-override';
-          expect(m1).to.eql(m1Prime);
+	  compareGrammars(m1, m1Prime);
 
           var m2Prime = ohm.namespace('inheritance-override-prime').make(eval(m2.toRecipe()));
           m2Prime.namespaceName = 'inheritance-override';
-          expect(m2).to.eql(m2Prime);
+	  compareGrammars(m2, m2Prime);
         });
 
         it("should check that rule exists in super-grammar", function() {
@@ -1254,11 +1303,11 @@ describe("Ohm", function() {
         it("to recipe and back", function() {
           var m1Prime = ohm.namespace('inheritance-extend-prime').make(eval(m1.toRecipe()));
           m1Prime.namespaceName = 'inheritanceExtend';
-          expect(m1).to.eql(m1Prime);
+	  compareGrammars(m1, m1Prime);
 
           var m2Prime = ohm.namespace('inheritance-extend-prime').make(eval(m2.toRecipe()));
           m2Prime.namespaceName = 'inheritanceExtend2';
-          expect(m2).to.eql(m2Prime);
+	  compareGrammars(m2, m2Prime);
         });
 
         it("should check that rule exists in super-grammar", function() {
@@ -1319,7 +1368,7 @@ describe("Ohm", function() {
     describe("bindings", function() {
       it("to recipe and back", function() {
         var m = makeGrammar("G { foo = 'a' 'b' | 'b' 'a' }");
-        expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	compareGrammars(m, ohm.make(eval(m.toRecipe())));
       });
 
       it("inconsistent arity in alts is an error", function() {
@@ -1366,7 +1415,7 @@ describe("Ohm", function() {
       });
 
       it("to recipe and back", function() {
-        expect(m).to.eql(ohm.make(eval(m.toRecipe())));
+	compareGrammars(m, ohm.make(eval(m.toRecipe())));
       });
 
       it("recognition", function() {
@@ -1635,13 +1684,47 @@ describe("Ohm", function() {
       it("full bootstrap!", function() {
         var gPrime = ohm._makeGrammarBuilder()(g.matchContents(ohmGrammarSource, 'Grammar'));
         var gPrimePrime = ohm._makeGrammarBuilder()(gPrime.matchContents(ohmGrammarSource, 'Grammar'));
-        expect(gPrime).to.eql(gPrimePrime);
+	compareGrammars(gPrime, gPrimePrime);
       });
 
       it("to recipe and back", function() {
         var gPrime = ohm._makeGrammarBuilder()(g.matchContents(ohmGrammarSource, 'Grammar'));
-        expect(ohm.make(eval(gPrime.toRecipe()))).to.eql(gPrime);
+	compareGrammars(gPrime, ohm.make(eval(gPrime.toRecipe())));
       });
+
+//       it("inherited attributes", function() {
+
+//         function stringify(node) {
+//           return node ? node.ctorName + '(' + node.interval.contents + ')' : '(nothing)';
+//         }
+
+//         var g = ohm.makeGrammar(arithmeticGrammarSource);
+//         var depth = g.inheritedAttribute({
+//           _base: function (topLevelNode) {
+// console.log('setting to zero: depth of ' + stringify(topLevelNode));
+//             depth.set(topLevelNode, 0);
+//           },
+//           _default: function() {
+//             var self = this;
+// console.log('_default on ' + stringify(this));
+//             this.args.forEach(function(arg) {
+// console.log('_default setting depth of ' + stringify(arg));
+//  depth.set(arg, depth(self) + 1); });
+//           },
+//           addExpr_plus: function (x, op, y) {
+// console.log('addExpr_plus on ' + stringify(this));
+//             depth.set(x, depth(this) + 1);
+//           }
+//         });
+//         var printDepths = g.synthesizedAttribute({
+//           _default: function() {
+//             console.log(stringify(this) + ' depth is ' + depth(this));
+//             this.args.forEach(function(arg) { printDepths(arg); });
+//           }
+//         });
+//         printDepths(g.matchContents('1+2*3', 'expr'));
+//       })
+      ;
     });
   });
 });

@@ -20,8 +20,18 @@ var equals = awlib.equals.equals;
 // Private stuff
 // --------------------------------------------------------------------
 
-function Grammar(ruleDict) {
+function Grammar(maybeNamespace, name, superGrammar, ruleDecls, ruleDict) {
+  // N.B. Consider compareGrammars() in the test code when adding instvars.
+  this.namespaceName = maybeNamespace ? maybeNamespace.name : undefined;
+  this.name = name;
+  this.superGrammar = superGrammar;
+  this.ruleDecls = ruleDecls;
   this.ruleDict = ruleDict;
+  this.constructors = this.createConstructors();
+
+  if (maybeNamespace) {
+    maybeNamespace.install(this.name, this);
+  }
 }
 
 Grammar.prototype = {
@@ -43,6 +53,25 @@ Grammar.prototype = {
     this.hexDigit = pexprs.makePrim(/[0-9a-fA-F]/);
     this.hexDigit.description = 'hexadecimal digit';
   })(),
+
+  createConstructors: function() {
+    var constructors = {};
+    for (var ruleName in this.ruleDict) {
+      // We want *all* properties, not just own properties, because of
+      // supergrammars.
+      constructors[ruleName] = function(/* val, val ... */) {
+	var body = this.ruleDict[ruleName];
+	var pieces = Array.prototype.slice(arguments);
+	var result = body.check(pieces);
+	if (result !== pieces.length) {
+	  throw new errors.InvalidConstructorCall(this, ruleName, pieces);
+	}
+	var interval = new Interval(InputStream.newFor(pieces), 0, pieces.length);
+	return new nodes.RuleNode(this, ruleName, pieces, interval);
+      };
+    }
+    return constructors;
+  },
 
   match: function(obj, startRule, optThrowOnFail) {
     return this.matchContents([obj], startRule, optThrowOnFail);

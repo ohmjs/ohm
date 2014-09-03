@@ -52,25 +52,12 @@ Builder.prototype = {
   },
 
   build: function(optNamespace) {
-    var superGrammar = this.superGrammar;
-    var ruleDict = Object.create(superGrammar.ruleDict);
+    var ruleDict = Object.create(this.superGrammar.ruleDict);
     this.ruleDecls.forEach(function(ruleDecl) {
       ruleDecl.performChecks();
       ruleDecl.installInto(ruleDict);
     });
-
-    var grammar = new Grammar(ruleDict);
-    grammar.superGrammar = superGrammar;
-    grammar.ruleDecls = this.ruleDecls;
-    if (this.name) {
-      grammar.name = this.name;
-      if (optNamespace) {
-        grammar.namespaceName = optNamespace.name;
-        optNamespace.install(this.name, grammar);
-      }
-    }
-    this.init();
-    return grammar;
+    return new Grammar(optNamespace, this.name, this.superGrammar, this.ruleDecls, ruleDict);
   },
 
   prim: function(x) { return pexprs.makePrim(x); },
