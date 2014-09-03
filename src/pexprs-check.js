@@ -10,10 +10,12 @@ var pexprs = require('./pexprs.js');
 // Operations
 // --------------------------------------------------------------------
 
+// TODO: make check :: [val] -> boolean, since the number will be getArity() always otherwise
+
 pexprs.PExpr.prototype.check = common.abstract;
 
 pexprs.anything.check = function(vals) {
-  return 1;
+  return vals.length >= 1 && 1;
 };
 
 pexprs.end.check = function(vals) {
@@ -33,7 +35,7 @@ pexprs.RegExpPrim.prototype.check = function(vals) {
 
 pexprs.Alt.prototype.check = function(vals) {
   for (var i = 0; i < this.terms.length; i++) {
-    var result = this.terms[i].check(vals[0]);
+    var result = this.terms[i].check(vals);
     if (result !== false) {
       return result;
     }
@@ -54,7 +56,6 @@ pexprs.Seq.prototype.check = function(vals) {
 };
 
 pexprs.Many.prototype.check = function(vals) {
-  var i;
   var arity = this.getArity();
   if (arity === 0) {
     // TODO: make this a static check w/ a nice error message, then remove the dynamic check.
@@ -67,6 +68,7 @@ pexprs.Many.prototype.check = function(vals) {
     return false;
   }
   var rowcount = columns[0].length;
+  var i;
   for (i = 1; i < arity; i++) {
     if (columns[i].length !== rowcount) {
       return false;
@@ -80,7 +82,7 @@ pexprs.Many.prototype.check = function(vals) {
     }
     var result = this.expr.check(row);
     if (result !== arity) {
-      return result;
+      return false;
     }
   }
 
@@ -88,10 +90,9 @@ pexprs.Many.prototype.check = function(vals) {
 };
 
 pexprs.Opt.prototype.check = function(vals) {
-  var i;
   var arity = this.getArity();
   var allUndefined = true;
-  for (i = 0; i < arity; i++) {
+  for (var i = 0; i < arity; i++) {
     if (vals[i] !== undefined) {
       allUndefined = false;
       break;
@@ -134,7 +135,7 @@ pexprs.Obj.prototype.check = function(vals) {
   }
 
   if (this.isLenient) {
-    if (!(typeof vals[pos] === 'object' && vals !== null) ) {
+    if (!(typeof vals[pos] === 'object' && vals[pos])) {
       return false;
     }
     pos++;
@@ -150,6 +151,8 @@ pexprs.Apply.prototype.check = function(vals) {
     return false;
   }
 
+  // TODO: think about *not* doing the following checks, i.e., trusting that the rule
+  // was correctly constructed.
   var result = this.grammar.ruleDict[this.ruleName].check(vals[0].args);
   if (result !== vals[0].args.length) {
     return false;
