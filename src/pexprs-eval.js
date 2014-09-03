@@ -132,6 +132,7 @@ pexprs.Many.prototype.eval = function(recordFailures, syntactic, grammar, inputS
   var arity = this.getArity();
   if (arity === 0) {
     // TODO: make this a static check w/ a nice error message, then remove the dynamic check.
+    // cf. pexprs-check.js for Many
     throw 'fix me!';
   }
 

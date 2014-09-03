@@ -165,8 +165,8 @@ exports.Apply = Apply;
 
 require('./pexprs-addRulesThatNeedSemanticAction.js');
 require('./pexprs-assertChoicesHaveUniformArity.js');
+require('./pexprs-check.js');
 require('./pexprs-getArity.js');
 require('./pexprs-eval.js');
 require('./pexprs-outputRecipe.js');
 require('./pexprs-toExpected.js');
-
