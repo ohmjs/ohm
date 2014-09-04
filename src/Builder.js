@@ -57,7 +57,7 @@ Builder.prototype = {
       ruleDecl.performChecks();
       ruleDecl.installInto(ruleDict);
     });
-    return new Grammar(optNamespace, this.name, this.superGrammar, this.ruleDecls, ruleDict);
+    return new Grammar(this.name, this.superGrammar, this.ruleDecls, ruleDict, optNamespace);
   },
 
   prim: function(x) { return pexprs.makePrim(x); },

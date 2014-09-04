@@ -10,35 +10,32 @@ var pexprs = require('./pexprs.js');
 // Operations
 // --------------------------------------------------------------------
 
-// TODO: make check :: grammar * [val] -> boolean, since the number
-// will be getArity() always otherwise
-
 pexprs.PExpr.prototype.check = common.abstract;
 
 pexprs.anything.check = function(grammar, vals) {
-  return vals.length >= 1 && 1;
+  return vals.length >= 1;
 };
 
 pexprs.end.check = function(grammar, vals) {
-  return (vals[0] instanceof nodes.ValueNode && vals[0].value === undefined) && 1;
+  return vals[0] instanceof nodes.ValueNode && vals[0].value === undefined;
 };
 
 pexprs.Prim.prototype.check = function(grammar, vals) {
-  return (vals[0] instanceof nodes.ValueNode && vals[0].value === this.obj) && 1;
+  return vals[0] instanceof nodes.ValueNode && vals[0].value === this.obj;
 };
 
 pexprs.RegExpPrim.prototype.check = function(grammar, vals) {
   // TODO: more efficient "total match checker" than the use of .replace here
-  return (vals[0] instanceof nodes.ValueNode
-	  && typeof vals[0].value === 'string'
-	  && vals[0].value.replace(this.obj, '') === '') && 1;
+  return vals[0] instanceof nodes.ValueNode &&
+         typeof vals[0].value === 'string' &&
+         vals[0].value.replace(this.obj, '') === '';
 };
 
 pexprs.Alt.prototype.check = function(grammar, vals) {
   for (var i = 0; i < this.terms.length; i++) {
-    var result = this.terms[i].check(grammar, vals);
-    if (result !== false) {
-      return result;
+    var term = this.terms[i];
+    if (term.check(grammar, vals)) {
+      return true;
     }
   }
   return false;
@@ -47,13 +44,14 @@ pexprs.Alt.prototype.check = function(grammar, vals) {
 pexprs.Seq.prototype.check = function(grammar, vals) {
   var pos = 0;
   for (var i = 0; i < this.factors.length; i++) {
-    var result = this.factors[i].check(grammar, vals.slice(pos));
-    if (result === false) {
-      return result;
+    var factor = this.factors[i];
+    if (factor.check(grammar, vals.slice(pos))) {
+      pos += factor.getArity();
+    } else {
+      return false;
     }
-    pos += result;
   }
-  return pos;
+  return true;
 };
 
 pexprs.Many.prototype.check = function(grammar, vals) {
@@ -81,13 +79,12 @@ pexprs.Many.prototype.check = function(grammar, vals) {
     for (var j = 0; j < arity; j++) {
       row.push(columns[j][i]);
     }
-    var result = this.expr.check(grammar, row);
-    if (result !== arity) {
+    if (!this.expr.check(grammar, row)) {
       return false;
     }
   }
 
-  return arity;
+  return true;
 };
 
 pexprs.Opt.prototype.check = function(grammar, vals) {
@@ -101,14 +98,14 @@ pexprs.Opt.prototype.check = function(grammar, vals) {
   }
 
   if (allUndefined) {
-    return arity;
+    return true;
   } else {
     return this.expr.check(grammar, vals);
   }
 };
 
 pexprs.Not.prototype.check = function(grammar, vals) {
-  return 0;
+  return true;
 };
 
 pexprs.Lookahead.prototype.check = function(grammar, vals) {
@@ -120,7 +117,6 @@ pexprs.Listy.prototype.check = function(grammar, vals) {
 };
 
 pexprs.Obj.prototype.check = function(grammar, vals) {
-  var i;
   var fixedArity = this.getArity();
   if (this.isLenient) {
     fixedArity--;
@@ -128,37 +124,28 @@ pexprs.Obj.prototype.check = function(grammar, vals) {
 
   var pos = 0;
   for (var i = 0; i < fixedArity; i++) {
-    var result = this.properties[i].pattern.check(grammar, vals.slice(pos));
-    if (result === false) {
-      return result;
-    }
-    pos += result;
-  }
-
-  if (this.isLenient) {
-    if (!(typeof vals[pos] === 'object' && vals[pos])) {
+    var pattern = this.properties[i].pattern;
+    if (pattern.check(grammar, vals.slice(pos))) {
+      pos += pattern.getArity();
+    } else {
       return false;
     }
-    pos++;
   }
 
-  return pos;
+  return this.isLenient ? typeof vals[pos] === 'object' && vals[pos] : true;
 };
 
 pexprs.Apply.prototype.check = function(grammar, vals) {
-  if (!(vals[0] instanceof nodes.RuleNode
-	&& vals[0].grammar === grammar
-	&& vals[0].ctorName === this.ruleName)) {
+  if (!(vals[0] instanceof nodes.RuleNode &&
+        vals[0].grammar === grammar &&
+        vals[0].ctorName === this.ruleName)) {
     return false;
   }
 
   // TODO: think about *not* doing the following checks, i.e., trusting that the rule
   // was correctly constructed.
-  var result = grammar.ruleDict[this.ruleName].check(grammar, vals[0].args);
-  if (result !== vals[0].args.length) {
-    return false;
-  }
-
-  return 1;
+  var ruleNode = vals[0];
+  var body = grammar.ruleDict[this.ruleName];
+  return body.check(grammar, ruleNode.args) && ruleNode.args.length === body.getArity();
 };
 

@@ -22,17 +22,17 @@ var equals = awlib.equals.equals;
 // Private stuff
 // --------------------------------------------------------------------
 
-function Grammar(maybeNamespace, name, superGrammar, ruleDecls, ruleDict) {
+function Grammar(name, superGrammar, ruleDecls, ruleDict, optNamespace) {
   // N.B. Consider compareGrammars() in the test code when adding instvars.
-  this.namespaceName = maybeNamespace ? maybeNamespace.name : undefined;
+  this.namespaceName = optNamespace ? optNamespace.name : undefined;
   this.name = name;
   this.superGrammar = superGrammar;
   this.ruleDecls = ruleDecls;
   this.ruleDict = ruleDict;
   this.constructors = this.ctors = this.createConstructors();
 
-  if (maybeNamespace) {
-    maybeNamespace.install(this.name, this);
+  if (optNamespace) {
+    optNamespace.install(this.name, this);
   }
 }
 
@@ -58,7 +58,7 @@ Grammar.prototype = {
 
   construct: function(ruleName, args) {
     var body = this.ruleDict[ruleName];
-    if (!body || (body.check(this, args) !== args.length)) {
+    if (!body || !body.check(this, args) || args.length !== body.getArity()) {
       throw new errors.InvalidConstructorCall(this, ruleName, args);
     }
     var interval = new Interval(InputStream.newFor(args), 0, args.length);
