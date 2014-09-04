@@ -2,6 +2,7 @@ var expect = require('expect.js');
 var fs = require('fs');
 var ohm = require('../src/main.js');
 var errors = require('../src/errors.js');
+var nodes = require('../src/nodes.js');
 var InputStream = require('../src/InputStream.js');
 var Interval = require('../src/Interval.js');
 
@@ -65,8 +66,9 @@ describe("Ohm", function() {
         m = ohm.makeGrammar(arithmeticGrammarSource);
       });
 
-      it("exists", function() {
+      it("exists and has a _default entry", function() {
 	expect(m.constructors).to.be.ok();
+	expect(m.constructors._default).to.be.ok();
       });
 
       it("has an entry for each of a few carefully chosen rules", function () {
@@ -77,7 +79,23 @@ describe("Ohm", function() {
 	expect(m.constructors._).to.be.ok();
       });
 
-      it("entries work when called", function () {
+      it("lacks entries for nonexistent rules", function () {
+	expect(m.constructors.foobar).to.be(undefined);
+      });
+
+      it("_default entry rejects nonexistent rule name", function () {
+	expect(function () { m.constructors._default('foobar', []) })
+	  .to.throwException(function (e) {
+	    expect(e).to.be.a(errors.InvalidConstructorCall);
+	  });
+      });
+
+      it("_default entry works when called correctly", function () {
+	expect(m.constructors._default('addExpr', [m.matchContents('1+2', 'addExpr_plus')]))
+	  .to.be.a(nodes.RuleNode);
+      });
+
+      it("particular entries work when called", function () {
 	var n = m.matchContents('1+2*3', 'addExpr');
 	expect(n.ctorName).to.equal('addExpr');
 	var n2 = m.constructors.addExpr(n.args[0]);

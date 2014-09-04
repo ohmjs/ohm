@@ -327,7 +327,7 @@ pexprs.Apply.prototype.evalOnce = function(expr, recordFailures, syntactic, gram
   var origPos = inputStream.pos;
   var bindings = [];
   if (expr.eval(recordFailures, syntactic, grammar, inputStream, bindings)) {
-    return new nodes.RuleNode(this.grammar, this.ruleName, bindings, inputStream.intervalFrom(origPos));
+    return new nodes.RuleNode(grammar, this.ruleName, bindings, inputStream.intervalFrom(origPos));
   } else {
     return false;
   }

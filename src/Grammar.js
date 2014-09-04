@@ -5,6 +5,8 @@
 var common = require('./common.js');
 var errors = require('./errors.js');
 var InputStream = require('./InputStream.js');
+var Interval = require('./Interval.js');
+var nodes = require('./nodes.js');
 var pexprs = require('./pexprs.js');
 var attributes = require('./attributes.js');
 
@@ -54,21 +56,33 @@ Grammar.prototype = {
     this.hexDigit.description = 'hexadecimal digit';
   })(),
 
+  applyRule: function(ruleName, args) {
+    var body = this.ruleDict[ruleName];
+    console.log('applyRule', ruleName, args);
+    console.log('body', body);
+    if (!body || (body.check(this, args) !== args.length)) {
+      throw new errors.InvalidConstructorCall(this, ruleName, args);
+    }
+    var interval = new Interval(InputStream.newFor(args), 0, args.length);
+    return new nodes.RuleNode(this, ruleName, args, interval);
+  },
+
   createConstructors: function() {
+    var self = this;
     var constructors = {};
+
+    constructors._default = this.applyRule.bind(this);
     for (var ruleName in this.ruleDict) {
       // We want *all* properties, not just own properties, because of
       // supergrammars.
-      constructors[ruleName] = function(/* val, val ... */) {
-	var body = this.ruleDict[ruleName];
-	var pieces = Array.prototype.slice(arguments);
-	var result = body.check(pieces);
-	if (result !== pieces.length) {
-	  throw new errors.InvalidConstructorCall(this, ruleName, pieces);
-	}
-	var interval = new Interval(InputStream.newFor(pieces), 0, pieces.length);
-	return new nodes.RuleNode(this, ruleName, pieces, interval);
-      };
+
+      // also WOW I can't believe I was bitten AGAIN by Javascript's
+      // silly mutable for-bound variables
+      (function (ruleName) {
+	constructors[ruleName] = function(/* val, val ... */) {
+	  return self.applyRule(ruleName, Array.prototype.slice.call(arguments));
+	};
+      })(ruleName);
     }
     return constructors;
   },
