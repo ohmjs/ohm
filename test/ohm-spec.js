@@ -68,7 +68,6 @@ describe("Ohm", function() {
 
       it("exists and has a _default entry", function() {
 	expect(m.constructors).to.be.ok();
-	expect(m.constructors._default).to.be.ok();
       });
 
       it("has an entry for each of a few carefully chosen rules", function () {
@@ -84,14 +83,14 @@ describe("Ohm", function() {
       });
 
       it("_default entry rejects nonexistent rule name", function () {
-	expect(function () { m.constructors._default('foobar', []) })
+	expect(function () { m.construct('foobar', []) })
 	  .to.throwException(function (e) {
 	    expect(e).to.be.a(errors.InvalidConstructorCall);
 	  });
       });
 
       it("_default entry works when called correctly", function () {
-	expect(m.constructors._default('addExpr', [m.matchContents('1+2', 'addExpr_plus')]))
+	expect(m.construct('addExpr', [m.matchContents('1+2', 'addExpr_plus')]))
 	  .to.be.a(nodes.RuleNode);
       });
 

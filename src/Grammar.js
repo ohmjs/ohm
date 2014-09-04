@@ -56,7 +56,7 @@ Grammar.prototype = {
     this.hexDigit.description = 'hexadecimal digit';
   })(),
 
-  applyRule: function(ruleName, args) {
+  construct: function(ruleName, args) {
     var body = this.ruleDict[ruleName];
     if (!body || (body.check(this, args) !== args.length)) {
       throw new errors.InvalidConstructorCall(this, ruleName, args);
@@ -69,7 +69,6 @@ Grammar.prototype = {
     var self = this;
     var constructors = {};
 
-    constructors._default = this.applyRule.bind(this);
     for (var ruleName in this.ruleDict) {
       // We want *all* properties, not just own properties, because of
       // supergrammars.
@@ -78,7 +77,7 @@ Grammar.prototype = {
       // silly mutable for-bound variables
       (function (ruleName) {
 	constructors[ruleName] = function(/* val, val ... */) {
-	  return self.applyRule(ruleName, Array.prototype.slice.call(arguments));
+	  return self.construct(ruleName, Array.prototype.slice.call(arguments));
 	};
       })(ruleName);
     }
