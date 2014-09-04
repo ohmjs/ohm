@@ -58,8 +58,6 @@ Grammar.prototype = {
 
   applyRule: function(ruleName, args) {
     var body = this.ruleDict[ruleName];
-    console.log('applyRule', ruleName, args);
-    console.log('body', body);
     if (!body || (body.check(this, args) !== args.length)) {
       throw new errors.InvalidConstructorCall(this, ruleName, args);
     }
