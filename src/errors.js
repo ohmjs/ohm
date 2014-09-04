@@ -17,6 +17,14 @@ function Error() {
   throw new BuiltinError('Error cannot be instantiated -- it\'s abstract');
 }
 
+Error.prototype = Object.create(BuiltinError.prototype, {
+  message: {
+    get: function() {
+      return this.getMessage();
+    }
+  }
+});
+
 Error.prototype.getMessage = common.abstract;
 
 Error.prototype.printMessage = function() {
