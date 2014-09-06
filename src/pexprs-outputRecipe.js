@@ -22,6 +22,10 @@ pexprs.end.outputRecipe = function(ws) {
   // no-op
 };
 
+pexprs.fail.outputRecipe = function(ws) {
+  // no-op
+};
+
 pexprs.Prim.prototype.outputRecipe = function(ws) {
   ws.nextPutAll('b.prim(');
   ws.nextPutAll(printString(this.obj));

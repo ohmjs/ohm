@@ -49,6 +49,13 @@ pexprs.end.eval = function(recordFailures, syntactic, grammar, inputStream, bind
   }
 };
 
+pexprs.fail.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
+  if (recordFailures) {
+    inputStream.recordFailure(inputStream.pos, this);
+  }
+  return false;
+};
+
 pexprs.Prim.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
   if (syntactic) {
     grammar.skipSpaces(inputStream);

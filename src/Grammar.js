@@ -40,6 +40,7 @@ Grammar.prototype = {
   ruleDict: new (function() {
     this._ = pexprs.anything;
     this.end = new pexprs.Not(pexprs.anything);
+    this.fail = pexprs.fail;
     this.space = pexprs.makePrim(/[\s]/);
     this.space.description = 'space';
     this.alnum = pexprs.makePrim(/[0-9a-zA-Z]/);

@@ -20,6 +20,10 @@ pexprs.end.check = function(grammar, vals) {
   return vals[0] instanceof nodes.ValueNode && vals[0].value === undefined;
 };
 
+pexprs.fail.check = function(grammar, vals) {
+  return false;
+};
+
 pexprs.Prim.prototype.check = function(grammar, vals) {
   return vals[0] instanceof nodes.ValueNode && vals[0].value === this.obj;
 };

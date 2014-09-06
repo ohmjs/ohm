@@ -23,6 +23,10 @@ pexprs.end.assertChoicesHaveUniformArity = function(ruleName) {
   // no-op
 };
 
+pexprs.fail.assertChoicesHaveUniformArity = function(ruleName) {
+  // no-op
+};
+
 pexprs.Prim.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   // no-op
 };
