@@ -40,7 +40,7 @@ Error.prototype.printShortMessage = function() {
 };
 
 Error.prototype.toString = function() {
-  return this.getShortMessage();
+  return this.getMessage();
 };
 
 // ----------------- errors about intervals -----------------

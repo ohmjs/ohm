@@ -22,7 +22,7 @@ pexprs.anything.toExpected = function(ruleDict) {
 };
 
 pexprs.end.toExpected = function(ruleDict) {
-  return "the end of the input";
+  return "end of input";
 };
 
 pexprs.fail.toExpected = function(ruleDict) {

@@ -1647,13 +1647,17 @@ describe("Ohm", function() {
         expect(function() {
           g.matchContents('ab', 'start', true);
         }).to.throwException(function(e) {
-          expect(e.toString()).to.equal("Line 1, col 3: expected 'c'");
+          expect(e.toString()).to.equal("Line 1, col 3: ab\n" +
+                                        "                 ^\n" +
+                                        "Expected: 'c'");
           expect(e.getPos()).to.equal(2);
         });
         expect(function() {
           g.matchContents('abcde', 'start', true);
         }).to.throwException(function(e) {
-          expect(e.toString()).to.equal("Line 1, col 5: expected the end of the input");
+          expect(e.toString()).to.equal("Line 1, col 5: abcde\n" +
+                                        "                   ^\n" +
+                                        "Expected: end of input");
           expect(e.getPos()).to.equal(4);
         });
       });
