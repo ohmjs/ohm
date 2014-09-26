@@ -149,6 +149,9 @@ pexprs.Many.prototype.eval = function(recordFailures, syntactic, grammar, inputS
   while (true) {
     var backtrackPos = inputStream.pos;
     var row = [];
+    if (syntactic) {
+      grammar.skipSpaces(inputStream);
+    }
     if (!this.expr.eval(recordFailures, syntactic, grammar, inputStream, row)) {
       inputStream.pos = backtrackPos;
       break;
