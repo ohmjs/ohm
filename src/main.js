@@ -15,6 +15,7 @@ var unescapeChar = awlib.stringUtils.unescapeChar;
 var UnicodeCategories = require("./unicode.js").UnicodeCategories;
 
 var thisModule = exports;
+var ohm = exports;
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -273,4 +274,15 @@ Object.defineProperty(exports, 'ohmGrammar', {
     return ohmGrammar;
   }
 });
+
+// Load all grammars in script elements into the appropriate namespaces
+
+if (typeof document !== 'undefined') {
+  Array.prototype.slice.call(document.getElementsByTagName('script')).
+      filter(function(elt) { return elt.getAttribute('type') === 'text/ohm-js'; }).
+      forEach(function(elt) {
+        var ns = elt.getAttribute('namespace') || 'default';
+        ohm.namespace(ns).loadGrammarsFromScriptElement(elt)
+      });
+}
 

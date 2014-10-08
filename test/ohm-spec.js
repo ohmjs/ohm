@@ -1598,7 +1598,10 @@ describe("Ohm", function() {
               "  number = number digit  -- rec",
               "         | digit",
               "}"
-            ].join('\n')
+            ].join('\n'),
+            getAttribute: function(name) {
+              return undefined;
+            }
           };
         });
 

@@ -9,6 +9,23 @@ var awlib = require('awlib');
 var browser = awlib.browser;
 
 // --------------------------------------------------------------------
+// Private Stuff
+// --------------------------------------------------------------------
+
+// TODO: make this cross-browser
+function load(url) {
+  var req = new XMLHttpRequest();
+  req.open('GET', url, false);
+  try {
+    req.send();
+    if (req.status === 0 || req.status === 200) {
+      return req.responseText;
+    }
+  } catch (e) {}
+  throw new Error('unable to load url ' + url);
+}
+
+// --------------------------------------------------------------------
 // Namespaces
 // --------------------------------------------------------------------
 
@@ -37,7 +54,8 @@ Namespace.prototype = {
 
   loadGrammarsFromScriptElement: function(element) {
     browser.sanityCheck('script tag\'s type attribute must be "text/ohm-js"', element.type === 'text/ohm-js');
-    ohm.makeGrammars(element.innerHTML, this);
+    var source = element.getAttribute('src') ? load(element.getAttribute('src')) : element.innerHTML;
+    ohm.makeGrammars(source, this);
     return this;
   },
 
