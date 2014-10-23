@@ -148,7 +148,7 @@ function makeGrammarBuilder(optNamespace) {
       return value(t);
     },
     ruleDescrText: function(_) {
-      return this.interval.contents;
+      return this.interval.contents.trim();
     },
 
     caseName: function(_, _, n, _, _) {
