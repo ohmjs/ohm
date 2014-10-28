@@ -1,0 +1,181 @@
+<!doctype html>
+<html>
+  <head>
+    <title>ohm/PL/0 demo</title>
+    <meta charset=utf-8>
+    <link href="math.css" rel="stylesheet"></link>
+    <script src="lib.js"></script>
+    <script type="text/ohm-js" id="pl0">
+
+PL0 {
+
+  Start 
+    = Seq
+
+  Seq
+    = Stmt Seq                -- seq
+    | Stmt                    -- base
+
+  Stmt
+    = 'var' ident ';'         -- var
+    | 'print' AddExpr ';'     -- print
+    | ident ':=' AddExpr      -- assign
+
+  AddExpr
+    = AddExpr '+' MulExpr  -- plus
+    | AddExpr '-' MulExpr  -- minus
+    | MulExpr
+
+  MulExpr
+    = MulExpr '*' ExpExpr  -- times
+    | MulExpr '/' ExpExpr  -- divide
+    | PriExpr
+
+  PriExpr
+    = '(' Expr ')'  -- paren
+    | '+' PriExpr   -- pos
+    | '-' PriExpr   -- neg
+    | ident
+    | number
+
+  ident  -- identifier
+    = letter alnum*
+
+  number  -- number
+    = digit+ ('.' digit*)?  -- integerAndFract
+    | '.' digit+            -- onlyFract
+}
+
+</script>
+  </head>
+  <body>
+    <input type="text" id="input" placeholder="Enter a PL/0 expression..." size="80"></input>
+    <div id="errorDiv">
+      <div id="spaces"></div>
+      <wrapperWrapper><wrapper>
+        <div id="error"><label>Expected: </label><span id="errorDetails"></span></div>
+      </wrapper></wrapperWrapper>
+    </div>
+    <div id="value"></div>
+    <script src="../dist/ohm.js"></script>
+    <script>
+
+var g = ohm.namespace('test')
+           .loadGrammarsFromScriptElement(document.getElementById('pl0'))
+           .getGrammar('PL0');
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+var symbolTableIn = g.inheritedAttribute({
+  _base:        function(s) {
+                  symbolTableIn.set(s, []);
+                },
+  Start:        function(s)
+                {
+                  symbolTableIn.set(s, []);
+                },
+  Seq_seq:      function(s, q)
+                {
+                  symbolTableIn.set(q, symbolTableOut(s));
+		  symbolTableIn.set(s, symbolTableIn(this));
+                },
+  Seq_base:     function(s)
+                {
+		  symbolTableIn.set(s, symbolTableIn(this));
+                },
+  _default:     function() {
+                  console.log('args: ' + this.args);
+                  var args = this.args;
+                  if (args && args.length > 0) {
+                    symbolTableIn(args[0], symbolTableIn(this));
+                    for (var i = 1; i < args.length; i++) {
+                      symbolTableIn(args[i], symbolTableOut(args[i-1]));
+                    }
+                  }
+                }
+});
+
+var symbolTableOut = g.synthesizedAttribute({
+  Start:          function(q)
+                  {
+      		    return symbolTableOut(q);
+                  },
+  Stmt_var:       function(n, _, e)
+                  {
+                     var foo = [].concat(symbolTableIn(this)).concat([n]);
+                     console.log('foo' + foo);
+                     return foo
+                  },
+  _default:       function()
+                  {
+                     console.log('args: ' + this.args);
+                     var args = this.args;
+                     if (args && args.length > 0) {
+			 return args.map(function(a) {return symbolTableOut(a)});
+//                       return symbolTableOut(args[args.length-1])
+                     }
+                     return symbolTableIn(this)
+                  },
+});
+
+var codeOut = g.synthesizedAttribute({
+  Start:          function(q)
+                  {
+                    return codeOut(q);
+                  },
+  Seq_seq:        function(s, q)
+                  {
+                    return codeOut(s) + 'pop\n' + codeOut(q)
+                  },
+  Seq_base:       function(s)
+                  { return codeOut(s); },
+
+  Stmt_var:       function(_, _, _) { return ''; },
+  Stmt_print:     function(_, e, _) { return codeOut(e) + 'print\n'; },
+  Stmt_assign:    function(n, _, e) { return codeOut(e) + 'push(' + symbolTableIn(this).indexOf(n) + ')\n' + 'store\n'; },
+  AddExpr_plus:   function(x, _, y) { return codeOut(x) + codeOut(y) + 'add\n'; },
+  AddExpr_minus:  function(x, _, y) { return codeOut(x) + codeOut(y) + 'sub\n'; },
+  MulExpr_times:  function(x, _, y) { return codeOut(x) + codeOut(y) + 'mul\n'; },
+  MulExpr_divide: function(x, _, y) { return codeOut(x) + codeOut(y) + 'div\n'; },
+  PriExpr_paren:  function(_, e, _) { return codeOut(e); },
+  PriExpr_pos:    function(_, e)    { return codeOut(e); },
+  PriExpr_neg:    function(_, e)    { return codeOut(e) + 'neg\n'; },
+  PriExpr_ident:  function(e)     { return codeOut(e); },
+  PriExpr_number: function(e)     { return codeOut(e); },
+  ident:          function(_, _)    { return 'push(' + symbolTableIn(this).indexOf(this.interval.contents) + ')\n'; },
+  number:         function(_)       { return 'push(' + parseFloat(this.interval.contents) + ')\n'; }
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+var input = document.getElementById('input');
+var spaces = document.getElementById('spaces');
+var error = document.getElementById('error');
+var errorDetails = document.getElementById('errorDetails');
+
+input.value = '';
+hideError();
+
+input.oninput = function() {
+  hideError();
+  try {
+    var cst = g.matchContents(this.value, 'Start', true);
+    show('value', codeOut(cst));
+  } catch (e) {
+    this.className = 'error';
+    showError(e);
+  }
+};
+
+function hideError() {
+  errorDiv.className = errorDiv.className = 'hidden';
+}
+
+function showError(e) {
+  console.log(e);
+}
+
+    </script>
+  </body>
+</html>
+
