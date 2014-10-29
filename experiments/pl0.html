@@ -19,7 +19,7 @@ PL0 {
   Stmt
     = 'var' ident ';'         -- var
     | 'print' AddExpr ';'     -- print
-    | ident ':=' AddExpr      -- assign
+    | ident ':=' AddExpr ';'  -- assign
 
   AddExpr
     = AddExpr '+' MulExpr  -- plus
@@ -27,8 +27,8 @@ PL0 {
     | MulExpr
 
   MulExpr
-    = MulExpr '*' ExpExpr  -- times
-    | MulExpr '/' ExpExpr  -- divide
+    = MulExpr '*' PriExpr  -- times
+    | MulExpr '/' PriExpr  -- divide
     | PriExpr
 
   PriExpr
@@ -74,11 +74,11 @@ var symbolTableIn = g.inheritedAttribute({
                 {
                   symbolTableIn.set(s, []);
                 },
-  Seq_seq:      function(s, q)
-                {
-                  symbolTableIn.set(q, symbolTableOut(s));
-		  symbolTableIn.set(s, symbolTableIn(this));
-                },
+  // Seq_seq:      function(s, q)
+  //               {
+  // 		  symbolTableIn.set(s, symbolTableIn(this));
+  //                 symbolTableIn.set(q, symbolTableOut(s));
+  //               },
   Seq_base:     function(s)
                 {
 		  symbolTableIn.set(s, symbolTableIn(this));
@@ -87,9 +87,9 @@ var symbolTableIn = g.inheritedAttribute({
                   console.log('args: ' + this.args);
                   var args = this.args;
                   if (args && args.length > 0) {
-                    symbolTableIn(args[0], symbolTableIn(this));
+                    symbolTableIn.set(args[0], symbolTableIn(this));
                     for (var i = 1; i < args.length; i++) {
-                      symbolTableIn(args[i], symbolTableOut(args[i-1]));
+                      symbolTableIn.set(args[i], symbolTableOut(args[i-1]));
                     }
                   }
                 }
@@ -100,10 +100,10 @@ var symbolTableOut = g.synthesizedAttribute({
                   {
       		    return symbolTableOut(q);
                   },
-  Stmt_var:       function(n, _, e)
+  Stmt_var:       function(_, n, e)
                   {
-                     var foo = [].concat(symbolTableIn(this)).concat([n]);
-                     console.log('foo' + foo);
+                     var foo = [].concat(symbolTableIn(this)).concat([n.interval.contents]);
+                     console.log('foo: ' + foo);
                      return foo
                   },
   _default:       function()
@@ -111,10 +111,11 @@ var symbolTableOut = g.synthesizedAttribute({
                      console.log('args: ' + this.args);
                      var args = this.args;
                      if (args && args.length > 0) {
-			 return args.map(function(a) {return symbolTableOut(a)});
-//                       return symbolTableOut(args[args.length-1])
+//			 return args.map(function(a) {return symbolTableOut(a)});
+			console.log('ret: ' + JSON.stringify(symbolTableOut(args[args.length-1])));
+                       return symbolTableOut(args[args.length-1])
                      }
-                     return symbolTableIn(this)
+                     throw("unreachable reached");
                   },
 });
 
@@ -130,9 +131,9 @@ var codeOut = g.synthesizedAttribute({
   Seq_base:       function(s)
                   { return codeOut(s); },
 
-  Stmt_var:       function(_, _, _) { return ''; },
+  Stmt_var:       function(_, _, _) { return 'push(nil)\n'; },
   Stmt_print:     function(_, e, _) { return codeOut(e) + 'print\n'; },
-  Stmt_assign:    function(n, _, e) { return codeOut(e) + 'push(' + symbolTableIn(this).indexOf(n) + ')\n' + 'store\n'; },
+  Stmt_assign:    function(n, _, e, _) { return codeOut(e) + 'push(' + symbolTableIn(this).indexOf(n) + ')\n' + 'store\n'; },
   AddExpr_plus:   function(x, _, y) { return codeOut(x) + codeOut(y) + 'add\n'; },
   AddExpr_minus:  function(x, _, y) { return codeOut(x) + codeOut(y) + 'sub\n'; },
   MulExpr_times:  function(x, _, y) { return codeOut(x) + codeOut(y) + 'mul\n'; },
@@ -142,7 +143,12 @@ var codeOut = g.synthesizedAttribute({
   PriExpr_neg:    function(_, e)    { return codeOut(e) + 'neg\n'; },
   PriExpr_ident:  function(e)     { return codeOut(e); },
   PriExpr_number: function(e)     { return codeOut(e); },
-  ident:          function(_, _)    { return 'push(' + symbolTableIn(this).indexOf(this.interval.contents) + ')\n'; },
+  ident:          function(_, _)    {
+    var lit = this.interval.contents;
+    var sym = symbolTableIn(this);
+    console.log('lit: ' + lit);
+    console.log('sym: ' + JSON.stringify(sym));
+    return 'push(' + symbolTableIn(this).indexOf(this.interval.contents) + ')\n'; },
   number:         function(_)       { return 'push(' + parseFloat(this.interval.contents) + ')\n'; }
 });
 
