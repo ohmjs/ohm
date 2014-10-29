@@ -77,20 +77,28 @@ var symbolTableIn = g.inheritedAttribute({
   _default:     function() {
                   var i;
                   var args = this.args;
+                  if (!isRuleNode(this)) {
+                    for (i = 0; i < args.length; i++) {
+                       symbolTableIn.set(args[i], symbolTableIn(this));
+                    }
+                    return;
+                  }
+                    
                   if (args && args.length > 0) {
                     var firstIndex = null;
-                    for (var i = 0; i < args.length; i++) {
+                    for (i = 0; i < args.length; i++) {
                       if (isRuleNode(args[i]) && firstIndex === null) {
+                        console.log("first: " + args[i].ctorName + " " + this.ctorName);
                         firstIndex = i;
                       }
                     }
                     if (firstIndex !== null) {
-                      console.log("set: " + args[firstIndex].ctorName);
+                      console.log("set0: " + args[firstIndex].ctorName + " " + JSON.stringify(symbolTableIn(this)));
                       symbolTableIn.set(args[firstIndex], symbolTableIn(this));
                       var last = firstIndex;
                       for (i = firstIndex + 1; i < args.length; i++) {
                         if (isRuleNode(args[i])) {
-                          console.log("set: " + args[i].ctorName + ' ' + last);
+                          console.log("set: " + args[i].ctorName + " " + args[last].ctorName + " " + i + " " + last + " " + JSON.stringify(symbolTableOut(args[last])));
                           symbolTableIn.set(args[i], symbolTableOut(args[last]));
                           last = i;
                       }
@@ -144,7 +152,7 @@ var codeOut = g.synthesizedAttribute({
 
   Stmt_var:       function(_, _, _) { return 'push(nil)\n'; },
   Stmt_print:     function(_, e, _) { return codeOut(e) + 'print\n'; },
-  Stmt_assign:    function(n, _, e, _) { return codeOut(e) + 'push(' + symbolTableIn(this).indexOf(n) + ')\n' + 'store\n'; },
+  Stmt_assign:    function(n, _, e, _) { return codeOut(e) + 'pushLit(' + symbolTableIn(this).indexOf(n) + ')\n' + 'store\n'; },
   AddExpr_plus:   function(x, _, y) { return codeOut(x) + codeOut(y) + 'add\n'; },
   AddExpr_minus:  function(x, _, y) { return codeOut(x) + codeOut(y) + 'sub\n'; },
   MulExpr_times:  function(x, _, y) { return codeOut(x) + codeOut(y) + 'mul\n'; },
@@ -159,8 +167,8 @@ var codeOut = g.synthesizedAttribute({
     var sym = symbolTableIn(this);
     console.log('lit: ' + lit);
     console.log('sym: ' + JSON.stringify(sym));
-    return 'push(' + symbolTableIn(this).indexOf(this.interval.contents) + ')\n'; },
-  number:         function(_)       { return 'push(' + parseFloat(this.interval.contents) + ')\n'; }
+    return 'pushReg(' + symbolTableIn(this).indexOf(this.interval.contents) + ')\n'; },
+  number:         function(_)       { return 'pushLit(' + parseFloat(this.interval.contents) + ')\n'; }
 });
 
 // ---------------------------------------------------------------------------------------------------------------------
