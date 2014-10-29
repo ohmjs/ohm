@@ -3,8 +3,8 @@
   <head>
     <title>ohm/PL/0 demo</title>
     <meta charset=utf-8>
-    <link href="math.css" rel="stylesheet"></link>
-    <script src="lib.js"></script>
+    <link href="../demo/math.css" rel="stylesheet"></link>
+    <script src="../demo/lib.js"></script>
     <script type="text/ohm-js" id="pl0">
 
 PL0 {
@@ -66,34 +66,40 @@ var g = ohm.namespace('test')
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+function isRuleNode(r) {
+  return r.hasOwnProperty("ctorName");
+}
+
 var symbolTableIn = g.inheritedAttribute({
   _base:        function(s) {
                   symbolTableIn.set(s, []);
                 },
-  Start:        function(s)
-                {
-                  symbolTableIn.set(s, []);
-                },
-  // Seq_seq:      function(s, q)
-  //               {
-  // 		  symbolTableIn.set(s, symbolTableIn(this));
-  //                 symbolTableIn.set(q, symbolTableOut(s));
-  //               },
-  Seq_base:     function(s)
-                {
-		  symbolTableIn.set(s, symbolTableIn(this));
-                },
   _default:     function() {
-                  console.log('args: ' + this.args);
+                  var i;
                   var args = this.args;
                   if (args && args.length > 0) {
-                    symbolTableIn.set(args[0], symbolTableIn(this));
-                    for (var i = 1; i < args.length; i++) {
-                      symbolTableIn.set(args[i], symbolTableOut(args[i-1]));
+                    var firstIndex = null;
+                    for (var i = 0; i < args.length; i++) {
+                      if (isRuleNode(args[i]) && firstIndex === null) {
+                        firstIndex = i;
+                      }
+                    }
+                    if (firstIndex !== null) {
+                      console.log("set: " + args[firstIndex].ctorName);
+                      symbolTableIn.set(args[firstIndex], symbolTableIn(this));
+                      var last = firstIndex;
+                      for (i = firstIndex + 1; i < args.length; i++) {
+                        if (isRuleNode(args[i])) {
+                          console.log("set: " + args[i].ctorName + ' ' + last);
+                          symbolTableIn.set(args[i], symbolTableOut(args[last]));
+                          last = i;
+                      }
                     }
                   }
                 }
+              }
 });
+
 
 var symbolTableOut = g.synthesizedAttribute({
   Start:          function(q)
@@ -103,19 +109,24 @@ var symbolTableOut = g.synthesizedAttribute({
   Stmt_var:       function(_, n, e)
                   {
                      var foo = [].concat(symbolTableIn(this)).concat([n.interval.contents]);
-                     console.log('foo: ' + foo);
                      return foo
                   },
   _default:       function()
                   {
-                     console.log('args: ' + this.args);
-                     var args = this.args;
-                     if (args && args.length > 0) {
-//			 return args.map(function(a) {return symbolTableOut(a)});
-			console.log('ret: ' + JSON.stringify(symbolTableOut(args[args.length-1])));
-                       return symbolTableOut(args[args.length-1])
-                     }
-                     throw("unreachable reached");
+                    var args = this.args;
+                    if (args && args.length > 0) {
+                      var lastIndex = null;
+                      for (var i = args.length - 1; i >= 0; i--) {
+                        if (isRuleNode(args[i]) && lastIndex === null) {
+                          lastIndex = i;
+                        }
+                      }
+                      if (lastIndex !== null) {
+                        return symbolTableOut(args[lastIndex]);
+                      } else {
+                        return symbolTableIn(this);
+                      }
+                    }
                   },
 });
 
@@ -164,13 +175,13 @@ hideError();
 
 input.oninput = function() {
   hideError();
-  try {
+//  try {
     var cst = g.matchContents(this.value, 'Start', true);
     show('value', codeOut(cst));
-  } catch (e) {
-    this.className = 'error';
-    showError(e);
-  }
+//  } catch (e) {
+//    this.className = 'error';
+//    showError(e);
+//  }
 };
 
 function hideError() {
