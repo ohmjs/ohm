@@ -240,6 +240,8 @@ function makeGrammars(source, optNamespace) {
 
 // Stuff that users should know about
 
+exports.error = errors;
+
 var namespaces = {};
 exports.namespace = function(name) {
   if (namespaces[name] === undefined) {

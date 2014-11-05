@@ -291,6 +291,7 @@ InvalidConstructorCall.prototype.getMessage = function() {
 // Exports
 // --------------------------------------------------------------------
 
+exports.Error = Error;
 exports.IntervalSourcesDontMatch = IntervalSourcesDontMatch;
 exports.UndeclaredGrammar = UndeclaredGrammar;
 exports.DuplicateGrammarDeclaration = DuplicateGrammarDeclaration;
