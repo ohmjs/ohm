@@ -64,6 +64,50 @@ ListNode.prototype = Object.create(Node.prototype, {
     value: function() {
       return this.values;
     }
+  },
+
+  length: {
+    value: function() {
+      return this.values.length;
+    }
+  },
+
+  get: {
+    value: function(idx) {
+      return this.values[idx];
+    }
+  },
+
+  indexOf: {
+    value: function(value) {
+      return this.values.indexOf(value);
+    }
+  },
+  
+  isEmpty: {
+    value: function() {
+      return this.values.length === 0;
+    }
+  },
+  
+  first: {
+    value: function() {
+      if (this.isEmpty()) {
+        throw new Error('cannot get first element of empty list node');
+      } else {
+        return this.values[0];
+      }
+    }
+  },
+  
+  last: {
+    value: function() {
+      if (this.isEmpty()) {
+        throw new Error('cannot get last element of empty list node');
+      } else {
+        return this.values[this.values.length - 1];
+      }
+    }
   }
 });
 
