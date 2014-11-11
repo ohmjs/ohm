@@ -28,7 +28,11 @@ function makeSynthesizedAttribute(actionDict, optDoNotMemoize) {
       return l.values.map(function(node) { return node.accept(nodeVisitor) });
     },
     visitValue: function(v) {
-      return v.value;
+      if (actionDict._terminal) {
+        return actionDict._terminal.call(v);
+      } else {
+        return v.value;
+      }
     }
   };
   var attribute;
