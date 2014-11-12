@@ -5,7 +5,7 @@
     <meta charset=utf-8>
     <link href="../demo/math.css" rel="stylesheet"></link>
     <script src="../demo/lib.js"></script>
-    <script type="text/ohm-js" id="pl0">
+    <script type="text/ohm-js" namespace="test">
 
 PL0 {
 
@@ -47,6 +47,7 @@ PL0 {
 }
 
 </script>
+    <script src="../dist/ohm.js"></script>
   </head>
   <body>
     <input type="text" id="input" placeholder="Enter a PL/0 expression..." size="80"></input>
@@ -57,85 +58,44 @@ PL0 {
       </wrapper></wrapperWrapper>
     </div>
     <div id="value"></div>
-    <script src="../dist/ohm.js"></script>
     <script>
 
-var g = ohm.namespace('test')
-           .loadGrammarsFromScriptElement(document.getElementById('pl0'))
-           .getGrammar('PL0');
+var g = ohm.namespace('test').getGrammar('PL0');
 
 // ---------------------------------------------------------------------------------------------------------------------
-
-function isRuleNode(r) {
-  return r.hasOwnProperty("ctorName");
-}
 
 var symbolTableIn = g.inheritedAttribute({
   _base:        function(s) {
                   symbolTableIn.set(s, []);
                 },
-  _default:     function() {
-                  var i;
-                  var args = this.args;
-                  if (!isRuleNode(this)) {
-                    for (i = 0; i < args.length; i++) {
-                       symbolTableIn.set(args[i], symbolTableIn(this));
-                    }
-                    return;
-                  }
-                    
-                  if (args && args.length > 0) {
-                    var firstIndex = null;
-                    for (i = 0; i < args.length; i++) {
-                      if (isRuleNode(args[i]) && firstIndex === null) {
-                        console.log("first: " + args[i].ctorName + " " + this.ctorName);
-                        firstIndex = i;
-                      }
-                    }
-                    if (firstIndex !== null) {
-                      console.log("set0: " + args[firstIndex].ctorName + " " + JSON.stringify(symbolTableIn(this)));
-                      symbolTableIn.set(args[firstIndex], symbolTableIn(this));
-                      var last = firstIndex;
-                      for (i = firstIndex + 1; i < args.length; i++) {
-                        if (isRuleNode(args[i])) {
-                          console.log("set: " + args[i].ctorName + " " + args[last].ctorName + " " + i + " " + last + " " + JSON.stringify(symbolTableOut(args[last])));
-                          symbolTableIn.set(args[i], symbolTableOut(args[last]));
-                          last = i;
-                      }
-                    }
+  _default:     function(child) {
+                  if (child === this.first()) {
+                    symbolTableIn.set(child, symbolTableIn(this));
+                  } else {
+                    symbolTableIn.set(child, symbolTableOut(this.get(this.indexOf(child) - 1)));
                   }
                 }
-              }
 });
 
-
 var symbolTableOut = g.synthesizedAttribute({
-  Start:          function(q)
-                  {
+  Start:          function(q) {
       		    return symbolTableOut(q);
                   },
-  Stmt_var:       function(_, n, e)
-                  {
-                     var foo = [].concat(symbolTableIn(this)).concat([n.interval.contents]);
-                     return foo
+  Stmt_var:       function(_, n, e) {
+                    var foo = [].concat(symbolTableIn(this)).concat([n.interval.contents]);
+                    return foo
                   },
-  _default:       function()
-                  {
-                    var args = this.args;
-                    if (args && args.length > 0) {
-                      var lastIndex = null;
-                      for (var i = args.length - 1; i >= 0; i--) {
-                        if (isRuleNode(args[i]) && lastIndex === null) {
-                          lastIndex = i;
-                        }
-                      }
-                      if (lastIndex !== null) {
-                        return symbolTableOut(args[lastIndex]);
-                      } else {
-                        return symbolTableIn(this);
-                      }
+  ident:          function(_, _) { return symbolTableIn(this); },
+  _default:       function() {
+                    if (this.isEmpty()) {
+                      return symbolTableIn(this);
+                    } else {
+                      return symbolTableOut(this.last());
                     }
                   },
+  _terminal:      function() {
+                    return symbolTableIn(this);
+                  }
 });
 
 var codeOut = g.synthesizedAttribute({
@@ -162,13 +122,13 @@ var codeOut = g.synthesizedAttribute({
   PriExpr_neg:    function(_, e)    { return codeOut(e) + 'neg\n'; },
   PriExpr_ident:  function(e)     { return codeOut(e); },
   PriExpr_number: function(e)     { return codeOut(e); },
-  ident:          function(_, _)    {
+  ident:          function(_, _) {
     var lit = this.interval.contents;
     var sym = symbolTableIn(this);
     console.log('lit: ' + lit);
     console.log('sym: ' + JSON.stringify(sym));
     return 'pushReg(' + symbolTableIn(this).indexOf(this.interval.contents) + ')\n'; },
-  number:         function(_)       { return 'pushLit(' + parseFloat(this.interval.contents) + ')\n'; }
+  number:         function(_)       { return 'pushLit(' + parseFloat(this.interval.contents) + ')\n'; },
 });
 
 // ---------------------------------------------------------------------------------------------------------------------

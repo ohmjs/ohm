@@ -105,17 +105,16 @@ Grammar.prototype = {
     if (succeeded) {
       var node = bindings[0];
       var stack = [undefined];
+      function setParentMethod() {
+        stack.push(this);
+        this.args.forEach(function(arg) { setParents(arg); });
+        stack.pop();
+        this.parent = stack[stack.length - 1];
+      };
       var setParents = this.synthesizedAttribute({
-        _default: function() {
-          stack.push(this);
-          this.args.forEach(function(arg) { setParents(arg); });
-          stack.pop();
-          this.parent = stack[stack.length - 1];
-        },
-        '*': function() {
-          stack.push(this);
-          this.args.forEach(function(arg) { setParents(arg); });
-          stack.pop();
+        _default: setParentMethod,
+        '*': setParentMethod,
+        _terminal: function() {
           this.parent = stack[stack.length - 1];
         }
       }, false);

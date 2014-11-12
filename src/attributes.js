@@ -12,7 +12,7 @@ function makeSynthesizedAttribute(actionDict, optDoNotMemoize) {
   var nodeVisitor = {
     visitRule: function(r) {
       if (r.ctorName === '*') {
-        if (r.parent && r.parent.ctorName) {
+        if (r.parent) {
           var actionName = r.parent.ctorName + '$' + (r.parent.args.indexOf(r) + 1);
           if (actionDict[actionName]) {
             return actionDict[actionName].call(r);
@@ -66,46 +66,46 @@ function makeSynthesizedAttribute(actionDict, optDoNotMemoize) {
 function makeInheritedAttribute(actionDict) {
   var nodeVisitor = {
     visitRule: function(r) {
-      if (actionDict[r.ctorName]) {
-        actionDict[r.ctorName].apply(r, r.args);
-      } else if (actionDict._default) {
-        actionDict._default.call(r);
-/*
-      } else if (r.args.length === 1) {
-	// We special-case unary rules here, since a very common case
-	// when writing actionDicts is to simply tail-recur
-	// immediately on the sole child.
-	attribute.set(r.args[0], attribute(this));
-*/
+      if (r.hasOwnProperty(key)) {
+        throw new Error('inherited attribute was set more than once on a node');
+      } else if (r.parent) {
+        if (r.parent.ctorName === '*') {
+          var grandparent = r.parent.parent;
+          var actionName = grandparent.ctorName + '$' + (grandparent.indexOf(r.parent) + 1) + '$each';
+          if (actionDict[actionName]) {
+            return actionDict[actionName].call(r.parent, r);
+          }
+        }
+
+        var actionName = r.parent.ctorName + '$' + (r.parent.indexOf(r) + 1);
+        if (r.parent.ctorName !== '*' && actionDict[actionName]) {
+          actionDict[actionName].apply(r.parent, r.parent.args);
+        } else if (actionDict._default) {
+          actionDict._default.call(r.parent, r);
+        } else {
+          throw new Error('missing case for ' + actionName);
+        }
       } else {
-        throw new Error('missing semantic action for ' + r.ctorName);
+        actionDict._base.call(undefined, r);
       }
     },
-    visitList: function(l) {
-      l.values.forEach(function(node) { node.accept(nodeVisitor) });
-    },
-    visitValue: function(v) {}
+    visitValue: function(v) {
+      return nodeVisitor.visitRule(v);
+    }
   };
   var key = Symbol();
-  var noValue = {};
   var attribute = function(node) {
-    if (!(node.hasOwnProperty(key))) {
-      if (node.parent) {
-        node.parent.args.forEach(function(arg) { arg[key] = noValue; });
-        node.parent.accept(nodeVisitor);
-      } else {
-        node[key] = noValue;
-        actionDict._base.call(undefined, node);
-      }
+    if (!node.hasOwnProperty(key)) {
+      node.accept(nodeVisitor);
     }
-    if (node[key] === noValue) {
-      // TODO: improve error message (e.g., add index of node, and name specific key in actionDict -- could be _default)
-      throw new Error((node.parent ? node.parent.ctorName : '_base') + ' did not supply a value for node type ' + node.ctorName);
+    if (!node.hasOwnProperty(key)) {
+      throw new Error(
+        (node.parent ? node.parent.ctorName : '_base') + ' did not supply a value for node ' + JSON.stringify(node));
     }
     return node[key];
   };
   attribute.set = function(node, value) {
-    if (node[key] !== noValue) {
+    if (node.hasOwnProperty(key)) {
       throw new Error('the value of an attribute cannot be set more than once');
     } else {
       node[key] = value;
