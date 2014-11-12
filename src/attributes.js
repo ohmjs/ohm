@@ -11,6 +11,18 @@ var Symbol = this.Symbol || require('symbol');
 function makeSynthesizedAttribute(actionDict, optDoNotMemoize) {
   var nodeVisitor = {
     visitRule: function(r) {
+      if (r.ctorName === '*') {
+        if (r.parent && r.parent.ctorName) {
+          var actionName = r.parent.ctorName + '$' + (r.parent.args.indexOf(r) + 1);
+          if (actionDict[actionName]) {
+            return actionDict[actionName].call(r);
+          }
+        }
+        if (!actionDict['*']) {
+          return r.args.map(function(node) { return node.accept(nodeVisitor); });
+        }
+      }
+        
       if (actionDict[r.ctorName]) {
         return actionDict[r.ctorName].apply(r, r.args);
       } else if (actionDict._default) {
@@ -23,9 +35,6 @@ function makeSynthesizedAttribute(actionDict, optDoNotMemoize) {
       } else {
         throw new Error('missing semantic action for ' + r.ctorName);
       }
-    },
-    visitList: function(l) {
-      return l.values.map(function(node) { return node.accept(nodeVisitor) });
     },
     visitValue: function(v) {
       if (actionDict._terminal) {

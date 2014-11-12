@@ -111,6 +111,12 @@ Grammar.prototype = {
           this.args.forEach(function(arg) { setParents(arg); });
           stack.pop();
           this.parent = stack[stack.length - 1];
+        },
+        '*': function() {
+          stack.push(this);
+          this.args.forEach(function(arg) { setParents(arg); });
+          stack.pop();
+          this.parent = stack[stack.length - 1];
         }
       }, false);
       setParents(node);

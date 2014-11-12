@@ -37,65 +37,36 @@ RuleNode.prototype = Object.create(Node.prototype, {
     }
   },
 
-  toJSON: {
-    value: function() {
-      var r = {};
-      r[this.ctorName] = this.args;
-      return r;
-    }
-  }
-});
-
-// List nodes
-
-function ListNode(values, interval) {
-  this.init(interval);
-  this.values = values;
-}
-
-ListNode.prototype = Object.create(Node.prototype, {
-  accept: {
-    value: function(visitor) {
-      return visitor.visitList(this);
-    }
-  },
-
-  toJSON: {
-    value: function() {
-      return this.values;
-    }
-  },
-
   length: {
     value: function() {
-      return this.values.length;
+      return this.args.length;
     }
   },
 
   get: {
     value: function(idx) {
-      return this.values[idx];
+      return this.args[idx];
     }
   },
 
   indexOf: {
-    value: function(value) {
-      return this.values.indexOf(value);
+    value: function(arg) {
+      return this.args.indexOf(arg);
     }
   },
   
   isEmpty: {
     value: function() {
-      return this.values.length === 0;
+      return this.args.length === 0;
     }
   },
   
   first: {
     value: function() {
       if (this.isEmpty()) {
-        throw new Error('cannot get first element of empty list node');
+        throw new Error('cannot get first element of empty rule node');
       } else {
-        return this.values[0];
+        return this.args[0];
       }
     }
   },
@@ -103,10 +74,18 @@ ListNode.prototype = Object.create(Node.prototype, {
   last: {
     value: function() {
       if (this.isEmpty()) {
-        throw new Error('cannot get last element of empty list node');
+        throw new Error('cannot get last element of empty rule node');
       } else {
-        return this.values[this.values.length - 1];
+        return this.args[this.args.length - 1];
       }
+    }
+  },
+
+  toJSON: {
+    value: function() {
+      var r = {};
+      r[this.ctorName] = this.args;
+      return r;
     }
   }
 });
@@ -137,6 +116,5 @@ ValueNode.prototype = Object.create(Node.prototype, {
 // --------------------------------------------------------------------
 
 exports.RuleNode = RuleNode;
-exports.ListNode = ListNode;
 exports.ValueNode = ValueNode;
 

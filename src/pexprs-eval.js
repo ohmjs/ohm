@@ -166,7 +166,7 @@ pexprs.Many.prototype.eval = function(recordFailures, syntactic, grammar, inputS
     return false;
   } else {
     for (var idx = 0; idx < columns.length; idx++) {
-      bindings.push(new nodes.ListNode(columns[idx], inputStream.intervalFrom(origPos)));
+      bindings.push(new nodes.RuleNode(grammar, '*', columns[idx], inputStream.intervalFrom(origPos)));
     }
     return true;
   }

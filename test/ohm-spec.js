@@ -1716,7 +1716,22 @@ describe("Ohm", function() {
 	compareGrammars(gPrime, ohm.make(eval(gPrime.toRecipe())));
       });
 
-//       it("inherited attributes", function() {
+/*
+      it("inherited attributes", function() {
+        var g = ohm.makeGrammar("G { n = '(' digit+ ')' }");
+        var a = g.synthesizedAttribute({
+          n: function(o, ds, c) {
+            return [a(o), a(ds), a(c)];
+          },
+          n$2: function() {
+            return ['values', this.args.map(function(node) { return a(node); })];
+          }
+        });
+        console.log('###');
+        console.log(JSON.stringify(a(g.matchContents('(0123456789)', 'n'))));
+        console.log('###');
+      })
+*/
 
 //         function stringify(node) {
 //           return node ? node.ctorName + '(' + node.interval.contents + ')' : '(nothing)';
