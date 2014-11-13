@@ -13,40 +13,42 @@ PL0 {
     = Seq
 
   Seq
-    = Stmt Seq                -- seq
-    | Stmt                    -- base
+    = Stmt Seq                  -- seq
+    | Stmt                      -- base
 
   Stmt
-    = 'var' ident ';'         -- var
-    | 'print' AddExpr ';'     -- print
-    | ident ':=' AddExpr ';'  -- assign
+    = 'var' ident ':=' Expr ';'           -- var
+    | 'print' AddExpr ';'                 -- print
+    | 'if' Expr 'then' Stmt 'else' Stmt   -- if3
+    | 'if' Expr 'then' Stmt               -- if2
+    | ident ':=' Expr ';'                 -- assign
 
   Expr
     = AddExpr
 
   AddExpr
-    = AddExpr '+' MulExpr  -- plus
-    | AddExpr '-' MulExpr  -- minus
+    = AddExpr '+' MulExpr       -- plus
+    | AddExpr '-' MulExpr       -- minus
     | MulExpr
 
   MulExpr
-    = MulExpr '*' PriExpr  -- times
-    | MulExpr '/' PriExpr  -- divide
+    = MulExpr '*' PriExpr       -- times
+    | MulExpr '/' PriExpr       -- divide
     | PriExpr
 
   PriExpr
-    = '(' Expr ')'  -- paren
-    | '+' PriExpr   -- pos
-    | '-' PriExpr   -- neg
+    = '(' Expr ')'              -- paren
+    | '+' PriExpr               -- pos
+    | '-' PriExpr               -- neg
     | ident
     | number
 
-  ident  -- identifier
+  ident                         -- identifier
     = letter alnum*
 
-  number  -- number
-    = digit+ ('.' digit*)?  -- integerAndFract
-    | '.' digit+            -- onlyFract
+  number                        -- number
+    = digit+ ('.' digit*)?      -- integerAndFract
+    | '.' digit+                -- onlyFract
 }
 
 </script>
@@ -84,7 +86,7 @@ var symbolTableOut = g.synthesizedAttribute({
   Start:          function(q) {
       		    return symbolTableOut(q);
                   },
-  Stmt_var:       function(_, n, e) {
+  Stmt_var:       function(_, n, _, e, _) {
                     return [].concat(symbolTableIn(this)).concat([n.interval.contents]);
                   },
   '*':            function() {
@@ -99,33 +101,43 @@ var symbolTableOut = g.synthesizedAttribute({
 });
 
 var codeOut = g.synthesizedAttribute({
-  Start:          function(q) {
-                    return codeOut(q);
-                  },
+  Start:          function(q) { return codeOut(q); },
   Seq_seq:        function(s, q) {
-                    return codeOut(s) + 'pop\n' + codeOut(q)
+                    return [].concat(codeOut(s)).concat(['pop']).concat(codeOut(q));
                   },
   Seq_base:       function(s) { return codeOut(s); },
 
-  Stmt_var:       function(_, _, _) { return 'push(nil)\n'; },
-  Stmt_print:     function(_, e, _) { return codeOut(e) + 'print\n'; },
-  Stmt_assign:    function(n, _, e, _) { return codeOut(e) + 'pushLit(' + symbolTableIn(this).indexOf(n.interval.contents) + ')\n' + 'store\n'; },
-  AddExpr_plus:   function(x, _, y) { return codeOut(x) + codeOut(y) + 'add\n'; },
-  AddExpr_minus:  function(x, _, y) { return codeOut(x) + codeOut(y) + 'sub\n'; },
-  MulExpr_times:  function(x, _, y) { return codeOut(x) + codeOut(y) + 'mul\n'; },
-  MulExpr_divide: function(x, _, y) { return codeOut(x) + codeOut(y) + 'div\n'; },
+  Stmt_var:       function(_, n, _, e, _) {
+    return [].concat(codeOut(e)).concat(['pushLit(' + symbolTableOut(this).indexOf(n.interval.contents) + ')', 'store']);
+  },
+  Stmt_print:     function(_, e, _) { return [].concat(codeOut(e)).concat(['print']); },
+  Stmt_assign:    function(n, _, e, _) {
+    return [].concat(codeOut(e)).concat(['pushLit(' + symbolTableOut(this).indexOf(n.interval.contents) + ')', 'store']); },
+
+  Stmt_if3:    function(_, c, _, t, _, f) {
+    var tCode = codeOut(t);
+    var fCode = codeOut(f);
+    return [].concat(codeOut(c)).concat(['jmp0(' + (tCode.length + 1) + ')']).concat(tCode)
+           .concat(['jmp(' + fCode.length + ')']).concat(fCode);
+  },
+
+  Stmt_if2:    function(_, c, _, t) {
+    var tCode = codeOut(t);
+    return [].concat(codeOut(c)).concat(['jmp0(' + tCode.length + ')']).concat(tCode);
+  },
+
+  AddExpr_plus:   function(x, _, y) { return [].concat(codeOut(x)).concat(codeOut(y)).concat(['add']); },
+  AddExpr_minus:  function(x, _, y) { return [].concat(codeOut(x)).concat(codeOut(y)).concat(['sub']); },
+  MulExpr_times:  function(x, _, y) { return [].concat(codeOut(x)).concat(codeOut(y)).concat(['mul']); },
+  MulExpr_divide: function(x, _, y) { return [].concat(codeOut(x)).concat(codeOut(y)).concat(['div']); },
   PriExpr_paren:  function(_, e, _) { return codeOut(e); },
   PriExpr_pos:    function(_, e)    { return codeOut(e); },
-  PriExpr_neg:    function(_, e)    { return codeOut(e) + 'neg\n'; },
-  PriExpr_ident:  function(e)     { return codeOut(e); },
-  PriExpr_number: function(e)     { return codeOut(e); },
+  PriExpr_neg:    function(_, e)    { return [].concat([codeOut(e)]).concat(['neg']); },
+  PriExpr_ident:  function(e)       { return codeOut(e); },
+  PriExpr_number: function(e)       { return codeOut(e); },
   ident:          function(_, _) {
-    var lit = this.interval.contents;
-    var sym = symbolTableIn(this);
-    console.log('lit: ' + lit);
-    console.log('sym: ' + JSON.stringify(sym));
-    return 'pushReg(' + symbolTableIn(this).indexOf(this.interval.contents) + ')\n'; },
-  number:         function(_)       { return 'pushLit(' + parseFloat(this.interval.contents) + ')\n'; },
+    return ['pushReg(' + symbolTableOut(this).indexOf(this.interval.contents) + ')']; },
+  number:         function(_)       { return ['pushLit(' + parseFloat(this.interval.contents) + ')']; },
 });
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -142,7 +154,7 @@ input.oninput = function() {
   hideError();
 //  try {
     var cst = g.matchContents(this.value, 'Start', true);
-    show('value', codeOut(cst));
+    show('value', codeOut(cst).join('\n'));
 //  } catch (e) {
 //    this.className = 'error';
 //    showError(e);
