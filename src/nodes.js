@@ -81,6 +81,26 @@ RuleNode.prototype = Object.create(Node.prototype, {
     }
   },
 
+  pred: {
+    value: function(arg) {
+      if (arg === this.first()) {
+        throw new Error('cannot get predecessor of first child node');
+      } else {
+        return this.args[this.indexOf(arg) - 1];
+      }
+    }
+  },
+
+  succ: {
+    value: function(arg) {
+      if (arg === this.last()) {
+        throw new Error('cannot get successor of last child node');
+      } else {
+        return this.args[this.indexOf(arg) + 1];
+      }
+    }
+  },
+
   toJSON: {
     value: function() {
       var r = {};

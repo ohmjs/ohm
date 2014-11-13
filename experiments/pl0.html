@@ -21,6 +21,9 @@ PL0 {
     | 'print' AddExpr ';'     -- print
     | ident ':=' AddExpr ';'  -- assign
 
+  Expr
+    = AddExpr
+
   AddExpr
     = AddExpr '+' MulExpr  -- plus
     | AddExpr '-' MulExpr  -- minus
@@ -72,7 +75,7 @@ var symbolTableIn = g.inheritedAttribute({
                   if (child === this.first()) {
                     symbolTableIn.set(child, symbolTableIn(this));
                   } else {
-                    symbolTableIn.set(child, symbolTableOut(this.get(this.indexOf(child) - 1)));
+                    symbolTableIn.set(child, symbolTableOut(this.pred(child)));
                   }
                 }
 });
@@ -88,11 +91,7 @@ var symbolTableOut = g.synthesizedAttribute({
                     return this.isEmpty() ? symbolTableIn(this) :symbolTableOut(this.last()); 
                   },
   _default:       function() {
-                    if (this.isEmpty()) {
-                      return symbolTableIn(this);
-                    } else {
-                      return symbolTableOut(this.last());
-                    }
+                    return this.isEmpty() ? symbolTableIn(this) : symbolTableOut(this.last());
                   },
   _terminal:      function() {
                     return symbolTableIn(this);
@@ -100,16 +99,13 @@ var symbolTableOut = g.synthesizedAttribute({
 });
 
 var codeOut = g.synthesizedAttribute({
-  Start:          function(q)
-                  {
+  Start:          function(q) {
                     return codeOut(q);
                   },
-  Seq_seq:        function(s, q)
-                  {
+  Seq_seq:        function(s, q) {
                     return codeOut(s) + 'pop\n' + codeOut(q)
                   },
-  Seq_base:       function(s)
-                  { return codeOut(s); },
+  Seq_base:       function(s) { return codeOut(s); },
 
   Stmt_var:       function(_, _, _) { return 'push(nil)\n'; },
   Stmt_print:     function(_, e, _) { return codeOut(e) + 'print\n'; },
