@@ -82,10 +82,11 @@ var symbolTableOut = g.synthesizedAttribute({
       		    return symbolTableOut(q);
                   },
   Stmt_var:       function(_, n, e) {
-                    var foo = [].concat(symbolTableIn(this)).concat([n.interval.contents]);
-                    return foo
+                    return [].concat(symbolTableIn(this)).concat([n.interval.contents]);
                   },
-  ident:          function(_, _) { return symbolTableIn(this); },
+  '*':            function() {
+                    return this.isEmpty() ? symbolTableIn(this) :symbolTableOut(this.last()); 
+                  },
   _default:       function() {
                     if (this.isEmpty()) {
                       return symbolTableIn(this);
@@ -112,7 +113,7 @@ var codeOut = g.synthesizedAttribute({
 
   Stmt_var:       function(_, _, _) { return 'push(nil)\n'; },
   Stmt_print:     function(_, e, _) { return codeOut(e) + 'print\n'; },
-  Stmt_assign:    function(n, _, e, _) { return codeOut(e) + 'pushLit(' + symbolTableIn(this).indexOf(n) + ')\n' + 'store\n'; },
+  Stmt_assign:    function(n, _, e, _) { return codeOut(e) + 'pushLit(' + symbolTableIn(this).indexOf(n.interval.contents) + ')\n' + 'store\n'; },
   AddExpr_plus:   function(x, _, y) { return codeOut(x) + codeOut(y) + 'add\n'; },
   AddExpr_minus:  function(x, _, y) { return codeOut(x) + codeOut(y) + 'sub\n'; },
   MulExpr_times:  function(x, _, y) { return codeOut(x) + codeOut(y) + 'mul\n'; },
