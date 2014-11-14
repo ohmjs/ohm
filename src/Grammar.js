@@ -137,6 +137,10 @@ Grammar.prototype = {
     }
   },
 
+  semanticAction: function(actionDict, optDoNotMemoize) {
+    return this.synthesizedAttribute(actionDict, optDoNotMemoize);
+  },
+
   synthesizedAttribute: function(actionDict, optDoNotMemoize) {
     this.assertSemanticActionNamesAndAritiesMatch(actionDict);
     var attribute = attributes.makeSynthesizedAttribute(actionDict, optDoNotMemoize);
