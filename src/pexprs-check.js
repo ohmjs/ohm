@@ -3,7 +3,7 @@
 // --------------------------------------------------------------------
 
 var common = require('./common.js');
-var nodes = require('./nodes.js');
+var Node = require('./Node.js');
 var pexprs = require('./pexprs.js');
 
 // --------------------------------------------------------------------
@@ -17,7 +17,7 @@ pexprs.anything.check = function(grammar, vals) {
 };
 
 pexprs.end.check = function(grammar, vals) {
-  return vals[0] instanceof nodes.ValueNode && vals[0].value === undefined;
+  return vals[0] instanceof Node && vals[0].isValue() && vals[0].value() === undefined;
 };
 
 pexprs.fail.check = function(grammar, vals) {
@@ -25,14 +25,15 @@ pexprs.fail.check = function(grammar, vals) {
 };
 
 pexprs.Prim.prototype.check = function(grammar, vals) {
-  return vals[0] instanceof nodes.ValueNode && vals[0].value === this.obj;
+  return vals[0] instanceof Node && vals[0].isValue() && vals[0].value() === this.obj;
 };
 
 pexprs.RegExpPrim.prototype.check = function(grammar, vals) {
   // TODO: more efficient "total match checker" than the use of .replace here
-  return vals[0] instanceof nodes.ValueNode &&
-         typeof vals[0].value === 'string' &&
-         vals[0].value.replace(this.obj, '') === '';
+  return vals[0] instanceof Node &&
+         vals[0].isValue() &&
+         typeof vals[0].value() === 'string' &&
+         vals[0].value().replace(this.obj, '') === '';
 };
 
 pexprs.Alt.prototype.check = function(grammar, vals) {
@@ -140,7 +141,7 @@ pexprs.Obj.prototype.check = function(grammar, vals) {
 };
 
 pexprs.Apply.prototype.check = function(grammar, vals) {
-  if (!(vals[0] instanceof nodes.RuleNode &&
+  if (!(vals[0] instanceof Node &&
         vals[0].grammar === grammar &&
         vals[0].ctorName === this.ruleName)) {
     return false;

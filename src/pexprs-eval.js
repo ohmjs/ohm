@@ -4,7 +4,7 @@
 
 var common = require('./common.js');
 var errors = require('./errors.js');
-var nodes = require('./nodes.js');
+var Node = require('./Node.js');
 var pexprs = require('./pexprs.js');
 var InputStream = require('./InputStream.js');
 
@@ -29,7 +29,7 @@ pexprs.anything.eval = function(recordFailures, syntactic, grammar, inputStream,
     }
     return false;
   } else {
-    bindings.push(new nodes.ValueNode(value, inputStream.intervalFrom(origPos)));
+    bindings.push(new Node(grammar, '_terminal',  [value], inputStream.intervalFrom(origPos)));
     return true;
   }
 };
@@ -39,7 +39,7 @@ pexprs.end.eval = function(recordFailures, syntactic, grammar, inputStream, bind
     grammar.skipSpaces(inputStream);
   }
   if (inputStream.atEnd()) {
-    bindings.push(new nodes.ValueNode(undefined, inputStream.intervalFrom(inputStream.pos)));
+    bindings.push(new Node(grammar, '_terminal', [undefined], inputStream.intervalFrom(inputStream.pos)));
     return true;
   } else {
     if (recordFailures) {
@@ -67,7 +67,7 @@ pexprs.Prim.prototype.eval = function(recordFailures, syntactic, grammar, inputS
     }
     return false;
   } else {
-    bindings.push(new nodes.ValueNode(this.obj, inputStream.intervalFrom(origPos)));
+    bindings.push(new Node(grammar, '_terminal', [this.obj], inputStream.intervalFrom(origPos)));
     return true;
   }
 };
@@ -91,7 +91,7 @@ pexprs.RegExpPrim.prototype.eval = function(recordFailures, syntactic, grammar, 
     }
     return false;
   } else {
-    bindings.push(new nodes.ValueNode(inputStream.source[origPos], inputStream.intervalFrom(origPos)));
+    bindings.push(new Node(grammar, '_terminal', [inputStream.source[origPos]], inputStream.intervalFrom(origPos)));
     return true;
   }
 };
@@ -166,7 +166,7 @@ pexprs.Many.prototype.eval = function(recordFailures, syntactic, grammar, inputS
     return false;
   } else {
     for (var idx = 0; idx < columns.length; idx++) {
-      bindings.push(new nodes.RuleNode(grammar, '_list', columns[idx], inputStream.intervalFrom(origPos)));
+      bindings.push(new Node(grammar, '_list', columns[idx], inputStream.intervalFrom(origPos)));
     }
     return true;
   }
@@ -178,7 +178,7 @@ pexprs.Opt.prototype.eval = function(recordFailures, syntactic, grammar, inputSt
   var arity = this.getArity();
   if (!this.expr.eval(recordFailures, syntactic, grammar, inputStream, row)) {
     inputStream.pos = origPos;
-    row = common.repeat(new nodes.ValueNode(undefined, inputStream.intervalFrom(origPos)), arity);
+    row = common.repeat(new Node(grammar, '_terminal', [undefined], inputStream.intervalFrom(origPos)), arity);
   }
   for (var idx = 0; idx < arity; idx++) {
     bindings.push(row[idx]);
@@ -252,7 +252,7 @@ pexprs.Obj.prototype.eval = function(recordFailures, syntactic, grammar, inputSt
           remainder[p] = obj[p];
         }
       }
-      bindings.push(new nodes.ValueNode(remainder, inputStream.intervalFrom(origPos)));
+      bindings.push(new Node(grammar, '_terminal', [remainder], inputStream.intervalFrom(origPos)));
       return true;
     } else {
       return numOwnPropertiesMatched === Object.keys(obj).length;
@@ -337,7 +337,7 @@ pexprs.Apply.prototype.evalOnce = function(expr, recordFailures, syntactic, gram
   var origPos = inputStream.pos;
   var bindings = [];
   if (expr.eval(recordFailures, syntactic, grammar, inputStream, bindings)) {
-    return new nodes.RuleNode(grammar, this.ruleName, bindings, inputStream.intervalFrom(origPos));
+    return new Node(grammar, this.ruleName, bindings, inputStream.intervalFrom(origPos));
   } else {
     return false;
   }

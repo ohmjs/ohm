@@ -2,7 +2,7 @@ var expect = require('expect.js');
 var fs = require('fs');
 var ohm = require('../src/main.js');
 var errors = require('../src/errors.js');
-var nodes = require('../src/nodes.js');
+var Node = require('../src/Node.js');
 var InputStream = require('../src/InputStream.js');
 var Interval = require('../src/Interval.js');
 
@@ -91,7 +91,7 @@ describe("Ohm", function() {
 
       it("_default entry works when called correctly", function () {
 	expect(m.construct('addExpr', [m.matchContents('1+2', 'addExpr_plus')]))
-	  .to.be.a(nodes.RuleNode);
+	  .to.be.a(Node);
       });
 
       it("particular entries work when called", function () {
@@ -632,7 +632,7 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var f = m.matchContents('abcz', 'start');
           expect(m.synthesizedAttribute({
-            start: function(x, _, _) { return x.value; },
+            start: function(x, _, _) { return x.value(); },
           })(f)).to.eql('a');
         });
       });
@@ -653,7 +653,7 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var f = m.matchContents('abcz', 'start');
           expect(m.synthesizedAttribute({
-            start: function(x, _, y) { return [x.value, y.value]; }
+            start: function(x, _, y) { return [x.value(), y.value()]; }
           })(f)).to.eql(['a', 'z']);
         });
       });
@@ -677,9 +677,9 @@ describe("Ohm", function() {
       });
 
       it("semantic actions", function() {
-        expect(m.synthesizedAttribute({start: function(x, _, y) { return [x.value, y.value] }})(m.matchContents('abc', 'start')))
+        expect(m.synthesizedAttribute({start: function(x, _, y) { return [x.value(), y.value()] }})(m.matchContents('abc', 'start')))
           .to.eql(['a', 'c']);
-        expect(m.synthesizedAttribute({start: function(x, _, y) { return [x.value, y.value] }})(m.matchContents('123', 'start')))
+        expect(m.synthesizedAttribute({start: function(x, _, y) { return [x.value(), y.value()] }})(m.matchContents('123', 'start')))
           .to.eql(['1', '3']);
       });
     });
@@ -745,7 +745,7 @@ describe("Ohm", function() {
       });
 
       it("semantic actions", function() {
-        var actionDict = {name: function(title, last) { return [title.value, last.value]; }};
+        var actionDict = {name: function(title, last) { return [title.value(), last.value()]; }};
         expect(m.synthesizedAttribute(actionDict)(m.matchContents('drwarth', 'name'))).to.eql(['dr', 'warth']);
         expect(m.synthesizedAttribute(actionDict)(m.matchContents('warth', 'name'))).to.eql([undefined, 'warth']);
       });
@@ -789,7 +789,7 @@ describe("Ohm", function() {
       });
 
       it("semantic actions", function() {
-        expect(m.synthesizedAttribute({start: function(x, _) { return x.value }})(m.matchContents('hello world', 'start'))).to.equal('hello');
+        expect(m.synthesizedAttribute({start: function(x, _) { return x.value() }})(m.matchContents('hello world', 'start'))).to.equal('hello');
       });
     });
 
@@ -848,10 +848,10 @@ describe("Ohm", function() {
 
         it("semantic actions", function() {
           expect(m.synthesizedAttribute({
-            strict: function(a, b) { return [a.value, b.value]; }
+            strict: function(a, b) { return [a.value(), b.value()]; }
           })(m.match({x: 1, y: 2}, 'strict')))
           expect(m.synthesizedAttribute({
-            strict: function(a, b) { return [a.value, b.value]; }
+            strict: function(a, b) { return [a.value(), b.value()]; }
           })(m.match({y: 2, x: 1}, 'strict'))).to.eql([1, 2]);
         });
       });
@@ -868,10 +868,10 @@ describe("Ohm", function() {
 
         it("semantic actions", function() {
           expect(m.synthesizedAttribute({
-            lenient: function(a, b, _) { return [a.value, b.value]; }
+            lenient: function(a, b, _) { return [a.value(), b.value()]; }
           })(m.match({x: 1, y: 2}, 'lenient'))).to.eql([1, 2]);
           expect(m.synthesizedAttribute({
-            lenient: function(a, b, _) { return [a.value, b.value]; }
+            lenient: function(a, b, _) { return [a.value(), b.value()]; }
           })(m.match({y: 2, x: 1}, 'lenient'))).to.eql([1, 2]);
         });
       });
@@ -1373,10 +1373,10 @@ describe("Ohm", function() {
 
         it("semantic actions", function() {
           expect(m2.synthesizedAttribute({
-            foo: function(x, y) { return [x.value, y.value]; }
+            foo: function(x, y) { return [x.value(), y.value()]; }
           })(m2.matchContents('aaabbb', 'foo'))).to.eql(['aaa', 'bbb']);
           expect(m2.synthesizedAttribute({
-            foo: function(x, y) { return [x.value, y.value]; }
+            foo: function(x, y) { return [x.value(), y.value()]; }
           })(m2.matchContents('111222', 'foo'))).to.eql(['111', '222']);
         });
       });
@@ -1716,10 +1716,9 @@ describe("Ohm", function() {
 	compareGrammars(gPrime, ohm.make(eval(gPrime.toRecipe())));
       });
 
-/*
       it("inherited attributes", function() {
-        var g = ohm.makeGrammar("G { n = '(' digit+ ')' }");
-        var a = g.synthesizedAttribute({
+        var g = ohm.makeGrammar("G { n = '(' (digit+)* ')' }");
+        var a = g.semanticAction({
           n: function(o, ds, c) {
             return [a(o), a(ds), a(c)];
           },
@@ -1731,7 +1730,6 @@ describe("Ohm", function() {
         console.log(JSON.stringify(a(g.matchContents('(0123456789)', 'n'))));
         console.log('###');
       })
-*/
 
 //         function stringify(node) {
 //           return node ? node.ctorName + '(' + node.interval.contents + ')' : '(nothing)';

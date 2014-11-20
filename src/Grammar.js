@@ -6,7 +6,7 @@ var common = require('./common.js');
 var errors = require('./errors.js');
 var InputStream = require('./InputStream.js');
 var Interval = require('./Interval.js');
-var nodes = require('./nodes.js');
+var Node = require('./Node.js');
 var pexprs = require('./pexprs.js');
 var attributes = require('./attributes.js');
 
@@ -63,7 +63,7 @@ Grammar.prototype = {
       throw new errors.InvalidConstructorCall(this, ruleName, args);
     }
     var interval = new Interval(InputStream.newFor(args), 0, args.length);
-    return new nodes.RuleNode(this, ruleName, args, interval);
+    return new Node(this, ruleName, args, interval);
   },
 
   createConstructors: function() {
@@ -105,15 +105,15 @@ Grammar.prototype = {
     if (succeeded) {
       var node = bindings[0];
       var stack = [undefined];
-      function setParentMethod() {
+      function setParentAction() {
         stack.push(this);
         this.args.forEach(function(arg) { setParents(arg); });
         stack.pop();
         this.parent = stack[stack.length - 1];
       };
       var setParents = this.synthesizedAttribute({
-        _default: setParentMethod,
-        _list: setParentMethod,
+        _default: setParentAction,
+        _list: setParentAction,
         _terminal: function() {
           this.parent = stack[stack.length - 1];
         }
@@ -137,13 +137,16 @@ Grammar.prototype = {
     }
   },
 
-  semanticAction: function(actionDict, optDoNotMemoize) {
-    return this.synthesizedAttribute(actionDict, optDoNotMemoize);
+  semanticAction: function(actionDict) {
+    this.assertSemanticActionNamesAndAritiesMatch(actionDict);
+    var semanticAction = attributes.makeSemanticAction(actionDict);
+    semanticAction.grammar = this;
+    return semanticAction;
   },
 
-  synthesizedAttribute: function(actionDict, optDoNotMemoize) {
+  synthesizedAttribute: function(actionDict) {
     this.assertSemanticActionNamesAndAritiesMatch(actionDict);
-    var attribute = attributes.makeSynthesizedAttribute(actionDict, optDoNotMemoize);
+    var attribute = attributes.makeSynthesizedAttribute(actionDict);
     attribute.grammar = this;
     return attribute;
   },
