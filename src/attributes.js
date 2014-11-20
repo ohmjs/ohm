@@ -11,14 +11,14 @@ var Symbol = this.Symbol || require('symbol');
 function makeSynthesizedAttribute(actionDict, optDoNotMemoize) {
   var nodeVisitor = {
     visitRule: function(r) {
-      if (r.ctorName === '*') {
+      if (r.ctorName === '_list') {
         if (r.parent) {
           var actionName = r.parent.ctorName + '$' + (r.parent.args.indexOf(r) + 1);
           if (actionDict[actionName]) {
             return actionDict[actionName].call(r);
           }
         }
-        if (!actionDict['*']) {
+        if (!actionDict['_list']) {
           return r.args.map(function(node) { return node.accept(nodeVisitor); });
         }
       }
@@ -69,7 +69,7 @@ function makeInheritedAttribute(actionDict) {
       if (r.hasOwnProperty(key)) {
         throw new Error('inherited attribute was set more than once on a node');
       } else if (r.parent) {
-        if (r.parent.ctorName === '*') {
+        if (r.parent.ctorName === '_list') {
           var grandparent = r.parent.parent;
           var actionName = grandparent.ctorName + '$' + (grandparent.indexOf(r.parent) + 1) + '$each';
           if (actionDict[actionName]) {
@@ -78,7 +78,7 @@ function makeInheritedAttribute(actionDict) {
         }
 
         var actionName = r.parent.ctorName + '$' + (r.parent.indexOf(r) + 1);
-        if (r.parent.ctorName !== '*' && actionDict[actionName]) {
+        if (r.parent.ctorName !== '_list' && actionDict[actionName]) {
           actionDict[actionName].apply(r.parent, r.parent.args);
         } else if (actionDict._default) {
           actionDict._default.call(r.parent, r);

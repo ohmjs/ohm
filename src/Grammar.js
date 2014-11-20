@@ -113,7 +113,7 @@ Grammar.prototype = {
       };
       var setParents = this.synthesizedAttribute({
         _default: setParentMethod,
-        '*': setParentMethod,
+        _list: setParentMethod,
         _terminal: function() {
           this.parent = stack[stack.length - 1];
         }
