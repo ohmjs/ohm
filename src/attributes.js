@@ -112,18 +112,6 @@ function makeInheritedAttribute(actionDict) {
   return attribute;
 }
 
-function doBottomUp(attribute) {
-  return function(node) {
-    var postOrder = attribute.grammar.attribute({
-      _default: function() {
-        this.args.forEach(postOrder);
-        return attribute(this);
-      }
-    });
-    return postOrder(node);
-  };
-}
-
 // --------------------------------------------------------------------
 // Exports
 // --------------------------------------------------------------------
@@ -131,5 +119,4 @@ function doBottomUp(attribute) {
 exports.makeSemanticAction = makeSemanticAction;
 exports.makeSynthesizedAttribute = makeSynthesizedAttribute;
 exports.makeInheritedAttribute = makeInheritedAttribute;
-exports.doBottomUp = doBottomUp;
 
