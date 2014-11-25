@@ -8,7 +8,7 @@ var Symbol = this.Symbol || require('symbol');
 // Private stuff
 // --------------------------------------------------------------------
 
-var defaultActions = {
+var actions = {
   getValue: function(t) {
     if (this.ctorName === '_terminal') {
       return t;
@@ -35,13 +35,13 @@ function _makeSynthesizedAttribute(actionDict, memoize) {
       }
     }
 
-    if (actionDict[node.ctorName] === defaultActions.map) {
+    if (actionDict[node.ctorName] === actions.map) {
       if (node.ctorName === '_list') {
         return node.args.map(attribute);
       } else {
         throw new Error('the map default action cannot be used with a ' + node.ctorName + ' node');
       }
-    } else if (actionDict[node.ctorName] === defaultActions.passThrough) {
+    } else if (actionDict[node.ctorName] === actions.passThrough) {
       return attribute(node.first());
     } else if (actionDict[node.ctorName]) {
       return actionDict[node.ctorName].apply(node, node.args);
@@ -102,7 +102,7 @@ function makeInheritedAttribute(actionDict) {
         }
       } else {
         var actionName = node.parent.ctorName + '$' + (node.parent.indexOf(node) + 1);
-        if (actionDict[actionName] === defaultActions.passThrough) {
+        if (actionDict[actionName] === actions.passThrough) {
           attribute.set(attribute(node.parent));
           return actionName;
         } else if (actionDict[actionName]) {
@@ -152,5 +152,5 @@ function makeInheritedAttribute(actionDict) {
 exports.makeSemanticAction = makeSemanticAction;
 exports.makeSynthesizedAttribute = makeSynthesizedAttribute;
 exports.makeInheritedAttribute = makeInheritedAttribute;
-exports.defaultActions = defaultActions;
+exports.actions = actions;
 

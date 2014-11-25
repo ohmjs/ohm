@@ -211,8 +211,8 @@ function makeGrammarBuilder(optNamespace) {
     space_multiLine: function(_, _, _) {},
     space_singleLine: function(_, _, _) {},
 
-    _list: attributes.defaultActions.map,
-    _terminal: attributes.defaultActions.getValue
+    _list: attributes.actions.map,
+    _terminal: attributes.actions.getValue
   });
   return value;
 }
@@ -260,7 +260,7 @@ exports.make = function(recipe) {
 exports.makeGrammar = makeGrammar;
 exports.makeGrammars = makeGrammars;
 
-exports.defaultActions = attributes.defaultActions;
+exports.actions = attributes.actions;
 
 // Stuff that's only here for bootstrapping, testing, etc.
 

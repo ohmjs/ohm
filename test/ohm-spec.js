@@ -55,8 +55,8 @@ describe("Ohm", function() {
         _default: function() {
           return ['id', nextId++, this.ctorName].concat(this.args.map(attr));
         },
-        _list: ohm.defaultActions.map,
-        _terminal: ohm.defaultActions.getValue
+        _list: ohm.actions.map,
+        _terminal: ohm.actions.getValue
       });
       attr._getNextId = function() { return nextId; };
       return attr;
@@ -242,8 +242,8 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var dict = {
-              _: ohm.defaultActions.passThrough,
-              _terminal: ohm.defaultActions.getValue
+              _: ohm.actions.passThrough,
+              _terminal: ohm.actions.getValue
             };
             expect(m.synthesizedAttribute(dict)(m.match(5, '_'))).to.equal(5);
             expect(m.synthesizedAttribute(dict)(m.match(null, '_'))).to.equal(null);
@@ -258,8 +258,8 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var dict = {
-              _: ohm.defaultActions.passThrough,
-              _terminal: ohm.defaultActions.getValue
+              _: ohm.actions.passThrough,
+              _terminal: ohm.actions.getValue
             };
             expect(m.synthesizedAttribute(dict)(m.matchContents('5', '_'))).to.equal('5');
           });
@@ -274,8 +274,8 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var dict = {
-              _: ohm.defaultActions.passThrough,
-              _terminal: ohm.defaultActions.getValue
+              _: ohm.actions.passThrough,
+              _terminal: ohm.actions.getValue
             };
             expect(m.synthesizedAttribute(dict)(m.matchContents(['123'], '_'))).to.equal('123');
           });
@@ -359,12 +359,12 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var dict = {
-              five: ohm.defaultActions.passThrough,
-              _true: ohm.defaultActions.passThrough,
-              _false: ohm.defaultActions.passThrough,
-              _null: ohm.defaultActions.passThrough,
-              _undefined: ohm.defaultActions.passThrough,
-              _terminal: ohm.defaultActions.getValue,
+              five: ohm.actions.passThrough,
+              _true: ohm.actions.passThrough,
+              _false: ohm.actions.passThrough,
+              _null: ohm.actions.passThrough,
+              _undefined: ohm.actions.passThrough,
+              _terminal: ohm.actions.getValue,
             };
             expect(m.synthesizedAttribute(dict)(m.match(5, 'five'))).to.equal(5);
             expect(m.synthesizedAttribute(dict)(m.match(true, '_true'))).to.equal(true);
@@ -407,8 +407,8 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var dict = {
-              five: ohm.defaultActions.passThrough,
-              _terminal: ohm.defaultActions.getValue,
+              five: ohm.actions.passThrough,
+              _terminal: ohm.actions.getValue,
             };
             var cst = m.matchContents([5], 'five');
             expect(m.synthesizedAttribute(dict)(cst)).to.equal(5);
@@ -436,8 +436,8 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var dict = {
-              bang: ohm.defaultActions.passThrough,
-              _terminal: ohm.defaultActions.getValue
+              bang: ohm.actions.passThrough,
+              _terminal: ohm.actions.getValue
             };
             var cst = m.match('!', 'bang');
             expect(m.synthesizedAttribute(dict)(cst)).to.equal('!');
@@ -453,8 +453,8 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var dict = {
-              bang: ohm.defaultActions.passThrough,
-              _terminal: ohm.defaultActions.getValue
+              bang: ohm.actions.passThrough,
+              _terminal: ohm.actions.getValue
             };
             var cst = m.matchContents('!', 'bang');
             expect(m.synthesizedAttribute(dict)(cst)).to.equal('!');
@@ -472,8 +472,8 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var dict = {
-              bang: ohm.defaultActions.passThrough,
-              _terminal: ohm.defaultActions.getValue
+              bang: ohm.actions.passThrough,
+              _terminal: ohm.actions.getValue
             };
             var cst = m.matchContents(['!'], 'bang');
             expect(m.synthesizedAttribute(dict)(cst)).to.equal('!');
@@ -501,8 +501,8 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var dict = {
-              foo: ohm.defaultActions.passThrough,
-              _terminal: ohm.defaultActions.getValue
+              foo: ohm.actions.passThrough,
+              _terminal: ohm.actions.getValue
             };
             var cst = m.match('foo', 'foo');
             expect(m.synthesizedAttribute(dict)(cst)).to.equal('foo');
@@ -518,8 +518,8 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var dict = {
-              foo: ohm.defaultActions.passThrough,
-              _terminal: ohm.defaultActions.getValue
+              foo: ohm.actions.passThrough,
+              _terminal: ohm.actions.getValue
             };
             var cst = m.matchContents('foo', 'foo');
             expect(m.synthesizedAttribute(dict)(cst)).to.equal('foo');
@@ -538,8 +538,8 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var dict = {
-              foo: ohm.defaultActions.passThrough,
-              _terminal: ohm.defaultActions.getValue
+              foo: ohm.actions.passThrough,
+              _terminal: ohm.actions.getValue
             };
             var cst = m.matchContents(['foo'], 'foo');
             expect(m.synthesizedAttribute(dict)(cst)).to.equal('foo');
@@ -580,8 +580,8 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var dict = {
-              myDigit: ohm.defaultActions.passThrough,
-              _terminal: ohm.defaultActions.getValue
+              myDigit: ohm.actions.passThrough,
+              _terminal: ohm.actions.getValue
             };
             var cst = m.matchContents('4', 'myDigit');
             expect(m.synthesizedAttribute(dict)(cst)).to.equal('4');
@@ -614,8 +614,8 @@ describe("Ohm", function() {
 
           it("semantic actions", function() {
             var dict = {
-              myLetter: ohm.defaultActions.passThrough,
-              _terminal: ohm.defaultActions.getValue
+              myLetter: ohm.actions.passThrough,
+              _terminal: ohm.actions.getValue
             };
             var cst = m.matchContents('a', 'myLetter');
             expect(m.synthesizedAttribute(dict)(cst)).to.equal('a');
@@ -643,8 +643,8 @@ describe("Ohm", function() {
 
       it("semantic actions", function() {
         var dict = {
-          altTest: ohm.defaultActions.passThrough,
-          _terminal: ohm.defaultActions.getValue
+          altTest: ohm.actions.passThrough,
+          _terminal: ohm.actions.getValue
         };
         expect(m.synthesizedAttribute(dict)(m.matchContents('a', 'altTest'))).to.equal('a');
         expect(m.synthesizedAttribute(dict)(m.matchContents('b', 'altTest'))).to.equal('b');
@@ -777,8 +777,8 @@ describe("Ohm", function() {
 	var value = m.synthesizedAttribute({
           number:     function(expr) { return ['digits', value(expr)]; },
           digit:      function(expr) { return ['digit', value(expr)]; },
-          _list:      ohm.defaultActions.map,
-          _terminal:  ohm.defaultActions.getValue
+          _list:      ohm.actions.map,
+          _terminal:  ohm.actions.getValue
         });
         expect(value(m.matchContents('1234', 'number')))
 	  .to.eql(['digits', [['digit', '1'], ['digit', '2'], ['digit', '3'], ['digit', '4']]]);
@@ -881,8 +881,8 @@ describe("Ohm", function() {
       it("semantic actions", function() {
 	var value = m.synthesizedAttribute({
           start: function(_, y, x, _, _) { return [value(x), value(y)]; },
-          _: ohm.defaultActions.passThrough,
-          _terminal: ohm.defaultActions.getValue
+          _: ohm.actions.passThrough,
+          _terminal: ohm.actions.getValue
         });
         expect(value(m.matchContents(['abc', ['d', 'ef'], 'g'], 'start'))).to.eql(['d', ['d', 'ef']]);
       });
@@ -977,7 +977,7 @@ describe("Ohm", function() {
 	  var value = m.synthesizedAttribute({
             easy: function(expr) { return ['easy', value(expr)]; },
             foo:  function(expr) { return ['foo', value(expr)]; },
-            _terminal: ohm.defaultActions.getValue
+            _terminal: ohm.actions.getValue
           });
           expect(value(m.matchContents('foo', 'easy'))).to.eql(['easy', ['foo', 'foo']]);
         });
@@ -1008,17 +1008,17 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var f = m.matchContents('1234', 'number');
 	  var eval = m.synthesizedAttribute({
-            number:    ohm.defaultActions.passThrough,
+            number:    ohm.actions.passThrough,
             numberRec: function(n, d) { return eval(n) * 10 + eval(d); },
             digit:     function(expr) { return eval(expr).charCodeAt(0) - '0'.charCodeAt(0); },
-            _terminal: ohm.defaultActions.getValue
+            _terminal: ohm.actions.getValue
           });
           expect(eval(f)).to.equal(1234);
 	  var parseTree = m.synthesizedAttribute({
             number:    function(expr) { return ['number', parseTree(expr)]; },
             numberRec: function(n, d) { return ['numberRec', parseTree(n), parseTree(d)]; },
-            digit:     ohm.defaultActions.passThrough,
-            _terminal: ohm.defaultActions.getValue
+            digit:     ohm.actions.passThrough,
+            _terminal: ohm.actions.getValue
           });
           expect(parseTree(f)).to.eql(
             ['number',
@@ -1057,12 +1057,12 @@ describe("Ohm", function() {
 
         it("semantic actions", function() {
 	  var v = m.synthesizedAttribute({
-            add:       ohm.defaultActions.passThrough,
+            add:       ohm.actions.passThrough,
             addRec:    function(x, _, y) { return [v(x), '+', v(y)]; },
-            pri:       ohm.defaultActions.passThrough,
-            priX:      ohm.defaultActions.passThrough,
-            priY:      ohm.defaultActions.passThrough,
-            _terminal: ohm.defaultActions.getValue
+            pri:       ohm.actions.passThrough,
+            priX:      ohm.actions.passThrough,
+            priY:      ohm.actions.passThrough,
+            _terminal: ohm.actions.getValue
           });
           expect(v(m.matchContents('x+y+x', 'add'))).to.eql([['x', '+', 'y'], '+', 'x']);
         });
@@ -1097,15 +1097,15 @@ describe("Ohm", function() {
 
         it("semantic actions", function() {
 	  var v = m.synthesizedAttribute({
-            number: ohm.defaultActions.passThrough,
-            foo: ohm.defaultActions.passThrough,
-            bar: ohm.defaultActions.passThrough,
-            baz: ohm.defaultActions.passThrough,
-            qux: ohm.defaultActions.passThrough,
-            quux: ohm.defaultActions.passThrough,
+            number: ohm.actions.passThrough,
+            foo: ohm.actions.passThrough,
+            bar: ohm.actions.passThrough,
+            baz: ohm.actions.passThrough,
+            qux: ohm.actions.passThrough,
+            quux: ohm.actions.passThrough,
             numberRec: function(n, d) { return [v(n), v(d)]; },
-            digit: ohm.defaultActions.passThrough,
-            _terminal: ohm.defaultActions.getValue
+            digit: ohm.actions.passThrough,
+            _terminal: ohm.actions.getValue
           });
           expect(v(m.matchContents('1234', 'number'))).to.eql([[['1', '2'], '3'], '4']);
         });
@@ -1144,8 +1144,8 @@ describe("Ohm", function() {
             addExprRec: function(x, _, y) { return ['addExprRec', parseTree(x), parseTree(y)]; },
             mulExpr:    function(expr)    { return ['mulExpr', parseTree(expr)]; },
             mulExprRec: function(x, _, y) { return ['mulExprRec', parseTree(x), parseTree(y)] },
-            priExpr:    ohm.defaultActions.passThrough,
-            _terminal:  ohm.defaultActions.getValue
+            priExpr:    ohm.actions.passThrough,
+            _terminal:  ohm.actions.getValue
           });
           expect(parseTree(f)).to.eql(
             ['addExpr',
@@ -1161,16 +1161,16 @@ describe("Ohm", function() {
             mulExpr:    function(expr)    { return eval(expr); },
             mulExprRec: function(x, _, y) { return eval(x) * eval(y); },
             priExpr:    function(expr)    { return parseInt(eval(expr)); },
-            _terminal:  ohm.defaultActions.getValue
+            _terminal:  ohm.actions.getValue
           });
           expect(eval(f)).to.equal(25);
 	  var pretty = m.synthesizedAttribute({
-            addExpr:    ohm.defaultActions.passThrough,
+            addExpr:    ohm.actions.passThrough,
             addExprRec: function(x, _, y) { return '(' + pretty(x) + '+' + pretty(y) + ')'; },
-            mulExpr:    ohm.defaultActions.passThrough,
+            mulExpr:    ohm.actions.passThrough,
             mulExprRec: function(x, _, y) { return '(' + pretty(x) + '*' + pretty(y) + ')'; },
-            priExpr:    ohm.defaultActions.passThrough,
-            _terminal:  ohm.defaultActions.getValue
+            priExpr:    ohm.actions.passThrough,
+            _terminal:  ohm.actions.getValue
           });
           expect(pretty(f)).to.equal('(((1*2)+3)+(4*5))');
         });
@@ -1238,7 +1238,7 @@ describe("Ohm", function() {
 	  var buildTree = m.synthesizedAttribute({
             addExprRec: function(x, _, y) { return [buildTree(x), '+', buildTree(y)]; },
             mulExprRec: function(x, _, y) { return [buildTree(x), '*', buildTree(y)]; },
-            _terminal:  ohm.defaultActions.getValue,
+            _terminal:  ohm.actions.getValue,
             _default:   function() { return buildTree(this.first()); }
           });
           expect(buildTree(m.matchContents('7+8*9+0', 'addExpr'))).to.eql([['7', '+', ['8', '*', '9']], '+', '0']);
@@ -1275,8 +1275,8 @@ describe("Ohm", function() {
             fooRec:    function(x, y) { return ['fooRec', buildTree(x), buildTree(y)]; },
             bar:       function(expr) { return ['bar', buildTree(expr)]; },
             barRec:    function(x, y) { return ['barRec', buildTree(x), buildTree(y)]; },
-            digit:     ohm.defaultActions.passThrough,
-            _terminal: ohm.defaultActions.getValue
+            digit:     ohm.actions.passThrough,
+            _terminal: ohm.actions.getValue
           });
           expect(buildTree(f)).to.eql(
             ['tricky', ['bar', ['barRec', ['foo', ['fooRec', ['bar', ['barRec', ['foo', '1'], '2']], '3']], '4']]]);
@@ -1394,8 +1394,8 @@ describe("Ohm", function() {
 	  var v = m2.synthesizedAttribute({
             number:    function(expr) { return ['number', v(expr)]; },
             digit:     function(expr) { return ['digit', v(expr)]; },
-            _list:     ohm.defaultActions.map,
-            _terminal: ohm.defaultActions.getValue
+            _list:     ohm.actions.map,
+            _terminal: ohm.actions.getValue
           });
           expect(v(m2.matchContents('abcd', 'number')))
 	    .to.eql(['number', [['digit', 'a'], ['digit', 'b'], ['digit', 'c'], ['digit', 'd']]]);
@@ -1509,7 +1509,7 @@ describe("Ohm", function() {
           foo:       function(x, y) { var xv = v(x); var yv = v(y); return {x: xv, y: yv}; },
           bar:       function(expr) { return ['bar', v(expr), id++]; },
           baz:       function(expr) { return ['baz', v(expr), id++]; },
-          _terminal: ohm.defaultActions.getValue
+          _terminal: ohm.actions.getValue
         });
         expect(v(g.matchContents('ab', 'foo'))).to.eql({x: ['bar', 'a', 0], y: ['baz', 'b', 1]});
 
@@ -1518,7 +1518,7 @@ describe("Ohm", function() {
           foo: function(x, y) { var yv = v(y); var xv = v(x); return {x: xv, y: yv}; },
           bar: function(expr) { return ['bar', v(expr), id++]; },
           baz: function(expr) { return ['baz', v(expr), id++]; },
-          _terminal: ohm.defaultActions.getValue
+          _terminal: ohm.actions.getValue
         });
         expect(v(g.matchContents('ab', 'foo'))).to.eql({x: ['bar', 'a', 1], y: ['baz', 'b', 0]});
       });
@@ -1548,7 +1548,7 @@ describe("Ohm", function() {
           number_rec:     function(n, d) { return eval(n) * 10 + eval(d); },
           digit:          function(expr) { return eval(expr).charCodeAt(0) - '0'.charCodeAt(0); },
           _default:       function() { if (this.length() === 1) return eval(this.first()); else throw 'oops'; },
-          _terminal:      ohm.defaultActions.getValue
+          _terminal:      ohm.actions.getValue
         });
         expect(eval(m.matchContents('10*(2+123)-4/5', 'expr'))).to.equal(1249.2);
       });
@@ -1729,7 +1729,7 @@ describe("Ohm", function() {
             number:     function(expr) { return eval(expr); },
             number_rec: function(n, d) { return eval(n) * 10 + eval(d); },
             digit:      function(expr) { return eval(expr).charCodeAt(0) - '0'.charCodeAt(0); },
-            _terminal:  ohm.defaultActions.getValue
+            _terminal:  ohm.actions.getValue
           });
           expect(eval(m.matchContents('1234', 'number'))).to.equal(1234);
         });
@@ -1803,7 +1803,7 @@ describe("Ohm", function() {
           number:         function(expr) { return eval(expr); },
           number_rec:     function(n, d) { return eval(n) * 10 + eval(d); },
           digit:          function(expr) { return eval(expr).charCodeAt(0) - '0'.charCodeAt(0); },
-          _terminal:      ohm.defaultActions.getValue
+          _terminal:      ohm.actions.getValue
         });
         expect(eval(a.matchContents('10*(2+123)-4/5', 'expr'))).to.equal(1249.2);
       });
