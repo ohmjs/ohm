@@ -29,12 +29,12 @@ function _makeSynthesizedAttribute(actionDict, memoize) {
       return node.value();
     } else if (actionDict._default) {
       return actionDict._default.call(node);
-    } else if (node.length() === 1) {
+    } else if (node.length() === 1 && node.ctorName !== '_terminal') {
       // We special-case unary rules here, since a very common case when writing actionDicts is to
       // simply tail-recur immediatelky on the sole child.
       return attribute(node.first());
     } else {
-      throw new Error('missing semantic action for ' + node.ctorName);
+      throw new Error('missing method for ' + node.ctorName);
     }
   }
   var attribute;
@@ -64,44 +64,60 @@ function makeSynthesizedAttribute(actionDict) {
 }
 
 function makeInheritedAttribute(actionDict) {
-  function get(node) {
-    if (node.hasOwnProperty(key)) {
-      throw new Error('inherited attribute was set more than once on a node');
-    } else if (!node.parent) {
+  function compute(node) {
+    if (!node.parent) {
       actionDict._base.call(undefined, node);
+      return '_base';
     } else {
       if (node.parent.ctorName === '_list') {
-        // If an action's name is ctorName$idx$each, where idx is the 1-based index of a child node that happens
-        // to be a list, it should override the _list action for that particular list node.
+        // If there is an action called <ctorName>$<idx>$each, where <idx> is the 1-based index of a child node
+        // that happens to be a list, it should override the _list method for that particular list node.
         var grandparent = node.parent.parent;
         var actionName = grandparent.ctorName + '$' + (grandparent.indexOf(node.parent) + 1) + '$each';
         if (actionDict[actionName]) {
-          return actionDict[actionName].call(node.parent, node);
+          actionDict[actionName].call(node.parent, node);
+          return '_actionName';
+        } else if (actionDict._list) {
+          actionDict._list.call(node.parent, node, node.parent.indexOf(node));
+          return '_list';
+        } else if (actionDict._default) {
+          actionDict._default.call(node.parent, node);
+          return '_default';
+        } else {
+          throw new Error('missing ' + actionName + ', _list, or _default method');
         }
-      }
-
-      var actionName = node.parent.ctorName + '$' + (node.parent.indexOf(node) + 1);
-      if (node.parent.ctorName !== '_list' && actionDict[actionName]) {
-        actionDict[actionName].apply(node.parent, node.parent.args);
-      } else if (actionDict._default) {
-        actionDict._default.call(node.parent, node);
       } else {
-        throw new Error('missing case for ' + actionName);
+        var actionName = node.parent.ctorName + '$' + (node.parent.indexOf(node) + 1);
+        if (actionDict[actionName]) {
+          actionDict[actionName].apply(node.parent, node.parent.args);
+          return actionName;
+        } else if (actionDict._default) {
+          actionDict._default.call(node.parent, node, node.parent.indexOf(node));
+          return '_default';
+        } else {
+          throw new Error('missing ' + actionName + ' or _default method');
+        }
       }
     }
   }
   var key = Symbol();
+  var currentChildStack = [];
   var attribute = function(node) {
     if (!node.hasOwnProperty(key)) {
-      get(node);
-    }
-    if (!node.hasOwnProperty(key)) {
-      throw new Error(
-        (node.parent ? node.parent.ctorName : '_base') + ' did not supply a value for node ' + JSON.stringify(node));
+      currentChildStack.push(node);
+      try {
+        var methodName = compute(node);
+        if (!node.hasOwnProperty(key)) {
+          throw new Error('method ' + methodName + ' did not set a value for a child node of type ' + node.ctorName);
+        }
+      } finally {
+        currentChildStack.pop();
+      }
     }
     return node[key];
   };
-  attribute.set = function(node, value) {
+  attribute.set = function(value) {
+    var node = currentChildStack[currentChildStack.length - 1];
     if (node.hasOwnProperty(key)) {
       throw new Error('the value of an inherited attribute cannot be set more than once');
     } else {
