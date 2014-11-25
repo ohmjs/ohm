@@ -15,6 +15,11 @@ function PExpr() {
   throw new Error('PExpr cannot be instantiated -- it\'s abstract');
 }
 
+PExpr.prototype.withDescription = function(description) {
+  this.description = description;
+  return this;
+};
+
 // Anything
 
 var anything = Object.create(PExpr.prototype);

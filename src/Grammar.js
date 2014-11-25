@@ -37,25 +37,18 @@ function Grammar(name, superGrammar, ruleDecls, ruleDict, optNamespace) {
 }
 
 Grammar.prototype = {
-  ruleDict: new (function() {
-    this._ = pexprs.anything;
-    this.end = new pexprs.Not(pexprs.anything);
-    this.fail = pexprs.fail;
-    this.space = pexprs.makePrim(/[\s]/);
-    this.space.description = 'space';
-    this.alnum = pexprs.makePrim(/[0-9a-zA-Z]/);
-    this.space.description = 'alpha-numeric character';
-    this.letter = pexprs.makePrim(/[a-zA-Z]/);
-    this.letter.description = 'letter';
-    this.lower = pexprs.makePrim(/[a-z]/);
-    this.lower.description = 'lower-case letter';
-    this.upper = pexprs.makePrim(/[A-Z]/);
-    this.upper.description = 'upper-case letter';
-    this.digit = pexprs.makePrim(/[0-9]/);
-    this.digit.description = 'digit';
-    this.hexDigit = pexprs.makePrim(/[0-9a-fA-F]/);
-    this.hexDigit.description = 'hexadecimal digit';
-  })(),
+  ruleDict: {
+    _: pexprs.anything,
+    end: new pexprs.Not(pexprs.anything),
+    fail: pexprs.fail,
+    space: pexprs.makePrim(/[\s]/).withDescription('space'),
+    alnum: pexprs.makePrim(/[0-9a-zA-Z]/).withDescription('alpha-numeric character'),
+    letter: pexprs.makePrim(/[a-zA-Z]/).withDescription('letter'),
+    lower: pexprs.makePrim(/[a-z]/).withDescription('lower-case letter'),
+    upper: pexprs.makePrim(/[A-Z]/).withDescription('upper-case letter'),
+    digit: pexprs.makePrim(/[0-9]/).withDescription('digit'),
+    hexDigit: pexprs.makePrim(/[0-9a-fA-F]/).withDescription('hexadecimal digit')
+  },
 
   construct: function(ruleName, args) {
     var body = this.ruleDict[ruleName];
@@ -112,10 +105,10 @@ Grammar.prototype = {
         this.parent = stack[stack.length - 1];
       };
       var setParents = this.synthesizedAttribute({
-        _default: setParentAction,
+        _terminal: function() { this.parent = stack[stack.length - 1]; },
         _list: setParentAction,
-        _terminal: function() { this.parent = stack[stack.length - 1]; }
-      }, false);
+        _default: setParentAction
+      });
       setParents(node);
       return node;
     } else if (optThrowOnFail) {

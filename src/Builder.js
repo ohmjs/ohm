@@ -11,16 +11,12 @@ var pexprs = require('./pexprs.js');
 // --------------------------------------------------------------------
 
 function Builder() {
-  this.init();
+  this.name = undefined;
+  this.superGrammar = Grammar.prototype;
+  this.ruleDecls = [];
 }
 
 Builder.prototype = {
-  init: function() {
-    this.name = undefined;
-    this.superGrammar = Grammar.prototype;
-    this.ruleDecls = [];
-  },
-
   setName: function(name) {
     this.name = name;
   },
@@ -60,7 +56,10 @@ Builder.prototype = {
     return new Grammar(this.name, this.superGrammar, this.ruleDecls, ruleDict, optNamespace);
   },
 
-  prim: function(x) { return pexprs.makePrim(x); },
+  prim: function(x) {
+    return pexprs.makePrim(x);
+  },
+
   alt: function(/* term1, term1, ... */) {
     var terms = [];
     for (var idx = 0; idx < arguments.length; idx++) {
@@ -73,6 +72,7 @@ Builder.prototype = {
     }
     return terms.length === 1 ? terms[0] : new pexprs.Alt(terms);
   },
+
   seq: function(/* factor1, factor2, ... */) {
     var factors = [];
     for (var idx = 0; idx < arguments.length; idx++) {
@@ -85,13 +85,34 @@ Builder.prototype = {
     }
     return factors.length === 1 ? factors[0] : new pexprs.Seq(factors);
   },
-  many: function(expr, minNumMatches) { return new pexprs.Many(expr, minNumMatches); },
-  opt: function(expr) { return new pexprs.Opt(expr); },
-  not: function(expr) { return new pexprs.Not(expr); },
-  la: function(expr) { return new pexprs.Lookahead(expr); },
-  listy: function(expr) { return new pexprs.Listy(expr); },
-  obj: function(properties, isLenient) { return new pexprs.Obj(properties, !!isLenient); },
-  app: function(ruleName) { return new pexprs.Apply(ruleName); }
+
+  many: function(expr, minNumMatches) {
+    return new pexprs.Many(expr, minNumMatches);
+  },
+
+  opt: function(expr) {
+    return new pexprs.Opt(expr);
+  },
+
+  not: function(expr) {
+    return new pexprs.Not(expr);
+  },
+
+  la: function(expr) {
+    return new pexprs.Lookahead(expr);
+  },
+
+  listy: function(expr) {
+    return new pexprs.Listy(expr);
+  },
+
+  obj: function(properties, isLenient) {
+    return new pexprs.Obj(properties, !!isLenient);
+  },
+
+  app: function(ruleName) {
+    return new pexprs.Apply(ruleName);
+  }
 };
 
 // --------------------------------------------------------------------

@@ -18,7 +18,7 @@ function InputStream() {
 InputStream.newFor = function(obj) {
   if (typeof obj === 'string') {
     return new StringInputStream(obj);
-  } else if (obj instanceof Array) {
+  } else if (Array.isArray(obj)) {
     return new ListInputStream(obj);
   } else if (obj instanceof InputStream) {
     return obj;
