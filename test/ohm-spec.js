@@ -1717,18 +1717,44 @@ describe("Ohm", function() {
       });
 
       it("inherited attributes", function() {
-        var g = ohm.makeGrammar("G { n = '(' (digit+)* ')' }");
-        var a = g.semanticAction({
-          n: function(o, ds, c) {
-            return [a(o), a(ds), a(c)];
+        var g = makeGrammar([
+          "G {",
+          "  abcs = 'a' b 'c'*",
+          "  b   = 'b'",
+          "}"
+        ]);
+        var depth = g.inheritedAttribute({
+          _base: function(node) {
+            depth.set(0);
           },
-          n$2: function() {
-            return ['values', this.args.map(function(node) { return a(node); })];
+          abcs$1: function(ab, cs) {
+            depth.set(depth(this) + 1);
+          },
+          abcs$2: function(ab, cs) {
+            depth.set(depth(this) + 1);
+          },
+          abcs$3: function(ab, cs) {
+            depth.set(depth(this) + 1);
+          },
+          abcs$3$each: function(c) {
+            depth.set(depth(this) + 1);
+          },
+          b$1: function(b) {
+            depth.set(depth(this) + 1);
           }
         });
-        console.log('###');
-        console.log(JSON.stringify(a(g.matchContents('(0123456789)', 'n'))));
-        console.log('###');
+        var print = g.semanticAction({
+          _default: function() {
+            for (var idx = 0; idx < this.length(); idx++) {
+              print(this.get(idx));
+            }
+          },
+          _terminal: function(t) {
+            console.log('terminal ' + t + ' has depth ' + depth(this));
+          }
+        });
+        var cst = g.matchContents('abccc', 'abcs');
+        print(cst);
       })
 
 //         function stringify(node) {

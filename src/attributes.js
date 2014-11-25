@@ -8,7 +8,7 @@ var Symbol = this.Symbol || require('symbol');
 // Private stuff
 // --------------------------------------------------------------------
 
-function _makeSynthesizedAttribute(actionDict, memoize) {
+function _makeSynthesizedAttribute(actionDict, magic, memoize) {
   function get(node) {
     if (node.ctorName === '_list' && node.parent) {
       // If an action's name is ctorName$idx, where idx is the 1-based index of a child node that happens
@@ -21,17 +21,17 @@ function _makeSynthesizedAttribute(actionDict, memoize) {
 
     if (actionDict[node.ctorName]) {
       return actionDict[node.ctorName].apply(node, node.args);
-    } else if (node.ctorName === '_list') {
+    } else if (magic && node.ctorName === '_list') {
       // Default implementation of the _list action
-      return node.args.map(get);
-    } else if (node.ctorName === '_terminal') {
+      return node.args.map(attribute);
+    } else if (magic && node.ctorName === '_terminal') {
       // Default implementation of the _terminal action
       return node.value();
     } else if (actionDict._default) {
       return actionDict._default.call(node);
-    } else if (node.length() === 1 && node.ctorName !== '_terminal') {
+    } else if (magic && node.length() === 1 && node.ctorName !== '_terminal') {
       // We special-case unary rules here, since a very common case when writing actionDicts is to
-      // simply tail-recur immediatelky on the sole child.
+      // simply tail-recur immediately on the sole child.
       return attribute(node.first());
     } else {
       throw new Error('missing method for ' + node.ctorName);
@@ -56,14 +56,14 @@ function _makeSynthesizedAttribute(actionDict, memoize) {
 }
 
 function makeSemanticAction(actionDict) {
-  return _makeSynthesizedAttribute(actionDict, false);
+  return _makeSynthesizedAttribute(actionDict, true, false);
 }
 
 function makeSynthesizedAttribute(actionDict) {
-  return _makeSynthesizedAttribute(actionDict, true);
+  return _makeSynthesizedAttribute(actionDict, true, true);
 }
 
-function makeInheritedAttribute(actionDict) {
+function _makeInheritedAttribute(actionDict, magic) {
   function compute(node) {
     if (!node.parent) {
       actionDict._base.call(undefined, node);
@@ -94,6 +94,10 @@ function makeInheritedAttribute(actionDict) {
         } else if (actionDict._default) {
           actionDict._default.call(node.parent, node, node.parent.indexOf(node));
           return '_default';
+        } else if (magic && node.parent.length() === 1) {
+          // We special-case unary rules here, since a very common case when writing actionDicts is to
+          // have the sole child inherit the parent's value.
+          attribute.set(attribute(node.parent));
         } else {
           throw new Error('missing ' + actionName + ' or _default method');
         }
@@ -126,6 +130,10 @@ function makeInheritedAttribute(actionDict) {
   };
   attribute.toString = function() { return '[inherited attribute]'; };
   return attribute;
+}
+
+function makeInheritedAttribute(actionDict) {
+  return _makeInheritedAttribute(actionDict, true);
 }
 
 // --------------------------------------------------------------------
