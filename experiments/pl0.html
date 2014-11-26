@@ -71,13 +71,13 @@ var g = ohm.namespace('test').getGrammar('PL0');
 
 var symbolTableIn = g.inheritedAttribute({
   _base:        function(s) {
-                  symbolTableIn.set(s, []);
+                  symbolTableIn.set([]);
                 },
   _default:     function(child) {
                   if (child === this.first()) {
-                    symbolTableIn.set(child, symbolTableIn(this));
+                    symbolTableIn.set(symbolTableIn(this));
                   } else {
-                    symbolTableIn.set(child, symbolTableOut(this.pred(child)));
+                    symbolTableIn.set(symbolTableOut(this.pred(child)));
                   }
                 }
 });
@@ -89,13 +89,10 @@ var symbolTableOut = g.synthesizedAttribute({
   Stmt_var:       function(_, n, _, e, _) {
                     return [].concat(symbolTableIn(this)).concat([n.interval.contents]);
                   },
-  '*':            function() {
-                    return this.isEmpty() ? symbolTableIn(this) :symbolTableOut(this.last()); 
-                  },
   _default:       function() {
                     return this.isEmpty() ? symbolTableIn(this) : symbolTableOut(this.last());
                   },
-  _terminal:      function() {
+  _terminal:      function(t) {
                     return symbolTableIn(this);
                   }
 });
@@ -138,6 +135,7 @@ var codeOut = g.synthesizedAttribute({
   ident:          function(_, _) {
     return ['pushReg(' + symbolTableOut(this).indexOf(this.interval.contents) + ')']; },
   number:         function(_)       { return ['pushLit(' + parseFloat(this.interval.contents) + ')']; },
+  _default:       function()        { return codeOut(this.first()); }
 });
 
 // ---------------------------------------------------------------------------------------------------------------------

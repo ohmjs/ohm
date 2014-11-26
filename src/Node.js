@@ -47,7 +47,7 @@ Node.prototype.last = function() {
   }
 };
 
-Node.prototype.pred = function() {
+Node.prototype.pred = function(arg) {
   if (arg === this.first()) {
     throw new Error('cannot get predecessor of first child node');
   } else {
@@ -55,7 +55,7 @@ Node.prototype.pred = function() {
   }
 };
 
-Node.prototype.succ = function() {
+Node.prototype.succ = function(arg) {
   if (arg === this.last()) {
     throw new Error('cannot get successor of last child node');
   } else {

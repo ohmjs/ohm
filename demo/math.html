@@ -72,7 +72,8 @@ var interpret = g.synthesizedAttribute({
   PriExpr_pos:    function(_, e)    { return interpret(e); },
   PriExpr_neg:    function(_, e)    { return interpret(-e); },
   ident:          function(_, _)    { return constants[this.interval.contents]; },
-  number:         function(_)       { return parseFloat(this.interval.contents); }
+  number:         function(_)       { return parseFloat(this.interval.contents); },
+  _default:       function()        { return interpret(this.first()); }
 });
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -100,7 +101,8 @@ var toLisp = g.synthesizedAttribute({
   PriExpr_pos:    function(_, e)    { return toLisp(e); },
   PriExpr_neg:    function(_, e)    { return ['neg', toLisp(e)]; },
   ident:          function(_, _)    { return this.interval.contents; },
-  number:         function(_)       { return this.interval.contents; }
+  number:         function(_)       { return this.interval.contents; },
+  _default:       function()        { return toLisp(this.first()); }
 });
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -120,7 +122,8 @@ var toTree = g.synthesizedAttribute({
   PriExpr_pos:    function(sign, e)        { return makeElement('pos', toTree(sign), toTree(e)); },
   PriExpr_neg:    function(sign, e)        { return makeElement('neg', toTree(sign), toTree(e)); },
   ident:          function(_, _)           { return makeElement('ident', this.interval.contents); },
-  number:         function(_)              { return makeElement('number', this.interval.contents); }
+  number:         function(_)              { return makeElement('number', this.interval.contents); },
+  _terminal:      function(t)              { return t; }
 });
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -143,7 +146,9 @@ var toTwoD = g.synthesizedAttribute({
   PriExpr_neg:    function(sign, e)  { return makeElement('neg', toTwoD(sign), toTwoD(e)); },
   ident:          function(_, _)     { var text = this.interval.contents;
                                        return makeElement('ident', text === 'pi' ? '\u03C0' : text); },
-  number:         function(_)        { return makeElement('number', this.interval.contents); }
+  number:         function(_)        { return makeElement('number', this.interval.contents); },
+  _terminal:      function(t)        { return t; },
+  _default:       function()         { return toTwoD(this.first()); },
 });
 
 // ---------------------------------------------------------------------------------------------------------------------

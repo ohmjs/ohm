@@ -108,7 +108,7 @@ function makeInheritedAttribute(actionDict) {
         } else if (actionDict[actionName]) {
           actionDict[actionName].apply(node.parent, node.parent.args);
           return actionName;
-        } else if (actionDict._default && node.ctorName !== '_terminal') {
+        } else if (actionDict._default) {
           actionDict._default.call(node.parent, node, node.parent.indexOf(node));
           return '_default';
         } else {

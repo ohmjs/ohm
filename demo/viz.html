@@ -299,6 +299,8 @@ var viz = ohm.ohmGrammar.synthesizedAttribute({
   Props_rec:                function(p, _, ps) {},
   Props_base:               function(p) {},
   Prop:                     function(n, _, p) {},
+  _list:                    ohm.actions.map,
+  _terminal:                function(t) { return t; }
 });
 
 function escape(str) {
