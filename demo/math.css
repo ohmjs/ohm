@@ -32,17 +32,14 @@ body {
   color: maroon;
   margin-top: -4pt;
   padding: 0 0 0 8pt;
+  visibility: hidden;
+  opacity: 0;
 }
 
 #errorDiv.visible {
   visibility: visible;
   opacity: 1;
   transition: visibility 0s 2s, opacity .25s 2s linear;
-}
-
-#errorDiv.hidden {
-  visibility: hidden;
-  opacity: 0;
 }
 
 wrapperWrapper {
