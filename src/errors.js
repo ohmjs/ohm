@@ -222,19 +222,19 @@ MatchFailure.prototype.getShortMessage = function() {
 
 MatchFailure.prototype.getMessage = function() {
  if (typeof this.inputStream.source !== 'string') {
-    return 'error at position ' + this.getPos();
-  } else {
-    var text = makeStringBuffer();
-    var errorInfo = toErrorInfo(this.getPos(), this.inputStream.source);
-    var lineAndColText = this.getLineAndColText() + ': ';
-    text.nextPutAll(lineAndColText);
-    text.nextPutAll(errorInfo.line);
-    text.nextPutAll('\n');
-    for (var idx = 1; idx < lineAndColText.length + errorInfo.colNum; idx++) {
-      text.nextPutAll(' ');
-    }
-    text.nextPutAll('^');
+    return 'match failed at position ' + this.getPos();
   }
+
+  var text = makeStringBuffer();
+  var errorInfo = toErrorInfo(this.getPos(), this.inputStream.source);
+  var lineAndColText = this.getLineAndColText() + ': ';
+  text.nextPutAll(lineAndColText);
+  text.nextPutAll(errorInfo.line);
+  text.nextPutAll('\n');
+  for (var idx = 1; idx < lineAndColText.length + errorInfo.colNum; idx++) {
+    text.nextPutAll(' ');
+  }
+  text.nextPutAll('^');
   text.nextPutAll('\nExpected: ');
   text.nextPutAll(this.getExpectedText());
   return text.contents();
@@ -262,9 +262,10 @@ MatchFailure.prototype.getExpectedText = function() {
 };
 
 MatchFailure.prototype.getExpected = function() {
+  var self = this;
   var expected = {};
   this.inputStream.failures.forEach(function(failure) {
-    expected[failure.toExpected(this.ruleDict)] = true;
+    expected[failure.toExpected(self.ruleDict)] = true;
   });
   return Object.keys(expected);
 };

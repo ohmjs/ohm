@@ -1628,7 +1628,7 @@ describe("Ohm", function() {
         expect(function() {
           g.match(42, 'start', true);
         }).to.throwException(function(e) {
-          expect(e.toString()).to.equal('error at position 0');
+          expect(e.toString()).to.equal('match failed at position 0');
           expect(e.getPos()).to.equal(0);
         });
       });
