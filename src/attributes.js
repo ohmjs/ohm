@@ -3,6 +3,7 @@
 // --------------------------------------------------------------------
 
 var Symbol = this.Symbol || require('symbol');
+var Node = require('./Node');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -26,6 +27,10 @@ var actions = {
 
 function _makeSynthesizedAttribute(actionDict, memoize) {
   function get(node) {
+    if (!(node instanceof Node)) {
+      throw new Error('not an Ohm CST node: ' + JSON.stringify(node));
+    }
+
     if (node.ctorName === '_list' && node.parent) {
       // If an action's name is ctorName$idx, where idx is the 1-based index of a child node that happens
       // to be a list, it should override the _list action for that particular list node.
@@ -42,7 +47,11 @@ function _makeSynthesizedAttribute(actionDict, memoize) {
         throw new Error('the map default action cannot be used with a ' + node.ctorName + ' node');
       }
     } else if (actionDict[node.ctorName] === actions.passThrough) {
-      return attribute(node.first());
+      if (node.length() === 1) {
+        return attribute(node.first());
+      } else {
+        throw new Error('the passThrough default action can only be used with a node of arity 1');
+      }
     } else if (actionDict[node.ctorName]) {
       return actionDict[node.ctorName].apply(node, node.args);
     } else if (actionDict._default && node.ctorName !== '_terminal') {
@@ -79,6 +88,10 @@ function makeSynthesizedAttribute(actionDict) {
 
 function makeInheritedAttribute(actionDict) {
   function compute(node) {
+    if (!(node instanceof Node)) {
+      throw new Error('not an Ohm CST node: ' + JSON.stringify(node));
+    }
+
     if (!node.parent) {
       actionDict._base.call(undefined, node);
       return '_base';
