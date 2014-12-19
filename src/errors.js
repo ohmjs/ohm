@@ -263,10 +263,10 @@ MatchFailure.prototype.getExpectedText = function() {
 
 MatchFailure.prototype.getExpected = function() {
   var expected = {};
-  for (var failure = this.inputStream.failures; failure !== null; failure = failure.next) {
-    expected[failure.expr.toExpected(this.ruleDict)] = true;
-  }
-  return Object.keys(expected).reverse();
+  this.inputStream.failures.forEach(function(failure) {
+    expected[failure.toExpected(this.ruleDict)] = true;
+  });
+  return Object.keys(expected);
 };
 
 // ----------------- constructors -----------------

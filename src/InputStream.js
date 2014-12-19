@@ -32,16 +32,16 @@ InputStream.prototype = {
     this.source = source;
     this.pos = 0;
     this.posInfos = [];
-    this.failures = null;
+    this.failures = [];
     this.failuresPos = -1;
   },
 
   recordFailure: function(pos, expr) {
     if (pos > this.failuresPos) {
-      this.failures = {expr: expr, next: null};
+      this.failures = [expr];
       this.failuresPos = pos;
     } else if (pos === this.failuresPos) {
-      this.failures = {expr: expr, next: this.failures};
+      this.failures.push(expr);
     }
   },
 
