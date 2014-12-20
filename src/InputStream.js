@@ -46,9 +46,12 @@ InputStream.prototype = {
   },
 
   getCurrentPosInfo: function() {
-    var currPos = this.pos;
-    var posInfo = this.posInfos[currPos];
-    return posInfo || (this.posInfos[currPos] = new PosInfo(currPos));
+    return this.getPosInfo(this.pos);
+  },
+
+  getPosInfo: function(pos) {
+    var posInfo = this.posInfos[pos];
+    return posInfo || (this.posInfos[pos] = new PosInfo(pos));
   },
 
   atEnd: function() {
