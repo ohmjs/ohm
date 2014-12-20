@@ -116,7 +116,7 @@ function add(/* tagName, child1, child2, ... */) {
   addNode(makeElement.apply(this, arguments));
 }
 
-var viz = ohm.ohmGrammar.synthesizedAttribute({
+var viz = ohm.ohmGrammar.semanticAction({
   Grammar:                  function(n, s, _, rs, _) {
                               enter('grammar');
                                 add('name', viz(n));

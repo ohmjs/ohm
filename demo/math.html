@@ -62,7 +62,7 @@ var g = ohm.namespace('demo').getGrammar('Arithmetic');
 // ---------------------------------------------------------------------------------------------------------------------
 
 var constants = {pi: Math.PI, e: Math.E};
-var interpret = g.synthesizedAttribute({
+var interpret = g.semanticAction({
   AddExpr_plus:   function(x, _, y) { return interpret(x) + interpret(y); },
   AddExpr_minus:  function(x, _, y) { return interpret(x) - interpret(y); },
   MulExpr_times:  function(x, _, y) { return interpret(x) * interpret(y); },
@@ -90,7 +90,7 @@ function stringify(x) {
   }
 }
 
-var toLisp = g.synthesizedAttribute({
+var toLisp = g.semanticAction({
   Expr:           function(e)       { return stringify(toLisp(e)); },
   AddExpr_plus:   function(x, _, y) { return ['+', toLisp(x), toLisp(y)]; },
   AddExpr_minus:  function(x, _, y) { return ['-', toLisp(x), toLisp(y)]; },
@@ -107,7 +107,7 @@ var toLisp = g.synthesizedAttribute({
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-var toTree = g.synthesizedAttribute({
+var toTree = g.semanticAction({
   Expr:           function(e)              { return makeElement('expr', toTree(e)); },
   AddExpr:        function(e)              { return makeElement('addExpr', toTree(e)); },
   AddExpr_plus:   function(x, op, y)       { return makeElement('plus', toTree(x), toTree(op), toTree(y)); },
@@ -128,7 +128,7 @@ var toTree = g.synthesizedAttribute({
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-var toTwoD = g.synthesizedAttribute({
+var toTwoD = g.semanticAction({
   AddExpr_plus:   function(x, op, y) { var operator = makeElement('operator', toTwoD(op));
                                        return makeElement('plus', toTwoD(x), operator, toTwoD(y)); },
   AddExpr_minus:  function(x, op, y) { var operator = makeElement('operator', '\u2212');
