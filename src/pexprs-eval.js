@@ -312,10 +312,10 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, grammar, input
     } else {
       origPosInfo.memo[ruleName] = {pos: inputStream.pos, value: value};
     }
-    origPosInfo.exit(ruleName);
+    var ans;
     if (value) {
       bindings.push(value);
-      return true;
+      ans = true;
     } else {
       if (recordFailures && body.description) {
         var errorPos;
@@ -328,8 +328,10 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, grammar, input
         }
         inputStream.recordFailure(errorPos, this);
       }
-      return false;
+      ans = false;
     }
+    origPosInfo.exit(ruleName);
+    return ans;
   }
 };
 
