@@ -104,7 +104,7 @@ Grammar.prototype = {
         stack.pop();
         this.parent = stack[stack.length - 1];
       };
-      var setParents = this.synthesizedAttribute({
+      var setParents = this.semanticAction({
         _terminal: function() { this.parent = stack[stack.length - 1]; },
         _list: setParentAction,
         _default: setParentAction
