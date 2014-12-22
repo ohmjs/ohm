@@ -87,10 +87,9 @@ Grammar.prototype = {
     var state = new State(this, inputStream);
     var succeeded = new pexprs.Apply(startRule).eval(optThrowOnFail, state);
     if (succeeded) {
-      if (common.isSyntactic(startRule)) {
-        state.skipSpaces();
-      }
+      state.ruleStack.push(startRule);
       succeeded = pexprs.end.eval(optThrowOnFail, state);
+      state.ruleStack.pop();
     }
     if (succeeded) {
       var node = state.bindings[0];
