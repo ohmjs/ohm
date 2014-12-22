@@ -216,6 +216,8 @@ pexprs.Listy.prototype.eval = function(recordFailures, syntactic, grammar, input
   var obj = inputStream.next();
   if (obj instanceof Array || typeof obj === 'string') {
     var objInputStream = InputStream.newFor(obj);
+    // TODO: if syntactic && typeof obj === 'string', shouldn't we skip whitespace after calling eval(), just like
+    // Grammar.matchContents? Probably should be using pexprs.end.eval() here anyway, which would do that.
     return this.expr.eval(recordFailures, syntactic, grammar, objInputStream, bindings) && objInputStream.atEnd();
   } else {
     return false;
