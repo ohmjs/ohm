@@ -24,8 +24,8 @@ PosInfo.prototype = {
     this.activeRules[ruleName] = true;
   },
 
-  exit: function(ruleName) {
-    this.ruleStack.pop();
+  exit: function() {
+    var ruleName = this.ruleStack.pop();
     this.activeRules[ruleName] = false;
   },
 

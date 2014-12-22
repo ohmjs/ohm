@@ -332,7 +332,7 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, grammar, input
       }
       ans = false;
     }
-    origPosInfo.exit(ruleName);
+    origPosInfo.exit();
     return ans;
   }
 };
