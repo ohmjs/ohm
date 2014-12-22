@@ -3,8 +3,6 @@
 // --------------------------------------------------------------------
 
 var common = require('./common.js');
-var PosInfo = require('./PosInfo.js');
-var Grammar = require('./Grammar.js');
 var Interval = require('./Interval.js');
 
 // --------------------------------------------------------------------
@@ -43,15 +41,6 @@ InputStream.prototype = {
     } else if (pos === this.failuresPos) {
       this.failures.push(expr);
     }
-  },
-
-  getCurrentPosInfo: function() {
-    return this.getPosInfo(this.pos);
-  },
-
-  getPosInfo: function(pos) {
-    var posInfo = this.posInfos[pos];
-    return posInfo || (this.posInfos[pos] = new PosInfo(pos));
   },
 
   atEnd: function() {

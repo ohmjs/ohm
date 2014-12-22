@@ -8,7 +8,8 @@ var common = require('./common.js');
 // Private stuff
 // --------------------------------------------------------------------
 
-function PosInfo() {
+function PosInfo(globalRuleStack) {
+  this.globalRuleStack = globalRuleStack;
   this.ruleStack = [];
   this.activeRules = {};  // redundant (could be generated from ruleStack) but useful for performance reasons
   this.memo = {};
@@ -20,12 +21,14 @@ PosInfo.prototype = {
   },
 
   enter: function(ruleName) {
+    this.globalRuleStack.push(ruleName);
     this.ruleStack.push(ruleName);
     this.activeRules[ruleName] = true;
   },
 
   exit: function() {
-    var ruleName = this.ruleStack.pop();
+    var ruleName = this.globalRuleStack.pop();
+    this.ruleStack.pop();
     this.activeRules[ruleName] = false;
   },
 

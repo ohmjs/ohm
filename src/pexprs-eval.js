@@ -8,19 +8,22 @@ var Node = require('./Node.js');
 var pexprs = require('./pexprs.js');
 var InputStream = require('./InputStream.js');
 
-var awlib = require('awlib');
-var browser = awlib.browser;
-
 // --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
 
+// The contract of this method:
+// * When the return value is true:
+//   -- bindings will have expr.arity more elements than before
+// * When the return value is false:
+//   -- bindings will have exactly the same number of elements as before
+//   -- position could be anywhere
+
 pexprs.PExpr.prototype.eval = common.abstract;
 
-pexprs.anything.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
-  if (syntactic) {
-    grammar.skipSpaces(inputStream);
-  }
+pexprs.anything.eval = function(recordFailures, state) {
+  state.skipSpacesIfAppropriate();
+  var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   var value = inputStream.next();
   if (value === common.fail) {
@@ -29,17 +32,16 @@ pexprs.anything.eval = function(recordFailures, syntactic, grammar, inputStream,
     }
     return false;
   } else {
-    bindings.push(new Node(grammar, '_terminal',  [value], inputStream.intervalFrom(origPos)));
+    state.bindings.push(new Node(state.grammar, '_terminal',  [value], inputStream.intervalFrom(origPos)));
     return true;
   }
 };
 
-pexprs.end.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
-  if (syntactic) {
-    grammar.skipSpaces(inputStream);
-  }
+pexprs.end.eval = function(recordFailures, state) {
+  state.skipSpacesIfAppropriate();
+  var inputStream = state.inputStream;
   if (inputStream.atEnd()) {
-    bindings.push(new Node(grammar, '_terminal', [undefined], inputStream.intervalFrom(inputStream.pos)));
+    state.bindings.push(new Node(state.grammar, '_terminal', [undefined], inputStream.intervalFrom(inputStream.pos)));
     return true;
   } else {
     if (recordFailures) {
@@ -49,17 +51,17 @@ pexprs.end.eval = function(recordFailures, syntactic, grammar, inputStream, bind
   }
 };
 
-pexprs.fail.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
+pexprs.fail.eval = function(recordFailures, state) {
+  var inputStream = state.inputStream;
   if (recordFailures) {
     inputStream.recordFailure(inputStream.pos, this);
   }
   return false;
 };
 
-pexprs.Prim.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
-  if (syntactic) {
-    grammar.skipSpaces(inputStream);
-  }
+pexprs.Prim.prototype.eval = function(recordFailures, state) {
+  state.skipSpacesIfAppropriate();
+  var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   if (this.match(inputStream) === common.fail) {
     if (recordFailures) {
@@ -67,7 +69,7 @@ pexprs.Prim.prototype.eval = function(recordFailures, syntactic, grammar, inputS
     }
     return false;
   } else {
-    bindings.push(new Node(grammar, '_terminal', [this.obj], inputStream.intervalFrom(origPos)));
+    state.bindings.push(new Node(state.grammar, '_terminal', [this.obj], inputStream.intervalFrom(origPos)));
     return true;
   }
 };
@@ -80,10 +82,9 @@ pexprs.StringPrim.prototype.match = function(inputStream) {
   return inputStream.matchString(this.obj);
 };
 
-pexprs.RegExpPrim.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
-  if (syntactic) {
-    grammar.skipSpaces(inputStream);
-  }
+pexprs.RegExpPrim.prototype.eval = function(recordFailures, state) {
+  state.skipSpacesIfAppropriate();
+  var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   if (inputStream.matchRegExp(this.obj) === common.fail) {
     if (recordFailures) {
@@ -91,51 +92,44 @@ pexprs.RegExpPrim.prototype.eval = function(recordFailures, syntactic, grammar, 
     }
     return false;
   } else {
-    bindings.push(new Node(grammar, '_terminal', [inputStream.source[origPos]], inputStream.intervalFrom(origPos)));
+    state.bindings.push(
+        new Node(state.grammar, '_terminal', [inputStream.source[origPos]], inputStream.intervalFrom(origPos)));
     return true;
   }
 };
 
-pexprs.Alt.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
+pexprs.Alt.prototype.eval = function(recordFailures, state) {
+  state.skipSpacesIfAppropriate();
+  var bindings = state.bindings;
+  var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   var origNumBindings = bindings.length;
   for (var idx = 0; idx < this.terms.length; idx++) {
-    if (syntactic) {
-      grammar.skipSpaces(inputStream);
-    }
-    if (this.terms[idx].eval(recordFailures, syntactic, grammar, inputStream, bindings)) {
+    if (this.terms[idx].eval(recordFailures, state)) {
       return true;
     } else {
       inputStream.pos = origPos;
-      // Note: while the following assignment could be done unconditionally, only doing it when necessary is
-      // better for performance. This is b/c assigning to an array's length property is more expensive than a
-      // typical assignment.
-      if (bindings.length > origNumBindings) {
-        bindings.length = origNumBindings;
-      }
+      bindings.length = origNumBindings;
     }
   }
   return false;
 };
 
-pexprs.Seq.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
-  if (syntactic) {
-    grammar.skipSpaces(inputStream);
-  }
-  var origPos = inputStream.pos;
+pexprs.Seq.prototype.eval = function(recordFailures, state) {
+  var inputStream = state.inputStream;
+  var origNumBindings = state.bindings.length;
   for (var idx = 0; idx < this.factors.length; idx++) {
-    if (idx > 0 && syntactic) {
-      grammar.skipSpaces(inputStream);
-    }
+    state.skipSpacesIfAppropriate();
     var factor = this.factors[idx];
-    if (!factor.eval(recordFailures, syntactic, grammar, inputStream, bindings)) {
+    if (!factor.eval(recordFailures, state)) {
+      state.bindings.length = origNumBindings;
       return false;
     }
   }
   return true;
 };
 
-pexprs.Many.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
+pexprs.Many.prototype.eval = function(recordFailures, state) {
   var arity = this.getArity();
   if (arity === 0) {
     // TODO: make this a static check w/ a nice error message, then remove the dynamic check.
@@ -145,53 +139,57 @@ pexprs.Many.prototype.eval = function(recordFailures, syntactic, grammar, inputS
 
   var columns = common.repeatFn(function() { return []; }, arity);
   var numMatches = 0;
+  var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   while (true) {
     var backtrackPos = inputStream.pos;
-    var row = [];
-    if (syntactic) {
-      grammar.skipSpaces(inputStream);
-    }
-    if (!this.expr.eval(recordFailures, syntactic, grammar, inputStream, row)) {
-      inputStream.pos = backtrackPos;
-      break;
-    } else {
+    state.skipSpacesIfAppropriate();
+    if (this.expr.eval(recordFailures, state)) {
       numMatches++;
+      var row = state.bindings.splice(state.bindings.length - arity, arity);
       for (var idx = 0; idx < row.length; idx++) {
         columns[idx].push(row[idx]);
       }
+    } else {
+      inputStream.pos = backtrackPos;
+      break;
     }
   }
   if (numMatches < this.minNumMatches) {
     return false;
   } else {
     for (var idx = 0; idx < columns.length; idx++) {
-      bindings.push(new Node(grammar, '_list', columns[idx], inputStream.intervalFrom(origPos)));
+      state.bindings.push(new Node(state.grammar, '_list', columns[idx], inputStream.intervalFrom(origPos)));
     }
     return true;
   }
 };
 
-pexprs.Opt.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
+pexprs.Opt.prototype.eval = function(recordFailures, state) {
+  var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  var row = [];
   var arity = this.getArity();
-  if (!this.expr.eval(recordFailures, syntactic, grammar, inputStream, row)) {
+  var row;
+  if (this.expr.eval(recordFailures, state)) {
+    row = state.bindings.splice(state.bindings.length - arity, arity);
+  } else {
     inputStream.pos = origPos;
-    row = common.repeat(new Node(grammar, '_terminal', [undefined], inputStream.intervalFrom(origPos)), arity);
+    row = common.repeat(new Node(state.grammar, '_terminal', [undefined], inputStream.intervalFrom(origPos)), arity);
   }
   for (var idx = 0; idx < arity; idx++) {
-    bindings.push(row[idx]);
+    state.bindings.push(row[idx]);
   }
   return true;
 };
 
-pexprs.Not.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
+pexprs.Not.prototype.eval = function(recordFailures, state) {
+  var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  if (this.expr.eval(false, syntactic, grammar, inputStream, [])) {
+  if (this.expr.eval(false, state)) {
     if (recordFailures) {
       inputStream.recordFailure(origPos, this);
     }
+    state.bindings.length -= this.getArity();
     return false;
   } else {
     inputStream.pos = origPos;
@@ -199,9 +197,10 @@ pexprs.Not.prototype.eval = function(recordFailures, syntactic, grammar, inputSt
   }
 };
 
-pexprs.Lookahead.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
+pexprs.Lookahead.prototype.eval = function(recordFailures, state) {
+  var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  if (this.expr.eval(recordFailures, syntactic, grammar, inputStream, bindings)) {
+  if (this.expr.eval(recordFailures, state)) {
     inputStream.pos = origPos;
     return true;
   } else {
@@ -209,26 +208,25 @@ pexprs.Lookahead.prototype.eval = function(recordFailures, syntactic, grammar, i
   }
 };
 
-pexprs.Listy.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
-  if (syntactic) {
-    grammar.skipSpaces(inputStream);
-  }
+pexprs.Listy.prototype.eval = function(recordFailures, state) {
+  state.skipSpacesIfAppropriate();
+  var inputStream = state.inputStream;
   var obj = inputStream.next();
   if (obj instanceof Array || typeof obj === 'string') {
     var objInputStream = InputStream.newFor(obj);
-    // TODO: if syntactic && typeof obj === 'string', shouldn't we skip whitespace after calling eval(), just like
-    // Grammar.matchContents? Probably should be using pexprs.end.eval() here anyway, which would do that.
-    return this.expr.eval(recordFailures, syntactic, grammar, objInputStream, bindings) && objInputStream.atEnd();
+    state.pushInputStream(objInputStream);
+    var ans = this.expr.eval(recordFailures, state) && state.atEnd();
+    state.popInputStream();
+    return ans;
   } else {
     return false;
   }
 };
 
-pexprs.Obj.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
+pexprs.Obj.prototype.eval = function(recordFailures, state) {
+  var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  if (syntactic) {
-    grammar.skipSpaces(inputStream);
-  }
+  state.skipSpacesIfAppropriate();
   var obj = inputStream.next();
   if (obj !== common.fail && obj && (typeof obj === 'object' || typeof obj === 'function')) {
     var numOwnPropertiesMatched = 0;
@@ -239,9 +237,9 @@ pexprs.Obj.prototype.eval = function(recordFailures, syntactic, grammar, inputSt
       }
       var value = obj[property.name];
       var valueInputStream = InputStream.newFor([value]);
-      var matched =
-          property.pattern.eval(recordFailures, syntactic, grammar, valueInputStream, bindings) &&
-          valueInputStream.atEnd();
+      state.pushInputStream(valueInputStream);
+      var matched = property.pattern.eval(recordFailures, state) && state.atEnd();
+      state.popInputStream();
       if (!matched) {
         return false;
       }
@@ -254,7 +252,7 @@ pexprs.Obj.prototype.eval = function(recordFailures, syntactic, grammar, inputSt
           remainder[p] = obj[p];
         }
       }
-      bindings.push(new Node(grammar, '_terminal', [remainder], inputStream.intervalFrom(origPos)));
+      state.bindings.push(new Node(state.grammar, '_terminal', [remainder], inputStream.intervalFrom(origPos)));
       return true;
     } else {
       return numOwnPropertiesMatched === Object.keys(obj).length;
@@ -264,7 +262,7 @@ pexprs.Obj.prototype.eval = function(recordFailures, syntactic, grammar, inputSt
   }
 };
 
-pexprs.Apply.prototype.eval = function(recordFailures, syntactic, grammar, inputStream, bindings) {
+pexprs.Apply.prototype.eval = function(recordFailures, state) {
   function useMemoizedResult(memoRecOrLR) {
     inputStream.pos = memoRecOrLR.pos;
     if (memoRecOrLR.value) {
@@ -276,7 +274,12 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, grammar, input
   }
 
   var ruleName = this.ruleName;
-  var origPosInfo = inputStream.getCurrentPosInfo();
+  var grammar = state.grammar;
+  var bindings = state.bindings;
+  var inputStream = state.inputStream;
+  // TODO: skip spaces here, if this rule is syntactic
+  // (this is necessary for correctness b/c of the Seq and Alt optimizations)
+  var origPosInfo = state.getCurrentPosInfo();
 
   var memoRec = origPosInfo.memo[ruleName];
   if (memoRec && origPosInfo.shouldUseMemoizedResult(memoRec)) {
@@ -298,14 +301,12 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, grammar, input
     var origPos = inputStream.pos;
     origPosInfo.enter(ruleName);
     var rf = recordFailures && !body.description;
-    var ruleIsSyntactic = common.isSyntactic(ruleName);
-    var value = this.evalOnce(body, rf, ruleIsSyntactic, grammar, inputStream);
+    var value = this.evalOnce(body, rf, state);
     var currentLR = origPosInfo.getCurrentLeftRecursion();
     if (currentLR) {
       if (currentLR.name === ruleName) {
-        value = this.handleLeftRecursion(body, rf, ruleIsSyntactic, grammar, inputStream, origPos, currentLR, value);
-        origPosInfo.memo[ruleName] =
-          {pos: inputStream.pos, value: value, involvedRules: currentLR.involvedRules};
+        value = this.handleLeftRecursion(body, rf, state, origPos, currentLR, value);
+        origPosInfo.memo[ruleName] = {pos: inputStream.pos, value: value, involvedRules: currentLR.involvedRules};
         origPosInfo.endLeftRecursion(ruleName);
       } else if (!currentLR.involvedRules[ruleName]) {
         // Only memoize if this rule is not involved in the current left recursion
@@ -320,15 +321,9 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, grammar, input
       ans = true;
     } else {
       if (recordFailures && body.description) {
-        var errorPos;
-        if (body.description && ruleIsSyntactic) {
-          inputStream.pos = origPos;
-          grammar.skipSpaces(inputStream);
-          errorPos = inputStream.pos;
-        } else {
-          errorPos = origPos;
-        }
-        inputStream.recordFailure(errorPos, this);
+        inputStream.pos = origPos;
+        state.skipSpacesIfAppropriate();
+        inputStream.recordFailure(inputStream.pos, this);
       }
       ans = false;
     }
@@ -337,32 +332,38 @@ pexprs.Apply.prototype.eval = function(recordFailures, syntactic, grammar, input
   }
 };
 
-pexprs.Apply.prototype.evalOnce = function(expr, recordFailures, syntactic, grammar, inputStream) {
+pexprs.Apply.prototype.evalOnce = function(expr, recordFailures, state) {
+  var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  var bindings = [];
-  if (expr.eval(recordFailures, syntactic, grammar, inputStream, bindings)) {
-    return new Node(grammar, this.ruleName, bindings, inputStream.intervalFrom(origPos));
+  if (expr.eval(recordFailures, state)) {
+    var arity = expr.getArity();
+    var bindings = state.bindings.splice(state.bindings.length - arity, arity);
+    var ans = new Node(state.grammar, this.ruleName, bindings, inputStream.intervalFrom(origPos));
+    return ans;
   } else {
     return false;
   }
 };
 
-pexprs.Apply.prototype.handleLeftRecursion = function(body, recordFailures, syntactic, grammar, inputStream, origPos, currentLR, seedValue) {
+pexprs.Apply.prototype.handleLeftRecursion = function(body, recordFailures, state, origPos, currentLR, seedValue) {
+  if (!seedValue) {
+    return seedValue;
+  }
+
   var value = seedValue;
-  if (seedValue) {
-    currentLR.value = seedValue;
-    currentLR.pos = inputStream.pos;
-    while (true) {
-      inputStream.pos = origPos;
-      value = this.evalOnce(body, recordFailures, syntactic, grammar, inputStream);
-      if (value && inputStream.pos > currentLR.pos) {
-        currentLR.value = value;
-        currentLR.pos = inputStream.pos;
-      } else {
-        value = currentLR.value;
-        inputStream.pos = currentLR.pos;
-        break;
-      }
+  currentLR.value = seedValue;
+  currentLR.pos = state.inputStream.pos;
+  var inputStream = state.inputStream;
+  while (true) {
+    inputStream.pos = origPos;
+    value = this.evalOnce(body, recordFailures, state);
+    if (value && inputStream.pos > currentLR.pos) {
+      currentLR.value = value;
+      currentLR.pos = inputStream.pos;
+    } else {
+      value = currentLR.value;
+      inputStream.pos = currentLR.pos;
+      break;
     }
   }
   return value;

@@ -7,6 +7,7 @@ var errors = require('./errors.js');
 var InputStream = require('./InputStream.js');
 var Interval = require('./Interval.js');
 var Node = require('./Node.js');
+var State = require('./State.js');
 var pexprs = require('./pexprs.js');
 var attributes = require('./attributes.js');
 
@@ -39,7 +40,6 @@ function Grammar(name, superGrammar, ruleDecls, ruleDict, optNamespace) {
 Grammar.prototype = {
   ruleDict: {
     _: pexprs.anything,
-    end: new pexprs.Not(pexprs.anything),
     fail: pexprs.fail,
     space: pexprs.makePrim(/[\s]/).withDescription('space'),
     alnum: pexprs.makePrim(/[0-9a-zA-Z]/).withDescription('alpha-numeric character'),
@@ -84,30 +84,27 @@ Grammar.prototype = {
 
   matchContents: function(obj, startRule, optThrowOnFail) {
     var inputStream = InputStream.newFor(obj);
-    var bindings = [];
-    var succeeded = new pexprs.Apply(startRule).eval(optThrowOnFail, undefined, this, inputStream, bindings);
-
+    var state = new State(this, inputStream);
+    var succeeded = new pexprs.Apply(startRule).eval(optThrowOnFail, state);
     if (succeeded) {
-      // This match only succeeded if the start rule consumed all of the input.
       if (common.isSyntactic(startRule)) {
-        this.skipSpaces(inputStream);
+        state.skipSpaces();
       }
-      succeeded = pexprs.end.eval(optThrowOnFail, false, this, inputStream, []);
+      succeeded = pexprs.end.eval(optThrowOnFail, state);
     }
-
     if (succeeded) {
-      var node = bindings[0];
+      var node = state.bindings[0];
       var stack = [undefined];
-      function setParentAction() {
-        stack.push(this);
-        this.args.forEach(function(arg) { setParents(arg); });
-        stack.pop();
-        this.parent = stack[stack.length - 1];
-      };
       var setParents = this.semanticAction({
-        _terminal: function() { this.parent = stack[stack.length - 1]; },
-        _list: setParentAction,
-        _default: setParentAction
+        _terminal: function() {
+          this.parent = stack[stack.length - 1];
+        },
+        _default: function() {
+          stack.push(this);
+          this.args.forEach(function(arg) { setParents(arg); });
+          stack.pop();
+          this.parent = stack[stack.length - 1];
+        }
       });
       setParents(node);
       return node;
@@ -115,16 +112,6 @@ Grammar.prototype = {
       throw new errors.MatchFailure(inputStream, this.ruleDict);
     } else {
       return false;
-    }
-  },
-
-  skipSpaces: function(inputStream) {
-    while (true) {
-      var origPos = inputStream.pos;
-      if (!this.ruleDict.space.eval(false, false, this, inputStream, [])) {
-        inputStream.pos = origPos;
-        break;
-      }
     }
   },
 
@@ -185,10 +172,12 @@ Grammar.prototype = {
     }
   },
 
+  // TODO: make sure this is still correct.
+  // TODO: the analog of this method for inherited attributes.
   toSemanticActionTemplate: function(/* entryPoint1, entryPoint2, ... */) {
     var entryPoints = arguments.length > 0 ? arguments : Object.keys(this.ruleDict);
     var rulesToBeIncluded = this.rulesThatNeedSemanticAction(entryPoints);
-    
+
     // TODO: add the super-grammar's templates at the right place, e.g., a case for AddExpr_plus should appear next to
     // other cases of AddExpr.
 
