@@ -28,7 +28,7 @@ pexprs.anything.eval = function(recordFailures, state) {
   var value = inputStream.next();
   if (value === common.fail) {
     if (recordFailures) {
-      inputStream.recordFailure(origPos, this);
+      state.recordFailure(origPos, this);
     }
     return false;
   } else {
@@ -45,7 +45,7 @@ pexprs.end.eval = function(recordFailures, state) {
     return true;
   } else {
     if (recordFailures) {
-      inputStream.recordFailure(inputStream.pos, this);
+      state.recordFailure(inputStream.pos, this);
     }
     return false;
   }
@@ -54,7 +54,7 @@ pexprs.end.eval = function(recordFailures, state) {
 pexprs.fail.eval = function(recordFailures, state) {
   var inputStream = state.inputStream;
   if (recordFailures) {
-    inputStream.recordFailure(inputStream.pos, this);
+    state.recordFailure(inputStream.pos, this);
   }
   return false;
 };
@@ -65,7 +65,7 @@ pexprs.Prim.prototype.eval = function(recordFailures, state) {
   var origPos = inputStream.pos;
   if (this.match(inputStream) === common.fail) {
     if (recordFailures) {
-      inputStream.recordFailure(origPos, this);
+      state.recordFailure(origPos, this);
     }
     return false;
   } else {
@@ -88,7 +88,7 @@ pexprs.RegExpPrim.prototype.eval = function(recordFailures, state) {
   var origPos = inputStream.pos;
   if (inputStream.matchRegExp(this.obj) === common.fail) {
     if (recordFailures) {
-      inputStream.recordFailure(origPos, this);
+      state.recordFailure(origPos, this);
     }
     return false;
   } else {
@@ -187,7 +187,7 @@ pexprs.Not.prototype.eval = function(recordFailures, state) {
   var origPos = inputStream.pos;
   if (this.expr.eval(false, state)) {
     if (recordFailures) {
-      inputStream.recordFailure(origPos, this);
+      state.recordFailure(origPos, this);
     }
     state.bindings.length -= this.getArity();
     return false;
@@ -215,7 +215,7 @@ pexprs.Listy.prototype.eval = function(recordFailures, state) {
   if (obj instanceof Array || typeof obj === 'string') {
     var objInputStream = InputStream.newFor(obj);
     state.pushInputStream(objInputStream);
-    var ans = this.expr.eval(recordFailures, state) && state.atEnd();
+    var ans = this.expr.eval(false, state) && state.atEnd();
     state.popInputStream();
     return ans;
   } else {
@@ -238,7 +238,7 @@ pexprs.Obj.prototype.eval = function(recordFailures, state) {
       var value = obj[property.name];
       var valueInputStream = InputStream.newFor([value]);
       state.pushInputStream(valueInputStream);
-      var matched = property.pattern.eval(recordFailures, state) && state.atEnd();
+      var matched = property.pattern.eval(false, state) && state.atEnd();
       state.popInputStream();
       if (!matched) {
         return false;
@@ -323,7 +323,7 @@ pexprs.Apply.prototype.eval = function(recordFailures, state) {
       if (recordFailures && body.description) {
         inputStream.pos = origPos;
         state.skipSpacesIfAppropriate();
-        inputStream.recordFailure(inputStream.pos, this);
+        state.recordFailure(inputStream.pos, this);
       }
       ans = false;
     }

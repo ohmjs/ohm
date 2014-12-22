@@ -109,7 +109,7 @@ Grammar.prototype = {
       setParents(node);
       return node;
     } else if (optThrowOnFail) {
-      throw new errors.MatchFailure(inputStream, this.ruleDict);
+      throw new errors.MatchFailure(state);
     } else {
       return false;
     }

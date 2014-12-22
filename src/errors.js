@@ -196,37 +196,36 @@ function toErrorInfo(pos, str) {
   };
 }
 
-function MatchFailure(inputStream, ruleDict) {
-  this.inputStream = inputStream;
-  this.ruleDict = ruleDict;
+function MatchFailure(state) {
+  this.state = state;
 }
 
 MatchFailure.prototype = Object.create(Error.prototype);
 
 MatchFailure.prototype.getPos = function() {
-  return this.inputStream.failuresPos;
+  return this.state.failuresPos;
 };
 
 MatchFailure.prototype.getShortMessage = function() {
- if (typeof this.inputStream.source !== 'string') {
-    return 'error at position ' + this.getPos();
-  } else {
+ if (typeof this.state.inputStream.source === 'string') {
     var text = makeStringBuffer();
-    var errorInfo = toErrorInfo(this.getPos(), this.inputStream.source);
+    var errorInfo = toErrorInfo(this.getPos(), this.state.inputStream.source);
     text.nextPutAll(this.getLineAndColText());
     text.nextPutAll(': expected ');
     text.nextPutAll(this.getExpectedText());
     return text.contents();
+  } else {
+    return 'match failed at position ' + this.getPos();
   }
 };
 
 MatchFailure.prototype.getMessage = function() {
- if (typeof this.inputStream.source !== 'string') {
+ if (typeof this.state.inputStream.source !== 'string') {
     return 'match failed at position ' + this.getPos();
   }
 
   var text = makeStringBuffer();
-  var errorInfo = toErrorInfo(this.getPos(), this.inputStream.source);
+  var errorInfo = toErrorInfo(this.getPos(), this.state.inputStream.source);
   var lineAndColText = this.getLineAndColText() + ': ';
   text.nextPutAll(lineAndColText);
   text.nextPutAll(errorInfo.line);
@@ -241,7 +240,7 @@ MatchFailure.prototype.getMessage = function() {
 };
 
 MatchFailure.prototype.getLineAndColText = function() {
-  var errorInfo = toErrorInfo(this.getPos(), this.inputStream.source);
+  var errorInfo = toErrorInfo(this.getPos(), this.state.inputStream.source);
   return 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum;
 };
 
@@ -264,8 +263,8 @@ MatchFailure.prototype.getExpectedText = function() {
 MatchFailure.prototype.getExpected = function() {
   var self = this;
   var expected = {};
-  this.inputStream.failures.forEach(function(failure) {
-    expected[failure.toExpected(self.ruleDict)] = true;
+  this.state.failures.forEach(function(failure) {
+    expected[failure.toExpected(self.state.grammar.ruleDict)] = true;
   });
   return Object.keys(expected);
 };

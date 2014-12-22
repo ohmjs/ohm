@@ -30,17 +30,6 @@ InputStream.prototype = {
     this.source = source;
     this.pos = 0;
     this.posInfos = [];
-    this.failures = [];
-    this.failuresPos = -1;
-  },
-
-  recordFailure: function(pos, expr) {
-    if (pos > this.failuresPos) {
-      this.failures = [expr];
-      this.failuresPos = pos;
-    } else if (pos === this.failuresPos) {
-      this.failures.push(expr);
-    }
   },
 
   atEnd: function() {
@@ -65,10 +54,6 @@ InputStream.prototype = {
 
   intervalFrom: function(startIdx) {
     return new Interval(this, startIdx, this.pos);
-  },
-
-  getFailuresPos: function() {
-    return this.failuresPos;
   }
 };
 

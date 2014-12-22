@@ -19,6 +19,8 @@ function State(grammar, inputStream) {
   this.pushInputStream(inputStream);
   this.ruleStack = [];
   this.bindings = [];
+  this.failures = [];
+  this.failuresPos = -1;
 }
 
 State.prototype = {
@@ -69,6 +71,19 @@ State.prototype = {
     var ans = this.inputStream.atEnd();
     this.inputStream.pos = origPos;
     return ans;
+  },
+
+  recordFailure: function(pos, expr) {
+    if (pos > this.failuresPos) {
+      this.failures = [expr];
+      this.failuresPos = pos;
+    } else if (pos === this.failuresPos) {
+      this.failures.push(expr);
+    }
+  },
+
+  getFailuresPos: function() {
+    return this.failuresPos;
   }
 };
 
