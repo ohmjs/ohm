@@ -74,11 +74,33 @@ State.prototype = {
   },
 
   recordFailure: function(pos, expr) {
-    if (pos > this.failuresPos) {
-      this.failures = [expr];
+    if (pos < this.failuresPos) {
+      return;
+    } else if (pos > this.failuresPos) {
+      this.failures = {};
       this.failuresPos = pos;
-    } else if (pos === this.failuresPos) {
-      this.failures.push(expr);
+    }
+
+    var fs = this.failures;
+    for (var idx = 0; idx < this.ruleStack.length; idx++) {
+      var ruleName = this.ruleStack[idx];
+      if (idx === this.ruleStack.length - 1) {
+        if (Array.isArray(fs[ruleName])) {
+          fs[ruleName].push(expr);
+        } else {
+          // This failure subsumes others whose paths have this failure's path as a prefix.
+          fs[ruleName] = [expr];
+        }
+      } else if (Array.isArray(fs[ruleName])) {
+        // Don't record this failure, it's subsumed by another failure
+        // whose path is a prefix of this failure's path.
+        break;
+      } else {
+        if (fs[ruleName] === undefined) {
+          fs[ruleName] = {};
+        }
+        fs = fs[ruleName];
+      }
     }
   },
 

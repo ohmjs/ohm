@@ -263,11 +263,21 @@ MatchFailure.prototype.getExpectedText = function() {
 MatchFailure.prototype.getExpected = function() {
   var self = this;
   var expected = {};
-  this.state.failures.forEach(function(failure) {
-    expected[failure.toExpected(self.state.grammar.ruleDict)] = true;
-  });
+  markExpected(this.state.failures, this.state.grammar.ruleDict, expected);
   return Object.keys(expected);
 };
+
+function markExpected(fs, ruleDict, expected) {
+  if (Array.isArray(fs)) {
+    fs.forEach(function(expr) {
+      expected[expr.toExpected(ruleDict)] = true;
+    });
+  } else {
+    Object.keys(fs).forEach(function(ruleName) {
+      markExpected(fs[ruleName], ruleDict, expected);
+    });
+  }
+}
 
 // ----------------- constructors -----------------
 
@@ -282,9 +292,7 @@ function InvalidConstructorCall(grammar, ctorName, args) {
 InvalidConstructorCall.prototype = Object.create(Error.prototype);
 
 InvalidConstructorCall.prototype.getMessage = function() {
-  return ('Attempt to invoke constructor '
-	  + this.ctorName
-	  + ' with invalid or unexpected arguments');
+  return 'Attempt to invoke constructor ' + this.ctorName + ' with invalid or unexpected arguments';
 };
 
 // --------------------------------------------------------------------
