@@ -30,7 +30,15 @@ Node.prototype.indexOf = function(arg) {
 Node.prototype.isEmpty = function() {
   return this.args.length === 0;
 };
-  
+
+Node.prototype.onlyArg = function() {
+  if (this.args.length !== 1) {
+    throw new Error('cannot get only argument of a node that has ' + this.args.length + ' arguments');
+  } else {
+    return this.args[0];
+  }
+};
+
 Node.prototype.first = function() {
   if (this.isEmpty()) {
     throw new Error('cannot get first element of empty rule node');

@@ -1158,7 +1158,7 @@ describe("Ohm", function() {
             addExprRec: function(x, _, y) { return [buildTree(x), '+', buildTree(y)]; },
             mulExprRec: function(x, _, y) { return [buildTree(x), '*', buildTree(y)]; },
             _terminal:  ohm.actions.getValue,
-            _default:   function() { return buildTree(this.first()); }
+            _default:   function() { return buildTree(this.onlyArg()); }
           });
           expect(buildTree(m.matchContents('7+8*9+0', 'addExpr'))).to.eql([['7', '+', ['8', '*', '9']], '+', '0']);
         });
@@ -1433,7 +1433,7 @@ describe("Ohm", function() {
           priExpr_paren:  function(oparen, e, cparen) { return eval(e); },
           number_rec:     function(n, d) { return eval(n) * 10 + eval(d); },
           digit:          function(expr) { return eval(expr).charCodeAt(0) - '0'.charCodeAt(0); },
-          _default:       function() { if (this.length() === 1) return eval(this.first()); else throw 'oops'; },
+          _default:       function() { return eval(this.onlyArg()); },
           _terminal:      ohm.actions.getValue
         });
         expect(eval(m.matchContents('10*(2+123)-4/5', 'expr'))).to.equal(1249.2);
