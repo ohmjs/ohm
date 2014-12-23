@@ -277,8 +277,7 @@ pexprs.Apply.prototype.eval = function(recordFailures, state) {
   var grammar = state.grammar;
   var bindings = state.bindings;
   var inputStream = state.inputStream;
-  // TODO: skip spaces here, if this rule is syntactic
-  // (this is necessary for correctness b/c of the Seq and Alt optimizations)
+  // TODO: skip spaces here, if this rule is syntactic (this is necessary for correctness b/c of the Seq and Alt optimizations)
   var origPosInfo = state.getCurrentPosInfo();
 
   var memoRec = origPosInfo.memo[ruleName];
