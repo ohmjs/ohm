@@ -12,7 +12,26 @@ var InputStream = require('./InputStream.js');
 // Operations
 // --------------------------------------------------------------------
 
-// The contract of this method:
+function atEnd(recordFailures, state) {
+  skipSpacesIfAppropriate(recordFailures, state);
+  return state.inputStream.atEnd();
+}
+
+var applySpaces_ = new pexprs.Apply('spaces_');
+
+function skipSpacesIfAppropriate(recordFailures, state) {
+  var ruleName = state.ruleStack[state.ruleStack.length - 1] || '';
+  if (typeof state.inputStream.source === 'string' && common.isSyntactic(ruleName)) {
+    skipSpaces(recordFailures, state);
+  }
+}
+
+function skipSpaces(recordFailures, state) {
+  applySpaces_.eval(recordFailures, state);
+  state.bindings.pop();
+}
+
+// The contract of PExpr.prototype.eval:
 // * When the return value is true:
 //   -- bindings will have expr.arity more elements than before
 // * When the return value is false:
@@ -22,7 +41,7 @@ var InputStream = require('./InputStream.js');
 pexprs.PExpr.prototype.eval = common.abstract;
 
 pexprs.anything.eval = function(recordFailures, state) {
-  state.skipSpacesIfAppropriate();
+  skipSpacesIfAppropriate(recordFailures, state);
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   var value = inputStream.next();
@@ -38,9 +57,8 @@ pexprs.anything.eval = function(recordFailures, state) {
 };
 
 pexprs.end.eval = function(recordFailures, state) {
-  state.skipSpacesIfAppropriate();
   var inputStream = state.inputStream;
-  if (inputStream.atEnd()) {
+  if (atEnd(recordFailures, state)) {
     state.bindings.push(new Node(state.grammar, '_terminal', [undefined], inputStream.intervalFrom(inputStream.pos)));
     return true;
   } else {
@@ -60,7 +78,7 @@ pexprs.fail.eval = function(recordFailures, state) {
 };
 
 pexprs.Prim.prototype.eval = function(recordFailures, state) {
-  state.skipSpacesIfAppropriate();
+  skipSpacesIfAppropriate(recordFailures, state);
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   if (this.match(inputStream) === common.fail) {
@@ -83,7 +101,7 @@ pexprs.StringPrim.prototype.match = function(inputStream) {
 };
 
 pexprs.RegExpPrim.prototype.eval = function(recordFailures, state) {
-  state.skipSpacesIfAppropriate();
+  skipSpacesIfAppropriate(recordFailures, state);
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   if (inputStream.matchRegExp(this.obj) === common.fail) {
@@ -99,7 +117,7 @@ pexprs.RegExpPrim.prototype.eval = function(recordFailures, state) {
 };
 
 pexprs.Alt.prototype.eval = function(recordFailures, state) {
-  state.skipSpacesIfAppropriate();
+  skipSpacesIfAppropriate(recordFailures, state);
   var bindings = state.bindings;
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
@@ -119,7 +137,7 @@ pexprs.Seq.prototype.eval = function(recordFailures, state) {
   var inputStream = state.inputStream;
   var origNumBindings = state.bindings.length;
   for (var idx = 0; idx < this.factors.length; idx++) {
-    state.skipSpacesIfAppropriate();
+    skipSpacesIfAppropriate(recordFailures, state);
     var factor = this.factors[idx];
     if (!factor.eval(recordFailures, state)) {
       state.bindings.length = origNumBindings;
@@ -143,7 +161,7 @@ pexprs.Many.prototype.eval = function(recordFailures, state) {
   var origPos = inputStream.pos;
   while (true) {
     var backtrackPos = inputStream.pos;
-    state.skipSpacesIfAppropriate();
+    skipSpacesIfAppropriate(recordFailures, state);
     if (this.expr.eval(recordFailures, state)) {
       numMatches++;
       var row = state.bindings.splice(state.bindings.length - arity, arity);
@@ -209,13 +227,13 @@ pexprs.Lookahead.prototype.eval = function(recordFailures, state) {
 };
 
 pexprs.Listy.prototype.eval = function(recordFailures, state) {
-  state.skipSpacesIfAppropriate();
+  skipSpacesIfAppropriate(recordFailures, state);
   var inputStream = state.inputStream;
   var obj = inputStream.next();
   if (obj instanceof Array || typeof obj === 'string') {
     var objInputStream = InputStream.newFor(obj);
     state.pushInputStream(objInputStream);
-    var ans = this.expr.eval(false, state) && state.atEnd();
+    var ans = this.expr.eval(false, state) && atEnd(recordFailures, state);
     state.popInputStream();
     return ans;
   } else {
@@ -226,7 +244,7 @@ pexprs.Listy.prototype.eval = function(recordFailures, state) {
 pexprs.Obj.prototype.eval = function(recordFailures, state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  state.skipSpacesIfAppropriate();
+  skipSpacesIfAppropriate(recordFailures, state);
   var obj = inputStream.next();
   if (obj !== common.fail && obj && (typeof obj === 'object' || typeof obj === 'function')) {
     var numOwnPropertiesMatched = 0;
@@ -238,7 +256,7 @@ pexprs.Obj.prototype.eval = function(recordFailures, state) {
       var value = obj[property.name];
       var valueInputStream = InputStream.newFor([value]);
       state.pushInputStream(valueInputStream);
-      var matched = property.pattern.eval(false, state) && state.atEnd();
+      var matched = property.pattern.eval(false, state) && atEnd(recordFailures, state);
       state.popInputStream();
       if (!matched) {
         return false;
@@ -273,11 +291,14 @@ pexprs.Apply.prototype.eval = function(recordFailures, state) {
     }
   }
 
+  if (common.isSyntactic(this.ruleName)) {
+    skipSpaces(recordFailures, state);
+  }
+
   var ruleName = this.ruleName;
   var grammar = state.grammar;
   var bindings = state.bindings;
   var inputStream = state.inputStream;
-  // TODO: skip spaces here, if this rule is syntactic (this is necessary for correctness b/c of the Seq and Alt optimizations)
   var origPosInfo = state.getCurrentPosInfo();
 
   var memoRec = origPosInfo.memo[ruleName];
@@ -321,7 +342,6 @@ pexprs.Apply.prototype.eval = function(recordFailures, state) {
     } else {
       if (recordFailures && body.description) {
         inputStream.pos = origPos;
-        state.skipSpacesIfAppropriate();
         state.recordFailure(inputStream.pos, this);
       }
       ans = false;

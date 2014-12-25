@@ -40,6 +40,7 @@ function Grammar(name, superGrammar, ruleDecls, ruleDict, optNamespace) {
 Grammar.prototype = {
   ruleDict: {
     _: pexprs.anything,
+    empty: new pexprs.Seq([]),
     fail: pexprs.fail,
     space: pexprs.makePrim(/[\s]/).withDescription('space'),
     alnum: pexprs.makePrim(/[0-9a-zA-Z]/).withDescription('alpha-numeric character'),
@@ -47,7 +48,12 @@ Grammar.prototype = {
     lower: pexprs.makePrim(/[a-z]/).withDescription('lower-case letter'),
     upper: pexprs.makePrim(/[A-Z]/).withDescription('upper-case letter'),
     digit: pexprs.makePrim(/[0-9]/).withDescription('digit'),
-    hexDigit: pexprs.makePrim(/[0-9a-fA-F]/).withDescription('hexadecimal digit')
+    hexDigit: pexprs.makePrim(/[0-9a-fA-F]/).withDescription('hexadecimal digit'),
+
+    // The following rules are part of the implementation.
+    // Their names end with '_' so that they can't be overridden or invoked by programmers.
+    spaces_: new pexprs.Alt([new pexprs.Apply('spaces_rec_'), new pexprs.Apply('empty')]),
+    spaces_rec_: new pexprs.Seq([new pexprs.Apply('space'), new pexprs.Apply('spaces_')]),
   },
 
   construct: function(ruleName, args) {
