@@ -65,6 +65,19 @@ State.prototype = {
         // Don't record this failure, it's subsumed by another failure
         // whose path is a prefix of this failure's path.
         break;
+
+        /*
+          TODO: think about this some more, it's not quite right.
+
+          The problem is that this scheme excludes failures that you would want, e.g., in
+
+            SeqExpr
+              = NoSeqExpr ';' SeqExpr  -- seq
+              | NoSeqExpr
+
+          it's not good to only complain about the missing ';', because failures from the NoSeqExpr in the second
+          case would be equally relevant, since the continuation of that application is nullable.
+        */
       } else {
         if (fs[ruleName] === undefined) {
           fs[ruleName] = {};
