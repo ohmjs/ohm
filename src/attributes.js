@@ -29,7 +29,11 @@ function _makeSynthesizedAttribute(actionDict, memoize) {
           throw new Error('the map default action cannot be used with a ' + node.ctorName + ' node');
         }
       } else if (actionFn === actions.passThrough) {
-        return attribute(node.onlyChild());
+        if (node.ctorName === '_list') {
+          throw new Error('the passThrough default action cannot be used with a _list node');
+        } else {
+          return attribute(node.onlyChild());
+        }
       } else {
         return optDontPassChildrenAsAnArgument ?
             actionFn.apply(node) :
