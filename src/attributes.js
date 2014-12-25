@@ -47,11 +47,7 @@ function _makeSynthesizedAttribute(actionDict, memoize) {
         throw new Error('the map default action cannot be used with a ' + node.ctorName + ' node');
       }
     } else if (actionDict[node.ctorName] === actions.passThrough) {
-      if (node.length() === 1) {
-        return attribute(node.first());
-      } else {
-        throw new Error('the passThrough default action can only be used with a node of arity 1');
-      }
+      return attribute(node.onlyArg());
     } else if (actionDict[node.ctorName]) {
       return actionDict[node.ctorName].apply(node, node.args);
     } else if (actionDict._default && node.ctorName !== '_terminal') {
