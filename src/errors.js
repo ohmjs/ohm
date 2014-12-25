@@ -283,10 +283,10 @@ function markExpected(fs, ruleDict, expected) {
 
 // Type error
 
-function InvalidConstructorCall(grammar, ctorName, args) {
+function InvalidConstructorCall(grammar, ctorName, children) {
   this.grammar = grammar;
   this.ctorName = ctorName;
-  this.args = args;
+  this.children = children;
 }
 
 InvalidConstructorCall.prototype = Object.create(Error.prototype);

@@ -97,10 +97,10 @@ var symbolTableIn = g.inheritedAttribute({
     symbolTableIn.set([]);
   },
   _default: function(child) {
-    if (child === this.first()) {
+    if (child === this.firstChild()) {
       symbolTableIn.set(symbolTableIn(this));
     } else {
-      symbolTableIn.set(symbolTableOut(this.pred(child)));
+      symbolTableIn.set(symbolTableOut(this.childBefore(child)));
     }
   }
 });
@@ -113,7 +113,7 @@ var symbolTableOut = g.synthesizedAttribute({
     return [].concat(symbolTableIn(this)).concat([n.interval.contents]);
   },
   _default: function() {
-    return this.isEmpty() ? symbolTableIn(this) : symbolTableOut(this.last());
+    return this.hasNoChildren() ? symbolTableIn(this) : symbolTableOut(this.lastChild());
   },
   _terminal: function(t) {
     return symbolTableIn(this);
@@ -190,15 +190,7 @@ var codeOut = g.synthesizedAttribute({
   number: function(_) {
     return ['pushLit(' + parseFloat(this.interval.contents) + ')'];
   },
-  _default: function() {
-    // This method does a generic "pass-through", but it requires that the rule's
-    // arity be 1.
-    if (this.length() === 1) {
-      return codeOut(this.first());
-    } else {
-      throw 'missing method for ' + this.ctorName;
-    }
-  }
+  _default: ohm.actions.passThrough
 });
 
 // ---------------------------------------------------------------------------------------------------------------------

@@ -8,66 +8,81 @@ var Interval = require('./Interval.js');
 // Private stuff
 // --------------------------------------------------------------------
 
-function Node(grammar, ctorName, args, interval) {
+function Node(grammar, ctorName, children, interval) {
   this.interval = interval;
   this.grammar = grammar;
   this.ctorName = ctorName;
-  this.args = args;
+  this.children = children;
 }
 
-Node.prototype.length = function() {
-  return this.args.length;
+// * pred -> childBefore
+// * succ -> childAfter
+
+Node.prototype.numChildren = function() {
+  return this.children.length;
 };
 
-Node.prototype.get = function(idx) {
-  return this.args[idx];
+Node.prototype.childAt = function(idx) {
+  return this.children[idx];
 };
 
-Node.prototype.indexOf = function(arg) {
-  return this.args.indexOf(arg);
+Node.prototype.indexOfChild = function(arg) {
+  return this.children.indexOf(arg);
 };
   
-Node.prototype.isEmpty = function() {
-  return this.args.length === 0;
+Node.prototype.hasChildren = function() {
+  return this.children.length > 0;
 };
 
-Node.prototype.onlyArg = function() {
-  if (this.args.length !== 1) {
-    throw new Error('cannot get only argument of a node that has ' + this.args.length + ' arguments');
+Node.prototype.hasNoChildren = function() {
+  return !this.hasChildren();
+};
+
+Node.prototype.onlyChild = function() {
+  if (this.children.length !== 1) {
+    throw new Error(
+        'cannot get only child of a node of type ' + this.ctorName +
+        '(it has ' + this.numChildren() + ' children)');
   } else {
-    return this.args[0];
+    return this.firstChild();
   }
 };
 
-Node.prototype.first = function() {
-  if (this.isEmpty()) {
-    throw new Error('cannot get first element of empty rule node');
+Node.prototype.firstChild = function() {
+  if (this.hasNoChildren()) {
+    throw new Error('cannot get first child of a ' + this.ctorName + ' node, which has no children');
   } else {
-    return this.args[0];
+    return this.childAt(0);
   }
 };
   
-Node.prototype.last = function() {
-  if (this.isEmpty()) {
-    throw new Error('cannot get last element of empty rule node');
+Node.prototype.lastChild = function() {
+  if (this.hasNoChildren()) {
+    throw new Error('cannot get last child of a ' + this.ctorName + ' node, which has no children');
   } else {
-    return this.args[this.args.length - 1];
+    return this.childAt(this.numChildren() - 1);
   }
 };
 
-Node.prototype.pred = function(arg) {
-  if (arg === this.first()) {
-    throw new Error('cannot get predecessor of first child node');
+Node.prototype.childBefore = function(child) {
+  var childIdx = this.indexOfChild(child);
+  if (childIdx < 0) {
+    throw new Error('Node.childBefore() called w/ an argument that is not a child');
+  } else if (childIdx === 0) {
+    throw new Error('cannot get child before first child');
   } else {
-    return this.args[this.indexOf(arg) - 1];
+    return this.childAt(childIdx - 1);
   }
 };
 
-Node.prototype.succ = function(arg) {
-  if (arg === this.last()) {
-    throw new Error('cannot get successor of last child node');
+Node.prototype.childAfter = function(child) {
+  var childIdx = this.indexOfChild(child);
+  if (childIdx < 0) {
+    throw new Error('Node.childAfter() called w/ an argument that is not a child');
+  } else if (childIdx === this.numChildren() - 1) {
+    throw new Error('cannot get child after last child');
   } else {
-    return this.args[this.indexOf(arg) + 1];
+    return this.childAt(childIdx + 1);
   }
 };
 
@@ -77,15 +92,15 @@ Node.prototype.isValue = function() {
 
 Node.prototype.value = function() {
   if (this.isValue()) {
-    return this.first();
+    return this.firstChild();
   } else {
-    throw new Error('cannot get value of a non-terminal node');
+    throw new Error('cannot get value of a non-terminal node (type ' + this.ctorName + ')');
   }
 };
 
 Node.prototype.toJSON = function() {
   var r = {};
-  r[this.ctorName] = this.args;
+  r[this.ctorName] = this.children;
   return r;
 };
 

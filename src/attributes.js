@@ -10,19 +10,9 @@ var Node = require('./Node');
 // --------------------------------------------------------------------
 
 var actions = {
-  getValue: function(t) {
-    if (this.ctorName === '_terminal') {
-      return t;
-    } else {
-      throw new Error('the getValue default action cannot be used with a node of type ' + this.ctorName);
-    } 
-  },
-  map: function() {
-    throw new Error('the map default action should never be called (this is a bug)');
-  },
-  passThrough: function(childNode) {
-    throw new Error('the passThrough default action should never be called (this is a bug)');
-  }
+  getValue:    function() { return this.value(); },
+  map:         function() { throw new Error('BUG: ohm.actions.map should never be called'); },
+  passThrough: function(childNode) { throw new Error('BUG: ohm.actions.passThrough should never be called'); }
 };
 
 function _makeSynthesizedAttribute(actionDict, memoize) {
@@ -31,31 +21,42 @@ function _makeSynthesizedAttribute(actionDict, memoize) {
       throw new Error('not an Ohm CST node: ' + JSON.stringify(node));
     }
 
-    if (node.ctorName === '_list' && node.parent) {
-      // If an action's name is ctorName$idx, where idx is the 1-based index of a child node that happens
-      // to be a list, it should override the _list action for that particular list node.
-      var actionName = node.parent.ctorName + '$' + (node.parent.args.indexOf(node) + 1);
-      if (actionDict[actionName]) {
-        return actionDict[actionName].call(node);
+    function doAction(actionFn, optDontPassChildrenAsAnArgument) {
+      if (actionFn === actions.map) {
+        if (node.ctorName === '_list') {
+          return node.children.map(attribute);
+        } else {
+          throw new Error('the map default action cannot be used with a ' + node.ctorName + ' node');
+        }
+      } else if (actionFn === actions.passThrough) {
+        return attribute(node.onlyChild());
+      } else {
+        return optDontPassChildrenAsAnArgument ?
+            actionFn.apply(node) :
+            actionFn.apply(node, node.children);
       }
     }
 
-    if (actionDict[node.ctorName] === actions.map) {
-      if (node.ctorName === '_list') {
-        return node.args.map(attribute);
-      } else {
-        throw new Error('the map default action cannot be used with a ' + node.ctorName + ' node');
+    if (node.ctorName === '_list' && node.parent) {
+      // If an action's name is ctorName$idx, where idx is the 1-based index of a child node that happens
+      // to be a list, it should override the _list action for that particular list node.
+      var actionName = node.parent.ctorName + '$' + (node.parent.indexOfChild(node) + 1);
+      var actionFn = actionDict[actionName];
+      if (actionFn) {
+        return doAction(actionFn, true);
       }
-    } else if (actionDict[node.ctorName] === actions.passThrough) {
-      return attribute(node.onlyArg());
-    } else if (actionDict[node.ctorName]) {
-      return actionDict[node.ctorName].apply(node, node.args);
+    }
+
+    var actionFn = actionDict[node.ctorName];
+    if (actionFn) {
+      return doAction(actionFn);
     } else if (actionDict._default && node.ctorName !== '_terminal') {
-      return actionDict._default.call(node);
+      return doAction(actionDict._default, true);
     } else {
       throw new Error('missing method for ' + node.ctorName);
     }
   }
+
   var attribute;
   if (memoize) {
     var key = Symbol();
@@ -88,38 +89,51 @@ function makeInheritedAttribute(actionDict) {
       throw new Error('not an Ohm CST node: ' + JSON.stringify(node));
     }
 
+    function doAction(actionName, optIncludeChildIndex) {
+      var actionFn = actionDict[actionName];
+      if (actionFn === actions.map) {
+        throw new Error('the map default action cannot be used in an inherited attribute');
+      } else if (actionFn === actions.passThrough) {
+        attribute.set(attribute(node.parent));
+        return actionName;
+      } else {
+        if (optIncludeChildIndex) {
+          actionFn.call(node.parent, node, node.parent.indexOfChild(node));
+        } else {
+          actionFn.call(node.parent, node);
+        }
+        return actionName;
+      }
+    }
+
     if (!node.parent) {
-      actionDict._base.call(undefined, node);
-      return '_base';
+      if (actionDict._base) {
+        return doAction('_base');
+      } else {
+        throw new Error('missing _base action');
+      }
     } else {
       if (node.parent.ctorName === '_list') {
         // If there is an action called <ctorName>$<idx>$each, where <idx> is the 1-based index of a child node
         // that happens to be a list, it should override the _list method for that particular list node.
         var grandparent = node.parent.parent;
-        var actionName = grandparent.ctorName + '$' + (grandparent.indexOf(node.parent) + 1) + '$each';
+        var actionName = grandparent.ctorName + '$' + (grandparent.indexOfChild(node.parent) + 1) + '$each';
         if (actionDict[actionName]) {
-          actionDict[actionName].call(node.parent, node);
-          return actionName;
+          return doAction(actionName);
         } else if (actionDict._list) {
-          actionDict._list.call(node.parent, node, node.parent.indexOf(node));
+          actionDict._list.call(node.parent, node, node.parent.indexOfChild(node));
           return '_list';
         } else if (actionDict._default) {
-          actionDict._default.call(node.parent, node);
-          return '_default';
+          return doAction('_default', true);
         } else {
           throw new Error('missing ' + actionName + ', _list, or _default method');
         }
       } else {
-        var actionName = node.parent.ctorName + '$' + (node.parent.indexOf(node) + 1);
-        if (actionDict[actionName] === actions.passThrough) {
-          attribute.set(attribute(node.parent));
-          return actionName;
-        } else if (actionDict[actionName]) {
-          actionDict[actionName].apply(node.parent, node.parent.args);
-          return actionName;
+        var actionName = node.parent.ctorName + '$' + (node.parent.indexOfChild(node) + 1);
+        if (actionDict[actionName]) {
+          return doAction(actionName);
         } else if (actionDict._default) {
-          actionDict._default.call(node.parent, node, node.parent.indexOf(node));
-          return '_default';
+          return doAction('_default', true);
         } else {
           throw new Error('missing ' + actionName + ' or _default method');
         }

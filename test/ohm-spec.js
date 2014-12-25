@@ -53,7 +53,7 @@ describe("Ohm", function() {
       var nextId = 0;
       var attr = m.synthesizedAttribute({
         _default: function() {
-          return ['id', nextId++, this.ctorName].concat(this.args.map(attr));
+          return ['id', nextId++, this.ctorName].concat(this.children.map(attr));
         },
         _list: ohm.actions.map,
         _terminal: ohm.actions.getValue
@@ -99,12 +99,12 @@ describe("Ohm", function() {
       it("particular entries work when called", function () {
 	var n = m.matchContents('1+2*3', 'addExpr');
 	expect(n.ctorName).to.equal('addExpr');
-	var n2 = m.constructors.addExpr(n.args[0]);
+	var n2 = m.constructors.addExpr(n.children[0]);
 
-	var p = n.args[0];
+	var p = n.children[0];
 	expect(p.ctorName).to.equal('addExpr_plus');
-	expect(p.args.length).to.equal(3);
-	var p2 = m.constructors.addExpr_plus(p.args[0], p.args[1], p.args[2]);
+	expect(p.numChildren()).to.equal(3);
+	var p2 = m.constructors.addExpr_plus(p.children[0], p.children[1], p.children[2]);
       });
     });
 
@@ -1158,7 +1158,7 @@ describe("Ohm", function() {
             addExprRec: function(x, _, y) { return [buildTree(x), '+', buildTree(y)]; },
             mulExprRec: function(x, _, y) { return [buildTree(x), '*', buildTree(y)]; },
             _terminal:  ohm.actions.getValue,
-            _default:   function() { return buildTree(this.onlyArg()); }
+            _default:   ohm.actions.passThrough
           });
           expect(buildTree(m.matchContents('7+8*9+0', 'addExpr'))).to.eql([['7', '+', ['8', '*', '9']], '+', '0']);
         });
@@ -1433,7 +1433,7 @@ describe("Ohm", function() {
           priExpr_paren:  function(oparen, e, cparen) { return eval(e); },
           number_rec:     function(n, d) { return eval(n) * 10 + eval(d); },
           digit:          function(expr) { return eval(expr).charCodeAt(0) - '0'.charCodeAt(0); },
-          _default:       function() { return eval(this.onlyArg()); },
+          _default:       ohm.actions.passThrough,
           _terminal:      ohm.actions.getValue
         });
         expect(eval(m.matchContents('10*(2+123)-4/5', 'expr'))).to.equal(1249.2);
@@ -1729,8 +1729,8 @@ describe("Ohm", function() {
         });
         var print = g.semanticAction({
           _default: function() {
-            for (var idx = 0; idx < this.length(); idx++) {
-              print(this.get(idx));
+            for (var idx = 0; idx < this.numChildren(); idx++) {
+              print(this.childAt(idx));
             }
           },
           _terminal: function(t) {
@@ -1754,7 +1754,7 @@ describe("Ohm", function() {
 //           _default: function() {
 //             var self = this;
 // console.log('_default on ' + stringify(this));
-//             this.args.forEach(function(arg) {
+//             this.children.forEach(function(arg) {
 // console.log('_default setting depth of ' + stringify(arg));
 //  depth.set(arg, depth(self) + 1); });
 //           },
@@ -1766,7 +1766,7 @@ describe("Ohm", function() {
 //         var printDepths = g.synthesizedAttribute({
 //           _default: function() {
 //             console.log(stringify(this) + ' depth is ' + depth(this));
-//             this.args.forEach(function(arg) { printDepths(arg); });
+//             this.children.forEach(function(arg) { printDepths(arg); });
 //           }
 //         });
 //         printDepths(g.matchContents('1+2*3', 'expr'));

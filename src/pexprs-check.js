@@ -151,6 +151,6 @@ pexprs.Apply.prototype.check = function(grammar, vals) {
   // was correctly constructed.
   var ruleNode = vals[0];
   var body = grammar.ruleDict[this.ruleName];
-  return body.check(grammar, ruleNode.args) && ruleNode.args.length === body.getArity();
+  return body.check(grammar, ruleNode.children) && ruleNode.numChildren() === body.getArity();
 };
 

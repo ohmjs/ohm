@@ -56,13 +56,13 @@ Grammar.prototype = {
     spaces_rec_: new pexprs.Seq([new pexprs.Apply('space'), new pexprs.Apply('spaces_')]),
   },
 
-  construct: function(ruleName, args) {
+  construct: function(ruleName, children) {
     var body = this.ruleDict[ruleName];
-    if (!body || !body.check(this, args) || args.length !== body.getArity()) {
-      throw new errors.InvalidConstructorCall(this, ruleName, args);
+    if (!body || !body.check(this, children) || children.length !== body.getArity()) {
+      throw new errors.InvalidConstructorCall(this, ruleName, children);
     }
-    var interval = new Interval(InputStream.newFor(args), 0, args.length);
-    return new Node(this, ruleName, args, interval);
+    var interval = new Interval(InputStream.newFor(children), 0, children.length);
+    return new Node(this, ruleName, children, interval);
   },
 
   createConstructors: function() {
@@ -106,7 +106,7 @@ Grammar.prototype = {
         },
         _default: function() {
           stack.push(this);
-          this.args.forEach(function(arg) { setParents(arg); });
+          this.children.forEach(function(child) { setParents(child); });
           stack.pop();
           this.parent = stack[stack.length - 1];
         }
