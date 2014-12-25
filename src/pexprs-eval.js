@@ -26,8 +26,13 @@ function skipSpacesIfAppropriate(recordFailures, state) {
   }
 }
 
+// TODO: This method shouldn't just ignore its recordFailures argument.
+// The thing is that it's annoying to have the "expected" errors include "space".
+// But it would be nice to be able to generate nice errors for, e.g., the closing "*/"
+// in a C-style comment, if it's missing. Which just using "false" for recordFailures
+// won't do.
 function skipSpaces(recordFailures, state) {
-  applySpaces_.eval(recordFailures, state);
+  applySpaces_.eval(false, state);
   state.bindings.pop();
 }
 
