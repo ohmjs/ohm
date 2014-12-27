@@ -92,7 +92,7 @@ Grammar.prototype = {
     var throwOnFail = !!optThrowOnFail;
     var inputStream = InputStream.newFor(obj);
     var state = new State(this, inputStream);
-    var succeeded = new pexprs.Apply(startRule).eval(throwOnFail, state);
+    var succeeded = new pexprs.Apply(startRule).eval(state);
     if (succeeded) {
       var node = state.bindings[0];
       var stack = [undefined];
