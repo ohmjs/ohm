@@ -17,8 +17,7 @@ function State(grammar, inputStream) {
   this.pushInputStream(inputStream);
   this.ruleStack = [];
   this.bindings = [];
-  this.failures = [];
-  this.failuresPos = -1;
+  this.failureDescriptor = {pos: -1, exprs: []};
 }
 
 State.prototype = {
@@ -44,51 +43,17 @@ State.prototype = {
   },
 
   recordFailure: function(pos, expr) {
-    if (pos < this.failuresPos) {
+    if (pos < this.failureDescriptor.pos) {
       return;
-    } else if (pos > this.failuresPos) {
-      this.failures = {};
-      this.failuresPos = pos;
+    } else if (pos > this.failureDescriptor.pos) {
+      this.failureDescriptor.pos = pos;
+      this.failureDescriptor.exprs = [];
     }
-
-    var fs = this.failures;
-    for (var idx = 0; idx < this.ruleStack.length; idx++) {
-      var ruleName = this.ruleStack[idx];
-      if (idx === this.ruleStack.length - 1) {
-        if (Array.isArray(fs[ruleName])) {
-          fs[ruleName].push(expr);
-        } else {
-          // This failure subsumes others whose paths have this failure's path as a prefix.
-          fs[ruleName] = [expr];
-        }
-      } else if (Array.isArray(fs[ruleName])) {
-        // Don't record this failure, it's subsumed by another failure
-        // whose path is a prefix of this failure's path.
-        break;
-
-        /*
-          TODO: think about this some more, it's not quite right.
-
-          The problem is that this scheme excludes failures that you would want, e.g., in
-
-            SeqExpr
-              = NoSeqExpr ';' SeqExpr  -- seq
-              | NoSeqExpr
-
-          it's not good to only complain about the missing ';', because failures from the NoSeqExpr in the second
-          case would be equally relevant, since the continuation of that application is nullable.
-        */
-      } else {
-        if (fs[ruleName] === undefined) {
-          fs[ruleName] = {};
-        }
-        fs = fs[ruleName];
-      }
-    }
+    this.failureDescriptor.exprs.push(expr);
   },
 
   getFailuresPos: function() {
-    return this.failuresPos;
+    return this.failureDescriptor.pos;
   }
 };
 

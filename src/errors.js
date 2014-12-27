@@ -203,7 +203,7 @@ function MatchFailure(state) {
 MatchFailure.prototype = Object.create(Error.prototype);
 
 MatchFailure.prototype.getPos = function() {
-  return this.state.failuresPos;
+  return this.state.getFailuresPos();
 };
 
 MatchFailure.prototype.getShortMessage = function() {
@@ -263,21 +263,11 @@ MatchFailure.prototype.getExpectedText = function() {
 MatchFailure.prototype.getExpected = function() {
   var self = this;
   var expected = {};
-  markExpected(this.state.failures, this.state.grammar.ruleDict, expected);
+  this.state.failureDescriptor.exprs.forEach(function(expr) {
+    expected[expr.toExpected(self.state.ruleDict)] = true;
+  });
   return Object.keys(expected);
 };
-
-function markExpected(fs, ruleDict, expected) {
-  if (Array.isArray(fs)) {
-    fs.forEach(function(expr) {
-      expected[expr.toExpected(ruleDict)] = true;
-    });
-  } else {
-    Object.keys(fs).forEach(function(ruleName) {
-      markExpected(fs[ruleName], ruleDict, expected);
-    });
-  }
-}
 
 // ----------------- constructors -----------------
 
