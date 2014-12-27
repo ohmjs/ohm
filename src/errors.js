@@ -264,7 +264,7 @@ MatchFailure.prototype.getExpected = function() {
   var self = this;
   var expected = {};
   this.state.failureDescriptor.exprs.forEach(function(expr) {
-    expected[expr.toExpected(self.state.ruleDict)] = true;
+    expected[expr.toExpected(self.state.grammar.ruleDict)] = true;
   });
   return Object.keys(expected);
 };

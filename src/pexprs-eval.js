@@ -27,8 +27,11 @@ function skipSpacesIfAppropriate(state) {
 }
 
 function skipSpaces(state) {
+  var origFailureDescriptor = state.failureDescriptor;
+  var newFailureDescriptor = state.failureDescriptor = state.makeFailureDescriptor();
   applySpaces_.eval(state);
   state.bindings.pop();
+  state.failureDescriptor = origFailureDescriptor;
 }
 
 // The contract of PExpr.prototype.eval:
@@ -193,15 +196,19 @@ pexprs.Opt.prototype.eval = function(state) {
 pexprs.Not.prototype.eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  if (this.expr.eval(state)) {
-    // TODO: remove failures that were added by the call to eval() above.
+  var origFailureDescriptor = state.failureDescriptor;
+  var newFailureDescriptor = state.failureDescriptor = state.makeFailureDescriptor();
+  var ans = this.expr.eval(state);
+  state.failureDescriptor = origFailureDescriptor;
+  if (ans) {
     state.recordFailure(origPos, this);
     state.bindings.length -= this.getArity();
-    return false;
+    ans = false;
   } else {
     inputStream.pos = origPos;
-    return true;
+    ans = true;
   }
+  return ans;
 };
 
 pexprs.Lookahead.prototype.eval = function(state) {
@@ -272,6 +279,9 @@ pexprs.Obj.prototype.eval = function(state) {
 pexprs.Apply.prototype.eval = function(state) {
   function useMemoizedResult(memoRecOrLR) {
     inputStream.pos = memoRecOrLR.pos;
+    if (memoRecOrLR.failureDescriptor) {
+      state.recordFailures(memoRecOrLR.failureDescriptor);
+    }
     if (memoRecOrLR.value) {
       bindings.push(memoRecOrLR.value);
       return true;
@@ -306,9 +316,12 @@ pexprs.Apply.prototype.eval = function(state) {
   } else {
     var body = grammar.ruleDict[ruleName];
     if (!body) {
+      // TODO: make this a "static" check
       throw new errors.UndeclaredRule(ruleName);
     }
     var origPos = inputStream.pos;
+    var origFailureDescriptor = state.failureDescriptor;
+    var newFailureDescriptor = state.failureDescriptor = state.makeFailureDescriptor();
     origPosInfo.enter(ruleName);
     var value = this.evalOnce(body, state);
     var currentLR = origPosInfo.getCurrentLeftRecursion();
@@ -323,6 +336,9 @@ pexprs.Apply.prototype.eval = function(state) {
       }
     } else {
       origPosInfo.memo[ruleName] = {pos: inputStream.pos, value: value};
+    }
+    if (origPosInfo.memo[ruleName]) {
+      origPosInfo.memo[ruleName].failureDescriptor = newFailureDescriptor;
     }
     var ans;
     if (value) {
@@ -339,6 +355,26 @@ pexprs.Apply.prototype.eval = function(state) {
     } else {
       ans = false;
     }
+
+    if (body.description) {
+      if (value) {
+        newFailureDescriptor.pos = -1;  // so that the failures are ignored
+      } else if (newFailureDescriptor.pos <= origPos) {
+        newFailureDescriptor.pos = origPos;
+        newFailureDescriptor.exprs = [this];
+      }
+    }
+/*
+    Here's the Brian Ford version (what he describes in his Master's thesis):
+
+    if (body.description && newFailureDescriptor.pos === origPos) {
+      newFailureDescriptor.pos = origPos;
+      newFailureDescriptor.exprs = [this];
+    }
+*/
+
+    state.failureDescriptor = origFailureDescriptor;
+    state.recordFailures(newFailureDescriptor);
     origPosInfo.exit();
     return ans;
   }

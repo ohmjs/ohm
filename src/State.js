@@ -17,7 +17,7 @@ function State(grammar, inputStream) {
   this.pushInputStream(inputStream);
   this.ruleStack = [];
   this.bindings = [];
-  this.failureDescriptor = {pos: -1, exprs: []};
+  this.failureDescriptor = this.makeFailureDescriptor();
 }
 
 State.prototype = {
@@ -52,8 +52,19 @@ State.prototype = {
     this.failureDescriptor.exprs.push(expr);
   },
 
+  recordFailures: function(failureDescriptor) {
+    var self = this;
+    failureDescriptor.exprs.forEach(function(expr) {
+      self.recordFailure(failureDescriptor.pos, expr);
+    });
+  },
+
   getFailuresPos: function() {
     return this.failureDescriptor.pos;
+  },
+
+  makeFailureDescriptor: function() {
+    return {pos: -1, exprs: []};
   }
 };
 
