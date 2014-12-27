@@ -47,9 +47,10 @@ State.prototype = {
       return;
     } else if (pos > this.failureDescriptor.pos) {
       this.failureDescriptor.pos = pos;
-      this.failureDescriptor.exprs = [];
+      this.failureDescriptor.exprs = [expr];
+    } else if (this.failureDescriptor.exprs.indexOf(expr) < 0) {
+      this.failureDescriptor.exprs.push(expr);
     }
-    this.failureDescriptor.exprs.push(expr);
   },
 
   recordFailures: function(failureDescriptor) {
