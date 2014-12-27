@@ -89,14 +89,10 @@ Grammar.prototype = {
   },
 
   matchContents: function(obj, startRule, optThrowOnFail) {
+    var throwOnFail = !!optThrowOnFail;
     var inputStream = InputStream.newFor(obj);
     var state = new State(this, inputStream);
-    var succeeded = new pexprs.Apply(startRule).eval(optThrowOnFail, state);
-    if (succeeded) {
-      state.ruleStack.push(startRule);
-      succeeded = pexprs.end.eval(optThrowOnFail, state);
-      state.ruleStack.pop();
-    }
+    var succeeded = new pexprs.Apply(startRule).eval(throwOnFail, state);
     if (succeeded) {
       var node = state.bindings[0];
       var stack = [undefined];
@@ -113,7 +109,7 @@ Grammar.prototype = {
       });
       setParents(node);
       return node;
-    } else if (optThrowOnFail) {
+    } else if (throwOnFail) {
       throw new errors.MatchFailure(state);
     } else {
       return false;

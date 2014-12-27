@@ -296,11 +296,12 @@ pexprs.Apply.prototype.eval = function(recordFailures, state) {
     }
   }
 
-  if (common.isSyntactic(this.ruleName)) {
+  var ruleName = this.ruleName;
+
+  if (common.isSyntactic(ruleName)) {
     skipSpaces(recordFailures, state);
   }
 
-  var ruleName = this.ruleName;
   var grammar = state.grammar;
   var bindings = state.bindings;
   var inputStream = state.inputStream;
@@ -343,7 +344,15 @@ pexprs.Apply.prototype.eval = function(recordFailures, state) {
     var ans;
     if (value) {
       bindings.push(value);
-      ans = true;
+      if (state.ruleStack.length === 1) {
+        if (common.isSyntactic(ruleName)) {
+          skipSpaces(recordFailures, state);
+        }
+        ans = pexprs.end.eval(recordFailures, state);
+        bindings.pop();
+      } else {
+        ans = true;
+      }
     } else {
       if (recordFailures && body.description) {
         inputStream.pos = origPos;
