@@ -173,6 +173,28 @@ Grammar.prototype = {
     }
   },
 
+  toRecipe: function() {
+    var ws = makeStringBuffer();
+    ws.nextPutAll('(function(ohm, optNamespace) {\n');
+    ws.nextPutAll('  var b = ohm._builder();\n');
+    ws.nextPutAll('  b.setName('); ws.nextPutAll(printString(this.name)); ws.nextPutAll(');\n');
+    if (this.superGrammar.name && this.superGrammar.namespaceName) {
+      ws.nextPutAll('  b.setSuperGrammar(ohm.namespace(');
+      ws.nextPutAll(printString(this.superGrammar.namespaceName));
+      ws.nextPutAll(').getGrammar(');
+      ws.nextPutAll(printString(this.superGrammar.name));
+      ws.nextPutAll('));\n');
+    }
+    for (var idx = 0; idx < this.ruleDecls.length; idx++) {
+      ws.nextPutAll('  ');
+      this.ruleDecls[idx].outputRecipe(ws);
+      ws.nextPutAll(';\n');
+    }
+    ws.nextPutAll('  return b.build(optNamespace);\n');
+    ws.nextPutAll('});');
+    return ws.contents();
+  },
+
   // TODO: make sure this is still correct.
   // TODO: the analog of this method for inherited attributes.
   toSemanticActionTemplate: function(/* entryPoint1, entryPoint2, ... */) {
