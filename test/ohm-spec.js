@@ -92,7 +92,7 @@ describe("Ohm", function() {
       });
 
       it("_default entry works when called correctly", function () {
-	expect(m.construct('addExpr', [m.matchContents('1+2', 'addExpr_plus')]))
+	expect(m.construct('addExpr', [m.match('1+2', 'addExpr_plus')]))
 	  .to.be.a(Node);
       });
 
@@ -248,6 +248,7 @@ describe("Ohm", function() {
 
         describe("match in string stream", function() {
           it("recognition", function() {
+            expect(m.match('5', '_')).to.be.ok();
             expect(m.matchContents('5', '_')).to.be.ok();
             expect(m.matchContents('', '_')).to.equal(false);
           });
@@ -257,6 +258,7 @@ describe("Ohm", function() {
               _: ohm.actions.passThrough,
               _terminal: ohm.actions.getValue
             };
+            expect(m.synthesizedAttribute(dict)(m.match('5', '_'))).to.equal('5');
             expect(m.synthesizedAttribute(dict)(m.matchContents('5', '_'))).to.equal('5');
           });
         });
@@ -540,7 +542,7 @@ describe("Ohm", function() {
         describe("direct match, no stream", function() {
           it("recognition", function() {
             expect(m.match(/[0-9]/, 'myDigit')).to.equal(false);
-            expect(m.match('4', 'myDigit')).to.equal(false);
+            expect(m.match('4', 'myDigit')).to.be.ok();
             expect(m.match(4, 'myDigit')).to.equal(false);
             expect(m.match('a', 'myDigit')).to.equal(false);
             expect(m.match('a4', 'myDigit')).to.equal(false);
@@ -842,6 +844,7 @@ describe("Ohm", function() {
           'M {',
           '  strict  = {x: 1, y: (2)}',
           '  lenient = {x: 1, y: (2), ...}',
+          '  withStringProps = {foos: "foo"*, bar: "bar"}',
           '}']);
       });
 
@@ -882,6 +885,25 @@ describe("Ohm", function() {
           expect(m.synthesizedAttribute({
             lenient: function(a, b, _) { return [a.value(), b.value()]; }
           })(m.match({y: 2, x: 1}, 'lenient'))).to.eql([1, 2]);
+        });
+      });
+
+      describe("string props", function() {
+        it("recognition", function() {
+          expect(m.match({foos: 'fo', bar: 'bar'}, 'withStringProps')).to.equal(false);
+          expect(m.match({foos: 'foo', bar: 'bar'}, 'withStringProps')).to.be.ok();
+          expect(m.match({foos: 'foofo', bar: 'bar'}, 'withStringProps')).to.equal(false);
+          expect(m.match({foos: 'foofoo', bar: 'bar'}, 'withStringProps')).to.be.ok();
+          expect(m.match({foos: 'foofoofoofoofoofoo', bar: 'bar'}, 'withStringProps')).to.be.ok();
+        });
+
+        it("semantic actions", function() {
+          var attr = m.synthesizedAttribute({
+            withStringProps: function(foos, bar) { return [attr(foos), attr(bar)]; },
+            _list: ohm.actions.map,
+            _terminal: ohm.actions.getValue,
+          });
+          expect(attr(m.match({foos: 'foofoo', bar: 'bar'}, 'withStringProps'))).to.eql([['foo', 'foo'], 'bar']);
         });
       });
 

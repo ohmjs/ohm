@@ -250,7 +250,7 @@ pexprs.Obj.prototype.eval = function(state) {
         return false;
       }
       var value = obj[property.name];
-      var valueInputStream = InputStream.newFor([value]);
+      var valueInputStream = InputStream.newFor(typeof value === 'string' ? value : [value]);
       state.pushInputStream(valueInputStream);
       var matched = property.pattern.eval(state) && atEnd(state);
       state.popInputStream();

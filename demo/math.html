@@ -164,7 +164,7 @@ hideError();
 input.oninput = function() {
   hideError();
   try {
-    var cst = g.matchContents(this.value, 'Expr', true);
+    var cst = g.match(this.value, 'Expr', true);
     this.className = undefined;
     show('value', interpret(cst));
     show('lisp', toLisp(cst));

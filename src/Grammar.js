@@ -85,7 +85,7 @@ Grammar.prototype = {
   },
 
   match: function(obj, startRule, optThrowOnFail) {
-    return this.matchContents([obj], startRule, optThrowOnFail);
+    return this.matchContents(typeof obj === 'string' ? obj : [obj], startRule, optThrowOnFail);
   },
 
   matchContents: function(obj, startRule, optThrowOnFail) {

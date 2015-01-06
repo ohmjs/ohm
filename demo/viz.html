@@ -334,7 +334,7 @@ var vizDiv = document.getElementById('vizDiv');
 
 source.oninput = function() {
   try {
-    var cst = ohm.ohmGrammar.matchContents(source.value, 'Grammar', true);
+    var cst = ohm.ohmGrammar.match(source.value, 'Grammar', true);
     removeChildren(vizDiv);
     viz(cst);
     source.className = undefined;
