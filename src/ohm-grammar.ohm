@@ -82,11 +82,16 @@ Ohm {
     | 'false' ~nameRest      -- false
 
   string  -- string literal
-    = '\'' singleQuoteStrChar* '\''
+    = "'" singleQuoteStrChar* "'"
+    | '"' doubleQuoteStrChar* '"'
 
   singleQuoteStrChar
     = escapeChar
-    | ~'\'' ~'\n' _
+    | ~"'" ~'\n' _
+
+  doubleQuoteStrChar
+    = escapeChar
+    | ~'"' ~'\n' _
 
   escapeChar
     = '\\x' hexDigit hexDigit                    -- hexEscape

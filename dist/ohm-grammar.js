@@ -47,8 +47,9 @@ ohm._ohmGrammarFactory =
   b.inline('keyword_true', b.seq(b.prim('true'), b.not(b.app('nameRest'))));
   b.inline('keyword_false', b.seq(b.prim('false'), b.not(b.app('nameRest'))));
   b.setRuleDescription(undefined); b.define('keyword', b.alt(b.app('keyword_undefined'), b.app('keyword_null'), b.app('keyword_true'), b.app('keyword_false')));
-  b.setRuleDescription('string literal'); b.define('string', b.seq(b.prim("'"), b.many(b.app('singleQuoteStrChar'), 0), b.prim("'")));
+  b.setRuleDescription('string literal'); b.define('string', b.alt(b.seq(b.prim("'"), b.many(b.app('singleQuoteStrChar'), 0), b.prim("'")), b.seq(b.prim('"'), b.many(b.app('doubleQuoteStrChar'), 0), b.prim('"'))));
   b.setRuleDescription(undefined); b.define('singleQuoteStrChar', b.alt(b.app('escapeChar'), b.seq(b.not(b.prim("'")), b.not(b.prim('\n')), b.app('_'))));
+  b.setRuleDescription(undefined); b.define('doubleQuoteStrChar', b.alt(b.app('escapeChar'), b.seq(b.not(b.prim('"')), b.not(b.prim('\n')), b.app('_'))));
   b.inline('escapeChar_hexEscape', b.seq(b.prim('\\x'), b.app('hexDigit'), b.app('hexDigit')));
   b.inline('escapeChar_unicodeEscape', b.seq(b.prim('\\u'), b.app('hexDigit'), b.app('hexDigit'), b.app('hexDigit'), b.app('hexDigit')));
   b.inline('escapeChar_escape', b.seq(b.prim('\\'), b.app('_')));

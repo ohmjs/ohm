@@ -189,6 +189,10 @@ function makeGrammarBuilder(optNamespace) {
       return this.interval.contents;
     },
 
+    doubleQuoteStrChar: function(_) {
+      return this.interval.contents;
+    },
+
     regExp: function(_, e, _) {
       return value(e);
     },
