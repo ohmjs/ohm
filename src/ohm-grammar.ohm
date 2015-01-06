@@ -50,7 +50,7 @@ Ohm {
     | Prop            -- base
 
   Prop
-    = (name | string) ':' Base
+    = (name | string) ':' Alt
 
   ruleDescr  -- rule description for use in error messages
     = '--' ruleDescrText '\n'
@@ -82,13 +82,16 @@ Ohm {
     | 'false' ~nameRest      -- false
 
   string  -- string literal
-    = '\'' sChar* '\''
+    = '\'' singleQuoteStrChar* '\''
 
-  sChar
+  singleQuoteStrChar
+    = escapeChar
+    | ~'\'' ~'\n' _
+
+  escapeChar
     = '\\x' hexDigit hexDigit                    -- hexEscape
     | '\\u' hexDigit hexDigit hexDigit hexDigit  -- unicodeEscape
     | '\\' _                                     -- escape
-    | ~'\'' ~'\n' _
 
   regExp  -- regular expression
     = '/' reCharClass '/'

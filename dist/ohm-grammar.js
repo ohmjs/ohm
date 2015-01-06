@@ -34,7 +34,7 @@ ohm._ohmGrammarFactory =
   b.inline('Props_rec', b.seq(b.app('Prop'), b.prim(','), b.app('Props')));
   b.inline('Props_base', b.app('Prop'));
   b.setRuleDescription(undefined); b.define('Props', b.alt(b.app('Props_rec'), b.app('Props_base')));
-  b.setRuleDescription(undefined); b.define('Prop', b.seq(b.alt(b.app('name'), b.app('string')), b.prim(':'), b.app('Base')));
+  b.setRuleDescription(undefined); b.define('Prop', b.seq(b.alt(b.app('name'), b.app('string')), b.prim(':'), b.app('Alt')));
   b.setRuleDescription('rule description for use in error messages'); b.define('ruleDescr', b.seq(b.prim('--'), b.app('ruleDescrText'), b.prim('\n')));
   b.setRuleDescription(undefined); b.define('ruleDescrText', b.many(b.seq(b.not(b.prim('\n')), b.app('_')), 0));
   b.setRuleDescription(undefined); b.define('caseName', b.seq(b.prim('--'), b.many(b.seq(b.not(b.prim('\n')), b.app('space')), 0), b.app('name'), b.many(b.seq(b.not(b.prim('\n')), b.app('space')), 0), b.alt(b.prim('\n'), b.la(b.prim('}')))));
@@ -47,11 +47,12 @@ ohm._ohmGrammarFactory =
   b.inline('keyword_true', b.seq(b.prim('true'), b.not(b.app('nameRest'))));
   b.inline('keyword_false', b.seq(b.prim('false'), b.not(b.app('nameRest'))));
   b.setRuleDescription(undefined); b.define('keyword', b.alt(b.app('keyword_undefined'), b.app('keyword_null'), b.app('keyword_true'), b.app('keyword_false')));
-  b.setRuleDescription('string literal'); b.define('string', b.seq(b.prim("'"), b.many(b.app('sChar'), 0), b.prim("'")));
-  b.inline('sChar_hexEscape', b.seq(b.prim('\\x'), b.app('hexDigit'), b.app('hexDigit')));
-  b.inline('sChar_unicodeEscape', b.seq(b.prim('\\u'), b.app('hexDigit'), b.app('hexDigit'), b.app('hexDigit'), b.app('hexDigit')));
-  b.inline('sChar_escape', b.seq(b.prim('\\'), b.app('_')));
-  b.setRuleDescription(undefined); b.define('sChar', b.alt(b.app('sChar_hexEscape'), b.app('sChar_unicodeEscape'), b.app('sChar_escape'), b.seq(b.not(b.prim("'")), b.not(b.prim('\n')), b.app('_'))));
+  b.setRuleDescription('string literal'); b.define('string', b.seq(b.prim("'"), b.many(b.app('singleQuoteStrChar'), 0), b.prim("'")));
+  b.setRuleDescription(undefined); b.define('singleQuoteStrChar', b.alt(b.app('escapeChar'), b.seq(b.not(b.prim("'")), b.not(b.prim('\n')), b.app('_'))));
+  b.inline('escapeChar_hexEscape', b.seq(b.prim('\\x'), b.app('hexDigit'), b.app('hexDigit')));
+  b.inline('escapeChar_unicodeEscape', b.seq(b.prim('\\u'), b.app('hexDigit'), b.app('hexDigit'), b.app('hexDigit'), b.app('hexDigit')));
+  b.inline('escapeChar_escape', b.seq(b.prim('\\'), b.app('_')));
+  b.setRuleDescription(undefined); b.define('escapeChar', b.alt(b.app('escapeChar_hexEscape'), b.app('escapeChar_unicodeEscape'), b.app('escapeChar_escape')));
   b.setRuleDescription('regular expression'); b.define('regExp', b.seq(b.prim('/'), b.app('reCharClass'), b.prim('/')));
   b.inline('reCharClass_unicode', b.seq(b.prim('\\p{'), b.many(b.prim(/[A-Za-z]/), 1), b.prim('}')));
   b.inline('reCharClass_ordinary', b.seq(b.prim('['), b.many(b.alt(b.prim('\\]'), b.seq(b.not(b.prim(']')), b.app('_'))), 0), b.prim(']')));

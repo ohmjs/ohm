@@ -185,7 +185,7 @@ function makeGrammarBuilder(optNamespace) {
       return value(cs).map(function(c) { return unescapeChar(c); }).join('');
     },
 
-    sChar: function(_) {
+    singleQuoteStrChar: function(_) {
       return this.interval.contents;
     },
 
