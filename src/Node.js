@@ -42,7 +42,7 @@ Node.prototype.onlyChild = function() {
   if (this.children.length !== 1) {
     throw new Error(
         'cannot get only child of a node of type ' + this.ctorName +
-        '(it has ' + this.numChildren() + ' children)');
+        ' (it has ' + this.numChildren() + ' children)');
   } else {
     return this.firstChild();
   }
