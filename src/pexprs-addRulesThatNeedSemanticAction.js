@@ -61,7 +61,7 @@ pexprs.Lookahead.prototype.addRulesThatNeedSemanticAction = function(dict, value
   return this.expr.addRulesThatNeedSemanticAction(dict, valueRequired);
 };
 
-pexprs.Listy.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
+pexprs.Arr.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
   return this.expr.addRulesThatNeedSemanticAction(dict, valueRequired);
 };
 

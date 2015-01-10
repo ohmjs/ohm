@@ -105,13 +105,13 @@ function Lookahead(expr) {
 
 Lookahead.prototype = Object.create(PExpr.prototype);
 
-// Listy object decomposition
+// Array decomposition
 
-function Listy(expr) {
+function Arr(expr) {
   this.expr = expr;
 }
 
-Listy.prototype = Object.create(PExpr.prototype);
+Arr.prototype = Object.create(PExpr.prototype);
 
 // Object decomposition
 
@@ -165,7 +165,7 @@ exports.Many = Many;
 exports.Opt = Opt;
 exports.Not = Not;
 exports.Lookahead = Lookahead;
-exports.Listy = Listy;
+exports.Arr = Arr;
 exports.Obj = Obj;
 exports.Apply = Apply;
 

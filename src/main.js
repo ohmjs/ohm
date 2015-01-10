@@ -120,8 +120,8 @@ function makeGrammarBuilder(optNamespace) {
     Base_paren: function(_, x, _) {
       return value(x);
     },
-    Base_listy: function(_, x, _) {
-      return builder.listy(value(x));
+    Base_arr: function(_, x, _) {
+      return builder.arr(value(x));
     },
     Base_obj: function(_, lenient, _) {
       return builder.obj([], value(lenient));

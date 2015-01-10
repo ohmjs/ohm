@@ -222,11 +222,11 @@ pexprs.Lookahead.prototype.eval = function(state) {
   }
 };
 
-pexprs.Listy.prototype.eval = function(state) {
+pexprs.Arr.prototype.eval = function(state) {
   skipSpacesIfAppropriate(state);
   var inputStream = state.inputStream;
   var obj = inputStream.next();
-  if (obj instanceof Array || typeof obj === 'string') {
+  if (obj instanceof Array) {
     var objInputStream = InputStream.newFor(obj);
     state.pushInputStream(objInputStream);
     var ans = this.expr.eval(state) && atEnd(state);

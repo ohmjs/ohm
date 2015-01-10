@@ -41,7 +41,7 @@ pexprs.Lookahead.prototype.getArity = function() {
   return this.expr.getArity();
 };
 
-pexprs.Listy.prototype.getArity = function() {
+pexprs.Arr.prototype.getArity = function() {
   return this.expr.getArity();
 };
 

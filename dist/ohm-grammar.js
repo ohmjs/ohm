@@ -27,10 +27,10 @@ ohm._ohmGrammarFactory =
   b.inline('Base_application', b.seq(b.app('ident'), b.not(b.alt(b.seq(b.opt(b.app('ruleDescr')), b.prim('=')), b.prim(':='), b.prim('+=')))));
   b.inline('Base_prim', b.alt(b.app('keyword'), b.app('string'), b.app('regExp'), b.app('number')));
   b.inline('Base_paren', b.seq(b.prim('('), b.app('Alt'), b.prim(')')));
-  b.inline('Base_listy', b.seq(b.prim('['), b.app('Alt'), b.prim(']')));
+  b.inline('Base_arr', b.seq(b.prim('['), b.app('Alt'), b.prim(']')));
   b.inline('Base_obj', b.seq(b.prim('{'), b.opt(b.prim('...')), b.prim('}')));
   b.inline('Base_objWithProps', b.seq(b.prim('{'), b.app('Props'), b.opt(b.seq(b.prim(','), b.prim('...'))), b.prim('}')));
-  b.setRuleDescription(undefined); b.define('Base', b.alt(b.app('Base_application'), b.app('Base_prim'), b.app('Base_paren'), b.app('Base_listy'), b.app('Base_obj'), b.app('Base_objWithProps')));
+  b.setRuleDescription(undefined); b.define('Base', b.alt(b.app('Base_application'), b.app('Base_prim'), b.app('Base_paren'), b.app('Base_arr'), b.app('Base_obj'), b.app('Base_objWithProps')));
   b.inline('Props_rec', b.seq(b.app('Prop'), b.prim(','), b.app('Props')));
   b.inline('Props_base', b.app('Prop'));
   b.setRuleDescription(undefined); b.define('Props', b.alt(b.app('Props_rec'), b.app('Props_base')));

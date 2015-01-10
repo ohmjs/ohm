@@ -117,7 +117,7 @@ pexprs.Lookahead.prototype.check = function(grammar, vals) {
   return this.expr.check(grammar, vals);
 };
 
-pexprs.Listy.prototype.check = function(grammar, vals) {
+pexprs.Arr.prototype.check = function(grammar, vals) {
   return this.expr.check(grammar, vals);
 };
 

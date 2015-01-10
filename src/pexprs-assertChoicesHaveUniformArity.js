@@ -68,7 +68,7 @@ pexprs.Lookahead.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   this.expr.assertChoicesHaveUniformArity(ruleName);
 };
 
-pexprs.Listy.prototype.assertChoicesHaveUniformArity = function(ruleName) {
+pexprs.Arr.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   this.expr.assertChoicesHaveUniformArity(ruleName);
 };
 

@@ -810,21 +810,21 @@ describe("Ohm", function() {
       });
     });
 
-    describe("listy", function() {
+    describe("arr", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { start = 'abc' &_ ['d' 'ef'] 'g' }");
+        m = makeGrammar("M { start = ['abc' &_ ['d' 'ef'] 'g'] }");
       });
 
       it("recognition", function() {
-        expect(m.matchContents(['abc', ['d', 'ef'], 'g'], 'start')).to.be.ok();
-        expect(m.matchContents(['abc', ['def'], 'g'], 'start')).to.equal(false);
-        expect(m.matchContents(['abc', 'def', 'g'], 'start')).to.be.ok();
-        expect(m.matchContents(['abc', ['d', 'ef', 'oops'], 'g'], 'start')).to.equal(false);
-        expect(m.matchContents(['abc', ['d', 'ef'], 'gh'], 'start')).to.equal(false);
-        expect(m.matchContents(['abc', [5], 'g'], 'start')).to.equal(false);
-        expect(m.matchContents(['abc', [], 'g'], 'start')).to.equal(false);
-        expect(m.matchContents(['abc', 5, 'g'], 'start')).to.equal(false);
+        expect(m.match(['abc', ['d', 'ef'], 'g'], 'start')).to.be.ok();
+        expect(m.match(['abc', ['def'], 'g'], 'start')).to.equal(false);
+        expect(m.match(['abc', 'def', 'g'], 'start')).to.equal(false);
+        expect(m.match(['abc', ['d', 'ef', 'oops'], 'g'], 'start')).to.equal(false);
+        expect(m.match(['abc', ['d', 'ef'], 'gh'], 'start')).to.equal(false);
+        expect(m.match(['abc', [5], 'g'], 'start')).to.equal(false);
+        expect(m.match(['abc', [], 'g'], 'start')).to.equal(false);
+        expect(m.match(['abc', 5, 'g'], 'start')).to.equal(false);
       });
 
       it("semantic actions", function() {
@@ -833,7 +833,7 @@ describe("Ohm", function() {
           _: ohm.actions.passThrough,
           _terminal: ohm.actions.getValue
         });
-        expect(value(m.matchContents(['abc', ['d', 'ef'], 'g'], 'start'))).to.eql(['d', ['d', 'ef']]);
+        expect(value(m.match(['abc', ['d', 'ef'], 'g'], 'start'))).to.eql(['d', ['d', 'ef']]);
       });
     });
 

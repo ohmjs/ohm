@@ -80,8 +80,8 @@ pexprs.Lookahead.prototype.outputRecipe = function(ws) {
   ws.nextPutAll(')');
 };
 
-pexprs.Listy.prototype.outputRecipe = function(ws) {
-  ws.nextPutAll('b.listy(');
+pexprs.Arr.prototype.outputRecipe = function(ws) {
+  ws.nextPutAll('b.arr(');
   this.expr.outputRecipe(ws);
   ws.nextPutAll(')');
 };

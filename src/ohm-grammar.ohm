@@ -41,7 +41,7 @@ Ohm {
     = ident ~(ruleDescr? '=' | ':=' | '+=')  -- application
     | (keyword | string | regExp | number)   -- prim
     | '(' Alt ')'                            -- paren
-    | '[' Alt ']'                            -- listy
+    | '[' Alt ']'                            -- arr
     | '{' '...'? '}'                         -- obj
     | '{' Props (',' '...')? '}'             -- objWithProps
 

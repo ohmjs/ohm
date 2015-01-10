@@ -102,8 +102,8 @@ Builder.prototype = {
     return new pexprs.Lookahead(expr);
   },
 
-  listy: function(expr) {
-    return new pexprs.Listy(expr);
+  arr: function(expr) {
+    return new pexprs.Arr(expr);
   },
 
   obj: function(properties, isLenient) {
