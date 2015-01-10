@@ -12,11 +12,6 @@ var InputStream = require('./InputStream.js');
 // Operations
 // --------------------------------------------------------------------
 
-function atEnd(state) {
-  skipSpacesIfAppropriate(state);
-  return state.inputStream.atEnd();
-}
-
 var applySpaces_ = new pexprs.Apply('spaces_');
 
 function skipSpacesIfAppropriate(state) {
@@ -44,7 +39,6 @@ function skipSpaces(state) {
 pexprs.PExpr.prototype.eval = common.abstract;
 
 pexprs.anything.eval = function(state) {
-  skipSpacesIfAppropriate(state);
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   var value = inputStream.next();
@@ -59,7 +53,7 @@ pexprs.anything.eval = function(state) {
 
 pexprs.end.eval = function(state) {
   var inputStream = state.inputStream;
-  if (atEnd(state)) {
+  if (state.inputStream.atEnd()) {
     state.bindings.push(new Node(state.grammar, '_terminal', [undefined], inputStream.intervalFrom(inputStream.pos)));
     return true;
   } else {
@@ -75,7 +69,6 @@ pexprs.fail.eval = function(state) {
 };
 
 pexprs.Prim.prototype.eval = function(state) {
-  skipSpacesIfAppropriate(state);
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   if (this.match(inputStream) === common.fail) {
@@ -96,7 +89,6 @@ pexprs.StringPrim.prototype.match = function(inputStream) {
 };
 
 pexprs.RegExpPrim.prototype.eval = function(state) {
-  skipSpacesIfAppropriate(state);
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   if (inputStream.matchRegExp(this.obj) === common.fail) {
@@ -110,7 +102,6 @@ pexprs.RegExpPrim.prototype.eval = function(state) {
 };
 
 pexprs.Alt.prototype.eval = function(state) {
-  skipSpacesIfAppropriate(state);
   var bindings = state.bindings;
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
@@ -223,13 +214,12 @@ pexprs.Lookahead.prototype.eval = function(state) {
 };
 
 pexprs.Arr.prototype.eval = function(state) {
-  skipSpacesIfAppropriate(state);
   var inputStream = state.inputStream;
   var obj = inputStream.next();
   if (obj instanceof Array) {
     var objInputStream = InputStream.newFor(obj);
     state.pushInputStream(objInputStream);
-    var ans = this.expr.eval(state) && atEnd(state);
+    var ans = this.expr.eval(state) && state.inputStream.atEnd();
     state.popInputStream();
     return ans;
   } else {
@@ -240,7 +230,6 @@ pexprs.Arr.prototype.eval = function(state) {
 pexprs.Obj.prototype.eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  skipSpacesIfAppropriate(state);
   var obj = inputStream.next();
   if (obj !== common.fail && obj && (typeof obj === 'object' || typeof obj === 'function')) {
     var numOwnPropertiesMatched = 0;
@@ -252,7 +241,7 @@ pexprs.Obj.prototype.eval = function(state) {
       var value = obj[property.name];
       var valueInputStream = InputStream.newFor(typeof value === 'string' ? value : [value]);
       state.pushInputStream(valueInputStream);
-      var matched = property.pattern.eval(state) && atEnd(state);
+      var matched = property.pattern.eval(state) && (skipSpacesIfAppropriate(state), state.inputStream.atEnd());
       state.popInputStream();
       if (!matched) {
         return false;
