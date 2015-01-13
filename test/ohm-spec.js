@@ -1650,7 +1650,7 @@ describe("Ohm", function() {
         expect(function() {
           g.match(42, 'start', true);
         }).to.throwException(function(e) {
-          expect(e.toString()).to.equal('match failed at position 0');
+          expect(e.message).to.equal('match failed at position 0');
           expect(e.getPos()).to.equal(0);
         });
       });
@@ -1660,17 +1660,17 @@ describe("Ohm", function() {
         expect(function() {
           g.matchContents('ab', 'start', true);
         }).to.throwException(function(e) {
-          expect(e.toString()).to.equal("Line 1, col 3: ab\n" +
-                                        "                 ^\n" +
-                                        "Expected: 'c'");
+          expect(e.message).to.equal("Line 1, col 3: ab\n" +
+                                     "                 ^\n" +
+                                     "Expected 'c'");
           expect(e.getPos()).to.equal(2);
         });
         expect(function() {
           g.matchContents('abcde', 'start', true);
         }).to.throwException(function(e) {
-          expect(e.toString()).to.equal("Line 1, col 5: abcde\n" +
-                                        "                   ^\n" +
-                                        "Expected: end of input");
+          expect(e.message).to.equal("Line 1, col 5: abcde\n" +
+                                     "                   ^\n" +
+                                     "Expected end of input");
           expect(e.getPos()).to.equal(4);
         });
       });

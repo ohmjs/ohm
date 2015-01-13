@@ -12,7 +12,7 @@ var browser = awlib.browser;
 // Private Stuff
 // --------------------------------------------------------------------
 
-// TODO: make this cross-browser
+// TODO: just use the jQuery thing
 function load(url) {
   var req = new XMLHttpRequest();
   req.open('GET', url, false);
@@ -55,7 +55,9 @@ Namespace.prototype = {
   loadGrammarsFromScriptElement: function(element) {
     browser.sanityCheck('script tag\'s type attribute must be "text/ohm-js"', element.type === 'text/ohm-js');
     var source = element.getAttribute('src') ? load(element.getAttribute('src')) : element.innerHTML;
-    ohm.makeGrammars(source, this);
+    try {
+      ohm.makeGrammars(source, this);
+    } catch (e) {}
     return this;
   },
 

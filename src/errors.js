@@ -11,232 +11,167 @@ var makeStringBuffer = awlib.objectUtils.stringBuffer;
 // Private stuff
 // --------------------------------------------------------------------
 
-var BuiltinError = Error;
+function OhmError() {}
+OhmError.prototype = Object.create(Error.prototype);
 
-function Error() {
-  throw new BuiltinError('Error cannot be instantiated -- it\'s abstract');
-}
-
-Error.prototype = Object.create(BuiltinError.prototype, {
-  message: {
-    get: function() {
-      return this.getMessage();
-    }
+function makeCustomError(name, initFn) {
+  // Make E think it's really called OhmError, so that errors look nicer when they're console.log'ed on Chrome.
+  var E = function OhmError() {  
+    var e = new Error();
+    Object.defineProperty(this, "stack", { get: function() { return e.stack; } });
+    initFn.apply(this, arguments);
   }
-});
-
-Error.prototype.getMessage = common.abstract;
-
-Error.prototype.printMessage = function() {
-  console.log(this.getMessage());
-};
-
-Error.prototype.getShortMessage = function() {
-  return this.getMessage();
-};
-
-Error.prototype.printShortMessage = function() {
-  console.log(this.getMessage());
-};
-
-Error.prototype.toString = function() {
-  return this.getMessage();
-};
+  E.prototype = Object.create(OhmError.prototype);
+  E.prototype.constructor = E;
+  E.prototype.name = name;
+  return E;
+}
 
 // ----------------- errors about intervals -----------------
 
-function IntervalSourcesDontMatch() {}
-
-IntervalSourcesDontMatch.prototype = Object.create(Error.prototype);
-
-IntervalSourcesDontMatch.prototype.getMessage = function() {
-  return 'interval sources don\'t match';
-};
+var IntervalSourcesDontMatch = makeCustomError(
+    "ohm.error.IntervalSourcesDontMatch",
+    function() {
+      this.message = "interval sources don't match";
+    }
+);
 
 // ----------------- errors about grammars -----------------
 
 // Undeclared grammar
 
-function UndeclaredGrammar(grammarName, optNamespaceName) {
-  this.grammarName = grammarName;
-  this.namespaceName = optNamespaceName;
-};
-
-UndeclaredGrammar.prototype = Object.create(Error.prototype);
-
-UndeclaredGrammar.prototype.getMessage = function() {
-  return this.namespaceName ?
-    ['grammar', this.grammarName, 'is not declared in namespace', this.namespaceName].join(' ') :
-    ['undeclared grammar', this.grammarName].join(' ');
-};
+var UndeclaredGrammar = makeCustomError(
+    "ohm.error.UndeclaredGrammar",
+    function(grammarName, optNamespaceName) {
+      this.grammarName = grammarName;
+      this.namespaceName = optNamespaceName;
+      this.message = this.namespace ?
+          "grammar " + this.grammarName + " is not declared in namespace " + this.namespaceName :
+          "undeclared grammar " + this.grammarName;
+    }
+);
 
 // Duplicate grammar declaration
 
-function DuplicateGrammarDeclaration(grammarName, namespaceName) {
-  this.grammarName = grammarName;
-  this.namespaceName = namespaceName;
-};
-
-DuplicateGrammarDeclaration.prototype = Object.create(Error.prototype);
-
-DuplicateGrammarDeclaration.prototype.getMessage = function() {
-  return ['grammar', this.grammarName, 'is already declared in namespace', this.namespaceName].join(' ');
-};
+var DuplicateGrammarDeclaration = makeCustomError(
+    "ohm.error.DuplicateGrammarDeclaration",
+    function(grammarName, namespaceName) {
+      this.grammarName = grammarName;
+      this.namespaceName = namespaceName;
+      this.message = "grammar " + this.grammarName + " is already declared in namespace " + this.namespaceName;
+    }
+);
 
 // ----------------- rules -----------------
 
 // Undeclared rule
 
-function UndeclaredRule(ruleName, optGrammarName) {
-  this.ruleName = ruleName;
-  this.grammarName = optGrammarName;
-};
-
-UndeclaredRule.prototype = Object.create(Error.prototype);
-
-UndeclaredRule.prototype.getMessage = function() {
-  return this.grammarName ?
-    ['rule', this.ruleName, 'is not declared in grammar', this.grammarName].join(' ') :
-    ['undeclared rule', this.ruleName].join(' ');
-};
+var UndeclaredRule = makeCustomError(
+    "ohm.error.UndeclaredRule",
+    function(ruleName, optGrammarName) {
+      this.ruleName = ruleName;
+      this.grammarName = optGrammarName;
+      this.message = this.grammarName ?
+          "rule " + this.ruleName + " is not declared in grammar " + this.grammarName :
+          "undeclared rule " + this.ruleName;
+    }
+);
 
 // Duplicate rule declaration
 
-function DuplicateRuleDeclaration(ruleName, grammarName) {
-  this.ruleName = ruleName;
-  this.grammarName = grammarName;
-};
-
-DuplicateRuleDeclaration.prototype = Object.create(Error.prototype);
-
-DuplicateRuleDeclaration.prototype.getMessage = function() {
-  return ['rule', this.ruleName, 'is already declared in grammar', this.grammarName].join(' ');
-};
+var DuplicateRuleDeclaration = makeCustomError(
+    "ohm.error.DuplicateRuleDeclaration",
+    function(ruleName, grammarName) {
+      this.ruleName = ruleName;
+      this.grammarName = grammarName;
+      this.message = "rule " + this.ruleName + " is already declared in grammar " + this.grammarName;
+    }
+);
 
 // Rule must produce value
 
-function RefinementMustBeCompatible(ruleName, expectedArity, why) {
-  this.ruleName = ruleName;
-  this.expectedArity = expectedArity;
-  this.why = why;
-};
-
-RefinementMustBeCompatible.prototype = Object.create(Error.prototype);
-
-RefinementMustBeCompatible.prototype.getMessage = function() {
-  return [
-    'rule', this.ruleName, 'must have arity', this.expectedArity,
-    'because the rule it is', this.why, 'also has arity', this.expectedArity
-  ].join(' ');
-};
+var RefinementMustBeCompatible = makeCustomError(
+    "ohm.error.RefinementMustBeCompatible",
+    function(ruleName, expectedArity, why) {
+      this.ruleName = ruleName;
+      this.expectedArity = expectedArity;
+      this.why = why;
+      this.message =
+          "rule " + this.ruleName + " must have arity " + this.expectedArity +
+          " because the rule it is " + this.why + " also has arity " + this.expectedArity;
+    }
+);
 
 // ----------------- arity -----------------
 
 // Inconsistent arity
 
-function InconsistentArity(ruleName, expected, actual) {
-  this.ruleName = ruleName;
-  this.expected = expected;
-  this.actual = actual;
-};
-
-InconsistentArity.prototype = Object.create(Error.prototype);
-
-InconsistentArity.prototype.getMessage = function() {
-  return [
-    'rule', this.ruleName, 'involves an alternation which has inconsistent arity.',
-    'expected:', this.expected,
-    'got:', this.actual
-  ].join(' ');
-};
+var InconsistentArity = makeCustomError(
+    "ohm.error.InconsistentArity",
+    function(ruleName, expected, actual) {
+      this.ruleName = ruleName;
+      this.expected = expected;
+      this.actual = actual;
+      this.message =
+          "rule " + this.ruleName + " involves an alternation which has inconsistent arity " +
+          "(expected " + this.expected + ", got " + this.actual + ")";
+    }
+);
 
 // ----------------- properties -----------------
 
 // Duplicate property names
 
-function DuplicatePropertyNames(duplicates) {
-  this.duplicates = duplicates;
-};
-
-DuplicatePropertyNames.prototype = Object.create(Error.prototype);
-
-DuplicatePropertyNames.prototype.getMessage = function() {
-  return ['object pattern has duplicate property names:', this.duplicates].join(' ');
-};
+var DuplicatePropertyNames = makeCustomError(
+    "ohm.error.DuplicatePropertyNames",
+    function(duplicates) {
+      this.duplicates = duplicates;
+      this.message = "object pattern has duplicate property names: " + this.duplicates.join(", ");
+    }
+);
 
 // ----------------- syntax -----------------
 
-function toErrorInfo(pos, str) {
-  var lineNum = 1;
-  var colNum = 1;
-
-  var currPos = 0;
-  var lineStartPos = 0;
-
-  while (currPos < pos) {
-    var c = str.charAt(currPos++);
-    if (c === '\n') {
-      lineNum++;
-      colNum = 1;
-      lineStartPos = currPos;
-    } else if (c !== '\r') {
-      colNum++;
+var MatchFailure = makeCustomError(
+    "ohm.error.MatchFailure",
+    function(state) {
+      this.state = state;
+      Object.defineProperty(this, "message", {
+          get: function() {
+            return this.getMessage();
+          }
+      });
     }
-  }
-
-  var lineEndPos = str.indexOf('\n', lineStartPos);
-  if (lineEndPos < 0) {
-    lineEndPos = str.length;
-  }
-
-  return {
-    lineNum: lineNum,
-    colNum: colNum,
-    line: str.substr(lineStartPos, lineEndPos - lineStartPos)
-  };
-}
-
-function MatchFailure(state) {
-  this.state = state;
-}
-
-MatchFailure.prototype = Object.create(Error.prototype);
-
-MatchFailure.prototype.getPos = function() {
-  return this.state.getFailuresPos();
-};
+);
 
 MatchFailure.prototype.getShortMessage = function() {
- if (typeof this.state.inputStream.source === 'string') {
-    var text = makeStringBuffer();
-    var errorInfo = toErrorInfo(this.getPos(), this.state.inputStream.source);
-    text.nextPutAll(this.getLineAndColText());
-    text.nextPutAll(': expected ');
-    text.nextPutAll(this.getExpectedText());
-    return text.contents();
+  if (typeof this.state.inputStream.source !== "string") {
+    return "match failed at position " + this.getPos();
   } else {
-    return 'match failed at position ' + this.getPos();
+    var errorInfo = toErrorInfo(this.getPos(), this.state.inputStream.source);
+    return "line " + errorInfo.lineNum + ", col " + errorInfo.colNum + ": expected " + this.getExpectedText();
   }
 };
 
 MatchFailure.prototype.getMessage = function() {
- if (typeof this.state.inputStream.source !== 'string') {
-    return 'match failed at position ' + this.getPos();
+  if (typeof this.state.inputStream.source !== "string") {
+    return "match failed at position " + this.getPos();
   }
 
-  var text = makeStringBuffer();
   var errorInfo = toErrorInfo(this.getPos(), this.state.inputStream.source);
-  var lineAndColText = this.getLineAndColText() + ': ';
-  text.nextPutAll(lineAndColText);
-  text.nextPutAll(errorInfo.line);
-  text.nextPutAll('\n');
+  var text = makeStringBuffer();
+  var lineAndColText = "Line " + errorInfo.lineNum + ", col " + errorInfo.colNum + ": ";
+  text.nextPutAll(lineAndColText + errorInfo.line + "\n");
   for (var idx = 1; idx < lineAndColText.length + errorInfo.colNum; idx++) {
-    text.nextPutAll(' ');
+    text.nextPutAll(" ");
   }
-  text.nextPutAll('^');
-  text.nextPutAll('\nExpected: ');
-  text.nextPutAll(this.getExpectedText());
+  text.nextPutAll("^\n");
+  text.nextPutAll("Expected " + this.getExpectedText());
   return text.contents();
+};
+
+MatchFailure.prototype.getPos = function() {
+  return this.state.getFailuresPos();
 };
 
 MatchFailure.prototype.getLineAndColText = function() {
@@ -269,27 +204,55 @@ MatchFailure.prototype.getExpected = function() {
   return Object.keys(expected);
 };
 
+function toErrorInfo(pos, str) {
+  var lineNum = 1;
+  var colNum = 1;
+
+  var currPos = 0;
+  var lineStartPos = 0;
+
+  while (currPos < pos) {
+    var c = str.charAt(currPos++);
+    if (c === '\n') {
+      lineNum++;
+      colNum = 1;
+      lineStartPos = currPos;
+    } else if (c !== '\r') {
+      colNum++;
+    }
+  }
+
+  var lineEndPos = str.indexOf('\n', lineStartPos);
+  if (lineEndPos < 0) {
+    lineEndPos = str.length;
+  }
+
+  return {
+    lineNum: lineNum,
+    colNum: colNum,
+    line: str.substr(lineStartPos, lineEndPos - lineStartPos)
+  };
+}
+
 // ----------------- constructors -----------------
 
 // Type error
 
-function InvalidConstructorCall(grammar, ctorName, children) {
-  this.grammar = grammar;
-  this.ctorName = ctorName;
-  this.children = children;
-}
-
-InvalidConstructorCall.prototype = Object.create(Error.prototype);
-
-InvalidConstructorCall.prototype.getMessage = function() {
-  return 'Attempt to invoke constructor ' + this.ctorName + ' with invalid or unexpected arguments';
-};
+var InvalidConstructorCall = makeCustomError(
+    "ohm.error.InvalidConstructorCall",
+    function(grammar, ctorName, children) {
+      this.grammar = grammar;
+      this.ctorName = ctorName;
+      this.children = children;
+      this.message = "Attempt to invoke constructor " + this.ctorName + " with invalid or unexpected arguments";
+    }
+);
 
 // --------------------------------------------------------------------
 // Exports
 // --------------------------------------------------------------------
 
-exports.Error = Error;
+exports.Error = OhmError;
 exports.IntervalSourcesDontMatch = IntervalSourcesDontMatch;
 exports.UndeclaredGrammar = UndeclaredGrammar;
 exports.DuplicateGrammarDeclaration = DuplicateGrammarDeclaration;
@@ -300,3 +263,4 @@ exports.InconsistentArity = InconsistentArity;
 exports.DuplicatePropertyNames = DuplicatePropertyNames;
 exports.MatchFailure = MatchFailure;
 exports.InvalidConstructorCall = InvalidConstructorCall;
+
