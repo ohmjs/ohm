@@ -2,9 +2,9 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common.js');
+var common = require("./common.js");
 
-var awlib = require('awlib');
+var awlib = require("awlib");
 var makeStringBuffer = awlib.objectUtils.stringBuffer;
 
 // --------------------------------------------------------------------
@@ -15,12 +15,13 @@ function OhmError() {}
 OhmError.prototype = Object.create(Error.prototype);
 
 function makeCustomError(name, initFn) {
-  // Make E think it's really called OhmError, so that errors look nicer when they're console.log'ed on Chrome.
-  var E = function OhmError() {  
-    var e = new Error();
-    Object.defineProperty(this, "stack", { get: function() { return e.stack; } });
-    initFn.apply(this, arguments);
-  }
+  // Make E think it's really called OhmError, so that errors look nicer when they're console.log'ed in Chrome.
+  var E =
+      function OhmError() {  
+        var e = new Error();
+        Object.defineProperty(this, "stack", { get: function() { return e.stack; } });
+        initFn.apply(this, arguments);
+      };
   E.prototype = Object.create(OhmError.prototype);
   E.prototype.constructor = E;
   E.prototype.name = name;
@@ -147,10 +148,10 @@ var MatchFailure = makeCustomError(
 MatchFailure.prototype.getShortMessage = function() {
   if (typeof this.state.inputStream.source !== "string") {
     return "match failed at position " + this.getPos();
-  } else {
-    var errorInfo = toErrorInfo(this.getPos(), this.state.inputStream.source);
-    return "line " + errorInfo.lineNum + ", col " + errorInfo.colNum + ": expected " + this.getExpectedText();
   }
+
+  var errorInfo = toErrorInfo(this.getPos(), this.state.inputStream.source);
+  return "Line " + errorInfo.lineNum + ", col " + errorInfo.colNum + ": expected " + this.getExpectedText();
 };
 
 MatchFailure.prototype.getMessage = function() {
@@ -174,20 +175,15 @@ MatchFailure.prototype.getPos = function() {
   return this.state.getFailuresPos();
 };
 
-MatchFailure.prototype.getLineAndColText = function() {
-  var errorInfo = toErrorInfo(this.getPos(), this.state.inputStream.source);
-  return 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum;
-};
-
 MatchFailure.prototype.getExpectedText = function() {
   var text = makeStringBuffer();
   var expected = this.getExpected();
   for (var idx = 0; idx < expected.length; idx++) {
     if (idx > 0) {
       if (idx === expected.length - 1) {
-        text.nextPutAll(expected.length > 2 ? ', or ' : ' or ');
+        text.nextPutAll(expected.length > 2 ? ", or " : " or ");
       } else {
-        text.nextPutAll(', ');
+        text.nextPutAll(", ");
       }
     }
     text.nextPutAll(expected[idx]);
@@ -213,16 +209,16 @@ function toErrorInfo(pos, str) {
 
   while (currPos < pos) {
     var c = str.charAt(currPos++);
-    if (c === '\n') {
+    if (c === "\n") {
       lineNum++;
       colNum = 1;
       lineStartPos = currPos;
-    } else if (c !== '\r') {
+    } else if (c !== "\r") {
       colNum++;
     }
   }
 
-  var lineEndPos = str.indexOf('\n', lineStartPos);
+  var lineEndPos = str.indexOf("\n", lineStartPos);
   if (lineEndPos < 0) {
     lineEndPos = str.length;
   }
