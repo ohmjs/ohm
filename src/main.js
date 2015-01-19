@@ -5,7 +5,7 @@
 require('../dist/ohm-grammar.js');
 
 var Builder = require('./Builder.js');
-var Namespace = require('./Namespace.js');
+var namespaces = require('./namespaces.js');
 var errors = require('./errors.js');
 var attributes = require('./attributes.js');
 
@@ -249,13 +249,7 @@ function makeGrammars(source, optNamespace) {
 
 exports.error = errors;
 
-var namespaces = {};
-exports.namespace = function(name) {
-  if (namespaces[name] === undefined) {
-    namespaces[name] = new Namespace(name);
-  }
-  return namespaces[name];
-};
+exports.namespace = namespaces;
 
 exports.make = function(recipe) {
   return recipe(thisModule);

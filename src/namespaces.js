@@ -25,9 +25,17 @@ function load(url) {
   throw new Error('unable to load url ' + url);
 }
 
+var namespaces = {};
+
 // --------------------------------------------------------------------
 // Namespaces
 // --------------------------------------------------------------------
+
+function namespace(name) {
+  return namespaces[name] ?
+    namespaces[name] :
+    (namespaces[name] = new Namespace(name));
+}
 
 function Namespace(name) {
   this.name = name;
@@ -70,5 +78,5 @@ Namespace.prototype = {
 // Exports
 // --------------------------------------------------------------------
 
-module.exports = Namespace;
+module.exports = namespace;
 
