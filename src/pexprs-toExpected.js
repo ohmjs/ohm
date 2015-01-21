@@ -7,7 +7,6 @@ var pexprs = require('./pexprs.js');
 
 var awlib = require('awlib');
 var printString = awlib.stringUtils.printString;
-var makeStringBuffer = awlib.objectUtils.stringBuffer;
 
 // --------------------------------------------------------------------
 // Operations

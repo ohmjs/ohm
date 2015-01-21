@@ -13,12 +13,8 @@ var namespace = require("./namespaces.js");
 var pexprs = require("./pexprs.js");
 
 var awlib = require("awlib");
-var keysDo = awlib.objectUtils.keysDo;
-var valuesDo = awlib.objectUtils.valuesDo;
-var formals = awlib.objectUtils.formals;
 var makeStringBuffer = awlib.objectUtils.stringBuffer;
 var printString = awlib.stringUtils.printString;
-var equals = awlib.equals.equals;
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -122,7 +118,7 @@ Grammar.prototype = {
     var self = this;
     var ruleDict = this.ruleDict;
     var ok = true;
-    keysDo(ruleDict, function(ruleName) {
+    Object.keys(ruleDict).forEach(function(ruleName) {
       if (actionDict[ruleName] === undefined) {
         return;
       }
