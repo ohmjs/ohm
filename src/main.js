@@ -3,7 +3,6 @@
 // --------------------------------------------------------------------
 
 require("./Grammar.js");  // required to initialize default namespace w/ Grammar grammar
-require("../dist/ohm-grammar.js");
 
 var Builder = require("./Builder.js");
 var attributes = require("./attributes.js");
@@ -27,7 +26,7 @@ function makeGrammarBuilder(optNamespaceName) {
   var decl;
   var currentRuleName;
   var overriding = false;
-  var value = exports.ohmGrammar.semanticAction({
+  var value = namespace("default").grammar("Ohm").semanticAction({
     Grammar: function(n, s, _, rs, _) {
       builder = new Builder();
       decl = builder.newGrammar(value(n), optNamespaceName || "default");
@@ -193,7 +192,7 @@ function makeGrammarBuilder(optNamespaceName) {
 
 function compileAndLoad(source, whatItIs, optNamespaceName) {
   try {
-    var node = thisModule.ohmGrammar.matchContents(source, whatItIs, true);
+    var node = namespace("default").grammar("Ohm").match(source, whatItIs, true);
     return makeGrammarBuilder(optNamespaceName)(node);
   } catch (e) {
     if (e instanceof errors.MatchFailure) {
@@ -221,8 +220,8 @@ exports.error = errors;
 
 exports.namespace = namespace;
 
-exports.make = function(recipe) {
-  return recipe.call(new Builder());
+exports.grammar = function(name) {
+  return namespace("default").grammar(name);
 };
 
 exports.makeGrammar = makeGrammar;
@@ -232,21 +231,13 @@ exports.actions = attributes.actions;
 
 // Stuff that's only here for bootstrapping, testing, etc.
 
-exports._builder = function() {
-  return new Builder();
+exports.makeRecipe = function(recipe) {
+  recipe.call(new Builder());
 };
 
 exports._makeGrammarBuilder = makeGrammarBuilder;
 
-var ohmGrammar;
-Object.defineProperty(exports, "ohmGrammar", {
-  get: function() {
-    if (!ohmGrammar) {
-      ohmGrammar = this._ohmGrammarRecipe.call(new Builder());
-    }
-    return ohmGrammar;
-  }
-});
+require("../dist/ohm-grammar.js");
 
 // Load all grammars in script elements into the appropriate namespaces
 

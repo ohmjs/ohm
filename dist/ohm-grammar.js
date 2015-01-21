@@ -1,5 +1,5 @@
 var ohm = require('../src/main.js');
-ohm._ohmGrammarRecipe = (function() {
+ohm.makeRecipe(function() {
   return new this.newGrammar('Ohm', /* in namespace */ 'default')
       .withSuperGrammar('Grammar', /* from namespace */ 'default')
       .define('Grammars', this.many(this.app('Grammar'), 0))

@@ -150,10 +150,10 @@ Grammar.prototype = {
   },
 
   toRecipe: function() {
-    if (this === namespace("default").getGrammar("Grammar")) {
+    if (this === namespace("default").grammar("Grammar")) {
       return "(function() {\n" +
           "  // no recipe required for Grammar in default namespace b/c it's built in\n" +
-          "  return namespace('default').getGrammar('Grammar');\n" +
+          "  return namespace('default').grammar('Grammar');\n" +
           "})";
     }
     var ws = makeStringBuffer();

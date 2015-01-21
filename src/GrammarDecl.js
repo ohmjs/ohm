@@ -37,7 +37,7 @@ GrammarDecl.prototype.withSuperGrammar = function(name, optNamespaceName) {
   if (this.superGrammar) {
     throw new Error("the super grammar of a GrammarDecl cannot be set more than once");
   }
-  this.superGrammar = (optNamespaceName ? namespace(optNamespaceName) : this.ns).getGrammar(name);
+  this.superGrammar = (optNamespaceName ? namespace(optNamespaceName) : this.ns).grammar(name);
   this.ruleDict = Object.create(this.superGrammar.ruleDict);
   return this;
 };

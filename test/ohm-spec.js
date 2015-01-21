@@ -1528,8 +1528,8 @@ describe("Ohm", function() {
             "  qux := 100",
             "}"
           ], 'semantic-action-templates');
-          g1 = ohm.namespace('semantic-action-templates').getGrammar('G1');
-          g2 = ohm.namespace('semantic-action-templates').getGrammar('G2');
+          g1 = ohm.namespace('semantic-action-templates').grammar('G1');
+          g2 = ohm.namespace('semantic-action-templates').grammar('G2');
         }
       });
 
@@ -1567,7 +1567,7 @@ describe("Ohm", function() {
 
         it("actually installs a grammar in a namespace", function() {
           var m = makeGrammar("aaa { foo = 'foo' }", ns1.name);
-          expect(ns1.getGrammar('aaa')).to.eql(m);
+          expect(ns1.grammar('aaa')).to.eql(m);
           expect(m.matchContents('foo', 'foo')).to.be.ok();
         });
 
@@ -1586,8 +1586,8 @@ describe("Ohm", function() {
           var m1 = makeGrammar("bbb { foo = 'foo' }", ns1.name);
           var m2 = makeGrammar("bbb { bar = 'bar' }", ns2.name);
 
-          expect(ns1.getGrammar('bbb')).to.eql(m1);
-          expect(ns2.getGrammar('bbb')).to.eql(m2);
+          expect(ns1.grammar('bbb')).to.eql(m1);
+          expect(ns2.grammar('bbb')).to.eql(m2);
           expect(m1 !== m2).to.be.ok();
         });
       });
@@ -1615,20 +1615,20 @@ describe("Ohm", function() {
           var ns = ohm.namespace('aaa1');
           ns.loadGrammarsFromScriptElement(scriptTag);
           expect(function() {
-            ns.getGrammar('M');
+            ns.grammar('M');
           }).to.throwException(function(e) {
             expect(e).to.be.an(errors.UndeclaredGrammar);
             expect(e.grammarName).to.equal('M');
             expect(e.namespaceName).to.equal('aaa1');
           });
-          expect(ns.getGrammar('O')).to.be.ok();
-          expect(ns.getGrammar('O').matchContents('1234', 'number')).to.be.ok();
+          expect(ns.grammar('O')).to.be.ok();
+          expect(ns.grammar('O').matchContents('1234', 'number')).to.be.ok();
         });
 
         it("semantic actions", function() {
           var ns = ohm.namespace('aaa2');
           ns.loadGrammarsFromScriptElement(scriptTag);
-          var m = ns.getGrammar('O');
+          var m = ns.grammar('O');
           expect(m).to.be.ok();
 	  var eval = m.synthesizedAttribute({
             number:     function(expr) { return eval(expr); },

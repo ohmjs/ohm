@@ -54,7 +54,7 @@ Namespace.prototype = {
     }
   },
 
-  getGrammar: function(name) {
+  grammar: function(name) {
     if (this.grammars[name]) {
       return this.grammars[name];
     } else {

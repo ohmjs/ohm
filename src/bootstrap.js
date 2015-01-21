@@ -21,5 +21,5 @@ try {
 var grammar = ohm.makeGrammar(source, "_default");
 grammar.namespaceName = "default";
 console.log("var ohm = require('../src/main.js');");
-console.log("ohm._ohmGrammarRecipe = " + grammar.toRecipe());
+console.log("ohm.makeRecipe" + grammar.toRecipe());
 
