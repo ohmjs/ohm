@@ -33,7 +33,6 @@
   "license": "MIT",
   "author": "Alex Warth <alexwarth@gmail.com> (http://tinlizzie.org/~awarth)",
   "dependencies": {
-    "awlib": "~0.0.0",
     "symbol": ""
   },
   "devDependencies": {

@@ -4,9 +4,6 @@
 
 var common = require("./common.js");
 
-var awlib = require("awlib");
-var makeStringBuffer = awlib.objectUtils.stringBuffer;
-
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
@@ -150,15 +147,15 @@ MatchFailure.prototype.getMessage = function() {
   }
 
   var errorInfo = toErrorInfo(this.getPos(), this.state.inputStream.source);
-  var text = makeStringBuffer();
+  var sb = new common.StringBuffer();
   var lineAndColText = "Line " + errorInfo.lineNum + ", col " + errorInfo.colNum + ": ";
-  text.nextPutAll(lineAndColText + errorInfo.line + "\n");
+  sb.append(lineAndColText + errorInfo.line + "\n");
   for (var idx = 1; idx < lineAndColText.length + errorInfo.colNum; idx++) {
-    text.nextPutAll(" ");
+    sb.append(" ");
   }
-  text.nextPutAll("^\n");
-  text.nextPutAll("Expected " + this.getExpectedText());
-  return text.contents();
+  sb.append("^\n");
+  sb.append("Expected " + this.getExpectedText());
+  return sb.contents();
 };
 
 MatchFailure.prototype.getPos = function() {
@@ -166,19 +163,19 @@ MatchFailure.prototype.getPos = function() {
 };
 
 MatchFailure.prototype.getExpectedText = function() {
-  var text = makeStringBuffer();
+  var sb = new common.StringBuffer();
   var expected = this.getExpected();
   for (var idx = 0; idx < expected.length; idx++) {
     if (idx > 0) {
       if (idx === expected.length - 1) {
-        text.nextPutAll(expected.length > 2 ? ", or " : " or ");
+        sb.append(expected.length > 2 ? ", or " : " or ");
       } else {
-        text.nextPutAll(", ");
+        sb.append(", ");
       }
     }
-    text.nextPutAll(expected[idx]);
+    sb.append(expected[idx]);
   }
-  return text.contents();
+  return sb.contents();
 };
 
 MatchFailure.prototype.getExpected = function() {

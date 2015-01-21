@@ -12,10 +12,6 @@ var errors = require("./errors.js");
 var namespace = require("./namespaces.js");
 var pexprs = require("./pexprs.js");
 
-var awlib = require("awlib");
-var makeStringBuffer = awlib.objectUtils.stringBuffer;
-var printString = awlib.stringUtils.printString;
-
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
@@ -152,34 +148,34 @@ Grammar.prototype = {
           "  return namespace('default').grammar('Grammar');\n" +
           "})";
     }
-    var ws = makeStringBuffer();
-    ws.nextPutAll("(function() {\n");
-    ws.nextPutAll(
-        "  return new this.newGrammar(" + printString(this.name) +
-        ", /* in namespace */ " + printString(this.namespaceName) + ")\n");
+    var sb = new common.StringBuffer();
+    sb.append("(function() {\n");
+    sb.append(
+        "  return new this.newGrammar(" + common.toStringLiteral(this.name) +
+        ", /* in namespace */ " + common.toStringLiteral(this.namespaceName) + ")\n");
     if (this.superGrammar) {
       var sg = this.superGrammar;
-      ws.nextPutAll(
-          "      .withSuperGrammar(" + printString(sg.name) +
-          ", /* from namespace */ " + printString(sg.namespaceName) + ")\n");
+      sb.append(
+          "      .withSuperGrammar(" + common.toStringLiteral(sg.name) +
+          ", /* from namespace */ " + common.toStringLiteral(sg.namespaceName) + ")\n");
     }
     var ruleNames = Object.keys(this.ruleDict);
     for (var idx = 0; idx < ruleNames.length; idx++) {
       var ruleName = ruleNames[idx];
       var body = this.ruleDict[ruleName];
-      ws.nextPutAll("      .");
+      sb.append("      .");
       if (this.superGrammar && this.superGrammar.ruleDict[ruleName]) {
-        ws.nextPutAll(body instanceof pexprs.Extend ? "extend" : "override");
+        sb.append(body instanceof pexprs.Extend ? "extend" : "override");
       } else {
-        ws.nextPutAll("define");
+        sb.append("define");
       }
-      ws.nextPutAll("(" + printString(ruleName) + ", ");
-      body.outputRecipe(ws);
-      ws.nextPutAll(")\n");
+      sb.append("(" + common.toStringLiteral(ruleName) + ", ");
+      body.outputRecipe(sb);
+      sb.append(")\n");
     }
-    ws.nextPutAll("      .install();\n");
-    ws.nextPutAll("});");
-    return ws.contents();
+    sb.append("      .install();\n");
+    sb.append("});");
+    return sb.contents();
   },
 
   // TODO: make sure this is still correct.
@@ -192,8 +188,8 @@ Grammar.prototype = {
     // other cases of AddExpr.
 
     var self = this;
-    var buffer = makeStringBuffer();
-    buffer.nextPutAll("{");
+    var sb = new common.StringBuffer();
+    sb.append("{");
 
     var first = true;
     for (var ruleName in rulesToBeIncluded) {
@@ -201,24 +197,24 @@ Grammar.prototype = {
       if (first) {
         first = false;
       } else {
-        buffer.nextPutAll(",");
+        sb.append(",");
       }
-      buffer.nextPutAll("\n");
-      buffer.nextPutAll("  ");
-      self.addSemanticActionTemplate(ruleName, body, buffer);
+      sb.append("\n");
+      sb.append("  ");
+      self.addSemanticActionTemplate(ruleName, body, sb);
     }
 
-    buffer.nextPutAll("\n}");
-    return buffer.contents();
+    sb.append("\n}");
+    return sb.contents();
   },
 
-  addSemanticActionTemplate: function(ruleName, body, buffer) {
-    buffer.nextPutAll(ruleName);
-    buffer.nextPutAll(": function(");
+  addSemanticActionTemplate: function(ruleName, body, sb) {
+    sb.append(ruleName);
+    sb.append(": function(");
     var arity = this.semanticActionArity(ruleName);
-    buffer.nextPutAll(common.repeat("_", arity).join(", "));
-    buffer.nextPutAll(") {\n");
-    buffer.nextPutAll("  }");
+    sb.append(common.repeat("_", arity).join(", "));
+    sb.append(") {\n");
+    sb.append("  }");
   },
 
   rulesThatNeedSemanticAction: function(entryPoints) {

@@ -6,11 +6,9 @@ require("./Grammar.js");  // required to initialize default namespace w/ Grammar
 
 var Builder = require("./Builder.js");
 var attributes = require("./attributes.js");
+var common = require("./common.js");
 var errors = require("./errors.js");
 var namespace = require("./namespaces.js");
-
-var awlib = require("awlib");
-var unescapeChar = awlib.stringUtils.unescapeChar;
 
 var UnicodeCategories = require("./unicode.js").UnicodeCategories;
 
@@ -153,7 +151,7 @@ function makeGrammarBuilder(optNamespaceName) {
     },
 
     string: function(_, cs, _) {
-      return value(cs).map(function(c) { return unescapeChar(c); }).join("");
+      return value(cs).map(function(c) { return common.unescapeChar(c); }).join("");
     },
 
     singleQuoteStrChar: function(_) {

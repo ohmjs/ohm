@@ -5,9 +5,6 @@
 var common = require('./common.js');
 var pexprs = require('./pexprs.js');
 
-var awlib = require('awlib');
-var printString = awlib.stringUtils.printString;
-
 // --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
@@ -29,7 +26,7 @@ pexprs.fail.toExpected = function(ruleDict) {
 };
 
 pexprs.Prim.prototype.toExpected = function(ruleDict) {
-  return printString(this.obj);
+  return common.toStringLiteral(this.obj);
 };
 
 pexprs.Not.prototype.toExpected = function(ruleDict) {

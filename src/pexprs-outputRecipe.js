@@ -5,111 +5,108 @@
 var common = require("./common.js");
 var pexprs = require("./pexprs.js");
 
-var awlib = require("awlib");
-var printString = awlib.stringUtils.printString;
-
 // --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
 
 pexprs.PExpr.prototype.outputRecipe = common.abstract;
 
-pexprs.anything.outputRecipe = function(ws) {
-  ws.nextPutAll("this.anything()");
+pexprs.anything.outputRecipe = function(sb) {
+  sb.append("this.anything()");
 };
 
-pexprs.end.outputRecipe = function(ws) {
-  ws.nextPutAll("this.end()");
+pexprs.end.outputRecipe = function(sb) {
+  sb.append("this.end()");
 };
 
-pexprs.fail.outputRecipe = function(ws) {
-  ws.nextPutAll("this.fail()");
+pexprs.fail.outputRecipe = function(sb) {
+  sb.append("this.fail()");
 };
 
-pexprs.Prim.prototype.outputRecipe = function(ws) {
-  ws.nextPutAll("this.prim(");
-  ws.nextPutAll(printString(this.obj));
-  ws.nextPutAll(")");
+pexprs.Prim.prototype.outputRecipe = function(sb) {
+  sb.append("this.prim(");
+  sb.append(typeof this.obj === "string" ? common.toStringLiteral(this.obj) : "" + this.obj);
+  sb.append(")");
 };
 
-pexprs.Alt.prototype.outputRecipe = function(ws) {
-  ws.nextPutAll("this.alt(");
+pexprs.Alt.prototype.outputRecipe = function(sb) {
+  sb.append("this.alt(");
   for (var idx = 0; idx < this.terms.length; idx++) {
     if (idx > 0) {
-      ws.nextPutAll(", ");
+      sb.append(", ");
     }
-    this.terms[idx].outputRecipe(ws);
+    this.terms[idx].outputRecipe(sb);
   }
-  ws.nextPutAll(")");
+  sb.append(")");
 };
 
-pexprs.Seq.prototype.outputRecipe = function(ws) {
-  ws.nextPutAll("this.seq(");
+pexprs.Seq.prototype.outputRecipe = function(sb) {
+  sb.append("this.seq(");
   for (var idx = 0; idx < this.factors.length; idx++) {
     if (idx > 0) {
-      ws.nextPutAll(", ");
+      sb.append(", ");
     }
-    this.factors[idx].outputRecipe(ws);
+    this.factors[idx].outputRecipe(sb);
   }
-  ws.nextPutAll(")");
+  sb.append(")");
 };
 
-pexprs.Many.prototype.outputRecipe = function(ws) {
-  ws.nextPutAll("this.many(");
-  this.expr.outputRecipe(ws);
-  ws.nextPutAll(", ");
-  ws.nextPutAll(this.minNumMatches);
-  ws.nextPutAll(")");
+pexprs.Many.prototype.outputRecipe = function(sb) {
+  sb.append("this.many(");
+  this.expr.outputRecipe(sb);
+  sb.append(", ");
+  sb.append(this.minNumMatches);
+  sb.append(")");
 };
 
-pexprs.Opt.prototype.outputRecipe = function(ws) {
-  ws.nextPutAll("this.opt(");
-  this.expr.outputRecipe(ws);
-  ws.nextPutAll(")");
+pexprs.Opt.prototype.outputRecipe = function(sb) {
+  sb.append("this.opt(");
+  this.expr.outputRecipe(sb);
+  sb.append(")");
 };
 
-pexprs.Not.prototype.outputRecipe = function(ws) {
-  ws.nextPutAll("this.not(");
-  this.expr.outputRecipe(ws);
-  ws.nextPutAll(")");
+pexprs.Not.prototype.outputRecipe = function(sb) {
+  sb.append("this.not(");
+  this.expr.outputRecipe(sb);
+  sb.append(")");
 };
 
-pexprs.Lookahead.prototype.outputRecipe = function(ws) {
-  ws.nextPutAll("this.la(");
-  this.expr.outputRecipe(ws);
-  ws.nextPutAll(")");
+pexprs.Lookahead.prototype.outputRecipe = function(sb) {
+  sb.append("this.la(");
+  this.expr.outputRecipe(sb);
+  sb.append(")");
 };
 
-pexprs.Arr.prototype.outputRecipe = function(ws) {
-  ws.nextPutAll("this.arr(");
-  this.expr.outputRecipe(ws);
-  ws.nextPutAll(")");
+pexprs.Arr.prototype.outputRecipe = function(sb) {
+  sb.append("this.arr(");
+  this.expr.outputRecipe(sb);
+  sb.append(")");
 };
 
-pexprs.Obj.prototype.outputRecipe = function(ws) {
+pexprs.Obj.prototype.outputRecipe = function(sb) {
   function outputPropertyRecipe(prop) {
-    ws.nextPutAll("{name: ");
-    ws.nextPutAll(printString(prop.name));
-    ws.nextPutAll(", pattern: ");
-    prop.pattern.outputRecipe(ws);
-    ws.nextPutAll("}");
+    sb.append("{name: ");
+    sb.append(common.toStringLiteral(prop.name));
+    sb.append(", pattern: ");
+    prop.pattern.outputRecipe(sb);
+    sb.append("}");
   }
 
-  ws.nextPutAll("this.obj([");
+  sb.append("this.obj([");
   for (var idx = 0; idx < this.properties.length; idx++) {
     if (idx > 0) {
-      ws.nextPutAll(", ");
+      sb.append(", ");
     }
     outputPropertyRecipe(this.properties[idx]);
   }
-  ws.nextPutAll("], ");
-  ws.nextPutAll(printString(!!this.isLenient));
-  ws.nextPutAll(")");
+  sb.append("], ");
+  sb.append(!!this.isLenient);
+  sb.append(")");
 };
 
-pexprs.Apply.prototype.outputRecipe = function(ws) {
-  ws.nextPutAll("this.app(");
-  ws.nextPutAll(printString(this.ruleName));
-  ws.nextPutAll(")");
+pexprs.Apply.prototype.outputRecipe = function(sb) {
+  sb.append("this.app(");
+  sb.append(common.toStringLiteral(this.ruleName));
+  sb.append(")");
 };
 
