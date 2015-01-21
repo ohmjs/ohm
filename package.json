@@ -17,7 +17,7 @@
   "homepage": "http://tinlizzie.org/ohm",
   "bugs": "http://github.com/alexwarth/ohm/issues",
   "main": "src/main.js",
-  "bin": "src/ohm-cmd.js",
+  "bin": "src/bootstrap.js",
   "scripts": {
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
     "build-debug": "browserify src/main.js -d -s ohm -o dist/ohm.js",
@@ -26,9 +26,9 @@
     "watch": "watchify src/main.js -d -s ohm -o dist/ohm.js",
     "test": "mocha",
     "test-watch": "mocha -w",
-    "build-ohm-grammar": "npm test && npm run unsafe-build-ohm-grammar && npm test",
-    "unsafe-build-ohm-grammar": "cp dist/ohm-grammar.js dist/ohm-grammar.js.old; (cat src/ohm-grammar-prelude.txt; node src/ohm-cmd.js src/ohm-grammar.ohm) > dist/ohm-grammar.js.new && mv dist/ohm-grammar.js.new dist/ohm-grammar.js",
-    "prepublish": "npm test && npm run build && npm run unsafe-build-ohm-grammar"
+    "bootstrap": "npm test && npm run unsafe-bootstrap && npm test",
+    "unsafe-bootstrap": "cp dist/ohm-grammar.js dist/ohm-grammar.js.old; node src/bootstrap.js src/ohm-grammar.ohm > dist/ohm-grammar.js.new && mv dist/ohm-grammar.js.new dist/ohm-grammar.js",
+    "prepublish": "npm run build && npm run bootstrap"
   },
   "license": "MIT",
   "author": "Alex Warth <alexwarth@gmail.com> (http://tinlizzie.org/~awarth)",

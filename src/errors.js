@@ -18,9 +18,9 @@ function makeCustomError(name, initFn) {
   // Make E think it's really called OhmError, so that errors look nicer when they're console.log'ed in Chrome.
   var E =
       function OhmError() {  
-        var e = new Error();
-        Object.defineProperty(this, "stack", { get: function() { return e.stack; } });
         initFn.apply(this, arguments);
+        var e = new Error(this.message);
+        Object.defineProperty(this, "stack", { get: function() { return e.stack; } });
       };
   E.prototype = Object.create(OhmError.prototype);
   E.prototype.constructor = E;
@@ -43,12 +43,12 @@ var IntervalSourcesDontMatch = makeCustomError(
 
 var UndeclaredGrammar = makeCustomError(
     "ohm.error.UndeclaredGrammar",
-    function(grammarName, optNamespaceName) {
+    function(grammarName, namespaceName) {
       this.grammarName = grammarName;
-      this.namespaceName = optNamespaceName;
-      this.message = this.namespace ?
-          "grammar " + this.grammarName + " is not declared in namespace " + this.namespaceName :
-          "undeclared grammar " + this.grammarName;
+      this.namespaceName = namespaceName;
+      this.message = this.namespaceName === "default" ?
+          "undeclared grammar " + this.grammarName :
+          "grammar " + this.grammarName + " is not declared in namespace " + this.namespaceName;
     }
 );
 
@@ -82,24 +82,14 @@ var UndeclaredRule = makeCustomError(
 
 var DuplicateRuleDeclaration = makeCustomError(
     "ohm.error.DuplicateRuleDeclaration",
-    function(ruleName, grammarName) {
+    function(ruleName, offendingGrammarName, declGrammarName) {
       this.ruleName = ruleName;
-      this.grammarName = grammarName;
-      this.message = "rule " + this.ruleName + " is already declared in grammar " + this.grammarName;
-    }
-);
-
-// Rule must produce value
-
-var RefinementMustBeCompatible = makeCustomError(
-    "ohm.error.RefinementMustBeCompatible",
-    function(ruleName, expectedArity, why) {
-      this.ruleName = ruleName;
-      this.expectedArity = expectedArity;
-      this.why = why;
-      this.message =
-          "rule " + this.ruleName + " must have arity " + this.expectedArity +
-          " because the rule it is " + this.why + " also has arity " + this.expectedArity;
+      this.offendingGrammarName = offendingGrammarName;
+      this.declGrammarName = declGrammarName;
+      this.message = "duplicate declaration for rule " + this.ruleName + " in grammar " + this.offendingGrammarName;
+      if (this.offendingGrammarName !== declGrammarName) {
+        this.message += " (it was originally declared in grammar " + this.declGrammarName + ")";
+      }
     }
 );
 
@@ -254,7 +244,6 @@ exports.UndeclaredGrammar = UndeclaredGrammar;
 exports.DuplicateGrammarDeclaration = DuplicateGrammarDeclaration;
 exports.UndeclaredRule = UndeclaredRule;
 exports.DuplicateRuleDeclaration = DuplicateRuleDeclaration;
-exports.RefinementMustBeCompatible = RefinementMustBeCompatible;
 exports.InconsistentArity = InconsistentArity;
 exports.DuplicatePropertyNames = DuplicatePropertyNames;
 exports.MatchFailure = MatchFailure;

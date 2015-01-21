@@ -2,58 +2,30 @@
 // Imports
 // --------------------------------------------------------------------
 
-var Grammar = require('./Grammar.js');
-var decls = require('./decls.js');
-var pexprs = require('./pexprs.js');
+var GrammarDecl = require("./GrammarDecl.js");
+var pexprs = require("./pexprs.js");
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
-function Builder() {
-  this.name = undefined;
-  this.superGrammar = Grammar.prototype;
-  this.ruleDecls = [];
-}
+function Builder() {}
 
 Builder.prototype = {
-  setName: function(name) {
-    this.name = name;
+  newGrammar: function(name, optNamespaceName) {
+    return new GrammarDecl(name, optNamespaceName);
   },
 
-  setSuperGrammar: function(grammar) {
-    this.superGrammar = grammar;
+  anything: function() {
+    return pexprs.anything;
   },
 
-  setRuleDescription: function(text) {
-    this.ruleDescription = text;
+  end: function() {
+    return pexprs.end;
   },
 
-  define: function(ruleName, body) {
-    this.ruleDecls.push(new decls.Define(ruleName, body, this.superGrammar, this.ruleDescription));
-    this.ruleDescription = undefined;
-  },
-
-  override: function(ruleName, body) {
-    this.ruleDecls.push(new decls.Override(ruleName, body, this.superGrammar));
-  },
-
-  inline: function(ruleName, body) {
-    this.ruleDecls.push(new decls.Inline(ruleName, body, this.superGrammar));
-    return this.app(ruleName);
-  },
-
-  extend: function(ruleName, body) {
-    this.ruleDecls.push(new decls.Extend(ruleName, body, this.superGrammar));
-  },
-
-  build: function(optNamespace) {
-    var ruleDict = Object.create(this.superGrammar.ruleDict);
-    this.ruleDecls.forEach(function(ruleDecl) {
-      ruleDecl.performChecks();
-      ruleDecl.installInto(ruleDict);
-    });
-    return new Grammar(this.name, this.superGrammar, this.ruleDecls, ruleDict, optNamespace);
+  fail: function() {
+    return pexprs.fail;
   },
 
   prim: function(x) {

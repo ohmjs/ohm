@@ -6,18 +6,23 @@ var Node = require('../src/Node.js');
 var InputStream = require('../src/InputStream.js');
 var Interval = require('../src/Interval.js');
 
+var nextFreshNSId = 0;
+function freshNamespaceName() {
+  return "ns" + nextFreshNSId++;
+}
+
 function makeGrammar(source, optNamespaceName) {
   if (source instanceof Array) {
     source = source.join('\n');
   }
-  return ohm.makeGrammar(source, optNamespaceName ? ohm.namespace(optNamespaceName) : undefined);
+  return ohm.makeGrammar(source, optNamespaceName || freshNamespaceName());
 }
 
 function makeGrammars(source, optNamespaceName) {
   if (source instanceof Array) {
     source = source.join('\n');
   }
-  return ohm.makeGrammars(source, optNamespaceName ? ohm.namespace(optNamespaceName) : undefined);
+  return ohm.makeGrammars(source, optNamespaceName || freshNamespaceName());
 }
 
 var arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
@@ -65,7 +70,7 @@ describe("Ohm", function() {
     describe("grammar constructors dictionary", function() {
       var m;
       beforeEach(function() {
-        m = ohm.makeGrammar(arithmeticGrammarSource);
+        m = makeGrammar(arithmeticGrammarSource);
       });
 
       it("exists and has a _default entry", function() {
@@ -909,7 +914,7 @@ describe("Ohm", function() {
 
       it("duplicate property names are not allowed", function() {
         expect(function() {
-          m = ohm.makeGrammar("M { duh = {x: 1, x: 2, y: 3, ...} }");
+          m = makeGrammar("M { duh = {x: 1, x: 2, y: 3, ...} }");
         }).to.throwException(function(e) {
           expect(e).to.be.a(errors.DuplicatePropertyNames);
           expect(e.duplicates).to.eql(['x']);
@@ -1233,13 +1238,13 @@ describe("Ohm", function() {
           });
         });
 
-        it("no namespace", function() {
+        it("default namespace", function() {
           expect(function() {
-            makeGrammar("G2 <: G1 {}");
+            makeGrammar("G2 <: G1 {}", "default");
           }).to.throwException(function(e) {
             expect(e).to.be.a(errors.UndeclaredGrammar);
             expect(e.grammarName).to.equal('G1');
-            expect(e.namespaceName).to.be(undefined);
+            expect(e.namespaceName).to.be("default");
           });
         });
       });
@@ -1254,7 +1259,8 @@ describe("Ohm", function() {
           }).to.throwException(function(e) {
             expect(e).to.be.an(errors.DuplicateRuleDeclaration);
             expect(e.ruleName).to.equal('foo');
-            expect(e.grammarName).to.equal('G1');
+            expect(e.offendingGrammarName).to.equal('G2');
+            expect(e.declGrammarName).to.equal('G1');
           });
         });
       });
@@ -1281,30 +1287,17 @@ describe("Ohm", function() {
           });
         });
 
-        it("should make sure rule arities are compatible", function() {
-          // An overriding rule must produce the same number of values
-	  // as the overridden rule. This is to ensure the semantic
-	  // action "API" doesn't change.
+        it("shouldn't matter if arities aren't the same", function() {
+          // It's OK for the semantic action "API" of a grammar to be different
+          // from that of its super-grammar.
 
-	  // Too many:
-          expect(function() {
-            makeGrammar("M1 { foo = 'foo' }", "inheritance-override");
-            makeGrammar("M2 <: M1 { foo := bar baz }", "inheritance-override");
-          }).to.throwException(function(e) {
-            expect(e).to.be.an(errors.RefinementMustBeCompatible);
-            expect(e.ruleName).to.equal('foo');
-            expect(e.why).to.equal('overriding');
-          });
+	  // arity(overriding rule) > arity(overridden rule)
+          makeGrammar("M1 { foo = 'foo' }", "inheritance-override");
+          makeGrammar("M2 <: M1 { foo := bar baz }", "inheritance-override");
 
-	  // Too few:
-	  expect(function() {
-            makeGrammar("M3 { foo = digit digit }", 'inheritance-override');
-            makeGrammar("M4 <: M3 { foo := digit }", 'inheritance-override');
-	  }).to.throwException(function (e) {
-            expect(e).to.be.an(errors.RefinementMustBeCompatible);
-            expect(e.ruleName).to.equal('foo');
-            expect(e.why).to.equal('overriding');
-	  });
+	  // arity(overriding rule) < arity(overridden rule)
+          makeGrammar("M3 { foo = digit digit }", 'inheritance-override');
+          makeGrammar("M4 <: M3 { foo := digit }", 'inheritance-override');
         });
 
         it("recognition", function() {
@@ -1361,9 +1354,10 @@ describe("Ohm", function() {
             makeGrammar("M1 { foo = 'foo' }", "inheritanceExtend3");
             makeGrammar("M2 <: M1 { foo += bar baz }", "inheritanceExtend3");
           }).to.throwException(function(e) {
-            expect(e).to.be.an(errors.RefinementMustBeCompatible);
+            expect(e).to.be.an(errors.InconsistentArity);
             expect(e.ruleName).to.equal('foo');
-            expect(e.why).to.equal('extending');
+            expect(e.expected).to.equal(1);
+            expect(e.actual).to.equal(2);
           });
 
 	  // Too few:
@@ -1371,9 +1365,10 @@ describe("Ohm", function() {
             makeGrammar("M3 { foo = digit digit }", 'inheritanceExtend3');
             makeGrammar("M4 <: M3 { foo += digit }", 'inheritanceExtend3');
 	  }).to.throwException(function(e) {
-            expect(e).to.be.an(errors.RefinementMustBeCompatible);
+            expect(e).to.be.an(errors.InconsistentArity);
             expect(e.ruleName).to.equal('foo');
-            expect(e.why).to.equal('extending');
+            expect(e.expected).to.equal(2);
+            expect(e.actual).to.equal(1);
 	  });
         });
 
@@ -1437,17 +1432,8 @@ describe("Ohm", function() {
     });
 
     describe("inline rule declarations", function() {
-      var m;
-      beforeEach(function() {
-        m = ohm.makeGrammar(arithmeticGrammarSource);
-      });
-
-      it("recognition", function() {
-        expect(m.matchContents('1*(2+3)-4/5', 'expr')).to.be.ok();
-      });
-
-      it("semantic actions", function() {
-	var eval = m.synthesizedAttribute({
+      function makeEval(g) {
+        var eval = g.synthesizedAttribute({
           addExpr_plus:   function(x, op, y) { return eval(x) + eval(y); },
           addExpr_minus:  function(x, op, y) { return eval(x) - eval(y); },
           mulExpr_times:  function(x, op, y) { return eval(x) * eval(y); },
@@ -1458,26 +1444,37 @@ describe("Ohm", function() {
           _default:       ohm.actions.passThrough,
           _terminal:      ohm.actions.getValue
         });
-        expect(eval(m.matchContents('10*(2+123)-4/5', 'expr'))).to.equal(1249.2);
+        return eval;
+      }
+
+      var m;
+      beforeEach(function() {
+        m = makeGrammar(arithmeticGrammarSource);
       });
 
-      it("can't be overridden/replaced", function() {
-        ohm.namespace('inlineRuleTest1').install('Expr', m);
+      it("recognition", function() {
+        expect(m.matchContents('1*(2+3)-4/5', 'expr')).to.be.ok();
+      });
+
+      it("semantic actions", function() {
+        expect(makeEval(m)(m.matchContents('10*(2+123)-4/5', 'expr'))).to.equal(1249.2);
+      });
+
+      it("overriding", function() {
+        var m2 = makeGrammar(["Good <: Expr {",
+                              "  addExpr := addExpr '~' mulExpr  -- minus",
+                              "           | mulExpr",
+                              "}"],
+                             m.namespaceName);
+        expect(makeEval(m2)(m2.matchContents('2*3~4', 'expr'))).to.equal(2);
 
         expect(function() {
-          makeGrammar("N <: Expr { addExpr := addExpr '~' mulExpr  -- minus }", 'inlineRuleTest1');
+          makeGrammar("Bad <: Expr { addExpr += addExpr '~' mulExpr  -- minus }", m.namespaceName);
         }).to.throwException(function(e) {
           expect(e).to.be.an(errors.DuplicateRuleDeclaration);
           expect(e.ruleName).to.equal('addExpr_minus');
-          expect(e.grammarName).to.equal('Expr');
-        });
-
-        expect(function() {
-          makeGrammar("N <: Expr { addExpr += addExpr '~' mulExpr  -- minus }", 'inlineRuleTest1');
-        }).to.throwException(function(e) {
-          expect(e).to.be.an(errors.DuplicateRuleDeclaration);
-          expect(e.ruleName).to.equal('addExpr_minus');
-          expect(e.grammarName).to.equal('Expr');
+          expect(e.offendingGrammarName).to.equal('Bad');
+          expect(e.declGrammarName).to.equal('Expr');
         });
       });
     });
@@ -1564,30 +1561,30 @@ describe("Ohm", function() {
         var ns1;
         var ns2;
         beforeEach(function() {
-           ns1 = ohm.namespace('ns1');
-           ns2 = ohm.namespace('ns2');
+           ns1 = ohm.namespace(freshNamespaceName());
+           ns2 = ohm.namespace(freshNamespaceName());
         });
 
         it("actually installs a grammar in a namespace", function() {
-          var m = ohm.makeGrammar("aaa { foo = 'foo' }", ns1);
+          var m = makeGrammar("aaa { foo = 'foo' }", ns1.name);
           expect(ns1.getGrammar('aaa')).to.eql(m);
           expect(m.matchContents('foo', 'foo')).to.be.ok();
         });
 
         it("detects duplicates", function() {
           expect(function() {
-            ohm.makeGrammar("ccc { foo = 'foo' }", ns1);
-            ohm.makeGrammar("ccc { bar = 'bar' }", ns1);
+            makeGrammar("ccc { foo = 'foo' }", ns1.name);
+            makeGrammar("ccc { bar = 'bar' }", ns1.name);
           }).to.throwException(function(e) {
             expect(e).to.be.an(errors.DuplicateGrammarDeclaration);
             expect(e.grammarName).to.equal('ccc');
-            expect(e.namespaceName).to.equal('ns1');
+            expect(e.namespaceName).to.equal(ns1.name);
           });
         });
 
         it("allows same-name grammars to be installed in different namespaces", function() {
-          var m1 = ohm.makeGrammar("bbb { foo = 'foo' }", ns1);
-          var m2 = ohm.makeGrammar("bbb { bar = 'bar' }", ns2);
+          var m1 = makeGrammar("bbb { foo = 'foo' }", ns1.name);
+          var m2 = makeGrammar("bbb { bar = 'bar' }", ns2.name);
 
           expect(ns1.getGrammar('bbb')).to.eql(m1);
           expect(ns2.getGrammar('bbb')).to.eql(m2);
@@ -1691,13 +1688,13 @@ describe("Ohm", function() {
       });
 
       it("can produce a grammar that will recognize itself", function() {
-        var gPrime = ohm._makeGrammarBuilder()(g.matchContents(ohmGrammarSource, 'Grammar'));
+        var gPrime = ohm._makeGrammarBuilder(freshNamespaceName())(g.matchContents(ohmGrammarSource, 'Grammar'));
         expect(gPrime.matchContents(ohmGrammarSource, 'Grammar')).to.be.ok();
       });
 
       it("can produce a grammar that works", function() {
-        var gPrime = ohm._makeGrammarBuilder()(g.matchContents(ohmGrammarSource, 'Grammar'));
-        var a = ohm._makeGrammarBuilder()(gPrime.matchContents(arithmeticGrammarSource, 'Grammar'));
+        var gPrime = ohm._makeGrammarBuilder(freshNamespaceName())(g.matchContents(ohmGrammarSource, 'Grammar'));
+        var a = ohm._makeGrammarBuilder(freshNamespaceName())(gPrime.matchContents(arithmeticGrammarSource, 'Grammar'));
         var eval = a.synthesizedAttribute({
           expr:           function(expr) { return eval(expr); },
           addExpr:        function(expr) { return eval(expr); },
@@ -1717,8 +1714,10 @@ describe("Ohm", function() {
       });
 
       it("full bootstrap!", function() {
-        var gPrime = ohm._makeGrammarBuilder()(g.matchContents(ohmGrammarSource, 'Grammar'));
-        var gPrimePrime = ohm._makeGrammarBuilder()(gPrime.matchContents(ohmGrammarSource, 'Grammar'));
+        var gPrime = ohm._makeGrammarBuilder(freshNamespaceName())(g.matchContents(ohmGrammarSource, 'Grammar'));
+        var gPrimePrime =
+            ohm._makeGrammarBuilder(freshNamespaceName())(gPrime.matchContents(ohmGrammarSource, 'Grammar'));
+        gPrimePrime.namespaceName = gPrime.namespaceName;  // make their namespaceName properties the same
 	compareGrammars(gPrime, gPrimePrime);
       });
 
@@ -1767,7 +1766,7 @@ describe("Ohm", function() {
 //           return node ? node.ctorName + '(' + node.interval.contents + ')' : '(nothing)';
 //         }
 
-//         var g = ohm.makeGrammar(arithmeticGrammarSource);
+//         var g = makeGrammar(arithmeticGrammarSource);
 //         var depth = g.inheritedAttribute({
 //           _base: function (topLevelNode) {
 // console.log('setting to zero: depth of ' + stringify(topLevelNode));

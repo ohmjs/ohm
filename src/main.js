@@ -2,14 +2,15 @@
 // Imports
 // --------------------------------------------------------------------
 
-require('../dist/ohm-grammar.js');
+require("./Grammar.js");  // required to initialize default namespace w/ Grammar grammar
+require("../dist/ohm-grammar.js");
 
-var Builder = require('./Builder.js');
-var namespaces = require('./namespaces.js');
-var errors = require('./errors.js');
-var attributes = require('./attributes.js');
+var Builder = require("./Builder.js");
+var attributes = require("./attributes.js");
+var errors = require("./errors.js");
+var namespace = require("./namespaces.js");
 
-var awlib = require('awlib');
+var awlib = require("awlib");
 var unescapeChar = awlib.stringUtils.unescapeChar;
 
 var UnicodeCategories = require("./unicode.js").UnicodeCategories;
@@ -21,73 +22,61 @@ var ohm = exports;
 // Private stuff
 // --------------------------------------------------------------------
 
-function makeGrammarBuilder(optNamespace) {
+function makeGrammarBuilder(optNamespaceName) {
   var builder;
-  var value = exports.ohmGrammar.synthesizedAttribute({
-    Grammars: function(exprs) {
-      return value(exprs);
-    },
-
+  var decl;
+  var currentRuleName;
+  var overriding = false;
+  var value = exports.ohmGrammar.semanticAction({
     Grammar: function(n, s, _, rs, _) {
       builder = new Builder();
-      builder.setName(value(n));
+      decl = builder.newGrammar(value(n), optNamespaceName || "default");
       value(s);  // force evaluation
       value(rs);  // force evaluation
-      return builder.build(optNamespace);
+      return decl.install();
     },
 
-    SuperGrammar: function(expr) {
-      builder.setSuperGrammar(value(expr));
-    },
     SuperGrammar_qualified: function(_, ns, _, n) {
-      return thisModule.namespace(value(ns)).getGrammar(value(n));
+      decl.withSuperGrammar(value(n), value(ns));
     },
     SuperGrammar_unqualified: function(_, n) {
-      if (optNamespace) {
-        return optNamespace.getGrammar(value(n));
-      } else {
-        throw new errors.UndeclaredGrammar(value(n));
-      }
+      decl.withSuperGrammar(value(n));
     },
 
-    Rule: function(expr) {
-      return value(expr);
-    },
     Rule_define: function(n, d, _, b) {
-      builder.currentRuleName = value(n);
-      value(d);  // force evaluation
-      return builder.define(value(n), value(b));
+      currentRuleName = value(n);
+      return decl.define(value(n), value(b), value(d));
     },
     Rule_override: function(n, _, b) {
-      builder.currentRuleName = value(n);
-      return builder.override(value(n), value(b));
+      currentRuleName = value(n);
+      overriding = true;
+      var ans = decl.override(value(n), value(b));
+      overriding = false;
+      return ans;
     },
     Rule_extend: function(n, _, b) {
-      builder.currentRuleName = value(n);
-      return builder.extend(value(n), value(b));
+      currentRuleName = value(n);
+      return decl.extend(value(n), value(b));
     },
 
-    Alt: function(expr) {
-      return value(expr);
-    },
     Alt_rec: function(x, _, y) {
       return builder.alt(value(x), value(y));
     },
 
-    Term: function(expr) {
-      return value(expr);
-    },
     Term_inline: function(x, n) {
-      return builder.inline(builder.currentRuleName + '_' + value(n), value(x));
+      var inlineRuleName = currentRuleName + "_" + value(n);
+      if (overriding) {
+        decl.override(inlineRuleName, value(x));
+      } else {
+        decl.define(inlineRuleName, value(x));
+      }
+      return builder.app(inlineRuleName);
     },
 
     Seq: function(expr) {
       return builder.seq.apply(builder, value(expr));
     },
 
-    Iter: function(expr) {
-      return value(expr);
-    },
     Iter_star: function(x, _) {
       return builder.many(value(x), 0);
     },
@@ -98,9 +87,6 @@ function makeGrammarBuilder(optNamespace) {
       return builder.opt(value(x));
     },
 
-    Pred: function(expr) {
-      return value(expr);
-    },
     Pred_not: function(_, x) {
       return builder.not(value(x));
     },
@@ -108,9 +94,6 @@ function makeGrammarBuilder(optNamespace) {
       return builder.la(value(x));
     },
 
-    Base: function(expr) {
-      return value(expr);
-    },
     Base_application: function(ruleName) {
       return builder.app(value(ruleName));
     },
@@ -130,9 +113,6 @@ function makeGrammarBuilder(optNamespace) {
       return builder.obj(value(ps), value(lenient));
     },
 
-    Props: function(expr) {
-      return value(expr);
-    },
     Props_rec: function(p, _, ps) {
       return [value(p)].concat(value(ps));
     },
@@ -144,7 +124,6 @@ function makeGrammarBuilder(optNamespace) {
     },
 
     ruleDescr: function(_, t, _) {
-      builder.setRuleDescription(value(t));
       return value(t);
     },
     ruleDescrText: function(_) {
@@ -161,13 +140,6 @@ function makeGrammarBuilder(optNamespace) {
     nameFirst: function(expr) {},
     nameRest: function(expr) {},
 
-    ident: function(n) {
-      return value(n);
-    },
-
-    keyword: function(expr) {
-      return value(expr);
-    },
     keyword_undefined: function(_) {
       return undefined;
     },
@@ -182,7 +154,7 @@ function makeGrammarBuilder(optNamespace) {
     },
 
     string: function(_, cs, _) {
-      return value(cs).map(function(c) { return unescapeChar(c); }).join('');
+      return value(cs).map(function(c) { return unescapeChar(c); }).join("");
     },
 
     singleQuoteStrChar: function(_) {
@@ -197,11 +169,8 @@ function makeGrammarBuilder(optNamespace) {
       return value(e);
     },
 
-    reCharClass: function(expr) {
-      return value(expr);
-    },
     reCharClass_unicode: function(_, unicodeClass, _) {
-      return UnicodeCategories[value(unicodeClass).join('')];
+      return UnicodeCategories[value(unicodeClass).join("")];
     },
     reCharClass_ordinary: function(_, _, _) {
       return new RegExp(this.interval.contents);
@@ -216,29 +185,30 @@ function makeGrammarBuilder(optNamespace) {
     space_singleLine: function(_, _, _) {},
 
     _list: attributes.actions.map,
-    _terminal: attributes.actions.getValue
+    _terminal: attributes.actions.getValue,
+    _default: attributes.actions.passThrough
   });
   return value;
 }
 
-function compileAndLoad(source, whatItIs, optNamespace) {
+function compileAndLoad(source, whatItIs, optNamespaceName) {
   try {
     var node = thisModule.ohmGrammar.matchContents(source, whatItIs, true);
-    return makeGrammarBuilder(optNamespace)(node);
+    return makeGrammarBuilder(optNamespaceName)(node);
   } catch (e) {
     if (e instanceof errors.MatchFailure) {
-      console.log('\n' + e.getMessage());
+      console.log("\n" + e.getMessage());
     }
     throw e;
   }
 }
 
-function makeGrammar(source, optNamespace) {
-  return compileAndLoad(source, 'Grammar', optNamespace);
+function makeGrammar(source, optNamespaceName) {
+  return compileAndLoad(source, "Grammar", optNamespaceName);
 }
 
-function makeGrammars(source, optNamespace) {
-  return compileAndLoad(source, 'Grammars', optNamespace);
+function makeGrammars(source, optNamespaceName) {
+  return compileAndLoad(source, "Grammars", optNamespaceName);
 }
 
 // --------------------------------------------------------------------
@@ -249,10 +219,10 @@ function makeGrammars(source, optNamespace) {
 
 exports.error = errors;
 
-exports.namespace = namespaces;
+exports.namespace = namespace;
 
 exports.make = function(recipe) {
-  return recipe(thisModule);
+  return recipe.call(new Builder());
 };
 
 exports.makeGrammar = makeGrammar;
@@ -269,10 +239,10 @@ exports._builder = function() {
 exports._makeGrammarBuilder = makeGrammarBuilder;
 
 var ohmGrammar;
-Object.defineProperty(exports, 'ohmGrammar', {
+Object.defineProperty(exports, "ohmGrammar", {
   get: function() {
     if (!ohmGrammar) {
-      ohmGrammar = this._ohmGrammarFactory(this);
+      ohmGrammar = this._ohmGrammarRecipe.call(new Builder());
     }
     return ohmGrammar;
   }
@@ -280,12 +250,14 @@ Object.defineProperty(exports, 'ohmGrammar', {
 
 // Load all grammars in script elements into the appropriate namespaces
 
-if (typeof document !== 'undefined') {
-  Array.prototype.slice.call(document.getElementsByTagName('script')).
-      filter(function(elt) { return elt.getAttribute('type') === 'text/ohm-js'; }).
+if (typeof document !== "undefined") {
+  Array.prototype.slice.call(document.getElementsByTagName("script")).
+      filter(function(elt) {
+        return elt.getAttribute("type") === "text/ohm-js";
+      }).
       forEach(function(elt) {
-        var ns = elt.getAttribute('namespace') || 'default';
-        ohm.namespace(ns).loadGrammarsFromScriptElement(elt)
+        var ns = elt.getAttribute("namespace") || "default";
+        namespace(ns).loadGrammarsFromScriptElement(elt)
       });
 }
 

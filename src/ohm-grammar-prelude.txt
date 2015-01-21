@@ -1,2 +1,0 @@
-var ohm = require('../src/main.js');
-ohm._ohmGrammarFactory =

@@ -2,16 +2,17 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common.js');
-var errors = require('./errors.js');
-var InputStream = require('./InputStream.js');
-var Interval = require('./Interval.js');
-var Node = require('./Node.js');
-var State = require('./State.js');
-var pexprs = require('./pexprs.js');
-var attributes = require('./attributes.js');
+var InputStream = require("./InputStream.js");
+var Interval = require("./Interval.js");
+var Node = require("./Node.js");
+var State = require("./State.js");
+var attributes = require("./attributes.js");
+var common = require("./common.js");
+var errors = require("./errors.js");
+var namespace = require("./namespaces.js");
+var pexprs = require("./pexprs.js");
 
-var awlib = require('awlib');
+var awlib = require("awlib");
 var keysDo = awlib.objectUtils.keysDo;
 var valuesDo = awlib.objectUtils.valuesDo;
 var formals = awlib.objectUtils.formals;
@@ -23,39 +24,14 @@ var equals = awlib.equals.equals;
 // Private stuff
 // --------------------------------------------------------------------
 
-function Grammar(name, superGrammar, ruleDecls, ruleDict, optNamespace) {
-  // N.B. Consider compareGrammars() in the test code when adding instvars.
-  this.namespaceName = optNamespace ? optNamespace.name : undefined;
+function Grammar(name, superGrammar, ruleDict) {
   this.name = name;
   this.superGrammar = superGrammar;
-  this.ruleDecls = ruleDecls;
   this.ruleDict = ruleDict;
   this.constructors = this.ctors = this.createConstructors();
-
-  if (optNamespace) {
-    optNamespace.install(this.name, this);
-  }
 }
 
 Grammar.prototype = {
-  ruleDict: {
-    _: pexprs.anything,
-    empty: new pexprs.Seq([]),
-    fail: pexprs.fail,
-    space: pexprs.makePrim(/[\s]/).withDescription('space'),
-    alnum: pexprs.makePrim(/[0-9a-zA-Z]/).withDescription('alpha-numeric character'),
-    letter: pexprs.makePrim(/[a-zA-Z]/).withDescription('letter'),
-    lower: pexprs.makePrim(/[a-z]/).withDescription('lower-case letter'),
-    upper: pexprs.makePrim(/[A-Z]/).withDescription('upper-case letter'),
-    digit: pexprs.makePrim(/[0-9]/).withDescription('digit'),
-    hexDigit: pexprs.makePrim(/[0-9a-fA-F]/).withDescription('hexadecimal digit'),
-
-    // The following rules are part of the implementation.
-    // Their names end with '_' so that they can't be overridden or invoked by programmers.
-    spaces_: new pexprs.Alt([new pexprs.Apply('spaces_rec_'), new pexprs.Apply('empty')]),
-    spaces_rec_: new pexprs.Seq([new pexprs.Apply('space'), new pexprs.Apply('spaces_')]),
-  },
-
   construct: function(ruleName, children) {
     var body = this.ruleDict[ruleName];
     if (!body || !body.check(this, children) || children.length !== body.getArity()) {
@@ -85,7 +61,7 @@ Grammar.prototype = {
   },
 
   match: function(obj, startRule, optThrowOnFail) {
-    return this.matchContents(typeof obj === 'string' ? obj : [obj], startRule, optThrowOnFail);
+    return this.matchContents(typeof obj === "string" ? obj : [obj], startRule, optThrowOnFail);
   },
 
   matchContents: function(obj, startRule, optThrowOnFail) {
@@ -133,9 +109,9 @@ Grammar.prototype = {
   inheritedAttribute: function(actionDict) {
     this.assertSemanticActionNamesAndAritiesMatch(actionDict);
     if (!actionDict._base) {
-      throw new Error('inherited attribute missing base case');
+      throw new Error("inherited attribute missing base case");
     } else if (actionDict._base.length !== 1) {
-      throw new Error('inherited attribute\'s base case must take exactly one argument');
+      throw new Error("inherited attribute's base case must take exactly one argument");
     }
     var attribute = attributes.makeInheritedAttribute(actionDict);
     attribute.grammar = this;
@@ -154,13 +130,13 @@ Grammar.prototype = {
       var expected = self.semanticActionArity(ruleName);
       if (actual !== expected) {
         ok = false;
-        console.log('semantic action for rule', ruleName, 'has the wrong arity');
-        console.log('  expected', expected);
-        console.log('    actual', actual);
+        console.log("semantic action for rule", ruleName, "has the wrong arity");
+        console.log("  expected", expected);
+        console.log("    actual", actual);
       }
     });
     if (!ok) {
-      throw new Error('one or more semantic actions have the wrong arity -- see console for details');
+      throw new Error("one or more semantic actions have the wrong arity -- see console for details");
     }
   },
 
@@ -174,24 +150,39 @@ Grammar.prototype = {
   },
 
   toRecipe: function() {
+    if (this === namespace("default").getGrammar("Grammar")) {
+      return "(function() {\n" +
+          "  // no recipe required for Grammar in default namespace b/c it's built in\n" +
+          "  return namespace('default').getGrammar('Grammar');\n" +
+          "})";
+    }
     var ws = makeStringBuffer();
-    ws.nextPutAll('(function(ohm, optNamespace) {\n');
-    ws.nextPutAll('  var b = ohm._builder();\n');
-    ws.nextPutAll('  b.setName('); ws.nextPutAll(printString(this.name)); ws.nextPutAll(');\n');
-    if (this.superGrammar.name && this.superGrammar.namespaceName) {
-      ws.nextPutAll('  b.setSuperGrammar(ohm.namespace(');
-      ws.nextPutAll(printString(this.superGrammar.namespaceName));
-      ws.nextPutAll(').getGrammar(');
-      ws.nextPutAll(printString(this.superGrammar.name));
-      ws.nextPutAll('));\n');
+    ws.nextPutAll("(function() {\n");
+    ws.nextPutAll(
+        "  return new this.newGrammar(" + printString(this.name) +
+        ", /* in namespace */ " + printString(this.namespaceName) + ")\n");
+    if (this.superGrammar) {
+      var sg = this.superGrammar;
+      ws.nextPutAll(
+          "      .withSuperGrammar(" + printString(sg.name) +
+          ", /* from namespace */ " + printString(sg.namespaceName) + ")\n");
     }
-    for (var idx = 0; idx < this.ruleDecls.length; idx++) {
-      ws.nextPutAll('  ');
-      this.ruleDecls[idx].outputRecipe(ws);
-      ws.nextPutAll(';\n');
+    var ruleNames = Object.keys(this.ruleDict);
+    for (var idx = 0; idx < ruleNames.length; idx++) {
+      var ruleName = ruleNames[idx];
+      var body = this.ruleDict[ruleName];
+      ws.nextPutAll("      .");
+      if (this.superGrammar && this.superGrammar.ruleDict[ruleName]) {
+        ws.nextPutAll(body instanceof pexprs.Extend ? "extend" : "override");
+      } else {
+        ws.nextPutAll("define");
+      }
+      ws.nextPutAll("(" + printString(ruleName) + ", ");
+      body.outputRecipe(ws);
+      ws.nextPutAll(")\n");
     }
-    ws.nextPutAll('  return b.build(optNamespace);\n');
-    ws.nextPutAll('});');
+    ws.nextPutAll("      .install();\n");
+    ws.nextPutAll("});");
     return ws.contents();
   },
 
@@ -206,7 +197,7 @@ Grammar.prototype = {
 
     var self = this;
     var buffer = makeStringBuffer();
-    buffer.nextPutAll('{');
+    buffer.nextPutAll("{");
 
     var first = true;
     for (var ruleName in rulesToBeIncluded) {
@@ -214,24 +205,24 @@ Grammar.prototype = {
       if (first) {
         first = false;
       } else {
-        buffer.nextPutAll(',');
+        buffer.nextPutAll(",");
       }
-      buffer.nextPutAll('\n');
-      buffer.nextPutAll('  ');
+      buffer.nextPutAll("\n");
+      buffer.nextPutAll("  ");
       self.addSemanticActionTemplate(ruleName, body, buffer);
     }
 
-    buffer.nextPutAll('\n}');
+    buffer.nextPutAll("\n}");
     return buffer.contents();
   },
 
   addSemanticActionTemplate: function(ruleName, body, buffer) {
     buffer.nextPutAll(ruleName);
-    buffer.nextPutAll(': function(');
+    buffer.nextPutAll(": function(");
     var arity = this.semanticActionArity(ruleName);
-    buffer.nextPutAll(common.repeat('_', arity).join(', '));
-    buffer.nextPutAll(') {\n');
-    buffer.nextPutAll('  }');
+    buffer.nextPutAll(common.repeat("_", arity).join(", "));
+    buffer.nextPutAll(") {\n");
+    buffer.nextPutAll("  }");
   },
 
   rulesThatNeedSemanticAction: function(entryPoints) {
@@ -263,6 +254,29 @@ Grammar.prototype = {
     return rules;
   }
 };
+
+// Install the base grammar in the default namespace
+
+namespace("default").install(new Grammar(
+    "Grammar",
+    null,
+    {
+        _: pexprs.anything,
+        empty: new pexprs.Seq([]),
+        fail: pexprs.fail,
+        space: pexprs.makePrim(/[\s]/).withDescription("space"),
+        alnum: pexprs.makePrim(/[0-9a-zA-Z]/).withDescription("alpha-numeric character"),
+        letter: pexprs.makePrim(/[a-zA-Z]/).withDescription("letter"),
+        lower: pexprs.makePrim(/[a-z]/).withDescription("lower-case letter"),
+        upper: pexprs.makePrim(/[A-Z]/).withDescription("upper-case letter"),
+        digit: pexprs.makePrim(/[0-9]/).withDescription("digit"),
+        hexDigit: pexprs.makePrim(/[0-9a-fA-F]/).withDescription("hexadecimal digit"),
+
+        // The following rules are part of the implementation.
+        // Their names end with '_' so that they can't be overridden or invoked by programmers.
+        spaces_: new pexprs.Alt([new pexprs.Apply("spaces_rec_"), new pexprs.Apply("empty")]),
+        spaces_rec_: new pexprs.Seq([new pexprs.Apply("space"), new pexprs.Apply("spaces_")]),
+    }));
 
 // --------------------------------------------------------------------
 // Exports

@@ -2,8 +2,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common.js');
-var errors = require('./errors.js');
+var common = require("./common.js");
+var errors = require("./errors.js");
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -12,7 +12,7 @@ var errors = require('./errors.js');
 // General stuff
 
 function PExpr() {
-  throw new Error('PExpr cannot be instantiated -- it\'s abstract');
+  throw new Error("PExpr cannot be instantiated -- it's abstract");
 }
 
 PExpr.prototype.withDescription = function(description) {
@@ -60,13 +60,14 @@ function Alt(terms) {
 
 Alt.prototype = Object.create(PExpr.prototype);
 
-// ExtendAlt is an implementation detail of rule extension
+// Extend is an implementation detail of rule extension
 
-function ExtendAlt(extensions, base) {
-  this.terms = [extensions, base];
+function Extend(superGrammar, name, body) {
+  var origBody = superGrammar.ruleDict[name];
+  this.terms = [body, origBody];
 }
 
-ExtendAlt.prototype = Object.create(Alt.prototype);
+Extend.prototype = Object.create(Alt.prototype);
 
 // Sequences
 
@@ -141,7 +142,7 @@ Apply.prototype = Object.create(PExpr.prototype);
 // --------------------------------------------------------------------
 
 exports.makePrim = function(obj) {
-  if (typeof obj === 'string' && obj.length !== 1) {
+  if (typeof obj === "string" && obj.length !== 1) {
     return new StringPrim(obj);
   }
   else if (obj instanceof RegExp) {
@@ -159,7 +160,7 @@ exports.Prim = Prim;
 exports.StringPrim = StringPrim;
 exports.RegExpPrim = RegExpPrim;
 exports.Alt = Alt;
-exports.ExtendAlt = ExtendAlt;
+exports.Extend = Extend;
 exports.Seq = Seq;
 exports.Many = Many;
 exports.Opt = Opt;
@@ -173,10 +174,11 @@ exports.Apply = Apply;
 // Extensions
 // --------------------------------------------------------------------
 
-require('./pexprs-addRulesThatNeedSemanticAction.js');
-require('./pexprs-assertChoicesHaveUniformArity.js');
-require('./pexprs-check.js');
-require('./pexprs-getArity.js');
-require('./pexprs-eval.js');
-require('./pexprs-outputRecipe.js');
-require('./pexprs-toExpected.js');
+require("./pexprs-addRulesThatNeedSemanticAction.js");
+require("./pexprs-assertChoicesHaveUniformArity.js");
+require("./pexprs-check.js");
+require("./pexprs-getArity.js");
+require("./pexprs-eval.js");
+require("./pexprs-outputRecipe.js");
+require("./pexprs-toExpected.js");
+

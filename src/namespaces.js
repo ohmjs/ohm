@@ -2,11 +2,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var ohm = require('./main.js');
-var errors = require('./errors.js');
-
-var awlib = require('awlib');
-var browser = awlib.browser;
+var ohm = require("./main.js");
+var errors = require("./errors.js");
 
 // --------------------------------------------------------------------
 // Private Stuff
@@ -15,14 +12,14 @@ var browser = awlib.browser;
 // TODO: just use the jQuery thing
 function load(url) {
   var req = new XMLHttpRequest();
-  req.open('GET', url, false);
+  req.open("GET", url, false);
   try {
     req.send();
     if (req.status === 0 || req.status === 200) {
       return req.responseText;
     }
   } catch (e) {}
-  throw new Error('unable to load url ' + url);
+  throw new Error("unable to load url " + url);
 }
 
 var namespaces = {};
@@ -43,13 +40,18 @@ function Namespace(name) {
 }
 
 Namespace.prototype = {
-  install: function(name, grammar) {
-    if (this.grammars[name]) {
-      throw new errors.DuplicateGrammarDeclaration(name, this.name);
+  install: function(grammar) {
+    if (grammar.namespaceName) {
+      throw new Error(
+        "cannot install grammar " + grammar.name + " into namespace " + this.name +
+        " because it's already in namespace " + grammar.namespaceName);
+    } else if (this.grammars[grammar.name]) {
+      throw new errors.DuplicateGrammarDeclaration(grammar.name, this.name);
     } else {
-      this.grammars[name] = grammar;
+      this.grammars[grammar.name] = grammar;
+      grammar.namespaceName = this.name;
+      return this;
     }
-    return this;
   },
 
   getGrammar: function(name) {
@@ -61,10 +63,12 @@ Namespace.prototype = {
   },
 
   loadGrammarsFromScriptElement: function(element) {
-    browser.sanityCheck('script tag\'s type attribute must be "text/ohm-js"', element.type === 'text/ohm-js');
-    var source = element.getAttribute('src') ? load(element.getAttribute('src')) : element.innerHTML;
+    if (element.type !== "text/ohm-js") {
+      throw new Error("script tag's type attribute must be text/ohm-js");
+    }
+    var source = element.getAttribute("src") ? load(element.getAttribute("src")) : element.innerHTML;
     try {
-      ohm.makeGrammars(source, this);
+      ohm.makeGrammars(source, this.name);
     } catch (e) {}
     return this;
   },
