@@ -1293,7 +1293,7 @@ describe("Ohm", function() {
 
 	  // arity(overriding rule) > arity(overridden rule)
           makeGrammar("M1 { foo = 'foo' }", "inheritance-override");
-          makeGrammar("M2 <: M1 { foo := bar baz }", "inheritance-override");
+          makeGrammar("M2 <: M1 { foo := 'foo' 'bar' }", "inheritance-override");
 
 	  // arity(overriding rule) < arity(overridden rule)
           makeGrammar("M3 { foo = digit digit }", 'inheritance-override');
@@ -1351,7 +1351,7 @@ describe("Ohm", function() {
 
 	  // Too many:
           expect(function() {
-            makeGrammar("M1 { foo = 'foo' }", "inheritanceExtend3");
+            makeGrammar("M1 { foo = 'foo'  bar = 'bar'  baz = 'baz' }", "inheritanceExtend3");
             makeGrammar("M2 <: M1 { foo += bar baz }", "inheritanceExtend3");
           }).to.throwException(function(e) {
             expect(e).to.be.an(errors.InconsistentArity);

@@ -69,7 +69,11 @@ Namespace.prototype = {
     var source = element.getAttribute("src") ? load(element.getAttribute("src")) : element.innerHTML;
     try {
       ohm.makeGrammars(source, this.name);
-    } catch (e) {}
+    } catch (e) {
+      if (!(e instanceof errors.Error)) {
+        console.error(e);
+      }
+    }
     return this;
   },
 

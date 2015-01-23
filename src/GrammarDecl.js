@@ -20,15 +20,23 @@ function GrammarDecl(name, optNamespaceName) {
 
 // Helpers
 
+function onOhmError(doFn, onErrorFn) {
+  try {
+    doFn();
+  } catch (e) {
+    if (e instanceof errors.Error) {
+      onErrorFn(e);
+    } else {
+      throw e;
+    }
+  }
+}
+
 GrammarDecl.prototype.ensureSuperGrammar = function() {
   if (!this.superGrammar) {
     this.withSuperGrammar("Grammar", "default");
   }
   return this.superGrammar;
-};
-
-GrammarDecl.prototype.checkBody = function(ruleName, body) {
-  body.assertChoicesHaveUniformArity(ruleName);
 };
 
 // Stuff that you should only do once
@@ -43,12 +51,26 @@ GrammarDecl.prototype.withSuperGrammar = function(name, optNamespaceName) {
 };
 
 GrammarDecl.prototype.install = function() {
-  if (!this.name) {
-    throw new Error("cannot install unnamed grammar");
-  }
   var grammar = new Grammar(this.name, this.ensureSuperGrammar(), this.ruleDict);
-  this.ns.install(grammar);
-  return grammar;
+  var error;
+  Object.keys(grammar.ruleDict).forEach(function(ruleName) {
+    var body = grammar.ruleDict[ruleName];
+    function handleError(e) {
+      error = e;
+      console.error(e.toString());
+    }
+    // TODO: change the pexpr.prototype.assert... methods to make them add exceptions to an array that's provided
+    // as an arg. Then we'll be able to show more than one error of the same type at a time.
+    // TODO: include the offending pexpr in the errors, that way we can show the part of the source that caused it.
+    onOhmError(function()  { body.assertChoicesHaveUniformArity(ruleName); }, handleError);
+    onOhmError(function()  { body.assertAllApplicationsAreValid(grammar); },  handleError);
+  });
+  if (error) {
+    throw error;
+  } else {
+    this.ns.install(grammar);
+    return grammar;
+  }
 };
 
 // Rule declarations
@@ -63,7 +85,6 @@ GrammarDecl.prototype.define = function(name, body, optDescr) {
   } else if (this.ruleDict[name]) {
     throw new errors.DuplicateRuleDeclaration(name, this.name, this.name);
   }
-  this.checkBody(name, body);
   this.ruleDict[name] = body;
   return this;
 };
@@ -73,7 +94,6 @@ GrammarDecl.prototype.override = function(name, body) {
   if (!this.superGrammar.ruleDict[name]) {
     throw new errors.UndeclaredRule(name, this.superGrammar.name);
   }
-  this.checkBody(name, body);
   this.ruleDict[name] = body;
   return this;
 };
@@ -83,9 +103,7 @@ GrammarDecl.prototype.extend = function(name, body) {
   if (!this.superGrammar.ruleDict[name]) {
     throw new errors.UndeclaredRule(name, this.superGrammar.name);
   }
-  body = new pexprs.Extend(this.superGrammar, name, body);
-  this.checkBody(name, body);
-  this.ruleDict[name] = body;
+  this.ruleDict[name] = new pexprs.Extend(this.superGrammar, name, body);
   return this;
 };
 
