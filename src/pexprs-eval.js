@@ -15,7 +15,8 @@ var InputStream = require('./InputStream.js');
 var applySpaces_ = new pexprs.Apply('spaces_');
 
 function skipSpacesIfAppropriate(state) {
-  var ruleName = state.ruleStack[state.ruleStack.length - 1] || '';
+  var currentRule = state.ruleStack[state.ruleStack.length - 1];
+  var ruleName = currentRule.ruleName || '';
   if (typeof state.inputStream.source === 'string' && common.isSyntactic(ruleName)) {
     skipSpaces(state);
   }
@@ -311,7 +312,7 @@ pexprs.Apply.prototype.eval = function(state) {
     var origPos = inputStream.pos;
     var origFailureDescriptor = state.failureDescriptor;
     var newFailureDescriptor = state.failureDescriptor = state.makeFailureDescriptor();
-    origPosInfo.enter(ruleName);
+    origPosInfo.enter(this);
     var value = this.evalOnce(body, state);
     var currentLR = origPosInfo.getCurrentLeftRecursion();
     if (currentLR) {

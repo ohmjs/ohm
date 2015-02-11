@@ -20,16 +20,16 @@ PosInfo.prototype = {
     return this.activeRules[ruleName];
   },
 
-  enter: function(ruleName) {
-    this.globalRuleStack.push(ruleName);
-    this.ruleStack.push(ruleName);
-    this.activeRules[ruleName] = true;
+  enter: function(pexpr) {
+    this.globalRuleStack.push(pexpr);
+    this.ruleStack.push(pexpr);
+    this.activeRules[pexpr.ruleName] = true;
   },
 
   exit: function() {
-    var ruleName = this.globalRuleStack.pop();
+    var pexpr = this.globalRuleStack.pop();
     this.ruleStack.pop();
-    this.activeRules[ruleName] = false;
+    this.activeRules[pexpr.ruleName] = false;
   },
 
   shouldUseMemoizedResult: function(memoRec) {
@@ -64,7 +64,7 @@ PosInfo.prototype = {
     var lrRuleName = currentLeftRecursion.name;
     var idx = this.ruleStack.length - 1;
     while (true) {
-      var ruleName = this.ruleStack[idx--];
+      var ruleName = this.ruleStack[idx--].ruleName;
       if (ruleName === lrRuleName) {
         break;
       }
