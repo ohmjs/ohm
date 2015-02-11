@@ -1794,6 +1794,35 @@ describe("Ohm", function() {
 //       })
       ;
     });
+
+    describe("definitionLocation", function() {
+      var g = makeGrammar([
+          "G {",
+          "  foo = bar",
+          "  bar = 'a' | 'b' -- baz",
+          "}"], "ns");
+      function definitionLoc(grammar, ruleName) {
+        var interval = grammar.ruleDict[ruleName].definitionInterval;
+        return [interval.startIdx, interval.endIdx];
+      }
+      it("works for regular rules", function() {
+        expect(definitionLoc(g, 'foo')).to.eql([6, 15]);
+        expect(definitionLoc(g, 'bar')).to.eql([18, 40]);
+      });
+      it("works for inline rules", function() {
+        expect(definitionLoc(g, 'bar_baz')).to.eql([30, 40]);
+      });
+
+      var g2 = makeGrammar([
+          "G2 <: G {",
+          "  foo += bar",
+          "  bar := 'a' | 'b' -- baz",
+          "}"], "ns");
+      it("works when overriding and extending rules", function() {
+        expect(definitionLoc(g2, 'foo')).to.eql([12, 22]);
+        expect(definitionLoc(g2, 'bar')).to.eql([25, 48]);
+        expect(definitionLoc(g2, 'bar_baz')).to.eql([38, 48]);
+      });
+    });
   });
 });
-

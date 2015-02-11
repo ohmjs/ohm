@@ -43,6 +43,15 @@ Interval.prototype = {
 
   collapsedRight: function() {
     return new Interval(this.inputStream, this.endIdx, this.endIdx);
+  },
+  // Returns a new Interval which contains the same contents as this one,
+  // but with whitespace trimmed from both ends. (This only makes sense when
+  // the input stream is a string.)
+  trimmed: function() {
+    var contents = this.contents;
+    var startIdx = this.startIdx + contents.match(/^\s*/)[0].length;
+    var endIdx = this.endIdx - contents.match(/\s*$/)[0].length;
+    return new Interval(this.inputStream, startIdx, endIdx);
   }
 };
 

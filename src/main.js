@@ -42,30 +42,38 @@ function makeGrammarBuilder(optNamespaceName) {
 
     Rule_define: function(n, d, _, b) {
       currentRuleName = value(n);
-      return decl.define(value(n), value(b), value(d));
+      var body = value(b);
+      body.definitionInterval = this.interval.trimmed();
+      return decl.define(currentRuleName, body, value(d));
     },
     Rule_override: function(n, _, b) {
       currentRuleName = value(n);
       overriding = true;
-      var ans = decl.override(value(n), value(b));
+      var body = value(b);
+      body.definitionInterval = this.interval.trimmed();
+      var ans = decl.override(currentRuleName, body);
       overriding = false;
       return ans;
     },
     Rule_extend: function(n, _, b) {
       currentRuleName = value(n);
-      return decl.extend(value(n), value(b));
+      var ans = decl.extend(currentRuleName, value(b));
+      decl.ruleDict[currentRuleName].definitionInterval = this.interval.trimmed();
+      return ans;
     },
 
     Alt_rec: function(x, _, y) {
       return builder.alt(value(x), value(y));
     },
 
-    Term_inline: function(x, n) {
+    Term_inline: function(b, n) {
       var inlineRuleName = currentRuleName + "_" + value(n);
+      var body = value(b);
+      body.definitionInterval = this.interval.trimmed();
       if (overriding) {
-        decl.override(inlineRuleName, value(x));
+        decl.override(inlineRuleName, body);
       } else {
-        decl.define(inlineRuleName, value(x));
+        decl.define(inlineRuleName, body);
       }
       return builder.app(inlineRuleName);
     },
@@ -91,8 +99,8 @@ function makeGrammarBuilder(optNamespaceName) {
       return builder.la(value(x));
     },
 
-    Base_application: function(ruleName) {
-      return builder.app(value(ruleName));
+    Base_application: function(rule) {
+      return builder.app(value(rule));
     },
     Base_prim: function(expr) {
       return builder.prim(value(expr));
@@ -206,6 +214,13 @@ function makeGrammar(source, optNamespaceName) {
 
 function makeGrammars(source, optNamespaceName) {
   return compileAndLoad(source, "Grammars", optNamespaceName);
+}
+
+function makeLoc(node) {
+  return {
+    start: node.interval.startIdx,
+    end: node.interval.endIdx
+  };
 }
 
 // --------------------------------------------------------------------
