@@ -1824,6 +1824,32 @@ describe("Ohm", function() {
         expect(definitionLoc(g2, "bar_baz")).to.eql([38, 48]);
       });
     });
+
+    describe("rule invocation interval", function() {
+      var g = makeGrammar([
+          "G {",
+          "  foo = bar",
+          "  beep = letter | bar",
+          "  bar = 'a' | 'b' -- baz",
+          "}"]);
+      function fromLoc(pexpr) {
+        var interval = pexpr.fromInterval;
+        return [interval.startIdx, interval.endIdx];
+      }
+      var fooBody = g.ruleDict["foo"];
+      var beepBody = g.ruleDict["beep"];
+      it("works for regular rule applications", function() {
+        expect(fromLoc(fooBody)).to.eql([12, 15]);
+        expect(fromLoc(beepBody.terms[1])).to.eql([34, 37]);
+      });
+      it("works for applications of built-in rules", function() {
+        expect(fromLoc(beepBody.terms[0])).to.eql([25, 31]);
+      });
+      it("is undefined for other types of pexpr", function() {
+        expect(beepBody.fromInterval).to.be(undefined);
+        expect(g.ruleDict["bar"].fromInterval).to.be(undefined);
+        expect(g.ruleDict["bar"].terms[0].fromInterval).to.be(undefined);
+        expect(g.ruleDict["bar"].terms[1].fromInterval).to.be(undefined);
       });
     });
   });

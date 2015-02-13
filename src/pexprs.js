@@ -131,8 +131,11 @@ Obj.prototype = Object.create(PExpr.prototype);
 
 // Rule application
 
-function Apply(ruleName) {
+function Apply(ruleName, optFromInterval) {
   this.ruleName = ruleName;
+  if (optFromInterval) {
+    this.fromInterval = optFromInterval;
+  }
 }
 
 Apply.prototype = Object.create(PExpr.prototype);
