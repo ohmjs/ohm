@@ -34,20 +34,29 @@ var fail = Object.create(PExpr.prototype);
 
 // Primitives
 
-function Prim(obj) {
+function Prim(obj, optFromInterval) {
   this.obj = obj;
+  if (optFromInterval) {
+    this.fromInterval = optFromInterval;
+  }
 }
 
 Prim.prototype = Object.create(PExpr.prototype);
 
-function StringPrim(obj) {
+function StringPrim(obj, optFromInterval) {
   this.obj = obj;
+  if (optFromInterval) {
+    this.fromInterval = optFromInterval;
+  }
 }
 
 StringPrim.prototype = Object.create(Prim.prototype);
 
-function RegExpPrim(obj) {
+function RegExpPrim(obj, optFromInterval) {
   this.obj = obj;
+  if (optFromInterval) {
+    this.fromInterval = optFromInterval;
+  }
 }
 
 RegExpPrim.prototype = Object.create(Prim.prototype);
@@ -144,14 +153,13 @@ Apply.prototype = Object.create(PExpr.prototype);
 // Exports
 // --------------------------------------------------------------------
 
-exports.makePrim = function(obj) {
+exports.makePrim = function(obj, optFromInterval) {
   if (typeof obj === "string" && obj.length !== 1) {
-    return new StringPrim(obj);
-  }
-  else if (obj instanceof RegExp) {
-    return new RegExpPrim(obj);
+    return new StringPrim(obj, optFromInterval);
+  } else if (obj instanceof RegExp) {
+    return new RegExpPrim(obj, optFromInterval);
   } else {
-    return new Prim(obj);
+    return new Prim(obj, optFromInterval);
   }
 };
 

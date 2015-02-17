@@ -1796,8 +1796,8 @@ describe("Ohm", function() {
       var g = makeGrammar([
           "G {",
           "  foo = bar",
-          "  beep = letter | bar",
-          "  bar = 'a' | 'b' -- baz",
+          "  beep = letter bar",
+          "  bar = 'a' | 'blah' | /[a-z]/ -- baz",
           "}"]);
       function fromLoc(pexpr) {
         var interval = pexpr.fromInterval;
@@ -1805,18 +1805,24 @@ describe("Ohm", function() {
       }
       var fooBody = g.ruleDict["foo"];
       var beepBody = g.ruleDict["beep"];
+      var barBody = g.ruleDict["bar"];
       it("works for regular rule applications", function() {
         expect(fromLoc(fooBody)).to.eql([12, 15]);
-        expect(fromLoc(beepBody.terms[1])).to.eql([34, 37]);
+        expect(fromLoc(beepBody.factors[1])).to.eql([32, 35]);
       });
       it("works for applications of built-in rules", function() {
-        expect(fromLoc(beepBody.terms[0])).to.eql([25, 31]);
+        expect(fromLoc(beepBody.factors[0])).to.eql([25, 31]);
+      });
+      it("works for primitives", function() {
+        expect(fromLoc(barBody.terms[0])).to.eql([44, 47]);
+        expect(fromLoc(barBody.terms[1])).to.eql([50, 56]);
+
+        var barBazBody = g.ruleDict["bar_baz"];
+        expect(fromLoc(barBazBody)).to.eql([59, 66]);
       });
       it("is undefined for other types of pexpr", function() {
         expect(beepBody.fromInterval).to.be(undefined);
-        expect(g.ruleDict["bar"].fromInterval).to.be(undefined);
-        expect(g.ruleDict["bar"].terms[0].fromInterval).to.be(undefined);
-        expect(g.ruleDict["bar"].terms[1].fromInterval).to.be(undefined);
+        expect(barBody.fromInterval).to.be(undefined);
       });
     });
   });
