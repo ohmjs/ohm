@@ -28,8 +28,8 @@ Builder.prototype = {
     return pexprs.fail;
   },
 
-  prim: function(x) {
-    return pexprs.makePrim(x);
+  prim: function(x, optFromInterval) {
+    return pexprs.makePrim(x, optFromInterval);
   },
 
   alt: function(/* term1, term1, ... */) {

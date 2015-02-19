@@ -103,7 +103,7 @@ function makeGrammarBuilder(optNamespaceName) {
       return builder.app(value(rule), this.interval.trimmed());
     },
     Base_prim: function(expr) {
-      return builder.prim(value(expr));
+      return builder.prim(value(expr), this.interval.trimmed());
     },
     Base_paren: function(_, x, _) {
       return value(x);
