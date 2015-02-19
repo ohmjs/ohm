@@ -44,9 +44,9 @@ Grammar.prototype = {
       // also WOW I can't believe I was bitten AGAIN by Javascript's
       // silly mutable for-bound variables
       (function(ruleName) {
-	constructors[ruleName] = function(/* val1, val2, ... */) {
-	  return self.construct(ruleName, Array.prototype.slice.call(arguments));
-	};
+        constructors[ruleName] = function(/* val1, val2, ... */) {
+          return self.construct(ruleName, Array.prototype.slice.call(arguments));
+        };
       })(ruleName);
     }
     return constructors;
