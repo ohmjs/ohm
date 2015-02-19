@@ -189,7 +189,7 @@ function makeGrammarBuilder(optNamespaceName) {
     space_multiLine: function(_, _, _) {},
     space_singleLine: function(_, _, _) {},
 
-    _list: attributes.actions.map,
+    _many: attributes.actions.makeArray,
     _terminal: attributes.actions.getValue,
     _default: attributes.actions.passThrough
   });

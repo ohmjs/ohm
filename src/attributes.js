@@ -11,7 +11,7 @@ var Node = require('./Node');
 
 var actions = {
   getValue:    function() { return this.value(); },
-  map:         function() { throw new Error('BUG: ohm.actions.map should never be called'); },
+  makeArray:   function() { throw new Error('BUG: ohm.actions.makeArray should never be called'); },
   passThrough: function(childNode) { throw new Error('BUG: ohm.actions.passThrough should never be called'); }
 };
 
@@ -22,15 +22,15 @@ function _makeSynthesizedAttribute(actionDict, memoize) {
     }
 
     function doAction(actionFn, optDontPassChildrenAsAnArgument) {
-      if (actionFn === actions.map) {
-        if (node.ctorName === '_list') {
+      if (actionFn === actions.makeArray) {
+        if (node.ctorName === '_many') {
           return node.children.map(attribute);
         } else {
-          throw new Error('the map default action cannot be used with a ' + node.ctorName + ' node');
+          throw new Error('the makeArray default action cannot be used with a ' + node.ctorName + ' node');
         }
       } else if (actionFn === actions.passThrough) {
-        if (node.ctorName === '_list') {
-          throw new Error('the passThrough default action cannot be used with a _list node');
+        if (node.ctorName === '_many') {
+          throw new Error('the passThrough default action cannot be used with a _many node');
         } else {
           return attribute(node.onlyChild());
         }
@@ -41,9 +41,9 @@ function _makeSynthesizedAttribute(actionDict, memoize) {
       }
     }
 
-    if (node.ctorName === '_list' && node.parent) {
+    if (node.ctorName === '_many' && node.parent) {
       // If an action's name is ctorName$idx, where idx is the 1-based index of a child node that happens
-      // to be a list, it should override the _list action for that particular list node.
+      // to be a list, it should override the _many action for that particular list node.
       var actionName = node.parent.ctorName + '$' + (node.parent.indexOfChild(node) + 1);
       var actionFn = actionDict[actionName];
       if (actionFn) {
@@ -95,8 +95,8 @@ function makeInheritedAttribute(actionDict) {
 
     function doAction(actionName, optIncludeChildIndex) {
       var actionFn = actionDict[actionName];
-      if (actionFn === actions.map) {
-        throw new Error('the map default action cannot be used in an inherited attribute');
+      if (actionFn === actions.makeArray) {
+        throw new Error('the makeArray default action cannot be used in an inherited attribute');
       } else if (actionFn === actions.passThrough) {
         attribute.set(attribute(node.parent));
         return actionName;
@@ -117,20 +117,20 @@ function makeInheritedAttribute(actionDict) {
         throw new Error('missing _base action');
       }
     } else {
-      if (node.parent.ctorName === '_list') {
+      if (node.parent.ctorName === '_many') {
         // If there is an action called <ctorName>$<idx>$each, where <idx> is the 1-based index of a child node
-        // that happens to be a list, it should override the _list method for that particular list node.
+        // that happens to be a list, it should override the _many method for that particular list node.
         var grandparent = node.parent.parent;
         var actionName = grandparent.ctorName + '$' + (grandparent.indexOfChild(node.parent) + 1) + '$each';
         if (actionDict[actionName]) {
           return doAction(actionName);
-        } else if (actionDict._list) {
-          actionDict._list.call(node.parent, node, node.parent.indexOfChild(node));
-          return '_list';
+        } else if (actionDict._many) {
+          actionDict._many.call(node.parent, node, node.parent.indexOfChild(node));
+          return '_many';
         } else if (actionDict._default) {
           return doAction('_default', true);
         } else {
-          throw new Error('missing ' + actionName + ', _list, or _default method');
+          throw new Error('missing ' + actionName + ', _many, or _default method');
         }
       } else {
         var actionName = node.parent.ctorName + '$' + (node.parent.indexOfChild(node) + 1);

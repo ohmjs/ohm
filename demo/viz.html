@@ -299,7 +299,7 @@ var viz = ohm.grammar("Ohm").semanticAction({
   Props_rec:                function(p, _, ps) {},
   Props_base:               function(p) {},
   Prop:                     function(n, _, p) {},
-  _list:                    ohm.actions.map,
+  _many:                    ohm.actions.makeArray,
   _terminal:                function(t) { return t; }
 });
 

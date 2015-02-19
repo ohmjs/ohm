@@ -162,7 +162,7 @@ pexprs.Many.prototype.eval = function(state) {
     return false;
   } else {
     for (var idx = 0; idx < columns.length; idx++) {
-      state.bindings.push(new Node(state.grammar, '_list', columns[idx], inputStream.intervalFrom(origPos)));
+      state.bindings.push(new Node(state.grammar, '_many', columns[idx], inputStream.intervalFrom(origPos)));
     }
     return true;
   }

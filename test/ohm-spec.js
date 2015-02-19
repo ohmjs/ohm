@@ -60,7 +60,7 @@ describe("Ohm", function() {
         _default: function() {
           return ['id', nextId++, this.ctorName].concat(this.children.map(attr));
         },
-        _list: ohm.actions.map,
+        _many: ohm.actions.makeArray,
         _terminal: ohm.actions.getValue
       });
       attr._getNextId = function() { return nextId; };
@@ -747,7 +747,7 @@ describe("Ohm", function() {
         var value = m.synthesizedAttribute({
           number:     function(expr) { return ['digits', value(expr)]; },
           digit:      function(expr) { return ['digit', value(expr)]; },
-          _list:      ohm.actions.map,
+          _many:      ohm.actions.makeArray,
           _terminal:  ohm.actions.getValue
         });
         expect(value(m.matchContents('1234', 'number')))
@@ -905,7 +905,7 @@ describe("Ohm", function() {
         it("semantic actions", function() {
           var attr = m.synthesizedAttribute({
             withStringProps: function(foos, bar) { return [attr(foos), attr(bar)]; },
-            _list: ohm.actions.map,
+            _many: ohm.actions.makeArray,
             _terminal: ohm.actions.getValue,
           });
           expect(attr(m.match({foos: 'foofoo', bar: 'bar'}, 'withStringProps'))).to.eql([['foo', 'foo'], 'bar']);
@@ -1314,7 +1314,7 @@ describe("Ohm", function() {
           var v = m2.synthesizedAttribute({
             number:    function(expr) { return ['number', v(expr)]; },
             digit:     function(expr) { return ['digit', v(expr)]; },
-            _list:     ohm.actions.map,
+            _many:     ohm.actions.makeArray,
             _terminal: ohm.actions.getValue
           });
           var expected = ['number', [['digit', 'a'], ['digit', 'b'], ['digit', 'c'], ['digit', 'd']]];
@@ -1350,8 +1350,8 @@ describe("Ohm", function() {
           // action "API" doesn't change.
 
           // Too many:
+          makeGrammar("M1 { foo = 'foo'  bar = 'bar'  baz = 'baz' }", "inheritanceExtend3");
           expect(function() {
-            makeGrammar("M1 { foo = 'foo'  bar = 'bar'  baz = 'baz' }", "inheritanceExtend3");
             makeGrammar("M2 <: M1 { foo += bar baz }", "inheritanceExtend3");
           }).to.throwException(function(e) {
             expect(e).to.be.an(errors.InconsistentArity);
@@ -1361,8 +1361,8 @@ describe("Ohm", function() {
           });
 
           // Too few:
+          makeGrammar("M3 { foo = digit digit }", 'inheritanceExtend3');
           expect(function() {
-            makeGrammar("M3 { foo = digit digit }", 'inheritanceExtend3');
             makeGrammar("M4 <: M3 { foo += digit }", 'inheritanceExtend3');
           }).to.throwException(function(e) {
             expect(e).to.be.an(errors.InconsistentArity);
