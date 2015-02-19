@@ -255,6 +255,7 @@ namespace("default").install(new Grammar(
     {
         _: pexprs.anything,
         empty: new pexprs.Seq([]),
+        end: pexprs.end,
         fail: pexprs.fail,
         space: pexprs.makePrim(/[\s]/).withDescription("space"),
         alnum: pexprs.makePrim(/[0-9a-zA-Z]/).withDescription("alpha-numeric character"),
