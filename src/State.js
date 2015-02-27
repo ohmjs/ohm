@@ -47,9 +47,10 @@ State.prototype = {
       return;
     } else if (pos > this.failureDescriptor.pos) {
       this.failureDescriptor.pos = pos;
-      this.failureDescriptor.exprs = [];
+      this.failureDescriptor.exprs = [expr];
+    } else if (this.failureDescriptor.exprs.indexOf(expr) < 0) {
+      this.failureDescriptor.exprs.push(expr);
     }
-    this.failureDescriptor.exprs.push(expr);
   },
 
   recordFailures: function(failureDescriptor) {
@@ -64,6 +65,7 @@ State.prototype = {
   },
 
   makeFailureDescriptor: function() {
+    // TODO: use a Map for exprs, once it's available (the shims don't help because they're O(1))
     return {pos: -1, exprs: []};
   }
 };
