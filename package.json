@@ -24,7 +24,7 @@
     "build-min": "browserify src/main.js -s ohm | uglifyjs > dist/ohm.min.js",
     "build": "npm run build-debug && npm run build-min",
     "watch": "watchify src/main.js -d -s ohm -o dist/ohm.js",
-    "test": "npm run build && mocha",
+    "test": "mocha",
     "test-watch": "mocha -w",
     "bootstrap": "npm test && npm run unsafe-bootstrap && npm test",
     "unsafe-bootstrap": "cp dist/ohm-grammar.js dist/ohm-grammar.js.old; node src/bootstrap.js src/ohm-grammar.ohm > dist/ohm-grammar.js.new && mv dist/ohm-grammar.js.new dist/ohm-grammar.js",
