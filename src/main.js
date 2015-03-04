@@ -213,7 +213,11 @@ function makeGrammar(source, optNamespaceName) {
 }
 
 function makeGrammars(source, optNamespaceName) {
-  return compileAndLoad(source, "Grammars", optNamespaceName);
+  var result = {};
+  var grammars = compileAndLoad(source, "Grammars", optNamespaceName).forEach(function(g) {
+    result[g.name] = g;
+  });
+  return result;
 }
 
 function makeLoc(node) {
