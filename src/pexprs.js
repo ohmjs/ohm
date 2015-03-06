@@ -181,8 +181,8 @@ require("./pexprs-addRulesThatNeedSemanticAction.js");
 require("./pexprs-assertAllApplicationsAreValid.js");
 require("./pexprs-assertChoicesHaveUniformArity.js");
 require("./pexprs-check.js");
-require("./pexprs-getArity.js");
 require("./pexprs-eval.js");
+require("./pexprs-maybeRecordFailure.js");
+require("./pexprs-getArity.js");
 require("./pexprs-outputRecipe.js");
 require("./pexprs-toExpected.js");
-

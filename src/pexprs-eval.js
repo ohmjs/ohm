@@ -30,21 +30,42 @@ function skipSpaces(state) {
   state.failureDescriptor = origFailureDescriptor;
 }
 
-// The contract of PExpr.prototype.eval:
+// Evaluate the expression and return true if it succeeded, otherwise false.
+// On success, the bindings will have `this.arity` more elements than before,
+// and the position could be anywhere. On failure, the bindings and position
+// will be unchanged.
+pexprs.PExpr.prototype.eval = function(state) {
+  var origPos = state.inputStream.pos;
+  var origNumBindings = state.bindings.length;
+
+  var ans = this._eval(state);
+  if (!ans) {
+    this.maybeRecordFailure(state, origPos);
+
+    // Reset the position and the bindings.
+    state.inputStream.pos = origPos;
+    state.bindings.length = origNumBindings;
+  }
+  return ans;
+};
+
+// Evaluate the expression and return true if it succeeded, otherwise false.
+// This should not be called directly except by `eval`.
+//
+// The contract of this method is as follows:
 // * When the return value is true:
 //   -- bindings will have expr.arity more elements than before
 // * When the return value is false:
 //   -- bindings will have exactly the same number of elements as before
 //   -- position could be anywhere
 
-pexprs.PExpr.prototype.eval = common.abstract;
+pexprs.PExpr.prototype._eval = common.abstract;
 
-pexprs.anything.eval = function(state) {
+pexprs.anything._eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   var value = inputStream.next();
   if (value === common.fail) {
-    state.recordFailure(origPos, this);
     return false;
   } else {
     state.bindings.push(new Node(state.grammar, '_terminal',  [value], inputStream.intervalFrom(origPos)));
@@ -52,22 +73,20 @@ pexprs.anything.eval = function(state) {
   }
 };
 
-pexprs.end.eval = function(state) {
+pexprs.end._eval = function(state) {
   var inputStream = state.inputStream;
   if (state.inputStream.atEnd()) {
     state.bindings.push(new Node(state.grammar, '_terminal', [undefined], inputStream.intervalFrom(inputStream.pos)));
     return true;
   } else {
-    state.recordFailure(inputStream.pos, this);
     return false;
   }
 };
 
-pexprs.Prim.prototype.eval = function(state) {
+pexprs.Prim.prototype._eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   if (this.match(inputStream) === common.fail) {
-    state.recordFailure(origPos, this);
     return false;
   } else {
     state.bindings.push(new Node(state.grammar, '_terminal', [this.obj], inputStream.intervalFrom(origPos)));
@@ -83,11 +102,10 @@ pexprs.StringPrim.prototype.match = function(inputStream) {
   return inputStream.matchString(this.obj);
 };
 
-pexprs.RegExpPrim.prototype.eval = function(state) {
+pexprs.RegExpPrim.prototype._eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   if (inputStream.matchRegExp(this.obj) === common.fail) {
-    state.recordFailure(origPos, this);
     return false;
   } else {
     state.bindings.push(
@@ -96,7 +114,7 @@ pexprs.RegExpPrim.prototype.eval = function(state) {
   }
 };
 
-pexprs.Alt.prototype.eval = function(state) {
+pexprs.Alt.prototype._eval = function(state) {
   var bindings = state.bindings;
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
@@ -112,8 +130,7 @@ pexprs.Alt.prototype.eval = function(state) {
   return false;
 };
 
-pexprs.Seq.prototype.eval = function(state) {
-  var inputStream = state.inputStream;
+pexprs.Seq.prototype._eval = function(state) {
   var origNumBindings = state.bindings.length;
   for (var idx = 0; idx < this.factors.length; idx++) {
     skipSpacesIfAppropriate(state);
@@ -126,7 +143,7 @@ pexprs.Seq.prototype.eval = function(state) {
   return true;
 };
 
-pexprs.Many.prototype.eval = function(state) {
+pexprs.Many.prototype._eval = function(state) {
   var arity = this.getArity();
   if (arity === 0) {
     // TODO: make this a static check w/ a nice error message, then remove the dynamic check.
@@ -162,7 +179,7 @@ pexprs.Many.prototype.eval = function(state) {
   }
 };
 
-pexprs.Opt.prototype.eval = function(state) {
+pexprs.Opt.prototype._eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   var arity = this.getArity();
@@ -179,25 +196,23 @@ pexprs.Opt.prototype.eval = function(state) {
   return true;
 };
 
-pexprs.Not.prototype.eval = function(state) {
+pexprs.Not.prototype._eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   var origFailureDescriptor = state.failureDescriptor;
-  var newFailureDescriptor = state.failureDescriptor = state.makeFailureDescriptor();
+  state.failureDescriptor = state.makeFailureDescriptor();
   var ans = this.expr.eval(state);
   state.failureDescriptor = origFailureDescriptor;
   if (ans) {
-    state.recordFailure(origPos, this);
     state.bindings.length -= this.getArity();
-    ans = false;
+    return false;
   } else {
     inputStream.pos = origPos;
-    ans = true;
+    return true;
   }
-  return ans;
 };
 
-pexprs.Lookahead.prototype.eval = function(state) {
+pexprs.Lookahead.prototype._eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   if (this.expr.eval(state)) {
@@ -208,7 +223,7 @@ pexprs.Lookahead.prototype.eval = function(state) {
   }
 };
 
-pexprs.Arr.prototype.eval = function(state) {
+pexprs.Arr.prototype._eval = function(state) {
   var inputStream = state.inputStream;
   var obj = inputStream.next();
   if (obj instanceof Array) {
@@ -222,7 +237,7 @@ pexprs.Arr.prototype.eval = function(state) {
   }
 };
 
-pexprs.Str.prototype.eval = function(state) {
+pexprs.Str.prototype._eval = function(state) {
   var inputStream = state.inputStream;
   var obj = inputStream.next();
   if (typeof obj === 'string') {
@@ -236,7 +251,7 @@ pexprs.Str.prototype.eval = function(state) {
   }
 };
 
-pexprs.Obj.prototype.eval = function(state) {
+pexprs.Obj.prototype._eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   var obj = inputStream.next();
@@ -274,7 +289,7 @@ pexprs.Obj.prototype.eval = function(state) {
   }
 };
 
-pexprs.Apply.prototype.eval = function(state) {
+pexprs.Apply.prototype._eval = function(state) {
   function useMemoizedResult(memoRecOrLR) {
     inputStream.pos = memoRecOrLR.pos;
     if (memoRecOrLR.failureDescriptor) {
