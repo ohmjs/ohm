@@ -1800,8 +1800,7 @@ describe("Ohm", function() {
           '  bar = "a" | "blah" | /[a-z]/ -- baz',
           '}']);
       function fromLoc(pexpr) {
-        var interval = pexpr.fromInterval;
-        return [interval.startIdx, interval.endIdx];
+        return [pexpr.interval.startIdx, pexpr.interval.endIdx];
       }
       var fooBody = g.ruleDict["foo"];
       var beepBody = g.ruleDict["beep"];

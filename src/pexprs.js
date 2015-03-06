@@ -21,6 +21,11 @@ PExpr.prototype.withDescription = function(description) {
   return this;
 };
 
+PExpr.prototype.withInterval = function(interval) {
+  this.interval = interval.trimmed();
+  return this;
+};
+
 // Anything
 
 var anything = Object.create(PExpr.prototype);

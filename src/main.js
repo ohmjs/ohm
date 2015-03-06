@@ -63,7 +63,7 @@ function makeGrammarBuilder(optNamespaceName) {
     },
 
     Alt_rec: function(x, _, y) {
-      return builder.alt(value(x), value(y));
+      return builder.alt(value(x), value(y)).withInterval(this.interval);
     },
 
     Term_inline: function(b, n) {
@@ -75,41 +75,41 @@ function makeGrammarBuilder(optNamespaceName) {
       } else {
         decl.define(inlineRuleName, body);
       }
-      return builder.app(inlineRuleName);
+      return builder.app(inlineRuleName).withInterval(body.interval);
     },
 
     Seq: function(expr) {
-      return builder.seq.apply(builder, value(expr));
+      return builder.seq.apply(builder, value(expr)).withInterval(this.interval);
     },
 
     Iter_star: function(x, _) {
-      return builder.many(value(x), 0);
+      return builder.many(value(x), 0).withInterval(this.interval);
     },
     Iter_plus: function(x, _) {
-      return builder.many(value(x), 1);
+      return builder.many(value(x), 1).withInterval(this.interval);
     },
     Iter_opt: function(x, _) {
-      return builder.opt(value(x));
+      return builder.opt(value(x)).withInterval(this.interval);
     },
 
     Pred_not: function(_, x) {
-      return builder.not(value(x));
+      return builder.not(value(x)).withInterval(this.interval);
     },
     Pred_lookahead: function(_, x) {
-      return builder.la(value(x));
+      return builder.la(value(x)).withInterval(this.interval);
     },
 
     Base_application: function(rule) {
-      return builder.app(value(rule), this.interval.trimmed());
+      return builder.app(value(rule)).withInterval(this.interval);
     },
     Base_prim: function(expr) {
-      return builder.prim(value(expr), this.interval.trimmed());
+      return builder.prim(value(expr)).withInterval(this.interval);
     },
     Base_paren: function(_, x, _) {
       return value(x);
     },
     Base_arr: function(_, x, _) {
-      return builder.arr(value(x));
+      return builder.arr(value(x)).withInterval(this.interval);
     },
     Base_str: function(_, x, _) {
       return builder.str(value(x));
@@ -118,7 +118,7 @@ function makeGrammarBuilder(optNamespaceName) {
       return builder.obj([], value(lenient));
     },
     Base_objWithProps: function(_, ps, _, lenient, _) {
-      return builder.obj(value(ps), value(lenient));
+      return builder.obj(value(ps), value(lenient)).withInterval(this.interval);
     },
 
     Props_rec: function(p, _, ps) {
