@@ -4,6 +4,7 @@
 
 var common = require("./common.js");
 var errors = require("./errors.js");
+var inherits = require("inherits");
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -36,8 +37,7 @@ function Prim(obj, optFromInterval) {
     this.fromInterval = optFromInterval;
   }
 }
-
-Prim.prototype = Object.create(PExpr.prototype);
+inherits(Prim, PExpr);
 
 function StringPrim(obj, optFromInterval) {
   this.obj = obj;
@@ -45,8 +45,7 @@ function StringPrim(obj, optFromInterval) {
     this.fromInterval = optFromInterval;
   }
 }
-
-StringPrim.prototype = Object.create(Prim.prototype);
+inherits(StringPrim, Prim);
 
 function RegExpPrim(obj, optFromInterval) {
   this.obj = obj;
@@ -54,16 +53,14 @@ function RegExpPrim(obj, optFromInterval) {
     this.fromInterval = optFromInterval;
   }
 }
-
-RegExpPrim.prototype = Object.create(Prim.prototype);
+inherits(RegExpPrim, Prim);
 
 // Alternation
 
 function Alt(terms) {
   this.terms = terms;
 }
-
-Alt.prototype = Object.create(PExpr.prototype);
+inherits(Alt, PExpr);
 
 // Extend is an implementation detail of rule extension
 
@@ -71,16 +68,14 @@ function Extend(superGrammar, name, body) {
   var origBody = superGrammar.ruleDict[name];
   this.terms = [body, origBody];
 }
-
-Extend.prototype = Object.create(Alt.prototype);
+inherits(Extend, Alt);
 
 // Sequences
 
 function Seq(factors) {
   this.factors = factors;
 }
-
-Seq.prototype = Object.create(PExpr.prototype);
+inherits(Seq, PExpr);
 
 // Iterators and optionals
 
@@ -88,36 +83,31 @@ function Many(expr, minNumMatches) {
   this.expr = expr;
   this.minNumMatches = minNumMatches;
 }
-
-Many.prototype = Object.create(PExpr.prototype);
+inherits(Many, PExpr);
 
 function Opt(expr) {
   this.expr = expr;
 }
-
-Opt.prototype = Object.create(PExpr.prototype);
+inherits(Opt, PExpr);
 
 // Predicates
 
 function Not(expr) {
   this.expr = expr;
 }
-
-Not.prototype = Object.create(PExpr.prototype);
+inherits(Not, PExpr);
 
 function Lookahead(expr) {
   this.expr = expr;
 }
-
-Lookahead.prototype = Object.create(PExpr.prototype);
+inherits(Lookahead, PExpr);
 
 // Array decomposition
 
 function Arr(expr) {
   this.expr = expr;
 }
-
-Arr.prototype = Object.create(PExpr.prototype);
+inherits(Arr, PExpr);
 
 // String decomposition
 
@@ -139,8 +129,7 @@ function Obj(properties, isLenient) {
     this.isLenient = isLenient;
   }
 }
-
-Obj.prototype = Object.create(PExpr.prototype);
+inherits(Obj, PExpr);
 
 // Rule application
 
@@ -150,8 +139,7 @@ function Apply(ruleName, optFromInterval) {
     this.fromInterval = optFromInterval;
   }
 }
-
-Apply.prototype = Object.create(PExpr.prototype);
+inherits(Apply, PExpr);
 
 // --------------------------------------------------------------------
 // Exports
