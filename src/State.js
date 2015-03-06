@@ -3,6 +3,7 @@
 // --------------------------------------------------------------------
 
 var common = require('./common.js');
+var Interval = require('./Interval.js');
 var pexprs = require('./pexprs.js');
 var PosInfo = require('./PosInfo.js');
 
@@ -10,7 +11,7 @@ var PosInfo = require('./PosInfo.js');
 // Private stuff
 // --------------------------------------------------------------------
 
-function State(grammar, inputStream) {
+function State(grammar, inputStream, tracingEnabled) {
   this.grammar = grammar;
   this.inputStreamStack = [];
   this.posInfosStack = [];
@@ -18,6 +19,9 @@ function State(grammar, inputStream) {
   this.ruleStack = [];
   this.bindings = [];
   this.failureDescriptor = this.makeFailureDescriptor();
+  if (tracingEnabled) {
+    this.trace = [];
+  }
 }
 
 State.prototype = {
@@ -72,6 +76,26 @@ State.prototype = {
   makeFailureDescriptor: function() {
     // TODO: use a Map for exprs, once it's available (the shims don't help because they're O(1))
     return {pos: -1, exprs: []};
+  },
+
+  // Make a new trace entry, using the currently active trace array as the
+  // new entry's children.
+  makeTraceEntry: function(pos, expr, ans) {
+    var entry = {
+      displayString: expr.ruleName || (expr.obj ? "'" + expr.obj + "'" : null),
+      pos: pos,
+      expr: expr,
+      succeeded: ans,
+      children: this.trace,
+    };
+    if (ans) {
+      entry.interval = new Interval(this.inputStream, pos, this.inputStream.pos);
+    }
+    return entry;
+  },
+
+  isTracing: function() {
+    return !!this.trace;
   }
 };
 

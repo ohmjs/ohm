@@ -1753,5 +1753,51 @@ describe("Ohm", function() {
         expect(barBody.fromInterval).to.be(undefined);
       });
     });
+
+    describe("trace", function() {
+      var g = makeGrammar('G { start = "a" | letter* }');
+      it("produces the correct trace", function() {
+        var state = g.trace('hallo', 'start');
+        var trace = state.trace;
+
+        expect(trace.length).to.be(1);
+        expect(trace[0].displayString).to.be('start');
+        expect(trace[0].succeeded).to.be(true);
+        expect(trace[0].pos).to.be(0);
+
+        var alt = trace[0].children[0];
+        expect(alt.succeeded).to.be(true);
+        expect(alt.children[0].succeeded).to.be(false);
+        expect(alt.children[1].succeeded).to.be(true);
+
+        var many = alt.children[1];
+        expect(many.interval.contents).to.be('hallo');
+        expect(many.children.length).to.be(6);
+
+        var childrenSucceeded = many.children.map(function(c) { return c.succeeded; });
+        expect(childrenSucceeded).to.eql([true, true, true, true, true, false]);
+      });
+
+      var g2 = makeGrammar('G { start = (letter ~letter) | letter* }');
+      it("works with memoization", function() {
+        var state = g2.trace('ab', 'start');
+        var trace = state.trace;
+
+        var alt = trace[0].children[0];
+        expect(alt.children[0].succeeded).to.be(false);
+        expect(alt.children[1].succeeded).to.be(true);
+
+        var many = alt.children[1];
+        expect(many.children.length).to.be(3);
+
+        // The 'letter*' should succeed, but its first two children should be
+        // memoized from the other size of the Alt (letter ~letter). Ensure
+        // the the trace is still recorded properly.
+        expect(many.children[0].succeeded).to.be(true);
+        expect(many.children[0].children.length).to.be(1);
+        expect(many.children[1].succeeded).to.be(true);
+        expect(many.children[1].children.length).to.be(1);
+      });
+    });
   });
 });
