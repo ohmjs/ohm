@@ -44,12 +44,17 @@ State.prototype = {
 
   recordFailure: function(pos, expr) {
     if (pos < this.failureDescriptor.pos) {
+      // Failure is not at the right-most position -- ignore it.
       return;
     } else if (pos > this.failureDescriptor.pos) {
+      // Drop the old failures -- this is the new right-most position.
       this.failureDescriptor.pos = pos;
       this.failureDescriptor.exprs = [expr];
-    } else if (this.failureDescriptor.exprs.indexOf(expr) < 0) {
-      this.failureDescriptor.exprs.push(expr);
+    } else {
+      // Another failure at right-most position -- record it if it wasn't already.
+      if (this.failureDescriptor.exprs.indexOf(expr) < 0) {
+        this.failureDescriptor.exprs.push(expr);
+      }
     }
   },
 
