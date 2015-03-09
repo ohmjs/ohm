@@ -228,6 +228,20 @@ pexprs.Arr.prototype.eval = function(state) {
   }
 };
 
+pexprs.Str.prototype.eval = function(state) {
+  var inputStream = state.inputStream;
+  var obj = inputStream.next();
+  if (typeof obj === 'string') {
+    var strInputStream = InputStream.newFor(obj);
+    state.pushInputStream(strInputStream);
+    var ans = this.expr.eval(state) && (skipSpacesIfAppropriate(state), state.inputStream.atEnd());
+    state.popInputStream();
+    return ans;
+  } else {
+    return false;
+  }
+};
+
 pexprs.Obj.prototype.eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
@@ -240,9 +254,9 @@ pexprs.Obj.prototype.eval = function(state) {
         return false;
       }
       var value = obj[property.name];
-      var valueInputStream = InputStream.newFor(typeof value === 'string' ? value : [value]);
+      var valueInputStream = InputStream.newFor([value]);
       state.pushInputStream(valueInputStream);
-      var matched = property.pattern.eval(state) && (skipSpacesIfAppropriate(state), state.inputStream.atEnd());
+      var matched = property.pattern.eval(state) && state.inputStream.atEnd();
       state.popInputStream();
       if (!matched) {
         return false;

@@ -111,6 +111,9 @@ function makeGrammarBuilder(optNamespaceName) {
     Base_arr: function(_, x, _) {
       return builder.arr(value(x));
     },
+    Base_str: function(_, x, _) {
+      return builder.str(value(x));
+    },
     Base_obj: function(_, lenient, _) {
       return builder.obj([], value(lenient));
     },
@@ -162,11 +165,11 @@ function makeGrammarBuilder(optNamespaceName) {
       return value(cs).map(function(c) { return common.unescapeChar(c); }).join("");
     },
 
-    singleQuoteStrChar: function(_) {
+    strChar: function(_) {
       return this.interval.contents;
     },
 
-    doubleQuoteStrChar: function(_) {
+    escapeChar: function(_) {
       return this.interval.contents;
     },
 

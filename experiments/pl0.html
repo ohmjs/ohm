@@ -31,44 +31,44 @@ PL0 {
     | Stmt      -- base
 
   Stmt
-    = var ident '=' Expr ';'       -- var
-    | print AddExpr ';'            -- print
+    = var ident "=" Expr ";"       -- var
+    | print AddExpr ";"            -- print
     | if Expr then Stmt else Stmt  -- if3
     | if Expr then Stmt            -- if2
-    | ident ':=' Expr ';'          -- assign
+    | ident ":=" Expr ";"          -- assign
 
   Expr
     = AddExpr
 
   AddExpr
-    = AddExpr '+' MulExpr  -- plus
-    | AddExpr '-' MulExpr  -- minus
+    = AddExpr "+" MulExpr  -- plus
+    | AddExpr "-" MulExpr  -- minus
     | MulExpr
 
   MulExpr
-    = MulExpr '*' PriExpr  -- times
-    | MulExpr '/' PriExpr  -- divide
+    = MulExpr "*" PriExpr  -- times
+    | MulExpr "/" PriExpr  -- divide
     | PriExpr
 
   PriExpr
-    = '(' Expr ')'  -- paren
-    | '+' PriExpr   -- pos
-    | '-' PriExpr   -- neg
+    = "(" Expr ")"  -- paren
+    | "+" PriExpr   -- pos
+    | "-" PriExpr   -- neg
     | number
     | ident
 
-  number  -- number
-    = digit+ ('.' digit*)?  -- integerAndFract
-    | '.' digit+            -- onlyFract
+  number  -- a number literal
+    = digit* "." digit+  -- fract
+    | digit+             -- whole
 
-  ident  -- identifier
+  ident  -- an identifier
     = ~keyword letter alnum*
 
-  var   = 'var' ~alnum
-  print = 'print' ~alnum
-  if    = 'if' ~alnum
-  then  = 'then' ~alnum
-  else  = 'else' ~alnum
+  var   = "var" ~alnum
+  print = "print" ~alnum
+  if    = "if" ~alnum
+  then  = "then" ~alnum
+  else  = "else" ~alnum
 
   keyword = var | print | if | then | else
   

@@ -60,6 +60,10 @@ pexprs.Arr.prototype.assertAllApplicationsAreValid = function(grammar) {
   this.expr.assertAllApplicationsAreValid(grammar);
 };
 
+pexprs.Str.prototype.assertAllApplicationsAreValid = function(grammar) {
+  this.expr.assertAllApplicationsAreValid(grammar);
+};
+
 pexprs.Obj.prototype.assertAllApplicationsAreValid = function(grammar) {
   for (var idx = 0; idx < this.properties.length; idx++) {
     this.properties[idx].pattern.assertAllApplicationsAreValid(grammar);

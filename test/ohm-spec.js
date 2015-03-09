@@ -418,7 +418,7 @@ describe("Ohm", function() {
       describe("char", function() {
         var m;
         beforeEach(function() {
-          m = makeGrammar("M { bang = '!' }");
+          m = makeGrammar('M { bang = "!" }');
         });
 
         describe("direct match, no stream", function() {
@@ -479,7 +479,7 @@ describe("Ohm", function() {
       describe("string", function() {
         var m;
         beforeEach(function() {
-          m = makeGrammar("M { foo = 'foo' }");
+          m = makeGrammar('M { foo = "foo" }');
         });
 
         describe("direct match, no stream", function() {
@@ -614,7 +614,7 @@ describe("Ohm", function() {
     describe("alt", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { altTest = 'a' | 'b' }");
+        m = makeGrammar('M { altTest = "a" | "b" }');
       });
 
       it("recognition", function() {
@@ -638,7 +638,7 @@ describe("Ohm", function() {
       describe("without bindings", function() {
         var m;
         beforeEach(function() {
-          m = makeGrammar("M { start = 'a' 'bc' 'z' }");
+          m = makeGrammar('M { start = "a" "bc" "z" }');
         });
 
         it("recognition", function() {
@@ -659,7 +659,7 @@ describe("Ohm", function() {
       describe("with exactly one binding", function() {
         var m;
         beforeEach(function() {
-          m = makeGrammar("M { start = 'a' 'bc' 'z' }");
+          m = makeGrammar('M { start = "a" "bc" "z" }');
         });
 
         it("recognition", function() {
@@ -680,7 +680,7 @@ describe("Ohm", function() {
       describe("with more than one binding", function() {
         var m;
         beforeEach(function() {
-          m = makeGrammar("M { start = 'a' 'bc' 'z' }");
+          m = makeGrammar('M { start = "a" "bc" "z" }');
         });
 
         it("recognition", function() {
@@ -702,7 +702,7 @@ describe("Ohm", function() {
     describe("alts and seqs together", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { start = 'a' 'b' 'c' | '1' '2' '3' }");
+        m = makeGrammar('M { start = "a" "b" "c" | "1" "2" "3" }');
       });
 
       it("recognition", function() {
@@ -765,7 +765,7 @@ describe("Ohm", function() {
     describe("opt", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { name = 'dr'? 'warth' }");
+        m = makeGrammar('M { name = "dr"? "warth" }');
       });
 
       it("recognition", function() {
@@ -784,7 +784,7 @@ describe("Ohm", function() {
     describe("not", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { start = ~'hello' _* }");
+        m = makeGrammar('M { start = ~"hello" _* }');
       });
 
       it("recognition", function() {
@@ -802,7 +802,7 @@ describe("Ohm", function() {
     describe("lookahead", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { start = &'hello' _* }");
+        m = makeGrammar('M { start = &"hello" _* }');
       });
 
       it("recognition", function() {
@@ -818,7 +818,7 @@ describe("Ohm", function() {
     describe("arr", function() {
       var m;
       beforeEach(function() {
-        m = makeGrammar("M { start = ['abc' &_ ['d' 'ef'] 'g'] }");
+        m = makeGrammar('M { start = ["abc" &_ ["d" "ef"] "g"] }');
       });
 
       it("recognition", function() {
@@ -849,7 +849,7 @@ describe("Ohm", function() {
           'M {',
           '  strict  = {x: 1, y: (2)}',
           '  lenient = {x: 1, y: (2), ...}',
-          '  withStringProps = {foos: "foo"*, bar: "bar"}',
+          '  withStringProps = {foos: ``"foo"*\'\', bar: "bar"}',
           '}']);
       });
 
@@ -927,10 +927,10 @@ describe("Ohm", function() {
         var m;
         beforeEach(function() {
           m = makeGrammar([
-            "M {",
-            "  easy = foo",
-            "  foo = 'foo'",
-            "}"]);
+            'M {',
+            '  easy = foo',
+            '  foo = "foo"',
+            '}']);
         });
 
         it("recognition", function() {
@@ -1000,13 +1000,13 @@ describe("Ohm", function() {
         var m;
         beforeEach(function() {
           m = makeGrammar([
-            "M {",
-            "  add = addRec | pri",
-            "  addRec = add '+' pri",
-            "  pri = priX | priY",
-            "  priX = 'x'",
-            "  priY = 'y'",
-            "}"]);
+            'M {',
+            '  add = addRec | pri',
+            '  addRec = add "+" pri',
+            '  pri = priX | priY',
+            '  priX = "x"',
+            '  priY = "y"',
+            '}']);
         });
 
         it("recognition", function() {
@@ -1069,14 +1069,14 @@ describe("Ohm", function() {
         var m
         beforeEach(function() {
           m = makeGrammar([
-            "M {",
-            "  addExpr = addExprRec | mulExpr",
-            "  addExprRec = addExpr '+' mulExpr",
-            "  mulExpr = mulExprRec | priExpr",
-            "  mulExprRec = mulExpr '*' priExpr",
-            "  priExpr = /[0-9]/",
-            "  sss = &addExpr addExpr",
-            "}"]);
+            'M {',
+            '  addExpr = addExprRec | mulExpr',
+            '  addExprRec = addExpr "+" mulExpr',
+            '  mulExpr = mulExprRec | priExpr',
+            '  mulExprRec = mulExpr "*" priExpr',
+            '  priExpr = /[0-9]/',
+            '  sss = &addExpr addExpr',
+            '}']);
         });
 
         it("recognition", function() {
@@ -1155,21 +1155,21 @@ describe("Ohm", function() {
         var m;
         beforeEach(function() {
           m = makeGrammar([
-            "G {",
-            "  addExpr = a | c",
-            "  a = b",
-            "  b = addExprRec",
-            "  addExprRec = addExpr '+' mulExpr",
-            "  c = d",
-            "  d = mulExpr",
-            "  mulExpr = e | g",
-            "  e = f",
-            "  f = mulExprRec",
-            "  g = h",
-            "  h = priExpr",
-            "  mulExprRec = mulExpr '*' priExpr",
-            "  priExpr = /[0-9]/",
-            "}"]);
+            'G {',
+            '  addExpr = a | c',
+            '  a = b',
+            '  b = addExprRec',
+            '  addExprRec = addExpr "+" mulExpr',
+            '  c = d',
+            '  d = mulExpr',
+            '  mulExpr = e | g',
+            '  e = f',
+            '  f = mulExprRec',
+            '  g = h',
+            '  h = priExpr',
+            '  mulExprRec = mulExpr "*" priExpr',
+            '  priExpr = /[0-9]/',
+            '}']);
         });
 
         it("recognition", function() {
@@ -1253,8 +1253,8 @@ describe("Ohm", function() {
         it("should check that rule does not already exist in super-grammar", function() {
           expect(function() {
             makeGrammars([
-              "G1 { foo = 'foo' }",
-              "G2 <: G1 { foo = 'bar' }"
+              'G1 { foo = "foo" }',
+              'G2 <: G1 { foo = "bar" }'
             ], 'inheritance-define');
           }).to.throwException(function(e) {
             expect(e).to.be.an(errors.DuplicateRuleDeclaration);
@@ -1279,7 +1279,7 @@ describe("Ohm", function() {
 
         it("should check that rule exists in super-grammar", function() {
           expect(function() {
-            makeGrammar("G3 <: G1 { foo := 'foo' }", 'inheritance-override');
+            makeGrammar('G3 <: G1 { foo := "foo" }', 'inheritance-override');
           }).to.throwException(function(e) {
             expect(e).to.be.an(errors.UndeclaredRule);
             expect(e.ruleName).to.equal('foo');
@@ -1292,8 +1292,8 @@ describe("Ohm", function() {
           // from that of its super-grammar.
 
           // arity(overriding rule) > arity(overridden rule)
-          makeGrammar("M1 { foo = 'foo' }", "inheritance-override");
-          makeGrammar("M2 <: M1 { foo := 'foo' 'bar' }", "inheritance-override");
+          makeGrammar('M1 { foo = "foo" }', "inheritance-override");
+          makeGrammar('M2 <: M1 { foo := "foo" "bar" }', "inheritance-override");
 
           // arity(overriding rule) < arity(overridden rule)
           makeGrammar("M3 { foo = digit digit }", 'inheritance-override');
@@ -1329,14 +1329,14 @@ describe("Ohm", function() {
           if (m1 && m2) {
             return;
           } else {
-            m1 = makeGrammar("G1 { foo = 'aaa' 'bbb' }", 'inheritanceExtend');
-            m2 = makeGrammar("G2 <: inheritanceExtend.G1 { foo += '111' '222' }", 'inheritanceExtend2');
+            m1 = makeGrammar('G1 { foo = "aaa" "bbb" }', 'inheritanceExtend');
+            m2 = makeGrammar('G2 <: inheritanceExtend.G1 { foo += "111" "222" }', 'inheritanceExtend2');
           }
         });
 
         it("should check that rule exists in super-grammar", function() {
           expect(function() {
-            makeGrammar("G3 <: G1 { bar += 'bar' }", 'inheritanceExtend');
+            makeGrammar('G3 <: G1 { bar += "bar" }', 'inheritanceExtend');
           }).to.throwException(function(e) {
             expect(e).to.be.an(errors.UndeclaredRule);
             expect(e.ruleName).to.equal('bar');
@@ -1350,7 +1350,7 @@ describe("Ohm", function() {
           // action "API" doesn't change.
 
           // Too many:
-          makeGrammar("M1 { foo = 'foo'  bar = 'bar'  baz = 'baz' }", "inheritanceExtend3");
+          makeGrammar('M1 { foo = "foo"  bar = "bar"  baz = "baz" }', "inheritanceExtend3");
           expect(function() {
             makeGrammar("M2 <: M1 { foo += bar baz }", "inheritanceExtend3");
           }).to.throwException(function(e) {
@@ -1394,7 +1394,7 @@ describe("Ohm", function() {
     describe("bindings", function() {
       it("inconsistent arity in alts is an error", function() {
         expect(function() {
-          makeGrammar("G { foo = 'a' 'c' | 'b' }");
+          makeGrammar('G { foo = "a" "c" | "b" }');
         }).to.throwException(function(e) {
           expect(e).to.be.a(errors.InconsistentArity);
           expect(e.ruleName).to.equal('foo');
@@ -1405,11 +1405,11 @@ describe("Ohm", function() {
 
       it("by default, bindings are evaluated lazily", function() {
         var g = makeGrammar([
-          "G {",
-          "  foo = bar baz",
-          "  bar = 'a'",
-          "  baz = 'b'",
-          "}"]);
+          'G {',
+          '  foo = bar baz',
+          '  bar = "a"',
+          '  baz = "b"',
+          '}']);
 
         var id = 0;
         var v = g.synthesizedAttribute({
@@ -1461,15 +1461,15 @@ describe("Ohm", function() {
       });
 
       it("overriding", function() {
-        var m2 = makeGrammar(["Good <: Expr {",
-                              "  addExpr := addExpr '~' mulExpr  -- minus",
-                              "           | mulExpr",
-                              "}"],
+        var m2 = makeGrammar(['Good <: Expr {',
+                              '  addExpr := addExpr "~" mulExpr  -- minus',
+                              '           | mulExpr',
+                              '}'],
                              m.namespaceName);
         expect(makeEval(m2)(m2.matchContents('2*3~4', 'expr'))).to.equal(2);
 
         expect(function() {
-          makeGrammar("Bad <: Expr { addExpr += addExpr '~' mulExpr  -- minus }", m.namespaceName);
+          makeGrammar('Bad <: Expr { addExpr += addExpr "~" mulExpr  -- minus }', m.namespaceName);
         }).to.throwException(function(e) {
           expect(e).to.be.an(errors.DuplicateRuleDeclaration);
           expect(e.ruleName).to.equal('addExpr_minus');
@@ -1481,14 +1481,14 @@ describe("Ohm", function() {
 
     describe("lexical vs. syntactic rules", function() {
       it("lexical rules don't skip spaces implicitly", function() {
-        var g = makeGrammar("G { start = 'foo' 'bar' }");
+        var g = makeGrammar('G { start = "foo" "bar" }');
         expect(g.matchContents('foobar', 'start')).to.be.ok();
         expect(g.matchContents('foo bar', 'start')).to.equal(false);
         expect(g.matchContents(' foo bar   ', 'start')).to.equal(false);
       });
 
       it("syntactic rules skip spaces implicitly", function() {
-        var g = makeGrammar("G { Start = 'foo' 'bar' }");
+        var g = makeGrammar('G { Start = "foo" "bar" }');
         expect(g.matchContents('foobar', 'Start')).to.be.ok();
         expect(g.matchContents('foo bar', 'Start')).to.be.ok();
         expect(g.matchContents(' foo bar   ', 'Start')).to.be.ok();
@@ -1496,11 +1496,11 @@ describe("Ohm", function() {
 
       it("mixing lexical and syntactic rules works as expected", function() {
         var g = makeGrammar([
-          "G {",
-          "  foo = 'foo'",
-          "  bar = 'bar'",
-          "  Start = foo bar",
-          "}"]);
+          'G {',
+          '  foo = "foo"',
+          '  bar = "bar"',
+          '  Start = foo bar',
+          '}']);
         expect(g.matchContents('foobar', 'Start')).to.be.ok();
         expect(g.matchContents('foo bar', 'Start')).to.be.ok();
         expect(g.matchContents(' foo bar   ', 'Start')).to.be.ok();
@@ -1515,18 +1515,18 @@ describe("Ohm", function() {
           return;
         } else {
           makeGrammars([
-            "G1 {",
-            "  foo = bar",
-            "  bar = baz",
-            "  baz = qux",
-            "  qux = quux",
-            "  quux = 42",
-            "  aaa = 'duh'",
-            "  bbb = ~aaa qux  -- blah",
-            "}",
-            "G2 <: G1 {",
-            "  qux := 100",
-            "}"
+            'G1 {',
+            '  foo = bar',
+            '  bar = baz',
+            '  baz = qux',
+            '  qux = quux',
+            '  quux = 42',
+            '  aaa = "duh"',
+            '  bbb = ~aaa qux  -- blah',
+            '}',
+            'G2 <: G1 {',
+            '  qux := 100',
+            '}'
           ], 'semantic-action-templates');
           g1 = ohm.namespace('semantic-action-templates').grammar('G1');
           g2 = ohm.namespace('semantic-action-templates').grammar('G2');
@@ -1566,15 +1566,15 @@ describe("Ohm", function() {
         });
 
         it("actually installs a grammar in a namespace", function() {
-          var m = makeGrammar("aaa { foo = 'foo' }", ns1.name);
+          var m = makeGrammar('aaa { foo = "foo" }', ns1.name);
           expect(ns1.grammar('aaa')).to.eql(m);
           expect(m.matchContents('foo', 'foo')).to.be.ok();
         });
 
         it("detects duplicates", function() {
           expect(function() {
-            makeGrammar("ccc { foo = 'foo' }", ns1.name);
-            makeGrammar("ccc { bar = 'bar' }", ns1.name);
+            makeGrammar('ccc { foo = "foo" }', ns1.name);
+            makeGrammar('ccc { bar = "bar" }', ns1.name);
           }).to.throwException(function(e) {
             expect(e).to.be.an(errors.DuplicateGrammarDeclaration);
             expect(e.grammarName).to.equal('ccc');
@@ -1583,8 +1583,8 @@ describe("Ohm", function() {
         });
 
         it("allows same-name grammars to be installed in different namespaces", function() {
-          var m1 = makeGrammar("bbb { foo = 'foo' }", ns1.name);
-          var m2 = makeGrammar("bbb { bar = 'bar' }", ns2.name);
+          var m1 = makeGrammar('bbb { foo = "foo" }', ns1.name);
+          var m2 = makeGrammar('bbb { bar = "bar" }', ns2.name);
 
           expect(ns1.grammar('bbb')).to.eql(m1);
           expect(ns2.grammar('bbb')).to.eql(m2);
@@ -1653,7 +1653,7 @@ describe("Ohm", function() {
       });
 
       it("matchContents", function() {
-        var g = makeGrammar("G { start = 'a' 'b' 'c' 'd' }");
+        var g = makeGrammar('G { start = "a" "b" "c" "d" }');
         expect(function() {
           g.matchContents('ab', 'start', true);
         }).to.throwException(function(e) {
@@ -1722,10 +1722,10 @@ describe("Ohm", function() {
 
       it("inherited attributes", function() {
         var g = makeGrammar([
-          "G {",
-          "  abcs = 'a' b 'c'*",
-          "  b   = 'b'",
-          "}"
+          'G {',
+          '  abcs = "a" b "c"*',
+          '  b    = "b"',
+          '}'
         ]);
         var depth = g.inheritedAttribute({
           _base: function(node) {
@@ -1764,10 +1764,10 @@ describe("Ohm", function() {
 
     describe("definitionInterval", function() {
       var g = makeGrammar([
-          "G {",
-          "  foo = bar",
-          "  bar = 'a' | 'b' -- baz",
-          "}"], "ns");
+          'G {',
+          '  foo = bar',
+          '  bar = "a" | "b" -- baz',
+          '}'], "ns");
       function definitionLoc(grammar, ruleName) {
         var interval = grammar.ruleDict[ruleName].definitionInterval;
         return [interval.startIdx, interval.endIdx];
@@ -1781,10 +1781,10 @@ describe("Ohm", function() {
       });
 
       var g2 = makeGrammar([
-          "G2 <: G {",
-          "  foo += bar",
-          "  bar := 'a' | 'b' -- baz",
-          "}"], "ns");
+          'G2 <: G {',
+          '  foo += bar',
+          '  bar := "a" | "b" -- baz',
+          '}'], "ns");
       it("works when overriding and extending rules", function() {
         expect(definitionLoc(g2, "foo")).to.eql([12, 22]);
         expect(definitionLoc(g2, "bar")).to.eql([25, 48]);
@@ -1794,11 +1794,11 @@ describe("Ohm", function() {
 
     describe("rule invocation interval", function() {
       var g = makeGrammar([
-          "G {",
-          "  foo = bar",
-          "  beep = letter bar",
-          "  bar = 'a' | 'blah' | /[a-z]/ -- baz",
-          "}"]);
+          'G {',
+          '  foo = bar',
+          '  beep = letter bar',
+          '  bar = "a" | "blah" | /[a-z]/ -- baz',
+          '}']);
       function fromLoc(pexpr) {
         var interval = pexpr.fromInterval;
         return [interval.startIdx, interval.endIdx];

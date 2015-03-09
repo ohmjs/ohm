@@ -123,6 +123,14 @@ function Arr(expr) {
 
 Arr.prototype = Object.create(PExpr.prototype);
 
+// String decomposition
+
+function Str(expr) {
+  this.expr = expr;
+}
+
+Str.prototype = Object.create(PExpr.prototype);
+
 // Object decomposition
 
 function Obj(properties, isLenient) {
@@ -178,6 +186,7 @@ exports.Opt = Opt;
 exports.Not = Not;
 exports.Lookahead = Lookahead;
 exports.Arr = Arr;
+exports.Str = Str;
 exports.Obj = Obj;
 exports.Apply = Apply;
 

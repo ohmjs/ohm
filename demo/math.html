@@ -12,23 +12,23 @@ Arithmetic {
     = AddExpr
 
   AddExpr
-    = AddExpr '+' MulExpr  -- plus
-    | AddExpr '-' MulExpr  -- minus
+    = AddExpr "+" MulExpr  -- plus
+    | AddExpr "-" MulExpr  -- minus
     | MulExpr
 
   MulExpr
-    = MulExpr '*' ExpExpr  -- times
-    | MulExpr '/' ExpExpr  -- divide
+    = MulExpr "*" ExpExpr  -- times
+    | MulExpr "/" ExpExpr  -- divide
     | ExpExpr
 
   ExpExpr
-    = PriExpr '^' ExpExpr  -- power
+    = PriExpr "^" ExpExpr  -- power
     | PriExpr
 
   PriExpr
-    = '(' Expr ')'  -- paren
-    | '+' PriExpr   -- pos
-    | '-' PriExpr   -- neg
+    = "(" Expr ")"  -- paren
+    | "+" PriExpr   -- pos
+    | "-" PriExpr   -- neg
     | ident
     | number
 
@@ -36,7 +36,7 @@ Arithmetic {
     = letter alnum*
 
   number  -- number
-    = digit* '.' digit+  -- fract
+    = digit* "." digit+  -- fract
     | digit+             -- whole
 }
 

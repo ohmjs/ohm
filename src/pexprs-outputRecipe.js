@@ -83,6 +83,12 @@ pexprs.Arr.prototype.outputRecipe = function(sb) {
   sb.append(")");
 };
 
+pexprs.Str.prototype.outputRecipe = function(sb) {
+  sb.append("this.str(");
+  this.expr.outputRecipe(sb);
+  sb.append(")");
+};
+
 pexprs.Obj.prototype.outputRecipe = function(sb) {
   function outputPropertyRecipe(prop) {
     sb.append("{name: ");

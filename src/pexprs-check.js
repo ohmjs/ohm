@@ -121,6 +121,10 @@ pexprs.Arr.prototype.check = function(grammar, vals) {
   return this.expr.check(grammar, vals);
 };
 
+pexprs.Str.prototype.check = function(grammar, vals) {
+  return this.expr.check(grammar, vals);
+};
+
 pexprs.Obj.prototype.check = function(grammar, vals) {
   var fixedArity = this.getArity();
   if (this.isLenient) {

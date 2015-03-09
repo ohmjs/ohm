@@ -78,6 +78,10 @@ pexprs.Arr.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   this.expr.assertChoicesHaveUniformArity(ruleName);
 };
 
+pexprs.Str.prototype.assertChoicesHaveUniformArity = function(ruleName) {
+  this.expr.assertChoicesHaveUniformArity(ruleName);
+};
+
 pexprs.Obj.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   for (var idx = 0; idx < this.properties.length; idx++) {
     this.properties[idx].pattern.assertChoicesHaveUniformArity(ruleName);

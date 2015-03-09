@@ -37,7 +37,7 @@ pexprs.Not.prototype.toExpected = function(ruleDict) {
   }
 };
 
-// TODO: think about Arr and Obj
+// TODO: think about Arr, Str, and Obj
 
 pexprs.Apply.prototype.toExpected = function(ruleDict) {
   var description = ruleDict[this.ruleName].description;

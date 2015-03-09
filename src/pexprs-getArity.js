@@ -45,6 +45,10 @@ pexprs.Arr.prototype.getArity = function() {
   return this.expr.getArity();
 };
 
+pexprs.Str.prototype.getArity = function() {
+  return this.expr.getArity();
+};
+
 pexprs.Obj.prototype.getArity = function() {
   var arity = this.isLenient ? 1 : 0;
   for (var idx = 0; idx < this.properties.length; idx++) {

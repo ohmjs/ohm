@@ -3,17 +3,17 @@ Expr {
     = addExpr
 
   addExpr
-    = addExpr '+' mulExpr  -- plus
-    | addExpr '-' mulExpr  -- minus
+    = addExpr "+" mulExpr  -- plus
+    | addExpr "-" mulExpr  -- minus
     | mulExpr
 
   mulExpr
-    = mulExpr '*' priExpr  -- times
-    | mulExpr '/' priExpr  -- divide
+    = mulExpr "*" priExpr  -- times
+    | mulExpr "/" priExpr  -- divide
     | priExpr
 
   priExpr
-    = '(' expr ')'         -- paren
+    = "(" expr ")"         -- paren
     | number
 
   number  -- number

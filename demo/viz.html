@@ -61,32 +61,32 @@ Arithmetic {
   Expr = AddExpr
 
   AddExpr
-    = AddExpr '+' MulExpr -- plus
-    | AddExpr '-' MulExpr -- minus
+    = AddExpr "+" MulExpr -- plus
+    | AddExpr "-" MulExpr -- minus
     | MulExpr
 
   MulExpr
-    = MulExpr '*' ExpExpr -- times
-    | MulExpr '/' ExpExpr -- divide
+    = MulExpr "*" ExpExpr -- times
+    | MulExpr "/" ExpExpr -- divide
     | ExpExpr
 
   ExpExpr
-    = PriExpr '^' ExpExpr -- power
+    = PriExpr "^" ExpExpr -- power
     | PriExpr
 
   PriExpr
-    = '(' Expr ')' -- paren
-    | '+' PriExpr  -- pos
-    | '-' PriExpr -- neg
+    = "(" Expr ")" -- paren
+    | "+" PriExpr  -- pos
+    | "-" PriExpr -- neg
     | ident
     | number
 
-  ident -- identifier
+  ident -- an identifier
     = letter alnum*
 
-  number -- number literal
-    = digit+ ('.' digit*)? -- integerAndFract
-    | '.' digit+ -- onlyFract
+  number  -- a number literal
+    = digit* "." digit+  -- fract
+    | digit+             -- whole
 }
 
       </textarea>
@@ -248,8 +248,13 @@ var viz = ohm.grammar("Ohm").semanticAction({
                                 viz(x);  // force evaluation
                               leave();
                             },
-  Base_listy:               function(_, x, _) {
-                              enter('listy');
+  Base_arr:                 function(_, x, _) {
+                              enter('arr');
+                                viz(x);  // force evaluation
+                              leave();
+                            },
+  Base_str:                 function(_, x, _) {
+                              enter('str');
                                 viz(x);  // force evaluation
                               leave();
                             },
