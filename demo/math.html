@@ -36,8 +36,8 @@ Arithmetic {
     = letter alnum*
 
   number  -- number
-    = digit+ ('.' digit*)?  -- integerAndFract
-    | '.' digit+            -- onlyFract
+    = digit* '.' digit+  -- fract
+    | digit+             -- whole
 }
 
     </script>
@@ -57,16 +57,7 @@ Arithmetic {
     <script src="../dist/ohm.js"></script>
     <script>
 
-//var g = ohm.grammar("Arithmetic <: J { ... }", { J: ... , L: ... });
 var g = ohm.grammar("Arithmetic");
-
-
-
-
-
-
-
-
 
 // ---------------------------------------------------------------------------------------------------------------------
 
