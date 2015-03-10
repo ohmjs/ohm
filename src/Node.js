@@ -15,9 +15,6 @@ function Node(grammar, ctorName, children, interval) {
   this.children = children;
 }
 
-// * pred -> childBefore
-// * succ -> childAfter
-
 Node.prototype.numChildren = function() {
   return this.children.length;
 };
