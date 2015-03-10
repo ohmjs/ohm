@@ -33,6 +33,7 @@
   "license": "MIT",
   "author": "Alex Warth <alexwarth@gmail.com> (http://tinlizzie.org/~awarth)",
   "dependencies": {
+    "inherits": "^2.0.1",
     "symbol": ""
   },
   "devDependencies": {

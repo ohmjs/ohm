@@ -24,8 +24,8 @@ Builder.prototype = {
     return pexprs.end;
   },
 
-  prim: function(x, optFromInterval) {
-    return pexprs.makePrim(x, optFromInterval);
+  prim: function(x) {
+    return pexprs.makePrim(x);
   },
 
   alt: function(/* term1, term1, ... */) {
@@ -82,8 +82,8 @@ Builder.prototype = {
     return new pexprs.Obj(properties, !!isLenient);
   },
 
-  app: function(ruleName, optFromInterval) {
-    return new pexprs.Apply(ruleName, optFromInterval);
+  app: function(ruleName) {
+    return new pexprs.Apply(ruleName);
   }
 };
 
