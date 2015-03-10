@@ -63,12 +63,6 @@ pexprs.end.eval = function(state) {
   }
 };
 
-pexprs.fail.eval = function(state) {
-  var inputStream = state.inputStream;
-  state.recordFailure(inputStream.pos, this);
-  return false;
-};
-
 pexprs.Prim.prototype.eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;

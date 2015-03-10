@@ -28,10 +28,6 @@ var anything = Object.create(PExpr.prototype);
 
 var end = Object.create(PExpr.prototype);
 
-// Fail
-
-var fail = Object.create(PExpr.prototype);
-
 // Primitives
 
 function Prim(obj, optFromInterval) {
@@ -174,7 +170,6 @@ exports.makePrim = function(obj, optFromInterval) {
 exports.PExpr = PExpr;
 exports.anything = anything;
 exports.end = end;
-exports.fail = fail;
 exports.Prim = Prim;
 exports.StringPrim = StringPrim;
 exports.RegExpPrim = RegExpPrim;

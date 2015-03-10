@@ -21,10 +21,6 @@ pexprs.end.toExpected = function(ruleDict) {
   return "end of input";
 };
 
-pexprs.fail.toExpected = function(ruleDict) {
-  return "hell to freeze over";
-};
-
 pexprs.Prim.prototype.toExpected = function(ruleDict) {
   return common.toStringLiteral(this.obj);
 };

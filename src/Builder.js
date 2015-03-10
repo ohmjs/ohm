@@ -24,10 +24,6 @@ Builder.prototype = {
     return pexprs.end;
   },
 
-  fail: function() {
-    return pexprs.fail;
-  },
-
   prim: function(x, optFromInterval) {
     return pexprs.makePrim(x, optFromInterval);
   },

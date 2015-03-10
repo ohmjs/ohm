@@ -20,10 +20,6 @@ pexprs.end.assertAllApplicationsAreValid = function(grammar) {
   // no-op
 };
 
-pexprs.fail.assertAllApplicationsAreValid = function(grammar) {
-  // no-op
-};
-
 pexprs.Prim.prototype.assertAllApplicationsAreValid = function(grammar) {
   // no-op
 };

@@ -41,11 +41,6 @@
     * `""`s, e.g., `"an expression"` -- this is the syntax for rule descriptions in PEG.js (using it may be a good idea b/c it will look familiar to lots of people)
     * Any other ideas?
 
-### The `empty` Rule
-
-* ... is a bad smell in any grammar that uses it. Always better to use case labels / inline rule declarations or optionals instead.
-* So let's remove the `empty` rule from `src/Grammar.js`.
-
 ### Unit Tests
 
 * The unit tests are a mess right now. They were pretty good early on, but the language has been changed a lot since then. **We should spend a couple of days cleaning up the unit tests.** E.g.,

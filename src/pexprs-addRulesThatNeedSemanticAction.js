@@ -19,10 +19,6 @@ pexprs.end.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
   // no-op
 };
 
-pexprs.fail.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
-  // no-op
-};
-
 pexprs.Prim.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
   // no-op
 };

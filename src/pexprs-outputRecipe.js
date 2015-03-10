@@ -19,10 +19,6 @@ pexprs.end.outputRecipe = function(sb) {
   sb.append("this.end()");
 };
 
-pexprs.fail.outputRecipe = function(sb) {
-  sb.append("this.fail()");
-};
-
 pexprs.Prim.prototype.outputRecipe = function(sb) {
   sb.append("this.prim(");
   sb.append(typeof this.obj === "string" ? common.toStringLiteral(this.obj) : "" + this.obj);
