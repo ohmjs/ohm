@@ -265,10 +265,9 @@ namespace("default").install(new Grammar(
         digit: pexprs.makePrim(/[0-9]/).withDescription("digit"),
         hexDigit: pexprs.makePrim(/[0-9a-fA-F]/).withDescription("hexadecimal digit"),
 
-        // The following rules are part of the implementation.
-        // Their names end with '_' so that they can't be overridden or invoked by programmers.
-        spaces_: new pexprs.Alt([new pexprs.Apply("spaces_rec_"), new pexprs.Apply("empty")]),
-        spaces_rec_: new pexprs.Seq([new pexprs.Apply("space"), new pexprs.Apply("spaces_")]),
+        // The following rule is part of the implementation.
+        // Its name ends with '_' so that it can't be overridden or invoked by programmers.
+        spaces_: new pexprs.Many(new pexprs.Apply("space"), 0),
     }));
 
 // --------------------------------------------------------------------
