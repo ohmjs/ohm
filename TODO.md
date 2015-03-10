@@ -35,6 +35,8 @@
 
 ### Rule Descriptions
 
+**NOTE: I've already made the change to use `()`s, but I'm leaving this item on the list to remind us to talk about it. Does it work for you, Pat?**
+
 * ... should always start with an indefinite article, e.g., "a rule description",  "an expression", etc. This makes them work better for error-reporting purposes. **Update all of the rule descriptions in our codebase accordingly.**
 * Come up with a better syntax for them. Right now they look a little confusing b/c they look just like inline rule declarations. A couple of options:
     * `()`s, e.g., `(an expression)`
