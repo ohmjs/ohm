@@ -28,7 +28,8 @@
     "test-watch": "mocha -w",
     "bootstrap": "npm test && npm run unsafe-bootstrap && npm test",
     "unsafe-bootstrap": "cp dist/ohm-grammar.js dist/ohm-grammar.js.old; node src/bootstrap.js src/ohm-grammar.ohm > dist/ohm-grammar.js.new && mv dist/ohm-grammar.js.new dist/ohm-grammar.js",
-    "prepublish": "npm run build && npm run bootstrap"
+    "prepublish": "npm run build && npm run bootstrap",
+    "postinstall": "git config --add merge.ours.driver true"
   },
   "license": "MIT",
   "author": "Alex Warth <alexwarth@gmail.com> (http://tinlizzie.org/~awarth)",

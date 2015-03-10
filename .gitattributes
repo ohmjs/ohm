@@ -1,0 +1,5 @@
+# Don't diff compiled files.
+dist/** -diff
+
+# When merging compiled files, always use the local version.
+dist/** merge=ours
