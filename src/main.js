@@ -62,8 +62,8 @@ function makeGrammarBuilder(optNamespaceName) {
       return ans;
     },
 
-    Alt_rec: function(x, _, y) {
-      return builder.alt(value(x), value(y));
+    Alt: function(term, _, terms) {
+      return builder.alt.apply(builder, [value(term)].concat(value(terms)));
     },
 
     Term_inline: function(b, n) {
@@ -121,11 +121,8 @@ function makeGrammarBuilder(optNamespaceName) {
       return builder.obj(value(ps), value(lenient));
     },
 
-    Props_rec: function(p, _, ps) {
+    Props: function(p, _, ps) {
       return [value(p)].concat(value(ps));
-    },
-    Props_base: function(p) {
-      return [value(p)];
     },
     Prop: function(n, _, p) {
       return {name: value(n), pattern: value(p)};

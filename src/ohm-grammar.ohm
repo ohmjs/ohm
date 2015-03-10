@@ -16,8 +16,7 @@ Ohm {
     | ident            "+=" Alt  -- extend
 
   Alt
-    = Term "|" Alt  -- rec
-    | Term
+    = Term ("|" Term)*
 
   Term
     = Seq caseName -- inline
@@ -47,8 +46,7 @@ Ohm {
     | "{" Props ("," "...")? "}"             -- objWithProps
 
   Props
-    = Prop "," Props  -- rec
-    | Prop            -- base
+    = Prop ("," Prop)*
 
   Prop
     = (name | string) ":" Alt
