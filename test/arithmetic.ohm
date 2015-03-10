@@ -16,7 +16,7 @@ Expr {
     = "(" expr ")"         -- paren
     | number
 
-  number  -- number
+  number  (a number)
     = number digit         -- rec
     | digit
 }

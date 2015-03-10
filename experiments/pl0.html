@@ -57,11 +57,11 @@ PL0 {
     | number
     | ident
 
-  number  -- a number literal
+  number  (a number literal)
     = digit* "." digit+  -- fract
     | digit+             -- whole
 
-  ident  -- an identifier
+  ident  (an identifier)
     = ~keyword letter alnum*
 
   var   = "var" ~alnum

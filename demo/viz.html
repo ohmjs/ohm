@@ -81,10 +81,10 @@ Arithmetic {
     | ident
     | number
 
-  ident -- an identifier
+  ident  (an identifier)
     = letter alnum*
 
-  number  -- a number literal
+  number  (a number literal)
     = digit* "." digit+  -- fract
     | digit+             -- whole
 }
@@ -196,7 +196,7 @@ var viz = ohm.grammar("Ohm").semanticAction({
                               viz(n);  // force evaluation
                             },
   caseName:                 function(_, _, n, _, _) {
-                              add('description', viz(n));
+                              add('caseName', viz(n));
                             },
   Seq:                      function(expr) {
                               enter('seq');

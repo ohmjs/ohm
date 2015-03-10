@@ -32,10 +32,10 @@ Arithmetic {
     | ident
     | number
 
-  ident  -- identifier
+  ident  (an identifier)
     = letter alnum*
 
-  number  -- number
+  number  (a number)
     = digit* "." digit+  -- fract
     | digit+             -- whole
 }

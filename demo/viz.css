@@ -38,12 +38,21 @@ rule > name {
   color: maroon;
 }
 
-description {
+description, caseName {
   opacity: .30;
   font-style: italic;
 }
 
 description::before {
+  content: '(';
+  padding-left: 10pt;
+}
+
+description::after {
+  content: ')';
+}
+
+caseName::before {
   content: '\2014';
   padding-left: 10pt;
   padding-right: 4pt;

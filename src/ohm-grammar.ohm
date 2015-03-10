@@ -53,16 +53,16 @@ Ohm {
   Prop
     = (name | string) ":" Alt
 
-  ruleDescr  -- rule description for use in error messages
-    = "--" ruleDescrText "\n"
+  ruleDescr  (a rule description)
+    = "(" ruleDescrText ")"
 
   ruleDescrText
-    = (~"\n" _)*
+    = (~")" _)*
 
   caseName
     = "--" (~"\n" space)* name (~"\n" space)* ("\n" | &"}")
 
-  name  -- name
+  name  (a name)
     = nameFirst nameRest*
 
   nameFirst
@@ -73,7 +73,7 @@ Ohm {
     = "_"
     | alnum
 
-  ident  -- identifier
+  ident  (an identifier)
     = ~keyword name
 
   keyword
@@ -82,7 +82,7 @@ Ohm {
     | "true" ~nameRest       -- true
     | "false" ~nameRest      -- false
 
-  string  -- string literal
+  string  (a string literal)
     = "\"" strChar* "\""
 
   strChar
@@ -94,14 +94,14 @@ Ohm {
     | "\\u" hexDigit hexDigit hexDigit hexDigit  -- unicodeEscape
     | "\\" _                                     -- escape
 
-  regExp  -- regular expression
+  regExp  (a regular expression)
     = "/" reCharClass "/"
 
   reCharClass
     = "\\p{" /[A-Za-z]/+ "}"    -- unicode
     | "[" ("\\]" | ~"]" _)* "]" -- ordinary
 
-  number  -- number
+  number  (a number)
     = "-"? digit+
 
   space
