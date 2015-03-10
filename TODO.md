@@ -16,6 +16,10 @@
     * No more `namespace` attribute in Ohm `<script>` tags.
     * Maybe now the stuff that's done in `src/bootstrap.js` can be done for any grammar? That would enable people to share grammar as "binaries". (A while ago I had an `ohm` command, but I removed it b/c it didn't support inheritance properly. That command turned into the less general but essential `src/bootstrap.js`.)
 
+### Refactorings
+
+* Pass origPos, etc., as arguments to `PExpr.prototype._eval`
+
 ### Inheriting from Semantic Actions and Attributes
 
 * Add `Grammar.prototype.extend(semanticActionOrAttribute, { ... })`
@@ -61,3 +65,4 @@
 * Better support for attribute grammars
     * Take another pass at the API for writing inherited attributes
     * Akira's editor?
+* Incremental parsing ala [Papa Carlo](http://lakhin.com/projects/papa-carlo/)?    
