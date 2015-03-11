@@ -91,7 +91,6 @@ function checkNodeAndGrammar(node, grammar, what) {
     throw new Error("not an Ohm CST node: " + JSON.stringify(node));
   }
   if (node.grammar !== grammar) {
-console.log("node.grammar:", node.grammar.namespaceName, node.grammar.name, "grammar", grammar.namespaceName, grammar.name);
     throw new Error("a node from grammar " + node.grammar.name +
                     " cannot be used with a " + what +
                     " from grammar " + grammar.name);
