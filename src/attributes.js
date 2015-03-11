@@ -15,16 +15,12 @@ var actions = {
   passThrough: function(childNode) { throw new Error('BUG: ohm.actions.passThrough should never be called'); }
 };
 
-function _makeSynthesizedAttribute(actionDict, memoize) {
+function makeTopDownThing(grammar, actionDict, memoize) {
   function get(node) {
-    if (!(node instanceof Node)) {
-      throw new Error('not an Ohm CST node: ' + JSON.stringify(node));
-    }
-
     function doAction(actionFn, optDontPassChildrenAsAnArgument) {
       if (actionFn === actions.makeArray) {
         if (node.ctorName === '_many') {
-          return node.children.map(attribute);
+          return node.children.map(thing);
         } else {
           throw new Error('the makeArray default action cannot be used with a ' + node.ctorName + ' node');
         }
@@ -32,7 +28,7 @@ function _makeSynthesizedAttribute(actionDict, memoize) {
         if (node.ctorName === '_many') {
           throw new Error('the passThrough default action cannot be used with a _many node');
         } else {
-          return attribute(node.onlyChild());
+          return thing(node.onlyChild());
         }
       } else {
         return optDontPassChildrenAsAnArgument ?
@@ -61,38 +57,57 @@ function _makeSynthesizedAttribute(actionDict, memoize) {
     }
   }
 
-  var attribute;
-  if (memoize) {
+  function synthesizedAttribute() {
     var key = Symbol();
-    // TODO: add black hole here to detect cycles.
-    attribute = function(node) {
-      if (!(node.hasOwnProperty(key))) {
+    var attribute = function(node) {
+      checkNodeAndGrammar(node, grammar, "synthesized attribute");
+      if (!node.hasOwnProperty(key)) {
         node[key] = get(node);
       }
       return node[key];
     };
-    attribute.toString = function() { return '[synthesized attribute]'; };
-  } else {
-    attribute = get;
-    attribute.toString = function() { return '[semantic action]'; };
+    attribute.toString = function() { return "[synthesized attribute]"; };
+    return attribute;
   }
-  return attribute;
+
+  function semanticAction() {
+    var action = function(node) {
+      checkNodeAndGrammar(node, grammar, "semantic action");
+      return get(node);
+    };
+    action.toString = function() { return "[semantic action]"; };
+    return action;
+  }
+
+  var thing = memoize ?
+    synthesizedAttribute() :
+    semanticAction();
+
+  return thing;
 }
 
-function makeSemanticAction(actionDict) {
-  return _makeSynthesizedAttribute(actionDict, false);
+function checkNodeAndGrammar(node, grammar, what) {
+  if (!(node instanceof Node)) {
+    throw new Error("not an Ohm CST node: " + JSON.stringify(node));
+  }
+  if (node.grammar !== grammar) {
+console.log("node.grammar:", node.grammar.namespaceName, node.grammar.name, "grammar", grammar.namespaceName, grammar.name);
+    throw new Error("a node from grammar " + node.grammar.name +
+                    " cannot be used with a " + what +
+                    " from grammar " + grammar.name);
+  }
 }
 
-function makeSynthesizedAttribute(actionDict) {
-  return _makeSynthesizedAttribute(actionDict, true);
+function makeSemanticAction(grammar, actionDict) {
+  return makeTopDownThing(grammar, actionDict, false);
 }
 
-function makeInheritedAttribute(actionDict) {
+function makeSynthesizedAttribute(grammar, actionDict) {
+  return makeTopDownThing(grammar, actionDict, true);
+}
+
+function makeInheritedAttribute(grammar, actionDict) {
   function compute(node) {
-    if (!(node instanceof Node)) {
-      throw new Error('not an Ohm CST node: ' + JSON.stringify(node));
-    }
-
     function doAction(actionName, optIncludeChildIndex) {
       var actionFn = actionDict[actionName];
       if (actionFn === actions.makeArray) {
@@ -147,6 +162,7 @@ function makeInheritedAttribute(actionDict) {
   var key = Symbol();
   var currentChildStack = [];
   var attribute = function(node) {
+    checkNodeAndGrammar(node, grammar, "inherited attribute");
     if (!node.hasOwnProperty(key)) {
       currentChildStack.push(node);
       try {

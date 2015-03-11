@@ -9,10 +9,10 @@ var Interval = require('./Interval.js');
 // --------------------------------------------------------------------
 
 function Node(grammar, ctorName, children, interval) {
-  this.interval = interval;
   this.grammar = grammar;
   this.ctorName = ctorName;
   this.children = children;
+  this.interval = interval;
 }
 
 Node.prototype.numChildren = function() {

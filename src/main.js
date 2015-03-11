@@ -19,15 +19,17 @@ var ohm = exports;
 // Private stuff
 // --------------------------------------------------------------------
 
-function makeGrammarBuilder(optNamespaceName) {
+function makeGrammarBuilder(optNamespaceName, optOhmGrammar) {
   var builder;
   var decl;
   var currentRuleName;
   var overriding = false;
-  var value = namespace("default").grammar("Ohm").semanticAction({
+  var namespaceName = optNamespaceName || "default";
+  var ohmGrammar = optOhmGrammar || namespace("default").grammar("Ohm");
+  var value = ohmGrammar.semanticAction({
     Grammar: function(n, s, _, rs, _) {
       builder = new Builder();
-      decl = builder.newGrammar(value(n), optNamespaceName || "default");
+      decl = builder.newGrammar(value(n), namespaceName);
       value(s);  // force evaluation
       value(rs);  // force evaluation
       return decl.install();

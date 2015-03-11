@@ -86,16 +86,12 @@ Grammar.prototype = {
 
   semanticAction: function(actionDict) {
     this.assertSemanticActionNamesAndAritiesMatch(actionDict);
-    var semanticAction = attributes.makeSemanticAction(actionDict);
-    semanticAction.grammar = this;
-    return semanticAction;
+    return attributes.makeSemanticAction(this, actionDict);
   },
 
   synthesizedAttribute: function(actionDict) {
     this.assertSemanticActionNamesAndAritiesMatch(actionDict);
-    var attribute = attributes.makeSynthesizedAttribute(actionDict);
-    attribute.grammar = this;
-    return attribute;
+    return attributes.makeSynthesizedAttribute(this, actionDict);
   },
 
   inheritedAttribute: function(actionDict) {
@@ -105,9 +101,7 @@ Grammar.prototype = {
     } else if (actionDict._base.length !== 1) {
       throw new Error("inherited attribute's base case must take exactly one argument");
     }
-    var attribute = attributes.makeInheritedAttribute(actionDict);
-    attribute.grammar = this;
-    return attribute;
+    return attributes.makeInheritedAttribute(this, actionDict);
   },
 
   assertSemanticActionNamesAndAritiesMatch: function(actionDict) {

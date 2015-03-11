@@ -1,3 +1,12 @@
+/*
+
+TODO:
+* add a test that tries to use a semantic action for one grammar w/ a CST from another (should throw an error)
+* rethink these tests, they're outdated now and should be re-written to test what Ohm has become
+  (see TODO.md)
+
+*/
+
 var expect = require('expect.js');
 var fs = require('fs');
 var ohm = require('../src/main.js');
@@ -1688,13 +1697,13 @@ describe("Ohm", function() {
       });
 
       it("can produce a grammar that will recognize itself", function() {
-        var gPrime = ohm._makeGrammarBuilder(freshNamespaceName())(g.matchContents(ohmGrammarSource, 'Grammar'));
+        var gPrime = ohm._makeGrammarBuilder(freshNamespaceName(), g)(g.matchContents(ohmGrammarSource, 'Grammar'));
         expect(gPrime.matchContents(ohmGrammarSource, 'Grammar')).to.be.ok();
       });
 
       it("can produce a grammar that works", function() {
-        var gPrime = ohm._makeGrammarBuilder(freshNamespaceName())(g.matchContents(ohmGrammarSource, 'Grammar'));
-        var a = ohm._makeGrammarBuilder(freshNamespaceName())(gPrime.matchContents(arithmeticGrammarSource, 'Grammar'));
+        var gPrime = ohm._makeGrammarBuilder(freshNamespaceName(), g)(g.matchContents(ohmGrammarSource, 'Grammar'));
+        var a = ohm._makeGrammarBuilder(freshNamespaceName(), gPrime)(gPrime.matchContents(arithmeticGrammarSource, 'Grammar'));
         var eval = a.synthesizedAttribute({
           expr:           function(expr) { return eval(expr); },
           addExpr:        function(expr) { return eval(expr); },
@@ -1714,8 +1723,8 @@ describe("Ohm", function() {
       });
 
       it("full bootstrap!", function() {
-        var gPrime = ohm._makeGrammarBuilder(freshNamespaceName())(g.matchContents(ohmGrammarSource, 'Grammar'));
-        var gPrimePrime = ohm._makeGrammarBuilder(freshNamespaceName())(gPrime.matchContents(ohmGrammarSource, 'Grammar'));
+        var gPrime = ohm._makeGrammarBuilder(freshNamespaceName(), g)(g.matchContents(ohmGrammarSource, 'Grammar'));
+        var gPrimePrime = ohm._makeGrammarBuilder(freshNamespaceName(), gPrime)(gPrime.matchContents(ohmGrammarSource, 'Grammar'));
         gPrimePrime.namespaceName = gPrime.namespaceName;  // make their namespaceName properties the same
         compareGrammars(gPrime, gPrimePrime);
       });
