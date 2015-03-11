@@ -79,6 +79,8 @@ function makeTopDownThing(grammar, actionDict, memoize) {
     return action;
   }
 
+  // `thing` has to be a local variable b/c it's called from `get()`,
+  // that's why we don't just return `memoize ? ... : ...`
   var thing = memoize ?
     synthesizedAttribute() :
     semanticAction();
