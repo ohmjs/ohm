@@ -2,12 +2,9 @@
 
 ## First Release Blockers
 
-### Scratch
+### Better error messages
 
-semantic actions and attributes have these properties:
-
-* grammar
-* dict
+Implement Alex's de-spockification idea.
 
 ### "Namespaces"
 
