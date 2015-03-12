@@ -2,6 +2,13 @@
 
 ## First Release Blockers
 
+### Scratch
+
+semantic actions and attributes have these properties:
+
+* grammar
+* dict
+
 ### "Namespaces"
 
 * `ohm.grammar(stringOrNodeList, optNS)` returns a `Grammar`
@@ -22,6 +29,8 @@
 * Pass origPos, etc., as arguments to `PExpr.prototype._eval`
 
 ### Inheriting from Semantic Actions and Attributes
+
+**NOTE: I've had a stab at this (it's easy enough to implement) but it needs more thinking. The problem is that recursive calls to the semantic action / attribute will still "dispatch" to the original instead of the extension. Maybe the semantic action / whatever needs to become `this`, but then what do we do about the parent node? I don't like the idea of including the parent node as an argument, that's too verbose.**
 
 * Add `Grammar.prototype.extend(semanticActionOrAttribute, { ... })`
 * The grammar that the 1st argument belongs to must be a (transitive) super-grammar of the receiver of `extend()`.
