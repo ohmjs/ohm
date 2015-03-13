@@ -34,16 +34,6 @@ Implement Alex's de-spockification idea.
 * The methods in the 2nd argument override / add to those of the original  semantic action or attribute.
 * (Does this do what Pat wanted?)
 
-### Rule Descriptions
-
-**NOTE: I've already made the change to use `()`s, but I'm leaving this item on the list to remind us to talk about it. Does it work for you, Pat?**
-
-* ... should always start with an indefinite article, e.g., "a rule description",  "an expression", etc. This makes them work better for error-reporting purposes. **Update all of the rule descriptions in our codebase accordingly.**
-* Come up with a better syntax for them. Right now they look a little confusing b/c they look just like inline rule declarations. A couple of options:
-    * `()`s, e.g., `(an expression)`
-    * `""`s, e.g., `"an expression"` -- this is the syntax for rule descriptions in PEG.js (using it may be a good idea b/c it will look familiar to lots of people)
-    * Any other ideas?
-
 ### Unit Tests
 
 * The unit tests are a mess right now. They were pretty good early on, but the language has been changed a lot since then. **We should spend a couple of days cleaning up the unit tests.** E.g.,
