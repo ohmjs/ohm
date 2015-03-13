@@ -136,7 +136,6 @@ pexprs.Seq.prototype._eval = function(state) {
     skipSpacesIfAppropriate(state);
     var factor = this.factors[idx];
     if (!factor.eval(state)) {
-      state.bindings.length = origNumBindings;
       return false;
     }
   }
