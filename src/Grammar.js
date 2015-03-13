@@ -53,12 +53,8 @@ Grammar.prototype = {
   },
 
   match: function(obj, startRule, optThrowOnFail) {
-    return this.matchContents(typeof obj === "string" ? obj : [obj], startRule, optThrowOnFail);
-  },
-
-  matchContents: function(obj, startRule, optThrowOnFail) {
     var throwOnFail = !!optThrowOnFail;
-    var inputStream = InputStream.newFor(obj);
+    var inputStream = InputStream.newFor(typeof obj === "string" ? obj : [obj]);
     var state = new State(this, inputStream);
     var succeeded = new pexprs.Apply(startRule).eval(state);
     if (succeeded) {

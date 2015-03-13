@@ -206,7 +206,7 @@ hideError();
 input.oninput = function() {
   hideError();
   try {
-    var cst = g.matchContents(this.value, 'Start', true);
+    var cst = g.match(this.value, 'Start', true);
     show('value', codeOut(cst).join('\n'));
   } catch (e) {
     this.className = 'error';
@@ -219,7 +219,6 @@ function hideError() {
 }
 
 function showError(e) {
-  console.log(e);
   setTimeout(function() {
     // Position the error bubble to line up with the offending input
     spaces.innerHTML = repeat(' ', e.getPos());

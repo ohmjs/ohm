@@ -111,7 +111,7 @@ describe("Ohm", function() {
       });
 
       it("particular entries work when called", function () {
-        var n = m.matchContents('1+2*3', 'addExpr');
+        var n = m.match('1+2*3', 'addExpr');
         expect(n.ctorName).to.equal('addExpr');
         var n2 = m.constructors.addExpr(n.children[0]);
 
@@ -263,8 +263,7 @@ describe("Ohm", function() {
         describe("match in string stream", function() {
           it("recognition", function() {
             expect(m.match('5', '_')).to.be.ok();
-            expect(m.matchContents('5', '_')).to.be.ok();
-            expect(m.matchContents('', '_')).to.equal(false);
+            expect(m.match('', '_')).to.equal(false);
           });
 
           it("semantic actions", function() {
@@ -273,15 +272,12 @@ describe("Ohm", function() {
               _terminal: ohm.actions.getValue
             };
             expect(m.synthesizedAttribute(dict)(m.match('5', '_'))).to.equal('5');
-            expect(m.synthesizedAttribute(dict)(m.matchContents('5', '_'))).to.equal('5');
           });
         });
 
         describe("match in list stream", function() {
           it("recognition", function() {
-            expect(m.matchContents(['123'], '_')).to.be.ok();
-            expect(m.matchContents(['123', 4], '_')).to.equal(false);
-            expect(m.matchContents([], '_')).to.equal(false);
+            expect(m.match(['123'], '_')).to.be.ok();
           });
 
           it("semantic actions", function() {
@@ -289,7 +285,7 @@ describe("Ohm", function() {
               _: ohm.actions.passThrough,
               _terminal: ohm.actions.getValue
             };
-            expect(m.synthesizedAttribute(dict)(m.matchContents(['123'], '_'))).to.equal('123');
+            expect(m.synthesizedAttribute(dict)(m.match(['123'], '_'))).to.eql(['123']);
           });
         });
       });
@@ -384,42 +380,18 @@ describe("Ohm", function() {
 
         describe("match in string stream", function() {
           it("recognition", function() {
-            expect(m.matchContents('!', 'five')).to.equal(false);
-            expect(m.matchContents('5', 'five')).to.equal(false);
-            expect(m.matchContents('2', 'five')).to.equal(false);
-            expect(m.matchContents('', 'five')).to.equal(false);
-            expect(m.matchContents('true', '_true')).to.equal(false);
-            expect(m.matchContents('false', '_false')).to.equal(false);
-            expect(m.matchContents('null', '_null')).to.equal(false);
-            expect(m.matchContents('undefined', '_undefined')).to.equal(false);
+            expect(m.match('!', 'five')).to.equal(false);
+            expect(m.match('5', 'five')).to.equal(false);
+            expect(m.match('2', 'five')).to.equal(false);
+            expect(m.match('', 'five')).to.equal(false);
+            expect(m.match('true', '_true')).to.equal(false);
+            expect(m.match('false', '_false')).to.equal(false);
+            expect(m.match('null', '_null')).to.equal(false);
+            expect(m.match('undefined', '_undefined')).to.equal(false);
           });
 
           it("semantic actions", function() {
             // N/A
-          });
-        });
-
-        describe("match in list stream", function() {
-          it("recognition", function() {
-            expect(m.matchContents(['!'], 'five')).to.equal(false);
-            expect(m.matchContents(['5'], 'five')).to.equal(false);
-            expect(m.matchContents([2], 'five')).to.equal(false);
-            expect(m.matchContents([5], 'five')).to.be.ok();
-            expect(m.matchContents([5, 'a'], 'five')).to.equal(false);
-            expect(m.matchContents([''], 'five')).to.equal(false);
-            expect(m.matchContents([], 'five')).to.equal(false);
-            expect(m.matchContents([true], '_true')).to.be.ok();
-            expect(m.matchContents([false], '_false')).to.be.ok();
-            expect(m.matchContents([undefined], '_undefined')).to.be.ok();
-          });
-
-          it("semantic actions", function() {
-            var dict = {
-              five: ohm.actions.passThrough,
-              _terminal: ohm.actions.getValue,
-            };
-            var cst = m.matchContents([5], 'five');
-            expect(m.synthesizedAttribute(dict)(cst)).to.equal(5);
           });
         });
       });
@@ -450,9 +422,9 @@ describe("Ohm", function() {
 
         describe("match in string stream", function() {
           it("recognition", function() {
-            expect(m.matchContents('!', 'bang')).to.be.ok();
-            expect(m.matchContents('a', 'bang')).to.equal(false);
-            expect(m.matchContents('', 'bang')).to.equal(false);
+            expect(m.match('!', 'bang')).to.be.ok();
+            expect(m.match('a', 'bang')).to.equal(false);
+            expect(m.match('', 'bang')).to.equal(false);
           });
 
           it("semantic actions", function() {
@@ -460,26 +432,7 @@ describe("Ohm", function() {
               bang: ohm.actions.passThrough,
               _terminal: ohm.actions.getValue
             };
-            var cst = m.matchContents('!', 'bang');
-            expect(m.synthesizedAttribute(dict)(cst)).to.equal('!');
-          });
-        });
-
-        describe("match in list stream", function() {
-          it("recognition", function() {
-            expect(m.matchContents(['!'], 'bang')).to.be.ok();
-            expect(m.matchContents(['a'], 'bang')).to.equal(false);
-            expect(m.matchContents(['!', 'a'], 'bang')).to.equal(false);
-            expect(m.matchContents([''], 'bang')).to.equal(false);
-            expect(m.matchContents([], 'bang')).to.equal(false);
-          });
-
-          it("semantic actions", function() {
-            var dict = {
-              bang: ohm.actions.passThrough,
-              _terminal: ohm.actions.getValue
-            };
-            var cst = m.matchContents(['!'], 'bang');
+            var cst = m.match('!', 'bang');
             expect(m.synthesizedAttribute(dict)(cst)).to.equal('!');
           });
         });
@@ -511,9 +464,9 @@ describe("Ohm", function() {
 
         describe("match in string stream", function() {
           it("recognition", function() {
-            expect(m.matchContents('foo', 'foo')).to.be.ok();
-            expect(m.matchContents('foo1', 'foo')).to.equal(false);
-            expect(m.matchContents('bar', 'foo')).to.equal(false);
+            expect(m.match('foo', 'foo')).to.be.ok();
+            expect(m.match('foo1', 'foo')).to.equal(false);
+            expect(m.match('bar', 'foo')).to.equal(false);
           });
 
           it("semantic actions", function() {
@@ -521,27 +474,7 @@ describe("Ohm", function() {
               foo: ohm.actions.passThrough,
               _terminal: ohm.actions.getValue
             };
-            var cst = m.matchContents('foo', 'foo');
-            expect(m.synthesizedAttribute(dict)(cst)).to.equal('foo');
-          });
-        });
-
-        describe("match in list stream", function() {
-          it("recognition", function() {
-            expect(m.matchContents(['foo'], 'foo')).to.be.ok();
-            expect(m.matchContents(['foo1'], 'foo')).to.equal(false);
-            expect(m.matchContents(['foo', '1'], 'foo')).to.equal(false);
-            expect(m.matchContents(['foo', 'foo'], 'foo')).to.equal(false);
-            expect(m.matchContents([''], 'foo')).to.equal(false);
-            expect(m.matchContents([], 'foo')).to.equal(false);
-          });
-
-          it("semantic actions", function() {
-            var dict = {
-              foo: ohm.actions.passThrough,
-              _terminal: ohm.actions.getValue
-            };
-            var cst = m.matchContents(['foo'], 'foo');
+            var cst = m.match('foo', 'foo');
             expect(m.synthesizedAttribute(dict)(cst)).to.equal('foo');
           });
         });
@@ -569,9 +502,9 @@ describe("Ohm", function() {
 
         describe("match in string stream", function() {
           it("recognition", function() {
-            expect(m.matchContents('4', 'myDigit')).to.be.ok();
-            expect(m.matchContents('a', 'myDigit')).to.equal(false);
-            expect(m.matchContents('a4', 'myDigit')).to.equal(false);
+            expect(m.match('4', 'myDigit')).to.be.ok();
+            expect(m.match('a', 'myDigit')).to.equal(false);
+            expect(m.match('a4', 'myDigit')).to.equal(false);
           });
 
           it("semantic actions", function() {
@@ -579,33 +512,20 @@ describe("Ohm", function() {
               myDigit: ohm.actions.passThrough,
               _terminal: ohm.actions.getValue
             };
-            var cst = m.matchContents('4', 'myDigit');
+            var cst = m.match('4', 'myDigit');
             expect(m.synthesizedAttribute(dict)(cst)).to.equal('4');
-          });
-        });
-
-        describe("match in list stream", function() {
-          it("recognition", function() {
-            expect(m.matchContents(['4'], 'myDigit')).to.equal(false);
-            expect(m.matchContents([/[0-9]/], 'myDigit')).to.equal(false);
-            expect(m.matchContents([''], 'myDigit')).to.equal(false);
-            expect(m.matchContents([], 'myDigit')).to.equal(false);
-          });
-
-          it("semantic actions", function() {
-            // N/A
           });
         });
 
         describe("unicode match in string stream", function() {
           it("recognition", function() {
-            expect(m.matchContents('4', 'myLetter')).to.equal(false);
-            expect(m.matchContents('a', 'myLetter')).to.be.ok();
-            expect(m.matchContents('a4', 'myLetter')).to.equal(false);
-            expect(m.matchContents('\u03e6', 'myLetter')).to.be.ok();
-            expect(m.matchContents('\u226a', 'myLetter')).to.equal(false);
-            expect(m.matchContents('\n', 'myLF')).to.be.ok();
-            expect(m.matchContents('x', 'myLF')).to.equal(false);
+            expect(m.match('4', 'myLetter')).to.equal(false);
+            expect(m.match('a', 'myLetter')).to.be.ok();
+            expect(m.match('a4', 'myLetter')).to.equal(false);
+            expect(m.match('\u03e6', 'myLetter')).to.be.ok();
+            expect(m.match('\u226a', 'myLetter')).to.equal(false);
+            expect(m.match('\n', 'myLF')).to.be.ok();
+            expect(m.match('x', 'myLF')).to.equal(false);
           });
 
           it("semantic actions", function() {
@@ -613,7 +533,7 @@ describe("Ohm", function() {
               myLetter: ohm.actions.passThrough,
               _terminal: ohm.actions.getValue
             };
-            var cst = m.matchContents('a', 'myLetter');
+            var cst = m.match('a', 'myLetter');
             expect(m.synthesizedAttribute(dict)(cst)).to.equal('a');
           });
         });
@@ -627,10 +547,10 @@ describe("Ohm", function() {
       });
 
       it("recognition", function() {
-        expect(m.matchContents('', 'altTest')).to.equal(false);
-        expect(m.matchContents('a', 'altTest')).to.be.ok();
-        expect(m.matchContents('b', 'altTest')).to.be.ok();
-        expect(m.matchContents('ab', 'altTest')).to.equal(false);
+        expect(m.match('', 'altTest')).to.equal(false);
+        expect(m.match('a', 'altTest')).to.be.ok();
+        expect(m.match('b', 'altTest')).to.be.ok();
+        expect(m.match('ab', 'altTest')).to.equal(false);
       });
 
       it("semantic actions", function() {
@@ -638,8 +558,8 @@ describe("Ohm", function() {
           altTest: ohm.actions.passThrough,
           _terminal: ohm.actions.getValue
         };
-        expect(m.synthesizedAttribute(dict)(m.matchContents('a', 'altTest'))).to.equal('a');
-        expect(m.synthesizedAttribute(dict)(m.matchContents('b', 'altTest'))).to.equal('b');
+        expect(m.synthesizedAttribute(dict)(m.match('a', 'altTest'))).to.equal('a');
+        expect(m.synthesizedAttribute(dict)(m.match('b', 'altTest'))).to.equal('b');
       });
     });
 
@@ -651,14 +571,14 @@ describe("Ohm", function() {
         });
 
         it("recognition", function() {
-          expect(m.matchContents('a', 'start')).to.equal(false);
-          expect(m.matchContents('bc', 'start')).to.equal(false);
-          expect(m.matchContents('abcz', 'start')).to.be.ok();
-          expect(m.matchContents('abbz', 'start')).to.equal(false);
+          expect(m.match('a', 'start')).to.equal(false);
+          expect(m.match('bc', 'start')).to.equal(false);
+          expect(m.match('abcz', 'start')).to.be.ok();
+          expect(m.match('abbz', 'start')).to.equal(false);
         });
 
         it("semantic actions", function() {
-          var f = m.matchContents('abcz', 'start');
+          var f = m.match('abcz', 'start');
           expect(m.synthesizedAttribute({
             start: function(x, y, z) { return [x.interval.contents, y.interval.contents, z.interval.contents]; }
           })(f)).to.eql(['a', 'bc', 'z']);
@@ -672,14 +592,14 @@ describe("Ohm", function() {
         });
 
         it("recognition", function() {
-          expect(m.matchContents('a', 'start')).to.equal(false);
-          expect(m.matchContents('bc', 'start')).to.equal(false);
-          expect(m.matchContents('abcz', 'start')).to.be.ok();
-          expect(m.matchContents('abbz', 'start')).to.equal(false);
+          expect(m.match('a', 'start')).to.equal(false);
+          expect(m.match('bc', 'start')).to.equal(false);
+          expect(m.match('abcz', 'start')).to.be.ok();
+          expect(m.match('abbz', 'start')).to.equal(false);
         });
 
         it("semantic actions", function() {
-          var f = m.matchContents('abcz', 'start');
+          var f = m.match('abcz', 'start');
           expect(m.synthesizedAttribute({
             start: function(x, _, _) { return x.value(); },
           })(f)).to.eql('a');
@@ -693,14 +613,14 @@ describe("Ohm", function() {
         });
 
         it("recognition", function() {
-          expect(m.matchContents('a', 'start')).to.equal(false);
-          expect(m.matchContents('bc', 'start')).to.equal(false);
-          expect(m.matchContents('abcz', 'start')).to.be.ok();
-          expect(m.matchContents('abbz', 'start')).to.equal(false);
+          expect(m.match('a', 'start')).to.equal(false);
+          expect(m.match('bc', 'start')).to.equal(false);
+          expect(m.match('abcz', 'start')).to.be.ok();
+          expect(m.match('abbz', 'start')).to.equal(false);
         });
 
         it("semantic actions", function() {
-          var f = m.matchContents('abcz', 'start');
+          var f = m.match('abcz', 'start');
           expect(m.synthesizedAttribute({
             start: function(x, _, y) { return [x.value(), y.value()]; }
           })(f)).to.eql(['a', 'z']);
@@ -715,16 +635,16 @@ describe("Ohm", function() {
       });
 
       it("recognition", function() {
-        expect(m.matchContents('ab', 'start')).to.equal(false);
-        expect(m.matchContents('12', 'start')).to.equal(false);
-        expect(m.matchContents('abc', 'start')).to.be.ok();
-        expect(m.matchContents('123', 'start')).to.be.ok();
+        expect(m.match('ab', 'start')).to.equal(false);
+        expect(m.match('12', 'start')).to.equal(false);
+        expect(m.match('abc', 'start')).to.be.ok();
+        expect(m.match('123', 'start')).to.be.ok();
       });
 
       it("semantic actions", function() {
-        expect(m.synthesizedAttribute({start: function(x, _, y) { return [x.value(), y.value()] }})(m.matchContents('abc', 'start')))
+        expect(m.synthesizedAttribute({start: function(x, _, y) { return [x.value(), y.value()] }})(m.match('abc', 'start')))
           .to.eql(['a', 'c']);
-        expect(m.synthesizedAttribute({start: function(x, _, y) { return [x.value(), y.value()] }})(m.matchContents('123', 'start')))
+        expect(m.synthesizedAttribute({start: function(x, _, y) { return [x.value(), y.value()] }})(m.match('123', 'start')))
           .to.eql(['1', '3']);
       });
     });
@@ -741,15 +661,15 @@ describe("Ohm", function() {
       });
 
       it("recognition", function() {
-        expect(m.matchContents('1234a', 'number')).to.equal(false);
-        expect(m.matchContents('1234', 'number')).to.be.ok();
-        expect(m.matchContents('5', 'number')).to.be.ok();
-        expect(m.matchContents('', 'number')).to.equal(false);
+        expect(m.match('1234a', 'number')).to.equal(false);
+        expect(m.match('1234', 'number')).to.be.ok();
+        expect(m.match('5', 'number')).to.be.ok();
+        expect(m.match('', 'number')).to.equal(false);
 
-        expect(m.matchContents('1234a', 'digits')).to.equal(false);
-        expect(m.matchContents('1234', 'digits')).to.be.ok();
-        expect(m.matchContents('5', 'digits')).to.be.ok();
-        expect(m.matchContents('', 'digits')).to.be.ok();
+        expect(m.match('1234a', 'digits')).to.equal(false);
+        expect(m.match('1234', 'digits')).to.be.ok();
+        expect(m.match('5', 'digits')).to.be.ok();
+        expect(m.match('', 'digits')).to.be.ok();
       });
 
       it("semantic actions", function() {
@@ -759,14 +679,14 @@ describe("Ohm", function() {
           _many:      ohm.actions.makeArray,
           _terminal:  ohm.actions.getValue
         });
-        expect(value(m.matchContents('1234', 'number')))
+        expect(value(m.match('1234', 'number')))
           .to.eql(['digits', [['digit', '1'], ['digit', '2'], ['digit', '3'], ['digit', '4']]]);
       });
 
       it("semantic actions are evaluated lazily", function() {
         var a = buildTreeNodeWithUniqueId(m);
         var t = ['id', 1, 'number', [[ 'id', 2, 'digit', '1'], ['id', 3, 'digit', '2'], ['id', 4, 'digit', '3']]];
-        expect(a(m.matchContents('123', 'sss'))).to.eql(['id', 0, 'sss', t, t]);
+        expect(a(m.match('123', 'sss'))).to.eql(['id', 0, 'sss', t, t]);
         expect(a._getNextId()).to.equal(5);
       });
     });
@@ -778,15 +698,15 @@ describe("Ohm", function() {
       });
 
       it("recognition", function() {
-        expect(m.matchContents('drwarth', 'name')).to.be.ok();
-        expect(m.matchContents('warth', 'name')).to.be.ok();
-        expect(m.matchContents('mrwarth', 'name')).to.equal(false);
+        expect(m.match('drwarth', 'name')).to.be.ok();
+        expect(m.match('warth', 'name')).to.be.ok();
+        expect(m.match('mrwarth', 'name')).to.equal(false);
       });
 
       it("semantic actions", function() {
         var actionDict = {name: function(title, last) { return [title.value(), last.value()]; }};
-        expect(m.synthesizedAttribute(actionDict)(m.matchContents('drwarth', 'name'))).to.eql(['dr', 'warth']);
-        expect(m.synthesizedAttribute(actionDict)(m.matchContents('warth', 'name'))).to.eql([undefined, 'warth']);
+        expect(m.synthesizedAttribute(actionDict)(m.match('drwarth', 'name'))).to.eql(['dr', 'warth']);
+        expect(m.synthesizedAttribute(actionDict)(m.match('warth', 'name'))).to.eql([undefined, 'warth']);
       });
     });
 
@@ -797,14 +717,14 @@ describe("Ohm", function() {
       });
 
       it("recognition", function() {
-        expect(m.matchContents('yello world', 'start')).to.be.ok();
-        expect(m.matchContents('hello world', 'start')).to.equal(false);
+        expect(m.match('yello world', 'start')).to.be.ok();
+        expect(m.match('hello world', 'start')).to.equal(false);
       });
 
       it("semantic actions", function() {
         expect(m.synthesizedAttribute({
           start: function(x) { return x.interval.contents; }
-        })(m.matchContents('yello world', 'start'))).to.equal('yello world');
+        })(m.match('yello world', 'start'))).to.equal('yello world');
       });
     });
 
@@ -815,12 +735,12 @@ describe("Ohm", function() {
       });
 
       it("recognition", function() {
-        expect(m.matchContents('hello world', 'start')).to.be.ok();
-        expect(m.matchContents('hell! world', 'start')).to.equal(false);
+        expect(m.match('hello world', 'start')).to.be.ok();
+        expect(m.match('hell! world', 'start')).to.equal(false);
       });
 
       it("semantic actions", function() {
-        expect(m.synthesizedAttribute({start: function(x, _) { return x.value() }})(m.matchContents('hello world', 'start'))).to.equal('hello');
+        expect(m.synthesizedAttribute({start: function(x, _) { return x.value() }})(m.match('hello world', 'start'))).to.equal('hello');
       });
     });
 
@@ -943,9 +863,9 @@ describe("Ohm", function() {
         });
 
         it("recognition", function() {
-          expect(m.matchContents('fo', 'easy')).to.equal(false);
-          expect(m.matchContents('foo', 'easy')).to.be.ok();
-          expect(m.matchContents('fooo', 'easy')).to.equal(false);
+          expect(m.match('fo', 'easy')).to.equal(false);
+          expect(m.match('foo', 'easy')).to.be.ok();
+          expect(m.match('fooo', 'easy')).to.equal(false);
         });
 
         it("semantic actions", function() {
@@ -954,7 +874,7 @@ describe("Ohm", function() {
             foo:  function(expr) { return ['foo', value(expr)]; },
             _terminal: ohm.actions.getValue
           });
-          expect(value(m.matchContents('foo', 'easy'))).to.eql(['easy', ['foo', 'foo']]);
+          expect(value(m.match('foo', 'easy'))).to.eql(['easy', ['foo', 'foo']]);
         });
       });
 
@@ -969,15 +889,15 @@ describe("Ohm", function() {
         });
 
         it("recognition", function() {
-          expect(m.matchContents('', 'number')).to.equal(false);
-          expect(m.matchContents('a', 'number')).to.equal(false);
-          expect(m.matchContents('1', 'number')).to.be.ok();
-          expect(m.matchContents('123', 'number')).to.be.ok();
-          expect(m.matchContents('7276218173', 'number')).to.be.ok();
+          expect(m.match('', 'number')).to.equal(false);
+          expect(m.match('a', 'number')).to.equal(false);
+          expect(m.match('1', 'number')).to.be.ok();
+          expect(m.match('123', 'number')).to.be.ok();
+          expect(m.match('7276218173', 'number')).to.be.ok();
         });
 
         it("semantic actions", function() {
-          var f = m.matchContents('1234', 'number');
+          var f = m.match('1234', 'number');
           var eval = m.synthesizedAttribute({
             number:    ohm.actions.passThrough,
             numberRec: function(n, d) { return eval(n) * 10 + eval(d); },
@@ -1019,7 +939,7 @@ describe("Ohm", function() {
         });
 
         it("recognition", function() {
-          expect(m.matchContents('x+y+x', 'add')).to.be.ok();
+          expect(m.match('x+y+x', 'add')).to.be.ok();
         });
 
         it("semantic actions", function() {
@@ -1031,7 +951,7 @@ describe("Ohm", function() {
             priY:      ohm.actions.passThrough,
             _terminal: ohm.actions.getValue
           });
-          expect(v(m.matchContents('x+y+x', 'add'))).to.eql([['x', '+', 'y'], '+', 'x']);
+          expect(v(m.match('x+y+x', 'add'))).to.eql([['x', '+', 'y'], '+', 'x']);
         });
       });
 
@@ -1051,11 +971,11 @@ describe("Ohm", function() {
         });
 
         it("recognition", function() {
-          expect(m.matchContents('', 'number')).to.equal(false);
-          expect(m.matchContents('a', 'number')).to.equal(false);
-          expect(m.matchContents('1', 'number')).to.be.ok();
-          expect(m.matchContents('123', 'number')).to.be.ok();
-          expect(m.matchContents('7276218173', 'number')).to.be.ok();
+          expect(m.match('', 'number')).to.equal(false);
+          expect(m.match('a', 'number')).to.equal(false);
+          expect(m.match('1', 'number')).to.be.ok();
+          expect(m.match('123', 'number')).to.be.ok();
+          expect(m.match('7276218173', 'number')).to.be.ok();
         });
 
         it("semantic actions", function() {
@@ -1070,7 +990,7 @@ describe("Ohm", function() {
             digit: ohm.actions.passThrough,
             _terminal: ohm.actions.getValue
           });
-          expect(v(m.matchContents('1234', 'number'))).to.eql([[['1', '2'], '3'], '4']);
+          expect(v(m.match('1234', 'number'))).to.eql([[['1', '2'], '3'], '4']);
         });
       });
 
@@ -1089,15 +1009,15 @@ describe("Ohm", function() {
         });
 
         it("recognition", function() {
-          expect(m.matchContents('1', 'addExpr')).to.be.ok();
-          expect(m.matchContents('2+3', 'addExpr')).to.be.ok();
-          expect(m.matchContents('4+', 'addExpr')).to.equal(false);
-          expect(m.matchContents('5*6', 'addExpr')).to.be.ok();
-          expect(m.matchContents('7*8+9+0', 'addExpr')).to.be.ok();
+          expect(m.match('1', 'addExpr')).to.be.ok();
+          expect(m.match('2+3', 'addExpr')).to.be.ok();
+          expect(m.match('4+', 'addExpr')).to.equal(false);
+          expect(m.match('5*6', 'addExpr')).to.be.ok();
+          expect(m.match('7*8+9+0', 'addExpr')).to.be.ok();
         });
 
         it("semantic actions", function() {
-          var f = m.matchContents('1*2+3+4*5', 'addExpr');
+          var f = m.match('1*2+3+4*5', 'addExpr');
           var parseTree = m.synthesizedAttribute({
             addExpr:    function(expr)    { return ['addExpr', parseTree(expr)]; },
             addExprRec: function(x, _, y) { return ['addExprRec', parseTree(x), parseTree(y)]; },
@@ -1135,7 +1055,7 @@ describe("Ohm", function() {
         });
 
         it("semantic actions are evaluated lazily", function() {
-          var f = m.matchContents('1*2+3+4*5', 'sss');
+          var f = m.match('1*2+3+4*5', 'sss');
           var a = buildTreeNodeWithUniqueId(m);
           var t = 
             ['id', 1, 'addExpr',
@@ -1182,11 +1102,11 @@ describe("Ohm", function() {
         });
 
         it("recognition", function() {
-          expect(m.matchContents('1', 'addExpr')).to.be.ok();
-          expect(m.matchContents('2+3', 'addExpr')).to.be.ok();
-          expect(m.matchContents('4+', 'addExpr')).to.equal(false);
-          expect(m.matchContents('5*6', 'addExpr')).to.be.ok();
-          expect(m.matchContents('7+8*9+0', 'addExpr')).to.be.ok();
+          expect(m.match('1', 'addExpr')).to.be.ok();
+          expect(m.match('2+3', 'addExpr')).to.be.ok();
+          expect(m.match('4+', 'addExpr')).to.equal(false);
+          expect(m.match('5*6', 'addExpr')).to.be.ok();
+          expect(m.match('7+8*9+0', 'addExpr')).to.be.ok();
         });
 
         it("semantic actions", function() {
@@ -1196,7 +1116,7 @@ describe("Ohm", function() {
             _terminal:  ohm.actions.getValue,
             _default:   ohm.actions.passThrough
           });
-          expect(buildTree(m.matchContents('7+8*9+0', 'addExpr'))).to.eql([['7', '+', ['8', '*', '9']], '+', '0']);
+          expect(buildTree(m.match('7+8*9+0', 'addExpr'))).to.eql([['7', '+', ['8', '*', '9']], '+', '0']);
         });
       });
 
@@ -1214,11 +1134,11 @@ describe("Ohm", function() {
         });
 
         it("recognition", function() {
-          expect(m.matchContents('1234', 'tricky')).to.be.ok();
+          expect(m.match('1234', 'tricky')).to.be.ok();
         });
 
         it("semantic actions", function() {
-          var f = m.matchContents('1234', 'tricky');
+          var f = m.match('1234', 'tricky');
           // TODO: perhaps just use JSON.stringify(f) here, and compare the result?
           var buildTree = m.synthesizedAttribute({
             tricky:    function(_, x) { return ['tricky', buildTree(x)]; },
@@ -1310,13 +1230,13 @@ describe("Ohm", function() {
         });
 
         it("recognition", function() {
-          expect(m1.matchContents('1234', 'number')).to.be.ok();
-          expect(m1.matchContents('hello', 'number')).to.equal(false);
-          expect(m1.matchContents('h3llo', 'number')).to.equal(false);
+          expect(m1.match('1234', 'number')).to.be.ok();
+          expect(m1.match('hello', 'number')).to.equal(false);
+          expect(m1.match('h3llo', 'number')).to.equal(false);
 
-          expect(m2.matchContents('1234', 'number')).to.equal(false);
-          expect(m2.matchContents('hello', 'number')).to.be.ok();
-          expect(m2.matchContents('h3llo', 'number')).to.equal(false);
+          expect(m2.match('1234', 'number')).to.equal(false);
+          expect(m2.match('hello', 'number')).to.be.ok();
+          expect(m2.match('h3llo', 'number')).to.equal(false);
         });
 
         it("semantic actions", function() {
@@ -1327,7 +1247,7 @@ describe("Ohm", function() {
             _terminal: ohm.actions.getValue
           });
           var expected = ['number', [['digit', 'a'], ['digit', 'b'], ['digit', 'c'], ['digit', 'd']]];
-          expect(v(m2.matchContents('abcd', 'number'))).to.eql(expected);
+          expect(v(m2.match('abcd', 'number'))).to.eql(expected);
         });
       });
 
@@ -1382,20 +1302,20 @@ describe("Ohm", function() {
         });
 
         it("recognition", function() {
-          expect(m1.matchContents('aaabbb', 'foo')).to.be.ok();
-          expect(m1.matchContents('111222', 'foo')).to.equal(false);
+          expect(m1.match('aaabbb', 'foo')).to.be.ok();
+          expect(m1.match('111222', 'foo')).to.equal(false);
 
-          expect(m2.matchContents('aaabbb', 'foo')).to.be.ok();
-          expect(m2.matchContents('111222', 'foo')).to.be.ok();
+          expect(m2.match('aaabbb', 'foo')).to.be.ok();
+          expect(m2.match('111222', 'foo')).to.be.ok();
         });
 
         it("semantic actions", function() {
           expect(m2.synthesizedAttribute({
             foo: function(x, y) { return [x.value(), y.value()]; }
-          })(m2.matchContents('aaabbb', 'foo'))).to.eql(['aaa', 'bbb']);
+          })(m2.match('aaabbb', 'foo'))).to.eql(['aaa', 'bbb']);
           expect(m2.synthesizedAttribute({
             foo: function(x, y) { return [x.value(), y.value()]; }
-          })(m2.matchContents('111222', 'foo'))).to.eql(['111', '222']);
+          })(m2.match('111222', 'foo'))).to.eql(['111', '222']);
         });
       });
     });
@@ -1427,7 +1347,7 @@ describe("Ohm", function() {
           baz:       function(expr) { return ['baz', v(expr), id++]; },
           _terminal: ohm.actions.getValue
         });
-        expect(v(g.matchContents('ab', 'foo'))).to.eql({x: ['bar', 'a', 0], y: ['baz', 'b', 1]});
+        expect(v(g.match('ab', 'foo'))).to.eql({x: ['bar', 'a', 0], y: ['baz', 'b', 1]});
 
         id = 0;
         v = g.synthesizedAttribute({
@@ -1436,7 +1356,7 @@ describe("Ohm", function() {
           baz: function(expr) { return ['baz', v(expr), id++]; },
           _terminal: ohm.actions.getValue
         });
-        expect(v(g.matchContents('ab', 'foo'))).to.eql({x: ['bar', 'a', 1], y: ['baz', 'b', 0]});
+        expect(v(g.match('ab', 'foo'))).to.eql({x: ['bar', 'a', 1], y: ['baz', 'b', 0]});
       });
     });
 
@@ -1462,11 +1382,11 @@ describe("Ohm", function() {
       });
 
       it("recognition", function() {
-        expect(m.matchContents('1*(2+3)-4/5', 'expr')).to.be.ok();
+        expect(m.match('1*(2+3)-4/5', 'expr')).to.be.ok();
       });
 
       it("semantic actions", function() {
-        expect(makeEval(m)(m.matchContents('10*(2+123)-4/5', 'expr'))).to.equal(1249.2);
+        expect(makeEval(m)(m.match('10*(2+123)-4/5', 'expr'))).to.equal(1249.2);
       });
 
       it("overriding", function() {
@@ -1475,7 +1395,7 @@ describe("Ohm", function() {
                               '           | mulExpr',
                               '}'],
                              m.namespaceName);
-        expect(makeEval(m2)(m2.matchContents('2*3~4', 'expr'))).to.equal(2);
+        expect(makeEval(m2)(m2.match('2*3~4', 'expr'))).to.equal(2);
 
         expect(function() {
           makeGrammar('Bad <: Expr { addExpr += addExpr "~" mulExpr  -- minus }', m.namespaceName);
@@ -1491,16 +1411,16 @@ describe("Ohm", function() {
     describe("lexical vs. syntactic rules", function() {
       it("lexical rules don't skip spaces implicitly", function() {
         var g = makeGrammar('G { start = "foo" "bar" }');
-        expect(g.matchContents('foobar', 'start')).to.be.ok();
-        expect(g.matchContents('foo bar', 'start')).to.equal(false);
-        expect(g.matchContents(' foo bar   ', 'start')).to.equal(false);
+        expect(g.match('foobar', 'start')).to.be.ok();
+        expect(g.match('foo bar', 'start')).to.equal(false);
+        expect(g.match(' foo bar   ', 'start')).to.equal(false);
       });
 
       it("syntactic rules skip spaces implicitly", function() {
         var g = makeGrammar('G { Start = "foo" "bar" }');
-        expect(g.matchContents('foobar', 'Start')).to.be.ok();
-        expect(g.matchContents('foo bar', 'Start')).to.be.ok();
-        expect(g.matchContents(' foo bar   ', 'Start')).to.be.ok();
+        expect(g.match('foobar', 'Start')).to.be.ok();
+        expect(g.match('foo bar', 'Start')).to.be.ok();
+        expect(g.match(' foo bar   ', 'Start')).to.be.ok();
       });
 
       it("mixing lexical and syntactic rules works as expected", function() {
@@ -1510,9 +1430,9 @@ describe("Ohm", function() {
           '  bar = "bar"',
           '  Start = foo bar',
           '}']);
-        expect(g.matchContents('foobar', 'Start')).to.be.ok();
-        expect(g.matchContents('foo bar', 'Start')).to.be.ok();
-        expect(g.matchContents(' foo bar   ', 'Start')).to.be.ok();
+        expect(g.match('foobar', 'Start')).to.be.ok();
+        expect(g.match('foo bar', 'Start')).to.be.ok();
+        expect(g.match(' foo bar   ', 'Start')).to.be.ok();
       });
     });
 
@@ -1577,7 +1497,7 @@ describe("Ohm", function() {
         it("actually installs a grammar in a namespace", function() {
           var m = makeGrammar('aaa { foo = "foo" }', ns1.name);
           expect(ns1.grammar('aaa')).to.eql(m);
-          expect(m.matchContents('foo', 'foo')).to.be.ok();
+          expect(m.match('foo', 'foo')).to.be.ok();
         });
 
         it("detects duplicates", function() {
@@ -1631,7 +1551,7 @@ describe("Ohm", function() {
             expect(e.namespaceName).to.equal('aaa1');
           });
           expect(ns.grammar('O')).to.be.ok();
-          expect(ns.grammar('O').matchContents('1234', 'number')).to.be.ok();
+          expect(ns.grammar('O').match('1234', 'number')).to.be.ok();
         });
 
         it("semantic actions", function() {
@@ -1645,13 +1565,13 @@ describe("Ohm", function() {
             digit:      function(expr) { return eval(expr).charCodeAt(0) - '0'.charCodeAt(0); },
             _terminal:  ohm.actions.getValue
           });
-          expect(eval(m.matchContents('1234', 'number'))).to.equal(1234);
+          expect(eval(m.match('1234', 'number'))).to.equal(1234);
         });
       });
     });
 
     describe("throw on fail", function() {
-      it("match", function() {
+      it("non-string input", function() {
         var g = makeGrammar('G { start = 5 }');
         expect(function() {
           g.match(42, 'start', true);
@@ -1661,10 +1581,10 @@ describe("Ohm", function() {
         });
       });
 
-      it("matchContents", function() {
+      it("string input", function() {
         var g = makeGrammar('G { start = "a" "b" "c" "d" }');
         expect(function() {
-          g.matchContents('ab', 'start', true);
+          g.match('ab', 'start', true);
         }).to.throwException(function(e) {
           expect(e.message).to.equal("Line 1, col 3: ab\n" +
                                      "                 ^\n" +
@@ -1672,7 +1592,7 @@ describe("Ohm", function() {
           expect(e.getPos()).to.equal(2);
         });
         expect(function() {
-          g.matchContents('abcde', 'start', true);
+          g.match('abcde', 'start', true);
         }).to.throwException(function(e) {
           expect(e.message).to.equal("Line 1, col 5: abcde\n" +
                                      "                   ^\n" +
@@ -1689,21 +1609,21 @@ describe("Ohm", function() {
       });
 
       it("can recognize arithmetic grammar", function() {
-        expect(g.matchContents(arithmeticGrammarSource, 'Grammar')).to.be.ok();
+        expect(g.match(arithmeticGrammarSource, 'Grammar')).to.be.ok();
       });
 
       it("can recognize itself", function() {
-        expect(g.matchContents(ohmGrammarSource, 'Grammar')).to.be.ok();
+        expect(g.match(ohmGrammarSource, 'Grammar')).to.be.ok();
       });
 
       it("can produce a grammar that will recognize itself", function() {
-        var gPrime = ohm._makeGrammarBuilder(freshNamespaceName(), g)(g.matchContents(ohmGrammarSource, 'Grammar'));
-        expect(gPrime.matchContents(ohmGrammarSource, 'Grammar')).to.be.ok();
+        var gPrime = ohm._makeGrammarBuilder(freshNamespaceName(), g)(g.match(ohmGrammarSource, 'Grammar'));
+        expect(gPrime.match(ohmGrammarSource, 'Grammar')).to.be.ok();
       });
 
       it("can produce a grammar that works", function() {
-        var gPrime = ohm._makeGrammarBuilder(freshNamespaceName(), g)(g.matchContents(ohmGrammarSource, 'Grammar'));
-        var a = ohm._makeGrammarBuilder(freshNamespaceName(), gPrime)(gPrime.matchContents(arithmeticGrammarSource, 'Grammar'));
+        var gPrime = ohm._makeGrammarBuilder(freshNamespaceName(), g)(g.match(ohmGrammarSource, 'Grammar'));
+        var a = ohm._makeGrammarBuilder(freshNamespaceName(), gPrime)(gPrime.match(arithmeticGrammarSource, 'Grammar'));
         var eval = a.synthesizedAttribute({
           expr:           function(expr) { return eval(expr); },
           addExpr:        function(expr) { return eval(expr); },
@@ -1719,12 +1639,12 @@ describe("Ohm", function() {
           digit:          function(expr) { return eval(expr).charCodeAt(0) - '0'.charCodeAt(0); },
           _terminal:      ohm.actions.getValue
         });
-        expect(eval(a.matchContents('10*(2+123)-4/5', 'expr'))).to.equal(1249.2);
+        expect(eval(a.match('10*(2+123)-4/5', 'expr'))).to.equal(1249.2);
       });
 
       it("full bootstrap!", function() {
-        var gPrime = ohm._makeGrammarBuilder(freshNamespaceName(), g)(g.matchContents(ohmGrammarSource, 'Grammar'));
-        var gPrimePrime = ohm._makeGrammarBuilder(freshNamespaceName(), gPrime)(gPrime.matchContents(ohmGrammarSource, 'Grammar'));
+        var gPrime = ohm._makeGrammarBuilder(freshNamespaceName(), g)(g.match(ohmGrammarSource, 'Grammar'));
+        var gPrimePrime = ohm._makeGrammarBuilder(freshNamespaceName(), gPrime)(gPrime.match(ohmGrammarSource, 'Grammar'));
         gPrimePrime.namespaceName = gPrime.namespaceName;  // make their namespaceName properties the same
         compareGrammars(gPrime, gPrimePrime);
       });
@@ -1766,7 +1686,7 @@ describe("Ohm", function() {
             console.log('terminal ' + t + ' has depth ' + depth(this));
           }
         });
-        var cst = g.matchContents('abccc', 'abcs');
+        var cst = g.match('abccc', 'abcs');
         print(cst);
       });
     });

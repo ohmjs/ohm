@@ -34,11 +34,6 @@ Implement Alex's de-spockification idea.
 * The methods in the 2nd argument override / add to those of the original  semantic action or attribute.
 * (Does this do what Pat wanted?)
 
-### `match` vs. `matchContents`
-
-* Get rid of `Grammar.prototype.matchContents()` -- I think `Grammar.prototype.match()` does the right thing w/ its special treatment of `String` inputs.
-* This is easy to do, but the unit tests are currently testing the different semantics between `match` and `matchContents`. So I think it's a good idea to fix the unit tests before doing this. (More on unit tests below.)
-
 ### Rule Descriptions
 
 **NOTE: I've already made the change to use `()`s, but I'm leaving this item on the list to remind us to talk about it. Does it work for you, Pat?**
