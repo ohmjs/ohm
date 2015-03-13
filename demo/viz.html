@@ -116,6 +116,15 @@ function add(/* tagName, child1, child2, ... */) {
   addNode(makeElement.apply(this, arguments));
 }
 
+var vizChoice = ohm.grammar("Ohm").semanticAction({
+  _default:  function() {
+               enter('choice');
+                 viz(this);
+               leave();
+             },
+  _many:     ohm.actions.makeArray,
+});
+
 var viz = ohm.grammar("Ohm").semanticAction({
   Grammar:                  function(n, s, _, rs, _) {
                               enter('grammar');
@@ -167,25 +176,10 @@ var viz = ohm.grammar("Ohm").semanticAction({
   ruleDescrText:            function(_) {
                               return this.interval.contents;
                             },
-  Alt:                      function(expr) {
-                              viz(expr);  // force evaluation
-                            },
-  Alt_rec:                  function(x, _, y) {
+  Alt:                      function(x, _, xs) {
                               enter('alt');
-                                enter('choice');
-                                  viz(x);  // force evaluation
-                                leave();
-                                enter('choice');
-                                  viz(y);  // force evaluation
-                                leave();
-                                if (curr.lastChild.children.length === 1 &&
-                                    curr.lastChild.firstChild.tagName === 'ALT') {
-                                  var alt = curr.lastChild.firstChild;
-                                  curr.removeChild(curr.lastChild);
-                                  while (alt.firstChild) {
-                                    addNode(alt.firstChild);
-                                  }
-                                }
+                                vizChoice(x);
+                                vizChoice(xs);
                               leave();
                             },
   Term:                     function(expr) {
@@ -264,7 +258,7 @@ var viz = ohm.grammar("Ohm").semanticAction({
   Base_objWithProps:        function(_, ps, _, lenient, _) {
                               throw 'TODO';
                             },
-  Props:                    function(expr) {
+  Props:                    function(p, _, ps) {
                               throw 'TODO';
                             },
   ident:                    function(n) {
