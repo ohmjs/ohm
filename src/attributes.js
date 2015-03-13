@@ -40,7 +40,7 @@ function makeTopDownThing(grammar, actionDict, memoize) {
     if (node.ctorName === '_many' && node.parent) {
       // If an action's name is ctorName$idx, where idx is the 1-based index of a child node that happens
       // to be a list, it should override the _many action for that particular list node.
-      var actionName = node.parent.ctorName + '$' + (node.parent.indexOfChild(node) + 1);
+      var actionName = node.parent.ctorName + '$' + node.parent.indexOfChild(node);
       var actionFn = actionDict[actionName];
       if (actionFn) {
         return doAction(actionFn, true);
@@ -137,7 +137,7 @@ function makeInheritedAttribute(grammar, actionDict) {
         // If there is an action called <ctorName>$<idx>$each, where <idx> is the 1-based index of a child node
         // that happens to be a list, it should override the _many method for that particular list node.
         var grandparent = node.parent.parent;
-        var actionName = grandparent.ctorName + '$' + (grandparent.indexOfChild(node.parent) + 1) + '$each';
+        var actionName = grandparent.ctorName + '$' + grandparent.indexOfChild(node.parent) + '$each';
         if (actionDict[actionName]) {
           return doAction(actionName);
         } else if (actionDict._many) {
@@ -149,7 +149,7 @@ function makeInheritedAttribute(grammar, actionDict) {
           throw new Error('missing ' + actionName + ', _many, or _default method');
         }
       } else {
-        var actionName = node.parent.ctorName + '$' + (node.parent.indexOfChild(node) + 1);
+        var actionName = node.parent.ctorName + '$' + node.parent.indexOfChild(node);
         if (actionDict[actionName]) {
           return doAction(actionName);
         } else if (actionDict._default) {

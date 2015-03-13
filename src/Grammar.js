@@ -85,17 +85,18 @@ Grammar.prototype = {
   },
 
   semanticAction: function(actionDict) {
-    this.assertSemanticActionNamesAndAritiesMatch(actionDict);
+    this.assertTopDownActionNamesAndAritiesMatch(actionDict, "semantic action");
     return attributes.makeSemanticAction(this, actionDict);
   },
 
   synthesizedAttribute: function(actionDict) {
-    this.assertSemanticActionNamesAndAritiesMatch(actionDict);
+    this.assertTopDownActionNamesAndAritiesMatch(actionDict, "synthesized attribute");
     return attributes.makeSynthesizedAttribute(this, actionDict);
   },
 
   inheritedAttribute: function(actionDict) {
-    this.assertSemanticActionNamesAndAritiesMatch(actionDict);
+    // TODO: write an arity-checker for inherited attributes
+    // all of the methods should have arity 1, except for _default, which has arity 2 b/c it also takes an index
     if (!actionDict._base) {
       throw new Error("inherited attribute missing base case");
     } else if (actionDict._base.length !== 1) {
@@ -104,7 +105,7 @@ Grammar.prototype = {
     return attributes.makeInheritedAttribute(this, actionDict);
   },
 
-  assertSemanticActionNamesAndAritiesMatch: function(actionDict) {
+  assertTopDownActionNamesAndAritiesMatch: function(actionDict, what) {
     var self = this;
     var ruleDict = this.ruleDict;
     var ok = true;
@@ -113,10 +114,10 @@ Grammar.prototype = {
         return;
       }
       var actual = actionDict[ruleName].length;
-      var expected = self.semanticActionArity(ruleName);
+      var expected = self.topDownActionArity(ruleName);
       if (actual !== expected) {
         ok = false;
-        console.log("semantic action for rule", ruleName, "has the wrong arity");
+        console.log(what + " for rule", ruleName, "has the wrong arity");
         console.log("  expected", expected);
         console.log("    actual", actual);
       }
@@ -126,9 +127,9 @@ Grammar.prototype = {
     }
   },
 
-  semanticActionArity: function(ruleName) {
+  topDownActionArity: function(ruleName) {
     if (this.superGrammar && this.superGrammar.ruleDict[ruleName]) {
-      return this.superGrammar.semanticActionArity(ruleName);
+      return this.superGrammar.topDownActionArity(ruleName);
     } else {
       var body = this.ruleDict[ruleName];
       return body.getArity();
@@ -205,7 +206,7 @@ Grammar.prototype = {
   addSemanticActionTemplate: function(ruleName, body, sb) {
     sb.append(ruleName);
     sb.append(": function(");
-    var arity = this.semanticActionArity(ruleName);
+    var arity = this.topDownActionArity(ruleName);
     sb.append(common.repeat("_", arity).join(", "));
     sb.append(") {\n");
     sb.append("  }");

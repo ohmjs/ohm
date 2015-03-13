@@ -1740,19 +1740,19 @@ describe("Ohm", function() {
           _base: function(node) {
             depth.set(0);
           },
-          abcs$1: function(ab, cs) {
+          abcs$0: function(a) {
             depth.set(depth(this) + 1);
           },
-          abcs$2: function(ab, cs) {
+          abcs$1: function(b) {
             depth.set(depth(this) + 1);
           },
-          abcs$3: function(ab, cs) {
+          abcs$2: function(cs) {
             depth.set(depth(this) + 1);
           },
-          abcs$3$each: function(c) {
+          abcs$2$each: function(c) {
             depth.set(depth(this) + 1);
           },
-          b$1: function(b) {
+          b$0: function(b) {
             depth.set(depth(this) + 1);
           }
         });
