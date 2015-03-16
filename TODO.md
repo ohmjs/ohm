@@ -27,6 +27,50 @@ Implement Alex's de-spockification idea.
 
 ### Inheriting from Semantic Actions and Attributes
 
+I'm starting to think that you should always have to create an instance of `Semantics` on which you can create semantic actions and attributes. Here's how this might work:
+
+```
+var g1 = ohm.grammar(...);
+var s1 = g1.semanticsBuilder()
+  .addSemanticAction("eval", {
+  	AddExp_plus: function(x, _, y) {
+  	  return this.eval(x) + this.eval(y);  	},
+  	...  })
+  .build();
+```
+
+Note that `SemanticsBuilder.prototype.semanticAction(name, dict)` returns the receiver to allow chaining. (Same goes for `Semantics.prototype.{synthesizedAttribute, inheritedAttribute}`.) I'm going with a builder pattern b/c the `build()` method tells us when it's OK to perform checks on the action dictionaries -- this is important for extensions, see below.
+
+The `Semantics` objects act as a family of semantic actions and attributes. Note that recursive (even mutually-recursive) calls of semantic actions / attributes must go through the semantics object, which is what `this` is bound to in the methods of action dictionaries. (This solves the problems I was having with early-binding in recursive calls, which were getting in the way of extensibility.)
+
+To extend a semantic action, you create a new `Semantics` object that  extends the one that the semantic action in question belongs to. You do this by passing the `Semantics` that you want to extend as an argument to *your grammar*'s `semantics` method. Then you call `extend(semanticActionOrAttributeName, dict)` on that. E.g.,
+
+```
+var g2 = ... // some grammar that extends g1
+var s2 = g2.semanticsBuilder(s1)
+  .extend("eval", {
+  	AddExp_foo: function(x, _, y) { ... }  })
+  .build();
+```
+
+Some checks we'll have to do when `build()` is called:
+	
+* `SemanticsBuilder.prototype.extend` should make sure that there is already a semantic action / attribute with the given name. (It's an error if there isn't.)
+* Conversely, `SemanticsBuilder.prototype.{addSemanticAction, addSynthesizedAttribute, addInheritedAttribute}` should throw an error if there is already a semantic action / attribute with the given name.
+* It should also be an error to try to declare a new semantic action / attribute whose name is `node` (see below).
+* You should only be able to extend a `Semantics` from the same grammar, or from a grammar that your grammar inherits from.
+* Other semantic checks, e.g., all action dict methods have the correct arity, and there are no "useless" methods.
+
+Now that `this` is bound to an instance of `Semantics`, we'll need a different way to access the current CST node. At the moment the best option I've come up with is `this.node`.  Here are some thoughts on implementing this:
+
+* We'll want to disallow assignment into `this.node`. So maybe we'll use `Object.defineProperty`?
+* We may need a try/finally around the outermost call to clean up in case an exception is thrown, or make `this` an object that delegates to the `Semantics` object and adds the `node` property.
+* We also have to make sure that whatever we do works with mutually-recursive semantic actions / attributes. (I.e., the value of `this.node` obeys a stack discipline.)
+
+------------
+
+Old version:
+
 **NOTE: I've had a stab at this (it's easy enough to implement) but it needs more thinking. The problem is that recursive calls to the semantic action / attribute will still "dispatch" to the original instead of the extension. Maybe the semantic action / whatever needs to become `this`, but then what do we do about the parent node? I don't like the idea of including the parent node as an argument, that's too verbose.**
 
 * Add `Grammar.prototype.extend(semanticActionOrAttribute, { ... })`
