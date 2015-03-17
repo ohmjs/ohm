@@ -67,6 +67,22 @@ Now that `this` is bound to an instance of `Semantics`, we'll need a different w
 * We may need a try/finally around the outermost call to clean up in case an exception is thrown, or make `this` an object that delegates to the `Semantics` object and adds the `node` property.
 * We also have to make sure that whatever we do works with mutually-recursive semantic actions / attributes. (I.e., the value of `this.node` obeys a stack discipline.)
 
+I get that this complicates the common case, where you create a stand-alone semantic action. One solution to this problem is to support {`semanticAction`, `synthesizedAttribute`, and `inheritedAttribute`} methods in `Grammar.prototype` and have them return "singleton" `Semantics` instances, e.g.,
+	
+```
+var eval = g.semanticAction({
+  AddExp_plus: function(x, _, y) {
+  	return this.apply(x) + this.apply(y);  },
+  ...});
+
+var value = eval.apply(someCST);
+```
+
+Note that you don't specify the name of the semantic action / attribute -- it's implicitly `apply`. Two reasons for this:
+	
+* It would look silly to say `var eval = g.semanticAction("eval", {...});` and 
+* This way you don't have to worry about the name of the variable that will hold the `Semantics` object.
+
 ------------
 
 Old version:
