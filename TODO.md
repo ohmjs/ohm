@@ -84,7 +84,7 @@ The expected set should be {`"sucks"`, `"stinks"`}.
 * You can't re-declare a grammar -- that's an error. This could happen with `ohm.grammar()` if the grammar is already declared in `optNS`, and in `ohm.grammars()` if the grammar is already in the new namespace, or in `optNS`.
 * After doing this stuff, we should be able to:
     * Remove the stuff having to do with `Namespaces` from the codebase.
-    * In `src/ohm-grammar.oh`, remove `SuperGrammar_qualified` rule
+    * In `src/ohm-grammar.ohm`, remove `SuperGrammar_qualified` rule
     * No more `namespace` attribute in Ohm `<script>` tags.
     * Maybe now the stuff that's done in `src/bootstrap.js` can be done for any grammar? That would enable people to share grammar as "binaries". (A while ago I had an `ohm` command, but I removed it b/c it didn't support inheritance properly. That command turned into the less general but essential `src/bootstrap.js`.)
 
