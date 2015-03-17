@@ -6,6 +6,23 @@
 
 Implement Alex's de-spockification idea.
 
+#### Unit tests
+
+##### A slightly tricky one
+
+```
+foo = bar "a" | bar "b"
+bar = "c" "d"?
+```
+
+If the input is just `"c"`, the recorded failed primitives at position `1` should be:
+
+* `"d"`, with stack `[app("bar"), app("foo")]`
+* `"a"`, with stack `["app("foo")"]`
+* `"b"`, with stack `["app("foo")"]`
+
+The `"d"` clearly shouldn't be in the list of expected strings at position `1`. The interesting thing is that neither `"a"` nor `"b"`  "subsumes" `"d"`. But `"b"` shouldn't be one of the expected strings b/c if it shows up in the input, we will still need one of the other expected strings in order to accept, which means that `"d"` is superfluous / not a member of the "minimal expected set".
+
 ### "Namespaces"
 
 * `ohm.grammar(stringOrNodeList, optNS)` returns a `Grammar`
