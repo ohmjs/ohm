@@ -54,10 +54,23 @@ Grammar.prototype = {
 
   match: function(obj, startRule, optThrowOnFail) {
     var throwOnFail = !!optThrowOnFail;
+    var state = this._match(obj, startRule);
+    var succeeded = state.bindings.length === 1;
+    if (succeeded) {
+      return state.bindings[0];  // Return the root CSTNode.
+    } else if (throwOnFail) {
+      throw new errors.MatchFailure(state);
+    } else {
+      return false;
+    }
+  },
+
+  _match: function(obj, startRule, optTracingEnabled) {
     var inputStream = InputStream.newFor(typeof obj === "string" ? obj : [obj]);
-    var state = new State(this, inputStream);
+    var state = new State(this, inputStream, optTracingEnabled);
     var succeeded = new pexprs.Apply(startRule).eval(state);
     if (succeeded) {
+      // Link every CSTNode to its parent.
       var node = state.bindings[0];
       var stack = [undefined];
       var setParents = this.semanticAction({
@@ -72,12 +85,12 @@ Grammar.prototype = {
         }
       });
       setParents(node);
-      return node;
-    } else if (throwOnFail) {
-      throw new errors.MatchFailure(state);
-    } else {
-      return false;
     }
+    return state;
+  },
+
+  trace: function(obj, startRule) {
+    return this._match(obj, startRule, true);
   },
 
   semanticAction: function(actionDict) {

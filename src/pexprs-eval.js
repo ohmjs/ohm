@@ -24,7 +24,7 @@ function skipSpacesIfAppropriate(state) {
 
 function skipSpaces(state) {
   var origFailureDescriptor = state.failureDescriptor;
-  var newFailureDescriptor = state.failureDescriptor = state.makeFailureDescriptor();
+  state.failureDescriptor = state.makeFailureDescriptor();
   applySpaces_.eval(state);
   state.bindings.pop();
   state.failureDescriptor = origFailureDescriptor;
@@ -37,8 +37,20 @@ function skipSpaces(state) {
 pexprs.PExpr.prototype.eval = function(state) {
   var origPos = state.inputStream.pos;
   var origNumBindings = state.bindings.length;
+  var origPosInfo = state.getCurrentPosInfo();
+  var origTrace = state.trace;
+  if (state.isTracing()) {
+    state.trace = [];
+  }
 
+  // Do the actual evaluation.
   var ans = this._eval(state);
+
+  if (state.isTracing()) {
+    origTrace.push(state.makeTraceEntry(origPos, this, ans));
+    state.trace = origTrace;
+  }
+
   if (!ans) {
     this.maybeRecordFailure(state, origPos);
 
@@ -294,6 +306,9 @@ pexprs.Apply.prototype._eval = function(state) {
     if (memoRecOrLR.failureDescriptor) {
       state.recordFailures(memoRecOrLR.failureDescriptor);
     }
+    if (state.isTracing()) {
+      state.trace.push(memoRecOrLR.traceEntry);
+    }
     if (memoRecOrLR.value) {
       bindings.push(memoRecOrLR.value);
       return true;
@@ -349,8 +364,13 @@ pexprs.Apply.prototype._eval = function(state) {
     } else {
       origPosInfo.memo[ruleName] = {pos: inputStream.pos, value: value};
     }
+    // Record the failure and trace information in the memo table, so that it is
+    // available if the memoized result is used later.
     if (origPosInfo.memo[ruleName]) {
       origPosInfo.memo[ruleName].failureDescriptor = newFailureDescriptor;
+      if (state.isTracing()) {
+        origPosInfo.memo[ruleName].traceEntry = state.makeTraceEntry(origPos, this, value);
+      }
     }
     var ans;
     if (value) {
@@ -377,7 +397,7 @@ pexprs.Apply.prototype._eval = function(state) {
       }
     }
 /*
-    Here's the Brian Ford version (what he describes in his Master's thesis):
+    Here's the Bryan Ford version (what he describes in his Master's thesis):
 
     if (body.description && newFailureDescriptor.pos === origPos) {
       newFailureDescriptor.pos = origPos;
