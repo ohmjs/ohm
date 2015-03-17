@@ -8,20 +8,70 @@ Implement Alex's de-spockification idea.
 
 #### Unit tests
 
-##### A slightly tricky one
+##### Unit test #1
 
 ```
-foo = bar "a" | bar "b"
-bar = "c" "d"?
+start = addExp
+addExp = addExp "+" mulExp | mulExp
+mulExp = mulExp "*" priExp | priExp
+priExp = number
 ```
 
-If the input is just `"c"`, the recorded failed primitives at position `1` should be:
+If the input is `"1-"`, the failed primitives recorded at position `1` should be:
 
-* `"d"`, with stack `[app("bar"), app("foo")]`
-* `"a"`, with stack `["app("foo")"]`
-* `"b"`, with stack `["app("foo")"]`
+* `"*"`, with stack `[app("mulExp"), app("addExp"), app("start")]`
+* `"+"`, with stack `[app("addExp"), app("start")]`
 
-The `"d"` clearly shouldn't be in the list of expected strings at position `1`. The interesting thing is that neither `"a"` nor `"b"`  "subsumes" `"d"`. But `"b"` shouldn't be one of the expected strings b/c if it shows up in the input, we will still need one of the other expected strings in order to accept, which means that `"d"` is superfluous / not a member of the "minimal expected set".
+The expected set should be {`"*"`, `"+"`}.
+
+
+##### Unit test #2
+
+```
+start = addExp ";"
+addExp = addExp "+" mulExp | mulExp
+mulExp = mulExp "*" priExp | priExp
+priExp = number
+```
+
+If the input is `"1"`, the failed primitives recorded at position `1` should be:
+
+* `"*"`, with stack `[app("mulExp"), app("addExp"), app("start")]`
+* `"+"`, with stack `[app("addExp"), app("start")]`
+* `";"`, with stack `[app("start")]`
+
+The expected set should be {`";"`}.
+
+##### Unit test #3
+
+```
+start = a b | b a
+a = "a"
+b = "b"
+```
+
+If the input is `""`, the failed primitives recorded at position `0` should be:
+
+* `"a"`, with stack `[app("a"), app("start")]`
+* `"b"`, with stack `[app("b"), app("start")]`
+
+The expected set should be {`"a"`, `"b"`}.
+
+##### Unit test #4
+
+```
+start = c "sucks" | c "stinks"
+c = "C" "++"?
+```
+
+If the input is `"C rules"`, the recorded failed primitives at position `1` should be:
+
+* `"++"`, with stack `[app("c"), app("start")]`
+* `"sucks"`, with stack `["app("start")"]`
+* `"stinks"`, with stack `["app("start")"]`
+
+The expected set should be {`"sucks"`, `"stinks"`}.
+The interesting thing in this example is that neither `"sucks"` nor `"stinks"`  "subsumes" `"++"`, but `"++"` shouldn't be included in the expected set. This is because even if it shows up in the input, we will still (eventually) need one of the other expected strings in order to get to an accepting state, which means that `"++"` is superfluous.
 
 ### "Namespaces"
 
