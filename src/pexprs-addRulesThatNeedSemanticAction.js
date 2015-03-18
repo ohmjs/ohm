@@ -73,7 +73,8 @@ pexprs.Apply.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequ
   if (!valueRequired || dict[this.ruleName]) {
     return false;
   } else {
-    return dict[this.ruleName] = true;
+    dict[this.ruleName] = true;
+    return true;
   }
 };
 

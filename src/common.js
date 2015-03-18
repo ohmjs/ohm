@@ -63,7 +63,7 @@ exports.fail = {};
 
 exports.isSyntactic = function(ruleName) {
   var firstChar = ruleName[0];
-  return 'A' <= firstChar && firstChar <= 'Z';
+  return ('A' <= firstChar && firstChar <= 'Z');
 };
 
 // StringBuffer
@@ -84,7 +84,7 @@ exports.StringBuffer.prototype.contents = function() {
 
 exports.escapeChar = function(c, optDelim) {
   var charCode = c.charCodeAt(0);
-  if ((c == '"' || c == "'") && optDelim && c !== optDelim) {
+  if ((c === '"' || c === "'") && optDelim && c !== optDelim) {
     return c;
   } else if (charCode < 128) {
     return escapeStringFor[charCode];
@@ -96,7 +96,7 @@ exports.escapeChar = function(c, optDelim) {
 };
 
 exports.unescapeChar = function(s) {
-  if (s.charAt(0) == '\\') {
+  if (s.charAt(0) === '\\') {
     switch (s.charAt(1)) {
       case 'b': return '\b';
       case 'f': return '\f';

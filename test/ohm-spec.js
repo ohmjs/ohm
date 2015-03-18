@@ -99,10 +99,9 @@ describe('Ohm', function() {
       });
 
       it('_default entry rejects nonexistent rule name', function () {
-        expect(function () { m.construct('foobar', []) })
-          .to.throwException(function (e) {
-            expect(e).to.be.a(errors.InvalidConstructorCall);
-          });
+        expect(function () { m.construct('foobar', []); }).to.throwException(function (e) {
+          expect(e).to.be.a(errors.InvalidConstructorCall);
+        });
       });
 
       it('_default entry works when called correctly', function () {
@@ -113,12 +112,10 @@ describe('Ohm', function() {
       it('particular entries work when called', function () {
         var n = m.match('1+2*3', 'addExpr');
         expect(n.ctorName).to.equal('addExpr');
-        var n2 = m.constructors.addExpr(n.children[0]);
 
         var p = n.children[0];
         expect(p.ctorName).to.equal('addExpr_plus');
         expect(p.numChildren()).to.equal(3);
-        var p2 = m.constructors.addExpr_plus(p.children[0], p.children[1], p.children[2]);
       });
     });
 
@@ -642,9 +639,9 @@ describe('Ohm', function() {
       });
 
       it('semantic actions', function() {
-        expect(m.synthesizedAttribute({start: function(x, _, y) { return [x.value(), y.value()] }})(m.match('abc', 'start')))
+        expect(m.synthesizedAttribute({start: function(x, _, y) { return [x.value(), y.value()]; }})(m.match('abc', 'start')))
           .to.eql(['a', 'c']);
-        expect(m.synthesizedAttribute({start: function(x, _, y) { return [x.value(), y.value()] }})(m.match('123', 'start')))
+        expect(m.synthesizedAttribute({start: function(x, _, y) { return [x.value(), y.value()]; }})(m.match('123', 'start')))
           .to.eql(['1', '3']);
       });
     });
@@ -740,7 +737,7 @@ describe('Ohm', function() {
       });
 
       it('semantic actions', function() {
-        expect(m.synthesizedAttribute({start: function(x, _) { return x.value() }})(m.match('hello world', 'start'))).to.equal('hello');
+        expect(m.synthesizedAttribute({start: function(x, _) { return x.value(); }})(m.match('hello world', 'start'))).to.equal('hello');
       });
     });
 
@@ -795,7 +792,7 @@ describe('Ohm', function() {
         it('semantic actions', function() {
           expect(m.synthesizedAttribute({
             strict: function(a, b) { return [a.value(), b.value()]; }
-          })(m.match({x: 1, y: 2}, 'strict')))
+          })(m.match({x: 1, y: 2}, 'strict')));
           expect(m.synthesizedAttribute({
             strict: function(a, b) { return [a.value(), b.value()]; }
           })(m.match({y: 2, x: 1}, 'strict'))).to.eql([1, 2]);
@@ -993,7 +990,7 @@ describe('Ohm', function() {
       });
 
       describe('nested left recursion', function() {
-        var m
+        var m;
         beforeEach(function() {
           m = makeGrammar([
             'M {',
@@ -1020,7 +1017,7 @@ describe('Ohm', function() {
             addExpr:    function(expr)    { return ['addExpr', parseTree(expr)]; },
             addExprRec: function(x, _, y) { return ['addExprRec', parseTree(x), parseTree(y)]; },
             mulExpr:    function(expr)    { return ['mulExpr', parseTree(expr)]; },
-            mulExprRec: function(x, _, y) { return ['mulExprRec', parseTree(x), parseTree(y)] },
+            mulExprRec: function(x, _, y) { return ['mulExprRec', parseTree(x), parseTree(y)]; },
             priExpr:    ohm.actions.passThrough,
             _terminal:  ohm.actions.getValue
           });
@@ -1729,9 +1726,9 @@ describe('Ohm', function() {
       function fromLoc(pexpr) {
         return [pexpr.interval.startIdx, pexpr.interval.endIdx];
       }
-      var fooBody = g.ruleDict['foo'];
-      var beepBody = g.ruleDict['beep'];
-      var barBody = g.ruleDict['bar'];
+      var fooBody = g.ruleDict.foo;
+      var beepBody = g.ruleDict.beep;
+      var barBody = g.ruleDict.bar;
       it('works for regular rule applications', function() {
         expect(fromLoc(fooBody)).to.eql([12, 15]);
         expect(fromLoc(beepBody.factors[1])).to.eql([32, 35]);
@@ -1743,7 +1740,7 @@ describe('Ohm', function() {
         expect(fromLoc(barBody.terms[0])).to.eql([44, 47]);
         expect(fromLoc(barBody.terms[1])).to.eql([50, 56]);
 
-        var barBazBody = g.ruleDict['bar_baz'];
+        var barBazBody = g.ruleDict.bar_baz;
         expect(fromLoc(barBazBody)).to.eql([59, 66]);
       });
       it('is undefined for other types of pexpr', function() {

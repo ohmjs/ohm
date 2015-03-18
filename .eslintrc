@@ -1,0 +1,34 @@
+{
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "rules": {
+    // Allow things like `while(true)`.
+    "no-constant-condition": 0,
+
+    // Allow extra spaces to be used for aligning variables.
+    "no-multi-spaces": 0,
+
+    // Allow variable shadowing.
+    "no-shadow": 0,
+
+    // Allow identifiers with leading or trailing underscores.
+    "no-underscore-dangle": 0,
+
+    // Allow unused parameters, but not unused variables.
+    "no-unused-vars": [2, {"vars": "all", "args": "none"}],
+
+    // Allow functions to be used before they are defined.
+    "no-use-before-define": [2, "nofunc"],
+
+    // Use single quotes, except when escaping would be necessary.
+    "quotes": [2, "single", "avoid-escape"],
+
+    // Don't enforce strict mode, because it disallows duplicate parameter
+    // names, which we use heavily in semantic actions.
+    "strict": 0,
+
+    "yoda": [2, "never", { "exceptRange": true }]
+  }
+}

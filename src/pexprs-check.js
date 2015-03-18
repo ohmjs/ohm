@@ -76,7 +76,7 @@ pexprs.Many.prototype.check = function(grammar, vals) {
   }
 
   for (i = 0; i < rowcount; i++) {
-    var row = []
+    var row = [];
     for (var j = 0; j < arity; j++) {
       row.push(columns[j][i]);
     }

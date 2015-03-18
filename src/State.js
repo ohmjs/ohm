@@ -2,9 +2,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common.js');
 var Interval = require('./Interval.js');
-var pexprs = require('./pexprs.js');
 var PosInfo = require('./PosInfo.js');
 
 // --------------------------------------------------------------------
@@ -86,7 +84,7 @@ State.prototype = {
       pos: pos,
       expr: expr,
       succeeded: ans,
-      children: this.trace,
+      children: this.trace
     };
     if (ans) {
       entry.interval = new Interval(this.inputStream, pos, this.inputStream.pos);

@@ -1,10 +1,4 @@
 // --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-var Interval = require('./Interval.js');
-
-// --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
@@ -26,7 +20,7 @@ Node.prototype.childAt = function(idx) {
 Node.prototype.indexOfChild = function(arg) {
   return this.children.indexOf(arg);
 };
-  
+
 Node.prototype.hasChildren = function() {
   return this.children.length > 0;
 };
@@ -52,7 +46,7 @@ Node.prototype.firstChild = function() {
     return this.childAt(0);
   }
 };
-  
+
 Node.prototype.lastChild = function() {
   if (this.hasNoChildren()) {
     throw new Error('cannot get last child of a ' + this.ctorName + ' node, which has no children');

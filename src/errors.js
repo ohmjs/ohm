@@ -13,12 +13,11 @@ OhmError.prototype = Object.create(Error.prototype);
 
 function makeCustomError(name, initFn) {
   // Make E think it's really called OhmError, so that errors look nicer when they're console.log'ed in Chrome.
-  var E =
-      function OhmError() {  
-        initFn.apply(this, arguments);
-        var e = new Error(this.message);
-        Object.defineProperty(this, 'stack', { get: function() { return e.stack; } });
-      };
+  var E = function OhmError() {
+    initFn.apply(this, arguments);
+    var e = new Error(this.message);
+    Object.defineProperty(this, 'stack', { get: function() { return e.stack; } });
+  };
   E.prototype = Object.create(OhmError.prototype);
   E.prototype.constructor = E;
   E.prototype.name = name;

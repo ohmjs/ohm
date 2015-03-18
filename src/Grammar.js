@@ -37,17 +37,16 @@ Grammar.prototype = {
     var self = this;
     var constructors = {};
 
+    function makeConstructor(ruleName) {
+      return function(/* val1, val2, ... */) {
+        return self.construct(ruleName, Array.prototype.slice.call(arguments));
+      };
+    }
+
     for (var ruleName in this.ruleDict) {
       // We want *all* properties, not just own properties, because of
       // supergrammars.
-
-      // also WOW I can't believe I was bitten AGAIN by Javascript's
-      // silly mutable for-bound variables
-      (function(ruleName) {
-        constructors[ruleName] = function(/* val1, val2, ... */) {
-          return self.construct(ruleName, Array.prototype.slice.call(arguments));
-        };
-      })(ruleName);
+      constructors[ruleName] = makeConstructor(ruleName);
     }
     return constructors;
   },
@@ -234,8 +233,9 @@ Grammar.prototype = {
     }
 
     var rules = {};
+    var ruleName;
     for (var idx = 0; idx < entryPoints.length; idx++) {
-      var ruleName = entryPoints[idx];
+      ruleName = entryPoints[idx];
       getBody(ruleName);  // to make sure the rule exists
       rules[ruleName] = true;
     }
@@ -243,7 +243,7 @@ Grammar.prototype = {
     var done = false;
     while (!done) {
       done = true;
-      for (var ruleName in rules) {
+      for (ruleName in rules) {
         var addedNewRule = getBody(ruleName).addRulesThatNeedSemanticAction(rules, true);
         done &= !addedNewRule;
       }
@@ -271,7 +271,7 @@ namespace('default').install(new Grammar(
 
         // The following rule is part of the implementation.
         // Its name ends with '_' so that it can't be overridden or invoked by programmers.
-        spaces_: new pexprs.Many(new pexprs.Apply('space'), 0),
+        spaces_: new pexprs.Many(new pexprs.Apply('space'), 0)
     }));
 
 // --------------------------------------------------------------------

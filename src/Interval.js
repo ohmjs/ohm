@@ -28,7 +28,7 @@ Interval.coverage = function(/* interval1, interval2, ... */) {
     }
   }
   return new Interval(inputStream, startIdx, endIdx);
-}
+};
 
 Interval.prototype = {
   coverageWith: function(/* interval1, interval2, ... */) {
