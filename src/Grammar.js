@@ -54,7 +54,7 @@ Grammar.prototype = {
 
   match: function(obj, startRule, optThrowOnFail) {
     var throwOnFail = !!optThrowOnFail;
-    var state = this._match(obj, startRule);
+    var state = this._match(obj, startRule, false);
     var succeeded = state.bindings.length === 1;
     if (succeeded) {
       return state.bindings[0];  // Return the root CSTNode.
@@ -65,9 +65,9 @@ Grammar.prototype = {
     }
   },
 
-  _match: function(obj, startRule, optTracingEnabled) {
+  _match: function(obj, startRule, tracingEnabled) {
     var inputStream = InputStream.newFor(typeof obj === "string" ? obj : [obj]);
-    var state = new State(this, inputStream, optTracingEnabled);
+    var state = new State(this, inputStream, tracingEnabled);
     var succeeded = new pexprs.Apply(startRule).eval(state);
     if (succeeded) {
       // Link every CSTNode to its parent.
