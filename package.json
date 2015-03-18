@@ -19,17 +19,17 @@
   "main": "src/main.js",
   "bin": "src/bootstrap.js",
   "scripts": {
-    "clean": "rm -f dist/ohm.js dist/ohm.min.js",
+    "bootstrap": "npm test --silent && npm run unsafe-bootstrap && (npm test --silent || (echo 'Bootstrap failed.'; mv -v dist/ohm-grammar.js.old dist/ohm-grammar.js))",
     "build-debug": "browserify src/main.js -d -s ohm -o dist/ohm.js",
     "build-min": "browserify src/main.js -s ohm | uglifyjs > dist/ohm.min.js",
     "build": "npm run build-debug && npm run build-min",
-    "watch": "watchify src/main.js -d -s ohm -o dist/ohm.js",
+    "clean": "rm -f dist/ohm.js dist/ohm.min.js",
     "test": "mocha",
     "test-watch": "mocha -w",
-    "bootstrap": "npm test --silent && npm run unsafe-bootstrap && (npm test --silent || (echo 'Bootstrap failed.'; mv -v dist/ohm-grammar.js.old dist/ohm-grammar.js))",
-    "unsafe-bootstrap": "cp dist/ohm-grammar.js dist/ohm-grammar.js.old; node src/bootstrap.js src/ohm-grammar.ohm > dist/ohm-grammar.js.new && mv -f dist/ohm-grammar.js.new dist/ohm-grammar.js",
     "prepublish": "npm run build && npm run bootstrap",
-    "postinstall": "git config --add merge.ours.driver true"
+    "postinstall": "git config --add merge.ours.driver true",
+    "unsafe-bootstrap": "cp dist/ohm-grammar.js dist/ohm-grammar.js.old; node src/bootstrap.js src/ohm-grammar.ohm > dist/ohm-grammar.js.new && mv -f dist/ohm-grammar.js.new dist/ohm-grammar.js",
+    "watch": "watchify src/main.js -d -s ohm -o dist/ohm.js"
   },
   "license": "MIT",
   "author": "Alex Warth <alexwarth@gmail.com> (http://tinlizzie.org/~awarth)",
@@ -38,10 +38,10 @@
     "symbol": ""
   },
   "devDependencies": {
-    "watchify": "^0.6.1",
-    "uglify-js": "^2.4.12",
     "browserify": "^3.30.4",
+    "expect.js": "^0.3.1",
     "mocha": "^1.17.1",
-    "expect.js": "^0.3.1"
+    "uglify-js": "^2.4.12",
+    "watchify": "^0.6.1"
   }
 }
