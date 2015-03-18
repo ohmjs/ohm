@@ -17,7 +17,7 @@ var Interval = require('../src/Interval.js');
 
 var nextFreshNSId = 0;
 function freshNamespaceName() {
-  return "ns" + nextFreshNSId++;
+  return 'ns' + nextFreshNSId++;
 }
 
 function makeGrammar(source, optNamespaceName) {
@@ -54,14 +54,14 @@ function compareGrammars(expected, actual) {
     compareGrammars(expected.superGrammar, actual.superGrammar);
     // In the list below, we exclude superGrammar (just tested above)
     // and constructors (for reasons given above).
-    ["namespaceName", "name", "ruleDecls", "ruleDict"].forEach(function (prop) {
+    ['namespaceName', 'name', 'ruleDecls', 'ruleDict'].forEach(function (prop) {
       expect(actual[prop]).to.eql(expected[prop]);
     });
   }
 }
 
-describe("Ohm", function() {
-  describe("unit tests", function() {
+describe('Ohm', function() {
+  describe('unit tests', function() {
 
     function buildTreeNodeWithUniqueId(m) {
       var nextId = 0;
@@ -76,17 +76,17 @@ describe("Ohm", function() {
       return attr;
     }
 
-    describe("grammar constructors dictionary", function() {
+    describe('grammar constructors dictionary', function() {
       var m;
       beforeEach(function() {
         m = makeGrammar(arithmeticGrammarSource);
       });
 
-      it("exists and has a _default entry", function() {
+      it('exists and has a _default entry', function() {
         expect(m.constructors).to.be.ok();
       });
 
-      it("has an entry for each of a few carefully chosen rules", function () {
+      it('has an entry for each of a few carefully chosen rules', function () {
         expect(m.constructors.addExpr).to.be.ok();
         expect(m.constructors.addExpr_minus).to.be.ok();
         expect(m.constructors.priExpr).to.be.ok();
@@ -94,23 +94,23 @@ describe("Ohm", function() {
         expect(m.constructors._).to.be.ok();
       });
 
-      it("lacks entries for nonexistent rules", function () {
+      it('lacks entries for nonexistent rules', function () {
         expect(m.constructors.foobar).to.be(undefined);
       });
 
-      it("_default entry rejects nonexistent rule name", function () {
+      it('_default entry rejects nonexistent rule name', function () {
         expect(function () { m.construct('foobar', []) })
           .to.throwException(function (e) {
             expect(e).to.be.a(errors.InvalidConstructorCall);
           });
       });
 
-      it("_default entry works when called correctly", function () {
+      it('_default entry works when called correctly', function () {
         expect(m.construct('addExpr', [m.match('1+2', 'addExpr_plus')]))
           .to.be.a(Node);
       });
 
-      it("particular entries work when called", function () {
+      it('particular entries work when called', function () {
         var n = m.match('1+2*3', 'addExpr');
         expect(n.ctorName).to.equal('addExpr');
         var n2 = m.constructors.addExpr(n.children[0]);
@@ -122,10 +122,10 @@ describe("Ohm", function() {
       });
     });
 
-    describe("helper stuff", function() {
-      describe("intervals", function() {
-        describe("collapsing", function() {
-          it("left", function() {
+    describe('helper stuff', function() {
+      describe('intervals', function() {
+        describe('collapsing', function() {
+          it('left', function() {
             var interval = makeInterval('hello world', 0, 5);
             var collapsed = interval.collapsedLeft();
 
@@ -141,7 +141,7 @@ describe("Ohm", function() {
             expect(collapsed.contents).to.equal('');
           });
 
-          it("right", function() {
+          it('right', function() {
             var interval = makeInterval('hello world', 0, 5);
             var collapsed = interval.collapsedRight();
 
@@ -158,8 +158,8 @@ describe("Ohm", function() {
           });
         });
 
-        describe("coverage", function() {
-          it("one interval", function() {
+        describe('coverage', function() {
+          it('one interval', function() {
             var interval = makeInterval('hello world', 0, 5);
             var ans = Interval.coverage(interval);
 
@@ -169,7 +169,7 @@ describe("Ohm", function() {
             expect(ans.contents).to.equal('hello');
           });
 
-          it("two adjacent intervals", function() {
+          it('two adjacent intervals', function() {
             var interval1 = makeInterval('hello world', 2, 5);
             var interval2 = makeInterval(interval1.inputStream, 0, 2);
             var ans = Interval.coverage(interval1, interval2);
@@ -180,7 +180,7 @@ describe("Ohm", function() {
             expect(ans.contents).to.equal('hello');
           });
 
-          it("two non-adjacent intervals", function() {
+          it('two non-adjacent intervals', function() {
             var interval1 = makeInterval('hello world', 0, 2);
             var interval2 = makeInterval(interval1.inputStream, 4, 5);
             var ans = Interval.coverage(interval1, interval2);
@@ -191,7 +191,7 @@ describe("Ohm", function() {
             expect(ans.contents).to.equal('hello');
           });
 
-          it("nested intervals", function() {
+          it('nested intervals', function() {
             var interval1 = makeInterval('hello world', 0, 5);
             var interval2 = makeInterval(interval1.inputStream, 3, 4);
             var ans = Interval.coverage(interval1, interval2);
@@ -202,7 +202,7 @@ describe("Ohm", function() {
             expect(ans.contents).to.equal('hello');
           });
 
-          it("more intervals", function() {
+          it('more intervals', function() {
             var interval1 = makeInterval('hello world', 0, 2);
             var interval2 = makeInterval(interval1.inputStream, 3, 4);
             var interval3 = makeInterval(interval1.inputStream, 6, 10);
@@ -214,7 +214,7 @@ describe("Ohm", function() {
             expect(ans.contents).to.equal('hello worl');
           });
 
-          it("brotha from anotha motha", function() {
+          it('brotha from anotha motha', function() {
             var interval1 = makeInterval('abc', 0, 3);
             var interval2 = makeInterval('xyz', 1, 2);
             expect(function() { Interval.coverage(interval1, interval2); }).to.throwException(function(e) {
@@ -222,7 +222,7 @@ describe("Ohm", function() {
             });
           });
 
-          it("coverageWith (same method as above but as a method of an interval)", function() {
+          it('coverageWith (same method as above but as a method of an interval)', function() {
             var interval1 = makeInterval('hello world', 0, 2);
             var interval2 = makeInterval(interval1.inputStream, 3, 4);
             var interval3 = makeInterval(interval1.inputStream, 6, 10);
@@ -237,20 +237,20 @@ describe("Ohm", function() {
       });
     });
 
-    describe("primitive patterns", function() {
-      describe("anything", function() {
+    describe('primitive patterns', function() {
+      describe('anything', function() {
         var m;
         beforeEach(function() {
-          m = makeGrammar("M { }");
+          m = makeGrammar('M { }');
         });
 
-        describe("direct match, no stream", function() {
-          it("recognition", function() {
+        describe('direct match, no stream', function() {
+          it('recognition', function() {
             expect(m.match(5, '_')).to.be.ok();
             expect(m.match(null, '_')).to.be.ok();
           });
 
-          it("semantic actions", function() {
+          it('semantic actions', function() {
             var dict = {
               _: ohm.actions.passThrough,
               _terminal: ohm.actions.getValue
@@ -260,13 +260,13 @@ describe("Ohm", function() {
           });
         });
 
-        describe("match in string stream", function() {
-          it("recognition", function() {
+        describe('match in string stream', function() {
+          it('recognition', function() {
             expect(m.match('5', '_')).to.be.ok();
             expect(m.match('', '_')).to.equal(false);
           });
 
-          it("semantic actions", function() {
+          it('semantic actions', function() {
             var dict = {
               _: ohm.actions.passThrough,
               _terminal: ohm.actions.getValue
@@ -275,12 +275,12 @@ describe("Ohm", function() {
           });
         });
 
-        describe("match in list stream", function() {
-          it("recognition", function() {
+        describe('match in list stream', function() {
+          it('recognition', function() {
             expect(m.match(['123'], '_')).to.be.ok();
           });
 
-          it("semantic actions", function() {
+          it('semantic actions', function() {
             var dict = {
               _: ohm.actions.passThrough,
               _terminal: ohm.actions.getValue
@@ -290,21 +290,21 @@ describe("Ohm", function() {
         });
       });
 
-      describe("exactly(x)", function() {
+      describe('exactly(x)', function() {
         var m;
         beforeEach(function() {
           m = makeGrammar([
-            "M {",
-            "  five = 5",
-            "  _true = true",
-            "  _false = false",
-            "  _null = null",
-            "  _undefined = undefined",
-            "}"]);
+            'M {',
+            '  five = 5',
+            '  _true = true',
+            '  _false = false',
+            '  _null = null',
+            '  _undefined = undefined',
+            '}']);
         });
 
-        describe("direct match, no stream", function() {
-          it("recognition", function() {
+        describe('direct match, no stream', function() {
+          it('recognition', function() {
             expect(m.match(5, 'five')).to.be.ok();
             expect(m.match(2, 'five')).to.equal(false);
             expect(m.match('a', 'five')).to.equal(false);
@@ -361,7 +361,7 @@ describe("Ohm", function() {
             expect(m.match(undefined, '_undefined')).to.be.ok();
           });
 
-          it("semantic actions", function() {
+          it('semantic actions', function() {
             var dict = {
               five: ohm.actions.passThrough,
               _true: ohm.actions.passThrough,
@@ -378,8 +378,8 @@ describe("Ohm", function() {
           });
         });
 
-        describe("match in string stream", function() {
-          it("recognition", function() {
+        describe('match in string stream', function() {
+          it('recognition', function() {
             expect(m.match('!', 'five')).to.equal(false);
             expect(m.match('5', 'five')).to.equal(false);
             expect(m.match('2', 'five')).to.equal(false);
@@ -390,27 +390,27 @@ describe("Ohm", function() {
             expect(m.match('undefined', '_undefined')).to.equal(false);
           });
 
-          it("semantic actions", function() {
+          it('semantic actions', function() {
             // N/A
           });
         });
       });
 
-      describe("char", function() {
+      describe('char', function() {
         var m;
         beforeEach(function() {
           m = makeGrammar('M { bang = "!" }');
         });
 
-        describe("direct match, no stream", function() {
-          it("recognition", function() {
+        describe('direct match, no stream', function() {
+          it('recognition', function() {
             expect(m.match('!', 'bang')).to.be.ok();
             expect(m.match('!a', 'bang')).to.equal(false);
             expect(m.match(5, 'bang')).to.equal(false);
             expect(m.match('', 'bang')).to.equal(false);
           });
 
-          it("semantic actions", function() {
+          it('semantic actions', function() {
             var dict = {
               bang: ohm.actions.passThrough,
               _terminal: ohm.actions.getValue
@@ -420,14 +420,14 @@ describe("Ohm", function() {
           });
         });
 
-        describe("match in string stream", function() {
-          it("recognition", function() {
+        describe('match in string stream', function() {
+          it('recognition', function() {
             expect(m.match('!', 'bang')).to.be.ok();
             expect(m.match('a', 'bang')).to.equal(false);
             expect(m.match('', 'bang')).to.equal(false);
           });
 
-          it("semantic actions", function() {
+          it('semantic actions', function() {
             var dict = {
               bang: ohm.actions.passThrough,
               _terminal: ohm.actions.getValue
@@ -438,21 +438,21 @@ describe("Ohm", function() {
         });
       });
 
-      describe("string", function() {
+      describe('string', function() {
         var m;
         beforeEach(function() {
           m = makeGrammar('M { foo = "foo" }');
         });
 
-        describe("direct match, no stream", function() {
-          it("recognition", function() {
+        describe('direct match, no stream', function() {
+          it('recognition', function() {
             expect(m.match('foo', 'foo')).to.be.ok();
             expect(m.match('foo1', 'foo')).to.equal(false);
             expect(m.match('bar', 'foo')).to.equal(false);
             expect(m.match(null, 'foo')).to.equal(false);
           });
 
-          it("semantic actions", function() {
+          it('semantic actions', function() {
             var dict = {
               foo: ohm.actions.passThrough,
               _terminal: ohm.actions.getValue
@@ -462,14 +462,14 @@ describe("Ohm", function() {
           });
         });
 
-        describe("match in string stream", function() {
-          it("recognition", function() {
+        describe('match in string stream', function() {
+          it('recognition', function() {
             expect(m.match('foo', 'foo')).to.be.ok();
             expect(m.match('foo1', 'foo')).to.equal(false);
             expect(m.match('bar', 'foo')).to.equal(false);
           });
 
-          it("semantic actions", function() {
+          it('semantic actions', function() {
             var dict = {
               foo: ohm.actions.passThrough,
               _terminal: ohm.actions.getValue
@@ -480,14 +480,14 @@ describe("Ohm", function() {
         });
       });
 
-      describe("regexp", function() {
+      describe('regexp', function() {
         var m;
         beforeEach(function() {
           m = makeGrammar('M { myDigit = /[0-9]/ myLetter = /\\p{L}/ myLF = /\\p{LF}/ }');
         });
 
-        describe("direct match, no stream", function() {
-          it("recognition", function() {
+        describe('direct match, no stream', function() {
+          it('recognition', function() {
             expect(m.match(/[0-9]/, 'myDigit')).to.equal(false);
             expect(m.match('4', 'myDigit')).to.be.ok();
             expect(m.match(4, 'myDigit')).to.equal(false);
@@ -495,19 +495,19 @@ describe("Ohm", function() {
             expect(m.match('a4', 'myDigit')).to.equal(false);
           });
 
-          it("semantic actions", function() {
+          it('semantic actions', function() {
             // N/A
           });
         });
 
-        describe("match in string stream", function() {
-          it("recognition", function() {
+        describe('match in string stream', function() {
+          it('recognition', function() {
             expect(m.match('4', 'myDigit')).to.be.ok();
             expect(m.match('a', 'myDigit')).to.equal(false);
             expect(m.match('a4', 'myDigit')).to.equal(false);
           });
 
-          it("semantic actions", function() {
+          it('semantic actions', function() {
             var dict = {
               myDigit: ohm.actions.passThrough,
               _terminal: ohm.actions.getValue
@@ -517,8 +517,8 @@ describe("Ohm", function() {
           });
         });
 
-        describe("unicode match in string stream", function() {
-          it("recognition", function() {
+        describe('unicode match in string stream', function() {
+          it('recognition', function() {
             expect(m.match('4', 'myLetter')).to.equal(false);
             expect(m.match('a', 'myLetter')).to.be.ok();
             expect(m.match('a4', 'myLetter')).to.equal(false);
@@ -528,7 +528,7 @@ describe("Ohm", function() {
             expect(m.match('x', 'myLF')).to.equal(false);
           });
 
-          it("semantic actions", function() {
+          it('semantic actions', function() {
             var dict = {
               myLetter: ohm.actions.passThrough,
               _terminal: ohm.actions.getValue
@@ -540,20 +540,20 @@ describe("Ohm", function() {
       });
     });
 
-    describe("alt", function() {
+    describe('alt', function() {
       var m;
       beforeEach(function() {
         m = makeGrammar('M { altTest = "a" | "b" }');
       });
 
-      it("recognition", function() {
+      it('recognition', function() {
         expect(m.match('', 'altTest')).to.equal(false);
         expect(m.match('a', 'altTest')).to.be.ok();
         expect(m.match('b', 'altTest')).to.be.ok();
         expect(m.match('ab', 'altTest')).to.equal(false);
       });
 
-      it("semantic actions", function() {
+      it('semantic actions', function() {
         var dict = {
           altTest: ohm.actions.passThrough,
           _terminal: ohm.actions.getValue
@@ -563,21 +563,21 @@ describe("Ohm", function() {
       });
     });
 
-    describe("seq", function() {
-      describe("without bindings", function() {
+    describe('seq', function() {
+      describe('without bindings', function() {
         var m;
         beforeEach(function() {
           m = makeGrammar('M { start = "a" "bc" "z" }');
         });
 
-        it("recognition", function() {
+        it('recognition', function() {
           expect(m.match('a', 'start')).to.equal(false);
           expect(m.match('bc', 'start')).to.equal(false);
           expect(m.match('abcz', 'start')).to.be.ok();
           expect(m.match('abbz', 'start')).to.equal(false);
         });
 
-        it("semantic actions", function() {
+        it('semantic actions', function() {
           var f = m.match('abcz', 'start');
           expect(m.synthesizedAttribute({
             start: function(x, y, z) { return [x.interval.contents, y.interval.contents, z.interval.contents]; }
@@ -585,20 +585,20 @@ describe("Ohm", function() {
         });
       });
 
-      describe("with exactly one binding", function() {
+      describe('with exactly one binding', function() {
         var m;
         beforeEach(function() {
           m = makeGrammar('M { start = "a" "bc" "z" }');
         });
 
-        it("recognition", function() {
+        it('recognition', function() {
           expect(m.match('a', 'start')).to.equal(false);
           expect(m.match('bc', 'start')).to.equal(false);
           expect(m.match('abcz', 'start')).to.be.ok();
           expect(m.match('abbz', 'start')).to.equal(false);
         });
 
-        it("semantic actions", function() {
+        it('semantic actions', function() {
           var f = m.match('abcz', 'start');
           expect(m.synthesizedAttribute({
             start: function(x, _, _) { return x.value(); },
@@ -606,20 +606,20 @@ describe("Ohm", function() {
         });
       });
 
-      describe("with more than one binding", function() {
+      describe('with more than one binding', function() {
         var m;
         beforeEach(function() {
           m = makeGrammar('M { start = "a" "bc" "z" }');
         });
 
-        it("recognition", function() {
+        it('recognition', function() {
           expect(m.match('a', 'start')).to.equal(false);
           expect(m.match('bc', 'start')).to.equal(false);
           expect(m.match('abcz', 'start')).to.be.ok();
           expect(m.match('abbz', 'start')).to.equal(false);
         });
 
-        it("semantic actions", function() {
+        it('semantic actions', function() {
           var f = m.match('abcz', 'start');
           expect(m.synthesizedAttribute({
             start: function(x, _, y) { return [x.value(), y.value()]; }
@@ -628,20 +628,20 @@ describe("Ohm", function() {
       });
     });
 
-    describe("alts and seqs together", function() {
+    describe('alts and seqs together', function() {
       var m;
       beforeEach(function() {
         m = makeGrammar('M { start = "a" "b" "c" | "1" "2" "3" }');
       });
 
-      it("recognition", function() {
+      it('recognition', function() {
         expect(m.match('ab', 'start')).to.equal(false);
         expect(m.match('12', 'start')).to.equal(false);
         expect(m.match('abc', 'start')).to.be.ok();
         expect(m.match('123', 'start')).to.be.ok();
       });
 
-      it("semantic actions", function() {
+      it('semantic actions', function() {
         expect(m.synthesizedAttribute({start: function(x, _, y) { return [x.value(), y.value()] }})(m.match('abc', 'start')))
           .to.eql(['a', 'c']);
         expect(m.synthesizedAttribute({start: function(x, _, y) { return [x.value(), y.value()] }})(m.match('123', 'start')))
@@ -649,18 +649,18 @@ describe("Ohm", function() {
       });
     });
 
-    describe("many", function() {
+    describe('many', function() {
       var m;
       beforeEach(function() {
         m = makeGrammar([
-          "M {",
-          "  number = digit+",
-          "  digits = digit*",
-          "  sss = &number number",
-          "}"]);
+          'M {',
+          '  number = digit+',
+          '  digits = digit*',
+          '  sss = &number number',
+          '}']);
       });
 
-      it("recognition", function() {
+      it('recognition', function() {
         expect(m.match('1234a', 'number')).to.equal(false);
         expect(m.match('1234', 'number')).to.be.ok();
         expect(m.match('5', 'number')).to.be.ok();
@@ -672,7 +672,7 @@ describe("Ohm", function() {
         expect(m.match('', 'digits')).to.be.ok();
       });
 
-      it("semantic actions", function() {
+      it('semantic actions', function() {
         var value = m.synthesizedAttribute({
           number:     function(expr) { return ['digits', value(expr)]; },
           digit:      function(expr) { return ['digit', value(expr)]; },
@@ -683,7 +683,7 @@ describe("Ohm", function() {
           .to.eql(['digits', [['digit', '1'], ['digit', '2'], ['digit', '3'], ['digit', '4']]]);
       });
 
-      it("semantic actions are evaluated lazily", function() {
+      it('semantic actions are evaluated lazily', function() {
         var a = buildTreeNodeWithUniqueId(m);
         var t = ['id', 1, 'number', [[ 'id', 2, 'digit', '1'], ['id', 3, 'digit', '2'], ['id', 4, 'digit', '3']]];
         expect(a(m.match('123', 'sss'))).to.eql(['id', 0, 'sss', t, t]);
@@ -691,66 +691,66 @@ describe("Ohm", function() {
       });
     });
 
-    describe("opt", function() {
+    describe('opt', function() {
       var m;
       beforeEach(function() {
         m = makeGrammar('M { name = "dr"? "warth" }');
       });
 
-      it("recognition", function() {
+      it('recognition', function() {
         expect(m.match('drwarth', 'name')).to.be.ok();
         expect(m.match('warth', 'name')).to.be.ok();
         expect(m.match('mrwarth', 'name')).to.equal(false);
       });
 
-      it("semantic actions", function() {
+      it('semantic actions', function() {
         var actionDict = {name: function(title, last) { return [title.value(), last.value()]; }};
         expect(m.synthesizedAttribute(actionDict)(m.match('drwarth', 'name'))).to.eql(['dr', 'warth']);
         expect(m.synthesizedAttribute(actionDict)(m.match('warth', 'name'))).to.eql([undefined, 'warth']);
       });
     });
 
-    describe("not", function() {
+    describe('not', function() {
       var m;
       beforeEach(function() {
         m = makeGrammar('M { start = ~"hello" _* }');
       });
 
-      it("recognition", function() {
+      it('recognition', function() {
         expect(m.match('yello world', 'start')).to.be.ok();
         expect(m.match('hello world', 'start')).to.equal(false);
       });
 
-      it("semantic actions", function() {
+      it('semantic actions', function() {
         expect(m.synthesizedAttribute({
           start: function(x) { return x.interval.contents; }
         })(m.match('yello world', 'start'))).to.equal('yello world');
       });
     });
 
-    describe("lookahead", function() {
+    describe('lookahead', function() {
       var m;
       beforeEach(function() {
         m = makeGrammar('M { start = &"hello" _* }');
       });
 
-      it("recognition", function() {
+      it('recognition', function() {
         expect(m.match('hello world', 'start')).to.be.ok();
         expect(m.match('hell! world', 'start')).to.equal(false);
       });
 
-      it("semantic actions", function() {
+      it('semantic actions', function() {
         expect(m.synthesizedAttribute({start: function(x, _) { return x.value() }})(m.match('hello world', 'start'))).to.equal('hello');
       });
     });
 
-    describe("arr", function() {
+    describe('arr', function() {
       var m;
       beforeEach(function() {
         m = makeGrammar('M { start = ["abc" &_ ["d" "ef"] "g"] }');
       });
 
-      it("recognition", function() {
+      it('recognition', function() {
         expect(m.match(['abc', ['d', 'ef'], 'g'], 'start')).to.be.ok();
         expect(m.match(['abc', ['def'], 'g'], 'start')).to.equal(false);
         expect(m.match(['abc', 'def', 'g'], 'start')).to.equal(false);
@@ -761,7 +761,7 @@ describe("Ohm", function() {
         expect(m.match(['abc', 5, 'g'], 'start')).to.equal(false);
       });
 
-      it("semantic actions", function() {
+      it('semantic actions', function() {
         var value = m.synthesizedAttribute({
           start: function(_, y, x, _, _) { return [value(x), value(y)]; },
           _: ohm.actions.passThrough,
@@ -771,7 +771,7 @@ describe("Ohm", function() {
       });
     });
 
-    describe("obj", function() {
+    describe('obj', function() {
       var m;
       beforeEach(function() {
         m = makeGrammar([
@@ -782,8 +782,8 @@ describe("Ohm", function() {
           '}']);
       });
 
-      describe("strict", function() {
-        it("recognition", function() {
+      describe('strict', function() {
+        it('recognition', function() {
           expect(m.match('foo', 'strict')).to.equal(false);
           expect(m.match([], 'strict')).to.equal(false);
           expect(m.match({y: 2}, 'strict')).to.equal(false);
@@ -792,7 +792,7 @@ describe("Ohm", function() {
           expect(m.match({x: 1, y: 2, z: 3}, 'strict')).to.equal(false);
         });
 
-        it("semantic actions", function() {
+        it('semantic actions', function() {
           expect(m.synthesizedAttribute({
             strict: function(a, b) { return [a.value(), b.value()]; }
           })(m.match({x: 1, y: 2}, 'strict')))
@@ -802,8 +802,8 @@ describe("Ohm", function() {
         });
       });
 
-      describe("lenient", function() {
-        it("recognition", function() {
+      describe('lenient', function() {
+        it('recognition', function() {
           expect(m.match('foo', 'lenient')).to.equal(false);
           expect(m.match([], 'lenient')).to.equal(false);
           expect(m.match({y: 2}, 'lenient')).to.equal(false);
@@ -812,7 +812,7 @@ describe("Ohm", function() {
           expect(m.match({x: 1, y: 2, z: 3}, 'lenient')).to.be.ok();
         });
 
-        it("semantic actions", function() {
+        it('semantic actions', function() {
           expect(m.synthesizedAttribute({
             lenient: function(a, b, _) { return [a.value(), b.value()]; }
           })(m.match({x: 1, y: 2}, 'lenient'))).to.eql([1, 2]);
@@ -822,8 +822,8 @@ describe("Ohm", function() {
         });
       });
 
-      describe("string props", function() {
-        it("recognition", function() {
+      describe('string props', function() {
+        it('recognition', function() {
           expect(m.match({foos: 'fo', bar: 'bar'}, 'withStringProps')).to.equal(false);
           expect(m.match({foos: 'foo', bar: 'bar'}, 'withStringProps')).to.be.ok();
           expect(m.match({foos: 'foofo', bar: 'bar'}, 'withStringProps')).to.equal(false);
@@ -831,7 +831,7 @@ describe("Ohm", function() {
           expect(m.match({foos: 'foofoofoofoofoofoo', bar: 'bar'}, 'withStringProps')).to.be.ok();
         });
 
-        it("semantic actions", function() {
+        it('semantic actions', function() {
           var attr = m.synthesizedAttribute({
             withStringProps: function(foos, bar) { return [attr(foos), attr(bar)]; },
             _many: ohm.actions.makeArray,
@@ -841,9 +841,9 @@ describe("Ohm", function() {
         });
       });
 
-      it("duplicate property names are not allowed", function() {
+      it('duplicate property names are not allowed', function() {
         expect(function() {
-          m = makeGrammar("M { duh = {x: 1, x: 2, y: 3, ...} }");
+          m = makeGrammar('M { duh = {x: 1, x: 2, y: 3, ...} }');
         }).to.throwException(function(e) {
           expect(e).to.be.a(errors.DuplicatePropertyNames);
           expect(e.duplicates).to.eql(['x']);
@@ -851,8 +851,8 @@ describe("Ohm", function() {
       });
     });
 
-    describe("apply", function() {
-      describe("simple, no left recursion", function() {
+    describe('apply', function() {
+      describe('simple, no left recursion', function() {
         var m;
         beforeEach(function() {
           m = makeGrammar([
@@ -862,13 +862,13 @@ describe("Ohm", function() {
             '}']);
         });
 
-        it("recognition", function() {
+        it('recognition', function() {
           expect(m.match('fo', 'easy')).to.equal(false);
           expect(m.match('foo', 'easy')).to.be.ok();
           expect(m.match('fooo', 'easy')).to.equal(false);
         });
 
-        it("semantic actions", function() {
+        it('semantic actions', function() {
           var value = m.synthesizedAttribute({
             easy: function(expr) { return ['easy', value(expr)]; },
             foo:  function(expr) { return ['foo', value(expr)]; },
@@ -878,17 +878,17 @@ describe("Ohm", function() {
         });
       });
 
-      describe("simple left recursion", function() {
+      describe('simple left recursion', function() {
         var m;
         beforeEach(function() {
           m = makeGrammar([
-            "M {",
-            "  number = numberRec | digit",
-            "  numberRec = number digit",
-            "}"]);
+            'M {',
+            ' number = numberRec | digit',
+            'numberRec = number digit',
+            '}']);
         });
 
-        it("recognition", function() {
+        it('recognition', function() {
           expect(m.match('', 'number')).to.equal(false);
           expect(m.match('a', 'number')).to.equal(false);
           expect(m.match('1', 'number')).to.be.ok();
@@ -896,7 +896,7 @@ describe("Ohm", function() {
           expect(m.match('7276218173', 'number')).to.be.ok();
         });
 
-        it("semantic actions", function() {
+        it('semantic actions', function() {
           var f = m.match('1234', 'number');
           var eval = m.synthesizedAttribute({
             number:    ohm.actions.passThrough,
@@ -925,7 +925,7 @@ describe("Ohm", function() {
         });
       });
 
-      describe("simple left recursion, with non-involved rules", function() {
+      describe('simple left recursion, with non-involved rules', function() {
         var m;
         beforeEach(function() {
           m = makeGrammar([
@@ -938,11 +938,11 @@ describe("Ohm", function() {
             '}']);
         });
 
-        it("recognition", function() {
+        it('recognition', function() {
           expect(m.match('x+y+x', 'add')).to.be.ok();
         });
 
-        it("semantic actions", function() {
+        it('semantic actions', function() {
           var v = m.synthesizedAttribute({
             add:       ohm.actions.passThrough,
             addRec:    function(x, _, y) { return [v(x), '+', v(y)]; },
@@ -955,22 +955,20 @@ describe("Ohm", function() {
         });
       });
 
-      describe("indirect left recursion", function() {
+      describe('indirect left recursion', function() {
         var m;
         beforeEach(function() {
           m = makeGrammar([
-            "M {",
-            "  number = foo | digit",
-            "  foo = bar",
-            "  bar = baz",
-            "  baz = qux",
-            "  qux = quux",
-            "  quux = numberRec",
-            "  numberRec = number digit",
-            "}"]);
+            'M {',
+            '  number = foo | digit',
+            '  foo = bar', '  bar = baz',
+            '  baz = qux', '  qux = quux',
+            '  quux = numberRec',
+            '  numberRec = number digit',
+            '}']);
         });
 
-        it("recognition", function() {
+        it('recognition', function() {
           expect(m.match('', 'number')).to.equal(false);
           expect(m.match('a', 'number')).to.equal(false);
           expect(m.match('1', 'number')).to.be.ok();
@@ -978,7 +976,7 @@ describe("Ohm", function() {
           expect(m.match('7276218173', 'number')).to.be.ok();
         });
 
-        it("semantic actions", function() {
+        it('semantic actions', function() {
           var v = m.synthesizedAttribute({
             number: ohm.actions.passThrough,
             foo: ohm.actions.passThrough,
@@ -994,7 +992,7 @@ describe("Ohm", function() {
         });
       });
 
-      describe("nested left recursion", function() {
+      describe('nested left recursion', function() {
         var m
         beforeEach(function() {
           m = makeGrammar([
@@ -1008,7 +1006,7 @@ describe("Ohm", function() {
             '}']);
         });
 
-        it("recognition", function() {
+        it('recognition', function() {
           expect(m.match('1', 'addExpr')).to.be.ok();
           expect(m.match('2+3', 'addExpr')).to.be.ok();
           expect(m.match('4+', 'addExpr')).to.equal(false);
@@ -1016,7 +1014,7 @@ describe("Ohm", function() {
           expect(m.match('7*8+9+0', 'addExpr')).to.be.ok();
         });
 
-        it("semantic actions", function() {
+        it('semantic actions', function() {
           var f = m.match('1*2+3+4*5', 'addExpr');
           var parseTree = m.synthesizedAttribute({
             addExpr:    function(expr)    { return ['addExpr', parseTree(expr)]; },
@@ -1054,7 +1052,7 @@ describe("Ohm", function() {
           expect(pretty(f)).to.equal('(((1*2)+3)+(4*5))');
         });
 
-        it("semantic actions are evaluated lazily", function() {
+        it('semantic actions are evaluated lazily', function() {
           var f = m.match('1*2+3+4*5', 'sss');
           var a = buildTreeNodeWithUniqueId(m);
           var t = 
@@ -1080,7 +1078,7 @@ describe("Ohm", function() {
         });
       });
 
-      describe("nested and indirect left recursion", function() {
+      describe('nested and indirect left recursion', function() {
         var m;
         beforeEach(function() {
           m = makeGrammar([
@@ -1101,7 +1099,7 @@ describe("Ohm", function() {
             '}']);
         });
 
-        it("recognition", function() {
+        it('recognition', function() {
           expect(m.match('1', 'addExpr')).to.be.ok();
           expect(m.match('2+3', 'addExpr')).to.be.ok();
           expect(m.match('4+', 'addExpr')).to.equal(false);
@@ -1109,7 +1107,7 @@ describe("Ohm", function() {
           expect(m.match('7+8*9+0', 'addExpr')).to.be.ok();
         });
 
-        it("semantic actions", function() {
+        it('semantic actions', function() {
           var buildTree = m.synthesizedAttribute({
             addExprRec: function(x, _, y) { return [buildTree(x), '+', buildTree(y)]; },
             mulExprRec: function(x, _, y) { return [buildTree(x), '*', buildTree(y)]; },
@@ -1120,24 +1118,24 @@ describe("Ohm", function() {
         });
       });
 
-      describe("tricky left recursion (different heads at same position)", function() {
+      describe('tricky left recursion (different heads at same position)', function() {
         var m;
         beforeEach(function() {
           m = makeGrammar([
-            "G {",
-            "  tricky = &foo bar",
-            "  foo = fooRec | digit",
-            "  fooRec = bar digit",
-            "  bar = barRec | digit",
-            "  barRec = foo digit",
-            "}"]);
+            'G {',
+            '  tricky = &foo bar',
+            '  foo = fooRec | digit',
+            '  fooRec = bar digit',
+            '  bar = barRec | digit',
+            '  barRec = foo digit',
+            '}']);
         });
 
-        it("recognition", function() {
+        it('recognition', function() {
           expect(m.match('1234', 'tricky')).to.be.ok();
         });
 
-        it("semantic actions", function() {
+        it('semantic actions', function() {
           var f = m.match('1234', 'tricky');
           // TODO: perhaps just use JSON.stringify(f) here, and compare the result?
           var buildTree = m.synthesizedAttribute({
@@ -1155,11 +1153,11 @@ describe("Ohm", function() {
       });
     });
 
-    describe("inheritance", function() {
-      describe("super-grammar does not exist", function() {
-        it("in namespace", function() {
+    describe('inheritance', function() {
+      describe('super-grammar does not exist', function() {
+        it('in namespace', function() {
           expect(function() {
-            makeGrammar("G2 <: G1 {}", 'inheritance-oops');
+            makeGrammar('G2 <: G1 {}', 'inheritance-oops');
           }).to.throwException(function(e) {
             expect(e).to.be.a(errors.UndeclaredGrammar);
             expect(e.grammarName).to.equal('G1');
@@ -1167,19 +1165,19 @@ describe("Ohm", function() {
           });
         });
 
-        it("default namespace", function() {
+        it('default namespace', function() {
           expect(function() {
-            makeGrammar("G2 <: G1 {}", "default");
+            makeGrammar('G2 <: G1 {}', 'default');
           }).to.throwException(function(e) {
             expect(e).to.be.a(errors.UndeclaredGrammar);
             expect(e.grammarName).to.equal('G1');
-            expect(e.namespaceName).to.be("default");
+            expect(e.namespaceName).to.be('default');
           });
         });
       });
 
-      describe("define", function() {
-        it("should check that rule does not already exist in super-grammar", function() {
+      describe('define', function() {
+        it('should check that rule does not already exist in super-grammar', function() {
           expect(function() {
             makeGrammars([
               'G1 { foo = "foo" }',
@@ -1194,19 +1192,19 @@ describe("Ohm", function() {
         });
       });
 
-      describe("override", function() {
+      describe('override', function() {
         var m1;
         var m2;
         beforeEach(function() {
           if (m1 && m2) {
             return;
           } else {
-            m1 = makeGrammar("G1 { number = digit+ }", 'inheritance-override');
-            m2 = makeGrammar("G2 <: G1 { digit := /[a-z]/ }", 'inheritance-override');
+            m1 = makeGrammar('G1 { number = digit+ }', 'inheritance-override');
+            m2 = makeGrammar('G2 <: G1 { digit := /[a-z]/ }', 'inheritance-override');
           }
         });
 
-        it("should check that rule exists in super-grammar", function() {
+        it('should check that rule exists in super-grammar', function() {
           expect(function() {
             makeGrammar('G3 <: G1 { foo := "foo" }', 'inheritance-override');
           }).to.throwException(function(e) {
@@ -1221,15 +1219,15 @@ describe("Ohm", function() {
           // from that of its super-grammar.
 
           // arity(overriding rule) > arity(overridden rule)
-          makeGrammar('M1 { foo = "foo" }', "inheritance-override");
-          makeGrammar('M2 <: M1 { foo := "foo" "bar" }', "inheritance-override");
+          makeGrammar('M1 { foo = "foo" }', 'inheritance-override');
+          makeGrammar('M2 <: M1 { foo := "foo" "bar" }', 'inheritance-override');
 
           // arity(overriding rule) < arity(overridden rule)
-          makeGrammar("M3 { foo = digit digit }", 'inheritance-override');
-          makeGrammar("M4 <: M3 { foo := digit }", 'inheritance-override');
+          makeGrammar('M3 { foo = digit digit }', 'inheritance-override');
+          makeGrammar('M4 <: M3 { foo := digit }', 'inheritance-override');
         });
 
-        it("recognition", function() {
+        it('recognition', function() {
           expect(m1.match('1234', 'number')).to.be.ok();
           expect(m1.match('hello', 'number')).to.equal(false);
           expect(m1.match('h3llo', 'number')).to.equal(false);
@@ -1239,7 +1237,7 @@ describe("Ohm", function() {
           expect(m2.match('h3llo', 'number')).to.equal(false);
         });
 
-        it("semantic actions", function() {
+        it('semantic actions', function() {
           var v = m2.synthesizedAttribute({
             number:    function(expr) { return ['number', v(expr)]; },
             digit:     function(expr) { return ['digit', v(expr)]; },
@@ -1251,7 +1249,7 @@ describe("Ohm", function() {
         });
       });
 
-      describe("extend", function() {
+      describe('extend', function() {
         var m1;
         var m2;
         beforeEach(function() {
@@ -1263,7 +1261,7 @@ describe("Ohm", function() {
           }
         });
 
-        it("should check that rule exists in super-grammar", function() {
+        it('should check that rule exists in super-grammar', function() {
           expect(function() {
             makeGrammar('G3 <: G1 { bar += "bar" }', 'inheritanceExtend');
           }).to.throwException(function(e) {
@@ -1273,15 +1271,15 @@ describe("Ohm", function() {
           });
         });
 
-        it("should make sure rule arities are compatible", function() {
+        it('should make sure rule arities are compatible', function() {
           // An extending rule must produce the same number of values
           // as the underlying rule. This is to ensure the semantic
           // action "API" doesn't change.
 
           // Too many:
-          makeGrammar('M1 { foo = "foo"  bar = "bar"  baz = "baz" }', "inheritanceExtend3");
+          makeGrammar('M1 { foo = "foo"  bar = "bar"  baz = "baz" }', 'inheritanceExtend3');
           expect(function() {
-            makeGrammar("M2 <: M1 { foo += bar baz }", "inheritanceExtend3");
+            makeGrammar('M2 <: M1 { foo += bar baz }', 'inheritanceExtend3');
           }).to.throwException(function(e) {
             expect(e).to.be.an(errors.InconsistentArity);
             expect(e.ruleName).to.equal('foo');
@@ -1290,9 +1288,9 @@ describe("Ohm", function() {
           });
 
           // Too few:
-          makeGrammar("M3 { foo = digit digit }", 'inheritanceExtend3');
+          makeGrammar('M3 { foo = digit digit }', 'inheritanceExtend3');
           expect(function() {
-            makeGrammar("M4 <: M3 { foo += digit }", 'inheritanceExtend3');
+            makeGrammar('M4 <: M3 { foo += digit }', 'inheritanceExtend3');
           }).to.throwException(function(e) {
             expect(e).to.be.an(errors.InconsistentArity);
             expect(e.ruleName).to.equal('foo');
@@ -1301,7 +1299,7 @@ describe("Ohm", function() {
           });
         });
 
-        it("recognition", function() {
+        it('recognition', function() {
           expect(m1.match('aaabbb', 'foo')).to.be.ok();
           expect(m1.match('111222', 'foo')).to.equal(false);
 
@@ -1309,7 +1307,7 @@ describe("Ohm", function() {
           expect(m2.match('111222', 'foo')).to.be.ok();
         });
 
-        it("semantic actions", function() {
+        it('semantic actions', function() {
           expect(m2.synthesizedAttribute({
             foo: function(x, y) { return [x.value(), y.value()]; }
           })(m2.match('aaabbb', 'foo'))).to.eql(['aaa', 'bbb']);
@@ -1320,8 +1318,8 @@ describe("Ohm", function() {
       });
     });
 
-    describe("bindings", function() {
-      it("inconsistent arity in alts is an error", function() {
+    describe('bindings', function() {
+      it('inconsistent arity in alts is an error', function() {
         expect(function() {
           makeGrammar('G { foo = "a" "c" | "b" }');
         }).to.throwException(function(e) {
@@ -1332,7 +1330,7 @@ describe("Ohm", function() {
         });
       });
 
-      it("by default, bindings are evaluated lazily", function() {
+      it('by default, bindings are evaluated lazily', function() {
         var g = makeGrammar([
           'G {',
           '  foo = bar baz',
@@ -1360,7 +1358,7 @@ describe("Ohm", function() {
       });
     });
 
-    describe("inline rule declarations", function() {
+    describe('inline rule declarations', function() {
       function makeEval(g) {
         var eval = g.synthesizedAttribute({
           addExpr_plus:   function(x, op, y) { return eval(x) + eval(y); },
@@ -1381,15 +1379,15 @@ describe("Ohm", function() {
         m = makeGrammar(arithmeticGrammarSource);
       });
 
-      it("recognition", function() {
+      it('recognition', function() {
         expect(m.match('1*(2+3)-4/5', 'expr')).to.be.ok();
       });
 
-      it("semantic actions", function() {
+      it('semantic actions', function() {
         expect(makeEval(m)(m.match('10*(2+123)-4/5', 'expr'))).to.equal(1249.2);
       });
 
-      it("overriding", function() {
+      it('overriding', function() {
         var m2 = makeGrammar(['Good <: Expr {',
                               '  addExpr := addExpr "~" mulExpr  -- minus',
                               '           | mulExpr',
@@ -1408,7 +1406,7 @@ describe("Ohm", function() {
       });
     });
 
-    describe("lexical vs. syntactic rules", function() {
+    describe('lexical vs. syntactic rules', function() {
       it("lexical rules don't skip spaces implicitly", function() {
         var g = makeGrammar('G { start = "foo" "bar" }');
         expect(g.match('foobar', 'start')).to.be.ok();
@@ -1416,14 +1414,14 @@ describe("Ohm", function() {
         expect(g.match(' foo bar   ', 'start')).to.equal(false);
       });
 
-      it("syntactic rules skip spaces implicitly", function() {
+      it('syntactic rules skip spaces implicitly', function() {
         var g = makeGrammar('G { Start = "foo" "bar" }');
         expect(g.match('foobar', 'Start')).to.be.ok();
         expect(g.match('foo bar', 'Start')).to.be.ok();
         expect(g.match(' foo bar   ', 'Start')).to.be.ok();
       });
 
-      it("mixing lexical and syntactic rules works as expected", function() {
+      it('mixing lexical and syntactic rules works as expected', function() {
         var g = makeGrammar([
           'G {',
           '  foo = "foo"',
@@ -1436,7 +1434,7 @@ describe("Ohm", function() {
       });
     });
 
-    describe("semantic action templates", function() {
+    describe('semantic action templates', function() {
       var g1;
       var g2;
       beforeEach(function() {
@@ -1462,7 +1460,7 @@ describe("Ohm", function() {
         }
       });
 
-      it("rules that need semantic action", function() {
+      it('rules that need semantic action', function() {
         expect(g1.rulesThatNeedSemanticAction([])).to.eql({});
         expect(g1.rulesThatNeedSemanticAction(['foo'])).to.eql(
           {foo: true, bar: true, baz: true, qux: true, quux: true}
@@ -1485,8 +1483,8 @@ describe("Ohm", function() {
       });
     });
 
-    describe("namespaces", function() {
-      describe("install", function() {
+    describe('namespaces', function() {
+      describe('install', function() {
         var ns1;
         var ns2;
         beforeEach(function() {
@@ -1494,13 +1492,13 @@ describe("Ohm", function() {
            ns2 = ohm.namespace(freshNamespaceName());
         });
 
-        it("actually installs a grammar in a namespace", function() {
+        it('actually installs a grammar in a namespace', function() {
           var m = makeGrammar('aaa { foo = "foo" }', ns1.name);
           expect(ns1.grammar('aaa')).to.eql(m);
           expect(m.match('foo', 'foo')).to.be.ok();
         });
 
-        it("detects duplicates", function() {
+        it('detects duplicates', function() {
           expect(function() {
             makeGrammar('ccc { foo = "foo" }', ns1.name);
             makeGrammar('ccc { bar = "bar" }', ns1.name);
@@ -1511,7 +1509,7 @@ describe("Ohm", function() {
           });
         });
 
-        it("allows same-name grammars to be installed in different namespaces", function() {
+        it('allows same-name grammars to be installed in different namespaces', function() {
           var m1 = makeGrammar('bbb { foo = "foo" }', ns1.name);
           var m2 = makeGrammar('bbb { bar = "bar" }', ns2.name);
 
@@ -1522,17 +1520,17 @@ describe("Ohm", function() {
       });
     });
 
-    describe("script tag support", function() {
-      describe("loadGrammarsFromScriptElement", function() {
+    describe('script tag support', function() {
+      describe('loadGrammarsFromScriptElement', function() {
         var scriptTag;
         beforeEach(function() {
           scriptTag = {
             type: 'text/ohm-js',
             innerHTML: [
-              "O {",
-              "  number = number digit  -- rec",
-              "         | digit",
-              "}"
+              'O {',
+              '  number = number digit  -- rec',
+              '         | digit',
+              '}'
             ].join('\n'),
             getAttribute: function(name) {
               return undefined;
@@ -1540,7 +1538,7 @@ describe("Ohm", function() {
           };
         });
 
-        it("recognition", function() {
+        it('recognition', function() {
           var ns = ohm.namespace('aaa1');
           ns.loadGrammarsFromScriptElement(scriptTag);
           expect(function() {
@@ -1554,7 +1552,7 @@ describe("Ohm", function() {
           expect(ns.grammar('O').match('1234', 'number')).to.be.ok();
         });
 
-        it("semantic actions", function() {
+        it('semantic actions', function() {
           var ns = ohm.namespace('aaa2');
           ns.loadGrammarsFromScriptElement(scriptTag);
           var m = ns.grammar('O');
@@ -1570,8 +1568,8 @@ describe("Ohm", function() {
       });
     });
 
-    describe("throw on fail", function() {
-      it("non-string input", function() {
+    describe('throw on fail', function() {
+      it('non-string input', function() {
         var g = makeGrammar('G { start = 5 }');
         expect(function() {
           g.match(42, 'start', true);
@@ -1581,47 +1579,47 @@ describe("Ohm", function() {
         });
       });
 
-      it("string input", function() {
+      it('string input', function() {
         var g = makeGrammar('G { start = "a" "b" "c" "d" }');
         expect(function() {
           g.match('ab', 'start', true);
         }).to.throwException(function(e) {
-          expect(e.message).to.equal("Line 1, col 3: ab\n" +
-                                     "                 ^\n" +
+          expect(e.message).to.equal('Line 1, col 3: ab\n' +
+                                     '                 ^\n' +
                                      "Expected 'c'");
           expect(e.getPos()).to.equal(2);
         });
         expect(function() {
           g.match('abcde', 'start', true);
         }).to.throwException(function(e) {
-          expect(e.message).to.equal("Line 1, col 5: abcde\n" +
-                                     "                   ^\n" +
-                                     "Expected end of input");
+          expect(e.message).to.equal('Line 1, col 5: abcde\n' +
+                                     '                   ^\n' +
+                                     'Expected end of input');
           expect(e.getPos()).to.equal(4);
         });
       });
     });
 
-    describe("bootstrap", function() {
+    describe('bootstrap', function() {
       var g;
       beforeEach(function() {
         g = g || makeGrammar(ohmGrammarSource, 'bootstrap');
       });
 
-      it("can recognize arithmetic grammar", function() {
+      it('can recognize arithmetic grammar', function() {
         expect(g.match(arithmeticGrammarSource, 'Grammar')).to.be.ok();
       });
 
-      it("can recognize itself", function() {
+      it('can recognize itself', function() {
         expect(g.match(ohmGrammarSource, 'Grammar')).to.be.ok();
       });
 
-      it("can produce a grammar that will recognize itself", function() {
+      it('can produce a grammar that will recognize itself', function() {
         var gPrime = ohm._makeGrammarBuilder(freshNamespaceName(), g)(g.match(ohmGrammarSource, 'Grammar'));
         expect(gPrime.match(ohmGrammarSource, 'Grammar')).to.be.ok();
       });
 
-      it("can produce a grammar that works", function() {
+      it('can produce a grammar that works', function() {
         var gPrime = ohm._makeGrammarBuilder(freshNamespaceName(), g)(g.match(ohmGrammarSource, 'Grammar'));
         var a = ohm._makeGrammarBuilder(freshNamespaceName(), gPrime)(gPrime.match(arithmeticGrammarSource, 'Grammar'));
         var eval = a.synthesizedAttribute({
@@ -1642,14 +1640,14 @@ describe("Ohm", function() {
         expect(eval(a.match('10*(2+123)-4/5', 'expr'))).to.equal(1249.2);
       });
 
-      it("full bootstrap!", function() {
+      it('full bootstrap!', function() {
         var gPrime = ohm._makeGrammarBuilder(freshNamespaceName(), g)(g.match(ohmGrammarSource, 'Grammar'));
         var gPrimePrime = ohm._makeGrammarBuilder(freshNamespaceName(), gPrime)(gPrime.match(ohmGrammarSource, 'Grammar'));
         gPrimePrime.namespaceName = gPrime.namespaceName;  // make their namespaceName properties the same
         compareGrammars(gPrime, gPrimePrime);
       });
 
-      it("inherited attributes", function() {
+      it('inherited attributes', function() {
         var g = makeGrammar([
           'G {',
           '  abcs = "a" b "c"*',
@@ -1691,37 +1689,37 @@ describe("Ohm", function() {
       });
     });
 
-    describe("definitionInterval", function() {
+    describe('definitionInterval', function() {
       var g = makeGrammar([
           'G {',
           '  foo = bar',
           '  bar = "a" | "b" -- baz',
-          '}'], "ns");
+          '}'], 'ns');
       function definitionLoc(grammar, ruleName) {
         var interval = grammar.ruleDict[ruleName].definitionInterval;
         return [interval.startIdx, interval.endIdx];
       }
-      it("works for regular rules", function() {
-        expect(definitionLoc(g, "foo")).to.eql([6, 15]);
-        expect(definitionLoc(g, "bar")).to.eql([18, 40]);
+      it('works for regular rules', function() {
+        expect(definitionLoc(g, 'foo')).to.eql([6, 15]);
+        expect(definitionLoc(g, 'bar')).to.eql([18, 40]);
       });
-      it("works for inline rules", function() {
-        expect(definitionLoc(g, "bar_baz")).to.eql([30, 40]);
+      it('works for inline rules', function() {
+        expect(definitionLoc(g, 'bar_baz')).to.eql([30, 40]);
       });
 
       var g2 = makeGrammar([
           'G2 <: G {',
           '  foo += bar',
           '  bar := "a" | "b" -- baz',
-          '}'], "ns");
-      it("works when overriding and extending rules", function() {
-        expect(definitionLoc(g2, "foo")).to.eql([12, 22]);
-        expect(definitionLoc(g2, "bar")).to.eql([25, 48]);
-        expect(definitionLoc(g2, "bar_baz")).to.eql([38, 48]);
+          '}'], 'ns');
+      it('works when overriding and extending rules', function() {
+        expect(definitionLoc(g2, 'foo')).to.eql([12, 22]);
+        expect(definitionLoc(g2, 'bar')).to.eql([25, 48]);
+        expect(definitionLoc(g2, 'bar_baz')).to.eql([38, 48]);
       });
     });
 
-    describe("rule invocation interval", function() {
+    describe('rule invocation interval', function() {
       var g = makeGrammar([
           'G {',
           '  foo = bar',
@@ -1731,32 +1729,32 @@ describe("Ohm", function() {
       function fromLoc(pexpr) {
         return [pexpr.interval.startIdx, pexpr.interval.endIdx];
       }
-      var fooBody = g.ruleDict["foo"];
-      var beepBody = g.ruleDict["beep"];
-      var barBody = g.ruleDict["bar"];
-      it("works for regular rule applications", function() {
+      var fooBody = g.ruleDict['foo'];
+      var beepBody = g.ruleDict['beep'];
+      var barBody = g.ruleDict['bar'];
+      it('works for regular rule applications', function() {
         expect(fromLoc(fooBody)).to.eql([12, 15]);
         expect(fromLoc(beepBody.factors[1])).to.eql([32, 35]);
       });
-      it("works for applications of built-in rules", function() {
+      it('works for applications of built-in rules', function() {
         expect(fromLoc(beepBody.factors[0])).to.eql([25, 31]);
       });
-      it("works for primitives", function() {
+      it('works for primitives', function() {
         expect(fromLoc(barBody.terms[0])).to.eql([44, 47]);
         expect(fromLoc(barBody.terms[1])).to.eql([50, 56]);
 
-        var barBazBody = g.ruleDict["bar_baz"];
+        var barBazBody = g.ruleDict['bar_baz'];
         expect(fromLoc(barBazBody)).to.eql([59, 66]);
       });
-      it("is undefined for other types of pexpr", function() {
+      it('is undefined for other types of pexpr', function() {
         expect(beepBody.fromInterval).to.be(undefined);
         expect(barBody.fromInterval).to.be(undefined);
       });
     });
 
-    describe("trace", function() {
+    describe('trace', function() {
       var g = makeGrammar('G { start = "a" | letter* }');
-      it("produces the correct trace", function() {
+      it('produces the correct trace', function() {
         var state = g.trace('hallo', 'start');
         var trace = state.trace;
 
@@ -1779,7 +1777,7 @@ describe("Ohm", function() {
       });
 
       var g2 = makeGrammar('G { start = letter ~letter | letter* }');
-      it("works with memoization", function() {
+      it('works with memoization', function() {
         var state = g2.trace('ab', 'start');
         var trace = state.trace;
 

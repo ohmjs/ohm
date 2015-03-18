@@ -2,10 +2,10 @@
 // Imports
 // --------------------------------------------------------------------
 
-var Grammar = require("./Grammar.js");
-var errors = require("./errors.js");
-var namespace = require("./namespaces.js");
-var pexprs = require("./pexprs.js");
+var Grammar = require('./Grammar.js');
+var errors = require('./errors.js');
+var namespace = require('./namespaces.js');
+var pexprs = require('./pexprs.js');
 
 // --------------------------------------------------------------------
 // Private Stuff
@@ -15,7 +15,7 @@ var pexprs = require("./pexprs.js");
 
 function GrammarDecl(name, optNamespaceName) {
   this.name = name;
-  this.ns = namespace(optNamespaceName || "default");
+  this.ns = namespace(optNamespaceName || 'default');
 }
 
 // Helpers
@@ -34,7 +34,7 @@ function onOhmError(doFn, onErrorFn) {
 
 GrammarDecl.prototype.ensureSuperGrammar = function() {
   if (!this.superGrammar) {
-    this.withSuperGrammar("Grammar", "default");
+    this.withSuperGrammar('Grammar', 'default');
   }
   return this.superGrammar;
 };
@@ -43,7 +43,7 @@ GrammarDecl.prototype.ensureSuperGrammar = function() {
 
 GrammarDecl.prototype.withSuperGrammar = function(name, optNamespaceName) {
   if (this.superGrammar) {
-    throw new Error("the super grammar of a GrammarDecl cannot be set more than once");
+    throw new Error('the super grammar of a GrammarDecl cannot be set more than once');
   }
   this.superGrammar = (optNamespaceName ? namespace(optNamespaceName) : this.ns).grammar(name);
   this.ruleDict = Object.create(this.superGrammar.ruleDict);

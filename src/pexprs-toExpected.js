@@ -14,11 +14,11 @@ pexprs.PExpr.prototype.toExpected = function(ruleDict) {
 };
 
 pexprs.anything.toExpected = function(ruleDict) {
-  return "any object";
+  return 'any object';
 };
 
 pexprs.end.toExpected = function(ruleDict) {
-  return "end of input";
+  return 'end of input';
 };
 
 pexprs.Prim.prototype.toExpected = function(ruleDict) {
@@ -27,9 +27,9 @@ pexprs.Prim.prototype.toExpected = function(ruleDict) {
 
 pexprs.Not.prototype.toExpected = function(ruleDict) {
   if (this.expr === pexprs.anything) {
-    return "nothing";
+    return 'nothing';
   } else {
-    return "not " + this.expr.toExpected(ruleDict);
+    return 'not ' + this.expr.toExpected(ruleDict);
   }
 };
 
@@ -40,8 +40,8 @@ pexprs.Apply.prototype.toExpected = function(ruleDict) {
   if (description) {
     return description;
   } else {
-    var article = /^[aeiouAEIOU]/.test(this.ruleName) ? "an" : "a";
-    return article + " " + this.ruleName;
+    var article = (/^[aeiouAEIOU]/.test(this.ruleName) ? 'an' : 'a');
+    return article + ' ' + this.ruleName;
   }
 };
 

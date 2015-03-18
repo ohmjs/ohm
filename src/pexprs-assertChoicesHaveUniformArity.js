@@ -2,9 +2,9 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require("./common.js");
-var pexprs = require("./pexprs.js");
-var errors = require("./errors.js");
+var common = require('./common.js');
+var pexprs = require('./pexprs.js');
+var errors = require('./errors.js');
 
 // --------------------------------------------------------------------
 // Operations

@@ -2,15 +2,15 @@
 // Imports
 // --------------------------------------------------------------------
 
-require("./Grammar.js");  // required to initialize default namespace w/ Grammar grammar
+require('./Grammar.js');  // required to initialize default namespace w/ Grammar grammar
 
-var Builder = require("./Builder.js");
-var attributes = require("./attributes.js");
-var common = require("./common.js");
-var errors = require("./errors.js");
-var namespace = require("./namespaces.js");
+var Builder = require('./Builder.js');
+var attributes = require('./attributes.js');
+var common = require('./common.js');
+var errors = require('./errors.js');
+var namespace = require('./namespaces.js');
 
-var UnicodeCategories = require("./unicode.js").UnicodeCategories;
+var UnicodeCategories = require('./unicode.js').UnicodeCategories;
 
 var thisModule = exports;
 var ohm = exports;
@@ -24,8 +24,8 @@ function makeGrammarBuilder(optNamespaceName, optOhmGrammar) {
   var decl;
   var currentRuleName;
   var overriding = false;
-  var namespaceName = optNamespaceName || "default";
-  var ohmGrammar = optOhmGrammar || namespace("default").grammar("Ohm");
+  var namespaceName = optNamespaceName || 'default';
+  var ohmGrammar = optOhmGrammar || namespace('default').grammar('Ohm');
   var value = ohmGrammar.semanticAction({
     Grammar: function(n, s, _, rs, _) {
       builder = new Builder();
@@ -69,7 +69,7 @@ function makeGrammarBuilder(optNamespaceName, optOhmGrammar) {
     },
 
     Term_inline: function(b, n) {
-      var inlineRuleName = currentRuleName + "_" + value(n);
+      var inlineRuleName = currentRuleName + '_' + value(n);
       var body = value(b);
       body.definitionInterval = this.interval.trimmed();
       if (overriding) {
@@ -161,7 +161,7 @@ function makeGrammarBuilder(optNamespaceName, optOhmGrammar) {
     },
 
     string: function(_, cs, _) {
-      return value(cs).map(function(c) { return common.unescapeChar(c); }).join("");
+      return value(cs).map(function(c) { return common.unescapeChar(c); }).join('');
     },
 
     strChar: function(_) {
@@ -177,7 +177,7 @@ function makeGrammarBuilder(optNamespaceName, optOhmGrammar) {
     },
 
     reCharClass_unicode: function(_, unicodeClass, _) {
-      return UnicodeCategories[value(unicodeClass).join("")];
+      return UnicodeCategories[value(unicodeClass).join('')];
     },
     reCharClass_ordinary: function(_, _, _) {
       return new RegExp(this.interval.contents);
@@ -200,23 +200,23 @@ function makeGrammarBuilder(optNamespaceName, optOhmGrammar) {
 
 function compileAndLoad(source, whatItIs, optNamespaceName) {
   try {
-    var node = namespace("default").grammar("Ohm").match(source, whatItIs, true);
+    var node = namespace('default').grammar('Ohm').match(source, whatItIs, true);
     return makeGrammarBuilder(optNamespaceName)(node);
   } catch (e) {
     if (e instanceof errors.MatchFailure) {
-      console.log("\n" + e.getMessage());
+      console.log('\n' + e.getMessage());
     }
     throw e;
   }
 }
 
 function makeGrammar(source, optNamespaceName) {
-  return compileAndLoad(source, "Grammar", optNamespaceName);
+  return compileAndLoad(source, 'Grammar', optNamespaceName);
 }
 
 function makeGrammars(source, optNamespaceName) {
   var result = {};
-  var grammars = compileAndLoad(source, "Grammars", optNamespaceName).forEach(function(g) {
+  var grammars = compileAndLoad(source, 'Grammars', optNamespaceName).forEach(function(g) {
     result[g.name] = g;
   });
   return result;
@@ -240,7 +240,7 @@ exports.error = errors;
 exports.namespace = namespace;
 
 exports.grammar = function(name) {
-  return namespace("default").grammar(name);
+  return namespace('default').grammar(name);
 };
 
 exports.makeGrammar = makeGrammar;
@@ -256,17 +256,17 @@ exports.makeRecipe = function(recipe) {
 
 exports._makeGrammarBuilder = makeGrammarBuilder;
 
-require("../dist/ohm-grammar.js");
+require('../dist/ohm-grammar.js');
 
 // Load all grammars in script elements into the appropriate namespaces
 
-if (typeof document !== "undefined") {
-  Array.prototype.slice.call(document.getElementsByTagName("script")).
+if (typeof document !== 'undefined') {
+  Array.prototype.slice.call(document.getElementsByTagName('script')).
       filter(function(elt) {
-        return elt.getAttribute("type") === "text/ohm-js";
+        return elt.getAttribute('type') === 'text/ohm-js';
       }).
       forEach(function(elt) {
-        var ns = elt.getAttribute("namespace") || "default";
+        var ns = elt.getAttribute('namespace') || 'default';
         namespace(ns).loadGrammarsFromScriptElement(elt)
       });
 }

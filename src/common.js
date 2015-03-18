@@ -9,9 +9,9 @@ var thisModule = exports;
 function pad(numberAsString, len) {
   var zeros = [];
   for (var idx = 0; idx < numberAsString.length - len; idx++) {
-    zeros.push("0");
+    zeros.push('0');
   }
-  return zeros.join("") + numberAsString;
+  return zeros.join('') + numberAsString;
 }
 
 var escapeStringFor = {};
@@ -20,20 +20,20 @@ for (var c = 0; c < 128; c++) {
 }
 escapeStringFor["'".charCodeAt(0)]  = "\\'";
 escapeStringFor['"'.charCodeAt(0)]  = '\\"';
-escapeStringFor["\\".charCodeAt(0)] = "\\\\";
-escapeStringFor["\b".charCodeAt(0)] = "\\b";
-escapeStringFor["\f".charCodeAt(0)] = "\\f";
-escapeStringFor["\n".charCodeAt(0)] = "\\n";
-escapeStringFor["\r".charCodeAt(0)] = "\\r";
-escapeStringFor["\t".charCodeAt(0)] = "\\t";
-escapeStringFor["\v".charCodeAt(0)] = "\\v";
+escapeStringFor['\\'.charCodeAt(0)] = '\\\\';
+escapeStringFor['\b'.charCodeAt(0)] = '\\b';
+escapeStringFor['\f'.charCodeAt(0)] = '\\f';
+escapeStringFor['\n'.charCodeAt(0)] = '\\n';
+escapeStringFor['\r'.charCodeAt(0)] = '\\r';
+escapeStringFor['\t'.charCodeAt(0)] = '\\t';
+escapeStringFor['\u000b'.charCodeAt(0)] = '\\v';
 
 // --------------------------------------------------------------------
 // Exports
 // --------------------------------------------------------------------
 
 exports.abstract = function() {
-  throw new Error("this method is abstract!");
+  throw new Error('this method is abstract!');
 };
 
 exports.repeatFn = function(fn, n) {
@@ -63,7 +63,7 @@ exports.fail = {};
 
 exports.isSyntactic = function(ruleName) {
   var firstChar = ruleName[0];
-  return "A" <= firstChar && firstChar <= "Z";
+  return 'A' <= firstChar && firstChar <= 'Z';
 };
 
 // StringBuffer
@@ -77,7 +77,7 @@ exports.StringBuffer.prototype.append = function(str) {
 };
 
 exports.StringBuffer.prototype.contents = function() {
-  return this.strings.join("");
+  return this.strings.join('');
 };
 
 // Character escaping and unescaping
@@ -89,23 +89,23 @@ exports.escapeChar = function(c, optDelim) {
   } else if (charCode < 128) {
     return escapeStringFor[charCode];
   } else if (128 <= charCode && charCode < 256) {
-    return "\\x" + pad(charCode.toString(16), 2);
+    return '\\x' + pad(charCode.toString(16), 2);
   } else {
-    return "\\u" + pad(charCode.toString(16), 4);
+    return '\\u' + pad(charCode.toString(16), 4);
   }
 };
 
 exports.unescapeChar = function(s) {
   if (s.charAt(0) == '\\') {
     switch (s.charAt(1)) {
-      case "b":  return "\b";
-      case "f":  return "\f";
-      case "n":  return "\n";
-      case "r":  return "\r";
-      case "t":  return "\t";
-      case "v":  return "\v";
-      case "x":  return String.fromCharCode(parseInt(s.substring(2, 4), 16));
-      case "u":  return String.fromCharCode(parseInt(s.substring(2, 6), 16));
+      case 'b': return '\b';
+      case 'f': return '\f';
+      case 'n': return '\n';
+      case 'r': return '\r';
+      case 't': return '\t';
+      case 'v': return '\v';
+      case 'x': return String.fromCharCode(parseInt(s.substring(2, 4), 16));
+      case 'u': return String.fromCharCode(parseInt(s.substring(2, 6), 16));
       default:   return s.charAt(1);
     }
   } else {
@@ -116,8 +116,8 @@ exports.unescapeChar = function(s) {
 // Pretty-printing of strings
 
 exports.toStringLiteral = function(str) {
-  if (typeof str !== "string") {
-    throw new Error("toStringLiteral only works on strings");
+  if (typeof str !== 'string') {
+    throw new Error('toStringLiteral only works on strings');
   }
   var hasSingleQuotes = str.indexOf("'") >= 0;
   var hasDoubleQuotes = str.indexOf('"') >= 0;

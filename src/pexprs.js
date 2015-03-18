@@ -2,9 +2,9 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require("./common.js");
-var errors = require("./errors.js");
-var inherits = require("inherits");
+var common = require('./common.js');
+var errors = require('./errors.js');
+var inherits = require('inherits');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -151,7 +151,7 @@ inherits(Apply, PExpr);
 // --------------------------------------------------------------------
 
 exports.makePrim = function(obj, optFromInterval) {
-  if (typeof obj === "string" && obj.length !== 1) {
+  if (typeof obj === 'string' && obj.length !== 1) {
     return new StringPrim(obj, optFromInterval);
   } else if (obj instanceof RegExp) {
     return new RegExpPrim(obj, optFromInterval);
@@ -182,12 +182,12 @@ exports.Apply = Apply;
 // Extensions
 // --------------------------------------------------------------------
 
-require("./pexprs-addRulesThatNeedSemanticAction.js");
-require("./pexprs-assertAllApplicationsAreValid.js");
-require("./pexprs-assertChoicesHaveUniformArity.js");
-require("./pexprs-check.js");
-require("./pexprs-eval.js");
-require("./pexprs-maybeRecordFailure.js");
-require("./pexprs-getArity.js");
-require("./pexprs-outputRecipe.js");
-require("./pexprs-toExpected.js");
+require('./pexprs-addRulesThatNeedSemanticAction.js');
+require('./pexprs-assertAllApplicationsAreValid.js');
+require('./pexprs-assertChoicesHaveUniformArity.js');
+require('./pexprs-check.js');
+require('./pexprs-eval.js');
+require('./pexprs-maybeRecordFailure.js');
+require('./pexprs-getArity.js');
+require('./pexprs-outputRecipe.js');
+require('./pexprs-toExpected.js');

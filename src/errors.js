@@ -2,7 +2,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require("./common.js");
+var common = require('./common.js');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -17,7 +17,7 @@ function makeCustomError(name, initFn) {
       function OhmError() {  
         initFn.apply(this, arguments);
         var e = new Error(this.message);
-        Object.defineProperty(this, "stack", { get: function() { return e.stack; } });
+        Object.defineProperty(this, 'stack', { get: function() { return e.stack; } });
       };
   E.prototype = Object.create(OhmError.prototype);
   E.prototype.constructor = E;
@@ -28,7 +28,7 @@ function makeCustomError(name, initFn) {
 // ----------------- errors about intervals -----------------
 
 var IntervalSourcesDontMatch = makeCustomError(
-    "ohm.error.IntervalSourcesDontMatch",
+    'ohm.error.IntervalSourcesDontMatch',
     function() {
       this.message = "interval sources don't match";
     }
@@ -39,24 +39,24 @@ var IntervalSourcesDontMatch = makeCustomError(
 // Undeclared grammar
 
 var UndeclaredGrammar = makeCustomError(
-    "ohm.error.UndeclaredGrammar",
+    'ohm.error.UndeclaredGrammar',
     function(grammarName, namespaceName) {
       this.grammarName = grammarName;
       this.namespaceName = namespaceName;
-      this.message = this.namespaceName === "default" ?
-          "undeclared grammar " + this.grammarName :
-          "grammar " + this.grammarName + " is not declared in namespace " + this.namespaceName;
+      this.message = this.namespaceName === 'default' ?
+          'undeclared grammar ' + this.grammarName :
+          'grammar ' + this.grammarName + ' is not declared in namespace ' + this.namespaceName;
     }
 );
 
 // Duplicate grammar declaration
 
 var DuplicateGrammarDeclaration = makeCustomError(
-    "ohm.error.DuplicateGrammarDeclaration",
+    'ohm.error.DuplicateGrammarDeclaration',
     function(grammarName, namespaceName) {
       this.grammarName = grammarName;
       this.namespaceName = namespaceName;
-      this.message = "grammar " + this.grammarName + " is already declared in namespace " + this.namespaceName;
+      this.message = 'grammar ' + this.grammarName + ' is already declared in namespace ' + this.namespaceName;
     }
 );
 
@@ -65,27 +65,27 @@ var DuplicateGrammarDeclaration = makeCustomError(
 // Undeclared rule
 
 var UndeclaredRule = makeCustomError(
-    "ohm.error.UndeclaredRule",
+    'ohm.error.UndeclaredRule',
     function(ruleName, optGrammarName) {
       this.ruleName = ruleName;
       this.grammarName = optGrammarName;
       this.message = this.grammarName ?
-          "rule " + this.ruleName + " is not declared in grammar " + this.grammarName :
-          "undeclared rule " + this.ruleName;
+          'rule ' + this.ruleName + ' is not declared in grammar ' + this.grammarName :
+          'undeclared rule ' + this.ruleName;
     }
 );
 
 // Duplicate rule declaration
 
 var DuplicateRuleDeclaration = makeCustomError(
-    "ohm.error.DuplicateRuleDeclaration",
+    'ohm.error.DuplicateRuleDeclaration',
     function(ruleName, offendingGrammarName, declGrammarName) {
       this.ruleName = ruleName;
       this.offendingGrammarName = offendingGrammarName;
       this.declGrammarName = declGrammarName;
-      this.message = "duplicate declaration for rule " + this.ruleName + " in grammar " + this.offendingGrammarName;
+      this.message = 'duplicate declaration for rule ' + this.ruleName + ' in grammar ' + this.offendingGrammarName;
       if (this.offendingGrammarName !== declGrammarName) {
-        this.message += " (it was originally declared in grammar " + this.declGrammarName + ")";
+        this.message += ' (it was originally declared in grammar ' + this.declGrammarName + ')';
       }
     }
 );
@@ -95,14 +95,14 @@ var DuplicateRuleDeclaration = makeCustomError(
 // Inconsistent arity
 
 var InconsistentArity = makeCustomError(
-    "ohm.error.InconsistentArity",
+    'ohm.error.InconsistentArity',
     function(ruleName, expected, actual) {
       this.ruleName = ruleName;
       this.expected = expected;
       this.actual = actual;
       this.message =
-          "rule " + this.ruleName + " involves an alternation which has inconsistent arity " +
-          "(expected " + this.expected + ", got " + this.actual + ")";
+          'rule ' + this.ruleName + ' involves an alternation which has inconsistent arity ' +
+          '(expected ' + this.expected + ', got ' + this.actual + ')';
     }
 );
 
@@ -111,20 +111,20 @@ var InconsistentArity = makeCustomError(
 // Duplicate property names
 
 var DuplicatePropertyNames = makeCustomError(
-    "ohm.error.DuplicatePropertyNames",
+    'ohm.error.DuplicatePropertyNames',
     function(duplicates) {
       this.duplicates = duplicates;
-      this.message = "object pattern has duplicate property names: " + this.duplicates.join(", ");
+      this.message = 'object pattern has duplicate property names: ' + this.duplicates.join(', ');
     }
 );
 
 // ----------------- syntax -----------------
 
 var MatchFailure = makeCustomError(
-    "ohm.error.MatchFailure",
+    'ohm.error.MatchFailure',
     function(state) {
       this.state = state;
-      Object.defineProperty(this, "message", {
+      Object.defineProperty(this, 'message', {
           get: function() {
             return this.getMessage();
           }
@@ -133,28 +133,28 @@ var MatchFailure = makeCustomError(
 );
 
 MatchFailure.prototype.getShortMessage = function() {
-  if (typeof this.state.inputStream.source !== "string") {
-    return "match failed at position " + this.getPos();
+  if (typeof this.state.inputStream.source !== 'string') {
+    return 'match failed at position ' + this.getPos();
   }
 
   var errorInfo = toErrorInfo(this.getPos(), this.state.inputStream.source);
-  return "Line " + errorInfo.lineNum + ", col " + errorInfo.colNum + ": expected " + this.getExpectedText();
+  return 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ': expected ' + this.getExpectedText();
 };
 
 MatchFailure.prototype.getMessage = function() {
-  if (typeof this.state.inputStream.source !== "string") {
-    return "match failed at position " + this.getPos();
+  if (typeof this.state.inputStream.source !== 'string') {
+    return 'match failed at position ' + this.getPos();
   }
 
   var errorInfo = toErrorInfo(this.getPos(), this.state.inputStream.source);
   var sb = new common.StringBuffer();
-  var lineAndColText = "Line " + errorInfo.lineNum + ", col " + errorInfo.colNum + ": ";
-  sb.append(lineAndColText + errorInfo.line + "\n");
+  var lineAndColText = 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ': ';
+  sb.append(lineAndColText + errorInfo.line + '\n');
   for (var idx = 1; idx < lineAndColText.length + errorInfo.colNum; idx++) {
-    sb.append(" ");
+    sb.append(' ');
   }
-  sb.append("^\n");
-  sb.append("Expected " + this.getExpectedText());
+  sb.append('^\n');
+  sb.append('Expected ' + this.getExpectedText());
   return sb.contents();
 };
 
@@ -168,9 +168,9 @@ MatchFailure.prototype.getExpectedText = function() {
   for (var idx = 0; idx < expected.length; idx++) {
     if (idx > 0) {
       if (idx === expected.length - 1) {
-        sb.append(expected.length > 2 ? ", or " : " or ");
+        sb.append((expected.length > 2 ? ', or ' : ' or '));
       } else {
-        sb.append(", ");
+        sb.append(', ');
       }
     }
     sb.append(expected[idx]);
@@ -196,16 +196,16 @@ function toErrorInfo(pos, str) {
 
   while (currPos < pos) {
     var c = str.charAt(currPos++);
-    if (c === "\n") {
+    if (c === '\n') {
       lineNum++;
       colNum = 1;
       lineStartPos = currPos;
-    } else if (c !== "\r") {
+    } else if (c !== '\r') {
       colNum++;
     }
   }
 
-  var lineEndPos = str.indexOf("\n", lineStartPos);
+  var lineEndPos = str.indexOf('\n', lineStartPos);
   if (lineEndPos < 0) {
     lineEndPos = str.length;
   }
@@ -222,12 +222,12 @@ function toErrorInfo(pos, str) {
 // Type error
 
 var InvalidConstructorCall = makeCustomError(
-    "ohm.error.InvalidConstructorCall",
+    'ohm.error.InvalidConstructorCall',
     function(grammar, ctorName, children) {
       this.grammar = grammar;
       this.ctorName = ctorName;
       this.children = children;
-      this.message = "Attempt to invoke constructor " + this.ctorName + " with invalid or unexpected arguments";
+      this.message = 'Attempt to invoke constructor ' + this.ctorName + ' with invalid or unexpected arguments';
     }
 );
 

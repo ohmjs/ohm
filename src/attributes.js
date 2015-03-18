@@ -60,22 +60,22 @@ function makeTopDownThing(grammar, actionDict, memoize) {
   function synthesizedAttribute() {
     var key = Symbol();
     var attribute = function(node) {
-      checkNodeAndGrammar(node, grammar, "synthesized attribute");
+      checkNodeAndGrammar(node, grammar, 'synthesized attribute');
       if (!node.hasOwnProperty(key)) {
         node[key] = get(node);
       }
       return node[key];
     };
-    attribute.toString = function() { return "[synthesized attribute]"; };
+    attribute.toString = function() { return '[synthesized attribute]'; };
     return attribute;
   }
 
   function semanticAction() {
     var action = function(node) {
-      checkNodeAndGrammar(node, grammar, "semantic action");
+      checkNodeAndGrammar(node, grammar, 'semantic action');
       return get(node);
     };
-    action.toString = function() { return "[semantic action]"; };
+    action.toString = function() { return '[semantic action]'; };
     return action;
   }
 
@@ -90,12 +90,12 @@ function makeTopDownThing(grammar, actionDict, memoize) {
 
 function checkNodeAndGrammar(node, grammar, what) {
   if (!(node instanceof Node)) {
-    throw new Error("not an Ohm CST node: " + JSON.stringify(node));
+    throw new Error('not an Ohm CST node: ' + JSON.stringify(node));
   }
   if (node.grammar !== grammar) {
-    throw new Error("a node from grammar " + node.grammar.name +
-                    " cannot be used with a " + what +
-                    " from grammar " + grammar.name);
+    throw new Error('a node from grammar ' + node.grammar.name +
+                    ' cannot be used with a ' + what +
+                    ' from grammar ' + grammar.name);
   }
 }
 
@@ -163,7 +163,7 @@ function makeInheritedAttribute(grammar, actionDict) {
   var key = Symbol();
   var currentChildStack = [];
   var attribute = function(node) {
-    checkNodeAndGrammar(node, grammar, "inherited attribute");
+    checkNodeAndGrammar(node, grammar, 'inherited attribute');
     if (!node.hasOwnProperty(key)) {
       currentChildStack.push(node);
       try {

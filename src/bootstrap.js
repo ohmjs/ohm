@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
-var ohm = require("./main.js");
-var fs = require("fs");
+var ohm = require('./main.js');
+var fs = require('fs');
 
 var args = process.argv.slice(2);
 if (args.length !== 1) {
-  console.error("usage: " + process.argv[0] + " " + process.argv[1] + " <ohm-grammar-file>");
+  console.error('usage: ' + process.argv[0] + ' ' + process.argv[1] + ' <ohm-grammar-file>');
   process.exit(1);
 }
 
@@ -18,8 +18,8 @@ try {
   process.exit(2);
 }
 
-var grammar = ohm.makeGrammar(source, "_default");
-grammar.namespaceName = "default";
+var grammar = ohm.makeGrammar(source, '_default');
+grammar.namespaceName = 'default';
 console.log("var ohm = require('../src/main.js');");
-console.log("ohm.makeRecipe" + grammar.toRecipe());
+console.log('ohm.makeRecipe' + grammar.toRecipe());
 
