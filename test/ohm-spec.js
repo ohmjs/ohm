@@ -1778,7 +1778,7 @@ describe("Ohm", function() {
         expect(childrenSucceeded).to.eql([true, true, true, true, true, false]);
       });
 
-      var g2 = makeGrammar('G { start = (letter ~letter) | letter* }');
+      var g2 = makeGrammar('G { start = letter ~letter | letter* }');
       it("works with memoization", function() {
         var state = g2.trace('ab', 'start');
         var trace = state.trace;
