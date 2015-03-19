@@ -28,7 +28,7 @@
     "test": "mocha",
     "test-watch": "mocha -w",
     "prepublish": "npm run lint && npm run build && npm run bootstrap",
-    "postinstall": "git config --add merge.ours.driver true",
+    "postinstall": "bin/dev-setup.sh",
     "unsafe-bootstrap": "cp dist/ohm-grammar.js dist/ohm-grammar.js.old; node src/bootstrap.js src/ohm-grammar.ohm > dist/ohm-grammar.js.new && mv -f dist/ohm-grammar.js.new dist/ohm-grammar.js",
     "watch": "watchify src/main.js -d -s ohm -o dist/ohm.js"
   },
