@@ -1,0 +1,166 @@
+<!doctype html>
+<html>
+<head>
+  <title></title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    #input {
+      box-sizing: border-box;
+      font-size: 100%;
+      margin-bottom: 1px;
+      outline: none;
+      padding: 8px 0 10px 0;
+    }
+    #input .highlight {
+      background-color: #B5D5FF;
+    }
+    .pexpr {
+      cursor: pointer;
+      color: #333;
+      display: inline-block;
+      flex-grow: 1;
+      font-family: Monaco, Menlo, sans-serif;
+      font-size: 9px;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .pexpr + .pexpr {
+      margin-left: 1px;
+    }
+    .pexpr.failed > .label {
+      background-color: rgba(219, 82, 75, 0.6);
+      border-right: 1px solid rgb(219, 82, 75);
+      border-left: 1px solid rgb(219, 82, 75);
+    }
+    .pexpr > .label {
+      background-color: #efefef;
+      border-left: 1px solid #ccc;
+      border-right: 1px solid #ccc;
+      box-sizing: border-box;
+      display: block;
+      margin: 1px 0;
+      padding: 1px 2px 0 2px;
+      position: relative;
+      text-align: center;
+    }
+    .pexpr > .label:hover {
+      background-color: #dfdfdf;
+    }
+    .pexpr > .label.prim {
+      background-color: transparent;
+      border-left: none;
+      border-right: none;
+      color: SeaGreen;
+    }
+    .pexpr > .children {
+      display: flex;
+    }
+    .pexpr > .children[hidden] {
+      display: none;
+    }
+    textarea, .CodeMirror {
+      display: none;
+    }
+    .highlightRule {
+      background-color: #B5D5FF;
+    }
+    .highlightApplication {
+      background-color: CornflowerBlue;
+      color: white;
+    }
+
+    #options {
+      background-color: white;
+      border-radius: 3px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+      padding: 2px 6px 1px 6px;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+    }
+    #options label {
+      position: relative;
+      top: 1px;
+    }
+    #options input[type=checkbox] {
+      position: relative;
+      top: -1px;
+    }
+    .input {
+      font-family: Monaco, Menlo, sans-serif;
+    }
+    #input, #input span {
+      display: inline-block;
+      text-align: center;
+      white-space: pre;
+    }
+    #measuringDiv {
+      height: auto;
+      position: absolute;
+      visibility: hidden;
+      white-space: nowrap;
+      width: auto;
+    }
+    #input .whitespace {
+      color: #ccc;
+    }
+    .pexpr.whitespace {
+      height: 0;
+    }
+    .pexpr.whitespace .prim {
+      /* HACK! This is not the right way to deal with whitespace. */
+      width: 10px;
+    }
+  </style>
+</head>
+<body>
+  <textarea>
+    MyLang {
+      Expr = IfExpr | AssignmentExpr | ValueExpr
+
+      ValueExpr = number | ArrayLiteral | id
+
+      AssignmentExpr = AssignmentPattern '=' Expr
+
+      AssignmentPattern
+        = id
+        | '[' AssignmentPattern (',' AssignmentPattern)* ']' -- rec
+
+      IfExpr
+        = 'if' '(' Expr ')' Expr 'else' Expr -- withElse
+        | 'if' '(' Expr ')'                  -- plain
+
+      ArrayLiteral = '[' ValueExpr (',' ValueExpr)* ']'
+
+      id = letter (number | letter)*
+
+      number = number digit -- rec
+             | digit
+    }
+  </textarea>
+<!--
+  <textarea>
+    MyLang {
+      expr = number
+      number = expr letter -- rec
+             | digit
+    }
+  </textarea>
+-->
+  <div id="rightColumn">
+    <div id="input" contenteditable>if (foobar) [x] = [3] else [x, y, z] = [foo, bar, baz]</div>
+    <div id="parseResults"></div>
+  </div>
+  <div id="options">
+    <label><input type="checkbox" name="showFailures"> Show failures</label>
+    <label><input type="checkbox" name="topDown" checked> Show rules top-down</label>
+  </div>
+  <div id="measuringDiv">
+    <div class="pexpr"></div>
+  </div>
+
+  <script src="../dist/ohm.js"></script>
+  <script src="third_party/d3.min.js"></script>
+  <script src="index.js"></script>
+</body>
+</html>

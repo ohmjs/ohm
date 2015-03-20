@@ -1,0 +1,45 @@
+#CodeMirror-drawer {
+	bottom: 0;
+	color: #333;
+	left: 0;
+	position: fixed;
+	top: 0;
+	width: 50%;
+}
+#CodeMirror-drawer .resize-area {
+	bottom: 0;
+	cursor: ew-resize;
+	position: absolute;
+	right: 0;
+	top: 0;
+	width: 7px;
+}
+#CodeMirror-drawer .resize-handle {
+	background-color: #ddd;
+	bottom: 0;
+	position: absolute;
+	right: 3px;
+	width: 1px;
+	top: 0;
+}
+#CodeMirror-drawer .resize-area:hover .resize-handle {
+	background-color: #ccc;
+}
+.CodeMirror {
+	background-color: #fcfcfc;
+	bottom: 0;
+	cursor: text;
+	font-family: Monaco, Menlo, monospace;
+	height: 100%;
+	left: 0;
+	line-height: 1.35;
+	position: absolute;
+	right: 3px;
+	top: 0;
+}
+.CodeMirror-lines {
+	padding: 1em 0.75em;
+}
+#CodeMirror-drawer.resizing .CodeMirror {
+	cursor: ew-resize;
+}
