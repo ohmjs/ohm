@@ -24,7 +24,7 @@
     "build-min": "browserify src/main.js -s ohm | uglifyjs > dist/ohm.min.js",
     "build": "npm run build-debug && npm run build-min",
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
-    "lint": "eslint src/*.js",
+    "lint": "eslint src",
     "test": "mocha",
     "test-watch": "mocha -w",
     "prepublish": "npm run lint && npm run build && npm run bootstrap",

@@ -1,0 +1,8 @@
+# Ignore third party files.
+**/third_party/**
+src/unicode.js
+
+# These are temporarily disabled because it's non-trivial to fix the errors.
+# These should eventually be re-enabled!
+src/attributes.js
+src/main.js

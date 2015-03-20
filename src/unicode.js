@@ -1,5 +1,4 @@
 // From https://code.google.com/p/es-lab/source/browse/trunk/src/parser/unicode.js
-/*eslint-disable */
 exports.UnicodeCategories = {
   ZWNJ : /\u200C/,
   ZWJ  : /\u200D/,
