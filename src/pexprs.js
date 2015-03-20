@@ -119,8 +119,7 @@ inherits(Arr, PExpr);
 function Str(expr) {
   this.expr = expr;
 }
-
-Str.prototype = Object.create(PExpr.prototype);
+inherits(Str, PExpr);
 
 // Object decomposition
 
