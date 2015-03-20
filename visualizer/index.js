@@ -27,8 +27,9 @@ function tweenWithCallback(endValue, cb) {
 function clone(obj) {
   var result = {};
   for (var k in obj) {
-    if (obj.hasOwnProperty(k))
+    if (obj.hasOwnProperty(k)) {
       result[k] = obj[k];
+    }
   }
   return result;
 }
@@ -40,8 +41,9 @@ function getWidthDependentElements(el) {
   // Add all ancestor pexpr nodes.
   var node = el;
   while ((node = node.parentNode) !== document) {
-    if (node.classList.contains('pexpr'))
+    if (node.classList.contains('pexpr')) {
       els.push(node);
+    }
   }
   // And add all descendent pexpr nodes.
   return els.concat(ArrayProto.slice.call(el.querySelectorAll('.pexpr')));
@@ -76,13 +78,15 @@ function initializeWidths() {
 function createElement(sel, optContent) {
   var parts = sel.split('.');
   var tagName = parts[0];
-  if (tagName.length === 0)
+  if (tagName.length === 0) {
     tagName = 'div';
+  }
 
   var el = document.createElement(tagName);
   el.className = parts.slice(1).join(' ');
-  if (optContent)
+  if (optContent) {
     el.textContent = optContent;
+  }
   return el;
 }
 
@@ -155,17 +159,20 @@ function toggleTraceElement(el) {
       .transition()
       .duration(500)
       .style('height', height + 'px')
-      .each('start', function() { if (showing) this.hidden = false; })
+      .each('start', function() { if (showing) { this.hidden = false; } })
       .each('end', function() {
-        if (!showing) this.hidden = true;
+        if (!showing) {
+          this.hidden = true;
+        }
         this.style.height = '';
       });
 }
 
 function createTraceElement(traceNode, container, input) {
   var wrapper = container.appendChild(createElement('.pexpr'));
-  if (!traceNode.succeeded)
+  if (!traceNode.succeeded) {
     wrapper.classList.add('failed');
+  }
 
   wrapper.addEventListener('click', function(e) {
     toggleTraceElement(wrapper);
@@ -183,8 +190,9 @@ function createTraceElement(traceNode, container, input) {
   wrapper._input = input;
 
   var label = wrapper.appendChild(createElement('.label', traceNode.displayString));
-  if (traceNode.expr.isPrimitive())
+  if (traceNode.expr.isPrimitive()) {
     label.classList.add('prim');
+  }
 
   return wrapper;
 }
@@ -204,8 +212,9 @@ function shouldNodeBeVisible(traceNode) {
   // TODO: We need to distinguish between nodes that nodes that should be
   // hidden and nodes that should be collapsed by default.
 
-  if (isBlackhole(traceNode))
+  if (isBlackhole(traceNode)) {
     return false;
+  }
 
   switch (traceNode.expr.constructor.name) {
     case 'Alt':
@@ -217,8 +226,9 @@ function shouldNodeBeVisible(traceNode) {
       return traceNode.interval.contents.length > 0;
     default:
       // Hide things that don't correspond to something the user wrote.
-      if (!traceNode.expr.interval)
+      if (!traceNode.expr.interval) {
         return false;
+      }
   }
   return true;
 }
@@ -239,8 +249,9 @@ function shouldNodeBeVisible(traceNode) {
       var root = m.matchContents($('#input').textContent, 'Expr', true, true);
       trace = root._trace;
     } catch (e) {
-      if (!(e instanceof ohm.error.MatchFailure))
+      if (!(e instanceof ohm.error.MatchFailure)) {
         throw e;
+      }
       trace = e.state.trace;
     }
 
@@ -248,7 +259,9 @@ function shouldNodeBeVisible(traceNode) {
     $('#parseResults').textContent = '';
     (function walkTraceNodes(nodes, container, inputContainer, showTrace) {
       nodes.forEach(function(node) {
-        if (!node.succeeded) return;  // TODO: Allow failed nodes to be shown.
+        if (!node.succeeded) {
+          return;  // TODO: Allow failed nodes to be shown.
+        }
 
         var contents = node.expr.isPrimitive() ? node.interval.contents : '';
         var childInput = inputContainer.appendChild(createElement('span.input', contents));
@@ -264,8 +277,9 @@ function shouldNodeBeVisible(traceNode) {
         if ((shouldShowTrace && shouldNodeBeVisible(node)) || isWhitespace) {
           var el = createTraceElement(node, container, childInput);
           childContainer = el.appendChild(createElement('.children'));
-          if (isWhitespace)
+          if (isWhitespace) {
             el.classList.add('whitespace');
+          }
         }
         walkTraceNodes(node.children, childContainer, childInput, shouldShowTrace);
       });
