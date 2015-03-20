@@ -120,17 +120,17 @@
 
       ValueExpr = number | ArrayLiteral | id
 
-      AssignmentExpr = AssignmentPattern '=' Expr
+      AssignmentExpr = AssignmentPattern "=" Expr
 
       AssignmentPattern
         = id
-        | '[' AssignmentPattern (',' AssignmentPattern)* ']' -- rec
+        | "[" AssignmentPattern ("," AssignmentPattern)* "]" -- rec
 
       IfExpr
-        = 'if' '(' Expr ')' Expr 'else' Expr -- withElse
-        | 'if' '(' Expr ')'                  -- plain
+        = "if" "(" Expr ")" Expr "else" Expr -- withElse
+        | "if" "(" Expr ")"                  -- plain
 
-      ArrayLiteral = '[' ValueExpr (',' ValueExpr)* ']'
+      ArrayLiteral = "[" ValueExpr ("," ValueExpr)* "]"
 
       id = letter (number | letter)*
 

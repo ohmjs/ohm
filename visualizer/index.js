@@ -190,7 +190,7 @@ function createTraceElement(traceNode, container, input) {
   wrapper._input = input;
 
   var label = wrapper.appendChild(createElement('.label', traceNode.displayString));
-  if (traceNode.expr.isPrimitive()) {
+  if (isPrimitive(traceNode.expr)) {
     label.classList.add('prim');
   }
 
@@ -233,6 +233,10 @@ function shouldNodeBeVisible(traceNode) {
   return true;
 }
 
+function isPrimitive(expr) {
+  return expr.constructor.name.indexOf('Prim') >= 0;
+}
+
 // Main
 // ----
 
@@ -243,17 +247,9 @@ function shouldNodeBeVisible(traceNode) {
     var grammarSrc = $('textarea').value;
     ohm.namespace('default').grammars = clone(origDefaultGrammars);  // Hack to reset the namespace.
 
-    var m = ohm.makeGrammar(grammarSrc);
-    var trace;
-    try {
-      var root = m.matchContents($('#input').textContent, 'Expr', true, true);
-      trace = root._trace;
-    } catch (e) {
-      if (!(e instanceof ohm.error.MatchFailure)) {
-        throw e;
-      }
-      trace = e.state.trace;
-    }
+    var g = ohm.makeGrammar(grammarSrc);
+    var trace = g.trace($('#input').textContent, 'Expr').trace;
+    console.log(trace);
 
     $('#input').textContent = '';
     $('#parseResults').textContent = '';
@@ -263,7 +259,7 @@ function shouldNodeBeVisible(traceNode) {
           return;  // TODO: Allow failed nodes to be shown.
         }
 
-        var contents = node.expr.isPrimitive() ? node.interval.contents : '';
+        var contents = isPrimitive(node.expr) ? node.interval.contents : '';
         var childInput = inputContainer.appendChild(createElement('span.input', contents));
         var isWhitespace = contents.length > 0 && contents.trim().length === 0;
         if (isWhitespace) {
