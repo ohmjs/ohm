@@ -1581,16 +1581,18 @@ describe('Ohm', function() {
         expect(function() {
           g.match('ab', 'start', true);
         }).to.throwException(function(e) {
-          expect(e.message).to.equal('Line 1, col 3: ab\n' +
-                                     '                 ^\n' +
+          expect(e.message).to.equal('Line 1, col 3:\n' +
+                                     '> | ab\n' +
+                                     '  |   ^\n' +
                                      "Expected 'c'");
           expect(e.getPos()).to.equal(2);
         });
         expect(function() {
           g.match('abcde', 'start', true);
         }).to.throwException(function(e) {
-          expect(e.message).to.equal('Line 1, col 5: abcde\n' +
-                                     '                   ^\n' +
+          expect(e.message).to.equal('Line 1, col 5:\n' +
+                                     '> | abcde\n' +
+                                     '  |     ^\n' +
                                      'Expected end of input');
           expect(e.getPos()).to.equal(4);
         });

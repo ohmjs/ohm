@@ -147,9 +147,9 @@ MatchFailure.prototype.getMessage = function() {
 
   var errorInfo = toErrorInfo(this.getPos(), this.state.inputStream.source);
   var sb = new common.StringBuffer();
-  var lineAndColText = 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ': ';
-  sb.append(lineAndColText + errorInfo.line + '\n');
-  for (var idx = 1; idx < lineAndColText.length + errorInfo.colNum; idx++) {
+  sb.append('Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ':\n');
+  sb.append('> | ' + errorInfo.line + '\n  | ');
+  for (var idx = 1; idx < errorInfo.colNum; idx++) {
     sb.append(' ');
   }
   sb.append('^\n');
