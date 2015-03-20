@@ -189,4 +189,5 @@ require('./pexprs-eval.js');
 require('./pexprs-maybeRecordFailure.js');
 require('./pexprs-getArity.js');
 require('./pexprs-outputRecipe.js');
+require('./pexprs-toDisplayString.js');
 require('./pexprs-toExpected.js');

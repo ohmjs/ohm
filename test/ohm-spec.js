@@ -1796,5 +1796,20 @@ describe('Ohm', function() {
         expect(many.children[1].children.length).to.be(1);
       });
     });
+
+    describe('toDisplayString', function() {
+      var g = makeGrammar('G { start = "ab" | letter* | /[a-z]/ }');
+      it('does the right thing', function() {
+        var seq = g.ruleDict.start;
+        expect(seq.toDisplayString()).to.be('"ab" | letter* | /[a-z]/');
+        expect(seq.terms[0].toDisplayString()).to.be('"ab"');
+
+        var many = seq.terms[1];
+        expect(many.toDisplayString()).to.be('letter*');
+        expect(many.expr.toDisplayString()).to.be('letter');
+
+        expect(seq.terms[2].toDisplayString()).to.be('/[a-z]/');
+      })
+    });
   });
 });
