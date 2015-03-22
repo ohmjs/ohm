@@ -1781,10 +1781,12 @@ describe('Ohm', function() {
       it('works with memoization', function() {
         var state = g2.trace('ab', 'start');
         var trace = state.trace;
+        expect(trace.length).to.be(1);
 
         var alt = trace[0].children[0];
         expect(alt.children[0].succeeded).to.be(false);
         expect(alt.children[1].succeeded).to.be(true);
+        expect(alt.children.length).to.be(2);
 
         var many = alt.children[1];
         expect(many.children.length).to.be(3);
@@ -1794,8 +1796,11 @@ describe('Ohm', function() {
         // the the trace is still recorded properly.
         expect(many.children[0].succeeded).to.be(true);
         expect(many.children[0].children.length).to.be(1);
+        expect(many.children[0].children[0].displayString).to.be('/[a-zA-Z]/');
+
         expect(many.children[1].succeeded).to.be(true);
         expect(many.children[1].children.length).to.be(1);
+        expect(many.children[1].children[0].displayString).to.be('/[a-zA-Z]/');
       });
     });
 

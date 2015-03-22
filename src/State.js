@@ -76,6 +76,18 @@ State.prototype = {
     return {pos: -1, exprs: []};
   },
 
+  // Returns the memoized trace entry for `pos` and `expr`, if one exists.
+  getMemoizedTraceEntry: function(pos, expr) {
+    var posInfo = this.posInfos[pos];
+    if (posInfo && expr.ruleName) {
+      var memoRec = posInfo.memo[expr.ruleName];
+      if (memoRec) {
+        return memoRec.traceEntry;
+      }
+    }
+    return null;
+  },
+
   // Make a new trace entry, using the currently active trace array as the
   // new entry's children.
   makeTraceEntry: function(pos, expr, ans) {

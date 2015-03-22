@@ -46,7 +46,12 @@ pexprs.PExpr.prototype.eval = function(state) {
   var ans = this._eval(state);
 
   if (state.isTracing()) {
-    origTrace.push(state.makeTraceEntry(origPos, this, ans));
+    // Record a trace entry, using the memoized entry if possible.
+    var entry = state.getMemoizedTraceEntry(origPos, this);
+    if (!entry) {
+      entry = state.makeTraceEntry(origPos, this, ans);
+    }
+    origTrace.push(entry);
     state.trace = origTrace;
   }
 
@@ -370,7 +375,8 @@ pexprs.Apply.prototype._eval = function(state) {
     if (origPosInfo.memo[ruleName]) {
       origPosInfo.memo[ruleName].failureDescriptor = newFailureDescriptor;
       if (state.isTracing()) {
-        origPosInfo.memo[ruleName].traceEntry = state.makeTraceEntry(origPos, this, value);
+        var entry = state.makeTraceEntry(origPos, this, !!value, true);
+        origPosInfo.memo[ruleName].traceEntry = entry;
       }
     }
     var ans;
