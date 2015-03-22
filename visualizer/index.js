@@ -270,7 +270,7 @@ function isPrimitive(expr) {
         var shouldShowTrace = showTrace && !isBlackhole(node);
         var childContainer = container;
 
-        if ((shouldShowTrace && shouldNodeBeVisible(node)) || isWhitespace) {
+        if ((shouldShowTrace && shouldNodeBeVisible(node)) || isWhitespace || nodes === trace) {
           var el = createTraceElement(node, container, childInput);
           childContainer = el.appendChild(createElement('.children'));
           if (isWhitespace) {
