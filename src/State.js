@@ -80,7 +80,7 @@ State.prototype = {
   // new entry's children.
   makeTraceEntry: function(pos, expr, ans) {
     var entry = {
-      displayString: expr.ruleName || (expr.obj ? "'" + expr.obj + "'" : null),
+      displayString: expr.toDisplayString(),
       pos: pos,
       expr: expr,
       succeeded: ans,

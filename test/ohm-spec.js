@@ -1763,11 +1763,13 @@ describe('Ohm', function() {
         expect(trace[0].pos).to.be(0);
 
         var alt = trace[0].children[0];
+        expect(alt.displayString).to.be('"a" | letter*');
         expect(alt.succeeded).to.be(true);
         expect(alt.children[0].succeeded).to.be(false);
         expect(alt.children[1].succeeded).to.be(true);
 
         var many = alt.children[1];
+        expect(many.displayString).to.be('letter*');
         expect(many.interval.contents).to.be('hallo');
         expect(many.children.length).to.be(6);
 
