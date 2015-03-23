@@ -2,6 +2,7 @@
 
 var ArrayProto = Array.prototype;
 function $(sel) { return document.querySelector(sel); }
+var options = {};
 
 // D3 Helpers
 // ----------
@@ -170,6 +171,7 @@ function toggleTraceElement(el) {
 
 function createTraceElement(traceNode, container, input) {
   var wrapper = container.appendChild(createElement('.pexpr'));
+  wrapper.classList.add(traceNode.expr.constructor.name.toLowerCase());
   if (!traceNode.succeeded) {
     wrapper.classList.add('failed');
   }
@@ -217,13 +219,17 @@ function shouldNodeBeVisible(traceNode) {
   }
 
   switch (traceNode.expr.constructor.name) {
-    case 'Alt':
     case 'Seq':
+      if (options.showFailures && !traceNode.succeeded) {
+        return true;
+      }
+      return false;
+    case 'Alt':
       return false;
     case 'Many':
       // Not sure if this is exactly right. Maybe better would be to hide the
       // node if it doesn't have any visible children.
-      return traceNode.interval.contents.length > 0;
+      return traceNode.interval && traceNode.interval.contents.length > 0;
     default:
       // Hide things that don't correspond to something the user wrote.
       if (!traceNode.expr.interval) {
@@ -243,23 +249,45 @@ function isPrimitive(expr) {
 (function main() {
   var origDefaultGrammars = clone(ohm.namespace('default').grammars);
 
+  var checkboxes = document.querySelectorAll('#options input[type=checkbox]');
+  function triggerRefresh(e) {
+    setTimeout(refresh, 1);
+  }
+  for (var i = 0; i < checkboxes.length; ++i) {
+    checkboxes[i].addEventListener('click', triggerRefresh);
+  }
+
+  var origInput = $('#input').textContent;
+
   function refresh() {
     var grammarSrc = $('textarea').value;
     ohm.namespace('default').grammars = clone(origDefaultGrammars);  // Hack to reset the namespace.
 
     var g = ohm.makeGrammar(grammarSrc);
-    var trace = g.trace($('#input').textContent, 'Expr').trace;
-    console.log(trace);
+    var trace = g.trace(origInput, 'Expr').trace;
 
-    $('#input').textContent = '';
-    $('#parseResults').textContent = '';
+    // Refresh the option values.
+    for (var i = 0; i < checkboxes.length; ++i) {
+      var checkbox = checkboxes[i];
+      options[checkbox.name] = checkbox.checked;
+    }
+
+    $('#input').innerHTML = '';
+    $('#parseResults').innerHTML = '';
     (function walkTraceNodes(nodes, container, inputContainer, showTrace) {
       nodes.forEach(function(node) {
-        if (!node.succeeded) {
-          return;  // TODO: Allow failed nodes to be shown.
+        if (!(options.showFailures || node.succeeded)) {
+          return;
         }
-
-        var contents = isPrimitive(node.expr) ? node.interval.contents : '';
+        if (!node) {
+          // FIXME -- What's going on here??
+          console.log('node is undefined');
+          return;
+        }
+        var contents = '';
+        if (node.succeeded) {
+          contents = isPrimitive(node.expr) ? node.interval.contents : '';
+        }
         var childInput = inputContainer.appendChild(createElement('span.input', contents));
         var isWhitespace = contents.length > 0 && contents.trim().length === 0;
         if (isWhitespace) {
@@ -270,17 +298,23 @@ function isPrimitive(expr) {
         var shouldShowTrace = showTrace && !isBlackhole(node);
         var childContainer = container;
 
-        if ((shouldShowTrace && shouldNodeBeVisible(node)) || isWhitespace || nodes === trace) {
+        if (shouldShowTrace || isWhitespace || nodes === trace) {
           var el = createTraceElement(node, container, childInput);
           childContainer = el.appendChild(createElement('.children'));
+          if (!shouldNodeBeVisible(node)) {
+            el.classList.add('hidden');
+          }
           if (isWhitespace) {
             el.classList.add('whitespace');
+          }
+          if (!node.succeeded) {
+            el.classList.add('failed');
           }
         }
         walkTraceNodes(node.children, childContainer, childInput, shouldShowTrace);
       });
     })(trace, $('#parseResults'), $('#input'), true);
+    initializeWidths();
   }
   refresh();
-  initializeWidths();
 })();
