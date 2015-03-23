@@ -30,6 +30,7 @@
     "prepublish": "npm run lint && npm run build && npm run bootstrap",
     "postinstall": "bin/dev-setup.sh",
     "unsafe-bootstrap": "cp dist/ohm-grammar.js dist/ohm-grammar.js.old; node src/bootstrap.js src/ohm-grammar.ohm > dist/ohm-grammar.js.new && mv -f dist/ohm-grammar.js.new dist/ohm-grammar.js",
+    "visualizer": "bin/ohm-visualizer",
     "watch": "watchify src/main.js -d -s ohm -o dist/ohm.js"
   },
   "license": "MIT",
@@ -39,6 +40,7 @@
     "symbol": ""
   },
   "devDependencies": {
+    "browser-sync": "^2.4.0",
     "browserify": "^3.30.4",
     "eslint": "^0.17.1",
     "expect.js": "^0.3.1",
