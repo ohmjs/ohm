@@ -56,6 +56,9 @@ function getWidthDependentElements(el) {
 function updateInputWidths(els) {
   for (var i = 0; i < els.length; ++i) {
     var el = els[i];
+    if (!el._input) {
+      continue;
+    }
     el._input.style.minWidth = el.offsetWidth + 'px';
     if (!el.style.minWidth) {
       el.style.minWidth = measureInput(el._input).width + 'px';
@@ -220,12 +223,11 @@ function shouldNodeBeVisible(traceNode) {
 
   switch (traceNode.expr.constructor.name) {
     case 'Seq':
-      if (options.showFailures && !traceNode.succeeded) {
-        return true;
-      }
-      return false;
     case 'Alt':
       return false;
+    case 'Apply':
+      // Don't show a separate node for failed inline rule applications.
+      return traceNode.succeeded || traceNode.expr.ruleName.indexOf('_') === -1;
     case 'Many':
       // Not sure if this is exactly right. Maybe better would be to hide the
       // node if it doesn't have any visible children.
@@ -274,7 +276,7 @@ function isPrimitive(expr) {
 
     $('#input').innerHTML = '';
     $('#parseResults').innerHTML = '';
-    (function walkTraceNodes(nodes, container, inputContainer, showTrace) {
+    (function walkTraceNodes(nodes, container, inputContainer, showTrace, parent) {
       nodes.forEach(function(node) {
         if (!(options.showFailures || node.succeeded)) {
           return;
@@ -282,6 +284,7 @@ function isPrimitive(expr) {
         if (!node) {
           // FIXME -- What's going on here??
           console.log('node is undefined');
+          console.log(parent);
           return;
         }
         var contents = '';
@@ -311,9 +314,32 @@ function isPrimitive(expr) {
             el.classList.add('failed');
           }
         }
-        walkTraceNodes(node.children, childContainer, childInput, shouldShowTrace);
+        walkTraceNodes(node.children, childContainer, childInput, shouldShowTrace, node);
+
+        // For Seq nodes, also display children that weren't evaluated.
+        // TODO: Consider handling this when the trace is being recorded.
+        if (node.expr.constructor.name === 'Seq') {
+          var factors = node.expr.factors;
+
+          // Due to implicit rules like `spaces_`, the accounting here is a bit
+          // tricky. This should probably be handled inside PExpr eval, not here.
+          var skipCount = childContainer.querySelectorAll('.pexpr').length;
+
+          for (var i = skipCount; i < factors.length; ++i) {
+            var wrapper = createElement('.pexpr.unevaluated');
+            wrapper.appendChild(createElement('.label', factors[i].toDisplayString()));
+            childContainer.appendChild(wrapper);
+          }
+          if (parent && parent.expr.constructor.name === 'Apply') {
+            var ruleName = parent.expr.ruleName;
+            var caseName = ruleName.slice(ruleName.lastIndexOf('_') + 1);
+            if (caseName !== ruleName) {
+              childContainer.appendChild(createElement('.caseName', caseName));
+            }
+          }
+        }
       });
-    })(trace, $('#parseResults'), $('#input'), true);
+    })(trace, $('#parseResults'), $('#input'), true, null);
     initializeWidths();
   }
   refresh();
