@@ -23,11 +23,10 @@ function skipSpacesIfAppropriate(state) {
 }
 
 function skipSpaces(state) {
-  var origFailureDescriptor = state.failureDescriptor;
-  state.failureDescriptor = state.makeFailureDescriptor();
+  state.pushFreshFailureDescriptor();
   applySpaces_.eval(state);
   state.bindings.pop();
-  state.failureDescriptor = origFailureDescriptor;
+  state.popFailureDescriptor();
 }
 
 // Evaluate the expression and return true if it succeeded, otherwise false.
@@ -212,12 +211,17 @@ pexprs.Opt.prototype._eval = function(state) {
 };
 
 pexprs.Not.prototype._eval = function(state) {
+  // TODO:
+  // * Right now we're just throwing away all of the failures that happen inside a `not`. Consider
+  //   recording `this` as a failed expression.
+  // * Double negation should be equivalent to lookahead, but that's not the case right now wrt
+  //   failures. E.g., ~~'foo' won't produce any failures.
+
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  var origFailureDescriptor = state.failureDescriptor;
-  state.failureDescriptor = state.makeFailureDescriptor();
+  state.pushFreshFailureDescriptor();
   var ans = this.expr.eval(state);
-  state.failureDescriptor = origFailureDescriptor;
+  state.popFailureDescriptor();
   if (ans) {
     state.bindings.length -= this.getArity();
     return false;
@@ -305,6 +309,7 @@ pexprs.Obj.prototype._eval = function(state) {
 };
 
 pexprs.Apply.prototype._eval = function(state) {
+  var self = this;
   var inputStream = state.inputStream;
   var grammar = state.grammar;
   var bindings = state.bindings;
@@ -312,7 +317,7 @@ pexprs.Apply.prototype._eval = function(state) {
   function useMemoizedResult(memoRecOrLR) {
     inputStream.pos = memoRecOrLR.pos;
     if (memoRecOrLR.failureDescriptor) {
-      state.recordFailures(memoRecOrLR.failureDescriptor);
+      state.recordFailures(memoRecOrLR.failureDescriptor, self);
     }
     if (state.isTracing()) {
       state.trace.push(memoRecOrLR.traceEntry);
@@ -348,13 +353,8 @@ pexprs.Apply.prototype._eval = function(state) {
     }
   } else {
     var body = grammar.ruleDict[ruleName];
-    if (!body) {
-      // TODO: make this a "static" check
-      throw new errors.UndeclaredRule(ruleName);
-    }
     var origPos = inputStream.pos;
-    var origFailureDescriptor = state.failureDescriptor;
-    var newFailureDescriptor = state.failureDescriptor = state.makeFailureDescriptor();
+    var newFailureDescriptor = state.pushFreshFailureDescriptor();
     origPosInfo.enter(this);
     var value = this.evalOnce(body, state);
     currentLR = origPosInfo.getCurrentLeftRecursion();
@@ -400,20 +400,12 @@ pexprs.Apply.prototype._eval = function(state) {
         newFailureDescriptor.pos = -1;  // so that the failures are ignored
       } else if (newFailureDescriptor.pos <= origPos) {
         newFailureDescriptor.pos = origPos;
-        newFailureDescriptor.exprs = [this];
+        newFailureDescriptor.exprsAndStacks = [{expr: this, stacks: [[]]}];
       }
     }
-/*
-    Here's the Bryan Ford version (what he describes in his Master's thesis):
 
-    if (body.description && newFailureDescriptor.pos === origPos) {
-      newFailureDescriptor.pos = origPos;
-      newFailureDescriptor.exprs = [this];
-    }
-*/
-
-    state.failureDescriptor = origFailureDescriptor;
-    state.recordFailures(newFailureDescriptor);
+    state.popFailureDescriptor();
+    state.recordFailures(newFailureDescriptor, this);
     origPosInfo.exit();
     return ans;
   }

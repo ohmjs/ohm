@@ -15,7 +15,7 @@ function makeCustomError(name, initFn) {
   // Make E think it's really called OhmError, so that errors look nicer when they're console.log'ed in Chrome.
   var E = function OhmError() {
     initFn.apply(this, arguments);
-    var e = new Error(this.message);
+    var e = new Error();
     Object.defineProperty(this, 'stack', { get: function() { return e.stack; } });
   };
   E.prototype = Object.create(OhmError.prototype);
@@ -180,9 +180,23 @@ MatchFailure.prototype.getExpectedText = function() {
 MatchFailure.prototype.getExpected = function() {
   var self = this;
   var expected = {};
-  this.state.failureDescriptor.exprs.forEach(function(expr) {
-    expected[expr.toExpected(self.state.grammar.ruleDict)] = true;
+
+  var exprsAndStacks = this.state.getFailures();
+
+  function printS(stack) {
+    return stack.map(function(app) {
+      return app.ruleName + (app.interval ? '@' + app.interval.startIdx : '');
+    }).join(">");
+  }
+
+  console.log("### --------");
+  exprsAndStacks.forEach(function(exprAndStacks) {
+    expected[exprAndStacks.expr.toExpected(self.state.grammar.ruleDict)] = true;
+    console.log("###", exprAndStacks.expr.toExpected(self.state.grammar.ruleDict) + ": " +
+                exprAndStacks.stacks.map(printS).join(" and "));
   });
+  console.log("### --------");
+
   return Object.keys(expected);
 };
 
