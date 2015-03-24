@@ -8,67 +8,111 @@ Implement Alex's de-spockification idea.
 
 #### Unit tests
 
+In the following unit tests, I've added suffixes to each rule application so that each one can be written unambiguously in the "stacks". This matters b/c we want to know what the "continuation" of a recorded failure would have been -- which means that we must know which application of a rule `r` caused the failure, if there is more than one.
+
 ##### Unit test #1
 
 ```
-start = addExp
-addExp = addExp "+" mulExp | mulExp
-mulExp = mulExp "*" priExp | priExp
+start = addExp#1
+addExp = addExp#2 "+" mulExp#1 | mulExp#2
+mulExp = mulExp#3 "*" priExp#1 | priExp#2
 priExp = number
 ```
 
 If the input is `"1-"`, the failed primitives recorded at position `1` should be:
 
-* `"*"`, with stack `[app("mulExp"), app("addExp"), app("start")]`
-* `"+"`, with stack `[app("addExp"), app("start")]`
+* `"*"`, with stack `start > addExp#1 > mulExp#2`
+* `"+"`, with stack `start > addExp#1`
 
 The expected set should be {`"*"`, `"+"`}.
 
+For more info, memo @ `0`:
+
+* `start` -> FAIL, w/ failures@`1`:
+    * `"+"`, `addExp#1`
+    * `"*"`, `addExp#1 > mulExp#2`
+* `addExp` -> SUCCESS@`1` w/ failures@`1`:
+    * `"+"`, (empty stack)
+    * `"*"`, `mulExp#2`
+* `mulExp` -> SUCCESS@`1` w/ failures@`1`:
+    * `"*"`, (empty stack)
+
+|::|::|::|
+| **subsumes**  | (`"+"`, `start > addExp#1`) | (`"*"`, `start > addExp#1 > mulExp#2`) |
+| `+` | N | N |
+| `*` | N  | N |
+| `+` or `*` | N  | N |
 
 ##### Unit test #2
 
 ```
-start = addExp ";"
-addExp = addExp "+" mulExp | mulExp
-mulExp = mulExp "*" priExp | priExp
+start = addExp#1 ";"
+addExp = addExp#2 "+" mulExp#1 | mulExp#2
+mulExp = mulExp#3 "*" priExp#1 | priExp#2
 priExp = number
 ```
 
 If the input is `"1"`, the failed primitives recorded at position `1` should be:
 
-* `"*"`, with stack `[app("mulExp"), app("addExp"), app("start")]`
-* `"+"`, with stack `[app("addExp"), app("start")]`
-* `";"`, with stack `[app("start")]`
+* `"*"`, with stack `start > addExp#1 > mulExp#2`
+* `"+"`, with stack `start > addExp#1`
+* `";"`, with stack `start`
 
 The expected set should be {`";"`}.
+
+|::|::|::|::|
+| **subsumes**  | (`";"`, `start`) | (`"+"`, `start > addExp#1`) | (`"*"`, `start > addExp#1 > mulExp#2`) |
+| `;` | N | Y | Y |
+| `+` | N  | N | N |
+| `*` | N  | N | N |
+| `;`, `+` or `*` | N  | Y | Y |
 
 ##### Unit test #3
 
 ```
-start = a b | b a
+start = a#1 b#1 | b#2 a#2
 a = "a"
 b = "b"
 ```
 
 If the input is `""`, the failed primitives recorded at position `0` should be:
 
-* `"a"`, with stack `[app("a"), app("start")]`
-* `"b"`, with stack `[app("b"), app("start")]`
+* `"a"`, with stack `start > a#1`
+* `"b"`, with stack `start > b#2`
 
 The expected set should be {`"a"`, `"b"`}.
 
 ##### Unit test #4
 
 ```
-start = c "sucks" | c "stinks"
+start = a#1 b#1 | a#2 | b#2 a#3
+a = "a"
+b = "b"
+```
+
+If the input is `""`, the failed primitives recorded at position `0` should be:
+
+* `"a"`, with stacks `start > a#1` and `start > #a2`
+* `"b"`, with stack `start > #b2`
+
+The expected set should be {`"a"`, `"b"`}.
+
+**TODO:** I added this example because it's important to consider the case when a terminal can be reached in different ways (i.e., w/ different stacks). Unfortunately in this case that doesn't make a difference. I'd like to find an example where it does.
+
+Straw man: when a terminal has more than one stack in a `FailureDescriptor`, we should only exclude it from the expected set if there is one or more entry (terminal) that subsumes it, i.e., considering all of its stacks / continuations. To say it in a different way: the subsuming terminal must be on the path to acceptance considering all of the stacks.
+
+##### Unit test #5
+
+```
+Start = c#1 "sucks" | c#2 "stinks"
 c = "C" "++"?
 ```
 
-If the input is `"C rules"`, the recorded failed primitives at position `1` should be:
+If the input is `"C rules"`, the recorded failed primitives at position `2` should be:
 
-* `"++"`, with stack `[app("c"), app("start")]`
-* `"sucks"`, with stack `["app("start")"]`
-* `"stinks"`, with stack `["app("start")"]`
+* `"++"`, with stack `start > c#1`
+* `"sucks"`, with stack `start`
+* `"stinks"`, with stack `start`
 
 The expected set should be {`"sucks"`, `"stinks"`}.
 The interesting thing in this example is that neither `"sucks"` nor `"stinks"`  "subsumes" `"++"`, but `"++"` shouldn't be included in the expected set. This is because even if it shows up in the input, we will still (eventually) need one of the other expected strings in order to get to an accepting state, which means that `"++"` is superfluous.
@@ -88,84 +132,87 @@ The expected set should be {`"sucks"`, `"stinks"`}.
     * No more `namespace` attribute in Ohm `<script>` tags.
     * Maybe now the stuff that's done in `src/bootstrap.js` can be done for any grammar? That would enable people to share grammar as "binaries". (A while ago I had an `ohm` command, but I removed it b/c it didn't support inheritance properly. That command turned into the less general but essential `src/bootstrap.js`.)
 
-### Refactorings
-
-* Pass origPos, etc., as arguments to `PExpr.prototype._eval`
-
 ### Inheriting from Semantic Actions and Attributes
 
-I'm starting to think that you should always have to create an instance of `Semantics` on which you can create semantic actions and attributes. Here's how this might work:
+To enable extensibilty, semantic actions and attributes should always belong to an instance of `Semantics`. Here's how this might work:
 
 ```
 var g1 = ohm.grammar(...);
-var s1 = g1.semanticsBuilder()
-  .addSemanticAction("eval", {
+var s1 = g1.createSemantics()
+  .addSemanticAction('eval', {
   	AddExp_plus: function(x, _, y) {
-  	  return this.eval(x) + this.eval(y);  	},
-  	...  })
-  .build();
+  	  return x.eval() + y.eval();  	},
+  	...  });
 ```
 
-Note that `SemanticsBuilder.prototype.semanticAction(name, dict)` returns the receiver to allow chaining. (Same goes for `Semantics.prototype.{synthesizedAttribute, inheritedAttribute}`.) I'm going with a builder pattern b/c the `build()` method tells us when it's OK to perform checks on the action dictionaries -- this is important for extensions, see below.
+Note that `Semantics.prototype.addSemanticAction(name, dict)` returns the receiver to allow chaining. (Same goes for `Semantics.prototype.addSynthesizedAttribute` and `Semantics.prototype.addInheritedAttribute`.)
 
-The `Semantics` objects act as a family of semantic actions and attributes. Note that recursive (even mutually-recursive) calls of semantic actions / attributes must go through the semantics object, which is what `this` is bound to in the methods of action dictionaries. (This solves the problems I was having with early-binding in recursive calls, which were getting in the way of extensibility.)
+The `Semantics` objects act as a family of semantic actions and attributes. Recursive (even mutually-recursive) calls of semantic actions / attributes go through "wrapper objects" that hold a reference to an instance of `Semantics` as well as a CST node, which may be accessed via the wrapper's `node` property. (This avoid the problems I was having with early-binding in recursive calls, which were getting in the way of extensibility.) Semantic actions are called as method of the wrapper objects, while synthesized attributes are accessed as properties.
 
-To extend a semantic action, you create a new `Semantics` object that  extends the one that the semantic action in question belongs to. You do this by passing the `Semantics` that you want to extend as an argument to *your grammar*'s `semantics` method. Then you call `extend(semanticActionOrAttributeName, dict)` on that. E.g.,
+**TODO:**
+
+* Figure out how semantic actions and attributes will be used *outside* of their definitions. Our current thinking is that they will look like methods of their corresponding `Semantics` object, e.g., `s1.eval(g1.matchContents(...))`.
+* Improve the API for defining inherited attributes.
+
+To extend a semantic action or an attribute, you create a new `Semantics` object that  extends the `Semantics` the the semantic action or attribute in question belongs to. You do this by passing the `Semantics` that you want to extend as an argument to *your grammar*'s `createSemantics` method. Then you call `extend(semanticActionOrAttributeName, dict)` on that. E.g.,
 
 ```
 var g2 = ... // some grammar that extends g1
-var s2 = g2.semanticsBuilder(s1)
+var s2 = g2.createSemantics(s1)
   .extend("eval", {
-  	AddExp_foo: function(x, _, y) { ... }  })
-  .build();
+  	AddExp_foo: function(x, _, y) { ... }  });
 ```
 
-Some checks we'll have to do when `build()` is called:
-	
-* `SemanticsBuilder.prototype.extend` should make sure that there is already a semantic action / attribute with the given name. (It's an error if there isn't.)
-* Conversely, `SemanticsBuilder.prototype.{addSemanticAction, addSynthesizedAttribute, addInheritedAttribute}` should throw an error if there is already a semantic action / attribute with the given name.
+A *derived* `Semantics` instance -- i.e., one that is created by passing an existing `Semantics` to `Grammar.prototype.createSemantics()` -- automatically inherits all of the semantic actions and attributes from the parent `Semantics`.
+
+#### Error conditions
+
+`Grammar.prototype.createSemantics(parentSemantics)` creates a new instance of `Semantics` that inherits all of the semantic actions and attributes from `parentSemantics`. **Note that all of the inherited semantic actions and attributes that haven't been `extend`ed explicitly must go through the *arity* and *superfluous method* checks the first time any of the semantic actions or attributes of the "child" `Semantics` is used.**
+
+`Semantics.prototype.extend(name, dict)` should throw an error if:
+
+* The receiver did not inherit a semantic action or attribute called `name` from its parent.
+* The semantic action or attribute called `name` has already been `extend`ed in the receiver.
+* One or more of `dict`'s methods are *superfluous* (i.e., do not correspond to a rule in the receiver's grammar) or have the wrong arity.
+
+`Semantics.prototype.addSemanticAction(name, dict)`,
+`Semantics.prototype.addSynthesizedAttribute(name, dict)`, and
+`Semantics.prototype.addInheritedAttribute(name, dict)` should throw an error if:
+
+* The receiver already has a semantic action or attribute with the same name.
+* One or more of `dict`'s methods are *superfluous* (i.e., do not correspond to a rule in the receiver's grammar) or have the wrong arity.
 * It should also be an error to try to declare a new semantic action / attribute whose name is `node` (see below).
-* You should only be able to extend a `Semantics` from the same grammar, or from a grammar that your grammar inherits from.
-* Other semantic checks, e.g., all action dict methods have the correct arity, and there are no "useless" methods.
 
-Now that `this` is bound to an instance of `Semantics`, we'll need a different way to access the current CST node. At the moment the best option I've come up with is `this.node`.  Here are some thoughts on implementing this:
+#### Singleton `Semantics` sugars
 
-* We'll want to disallow assignment into `this.node`. So maybe we'll use `Object.defineProperty`?
-* We may need a try/finally around the outermost call to clean up in case an exception is thrown, or make `this` an object that delegates to the `Semantics` object and adds the `node` property.
-* We also have to make sure that whatever we do works with mutually-recursive semantic actions / attributes. (I.e., the value of `this.node` obeys a stack discipline.)
-
-I get that this complicates the common case, where you create a stand-alone semantic action. One solution to this problem is to support {`semanticAction`, `synthesizedAttribute`, and `inheritedAttribute`} methods in `Grammar.prototype` and have them return "singleton" `Semantics` instances, e.g.,
+This complicates the common case, where you create a stand-alone semantic action. One solution to this problem is to support {`semanticAction`, `synthesizedAttribute`, and `inheritedAttribute`} methods in `Grammar.prototype` and have them return "singleton" `Semantics` instances, e.g.,
 	
 ```
-var eval = g.semanticAction({
+var eval = g.semanticAction('eval', {
   AddExp_plus: function(x, _, y) {
-  	return this.apply(x) + this.apply(y);  },
+  	return x.eval()) + y.eval();  },
   ...});
 
-var value = eval.apply(someCST);
+var value = eval(someCST);
 ```
 
-Note that you don't specify the name of the semantic action / attribute -- it's implicitly `apply`. Two reasons for this:
+The semantic action returned by `Grammar.prototype.semanticAction` would have a reference to its singleton `Semantics` and you would be able to extend that like this:
+
+```
+g2.createSemantics(eval.semantics).extend('eval', {...}));
+```
 	
-* It would look silly to say `var eval = g.semanticAction("eval", {...});` and 
-* This way you don't have to worry about the name of the variable that will hold the `Semantics` object.
-
-------------
-
-Old version:
-
-**NOTE: I've had a stab at this (it's easy enough to implement) but it needs more thinking. The problem is that recursive calls to the semantic action / attribute will still "dispatch" to the original instead of the extension. Maybe the semantic action / whatever needs to become `this`, but then what do we do about the parent node? I don't like the idea of including the parent node as an argument, that's too verbose.**
-
-* Add `Grammar.prototype.extend(semanticActionOrAttribute, { ... })`
-* The grammar that the 1st argument belongs to must be a (transitive) super-grammar of the receiver of `extend()`.
-* The methods in the 2nd argument override / add to those of the original  semantic action or attribute.
-* (Does this do what Pat wanted?)
+That's not quite right, but I've got to go! Will work on this tomorrow... -- Alex
 
 ### Unit Tests
 
 * The unit tests are a mess right now. They were pretty good early on, but the language has been changed a lot since then. **We should spend a couple of days cleaning up the unit tests.** E.g.,
     * Now that we have CSTs, there's no reason to check acceptance and semantic actions separately for each kind of `PExpr`. We should just compare the result of `Grammar.prototype.match` with the expected CST. (We may have to do some work to get `Node.equals(anotherNode)` to work.)
     * ...
+
+### Refactorings
+
+* Pass origPos, etc., as arguments to `PExpr.prototype._eval`
 
 ### Documentation
 
@@ -181,4 +228,5 @@ Old version:
 * Better support for attribute grammars
     * Take another pass at the API for writing inherited attributes
     * Akira's editor?
+* Using persistent data structures (ImmutableJS?) for parsing contexts, so that adding that extra key to the memo table won't be so expensive.
 * Incremental parsing ala [Papa Carlo](http://lakhin.com/projects/papa-carlo/)?    
