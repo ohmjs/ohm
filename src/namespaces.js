@@ -1,3 +1,5 @@
+/* global XMLHttpRequest */
+
 // --------------------------------------------------------------------
 // Imports
 // --------------------------------------------------------------------
@@ -71,7 +73,7 @@ Namespace.prototype = {
       ohm.makeGrammars(source, this.name);
     } catch (e) {
       if (!(e instanceof errors.Error)) {
-        console.error(e);
+        console.error(e);  // eslint-disable-line no-console
       }
     }
     return this;

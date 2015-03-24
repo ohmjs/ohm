@@ -125,9 +125,11 @@ Grammar.prototype = {
       var expected = self.topDownActionArity(ruleName);
       if (actual !== expected) {
         ok = false;
+        /* eslint-disable no-console */
         console.log(what + ' for rule', ruleName, 'has the wrong arity');
         console.log('  expected', expected);
         console.log('    actual', actual);
+        /* eslint-enable no-console */
       }
     });
     if (!ok) {

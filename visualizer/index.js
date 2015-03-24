@@ -1,3 +1,4 @@
+/* eslint-env browser */
 /* global d3, ohm */
 
 var ArrayProto = Array.prototype;
@@ -285,8 +286,6 @@ function isPrimitive(expr) {
         }
         if (!node) {
           // FIXME -- What's going on here??
-          console.log('node is undefined');
-          console.log(parent);
           return;
         }
         var contents = '';

@@ -57,7 +57,7 @@ GrammarDecl.prototype.install = function() {
     var body = grammar.ruleDict[ruleName];
     function handleError(e) {
       error = e;
-      console.error(e.toString());
+      console.error(e.toString());  // eslint-disable-line no-console
     }
     // TODO: change the pexpr.prototype.assert... methods to make them add exceptions to an array that's provided
     // as an arg. Then we'll be able to show more than one error of the same type at a time.

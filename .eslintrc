@@ -1,7 +1,15 @@
 {
-  "env": {
-    "browser": true,
-    "node": true
+  // To minimize dependencies on Node- or browser-specific features, leave the
+  // env empty, and instead define globals as needed.
+  "env": {},
+
+  // Project-wide globals. If other globals are necessary, prefer putting them
+  // in a comment at the top of the file rather than adding them here.
+  "globals": {
+    "console": true,
+    "exports": true,
+    "module": true,
+    "require": true,
   },
   "rules": {
     // Allow things like `while(true)`.
