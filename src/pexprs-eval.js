@@ -162,7 +162,7 @@ pexprs.Many.prototype._eval = function(state) {
   if (arity === 0) {
     // TODO: make this a static check w/ a nice error message, then remove the dynamic check.
     // cf. pexprs-check.js for Many
-    throw 'fix me!';
+    throw new Error('fix me!');
   }
 
   var columns = common.repeatFn(function() { return []; }, arity);

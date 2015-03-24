@@ -12,6 +12,16 @@
     "require": true,
   },
   "rules": {
+    // Enforce "one true brace style", allowing start and end braces to be
+    // on the same line.
+    "brace-style": [2, "1tbs", {"allowSingleLine": true}],
+
+    // Enforce the name 'self' when assigning `this` to a local variable.
+    "consistent-this": [0, "self"],
+
+    // Enforce two-space indentation.
+    "indent": [2, 2, {indentSwitchCase: true}],
+
     // Allow things like `while(true)`.
     "no-constant-condition": 0,
 
@@ -20,6 +30,9 @@
 
     // Allow variable shadowing.
     "no-shadow": 0,
+
+    // Restrict what kind of objects can be used with 'throw'.
+    "no-throw-literal": 2,
 
     // Allow identifiers with leading or trailing underscores.
     "no-underscore-dangle": 0,
@@ -37,6 +50,9 @@
     // names, which we use heavily in semantic actions.
     "strict": 0,
 
-    "yoda": [2, "never", { "exceptRange": true }]
+    // Force IIFEs to be wrapped in parentheses.
+    "wrap-iife": [2, "inside"],
+
+    "yoda": [2, "never", {"exceptRange": true}]
   }
 }

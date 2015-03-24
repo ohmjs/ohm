@@ -60,7 +60,7 @@ pexprs.Many.prototype.check = function(grammar, vals) {
   if (arity === 0) {
     // TODO: make this a static check w/ a nice error message, then remove the dynamic check.
     // cf. pexprs-eval.js for Many
-    throw 'fix me!';
+    throw new Error('fix me!');
   }
 
   var columns = vals.slice(0, arity);
