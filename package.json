@@ -27,8 +27,7 @@
     "build-debug": "browserify . $npm_package_browserify_options",
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
     "lint": "eslint src visualizer",
-    "test": "mocha",
-    "test-watch": "mocha -w",
+    "test": "tape test/*.js | tap-spec",
     "postinstall": "bin/dev-setup.sh",
     "prepublish": "npm run lint && npm run build && npm run bootstrap",
     "unsafe-bootstrap": "cp dist/ohm-grammar.js dist/ohm-grammar.js.old; node src/bootstrap.js src/ohm-grammar.ohm > dist/ohm-grammar.js.new && mv -f dist/ohm-grammar.js.new dist/ohm-grammar.js",
@@ -51,7 +50,8 @@
     "browserify": "^3.30.4",
     "eslint": "^0.17.1",
     "expect.js": "^0.3.1",
-    "mocha": "^1.17.1",
+    "tap-spec": "^2.2.2",
+    "tape-catch": "^1.0.4",
     "uglify-js": "^2.4.12",
     "watchify": "^0.6.1"
   }
