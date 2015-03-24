@@ -37,6 +37,11 @@
   },
   "license": "MIT",
   "author": "Alex Warth <alexwarth@gmail.com> (http://tinlizzie.org/~awarth)",
+  "contributors": [
+    "Patrick Dubroy <pdubroy@gmail.com>",
+    "Tony Garnock-Jones <tonygarnockjones@gmail.com>",
+    "Yoshiki Ohshima <Yoshiki.Ohshima@acm.org>"
+  ],
   "dependencies": {
     "inherits": "^2.0.1",
     "symbol": ""
