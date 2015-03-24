@@ -204,6 +204,12 @@ function createTraceElement(traceNode, container, input) {
 
 // A blackhole node is hidden and makes all its descendents hidden too.
 function isBlackhole(traceNode) {
+  if (traceNode.expr.constructor.name === 'Many' && !options.showFailures) {
+    // Not sure if this is exactly right. Maybe better would be to hide the
+    // node if it doesn't have any visible children.
+    return !traceNode.interval || traceNode.interval.contents.length === 0;
+  }
+
   var desc = traceNode.displayString;
   if (desc) {
     return desc[desc.length - 1] === '_' ||
@@ -228,10 +234,6 @@ function shouldNodeBeVisible(traceNode) {
     case 'Apply':
       // Don't show a separate node for failed inline rule applications.
       return traceNode.succeeded || traceNode.expr.ruleName.indexOf('_') === -1;
-    case 'Many':
-      // Not sure if this is exactly right. Maybe better would be to hide the
-      // node if it doesn't have any visible children.
-      return traceNode.interval && traceNode.interval.contents.length > 0;
     default:
       // Hide things that don't correspond to something the user wrote.
       if (!traceNode.expr.interval) {
@@ -330,7 +332,7 @@ function isPrimitive(expr) {
             wrapper.appendChild(createElement('.label', factors[i].toDisplayString()));
             childContainer.appendChild(wrapper);
           }
-          if (parent && parent.expr.constructor.name === 'Apply') {
+          if (options.showFailures && parent && parent.expr.constructor.name === 'Apply') {
             var ruleName = parent.expr.ruleName;
             var caseName = ruleName.slice(ruleName.lastIndexOf('_') + 1);
             if (caseName !== ruleName) {
