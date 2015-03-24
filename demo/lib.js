@@ -26,7 +26,7 @@ function show(divId, what) {
 
 function repeat(s, n) {
   var arr = [];
-  while (n--) {
+  while (n-- > 0) {
     arr.push(s);
   }
   return arr.join('');
