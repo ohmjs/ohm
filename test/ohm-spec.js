@@ -7,11 +7,11 @@ TODO:
 
 */
 
-var expect = require('expect.js');
+var test = require('tape-catch');
+
+var errors = require('../src/errors.js');
 var fs = require('fs');
 var ohm = require('../src/main.js');
-var errors = require('../src/errors.js');
-var test = require('tape-catch');
 var Node = require('../src/Node.js');
 var InputStream = require('../src/InputStream.js');
 var Interval = require('../src/Interval.js');
@@ -42,26 +42,27 @@ function makeInterval(thing, startIdx, endIdx) {
   return new Interval(InputStream.newFor(thing), startIdx, endIdx);
 }
 
-function compareGrammars(expected, actual) {
+function compareGrammars(t, expected, actual) {
   // The other property on grammars is "constructors", which contains
   // closures which cause spurious test failures if we compare
   // them. So we ignore that property here, concentrating on ruleDict
   // and other "real" properties of each grammar.
 
-  expect(typeof actual).to.be(typeof expected);
+  t.equal(typeof actual, typeof expected);
   // ^ e.g. when one is undefined and the other isn't
 
   if (expected && actual) {
-    compareGrammars(expected.superGrammar, actual.superGrammar);
+    compareGrammars(t, expected.superGrammar, actual.superGrammar);
     // In the list below, we exclude superGrammar (just tested above)
     // and constructors (for reasons given above).
     ['namespaceName', 'name', 'ruleDecls', 'ruleDict'].forEach(function(prop) {
-      expect(actual[prop]).to.eql(expected[prop]);
+      t.deepEqual(actual[prop], expected[prop]);
     });
   }
 }
 
 function it(desc, fn) {
+  console.log(desc);
   fn.call();
 }
 
@@ -84,41 +85,36 @@ test('grammar constructors dictionary', function(t) {
   var m = makeGrammar(arithmeticGrammarSource);
 
   it('exists and has a _default entry', function() {
-    expect(m.constructors).to.be.ok();
+    t.ok(m.constructors);
   });
 
   it('has an entry for each of a few carefully chosen rules', function() {
-    expect(m.constructors.addExpr).to.be.ok();
-    expect(m.constructors.addExpr_minus).to.be.ok();
-    expect(m.constructors.priExpr).to.be.ok();
-    expect(m.constructors.digit).to.be.ok();
-    expect(m.constructors._).to.be.ok();
+    t.ok(m.constructors.addExpr);
+    t.ok(m.constructors.addExpr_minus);
+    t.ok(m.constructors.priExpr);
+    t.ok(m.constructors.digit);
+    t.ok(m.constructors._);
   });
 
   it('lacks entries for nonexistent rules', function() {
-    expect(m.constructors.foobar).to.be(undefined);
+    t.equal(m.constructors.foobar, undefined);
   });
 
   it('_default entry rejects nonexistent rule name', function() {
-    expect(function() {
-      m.construct('foobar', []);
-    }).to.throwException(function(e) {
-      expect(e).to.be.a(errors.InvalidConstructorCall);
-    });
+    t.throws(function() { m.construct('foobar', []); }, errors.InvalidConstructorCall);
   });
 
   it('_default entry works when called correctly', function() {
-    expect(m.construct('addExpr', [m.match('1+2', 'addExpr_plus')]))
-      .to.be.a(Node);
+    t.ok(m.construct('addExpr', [m.match('1+2', 'addExpr_plus')]) instanceof Node);
   });
 
   it('particular entries work when called', function() {
     var n = m.match('1+2*3', 'addExpr');
-    expect(n.ctorName).to.equal('addExpr');
+    t.equal(n.ctorName, 'addExpr');
 
     var p = n.children[0];
-    expect(p.ctorName).to.equal('addExpr_plus');
-    expect(p.numChildren()).to.equal(3);
+    t.equal(p.ctorName, 'addExpr_plus');
+    t.equal(p.numChildren(), 3);
   });
 
   t.end();
@@ -132,15 +128,15 @@ test('helper stuff', function(t) {
         var collapsed = interval.collapsedLeft();
 
         // Original interval shouldn't change
-        expect(interval.startIdx).to.equal(0);
-        expect(interval.endIdx).to.equal(5);
-        expect(interval.inputStream.source).to.equal('hello world');
-        expect(interval.contents).to.equal('hello');
+        t.equal(interval.startIdx, 0);
+        t.equal(interval.endIdx, 5);
+        t.equal(interval.inputStream.source, 'hello world');
+        t.equal(interval.contents, 'hello');
 
-        expect(collapsed.startIdx).to.equal(0);
-        expect(collapsed.endIdx).to.equal(0);
-        expect(collapsed.inputStream.source).to.equal('hello world');
-        expect(collapsed.contents).to.equal('');
+        t.equal(collapsed.startIdx, 0);
+        t.equal(collapsed.endIdx, 0);
+        t.equal(collapsed.inputStream.source, 'hello world');
+        t.equal(collapsed.contents, '');
       });
 
       it('right', function() {
@@ -148,15 +144,15 @@ test('helper stuff', function(t) {
         var collapsed = interval.collapsedRight();
 
         // Original interval shouldn't change
-        expect(interval.startIdx).to.equal(0);
-        expect(interval.endIdx).to.equal(5);
-        expect(interval.inputStream.source).to.equal('hello world');
-        expect(collapsed.contents).to.equal('');
+        t.equal(interval.startIdx, 0);
+        t.equal(interval.endIdx, 5);
+        t.equal(interval.inputStream.source, 'hello world');
+        t.equal(collapsed.contents, '');
 
-        expect(collapsed.startIdx).to.equal(5);
-        expect(collapsed.endIdx).to.equal(5);
-        expect(collapsed.inputStream.source).to.equal('hello world');
-        expect(collapsed.contents).to.equal('');
+        t.equal(collapsed.startIdx, 5);
+        t.equal(collapsed.endIdx, 5);
+        t.equal(collapsed.inputStream.source, 'hello world');
+        t.equal(collapsed.contents, '');
       });
       t.end();
     });
@@ -166,10 +162,10 @@ test('helper stuff', function(t) {
         var interval = makeInterval('hello world', 0, 5);
         var ans = Interval.coverage(interval);
 
-        expect(ans.startIdx).to.equal(0);
-        expect(ans.endIdx).to.equal(5);
-        expect(ans.inputStream.source).to.equal('hello world');
-        expect(ans.contents).to.equal('hello');
+        t.equal(ans.startIdx, 0);
+        t.equal(ans.endIdx, 5);
+        t.equal(ans.inputStream.source, 'hello world');
+        t.equal(ans.contents, 'hello');
       });
 
       it('two adjacent intervals', function() {
@@ -177,10 +173,10 @@ test('helper stuff', function(t) {
         var interval2 = makeInterval(interval1.inputStream, 0, 2);
         var ans = Interval.coverage(interval1, interval2);
 
-        expect(ans.startIdx).to.equal(0);
-        expect(ans.endIdx).to.equal(5);
-        expect(ans.inputStream.source).to.equal('hello world');
-        expect(ans.contents).to.equal('hello');
+        t.equal(ans.startIdx, 0);
+        t.equal(ans.endIdx, 5);
+        t.equal(ans.inputStream.source, 'hello world');
+        t.equal(ans.contents, 'hello');
       });
 
       it('two non-adjacent intervals', function() {
@@ -188,10 +184,10 @@ test('helper stuff', function(t) {
         var interval2 = makeInterval(interval1.inputStream, 4, 5);
         var ans = Interval.coverage(interval1, interval2);
 
-        expect(ans.startIdx).to.equal(0);
-        expect(ans.endIdx).to.equal(5);
-        expect(ans.inputStream.source).to.equal('hello world');
-        expect(ans.contents).to.equal('hello');
+        t.equal(ans.startIdx, 0);
+        t.equal(ans.endIdx, 5);
+        t.equal(ans.inputStream.source, 'hello world');
+        t.equal(ans.contents, 'hello');
       });
 
       it('nested intervals', function() {
@@ -199,10 +195,10 @@ test('helper stuff', function(t) {
         var interval2 = makeInterval(interval1.inputStream, 3, 4);
         var ans = Interval.coverage(interval1, interval2);
 
-        expect(ans.startIdx).to.equal(0);
-        expect(ans.endIdx).to.equal(5);
-        expect(ans.inputStream.source).to.equal('hello world');
-        expect(ans.contents).to.equal('hello');
+        t.equal(ans.startIdx, 0);
+        t.equal(ans.endIdx, 5);
+        t.equal(ans.inputStream.source, 'hello world');
+        t.equal(ans.contents, 'hello');
       });
 
       it('more intervals', function() {
@@ -211,20 +207,18 @@ test('helper stuff', function(t) {
         var interval3 = makeInterval(interval1.inputStream, 6, 10);
         var ans = Interval.coverage(interval1, interval2, interval3);
 
-        expect(ans.startIdx).to.equal(0);
-        expect(ans.endIdx).to.equal(10);
-        expect(ans.inputStream.source).to.equal('hello world');
-        expect(ans.contents).to.equal('hello worl');
+        t.equal(ans.startIdx, 0);
+        t.equal(ans.endIdx, 10);
+        t.equal(ans.inputStream.source, 'hello world');
+        t.equal(ans.contents, 'hello worl');
       });
 
       it('brotha from anotha motha', function() {
         var interval1 = makeInterval('abc', 0, 3);
         var interval2 = makeInterval('xyz', 1, 2);
-        expect(function() {
+        t.throws(function() {
           Interval.coverage(interval1, interval2);
-        }).to.throwException(function(e) {
-          expect(e).to.be.a(errors.IntervalSourcesDontMatch);
-        });
+        }, errors.IntervalSourcesDontMatch);
       });
 
       it('coverageWith (same method as above but as a method of an interval)', function() {
@@ -233,10 +227,10 @@ test('helper stuff', function(t) {
         var interval3 = makeInterval(interval1.inputStream, 6, 10);
         var ans = interval1.coverageWith(interval2, interval3);
 
-        expect(ans.startIdx).to.equal(0);
-        expect(ans.endIdx).to.equal(10);
-        expect(ans.inputStream.source).to.equal('hello world');
-        expect(ans.contents).to.equal('hello worl');
+        t.equal(ans.startIdx, 0);
+        t.equal(ans.endIdx, 10);
+        t.equal(ans.inputStream.source, 'hello world');
+        t.equal(ans.contents, 'hello worl');
       });
 
       t.end();
@@ -252,8 +246,8 @@ test('primitive patterns', function(t) {
 
     test('direct match, no stream', function(t) {
       it('recognition', function() {
-        expect(m.match(5, '_')).to.be.ok();
-        expect(m.match(null, '_')).to.be.ok();
+        t.ok(m.match(5, '_'));
+        t.ok(m.match(null, '_'));
       });
 
       it('semantic actions', function() {
@@ -261,16 +255,16 @@ test('primitive patterns', function(t) {
           _: ohm.actions.passThrough,
           _terminal: ohm.actions.getValue
         };
-        expect(m.synthesizedAttribute(dict)(m.match(5, '_'))).to.equal(5);
-        expect(m.synthesizedAttribute(dict)(m.match(null, '_'))).to.equal(null);
+        t.equal(m.synthesizedAttribute(dict)(m.match(5, '_')), 5);
+        t.equal(m.synthesizedAttribute(dict)(m.match(null, '_')), null);
       });
       t.end();
     });
 
     test('match in string stream', function(t) {
       it('recognition', function() {
-        expect(m.match('5', '_')).to.be.ok();
-        expect(m.match('', '_')).to.equal(false);
+        t.ok(m.match('5', '_'));
+        t.equal(m.match('', '_'), false);
       });
 
       it('semantic actions', function() {
@@ -278,14 +272,14 @@ test('primitive patterns', function(t) {
           _: ohm.actions.passThrough,
           _terminal: ohm.actions.getValue
         };
-        expect(m.synthesizedAttribute(dict)(m.match('5', '_'))).to.equal('5');
+        t.equal(m.synthesizedAttribute(dict)(m.match('5', '_')), '5');
       });
       t.end();
     });
 
     test('match in list stream', function(t) {
       it('recognition', function() {
-        expect(m.match(['123'], '_')).to.be.ok();
+        t.ok(m.match(['123'], '_'));
       });
 
       it('semantic actions', function() {
@@ -293,7 +287,7 @@ test('primitive patterns', function(t) {
           _: ohm.actions.passThrough,
           _terminal: ohm.actions.getValue
         };
-        expect(m.synthesizedAttribute(dict)(m.match(['123'], '_'))).to.eql(['123']);
+        t.deepEqual(m.synthesizedAttribute(dict)(m.match(['123'], '_')), ['123']);
       });
       t.end();
     });
@@ -312,60 +306,60 @@ test('primitive patterns', function(t) {
     ]);
 
     it('recognition', function() {
-      expect(m.match(5, 'five')).to.be.ok();
-      expect(m.match(2, 'five')).to.equal(false);
-      expect(m.match('a', 'five')).to.equal(false);
-      expect(m.match('5', 'five')).to.equal(false);
-      expect(m.match('true', 'five')).to.equal(false);
-      expect(m.match(true, 'five')).to.equal(false);
-      expect(m.match('false', 'five')).to.equal(false);
-      expect(m.match(false, 'five')).to.equal(false);
-      expect(m.match(null, 'five')).to.equal(false);
-      expect(m.match(undefined, 'five')).to.equal(false);
+      t.ok(m.match(5, 'five'));
+      t.equal(m.match(2, 'five'), false);
+      t.equal(m.match('a', 'five'), false);
+      t.equal(m.match('5', 'five'), false);
+      t.equal(m.match('true', 'five'), false);
+      t.equal(m.match(true, 'five'), false);
+      t.equal(m.match('false', 'five'), false);
+      t.equal(m.match(false, 'five'), false);
+      t.equal(m.match(null, 'five'), false);
+      t.equal(m.match(undefined, 'five'), false);
 
-      expect(m.match(5, '_true')).to.equal(false);
-      expect(m.match(2, '_true')).to.equal(false);
-      expect(m.match('a', '_true')).to.equal(false);
-      expect(m.match('5', '_true')).to.equal(false);
-      expect(m.match('true', '_true')).to.equal(false);
-      expect(m.match(true, '_true')).to.be.ok();
-      expect(m.match('false', '_true')).to.equal(false);
-      expect(m.match(false, '_true')).to.equal(false);
-      expect(m.match(null, '_true')).to.equal(false);
-      expect(m.match(undefined, '_true')).to.equal(false);
+      t.equal(m.match(5, '_true'), false);
+      t.equal(m.match(2, '_true'), false);
+      t.equal(m.match('a', '_true'), false);
+      t.equal(m.match('5', '_true'), false);
+      t.equal(m.match('true', '_true'), false);
+      t.ok(m.match(true, '_true'));
+      t.equal(m.match('false', '_true'), false);
+      t.equal(m.match(false, '_true'), false);
+      t.equal(m.match(null, '_true'), false);
+      t.equal(m.match(undefined, '_true'), false);
 
-      expect(m.match(5, '_false')).to.equal(false);
-      expect(m.match(2, '_false')).to.equal(false);
-      expect(m.match('a', '_false')).to.equal(false);
-      expect(m.match('5', '_false')).to.equal(false);
-      expect(m.match('true', '_false')).to.equal(false);
-      expect(m.match(true, '_false')).to.equal(false);
-      expect(m.match('false', '_false')).to.equal(false);
-      expect(m.match(false, '_false')).to.be.ok();
-      expect(m.match(null, '_false')).to.equal(false);
-      expect(m.match(undefined, '_false')).to.equal(false);
+      t.equal(m.match(5, '_false'), false);
+      t.equal(m.match(2, '_false'), false);
+      t.equal(m.match('a', '_false'), false);
+      t.equal(m.match('5', '_false'), false);
+      t.equal(m.match('true', '_false'), false);
+      t.equal(m.match(true, '_false'), false);
+      t.equal(m.match('false', '_false'), false);
+      t.ok(m.match(false, '_false'));
+      t.equal(m.match(null, '_false'), false);
+      t.equal(m.match(undefined, '_false'), false);
 
-      expect(m.match(5, '_null')).to.equal(false);
-      expect(m.match(2, '_null')).to.equal(false);
-      expect(m.match('a', '_null')).to.equal(false);
-      expect(m.match('5', '_null')).to.equal(false);
-      expect(m.match('true', '_null')).to.equal(false);
-      expect(m.match(true, '_null')).to.equal(false);
-      expect(m.match('false', '_null')).to.equal(false);
-      expect(m.match(false, '_null')).to.equal(false);
-      expect(m.match(null, '_null')).to.be.ok();
-      expect(m.match(undefined, '_null')).to.equal(false);
+      t.equal(m.match(5, '_null'), false);
+      t.equal(m.match(2, '_null'), false);
+      t.equal(m.match('a', '_null'), false);
+      t.equal(m.match('5', '_null'), false);
+      t.equal(m.match('true', '_null'), false);
+      t.equal(m.match(true, '_null'), false);
+      t.equal(m.match('false', '_null'), false);
+      t.equal(m.match(false, '_null'), false);
+      t.ok(m.match(null, '_null'));
+      t.equal(m.match(undefined, '_null'), false);
 
-      expect(m.match(5, '_undefined')).to.equal(false);
-      expect(m.match(2, '_undefined')).to.equal(false);
-      expect(m.match('a', '_undefined')).to.equal(false);
-      expect(m.match('5', '_undefined')).to.equal(false);
-      expect(m.match('true', '_undefined')).to.equal(false);
-      expect(m.match(true, '_undefined')).to.equal(false);
-      expect(m.match('false', '_undefined')).to.equal(false);
-      expect(m.match(false, '_undefined')).to.equal(false);
-      expect(m.match(null, '_undefined')).to.equal(false);
-      expect(m.match(undefined, '_undefined')).to.be.ok();
+      t.equal(m.match(5, '_undefined'), false);
+      t.equal(m.match(2, '_undefined'), false);
+      t.equal(m.match('a', '_undefined'), false);
+      t.equal(m.match('5', '_undefined'), false);
+      t.equal(m.match('true', '_undefined'), false);
+      t.equal(m.match(true, '_undefined'), false);
+      t.equal(m.match('false', '_undefined'), false);
+      t.equal(m.match(false, '_undefined'), false);
+      t.equal(m.match(null, '_undefined'), false);
+      t.ok(m.match(undefined, '_undefined'));
     });
 
     it('semantic actions', function() {
@@ -377,11 +371,11 @@ test('primitive patterns', function(t) {
         _undefined: ohm.actions.passThrough,
         _terminal: ohm.actions.getValue,
       };
-      expect(m.synthesizedAttribute(dict)(m.match(5, 'five'))).to.equal(5);
-      expect(m.synthesizedAttribute(dict)(m.match(true, '_true'))).to.equal(true);
-      expect(m.synthesizedAttribute(dict)(m.match(false, '_false'))).to.equal(false);
-      expect(m.synthesizedAttribute(dict)(m.match(null, '_null'))).to.equal(null);
-      expect(m.synthesizedAttribute(dict)(m.match(undefined, '_undefined'))).to.equal(undefined);
+      t.equal(m.synthesizedAttribute(dict)(m.match(5, 'five')), 5);
+      t.equal(m.synthesizedAttribute(dict)(m.match(true, '_true')), true);
+      t.equal(m.synthesizedAttribute(dict)(m.match(false, '_false')), false);
+      t.equal(m.synthesizedAttribute(dict)(m.match(null, '_null')), null);
+      t.equal(m.synthesizedAttribute(dict)(m.match(undefined, '_undefined')), undefined);
     });
     t.end();
   });
@@ -397,14 +391,14 @@ test('primitive patterns', function(t) {
       '}'
     ]);
     it('recognition', function() {
-      expect(m.match('!', 'five')).to.equal(false);
-      expect(m.match('5', 'five')).to.equal(false);
-      expect(m.match('2', 'five')).to.equal(false);
-      expect(m.match('', 'five')).to.equal(false);
-      expect(m.match('true', '_true')).to.equal(false);
-      expect(m.match('false', '_false')).to.equal(false);
-      expect(m.match('null', '_null')).to.equal(false);
-      expect(m.match('undefined', '_undefined')).to.equal(false);
+      t.equal(m.match('!', 'five'), false);
+      t.equal(m.match('5', 'five'), false);
+      t.equal(m.match('2', 'five'), false);
+      t.equal(m.match('', 'five'), false);
+      t.equal(m.match('true', '_true'), false);
+      t.equal(m.match('false', '_false'), false);
+      t.equal(m.match('null', '_null'), false);
+      t.equal(m.match('undefined', '_undefined'), false);
     });
 
     it('semantic actions', function() {
@@ -420,10 +414,10 @@ test('char', function(t) {
 
   test('direct match, no stream', function(t) {
     it('recognition', function() {
-      expect(m.match('!', 'bang')).to.be.ok();
-      expect(m.match('!a', 'bang')).to.equal(false);
-      expect(m.match(5, 'bang')).to.equal(false);
-      expect(m.match('', 'bang')).to.equal(false);
+      t.ok(m.match('!', 'bang'));
+      t.equal(m.match('!a', 'bang'), false);
+      t.equal(m.match(5, 'bang'), false);
+      t.equal(m.match('', 'bang'), false);
     });
 
     it('semantic actions', function() {
@@ -432,16 +426,16 @@ test('char', function(t) {
         _terminal: ohm.actions.getValue
       };
       var cst = m.match('!', 'bang');
-      expect(m.synthesizedAttribute(dict)(cst)).to.equal('!');
+      t.equal(m.synthesizedAttribute(dict)(cst), '!');
     });
     t.end();
   });
 
   test('match in string stream', function(t) {
     it('recognition', function() {
-      expect(m.match('!', 'bang')).to.be.ok();
-      expect(m.match('a', 'bang')).to.equal(false);
-      expect(m.match('', 'bang')).to.equal(false);
+      t.ok(m.match('!', 'bang'));
+      t.equal(m.match('a', 'bang'), false);
+      t.equal(m.match('', 'bang'), false);
     });
 
     it('semantic actions', function() {
@@ -450,7 +444,7 @@ test('char', function(t) {
         _terminal: ohm.actions.getValue
       };
       var cst = m.match('!', 'bang');
-      expect(m.synthesizedAttribute(dict)(cst)).to.equal('!');
+      t.equal(m.synthesizedAttribute(dict)(cst), '!');
     });
     t.end();
   });
@@ -462,10 +456,10 @@ test('string', function(t) {
 
   test('direct match, no stream', function(t) {
     it('recognition', function() {
-      expect(m.match('foo', 'foo')).to.be.ok();
-      expect(m.match('foo1', 'foo')).to.equal(false);
-      expect(m.match('bar', 'foo')).to.equal(false);
-      expect(m.match(null, 'foo')).to.equal(false);
+      t.ok(m.match('foo', 'foo'));
+      t.equal(m.match('foo1', 'foo'), false);
+      t.equal(m.match('bar', 'foo'), false);
+      t.equal(m.match(null, 'foo'), false);
     });
 
     it('semantic actions', function() {
@@ -474,16 +468,16 @@ test('string', function(t) {
         _terminal: ohm.actions.getValue
       };
       var cst = m.match('foo', 'foo');
-      expect(m.synthesizedAttribute(dict)(cst)).to.equal('foo');
+      t.equal(m.synthesizedAttribute(dict)(cst), 'foo');
     });
     t.end();
   });
 
   test('match in string stream', function(t) {
     it('recognition', function() {
-      expect(m.match('foo', 'foo')).to.be.ok();
-      expect(m.match('foo1', 'foo')).to.equal(false);
-      expect(m.match('bar', 'foo')).to.equal(false);
+      t.ok(m.match('foo', 'foo'));
+      t.equal(m.match('foo1', 'foo'), false);
+      t.equal(m.match('bar', 'foo'), false);
     });
 
     it('semantic actions', function() {
@@ -492,7 +486,7 @@ test('string', function(t) {
         _terminal: ohm.actions.getValue
       };
       var cst = m.match('foo', 'foo');
-      expect(m.synthesizedAttribute(dict)(cst)).to.equal('foo');
+      t.equal(m.synthesizedAttribute(dict)(cst), 'foo');
     });
     t.end();
   });
@@ -504,20 +498,20 @@ test('regexp', function(t) {
 
   test('direct match, no stream', function(t) {
     it('recognition', function() {
-      expect(m.match(/[0-9]/, 'myDigit')).to.equal(false);
-      expect(m.match('4', 'myDigit')).to.be.ok();
-      expect(m.match(4, 'myDigit')).to.equal(false);
-      expect(m.match('a', 'myDigit')).to.equal(false);
-      expect(m.match('a4', 'myDigit')).to.equal(false);
+      t.equal(m.match(/[0-9]/, 'myDigit'), false);
+      t.ok(m.match('4', 'myDigit'));
+      t.equal(m.match(4, 'myDigit'), false);
+      t.equal(m.match('a', 'myDigit'), false);
+      t.equal(m.match('a4', 'myDigit'), false);
     });
     t.end();
   });
 
   test('match in string stream', function(t) {
     it('recognition', function() {
-      expect(m.match('4', 'myDigit')).to.be.ok();
-      expect(m.match('a', 'myDigit')).to.equal(false);
-      expect(m.match('a4', 'myDigit')).to.equal(false);
+      t.ok(m.match('4', 'myDigit'));
+      t.equal(m.match('a', 'myDigit'), false);
+      t.equal(m.match('a4', 'myDigit'), false);
     });
 
     it('semantic actions', function() {
@@ -526,20 +520,20 @@ test('regexp', function(t) {
         _terminal: ohm.actions.getValue
       };
       var cst = m.match('4', 'myDigit');
-      expect(m.synthesizedAttribute(dict)(cst)).to.equal('4');
+      t.equal(m.synthesizedAttribute(dict)(cst), '4');
     });
     t.end();
   });
 
   test('unicode match in string stream', function(t) {
     it('recognition', function() {
-      expect(m.match('4', 'myLetter')).to.equal(false);
-      expect(m.match('a', 'myLetter')).to.be.ok();
-      expect(m.match('a4', 'myLetter')).to.equal(false);
-      expect(m.match('\u03e6', 'myLetter')).to.be.ok();
-      expect(m.match('\u226a', 'myLetter')).to.equal(false);
-      expect(m.match('\n', 'myLF')).to.be.ok();
-      expect(m.match('x', 'myLF')).to.equal(false);
+      t.equal(m.match('4', 'myLetter'), false);
+      t.ok(m.match('a', 'myLetter'));
+      t.equal(m.match('a4', 'myLetter'), false);
+      t.ok(m.match('\u03e6', 'myLetter'));
+      t.equal(m.match('\u226a', 'myLetter'), false);
+      t.ok(m.match('\n', 'myLF'));
+      t.equal(m.match('x', 'myLF'), false);
     });
 
     it('semantic actions', function() {
@@ -548,7 +542,7 @@ test('regexp', function(t) {
         _terminal: ohm.actions.getValue
       };
       var cst = m.match('a', 'myLetter');
-      expect(m.synthesizedAttribute(dict)(cst)).to.equal('a');
+      t.equal(m.synthesizedAttribute(dict)(cst), 'a');
     });
     t.end();
   });
@@ -559,10 +553,10 @@ test('alt', function(t) {
   var m = makeGrammar('M { altTest = "a" | "b" }');
 
   it('recognition', function() {
-    expect(m.match('', 'altTest')).to.equal(false);
-    expect(m.match('a', 'altTest')).to.be.ok();
-    expect(m.match('b', 'altTest')).to.be.ok();
-    expect(m.match('ab', 'altTest')).to.equal(false);
+    t.equal(m.match('', 'altTest'), false);
+    t.ok(m.match('a', 'altTest'));
+    t.ok(m.match('b', 'altTest'));
+    t.equal(m.match('ab', 'altTest'), false);
   });
 
   it('semantic actions', function() {
@@ -570,8 +564,8 @@ test('alt', function(t) {
       altTest: ohm.actions.passThrough,
       _terminal: ohm.actions.getValue
     };
-    expect(m.synthesizedAttribute(dict)(m.match('a', 'altTest'))).to.equal('a');
-    expect(m.synthesizedAttribute(dict)(m.match('b', 'altTest'))).to.equal('b');
+    t.equal(m.synthesizedAttribute(dict)(m.match('a', 'altTest')), 'a');
+    t.equal(m.synthesizedAttribute(dict)(m.match('b', 'altTest')), 'b');
   });
   t.end();
 });
@@ -581,19 +575,19 @@ test('seq', function(t) {
     var m = makeGrammar('M { start = "a" "bc" "z" }');
 
     it('recognition', function() {
-      expect(m.match('a', 'start')).to.equal(false);
-      expect(m.match('bc', 'start')).to.equal(false);
-      expect(m.match('abcz', 'start')).to.be.ok();
-      expect(m.match('abbz', 'start')).to.equal(false);
+      t.equal(m.match('a', 'start'), false);
+      t.equal(m.match('bc', 'start'), false);
+      t.ok(m.match('abcz', 'start'));
+      t.equal(m.match('abbz', 'start'), false);
     });
 
     it('semantic actions', function() {
       var f = m.match('abcz', 'start');
-      expect(m.synthesizedAttribute({
+      t.deepEqual(m.synthesizedAttribute({
         start: function(x, y, z) {
           return [x.interval.contents, y.interval.contents, z.interval.contents];
         }
-      })(f)).to.eql(['a', 'bc', 'z']);
+      })(f), ['a', 'bc', 'z']);
     });
     t.end();
   });
@@ -602,19 +596,19 @@ test('seq', function(t) {
     var m = makeGrammar('M { start = "a" "bc" "z" }');
 
     it('recognition', function() {
-      expect(m.match('a', 'start')).to.equal(false);
-      expect(m.match('bc', 'start')).to.equal(false);
-      expect(m.match('abcz', 'start')).to.be.ok();
-      expect(m.match('abbz', 'start')).to.equal(false);
+      t.equal(m.match('a', 'start'), false);
+      t.equal(m.match('bc', 'start'), false);
+      t.ok(m.match('abcz', 'start'));
+      t.equal(m.match('abbz', 'start'), false);
     });
 
     it('semantic actions', function() {
       var f = m.match('abcz', 'start');
-      expect(m.synthesizedAttribute({
+      t.deepEqual(m.synthesizedAttribute({
         start: function(x, _, _) {
           return x.value();
         },
-      })(f)).to.eql('a');
+      })(f), 'a');
     });
     t.end();
   });
@@ -623,19 +617,19 @@ test('seq', function(t) {
     var m = makeGrammar('M { start = "a" "bc" "z" }');
 
     it('recognition', function() {
-      expect(m.match('a', 'start')).to.equal(false);
-      expect(m.match('bc', 'start')).to.equal(false);
-      expect(m.match('abcz', 'start')).to.be.ok();
-      expect(m.match('abbz', 'start')).to.equal(false);
+      t.equal(m.match('a', 'start'), false);
+      t.equal(m.match('bc', 'start'), false);
+      t.ok(m.match('abcz', 'start'));
+      t.equal(m.match('abbz', 'start'), false);
     });
 
     it('semantic actions', function() {
       var f = m.match('abcz', 'start');
-      expect(m.synthesizedAttribute({
+      t.deepEqual(m.synthesizedAttribute({
         start: function(x, _, y) {
           return [x.value(), y.value()];
         }
-      })(f)).to.eql(['a', 'z']);
+      })(f), ['a', 'z']);
     });
     t.end();
   });
@@ -646,25 +640,23 @@ test('alts and seqs together', function(t) {
   var m = makeGrammar('M { start = "a" "b" "c" | "1" "2" "3" }');
 
   it('recognition', function() {
-    expect(m.match('ab', 'start')).to.equal(false);
-    expect(m.match('12', 'start')).to.equal(false);
-    expect(m.match('abc', 'start')).to.be.ok();
-    expect(m.match('123', 'start')).to.be.ok();
+    t.equal(m.match('ab', 'start'), false);
+    t.equal(m.match('12', 'start'), false);
+    t.ok(m.match('abc', 'start'));
+    t.ok(m.match('123', 'start'));
   });
 
   it('semantic actions', function() {
-    expect(m.synthesizedAttribute({
+    t.deepEqual(m.synthesizedAttribute({
         start: function(x, _, y) {
           return [x.value(), y.value()];
         }
-      })(m.match('abc', 'start')))
-      .to.eql(['a', 'c']);
-    expect(m.synthesizedAttribute({
+      })(m.match('abc', 'start')), ['a', 'c']);
+    t.deepEqual(m.synthesizedAttribute({
         start: function(x, _, y) {
           return [x.value(), y.value()];
         }
-      })(m.match('123', 'start')))
-      .to.eql(['1', '3']);
+      })(m.match('123', 'start')), ['1', '3']);
   });
 
   t.end();
@@ -680,15 +672,15 @@ test('many', function(t) {
   ]);
 
   it('recognition', function() {
-    expect(m.match('1234a', 'number')).to.equal(false);
-    expect(m.match('1234', 'number')).to.be.ok();
-    expect(m.match('5', 'number')).to.be.ok();
-    expect(m.match('', 'number')).to.equal(false);
+    t.equal(m.match('1234a', 'number'), false);
+    t.ok(m.match('1234', 'number'));
+    t.ok(m.match('5', 'number'));
+    t.equal(m.match('', 'number'), false);
 
-    expect(m.match('1234a', 'digits')).to.equal(false);
-    expect(m.match('1234', 'digits')).to.be.ok();
-    expect(m.match('5', 'digits')).to.be.ok();
-    expect(m.match('', 'digits')).to.be.ok();
+    t.equal(m.match('1234a', 'digits'), false);
+    t.ok(m.match('1234', 'digits'));
+    t.ok(m.match('5', 'digits'));
+    t.ok(m.match('', 'digits'));
   });
 
   it('semantic actions', function() {
@@ -702,8 +694,8 @@ test('many', function(t) {
       _many: ohm.actions.makeArray,
       _terminal: ohm.actions.getValue
     });
-    expect(value(m.match('1234', 'number')))
-      .to.eql(['digits', [
+    t.deepEqual(value(m.match('1234', 'number')), [
+      'digits', [
         ['digit', '1'],
         ['digit', '2'],
         ['digit', '3'],
@@ -713,13 +705,13 @@ test('many', function(t) {
 
   it('semantic actions are evaluated lazily', function() {
     var a = buildTreeNodeWithUniqueId(m);
-    var t = ['id', 1, 'number', [
+    var tree = ['id', 1, 'number', [
       ['id', 2, 'digit', '1'],
       ['id', 3, 'digit', '2'],
       ['id', 4, 'digit', '3']
     ]];
-    expect(a(m.match('123', 'sss'))).to.eql(['id', 0, 'sss', t, t]);
-    expect(a._getNextId()).to.equal(5);
+    t.deepEqual(a(m.match('123', 'sss')), ['id', 0, 'sss', tree, tree]);
+    t.equal(a._getNextId(), 5);
   });
   t.end();
 });
@@ -728,9 +720,9 @@ test('opt', function(t) {
   var m = makeGrammar('M { name = "dr"? "warth" }');
 
   it('recognition', function() {
-    expect(m.match('drwarth', 'name')).to.be.ok();
-    expect(m.match('warth', 'name')).to.be.ok();
-    expect(m.match('mrwarth', 'name')).to.equal(false);
+    t.ok(m.match('drwarth', 'name'));
+    t.ok(m.match('warth', 'name'));
+    t.equal(m.match('mrwarth', 'name'), false);
   });
 
   it('semantic actions', function() {
@@ -739,8 +731,8 @@ test('opt', function(t) {
         return [title.value(), last.value()];
       }
     };
-    expect(m.synthesizedAttribute(actionDict)(m.match('drwarth', 'name'))).to.eql(['dr', 'warth']);
-    expect(m.synthesizedAttribute(actionDict)(m.match('warth', 'name'))).to.eql([undefined, 'warth']);
+    t.deepEqual(m.synthesizedAttribute(actionDict)(m.match('drwarth', 'name')), ['dr', 'warth']);
+    t.deepEqual(m.synthesizedAttribute(actionDict)(m.match('warth', 'name')), [undefined, 'warth']);
   });
   t.end();
 });
@@ -748,16 +740,17 @@ test('not', function(t) {
   var m = makeGrammar('M { start = ~"hello" _* }');
 
   it('recognition', function() {
-    expect(m.match('yello world', 'start')).to.be.ok();
-    expect(m.match('hello world', 'start')).to.equal(false);
+    t.ok(m.match('yello world', 'start'));
+    t.equal(m.match('hello world', 'start'), false);
   });
 
   it('semantic actions', function() {
-    expect(m.synthesizedAttribute({
+    var attr = m.synthesizedAttribute({
       start: function(x) {
         return x.interval.contents;
       }
-    })(m.match('yello world', 'start'))).to.equal('yello world');
+    });
+    t.equal(attr(m.match('yello world', 'start')), 'yello world');
   });
   t.end();
 });
@@ -766,16 +759,17 @@ test('lookahead', function(t) {
   var m = makeGrammar('M { start = &"hello" _* }');
 
   it('recognition', function() {
-    expect(m.match('hello world', 'start')).to.be.ok();
-    expect(m.match('hell! world', 'start')).to.equal(false);
+    t.ok(m.match('hello world', 'start'));
+    t.equal(m.match('hell! world', 'start'), false);
   });
 
   it('semantic actions', function() {
-    expect(m.synthesizedAttribute({
+    var attr = m.synthesizedAttribute({
       start: function(x, _) {
         return x.value();
       }
-    })(m.match('hello world', 'start'))).to.equal('hello');
+    });
+    t.equal(attr(m.match('hello world', 'start')), 'hello');
   });
   t.end();
 });
@@ -784,14 +778,14 @@ test('arr', function(t) {
   var m = makeGrammar('M { start = ["abc" &_ ["d" "ef"] "g"] }');
 
   it('recognition', function() {
-    expect(m.match(['abc', ['d', 'ef'], 'g'], 'start')).to.be.ok();
-    expect(m.match(['abc', ['def'], 'g'], 'start')).to.equal(false);
-    expect(m.match(['abc', 'def', 'g'], 'start')).to.equal(false);
-    expect(m.match(['abc', ['d', 'ef', 'oops'], 'g'], 'start')).to.equal(false);
-    expect(m.match(['abc', ['d', 'ef'], 'gh'], 'start')).to.equal(false);
-    expect(m.match(['abc', [5], 'g'], 'start')).to.equal(false);
-    expect(m.match(['abc', [], 'g'], 'start')).to.equal(false);
-    expect(m.match(['abc', 5, 'g'], 'start')).to.equal(false);
+    t.ok(m.match(['abc', ['d', 'ef'], 'g'], 'start'));
+    t.equal(m.match(['abc', ['def'], 'g'], 'start'), false);
+    t.equal(m.match(['abc', 'def', 'g'], 'start'), false);
+    t.equal(m.match(['abc', ['d', 'ef', 'oops'], 'g'], 'start'), false);
+    t.equal(m.match(['abc', ['d', 'ef'], 'gh'], 'start'), false);
+    t.equal(m.match(['abc', [5], 'g'], 'start'), false);
+    t.equal(m.match(['abc', [], 'g'], 'start'), false);
+    t.equal(m.match(['abc', 5, 'g'], 'start'), false);
   });
 
   it('semantic actions', function() {
@@ -802,7 +796,7 @@ test('arr', function(t) {
       _: ohm.actions.passThrough,
       _terminal: ohm.actions.getValue
     });
-    expect(value(m.match(['abc', ['d', 'ef'], 'g'], 'start'))).to.eql(['d', ['d', 'ef']]);
+    t.deepEqual(value(m.match(['abc', ['d', 'ef'], 'g'], 'start')), ['d', ['d', 'ef']]);
   });
   t.end();
 });
@@ -818,61 +812,61 @@ test('obj', function(t) {
 
   test('strict', function(t) {
     it('recognition', function() {
-      expect(m.match('foo', 'strict')).to.equal(false);
-      expect(m.match([], 'strict')).to.equal(false);
-      expect(m.match({y: 2}, 'strict')).to.equal(false);
-      expect(m.match({x: 1, y: 2}, 'strict')).to.be.ok();
-      expect(m.match({y: 2, x: 1}, 'strict')).to.be.ok();
-      expect(m.match({x: 1, y: 2, z: 3}, 'strict')).to.equal(false);
+      t.equal(m.match('foo', 'strict'), false);
+      t.equal(m.match([], 'strict'), false);
+      t.equal(m.match({y: 2}, 'strict'), false);
+      t.ok(m.match({x: 1, y: 2}, 'strict'));
+      t.ok(m.match({y: 2, x: 1}, 'strict'));
+      t.equal(m.match({x: 1, y: 2, z: 3}, 'strict'), false);
     });
 
     it('semantic actions', function() {
-      expect(m.synthesizedAttribute({
+      t.deepEqual(m.synthesizedAttribute({
         strict: function(a, b) {
           return [a.value(), b.value()];
         }
-      })(m.match({x: 1, y: 2}, 'strict')));
-      expect(m.synthesizedAttribute({
+      })(m.match({x: 1, y: 2}, 'strict')), [1, 2]);
+      t.deepEqual(m.synthesizedAttribute({
         strict: function(a, b) {
           return [a.value(), b.value()];
         }
-      })(m.match({y: 2, x: 1}, 'strict'))).to.eql([1, 2]);
+      })(m.match({y: 2, x: 1}, 'strict')), [1, 2]);
     });
     t.end();
   });
 
   test('lenient', function(t) {
     it('recognition', function() {
-      expect(m.match('foo', 'lenient')).to.equal(false);
-      expect(m.match([], 'lenient')).to.equal(false);
-      expect(m.match({y: 2}, 'lenient')).to.equal(false);
-      expect(m.match({x: 1, y: 2}, 'lenient')).to.be.ok();
-      expect(m.match({y: 2, x: 1}, 'lenient')).to.be.ok();
-      expect(m.match({x: 1, y: 2, z: 3}, 'lenient')).to.be.ok();
+      t.equal(m.match('foo', 'lenient'), false);
+      t.equal(m.match([], 'lenient'), false);
+      t.equal(m.match({y: 2}, 'lenient'), false);
+      t.ok(m.match({x: 1, y: 2}, 'lenient'));
+      t.ok(m.match({y: 2, x: 1}, 'lenient'));
+      t.ok(m.match({x: 1, y: 2, z: 3}, 'lenient'));
     });
 
     it('semantic actions', function() {
-      expect(m.synthesizedAttribute({
+      t.deepEqual(m.synthesizedAttribute({
         lenient: function(a, b, _) {
           return [a.value(), b.value()];
         }
-      })(m.match({x: 1, y: 2}, 'lenient'))).to.eql([1, 2]);
-      expect(m.synthesizedAttribute({
+      })(m.match({x: 1, y: 2}, 'lenient')), [1, 2]);
+      t.deepEqual(m.synthesizedAttribute({
         lenient: function(a, b, _) {
           return [a.value(), b.value()];
         }
-      })(m.match({y: 2, x: 1}, 'lenient'))).to.eql([1, 2]);
+      })(m.match({y: 2, x: 1}, 'lenient')), [1, 2]);
     });
     t.end();
   });
 
   test('string props', function(t) {
     it('recognition', function() {
-      expect(m.match({foos: 'fo', bar: 'bar'}, 'withStringProps')).to.equal(false);
-      expect(m.match({foos: 'foo', bar: 'bar'}, 'withStringProps')).to.be.ok();
-      expect(m.match({foos: 'foofo', bar: 'bar'}, 'withStringProps')).to.equal(false);
-      expect(m.match({foos: 'foofoo', bar: 'bar'}, 'withStringProps')).to.be.ok();
-      expect(m.match({foos: 'foofoofoofoofoofoo', bar: 'bar'}, 'withStringProps')).to.be.ok();
+      t.equal(m.match({foos: 'fo', bar: 'bar'}, 'withStringProps'), false);
+      t.ok(m.match({foos: 'foo', bar: 'bar'}, 'withStringProps'));
+      t.equal(m.match({foos: 'foofo', bar: 'bar'}, 'withStringProps'), false);
+      t.ok(m.match({foos: 'foofoo', bar: 'bar'}, 'withStringProps'));
+      t.ok(m.match({foos: 'foofoofoofoofoofoo', bar: 'bar'}, 'withStringProps'));
     });
 
     it('semantic actions', function() {
@@ -883,7 +877,7 @@ test('obj', function(t) {
         _many: ohm.actions.makeArray,
         _terminal: ohm.actions.getValue,
       });
-      expect(attr(m.match({foos: 'foofoo', bar: 'bar'}, 'withStringProps'))).to.eql([
+      t.deepEqual(attr(m.match({foos: 'foofoo', bar: 'bar'}, 'withStringProps')), [
         ['foo', 'foo'], 'bar'
       ]);
     });
@@ -891,12 +885,13 @@ test('obj', function(t) {
   });
 
   it('duplicate property names are not allowed', function() {
-    expect(function() {
+    try {
       m = makeGrammar('M { duh = {x: 1, x: 2, y: 3, ...} }');
-    }).to.throwException(function(e) {
-      expect(e).to.be.a(errors.DuplicatePropertyNames);
-      expect(e.duplicates).to.eql(['x']);
-    });
+      t.fail();  // Ensure exception is thrown.
+    } catch(e) {
+      t.ok(e instanceof errors.DuplicatePropertyNames);
+      t.deepEqual(e.duplicates, ['x']);
+    }
   });
   t.end();
 });
@@ -911,9 +906,9 @@ test('apply', function(t) {
     ]);
 
     it('recognition', function() {
-      expect(m.match('fo', 'easy')).to.equal(false);
-      expect(m.match('foo', 'easy')).to.be.ok();
-      expect(m.match('fooo', 'easy')).to.equal(false);
+      t.equal(m.match('fo', 'easy'), false);
+      t.ok(m.match('foo', 'easy'));
+      t.equal(m.match('fooo', 'easy'), false);
     });
 
     it('semantic actions', function() {
@@ -926,7 +921,7 @@ test('apply', function(t) {
         },
         _terminal: ohm.actions.getValue
       });
-      expect(value(m.match('foo', 'easy'))).to.eql(['easy', ['foo', 'foo']]);
+      t.deepEqual(value(m.match('foo', 'easy')), ['easy', ['foo', 'foo']]);
     });
     t.end();
   });
@@ -940,11 +935,11 @@ test('apply', function(t) {
     ]);
 
     it('recognition', function() {
-      expect(m.match('', 'number')).to.equal(false);
-      expect(m.match('a', 'number')).to.equal(false);
-      expect(m.match('1', 'number')).to.be.ok();
-      expect(m.match('123', 'number')).to.be.ok();
-      expect(m.match('7276218173', 'number')).to.be.ok();
+      t.equal(m.match('', 'number'), false);
+      t.equal(m.match('a', 'number'), false);
+      t.ok(m.match('1', 'number'));
+      t.ok(m.match('123', 'number'));
+      t.ok(m.match('7276218173', 'number'));
     });
 
     it('semantic actions', function() {
@@ -959,7 +954,7 @@ test('apply', function(t) {
         },
         _terminal: ohm.actions.getValue
       });
-      expect(eval(f)).to.equal(1234);
+      t.equal(eval(f), 1234);
       var parseTree = m.synthesizedAttribute({
         number: function(expr) {
           return ['number', parseTree(expr)];
@@ -970,7 +965,7 @@ test('apply', function(t) {
         digit: ohm.actions.passThrough,
         _terminal: ohm.actions.getValue
       });
-      expect(parseTree(f)).to.eql(
+      t.deepEqual(parseTree(f),
         ['number',
           ['numberRec',
             ['number',
@@ -997,7 +992,7 @@ test('apply', function(t) {
     ]);
 
     it('recognition', function() {
-      expect(m.match('x+y+x', 'add')).to.be.ok();
+      t.ok(m.match('x+y+x', 'add'));
     });
 
     it('semantic actions', function() {
@@ -1011,7 +1006,7 @@ test('apply', function(t) {
         priY: ohm.actions.passThrough,
         _terminal: ohm.actions.getValue
       });
-      expect(v(m.match('x+y+x', 'add'))).to.eql([
+      t.deepEqual(v(m.match('x+y+x', 'add')), [
         ['x', '+', 'y'], '+', 'x'
       ]);
     });
@@ -1030,11 +1025,11 @@ test('apply', function(t) {
     ]);
 
     it('recognition', function() {
-      expect(m.match('', 'number')).to.equal(false);
-      expect(m.match('a', 'number')).to.equal(false);
-      expect(m.match('1', 'number')).to.be.ok();
-      expect(m.match('123', 'number')).to.be.ok();
-      expect(m.match('7276218173', 'number')).to.be.ok();
+      t.equal(m.match('', 'number'), false);
+      t.equal(m.match('a', 'number'), false);
+      t.ok(m.match('1', 'number'));
+      t.ok(m.match('123', 'number'));
+      t.ok(m.match('7276218173', 'number'));
     });
 
     it('semantic actions', function() {
@@ -1051,7 +1046,7 @@ test('apply', function(t) {
         digit: ohm.actions.passThrough,
         _terminal: ohm.actions.getValue
       });
-      expect(v(m.match('1234', 'number'))).to.eql([[['1', '2'], '3'], '4']);
+      t.deepEqual(v(m.match('1234', 'number')), [[['1', '2'], '3'], '4']);
     });
     t.end();
   });
@@ -1069,11 +1064,11 @@ test('apply', function(t) {
     ]);
 
     it('recognition', function() {
-      expect(m.match('1', 'addExpr')).to.be.ok();
-      expect(m.match('2+3', 'addExpr')).to.be.ok();
-      expect(m.match('4+', 'addExpr')).to.equal(false);
-      expect(m.match('5*6', 'addExpr')).to.be.ok();
-      expect(m.match('7*8+9+0', 'addExpr')).to.be.ok();
+      t.ok(m.match('1', 'addExpr'));
+      t.ok(m.match('2+3', 'addExpr'));
+      t.equal(m.match('4+', 'addExpr'), false);
+      t.ok(m.match('5*6', 'addExpr'));
+      t.ok(m.match('7*8+9+0', 'addExpr'));
     });
 
     it('semantic actions', function() {
@@ -1094,7 +1089,7 @@ test('apply', function(t) {
         priExpr: ohm.actions.passThrough,
         _terminal: ohm.actions.getValue
       });
-      expect(parseTree(f)).to.eql(
+      t.deepEqual(parseTree(f),
         ['addExpr',
           ['addExprRec',
             ['addExpr',
@@ -1120,7 +1115,7 @@ test('apply', function(t) {
         },
         _terminal: ohm.actions.getValue
       });
-      expect(eval(f)).to.equal(25);
+      t.equal(eval(f), 25);
       var pretty = m.synthesizedAttribute({
         addExpr: ohm.actions.passThrough,
         addExprRec: function(x, _, y) {
@@ -1133,13 +1128,13 @@ test('apply', function(t) {
         priExpr: ohm.actions.passThrough,
         _terminal: ohm.actions.getValue
       });
-      expect(pretty(f)).to.equal('(((1*2)+3)+(4*5))');
+      t.equal(pretty(f), '(((1*2)+3)+(4*5))');
     });
 
     it('semantic actions are evaluated lazily', function() {
       var f = m.match('1*2+3+4*5', 'sss');
       var a = buildTreeNodeWithUniqueId(m);
-      var t =
+      var tree =
         ['id', 1, 'addExpr',
           ['id', 2, 'addExprRec',
             ['id', 3, 'addExpr',
@@ -1157,8 +1152,8 @@ test('apply', function(t) {
                   ['id', 15, 'mulExpr',
                     ['id', 16, 'priExpr', '4']], '*',
                   ['id', 17, 'priExpr', '5']]]]];
-      expect(a(f)).to.eql(['id', 0, 'sss', t, t]);
-      expect(a._getNextId()).to.equal(18);
+      t.deepEqual(a(f), ['id', 0, 'sss', tree, tree]);
+      t.equal(a._getNextId(), 18);
     });
     t.end();
   });
@@ -1183,11 +1178,11 @@ test('apply', function(t) {
     ]);
 
     it('recognition', function() {
-      expect(m.match('1', 'addExpr')).to.be.ok();
-      expect(m.match('2+3', 'addExpr')).to.be.ok();
-      expect(m.match('4+', 'addExpr')).to.equal(false);
-      expect(m.match('5*6', 'addExpr')).to.be.ok();
-      expect(m.match('7+8*9+0', 'addExpr')).to.be.ok();
+      t.ok(m.match('1', 'addExpr'));
+      t.ok(m.match('2+3', 'addExpr'));
+      t.equal(m.match('4+', 'addExpr'), false);
+      t.ok(m.match('5*6', 'addExpr'));
+      t.ok(m.match('7+8*9+0', 'addExpr'));
     });
 
     it('semantic actions', function() {
@@ -1201,7 +1196,7 @@ test('apply', function(t) {
         _terminal: ohm.actions.getValue,
         _default: ohm.actions.passThrough
       });
-      expect(buildTree(m.match('7+8*9+0', 'addExpr'))).to.eql([
+      t.deepEqual(buildTree(m.match('7+8*9+0', 'addExpr')), [
         ['7', '+', ['8', '*', '9']], '+', '0'
       ]);
     });
@@ -1220,7 +1215,7 @@ test('apply', function(t) {
     ]);
 
     it('recognition', function() {
-      expect(m.match('1234', 'tricky')).to.be.ok();
+      t.ok(m.match('1234', 'tricky'));
     });
 
     it('semantic actions', function() {
@@ -1245,7 +1240,7 @@ test('apply', function(t) {
         digit: ohm.actions.passThrough,
         _terminal: ohm.actions.getValue
       });
-      expect(buildTree(f)).to.eql(
+      t.deepEqual(buildTree(f),
         ['tricky', ['bar', ['barRec', ['foo', ['fooRec', ['bar', ['barRec', ['foo', '1'], '2']], '3']], '4']]]);
     });
     t.end();
@@ -1256,40 +1251,43 @@ test('apply', function(t) {
 test('inheritance', function(t) {
   test('super-grammar does not exist', function(t) {
     it('in namespace', function() {
-      expect(function() {
+      try {
         makeGrammar('G2 <: G1 {}', 'inheritance-oops');
-      }).to.throwException(function(e) {
-        expect(e).to.be.a(errors.UndeclaredGrammar);
-        expect(e.grammarName).to.equal('G1');
-        expect(e.namespaceName).to.equal('inheritance-oops');
-      });
+        t.fail();  // Ensure exception is thrown.
+      } catch(e) {
+        t.ok(e instanceof errors.UndeclaredGrammar);
+        t.equal(e.grammarName, 'G1');
+        t.equal(e.namespaceName, 'inheritance-oops');
+      };
     });
 
     it('default namespace', function() {
-      expect(function() {
+      try {
         makeGrammar('G2 <: G1 {}', 'default');
-      }).to.throwException(function(e) {
-        expect(e).to.be.a(errors.UndeclaredGrammar);
-        expect(e.grammarName).to.equal('G1');
-        expect(e.namespaceName).to.be('default');
-      });
+        t.fail();  // Ensure exception is thrown.
+      } catch(e) {
+        t.ok(e instanceof errors.UndeclaredGrammar);
+        t.equal(e.grammarName, 'G1');
+        t.equal(e.namespaceName, 'default');
+      };
     });
     t.end();
   });
 
   test('define', function(t) {
     it('should check that rule does not already exist in super-grammar', function() {
-      expect(function() {
+      try {
         makeGrammars([
           'G1 { foo = "foo" }',
           'G2 <: G1 { foo = "bar" }'
         ], 'inheritance-define');
-      }).to.throwException(function(e) {
-        expect(e).to.be.an(errors.DuplicateRuleDeclaration);
-        expect(e.ruleName).to.equal('foo');
-        expect(e.offendingGrammarName).to.equal('G2');
-        expect(e.declGrammarName).to.equal('G1');
-      });
+        t.fail();  // Ensure exception is thrown.
+      } catch(e) {
+        t.ok(e instanceof errors.DuplicateRuleDeclaration);
+        t.equal(e.ruleName, 'foo');
+        t.equal(e.offendingGrammarName, 'G2');
+        t.equal(e.declGrammarName, 'G1');
+      };
     });
     t.end();
   });
@@ -1299,13 +1297,14 @@ test('inheritance', function(t) {
     var m2 = makeGrammar('G2 <: G1 { digit := /[a-z]/ }', 'inheritance-override');
 
     it('should check that rule exists in super-grammar', function() {
-      expect(function() {
+      try {
         makeGrammar('G3 <: G1 { foo := "foo" }', 'inheritance-override');
-      }).to.throwException(function(e) {
-        expect(e).to.be.an(errors.UndeclaredRule);
-        expect(e.ruleName).to.equal('foo');
-        expect(e.grammarName).to.equal('G1');
-      });
+        t.fail();  // Ensure exception is thrown.
+      } catch(e) {
+        t.ok(e instanceof errors.UndeclaredRule);
+        t.equal(e.ruleName, 'foo');
+        t.equal(e.grammarName, 'G1');
+      };
     });
 
     it("shouldn't matter if arities aren't the same", function() {
@@ -1322,13 +1321,13 @@ test('inheritance', function(t) {
     });
 
     it('recognition', function() {
-      expect(m1.match('1234', 'number')).to.be.ok();
-      expect(m1.match('hello', 'number')).to.equal(false);
-      expect(m1.match('h3llo', 'number')).to.equal(false);
+      t.ok(m1.match('1234', 'number'));
+      t.equal(m1.match('hello', 'number'), false);
+      t.equal(m1.match('h3llo', 'number'), false);
 
-      expect(m2.match('1234', 'number')).to.equal(false);
-      expect(m2.match('hello', 'number')).to.be.ok();
-      expect(m2.match('h3llo', 'number')).to.equal(false);
+      t.equal(m2.match('1234', 'number'), false);
+      t.ok(m2.match('hello', 'number'));
+      t.equal(m2.match('h3llo', 'number'), false);
     });
 
     it('semantic actions', function() {
@@ -1343,7 +1342,7 @@ test('inheritance', function(t) {
         _terminal: ohm.actions.getValue
       });
       var expected = ['number', [['digit', 'a'], ['digit', 'b'], ['digit', 'c'], ['digit', 'd']]];
-      expect(v(m2.match('abcd', 'number'))).to.eql(expected);
+      t.deepEqual(v(m2.match('abcd', 'number')), expected);
     });
     t.end();
   });
@@ -1353,13 +1352,14 @@ test('inheritance', function(t) {
     var m2 = makeGrammar('G2 <: inheritanceExtend.G1 { foo += "111" "222" }', 'inheritanceExtend2');
 
     it('should check that rule exists in super-grammar', function() {
-      expect(function() {
+      try {
         makeGrammar('G3 <: G1 { bar += "bar" }', 'inheritanceExtend');
-      }).to.throwException(function(e) {
-        expect(e).to.be.an(errors.UndeclaredRule);
-        expect(e.ruleName).to.equal('bar');
-        expect(e.grammarName).to.equal('G1');
-      });
+        t.fail();  // Ensure exception is thrown.
+      } catch(e) {
+        t.ok(e instanceof errors.UndeclaredRule);
+        t.equal(e.ruleName, 'bar');
+        t.equal(e.grammarName, 'G1');
+      }
     });
 
     it('should make sure rule arities are compatible', function() {
@@ -1369,46 +1369,48 @@ test('inheritance', function(t) {
 
       // Too many:
       makeGrammar('M1 { foo = "foo"  bar = "bar"  baz = "baz" }', 'inheritanceExtend3');
-      expect(function() {
+      try {
         makeGrammar('M2 <: M1 { foo += bar baz }', 'inheritanceExtend3');
-      }).to.throwException(function(e) {
-        expect(e).to.be.an(errors.InconsistentArity);
-        expect(e.ruleName).to.equal('foo');
-        expect(e.expected).to.equal(1);
-        expect(e.actual).to.equal(2);
-      });
+        t.fail();  // Ensure exception is thrown.
+      } catch(e) {
+        t.ok(e instanceof errors.InconsistentArity);
+        t.equal(e.ruleName, 'foo');
+        t.equal(e.expected, 1);
+        t.equal(e.actual, 2);
+      }
 
       // Too few:
       makeGrammar('M3 { foo = digit digit }', 'inheritanceExtend3');
-      expect(function() {
+      try {
         makeGrammar('M4 <: M3 { foo += digit }', 'inheritanceExtend3');
-      }).to.throwException(function(e) {
-        expect(e).to.be.an(errors.InconsistentArity);
-        expect(e.ruleName).to.equal('foo');
-        expect(e.expected).to.equal(2);
-        expect(e.actual).to.equal(1);
-      });
+        t.fail();  // Ensure exception is thrown.
+      } catch(e) {
+        t.ok(e instanceof errors.InconsistentArity);
+        t.equal(e.ruleName, 'foo');
+        t.equal(e.expected, 2);
+        t.equal(e.actual, 1);
+      }
     });
 
     it('recognition', function() {
-      expect(m1.match('aaabbb', 'foo')).to.be.ok();
-      expect(m1.match('111222', 'foo')).to.equal(false);
+      t.ok(m1.match('aaabbb', 'foo'));
+      t.equal(m1.match('111222', 'foo'), false);
 
-      expect(m2.match('aaabbb', 'foo')).to.be.ok();
-      expect(m2.match('111222', 'foo')).to.be.ok();
+      t.ok(m2.match('aaabbb', 'foo'));
+      t.ok(m2.match('111222', 'foo'));
     });
 
     it('semantic actions', function() {
-      expect(m2.synthesizedAttribute({
+      t.deepEqual(m2.synthesizedAttribute({
         foo: function(x, y) {
           return [x.value(), y.value()];
         }
-      })(m2.match('aaabbb', 'foo'))).to.eql(['aaa', 'bbb']);
-      expect(m2.synthesizedAttribute({
+      })(m2.match('aaabbb', 'foo')), ['aaa', 'bbb']);
+      t.deepEqual(m2.synthesizedAttribute({
         foo: function(x, y) {
           return [x.value(), y.value()];
         }
-      })(m2.match('111222', 'foo'))).to.eql(['111', '222']);
+      })(m2.match('111222', 'foo')), ['111', '222']);
     });
     t.end();
   });
@@ -1417,14 +1419,15 @@ test('inheritance', function(t) {
 
 test('bindings', function(t) {
   it('inconsistent arity in alts is an error', function() {
-    expect(function() {
+    try {
       makeGrammar('G { foo = "a" "c" | "b" }');
-    }).to.throwException(function(e) {
-      expect(e).to.be.a(errors.InconsistentArity);
-      expect(e.ruleName).to.equal('foo');
-      expect(e.expected).to.eql(2);
-      expect(e.actual).to.eql(1);
-    });
+      t.fail();  // Ensure exception is thrown.
+    } catch(e) {
+      t.ok(e instanceof errors.InconsistentArity);
+      t.equal(e.ruleName, 'foo');
+      t.deepEqual(e.expected, 2);
+      t.deepEqual(e.actual, 1);
+    }
   });
 
   it('by default, bindings are evaluated lazily', function() {
@@ -1454,7 +1457,7 @@ test('bindings', function(t) {
       },
       _terminal: ohm.actions.getValue
     });
-    expect(v(g.match('ab', 'foo'))).to.eql({
+    t.deepEqual(v(g.match('ab', 'foo')), {
       x: ['bar', 'a', 0],
       y: ['baz', 'b', 1]
     });
@@ -1477,7 +1480,7 @@ test('bindings', function(t) {
       },
       _terminal: ohm.actions.getValue
     });
-    expect(v(g.match('ab', 'foo'))).to.eql({
+    t.deepEqual(v(g.match('ab', 'foo')), {
       x: ['bar', 'a', 1],
       y: ['baz', 'b', 0]
     });
@@ -1518,11 +1521,11 @@ test('inline rule declarations', function(t) {
   var m = makeGrammar(arithmeticGrammarSource);
 
   it('recognition', function() {
-    expect(m.match('1*(2+3)-4/5', 'expr')).to.be.ok();
+    t.ok(m.match('1*(2+3)-4/5', 'expr'));
   });
 
   it('semantic actions', function() {
-    expect(makeEval(m)(m.match('10*(2+123)-4/5', 'expr'))).to.equal(1249.2);
+    t.equal(makeEval(m)(m.match('10*(2+123)-4/5', 'expr')), 1249.2);
   });
 
   it('overriding', function() {
@@ -1532,16 +1535,17 @@ test('inline rule declarations', function(t) {
         '}'
       ],
       m.namespaceName);
-    expect(makeEval(m2)(m2.match('2*3~4', 'expr'))).to.equal(2);
+    t.equal(makeEval(m2)(m2.match('2*3~4', 'expr')), 2);
 
-    expect(function() {
+    try {
       makeGrammar('Bad <: Expr { addExpr += addExpr "~" mulExpr  -- minus }', m.namespaceName);
-    }).to.throwException(function(e) {
-      expect(e).to.be.an(errors.DuplicateRuleDeclaration);
-      expect(e.ruleName).to.equal('addExpr_minus');
-      expect(e.offendingGrammarName).to.equal('Bad');
-      expect(e.declGrammarName).to.equal('Expr');
-    });
+      t.fail();  // Ensure exception is thrown.
+    } catch(e) {
+      t.ok(e instanceof errors.DuplicateRuleDeclaration);
+      t.equal(e.ruleName, 'addExpr_minus');
+      t.equal(e.offendingGrammarName, 'Bad');
+      t.equal(e.declGrammarName, 'Expr');
+    };
   });
   t.end();
 });
@@ -1549,16 +1553,16 @@ test('inline rule declarations', function(t) {
 test('lexical vs. syntactic rules', function(t) {
   it("lexical rules don't skip spaces implicitly", function() {
     var g = makeGrammar('G { start = "foo" "bar" }');
-    expect(g.match('foobar', 'start')).to.be.ok();
-    expect(g.match('foo bar', 'start')).to.equal(false);
-    expect(g.match(' foo bar   ', 'start')).to.equal(false);
+    t.ok(g.match('foobar', 'start'));
+    t.equal(g.match('foo bar', 'start'), false);
+    t.equal(g.match(' foo bar   ', 'start'), false);
   });
 
   it('syntactic rules skip spaces implicitly', function() {
     var g = makeGrammar('G { Start = "foo" "bar" }');
-    expect(g.match('foobar', 'Start')).to.be.ok();
-    expect(g.match('foo bar', 'Start')).to.be.ok();
-    expect(g.match(' foo bar   ', 'Start')).to.be.ok();
+    t.ok(g.match('foobar', 'Start'));
+    t.ok(g.match('foo bar', 'Start'));
+    t.ok(g.match(' foo bar   ', 'Start'));
   });
 
   it('mixing lexical and syntactic rules works as expected', function() {
@@ -1569,9 +1573,9 @@ test('lexical vs. syntactic rules', function(t) {
       '  Start = foo bar',
       '}'
     ]);
-    expect(g.match('foobar', 'Start')).to.be.ok();
-    expect(g.match('foo bar', 'Start')).to.be.ok();
-    expect(g.match(' foo bar   ', 'Start')).to.be.ok();
+    t.ok(g.match('foobar', 'Start'));
+    t.ok(g.match('foo bar', 'Start'));
+    t.ok(g.match(' foo bar   ', 'Start'));
   });
   t.end();
 });
@@ -1595,22 +1599,22 @@ test('semantic action templates', function(t) {
   var g2 = ohm.namespace('semantic-action-templates').grammar('G2');
 
   it('rules that need semantic action', function() {
-    expect(g1.rulesThatNeedSemanticAction([])).to.eql({});
-    expect(g1.rulesThatNeedSemanticAction(['foo'])).to.eql({
+    t.deepEqual(g1.rulesThatNeedSemanticAction([]), {});
+    t.deepEqual(g1.rulesThatNeedSemanticAction(['foo']), {
       foo: true,
       bar: true,
       baz: true,
       qux: true,
       quux: true
     });
-    expect(g1.rulesThatNeedSemanticAction(['aaa'])).to.eql({aaa: true});
-    expect(g1.rulesThatNeedSemanticAction(['bbb'])).to.eql({
+    t.deepEqual(g1.rulesThatNeedSemanticAction(['aaa']), {aaa: true});
+    t.deepEqual(g1.rulesThatNeedSemanticAction(['bbb']), {
       bbb: true,
       bbb_blah: true,
       qux: true,
       quux: true
     });
-    expect(g1.rulesThatNeedSemanticAction(['aaa', 'bbb'])).to.eql({
+    t.deepEqual(g1.rulesThatNeedSemanticAction(['aaa', 'bbb']), {
       aaa: true,
       bbb: true,
       bbb_blah: true,
@@ -1618,20 +1622,20 @@ test('semantic action templates', function(t) {
       quux: true
     });
 
-    expect(g2.rulesThatNeedSemanticAction([])).to.eql({});
-    expect(g2.rulesThatNeedSemanticAction(['foo'])).to.eql({
+    t.deepEqual(g2.rulesThatNeedSemanticAction([]), {});
+    t.deepEqual(g2.rulesThatNeedSemanticAction(['foo']), {
       foo: true,
       bar: true,
       baz: true,
       qux: true
     });
-    expect(g2.rulesThatNeedSemanticAction(['aaa'])).to.eql({aaa: true});
-    expect(g2.rulesThatNeedSemanticAction(['bbb'])).to.eql({
+    t.deepEqual(g2.rulesThatNeedSemanticAction(['aaa']), {aaa: true});
+    t.deepEqual(g2.rulesThatNeedSemanticAction(['bbb']), {
       bbb: true,
       bbb_blah: true,
       qux: true
     });
-    expect(g2.rulesThatNeedSemanticAction(['aaa', 'bbb'])).to.eql({
+    t.deepEqual(g2.rulesThatNeedSemanticAction(['aaa', 'bbb']), {
       aaa: true,
       bbb: true,
       bbb_blah: true,
@@ -1648,28 +1652,29 @@ test('namespaces', function(t) {
 
     it('actually installs a grammar in a namespace', function() {
       var m = makeGrammar('aaa { foo = "foo" }', ns1.name);
-      expect(ns1.grammar('aaa')).to.eql(m);
-      expect(m.match('foo', 'foo')).to.be.ok();
+      t.deepEqual(ns1.grammar('aaa'), m);
+      t.ok(m.match('foo', 'foo'));
     });
 
     it('detects duplicates', function() {
-      expect(function() {
+      try {
         makeGrammar('ccc { foo = "foo" }', ns1.name);
         makeGrammar('ccc { bar = "bar" }', ns1.name);
-      }).to.throwException(function(e) {
-        expect(e).to.be.an(errors.DuplicateGrammarDeclaration);
-        expect(e.grammarName).to.equal('ccc');
-        expect(e.namespaceName).to.equal(ns1.name);
-      });
+        t.fail();  // Ensure exception is thrown.
+      } catch(e) {
+        t.ok(e instanceof errors.DuplicateGrammarDeclaration);
+        t.equal(e.grammarName, 'ccc');
+        t.equal(e.namespaceName, ns1.name);
+      }
     });
 
     it('allows same-name grammars to be installed in different namespaces', function() {
       var m1 = makeGrammar('bbb { foo = "foo" }', ns1.name);
       var m2 = makeGrammar('bbb { bar = "bar" }', ns2.name);
 
-      expect(ns1.grammar('bbb')).to.eql(m1);
-      expect(ns2.grammar('bbb')).to.eql(m2);
-      expect(m1 !== m2).to.be.ok();
+      t.deepEqual(ns1.grammar('bbb'), m1);
+      t.deepEqual(ns2.grammar('bbb'), m2);
+      t.ok(m1 !== m2);
     });
     t.end();
   });
@@ -1694,22 +1699,23 @@ test('script tag support', function(t) {
     it('recognition', function() {
       var ns = ohm.namespace('aaa1');
       ns.loadGrammarsFromScriptElement(scriptTag);
-      expect(function() {
+      try {
         ns.grammar('M');
-      }).to.throwException(function(e) {
-        expect(e).to.be.an(errors.UndeclaredGrammar);
-        expect(e.grammarName).to.equal('M');
-        expect(e.namespaceName).to.equal('aaa1');
-      });
-      expect(ns.grammar('O')).to.be.ok();
-      expect(ns.grammar('O').match('1234', 'number')).to.be.ok();
+        t.fail();  // Ensure exception is thrown.
+      } catch(e) {
+        t.ok(e instanceof errors.UndeclaredGrammar);
+        t.equal(e.grammarName, 'M');
+        t.equal(e.namespaceName, 'aaa1');
+      }
+      t.ok(ns.grammar('O'));
+      t.ok(ns.grammar('O').match('1234', 'number'));
     });
 
     it('semantic actions', function() {
       var ns = ohm.namespace('aaa2');
       ns.loadGrammarsFromScriptElement(scriptTag);
       var m = ns.grammar('O');
-      expect(m).to.be.ok();
+      t.ok(m);
       var eval = m.synthesizedAttribute({
         number: function(expr) {
           return eval(expr);
@@ -1722,7 +1728,7 @@ test('script tag support', function(t) {
         },
         _terminal: ohm.actions.getValue
       });
-      expect(eval(m.match('1234', 'number'))).to.equal(1234);
+      t.equal(eval(m.match('1234', 'number')), 1234);
     });
     t.end();
   });
@@ -1732,34 +1738,39 @@ test('script tag support', function(t) {
 test('throw on fail', function(t) {
   it('non-string input', function() {
     var g = makeGrammar('G { start = 5 }');
-    expect(function() {
+    try {
       g.match(42, 'start', true);
-    }).to.throwException(function(e) {
-      expect(e.message).to.equal('match failed at position 0');
-      expect(e.getPos()).to.equal(0);
-    });
+      t.fail();  // Ensure exception is thrown.
+    } catch(e) {
+      t.equal(e.message, 'match failed at position 0');
+      t.equal(e.getPos(), 0);
+    }
   });
 
   it('string input', function() {
     var g = makeGrammar('G { start = "a" "b" "c" "d" }');
-    expect(function() {
+    try {
       g.match('ab', 'start', true);
-    }).to.throwException(function(e) {
-      expect(e.message).to.equal('Line 1, col 3:\n' +
+      t.fail();  // Ensure exception is thrown.
+    } catch(e) {
+      t.equal(e.message,
+        'Line 1, col 3:\n' +
         '> | ab\n' +
         '  |   ^\n' +
         "Expected 'c'");
-      expect(e.getPos()).to.equal(2);
-    });
-    expect(function() {
+      t.equal(e.getPos(), 2);
+    };
+    try {
       g.match('abcde', 'start', true);
-    }).to.throwException(function(e) {
-      expect(e.message).to.equal('Line 1, col 5:\n' +
+      t.fail();  // Ensure exception is thrown.
+    } catch(e) {
+      t.equal(e.message,
+        'Line 1, col 5:\n' +
         '> | abcde\n' +
         '  |     ^\n' +
         'Expected end of input');
-      expect(e.getPos()).to.equal(4);
-    });
+      t.equal(e.getPos(), 4);
+    }
   });
   t.end();
 });
@@ -1768,16 +1779,16 @@ test('bootstrap', function(t) {
   var g = makeGrammar(ohmGrammarSource, 'bootstrap');
 
   it('can recognize arithmetic grammar', function() {
-    expect(g.match(arithmeticGrammarSource, 'Grammar')).to.be.ok();
+    t.ok(g.match(arithmeticGrammarSource, 'Grammar'));
   });
 
   it('can recognize itself', function() {
-    expect(g.match(ohmGrammarSource, 'Grammar')).to.be.ok();
+    t.ok(g.match(ohmGrammarSource, 'Grammar'));
   });
 
   it('can produce a grammar that will recognize itself', function() {
     var gPrime = ohm._makeGrammarBuilder(freshNamespaceName(), g)(g.match(ohmGrammarSource, 'Grammar'));
-    expect(gPrime.match(ohmGrammarSource, 'Grammar')).to.be.ok();
+    t.ok(gPrime.match(ohmGrammarSource, 'Grammar'));
   });
 
   it('can produce a grammar that works', function() {
@@ -1822,14 +1833,14 @@ test('bootstrap', function(t) {
       },
       _terminal: ohm.actions.getValue
     });
-    expect(eval(a.match('10*(2+123)-4/5', 'expr'))).to.equal(1249.2);
+    t.equal(eval(a.match('10*(2+123)-4/5', 'expr')), 1249.2);
   });
 
   it('full bootstrap!', function() {
     var gPrime = ohm._makeGrammarBuilder(freshNamespaceName(), g)(g.match(ohmGrammarSource, 'Grammar'));
     var gPrimePrime = ohm._makeGrammarBuilder(freshNamespaceName(), gPrime)(gPrime.match(ohmGrammarSource, 'Grammar'));
     gPrimePrime.namespaceName = gPrime.namespaceName; // make their namespaceName properties the same
-    compareGrammars(gPrime, gPrimePrime);
+    compareGrammars(t, gPrime, gPrimePrime);
   });
 
   it('inherited attributes', function() {
@@ -1888,11 +1899,11 @@ test('definitionInterval', function(t) {
     return [interval.startIdx, interval.endIdx];
   }
   it('works for regular rules', function() {
-    expect(definitionLoc(g, 'foo')).to.eql([6, 15]);
-    expect(definitionLoc(g, 'bar')).to.eql([18, 40]);
+    t.deepEqual(definitionLoc(g, 'foo'), [6, 15]);
+    t.deepEqual(definitionLoc(g, 'bar'), [18, 40]);
   });
   it('works for inline rules', function() {
-    expect(definitionLoc(g, 'bar_baz')).to.eql([30, 40]);
+    t.deepEqual(definitionLoc(g, 'bar_baz'), [30, 40]);
   });
 
   var g2 = makeGrammar([
@@ -1902,9 +1913,9 @@ test('definitionInterval', function(t) {
     '}'
   ], 'ns');
   it('works when overriding and extending rules', function() {
-    expect(definitionLoc(g2, 'foo')).to.eql([12, 22]);
-    expect(definitionLoc(g2, 'bar')).to.eql([25, 48]);
-    expect(definitionLoc(g2, 'bar_baz')).to.eql([38, 48]);
+    t.deepEqual(definitionLoc(g2, 'foo'), [12, 22]);
+    t.deepEqual(definitionLoc(g2, 'bar'), [25, 48]);
+    t.deepEqual(definitionLoc(g2, 'bar_baz'), [38, 48]);
   });
   t.end();
 });
@@ -1925,22 +1936,22 @@ test('rule invocation interval', function(t) {
   var beepBody = g.ruleDict.beep;
   var barBody = g.ruleDict.bar;
   it('works for regular rule applications', function() {
-    expect(fromLoc(fooBody)).to.eql([12, 15]);
-    expect(fromLoc(beepBody.factors[1])).to.eql([32, 35]);
+    t.deepEqual(fromLoc(fooBody), [12, 15]);
+    t.deepEqual(fromLoc(beepBody.factors[1]), [32, 35]);
   });
   it('works for applications of built-in rules', function() {
-    expect(fromLoc(beepBody.factors[0])).to.eql([25, 31]);
+    t.deepEqual(fromLoc(beepBody.factors[0]), [25, 31]);
   });
   it('works for primitives', function() {
-    expect(fromLoc(barBody.terms[0])).to.eql([44, 47]);
-    expect(fromLoc(barBody.terms[1])).to.eql([50, 56]);
+    t.deepEqual(fromLoc(barBody.terms[0]), [44, 47]);
+    t.deepEqual(fromLoc(barBody.terms[1]), [50, 56]);
 
     var barBazBody = g.ruleDict.bar_baz;
-    expect(fromLoc(barBazBody)).to.eql([59, 66]);
+    t.deepEqual(fromLoc(barBazBody), [59, 66]);
   });
   it('is undefined for other types of pexpr', function() {
-    expect(beepBody.fromInterval).to.be(undefined);
-    expect(barBody.fromInterval).to.be(undefined);
+    t.equal(beepBody.fromInterval, undefined);
+    t.equal(barBody.fromInterval, undefined);
   });
   t.end();
 });
@@ -1951,52 +1962,52 @@ test('trace', function(t) {
     var state = g.trace('hallo', 'start');
     var trace = state.trace;
 
-    expect(trace.length).to.be(1);
-    expect(trace[0].displayString).to.be('start');
-    expect(trace[0].succeeded).to.be(true);
-    expect(trace[0].pos).to.be(0);
+    t.equal(trace.length, 1);
+    t.equal(trace[0].displayString, 'start');
+    t.equal(trace[0].succeeded, true);
+    t.equal(trace[0].pos, 0);
 
     var alt = trace[0].children[0];
-    expect(alt.displayString).to.be('"a" | letter*');
-    expect(alt.succeeded).to.be(true);
-    expect(alt.children[0].succeeded).to.be(false);
-    expect(alt.children[1].succeeded).to.be(true);
+    t.equal(alt.displayString, '"a" | letter*');
+    t.equal(alt.succeeded, true);
+    t.equal(alt.children[0].succeeded, false);
+    t.equal(alt.children[1].succeeded, true);
 
     var many = alt.children[1];
-    expect(many.displayString).to.be('letter*');
-    expect(many.interval.contents).to.be('hallo');
-    expect(many.children.length).to.be(6);
+    t.equal(many.displayString, 'letter*');
+    t.equal(many.interval.contents, 'hallo');
+    t.equal(many.children.length, 6);
 
     var childrenSucceeded = many.children.map(function(c) {
       return c.succeeded;
     });
-    expect(childrenSucceeded).to.eql([true, true, true, true, true, false]);
+    t.deepEqual(childrenSucceeded, [true, true, true, true, true, false]);
   });
 
   var g2 = makeGrammar('G { start = letter ~letter | letter* }');
   it('works with memoization', function() {
     var state = g2.trace('ab', 'start');
     var trace = state.trace;
-    expect(trace.length).to.be(1);
+    t.equal(trace.length, 1);
 
     var alt = trace[0].children[0];
-    expect(alt.children[0].succeeded).to.be(false);
-    expect(alt.children[1].succeeded).to.be(true);
-    expect(alt.children.length).to.be(2);
+    t.equal(alt.children[0].succeeded, false);
+    t.equal(alt.children[1].succeeded, true);
+    t.equal(alt.children.length, 2);
 
     var many = alt.children[1];
-    expect(many.children.length).to.be(3);
+    t.equal(many.children.length, 3);
 
     // The 'letter*' should succeed, but its first two children should be
     // memoized from the other size of the Alt (letter ~letter). Ensure
     // the the trace is still recorded properly.
-    expect(many.children[0].succeeded).to.be(true);
-    expect(many.children[0].children.length).to.be(1);
-    expect(many.children[0].children[0].displayString).to.be('/[a-zA-Z]/');
+    t.equal(many.children[0].succeeded, true);
+    t.equal(many.children[0].children.length, 1);
+    t.equal(many.children[0].children[0].displayString, '/[a-zA-Z]/');
 
-    expect(many.children[1].succeeded).to.be(true);
-    expect(many.children[1].children.length).to.be(1);
-    expect(many.children[1].children[0].displayString).to.be('/[a-zA-Z]/');
+    t.equal(many.children[1].succeeded, true);
+    t.equal(many.children[1].children.length, 1);
+    t.equal(many.children[1].children[0].displayString, '/[a-zA-Z]/');
   });
   t.end();
 });
@@ -2005,14 +2016,14 @@ test('toDisplayString', function(t) {
   var g = makeGrammar('G { start = "ab" | letter* | /[a-z]/ }');
   it('does the right thing', function() {
     var seq = g.ruleDict.start;
-    expect(seq.toDisplayString()).to.be('"ab" | letter* | /[a-z]/');
-    expect(seq.terms[0].toDisplayString()).to.be('"ab"');
+    t.equal(seq.toDisplayString(), '"ab" | letter* | /[a-z]/');
+    t.equal(seq.terms[0].toDisplayString(), '"ab"');
 
     var many = seq.terms[1];
-    expect(many.toDisplayString()).to.be('letter*');
-    expect(many.expr.toDisplayString()).to.be('letter');
+    t.equal(many.toDisplayString(), 'letter*');
+    t.equal(many.expr.toDisplayString(), 'letter');
 
-    expect(seq.terms[2].toDisplayString()).to.be('/[a-z]/');
-  })
+    t.equal(seq.terms[2].toDisplayString(), '/[a-z]/');
+  });
   t.end();
 });
