@@ -12,8 +12,8 @@ var pexprs = require('./pexprs.js');
 function Builder() {}
 
 Builder.prototype = {
-  newGrammar: function(name, optNamespaceName) {
-    return new GrammarDecl(name, optNamespaceName);
+  newGrammar: function(name) {
+    return new GrammarDecl(name);
   },
 
   anything: function() {

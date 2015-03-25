@@ -4,7 +4,6 @@
 
 var Grammar = require('./Grammar.js');
 var errors = require('./errors.js');
-var namespace = require('./namespaces.js');
 var pexprs = require('./pexprs.js');
 
 // --------------------------------------------------------------------
@@ -13,9 +12,8 @@ var pexprs = require('./pexprs.js');
 
 // Constructors
 
-function GrammarDecl(name, optNamespaceName) {
+function GrammarDecl(name) {
   this.name = name;
-  this.ns = namespace(optNamespaceName || 'default');
 }
 
 // Helpers
@@ -34,23 +32,25 @@ function onOhmError(doFn, onErrorFn) {
 
 GrammarDecl.prototype.ensureSuperGrammar = function() {
   if (!this.superGrammar) {
-    this.withSuperGrammar('Grammar', 'default');
+    this.withSuperGrammar(Grammar.base);
   }
   return this.superGrammar;
 };
 
 // Stuff that you should only do once
 
-GrammarDecl.prototype.withSuperGrammar = function(name, optNamespaceName) {
+GrammarDecl.prototype.withSuperGrammar = function(superGrammar) {
   if (this.superGrammar) {
     throw new Error('the super grammar of a GrammarDecl cannot be set more than once');
   }
-  this.superGrammar = (optNamespaceName ? namespace(optNamespaceName) : this.ns).grammar(name);
-  this.ruleDict = Object.create(this.superGrammar.ruleDict);
+  this.superGrammar = superGrammar;
+  this.ruleDict = Object.create(superGrammar.ruleDict);
   return this;
 };
 
-GrammarDecl.prototype.install = function() {
+
+// Creates a Grammar instance, and if it passes the sanity checks, returns it.
+GrammarDecl.prototype.build = function() {
   var grammar = new Grammar(this.name, this.ensureSuperGrammar(), this.ruleDict);
   var error;
   Object.keys(grammar.ruleDict).forEach(function(ruleName) {
@@ -62,15 +62,13 @@ GrammarDecl.prototype.install = function() {
     // TODO: change the pexpr.prototype.assert... methods to make them add exceptions to an array that's provided
     // as an arg. Then we'll be able to show more than one error of the same type at a time.
     // TODO: include the offending pexpr in the errors, that way we can show the part of the source that caused it.
-    onOhmError(function()  { body.assertChoicesHaveUniformArity(ruleName); }, handleError);
-    onOhmError(function()  { body.assertAllApplicationsAreValid(grammar); },  handleError);
+    onOhmError(function() { body.assertChoicesHaveUniformArity(ruleName); }, handleError);
+    onOhmError(function() { body.assertAllApplicationsAreValid(grammar); },  handleError);
   });
   if (error) {
     throw error;
-  } else {
-    this.ns.install(grammar);
-    return grammar;
   }
+  return grammar;
 };
 
 // Rule declarations

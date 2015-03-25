@@ -1,15 +1,15 @@
+/* global XMLHttpRequest */
+
 // --------------------------------------------------------------------
 // Imports
 // --------------------------------------------------------------------
-
-require('./Grammar.js');  // required to initialize default namespace w/ Grammar grammar
 
 var Builder = require('./Builder.js');
 var attributes = require('./attributes.js');
 var common = require('./common.js');
 var errors = require('./errors.js');
-var namespace = require('./namespaces.js');
 
+var Namespace = require('./Namespace.js');
 var UnicodeCategories = require('./unicode.js').UnicodeCategories;
 
 var thisModule = exports;
@@ -19,27 +19,58 @@ var ohm = exports;
 // Private stuff
 // --------------------------------------------------------------------
 
-function makeGrammarBuilder(optNamespaceName, optOhmGrammar) {
+// The metagrammar, i.e. the grammar for Ohm grammars. Initialized at the
+// bottom of this file because loading the grammar requires Ohm itself.
+var ohmGrammar;
+
+// TODO: just use the jQuery thing
+function load(url) {
+  var req = new XMLHttpRequest();
+  req.open('GET', url, false);
+  try {
+    req.send();
+    if (req.status === 0 || req.status === 200) {
+      return req.responseText;
+    }
+  } catch (e) {}
+  throw new Error('unable to load url ' + url);
+}
+
+// Returns a Grammar instance (i.e., an object with a `match` method) for
+// `tree`, which is the concrete syntax tree of a user-written grammar.
+// The grammar will be assigned into `namespace` under the name of the grammar
+// as specified in the source.
+function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
   var builder;
   var decl;
   var currentRuleName;
   var overriding = false;
-  var namespaceName = optNamespaceName || 'default';
-  var ohmGrammar = optOhmGrammar || namespace('default').grammar('Ohm');
-  var value = ohmGrammar.semanticAction({
+  var metaGrammar = optOhmGrammarForTesting || ohmGrammar;
+
+  // A set of semantic actions that produces a Grammar instance from the CST.
+  var value = metaGrammar.semanticAction({
     Grammar: function(n, s, _, rs, _) {
       builder = new Builder();
-      decl = builder.newGrammar(value(n), namespaceName);
+      var grammarName = value(n);
+      decl = builder.newGrammar(grammarName, namespace);
       value(s);  // force evaluation
       value(rs);  // force evaluation
-      return decl.install();
+      var g = decl.build();
+      // FIXME: Maybe push this check to GrammarDecl or Grammar.
+      if (grammarName in namespace) {
+        throw new errors.DuplicateGrammarDeclaration(grammarName, namespace);
+      }
+      namespace[grammarName] = g;
+      return g;
     },
 
-    SuperGrammar_qualified: function(_, ns, _, n) {
-      decl.withSuperGrammar(value(n), value(ns));
-    },
-    SuperGrammar_unqualified: function(_, n) {
-      decl.withSuperGrammar(value(n));
+    SuperGrammar: function(_, n) {
+      var superGrammarName = value(n);
+      // FIXME: Maybe push this check to GrammarDecl.
+      if (!namespace || !(superGrammarName in namespace)) {
+        throw new errors.UndeclaredGrammar(superGrammarName, namespace);
+      }
+      decl.withSuperGrammar(namespace[superGrammarName]);
     },
 
     Rule_define: function(n, fs, d, _, b) {
@@ -195,13 +226,13 @@ function makeGrammarBuilder(optNamespaceName, optOhmGrammar) {
     _terminal: attributes.actions.getValue,
     _default: attributes.actions.passThrough
   });
-  return value;
+  return value(tree);
 }
 
-function compileAndLoad(source, whatItIs, optNamespaceName) {
+function compileAndLoad(source, whatItIs, namespace) {
   try {
-    var node = namespace('default').grammar('Ohm').match(source, whatItIs, true);
-    return makeGrammarBuilder(optNamespaceName)(node);
+    var node = ohmGrammar.match(source, whatItIs, true);
+    return buildGrammar(node, namespace);
   } catch (e) {
     if (e instanceof errors.MatchFailure) {
       console.log('\n' + e.getMessage());
@@ -210,16 +241,15 @@ function compileAndLoad(source, whatItIs, optNamespaceName) {
   }
 }
 
-function makeGrammar(source, optNamespaceName) {
-  return compileAndLoad(source, 'Grammar', optNamespaceName);
+function makeGrammar(source, optNamespace) {
+  var ns = Namespace.extend(Namespace.asNamespace(optNamespace));
+  return compileAndLoad(source, 'Grammar', ns);
 }
 
-function makeGrammars(source, optNamespaceName) {
-  var result = {};
-  var grammars = compileAndLoad(source, 'Grammars', optNamespaceName).forEach(function(g) {
-    result[g.name] = g;
-  });
-  return result;
+function makeGrammars(source, optNamespace) {
+  var ns = Namespace.extend(Namespace.asNamespace(optNamespace));
+  compileAndLoad(source, 'Grammars', ns);
+  return ns;
 }
 
 function makeLoc(node) {
@@ -229,45 +259,40 @@ function makeLoc(node) {
   };
 }
 
+function loadGrammarsFromScriptElement(element) {
+  if (element.type !== 'text/ohm-js') {
+    throw new Error("script tag's type attribute must be text/ohm-js");
+  }
+  var source = element.getAttribute('src') ? load(element.getAttribute('src')) : element.innerHTML;
+  try {
+    return makeGrammars(source);
+  } catch (e) {
+    if (!(e instanceof errors.Error)) {
+      console.error(e);  // eslint-disable-line no-console
+    }
+  }
+}
+
+function makeRecipe(recipeFn) {
+  return recipeFn.call(new Builder());
+}
+
 // --------------------------------------------------------------------
 // Exports
 // --------------------------------------------------------------------
 
 // Stuff that users should know about
 
-exports.error = errors;
-
-exports.namespace = namespace;
-
-exports.grammar = function(name) {
-  return namespace('default').grammar(name);
+module.exports = {
+  actions: attributes.actions,
+  createNamespace: Namespace.createNamespace,
+  error: errors,
+  loadGrammarsFromScriptElement: loadGrammarsFromScriptElement,
+  makeGrammar: makeGrammar,
+  makeGrammars: makeGrammars,
+  makeRecipe: makeRecipe
 };
-
-exports.makeGrammar = makeGrammar;
-exports.makeGrammars = makeGrammars;
-
-exports.actions = attributes.actions;
 
 // Stuff that's only here for bootstrapping, testing, etc.
-
-exports.makeRecipe = function(recipe) {
-  recipe.call(new Builder());
-};
-
-exports._makeGrammarBuilder = makeGrammarBuilder;
-
-require('../dist/ohm-grammar.js');
-
-// Load all grammars in script elements into the appropriate namespaces
-
-if (typeof document !== 'undefined') {
-  Array.prototype.slice.call(document.getElementsByTagName('script')).
-      filter(function(elt) {
-        return elt.getAttribute('type') === 'text/ohm-js';
-      }).
-      forEach(function(elt) {
-        var ns = elt.getAttribute('namespace') || 'default';
-        namespace(ns).loadGrammarsFromScriptElement(elt)
-      });
-}
-
+ohmGrammar = require('../dist/ohm-grammar.js');
+module.exports._buildGrammar = buildGrammar;

@@ -9,7 +9,6 @@ var State = require('./State.js');
 var attributes = require('./attributes.js');
 var common = require('./common.js');
 var errors = require('./errors.js');
-var namespace = require('./namespaces.js');
 var pexprs = require('./pexprs.js');
 
 // --------------------------------------------------------------------
@@ -148,40 +147,35 @@ Grammar.prototype = {
     }
   },
 
-  toRecipe: function() {
-    if (this === namespace('default').grammar('Grammar')) {
-      return '(function() {\n' +
-          "  // no recipe required for Grammar in default namespace b/c it's built in\n" +
-          "  return namespace('default').grammar('Grammar');\n" +
-          '})';
-    }
+  toRecipe: function(optVarName) {
     var sb = new common.StringBuffer();
-    sb.append('(function() {\n');
-    sb.append(
-        '  return new this.newGrammar(' + common.toStringLiteral(this.name) +
-        ', /* in namespace */ ' + common.toStringLiteral(this.namespaceName) + ')\n');
-    if (this.superGrammar) {
-      var sg = this.superGrammar;
-      sb.append(
-          '      .withSuperGrammar(' + common.toStringLiteral(sg.name) +
-          ', /* from namespace */ ' + common.toStringLiteral(sg.namespaceName) + ')\n');
+    if (optVarName) {
+      sb.append('var ' + optVarName + ' = ');
     }
-    var ruleNames = Object.keys(this.ruleDict);
-    for (var idx = 0; idx < ruleNames.length; idx++) {
-      var ruleName = ruleNames[idx];
-      var body = this.ruleDict[ruleName];
-      sb.append('      .');
-      if (this.superGrammar && this.superGrammar.ruleDict[ruleName]) {
-        sb.append((body instanceof pexprs.Extend ? 'extend' : 'override'));
+    sb.append('(function() {\n');
+
+    var superGrammarDecl = '';
+    if (this.superGrammar && this.superGrammar !== Grammar.base) {
+      sb.append(this.superGrammar.toRecipe('buildSuperGrammar'));
+      superGrammarDecl = '    .withSuperGrammar(buildSuperGrammar.call(this))\n';
+    }
+    sb.append('  return new this.newGrammar(' + common.toStringLiteral(this.name) + ')\n');
+    sb.append(superGrammarDecl);
+
+    var self = this;
+    Object.keys(this.ruleDict).forEach(function(ruleName) {
+      var body = self.ruleDict[ruleName];
+      sb.append('    .');
+      if (self.superGrammar && self.superGrammar.ruleDict[ruleName]) {
+        sb.append(body instanceof pexprs.Extend ? 'extend' : 'override');
       } else {
         sb.append('define');
       }
       sb.append('(' + common.toStringLiteral(ruleName) + ', ');
       body.outputRecipe(sb);
       sb.append(')\n');
-    }
-    sb.append('      .install();\n');
-    sb.append('});');
+    });
+    sb.append('    .build();\n});\n');
     return sb.contents();
   },
 
@@ -255,30 +249,25 @@ Grammar.prototype = {
   }
 };
 
-// Install the base grammar in the default namespace
+// This object contains Ohm's built-in rules.
+Grammar.base = new Grammar('Grammar', null, {
+  _: pexprs.anything,
+  end: pexprs.end,
+  space: pexprs.makePrim(/[\s]/).withDescription('space'),
+  alnum: pexprs.makePrim(/[0-9a-zA-Z]/).withDescription('alpha-numeric character'),
+  letter: pexprs.makePrim(/[a-zA-Z]/).withDescription('letter'),
+  lower: pexprs.makePrim(/[a-z]/).withDescription('lower-case letter'),
+  upper: pexprs.makePrim(/[A-Z]/).withDescription('upper-case letter'),
+  digit: pexprs.makePrim(/[0-9]/).withDescription('digit'),
+  hexDigit: pexprs.makePrim(/[0-9a-fA-F]/).withDescription('hexadecimal digit'),
 
-namespace('default').install(new Grammar(
-    'Grammar',
-    null,
-    {
-        _: pexprs.anything,
-        end: pexprs.end,
-        space: pexprs.makePrim(/[\s]/).withDescription('space'),
-        alnum: pexprs.makePrim(/[0-9a-zA-Z]/).withDescription('alpha-numeric character'),
-        letter: pexprs.makePrim(/[a-zA-Z]/).withDescription('letter'),
-        lower: pexprs.makePrim(/[a-z]/).withDescription('lower-case letter'),
-        upper: pexprs.makePrim(/[A-Z]/).withDescription('upper-case letter'),
-        digit: pexprs.makePrim(/[0-9]/).withDescription('digit'),
-        hexDigit: pexprs.makePrim(/[0-9a-fA-F]/).withDescription('hexadecimal digit'),
-
-        // The following rule is part of the implementation.
-        // Its name ends with '_' so that it can't be overridden or invoked by programmers.
-        spaces_: new pexprs.Many(new pexprs.Apply('space'), 0)
-    }));
+  // The following rule is part of the implementation.
+  // Its name ends with '_' so that it can't be overridden or invoked by programmers.
+  spaces_: new pexprs.Many(new pexprs.Apply('space'), 0)
+});
 
 // --------------------------------------------------------------------
 // Exports
 // --------------------------------------------------------------------
 
 module.exports = Grammar;
-

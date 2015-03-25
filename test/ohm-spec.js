@@ -1233,25 +1233,23 @@ test('apply', function(t) {
 
 test('inheritance', function(t) {
   test('super-grammar does not exist', function(t) {
-    it('in namespace', function() {
+    it('no namespace', function() {
       try {
-        util.makeGrammar('G2 <: G1 {}', 'inheritance-oops');
+        util.makeGrammar('G2 <: G1 {}');
         t.fail('Expected an exception to be thrown');
       } catch(e) {
-        t.ok(e instanceof errors.UndeclaredGrammar);
+        t.equal(e.constructor, errors.UndeclaredGrammar);
         t.equal(e.grammarName, 'G1');
-        t.equal(e.namespaceName, 'inheritance-oops');
       };
     });
 
-    it('default namespace', function() {
+    it('empty namespace', function() {
       try {
-        util.makeGrammar('G2 <: G1 {}', 'default');
+        util.makeGrammar('G2 <: G1 {}', {});
         t.fail('Expected an exception to be thrown');
       } catch(e) {
-        t.ok(e instanceof errors.UndeclaredGrammar);
+        t.equal(e.constructor, errors.UndeclaredGrammar);
         t.equal(e.grammarName, 'G1');
-        t.equal(e.namespaceName, 'default');
       };
     });
     t.end();
@@ -1259,14 +1257,15 @@ test('inheritance', function(t) {
 
   test('define', function(t) {
     it('should check that rule does not already exist in super-grammar', function() {
+      var ns;
       try {
-        util.makeGrammars([
+        ns = util.makeGrammars([
           'G1 { foo = "foo" }',
           'G2 <: G1 { foo = "bar" }'
-        ], 'inheritance-define');
+        ]);
         t.fail('Expected an exception to be thrown');
       } catch(e) {
-        t.ok(e instanceof errors.DuplicateRuleDeclaration);
+        t.equal(e.constructor, errors.DuplicateRuleDeclaration);
         t.equal(e.ruleName, 'foo');
         t.equal(e.offendingGrammarName, 'G2');
         t.equal(e.declGrammarName, 'G1');
@@ -1276,15 +1275,15 @@ test('inheritance', function(t) {
   });
 
   test('override', function(t) {
-    var m1 = util.makeGrammar('G1 { number = digit+ }', 'inheritance-override');
-    var m2 = util.makeGrammar('G2 <: G1 { digit := /[a-z]/ }', 'inheritance-override');
+    var ns = util.makeGrammars(['G1 { number = digit+ }',
+                           'G2 <: G1 { digit := /[a-z]/ }']);
 
     it('should check that rule exists in super-grammar', function() {
       try {
-        util.makeGrammar('G3 <: G1 { foo := "foo" }', 'inheritance-override');
+        ns.G3 = util.makeGrammar('G3 <: G1 { foo := "foo" }', ns);
         t.fail('Expected an exception to be thrown');
       } catch(e) {
-        t.ok(e instanceof errors.UndeclaredRule);
+        t.equal(e.constructor, errors.UndeclaredRule);
         t.equal(e.ruleName, 'foo');
         t.equal(e.grammarName, 'G1');
       };
@@ -1295,26 +1294,26 @@ test('inheritance', function(t) {
       // from that of its super-grammar.
 
       // arity(overriding rule) > arity(overridden rule)
-      util.makeGrammar('M1 { foo = "foo" }', 'inheritance-override');
-      util.makeGrammar('M2 <: M1 { foo := "foo" "bar" }', 'inheritance-override');
+      ns.M1 = util.makeGrammar('M1 { foo = "foo" }');
+      util.makeGrammar('M2 <: M1 { foo := "foo" "bar" }', ns);
 
       // arity(overriding rule) < arity(overridden rule)
-      util.makeGrammar('M3 { foo = digit digit }', 'inheritance-override');
-      util.makeGrammar('M4 <: M3 { foo := digit }', 'inheritance-override');
+      ns.M3 = util.makeGrammar('M3 { foo = digit digit }', ns);
+      ns.M4 = util.makeGrammar('M4 <: M3 { foo := digit }', ns);
     });
 
     it('recognition', function() {
-      t.ok(m1.match('1234', 'number'));
-      t.equal(m1.match('hello', 'number'), false);
-      t.equal(m1.match('h3llo', 'number'), false);
+      t.ok(ns.G1.match('1234', 'number'));
+      t.equal(ns.G1.match('hello', 'number'), false);
+      t.equal(ns.G1.match('h3llo', 'number'), false);
 
-      t.equal(m2.match('1234', 'number'), false);
-      t.ok(m2.match('hello', 'number'));
-      t.equal(m2.match('h3llo', 'number'), false);
+      t.equal(ns.G2.match('1234', 'number'), false);
+      t.ok(ns.G2.match('hello', 'number'));
+      t.equal(ns.G2.match('h3llo', 'number'), false);
     });
 
     it('semantic actions', function() {
-      var v = m2.synthesizedAttribute({
+      var v = ns.G2.synthesizedAttribute({
         number: function(expr) {
           return ['number', v(expr)];
         },
@@ -1325,21 +1324,43 @@ test('inheritance', function(t) {
         _terminal: ohm.actions.getValue
       });
       var expected = ['number', [['digit', 'a'], ['digit', 'b'], ['digit', 'c'], ['digit', 'd']]];
-      t.deepEqual(v(m2.match('abcd', 'number')), expected);
+      t.deepEqual(v(ns.G2.match('abcd', 'number')), expected);
     });
     t.end();
   });
 
   test('extend', function(t) {
-    var m1 = util.makeGrammar('G1 { foo = "aaa" "bbb" }', 'inheritanceExtend');
-    var m2 = util.makeGrammar('G2 <: inheritanceExtend.G1 { foo += "111" "222" }', 'inheritanceExtend2');
+    var ns = util.makeGrammars(['G1 { foo = "aaa" "bbb" }',
+                                'G2 <: G1 { foo += "111" "222" }']);
+
+    it('recognition', function() {
+      t.ok(ns.G1.match('aaabbb', 'foo'));
+      t.equal(ns.G1.match('111222', 'foo'), false);
+
+      t.ok(ns.G2.match('aaabbb', 'foo'));
+      t.ok(ns.G2.match('111222', 'foo'));
+    });
+
+    it('semantic actions', function() {
+      t.deepEqual(ns.G2.synthesizedAttribute({
+        foo: function(x, y) {
+          return [x.value(), y.value()];
+        }
+      })(ns.G2.match('aaabbb', 'foo')), ['aaa', 'bbb']);
+
+      t.deepEqual(ns.G2.synthesizedAttribute({
+        foo: function(x, y) {
+          return [x.value(), y.value()];
+        }
+      })(ns.G2.match('111222', 'foo')), ['111', '222']);
+    });
 
     it('should check that rule exists in super-grammar', function() {
       try {
-        util.makeGrammar('G3 <: G1 { bar += "bar" }', 'inheritanceExtend');
+        util.makeGrammar('G3 <: G1 { bar += "bar" }', ns);
         t.fail('Expected an exception to be thrown');
       } catch(e) {
-        t.ok(e instanceof errors.UndeclaredRule);
+        t.equal(e.constructor, errors.UndeclaredRule);
         t.equal(e.ruleName, 'bar');
         t.equal(e.grammarName, 'G1');
       }
@@ -1351,49 +1372,28 @@ test('inheritance', function(t) {
       // action "API" doesn't change.
 
       // Too many:
-      util.makeGrammar('M1 { foo = "foo"  bar = "bar"  baz = "baz" }', 'inheritanceExtend3');
+      ns.M1 = util.makeGrammar('M1 { foo = "foo"  bar = "bar"  baz = "baz" }');
       try {
-        util.makeGrammar('M2 <: M1 { foo += bar baz }', 'inheritanceExtend3');
+        util.makeGrammar('M2 <: M1 { foo += bar baz }', ns);
         t.fail('Expected an exception to be thrown');
       } catch(e) {
-        t.ok(e instanceof errors.InconsistentArity);
+        t.equal(e.constructor, errors.InconsistentArity);
         t.equal(e.ruleName, 'foo');
         t.equal(e.expected, 1);
         t.equal(e.actual, 2);
       }
 
       // Too few:
-      util.makeGrammar('M3 { foo = digit digit }', 'inheritanceExtend3');
+      ns.M3 = util.makeGrammar('M3 { foo = digit digit }');
       try {
-        util.makeGrammar('M4 <: M3 { foo += digit }', 'inheritanceExtend3');
+        util.makeGrammar('M4 <: M3 { foo += digit }', ns);
         t.fail('Expected an exception to be thrown');
       } catch(e) {
-        t.ok(e instanceof errors.InconsistentArity);
+        t.equal(e.constructor, errors.InconsistentArity);
         t.equal(e.ruleName, 'foo');
         t.equal(e.expected, 2);
         t.equal(e.actual, 1);
       }
-    });
-
-    it('recognition', function() {
-      t.ok(m1.match('aaabbb', 'foo'));
-      t.equal(m1.match('111222', 'foo'), false);
-
-      t.ok(m2.match('aaabbb', 'foo'));
-      t.ok(m2.match('111222', 'foo'));
-    });
-
-    it('semantic actions', function() {
-      t.deepEqual(m2.synthesizedAttribute({
-        foo: function(x, y) {
-          return [x.value(), y.value()];
-        }
-      })(m2.match('aaabbb', 'foo')), ['aaa', 'bbb']);
-      t.deepEqual(m2.synthesizedAttribute({
-        foo: function(x, y) {
-          return [x.value(), y.value()];
-        }
-      })(m2.match('111222', 'foo')), ['111', '222']);
     });
     t.end();
   });
@@ -1406,7 +1406,7 @@ test('bindings', function(t) {
       util.makeGrammar('G { foo = "a" "c" | "b" }');
       t.fail('Expected an exception to be thrown');
     } catch(e) {
-      t.ok(e instanceof errors.InconsistentArity);
+      t.equal(e.constructor, errors.InconsistentArity);
       t.equal(e.ruleName, 'foo');
       t.deepEqual(e.expected, 2);
       t.deepEqual(e.actual, 1);
@@ -1501,35 +1501,29 @@ test('inline rule declarations', function(t) {
     return eval;
   }
 
-  var m = util.makeGrammar(arithmeticGrammarSource);
+  var ns = {};
+  var expr = ns.Expr = util.makeGrammar(arithmeticGrammarSource);
 
-  it('recognition', function() {
-    t.ok(m.match('1*(2+3)-4/5', 'expr'));
-  });
+  t.ok(expr.match('1*(2+3)-4/5', 'expr'), 'expr is recognized');
+  t.equal(makeEval(expr)(expr.match('10*(2+123)-4/5', 'expr')), 1249.2, 'semantic action works');
 
-  it('semantic actions', function() {
-    t.equal(makeEval(m)(m.match('10*(2+123)-4/5', 'expr')), 1249.2);
-  });
+  var m2 = util.makeGrammar([
+      'Good <: Expr {',
+      '  addExpr := addExpr "~" mulExpr  -- minus',
+      '           | mulExpr',
+      '}'
+    ], ns);
+  t.equal(makeEval(m2)(m2.match('2*3~4', 'expr')), 2);
 
-  it('overriding', function() {
-    var m2 = util.makeGrammar(['Good <: Expr {',
-        '  addExpr := addExpr "~" mulExpr  -- minus',
-        '           | mulExpr',
-        '}'
-      ],
-      m.namespaceName);
-    t.equal(makeEval(m2)(m2.match('2*3~4', 'expr')), 2);
-
-    try {
-      util.makeGrammar('Bad <: Expr { addExpr += addExpr "~" mulExpr  -- minus }', m.namespaceName);
+  try {
+    util.makeGrammar('Bad <: Expr { addExpr += addExpr "~" mulExpr  -- minus }', ns);
       t.fail('Expected an exception to be thrown');
-    } catch(e) {
-      t.ok(e instanceof errors.DuplicateRuleDeclaration);
-      t.equal(e.ruleName, 'addExpr_minus');
-      t.equal(e.offendingGrammarName, 'Bad');
-      t.equal(e.declGrammarName, 'Expr');
-    };
-  });
+  } catch(e) {
+    t.ok(e instanceof errors.DuplicateRuleDeclaration);
+    t.equal(e.ruleName, 'addExpr_minus');
+    t.equal(e.offendingGrammarName, 'Bad');
+    t.equal(e.declGrammarName, 'Expr');
+  };
   t.end();
 });
 
@@ -1564,7 +1558,7 @@ test('lexical vs. syntactic rules', function(t) {
 });
 
 test('semantic action templates', function(t) {
-  util.makeGrammars([
+  var ns = util.makeGrammars([
     'G1 {',
     '  foo = bar',
     '  bar = baz',
@@ -1577,163 +1571,129 @@ test('semantic action templates', function(t) {
     'G2 <: G1 {',
     '  qux := 100',
     '}'
-  ], 'semantic-action-templates');
-  var g1 = ohm.namespace('semantic-action-templates').grammar('G1');
-  var g2 = ohm.namespace('semantic-action-templates').grammar('G2');
-
-  it('rules that need semantic action', function() {
-    t.deepEqual(g1.rulesThatNeedSemanticAction([]), {});
-    t.deepEqual(g1.rulesThatNeedSemanticAction(['foo']), {
-      foo: true,
-      bar: true,
-      baz: true,
-      qux: true,
-      quux: true
-    });
-    t.deepEqual(g1.rulesThatNeedSemanticAction(['aaa']), {aaa: true});
-    t.deepEqual(g1.rulesThatNeedSemanticAction(['bbb']), {
-      bbb: true,
-      bbb_blah: true,
-      qux: true,
-      quux: true
-    });
-    t.deepEqual(g1.rulesThatNeedSemanticAction(['aaa', 'bbb']), {
-      aaa: true,
-      bbb: true,
-      bbb_blah: true,
-      qux: true,
-      quux: true
-    });
-
-    t.deepEqual(g2.rulesThatNeedSemanticAction([]), {});
-    t.deepEqual(g2.rulesThatNeedSemanticAction(['foo']), {
-      foo: true,
-      bar: true,
-      baz: true,
-      qux: true
-    });
-    t.deepEqual(g2.rulesThatNeedSemanticAction(['aaa']), {aaa: true});
-    t.deepEqual(g2.rulesThatNeedSemanticAction(['bbb']), {
-      bbb: true,
-      bbb_blah: true,
-      qux: true
-    });
-    t.deepEqual(g2.rulesThatNeedSemanticAction(['aaa', 'bbb']), {
-      aaa: true,
-      bbb: true,
-      bbb_blah: true,
-      qux: true
-    });
+  ]);
+  var g1 = ns.G1;
+  var g2 = ns.G2;
+  t.deepEqual(g1.rulesThatNeedSemanticAction([]), {});
+  t.deepEqual(g1.rulesThatNeedSemanticAction(['foo']), {
+    foo: true,
+    bar: true,
+    baz: true,
+    qux: true,
+    quux: true
   });
+  t.deepEqual(g1.rulesThatNeedSemanticAction(['aaa']), {aaa: true});
+  t.deepEqual(g1.rulesThatNeedSemanticAction(['bbb']), {
+    bbb: true,
+    bbb_blah: true,
+    qux: true,
+    quux: true
+  });
+  t.deepEqual(g1.rulesThatNeedSemanticAction(['aaa', 'bbb']), {
+    aaa: true,
+    bbb: true,
+    bbb_blah: true,
+    qux: true,
+    quux: true
+  });
+
+  t.deepEqual(g2.rulesThatNeedSemanticAction([]), {});
+  t.deepEqual(g2.rulesThatNeedSemanticAction(['foo']), {
+    foo: true,
+    bar: true,
+    baz: true,
+    qux: true
+  });
+  t.deepEqual(g2.rulesThatNeedSemanticAction(['aaa']), {aaa: true});
+  t.deepEqual(g2.rulesThatNeedSemanticAction(['bbb']), {
+    bbb: true,
+    bbb_blah: true,
+    qux: true
+  });
+  t.deepEqual(g2.rulesThatNeedSemanticAction(['aaa', 'bbb']), {
+    aaa: true,
+    bbb: true,
+    bbb_blah: true,
+    qux: true
+  });
+
   t.end();
 });
 
 test('namespaces', function(t) {
-  test('install', function(t) {
-    var ns1 = ohm.namespace(util.freshNamespaceName());
-    var ns2 = ohm.namespace(util.freshNamespaceName());
+  var ns = util.makeGrammars('G { start = "foo" }');
+  t.ok(ns.G.match('foo', 'start'), 'G exists in the namespace and works');
 
-    it('actually installs a grammar in a namespace', function() {
-      var m = util.makeGrammar('aaa { foo = "foo" }', ns1.name);
-      t.deepEqual(ns1.grammar('aaa'), m);
-      t.ok(m.match('foo', 'foo'));
-    });
+  var ns2 = util.makeGrammars('ccc { foo = "foo" }', ns);
+  t.ok(ns2);
+  try {
+    util.makeGrammar('ccc { bar = "bar" }', ns2);
+    t.fail('throws exception on duplicate grammar');
+  } catch(e) {
+    t.equal(e.constructor, errors.DuplicateGrammarDeclaration);
+    t.equal(e.grammarName, 'ccc');
+  }
+  t.ok(ns2.G, 'ns2 delegates to ns1');
 
-    it('detects duplicates', function() {
-      try {
-        util.makeGrammar('ccc { foo = "foo" }', ns1.name);
-        util.makeGrammar('ccc { bar = "bar" }', ns1.name);
-        t.fail('Expected an exception to be thrown');
-      } catch(e) {
-        t.ok(e instanceof errors.DuplicateGrammarDeclaration);
-        t.equal(e.grammarName, 'ccc');
-        t.equal(e.namespaceName, ns1.name);
-      }
-    });
+  var ns3 = util.makeGrammars('ccc { start = "x" }', ns);
+  t.ok(ns3);
+  t.ok(ns3.ccc, "grammars with same name can be created in diff't namespaces");
+  t.notEqual(ns3.ccc, ns2.ccc, "grammars with same name are diff't objects");
+  t.deepEqual(ns3.G, ns2.G, 'super grammar is the same');
 
-    it('allows same-name grammars to be installed in different namespaces', function() {
-      var m1 = util.makeGrammar('bbb { foo = "foo" }', ns1.name);
-      var m2 = util.makeGrammar('bbb { bar = "bar" }', ns2.name);
-
-      t.deepEqual(ns1.grammar('bbb'), m1);
-      t.deepEqual(ns2.grammar('bbb'), m2);
-      t.ok(m1 !== m2);
-    });
-    t.end();
-  });
   t.end();
 });
 
 test('loadGrammarsFromScriptElement', function(t) {
-  var scriptTag = {
-    type: 'text/ohm-js',
-    innerHTML: [
-      'O {',
-      '  number = number digit  -- rec',
-      '         | digit',
-      '}'
-    ].join('\n'),
-    getAttribute: function(name) {
-      return undefined;
-    }
-  };
+  function fakeScriptTag(contents) {
+    return {
+      type: 'text/ohm-js',
+      innerHTML: Array.isArray(contents) ? contents.join('\n') : contents,
+      getAttribute: function(name) {
+        return undefined;
+      }
+    };
+  }
+  var script1 = fakeScriptTag(['O { number = number digit  -- rec',
+                               '           | digit',
+                               '}']);
+  var script2 = fakeScriptTag(['M { x = "xx" }',
+                               'N { y = "yy" }']);
 
-  it('recognition', function() {
-    var ns = ohm.namespace('aaa1');
-    ns.loadGrammarsFromScriptElement(scriptTag);
-    try {
-      ns.grammar('M');
-      t.fail('Expected an exception to be thrown');
-    } catch(e) {
-      t.ok(e instanceof errors.UndeclaredGrammar);
-      t.equal(e.grammarName, 'M');
-      t.equal(e.namespaceName, 'aaa1');
-    }
-    t.ok(ns.grammar('O'));
-    t.ok(ns.grammar('O').match('1234', 'number'));
-  });
+  var ns1 = ohm.loadGrammarsFromScriptElement(script1);
+  var ns2 = ohm.loadGrammarsFromScriptElement(script2);
+  t.equal(ns1.M, undefined, 'M is undefined in ns1');
+  t.ok(ns1.O, 'O is defined in ns1');
+  t.ok(ns1.O.match('1234', 'number'), 'O can match');
 
-  it('semantic actions', function() {
-    var ns = ohm.namespace('aaa2');
-    ns.loadGrammarsFromScriptElement(scriptTag);
-    var m = ns.grammar('O');
-    t.ok(m);
-    var eval = m.synthesizedAttribute({
-      number: function(expr) {
-        return eval(expr);
-      },
-      number_rec: function(n, d) {
-        return eval(n) * 10 + eval(d);
-      },
-      digit: function(expr) {
-        return eval(expr).charCodeAt(0) - '0'.charCodeAt(0);
-      },
-      _terminal: ohm.actions.getValue
-    });
-    t.equal(eval(m.match('1234', 'number')), 1234);
-  });
+  t.ok(ns2.M, 'M is defined in ns2');
+  t.ok(ns2.N, 'N is also defined');
+  t.equal(ns2.O, undefined, 'O is not defined in ns2');
+  t.ok(ns2.M.match('xx', 'x'), 'M can match');
+
   t.end();
 });
 
 test('bootstrap', function(t) {
-  var g = util.makeGrammar(ohmGrammarSource, 'bootstrap');
+  var ns = util.makeGrammars(ohmGrammarSource);
 
   it('can recognize arithmetic grammar', function() {
-    t.ok(g.match(arithmeticGrammarSource, 'Grammar'));
+    t.ok(ns.Ohm.match(arithmeticGrammarSource, 'Grammar'));
   });
 
   it('can recognize itself', function() {
-    t.ok(g.match(ohmGrammarSource, 'Grammar'));
+    t.ok(ns.Ohm.match(ohmGrammarSource, 'Grammar'));
   });
 
-  it('can produce a grammar that will recognize itself', function() {
-    var gPrime = ohm._makeGrammarBuilder(util.freshNamespaceName(), g)(g.match(ohmGrammarSource, 'Grammar'));
-    t.ok(gPrime.match(ohmGrammarSource, 'Grammar'));
-  });
+  var g = ohm._buildGrammar(ns.Ohm.match(ohmGrammarSource, 'Grammar'),
+                            ohm.createNamespace(),
+                            ns.Ohm);
+  t.ok(g.match(ohmGrammarSource, 'Grammar'), 'Ohm grammar can recognize itself');
 
   it('can produce a grammar that works', function() {
-    var gPrime = ohm._makeGrammarBuilder(util.freshNamespaceName(), g)(g.match(ohmGrammarSource, 'Grammar'));
-    var a = ohm._makeGrammarBuilder(util.freshNamespaceName(), gPrime)(gPrime.match(arithmeticGrammarSource, 'Grammar'));
+    var a = ohm._buildGrammar(g.match(arithmeticGrammarSource, 'Grammar'),
+                              ohm.createNamespace(),
+                              g);
     var eval = a.synthesizedAttribute({
       expr: function(expr) {
         return eval(expr);
@@ -1777,10 +1737,14 @@ test('bootstrap', function(t) {
   });
 
   it('full bootstrap!', function() {
-    var gPrime = ohm._makeGrammarBuilder(util.freshNamespaceName(), g)(g.match(ohmGrammarSource, 'Grammar'));
-    var gPrimePrime = ohm._makeGrammarBuilder(util.freshNamespaceName(), gPrime)(gPrime.match(ohmGrammarSource, 'Grammar'));
-    gPrimePrime.namespaceName = gPrime.namespaceName; // make their namespaceName properties the same
-    compareGrammars(t, gPrime, gPrimePrime);
+    var g = ohm._buildGrammar(ns.Ohm.match(ohmGrammarSource, 'Grammar'),
+                              ohm.createNamespace(),
+                              ns.Ohm);
+    var gPrime = ohm._buildGrammar(g.match(ohmGrammarSource, 'Grammar'),
+                                   ohm.createNamespace(),
+                                   g);
+    gPrime.namespaceName = g.namespaceName; // make their namespaceName properties the same
+    compareGrammars(t, g, gPrime);
   });
 
   it('inherited attributes', function() {
@@ -1832,7 +1796,7 @@ test('definitionInterval', function(t) {
     '  foo = bar',
     '  bar = "a" | "b" -- baz',
     '}'
-  ], 'ns');
+  ]);
 
   function definitionLoc(grammar, ruleName) {
     var interval = grammar.ruleDict[ruleName].definitionInterval;
@@ -1851,7 +1815,7 @@ test('definitionInterval', function(t) {
     '  foo += bar',
     '  bar := "a" | "b" -- baz',
     '}'
-  ], 'ns');
+  ], { G: g });
   it('works when overriding and extending rules', function() {
     t.deepEqual(definitionLoc(g2, 'foo'), [12, 22]);
     t.deepEqual(definitionLoc(g2, 'bar'), [25, 48]);

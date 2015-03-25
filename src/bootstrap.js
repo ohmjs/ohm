@@ -19,7 +19,6 @@ try {
   process.exit(2);  // eslint-disable-line no-process-exit
 }
 
-var grammar = ohm.makeGrammar(source, '_default');
-grammar.namespaceName = 'default';
-console.log("var ohm = require('../src/main.js');");
-console.log('ohm.makeRecipe' + grammar.toRecipe());
+var grammar = ohm.makeGrammar(source);
+console.log("var ohm = require('..');");
+console.log('module.exports = ohm.makeRecipe' + grammar.toRecipe());

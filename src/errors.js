@@ -3,6 +3,7 @@
 // --------------------------------------------------------------------
 
 var common = require('./common.js');
+var Namespace = require('./Namespace.js');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -106,12 +107,15 @@ var IntervalSourcesDontMatch = makeCustomError(
 
 var UndeclaredGrammar = makeCustomError(
     'ohm.error.UndeclaredGrammar',
-    function(grammarName, namespaceName) {
+    function(grammarName, namespace) {
       this.grammarName = grammarName;
-      this.namespaceName = namespaceName;
-      this.message = this.namespaceName === 'default' ?
-          'undeclared grammar ' + this.grammarName :
-          'grammar ' + this.grammarName + ' is not declared in namespace ' + this.namespaceName;
+      this.namespace = namespace;
+      if (this.namespace) {
+        this.message = 'grammar ' + this.grammarName +
+            ' is not declared in namespace ' + Namespace.toString(this.namespace);
+      } else {
+        this.message = 'undeclared grammar ' + this.grammarName;
+      }
     }
 );
 
@@ -119,10 +123,11 @@ var UndeclaredGrammar = makeCustomError(
 
 var DuplicateGrammarDeclaration = makeCustomError(
     'ohm.error.DuplicateGrammarDeclaration',
-    function(grammarName, namespaceName) {
+    function(grammarName, namespace) {
       this.grammarName = grammarName;
-      this.namespaceName = namespaceName;
-      this.message = 'grammar ' + this.grammarName + ' is already declared in namespace ' + this.namespaceName;
+      this.namespace = namespace;
+      this.message = 'grammar ' + this.grammarName +
+          ' is already declared in namespace ' + Namespace.toString(this.namespace);
     }
 );
 

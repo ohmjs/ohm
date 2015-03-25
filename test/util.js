@@ -8,23 +8,18 @@ var ohm = require('..');
 // Private stuff
 // --------------------------------------------------------------------
 
-var nextFreshNSId = 0;
-function freshNamespaceName() {
-  return 'ns' + nextFreshNSId++;
-}
-
-function makeGrammar(source, optNamespaceName) {
+function makeGrammar(source, optNamespace) {
   if (source instanceof Array) {
     source = source.join('\n');
   }
-  return ohm.makeGrammar(source, optNamespaceName || freshNamespaceName());
+  return ohm.makeGrammar(source, optNamespace);
 }
 
-function makeGrammars(source, optNamespaceName) {
+function makeGrammars(source, optNamespace) {
   if (source instanceof Array) {
     source = source.join('\n');
   }
-  return ohm.makeGrammars(source, optNamespaceName || freshNamespaceName());
+  return ohm.makeGrammars(source, optNamespace);
 }
 
 // --------------------------------------------------------------------
@@ -32,7 +27,6 @@ function makeGrammars(source, optNamespaceName) {
 // --------------------------------------------------------------------
 
 module.exports = {
-  freshNamespaceName: freshNamespaceName,
   makeGrammar: makeGrammar,
   makeGrammars: makeGrammars
 };
