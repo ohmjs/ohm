@@ -23,10 +23,10 @@ function skipSpacesIfAppropriate(state) {
 }
 
 function skipSpaces(state) {
-  state.pushFreshFailureDescriptor();
+  state.ignoreFailures();
   applySpaces_.eval(state);
   state.bindings.pop();
-  state.popFailureDescriptor();
+  state.recordFailures();
 }
 
 // Evaluate the expression and return true if it succeeded, otherwise false.
@@ -219,9 +219,9 @@ pexprs.Not.prototype._eval = function(state) {
 
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  state.pushFreshFailureDescriptor();
+  state.ignoreFailures();
   var ans = this.expr.eval(state);
-  state.popFailureDescriptor();
+  state.recordFailures();
   if (ans) {
     state.bindings.length -= this.getArity();
     return false;
@@ -354,8 +354,10 @@ pexprs.Apply.prototype._eval = function(state) {
   } else {
     var body = grammar.ruleDict[ruleName];
     var origPos = inputStream.pos;
-    var newFailureDescriptor = state.pushFreshFailureDescriptor();
     origPosInfo.enter(this);
+    if (body.description) {
+      state.ignoreFailures();
+    }
     var value = this.evalOnce(body, state);
     currentLR = origPosInfo.getCurrentLeftRecursion();
     if (currentLR) {
@@ -370,14 +372,17 @@ pexprs.Apply.prototype._eval = function(state) {
     } else {
       origPosInfo.memo[ruleName] = {pos: inputStream.pos, value: value};
     }
-    // Record the failure and trace information in the memo table, so that it is
-    // available if the memoized result is used later.
-    if (origPosInfo.memo[ruleName]) {
-      origPosInfo.memo[ruleName].failureDescriptor = newFailureDescriptor;
-      if (state.isTracing()) {
-        var entry = state.makeTraceEntry(origPos, this, !!value, true);
-        origPosInfo.memo[ruleName].traceEntry = entry;
+    if (body.description) {
+      state.recordFailures();
+      if (!value) {
+        state.recordFailure(origPos, this);
       }
+    }
+    // Record trace information in the memo table, so that it is
+    // available if the memoized result is used later.
+    if (origPosInfo.memo[ruleName] && state.isTracing()) {
+      var entry = state.makeTraceEntry(origPos, this, !!value, true);
+      origPosInfo.memo[ruleName].traceEntry = entry;
     }
     var ans;
     if (value) {
@@ -395,17 +400,6 @@ pexprs.Apply.prototype._eval = function(state) {
       ans = false;
     }
 
-    if (body.description) {
-      if (value) {
-        newFailureDescriptor.pos = -1;  // so that the failures are ignored
-      } else if (newFailureDescriptor.pos <= origPos) {
-        newFailureDescriptor.pos = origPos;
-        newFailureDescriptor.exprsAndStacks = [{expr: this, stacks: [[]]}];
-      }
-    }
-
-    state.popFailureDescriptor();
-    state.recordFailures(newFailureDescriptor, this);
     origPosInfo.exit();
     return ans;
   }

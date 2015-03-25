@@ -4,26 +4,35 @@
 
 var Interval = require('./Interval.js');
 var PosInfo = require('./PosInfo.js');
+var pexprs = require('./pexprs.js');
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
-function State(grammar, inputStream, tracingEnabled) {
+function State(grammar, inputStream, startRule, tracingEnabled) {
   this.grammar = grammar;
-  this.inputStreamStack = [];
-  this.posInfosStack = [];
-  this.pushInputStream(inputStream);
-  this.ruleStack = [];
-  this.bindings = [];
-  this.failureDescriptor = this.makeFailureDescriptor();
-  this.failureDescriptorStack = [];
-  if (tracingEnabled) {
-    this.trace = [];
-  }
+  this.origInputStream = inputStream;
+  this.startRule = startRule;
+  this.tracingEnabled = tracingEnabled;
+  this.rightmostFailPos = -1;
+  this.init();
 }
 
 State.prototype = {
+  init: function(optFailuresArray) {
+    this.inputStreamStack = [];
+    this.posInfosStack = [];
+    this.pushInputStream(this.origInputStream);
+    this.ruleStack = [];
+    this.bindings = [];
+    this.failures = optFailuresArray;
+    this.ignoreFailuresCount = 0;
+    if (this.isTracing()) {
+      this.trace = [];
+    }
+  },
+
   pushInputStream: function(inputStream) {
     this.inputStreamStack.push(this.inputStream);
     this.posInfosStack.push(this.posInfos);
@@ -45,7 +54,22 @@ State.prototype = {
     return posInfo || (this.posInfos[pos] = new PosInfo(this.ruleStack));
   },
 
-  recordFailure: function(pos, expr, optStack) {
+  recordFailure: function(pos, expr) {
+    if (this.ignoreFailuresCount > 0) {
+      return;
+    }
+    if (pos < this.rightmostFailPos) {
+      // it would be useless to record this failure, so don't do it
+      return;
+    } else if (pos > this.rightmostFailPos) {
+      // new rightmost failure!
+      this.rightmostFailPos = pos;
+    }
+    if (!this.failures) {
+      // we're not really recording failures, so we're done
+      return;
+    }
+
     // TODO: consider making this code more OO, e.g., add an ExprAndStacks class
     // that supports an addStack(stack) method.
     function addStack(stack, stacks) {
@@ -67,61 +91,45 @@ State.prototype = {
       stacks.push(stack);
     }
 
-    if (pos < this.failureDescriptor.pos) {
-      // Failure is not at the right-most position -- ignore it.
-      return;
-    }
-
-    var stack = optStack || [];
-    if (pos > this.failureDescriptor.pos) {
-      // Drop the old failures -- this is the new right-most position.
-      this.failureDescriptor.pos = pos;
-      this.failureDescriptor.exprsAndStacks = [{expr: expr, stacks: [stack]}];
-    } else {
-      // Another failure at right-most position -- record it if it wasn't already.
-      var exprsAndStacks = this.failureDescriptor.exprsAndStacks;
-      for (var idx = 0; idx < exprsAndStacks.length; idx++) {
-        var exprAndStacks = exprsAndStacks[idx];
-        if (exprAndStacks.expr === expr) {
-          addStack(stack, exprAndStacks.stacks);
-          return;
-        }
+    // Another failure at right-most position -- record it if it wasn't already.
+    var stack = this.ruleStack.slice();
+    var exprsAndStacks = this.failures;
+if (expr.obj === '+') {
+console.log('+ at pos', this.rightmostFailPos, 'w/ stack', stack.map(function(a){return a.ruleName}).join(','));
+}
+    for (var idx = 0; idx < exprsAndStacks.length; idx++) {
+      var exprAndStacks = exprsAndStacks[idx];
+      if (exprAndStacks.expr === expr) {
+        addStack(stack, exprAndStacks.stacks);
+        return;
       }
-      exprsAndStacks.push({expr: expr, stacks: [stack]});
     }
+    exprsAndStacks.push({expr: expr, stacks: [stack]});
   },
 
-  recordFailures: function(failureDescriptor, currentApplication) {
-    var self = this;
-    failureDescriptor.exprsAndStacks.forEach(function(exprAndStacks) {
-      var expr = exprAndStacks.expr;
-      exprAndStacks.stacks.forEach(function(stack) {
-        self.recordFailure(failureDescriptor.pos, expr, [currentApplication].concat(stack));
-      });
-    });
+  ignoreFailures: function() {
+    this.ignoreFailuresCount++;
+  },
+
+  recordFailures: function() {
+    this.ignoreFailuresCount--;
   },
 
   getFailuresPos: function() {
-    return this.failureDescriptor.pos;
+    return this.rightmostFailPos;
   },
 
   getFailures: function() {
-    return this.failureDescriptor.exprsAndStacks;
-  },
-
-  makeFailureDescriptor: function() {
-    return {pos: -1, exprsAndStacks: []};
-  },
-
-  pushFreshFailureDescriptor: function() {
-    this.failureDescriptorStack.push(this.failureDescriptor);
-    this.failureDescriptor = this.makeFailureDescriptor();
-    return this.failureDescriptor;
-  },
-
-  popFailureDescriptor: function() {
-    this.failureDescriptor = this.failureDescriptorStack.pop();
-    return this.failureDescriptor;
+    if (!this.failures) {
+      // Rewind, then try to match the input again, recording failures.
+      this.init([]);
+      this.tracingEnabled = false;
+      var succeeded = new pexprs.Apply(this.startRule).eval(this);
+      if (succeeded) {
+        this.failures = [];
+      }
+    }
+    return this.failures;
   },
 
   // Returns the memoized trace entry for `pos` and `expr`, if one exists.
@@ -153,7 +161,7 @@ State.prototype = {
   },
 
   isTracing: function() {
-    return !!this.trace;
+    return this.tracingEnabled;
   }
 };
 
