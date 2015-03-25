@@ -120,121 +120,118 @@ test('grammar constructors dictionary', function(t) {
   t.end();
 });
 
-test('helper stuff', function(t) {
-  test('intervals', function(t) {
-    test('collapsing', function(t) {
-      it('left', function() {
-        var interval = makeInterval('hello world', 0, 5);
-        var collapsed = interval.collapsedLeft();
+test('intervals', function(t) {
+  test('collapsing', function(t) {
+    it('left', function() {
+      var interval = makeInterval('hello world', 0, 5);
+      var collapsed = interval.collapsedLeft();
 
-        // Original interval shouldn't change
-        t.equal(interval.startIdx, 0);
-        t.equal(interval.endIdx, 5);
-        t.equal(interval.inputStream.source, 'hello world');
-        t.equal(interval.contents, 'hello');
+      // Original interval shouldn't change
+      t.equal(interval.startIdx, 0);
+      t.equal(interval.endIdx, 5);
+      t.equal(interval.inputStream.source, 'hello world');
+      t.equal(interval.contents, 'hello');
 
-        t.equal(collapsed.startIdx, 0);
-        t.equal(collapsed.endIdx, 0);
-        t.equal(collapsed.inputStream.source, 'hello world');
-        t.equal(collapsed.contents, '');
-      });
-
-      it('right', function() {
-        var interval = makeInterval('hello world', 0, 5);
-        var collapsed = interval.collapsedRight();
-
-        // Original interval shouldn't change
-        t.equal(interval.startIdx, 0);
-        t.equal(interval.endIdx, 5);
-        t.equal(interval.inputStream.source, 'hello world');
-        t.equal(collapsed.contents, '');
-
-        t.equal(collapsed.startIdx, 5);
-        t.equal(collapsed.endIdx, 5);
-        t.equal(collapsed.inputStream.source, 'hello world');
-        t.equal(collapsed.contents, '');
-      });
-      t.end();
+      t.equal(collapsed.startIdx, 0);
+      t.equal(collapsed.endIdx, 0);
+      t.equal(collapsed.inputStream.source, 'hello world');
+      t.equal(collapsed.contents, '');
     });
 
-    test('coverage', function(t) {
-      it('one interval', function() {
-        var interval = makeInterval('hello world', 0, 5);
-        var ans = Interval.coverage(interval);
+    it('right', function() {
+      var interval = makeInterval('hello world', 0, 5);
+      var collapsed = interval.collapsedRight();
 
-        t.equal(ans.startIdx, 0);
-        t.equal(ans.endIdx, 5);
-        t.equal(ans.inputStream.source, 'hello world');
-        t.equal(ans.contents, 'hello');
-      });
+      // Original interval shouldn't change
+      t.equal(interval.startIdx, 0);
+      t.equal(interval.endIdx, 5);
+      t.equal(interval.inputStream.source, 'hello world');
+      t.equal(collapsed.contents, '');
 
-      it('two adjacent intervals', function() {
-        var interval1 = makeInterval('hello world', 2, 5);
-        var interval2 = makeInterval(interval1.inputStream, 0, 2);
-        var ans = Interval.coverage(interval1, interval2);
-
-        t.equal(ans.startIdx, 0);
-        t.equal(ans.endIdx, 5);
-        t.equal(ans.inputStream.source, 'hello world');
-        t.equal(ans.contents, 'hello');
-      });
-
-      it('two non-adjacent intervals', function() {
-        var interval1 = makeInterval('hello world', 0, 2);
-        var interval2 = makeInterval(interval1.inputStream, 4, 5);
-        var ans = Interval.coverage(interval1, interval2);
-
-        t.equal(ans.startIdx, 0);
-        t.equal(ans.endIdx, 5);
-        t.equal(ans.inputStream.source, 'hello world');
-        t.equal(ans.contents, 'hello');
-      });
-
-      it('nested intervals', function() {
-        var interval1 = makeInterval('hello world', 0, 5);
-        var interval2 = makeInterval(interval1.inputStream, 3, 4);
-        var ans = Interval.coverage(interval1, interval2);
-
-        t.equal(ans.startIdx, 0);
-        t.equal(ans.endIdx, 5);
-        t.equal(ans.inputStream.source, 'hello world');
-        t.equal(ans.contents, 'hello');
-      });
-
-      it('more intervals', function() {
-        var interval1 = makeInterval('hello world', 0, 2);
-        var interval2 = makeInterval(interval1.inputStream, 3, 4);
-        var interval3 = makeInterval(interval1.inputStream, 6, 10);
-        var ans = Interval.coverage(interval1, interval2, interval3);
-
-        t.equal(ans.startIdx, 0);
-        t.equal(ans.endIdx, 10);
-        t.equal(ans.inputStream.source, 'hello world');
-        t.equal(ans.contents, 'hello worl');
-      });
-
-      it('brotha from anotha motha', function() {
-        var interval1 = makeInterval('abc', 0, 3);
-        var interval2 = makeInterval('xyz', 1, 2);
-        t.throws(function() {
-          Interval.coverage(interval1, interval2);
-        }, errors.IntervalSourcesDontMatch);
-      });
-
-      it('coverageWith (same method as above but as a method of an interval)', function() {
-        var interval1 = makeInterval('hello world', 0, 2);
-        var interval2 = makeInterval(interval1.inputStream, 3, 4);
-        var interval3 = makeInterval(interval1.inputStream, 6, 10);
-        var ans = interval1.coverageWith(interval2, interval3);
-
-        t.equal(ans.startIdx, 0);
-        t.equal(ans.endIdx, 10);
-        t.equal(ans.inputStream.source, 'hello world');
-        t.equal(ans.contents, 'hello worl');
-      });
-
-      t.end();
+      t.equal(collapsed.startIdx, 5);
+      t.equal(collapsed.endIdx, 5);
+      t.equal(collapsed.inputStream.source, 'hello world');
+      t.equal(collapsed.contents, '');
     });
+    t.end();
+  });
+
+  test('coverage', function(t) {
+    it('one interval', function() {
+      var interval = makeInterval('hello world', 0, 5);
+      var ans = Interval.coverage(interval);
+
+      t.equal(ans.startIdx, 0);
+      t.equal(ans.endIdx, 5);
+      t.equal(ans.inputStream.source, 'hello world');
+      t.equal(ans.contents, 'hello');
+    });
+
+    it('two adjacent intervals', function() {
+      var interval1 = makeInterval('hello world', 2, 5);
+      var interval2 = makeInterval(interval1.inputStream, 0, 2);
+      var ans = Interval.coverage(interval1, interval2);
+
+      t.equal(ans.startIdx, 0);
+      t.equal(ans.endIdx, 5);
+      t.equal(ans.inputStream.source, 'hello world');
+      t.equal(ans.contents, 'hello');
+    });
+
+    it('two non-adjacent intervals', function() {
+      var interval1 = makeInterval('hello world', 0, 2);
+      var interval2 = makeInterval(interval1.inputStream, 4, 5);
+      var ans = Interval.coverage(interval1, interval2);
+
+      t.equal(ans.startIdx, 0);
+      t.equal(ans.endIdx, 5);
+      t.equal(ans.inputStream.source, 'hello world');
+      t.equal(ans.contents, 'hello');
+    });
+
+    it('nested intervals', function() {
+      var interval1 = makeInterval('hello world', 0, 5);
+      var interval2 = makeInterval(interval1.inputStream, 3, 4);
+      var ans = Interval.coverage(interval1, interval2);
+
+      t.equal(ans.startIdx, 0);
+      t.equal(ans.endIdx, 5);
+      t.equal(ans.inputStream.source, 'hello world');
+      t.equal(ans.contents, 'hello');
+    });
+
+    it('more intervals', function() {
+      var interval1 = makeInterval('hello world', 0, 2);
+      var interval2 = makeInterval(interval1.inputStream, 3, 4);
+      var interval3 = makeInterval(interval1.inputStream, 6, 10);
+      var ans = Interval.coverage(interval1, interval2, interval3);
+
+      t.equal(ans.startIdx, 0);
+      t.equal(ans.endIdx, 10);
+      t.equal(ans.inputStream.source, 'hello world');
+      t.equal(ans.contents, 'hello worl');
+    });
+
+    it('brotha from anotha motha', function() {
+      var interval1 = makeInterval('abc', 0, 3);
+      var interval2 = makeInterval('xyz', 1, 2);
+      t.throws(function() {
+        Interval.coverage(interval1, interval2);
+      }, errors.IntervalSourcesDontMatch);
+    });
+
+    it('coverageWith (same method as above but as a method of an interval)', function() {
+      var interval1 = makeInterval('hello world', 0, 2);
+      var interval2 = makeInterval(interval1.inputStream, 3, 4);
+      var interval3 = makeInterval(interval1.inputStream, 6, 10);
+      var ans = interval1.coverageWith(interval2, interval3);
+
+      t.equal(ans.startIdx, 0);
+      t.equal(ans.endIdx, 10);
+      t.equal(ans.inputStream.source, 'hello world');
+      t.equal(ans.contents, 'hello worl');
+    });
+
     t.end();
   });
   t.end();
