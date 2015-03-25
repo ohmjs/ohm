@@ -3,7 +3,6 @@
 // --------------------------------------------------------------------
 
 var common = require('./common.js');
-var errors = require('./errors.js');
 var Node = require('./Node.js');
 var pexprs = require('./pexprs.js');
 var InputStream = require('./InputStream.js');

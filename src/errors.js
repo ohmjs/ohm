@@ -186,16 +186,18 @@ MatchFailure.prototype.getExpected = function() {
   function printS(stack) {
     return stack.map(function(app) {
       return app.ruleName + (app.interval ? '@' + app.interval.startIdx : '');
-    }).join(">");
+    }).join('>');
   }
 
-  console.log("### --------");
+  /* eslint-disable no-console */
+  console.log('### --------');
   exprsAndStacks.forEach(function(exprAndStacks) {
     expected[exprAndStacks.expr.toExpected(self.state.grammar.ruleDict)] = true;
-    console.log("###", exprAndStacks.expr.toExpected(self.state.grammar.ruleDict) + ": " +
-                exprAndStacks.stacks.map(printS).join(" and "));
+    console.log('###', exprAndStacks.expr.toExpected(self.state.grammar.ruleDict) + ': ' +
+                exprAndStacks.stacks.map(printS).join(' and '));
   });
-  console.log("### --------");
+  console.log('### --------');
+  /* eslint-enable no-console */
 
   return Object.keys(expected);
 };
