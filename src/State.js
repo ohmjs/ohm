@@ -94,9 +94,6 @@ State.prototype = {
     // Another failure at right-most position -- record it if it wasn't already.
     var stack = this.ruleStack.slice();
     var exprsAndStacks = this.failures;
-if (expr.obj === '+') {
-console.log('+ at pos', this.rightmostFailPos, 'w/ stack', stack.map(function(a){return a.ruleName}).join(','));
-}
     for (var idx = 0; idx < exprsAndStacks.length; idx++) {
       var exprAndStacks = exprsAndStacks[idx];
       if (exprAndStacks.expr === expr) {
