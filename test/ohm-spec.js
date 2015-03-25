@@ -61,6 +61,10 @@ function compareGrammars(t, expected, actual) {
   }
 }
 
+// A stub for Jasmin/RSpec-style tests, for tests that were written before we
+// moved to `tape`. New tests shouldn't use this -- instead, they should
+// pass a message argument to the assertion functions (e.g. `t.equal`), or
+// just put checks in a separate call to `test`.
 function it(desc, fn) {
   console.log(desc);
   fn.call();
@@ -1678,56 +1682,53 @@ test('namespaces', function(t) {
   t.end();
 });
 
-test('script tag support', function(t) {
-  test('loadGrammarsFromScriptElement', function(t) {
-    var scriptTag = {
-      type: 'text/ohm-js',
-      innerHTML: [
-        'O {',
-        '  number = number digit  -- rec',
-        '         | digit',
-        '}'
-      ].join('\n'),
-      getAttribute: function(name) {
-        return undefined;
-      }
-    };
+test('loadGrammarsFromScriptElement', function(t) {
+  var scriptTag = {
+    type: 'text/ohm-js',
+    innerHTML: [
+      'O {',
+      '  number = number digit  -- rec',
+      '         | digit',
+      '}'
+    ].join('\n'),
+    getAttribute: function(name) {
+      return undefined;
+    }
+  };
 
-    it('recognition', function() {
-      var ns = ohm.namespace('aaa1');
-      ns.loadGrammarsFromScriptElement(scriptTag);
-      try {
-        ns.grammar('M');
-        t.fail();  // Ensure exception is thrown.
-      } catch(e) {
-        t.ok(e instanceof errors.UndeclaredGrammar);
-        t.equal(e.grammarName, 'M');
-        t.equal(e.namespaceName, 'aaa1');
-      }
-      t.ok(ns.grammar('O'));
-      t.ok(ns.grammar('O').match('1234', 'number'));
-    });
+  it('recognition', function() {
+    var ns = ohm.namespace('aaa1');
+    ns.loadGrammarsFromScriptElement(scriptTag);
+    try {
+      ns.grammar('M');
+      t.fail();  // Ensure exception is thrown.
+    } catch(e) {
+      t.ok(e instanceof errors.UndeclaredGrammar);
+      t.equal(e.grammarName, 'M');
+      t.equal(e.namespaceName, 'aaa1');
+    }
+    t.ok(ns.grammar('O'));
+    t.ok(ns.grammar('O').match('1234', 'number'));
+  });
 
-    it('semantic actions', function() {
-      var ns = ohm.namespace('aaa2');
-      ns.loadGrammarsFromScriptElement(scriptTag);
-      var m = ns.grammar('O');
-      t.ok(m);
-      var eval = m.synthesizedAttribute({
-        number: function(expr) {
-          return eval(expr);
-        },
-        number_rec: function(n, d) {
-          return eval(n) * 10 + eval(d);
-        },
-        digit: function(expr) {
-          return eval(expr).charCodeAt(0) - '0'.charCodeAt(0);
-        },
-        _terminal: ohm.actions.getValue
-      });
-      t.equal(eval(m.match('1234', 'number')), 1234);
+  it('semantic actions', function() {
+    var ns = ohm.namespace('aaa2');
+    ns.loadGrammarsFromScriptElement(scriptTag);
+    var m = ns.grammar('O');
+    t.ok(m);
+    var eval = m.synthesizedAttribute({
+      number: function(expr) {
+        return eval(expr);
+      },
+      number_rec: function(n, d) {
+        return eval(n) * 10 + eval(d);
+      },
+      digit: function(expr) {
+        return eval(expr).charCodeAt(0) - '0'.charCodeAt(0);
+      },
+      _terminal: ohm.actions.getValue
     });
-    t.end();
+    t.equal(eval(m.match('1234', 'number')), 1234);
   });
   t.end();
 });
