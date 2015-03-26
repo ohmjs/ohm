@@ -51,6 +51,7 @@
     "browserify": "^3.30.4",
     "eslint": "^0.17.1",
     "tap-spec": "^2.2.2",
+    "tape": "^3.5.0",
     "tape-catch": "^1.0.4",
     "uglify-js": "^2.4.12",
     "watchify": "^0.6.1",
