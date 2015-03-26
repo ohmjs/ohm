@@ -54,6 +54,6 @@
     "tape-catch": "^1.0.4",
     "uglify-js": "^2.4.12",
     "watchify": "^0.6.1",
-    "watchy": "git://github.com/pdubroy/watchy.git#master"
+    "watchy": "^0.6.1"
   }
 }
