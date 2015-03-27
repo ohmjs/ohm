@@ -1,5 +1,5 @@
 /* eslint-env browser */
-/* global d3, ohm */
+/* global CodeMirror, d3, ohm */
 
 var ArrayProto = Array.prototype;
 function $(sel) { return document.querySelector(sel); }
@@ -265,7 +265,7 @@ function isPrimitive(expr) {
   var origInput = $('#input').textContent;
 
   function refresh() {
-    var grammarSrc = $('textarea').value;
+    var grammarSrc = $('#grammar').value;
     ohm.namespace('default').grammars = clone(origDefaultGrammars);  // Hack to reset the namespace.
 
     var g = ohm.makeGrammar(grammarSrc);
@@ -277,7 +277,10 @@ function isPrimitive(expr) {
       options[checkbox.name] = checkbox.checked;
     }
 
-    $('#input').innerHTML = '';
+    CodeMirror.fromTextArea($('#input'));
+    CodeMirror.fromTextArea($('#grammar'));
+
+    $('#expandedInput').innerHTML = '';
     $('#parseResults').innerHTML = '';
     (function walkTraceNodes(nodes, container, inputContainer, showTrace, parent) {
       nodes.forEach(function(node) {
@@ -340,7 +343,7 @@ function isPrimitive(expr) {
           }
         }
       });
-    })(trace, $('#parseResults'), $('#input'), true, null);
+    })(trace, $('#parseResults'), $('#expandedInput'), true, null);
     initializeWidths();
   }
   refresh();

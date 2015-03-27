@@ -3,15 +3,20 @@
 <head>
   <title>Ohm</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="third_party/codemirror-5.1/lib/codemirror.css">
   <style>
-    #input {
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    #expandedInput {
       box-sizing: border-box;
       font-size: 100%;
       margin-bottom: 1px;
       outline: none;
-      padding: 8px 0 10px 0;
+      padding: 8px 0 8px 0;
     }
-    #input .highlight {
+    #expandedInput .highlight {
       background-color: #B5D5FF;
     }
     .pexpr {
@@ -92,9 +97,6 @@
     .pexpr > .children[hidden] {
       display: none;
     }
-    textarea, .CodeMirror {
-      display: none;
-    }
     .highlightRule {
       background-color: #B5D5FF;
     }
@@ -123,7 +125,7 @@
     .input {
       font-family: Monaco, Menlo, sans-serif;
     }
-    #input, #input span {
+    #expandedInput, #expandedInput span {
       display: inline-block;
       text-align: center;
       white-space: pre;
@@ -135,7 +137,7 @@
       white-space: nowrap;
       width: auto;
     }
-    #input .whitespace {
+    #expandedInput .whitespace {
       color: #ccc;
     }
     .pexpr.whitespace {
@@ -145,35 +147,45 @@
       /* HACK! This is not the right way to deal with whitespace. */
       width: 10px;
     }
+
+    #bottomSection {
+      border-top: 1px solid #ddd;
+      overflow: scroll;
+    }
+    #grammar + .CodeMirror,
+    #input + .CodeMirror {
+      box-sizing: border-box;
+      display: inline-block;
+      width: 49%;
+    }
+    #input + .CodeMirror {
+      border-right: 1px solid #ddd;
+    }
   </style>
 </head>
 <body>
-  <textarea>
-    MyLang {
-      Expr = IfExpr | AssignmentExpr | ValueExpr
-
-      ValueExpr = number | ArrayLiteral | id
-
-      AssignmentExpr = AssignmentPattern "=" Expr
-
-      AssignmentPattern
-        = id
-        | "[" AssignmentPattern ("," AssignmentPattern)* "]" -- rec
-
-      IfExpr
-        = "if" "(" Expr ")" Expr "else" Expr -- withElse
-        | "if" "(" Expr ")"                  -- plain
-
-      ArrayLiteral = "[" ValueExpr ("," ValueExpr)* "]"
-
-      id = letter (letter | number)*
-
-      number = number digit -- rec
-             | digit
-    }
-  </textarea>
-  <div id="rightColumn">
-    <div id="input" contenteditable>if (foobar) [x] = [3] else [x, y, z] = [foo, bar, baz]</div>
+  <div id="topSection">
+    <textarea id="input">if (foobar) [x] = [3] else [x, y, z] = [foo, bar, baz]</textarea>
+    <textarea id="grammar">
+      MyLang {
+        Expr = IfExpr | AssignmentExpr | ValueExpr
+        ValueExpr = number | ArrayLiteral | id
+        AssignmentExpr = AssignmentPattern "=" Expr
+        AssignmentPattern
+          = id
+          | "[" AssignmentPattern ("," AssignmentPattern)* "]" -- rec
+        IfExpr
+          = "if" "(" Expr ")" Expr "else" Expr -- withElse
+          | "if" "(" Expr ")"                  -- plain
+        ArrayLiteral = "[" ValueExpr ("," ValueExpr)* "]"
+        id = letter (letter | number)*
+        number = number digit -- rec
+               | digit
+      }
+    </textarea>
+  </div>
+  <div id="bottomSection">
+    <div id="expandedInput"></div>
     <div id="parseResults"></div>
   </div>
   <div id="options">
@@ -185,6 +197,7 @@
 
   <script src="../dist/ohm.js"></script>
   <script src="third_party/d3.min.js"></script>
+  <script src="third_party/codemirror-5.1/lib/codemirror.js"></script>
   <script src="index.js"></script>
 </body>
 </html>
