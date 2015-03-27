@@ -7,6 +7,7 @@ var options = {};
 
 var inputEditor = CodeMirror.fromTextArea($('#input'));
 var grammarEditor = CodeMirror.fromTextArea($('#grammar'));
+var grammar;
 
 // D3 Helpers
 // ----------
@@ -281,21 +282,31 @@ function isPrimitive(expr) {
   var origDefaultGrammars = clone(ohm.namespace('default').grammars);
 
   var checkboxes = document.querySelectorAll('#options input[type=checkbox]');
-  function triggerRefresh(e) {
-    setTimeout(refresh, 1);
+  var refreshTimeout;
+  function triggerRefresh(delay) {
+    if (refreshTimeout) {
+      clearTimeout(refreshTimeout);
+    }
+    refreshTimeout = setTimeout(refresh, delay || 0);
   }
-  for (var i = 0; i < checkboxes.length; ++i) {
-    checkboxes[i].addEventListener('click', triggerRefresh);
-  }
+  Array.prototype.forEach.call(checkboxes, function(cb) {
+    cb.addEventListener('click', function(e) { triggerRefresh(); });
+  });
+  inputEditor.on('change', function() { triggerRefresh(150); });
+  grammarEditor.on('change', function() { triggerRefresh(150); });
 
-  var origInput = $('#input').textContent;
 
   function refresh() {
-    var grammarSrc = $('#grammar').value;
+    var grammarSrc = grammarEditor.getValue();
     ohm.namespace('default').grammars = clone(origDefaultGrammars);  // Hack to reset the namespace.
 
-    var g = ohm.makeGrammar(grammarSrc);
-    var trace = g.trace(origInput, 'Expr').trace;
+    try {
+      grammar = ohm.makeGrammar(grammarSrc);
+    } catch (e) {
+      console.log('Grammar failed to parse.');  // eslint-disable-line no-console
+      return;
+    }
+    var trace = grammar.trace(inputEditor.getValue(), 'Expr').trace;
 
     // Refresh the option values.
     for (var i = 0; i < checkboxes.length; ++i) {
