@@ -5,6 +5,9 @@ var ArrayProto = Array.prototype;
 function $(sel) { return document.querySelector(sel); }
 var options = {};
 
+var inputEditor = CodeMirror.fromTextArea($('#input'));
+var grammarEditor = CodeMirror.fromTextArea($('#grammar'));
+
 // D3 Helpers
 // ----------
 
@@ -21,6 +24,21 @@ function tweenWithCallback(endValue, cb) {
       return stepValue;
     };
   };
+}
+
+// CodeMirror Helpers
+// ------------------
+
+function markInterval(cm, interval, options) {
+  var startPos = cm.posFromIndex(interval.startIdx);
+  var endPos = cm.posFromIndex(interval.endIdx);
+  return cm.markText(startPos, endPos, options);
+}
+
+function clearMark(cm, mark) {
+  if (mark) {
+    mark.clear();
+  }
 }
 
 // Misc Helpers
@@ -186,12 +204,20 @@ function createTraceElement(traceNode, container, input) {
     e.preventDefault();
   });
 
+  var inputMark, grammarMark;
   wrapper.addEventListener('mouseover', function(e) {
     input.classList.add('highlight');
+    var markOpts = { className: 'highlight' };
+    inputMark = markInterval(inputEditor, traceNode.interval, markOpts);
+    if (traceNode.expr.interval) {
+      grammarMark = markInterval(grammarEditor, traceNode.expr.interval, markOpts);
+    }
     e.stopPropagation();
   });
   wrapper.addEventListener('mouseout', function(e) {
     input.classList.remove('highlight');
+    clearMark(inputEditor, inputMark);
+    clearMark(grammarEditor, grammarMark);
   });
   wrapper._input = input;
 
@@ -276,9 +302,6 @@ function isPrimitive(expr) {
       var checkbox = checkboxes[i];
       options[checkbox.name] = checkbox.checked;
     }
-
-    CodeMirror.fromTextArea($('#input'));
-    CodeMirror.fromTextArea($('#grammar'));
 
     $('#expandedInput').innerHTML = '';
     $('#parseResults').innerHTML = '';

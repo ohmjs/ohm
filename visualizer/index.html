@@ -16,7 +16,8 @@
       outline: none;
       padding: 8px 0 8px 0;
     }
-    #expandedInput .highlight {
+    #expandedInput .highlight,
+    .CodeMirror .highlight {
       background-color: #B5D5FF;
     }
     .pexpr {
@@ -152,12 +153,14 @@
       border-top: 1px solid #ddd;
       overflow: scroll;
     }
+
     #grammar + .CodeMirror,
     #input + .CodeMirror {
       box-sizing: border-box;
       display: inline-block;
       width: 49%;
     }
+
     #input + .CodeMirror {
       border-right: 1px solid #ddd;
     }
@@ -167,21 +170,21 @@
   <div id="topSection">
     <textarea id="input">if (foobar) [x] = [3] else [x, y, z] = [foo, bar, baz]</textarea>
     <textarea id="grammar">
-      MyLang {
-        Expr = IfExpr | AssignmentExpr | ValueExpr
-        ValueExpr = number | ArrayLiteral | id
-        AssignmentExpr = AssignmentPattern "=" Expr
-        AssignmentPattern
-          = id
-          | "[" AssignmentPattern ("," AssignmentPattern)* "]" -- rec
-        IfExpr
-          = "if" "(" Expr ")" Expr "else" Expr -- withElse
-          | "if" "(" Expr ")"                  -- plain
-        ArrayLiteral = "[" ValueExpr ("," ValueExpr)* "]"
-        id = letter (letter | number)*
-        number = number digit -- rec
-               | digit
-      }
+MyLang {
+  Expr = IfExpr | AssignmentExpr | ValueExpr
+  ValueExpr = number | ArrayLiteral | id
+  AssignmentExpr = AssignmentPattern "=" Expr
+  AssignmentPattern
+    = id
+    | "[" AssignmentPattern ("," AssignmentPattern)* "]" -- rec
+  IfExpr
+    = "if" "(" Expr ")" Expr "else" Expr -- withElse
+    | "if" "(" Expr ")"                  -- plain
+  ArrayLiteral = "[" ValueExpr ("," ValueExpr)* "]"
+  id = letter (letter | number)*
+  number = number digit -- rec
+         | digit
+}
     </textarea>
   </div>
   <div id="bottomSection">
