@@ -19,12 +19,12 @@
   "main": "src/main.js",
   "bin": "src/bootstrap.js",
   "browserify": {
-    "options": "--debug --standalone ohm -o dist/ohm.js"
+    "options": "src/main.js --debug --standalone ohm -o dist/ohm.js"
   },
   "scripts": {
     "bootstrap": "npm test --silent && npm run unsafe-bootstrap && (npm test --silent || (echo 'Bootstrap failed.'; mv -v dist/ohm-grammar.js.old dist/ohm-grammar.js))",
     "build": "npm run build-debug && uglifyjs dist/ohm.js > dist/ohm.min.js",
-    "build-debug": "browserify . $npm_package_browserify_options",
+    "build-debug": "browserify $npm_package_browserify_options",
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
     "lint": "eslint src visualizer",
     "test": "tape test/*.js | tap-spec",
@@ -32,8 +32,8 @@
     "postinstall": "bin/dev-setup.sh",
     "prepublish": "npm run lint && npm run build && npm run bootstrap",
     "unsafe-bootstrap": "cp dist/ohm-grammar.js dist/ohm-grammar.js.old; node src/bootstrap.js src/ohm-grammar.ohm > dist/ohm-grammar.js.new && mv -f dist/ohm-grammar.js.new dist/ohm-grammar.js",
-    "visualizer": "bin/ohm-visualizer",
-    "watch": "watchify . $npm_package_browserify_options"
+    "visualizer": "npm run watch & bin/ohm-visualizer",
+    "watch": "watchify $npm_package_browserify_options -v"
   },
   "license": "MIT",
   "author": "Alex Warth <alexwarth@gmail.com> (http://tinlizzie.org/~awarth)",
