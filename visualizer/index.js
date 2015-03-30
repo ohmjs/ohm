@@ -243,14 +243,18 @@ function createTraceElement(traceNode, container, input) {
   var inputMark, grammarMark, defMark;
   wrapper.addEventListener('mouseover', function(e) {
     input.classList.add('highlight');
-    inputMark = markInterval(inputEditor, traceNode.interval, 'highlight');
+    if (traceNode.interval) {
+      inputMark = markInterval(inputEditor, traceNode.interval, 'highlight');
+    }
     if (traceNode.expr.interval) {
       grammarMark = markInterval(grammarEditor, traceNode.expr.interval, 'active-appl');
     }
     var ruleName = traceNode.expr.ruleName;
     if (ruleName) {
       var defInterval = grammar.ruleDict[ruleName].definitionInterval;
-      defMark = markInterval(grammarEditor, defInterval, 'active-definition');
+      if (defInterval) {
+        defMark = markInterval(grammarEditor, defInterval, 'active-definition');
+      }
     }
     e.stopPropagation();
   });
