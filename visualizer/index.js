@@ -242,7 +242,9 @@ function createTraceElement(traceNode, container, input) {
 
   var inputMark, grammarMark, defMark;
   wrapper.addEventListener('mouseover', function(e) {
-    input.classList.add('highlight');
+    if (input) {
+      input.classList.add('highlight');
+    }
     if (traceNode.interval) {
       inputMark = markInterval(inputEditor, traceNode.interval, 'highlight');
     }
@@ -259,7 +261,9 @@ function createTraceElement(traceNode, container, input) {
     e.stopPropagation();
   });
   wrapper.addEventListener('mouseout', function(e) {
-    input.classList.remove('highlight');
+    if (input) {
+      input.classList.remove('highlight');
+    }
     clearMark(inputEditor, inputMark);
     clearMark(grammarEditor, grammarMark);
     clearMark(grammarEditor, defMark);
@@ -360,7 +364,7 @@ function isPrimitive(expr) {
 
     $('#expandedInput').innerHTML = '';
     $('#parseResults').innerHTML = '';
-    (function walkTraceNodes(nodes, container, inputContainer, showTrace, parent) {
+    (function walkTraceNodes(nodes, container, inputContainer, showTrace, printInput, parent) {
       nodes.forEach(function(node) {
         if (!(options.showFailures || node.succeeded)) {
           return;
@@ -373,7 +377,11 @@ function isPrimitive(expr) {
         if (node.succeeded) {
           contents = isPrimitive(node.expr) ? node.interval.contents : '';
         }
-        var childInput = inputContainer.appendChild(createElement('span.input', contents));
+        var childInput;
+        var shouldPrintInput = printInput && node.succeeded;
+        if (shouldPrintInput) {
+          childInput = inputContainer.appendChild(createElement('span.input', contents));
+        }
         var isWhitespace = contents.length > 0 && contents.trim().length === 0;
         if (isWhitespace) {
           childInput.innerHTML = '&#xb7;';  // Unicode Character 'MIDDLE DOT'
@@ -396,7 +404,7 @@ function isPrimitive(expr) {
             el.classList.add('failed');
           }
         }
-        walkTraceNodes(node.children, childContainer, childInput, shouldShowTrace, node);
+        walkTraceNodes(node.children, childContainer, childInput, shouldShowTrace, shouldPrintInput, node);
 
         // For Seq nodes, also display children that weren't evaluated.
         // TODO: Consider handling this when the trace is being recorded.
@@ -421,7 +429,7 @@ function isPrimitive(expr) {
           }
         }
       });
-    })(trace, $('#parseResults'), $('#expandedInput'), true, null);
+    })(trace, $('#parseResults'), $('#expandedInput'), true, true, null);
     initializeWidths();
   }
   refresh();
