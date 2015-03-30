@@ -157,7 +157,7 @@
     #inputContainer {
       box-sizing: border-box;
       display: inline-block;
-      width: 49%;
+      width: 50%;
     }
 
     #grammarContainer h2,
@@ -165,7 +165,7 @@
       color: #e0a;
       font-family: Helvetica, Arial, sans-serif;
       font-size: 1em;
-      margin: 6px 3px;
+      margin: 12px 12px 6px;
     }
     #inputContainer {
       border-right: 1px solid #ddd;
@@ -188,6 +188,13 @@
       position: relative;
       color: black;
     }
+    .CodeMirror-lines {
+      padding-top: 0;
+    }
+    .CodeMirror-lines pre {
+      padding-left: 14px;
+    }
+
   </style>
 </head>
 <body>
@@ -195,8 +202,7 @@
     <div id="inputContainer">
       <h2>Test Input</h2>
       <textarea id="input">if (foobar) [x] = [3] else [x, y, z] = [foo, bar, baz]</textarea>
-    </div>
-    <div id="grammarContainer">
+    </div><div id="grammarContainer">
       <h2>Grammar</h2>
       <textarea id="grammar">
 MyLang {
@@ -214,9 +220,7 @@ MyLang {
   number = number digit -- rec
          | digit
 }
-      </textarea>
-    </div>
-  </div>
+</textarea></div></div>
   <div id="bottomSection">
     <div id="expandedInput"></div>
     <div id="parseResults"></div>
