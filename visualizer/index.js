@@ -235,7 +235,11 @@ function createTraceElement(traceNode, container, input) {
   }
 
   wrapper.addEventListener('click', function(e) {
-    toggleTraceElement(wrapper);
+    if (e.altKey && !(e.shiftKey || e.metaKey)) {
+      console.log(traceNode);  // eslint-disable-line no-console
+    } else {
+      toggleTraceElement(wrapper);
+    }
     e.stopPropagation();
     e.preventDefault();
   });
