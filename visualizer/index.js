@@ -30,16 +30,51 @@ function tweenWithCallback(endValue, cb) {
 // CodeMirror Helpers
 // ------------------
 
-function markInterval(cm, interval, options) {
+function countLeadingWhitespace(str) {
+  return str.match(/^\s*/)[0].length;
+}
+
+function countTrailingWhitespace(str) {
+  return str.match(/\s*$/)[0].length;
+}
+
+function isBlockSelectable(cm, startPos, endPos) {
+  var lastLine = cm.getLine(endPos.line);
+  return countLeadingWhitespace(cm.getLine(startPos.line)) === startPos.ch &&
+         (lastLine.length - countTrailingWhitespace(lastLine)) === endPos.ch;
+}
+
+// Mark a block of text with `className` by marking entire lines.
+function markBlock(cm, startLine, endLine, className) {
+  for (var i = startLine; i <= endLine; ++i) {
+    cm.addLineClass(i, 'wrap', className);
+  }
+  return {
+    clear: function() {
+      for (var i = startLine; i <= endLine; ++i) {
+        cm.removeLineClass(i, 'wrap', className);
+      }
+    }
+  };
+}
+
+function markInterval(cm, interval, className) {
   var startPos = cm.posFromIndex(interval.startIdx);
   var endPos = cm.posFromIndex(interval.endIdx);
-  return cm.markText(startPos, endPos, options);
+
+  // See if the selection can be expanded to a block selection.
+  if (isBlockSelectable(cm, startPos, endPos)) {
+    return markBlock(cm, startPos.line, endPos.line, className);
+  }
+  cm.getWrapperElement().classList.add('highlighting');
+  return cm.markText(startPos, endPos, { className: className });
 }
 
 function clearMark(cm, mark) {
   if (mark) {
     mark.clear();
   }
+  cm.getWrapperElement().classList.remove('highlighting');
 }
 
 // Misc Helpers
@@ -205,13 +240,17 @@ function createTraceElement(traceNode, container, input) {
     e.preventDefault();
   });
 
-  var inputMark, grammarMark;
+  var inputMark, grammarMark, defMark;
   wrapper.addEventListener('mouseover', function(e) {
     input.classList.add('highlight');
-    var markOpts = { className: 'highlight' };
-    inputMark = markInterval(inputEditor, traceNode.interval, markOpts);
+    inputMark = markInterval(inputEditor, traceNode.interval, 'highlight');
     if (traceNode.expr.interval) {
-      grammarMark = markInterval(grammarEditor, traceNode.expr.interval, markOpts);
+      grammarMark = markInterval(grammarEditor, traceNode.expr.interval, 'active-appl');
+    }
+    var ruleName = traceNode.expr.ruleName;
+    if (ruleName) {
+      var defInterval = grammar.ruleDict[ruleName].definitionInterval;
+      defMark = markInterval(grammarEditor, defInterval, 'active-definition');
     }
     e.stopPropagation();
   });
@@ -219,6 +258,7 @@ function createTraceElement(traceNode, container, input) {
     input.classList.remove('highlight');
     clearMark(inputEditor, inputMark);
     clearMark(grammarEditor, grammarMark);
+    clearMark(grammarEditor, defMark);
   });
   wrapper._input = input;
 

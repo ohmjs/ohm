@@ -16,8 +16,7 @@
       outline: none;
       padding: 8px 0 8px 0;
     }
-    #expandedInput .highlight,
-    .CodeMirror .highlight {
+    #expandedInput .highlight {
       background-color: #B5D5FF;
     }
     .pexpr {
@@ -154,22 +153,52 @@
       overflow: scroll;
     }
 
-    #grammar + .CodeMirror,
-    #input + .CodeMirror {
+    #grammarContainer,
+    #inputContainer {
       box-sizing: border-box;
       display: inline-block;
       width: 49%;
     }
 
-    #input + .CodeMirror {
+    #grammarContainer h2,
+    #inputContainer h2 {
+      color: #e0a;
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 1em;
+      margin: 6px 3px;
+    }
+    #inputContainer {
       border-right: 1px solid #ddd;
+    }
+
+    .CodeMirror.highlighting {
+      color: rgba(51, 51, 51, 0.8);
+    }
+
+    .CodeMirror .highlight {
+      background-color: #B5D5FF;
+    }
+
+    .CodeMirror .active-definition {
+      background-color: rgba(238, 0, 170, 0.1);
+    }
+
+    .CodeMirror .active-appl {
+      font-weight: bold;
+      position: relative;
+      color: black;
     }
   </style>
 </head>
 <body>
   <div id="topSection">
-    <textarea id="input">if (foobar) [x] = [3] else [x, y, z] = [foo, bar, baz]</textarea>
-    <textarea id="grammar">
+    <div id="inputContainer">
+      <h2>Test Input</h2>
+      <textarea id="input">if (foobar) [x] = [3] else [x, y, z] = [foo, bar, baz]</textarea>
+    </div>
+    <div id="grammarContainer">
+      <h2>Grammar</h2>
+      <textarea id="grammar">
 MyLang {
   Expr = IfExpr | AssignmentExpr | ValueExpr
   ValueExpr = number | ArrayLiteral | id
@@ -185,7 +214,8 @@ MyLang {
   number = number digit -- rec
          | digit
 }
-    </textarea>
+      </textarea>
+    </div>
   </div>
   <div id="bottomSection">
     <div id="expandedInput"></div>
