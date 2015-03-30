@@ -366,11 +366,11 @@ function isPrimitive(expr) {
     $('#parseResults').innerHTML = '';
     (function walkTraceNodes(nodes, container, inputContainer, showTrace, printInput, parent) {
       nodes.forEach(function(node) {
-        if (!(options.showFailures || node.succeeded)) {
-          return;
-        }
         if (!node) {
           // FIXME -- What's going on here??
+          return;
+        }
+        if (!(options.showFailures || node.succeeded)) {
           return;
         }
         var contents = '';
