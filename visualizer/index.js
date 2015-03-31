@@ -355,7 +355,7 @@ function isPrimitive(expr) {
     try {
       grammar = ohm.makeGrammar(grammarSrc);
     } catch (e) {
-      console.log('Grammar failed to parse.');  // eslint-disable-line no-console
+      console.log(e);  // eslint-disable-line no-console
       return;
     }
     var trace = grammar.trace(inputEditor.getValue(), 'Expr').trace;
