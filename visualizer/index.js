@@ -383,13 +383,13 @@ function isPrimitive(expr) {
         }
         var childInput;
         var shouldPrintInput = printInput && node.succeeded;
+        var isWhitespace = contents.length > 0 && contents.trim().length === 0;
         if (shouldPrintInput) {
           childInput = inputContainer.appendChild(createElement('span.input', contents));
-        }
-        var isWhitespace = contents.length > 0 && contents.trim().length === 0;
-        if (isWhitespace) {
-          childInput.innerHTML = '&#xb7;';  // Unicode Character 'MIDDLE DOT'
-          childInput.classList.add('whitespace');
+          if (isWhitespace) {
+            childInput.innerHTML = '&#xb7;';  // Unicode Character 'MIDDLE DOT'
+            childInput.classList.add('whitespace');
+          }
         }
 
         var shouldShowTrace = showTrace && !isBlackhole(node);
