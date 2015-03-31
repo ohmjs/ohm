@@ -24,6 +24,67 @@ function makeCustomError(name, initFn) {
   return E;
 }
 
+function toErrorInfo(pos, str) {
+  var lineNum = 1;
+  var colNum = 1;
+
+  var currPos = 0;
+  var lineStartPos = 0;
+
+  while (currPos < pos) {
+    var c = str.charAt(currPos++);
+    if (c === '\n') {
+      lineNum++;
+      colNum = 1;
+      lineStartPos = currPos;
+    } else if (c !== '\r') {
+      colNum++;
+    }
+  }
+
+  var lineEndPos = str.indexOf('\n', lineStartPos);
+  if (lineEndPos < 0) {
+    lineEndPos = str.length;
+  }
+
+  return {
+    lineNum: lineNum,
+    colNum: colNum,
+    line: str.substr(lineStartPos, lineEndPos - lineStartPos)
+  };
+}
+
+// Create a verbose error message for an error that occurred during matching.
+function getMatchErrorMessage(pos, source, detail) {
+  var errorInfo = toErrorInfo(pos, source);
+  var sb = new common.StringBuffer();
+  sb.append('Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ':\n');
+  sb.append('> | ' + errorInfo.line + '\n  | ');
+  for (var idx = 1; idx < errorInfo.colNum; idx++) {
+    sb.append(' ');
+  }
+  sb.append('^\n');
+  sb.append(detail);
+  return sb.contents();
+}
+
+// Create a short error message for an error that occurred during matching.
+function getShortMatchErrorMessage(pos, source, detail) {
+  var errorInfo = toErrorInfo(pos, source);
+  return 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ': ' + detail;
+}
+
+// ----------------- runtime errors -----------------
+
+var InfiniteLoop = makeCustomError(
+  'ohm.error.InfiniteLoop',
+  function(state, expr) {
+    var inputStream = state.inputStream;
+    var detail = "Infinite loop detected when matching '" + expr.toDisplayString() + "'";
+    this.message = getMatchErrorMessage(inputStream.pos, inputStream.source, detail);
+  }
+);
+
 // ----------------- errors about intervals -----------------
 
 var IntervalSourcesDontMatch = makeCustomError(
@@ -135,26 +196,18 @@ MatchFailure.prototype.getShortMessage = function() {
   if (typeof this.state.inputStream.source !== 'string') {
     return 'match failed at position ' + this.getPos();
   }
-
-  var errorInfo = toErrorInfo(this.getPos(), this.state.inputStream.source);
-  return 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ': expected ' + this.getExpectedText();
+  var detail = 'expected' + this.getExpectedText();
+  return getShortMatchErrorMessage(this.getPos(), this.state.inputStream.source, detail);
 };
 
 MatchFailure.prototype.getMessage = function() {
-  if (typeof this.state.inputStream.source !== 'string') {
+  var source = this.state.inputStream.source;
+  if (typeof source !== 'string') {
     return 'match failed at position ' + this.getPos();
   }
 
-  var errorInfo = toErrorInfo(this.getPos(), this.state.inputStream.source);
-  var sb = new common.StringBuffer();
-  sb.append('Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ':\n');
-  sb.append('> | ' + errorInfo.line + '\n  | ');
-  for (var idx = 1; idx < errorInfo.colNum; idx++) {
-    sb.append(' ');
-  }
-  sb.append('^\n');
-  sb.append('Expected ' + this.getExpectedText());
-  return sb.contents();
+  var detail = 'Expected ' + this.getExpectedText();
+  return getMatchErrorMessage(this.getPos(), source, detail);
 };
 
 MatchFailure.prototype.getPos = function() {
@@ -202,36 +255,6 @@ MatchFailure.prototype.getExpected = function() {
   return Object.keys(expected);
 };
 
-function toErrorInfo(pos, str) {
-  var lineNum = 1;
-  var colNum = 1;
-
-  var currPos = 0;
-  var lineStartPos = 0;
-
-  while (currPos < pos) {
-    var c = str.charAt(currPos++);
-    if (c === '\n') {
-      lineNum++;
-      colNum = 1;
-      lineStartPos = currPos;
-    } else if (c !== '\r') {
-      colNum++;
-    }
-  }
-
-  var lineEndPos = str.indexOf('\n', lineStartPos);
-  if (lineEndPos < 0) {
-    lineEndPos = str.length;
-  }
-
-  return {
-    lineNum: lineNum,
-    colNum: colNum,
-    line: str.substr(lineStartPos, lineEndPos - lineStartPos)
-  };
-}
-
 // ----------------- constructors -----------------
 
 // Type error
@@ -250,14 +273,16 @@ var InvalidConstructorCall = makeCustomError(
 // Exports
 // --------------------------------------------------------------------
 
-exports.Error = OhmError;
-exports.IntervalSourcesDontMatch = IntervalSourcesDontMatch;
-exports.UndeclaredGrammar = UndeclaredGrammar;
-exports.DuplicateGrammarDeclaration = DuplicateGrammarDeclaration;
-exports.UndeclaredRule = UndeclaredRule;
-exports.DuplicateRuleDeclaration = DuplicateRuleDeclaration;
-exports.InconsistentArity = InconsistentArity;
-exports.DuplicatePropertyNames = DuplicatePropertyNames;
-exports.MatchFailure = MatchFailure;
-exports.InvalidConstructorCall = InvalidConstructorCall;
-
+module.exports = {
+  Error: OhmError,
+  InfiniteLoop: InfiniteLoop,
+  IntervalSourcesDontMatch: IntervalSourcesDontMatch,
+  UndeclaredGrammar: UndeclaredGrammar,
+  DuplicateGrammarDeclaration: DuplicateGrammarDeclaration,
+  UndeclaredRule: UndeclaredRule,
+  DuplicateRuleDeclaration: DuplicateRuleDeclaration,
+  InconsistentArity: InconsistentArity,
+  DuplicatePropertyNames: DuplicatePropertyNames,
+  MatchFailure: MatchFailure,
+  InvalidConstructorCall: InvalidConstructorCall
+};

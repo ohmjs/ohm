@@ -3,6 +3,7 @@
 // --------------------------------------------------------------------
 
 var common = require('./common.js');
+var errors = require('./errors.js');
 var Node = require('./Node.js');
 var pexprs = require('./pexprs.js');
 var InputStream = require('./InputStream.js');
@@ -192,6 +193,11 @@ pexprs.Many.prototype._eval = function(state) {
       var row = state.bindings.splice(state.bindings.length - arity, arity);
       for (idx = 0; idx < row.length; idx++) {
         columns[idx].push(row[idx]);
+      }
+      if (inputStream.pos === backtrackPos) {
+        // TODO: Consider making it a static error for a nullable expression to
+        // be inside `Many`.
+        throw new errors.InfiniteLoop(state, this);
       }
     } else {
       inputStream.pos = backtrackPos;

@@ -888,7 +888,7 @@ test('obj', function(t) {
   it('duplicate property names are not allowed', function() {
     try {
       m = makeGrammar('M { duh = {x: 1, x: 2, y: 3, ...} }');
-      t.fail();  // Ensure exception is thrown.
+      t.fail('Expected an exception to be thrown');
     } catch(e) {
       t.ok(e instanceof errors.DuplicatePropertyNames);
       t.deepEqual(e.duplicates, ['x']);
@@ -1254,7 +1254,7 @@ test('inheritance', function(t) {
     it('in namespace', function() {
       try {
         makeGrammar('G2 <: G1 {}', 'inheritance-oops');
-        t.fail();  // Ensure exception is thrown.
+        t.fail('Expected an exception to be thrown');
       } catch(e) {
         t.ok(e instanceof errors.UndeclaredGrammar);
         t.equal(e.grammarName, 'G1');
@@ -1265,7 +1265,7 @@ test('inheritance', function(t) {
     it('default namespace', function() {
       try {
         makeGrammar('G2 <: G1 {}', 'default');
-        t.fail();  // Ensure exception is thrown.
+        t.fail('Expected an exception to be thrown');
       } catch(e) {
         t.ok(e instanceof errors.UndeclaredGrammar);
         t.equal(e.grammarName, 'G1');
@@ -1282,7 +1282,7 @@ test('inheritance', function(t) {
           'G1 { foo = "foo" }',
           'G2 <: G1 { foo = "bar" }'
         ], 'inheritance-define');
-        t.fail();  // Ensure exception is thrown.
+        t.fail('Expected an exception to be thrown');
       } catch(e) {
         t.ok(e instanceof errors.DuplicateRuleDeclaration);
         t.equal(e.ruleName, 'foo');
@@ -1300,7 +1300,7 @@ test('inheritance', function(t) {
     it('should check that rule exists in super-grammar', function() {
       try {
         makeGrammar('G3 <: G1 { foo := "foo" }', 'inheritance-override');
-        t.fail();  // Ensure exception is thrown.
+        t.fail('Expected an exception to be thrown');
       } catch(e) {
         t.ok(e instanceof errors.UndeclaredRule);
         t.equal(e.ruleName, 'foo');
@@ -1355,7 +1355,7 @@ test('inheritance', function(t) {
     it('should check that rule exists in super-grammar', function() {
       try {
         makeGrammar('G3 <: G1 { bar += "bar" }', 'inheritanceExtend');
-        t.fail();  // Ensure exception is thrown.
+        t.fail('Expected an exception to be thrown');
       } catch(e) {
         t.ok(e instanceof errors.UndeclaredRule);
         t.equal(e.ruleName, 'bar');
@@ -1372,7 +1372,7 @@ test('inheritance', function(t) {
       makeGrammar('M1 { foo = "foo"  bar = "bar"  baz = "baz" }', 'inheritanceExtend3');
       try {
         makeGrammar('M2 <: M1 { foo += bar baz }', 'inheritanceExtend3');
-        t.fail();  // Ensure exception is thrown.
+        t.fail('Expected an exception to be thrown');
       } catch(e) {
         t.ok(e instanceof errors.InconsistentArity);
         t.equal(e.ruleName, 'foo');
@@ -1384,7 +1384,7 @@ test('inheritance', function(t) {
       makeGrammar('M3 { foo = digit digit }', 'inheritanceExtend3');
       try {
         makeGrammar('M4 <: M3 { foo += digit }', 'inheritanceExtend3');
-        t.fail();  // Ensure exception is thrown.
+        t.fail('Expected an exception to be thrown');
       } catch(e) {
         t.ok(e instanceof errors.InconsistentArity);
         t.equal(e.ruleName, 'foo');
@@ -1422,7 +1422,7 @@ test('bindings', function(t) {
   it('inconsistent arity in alts is an error', function() {
     try {
       makeGrammar('G { foo = "a" "c" | "b" }');
-      t.fail();  // Ensure exception is thrown.
+      t.fail('Expected an exception to be thrown');
     } catch(e) {
       t.ok(e instanceof errors.InconsistentArity);
       t.equal(e.ruleName, 'foo');
@@ -1540,7 +1540,7 @@ test('inline rule declarations', function(t) {
 
     try {
       makeGrammar('Bad <: Expr { addExpr += addExpr "~" mulExpr  -- minus }', m.namespaceName);
-      t.fail();  // Ensure exception is thrown.
+      t.fail('Expected an exception to be thrown');
     } catch(e) {
       t.ok(e instanceof errors.DuplicateRuleDeclaration);
       t.equal(e.ruleName, 'addExpr_minus');
@@ -1661,7 +1661,7 @@ test('namespaces', function(t) {
       try {
         makeGrammar('ccc { foo = "foo" }', ns1.name);
         makeGrammar('ccc { bar = "bar" }', ns1.name);
-        t.fail();  // Ensure exception is thrown.
+        t.fail('Expected an exception to be thrown');
       } catch(e) {
         t.ok(e instanceof errors.DuplicateGrammarDeclaration);
         t.equal(e.grammarName, 'ccc');
@@ -1701,7 +1701,7 @@ test('loadGrammarsFromScriptElement', function(t) {
     ns.loadGrammarsFromScriptElement(scriptTag);
     try {
       ns.grammar('M');
-      t.fail();  // Ensure exception is thrown.
+      t.fail('Expected an exception to be thrown');
     } catch(e) {
       t.ok(e instanceof errors.UndeclaredGrammar);
       t.equal(e.grammarName, 'M');
@@ -1738,7 +1738,7 @@ test('throw on fail', function(t) {
     var g = makeGrammar('G { start = 5 }');
     try {
       g.match(42, 'start', true);
-      t.fail();  // Ensure exception is thrown.
+      t.fail('Expected an exception to be thrown');
     } catch(e) {
       t.equal(e.message, 'match failed at position 0');
       t.equal(e.getPos(), 0);
@@ -1749,7 +1749,7 @@ test('throw on fail', function(t) {
     var g = makeGrammar('G { start = "a" "b" "c" "d" }');
     try {
       g.match('ab', 'start', true);
-      t.fail();  // Ensure exception is thrown.
+      t.fail('Expected an exception to be thrown');
     } catch(e) {
       t.equal(e.message,
         'Line 1, col 3:\n' +
@@ -1760,7 +1760,7 @@ test('throw on fail', function(t) {
     };
     try {
       g.match('abcde', 'start', true);
-      t.fail();  // Ensure exception is thrown.
+      t.fail('Expected an exception to be thrown');
     } catch(e) {
       t.equal(e.message,
         'Line 1, col 5:\n' +
@@ -2023,5 +2023,29 @@ test('toDisplayString', function(t) {
 
     t.equal(seq.terms[2].toDisplayString(), '/[a-z]/');
   });
+  t.end();
+});
+
+test('infinite loops', function(t) {
+  function matchExpr(expr, input) {
+    var g = makeGrammar('G { start = ' + expr + '}');
+    return g.match(input, 'start');
+  }
+  t.throws(function() { matchExpr('("a"*)*', 'aaa') }, errors.InfiniteLoop);
+  t.throws(function() { matchExpr('("a"?)*', 'aaa') }, errors.InfiniteLoop);
+  t.throws(function() { matchExpr('("a"*)+', 'aaa') }, errors.InfiniteLoop);
+  t.throws(function() { matchExpr('("a"?)+', 'aaa') }, errors.InfiniteLoop);
+
+  try {
+    matchExpr('("a"*)*', 'aaa');
+    t.fail('Expected an exception to be thrown');
+  } catch(e) {
+    t.equal(e.message, [
+      'Line 1, col 4:',
+      '> | aaa',
+      '  |    ^',
+      'Infinite loop detected when matching \'("a"*)*\''].join('\n'));
+  }
+
   t.end();
 });
