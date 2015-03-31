@@ -379,8 +379,9 @@ pexprs.Apply.prototype._eval = function(state) {
     }
     // Record trace information in the memo table, so that it is
     // available if the memoized result is used later.
-    if (origPosInfo.memo[ruleName] && state.isTracing()) {
+    if (state.isTracing() && origPosInfo.memo[ruleName]) {
       var entry = state.makeTraceEntry(origPos, this, !!value, true);
+      entry.isLeftRecursion = currentLR && currentLR.name === ruleName;
       origPosInfo.memo[ruleName].traceEntry = entry;
     }
     var ans;
@@ -435,6 +436,11 @@ pexprs.Apply.prototype.handleLeftRecursion = function(body, state, origPos, curr
     } else {
       value = currentLR.value;
       inputStream.pos = currentLR.pos;
+      if (state.isTracing()) {
+        // Since no more progress was made, the last trace entry is a
+        // duplicate, and can be discarded.
+        state.trace.pop();
+      }
       break;
     }
   }
