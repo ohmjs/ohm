@@ -290,6 +290,10 @@ function isBlackhole(traceNode) {
     return !traceNode.interval || traceNode.interval.contents.length === 0;
   }
 
+  if (traceNode.replacedBy) {
+    return true;
+  }
+
   var desc = traceNode.displayString;
   if (desc) {
     return desc[desc.length - 1] === '_' ||
@@ -382,7 +386,7 @@ function isPrimitive(expr) {
           contents = isPrimitive(node.expr) ? node.interval.contents : '';
         }
         var childInput;
-        var shouldPrintInput = printInput && node.succeeded;
+        var shouldPrintInput = printInput && node.succeeded && !node.replacedBy;
         var isWhitespace = contents.length > 0 && contents.trim().length === 0;
         if (shouldPrintInput) {
           childInput = inputContainer.appendChild(createElement('span.input', contents));
@@ -412,7 +416,7 @@ function isPrimitive(expr) {
 
         // For Seq nodes, also display children that weren't evaluated.
         // TODO: Consider handling this when the trace is being recorded.
-        if (node.expr.constructor.name === 'Seq') {
+        if (options.showFailures && node.expr.constructor.name === 'Seq') {
           var factors = node.expr.factors;
 
           // Due to implicit rules like `spaces_`, the accounting here is a bit
@@ -424,7 +428,7 @@ function isPrimitive(expr) {
             wrapper.appendChild(createElement('.label', factors[i].toDisplayString()));
             childContainer.appendChild(wrapper);
           }
-          if (options.showFailures && parent && parent.expr.constructor.name === 'Apply') {
+          if (parent && parent.expr.constructor.name === 'Apply') {
             var ruleName = parent.expr.ruleName;
             var caseName = ruleName.slice(ruleName.lastIndexOf('_') + 1);
             if (caseName !== ruleName) {

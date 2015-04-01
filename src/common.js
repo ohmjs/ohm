@@ -1,4 +1,10 @@
 // --------------------------------------------------------------------
+// Imports
+// --------------------------------------------------------------------
+
+var extend = require('util-extend');
+
+// --------------------------------------------------------------------
 // Private Stuff
 // --------------------------------------------------------------------
 
@@ -35,6 +41,12 @@ escapeStringFor['\u000b'.charCodeAt(0)] = '\\v';
 exports.abstract = function() {
   throw new Error('this method is abstract!');
 };
+
+exports.clone = function(obj) {
+  return extend({}, obj);
+};
+
+exports.extend = extend;
 
 exports.repeatFn = function(fn, n) {
   var arr = [];

@@ -4,6 +4,7 @@
 
 var Interval = require('./Interval.js');
 var PosInfo = require('./PosInfo.js');
+var common = require('./common.js');
 var pexprs = require('./pexprs.js');
 
 // --------------------------------------------------------------------
@@ -141,15 +142,19 @@ State.prototype = {
     return null;
   },
 
+  cloneLastTraceEntry: function() {
+    return common.clone(this.trace[this.trace.length - 1]);
+  },
+
   // Make a new trace entry, using the currently active trace array as the
   // new entry's children.
   makeTraceEntry: function(pos, expr, ans) {
     var entry = {
+      children: this.trace,
       displayString: expr.toDisplayString(),
-      pos: pos,
       expr: expr,
-      succeeded: ans,
-      children: this.trace
+      pos: pos,
+      succeeded: !!ans
     };
     if (ans) {
       entry.interval = new Interval(this.inputStream, pos, this.inputStream.pos);

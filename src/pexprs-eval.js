@@ -28,6 +28,18 @@ function skipSpaces(state) {
   state.recordFailures();
 }
 
+function linkLeftRecursiveChildren(traceEntry) {
+  var children = traceEntry.children;
+  for (var i = 0; i < children.length; ++i) {
+    var child = children[i];
+    var nextChild = children[i + 1];
+
+    if (nextChild && child.expr === nextChild.expr) {
+      child.replacedBy = nextChild;
+    }
+  }
+}
+
 // Evaluate the expression and return true if it succeeded, otherwise false.
 // On success, the bindings will have `this.arity` more elements than before,
 // and the position could be anywhere. On failure, the bindings and position
@@ -51,6 +63,10 @@ pexprs.PExpr.prototype.eval = function(state) {
     }
     origTrace.push(entry);
     state.trace = origTrace;
+
+    if (entry.isLeftRecursive) {
+      linkLeftRecursiveChildren(entry);
+    }
   }
 
   if (!ans) {
@@ -380,8 +396,8 @@ pexprs.Apply.prototype._eval = function(state) {
     // Record trace information in the memo table, so that it is
     // available if the memoized result is used later.
     if (state.isTracing() && origPosInfo.memo[ruleName]) {
-      var entry = state.makeTraceEntry(origPos, this, !!value, true);
-      entry.isLeftRecursion = currentLR && currentLR.name === ruleName;
+      var entry = state.makeTraceEntry(origPos, this, value, true);
+      entry.isLeftRecursive = currentLR && currentLR.name === ruleName;
       origPosInfo.memo[ruleName].traceEntry = entry;
     }
     var ans;
@@ -426,24 +442,29 @@ pexprs.Apply.prototype.handleLeftRecursion = function(body, state, origPos, curr
   var value = seedValue;
   currentLR.value = seedValue;
   currentLR.pos = state.inputStream.pos;
+
   var inputStream = state.inputStream;
+
   while (true) {
+    if (state.isTracing()) {
+      currentLR.traceEntry = state.cloneLastTraceEntry();
+    }
+
     inputStream.pos = origPos;
     value = this.evalOnce(body, state);
     if (value && inputStream.pos > currentLR.pos) {
+      // The left-recursive result was expanded -- keep looping.
       currentLR.value = value;
       currentLR.pos = inputStream.pos;
     } else {
-      value = currentLR.value;
+      // Failed to expand the result.
       inputStream.pos = currentLR.pos;
       if (state.isTracing()) {
-        // Since no more progress was made, the last trace entry is a
-        // duplicate, and can be discarded.
-        state.trace.pop();
+        state.trace.pop();  // Drop last trace entry since `value` was unused.
       }
       break;
     }
   }
-  return value;
+  return currentLR.value;
 };
 
