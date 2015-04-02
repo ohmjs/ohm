@@ -2,6 +2,29 @@
 
 ## First Release Blockers
 
+### Parameterized rules
+
+E.g.,
+
+```
+G {
+  ListOf<elem, sep>
+    = elem (sep elem)*  -- some
+    |                   -- none
+
+  PriExp
+    = ...
+    | ListOf<Exp, ','>}
+```
+
+Notes:
+
+* Using `<>`s instead of `()`s so that we don't have to make whitespace significant, e.g., in OMeta, `foo(bar)` was a rule application and `foo (bar)` was just a `foo` followed by a `bar` -- this was very confusing to some people.
+* The things inside the `<>`s -- i.e., the arguments passed to parameterized rules -- are unevaluated parsing expressions. They are evaluated when they're used inside the parameterized rule. So in some sense the lexical scope of the body of a parameterized rule is different than that of a non-parametrized rule in the same grammar. We could implement this by
+    * using a specialized version of the grammar where the argument names correspond to rule that when called will evaluate those parsing expressions, or 
+    * keeping track of the names of the arguments so that we can do something special about them in code generation.
+* You have to write semantic actions / attribute definitions for parameterized rules, just like any other rules.
+
 ### Better error messages
 
 Implement Alex's de-spockification idea.
