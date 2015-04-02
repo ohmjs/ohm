@@ -54,6 +54,7 @@
     "tape": "^3.5.0",
     "tape-catch": "^1.0.4",
     "uglify-js": "^2.4.12",
+    "util-extend": "^1.0.1",
     "watchify": "^0.6.1",
     "watchy": "^0.6.1"
   }
