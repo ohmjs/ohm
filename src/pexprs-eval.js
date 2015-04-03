@@ -233,10 +233,11 @@ pexprs.Opt.prototype._eval = function(state) {
 
 pexprs.Not.prototype._eval = function(state) {
   // TODO:
-  // * Right now we're just throwing away all of the failures that happen inside a `not`. Consider
-  //   recording `this` as a failed expression.
+  // * Right now we're just throwing away all of the failures that happen inside a `not`,
+  //   and recording `this` as a failed expression.
   // * Double negation should be equivalent to lookahead, but that's not the case right now wrt
-  //   failures. E.g., ~~'foo' won't produce any failures.
+  //   failures. E.g., ~~'foo' produces a failure for ~~'foo', but maybe it should produce
+  //   a failure for 'foo' instead.
 
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
@@ -473,4 +474,3 @@ pexprs.Apply.prototype.handleLeftRecursion = function(body, state, origPos, curr
   }
   return currentLR.value;
 };
-
