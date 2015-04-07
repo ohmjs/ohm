@@ -1956,7 +1956,7 @@ test('rule invocation interval', function(t) {
 
 test('trace', function(t) {
   var g = makeGrammar('G { start = "a" | letter* }');
-  it('produces the correct trace', function() {
+  t.test('basic tracing', function(t) {
     var state = g.trace('hallo', 'start');
     var trace = state.trace;
 
@@ -1980,10 +1980,11 @@ test('trace', function(t) {
       return c.succeeded;
     });
     t.deepEqual(childrenSucceeded, [true, true, true, true, true, false]);
+    t.end();
   });
 
   var g2 = makeGrammar('G { start = letter ~letter | letter* }');
-  it('works with memoization', function() {
+  t.test('traces with memoization', function(t) {
     var state = g2.trace('ab', 'start');
     var trace = state.trace;
     t.equal(trace.length, 1);
@@ -2006,6 +2007,7 @@ test('trace', function(t) {
     t.equal(many.children[1].succeeded, true);
     t.equal(many.children[1].children.length, 1);
     t.equal(many.children[1].children[0].displayString, '/[a-zA-Z]/');
+    t.end();
   });
   t.end();
 });

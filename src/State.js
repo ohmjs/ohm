@@ -2,9 +2,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var Interval = require('./Interval.js');
 var PosInfo = require('./PosInfo.js');
-var common = require('./common.js');
+var Trace = require('./Trace.js');
 var pexprs = require('./pexprs.js');
 
 // --------------------------------------------------------------------
@@ -142,22 +141,12 @@ State.prototype = {
     return null;
   },
 
-  cloneLastTraceEntry: function() {
-    return common.clone(this.trace[this.trace.length - 1]);
-  },
-
   // Make a new trace entry, using the currently active trace array as the
   // new entry's children.
-  makeTraceEntry: function(pos, expr, ans) {
-    var entry = {
-      children: this.trace,
-      displayString: expr.toDisplayString(),
-      expr: expr,
-      pos: pos,
-      succeeded: !!ans
-    };
-    if (ans) {
-      entry.interval = new Interval(this.inputStream, pos, this.inputStream.pos);
+  getTraceEntry: function(pos, expr, result) {
+    var entry = this.getMemoizedTraceEntry(pos, expr);
+    if (!entry) {
+      entry = new Trace(this.inputStream, pos, expr, result, this.trace);
     }
     return entry;
   },

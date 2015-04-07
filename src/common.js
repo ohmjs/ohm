@@ -43,7 +43,10 @@ exports.abstract = function() {
 };
 
 exports.clone = function(obj) {
-  return extend({}, obj);
+  if (obj) {
+    return extend({}, obj);
+  }
+  return obj;
 };
 
 exports.extend = extend;

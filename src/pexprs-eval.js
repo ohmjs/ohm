@@ -29,18 +29,6 @@ function skipSpaces(state) {
   state.recordFailures();
 }
 
-function linkLeftRecursiveChildren(traceEntry) {
-  var children = traceEntry.children;
-  for (var i = 0; i < children.length; ++i) {
-    var child = children[i];
-    var nextChild = children[i + 1];
-
-    if (nextChild && child.expr === nextChild.expr) {
-      child.replacedBy = nextChild;
-    }
-  }
-}
-
 // Evaluate the expression and return true if it succeeded, otherwise false.
 // On success, the bindings will have `this.arity` more elements than before,
 // and the position could be anywhere. On failure, the bindings and position
@@ -57,17 +45,9 @@ pexprs.PExpr.prototype.eval = function(state) {
   var ans = this._eval(state);
 
   if (state.isTracing()) {
-    // Record a trace entry, using the memoized entry if possible.
-    var entry = state.getMemoizedTraceEntry(origPos, this);
-    if (!entry) {
-      entry = state.makeTraceEntry(origPos, this, ans);
-    }
-    origTrace.push(entry);
+    var traceEntry = state.getTraceEntry(origPos, this, ans);
+    origTrace.push(traceEntry);
     state.trace = origTrace;
-
-    if (entry.isLeftRecursive) {
-      linkLeftRecursiveChildren(entry);
-    }
   }
 
   if (!ans) {
@@ -403,8 +383,8 @@ pexprs.Apply.prototype._eval = function(state) {
     // Record trace information in the memo table, so that it is
     // available if the memoized result is used later.
     if (state.isTracing() && origPosInfo.memo[ruleName]) {
-      var entry = state.makeTraceEntry(origPos, this, value, true);
-      entry.isLeftRecursive = currentLR && currentLR.name === ruleName;
+      var entry = state.getTraceEntry(origPos, this, value);
+      entry.setLeftRecursive(currentLR && (currentLR.name === ruleName));
       origPosInfo.memo[ruleName].traceEntry = entry;
     }
     var ans;
@@ -454,7 +434,7 @@ pexprs.Apply.prototype.handleLeftRecursion = function(body, state, origPos, curr
 
   while (true) {
     if (state.isTracing()) {
-      currentLR.traceEntry = state.cloneLastTraceEntry();
+      currentLR.traceEntry = common.clone(state.trace[state.trace.length - 1]);
     }
 
     inputStream.pos = origPos;
