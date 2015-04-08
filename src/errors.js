@@ -59,7 +59,7 @@ function getMatchErrorMessage(pos, source, detail) {
   var errorInfo = toErrorInfo(pos, source);
   var sb = new common.StringBuffer();
   sb.append('Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ':\n');
-  sb.append('> | ' + errorInfo.line + '\n  | ');
+  sb.append('> | ' + errorInfo.line + '\n    ');
   for (var idx = 1; idx < errorInfo.colNum; idx++) {
     sb.append(' ');
   }
@@ -72,6 +72,12 @@ function getMatchErrorMessage(pos, source, detail) {
 function getShortMatchErrorMessage(pos, source, detail) {
   var errorInfo = toErrorInfo(pos, source);
   return 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ': ' + detail;
+}
+
+function describeRuleStacks(stacks) {
+  return stacks.map(function(s) {
+    return s.map(function(app) { return app.ruleName; }).join(' > ');
+  }).join('; ');
 }
 
 // ----------------- runtime errors -----------------
@@ -184,10 +190,16 @@ var MatchFailure = makeCustomError(
     'ohm.error.MatchFailure',
     function(state) {
       this.state = state;
-      Object.defineProperty(this, 'message', {
-          get: function() {
-            return this.getMessage();
-          }
+      common.defineLazyProperty(this, 'exprsAndStacks', function() {
+        return this.state.getFailures();
+      });
+      // `displayString` is intended to be shown to users of a grammar.
+      common.defineLazyProperty(this, 'displayString', function() {
+        return this.getMessage();
+      });
+      // `message` is intended to be shown to developers of a grammar.
+      common.defineLazyProperty(this, 'message', function() {
+        return this.getMessage(true);
       });
     }
 );
@@ -200,13 +212,13 @@ MatchFailure.prototype.getShortMessage = function() {
   return getShortMatchErrorMessage(this.getPos(), this.state.inputStream.source, detail);
 };
 
-MatchFailure.prototype.getMessage = function() {
+MatchFailure.prototype.getMessage = function(optIncludeRules) {
   var source = this.state.inputStream.source;
   if (typeof source !== 'string') {
     return 'match failed at position ' + this.getPos();
   }
 
-  var detail = 'Expected ' + this.getExpectedText();
+  var detail = 'Expected ' + this.getExpectedText(!!optIncludeRules);
   return getMatchErrorMessage(this.getPos(), source, detail);
 };
 
@@ -214,9 +226,12 @@ MatchFailure.prototype.getPos = function() {
   return this.state.getFailuresPos();
 };
 
-MatchFailure.prototype.getExpectedText = function() {
+// Return a string summarizing the expected contents of the input stream when
+// the match failure occurred. If `includeRules` is true, the string will
+// include information about the rule stacks for each terminal or rule.
+MatchFailure.prototype.getExpectedText = function(includeRules) {
   var sb = new common.StringBuffer();
-  var expected = this.getExpected();
+  var expected = includeRules ? this.getExpectedWithRules() : this.getExpected();
   for (var idx = 0; idx < expected.length; idx++) {
     if (idx > 0) {
       if (idx === expected.length - 1) {
@@ -230,29 +245,26 @@ MatchFailure.prototype.getExpectedText = function() {
   return sb.contents();
 };
 
+// Return an Array of unique strings representing the terminals or rules that
+// were expected to be matched.
 MatchFailure.prototype.getExpected = function() {
-  var self = this;
   var expected = {};
-
-  var exprsAndStacks = this.state.getFailures();
-
-  function printS(stack) {
-    return stack.map(function(app) {
-      return app.ruleName + (app.interval ? '@' + app.interval.startIdx : '');
-    }).join('>');
-  }
-
-  /* eslint-disable no-console */
-  console.log('### --------');
-  exprsAndStacks.forEach(function(exprAndStacks) {
-    expected[exprAndStacks.expr.toExpected(self.state.grammar.ruleDict)] = true;
-    console.log('###', exprAndStacks.expr.toExpected(self.state.grammar.ruleDict) + ': ' +
-                exprAndStacks.stacks.map(printS).join(' and '));
+  var ruleDict = this.state.grammar.ruleDict;
+  this.exprsAndStacks.forEach(function(obj) {
+    expected[obj.expr.toExpected(ruleDict)] = true;
   });
-  console.log('### --------');
-  /* eslint-enable no-console */
-
   return Object.keys(expected);
+};
+
+// Return an Array of strings representing the terminals or rules that were
+// expected to be matched, as well as information about each rule stack.
+MatchFailure.prototype.getExpectedWithRules = function() {
+  var ans = [];
+  var ruleDict = this.state.grammar.ruleDict;
+  this.exprsAndStacks.forEach(function(obj) {
+    ans.push(obj.expr.toExpected(ruleDict) + ' (' + describeRuleStacks(obj.stacks) + ')');
+  }, this);
+  return ans;
 };
 
 // ----------------- constructors -----------------

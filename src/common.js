@@ -42,6 +42,21 @@ exports.abstract = function() {
   throw new Error('this method is abstract!');
 };
 
+// Define a lazily-computed, non-enumerable property named `propName`
+// on the object `obj`. `getterFn` will be called to compute the value the
+// first time the property is accessed.
+exports.defineLazyProperty = function(obj, propName, getterFn) {
+  var memo;
+  Object.defineProperty(obj, propName, {
+    get: function() {
+      if (!memo) {
+        memo = getterFn.call(this);
+      }
+      return memo;
+    }
+  });
+};
+
 exports.clone = function(obj) {
   if (obj) {
     return extend({}, obj);

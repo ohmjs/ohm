@@ -1715,46 +1715,6 @@ test('loadGrammarsFromScriptElement', function(t) {
   t.end();
 });
 
-test('throw on fail', function(t) {
-  it('non-string input', function() {
-    var g = util.makeGrammar('G { start = 5 }');
-    try {
-      g.match(42, 'start', true);
-      t.fail('Expected an exception to be thrown');
-    } catch(e) {
-      t.equal(e.message, 'match failed at position 0');
-      t.equal(e.getPos(), 0);
-    }
-  });
-
-  it('string input', function() {
-    var g = util.makeGrammar('G { start = "a" "b" "c" "d" }');
-    try {
-      g.match('ab', 'start', true);
-      t.fail('Expected an exception to be thrown');
-    } catch(e) {
-      t.equal(e.message,
-        'Line 1, col 3:\n' +
-        '> | ab\n' +
-        '  |   ^\n' +
-        "Expected 'c'");
-      t.equal(e.getPos(), 2);
-    };
-    try {
-      g.match('abcde', 'start', true);
-      t.fail('Expected an exception to be thrown');
-    } catch(e) {
-      t.equal(e.message,
-        'Line 1, col 5:\n' +
-        '> | abcde\n' +
-        '  |     ^\n' +
-        'Expected end of input');
-      t.equal(e.getPos(), 4);
-    }
-  });
-  t.end();
-});
-
 test('bootstrap', function(t) {
   var g = util.makeGrammar(ohmGrammarSource, 'bootstrap');
 
@@ -1949,30 +1909,6 @@ test('toDisplayString', function(t) {
 
     t.equal(seq.terms[2].toDisplayString(), '/[a-z]/');
   });
-  t.end();
-});
-
-test('infinite loops', function(t) {
-  function matchExpr(expr, input) {
-    var g = util.makeGrammar('G { start = ' + expr + '}');
-    return g.match(input, 'start');
-  }
-  t.throws(function() { matchExpr('("a"*)*', 'aaa') }, errors.InfiniteLoop);
-  t.throws(function() { matchExpr('("a"?)*', 'aaa') }, errors.InfiniteLoop);
-  t.throws(function() { matchExpr('("a"*)+', 'aaa') }, errors.InfiniteLoop);
-  t.throws(function() { matchExpr('("a"?)+', 'aaa') }, errors.InfiniteLoop);
-
-  try {
-    matchExpr('("a"*)*', 'aaa');
-    t.fail('Expected an exception to be thrown');
-  } catch(e) {
-    t.equal(e.message, [
-      'Line 1, col 4:',
-      '> | aaa',
-      '  |    ^',
-      'Infinite loop detected when matching \'("a"*)*\''].join('\n'));
-  }
-
   t.end();
 });
 
