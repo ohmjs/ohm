@@ -333,6 +333,7 @@ pexprs.Apply.prototype._eval = function(state) {
   }
 
   var ruleName = this.ruleName;
+  var memoKey = this.toMemoKey();
 
   if (common.isSyntactic(ruleName)) {
     skipSpaces(state);
@@ -340,7 +341,7 @@ pexprs.Apply.prototype._eval = function(state) {
 
   var origPosInfo = state.getCurrentPosInfo();
 
-  var memoRec = origPosInfo.memo[ruleName];
+  var memoRec = origPosInfo.memo[memoKey];
   var currentLR;
   if (memoRec && origPosInfo.shouldUseMemoizedResult(memoRec)) {
     return useMemoizedResult(memoRec);
@@ -365,14 +366,14 @@ pexprs.Apply.prototype._eval = function(state) {
     if (currentLR) {
       if (currentLR.name === ruleName) {
         value = this.handleLeftRecursion(body, state, origPos, currentLR, value);
-        origPosInfo.memo[ruleName] = {pos: inputStream.pos, value: value, involvedRules: currentLR.involvedRules};
+        origPosInfo.memo[memoKey] = {pos: inputStream.pos, value: value, involvedRules: currentLR.involvedRules};
         origPosInfo.endLeftRecursion(ruleName);
       } else if (!currentLR.involvedRules[ruleName]) {
         // Only memoize if this rule is not involved in the current left recursion
-        origPosInfo.memo[ruleName] = {pos: inputStream.pos, value: value};
+        origPosInfo.memo[memoKey] = {pos: inputStream.pos, value: value};
       }
     } else {
-      origPosInfo.memo[ruleName] = {pos: inputStream.pos, value: value};
+      origPosInfo.memo[memoKey] = {pos: inputStream.pos, value: value};
     }
     if (body.description) {
       state.recordFailures();
@@ -382,10 +383,10 @@ pexprs.Apply.prototype._eval = function(state) {
     }
     // Record trace information in the memo table, so that it is
     // available if the memoized result is used later.
-    if (state.isTracing() && origPosInfo.memo[ruleName]) {
+    if (state.isTracing() && origPosInfo.memo[memoKey]) {
       var entry = state.getTraceEntry(origPos, this, value);
       entry.setLeftRecursive(currentLR && (currentLR.name === ruleName));
-      origPosInfo.memo[ruleName].traceEntry = entry;
+      origPosInfo.memo[memoKey].traceEntry = entry;
     }
     var ans;
     if (value) {

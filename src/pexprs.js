@@ -30,7 +30,7 @@ var nextId = 1;
 
 PExpr.prototype.getId = function() {
   if (!this.id) {
-    this.id = nextId++;
+    Object.defineProperty(this, 'id', { value: nextId++ });
   }
   return this.id;
 };
@@ -153,6 +153,13 @@ function Apply(ruleName, optFromInterval) {
   }
 }
 inherits(Apply, PExpr);
+
+Apply.prototype.toMemoKey = function() {
+  if (!this.memoKey) {
+    Object.defineProperty(this, 'memoKey', { value: this.ruleName });
+  }
+  return this.memoKey;
+};
 
 // --------------------------------------------------------------------
 // Exports
