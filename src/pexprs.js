@@ -26,6 +26,15 @@ PExpr.prototype.withInterval = function(interval) {
   return this;
 };
 
+var nextId = 1;
+
+PExpr.prototype.getId = function() {
+  if (!this.id) {
+    this.id = nextId++;
+  }
+  return this.id;
+};
+
 // Anything
 
 var anything = Object.create(PExpr.prototype);
