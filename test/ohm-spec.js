@@ -1912,17 +1912,9 @@ test('toDisplayString', function(t) {
   t.end();
 });
 
-test('pexpr.getId', function(t) {
-  var g = util.makeGrammar('G { start = "a" 2 "c" }');
-  var es = g.ruleDict.start.factors;
-  var id1 = es[0].getId();
-  var id2 = es[1].getId();
-  var id3 = es[2].getId();
-  t.notEqual(id1, id2);
-  t.notEqual(id2, id3);
-  t.notEqual(id1, id3);
-  t.equal(id1, es[0].getId());
-  t.equal(id2, es[1].getId());
-  t.equal(id3, es[2].getId());
+test('pexpr.toString()', function(t) {
+  var g = util.makeGrammar('G { start = &"a" ~(2 | 3?) ``b a\'\' [c {e: b, ...} {g: /[a-z]/}]  a = 1  b = 2  c = 3 }');
+  var e = g.ruleDict.start;
+  t.equal(e.toString(), '(&"a" ~(2 | 3?) ``(b a)\'\' [(c {"e": b, ...} {"g": /[a-z]/})])');
   t.end();
 });

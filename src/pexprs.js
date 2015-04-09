@@ -26,15 +26,6 @@ PExpr.prototype.withInterval = function(interval) {
   return this;
 };
 
-var nextId = 1;
-
-PExpr.prototype.getId = function() {
-  if (!this.id) {
-    Object.defineProperty(this, 'id', { value: nextId++ });
-  }
-  return this.id;
-};
-
 // Anything
 
 var anything = Object.create(PExpr.prototype);
@@ -154,11 +145,12 @@ function Apply(ruleName, optFromInterval) {
 }
 inherits(Apply, PExpr);
 
+// This method just caches the result of `this.toString()` in a non-enumerable property.
 Apply.prototype.toMemoKey = function() {
-  if (!this.memoKey) {
-    Object.defineProperty(this, 'memoKey', { value: this.ruleName });
+  if (!this._memoKey) {
+    Object.defineProperty(this, '_memoKey', { value: this.toString() });
   }
-  return this.memoKey;
+  return this._memoKey;
 };
 
 // --------------------------------------------------------------------
@@ -207,3 +199,4 @@ require('./pexprs-getArity.js');
 require('./pexprs-outputRecipe.js');
 require('./pexprs-toDisplayString.js');
 require('./pexprs-toExpected.js');
+require('./pexprs-toString.js');

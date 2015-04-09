@@ -1,0 +1,99 @@
+// --------------------------------------------------------------------
+// Imports
+// --------------------------------------------------------------------
+
+var common = require('./common.js');
+var pexprs = require('./pexprs.js');
+
+// --------------------------------------------------------------------
+// Operations
+// --------------------------------------------------------------------
+
+/*
+  e1.toString() === e2.toString() ==> e1 and e2 are semantically equivalent.
+  Note that this is not an iff (<==>): e.g.,
+  (~"b" "a").toString() !== ("a").toString(), even though
+  ~"b" "a" and "a" are interchangeable in any grammar,
+  both in terms of the languages they accept and their arities.
+*/
+pexprs.PExpr.prototype.toString = common.abstract;
+
+pexprs.anything.toString = function() {
+  return '_';
+};
+
+pexprs.end.toString = function() {
+  return 'end';
+};
+
+pexprs.Prim.prototype.toString = function() {
+  return JSON.stringify(this.obj);
+};
+
+pexprs.RegExpPrim.prototype.toString = function() {
+  return this.obj.toString();
+};
+
+pexprs.Alt.prototype.toString = function() {
+  return this.terms.length === 1 ?
+    this.terms[0].toString() :
+    '(' + this.terms.map(function(term) { return term.toString(); }).join(' | ') + ')';
+};
+
+pexprs.Seq.prototype.toString = function() {
+  return this.factors.length === 1 ?
+    this.factors[0].toString() :
+    '(' + this.factors.map(function(factor) { return factor.toString(); }).join(' ') + ')';
+};
+
+pexprs.Many.prototype.toString = function() {
+  return this.expr + (this.minNumMatches === 0 ? '*' : '+');
+};
+
+pexprs.Opt.prototype.toString = function() {
+  return this.expr + '?';
+};
+
+pexprs.Not.prototype.toString = function() {
+  return '~' + this.expr;
+};
+
+pexprs.Lookahead.prototype.toString = function() {
+  return '&' + this.expr;
+};
+
+pexprs.Arr.prototype.toString = function() {
+  return '[' + this.expr.toString() + ']';
+};
+
+pexprs.Str.prototype.toString = function() {
+  return '``' + this.expr.toString() + "''";
+};
+
+pexprs.Obj.prototype.toString = function() {
+  var parts = ['{'];
+
+  var first = true;
+  function emit(part) {
+    if (first) {
+      first = false;
+    } else {
+      parts.push(', ');
+    }
+    parts.push(part);
+  }
+
+  this.properties.forEach(function(property) {
+    emit(JSON.stringify(property.name) + ': ' + property.pattern.toString());
+  });
+  if (this.isLenient) {
+    emit('...');
+  }
+
+  parts.push('}');
+  return parts.join('');
+};
+
+pexprs.Apply.prototype.toString = function() {
+  return this.ruleName;
+};
