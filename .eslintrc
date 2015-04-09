@@ -16,6 +16,11 @@
     // on the same line.
     "brace-style": [2, "1tbs", {"allowSingleLine": true}],
 
+    // Turn off the regular camelcase rule, and use a custom rule which
+    // allows semantic actions to be named like `RuleName_caseName`.
+    "camelcase": 0,
+    "camelcase-ohm": 2,
+
     // Enforce the name 'self' when assigning `this` to a local variable.
     "consistent-this": [0, "self"],
 

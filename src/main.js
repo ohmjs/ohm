@@ -12,9 +12,6 @@ var errors = require('./errors.js');
 var Namespace = require('./Namespace.js');
 var UnicodeCategories = require('./unicode.js').UnicodeCategories;
 
-var thisModule = exports;
-var ohm = exports;
-
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
@@ -49,7 +46,7 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
 
   // A set of semantic actions that produces a Grammar instance from the CST.
   var value = metaGrammar.semanticAction({
-    Grammar: function(n, s, _, rs, _) {
+    Grammar: function(n, s, open, rs, close) {
       builder = new Builder();
       var grammarName = value(n);
       decl = builder.newGrammar(grammarName, namespace);
@@ -138,19 +135,19 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
     Base_prim: function(expr) {
       return builder.prim(value(expr)).withInterval(this.interval);
     },
-    Base_paren: function(_, x, _) {
+    Base_paren: function(open, x, close) {
       return value(x);
     },
-    Base_arr: function(_, x, _) {
+    Base_arr: function(open, x, close) {
       return builder.arr(value(x)).withInterval(this.interval);
     },
-    Base_str: function(_, x, _) {
+    Base_str: function(open, x, close) {
       return builder.str(value(x));
     },
-    Base_obj: function(_, lenient, _) {
+    Base_obj: function(open, lenient, close) {
       return builder.obj([], value(lenient));
     },
-    Base_objWithProps: function(_, ps, _, lenient, _) {
+    Base_objWithProps: function(open, ps, _, lenient, close) {
       return builder.obj(value(ps), value(lenient)).withInterval(this.interval);
     },
 
@@ -161,18 +158,18 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
       return {name: value(n), pattern: value(p)};
     },
 
-    ruleDescr: function(_, t, _) {
+    ruleDescr: function(open, t, close) {
       return value(t);
     },
     ruleDescrText: function(_) {
       return this.interval.contents.trim();
     },
 
-    caseName: function(_, _, n, _, _) {
-      return value(n)
+    caseName: function(_, space1, n, space2, end) {
+      return value(n);
     },
 
-    name: function(_, _) {
+    name: function(first, rest) {
       return this.interval.contents;
     },
     nameFirst: function(expr) {},
@@ -191,7 +188,7 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
       return false;
     },
 
-    string: function(_, cs, _) {
+    string: function(open, cs, close) {
       return value(cs).map(function(c) { return common.unescapeChar(c); }).join('');
     },
 
@@ -203,24 +200,24 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
       return this.interval.contents;
     },
 
-    regExp: function(_, e, _) {
+    regExp: function(open, e, close) {
       return value(e);
     },
 
-    reCharClass_unicode: function(_, unicodeClass, _) {
+    reCharClass_unicode: function(open, unicodeClass, close) {
       return UnicodeCategories[value(unicodeClass).join('')];
     },
-    reCharClass_ordinary: function(_, _, _) {
+    reCharClass_ordinary: function(open, _, close) {
       return new RegExp(this.interval.contents);
     },
 
-    number: function(_, _) {
+    number: function(_, digits) {
       return parseInt(this.interval.contents);
     },
 
     space: function(expr) {},
-    space_multiLine: function(_, _, _) {},
-    space_singleLine: function(_, _, _) {},
+    space_multiLine: function(start, _, end) {},
+    space_singleLine: function(start, _, end) {},
 
     _many: attributes.actions.makeArray,
     _terminal: attributes.actions.getValue,
@@ -235,7 +232,7 @@ function compileAndLoad(source, whatItIs, namespace) {
     return buildGrammar(node, namespace);
   } catch (e) {
     if (e instanceof errors.MatchFailure) {
-      console.log('\n' + e.getMessage());
+      console.log('\n' + e.getMessage());  // eslint-disable-line no-console
     }
     throw e;
   }
@@ -250,13 +247,6 @@ function makeGrammars(source, optNamespace) {
   var ns = Namespace.extend(Namespace.asNamespace(optNamespace));
   compileAndLoad(source, 'Grammars', ns);
   return ns;
-}
-
-function makeLoc(node) {
-  return {
-    start: node.interval.startIdx,
-    end: node.interval.endIdx
-  };
 }
 
 function loadGrammarsFromScriptElement(element) {
