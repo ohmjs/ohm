@@ -1,3 +1,5 @@
+'use strict';
+
 var camelcase = require('./third_party/camelcase');
 
 // Checks whether the given node is considered an error by the camelcase rule.

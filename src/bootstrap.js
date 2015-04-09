@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /* eslint-env node */
 
+'use strict';
+
 var ohm = require('./main.js');
 var fs = require('fs');
 

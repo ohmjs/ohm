@@ -27,6 +27,8 @@
     // Enforce two-space indentation.
     "indent": [2, 2, {indentSwitchCase: true}],
 
+    "global-strict": 0,
+
     // Allow things like `while(true)`.
     "no-constant-condition": 0,
 
@@ -51,9 +53,7 @@
     // Use single quotes, except when escaping would be necessary.
     "quotes": [2, "single", "avoid-escape"],
 
-    // Don't enforce strict mode, because it disallows duplicate parameter
-    // names, which we use heavily in semantic actions.
-    "strict": 0,
+    "strict": [2, "global"],
 
     // Force IIFEs to be wrapped in parentheses.
     "wrap-iife": [2, "inside"],

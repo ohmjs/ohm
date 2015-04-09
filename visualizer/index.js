@@ -1,6 +1,8 @@
 /* eslint-env browser */
 /* global CodeMirror, d3, ohm */
 
+'use strict';
+
 var ArrayProto = Array.prototype;
 function $(sel) { return document.querySelector(sel); }
 var options = {};
