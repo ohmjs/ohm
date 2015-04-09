@@ -1,5 +1,5 @@
 # Don't diff compiled files.
-dist/** -diff
+dist/ohm.* -diff
 
 # When merging compiled files, always use the local version.
-dist/** merge=ours
+dist/ohm.* merge=ours
