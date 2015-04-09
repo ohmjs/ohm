@@ -42,13 +42,13 @@ function makeGrammarBuilder(optNamespaceName, optOhmGrammar) {
       decl.withSuperGrammar(value(n));
     },
 
-    Rule_define: function(n, d, _, b) {
+    Rule_define: function(n, fs, d, _, b) {
       currentRuleName = value(n);
       var body = value(b);
       body.definitionInterval = this.interval.trimmed();
       return decl.define(currentRuleName, body, value(d));
     },
-    Rule_override: function(n, _, b) {
+    Rule_override: function(n, fs, _, b) {
       currentRuleName = value(n);
       overriding = true;
       var body = value(b);
@@ -57,7 +57,7 @@ function makeGrammarBuilder(optNamespaceName, optOhmGrammar) {
       overriding = false;
       return ans;
     },
-    Rule_extend: function(n, _, b) {
+    Rule_extend: function(n, fs, _, b) {
       currentRuleName = value(n);
       var ans = decl.extend(currentRuleName, value(b));
       decl.ruleDict[currentRuleName].definitionInterval = this.interval.trimmed();
@@ -101,7 +101,7 @@ function makeGrammarBuilder(optNamespaceName, optOhmGrammar) {
       return builder.la(value(x)).withInterval(this.interval);
     },
 
-    Base_application: function(rule) {
+    Base_application: function(rule, ps) {
       return builder.app(value(rule)).withInterval(this.interval);
     },
     Base_prim: function(expr) {
