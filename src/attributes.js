@@ -2,7 +2,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-var Symbol = this.Symbol || require('symbol');
+var Symbol = require('symbol');  // eslint-disable-line no-undef
 var Node = require('./Node');
 
 // --------------------------------------------------------------------
@@ -10,12 +10,14 @@ var Node = require('./Node');
 // --------------------------------------------------------------------
 
 var actions = {
-  getValue:    function() { return this.value(); },
-  makeArray:   function() { throw new Error('BUG: ohm.actions.makeArray should never be called'); },
+  getValue: function() { return this.value(); },
+  makeArray: function() { throw new Error('BUG: ohm.actions.makeArray should never be called'); },
   passThrough: function(childNode) { throw new Error('BUG: ohm.actions.passThrough should never be called'); }
 };
 
 function makeTopDownThing(grammar, actionDict, memoize) {
+  var thing;
+
   function get(node) {
     function doAction(actionFn, optDontPassChildrenAsAnArgument) {
       if (actionFn === actions.makeArray) {
@@ -37,17 +39,18 @@ function makeTopDownThing(grammar, actionDict, memoize) {
       }
     }
 
+    var actionFn;
     if (node.ctorName === '_many' && node.parent) {
       // If an action's name is ctorName$idx, where idx is the 1-based index of a child node that happens
       // to be a list, it should override the _many action for that particular list node.
       var actionName = node.parent.ctorName + '$' + node.parent.indexOfChild(node);
-      var actionFn = actionDict[actionName];
+      actionFn = actionDict[actionName];
       if (actionFn) {
         return doAction(actionFn, true);
       }
     }
 
-    var actionFn = actionDict[node.ctorName];
+    actionFn = actionDict[node.ctorName];
     if (actionFn) {
       return doAction(actionFn);
     } else if (actionDict._default && node.ctorName !== '_terminal') {
@@ -81,7 +84,7 @@ function makeTopDownThing(grammar, actionDict, memoize) {
 
   // `thing` has to be a local variable b/c it's called from `get()`,
   // that's why we don't just return `memoize ? ... : ...`
-  var thing = memoize ?
+  thing = memoize ?
     synthesizedAttribute() :
     semanticAction();
 
@@ -108,6 +111,8 @@ function makeSynthesizedAttribute(grammar, actionDict) {
 }
 
 function makeInheritedAttribute(grammar, actionDict) {
+  var attribute;
+
   function compute(node) {
     function doAction(actionName, optIncludeChildIndex) {
       var actionFn = actionDict[actionName];
@@ -133,11 +138,12 @@ function makeInheritedAttribute(grammar, actionDict) {
         throw new Error('missing _base action');
       }
     } else {
+      var actionName;
       if (node.parent.ctorName === '_many') {
         // If there is an action called <ctorName>$<idx>$each, where <idx> is the 1-based index of a child node
         // that happens to be a list, it should override the _many method for that particular list node.
         var grandparent = node.parent.parent;
-        var actionName = grandparent.ctorName + '$' + grandparent.indexOfChild(node.parent) + '$each';
+        actionName = grandparent.ctorName + '$' + grandparent.indexOfChild(node.parent) + '$each';
         if (actionDict[actionName]) {
           return doAction(actionName);
         } else if (actionDict._many) {
@@ -149,7 +155,7 @@ function makeInheritedAttribute(grammar, actionDict) {
           throw new Error('missing ' + actionName + ', _many, or _default method');
         }
       } else {
-        var actionName = node.parent.ctorName + '$' + node.parent.indexOfChild(node);
+        actionName = node.parent.ctorName + '$' + node.parent.indexOfChild(node);
         if (actionDict[actionName]) {
           return doAction(actionName);
         } else if (actionDict._default) {
@@ -162,7 +168,7 @@ function makeInheritedAttribute(grammar, actionDict) {
   }
   var key = Symbol();
   var currentChildStack = [];
-  var attribute = function(node) {
+  attribute = function(node) {
     checkNodeAndGrammar(node, grammar, 'inherited attribute');
     if (!node.hasOwnProperty(key)) {
       currentChildStack.push(node);
