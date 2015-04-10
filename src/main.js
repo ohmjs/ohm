@@ -12,7 +12,7 @@ var common = require('./common.js');
 var errors = require('./errors.js');
 
 var Namespace = require('./Namespace.js');
-var UnicodeCategories = require('./unicode.js').UnicodeCategories;
+var UnicodeCategories = require('../third_party/unicode.js').UnicodeCategories;
 
 // --------------------------------------------------------------------
 // Private stuff
