@@ -14,7 +14,8 @@ G {
 
   PriExp
     = ...
-    | ListOf<Exp, ','>}
+    | ListOf<Exp, ','>
+}
 ```
 
 Notes:
@@ -138,22 +139,11 @@ If the input is `"C rules"`, the recorded failed primitives at position `2` shou
 * `"stinks"`, with stack `start`
 
 The expected set should be {`"sucks"`, `"stinks"`}.
-The interesting thing in this example is that neither `"sucks"` nor `"stinks"`  "subsumes" `"++"`, but `"++"` shouldn't be included in the expected set. This is because even if it shows up in the input, we will still (eventually) need one of the other expected strings in order to get to an accepting state, which means that `"++"` is superfluous.
+The interesting thing in this example is that neither `"sucks"` nor `"stinks"`  "subsumes" `"++"`, but `"++"` shouldn't be included in the expected set. This is because even if it shows up in the input, we will still (eventually) need one of the other expected strings in order to get to an accepting state, which means that `"++"` is superfluous.
 
 ### "Namespaces"
 
-* `ohm.grammar(stringOrNodeList, optNS)` returns a `Grammar`
-* `ohm.grammars(stringOrNodeList, optNS)` returns a namespace
-* Namespaces are just JS objects mapping grammar names to `Grammar` objects.
-* If the `stringOrNodeList` argument is a `NodeList`, it must only contain `<script>` tags whose `type` attribute is set to `text/ohm-js`.
-* Grammars that are used as super-grammars in grammar declarations should be looked up in the `optNS` dictionary, if there is one.
-* The `ohm.grammars()` method should create a new namespace object in which it should put all of the grammars it creates. Lookup for super-grammars should start in that object, and if there's no match, it should go to the `optNS` object, if present.
-* You can't re-declare a grammar -- that's an error. This could happen with `ohm.grammar()` if the grammar is already declared in `optNS`, and in `ohm.grammars()` if the grammar is already in the new namespace, or in `optNS`.
-* After doing this stuff, we should be able to:
-    * Remove the stuff having to do with `Namespaces` from the codebase.
-    * In `src/ohm-grammar.ohm`, remove `SuperGrammar_qualified` rule
-    * No more `namespace` attribute in Ohm `<script>` tags.
-    * Maybe now the stuff that's done in `src/bootstrap.js` can be done for any grammar? That would enable people to share grammar as "binaries". (A while ago I had an `ohm` command, but I removed it b/c it didn't support inheritance properly. That command turned into the less general but essential `src/bootstrap.js`.)
+Maybe now the stuff that's done in `src/bootstrap.js` can be done for any grammar? That would enable people to share grammar as "binaries". (A while ago I had an `ohm` command, but I removed it b/c it didn't support inheritance properly. That command turned into the less general but essential `src/bootstrap.js`.)
 
 ### Inheriting from Operations and Attributes
 
@@ -164,8 +154,10 @@ var g1 = ohm.grammar(...);
 var s1 = g1.createSemantics()
   .addOperation('eval', {
   	AddExp_plus: function(x, _, y) {
-  	  return x.eval() + y.eval();  	},
-  	...  });
+  	  return x.eval() + y.eval();
+  	},
+  	...
+  });
 ```
 
 Note that `Semantics.prototype.addOperation(name, dict)` returns the receiver to allow chaining. (Same goes for `Semantics.prototype.addSynthesizedAttribute` and `Semantics.prototype.addInheritedAttribute`.)
@@ -183,7 +175,8 @@ To extend an operation or an attribute, you create a new `Semantics` object that
 var g2 = ... // some grammar that extends g1
 var s2 = g2.createSemantics(s1)
   .extend("eval", {
-  	AddExp_foo: function(x, _, y) { ... }  });
+  	AddExp_foo: function(x, _, y) { ... }
+  });
 ```
 
 A *derived* `Semantics` instance -- i.e., one that is created by passing an existing `Semantics` to `Grammar.prototype.createSemantics()` -- automatically inherits all of the operations and attributes from the parent `Semantics`.

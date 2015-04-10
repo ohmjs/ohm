@@ -22,6 +22,15 @@ var UnicodeCategories = require('../third_party/unicode.js').UnicodeCategories;
 // bottom of this file because loading the grammar requires Ohm itself.
 var ohmGrammar;
 
+// Check if `obj` is a DOM element.
+function isElement(obj) {
+  return !!(obj && obj.nodeType === 1);
+}
+
+function isUndefined(obj) {
+  return obj === void 0;
+}
+
 // TODO: just use the jQuery thing
 function load(url) {
   var req = new XMLHttpRequest();
@@ -241,27 +250,40 @@ function compileAndLoad(source, whatItIs, namespace) {
   }
 }
 
-function makeGrammar(source, optNamespace) {
-  var ns = Namespace.extend(Namespace.asNamespace(optNamespace));
-  return compileAndLoad(source, 'Grammar', ns);
+// Return the contents of a script element, fetching it via XHR if necessary.
+function getScriptElementContents(el) {
+  if (!isElement(el)) {
+    throw new TypeError('Expected a DOM Node');
+  }
+  if (el.type !== 'text/ohm-js') {
+    throw new Error("script tag's type attribute must be text/ohm-js");
+  }
+  return el.getAttribute('src') ? load(el.getAttribute('src')) : el.innerHTML;
 }
 
-function makeGrammars(source, optNamespace) {
+function makeGrammar(stringOrNode, optNamespace) {
   var ns = Namespace.extend(Namespace.asNamespace(optNamespace));
-  compileAndLoad(source, 'Grammars', ns);
+  var source = typeof stringOrNode === 'string' ? stringOrNode : [stringOrNode];
+  make(source, 'Grammar', ns);
+  return ns[Object.keys(ns)[0]];  // Return the one and only property.
+}
+
+function makeGrammars(stringOrNodeList, optNamespace) {
+  var ns = Namespace.extend(Namespace.asNamespace(optNamespace));
+  make(stringOrNodeList, 'Grammars', ns);
   return ns;
 }
 
-function loadGrammarsFromScriptElement(element) {
-  if (element.type !== 'text/ohm-js') {
-    throw new Error("script tag's type attribute must be text/ohm-js");
+// Makes a grammar or grammars from `source`, which may be a string, NodeList, or Array.
+function make(source, whatItIs, namespace) {
+  if (!source || isUndefined(source.length)) {
+    throw new TypeError('Expected string or NodeList as first argument');
   }
-  var source = element.getAttribute('src') ? load(element.getAttribute('src')) : element.innerHTML;
-  try {
-    return makeGrammars(source);
-  } catch (e) {
-    if (!(e instanceof errors.Error)) {
-      console.error(e);  // eslint-disable-line no-console
+  if (typeof source === 'string') {
+    compileAndLoad(source, whatItIs, namespace);
+  } else {
+    for (var i = 0; i < source.length; ++i) {
+      compileAndLoad(getScriptElementContents(source[i]), whatItIs, namespace);
     }
   }
 }
@@ -280,7 +302,6 @@ module.exports = {
   actions: attributes.actions,
   createNamespace: Namespace.createNamespace,
   error: errors,
-  loadGrammarsFromScriptElement: loadGrammarsFromScriptElement,
   makeGrammar: makeGrammar,
   makeGrammars: makeGrammars,
   makeRecipe: makeRecipe

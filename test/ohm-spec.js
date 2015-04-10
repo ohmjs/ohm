@@ -1649,14 +1649,15 @@ test('namespaces', function(t) {
   t.end();
 });
 
-test('loadGrammarsFromScriptElement', function(t) {
+test('loading from script elements', function(t) {
   function fakeScriptTag(contents) {
     return {
       type: 'text/ohm-js',
       innerHTML: Array.isArray(contents) ? contents.join('\n') : contents,
       getAttribute: function(name) {
         return undefined;
-      }
+      },
+      nodeType: 1
     };
   }
   var script1 = fakeScriptTag(['O { number = number digit  -- rec',
@@ -1665,8 +1666,8 @@ test('loadGrammarsFromScriptElement', function(t) {
   var script2 = fakeScriptTag(['M { x = "xx" }',
                                'N { y = "yy" }']);
 
-  var ns1 = ohm.loadGrammarsFromScriptElement(script1);
-  var ns2 = ohm.loadGrammarsFromScriptElement(script2);
+  var ns1 = ohm.makeGrammars([script1]);
+  var ns2 = ohm.makeGrammars([script2]);
   t.equal(ns1.M, undefined, 'M is undefined in ns1');
   t.ok(ns1.O, 'O is defined in ns1');
   t.ok(ns1.O.match('1234', 'number'), 'O can match');
@@ -1675,6 +1676,9 @@ test('loadGrammarsFromScriptElement', function(t) {
   t.ok(ns2.N, 'N is also defined');
   t.equal(ns2.O, undefined, 'O is not defined in ns2');
   t.ok(ns2.M.match('xx', 'x'), 'M can match');
+
+  var g1 = ohm.makeGrammar(script1);
+  t.ok(g1.match('1234', 'number'), 'loading a single grammar works');
 
   t.end();
 });

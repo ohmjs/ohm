@@ -54,6 +54,9 @@ Grammar.prototype = {
 
   match: function(obj, startRule, optThrowOnFail) {
     var throwOnFail = !!optThrowOnFail;
+    if (!startRule) {
+      throw new TypeError("'startRule' argument cannot be null or undefined");
+    }
     var state = this._match(obj, startRule, false);
     var succeeded = state.bindings.length === 1;
     if (succeeded) {

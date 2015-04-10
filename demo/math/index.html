@@ -57,8 +57,7 @@ Arithmetic {
     <script src="../../dist/ohm.js"></script>
     <script>
 
-var scriptEl = document.querySelector('[type="text/ohm-js"]');
-var g = ohm.loadGrammarsFromScriptElement(scriptEl).Arithmetic;
+var g = ohm.makeGrammar(document.querySelector('[type="text/ohm-js"]'));
 
 // ---------------------------------------------------------------------------------------------------------------------
 
