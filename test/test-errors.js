@@ -15,7 +15,7 @@ var util = require('./util.js');
 // --------------------------------------------------------------------
 
 test('non-string input', function(t) {
-  var g = util.makeGrammar('G { start = 5 }');
+  var g = ohm.makeGrammar('G { start = 5 }');
   t.plan(2);
   try {
     g.match(42, 'start', true);
@@ -26,7 +26,7 @@ test('non-string input', function(t) {
 });
 
 test('basic match failure', function(t) {
-  var g = util.makeGrammar('G { start = "a" "b" "c" "d" }');
+  var g = ohm.makeGrammar('G { start = "a" "b" "c" "d" }');
 
   t.plan(4);
   try {
@@ -38,7 +38,7 @@ test('basic match failure', function(t) {
       '      ^',
       "Expected 'c'"].join('\n'));
     t.equal(e.getPos(), 2);
-  };
+  }
 
   try {
     g.match('abcde', 'start', true);
@@ -85,10 +85,10 @@ test('infinite loops', function(t) {
     var g = util.makeGrammar('G { start = ' + expr + '}');
     return g.match(input, 'start');
   }
-  t.throws(function() { matchExpr('("a"*)*', 'aaa') }, errors.InfiniteLoop);
-  t.throws(function() { matchExpr('("a"?)*', 'aaa') }, errors.InfiniteLoop);
-  t.throws(function() { matchExpr('("a"*)+', 'aaa') }, errors.InfiniteLoop);
-  t.throws(function() { matchExpr('("a"?)+', 'aaa') }, errors.InfiniteLoop);
+  t.throws(function() { matchExpr('("a"*)*', 'aaa'); }, errors.InfiniteLoop);
+  t.throws(function() { matchExpr('("a"?)*', 'aaa'); }, errors.InfiniteLoop);
+  t.throws(function() { matchExpr('("a"*)+', 'aaa'); }, errors.InfiniteLoop);
+  t.throws(function() { matchExpr('("a"?)+', 'aaa'); }, errors.InfiniteLoop);
 
   try {
     matchExpr('("a"*)*', 'aaa');

@@ -1,3 +1,5 @@
+/* eslint-disable no-eval */
+
 /*
 
 TODO:
@@ -49,7 +51,7 @@ function compareGrammars(t, expected, actual) {
 // pass a message argument to the assertion functions (e.g. `t.equal`), or
 // just put checks in a separate call to `test`.
 function it(desc, fn) {
-  console.log(desc);
+  console.log(desc);  // eslint-disable-line no-console
   fn.call();
 }
 
@@ -353,7 +355,7 @@ test('primitive patterns', function(t) {
         _false: ohm.actions.passThrough,
         _null: ohm.actions.passThrough,
         _undefined: ohm.actions.passThrough,
-        _terminal: ohm.actions.getValue,
+        _terminal: ohm.actions.getValue
       };
       t.equal(m.synthesizedAttribute(dict)(m.match(5, 'five')), 5);
       t.equal(m.synthesizedAttribute(dict)(m.match(true, '_true')), true);

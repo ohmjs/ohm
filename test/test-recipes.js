@@ -1,3 +1,5 @@
+'use strict';
+
 // --------------------------------------------------------------------
 // Imports
 // --------------------------------------------------------------------
@@ -10,7 +12,7 @@ var test = require('tape-catch');
 // --------------------------------------------------------------------
 
 function toGrammar(recipeString) {
-  return ohm.makeRecipe(eval(recipeString));
+  return ohm.makeRecipe(eval(recipeString));  // eslint-disable-line no-eval
 }
 
 // --------------------------------------------------------------------
@@ -24,7 +26,7 @@ test('simple recipes', function(t) {
   g = ohm.makeGrammar('G { start = end }');
   t.ok(toGrammar(g.toRecipe()).match('', 'start'), 'grammar with one rule');
 
-  g = ohm.makeGrammar('MyGrammar { start = x\n  x = "a" }')
+  g = ohm.makeGrammar('MyGrammar { start = x\n  x = "a" }');
   t.ok(toGrammar(g.toRecipe()).match('a', 'start'), 'grammar with multiple rules');
 
   t.end();

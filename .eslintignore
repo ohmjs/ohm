@@ -1,3 +1,6 @@
-# Ignore third party files.
 **/third_party/**
-src/unicode.js
+node_modules/**
+dist/*
+
+// TODO: Fix up errors and stop ignoring this file.
+test/ohm-spec.js
