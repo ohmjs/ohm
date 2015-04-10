@@ -289,3 +289,4 @@ module.exports = {
 // Stuff that's only here for bootstrapping, testing, etc.
 ohmGrammar = require('../dist/ohm-grammar.js');
 module.exports._buildGrammar = buildGrammar;
+module.exports.ohmGrammar = ohmGrammar;

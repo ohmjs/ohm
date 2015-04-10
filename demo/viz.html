@@ -116,7 +116,7 @@ function add(/* tagName, child1, child2, ... */) {
   addNode(makeElement.apply(this, arguments));
 }
 
-var vizChoice = ohm.grammar("Ohm").semanticAction({
+var vizChoice = ohm.ohmGrammar.semanticAction({
   _default:  function() {
                enter('choice');
                  viz(this);
@@ -125,7 +125,7 @@ var vizChoice = ohm.grammar("Ohm").semanticAction({
   _many:     ohm.actions.makeArray,
 });
 
-var viz = ohm.grammar("Ohm").semanticAction({
+var viz = ohm.ohmGrammar.semanticAction({
   Grammar:                  function(n, s, _, rs, _) {
                               enter('grammar');
                                 add('name', viz(n));
@@ -135,36 +135,30 @@ var viz = ohm.grammar("Ohm").semanticAction({
                                 leave();
                               leave();
                             },
-  SuperGrammar:             function(expr) {
+  SuperGrammar:             function(_, n) {
                               enter('super');
-                                viz(expr);  // force evaluation
+                                add('name', viz(n));
                               leave();
-                            },
-  SuperGrammar_qualified:   function(_, ns, _, n) {
-                              add('name', viz(ns) + '.' + viz(n));
-                            },
-  SuperGrammar_unqualified: function(_, n) {
-                              add('name', viz(n));
                             },
   Rule:                     function(expr) {
                               enter('rule');
                                 viz(expr);  // force evaluation
                               leave();
                             },
-  Rule_define:              function(n, d, _, b) {
+  Rule_define:              function(n, fs, d, _, b) {
                               add('name', viz(n));
                               viz(d);  // force evaluation
                               enter('ruleDefineBody');
                                 viz(b);  // force evaluation
                               leave();
                             },
-  Rule_override:            function(n, _, b) {
+  Rule_override:            function(n, fs, _, b) {
                               add('name', viz(n));
                               enter('ruleOverrideBody');
                                 viz(b);  // force evaluation
                               leave();
                             },
-  Rule_extend:              function(n, _, b) {
+  Rule_extend:              function(n, fs, _, b) {
                               add('name', viz(n));
                               enter('ruleExtendBody');
                                 viz(b);  // force evaluation
@@ -231,8 +225,8 @@ var viz = ohm.grammar("Ohm").semanticAction({
   Base:                     function(expr) {
                               viz(expr);  // force evaluation
                             },
-  Base_application:         function(ruleName) {
-                              add('app', viz(ruleName));
+  Base_application:         function(rule, ps) {
+                              add('app', viz(rule));
                             },
   Base_prim:                function(expr) {
                               viz(expr);  // force evaluation
@@ -333,7 +327,7 @@ var vizDiv = document.getElementById('vizDiv');
 
 source.oninput = function() {
   try {
-    var cst = ohm.grammar("Ohm").match(source.value, 'Grammar', true);
+    var cst = ohm.ohmGrammar.match(source.value, 'Grammar', true);
     removeChildren(vizDiv);
     viz(cst);
     source.className = undefined;
