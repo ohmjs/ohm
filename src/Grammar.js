@@ -104,8 +104,9 @@ Grammar.prototype = {
   },
 
   inheritedAttribute: function(actionDict) {
-    // TODO: write an arity-checker for inherited attributes
-    // all of the methods should have arity 1, except for _default, which has arity 2 b/c it also takes an index
+    // TODO: write an arity-checker for inherited attributes.
+    // All of the methods should have arity 1, except for _default, which has
+    // arity 2 b/c it also takes an index.
     if (!actionDict._base) {
       throw new Error('inherited attribute missing base case');
     } else if (actionDict._base.length !== 1) {
@@ -187,8 +188,8 @@ Grammar.prototype = {
     var entryPoints = arguments.length > 0 ? arguments : Object.keys(this.ruleDict);
     var rulesToBeIncluded = this.rulesThatNeedSemanticAction(entryPoints);
 
-    // TODO: add the super-grammar's templates at the right place, e.g., a case for AddExpr_plus should appear next to
-    // other cases of AddExpr.
+    // TODO: add the super-grammar's templates at the right place, e.g., a case for AddExpr_plus
+    // should appear next to other cases of AddExpr.
 
     var self = this;
     var sb = new common.StringBuffer();

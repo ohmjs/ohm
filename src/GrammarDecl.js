@@ -60,9 +60,11 @@ GrammarDecl.prototype.build = function() {
       error = e;
       console.error(e.toString());  // eslint-disable-line no-console
     }
-    // TODO: change the pexpr.prototype.assert... methods to make them add exceptions to an array that's provided
-    // as an arg. Then we'll be able to show more than one error of the same type at a time.
-    // TODO: include the offending pexpr in the errors, that way we can show the part of the source that caused it.
+    // TODO: change the pexpr.prototype.assert... methods to make them add
+    // exceptions to an array that's provided as an arg. Then we'll be able to
+    // show more than one error of the same type at a time.
+    // TODO: include the offending pexpr in the errors, that way we can show
+    // the part of the source that caused it.
     onOhmError(function() { body.assertChoicesHaveUniformArity(ruleName); }, handleError);
     onOhmError(function() { body.assertAllApplicationsAreValid(grammar); },  handleError);
   });

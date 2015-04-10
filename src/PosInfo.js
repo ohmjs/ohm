@@ -7,7 +7,8 @@
 function PosInfo(globalRuleStack) {
   this.globalRuleStack = globalRuleStack;
   this.ruleStack = [];
-  this.activeRules = {};  // redundant (could be generated from ruleStack) but useful for performance reasons
+  // Redundant (could be generated from ruleStack) but useful for performance reasons.
+  this.activeRules = {};
   this.memo = {};
 }
 
@@ -39,7 +40,9 @@ PosInfo.prototype = {
   },
 
   getCurrentLeftRecursion: function() {
-    return this.leftRecursionStack ? this.leftRecursionStack[this.leftRecursionStack.length - 1] : undefined;
+    if (this.leftRecursionStack) {
+      return this.leftRecursionStack[this.leftRecursionStack.length - 1];
+    }
   },
 
   startLeftRecursion: function(ruleName) {

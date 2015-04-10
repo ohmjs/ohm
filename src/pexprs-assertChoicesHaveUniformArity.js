@@ -42,7 +42,8 @@ pexprs.Alt.prototype.assertChoicesHaveUniformArity = function(ruleName) {
 };
 
 pexprs.Extend.prototype.assertChoicesHaveUniformArity = function(ruleName) {
-  // Extend is a special case of Alt that's guaranteed to have exactly two cases: [extensions, origBody]
+  // Extend is a special case of Alt that's guaranteed to have exactly two
+  // cases: [extensions, origBody].
   var actualArity = this.terms[0].getArity();
   var expectedArity = this.terms[1].getArity();
   if (actualArity !== expectedArity) {

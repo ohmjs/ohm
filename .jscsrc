@@ -2,8 +2,8 @@
   "excludeFiles": ["dist/*", "node_modules/**", "**/third_party/**"],
 
   "maximumLineLength": {
-    "value": 120,
-    "allowComments": true
+    "value": 100,
+    "allowUrlComments": true
   },
 
   // For semantic actions, allow object properties to have underscores.

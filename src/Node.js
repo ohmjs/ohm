@@ -43,7 +43,8 @@ Node.prototype.onlyChild = function() {
 
 Node.prototype.firstChild = function() {
   if (this.hasNoChildren()) {
-    throw new Error('cannot get first child of a ' + this.ctorName + ' node, which has no children');
+    throw new Error(
+        'cannot get first child of a ' + this.ctorName + ' node, which has no children');
   } else {
     return this.childAt(0);
   }
@@ -51,7 +52,8 @@ Node.prototype.firstChild = function() {
 
 Node.prototype.lastChild = function() {
   if (this.hasNoChildren()) {
-    throw new Error('cannot get last child of a ' + this.ctorName + ' node, which has no children');
+    throw new Error(
+        'cannot get last child of a ' + this.ctorName + ' node, which has no children');
   } else {
     return this.childAt(this.numChildren() - 1);
   }

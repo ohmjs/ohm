@@ -13,8 +13,12 @@ var Node = require('./Node');
 
 var actions = {
   getValue: function() { return this.value(); },
-  makeArray: function() { throw new Error('BUG: ohm.actions.makeArray should never be called'); },
-  passThrough: function(childNode) { throw new Error('BUG: ohm.actions.passThrough should never be called'); }
+  makeArray: function() {
+    throw new Error('BUG: ohm.actions.makeArray should never be called');
+  },
+  passThrough: function(childNode) {
+    throw new Error('BUG: ohm.actions.passThrough should never be called');
+  }
 };
 
 function makeTopDownThing(grammar, actionDict, memoize) {
@@ -26,7 +30,8 @@ function makeTopDownThing(grammar, actionDict, memoize) {
         if (node.ctorName === '_many') {
           return node.children.map(thing);
         } else {
-          throw new Error('the makeArray default action cannot be used with a ' + node.ctorName + ' node');
+          throw new Error(
+              'the makeArray default action cannot be used with a ' + node.ctorName + ' node');
         }
       } else if (actionFn === actions.passThrough) {
         if (node.ctorName === '_many') {
@@ -43,8 +48,8 @@ function makeTopDownThing(grammar, actionDict, memoize) {
 
     var actionFn;
     if (node.ctorName === '_many' && node.parent) {
-      // If an action's name is ctorName$idx, where idx is the 1-based index of a child node that happens
-      // to be a list, it should override the _many action for that particular list node.
+      // If an action's name is ctorName$idx, where idx is the 1-based index of a child node that
+      // happens to be a list, it should override the _many action for that particular list node.
       var actionName = node.parent.ctorName + '$' + node.parent.indexOfChild(node);
       actionFn = actionDict[actionName];
       if (actionFn) {
@@ -142,8 +147,9 @@ function makeInheritedAttribute(grammar, actionDict) {
     } else {
       var actionName;
       if (node.parent.ctorName === '_many') {
-        // If there is an action called <ctorName>$<idx>$each, where <idx> is the 1-based index of a child node
-        // that happens to be a list, it should override the _many method for that particular list node.
+        // If there is an action called <ctorName>$<idx>$each, where <idx> is the 1-based index
+        // of a child node that happens to be a list, it should override the _many method for
+        // that particular list node.
         var grandparent = node.parent.parent;
         actionName = grandparent.ctorName + '$' + grandparent.indexOfChild(node.parent) + '$each';
         if (actionDict[actionName]) {
@@ -177,7 +183,8 @@ function makeInheritedAttribute(grammar, actionDict) {
       try {
         var methodName = compute(node);
         if (!node.hasOwnProperty(key)) {
-          throw new Error('method ' + methodName + ' did not set a value for a child node of type ' + node.ctorName);
+          throw new Error('method ' + methodName +
+                          ' did not set a value for a child node of type ' + node.ctorName);
         }
       } finally {
         currentChildStack.pop();

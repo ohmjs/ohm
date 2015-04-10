@@ -15,7 +15,8 @@ function OhmError() {}
 OhmError.prototype = Object.create(Error.prototype);
 
 function makeCustomError(name, initFn) {
-  // Make E think it's really called OhmError, so that errors look nicer when they're console.log'ed in Chrome.
+  // Make E think it's really called OhmError, so that errors look nicer when they're
+  // console.log'ed in Chrome.
   var E = function OhmError() {
     initFn.apply(this, arguments);
     var e = new Error();
@@ -156,7 +157,8 @@ var DuplicateRuleDeclaration = makeCustomError(
       this.ruleName = ruleName;
       this.offendingGrammarName = offendingGrammarName;
       this.declGrammarName = declGrammarName;
-      this.message = 'duplicate declaration for rule ' + this.ruleName + ' in grammar ' + this.offendingGrammarName;
+      this.message = 'duplicate declaration for rule ' + this.ruleName +
+                     ' in grammar ' + this.offendingGrammarName;
       if (this.offendingGrammarName !== declGrammarName) {
         this.message += ' (it was originally declared in grammar ' + this.declGrammarName + ')';
       }
@@ -284,7 +286,8 @@ var InvalidConstructorCall = makeCustomError(
       this.grammar = grammar;
       this.ctorName = ctorName;
       this.children = children;
-      this.message = 'Attempt to invoke constructor ' + this.ctorName + ' with invalid or unexpected arguments';
+      this.message = 'Attempt to invoke constructor ' + this.ctorName +
+                     ' with invalid or unexpected arguments';
     }
 );
 

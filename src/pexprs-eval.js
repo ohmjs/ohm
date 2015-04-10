@@ -81,7 +81,8 @@ pexprs.anything._eval = function(state) {
   if (value === common.fail) {
     return false;
   } else {
-    state.bindings.push(new Node(state.grammar, '_terminal', [value], inputStream.intervalFrom(origPos)));
+    var interval = inputStream.intervalFrom(origPos);
+    state.bindings.push(new Node(state.grammar, '_terminal', [value], interval));
     return true;
   }
 };
@@ -89,7 +90,8 @@ pexprs.anything._eval = function(state) {
 pexprs.end._eval = function(state) {
   var inputStream = state.inputStream;
   if (state.inputStream.atEnd()) {
-    state.bindings.push(new Node(state.grammar, '_terminal', [undefined], inputStream.intervalFrom(inputStream.pos)));
+    var interval = inputStream.intervalFrom(inputStream.pos);
+    state.bindings.push(new Node(state.grammar, '_terminal', [undefined], interval));
     return true;
   } else {
     return false;
@@ -102,7 +104,8 @@ pexprs.Prim.prototype._eval = function(state) {
   if (this.match(inputStream) === common.fail) {
     return false;
   } else {
-    state.bindings.push(new Node(state.grammar, '_terminal', [this.obj], inputStream.intervalFrom(origPos)));
+    var interval = inputStream.intervalFrom(origPos);
+    state.bindings.push(new Node(state.grammar, '_terminal', [this.obj], interval));
     return true;
   }
 };
@@ -121,8 +124,9 @@ pexprs.RegExpPrim.prototype._eval = function(state) {
   if (inputStream.matchRegExp(this.obj) === common.fail) {
     return false;
   } else {
+    var interval = inputStream.intervalFrom(origPos);
     state.bindings.push(
-        new Node(state.grammar, '_terminal', [inputStream.source[origPos]], inputStream.intervalFrom(origPos)));
+        new Node(state.grammar, '_terminal', [inputStream.source[origPos]], interval));
     return true;
   }
 };
@@ -190,7 +194,8 @@ pexprs.Many.prototype._eval = function(state) {
     return false;
   } else {
     for (idx = 0; idx < columns.length; idx++) {
-      state.bindings.push(new Node(state.grammar, '_many', columns[idx], inputStream.intervalFrom(origPos)));
+      var interval = inputStream.intervalFrom(origPos);
+      state.bindings.push(new Node(state.grammar, '_many', columns[idx], interval));
     }
     return true;
   }
@@ -205,7 +210,8 @@ pexprs.Opt.prototype._eval = function(state) {
     row = state.bindings.splice(state.bindings.length - arity, arity);
   } else {
     inputStream.pos = origPos;
-    row = common.repeat(new Node(state.grammar, '_terminal', [undefined], inputStream.intervalFrom(origPos)), arity);
+    var interval = inputStream.intervalFrom(origPos);
+    row = common.repeat(new Node(state.grammar, '_terminal', [undefined], interval), arity);
   }
   for (var idx = 0; idx < arity; idx++) {
     state.bindings.push(row[idx]);
@@ -302,7 +308,8 @@ pexprs.Obj.prototype._eval = function(state) {
           remainder[p] = obj[p];
         }
       }
-      state.bindings.push(new Node(state.grammar, '_terminal', [remainder], inputStream.intervalFrom(origPos)));
+      var interval = inputStream.intervalFrom(origPos);
+      state.bindings.push(new Node(state.grammar, '_terminal', [remainder], interval));
       return true;
     } else {
       return numOwnPropertiesMatched === Object.keys(obj).length;
@@ -368,7 +375,11 @@ pexprs.Apply.prototype._eval = function(state) {
     if (currentLR) {
       if (currentLR.name === ruleName) {
         value = this.handleLeftRecursion(body, state, origPos, currentLR, value);
-        origPosInfo.memo[memoKey] = {pos: inputStream.pos, value: value, involvedRules: currentLR.involvedRules};
+        origPosInfo.memo[memoKey] = {
+          pos: inputStream.pos,
+          value: value,
+          involvedRules: currentLR.involvedRules
+        };
         origPosInfo.endLeftRecursion(ruleName);
       } else if (!currentLR.involvedRules[ruleName]) {
         // Only memoize if this rule is not involved in the current left recursion

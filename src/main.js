@@ -95,7 +95,8 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
     },
 
     Alt: function(term, _, terms) {
-      return builder.alt.apply(builder, [value(term)].concat(value(terms))).withInterval(this.interval);
+      return builder.alt.apply(
+          builder, [value(term)].concat(value(terms))).withInterval(this.interval);
     },
 
     Term_inline: function(b, n) {
