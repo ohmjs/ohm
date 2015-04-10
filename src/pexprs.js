@@ -150,7 +150,7 @@ inherits(Apply, PExpr);
 // This method just caches the result of `this.toString()` in a non-enumerable property.
 Apply.prototype.toMemoKey = function() {
   if (!this._memoKey) {
-    Object.defineProperty(this, '_memoKey', { value: this.toString() });
+    Object.defineProperty(this, '_memoKey', {value: this.toString()});
   }
   return this._memoKey;
 };

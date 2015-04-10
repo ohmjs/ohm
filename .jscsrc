@@ -1,0 +1,16 @@
+{
+  "excludeFiles": ["dist/*", "node_modules/**", "**/third_party/**"],
+
+  "maximumLineLength": {
+    "value": 120,
+    "allowComments": true
+  },
+
+  // For semantic actions, allow object properties to have underscores.
+  "requireCamelCaseOrUpperCaseIdentifiers": "ignoreProperties",
+
+  "validateQuoteMarks": {
+    "mark": "'",
+    "escape": true
+  }
+}

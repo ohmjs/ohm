@@ -50,7 +50,6 @@ GrammarDecl.prototype.withSuperGrammar = function(superGrammar) {
   return this;
 };
 
-
 // Creates a Grammar instance, and if it passes the sanity checks, returns it.
 GrammarDecl.prototype.build = function() {
   var grammar = new Grammar(this.name, this.ensureSuperGrammar(), this.ruleDict);

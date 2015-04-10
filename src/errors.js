@@ -19,7 +19,7 @@ function makeCustomError(name, initFn) {
   var E = function OhmError() {
     initFn.apply(this, arguments);
     var e = new Error();
-    Object.defineProperty(this, 'stack', { get: function() { return e.stack; } });
+    Object.defineProperty(this, 'stack', {get: function() { return e.stack; }});
   };
   E.prototype = Object.create(OhmError.prototype);
   E.prototype.constructor = E;
