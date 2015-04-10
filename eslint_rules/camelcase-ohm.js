@@ -15,7 +15,7 @@ function checkCamelCase(idNode) {
 
 // Reports an AST node as a rule violation.
 function report(context, node) {
-  context.report(node, "Identifier '{{name}}' is not camel case.", { name: node.name });
+  context.report(node, "Identifier '{{name}}' is not camel case.", {name: node.name});
 }
 
 // Returns true if `name` appears to be the name of a semantic action.

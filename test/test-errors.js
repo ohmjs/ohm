@@ -19,7 +19,7 @@ test('non-string input', function(t) {
   t.plan(2);
   try {
     g.match(42, 'start', true);
-  } catch(e) {
+  } catch (e) {
     t.equal(e.displayString, 'match failed at position 0');
     t.equal(e.getPos(), 0);
   }
@@ -31,7 +31,7 @@ test('basic match failure', function(t) {
   t.plan(4);
   try {
     g.match('ab', 'start', true);
-  } catch(e) {
+  } catch (e) {
     t.equal(e.displayString, [
       'Line 1, col 3:',
       '> | ab',
@@ -42,7 +42,7 @@ test('basic match failure', function(t) {
 
   try {
     g.match('abcde', 'start', true);
-  } catch(e) {
+  } catch (e) {
     t.equal(e.displayString, [
       'Line 1, col 5:',
       '> | abcde',
@@ -93,7 +93,7 @@ test('infinite loops', function(t) {
   try {
     matchExpr('("a"*)*', 'aaa');
     t.fail('Expected an exception to be thrown');
-  } catch(e) {
+  } catch (e) {
     t.equal(e.message, [
       'Line 1, col 4:',
       '> | aaa',

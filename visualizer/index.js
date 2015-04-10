@@ -69,7 +69,7 @@ function markInterval(cm, interval, className) {
     return markBlock(cm, startPos.line, endPos.line, className);
   }
   cm.getWrapperElement().classList.add('highlighting');
-  return cm.markText(startPos, endPos, { className: className });
+  return cm.markText(startPos, endPos, {className: className});
 }
 
 function clearMark(cm, mark) {
@@ -353,7 +353,6 @@ function isPrimitive(expr) {
   inputEditor.on('change', function() { triggerRefresh(150); });
   grammarEditor.on('change', function() { triggerRefresh(150); });
 
-
   function refresh() {
     var grammarSrc = grammarEditor.getValue();
     ohm.namespace('default').grammars = clone(origDefaultGrammars);  // Hack to reset the namespace.
@@ -414,7 +413,8 @@ function isPrimitive(expr) {
             el.classList.add('failed');
           }
         }
-        walkTraceNodes(node.children, childContainer, childInput, shouldShowTrace, shouldPrintInput, node);
+        walkTraceNodes(
+            node.children, childContainer, childInput, shouldShowTrace, shouldPrintInput, node);
 
         // For Seq nodes, also display children that weren't evaluated.
         // TODO: Consider handling this when the trace is being recorded.

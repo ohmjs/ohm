@@ -1,7 +1,8 @@
 /*
 
 TODO:
-* add a test that tries to use a semantic action for one grammar w/ a CST from another (should throw an error)
+* add a test that tries to use a semantic action for one grammar w/ a CST from another
+  (should throw an error)
 * rethink these tests, they're outdated now and should be re-written to test what Ohm has become
   (see TODO.md)
 
@@ -871,7 +872,7 @@ test('obj', function(t) {
     try {
       m = util.makeGrammar('M { duh = {x: 1, x: 2, y: 3, ...} }');
       t.fail('Expected an exception to be thrown');
-    } catch(e) {
+    } catch (e) {
       t.ok(e instanceof errors.DuplicatePropertyNames);
       t.deepEqual(e.duplicates, ['x']);
     }
@@ -1224,7 +1225,9 @@ test('apply', function(t) {
         _terminal: ohm.actions.getValue
       });
       t.deepEqual(buildTree(f),
-        ['tricky', ['bar', ['barRec', ['foo', ['fooRec', ['bar', ['barRec', ['foo', '1'], '2']], '3']], '4']]]);
+        ['tricky',
+          ['bar',
+            ['barRec', ['foo', ['fooRec', ['bar', ['barRec', ['foo', '1'], '2']], '3']], '4']]]);
     });
     t.end();
   });
@@ -1237,7 +1240,7 @@ test('inheritance', function(t) {
       try {
         util.makeGrammar('G2 <: G1 {}');
         t.fail('Expected an exception to be thrown');
-      } catch(e) {
+      } catch (e) {
         t.equal(e.constructor, errors.UndeclaredGrammar);
         t.equal(e.grammarName, 'G1');
       };
@@ -1247,7 +1250,7 @@ test('inheritance', function(t) {
       try {
         util.makeGrammar('G2 <: G1 {}', {});
         t.fail('Expected an exception to be thrown');
-      } catch(e) {
+      } catch (e) {
         t.equal(e.constructor, errors.UndeclaredGrammar);
         t.equal(e.grammarName, 'G1');
       };
@@ -1264,7 +1267,7 @@ test('inheritance', function(t) {
           'G2 <: G1 { foo = "bar" }'
         ]);
         t.fail('Expected an exception to be thrown');
-      } catch(e) {
+      } catch (e) {
         t.equal(e.constructor, errors.DuplicateRuleDeclaration);
         t.equal(e.ruleName, 'foo');
         t.equal(e.offendingGrammarName, 'G2');
@@ -1282,7 +1285,7 @@ test('inheritance', function(t) {
       try {
         ns.G3 = util.makeGrammar('G3 <: G1 { foo := "foo" }', ns);
         t.fail('Expected an exception to be thrown');
-      } catch(e) {
+      } catch (e) {
         t.equal(e.constructor, errors.UndeclaredRule);
         t.equal(e.ruleName, 'foo');
         t.equal(e.grammarName, 'G1');
@@ -1359,7 +1362,7 @@ test('inheritance', function(t) {
       try {
         util.makeGrammar('G3 <: G1 { bar += "bar" }', ns);
         t.fail('Expected an exception to be thrown');
-      } catch(e) {
+      } catch (e) {
         t.equal(e.constructor, errors.UndeclaredRule);
         t.equal(e.ruleName, 'bar');
         t.equal(e.grammarName, 'G1');
@@ -1376,7 +1379,7 @@ test('inheritance', function(t) {
       try {
         util.makeGrammar('M2 <: M1 { foo += bar baz }', ns);
         t.fail('Expected an exception to be thrown');
-      } catch(e) {
+      } catch (e) {
         t.equal(e.constructor, errors.InconsistentArity);
         t.equal(e.ruleName, 'foo');
         t.equal(e.expected, 1);
@@ -1388,7 +1391,7 @@ test('inheritance', function(t) {
       try {
         util.makeGrammar('M4 <: M3 { foo += digit }', ns);
         t.fail('Expected an exception to be thrown');
-      } catch(e) {
+      } catch (e) {
         t.equal(e.constructor, errors.InconsistentArity);
         t.equal(e.ruleName, 'foo');
         t.equal(e.expected, 2);
@@ -1405,7 +1408,7 @@ test('bindings', function(t) {
     try {
       util.makeGrammar('G { foo = "a" "c" | "b" }');
       t.fail('Expected an exception to be thrown');
-    } catch(e) {
+    } catch (e) {
       t.equal(e.constructor, errors.InconsistentArity);
       t.equal(e.ruleName, 'foo');
       t.deepEqual(e.expected, 2);
@@ -1517,8 +1520,8 @@ test('inline rule declarations', function(t) {
 
   try {
     util.makeGrammar('Bad <: Expr { addExpr += addExpr "~" mulExpr  -- minus }', ns);
-      t.fail('Expected an exception to be thrown');
-  } catch(e) {
+    t.fail('Expected an exception to be thrown');
+  } catch (e) {
     t.ok(e instanceof errors.DuplicateRuleDeclaration);
     t.equal(e.ruleName, 'addExpr_minus');
     t.equal(e.offendingGrammarName, 'Bad');
@@ -1629,7 +1632,7 @@ test('namespaces', function(t) {
   try {
     util.makeGrammar('ccc { bar = "bar" }', ns2);
     t.fail('throws exception on duplicate grammar');
-  } catch(e) {
+  } catch (e) {
     t.equal(e.constructor, errors.DuplicateGrammarDeclaration);
     t.equal(e.grammarName, 'ccc');
   }
@@ -1815,7 +1818,7 @@ test('definitionInterval', function(t) {
     '  foo += bar',
     '  bar := "a" | "b" -- baz',
     '}'
-  ], { G: g });
+  ], {G: g});
   it('works when overriding and extending rules', function() {
     t.deepEqual(definitionLoc(g2, 'foo'), [12, 22]);
     t.deepEqual(definitionLoc(g2, 'bar'), [25, 48]);
@@ -1877,7 +1880,8 @@ test('toDisplayString', function(t) {
 });
 
 test('pexpr.toString()', function(t) {
-  var g = util.makeGrammar('G { start = &"a" ~(2 | 3?) ``b a\'\' [c {e: b, ...} {g: /[a-z]/}]  a = 1  b = 2  c = 3 }');
+  var g = util.makeGrammar(
+      'G { start = &"a" ~(2 | 3?) ``b a\'\' [c {e: b, ...} {g: /[a-z]/}]  a = 1  b = 2  c = 3 }');
   var e = g.ruleDict.start;
   t.equal(e.toString(), '(&"a" ~(2 | 3?) ``(b a)\'\' [(c {"e": b, ...} {"g": /[a-z]/})])');
   t.end();

@@ -1,4 +1,6 @@
 {
+  "disallowMultipleVarDecl": "exceptUndefined",
+
   "excludeFiles": ["dist/*", "node_modules/**", "**/third_party/**"],
 
   "maximumLineLength": {

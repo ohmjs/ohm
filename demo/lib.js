@@ -1,7 +1,9 @@
 function makeElement(tagName) {
   var element = document.createElement(tagName);
   for (var idx = 1; idx < arguments.length; idx++) {
-    var child = typeof arguments[idx] === 'string' ?  document.createTextNode(arguments[idx]) : arguments[idx];
+    var child = typeof arguments[idx] === 'string' ?
+        document.createTextNode(arguments[idx]) :
+        arguments[idx];
     element.appendChild(child);
   }
   return element;
