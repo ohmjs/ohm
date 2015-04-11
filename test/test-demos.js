@@ -24,14 +24,20 @@ function runDemo(relativePath, cb) {
   jsdom.env({
     file: path.join(DEMO_ROOT, relativePath),
     features: {
-      FetchExternalResources: true,
-      ProcessExternalResources: true,
+      FetchExternalResources: ['script', 'img', 'css', 'frame', 'iframe', 'link'],
 
       // Block URLs that begin with HTTP. The demos should use only local resources,
       // referenced by relative path.
       SkipExternalResources: /^http/
     },
-    done: function(errors, window) {
+    created: function(errors, window) {
+      if (errors) {
+        cb(errors);
+      } else {
+        jsdom.getVirtualConsole(window).sendTo(console);
+      }
+    },
+    loaded: function(errors, window) {
       if (errors) {
         errors.forEach(function(e) {
           // Try to print a more useful error message for errors that occur in the
