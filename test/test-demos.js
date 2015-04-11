@@ -20,7 +20,7 @@ var DEMO_ROOT = path.normalize(path.join(__dirname, '../demo/'));
 // The demos are loaded using JSDOM (https://github.com/tmpvar/jsdom), a JavaScript
 // implementation of the WHATWG DOM and HTML standards. Some things may behave slightly
 // differently than a real browser environment.
-function runDemo(relativePath, cb) {
+function runDemo(relativePath, testObj, cb) {
   jsdom.env({
     file: path.join(DEMO_ROOT, relativePath),
     features: {
@@ -48,6 +48,11 @@ function runDemo(relativePath, cb) {
             console.log(e);
           }
         });
+      } else {
+        // If the demo specifies an inline test, run it.
+        if (window.test) {
+          testObj.test('test in ' + relativePath, window.test);
+        }
       }
       cb(errors);
     }
@@ -59,14 +64,14 @@ function runDemo(relativePath, cb) {
 // --------------------------------------------------------------------
 
 test('math demo', function(t) {
-  runDemo('math/index.html', function(errors) {
+  runDemo('math/index.html', t, function(errors) {
     t.equal(errors, null, 'runs without errors');
     t.end();
   });
 });
 
 test('viz demo', function(t) {
-  runDemo('viz/index.html', function(errors) {
+  runDemo('viz/index.html', t, function(errors) {
     t.equal(errors, null, 'runs without errors');
     t.end();
   });

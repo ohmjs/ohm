@@ -221,6 +221,16 @@ function createExpectedElement(s) {
     return makeElement('description', s);
   }
 }
+
+function $(sel) { return document.querySelector(sel); }
+
+window.test = function(t) {
+  input.value = '33 * 5 + 100';
+  input.oninput();
+  t.equal($('#value').textContent, '265', 'value is correct');
+  t.equal($('#lisp').textContent, '(+ (* 33 5) 100)', 'LISP representation is correct');
+  t.end();
+};
     </script>
   </body>
 </html>
