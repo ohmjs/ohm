@@ -76,3 +76,10 @@ test('viz demo', function(t) {
     t.end();
   });
 });
+
+test('pl0 demo', function(t) {
+  runDemo('../experiments/pl0.html', t, function(errors) {
+    t.equal(errors, null, 'runs without errors');
+    t.end();
+  });
+});

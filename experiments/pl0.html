@@ -17,7 +17,7 @@
   <head>
     <title>ohm/PL/0 demo</title>
     <meta charset=utf-8>
-    <link href="../demo/math.css" rel="stylesheet"></link>
+    <link href="../demo/math/math.css" rel="stylesheet">
     <script src="../demo/lib.js"></script>
     <script type="text/ohm-js">
 
@@ -74,7 +74,7 @@ PL0 {
   
 }
 
-</script>
+    </script>
     <script src="../dist/ohm.js"></script>
   </head>
   <body>
@@ -88,7 +88,7 @@ PL0 {
     <div id="value"></div>
     <script>
 
-var g = ohm.grammar('PL0');
+var g = ohm.makeGrammar(document.querySelector('script[type="text/ohm-js"]'));
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -199,6 +199,7 @@ var input = document.getElementById('input');
 var spaces = document.getElementById('spaces');
 var error = document.getElementById('error');
 var errorDetails = document.getElementById('errorDetails');
+var errorDiv = document.getElementById('errorDiv');
 
 input.value = '';
 hideError();
@@ -250,6 +251,16 @@ function createExpectedElement(s) {
   }
 }
 
+window.test = function(t) {
+  var valueField = document.querySelector('#value');
+
+  input.value = 'var x = 3; print x + 1;';
+  input.oninput();
+  var expected = 'pushLit(3) pushLit(0) store pop pushReg(0) pushLit(1) add print';
+  var actual = valueField.textContent.split(/\s+/).join(' ');
+  t.equal(actual, expected, 'simple program produces expected code');
+  t.end();
+};
     </script>
   </body>
 </html>
