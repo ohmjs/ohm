@@ -95,6 +95,7 @@ Arithmetic {
       <div id="vizDiv"></div>
     </col2>
     <script>
+(function() {
 
 var curr = document.getElementById('vizDiv');
 
@@ -352,6 +353,8 @@ window.test = function(t) {
       'the expected case names appear in the DOM');
   t.end();
 };
+
+})();
     </script>
   </body>
 </html>

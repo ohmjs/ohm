@@ -55,6 +55,7 @@ function runDemo(relativePath, testObj, cb) {
         }
       }
       cb(errors);
+      window.close();
     }
   });
 }
