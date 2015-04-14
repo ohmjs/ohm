@@ -179,6 +179,9 @@ Grammar.prototype = {
       }
       sb.append('(' + common.toStringLiteral(ruleName) + ', ');
       body.outputRecipe(sb);
+      if (body.description) {
+        sb.append(', ' + common.toStringLiteral(body.description));
+      }
       sb.append(')\n');
     });
     sb.append('    .build();\n});\n');
