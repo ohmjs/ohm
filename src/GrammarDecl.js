@@ -116,10 +116,10 @@ GrammarDecl.prototype.override = function(name, numParams, body) {
   return this;
 };
 
-
 GrammarDecl.prototype.extend = function(name, numParams, body) {
   this.ensureSuperGrammar();
-  this.installOverriddenOrExtendedRule(name, numParams, new pexprs.Extend(this.superGrammar, name, body));
+  this.installOverriddenOrExtendedRule(
+      name, numParams, new pexprs.Extend(this.superGrammar, name, body));
   return this;
 };
 
