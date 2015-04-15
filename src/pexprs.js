@@ -28,6 +28,11 @@ PExpr.prototype.withInterval = function(interval) {
   return this;
 };
 
+PExpr.prototype.withNumParams = function(numParams) {
+  this.numParams = numParams;
+  return this;
+};
+
 // Anything
 
 var anything = Object.create(PExpr.prototype);

@@ -262,13 +262,14 @@ Grammar.prototype = {
 Grammar.base = new Grammar('Grammar', null, {
   _: pexprs.anything,
   end: pexprs.end,
-  space: pexprs.makePrim(/[\s]/).withDescription('space'),
-  alnum: pexprs.makePrim(/[0-9a-zA-Z]/).withDescription('alpha-numeric character'),
-  letter: pexprs.makePrim(/[a-zA-Z]/).withDescription('letter'),
-  lower: pexprs.makePrim(/[a-z]/).withDescription('lower-case letter'),
-  upper: pexprs.makePrim(/[A-Z]/).withDescription('upper-case letter'),
-  digit: pexprs.makePrim(/[0-9]/).withDescription('digit'),
-  hexDigit: pexprs.makePrim(/[0-9a-fA-F]/).withDescription('hexadecimal digit'),
+  space: pexprs.makePrim(/[\s]/).withNumParams(0).withDescription('a space'),
+  alnum: pexprs.makePrim(/[0-9a-zA-Z]/).
+             withNumParams(0).withDescription('an alpha-numeric character'),
+  letter: pexprs.makePrim(/[a-zA-Z]/).withNumParams(0).withDescription('a letter'),
+  lower: pexprs.makePrim(/[a-z]/).withNumParams(0).withDescription('a lower-case letter'),
+  upper: pexprs.makePrim(/[A-Z]/).withNumParams(0).withDescription('an upper-case letter'),
+  digit: pexprs.makePrim(/[0-9]/).withNumParams(0).withDescription('a digit'),
+  hexDigit: pexprs.makePrim(/[0-9a-fA-F]/).withNumParams(0).withDescription('a hexadecimal digit'),
 
   // The following rule is part of the implementation.
   // Its name ends with '_' so that it can't be overridden or invoked by programmers.
