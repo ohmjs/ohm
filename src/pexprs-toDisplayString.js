@@ -22,6 +22,10 @@ pexprs.Prim.prototype.toDisplayString = function() {
   return String(this.obj);
 };
 
+pexprs.Param.prototype.toDisplayString = function() {
+  return '#' + this.index;
+};
+
 pexprs.StringPrim.prototype.toDisplayString = function() {
   return '"' + this.obj + '"';
 };

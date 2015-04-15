@@ -84,8 +84,8 @@ Builder.prototype = {
     return new pexprs.Obj(properties, !!isLenient);
   },
 
-  app: function(ruleName) {
-    return new pexprs.Apply(ruleName);
+  app: function(ruleName, optParams) {
+    return new pexprs.Apply(ruleName, optParams || []);
   }
 };
 

@@ -17,8 +17,8 @@ var InputStream = require('./InputStream.js');
 var applySpaces_ = new pexprs.Apply('spaces_');
 
 function skipSpacesIfAppropriate(state) {
-  var currentRule = state.ruleStack[state.ruleStack.length - 1];
-  var ruleName = currentRule.ruleName || '';
+  var currentApplication = state.ruleStack[state.ruleStack.length - 1];
+  var ruleName = currentApplication.ruleName || '';
   if (typeof state.inputStream.source === 'string' && common.isSyntactic(ruleName)) {
     skipSpaces(state);
   }
@@ -129,6 +129,11 @@ pexprs.RegExpPrim.prototype._eval = function(state) {
         new Node(state.grammar, '_terminal', [inputStream.source[origPos]], interval));
     return true;
   }
+};
+
+pexprs.Param.prototype._eval = function(state) {
+  var currentApplication = state.ruleStack[state.ruleStack.length - 1];
+  return currentApplication.arguments[this.index].eval(state);
 };
 
 pexprs.Alt.prototype._eval = function(state) {

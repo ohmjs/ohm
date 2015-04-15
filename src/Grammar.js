@@ -177,7 +177,7 @@ Grammar.prototype = {
       } else {
         sb.append('define');
       }
-      sb.append('(' + common.toStringLiteral(ruleName) + ', ');
+      sb.append('(' + common.toStringLiteral(ruleName) + ', ' + body.numParams + ', ');
       body.outputRecipe(sb);
       if (body.description) {
         sb.append(', ' + common.toStringLiteral(body.description));

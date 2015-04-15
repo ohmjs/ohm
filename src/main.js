@@ -84,23 +84,41 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
     Rule_define: function(n, fs, d, _, b) {
       currentRuleName = value(n);
       var body = value(b);
+      var formals = value(fs);
       body.definitionInterval = this.interval.trimmed();
-      return decl.define(currentRuleName, body, value(d));
+      return decl.define(currentRuleName, formals.length, body, value(d));
     },
     Rule_override: function(n, fs, _, b) {
       currentRuleName = value(n);
       overriding = true;
       var body = value(b);
+      var formals = value(fs);
       body.definitionInterval = this.interval.trimmed();
-      var ans = decl.override(currentRuleName, body);
+      var ans = decl.override(currentRuleName, formals.length, body);
       overriding = false;
       return ans;
     },
     Rule_extend: function(n, fs, _, b) {
       currentRuleName = value(n);
-      var ans = decl.extend(currentRuleName, value(b));
+      var body = value(b);
+      var formals = value(fs);
+      var ans = decl.extend(currentRuleName, formals.length, body);
       decl.ruleDict[currentRuleName].definitionInterval = this.interval.trimmed();
       return ans;
+    },
+
+    Formals_none: function() {
+      return [];
+    },
+    Formals_some: function(opointy, n, commas, ns, cpointy) {
+      return [value(n)].concat(value(ns));
+    },
+
+    Params_none: function() {
+      return [];
+    },
+    Params_some: function(opointy, p, commas, ps, cpointy) {
+      return [value(p)].concat(value(ps));
     },
 
     Alt: function(term, _, terms) {
@@ -113,9 +131,9 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
       var body = value(b);
       body.definitionInterval = this.interval.trimmed();
       if (overriding) {
-        decl.override(inlineRuleName, body);
+        decl.override(inlineRuleName, 0, body);
       } else {
-        decl.define(inlineRuleName, body);
+        decl.define(inlineRuleName, 0, body);
       }
       return builder.app(inlineRuleName).withInterval(body.interval);
     },
@@ -142,7 +160,7 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
     },
 
     Base_application: function(rule, ps) {
-      return builder.app(value(rule)).withInterval(this.interval);
+      return builder.app(value(rule), value(ps)).withInterval(this.interval);
     },
     Base_prim: function(expr) {
       return builder.prim(value(expr)).withInterval(this.interval);

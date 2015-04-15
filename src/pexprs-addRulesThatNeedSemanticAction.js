@@ -25,6 +25,10 @@ pexprs.Prim.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequi
   // no-op
 };
 
+pexprs.Param.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
+  // no-op
+};
+
 pexprs.Alt.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
   var ans = false;
   for (var idx = 0; idx < this.terms.length; idx++) {

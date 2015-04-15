@@ -26,6 +26,7 @@ State.prototype = {
     this.inputStreamStack = [];
     this.posInfosStack = [];
     this.pushInputStream(this.origInputStream);
+    // TODO: rename ruleStack to appStack (it's really a stack of pexprs.Apply)
     this.ruleStack = [];
     this.bindings = [];
     this.failures = optFailuresArray;

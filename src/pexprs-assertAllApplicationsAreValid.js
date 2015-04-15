@@ -26,6 +26,10 @@ pexprs.Prim.prototype.assertAllApplicationsAreValid = function(grammar) {
   // no-op
 };
 
+pexprs.Param.prototype.assertAllApplicationsAreValid = function(grammar) {
+  // no-op
+};
+
 pexprs.Alt.prototype.assertAllApplicationsAreValid = function(grammar) {
   for (var idx = 0; idx < this.terms.length; idx++) {
     this.terms[idx].assertAllApplicationsAreValid(grammar);

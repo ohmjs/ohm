@@ -27,6 +27,10 @@ pexprs.Prim.prototype.outputRecipe = function(sb) {
   sb.append(')');
 };
 
+pexprs.Param.prototype.outputRecipe = function(sb) {
+  sb.append('this.param(' + this.index + ')');
+};
+
 pexprs.Alt.prototype.outputRecipe = function(sb) {
   sb.append('this.alt(');
   for (var idx = 0; idx < this.terms.length; idx++) {

@@ -62,6 +62,13 @@ function RegExpPrim(obj, optFromInterval) {
 }
 inherits(RegExpPrim, Prim);
 
+// Parameters
+
+function Param(index) {
+  this.index = index;
+}
+inherits(Param, PExpr);
+
 // Alternation
 
 function Alt(terms) {
@@ -139,8 +146,9 @@ inherits(Obj, PExpr);
 
 // Rule application
 
-function Apply(ruleName, optFromInterval) {
+function Apply(ruleName, params, optFromInterval) {
   this.ruleName = ruleName;
+  this.params = params;
   if (optFromInterval) {
     this.fromInterval = optFromInterval;
   }
@@ -175,6 +183,7 @@ exports.end = end;
 exports.Prim = Prim;
 exports.StringPrim = StringPrim;
 exports.RegExpPrim = RegExpPrim;
+exports.Param = Param;
 exports.Alt = Alt;
 exports.Extend = Extend;
 exports.Seq = Seq;

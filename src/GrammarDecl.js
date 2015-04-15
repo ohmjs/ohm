@@ -39,6 +39,24 @@ GrammarDecl.prototype.ensureSuperGrammar = function() {
   return this.superGrammar;
 };
 
+GrammarDecl.prototype.ensureBaseRule = function(name) {
+  var baseRule = this.superGrammar.ruleDict[name];
+  if (baseRule) {
+    return baseRule;
+  } else {
+    throw new errors.UndeclaredRule(name, this.superGrammar.name);
+  }
+};
+
+GrammarDecl.prototype.installOverriddenOrExtendedRule = function(name, numParams, body) {
+  var baseRule = this.ensureBaseRule(name);
+  this.ruleDict[name] = body;
+  body.description = baseRule.description;
+  // TODO: check that numParams === baseRule.numParams
+  body.numParams = baseRule.numParams;
+  return this;
+};
+
 // Stuff that you should only do once
 
 GrammarDecl.prototype.withSuperGrammar = function(superGrammar) {
@@ -76,7 +94,7 @@ GrammarDecl.prototype.build = function() {
 
 // Rule declarations
 
-GrammarDecl.prototype.define = function(name, body, optDescr) {
+GrammarDecl.prototype.define = function(name, numParams, body, optDescr) {
   this.ensureSuperGrammar();
   if (optDescr) {
     body.description = optDescr;
@@ -86,25 +104,22 @@ GrammarDecl.prototype.define = function(name, body, optDescr) {
   } else if (this.ruleDict[name]) {
     throw new errors.DuplicateRuleDeclaration(name, this.name, this.name);
   }
+  // TODO: make numParams an argument to this method.
+  body.numParams = numParams;
   this.ruleDict[name] = body;
   return this;
 };
 
-GrammarDecl.prototype.override = function(name, body) {
+GrammarDecl.prototype.override = function(name, numParams, body) {
   this.ensureSuperGrammar();
-  if (!this.superGrammar.ruleDict[name]) {
-    throw new errors.UndeclaredRule(name, this.superGrammar.name);
-  }
-  this.ruleDict[name] = body;
+  this.installOverriddenOrExtendedRule(name, numParams, body);
   return this;
 };
 
-GrammarDecl.prototype.extend = function(name, body) {
+
+GrammarDecl.prototype.extend = function(name, numParams, body) {
   this.ensureSuperGrammar();
-  if (!this.superGrammar.ruleDict[name]) {
-    throw new errors.UndeclaredRule(name, this.superGrammar.name);
-  }
-  this.ruleDict[name] = new pexprs.Extend(this.superGrammar, name, body);
+  this.installOverriddenOrExtendedRule(name, numParams, new pexprs.Extend(this.superGrammar, name, body));
   return this;
 };
 
@@ -113,4 +128,3 @@ GrammarDecl.prototype.extend = function(name, body) {
 // --------------------------------------------------------------------
 
 module.exports = GrammarDecl;
-

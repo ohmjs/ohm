@@ -26,6 +26,10 @@ pexprs.Prim.prototype.check = function(grammar, vals) {
   return vals[0] instanceof Node && vals[0].isValue() && vals[0].value() === this.obj;
 };
 
+pexprs.Param.prototype.check = function(grammar, vals) {
+  return vals.length >= 1;
+};
+
 pexprs.RegExpPrim.prototype.check = function(grammar, vals) {
   // TODO: more efficient "total match checker" than the use of .replace here
   return vals[0] instanceof Node &&
