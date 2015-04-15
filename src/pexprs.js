@@ -43,27 +43,18 @@ var end = Object.create(PExpr.prototype);
 
 // Primitives
 
-function Prim(obj, optFromInterval) {
+function Prim(obj) {
   this.obj = obj;
-  if (optFromInterval) {
-    this.fromInterval = optFromInterval;
-  }
 }
 inherits(Prim, PExpr);
 
-function StringPrim(obj, optFromInterval) {
+function StringPrim(obj) {
   this.obj = obj;
-  if (optFromInterval) {
-    this.fromInterval = optFromInterval;
-  }
 }
 inherits(StringPrim, Prim);
 
-function RegExpPrim(obj, optFromInterval) {
+function RegExpPrim(obj) {
   this.obj = obj;
-  if (optFromInterval) {
-    this.fromInterval = optFromInterval;
-  }
 }
 inherits(RegExpPrim, Prim);
 
@@ -151,12 +142,9 @@ inherits(Obj, PExpr);
 
 // Rule application
 
-function Apply(ruleName, params, optFromInterval) {
+function Apply(ruleName, params) {
   this.ruleName = ruleName;
   this.params = params;
-  if (optFromInterval) {
-    this.fromInterval = optFromInterval;
-  }
 }
 inherits(Apply, PExpr);
 
@@ -172,13 +160,13 @@ Apply.prototype.toMemoKey = function() {
 // Exports
 // --------------------------------------------------------------------
 
-exports.makePrim = function(obj, optFromInterval) {
+exports.makePrim = function(obj) {
   if (typeof obj === 'string' && obj.length !== 1) {
-    return new StringPrim(obj, optFromInterval);
+    return new StringPrim(obj);
   } else if (obj instanceof RegExp) {
-    return new RegExpPrim(obj, optFromInterval);
+    return new RegExpPrim(obj);
   } else {
-    return new Prim(obj, optFromInterval);
+    return new Prim(obj);
   }
 };
 

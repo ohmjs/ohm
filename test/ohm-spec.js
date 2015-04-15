@@ -1852,9 +1852,7 @@ test('rule invocation interval', function(t) {
     t.deepEqual(fromLoc(fooBody), [12, 15]);
     t.deepEqual(fromLoc(beepBody.factors[1]), [32, 35]);
   });
-  it('works for applications of built-in rules', function() {
-    t.deepEqual(fromLoc(beepBody.factors[0]), [25, 31]);
-  });
+  t.deepEqual(fromLoc(beepBody.factors[0]), [25, 31], 'works for built-in rule applications');
   it('works for primitives', function() {
     t.deepEqual(fromLoc(barBody.terms[0]), [44, 47]);
     t.deepEqual(fromLoc(barBody.terms[1]), [50, 56]);
@@ -1862,10 +1860,8 @@ test('rule invocation interval', function(t) {
     var barBazBody = g.ruleDict.bar_baz;
     t.deepEqual(fromLoc(barBazBody), [59, 66]);
   });
-  it('is undefined for other types of pexpr', function() {
-    t.equal(beepBody.fromInterval, undefined);
-    t.equal(barBody.fromInterval, undefined);
-  });
+  t.deepEqual(fromLoc(beepBody), [25, 35], 'works for seq');
+  t.deepEqual(fromLoc(barBody), [44, 73], 'works for alt');
   t.end();
 });
 
