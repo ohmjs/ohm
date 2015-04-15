@@ -82,16 +82,6 @@ function clearMark(cm, mark) {
 // Misc Helpers
 // ------------
 
-function clone(obj) {
-  var result = {};
-  for (var k in obj) {
-    if (obj.hasOwnProperty(k)) {
-      result[k] = obj[k];
-    }
-  }
-  return result;
-}
-
 // Returns an array of elements whose width could depend on `el`, including
 // the element itself.
 function getWidthDependentElements(el) {
@@ -337,8 +327,6 @@ function isPrimitive(expr) {
 // ----
 
 (function main() {
-  var origDefaultGrammars = clone(ohm.namespace('default').grammars);
-
   var checkboxes = document.querySelectorAll('#options input[type=checkbox]');
   var refreshTimeout;
   function triggerRefresh(delay) {
@@ -355,7 +343,6 @@ function isPrimitive(expr) {
 
   function refresh() {
     var grammarSrc = grammarEditor.getValue();
-    ohm.namespace('default').grammars = clone(origDefaultGrammars);  // Hack to reset the namespace.
 
     try {
       grammar = ohm.makeGrammar(grammarSrc);
