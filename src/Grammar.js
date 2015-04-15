@@ -177,7 +177,8 @@ Grammar.prototype = {
       } else {
         sb.append('define');
       }
-      sb.append('(' + common.toStringLiteral(ruleName) + ', ' + body.numParams + ', ');
+      var formals = '[' + body.formals.map(common.toStringLiteral).join(', ') + ']';
+      sb.append('(' + common.toStringLiteral(ruleName) + ', ' + formals + ', ');
       body.outputRecipe(sb);
       if (body.description) {
         sb.append(', ' + common.toStringLiteral(body.description));
@@ -262,14 +263,14 @@ Grammar.prototype = {
 Grammar.base = new Grammar('Grammar', null, {
   _: pexprs.anything,
   end: pexprs.end,
-  space: pexprs.makePrim(/[\s]/).withNumParams(0).withDescription('a space'),
+  space: pexprs.makePrim(/[\s]/).withFormals([]).withDescription('a space'),
   alnum: pexprs.makePrim(/[0-9a-zA-Z]/).
-             withNumParams(0).withDescription('an alpha-numeric character'),
-  letter: pexprs.makePrim(/[a-zA-Z]/).withNumParams(0).withDescription('a letter'),
-  lower: pexprs.makePrim(/[a-z]/).withNumParams(0).withDescription('a lower-case letter'),
-  upper: pexprs.makePrim(/[A-Z]/).withNumParams(0).withDescription('an upper-case letter'),
-  digit: pexprs.makePrim(/[0-9]/).withNumParams(0).withDescription('a digit'),
-  hexDigit: pexprs.makePrim(/[0-9a-fA-F]/).withNumParams(0).withDescription('a hexadecimal digit'),
+             withFormals([]).withDescription('an alpha-numeric character'),
+  letter: pexprs.makePrim(/[a-zA-Z]/).withFormals([]).withDescription('a letter'),
+  lower: pexprs.makePrim(/[a-z]/).withFormals([]).withDescription('a lower-case letter'),
+  upper: pexprs.makePrim(/[A-Z]/).withFormals([]).withDescription('an upper-case letter'),
+  digit: pexprs.makePrim(/[0-9]/).withFormals([]).withDescription('a digit'),
+  hexDigit: pexprs.makePrim(/[0-9a-fA-F]/).withFormals([]).withDescription('a hexadecimal digit'),
 
   // The following rule is part of the implementation.
   // Its name ends with '_' so that it can't be overridden or invoked by programmers.

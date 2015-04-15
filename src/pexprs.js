@@ -28,8 +28,8 @@ PExpr.prototype.withInterval = function(interval) {
   return this;
 };
 
-PExpr.prototype.withNumParams = function(numParams) {
-  this.numParams = numParams;
+PExpr.prototype.withFormals = function(formals) {
+  this.formals = formals;
   return this;
 };
 

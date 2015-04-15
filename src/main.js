@@ -86,7 +86,7 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
       var body = value(b);
       var formals = value(fs);
       body.definitionInterval = this.interval.trimmed();
-      return decl.define(currentRuleName, formals.length, body, value(d));
+      return decl.define(currentRuleName, formals, body, value(d));
     },
     Rule_override: function(n, fs, _, b) {
       currentRuleName = value(n);
@@ -94,7 +94,7 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
       var body = value(b);
       var formals = value(fs);
       body.definitionInterval = this.interval.trimmed();
-      var ans = decl.override(currentRuleName, formals.length, body);
+      var ans = decl.override(currentRuleName, formals, body);
       overriding = false;
       return ans;
     },
@@ -102,7 +102,7 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
       currentRuleName = value(n);
       var body = value(b);
       var formals = value(fs);
-      var ans = decl.extend(currentRuleName, formals.length, body);
+      var ans = decl.extend(currentRuleName, formals, body);
       decl.ruleDict[currentRuleName].definitionInterval = this.interval.trimmed();
       return ans;
     },
@@ -131,9 +131,9 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
       var body = value(b);
       body.definitionInterval = this.interval.trimmed();
       if (overriding) {
-        decl.override(inlineRuleName, 0, body);
+        decl.override(inlineRuleName, [], body);
       } else {
-        decl.define(inlineRuleName, 0, body);
+        decl.define(inlineRuleName, [], body);
       }
       return builder.app(inlineRuleName).withInterval(body.interval);
     },
