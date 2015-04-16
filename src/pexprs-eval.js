@@ -17,7 +17,7 @@ var InputStream = require('./InputStream.js');
 var applySpaces_ = new pexprs.Apply('spaces_');
 
 function skipSpacesIfAppropriate(state) {
-  var currentApplication = state.ruleStack[state.ruleStack.length - 1];
+  var currentApplication = state.applicationStack[state.applicationStack.length - 1];
   var ruleName = currentApplication.ruleName || '';
   if (typeof state.inputStream.source === 'string' && common.isSyntactic(ruleName)) {
     skipSpaces(state);
@@ -132,7 +132,7 @@ pexprs.RegExpPrim.prototype._eval = function(state) {
 };
 
 pexprs.Param.prototype._eval = function(state) {
-  var currentApplication = state.ruleStack[state.ruleStack.length - 1];
+  var currentApplication = state.applicationStack[state.applicationStack.length - 1];
   return currentApplication.arguments[this.index].eval(state);
 };
 
@@ -359,13 +359,13 @@ pexprs.Apply.prototype._eval = function(state) {
   var currentLR;
   if (memoRec && origPosInfo.shouldUseMemoizedResult(memoRec)) {
     return useMemoizedResult(memoRec);
-  } else if (origPosInfo.isActive(ruleName)) {
+  } else if (origPosInfo.isActive(this)) {
     currentLR = origPosInfo.getCurrentLeftRecursion();
-    if (currentLR && currentLR.name === ruleName) {
-      origPosInfo.updateInvolvedRules();
+    if (currentLR && currentLR.memoKey === memoKey) {
+      origPosInfo.updateInvolvedApplications();
       return useMemoizedResult(currentLR);
     } else {
-      origPosInfo.startLeftRecursion(ruleName);
+      origPosInfo.startLeftRecursion(this);
       return false;
     }
   } else {
@@ -378,15 +378,15 @@ pexprs.Apply.prototype._eval = function(state) {
     var value = this.evalOnce(body, state);
     currentLR = origPosInfo.getCurrentLeftRecursion();
     if (currentLR) {
-      if (currentLR.name === ruleName) {
+      if (currentLR.memoKey === memoKey) {
         value = this.handleLeftRecursion(body, state, origPos, currentLR, value);
         origPosInfo.memo[memoKey] = {
           pos: inputStream.pos,
           value: value,
-          involvedRules: currentLR.involvedRules
+          involvedApplications: currentLR.involvedApplications
         };
-        origPosInfo.endLeftRecursion(ruleName);
-      } else if (!currentLR.involvedRules[ruleName]) {
+        origPosInfo.endLeftRecursion(this);
+      } else if (!currentLR.involvedApplications[memoKey]) {
         // Only memoize if this rule is not involved in the current left recursion
         origPosInfo.memo[memoKey] = {pos: inputStream.pos, value: value};
       }
@@ -403,13 +403,13 @@ pexprs.Apply.prototype._eval = function(state) {
     // available if the memoized result is used later.
     if (state.isTracing() && origPosInfo.memo[memoKey]) {
       var entry = state.getTraceEntry(origPos, this, value);
-      entry.setLeftRecursive(currentLR && (currentLR.name === ruleName));
+      entry.setLeftRecursive(currentLR && (currentLR.memoKey === memoKey));
       origPosInfo.memo[memoKey].traceEntry = entry;
     }
     var ans;
     if (value) {
       bindings.push(value);
-      if (state.ruleStack.length === 1) {
+      if (state.applicationStack.length === 1) {
         if (common.isSyntactic(ruleName)) {
           skipSpaces(state);
         }

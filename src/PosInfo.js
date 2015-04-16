@@ -4,35 +4,35 @@
 // Private stuff
 // --------------------------------------------------------------------
 
-function PosInfo(globalRuleStack) {
-  this.globalRuleStack = globalRuleStack;
-  this.ruleStack = [];
-  // Redundant (could be generated from ruleStack) but useful for performance reasons.
-  this.activeRules = {};
+function PosInfo(globalApplicationStack) {
+  this.globalApplicationStack = globalApplicationStack;
+  this.applicationStack = [];
+  // Redundant (could be generated from applicationStack) but useful for performance reasons.
+  this.activeApplications = {};
   this.memo = {};
 }
 
 PosInfo.prototype = {
-  isActive: function(ruleName) {
-    return this.activeRules[ruleName];
+  isActive: function(application) {
+    return this.activeApplications[application.toMemoKey()];
   },
 
-  enter: function(pexpr) {
-    this.globalRuleStack.push(pexpr);
-    this.ruleStack.push(pexpr);
-    this.activeRules[pexpr.ruleName] = true;
+  enter: function(application) {
+    this.globalApplicationStack.push(application);
+    this.applicationStack.push(application);
+    this.activeApplications[application.toMemoKey()] = true;
   },
 
   exit: function() {
-    var pexpr = this.globalRuleStack.pop();
-    this.ruleStack.pop();
-    this.activeRules[pexpr.ruleName] = false;
+    var application = this.globalApplicationStack.pop();
+    this.applicationStack.pop();
+    this.activeApplications[application.toMemoKey()] = false;
   },
 
   shouldUseMemoizedResult: function(memoRec) {
-    var involvedRules = memoRec.involvedRules;
-    for (var ruleName in involvedRules) {
-      if (involvedRules[ruleName] && this.activeRules[ruleName]) {
+    var involvedApplications = memoRec.involvedApplications;
+    for (var memoKey in involvedApplications) {
+      if (involvedApplications[memoKey] && this.activeApplications[memoKey]) {
         return false;
       }
     }
@@ -45,29 +45,33 @@ PosInfo.prototype = {
     }
   },
 
-  startLeftRecursion: function(ruleName) {
+  startLeftRecursion: function(application) {
     if (!this.leftRecursionStack) {
       this.leftRecursionStack = [];
     }
-    this.leftRecursionStack.push({name: ruleName, value: false, pos: -1, involvedRules: {}});
-    this.updateInvolvedRules();
+    this.leftRecursionStack.push({
+        memoKey: application.toMemoKey(),
+        value: false,
+        pos: -1,
+        involvedApplications: {}});
+    this.updateInvolvedApplications();
   },
 
-  endLeftRecursion: function(ruleName) {
+  endLeftRecursion: function(application) {
     this.leftRecursionStack.pop();
   },
 
-  updateInvolvedRules: function() {
+  updateInvolvedApplications: function() {
     var currentLeftRecursion = this.getCurrentLeftRecursion();
-    var involvedRules = currentLeftRecursion.involvedRules;
-    var lrRuleName = currentLeftRecursion.name;
-    var idx = this.ruleStack.length - 1;
+    var involvedApplications = currentLeftRecursion.involvedApplications;
+    var lrApplicationMemoKey = currentLeftRecursion.memoKey;
+    var idx = this.applicationStack.length - 1;
     while (true) {
-      var ruleName = this.ruleStack[idx--].ruleName;
-      if (ruleName === lrRuleName) {
+      var memoKey = this.applicationStack[idx--].toMemoKey();
+      if (memoKey === lrApplicationMemoKey) {
         break;
       }
-      involvedRules[ruleName] = true;
+      involvedApplications[memoKey] = true;
     }
   }
 };

@@ -26,8 +26,7 @@ State.prototype = {
     this.inputStreamStack = [];
     this.posInfosStack = [];
     this.pushInputStream(this.origInputStream);
-    // TODO: rename ruleStack to appStack (it's really a stack of pexprs.Apply)
-    this.ruleStack = [];
+    this.applicationStack = [];
     this.bindings = [];
     this.failures = optFailuresArray;
     this.ignoreFailuresCount = 0;
@@ -54,7 +53,7 @@ State.prototype = {
 
   getPosInfo: function(pos) {
     var posInfo = this.posInfos[pos];
-    return posInfo || (this.posInfos[pos] = new PosInfo(this.ruleStack));
+    return posInfo || (this.posInfos[pos] = new PosInfo(this.applicationStack));
   },
 
   recordFailure: function(pos, expr) {
@@ -95,7 +94,7 @@ State.prototype = {
     }
 
     // Another failure at right-most position -- record it if it wasn't already.
-    var stack = this.ruleStack.slice();
+    var stack = this.applicationStack.slice();
     var exprsAndStacks = this.failures;
     for (var idx = 0; idx < exprsAndStacks.length; idx++) {
       var exprAndStacks = exprsAndStacks[idx];
