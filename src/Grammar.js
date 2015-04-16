@@ -259,10 +259,9 @@ Grammar.prototype = {
   }
 };
 
-// This object contains Ohm's built-in rules.
-Grammar.base = new Grammar('Grammar', null, {
-  _: pexprs.anything,
-  end: pexprs.end,
+var builtInRules = {
+  _: pexprs.anything.withFormals([]),
+  end: pexprs.end.withFormals([]),
   space: pexprs.makePrim(/[\s]/).withFormals([]).withDescription('a space'),
   alnum: pexprs.makePrim(/[0-9a-zA-Z]/).
              withFormals([]).withDescription('an alpha-numeric character'),
@@ -273,9 +272,18 @@ Grammar.base = new Grammar('Grammar', null, {
   hexDigit: pexprs.makePrim(/[0-9a-fA-F]/).withFormals([]).withDescription('a hexadecimal digit'),
 
   // The following rule is part of the implementation.
-  // Its name ends with '_' so that it can't be overridden or invoked by programmers.
+  // Its name ends with '_' to prevent it from being overridden or invoked by programmers.
   spaces_: new pexprs.Many(new pexprs.Apply('space'), 0)
+};
+
+// Create the "base grammar"'s rule dictionary using `Object.create(null)` so
+// that it doesn't have properties like `toString`, etc.
+var baseGrammarRuleDict = Object.create(null);
+Object.keys(builtInRules).forEach(function(ruleName) {
+  baseGrammarRuleDict[ruleName] = builtInRules[ruleName];
 });
+
+Grammar.base = new Grammar('Grammar', null, baseGrammarRuleDict);
 
 // --------------------------------------------------------------------
 // Exports

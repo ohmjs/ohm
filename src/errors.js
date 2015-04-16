@@ -165,6 +165,44 @@ var DuplicateRuleDeclaration = makeCustomError(
     }
 );
 
+// Wrong number of parameters
+
+var WrongNumberOfParameters = makeCustomError(
+    'ohm.error.WrongNumberOfParameters',
+    function(ruleName, expected, actual) {
+      this.ruleName = ruleName;
+      this.expected = expected;
+      this.actual = actual;
+      this.message = 'wrong number of parameters for rule ' + this.ruleName +
+                     ' (expected ' + this.expected + ', got ' + this.actual + ')';
+    }
+);
+
+// Duplicate parameter names
+
+var DuplicateParameterNames = makeCustomError(
+    'ohm.error.DuplicateParameterNames',
+    function(ruleName, duplicates) {
+      this.ruleName = ruleName;
+      this.duplicates = duplicates;
+      this.message = 'duplicate parameter names in rule ' + this.ruleName + ': ' +
+                     this.duplicates.join(',');
+    }
+);
+
+// Invalid parameter expression
+
+var InvalidParameter = makeCustomError(
+    'ohm.error.InvalidParameter',
+    function(ruleName, expr) {
+      this.ruleName = ruleName;
+      this.expr = expr;
+      this.message = 'invalid parameter to rule ' + this.ruleName + ': ' + this.expr +
+                     ' has arity ' + this.expr.getArity() + ', but parameter expressions ' +
+                     'must have arity 1';
+    }
+);
+
 // ----------------- arity -----------------
 
 // Inconsistent arity
@@ -296,15 +334,18 @@ var InvalidConstructorCall = makeCustomError(
 // --------------------------------------------------------------------
 
 module.exports = {
+  DuplicateGrammarDeclaration: DuplicateGrammarDeclaration,
+  DuplicateParameterNames: DuplicateParameterNames,
+  DuplicatePropertyNames: DuplicatePropertyNames,
+  DuplicateRuleDeclaration: DuplicateRuleDeclaration,
   Error: OhmError,
+  InconsistentArity: InconsistentArity,
   InfiniteLoop: InfiniteLoop,
   IntervalSourcesDontMatch: IntervalSourcesDontMatch,
-  UndeclaredGrammar: UndeclaredGrammar,
-  DuplicateGrammarDeclaration: DuplicateGrammarDeclaration,
-  UndeclaredRule: UndeclaredRule,
-  DuplicateRuleDeclaration: DuplicateRuleDeclaration,
-  InconsistentArity: InconsistentArity,
-  DuplicatePropertyNames: DuplicatePropertyNames,
+  InvalidConstructorCall: InvalidConstructorCall,
+  InvalidParameter: InvalidParameter,
   MatchFailure: MatchFailure,
-  InvalidConstructorCall: InvalidConstructorCall
+  UndeclaredGrammar: UndeclaredGrammar,
+  UndeclaredRule: UndeclaredRule,
+  WrongNumberOfParameters: WrongNumberOfParameters
 };

@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------
 
 var Grammar = require('./Grammar.js');
+var common = require('./common.js');
 var errors = require('./errors.js');
 var pexprs = require('./pexprs.js');
 
@@ -50,10 +51,21 @@ GrammarDecl.prototype.ensureBaseRule = function(name) {
 
 GrammarDecl.prototype.installOverriddenOrExtendedRule = function(name, formals, body) {
   var baseRule = this.ensureBaseRule(name);
-  this.ruleDict[name] = body;
-  body.description = baseRule.description;
-  // TODO: check that formals.length === baseRule.formals.length
+  var duplicateParameterNames = common.getDuplicates(formals);
+  if (duplicateParameterNames.length > 0) {
+    throw new errors.DuplicateParameterNames(name, duplicateParameterNames);
+  }
+  if (formals.length !== baseRule.formals.length) {
+    throw new errors.WrongNumberOfParameters(name, baseRule.formals.length, formals.length);
+  }
+  return this.install(name, formals, baseRule.description, body);
+};
+
+GrammarDecl.prototype.install = function(name, formals, description, body) {
+  body = body.introduceParams(formals);
   body.formals = formals;
+  body.description = description;
+  this.ruleDict[name] = body;
   return this;
 };
 
@@ -96,17 +108,16 @@ GrammarDecl.prototype.build = function() {
 
 GrammarDecl.prototype.define = function(name, formals, body, optDescr) {
   this.ensureSuperGrammar();
-  if (optDescr) {
-    body.description = optDescr;
-  }
   if (this.superGrammar.ruleDict[name]) {
     throw new errors.DuplicateRuleDeclaration(name, this.name, this.superGrammar.name);
   } else if (this.ruleDict[name]) {
     throw new errors.DuplicateRuleDeclaration(name, this.name, this.name);
   }
-  body.formals = formals;
-  this.ruleDict[name] = body;
-  return this;
+  var duplicateParameterNames = common.getDuplicates(formals);
+  if (duplicateParameterNames.length > 0) {
+    throw new errors.DuplicateParameterNames(name, duplicateParameterNames);
+  }
+  return this.install(name, formals, optDescr, body);
 };
 
 GrammarDecl.prototype.override = function(name, formals, body) {

@@ -73,8 +73,25 @@ pexprs.Obj.prototype.assertAllApplicationsAreValid = function(grammar) {
 };
 
 pexprs.Apply.prototype.assertAllApplicationsAreValid = function(grammar) {
-  if (!grammar.ruleDict[this.ruleName]) {
+  var body = grammar.ruleDict[this.ruleName];
+
+  // Make sure that the rule exists
+  if (!body) {
     throw new errors.UndeclaredRule(this.ruleName, grammar.name);
   }
-};
 
+  // ... and that this application has the correct number of parameters
+  var actual = this.params.length;
+  var expected = body.formals.length;
+  if (actual !== expected) {
+    throw new errors.WrongNumberOfParameters(this.ruleName, expected, actual);
+  }
+
+  // ... and that all of the parameter expressions have arity 1
+  var self = this;
+  this.params.forEach(function(param) {
+    if (param.getArity() !== 1) {
+      throw new errors.InvalidParameter(self.ruleName, param);
+    }
+  });
+};

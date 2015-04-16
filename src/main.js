@@ -52,6 +52,7 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
   var builder;
   var decl;
   var currentRuleName;
+  var currentRuleFormals;
   var overriding = false;
   var metaGrammar = optOhmGrammarForTesting || ohmGrammar;
 
@@ -83,26 +84,26 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
 
     Rule_define: function(n, fs, d, _, b) {
       currentRuleName = value(n);
+      currentRuleFormals = value(fs);
       var body = value(b);
-      var formals = value(fs);
       body.definitionInterval = this.interval.trimmed();
-      return decl.define(currentRuleName, formals, body, value(d));
+      return decl.define(currentRuleName, currentRuleFormals, body, value(d));
     },
     Rule_override: function(n, fs, _, b) {
       currentRuleName = value(n);
+      currentRuleFormals = value(fs);
       overriding = true;
       var body = value(b);
-      var formals = value(fs);
       body.definitionInterval = this.interval.trimmed();
-      var ans = decl.override(currentRuleName, formals, body);
+      var ans = decl.override(currentRuleName, currentRuleFormals, body);
       overriding = false;
       return ans;
     },
     Rule_extend: function(n, fs, _, b) {
       currentRuleName = value(n);
+      currentRuleFormals = value(fs);
       var body = value(b);
-      var formals = value(fs);
-      var ans = decl.extend(currentRuleName, formals, body);
+      var ans = decl.extend(currentRuleName, currentRuleFormals, body);
       decl.ruleDict[currentRuleName].definitionInterval = this.interval.trimmed();
       return ans;
     },
@@ -131,11 +132,12 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
       var body = value(b);
       body.definitionInterval = this.interval.trimmed();
       if (overriding) {
-        decl.override(inlineRuleName, [], body);
+        decl.override(inlineRuleName, currentRuleFormals, body);
       } else {
-        decl.define(inlineRuleName, [], body);
+        decl.define(inlineRuleName, currentRuleFormals, body);
       }
-      return builder.app(inlineRuleName).withInterval(body.interval);
+      var params = currentRuleFormals.map(function(formal) { return builder.app(formal); });
+      return builder.app(inlineRuleName, params).withInterval(body.interval);
     },
 
     Seq: function(expr) {

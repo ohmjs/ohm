@@ -133,7 +133,7 @@ pexprs.RegExpPrim.prototype._eval = function(state) {
 
 pexprs.Param.prototype._eval = function(state) {
   var currentApplication = state.applicationStack[state.applicationStack.length - 1];
-  return currentApplication.arguments[this.index].eval(state);
+  return currentApplication.params[this.index].eval(state);
 };
 
 pexprs.Alt.prototype._eval = function(state) {
@@ -346,8 +346,12 @@ pexprs.Apply.prototype._eval = function(state) {
     }
   }
 
-  var ruleName = this.ruleName;
-  var memoKey = this.toMemoKey();
+  var actuals = state.applicationStack.length > 1 ?
+      state.applicationStack[state.applicationStack.length - 1].params :
+      [];
+  var app = this.substituteParams(actuals);
+  var ruleName = app.ruleName;
+  var memoKey = app.toMemoKey();
 
   if (common.isSyntactic(ruleName)) {
     skipSpaces(state);
@@ -359,35 +363,35 @@ pexprs.Apply.prototype._eval = function(state) {
   var currentLR;
   if (memoRec && origPosInfo.shouldUseMemoizedResult(memoRec)) {
     return useMemoizedResult(memoRec);
-  } else if (origPosInfo.isActive(this)) {
+  } else if (origPosInfo.isActive(app)) {
     currentLR = origPosInfo.getCurrentLeftRecursion();
     if (currentLR && currentLR.memoKey === memoKey) {
       origPosInfo.updateInvolvedApplications();
       return useMemoizedResult(currentLR);
     } else {
-      origPosInfo.startLeftRecursion(this);
+      origPosInfo.startLeftRecursion(app);
       return false;
     }
   } else {
     var body = grammar.ruleDict[ruleName];
     var origPos = inputStream.pos;
-    origPosInfo.enter(this);
+    origPosInfo.enter(app);
     if (body.description) {
       state.ignoreFailures();
     }
-    var value = this.evalOnce(body, state);
+    var value = app.evalOnce(body, state);
     currentLR = origPosInfo.getCurrentLeftRecursion();
     if (currentLR) {
       if (currentLR.memoKey === memoKey) {
-        value = this.handleLeftRecursion(body, state, origPos, currentLR, value);
+        value = app.handleLeftRecursion(body, state, origPos, currentLR, value);
         origPosInfo.memo[memoKey] = {
           pos: inputStream.pos,
           value: value,
           involvedApplications: currentLR.involvedApplications
         };
-        origPosInfo.endLeftRecursion(this);
+        origPosInfo.endLeftRecursion(app);
       } else if (!currentLR.involvedApplications[memoKey]) {
-        // Only memoize if this rule is not involved in the current left recursion
+        // Only memoize if this application is not involved in the current left recursion
         origPosInfo.memo[memoKey] = {pos: inputStream.pos, value: value};
       }
     } else {
@@ -396,13 +400,13 @@ pexprs.Apply.prototype._eval = function(state) {
     if (body.description) {
       state.recordFailures();
       if (!value) {
-        state.recordFailure(origPos, this);
+        state.recordFailure(origPos, app);
       }
     }
     // Record trace information in the memo table, so that it is
     // available if the memoized result is used later.
     if (state.isTracing() && origPosInfo.memo[memoKey]) {
-      var entry = state.getTraceEntry(origPos, this, value);
+      var entry = state.getTraceEntry(origPos, app, value);
       entry.setLeftRecursive(currentLR && (currentLR.memoKey === memoKey));
       origPosInfo.memo[memoKey].traceEntry = entry;
     }

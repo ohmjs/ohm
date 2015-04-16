@@ -85,7 +85,7 @@ Builder.prototype = {
   },
 
   app: function(ruleName, optParams) {
-    return new pexprs.Apply(ruleName, optParams || []);
+    return new pexprs.Apply(ruleName, optParams);
   }
 };
 

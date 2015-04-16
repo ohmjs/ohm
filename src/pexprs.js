@@ -142,9 +142,9 @@ inherits(Obj, PExpr);
 
 // Rule application
 
-function Apply(ruleName, params) {
+function Apply(ruleName, optParams) {
   this.ruleName = ruleName;
-  this.params = params;
+  this.params = optParams || [];
 }
 inherits(Apply, PExpr);
 
@@ -201,6 +201,8 @@ require('./pexprs-eval.js');
 require('./pexprs-maybeRecordFailure.js');
 require('./pexprs-getArity.js');
 require('./pexprs-outputRecipe.js');
+require('./pexprs-introduceParams.js');
+require('./pexprs-substituteParams.js');
 require('./pexprs-toDisplayString.js');
 require('./pexprs-toExpected.js');
 require('./pexprs-toString.js');
