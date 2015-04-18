@@ -3,7 +3,7 @@ module.exports = ohm.makeRecipe(function() {
   return new this.newGrammar('Ohm')
     .define('Grammars', [], this.many(this.app('Grammar'), 0))
     .define('Grammar', [], this.seq(this.app('ident'), this.opt(this.app('SuperGrammar')), this.prim('{'), this.many(this.app('Rule'), 0), this.prim('}')))
-    .define('SuperGrammar', [], this.seq(this.prim('<:'), this.app('ident')))
+    .define('SuperGrammar', [], this.seq(this.prim('<:'), this.alt(this.app('ident'), this.seq(this.prim('null'), this.not(this.app('nameRest'))))))
     .define('Rule_define', [], this.seq(this.app('ident'), this.app('Formals'), this.opt(this.app('ruleDescr')), this.prim('='), this.app('Alt')))
     .define('Rule_override', [], this.seq(this.app('ident'), this.app('Formals'), this.prim(':='), this.app('Alt')))
     .define('Rule_extend', [], this.seq(this.app('ident'), this.app('Formals'), this.prim('+='), this.app('Alt')))

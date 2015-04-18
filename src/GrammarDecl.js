@@ -34,8 +34,12 @@ function onOhmError(doFn, onErrorFn) {
 }
 
 GrammarDecl.prototype.ensureSuperGrammar = function() {
-  if (!this.superGrammar) {
-    this.withSuperGrammar(Grammar.base);
+  if (this.superGrammar === null) {
+    // This is the case for the BuiltInRules grammar, and makes it possible for that grammar to
+    // be written in "userland", i.e., in Ohm syntax rather than using the builder interface.
+    this.withSuperGrammar(new Grammar('', null, {}));
+  } else if (!this.superGrammar) {
+    this.withSuperGrammar(Grammar.BuiltInRules);
   }
   return this.superGrammar;
 };
@@ -76,7 +80,8 @@ GrammarDecl.prototype.withSuperGrammar = function(superGrammar) {
     throw new Error('the super grammar of a GrammarDecl cannot be set more than once');
   }
   this.superGrammar = superGrammar;
-  this.ruleDict = Object.create(superGrammar.ruleDict);
+  // Note: superGrammar will be null for the BuiltInRules grammar.
+  this.ruleDict = Object.create(superGrammar ? superGrammar.ruleDict : null);
   return this;
 };
 

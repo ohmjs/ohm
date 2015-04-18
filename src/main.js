@@ -7,6 +7,7 @@
 // --------------------------------------------------------------------
 
 var Builder = require('./Builder.js');
+var Grammar = require('./Grammar.js');
 var attributes = require('./attributes.js');
 var common = require('./common.js');
 var errors = require('./errors.js');
@@ -75,11 +76,15 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
 
     SuperGrammar: function(_, n) {
       var superGrammarName = value(n);
-      // FIXME: Maybe push this check to GrammarDecl.
-      if (!namespace || !(superGrammarName in namespace)) {
-        throw new errors.UndeclaredGrammar(superGrammarName, namespace);
+      if (superGrammarName === 'null') {
+        decl.withSuperGrammar(null);
+      } else {
+        // FIXME: Maybe push this check to GrammarDecl.
+        if (!namespace || !(superGrammarName in namespace)) {
+          throw new errors.UndeclaredGrammar(superGrammarName, namespace);
+        }
+        decl.withSuperGrammar(namespace[superGrammarName]);
       }
-      decl.withSuperGrammar(namespace[superGrammarName]);
     },
 
     Rule_define: function(n, fs, d, _, b) {
@@ -328,6 +333,7 @@ module.exports = {
 };
 
 // Stuff that's only here for bootstrapping, testing, etc.
+Grammar.BuiltInRules = require('../dist/built-in-rules.js');
 ohmGrammar = require('../dist/ohm-grammar.js');
 module.exports._buildGrammar = buildGrammar;
 module.exports.ohmGrammar = ohmGrammar;

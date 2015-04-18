@@ -161,7 +161,7 @@ Grammar.prototype = {
     sb.append('(function() {\n');
 
     var superGrammarDecl = '';
-    if (this.superGrammar && this.superGrammar !== Grammar.base) {
+    if (this.superGrammar && this.superGrammar !== Grammar.BuiltInRules) {
       sb.append(this.superGrammar.toRecipe('buildSuperGrammar'));
       superGrammarDecl = '    .withSuperGrammar(buildSuperGrammar.call(this))\n';
     }
@@ -259,31 +259,24 @@ Grammar.prototype = {
   }
 };
 
-var builtInRules = {
+// The following grammar contains a minimal set of built-in rules.
+// At the bottom of src/main.js, we replace this grammar with a
+// sub-grammar that contains more convenience rules, e.g., letter
+// and digit. (The source of that grammar is in src/built-in-rules.ohm.)
+Grammar.BuiltInRules = new Grammar('BuiltInRules', null, {
+  // The following rules can't be written in "userland" because they reference
+  // `anything` and `end` directly.
   _: pexprs.anything.withFormals([]),
   end: pexprs.end.withFormals([]),
-  space: pexprs.makePrim(/[\s]/).withFormals([]).withDescription('a space'),
-  alnum: pexprs.makePrim(/[0-9a-zA-Z]/).
-             withFormals([]).withDescription('an alpha-numeric character'),
-  letter: pexprs.makePrim(/[a-zA-Z]/).withFormals([]).withDescription('a letter'),
-  lower: pexprs.makePrim(/[a-z]/).withFormals([]).withDescription('a lower-case letter'),
-  upper: pexprs.makePrim(/[A-Z]/).withFormals([]).withDescription('an upper-case letter'),
-  digit: pexprs.makePrim(/[0-9]/).withFormals([]).withDescription('a digit'),
-  hexDigit: pexprs.makePrim(/[0-9a-fA-F]/).withFormals([]).withDescription('a hexadecimal digit'),
 
-  // The following rule is part of the implementation.
-  // Its name ends with '_' to prevent it from being overridden or invoked by programmers.
-  spaces_: new pexprs.Many(new pexprs.Apply('space'), 0)
-};
+  // The following rule is part of the implementation. Its name ends with '_' to prevent it
+  // from being overridden or invoked by programmers.
+  spaces_: new pexprs.Many(new pexprs.Apply('space'), 0).withFormals([]),
 
-// Create the "base grammar"'s rule dictionary using `Object.create(null)` so
-// that it doesn't have properties like `toString`, etc.
-var baseGrammarRuleDict = Object.create(null);
-Object.keys(builtInRules).forEach(function(ruleName) {
-  baseGrammarRuleDict[ruleName] = builtInRules[ruleName];
+  // The `space` rule must be defined here because it's referenced in the body of `_spaces`.
+  // (Otherwise the call to `new Grammar(...)` below will throw an `UndeclaredRule` exception.)
+  space: pexprs.makePrim(/[\s]/).withFormals([]).withDescription('a space')
 });
-
-Grammar.base = new Grammar('Grammar', null, baseGrammarRuleDict);
 
 // --------------------------------------------------------------------
 // Exports

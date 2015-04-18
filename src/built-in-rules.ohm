@@ -1,0 +1,21 @@
+BuiltInRules <: null {
+
+  alnum  (an alpha-numeric character)
+    = /[0-9a-zA-Z]/
+
+  letter  (a letter)
+    = /[a-zA-Z]/
+
+  lower  (a lower-case letter)
+    = /[a-z]/
+
+  upper  (an upper-case letter)
+    = /[A-Z]/
+
+  digit  (a digit)
+    = /[0-9]/
+
+  hexDigit  (a hexadecimal digit)
+    = /[0-9a-fA-F]/
+
+}
