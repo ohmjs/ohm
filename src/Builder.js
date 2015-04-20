@@ -30,6 +30,10 @@ Builder.prototype = {
     return pexprs.makePrim(x);
   },
 
+  param: function(index) {
+    return new pexprs.Param(index);
+  },
+
   alt: function(/* term1, term1, ... */) {
     var terms = [];
     for (var idx = 0; idx < arguments.length; idx++) {

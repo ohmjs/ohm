@@ -1950,15 +1950,15 @@ test('parameterized rules', function(t) {
   it('work with inline rule declarations', function() {
     var g = util.makeGrammar(
         'G {\n' +
-        '  ListOf<elem, sep>\n' +
+        '  List<elem, sep>\n' +
         '    = elem (sep elem)*  -- some\n' +
         '    |                   -- none\n' +
         '  Start\n' +
-        '    = ListOf<"x", ",">\n' +
+        '    = List<"x", ",">\n' +
         '}');
     var value = g.semanticAction({
-      ListOf_some: function(x, sep, xs) { return [value(x)].concat(value(xs)); },
-      ListOf_none: function() { return []; },
+      List_some: function(x, sep, xs) { return [value(x)].concat(value(xs)); },
+      List_none: function() { return []; },
       _many: ohm.actions.makeArray,
       _terminal: ohm.actions.getValue,
       _default: ohm.actions.passThrough

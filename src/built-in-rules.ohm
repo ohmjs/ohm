@@ -18,4 +18,8 @@ BuiltInRules <: null {
   hexDigit  (a hexadecimal digit)
     = /[0-9a-fA-F]/
 
+  ListOf<elem, sep>
+    = elem (sep elem)*  -- some
+    |                   -- none
+
 }

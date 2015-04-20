@@ -179,7 +179,7 @@ Grammar.prototype = {
       }
       var formals = '[' + body.formals.map(common.toStringLiteral).join(', ') + ']';
       sb.append('(' + common.toStringLiteral(ruleName) + ', ' + formals + ', ');
-      body.outputRecipe(sb);
+      body.outputRecipe(sb, body.formals);
       if (body.description) {
         sb.append(', ' + common.toStringLiteral(body.description));
       }
