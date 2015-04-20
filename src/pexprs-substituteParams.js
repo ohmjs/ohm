@@ -27,7 +27,7 @@ pexprs.Seq.prototype.substituteParams = function(actuals) {
   return new pexprs.Seq(
       this.factors.map(function(factor) { return factor.substituteParams(actuals); }));
 };
- 
+
 pexprs.Many.prototype.substituteParams =
 pexprs.Opt.prototype.substituteParams =
 pexprs.Not.prototype.substituteParams =

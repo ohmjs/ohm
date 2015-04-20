@@ -89,14 +89,14 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
 
     Rule_define: function(n, fs, d, _, b) {
       currentRuleName = value(n);
-      currentRuleFormals = value(fs);
+      currentRuleFormals = value(fs) || [];
       var body = value(b);
       body.definitionInterval = this.interval.trimmed();
       return decl.define(currentRuleName, currentRuleFormals, body, value(d));
     },
     Rule_override: function(n, fs, _, b) {
       currentRuleName = value(n);
-      currentRuleFormals = value(fs);
+      currentRuleFormals = value(fs) || [];
       overriding = true;
       var body = value(b);
       body.definitionInterval = this.interval.trimmed();
@@ -106,25 +106,19 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
     },
     Rule_extend: function(n, fs, _, b) {
       currentRuleName = value(n);
-      currentRuleFormals = value(fs);
+      currentRuleFormals = value(fs) || [];
       var body = value(b);
       var ans = decl.extend(currentRuleName, currentRuleFormals, body);
       decl.ruleDict[currentRuleName].definitionInterval = this.interval.trimmed();
       return ans;
     },
 
-    Formals_none: function() {
-      return [];
-    },
-    Formals_some: function(opointy, n, commas, ns, cpointy) {
-      return [value(n)].concat(value(ns));
+    Formals: function(opointy, fs, cpointy) {
+      return value(fs);
     },
 
-    Params_none: function() {
-      return [];
-    },
-    Params_some: function(opointy, p, commas, ps, cpointy) {
-      return [value(p)].concat(value(ps));
+    Params: function(opointy, ps, cpointy) {
+      return value(ps);
     },
 
     Alt: function(term, _, terms) {
@@ -167,7 +161,7 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
     },
 
     Base_application: function(rule, ps) {
-      return builder.app(value(rule), value(ps)).withInterval(this.interval);
+      return builder.app(value(rule), value(ps) || []).withInterval(this.interval);
     },
     Base_prim: function(expr) {
       return builder.prim(value(expr)).withInterval(this.interval);
@@ -255,6 +249,13 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
     space: function(expr) {},
     space_multiLine: function(start, _, end) {},
     space_singleLine: function(start, _, end) {},
+
+    ListOf_some: function(x, _, xs) {
+      return [value(x)].concat(value(xs));
+    },
+    ListOf_none: function() {
+      return [];
+    },
 
     _many: attributes.actions.makeArray,
     _terminal: attributes.actions.getValue,

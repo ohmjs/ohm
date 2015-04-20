@@ -10,17 +10,15 @@ Ohm {
     = "<:" (ident | "null" ~nameRest)
 
   Rule
-    = ident Formals ruleDescr? "="  Alt  -- define
-    | ident Formals            ":=" Alt  -- override
-    | ident Formals            "+=" Alt  -- extend
+    = ident Formals? ruleDescr? "="  Alt  -- define
+    | ident Formals?            ":=" Alt  -- override
+    | ident Formals?            "+=" Alt  -- extend
 
   Formals
-    = "<" ident ("," ident)* ">"  -- some
-    |                             -- none
+    = "<" ListOf<ident, ","> ">"
 
   Params
-    = "<" Seq ("," Seq)* ">"  -- some
-    |                         -- none
+    = "<" ListOf<Seq, ","> ">"
 
   Alt
     = Term ("|" Term)*
@@ -44,13 +42,13 @@ Ohm {
     | Base
 
   Base
-    = ident Params ~(ruleDescr? "=" | ":=" | "+=")  -- application
-    | (keyword | string | regExp | number)          -- prim
-    | "(" Alt ")"                                   -- paren
-    | "[" Alt "]"                                   -- arr
-    | "``" Alt "''"                                 -- str
-    | "{" "..."? "}"                                -- obj
-    | "{" Props ("," "...")? "}"                    -- objWithProps
+    = ident Params? ~(ruleDescr? "=" | ":=" | "+=")  -- application
+    | (keyword | string | regExp | number)           -- prim
+    | "(" Alt ")"                                    -- paren
+    | "[" Alt "]"                                    -- arr
+    | "``" Alt "''"                                  -- str
+    | "{" "..."? "}"                                 -- obj
+    | "{" Props ("," "...")? "}"                     -- objWithProps
 
   Props
     = Prop ("," Prop)*
