@@ -2,6 +2,76 @@
 
 ## First Release Blockers
 
+### Inheriting from Operations and Attributes
+
+To enable extensibilty, operations and attributes should always belong to an instance of `Semantics`. Here's how this might work:
+
+```
+var g1 = ohm.grammar(...);
+var s1 = g1.createSemantics()
+  .addOperation('eval', {
+  	AddExp_plus: function(x, _, y) {
+  	  return x.eval() + y.eval();
+  	},
+  	...
+  });
+```
+
+Note that `Semantics.prototype.addOperation(name, dict)` returns the receiver to allow chaining. (Same goes for `Semantics.prototype.addSynthesizedAttribute` and `Semantics.prototype.addInheritedAttribute`.)
+
+The `Semantics` objects act as a family of operations and attributes. Recursive (even mutually-recursive) uses of operations / attributes go through "wrapper objects" that hold a reference to an instance of `Semantics` as well as a CST node, which may be accessed via the wrapper's `node` property. (This avoids the problems I was having with early-binding in recursive calls, which were getting in the way of extensibility.) Operations are called as methods of the wrapper objects, while synthesized attributes are accessed as properties.
+
+**TODO:**
+
+* Figure out how operations and attributes will be used *outside* of their definitions. Our current thinking is that they will look like methods of their corresponding `Semantics` object, e.g., `s1.eval(g1.matchContents(...))` and `s1.value(g1.matchContents(...))`.
+* Improve the API for defining inherited attributes.
+
+To extend an operation or an attribute, you create a new `Semantics` object that  extends the `Semantics` the the operation or attribute in question belongs to. You do this by passing the `Semantics` that you want to extend as an argument to *your grammar*'s `createSemantics` method. Then you call `extend(operationOrAttributeName, dict)` on that. E.g.,
+
+```
+var g2 = ... // some grammar that extends g1
+var s2 = g2.createSemantics(s1)
+  .extend("eval", {
+  	AddExp_foo: function(x, _, y) { ... }
+  });
+```
+
+A *derived* `Semantics` instance -- i.e., one that is created by passing an existing `Semantics` to `Grammar.prototype.createSemantics()` -- automatically inherits all of the operations and attributes from the parent `Semantics`.
+
+#### Error conditions
+
+`Grammar.prototype.createSemantics(parentSemantics)` creates a new instance of `Semantics` that inherits all of the operations and attributes from `parentSemantics`. **Note that all of the inherited operations and attributes that haven't been `extend`ed explicitly must go through the *arity* and *superfluous method* checks the first time any of the operations or attributes of the "child" `Semantics` is used.**
+
+`Semantics.prototype.extend(name, dict)` should throw an error if:
+
+* The receiver did not inherit an operation or attribute called `name` from its parent.
+* The operation or attribute called `name` has already been `extend`ed in the receiver.
+* One or more of `dict`'s methods are *superfluous* (i.e., do not correspond to a rule in the receiver's grammar) or have the wrong arity.
+
+`Semantics.prototype.addOperation(name, dict)`,
+`Semantics.prototype.addSynthesizedAttribute(name, dict)`, and
+`Semantics.prototype.addInheritedAttribute(name, dict)` should throw an error if:
+
+* The receiver already has an operation or attribute with the same name.
+* One or more of `dict`'s methods are *superfluous* (i.e., do not correspond to a rule in the receiver's grammar) or have the wrong arity.
+* It should also be an error to try to declare a new operation or attribute whose name is `node` (see below).
+
+### Unit Tests
+
+* The unit tests are a mess right now. They were pretty good early on, but the language has been changed a lot since then. **We should spend a couple of days cleaning up the unit tests.** E.g.,
+    * Now that we have CSTs, there's no reason to check acceptance and semantic actions separately for each kind of `PExpr`. We should just compare the result of `Grammar.prototype.match` with the expected CST. (We may have to do some work to get `Node.equals(anotherNode)` to work.)
+    * ...
+
+### Refactorings
+
+* Pass origPos, etc., as arguments to `PExpr.prototype._eval`
+
+### Documentation
+
+* Write it.
+
+## Things we've already done
+
 ### Parameterized rules
 
 E.g.,
@@ -21,10 +91,29 @@ G {
 Notes:
 
 * Using `<>`s instead of `()`s so that we don't have to make whitespace significant, e.g., in OMeta, `foo(bar)` was a rule application and `foo (bar)` was just a `foo` followed by a `bar` -- this was very confusing to some people.
-* The things inside the `<>`s -- i.e., the arguments passed to parameterized rules -- are unevaluated parsing expressions. They are evaluated when they're used inside the parameterized rule. So in some sense the lexical scope of the body of a parameterized rule is different than that of a non-parametrized rule in the same grammar. We could implement this by
+* The things inside the `<>`s -- i.e., the arguments passed to parameterized rules -- are unevaluated parsing expressions. The arity of a parameter expression must be equal to 1. They are evaluated when they're used inside the parameterized rule. So in some sense the lexical scope of the body of a parameterized rule is different than that of a non-parametrized rule in the same grammar. We could implement this by
     * using a specialized version of the grammar where the argument names correspond to rule that when called will evaluate those parsing expressions, or 
     * keeping track of the names of the arguments so that we can do something special about them in code generation.
 * You have to write semantic actions / attribute definitions for parameterized rules, just like any other rules.
+
+### "Namespaces"
+
+Maybe now the stuff that's done in `src/bootstrap.js` can be done for any grammar? That would enable people to share grammar as "binaries". (A while ago I had an `ohm` command, but I removed it b/c it didn't support inheritance properly. That command turned into the less general but essential `src/bootstrap.js`.)
+
+
+
+## Things that should be included in future releases
+
+* Pat's visualizer / omniscient debugger
+* An IDE for Ohm
+    * Integrate Pat's visualizer
+    * Built-in support for unit testing grammars (re-run unit tests while programmer changes the grammar, show coverage, etc.)
+    * Automatic generation of random valid inputs
+* Better support for attribute grammars
+    * Take another pass at the API for writing inherited attributes
+    * Akira's editor?
+* Using persistent data structures (ImmutableJS?) for parsing contexts, so that adding that extra key to the memo table won't be so expensive.
+* Incremental parsing ala [Papa Carlo](http://lakhin.com/projects/papa-carlo/)?
 
 ### Better error messages
 
@@ -141,87 +230,3 @@ If the input is `"C rules"`, the recorded failed primitives at position `2` shou
 The expected set should be {`"sucks"`, `"stinks"`}.
 The interesting thing in this example is that neither `"sucks"` nor `"stinks"`  "subsumes" `"++"`, but `"++"` shouldn't be included in the expected set. This is because even if it shows up in the input, we will still (eventually) need one of the other expected strings in order to get to an accepting state, which means that `"++"` is superfluous.
 
-### "Namespaces"
-
-Maybe now the stuff that's done in `src/bootstrap.js` can be done for any grammar? That would enable people to share grammar as "binaries". (A while ago I had an `ohm` command, but I removed it b/c it didn't support inheritance properly. That command turned into the less general but essential `src/bootstrap.js`.)
-
-### Inheriting from Operations and Attributes
-
-To enable extensibilty, operations and attributes should always belong to an instance of `Semantics`. Here's how this might work:
-
-```
-var g1 = ohm.grammar(...);
-var s1 = g1.createSemantics()
-  .addOperation('eval', {
-  	AddExp_plus: function(x, _, y) {
-  	  return x.eval() + y.eval();
-  	},
-  	...
-  });
-```
-
-Note that `Semantics.prototype.addOperation(name, dict)` returns the receiver to allow chaining. (Same goes for `Semantics.prototype.addSynthesizedAttribute` and `Semantics.prototype.addInheritedAttribute`.)
-
-The `Semantics` objects act as a family of operations and attributes. Recursive (even mutually-recursive) uses of operations / attributes go through "wrapper objects" that hold a reference to an instance of `Semantics` as well as a CST node, which may be accessed via the wrapper's `node` property. (This avoids the problems I was having with early-binding in recursive calls, which were getting in the way of extensibility.) Operations are called as methods of the wrapper objects, while synthesized attributes are accessed as properties.
-
-**TODO:**
-
-* Figure out how operations and attributes will be used *outside* of their definitions. Our current thinking is that they will look like methods of their corresponding `Semantics` object, e.g., `s1.eval(g1.matchContents(...))` and `s1.value(g1.matchContents(...))`.
-* Improve the API for defining inherited attributes.
-
-To extend an operation or an attribute, you create a new `Semantics` object that  extends the `Semantics` the the operation or attribute in question belongs to. You do this by passing the `Semantics` that you want to extend as an argument to *your grammar*'s `createSemantics` method. Then you call `extend(operationOrAttributeName, dict)` on that. E.g.,
-
-```
-var g2 = ... // some grammar that extends g1
-var s2 = g2.createSemantics(s1)
-  .extend("eval", {
-  	AddExp_foo: function(x, _, y) { ... }
-  });
-```
-
-A *derived* `Semantics` instance -- i.e., one that is created by passing an existing `Semantics` to `Grammar.prototype.createSemantics()` -- automatically inherits all of the operations and attributes from the parent `Semantics`.
-
-#### Error conditions
-
-`Grammar.prototype.createSemantics(parentSemantics)` creates a new instance of `Semantics` that inherits all of the operations and attributes from `parentSemantics`. **Note that all of the inherited operations and attributes that haven't been `extend`ed explicitly must go through the *arity* and *superfluous method* checks the first time any of the operations or attributes of the "child" `Semantics` is used.**
-
-`Semantics.prototype.extend(name, dict)` should throw an error if:
-
-* The receiver did not inherit an operation or attribute called `name` from its parent.
-* The operation or attribute called `name` has already been `extend`ed in the receiver.
-* One or more of `dict`'s methods are *superfluous* (i.e., do not correspond to a rule in the receiver's grammar) or have the wrong arity.
-
-`Semantics.prototype.addOperation(name, dict)`,
-`Semantics.prototype.addSynthesizedAttribute(name, dict)`, and
-`Semantics.prototype.addInheritedAttribute(name, dict)` should throw an error if:
-
-* The receiver already has an operation or attribute with the same name.
-* One or more of `dict`'s methods are *superfluous* (i.e., do not correspond to a rule in the receiver's grammar) or have the wrong arity.
-* It should also be an error to try to declare a new operation or attribute whose name is `node` (see below).
-
-### Unit Tests
-
-* The unit tests are a mess right now. They were pretty good early on, but the language has been changed a lot since then. **We should spend a couple of days cleaning up the unit tests.** E.g.,
-    * Now that we have CSTs, there's no reason to check acceptance and semantic actions separately for each kind of `PExpr`. We should just compare the result of `Grammar.prototype.match` with the expected CST. (We may have to do some work to get `Node.equals(anotherNode)` to work.)
-    * ...
-
-### Refactorings
-
-* Pass origPos, etc., as arguments to `PExpr.prototype._eval`
-
-### Documentation
-
-* Write it.
-
-## Things that should be included in future releases
-
-* Pat's visualizer / omniscient debugger
-* An IDE for Ohm
-    * Integrate Pat's visualizer
-    * Built-in support for unit testing grammars (re-run unit tests while programmer changes the grammar, show coverage, etc.)
-    * Automatic generation of random valid inputs
-* Better support for attribute grammars
-    * Take another pass at the API for writing inherited attributes
-    * Akira's editor?
-* Using persistent data structures (ImmutableJS?) for parsing contexts, so that adding that extra key to the memo table won't be so expensive.
-* Incremental parsing ala [Papa Carlo](http://lakhin.com/projects/papa-carlo/)?    
