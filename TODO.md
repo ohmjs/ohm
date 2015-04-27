@@ -64,8 +64,6 @@ A *derived* `Semantics` instance -- i.e., one that is created by passing an exis
 
 ### Refactorings
 
-* Pass origPos, etc., as arguments to `PExpr.prototype._eval`
-
 ### Documentation
 
 * Write it.
