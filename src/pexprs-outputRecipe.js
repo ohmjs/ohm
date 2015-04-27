@@ -4,8 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common.js');
-var pexprs = require('./pexprs.js');
+var common = require('./common');
+var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations

@@ -4,8 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common.js');
-var Namespace = require('./Namespace.js');
+var common = require('./common');
+var Namespace = require('./Namespace');
 
 // --------------------------------------------------------------------
 // Private stuff

@@ -4,8 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common.js');
-var Interval = require('./Interval.js');
+var common = require('./common');
+var Interval = require('./Interval');
 
 // --------------------------------------------------------------------
 // Private stuff

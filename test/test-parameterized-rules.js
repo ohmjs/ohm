@@ -6,10 +6,10 @@
 // Imports
 // --------------------------------------------------------------------
 
-var errors = require('../src/errors.js');
+var errors = require('../src/errors');
 var ohm = require('..');
 var test = require('tape-catch');
-var util = require('./util.js');
+var util = require('./util');
 
 // --------------------------------------------------------------------
 // Tests

@@ -7,8 +7,8 @@
 var test = require('tape-catch');
 
 var ohm = require('..');
-var errors = require('../src/errors.js');
-var util = require('./util.js');
+var errors = require('../src/errors');
+var util = require('./util');
 
 // --------------------------------------------------------------------
 // Tests

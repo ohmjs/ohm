@@ -4,14 +4,14 @@
 // Imports
 // --------------------------------------------------------------------
 
-var InputStream = require('./InputStream.js');
-var Interval = require('./Interval.js');
-var Node = require('./Node.js');
-var State = require('./State.js');
-var attributes = require('./attributes.js');
-var common = require('./common.js');
-var errors = require('./errors.js');
-var pexprs = require('./pexprs.js');
+var InputStream = require('./InputStream');
+var Interval = require('./Interval');
+var Node = require('./Node');
+var State = require('./State');
+var attributes = require('./attributes');
+var common = require('./common');
+var errors = require('./errors');
+var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Private stuff

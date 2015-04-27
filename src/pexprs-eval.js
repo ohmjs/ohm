@@ -4,11 +4,11 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common.js');
-var errors = require('./errors.js');
-var Node = require('./Node.js');
-var pexprs = require('./pexprs.js');
-var InputStream = require('./InputStream.js');
+var common = require('./common');
+var errors = require('./errors');
+var Node = require('./Node');
+var pexprs = require('./pexprs');
+var InputStream = require('./InputStream');
 
 // --------------------------------------------------------------------
 // Operations

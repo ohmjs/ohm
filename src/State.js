@@ -4,9 +4,9 @@
 // Imports
 // --------------------------------------------------------------------
 
-var PosInfo = require('./PosInfo.js');
-var Trace = require('./Trace.js');
-var pexprs = require('./pexprs.js');
+var PosInfo = require('./PosInfo');
+var Trace = require('./Trace');
+var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Private stuff
