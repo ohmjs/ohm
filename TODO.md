@@ -1,14 +1,14 @@
 # Ohm TODO
 
-## First Release Blockers
+## Alpha Release Blockers
 
 ### Inheriting from Operations and Attributes
 
-To enable extensibilty, operations and attributes should always belong to an instance of `Semantics`. Here's how this might work:
+To enable extensibilty, operations and attributes should always belong to an instance of `Semantics`. Here's how this will work:
 
 ```
 var g1 = ohm.grammar(...);
-var s1 = g1.createSemantics()
+var s1 = g1.semantics()
   .addOperation('eval', {
   	AddExp_plus: function(x, _, y) {
   	  return x.eval() + y.eval();
@@ -17,26 +17,32 @@ var s1 = g1.createSemantics()
   });
 ```
 
-Note that `Semantics.prototype.addOperation(name, dict)` returns the receiver to allow chaining. (Same goes for `Semantics.prototype.addSynthesizedAttribute` and `Semantics.prototype.addInheritedAttribute`.)
+Note that `Semantics.prototype.addOperation(name, dict)` returns the receiver to allow chaining. (The same goes for `Semantics.prototype.addSynthesizedAttribute` and `Semantics.prototype.addInheritedAttribute`.)
 
 The `Semantics` objects act as a family of operations and attributes. Recursive (even mutually-recursive) uses of operations / attributes go through "wrapper objects" that hold a reference to an instance of `Semantics` as well as a CST node, which may be accessed via the wrapper's `node` property. (This avoids the problems I was having with early-binding in recursive calls, which were getting in the way of extensibility.) Operations are called as methods of the wrapper objects, while synthesized attributes are accessed as properties.
 
-**TODO:**
+* Here's how you access / use the operations and attributes defined by a `Semantics`:
 
-* Figure out how operations and attributes will be used *outside* of their definitions. Our current thinking is that they will look like methods of their corresponding `Semantics` object, e.g., `s1.eval(g1.matchContents(...))` and `s1.value(g1.matchContents(...))`.
-* Improve the API for defining inherited attributes.
+```
+  var s = g.semantics()...;
+  var cst = g.match(...);
+  // Now we "wrap" the CST and access the functionality that's defined in the Semantics obj.
+  s(cst).value;  // attribute
+  s(cst).doIt();  // operation
+  ...
+```
 
 To extend an operation or an attribute, you create a new `Semantics` object that  extends the `Semantics` the the operation or attribute in question belongs to. You do this by passing the `Semantics` that you want to extend as an argument to *your grammar*'s `createSemantics` method. Then you call `extend(operationOrAttributeName, dict)` on that. E.g.,
 
 ```
 var g2 = ... // some grammar that extends g1
-var s2 = g2.createSemantics(s1)
+var s2 = g2.semantics(s1)
   .extend("eval", {
   	AddExp_foo: function(x, _, y) { ... }
   });
 ```
 
-A *derived* `Semantics` instance -- i.e., one that is created by passing an existing `Semantics` to `Grammar.prototype.createSemantics()` -- automatically inherits all of the operations and attributes from the parent `Semantics`.
+A *derived* `Semantics` instance -- i.e., one that is created by passing an existing `Semantics` to `Grammar.prototype.semantics()` -- automatically inherits all of the operations and attributes from the parent `Semantics`.
 
 #### Error conditions
 
@@ -44,6 +50,7 @@ A *derived* `Semantics` instance -- i.e., one that is created by passing an exis
 
 `Semantics.prototype.extend(name, dict)` should throw an error if:
 
+* The operation / attribute was created with the optional second argument `{ exhaustive: true}` and it's not exhaustive, i.e., it doesn't have a case for each type of CST. (Think about this more, it may get annoying b/c of little lexical rules that shouldn't generate a value anyway.)
 * The receiver did not inherit an operation or attribute called `name` from its parent.
 * The operation or attribute called `name` has already been `extend`ed in the receiver.
 * One or more of `dict`'s methods are *superfluous* (i.e., do not correspond to a rule in the receiver's grammar) or have the wrong arity.
@@ -56,6 +63,51 @@ A *derived* `Semantics` instance -- i.e., one that is created by passing an exis
 * One or more of `dict`'s methods are *superfluous* (i.e., do not correspond to a rule in the receiver's grammar) or have the wrong arity.
 * It should also be an error to try to declare a new operation or attribute whose name is `node` (see below).
 
+### Instantiating grammars from script elements
+
+```
+var g = ohm.grammarFromScriptElement(/* optional element */);
+var ns = ohm.grammarsFromScriptElements(/* optional element or node list */);
+```
+
+When you don't pass in the optional element / node list argument, these methods are sugars for:
+
+`ohm.grammar(document.querySelector(... script tag w/ language = text/ohm-js ...))`
+
+and
+
+`ohm.grammars(document.querySelectorAll(... script tags w/ language = text/ohm-js ...))`
+
+respectively.
+
+### Start rules
+
+* When you declare a new grammar that doesn't explicitly inherit from another, the first rule of that grammar is its start rule.
+
+* Once we have start rules, you should be able to omit the 2nd argument to `Grammar.prototype.match`.
+
+### No more "throw mode" for `Grammar.prototype.match`
+
+* Get rid of the 3rd argument to `Grammar.prototype.match`.
+
+* `match`'s return value will be a CST node (for successful matches) or a `Failure` object (for failed matches).
+
+* Both `Node`s and `Failure`s will support an `isFailure()` method. (The former will always return `false`, the latter `true`.)
+
+* `Failures` will hold on to the `State` object so that we can lazily re-parse the input to collect "expected" strings / perps, etc. This should be done if / when the programmer asks for this information.
+
+* (We'll need to design the API of `Failure`s. Let's try to think about this while Pat's still in town.)
+
+```
+var s = g.semantics()...;
+var ans = g.match('...');
+if (ans.isFailure()) {
+	// deal with it} else {
+	s(ans).doIt();}
+```
+
+* Applying a `Semantics` to a `Failure` should throw an exception.
+ 
 ### Unit Tests
 
 * The unit tests are a mess right now. They were pretty good early on, but the language has been changed a lot since then. **We should spend a couple of days cleaning up the unit tests.** E.g.,
