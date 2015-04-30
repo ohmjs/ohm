@@ -6,11 +6,12 @@
 
 var InputStream = require('./InputStream');
 var Interval = require('./Interval');
-var Node = require('./Node');
+var Semantics = require('./Semantics');
 var State = require('./State');
 var attributes = require('./attributes');
 var common = require('./common');
 var errors = require('./errors');
+var nodes = require('./nodes');
 var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
@@ -31,7 +32,7 @@ Grammar.prototype = {
       throw new errors.InvalidConstructorCall(this, ruleName, children);
     }
     var interval = new Interval(InputStream.newFor(children), 0, children.length);
-    return new Node(this, ruleName, children, interval);
+    return new nodes.Node(this, ruleName, children, interval);
   },
 
   createConstructors: function() {
@@ -97,12 +98,16 @@ Grammar.prototype = {
   },
 
   semanticAction: function(actionDict) {
-    this.assertTopDownActionNamesAndAritiesMatch(actionDict, 'semantic action');
+    this._assertTopDownActionNamesAndAritiesMatch(actionDict, 'semantic action');
     return attributes.makeSemanticAction(this, actionDict);
   },
 
+  semantics: function(optSuperSemantics) {
+    return Semantics.createSemantics(this, optSuperSemantics);
+  },
+
   synthesizedAttribute: function(actionDict) {
-    this.assertTopDownActionNamesAndAritiesMatch(actionDict, 'synthesized attribute');
+    this._assertTopDownActionNamesAndAritiesMatch(actionDict, 'synthesized attribute');
     return attributes.makeSynthesizedAttribute(this, actionDict);
   },
 
@@ -118,7 +123,7 @@ Grammar.prototype = {
     return attributes.makeInheritedAttribute(this, actionDict);
   },
 
-  assertTopDownActionNamesAndAritiesMatch: function(actionDict, what) {
+  _assertTopDownActionNamesAndAritiesMatch: function(actionDict, what) {
     var self = this;
     var ruleDict = this.ruleDict;
     var ok = true;

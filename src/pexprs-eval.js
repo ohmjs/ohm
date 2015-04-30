@@ -4,11 +4,14 @@
 // Imports
 // --------------------------------------------------------------------
 
+var InputStream = require('./InputStream');
 var common = require('./common');
 var errors = require('./errors');
-var Node = require('./Node');
+var nodes = require('./nodes');
 var pexprs = require('./pexprs');
-var InputStream = require('./InputStream');
+
+var Node = nodes.Node;
+var TerminalNode = nodes.TerminalNode;
 
 // --------------------------------------------------------------------
 // Operations
@@ -80,7 +83,7 @@ pexprs.anything._eval = function(state, inputStream, origPos) {
     return false;
   } else {
     var interval = inputStream.intervalFrom(origPos);
-    state.bindings.push(new Node(state.grammar, '_terminal', [value], interval));
+    state.bindings.push(new TerminalNode(state.grammar, value, interval));
     return true;
   }
 };
@@ -88,7 +91,7 @@ pexprs.anything._eval = function(state, inputStream, origPos) {
 pexprs.end._eval = function(state, inputStream, origPos) {
   if (state.inputStream.atEnd()) {
     var interval = inputStream.intervalFrom(inputStream.pos);
-    state.bindings.push(new Node(state.grammar, '_terminal', [undefined], interval));
+    state.bindings.push(new TerminalNode(state.grammar, undefined, interval));
     return true;
   } else {
     return false;
@@ -100,7 +103,7 @@ pexprs.Prim.prototype._eval = function(state, inputStream, origPos) {
     return false;
   } else {
     var interval = inputStream.intervalFrom(origPos);
-    state.bindings.push(new Node(state.grammar, '_terminal', [this.obj], interval));
+    state.bindings.push(new TerminalNode(state.grammar, this.obj, interval));
     return true;
   }
 };
@@ -119,7 +122,7 @@ pexprs.RegExpPrim.prototype._eval = function(state, inputStream, origPos) {
   } else {
     var interval = inputStream.intervalFrom(origPos);
     state.bindings.push(
-        new Node(state.grammar, '_terminal', [inputStream.source[origPos]], interval));
+        new TerminalNode(state.grammar, inputStream.source[origPos], interval));
     return true;
   }
 };
@@ -203,7 +206,7 @@ pexprs.Opt.prototype._eval = function(state, inputStream, origPos) {
   } else {
     inputStream.pos = origPos;
     var interval = inputStream.intervalFrom(origPos);
-    row = common.repeat(new Node(state.grammar, '_terminal', [undefined], interval), arity);
+    row = common.repeat(new TerminalNode(state.grammar, undefined, interval), arity);
   }
   for (var idx = 0; idx < arity; idx++) {
     state.bindings.push(row[idx]);
@@ -293,7 +296,7 @@ pexprs.Obj.prototype._eval = function(state, inputStream, origPos) {
         }
       }
       var interval = inputStream.intervalFrom(origPos);
-      state.bindings.push(new Node(state.grammar, '_terminal', [remainder], interval));
+      state.bindings.push(new TerminalNode(state.grammar, remainder, interval));
       return true;
     } else {
       return numOwnPropertiesMatched === Object.keys(obj).length;

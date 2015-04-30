@@ -123,7 +123,7 @@ var toTree = g.semanticAction({
   PriExpr_neg:    function(sign, e)        { return makeElement('neg', toTree(sign), toTree(e)); },
   ident:          function(_, _)           { return makeElement('ident', this.interval.contents); },
   number:         function(_)              { return makeElement('number', this.interval.contents); },
-  _terminal:      function(t)              { return t; }
+  _terminal:      ohm.actions.getPrimitiveValue
 });
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -147,7 +147,7 @@ var toTwoD = g.semanticAction({
   ident:          function(_, _)     { var text = this.interval.contents;
                                        return makeElement('ident', text === 'pi' ? '\u03C0' : text); },
   number:         function(_)        { return makeElement('number', this.interval.contents); },
-  _terminal:      function(t)        { return t; },
+  _terminal:      ohm.actions.getPrimitiveValue,
   _default:       ohm.actions.passThrough
 });
 

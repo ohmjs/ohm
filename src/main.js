@@ -8,7 +8,7 @@
 
 var Builder = require('./Builder');
 var Grammar = require('./Grammar');
-var attributes = require('./attributes');
+var Semantics = require('./Semantics');
 var common = require('./common');
 var errors = require('./errors');
 
@@ -257,9 +257,9 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
       return [];
     },
 
-    _many: attributes.actions.makeArray,
-    _terminal: attributes.actions.getValue,
-    _default: attributes.actions.passThrough
+    _many: Semantics.actions.makeArray,
+    _terminal: Semantics.actions.getPrimitiveValue,
+    _default: Semantics.actions.passThrough
   });
   return value(tree);
 }
@@ -325,7 +325,7 @@ function makeRecipe(recipeFn) {
 // Stuff that users should know about
 
 module.exports = {
-  actions: attributes.actions,
+  actions: Semantics.actions,
   createNamespace: Namespace.createNamespace,
   error: errors,
   makeGrammar: makeGrammar,

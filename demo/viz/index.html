@@ -294,7 +294,7 @@ var viz = ohm.ohmGrammar.semanticAction({
   Props_base:               function(p) {},
   Prop:                     function(n, _, p) {},
   _many:                    ohm.actions.makeArray,
-  _terminal:                function(t) { return t; }
+  _terminal:                ohm.actions.getPrimitiveValue
 });
 
 function escape(str) {

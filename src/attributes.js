@@ -5,21 +5,15 @@
 // --------------------------------------------------------------------
 
 var Symbol = require('symbol');  // eslint-disable-line no-undef
-var Node = require('./Node');
+
+var Semantics = require('./Semantics');
+var nodes = require('./nodes');
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
-var actions = {
-  getValue: function() { return this.value(); },
-  makeArray: function() {
-    throw new Error('BUG: ohm.actions.makeArray should never be called');
-  },
-  passThrough: function(childNode) {
-    throw new Error('BUG: ohm.actions.passThrough should never be called');
-  }
-};
+var actions = Semantics.actions;
 
 function makeTopDownThing(grammar, actionDict, memoize) {
   var thing;
@@ -63,7 +57,7 @@ function makeTopDownThing(grammar, actionDict, memoize) {
     } else if (actionDict._default && node.ctorName !== '_terminal') {
       return doAction(actionDict._default, true);
     } else {
-      throw new Error('missing method for ' + node.ctorName);
+      throw new Error('missing semantic action for ' + node.ctorName);
     }
   }
 
@@ -99,7 +93,7 @@ function makeTopDownThing(grammar, actionDict, memoize) {
 }
 
 function checkNodeAndGrammar(node, grammar, what) {
-  if (!(node instanceof Node)) {
+  if (!(node instanceof nodes.Node)) {
     throw new Error('not an Ohm CST node: ' + JSON.stringify(node));
   }
   if (node.grammar !== grammar) {

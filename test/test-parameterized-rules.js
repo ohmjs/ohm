@@ -72,7 +72,7 @@ test('simple examples', function(t) {
       '}');
   var value = g.semanticAction({
     Pair: function(oparen, x, comma, y, cparen) { return [value(x), value(y)]; },
-    _terminal: ohm.actions.getValue,
+    _terminal: ohm.actions.getPrimitiveValue,
     _default: ohm.actions.passThrough
   });
   var cst = g.match('(1,2)', 'Start');
@@ -93,7 +93,7 @@ test('inline rule declarations', function(t) {
     List_some: function(x, sep, xs) { return [value(x)].concat(value(xs)); },
     List_none: function() { return []; },
     _many: ohm.actions.makeArray,
-    _terminal: ohm.actions.getValue,
+    _terminal: ohm.actions.getPrimitiveValue,
     _default: ohm.actions.passThrough
   });
   var cst = g.match('x, x,x', 'Start');
@@ -113,7 +113,7 @@ test('left recursion', function(t) {
   var value = g.semanticAction({
     LeftAssoc_rec: function(x, op, y) { return [value(op), value(x), value(y)]; },
     LeftAssoc_base: function(x) { return value(x); },
-    _terminal: ohm.actions.getValue,
+    _terminal: ohm.actions.getPrimitiveValue,
     _default: ohm.actions.passThrough
   });
   var cst = g.match('1 + 2 + 3', 'Start');
@@ -129,7 +129,7 @@ test('work with complex parameters', function(t) {
       '}');
   var value = g.semanticAction({
     two: function(x, y) { return [value(x), value(y)]; },
-    _terminal: ohm.actions.getValue,
+    _terminal: ohm.actions.getPrimitiveValue,
     _default: ohm.actions.passThrough
   });
   t.deepEqual(value(g.match('42', 'start')), ['4', '2']);

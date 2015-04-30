@@ -1,5 +1,7 @@
 'use strict';
 
+var inherits = require('inherits');
+
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
@@ -81,16 +83,8 @@ Node.prototype.childAfter = function(child) {
   }
 };
 
-Node.prototype.isValue = function() {
-  return this.ctorName === '_terminal';
-};
-
-Node.prototype.value = function() {
-  if (this.isValue()) {
-    return this.firstChild();
-  } else {
-    throw new Error('cannot get value of a non-terminal node (type ' + this.ctorName + ')');
-  }
+Node.prototype.isTerminal = function() {
+  return false;
 };
 
 Node.prototype.toJSON = function() {
@@ -99,9 +93,18 @@ Node.prototype.toJSON = function() {
   return r;
 };
 
+function TerminalNode(grammar, value, interval) {
+  Node.call(this, grammar, '_terminal', [], interval);
+  this.primitiveValue = value;
+}
+inherits(TerminalNode, Node);
+
+TerminalNode.prototype.isTerminal = function() {
+  return true;
+};
+
 // --------------------------------------------------------------------
 // Exports
 // --------------------------------------------------------------------
 
-module.exports = Node;
-
+module.exports = {Node: Node, TerminalNode: TerminalNode};

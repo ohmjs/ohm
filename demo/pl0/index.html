@@ -114,7 +114,7 @@ var symbolTableOut = g.synthesizedAttribute({
   _default: function() {
     return this.hasNoChildren() ? symbolTableIn(this) : symbolTableOut(this.lastChild());
   },
-  _terminal: function(t) {
+  _terminal: function() {
     return symbolTableIn(this);
   }
 });
