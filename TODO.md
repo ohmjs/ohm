@@ -2,6 +2,14 @@
 
 ## Alpha Release Blockers
 
+### Terminal nodes, etc.
+
+* Add `TerminalNode`, which inherits from `Node`.
+* All `TerminalNode`s should have a `primitiveValue` property.
+* Rename `Node.prototype.isValue()` to `isTerminal()`
+* Remove `Node.prototype.value()`
+* Rename `ohm.actions.getValue` to `getPrimitiveValue`
+
 ### Inheriting from Operations and Attributes
 
 To enable extensibilty, operations and attributes should always belong to an instance of `Semantics`. Here's how this will work:
