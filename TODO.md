@@ -2,6 +2,16 @@
 
 ## Alpha Release Blockers
 
+### Operations with arguments
+
+* We should be able to (optionally) specify the number of arguments that are required by an operation.
+* We'll have to take these into account when doing the arity checks.
+
+### Missing arity checks
+
+* `_many` and `_default` must take exactly 1 argument (an array of wrappers)
+* `_terminal` must take 0 arguments (you can get its value via `this.node.primitiveValue`)
+
 ### Terminal nodes, etc.
 
 * Add `TerminalNode`, which inherits from `Node`.
@@ -161,6 +171,8 @@ Maybe now the stuff that's done in `src/bootstrap.js` can be done for any gramma
 
 
 ## Things that should be included in future releases
+
+* A refactoring that makes `parent` a synthesized attribute (right now it's just a semantic action that side-effects the CST nodes)
 
 * Pat's visualizer / omniscient debugger
 * An IDE for Ohm

@@ -57,14 +57,14 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
   var overriding = false;
   var metaGrammar = optOhmGrammarForTesting || ohmGrammar;
 
-  // A set of semantic actions that produces a Grammar instance from the CST.
-  var value = metaGrammar.semanticAction({
+  // A visitor that produces a Grammar instance from the CST.
+  var helpers = metaGrammar.semantics().addOperation('visit', {
     Grammar: function(n, s, open, rs, close) {
       builder = new Builder();
-      var grammarName = value(n);
+      var grammarName = n.visit();
       decl = builder.newGrammar(grammarName, namespace);
-      value(s);  // force evaluation
-      value(rs);  // force evaluation
+      s.visit();
+      rs.visit();
       var g = decl.build();
       // FIXME: Maybe push this check to GrammarDecl or Grammar.
       if (grammarName in namespace) {
@@ -75,7 +75,7 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
     },
 
     SuperGrammar: function(_, n) {
-      var superGrammarName = value(n);
+      var superGrammarName = n.visit();
       if (superGrammarName === 'null') {
         decl.withSuperGrammar(null);
       } else {
@@ -88,48 +88,49 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
     },
 
     Rule_define: function(n, fs, d, _, b) {
-      currentRuleName = value(n);
-      currentRuleFormals = value(fs) || [];
-      var body = value(b);
-      body.definitionInterval = this.interval.trimmed();
-      return decl.define(currentRuleName, currentRuleFormals, body, value(d));
+      currentRuleName = n.visit();
+      currentRuleFormals = fs.visit() || [];
+      var body = b.visit();
+      body.definitionInterval = this.node.interval.trimmed();
+      var description = d.visit();
+      return decl.define(currentRuleName, currentRuleFormals, body, description);
     },
     Rule_override: function(n, fs, _, b) {
-      currentRuleName = value(n);
-      currentRuleFormals = value(fs) || [];
+      currentRuleName = n.visit();
+      currentRuleFormals = fs.visit() || [];
       overriding = true;
-      var body = value(b);
-      body.definitionInterval = this.interval.trimmed();
+      var body = b.visit();
+      body.definitionInterval = this.node.interval.trimmed();
       var ans = decl.override(currentRuleName, currentRuleFormals, body);
       overriding = false;
       return ans;
     },
     Rule_extend: function(n, fs, _, b) {
-      currentRuleName = value(n);
-      currentRuleFormals = value(fs) || [];
-      var body = value(b);
+      currentRuleName = n.visit();
+      currentRuleFormals = fs.visit() || [];
+      var body = b.visit();
       var ans = decl.extend(currentRuleName, currentRuleFormals, body);
-      decl.ruleDict[currentRuleName].definitionInterval = this.interval.trimmed();
+      decl.ruleDict[currentRuleName].definitionInterval = this.node.interval.trimmed();
       return ans;
     },
 
     Formals: function(opointy, fs, cpointy) {
-      return value(fs);
+      return fs.visit();
     },
 
     Params: function(opointy, ps, cpointy) {
-      return value(ps);
+      return ps.visit();
     },
 
     Alt: function(term, _, terms) {
-      return builder.alt.apply(
-          builder, [value(term)].concat(value(terms))).withInterval(this.interval);
+      var args = [term.visit()].concat(terms.visit());
+      return builder.alt.apply(builder, args).withInterval(this.node.interval);
     },
 
     Term_inline: function(b, n) {
-      var inlineRuleName = currentRuleName + '_' + value(n);
-      var body = value(b);
-      body.definitionInterval = this.interval.trimmed();
+      var inlineRuleName = currentRuleName + '_' + n.visit();
+      var body = b.visit();
+      body.definitionInterval = this.node.interval.trimmed();
       if (overriding) {
         decl.override(inlineRuleName, currentRuleFormals, body);
       } else {
@@ -140,68 +141,69 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
     },
 
     Seq: function(expr) {
-      return builder.seq.apply(builder, value(expr)).withInterval(this.interval);
+      return builder.seq.apply(builder, expr.visit()).withInterval(this.node.interval);
     },
 
     Iter_star: function(x, _) {
-      return builder.many(value(x), 0).withInterval(this.interval);
+      return builder.many(x.visit(), 0).withInterval(this.node.interval);
     },
     Iter_plus: function(x, _) {
-      return builder.many(value(x), 1).withInterval(this.interval);
+      return builder.many(x.visit(), 1).withInterval(this.node.interval);
     },
     Iter_opt: function(x, _) {
-      return builder.opt(value(x)).withInterval(this.interval);
+      return builder.opt(x.visit()).withInterval(this.node.interval);
     },
 
     Pred_not: function(_, x) {
-      return builder.not(value(x)).withInterval(this.interval);
+      return builder.not(x.visit()).withInterval(this.node.interval);
     },
     Pred_lookahead: function(_, x) {
-      return builder.la(value(x)).withInterval(this.interval);
+      return builder.la(x.visit()).withInterval(this.node.interval);
     },
 
     Base_application: function(rule, ps) {
-      return builder.app(value(rule), value(ps) || []).withInterval(this.interval);
+      return builder.app(rule.visit(), ps.visit() || []).withInterval(this.node.interval);
     },
     Base_prim: function(expr) {
-      return builder.prim(value(expr)).withInterval(this.interval);
+      return builder.prim(expr.visit()).withInterval(this.node.interval);
     },
     Base_paren: function(open, x, close) {
-      return value(x);
+      return x.visit();
     },
     Base_arr: function(open, x, close) {
-      return builder.arr(value(x)).withInterval(this.interval);
+      return builder.arr(x.visit()).withInterval(this.node.interval);
     },
     Base_str: function(open, x, close) {
-      return builder.str(value(x));
+      return builder.str(x.visit());
     },
     Base_obj: function(open, lenient, close) {
-      return builder.obj([], value(lenient));
+      return builder.obj([], lenient.visit());
     },
+
     Base_objWithProps: function(open, ps, _, lenient, close) {
-      return builder.obj(value(ps), value(lenient)).withInterval(this.interval);
+      return builder.obj(ps.visit(), lenient.visit()).withInterval(this.node.interval);
     },
 
     Props: function(p, _, ps) {
-      return [value(p)].concat(value(ps));
+      return [p.visit()].concat(ps.visit());
     },
     Prop: function(n, _, p) {
-      return {name: value(n), pattern: value(p)};
+      return {name: n.visit(), pattern: p.visit()};
     },
 
     ruleDescr: function(open, t, close) {
-      return value(t);
+      return t.visit();
     },
     ruleDescrText: function(_) {
-      return this.interval.contents.trim();
+      return this.node.interval.contents.trim();
     },
 
     caseName: function(_, space1, n, space2, end) {
-      return value(n);
+      return n.visit();
     },
 
     name: function(first, rest) {
-      return this.interval.contents;
+      return this.node.interval.contents;
     },
     nameFirst: function(expr) {},
     nameRest: function(expr) {},
@@ -220,30 +222,30 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
     },
 
     string: function(open, cs, close) {
-      return value(cs).map(function(c) { return common.unescapeChar(c); }).join('');
+      return cs.visit().map(function(c) { return common.unescapeChar(c); }).join('');
     },
 
     strChar: function(_) {
-      return this.interval.contents;
+      return this.node.interval.contents;
     },
 
     escapeChar: function(_) {
-      return this.interval.contents;
+      return this.node.interval.contents;
     },
 
     regExp: function(open, e, close) {
-      return value(e);
+      return e.visit();
     },
 
     reCharClass_unicode: function(open, unicodeClass, close) {
-      return UnicodeCategories[value(unicodeClass).join('')];
+      return UnicodeCategories[unicodeClass.visit().join('')];
     },
     reCharClass_ordinary: function(open, _, close) {
-      return new RegExp(this.interval.contents);
+      return new RegExp(this.node.interval.contents);
     },
 
     number: function(_, digits) {
-      return parseInt(this.interval.contents);
+      return parseInt(this.node.interval.contents);
     },
 
     space: function(expr) {},
@@ -251,7 +253,7 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
     space_singleLine: function(start, _, end) {},
 
     ListOf_some: function(x, _, xs) {
-      return [value(x)].concat(value(xs));
+      return [x.visit()].concat(xs.visit());
     },
     ListOf_none: function() {
       return [];
@@ -261,7 +263,7 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
     _terminal: Semantics.actions.getPrimitiveValue,
     _default: Semantics.actions.passThrough
   });
-  return value(tree);
+  return helpers(tree).visit();
 }
 
 function compileAndLoad(source, whatItIs, namespace) {

@@ -77,18 +77,18 @@ Grammar.prototype = {
       // Link every CSTNode to its parent.
       var node = state.bindings[0];
       var stack = [undefined];
-      var setParents = this.semanticAction({
+      var helpers = this.semantics().addOperation('setParents', {
         _terminal: function() {
-          this.parent = stack[stack.length - 1];
+          this.node.parent = stack[stack.length - 1];
         },
-        _default: function() {
-          stack.push(this);
-          this.children.forEach(function(child) { setParents(child); });
+        _default: function(children) {
+          stack.push(this.node);
+          children.forEach(function(child) { child.setParents(); });
           stack.pop();
-          this.parent = stack[stack.length - 1];
+          this.node.parent = stack[stack.length - 1];
         }
       });
-      setParents(node);
+      helpers(node).setParents();
     }
     return state;
   },
