@@ -21,8 +21,7 @@ var arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
 // --------------------------------------------------------------------
 
 test('basic semantics', function(t) {
-  var ns = util.makeGrammars(arithmeticGrammarSource);
-  var expr = ns.Expr;
+  var expr = util.makeGrammar(arithmeticGrammarSource);
 
   var s = expr.semantics();
   s.addOperation('value', {
@@ -76,6 +75,20 @@ test('basic semantics', function(t) {
   });
   t.deepEqual(s(match('13+10*2*3')).numberValues(), [13, 10, 2, 3]);
   t.deepEqual(s(match('9')).numberValues(), [9]);
+
+  t.end();
+});
+
+test('many', function(t) {
+  var g = util.makeGrammar('G { letters = letter* }');
+  var s = g.semantics();
+  s.addOperation('value', {
+    letters: function(l) { return l.value().join(''); },
+    _default: ohm.actions.passThrough,
+    _many: ohm.actions.makeArray,
+    _terminal: ohm.actions.getPrimitiveValue
+  });
+  t.equal(s(g.match('abc', 'letters')).value(), 'abc');
 
   t.end();
 });

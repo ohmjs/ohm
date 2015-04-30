@@ -11,7 +11,9 @@ var nodes = require('./nodes');
 // --------------------------------------------------------------------
 
 var actions = {
-  getPrimitiveValue: function() { return this.primitiveValue; },
+  getPrimitiveValue: function() {
+    return (this.node && this.node.primitiveValue) || this.primitiveValue;
+  },
   makeArray: function() {
     throw new Error('BUG: ohm.actions.makeArray should never be called');
   },
@@ -32,8 +34,7 @@ Operation.prototype.toString = function() {
   return '[operation ' + this.name + ']';
 };
 
-Operation.prototype.execute = function(node /* ...args */) {
-  var actionFn;
+Operation.prototype.execute = function(node) {
   var dict = this.actionDict;
 
   // TODO: Is this check necessary? We already check the argument to the semantics proxy.
@@ -41,31 +42,21 @@ Operation.prototype.execute = function(node /* ...args */) {
     throw new TypeError('Operation expected a node, but got: ' + node);
   }
 
-  var parent = node.parent;
-  if (node.ctorName === '_many' && parent) {
-    // If an action's name is ctorName$idx, where idx is the 1-based index of a child node that
-    // happens to be a list, it should override the _many action for that particular list node.
-    var actionName = node.parent.ctorName + '$' + parent.indexOfChild(node);
-    actionFn = dict[actionName];
-    if (actionFn) {
-      return this._doAction(node, actionFn, true);
-    }
-  }
-  actionFn = dict[node.ctorName];
+  var actionFn = dict[node.ctorName];
   if (actionFn) {
-    return this._doAction(node, actionFn);
+    return this._doAction(node, actionFn, node.ctorName === '_many');
   }
   if (dict._default && node.ctorName !== '_terminal') {
     return this._doAction(node, dict._default, true);
   }
-  throw new Error(
-      'missing semantic action for ' + node.ctorName + ' (child of ' + parent.ctorName + ')');
+  throw new Error('missing semantic action for ' + node.ctorName);
 };
 
 Operation.prototype._doAction = function(node, actionFn, optPassChildrenAsArray) {
   if (actionFn === actions.makeArray) {
     if (node.ctorName === '_many') {
-      return node.children.map(function(n) { return this.execute(n); });
+      var self = this;
+      return node.children.map(function(n) { return self.execute(n); });
     }
     throw new Error(
         'the makeArray default action cannot be used with a ' + node.ctorName + ' node');
