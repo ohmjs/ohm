@@ -40,18 +40,7 @@ function makeTopDownThing(grammar, actionDict, memoize) {
       }
     }
 
-    var actionFn;
-    if (node.ctorName === '_many' && node.parent) {
-      // If an action's name is ctorName$idx, where idx is the 1-based index of a child node that
-      // happens to be a list, it should override the _many action for that particular list node.
-      var actionName = node.parent.ctorName + '$' + node.parent.indexOfChild(node);
-      actionFn = actionDict[actionName];
-      if (actionFn) {
-        return doAction(actionFn, true);
-      }
-    }
-
-    actionFn = actionDict[node.ctorName];
+    var actionFn = actionDict[node.ctorName];
     if (actionFn) {
       return doAction(actionFn);
     } else if (actionDict._default && node.ctorName !== '_terminal') {
@@ -141,7 +130,7 @@ function makeInheritedAttribute(grammar, actionDict) {
     } else {
       var actionName;
       if (node.parent.ctorName === '_many') {
-        // If there is an action called <ctorName>$<idx>$each, where <idx> is the 1-based index
+        // If there is an action called <ctorName>$<idx>$each, where <idx> is the 0-based index
         // of a child node that happens to be a list, it should override the _many method for
         // that particular list node.
         var grandparent = node.parent.parent;
