@@ -4,10 +4,10 @@
 // Imports
 // --------------------------------------------------------------------
 
-var Grammar = require('./Grammar.js');
-var common = require('./common.js');
-var errors = require('./errors.js');
-var pexprs = require('./pexprs.js');
+var Grammar = require('./Grammar');
+var common = require('./common');
+var errors = require('./errors');
+var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Private Stuff

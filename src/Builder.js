@@ -4,8 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var GrammarDecl = require('./GrammarDecl.js');
-var pexprs = require('./pexprs.js');
+var GrammarDecl = require('./GrammarDecl');
+var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Private stuff

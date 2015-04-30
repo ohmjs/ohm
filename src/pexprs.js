@@ -4,8 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common.js');
-var errors = require('./errors.js');
+var common = require('./common');
+var errors = require('./errors');
 var inherits = require('inherits');
 
 // --------------------------------------------------------------------
@@ -193,16 +193,16 @@ exports.Apply = Apply;
 // Extensions
 // --------------------------------------------------------------------
 
-require('./pexprs-addRulesThatNeedSemanticAction.js');
-require('./pexprs-assertAllApplicationsAreValid.js');
-require('./pexprs-assertChoicesHaveUniformArity.js');
-require('./pexprs-check.js');
-require('./pexprs-eval.js');
-require('./pexprs-maybeRecordFailure.js');
-require('./pexprs-getArity.js');
-require('./pexprs-outputRecipe.js');
-require('./pexprs-introduceParams.js');
-require('./pexprs-substituteParams.js');
-require('./pexprs-toDisplayString.js');
-require('./pexprs-toExpected.js');
-require('./pexprs-toString.js');
+require('./pexprs-addRulesThatNeedSemanticAction');
+require('./pexprs-assertAllApplicationsAreValid');
+require('./pexprs-assertChoicesHaveUniformArity');
+require('./pexprs-check');
+require('./pexprs-eval');
+require('./pexprs-maybeRecordFailure');
+require('./pexprs-getArity');
+require('./pexprs-outputRecipe');
+require('./pexprs-introduceParams');
+require('./pexprs-substituteParams');
+require('./pexprs-toDisplayString');
+require('./pexprs-toExpected');
+require('./pexprs-toString');

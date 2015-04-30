@@ -11,6 +11,9 @@
     "module": true,
     "require": true,
   },
+  "plugins": [
+    "eslint-plugin-no-extension-in-require"
+  ],
   "rules": {
     // Enforce "one true brace style", allowing start and end braces to be
     // on the same line.
@@ -31,6 +34,9 @@
 
     // Allow things like `while(true)`.
     "no-constant-condition": 0,
+
+    // Don't allow require() statements to include the '.js' extension.
+    "no-extension-in-require/main": 2,
 
     // Allow extra spaces to be used for aligning variables.
     "no-multi-spaces": 0,

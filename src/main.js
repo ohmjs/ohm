@@ -6,14 +6,14 @@
 // Imports
 // --------------------------------------------------------------------
 
-var Builder = require('./Builder.js');
-var Grammar = require('./Grammar.js');
-var attributes = require('./attributes.js');
-var common = require('./common.js');
-var errors = require('./errors.js');
+var Builder = require('./Builder');
+var Grammar = require('./Grammar');
+var attributes = require('./attributes');
+var common = require('./common');
+var errors = require('./errors');
 
-var Namespace = require('./Namespace.js');
-var UnicodeCategories = require('../third_party/unicode.js').UnicodeCategories;
+var Namespace = require('./Namespace');
+var UnicodeCategories = require('../third_party/unicode').UnicodeCategories;
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -334,7 +334,7 @@ module.exports = {
 };
 
 // Stuff that's only here for bootstrapping, testing, etc.
-Grammar.BuiltInRules = require('../dist/built-in-rules.js');
-ohmGrammar = require('../dist/ohm-grammar.js');
+Grammar.BuiltInRules = require('../dist/built-in-rules');
+ohmGrammar = require('../dist/ohm-grammar');
 module.exports._buildGrammar = buildGrammar;
 module.exports.ohmGrammar = ohmGrammar;

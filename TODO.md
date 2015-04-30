@@ -116,8 +116,6 @@ if (ans.isFailure()) {
 
 ### Refactorings
 
-* Pass origPos, etc., as arguments to `PExpr.prototype._eval`
-
 ### Documentation
 
 * Write it.

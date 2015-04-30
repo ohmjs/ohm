@@ -4,9 +4,9 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common.js');
-var Node = require('./Node.js');
-var pexprs = require('./pexprs.js');
+var common = require('./common');
+var Node = require('./Node');
+var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations

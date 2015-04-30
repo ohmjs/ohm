@@ -3,7 +3,7 @@
 
 'use strict';
 
-var ohm = require('./main.js');
+var ohm = require('./main');
 var fs = require('fs');
 
 var args = process.argv.slice(2);

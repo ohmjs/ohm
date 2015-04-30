@@ -1,3 +1,4 @@
 dist/ohm-grammar.js.*
+dist/*.old
 node_modules
 npm-debug.log
