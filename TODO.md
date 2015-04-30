@@ -5,7 +5,7 @@
 ### Operations with arguments
 
 * We should be able to (optionally) specify the number of arguments that are required by an operation.
-* We'll have to take these into account when doing the arity checks.
+* We'll have to take these into account when doing the arity checks.	
 
 ### Missing arity checks
 
@@ -171,6 +171,28 @@ Maybe now the stuff that's done in `src/bootstrap.js` can be done for any gramma
 
 
 ## Things that should be included in future releases
+
+* Support for inherited attributes. A couple of changes: (i) get rid of the `$idx` syntax and use arrays instead, and (ii) get rid of the attribute's `set` method, just use return values instead. E.g.,
+
+```
+var s = g.semantics().addInheritedAttribute('foo', {
+  _base: function(child) { ... },
+  AddExpr_plus: [
+    function(x) {
+      return this.childAfter(x).foo() + 1;
+    },
+    ohm.actions.notSupported,  // this is for the + or - operator
+    function(y) {
+      return 123;
+    }
+  ],
+  _default: function(child) { ... }
+});
+
+// Client-side:
+var node = g.match(...);
+s(node).foo();
+```
 
 * A refactoring that makes `parent` a synthesized attribute (right now it's just a semantic action that side-effects the CST nodes)
 
