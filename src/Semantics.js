@@ -4,7 +4,6 @@
 // Imports
 // --------------------------------------------------------------------
 
-var extend = require('util-extend');
 var inherits = require('inherits');
 
 var nodes = require('./nodes');
