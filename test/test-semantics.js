@@ -258,3 +258,33 @@ test('extending semantics', function(t) {
 
   t.end();
 });
+
+test('mixing nodes from one grammar with semantics from another', function(t) {
+  var ns = util.makeGrammars([
+    'G {',
+    '  start = "aaa"',
+    '}',
+    'GPrime <: G {',
+    '  start := "bbb"',
+    '}',
+    'Unrelated {',
+    '  start = "asdf"',
+    '}'
+  ]);
+
+  var s = ns.G.semantics().addOperation('value', {
+    start: function(x) { return x.value() + 'choo!'; },
+    _terminal: function() { return this.node.primitiveValue; }
+  });
+
+  var m = ns.G.match('aaa', 'start');
+  t.equal(s(m).value(), 'aaachoo!');
+
+  m = ns.GPrime.match('bbb', 'start');
+  t.throws(function() { s(m).value(); }, /node from grammar/);
+
+  m = ns.Unrelated.match('asdf', 'start');
+  t.throws(function() { s(m).value(); }, /node from grammar/);
+
+  t.end();
+});
