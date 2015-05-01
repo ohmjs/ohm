@@ -152,41 +152,57 @@ test('_terminal nodes', function(t) {
 
 test('semantic action arity checks', function(t) {
   var g = util.makeGrammar('G {}');
-  function makeOperation(actions) {
-    return g.semantics().addOperation('op' + util.uniqueId(), actions);
+  function makeOperation(grammar, actions) {
+    return grammar.semantics().addOperation('op' + util.uniqueId(), actions);
   }
   function ignore0() {}
   function ignore1(a) {}
   function ignore2(a, b) {}
-  function ignore3(a, b, c) {}
 
-  t.ok(makeOperation({}), 'empty actions with empty grammar');
-  t.ok(makeOperation({foo: null}), 'unrecognized action names are ignored');
+  t.ok(makeOperation(g, {}), 'empty actions with empty grammar');
+  t.ok(makeOperation(g, {foo: null}), 'unrecognized action names are ignored');
 
-  t.throws(function() { makeOperation({_many: ignore0}); }, /arity/, '_many');
-  t.ok(makeOperation({_many: ignore1}), '_many works with one arg');
+  t.throws(function() { makeOperation(g, {_many: ignore0}); }, /arity/, '_many');
+  t.ok(makeOperation(g, {_many: ignore1}), '_many works with one arg');
 
-  t.throws(function() { makeOperation({_default: ignore0}); }, /arity/, '_default is checked');
-  t.ok(makeOperation({_default: ignore1}), '_default works with one arg');
+  t.throws(function() { makeOperation(g, {_default: ignore0}); }, /arity/, '_default is checked');
+  t.ok(makeOperation(g, {_default: ignore1}), '_default works with one arg');
 
   t.throws(function() {
-    makeOperation({_terminal: ignore1});
+    makeOperation(g, {_terminal: ignore1});
   }, /arity/, '_terminal is checked');
-  t.ok(makeOperation({_terminal: ignore0}), '_terminal works with no args');
+  t.ok(makeOperation(g, {_terminal: ignore0}), '_terminal works with no args');
+
+  t.throws(function() {
+    makeOperation(g, {letter: ignore0});
+  }, /arity/, 'built-in rules are checked');
+  t.ok(makeOperation(g, {letter: ignore1}), 'letter works with one arg');
 
   g = util.makeGrammar([
     'G {',
     '  one = two',
     '  two = "2" letter',
     '}']);
-  t.ok(makeOperation({one: ignore1, two: ignore2, three: ignore3}));
+  t.ok(makeOperation(g, {one: ignore1, two: ignore2}));
 
   t.throws(function() {
-    makeOperation({one: ignore0, two: ignore2, three: ignore3});
+    makeOperation(g, {one: ignore0, two: ignore2});
   }, /wrong arity/, "'one', is checked");
   t.throws(function() {
-    makeOperation({one: ignore1, two: ignore0, three: ignore3});
+    makeOperation(g, {one: ignore1, two: ignore0});
   }, /wrong arity/, "'two' is checked");
+
+  var g2 = util.makeGrammar('G2 <: G {}', {G: g});
+  t.throws(function() {
+    makeOperation(g2, {one: ignore2});
+  }, /wrong arity/, 'supergrammar rules are checked');
+  t.ok(makeOperation(g2, {one: ignore1}), 'works with one arg');
+
+  var g3 = util.makeGrammar('G3 <: G { one := "now" "two" }', {G: g});
+  t.throws(function() {
+    makeOperation(g3, {one: ignore1});
+  }, /wrong arity/, 'changing arity in an overridden rule');
+  t.ok(makeOperation(g3, {one: ignore2}));
 
   t.end();
 });

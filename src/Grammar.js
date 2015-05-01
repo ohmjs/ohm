@@ -123,10 +123,17 @@ Grammar.prototype = {
     return attributes.makeInheritedAttribute(this, actionDict);
   },
 
+  // Check that every semantic action in `actionDict` has the correct arity.
+  // If not, throw an exception.
+  // TODO: Get rid of `tempIgnoreSpecialActions` once everything is moved over
+  // to new-style semantic actions.
   _assertTopDownActionNamesAndAritiesMatch: function(actionDict, tempIgnoreSpecialActions) {
     var self = this;
     var ruleDict = this.ruleDict;
-    var keysToCheck = Object.keys(ruleDict);
+    var keysToCheck = [];
+    for (var k in ruleDict) {
+      keysToCheck.push(k);
+    }
     // TODO: Remove this check when everything is converted to new-style semantics.
     if (!tempIgnoreSpecialActions) {
       keysToCheck.push('_many', '_terminal', '_default');
@@ -152,20 +159,15 @@ Grammar.prototype = {
     }
   },
 
+  // Return the expected arity for a semantic action named `actionName`, which
+  // is either a rule name or a special action name like '_many' or '_default'.
   _topDownActionArity: function(actionName) {
-    // First, check if it is a "special" action name.
     if (actionName === '_many' || actionName === '_default') {
       return 1;
     } else if (actionName === '_terminal') {
       return 0;
     }
-    // Otherwise, it must be a rule name.
-    if (this.superGrammar && this.superGrammar.ruleDict[actionName]) {
-      return this.superGrammar._topDownActionArity(actionName);
-    } else {
-      var body = this.ruleDict[actionName];
-      return body.getArity();
-    }
+    return this.ruleDict[actionName].getArity();
   },
 
   toRecipe: function(optVarName) {
@@ -274,10 +276,10 @@ Grammar.prototype = {
   }
 };
 
-// The following grammar contains a minimal set of built-in rules.
-// At the bottom of src/main.js, we replace this grammar with a
-// sub-grammar that contains more convenience rules, e.g., letter
-// and digit. (The source of that grammar is in src/built-in-rules.ohm.)
+// The following grammar is a minimal set of built-in rules. At the bottom of
+// src/main.js, we replace this grammar with a sub-grammar that contains more
+// convenience rules, e.g., letter and digit. (The source of that grammar is
+// in src/built-in-rules.ohm.)
 Grammar.BuiltInRules = new Grammar('BuiltInRules', null, {
   // The following rules can't be written in "userland" because they reference
   // `anything` and `end` directly.
