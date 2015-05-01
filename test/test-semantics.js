@@ -226,26 +226,35 @@ test('extending semantics', function(t) {
     '  one := "eins" "!"',
     '  three = "drei"',
     '}']);
-  var s = ns.G.semantics().addOperation('value', {
-    one: function(_) { return 1; },
-    two: function(_) { return 2; },
-    _terminal: ohm.actions.getPrimitiveValue
-  });
+  var s = ns.G.semantics().
+      addOperation('value', {
+        one: function(_) { return 1; },
+        two: function(_) { return 2; },
+        _terminal: ohm.actions.getPrimitiveValue
+      }).
+      addOperation('valueTimesTwo', {
+        _default: function(children) { return this.value() * 2; }
+      });
   t.throws(function() { ns.G2.semantics(s).addOperation('value', {}); }, /already exists/);
   t.throws(function() { ns.G2.semantics(s).extendOperation('value', {}); }, /wrong arity/);
-
-  // TODO: Decide if this should be an error or not.
-  // ns.G.extendOperation('value', {});
+  t.throws(function() { ns.G2.semantics(s).extendOperation('foo', {}); }, /no inherited operation/);
+  t.throws(function() { ns.G.semantics().extendOperation('value', {}); }, /no inherited operation/);
 
   var s2 = ns.G2.semantics(s).extendOperation('value', {
-    one: function(str, _) { return str.value(); },
-    three: function(str) { return str.value(); }
+    one: function(str, _) { return 21; },  // overriding
+    three: function(str) { return 3; }     // adding a new case
   });
   var m = ns.G2.match('eins!', 'one');
-  t.equal(s2(m).value(), 'eins');
+  t.equal(s2(m).value(), 21);
+  t.equal(s2(m).valueTimesTwo(), 42);
+
+  m = ns.G2.match('two', 'two');
+  t.equal(s2(m).value(), 2);
+  t.equal(s2(m).valueTimesTwo(), 4);
 
   m = ns.G2.match('drei', 'three');
-  t.equal(s2(m).value(), 'drei');
+  t.equal(s2(m).value(), 3);
+  t.equal(s2(m).valueTimesTwo(), 6);
 
   t.end();
 });
