@@ -12,6 +12,12 @@ var nodes = require('./nodes');
 
 var actions = {
   getPrimitiveValue: function() {
+    // TODO: Change this to `!(this.node && this.node.ctorName === '_terminal')`
+    if (this.node && this.node.ctorName !== '_terminal') {
+      throw new TypeError('ohm.actions.getPrimitiveValue can only be used on _terminal nodes');
+    }
+    // TODO: Remove this conditional and just return this.node.primitiveValue
+    // as soon as everything is moved from the old-style semantic actions.
     return (this.node && this.node.primitiveValue) || this.primitiveValue;
   },
   makeArray: function() {
@@ -58,11 +64,10 @@ Operation.prototype._doAction = function(node, actionFn, optPassChildrenAsArray)
       var self = this;
       return node.children.map(function(n) { return self.execute(n); });
     }
-    throw new Error(
-        'the makeArray default action cannot be used with a ' + node.ctorName + ' node');
+    throw new TypeError('ohm.actions.makeArray expected a _many node, got: ' + node.ctorName);
   } else if (actionFn === actions.passThrough) {
     if (node.ctorName === '_many') {
-      throw new Error('the passThrough default action cannot be used with a _many node');
+      throw new TypeError('ohm.actions.passThrough cannot be used with a _many node');
     }
     return this.execute(node.onlyChild());
   }

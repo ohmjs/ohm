@@ -4,6 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
+var extend = require('util-extend');
 var fs = require('fs');
 var test = require('tape');
 
@@ -11,10 +12,15 @@ var ohm = require('..');
 var util = require('./util');
 
 // --------------------------------------------------------------------
-// Private stuff
+// Helpers
 // --------------------------------------------------------------------
 
 var arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
+
+// Combines the properties of `obj1` and `props` into a new object.
+function combine(obj1, props) {
+  return extend(extend({}, obj1), props);
+}
 
 // --------------------------------------------------------------------
 // Tests
@@ -79,16 +85,64 @@ test('basic semantics', function(t) {
   t.end();
 });
 
-test('many', function(t) {
+test('_many nodes', function(t) {
   var g = util.makeGrammar('G { letters = letter* }');
-  var s = g.semantics();
-  s.addOperation('value', {
-    letters: function(l) { return l.value().join(''); },
+  var actions = {
     _default: ohm.actions.passThrough,
-    _many: ohm.actions.makeArray,
     _terminal: ohm.actions.getPrimitiveValue
-  });
-  t.equal(s(g.match('abc', 'letters')).value(), 'abc');
+  };
+  var s = g.semantics().addOperation('op', combine(actions, {_many: ohm.actions.makeArray}));
+  var m = g.match('abc', 'letters');
+  t.deepEqual(s(m).op(), ['a', 'b', 'c'], 'makeArray works');
+
+  s = g.semantics().addOperation('op', combine(actions, {_many: ohm.actions.passThrough}));
+  t.throws(function() { s(m).op(); }, /passThrough/, 'passThrough throws');
+
+  s = g.semantics().addOperation('op', combine(actions, {_many: ohm.actions.getPrimitiveValue}));
+  t.throws(function() { s(m).op(); }, /getPrimitiveValue/, 'getPrimitiveValue throws');
+
+  s = g.semantics().addOperation('op', combine(actions, {
+    _many: function(letters) {
+      t.ok(letters.every(function(l) {
+        return typeof l.op === 'function';
+      }), 'only arg is an array of wrappers');
+      t.equal(typeof this.op, 'function', '`this` has an op() method');
+      t.equal(this.node.ctorName, '_many', '`this.node` is the actual node');
+      return letters.map(function(l) { return l.op(); }).join(',');
+    }
+  }));
+  t.equal(s(m).op(), 'a,b,c');
+
+  t.end();
+});
+
+test('_terminal nodes', function(t) {
+  var g = util.makeGrammar('G { letters = letter* }');
+  var actions = {
+    _default: ohm.actions.passThrough,
+    _many: ohm.actions.makeArray
+  };
+  var s = g.semantics().addOperation('op', combine(actions, {
+    _terminal: ohm.actions.getPrimitiveValue
+  }));
+  var m = g.match('abc', 'letters');
+  t.deepEqual(s(m).op(), ['a', 'b', 'c'], 'getPrimitiveValue works');
+
+  s = g.semantics().addOperation('op', combine(actions, {_terminal: ohm.actions.passThrough}));
+  t.throws(function() { s(m).op(); }, /cannot get only child/, 'passThrough throws');
+
+  s = g.semantics().addOperation('op', combine(actions, {_terminal: ohm.actions.makeArray}));
+  t.throws(function() { s(m).op(); }, /makeArray/, 'makeArray throws');
+
+  s = g.semantics().addOperation('op', combine(actions, {
+    _terminal: function() {
+      t.equal(arguments.length, 0, 'there are no arguments');
+      t.equal(this.node.ctorName, '_terminal');
+      t.equal(this.node.children.length, 0, 'node has no children');
+      return this.node.primitiveValue;
+    }
+  }));
+  t.deepEqual(s(m).op(), ['a', 'b', 'c']);
 
   t.end();
 });
