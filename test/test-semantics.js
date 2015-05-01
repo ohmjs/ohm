@@ -96,10 +96,11 @@ test('_many nodes', function(t) {
   t.deepEqual(s(m).op(), ['a', 'b', 'c'], 'makeArray works');
 
   s = g.semantics().addOperation('op', combine(actions, {_many: ohm.actions.passThrough}));
-  t.throws(function() { s(m).op(); }, /passThrough/, 'passThrough throws');
+  t.throws(function() { s(m).op(); }, /passThrough/, 'throws with passThrough');
 
-  s = g.semantics().addOperation('op', combine(actions, {_many: ohm.actions.getPrimitiveValue}));
-  t.throws(function() { s(m).op(); }, /getPrimitiveValue/, 'getPrimitiveValue throws');
+  t.throws(function() {
+    g.semantics().addOperation('op', combine(actions, {_many: ohm.actions.getPrimitiveValue}));
+  }, /wrong arity/, 'throws with getPrimitiveValue');
 
   s = g.semantics().addOperation('op', combine(actions, {
     _many: function(letters) {
@@ -128,11 +129,13 @@ test('_terminal nodes', function(t) {
   var m = g.match('abc', 'letters');
   t.deepEqual(s(m).op(), ['a', 'b', 'c'], 'getPrimitiveValue works');
 
-  s = g.semantics().addOperation('op', combine(actions, {_terminal: ohm.actions.passThrough}));
-  t.throws(function() { s(m).op(); }, /cannot get only child/, 'passThrough throws');
+  t.throws(function() {
+    g.semantics().addOperation('op', combine(actions, {_terminal: ohm.actions.passThrough}));
+  }, /wrong arity/, 'throws with passThrough');
 
-  s = g.semantics().addOperation('op', combine(actions, {_terminal: ohm.actions.makeArray}));
-  t.throws(function() { s(m).op(); }, /makeArray/, 'makeArray throws');
+  t.throws(function() {
+    g.semantics().addOperation('op', combine(actions, {_terminal: ohm.actions.makeArray}));
+  }, /wrong arity/, 'throws with makeArray');
 
   s = g.semantics().addOperation('op', combine(actions, {
     _terminal: function() {
@@ -143,6 +146,47 @@ test('_terminal nodes', function(t) {
     }
   }));
   t.deepEqual(s(m).op(), ['a', 'b', 'c']);
+
+  t.end();
+});
+
+test('semantic action arity checks', function(t) {
+  var g = util.makeGrammar('G {}');
+  function makeOperation(actions) {
+    return g.semantics().addOperation('op' + util.uniqueId(), actions);
+  }
+  function ignore0() {}
+  function ignore1(a) {}
+  function ignore2(a, b) {}
+  function ignore3(a, b, c) {}
+
+  t.ok(makeOperation({}), 'empty actions with empty grammar');
+  t.ok(makeOperation({foo: null}), 'unrecognized action names are ignored');
+
+  t.throws(function() { makeOperation({_many: ignore0}); }, /arity/, '_many');
+  t.ok(makeOperation({_many: ignore1}), '_many works with one arg');
+
+  t.throws(function() { makeOperation({_default: ignore0}); }, /arity/, '_default is checked');
+  t.ok(makeOperation({_default: ignore1}), '_default works with one arg');
+
+  t.throws(function() {
+    makeOperation({_terminal: ignore1});
+  }, /arity/, '_terminal is checked');
+  t.ok(makeOperation({_terminal: ignore0}), '_terminal works with no args');
+
+  g = util.makeGrammar([
+    'G {',
+    '  one = two',
+    '  two = "2" letter',
+    '}']);
+  t.ok(makeOperation({one: ignore1, two: ignore2, three: ignore3}));
+
+  t.throws(function() {
+    makeOperation({one: ignore0, two: ignore2, three: ignore3});
+  }, /wrong arity/, "'one', is checked");
+  t.throws(function() {
+    makeOperation({one: ignore1, two: ignore0, three: ignore3});
+  }, /wrong arity/, "'two' is checked");
 
   t.end();
 });

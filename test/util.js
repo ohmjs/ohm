@@ -10,6 +10,12 @@ var ohm = require('..');
 // Private stuff
 // --------------------------------------------------------------------
 
+var nextId = 0;
+
+function uniqueId() {
+  return nextId++;
+}
+
 function makeGrammar(source, optNamespace) {
   if (source instanceof Array) {
     source = source.join('\n');
@@ -30,5 +36,6 @@ function makeGrammars(source, optNamespace) {
 
 module.exports = {
   makeGrammar: makeGrammar,
-  makeGrammars: makeGrammars
+  makeGrammars: makeGrammars,
+  uniqueId: uniqueId
 };

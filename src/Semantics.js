@@ -20,7 +20,7 @@ var actions = {
     // as soon as everything is moved from the old-style semantic actions.
     return (this.node && this.node.primitiveValue) || this.primitiveValue;
   },
-  makeArray: function() {
+  makeArray: function(children) {
     throw new Error('BUG: ohm.actions.makeArray should never be called');
   },
   passThrough: function(childNode) {
@@ -100,7 +100,7 @@ Semantics.prototype.addOperation = function(name, actionDict) {
     throw new Error(
         "Cannot add operation '" + name + "': an operation with that name already exists");
   }
-  this._grammar._assertTopDownActionNamesAndAritiesMatch(actionDict, "operation '" + name + "'");
+  this._grammar._assertTopDownActionNamesAndAritiesMatch(actionDict, false);
 
   var op = new Operation(name, actionDict, this);
 

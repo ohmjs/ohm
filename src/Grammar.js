@@ -98,7 +98,7 @@ Grammar.prototype = {
   },
 
   semanticAction: function(actionDict) {
-    this._assertTopDownActionNamesAndAritiesMatch(actionDict, 'semantic action');
+    this._assertTopDownActionNamesAndAritiesMatch(actionDict, true);
     return attributes.makeSemanticAction(this, actionDict);
   },
 
@@ -107,7 +107,7 @@ Grammar.prototype = {
   },
 
   synthesizedAttribute: function(actionDict) {
-    this._assertTopDownActionNamesAndAritiesMatch(actionDict, 'synthesized attribute');
+    this._assertTopDownActionNamesAndAritiesMatch(actionDict, true);
     return attributes.makeSynthesizedAttribute(this, actionDict);
   },
 
@@ -123,24 +123,27 @@ Grammar.prototype = {
     return attributes.makeInheritedAttribute(this, actionDict);
   },
 
-  _assertTopDownActionNamesAndAritiesMatch: function(actionDict, what) {
+  _assertTopDownActionNamesAndAritiesMatch: function(actionDict, tempIgnoreSpecialActions) {
     var self = this;
     var ruleDict = this.ruleDict;
-    var ok = true;
-    Object.keys(ruleDict).forEach(function(ruleName) {
-      if (actionDict[ruleName] === undefined) {
-        return;
+    var keysToCheck = Object.keys(ruleDict);
+    // TODO: Remove this check when everything is converted to new-style semantics.
+    if (!tempIgnoreSpecialActions) {
+      keysToCheck.push('_many', '_terminal', '_default');
+    }
+    var ok = keysToCheck.every(function(k) {
+      if (k in actionDict) {
+        var actual = actionDict[k].length;
+        var expected = self._topDownActionArity(k);
+        if (actual !== expected) {
+          /* eslint-disable no-console */
+          console.log("Semantic action '" + k + "' has the wrong arity: " +
+                      'expected ' + expected + ', got ' + actual);
+          /* eslint-enable no-console */
+          return false;
+        }
       }
-      var actual = actionDict[ruleName].length;
-      var expected = self.topDownActionArity(ruleName);
-      if (actual !== expected) {
-        ok = false;
-        /* eslint-disable no-console */
-        console.log(what + ' for rule', ruleName, 'has the wrong arity');
-        console.log('  expected', expected);
-        console.log('    actual', actual);
-        /* eslint-enable no-console */
-      }
+      return true;
     });
     if (!ok) {
       throw new Error(
@@ -149,11 +152,18 @@ Grammar.prototype = {
     }
   },
 
-  topDownActionArity: function(ruleName) {
-    if (this.superGrammar && this.superGrammar.ruleDict[ruleName]) {
-      return this.superGrammar.topDownActionArity(ruleName);
+  _topDownActionArity: function(actionName) {
+    // First, check if it is a "special" action name.
+    if (actionName === '_many' || actionName === '_default') {
+      return 1;
+    } else if (actionName === '_terminal') {
+      return 0;
+    }
+    // Otherwise, it must be a rule name.
+    if (this.superGrammar && this.superGrammar.ruleDict[actionName]) {
+      return this.superGrammar._topDownActionArity(actionName);
     } else {
-      var body = this.ruleDict[ruleName];
+      var body = this.ruleDict[actionName];
       return body.getArity();
     }
   },
@@ -227,7 +237,7 @@ Grammar.prototype = {
   addSemanticActionTemplate: function(ruleName, body, sb) {
     sb.append(ruleName);
     sb.append(': function(');
-    var arity = this.topDownActionArity(ruleName);
+    var arity = this._topDownActionArity(ruleName);
     sb.append(common.repeat('_', arity).join(', '));
     sb.append(') {\n');
     sb.append('  }');
