@@ -27,7 +27,7 @@ function combine(obj1, props) {
 // --------------------------------------------------------------------
 
 test('basic semantics', function(t) {
-  var expr = util.makeGrammar(arithmeticGrammarSource);
+  var expr = ohm.makeGrammar(arithmeticGrammarSource);
 
   var s = expr.semantics();
   s.addOperation('value', {
@@ -60,11 +60,20 @@ test('basic semantics', function(t) {
   t.throws(function() { s.addOperation('value'); }, 'throws when name already exists');
 
   t.ok(s.addOperation('one', {}).addOperation('two', {}), 'chaining');
-  t.throws(function() { s(null).value(); }, TypeError);
-  t.throws(function() { s(false).value(); }, TypeError);
-  t.throws(function() { s().value(); }, TypeError);
-  t.throws(function() { s(3).value(); }, TypeError);
-  t.throws(function() { s('asdf').value(); }, TypeError);
+  t.throws(function() { s(null).value(); }, /expected a node/);
+  t.throws(function() { s(false).value(); }, /expected a node/);
+  t.throws(function() { s().value(); }, /expected a node/);
+  t.throws(function() { s(3).value(); }, /expected a node/);
+  t.throws(function() { s('asdf').value(); }, /expected a node/);
+
+  // Cannot use the semantics on nodes from another grammar.
+  var g = ohm.makeGrammar('G {}');
+  t.throws(function() { s(g.match('a', 'letter')).value(); }, /Cannot use node from grammar/);
+
+  // TODO: Decide how this should work. Also, test with a subgrammar that has different arity
+  // for some rules.
+  // g = ohm.makeGrammar('Expr2 <: Expr {}', {Expr:expr});
+  // t.equal(s(g.match('1+2', 'expr')).value(), 3);
 
   // An operation that produces a list of the values of all the numbers in the tree.
   s.addOperation('numberValues', {
@@ -86,7 +95,7 @@ test('basic semantics', function(t) {
 });
 
 test('_many nodes', function(t) {
-  var g = util.makeGrammar('G { letters = letter* }');
+  var g = ohm.makeGrammar('G { letters = letter* }');
   var actions = {
     _default: ohm.actions.passThrough,
     _terminal: ohm.actions.getPrimitiveValue
@@ -118,7 +127,7 @@ test('_many nodes', function(t) {
 });
 
 test('_terminal nodes', function(t) {
-  var g = util.makeGrammar('G { letters = letter* }');
+  var g = ohm.makeGrammar('G { letters = letter* }');
   var actions = {
     _default: ohm.actions.passThrough,
     _many: ohm.actions.makeArray
@@ -151,7 +160,7 @@ test('_terminal nodes', function(t) {
 });
 
 test('semantic action arity checks', function(t) {
-  var g = util.makeGrammar('G {}');
+  var g = ohm.makeGrammar('G {}');
   function makeOperation(grammar, actions) {
     return grammar.semantics().addOperation('op' + util.uniqueId(), actions);
   }
@@ -192,17 +201,51 @@ test('semantic action arity checks', function(t) {
     makeOperation(g, {one: ignore1, two: ignore0});
   }, /wrong arity/, "'two' is checked");
 
-  var g2 = util.makeGrammar('G2 <: G {}', {G: g});
+  var g2 = ohm.makeGrammar('G2 <: G {}', {G: g});
   t.throws(function() {
     makeOperation(g2, {one: ignore2});
   }, /wrong arity/, 'supergrammar rules are checked');
   t.ok(makeOperation(g2, {one: ignore1}), 'works with one arg');
 
-  var g3 = util.makeGrammar('G3 <: G { one := "now" "two" }', {G: g});
+  var g3 = ohm.makeGrammar('G3 <: G { one := "now" "two" }', {G: g});
   t.throws(function() {
     makeOperation(g3, {one: ignore1});
   }, /wrong arity/, 'changing arity in an overridden rule');
   t.ok(makeOperation(g3, {one: ignore2}));
+
+  t.end();
+});
+
+test('extending semantics', function(t) {
+  var ns = util.makeGrammars([
+    'G { ',
+    '  one = "one"',
+    '  two = "two"',
+    '}',
+    'G2 <: G {',
+    '  one := "eins" "!"',
+    '  three = "drei"',
+    '}']);
+  var s = ns.G.semantics().addOperation('value', {
+    one: function(_) { return 1; },
+    two: function(_) { return 2; },
+    _terminal: ohm.actions.getPrimitiveValue
+  });
+  t.throws(function() { ns.G2.semantics(s).addOperation('value', {}); }, /already exists/);
+  t.throws(function() { ns.G2.semantics(s).extendOperation('value', {}); }, /wrong arity/);
+
+  // TODO: Decide if this should be an error or not.
+  // ns.G.extendOperation('value', {});
+
+  var s2 = ns.G2.semantics(s).extendOperation('value', {
+    one: function(str, _) { return str.value(); },
+    three: function(str) { return str.value(); }
+  });
+  var m = ns.G2.match('eins!', 'one');
+  t.equal(s2(m).value(), 'eins');
+
+  m = ns.G2.match('drei', 'three');
+  t.equal(s2(m).value(), 'drei');
 
   t.end();
 });

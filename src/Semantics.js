@@ -4,6 +4,9 @@
 // Imports
 // --------------------------------------------------------------------
 
+var extend = require('util-extend');
+var inherits = require('inherits');
+
 var nodes = require('./nodes');
 
 // --------------------------------------------------------------------
@@ -83,14 +86,23 @@ Operation.prototype._wrapChildren = function(node) {
 
 // ----------------- Semantics -----------------
 
-function Semantics(grammar) {
+function Semantics(grammar, optSuperSemantics) {
   this._grammar = grammar;
+  if (optSuperSemantics) {
+    this._super = optSuperSemantics._getTarget();
+    this._operations = Object.create(this._super._operations);
+  } else {
+    this._operations = Object.create(null);
+  }
 
   // Constructor for new wrapper instances, which are passed as the arguments
   // to the semantic action functions of an operation or attribute.
   this._wrapperCtor = function(node) {
     this.node = node;
   };
+  if (this._super) {
+    inherits(this._wrapperCtor, this._super._wrapperCtor);
+  }
 }
 
 Semantics.actions = actions;
@@ -101,16 +113,34 @@ Semantics.prototype.addOperation = function(name, actionDict) {
         "Cannot add operation '" + name + "': an operation with that name already exists");
   }
   this._grammar._assertTopDownActionNamesAndAritiesMatch(actionDict, false);
-
   var op = new Operation(name, actionDict, this);
+  this._bindOperation(op);
+  this._operations[name] = op;
+};
 
+Semantics.prototype.extendOperation = function(name, actionDict) {
+  if (!(name in this._operations)) {
+    throw new Error(
+        "Cannot extend operation '" + name + "': no operation with that name exists");
+  }
+  var op = this._operations[name];
+
+  // Create a new object which delegates to the super operation's actionDict,
+  // and which has all the keys from `actionDict`.
+  var actions = Object.create(op.actionDict);
+  extend(actions, actionDict);
+
+  this._grammar._assertTopDownActionNamesAndAritiesMatch(actions, false);
+  this._bindOperation(new Operation(name, actions, this));
+};
+
+Semantics.prototype._bindOperation = function(op) {
   // All wrapper instances inherit a curried version of the operation's
   // `execute`, where the first argument is bound to the wrapper's node.
-  this._wrapperCtor.prototype[name] = function applyToNode() {
+  this._wrapperCtor.prototype[op.name] = function applyToNode() {
     var args = [this.node].concat(arguments);
     return op.execute.apply(op, args);
   };
-  return this;
 };
 
 Semantics.prototype._createWrapper = function(node) {
@@ -123,14 +153,25 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
   // In order to support invoking a semantics instance like a function, return
   // a function which acts as a proxy for the actual semantics object.
   var proxy = function semanticsProxy(cst) {
-    if (!cst || !(cst instanceof nodes.Node)) {
+    if (!(cst instanceof nodes.Node)) {
       throw new TypeError('Semantics expected a node, but got: ' + cst);
+    }
+    if (cst.grammar !== grammar) {
+      throw new Error("Cannot use node from grammar '" + cst.grammar.name +
+                      "' with semantics from grammar '" + grammar.name + "'");
     }
     return s._createWrapper(cst);
   };
-  proxy.addOperation = function() {
-    s.addOperation.apply(s, arguments);
-    return this;
+  // Forward public methods from the proxy to the semantics instance.
+  ['addOperation', 'extendOperation'].forEach(function(name) {
+    proxy[name] = function() {
+      s[name].apply(s, arguments);
+      return proxy;
+    };
+  });
+  // Return the semantics for the proxy.
+  proxy._getTarget = function() {
+    return s;
   };
   return proxy;
 };

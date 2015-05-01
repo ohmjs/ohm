@@ -157,10 +157,10 @@ var DuplicateRuleDeclaration = makeCustomError(
       this.ruleName = ruleName;
       this.offendingGrammarName = offendingGrammarName;
       this.declGrammarName = declGrammarName;
-      this.message = 'duplicate declaration for rule ' + this.ruleName +
-                     ' in grammar ' + this.offendingGrammarName;
+      this.message = "duplicate declaration for rule '" + this.ruleName +
+                     "' in grammar '" + this.offendingGrammarName + "'";
       if (this.offendingGrammarName !== declGrammarName) {
-        this.message += ' (it was originally declared in grammar ' + this.declGrammarName + ')';
+        this.message += " (originally declared in grammar '" + this.declGrammarName + "')";
       }
     }
 );
