@@ -26,10 +26,15 @@ function combine(obj1, props) {
 // Tests
 // --------------------------------------------------------------------
 
-test('basic semantics', function(t) {
+test('operations', function(t) {
   var expr = ohm.makeGrammar(arithmeticGrammarSource);
-
   var s = expr.semantics();
+
+  function match(source) {
+    return expr.match(source, 'expr');
+  }
+
+  // An operation that evaluates an expression
   s.addOperation('value', {
     addExpr_plus: function(x, op, y) {
       return x.value() + y.value();
@@ -49,31 +54,8 @@ test('basic semantics', function(t) {
     }
   });
 
-  function match(source) {
-    return expr.match(source, 'expr');
-  }
-
-  t.ok(match('1*(2+3)-4/5'), 'expr is recognized');
-
   t.equal(s(match('1+2')).value(), 3, 'single addExpr');
   t.equal(s(match('13+10*2*3')).value(), 73, 'more complicated case');
-  t.throws(function() { s.addOperation('value'); }, 'throws when name already exists');
-
-  t.ok(s.addOperation('one', {}).addOperation('two', {}), 'chaining');
-  t.throws(function() { s(null).value(); }, /expected a node/);
-  t.throws(function() { s(false).value(); }, /expected a node/);
-  t.throws(function() { s().value(); }, /expected a node/);
-  t.throws(function() { s(3).value(); }, /expected a node/);
-  t.throws(function() { s('asdf').value(); }, /expected a node/);
-
-  // Cannot use the semantics on nodes from another grammar.
-  var g = ohm.makeGrammar('G {}');
-  t.throws(function() { s(g.match('a', 'letter')).value(); }, /Cannot use node from grammar/);
-
-  // TODO: Decide how this should work. Also, test with a subgrammar that has different arity
-  // for some rules.
-  // g = ohm.makeGrammar('Expr2 <: Expr {}', {Expr:expr});
-  // t.equal(s(g.match('1+2', 'expr')).value(), 3);
 
   // An operation that produces a list of the values of all the numbers in the tree.
   s.addOperation('numberValues', {
@@ -88,8 +70,98 @@ test('basic semantics', function(t) {
     },
     _default: ohm.actions.passThrough
   });
-  t.deepEqual(s(match('13+10*2*3')).numberValues(), [13, 10, 2, 3]);
   t.deepEqual(s(match('9')).numberValues(), [9]);
+  t.deepEqual(s(match('13+10*2*3')).numberValues(), [13, 10, 2, 3]);
+
+  t.end();
+});
+
+test('attributes', function(t) {
+  var expr = ohm.makeGrammar(arithmeticGrammarSource);
+  var count = 0;
+  var s = expr.semantics().addAttribute('value', {
+    addExpr_plus: function(x, op, y) {
+      count++;
+      return x.value + y.value;
+    },
+    mulExpr_times: function(x, op, y) {
+      count++;
+      return x.value * y.value;
+    },
+    number_rec: function(n, d) {
+      count++;
+      return n.value * 10 + d.value;
+    },
+    digit: function(expr) {
+      count++;
+      return expr.value.charCodeAt(0) - '0'.charCodeAt(0);
+    },
+    _default: ohm.actions.passThrough,
+    _terminal: function() {
+      count++;
+      return this.node.primitiveValue;
+    }
+  });
+
+  function match(source) {
+    return expr.match(source, 'expr');
+  }
+
+  var simple = match('1+2');
+  var complicated = match('13+10*2*3');
+
+  t.equal(s(simple).value, 3, 'single addExpr');
+  t.equal(s(complicated).value, 73, 'more complicated case');
+
+  // Check that attributes are memoized
+  var oldCount = count;
+  t.deepEqual(s(simple).value, 3);
+  t.deepEqual(s(complicated).value, 73);
+  t.equal(count, oldCount);
+
+  t.end();
+});
+
+test('semantics', function(t) {
+  var expr = ohm.makeGrammar(arithmeticGrammarSource);
+  var s = expr.semantics();
+
+  t.equal(s.addOperation('op', {}), s, 'addOperation returns the receiver');
+  t.equal(s.addAttribute('attr', {}), s, 'addAttribute returns the receiver');
+
+  t.equal(s.addOperation('op2', {}), s, 'can add more than one operation');
+  t.equal(s.addAttribute('attr2', {}), s, 'can add more than one attribute');
+
+  t.throws(
+    function() { s.addOperation('op'); },
+    /already exists/,
+    'addOperation throws when name is already used');
+  t.throws(
+    function() { s.addOperation('attr'); },
+    /already exists/,
+    'addOperation throws when name is already used, even if it is an attribute');
+
+  t.throws(
+    function() { s.addAttribute('attr'); },
+    /already exists/,
+    'addAttribute throws when name is already used');
+  t.throws(
+    function() { s.addAttribute('attr'); },
+    /already exists/,
+    'addAttribute throws when name is already used, even if it is an operation');
+
+  t.throws(function() { s(null); }, /expected a node/);
+  t.throws(function() { s(false); }, /expected a node/);
+  t.throws(function() { s(); }, /expected a node/);
+  t.throws(function() { s(3); }, /expected a node/);
+  t.throws(function() { s('asdf'); }, /expected a node/);
+
+  // Cannot use the semantics on nodes from another grammar...
+  var g = ohm.makeGrammar('G {}');
+  t.throws(function() { s(g.match('a', 'letter')); }, /Cannot use node from grammar/);
+  // ... even if it's a sub-grammar
+  g = ohm.makeGrammar('Expr2 <: Expr {}', {Expr: expr});
+  t.throws(function() { s(g.match('1+2', 'expr')); }, /Cannot use node from grammar/);
 
   t.end();
 });
@@ -237,8 +309,8 @@ test('extending semantics', function(t) {
       });
   t.throws(function() { ns.G2.semantics(s).addOperation('value', {}); }, /already exists/);
   t.throws(function() { ns.G2.semantics(s).extendOperation('value', {}); }, /wrong arity/);
-  t.throws(function() { ns.G2.semantics(s).extendOperation('foo', {}); }, /no inherited operation/);
-  t.throws(function() { ns.G.semantics().extendOperation('value', {}); }, /no inherited operation/);
+  t.throws(function() { ns.G2.semantics(s).extendOperation('foo', {}); }, /did not inherit/);
+  t.throws(function() { ns.G.semantics().extendOperation('value', {}); }, /did not inherit/);
 
   var s2 = ns.G2.semantics(s).extendOperation('value', {
     one: function(str, _) { return 21; },  // overriding
