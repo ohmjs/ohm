@@ -2,65 +2,17 @@
 
 ## Alpha Release Blockers
 
-### Operations with arguments
+* improve error message when calling makeGrammar() on a source that has multiple grammars defined.
+  * Use Grammars and not Grammar as the start rule, and throw an error if != 1 grammar is produced.
+
+* Rename the primitive built-in rules to ProtoBuiltInRules (or something), and in built-in-rules.ohm, inherit from that instead of from null.
+
+### Operations and Semantics
+
+#### Operations with arguments
 
 * We should be able to (optionally) specify the number of arguments that are required by an operation.
 * We'll have to take these into account when doing the arity checks.	
-
-### Missing arity checks
-
-* `_many` and `_default` must take exactly 1 argument (an array of wrappers)
-* `_terminal` must take 0 arguments (you can get its value via `this.node.primitiveValue`)
-
-### Terminal nodes, etc.
-
-* Add `TerminalNode`, which inherits from `Node`.
-* All `TerminalNode`s should have a `primitiveValue` property.
-* Rename `Node.prototype.isValue()` to `isTerminal()`
-* Remove `Node.prototype.value()`
-* Rename `ohm.actions.getValue` to `getPrimitiveValue`
-
-### Inheriting from Operations and Attributes
-
-To enable extensibilty, operations and attributes should always belong to an instance of `Semantics`. Here's how this will work:
-
-```
-var g1 = ohm.grammar(...);
-var s1 = g1.semantics()
-  .addOperation('eval', {
-  	AddExp_plus: function(x, _, y) {
-  	  return x.eval() + y.eval();
-  	},
-  	...
-  });
-```
-
-Note that `Semantics.prototype.addOperation(name, dict)` returns the receiver to allow chaining. (The same goes for `Semantics.prototype.addSynthesizedAttribute` and `Semantics.prototype.addInheritedAttribute`.)
-
-The `Semantics` objects act as a family of operations and attributes. Recursive (even mutually-recursive) uses of operations / attributes go through "wrapper objects" that hold a reference to an instance of `Semantics` as well as a CST node, which may be accessed via the wrapper's `node` property. (This avoids the problems I was having with early-binding in recursive calls, which were getting in the way of extensibility.) Operations are called as methods of the wrapper objects, while synthesized attributes are accessed as properties.
-
-* Here's how you access / use the operations and attributes defined by a `Semantics`:
-
-```
-  var s = g.semantics()...;
-  var cst = g.match(...);
-  // Now we "wrap" the CST and access the functionality that's defined in the Semantics obj.
-  s(cst).value;  // attribute
-  s(cst).doIt();  // operation
-  ...
-```
-
-To extend an operation or an attribute, you create a new `Semantics` object that  extends the `Semantics` the the operation or attribute in question belongs to. You do this by passing the `Semantics` that you want to extend as an argument to *your grammar*'s `createSemantics` method. Then you call `extend(operationOrAttributeName, dict)` on that. E.g.,
-
-```
-var g2 = ... // some grammar that extends g1
-var s2 = g2.semantics(s1)
-  .extend("eval", {
-  	AddExp_foo: function(x, _, y) { ... }
-  });
-```
-
-A *derived* `Semantics` instance -- i.e., one that is created by passing an existing `Semantics` to `Grammar.prototype.semantics()` -- automatically inherits all of the operations and attributes from the parent `Semantics`.
 
 #### Error conditions
 
@@ -98,12 +50,6 @@ and
 
 respectively.
 
-### Start rules
-
-* When you declare a new grammar that doesn't explicitly inherit from another, the first rule of that grammar is its start rule.
-
-* Once we have start rules, you should be able to omit the 2nd argument to `Grammar.prototype.match`.
-
 ### No more "throw mode" for `Grammar.prototype.match`
 
 * Get rid of the 3rd argument to `Grammar.prototype.match`.
@@ -114,14 +60,18 @@ respectively.
 
 * `Failures` will hold on to the `State` object so that we can lazily re-parse the input to collect "expected" strings / perps, etc. This should be done if / when the programmer asks for this information.
 
+* Failure objects should only doing the second parse (to generate error info) on demand.
+
 * (We'll need to design the API of `Failure`s. Let's try to think about this while Pat's still in town.)
 
 ```
 var s = g.semantics()...;
 var ans = g.match('...');
 if (ans.isFailure()) {
-	// deal with it} else {
-	s(ans).doIt();}
+	// deal with it
+} else {
+	s(ans).doIt();
+}
 ```
 
 * Applying a `Semantics` to a `Failure` should throw an exception.
@@ -139,6 +89,67 @@ if (ans.isFailure()) {
 * Write it.
 
 ## Things we've already done
+
+### Start rules
+
+* When you declare a new grammar that doesn't explicitly inherit from another, the first rule of that grammar is its start rule.
+
+* Once we have start rules, you should be able to omit the 2nd argument to `Grammar.prototype.match`.
+
+### Missing arity checks
+
+* `_many` and `_default` must take exactly 1 argument (an array of wrappers)
+* `_terminal` must take 0 arguments (you can get its value via `this.node.primitiveValue`)
+
+### Terminal nodes, etc.
+
+* Add `TerminalNode`, which inherits from `Node`.
+* All `TerminalNode`s should have a `primitiveValue` property.
+* Rename `Node.prototype.isValue()` to `isTerminal()`
+* Remove `Node.prototype.value()`
+* Rename `ohm.actions.getValue` to `getPrimitiveValue`
+
+### Inheriting from Operations and Attributes
+
+To enable extensibilty, operations and attributes should always belong to an instance of `Semantics`. Here's how this will work:
+
+```
+var g1 = ohm.grammar(...);
+var s1 = g1.semantics()
+  .addOperation('eval', {
+    AddExp_plus: function(x, _, y) {
+      return x.eval() + y.eval();
+    },
+    ...
+  });
+```
+
+Note that `Semantics.prototype.addOperation(name, dict)` returns the receiver to allow chaining. (The same goes for `Semantics.prototype.addSynthesizedAttribute` and `Semantics.prototype.addInheritedAttribute`.)
+
+The `Semantics` objects act as a family of operations and attributes. Recursive (even mutually-recursive) uses of operations / attributes go through "wrapper objects" that hold a reference to an instance of `Semantics` as well as a CST node, which may be accessed via the wrapper's `node` property. (This avoids the problems I was having with early-binding in recursive calls, which were getting in the way of extensibility.) Operations are called as methods of the wrapper objects, while synthesized attributes are accessed as properties.
+
+* Here's how you access / use the operations and attributes defined by a `Semantics`:
+
+```
+  var s = g.semantics()...;
+  var cst = g.match(...);
+  // Now we "wrap" the CST and access the functionality that's defined in the Semantics obj.
+  s(cst).value;  // attribute
+  s(cst).doIt();  // operation
+  ...
+```
+
+To extend an operation or an attribute, you create a new `Semantics` object that  extends the `Semantics` the the operation or attribute in question belongs to. You do this by passing the `Semantics` that you want to extend as an argument to *your grammar*'s `createSemantics` method. Then you call `extend(operationOrAttributeName, dict)` on that. E.g.,
+
+```
+var g2 = ... // some grammar that extends g1
+var s2 = g2.semantics(s1)
+  .extend("eval", {
+    AddExp_foo: function(x, _, y) { ... }
+  });
+```
+
+A *derived* `Semantics` instance -- i.e., one that is created by passing an existing `Semantics` to `Grammar.prototype.semantics()` -- automatically inherits all of the operations and attributes from the parent `Semantics`.
 
 ### Parameterized rules
 
