@@ -80,14 +80,20 @@ GrammarDecl.prototype.withSuperGrammar = function(superGrammar) {
     throw new Error('the super grammar of a GrammarDecl cannot be set more than once');
   }
   this.superGrammar = superGrammar;
-  // Note: superGrammar will be null for the BuiltInRules grammar.
+  // Note: superGrammar will only be null for the BuiltInRules grammar.
   this.ruleDict = Object.create(superGrammar ? superGrammar.ruleDict : null);
+
+  // Grammars with an explicit (and non-null) supergrammar inherit a default start rule.
+  if (superGrammar && superGrammar !== Grammar.BuiltInRules) {
+    this.defaultStartRule = superGrammar.defaultStartRule;
+  }
   return this;
 };
 
 // Creates a Grammar instance, and if it passes the sanity checks, returns it.
 GrammarDecl.prototype.build = function() {
-  var grammar = new Grammar(this.name, this.ensureSuperGrammar(), this.ruleDict);
+  var grammar = new Grammar(
+      this.name, this.ensureSuperGrammar(), this.ruleDict, this.defaultStartRule);
   var error;
   Object.keys(grammar.ruleDict).forEach(function(ruleName) {
     var body = grammar.ruleDict[ruleName];
@@ -121,6 +127,9 @@ GrammarDecl.prototype.define = function(name, formals, body, optDescr) {
   var duplicateParameterNames = common.getDuplicates(formals);
   if (duplicateParameterNames.length > 0) {
     throw new errors.DuplicateParameterNames(name, duplicateParameterNames);
+  }
+  if (!this.defaultStartRule) {
+    this.defaultStartRule = name;
   }
   return this.install(name, formals, optDescr, body);
 };

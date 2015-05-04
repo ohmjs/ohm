@@ -66,7 +66,6 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
       s.visit();
       rs.visit();
       var g = decl.build();
-      // FIXME: Maybe push this check to GrammarDecl or Grammar.
       if (grammarName in namespace) {
         throw new errors.DuplicateGrammarDeclaration(grammarName, namespace);
       }
@@ -79,7 +78,6 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
       if (superGrammarName === 'null') {
         decl.withSuperGrammar(null);
       } else {
-        // FIXME: Maybe push this check to GrammarDecl.
         if (!namespace || !(superGrammarName in namespace)) {
           throw new errors.UndeclaredGrammar(superGrammarName, namespace);
         }

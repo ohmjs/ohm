@@ -17,6 +17,7 @@ var fs = require('fs');
 var ohm = require('..');
 var util = require('./util');
 var nodes = require('../src/nodes');
+var Grammar = require('../src/Grammar');
 var InputStream = require('../src/InputStream');
 var Interval = require('../src/Interval');
 
@@ -386,10 +387,6 @@ test('primitive patterns', function(t) {
       t.equal(m.match('null', '_null'), false);
       t.equal(m.match('undefined', '_undefined'), false);
     });
-
-    it('semantic actions', function() {
-      // N/A
-    });
     t.end();
   });
   t.end();
@@ -400,10 +397,10 @@ test('char', function(t) {
 
   test('direct match, no stream', function(t) {
     it('recognition', function() {
-      t.ok(m.match('!', 'bang'));
-      t.equal(m.match('!a', 'bang'), false);
-      t.equal(m.match(5, 'bang'), false);
-      t.equal(m.match('', 'bang'), false);
+      t.ok(m.match('!'));
+      t.equal(m.match('!a'), false);
+      t.equal(m.match(5), false);
+      t.equal(m.match(''), false);
     });
 
     it('semantic actions', function() {
@@ -411,7 +408,7 @@ test('char', function(t) {
         bang: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
       };
-      var cst = m.match('!', 'bang');
+      var cst = m.match('!');
       t.equal(m.synthesizedAttribute(dict)(cst), '!');
     });
     t.end();
@@ -419,9 +416,9 @@ test('char', function(t) {
 
   test('match in string stream', function(t) {
     it('recognition', function() {
-      t.ok(m.match('!', 'bang'));
-      t.equal(m.match('a', 'bang'), false);
-      t.equal(m.match('', 'bang'), false);
+      t.ok(m.match('!'));
+      t.equal(m.match('a'), false);
+      t.equal(m.match(''), false);
     });
 
     it('semantic actions', function() {
@@ -429,7 +426,7 @@ test('char', function(t) {
         bang: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
       };
-      var cst = m.match('!', 'bang');
+      var cst = m.match('!');
       t.equal(m.synthesizedAttribute(dict)(cst), '!');
     });
     t.end();
@@ -442,10 +439,10 @@ test('string', function(t) {
 
   test('direct match, no stream', function(t) {
     it('recognition', function() {
-      t.ok(m.match('foo', 'foo'));
-      t.equal(m.match('foo1', 'foo'), false);
-      t.equal(m.match('bar', 'foo'), false);
-      t.equal(m.match(null, 'foo'), false);
+      t.ok(m.match('foo'));
+      t.equal(m.match('foo1'), false);
+      t.equal(m.match('bar'), false);
+      t.equal(m.match(null), false);
     });
 
     it('semantic actions', function() {
@@ -453,7 +450,7 @@ test('string', function(t) {
         foo: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
       };
-      var cst = m.match('foo', 'foo');
+      var cst = m.match('foo');
       t.equal(m.synthesizedAttribute(dict)(cst), 'foo');
     });
     t.end();
@@ -461,9 +458,9 @@ test('string', function(t) {
 
   test('match in string stream', function(t) {
     it('recognition', function() {
-      t.ok(m.match('foo', 'foo'));
-      t.equal(m.match('foo1', 'foo'), false);
-      t.equal(m.match('bar', 'foo'), false);
+      t.ok(m.match('foo'));
+      t.equal(m.match('foo1'), false);
+      t.equal(m.match('bar'), false);
     });
 
     it('semantic actions', function() {
@@ -471,7 +468,7 @@ test('string', function(t) {
         foo: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
       };
-      var cst = m.match('foo', 'foo');
+      var cst = m.match('foo');
       t.equal(m.synthesizedAttribute(dict)(cst), 'foo');
     });
     t.end();
@@ -484,20 +481,20 @@ test('regexp', function(t) {
 
   test('direct match, no stream', function(t) {
     it('recognition', function() {
-      t.equal(m.match(/[0-9]/, 'myDigit'), false);
-      t.ok(m.match('4', 'myDigit'));
-      t.equal(m.match(4, 'myDigit'), false);
-      t.equal(m.match('a', 'myDigit'), false);
-      t.equal(m.match('a4', 'myDigit'), false);
+      t.equal(m.match(/[0-9]/), false);
+      t.ok(m.match('4'));
+      t.equal(m.match(4), false);
+      t.equal(m.match('a'), false);
+      t.equal(m.match('a4'), false);
     });
     t.end();
   });
 
   test('match in string stream', function(t) {
     it('recognition', function() {
-      t.ok(m.match('4', 'myDigit'));
-      t.equal(m.match('a', 'myDigit'), false);
-      t.equal(m.match('a4', 'myDigit'), false);
+      t.ok(m.match('4'));
+      t.equal(m.match('a'), false);
+      t.equal(m.match('a4'), false);
     });
 
     it('semantic actions', function() {
@@ -505,7 +502,7 @@ test('regexp', function(t) {
         myDigit: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
       };
-      var cst = m.match('4', 'myDigit');
+      var cst = m.match('4');
       t.equal(m.synthesizedAttribute(dict)(cst), '4');
     });
     t.end();
@@ -539,10 +536,10 @@ test('alt', function(t) {
   var m = util.makeGrammar('M { altTest = "a" | "b" }');
 
   it('recognition', function() {
-    t.equal(m.match('', 'altTest'), false);
-    t.ok(m.match('a', 'altTest'));
-    t.ok(m.match('b', 'altTest'));
-    t.equal(m.match('ab', 'altTest'), false);
+    t.equal(m.match(''), false);
+    t.ok(m.match('a'));
+    t.ok(m.match('b'));
+    t.equal(m.match('ab'), false);
   });
 
   it('semantic actions', function() {
@@ -550,8 +547,8 @@ test('alt', function(t) {
       altTest: ohm.actions.passThrough,
       _terminal: ohm.actions.getPrimitiveValue
     };
-    t.equal(m.synthesizedAttribute(dict)(m.match('a', 'altTest')), 'a');
-    t.equal(m.synthesizedAttribute(dict)(m.match('b', 'altTest')), 'b');
+    t.equal(m.synthesizedAttribute(dict)(m.match('a')), 'a');
+    t.equal(m.synthesizedAttribute(dict)(m.match('b')), 'b');
   });
   t.end();
 });
@@ -561,14 +558,14 @@ test('seq', function(t) {
     var m = util.makeGrammar('M { start = "a" "bc" "z" }');
 
     it('recognition', function() {
-      t.equal(m.match('a', 'start'), false);
-      t.equal(m.match('bc', 'start'), false);
-      t.ok(m.match('abcz', 'start'));
-      t.equal(m.match('abbz', 'start'), false);
+      t.equal(m.match('a'), false);
+      t.equal(m.match('bc'), false);
+      t.ok(m.match('abcz'));
+      t.equal(m.match('abbz'), false);
     });
 
     it('semantic actions', function() {
-      var f = m.match('abcz', 'start');
+      var f = m.match('abcz');
       t.deepEqual(m.synthesizedAttribute({
         start: function(x, y, z) {
           return [x.interval.contents, y.interval.contents, z.interval.contents];
@@ -582,14 +579,14 @@ test('seq', function(t) {
     var m = util.makeGrammar('M { start = "a" "bc" "z" }');
 
     it('recognition', function() {
-      t.equal(m.match('a', 'start'), false);
-      t.equal(m.match('bc', 'start'), false);
-      t.ok(m.match('abcz', 'start'));
-      t.equal(m.match('abbz', 'start'), false);
+      t.equal(m.match('a'), false);
+      t.equal(m.match('bc'), false);
+      t.ok(m.match('abcz'));
+      t.equal(m.match('abbz'), false);
     });
 
     it('semantic actions', function() {
-      var f = m.match('abcz', 'start');
+      var f = m.match('abcz');
       t.deepEqual(m.synthesizedAttribute({
         start: function(x, _, _) {
           return x.primitiveValue;
@@ -603,14 +600,14 @@ test('seq', function(t) {
     var m = util.makeGrammar('M { start = "a" "bc" "z" }');
 
     it('recognition', function() {
-      t.equal(m.match('a', 'start'), false);
-      t.equal(m.match('bc', 'start'), false);
-      t.ok(m.match('abcz', 'start'));
-      t.equal(m.match('abbz', 'start'), false);
+      t.equal(m.match('a'), false);
+      t.equal(m.match('bc'), false);
+      t.ok(m.match('abcz'));
+      t.equal(m.match('abbz'), false);
     });
 
     it('semantic actions', function() {
-      var f = m.match('abcz', 'start');
+      var f = m.match('abcz');
       t.deepEqual(m.synthesizedAttribute({
         start: function(x, _, y) {
           return [x.primitiveValue, y.primitiveValue];
@@ -626,10 +623,10 @@ test('alts and seqs together', function(t) {
   var m = util.makeGrammar('M { start = "a" "b" "c" | "1" "2" "3" }');
 
   it('recognition', function() {
-    t.equal(m.match('ab', 'start'), false);
-    t.equal(m.match('12', 'start'), false);
-    t.ok(m.match('abc', 'start'));
-    t.ok(m.match('123', 'start'));
+    t.equal(m.match('ab'), false);
+    t.equal(m.match('12'), false);
+    t.ok(m.match('abc'));
+    t.ok(m.match('123'));
   });
 
   it('semantic actions', function() {
@@ -637,12 +634,12 @@ test('alts and seqs together', function(t) {
         start: function(x, _, y) {
           return [x.primitiveValue, y.primitiveValue];
         }
-      })(m.match('abc', 'start')), ['a', 'c']);
+      })(m.match('abc')), ['a', 'c']);
     t.deepEqual(m.synthesizedAttribute({
         start: function(x, _, y) {
           return [x.primitiveValue, y.primitiveValue];
         }
-      })(m.match('123', 'start')), ['1', '3']);
+      })(m.match('123')), ['1', '3']);
   });
 
   t.end();
@@ -706,9 +703,9 @@ test('opt', function(t) {
   var m = util.makeGrammar('M { name = "dr"? "warth" }');
 
   it('recognition', function() {
-    t.ok(m.match('drwarth', 'name'));
-    t.ok(m.match('warth', 'name'));
-    t.equal(m.match('mrwarth', 'name'), false);
+    t.ok(m.match('drwarth'));
+    t.ok(m.match('warth'));
+    t.equal(m.match('mrwarth'), false);
   });
 
   it('semantic actions', function() {
@@ -717,17 +714,18 @@ test('opt', function(t) {
         return [title.primitiveValue, last.primitiveValue];
       }
     };
-    t.deepEqual(m.synthesizedAttribute(actionDict)(m.match('drwarth', 'name')), ['dr', 'warth']);
-    t.deepEqual(m.synthesizedAttribute(actionDict)(m.match('warth', 'name')), [undefined, 'warth']);
+    t.deepEqual(m.synthesizedAttribute(actionDict)(m.match('drwarth')), ['dr', 'warth']);
+    t.deepEqual(m.synthesizedAttribute(actionDict)(m.match('warth')), [undefined, 'warth']);
   });
   t.end();
 });
+
 test('not', function(t) {
   var m = util.makeGrammar('M { start = ~"hello" _* }');
 
   it('recognition', function() {
-    t.ok(m.match('yello world', 'start'));
-    t.equal(m.match('hello world', 'start'), false);
+    t.ok(m.match('yello world'));
+    t.equal(m.match('hello world'), false);
   });
 
   it('semantic actions', function() {
@@ -736,7 +734,7 @@ test('not', function(t) {
         return x.interval.contents;
       }
     });
-    t.equal(attr(m.match('yello world', 'start')), 'yello world');
+    t.equal(attr(m.match('yello world')), 'yello world');
   });
   t.end();
 });
@@ -745,8 +743,8 @@ test('lookahead', function(t) {
   var m = util.makeGrammar('M { start = &"hello" _* }');
 
   it('recognition', function() {
-    t.ok(m.match('hello world', 'start'));
-    t.equal(m.match('hell! world', 'start'), false);
+    t.ok(m.match('hello world'));
+    t.equal(m.match('hell! world'), false);
   });
 
   it('semantic actions', function() {
@@ -755,7 +753,7 @@ test('lookahead', function(t) {
         return x.primitiveValue;
       }
     });
-    t.equal(attr(m.match('hello world', 'start')), 'hello');
+    t.equal(attr(m.match('hello world')), 'hello');
   });
   t.end();
 });
@@ -764,14 +762,14 @@ test('arr', function(t) {
   var m = util.makeGrammar('M { start = ["abc" &_ ["d" "ef"] "g"] }');
 
   it('recognition', function() {
-    t.ok(m.match(['abc', ['d', 'ef'], 'g'], 'start'));
-    t.equal(m.match(['abc', ['def'], 'g'], 'start'), false);
-    t.equal(m.match(['abc', 'def', 'g'], 'start'), false);
-    t.equal(m.match(['abc', ['d', 'ef', 'oops'], 'g'], 'start'), false);
-    t.equal(m.match(['abc', ['d', 'ef'], 'gh'], 'start'), false);
-    t.equal(m.match(['abc', [5], 'g'], 'start'), false);
-    t.equal(m.match(['abc', [], 'g'], 'start'), false);
-    t.equal(m.match(['abc', 5, 'g'], 'start'), false);
+    t.ok(m.match(['abc', ['d', 'ef'], 'g']));
+    t.equal(m.match(['abc', ['def'], 'g']), false);
+    t.equal(m.match(['abc', 'def', 'g']), false);
+    t.equal(m.match(['abc', ['d', 'ef', 'oops'], 'g']), false);
+    t.equal(m.match(['abc', ['d', 'ef'], 'gh']), false);
+    t.equal(m.match(['abc', [5], 'g']), false);
+    t.equal(m.match(['abc', [], 'g']), false);
+    t.equal(m.match(['abc', 5, 'g']), false);
   });
 
   it('semantic actions', function() {
@@ -782,7 +780,7 @@ test('arr', function(t) {
       _: ohm.actions.passThrough,
       _terminal: ohm.actions.getPrimitiveValue
     });
-    t.deepEqual(value(m.match(['abc', ['d', 'ef'], 'g'], 'start')), ['d', ['d', 'ef']]);
+    t.deepEqual(value(m.match(['abc', ['d', 'ef'], 'g'])), ['d', ['d', 'ef']]);
   });
   t.end();
 });
@@ -892,9 +890,9 @@ test('apply', function(t) {
     ]);
 
     it('recognition', function() {
-      t.equal(m.match('fo', 'easy'), false);
-      t.ok(m.match('foo', 'easy'));
-      t.equal(m.match('fooo', 'easy'), false);
+      t.equal(m.match('fo'), false);
+      t.ok(m.match('foo'));
+      t.equal(m.match('fooo'), false);
     });
 
     it('semantic actions', function() {
@@ -907,7 +905,7 @@ test('apply', function(t) {
         },
         _terminal: ohm.actions.getPrimitiveValue
       });
-      t.deepEqual(value(m.match('foo', 'easy')), ['easy', ['foo', 'foo']]);
+      t.deepEqual(value(m.match('foo')), ['easy', ['foo', 'foo']]);
     });
     t.end();
   });
@@ -1050,15 +1048,15 @@ test('apply', function(t) {
     ]);
 
     it('recognition', function() {
-      t.ok(m.match('1', 'addExpr'));
-      t.ok(m.match('2+3', 'addExpr'));
-      t.equal(m.match('4+', 'addExpr'), false);
-      t.ok(m.match('5*6', 'addExpr'));
-      t.ok(m.match('7*8+9+0', 'addExpr'));
+      t.ok(m.match('1'));
+      t.ok(m.match('2+3'));
+      t.equal(m.match('4+'), false);
+      t.ok(m.match('5*6'));
+      t.ok(m.match('7*8+9+0'));
     });
 
     it('semantic actions', function() {
-      var f = m.match('1*2+3+4*5', 'addExpr');
+      var f = m.match('1*2+3+4*5');
       var parseTree = m.synthesizedAttribute({
         addExpr: function(expr) {
           return ['addExpr', parseTree(expr)];
@@ -1164,11 +1162,11 @@ test('apply', function(t) {
     ]);
 
     it('recognition', function() {
-      t.ok(m.match('1', 'addExpr'));
-      t.ok(m.match('2+3', 'addExpr'));
-      t.equal(m.match('4+', 'addExpr'), false);
-      t.ok(m.match('5*6', 'addExpr'));
-      t.ok(m.match('7+8*9+0', 'addExpr'));
+      t.ok(m.match('1'));
+      t.ok(m.match('2+3'));
+      t.equal(m.match('4+'), false);
+      t.ok(m.match('5*6'));
+      t.ok(m.match('7+8*9+0'));
     });
 
     it('semantic actions', function() {
@@ -1182,7 +1180,7 @@ test('apply', function(t) {
         _terminal: ohm.actions.getPrimitiveValue,
         _default: ohm.actions.passThrough
       });
-      t.deepEqual(buildTree(m.match('7+8*9+0', 'addExpr')), [
+      t.deepEqual(buildTree(m.match('7+8*9+0')), [
         ['7', '+', ['8', '*', '9']], '+', '0'
       ]);
     });
@@ -1339,11 +1337,11 @@ test('inheritance', function(t) {
                                 'G2 <: G1 { foo += "111" "222" }']);
 
     it('recognition', function() {
-      t.ok(ns.G1.match('aaabbb', 'foo'));
-      t.equal(ns.G1.match('111222', 'foo'), false);
+      t.ok(ns.G1.match('aaabbb'));
+      t.equal(ns.G1.match('111222'), false);
 
-      t.ok(ns.G2.match('aaabbb', 'foo'));
-      t.ok(ns.G2.match('111222', 'foo'));
+      t.ok(ns.G2.match('aaabbb'));
+      t.ok(ns.G2.match('111222'));
     });
 
     it('semantic actions', function() {
@@ -1351,13 +1349,13 @@ test('inheritance', function(t) {
         foo: function(x, y) {
           return [x.primitiveValue, y.primitiveValue];
         }
-      })(ns.G2.match('aaabbb', 'foo')), ['aaa', 'bbb']);
+      })(ns.G2.match('aaabbb')), ['aaa', 'bbb']);
 
       t.deepEqual(ns.G2.synthesizedAttribute({
         foo: function(x, y) {
           return [x.primitiveValue, y.primitiveValue];
         }
-      })(ns.G2.match('111222', 'foo')), ['111', '222']);
+      })(ns.G2.match('111222')), ['111', '222']);
     });
 
     it('should check that rule exists in super-grammar', function() {
@@ -1445,7 +1443,7 @@ test('bindings', function(t) {
       },
       _terminal: ohm.actions.getPrimitiveValue
     });
-    t.deepEqual(v(g.match('ab', 'foo')), {
+    t.deepEqual(v(g.match('ab')), {
       x: ['bar', 'a', 0],
       y: ['baz', 'b', 1]
     });
@@ -1468,7 +1466,7 @@ test('bindings', function(t) {
       },
       _terminal: ohm.actions.getPrimitiveValue
     });
-    t.deepEqual(v(g.match('ab', 'foo')), {
+    t.deepEqual(v(g.match('ab')), {
       x: ['bar', 'a', 1],
       y: ['baz', 'b', 0]
     });
@@ -1627,7 +1625,7 @@ test('semantic action templates', function(t) {
 
 test('namespaces', function(t) {
   var ns = util.makeGrammars('G { start = "foo" }');
-  t.ok(ns.G.match('foo', 'start'), 'G exists in the namespace and works');
+  t.ok(ns.G.match('foo'), 'G exists in the namespace and works');
 
   var ns2 = util.makeGrammars('ccc { foo = "foo" }', ns);
   t.ok(ns2);
@@ -1884,5 +1882,47 @@ test('pexpr.toString()', function(t) {
       'G { start = &"a" ~(2 | 3?) ``b a\'\' [c {e: b, ...} {g: /[a-z]/}]  a = 1  b = 2  c = 3 }');
   var e = g.ruleDict.start;
   t.equal(e.toString(), '(&"a" ~(2 | 3?) ``(b a)\'\' [(c {"e": b, ...} {"g": /[a-z]/})])');
+  t.end();
+});
+
+test('default start rule', function(t) {
+  var g = util.makeGrammar('G {}');
+  t.equal(g.defaultStartRule, undefined, 'undefined for an empty grammar');
+  t.throws(function() { g.match('a'); }, /missing start rule/, 'match throws with no start rule');
+  // TODO: Fix this.
+  // t.equal(Grammar.BuiltInRules.defaultStartRule, undefined, 'undefined for the BuiltInRules');
+
+  var g2 = util.makeGrammar('G2 <: G {}', {G:g});
+  t.equal(g2.defaultStartRule, undefined, 'undefined for a subgrammar too');
+  t.throws(function() { g2.match('a'); }, /missing start rule/, 'match throws with no start rule');
+
+  var ns = util.makeGrammars(['G { foo = "a" }', 'G2 <: G {}']);
+  t.equal(ns.G.defaultStartRule, 'foo', 'only rule becomes default start rule');
+  t.equal(ns.G2.defaultStartRule, 'foo', 'start rule is inherited from supergrammar');
+  t.ok(ns.G.match('a'), 'match works without a start rule argument');
+  t.ok(ns.G2.match('a'));
+
+  var g3 = util.makeGrammar('G3 <: G { bar = "b" }', ns);
+  t.equal(g3.defaultStartRule, 'foo', 'start rule is still inherited');
+  t.ok(g3.match('a'));
+
+  var g4 = util.makeGrammar('G4 <: G3 { blah = "c" }', {G3:g3});
+  t.equal(g4.defaultStartRule, 'foo', 'start rule inherited from super-supergrammar');
+  t.ok(g4.match('a'));
+
+  g = util.makeGrammar('G { digit += _ }');
+  t.equal(g.defaultStartRule, undefined, "extending alone doesn't set the start rule");
+  t.throws(function() { g.match('a'); }, /missing start rule/, 'match throws with no start rule');
+  g = util.makeGrammar(['G { digit += _', 'blah = "3" }'])
+  t.equal(g.defaultStartRule, 'blah', 'rule defined after extending becomes start rule');
+  t.ok(g.match('3'));
+
+  g = util.makeGrammar('G { digit := _ }');
+  t.equal(g.defaultStartRule, undefined, "overriding alone doesn't set the start rule");
+  t.throws(function() { g.match('a'); }, /missing start rule/, 'match throws with no start rule');
+  g = util.makeGrammar(['G { digit := _', 'blah = "3" }'])
+  t.equal(g.defaultStartRule, 'blah', 'rule defined after overriding becomes start rule');
+  t.ok(g.match('3'));
+
   t.end();
 });

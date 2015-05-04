@@ -18,10 +18,11 @@ var pexprs = require('./pexprs');
 // Private stuff
 // --------------------------------------------------------------------
 
-function Grammar(name, superGrammar, ruleDict) {
+function Grammar(name, superGrammar, ruleDict, optDefaultStartRule) {
   this.name = name;
   this.superGrammar = superGrammar;
   this.ruleDict = ruleDict;
+  this.defaultStartRule = optDefaultStartRule;
   this.constructors = this.ctors = this.createConstructors();
 }
 
@@ -53,10 +54,11 @@ Grammar.prototype = {
     return constructors;
   },
 
-  match: function(obj, startRule, optThrowOnFail) {
+  match: function(obj, optStartRule, optThrowOnFail) {
     var throwOnFail = !!optThrowOnFail;
+    var startRule = optStartRule || this.defaultStartRule;
     if (!startRule) {
-      throw new TypeError("'startRule' argument cannot be null or undefined");
+      throw new Error('missing start rule argument -- the grammar has no default start rule.');
     }
     var state = this._match(obj, startRule, false);
     var succeeded = state.bindings.length === 1;
@@ -290,8 +292,7 @@ Grammar.BuiltInRules = new Grammar('BuiltInRules', null, {
   // from being overridden or invoked by programmers.
   spaces_: new pexprs.Many(new pexprs.Apply('space'), 0).withFormals([]),
 
-  // The `space` rule must be defined here because it's referenced in the body of `_spaces`.
-  // (Otherwise the call to `new Grammar(...)` below will throw an `UndeclaredRule` exception.)
+  // The `space` rule must be defined here because it's referenced in the body of `spaces_`.
   space: pexprs.makePrim(/[\s]/).withFormals([]).withDescription('a space')
 });
 
