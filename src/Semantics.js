@@ -38,10 +38,6 @@ function Operation(name, actionDict) {
   this.actionDict = actionDict;
 }
 
-Operation.prototype.toString = function() {
-  return '[operation ' + this.name + ']';
-};
-
 Operation.prototype.execute = function(semantics, node) {
   var dict = this.actionDict;
 
@@ -80,19 +76,15 @@ Operation.prototype.doAction = function(semantics, node, actionFn, optPassChildr
 function Attribute(name, actionDict) {
   this.name = name;
   this.actionDict = actionDict;
-  this.key = Symbol();
 }
 inherits(Attribute, Operation);
 
-Attribute.prototype.toString = function() {
-  return '[attribute ' + this.name + ']';
-};
-
 Attribute.prototype.execute = function(semantics, node) {
-  if (!node.hasOwnProperty(this.key)) {
-    node[this.key] = Operation.prototype.execute.call(this, semantics, node);
+  var key = semantics.attributeKeys[this.name];
+  if (!node.hasOwnProperty(key)) {
+    node[key] = Operation.prototype.execute.call(this, semantics, node);
   }
-  return node[this.key];
+  return node[key];
 };
 
 // ----------------- Semantics -----------------
@@ -109,15 +101,20 @@ function Semantics(grammar, optSuperSemantics) {
     // TODO: Consider making interval and primitiveValue into attributes, too.
     this.node = node;
     this._semantics = semantics;
+
     // Install all attributes into the wrapper, using Object.defineProperty
     var wrapper = this;
-    Object.keys(semantics.attributes).forEach(function(name) {
-      Object.defineProperty(wrapper, name, {
-        get: function() {
-          return semantics.attributes[name].execute(semantics, wrapper.node);
-        }
-      });
-    });
+    for (var attributeName in semantics.attributes) {
+      // This is a work-around for JS's stupid "only functions are lexical scopes" thing.
+      // Without it, attributeName may not be the same by the time it's used in the getter.
+      (function(attributeName) {
+        Object.defineProperty(wrapper, attributeName, {
+          get: function() {
+            return semantics.attributes[attributeName].execute(semantics, wrapper.node);
+          }
+        });
+      })(attributeName);
+    }
   };
 
   if (optSuperSemantics) {
@@ -130,9 +127,21 @@ function Semantics(grammar, optSuperSemantics) {
     this.operations = Object.create(null);
     this.attributes = Object.create(null);
   }
+
+  // Assign unique symbols for each of the attributes in this Semantics, so that
+  // they are memoized independently of other instances of Semantics (even
+  // sub-Semantics of this one).
+  this.attributeKeys = Object.create(null);
+  for (var attributeName in this.attributes) {
+    this.attributeKeys[attributeName] = Symbol();
+  }
 }
 
 Semantics.actions = actions;
+
+Semantics.prototype.toString = function() {
+  return '[semantics for ' + this.grammar.name + ']';
+};
 
 Semantics.prototype.assertNewName = function(name, type) {
   if (name in this.operations) {
@@ -150,9 +159,14 @@ Semantics.prototype.addOperation = function(name, actionDict) {
   this.grammar._assertTopDownActionNamesAndAritiesMatch(actionDict, false);
   var op = new Operation(name, actionDict);
   this.operations[name] = op;
-  this.Wrapper.prototype[name] = function() {
+  var opFn = function() {
     return this._semantics.operations[name].execute(this._semantics, this.node);
   };
+  opFn.toString = function() {
+    return '[' + name + ' operation ]';
+  };
+  this.Wrapper.prototype[name] = opFn;
+  // TODO: add a toString for the wrappers (will make this stuff nicer to use on the console)
 };
 
 Semantics.prototype.extendOperation = function(name, actionDict) {
@@ -162,7 +176,7 @@ Semantics.prototype.extendOperation = function(name, actionDict) {
   }
 
   // Create a new operation whose actionDict delegates to the super operation's actionDict,
-  // and which has all the keys from `actionDict`.
+  // and which has all the keys from `inheritedActionDict`.
   var inheritedActionDict = this.operations[name].actionDict;
   var newActionDict = Object.create(inheritedActionDict);
   Object.keys(actionDict).forEach(function(name) {
@@ -179,6 +193,7 @@ Semantics.prototype.addAttribute = function(name, actionDict) {
   this.assertNewName(name, 'attribute');
   this.grammar._assertTopDownActionNamesAndAritiesMatch(actionDict, false);
   this.attributes[name] = new Attribute(name, actionDict);
+  this.attributeKeys[name] = Symbol();
 };
 
 Semantics.prototype.extendAttribute = function(name, actionDict) {
@@ -188,8 +203,8 @@ Semantics.prototype.extendAttribute = function(name, actionDict) {
   }
 
   // Create a new attribute whose actionDict delegates to the super attribute's actionDict,
-  // and which has all the keys from `actionDict`.
-  var inheritedActionDict = this.operations[name].actionDict;
+  // and which has all the keys from `inheritedActionDict`.
+  var inheritedActionDict = this.attributes[name].actionDict;
   var newActionDict = Object.create(inheritedActionDict);
   Object.keys(actionDict).forEach(function(name) {
     newActionDict[name] = actionDict[name];
@@ -214,7 +229,7 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
 
   // In order to support invoking a semantics instance like a function, return
   // a function which acts as a proxy for the actual semantics object.
-  var proxy = function semanticsProxy(cst) {
+  var proxy = function(cst) {
     if (!(cst instanceof nodes.Node)) {
       throw new TypeError('Semantics expected a node, but got: ' + cst);
     }
@@ -224,6 +239,7 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
     }
     return s.wrap(cst);
   };
+
   // Forward public methods from the proxy to the semantics instance.
   ['addOperation', 'extendOperation', 'addAttribute', 'extendAttribute'].forEach(function(name) {
     proxy[name] = function() {
@@ -231,10 +247,15 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
       return proxy;
     };
   });
+
+  // Make the proxy's toString() work.
+  proxy.toString = s.toString.bind(s);
+
   // Return the semantics for the proxy.
   proxy._getTarget = function() {
     return s;
   };
+
   return proxy;
 };
 

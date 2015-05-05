@@ -298,6 +298,9 @@ test('extending semantics', function(t) {
     '  one := "eins" "!"',
     '  three = "drei"',
     '}']);
+
+  // Make sure operations behave as expected
+
   var s = ns.G.semantics().
       addOperation('value', {
         one: function(_) { return 1; },
@@ -327,6 +330,49 @@ test('extending semantics', function(t) {
   m = ns.G2.match('drei', 'three');
   t.equal(s2(m).value(), 3);
   t.equal(s2(m).valueTimesTwo(), 6);
+
+  // Make sure attributes behave as expected
+
+  var s = ns.G.semantics().
+      addAttribute('value', {
+        one: function(_) { return 1; },
+        two: function(_) { return 2; },
+        _terminal: ohm.actions.getPrimitiveValue
+      }).
+      addAttribute('valueTimesTwo', {
+        _default: function(children) { return this.value * 2; }
+      });
+  t.throws(function() { ns.G2.semantics(s).addAttribute('value', {}); }, /already exists/);
+  t.throws(function() { ns.G2.semantics(s).extendAttribute('value', {}); }, /wrong arity/);
+  t.throws(function() { ns.G2.semantics(s).extendAttribute('foo', {}); }, /did not inherit/);
+  t.throws(function() { ns.G.semantics().extendAttribute('value', {}); }, /did not inherit/);
+
+  var s2 = ns.G2.semantics(s).extendAttribute('value', {
+    one: function(str, _) { return 21; },  // overriding
+    three: function(str) { return 3; }     // adding a new case
+  });
+  m = ns.G2.match('eins!', 'one');
+  t.equal(s2(m).value, 21);
+  t.equal(s2(m).valueTimesTwo, 42);
+
+  m = ns.G2.match('two', 'two');
+  t.equal(s2(m).value, 2);
+  t.equal(s2(m).valueTimesTwo, 4);
+
+  m = ns.G2.match('drei', 'three');
+  t.equal(s2(m).value, 3);
+  t.equal(s2(m).valueTimesTwo, 6);
+
+  // Make sure an attribute that was inherited from a parent semantics
+  // does not share its memo table with its parent.
+  var s3 = ns.G2.semantics(s2).extendAttribute('value', {
+    one: function(str, _) { return 123; }
+  });
+  m = ns.G2.match('eins!', 'one');
+  t.equal(s2(m).value, 21);
+  t.equal(s2(m).valueTimesTwo, 42);
+  t.equal(s3(m).value, 123);
+  t.equal(s3(m).valueTimesTwo, 246);
 
   t.end();
 });
