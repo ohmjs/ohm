@@ -128,7 +128,11 @@ function Semantics(grammar, optSuperSemantics) {
 
   if (optSuperSemantics) {
     this.super = optSuperSemantics._getTarget();
-    // TODO: throw an Error if grammar does not inherit from this.super.grammar
+    if (grammar !== this.super.grammar && !grammar._inheritsFrom(this.super.grammar)) {
+      throw new Error(
+          "Cannot extend a semantics for grammar '" + this.super.grammar.name +
+          "' for use with grammar '" + grammar.name + "' (not a sub-grammar)");
+    }
     this.operations = Object.create(this.super.operations);
     this.attributes = Object.create(this.super.attributes);
     this.attributeKeys = Object.create(null);

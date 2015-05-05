@@ -178,6 +178,17 @@ Grammar.prototype = {
     return this.ruleDict[actionName].getArity();
   },
 
+  _inheritsFrom: function(grammar) {
+    var g = this.superGrammar;
+    while (g) {
+      if (g === grammar) {
+        return true;
+      }
+      g = g.superGrammar;
+    }
+    return false;
+  },
+
   toRecipe: function(optVarName) {
     var sb = new common.StringBuffer();
     if (optVarName) {

@@ -297,7 +297,9 @@ test('extending semantics', function(t) {
     'G2 <: G {',
     '  one := "eins" "!"',
     '  three = "drei"',
-    '}']);
+    '}',
+    'G3 <: G2 { }',
+    'G4 { }']);
 
   // Make sure operations behave as expected
 
@@ -314,6 +316,8 @@ test('extending semantics', function(t) {
   t.throws(function() { ns.G2.semantics(s).extendOperation('value', {}); }, /wrong arity/);
   t.throws(function() { ns.G2.semantics(s).extendOperation('foo', {}); }, /did not inherit/);
   t.throws(function() { ns.G.semantics().extendOperation('value', {}); }, /did not inherit/);
+  t.ok(ns.G3.semantics(s));
+  t.throws(function() { ns.G4.semantics(s); }, /not a sub-grammar/);
 
   var s2 = ns.G2.semantics(s).extendOperation('value', {
     one: function(str, _) { return 21; },  // overriding
