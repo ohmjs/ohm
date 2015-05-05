@@ -38,6 +38,10 @@ function Operation(name, actionDict) {
   this.actionDict = actionDict;
 }
 
+Operation.prototype.checkArities = function(grammar) {
+  grammar._assertTopDownActionNamesAndAritiesMatch(this.actionDict, false);
+};
+
 Operation.prototype.execute = function(semantics, node) {
   var dict = this.actionDict;
 
@@ -95,7 +99,18 @@ function Semantics(grammar, optSuperSemantics) {
   // Constructor for new wrapper instances, which are passed as the arguments
   // to the semantic action functions of an operation or attribute.
   var semantics = this;
+  var checkedArities = false;
   this.Wrapper = function SemanticsWrapper(node) {
+    if (!checkedArities) {
+      for (var name in semantics.operations) {
+        semantics.operations[name].checkArities(grammar);
+      }
+      for (name in semantics.attributes) {
+        semantics.attributes[name].checkArities(grammar);
+      }
+      checkedArities = true;
+    }
+
     this.node = node;
     this.interval = node.interval;
     this.primitiveValue = node.primitiveValue;
@@ -186,9 +201,13 @@ Semantics.prototype.assertNewName = function(name, type) {
 
 Semantics.prototype.addOperation = function(name, actionDict) {
   this.assertNewName(name, 'operation');
-  this.grammar._assertTopDownActionNamesAndAritiesMatch(actionDict, false);
   var op = new Operation(name, actionDict);
   this.operations[name] = op;
+
+  // The following check is not required (it will happen later anyway) but it's useful
+  // to catch arity errors early.
+  op.checkArities(this.grammar);
+
   var opFn = function() {
     return this._semantics.operations[name].execute(this._semantics, this.node);
   };
@@ -211,17 +230,25 @@ Semantics.prototype.extendOperation = function(name, actionDict) {
   Object.keys(actionDict).forEach(function(name) {
     newActionDict[name] = actionDict[name];
   });
-  this.operations[name] = new Operation(name, newActionDict);
 
-  // TODO: keep the following check here, but also do it (lazily) for all of the operations /
-  // attributes in this Semantics the first first time any operation / attribute is used.
-  this.grammar._assertTopDownActionNamesAndAritiesMatch(newActionDict, false);
+  var op = new Operation(name, newActionDict);
+
+  // The following check is not required (it will happen later anyway) but it's useful
+  // to catch arity errors early.
+  op.checkArities(this.grammar);
+
+  this.operations[name] = op;
 };
 
 Semantics.prototype.addAttribute = function(name, actionDict) {
   this.assertNewName(name, 'attribute');
-  this.grammar._assertTopDownActionNamesAndAritiesMatch(actionDict, false);
-  this.attributes[name] = new Attribute(name, actionDict);
+  var attr = new Attribute(name, actionDict);
+
+  // The following check is not required (it will happen later anyway) but it's useful
+  // to catch arity errors early.
+  attr.checkArities(this.grammar);
+
+  this.attributes[name] = attr;
   this.attributeKeys[name] = Symbol();
 };
 
@@ -238,11 +265,14 @@ Semantics.prototype.extendAttribute = function(name, actionDict) {
   Object.keys(actionDict).forEach(function(name) {
     newActionDict[name] = actionDict[name];
   });
-  this.attributes[name] = new Attribute(name, newActionDict);
 
-  // TODO: keep the following check here, but also do it (lazily) for all of the operations /
-  // attributes in this Semantics the first first time any operation / attribute is used.
-  this.grammar._assertTopDownActionNamesAndAritiesMatch(newActionDict, false);
+  var attr = new Attribute(name, newActionDict);
+
+  // The following check is not required (it will happen later anyway) but it's useful
+  // to catch arity errors early.
+  attr.checkArities(this.grammar);
+
+  this.attributes[name] = attr;
 };
 
 Semantics.prototype.wrap = function(node) {

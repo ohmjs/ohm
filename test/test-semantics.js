@@ -313,11 +313,16 @@ test('extending semantics', function(t) {
         _default: function(children) { return this.value() * 2; }
       });
   t.throws(function() { ns.G2.semantics(s).addOperation('value', {}); }, /already exists/);
-  t.throws(function() { ns.G2.semantics(s).extendOperation('value', {}); }, /wrong arity/);
   t.throws(function() { ns.G2.semantics(s).extendOperation('foo', {}); }, /did not inherit/);
   t.throws(function() { ns.G.semantics().extendOperation('value', {}); }, /did not inherit/);
   t.ok(ns.G3.semantics(s));
   t.throws(function() { ns.G4.semantics(s); }, /not a sub-grammar/);
+
+  t.throws(function() { ns.G2.semantics(s).extendOperation('value', {}); }, /wrong arity/);
+  // If there is an arity mismatch due to overriding and we don't explicitly extend the operation /
+  // attribute, we should catch this error when the derived semantics is applied to its first
+  // CST node.
+  t.throws(function() { ns.G2.semantics(s)(ns.G2.match('eins!', 'one')); }, /wrong arity/);
 
   var s2 = ns.G2.semantics(s).extendOperation('value', {
     one: function(str, _) { return 21; },  // overriding
