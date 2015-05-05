@@ -49,7 +49,7 @@ Operation.prototype.execute = function(semantics, node) {
     return this.doAction(semantics, node, dict._default, true);
   }
   throw new Error(
-    'missing semantic action for ' + node.ctorName + ' in ' + this.name + ' operation');
+      'missing semantic action for ' + node.ctorName + ' in ' + this.name + ' operation');
 };
 
 Operation.prototype.doAction = function(semantics, node, actionFn, optPassChildrenAsArray) {
@@ -97,22 +97,32 @@ function Semantics(grammar, optSuperSemantics) {
   var semantics = this;
   this.Wrapper = function SemanticsWrapper(node) {
     this.node = node;
+    this.interval = node.interval;
+    this.primitiveValue = node.primitiveValue;
     this._semantics = semantics;
 
     // Install all attributes into the wrapper, using Object.defineProperty
     var wrapper = this;
+    var descriptors = {};
+    var hasAttributes = false;
     for (var attributeName in semantics.attributes) {
-      // This is a work-around for JS's stupid "only functions are lexical scopes" thing.
-      // Without it, attributeName may not be the same by the time it's used in the getter.
+      hasAttributes = true;
+      // The following is a work-around for JS's stupid "only functions are lexical scopes" thing.
+      // Without it, `attributeName` may not be the same by the time it's used in the getter.
       /* eslint-disable no-loop-func */
       (function(attributeName) {
-        Object.defineProperty(wrapper, attributeName, {
+        descriptors[attributeName] = {
           get: function() {
             return semantics.attributes[attributeName].execute(semantics, wrapper.node);
           }
-        });
+        };
       })(attributeName);
       /* eslint-enable no-loop-func */
+    }
+    if (hasAttributes) {
+      // Only call `Object.defineProperties` if this semantics has attributes.
+      // (This speeds things up a little bit.)
+      Object.defineProperties(wrapper, descriptors);
     }
   };
 
@@ -147,11 +157,9 @@ function addBuiltInOperationsAndAttributes(semantics) {
       return '[semantics wrapper for ' + this.node.grammar.name + ']';
     }
   });
-  // TODO: It would be nice to make `interval` and `primitiveValue` into attributes, too. I haven't
-  // done this yet b/c each of these attributes becomes an Object.defineProperty() call in the
-  // Wrapper constructor, even if they're never used, which makes all semantic action type things
-  // significantly slower. There must be a better, more efficient way to do this. What do you think,
-  // Pat?
+  // `node`, `interval`, and `primitiveValue` could be real attributes, but they're special-cased
+  // as real properties so that we can avoid calling `Object.defineProperties` every time we create
+  // a wrapper. (That would make it kind of expensive.)
 }
 
 Semantics.actions = actions;
@@ -165,7 +173,8 @@ Semantics.prototype.assertNewName = function(name, type) {
     throw new Error(
         'Cannot add ' + type + " '" + name + "': an operation with that name already exists");
   }
-  if (name === 'node' || name in this.attributes) {
+  if (name === 'node' || name === 'interval' || name === 'primitiveValue' ||
+      name in this.attributes) {
     throw new Error(
         'Cannot add ' + type + " '" + name + "': an attribute with that name already exists");
   }
@@ -250,8 +259,9 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
       throw new TypeError('Semantics expected a CST node, but got ' + cst);
     }
     if (cst.grammar !== grammar) {
-      throw new Error("Cannot use a CST node created by grammar '" + cst.grammar.name +
-                      "' with a semantics for '" + grammar.name + "'");
+      throw new Error(
+          "Cannot use a CST node created by grammar '" + cst.grammar.name +
+          "' with a semantics for '" + grammar.name + "'");
     }
     return s.wrap(cst);
   };
