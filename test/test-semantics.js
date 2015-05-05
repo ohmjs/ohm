@@ -150,18 +150,18 @@ test('semantics', function(t) {
     /already exists/,
     'addAttribute throws when name is already used, even if it is an operation');
 
-  t.throws(function() { s(null); }, /expected a node/);
-  t.throws(function() { s(false); }, /expected a node/);
-  t.throws(function() { s(); }, /expected a node/);
-  t.throws(function() { s(3); }, /expected a node/);
-  t.throws(function() { s('asdf'); }, /expected a node/);
+  t.throws(function() { s(null); }, /expected a CST node/);
+  t.throws(function() { s(false); }, /expected a CST node/);
+  t.throws(function() { s(); }, /expected a CST node/);
+  t.throws(function() { s(3); }, /expected a CST node/);
+  t.throws(function() { s('asdf'); }, /expected a CST node/);
 
   // Cannot use the semantics on nodes from another grammar...
   var g = ohm.makeGrammar('G {}');
-  t.throws(function() { s(g.match('a', 'letter')); }, /Cannot use node from grammar/);
+  t.throws(function() { s(g.match('a', 'letter')); }, /Cannot use a CST node created by grammar/);
   // ... even if it's a sub-grammar
   g = ohm.makeGrammar('Expr2 <: Expr {}', {Expr: expr});
-  t.throws(function() { s(g.match('1+2', 'expr')); }, /Cannot use node from grammar/);
+  t.throws(function() { s(g.match('1+2', 'expr')); }, /Cannot use a CST node created by grammar/);
 
   t.end();
 });
@@ -399,10 +399,10 @@ test('mixing nodes from one grammar with semantics from another', function(t) {
   t.equal(s(m).value(), 'aaachoo!');
 
   m = ns.GPrime.match('bbb', 'start');
-  t.throws(function() { s(m).value(); }, /node from grammar/);
+  t.throws(function() { s(m).value(); }, /Cannot use a CST node created by grammar/);
 
   m = ns.Unrelated.match('asdf', 'start');
-  t.throws(function() { s(m).value(); }, /node from grammar/);
+  t.throws(function() { s(m).value(); }, /Cannot use a CST node created by grammar/);
 
   t.end();
 });

@@ -95,10 +95,7 @@ function Semantics(grammar, optSuperSemantics) {
   // Constructor for new wrapper instances, which are passed as the arguments
   // to the semantic action functions of an operation or attribute.
   var semantics = this;
-  this.Wrapper = function(node) {
-    // TODO: Make node into an actual attribute to prevent programmers from
-    // defining an attribute / semantic action with the same name.
-    // TODO: Consider making interval and primitiveValue into attributes, too.
+  this.Wrapper = function SemanticsWrapper(node) {
     this.node = node;
     this._semantics = semantics;
 
@@ -124,19 +121,37 @@ function Semantics(grammar, optSuperSemantics) {
     // TODO: throw an Error if grammar does not inherit from this.super.grammar
     this.operations = Object.create(this.super.operations);
     this.attributes = Object.create(this.super.attributes);
+    this.attributeKeys = Object.create(null);
     inherits(this.Wrapper, this.super.Wrapper);
   } else {
     this.operations = Object.create(null);
     this.attributes = Object.create(null);
+    this.attributeKeys = Object.create(null);
+    addBuiltInOperationsAndAttributes(this);
   }
 
   // Assign unique symbols for each of the attributes in this Semantics, so that
   // they are memoized independently of other instances of Semantics (even
   // sub-Semantics of this one).
-  this.attributeKeys = Object.create(null);
   for (var attributeName in this.attributes) {
     this.attributeKeys[attributeName] = Symbol();
   }
+}
+
+function addBuiltInOperationsAndAttributes(semantics) {
+  semantics.addOperation('toString', {
+    _default: function(children) {
+      return '[semantics wrapper for ' + this.node.grammar.name + ']';
+    },
+    _terminal: function() {
+      return '[semantics wrapper for ' + this.node.grammar.name + ']';
+    }
+  });
+  // TODO: It would be nice to make `interval` and `primitiveValue` into attributes, too. I haven't
+  // done this yet b/c each of these attributes becomes an Object.defineProperty() call in the
+  // Wrapper constructor, even if they're never used, which makes all semantic action type things
+  // significantly slower. There must be a better, more efficient way to do this. What do you think,
+  // Pat?
 }
 
 Semantics.actions = actions;
@@ -150,7 +165,7 @@ Semantics.prototype.assertNewName = function(name, type) {
     throw new Error(
         'Cannot add ' + type + " '" + name + "': an operation with that name already exists");
   }
-  if (name in this.attributes) {
+  if (name === 'node' || name in this.attributes) {
     throw new Error(
         'Cannot add ' + type + " '" + name + "': an attribute with that name already exists");
   }
@@ -168,7 +183,6 @@ Semantics.prototype.addOperation = function(name, actionDict) {
     return '[' + name + ' operation ]';
   };
   this.Wrapper.prototype[name] = opFn;
-  // TODO: add a toString for the wrappers (will make this stuff nicer to use on the console)
 };
 
 Semantics.prototype.extendOperation = function(name, actionDict) {
@@ -233,11 +247,11 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
   // a function which acts as a proxy for the actual semantics object.
   var proxy = function(cst) {
     if (!(cst instanceof nodes.Node)) {
-      throw new TypeError('Semantics expected a node, but got: ' + cst);
+      throw new TypeError('Semantics expected a CST node, but got ' + cst);
     }
     if (cst.grammar !== grammar) {
-      throw new Error("Cannot use node from grammar '" + cst.grammar.name +
-                      "' with semantics from grammar '" + grammar.name + "'");
+      throw new Error("Cannot use a CST node created by grammar '" + cst.grammar.name +
+                      "' with a semantics for '" + grammar.name + "'");
     }
     return s.wrap(cst);
   };
