@@ -333,7 +333,7 @@ test('extending semantics', function(t) {
 
   // Make sure attributes behave as expected
 
-  var s = ns.G.semantics().
+  s = ns.G.semantics().
       addAttribute('value', {
         one: function(_) { return 1; },
         two: function(_) { return 2; },
@@ -347,7 +347,7 @@ test('extending semantics', function(t) {
   t.throws(function() { ns.G2.semantics(s).extendAttribute('foo', {}); }, /did not inherit/);
   t.throws(function() { ns.G.semantics().extendAttribute('value', {}); }, /did not inherit/);
 
-  var s2 = ns.G2.semantics(s).extendAttribute('value', {
+  s2 = ns.G2.semantics(s).extendAttribute('value', {
     one: function(str, _) { return 21; },  // overriding
     three: function(str) { return 3; }     // adding a new case
   });

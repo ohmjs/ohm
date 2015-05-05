@@ -107,6 +107,7 @@ function Semantics(grammar, optSuperSemantics) {
     for (var attributeName in semantics.attributes) {
       // This is a work-around for JS's stupid "only functions are lexical scopes" thing.
       // Without it, attributeName may not be the same by the time it's used in the getter.
+      /* eslint-disable no-loop-func */
       (function(attributeName) {
         Object.defineProperty(wrapper, attributeName, {
           get: function() {
@@ -114,6 +115,7 @@ function Semantics(grammar, optSuperSemantics) {
           }
         });
       })(attributeName);
+      /* eslint-enable no-loop-func */
     }
   };
 
