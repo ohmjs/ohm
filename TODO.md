@@ -2,36 +2,12 @@
 
 ## Alpha Release Blockers
 
-* improve error message when calling makeGrammar() on a source that has multiple grammars defined.
+* Check for superfluous properties in action dicts, i.e., properties that do not correspond to a rule in the grammar. This will have to be done in methods like `addOperation`, `addAttribute`, `extendOperation`, and `extendAttribute`.
+
+* Improve error message when calling makeGrammar() on a source that has multiple grammars defined.
   * Use Grammars and not Grammar as the start rule, and throw an error if != 1 grammar is produced.
 
 * Rename the primitive built-in rules to ProtoBuiltInRules (or something), and in built-in-rules.ohm, inherit from that instead of from null.
-
-### Operations and Semantics
-
-#### Operations with arguments
-
-* We should be able to (optionally) specify the number of arguments that are required by an operation.
-* We'll have to take these into account when doing the arity checks.	
-
-#### Error conditions
-
-`Grammar.prototype.createSemantics(parentSemantics)` creates a new instance of `Semantics` that inherits all of the operations and attributes from `parentSemantics`. **Note that all of the inherited operations and attributes that haven't been `extend`ed explicitly must go through the *arity* and *superfluous method* checks the first time any of the operations or attributes of the "child" `Semantics` is used.**
-
-`Semantics.prototype.extend(name, dict)` should throw an error if:
-
-* The operation / attribute was created with the optional second argument `{ exhaustive: true}` and it's not exhaustive, i.e., it doesn't have a case for each type of CST. (Think about this more, it may get annoying b/c of little lexical rules that shouldn't generate a value anyway.)
-* The receiver did not inherit an operation or attribute called `name` from its parent.
-* The operation or attribute called `name` has already been `extend`ed in the receiver.
-* One or more of `dict`'s methods are *superfluous* (i.e., do not correspond to a rule in the receiver's grammar) or have the wrong arity.
-
-`Semantics.prototype.addOperation(name, dict)`,
-`Semantics.prototype.addSynthesizedAttribute(name, dict)`, and
-`Semantics.prototype.addInheritedAttribute(name, dict)` should throw an error if:
-
-* The receiver already has an operation or attribute with the same name.
-* One or more of `dict`'s methods are *superfluous* (i.e., do not correspond to a rule in the receiver's grammar) or have the wrong arity.
-* It should also be an error to try to declare a new operation or attribute whose name is `node` (see below).
 
 ### Instantiating grammars from script elements
 
@@ -109,6 +85,25 @@ if (ans.isFailure()) {
 * Remove `Node.prototype.value()`
 * Rename `ohm.actions.getValue` to `getPrimitiveValue`
 
+### Error conditions for Semantics
+
+`Grammar.prototype.createSemantics(parentSemantics)` creates a new instance of `Semantics` that inherits all of the operations and attributes from `parentSemantics`. **Note that all of the inherited operations and attributes that haven't been `extend`ed explicitly must go through the *arity* and *superfluous method* checks the first time any of the operations or attributes of the "child" `Semantics` is used.**
+
+`Semantics.prototype.extend(name, dict)` should throw an error if:
+
+* (I've thought about this, and decided it wouldn't be very nice to use. So let's not worry about it for now. -- Alex) The operation / attribute was created with the optional second argument `{ exhaustive: true}` and it's not exhaustive, i.e., it doesn't have a case for each type of CST.
+* The receiver did not inherit an operation or attribute called `name` from its parent.
+* The operation or attribute called `name` has already been `extend`ed in the receiver.
+
+`Semantics.prototype.addOperation(name, dict)`,
+`Semantics.prototype.addSynthesizedAttribute(name, dict)`, and
+`Semantics.prototype.addInheritedAttribute(name, dict)` should throw an error if:
+
+* The receiver already has an operation or attribute with the same name.
+* One or more of `dict`'s methods are *superfluous* (i.e., do not correspond to a rule in the receiver's grammar) or have the wrong arity.
+* It should also be an error to try to declare a new operation or attribute whose name is `node` (see below).
+
+
 ### Inheriting from Operations and Attributes
 
 To enable extensibilty, operations and attributes should always belong to an instance of `Semantics`. Here's how this will work:
@@ -183,7 +178,17 @@ Maybe now the stuff that's done in `src/bootstrap.js` can be done for any gramma
 
 ## Things that should be included in future releases
 
-* Support for inherited attributes. A couple of changes: (i) get rid of the `$idx` syntax and use arrays instead, and (ii) get rid of the attribute's `set` method, just use return values instead. E.g.,
+### Operations and Semantics
+
+#### Operations with arguments
+
+* We should be able to (optionally) specify the number of arguments that are required by an operation.
+* We'll have to take these into account when doing the arity checks.	
+
+#### Inherited attributes
+
+* Add support for inherited attributes.
+* A couple of changes: (i) get rid of the `$idx` syntax and use arrays instead, and (ii) get rid of the attribute's `set` method, just use return values instead. E.g.,
 
 ```
 var s = g.semantics().addInheritedAttribute('foo', {
@@ -204,6 +209,8 @@ var s = g.semantics().addInheritedAttribute('foo', {
 var node = g.match(...);
 s(node).foo();
 ```
+
+### Other stuff
 
 * A refactoring that makes `parent` a synthesized attribute (right now it's just a semantic action that side-effects the CST nodes)
 
