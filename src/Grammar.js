@@ -22,7 +22,13 @@ function Grammar(name, superGrammar, ruleDict, optDefaultStartRule) {
   this.name = name;
   this.superGrammar = superGrammar;
   this.ruleDict = ruleDict;
-  this.defaultStartRule = optDefaultStartRule;
+  if (optDefaultStartRule) {
+    if (!(optDefaultStartRule in ruleDict)) {
+      throw new Error("Invalid start rule: '" + optDefaultStartRule +
+                      "' is not a rule in grammar '" + name + "'");
+    }
+    this.defaultStartRule = optDefaultStartRule;
+  }
   this.constructors = this.ctors = this.createConstructors();
 }
 

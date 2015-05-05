@@ -1924,5 +1924,14 @@ test('default start rule', function(t) {
   t.equal(g.defaultStartRule, 'blah', 'rule defined after overriding becomes start rule');
   t.ok(g.match('3'));
 
+  // Test passing the default start rule as an argument to the Grammar constructor.
+  var root = Grammar.BuiltInRules;
+  t.throws(function() {
+    new Grammar('G', root, {}, 'nonexistentRule');
+  }, /Invalid start rule/, 'throws when start rule is not in the grammar');
+  t.ok(new Grammar('G', root, {aRule:null}, 'aRule'), 'works when rule is in the ruleDict');
+  var ruleDict = Object.create(root.ruleDict);
+  t.ok(new Grammar('G', root, ruleDict, 'digit'), 'works when rule is in the supergrammar');
+
   t.end();
 });
