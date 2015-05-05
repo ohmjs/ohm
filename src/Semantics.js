@@ -222,6 +222,9 @@ Semantics.prototype.extendOperation = function(name, actionDict) {
     throw new Error(
         "Cannot extend operation '" + name + "': did not inherit an operation with that name");
   }
+  if (Object.prototype.hasOwnProperty.call(this.operations, name)) {
+    throw new Error("Cannot extend operation '" + name + "' again");
+  }
 
   // Create a new operation whose actionDict delegates to the super operation's actionDict,
   // and which has all the keys from `inheritedActionDict`.
@@ -257,6 +260,10 @@ Semantics.prototype.extendAttribute = function(name, actionDict) {
     throw new Error(
         "Cannot extend attribute '" + name + "': did not inherit an attribute with that name");
   }
+  if (Object.prototype.hasOwnProperty.call(this.attributes, name)) {
+    throw new Error("Cannot extend attribute '" + name + "' again");
+  }
+
 
   // Create a new attribute whose actionDict delegates to the super attribute's actionDict,
   // and which has all the keys from `inheritedActionDict`.

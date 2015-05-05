@@ -340,6 +340,9 @@ test('extending semantics', function(t) {
   t.equal(s2(m).value(), 3);
   t.equal(s2(m).valueTimesTwo(), 6);
 
+  // Make sure you can't extend the same operation again
+  t.throws(function() { s2.extendOperation('value', {}); }, /again/);
+
   // Make sure attributes behave as expected
 
   s = ns.G.semantics().
@@ -371,6 +374,9 @@ test('extending semantics', function(t) {
   m = ns.G2.match('drei', 'three');
   t.equal(s2(m).value, 3);
   t.equal(s2(m).valueTimesTwo, 6);
+
+  // Make sure you can't extend the same attribute again
+  t.throws(function() { s2.extendAttribute('value', {}); }, /again/);
 
   // Make sure an attribute that was inherited from a parent semantics
   // does not share its memo table with its parent.
