@@ -149,10 +149,8 @@ Grammar.prototype = {
         problems.push(
             "'" + k + "' must be a function in an action dictionary for '" + this.name + "'");
       } else if (tempIgnoreSpecialActions && isSpecialAction(k)) {
-        /* eslint-disable no-empty */
         // Don't check the arities of these guys
         // TODO: Remove this case when everything is converted to new-style semantics.
-        /* eslint-enable no-empty */
       } else {
         var actual = v.length;
         var expected = this._topDownActionArity(k);
