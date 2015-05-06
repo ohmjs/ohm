@@ -22,7 +22,8 @@
     "options": "src/main.js --debug --standalone ohm -o dist/ohm.js"
   },
   "scripts": {
-    "bootstrap": "npm test --silent && npm run unsafe-bootstrap && (npm test --silent || (echo 'Bootstrap failed.'; mv -v dist/ohm-grammar.js.old dist/ohm-grammar.js; mv -v dist/built-in-rules.js.old dist/built-in-rules.js))",
+    "prebootstrap": "npm test --silent && cp dist/ohm-grammar.js{,.old} && cp dist/built-in-rules.js{,.old}",
+    "bootstrap": "npm run unsafe-bootstrap && npm test --silent || (echo 'Bootstrap failed.'; mv -v dist/ohm-grammar.js{.old,}; mv -v dist/built-in-rules.js{.old,})",
     "build": "npm run build-debug && uglifyjs dist/ohm.js > dist/ohm.min.js",
     "build-debug": "browserify $npm_package_browserify_options",
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
@@ -31,7 +32,7 @@
     "test-watch": "watchy -w src,test,demo -- npm test",
     "postinstall": "bin/dev-setup.sh",
     "prepublish": "npm run lint && npm run build && npm run bootstrap",
-    "unsafe-bootstrap": "cp dist/ohm-grammar.js dist/ohm-grammar.js.old; cp dist/built-in-rules.js dist/built-in-rules.js.old; node src/ohm-cmd.js src/ohm-grammar.ohm > dist/ohm-grammar.js.new && mv -f dist/ohm-grammar.js.new dist/ohm-grammar.js && node src/ohm-cmd.js src/built-in-rules.ohm > dist/built-in-rules.js.new && mv -f dist/built-in-rules.js.new dist/built-in-rules.js",
+    "unsafe-bootstrap": "src/ohm-cmd.js src/ohm-grammar.ohm > dist/ohm-grammar.js.new && mv -f dist/ohm-grammar.js{.new,} && src/ohm-cmd.js src/built-in-rules.ohm > dist/built-in-rules.js.new && mv -f dist/built-in-rules.js{.new,}",
     "visualizer": "npm run watch & bin/ohm-visualizer",
     "watch": "watchify $npm_package_browserify_options -v"
   },
