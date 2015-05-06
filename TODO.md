@@ -2,8 +2,6 @@
 
 ## Alpha Release Blockers
 
-* Check for superfluous properties in action dicts, i.e., properties that do not correspond to a rule in the grammar. This will have to be done in methods like `addOperation`, `addAttribute`, `extendOperation`, and `extendAttribute`.
-
 * Improve error message when calling makeGrammar() on a source that has multiple grammars defined.
   * Use Grammars and not Grammar as the start rule, and throw an error if != 1 grammar is produced.
 
@@ -65,6 +63,8 @@ if (ans.isFailure()) {
 * Write it.
 
 ## Things we've already done
+
+* Check for superfluous properties in action dicts, i.e., properties that do not correspond to a rule in the grammar. This will have to be done in methods like `addOperation`, `addAttribute`, `extendOperation`, and `extendAttribute`.
 
 ### Start rules
 
