@@ -241,7 +241,10 @@ test('semantic action arity checks', function(t) {
   function ignore2(a, b) {}
 
   t.ok(makeOperation(g, {}), 'empty actions with empty grammar');
-  t.ok(makeOperation(g, {foo: null}), 'unrecognized action names are ignored');
+  t.throws(
+      function() { makeOperation(g, {foo: null}); },
+      /not a valid semantic action/,
+      'superfluous action dictionary keys are not allowed');
 
   t.throws(function() { makeOperation(g, {_many: ignore0}); }, /arity/, '_many');
   t.ok(makeOperation(g, {_many: ignore1}), '_many works with one arg');

@@ -106,7 +106,7 @@ Grammar.prototype = {
   },
 
   semanticAction: function(actionDict) {
-    this._assertTopDownActionNamesAndAritiesMatch(actionDict, true);
+    this._checkTopDownActionDict('semantic action', '???', actionDict, true);
     return attributes.makeSemanticAction(this, actionDict);
   },
 
@@ -115,7 +115,7 @@ Grammar.prototype = {
   },
 
   synthesizedAttribute: function(actionDict) {
-    this._assertTopDownActionNamesAndAritiesMatch(actionDict, true);
+    this._checkTopDownActionDict('synthesized attribute', '???', actionDict, true);
     return attributes.makeSynthesizedAttribute(this, actionDict);
   },
 
@@ -131,39 +131,45 @@ Grammar.prototype = {
     return attributes.makeInheritedAttribute(this, actionDict);
   },
 
-  // Check that every semantic action in `actionDict` has the correct arity.
-  // If not, throw an exception.
+  // Check that every key in `actionDict` corresponds to a semantic action, and that it maps to
+  // a function of the correct arity. If not, throw an exception.
   // TODO: Get rid of `tempIgnoreSpecialActions` once everything is moved over
   // to new-style semantic actions.
-  _assertTopDownActionNamesAndAritiesMatch: function(actionDict, tempIgnoreSpecialActions) {
-    var self = this;
-    var ruleDict = this.ruleDict;
-    var keysToCheck = [];
-    for (var k in ruleDict) {
-      keysToCheck.push(k);
+  _checkTopDownActionDict: function(what, name, actionDict, tempIgnoreSpecialActions) {
+    function isSpecialAction(name) {
+      return name === '_many' || name === '_terminal' || name === '_default';
     }
-    // TODO: Remove this check when everything is converted to new-style semantics.
-    if (!tempIgnoreSpecialActions) {
-      keysToCheck.push('_many', '_terminal', '_default');
-    }
-    var ok = keysToCheck.every(function(k) {
-      if (k in actionDict) {
-        var actual = actionDict[k].length;
-        var expected = self._topDownActionArity(k);
+
+    var problems = [];
+    for (var k in actionDict) {
+      var v = actionDict[k];
+      if (!isSpecialAction(k) && !(k in this.ruleDict)) {
+        problems.push("'" + k + "' is not a valid semantic action for '" + this.name + "'");
+      } else if (typeof v !== 'function') {
+        problems.push(
+            "'" + k + "' must be a function in an action dictionary for '" + this.name + "'");
+      } else if (tempIgnoreSpecialActions && isSpecialAction(k)) {
+        /* eslint-disable no-empty */
+        // Don't check the arities of these guys
+        // TODO: Remove this case when everything is converted to new-style semantics.
+        /* eslint-enable no-empty */
+      } else {
+        var actual = v.length;
+        var expected = this._topDownActionArity(k);
         if (actual !== expected) {
-          /* eslint-disable no-console */
-          console.log("Semantic action '" + k + "' has the wrong arity: " +
-                      'expected ' + expected + ', got ' + actual);
-          /* eslint-enable no-console */
-          return false;
+          problems.push(
+              "Semantic action '" + k + "' has the wrong arity: " +
+              'expected ' + expected + ', got ' + actual);
         }
       }
-      return true;
-    });
-    if (!ok) {
-      throw new Error(
-        'one or more semantic actions have the wrong arity -- see console for details'
-      );
+    }
+    if (problems.length > 0) {
+      var prettyProblems = problems.map(function(problem) { return '- ' + problem; });
+      var error = new Error(
+          "Found errors in the action dictionary of the '" + name + "' " + what + ':\n' +
+          prettyProblems.join('\n'));
+      error.problems = problems;
+      throw error;
     }
   },
 

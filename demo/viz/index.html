@@ -289,9 +289,6 @@ var viz = ohm.ohmGrammar.semanticAction({
   keyword_false:            function(_) {
                               add('prim', 'false');
                             },
-  sChar:                    function(_) {},
-  Props_rec:                function(p, _, ps) {},
-  Props_base:               function(p) {},
   Prop:                     function(n, _, p) {},
   _many:                    ohm.actions.makeArray,
   _terminal:                ohm.actions.getPrimitiveValue

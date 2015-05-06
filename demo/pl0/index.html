@@ -177,12 +177,6 @@ var codeOut = g.synthesizedAttribute({
   PriExpr_neg: function(_, e) {
     return [].concat([codeOut(e)]).concat(['neg']);
   },
-  PriExpr_ident: function(e) {
-    return codeOut(e);
-  },
-  PriExpr_number: function(e) {
-    return codeOut(e);
-  },
   ident: function(_, _) {
     return ['pushReg(' + symbolTableOut(this).indexOf(this.interval.contents) + ')'];
   },
