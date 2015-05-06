@@ -121,18 +121,18 @@ test('left recursion', function(t) {
   t.end();
 });
 
-test('work with complex parameters', function(t) {
+test('complex parameters', function(t) {
   var g = util.makeGrammar(
       'G {\n' +
-      '  two<x> = x x\n' +
       '  start = two<~"5" digit>\n' +
+      '  two<x> = x x\n' +
       '}');
   var value = g.semanticAction({
     two: function(x, y) { return [value(x), value(y)]; },
     _terminal: ohm.actions.getPrimitiveValue,
     _default: ohm.actions.passThrough
   });
-  t.deepEqual(value(g.match('42', 'start')), ['4', '2']);
-  t.notOk(g.match('45', 'start'));
+  t.deepEqual(value(g.match('42')), ['4', '2']);
+  t.equal(g.match('45').failed(), true);
   t.end();
 });

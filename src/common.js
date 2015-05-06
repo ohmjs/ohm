@@ -98,6 +98,52 @@ exports.isSyntactic = function(ruleName) {
   return ('A' <= firstChar && firstChar <= 'Z');
 };
 
+// Return an object with the line and column information for the given
+// offset in `str`.
+exports.getLineAndColumn = function(str, offset) {
+  var lineNum = 1;
+  var colNum = 1;
+
+  var currOffset = 0;
+  var lineStartOffset = 0;
+
+  while (currOffset < offset) {
+    var c = str.charAt(currOffset++);
+    if (c === '\n') {
+      lineNum++;
+      colNum = 1;
+      lineStartOffset = currOffset;
+    } else if (c !== '\r') {
+      colNum++;
+    }
+  }
+
+  var lineEndOffset = str.indexOf('\n', lineStartOffset);
+  if (lineEndOffset < 0) {
+    lineEndOffset = str.length;
+  }
+
+  return {
+    lineNum: lineNum,
+    colNum: colNum,
+    line: str.substr(lineStartOffset, lineEndOffset - lineStartOffset)
+  };
+};
+
+// Return a nicely-formatted string describing the line and column for the
+// given offset in `str`.
+exports.getLineAndColumnMessage = function(str, offset) {
+  var lineAndCol = exports.getLineAndColumn(str, offset);
+  var sb = new exports.StringBuffer();
+  sb.append('Line ' + lineAndCol.lineNum + ', col ' + lineAndCol.colNum + ':\n');
+  sb.append('> | ' + lineAndCol.line + '\n    ');
+  for (var idx = 1; idx < lineAndCol.colNum; idx++) {
+    sb.append(' ');
+  }
+  sb.append('^\n');
+  return sb.contents();
+};
+
 // StringBuffer
 
 exports.StringBuffer = function() {

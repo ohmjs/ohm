@@ -19,69 +19,18 @@ function makeCustomError(name, initFn) {
   // console.log'ed in Chrome.
   var E = function OhmError() {
     initFn.apply(this, arguments);
-    var e = new Error();
-    Object.defineProperty(this, 'stack', {get: function() { return e.stack; }});
+    // `captureStackTrace` is V8-only.
+    if (typeof Error.captureStackTrace === 'function') {
+      Error.captureStackTrace(this, this.constructor);
+    } else {
+      var e = new Error();
+      Object.defineProperty(this, 'stack', {get: function() { return e.stack; }});
+    }
   };
   E.prototype = Object.create(OhmError.prototype);
   E.prototype.constructor = E;
   E.prototype.name = name;
   return E;
-}
-
-function toErrorInfo(pos, str) {
-  var lineNum = 1;
-  var colNum = 1;
-
-  var currPos = 0;
-  var lineStartPos = 0;
-
-  while (currPos < pos) {
-    var c = str.charAt(currPos++);
-    if (c === '\n') {
-      lineNum++;
-      colNum = 1;
-      lineStartPos = currPos;
-    } else if (c !== '\r') {
-      colNum++;
-    }
-  }
-
-  var lineEndPos = str.indexOf('\n', lineStartPos);
-  if (lineEndPos < 0) {
-    lineEndPos = str.length;
-  }
-
-  return {
-    lineNum: lineNum,
-    colNum: colNum,
-    line: str.substr(lineStartPos, lineEndPos - lineStartPos)
-  };
-}
-
-// Create a verbose error message for an error that occurred during matching.
-function getMatchErrorMessage(pos, source, detail) {
-  var errorInfo = toErrorInfo(pos, source);
-  var sb = new common.StringBuffer();
-  sb.append('Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ':\n');
-  sb.append('> | ' + errorInfo.line + '\n    ');
-  for (var idx = 1; idx < errorInfo.colNum; idx++) {
-    sb.append(' ');
-  }
-  sb.append('^\n');
-  sb.append(detail);
-  return sb.contents();
-}
-
-// Create a short error message for an error that occurred during matching.
-function getShortMatchErrorMessage(pos, source, detail) {
-  var errorInfo = toErrorInfo(pos, source);
-  return 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ': ' + detail;
-}
-
-function describeRuleStacks(stacks) {
-  return stacks.map(function(s) {
-    return s.map(function(app) { return app.ruleName; }).join(' > ');
-  }).join('; ');
 }
 
 // ----------------- runtime errors -----------------
@@ -91,7 +40,7 @@ var InfiniteLoop = makeCustomError(
   function(state, expr) {
     var inputStream = state.inputStream;
     var detail = "Infinite loop detected when matching '" + expr.toDisplayString() + "'";
-    this.message = getMatchErrorMessage(inputStream.pos, inputStream.source, detail);
+    this.message = common.getLineAndColumnMessage(inputStream.source, inputStream.pos) + detail;
   }
 );
 
@@ -105,6 +54,19 @@ var IntervalSourcesDontMatch = makeCustomError(
 );
 
 // ----------------- errors about grammars -----------------
+
+// Grammar syntax error
+
+var GrammarSyntaxError = makeCustomError(
+    'ohm.error.SyntaxError',
+    function(matchFailure) {
+      Object.defineProperty(this, 'message', {
+        get: function() {
+          return 'failed to parse grammar\n' + matchFailure.message;
+        }
+      });
+    }
+);
 
 // Undeclared grammar
 
@@ -205,8 +167,6 @@ var InvalidParameter = makeCustomError(
 
 // ----------------- arity -----------------
 
-// Inconsistent arity
-
 var InconsistentArity = makeCustomError(
     'ohm.error.InconsistentArity',
     function(ruleName, expected, actual) {
@@ -221,8 +181,6 @@ var InconsistentArity = makeCustomError(
 
 // ----------------- properties -----------------
 
-// Duplicate property names
-
 var DuplicatePropertyNames = makeCustomError(
     'ohm.error.DuplicatePropertyNames',
     function(duplicates) {
@@ -231,92 +189,7 @@ var DuplicatePropertyNames = makeCustomError(
     }
 );
 
-// ----------------- syntax -----------------
-
-var MatchFailure = makeCustomError(
-    'ohm.error.MatchFailure',
-    function(state) {
-      this.state = state;
-      common.defineLazyProperty(this, 'exprsAndStacks', function() {
-        return this.state.getFailures();
-      });
-      // `displayString` is intended to be shown to users of a grammar.
-      common.defineLazyProperty(this, 'displayString', function() {
-        return this.getMessage();
-      });
-      // `message` is intended to be shown to developers of a grammar.
-      common.defineLazyProperty(this, 'message', function() {
-        return this.getMessage(true);
-      });
-    }
-);
-
-MatchFailure.prototype.getShortMessage = function() {
-  if (typeof this.state.inputStream.source !== 'string') {
-    return 'match failed at position ' + this.getPos();
-  }
-  var detail = 'expected' + this.getExpectedText();
-  return getShortMatchErrorMessage(this.getPos(), this.state.inputStream.source, detail);
-};
-
-MatchFailure.prototype.getMessage = function(optIncludeRules) {
-  var source = this.state.inputStream.source;
-  if (typeof source !== 'string') {
-    return 'match failed at position ' + this.getPos();
-  }
-
-  var detail = 'Expected ' + this.getExpectedText(!!optIncludeRules);
-  return getMatchErrorMessage(this.getPos(), source, detail);
-};
-
-MatchFailure.prototype.getPos = function() {
-  return this.state.getFailuresPos();
-};
-
-// Return a string summarizing the expected contents of the input stream when
-// the match failure occurred. If `includeRules` is true, the string will
-// include information about the rule stacks for each terminal or rule.
-MatchFailure.prototype.getExpectedText = function(includeRules) {
-  var sb = new common.StringBuffer();
-  var expected = includeRules ? this.getExpectedWithRules() : this.getExpected();
-  for (var idx = 0; idx < expected.length; idx++) {
-    if (idx > 0) {
-      if (idx === expected.length - 1) {
-        sb.append((expected.length > 2 ? ', or ' : ' or '));
-      } else {
-        sb.append(', ');
-      }
-    }
-    sb.append(expected[idx]);
-  }
-  return sb.contents();
-};
-
-// Return an Array of unique strings representing the terminals or rules that
-// were expected to be matched.
-MatchFailure.prototype.getExpected = function() {
-  var expected = {};
-  var ruleDict = this.state.grammar.ruleDict;
-  this.exprsAndStacks.forEach(function(obj) {
-    expected[obj.expr.toExpected(ruleDict)] = true;
-  });
-  return Object.keys(expected);
-};
-
-// Return an Array of strings representing the terminals or rules that were
-// expected to be matched, as well as information about each rule stack.
-MatchFailure.prototype.getExpectedWithRules = function() {
-  var ans = [];
-  var ruleDict = this.state.grammar.ruleDict;
-  this.exprsAndStacks.forEach(function(obj) {
-    ans.push(obj.expr.toExpected(ruleDict) + ' (' + describeRuleStacks(obj.stacks) + ')');
-  }, this);
-  return ans;
-};
-
 // ----------------- constructors -----------------
-
-// Type error
 
 var InvalidConstructorCall = makeCustomError(
     'ohm.error.InvalidConstructorCall',
@@ -344,7 +217,7 @@ module.exports = {
   IntervalSourcesDontMatch: IntervalSourcesDontMatch,
   InvalidConstructorCall: InvalidConstructorCall,
   InvalidParameter: InvalidParameter,
-  MatchFailure: MatchFailure,
+  SyntaxError: GrammarSyntaxError,
   UndeclaredGrammar: UndeclaredGrammar,
   UndeclaredRule: UndeclaredRule,
   WrongNumberOfParameters: WrongNumberOfParameters

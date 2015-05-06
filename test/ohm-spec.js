@@ -251,7 +251,7 @@ test('primitive patterns', function(t) {
     test('match in string stream', function(t) {
       it('recognition', function() {
         t.ok(m.match('5', '_'));
-        t.equal(m.match('', '_'), false);
+        t.equal(m.match('', '_').failed(), true);
       });
 
       it('semantic actions', function() {
@@ -293,59 +293,59 @@ test('primitive patterns', function(t) {
     ]);
 
     it('recognition', function() {
-      t.ok(m.match(5, 'five'));
-      t.equal(m.match(2, 'five'), false);
-      t.equal(m.match('a', 'five'), false);
-      t.equal(m.match('5', 'five'), false);
-      t.equal(m.match('true', 'five'), false);
-      t.equal(m.match(true, 'five'), false);
-      t.equal(m.match('false', 'five'), false);
-      t.equal(m.match(false, 'five'), false);
-      t.equal(m.match(null, 'five'), false);
-      t.equal(m.match(undefined, 'five'), false);
+      t.ok(m.match(5));
+      t.ok(m.match(2).failed());
+      t.equal(m.match('a').failed(), true);
+      t.equal(m.match('5').failed(), true);
+      t.equal(m.match('true').failed(), true);
+      t.equal(m.match(true).failed(), true);
+      t.equal(m.match('false').failed(), true);
+      t.equal(m.match(false).failed(), true);
+      t.equal(m.match(null).failed(), true);
+      t.equal(m.match(undefined).failed(), true);
 
-      t.equal(m.match(5, '_true'), false);
-      t.equal(m.match(2, '_true'), false);
-      t.equal(m.match('a', '_true'), false);
-      t.equal(m.match('5', '_true'), false);
-      t.equal(m.match('true', '_true'), false);
+      t.equal(m.match(5, '_true').failed(), true);
+      t.equal(m.match(2, '_true').failed(), true);
+      t.equal(m.match('a', '_true').failed(), true);
+      t.equal(m.match('5', '_true').failed(), true);
+      t.equal(m.match('true', '_true').failed(), true);
       t.ok(m.match(true, '_true'));
-      t.equal(m.match('false', '_true'), false);
-      t.equal(m.match(false, '_true'), false);
-      t.equal(m.match(null, '_true'), false);
-      t.equal(m.match(undefined, '_true'), false);
+      t.equal(m.match('false', '_true').failed(), true);
+      t.equal(m.match(false, '_true').failed(), true);
+      t.equal(m.match(null, '_true').failed(), true);
+      t.equal(m.match(undefined, '_true').failed(), true);
 
-      t.equal(m.match(5, '_false'), false);
-      t.equal(m.match(2, '_false'), false);
-      t.equal(m.match('a', '_false'), false);
-      t.equal(m.match('5', '_false'), false);
-      t.equal(m.match('true', '_false'), false);
-      t.equal(m.match(true, '_false'), false);
-      t.equal(m.match('false', '_false'), false);
+      t.equal(m.match(5, '_false').failed(), true);
+      t.equal(m.match(2, '_false').failed(), true);
+      t.equal(m.match('a', '_false').failed(), true);
+      t.equal(m.match('5', '_false').failed(), true);
+      t.equal(m.match('true', '_false').failed(), true);
+      t.equal(m.match(true, '_false').failed(), true);
+      t.equal(m.match('false', '_false').failed(), true);
       t.ok(m.match(false, '_false'));
-      t.equal(m.match(null, '_false'), false);
-      t.equal(m.match(undefined, '_false'), false);
+      t.equal(m.match(null, '_false').failed(), true);
+      t.equal(m.match(undefined, '_false').failed(), true);
 
-      t.equal(m.match(5, '_null'), false);
-      t.equal(m.match(2, '_null'), false);
-      t.equal(m.match('a', '_null'), false);
-      t.equal(m.match('5', '_null'), false);
-      t.equal(m.match('true', '_null'), false);
-      t.equal(m.match(true, '_null'), false);
-      t.equal(m.match('false', '_null'), false);
-      t.equal(m.match(false, '_null'), false);
+      t.equal(m.match(5, '_null').failed(), true);
+      t.equal(m.match(2, '_null').failed(), true);
+      t.equal(m.match('a', '_null').failed(), true);
+      t.equal(m.match('5', '_null').failed(), true);
+      t.equal(m.match('true', '_null').failed(), true);
+      t.equal(m.match(true, '_null').failed(), true);
+      t.equal(m.match('false', '_null').failed(), true);
+      t.equal(m.match(false, '_null').failed(), true);
       t.ok(m.match(null, '_null'));
-      t.equal(m.match(undefined, '_null'), false);
+      t.equal(m.match(undefined, '_null').failed(), true);
 
-      t.equal(m.match(5, '_undefined'), false);
-      t.equal(m.match(2, '_undefined'), false);
-      t.equal(m.match('a', '_undefined'), false);
-      t.equal(m.match('5', '_undefined'), false);
-      t.equal(m.match('true', '_undefined'), false);
-      t.equal(m.match(true, '_undefined'), false);
-      t.equal(m.match('false', '_undefined'), false);
-      t.equal(m.match(false, '_undefined'), false);
-      t.equal(m.match(null, '_undefined'), false);
+      t.equal(m.match(5, '_undefined').failed(), true);
+      t.equal(m.match(2, '_undefined').failed(), true);
+      t.equal(m.match('a', '_undefined').failed(), true);
+      t.equal(m.match('5', '_undefined').failed(), true);
+      t.equal(m.match('true', '_undefined').failed(), true);
+      t.equal(m.match(true, '_undefined').failed(), true);
+      t.equal(m.match('false', '_undefined').failed(), true);
+      t.equal(m.match(false, '_undefined').failed(), true);
+      t.equal(m.match(null, '_undefined').failed(), true);
       t.ok(m.match(undefined, '_undefined'));
     });
 
@@ -358,7 +358,7 @@ test('primitive patterns', function(t) {
         _undefined: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
       };
-      t.equal(m.synthesizedAttribute(dict)(m.match(5, 'five')), 5);
+      t.equal(m.synthesizedAttribute(dict)(m.match(5)), 5);
       t.equal(m.synthesizedAttribute(dict)(m.match(true, '_true')), true);
       t.equal(m.synthesizedAttribute(dict)(m.match(false, '_false')), false);
       t.equal(m.synthesizedAttribute(dict)(m.match(null, '_null')), null);
@@ -378,14 +378,14 @@ test('primitive patterns', function(t) {
       '}'
     ]);
     it('recognition', function() {
-      t.equal(m.match('!', 'five'), false);
-      t.equal(m.match('5', 'five'), false);
-      t.equal(m.match('2', 'five'), false);
-      t.equal(m.match('', 'five'), false);
-      t.equal(m.match('true', '_true'), false);
-      t.equal(m.match('false', '_false'), false);
-      t.equal(m.match('null', '_null'), false);
-      t.equal(m.match('undefined', '_undefined'), false);
+      t.equal(m.match('!').failed(), true);
+      t.equal(m.match('5').failed(), true);
+      t.equal(m.match('2').failed(), true);
+      t.equal(m.match('').failed(), true);
+      t.equal(m.match('true', '_true').failed(), true);
+      t.equal(m.match('false', '_false').failed(), true);
+      t.equal(m.match('null', '_null').failed(), true);
+      t.equal(m.match('undefined', '_undefined').failed(), true);
     });
     t.end();
   });
@@ -398,9 +398,9 @@ test('char', function(t) {
   test('direct match, no stream', function(t) {
     it('recognition', function() {
       t.ok(m.match('!'));
-      t.equal(m.match('!a'), false);
-      t.equal(m.match(5), false);
-      t.equal(m.match(''), false);
+      t.equal(m.match('!a').failed(), true);
+      t.equal(m.match(5).failed(), true);
+      t.equal(m.match('').failed(), true);
     });
 
     it('semantic actions', function() {
@@ -417,8 +417,8 @@ test('char', function(t) {
   test('match in string stream', function(t) {
     it('recognition', function() {
       t.ok(m.match('!'));
-      t.equal(m.match('a'), false);
-      t.equal(m.match(''), false);
+      t.equal(m.match('a').failed(), true);
+      t.equal(m.match('').failed(), true);
     });
 
     it('semantic actions', function() {
@@ -440,9 +440,9 @@ test('string', function(t) {
   test('direct match, no stream', function(t) {
     it('recognition', function() {
       t.ok(m.match('foo'));
-      t.equal(m.match('foo1'), false);
-      t.equal(m.match('bar'), false);
-      t.equal(m.match(null), false);
+      t.equal(m.match('foo1').failed(), true);
+      t.equal(m.match('bar').failed(), true);
+      t.equal(m.match(null).failed(), true);
     });
 
     it('semantic actions', function() {
@@ -459,8 +459,8 @@ test('string', function(t) {
   test('match in string stream', function(t) {
     it('recognition', function() {
       t.ok(m.match('foo'));
-      t.equal(m.match('foo1'), false);
-      t.equal(m.match('bar'), false);
+      t.equal(m.match('foo1').failed(), true);
+      t.equal(m.match('bar').failed(), true);
     });
 
     it('semantic actions', function() {
@@ -481,11 +481,11 @@ test('regexp', function(t) {
 
   test('direct match, no stream', function(t) {
     it('recognition', function() {
-      t.equal(m.match(/[0-9]/), false);
+      t.equal(m.match(/[0-9]/).failed(), true);
       t.ok(m.match('4'));
-      t.equal(m.match(4), false);
-      t.equal(m.match('a'), false);
-      t.equal(m.match('a4'), false);
+      t.equal(m.match(4).failed(), true);
+      t.equal(m.match('a').failed(), true);
+      t.equal(m.match('a4').failed(), true);
     });
     t.end();
   });
@@ -493,8 +493,8 @@ test('regexp', function(t) {
   test('match in string stream', function(t) {
     it('recognition', function() {
       t.ok(m.match('4'));
-      t.equal(m.match('a'), false);
-      t.equal(m.match('a4'), false);
+      t.equal(m.match('a').failed(), true);
+      t.equal(m.match('a4').failed(), true);
     });
 
     it('semantic actions', function() {
@@ -510,13 +510,13 @@ test('regexp', function(t) {
 
   test('unicode match in string stream', function(t) {
     it('recognition', function() {
-      t.equal(m.match('4', 'myLetter'), false);
+      t.equal(m.match('4', 'myLetter').failed(), true);
       t.ok(m.match('a', 'myLetter'));
-      t.equal(m.match('a4', 'myLetter'), false);
+      t.equal(m.match('a4', 'myLetter').failed(), true);
       t.ok(m.match('\u03e6', 'myLetter'));
-      t.equal(m.match('\u226a', 'myLetter'), false);
+      t.equal(m.match('\u226a', 'myLetter').failed(), true);
       t.ok(m.match('\n', 'myLF'));
-      t.equal(m.match('x', 'myLF'), false);
+      t.equal(m.match('x', 'myLF').failed(), true);
     });
 
     it('semantic actions', function() {
@@ -536,10 +536,10 @@ test('alt', function(t) {
   var m = util.makeGrammar('M { altTest = "a" | "b" }');
 
   it('recognition', function() {
-    t.equal(m.match(''), false);
+    t.equal(m.match('').failed(), true);
     t.ok(m.match('a'));
     t.ok(m.match('b'));
-    t.equal(m.match('ab'), false);
+    t.equal(m.match('ab').failed(), true);
   });
 
   it('semantic actions', function() {
@@ -558,10 +558,10 @@ test('seq', function(t) {
     var m = util.makeGrammar('M { start = "a" "bc" "z" }');
 
     it('recognition', function() {
-      t.equal(m.match('a'), false);
-      t.equal(m.match('bc'), false);
+      t.equal(m.match('a').failed(), true);
+      t.equal(m.match('bc').failed(), true);
       t.ok(m.match('abcz'));
-      t.equal(m.match('abbz'), false);
+      t.equal(m.match('abbz').failed(), true);
     });
 
     it('semantic actions', function() {
@@ -579,10 +579,10 @@ test('seq', function(t) {
     var m = util.makeGrammar('M { start = "a" "bc" "z" }');
 
     it('recognition', function() {
-      t.equal(m.match('a'), false);
-      t.equal(m.match('bc'), false);
+      t.equal(m.match('a').failed(), true);
+      t.equal(m.match('bc').failed(), true);
       t.ok(m.match('abcz'));
-      t.equal(m.match('abbz'), false);
+      t.equal(m.match('abbz').failed(), true);
     });
 
     it('semantic actions', function() {
@@ -600,10 +600,10 @@ test('seq', function(t) {
     var m = util.makeGrammar('M { start = "a" "bc" "z" }');
 
     it('recognition', function() {
-      t.equal(m.match('a'), false);
-      t.equal(m.match('bc'), false);
+      t.equal(m.match('a').failed(), true);
+      t.equal(m.match('bc').failed(), true);
       t.ok(m.match('abcz'));
-      t.equal(m.match('abbz'), false);
+      t.equal(m.match('abbz').failed(), true);
     });
 
     it('semantic actions', function() {
@@ -623,8 +623,8 @@ test('alts and seqs together', function(t) {
   var m = util.makeGrammar('M { start = "a" "b" "c" | "1" "2" "3" }');
 
   it('recognition', function() {
-    t.equal(m.match('ab'), false);
-    t.equal(m.match('12'), false);
+    t.equal(m.match('ab').failed(), true);
+    t.equal(m.match('12').failed(), true);
     t.ok(m.match('abc'));
     t.ok(m.match('123'));
   });
@@ -655,12 +655,12 @@ test('many', function(t) {
   ]);
 
   it('recognition', function() {
-    t.equal(m.match('1234a', 'number'), false);
+    t.equal(m.match('1234a', 'number').failed(), true);
     t.ok(m.match('1234', 'number'));
     t.ok(m.match('5', 'number'));
-    t.equal(m.match('', 'number'), false);
+    t.equal(m.match('', 'number').failed(), true);
 
-    t.equal(m.match('1234a', 'digits'), false);
+    t.equal(m.match('1234a', 'digits').failed(), true);
     t.ok(m.match('1234', 'digits'));
     t.ok(m.match('5', 'digits'));
     t.ok(m.match('', 'digits'));
@@ -705,7 +705,7 @@ test('opt', function(t) {
   it('recognition', function() {
     t.ok(m.match('drwarth'));
     t.ok(m.match('warth'));
-    t.equal(m.match('mrwarth'), false);
+    t.equal(m.match('mrwarth').failed(), true);
   });
 
   it('semantic actions', function() {
@@ -725,7 +725,7 @@ test('not', function(t) {
 
   it('recognition', function() {
     t.ok(m.match('yello world'));
-    t.equal(m.match('hello world'), false);
+    t.equal(m.match('hello world').failed(), true);
   });
 
   it('semantic actions', function() {
@@ -744,7 +744,7 @@ test('lookahead', function(t) {
 
   it('recognition', function() {
     t.ok(m.match('hello world'));
-    t.equal(m.match('hell! world'), false);
+    t.equal(m.match('hell! world').failed(), true);
   });
 
   it('semantic actions', function() {
@@ -763,13 +763,13 @@ test('arr', function(t) {
 
   it('recognition', function() {
     t.ok(m.match(['abc', ['d', 'ef'], 'g']));
-    t.equal(m.match(['abc', ['def'], 'g']), false);
-    t.equal(m.match(['abc', 'def', 'g']), false);
-    t.equal(m.match(['abc', ['d', 'ef', 'oops'], 'g']), false);
-    t.equal(m.match(['abc', ['d', 'ef'], 'gh']), false);
-    t.equal(m.match(['abc', [5], 'g']), false);
-    t.equal(m.match(['abc', [], 'g']), false);
-    t.equal(m.match(['abc', 5, 'g']), false);
+    t.equal(m.match(['abc', ['def'], 'g']).failed(), true);
+    t.equal(m.match(['abc', 'def', 'g']).failed(), true);
+    t.equal(m.match(['abc', ['d', 'ef', 'oops'], 'g']).failed(), true);
+    t.equal(m.match(['abc', ['d', 'ef'], 'gh']).failed(), true);
+    t.equal(m.match(['abc', [5], 'g']).failed(), true);
+    t.equal(m.match(['abc', [], 'g']).failed(), true);
+    t.equal(m.match(['abc', 5, 'g']).failed(), true);
   });
 
   it('semantic actions', function() {
@@ -796,12 +796,12 @@ test('obj', function(t) {
 
   test('strict', function(t) {
     it('recognition', function() {
-      t.equal(m.match('foo', 'strict'), false);
-      t.equal(m.match([], 'strict'), false);
-      t.equal(m.match({y: 2}, 'strict'), false);
+      t.equal(m.match('foo', 'strict').failed(), true);
+      t.equal(m.match([], 'strict').failed(), true);
+      t.equal(m.match({y: 2}, 'strict').failed(), true);
       t.ok(m.match({x: 1, y: 2}, 'strict'));
       t.ok(m.match({y: 2, x: 1}, 'strict'));
-      t.equal(m.match({x: 1, y: 2, z: 3}, 'strict'), false);
+      t.equal(m.match({x: 1, y: 2, z: 3}, 'strict').failed(), true);
     });
 
     it('semantic actions', function() {
@@ -821,9 +821,9 @@ test('obj', function(t) {
 
   test('lenient', function(t) {
     it('recognition', function() {
-      t.equal(m.match('foo', 'lenient'), false);
-      t.equal(m.match([], 'lenient'), false);
-      t.equal(m.match({y: 2}, 'lenient'), false);
+      t.equal(m.match('foo', 'lenient').failed(), true);
+      t.equal(m.match([], 'lenient').failed(), true);
+      t.equal(m.match({y: 2}, 'lenient').failed(), true);
       t.ok(m.match({x: 1, y: 2}, 'lenient'));
       t.ok(m.match({y: 2, x: 1}, 'lenient'));
       t.ok(m.match({x: 1, y: 2, z: 3}, 'lenient'));
@@ -846,9 +846,9 @@ test('obj', function(t) {
 
   test('string props', function(t) {
     it('recognition', function() {
-      t.equal(m.match({foos: 'fo', bar: 'bar'}, 'withStringProps'), false);
+      t.equal(m.match({foos: 'fo', bar: 'bar'}, 'withStringProps').failed(), true);
       t.ok(m.match({foos: 'foo', bar: 'bar'}, 'withStringProps'));
-      t.equal(m.match({foos: 'foofo', bar: 'bar'}, 'withStringProps'), false);
+      t.equal(m.match({foos: 'foofo', bar: 'bar'}, 'withStringProps').failed(), true);
       t.ok(m.match({foos: 'foofoo', bar: 'bar'}, 'withStringProps'));
       t.ok(m.match({foos: 'foofoofoofoofoofoo', bar: 'bar'}, 'withStringProps'));
     });
@@ -890,9 +890,9 @@ test('apply', function(t) {
     ]);
 
     it('recognition', function() {
-      t.equal(m.match('fo'), false);
+      t.equal(m.match('fo').failed(), true);
       t.ok(m.match('foo'));
-      t.equal(m.match('fooo'), false);
+      t.equal(m.match('fooo').failed(), true);
     });
 
     it('semantic actions', function() {
@@ -919,8 +919,8 @@ test('apply', function(t) {
     ]);
 
     it('recognition', function() {
-      t.equal(m.match('', 'number'), false);
-      t.equal(m.match('a', 'number'), false);
+      t.equal(m.match('', 'number').failed(), true);
+      t.equal(m.match('a', 'number').failed(), true);
       t.ok(m.match('1', 'number'));
       t.ok(m.match('123', 'number'));
       t.ok(m.match('7276218173', 'number'));
@@ -1009,8 +1009,8 @@ test('apply', function(t) {
     ]);
 
     it('recognition', function() {
-      t.equal(m.match('', 'number'), false);
-      t.equal(m.match('a', 'number'), false);
+      t.equal(m.match('', 'number').failed(), true);
+      t.equal(m.match('a', 'number').failed(), true);
       t.ok(m.match('1', 'number'));
       t.ok(m.match('123', 'number'));
       t.ok(m.match('7276218173', 'number'));
@@ -1050,7 +1050,7 @@ test('apply', function(t) {
     it('recognition', function() {
       t.ok(m.match('1'));
       t.ok(m.match('2+3'));
-      t.equal(m.match('4+'), false);
+      t.equal(m.match('4+').failed(), true);
       t.ok(m.match('5*6'));
       t.ok(m.match('7*8+9+0'));
     });
@@ -1164,7 +1164,7 @@ test('apply', function(t) {
     it('recognition', function() {
       t.ok(m.match('1'));
       t.ok(m.match('2+3'));
-      t.equal(m.match('4+'), false);
+      t.equal(m.match('4+').failed(), true);
       t.ok(m.match('5*6'));
       t.ok(m.match('7+8*9+0'));
     });
@@ -1307,12 +1307,12 @@ test('inheritance', function(t) {
 
     it('recognition', function() {
       t.ok(ns.G1.match('1234', 'number'));
-      t.equal(ns.G1.match('hello', 'number'), false);
-      t.equal(ns.G1.match('h3llo', 'number'), false);
+      t.equal(ns.G1.match('hello', 'number').failed(), true);
+      t.equal(ns.G1.match('h3llo', 'number').failed(), true);
 
-      t.equal(ns.G2.match('1234', 'number'), false);
+      t.equal(ns.G2.match('1234', 'number').failed(), true);
       t.ok(ns.G2.match('hello', 'number'));
-      t.equal(ns.G2.match('h3llo', 'number'), false);
+      t.equal(ns.G2.match('h3llo', 'number').failed(), true);
     });
 
     it('semantic actions', function() {
@@ -1338,7 +1338,7 @@ test('inheritance', function(t) {
 
     it('recognition', function() {
       t.ok(ns.G1.match('aaabbb'));
-      t.equal(ns.G1.match('111222'), false);
+      t.equal(ns.G1.match('111222').failed(), true);
 
       t.ok(ns.G2.match('aaabbb'));
       t.ok(ns.G2.match('111222'));
@@ -1534,8 +1534,8 @@ test('lexical vs. syntactic rules', function(t) {
   it("lexical rules don't skip spaces implicitly", function() {
     var g = util.makeGrammar('G { start = "foo" "bar" }');
     t.ok(g.match('foobar', 'start'));
-    t.equal(g.match('foo bar', 'start'), false);
-    t.equal(g.match(' foo bar   ', 'start'), false);
+    t.equal(g.match('foo bar', 'start').failed(), true);
+    t.equal(g.match(' foo bar   ', 'start').failed(), true);
   });
 
   it('syntactic rules skip spaces implicitly', function() {

@@ -199,12 +199,12 @@ hideError();
 
 input.oninput = function() {
   hideError();
-  try {
-    var cst = g.match(this.value, 'Start', true);
-    show('value', codeOut(cst).join('\n'));
-  } catch (e) {
+  var m = g.match(this.value);
+  if (m.failed()) {
     this.className = 'error';
-    showError(e);
+    showError(m);
+  } else {
+    show('value', codeOut(m).join('\n'));
   }
 };
 
@@ -212,14 +212,14 @@ function hideError() {
   errorDiv.className = errorDiv.className = 'hidden';
 }
 
-function showError(e) {
+function showError(failure) {
   setTimeout(function() {
     // Position the error bubble to line up with the offending input
-    spaces.innerHTML = repeat(' ', e.getPos());
+    spaces.innerHTML = repeat(' ', failure.getPos());
 
     // Set up the details, i.e., what input was expected at that position
     removeChildren(errorDetails);
-    e.getExpected().forEach(function(text, idx, expected) {
+    failure.getExpected().forEach(function(text, idx, expected) {
       var element = createExpectedElement(text);
       if (idx > 0) {
         errorDetails.appendChild(makeElement('light', idx === expected.length - 1 ? ', or ' : ', '));

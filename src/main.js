@@ -265,15 +265,11 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
 }
 
 function compileAndLoad(source, whatItIs, namespace) {
-  try {
-    var node = ohmGrammar.match(source, whatItIs, true);
-    return buildGrammar(node, namespace);
-  } catch (e) {
-    if (e instanceof errors.MatchFailure) {
-      console.log('\n' + e.getMessage());  // eslint-disable-line no-console
-    }
-    throw e;
+  var m = ohmGrammar.match(source, whatItIs);
+  if (m.failed()) {
+    throw new errors.SyntaxError(m);
   }
+  return buildGrammar(m, namespace);
 }
 
 // Return the contents of a script element, fetching it via XHR if necessary.

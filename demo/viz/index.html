@@ -324,14 +324,14 @@ var source = document.getElementById('source');
 var vizDiv = document.getElementById('vizDiv');
 
 source.oninput = function() {
-  try {
-    var cst = ohm.ohmGrammar.match(source.value, 'Grammar', true);
-    removeChildren(vizDiv);
-    viz(cst);
-    source.className = undefined;
-  } catch (e) {
-    console.log(e);
+  var m = ohm.ohmGrammar.match(source.value, 'Grammar');
+  if (m.failed()) {
+    console.log(m.message);
     source.className = 'error';
+  } else {
+    removeChildren(vizDiv);
+    viz(m);
+    source.className = undefined;
   }
 };
 

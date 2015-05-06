@@ -164,25 +164,23 @@ hideError();
 
 input.oninput = function() {
   hideError();
-  try {
-    var cst = g.match(this.value, 'Expr', true);
-    this.className = undefined;
-    show('value', interpret(cst));
-    show('lisp', toLisp(cst));
-    show('tree', toTree(cst));
-    show('twoD', toTwoD(cst));
-  } catch (e) {
+  var m = g.match(this.value);
+  if (m.failed()) {
     if (this.value.length === 0) {
       show('value', '');
       show('lisp', '');
       show('tree', '');
       show('twoD', '');
-    } else if (e instanceof ohm.error.MatchFailure) {
-      this.className = 'error';
-      showError(e);
     } else {
-      throw e;
+      this.className = 'error';
+      showError(m);
     }
+  } else {
+    this.className = undefined;
+    show('value', interpret(m));
+    show('lisp', toLisp(m));
+    show('tree', toTree(m));
+    show('twoD', toTwoD(m));
   }
 };
 
@@ -190,14 +188,14 @@ function hideError() {
   errorDiv.className = errorDiv.className = 'hidden';
 }
 
-function showError(e) {
+function showError(failure) {
   setTimeout(function() {
     // Position the error bubble to line up with the offending input
-    spaces.innerHTML = repeat(' ', e.getPos());
+    spaces.innerHTML = repeat(' ', failure.getPos());
 
     // Set up the details, i.e., what input was expected at that position
     removeChildren(errorDetails);
-    e.getExpected().forEach(function(text, idx, expected) {
+    failure.getExpected().forEach(function(text, idx, expected) {
       var element = createExpectedElement(text);
       if (idx > 0) {
         errorDetails.appendChild(makeElement('light', idx === expected.length - 1 ? ', or ' : ', '));

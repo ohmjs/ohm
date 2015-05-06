@@ -16,74 +16,41 @@ var util = require('./util');
 
 test('non-string input', function(t) {
   var g = ohm.makeGrammar('G { start = 5 }');
-  t.plan(2);
-  try {
-    g.match(42, 'start', true);
-  } catch (e) {
-    t.equal(e.displayString, 'match failed at position 0');
-    t.equal(e.getPos(), 0);
-  }
+
+  var e = g.match(42);
+  t.equal(e.failed(), true);
+  t.equal(e.message, 'match failed at position 0');
+  t.equal(e.getPos(), 0);
+  t.end();
 });
 
 test('basic match failure', function(t) {
   var g = ohm.makeGrammar('G { start = "a" "b" "c" "d" }');
 
-  t.plan(4);
-  try {
-    g.match('ab', 'start', true);
-  } catch (e) {
-    t.equal(e.displayString, [
-      'Line 1, col 3:',
-      '> | ab',
-      '      ^',
-      "Expected 'c'"].join('\n'));
-    t.equal(e.getPos(), 2);
-  }
+  var e = g.match('ab');
+  t.equal(e.failed(), true);
+  t.equal(e.message, [
+    'Line 1, col 3:',
+    '> | ab',
+    '      ^',
+    "Expected 'c'"].join('\n'));
+  t.equal(e.getPos(), 2);
 
-  try {
-    g.match('abcde', 'start', true);
-  } catch (e) {
-    t.equal(e.displayString, [
-      'Line 1, col 5:',
-      '> | abcde',
-      '        ^',
-      'Expected end of input'].join('\n'));
-    t.equal(e.getPos(), 4);
-  }
-});
-
-test('displayString vs. message', function(t) {
-  var g = util.makeGrammar([
-    'G {',
-    '  start = one | two | three',
-    '  one = "1" | "eins"',
-    '  two = "2"',
-    '  three = one',
-    '}'
-  ]);
-  try {
-    g.match('x', 'start', true);
-  } catch (e) {
-    t.equal(e.displayString, [
-        'Line 1, col 1:',
-        '> | x',
-        '    ^',
-        "Expected '1', 'eins', or '2'"].join('\n'));
-    // `message` contains more information, because it should only be seen by
-    // grammar developers.
-    t.equal(e.message, [
-        'Line 1, col 1:',
-        '> | x',
-        '    ^',
-        "Expected '1' (start > one), 'eins' (start > one), or '2' (start > two)"].join('\n'));
-  }
+  e = g.match('abcde');
+  t.equal(e.failed(), true);
+  t.equal(e.message, [
+    'Line 1, col 5:',
+    '> | abcde',
+    '        ^',
+    'Expected end of input'].join('\n'));
+  t.equal(e.getPos(), 4);
   t.end();
 });
 
 test('infinite loops', function(t) {
   function matchExpr(expr, input) {
     var g = util.makeGrammar('G { start = ' + expr + '}');
-    return g.match(input, 'start');
+    return g.match(input);
   }
   t.throws(function() { matchExpr('("a"*)*', 'aaa'); }, errors.InfiniteLoop);
   t.throws(function() { matchExpr('("a"?)*', 'aaa'); }, errors.InfiniteLoop);

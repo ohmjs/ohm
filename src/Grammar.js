@@ -6,6 +6,7 @@
 
 var InputStream = require('./InputStream');
 var Interval = require('./Interval');
+var MatchFailure = require('./MatchFailure');
 var Semantics = require('./Semantics');
 var State = require('./State');
 var attributes = require('./attributes');
@@ -17,6 +18,9 @@ var pexprs = require('./pexprs');
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
+
+function returnFalse() { return false; }
+function returnTrue() { return true; }
 
 function Grammar(name, superGrammar, ruleDict, optDefaultStartRule) {
   this.name = name;
@@ -60,8 +64,7 @@ Grammar.prototype = {
     return constructors;
   },
 
-  match: function(obj, optStartRule, optThrowOnFail) {
-    var throwOnFail = !!optThrowOnFail;
+  match: function(obj, optStartRule) {
     var startRule = optStartRule || this.defaultStartRule;
     if (!startRule) {
       throw new Error('missing start rule argument -- the grammar has no default start rule.');
@@ -69,12 +72,12 @@ Grammar.prototype = {
     var state = this._match(obj, startRule, false);
     var succeeded = state.bindings.length === 1;
     if (succeeded) {
-      return state.bindings[0];  // Return the root CSTNode.
-    } else if (throwOnFail) {
-      throw new errors.MatchFailure(state);
-    } else {
-      return false;
+      var cst = state.bindings[0];
+      cst.succeeded = returnTrue;
+      cst.failed = returnFalse;
+      return cst;
     }
+    return new MatchFailure(state);
   },
 
   _match: function(obj, startRule, tracingEnabled) {
