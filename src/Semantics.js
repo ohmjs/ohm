@@ -268,7 +268,6 @@ Semantics.prototype.extendAttribute = function(name, actionDict) {
     throw new Error("Cannot extend attribute '" + name + "' again");
   }
 
-
   // Create a new attribute whose actionDict delegates to the super attribute's actionDict,
   // and which has all the keys from `inheritedActionDict`.
   var inheritedActionDict = this.attributes[name].actionDict;

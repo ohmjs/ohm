@@ -35,6 +35,9 @@
     // Allow things like `while(true)`.
     "no-constant-condition": 0,
 
+    // Allow empty block statements.
+    "no-empty": 0,
+
     // Don't allow require() statements to include the '.js' extension.
     "no-extension-in-require/main": 2,
 
