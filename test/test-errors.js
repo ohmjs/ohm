@@ -24,11 +24,12 @@ test('non-string input', function(t) {
   t.end();
 });
 
-test('basic match failure', function(t) {
+test('match failure', function(t) {
   var g = ohm.makeGrammar('G { start = "a" "b" "c" "d" }');
 
   var e = g.match('ab');
   t.equal(e.failed(), true);
+  t.equal(e.succeeded(), false);
   t.equal(e.message, [
     'Line 1, col 3:',
     '> | ab',
@@ -39,6 +40,7 @@ test('basic match failure', function(t) {
 
   e = g.match('abcde');
   t.equal(e.failed(), true);
+  t.equal(e.succeeded(), false);
   t.equal(e.message, [
     'Line 1, col 5:',
     '> | abcde',
@@ -46,6 +48,16 @@ test('basic match failure', function(t) {
     'Expected end of input'].join('\n'));
   t.equal(e.shortMessage, 'Line 1, col 5: expected end of input');
   t.equal(e.getPos(), 4);
+
+  var m = g.match('abcd');
+  t.equal(m.succeeded(), true, 'succeeded() is true for root CST node');
+  t.equal(m.failed(), false, 'failed() is false for root CST node');
+
+  function hasMethods(c) {
+    return typeof c.succeeded === 'function' || c.failed === 'function';
+  }
+  t.notOk(m.children.some(hasMethods), 'other nodes do not have succeeded() or failed() methods');
+
   t.end();
 });
 
