@@ -2,6 +2,10 @@
 
 ## Alpha Release Blockers
 
+* Applying a `Semantics` to a `Failure` should throw an exception.
+ 
+### Unit Tests
+
 * Improve error message when calling makeGrammar() on a source that has multiple grammars defined.
   * Use Grammars and not Grammar as the start rule, and throw an error if != 1 grammar is produced.
 
@@ -40,15 +44,11 @@ respectively.
 var s = g.semantics()...;
 var ans = g.match('...');
 if (ans.isFailure()) {
-	// deal with it
+  // deal with it
 } else {
-	s(ans).doIt();
+  s(ans).doIt();
 }
 ```
-
-* Applying a `Semantics` to a `Failure` should throw an exception.
- 
-### Unit Tests
 
 * The unit tests are a mess right now. They were pretty good early on, but the language has been changed a lot since then. **We should spend a couple of days cleaning up the unit tests.** E.g.,
     * Now that we have CSTs, there's no reason to check acceptance and semantic actions separately for each kind of `PExpr`. We should just compare the result of `Grammar.prototype.match` with the expected CST. (We may have to do some work to get `Node.equals(anotherNode)` to work.)
