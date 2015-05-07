@@ -64,6 +64,12 @@ Grammar.prototype = {
     return constructors;
   },
 
+  // Return true if the grammar is a built-in grammar, otherwise false.
+  // NOTE: This might give an unexpected result if called before BuiltInRules is defined!
+  isBuiltIn: function() {
+    return this === Grammar.ProtoBuiltInRules || this === Grammar.BuiltInRules;
+  },
+
   match: function(obj, optStartRule) {
     var startRule = optStartRule || this.defaultStartRule;
     if (!startRule) {
@@ -197,8 +203,7 @@ Grammar.prototype = {
   },
 
   toRecipe: function(optVarName) {
-    if (this === Grammar.ProtoBuiltInRules ||
-        this === Grammar.BuiltInRules) {
+    if (this.isBuiltIn()) {
       throw new Error(
           'Why would anyone want to generate a recipe for the ' + this.name + ' grammar?!?!');
     }
@@ -209,9 +214,9 @@ Grammar.prototype = {
     }
     sb.append('(function() {\n');
 
+    // Include the supergrammar in the recipe if it's not a built-in grammar.
     var superGrammarDecl = '';
-    if (this.superGrammar !== Grammar.ProtoBuiltInRules &&
-        this.superGrammar !== Grammar.BuiltInRules) {
+    if (!this.superGrammar.isBuiltIn()) {
       sb.append(this.superGrammar.toRecipe('buildSuperGrammar'));
       superGrammarDecl = '    .withSuperGrammar(buildSuperGrammar.call(this))\n';
     }

@@ -1889,8 +1889,8 @@ test('default start rule', function(t) {
   var g = util.makeGrammar('G {}');
   t.equal(g.defaultStartRule, undefined, 'undefined for an empty grammar');
   t.throws(function() { g.match('a'); }, /Missing start rule/, 'match throws with no start rule');
-  // TODO: Fix this.
-  // t.equal(Grammar.BuiltInRules.defaultStartRule, undefined, 'undefined for the BuiltInRules');
+  t.equal(Grammar.ProtoBuiltInRules.defaultStartRule, undefined, 'undefined for ProtoBuiltInRules');
+  t.equal(Grammar.BuiltInRules.defaultStartRule, undefined, 'undefined for BuiltInRules');
 
   var g2 = util.makeGrammar('G2 <: G {}', {G:g});
   t.equal(g2.defaultStartRule, undefined, 'undefined for a subgrammar too');

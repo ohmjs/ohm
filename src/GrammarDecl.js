@@ -85,7 +85,7 @@ GrammarDecl.prototype.withSuperGrammar = function(superGrammar) {
   this.ruleDict = Object.create(superGrammar.ruleDict);
 
   // Grammars with an explicit supergrammar inherit a default start rule.
-  if (superGrammar !== Grammar.ProtoBuiltInRules && superGrammar !== Grammar.BuiltInRules) {
+  if (!superGrammar.isBuiltIn()) {
     this.defaultStartRule = superGrammar.defaultStartRule;
   }
   return this;
@@ -129,7 +129,7 @@ GrammarDecl.prototype.define = function(name, formals, body, optDescr) {
   if (duplicateParameterNames.length > 0) {
     throw new errors.DuplicateParameterNames(name, duplicateParameterNames);
   }
-  if (!this.defaultStartRule) {
+  if (!this.defaultStartRule && this.superGrammar !== Grammar.ProtoBuiltInRules) {
     this.defaultStartRule = name;
   }
   return this.install(name, formals, optDescr, body);
