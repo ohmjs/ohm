@@ -1,4 +1,4 @@
-/* global XMLHttpRequest */
+/* global document, XMLHttpRequest */
 
 'use strict';
 
@@ -8,12 +8,11 @@
 
 var Builder = require('./Builder');
 var Grammar = require('./Grammar');
+var Namespace = require('./Namespace');
 var Semantics = require('./Semantics');
+var UnicodeCategories = require('../third_party/unicode').UnicodeCategories;
 var common = require('./common');
 var errors = require('./errors');
-
-var Namespace = require('./Namespace');
-var UnicodeCategories = require('../third_party/unicode').UnicodeCategories;
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -23,6 +22,12 @@ var UnicodeCategories = require('../third_party/unicode').UnicodeCategories;
 // bottom of this file because loading the grammar requires Ohm itself.
 var ohmGrammar;
 
+// An object which makes it possible to stub out the document API for testing.
+var documentInterface = {
+  querySelector: function(sel) { return document.querySelector(sel); },
+  querySelectorAll: function(sel) { return document.querySelectorAll(sel); }
+};
+
 // Check if `obj` is a DOM element.
 function isElement(obj) {
   return !!(obj && obj.nodeType === 1);
@@ -30,6 +35,16 @@ function isElement(obj) {
 
 function isUndefined(obj) {
   return obj === void 0;
+}
+
+var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
+
+function isArrayLike(obj) {
+  if (obj == null) {
+    return false;
+  }
+  var length = obj.length;
+  return typeof length === 'number' && length >= 0 && length <= MAX_ARRAY_INDEX;
 }
 
 // TODO: just use the jQuery thing
@@ -276,10 +291,10 @@ function compileAndLoad(source, namespace) {
 // Return the contents of a script element, fetching it via XHR if necessary.
 function getScriptElementContents(el) {
   if (!isElement(el)) {
-    throw new TypeError('Expected a DOM Node');
+    throw new TypeError('Expected a DOM Node, got ' + el);
   }
   if (el.type !== 'text/ohm-js') {
-    throw new Error("script tag's type attribute must be text/ohm-js");
+    throw new Error('Expected a script tag with type="text/ohm-js", got ' + el);
   }
   return el.getAttribute('src') ? load(el.getAttribute('src')) : el.innerHTML;
 }
@@ -300,17 +315,45 @@ function grammar(stringOrNode, optNamespace) {
   return ns[grammarNames[0]];  // Return the one and only grammar.
 }
 
-function grammars(stringOrNodeList, optNamespace) {
+function grammars(source, optNamespace) {
   var ns = Namespace.extend(Namespace.asNamespace(optNamespace));
-  if (stringOrNodeList == null || isUndefined(stringOrNodeList.length)) {
-    throw new TypeError('Expected string or NodeList as first argument, got ' + stringOrNodeList);
+  if (typeof source !== 'string') {
+    throw new TypeError('Expected string as first argument, got ' + source);
   }
-  if (typeof stringOrNodeList === 'string') {
-    compileAndLoad(stringOrNodeList, ns);
-  } else {
-    for (var i = 0; i < stringOrNodeList.length; ++i) {
-      compileAndLoad(getScriptElementContents(stringOrNodeList[i]), ns);
+  compileAndLoad(source, ns);
+  return ns;
+}
+
+function grammarFromScriptElement(optNode) {
+  var node = optNode;
+  if (isUndefined(node)) {
+    var nodeList = documentInterface.querySelectorAll('script[type="text/ohm-js"]');
+    if (nodeList.length !== 1) {
+      throw new Error(
+          'Expected exactly one script tag with type="text/ohm-js", found ' + nodeList.length);
     }
+    node = nodeList[0];
+  }
+  return grammar(getScriptElementContents(node));
+}
+
+function grammarsFromScriptElements(optNodeOrNodeList) {
+  // Simple case: the argument is a DOM node.
+  if (isElement(optNodeOrNodeList)) {
+    return grammars(optNodeOrNodeList);
+  }
+  // Otherwise, it must be either undefined or a NodeList.
+  var nodeList = optNodeOrNodeList;
+  if (isUndefined(nodeList)) {
+    // Find all script elements with type="text/ohm-js".
+    nodeList = documentInterface.querySelectorAll('script[type="text/ohm-js"]');
+  } else if (typeof nodeList === 'string' || (!isElement(nodeList) && !isArrayLike(nodeList))) {
+    throw new TypeError('Expected a Node, NodeList, or Array, but got ' + nodeList);
+  }
+  var ns = Namespace.createNamespace();
+  for (var i = 0; i < nodeList.length; ++i) {
+    // Copy the new grammars into `ns` to keep the namespace flat.
+    common.extend(ns, grammars(getScriptElementContents(nodeList[i]), ns));
   }
   return ns;
 }
@@ -331,6 +374,8 @@ module.exports = {
   error: errors,
   grammar: grammar,
   grammars: grammars,
+  grammarFromScriptElement: grammarFromScriptElement,
+  grammarsFromScriptElements: grammarsFromScriptElements,
   makeRecipe: makeRecipe
 };
 
@@ -338,4 +383,5 @@ module.exports = {
 Grammar.BuiltInRules = require('../dist/built-in-rules');
 ohmGrammar = require('../dist/ohm-grammar');
 module.exports._buildGrammar = buildGrammar;
+module.exports._setDocumentInterfaceForTesting = function(doc) { documentInterface = doc; };
 module.exports.ohmGrammar = ohmGrammar;

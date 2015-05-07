@@ -1663,9 +1663,8 @@ test('loading from script elements', function(t) {
                                '}']);
   var script2 = fakeScriptTag(['M { x = "xx" }',
                                'N { y = "yy" }']);
-
-  var ns1 = ohm.grammars([script1]);
-  var ns2 = ohm.grammars([script2]);
+  var ns1 = ohm.grammarsFromScriptElements([script1]);
+  var ns2 = ohm.grammarsFromScriptElements([script2]);
   t.equal(ns1.M, undefined, 'M is undefined in ns1');
   t.ok(ns1.O, 'O is defined in ns1');
   t.ok(ns1.O.match('1234', 'number'), 'O can match');
@@ -1675,7 +1674,7 @@ test('loading from script elements', function(t) {
   t.equal(ns2.O, undefined, 'O is not defined in ns2');
   t.ok(ns2.M.match('xx', 'x'), 'M can match');
 
-  var g1 = ohm.grammar(script1);
+  var g1 = ohm.grammarFromScriptElement(script1);
   t.ok(g1.match('1234', 'number'), 'loading a single grammar works');
 
   t.end();

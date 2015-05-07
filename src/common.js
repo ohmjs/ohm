@@ -10,8 +10,6 @@ var extend = require('util-extend');
 // Private Stuff
 // --------------------------------------------------------------------
 
-var thisModule = exports;
-
 // Helpers
 
 function pad(numberAsString, len) {
@@ -200,10 +198,10 @@ exports.toStringLiteral = function(str) {
   var hasSingleQuotes = str.indexOf("'") >= 0;
   var hasDoubleQuotes = str.indexOf('"') >= 0;
   var delim = hasSingleQuotes && !hasDoubleQuotes ? '"' : "'";
-  var sb = new thisModule.StringBuffer();
+  var sb = new exports.StringBuffer();
   sb.append(delim);
   for (var idx = 0; idx < str.length; idx++) {
-    sb.append(thisModule.escapeChar(str[idx], delim));
+    sb.append(exports.escapeChar(str[idx], delim));
   }
   sb.append(delim);
   return sb.contents();
