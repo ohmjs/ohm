@@ -69,6 +69,7 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
       if (grammarName in namespace) {
         throw new errors.DuplicateGrammarDeclaration(grammarName, namespace);
       }
+      g.definitionInterval = this.node.interval.trimmed();
       namespace[grammarName] = g;
       return g;
     },
@@ -264,8 +265,8 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
   return helpers(tree).visit();
 }
 
-function compileAndLoad(source, whatItIs, namespace) {
-  var m = ohmGrammar.match(source, whatItIs);
+function compileAndLoad(source, namespace) {
+  var m = ohmGrammar.match(source, 'Grammars');
   if (m.failed()) {
     throw new errors.SyntaxError(m);
   }
@@ -284,30 +285,34 @@ function getScriptElementContents(el) {
 }
 
 function makeGrammar(stringOrNode, optNamespace) {
-  var ns = Namespace.extend(Namespace.asNamespace(optNamespace));
   var source = typeof stringOrNode === 'string' ? stringOrNode : [stringOrNode];
-  make(source, 'Grammar', ns);
-  return ns[Object.keys(ns)[0]];  // Return the one and only property.
+  var ns = makeGrammars(source, optNamespace);
+
+  // Ensure that the source contained no more than one grammar definition.
+  var grammarNames = Object.keys(ns);
+  if (grammarNames.length > 1) {
+    var secondGrammar = ns[grammarNames[1]];
+    var interval = secondGrammar.definitionInterval;
+    throw new Error(
+        common.getLineAndColumnMessage(interval.inputStream.source, interval.startIdx) +
+        'Found more than one grammar definition -- use ohm.makeGrammars() instead.');
+  }
+  return ns[grammarNames[0]];  // Return the one and only grammar.
 }
 
 function makeGrammars(stringOrNodeList, optNamespace) {
   var ns = Namespace.extend(Namespace.asNamespace(optNamespace));
-  make(stringOrNodeList, 'Grammars', ns);
-  return ns;
-}
-
-// Makes a grammar or grammars from `source`, which may be a string, NodeList, or Array.
-function make(source, whatItIs, namespace) {
-  if (!source || isUndefined(source.length)) {
-    throw new TypeError('Expected string or NodeList as first argument');
+  if (stringOrNodeList == null || isUndefined(stringOrNodeList.length)) {
+    throw new TypeError('Expected string or NodeList as first argument, got ' + stringOrNodeList);
   }
-  if (typeof source === 'string') {
-    compileAndLoad(source, whatItIs, namespace);
+  if (typeof stringOrNodeList === 'string') {
+    compileAndLoad(stringOrNodeList, ns);
   } else {
-    for (var i = 0; i < source.length; ++i) {
-      compileAndLoad(getScriptElementContents(source[i]), whatItIs, namespace);
+    for (var i = 0; i < stringOrNodeList.length; ++i) {
+      compileAndLoad(getScriptElementContents(stringOrNodeList[i]), ns);
     }
   }
+  return ns;
 }
 
 function makeRecipe(recipeFn) {

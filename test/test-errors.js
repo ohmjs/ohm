@@ -83,3 +83,20 @@ test('infinite loops', function(t) {
   }
   t.end();
 });
+
+test('errors from makeGrammar()', function(t) {
+  var source = 'G {}\nG2 <: G {}';
+  try {
+    ohm.makeGrammar(source);
+    t.fail('Expected an exception to be thrown');
+  } catch (e) {
+    t.equal(e.message, [
+      'Line 2, col 1:',
+      '> | G2 <: G {}',
+      '    ^',
+      'Found more than one grammar definition -- use ohm.makeGrammars() instead.'].join('\n'));
+  }
+  // TODO: Shouldn't we really be throwing an error here?
+  t.equal(ohm.makeGrammar(''), undefined, 'empty grammar definition returns undefined');
+  t.end();
+});
