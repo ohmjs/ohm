@@ -1,4 +1,4 @@
-BuiltInRules <: null {
+BuiltInRules {
 
   alnum  (an alpha-numeric character)
     = /[0-9a-zA-Z]/

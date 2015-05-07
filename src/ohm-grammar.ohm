@@ -7,7 +7,7 @@ Ohm {
     = ident SuperGrammar? "{" Rule* "}"
 
   SuperGrammar
-    = "<:" (ident | "null" ~nameRest)
+    = "<:" ident
 
   Rule
     = ident Formals? ruleDescr? "="  Alt  -- define

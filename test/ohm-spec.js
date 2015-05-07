@@ -1888,13 +1888,13 @@ test('pexpr.toString()', function(t) {
 test('default start rule', function(t) {
   var g = util.makeGrammar('G {}');
   t.equal(g.defaultStartRule, undefined, 'undefined for an empty grammar');
-  t.throws(function() { g.match('a'); }, /missing start rule/, 'match throws with no start rule');
+  t.throws(function() { g.match('a'); }, /Missing start rule/, 'match throws with no start rule');
   // TODO: Fix this.
   // t.equal(Grammar.BuiltInRules.defaultStartRule, undefined, 'undefined for the BuiltInRules');
 
   var g2 = util.makeGrammar('G2 <: G {}', {G:g});
   t.equal(g2.defaultStartRule, undefined, 'undefined for a subgrammar too');
-  t.throws(function() { g2.match('a'); }, /missing start rule/, 'match throws with no start rule');
+  t.throws(function() { g2.match('a'); }, /Missing start rule/, 'match throws with no start rule');
 
   var ns = util.makeGrammars(['G { foo = "a" }', 'G2 <: G {}']);
   t.equal(ns.G.defaultStartRule, 'foo', 'only rule becomes default start rule');
@@ -1912,14 +1912,14 @@ test('default start rule', function(t) {
 
   g = util.makeGrammar('G { digit += _ }');
   t.equal(g.defaultStartRule, undefined, "extending alone doesn't set the start rule");
-  t.throws(function() { g.match('a'); }, /missing start rule/, 'match throws with no start rule');
+  t.throws(function() { g.match('a'); }, /Missing start rule/, 'match throws with no start rule');
   g = util.makeGrammar(['G { digit += _', 'blah = "3" }'])
   t.equal(g.defaultStartRule, 'blah', 'rule defined after extending becomes start rule');
   t.ok(g.match('3'));
 
   g = util.makeGrammar('G { digit := _ }');
   t.equal(g.defaultStartRule, undefined, "overriding alone doesn't set the start rule");
-  t.throws(function() { g.match('a'); }, /missing start rule/, 'match throws with no start rule');
+  t.throws(function() { g.match('a'); }, /Missing start rule/, 'match throws with no start rule');
   g = util.makeGrammar(['G { digit := _', 'blah = "3" }'])
   t.equal(g.defaultStartRule, 'blah', 'rule defined after overriding becomes start rule');
   t.ok(g.match('3'));

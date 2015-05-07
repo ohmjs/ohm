@@ -34,12 +34,14 @@ function onOhmError(doFn, onErrorFn) {
 }
 
 GrammarDecl.prototype.ensureSuperGrammar = function() {
-  if (this.superGrammar === null) {
-    // This is the case for the BuiltInRules grammar, and makes it possible for that grammar to
-    // be written in "userland", i.e., in Ohm syntax rather than using the builder interface.
-    this.withSuperGrammar(new Grammar('', null, {}));
-  } else if (!this.superGrammar) {
-    this.withSuperGrammar(Grammar.BuiltInRules);
+  if (!this.superGrammar) {
+    this.withSuperGrammar(
+        // TODO: The conditional expression below is an ugly hack. It's kind of ok because
+        // I doubt anyone will ever try to declare a grammar called `BuiltInRules`. Still,
+        // we should try to find a better way to do this.
+        this.name === 'BuiltInRules' ?
+            Grammar.ProtoBuiltInRules :
+            Grammar.BuiltInRules);
   }
   return this.superGrammar;
 };
@@ -80,11 +82,10 @@ GrammarDecl.prototype.withSuperGrammar = function(superGrammar) {
     throw new Error('the super grammar of a GrammarDecl cannot be set more than once');
   }
   this.superGrammar = superGrammar;
-  // Note: superGrammar will only be null for the BuiltInRules grammar.
-  this.ruleDict = Object.create(superGrammar ? superGrammar.ruleDict : null);
+  this.ruleDict = Object.create(superGrammar.ruleDict);
 
-  // Grammars with an explicit (and non-null) supergrammar inherit a default start rule.
-  if (superGrammar && superGrammar !== Grammar.BuiltInRules) {
+  // Grammars with an explicit supergrammar inherit a default start rule.
+  if (superGrammar !== Grammar.ProtoBuiltInRules && superGrammar !== Grammar.BuiltInRules) {
     this.defaultStartRule = superGrammar.defaultStartRule;
   }
   return this;

@@ -67,7 +67,7 @@ Grammar.prototype = {
   match: function(obj, optStartRule) {
     var startRule = optStartRule || this.defaultStartRule;
     if (!startRule) {
-      throw new Error('missing start rule argument -- the grammar has no default start rule.');
+      throw new Error('Missing start rule argument -- the grammar has no default start rule.');
     }
     var state = this._match(obj, startRule, false);
     var succeeded = state.bindings.length === 1;
@@ -127,9 +127,9 @@ Grammar.prototype = {
     // All of the methods should have arity 1, except for _default, which has
     // arity 2 b/c it also takes an index.
     if (!actionDict._base) {
-      throw new Error('inherited attribute missing base case');
+      throw new Error('Inherited attribute missing base case');
     } else if (actionDict._base.length !== 1) {
-      throw new Error("inherited attribute's base case must take exactly one argument");
+      throw new Error("Inherited attribute's base case must take exactly one argument");
     }
     return attributes.makeInheritedAttribute(this, actionDict);
   },
@@ -197,6 +197,12 @@ Grammar.prototype = {
   },
 
   toRecipe: function(optVarName) {
+    if (this === Grammar.ProtoBuiltInRules ||
+        this === Grammar.BuiltInRules) {
+      throw new Error(
+          'Why would anyone want to generate a recipe for the ' + this.name + ' grammar?!?!');
+    }
+
     var sb = new common.StringBuffer();
     if (optVarName) {
       sb.append('var ' + optVarName + ' = ');
@@ -204,7 +210,8 @@ Grammar.prototype = {
     sb.append('(function() {\n');
 
     var superGrammarDecl = '';
-    if (this.superGrammar && this.superGrammar !== Grammar.BuiltInRules) {
+    if (this.superGrammar !== Grammar.ProtoBuiltInRules &&
+        this.superGrammar !== Grammar.BuiltInRules) {
       sb.append(this.superGrammar.toRecipe('buildSuperGrammar'));
       superGrammarDecl = '    .withSuperGrammar(buildSuperGrammar.call(this))\n';
     }
@@ -215,7 +222,7 @@ Grammar.prototype = {
     Object.keys(this.ruleDict).forEach(function(ruleName) {
       var body = self.ruleDict[ruleName];
       sb.append('    .');
-      if (self.superGrammar && self.superGrammar.ruleDict[ruleName]) {
+      if (self.superGrammar.ruleDict[ruleName]) {
         sb.append(body instanceof pexprs.Extend ? 'extend' : 'override');
       } else {
         sb.append('define');
@@ -302,21 +309,22 @@ Grammar.prototype = {
   }
 };
 
-// The following grammar is a minimal set of built-in rules. At the bottom of
-// src/main.js, we replace this grammar with a sub-grammar that contains more
-// convenience rules, e.g., letter and digit. (The source of that grammar is
-// in src/built-in-rules.ohm.)
-Grammar.BuiltInRules = new Grammar('BuiltInRules', null, {
-  // The following rules can't be written in "userland" because they reference
+// The following grammar contains a few rules that couldn't be written  in "userland".
+// At the bottom of src/main.js, we create a sub-grammar of this grammar that's called
+// `BuiltInRules`. That grammar contains several convenience rules, e.g., `letter` and
+// `digit`, and is implicitly the super-grammar of any grammar whose super-grammar
+// isn't specified.
+Grammar.ProtoBuiltInRules = new Grammar('ProtoBuiltInRules', undefined, {
+  // The following rules can't be written in userland because they reference
   // `anything` and `end` directly.
   _: pexprs.anything.withFormals([]),
   end: pexprs.end.withFormals([]),
 
-  // The following rule is part of the implementation. Its name ends with '_' to prevent it
-  // from being overridden or invoked by programmers.
+  // The following rule is part of the Ohm implementation. Its name ends with '_' to
+  // prevent programmers from invoking, extending, and overriding it.
   spaces_: new pexprs.Many(new pexprs.Apply('space'), 0).withFormals([]),
 
-  // The `space` rule must be defined here because it's referenced in the body of `spaces_`.
+  // The `space` rule must be defined here because it's referenced by `spaces_`.
   space: pexprs.makePrim(/[\s]/).withFormals([]).withDescription('a space')
 });
 

@@ -5,8 +5,6 @@
 * Improve error message when calling makeGrammar() on a source that has multiple grammars defined.
   * Use Grammars and not Grammar as the start rule, and throw an error if != 1 grammar is produced.
 
-* Rename the primitive built-in rules to ProtoBuiltInRules (or something), and in built-in-rules.ohm, inherit from that instead of from null.
-
 ### Instantiating grammars from script elements
 
 ```
