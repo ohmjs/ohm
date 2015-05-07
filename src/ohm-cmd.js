@@ -21,6 +21,6 @@ try {
   process.exit(2);  // eslint-disable-line no-process-exit
 }
 
-var grammar = ohm.makeGrammar(source);
+var grammar = ohm.grammar(source);
 console.log("var ohm = require('..');");
 console.log('module.exports = ohm.makeRecipe' + grammar.toRecipe());

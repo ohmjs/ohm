@@ -284,9 +284,9 @@ function getScriptElementContents(el) {
   return el.getAttribute('src') ? load(el.getAttribute('src')) : el.innerHTML;
 }
 
-function makeGrammar(stringOrNode, optNamespace) {
+function grammar(stringOrNode, optNamespace) {
   var source = typeof stringOrNode === 'string' ? stringOrNode : [stringOrNode];
-  var ns = makeGrammars(source, optNamespace);
+  var ns = grammars(source, optNamespace);
 
   // Ensure that the source contained no more than one grammar definition.
   var grammarNames = Object.keys(ns);
@@ -295,12 +295,12 @@ function makeGrammar(stringOrNode, optNamespace) {
     var interval = secondGrammar.definitionInterval;
     throw new Error(
         common.getLineAndColumnMessage(interval.inputStream.source, interval.startIdx) +
-        'Found more than one grammar definition -- use ohm.makeGrammars() instead.');
+        'Found more than one grammar definition -- use ohm.grammars() instead.');
   }
   return ns[grammarNames[0]];  // Return the one and only grammar.
 }
 
-function makeGrammars(stringOrNodeList, optNamespace) {
+function grammars(stringOrNodeList, optNamespace) {
   var ns = Namespace.extend(Namespace.asNamespace(optNamespace));
   if (stringOrNodeList == null || isUndefined(stringOrNodeList.length)) {
     throw new TypeError('Expected string or NodeList as first argument, got ' + stringOrNodeList);
@@ -329,8 +329,8 @@ module.exports = {
   actions: Semantics.actions,
   createNamespace: Namespace.createNamespace,
   error: errors,
-  makeGrammar: makeGrammar,
-  makeGrammars: makeGrammars,
+  grammar: grammar,
+  grammars: grammars,
   makeRecipe: makeRecipe
 };
 

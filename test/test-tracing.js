@@ -8,17 +8,11 @@ var test = require('tape-catch');
 var util = require('./util');
 
 // --------------------------------------------------------------------
-// Helpers
-// --------------------------------------------------------------------
-
-var makeGrammar = util.makeGrammar;
-
-// --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
 
 test('basic tracing', function(t) {
-  var g = makeGrammar('G { start = "a" | letter* }');
+  var g = util.makeGrammar('G { start = "a" | letter* }');
   var state = g.trace('hallo', 'start');
   var trace = state.trace;
 
@@ -46,7 +40,7 @@ test('basic tracing', function(t) {
 });
 
 test('tracing with memoization', function(t) {
-  var g = makeGrammar('G { start = letter ~letter | letter* }');
+  var g = util.makeGrammar('G { start = letter ~letter | letter* }');
   var state = g.trace('ab', 'start');
   var trace = state.trace;
   t.equal(trace.length, 1);
@@ -73,7 +67,7 @@ test('tracing with memoization', function(t) {
 });
 
 test('tracing with left recursion', function(t) {
-  var g = makeGrammar('G { id = id letter -- rec\n    | letter }');
+  var g = util.makeGrammar('G { id = id letter -- rec\n    | letter }');
   var state = g.trace('abc', 'id');
   var trace = state.trace;
 

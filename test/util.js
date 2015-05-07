@@ -20,14 +20,14 @@ function makeGrammar(source, optNamespace) {
   if (source instanceof Array) {
     source = source.join('\n');
   }
-  return ohm.makeGrammar(source, optNamespace);
+  return ohm.grammar(source, optNamespace);
 }
 
 function makeGrammars(source, optNamespace) {
   if (source instanceof Array) {
     source = source.join('\n');
   }
-  return ohm.makeGrammars(source, optNamespace);
+  return ohm.grammars(source, optNamespace);
 }
 
 // --------------------------------------------------------------------

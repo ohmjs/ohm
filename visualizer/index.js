@@ -345,7 +345,7 @@ function isPrimitive(expr) {
     var grammarSrc = grammarEditor.getValue();
 
     try {
-      grammar = ohm.makeGrammar(grammarSrc);
+      grammar = ohm.grammar(grammarSrc);
     } catch (e) {
       console.log(e);  // eslint-disable-line no-console
       return;

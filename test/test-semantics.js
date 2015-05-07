@@ -27,7 +27,7 @@ function combine(obj1, props) {
 // --------------------------------------------------------------------
 
 test('operations', function(t) {
-  var expr = ohm.makeGrammar(arithmeticGrammarSource);
+  var expr = ohm.grammar(arithmeticGrammarSource);
   var s = expr.semantics();
 
   function match(source) {
@@ -77,7 +77,7 @@ test('operations', function(t) {
 });
 
 test('attributes', function(t) {
-  var expr = ohm.makeGrammar(arithmeticGrammarSource);
+  var expr = ohm.grammar(arithmeticGrammarSource);
   var count = 0;
   var s = expr.semantics().addAttribute('value', {
     addExpr_plus: function(x, op, y) {
@@ -123,7 +123,7 @@ test('attributes', function(t) {
 });
 
 test('semantics', function(t) {
-  var expr = ohm.makeGrammar(arithmeticGrammarSource);
+  var expr = ohm.grammar(arithmeticGrammarSource);
   var s = expr.semantics();
 
   t.equal(s.addOperation('op', {}), s, 'addOperation returns the receiver');
@@ -157,17 +157,17 @@ test('semantics', function(t) {
   t.throws(function() { s('asdf'); }, /expected a CST node/);
 
   // Cannot use the semantics on nodes from another grammar...
-  var g = ohm.makeGrammar('G {}');
+  var g = ohm.grammar('G {}');
   t.throws(function() { s(g.match('a', 'letter')); }, /Cannot use a CST node created by grammar/);
   // ... even if it's a sub-grammar
-  g = ohm.makeGrammar('Expr2 <: Expr {}', {Expr: expr});
+  g = ohm.grammar('Expr2 <: Expr {}', {Expr: expr});
   t.throws(function() { s(g.match('1+2', 'expr')); }, /Cannot use a CST node created by grammar/);
 
   t.end();
 });
 
 test('_many nodes', function(t) {
-  var g = ohm.makeGrammar('G { letters = letter* }');
+  var g = ohm.grammar('G { letters = letter* }');
   var actions = {
     _default: ohm.actions.passThrough,
     _terminal: ohm.actions.getPrimitiveValue
@@ -199,7 +199,7 @@ test('_many nodes', function(t) {
 });
 
 test('_terminal nodes', function(t) {
-  var g = ohm.makeGrammar('G { letters = letter* }');
+  var g = ohm.grammar('G { letters = letter* }');
   var actions = {
     _default: ohm.actions.passThrough,
     _many: ohm.actions.makeArray
@@ -232,7 +232,7 @@ test('_terminal nodes', function(t) {
 });
 
 test('semantic action arity checks', function(t) {
-  var g = ohm.makeGrammar('G {}');
+  var g = ohm.grammar('G {}');
   function makeOperation(grammar, actions) {
     return grammar.semantics().addOperation('op' + util.uniqueId(), actions);
   }
@@ -276,13 +276,13 @@ test('semantic action arity checks', function(t) {
     makeOperation(g, {one: ignore1, two: ignore0});
   }, /wrong arity/, "'two' is checked");
 
-  var g2 = ohm.makeGrammar('G2 <: G {}', {G: g});
+  var g2 = ohm.grammar('G2 <: G {}', {G: g});
   t.throws(function() {
     makeOperation(g2, {one: ignore2});
   }, /wrong arity/, 'supergrammar rules are checked');
   t.ok(makeOperation(g2, {one: ignore1}), 'works with one arg');
 
-  var g3 = ohm.makeGrammar('G3 <: G { one := "now" "two" }', {G: g});
+  var g3 = ohm.grammar('G3 <: G { one := "now" "two" }', {G: g});
   t.throws(function() {
     makeOperation(g3, {one: ignore1});
   }, /wrong arity/, 'changing arity in an overridden rule');

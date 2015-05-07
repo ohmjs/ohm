@@ -15,7 +15,7 @@ var util = require('./util');
 // --------------------------------------------------------------------
 
 test('non-string input', function(t) {
-  var g = ohm.makeGrammar('G { start = 5 }');
+  var g = ohm.grammar('G { start = 5 }');
 
   var e = g.match(42);
   t.equal(e.failed(), true);
@@ -25,7 +25,7 @@ test('non-string input', function(t) {
 });
 
 test('match failure', function(t) {
-  var g = ohm.makeGrammar('G { start = "a" "b" "c" "d" }');
+  var g = ohm.grammar('G { start = "a" "b" "c" "d" }');
 
   var e = g.match('ab');
   t.equal(e.failed(), true);
@@ -87,16 +87,16 @@ test('infinite loops', function(t) {
 test('errors from makeGrammar()', function(t) {
   var source = 'G {}\nG2 <: G {}';
   try {
-    ohm.makeGrammar(source);
+    ohm.grammar(source);
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.equal(e.message, [
       'Line 2, col 1:',
       '> | G2 <: G {}',
       '    ^',
-      'Found more than one grammar definition -- use ohm.makeGrammars() instead.'].join('\n'));
+      'Found more than one grammar definition -- use ohm.grammars() instead.'].join('\n'));
   }
   // TODO: Shouldn't we really be throwing an error here?
-  t.equal(ohm.makeGrammar(''), undefined, 'empty grammar definition returns undefined');
+  t.equal(ohm.grammar(''), undefined, 'empty grammar definition returns undefined');
   t.end();
 });
