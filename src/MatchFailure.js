@@ -34,7 +34,7 @@ function MatchFailure(state) {
     if (typeof this.state.inputStream.source !== 'string') {
       return 'match failed at position ' + this.getPos();
     }
-    var detail = 'expected' + this.getExpectedText();
+    var detail = 'expected ' + this.getExpectedText();
     return getShortMatchErrorMessage(this.getPos(), this.state.inputStream.source, detail);
   });
 }

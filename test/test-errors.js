@@ -34,6 +34,7 @@ test('basic match failure', function(t) {
     '> | ab',
     '      ^',
     "Expected 'c'"].join('\n'));
+  t.equal(e.shortMessage, "Line 1, col 3: expected 'c'");
   t.equal(e.getPos(), 2);
 
   e = g.match('abcde');
@@ -43,6 +44,7 @@ test('basic match failure', function(t) {
     '> | abcde',
     '        ^',
     'Expected end of input'].join('\n'));
+  t.equal(e.shortMessage, 'Line 1, col 5: expected end of input');
   t.equal(e.getPos(), 4);
   t.end();
 });
