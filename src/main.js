@@ -305,7 +305,9 @@ function grammar(stringOrNode, optNamespace) {
 
   // Ensure that the source contained no more than one grammar definition.
   var grammarNames = Object.keys(ns);
-  if (grammarNames.length > 1) {
+  if (grammarNames.length === 0) {
+    throw new Error('Missing grammar definition');
+  } else if (grammarNames.length > 1) {
     var secondGrammar = ns[grammarNames[1]];
     var interval = secondGrammar.definitionInterval;
     throw new Error(

@@ -96,7 +96,7 @@ test('errors from makeGrammar()', function(t) {
       '    ^',
       'Found more than one grammar definition -- use ohm.grammars() instead.'].join('\n'));
   }
-  // TODO: Shouldn't we really be throwing an error here?
-  t.equal(ohm.grammar(''), undefined, 'empty grammar definition returns undefined');
+  t.throws(function() { ohm.grammar(''); }, /Missing grammar/);
+  t.throws(function() { ohm.grammar(' \t\n'); }, /Missing grammar/);
   t.end();
 });
