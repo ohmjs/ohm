@@ -155,6 +155,9 @@ test('semantics', function(t) {
   t.throws(function() { s(); }, /expected a CST node/);
   t.throws(function() { s(3); }, /expected a CST node/);
   t.throws(function() { s('asdf'); }, /expected a CST node/);
+  t.throws(function() { s(expr.match('barf')); },
+      /expected a CST node, but got \[MatchFailure at position 0\]/,
+      'throws when arg is a MatchFailure');
 
   // Cannot use the semantics on nodes from another grammar...
   var g = ohm.grammar('G {}');

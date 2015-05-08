@@ -39,6 +39,10 @@ function MatchFailure(state) {
   });
 }
 
+MatchFailure.prototype.toString = function() {
+  return '[MatchFailure at position ' + this.getPos() + ']';
+};
+
 MatchFailure.prototype.failed = function() {
   return true;
 };

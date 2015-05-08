@@ -328,7 +328,8 @@ Semantics.prototype.wrapChildren = function(node) {
 
 // Create a new Semantics instance for `grammar`, inheriting operations and attributes from
 // `optSuperSemantics`, if it is specified. Return a function which acts as a proxy for the
-// new Semantics instance.
+// new Semantics instance. When the function is invoked with a CST node as an argument, it
+// returns a wrapper for the Semantics, which gives access to the operations and attributes.
 Semantics.createSemantics = function(grammar, optSuperSemantics) {
   var s = new Semantics(grammar, optSuperSemantics);
 
