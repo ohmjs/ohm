@@ -33,6 +33,11 @@ var actions = {
 
 // ----------------- Operation -----------------
 
+// An Operation represents a function to be applied to a concrete syntax tree (CST).
+// It's very similar to a Visitor (http://en.wikipedia.org/wiki/Visitor_pattern).
+// An operation is executed by recursively walking the CST, and at each node, invoking
+// the matching semantic action from `actionDict`. See `Operation.prototype.execute`
+// for details of how the matching semantic action is determined.
 function Operation(name, actionDict) {
   this.name = name;
   this.actionDict = actionDict;
@@ -44,13 +49,17 @@ Operation.prototype.checkActionDict = function(grammar) {
   grammar._checkTopDownActionDict(this.typeName, this.name, this.actionDict, false);
 };
 
+// Execute this operation on `node` in the context of the given Semantics instance.
 Operation.prototype.execute = function(semantics, node) {
   var dict = this.actionDict;
 
+  // First, look for an action whose name matches the node's constructor name -- either
+  // the rule name, or a special name like '_many' or '_terminal'.
   var actionFn = dict[node.ctorName];
   if (actionFn) {
     return this.doAction(semantics, node, actionFn, node.ctorName === '_many');
   }
+  // If there was no node-specific action, invoke the '_default' action if it exists.
   if (dict._default && node.ctorName !== '_terminal') {
     return this.doAction(semantics, node, dict._default, true);
   }
@@ -58,6 +67,10 @@ Operation.prototype.execute = function(semantics, node) {
       'missing semantic action for ' + node.ctorName + ' in ' + this.name + ' operation');
 };
 
+// Invoke `actionFn` for the given `node` in the context of `semantics`.
+// If `optPassChildrenAsArray` is true, `actionFn` will be called with a single argument,
+// which is an array of wrappers. Otherwise, the number of arguments to `actionFn` will be
+// the same as the number of children that it has.
 Operation.prototype.doAction = function(semantics, node, actionFn, optPassChildrenAsArray) {
   if (actionFn === actions.makeArray) {
     if (node.ctorName === '_many') {
@@ -79,6 +92,10 @@ Operation.prototype.doAction = function(semantics, node, actionFn, optPassChildr
 
 // ----------------- Attribute -----------------
 
+// An Attribute is a value that is computed for a node in a concrete syntax tree (CST).
+// It's basically the same as an Operation, except that Attribute values are memoized,
+// so the semantic action for a node will be applied no more than once in the context
+// of any one Semantics instance.
 function Attribute(name, actionDict) {
   this.name = name;
   this.actionDict = actionDict;
@@ -97,13 +114,21 @@ Attribute.prototype.execute = function(semantics, node) {
 
 // ----------------- Semantics -----------------
 
+// A Semantics object is a container for a family of Operations and/or Attributes.
+// They make it possible for an operation to invoke other operations in the same semantics,
+// and for operations (and attributes) to be mutually recursive.
+// This constructor should not be called directly except from `Semantics.createSemantics`.
+// The normal way to create a semantics, given a grammar 'g', is `g.semantics()`.
 function Semantics(grammar, optSuperSemantics) {
   this.grammar = grammar;
 
-  // Constructor for new wrapper instances, which are passed as the arguments
-  // to the semantic action functions of an operation or attribute.
   var semantics = this;
   var checkedActionDicts = false;
+
+  // Constructor for new wrapper instances, which are passed as the arguments
+  // to the semantic actions of an operation or attribute. Operations and attributes require
+  // double dispatch: the semantic action is chosen based on both the node and the semantics.
+  // Wrappers ensure that `execute` is called with the correct semantics object as an argument.
   this.Wrapper = function SemanticsWrapper(node) {
     if (!checkedActionDicts) {
       for (var name in semantics.operations) {
@@ -120,7 +145,7 @@ function Semantics(grammar, optSuperSemantics) {
     this.primitiveValue = node.primitiveValue;
     this._semantics = semantics;
 
-    // Install all attributes into the wrapper, using Object.defineProperty
+    // Install all attributes into the wrapper, using Object.defineProperty.
     var wrapper = this;
     var descriptors = {};
     var hasAttributes = false;
@@ -285,14 +310,19 @@ Semantics.prototype.extendAttribute = function(name, actionDict) {
   this.attributes[name] = attr;
 };
 
+// Given a CST node, return a wrapper for that node in this semantics.
 Semantics.prototype.wrap = function(node) {
   return new this.Wrapper(node);
 };
 
+// Return an Array of wrappers for each of the given node's children.
 Semantics.prototype.wrapChildren = function(node) {
   return node.children.map(this.wrap, this);
 };
 
+// Create a new Semantics instance for `grammar`, inheriting operations and attributes from
+// `optSuperSemantics`, if it is specified. Return a function which acts as a proxy for the
+// new Semantics instance.
 Semantics.createSemantics = function(grammar, optSuperSemantics) {
   var s = new Semantics(grammar, optSuperSemantics);
 
