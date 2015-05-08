@@ -131,12 +131,7 @@ function Semantics(grammar, optSuperSemantics) {
   // Wrappers ensure that `execute` is called with the correct semantics object as an argument.
   this.Wrapper = function SemanticsWrapper(node) {
     if (!checkedActionDicts) {
-      for (var name in semantics.operations) {
-        semantics.operations[name].checkActionDict(grammar);
-      }
-      for (name in semantics.attributes) {
-        semantics.attributes[name].checkActionDict(grammar);
-      }
+      checkActionDicts(semantics, grammar);
       checkedActionDicts = true;
     }
 
@@ -154,10 +149,10 @@ function Semantics(grammar, optSuperSemantics) {
       // The following is a work-around for JS's stupid "only functions are lexical scopes" thing.
       // Without it, `attributeName` may not be the same by the time it's used in the getter.
       /* eslint-disable no-loop-func */
-      (function(attributeName) {
-        descriptors[attributeName] = {
+      (function(name) {
+        descriptors[name] = {
           get: function() {
-            return semantics.attributes[attributeName].execute(semantics, wrapper.node);
+            return semantics.attributes[name].execute(semantics, wrapper.node);
           }
         };
       })(attributeName);
@@ -208,6 +203,17 @@ function addBuiltInOperationsAndAttributes(semantics) {
   // `node`, `interval`, and `primitiveValue` could be real attributes, but they're special-cased
   // as real properties so that we can avoid calling `Object.defineProperties` every time we create
   // a wrapper. (That would make it kind of expensive.)
+}
+
+// Check the semantic action dictionary of every operation and attribute in `semantics`, and
+// return true if the actions are appropriate for the given grammar, or false if they are not.
+function checkActionDicts(semantics, grammar) {
+  for (var name in semantics.operations) {
+    semantics.operations[name].checkActionDict(grammar);
+  }
+  for (name in semantics.attributes) {
+    semantics.attributes[name].checkActionDict(grammar);
+  }
 }
 
 Semantics.actions = actions;
