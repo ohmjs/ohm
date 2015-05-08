@@ -159,21 +159,21 @@ wrapper {
   border-bottom: 1pt solid slateblue;
 }
 
-#tree expr::before    { content: 'expr'; }
-#tree addExpr::before { content: 'addExpr'; }
-#tree plus::before    { content: 'plus'; }
-#tree minus::before   { content: 'minus'; }
-#tree mulExpr::before { content: 'mulExpr'; }
-#tree times::before   { content: 'times'; }
-#tree divide::before  { content: 'divide'; }
-#tree expExpr::before { content: 'expExpr'; }
-#tree power::before   { content: 'power'; }
-#tree priExpr::before { content: 'priExpr'; }
-#tree paren::before   { content: 'paren'; }
-#tree pos::before     { content: 'pos'; }
-#tree neg::before     { content: 'neg'; }
-#tree ident::before   { content: 'ident'; }
-#tree number::before  { content: 'number'; }
+#tree expr::before   { content: 'expr'; }
+#tree addExp::before { content: 'addExp'; }
+#tree plus::before   { content: 'plus'; }
+#tree minus::before  { content: 'minus'; }
+#tree mulExp::before { content: 'mulExp'; }
+#tree times::before  { content: 'times'; }
+#tree divide::before { content: 'divide'; }
+#tree expExp::before { content: 'expExp'; }
+#tree power::before  { content: 'power'; }
+#tree priExp::before { content: 'priExp'; }
+#tree paren::before  { content: 'paren'; }
+#tree pos::before    { content: 'pos'; }
+#tree neg::before    { content: 'neg'; }
+#tree ident::before  { content: 'ident'; }
+#tree number::before { content: 'number'; }
 
 #twoD {
   font-family: Times, "Times New Roman", serif;
@@ -230,4 +230,3 @@ wrapper {
 #twoD exponent > * {
   line-height: 100%;
 }
-

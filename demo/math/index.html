@@ -8,27 +8,27 @@
     <script type="text/ohm-js">
 
 Arithmetic {
-  Expr
-    = AddExpr
+  Exp
+    = AddExp
 
-  AddExpr
-    = AddExpr "+" MulExpr  -- plus
-    | AddExpr "-" MulExpr  -- minus
-    | MulExpr
+  AddExp
+    = AddExp "+" MulExp  -- plus
+    | AddExp "-" MulExp  -- minus
+    | MulExp
 
-  MulExpr
-    = MulExpr "*" ExpExpr  -- times
-    | MulExpr "/" ExpExpr  -- divide
-    | ExpExpr
+  MulExp
+    = MulExp "*" ExpExp  -- times
+    | MulExp "/" ExpExp  -- divide
+    | ExpExp
 
-  ExpExpr
-    = PriExpr "^" ExpExpr  -- power
-    | PriExpr
+  ExpExp
+    = PriExp "^" ExpExp  -- power
+    | PriExp
 
-  PriExpr
-    = "(" Expr ")"  -- paren
-    | "+" PriExpr   -- pos
-    | "-" PriExpr   -- neg
+  PriExp
+    = "(" Exp ")"  -- paren
+    | "+" PriExp   -- pos
+    | "-" PriExp   -- neg
     | ident
     | number
 
@@ -58,100 +58,97 @@ Arithmetic {
     <script>
 
 var g = ohm.grammarFromScriptElement();
+var s = g.semantics();
 
-// ---------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 
 var constants = {pi: Math.PI, e: Math.E};
-var interpret = g.semanticAction({
-  AddExpr_plus:   function(x, _, y) { return interpret(x) + interpret(y); },
-  AddExpr_minus:  function(x, _, y) { return interpret(x) - interpret(y); },
-  MulExpr_times:  function(x, _, y) { return interpret(x) * interpret(y); },
-  MulExpr_divide: function(x, _, y) { return interpret(x) / interpret(y); },
-  ExpExpr_power:  function(x, _, y) { return Math.pow(interpret(x), interpret(y)); },
-  PriExpr_paren:  function(_, e, _) { return interpret(e); },
-  PriExpr_pos:    function(_, e)    { return interpret(e); },
-  PriExpr_neg:    function(_, e)    { return interpret(-e); },
-  ident:          function(_, _)    { return constants[this.interval.contents]; },
-  number:         function(_)       { return parseFloat(this.interval.contents); },
+s.addOperation('interpret', {
+  AddExp_plus:   function(x, _, y) { return x.interpret() + y.interpret(); },
+  AddExp_minus:  function(x, _, y) { return x.interpret() - y.interpret(); },
+  MulExp_times:  function(x, _, y) { return x.interpret() * y.interpret(); },
+  MulExp_divide: function(x, _, y) { return x.interpret() / y.interpret(); },
+  ExpExp_power:  function(x, _, y) { return Math.pow(x.interpret(), y.interpret()); },
+  PriExp_paren:  function(_, e, _) { return e.interpret(); },
+  PriExp_pos:    function(_, e)    { return e.interpret(); },
+  PriExp_neg:    function(_, e)    { return -e.interpret(); },
+  ident:         function(_, _)    { return constants[this.interval.contents]; },
+  number:        function(_)       { return parseFloat(this.interval.contents); },
   _default:       ohm.actions.passThrough
 });
 
-// ---------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 
 function stringify(x) {
-  if (x instanceof Array) {
-    var parts = [];
-    for (var idx = 0; idx < x.length; idx++) {
-      parts.push(stringify(x[idx]));
-    }
-    return '(' + parts.join(' ') + ')';
-  } else {
-    return x.toString();
-  }
+  return x instanceof Array ?
+      '(' + x.map(stringify).join(' ') + ')' :
+      x.toString();
 }
 
-var toLisp = g.semanticAction({
-  Expr:           function(e)       { return stringify(toLisp(e)); },
-  AddExpr_plus:   function(x, _, y) { return ['+', toLisp(x), toLisp(y)]; },
-  AddExpr_minus:  function(x, _, y) { return ['-', toLisp(x), toLisp(y)]; },
-  MulExpr_times:  function(x, _, y) { return ['*', toLisp(x), toLisp(y)]; },
-  MulExpr_divide: function(x, _, y) { return ['/', toLisp(x), toLisp(y)]; },
-  ExpExpr_power:  function(x, _, y) { return ['pow', toLisp(x), toLisp(y)]; },
-  PriExpr_paren:  function(_, e, _) { return toLisp(e); },
-  PriExpr_pos:    function(_, e)    { return toLisp(e); },
-  PriExpr_neg:    function(_, e)    { return ['neg', toLisp(e)]; },
-  ident:          function(_, _)    { return this.interval.contents; },
-  number:         function(_)       { return this.interval.contents; },
-  _default:       ohm.actions.passThrough
+s.addAttribute('asLisp', {
+  Exp:           function(e)       { return stringify(e.asLisp); },
+  AddExp_plus:   function(x, _, y) { return ['+', x.asLisp, y.asLisp]; },
+  AddExp_minus:  function(x, _, y) { return ['-', x.asLisp, y.asLisp]; },
+  MulExp_times:  function(x, _, y) { return ['*', x.asLisp, y.asLisp]; },
+  MulExp_divide: function(x, _, y) { return ['/', x.asLisp, y.asLisp]; },
+  ExpExp_power:  function(x, _, y) { return ['pow', x.asLisp, y.asLisp]; },
+  PriExp_paren:  function(_, e, _) { return e.asLisp; },
+  PriExp_pos:    function(_, e)    { return e.asLisp; },
+  PriExp_neg:    function(_, e)    { return ['neg', e.asLisp]; },
+  ident:         function(_, _)    { return this.interval.contents; },
+  number:        function(_)       { return this.interval.contents; },
+  _default:      ohm.actions.passThrough
 });
 
-// ---------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 
-var toTree = g.semanticAction({
-  Expr:           function(e)              { return makeElement('expr', toTree(e)); },
-  AddExpr:        function(e)              { return makeElement('addExpr', toTree(e)); },
-  AddExpr_plus:   function(x, op, y)       { return makeElement('plus', toTree(x), toTree(op), toTree(y)); },
-  AddExpr_minus:  function(x, op, y)       { return makeElement('minus', toTree(x), toTree(op), toTree(y)); },
-  MulExpr:        function(e)              { return makeElement('mulExpr', toTree(e)); },
-  MulExpr_times:  function(x, op, y)       { return makeElement('times', toTree(x), toTree(op), toTree(y)); },
-  MulExpr_divide: function(x, op, y)       { return makeElement('divide', toTree(x), toTree(op), toTree(y)); },
-  ExpExpr:        function(e)              { return makeElement('expExpr', toTree(e)); },
-  ExpExpr_power:  function(x, op, y)       { return makeElement('power', toTree(x), toTree(op), toTree(y)); },
-  PriExpr:        function(e)              { return makeElement('priExpr', toTree(e)); },
-  PriExpr_paren:  function(open, e, close) { return makeElement('paren', toTree(open), toTree(e), toTree(close)); },
-  PriExpr_pos:    function(sign, e)        { return makeElement('pos', toTree(sign), toTree(e)); },
-  PriExpr_neg:    function(sign, e)        { return makeElement('neg', toTree(sign), toTree(e)); },
-  ident:          function(_, _)           { return makeElement('ident', this.interval.contents); },
-  number:         function(_)              { return makeElement('number', this.interval.contents); },
-  _terminal:      ohm.actions.getPrimitiveValue
+var elt = makeElement;
+
+s.addOperation('toTree', {
+  Exp:           function(e)         { return elt('expr', e.toTree()); },
+  AddExp:        function(e)         { return elt('addExp', e.toTree()); },
+  AddExp_plus:   function(x, op, y)  { return elt('plus', x.toTree(), op.toTree(), y.toTree()); },
+  AddExp_minus:  function(x, op, y)  { return elt('minus', x.toTree(), op.toTree(), y.toTree()); },
+  MulExp:        function(e)         { return elt('mulExp', e.toTree()); },
+  MulExp_times:  function(x, op, y)  { return elt('times', x.toTree(), op.toTree(), y.toTree()); },
+  MulExp_divide: function(x, op, y)  { return elt('divide', x.toTree(), op.toTree(), y.toTree()); },
+  ExpExp:        function(e)         { return elt('expExp', e.toTree()); },
+  ExpExp_power:  function(x, op, y)  { return elt('power', x.toTree(), op.toTree(), y.toTree()); },
+  PriExp:        function(e)         { return elt('priExp', e.toTree()); },
+  PriExp_paren:  function(op, e, cp) { return elt('paren', op.toTree(), e.toTree(), cp.toTree()); },
+  PriExp_pos:    function(sign, e)   { return elt('pos', sign.toTree(), e.toTree()); },
+  PriExp_neg:    function(sign, e)   { return elt('neg', sign.toTree(), e.toTree()); },
+  ident:         function(_, _)      { return elt('ident', this.interval.contents); },
+  number:        function(_)         { return elt('number', this.interval.contents); },
+  _terminal:     ohm.actions.getPrimitiveValue
 });
 
-// ---------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 
-var toTwoD = g.semanticAction({
-  AddExpr_plus:   function(x, op, y) { var operator = makeElement('operator', toTwoD(op));
-                                       return makeElement('plus', toTwoD(x), operator, toTwoD(y)); },
-  AddExpr_minus:  function(x, op, y) { var operator = makeElement('operator', '\u2212');
-                                       return makeElement('minus', toTwoD(x), operator, toTwoD(y)); },
-  MulExpr_times:  function(x, op, y) { var operator = makeElement('operator', '\u00D7');
-                                       return makeElement('times', toTwoD(x), operator, toTwoD(y)); },
-  MulExpr_divide: function(x, op, y) { var numerator = makeElement('numerator', toTwoD(x));
-                                       var denominator = makeElement('denominator', toTwoD(y));
-                                       return makeElement('fraction', numerator, denominator); },
-  ExpExpr_power:  function(x, op, y) { var base = makeElement('theBase', toTwoD(x));
-                                       var exponent = makeElement('exponent', toTwoD(y));
-                                       return makeElement('power', base, exponent); },
-  PriExpr_paren:  function(_, e, _)  { return makeElement('paren', toTwoD(e)); },
-  PriExpr_pos:    function(sign, e)  { return makeElement('pos', toTwoD(sign), toTwoD(e)); },
-  PriExpr_neg:    function(sign, e)  { return makeElement('neg', toTwoD(sign), toTwoD(e)); },
-  ident:          function(_, _)     { var text = this.interval.contents;
-                                       return makeElement('ident', text === 'pi' ? '\u03C0' : text); },
-  number:         function(_)        { return makeElement('number', this.interval.contents); },
-  _terminal:      ohm.actions.getPrimitiveValue,
-  _default:       ohm.actions.passThrough
+s.addOperation('toTwoD', {
+  AddExp_plus:   function(x, op, y) { var operator = elt('operator', op.toTwoD());
+                                      return elt('plus', x.toTwoD(), operator, y.toTwoD()); },
+  AddExp_minus:  function(x, op, y) { var operator = elt('operator', '\u2212');
+                                      return elt('minus', x.toTwoD(), operator, y.toTwoD()); },
+  MulExp_times:  function(x, op, y) { var operator = elt('operator', '\u00D7');
+                                      return elt('times', x.toTwoD(), operator, y.toTwoD()); },
+  MulExp_divide: function(x, op, y) { var numerator = elt('numerator', x.toTwoD());
+                                      var denominator = elt('denominator', y.toTwoD());
+                                      return elt('fraction', numerator, denominator); },
+  ExpExp_power:  function(x, op, y) { var base = elt('theBase', x.toTwoD());
+                                      var exponent = elt('exponent', y.toTwoD());
+                                      return elt('power', base, exponent); },
+  PriExp_paren:  function(_, e, _)  { return elt('paren', e.toTwoD()); },
+  PriExp_pos:    function(sign, e)  { return elt('pos', sign.toTwoD(), e.toTwoD()); },
+  PriExp_neg:    function(sign, e)  { return elt('neg', sign.toTwoD(), e.toTwoD()); },
+  ident:         function(_, _)     { var text = this.interval.contents;
+                                      return elt('ident', text === 'pi' ? '\u03C0' : text); },
+  number:        function(_)        { return elt('number', this.interval.contents); },
+  _terminal:     ohm.actions.getPrimitiveValue,
+  _default:      ohm.actions.passThrough
 });
 
-// ---------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 
 var input = document.getElementById('input');
 var spaces = document.getElementById('spaces');
@@ -164,31 +161,31 @@ hideError();
 
 input.oninput = function() {
   hideError();
+  this.className = undefined;
   var m = g.match(this.value);
-  if (m.failed()) {
-    if (this.value.length === 0) {
-      show('value', '');
-      show('lisp', '');
-      show('tree', '');
-      show('twoD', '');
-    } else {
-      this.className = 'error';
-      showError(m);
-    }
+  if (m.succeeded()) {
+    show('value', s(m).interpret());
+    show('lisp', s(m).asLisp);
+    show('tree', s(m).toTree());
+    show('twoD', s(m).toTwoD());
+  } else if (this.value.trim().length === 0) {
+    // Didn't match because there was no input, so don't complain
+    show('value', '');
+    show('lisp', '');
+    show('tree', '');
+    show('twoD', '');
   } else {
-    this.className = undefined;
-    show('value', interpret(m));
-    show('lisp', toLisp(m));
-    show('tree', toTree(m));
-    show('twoD', toTwoD(m));
+    showError(m);
   }
 };
 
 function hideError() {
+  input.className = undefined;
   errorDiv.className = errorDiv.className = 'hidden';
 }
 
 function showError(failure) {
+  input.className = 'error';
   setTimeout(function() {
     // Position the error bubble to line up with the offending input
     spaces.innerHTML = repeat(' ', failure.getPos());
@@ -198,7 +195,7 @@ function showError(failure) {
     failure.getExpected().forEach(function(text, idx, expected) {
       var element = createExpectedElement(text);
       if (idx > 0) {
-        errorDetails.appendChild(makeElement('light', idx === expected.length - 1 ? ', or ' : ', '));
+        errorDetails.appendChild(elt('light', idx === expected.length - 1 ? ', or ' : ', '));
       }
       errorDetails.appendChild(element);
     });
@@ -211,12 +208,12 @@ function showError(failure) {
 function createExpectedElement(s) {
   if (s.charAt(0) === '"' && s.charAt(s.length - 1) === '"' ||
       s.charAt(0) === "'" && s.charAt(s.length - 1) === "'") {
-    return makeElement('literal',
-      makeElement('light', '"'),
-      makeElement('code', s.substr(1, s.length - 2)),
-      makeElement('light', '"'));
+    return elt('literal',
+      elt('light', '"'),
+      elt('code', s.substr(1, s.length - 2)),
+      elt('light', '"'));
   } else {
-    return makeElement('description', s);
+    return elt('description', s);
   }
 }
 
@@ -232,4 +229,3 @@ window.test = function(t) {
     </script>
   </body>
 </html>
-
