@@ -2,6 +2,14 @@
 
 ## Alpha Release Blockers
 
+### Refactorings
+
+### Documentation
+
+* Write it.
+
+## Things we've already done
+
 * Applying a `Semantics` to a `Failure` should throw an exception.
  
 ### Unit Tests
@@ -53,14 +61,6 @@ if (ans.isFailure()) {
 * The unit tests are a mess right now. They were pretty good early on, but the language has been changed a lot since then. **We should spend a couple of days cleaning up the unit tests.** E.g.,
     * Now that we have CSTs, there's no reason to check acceptance and semantic actions separately for each kind of `PExpr`. We should just compare the result of `Grammar.prototype.match` with the expected CST. (We may have to do some work to get `Node.equals(anotherNode)` to work.)
     * ...
-
-### Refactorings
-
-### Documentation
-
-* Write it.
-
-## Things we've already done
 
 * Check for superfluous properties in action dicts, i.e., properties that do not correspond to a rule in the grammar. This will have to be done in methods like `addOperation`, `addAttribute`, `extendOperation`, and `extendAttribute`.
 
