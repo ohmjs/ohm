@@ -1508,7 +1508,8 @@ test('inline rule declarations', function(t) {
   var Arithmetic = ns.Arithmetic = util.makeGrammar(arithmeticGrammarSource);
 
   t.ok(Arithmetic.match('1*(2+3)-4/5'), 'expr is recognized');
-  t.equal(makeEval(Arithmetic)(Arithmetic.match('10*(2+123)-4/5')), 1249.2, 'semantic action works');
+  t.equal(
+      makeEval(Arithmetic)(Arithmetic.match('10*(2+123)-4/5')), 1249.2, 'semantic action works');
 
   var m2 = util.makeGrammar([
       'Good <: Arithmetic {',
