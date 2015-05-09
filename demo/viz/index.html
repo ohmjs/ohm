@@ -58,26 +58,26 @@ col2 {
     <col1>
       <textarea id="source" cols="60" autofocus="true" spellcheck="false" wrap="off">
 Arithmetic {
-  Expr = AddExpr
+  Exp = AddExp
 
-  AddExpr
-    = AddExpr "+" MulExpr -- plus
-    | AddExpr "-" MulExpr -- minus
-    | MulExpr
+  AddExp
+    = AddExp "+" MulExp -- plus
+    | AddExp "-" MulExp -- minus
+    | MulExp
 
-  MulExpr
-    = MulExpr "*" ExpExpr -- times
-    | MulExpr "/" ExpExpr -- divide
-    | ExpExpr
+  MulExp
+    = MulExp "*" ExpExp -- times
+    | MulExp "/" ExpExp -- divide
+    | ExpExp
 
-  ExpExpr
-    = PriExpr "^" ExpExpr -- power
-    | PriExpr
+  ExpExp
+    = PriExp "^" ExpExp -- power
+    | PriExp
 
-  PriExpr
-    = "(" Expr ")" -- paren
-    | "+" PriExpr  -- pos
-    | "-" PriExpr -- neg
+  PriExp
+    = "(" Exp ")" -- paren
+    | "+" PriExp  -- pos
+    | "-" PriExp  -- neg
     | ident
     | number
 
@@ -87,15 +87,12 @@ Arithmetic {
   number  (a number literal)
     = digit* "." digit+  -- fract
     | digit+             -- whole
-}
-
-      </textarea>
+}</textarea>
     </col1>
     <col2>
       <div id="vizDiv"></div>
     </col2>
     <script>
-(function() {
 
 var curr = document.getElementById('vizDiv');
 
@@ -117,181 +114,183 @@ function add(/* tagName, child1, child2, ... */) {
   addNode(makeElement.apply(this, arguments));
 }
 
-var vizChoice = ohm.ohmGrammar.semanticAction({
-  _default:  function() {
-               enter('choice');
-                 viz(this);
-               leave();
-             },
-  _many:     ohm.actions.makeArray,
+var s = ohm.ohmGrammar.semantics();
+
+s.addOperation('viz', {
+  Grammar:           function(n, s, _, rs, _) {
+                       enter('grammar');
+                         add('name', n.viz());
+                         s.viz();
+                         enter('rules');
+                           rs.viz();
+                         leave();
+                       leave();
+                     },
+  SuperGrammar:      function(_, n) {
+                       enter('super');
+                         add('name', n.viz());
+                       leave();
+                     },
+  Rule:              function(expr) {
+                       enter('rule');
+                         expr.viz();
+                       leave();
+                     },
+  Rule_define:       function(n, fs, d, _, b) {
+                       add('name', n.viz());
+                       d.viz();
+                       enter('ruleDefineBody');
+                         b.viz();
+                       leave();
+                     },
+  Rule_override:     function(n, fs, _, b) {
+                       add('name', n.viz());
+                       enter('ruleOverrideBody');
+                         b.viz();
+                       leave();
+                     },
+  Rule_extend:       function(n, fs, _, b) {
+                       add('name', n.viz());
+                       enter('ruleExtendBody');
+                         b.viz();
+                       leave();
+                     },
+  ruleDescr:         function(_, t, _) {
+                       add('description', t.viz());
+                     },
+  ruleDescrText:     function(_) {
+                       return this.interval.contents;
+                     },
+  Alt:               function(x, _, xs) {
+                       enter('alt');
+                         x.vizChoice();
+                         xs.vizChoice();
+                       leave();
+                     },
+  Term:              function(expr) {
+                       expr.viz();
+                     },
+  Term_inline:       function(x, n) {
+                       x.viz();
+                       n.viz();
+                     },
+  caseName:          function(_, _, n, _, _) {
+                       add('caseName', n.viz());
+                     },
+  Seq:               function(expr) {
+                       enter('seq');
+                         expr.viz();
+                       leave();
+                     },
+  Iter:              function(expr) {
+                       expr.viz();
+                     },
+  Iter_star:         function(x, _) {
+                       enter('star');
+                         x.viz();
+                       leave();
+                     },
+  Iter_plus:         function(x, _) {
+                       enter('plus');
+                         x.viz();
+                       leave();
+                     },
+  Iter_opt:          function(x, _) {
+                       enter('opt');
+                         x.viz();
+                       leave();
+                     },
+  Pred:              function(expr) {
+                       expr.viz();
+                     },
+  Pred_not:          function(_, x) {
+                       enter('not');
+                         x.viz();
+                       leave();
+                     },
+  Pred_lookahead:    function(_, x) {
+                       enter('lookahead');
+                         x.viz();
+                       leave();
+                     },
+  Base:              function(expr) {
+                       expr.viz();
+                     },
+  Base_application:  function(rule, ps) {
+                       add('app', rule.viz());
+                     },
+  Base_prim:         function(expr) {
+                       expr.viz();
+                     },
+  Base_paren:        function(_, x, _) {
+                       enter('paren');
+                         x.viz();
+                       leave();
+                     },
+  Base_arr:          function(_, x, _) {
+                       enter('arr');
+                         x.viz();
+                       leave();
+                     },
+  Base_str:          function(_, x, _) {
+                       enter('str');
+                         x.viz();
+                       leave();
+                     },
+  Base_obj:          function(_, lenient, _) {
+                       throw 'TODO';
+                     },
+  Base_objWithProps: function(_, ps, _, lenient, _) {
+                       throw 'TODO';
+                     },
+  Props:             function(p, _, ps) {
+                       throw 'TODO';
+                     },
+  ident:             function(n) {
+                       return n.viz();
+                     },
+  name:              function(_, _) {
+                       return this.interval.contents;
+                     },
+  string:            function(_, cs, _) {
+                       add('string', escape(eval(this.interval.contents)));
+                     },
+  regExp:            function(_, e, _) {
+                       e.viz();
+                     },
+  reCharClass:       function(_) {
+                       add('charClass', this.interval.contents);
+                     },
+  number:            function(_, _) {
+                       add('prim', this.interval.contents);
+                     },
+  keyword:           function(expr) {
+                       expr.viz();
+                     },
+  keyword_undefined: function(_) {
+                       add('prim', 'undefined');
+                     },
+  keyword_null:      function(_) {
+                       add('prim', 'null');
+                     },
+  keyword_true:      function(_) {
+                       add('prim', 'true');
+                     },
+  keyword_false:     function(_) {
+                       add('prim', 'false');
+                     },
+  Prop:              function(n, _, p) {},
+  _many:             ohm.actions.makeArray,
+  _terminal:         ohm.actions.getPrimitiveValue
 });
 
-var viz = ohm.ohmGrammar.semanticAction({
-  Grammar:                  function(n, s, _, rs, _) {
-                              enter('grammar');
-                                add('name', viz(n));
-                                viz(s);  // force evaluation
-                                enter('rules');
-                                  viz(rs);  // force evaluation
-                                leave();
-                              leave();
-                            },
-  SuperGrammar:             function(_, n) {
-                              enter('super');
-                                add('name', viz(n));
-                              leave();
-                            },
-  Rule:                     function(expr) {
-                              enter('rule');
-                                viz(expr);  // force evaluation
-                              leave();
-                            },
-  Rule_define:              function(n, fs, d, _, b) {
-                              add('name', viz(n));
-                              viz(d);  // force evaluation
-                              enter('ruleDefineBody');
-                                viz(b);  // force evaluation
-                              leave();
-                            },
-  Rule_override:            function(n, fs, _, b) {
-                              add('name', viz(n));
-                              enter('ruleOverrideBody');
-                                viz(b);  // force evaluation
-                              leave();
-                            },
-  Rule_extend:              function(n, fs, _, b) {
-                              add('name', viz(n));
-                              enter('ruleExtendBody');
-                                viz(b);  // force evaluation
-                              leave();
-                            },
-  ruleDescr:                function(_, t, _) {
-                              add('description', viz(t));
-                            },
-  ruleDescrText:            function(_) {
-                              return this.interval.contents;
-                            },
-  Alt:                      function(x, _, xs) {
-                              enter('alt');
-                                vizChoice(x);
-                                vizChoice(xs);
-                              leave();
-                            },
-  Term:                     function(expr) {
-                              viz(expr);  // force evaluation
-                            },
-  Term_inline:              function(x, n) {
-                              viz(x);  // force evaluation
-                              viz(n);  // force evaluation
-                            },
-  caseName:                 function(_, _, n, _, _) {
-                              add('caseName', viz(n));
-                            },
-  Seq:                      function(expr) {
-                              enter('seq');
-                                viz(expr);  // force evaluation
-                              leave();
-                            },
-  Iter:                     function(expr) {
-                              viz(expr);  // force evaluation
-                            },
-  Iter_star:                function(x, _) {
-                              enter('star');
-                                viz(x);  // force evaluation
-                              leave();
-                            },
-  Iter_plus:                function(x, _) {
-                              enter('plus');
-                                viz(x);  // force evaluation
-                              leave();
-                            },
-  Iter_opt:                 function(x, _) {
-                              enter('opt');
-                                viz(x);  // force evaluation
-                              leave();
-                            },
-  Pred:                     function(expr) {
-                              viz(expr);  // force evaluation
-                            },
-  Pred_not:                 function(_, x) {
-                              enter('not');
-                                viz(x);  // force evaluation
-                              leave();
-                            },
-  Pred_lookahead:           function(_, x) {
-                              enter('lookahead');
-                                viz(x);  // force evaluation
-                              leave();
-                            },
-  Base:                     function(expr) {
-                              viz(expr);  // force evaluation
-                            },
-  Base_application:         function(rule, ps) {
-                              add('app', viz(rule));
-                            },
-  Base_prim:                function(expr) {
-                              viz(expr);  // force evaluation
-                            },
-  Base_paren:               function(_, x, _) {
-                              enter('paren');
-                                viz(x);  // force evaluation
-                              leave();
-                            },
-  Base_arr:                 function(_, x, _) {
-                              enter('arr');
-                                viz(x);  // force evaluation
-                              leave();
-                            },
-  Base_str:                 function(_, x, _) {
-                              enter('str');
-                                viz(x);  // force evaluation
-                              leave();
-                            },
-  Base_obj:                 function(_, lenient, _) {
-                              throw 'TODO';
-                            },
-  Base_objWithProps:        function(_, ps, _, lenient, _) {
-                              throw 'TODO';
-                            },
-  Props:                    function(p, _, ps) {
-                              throw 'TODO';
-                            },
-  ident:                    function(n) {
-                              return viz(n);
-                            },
-  name:                     function(_, _) {
-                              return this.interval.contents;
-                            },
-  string:                   function(_, cs, _) {
-                              add('string', escape(eval(this.interval.contents)));
-                            },
-  regExp:                   function(_, e, _) {
-                              viz(e);  // force evaluation
-                            },
-  reCharClass:              function(_) {
-                              add('charClass', this.interval.contents);
-                            },
-  number:                   function(_, _) {
-                              add('prim', this.interval.contents);
-                            },
-  keyword:                  function(expr) {
-                              viz(expr);  // force evaluation
-                            },
-  keyword_undefined:        function(_) {
-                              add('prim', 'undefined');
-                            },
-  keyword_null:             function(_) {
-                              add('prim', 'null');
-                            },
-  keyword_true:             function(_) {
-                              add('prim', 'true');
-                            },
-  keyword_false:            function(_) {
-                              add('prim', 'false');
-                            },
-  Prop:                     function(n, _, p) {},
-  _many:                    ohm.actions.makeArray,
-  _terminal:                ohm.actions.getPrimitiveValue
+s.addOperation('vizChoice', {
+  _default:          function(children) {
+                       enter('choice');
+                         this.viz();
+                       leave();
+                     },
+  _many:             ohm.actions.makeArray,
 });
 
 function escape(str) {
@@ -330,7 +329,7 @@ source.oninput = function() {
     source.className = 'error';
   } else {
     removeChildren(vizDiv);
-    viz(m);
+    s(m).viz();
     source.className = undefined;
   }
 };
@@ -351,8 +350,6 @@ window.test = function(t) {
   t.end();
 };
 
-})();
     </script>
   </body>
 </html>
-

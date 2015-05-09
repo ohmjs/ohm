@@ -72,7 +72,7 @@ s.addOperation('interpret', {
   PriExp_paren:  function(_, e, _) { return e.interpret(); },
   PriExp_pos:    function(_, e)    { return e.interpret(); },
   PriExp_neg:    function(_, e)    { return -e.interpret(); },
-  ident:         function(_, _)    { return constants[this.interval.contents]; },
+  ident:         function(_, _)    { return constants[this.interval.contents] || 0; },
   number:        function(_)       { return parseFloat(this.interval.contents); },
   _default:       ohm.actions.passThrough
 });
