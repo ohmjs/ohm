@@ -27,19 +27,15 @@ function combine(obj1, props) {
 // --------------------------------------------------------------------
 
 test('operations', function(t) {
-  var expr = ohm.grammar(arithmeticGrammarSource);
-  var s = expr.semantics();
-
-  function match(source) {
-    return expr.match(source, 'expr');
-  }
+  var Arithmetic = ohm.grammar(arithmeticGrammarSource);
+  var s = Arithmetic.semantics();
 
   // An operation that evaluates an expression
   s.addOperation('value', {
-    addExpr_plus: function(x, op, y) {
+    addExp_plus: function(x, op, y) {
       return x.value() + y.value();
     },
-    mulExpr_times: function(x, op, y) {
+    mulExp_times: function(x, op, y) {
       return x.value() * y.value();
     },
     number_rec: function(n, d) {
@@ -54,15 +50,15 @@ test('operations', function(t) {
     }
   });
 
-  t.equal(s(match('1+2')).value(), 3, 'single addExpr');
-  t.equal(s(match('13+10*2*3')).value(), 73, 'more complicated case');
+  t.equal(s(Arithmetic.match('1+2')).value(), 3, 'single addExp');
+  t.equal(s(Arithmetic.match('13+10*2*3')).value(), 73, 'more complicated case');
 
   // An operation that produces a list of the values of all the numbers in the tree.
   s.addOperation('numberValues', {
-    addExpr_plus: function(x, op, y) {
+    addExp_plus: function(x, op, y) {
       return x.numberValues().concat(y.numberValues());
     },
-    mulExpr_times: function(x, op, y) {
+    mulExp_times: function(x, op, y) {
       return x.numberValues().concat(y.numberValues());
     },
     number: function(n) {
@@ -70,21 +66,21 @@ test('operations', function(t) {
     },
     _default: ohm.actions.passThrough
   });
-  t.deepEqual(s(match('9')).numberValues(), [9]);
-  t.deepEqual(s(match('13+10*2*3')).numberValues(), [13, 10, 2, 3]);
+  t.deepEqual(s(Arithmetic.match('9')).numberValues(), [9]);
+  t.deepEqual(s(Arithmetic.match('13+10*2*3')).numberValues(), [13, 10, 2, 3]);
 
   t.end();
 });
 
 test('attributes', function(t) {
-  var expr = ohm.grammar(arithmeticGrammarSource);
+  var Arithmetic = ohm.grammar(arithmeticGrammarSource);
   var count = 0;
-  var s = expr.semantics().addAttribute('value', {
-    addExpr_plus: function(x, op, y) {
+  var s = Arithmetic.semantics().addAttribute('value', {
+    addExp_plus: function(x, op, y) {
       count++;
       return x.value + y.value;
     },
-    mulExpr_times: function(x, op, y) {
+    mulExp_times: function(x, op, y) {
       count++;
       return x.value * y.value;
     },
@@ -103,14 +99,10 @@ test('attributes', function(t) {
     }
   });
 
-  function match(source) {
-    return expr.match(source, 'expr');
-  }
+  var simple = Arithmetic.match('1+2');
+  var complicated = Arithmetic.match('13+10*2*3');
 
-  var simple = match('1+2');
-  var complicated = match('13+10*2*3');
-
-  t.equal(s(simple).value, 3, 'single addExpr');
+  t.equal(s(simple).value, 3, 'single addExp');
   t.equal(s(complicated).value, 73, 'more complicated case');
 
   // Check that attributes are memoized
@@ -123,8 +115,8 @@ test('attributes', function(t) {
 });
 
 test('semantics', function(t) {
-  var expr = ohm.grammar(arithmeticGrammarSource);
-  var s = expr.semantics();
+  var Arithmetic = ohm.grammar(arithmeticGrammarSource);
+  var s = Arithmetic.semantics();
 
   t.equal(s.addOperation('op', {}), s, 'addOperation returns the receiver');
   t.equal(s.addAttribute('attr', {}), s, 'addAttribute returns the receiver');
@@ -155,7 +147,7 @@ test('semantics', function(t) {
   t.throws(function() { s(); }, /expected a CST node/);
   t.throws(function() { s(3); }, /expected a CST node/);
   t.throws(function() { s('asdf'); }, /expected a CST node/);
-  t.throws(function() { s(expr.match('barf')); },
+  t.throws(function() { s(Arithmetic.match('barf')); },
       /expected a CST node, but got \[MatchFailure at position 0\]/,
       'throws when arg is a MatchFailure');
 
@@ -163,8 +155,8 @@ test('semantics', function(t) {
   var g = ohm.grammar('G {}');
   t.throws(function() { s(g.match('a', 'letter')); }, /Cannot use a CST node created by grammar/);
   // ... even if it's a sub-grammar
-  g = ohm.grammar('Expr2 <: Expr {}', {Expr: expr});
-  t.throws(function() { s(g.match('1+2', 'expr')); }, /Cannot use a CST node created by grammar/);
+  g = ohm.grammar('Arithmetic2 <: Arithmetic {}', {Arithmetic: Arithmetic});
+  t.throws(function() { s(g.match('1+2', 'exp')); }, /Cannot use a CST node created by grammar/);
 
   t.end();
 });

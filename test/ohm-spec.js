@@ -79,9 +79,9 @@ test('grammar constructors dictionary', function(t) {
   });
 
   it('has an entry for each of a few carefully chosen rules', function() {
-    t.ok(m.constructors.addExpr);
-    t.ok(m.constructors.addExpr_minus);
-    t.ok(m.constructors.priExpr);
+    t.ok(m.constructors.addExp);
+    t.ok(m.constructors.addExp_minus);
+    t.ok(m.constructors.priExp);
     t.ok(m.constructors.digit);
     t.ok(m.constructors._);
   });
@@ -95,15 +95,15 @@ test('grammar constructors dictionary', function(t) {
   });
 
   it('_default entry works when called correctly', function() {
-    t.ok(m.construct('addExpr', [m.match('1+2', 'addExpr_plus')]) instanceof nodes.Node);
+    t.ok(m.construct('addExp', [m.match('1+2', 'addExp_plus')]) instanceof nodes.Node);
   });
 
   it('particular entries work when called', function() {
-    var n = m.match('1+2*3', 'addExpr');
-    t.equal(n.ctorName, 'addExpr');
+    var n = m.match('1+2*3', 'addExp');
+    t.equal(n.ctorName, 'addExp');
 
     var p = n.children[0];
-    t.equal(p.ctorName, 'addExpr_plus');
+    t.equal(p.ctorName, 'addExp_plus');
     t.equal(p.numChildren(), 3);
   });
 
@@ -1038,12 +1038,12 @@ test('apply', function(t) {
   test('nested left recursion', function(t) {
     var m = util.makeGrammar([
       'M {',
-      '  addExpr = addExprRec | mulExpr',
-      '  addExprRec = addExpr "+" mulExpr',
-      '  mulExpr = mulExprRec | priExpr',
-      '  mulExprRec = mulExpr "*" priExpr',
-      '  priExpr = /[0-9]/',
-      '  sss = &addExpr addExpr',
+      '  addExp = addExpRec | mulExp',
+      '  addExpRec = addExp "+" mulExp',
+      '  mulExp = mulExpRec | priExp',
+      '  mulExpRec = mulExp "*" priExp',
+      '  priExp = /[0-9]/',
+      '  sss = &addExp addExp',
       '}'
     ]);
 
@@ -1058,58 +1058,58 @@ test('apply', function(t) {
     it('semantic actions', function() {
       var f = m.match('1*2+3+4*5');
       var parseTree = m.synthesizedAttribute({
-        addExpr: function(expr) {
-          return ['addExpr', parseTree(expr)];
+        addExp: function(expr) {
+          return ['addExp', parseTree(expr)];
         },
-        addExprRec: function(x, _, y) {
-          return ['addExprRec', parseTree(x), parseTree(y)];
+        addExpRec: function(x, _, y) {
+          return ['addExpRec', parseTree(x), parseTree(y)];
         },
-        mulExpr: function(expr) {
-          return ['mulExpr', parseTree(expr)];
+        mulExp: function(expr) {
+          return ['mulExp', parseTree(expr)];
         },
-        mulExprRec: function(x, _, y) {
-          return ['mulExprRec', parseTree(x), parseTree(y)];
+        mulExpRec: function(x, _, y) {
+          return ['mulExpRec', parseTree(x), parseTree(y)];
         },
-        priExpr: ohm.actions.passThrough,
+        priExp: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
       });
       t.deepEqual(parseTree(f),
-        ['addExpr',
-          ['addExprRec',
-            ['addExpr',
-              ['addExprRec',
-                ['addExpr', ['mulExpr', ['mulExprRec', ['mulExpr', '1'], '2']]],
-                ['mulExpr', '3']]],
-            ['mulExpr', ['mulExprRec', ['mulExpr', '4'], '5']]]]);
+        ['addExp',
+          ['addExpRec',
+            ['addExp',
+              ['addExpRec',
+                ['addExp', ['mulExp', ['mulExpRec', ['mulExp', '1'], '2']]],
+                ['mulExp', '3']]],
+            ['mulExp', ['mulExpRec', ['mulExp', '4'], '5']]]]);
       var eval = m.synthesizedAttribute({
-        addExpr: function(expr) {
+        addExp: function(expr) {
           return eval(expr);
         },
-        addExprRec: function(x, _, y) {
+        addExpRec: function(x, _, y) {
           return eval(x) + eval(y);
         },
-        mulExpr: function(expr) {
+        mulExp: function(expr) {
           return eval(expr);
         },
-        mulExprRec: function(x, _, y) {
+        mulExpRec: function(x, _, y) {
           return eval(x) * eval(y);
         },
-        priExpr: function(expr) {
+        priExp: function(expr) {
           return parseInt(eval(expr));
         },
         _terminal: ohm.actions.getPrimitiveValue
       });
       t.equal(eval(f), 25);
       var pretty = m.synthesizedAttribute({
-        addExpr: ohm.actions.passThrough,
-        addExprRec: function(x, _, y) {
+        addExp: ohm.actions.passThrough,
+        addExpRec: function(x, _, y) {
           return '(' + pretty(x) + '+' + pretty(y) + ')';
         },
-        mulExpr: ohm.actions.passThrough,
-        mulExprRec: function(x, _, y) {
+        mulExp: ohm.actions.passThrough,
+        mulExpRec: function(x, _, y) {
           return '(' + pretty(x) + '*' + pretty(y) + ')';
         },
-        priExpr: ohm.actions.passThrough,
+        priExp: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
       });
       t.equal(pretty(f), '(((1*2)+3)+(4*5))');
@@ -1119,23 +1119,23 @@ test('apply', function(t) {
       var f = m.match('1*2+3+4*5', 'sss');
       var a = buildTreeNodeWithUniqueId(m);
       var tree =
-        ['id', 1, 'addExpr',
-          ['id', 2, 'addExprRec',
-            ['id', 3, 'addExpr',
-              ['id', 4, 'addExprRec',
-                ['id', 5, 'addExpr',
-                  ['id', 6, 'mulExpr',
-                    ['id', 7, 'mulExprRec',
-                      ['id', 8, 'mulExpr',
-                        ['id', 9, 'priExpr', '1']], '*',
-                      ['id', 10, 'priExpr', '2']]]], '+',
-                  ['id', 11, 'mulExpr',
-                    ['id', 12, 'priExpr', '3']]]], '+',
-              ['id', 13, 'mulExpr',
-                ['id', 14, 'mulExprRec',
-                  ['id', 15, 'mulExpr',
-                    ['id', 16, 'priExpr', '4']], '*',
-                  ['id', 17, 'priExpr', '5']]]]];
+        ['id', 1, 'addExp',
+          ['id', 2, 'addExpRec',
+            ['id', 3, 'addExp',
+              ['id', 4, 'addExpRec',
+                ['id', 5, 'addExp',
+                  ['id', 6, 'mulExp',
+                    ['id', 7, 'mulExpRec',
+                      ['id', 8, 'mulExp',
+                        ['id', 9, 'priExp', '1']], '*',
+                      ['id', 10, 'priExp', '2']]]], '+',
+                  ['id', 11, 'mulExp',
+                    ['id', 12, 'priExp', '3']]]], '+',
+              ['id', 13, 'mulExp',
+                ['id', 14, 'mulExpRec',
+                  ['id', 15, 'mulExp',
+                    ['id', 16, 'priExp', '4']], '*',
+                  ['id', 17, 'priExp', '5']]]]];
       t.deepEqual(a(f), ['id', 0, 'sss', tree, tree]);
       t.equal(a._getNextId(), 18);
     });
@@ -1145,19 +1145,19 @@ test('apply', function(t) {
   test('nested and indirect left recursion', function(t) {
     var m = util.makeGrammar([
       'G {',
-      '  addExpr = a | c',
+      '  addExp = a | c',
       '  a = b',
-      '  b = addExprRec',
-      '  addExprRec = addExpr "+" mulExpr',
+      '  b = addExpRec',
+      '  addExpRec = addExp "+" mulExp',
       '  c = d',
-      '  d = mulExpr',
-      '  mulExpr = e | g',
+      '  d = mulExp',
+      '  mulExp = e | g',
       '  e = f',
-      '  f = mulExprRec',
+      '  f = mulExpRec',
       '  g = h',
-      '  h = priExpr',
-      '  mulExprRec = mulExpr "*" priExpr',
-      '  priExpr = /[0-9]/',
+      '  h = priExp',
+      '  mulExpRec = mulExp "*" priExp',
+      '  priExp = /[0-9]/',
       '}'
     ]);
 
@@ -1171,10 +1171,10 @@ test('apply', function(t) {
 
     it('semantic actions', function() {
       var buildTree = m.synthesizedAttribute({
-        addExprRec: function(x, _, y) {
+        addExpRec: function(x, _, y) {
           return [buildTree(x), '+', buildTree(y)];
         },
-        mulExprRec: function(x, _, y) {
+        mulExpRec: function(x, _, y) {
           return [buildTree(x), '*', buildTree(y)];
         },
         _terminal: ohm.actions.getPrimitiveValue,
@@ -1477,19 +1477,19 @@ test('bindings', function(t) {
 test('inline rule declarations', function(t) {
   function makeEval(g) {
     var eval = g.synthesizedAttribute({
-      addExpr_plus: function(x, op, y) {
+      addExp_plus: function(x, op, y) {
         return eval(x) + eval(y);
       },
-      addExpr_minus: function(x, op, y) {
+      addExp_minus: function(x, op, y) {
         return eval(x) - eval(y);
       },
-      mulExpr_times: function(x, op, y) {
+      mulExp_times: function(x, op, y) {
         return eval(x) * eval(y);
       },
-      mulExpr_divide: function(x, op, y) {
+      mulExp_divide: function(x, op, y) {
         return eval(x) / eval(y);
       },
-      priExpr_paren: function(oparen, e, cparen) {
+      priExp_paren: function(oparen, e, cparen) {
         return eval(e);
       },
       number_rec: function(n, d) {
@@ -1505,27 +1505,27 @@ test('inline rule declarations', function(t) {
   }
 
   var ns = {};
-  var expr = ns.Expr = util.makeGrammar(arithmeticGrammarSource);
+  var Arithmetic = ns.Arithmetic = util.makeGrammar(arithmeticGrammarSource);
 
-  t.ok(expr.match('1*(2+3)-4/5', 'expr'), 'expr is recognized');
-  t.equal(makeEval(expr)(expr.match('10*(2+123)-4/5', 'expr')), 1249.2, 'semantic action works');
+  t.ok(Arithmetic.match('1*(2+3)-4/5'), 'expr is recognized');
+  t.equal(makeEval(Arithmetic)(Arithmetic.match('10*(2+123)-4/5')), 1249.2, 'semantic action works');
 
   var m2 = util.makeGrammar([
-      'Good <: Expr {',
-      '  addExpr := addExpr "~" mulExpr  -- minus',
-      '           | mulExpr',
+      'Good <: Arithmetic {',
+      '  addExp := addExp "~" mulExp  -- minus',
+      '           | mulExp',
       '}'
     ], ns);
-  t.equal(makeEval(m2)(m2.match('2*3~4', 'expr')), 2);
+  t.equal(makeEval(m2)(m2.match('2*3~4')), 2);
 
   try {
-    util.makeGrammar('Bad <: Expr { addExpr += addExpr "~" mulExpr  -- minus }', ns);
+    util.makeGrammar('Bad <: Arithmetic { addExp += addExp "~" mulExp  -- minus }', ns);
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.ok(e instanceof errors.DuplicateRuleDeclaration);
-    t.equal(e.ruleName, 'addExpr_minus');
+    t.equal(e.ruleName, 'addExp_minus');
     t.equal(e.offendingGrammarName, 'Bad');
-    t.equal(e.declGrammarName, 'Expr');
+    t.equal(e.declGrammarName, 'Arithmetic');
   };
   t.end();
 });
@@ -1697,35 +1697,35 @@ test('bootstrap', function(t) {
   t.ok(g.match(ohmGrammarSource, 'Grammar'), 'Ohm grammar can recognize itself');
 
   it('can produce a grammar that works', function() {
-    var a = ohm._buildGrammar(g.match(arithmeticGrammarSource, 'Grammar'),
-                              ohm.createNamespace(),
-                              g);
-    var eval = a.synthesizedAttribute({
-      expr: function(expr) {
+    var Arithmetic = ohm._buildGrammar(g.match(arithmeticGrammarSource, 'Grammar'),
+                                       ohm.createNamespace(),
+                                       g);
+    var eval = Arithmetic.synthesizedAttribute({
+      exp: function(expr) {
         return eval(expr);
       },
-      addExpr: function(expr) {
+      addExp: function(expr) {
         return eval(expr);
       },
-      addExpr_plus: function(x, op, y) {
+      addExp_plus: function(x, op, y) {
         return eval(x) + eval(y);
       },
-      addExpr_minus: function(x, op, y) {
+      addExp_minus: function(x, op, y) {
         return eval(x) - eval(y);
       },
-      mulExpr: function(expr) {
+      mulExp: function(expr) {
         return eval(expr);
       },
-      mulExpr_times: function(x, op, y) {
+      mulExp_times: function(x, op, y) {
         return eval(x) * eval(y);
       },
-      mulExpr_divide: function(x, op, y) {
+      mulExp_divide: function(x, op, y) {
         return eval(x) / eval(y);
       },
-      priExpr: function(expr) {
+      priExp: function(expr) {
         return eval(expr);
       },
-      priExpr_paren: function(oparen, e, cparen) {
+      priExp_paren: function(oparen, e, cparen) {
         return eval(e);
       },
       number: function(expr) {
@@ -1739,7 +1739,7 @@ test('bootstrap', function(t) {
       },
       _terminal: ohm.actions.getPrimitiveValue
     });
-    t.equal(eval(a.match('10*(2+123)-4/5', 'expr')), 1249.2);
+    t.equal(eval(Arithmetic.match('10*(2+123)-4/5')), 1249.2);
   });
 
   it('full bootstrap!', function() {

@@ -1,23 +1,24 @@
-Expr {
-  expr
-    = addExpr
+Arithmetic {
 
-  addExpr
-    = addExpr "+" mulExpr  -- plus
-    | addExpr "-" mulExpr  -- minus
-    | mulExpr
+  exp
+    = addExp
 
-  mulExpr
-    = mulExpr "*" priExpr  -- times
-    | mulExpr "/" priExpr  -- divide
-    | priExpr
+  addExp
+    = addExp "+" mulExp  -- plus
+    | addExp "-" mulExp  -- minus
+    | mulExp
 
-  priExpr
-    = "(" expr ")"         -- paren
+  mulExp
+    = mulExp "*" priExp  -- times
+    | mulExp "/" priExp  -- divide
+    | priExp
+
+  priExp
+    = "(" exp ")"        -- paren
     | number
 
   number  (a number)
-    = number digit         -- rec
+    = number digit       -- rec
     | digit
-}
 
+}
