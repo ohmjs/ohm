@@ -47,7 +47,7 @@ For use in the browser, simply download [dist/ohm.js](./dist/ohm.js) or [dist/oh
 #### Instantiating Grammars
 
 To use Ohm, you'll need a grammar that is written in the Ohm language. The grammar provides a formal definition of the language or data format that you want to parse. In the examples above, the grammar was simply stored as a string literal in the source code. This works for simple examples, but for larger grammars, you'll probably want to do things differently. If you are using Node or io.js, you can store the grammar in a separate file (e.g. 
-myGrammar.ohm') and use it like this:
+'myGrammar.ohm') and use it like this:
 
 ```js
 var fs = require('fs');
@@ -93,7 +93,7 @@ if (m.succeeded()) {
 }
 ```
 
-For more information, see the [tutorial](./doc/tutorial.md) or the [reference](./doct/reference.md).
+For more information, see the [tutorial](./doc/tutorial.md) or the [reference](./doc/reference.md).
 
 Contributing
 ------------
