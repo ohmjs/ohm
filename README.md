@@ -1,63 +1,114 @@
-What is this thing?
-===================
+Ohm
+===
 
-Ohm is a new object-oriented language for pattern matching. Like its older sibling [OMeta](https://github.com/alexwarth/ometa-js), it is based on [Parsing Expression Grammars (PEGs)](http://en.wikipedia.org/wiki/Parsing_expression_grammar), and [supports pattern matching on arbitrary data](http://tinlizzie.org/~awarth/papers/dls07.pdf), e.g., strings, lists, and objects.
+[Ohm](https://gitlab.com/cdg/ohm) is a library and domain-specific language for parsing and pattern matching. You can use it to parse custom file formats, transform complex data structures, and quickly build parsers, interpreters, and compilers for programming languages. The _Ohm language_ is based on [parsing expression grammars](http://en.wikipedia.org/wiki/Parsing_expression_grammar) (PEGs), which are a formal way of describing syntax, similar to regular expressions and context-free grammars. The _Ohm library_ provides a JavaScript interface (known as Ohm/JS) for creating parsers and interpreters from the grammars you write.
 
-One feature that distinguishes Ohm from OMeta and other parsing DSLs / frameworks is that Ohm completely separates grammars from semantic actions. In Ohm, a grammar defines a language, and semantic actions specify what to do with valid inputs in that language. The benefits of this separation of concerns include:
+Like its older sibling [OMeta](http://tinlizzie.org/ometa/), Ohm supports object-oriented grammar extension and allows pattern matching of arbitrary data structures (not just strings). One thing that distinguishes Ohm from other parsing tools is that it completely separates grammars from semantic actions. In Ohm, a grammar defines a language, and semantic actions specify what to do with valid inputs in that language. Semantic actions are written in the _host language_ -- e.g., for Ohm/JS, the host language is JavaScript. Ohm grammars, on the other hand, work without modification in any host language. This separation improves modularity, and makes both grammars and semantic actions easier to read and understand.
 
-* __Improved readability__
-    - Grammars are *pure*, not cluttered with semantic actions.
-    - The meaning of the semantic actions is also more obvious when they're seen in isolation, and not scattered throughout a grammar, amidst Kleene-*s and other control structures.
-* __Better modularity__
-    - Grammars and semantic actions can be extended independently, using familiar object-oriented mechanisms.
-    - The same grammar can be used with different semantic actions to (for instance) parse, syntax highlight, and compile programs. (In fact, Ohm lets you do all of these things without making multiple passes over the input.)
-* __Portability__
-    - The same Ohm grammar can be used, without modification, with Ohm implementations that run on top of different languages, e.g., Ohm/JS and Ohm/Scheme. (Note that semantic actions are still language-dependent.)
+About PEGs
+----------
 
-Another interesting aspect of Ohm is that it applies semantic actions *lazily*, i.e., a semantic action is only evaluated if and when its result is required, and never more than once. The benefits of laziness are:
+Like a [context-free grammar](http://en.wikipedia.org/wiki/Context-free_grammar) (CFG), a PEG is a formal way to describe the syntax of a language. We use the term "language" loosely: formal grammars describe patterns, and anything that matches the pattern is said to be part of the _language_ described by that grammar. A PEG might describe a programming language, a file format, or something as simple as the set of valid North American phone numbers.
 
-* __A more sensible programming model__
-    - When writing semantic actions, programmers don't have to worry about backtracking. This is especially nice when you're writing side-effectful semantic actions.
-* __Semantic actions (not the grammar!) control the evaluation of sub-expressions__
-    - Like the visitor design pattern, this enables programmers to specify what to do *before* and *after* the semantic actions of sub-epressions are evaluated.
-    - Unlike visitors, laziness enables different semantic actions (i.e., different uses of the same grammar) to customize the order in which sub-expressions are evaluated to suit their own needs.
-* __Efficiency__
-    - No semantic actions are evaluated if the input is invalid.
-    - No semantic actions are evaluated for the failed branches of an alternation (`|`) expression, i.e., for anything that causes backtracking.
-    - If a semantic action doesn't mention a particular sub-expression, that sub-expression's semantic actions will never be evaluated.
+PEGs and CFGs share many concepts with regular expressions, but are generally more powerful and easier to understand. Compared to context-free grammars, the main advantage of PEGs is that they are never ambiguous, and as a result, a PEG maps directly to a top-down parser for the language it describes. For more on the history and theory of PEGs, see Bryan Ford's page on [Packrat Parsing and Parsing Expression Grammars](http://bford.info/packrat/).
 
-Notes for users
-===============
+Usage
+-----
 
-Installation
-------------
+### Getting Started
+
+For Node.js and io.js (**Note:** As soon as Ohm is ready for release, it will be published on NPM):
 
     git clone git@gitlab.com:cdg/ohm.git
-    npm install -g --ignore-scripts ohm/.
+    npm install -g --ignore-scripts ./ohm
 
-**Note:** As soon as the language is a little more mature and I get around to writing some documentation, I'll publish the npm module so that people won't have to clone this repository.
+Then require it from anywhere:
 
-Using Ohm
----------
+```js
+var ohm = require('ohm');
+var g = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
+var result = g.match('hola');
+if (result.failed()) console.log(result.message);
+```
 
-For now, the best place to start is the example code in `demo/index.html`. It defines a simple grammar of arithmetic expressions and shows how you can write *semantic action dictionaries* that make it do interesting things.
+For use in the browser, simply download [dist/ohm.js](./dist/ohm.js) or [dist/ohm.min.js](./dist/ohm.min.js), and add it as a script tag to your page:
 
-*(A proper tutorial is coming soon.)*
+```html
+<script src="ohm.min.js"></script>
+<script>
+  var g = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }')
+  var result = g.match('hola');
+  if (result.failed()) console.log(result.message);
+</script>
+```
 
-Notes for contributors
-======================
+### Basics
 
-To get started
---------------
+#### Instantiating Grammars
+
+To use Ohm, you'll need a grammar that is written in the Ohm language. The grammar provides a formal definition of the language or data format that you want to parse. In the examples above, the grammar was simply stored as a string literal in the source code. This works for simple examples, but for larger grammars, you'll probably want to do things differently. If you are using Node or io.js, you can store the grammar in a separate file (e.g. 
+myGrammar.ohm') and use it like this:
+
+```js
+var fs = require('fs');
+var ohm = require('ohm');
+var myGrammar = ohm.grammar(fs.readFileSync('myGrammar.ohm'));
+```
+
+In the browser, you can put the grammar into a separate script element, with `type="text/ohm-js"`:
+
+```html
+<script type="text/ohm-js" id="grammarSrc">
+  MyGrammar {
+    greeting = "Hello" | "Hola"
+  }
+</script>
+```
+
+Then, you can instantiate the grammar like this:
+
+```js
+var myGrammar = ohm.grammarFromScriptElement();
+```
+
+If you have more than one script tag with type="text/ohm-js" in your document, you will need to pass the appropriate script tag as an argument:
+
+```js
+var myGrammar = ohm.grammarFromScriptElement(document.querySelector('#grammarSrc'));
+```
+
+To instantiate multiple grammars at once, use `ohm.grammars()` and `ohm.grammarsFromScriptElements()`.
+
+#### Using Grammars
+
+Once you've instantiated a grammar object, you can use the grammar's `match()` method:
+
+```js
+var userInput = 'Hello';
+var m = myGrammar.match(userInput);
+if (m.succeeded()) {
+  console.log('Greetings, human.');
+} else {
+  console.log("That's not a greeting!");
+}
+```
+
+For more information, see the [tutorial](./doc/tutorial.md) or the [reference](./doct/reference.md).
+
+Contributing
+------------
+
+All you need to get started:
 
     git clone git@gitlab.com:cdg/ohm.git
     cd ohm
-    npm install .   # this will install the required dependencies
+    npm install
 
-Some useful scripts
--------------------
+### Some useful scripts
 
-* `npm test` runs the unit tests
-* `npm test-watch` runs the unit tests every time a file changes
-* `npm run build` builds `dist/ohm.js` and `dist/ohm.min.js`, which are stand-alone "binaries" that can be included in a webpage. (The latter is a minified version of the former.)
-* `npm run build-ohm-grammar` generates `dist/ohm-grammar.js` from `src/ohm-grammar.ohm`
+* `npm test` runs the unit tests.
+* `npm run test-watch` re-runs the unit tests every time a file changes.
+* `npm run build` builds [dist/ohm.js](./dist/ohm.js) and [dist/ohm.min.js](./dist/ohm.min.js), which are stand-alone bundles that can be included in a webpage.
+* When editing Ohm's own grammar (in `src/ohm-grammar.ohm`), run `npm run bootstrap` to re-build Ohm and test your changes.
+
+Before submitting a pull request, be sure to add tests, and ensure that `npm run prepublish` runs without errors.
