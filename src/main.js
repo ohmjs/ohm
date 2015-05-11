@@ -299,8 +299,7 @@ function getScriptElementContents(el) {
   return el.getAttribute('src') ? load(el.getAttribute('src')) : el.innerHTML;
 }
 
-function grammar(stringOrNode, optNamespace) {
-  var source = typeof stringOrNode === 'string' ? stringOrNode : [stringOrNode];
+function grammar(source, optNamespace) {
   var ns = grammars(source, optNamespace);
 
   // Ensure that the source contained no more than one grammar definition.

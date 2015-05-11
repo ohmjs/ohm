@@ -1,0 +1,57 @@
+/* eslint-env node*/
+
+'use strict';
+
+// --------------------------------------------------------------------
+// Imports
+// --------------------------------------------------------------------
+
+var markscript = require('markscript');
+var ohm = require('..');
+var path = require('path');
+
+var test = require('tape-catch');
+var util = require('./util');
+
+// --------------------------------------------------------------------
+// Private stuff
+// --------------------------------------------------------------------
+
+var fakeDocument = {
+  querySelector: function(sel) {
+    return util.fakeScriptTag('G { foo = end }');
+  },
+  querySelectorAll: function(sel) {
+    return [util.fakeScriptTag('G { foo = end }')];
+  }
+};
+
+var markscriptConfig = {
+  // Expose the fake document object to scripts inside Markdown.
+  globals: {document: fakeDocument},
+
+  // Make `require('ohm')` work properly from inside Markdown.
+  moduleAliases: {ohm: '..'},
+  workingDir: scriptRel('data')
+};
+
+function scriptRel(relPath) {
+  return path.join(__dirname, relPath);
+}
+
+// Stub out the use of `document` in the loaded module. When scripts inside
+// Markdown require 'ohm', they will get the same instance.
+ohm._setDocumentInterfaceForTesting(fakeDocument);
+
+// --------------------------------------------------------------------
+// Tests
+// --------------------------------------------------------------------
+
+// The tests below use Markscript to execute any code that is inside fenced
+// code blocks in a Markdown document. This allows us to ensure that examples
+// in the documentation run without errors.
+
+test('README.md', function(t) {
+  markscript.evaluateFile(scriptRel('../README.md'), markscriptConfig);
+  t.end();
+});

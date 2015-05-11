@@ -27,7 +27,7 @@ Then require it from anywhere:
 ```js
 var ohm = require('ohm');
 var g = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
-var result = g.match('hola');
+var result = g.match('Hallo');
 if (result.failed()) console.log(result.message);
 ```
 
@@ -52,7 +52,7 @@ To use Ohm, you'll need a grammar that is written in the Ohm language. The gramm
 ```js
 var fs = require('fs');
 var ohm = require('ohm');
-var myGrammar = ohm.grammar(fs.readFileSync('myGrammar.ohm'));
+var myGrammar = ohm.grammar(fs.readFileSync('myGrammar.ohm').toString());
 ```
 
 In the browser, you can put the grammar into a separate script element, with `type="text/ohm-js"`:

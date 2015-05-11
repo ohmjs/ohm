@@ -1649,21 +1649,11 @@ test('namespaces', function(t) {
 });
 
 test('loading from script elements', function(t) {
-  function fakeScriptTag(contents) {
-    return {
-      type: 'text/ohm-js',
-      innerHTML: Array.isArray(contents) ? contents.join('\n') : contents,
-      getAttribute: function(name) {
-        return undefined;
-      },
-      nodeType: 1
-    };
-  }
-  var script1 = fakeScriptTag(['O { number = number digit  -- rec',
-                               '           | digit',
-                               '}']);
-  var script2 = fakeScriptTag(['M { x = "xx" }',
-                               'N { y = "yy" }']);
+  var script1 = util.fakeScriptTag(['O { number = number digit  -- rec',
+                                    '           | digit',
+                                    '}']);
+  var script2 = util.fakeScriptTag(['M { x = "xx" }',
+                                    'N { y = "yy" }']);
   var ns1 = ohm.grammarsFromScriptElements([script1]);
   var ns2 = ohm.grammarsFromScriptElements([script2]);
   t.equal(ns1.M, undefined, 'M is undefined in ns1');

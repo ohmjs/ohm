@@ -16,6 +16,15 @@ function uniqueId() {
   return nextId++;
 }
 
+function fakeScriptTag(contents) {
+  return {
+    type: 'text/ohm-js',
+    innerHTML: Array.isArray(contents) ? contents.join('\n') : contents,
+    getAttribute: function(name) { return undefined; },
+    nodeType: 1
+  };
+}
+
 function makeGrammar(source, optNamespace) {
   if (source instanceof Array) {
     source = source.join('\n');
@@ -35,6 +44,7 @@ function makeGrammars(source, optNamespace) {
 // --------------------------------------------------------------------
 
 module.exports = {
+  fakeScriptTag: fakeScriptTag,
   makeGrammar: makeGrammar,
   makeGrammars: makeGrammars,
   uniqueId: uniqueId
