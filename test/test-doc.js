@@ -7,10 +7,10 @@
 // --------------------------------------------------------------------
 
 var markscript = require('markscript');
-var ohm = require('..');
 var path = require('path');
-
 var test = require('tape-catch');
+
+var ohm = require('..');
 var util = require('./util');
 
 // --------------------------------------------------------------------
@@ -53,5 +53,10 @@ ohm._setDocumentInterfaceForTesting(fakeDocument);
 
 test('README.md', function(t) {
   markscript.evaluateFile(scriptRel('../README.md'), markscriptConfig);
+  t.end();
+});
+
+test('doc/index.md', function(t) {
+  markscript.evaluateFile(scriptRel('../doc/index.md'), markscriptConfig);
   t.end();
 });
