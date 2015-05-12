@@ -80,9 +80,8 @@ s.addOperation('interpret', {
 // -------------------------------------------------------------------------------------------------
 
 function stringify(x) {
-  return x instanceof Array ?
-      '(' + x.map(stringify).join(' ') + ')' :
-      x.toString();
+  return Array.isArray(x) ? '(' + x.map(stringify).join(' ') + ')'
+                          : x.toString();
 }
 
 s.addAttribute('asLisp', {

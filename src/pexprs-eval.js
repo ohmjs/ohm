@@ -245,7 +245,7 @@ pexprs.Lookahead.prototype._eval = function(state, inputStream, origPos) {
 
 pexprs.Arr.prototype._eval = function(state, inputStream, origPos) {
   var obj = inputStream.next();
-  if (obj instanceof Array) {
+  if (Array.isArray(obj)) {
     var objInputStream = InputStream.newFor(obj);
     state.pushInputStream(objInputStream);
     var ans = this.expr.eval(state) && state.inputStream.atEnd();
