@@ -83,3 +83,43 @@ Extend the Operation named `name` with the semantic actions contained in `action
 <code class="api">semantics.extendAttribute(name: string, actionDict: object) &rarr; this</code>
 
 Exactly like `semantics.extendOperation`, except it will extend an Attribute of the super semantics rather than an Operation.
+
+<h3 id="semantic-actions">Semantic Actions</h3>
+
+A semantic action is a function that computes the value of an operation or attribute for a specific type of node in the parse tree. Generally, you write a semantic action for every rule in your grammar, and store them together in an _action dictionary_. For example, given the following grammar:
+
+    RestrictiveName {
+      FullName = name name
+      name = (letter | "-" | ".")+
+    }
+
+<script type="text/markscript">
+  // Make sure this grammar is the same as the one above!
+  var g = require('ohm').grammar([
+      'RestrictiveName {',
+      '  FullName = name name',
+      '  name = (letter | "-" | ".")+',
+      '}'].join('\n'));
+</script>
+
+Here's what a set of semantic actions for this grammar might look like:
+
+    var actions = {
+      FullName: function(firstName, lastName) { ... },
+      name: function(chars) { ... }
+    };
+
+<script type="text/markscript">
+// This will be executed by Markscript but won't be visible in the HTML output.
+var actions = {
+  FullName: function(firstName, lastName) {
+  	return lastName.x().toUpperCase() + ', ' + firstName.x();
+  },
+  name: function(chars) {
+    return this.node.interval.contents;
+  }
+};
+var semantics = g.semantics().addOperation('x', actions);
+assert.equal(semantics(g.match('Guy Incognito')).x(), 'INCOGNITO, Guy');
+</script>
+

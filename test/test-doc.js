@@ -60,3 +60,8 @@ test('doc/index.md', function(t) {
   markscript.evaluateFile(scriptRel('../doc/index.md'), markscriptConfig);
   t.end();
 });
+
+test('doc/api-reference.md', function(t) {
+  markscript.evaluateFile(scriptRel('../doc/api-reference.md'), markscriptConfig);
+  t.end();
+});
