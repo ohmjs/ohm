@@ -88,38 +88,40 @@ Exactly like `semantics.extendOperation`, except it will extend an Attribute of 
 
 A semantic action is a function that computes the value of an operation or attribute for a specific type of node in the parse tree. Generally, you write a semantic action for every rule in your grammar, and store them together in an _action dictionary_. For example, given the following grammar:
 
-    RestrictiveName {
-      FullName = name name
-      name = (letter | "-" | ".")+
-    }
-
 <script type="text/markscript">
-  // Make sure this grammar is the same as the one above!
-  var g = require('ohm').grammar([
-      'RestrictiveName {',
-      '  FullName = name name',
-      '  name = (letter | "-" | ".")+',
-      '}'].join('\n'));
+  // Take the grammar below and instantiate it as `g` in the markscript environment.
+  markscript.transformNextBlock(function(code) {
+    return "var g = require('ohm').grammar('" + code.replace(/\n/g, '\\n') + "');";
+  });
 </script>
+
+```
+RestrictiveName {
+  FullName = name name
+  name = (letter | "-" | ".")+
+}
+```
 
 Here's what a set of semantic actions for this grammar might look like:
 
-    var actions = {
-      FullName: function(firstName, lastName) { ... },
-      name: function(chars) { ... }
-    };
-
 <script type="text/markscript">
-// This will be executed by Markscript but won't be visible in the HTML output.
-var actions = {
-  FullName: function(firstName, lastName) {
-  	return lastName.x().toUpperCase() + ', ' + firstName.x();
-  },
-  name: function(chars) {
-    return this.node.interval.contents;
-  }
-};
-var semantics = g.semantics().addOperation('x', actions);
-assert.equal(semantics(g.match('Guy Incognito')).x(), 'INCOGNITO, Guy');
+  // Replace '...' in the action dict below with some actual function definitions,
+  // so that we can be sure that the code actually works.
+  markscript.transformNextBlock(function(code) {
+    return code.replace('...', "return lastName.x().toUpperCase() + ', ' + firstName.x()")
+               .replace('...', "return this.node.interval.contents;");
+  });
 </script>
 
+```js
+var actions = {
+  FullName: function(firstName, lastName) { ... },
+  name: function(chars) { ... }
+};
+```
+
+<script type="text/markscript">
+  // Verify that the action dict actually works.
+  var semantics = g.semantics().addOperation('x', actions);
+  assert.equal(semantics(g.match('Guy Incognito')).x(), 'INCOGNITO, Guy');
+</script>
