@@ -310,19 +310,19 @@ test('extending semantics', function(t) {
       addOperation('valueTimesTwo', {
         _default: function(children) { return this.value() * 2; }
       });
-  t.throws(function() { ns.G2.semantics(s).addOperation('value', {}); }, /already exists/);
-  t.throws(function() { ns.G2.semantics(s).extendOperation('foo', {}); }, /did not inherit/);
+  t.throws(function() { ns.G2.extendSemantics(s).addOperation('value', {}); }, /already exists/);
+  t.throws(function() { ns.G2.extendSemantics(s).extendOperation('foo', {}); }, /did not inherit/);
   t.throws(function() { ns.G.semantics().extendOperation('value', {}); }, /did not inherit/);
-  t.ok(ns.G3.semantics(s));
-  t.throws(function() { ns.G4.semantics(s); }, /not a sub-grammar/);
+  t.ok(ns.G3.extendSemantics(s));
+  t.throws(function() { ns.G4.extendSemantics(s); }, /not a sub-grammar/);
 
-  t.throws(function() { ns.G2.semantics(s).extendOperation('value', {}); }, /wrong arity/);
+  t.throws(function() { ns.G2.extendSemantics(s).extendOperation('value', {}); }, /wrong arity/);
   // If there is an arity mismatch due to overriding and we don't explicitly extend the operation /
   // attribute, we should catch this error when the derived semantics is applied to its first
   // CST node.
-  t.throws(function() { ns.G2.semantics(s)(ns.G2.match('eins!', 'one')); }, /wrong arity/);
+  t.throws(function() { ns.G2.extendSemantics(s)(ns.G2.match('eins!', 'one')); }, /wrong arity/);
 
-  var s2 = ns.G2.semantics(s).extendOperation('value', {
+  var s2 = ns.G2.extendSemantics(s).extendOperation('value', {
     one: function(str, _) { return 21; },  // overriding
     three: function(str) { return 3; }     // adding a new case
   });
@@ -352,12 +352,12 @@ test('extending semantics', function(t) {
       addAttribute('valueTimesTwo', {
         _default: function(children) { return this.value * 2; }
       });
-  t.throws(function() { ns.G2.semantics(s).addAttribute('value', {}); }, /already exists/);
-  t.throws(function() { ns.G2.semantics(s).extendAttribute('value', {}); }, /wrong arity/);
-  t.throws(function() { ns.G2.semantics(s).extendAttribute('foo', {}); }, /did not inherit/);
+  t.throws(function() { ns.G2.extendSemantics(s).addAttribute('value', {}); }, /already exists/);
+  t.throws(function() { ns.G2.extendSemantics(s).extendAttribute('value', {}); }, /wrong arity/);
+  t.throws(function() { ns.G2.extendSemantics(s).extendAttribute('foo', {}); }, /did not inherit/);
   t.throws(function() { ns.G.semantics().extendAttribute('value', {}); }, /did not inherit/);
 
-  s2 = ns.G2.semantics(s).extendAttribute('value', {
+  s2 = ns.G2.extendSemantics(s).extendAttribute('value', {
     one: function(str, _) { return 21; },  // overriding
     three: function(str) { return 3; }     // adding a new case
   });
@@ -378,7 +378,7 @@ test('extending semantics', function(t) {
 
   // Make sure an attribute that was inherited from a parent semantics
   // does not share its memo table with its parent.
-  var s3 = ns.G2.semantics(s2).extendAttribute('value', {
+  var s3 = ns.G2.extendSemantics(s2).extendAttribute('value', {
     one: function(str, _) { return 123; }
   });
   m = ns.G2.match('eins!', 'one');

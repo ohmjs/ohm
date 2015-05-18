@@ -119,8 +119,12 @@ Grammar.prototype = {
     return attributes.makeSemanticAction(this, actionDict);
   },
 
-  semantics: function(optSuperSemantics) {
-    return Semantics.createSemantics(this, optSuperSemantics);
+  semantics: function() {
+    return Semantics.createSemantics(this);
+  },
+
+  extendSemantics: function(superSemantics) {
+    return Semantics.createSemantics(this, superSemantics);
   },
 
   synthesizedAttribute: function(actionDict) {
