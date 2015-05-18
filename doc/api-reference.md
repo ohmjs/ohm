@@ -68,7 +68,6 @@ Contains a message indicating where and why the match failed. This message is su
 Contains an abbreviated version of `matchResult.message` that does not include an excerpt from the invalid input.
 
 <h2 id="semantics">Semantics, Operations, and Attributes</h2>
-<!---------------------------------------------------------->
 
 An Operation represents a function that can be applied to a successful match result. Like a [Visitor](http://en.wikipedia.org/wiki/Visitor_pattern), an operation is evaluated by recursively walking the parse tree, and at each node, invoking the matching semantic action from its *action dictionary*.
 
@@ -98,7 +97,7 @@ Exactly like `semantics.extendOperation`, except it will extend an Attribute of 
 
 <h3 id="semantic-actions">Semantic Actions</h3>
 
-A semantic action is a function that computes the value of an operation or attribute for a specific type of node in the parse tree. Generally, you write a semantic action for every rule in your grammar, and store them together in an _action dictionary_. For example, given the following grammar:
+A semantic action is a function that computes the value of an operation or attribute for a specific type of node in the parse tree. Generally, you write a semantic action for each rule in your grammar, and store them together in an _action dictionary_. For example, given the following grammar:
 
 <script type="text/markscript">
   // Take the grammar below and instantiate it as `g` in the markscript environment.
@@ -108,7 +107,7 @@ A semantic action is a function that computes the value of an operation or attri
 </script>
 
 ```
-RestrictiveName {
+Name {
   FullName = name name
   name = (letter | "-" | ".")+
 }
@@ -121,14 +120,14 @@ Here's what a set of semantic actions for this grammar might look like:
   // so that we can be sure that the code actually works.
   markscript.transformNextBlock(function(code) {
     return code.replace('...', "return lastName.x().toUpperCase() + ', ' + firstName.x()")
-               .replace('...', "return this.node.interval.contents;");
+               .replace('...', "return this.node.interval.contents;")
   });
 </script>
 
 ```js
 var actions = {
   FullName: function(firstName, lastName) { ... },
-  name: function(chars) { ... }
+  name: function(parts) { ... }
 };
 ```
 
@@ -137,3 +136,7 @@ var actions = {
   var semantics = g.semantics().addOperation('x', actions);
   assert.equal(semantics(g.match('Guy Incognito')).x(), 'INCOGNITO, Guy');
 </script>
+
+To evaluate an operation or attribute, the first step is to find the matching semantic action for the root node. Usually, this will be the name of the starting rule -- in this case, 'FullName'. If there is no matching property name in the action dictionary, then action named '_default' will be used instead.
+
+When a semantic action is invoked, the arity of the function must be the same as the arity of the node. Unlike many other parsing frameworks, Ohm does not have a syntax for binding/capturing -- every parsing expression will capture all of the input it consumes. For example, in the grammar above, the body of the `FullName` rule captures two values: one for each application of the `name` rule. That's why the semantic action `FullName` must have two arguments.
