@@ -1,4 +1,4 @@
-// This grammar is used by the CSV example in `docs/index.md`. Do not change
+// This grammar is used by the CSV example in `doc/index.md`. Do not change
 // this without copying the change to index.md.
 
     CSV {
