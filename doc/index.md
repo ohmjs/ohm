@@ -34,54 +34,67 @@ assert(g.match({}).failed());
 Arrays, numbers, and `null` are all valid patterns:
 
 ```js
-var g = ohm.grammar('G { value = null | 13 | [value] }');
-assert(g.match(null).succeeded());
-assert(g.match([13]).succeeded());
-assert(g.match(['not null or 13']).failed());
+var g = ohm.grammar('G { start = [13 null] }');
+assert(g.match([13, null]).succeeded());
 ```
 
 ### Implementing Semantics
 
-You can use _operations_ and _attributes_ to analyze and extract values from parsed data. In this example, we'll parse a simple comma-separated value (CSV) file, like you might be able to download from your bank. Assume we have the following data in `account.csv`:
+You can use _operations_ and _attributes_ to analyze and extract values from parsed data. For example, take the following grammar in `arithmetic.ohm`:
 
-    Symbol,Quantity,Price,Total Value
-    DB900,11,465.207,5117.28
-    DB904,2,1566.705,3133.41
-    DB905,2,2013.168,4026.34
+<script type="text/markscript">
+  var fs = require('fs');
+  // Make sure the grammar embedded below is the same as in 'arithmetic.ohm'.
+  markscript.transformNextBlock(function(code) {
+    assert(code === fs.readFileSync('arithmetic.ohm').toString(),
+           'arithmetic.ohm does not match grammar in doc');
+    return '';  // Don't actually execute anything.
+  });
+</script>
 
-In `csv.ohm`, we can write a grammar to parse this format:
+```
+Arithmetic {
+  Exp
+    = AddExp
 
-    CSV {
-      csv = line*
-      line = ~end (~eol fields)* eol
-      fields = ListOf<field, ",">
-      field = (~(eol | ",") _)*
-      eol = "\r"? "\n" -- char
-          | end        -- endOfFile
-    }
+  AddExp
+    = AddExp "+" PriExp  -- plus
+    | AddExp "-" PriExp  -- minus
+    | PriExp
 
-To parse the file and extract some values from it:
+  PriExp
+    = "(" Exp ")"  -- paren
+    | number
+
+  number  (a number)
+    = digit+
+}
+```
+
+We can create an operation named 'eval' to evaluate arithmetic expressions that match the grammar:
 
 ```js
 var fs = require('fs');
 
-// Instantiate the grammar and match the contents of the file.
-var g = ohm.grammar(fs.readFileSync('csv.ohm').toString());
-var match = g.match(fs.readFileSync('account.csv').toString());
-assert(match.succeeded());
+// Instantiate the grammar.
+var g = ohm.grammar(fs.readFileSync('arithmetic.ohm').toString());
 
-// Create an operation that returns the value of the last column of each line.
-var semantics = g.semantics().addOperation('getLastColumn', {
-  line: function(fields, eol) {
-    return fields.getLastColumn()[0];
+// Create an operation that evaluates the expression.
+var semantics = g.semantics().addOperation('eval', {
+  AddExp_plus: function(left, op, right) {
+    return left.eval() + right.eval();
   },
-  ListOf_some: function(first, seps, rest) {
-	var lastNode = rest.node.lastChild();
-    return lastNode.interval.contents;
+  AddExp_minus: function(left, op, right) {
+    return left.eval() - right.eval();
   },
-  _default: ohm.actions.passThrough,
-  _many: ohm.actions.makeArray
+  PriExp_paren: function(open, exp, close) {
+    return exp.eval();
+  },
+  number: function(chars) {
+    return parseInt(this.node.interval.contents, 10);
+  },
+  _default: ohm.actions.passThrough
 });
-var col = semantics(match).getLastColumn();
-assert.deepEqual(col, ['Total Value', '5117.28', '3133.41', '4026.34']);
+var match = g.match('1 + (2 - 3) + 4');
+assert.equal(semantics(match).eval(), 4);
 ```
