@@ -43,7 +43,7 @@ function Operation(name, actionDict) {
 Operation.prototype.typeName = 'operation';
 
 Operation.prototype.checkActionDict = function(grammar) {
-  grammar._checkTopDownActionDict(this.typeName, this.name, this.actionDict, false);
+  grammar._checkTopDownActionDict(this.typeName, this.name, this.actionDict);
 };
 
 // Execute this operation on `node` in the context of the given Semantics instance.

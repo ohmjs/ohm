@@ -123,9 +123,7 @@ Grammar.prototype = {
 
   // Check that every key in `actionDict` corresponds to a semantic action, and that it maps to
   // a function of the correct arity. If not, throw an exception.
-  // TODO: Get rid of `tempIgnoreSpecialActions` once everything is moved over
-  // to new-style semantic actions.
-  _checkTopDownActionDict: function(what, name, actionDict, tempIgnoreSpecialActions) {
+  _checkTopDownActionDict: function(what, name, actionDict) {
     function isSpecialAction(name) {
       return name === '_many' || name === '_terminal' || name === '_default';
     }
@@ -138,9 +136,6 @@ Grammar.prototype = {
       } else if (typeof v !== 'function') {
         problems.push(
             "'" + k + "' must be a function in an action dictionary for '" + this.name + "'");
-      } else if (tempIgnoreSpecialActions && isSpecialAction(k)) {
-        // Don't check the arities of these guys
-        // TODO: Remove this case when everything is converted to new-style semantics.
       } else {
         var actual = v.length;
         var expected = this._topDownActionArity(k);
