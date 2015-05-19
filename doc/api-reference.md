@@ -8,11 +8,7 @@ Instantiating Grammars
 
 <code class="api">ohm.grammar(source: string, optNamespace?: object) &rarr; Grammar</code>
 
-Instantiate the Grammar defined by `source`. If specified, `optNamespace` is the Namespace to use when resolving external references (e.g., a supergrammar that is not defined in `source`).
-
-**FIXME:** *should we say somewhere that Namespaces are just regular JS objects?*
-
-**FIXME:** *this document would probably benefit from having inline examples (especially the namespace stuff)*
+Instantiate the Grammar defined by `source`. If specified, `optNamespace` is the Namespace to use when resolving external references in the grammar. For more information, see the documentation on [Namespace objects](#namespace) below.
 
 <code class="api">ohm.grammarFromScriptElement(optNode?: Node, optNamespace?: object) &rarr; Grammar</code>
 
@@ -25,6 +21,18 @@ Create a new Namespace containing Grammar instances for all of the grammars defi
 <code class="api">ohm.grammarsFromScriptElements(optNodeList?: NodeList, optNamespace?: object) &rarr; Namespace</code>
 
 Create a new Namespace containing Grammar instances for all of the grammars defined in the `<script>` tags in `optNodeList`. If `optNodeList` is not specified, the result of `document.querySelectorAll('script[type="text/ohm-js"]')` will be used. `optNamespace` has the same meaning as in `ohm.grammars`.
+
+<h2 id="namespace">Namespace objects</h2>
+
+When instantiating a grammar that refers to another grammar -- e.g. `SuperJava <: Java { ... }` -- the supergrammar name ('Java') is resolved to a grammar by looking up the name in a Namespace. In Ohm/JS, Namespaces are a plain old JavaScript objects, and an object literal like `{Java: ...}` can be passed to any API that expects a Namespace. For convenience, Ohm also has the following methods for working with namespaces:
+
+<code class="api">ohm.namespace(optProps?: object)</code>
+
+Create a new namespace. If `optProps` is specified, all of its properties will be copied to the new namespace.
+
+<code class="api">ohm.extendNamespace(namespace: object, optProps?: object)</coder>
+
+Create a new namespace which inherits from `namespace`. If `optProps` is specified, all of its properties will be copied to the new namespace.
 
 Grammar objects
 ---------------
@@ -113,7 +121,7 @@ Name {
 }
 ```
 
-Here's what a set of semantic actions for this grammar might look like:
+A set of semantic actions for this grammar might look like this:
 
 <script type="text/markscript">
   // Replace '...' in the action dict below with some actual function definitions,
@@ -137,6 +145,13 @@ var actions = {
   assert.equal(semantics(g.match('Guy Incognito')).x(), 'INCOGNITO, Guy');
 </script>
 
-To evaluate an operation or attribute, the first step is to find the matching semantic action for the root node. Usually, this will be the name of the starting rule -- in this case, 'FullName'. If there is no matching property name in the action dictionary, then action named '_default' will be used instead.
+The value of an operation or attribute for a node is the result of invoking the node's _matching semantic action_, which is chosen as follows:
 
-When a semantic action is invoked, the arity of the function must be the same as the arity of the node. Unlike many other parsing frameworks, Ohm does not have a syntax for binding/capturing -- every parsing expression will capture all of the input it consumes. For example, in the grammar above, the body of the `FullName` rule captures two values: one for each application of the `name` rule. That's why the semantic action `FullName` must have two arguments.
+- On a _rule application_ (i.e., non-terminal) node, first look for a semantic action with the same name as the rule (e.g., 'FullName'). If the action dictionary does not have a property with that name, use the action named '_default'.
+- On a terminal node (e.g., a node produced by the parsing expression `"-"`), use the semantic action named '_terminal' if it exists, otherwise use '_default'.
+
+#### Arity
+
+When a semantic action is invoked, the arity of the function must be the same as the arity of the node. Unlike many other parsing frameworks, Ohm does not have a syntax for binding/capturing -- every parsing expression will capture all of the input it consumes. In the grammar above, the body of the `FullName` rule captures two values -- one for each application of the `name` rule -- so the semantic action `FullName` must have two arguments.
+
+The `*` (zero or more) and `+` (one or more) operators do not affect the arity: the expressions `"a" "b"` and `("a" "b")+` both have arity 2. However, a semantic action for the latter would be invoked with two arrays as arguments, with both arrays having a length of at least 1. **TODO:** Not quite true, they would actually be passed the result of the '_many' semantic action.
