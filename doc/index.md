@@ -81,11 +81,19 @@ var g = ohm.grammar(fs.readFileSync('arithmetic.ohm').toString());
 
 // Create an operation that evaluates the expression.
 var semantics = g.semantics().addOperation('eval', {
-  AddExp_plus:  function(left, op, right)  { return left.eval() + right.eval(); },
-  AddExp_minus: function(left, op, right)  { return left.eval() - right.eval(); },
-  PriExp_paren: function(open, exp, close) { return exp.eval(); },
-  number:       function(chars)            { return parseInt(this.interval.contents, 10); },
-  _default:     ohm.actions.passThrough
+  AddExp_plus: function(left, op, right) {
+    return left.eval() + right.eval();
+  },
+  AddExp_minus: function(left, op, right) {
+    return left.eval() - right.eval();
+  },
+  PriExp_paren: function(open, exp, close) {
+    return exp.eval();
+  },
+  number: function(chars) {
+    return parseInt(this.interval.contents, 10);
+  },
+  _default: ohm.actions.passThrough
 });
 var match = g.match('1 + (2 - 3) + 4');
 assert.equal(semantics(match).eval(), 4);
