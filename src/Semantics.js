@@ -111,6 +111,8 @@ Attribute.prototype.execute = function(semantics, node) {
 
 // ----------------- Semantics -----------------
 
+var attributesCopiedFromNode = ['ctorName', 'interval', 'primitiveValue'];
+
 // A Semantics object is a container for a family of Operations and/or Attributes.
 // They make it possible for an operation to invoke other operations in the same semantics,
 // and for operations (and attributes) to be mutually recursive.
@@ -133,11 +135,9 @@ function Semantics(grammar, optSuperSemantics) {
     }
 
     this.node = node;
-    this.ctorName = node.ctorName;
-    this.interval = node.interval;
-    this.primitiveValue = node.primitiveValue;
     this._semantics = semantics;
-
+    attributesCopiedFromNode.forEach(function(name) { this[name] = node[name]; }, this);
+    
     // Install all attributes into the wrapper, using Object.defineProperty.
     var wrapper = this;
     var descriptors = {};
@@ -198,6 +198,7 @@ function addBuiltInOperationsAndAttributes(semantics) {
       return '[semantics wrapper for ' + this.node.grammar.name + ']';
     }
   });
+
   // `node`, `interval`, and `primitiveValue` could be real attributes, but they're special-cased
   // as real properties so that we can avoid calling `Object.defineProperties` every time we create
   // a wrapper. (That would make it kind of expensive.)
@@ -220,13 +221,16 @@ Semantics.prototype.toString = function() {
   return '[semantics for ' + this.grammar.name + ']';
 };
 
+function isBuiltInAttribute(name) {
+  return name === 'node' || attributesCopiedFromNode.indexOf(name) >= 0;
+}
+
 Semantics.prototype.assertNewName = function(name, type) {
   if (name in this.operations) {
     throw new Error(
         'Cannot add ' + type + " '" + name + "': an operation with that name already exists");
   }
-  if (name === 'node' || name === 'interval' || name === 'primitiveValue' || name === 'ctorName' ||
-      name in this.attributes) {
+  if (isBuiltInAttribute(name) || name in this.attributes) {
     throw new Error(
         'Cannot add ' + type + " '" + name + "': an attribute with that name already exists");
   }
