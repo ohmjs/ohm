@@ -25,7 +25,7 @@ A rule body must be a valid _parsing expression_. We've shown two of the simples
 
 ### String Literal
 
-"hello there"
+`"hello there"`
 
 Matches exactly the characters contained inside the quotation marks.
 
@@ -80,6 +80,8 @@ Succeeds if the expression `expr` can be matched, but does not consume anything 
 Succeeds if the expression `expr` cannot be matched, and does not consume anything from the input stream.
 
 ## Built-in Rules
+
+(See [src/built-in-rules.ohm](../src/built-in-rules.ohm).)
 
 `letter`: Matches a single character which is a letter (either uppercase or lowercase).
 

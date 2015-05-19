@@ -7,11 +7,11 @@ One feature that distinguishes Ohm from OMeta and other parsing DSLs / framework
     - The meaning of the semantic actions is also more obvious when they're seen in isolation, and not scattered throughout a grammar, amidst Kleene-*s and other control structures.
 * __Better modularity__
     - Grammars and semantic actions can be extended independently, using familiar object-oriented mechanisms.
-    - The same grammar can be used with different semantic actions to (for instance) parse, syntax highlight, and compile programs. (In fact, Ohm lets you do all of these things without making multiple passes over the input.)
+    - The same grammar can be used with different semantic actions to (for instance) parse, syntax highlight, and compile programs. (In fact, Ohm lets you do all of these things without taking multiple passes over the input.)
 * __Portability__
     - The same Ohm grammar can be used, without modification, with Ohm implementations that run on top of different languages, e.g., Ohm/JS and Ohm/Scheme. (Note that semantic actions are still language-dependent.)
 
-Another interesting aspect of Ohm is that it applies semantic actions *lazily*, i.e., a semantic action is only evaluated if and when its result is required, and never more than once. The benefits of laziness are:
+Another interesting aspect of Ohm is that it applies semantic actions *lazily*, i.e., a semantic action is only evaluated if and when its result is required. The benefits of laziness are:
 
 * __A more sensible programming model__
     - When writing semantic actions, programmers don't have to worry about backtracking. This is especially nice when you're writing side-effectful semantic actions.

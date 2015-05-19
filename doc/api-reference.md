@@ -1,14 +1,18 @@
 API Reference
 =============
 
-This page documents the API of Ohm/JS, a JavaScript library for working with grammars written in the Ohm language. For documentation on the Ohm language, see the [syntax reference](./syntax.md).
+This page documents the API of Ohm/JS, a JavaScript library for working with grammars written in the Ohm language. For documentation on the Ohm language, see the [syntax reference](./syntax-reference.md).
 
 Instantiating Grammars
 ----------------------
 
 <code class="api">ohm.grammar(source: string, optNamespace?: object) &rarr; Grammar</code>
 
-Create a Grammar instance based on the grammar defined by `source`. If specified, `optNamespace` is a namespace to use when resolving external references (e.g., a supergrammar that is not defined in `source`).
+Instantiate the Grammar defined by `source`. If specified, `optNamespace` is the Namespace to use when resolving external references (e.g., a supergrammar that is not defined in `source`).
+
+**FIXME:** *should we say somewhere that Namespaces are just regular JS objects?*
+
+**FIXME:** *this document would probably benefit from having inline examples (especially the namespace stuff)*
 
 <code class="api">ohm.grammarFromScriptElement(optNode?: Node, optNamespace?: object) &rarr; Grammar</code>
 
@@ -25,19 +29,23 @@ Create a new Namespace containing Grammar instances for all of the grammars defi
 Grammar objects
 ---------------
 
-Instances of Grammar have the following properties:
+Instances of Grammar have the following methods:
 
 <code class="api">grammar.match(obj: string|object, optStartRule?: string) &rarr; MatchResult</code>
 
-Try to match `obj` against the grammar, returning a MatchResult. If `optStartRule` is given, it specifies the rule on which to start matching. By default, the start rule is inherited from the supergrammar, or if there is no supergrammar specified, it is the first rule in the grammar definition.
+Try to match `obj` against `grammar`, returning a MatchResult. If `optStartRule` is given, it specifies the rule on which to start matching. By default, the start rule is inherited from the supergrammar, or if there is no supergrammar specified, it is the first rule in `grammar`'s definition.
 
-<code class="api">grammar.semantics(optSuperSemantics?: Semantics) &rarr; Semantics</code>
+<code class="api">grammar.semantics() &rarr; Semantics</code>
 
-Create a new [Semantics](#semantics) object for the grammar. If `optSuperSemantics` is specified, the new Semantics object will inherit all its operations and attributes.
+Create a new [Semantics](#semantics) object for `grammar`.
+
+<code class="api">grammar.extendSemantics(superSemantics: Semantics) &rarr; Semantics</code>
+
+Create a new [Semantics](#semantics) object for `grammar` that inherits all of the operations and attributes in `superSemantics`. `grammar` must be a descendent of the grammar associated with `superSemantics`.
 
 <h2 id="MatchResult">MatchResult objects</h2>
 
-Instances of MatchResult have the following properties:
+Instances of MatchResult have the following methods:
 
 <code class="api">matchResult.succeeded() &rarr; boolean</code>
 
@@ -45,38 +53,42 @@ Return `true` if the match succeeded, otherwise `false`.
 
 <code class="api">matchResult.failed() &rarr; boolean</code>
 
-Return `true` if the match failed, otherwise `false.
+Return `true` if the match failed, otherwise `false`.
 
 ### MatchFailure properties
 
-When `matchResult.failed()` is `true`, MatchResult objects also have the following properties:
+When `matchResult.failed()` is `true`, `matchResult` has the following additional properties:
 
-#### <code>matchResult.message: string</code>
+<code>matchResult.message: string</code>
 
-If the match failed, contains a message indicating where and why it failed. The message is suitable for end users of a language (i.e., people who do not have access to the grammar source).
+Contains a message indicating where and why the match failed. This message is suitable for end users of a language (i.e., people who do not have access to the grammar source).
 
 <code>matchResult.shortMessage: string</code>
+
+Contains an abbreviated version of `matchResult.message` that does not include an excerpt from the invalid input.
 
 <h2 id="semantics">Semantics, Operations, and Attributes</h2>
 <!---------------------------------------------------------->
 
-An Operation represents a function to be applied to a successful match result. It's very similar to a [Visitor](http://en.wikipedia.org/wiki/Visitor_pattern). An operation is executed by recursively walking the parse tree, and at each node, invoking the matching semantic action from its action dictionary. An Attribute is like an Operation, except that attributes are calculated no more than once for a given node, and the value is memoized.
+An Operation represents a function that can be applied to a successful match result. Like a [Visitor](http://en.wikipedia.org/wiki/Visitor_pattern), an operation is evaluated by recursively walking the parse tree, and at each node, invoking the matching semantic action from its *action dictionary*.
 
-A Semantics object is a container for a family of operations and/or attributes. They make it possible for an operation to invoke other operations in the same semantics, and for operations (and attributes) to be mutually recursive. Semantics instances are created using the `grammar.semantics()` method.
+An Attribute is an Operation whose result is memoized, i.e., it is evaluated at most once for any given node.
 
-Operations and attributes are accessed by applying the semantics instance to a [MatchResult](#MatchResult). This returns an object whose properties correspond to the operations and attributes of the semantics. For example, to invoke an operation named 'prettyPrint': `semantics(matchResult).prettyPrint()`. Attributes are accessed using property syntax -- e.g., for an attribute named 'value': `semantics(matchResult).value`.
+A Semantics is a family of operations and/or attributes for a given grammar. A grammar may have any number of Semantics instances associated with it -- this means that the clients of a grammar (even in the same program) never have to worry about operation/attribute name clashes.
+
+Operations and attributes are accessed by applying a semantics instance to a [MatchResult](#MatchResult). This returns an object whose properties correspond to the operations and attributes of the semantics. For example, to invoke an operation named 'prettyPrint': `mySemantics(matchResult).prettyPrint()`. Attributes are accessed using property syntax -- e.g., for an attribute named 'value': `mySemantics(matchResult).value`.
 
 Semantics instances have the following properties:
 
-<code class="api">semantics.addOperation(name: string, actionDict: object) &rarr; this</code>
+<code class="api">mySemantics.addOperation(name: string, actionDict: object) &rarr; this</code>
 
-Add a new Operation named `name` to this Semantics, using the [semantic actions](#semantic-actions) contained in `actionDict`. It is an error if there is already an operation or attribute called `name` in this semantics or its super.
+Add a new Operation named `name` to this Semantics, using the [semantic actions](#semantic-actions) contained in `actionDict`. It is an error if there is already an operation or attribute called `name` in this semantics.
 
-<code class="api">semantics.addAttribute(name: string, actionDict: object) &rarr; this</code>
+<code class="api">mySemantics.addAttribute(name: string, actionDict: object) &rarr; this</code>
 
 Exactly like `semantics.addOperation`, except it will add an Attribute to the semantics rather than an Operation.
 
-<code class="api">semantics.extendOperation(name: string, actionDict: object) &rarr; this</code>
+<code class="api">mySemantics.extendOperation(name: string, actionDict: object) &rarr; this</code>
 
 Extend the Operation named `name` with the semantic actions contained in `actionDict`. `name` must be the name of an operation in the super semantics.
 

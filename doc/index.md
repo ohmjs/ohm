@@ -11,11 +11,11 @@ Instantiate a grammar from a string using `ohm.grammar()`, and check inputs usin
 
 ```js
 var ohm = require('ohm');
-var g = ohm.grammar([
-    'Laugh {',
-    '  laugh = lol | "lmao"',
-    '  lol = "l" "o"+ "l"',
-    '}'].join('\n'));
+var g = ohm.grammar(
+    'Laugh {' +
+    '  laugh = lol | "lmao"' +
+    '  lol = "l" "o"+ "l"' +
+    '}');
 assert(g.match('lol').succeeded());
 assert(!g.match('lmao').failed());
 assert(g.match('loooooool').succeeded());
@@ -66,7 +66,7 @@ Arithmetic {
     = "(" Exp ")"  -- paren
     | number
 
-  number  (a number)
+  number
     = digit+
 }
 ```
@@ -81,20 +81,18 @@ var g = ohm.grammar(fs.readFileSync('arithmetic.ohm').toString());
 
 // Create an operation that evaluates the expression.
 var semantics = g.semantics().addOperation('eval', {
-  AddExp_plus: function(left, op, right) {
-    return left.eval() + right.eval();
-  },
-  AddExp_minus: function(left, op, right) {
-    return left.eval() - right.eval();
-  },
-  PriExp_paren: function(open, exp, close) {
-    return exp.eval();
-  },
-  number: function(chars) {
-    return parseInt(this.node.interval.contents, 10);
-  },
-  _default: ohm.actions.passThrough
+  AddExp_plus:  function(left, op, right)  { return left.eval() + right.eval(); },
+  AddExp_minus: function(left, op, right)  { return left.eval() - right.eval(); },
+  PriExp_paren: function(open, exp, close) { return exp.eval(); },
+  number:       function(chars)            { return parseInt(this.interval.contents, 10); },
+  _default:     ohm.actions.passThrough
 });
 var match = g.match('1 + (2 - 3) + 4');
 assert.equal(semantics(match).eval(), 4);
 ```
+
+### TODO
+
+* Should we say something about the methods of the "action dictionary", e.g., what their arguments are, that each of them must have the correct arity, etc.?
+* I'm afraid the use of `ohm.actions.passThrough` will be confusing here. Consider starting without it, then showing that we can avoid writing a bunch of the methods in the action dictionary if you use `_default` and `ohm.actions.passThrough`.
+* It's OK to explain "semantics" later, but we may want to say something about it here so that the call to `semantics()` doesn't seem so mysterious.

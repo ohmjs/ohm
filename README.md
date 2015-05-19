@@ -36,7 +36,7 @@ For use in the browser, simply download [dist/ohm.js](./dist/ohm.js) or [dist/oh
 ```html
 <script src="ohm.min.js"></script>
 <script>
-  var g = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }')
+  var g = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
   var result = g.match('hola');
   if (result.failed()) console.log(result.message);
 </script>
@@ -71,7 +71,7 @@ Then, you can instantiate the grammar like this:
 var myGrammar = ohm.grammarFromScriptElement();
 ```
 
-If you have more than one script tag with type="text/ohm-js" in your document, you will need to pass the appropriate script tag as an argument:
+If you have more than one script tag with `type="text/ohm-js"` in your document, you will need to pass the appropriate script tag as an argument:
 
 ```js
 var myGrammar = ohm.grammarFromScriptElement(document.querySelector('#grammarSrc'));
