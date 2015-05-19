@@ -15,13 +15,10 @@ var nodes = require('./nodes');
 
 var actions = {
   getPrimitiveValue: function() {
-    // TODO: Change this to `!(this.node && this.node.ctorName === '_terminal')`
-    if (this.node && this.node.ctorName !== '_terminal') {
+    if (!(this.node && this.node.ctorName === '_terminal')) {
       throw new TypeError('ohm.actions.getPrimitiveValue can only be used on _terminal nodes');
     }
-    // TODO: Remove this conditional and just return this.node.primitiveValue
-    // as soon as everything is moved from the old-style semantic actions.
-    return (this.node && this.node.primitiveValue) || this.primitiveValue;
+    return this.primitiveValue;
   },
   makeArray: function(children) {
     throw new Error('BUG: ohm.actions.makeArray should never be called');
