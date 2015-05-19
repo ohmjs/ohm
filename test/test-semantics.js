@@ -125,20 +125,20 @@ test('semantics', function(t) {
   t.equal(s.addAttribute('attr2', {}), s, 'can add more than one attribute');
 
   t.throws(
-    function() { s.addOperation('op'); },
+    function() { s.addOperation('op', {}); },
     /already exists/,
     'addOperation throws when name is already used');
   t.throws(
-    function() { s.addOperation('attr'); },
+    function() { s.addOperation('attr', {}); },
     /already exists/,
     'addOperation throws when name is already used, even if it is an attribute');
 
   t.throws(
-    function() { s.addAttribute('attr'); },
+    function() { s.addAttribute('attr', {}); },
     /already exists/,
     'addAttribute throws when name is already used');
   t.throws(
-    function() { s.addAttribute('attr'); },
+    function() { s.addAttribute('attr', {}); },
     /already exists/,
     'addAttribute throws when name is already used, even if it is an operation');
 
