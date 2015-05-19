@@ -70,13 +70,13 @@ test('simple examples', function(t) {
       '  Pair<elem> = "(" elem "," elem ")"\n' +
       '  Start = Pair<digit>\n' +
       '}');
-  var value = g.semanticAction({
-    Pair: function(oparen, x, comma, y, cparen) { return [value(x), value(y)]; },
+  var s = g.semantics().addOperation('v', {
+    Pair: function(oparen, x, comma, y, cparen) { return [x.v(), y.v()]; },
     _terminal: ohm.actions.getPrimitiveValue,
     _default: ohm.actions.passThrough
   });
   var cst = g.match('(1,2)', 'Start');
-  t.deepEqual(value(cst), ['1', '2']);
+  t.deepEqual(s(cst).v(), ['1', '2']);
   t.end();
 });
 
@@ -89,15 +89,15 @@ test('inline rule declarations', function(t) {
       '  Start\n' +
       '    = List<"x", ",">\n' +
       '}');
-  var value = g.semanticAction({
-    List_some: function(x, sep, xs) { return [value(x)].concat(value(xs)); },
+  var s = g.semantics().addOperation('v', {
+    List_some: function(x, sep, xs) { return [x.v()].concat(xs.v()); },
     List_none: function() { return []; },
     _many: ohm.actions.makeArray,
     _terminal: ohm.actions.getPrimitiveValue,
     _default: ohm.actions.passThrough
   });
   var cst = g.match('x, x,x', 'Start');
-  t.deepEqual(value(cst), ['x', 'x', 'x']);
+  t.deepEqual(s(cst).v(), ['x', 'x', 'x']);
   t.end();
 });
 
@@ -110,14 +110,14 @@ test('left recursion', function(t) {
       '  Start\n' +
       '    = LeftAssoc<digit, "+">\n' +
       '}');
-  var value = g.semanticAction({
-    LeftAssoc_rec: function(x, op, y) { return [value(op), value(x), value(y)]; },
-    LeftAssoc_base: function(x) { return value(x); },
+  var s = g.semantics().addOperation('v', {
+    LeftAssoc_rec: function(x, op, y) { return [op.v(), x.v(), y.v()]; },
+    LeftAssoc_base: function(x) { return x.v(); },
     _terminal: ohm.actions.getPrimitiveValue,
     _default: ohm.actions.passThrough
   });
   var cst = g.match('1 + 2 + 3', 'Start');
-  t.deepEqual(value(cst), ['+', ['+', '1', '2'], '3']);
+  t.deepEqual(s(cst).v(), ['+', ['+', '1', '2'], '3']);
   t.end();
 });
 
@@ -127,12 +127,12 @@ test('complex parameters', function(t) {
       '  start = two<~"5" digit>\n' +
       '  two<x> = x x\n' +
       '}');
-  var value = g.semanticAction({
-    two: function(x, y) { return [value(x), value(y)]; },
+  var s = g.semantics().addOperation('v', {
+    two: function(x, y) { return [x.v(), y.v()]; },
     _terminal: ohm.actions.getPrimitiveValue,
     _default: ohm.actions.passThrough
   });
-  t.deepEqual(value(g.match('42')), ['4', '2']);
+  t.deepEqual(s(g.match('42')).v(), ['4', '2']);
   t.equal(g.match('45').failed(), true);
   t.end();
 });

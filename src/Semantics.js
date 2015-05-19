@@ -136,6 +136,7 @@ function Semantics(grammar, optSuperSemantics) {
     }
 
     this.node = node;
+    this.ctorName = node.ctorName;
     this.interval = node.interval;
     this.primitiveValue = node.primitiveValue;
     this._semantics = semantics;
@@ -227,7 +228,7 @@ Semantics.prototype.assertNewName = function(name, type) {
     throw new Error(
         'Cannot add ' + type + " '" + name + "': an operation with that name already exists");
   }
-  if (name === 'node' || name === 'interval' || name === 'primitiveValue' ||
+  if (name === 'node' || name === 'interval' || name === 'primitiveValue' || name === 'ctorName' ||
       name in this.attributes) {
     throw new Error(
         'Cannot add ' + type + " '" + name + "': an attribute with that name already exists");

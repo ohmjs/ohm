@@ -56,19 +56,20 @@ function it(desc, fn) {
   fn.call();
 }
 
-function buildTreeNodeWithUniqueId(m) {
+function buildTreeNodeWithUniqueId(g) {
   var nextId = 0;
-  var attr = m.synthesizedAttribute({
-    _default: function() {
-      return ['id', nextId++, this.ctorName].concat(this.children.map(attr));
+  var s = g.semantics().addAttribute('tree', {
+    _default: function(children) {
+      return ['id', nextId++, this.ctorName]
+          .concat(children.map(function(child) { return child.tree; }));
     },
     _many: ohm.actions.makeArray,
     _terminal: ohm.actions.getPrimitiveValue
   });
-  attr._getNextId = function() {
-    return nextId;
-  };
-  return attr;
+  
+  function makeTree(node) { return s(node).tree; }
+  makeTree._getNextId = function() { return nextId; };
+  return makeTree;
 }
 
 test('grammar constructors dictionary', function(t) {
@@ -238,12 +239,12 @@ test('primitive patterns', function(t) {
       });
 
       it('semantic actions', function() {
-        var dict = {
+        var s = m.semantics().addAttribute('v', {
           _: ohm.actions.passThrough,
           _terminal: ohm.actions.getPrimitiveValue
-        };
-        t.equal(m.synthesizedAttribute(dict)(m.match(5, '_')), 5);
-        t.equal(m.synthesizedAttribute(dict)(m.match(null, '_')), null);
+        });
+        t.equal(s(m.match(5, '_')).v, 5);
+        t.equal(s(m.match(null, '_')).v, null);
       });
       t.end();
     });
@@ -255,11 +256,11 @@ test('primitive patterns', function(t) {
       });
 
       it('semantic actions', function() {
-        var dict = {
+        var s = m.semantics().addAttribute('v', {
           _: ohm.actions.passThrough,
           _terminal: ohm.actions.getPrimitiveValue
-        };
-        t.equal(m.synthesizedAttribute(dict)(m.match('5', '_')), '5');
+        });
+        t.equal(s(m.match('5', '_')).v, '5');
       });
       t.end();
     });
@@ -270,11 +271,11 @@ test('primitive patterns', function(t) {
       });
 
       it('semantic actions', function() {
-        var dict = {
+        var s = m.semantics().addAttribute('v', {
           _: ohm.actions.passThrough,
           _terminal: ohm.actions.getPrimitiveValue
-        };
-        t.deepEqual(m.synthesizedAttribute(dict)(m.match(['123'], '_')), ['123']);
+        });
+        t.deepEqual(s(m.match(['123'], '_')).v, ['123']);
       });
       t.end();
     });
@@ -350,19 +351,19 @@ test('primitive patterns', function(t) {
     });
 
     it('semantic actions', function() {
-      var dict = {
+      var s = m.semantics().addAttribute('v', {
         five: ohm.actions.passThrough,
         _true: ohm.actions.passThrough,
         _false: ohm.actions.passThrough,
         _null: ohm.actions.passThrough,
         _undefined: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
-      };
-      t.equal(m.synthesizedAttribute(dict)(m.match(5)), 5);
-      t.equal(m.synthesizedAttribute(dict)(m.match(true, '_true')), true);
-      t.equal(m.synthesizedAttribute(dict)(m.match(false, '_false')), false);
-      t.equal(m.synthesizedAttribute(dict)(m.match(null, '_null')), null);
-      t.equal(m.synthesizedAttribute(dict)(m.match(undefined, '_undefined')), undefined);
+      });
+      t.equal(s(m.match(5)).v, 5);
+      t.equal(s(m.match(true, '_true')).v, true);
+      t.equal(s(m.match(false, '_false')).v, false);
+      t.equal(s(m.match(null, '_null')).v, null);
+      t.equal(s(m.match(undefined, '_undefined')).v, undefined);
     });
     t.end();
   });
@@ -404,12 +405,12 @@ test('char', function(t) {
     });
 
     it('semantic actions', function() {
-      var dict = {
+      var s = m.semantics().addAttribute('v', {
         bang: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
-      };
+      });
       var cst = m.match('!');
-      t.equal(m.synthesizedAttribute(dict)(cst), '!');
+      t.equal(s(cst).v, '!');
     });
     t.end();
   });
@@ -422,12 +423,12 @@ test('char', function(t) {
     });
 
     it('semantic actions', function() {
-      var dict = {
+      var s = m.semantics().addAttribute('v', {
         bang: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
-      };
+      });
       var cst = m.match('!');
-      t.equal(m.synthesizedAttribute(dict)(cst), '!');
+      t.equal(s(cst).v, '!');
     });
     t.end();
   });
@@ -446,12 +447,12 @@ test('string', function(t) {
     });
 
     it('semantic actions', function() {
-      var dict = {
+      var s = m.semantics().addAttribute('v', {
         foo: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
-      };
+      });
       var cst = m.match('foo');
-      t.equal(m.synthesizedAttribute(dict)(cst), 'foo');
+      t.equal(s(cst).v, 'foo');
     });
     t.end();
   });
@@ -464,12 +465,12 @@ test('string', function(t) {
     });
 
     it('semantic actions', function() {
-      var dict = {
+      var s = m.semantics().addAttribute('v', {
         foo: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
-      };
+      });
       var cst = m.match('foo');
-      t.equal(m.synthesizedAttribute(dict)(cst), 'foo');
+      t.equal(s(cst).v, 'foo');
     });
     t.end();
   });
@@ -498,12 +499,12 @@ test('regexp', function(t) {
     });
 
     it('semantic actions', function() {
-      var dict = {
+      var s = m.semantics().addAttribute('v', {
         myDigit: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
-      };
+      });
       var cst = m.match('4');
-      t.equal(m.synthesizedAttribute(dict)(cst), '4');
+      t.equal(s(cst).v, '4');
     });
     t.end();
   });
@@ -520,12 +521,12 @@ test('regexp', function(t) {
     });
 
     it('semantic actions', function() {
-      var dict = {
+      var s = m.semantics().addAttribute('v', {
         myLetter: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
-      };
+      });
       var cst = m.match('a', 'myLetter');
-      t.equal(m.synthesizedAttribute(dict)(cst), 'a');
+      t.equal(s(cst).v, 'a');
     });
     t.end();
   });
@@ -543,12 +544,12 @@ test('alt', function(t) {
   });
 
   it('semantic actions', function() {
-    var dict = {
+    var s = m.semantics().addAttribute('v', {
       altTest: ohm.actions.passThrough,
       _terminal: ohm.actions.getPrimitiveValue
-    };
-    t.equal(m.synthesizedAttribute(dict)(m.match('a')), 'a');
-    t.equal(m.synthesizedAttribute(dict)(m.match('b')), 'b');
+    });
+    t.equal(s(m.match('a')).v, 'a');
+    t.equal(s(m.match('b')).v, 'b');
   });
   t.end();
 });
@@ -566,11 +567,12 @@ test('seq', function(t) {
 
     it('semantic actions', function() {
       var f = m.match('abcz');
-      t.deepEqual(m.synthesizedAttribute({
+      var s = m.semantics().addAttribute('v', {
         start: function(x, y, z) {
           return [x.interval.contents, y.interval.contents, z.interval.contents];
         }
-      })(f), ['a', 'bc', 'z']);
+      });
+      t.deepEqual(s(f).v, ['a', 'bc', 'z']);
     });
     t.end();
   });
@@ -587,11 +589,12 @@ test('seq', function(t) {
 
     it('semantic actions', function() {
       var f = m.match('abcz');
-      t.deepEqual(m.synthesizedAttribute({
+      var s = m.semantics().addAttribute('v', {
         start: function(x, _, _) {
           return x.primitiveValue;
-        },
-      })(f), 'a');
+        }
+      });
+      t.deepEqual(s(f).v, 'a');
     });
     t.end();
   });
@@ -608,11 +611,12 @@ test('seq', function(t) {
 
     it('semantic actions', function() {
       var f = m.match('abcz');
-      t.deepEqual(m.synthesizedAttribute({
+      var s = m.semantics().addAttribute('v', {
         start: function(x, _, y) {
           return [x.primitiveValue, y.primitiveValue];
         }
-      })(f), ['a', 'z']);
+      });
+      t.deepEqual(s(f).v, ['a', 'z']);
     });
     t.end();
   });
@@ -630,16 +634,13 @@ test('alts and seqs together', function(t) {
   });
 
   it('semantic actions', function() {
-    t.deepEqual(m.synthesizedAttribute({
-        start: function(x, _, y) {
-          return [x.primitiveValue, y.primitiveValue];
-        }
-      })(m.match('abc')), ['a', 'c']);
-    t.deepEqual(m.synthesizedAttribute({
-        start: function(x, _, y) {
-          return [x.primitiveValue, y.primitiveValue];
-        }
-      })(m.match('123')), ['1', '3']);
+    var s = m.semantics().addAttribute('v', {
+      start: function(x, _, y) {
+        return [x.primitiveValue, y.primitiveValue];
+      }
+    })
+    t.deepEqual(s(m.match('abc')).v, ['a', 'c']);
+    t.deepEqual(s(m.match('123')).v, ['1', '3']);
   });
 
   t.end();
@@ -667,17 +668,17 @@ test('many', function(t) {
   });
 
   it('semantic actions', function() {
-    var value = m.synthesizedAttribute({
+    var s = m.semantics().addAttribute('v', {
       number: function(expr) {
-        return ['digits', value(expr)];
+        return ['digits', expr.v];
       },
       digit: function(expr) {
-        return ['digit', value(expr)];
+        return ['digit', expr.v];
       },
       _many: ohm.actions.makeArray,
       _terminal: ohm.actions.getPrimitiveValue
     });
-    t.deepEqual(value(m.match('1234', 'number')), [
+    t.deepEqual(s(m.match('1234', 'number')).v, [
       'digits', [
         ['digit', '1'],
         ['digit', '2'],
@@ -709,13 +710,13 @@ test('opt', function(t) {
   });
 
   it('semantic actions', function() {
-    var actionDict = {
+    var s = m.semantics().addAttribute('v', {
       name: function(title, last) {
         return [title.primitiveValue, last.primitiveValue];
       }
-    };
-    t.deepEqual(m.synthesizedAttribute(actionDict)(m.match('drwarth')), ['dr', 'warth']);
-    t.deepEqual(m.synthesizedAttribute(actionDict)(m.match('warth')), [undefined, 'warth']);
+    });
+    t.deepEqual(s(m.match('drwarth')).v, ['dr', 'warth']);
+    t.deepEqual(s(m.match('warth')).v, [undefined, 'warth']);
   });
   t.end();
 });
@@ -729,12 +730,12 @@ test('not', function(t) {
   });
 
   it('semantic actions', function() {
-    var attr = m.synthesizedAttribute({
+    var s = m.semantics().addAttribute('v', {
       start: function(x) {
         return x.interval.contents;
       }
     });
-    t.equal(attr(m.match('yello world')), 'yello world');
+    t.equal(s(m.match('yello world')).v, 'yello world');
   });
   t.end();
 });
@@ -748,12 +749,12 @@ test('lookahead', function(t) {
   });
 
   it('semantic actions', function() {
-    var attr = m.synthesizedAttribute({
+    var s = m.semantics().addAttribute('v', {
       start: function(x, _) {
         return x.primitiveValue;
       }
     });
-    t.equal(attr(m.match('hello world')), 'hello');
+    t.equal(s(m.match('hello world')).v, 'hello');
   });
   t.end();
 });
@@ -773,14 +774,14 @@ test('arr', function(t) {
   });
 
   it('semantic actions', function() {
-    var value = m.synthesizedAttribute({
+    var s = m.semantics().addAttribute('v', {
       start: function(_, y, x, _, _) {
-        return [value(x), value(y)];
+        return [x.v, y.v];
       },
       _: ohm.actions.passThrough,
       _terminal: ohm.actions.getPrimitiveValue
     });
-    t.deepEqual(value(m.match(['abc', ['d', 'ef'], 'g'])), ['d', ['d', 'ef']]);
+    t.deepEqual(s(m.match(['abc', ['d', 'ef'], 'g'])).v, ['d', ['d', 'ef']]);
   });
   t.end();
 });
@@ -805,16 +806,13 @@ test('obj', function(t) {
     });
 
     it('semantic actions', function() {
-      t.deepEqual(m.synthesizedAttribute({
+      var s = m.semantics().addAttribute('v', {
         strict: function(a, b) {
           return [a.primitiveValue, b.primitiveValue];
         }
-      })(m.match({x: 1, y: 2}, 'strict')), [1, 2]);
-      t.deepEqual(m.synthesizedAttribute({
-        strict: function(a, b) {
-          return [a.primitiveValue, b.primitiveValue];
-        }
-      })(m.match({y: 2, x: 1}, 'strict')), [1, 2]);
+      });
+      t.deepEqual(s(m.match({x: 1, y: 2}, 'strict')).v, [1, 2]);
+      t.deepEqual(s(m.match({y: 2, x: 1}, 'strict')).v, [1, 2]);
     });
     t.end();
   });
@@ -830,16 +828,13 @@ test('obj', function(t) {
     });
 
     it('semantic actions', function() {
-      t.deepEqual(m.synthesizedAttribute({
+      var s = m.semantics().addAttribute('v', {
         lenient: function(a, b, _) {
           return [a.primitiveValue, b.primitiveValue];
         }
-      })(m.match({x: 1, y: 2}, 'lenient')), [1, 2]);
-      t.deepEqual(m.synthesizedAttribute({
-        lenient: function(a, b, _) {
-          return [a.primitiveValue, b.primitiveValue];
-        }
-      })(m.match({y: 2, x: 1}, 'lenient')), [1, 2]);
+      });
+      t.deepEqual(s(m.match({x: 1, y: 2}, 'lenient')).v, [1, 2]);
+      t.deepEqual(s(m.match({y: 2, x: 1}, 'lenient')).v, [1, 2]);
     });
     t.end();
   });
@@ -854,14 +849,14 @@ test('obj', function(t) {
     });
 
     it('semantic actions', function() {
-      var attr = m.synthesizedAttribute({
+      var s = m.semantics().addAttribute('v', {
         withStringProps: function(foos, bar) {
-          return [attr(foos), attr(bar)];
+          return [foos.v, bar.v];
         },
         _many: ohm.actions.makeArray,
         _terminal: ohm.actions.getPrimitiveValue,
       });
-      t.deepEqual(attr(m.match({foos: 'foofoo', bar: 'bar'}, 'withStringProps')), [
+      t.deepEqual(s(m.match({foos: 'foofoo', bar: 'bar'}, 'withStringProps')).v, [
         ['foo', 'foo'], 'bar'
       ]);
     });
@@ -896,16 +891,16 @@ test('apply', function(t) {
     });
 
     it('semantic actions', function() {
-      var value = m.synthesizedAttribute({
+      var s = m.semantics().addAttribute('v', {
         easy: function(expr) {
-          return ['easy', value(expr)];
+          return ['easy', expr.v];
         },
         foo: function(expr) {
-          return ['foo', value(expr)];
+          return ['foo', expr.v];
         },
         _terminal: ohm.actions.getPrimitiveValue
       });
-      t.deepEqual(value(m.match('foo')), ['easy', ['foo', 'foo']]);
+      t.deepEqual(s(m.match('foo')).v, ['easy', ['foo', 'foo']]);
     });
     t.end();
   });
@@ -928,28 +923,27 @@ test('apply', function(t) {
 
     it('semantic actions', function() {
       var f = m.match('1234', 'number');
-      var eval = m.synthesizedAttribute({
+      var s = m.semantics().addAttribute('v', {
         number: ohm.actions.passThrough,
         numberRec: function(n, d) {
-          return eval(n) * 10 + eval(d);
+          return n.v * 10 + d.v;
         },
         digit: function(expr) {
-          return eval(expr).charCodeAt(0) - '0'.charCodeAt(0);
+          return expr.v.charCodeAt(0) - '0'.charCodeAt(0);
         },
         _terminal: ohm.actions.getPrimitiveValue
-      });
-      t.equal(eval(f), 1234);
-      var parseTree = m.synthesizedAttribute({
+      }).addAttribute('t', {
         number: function(expr) {
-          return ['number', parseTree(expr)];
+          return ['number', expr.t];
         },
         numberRec: function(n, d) {
-          return ['numberRec', parseTree(n), parseTree(d)];
+          return ['numberRec', n.t, d.t];
         },
         digit: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
       });
-      t.deepEqual(parseTree(f),
+      t.equal(s(f).v, 1234);
+      t.deepEqual(s(f).t,
         ['number',
           ['numberRec',
             ['number',
@@ -980,19 +974,17 @@ test('apply', function(t) {
     });
 
     it('semantic actions', function() {
-      var v = m.synthesizedAttribute({
+      var s = m.semantics().addAttribute('v', {
         add: ohm.actions.passThrough,
         addRec: function(x, _, y) {
-          return [v(x), '+', v(y)];
+          return [x.v, '+', y.v];
         },
         pri: ohm.actions.passThrough,
         priX: ohm.actions.passThrough,
         priY: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
       });
-      t.deepEqual(v(m.match('x+y+x', 'add')), [
-        ['x', '+', 'y'], '+', 'x'
-      ]);
+      t.deepEqual(s(m.match('x+y+x', 'add')).v, [['x', '+', 'y'], '+', 'x']);
     });
     t.end();
   });
@@ -1017,7 +1009,7 @@ test('apply', function(t) {
     });
 
     it('semantic actions', function() {
-      var v = m.synthesizedAttribute({
+      var s = m.semantics().addAttribute('v', {
         number: ohm.actions.passThrough,
         foo: ohm.actions.passThrough,
         bar: ohm.actions.passThrough,
@@ -1025,12 +1017,12 @@ test('apply', function(t) {
         qux: ohm.actions.passThrough,
         quux: ohm.actions.passThrough,
         numberRec: function(n, d) {
-          return [v(n), v(d)];
+          return [n.v, d.v];
         },
         digit: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
       });
-      t.deepEqual(v(m.match('1234', 'number')), [[['1', '2'], '3'], '4']);
+      t.deepEqual(s(m.match('1234', 'number')).v, [[['1', '2'], '3'], '4']);
     });
     t.end();
   });
@@ -1057,23 +1049,51 @@ test('apply', function(t) {
 
     it('semantic actions', function() {
       var f = m.match('1*2+3+4*5');
-      var parseTree = m.synthesizedAttribute({
+      var s = m.semantics().addAttribute('t', {
         addExp: function(expr) {
-          return ['addExp', parseTree(expr)];
+          return ['addExp', expr.t];
         },
         addExpRec: function(x, _, y) {
-          return ['addExpRec', parseTree(x), parseTree(y)];
+          return ['addExpRec', x.t, y.t];
         },
         mulExp: function(expr) {
-          return ['mulExp', parseTree(expr)];
+          return ['mulExp', expr.t];
         },
         mulExpRec: function(x, _, y) {
-          return ['mulExpRec', parseTree(x), parseTree(y)];
+          return ['mulExpRec', x.t, y.t];
+        },
+        priExp: ohm.actions.passThrough,
+        _terminal: ohm.actions.getPrimitiveValue
+      }).addAttribute('v', {
+        addExp: function(expr) {
+          return expr.v;
+        },
+        addExpRec: function(x, _, y) {
+          return x.v + y.v;
+        },
+        mulExp: function(expr) {
+          return expr.v;
+        },
+        mulExpRec: function(x, _, y) {
+          return x.v * y.v;
+        },
+        priExp: function(expr) {
+          return parseInt(expr.v);
+        },
+        _terminal: ohm.actions.getPrimitiveValue
+      }).addAttribute('p', {
+        addExp: ohm.actions.passThrough,
+        addExpRec: function(x, _, y) {
+          return '(' + x.p + '+' + y.p + ')';
+        },
+        mulExp: ohm.actions.passThrough,
+        mulExpRec: function(x, _, y) {
+          return '(' + x.p + '*' + y.p + ')';
         },
         priExp: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
       });
-      t.deepEqual(parseTree(f),
+      t.deepEqual(s(f).t,
         ['addExp',
           ['addExpRec',
             ['addExp',
@@ -1081,38 +1101,8 @@ test('apply', function(t) {
                 ['addExp', ['mulExp', ['mulExpRec', ['mulExp', '1'], '2']]],
                 ['mulExp', '3']]],
             ['mulExp', ['mulExpRec', ['mulExp', '4'], '5']]]]);
-      var eval = m.synthesizedAttribute({
-        addExp: function(expr) {
-          return eval(expr);
-        },
-        addExpRec: function(x, _, y) {
-          return eval(x) + eval(y);
-        },
-        mulExp: function(expr) {
-          return eval(expr);
-        },
-        mulExpRec: function(x, _, y) {
-          return eval(x) * eval(y);
-        },
-        priExp: function(expr) {
-          return parseInt(eval(expr));
-        },
-        _terminal: ohm.actions.getPrimitiveValue
-      });
-      t.equal(eval(f), 25);
-      var pretty = m.synthesizedAttribute({
-        addExp: ohm.actions.passThrough,
-        addExpRec: function(x, _, y) {
-          return '(' + pretty(x) + '+' + pretty(y) + ')';
-        },
-        mulExp: ohm.actions.passThrough,
-        mulExpRec: function(x, _, y) {
-          return '(' + pretty(x) + '*' + pretty(y) + ')';
-        },
-        priExp: ohm.actions.passThrough,
-        _terminal: ohm.actions.getPrimitiveValue
-      });
-      t.equal(pretty(f), '(((1*2)+3)+(4*5))');
+      t.equal(s(f).v, 25);
+      t.equal(s(f).p, '(((1*2)+3)+(4*5))');
     });
 
     it('semantic actions are evaluated lazily', function() {
@@ -1170,19 +1160,17 @@ test('apply', function(t) {
     });
 
     it('semantic actions', function() {
-      var buildTree = m.synthesizedAttribute({
+      var s = m.semantics().addAttribute('t', {
         addExpRec: function(x, _, y) {
-          return [buildTree(x), '+', buildTree(y)];
+          return [x.t, '+', y.t];
         },
         mulExpRec: function(x, _, y) {
-          return [buildTree(x), '*', buildTree(y)];
+          return [x.t, '*', y.t];
         },
         _terminal: ohm.actions.getPrimitiveValue,
         _default: ohm.actions.passThrough
       });
-      t.deepEqual(buildTree(m.match('7+8*9+0')), [
-        ['7', '+', ['8', '*', '9']], '+', '0'
-      ]);
+      t.deepEqual(s(m.match('7+8*9+0')).t, [['7', '+', ['8', '*', '9']], '+', '0']);
     });
     t.end();
   });
@@ -1205,26 +1193,26 @@ test('apply', function(t) {
     it('semantic actions', function() {
       var f = m.match('1234', 'tricky');
       // TODO: perhaps just use JSON.stringify(f) here, and compare the result?
-      var buildTree = m.synthesizedAttribute({
+      var s = m.semantics().addAttribute('t', {
         tricky: function(_, x) {
-          return ['tricky', buildTree(x)];
+          return ['tricky', x.t];
         },
         foo: function(expr) {
-          return ['foo', buildTree(expr)];
+          return ['foo', expr.t];
         },
         fooRec: function(x, y) {
-          return ['fooRec', buildTree(x), buildTree(y)];
+          return ['fooRec', x.t, y.t];
         },
         bar: function(expr) {
-          return ['bar', buildTree(expr)];
+          return ['bar', expr.t];
         },
         barRec: function(x, y) {
-          return ['barRec', buildTree(x), buildTree(y)];
+          return ['barRec', x.t, y.t];
         },
         digit: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
       });
-      t.deepEqual(buildTree(f),
+      t.deepEqual(s(f).t,
         ['tricky',
           ['bar',
             ['barRec', ['foo', ['fooRec', ['bar', ['barRec', ['foo', '1'], '2']], '3']], '4']]]);
@@ -1316,18 +1304,18 @@ test('inheritance', function(t) {
     });
 
     it('semantic actions', function() {
-      var v = ns.G2.synthesizedAttribute({
+      var s = ns.G2.semantics().addAttribute('v', {
         number: function(expr) {
-          return ['number', v(expr)];
+          return ['number', expr.v];
         },
         digit: function(expr) {
-          return ['digit', v(expr)];
+          return ['digit', expr.v];
         },
         _many: ohm.actions.makeArray,
         _terminal: ohm.actions.getPrimitiveValue
       });
       var expected = ['number', [['digit', 'a'], ['digit', 'b'], ['digit', 'c'], ['digit', 'd']]];
-      t.deepEqual(v(ns.G2.match('abcd', 'number')), expected);
+      t.deepEqual(s(ns.G2.match('abcd', 'number')).v, expected);
     });
     t.end();
   });
@@ -1345,17 +1333,13 @@ test('inheritance', function(t) {
     });
 
     it('semantic actions', function() {
-      t.deepEqual(ns.G2.synthesizedAttribute({
+      var s = ns.G2.semantics().addAttribute('v', {
         foo: function(x, y) {
           return [x.primitiveValue, y.primitiveValue];
         }
-      })(ns.G2.match('aaabbb')), ['aaa', 'bbb']);
-
-      t.deepEqual(ns.G2.synthesizedAttribute({
-        foo: function(x, y) {
-          return [x.primitiveValue, y.primitiveValue];
-        }
-      })(ns.G2.match('111222')), ['111', '222']);
+      });
+      t.deepEqual(s(ns.G2.match('aaabbb')).v, ['aaa', 'bbb']);
+      t.deepEqual(s(ns.G2.match('111222')).v, ['111', '222']);
     });
 
     it('should check that rule exists in super-grammar', function() {
@@ -1426,47 +1410,47 @@ test('bindings', function(t) {
     ]);
 
     var id = 0;
-    var v = g.synthesizedAttribute({
+    var s = g.semantics().addAttribute('v', {
       foo: function(x, y) {
-        var xv = v(x);
-        var yv = v(y);
+        var xv = x.v;
+        var yv = y.v;
         return {
           x: xv,
           y: yv
         };
       },
       bar: function(expr) {
-        return ['bar', v(expr), id++];
+        return ['bar', expr.v, id++];
       },
       baz: function(expr) {
-        return ['baz', v(expr), id++];
+        return ['baz', expr.v, id++];
       },
       _terminal: ohm.actions.getPrimitiveValue
     });
-    t.deepEqual(v(g.match('ab')), {
+    t.deepEqual(s(g.match('ab')).v, {
       x: ['bar', 'a', 0],
       y: ['baz', 'b', 1]
     });
 
     id = 0;
-    v = g.synthesizedAttribute({
+    s = g.semantics().addAttribute('v', {
       foo: function(x, y) {
-        var yv = v(y);
-        var xv = v(x);
+        var yv = y.v;
+        var xv = x.v;
         return {
           x: xv,
           y: yv
         };
       },
       bar: function(expr) {
-        return ['bar', v(expr), id++];
+        return ['bar', expr.v, id++];
       },
       baz: function(expr) {
-        return ['baz', v(expr), id++];
+        return ['baz', expr.v, id++];
       },
       _terminal: ohm.actions.getPrimitiveValue
     });
-    t.deepEqual(v(g.match('ab')), {
+    t.deepEqual(s(g.match('ab')).v, {
       x: ['bar', 'a', 1],
       y: ['baz', 'b', 0]
     });
@@ -1476,32 +1460,34 @@ test('bindings', function(t) {
 
 test('inline rule declarations', function(t) {
   function makeEval(g) {
-    var eval = g.synthesizedAttribute({
+    var s = g.semantics().addAttribute('v', {
       addExp_plus: function(x, op, y) {
-        return eval(x) + eval(y);
+        return x.v + y.v;
       },
       addExp_minus: function(x, op, y) {
-        return eval(x) - eval(y);
+        return x.v - y.v;
       },
       mulExp_times: function(x, op, y) {
-        return eval(x) * eval(y);
+        return x.v * y.v;
       },
       mulExp_divide: function(x, op, y) {
-        return eval(x) / eval(y);
+        return x.v / y.v;
       },
       priExp_paren: function(oparen, e, cparen) {
-        return eval(e);
+        return e.v;
       },
       number_rec: function(n, d) {
-        return eval(n) * 10 + eval(d);
+        return n.v * 10 + d.v;
       },
       digit: function(expr) {
-        return eval(expr).charCodeAt(0) - '0'.charCodeAt(0);
+        return expr.v.charCodeAt(0) - '0'.charCodeAt(0);
       },
       _default: ohm.actions.passThrough,
       _terminal: ohm.actions.getPrimitiveValue
     });
-    return eval;
+    return function(node) {
+      return s(node).v;
+    };
   }
 
   var ns = {};
@@ -1691,46 +1677,46 @@ test('bootstrap', function(t) {
     var Arithmetic = ohm._buildGrammar(g.match(arithmeticGrammarSource, 'Grammar'),
                                        ohm.createNamespace(),
                                        g);
-    var eval = Arithmetic.synthesizedAttribute({
+    var s = Arithmetic.semantics().addAttribute('v', {
       exp: function(expr) {
-        return eval(expr);
+        return expr.v;
       },
       addExp: function(expr) {
-        return eval(expr);
+        return expr.v;
       },
       addExp_plus: function(x, op, y) {
-        return eval(x) + eval(y);
+        return x.v + y.v;
       },
       addExp_minus: function(x, op, y) {
-        return eval(x) - eval(y);
+        return x.v - y.v;
       },
       mulExp: function(expr) {
-        return eval(expr);
+        return expr.v;
       },
       mulExp_times: function(x, op, y) {
-        return eval(x) * eval(y);
+        return x.v * y.v;
       },
       mulExp_divide: function(x, op, y) {
-        return eval(x) / eval(y);
+        return x.v / y.v;
       },
       priExp: function(expr) {
-        return eval(expr);
+        return expr.v;
       },
       priExp_paren: function(oparen, e, cparen) {
-        return eval(e);
+        return e.v;
       },
       number: function(expr) {
-        return eval(expr);
+        return expr.v;
       },
       number_rec: function(n, d) {
-        return eval(n) * 10 + eval(d);
+        return n.v * 10 + d.v;
       },
       digit: function(expr) {
-        return eval(expr).charCodeAt(0) - '0'.charCodeAt(0);
+        return expr.v.charCodeAt(0) - '0'.charCodeAt(0);
       },
       _terminal: ohm.actions.getPrimitiveValue
     });
-    t.equal(eval(Arithmetic.match('10*(2+123)-4/5')), 1249.2);
+    t.equal(s(Arithmetic.match('10*(2+123)-4/5')).v, 1249.2);
   });
 
   it('full bootstrap!', function() {
@@ -1744,44 +1730,6 @@ test('bootstrap', function(t) {
     compareGrammars(t, g, gPrime);
   });
 
-  it('inherited attributes', function() {
-    var g = util.makeGrammar([
-      'G {',
-      '  abcs = "a" b "c"*',
-      '  b    = "b"',
-      '}'
-    ]);
-    var depth = g.inheritedAttribute({
-      _base: function(node) {
-        depth.set(0);
-      },
-      abcs$0: function(a) {
-        depth.set(depth(this) + 1);
-      },
-      abcs$1: function(b) {
-        depth.set(depth(this) + 1);
-      },
-      abcs$2: function(cs) {
-        depth.set(depth(this) + 1);
-      },
-      abcs$2$each: function(c) {
-        depth.set(depth(this) + 1);
-      },
-      b$0: function(b) {
-        depth.set(depth(this) + 1);
-      }
-    });
-    var print = g.semanticAction({
-      _default: function() {
-        for (var idx = 0; idx < this.numChildren(); idx++) {
-          print(this.childAt(idx));
-        }
-      },
-      _terminal: function() {}
-    });
-    var cst = g.match('abccc', 'abcs');
-    print(cst);
-  });
   t.end();
 });
 

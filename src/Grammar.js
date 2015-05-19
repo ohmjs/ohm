@@ -9,7 +9,6 @@ var Interval = require('./Interval');
 var MatchFailure = require('./MatchFailure');
 var Semantics = require('./Semantics');
 var State = require('./State');
-var attributes = require('./attributes');
 var common = require('./common');
 var errors = require('./errors');
 var nodes = require('./nodes');
@@ -114,34 +113,12 @@ Grammar.prototype = {
     return this._match(obj, startRule, true);
   },
 
-  semanticAction: function(actionDict) {
-    this._checkTopDownActionDict('semantic action', '???', actionDict, true);
-    return attributes.makeSemanticAction(this, actionDict);
-  },
-
   semantics: function() {
     return Semantics.createSemantics(this);
   },
 
   extendSemantics: function(superSemantics) {
     return Semantics.createSemantics(this, superSemantics);
-  },
-
-  synthesizedAttribute: function(actionDict) {
-    this._checkTopDownActionDict('synthesized attribute', '???', actionDict, true);
-    return attributes.makeSynthesizedAttribute(this, actionDict);
-  },
-
-  inheritedAttribute: function(actionDict) {
-    // TODO: write an arity-checker for inherited attributes.
-    // All of the methods should have arity 1, except for _default, which has
-    // arity 2 b/c it also takes an index.
-    if (!actionDict._base) {
-      throw new Error('Inherited attribute missing base case');
-    } else if (actionDict._base.length !== 1) {
-      throw new Error("Inherited attribute's base case must take exactly one argument");
-    }
-    return attributes.makeInheritedAttribute(this, actionDict);
   },
 
   // Check that every key in `actionDict` corresponds to a semantic action, and that it maps to
