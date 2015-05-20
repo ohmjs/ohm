@@ -66,7 +66,7 @@ function buildTreeNodeWithUniqueId(g) {
     _many: ohm.actions.makeArray,
     _terminal: ohm.actions.getPrimitiveValue
   });
-  
+
   function makeTree(node) { return s(node).tree; }
   makeTree._getNextId = function() { return nextId; };
   return makeTree;

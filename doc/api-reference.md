@@ -128,7 +128,7 @@ A set of semantic actions for this grammar might look like this:
   // so that we can be sure that the code actually works.
   markscript.transformNextBlock(function(code) {
     return code.replace('...', "return lastName.x().toUpperCase() + ', ' + firstName.x()")
-               .replace('...', "return this.node.interval.contents;")
+               .replace('...', "return this.interval.contents;")
   });
 </script>
 

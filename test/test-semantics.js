@@ -46,7 +46,7 @@ test('operations', function(t) {
     },
     _default: ohm.actions.passThrough,
     _terminal: function() {
-      return this.node.primitiveValue;
+      return this.primitiveValue;
     }
   });
 
@@ -95,7 +95,7 @@ test('attributes', function(t) {
     _default: ohm.actions.passThrough,
     _terminal: function() {
       count++;
-      return this.node.primitiveValue;
+      return this.primitiveValue;
     }
   });
 
@@ -405,7 +405,7 @@ test('mixing nodes from one grammar with semantics from another', function(t) {
 
   var s = ns.G.semantics().addOperation('value', {
     start: function(x) { return x.value() + 'choo!'; },
-    _terminal: function() { return this.node.primitiveValue; }
+    _terminal: function() { return this.primitiveValue; }
   });
 
   var m = ns.G.match('aaa', 'start');

@@ -81,7 +81,7 @@ test('viz example', function(t) {
 /*
 TODO: implement new version of inherited attributes,
 then update pl0 example and uncomment the following.
- 
+
 test('pl0 example', function(t) {
   runExample('pl0/index.html', t, function(errors) {
     t.equal(errors, null, 'runs without errors');

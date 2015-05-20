@@ -137,7 +137,7 @@ function Semantics(grammar, optSuperSemantics) {
     this.node = node;
     this._semantics = semantics;
     attributesCopiedFromNode.forEach(function(name) { this[name] = node[name]; }, this);
-    
+
     // Install all attributes into the wrapper, using Object.defineProperty.
     var wrapper = this;
     var descriptors = {};
