@@ -11,6 +11,6 @@ Arithmetic {
     = "(" Exp ")"  -- paren
     | number
 
-  number  (a number)
+  number
     = digit+
 }
