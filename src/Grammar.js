@@ -109,7 +109,11 @@ Grammar.prototype = {
     return state;
   },
 
-  trace: function(obj, startRule) {
+  trace: function(obj, optStartRule) {
+    var startRule = optStartRule || this.defaultStartRule;
+    if (!startRule) {
+      throw new Error('Missing start rule argument -- the grammar has no default start rule.');
+    }
     return this._match(obj, startRule, true);
   },
 

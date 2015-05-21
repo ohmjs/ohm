@@ -5,14 +5,15 @@
 // --------------------------------------------------------------------
 
 var test = require('tape-catch');
-var util = require('./util');
+
+var ohm = require('..');
 
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
 
 test('basic tracing', function(t) {
-  var g = util.makeGrammar('G { start = "a" | letter* }');
+  var g = ohm.grammar('G { start = "a" | letter* }');
   var state = g.trace('hallo', 'start');
   var trace = state.trace;
 
@@ -40,7 +41,7 @@ test('basic tracing', function(t) {
 });
 
 test('tracing with memoization', function(t) {
-  var g = util.makeGrammar('G { start = letter ~letter | letter* }');
+  var g = ohm.grammar('G { start = letter ~letter | letter* }');
   var state = g.trace('ab', 'start');
   var trace = state.trace;
   t.equal(trace.length, 1);
@@ -67,7 +68,7 @@ test('tracing with memoization', function(t) {
 });
 
 test('tracing with left recursion', function(t) {
-  var g = util.makeGrammar('G { id = id letter -- rec\n    | letter }');
+  var g = ohm.grammar('G { id = id letter -- rec\n    | letter }');
   var state = g.trace('abc', 'id');
   var trace = state.trace;
 
@@ -93,5 +94,26 @@ test('tracing with left recursion', function(t) {
   t.equal(seq.children.length, 2);
   t.equal(seq.children[0].displayString, 'id');
   t.equal(seq.children[1].displayString, 'letter');
+  t.end();
+});
+
+test('toString', function(t) {
+  var g = ohm.grammar('G { start = "a" | letter* }');
+  var state = g.trace('hi');
+  var lines = state.trace[0].toString().split('\n').slice(0, -1);
+
+  var exprs = lines.map(function(l) { return l.split(/\s+/)[2]; });
+  t.deepEqual(exprs, [
+      'start',
+      'a',  // Failed.
+      'letter*',
+      'letter', '/[a-zA-Z]/',
+      'letter', '/[a-zA-Z]/',
+      'letter', '/[a-zA-Z]/',  // Failed.
+      '[PExpr]'], 'expressions');
+
+  var excerpts = lines.map(function(l) { return l.split(/\s+/)[0]; });
+  t.deepEqual(excerpts, ['hi', 'hi', 'hi', 'hi', 'hi', 'i', 'i', '', '', ''], 'excerpts');
+
   t.end();
 });
