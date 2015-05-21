@@ -8,7 +8,7 @@
   // are all undefined, e.g., `var x, y, z;`.
   "disallowMultipleVarDecl": "exceptUndefined",
 
-  "excludeFiles": ["dist/*", "node_modules/**", "**/third_party/**"],
+  "excludeFiles": ["dist/*", "**/node_modules/**", "**/third_party/**"],
 
   "maximumLineLength": {
     "value": 100,

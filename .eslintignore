@@ -1,5 +1,5 @@
 **/third_party/**
-node_modules/**
+**/node_modules/**
 dist/*
 
 // TODO: Fix up errors and stop ignoring this file.

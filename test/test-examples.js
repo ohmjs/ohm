@@ -78,6 +78,11 @@ test('viz example', function(t) {
   });
 });
 
+test('csv example', function(t) {
+  require(path.join(EXAMPLE_ROOT, 'csv', 'index.js'));
+  t.end();
+});
+
 /*
 TODO: implement new version of inherited attributes,
 then update pl0 example and uncomment the following.
