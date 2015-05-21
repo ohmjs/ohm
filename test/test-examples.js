@@ -14,7 +14,7 @@ var path = require('path');
 // Helpers
 // --------------------------------------------------------------------
 
-var EXAMPLE_ROOT = path.normalize(path.join(__dirname, '../example/'));
+var EXAMPLE_ROOT = path.normalize(path.join(__dirname, '../examples/'));
 
 // Run the example at the given path (relative to `EXAMPLE_ROOT`), calling `cb` on completion.
 // The examples are loaded using JSDOM (https://github.com/tmpvar/jsdom), a JavaScript
