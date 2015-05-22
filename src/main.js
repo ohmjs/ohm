@@ -273,7 +273,6 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
       return [];
     },
 
-    _many: Semantics.actions.makeArray,
     _terminal: Semantics.actions.getPrimitiveValue,
     _default: Semantics.actions.passThrough
   });

@@ -63,7 +63,6 @@ function buildTreeNodeWithUniqueId(g) {
       return ['id', nextId++, this.ctorName]
           .concat(children.map(function(child) { return child.tree; }));
     },
-    _many: ohm.actions.makeArray,
     _terminal: ohm.actions.getPrimitiveValue
   });
 
@@ -675,7 +674,6 @@ test('many', function(t) {
       digit: function(expr) {
         return ['digit', expr.v];
       },
-      _many: ohm.actions.makeArray,
       _terminal: ohm.actions.getPrimitiveValue
     });
     t.deepEqual(s(m.match('1234', 'number')).v, [
@@ -853,7 +851,6 @@ test('obj', function(t) {
         withStringProps: function(foos, bar) {
           return [foos.v, bar.v];
         },
-        _many: ohm.actions.makeArray,
         _terminal: ohm.actions.getPrimitiveValue,
       });
       t.deepEqual(s(m.match({foos: 'foofoo', bar: 'bar'}, 'withStringProps')).v, [
@@ -1311,7 +1308,6 @@ test('inheritance', function(t) {
         digit: function(expr) {
           return ['digit', expr.v];
         },
-        _many: ohm.actions.makeArray,
         _terminal: ohm.actions.getPrimitiveValue
       });
       var expected = ['number', [['digit', 'a'], ['digit', 'b'], ['digit', 'c'], ['digit', 'd']]];

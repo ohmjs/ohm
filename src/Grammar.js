@@ -95,13 +95,13 @@ Grammar.prototype = {
       var stack = [undefined];
       var helpers = this.semantics().addOperation('setParents', {
         _terminal: function() {
-          this.node.parent = stack[stack.length - 1];
+          this._node.parent = stack[stack.length - 1];
         },
         _default: function(children) {
-          stack.push(this.node);
+          stack.push(this._node);
           children.forEach(function(child) { child.setParents(); });
           stack.pop();
-          this.node.parent = stack[stack.length - 1];
+          this._node.parent = stack[stack.length - 1];
         }
       });
       helpers(node).setParents();
@@ -122,14 +122,14 @@ Grammar.prototype = {
   },
 
   extendSemantics: function(superSemantics) {
-    return Semantics.createSemantics(this, superSemantics);
+    return Semantics.createSemantics(this, superSemantics._getSemantics());
   },
 
   // Check that every key in `actionDict` corresponds to a semantic action, and that it maps to
   // a function of the correct arity. If not, throw an exception.
   _checkTopDownActionDict: function(what, name, actionDict) {
     function isSpecialAction(name) {
-      return name === '_many' || name === '_terminal' || name === '_default';
+      return name === '_terminal' || name === '_default';
     }
 
     var problems = [];
@@ -161,9 +161,9 @@ Grammar.prototype = {
   },
 
   // Return the expected arity for a semantic action named `actionName`, which
-  // is either a rule name or a special action name like '_many' or '_default'.
+  // is either a rule name or a special action name like '_default'.
   _topDownActionArity: function(actionName) {
-    if (actionName === '_many' || actionName === '_default') {
+    if (actionName === '_default') {
       return 1;
     } else if (actionName === '_terminal') {
       return 0;

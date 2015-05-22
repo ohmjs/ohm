@@ -92,7 +92,6 @@ test('inline rule declarations', function(t) {
   var s = g.semantics().addOperation('v', {
     List_some: function(x, sep, xs) { return [x.v()].concat(xs.v()); },
     List_none: function() { return []; },
-    _many: ohm.actions.makeArray,
     _terminal: ohm.actions.getPrimitiveValue,
     _default: ohm.actions.passThrough
   });
