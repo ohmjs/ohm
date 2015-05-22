@@ -76,6 +76,9 @@ Wrapper.prototype.isTerminal = function() {
   return this._node.isTerminal();
 };
 
+// TODO: Consolidate all of the `Object.defineProperty` calls below into a single
+// call to `Object.defineProperties`.
+
 // Returns an array containing the children of this CST node.
 Object.defineProperty(Wrapper.prototype, 'children', {
   get: function() {
