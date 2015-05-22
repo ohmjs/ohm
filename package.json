@@ -1,7 +1,7 @@
 {
   "name": "ohm",
   "version": "0.0.0",
-  "description": "an object-oriented language for parsing and pattern matching",
+  "description": "An object-oriented language for parsing and pattern matching",
   "keywords": [
     "parser",
     "compiler",
