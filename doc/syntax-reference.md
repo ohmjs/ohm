@@ -1,4 +1,4 @@
-# Ohm Reference
+# Syntax Reference
 
 ## Grammars and Rules
 
