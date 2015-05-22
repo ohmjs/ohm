@@ -1,4 +1,4 @@
-/* global document, XMLHttpRequest */
+/* global document, Buffer, XMLHttpRequest */
 
 'use strict';
 
@@ -290,7 +290,7 @@ function compileAndLoad(source, namespace) {
 // Return the contents of a script element, fetching it via XHR if necessary.
 function getScriptElementContents(el) {
   if (!isElement(el)) {
-    throw new TypeError('Expected a DOM Node, got ' + el);
+    throw new TypeError('Expected a DOM Node, got ' + common.unexpectedObjToString(el));
   }
   if (el.type !== 'text/ohm-js') {
     throw new Error('Expected a script tag with type="text/ohm-js", got ' + el);
@@ -318,7 +318,13 @@ function grammar(source, optNamespace) {
 function grammars(source, optNamespace) {
   var ns = Namespace.extend(Namespace.asNamespace(optNamespace));
   if (typeof source !== 'string') {
-    throw new TypeError('Expected string as first argument, got ' + source);
+    // For convenience, detect Node.js Buffer objects and automatically call toString().
+    if (Buffer && Buffer.isBuffer(source)) {
+      source = source.toString();
+    } else {
+      throw new TypeError(
+          'Expected string as first argument, got ' + common.unexpectedObjToString(source));
+    }
   }
   compileAndLoad(source, ns);
   return ns;

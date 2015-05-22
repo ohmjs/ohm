@@ -189,6 +189,28 @@ exports.unescapeChar = function(s) {
   }
 };
 
+// Helper for producing a description of an unknown object in a safe way.
+// Especially useful for error messages where an unexpected type of object was encountered.
+exports.unexpectedObjToString = function(obj) {
+  if (obj == null) {
+    return String(obj);
+  }
+  var baseToString = Object.prototype.toString.call(obj);
+  try {
+    var typeName;
+    if (obj.constructor && obj.constructor.name) {
+      typeName = obj.constructor.name;
+    } else if (baseToString.indexOf('[object ') === 0) {
+      typeName = baseToString.slice(8, -1);  // Extract e.g. "Array" from "[object Array]".
+    } else {
+      typeName = typeof obj;
+    }
+    return typeName + ': ' + JSON.stringify(String(obj));
+  } catch (e) {
+    return baseToString;
+  }
+};
+
 // Pretty-printing of strings
 
 exports.toStringLiteral = function(str) {

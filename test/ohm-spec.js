@@ -1653,6 +1653,31 @@ test('loading from script elements', function(t) {
   t.end();
 });
 
+test('instantiating grammars from different types of objects', function(t) {
+  var g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
+  t.equal(g.match('1+2').succeeded(), true, 'works with a Buffer from fs.readFileSync()');
+
+  var ns = ohm.grammars(new Buffer('G {}'));
+  t.equal(g.match('a', 'letter').succeeded(), true, 'works with a new Buffer');
+
+  // Try with some objects where 'toString' won't work.
+  t.throws(function() { ohm.grammar({toString: 3}); },
+      /Expected string as first argument, got \[object Object\]/, 'object with invalid toString');
+  t.throws(function() { ohm.grammar(Object.create(null)); },
+      /Expected string as first argument, got \[object Object\]/, 'object with no toString');
+
+  t.throws(function() { ohm.grammar([1, 2]); },
+      /Expected string as first argument, got Array: "1,2"/, 'Array with valid toString');
+
+  function Foo() {
+    this.toString = function() { return 'Foo!'; };
+  };
+  t.throws(function() { ohm.grammar(new Foo()); },
+      /Expected string as first argument, got Foo: "Foo!"/, 'Custom objects with toString');
+
+  t.end();
+});
+
 test('bootstrap', function(t) {
   var ns = util.makeGrammars(ohmGrammarSource);
 
