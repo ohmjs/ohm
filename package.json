@@ -14,8 +14,9 @@
     "rapid",
     "prototyping"
   ],
-  "homepage": "http://tinlizzie.org/ohm",
-  "bugs": "http://github.com/alexwarth/ohm/issues",
+  "repository": "https://github.com/cdglabs/ohm",
+  "homepage": "http://cdglabs.org/ohm",
+  "bugs": "https://github.com/cdglabs/ohm/issues",
   "main": "src/main.js",
   "bin": "src/ohm-cmd.js",
   "browserify": {

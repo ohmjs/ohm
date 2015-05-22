@@ -1,7 +1,7 @@
 Ohm
 ===
 
-[Ohm](https://gitlab.com/cdg/ohm) is a library and domain-specific language for parsing and pattern matching. You can use it to parse custom file formats, transform complex data structures, and quickly build parsers, interpreters, and compilers for programming languages. The _Ohm language_ is based on [parsing expression grammars](http://en.wikipedia.org/wiki/Parsing_expression_grammar) (PEGs), which are a formal way of describing syntax, similar to regular expressions and context-free grammars. The _Ohm library_ provides a JavaScript interface (known as Ohm/JS) for creating parsers and interpreters from the grammars you write.
+[Ohm](https://github.com/cdglabs/ohm) is a library and domain-specific language for parsing and pattern matching. You can use it to parse custom file formats, transform complex data structures, and quickly build parsers, interpreters, and compilers for programming languages. The _Ohm language_ is based on [parsing expression grammars](http://en.wikipedia.org/wiki/Parsing_expression_grammar) (PEGs), which are a formal way of describing syntax, similar to regular expressions and context-free grammars. The _Ohm library_ provides a JavaScript interface (known as Ohm/JS) for creating parsers and interpreters from the grammars you write.
 
 Like its older sibling [OMeta](http://tinlizzie.org/ometa/), Ohm supports object-oriented grammar extension and allows pattern matching of arbitrary data structures (not just strings). One thing that distinguishes Ohm from other parsing tools is that it completely separates grammars from semantic actions. In Ohm, a grammar defines a language, and semantic actions specify what to do with valid inputs in that language. Semantic actions are written in the _host language_ -- e.g., for Ohm/JS, the host language is JavaScript. Ohm grammars, on the other hand, work without modification in any host language. This separation improves modularity, and makes both grammars and semantic actions easier to read and understand.
 
@@ -19,7 +19,7 @@ Usage
 
 For Node.js and io.js (**Note:** As soon as Ohm is ready for release, it will be published on NPM):
 
-    git clone git@gitlab.com:cdg/ohm.git
+    git clone https://github.com/cdglabs/ohm.git
     npm install -g --ignore-scripts ./ohm
 
 Then require it from anywhere:
@@ -100,7 +100,7 @@ Contributing
 
 All you need to get started:
 
-    git clone git@gitlab.com:cdg/ohm.git
+    git clone https://github.com/cdglabs/ohm.git
     cd ohm
     npm install
 
