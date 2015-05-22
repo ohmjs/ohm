@@ -4,7 +4,6 @@
 // Imports
 // --------------------------------------------------------------------
 
-var extend = require('util-extend');
 var fs = require('fs');
 var test = require('tape');
 

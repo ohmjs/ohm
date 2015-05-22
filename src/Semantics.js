@@ -206,7 +206,7 @@ Semantics.prototype.addOperationOrAttribute = function(type, name, actionDict) {
     // overridden by a sub-semantics.
     var thisThing = this._semantics[typePlural][name];
     return thisThing.execute(this._semantics, this);
-  };
+  }
 
   if (type === 'operation') {
     this.Wrapper.prototype[name] = doIt;
