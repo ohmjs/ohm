@@ -173,7 +173,6 @@ Semantics.prototype.toString = function() {
   return '[semantics for ' + this.grammar.name + ']';
 };
 
-
 Semantics.prototype.checkActionDictsIfHaventAlready = function() {
   if (!this.checkedActionDicts) {
     this.checkActionDicts();
@@ -217,7 +216,7 @@ Semantics.prototype.addOperationOrAttribute = function(type, name, actionDict) {
       return '[' + name + ' operation]';
     };
   } else {
-    Object.defineProperty(this.Wrapper.prototype, name, { get: doIt });
+    Object.defineProperty(this.Wrapper.prototype, name, {get: doIt});
     this.attributeKeys[name] = Symbol();
   }
 };
@@ -227,8 +226,8 @@ Semantics.prototype.extendOperationOrAttribute = function(type, name, actionDict
   var Ctor = type === 'operation' ? Operation : Attribute;
 
   if (!(this.super && name in this.super[typePlural])) {
-    throw new Error(
-        'Cannot extend ' + type + " '" + name + "': did not inherit an " + type + ' with that name');
+    throw new Error('Cannot extend ' + type + " '" + name +
+        "': did not inherit an " + type + ' with that name');
   }
   if (Object.prototype.hasOwnProperty.call(this[typePlural], name)) {
     throw new Error('Cannot extend ' + type + " '" + name + "' again");
@@ -369,7 +368,6 @@ Operation.prototype.execute = function(semantics, nodeWrapper) {
   // name of a rule in the grammar, or the special value '_terminal'.
   var actionFn = this.actionDict[nodeWrapper._node.ctorName];
   if (actionFn) {
-//console.log('doing actiondict thing w/ fn', actionFn);
     return this.doAction(semantics, nodeWrapper, actionFn);
   }
 
@@ -377,7 +375,6 @@ Operation.prototype.execute = function(semantics, nodeWrapper) {
   // invoke the '_default' semantic action if it exists (but only if this node is not a terminal).
   var defaultActionFn = this.actionDict._default;
   if (defaultActionFn && !nodeWrapper.isTerminal()) {
-//console.log('doing default w/ fn', defaultActionFn);
     return this.doAction(semantics, nodeWrapper, defaultActionFn, true);
   }
 

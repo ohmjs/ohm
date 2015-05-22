@@ -280,7 +280,6 @@ s.addOperation('viz', {
                        add('prim', 'false');
                      },
   Prop:              function(n, _, p) {},
-  _many:             ohm.actions.makeArray,
   _terminal:         ohm.actions.getPrimitiveValue
 });
 
@@ -289,8 +288,7 @@ s.addOperation('vizChoice', {
                        enter('choice');
                          this.viz();
                        leave();
-                     },
-  _many:             ohm.actions.makeArray,
+                     }
 });
 
 function escape(str) {

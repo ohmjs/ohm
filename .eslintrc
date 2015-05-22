@@ -67,6 +67,6 @@
     // Force IIFEs to be wrapped in parentheses.
     "wrap-iife": [2, "inside"],
 
-    "yoda": [2, "never", {"exceptRange": true}]
+    "yoda": 0
   }
 }

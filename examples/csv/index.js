@@ -4,18 +4,24 @@
 
 var assert = require('assert');
 var fs = require('fs');
+var join = require('path').join;
 var ohm = require('ohm');
 
-var g = ohm.grammar(fs.readFileSync(__dirname + '/csv.ohm').toString());
+var g = ohm.grammar(fs.readFileSync(join(__dirname, 'csv.ohm')).toString());
 
 var semantics = g.semantics().addOperation('value', {
-  csv:   function(r, _, rs, _) { return [r.value()].concat(rs.value()); },
-  row:   function(c, _, cs)    { return [c.value()].concat(cs.value()); },
-  col:   function(_)           { return this.interval.contents; },
-  _many: ohm.actions.makeArray
+  csv: function(r, _, rs, eol) {
+    return [r.value()].concat(rs.value());
+  },
+  row: function(c, _, cs) {
+    return [c.value()].concat(cs.value());
+  },
+  col: function(_) {
+    return this.interval.contents;
+  }
 });
 
-var someInput = 
+var someInput =
     'foo,bar,baz\n' +
     'foo,bar\n' +
     '\n' +
@@ -29,7 +35,9 @@ function parse(input) {
   return semantics(match).value();
 }
 
-assert.deepEqual(parse(someInput), 
-    [['foo','bar','baz'],['foo','bar'],[''],['foo','','baz'],['','bar','baz'],['foo']]);
+assert.deepEqual(parse(someInput),
+    [['foo', 'bar', 'baz'], ['foo', 'bar'], [''],
+    ['foo', '', 'baz'], ['', 'bar', 'baz'], ['foo']]);
 assert.deepEqual(parse(someInput + '\n'),
-    [['foo','bar','baz'],['foo','bar'],[''],['foo','','baz'],['','bar','baz'],['foo']]);
+    [['foo', 'bar', 'baz'], ['foo', 'bar'], [''],
+    ['foo', '', 'baz'], ['', 'bar', 'baz'], ['foo']]);
