@@ -197,6 +197,10 @@ Grammar.prototype = {
     sb.append('  return new this.newGrammar(' + common.toStringLiteral(this.name) + ')\n');
     sb.append(superGrammarDecl);
 
+    if (this.defaultStartRule) {
+      sb.append("    .withDefaultStartRule('" + this.defaultStartRule + "')\n");
+    }
+
     var self = this;
     Object.keys(this.ruleDict).forEach(function(ruleName) {
       var body = self.ruleDict[ruleName];

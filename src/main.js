@@ -104,6 +104,11 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     Rule_define: function(n, fs, d, _, b) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit() || [];
+      // If there is no default start rule yet, set it now. This must be done before visiting
+      // the body, because it might contain an inline rule definition.
+      if (!decl.defaultStartRule && decl.ensureSuperGrammar() !== Grammar.ProtoBuiltInRules) {
+        decl.withDefaultStartRule(currentRuleName);
+      }
       var body = b.visit();
       body.definitionInterval = this.interval.trimmed();
       var description = d.visit();

@@ -1883,6 +1883,9 @@ test('default start rule', function(t) {
   t.equal(g.defaultStartRule, 'blah', 'rule defined after overriding becomes start rule');
   t.ok(g.match('3'));
 
+  g = util.makeGrammar('G { x = "a"\n| -- nothing }');
+  t.equal(g.defaultStartRule, 'x', "an inline rule doesn't become the default");
+
   // Test passing the default start rule as an argument to the Grammar constructor.
   var root = Grammar.BuiltInRules;
   t.throws(function() {

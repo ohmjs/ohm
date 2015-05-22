@@ -91,6 +91,11 @@ GrammarDecl.prototype.withSuperGrammar = function(superGrammar) {
   return this;
 };
 
+GrammarDecl.prototype.withDefaultStartRule = function(ruleName) {
+  this.defaultStartRule = ruleName;
+  return this;
+};
+
 // Creates a Grammar instance, and if it passes the sanity checks, returns it.
 GrammarDecl.prototype.build = function() {
   var grammar = new Grammar(
@@ -128,9 +133,6 @@ GrammarDecl.prototype.define = function(name, formals, body, optDescr) {
   var duplicateParameterNames = common.getDuplicates(formals);
   if (duplicateParameterNames.length > 0) {
     throw new errors.DuplicateParameterNames(name, duplicateParameterNames);
-  }
-  if (!this.defaultStartRule && this.superGrammar !== Grammar.ProtoBuiltInRules) {
-    this.defaultStartRule = name;
   }
   return this.install(name, formals, optDescr, body);
 };
