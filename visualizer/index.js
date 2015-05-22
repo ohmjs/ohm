@@ -350,7 +350,7 @@ function isPrimitive(expr) {
       console.log(e);  // eslint-disable-line no-console
       return;
     }
-    var trace = grammar.trace(inputEditor.getValue(), 'Expr').state.trace;
+    var trace = grammar.trace(inputEditor.getValue(), 'Expr');
 
     // Refresh the option values.
     for (var i = 0; i < checkboxes.length; ++i) {
@@ -426,7 +426,7 @@ function isPrimitive(expr) {
           }
         }
       });
-    })(trace, $('#parseResults'), $('#expandedInput'), true, true, null);
+    })([trace], $('#parseResults'), $('#expandedInput'), true, true, null);
     initializeWidths();
   }
   refresh();

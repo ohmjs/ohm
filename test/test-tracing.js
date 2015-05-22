@@ -42,11 +42,9 @@ test('basic tracing', function(t) {
 
 test('tracing with memoization', function(t) {
   var g = ohm.grammar('G { start = letter ~letter | letter* }');
-  var state = g.trace('ab', 'start').state;
-  var trace = state.trace;
-  t.equal(trace.length, 1);
+  var trace = g.trace('ab', 'start');
 
-  var alt = trace[0].children[0];
+  var alt = trace.children[0];
   t.equal(alt.children[0].succeeded, false);
   t.equal(alt.children[1].succeeded, true);
   t.equal(alt.children.length, 2);
@@ -69,20 +67,19 @@ test('tracing with memoization', function(t) {
 
 test('tracing with left recursion', function(t) {
   var g = ohm.grammar('G { id = id letter -- rec\n    | letter }');
-  var state = g.trace('abc', 'id').state;
-  var trace = state.trace;
+  var trace = g.trace('abc', 'id');
 
-  var entries = trace[0].children;
-  t.ok(trace[0].isLeftRecursive);
+  var children = trace.children;
+  t.ok(trace.isLeftRecursive);
   // At the top-level recursive application, there is a loop which grows the
   // left-recursive result. There should be one entry for each iteration of
   // the loop.
-  t.equal(entries.length, 4);
-  t.equal(entries[0].replacedBy, entries[1]);
-  t.equal(entries[1].replacedBy, entries[2]);
-  t.equal(entries[3].interval.contents, '', 'last entry is <end>');
+  t.equal(children.length, 4);
+  t.equal(children[0].replacedBy, children[1]);
+  t.equal(children[1].replacedBy, children[2]);
+  t.equal(children[3].interval.contents, '', 'last entry is <end>');
 
-  var choice = entries[2];
+  var choice = children[2];
   t.equal(choice.children.length, 1);
 
   var recApply = choice.children[0];
@@ -99,8 +96,7 @@ test('tracing with left recursion', function(t) {
 
 test('toString', function(t) {
   var g = ohm.grammar('G { start = "a" | letter* }');
-  var state = g.trace('hi').state;
-  var lines = state.trace[0].toString().split('\n').slice(0, -1);
+  var lines = g.trace('hi').toString().split('\n').slice(0, -1);
 
   var exprs = lines.map(function(l) { return l.split(/\s+/)[2]; });
   t.deepEqual(exprs, [

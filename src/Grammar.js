@@ -71,18 +71,14 @@ Grammar.prototype = {
     if (!startRule) {
       throw new Error('Missing start rule argument -- the grammar has no default start rule.');
     }
-    var matchResult = this._match(obj, startRule, false);
-    if (matchResult.succeeded()) {
-      delete matchResult.state;  // TODO: Should we keep this around?
-    }
-    return matchResult;
+    var state = this._match(obj, startRule, false);
+    return MatchResult.newFor(state);
   },
 
   _match: function(obj, startRule, tracingEnabled) {
     var inputStream = InputStream.newFor(typeof obj === 'string' ? obj : [obj]);
     var state = new State(this, inputStream, startRule, tracingEnabled);
     var succeeded = new pexprs.Apply(startRule).eval(state);
-    var matchResult = MatchResult.newFor(state);
     if (succeeded) {
       // Link every CSTNode to its parent.
       var stack = [undefined];
@@ -97,9 +93,9 @@ Grammar.prototype = {
           this._node.parent = stack[stack.length - 1];
         }
       });
-      helpers(matchResult).setParents();
+      helpers(MatchResult.newFor(state)).setParents();
     }
-    return matchResult;
+    return state;
   },
 
   trace: function(obj, optStartRule) {
@@ -107,7 +103,12 @@ Grammar.prototype = {
     if (!startRule) {
       throw new Error('Missing start rule argument -- the grammar has no default start rule.');
     }
-    return this._match(obj, startRule, true);
+    var state = this._match(obj, startRule, true);
+
+    var rootTrace = state.trace[0];
+    rootTrace.state = state;
+    rootTrace.result = MatchResult.newFor(state);
+    return rootTrace;
   },
 
   semantics: function() {
