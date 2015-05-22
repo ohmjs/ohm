@@ -93,7 +93,7 @@ if (m.succeeded()) {
 }
 ```
 
-For more information, see [API reference](./doc/api-reference.md) and the [syntax reference](./doc/syntax-reference.md).
+For more information, see [main documentation](./doc/index.md).
 
 Contributing
 ------------
