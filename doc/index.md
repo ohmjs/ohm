@@ -79,13 +79,23 @@ var fs = require('fs');
 // Instantiate the grammar.
 var g = ohm.grammar(fs.readFileSync('arithmetic.ohm').toString());
 
-// Create an operation that evaluates the expression.
+// Create an operation that evaluates the expression. An operation always belongs to a Semantics,
+// which is a family of related operations and attributes for a particular grammar.
 var semantics = g.semantics().addOperation('eval', {
+  Exp: function(e) {
+    return e.eval();
+  },
+  AddExp: function(e) {
+    return e.eval();
+  },
   AddExp_plus: function(left, op, right) {
     return left.eval() + right.eval();
   },
   AddExp_minus: function(left, op, right) {
     return left.eval() - right.eval();
+  },
+  PriExp: function(e) {
+    return e.eval();
   },
   PriExp_paren: function(open, exp, close) {
     return exp.eval();
@@ -93,14 +103,9 @@ var semantics = g.semantics().addOperation('eval', {
   number: function(chars) {
     return parseInt(this.interval.contents, 10);
   },
-  _default: ohm.actions.passThrough
 });
 var match = g.match('1 + (2 - 3) + 4');
 assert.equal(semantics(match).eval(), 4);
 ```
 
-### TODO
-
-* Should we say something about the methods of the "action dictionary", e.g., what their arguments are, that each of them must have the correct arity, etc.?
-* I'm afraid the use of `ohm.actions.passThrough` will be confusing here. Consider starting without it, then showing that we can avoid writing a bunch of the methods in the action dictionary if you use `_default` and `ohm.actions.passThrough`.
-* It's OK to explain "semantics" later, but we may want to say something about it here so that the call to `semantics()` doesn't seem so mysterious.
+You can learn more about semantics in the [API reference](./api-reference.md#semantics).
