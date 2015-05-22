@@ -14,7 +14,7 @@ var ohm = require('..');
 
 test('basic tracing', function(t) {
   var g = ohm.grammar('G { start = "a" | letter* }');
-  var state = g.trace('hallo', 'start');
+  var state = g.trace('hallo', 'start').state;
   var trace = state.trace;
 
   t.equal(trace.length, 1);
@@ -42,7 +42,7 @@ test('basic tracing', function(t) {
 
 test('tracing with memoization', function(t) {
   var g = ohm.grammar('G { start = letter ~letter | letter* }');
-  var state = g.trace('ab', 'start');
+  var state = g.trace('ab', 'start').state;
   var trace = state.trace;
   t.equal(trace.length, 1);
 
@@ -69,7 +69,7 @@ test('tracing with memoization', function(t) {
 
 test('tracing with left recursion', function(t) {
   var g = ohm.grammar('G { id = id letter -- rec\n    | letter }');
-  var state = g.trace('abc', 'id');
+  var state = g.trace('abc', 'id').state;
   var trace = state.trace;
 
   var entries = trace[0].children;
@@ -99,7 +99,7 @@ test('tracing with left recursion', function(t) {
 
 test('toString', function(t) {
   var g = ohm.grammar('G { start = "a" | letter* }');
-  var state = g.trace('hi');
+  var state = g.trace('hi').state;
   var lines = state.trace[0].toString().split('\n').slice(0, -1);
 
   var exprs = lines.map(function(l) { return l.split(/\s+/)[2]; });

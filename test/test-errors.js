@@ -53,11 +53,6 @@ test('match failure', function(t) {
   t.equal(m.succeeded(), true, 'succeeded() is true for root CST node');
   t.equal(m.failed(), false, 'failed() is false for root CST node');
 
-  function hasMethods(c) {
-    return typeof c.succeeded === 'function' || c.failed === 'function';
-  }
-  t.notOk(m.children.some(hasMethods), 'other nodes do not have succeeded() or failed() methods');
-
   t.end();
 });
 

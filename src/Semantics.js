@@ -7,7 +7,8 @@
 var Symbol = require('symbol');  // eslint-disable-line no-undef
 var inherits = require('inherits');
 
-var nodes = require('./nodes');
+var MatchResult = require('./MatchResult');
+var common = require('./common');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -278,11 +279,17 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
 
   // To enable clients to invoke a semantics like a function, return a function that acts as a proxy
   // for `s`, which is the real `Semantics` instance.
-  var proxy = function(cst) {
-    // FIXME: Wasn't this supposed to be a MatchResult, Pat? Or is there no such thing?
-    if (!(cst instanceof nodes.Node)) {
-      throw new TypeError('Semantics expected a CST node, but got ' + cst);
+  var proxy = function(matchResult) {
+    if (!(matchResult instanceof MatchResult)) {
+      throw new TypeError(
+          'Semantics expected a MatchResult, but got ' + common.unexpectedObjToString(matchResult));
     }
+    if (!matchResult.succeeded()) {
+      throw new TypeError(
+          'cannot apply Semantics to ' + matchResult.toString());
+    }
+
+    var cst = matchResult._cst;
     if (cst.grammar !== grammar) {
       throw new Error(
           "Cannot use a CST node created by grammar '" + cst.grammar.name +

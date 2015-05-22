@@ -64,7 +64,7 @@ function load(url) {
 // `tree`, which is the concrete syntax tree of a user-written grammar.
 // The grammar will be assigned into `namespace` under the name of the grammar
 // as specified in the source.
-function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
+function buildGrammar(match, namespace, optOhmGrammarForTesting) {
   var builder;
   var decl;
   var currentRuleName;
@@ -276,7 +276,7 @@ function buildGrammar(tree, namespace, optOhmGrammarForTesting) {
     _terminal: Semantics.actions.getPrimitiveValue,
     _default: Semantics.actions.passThrough
   });
-  return helpers(tree).visit();
+  return helpers(match).visit();
 }
 
 function compileAndLoad(source, namespace) {

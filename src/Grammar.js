@@ -6,7 +6,7 @@
 
 var InputStream = require('./InputStream');
 var Interval = require('./Interval');
-var MatchFailure = require('./MatchFailure');
+var MatchResult = require('./MatchResult');
 var Semantics = require('./Semantics');
 var State = require('./State');
 var common = require('./common');
@@ -17,9 +17,6 @@ var pexprs = require('./pexprs');
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
-
-function returnFalse() { return false; }
-function returnTrue() { return true; }
 
 function Grammar(name, superGrammar, ruleDict, optDefaultStartRule) {
   this.name = name;
@@ -74,24 +71,20 @@ Grammar.prototype = {
     if (!startRule) {
       throw new Error('Missing start rule argument -- the grammar has no default start rule.');
     }
-    var state = this._match(obj, startRule, false);
-    var succeeded = state.bindings.length === 1;
-    if (succeeded) {
-      var cst = state.bindings[0];
-      cst.succeeded = returnTrue;
-      cst.failed = returnFalse;
-      return cst;
+    var matchResult = this._match(obj, startRule, false);
+    if (matchResult.succeeded()) {
+      delete matchResult.state;  // TODO: Should we keep this around?
     }
-    return new MatchFailure(state);
+    return matchResult;
   },
 
   _match: function(obj, startRule, tracingEnabled) {
     var inputStream = InputStream.newFor(typeof obj === 'string' ? obj : [obj]);
     var state = new State(this, inputStream, startRule, tracingEnabled);
     var succeeded = new pexprs.Apply(startRule).eval(state);
+    var matchResult = MatchResult.newFor(state);
     if (succeeded) {
       // Link every CSTNode to its parent.
-      var node = state.bindings[0];
       var stack = [undefined];
       var helpers = this.semantics().addOperation('setParents', {
         _terminal: function() {
@@ -104,9 +97,9 @@ Grammar.prototype = {
           this._node.parent = stack[stack.length - 1];
         }
       });
-      helpers(node).setParents();
+      helpers(matchResult).setParents();
     }
-    return state;
+    return matchResult;
   },
 
   trace: function(obj, optStartRule) {

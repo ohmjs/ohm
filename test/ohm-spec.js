@@ -95,11 +95,11 @@ test('grammar constructors dictionary', function(t) {
   });
 
   it('_default entry works when called correctly', function() {
-    t.ok(m.construct('addExp', [m.match('1+2', 'addExp_plus')]) instanceof nodes.Node);
+    t.ok(m.construct('addExp', [m.match('1+2', 'addExp_plus')._cst]) instanceof nodes.Node);
   });
 
   it('particular entries work when called', function() {
-    var n = m.match('1+2*3', 'addExp');
+    var n = m.match('1+2*3', 'addExp')._cst;
     t.equal(n.ctorName, 'addExp');
 
     var p = n.children[0];

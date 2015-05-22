@@ -4,6 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
+var inherits = require('inherits');
+
 var common = require('./common');
 
 // --------------------------------------------------------------------
@@ -15,6 +17,28 @@ function getShortMatchErrorMessage(pos, source, detail) {
   var errorInfo = common.getLineAndColumn(source, pos);
   return 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ': ' + detail;
 }
+
+// ----------------- MatchFailure -----------------
+
+function MatchResult(state) {
+  this.state = state;
+  this._cst = state.bindings[0];
+}
+
+MatchResult.newFor = function(state) {
+  var succeeded = state.bindings.length === 1;
+  return succeeded ? new MatchResult(state) : new MatchFailure(state);
+};
+
+MatchResult.prototype.failed = function() {
+  return false;
+};
+
+MatchResult.prototype.succeeded = function() {
+  return !this.failed();
+};
+
+// ----------------- MatchFailure -----------------
 
 function MatchFailure(state) {
   this.state = state;
@@ -38,6 +62,7 @@ function MatchFailure(state) {
     return getShortMatchErrorMessage(this.getPos(), this.state.inputStream.source, detail);
   });
 }
+inherits(MatchFailure, MatchResult);
 
 MatchFailure.prototype.toString = function() {
   return '[MatchFailure at position ' + this.getPos() + ']';
@@ -45,10 +70,6 @@ MatchFailure.prototype.toString = function() {
 
 MatchFailure.prototype.failed = function() {
   return true;
-};
-
-MatchFailure.prototype.succeeded = function() {
-  return false;
 };
 
 MatchFailure.prototype.getPos = function() {
@@ -88,4 +109,4 @@ MatchFailure.prototype.getExpected = function() {
 // Exports
 // --------------------------------------------------------------------
 
-module.exports = MatchFailure;
+module.exports = MatchResult;

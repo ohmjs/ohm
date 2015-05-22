@@ -136,13 +136,13 @@ test('semantics', function(t) {
     /already exists/,
     'addAttribute throws when name is already used, even if it is an operation');
 
-  t.throws(function() { s(null); }, /expected a CST node/);
-  t.throws(function() { s(false); }, /expected a CST node/);
-  t.throws(function() { s(); }, /expected a CST node/);
-  t.throws(function() { s(3); }, /expected a CST node/);
-  t.throws(function() { s('asdf'); }, /expected a CST node/);
+  t.throws(function() { s(null); }, /expected a MatchResult/);
+  t.throws(function() { s(false); }, /expected a MatchResult/);
+  t.throws(function() { s(); }, /expected a MatchResult/);
+  t.throws(function() { s(3); }, /expected a MatchResult/);
+  t.throws(function() { s('asdf'); }, /expected a MatchResult/);
   t.throws(function() { s(Arithmetic.match('barf')); },
-      /expected a CST node, but got \[MatchFailure at position 0\]/,
+      /cannot apply Semantics to \[MatchFailure at position 0\]/,
       'throws when arg is a MatchFailure');
 
   // Cannot use the semantics on nodes from another grammar...
