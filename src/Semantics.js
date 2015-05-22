@@ -77,46 +77,29 @@ Wrapper.prototype.isTerminal = function() {
   return this._node.isTerminal();
 };
 
-// TODO: Consolidate all of the `Object.defineProperty` calls below into a single
-// call to `Object.defineProperties`.
+Object.defineProperties(Wrapper.prototype, {
+  // Returns an array containing the children of this CST node.
+  children: {get: function() { return this._children(); }},
 
-// Returns an array containing the children of this CST node.
-Object.defineProperty(Wrapper.prototype, 'children', {
-  get: function() {
-    return this._children();
-  }
-});
+  // Returns the name of grammar rule that created this CST node.
+  ctorName: {get: function() { return this._node.ctorName; }},
 
-// Returns the name of grammar rule that created this CST node.
-Object.defineProperty(Wrapper.prototype, 'ctorName', {
-  get: function() {
-    return this._node.ctorName;
-  }
-});
+  // Returns the interval consumed by the CST node associated with this wrapper.
+  interval: {get: function() { return this._node.interval; }},
 
-// Returns the interval consumed by the CST node associated with this wrapper.
-Object.defineProperty(Wrapper.prototype, 'interval', {
-  get: function() {
-    return this._node.interval;
-  }
-});
+  // Returns the number of children of this CST node.
+  numChildren: {get: function() { return this._node.numChildren(); }},
 
-// Returns the number of children of this CST node.
-Object.defineProperty(Wrapper.prototype, 'numChildren', {
-  get: function() {
-    return this._node.numChildren();
-  }
-});
-
-// Returns the primitive value of this CST node, if it's a terminal node. Otherwise, throws an
-// exception.
-Object.defineProperty(Wrapper.prototype, 'primitiveValue', {
-  get: function() {
-    if (this.isTerminal()) {
-      return this._node.primitiveValue;
+  // Returns the primitive value of this CST node, if it's a terminal node. Otherwise,
+  // throws an exception.
+  primitiveValue: {
+    get: function() {
+      if (this.isTerminal()) {
+        return this._node.primitiveValue;
+      }
+      throw new TypeError(
+          "tried to access the 'primitiveValue' attribute of a non-terminal CST node");
     }
-    throw new TypeError(
-        "tried to access the 'primitiveValue' attribute of a non-terminal CST node");
   }
 });
 
