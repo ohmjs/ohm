@@ -1,7 +1,7 @@
 # Ohm Documentation
 
-* [Tutorial](./tutorial.md)
-* [Reference](./reference.md)
+* [Ohm/JS API Reference](./api-reference.md)
+* [Ohm Syntax Reference](./syntax-reference.md)
 
 ## Examples
 
@@ -108,4 +108,4 @@ var match = g.match('1 + (2 - 3) + 4');
 assert.equal(semantics(match).eval(), 4);
 ```
 
-You can learn more about semantics in the [API reference](./api-reference.md#semantics).
+You can learn more about semantics in the [API reference](./api-reference.md#semantics). For more in-depth examples, see the `examples/` directory.
