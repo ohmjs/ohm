@@ -24,7 +24,7 @@ Create a new Namespace containing Grammar instances for all of the grammars defi
 
 <h2 id="namespace">Namespace objects</h2>
 
-When instantiating a grammar that refers to another grammar -- e.g. `SuperJava <: Java { ... }` -- the supergrammar name ('Java') is resolved to a grammar by looking up the name in a Namespace. In Ohm/JS, Namespaces are a plain old JavaScript objects, and an object literal like `{Java: ...}` can be passed to any API that expects a Namespace. For convenience, Ohm also has the following methods for working with namespaces:
+When instantiating a grammar that refers to another grammar -- e.g. `MyJava <: Java { keyword += "async" }` -- the supergrammar name ('Java') is resolved to a grammar by looking up the name in a Namespace. In Ohm/JS, Namespaces are a plain old JavaScript objects, and an object literal like `{Java: myJavaGrammar}` can be passed to any API that expects a Namespace. For convenience, Ohm also has the following methods for working with namespaces:
 
 <b><pre class="api">ohm.namespace(optProps?: object)</pre></b>
 
@@ -37,45 +37,47 @@ Create a new namespace which inherits from `namespace`. If `optProps` is specifi
 Grammar objects
 ---------------
 
-Instances of Grammar have the following methods:
+A Grammar instance `g` has the following methods:
 
-<b><pre class="api">grammar.match(obj: string|object, optStartRule?: string) &rarr; MatchResult</pre></b>
+<b><pre class="api">g.match(obj: string|object, optStartRule?: string) &rarr; MatchResult</pre></b>
 
-Try to match `obj` against `grammar`, returning a MatchResult. If `optStartRule` is given, it specifies the rule on which to start matching. By default, the start rule is inherited from the supergrammar, or if there is no supergrammar specified, it is the first rule in `grammar`'s definition.
+Try to match `obj` against `g`, returning a MatchResult. If `optStartRule` is given, it specifies the rule on which to start matching. By default, the start rule is inherited from the supergrammar, or if there is no supergrammar specified, it is the first rule in `g`'s definition.
 
-<b><pre class="api">grammar.semantics() &rarr; Semantics</pre></b>
+<b><pre class="api">g.semantics() &rarr; Semantics</pre></b>
 
-Create a new [Semantics](#semantics) object for `grammar`.
+Create a new [Semantics](#semantics) object for `g`.
 
-<b><pre class="api">grammar.extendSemantics(superSemantics: Semantics) &rarr; Semantics</pre></b>
+<b><pre class="api">g.extendSemantics(superSemantics: Semantics) &rarr; Semantics</pre></b>
 
-Create a new [Semantics](#semantics) object for `grammar` that inherits all of the operations and attributes in `superSemantics`. `grammar` must be a descendent of the grammar associated with `superSemantics`.
+Create a new [Semantics](#semantics) object for `g` that inherits all of the operations and attributes in `superSemantics`. `g` must be a descendent of the grammar associated with `superSemantics`.
 
 <h2 id="MatchResult">MatchResult objects</h2>
 
-Instances of MatchResult have the following methods:
+A MatchResult instance `r` has the following methods:
 
-<b><pre class="api">matchResult.succeeded() &rarr; boolean</pre></b>
+<b><pre class="api">r.succeeded() &rarr; boolean</pre></b>
 
 Return `true` if the match succeeded, otherwise `false`.
 
-<b><pre class="api">matchResult.failed() &rarr; boolean</pre></b>
+<b><pre class="api">r.failed() &rarr; boolean</pre></b>
 
 Return `true` if the match failed, otherwise `false`.
 
-### MatchFailure properties
+### MatchFailure objects
 
-When `matchResult.failed()` is `true`, `matchResult` has the following additional properties:
+When `r.failed()` is `true`, `r` has the following additional properties:
 
-<b><pre class="api">matchResult.message: string</pre></b>
+<b><pre class="api">r.message: string</pre></b>
 
 Contains a message indicating where and why the match failed. This message is suitable for end users of a language (i.e., people who do not have access to the grammar source).
 
-<b><pre class="api">matchResult.shortMessage: string</pre></b>
+<b><pre class="api">r.shortMessage: string</pre></b>
 
-Contains an abbreviated version of `matchResult.message` that does not include an excerpt from the invalid input.
+Contains an abbreviated version of `r.message` that does not include an excerpt from the invalid input.
 
 <h2 id="semantics">Semantics, Operations, and Attributes</h2>
+
+Internally, a successful MatchResult contains a _parse tree_, which is made up of _parse nodes_. Each parse node is associated with a particular _parsing expression_ (a fragment of an Ohm grammar), and the node captures any input that was successfully parsed by that expression. Parse trees are not directly exposed -- instead, they are inspected indirectly through _operations_ and _attributes_.
 
 An Operation represents a function that can be applied to a successful match result. Like a [Visitor](http://en.wikipedia.org/wiki/Visitor_pattern), an operation is evaluated by recursively walking the parse tree, and at each node, invoking the matching semantic action from its *action dictionary*.
 
@@ -85,7 +87,7 @@ A Semantics is a family of operations and/or attributes for a given grammar. A g
 
 Operations and attributes are accessed by applying a semantics instance to a [MatchResult](#MatchResult). This returns an object whose properties correspond to the operations and attributes of the semantics. For example, to invoke an operation named 'prettyPrint': `mySemantics(matchResult).prettyPrint()`. Attributes are accessed using property syntax -- e.g., for an attribute named 'value': `mySemantics(matchResult).value`.
 
-Semantics instances have the following methods, which all return `this` so they can be chained:
+A Semantics instance `s` has the following methods, which all return `this` so they can be chained:
 
 <b><pre class="api">mySemantics.addOperation(name: string, actionDict: object) &rarr; Semantics</pre></b>
 
@@ -147,11 +149,49 @@ var actions = {
 
 The value of an operation or attribute for a node is the result of invoking the node's _matching semantic action_, which is chosen as follows:
 
-- On a _rule application_ (i.e., non-terminal) node, first look for a semantic action with the same name as the rule (e.g., 'FullName'). If the action dictionary does not have a property with that name, use the action named '_default'.
+- On a _rule application_ node, first look for a semantic action with the same name as the rule (e.g., 'FullName'). If the action dictionary does not have a property with that name, use the action named '_default'.
 - On a terminal node (e.g., a node produced by the parsing expression `"-"`), use the semantic action named '_terminal' if it exists, otherwise use '_default'.
 
 #### Arity
 
-When a semantic action is invoked, the arity of the function must be the same as the arity of the node. Unlike many other parsing frameworks, Ohm does not have a syntax for binding/capturing -- every parsing expression will capture all of the input it consumes. In the grammar above, the body of the `FullName` rule captures two values -- one for each application of the `name` rule -- so the semantic action `FullName` must have two arguments.
+When a semantic action is invoked, the arity of the function must equal the number of values produced by the corresponding parsing expression. Unlike many other parsing frameworks, Ohm does not have a syntax for binding/capturing -- every parsing expression captures all the input it consumes, and produces a fixed number of values. In the grammar above, the body of the `FullName` rule produces two values -- one for each application of the `name` rule -- so the semantic action `FullName` must have two arguments.
 
-The `*` (zero or more) and `+` (one or more) operators do not affect the arity: the expressions `"a" "b"` and `("a" "b")+` both have arity 2.
+The `*` (zero or more) and `+` (one or more) operators do not change the arity: the expressions `"a" "b"` and `("a" "b")+` both produce two values.
+
+### Parse Nodes
+
+When a semantic action is invoked, the arguments are the child nodes of the current node, and `this` is bound to the current node. There are three types of node: _terminal_, _rule application_ nodes, and _"many"_ nodes. No matter what the type, a node `n` has the following methods and properties:
+
+<b><pre class="api">n.child(idx: number) &rarr; Node</pre></b>
+
+Get the child at index `idx`.
+
+<b><pre class="api">n.isTerminal() &rarr; boolean</pre></b>
+
+`true` if the node is a terminal node, otherwise `false`.
+
+<b><pre class="api">n.isMany() &rarr; boolean</pre></b>
+
+`true` if the node is a _many_ node, otherwise `false`.
+
+<b><pre class="api">n.children: Array</pre></b>
+
+An array containing the node's children.
+
+<b><pre class="api">n.ctorName: string</pre></b>
+
+The name of grammar rule that created the node.
+
+<b><pre class="api">n.interval: Interval</pre></b>
+
+Captures the portion of the input that was consumed by the node.
+
+<b><pre class="api">n.numChildren: number</pre></b>
+
+The number of child nodes that the node has.
+
+#### Operations and Attributes
+
+In addition to the properties listed above, within a given semantics, every node also has a method/property corresponding to each operation/attribute in the semantics. For example, in a semantics that has an operation named 'prettyPrint' and an attribute named 'freeVars', every node has a `prettyPrint()` method and a `freeVars` property.
+
+**If a Node `n` returns `true` to `n.isMany()`**, operations and attributes return an Array containing the attribute values for all of the node's children.
