@@ -93,5 +93,18 @@ test('errors from makeGrammar()', function(t) {
   }
   t.throws(function() { ohm.grammar(''); }, /Missing grammar/);
   t.throws(function() { ohm.grammar(' \t\n'); }, /Missing grammar/);
+
+  try {
+    ohm.grammar('G {');
+    t.fail('Expected an exception to be thrown');
+  } catch (e) {
+    t.equal(e.message, [
+      'Failed to parse grammar:',
+      'Line 1, col 4:',
+      '> | G {',
+      '       ^',
+      "Expected an identifier or '}'"].join('\n'));
+  }
+
   t.end();
 });

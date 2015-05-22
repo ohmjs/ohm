@@ -58,11 +58,11 @@ var IntervalSourcesDontMatch = makeCustomError(
 // Grammar syntax error
 
 var GrammarSyntaxError = makeCustomError(
-    'ohm.error.SyntaxError',
+    'ohm.error.GrammarSyntaxError',
     function(matchFailure) {
       Object.defineProperty(this, 'message', {
         get: function() {
-          return 'failed to parse grammar\n' + matchFailure.message;
+          return 'Failed to parse grammar:\n' + matchFailure.message;
         }
       });
     }
@@ -217,7 +217,7 @@ module.exports = {
   IntervalSourcesDontMatch: IntervalSourcesDontMatch,
   InvalidConstructorCall: InvalidConstructorCall,
   InvalidParameter: InvalidParameter,
-  SyntaxError: GrammarSyntaxError,
+  GrammarSyntaxError: GrammarSyntaxError,
   UndeclaredGrammar: UndeclaredGrammar,
   UndeclaredRule: UndeclaredRule,
   WrongNumberOfParameters: WrongNumberOfParameters

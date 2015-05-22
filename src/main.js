@@ -287,7 +287,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
 function compileAndLoad(source, namespace) {
   var m = ohmGrammar.match(source, 'Grammars');
   if (m.failed()) {
-    throw new errors.SyntaxError(m);
+    throw new errors.GrammarSyntaxError(m);
   }
   return buildGrammar(m, namespace);
 }
