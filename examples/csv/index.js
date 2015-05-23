@@ -5,7 +5,7 @@
 var assert = require('assert');
 var fs = require('fs');
 var join = require('path').join;
-var ohm = require('ohm');
+var ohm = require('../..');
 
 var g = ohm.grammar(fs.readFileSync(join(__dirname, 'csv.ohm')).toString());
 
