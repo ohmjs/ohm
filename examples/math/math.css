@@ -25,6 +25,7 @@ body {
 
 #input.error {
   border: 1px solid rgba(255, 0, 0, .3);
+  background: rgba(255, 0, 0, .3);
 }
 
 #errorDiv {
