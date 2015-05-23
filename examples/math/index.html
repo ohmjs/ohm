@@ -39,12 +39,12 @@ Arithmetic {
     | number
 
   /*
-    Rule descriptions are optional parenthesized "comments" following the name of a rule in its
-    declaration. They are used to produce better error messages when the input is not recognized.
-    E.g., if you try to match the input "123" with the `ident` rule below, Ohm will say that "an
-    identifier" was expected. Without `ident`'s rule description, the error message would have said
-    that "a letter"* was expected -- which is true, but too low-level to be helpful. (`letter` is
-    a built-in rule with its own description.)
+    The following rules have *descriptions*, which are optional parenthesized "comments" following
+    the name of a rule in its declaration. Rule descriptions are used to produce better error
+    messages when the input is not recognized. E.g., if you try to match the input "123" with
+    the `ident` rule below, Ohm will say that "an identifier" was expected. Without `ident`'s rule
+    description, the error message would have said that "a letter" was expected -- which is true,
+    but too low-level to be helpful. (`letter` is a built-in rule with its own description.)
   */
   ident  (an identifier)
     = letter alnum*
@@ -69,21 +69,21 @@ var g = ohm.grammarFromScriptElement();
   `MatchResult`, which (among other things) can tell you if the match succeeded or failed. E.g.,
 */
 
-g.match('1+2*3').succeeded();  // evaluates to `true`
-g.match('1+2*3').failed();     // evaluates to `false`
+g.match('1+2*3').succeeded();                   // evaluates to `true`
+g.match('1+2*3').failed();                      // evaluates to `false`
 
-g.match('I CAN HAS CHEESEBURGER?').succeeded();  // evaluates to `false`
-g.match('I CAN HAS CHEESEBURGER?').failed();     // evaluates to `true`
+g.match('I CAN HAS CHEEZBURGER?').succeeded();  // evaluates to `false`
+g.match('I CAN HAS CHEEZBURGER?').failed();     // evaluates to `true`
 
 /*
   In Ohm, a grammar determines the set of all valid inputs / sentences in a language, but it doesn't
   specify what to do with valid inputs. To do something other than recognize valid inputs (e.g., to
-  generate a parse tree or interpret a program) you first have to create a "semantics" for that
+  generate a parse tree or interpret a program) you first have to create a *semantics* for that
   grammar.
 
-  A semantics is a family of operations and attributes for a given grammar. A grammar may have any
-  number of semantics associated with it -- this means that the clients of a grammar (even in the
-  same program) never have to worry about operation/attribute name clashes.
+  A semantics is a family of *operations* and *attributes* for a given grammar. A grammar may have
+  any number of semantics associated with it -- this means that the clients of a grammar (even in
+  the same program) never have to worry about operation/attribute name clashes.
 
   Below, we create a new semantics `s` for our arithmetic grammar.
 */
@@ -91,7 +91,7 @@ g.match('I CAN HAS CHEESEBURGER?').failed();     // evaluates to `true`
 var s = g.semantics();
 
 /*
-  But a semantics without any operations or attributes is not very interesting: it can't do
+  But a semantics without any operations or attributes is not very interesting: it doesn't do
   anything! Let's add an operation to our semantics that can be used to evaluate the arithmetic
   expressions:
 */
@@ -103,14 +103,14 @@ s.addOperation(
     /*
       When you create an operation, you have to specify what it does for each rule in the grammar.
       You do this by passing the `addOperation` method an "action dictionary": a plain old JS object
-      that maps the names of the rules in the grammar to "semantic actions", i.e., functions that
+      that maps the names of the rules in the grammar to *semantic actions*, i.e., functions that
       specify what to do with that particular syntactic construct in the language. Here's the
       action dictionary of our new operation:
     */
     {
       /*
-        The arguments of a semantic action are the concrete syntax tree (CST) nodes produced by the
-        body of its corresponding rule. E.g., here's the `Exp` rule from our arithmetic grammar:
+        The arguments of a semantic action are the *concrete syntax tree (CST) nodes* produced by
+        the body of its corresponding rule. E.g., here's the `Exp` rule from our arithmetic grammar:
 
           Exp
             = AddExp
@@ -118,7 +118,7 @@ s.addOperation(
         The body of this rule consists of an application of the `AddExp` rule, which produces a
         single CST node. Our semantic action for `Exp` will take this CST node as its only argument.
 
-        (When a new operation / attribute is created, Ohm checks the arities of all of its semantic
+        (When you create a new operation / attribute, Ohm checks the arities of all of its semantic
         actions against their corresponding grammar rules -- this makes programming operations /
         attributes much less error-prone. More on this later.)
 
@@ -126,7 +126,7 @@ s.addOperation(
         its enclosed "add expression", we write:
       */
       Exp: function(e) {
-        return e.interpret();  // Note that operations are provided as methods on the CST nodes
+        return e.interpret();  // Note that operations are accessed as methods on the CST nodes.
       },
 
       /*
@@ -137,7 +137,7 @@ s.addOperation(
             | AddExp "-" MulExp
             | MulExp
 
-        The body of this rule is a disjunction ("OR") of three parsing expressions. The first of
+        The body of this rule is a disjunction (an "OR") of three parsing expressions. The first of
         these expressions,
 
           AddExp "+" MulExp
@@ -154,9 +154,9 @@ s.addOperation(
 
         produces only 1 CST node. This mismatch would be problematic for someone who is trying to
         write a semantic action for `AddExpr`: How many arguments should that semantic action take?
-        Maybe it should depend on which choice succeeded? Turns out that's not such a good idea. For
-        one thing, it would complicate the task of writing semantic actions: e.g., the programmer
-        would have to branch on the value of `arguments.length`. Worse, it would make it impossible
+        Maybe it should depend on which choice succeeded? No, it turns out this wouldn't be such a
+        good idea. For one thing, it would make the programmer's life more difficult (e.g., she
+        would have to branch on the value of `arguments.length`). Worse, it would make it impossible
         for Ohm to check the arities of semantic actions at operation / attribute creation time,
         which would in turn make programming with Ohm error-prone.
 
@@ -164,7 +164,7 @@ s.addOperation(
 
           e_1 | e_2 | ... | e_n
 
-        to have the same "arity", i.e., to produce the same number of CST nodes. In fact, the
+        to have the same *arity*, i.e., to produce the same number of CST nodes. In fact, the
         declaration of `AddExp`, as shown above, would result in a compile-time error -- namely,
         the call to `ohm.grammarFromScriptElement()` would throw an exception.
 
@@ -181,12 +181,12 @@ s.addOperation(
           AddExp_minus
             = AddExp "-" MulExp
 
-        Now the arity of `AddExp` is 1, and both `AddExp_plus` and `AddExp_minus` have arity 3, and
+        Now `AddExp` has arity 1, and both `AddExp_plus` and `AddExp_minus` have arity 3, and
         everything is consistent.
 
         The downside of this refactoring is that it has made our grammar more verbose. Fortunately,
-        Ohm provides a sugar for this common construction: it's called a "inline rule
-        declarations". When you write this (notice the "case labels" `plus` and `minus`, which look
+        Ohm provides a syntactic sugar for this common construction: it's called an *inline rule
+        declaration*. When you write this (notice the "case labels" `plus` and `minus`, which look
         like comments in Haskell):
 
           AddExp
@@ -194,7 +194,7 @@ s.addOperation(
             | AddExp "-" MulExp  -- minus
             | MulExp
 
-        the expressions to the left of each "--" becomes the body of a new rule whose name is the
+        the expression to the left of each "--" becomes the body of a new rule whose name is the
         name of the original rule concatenated with an underscore and the case label:
 
           AddExp
@@ -234,26 +234,34 @@ s.addOperation(
       PriExp_neg:    function(_, e)    { return -e.interpret(); },
 
       /*
-        In a semantic action for a rule R, `this` is bound to the CST node that was produced by R.
         All CST nodes have an `interval` property whose value is an object that contains information
         about where that node "came from" in the input:
+
         * `aNode.interval.startIdx` and `aNode.interval.endIdx` tell you exactly what segment of the
           input was consumed by the rule that constructed the node, and
-        * `aNode.interval.contents` cntains the sub-string of the input that was consumed by the
+
+        * `aNode.interval.contents` contains the substring of the input that was consumed by the
           node.
-        We use `this.interval.contents` in the two rules below to interpret identifiers and numbers:
+
+        We use `this.interval.contents` in the two rules below to interpret identifiers and numbers.
+        (In a semantic action for a rule R, `this` is bound to the CST node that was produced by R.
+        In other words, `this` is the parent of each of the CST nodes that are passed as arguments
+        to the semantic action.)
       */
       ident: function(_, _) {
+        // look up the value of a named constant, e.g., 'pi'
         return constants[this.interval.contents] || 0;
       },
       number: function(_) {
+        // use `parseFloat` to convert (e.g.) the string '123' to the number 123
         return parseFloat(this.interval.contents);
       }
     }
 );
 
 /*
-  Here's how you use a semantics. First, you need a successful `MatchResult`:
+  So now that we've created a semantics for our arithmetic grammar and defined the `interpret`
+  operation, how do we use them?
 */
 
 var r = g.match('(2+4)*7'); // First, you need a successful `MatchResult`.
@@ -261,21 +269,13 @@ var n = s(r);               // Then, you apply the semantics to that match resul
 console.log(n.interpret()); // ... on which you can access the functionality provided by the
                             // semantics. (This will print `42`.)
 
-// -------------------------------------------------------------------------------------------------
-
 /*
-  TODO: explain that "attributes" are just like operations, except:
-  * they are accessed like properties on CST nodes, and
-  * their values are memoized.
+  Now we'll add an `asLisp` attribute to our semantics that converts CST nodes to Lisp-like trees.
+  Attributes are just like operations, but (i) they are accessed like properties -- not methods --
+  on CST nodes, and (ii) their values are memoized.
 */
 
-function stringify(x) {
-  return Array.isArray(x) ? '(' + x.map(stringify).join(' ') + ')'
-                          : x.toString();
-}
-
 s.addAttribute('asLisp', {
-  Exp:           function(e)       { return stringify(e.asLisp); },
   AddExp_plus:   function(x, _, y) { return ['+', x.asLisp, y.asLisp]; },
   AddExp_minus:  function(x, _, y) { return ['-', x.asLisp, y.asLisp]; },
   MulExp_times:  function(x, _, y) { return ['*', x.asLisp, y.asLisp]; },
@@ -286,8 +286,16 @@ s.addAttribute('asLisp', {
   PriExp_neg:    function(_, e)    { return ['neg', e.asLisp]; },
   ident:         function(_, _)    { return this.interval.contents; },
   number:        function(_)       { return this.interval.contents; },
-  _default:      ohm.actions.passThrough
+  _default:      ohm.actions.passThrough  // TODO: Explain _default.
 });
+
+/*
+  Remember the CST node that we created from the expression '(2+4)*7'? Now it has an `asLisp`
+  attribute:
+*/
+
+n.asLisp;               // evaluates to `["*", ["+", "2", "4"], "7"]`
+n.asLisp === n.asLisp;  // evaluates to `true`
 
 // -------------------------------------------------------------------------------------------------
 
@@ -309,7 +317,7 @@ s.addOperation('toTree', {
   PriExp_neg:    function(sign, e)   { return elt('neg', sign.toTree(), e.toTree()); },
   ident:         function(_, _)      { return elt('ident', this.interval.contents); },
   number:        function(_)         { return elt('number', this.interval.contents); },
-  _terminal:     ohm.actions.getPrimitiveValue
+  _terminal:     ohm.actions.getPrimitiveValue  // TODO: explain _terminal, ohm...getPrimitiveValue
 });
 
 // -------------------------------------------------------------------------------------------------
@@ -352,9 +360,9 @@ s.addOperation('toTwoD', {
     <div id="twoD"></div>
     <script>
 
-
-
-// -------------------------------------------------------------------------------------------------
+/*
+  This is the code that drives the UI in this demo.
+*/
 
 var input = document.getElementById('input');
 var spaces = document.getElementById('spaces');
@@ -365,23 +373,30 @@ var errorDetails = document.getElementById('errorDetails');
 input.value = '';
 hideError();
 
+function stringifyLisp(x) {
+  return Array.isArray(x) ? '(' + x.map(stringifyLisp).join(' ') + ')'
+                          : x.toString();
+}
+
 input.oninput = function() {
   hideError();
   this.className = undefined;
-  var m = g.match(this.value);
-  if (m.succeeded()) {
-    show('value', s(m).interpret());
-    show('lisp', s(m).asLisp);
-    show('tree', s(m).toTree());
-    show('twoD', s(m).toTwoD());
+  var r = g.match(this.value);
+  if (r.succeeded()) {
+    // Notice we can do lots of things with the same match result -- you only have to process the
+    // input once.
+    show('value', s(r).interpret());
+    show('lisp', stringifyLisp(s(r).asLisp));
+    show('tree', s(r).toTree());
+    show('twoD', s(r).toTwoD());
   } else if (this.value.trim().length === 0) {
-    // Didn't match because there was no input, so don't complain
+    // Match failed because there was no input, so don't complain.
     show('value', '');
     show('lisp', '');
     show('tree', '');
     show('twoD', '');
   } else {
-    showError(m);
+    showError(r);
   }
 };
 
@@ -393,12 +408,13 @@ function hideError() {
 function showError(failure) {
   input.className = 'error';
   setTimeout(function() {
-    // Position the error bubble to line up with the offending input
+    // Position the error bubble to line up with the offending input.
     spaces.innerHTML = repeat(' ', failure.getPos());
 
-    // Set up the details, i.e., what input was expected at that position
+    // Set up the details, i.e., what input was expected at that position.
     removeChildren(errorDetails);
-    failure.getExpected().forEach(function(text, idx, expected) {
+    var expected = failure.getExpected();
+    expected.forEach(function(text, idx) {
       var element = createExpectedElement(text);
       if (idx > 0) {
         errorDetails.appendChild(elt('light', idx === expected.length - 1 ? ', or ' : ', '));
@@ -406,7 +422,7 @@ function showError(failure) {
       errorDetails.appendChild(element);
     });
 
-    // Show error
+    // Show the error balloon.
     errorDiv.className = 'visible';
   }, 0);
 }
