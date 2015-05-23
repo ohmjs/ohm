@@ -439,11 +439,22 @@ function createExpectedElement(s) {
   }
 }
 
+function setInput(text) {
+  input.value = text;
+  input.oninput();
+}
+
+// Show something interesting when the page loads.
+setInput('1 + 2 * 3 / 4^5');
+
+// -------------------------------------------------------------------------------------------------
+
+// This other stuff turns this example into a unit test.
+
 function $(sel) { return document.querySelector(sel); }
 
 window.test = function(t) {
-  input.value = '33 * 5 + 100';
-  input.oninput();
+  setInput('33 * 5 + 100');
   t.equal($('#value').textContent, '265', 'value is correct');
   t.equal($('#lisp').textContent, '(+ (* 33 5) 100)', 'LISP representation is correct');
   t.end();
