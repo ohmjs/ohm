@@ -72,6 +72,8 @@ GrammarDecl.prototype.install = function(name, formals, description, body) {
   body.formals = formals;
   body.description = description;
   this.ruleDict[name] = body;
+  if (!this.defaultStartRule)
+    this.defaultStartRule = name;
   return this;
 };
 
