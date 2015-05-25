@@ -119,7 +119,11 @@ function initializeWidths() {
   // First, ensure that each pexpr node must be as least as wide as the width
   // of its associated input text.
   for (var i = 0; i < els.length; ++i) {
-    els[i].style.minWidth = measureInput(els[i]._input).width + 'px';
+    var el = els[i];
+    if (!el._input)
+      el.style.minWidth = '0px';
+    else
+      el.style.minWidth = measureInput(el._input).width + 'px';
   }
 
   // Then, set the initial widths of all the input elements.
