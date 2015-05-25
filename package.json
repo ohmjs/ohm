@@ -36,6 +36,7 @@
     "postinstall": "bin/dev-setup.sh; touch .install-timestamp",
     "prepublish": "npm run lint && npm run build && npm run bootstrap",
     "unsafe-bootstrap": "src/ohm-cmd.js src/ohm-grammar.ohm > dist/ohm-grammar.js.new && mv -f dist/ohm-grammar.js{.new,} && src/ohm-cmd.js src/built-in-rules.ohm > dist/built-in-rules.js.new && mv -f dist/built-in-rules.js{.new,}",
+    "update-gh-pages": "git rev-parse --verify --quiet gh-pages && git checkout gh-pages && (git checkout master -- doc dist && git commit -am 'Update from master' && git push origin gh-pages; git checkout -)",
     "visualizer": "npm run watch & bin/ohm-visualizer",
     "watch": "watchify $npm_package_browserify_options -v"
   },
