@@ -350,7 +350,7 @@ function isPrimitive(expr) {
       console.log(e);  // eslint-disable-line no-console
       return;
     }
-    var trace = grammar.trace(inputEditor.getValue(), 'Expr');
+    var trace = grammar.trace(inputEditor.getValue());
 
     // Refresh the option values.
     for (var i = 0; i < checkboxes.length; ++i) {
