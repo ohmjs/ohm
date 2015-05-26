@@ -87,9 +87,10 @@ pexprs.Apply.prototype.assertAllApplicationsAreValid = function(grammar) {
     throw new errors.WrongNumberOfParameters(this.ruleName, expected, actual);
   }
 
-  // ... and that all of the parameter expressions have arity 1
+  // ... and that all of the parameter expressions only have valid applications and have arity 1
   var self = this;
   this.params.forEach(function(param) {
+    param.assertAllApplicationsAreValid(grammar);
     if (param.getArity() !== 1) {
       throw new errors.InvalidParameter(self.ruleName, param);
     }

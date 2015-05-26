@@ -64,6 +64,18 @@ test('require arguments to have arity 1', function(t) {
   t.end();
 });
 
+test('require the rules referenced in arguments to be declared', function(t) {
+  t.throws(
+      function() {
+        util.makeGrammar(
+          'G {\n' +
+          '  start = ListOf<asdlfk, ",">\n' +
+          '}');
+      },
+      errors.UndeclaredRule);
+  t.end();
+});
+
 test('simple examples', function(t) {
   var g = util.makeGrammar(
       'G {\n' +
