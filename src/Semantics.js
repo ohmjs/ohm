@@ -262,7 +262,7 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
 
   // To enable clients to invoke a semantics like a function, return a function that acts as a proxy
   // for `s`, which is the real `Semantics` instance.
-  var proxy = function(matchResult) {
+  var proxy = function ASemantics(matchResult) {
     if (!(matchResult instanceof MatchResult)) {
       throw new TypeError(
           'Semantics expected a MatchResult, but got ' + common.unexpectedObjToString(matchResult));
