@@ -120,10 +120,11 @@ function initializeWidths() {
   // of its associated input text.
   for (var i = 0; i < els.length; ++i) {
     var el = els[i];
-    if (!el._input)
+    if (!el._input) {
       el.style.minWidth = '0px';
-    else
+    } else {
       el.style.minWidth = measureInput(el._input).width + 'px';
+    }
   }
 
   // Then, set the initial widths of all the input elements.
