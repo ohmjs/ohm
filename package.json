@@ -23,7 +23,7 @@
     "options": "src/main.js --debug --standalone ohm -o dist/ohm.js"
   },
   "scripts": {
-    "prebootstrap": "npm test --silent && cp dist/ohm-grammar.js{,.old} && cp dist/built-in-rules.js{,.old}",
+    "prebootstrap": "npm test --silent && ls {README.md,TODO.md} && cp dist/ohm-grammar.js{,.old} && cp dist/built-in-rules.js{,.old}",
     "bootstrap": "npm run unsafe-bootstrap && npm test --silent || (echo 'Bootstrap failed.'; mv -v dist/ohm-grammar.js{.old,}; mv -v dist/built-in-rules.js{.old,})",
     "build": "npm run build-debug && uglifyjs dist/ohm.js > dist/ohm.min.js",
     "prebuild-debug": "bin/update-env.sh",

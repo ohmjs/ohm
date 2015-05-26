@@ -4,7 +4,7 @@ node_js:
   - "iojs"
 
 before_install:
-  - "echo $0 $BASH $SHELL && bash --version && npm config ls -l"
+  - "ls {README.md,TODO.md}"
 
 notifications:
   slack:
