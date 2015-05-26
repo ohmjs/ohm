@@ -4,7 +4,7 @@ node_js:
   - "iojs"
 
 before_install:
-  - echo $0 \$BASH: $BASH \$SHELL: $SHELL
+  - "echo $0 $BASH $SHELL"
 
 notifications:
   slack:
