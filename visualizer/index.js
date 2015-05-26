@@ -60,12 +60,12 @@ function markBlock(cm, startLine, endLine, className) {
   };
 }
 
-function markInterval(cm, interval, className) {
+function markInterval(cm, interval, className, canHighlightBlocks) {
   var startPos = cm.posFromIndex(interval.startIdx);
   var endPos = cm.posFromIndex(interval.endIdx);
 
   // See if the selection can be expanded to a block selection.
-  if (isBlockSelectable(cm, startPos, endPos)) {
+  if (canHighlightBlocks && isBlockSelectable(cm, startPos, endPos)) {
     return markBlock(cm, startPos.line, endPos.line, className);
   }
   cm.getWrapperElement().classList.add('highlighting');
@@ -247,16 +247,16 @@ function createTraceElement(traceNode, container, input) {
       input.classList.add('highlight');
     }
     if (traceNode.interval) {
-      inputMark = markInterval(inputEditor, traceNode.interval, 'highlight');
+      inputMark = markInterval(inputEditor, traceNode.interval, 'highlight', false);
     }
     if (traceNode.expr.interval) {
-      grammarMark = markInterval(grammarEditor, traceNode.expr.interval, 'active-appl');
+      grammarMark = markInterval(grammarEditor, traceNode.expr.interval, 'active-appl', false);
     }
     var ruleName = traceNode.expr.ruleName;
     if (ruleName) {
       var defInterval = grammar.ruleDict[ruleName].definitionInterval;
       if (defInterval) {
-        defMark = markInterval(grammarEditor, defInterval, 'active-definition');
+        defMark = markInterval(grammarEditor, defInterval, 'active-definition', true);
       }
     }
     e.stopPropagation();
