@@ -4,7 +4,7 @@ node_js:
   - "iojs"
 
 after_success:
-  - "npm run deploy-gh-pages"
+  - "[ \"$TRAVIS_BRANCH\" == \"master\" ] && npm run deploy-gh-pages"
 
 notifications:
   slack:

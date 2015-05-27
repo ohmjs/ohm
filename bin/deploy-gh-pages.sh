@@ -2,7 +2,7 @@
 
 set -x
 
-# Create the gh-pages branch if we are running on Travis.
+# Create the gh-pages branch if we are running on a CI server (e.g., Travis).
 if [ -n "$CI" ]; then
   git remote set-branches --add origin gh-pages &&
   git fetch origin &&
