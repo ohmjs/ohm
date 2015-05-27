@@ -43,6 +43,10 @@ A Grammar instance `g` has the following methods:
 
 Try to match `obj` against `g`, returning a MatchResult. If `optStartRule` is given, it specifies the rule on which to start matching. By default, the start rule is inherited from the supergrammar, or if there is no supergrammar specified, it is the first rule in `g`'s definition.
 
+<b><pre class="api" id="trace">g.trace(obj: string|object, optStartRule?: string) &rarr; Trace</pre></b>
+
+Try to match `obj` against `g`, returning a Trace object. `optNamespace` has the same meaning as in `ohm.grammar`. Trace objects have a `toString()` method, which returns a string which summarizes each parsing step (useful for debugging).
+
 <b><pre class="api">g.semantics() &rarr; Semantics</pre></b>
 
 Create a new [Semantics](#semantics) object for `g`.

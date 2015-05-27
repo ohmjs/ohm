@@ -107,6 +107,39 @@ if (m.succeeded()) {
 
 For more information, see [main documentation](./doc/index.md).
 
+### Debugging
+
+Ohm has two tools to help you debug grammars: a text trace, and a graphical visualizer. The
+visualizer is still under development (i.e., it might be buggy!) but it can still be useful.
+
+![Ohm Visualizer](./images/visualizer-small.png)
+
+To run the visualizer, just open `visualizer/index.html` in your web browser.
+
+To see the text trace for a grammar `g`, just use the [`g.trace()`](./doc/api-reference.md#trace)
+method instead of `g.match`. It takes the same arguments, but instead of returning a MatchResult
+object, it returns a Trace object -- calling its `toString` method returns a string describing
+all of the decisions the parser made when trying to match the input. For example:
+
+<script type="text/markscript">
+  markscript.transformNextBlock(function(code) {
+    var trace = ohm.grammar('G { start = letter+ }').trace('ab');
+    assert.equal(trace.toString().trim(), code.trim());
+  });
+</script>
+
+```
+ab         ✓ start ⇒  "ab"
+ab           ✓ letter+ ⇒  "ab"
+ab             ✓ letter ⇒  "a"
+ab               ✓ /[a-zA-Z]/ ⇒  "a"
+b              ✓ letter ⇒  "b"
+b                ✓ /[a-zA-Z]/ ⇒  "b"
+               ✗ letter
+                 ✗ /[a-zA-Z]/
+             ✓ end ⇒  ""
+```
+
 Contributing
 ------------
 
