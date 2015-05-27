@@ -5,7 +5,7 @@ set -x
 # Check if we are running on the CI server (e.g., Travis).
 if [ -n "$CI" ]; then
   # Commit anything generated during the build.
-  git commit -am "Add missing files from $(git rev-parse --short master)" &&
+  git commit -am --no-verify "Add missing files from master@$(git rev-parse --short master)"
 
   # Create the gh-pages branch.
   git remote set-branches --add origin gh-pages &&
