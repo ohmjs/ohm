@@ -79,6 +79,24 @@ function clearMark(cm, mark) {
   cm.getWrapperElement().classList.remove('highlighting');
 }
 
+function indexToHeight(cm, index) {
+  var pos = cm.posFromIndex(index);
+  return cm.heightAtLine(pos.line, 'local');
+}
+
+function scrollToInterval(cm, interval) {
+  var startHeight = indexToHeight(cm, interval.startIdx);
+  var endHeight = indexToHeight(cm, interval.endIdx);
+  var scrollInfo = cm.getScrollInfo();
+  var margin = scrollInfo.clientHeight - (endHeight - startHeight);
+  if (startHeight < scrollInfo.top  ||
+      endHeight > (scrollInfo.top + scrollInfo.clientHeight)) {
+    cm.scrollIntoView({left: 0, top: startHeight,
+                       right: 0, bottom: endHeight},
+                      margin > 0 ? margin / 2 : undefined);
+  }
+}
+
 // Misc Helpers
 // ------------
 
@@ -251,12 +269,14 @@ function createTraceElement(traceNode, container, input) {
     }
     if (traceNode.expr.interval) {
       grammarMark = markInterval(grammarEditor, traceNode.expr.interval, 'active-appl', false);
+      scrollToInterval(grammarEditor, traceNode.expr.interval);
     }
     var ruleName = traceNode.expr.ruleName;
     if (ruleName) {
       var defInterval = grammar.ruleDict[ruleName].definitionInterval;
       if (defInterval) {
         defMark = markInterval(grammarEditor, defInterval, 'active-definition', true);
+        scrollToInterval(grammarEditor, defInterval);
       }
     }
     e.stopPropagation();
