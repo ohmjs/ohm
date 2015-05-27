@@ -2,12 +2,20 @@
 
 set -x
 
-(git checkout gh-pages || (git fetch origin && git checkout -b gh-pages origin/gh-pages)) &&
+# Create the gh-pages branch if we are running on Travis.
+if [ -n "$TRAVIS" ]; then
+  git remote set-branches --add origin gh-pages &&
+  git branch origin origin/gh-pages &&
+  git config user.name "Travis CI" &&
+  git config user.email "travis@w3ctag.org"
+fi
+
+git rev-parse --quiet --verify gh-pages > /dev/null || (echo "No gh-pages branch found."; exit 1)
+
+git checkout gh-pages &&
 (
   (
     git checkout master -- doc dist &&
-    git config user.name "Travis CI" &&
-    git config user.email "travis@w3ctag.org" &&
     git commit -am "Update from master@$(git rev-parse --short master)" &&
     git push origin gh-pages
   ); git checkout -
