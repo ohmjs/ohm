@@ -116,6 +116,10 @@ All you need to get started:
     cd ohm
     npm install
 
+**NOTE:** We recommend using the latest Node.js stable release (>=0.12.1) for
+development. Some of the JSDOM-based tests are flaky on io.js, and other tests
+will reliably fail on older versions of Node.
+
 ### Some useful scripts
 
 * `npm test` runs the unit tests.

@@ -1,7 +1,6 @@
 language: node_js
 node_js:
   - "stable"
-  - "iojs"
 
 after_success:
   - "[ \"$TRAVIS_BRANCH\" == \"master\" ] && npm run deploy-gh-pages"

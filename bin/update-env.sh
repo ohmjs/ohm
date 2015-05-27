@@ -7,7 +7,7 @@ EXEC_NAME=$(basename $0)
 
 if [ package.json -nt .install-timestamp ]; then
   echo "$EXEC_NAME: running 'npm install' because package.json has changed."
-  # Use --ignore-script so that "prepublish" is skipped. We still want
+  # Use --ignore-scripts so that "prepublish" is skipped. We still want
   # "postinstall" so run it manually.
   npm install --ignore-scripts && npm run postinstall; touch .install-timestamp
 fi

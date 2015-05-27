@@ -66,5 +66,8 @@
     "uglify-js": "^2.4.12",
     "watchify": "^0.6.1",
     "watchy": "^0.6.1"
+  },
+  "engines": {
+    "node": ">=0.12.1"
   }
 }
