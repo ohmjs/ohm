@@ -334,6 +334,7 @@ function isPrimitive(expr) {
 (function main() {
   var checkboxes = document.querySelectorAll('#options input[type=checkbox]');
   var refreshTimeout;
+  var grammarChanged = true;
   function triggerRefresh(delay) {
     if (refreshTimeout) {
       clearTimeout(refreshTimeout);
@@ -344,16 +345,22 @@ function isPrimitive(expr) {
     cb.addEventListener('click', function(e) { triggerRefresh(); });
   });
   inputEditor.on('change', function() { triggerRefresh(150); });
-  grammarEditor.on('change', function() { triggerRefresh(150); });
+  grammarEditor.on('change', function() {
+    grammarChanged = true;
+    triggerRefresh(150);
+  });
 
   function refresh() {
-    var grammarSrc = grammarEditor.getValue();
+    if (grammarChanged) {
+      grammarChanged = false;
 
-    try {
-      grammar = ohm.grammar(grammarSrc);
-    } catch (e) {
-      console.log(e);  // eslint-disable-line no-console
-      return;
+      var grammarSrc = grammarEditor.getValue();
+      try {
+        grammar = ohm.grammar(grammarSrc);
+      } catch (e) {
+        console.log(e);  // eslint-disable-line no-console
+        return;
+      }
     }
     var trace = grammar.trace(inputEditor.getValue());
 
