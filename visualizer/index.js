@@ -65,7 +65,7 @@ function markInterval(cm, interval, className) {
   var endPos = cm.posFromIndex(interval.endIdx);
 
   // See if the selection can be expanded to a block selection.
-  if (isBlockSelectable(cm, startPos, endPos)) {
+  if (options.highlightBlocks && isBlockSelectable(cm, startPos, endPos)) {
     return markBlock(cm, startPos.line, endPos.line, className);
   }
   cm.getWrapperElement().classList.add('highlighting');
