@@ -106,10 +106,19 @@ test('toString', function(t) {
       'letter', '/[a-zA-Z]/',
       'letter', '/[a-zA-Z]/',
       'letter', '/[a-zA-Z]/',  // Failed.
-      '[PExpr]'], 'expressions');
+      'end'], 'expressions');
 
   var excerpts = lines.map(function(l) { return l.split(/\s+/)[0]; });
   t.deepEqual(excerpts, ['hi', 'hi', 'hi', 'hi', 'hi', 'i', 'i', '', '', ''], 'excerpts');
+
+  // Test that newlines are escaped in the trace output.
+  g = ohm.grammar('G { start = space* }');
+  lines = g.trace(' ', 'space').toString().split('\n');
+  t.equal(lines.length, 4, 'trace is only four lines long');
+
+  lines = g.trace('\n\n', 'space').toString().split('\n');
+  t.equal(lines.length, 4, 'trace is still four lines long');
+  t.equal(lines[lines.length - 1], '', 'last line is empty');
 
   t.end();
 });

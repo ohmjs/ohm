@@ -18,6 +18,14 @@ pexprs.PExpr.prototype.toDisplayString = function() {
   return '[' + this.constructor.name + ']';
 };
 
+pexprs.anything.toDisplayString = function() {
+  return '_';
+};
+
+pexprs.end.toDisplayString = function() {
+  return 'end';
+};
+
 pexprs.Prim.prototype.toDisplayString = function() {
   return String(this.obj);
 };

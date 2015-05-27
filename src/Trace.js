@@ -38,22 +38,25 @@ function spaces(n) {
 // Return a string representation of a portion of `inputStream` at offset `pos`.
 // The result will contain exactly `len` characters.
 function getInputExcerpt(inputStream, pos, len) {
-  var excerpt = inputStream.sourceSlice(pos, pos + len);
-  if (typeof excerpt === 'string') {
-    // For string input streams, replace non-printable characters with a visible symbol.
-    excerpt = excerpt
-        .replace(/ /g, DOT_OPERATOR)
-        .replace(/\t/g, SYMBOL_FOR_HORIZONTAL_TABULATION)
-        .replace(/\n/g, SYMBOL_FOR_LINE_FEED)
-        .replace(/\r/g, SYMBOL_FOR_CARRIAGE_RETURN);
-  } else {
-    excerpt = String(excerpt);
-  }
+  var excerpt = asEscapedString(inputStream.sourceSlice(pos, pos + len));
+
   // Pad the output if necessary.
   if (excerpt.length < len) {
     return excerpt + common.repeat(' ', len - excerpt.length).join('');
   }
   return excerpt;
+}
+
+function asEscapedString(obj) {
+  if (typeof obj === 'string') {
+    // Replace non-printable characters with visible symbols.
+    return obj
+        .replace(/ /g, DOT_OPERATOR)
+        .replace(/\t/g, SYMBOL_FOR_HORIZONTAL_TABULATION)
+        .replace(/\n/g, SYMBOL_FOR_LINE_FEED)
+        .replace(/\r/g, SYMBOL_FOR_CARRIAGE_RETURN);
+  }
+  return String(obj);
 }
 
 // ----------------- Trace -----------------
@@ -128,7 +131,7 @@ Trace.prototype.toString = function() {
       sb.append(' (LR)');
     }
     if (node.succeeded) {
-      var contents = node.interval.contents;
+      var contents = asEscapedString(node.interval.contents);
       sb.append(' ' + RIGHTWARDS_DOUBLE_ARROW + '  ');
       sb.append(typeof contents === 'string' ? '"' + contents + '"' : contents);
     }
