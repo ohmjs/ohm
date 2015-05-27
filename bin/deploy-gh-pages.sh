@@ -3,9 +3,10 @@
 set -x
 
 # Create the gh-pages branch if we are running on Travis.
-if [ -n "$TRAVIS" ]; then
+if [ -n "$CI" ]; then
   git remote set-branches --add origin gh-pages &&
-  git branch origin origin/gh-pages &&
+  git fetch origin &&
+  git branch gh-pages origin/gh-pages &&
   git config user.name "Travis CI" &&
   git config user.email "travis@w3ctag.org"
 fi
