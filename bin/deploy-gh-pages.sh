@@ -2,13 +2,15 @@
 
 set -x
 
-# Create the gh-pages branch if we are running on a CI server (e.g., Travis).
+# Check if we are running on the CI server (e.g., Travis).
 if [ -n "$CI" ]; then
+  # Commit anything generated during the build.
+  git commit -am "Add missing files from $(git rev-parse --short master)" &&
+
+  # Create the gh-pages branch.
   git remote set-branches --add origin gh-pages &&
   git fetch origin &&
-  git branch gh-pages origin/gh-pages &&
-  git config user.name "bin/deploy-gh-pages.sh" &&
-  git config user.email "ci@invalid"
+  git branch gh-pages origin/gh-pages
 fi
 
 git rev-parse --quiet --verify gh-pages > /dev/null || (echo "No gh-pages branch found."; exit 1)

@@ -2,6 +2,10 @@ language: node_js
 node_js:
   - "stable"
 
+before_script:
+  - git config --global user.name "Travis CI"
+  - git config --global user.email "travis-ci@example.com"
+
 after_success:
   - "[ \"$TRAVIS_BRANCH\" == \"master\" ] && npm run deploy-gh-pages"
 
