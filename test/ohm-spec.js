@@ -288,7 +288,6 @@ test('primitive patterns', function(t) {
       '  _true = true',
       '  _false = false',
       '  _null = null',
-      '  _undefined = undefined',
       '}'
     ]);
 
@@ -336,17 +335,6 @@ test('primitive patterns', function(t) {
       t.equal(m.match(false, '_null').failed(), true);
       t.ok(m.match(null, '_null'));
       t.equal(m.match(undefined, '_null').failed(), true);
-
-      t.equal(m.match(5, '_undefined').failed(), true);
-      t.equal(m.match(2, '_undefined').failed(), true);
-      t.equal(m.match('a', '_undefined').failed(), true);
-      t.equal(m.match('5', '_undefined').failed(), true);
-      t.equal(m.match('true', '_undefined').failed(), true);
-      t.equal(m.match(true, '_undefined').failed(), true);
-      t.equal(m.match('false', '_undefined').failed(), true);
-      t.equal(m.match(false, '_undefined').failed(), true);
-      t.equal(m.match(null, '_undefined').failed(), true);
-      t.ok(m.match(undefined, '_undefined'));
     });
 
     it('semantic actions', function() {
@@ -355,14 +343,12 @@ test('primitive patterns', function(t) {
         _true: ohm.actions.passThrough,
         _false: ohm.actions.passThrough,
         _null: ohm.actions.passThrough,
-        _undefined: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
       });
       t.equal(s(m.match(5)).v, 5);
       t.equal(s(m.match(true, '_true')).v, true);
       t.equal(s(m.match(false, '_false')).v, false);
       t.equal(s(m.match(null, '_null')).v, null);
-      t.equal(s(m.match(undefined, '_undefined')).v, undefined);
     });
     t.end();
   });
@@ -374,7 +360,6 @@ test('primitive patterns', function(t) {
       '  _true = true',
       '  _false = false',
       '  _null = null',
-      '  _undefined = undefined',
       '}'
     ]);
     it('recognition', function() {
@@ -385,7 +370,6 @@ test('primitive patterns', function(t) {
       t.equal(m.match('true', '_true').failed(), true);
       t.equal(m.match('false', '_false').failed(), true);
       t.equal(m.match('null', '_null').failed(), true);
-      t.equal(m.match('undefined', '_undefined').failed(), true);
     });
     t.end();
   });

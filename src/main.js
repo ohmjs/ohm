@@ -228,9 +228,6 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     nameFirst: function(expr) {},
     nameRest: function(expr) {},
 
-    keyword_undefined: function(_) {
-      return undefined;
-    },
     keyword_null: function(_) {
       return null;
     },

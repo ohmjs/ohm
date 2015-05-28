@@ -80,10 +80,9 @@ Ohm {
     = ~keyword name
 
   keyword
-    = "undefined" ~nameRest  -- undefined
-    | "null" ~nameRest       -- null
-    | "true" ~nameRest       -- true
-    | "false" ~nameRest      -- false
+    = "null" ~nameRest   -- null
+    | "true" ~nameRest   -- true
+    | "false" ~nameRest  -- false
 
   string  (a string literal)
     = "\"" strChar* "\""
