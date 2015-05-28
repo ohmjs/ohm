@@ -1,6 +1,6 @@
 # Syntax Reference
 
-## Grammars and Rules
+## Terminology
 
 <script type="text/markscript">
   var ohm = require('ohm');
@@ -17,24 +17,11 @@ Arithmetic {
 }
 ```
 
-This is a grammar named "Arithmetic", which has a single rule named "Expr". It says that a valid Arithmetic expression must consist of the string "1 + 1". The right hand side of _Expr_ is known as a "rule body". The rule body may also refer to other rules, as in this example:
-
-<script type="text/markscript">
-  markscript.transformNextBlock(checkGrammar);
-</script>
-
-```
-Arithmetic {
-  Expr = AddExpr
-  AddExpr = "1 + 1"
-}
-```
-
-This means that the rule "Expr" matches an AddExpr, which matches the string "1 + 1". This grammar will succeed in matching the exact same set of inputs as the previous grammar, but produce a different parse tree.
+This is a grammar named "Arithmetic", which has a single rule named "Expr". The right hand side of _Expr_ is known as a "rule body". A rule body may be any valid _parsing expression_.
 
 ## Parsing Expressions
 
-A rule body must be a valid _parsing expression_. We've already seen two of the simplest kinds of parsing expressions: a string literal, and a rule application. Here is a full list of the different kinds of parsing expressions supported by Ohm:
+Here is a full list of the different kinds of parsing expressions supported by Ohm:
 
 ### String Literal
 
@@ -165,3 +152,61 @@ Any number of comma-separated key/expression pairs can be specified. Other valid
 `end`: Matches the end of the input stream. Equivalent to `~ _`.
 
 <code>ListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Matches the expression _elem_ zero or more times, separated by something that matches the expression _sep_. E.g., `ListOf<letter, ",">` will match `''`, `'a'`, and `'a, b, c'`.
+
+## Grammar Syntax
+
+### Grammar Inheritance
+
+<code><i>grammarName</i> &lt;: <i>supergrammarName</i> { ... }</code>
+
+Declares a grammar named `grammarName` which inherits from `supergrammarName`.
+
+### Defining, Extending, and Overriding Rules
+
+<code><i>ruleName</i> = <i>expr</i></code>
+
+Defines a new rule named `ruleName` in the grammar, with the parsing expression `expr` as the rule body. Throws an error if a rule with that name already exists in the grammar or one of its supergrammars.
+
+<code><i>ruleName</i> := <i>expr</i></code>
+
+Defines a rule named `ruleName`, overriding a rule of the same name in a supergrammar. Throws an error if no rule with that name exists in a supergrammar.
+
+<code><i>ruleName</i> += <i>expr</i></code>
+
+Extends a supergrammar rule named `ruleName`, throwing an error if no rule with that name exists in a supergrammar. The rule body will effectively be <code><i>expr</i> | <i>oldBody</i></code>, where `oldBody` is the rule body as defined in the supergrammar.
+
+#### Rule Descriptions
+
+Rule declarations may optionally have a description, which is a parenthesized "comment" following the name of the rule in its declaration. Rule descriptions are used to produce better error messages for end users of a language when input is not recognized. For example:
+
+<code>
+ident  (an identifier)
+  = ~keyword name
+</code>
+
+<h3 id="syntactic-lexical">Syntactic vs. Lexical Rules</h3>
+
+A _syntactic rule_ is a rule whose name begins with an uppercase letter, and _lexical rule_ is one whose name begins with a lowercase letter. The difference between lexical and syntactic rules is that syntactic rules implicitly skip whitespace characters.
+
+For the purposes of a syntactic rule, a "whitespace character" is anything that matches its enclosing grammar's "space" rule. The default implementation of "space" matches ' ', '\t', '\n', '\r', and any other character that is considered whitespace in the [ES5 spec](http://ecma-international.org/ecma-262/5.1/#sec-7.2).
+
+### Inline Rules
+
+<code><i>expr</i> -- <i>caseName</i></code>
+
+When a parsing expression is followed by the characters `--` and a name, it signals an _inline rule declaration_. This is most commonly used in Alt expressions to ensure that each branch has the same arity. For example, the following declaration:
+
+<pre><code>AddExp = AddExp "+" MulExp  -- plus
+       | MulExp
+</code></pre>
+
+is equivalent to:
+
+<pre><code>AddExp = AddExp_plus
+       | MulExp
+AddExp_plus = AddExp "+" MulExp
+</code></pre>
+
+### Parameterized Rules
+
+TODO
