@@ -407,11 +407,11 @@ test('char', function(t) {
 });
 
 test('string', function(t) {
-  var m = util.makeGrammar('M { foo = "foo" }');
+  var m = util.makeGrammar('M { foo = "foo\\b\\n\\r\\t\\\\\\\"\\u01bcff\\x8f" }');
 
   test('direct match, no stream', function(t) {
     it('recognition', function() {
-      t.ok(m.match('foo'));
+      t.ok(m.match('foo\b\n\r\t\\"'));
       t.equal(m.match('foo1').failed(), true);
       t.equal(m.match('bar').failed(), true);
       t.equal(m.match(null).failed(), true);
@@ -422,15 +422,20 @@ test('string', function(t) {
         foo: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
       });
-      var cst = m.match('foo');
-      t.equal(s(cst).v, 'foo');
+      var cst = m.match('foo\b\n\r\t\\"\u01bcff\x8f');
+      t.equal(s(cst).v, 'foo\b\n\r\t\\"\u01bcff\x8f');
     });
+
+    it('unrecognized escape characters are parse errors', function() {
+      t.throws(function() { util.makeGrammar('G { r = "\\w" }'); }, /Failed to parse grammar/);
+    });
+
     t.end();
   });
 
   test('match in string stream', function(t) {
     it('recognition', function() {
-      t.ok(m.match('foo'));
+      t.ok(m.match('foo\b\n\r\t\\"\u01bcff\x8f'));
       t.equal(m.match('foo1').failed(), true);
       t.equal(m.match('bar').failed(), true);
     });
@@ -440,8 +445,8 @@ test('string', function(t) {
         foo: ohm.actions.passThrough,
         _terminal: ohm.actions.getPrimitiveValue
       });
-      var cst = m.match('foo');
-      t.equal(s(cst).v, 'foo');
+      var cst = m.match('foo\b\n\r\t\\"\u01bcff\x8f');
+      t.equal(s(cst).v, 'foo\b\n\r\t\\"\u01bcff\x8f');
     });
     t.end();
   });

@@ -89,12 +89,17 @@ Ohm {
 
   strChar
     = escapeChar
-    | ~"\"" ~"\n" _
+    | ~"\\" ~"\"" ~"\n" _
 
   escapeChar
-    = "\\x" hexDigit hexDigit                    -- hexEscape
+    = "\\\\"                                     -- backslash
+    | "\\\""                                     -- doubleQuote
+    | "\\b"                                      -- backspace
+    | "\\n"                                      -- lineFeed
+    | "\\r"                                      -- carriageReturn
+    | "\\t"                                      -- tab
     | "\\u" hexDigit hexDigit hexDigit hexDigit  -- unicodeEscape
-    | "\\" _                                     -- escape
+    | "\\x" hexDigit hexDigit                    -- hexEscape
 
   regExp  (a regular expression)
     = "/" reCharClass "/"
