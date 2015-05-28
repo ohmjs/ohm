@@ -1290,6 +1290,10 @@ test('inheritance', function(t) {
       ns.M4 = util.makeGrammar('M4 <: M3 { foo := digit }', ns);
     });
 
+    it("should be ok to add new cases", function() {
+      t.ok(util.makeGrammar('G { space := "foo" -- newCaseLabel }'));
+    });
+
     it('recognition', function() {
       t.ok(ns.G1.match('1234', 'number'));
       t.equal(ns.G1.match('hello', 'number').failed(), true);
@@ -1378,6 +1382,11 @@ test('inheritance', function(t) {
         t.equal(e.actual, 1);
       }
     });
+
+    it("should be ok to add new cases", function() {
+      t.ok(util.makeGrammar('G { space += "foo" -- newCaseLabel }'));
+    });
+
     t.end();
   });
   t.end();

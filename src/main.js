@@ -150,7 +150,8 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       var inlineRuleName = currentRuleName + '_' + n.visit();
       var body = b.visit();
       body.definitionInterval = this.interval.trimmed();
-      if (overriding) {
+      var isNewRuleDeclaration = !(decl.superGrammar && decl.superGrammar.ruleDict[inlineRuleName]);
+      if (overriding && !isNewRuleDeclaration) {
         decl.override(inlineRuleName, currentRuleFormals, body);
       } else {
         decl.define(inlineRuleName, currentRuleFormals, body);
