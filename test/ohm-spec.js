@@ -1,15 +1,3 @@
-/* eslint-disable no-eval */
-
-/*
-
-TODO:
-* add a test that tries to use a semantic action for one grammar w/ a CST from another
-  (should throw an error)
-* rethink these tests, they're outdated now and should be re-written to test what Ohm has become
-  (see TODO.md)
-
-*/
-
 var test = require('tape-catch');
 
 var errors = require('../src/errors');
