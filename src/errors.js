@@ -102,12 +102,10 @@ var DuplicateGrammarDeclaration = makeCustomError(
 
 var UndeclaredRule = makeCustomError(
     'ohm.error.UndeclaredRule',
-    function(ruleName, optGrammarName) {
+    function(ruleName, grammarName) {
       this.ruleName = ruleName;
-      this.grammarName = optGrammarName;
-      this.message = this.grammarName ?
-          'rule ' + this.ruleName + ' is not declared in grammar ' + this.grammarName :
-          'undeclared rule ' + this.ruleName;
+      this.grammarName = grammarName;
+      this.message = 'rule ' + this.ruleName + ' is not declared in grammar ' + this.grammarName;
     }
 );
 
