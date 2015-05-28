@@ -1271,7 +1271,7 @@ test('inheritance', function(t) {
         ns.G3 = util.makeGrammar('G3 <: G1 { foo := "foo" }', ns);
         t.fail('Expected an exception to be thrown');
       } catch (e) {
-        t.equal(e.constructor, errors.UndeclaredRule);
+        t.equal(e.constructor, errors.CannotOverrideUndeclaredRule);
         t.equal(e.ruleName, 'foo');
         t.equal(e.grammarName, 'G1');
       };
@@ -1343,7 +1343,7 @@ test('inheritance', function(t) {
         util.makeGrammar('G3 <: G1 { bar += "bar" }', ns);
         t.fail('Expected an exception to be thrown');
       } catch (e) {
-        t.equal(e.constructor, errors.UndeclaredRule);
+        t.equal(e.constructor, errors.CannotExtendUndeclaredRule);
         t.equal(e.ruleName, 'bar');
         t.equal(e.grammarName, 'G1');
       }

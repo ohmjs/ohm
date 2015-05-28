@@ -109,6 +109,32 @@ var UndeclaredRule = makeCustomError(
     }
 );
 
+// Cannot override undeclared rule
+
+var CannotOverrideUndeclaredRule = makeCustomError(
+    'ohm.error.CannotOverrideUndeclaredRule',
+    function(ruleName, grammarName) {
+      this.ruleName = ruleName;
+      this.grammarName = grammarName;
+      this.message =
+          'cannot override rule ' + this.ruleName +
+          ' because it is not declared in ' + this.grammarName;
+    }
+);
+
+// Cannot extend undeclared rule
+
+var CannotExtendUndeclaredRule = makeCustomError(
+    'ohm.error.CannotExtendUndeclaredRule',
+    function(ruleName, grammarName) {
+      this.ruleName = ruleName;
+      this.grammarName = grammarName;
+      this.message =
+          'cannot extend rule ' + this.ruleName +
+          ' because it is not declared in ' + this.grammarName;
+    }
+);
+
 // Duplicate rule declaration
 
 var DuplicateRuleDeclaration = makeCustomError(
@@ -205,6 +231,8 @@ var InvalidConstructorCall = makeCustomError(
 // --------------------------------------------------------------------
 
 module.exports = {
+  CannotExtendUndeclaredRule: CannotExtendUndeclaredRule,
+  CannotOverrideUndeclaredRule: CannotOverrideUndeclaredRule,
   DuplicateGrammarDeclaration: DuplicateGrammarDeclaration,
   DuplicateParameterNames: DuplicateParameterNames,
   DuplicatePropertyNames: DuplicatePropertyNames,
