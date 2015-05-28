@@ -65,3 +65,8 @@ test('doc/api-reference.md', function(t) {
   markscript.evaluateFile(scriptRel('../doc/api-reference.md'), markscriptConfig);
   t.end();
 });
+
+test('doc/syntax-reference.md', function(t) {
+  markscript.evaluateFile(scriptRel('../doc/syntax-reference.md'), markscriptConfig);
+  t.end();
+});

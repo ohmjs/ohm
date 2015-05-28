@@ -2,6 +2,15 @@
 
 ## Grammars and Rules
 
+<script type="text/markscript">
+  var ohm = require('ohm');
+  function checkGrammar(source) {
+  	assert(ohm.grammar(source));
+  	return '';
+  }
+  markscript.transformNextBlock(checkGrammar);
+</script>
+
 ```
 Arithmetic {
   Expr = "1 + 1"
@@ -10,6 +19,10 @@ Arithmetic {
 
 This is a grammar named "Arithmetic", which has a single rule named "Expr". It says that a valid Arithmetic expression must consist of the string "1 + 1". The right hand side of _Expr_ is known as a "rule body". The rule body may also refer to other rules, as in this example:
 
+<script type="text/markscript">
+  markscript.transformNextBlock(checkGrammar);
+</script>
+
 ```
 Arithmetic {
   Expr = AddExpr
@@ -17,11 +30,11 @@ Arithmetic {
 }
 ```
 
-This means that the rule "Expr" matches an AddExpr, which matches the string "1 + 1". This grammar will succeed in matching the exact same set of inputs as the previous grammar, but produce a different parse tree. Note that Ohm grammars do not specify which rule to begin parsing on (that's specified by the programmer when they use the grammar) but by convention, the first rule in the grammar is the starting rule.
+This means that the rule "Expr" matches an AddExpr, which matches the string "1 + 1". This grammar will succeed in matching the exact same set of inputs as the previous grammar, but produce a different parse tree.
 
 ## Parsing Expressions
 
-A rule body must be a valid _parsing expression_. We've shown two of the simplest kinds of parsing expressions above: a string literal, and a rule application. Here is a full list of the different kinds of parsing expressions supported by Ohm:
+A rule body must be a valid _parsing expression_. We've already seen two of the simplest kinds of parsing expressions: a string literal, and a rule application. Here is a full list of the different kinds of parsing expressions supported by Ohm:
 
 ### String Literal
 
@@ -29,59 +42,111 @@ A rule body must be a valid _parsing expression_. We've shown two of the simples
 
 Matches exactly the characters contained inside the quotation marks.
 
+### Number
+
+`-42`
+
+Matches a positive or negative integer value.
+
+### Keywords
+
+`true`: Matches the boolean value `true`.
+
+`false`: Matches the boolean value `false`.
+
+`null`: Matches a null value (or the equivalent in the host language).
+
 ### Rule Application
 
-_ruleName_
+<code><i>ruleName</i></code>
 
-Matches the body of the rule named _ruleName_.
+Matches the body of the rule named _ruleName_. For example, the built-in rule `letter` will parse a string of length 1 that is a letter.
 
-### Anything
+<code><i>ruleName</i>&lt;<i>expr1</i>&gt;</code>
 
-`_`
-
-Matches a single character from the input stream.
+Matches the body of the _parameterized rule_ named _ruleName_, substituting the parsing expression _expr_ as its first parameter. For parameterized rules with more than one parameter, the expressions are comma-separated, e.g. `ListOf<elem, ",">`.
 
 ### Repetition operators
 
 <code><i>expr</i> *</code>
 
-Matches the expression `expr` repeated 0 or more times.
+Matches the expression _expr_ repeated 0 or more times. E.g., `"a"*` will match `''`, `'a'`, `'aa'`, ...
+
+Inside a _syntactic rule_ -- any rule whose name begins with an upper-case letter -- spaces before a match are automatically skipped. E.g., `"a"*` will match `" a a"` as well as `"aa"`. See the documentation on [syntactic and lexical rules](#syntactic-lexical) for more information.
 
 <code><i>expr</i> +</code>
 
-Matches the expression `expr` repeated 1 or more times.
+Matches the expression _expr_ repeated 1 or more times. E.g., `letter+` will match `'x'`, `'xA'`, ...
+
+As with the `*` operator, spaces are skipped when used in a [syntactic rule](#syntactic-lexical).
 
 <code><i>expr</i> ?</code>
 
-Matches the optional expression `expr`, succeeding whether it matches or not.
+Tries to match the expression _expr_, succeeding whether it matches or not. E.g., `letter?` will match both `'a'` and `'9'`.
 
 ### Sequence
 
 <code><i>expr1</i> <i>expr2</i></code>
 
-Matches the expression `expr1` followed by `expr2`.
+Matches the expression `expr1` followed by `expr2`. E.g., `"grade" letter` will match `'gradeA'`, `'gradeB'`, ...
+
+As with the `*` and `+` operators, spaces are skipped when used in a [syntactic rule](#syntactic-lexical). E.g., `"grade" letter` will match `' grade A'` as well as `'gradeA'`.
 
 ### Alternation
 
 <code><i>expr1</i> | <i>expr2</i></code>
 
-Matches the expression `expr1`, and if that does not succeed, matches the expression `expr2`.
+Matches the expression `expr1`, and if that does not succeed, matches the expression `expr2`. E.g., `letter | number` will match `'a'`, `'9'`, ...
 
 ### Lookahead
 
 <code>& <i>expr</i></code>
 
-Succeeds if the expression `expr` can be matched, but does not consume anything from the input stream.
+Succeeds if the expression `expr` can be matched, but does not consume anything from the input stream. Usually used as part of a sequence, e.g. `letter &number` will match `'a9'`, but only consume 'a'. `&"a" letter+` will match any string of letters that begins with 'a'.
 
 ### Negative Lookahead
 
 <code>~ <i>expr</i></code>
 
-Succeeds if the expression `expr` cannot be matched, and does not consume anything from the input stream.
+Succeeds if the expression `expr` cannot be matched, and does not consume anything from the input stream. Usually used as part of a sequence, e.g. `~"\n" _` will consume any single character that is not a new line character.
+
+### Arrays
+
+<code>[ <i>expr</i> ]</code>
+
+Matches an Array object whose contents match _expr_. E.g., `["hey"]` will match an Array having the string `'hey'` as its only element.
+
+If _expr_ is a Sequence, it will match successive elements in the Array, beginning at index 0. E.g., `["a" "b" "c"]` will match the array `['a', 'b', 'c']`.
+
+<script type="text/markscript">
+  assert(ohm.grammar('G { start = ["a" "b" "c"] }').match(['a', 'b', 'c']).succeeded());
+  assert(ohm.grammar('G { start = ["a" "b" "c"] }').match(['a', 'b', 'c', 'd']).failed());
+  assert(ohm.grammar('G { start = ["a" "bc"] }').match(['a', 'b', 'c', 'd']).failed());
+</script>
+
+### Objects
+
+<code>{ <i>key</i>: <i>expr</i> } </code>
+
+Matches an object with an [own property](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/hasOwnProperty) named _key_ whose value matches the parsing expression _expr_, and no other properties. E.g., `{"name": _}` matches the object `{name: 'Manuel'}`, but not the object `{name: 'Philip', age: 31}`.
+
+<code>{ <i>key</i>: <i>expr</i>, ... }</code>
+
+Like above, but will still match if the object has other properties. E.g., `{stars: 4, ...}` will match the object `{stars: 2, name: 'Noma'}`.
+
+<script type="text/markscript">
+  assert(ohm.grammar('G { start = {"name": _} }').match({name: 'Manuel'}).succeeded());
+  assert(ohm.grammar('G { start = {"name": _} }').match({name: 'Philip', age: 31}).failed());
+  assert(ohm.grammar('G { start = {stars: 2, ...} }').match({stars: 2, name: 'Noma'}).succeeded());
+</script>
+
+Any number of comma-separated key/expression pairs can be specified. Other valid patterns are `{}`, which matches an object with no properties, and `{...}`, which matches any object. **NOTE:** In Ohm/JS, object patterns will also match Array objects.
 
 ## Built-in Rules
 
 (See [src/built-in-rules.ohm](../src/built-in-rules.ohm).)
+
+`_`: Matches a single item from the input stream. For a string, it will match any one character.
 
 `letter`: Matches a single character which is a letter (either uppercase or lowercase).
 
@@ -97,4 +162,6 @@ Succeeds if the expression `expr` cannot be matched, and does not consume anythi
 
 `space`: Matches a single whitespace character (e.g., space, tab, newline, etc.)
 
-`end`: Matches the end of the input stream.
+`end`: Matches the end of the input stream. Equivalent to `~ _`.
+
+<code>ListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Matches the expression _elem_ zero or more times, separated by something that matches the expression _sep_. E.g., `ListOf<letter, ",">` will match `''`, `'a'`, and `'a, b, c'`.
