@@ -38,12 +38,8 @@ function makeCustomError(name, initFn) {
 var InfiniteLoop = makeCustomError(
   'ohm.error.InfiniteLoop',
   function(state, expr) {
-    var stackString =
-        state.applicationStack.map(function(app) { return app.ruleName; }).join(' > ');
-    var detail =
-        "Infinite loop detected when matching '" + expr.toDisplayString() + "'\n" +
-        '(Rule application stack: ' + stackString + ')';
     var inputStream = state.inputStream;
+    var detail = "Infinite loop detected when matching '" + expr.toDisplayString() + "'";
     this.message = common.getLineAndColumnMessage(inputStream.source, inputStream.pos) + detail;
   }
 );

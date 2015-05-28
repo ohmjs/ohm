@@ -58,7 +58,7 @@ test('match failure', function(t) {
 
 test('infinite loops', function(t) {
   function matchExpr(expr, input) {
-    var g = util.makeGrammar('G { start = anotherRule  anotherRule = ' + expr + '}');
+    var g = util.makeGrammar('G { start = ' + expr + '}');
     return g.match(input);
   }
   t.throws(function() { matchExpr('("a"*)*', 'aaa'); }, errors.InfiniteLoop);
@@ -74,8 +74,7 @@ test('infinite loops', function(t) {
       'Line 1, col 4:',
       '> | aaa',
       '       ^',
-      'Infinite loop detected when matching \'("a"*)*\'',
-      '(Rule application stack: start > anotherRule)'].join('\n'));
+      'Infinite loop detected when matching \'("a"*)*\''].join('\n'));
   }
   t.end();
 });
