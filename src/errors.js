@@ -4,7 +4,6 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common');
 var Namespace = require('./Namespace');
 
 // --------------------------------------------------------------------
@@ -32,17 +31,6 @@ function makeCustomError(name, initFn) {
   E.prototype.name = name;
   return E;
 }
-
-// ----------------- runtime errors -----------------
-
-var InfiniteLoop = makeCustomError(
-  'ohm.error.InfiniteLoop',
-  function(state, expr) {
-    var inputStream = state.inputStream;
-    var detail = "Infinite loop detected when matching '" + expr.toDisplayString() + "'";
-    this.message = common.getLineAndColumnMessage(inputStream.source, inputStream.pos) + detail;
-  }
-);
 
 // ----------------- errors about intervals -----------------
 
@@ -189,6 +177,19 @@ var InvalidParameter = makeCustomError(
     }
 );
 
+// ----------------- kleene operators -----------------
+
+var ManyExprHasNullableOperand = makeCustomError(
+    'ohm.error.ManyExprHasNullableOperand',
+    function(expr, ruleName) {
+      this.expr = expr;
+      this.ruleName = ruleName;
+      this.message =
+          'Iteration expression ' + expr.interval.contents + ' in rule ' + this.ruleName +
+          ' has a nullable operand';
+    }
+);
+
 // ----------------- arity -----------------
 
 var InconsistentArity = makeCustomError(
@@ -239,11 +240,11 @@ module.exports = {
   DuplicateRuleDeclaration: DuplicateRuleDeclaration,
   Error: OhmError,
   InconsistentArity: InconsistentArity,
-  InfiniteLoop: InfiniteLoop,
   IntervalSourcesDontMatch: IntervalSourcesDontMatch,
   InvalidConstructorCall: InvalidConstructorCall,
   InvalidParameter: InvalidParameter,
   GrammarSyntaxError: GrammarSyntaxError,
+  ManyExprHasNullableOperand: ManyExprHasNullableOperand,
   UndeclaredGrammar: UndeclaredGrammar,
   UndeclaredRule: UndeclaredRule,
   WrongNumberOfParameters: WrongNumberOfParameters

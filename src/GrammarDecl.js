@@ -105,6 +105,9 @@ GrammarDecl.prototype.build = function() {
     // the part of the source that caused it.
     onOhmError(function() { body.assertChoicesHaveUniformArity(ruleName); }, handleError);
     onOhmError(function() { body.assertAllApplicationsAreValid(grammar); },  handleError);
+    onOhmError(
+        function() { body.assertIteratedExprsAreNotNullable(grammar, ruleName); },
+        handleError);
   });
   if (error) {
     throw error;

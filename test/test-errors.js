@@ -57,24 +57,19 @@ test('match failure', function(t) {
 });
 
 test('infinite loops', function(t) {
-  function matchExpr(expr, input) {
-    var g = util.makeGrammar('G { start = ' + expr + '}');
-    return g.match(input);
+  function makeRuleWithBody(expr) {
+    util.makeGrammar('G { start = ' + expr + '}');
   }
-  t.throws(function() { matchExpr('("a"*)*', 'aaa'); }, errors.InfiniteLoop);
-  t.throws(function() { matchExpr('("a"?)*', 'aaa'); }, errors.InfiniteLoop);
-  t.throws(function() { matchExpr('("a"*)+', 'aaa'); }, errors.InfiniteLoop);
-  t.throws(function() { matchExpr('("a"?)+', 'aaa'); }, errors.InfiniteLoop);
+  t.throws(function() { makeRuleWithBody('("a"*)*'); }, errors.ManyExprHasNullableOperand);
+  t.throws(function() { makeRuleWithBody('("a"?)*'); }, errors.ManyExprHasNullableOperand);
+  t.throws(function() { makeRuleWithBody('("a"*)+'); }, errors.ManyExprHasNullableOperand);
+  t.throws(function() { makeRuleWithBody('("a"?)+'); }, errors.ManyExprHasNullableOperand);
 
   try {
-    matchExpr('("a"*)*', 'aaa');
+    makeRuleWithBody('("a"?)*');
     t.fail('Expected an exception to be thrown');
   } catch (e) {
-    t.equal(e.message, [
-      'Line 1, col 4:',
-      '> | aaa',
-      '       ^',
-      'Infinite loop detected when matching \'("a"*)*\''].join('\n'));
+    t.equal(e.message, 'Iteration expression ("a"?)* in rule start has a nullable operand');
   }
   t.end();
 });

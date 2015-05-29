@@ -6,7 +6,6 @@
 
 var InputStream = require('./InputStream');
 var common = require('./common');
-var errors = require('./errors');
 var nodes = require('./nodes');
 var pexprs = require('./pexprs');
 
@@ -176,11 +175,6 @@ pexprs.Many.prototype._eval = function(state, inputStream, origPos) {
       var row = state.bindings.splice(state.bindings.length - arity, arity);
       for (idx = 0; idx < row.length; idx++) {
         columns[idx].push(row[idx]);
-      }
-      if (inputStream.pos === backtrackPos) {
-        // TODO: Consider making it a static error for a nullable expression to
-        // be inside `Many`.
-        throw new errors.InfiniteLoop(state, this);
       }
     } else {
       inputStream.pos = backtrackPos;
