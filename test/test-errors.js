@@ -69,7 +69,18 @@ test('infinite loops', function(t) {
     makeRuleWithBody('("a"?)*');
     t.fail('Expected an exception to be thrown');
   } catch (e) {
-    t.equal(e.message, 'Iteration expression ("a"?)* in rule start has a nullable operand');
+    t.equal(e.message,
+        'In rule start, the nullable expression "a"? is the operand of a * (this is not allowed ' +
+        'because it may lead to an infinite loop)');
+  }
+
+  try {
+    makeRuleWithBody('("a"?)+');
+    t.fail('Expected an exception to be thrown');
+  } catch (e) {
+    t.equal(e.message,
+        'In rule start, the nullable expression "a"? is the operand of a + (this is not allowed ' +
+        'because it may lead to an infinite loop)');
   }
   t.end();
 });

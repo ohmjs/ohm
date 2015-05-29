@@ -184,9 +184,11 @@ var ManyExprHasNullableOperand = makeCustomError(
     function(expr, ruleName) {
       this.expr = expr;
       this.ruleName = ruleName;
+      var operator = this.expr.minNumMatches === 0 ? '*' : '+';
       this.message =
-          'Iteration expression ' + expr.interval.contents + ' in rule ' + this.ruleName +
-          ' has a nullable operand';
+          'In rule ' + ruleName + ', the nullable expression ' + expr.expr.interval.contents +
+          ' is the operand of a ' + operator + ' (this is not allowed because it may lead to' +
+          ' an infinite loop)';
     }
 );
 
