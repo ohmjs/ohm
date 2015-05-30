@@ -4,6 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
+var errors = require('./errors');
 var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
@@ -56,6 +57,9 @@ pexprs.Str.prototype._isNullable = function(grammar, memo) {
 pexprs.Apply.prototype._isNullable = function(grammar, memo) {
   var key = this.toMemoKey();
   if (!Object.prototype.hasOwnProperty.call(memo, key)) {
+    if (grammar.ruleDict[this.ruleName] === undefined) {
+      throw new errors.UndeclaredRule(this.ruleName, grammar.name);
+    }
     var body = grammar.ruleDict[this.ruleName];
     var inlined = body.substituteParams(this.params);
     memo[key] = false;
