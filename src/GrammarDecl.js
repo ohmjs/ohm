@@ -89,28 +89,38 @@ GrammarDecl.prototype.withDefaultStartRule = function(ruleName) {
 
 // Creates a Grammar instance, and if it passes the sanity checks, returns it.
 GrammarDecl.prototype.build = function() {
-  var grammar = new Grammar(
-      this.name, this.ensureSuperGrammar(), this.ruleDict, this.defaultStartRule);
-  var error;
+  var grammar =
+      new Grammar(this.name, this.ensureSuperGrammar(), this.ruleDict, this.defaultStartRule);
+  // TODO: change the pexpr.prototype.assert... methods to make them add
+  // exceptions to an array that's provided as an arg. Then we'll be able to
+  // show more than one error of the same type at a time.
+  // TODO: include the offending pexpr in the errors, that way we can show
+  // the part of the source that caused it.
+  var grammarErrors = [];
+  var grammarHasInvalidApplications = false;
   Object.keys(grammar.ruleDict).forEach(function(ruleName) {
     var body = grammar.ruleDict[ruleName];
-    function handleError(e) {
-      error = e;
-      console.error(e.toString());  // eslint-disable-line no-console
-    }
-    // TODO: change the pexpr.prototype.assert... methods to make them add
-    // exceptions to an array that's provided as an arg. Then we'll be able to
-    // show more than one error of the same type at a time.
-    // TODO: include the offending pexpr in the errors, that way we can show
-    // the part of the source that caused it.
-    onOhmError(function() { body.assertChoicesHaveUniformArity(ruleName); }, handleError);
-    onOhmError(function() { body.assertAllApplicationsAreValid(grammar); },  handleError);
     onOhmError(
-        function() { body.assertIteratedExprsAreNotNullable(grammar, ruleName); },
-        handleError);
+        function() { body.assertChoicesHaveUniformArity(ruleName); },
+        function(e) { grammarErrors.push(e); });
+    onOhmError(
+        function() { body.assertAllApplicationsAreValid(grammar); },
+        function(e) {
+          grammarErrors.push(e);
+          grammarHasInvalidApplications = true;
+        });
   });
-  if (error) {
-    throw error;
+  if (!grammarHasInvalidApplications) {
+    // The following check can only be done if the grammar has no invalid applications.
+    Object.keys(grammar.ruleDict).forEach(function(ruleName) {
+      var body = grammar.ruleDict[ruleName];
+      onOhmError(
+          function() { body.assertIteratedExprsAreNotNullable(grammar, ruleName); },
+          function(e) { grammarErrors.push(e); });
+    });
+  }
+  if (grammarErrors.length > 0) {
+    errors.throwErrors(grammarErrors);
   }
   return grammar;
 };

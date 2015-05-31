@@ -56,10 +56,24 @@ test('match failure', function(t) {
   t.end();
 });
 
-test('infinite loops', function(t) {
+test('grammar declaration errors', function(t) {
   function makeRuleWithBody(expr) {
     util.makeGrammar('G { start = ' + expr + '}');
   }
+
+  // UndeclaredRule
+
+  t.throws(function() { makeRuleWithBody('undeclaredRule'); }, errors.UndeclaredRule);
+
+  try {
+    makeRuleWithBody('undeclaredRule');
+    t.fail('Expected an exception to be thrown');
+  } catch (e) {
+    t.equal(e.message, 'Rule undeclaredRule is not declared in grammar G');
+  }
+
+  // ManyExprHasNullableOperand
+
   t.throws(function() { makeRuleWithBody('("a"*)*'); }, errors.ManyExprHasNullableOperand);
   t.throws(function() { makeRuleWithBody('("a"?)*'); }, errors.ManyExprHasNullableOperand);
   t.throws(function() { makeRuleWithBody('("a"*)+'); }, errors.ManyExprHasNullableOperand);
@@ -82,6 +96,13 @@ test('infinite loops', function(t) {
         'In rule start, the nullable expression "a"? is the operand of a + (this is not allowed ' +
         'because it may lead to an infinite loop)');
   }
+
+  // UndeclaredRule prevents ManyExprHasNullableOperand check
+
+  t.throws(
+      function() { ohm.grammar('G { x = y+  y = undeclaredRule }'); },
+      errors.UndeclaredRule);
+
   t.end();
 });
 

@@ -37,7 +37,7 @@ function makeCustomError(name, initFn) {
 var IntervalSourcesDontMatch = makeCustomError(
     'ohm.error.IntervalSourcesDontMatch',
     function() {
-      this.message = "interval sources don't match";
+      this.message = "Interval sources don't match";
     }
 );
 
@@ -64,10 +64,10 @@ var UndeclaredGrammar = makeCustomError(
       this.grammarName = grammarName;
       this.namespace = namespace;
       if (this.namespace) {
-        this.message = 'grammar ' + this.grammarName +
+        this.message = 'Grammar ' + this.grammarName +
             ' is not declared in namespace ' + Namespace.toString(this.namespace);
       } else {
-        this.message = 'undeclared grammar ' + this.grammarName;
+        this.message = 'Undeclared grammar ' + this.grammarName;
       }
     }
 );
@@ -79,7 +79,7 @@ var DuplicateGrammarDeclaration = makeCustomError(
     function(grammarName, namespace) {
       this.grammarName = grammarName;
       this.namespace = namespace;
-      this.message = 'grammar ' + this.grammarName +
+      this.message = 'Grammar ' + this.grammarName +
           ' is already declared in namespace ' + Namespace.toString(this.namespace);
     }
 );
@@ -93,7 +93,7 @@ var UndeclaredRule = makeCustomError(
     function(ruleName, grammarName) {
       this.ruleName = ruleName;
       this.grammarName = grammarName;
-      this.message = 'rule ' + this.ruleName + ' is not declared in grammar ' + this.grammarName;
+      this.message = 'Rule ' + this.ruleName + ' is not declared in grammar ' + this.grammarName;
     }
 );
 
@@ -105,7 +105,7 @@ var CannotOverrideUndeclaredRule = makeCustomError(
       this.ruleName = ruleName;
       this.grammarName = grammarName;
       this.message =
-          'cannot override rule ' + this.ruleName +
+          'Cannot override rule ' + this.ruleName +
           ' because it is not declared in ' + this.grammarName;
     }
 );
@@ -118,7 +118,7 @@ var CannotExtendUndeclaredRule = makeCustomError(
       this.ruleName = ruleName;
       this.grammarName = grammarName;
       this.message =
-          'cannot extend rule ' + this.ruleName +
+          'Cannot extend rule ' + this.ruleName +
           ' because it is not declared in ' + this.grammarName;
     }
 );
@@ -131,7 +131,7 @@ var DuplicateRuleDeclaration = makeCustomError(
       this.ruleName = ruleName;
       this.offendingGrammarName = offendingGrammarName;
       this.declGrammarName = declGrammarName;
-      this.message = "duplicate declaration for rule '" + this.ruleName +
+      this.message = "Duplicate declaration for rule '" + this.ruleName +
                      "' in grammar '" + this.offendingGrammarName + "'";
       if (this.offendingGrammarName !== declGrammarName) {
         this.message += " (originally declared in grammar '" + this.declGrammarName + "')";
@@ -147,7 +147,7 @@ var WrongNumberOfParameters = makeCustomError(
       this.ruleName = ruleName;
       this.expected = expected;
       this.actual = actual;
-      this.message = 'wrong number of parameters for rule ' + this.ruleName +
+      this.message = 'Wrong number of parameters for rule ' + this.ruleName +
                      ' (expected ' + this.expected + ', got ' + this.actual + ')';
     }
 );
@@ -159,7 +159,7 @@ var DuplicateParameterNames = makeCustomError(
     function(ruleName, duplicates) {
       this.ruleName = ruleName;
       this.duplicates = duplicates;
-      this.message = 'duplicate parameter names in rule ' + this.ruleName + ': ' +
+      this.message = 'Duplicate parameter names in rule ' + this.ruleName + ': ' +
                      this.duplicates.join(',');
     }
 );
@@ -171,7 +171,7 @@ var InvalidParameter = makeCustomError(
     function(ruleName, expr) {
       this.ruleName = ruleName;
       this.expr = expr;
-      this.message = 'invalid parameter to rule ' + this.ruleName + ': ' + this.expr +
+      this.message = 'Invalid parameter to rule ' + this.ruleName + ': ' + this.expr +
                      ' has arity ' + this.expr.getArity() + ', but parameter expressions ' +
                      'must have arity 1';
     }
@@ -201,7 +201,7 @@ var InconsistentArity = makeCustomError(
       this.expected = expected;
       this.actual = actual;
       this.message =
-          'rule ' + this.ruleName + ' involves an alternation which has inconsistent arity ' +
+          'Rule ' + this.ruleName + ' involves an alternation which has inconsistent arity ' +
           '(expected ' + this.expected + ', got ' + this.actual + ')';
     }
 );
@@ -212,7 +212,7 @@ var DuplicatePropertyNames = makeCustomError(
     'ohm.error.DuplicatePropertyNames',
     function(duplicates) {
       this.duplicates = duplicates;
-      this.message = 'object pattern has duplicate property names: ' + this.duplicates.join(', ');
+      this.message = 'Object pattern has duplicate property names: ' + this.duplicates.join(', ');
     }
 );
 
@@ -226,6 +226,17 @@ var InvalidConstructorCall = makeCustomError(
       this.children = children;
       this.message = 'Attempt to invoke constructor ' + this.ctorName +
                      ' with invalid or unexpected arguments';
+    }
+);
+
+// ----------------- convenience -----------------
+
+var MultipleErrors = makeCustomError(
+    'ohm.error.MultipleErrors',
+    function(errors) {
+      this.errors = errors;
+      var messages = errors.map(function(e) { return e.message; });
+      this.message = ['Errors:'].concat(messages).join('\n- ');
     }
 );
 
@@ -247,7 +258,17 @@ module.exports = {
   InvalidParameter: InvalidParameter,
   GrammarSyntaxError: GrammarSyntaxError,
   ManyExprHasNullableOperand: ManyExprHasNullableOperand,
+  MultipleErrors: MultipleErrors,
   UndeclaredGrammar: UndeclaredGrammar,
   UndeclaredRule: UndeclaredRule,
-  WrongNumberOfParameters: WrongNumberOfParameters
+  WrongNumberOfParameters: WrongNumberOfParameters,
+
+  throwErrors: function(errors) {
+    if (errors.length === 1) {
+      throw errors[0];
+    }
+    if (errors.length > 1) {
+      throw new MultipleErrors(errors);
+    }
+  }
 };
