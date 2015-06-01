@@ -7,6 +7,7 @@
 var inherits = require('inherits');
 
 var common = require('./common');
+var util = require('./util');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -14,7 +15,7 @@ var common = require('./common');
 
 // Create a short error message for an error that occurred during matching.
 function getShortMatchErrorMessage(pos, source, detail) {
-  var errorInfo = common.getLineAndColumn(source, pos);
+  var errorInfo = util.getLineAndColumn(source, pos);
   return 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ': ' + detail;
 }
 
@@ -52,7 +53,7 @@ function MatchFailure(state) {
     }
 
     var detail = 'Expected ' + this.getExpectedText();
-    return common.getLineAndColumnMessage(source, this.getPos()) + detail;
+    return util.getLineAndColumnMessage(source, this.getPos()) + detail;
   });
   common.defineLazyProperty(this, 'shortMessage', function() {
     if (typeof this.state.inputStream.source !== 'string') {

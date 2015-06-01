@@ -8,7 +8,7 @@ var fs = require('fs');
 var test = require('tape');
 
 var ohm = require('..');
-var util = require('./util');
+var testUtil = require('./testUtil');
 
 // --------------------------------------------------------------------
 // Helpers
@@ -228,7 +228,7 @@ test('_terminal nodes', function(t) {
 test('semantic action arity checks', function(t) {
   var g = ohm.grammar('G {}');
   function makeOperation(grammar, actions) {
-    return grammar.semantics().addOperation('op' + util.uniqueId(), actions);
+    return grammar.semantics().addOperation('op' + testUtil.uniqueId(), actions);
   }
   function ignore0() {}
   function ignore1(a) {}
@@ -253,7 +253,7 @@ test('semantic action arity checks', function(t) {
   }, /arity/, 'built-in rules are checked');
   t.ok(makeOperation(g, {letter: ignore1}), 'letter works with one arg');
 
-  g = util.makeGrammar([
+  g = testUtil.makeGrammar([
     'G {',
     '  one = two',
     '  two = "2" letter',
@@ -283,7 +283,7 @@ test('semantic action arity checks', function(t) {
 });
 
 test('extending semantics', function(t) {
-  var ns = util.makeGrammars([
+  var ns = testUtil.makeGrammars([
     'G { ',
     '  one = "one"',
     '  two = "two"',
@@ -387,7 +387,7 @@ test('extending semantics', function(t) {
 });
 
 test('mixing nodes from one grammar with semantics from another', function(t) {
-  var ns = util.makeGrammars([
+  var ns = testUtil.makeGrammars([
     'G {',
     '  start = "aaa"',
     '}',

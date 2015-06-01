@@ -11,7 +11,7 @@ var path = require('path');
 var test = require('tape-catch');
 
 var ohm = require('..');
-var util = require('./util');
+var testUtil = require('./testUtil');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -19,10 +19,10 @@ var util = require('./util');
 
 var fakeDocument = {
   querySelector: function(sel) {
-    return util.fakeScriptTag('G { foo = end }');
+    return testUtil.fakeScriptTag('G { foo = end }');
   },
   querySelectorAll: function(sel) {
-    return [util.fakeScriptTag('G { foo = end }')];
+    return [testUtil.fakeScriptTag('G { foo = end }')];
   }
 };
 

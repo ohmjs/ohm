@@ -6,47 +6,48 @@
 // Imports
 // --------------------------------------------------------------------
 
+var test = require('tape-catch');
+
 var errors = require('../src/errors');
 var ohm = require('..');
-var test = require('tape-catch');
-var util = require('./util');
+var testUtil = require('./testUtil');
 
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
 
 test('require same number of params when overriding and extending', function(t) {
-  var ns = util.makeGrammars('G { Foo<x, y> = x y }');
+  var ns = testUtil.makeGrammars('G { Foo<x, y> = x y }');
 
   // Too few arguments
   t.throws(
-      function() { util.makeGrammar('G2 <: G { Foo<x> := "oops!" }', ns); },
+      function() { testUtil.makeGrammar('G2 <: G { Foo<x> := "oops!" }', ns); },
       errors.WrongNumberOfParameters);
   t.throws(
-      function() { util.makeGrammar('G2 <: G { Foo<x> += "oops!" }', ns); },
+      function() { testUtil.makeGrammar('G2 <: G { Foo<x> += "oops!" }', ns); },
       errors.WrongNumberOfParameters);
 
   // Too many arguments
   t.throws(
-      function() { util.makeGrammar('G2 <: G { Foo<x, y, z> := "oops!" }', ns); },
+      function() { testUtil.makeGrammar('G2 <: G { Foo<x, y, z> := "oops!" }', ns); },
       errors.WrongNumberOfParameters);
   t.throws(
-      function() { util.makeGrammar('G2 <: G { Foo<x, y, z> += "oops!" }', ns); },
+      function() { testUtil.makeGrammar('G2 <: G { Foo<x, y, z> += "oops!" }', ns); },
       errors.WrongNumberOfParameters);
 
   // Just right
-  t.ok(util.makeGrammar('G2 <: G { Foo<x, y> := "yay!" }', ns));
-  t.ok(util.makeGrammar('G2 <: G { Foo<x, y> += "it" "works" }', ns));
+  t.ok(testUtil.makeGrammar('G2 <: G { Foo<x, y> := "yay!" }', ns));
+  t.ok(testUtil.makeGrammar('G2 <: G { Foo<x, y> += "it" "works" }', ns));
   t.end();
 });
 
 test('require same number of params when applying', function(t) {
-  var ns = util.makeGrammars('G { Foo<x, y> = x y }');
+  var ns = testUtil.makeGrammars('G { Foo<x, y> = x y }');
   t.throws(
-      function() { util.makeGrammar('G2 <: G { Foo<x> += "oops!" }', ns); },
+      function() { testUtil.makeGrammar('G2 <: G { Foo<x> += "oops!" }', ns); },
       errors.WrongNumberOfParameters);
   t.throws(
-      function() { util.makeGrammar('G2 <: G { Foo<x, y, z> += "oops!" }', ns); },
+      function() { testUtil.makeGrammar('G2 <: G { Foo<x, y, z> += "oops!" }', ns); },
       errors.WrongNumberOfParameters);
   t.end();
 });
@@ -54,7 +55,7 @@ test('require same number of params when applying', function(t) {
 test('require arguments to have arity 1', function(t) {
   t.throws(
       function() {
-        util.makeGrammar(
+        testUtil.makeGrammar(
           'G {\n' +
           '  Foo<x> = x x\n' +
           '  Start = Foo<digit digit>\n' +
@@ -67,7 +68,7 @@ test('require arguments to have arity 1', function(t) {
 test('require the rules referenced in arguments to be declared', function(t) {
   t.throws(
       function() {
-        util.makeGrammar(
+        testUtil.makeGrammar(
           'G {\n' +
           '  start = ListOf<asdlfk, ",">\n' +
           '}');
@@ -77,7 +78,7 @@ test('require the rules referenced in arguments to be declared', function(t) {
 });
 
 test('simple examples', function(t) {
-  var g = util.makeGrammar(
+  var g = testUtil.makeGrammar(
       'G {\n' +
       '  Pair<elem> = "(" elem "," elem ")"\n' +
       '  Start = Pair<digit>\n' +
@@ -93,7 +94,7 @@ test('simple examples', function(t) {
 });
 
 test('inline rule declarations', function(t) {
-  var g = util.makeGrammar(
+  var g = testUtil.makeGrammar(
       'G {\n' +
       '  List<elem, sep>\n' +
       '    = elem (sep elem)*  -- some\n' +
@@ -113,7 +114,7 @@ test('inline rule declarations', function(t) {
 });
 
 test('left recursion', function(t) {
-  var g = util.makeGrammar(
+  var g = testUtil.makeGrammar(
       'G {\n' +
       '  LeftAssoc<expr, op>\n' +
       '    = LeftAssoc<expr, op> op expr  -- rec\n' +
@@ -133,7 +134,7 @@ test('left recursion', function(t) {
 });
 
 test('complex parameters', function(t) {
-  var g = util.makeGrammar(
+  var g = testUtil.makeGrammar(
       'G {\n' +
       '  start = two<~"5" digit>\n' +
       '  two<x> = x x\n' +

@@ -13,6 +13,7 @@ var Semantics = require('./Semantics');
 var UnicodeCategories = require('../third_party/unicode').UnicodeCategories;
 var common = require('./common');
 var errors = require('./errors');
+var util = require('./util');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -312,7 +313,7 @@ function grammar(source, optNamespace) {
     var secondGrammar = ns[grammarNames[1]];
     var interval = secondGrammar.definitionInterval;
     throw new Error(
-        common.getLineAndColumnMessage(interval.inputStream.source, interval.startIdx) +
+        util.getLineAndColumnMessage(interval.inputStream.source, interval.startIdx) +
         'Found more than one grammar definition -- use ohm.grammars() instead.');
   }
   return ns[grammarNames[0]];  // Return the one and only grammar.
@@ -385,7 +386,8 @@ module.exports = {
   grammars: grammars,
   grammarFromScriptElement: grammarFromScriptElement,
   grammarsFromScriptElements: grammarsFromScriptElements,
-  makeRecipe: makeRecipe
+  makeRecipe: makeRecipe,
+  util: util
 };
 
 // Stuff that's only here for bootstrapping, testing, etc.

@@ -3,7 +3,7 @@ var test = require('tape-catch');
 var errors = require('../src/errors');
 var fs = require('fs');
 var ohm = require('..');
-var util = require('./util');
+var testUtil = require('./testUtil');
 var nodes = require('../src/nodes');
 var Grammar = require('../src/Grammar');
 var InputStream = require('../src/InputStream');
@@ -11,6 +11,9 @@ var Interval = require('../src/Interval');
 
 var arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
 var ohmGrammarSource = fs.readFileSync('src/ohm-grammar.ohm').toString();
+
+var makeGrammar = testUtil.makeGrammar;
+var makeGrammars = testUtil.makeGrammars;
 
 function makeInterval(thing, startIdx, endIdx) {
   return new Interval(InputStream.newFor(thing), startIdx, endIdx);
@@ -60,7 +63,7 @@ function buildTreeNodeWithUniqueId(g) {
 }
 
 test('grammar constructors dictionary', function(t) {
-  var m = util.makeGrammar(arithmeticGrammarSource);
+  var m = makeGrammar(arithmeticGrammarSource);
 
   it('exists and has a _default entry', function() {
     t.ok(m.constructors);
@@ -217,7 +220,7 @@ test('intervals', function(t) {
 
 test('primitive patterns', function(t) {
   test('anything', function(t) {
-    var m = util.makeGrammar('M { }');
+    var m = ohm.grammar('M { }');
 
     test('direct match, no stream', function(t) {
       it('recognition', function() {
@@ -270,7 +273,7 @@ test('primitive patterns', function(t) {
   });
 
   test('direct match, no stream', function(t) {
-    var m = util.makeGrammar([
+    var m = makeGrammar([
       'M {',
       '  five = 5',
       '  _true = true',
@@ -342,7 +345,7 @@ test('primitive patterns', function(t) {
   });
 
   test('match in string stream', function(t) {
-    var m = util.makeGrammar([
+    var m = makeGrammar([
       'M {',
       '  five = 5',
       '  _true = true',
@@ -365,7 +368,7 @@ test('primitive patterns', function(t) {
 });
 
 test('char', function(t) {
-  var m = util.makeGrammar('M { bang = "!" }');
+  var m = ohm.grammar('M { bang = "!" }');
 
   test('direct match, no stream', function(t) {
     it('recognition', function() {
@@ -407,7 +410,7 @@ test('char', function(t) {
 });
 
 test('string', function(t) {
-  var m = util.makeGrammar('M { foo = "foo\\b\\n\\r\\t\\\\\\\"\\u01bcff\\x8f" }');
+  var m = ohm.grammar('M { foo = "foo\\b\\n\\r\\t\\\\\\\"\\u01bcff\\x8f" }');
 
   test('direct match, no stream', function(t) {
     it('recognition', function() {
@@ -427,7 +430,7 @@ test('string', function(t) {
     });
 
     it('unrecognized escape characters are parse errors', function() {
-      t.throws(function() { util.makeGrammar('G { r = "\\w" }'); }, /Failed to parse grammar/);
+      t.throws(function() { ohm.grammar('G { r = "\\w" }'); }, /Failed to parse grammar/);
     });
 
     t.end();
@@ -454,7 +457,7 @@ test('string', function(t) {
 });
 
 test('regexp', function(t) {
-  var m = util.makeGrammar('M { myDigit = /[0-9]/ myLetter = /\\p{L}/ myLF = /\\p{LF}/ }');
+  var m = ohm.grammar('M { myDigit = /[0-9]/ myLetter = /\\p{L}/ myLF = /\\p{LF}/ }');
 
   test('direct match, no stream', function(t) {
     it('recognition', function() {
@@ -510,7 +513,7 @@ test('regexp', function(t) {
 });
 
 test('alt', function(t) {
-  var m = util.makeGrammar('M { altTest = "a" | "b" }');
+  var m = ohm.grammar('M { altTest = "a" | "b" }');
 
   it('recognition', function() {
     t.equal(m.match('').failed(), true);
@@ -532,7 +535,7 @@ test('alt', function(t) {
 
 test('seq', function(t) {
   test('without bindings', function(t) {
-    var m = util.makeGrammar('M { start = "a" "bc" "z" }');
+    var m = ohm.grammar('M { start = "a" "bc" "z" }');
 
     it('recognition', function() {
       t.equal(m.match('a').failed(), true);
@@ -554,7 +557,7 @@ test('seq', function(t) {
   });
 
   test('with exactly one binding', function(t) {
-    var m = util.makeGrammar('M { start = "a" "bc" "z" }');
+    var m = ohm.grammar('M { start = "a" "bc" "z" }');
 
     it('recognition', function() {
       t.equal(m.match('a').failed(), true);
@@ -576,7 +579,7 @@ test('seq', function(t) {
   });
 
   test('with more than one binding', function(t) {
-    var m = util.makeGrammar('M { start = "a" "bc" "z" }');
+    var m = ohm.grammar('M { start = "a" "bc" "z" }');
 
     it('recognition', function() {
       t.equal(m.match('a').failed(), true);
@@ -600,7 +603,7 @@ test('seq', function(t) {
 });
 
 test('alts and seqs together', function(t) {
-  var m = util.makeGrammar('M { start = "a" "b" "c" | "1" "2" "3" }');
+  var m = ohm.grammar('M { start = "a" "b" "c" | "1" "2" "3" }');
 
   it('recognition', function() {
     t.equal(m.match('ab').failed(), true);
@@ -623,7 +626,7 @@ test('alts and seqs together', function(t) {
 });
 
 test('many', function(t) {
-  var m = util.makeGrammar([
+  var m = makeGrammar([
     'M {',
     '  number = digit+',
     '  digits = digit*',
@@ -676,7 +679,7 @@ test('many', function(t) {
 });
 
 test('opt', function(t) {
-  var m = util.makeGrammar('M { name = "dr"? "warth" }');
+  var m = ohm.grammar('M { name = "dr"? "warth" }');
 
   it('recognition', function() {
     t.ok(m.match('drwarth'));
@@ -697,7 +700,7 @@ test('opt', function(t) {
 });
 
 test('not', function(t) {
-  var m = util.makeGrammar('M { start = ~"hello" _* }');
+  var m = ohm.grammar('M { start = ~"hello" _* }');
 
   it('recognition', function() {
     t.ok(m.match('yello world'));
@@ -716,7 +719,7 @@ test('not', function(t) {
 });
 
 test('lookahead', function(t) {
-  var m = util.makeGrammar('M { start = &"hello" _* }');
+  var m = ohm.grammar('M { start = &"hello" _* }');
 
   it('recognition', function() {
     t.ok(m.match('hello world'));
@@ -735,7 +738,7 @@ test('lookahead', function(t) {
 });
 
 test('arr', function(t) {
-  var m = util.makeGrammar('M { start = ["abc" &_ ["d" "ef"] "g"] }');
+  var m = ohm.grammar('M { start = ["abc" &_ ["d" "ef"] "g"] }');
 
   it('recognition', function() {
     t.ok(m.match(['abc', ['d', 'ef'], 'g']));
@@ -762,7 +765,7 @@ test('arr', function(t) {
 });
 
 test('obj', function(t) {
-  var m = util.makeGrammar([
+  var m = makeGrammar([
     'M {',
     '  strict  = {x: 1, y: (2)}',
     '  lenient = {x: 1, y: (2), ...}',
@@ -839,7 +842,7 @@ test('obj', function(t) {
 
   it('duplicate property names are not allowed', function() {
     try {
-      m = util.makeGrammar('M { duh = {x: 1, x: 2, y: 3, ...} }');
+      m = ohm.grammar('M { duh = {x: 1, x: 2, y: 3, ...} }');
       t.fail('Expected an exception to be thrown');
     } catch (e) {
       t.ok(e instanceof errors.DuplicatePropertyNames);
@@ -851,7 +854,7 @@ test('obj', function(t) {
 
 test('apply', function(t) {
   test('simple, no left recursion', function(t) {
-    var m = util.makeGrammar([
+    var m = makeGrammar([
       'M {',
       '  easy = foo',
       '  foo = "foo"',
@@ -880,7 +883,7 @@ test('apply', function(t) {
   });
 
   test('simple left recursion', function(t) {
-    var m = util.makeGrammar([
+    var m = makeGrammar([
       'M {',
       ' number = numberRec | digit',
       'numberRec = number digit',
@@ -933,7 +936,7 @@ test('apply', function(t) {
   });
 
   test('simple left recursion, with non-involved rules', function(t) {
-    var m = util.makeGrammar([
+    var m = makeGrammar([
       'M {',
       '  add = addRec | pri',
       '  addRec = add "+" pri',
@@ -964,7 +967,7 @@ test('apply', function(t) {
   });
 
   test('indirect left recursion', function(t) {
-    var m = util.makeGrammar([
+    var m = makeGrammar([
       'M {',
       '  number = foo | digit',
       '  foo = bar', '  bar = baz',
@@ -1002,7 +1005,7 @@ test('apply', function(t) {
   });
 
   test('nested left recursion', function(t) {
-    var m = util.makeGrammar([
+    var m = makeGrammar([
       'M {',
       '  addExp = addExpRec | mulExp',
       '  addExpRec = addExp "+" mulExp',
@@ -1107,7 +1110,7 @@ test('apply', function(t) {
   });
 
   test('nested and indirect left recursion', function(t) {
-    var m = util.makeGrammar([
+    var m = makeGrammar([
       'G {',
       '  addExp = a | c',
       '  a = b',
@@ -1150,7 +1153,7 @@ test('apply', function(t) {
   });
 
   test('tricky left recursion (different heads at same position)', function(t) {
-    var m = util.makeGrammar([
+    var m = makeGrammar([
       'G {',
       '  tricky = &foo bar',
       '  foo = fooRec | digit',
@@ -1200,7 +1203,7 @@ test('inheritance', function(t) {
   test('super-grammar does not exist', function(t) {
     it('no namespace', function() {
       try {
-        util.makeGrammar('G2 <: G1 {}');
+        ohm.grammar('G2 <: G1 {}');
         t.fail('Expected an exception to be thrown');
       } catch (e) {
         t.equal(e.constructor, errors.UndeclaredGrammar);
@@ -1210,7 +1213,7 @@ test('inheritance', function(t) {
 
     it('empty namespace', function() {
       try {
-        util.makeGrammar('G2 <: G1 {}', {});
+        ohm.grammar('G2 <: G1 {}', {});
         t.fail('Expected an exception to be thrown');
       } catch (e) {
         t.equal(e.constructor, errors.UndeclaredGrammar);
@@ -1224,7 +1227,7 @@ test('inheritance', function(t) {
     it('should check that rule does not already exist in super-grammar', function() {
       var ns;
       try {
-        ns = util.makeGrammars([
+        ns = makeGrammars([
           'G1 { foo = "foo" }',
           'G2 <: G1 { foo = "bar" }'
         ]);
@@ -1240,12 +1243,12 @@ test('inheritance', function(t) {
   });
 
   test('override', function(t) {
-    var ns = util.makeGrammars(['G1 { number = digit+ }',
+    var ns = makeGrammars(['G1 { number = digit+ }',
                            'G2 <: G1 { digit := /[a-z]/ }']);
 
     it('should check that rule exists in super-grammar', function() {
       try {
-        ns.G3 = util.makeGrammar('G3 <: G1 { foo := "foo" }', ns);
+        ns.G3 = ohm.grammar('G3 <: G1 { foo := "foo" }', ns);
         t.fail('Expected an exception to be thrown');
       } catch (e) {
         t.equal(e.constructor, errors.CannotOverrideUndeclaredRule);
@@ -1259,16 +1262,16 @@ test('inheritance', function(t) {
       // from that of its super-grammar.
 
       // arity(overriding rule) > arity(overridden rule)
-      ns.M1 = util.makeGrammar('M1 { foo = "foo" }');
-      util.makeGrammar('M2 <: M1 { foo := "foo" "bar" }', ns);
+      ns.M1 = ohm.grammar('M1 { foo = "foo" }');
+      ohm.grammar('M2 <: M1 { foo := "foo" "bar" }', ns);
 
       // arity(overriding rule) < arity(overridden rule)
-      ns.M3 = util.makeGrammar('M3 { foo = digit digit }', ns);
-      ns.M4 = util.makeGrammar('M4 <: M3 { foo := digit }', ns);
+      ns.M3 = ohm.grammar('M3 { foo = digit digit }', ns);
+      ns.M4 = ohm.grammar('M4 <: M3 { foo := digit }', ns);
     });
 
     it('should be ok to add new cases', function() {
-      t.ok(util.makeGrammar('G { space := "foo" -- newCaseLabel }'));
+      t.ok(ohm.grammar('G { space := "foo" -- newCaseLabel }'));
     });
 
     it('recognition', function() {
@@ -1298,7 +1301,7 @@ test('inheritance', function(t) {
   });
 
   test('extend', function(t) {
-    var ns = util.makeGrammars(['G1 { foo = "aaa" "bbb" }',
+    var ns = makeGrammars(['G1 { foo = "aaa" "bbb" }',
                                 'G2 <: G1 { foo += "111" "222" }']);
 
     it('recognition', function() {
@@ -1321,7 +1324,7 @@ test('inheritance', function(t) {
 
     it('should check that rule exists in super-grammar', function() {
       try {
-        util.makeGrammar('G3 <: G1 { bar += "bar" }', ns);
+        ohm.grammar('G3 <: G1 { bar += "bar" }', ns);
         t.fail('Expected an exception to be thrown');
       } catch (e) {
         t.equal(e.constructor, errors.CannotExtendUndeclaredRule);
@@ -1336,9 +1339,9 @@ test('inheritance', function(t) {
       // action "API" doesn't change.
 
       // Too many:
-      ns.M1 = util.makeGrammar('M1 { foo = "foo"  bar = "bar"  baz = "baz" }');
+      ns.M1 = ohm.grammar('M1 { foo = "foo"  bar = "bar"  baz = "baz" }');
       try {
-        util.makeGrammar('M2 <: M1 { foo += bar baz }', ns);
+        ohm.grammar('M2 <: M1 { foo += bar baz }', ns);
         t.fail('Expected an exception to be thrown');
       } catch (e) {
         t.equal(e.constructor, errors.InconsistentArity);
@@ -1348,9 +1351,9 @@ test('inheritance', function(t) {
       }
 
       // Too few:
-      ns.M3 = util.makeGrammar('M3 { foo = digit digit }');
+      ns.M3 = ohm.grammar('M3 { foo = digit digit }');
       try {
-        util.makeGrammar('M4 <: M3 { foo += digit }', ns);
+        ohm.grammar('M4 <: M3 { foo += digit }', ns);
         t.fail('Expected an exception to be thrown');
       } catch (e) {
         t.equal(e.constructor, errors.InconsistentArity);
@@ -1361,7 +1364,7 @@ test('inheritance', function(t) {
     });
 
     it('should be ok to add new cases', function() {
-      t.ok(util.makeGrammar('G { space += "foo" -- newCaseLabel }'));
+      t.ok(ohm.grammar('G { space += "foo" -- newCaseLabel }'));
     });
 
     t.end();
@@ -1372,7 +1375,7 @@ test('inheritance', function(t) {
 test('bindings', function(t) {
   it('inconsistent arity in alts is an error', function() {
     try {
-      util.makeGrammar('G { foo = "a" "c" | "b" }');
+      ohm.grammar('G { foo = "a" "c" | "b" }');
       t.fail('Expected an exception to be thrown');
     } catch (e) {
       t.equal(e.constructor, errors.InconsistentArity);
@@ -1383,7 +1386,7 @@ test('bindings', function(t) {
   });
 
   it('by default, bindings are evaluated lazily', function() {
-    var g = util.makeGrammar([
+    var g = makeGrammar([
       'G {',
       '  foo = bar baz',
       '  bar = "a"',
@@ -1473,13 +1476,13 @@ test('inline rule declarations', function(t) {
   }
 
   var ns = {};
-  var Arithmetic = ns.Arithmetic = util.makeGrammar(arithmeticGrammarSource);
+  var Arithmetic = ns.Arithmetic = makeGrammar(arithmeticGrammarSource);
 
   t.ok(Arithmetic.match('1*(2+3)-4/5'), 'expr is recognized');
   t.equal(
       makeEval(Arithmetic)(Arithmetic.match('10*(2+123)-4/5')), 1249.2, 'semantic action works');
 
-  var m2 = util.makeGrammar([
+  var m2 = makeGrammar([
       'Good <: Arithmetic {',
       '  addExp := addExp "~" mulExp  -- minus',
       '           | mulExp',
@@ -1488,7 +1491,7 @@ test('inline rule declarations', function(t) {
   t.equal(makeEval(m2)(m2.match('2*3~4')), 2);
 
   try {
-    util.makeGrammar('Bad <: Arithmetic { addExp += addExp "~" mulExp  -- minus }', ns);
+    ohm.grammar('Bad <: Arithmetic { addExp += addExp "~" mulExp  -- minus }', ns);
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.ok(e instanceof errors.DuplicateRuleDeclaration);
@@ -1501,21 +1504,21 @@ test('inline rule declarations', function(t) {
 
 test('lexical vs. syntactic rules', function(t) {
   it("lexical rules don't skip spaces implicitly", function() {
-    var g = util.makeGrammar('G { start = "foo" "bar" }');
+    var g = ohm.grammar('G { start = "foo" "bar" }');
     t.ok(g.match('foobar', 'start'));
     t.equal(g.match('foo bar', 'start').failed(), true);
     t.equal(g.match(' foo bar   ', 'start').failed(), true);
   });
 
   it('syntactic rules skip spaces implicitly', function() {
-    var g = util.makeGrammar('G { Start = "foo" "bar" }');
+    var g = ohm.grammar('G { Start = "foo" "bar" }');
     t.ok(g.match('foobar', 'Start'));
     t.ok(g.match('foo bar', 'Start'));
     t.ok(g.match(' foo bar   ', 'Start'));
   });
 
   it('mixing lexical and syntactic rules works as expected', function() {
-    var g = util.makeGrammar([
+    var g = makeGrammar([
       'G {',
       '  foo = "foo"',
       '  bar = "bar"',
@@ -1530,7 +1533,7 @@ test('lexical vs. syntactic rules', function(t) {
 });
 
 test('semantic action templates', function(t) {
-  var ns = util.makeGrammars([
+  var ns = makeGrammars([
     'G1 {',
     '  foo = bar',
     '  bar = baz',
@@ -1593,13 +1596,13 @@ test('semantic action templates', function(t) {
 });
 
 test('namespaces', function(t) {
-  var ns = util.makeGrammars('G { start = "foo" }');
+  var ns = ohm.grammars('G { start = "foo" }');
   t.ok(ns.G.match('foo'), 'G exists in the namespace and works');
 
-  var ns2 = util.makeGrammars('ccc { foo = "foo" }', ns);
+  var ns2 = ohm.grammars('ccc { foo = "foo" }', ns);
   t.ok(ns2);
   try {
-    util.makeGrammar('ccc { bar = "bar" }', ns2);
+    ohm.grammar('ccc { bar = "bar" }', ns2);
     t.fail('throws exception on duplicate grammar');
   } catch (e) {
     t.equal(e.constructor, errors.DuplicateGrammarDeclaration);
@@ -1607,7 +1610,7 @@ test('namespaces', function(t) {
   }
   t.ok(ns2.G, 'ns2 delegates to ns1');
 
-  var ns3 = util.makeGrammars('ccc { start = "x" }', ns);
+  var ns3 = ohm.grammars('ccc { start = "x" }', ns);
   t.ok(ns3);
   t.ok(ns3.ccc, "grammars with same name can be created in diff't namespaces");
   t.notEqual(ns3.ccc, ns2.ccc, "grammars with same name are diff't objects");
@@ -1617,10 +1620,10 @@ test('namespaces', function(t) {
 });
 
 test('loading from script elements', function(t) {
-  var script1 = util.fakeScriptTag(['O { number = number digit  -- rec',
+  var script1 = testUtil.fakeScriptTag(['O { number = number digit  -- rec',
                                     '           | digit',
                                     '}']);
-  var script2 = util.fakeScriptTag(['M { x = "xx" }',
+  var script2 = testUtil.fakeScriptTag(['M { x = "xx" }',
                                     'N { y = "yy" }']);
   var ns1 = ohm.grammarsFromScriptElements([script1]);
   var ns2 = ohm.grammarsFromScriptElements([script2]);
@@ -1665,7 +1668,7 @@ test('instantiating grammars from different types of objects', function(t) {
 });
 
 test('bootstrap', function(t) {
-  var ns = util.makeGrammars(ohmGrammarSource);
+  var ns = makeGrammars(ohmGrammarSource);
 
   it('can recognize arithmetic grammar', function() {
     t.ok(ns.Ohm.match(arithmeticGrammarSource, 'Grammar'));
@@ -1741,7 +1744,7 @@ test('bootstrap', function(t) {
 });
 
 test('definitionInterval', function(t) {
-  var g = util.makeGrammar([
+  var g = makeGrammar([
     'G {',
     '  foo = bar',
     '  bar = "a" | "b" -- baz',
@@ -1760,7 +1763,7 @@ test('definitionInterval', function(t) {
     t.deepEqual(definitionLoc(g, 'bar_baz'), [30, 40]);
   });
 
-  var g2 = util.makeGrammar([
+  var g2 = makeGrammar([
     'G2 <: G {',
     '  foo += bar',
     '  bar := "a" | "b" -- baz',
@@ -1775,7 +1778,7 @@ test('definitionInterval', function(t) {
 });
 
 test('rule invocation interval', function(t) {
-  var g = util.makeGrammar([
+  var g = makeGrammar([
     'G {',
     '  foo = bar',
     '  beep = letter bar',
@@ -1807,7 +1810,7 @@ test('rule invocation interval', function(t) {
 });
 
 test('toDisplayString', function(t) {
-  var g = util.makeGrammar('G { start = "ab" | letter* | /[a-z]/ }');
+  var g = ohm.grammar('G { start = "ab" | letter* | /[a-z]/ }');
   it('does the right thing', function() {
     var seq = g.ruleDict.start;
     t.equal(seq.toDisplayString(), '"ab" | letter* | /[a-z]/');
@@ -1823,7 +1826,7 @@ test('toDisplayString', function(t) {
 });
 
 test('pexpr.toString()', function(t) {
-  var g = util.makeGrammar(
+  var g = makeGrammar(
       'G { start = &"a" ~(2 | 3?) ``b a\'\' [c {e: b, ...} {g: /[a-z]/}]  a = 1  b = 2  c = 3 }');
   var e = g.ruleDict.start;
   t.equal(e.toString(), '(&"a" ~(2 | 3?) ``(b a)\'\' [(c {"e": b, ...} {"g": /[a-z]/})])');
@@ -1831,45 +1834,45 @@ test('pexpr.toString()', function(t) {
 });
 
 test('default start rule', function(t) {
-  var g = util.makeGrammar('G {}');
+  var g = ohm.grammar('G {}');
   t.equal(g.defaultStartRule, undefined, 'undefined for an empty grammar');
   t.throws(function() { g.match('a'); }, /Missing start rule/, 'match throws with no start rule');
   t.equal(Grammar.ProtoBuiltInRules.defaultStartRule, undefined, 'undefined for ProtoBuiltInRules');
   t.equal(Grammar.BuiltInRules.defaultStartRule, undefined, 'undefined for BuiltInRules');
 
-  var g2 = util.makeGrammar('G2 <: G {}', {G:g});
+  var g2 = ohm.grammar('G2 <: G {}', {G:g});
   t.equal(g2.defaultStartRule, undefined, 'undefined for a subgrammar too');
   t.throws(function() { g2.match('a'); }, /Missing start rule/, 'match throws with no start rule');
 
-  var ns = util.makeGrammars(['G { foo = "a" }', 'G2 <: G {}']);
+  var ns = makeGrammars(['G { foo = "a" }', 'G2 <: G {}']);
   t.equal(ns.G.defaultStartRule, 'foo', 'only rule becomes default start rule');
   t.equal(ns.G2.defaultStartRule, 'foo', 'start rule is inherited from supergrammar');
   t.ok(ns.G.match('a'), 'match works without a start rule argument');
   t.ok(ns.G2.match('a'));
 
-  var g3 = util.makeGrammar('G3 <: G { bar = "b" }', ns);
+  var g3 = ohm.grammar('G3 <: G { bar = "b" }', ns);
   t.equal(g3.defaultStartRule, 'foo', 'start rule is still inherited');
   t.ok(g3.match('a'));
 
-  var g4 = util.makeGrammar('G4 <: G3 { blah = "c" }', {G3:g3});
+  var g4 = ohm.grammar('G4 <: G3 { blah = "c" }', {G3:g3});
   t.equal(g4.defaultStartRule, 'foo', 'start rule inherited from super-supergrammar');
   t.ok(g4.match('a'));
 
-  g = util.makeGrammar('G { digit += _ }');
+  g = ohm.grammar('G { digit += _ }');
   t.equal(g.defaultStartRule, undefined, "extending alone doesn't set the start rule");
   t.throws(function() { g.match('a'); }, /Missing start rule/, 'match throws with no start rule');
-  g = util.makeGrammar(['G { digit += _', 'blah = "3" }'])
+  g = makeGrammar(['G { digit += _', 'blah = "3" }'])
   t.equal(g.defaultStartRule, 'blah', 'rule defined after extending becomes start rule');
   t.ok(g.match('3'));
 
-  g = util.makeGrammar('G { digit := _ }');
+  g = ohm.grammar('G { digit := _ }');
   t.equal(g.defaultStartRule, undefined, "overriding alone doesn't set the start rule");
   t.throws(function() { g.match('a'); }, /Missing start rule/, 'match throws with no start rule');
-  g = util.makeGrammar(['G { digit := _', 'blah = "3" }'])
+  g = makeGrammar(['G { digit := _', 'blah = "3" }'])
   t.equal(g.defaultStartRule, 'blah', 'rule defined after overriding becomes start rule');
   t.ok(g.match('3'));
 
-  g = util.makeGrammar('G { x = "a"\n| -- nothing }');
+  g = ohm.grammar('G { x = "a"\n| -- nothing }');
   t.equal(g.defaultStartRule, 'x', "an inline rule doesn't become the default");
 
   // Test passing the default start rule as an argument to the Grammar constructor.
