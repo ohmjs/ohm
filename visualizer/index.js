@@ -348,6 +348,21 @@ function isPrimitive(expr) {
   return expr.constructor.name.indexOf('Prim') >= 0;
 }
 
+// Hides or show the grammar error.
+var errorMarker = null;
+function hideError() {
+  if (errorMarker) {
+    clearMark(grammarEditor, errorMarker);
+  }
+  $('#grammarError').innerHTML = '';
+}
+
+function showError(error) {
+  var el = $('#grammarError').appendChild(createElement('.grammarErrorItem'));
+  el.textContent = (error.shortMessage ? error.shortMessage : error.message);
+  errorMarker = markInterval(grammarEditor, error.interval, 'error', false);
+}
+
 // Main
 // ----
 
@@ -371,13 +386,18 @@ function isPrimitive(expr) {
   });
 
   function refresh() {
+    $('#expandedInput').innerHTML = '';
+    $('#parseResults').innerHTML = '';
+
     if (grammarChanged) {
       grammarChanged = false;
 
+      hideError();
       var grammarSrc = grammarEditor.getValue();
       try {
         grammar = ohm.grammar(grammarSrc);
       } catch (e) {
+        showError(e);
         console.log(e);  // eslint-disable-line no-console
         return;
       }
@@ -390,8 +410,6 @@ function isPrimitive(expr) {
       options[checkbox.name] = checkbox.checked;
     }
 
-    $('#expandedInput').innerHTML = '';
-    $('#parseResults').innerHTML = '';
     (function walkTraceNodes(nodes, container, inputContainer, showTrace, printInput, parent) {
       nodes.forEach(function(node) {
         if (!node) {
