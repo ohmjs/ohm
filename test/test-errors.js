@@ -10,6 +10,14 @@ var ohm = require('..');
 var errors = require('../src/errors');
 
 // --------------------------------------------------------------------
+// Helpers
+// --------------------------------------------------------------------
+
+function makeRuleWithBody(expr) {
+  ohm.grammar('G { start = ' + expr + '}');
+}
+
+// --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
 
@@ -55,13 +63,7 @@ test('match failure', function(t) {
   t.end();
 });
 
-test('grammar declaration errors', function(t) {
-  function makeRuleWithBody(expr) {
-    ohm.grammar('G { start = ' + expr + '}');
-  }
-
-  // UndeclaredRule
-
+test('undeclared rules', function(t) {
   t.throws(function() { makeRuleWithBody('undeclaredRule'); }, errors.UndeclaredRule);
 
   try {
@@ -71,8 +73,10 @@ test('grammar declaration errors', function(t) {
     t.equal(e.message, 'Rule undeclaredRule is not declared in grammar G');
   }
 
-  // ManyExprHasNullableOperand
+  t.end();
+});
 
+test('many expressions with nullable operands', function(t) {
   t.throws(function() { makeRuleWithBody('("a"*)*'); }, errors.ManyExprHasNullableOperand);
   t.throws(function() { makeRuleWithBody('("a"?)*'); }, errors.ManyExprHasNullableOperand);
   t.throws(function() { makeRuleWithBody('("a"*)+'); }, errors.ManyExprHasNullableOperand);
@@ -82,25 +86,28 @@ test('grammar declaration errors', function(t) {
     makeRuleWithBody('("a"?)*');
     t.fail('Expected an exception to be thrown');
   } catch (e) {
-    t.equal(e.message,
-        'In rule start, the nullable expression "a"? is the operand of a * (this is not allowed ' +
-        'because it may lead to an infinite loop)');
+    t.equal(e.message, [
+      'Line 1, col 14:',
+      '> 1 | G { start = ("a"?)*}',
+      '                   ^',
+      'Nullable expression "a"? is not allowed inside \'*\' (possible infinite loop)'].join('\n'));
   }
 
   try {
     makeRuleWithBody('("a"?)+');
     t.fail('Expected an exception to be thrown');
   } catch (e) {
-    t.equal(e.message,
-        'In rule start, the nullable expression "a"? is the operand of a + (this is not allowed ' +
-        'because it may lead to an infinite loop)');
+    t.equal(e.message, [
+      'Line 1, col 14:',
+      '> 1 | G { start = ("a"?)+}',
+      '                   ^',
+      'Nullable expression "a"? is not allowed inside \'+\' (possible infinite loop)'].join('\n'));
   }
-
-  // UndeclaredRule prevents ManyExprHasNullableOperand check
 
   t.throws(
       function() { ohm.grammar('G { x = y+  y = undeclaredRule }'); },
-      errors.UndeclaredRule);
+      errors.UndeclaredRule,
+      'undeclared rule prevents ManyExprHasNullableOperand check');
 
   t.end();
 });

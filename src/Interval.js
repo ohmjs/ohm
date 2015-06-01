@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------
 
 var errors = require('./errors');
+var util = require('./util');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -46,6 +47,11 @@ Interval.prototype = {
   collapsedRight: function() {
     return new Interval(this.inputStream, this.endIdx, this.endIdx);
   },
+
+  getLineAndColumnMessage: function() {
+    return util.getLineAndColumnMessage(this.inputStream.source, this.startIdx);
+  },
+
   // Returns a new Interval which contains the same contents as this one,
   // but with whitespace trimmed from both ends. (This only makes sense when
   // the input stream is a string.)

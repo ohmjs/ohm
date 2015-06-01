@@ -181,14 +181,14 @@ var InvalidParameter = makeCustomError(
 
 var ManyExprHasNullableOperand = makeCustomError(
     'ohm.error.ManyExprHasNullableOperand',
-    function(expr, ruleName) {
-      this.expr = expr;
-      this.ruleName = ruleName;
-      var operator = this.expr.minNumMatches === 0 ? '*' : '+';
-      this.message =
-          'In rule ' + ruleName + ', the nullable expression ' + expr.expr.interval.contents +
-          ' is the operand of a ' + operator + ' (this is not allowed because it may lead to' +
-          ' an infinite loop)';
+    function(manyExpr) {
+      this.expr = manyExpr;
+
+      var operator = manyExpr.minNumMatches === 0 ? '*' : '+';
+      var nullableExpr = manyExpr.expr;
+      this.message = nullableExpr.interval.getLineAndColumnMessage() +
+                     'Nullable expression ' + nullableExpr.interval.contents +
+                     " is not allowed inside '" + operator + "' (possible infinite loop)";
     }
 );
 
