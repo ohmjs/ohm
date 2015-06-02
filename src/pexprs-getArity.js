@@ -28,10 +28,7 @@ pexprs.Seq.prototype.getArity = function() {
   return arity;
 };
 
-pexprs.Many.prototype.getArity = function() {
-  return this.expr.getArity();
-};
-
+pexprs.Kleene.prototype.getArity =
 pexprs.Opt.prototype.getArity = function() {
   return this.expr.getArity();
 };
@@ -40,14 +37,8 @@ pexprs.Not.prototype.getArity = function() {
   return 0;
 };
 
-pexprs.Lookahead.prototype.getArity = function() {
-  return this.expr.getArity();
-};
-
-pexprs.Arr.prototype.getArity = function() {
-  return this.expr.getArity();
-};
-
+pexprs.Lookahead.prototype.getArity =
+pexprs.Arr.prototype.getArity =
 pexprs.Str.prototype.getArity = function() {
   return this.expr.getArity();
 };
@@ -59,4 +50,3 @@ pexprs.Obj.prototype.getArity = function() {
   }
   return arity;
 };
-

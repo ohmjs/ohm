@@ -27,10 +27,10 @@ pexprs.Seq.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleN
   }
 };
 
-pexprs.Many.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleName) {
+pexprs.Kleene.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleName) {
   this.expr.assertIteratedExprsAreNotNullable(grammar, ruleName);
   if (this.expr.isNullable(grammar)) {
-    throw new errors.ManyExprHasNullableOperand(this, ruleName);
+    throw new errors.KleeneExprHasNullableOperand(this, ruleName);
   }
 };
 

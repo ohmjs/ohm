@@ -42,26 +42,12 @@ pexprs.Seq.prototype.assertAllApplicationsAreValid = function(grammar) {
   }
 };
 
-pexprs.Many.prototype.assertAllApplicationsAreValid = function(grammar) {
-  this.expr.assertAllApplicationsAreValid(grammar);
-};
-
-pexprs.Opt.prototype.assertAllApplicationsAreValid = function(grammar) {
-  this.expr.assertAllApplicationsAreValid(grammar);
-};
-
-pexprs.Not.prototype.assertAllApplicationsAreValid = function(grammar) {
-  this.expr.assertAllApplicationsAreValid(grammar);
-};
-
-pexprs.Lookahead.prototype.assertAllApplicationsAreValid = function(grammar) {
-  this.expr.assertAllApplicationsAreValid(grammar);
-};
-
-pexprs.Arr.prototype.assertAllApplicationsAreValid = function(grammar) {
-  this.expr.assertAllApplicationsAreValid(grammar);
-};
-
+pexprs.Star.prototype.assertAllApplicationsAreValid =
+pexprs.Plus.prototype.assertAllApplicationsAreValid =
+pexprs.Opt.prototype.assertAllApplicationsAreValid =
+pexprs.Not.prototype.assertAllApplicationsAreValid =
+pexprs.Lookahead.prototype.assertAllApplicationsAreValid =
+pexprs.Arr.prototype.assertAllApplicationsAreValid =
 pexprs.Str.prototype.assertAllApplicationsAreValid = function(grammar) {
   this.expr.assertAllApplicationsAreValid(grammar);
 };

@@ -53,11 +53,15 @@ pexprs.Seq.prototype.outputRecipe = function(sb, formals) {
   sb.append(')');
 };
 
-pexprs.Many.prototype.outputRecipe = function(sb, formals) {
-  sb.append('this.many(');
+pexprs.Star.prototype.outputRecipe = function(sb, formals) {
+  sb.append('this.star(');
   this.expr.outputRecipe(sb, formals);
-  sb.append(', ');
-  sb.append(this.minNumMatches);
+  sb.append(')');
+};
+
+pexprs.Plus.prototype.outputRecipe = function(sb, formals) {
+  sb.append('this.plus(');
+  this.expr.outputRecipe(sb, formals);
   sb.append(')');
 };
 
@@ -131,4 +135,3 @@ pexprs.Apply.prototype.outputRecipe = function(sb, formals) {
   }
   sb.append(')');
 };
-

@@ -38,8 +38,8 @@ pexprs.Seq.prototype._isNullable = function(grammar, memo) {
   return this.factors.every(function(factor) { return factor._isNullable(grammar, memo); });
 };
 
-pexprs.Many.prototype._isNullable = function(grammar, memo) {
-  return this.minNumMatches === 0;
+pexprs.Star.prototype._isNullable = function(grammar, memo) {
+  return true;
 };
 
 pexprs.Opt.prototype._isNullable =

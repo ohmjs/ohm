@@ -89,11 +89,22 @@ inherits(Seq, PExpr);
 
 // Iterators and optionals
 
-function Many(expr, minNumMatches) {
+function Kleene(expr) {
   this.expr = expr;
-  this.minNumMatches = minNumMatches;
 }
-inherits(Many, PExpr);
+inherits(Kleene, PExpr);
+
+function Star(expr) {
+  this.expr = expr;
+}
+inherits(Star, Kleene);
+Star.prototype.operator = '*';
+
+function Plus(expr) {
+  this.expr = expr;
+}
+inherits(Plus, Kleene);
+Plus.prototype.operator = '+';
 
 function Opt(expr) {
   this.expr = expr;
@@ -180,7 +191,9 @@ exports.Param = Param;
 exports.Alt = Alt;
 exports.Extend = Extend;
 exports.Seq = Seq;
-exports.Many = Many;
+exports.Kleene = Kleene;
+exports.Star = Star;
+exports.Plus = Plus;
 exports.Opt = Opt;
 exports.Not = Not;
 exports.Lookahead = Lookahead;

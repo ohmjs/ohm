@@ -30,7 +30,7 @@ pexprs.Seq.prototype.introduceParams = function(formals) {
   return this;
 };
 
-pexprs.Many.prototype.introduceParams =
+pexprs.Kleene.prototype.introduceParams =
 pexprs.Opt.prototype.introduceParams =
 pexprs.Not.prototype.introduceParams =
 pexprs.Lookahead.prototype.introduceParams =

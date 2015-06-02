@@ -177,15 +177,15 @@ var InvalidParameter = makeCustomError(
     }
 );
 
-// ----------------- kleene operators -----------------
+// ----------------- Kleene operators -----------------
 
-var ManyExprHasNullableOperand = makeCustomError(
-    'ohm.error.ManyExprHasNullableOperand',
-    function(manyExpr) {
-      this.expr = manyExpr;
+var KleeneExprHasNullableOperand = makeCustomError(
+    'ohm.error.KleeneExprHasNullableOperand',
+    function(kleeneExpr) {
+      this.expr = kleeneExpr;
 
-      var operator = manyExpr.minNumMatches === 0 ? '*' : '+';
-      var nullableExpr = manyExpr.expr;
+      var operator = kleeneExpr.operator;
+      var nullableExpr = kleeneExpr.expr;
       this.message = nullableExpr.interval.getLineAndColumnMessage() +
                      'Nullable expression ' + nullableExpr.interval.contents +
                      " is not allowed inside '" + operator + "' (possible infinite loop)";
@@ -257,7 +257,7 @@ module.exports = {
   InvalidConstructorCall: InvalidConstructorCall,
   InvalidParameter: InvalidParameter,
   GrammarSyntaxError: GrammarSyntaxError,
-  ManyExprHasNullableOperand: ManyExprHasNullableOperand,
+  KleeneExprHasNullableOperand: KleeneExprHasNullableOperand,
   MultipleErrors: MultipleErrors,
   UndeclaredGrammar: UndeclaredGrammar,
   UndeclaredRule: UndeclaredRule,

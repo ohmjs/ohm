@@ -305,7 +305,7 @@ Grammar.ProtoBuiltInRules = new Grammar('ProtoBuiltInRules', undefined, {
 
   // The following rule is part of the Ohm implementation. Its name ends with '_' to
   // discourage programmers from invoking, extending, and overriding it.
-  spaces_: new pexprs.Many(new pexprs.Apply('space'), 0).withFormals([]),
+  spaces_: new pexprs.Star(new pexprs.Apply('space')).withFormals([]),
 
   // The `space` rule must be defined here because it's referenced by `spaces_`.
   space: pexprs.makePrim(/[\s]/).withFormals([]).withDescription('a space')

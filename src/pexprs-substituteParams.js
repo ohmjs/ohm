@@ -28,8 +28,8 @@ pexprs.Seq.prototype.substituteParams = function(actuals) {
       this.factors.map(function(factor) { return factor.substituteParams(actuals); }));
 };
 
-pexprs.Many.prototype.substituteParams = function(actuals) {
-  return new pexprs.Many(this.expr.substituteParams(actuals), this.minNumMatches);
+pexprs.Kleene.prototype.substituteParams = function(actuals) {
+  return new this.constructor(this.expr.substituteParams(actuals));
 };
 
 pexprs.Opt.prototype.substituteParams =

@@ -166,10 +166,10 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
 
     Iter_star: function(x, _) {
-      return builder.many(x.visit(), 0).withInterval(this.interval);
+      return builder.star(x.visit()).withInterval(this.interval);
     },
     Iter_plus: function(x, _) {
-      return builder.many(x.visit(), 1).withInterval(this.interval);
+      return builder.plus(x.visit()).withInterval(this.interval);
     },
     Iter_opt: function(x, _) {
       return builder.opt(x.visit()).withInterval(this.interval);

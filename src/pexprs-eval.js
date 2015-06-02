@@ -156,14 +156,8 @@ pexprs.Seq.prototype._eval = function(state, inputStream, origPos) {
   return true;
 };
 
-pexprs.Many.prototype._eval = function(state, inputStream, origPos) {
+pexprs.Kleene.prototype._eval = function(state, inputStream, origPos) {
   var arity = this.getArity();
-  if (arity === 0) {
-    // TODO: make this a static check w/ a nice error message, then remove the dynamic check.
-    // cf. pexprs-check.js for Many
-    throw new Error('fix me!');
-  }
-
   var columns = common.repeatFn(function() { return []; }, arity);
   var numMatches = 0;
   var idx;
@@ -181,16 +175,18 @@ pexprs.Many.prototype._eval = function(state, inputStream, origPos) {
       break;
     }
   }
-  if (numMatches < this.minNumMatches) {
+  if (!this.gotEnoughMatches(numMatches)) {
     return false;
-  } else {
-    for (idx = 0; idx < columns.length; idx++) {
-      var interval = inputStream.intervalFrom(origPos);
-      state.bindings.push(new Node(state.grammar, '_many', columns[idx], interval));
-    }
-    return true;
   }
+  for (idx = 0; idx < columns.length; idx++) {
+    var interval = inputStream.intervalFrom(origPos);
+    state.bindings.push(new Node(state.grammar, '_many', columns[idx], interval));
+  }
+  return true;
 };
+pexprs.Kleene.prototype.gotEnoughMatches = common.abstract;
+pexprs.Star.prototype.gotEnoughMatches = function(n) { return true; };
+pexprs.Plus.prototype.gotEnoughMatches = function(n) { return n > 0; };
 
 pexprs.Opt.prototype._eval = function(state, inputStream, origPos) {
   var arity = this.getArity();

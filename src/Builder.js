@@ -60,8 +60,12 @@ Builder.prototype = {
     return factors.length === 1 ? factors[0] : new pexprs.Seq(factors);
   },
 
-  many: function(expr, minNumMatches) {
-    return new pexprs.Many(expr, minNumMatches);
+  star: function(expr) {
+    return new pexprs.Star(expr);
+  },
+
+  plus: function(expr) {
+    return new pexprs.Plus(expr);
   },
 
   opt: function(expr) {

@@ -65,27 +65,21 @@ pexprs.Seq.prototype.check = function(grammar, vals) {
   return true;
 };
 
-pexprs.Many.prototype.check = function(grammar, vals) {
+pexprs.Kleene.prototype.check = function(grammar, vals) {
   var arity = this.getArity();
-  if (arity === 0) {
-    // TODO: make this a static check w/ a nice error message, then remove the dynamic check.
-    // cf. pexprs-eval.js for Many
-    throw new Error('fix me!');
-  }
-
   var columns = vals.slice(0, arity);
   if (columns.length !== arity) {
     return false;
   }
-  var rowcount = columns[0].length;
+  var rowCount = columns[0].length;
   var i;
   for (i = 1; i < arity; i++) {
-    if (columns[i].length !== rowcount) {
+    if (columns[i].length !== rowCount) {
       return false;
     }
   }
 
-  for (i = 0; i < rowcount; i++) {
+  for (i = 0; i < rowCount; i++) {
     var row = [];
     for (var j = 0; j < arity; j++) {
       row.push(columns[j][i]);
@@ -163,4 +157,3 @@ pexprs.Apply.prototype.check = function(grammar, vals) {
   var body = grammar.ruleDict[this.ruleName];
   return body.check(grammar, ruleNode.children) && ruleNode.numChildren() === body.getArity();
 };
-

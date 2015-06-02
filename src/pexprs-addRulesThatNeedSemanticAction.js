@@ -13,44 +13,25 @@ var pexprs = require('./pexprs');
 
 pexprs.PExpr.prototype.addRulesThatNeedSemanticAction = common.abstract;
 
-pexprs.anything.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
-  // no-op
-};
-
-pexprs.end.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
-  // no-op
-};
-
-pexprs.Prim.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
-  // no-op
-};
-
+pexprs.anything.addRulesThatNeedSemanticAction =
+pexprs.end.addRulesThatNeedSemanticAction =
+pexprs.Prim.prototype.addRulesThatNeedSemanticAction =
 pexprs.Param.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
-  // no-op
+  return false;
 };
 
 pexprs.Alt.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
-  var ans = false;
-  for (var idx = 0; idx < this.terms.length; idx++) {
-    var term = this.terms[idx];
-    ans |= term.addRulesThatNeedSemanticAction(dict, valueRequired);
-  }
-  return ans;
+  return this.terms.some(
+      function(term) { return term.addRulesThatNeedSemanticAction(dict, valueRequired); });
 };
 
 pexprs.Seq.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
-  var ans = false;
-  for (var idx = 0; idx < this.factors.length; idx++) {
-    var factor = this.factors[idx];
-    ans |= factor.addRulesThatNeedSemanticAction(dict, valueRequired);
-  }
-  return ans;
+  return this.factors.some(
+      function(factor) { return factor.addRulesThatNeedSemanticAction(dict, valueRequired); });
 };
 
-pexprs.Many.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
-  return this.expr.addRulesThatNeedSemanticAction(dict, valueRequired);
-};
-
+pexprs.Star.prototype.addRulesThatNeedSemanticAction =
+pexprs.Plus.prototype.addRulesThatNeedSemanticAction =
 pexprs.Opt.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
   return this.expr.addRulesThatNeedSemanticAction(dict, valueRequired);
 };
@@ -59,20 +40,17 @@ pexprs.Not.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequir
   return this.expr.addRulesThatNeedSemanticAction(dict, false);
 };
 
-pexprs.Lookahead.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
-  return this.expr.addRulesThatNeedSemanticAction(dict, valueRequired);
-};
-
-pexprs.Arr.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
-  return this.expr.addRulesThatNeedSemanticAction(dict, valueRequired);
-};
-
+pexprs.Lookahead.prototype.addRulesThatNeedSemanticAction =
+pexprs.Arr.prototype.addRulesThatNeedSemanticAction =
 pexprs.Str.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
   return this.expr.addRulesThatNeedSemanticAction(dict, valueRequired);
 };
 
 pexprs.Obj.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
-  return this.expr.addRulesThatNeedSemanticAction(dict, valueRequired);
+  return this.properties.some(
+      function(property) {
+        return property.pattern.addRulesThatNeedSemanticAction(dict, valueRequired);
+      });
 };
 
 pexprs.Apply.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {

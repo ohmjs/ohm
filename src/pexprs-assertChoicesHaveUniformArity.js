@@ -14,18 +14,9 @@ var errors = require('./errors');
 
 pexprs.PExpr.prototype.assertChoicesHaveUniformArity = common.abstract;
 
-pexprs.anything.assertChoicesHaveUniformArity = function(ruleName) {
-  // no-op
-};
-
-pexprs.end.assertChoicesHaveUniformArity = function(ruleName) {
-  // no-op
-};
-
-pexprs.Prim.prototype.assertChoicesHaveUniformArity = function(ruleName) {
-  // no-op
-};
-
+pexprs.anything.assertChoicesHaveUniformArity =
+pexprs.end.assertChoicesHaveUniformArity =
+pexprs.Prim.prototype.assertChoicesHaveUniformArity =
 pexprs.Param.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   // no-op
 };
@@ -61,10 +52,8 @@ pexprs.Seq.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   }
 };
 
-pexprs.Many.prototype.assertChoicesHaveUniformArity = function(ruleName) {
-  this.expr.assertChoicesHaveUniformArity(ruleName);
-};
-
+pexprs.Star.prototype.assertChoicesHaveUniformArity =
+pexprs.Plus.prototype.assertChoicesHaveUniformArity =
 pexprs.Opt.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   this.expr.assertChoicesHaveUniformArity(ruleName);
 };
@@ -73,14 +62,8 @@ pexprs.Not.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   // no-op (not required b/c the nested expr doesn't show up in the CST)
 };
 
-pexprs.Lookahead.prototype.assertChoicesHaveUniformArity = function(ruleName) {
-  this.expr.assertChoicesHaveUniformArity(ruleName);
-};
-
-pexprs.Arr.prototype.assertChoicesHaveUniformArity = function(ruleName) {
-  this.expr.assertChoicesHaveUniformArity(ruleName);
-};
-
+pexprs.Lookahead.prototype.assertChoicesHaveUniformArity =
+pexprs.Arr.prototype.assertChoicesHaveUniformArity =
 pexprs.Str.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   this.expr.assertChoicesHaveUniformArity(ruleName);
 };
@@ -92,6 +75,6 @@ pexprs.Obj.prototype.assertChoicesHaveUniformArity = function(ruleName) {
 };
 
 pexprs.Apply.prototype.assertChoicesHaveUniformArity = function(ruleName) {
-  // no-op
+  // The arities of the parameter expressions is required to be 1 by
+  // `assertAllApplicationsAreValid()`.
 };
-
