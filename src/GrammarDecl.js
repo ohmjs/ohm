@@ -49,11 +49,15 @@ GrammarDecl.prototype.ensureSuperGrammar = function() {
 GrammarDecl.prototype.installOverriddenOrExtendedRule = function(name, formals, body) {
   var duplicateParameterNames = common.getDuplicates(formals);
   if (duplicateParameterNames.length > 0) {
-    throw new errors.DuplicateParameterNames(name, duplicateParameterNames);
+    throw new errors.DuplicateParameterNames(name, duplicateParameterNames,
+                                             body.definitionInterval);
   }
   var baseRule = this.ensureSuperGrammar().ruleDict[name];
   if (formals.length !== baseRule.formals.length) {
-    throw new errors.WrongNumberOfParameters(name, baseRule.formals.length, formals.length);
+    throw new errors.WrongNumberOfParameters(name,
+                                             baseRule.formals.length,
+                                             formals.length,
+                                             body.definitionInterval);
   }
   return this.install(name, formals, baseRule.description, body);
 };
@@ -130,13 +134,20 @@ GrammarDecl.prototype.build = function() {
 GrammarDecl.prototype.define = function(name, formals, body, optDescr) {
   this.ensureSuperGrammar();
   if (this.superGrammar.ruleDict[name]) {
-    throw new errors.DuplicateRuleDeclaration(name, this.name, this.superGrammar.name);
+    throw new errors.DuplicateRuleDeclaration(name, this.name,
+                                              this.superGrammar.name,
+                                              body.definitionInterval);
   } else if (this.ruleDict[name]) {
-    throw new errors.DuplicateRuleDeclaration(name, this.name, this.name);
+    throw new errors.DuplicateRuleDeclaration(name,
+                                              this.name,
+                                              this.name,
+                                              body.definitionInterval);
   }
   var duplicateParameterNames = common.getDuplicates(formals);
   if (duplicateParameterNames.length > 0) {
-    throw new errors.DuplicateParameterNames(name, duplicateParameterNames);
+    throw new errors.DuplicateParameterNames(name,
+                                             duplicateParameterNames,
+                                             body.definitionInterval);
   }
   return this.install(name, formals, optDescr, body);
 };
@@ -144,7 +155,9 @@ GrammarDecl.prototype.define = function(name, formals, body, optDescr) {
 GrammarDecl.prototype.override = function(name, formals, body) {
   var baseRule = this.ensureSuperGrammar().ruleDict[name];
   if (!baseRule) {
-    throw new errors.CannotOverrideUndeclaredRule(name, this.superGrammar.name);
+    throw new errors.CannotOverrideUndeclaredRule(name,
+                                                  this.superGrammar.name,
+                                                  body.definitionInterval);
   }
   this.installOverriddenOrExtendedRule(name, formals, body);
   return this;
@@ -153,7 +166,9 @@ GrammarDecl.prototype.override = function(name, formals, body) {
 GrammarDecl.prototype.extend = function(name, formals, body) {
   var baseRule = this.ensureSuperGrammar().ruleDict[name];
   if (!baseRule) {
-    throw new errors.CannotExtendUndeclaredRule(name, this.superGrammar.name);
+    throw new errors.CannotExtendUndeclaredRule(name,
+                                                this.superGrammar.name,
+                                                body.definitionInterval);
   }
   this.installOverriddenOrExtendedRule(
       name, formals, new pexprs.Extend(this.superGrammar, name, body));

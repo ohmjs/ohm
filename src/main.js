@@ -83,7 +83,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       rs.visit();
       var g = decl.build();
       if (grammarName in namespace) {
-        throw new errors.DuplicateGrammarDeclaration(grammarName, namespace);
+        throw new errors.DuplicateGrammarDeclaration(grammarName, namespace, this.interval);
       }
       g.definitionInterval = this.interval.trimmed();
       namespace[grammarName] = g;
@@ -96,7 +96,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
         decl.withSuperGrammar(null);
       } else {
         if (!namespace || !(superGrammarName in namespace)) {
-          throw new errors.UndeclaredGrammar(superGrammarName, namespace);
+          throw new errors.UndeclaredGrammar(superGrammarName, namespace, n.interval);
         }
         decl.withSuperGrammar(namespace[superGrammarName]);
       }
@@ -129,8 +129,9 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
       var body = b.visit();
+      body.definitionInterval = this.interval.trimmed();
       var ans = decl.extend(currentRuleName, currentRuleFormals, body);
-      decl.ruleDict[currentRuleName].definitionInterval = this.interval.trimmed();
+      decl.ruleDict[currentRuleName].definitionInterval = body.definitionInterval;
       return ans;
     },
 

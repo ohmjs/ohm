@@ -173,6 +173,14 @@
     }
     #inputContainer {
       border-right: 1px solid #ddd;
+      }
+
+    #grammarError {
+      background: #FCF68B;
+    }
+
+    .grammarErrorItem {
+      text-align: center;
     }
 
     .CodeMirror.highlighting {
@@ -181,6 +189,11 @@
 
     .CodeMirror .highlight {
       background-color: #B5D5FF;
+    }
+
+    .CodeMirror .error {
+      background-color: #FF0000;
+      color: white;
     }
 
     .CodeMirror .active-definition {
@@ -224,7 +237,10 @@ MyLang {
   number = number digit -- rec
          | digit
 }
-</textarea></div></div>
+      </textarea>
+      <div id="grammarError"></div>
+    </div>
+  </div>
   <div id="bottomSection">
     <div id="expandedInput"></div>
     <div id="parseResults"></div>
@@ -239,6 +255,7 @@ MyLang {
   <script src="../dist/ohm.js"></script>
   <script src="third_party/d3.min.js"></script>
   <script src="third_party/codemirror-5.1/lib/codemirror.js"></script>
+  <script src="third_party/codemirror-5.1/lib/show-hint.js"></script>
   <script src="index.js"></script>
 </body>
 </html>
