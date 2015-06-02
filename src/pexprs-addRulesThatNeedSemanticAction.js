@@ -30,9 +30,7 @@ pexprs.Seq.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequir
       function(factor) { return factor.addRulesThatNeedSemanticAction(dict, valueRequired); });
 };
 
-pexprs.Star.prototype.addRulesThatNeedSemanticAction =
-pexprs.Plus.prototype.addRulesThatNeedSemanticAction =
-pexprs.Opt.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
+pexprs.Iter.prototype.addRulesThatNeedSemanticAction = function(dict, valueRequired) {
   return this.expr.addRulesThatNeedSemanticAction(dict, valueRequired);
 };
 

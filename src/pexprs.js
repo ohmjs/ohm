@@ -89,27 +89,37 @@ inherits(Seq, PExpr);
 
 // Iterators and optionals
 
-function Kleene(expr) {
+function Iter(expr) {
   this.expr = expr;
 }
-inherits(Kleene, PExpr);
+inherits(Iter, PExpr);
 
 function Star(expr) {
   this.expr = expr;
 }
-inherits(Star, Kleene);
-Star.prototype.operator = '*';
+inherits(Star, Iter);
 
 function Plus(expr) {
   this.expr = expr;
 }
-inherits(Plus, Kleene);
-Plus.prototype.operator = '+';
+inherits(Plus, Iter);
 
 function Opt(expr) {
   this.expr = expr;
 }
-inherits(Opt, PExpr);
+inherits(Opt, Iter);
+
+Star.prototype.operator = '*';
+Plus.prototype.operator = '+';
+Opt.prototype.operator = '?';
+
+Star.prototype.minNumMatches = 0;
+Plus.prototype.minNumMatches = 1;
+Opt.prototype.minNumMatches = 0;
+
+Star.prototype.maxNumMatches = Number.POSITIVE_INFINITY;
+Plus.prototype.maxNumMatches = Number.POSITIVE_INFINITY;
+Opt.prototype.maxNumMatches = 1;
 
 // Predicates
 
@@ -191,7 +201,7 @@ exports.Param = Param;
 exports.Alt = Alt;
 exports.Extend = Extend;
 exports.Seq = Seq;
-exports.Kleene = Kleene;
+exports.Iter = Iter;
 exports.Star = Star;
 exports.Plus = Plus;
 exports.Opt = Opt;

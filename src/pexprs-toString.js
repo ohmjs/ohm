@@ -52,16 +52,8 @@ pexprs.Seq.prototype.toString = function() {
     '(' + this.factors.map(function(factor) { return factor.toString(); }).join(' ') + ')';
 };
 
-pexprs.Star.prototype.toString = function() {
-  return this.expr + '*';
-};
-
-pexprs.Plus.prototype.toString = function() {
-  return this.expr + '+';
-};
-
-pexprs.Opt.prototype.toString = function() {
-  return this.expr + '?';
+pexprs.Iter.prototype.toString = function() {
+  return this.expr + this.operator;
 };
 
 pexprs.Not.prototype.toString = function() {

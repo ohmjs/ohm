@@ -104,7 +104,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
 
     Rule_define: function(n, fs, d, _, b) {
       currentRuleName = n.visit();
-      currentRuleFormals = fs.visit() || [];
+      currentRuleFormals = fs.visit()[0] || [];
       // If there is no default start rule yet, set it now. This must be done before visiting
       // the body, because it might contain an inline rule definition.
       if (!decl.defaultStartRule && decl.ensureSuperGrammar() !== Grammar.ProtoBuiltInRules) {
@@ -112,12 +112,12 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       }
       var body = b.visit();
       body.definitionInterval = this.interval.trimmed();
-      var description = d.visit();
+      var description = d.visit()[0];
       return decl.define(currentRuleName, currentRuleFormals, body, description);
     },
     Rule_override: function(n, fs, _, b) {
       currentRuleName = n.visit();
-      currentRuleFormals = fs.visit() || [];
+      currentRuleFormals = fs.visit()[0] || [];
       overriding = true;
       var body = b.visit();
       body.definitionInterval = this.interval.trimmed();
@@ -127,7 +127,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
     Rule_extend: function(n, fs, _, b) {
       currentRuleName = n.visit();
-      currentRuleFormals = fs.visit() || [];
+      currentRuleFormals = fs.visit()[0] || [];
       var body = b.visit();
       var ans = decl.extend(currentRuleName, currentRuleFormals, body);
       decl.ruleDict[currentRuleName].definitionInterval = this.interval.trimmed();
@@ -183,7 +183,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
 
     Base_application: function(rule, ps) {
-      return builder.app(rule.visit(), ps.visit() || []).withInterval(this.interval);
+      return builder.app(rule.visit(), ps.visit()[0] || []).withInterval(this.interval);
     },
     Base_prim: function(expr) {
       return builder.prim(expr.visit()).withInterval(this.interval);
@@ -198,11 +198,11 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return builder.str(x.visit());
     },
     Base_obj: function(open, lenient, close) {
-      return builder.obj([], lenient.visit());
+      return builder.obj([], lenient.visit()[0]);
     },
 
     Base_objWithProps: function(open, ps, _, lenient, close) {
-      return builder.obj(ps.visit(), lenient.visit()).withInterval(this.interval);
+      return builder.obj(ps.visit(), lenient.visit()[0]).withInterval(this.interval);
     },
 
     Props: function(p, _, ps) {

@@ -52,9 +52,7 @@ pexprs.Seq.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   }
 };
 
-pexprs.Star.prototype.assertChoicesHaveUniformArity =
-pexprs.Plus.prototype.assertChoicesHaveUniformArity =
-pexprs.Opt.prototype.assertChoicesHaveUniformArity = function(ruleName) {
+pexprs.Iter.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   this.expr.assertChoicesHaveUniformArity(ruleName);
 };
 

@@ -164,7 +164,7 @@ The `*` (zero or more) and `+` (one or more) operators do not change the arity: 
 
 ### Parse Nodes
 
-When a semantic action is invoked, the arguments are the child nodes of the current node, and `this` is bound to the current node. There are three types of node: _terminal_, _rule application_ nodes, and _"many"_ nodes. No matter what the type, a node `n` has the following methods and properties:
+When a semantic action is invoked, the arguments are the child nodes of the current node, and `this` is bound to the current node. There are three types of node: _terminal_, _rule application_ nodes, and _iteration_ nodes. No matter what the type, a node `n` has the following methods and properties:
 
 <b><pre class="api">n.child(idx: number) &rarr; Node</pre></b>
 
@@ -174,9 +174,10 @@ Get the child at index `idx`.
 
 `true` if the node is a terminal node, otherwise `false`.
 
-<b><pre class="api">n.isMany() &rarr; boolean</pre></b>
+<b><pre class="api">n.isIteration() &rarr; boolean</pre></b>
 
-`true` if the node is a _many_ node, otherwise `false`.
+`true` if the node is an _iteration_ node (i.e., if it corresponds to a `*`, `+`, or `?` expression
+in the grammar), otherwise `false`.
 
 <b><pre class="api">n.children: Array</pre></b>
 
@@ -198,4 +199,5 @@ The number of child nodes that the node has.
 
 In addition to the properties listed above, within a given semantics, every node also has a method/property corresponding to each operation/attribute in the semantics. For example, in a semantics that has an operation named 'prettyPrint' and an attribute named 'freeVars', every node has a `prettyPrint()` method and a `freeVars` property.
 
-**If a Node `n` returns `true` to `n.isMany()`**, operations and attributes return an Array containing the attribute values for all of the node's children.
+**If a Node `n` returns `true` to `n.isIteration()`**, operations and attributes return an Array
+containing the attribute values for all of the node's children.

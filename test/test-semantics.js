@@ -155,7 +155,7 @@ test('semantics', function(t) {
   t.end();
 });
 
-test('_many nodes', function(t) {
+test('_iter nodes', function(t) {
   var g = ohm.grammar('G { letters = letter* }');
   var s = g.semantics().addOperation('op', {
     letter: function(l) {
@@ -179,8 +179,8 @@ test('_many nodes', function(t) {
 
   s = g.semantics().addOperation('op', {
     letters: function(ls) {
-      t.equal(ls.ctorName, '_many', '`ls` is a _many node');
-      t.ok(ls.isMany(), '`ls.isMany()` returns a truthy value');
+      t.equal(ls.ctorName, '_iter', '`ls` is an _iter node');
+      t.ok(ls.isIteration(), '`ls.isIteration()` returns a truthy value');
       t.equal(typeof ls.op, 'function', '`ls` has an op() method');
       t.ok(ls.children.every(function(l) {
         return typeof l.op === 'function';

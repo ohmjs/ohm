@@ -65,7 +65,7 @@ pexprs.Seq.prototype.check = function(grammar, vals) {
   return true;
 };
 
-pexprs.Kleene.prototype.check = function(grammar, vals) {
+pexprs.Iter.prototype.check = function(grammar, vals) {
   var arity = this.getArity();
   var columns = vals.slice(0, arity);
   if (columns.length !== arity) {
@@ -90,23 +90,6 @@ pexprs.Kleene.prototype.check = function(grammar, vals) {
   }
 
   return true;
-};
-
-pexprs.Opt.prototype.check = function(grammar, vals) {
-  var arity = this.getArity();
-  var allUndefined = true;
-  for (var i = 0; i < arity; i++) {
-    if (vals[i] !== undefined) {
-      allUndefined = false;
-      break;
-    }
-  }
-
-  if (allUndefined) {
-    return true;
-  } else {
-    return this.expr.check(grammar, vals);
-  }
 };
 
 pexprs.Not.prototype.check = function(grammar, vals) {

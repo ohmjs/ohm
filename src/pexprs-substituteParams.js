@@ -28,11 +28,7 @@ pexprs.Seq.prototype.substituteParams = function(actuals) {
       this.factors.map(function(factor) { return factor.substituteParams(actuals); }));
 };
 
-pexprs.Kleene.prototype.substituteParams = function(actuals) {
-  return new this.constructor(this.expr.substituteParams(actuals));
-};
-
-pexprs.Opt.prototype.substituteParams =
+pexprs.Iter.prototype.substituteParams =
 pexprs.Not.prototype.substituteParams =
 pexprs.Lookahead.prototype.substituteParams =
 pexprs.Arr.prototype.substituteParams =

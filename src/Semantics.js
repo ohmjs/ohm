@@ -65,10 +65,10 @@ Wrapper.prototype._onlyChild = function() {
   }
 };
 
-// Returns `true` if the CST node associated with this wrapper corresponds to a Kleene-*
-// or Kleene-+ operation in the grammar, `false` otherwise.
-Wrapper.prototype.isMany = function() {
-  return this._node.ctorName === '_many';
+// Returns `true` if the CST node associated with this wrapper corresponds to an iteration
+// expression, i.e., a Kleene-*, Kleene-+, or an optional. Returns `false` otherwise.
+Wrapper.prototype.isIteration = function() {
+  return this._node.ctorName === '_iter';
 };
 
 // Returns `true` if the CST node associated with this wrapper is a terminal node, `false`
@@ -344,9 +344,9 @@ Operation.prototype.checkActionDict = function(grammar) {
 // Execute this operation on the CST node associated with `nodeWrapper` in the context of the given
 // Semantics instance.
 Operation.prototype.execute = function(semantics, nodeWrapper) {
-  if (nodeWrapper.isMany()) {
-    // This CST node corresponds to a Kleene-* or a Kleene-+ in the grammar, so we map this
-    // operation over all of its child nodes.
+  if (nodeWrapper.isIteration()) {
+    // This CST node corresponds to an iteration expression in the grammar (*, +, or ?), so we map
+    // this operation over all of its child nodes.
     var results = [];
     for (var idx = 0; idx < nodeWrapper._node.numChildren(); idx++) {
       results.push(this.execute(semantics, nodeWrapper.child(idx)));

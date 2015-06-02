@@ -42,9 +42,7 @@ pexprs.Seq.prototype.assertAllApplicationsAreValid = function(grammar) {
   }
 };
 
-pexprs.Star.prototype.assertAllApplicationsAreValid =
-pexprs.Plus.prototype.assertAllApplicationsAreValid =
-pexprs.Opt.prototype.assertAllApplicationsAreValid =
+pexprs.Iter.prototype.assertAllApplicationsAreValid =
 pexprs.Not.prototype.assertAllApplicationsAreValid =
 pexprs.Lookahead.prototype.assertAllApplicationsAreValid =
 pexprs.Arr.prototype.assertAllApplicationsAreValid =

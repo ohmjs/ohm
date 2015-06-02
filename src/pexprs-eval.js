@@ -156,12 +156,12 @@ pexprs.Seq.prototype._eval = function(state, inputStream, origPos) {
   return true;
 };
 
-pexprs.Kleene.prototype._eval = function(state, inputStream, origPos) {
+pexprs.Iter.prototype._eval = function(state, inputStream, origPos) {
   var arity = this.getArity();
   var columns = common.repeatFn(function() { return []; }, arity);
   var numMatches = 0;
   var idx;
-  while (true) {
+  while (numMatches < this.maxNumMatches) {
     var backtrackPos = inputStream.pos;
     skipSpacesIfAppropriate(state);
     if (this.expr.eval(state)) {
@@ -175,31 +175,12 @@ pexprs.Kleene.prototype._eval = function(state, inputStream, origPos) {
       break;
     }
   }
-  if (!this.gotEnoughMatches(numMatches)) {
+  if (numMatches < this.minNumMatches) {
     return false;
   }
   for (idx = 0; idx < columns.length; idx++) {
     var interval = inputStream.intervalFrom(origPos);
-    state.bindings.push(new Node(state.grammar, '_many', columns[idx], interval));
-  }
-  return true;
-};
-pexprs.Kleene.prototype.gotEnoughMatches = common.abstract;
-pexprs.Star.prototype.gotEnoughMatches = function(n) { return true; };
-pexprs.Plus.prototype.gotEnoughMatches = function(n) { return n > 0; };
-
-pexprs.Opt.prototype._eval = function(state, inputStream, origPos) {
-  var arity = this.getArity();
-  var row;
-  if (this.expr.eval(state)) {
-    row = state.bindings.splice(state.bindings.length - arity, arity);
-  } else {
-    inputStream.pos = origPos;
-    var interval = inputStream.intervalFrom(origPos);
-    row = common.repeat(new TerminalNode(state.grammar, undefined, interval), arity);
-  }
-  for (var idx = 0; idx < arity; idx++) {
-    state.bindings.push(row[idx]);
+    state.bindings.push(new Node(state.grammar, '_iter', columns[idx], interval));
   }
   return true;
 };

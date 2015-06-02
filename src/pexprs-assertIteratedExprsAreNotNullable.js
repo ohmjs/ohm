@@ -27,7 +27,9 @@ pexprs.Seq.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleN
   }
 };
 
-pexprs.Kleene.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleName) {
+pexprs.Iter.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleName) {
+  // Note: this is the implementation of this method for `Star` and `Plus` expressions.
+  // It is overridden for `Opt` below.
   this.expr.assertIteratedExprsAreNotNullable(grammar, ruleName);
   if (this.expr.isNullable(grammar)) {
     throw new errors.KleeneExprHasNullableOperand(this, ruleName);

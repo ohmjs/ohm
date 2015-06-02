@@ -38,10 +38,7 @@ pexprs.Seq.prototype._isNullable = function(grammar, memo) {
   return this.factors.every(function(factor) { return factor._isNullable(grammar, memo); });
 };
 
-pexprs.Star.prototype._isNullable = function(grammar, memo) {
-  return true;
-};
-
+pexprs.Star.prototype._isNullable =
 pexprs.Opt.prototype._isNullable =
 pexprs.Not.prototype._isNullable =
 pexprs.Lookahead.prototype._isNullable = function(grammar, memo) {

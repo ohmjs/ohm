@@ -625,7 +625,7 @@ test('alts and seqs together', function(t) {
   t.end();
 });
 
-test('many', function(t) {
+test('kleene-* and kleene-+', function(t) {
   var m = makeGrammar([
     'M {',
     '  number = digit+',
@@ -690,8 +690,9 @@ test('opt', function(t) {
   it('semantic actions', function() {
     var s = m.semantics().addAttribute('v', {
       name: function(title, last) {
-        return [title.primitiveValue, last.primitiveValue];
-      }
+        return [title.children.length === 1 ? title.v[0] : undefined, last.primitiveValue];
+      },
+      _terminal: ohm.actions.getPrimitiveValue
     });
     t.deepEqual(s(m.match('drwarth')).v, ['dr', 'warth']);
     t.deepEqual(s(m.match('warth')).v, [undefined, 'warth']);

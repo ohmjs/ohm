@@ -28,8 +28,7 @@ pexprs.Seq.prototype.getArity = function() {
   return arity;
 };
 
-pexprs.Kleene.prototype.getArity =
-pexprs.Opt.prototype.getArity = function() {
+pexprs.Iter.prototype.getArity = function() {
   return this.expr.getArity();
 };
 
