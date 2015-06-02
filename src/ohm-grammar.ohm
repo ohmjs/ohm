@@ -94,6 +94,7 @@ Ohm {
   escapeChar
     = "\\\\"                                     -- backslash
     | "\\\""                                     -- doubleQuote
+    | "\\\'"                                     -- singleQuote
     | "\\b"                                      -- backspace
     | "\\n"                                      -- lineFeed
     | "\\r"                                      -- carriageReturn
