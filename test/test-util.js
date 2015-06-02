@@ -12,9 +12,9 @@ var util = require('../src/util');
 // Tests
 // --------------------------------------------------------------------
 
-test('getLineAndColumnMessage', function(t) {
-  var getLineAndColumnMessage = util.getLineAndColumnMessage;
+var getLineAndColumnMessage = util.getLineAndColumnMessage;
 
+test('getLineAndColumnMessage', function(t) {
   t.equal(getLineAndColumnMessage('', 0), [
       'Line 1, col 1:',
       '> 1 | ',
@@ -85,6 +85,59 @@ test('getLineAndColumnMessage', function(t) {
     '      ^',
     ''].join('\n');
   t.equal(getLineAndColumnMessage('x', 0), expected, 'no next or prev line');
+
+  t.end();
+});
+
+test('getLineAndColumnMessage with ranges', function(t) {
+  t.equal(getLineAndColumnMessage('3 + 4', 2, [0, 1]), [
+    'Line 1, col 3:',
+    '> 1 | 3 + 4',
+    '      ~ ^',
+    ''].join('\n'), 'a simple range');
+
+  t.equal(getLineAndColumnMessage('3 + 4', 2, [0, 1], [4, 5]), [
+    'Line 1, col 3:',
+    '> 1 | 3 + 4',
+    '      ~ ^ ~',
+    ''].join('\n'), 'more than one range');
+
+  t.equal(getLineAndColumnMessage('3 + 4', 2, [0, 100]), [
+    'Line 1, col 3:',
+    '> 1 | 3 + 4',
+    '      ~~^~~',
+    ''].join('\n'), 'end index out of bounds');
+
+  t.equal(getLineAndColumnMessage('3 + 4', 2, [0, 0]),
+          getLineAndColumnMessage('3 + 4', 2),
+          'empty range');
+
+  t.equal(getLineAndColumnMessage('3 + 4', 0, [0, 3], [1, 5]), [
+    'Line 1, col 1:',
+    '> 1 | 3 + 4',
+    '      ^~~~~',
+    ''].join('\n'), 'overlapping ranges');
+
+  t.equal(getLineAndColumnMessage('blah\n3 + 4', 7, [5, 6]), [
+    'Line 2, col 3:',
+    '  1 | blah',
+    '> 2 | 3 + 4',
+    '      ~ ^',
+    ''].join('\n'), 'range on second line');
+
+  t.equal(getLineAndColumnMessage('blah\n3 + 4', 7, [0, 6]), [
+    'Line 2, col 3:',
+    '  1 | blah',
+    '> 2 | 3 + 4',
+    '      ~ ^',
+    ''].join('\n'), 'range crossing lines');
+
+  t.equal(getLineAndColumnMessage('blah\n3 + 4', 7, [0, 50]), [
+    'Line 2, col 3:',
+    '  1 | blah',
+    '> 2 | 3 + 4',
+    '      ~~^~~',
+    ''].join('\n'), 'range crossing lines at start and end');
 
   t.end();
 });

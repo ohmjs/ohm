@@ -12,10 +12,6 @@ var extend = require('util-extend');
 
 // Helpers
 
-function repeatStr(str, n) {
-  return new Array(n + 1).join(str);
-}
-
 var escapeStringFor = {};
 for (var c = 0; c < 128; c++) {
   escapeStringFor[c] = String.fromCharCode(c);
@@ -36,6 +32,12 @@ escapeStringFor['\u000b'.charCodeAt(0)] = '\\v';
 
 exports.abstract = function() {
   throw new Error('this method is abstract!');
+};
+
+exports.assert = function(cond, message) {
+  if (!cond) {
+    throw new Error(message);
+  }
 };
 
 // Define a lazily-computed, non-enumerable property named `propName`
@@ -70,6 +72,10 @@ exports.repeatFn = function(fn, n) {
   return arr;
 };
 
+exports.repeatStr = function(str, n) {
+  return new Array(n + 1).join(str);
+};
+
 exports.repeat = function(x, n) {
   return exports.repeatFn(function() { return x; }, n);
 };
@@ -95,7 +101,7 @@ exports.isSyntactic = function(ruleName) {
 exports.padLeft = function(str, len, optChar) {
   var ch = optChar || ' ';
   if (str.length < len) {
-    return repeatStr(ch, len - str.length) + str;
+    return exports.repeatStr(ch, len - str.length) + str;
   }
   return str;
 };

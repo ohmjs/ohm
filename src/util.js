@@ -22,6 +22,15 @@ function padNumbersToEqualLength(arr) {
   return strings.map(function(s) { return common.padLeft(s, maxLen); });
 }
 
+// Produce a new string that would be the result of copying the contents
+// of the string `src` onto `dest` at offset `offest`.
+function strcpy(dest, src, offset) {
+  var origDestLen = dest.length;
+  var start = dest.slice(0, offset);
+  var end = dest.slice(offset + src.length);
+  return (start + src + end).substr(0, origDestLen);
+}
+
 // --------------------------------------------------------------------
 // Exports
 // --------------------------------------------------------------------
@@ -84,7 +93,9 @@ exports.getLineAndColumn = function(str, offset) {
 
 // Return a nicely-formatted string describing the line and column for the
 // given offset in `str`.
-exports.getLineAndColumnMessage = function(str, offset) {
+exports.getLineAndColumnMessage = function(str, offset /* ...ranges */) {
+  var repeatStr = common.repeatStr;
+
   var lineAndCol = exports.getLineAndColumn(str, offset);
   var sb = new common.StringBuffer();
   sb.append('Line ' + lineAndCol.lineNum + ', col ' + lineAndCol.colNum + ':\n');
@@ -108,9 +119,26 @@ exports.getLineAndColumnMessage = function(str, offset) {
   // Line that the error occurred on.
   appendLine(1, lineAndCol.line, '> ');
 
-  // Line indicating the column on which the error occurred.
+  // Build up the line that points to the offset and possible indicates one or more ranges.
+  // Start with a blank line, and indicate each range by overlaying a string of `~` chars.
+  var lineLen = lineAndCol.line.length;
+  var indicationLine = repeatStr(' ', lineLen + 1);
+  var ranges = Array.prototype.slice.call(arguments, 2);
+  for (var i = 0; i < ranges.length; ++i) {
+    var startIdx = ranges[i][0];
+    var endIdx = ranges[i][1];
+    common.assert(startIdx >= 0 && startIdx <= endIdx, 'range start must be >= 0 and <= end');
+
+    var lineStartOffset = offset - lineAndCol.colNum + 1;
+    startIdx = Math.max(0, startIdx - lineStartOffset);
+    endIdx = Math.min(endIdx - lineStartOffset, lineLen);
+
+    indicationLine = strcpy(indicationLine, repeatStr('~', endIdx - startIdx), startIdx);
+  }
   var gutterWidth = 2 + lineNumbers[1].length + 3;
-  sb.append(common.padLeft('^', gutterWidth + lineAndCol.colNum) + '\n');
+  sb.append(repeatStr(' ', gutterWidth));
+  indicationLine = strcpy(indicationLine, '^', lineAndCol.colNum - 1);
+  sb.append(indicationLine.replace(/ +$/, '') + '\n');
 
   // Include the next line for context if possible.
   if (lineAndCol.nextLine != null) {
