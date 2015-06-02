@@ -222,21 +222,28 @@ Grammar.prototype = {
     return sb.contents();
   },
 
-  // TODO: make sure this is still correct.
-  // TODO: the analog of this method for inherited attributes.
-  toSemanticActionTemplate: function(/* entryPoint1, entryPoint2, ... */) {
-    var entryPoints = arguments.length > 0 ? arguments : Object.keys(this.ruleDict);
-    var rulesToBeIncluded = this.rulesThatNeedSemanticAction(entryPoints);
+  // TODO: Come up with better names for these methods.
+  // TODO: Write the analog of these methods for inherited attributes.
+  toOperationActionDictionaryTemplate: function() {
+    return this._toOperationOrAttributeActionDictionaryTemplate();
+  },
+  toAttributeActionDictionaryTemplate: function() {
+    return this._toOperationOrAttributeActionDictionaryTemplate();
+  },
 
+  _toOperationOrAttributeActionDictionaryTemplate: function() {
     // TODO: add the super-grammar's templates at the right place, e.g., a case for AddExpr_plus
     // should appear next to other cases of AddExpr.
 
-    var self = this;
     var sb = new common.StringBuffer();
     sb.append('{');
 
     var first = true;
-    for (var ruleName in rulesToBeIncluded) {
+    for (var ruleName in this.ruleDict) {
+      if (ruleName === 'spaces_') {
+        // This rule is not for the user, it's more of an implementation detail of syntactic rules.
+        continue;
+      }
       var body = this.ruleDict[ruleName];
       if (first) {
         first = false;
@@ -245,7 +252,7 @@ Grammar.prototype = {
       }
       sb.append('\n');
       sb.append('  ');
-      self.addSemanticActionTemplate(ruleName, body, sb);
+      this.addSemanticActionTemplate(ruleName, body, sb);
     }
 
     sb.append('\n}');
@@ -259,36 +266,6 @@ Grammar.prototype = {
     sb.append(common.repeat('_', arity).join(', '));
     sb.append(') {\n');
     sb.append('  }');
-  },
-
-  rulesThatNeedSemanticAction: function(entryPoints) {
-    var self = this;
-    function getBody(ruleName) {
-      if (self.ruleDict[ruleName] === undefined) {
-        throw new errors.UndeclaredRule(ruleName, self.name);
-      } else {
-        return self.ruleDict[ruleName];
-      }
-    }
-
-    var rules = {};
-    var ruleName;
-    for (var idx = 0; idx < entryPoints.length; idx++) {
-      ruleName = entryPoints[idx];
-      getBody(ruleName);  // to make sure the rule exists
-      rules[ruleName] = true;
-    }
-
-    var done = false;
-    while (!done) {
-      done = true;
-      for (ruleName in rules) {
-        var addedNewRule = getBody(ruleName).addRulesThatNeedSemanticAction(rules, true);
-        done &= !addedNewRule;
-      }
-    }
-
-    return rules;
   }
 };
 

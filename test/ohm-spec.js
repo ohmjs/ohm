@@ -1533,13 +1533,13 @@ test('lexical vs. syntactic rules', function(t) {
   t.end();
 });
 
-test('semantic action templates', function(t) {
+test('action dictionary templates', function(t) {
   var ns = makeGrammars([
     'G1 {',
     '  foo = bar',
-    '  bar = baz',
+    '  bar = baz baz baz',
     '  baz = qux',
-    '  qux = quux',
+    '  qux = quux 123',
     '  quux = 42',
     '  aaa = "duh"',
     '  bbb = ~aaa qux  -- blah',
@@ -1550,49 +1550,92 @@ test('semantic action templates', function(t) {
   ]);
   var g1 = ns.G1;
   var g2 = ns.G2;
-  t.deepEqual(g1.rulesThatNeedSemanticAction([]), {});
-  t.deepEqual(g1.rulesThatNeedSemanticAction(['foo']), {
-    foo: true,
-    bar: true,
-    baz: true,
-    qux: true,
-    quux: true
-  });
-  t.deepEqual(g1.rulesThatNeedSemanticAction(['aaa']), {aaa: true});
-  t.deepEqual(g1.rulesThatNeedSemanticAction(['bbb']), {
-    bbb: true,
-    bbb_blah: true,
-    qux: true,
-    quux: true
-  });
-  t.deepEqual(g1.rulesThatNeedSemanticAction(['aaa', 'bbb']), {
-    aaa: true,
-    bbb: true,
-    bbb_blah: true,
-    qux: true,
-    quux: true
-  });
-
-  t.deepEqual(g2.rulesThatNeedSemanticAction([]), {});
-  t.deepEqual(g2.rulesThatNeedSemanticAction(['foo']), {
-    foo: true,
-    bar: true,
-    baz: true,
-    qux: true
-  });
-  t.deepEqual(g2.rulesThatNeedSemanticAction(['aaa']), {aaa: true});
-  t.deepEqual(g2.rulesThatNeedSemanticAction(['bbb']), {
-    bbb: true,
-    bbb_blah: true,
-    qux: true
-  });
-  t.deepEqual(g2.rulesThatNeedSemanticAction(['aaa', 'bbb']), {
-    aaa: true,
-    bbb: true,
-    bbb_blah: true,
-    qux: true
-  });
-
+  t.equal(ns.G1.toOperationActionDictionaryTemplate(),
+    '{\n' +
+    '  foo: function(_) {\n' +
+    '  },\n' +
+    '  bar: function(_, _, _) {\n' +
+    '  },\n' +
+    '  baz: function(_) {\n' +
+    '  },\n' +
+    '  qux: function(_, _) {\n' +
+    '  },\n' +
+    '  quux: function(_) {\n' +
+    '  },\n' +
+    '  aaa: function(_) {\n' +
+    '  },\n' +
+    '  bbb_blah: function(_) {\n' +
+    '  },\n' +
+    '  bbb: function(_) {\n' +
+    '  },\n' +
+    '  alnum: function(_) {\n' +
+    '  },\n' +
+    '  letter: function(_) {\n' +
+    '  },\n' +
+    '  lower: function(_) {\n' +
+    '  },\n' +
+    '  upper: function(_) {\n' +
+    '  },\n' +
+    '  digit: function(_) {\n' +
+    '  },\n' +
+    '  hexDigit: function(_) {\n' +
+    '  },\n' +
+    '  ListOf_some: function(_, _, _) {\n' +
+    '  },\n' +
+    '  ListOf_none: function() {\n' +
+    '  },\n' +
+    '  ListOf: function(_) {\n' +
+    '  },\n' +
+    '  _: function(_) {\n' +
+    '  },\n' +
+    '  end: function(_) {\n' +
+    '  },\n' +
+    '  space: function(_) {\n' +
+    '  }\n' +
+    '}');
+  t.equal(ns.G2.toAttributeActionDictionaryTemplate(),
+    '{\n' +
+    '  qux: function(_) {\n' +
+    '  },\n' +
+    '  foo: function(_) {\n' +
+    '  },\n' +
+    '  bar: function(_, _, _) {\n' +
+    '  },\n' +
+    '  baz: function(_) {\n' +
+    '  },\n' +
+    '  quux: function(_) {\n' +
+    '  },\n' +
+    '  aaa: function(_) {\n' +
+    '  },\n' +
+    '  bbb_blah: function(_) {\n' +
+    '  },\n' +
+    '  bbb: function(_) {\n' +
+    '  },\n' +
+    '  alnum: function(_) {\n' +
+    '  },\n' +
+    '  letter: function(_) {\n' +
+    '  },\n' +
+    '  lower: function(_) {\n' +
+    '  },\n' +
+    '  upper: function(_) {\n' +
+    '  },\n' +
+    '  digit: function(_) {\n' +
+    '  },\n' +
+    '  hexDigit: function(_) {\n' +
+    '  },\n' +
+    '  ListOf_some: function(_, _, _) {\n' +
+    '  },\n' +
+    '  ListOf_none: function() {\n' +
+    '  },\n' +
+    '  ListOf: function(_) {\n' +
+    '  },\n' +
+    '  _: function(_) {\n' +
+    '  },\n' +
+    '  end: function(_) {\n' +
+    '  },\n' +
+    '  space: function(_) {\n' +
+    '  }\n' +
+    '}');
   t.end();
 });
 

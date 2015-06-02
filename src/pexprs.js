@@ -216,7 +216,6 @@ exports.Apply = Apply;
 // Extensions
 // --------------------------------------------------------------------
 
-require('./pexprs-addRulesThatNeedSemanticAction');
 require('./pexprs-assertAllApplicationsAreValid');
 require('./pexprs-assertChoicesHaveUniformArity');
 require('./pexprs-assertIteratedExprsAreNotNullable');
