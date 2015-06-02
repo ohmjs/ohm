@@ -61,7 +61,7 @@ pexprs.Apply.prototype.assertAllApplicationsAreValid = function(grammar) {
 
   // Make sure that the rule exists
   if (!body) {
-    throw new errors.UndeclaredRule(this.ruleName, grammar.name);
+    throw new errors.UndeclaredRule(this.ruleName, grammar.name, this.interval);
   }
 
   // ... and that this application has the correct number of parameters

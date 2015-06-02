@@ -8,6 +8,7 @@ var inherits = require('inherits');
 
 var common = require('./common');
 var util = require('./util');
+var Interval = require('./Interval');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -75,6 +76,12 @@ MatchFailure.prototype.failed = function() {
 
 MatchFailure.prototype.getPos = function() {
   return this.state.getFailuresPos();
+};
+
+MatchFailure.prototype.getInterval = function() {
+  return new Interval(this.state.inputStream,
+                      this.state.getFailuresPos(),
+                      this.state.getFailuresPos() + 1);
 };
 
 // Return a string summarizing the expected contents of the input stream when
