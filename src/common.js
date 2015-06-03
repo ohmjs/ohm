@@ -174,22 +174,3 @@ exports.unexpectedObjToString = function(obj) {
     return baseToString;
   }
 };
-
-// Pretty-printing of strings
-
-exports.toStringLiteral = function(str) {
-  if (typeof str !== 'string') {
-    throw new Error('toStringLiteral only works on strings');
-  }
-  var hasSingleQuotes = str.indexOf("'") >= 0;
-  var hasDoubleQuotes = str.indexOf('"') >= 0;
-  var delim = hasSingleQuotes && !hasDoubleQuotes ? '"' : "'";
-  var sb = new exports.StringBuffer();
-  sb.append(delim);
-  for (var idx = 0; idx < str.length; idx++) {
-    sb.append(exports.escapeChar(str[idx], delim));
-  }
-  sb.append(delim);
-  return sb.contents();
-};
-

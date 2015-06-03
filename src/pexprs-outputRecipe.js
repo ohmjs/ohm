@@ -23,7 +23,7 @@ pexprs.end.outputRecipe = function(sb, formals) {
 
 pexprs.Prim.prototype.outputRecipe = function(sb, formals) {
   sb.append('this.prim(');
-  sb.append(typeof this.obj === 'string' ? common.toStringLiteral(this.obj) : '' + this.obj);
+  sb.append(typeof this.obj === 'string' ? JSON.stringify(this.obj) : '' + this.obj);
   sb.append(')');
 };
 
@@ -98,7 +98,7 @@ pexprs.Str.prototype.outputRecipe = function(sb, formals) {
 pexprs.Obj.prototype.outputRecipe = function(sb, formals) {
   function outputPropertyRecipe(prop) {
     sb.append('{name: ');
-    sb.append(common.toStringLiteral(prop.name));
+    sb.append(JSON.stringify(prop.name));
     sb.append(', pattern: ');
     prop.pattern.outputRecipe(sb, formals);
     sb.append('}');
@@ -118,10 +118,10 @@ pexprs.Obj.prototype.outputRecipe = function(sb, formals) {
 
 pexprs.Apply.prototype.outputRecipe = function(sb, formals) {
   sb.append('this.app(');
-  sb.append(common.toStringLiteral(this.ruleName));
+  sb.append(JSON.stringify(this.ruleName));
   if (this.ruleName.indexOf('_') >= 0 && formals.length > 0) {
     var apps = formals.
-        map(function(formal) { return 'this.app(' + common.toStringLiteral(formal) + ')'; });
+        map(function(formal) { return 'this.app(' + JSON.stringify(formal) + ')'; });
     sb.append(', [' + apps.join(', ') + ']');
   } else if (this.params.length > 0) {
     sb.append(', [');

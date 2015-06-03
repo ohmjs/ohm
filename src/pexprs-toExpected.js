@@ -4,7 +4,6 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common');
 var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
@@ -24,7 +23,7 @@ pexprs.end.toExpected = function(ruleDict) {
 };
 
 pexprs.Prim.prototype.toExpected = function(ruleDict) {
-  return common.toStringLiteral(this.obj);
+  return JSON.stringify(this.obj);
 };
 
 pexprs.Not.prototype.toExpected = function(ruleDict) {

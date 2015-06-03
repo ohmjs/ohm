@@ -200,7 +200,7 @@ Grammar.prototype = {
       sb.append(this.superGrammar.toRecipe('buildSuperGrammar'));
       superGrammarDecl = '    .withSuperGrammar(buildSuperGrammar.call(this))\n';
     }
-    sb.append('  return new this.newGrammar(' + common.toStringLiteral(this.name) + ')\n');
+    sb.append('  return new this.newGrammar(' + JSON.stringify(this.name) + ')\n');
     sb.append(superGrammarDecl);
 
     if (this.defaultStartRule) {
@@ -216,11 +216,11 @@ Grammar.prototype = {
       } else {
         sb.append('define');
       }
-      var formals = '[' + body.formals.map(common.toStringLiteral).join(', ') + ']';
-      sb.append('(' + common.toStringLiteral(ruleName) + ', ' + formals + ', ');
+      var formals = '[' + body.formals.map(JSON.stringify).join(', ') + ']';
+      sb.append('(' + JSON.stringify(ruleName) + ', ' + formals + ', ');
       body.outputRecipe(sb, body.formals);
       if (body.description) {
-        sb.append(', ' + common.toStringLiteral(body.description));
+        sb.append(', ' + JSON.stringify(body.description));
       }
       sb.append(')\n');
     });

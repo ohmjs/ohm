@@ -41,8 +41,8 @@ test('match failure', function(t) {
     'Line 1, col 3:',
     '> 1 | ab',
     '        ^',
-    "Expected 'c'"].join('\n'));
-  t.equal(e.shortMessage, "Line 1, col 3: expected 'c'");
+    'Expected "c"'].join('\n'));
+  t.equal(e.shortMessage, 'Line 1, col 3: expected "c"');
   t.equal(e.getPos(), 2);
 
   e = g.match('abcde');
@@ -137,7 +137,7 @@ test('errors from makeGrammar()', function(t) {
       'Line 1, col 4:',
       '> 1 | G {',
       '         ^',
-      "Expected an identifier or '}'"].join('\n'));
+      'Expected an identifier or "}"'].join('\n'));
   }
 
   t.end();
@@ -154,7 +154,7 @@ test('unrecognized escape sequences', function(t) {
         'Line 1, col 19:',
         '> 1 | G { start = "hello' + bes + 'world" }',
         '                        ^',
-        'Expected an escape sequence, not \'\\\\\', or \'"\''].join('\n'));
+        'Expected an escape sequence, not "\\\\", or \"\\"\"'].join('\n'));
     }
   }
   testBadEscapeSequence('\\$');
