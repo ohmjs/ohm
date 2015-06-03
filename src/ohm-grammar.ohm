@@ -84,14 +84,14 @@ Ohm {
     | "true" ~nameRest   -- true
     | "false" ~nameRest  -- false
 
-  string  (a string literal)
+  string
     = "\"" strChar* "\""
 
   strChar
     = escapeChar
     | ~"\\" ~"\"" ~"\n" _
 
-  escapeChar
+  escapeChar  (an escape sequence)
     = "\\\\"                                     -- backslash
     | "\\\""                                     -- doubleQuote
     | "\\\'"                                     -- singleQuote
