@@ -144,16 +144,21 @@ test('errors from makeGrammar()', function(t) {
 });
 
 test('unrecognized escape sequences', function(t) {
-  try {
-    ohm.grammar('G { start = "hello\\$world" }');
-    t.fail('Expected an exception to be thrown');
-  } catch (e) {
-    t.equal(e.message, [
-      'Failed to parse grammar:',
-      'Line 1, col 19:',
-      '> 1 | G { start = "hello\\$world" }',
-      '                        ^',
-      'Expected an escape sequence, not \'\\\\\', or \'"\''].join('\n'));
+  function testBadEscapeSequence(bes) {
+    try {
+      ohm.grammar('G { start = "hello' + bes + 'world" }');
+      t.fail('Expected an exception to be thrown');
+    } catch (e) {
+      t.equal(e.message, [
+        'Failed to parse grammar:',
+        'Line 1, col 19:',
+        '> 1 | G { start = "hello' + bes + 'world" }',
+        '                        ^',
+        'Expected an escape sequence, not \'\\\\\', or \'"\''].join('\n'));
+    }
   }
+  testBadEscapeSequence('\\$');
+  testBadEscapeSequence('\\!');
+  testBadEscapeSequence('\\w');
   t.end();
 });
