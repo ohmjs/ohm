@@ -89,7 +89,7 @@ test('many expressions with nullable operands', function(t) {
     t.equal(e.message, [
       'Line 1, col 14:',
       '> 1 | G { start = ("a"?)*}',
-      '                   ^',
+      '                   ^~~~',
       'Nullable expression "a"? is not allowed inside \'*\' (possible infinite loop)'].join('\n'));
   }
 
@@ -100,7 +100,7 @@ test('many expressions with nullable operands', function(t) {
     t.equal(e.message, [
       'Line 1, col 14:',
       '> 1 | G { start = ("a"?)+}',
-      '                   ^',
+      '                   ^~~~',
       'Nullable expression "a"? is not allowed inside \'+\' (possible infinite loop)'].join('\n'));
   }
 
@@ -139,6 +139,22 @@ test('errors from makeGrammar()', function(t) {
       '         ^',
       "Expected an identifier or '}'"].join('\n'));
   }
+
+  t.end();
+});
+
+test('unrecognized escape sequences', function(t) {
+  function getExceptionMessage(ruleBody) {
+    try {
+      ohm.grammar('G { r = ' + ruleBody + ' }');
+      t.fail('Expected an exception to be thrown');
+    } catch (e) {
+      return e.message;
+    }
+  }
+
+  t.ok(getExceptionMessage('"\\!"').match(/Did you mean "\\\\!" or "!"?/), '"\\!"');
+  t.ok(getExceptionMessage('"\\w"').match(/Did you mean "\\\\w" or "w"?/), '"\\w"');
 
   t.end();
 });

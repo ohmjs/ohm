@@ -49,7 +49,8 @@ Interval.prototype = {
   },
 
   getLineAndColumnMessage: function() {
-    return util.getLineAndColumnMessage(this.inputStream.source, this.startIdx);
+    var range = [this.startIdx, this.endIdx];
+    return util.getLineAndColumnMessage(this.inputStream.source, this.startIdx, range);
   },
 
   // Returns a new Interval which contains the same contents as this one,
