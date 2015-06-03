@@ -38,11 +38,11 @@ Arithmetic {
   /*
     The following rules have *descriptions*, which are optional parenthesized "comments" following
     the name of a rule in its declaration. Rule descriptions are used to produce better error
-    messages when the input is not recognized. E.g., if you try to match the input "123" with
-    the `ident` rule below, Ohm will say that "an identifier" was expected. Without `ident`'s rule
+    messages when the input is not recognized. E.g., if you try to match the input "123" with the
+    `ident` rule below, Ohm will say that "an identifier" was expected. Without `ident`'s rule
     description, the error message would have said that "a letter" was expected -- which is true,
-    but probably too low-level to be helpful. (`letter`, `alnum`, and `digit` are built-in rules
-    with their own descriptions -- you can see their declarations in src/built-in-rules.ohm.)
+    but probably too low-level to be helpful. Note that `letter`, `alnum`, and `digit` are built-in
+    rules with their own descriptions (you can see their declarations in src/built-in-rules.ohm).
   */
   ident  (an identifier)
     = letter alnum*
@@ -80,15 +80,12 @@ g.match('I CAN HAS CHEEZBURGER?').failed();     // evaluates to `true`
   * Syntactic rules, whose names begin with an upper-case letter.
 
   The difference between lexical and syntactic rules is that syntactic rules implicitly skip
-  whitespace characters.
+  whitespace characters. Here, a "whitespace character" is anything that matches the grammar's
+  `space` rule. By default, you get a "vanilla" implementation of `space` that matches characters
+  like ' ', '\t', '\n', '\r', etc., but you're free to override `space` to suit the language you're
+  creating. (E.g., you may want it to consume comments, the syntax of which is up to you.)
 
-  (For the purposes of a syntactic rule, a "whitespace character" is anything that matches its
-  enclosing grammar's `space` rule. By default, you get a "vanilla" implementation of `space` that
-  matches characters like ' ', '\t', '\n', '\r', etc., but you're free to override `space` to suit
-  the language you're creating. E.g., you may want it to consume comments -- the syntax of which up
-  to you.)
-
-  E.g., here's the `PriExp` rule from our arithmetic grammar:
+  Here's the `PriExp` rule from our arithmetic grammar:
 
     PriExp
       = "(" Exp ")"
@@ -103,14 +100,14 @@ g.match('I CAN HAS CHEEZBURGER?').failed();     // evaluates to `true`
 g.match(' (  \t123   ) ', 'PriExp').succeeded();  // evaluates to `true`
 
 /*
-  (Note that you can optionally specify a "start rule" of a match by passing its name as the 2nd
-  argument to the `match` method. When you don't specify a start rule, `match()` uses the grammar's
-  *default start rule*, which is the first rule in the grammar's declaration -- which is `Exp` for
-  our arithmetic grammar.)
+  Note that you can optionally specify a "start rule" of a match by passing its name as the 2nd
+  argument to the `match` method, as shown above. When you don't specify a start rule, `match()`
+  uses the grammar's *default start rule*, which is the first rule in the grammar's declaration.
+  That's `Exp` for our arithmetic grammar.
 
-  Without support for syntactic rules, rules like `PriExp` would have to skip whitespace characters
-  explicitly, which can be tedious, error-prone, and often obscures the meaning of the rule. E.g.,
-  here is what the `PriExp` rule would look like if it weren't a syntactic rule:
+  Anyway, without support for syntactic rules, rules like `PriExp` would have to skip whitespace
+  characters explicitly, which can be tedious and error-prone, and often obscures the meaning of
+  the rule. E.g., here is what the `PriExp` rule would look like if it weren't a syntactic rule:
 
     priExp
       = space* "(" exp space* ")"
@@ -119,7 +116,8 @@ g.match(' (  \t123   ) ', 'PriExp').succeeded();  // evaluates to `true`
       | space* ident
       | space* number
 
-  `exp` (not shown) would also have to skip whitespace characters explicitly.
+  Note that `exp` -- the lexical version of the `Exp` in our arithmetic grammar (not shown) -- would
+  also have to skip whitespace characters explicitly.
 */
 
 /*
@@ -241,7 +239,7 @@ s.addOperation(
             | AddExp "-" MulExp  -- minus
             | MulExp
 
-        the expression to the left of each "--" becomes the body of a new rule whose name is the
+        the expression to the left of each `--` becomes the body of a new rule whose name is the
         name of the original rule concatenated with an underscore and the case label:
 
           AddExp
@@ -296,11 +294,11 @@ s.addOperation(
         to the semantic action.)
       */
       ident: function(_, _) {
-        // look up the value of a named constant, e.g., 'pi'
+        // Look up the value of a named constant, e.g., 'pi'.
         return constants[this.interval.contents] || 0;
       },
       number: function(_) {
-        // use `parseFloat` to convert (e.g.) the string '123' to the number 123
+        // Use `parseFloat` to convert (e.g.) the string '123' to the number 123.
         return parseFloat(this.interval.contents);
       }
     }
@@ -335,19 +333,21 @@ s.addAttribute('asLisp', {
   number:        function(_)       { return this.interval.contents; },
 
   /*
-    You can optionally provide a _default semantic action that will be invoked when the action
-    dictionary does not have a method that corresponds to the type of a CST node. The receiver
-    (`this`) of the _default method is that CST node, _default's only argument is an array that
-    contains the children of that node.
+    When you create an operation or an attribute, you can optionally provide a `_default` semantic
+    action that will be invoked when your action dictionary does not have a method that corresponds
+    to the type of a CST node. The receiver (`this`) of the _default method will be that CST node,
+    and `_default`'s only argument will be an array that contains the children of that node.
   */
   _default:      function(children) {
     if (children.length === 1) {
-      // If this node only has one child, just return the Lisp tree of its child. This lets us avoid
-      // writing semantic actions for the Exp, AddExp, MulExp, ExpExp, and PriExp rules.
+      // If this node has only one child, just return the Lisp-like tree of its child. This lets us
+      // avoid writing semantic actions for the `Exp`, `AddExp`, `MulExp`, `ExpExp`, and `PriExp`
+      // rules.
       return children[0].asLisp;
     } else {
-      // Hmm, this probably means that we forgot to write a semantic action for one of the rules.
-      // We'll throw an exception so we'll know that it's missing.
+      // If this node doesn't have exactly one child, we probably should have handled it specially.
+      // So we'll throw an exception to let us know that we're missing a semantic action for this
+      // type of node.
       throw new Error("Uh-oh, missing semantic action for " + this.constructor);
     }
   }
@@ -405,10 +405,11 @@ s.addOperation('toTwoD', {
                                       return elt('ident', text === 'pi' ? '\u03C0' : text); },
   number:        function(_)        { return elt('number', this.interval.contents); }
 
-  // Remember the _default semantic action that we wrote for the `interpret` operation above? Turns
-  // out that's so convenient that the Ohm people decided to give it to you "for free", i.e., if you
-  // don't write a _default semantic action, you get that one automatically. Of course you're free
-  // to override it if that's not what you want, but in this case, it's exactly what we want.
+  // Remember the `_default` semantic action that we wrote for the `interpret` operation above?
+  // Turns out that's so convenient that the Ohm people decided to give it to you "for free", i.e.,
+  // if you don't write a `_default` semantic action, you get that one automatically. Of course
+  // you're free to override it if that's not what you want, but in this case, it's exactly what
+  // we want.
 });
     </script>
   </head>
@@ -449,14 +450,14 @@ input.oninput = function() {
   this.className = undefined;
   var r = g.match(this.value);
   if (r.succeeded()) {
-    // Notice we can do lots of things with the same match result -- you only have to process the
-    // input once.
+    // Notice that you can do many different things with the same match result, i.e., you only have
+    // to process the input once.
     show('value', s(r).interpret());
     show('lisp', stringifyLisp(s(r).asLisp));
     show('tree', s(r).toTree());
     show('twoD', s(r).toTwoD());
   } else if (this.value.trim().length === 0) {
-    // Match failed because there was no input, so don't complain.
+    // The match failed because there was no input, so don't complain. (That would be annoying.)
     show('value', '');
     show('lisp', '');
     show('tree', '');
