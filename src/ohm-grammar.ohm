@@ -101,10 +101,6 @@ Ohm {
     | "\\t"                                      -- tab
     | "\\u" hexDigit hexDigit hexDigit hexDigit  -- unicodeEscape
     | "\\x" hexDigit hexDigit                    -- hexEscape
-    | "\\" ~controlChar ~" " _                   -- unrecognized
-
-  controlChar
-    = /[\000-\037]/
 
   regExp  (a regular expression)
     = "/" reCharClass "/"

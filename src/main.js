@@ -243,13 +243,10 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
 
     strChar: function(_) {
-      return _.visit();
+      return this.interval.contents;
     },
 
-    escapeChar: function(child) {
-      if (child.ctorName === 'escapeChar_unrecognized') {
-        throw new errors.UnrecognizedEscapeSequence(child.interval);
-      }
+    escapeChar: function(_) {
       return this.interval.contents;
     },
 

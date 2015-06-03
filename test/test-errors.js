@@ -142,19 +142,3 @@ test('errors from makeGrammar()', function(t) {
 
   t.end();
 });
-
-test('unrecognized escape sequences', function(t) {
-  function getExceptionMessage(ruleBody) {
-    try {
-      ohm.grammar('G { r = ' + ruleBody + ' }');
-      t.fail('Expected an exception to be thrown');
-    } catch (e) {
-      return e.message;
-    }
-  }
-
-  t.ok(getExceptionMessage('"\\!"').match(/Did you mean "\\\\!" or "!"?/), '"\\!"');
-  t.ok(getExceptionMessage('"\\w"').match(/Did you mean "\\\\w" or "w"?/), '"\\w"');
-
-  t.end();
-});

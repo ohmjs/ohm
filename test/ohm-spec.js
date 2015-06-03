@@ -390,30 +390,41 @@ test('char', function(t) {
 test('string', function(t) {
   var m = ohm.grammar('M { foo = "foo\\b\\n\\r\\t\\\\\\\"\\u01bcff\\x8f" }');
 
-  it('recognition', function() {
-    t.ok(m.match('foo\b\n\r\t\\"'));
-    t.equal(m.match('foo1').failed(), true);
-    t.equal(m.match('bar').failed(), true);
-    t.equal(m.match(null).failed(), true);
+  test('direct match, no stream', function(t) {
+    it('recognition', function() {
+      t.ok(m.match('foo\b\n\r\t\\"'));
+      t.equal(m.match('foo1').failed(), true);
+      t.equal(m.match('bar').failed(), true);
+      t.equal(m.match(null).failed(), true);
+    });
+
+    it('semantic actions', function() {
+      var s = m.semantics().addAttribute('v', {});
+      var cst = m.match('foo\b\n\r\t\\"\u01bcff\x8f');
+      t.equal(s(cst).v, 'foo\b\n\r\t\\"\u01bcff\x8f');
+    });
+
+    it('unrecognized escape characters are parse errors', function() {
+      t.throws(function() { ohm.grammar('G { r = "\\w" }'); }, /Failed to parse grammar/);
+    });
+
+    t.end();
   });
 
-  it('semantic actions', function() {
-    var s = m.semantics().addAttribute('v', {});
-    var cst = m.match('foo\b\n\r\t\\"\u01bcff\x8f');
-    t.equal(s(cst).v, 'foo\b\n\r\t\\"\u01bcff\x8f');
+  test('match in string stream', function(t) {
+    it('recognition', function() {
+      t.ok(m.match('foo\b\n\r\t\\"\u01bcff\x8f'));
+      t.equal(m.match('foo1').failed(), true);
+      t.equal(m.match('bar').failed(), true);
+    });
+
+    it('semantic actions', function() {
+      var s = m.semantics().addAttribute('v', {});
+      var cst = m.match('foo\b\n\r\t\\"\u01bcff\x8f');
+      t.equal(s(cst).v, 'foo\b\n\r\t\\"\u01bcff\x8f');
+    });
+    t.end();
   });
-
-  // Printable chars after "\" throw UnrecognizedEscapeSequence.
-  t.throws(function() { ohm.grammar('G { r = "\\w" }'); }, /Unrecognized escape sequence/);
-  t.throws(function() { ohm.grammar('G { r = "\\!" }'); }, /Unrecognized escape sequence/);
-  t.throws(function() { ohm.grammar('G { r = "\\~" }'); }, /Unrecognized escape sequence/);
-
-  // Non-printable chars or " " after "\" are just a regular parse error.
-  t.throws(function() { ohm.grammar('G { r = "\\\0" }'); }, /Failed to parse grammar/);
-  t.throws(function() { ohm.grammar('G { r = "\\\n" }'); }, /Failed to parse grammar/);
-  t.throws(function() { ohm.grammar('G { r = "\\\t" }'); }, /Failed to parse grammar/);
-  t.throws(function() { ohm.grammar('G { r = "\\ " }'); }, /Failed to parse grammar/);
-
   t.end();
 });
 

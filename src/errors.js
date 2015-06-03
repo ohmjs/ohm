@@ -56,18 +56,6 @@ var GrammarSyntaxError = makeCustomError(
     }
 );
 
-var UnrecognizedEscapeSequence = makeCustomError(
-    'ohm.error.UnrecognizedEscapeSequence',
-    function(interval) {
-      this.interval = interval;
-      var seq = interval.contents;
-      var c = seq[1];
-      this.message = interval.getLineAndColumnMessage() +
-                     'Unrecognized escape sequence "' + seq + '". Did you mean ' +
-                     JSON.stringify(seq) + ' or ' + JSON.stringify(c) + '?';
-    }
-);
-
 // Undeclared grammar
 
 var UndeclaredGrammar = makeCustomError(
@@ -273,7 +261,6 @@ module.exports = {
   MultipleErrors: MultipleErrors,
   UndeclaredGrammar: UndeclaredGrammar,
   UndeclaredRule: UndeclaredRule,
-  UnrecognizedEscapeSequence: UnrecognizedEscapeSequence,
   WrongNumberOfParameters: WrongNumberOfParameters,
 
   throwErrors: function(errors) {
