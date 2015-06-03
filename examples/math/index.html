@@ -333,7 +333,24 @@ s.addAttribute('asLisp', {
   PriExp_neg:    function(_, e)    { return ['neg', e.asLisp]; },
   ident:         function(_, _)    { return this.interval.contents; },
   number:        function(_)       { return this.interval.contents; },
-  _default:      ohm.actions.passThrough  // TODO: Explain _default.
+
+  /*
+    You can optionally provide a _default semantic action that will be invoked when the action
+    dictionary does not have a method that corresponds to the type of a CST node. The receiver
+    (`this`) of the _default method is that CST node, _default's only argument is an array that
+    contains the children of that node.
+  */
+  _default:      function(children) {
+    if (children.length === 1) {
+      // If this node only has one child, just return the Lisp tree of its child. This lets us avoid
+      // writing semantic actions for the Exp, AddExp, MulExp, ExpExp, and PriExp rules.
+      return children[0].asLisp;
+    } else {
+      // Hmm, this probably means that we forgot to write a semantic action for one of the rules.
+      // We'll throw an exception so we'll know that it's missing.
+      throw new Error("Uh-oh, missing semantic action for " + this.constructor);
+    }
+  }
 });
 
 /*
@@ -363,8 +380,7 @@ s.addOperation('toTree', {
   PriExp_pos:    function(sign, e)   { return elt('pos', sign.toTree(), e.toTree()); },
   PriExp_neg:    function(sign, e)   { return elt('neg', sign.toTree(), e.toTree()); },
   ident:         function(_, _)      { return elt('ident', this.interval.contents); },
-  number:        function(_)         { return elt('number', this.interval.contents); },
-  _terminal:     ohm.actions.getPrimitiveValue  // TODO: explain _terminal, ohm...getPrimitiveValue
+  number:        function(_)         { return elt('number', this.interval.contents); }
 });
 
 // -------------------------------------------------------------------------------------------------
@@ -387,9 +403,12 @@ s.addOperation('toTwoD', {
   PriExp_neg:    function(sign, e)  { return elt('neg', sign.toTwoD(), e.toTwoD()); },
   ident:         function(_, _)     { var text = this.interval.contents;
                                       return elt('ident', text === 'pi' ? '\u03C0' : text); },
-  number:        function(_)        { return elt('number', this.interval.contents); },
-  _terminal:     ohm.actions.getPrimitiveValue,
-  _default:      ohm.actions.passThrough
+  number:        function(_)        { return elt('number', this.interval.contents); }
+
+  // Remember the _default semantic action that we wrote for the `interpret` operation above? Turns
+  // out that's so convenient that the Ohm people decided to give it to you "for free", i.e., if you
+  // don't write a _default semantic action, you get that one automatically. Of course you're free
+  // to override it if that's not what you want, but in this case, it's exactly what we want.
 });
     </script>
   </head>

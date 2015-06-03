@@ -181,7 +181,37 @@ Semantics.prototype.addOperationOrAttribute = function(type, name, actionDict) {
   var Ctor = type === 'operation' ? Operation : Attribute;
 
   this.assertNewName(name, type);
-  this[typePlural][name] = new Ctor(name, actionDict);
+
+  // Create the action dictionary for this operation / attribute. We begin by defining the default
+  // behavior of terminal and iteration nodes, and add a '_default' action that throws an error if
+  // a rule in the grammar doesn't have a corresponding action in this operation / attribute...
+  var realActionDict = {
+    _terminal: function() {
+      return this.primitiveValue;
+    },
+    _iter: function(children) {
+      // This CST node corresponds to an iteration expression in the grammar (*, +, or ?). The
+      // default behavior is to map this operation or attribute over all of its child nodes.
+      var thisSemantics = this._semantics;
+      var thisThing = thisSemantics[typePlural][name];
+      return children.map(function(child) { return thisThing.execute(thisSemantics, child); });
+    },
+    _default: function(children) {
+      if (children.length === 1) {
+        var thisSemantics = this._semantics;
+        var thisThing = thisSemantics[typePlural][name];
+        return thisThing.execute(thisSemantics, children[0]);
+      }
+      throw new Error('missing semantic action for ' + this.ctorName + ' in ' + name + ' ' + type);
+    }
+  };
+  // ... and add in the actions supplied by the programmer, which may override some or all of the
+  // default ones.
+  Object.keys(actionDict).forEach(function(name) {
+    realActionDict[name] = actionDict[name];
+  });
+
+  this[typePlural][name] = new Ctor(name, realActionDict);
 
   // The following check is not strictly necessary (it will happen later anyway) but it's better to
   // catch errors early.
@@ -310,19 +340,6 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
   return proxy;
 };
 
-// ----------------- Default semantic actions -----------------
-
-var actions = {
-  getPrimitiveValue: function() {
-    return this.primitiveValue;
-  },
-  passThrough: function(childNode) {
-    throw new Error('BUG: ohm.actions.passThrough should never be called');
-  }
-};
-
-Semantics.actions = actions;
-
 // ----------------- Operation -----------------
 
 // An Operation represents a function to be applied to a concrete syntax tree (CST) -- it's very
@@ -344,34 +361,19 @@ Operation.prototype.checkActionDict = function(grammar) {
 // Execute this operation on the CST node associated with `nodeWrapper` in the context of the given
 // Semantics instance.
 Operation.prototype.execute = function(semantics, nodeWrapper) {
-  if (nodeWrapper.isIteration()) {
-    // This CST node corresponds to an iteration expression in the grammar (*, +, or ?), so we map
-    // this operation over all of its child nodes.
-    var results = [];
-    for (var idx = 0; idx < nodeWrapper._node.numChildren(); idx++) {
-      results.push(this.execute(semantics, nodeWrapper.child(idx)));
-    }
-    return results;
-  }
-
   // Look for a semantic action whose name matches the node's constructor name, which is either the
-  // name of a rule in the grammar, or the special value '_terminal'.
+  // name of a rule in the grammar, or '_terminal' (for a terminal node), or '_iter' (for an
+  // iteration node). In the latter case, the action function receives a single argument, which is
+  // an array containing all of the children of the CST node.
   var actionFn = this.actionDict[nodeWrapper._node.ctorName];
   if (actionFn) {
-    return this.doAction(semantics, nodeWrapper, actionFn);
+    return this.doAction(semantics, nodeWrapper, actionFn, nodeWrapper.isIteration());
   }
 
   // The action dictionary does not contain a semantic action for this specific type of node, so
-  // invoke the '_default' semantic action if it exists (but only if this node is not a terminal).
-  var defaultActionFn = this.actionDict._default;
-  if (defaultActionFn && !nodeWrapper.isTerminal()) {
-    return this.doAction(semantics, nodeWrapper, defaultActionFn, true);
-  }
-
-  // The programmer hasn't written a semantic action for this type of node yet.
-  throw new Error(
-      'missing semantic action for ' + nodeWrapper._node.ctorName + ' in ' + this.name + ' ' +
-      this.typeName);
+  // invoke the '_default' semantic action. The built-in implementation of the `_default` semantic
+  // action just throws an error, but the programmer may have overridden it.
+  return this.doAction(semantics, nodeWrapper, this.actionDict._default, true);
 };
 
 // Invoke `actionFn` on the CST node that corresponds to `nodeWrapper`, in the context of
@@ -379,9 +381,6 @@ Operation.prototype.execute = function(semantics, nodeWrapper) {
 // argument, which is an array of wrappers. Otherwise, the number of arguments to `actionFn` will
 // be equal to the number of children in the CST node.
 Operation.prototype.doAction = function(semantics, nodeWrapper, actionFn, optPassChildrenAsArray) {
-  if (actionFn === actions.passThrough) {
-    return this.execute(semantics, nodeWrapper._onlyChild());
-  }
   return optPassChildrenAsArray ?
       actionFn.call(nodeWrapper, nodeWrapper._children()) :
       actionFn.apply(nodeWrapper, nodeWrapper._children());

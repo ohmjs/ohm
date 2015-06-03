@@ -9,7 +9,6 @@
 var Builder = require('./Builder');
 var Grammar = require('./Grammar');
 var Namespace = require('./Namespace');
-var Semantics = require('./Semantics');
 var UnicodeCategories = require('../third_party/unicode').UnicodeCategories;
 var common = require('./common');
 var errors = require('./errors');
@@ -275,10 +274,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
     ListOf_none: function() {
       return [];
-    },
-
-    _terminal: Semantics.actions.getPrimitiveValue,
-    _default: Semantics.actions.passThrough
+    }
   });
   return helpers(match).visit();
 }
@@ -379,7 +375,6 @@ function makeRecipe(recipeFn) {
 // Stuff that users should know about
 
 module.exports = {
-  actions: Semantics.actions,
   createNamespace: Namespace.createNamespace,
   error: errors,
   grammar: grammar,

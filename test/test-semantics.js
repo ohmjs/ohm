@@ -37,10 +37,6 @@ test('operations', function(t) {
     },
     digit: function(expr) {
       return expr.value().charCodeAt(0) - '0'.charCodeAt(0);
-    },
-    _default: ohm.actions.passThrough,
-    _terminal: function() {
-      return this.primitiveValue;
     }
   });
 
@@ -57,8 +53,7 @@ test('operations', function(t) {
     },
     number: function(n) {
       return [n.value()];
-    },
-    _default: ohm.actions.passThrough
+    }
   });
   t.deepEqual(s(Arithmetic.match('9')).numberValues(), [9]);
   t.deepEqual(s(Arithmetic.match('13+10*2*3')).numberValues(), [13, 10, 2, 3]);
@@ -86,7 +81,6 @@ test('attributes', function(t) {
       count++;
       return expr.value.charCodeAt(0) - '0'.charCodeAt(0);
     },
-    _default: ohm.actions.passThrough,
     _terminal: function() {
       count++;
       return this.primitiveValue;
@@ -172,10 +166,9 @@ test('_iter nodes', function(t) {
   s = g.semantics().addOperation('op', {
     letter: function(l) {
       return l.interval.contents;
-    },
-    _default: ohm.actions.passThrough
+    }
   });
-  t.deepEqual(s(m).op(), ['a', 'b', 'c'], 'works with passThrough');
+  t.deepEqual(s(m).op(), ['a', 'b', 'c'], 'works with pass-through default behavior of _default');
 
   s = g.semantics().addOperation('op', {
     letters: function(ls) {
@@ -186,9 +179,7 @@ test('_iter nodes', function(t) {
         return typeof l.op === 'function';
       }), 'children is an array of wrappers');
       return ls.children.map(function(l) { return l.op(); }).join(',');
-    },
-    _terminal: ohm.actions.getPrimitiveValue,
-    _default: ohm.actions.passThrough
+    }
   });
   t.equal(s(m).op(), 'a,b,c');
 
@@ -197,19 +188,15 @@ test('_iter nodes', function(t) {
 
 test('_terminal nodes', function(t) {
   var g = ohm.grammar('G { letters = letter* }');
-  var s = g.semantics().addOperation('op', {
-    _terminal: ohm.actions.getPrimitiveValue,
-    _default: ohm.actions.passThrough
-  });
+  var s = g.semantics().addOperation('op', {});
   var m = g.match('abc', 'letters');
-  t.deepEqual(s(m).op(), ['a', 'b', 'c'], 'getPrimitiveValue works');
+  t.deepEqual(s(m).op(), ['a', 'b', 'c'], 'default behavior is to return `primitiveValue`');
 
   t.throws(function() {
     g.semantics().addOperation('op', {
-      _terminal: ohm.actions.passThrough,
-      _default: ohm.actions.passThrough
+      _terminal: function(x) {}
     });
-  }, /wrong arity/, 'throws with passThrough');
+  }, /wrong arity/);
 
   s = g.semantics().addOperation('op', {
     _terminal: function() {
@@ -217,8 +204,7 @@ test('_terminal nodes', function(t) {
       t.equal(this.ctorName, '_terminal');
       t.equal(this.children.length, 0, 'node has no children');
       return this.primitiveValue;
-    },
-    _default: ohm.actions.passThrough
+    }
   });
   t.deepEqual(s(m).op(), ['a', 'b', 'c']);
 
@@ -300,8 +286,7 @@ test('extending semantics', function(t) {
   var s = ns.G.semantics().
       addOperation('value', {
         one: function(_) { return 1; },
-        two: function(_) { return 2; },
-        _terminal: ohm.actions.getPrimitiveValue
+        two: function(_) { return 2; }
       }).
       addOperation('valueTimesTwo', {
         _default: function(children) { return this.value() * 2; }
@@ -342,8 +327,7 @@ test('extending semantics', function(t) {
   s = ns.G.semantics().
       addAttribute('value', {
         one: function(_) { return 1; },
-        two: function(_) { return 2; },
-        _terminal: ohm.actions.getPrimitiveValue
+        two: function(_) { return 2; }
       }).
       addAttribute('valueTimesTwo', {
         _default: function(children) { return this.value * 2; }
