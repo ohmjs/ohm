@@ -348,6 +348,25 @@ function isPrimitive(expr) {
   return expr.constructor.name.indexOf('Prim') >= 0;
 }
 
+// Hides or shows the grammar error.
+var errorMarks = {
+  grammar: null,
+  input: null
+};
+
+function hideError(category, editor) {
+  if (errorMarks[category]) {
+    clearMark(editor, errorMarks[category]);
+  }
+  $('#' + category + 'Error').innerHTML = '';
+}
+
+function showError(category, editor, message, interval) {
+  var el = $('#' + category + 'Error').appendChild(createElement('.errorItem'));
+  el.textContent = message;
+  errorMarks[category] = markInterval(editor, interval, 'error', false);
+}
+
 // Main
 // ----
 
@@ -371,18 +390,41 @@ function isPrimitive(expr) {
   });
 
   function refresh() {
+    $('#expandedInput').innerHTML = '';
+    $('#parseResults').innerHTML = '';
+
+    hideError('input', inputEditor);
+
     if (grammarChanged) {
       grammarChanged = false;
 
+      hideError('grammar', grammarEditor);
       var grammarSrc = grammarEditor.getValue();
       try {
         grammar = ohm.grammar(grammarSrc);
       } catch (e) {
+        showError('grammar',
+                  grammarEditor,
+                  e.shortMessage ? e.shortMessage : e.message,
+                  e.interval);
+        // If the grammar is unusable, prevent the input to be parsed.
+        grammar = null;
         console.log(e);  // eslint-disable-line no-console
         return;
       }
     }
+
+    if (!grammar) {
+      return;
+    }
+
     var trace = grammar.trace(inputEditor.getValue());
+    if (trace.result.failed()) {
+      // Intervals with start == end won't show up in CodeMirror.
+      var interval = trace.result.getInterval();
+      interval.endIdx += 1;
+      showError('input', inputEditor, 'Expected: ' + trace.result.getExpectedText(), interval);
+    }
 
     // Refresh the option values.
     for (var i = 0; i < checkboxes.length; ++i) {
@@ -390,8 +432,6 @@ function isPrimitive(expr) {
       options[checkbox.name] = checkbox.checked;
     }
 
-    $('#expandedInput').innerHTML = '';
-    $('#parseResults').innerHTML = '';
     (function walkTraceNodes(nodes, container, inputContainer, showTrace, printInput, parent) {
       nodes.forEach(function(node) {
         if (!node) {

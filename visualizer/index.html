@@ -160,8 +160,9 @@
 
     #grammarContainer,
     #inputContainer {
+      display: inline-flex;
+      flex-direction: column;
       box-sizing: border-box;
-      display: inline-block;
       width: 50%;
     }
 
@@ -175,12 +176,25 @@
       border-right: 1px solid #ddd;
     }
 
+    .errorContainer {
+      background-color: #FCF68B;
+    }
+
+    .errorItem {
+      text-align: center;
+    }
+
     .CodeMirror.highlighting {
       color: rgba(51, 51, 51, 0.8);
     }
 
     .CodeMirror .highlight {
       background-color: #B5D5FF;
+    }
+
+    .CodeMirror .error {
+      background-color: #C7254E;
+      color: #F9F2F4;
     }
 
     .CodeMirror .active-definition {
@@ -206,6 +220,7 @@
     <div id="inputContainer">
       <h2>Test Input</h2>
       <textarea id="input">if (foobar) [x] = [3] else [x, y, z] = [foo, bar, baz]</textarea>
+      <div id="inputError" class="errorContainer"></div>
     </div><div id="grammarContainer">
       <h2>Grammar</h2>
       <textarea id="grammar">
@@ -224,7 +239,10 @@ MyLang {
   number = number digit -- rec
          | digit
 }
-</textarea></div></div>
+</textarea>
+      <div id="grammarError" class="errorContainer"></div>
+    </div>
+  </div>
   <div id="bottomSection">
     <div id="expandedInput"></div>
     <div id="parseResults"></div>
