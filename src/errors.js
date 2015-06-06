@@ -255,7 +255,7 @@ var MultipleErrors = makeCustomError(
       var messages = errors.map(function(e) { return e.message; });
       this.message = ['Errors:'].concat(messages).join('\n- ');
       // Let's use the first error.
-      this.shortMessage = messages[0];
+      this.shortMessage = errors[0].shortMessage ? errors[0].shortMessage : errors[0].message;
       this.interval = errors[0].interval;
     }
 );
