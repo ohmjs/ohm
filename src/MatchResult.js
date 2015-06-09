@@ -79,9 +79,8 @@ MatchFailure.prototype.getPos = function() {
 };
 
 MatchFailure.prototype.getInterval = function() {
-  return new Interval(this.state.inputStream,
-                      this.state.getFailuresPos(),
-                      this.state.getFailuresPos() + 1);
+  var pos = this.state.getFailuresPos();
+  return new Interval(this.state.inputStream, pos, pos);
 };
 
 // Return a string summarizing the expected contents of the input stream when
