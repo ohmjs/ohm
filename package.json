@@ -32,7 +32,7 @@
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
     "deploy-gh-pages": "bin/deploy-gh-pages.sh",
     "lint": "eslint --rulesdir eslint_rules . && jscs --preset=google .",
-    "pretest": "bin/update-env.sh",
+    "pretest": "bin/update-env.sh && npm run build",
     "test": "tape test/*.js | tap-spec",
     "test-watch": "watchy -w .,example,doc,src,test -- npm test",
     "postinstall": "bin/dev-setup.sh; touch .install-timestamp",
