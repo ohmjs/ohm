@@ -176,12 +176,9 @@
       border-right: 1px solid #ddd;
     }
 
-    .errorContainer {
-      background-color: #FCF68B;
-    }
-
     .errorItem {
       text-align: center;
+      background-color: #FCF68B;
     }
 
     .CodeMirror.highlighting {
@@ -220,7 +217,6 @@
     <div id="inputContainer">
       <h2>Test Input</h2>
       <textarea id="input">if (foobar) [x] = [3] else [x, y, z] = [foo, bar, baz]</textarea>
-      <div id="inputError" class="errorContainer"></div>
     </div><div id="grammarContainer">
       <h2>Grammar</h2>
       <textarea id="grammar">
@@ -240,7 +236,6 @@ MyLang {
          | digit
 }
 </textarea>
-      <div id="grammarError" class="errorContainer"></div>
     </div>
   </div>
   <div id="bottomSection">
