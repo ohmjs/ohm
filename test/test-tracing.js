@@ -101,7 +101,7 @@ test('toString', function(t) {
   var exprs = lines.map(function(l) { return l.split(/\s+/)[2]; });
   t.deepEqual(exprs, [
       'start',
-      'a',  // Failed.
+      '"a"',
       'letter*',
       'letter', '/[a-zA-Z]/',
       'letter', '/[a-zA-Z]/',
