@@ -75,7 +75,7 @@ ES5 {
   unicodeDigit = /\p{Nd}/
   unicodeConnectorPunctuation = /\p{Pc}/
 
-  reservedWord = keyword | futureReservedWord | nullLiteral | booleanLiteral
+  reservedWord = (keyword | futureReservedWord | nullLiteral | booleanLiteral) ~identifierPart
 
   // Note: keywords that are the complete prefix of another keyword should
   // be prioritized (e.g. 'in' should come before 'instanceof')
@@ -116,8 +116,8 @@ ES5 {
 
   literal = nullLiteral | booleanLiteral | numericLiteral
           | stringLiteral | regularExpressionLiteral // spec forgot Regexp literals in appendix?
-  nullLiteral = "null"
-  booleanLiteral = "true" | "false"
+  nullLiteral = "null" ~identifierPart
+  booleanLiteral = ("true" | "false") ~identifierPart
 
   // For semantics on how decimal literals are constructed, see section 7.8.3
 
@@ -258,8 +258,8 @@ ES5 {
   // A.3 Expressions
 
   // @returns an AST
-  PrimaryExpression = "this"                       -- thisExpr
-                    | scanIdentifier               -- idExpr
+  PrimaryExpression = "this" ~identifierPart  -- thisExpr
+                    | scanIdentifier          -- idExpr
                     | scanLiteral
                       // ( litToken.type === "regexp"
                       //   ? this.ast(_fromIdx, "RegExpExpr",{body:  litToken.value.body
@@ -268,7 +268,7 @@ ES5 {
                       //                             value: litToken.value}, []) )
                     | ArrayLiteral
                     | ObjectLiteral
-                    | "(" Expression ")"         -- parenExpr
+                    | "(" Expression ")"      -- parenExpr
 
   // @returns an ArrayExpr AST
   ArrayLiteral = "[" AssignmentExpressionOrElisionComma* "]" -- trailingComma
@@ -291,16 +291,21 @@ ES5 {
                | stringLiteral
                | numericLiteral
 
+  // Due to the way Ohm currently skips whitespace, this rule is needed to properly handle
+  // "new" inside a syntactic rule (e.g. in MemberExpression and NewExpression).
+  // TODO: Consider removing this when we change the way whitespace skipping works.
+  justNew = "new" ~identifierPart
+
   // @returns an AST
   MemberExpression = MemberExpression "[" Expression "]"  -- arrayRefExp
                    | MemberExpression "." identifierName  -- propRefExp
-                   | "new" MemberExpression Arguments     -- newExp
+                   | justNew MemberExpression Arguments   -- newExp
                    | FunctionExpression
                    | PrimaryExpression
 
   // @returns an AST
   NewExpression = MemberExpression
-                | "new" NewExpression -- newExp
+                | justNew NewExpression -- newExp
 
   // @returns an AST
   CallExpression = CallExpression "[" Expression "]"     -- arrayRefExp
