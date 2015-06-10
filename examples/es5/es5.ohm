@@ -30,11 +30,11 @@ ES5Parser {
 
   empty =
 
-  // // 7: Goal production in contexts where a leading '/' or '/=' is permitted
+  // // 7: Goal production in contexts where a leading "/" or "/=" is permitted
   // // Note: not used by the parser
   // InputElementDiv = whitespace | lineTerminator | comment | token | DivPunctuator
 
-  // // 7: Goal production in contexts where a leading '/' or '/=' is not permitted
+  // // 7: Goal production in contexts where a leading "/" or "/=' is not permitted
   // // Note: not used by the parser
   // InputElementRegExp = whitespace | lineTerminator | comment | token | regularExpressionLiteral
 
@@ -51,20 +51,20 @@ ES5Parser {
 
   comment = multiLineComment | singleLineComment
 
-  multiLineComment = '/*' (multiLineCommentChars | empty) '*/'
+  multiLineComment = "/*" (multiLineCommentChars | empty) "*/"
   multiLineCommentChars = multiLineNotAsteriskChar (multiLineCommentChars | empty)
-                       | '*' (postAsteriskCommentChars | &'*/')
+                       | "*" (postAsteriskCommentChars | &"*/")
   postAsteriskCommentChars = multiLineNotForwardSlashOrAsteriskChar (multiLineCommentChars | empty)
-                          | '*' (postAsteriskCommentChars | &'*/')
-  multiLineNotAsteriskChar = ~('*') sourceCharacter
-  multiLineNotForwardSlashOrAsteriskChar = ~('/' | '*') sourceCharacter
-  singleLineComment = '//' (~lineTerminator sourceCharacter)*
+                          | "*" (postAsteriskCommentChars | &"*/")
+  multiLineNotAsteriskChar = ~("*") sourceCharacter
+  multiLineNotForwardSlashOrAsteriskChar = ~("/" | "*") sourceCharacter
+  singleLineComment = "//" (~lineTerminator sourceCharacter)*
 
   identifier = ~reservedWord identifierName
   identifierName = identifierStart identifierPart*
 
-  identifierStart = unicodeLetter | '$' | '_'
-                  | '\\' unicodeEscapeSequence -- escaped
+  identifierStart = unicodeLetter | "$" | "_"
+                  | "\\" unicodeEscapeSequence -- escaped
   identifierPart = identifierStart | unicodeCombiningMark
                  | unicodeDigit | unicodeConnectorPunctuation
                  | /\p{ZWNJ}/ | /\p{ZWJ}/
@@ -77,136 +77,136 @@ ES5Parser {
 
   // Note: keywords that are the complete prefix of another keyword should
   // be prioritized (e.g. 'in' should come before 'instanceof')
-  keyword = ('break'   | 'do'        | 'instanceof' | 'typeof'
-          | 'case'     | 'else'      | 'new'        | 'var'
-          | 'catch'    | 'finally'   | 'return'     | 'void'
-          | 'continue' | 'for'       | 'switch'     | 'while'
-          | 'debugger' | 'function'  | 'this'       | 'with'
-          | 'default'  | 'if'        | 'throw'
-          | 'delete'   | 'in'        | 'try') ~identifierPart
+  keyword = ("break"   | "do"        | "instanceof" | "typeof"
+          | "case"     | "else"      | "new"        | "var"
+          | "catch"    | "finally"   | "return"     | "void"
+          | "continue" | "for"       | "switch"     | "while"
+          | "debugger" | "function"  | "this"       | "with"
+          | "default"  | "if"        | "throw"
+          | "delete"   | "in"        | "try") ~identifierPart
 
-  futureReservedWordLax = ('class'| 'enum'  | 'extends'
-                        | 'super' | 'const' | 'export'
-                        | 'import' ) ~identifierPart
+  futureReservedWordLax = ("class"| "enum"  | "extends"
+                        | "super" | "const" | "export"
+                        | "import" ) ~identifierPart
   futureReservedWordStrict = (futureReservedWordLax
-                           |  'implements'| 'let'     | 'private'   | 'public'
-                           |  'interface' | 'package' | 'protected' | 'static'
-                           |  'yield' ) ~identifierPart
+                           |  "implements"| "let"     | "private"   | "public"
+                           |  "interface" | "package" | "protected" | "static"
+                           |  "yield" ) ~identifierPart
   futureReservedWord = futureReservedWordStrict
 
   // Note: beware of the ordering of punctuators with a common prefix!
-  // OMeta is a PEG, so '|' denotes prioritized choice.
-  // E.g. if '+' would come before '++' then the string "++5"
+  // OMeta is a PEG, so "|" denotes prioritized choice.
+  // E.g. if "+" would come before "++" then the string "++5"
   // would be parsed as "+(+(5))" rather than "++(5)"
   // Punctuators comprised of more characters are prioritized
   // Note: the Punctuator and DivPunctuator rules are not currently used by the parser
-  // Punctuator = ('>>>='
-  //            | '>>=' | '>>>' | '===' | '!=='| '<<='
-  //            | '+='  | '-='  | '*='  | '%=' | '>='
-  //            | '=='  | '!='  | '++'  | '--' | '<<'
-  //            | '>>'  | '<='  | '&='  | '|=' | '^='
-  //            | '&&'  | '||'
-  //            | '{'     | '}'     | '('     | ')'    | '['   | ']'
-  //            | '.'     | ';'     | ','     | '<'    | '>'   | '!'
-  //            | '~'     | '='     | '&'     | '|'    | '^'   | '?'
-  //            | ':'     | '*'     | '%'     | '+'    | '-')
-  // DivPunctuator = ('/=' | '/')
+  // Punctuator = (">>>="
+  //            | ">>=" | ">>>" | "===" | "!=="| "<<="
+  //            | "+="  | "-="  | "*="  | "%=" | ">="
+  //            | "=="  | "!="  | "++"  | "--" | "<<"
+  //            | ">>"  | "<="  | "&="  | "|=" | "^="
+  //            | "&&"  | "||"
+  //            | "{"     | "}"     | "("     | ")"    | "["   | "]"
+  //            | "."     | ";"     | ","     | "<"    | ">"   | "!"
+  //            | "~"     | "="     | "&"     | "|"    | "^"   | "?"
+  //            | ":"     | "*"     | "%"     | "+"    | "-")
+  // DivPunctuator = ("/=" | "/")
 
   literal = nullLiteral | booleanLiteral | numericLiteral
           | stringLiteral | regularExpressionLiteral // spec forgot Regexp literals in appendix?
-  nullLiteral = 'null'
-  booleanLiteral = 'true' | 'false'
+  nullLiteral = "null"
+  booleanLiteral = "true" | "false"
 
   // For semantics on how decimal literals are constructed, see section 7.8.3
 
   // Note that the ordering of hexIntegerLiteral and decimalLiteral is reversed w.r.t. the spec
   // This is intentional: the order decimalLiteral | hexIntegerLiteral will parse
-  // '0x...' as a decimal literal '0' followed by 'x...'
+  // "0x..." as a decimal literal "0" followed by "x..."
   numericLiteral = hexIntegerLiteral | decimalLiteral
 
-  decimalLiteral = decimalIntegerLiteral '.' decimalDigit* exponentPart -- bothParts
-                 |                       '.' decimalDigit* exponentPart -- decimalsOnly
+  decimalLiteral = decimalIntegerLiteral "." decimalDigit* exponentPart -- bothParts
+                 |                       "." decimalDigit* exponentPart -- decimalsOnly
                  | decimalIntegerLiteral                   exponentPart -- integerOnly
 
   decimalIntegerLiteral = nonZeroDigit (decimalDigit* | empty) -- nonZero
-                        | '0'                                  -- zero
+                        | "0"                                  -- zero
   decimalDigit = /[0123456789]/
   nonZeroDigit = /[123456789]/
 
   exponentPart = exponentIndicator signedInteger -- present
                |                                 -- absent
-  exponentIndicator = 'e' | 'E'
-  signedInteger = '+' decimalDigit* -- positive
-                | '-' decimalDigit* -- negative
+  exponentIndicator = "e" | "E"
+  signedInteger = "+" decimalDigit* -- positive
+                | "-" decimalDigit* -- negative
                 |     decimalDigit+ -- noSign
 
-  hexIntegerLiteral = '0x' hexDigit*
-                    | '0X' hexDigit*
+  hexIntegerLiteral = "0x" hexDigit*
+                    | "0X" hexDigit*
 
   // For semantics on how string literals are constructed, see section 7.8.4
-  stringLiteral = '"' doubleStringCharacter* '"'
-                | '\'' singleStringCharacter* '\''
-  doubleStringCharacter = ~('"' | '\\' | lineTerminator) sourceCharacter -- nonEscaped
-                        | '\\' escapeSequence                            -- escaped
-                        | lineContinuation                               -- lineContinuation
-  singleStringCharacter = ~('\'' | '\\' | lineTerminator) sourceCharacter -- nonEscaped
-                        | '\\' escapeSequence                             -- escaped
+  stringLiteral = """ doubleStringCharacter* """
+                | "'" singleStringCharacter* "'"
+  doubleStringCharacter = ~("\"" | "\\" | lineTerminator) sourceCharacter -- nonEscaped
+                        | "\\" escapeSequence                             -- escaped
                         | lineContinuation                                -- lineContinuation
-  lineContinuation = '\\' lineTerminatorSequence
+  singleStringCharacter = ~("'" | "\\" | lineTerminator) sourceCharacter -- nonEscaped
+                        | "\\" escapeSequence                            -- escaped
+                        | lineContinuation                               -- lineContinuation
+  lineContinuation = "\\" lineTerminatorSequence
   escapeSequence = characterEscapeSequence
-                 | ~decimalDigit '0' // -> ( String.fromCharCode(0000) ) /*\u0000*/
+                 | ~decimalDigit "0" // -> ( String.fromCharCode(0000) ) /*\u0000*/
                  | hexEscapeSequence
                  | unicodeEscapeSequence
   characterEscapeSequence = singleEscapeCharacter
                           | nonEscapeCharacter
-  singleEscapeCharacter = '\'' // -> ( String.fromCharCode(0039) ) /*\u0027*/
-                        | '"'  // -> ( String.fromCharCode(0034) ) /*\u0022*/
-                        | '\\' // -> ( String.fromCharCode(0092) ) /*\u005C*/
-                        | 'b'  // -> ( String.fromCharCode(0008) ) /*\u0008*/
-                        | 'f'  // -> ( String.fromCharCode(0012) ) /*\u000C*/
-                        | 'n'  // -> ( String.fromCharCode(0010) ) /*\u000A*/
-                        | 'r'  // -> ( String.fromCharCode(0013) ) /*\u000D*/
-                        | 't'  // -> ( String.fromCharCode(0009) ) /*\u0009*/
-                        | 'v'  // -> ( String.fromCharCode(0011) ) /*\u000B*/
+  singleEscapeCharacter = "'"  // -> ( String.fromCharCode(0039) ) /*\u0027*/
+                        | "\"" // -> ( String.fromCharCode(0034) ) /*\u0022*/
+                        | "\\" // -> ( String.fromCharCode(0092) ) /*\u005C*/
+                        | "b"  // -> ( String.fromCharCode(0008) ) /*\u0008*/
+                        | "f"  // -> ( String.fromCharCode(0012) ) /*\u000C*/
+                        | "n"  // -> ( String.fromCharCode(0010) ) /*\u000A*/
+                        | "r"  // -> ( String.fromCharCode(0013) ) /*\u000D*/
+                        | "t"  // -> ( String.fromCharCode(0009) ) /*\u0009*/
+                        | "v"  // -> ( String.fromCharCode(0011) ) /*\u000B*/
   nonEscapeCharacter = ~(escapeCharacter | lineTerminator) sourceCharacter
-  escapeCharacter = singleEscapeCharacter | decimalDigit | 'x' | 'u'
-  hexEscapeSequence = 'x' hexDigit hexDigit
-  unicodeEscapeSequence = 'u' hexDigit hexDigit hexDigit hexDigit
+  escapeCharacter = singleEscapeCharacter | decimalDigit | "x" | "u"
+  hexEscapeSequence = "x" hexDigit hexDigit
+  unicodeEscapeSequence = "u" hexDigit hexDigit hexDigit hexDigit
 
   // section 7.8.5
 
   // body and flags are left uninterpreted while parsing (they are parsed as strings)
-  regularExpressionLiteral = '/' regularExpressionBody '/' regularExpressionFlags
+  regularExpressionLiteral = "/" regularExpressionBody "/" regularExpressionFlags
   regularExpressionBody = regularExpressionFirstChar regularExpressionChar*
-  regularExpressionFirstChar = ~('*' |'\\' | '/' | '[') regularExpressionNonTerminator
+  regularExpressionFirstChar = ~("*" |"\\" | "/" | "[") regularExpressionNonTerminator
                              | regularExpressionBackslashSequence
                              | regularExpressionClass
-  regularExpressionChar = ~('\\' | '/' | '[') regularExpressionNonTerminator
+  regularExpressionChar = ~("\\" | "/" | "[") regularExpressionNonTerminator
                         | regularExpressionBackslashSequence
                         | regularExpressionClass
-  regularExpressionBackslashSequence = '\\' regularExpressionNonTerminator
+  regularExpressionBackslashSequence = "\\" regularExpressionNonTerminator
   regularExpressionNonTerminator = ~(lineTerminator) sourceCharacter
-  regularExpressionClass = '[' regularExpressionClassChar* ']'
-  regularExpressionClassChar = ~(']' | '\\') regularExpressionNonTerminator
+  regularExpressionClass = "[" regularExpressionClassChar* "]"
+  regularExpressionClassChar = ~("]" | "\\") regularExpressionNonTerminator
                              | regularExpressionBackslashSequence
   regularExpressionFlags = identifierPart*
 
   // === Implementation-level rules (not part of the spec) ===
 
-  multiLineCommentNoNL = '/*' (multiLineCommentCharsNoNL | empty) '*/'
+  multiLineCommentNoNL = "/*" (multiLineCommentCharsNoNL | empty) "*/"
   multiLineCommentCharsNoNL = multiLineNotAsteriskCharNoNL (multiLineCommentCharsNoNL | empty)
-                           | '*' postAsteriskCommentCharsNoNL
+                           | "*" postAsteriskCommentCharsNoNL
   postAsteriskCommentCharsNoNL = multiLineNotForwardSlashOrAsteriskCharNoNL (multiLineCommentCharsNoNL | empty)
-                              | '*' postAsteriskCommentCharsNoNL
-  multiLineNotAsteriskCharNoNL = ~('*') ~lineTerminator sourceCharacter
-  multiLineNotForwardSlashOrAsteriskCharNoNL = ~('/' | '*') ~lineTerminator sourceCharacter
+                              | "*" postAsteriskCommentCharsNoNL
+  multiLineNotAsteriskCharNoNL = ~("*") ~lineTerminator sourceCharacter
+  multiLineNotForwardSlashOrAsteriskCharNoNL = ~("/" | "*") ~lineTerminator sourceCharacter
 
   // see section 14.1: Directive Prologues and the Use Strict Directive
   // Some directives (like the Use Strict Directive) may require access to the
   // raw string value, without interpretation of escapeSequences or lineContinuations
   // @returns the raw string value (not a String Literal AST)
-  rawStringLiteral = '"' (~'"' sourceCharacter)* '"'
-                  | '\'' (~'\'' sourceCharacter)* '\''
+  rawStringLiteral = "\"" (~"\"" sourceCharacter)* "\""
+                  | "'" (~"'" sourceCharacter)* "'"
 
   // used by parser to parse actual tokens
 
@@ -218,18 +218,18 @@ ES5Parser {
   skipToEnd = skip end
 
   // a semicolon is "automatically inserted" if a newline is reached
-  // the end of the input stream is reached, or the offending token is '}'
+  // the end of the input stream is reached, or the offending token is "}"
   // Note: don't use ";" as this is equivalent to token(";")
   // which would allow line terminators to be eaten as well
-  sc = skipNoLine ';'
-     | skipNoLine (scanLineTerminator | end | &'}')
+  sc = skipNoLine ";"
+     | skipNoLine (scanLineTerminator | end | &"}")
 
   // All rules starting with 'scan' skip whitespace, then scan the appropriate tokens
 
   scanLineTerminator = lineTerminator | ~multiLineCommentNoNL multiLineComment
 
-  scanPunctNoLineTerminatorPP = skipNoLine '++'
-  scanPunctNoLineTerminatorMM = skipNoLine '--'
+  scanPunctNoLineTerminatorPP = skipNoLine "++"
+  scanPunctNoLineTerminatorMM = skipNoLine "--"
 
   // @returns a string
   scanIdentifier = skip identifier
@@ -256,7 +256,7 @@ ES5Parser {
   // A.3 Expressions
 
   // @returns an AST
-  PrimaryExpression = 'this'                       -- thisExpr
+  PrimaryExpression = "this"                       -- thisExpr
                     | scanIdentifier               -- idExpr
                     | scanLiteral
                       // ( litToken.type === "regexp"
@@ -266,23 +266,23 @@ ES5Parser {
                       //                             value: litToken.value}, []) )
                     | ArrayLiteral
                     | ObjectLiteral
-                    | '(' Expression ')'         -- parenExpr
+                    | "(" Expression ")"         -- parenExpr
 
   // @returns an ArrayExpr AST
-  ArrayLiteral = '[' AssignmentExpressionOrElisionComma* ']' -- trailingComma
-               | '[' AssignmentExpressionOrElisionComma* AssignmentExpression ']' -- noTrailingComma
-  AssignmentExpressionOrElisionComma = (AssignmentExpression | Elision) ','
+  ArrayLiteral = "[" AssignmentExpressionOrElisionComma* "]" -- trailingComma
+               | "[" AssignmentExpressionOrElisionComma* AssignmentExpression "]" -- noTrailingComma
+  AssignmentExpressionOrElisionComma = (AssignmentExpression | Elision) ","
   Elision =
 
   // @returns an ObjectExpr AST
-  ObjectLiteral = '{' PropertyAssignmentComma* '}' -- trailingComma
-                | '{' PropertyAssignmentComma* PropertyAssignment '}' -- noTrailingComma
-  PropertyAssignmentComma = PropertyAssignment ','
+  ObjectLiteral = "{" PropertyAssignmentComma* "}" -- trailingComma
+                | "{" PropertyAssignmentComma* PropertyAssignment "}" -- noTrailingComma
+  PropertyAssignmentComma = PropertyAssignment ","
 
   // @returns a *Prop AST
-  PropertyAssignment = 'get' PropertyName '(' ')' '{' FunctionBody '}'                 -- getter
-                     | 'set' PropertyName '(' FormalParameter ')' '{' FunctionBody '}' -- setter
-                     | PropertyName ':' AssignmentExpression                           -- simple
+  PropertyAssignment = "get" PropertyName "(" ")" "{" FunctionBody "}"                 -- getter
+                     | "set" PropertyName "(" FormalParameter ")" "{" FunctionBody "}" -- setter
+                     | PropertyName ":" AssignmentExpression                           -- simple
 
   // @returns a string
   PropertyName = scanIdentifierName
@@ -290,31 +290,31 @@ ES5Parser {
                | numericLiteral
 
   // @returns an AST
-  MemberExpression = 'new' MemberExpression Arguments         -- newExp
-                   | MemberExpression '[' Expression ']'      -- arrayRefExp
-                   | MemberExpression '.' scanIdentifierName  -- propRefExp
+  MemberExpression = "new" MemberExpression Arguments         -- newExp
+                   | MemberExpression "[" Expression "]"      -- arrayRefExp
+                   | MemberExpression "." scanIdentifierName  -- propRefExp
                    | FunctionExpression
                    | PrimaryExpression
 
   // @returns an AST
   NewExpression = MemberExpression
-                | 'new' NewExpression -- newExp
+                | "new" NewExpression -- newExp
 
   // @returns an AST
-  CallExpression = CallExpression '[' Expression ']'     -- arrayRefExp
-                 | CallExpression '.' scanIdentifierName -- propRefExp
+  CallExpression = CallExpression "[" Expression "]"     -- arrayRefExp
+                 | CallExpression "." scanIdentifierName -- propRefExp
                  | CallExpression Arguments              -- callExpExp
                  | MemberExpression Arguments            -- memberExpExp
 
   // @returns an array of ASTs
-  Arguments = '(' ')'                -- empty
-            | '(' ArgumentList ')'   -- nonEmpty
+  Arguments = "(" ")"                -- empty
+            | "(" ArgumentList ")"   -- nonEmpty
 
   // @returns an array of ASTs
   ArgumentList = AssignmentExpressionComma* AssignmentExpression -- many
                | AssignmentExpression                            -- one
 
-  AssignmentExpressionComma = AssignmentExpression ','
+  AssignmentExpressionComma = AssignmentExpression ","
 
   LeftHandSideExpression = CallExpression
                          | NewExpression
@@ -323,29 +323,29 @@ ES5Parser {
                     | LeftHandSideExpression scanPunctNoLineTerminatorMM -- postDecrement
                     | LeftHandSideExpression
 
-  UnaryExpression = 'delete'   UnaryExpression     -- deleteExp
-                  | 'void'     UnaryExpression     -- voidExp
-                  | 'typeof'   UnaryExpression     -- typeofExp
-                  | '++'          UnaryExpression  -- preIncrement
-                  | '--'          UnaryExpression  -- preDecrement
-                  | '+' UnaryExpression            -- unaryPlus
-                  | '-' UnaryExpression            -- unaryMinus
-                  | '~' UnaryExpression            -- bnot
-                  | '!' UnaryExpression            -- lnot
+  UnaryExpression = "delete"   UnaryExpression     -- deleteExp
+                  | "void"     UnaryExpression     -- voidExp
+                  | "typeof"   UnaryExpression     -- typeofExp
+                  | "++"          UnaryExpression  -- preIncrement
+                  | "--"          UnaryExpression  -- preDecrement
+                  | "+" UnaryExpression            -- unaryPlus
+                  | "-" UnaryExpression            -- unaryMinus
+                  | "~" UnaryExpression            -- bnot
+                  | "!" UnaryExpression            -- lnot
                   | PostfixExpression
 
-  MultiplicativeExpression = MultiplicativeExpression '*' UnaryExpression -- mul
-                           | MultiplicativeExpression '/' UnaryExpression -- div
-                           | MultiplicativeExpression '%' UnaryExpression -- mod
+  MultiplicativeExpression = MultiplicativeExpression "*" UnaryExpression -- mul
+                           | MultiplicativeExpression "/" UnaryExpression -- div
+                           | MultiplicativeExpression "%" UnaryExpression -- mod
                            | UnaryExpression
 
-  AdditiveExpression = AdditiveExpression '+' MultiplicativeExpression -- add
-		     | AdditiveExpression '-' MultiplicativeExpression -- sub
+  AdditiveExpression = AdditiveExpression "+" MultiplicativeExpression -- add
+		     | AdditiveExpression "-" MultiplicativeExpression -- sub
 		     | MultiplicativeExpression
 
-  ShiftExpression = ShiftExpression '<<' AdditiveExpression  -- lsl
-                  | ShiftExpression '>>>' AdditiveExpression -- lsr
-                  | ShiftExpression '>>' AdditiveExpression  -- asr
+  ShiftExpression = ShiftExpression "<<" AdditiveExpression  -- lsl
+                  | ShiftExpression ">>>" AdditiveExpression -- lsr
+                  | ShiftExpression ">>" AdditiveExpression  -- asr
                   | AdditiveExpression
 
   // Ohm doesn't support parameterized rules, but we don't want to
@@ -356,49 +356,49 @@ ES5Parser {
   // postpass, or implementing a type checker.
 
   RelationalExpression =
-      RelationalExpression '<' ShiftExpression           -- lt
-    | RelationalExpression '>' ShiftExpression           -- gt
-    | RelationalExpression '<=' ShiftExpression          -- le
-    | RelationalExpression '>=' ShiftExpression          -- ge
-    | RelationalExpression 'instanceof' ShiftExpression  -- instanceOfExp
-    | RelationalExpression 'in' ShiftExpression          -- inExp
+      RelationalExpression "<" ShiftExpression           -- lt
+    | RelationalExpression ">" ShiftExpression           -- gt
+    | RelationalExpression "<=" ShiftExpression          -- le
+    | RelationalExpression ">=" ShiftExpression          -- ge
+    | RelationalExpression "instanceof" ShiftExpression  -- instanceOfExp
+    | RelationalExpression "in" ShiftExpression          -- inExp
     | ShiftExpression
 
   EqualityExpression =
-      EqualityExpression '==' RelationalExpression  -- equal
-    | EqualityExpression '!=' RelationalExpression  -- notEqual
-    | EqualityExpression '===' RelationalExpression -- eq
-    | EqualityExpression '!==' RelationalExpression -- notEq
+      EqualityExpression "==" RelationalExpression  -- equal
+    | EqualityExpression "!=" RelationalExpression  -- notEqual
+    | EqualityExpression "===" RelationalExpression -- eq
+    | EqualityExpression "!==" RelationalExpression -- notEq
     | RelationalExpression
 
-  BitwiseANDExpression = BitwiseANDExpression '&' EqualityExpression -- band
+  BitwiseANDExpression = BitwiseANDExpression "&" EqualityExpression -- band
 		       | EqualityExpression
 
-  BitwiseXORExpression = BitwiseXORExpression '^' BitwiseANDExpression -- bxor
+  BitwiseXORExpression = BitwiseXORExpression "^" BitwiseANDExpression -- bxor
 		       | BitwiseANDExpression
 
-  BitwiseORExpression = BitwiseORExpression '|' BitwiseXORExpression -- bor
+  BitwiseORExpression = BitwiseORExpression "|" BitwiseXORExpression -- bor
 		      | BitwiseXORExpression
 
-  LogicalANDExpression = LogicalANDExpression '&&' BitwiseORExpression -- land
+  LogicalANDExpression = LogicalANDExpression "&&" BitwiseORExpression -- land
 		       | BitwiseORExpression
 
-  LogicalORExpression = LogicalORExpression '||' LogicalANDExpression -- lor
+  LogicalORExpression = LogicalORExpression "||" LogicalANDExpression -- lor
 		      | LogicalANDExpression
 
-  ConditionalExpression = LogicalORExpression '?'
-                            AssignmentExpression ':' AssignmentExpression -- conditional
+  ConditionalExpression = LogicalORExpression "?"
+                            AssignmentExpression ":" AssignmentExpression -- conditional
                         | LogicalORExpression
 
   AssignmentExpression = LeftHandSideExpression
                            AssignmentOperator AssignmentExpression -- assignment
                        | ConditionalExpression
 
-  Expression = Expression ',' AssignmentExpression -- commaExp
+  Expression = Expression "," AssignmentExpression -- commaExp
              | AssignmentExpression
 
-  AssignmentOperator = '=' | '>>>=' | '<<=' | '>>='
-                     | '*=' | '/=' | '%=' | '+=' | '-=' | '&=' | '^=' | '|='
+  AssignmentOperator = "=" | ">>>=" | "<<=" | ">>="
+                     | "*=" | "/=" | "%=" | "+=" | "-=" | "&=" | "^=" | "|="
 
   // A.4 Statements
 
@@ -422,18 +422,18 @@ ES5Parser {
   // Note: the ES5 spec prescribes that a block is a StatementList, not a SourceElement list
   // this precludes nested function declarations
   // This parser explicitly deviates from the spec to enable nested function declarations
-  Block = '{' SourceElement* '}'
+  Block = "{" SourceElement* "}"
 
   // StatementList = Statement*
 
   // @returns a Var AST
-  VariableStatement = 'var' VariableDeclarationList sc
+  VariableStatement = "var" VariableDeclarationList sc
 
   // @returns an array of ASTs
   VariableDeclarationList = VariableDeclarationComma* VariableDeclaration -- many
                           | VariableDeclaration
 
-  VariableDeclarationComma = VariableDeclaration ','
+  VariableDeclarationComma = VariableDeclaration ","
 
   // @returns an AST
   VariableDeclaration = InitPattern -- initialValue
@@ -446,91 +446,91 @@ ES5Parser {
   IdPattern = scanIdentifier
 
   // @returns an AST
-  Initialiser = '=' AssignmentExpression
+  Initialiser = "=" AssignmentExpression
 
   // @returns an AST
-  EmptyStatement = ';' // note: this semicolon eats newlines
+  EmptyStatement = ";" // note: this semicolon eats newlines
 
   // @returns an Expression AST
-  ExpressionStatement = ~('{' | 'function') Expression sc
+  ExpressionStatement = ~("{" | "function") Expression sc
 
   // @returns an AST
-  IfStatement = 'if' '(' Expression ')' Statement 'else' Statement -- ifThenElse
-              | 'if' '(' Expression ')' Statement                  -- ifThen
+  IfStatement = "if" "(" Expression ")" Statement "else" Statement -- ifThenElse
+              | "if" "(" Expression ")" Statement                  -- ifThen
 
   // @returns an AST
-  IterationStatement = 'do' Statement 'while' '(' Expression ')' sc     -- doWhile
-                     | 'while' '(' Expression ')' Statement             -- whileDo
-                     | 'for' '(' (Expression | empty) ';'
-                                 (Expression | empty) ';'
-                                 (Expression | empty) ')' Statement     -- for3
-                     | 'for' '(' 'var' VariableDeclarationList ';'
-                                 (Expression | empty) ';'
-                                 (Expression | empty) ')' Statement     -- for3var
-                     | 'for' '(' LeftHandSideExpression 'in'
-                                 Expression ')' Statement               -- forIn
-                     | 'for' '(' 'var' VariableDeclaration 'in'
-                                 Expression ')' Statement               -- forInVar
+  IterationStatement = "do" Statement "while" "(" Expression ")" sc     -- doWhile
+                     | "while" "(" Expression ")" Statement             -- whileDo
+                     | "for" "(" (Expression | empty) ";"
+                                 (Expression | empty) ";"
+                                 (Expression | empty) ")" Statement     -- for3
+                     | "for" "(" "var" VariableDeclarationList ";"
+                                 (Expression | empty) ";"
+                                 (Expression | empty) ")" Statement     -- for3var
+                     | "for" "(" LeftHandSideExpression "in"
+                                 Expression ")" Statement               -- forIn
+                     | "for" "(" "var" VariableDeclaration "in"
+                                 Expression ")" Statement               -- forInVar
 
-  ContinueStatement = 'continue' sc                                 -- unlabelled
-                    | 'continue' scanIdentifierNoLineTerminator sc  -- labelled
+  ContinueStatement = "continue" sc                                 -- unlabelled
+                    | "continue" scanIdentifierNoLineTerminator sc  -- labelled
 
-  BreakStatement = 'break' sc                                 -- unlabelled
-                 | 'break' scanIdentifierNoLineTerminator sc  -- labelled
+  BreakStatement = "break" sc                                 -- unlabelled
+                 | "break" scanIdentifierNoLineTerminator sc  -- labelled
 
-  ReturnStatement = 'return' sc                        -- returnVoid
-                  | 'return' skipNoLine Expression sc  -- returnExpr
+  ReturnStatement = "return" sc                        -- returnVoid
+                  | "return" skipNoLine Expression sc  -- returnExpr
 
-  WithStatement = 'with' '(' Expression ')' Statement
+  WithStatement = "with" "(" Expression ")" Statement
 
-  SwitchStatement = 'switch' '(' Expression ')' CaseBlock
+  SwitchStatement = "switch" "(" Expression ")" CaseBlock
 
   // @return an array of ASTs
-  CaseBlock = '{' CaseClause* DefaultClause CaseClause* '}'  -- withDefault
-            | '{'                           CaseClause* '}'  -- withoutDefault
+  CaseBlock = "{" CaseClause* DefaultClause CaseClause* "}"  -- withDefault
+            | "{"                           CaseClause* "}"  -- withoutDefault
 
-  CaseClause = 'case' Expression ':' Statement*
+  CaseClause = "case" Expression ":" Statement*
 
-  DefaultClause = 'default' ':' Statement*
+  DefaultClause = "default" ":" Statement*
 
-  LabelledStatement = scanIdentifier ':' Statement
+  LabelledStatement = scanIdentifier ":" Statement
 
-  ThrowStatement = 'throw' skipNoLine
+  ThrowStatement = "throw" skipNoLine
                               scanLineTerminator ~empty // fails explicitly
                    // TODO: what on earth is this rule for?
                                              -- throwShouldNeverMatch
-                 | 'throw' Expression sc   -- throwExpr
+                 | "throw" Expression sc   -- throwExpr
 
-  TryStatement = 'try' Block Catch Finally  -- tryCatchFinally
-               | 'try' Block Finally        -- tryFinally
-               | 'try' Block Catch          -- tryCatch
+  TryStatement = "try" Block Catch Finally  -- tryCatchFinally
+               | "try" Block Finally        -- tryFinally
+               | "try" Block Catch          -- tryCatch
 
   // @returns a CatchClause AST
-  Catch = 'catch' '(' FormalParameter ')' Block
+  Catch = "catch" "(" FormalParameter ")" Block
 
   // @returns a Block AST
-  Finally = 'finally' Block
+  Finally = "finally" Block
 
-  DebuggerStatement = 'debugger' sc
+  DebuggerStatement = "debugger" sc
 
 
   // A.5 Functions and Programs
 
-  FunctionDeclaration = 'function' IdPattern
-                        '(' FormalParameterList ')'
-                        '{' FunctionBody '}'
+  FunctionDeclaration = "function" IdPattern
+                        "(" FormalParameterList ")"
+                        "{" FunctionBody "}"
 
-  FunctionExpression = 'function' IdPattern
-                       '(' FormalParameterList ')'
-                       '{' FunctionBody '}'                                 -- named
-                     | 'function' '(' FormalParameterList ')'
-                       '{' FunctionBody '}'                                 -- anonymous
+  FunctionExpression = "function" IdPattern
+                       "(" FormalParameterList ")"
+                       "{" FunctionBody "}"                                 -- named
+                     | "function" "(" FormalParameterList ")"
+                       "{" FunctionBody "}"                                 -- anonymous
 
   // @returns an array of ASTs
   FormalParameterList = FormalParameter (CommaFormalParameter)* -- many
                       |                                         -- zero
 
-  CommaFormalParameter = ',' FormalParameter
+  CommaFormalParameter = "," FormalParameter
 
   // @returns an AST
   FormalParameter = IdPattern
