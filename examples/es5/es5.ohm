@@ -21,7 +21,9 @@
 // abstract syntax trees (ASTs) are stored in JSONML format. For details see:
 // http://code.google.com/p/es-lab/wiki/JsonMLASTFormat
 
-ES5Parser {
+ES5 {
+
+  Program = Directive* SourceElement* skipToEnd
 
   // A.1 Lexical Grammar
 
@@ -538,8 +540,6 @@ ES5Parser {
   // @returns an array of ASTs
   FunctionBody = Directive* SourceElement*
 
-  Program = Directive* SourceElement* skipToEnd
-
   SourceElement = Declaration | Statement
 
   // Broken out so es6 can override to include ConstDecl and LetDecl
@@ -553,6 +553,6 @@ ES5Parser {
   ExpressionOnly = Expression skipToEnd
 }
 
-ES5ParserLax <: ES5Parser {
+ES5Lax <: ES5 {
   futureReservedWord := futureReservedWordLax
 }
