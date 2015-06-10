@@ -144,7 +144,7 @@ ES5Parser {
                     | "0X" hexDigit*
 
   // For semantics on how string literals are constructed, see section 7.8.4
-  stringLiteral = """ doubleStringCharacter* """
+  stringLiteral = "\"" doubleStringCharacter* "\""
                 | "'" singleStringCharacter* "'"
   doubleStringCharacter = ~("\"" | "\\" | lineTerminator) sourceCharacter -- nonEscaped
                         | "\\" escapeSequence                             -- escaped
