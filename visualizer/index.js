@@ -1,5 +1,5 @@
 /* eslint-env browser */
-/* global CodeMirror, d3, ohm */
+/* global CodeMirror, d3, ohm, Storage */
 
 'use strict';
 
@@ -367,6 +367,21 @@ function showError(category, editor, message, interval) {
   errorMarks[category] = markInterval(editor, interval, 'error', false);
 }
 
+function useLocalStorage() {
+  return typeof localStorage !== 'undefined' &&
+         typeof Storage === 'function' &&
+         localStorage instanceof Storage;
+}
+
+function setEditorValueFromLocalStorage(editor, key) {
+  if (useLocalStorage()) {
+    var contents = localStorage.getItem(key);
+    if (contents != null) {
+      editor.setValue(contents);
+    }
+  }
+}
+
 // Main
 // ----
 
@@ -374,6 +389,7 @@ function showError(category, editor, message, interval) {
   var checkboxes = document.querySelectorAll('#options input[type=checkbox]');
   var refreshTimeout;
   var grammarChanged = true;
+
   function triggerRefresh(delay) {
     if (refreshTimeout) {
       clearTimeout(refreshTimeout);
@@ -383,6 +399,10 @@ function showError(category, editor, message, interval) {
   Array.prototype.forEach.call(checkboxes, function(cb) {
     cb.addEventListener('click', function(e) { triggerRefresh(); });
   });
+
+  setEditorValueFromLocalStorage(inputEditor, 'input');
+  setEditorValueFromLocalStorage(grammarEditor, 'grammar');
+
   inputEditor.on('change', function() { triggerRefresh(150); });
   grammarEditor.on('change', function() {
     grammarChanged = true;
@@ -394,22 +414,27 @@ function showError(category, editor, message, interval) {
     $('#parseResults').innerHTML = '';
 
     hideError('input', inputEditor);
+    if (useLocalStorage()) {
+      localStorage.setItem('input', inputEditor.getValue());
+    }
 
     if (grammarChanged) {
       grammarChanged = false;
 
       hideError('grammar', grammarEditor);
       var grammarSrc = grammarEditor.getValue();
+      if (useLocalStorage()) {
+        localStorage.setItem('grammar', grammarSrc);
+      }
       try {
         grammar = ohm.grammar(grammarSrc);
       } catch (e) {
-        showError('grammar',
-                  grammarEditor,
-                  e.shortMessage ? e.shortMessage : e.message,
-                  e.interval);
+        console.log(e);  // eslint-disable-line no-console
+
+        var message = e.shortMessage ? e.shortMessage : e.message;
+        showError('grammar', grammarEditor, message, e.interval);
         // If the grammar is unusable, prevent the input to be parsed.
         grammar = null;
-        console.log(e);  // eslint-disable-line no-console
         return;
       }
     }
