@@ -291,7 +291,10 @@ function createTraceElement(traceNode, container, input) {
   });
   wrapper._input = input;
 
-  var label = wrapper.appendChild(createElement('.label', traceNode.displayString));
+  var text = (traceNode.displayString.length > 20 && traceNode.displayString.indexOf(' ') !== -1) ?
+      (traceNode.displayString.slice(0, 20) + '\u2026') : traceNode.displayString;
+  var label = wrapper.appendChild(createElement('.label', text));
+  label.setAttribute('title', traceNode.displayString);
   if (isPrimitive(traceNode.expr)) {
     label.classList.add('prim');
   }
