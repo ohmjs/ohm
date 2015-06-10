@@ -292,9 +292,9 @@ ES5 {
                | numericLiteral
 
   // @returns an AST
-  MemberExpression = "new" MemberExpression Arguments         -- newExp
-                   | MemberExpression "[" Expression "]"      -- arrayRefExp
-                   | MemberExpression "." scanIdentifierName  -- propRefExp
+  MemberExpression = MemberExpression "[" Expression "]"  -- arrayRefExp
+                   | MemberExpression "." identifierName  -- propRefExp
+                   | "new" MemberExpression Arguments     -- newExp
                    | FunctionExpression
                    | PrimaryExpression
 
