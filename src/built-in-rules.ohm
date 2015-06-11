@@ -22,4 +22,8 @@ BuiltInRules {
     = elem (sep elem)*  -- some
     |                   -- none
 
+  listOf<elem, sep>
+    = elem (sep elem)*  -- some
+    |                   -- none
+
 }

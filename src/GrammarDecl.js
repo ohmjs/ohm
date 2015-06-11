@@ -104,7 +104,7 @@ GrammarDecl.prototype.build = function() {
         function() { body.assertChoicesHaveUniformArity(ruleName); },
         function(e) { grammarErrors.push(e); });
     onOhmError(
-        function() { body.assertAllApplicationsAreValid(grammar); },
+        function() { body.assertAllApplicationsAreValid(ruleName, grammar); },
         function(e) {
           grammarErrors.push(e);
           grammarHasInvalidApplications = true;

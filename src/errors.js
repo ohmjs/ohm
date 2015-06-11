@@ -192,6 +192,22 @@ var InvalidParameter = makeCustomError(
     }
 );
 
+// Application of syntactic rule from lexical rule
+
+var ApplicationOfSyntacticRuleFromLexicalRule = makeCustomError(
+    'ohm.error.ApplicationOfSyntacticRuleFromLexicalRule',
+    function(lexicalRuleName, syntacticRuleName, applyExpr) {
+      this.lexicalRuleName = lexicalRuleName;
+      this.syntacticRuleName = syntacticRuleName;
+      this.applyExpr = applyExpr;
+      this.interval = applyExpr.interval;
+      this.shortMessage =
+          'Cannot apply syntactic rule ' + syntacticRuleName +
+          ' from the body of lexical rule ' + lexicalRuleName;
+      this.message = applyExpr.interval.getLineAndColumnMessage() + this.shortMessage;
+    }
+);
+
 // ----------------- Kleene operators -----------------
 
 var KleeneExprHasNullableOperand = makeCustomError(
@@ -265,6 +281,7 @@ var MultipleErrors = makeCustomError(
 // --------------------------------------------------------------------
 
 module.exports = {
+  ApplicationOfSyntacticRuleFromLexicalRule: ApplicationOfSyntacticRuleFromLexicalRule,
   CannotExtendUndeclaredRule: CannotExtendUndeclaredRule,
   CannotOverrideUndeclaredRule: CannotOverrideUndeclaredRule,
   DuplicateGrammarDeclaration: DuplicateGrammarDeclaration,

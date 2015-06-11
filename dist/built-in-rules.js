@@ -10,6 +10,9 @@ module.exports = ohm.makeRecipe(function() {
     .define("ListOf_some", ["elem", "sep"], this.seq(this.param(0), this.star(this.seq(this.param(1), this.param(0)))))
     .define("ListOf_none", ["elem", "sep"], this.seq())
     .define("ListOf", ["elem", "sep"], this.alt(this.app("ListOf_some", [this.app("elem"), this.app("sep")]), this.app("ListOf_none", [this.app("elem"), this.app("sep")])))
+    .define("listOf_some", ["elem", "sep"], this.seq(this.param(0), this.star(this.seq(this.param(1), this.param(0)))))
+    .define("listOf_none", ["elem", "sep"], this.seq())
+    .define("listOf", ["elem", "sep"], this.alt(this.app("listOf_some", [this.app("elem"), this.app("sep")]), this.app("listOf_none", [this.app("elem"), this.app("sep")])))
     .build();
 });
 

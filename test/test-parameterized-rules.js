@@ -69,7 +69,7 @@ test('require the rules referenced in arguments to be declared', function(t) {
       function() {
         testUtil.makeGrammar(
           'G {\n' +
-          '  start = ListOf<asdlfk, ",">\n' +
+          '  start = listOf<asdlfk, ",">\n' +
           '}');
       },
       errors.UndeclaredRule);

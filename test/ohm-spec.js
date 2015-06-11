@@ -1428,6 +1428,16 @@ test('inline rule declarations', function(t) {
 });
 
 test('lexical vs. syntactic rules', function(t) {
+  it("can't call syntactic rule from lexical rule, not not the other way around", function() {
+    t.ok(ohm.grammar('G { foo = bar  bar = "bar" }'), 'lexical calling lexical');
+    t.throws(
+        function() { ohm.grammar('G { foo = Bar  Bar = "bar" }'); },
+        /Cannot apply syntactic rule Bar from the body of lexical rule foo/,
+        'lexical calling syntactic');
+    t.ok(ohm.grammar('G { Foo = bar  bar = "bar" }'), 'syntactic calling lexical');
+    t.ok(ohm.grammar('G { Foo = Bar  Bar = "bar" }'), 'syntactic calling syntactic');
+  });
+
   it("lexical rules don't skip spaces implicitly", function() {
     var g = ohm.grammar('G { start = "foo" "bar" }');
     t.ok(g.match('foobar', 'start'));
@@ -1510,6 +1520,12 @@ test('action dictionary templates', function(t) {
     '  },\n' +
     '  ListOf: function(_) {\n' +
     '  },\n' +
+    '  listOf_some: function(_, _, _) {\n' +
+    '  },\n' +
+    '  listOf_none: function() {\n' +
+    '  },\n' +
+    '  listOf: function(_) {\n' +
+    '  },\n' +
     '  _: function(_) {\n' +
     '  },\n' +
     '  end: function(_) {\n' +
@@ -1552,6 +1568,12 @@ test('action dictionary templates', function(t) {
     '  ListOf_none: function() {\n' +
     '  },\n' +
     '  ListOf: function(_) {\n' +
+    '  },\n' +
+    '  listOf_some: function(_, _, _) {\n' +
+    '  },\n' +
+    '  listOf_none: function() {\n' +
+    '  },\n' +
+    '  listOf: function(_) {\n' +
     '  },\n' +
     '  _: function(_) {\n' +
     '  },\n' +
