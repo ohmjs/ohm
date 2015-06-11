@@ -31,9 +31,13 @@ PosInfo.prototype = {
 
   shouldUseMemoizedResult: function(memoRec) {
     var involvedApplications = memoRec.involvedApplications;
-    for (var memoKey in involvedApplications) {
-      if (involvedApplications[memoKey] && this.activeApplications[memoKey]) {
-        return false;
+    if (involvedApplications != null) {
+      var keys = Object.keys(involvedApplications);
+      for (var i = 0; i < keys.length; ++i) {
+        var memoKey = keys[i];
+        if (involvedApplications[memoKey] && this.activeApplications[memoKey]) {
+          return false;
+        }
       }
     }
     return true;
