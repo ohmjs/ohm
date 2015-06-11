@@ -27,7 +27,9 @@ pexprs.end.toDisplayString = function() {
 };
 
 pexprs.Prim.prototype.toDisplayString = function() {
-  return String(this.obj);
+  var objText = String(this.obj);
+  var inputText = this.interval ? this.interval.trimmed().contents : '';
+  return (objText.length <= inputText.length) ? objText : inputText;
 };
 
 pexprs.Param.prototype.toDisplayString = function() {
