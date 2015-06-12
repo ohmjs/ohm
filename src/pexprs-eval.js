@@ -59,7 +59,9 @@ pexprs.PExpr.prototype.eval = function(state) {
 
     // Reset the position and the bindings.
     state.inputStream.pos = origPos;
-    state.bindings.length = origNumBindings;
+    while (state.bindings.length > origNumBindings) {
+      state.bindings.pop();
+    }
   }
   return ans;
 };
@@ -129,14 +131,9 @@ pexprs.Param.prototype._eval = function(state, inputStream, origPos) {
 };
 
 pexprs.Alt.prototype._eval = function(state, inputStream, origPos) {
-  var bindings = state.bindings;
-  var origNumBindings = bindings.length;
   for (var idx = 0; idx < this.terms.length; idx++) {
     if (this.terms[idx].eval(state)) {
       return true;
-    } else {
-      inputStream.pos = origPos;
-      bindings.length = origNumBindings;
     }
   }
   return false;
@@ -190,11 +187,14 @@ pexprs.Not.prototype._eval = function(state, inputStream, origPos) {
   //   failures. E.g., ~~'foo' produces a failure for ~~'foo', but maybe it should produce
   //   a failure for 'foo' instead.
 
+  var origNumBindings = state.bindings.length;
   state.ignoreFailures();
   var ans = this.expr.eval(state);
   state.recordFailures();
   if (ans) {
-    state.bindings.length -= this.getArity();
+    while (state.bindings.length > origNumBindings) {
+      state.bindings.pop();
+    }
     return false;
   } else {
     inputStream.pos = origPos;
