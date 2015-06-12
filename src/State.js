@@ -35,6 +35,12 @@ State.prototype = {
     }
   },
 
+  truncateBindings: function(newLength) {
+    while (this.bindings.length > newLength) {
+      this.bindings.pop();
+    }
+  },
+
   pushInputStream: function(inputStream) {
     this.inputStreamStack.push(this.inputStream);
     this.posInfosStack.push(this.posInfos);

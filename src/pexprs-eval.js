@@ -57,9 +57,7 @@ pexprs.PExpr.prototype.eval = function(state) {
   if (!ans) {
     // Reset the position and the bindings.
     state.inputStream.pos = origPos;
-    while (state.bindings.length > origNumBindings) {
-      state.bindings.pop();
-    }
+    state.truncateBindings(origNumBindings);
   }
   return ans;
 };
@@ -196,9 +194,7 @@ pexprs.Not.prototype._eval = function(state, inputStream, origPos) {
   state.recordFailures();
   if (ans) {
     state.recordFailure(origPos, this);
-    while (state.bindings.length > origNumBindings) {
-      state.bindings.pop();
-    }
+    state.truncateBindings(origNumBindings);
     return false;
   } else {
     inputStream.pos = origPos;
