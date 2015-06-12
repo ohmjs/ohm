@@ -152,7 +152,10 @@ pexprs.Seq.prototype._eval = function(state, inputStream, origPos) {
 
 pexprs.Iter.prototype._eval = function(state, inputStream, origPos) {
   var arity = this.getArity();
-  var columns = common.repeatFn(function() { return []; }, arity);
+  var columns = [];
+  while (columns.length < arity) {
+    columns.push([]);
+  }
   var numMatches = 0;
   var idx;
   while (numMatches < this.maxNumMatches) {
@@ -274,26 +277,27 @@ pexprs.Obj.prototype._eval = function(state, inputStream, origPos) {
   }
 };
 
-pexprs.Apply.prototype._eval = function(state, inputStream) {
-  var self = this;
-  var grammar = state.grammar;
+function useMemoizedResult(state, application, memoRecOrLR) {
+  var inputStream = state.inputStream;
   var bindings = state.bindings;
 
-  function useMemoizedResult(memoRecOrLR) {
-    inputStream.pos = memoRecOrLR.pos;
-    if (memoRecOrLR.failureDescriptor) {
-      state.recordFailures(memoRecOrLR.failureDescriptor, self);
-    }
-    if (state.isTracing()) {
-      state.trace.push(memoRecOrLR.traceEntry);
-    }
-    if (memoRecOrLR.value) {
-      bindings.push(memoRecOrLR.value);
-      return true;
-    } else {
-      return false;
-    }
+  inputStream.pos = memoRecOrLR.pos;
+  if (memoRecOrLR.failureDescriptor) {
+    state.recordFailures(memoRecOrLR.failureDescriptor, application);
   }
+  if (state.isTracing()) {
+    state.trace.push(memoRecOrLR.traceEntry);
+  }
+  if (memoRecOrLR.value) {
+    bindings.push(memoRecOrLR.value);
+    return true;
+  }
+  return false;
+}
+
+pexprs.Apply.prototype._eval = function(state, inputStream) {
+  var grammar = state.grammar;
+  var bindings = state.bindings;
 
   var actuals = state.applicationStack.length > 1 ?
       state.applicationStack[state.applicationStack.length - 1].params :
@@ -311,12 +315,12 @@ pexprs.Apply.prototype._eval = function(state, inputStream) {
   var memoRec = origPosInfo.memo[memoKey];
   var currentLR;
   if (memoRec && origPosInfo.shouldUseMemoizedResult(memoRec)) {
-    return useMemoizedResult(memoRec);
+    return useMemoizedResult(state, this, memoRec);
   } else if (origPosInfo.isActive(app)) {
     currentLR = origPosInfo.getCurrentLeftRecursion();
     if (currentLR && currentLR.memoKey === memoKey) {
       origPosInfo.updateInvolvedApplications();
-      return useMemoizedResult(currentLR);
+      return useMemoizedResult(state, this, currentLR);
     } else {
       origPosInfo.startLeftRecursion(app);
       return false;
