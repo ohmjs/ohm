@@ -6,11 +6,14 @@
 
 var PosInfo = require('./PosInfo');
 var Trace = require('./Trace');
+var common = require('./common');
 var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
+
+var applySpaces_ = new pexprs.Apply('spaces_');
 
 function State(grammar, inputStream, startRule, tracingEnabled) {
   this.grammar = grammar;
@@ -32,6 +35,28 @@ State.prototype = {
     this.ignoreFailuresCount = 0;
     if (this.isTracing()) {
       this.trace = [];
+    }
+  },
+
+  inSyntacticRule: function() {
+    var applicationStack = this.applicationStack;
+    if (typeof this.inputStream.source !== 'string' || applicationStack.length === 0) {
+      return false;
+    }
+    var currentApplication = applicationStack[applicationStack.length - 1];
+    return common.isSyntactic(currentApplication.ruleName);
+  },
+
+  skipSpaces: function() {
+    this.ignoreFailures();
+    applySpaces_.eval(this);
+    this.bindings.pop();
+    this.recordFailures();
+  },
+
+  skipSpacesIfInSyntacticRule: function() {
+    if (this.inSyntacticRule()) {
+      this.skipSpaces();
     }
   },
 
@@ -169,4 +194,3 @@ State.prototype = {
 // --------------------------------------------------------------------
 
 module.exports = State;
-

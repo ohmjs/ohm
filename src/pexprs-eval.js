@@ -16,23 +16,6 @@ var TerminalNode = nodes.TerminalNode;
 // Operations
 // --------------------------------------------------------------------
 
-var applySpaces_ = new pexprs.Apply('spaces_');
-
-function skipSpacesIfInSyntacticRule(state) {
-  var currentApplication = state.applicationStack[state.applicationStack.length - 1];
-  var ruleName = currentApplication.ruleName || '';
-  if (typeof state.inputStream.source === 'string' && common.isSyntactic(ruleName)) {
-    skipSpaces(state);
-  }
-}
-
-function skipSpaces(state) {
-  state.ignoreFailures();
-  applySpaces_.eval(state);
-  state.bindings.pop();
-  state.recordFailures();
-}
-
 // Evaluate the expression and return true if it succeeded, otherwise false.
 // On success, the bindings will have `this.arity` more elements than before,
 // and the position could be anywhere. On failure, the bindings and position
@@ -139,7 +122,7 @@ pexprs.Alt.prototype._eval = function(state, inputStream, origPos) {
 
 pexprs.Seq.prototype._eval = function(state, inputStream, origPos) {
   for (var idx = 0; idx < this.factors.length; idx++) {
-    skipSpacesIfInSyntacticRule(state);
+    state.skipSpacesIfInSyntacticRule();
     var factor = this.factors[idx];
     if (!factor.eval(state)) {
       return false;
@@ -157,7 +140,7 @@ pexprs.Iter.prototype._eval = function(state, inputStream, origPos) {
   var numMatches = 0;
   var idx;
   while (numMatches < this.maxNumMatches) {
-    skipSpacesIfInSyntacticRule(state);
+    state.skipSpacesIfInSyntacticRule();
     if (this.expr.eval(state)) {
       numMatches++;
       var row = state.bindings.splice(state.bindings.length - arity, arity);
@@ -228,7 +211,7 @@ pexprs.Str.prototype._eval = function(state, inputStream, origPos) {
     var strInputStream = InputStream.newFor(obj);
     state.pushInputStream(strInputStream);
     var ans =
-        this.expr.eval(state) && (skipSpacesIfInSyntacticRule(state), state.inputStream.atEnd());
+        this.expr.eval(state) && (state.skipSpacesIfInSyntacticRule(), state.inputStream.atEnd());
     state.popInputStream();
     return ans;
   } else {
@@ -303,7 +286,7 @@ pexprs.Apply.prototype._eval = function(state, inputStream) {
   var memoKey = app.toMemoKey();
 
   if (common.isSyntactic(ruleName)) {
-    skipSpaces(state);
+    state.skipSpaces();
   }
 
   var origPosInfo = state.getCurrentPosInfo();
@@ -364,7 +347,7 @@ pexprs.Apply.prototype._eval = function(state, inputStream) {
       bindings.push(value);
       if (state.applicationStack.length === 1) {
         if (common.isSyntactic(ruleName)) {
-          skipSpaces(state);
+          state.skipSpaces();
         }
         ans = pexprs.end.eval(state);
         bindings.pop();
