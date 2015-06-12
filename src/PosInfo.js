@@ -7,35 +7,38 @@
 function PosInfo(globalApplicationStack) {
   this.globalApplicationStack = globalApplicationStack;
   this.applicationStack = [];
-  // Redundant (could be generated from applicationStack) but useful for performance reasons.
-  this.activeApplications = {};
   this.memo = {};
+
+  // Redundant (could be generated from applicationStack) but it makes things simpler.
+  // Note: this used to a dictionary, but that caused V8 to deoptimize the entire function,
+  // so using an Array is actually faster (for now).
+  this.activeApplications = [];
 }
 
 PosInfo.prototype = {
   isActive: function(application) {
-    return this.activeApplications[application.toMemoKey()];
+    return this.activeApplications.indexOf(application.toMemoKey()) !== -1;
   },
 
   enter: function(application) {
     this.globalApplicationStack.push(application);
     this.applicationStack.push(application);
-    this.activeApplications[application.toMemoKey()] = true;
+    this.activeApplications.push(application.toMemoKey());
   },
 
   exit: function() {
-    var application = this.globalApplicationStack.pop();
+    this.globalApplicationStack.pop();
     this.applicationStack.pop();
-    this.activeApplications[application.toMemoKey()] = false;
+    this.activeApplications.pop();
   },
 
-  shouldUseMemoizedResult: function(memoRec) {
+  shouldUseMemoizedResult: function(application, memoRec) {
     var involvedApplications = memoRec.involvedApplications;
     if (involvedApplications != null) {
       var keys = Object.keys(involvedApplications);
       for (var i = 0; i < keys.length; ++i) {
         var memoKey = keys[i];
-        if (involvedApplications[memoKey] && this.activeApplications[memoKey]) {
+        if (involvedApplications[memoKey] && this.activeApplications.indexOf(memoKey) !== -1) {
           return false;
         }
       }
