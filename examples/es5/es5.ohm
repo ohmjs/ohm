@@ -257,9 +257,11 @@ ES5 {
 
   // A.3 Expressions
 
+  justThis = "this" ~identifierPart
+
   // @returns an AST
-  PrimaryExpression = "this" ~identifierPart  -- thisExpr
-                    | scanIdentifier          -- idExpr
+  PrimaryExpression = justThis
+                    | scanIdentifier  -- idExpr
                     | scanLiteral
                       // ( litToken.type === "regexp"
                       //   ? this.ast(_fromIdx, "RegExpExpr",{body:  litToken.value.body
@@ -268,7 +270,7 @@ ES5 {
                       //                             value: litToken.value}, []) )
                     | ArrayLiteral
                     | ObjectLiteral
-                    | "(" Expression ")"      -- parenExpr
+                    | "(" Expression ")"  -- parenExpr
 
   // @returns an ArrayExpr AST
   ArrayLiteral = "[" AssignmentExpressionOrElisionComma* "]" -- trailingComma
