@@ -221,7 +221,6 @@ require('./pexprs-assertChoicesHaveUniformArity');
 require('./pexprs-assertIteratedExprsAreNotNullable');
 require('./pexprs-check');
 require('./pexprs-eval');
-require('./pexprs-maybeRecordFailure');
 require('./pexprs-getArity');
 require('./pexprs-outputRecipe');
 require('./pexprs-introduceParams');

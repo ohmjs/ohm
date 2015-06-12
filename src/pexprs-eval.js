@@ -55,8 +55,6 @@ pexprs.PExpr.prototype.eval = function(state) {
   }
 
   if (!ans) {
-    this.maybeRecordFailure(state, origPos);
-
     // Reset the position and the bindings.
     state.inputStream.pos = origPos;
     while (state.bindings.length > origNumBindings) {
@@ -81,6 +79,7 @@ pexprs.PExpr.prototype._eval = common.abstract;
 pexprs.anything._eval = function(state, inputStream, origPos) {
   var value = inputStream.next();
   if (value === common.fail) {
+    state.recordFailure(origPos, this);
     return false;
   } else {
     var interval = inputStream.intervalFrom(origPos);
@@ -95,6 +94,7 @@ pexprs.end._eval = function(state, inputStream, origPos) {
     state.bindings.push(new TerminalNode(state.grammar, undefined, interval));
     return true;
   } else {
+    state.recordFailure(origPos, this);
     return false;
   }
 };
@@ -195,6 +195,7 @@ pexprs.Not.prototype._eval = function(state, inputStream, origPos) {
   var ans = this.expr.eval(state);
   state.recordFailures();
   if (ans) {
+    state.recordFailure(origPos, this);
     while (state.bindings.length > origNumBindings) {
       state.bindings.pop();
     }
