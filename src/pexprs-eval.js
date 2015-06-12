@@ -99,10 +99,14 @@ pexprs.end._eval = function(state, inputStream, origPos) {
 
 pexprs.Prim.prototype._eval = function(state, inputStream, origPos) {
   if (this.match(inputStream) === common.fail) {
+    state.recordFailure(origPos, this);
     return false;
   } else {
     var interval = inputStream.intervalFrom(origPos);
-    state.bindings.push(new TerminalNode(state.grammar, this.obj, interval));
+    var primitiveValue = this instanceof pexprs.RegExpPrim ?
+        inputStream.source[origPos] :
+        this.obj;
+    state.bindings.push(new TerminalNode(state.grammar, primitiveValue, interval));
     return true;
   }
 };
@@ -115,15 +119,8 @@ pexprs.StringPrim.prototype.match = function(inputStream) {
   return inputStream.matchString(this.obj);
 };
 
-pexprs.RegExpPrim.prototype._eval = function(state, inputStream, origPos) {
-  if (inputStream.matchRegExp(this.obj) === common.fail) {
-    return false;
-  } else {
-    var interval = inputStream.intervalFrom(origPos);
-    state.bindings.push(
-        new TerminalNode(state.grammar, inputStream.source[origPos], interval));
-    return true;
-  }
+pexprs.RegExpPrim.prototype.match = function(inputStream) {
+  return inputStream.matchRegExp(this.obj);
 };
 
 pexprs.Param.prototype._eval = function(state, inputStream, origPos) {
