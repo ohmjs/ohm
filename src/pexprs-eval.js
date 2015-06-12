@@ -157,7 +157,6 @@ pexprs.Iter.prototype._eval = function(state, inputStream, origPos) {
   var numMatches = 0;
   var idx;
   while (numMatches < this.maxNumMatches) {
-    var backtrackPos = inputStream.pos;
     skipSpacesIfInSyntacticRule(state);
     if (this.expr.eval(state)) {
       numMatches++;
@@ -166,7 +165,6 @@ pexprs.Iter.prototype._eval = function(state, inputStream, origPos) {
         columns[idx].push(row[idx]);
       }
     } else {
-      inputStream.pos = backtrackPos;
       break;
     }
   }
