@@ -15,31 +15,27 @@ function removeShebang(source) {
   return source.slice(0, 2) === '#!' ? source.replace('#!', '//') : source;
 }
 
-function formatTime(timeArr) {
-  return timeArr[0] + '.' + Math.round(timeArr[1] / 1000000) + 's';
-}
-
 (function main() {
   var grammars = ohm.grammars(fs.readFileSync(path.join(__dirname, 'es5.ohm')));
   var dir = path.resolve(__dirname, '../../src');
-  var sourceFiles = fs.readdirSync(dir).filter(isJavaScriptFile);
-
-  var totalLen = 0;
-  var startTime = process.hrtime();
-
-  var ok = sourceFiles.every(function(filename) {
-    var source = removeShebang(fs.readFileSync(path.join(dir, filename)).toString());
-    totalLen += source.length;
-    var trace = grammars.ES5.trace(source, 'Program');
-    process.stdout.write('.');
-    if (trace.result.failed()) {
-      console.log(trace.result.message);
-      return false;
-    }
-    return true;
+  var files = fs.readdirSync(dir).filter(isJavaScriptFile).map(function(name) {
+    return {
+      name: name,
+      contents: removeShebang(fs.readFileSync(path.join(dir, name)).toString())
+    };
   });
-  var elapsedTime = process.hrtime(startTime);
+
+  console.time('Matching time');
+  var filename;
+  var result;
+  var ok = files.every(function(f) {
+    filename = f.name;
+    result = grammars.ES5.match(f.contents, 'Program');
+    return result.succeeded();
+  });
   if (ok) {
-    console.log('\nProcessed ' + totalLen + ' bytes in ' + formatTime(elapsedTime));
+    console.timeEnd('Matching time');
+  } else {
+    console.log(filename + ':\n' + result.message);
   }
 })();
