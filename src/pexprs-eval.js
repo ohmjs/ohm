@@ -16,14 +16,16 @@ var TerminalNode = nodes.TerminalNode;
 // Operations
 // --------------------------------------------------------------------
 
-// Evaluate the expression and return true if it succeeded, otherwise false.
-// On success, the bindings will have `this.arity` more elements than before,
-// and the position could be anywhere. On failure, the bindings and position
-// will be unchanged.
+/**
+ *  Evaluate the expression and return `true` if it succeeded, `false` otherwise. On success, the
+ *  bindings will have `this.arity` more elements than before, and the position may have increased.
+ *  On failure, the bindings and position will be unchanged.
+ */
 pexprs.PExpr.prototype.eval = function(state) {
   var origPos = state.inputStream.pos;
   var origNumBindings = state.bindings.length;
   var origTrace = state.trace;
+
   if (state.isTracing()) {
     state.trace = [];
   }
@@ -42,19 +44,21 @@ pexprs.PExpr.prototype.eval = function(state) {
     state.inputStream.pos = origPos;
     state.truncateBindings(origNumBindings);
   }
+
   return ans;
 };
 
-// Evaluate the expression and return true if it succeeded, otherwise false.
-// This should not be called directly except by `eval`.
-//
-// The contract of this method is as follows:
-// * When the return value is true:
-//   -- bindings will have expr.arity more elements than before
-// * When the return value is false:
-//   -- bindings will have exactly the same number of elements as before
-//   -- position could be anywhere
-
+/**
+ *  Evaluate the expression and return true if it succeeded, false otherwise.
+ *  This method should not be called directly except by `eval`.
+ *
+ *  The contract of this method is as follows:
+ *  - When the return value is true:
+ *    - bindings will have expr.arity more elements than before
+ *  - When the return value is false:
+ *    - bindings may have more elements than before this call
+ *    - position could be anywhere
+ */
 pexprs.PExpr.prototype._eval = common.abstract;
 
 pexprs.anything._eval = function(state, inputStream, origPos) {
@@ -162,12 +166,14 @@ pexprs.Iter.prototype._eval = function(state, inputStream, origPos) {
 };
 
 pexprs.Not.prototype._eval = function(state, inputStream, origPos) {
-  // TODO:
-  // * Right now we're just throwing away all of the failures that happen inside a `not`,
-  //   and recording `this` as a failed expression.
-  // * Double negation should be equivalent to lookahead, but that's not the case right now wrt
-  //   failures. E.g., ~~'foo' produces a failure for ~~'foo', but maybe it should produce
-  //   a failure for 'foo' instead.
+  /*
+    TODO:
+    - Right now we're just throwing away all of the failures that happen inside a `not`, and
+      recording `this` as a failed expression.
+    - Double negation should be equivalent to lookahead, but that's not the case right now wrt
+      failures. E.g., ~~'foo' produces a failure for ~~'foo', but maybe it should produce
+      a failure for 'foo' instead.
+  */
 
   var origNumBindings = state.bindings.length;
   state.ignoreFailures();
