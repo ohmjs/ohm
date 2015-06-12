@@ -52,12 +52,14 @@ State.prototype = {
     applySpaces_.eval(this);
     this.bindings.pop();
     this.recordFailures();
+    return this.inputStream.pos;
   },
 
   skipSpacesIfInSyntacticRule: function() {
     if (this.inSyntacticRule()) {
       this.skipSpaces();
     }
+    return this.inputStream.pos;
   },
 
   truncateBindings: function(newLength) {
@@ -186,7 +188,9 @@ State.prototype = {
 
   isTracing: function() {
     return this.tracingEnabled;
-  }
+  },
+
+  applySpaces_: applySpaces_
 };
 
 // --------------------------------------------------------------------

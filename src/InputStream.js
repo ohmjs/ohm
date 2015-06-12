@@ -54,8 +54,8 @@ InputStream.prototype = {
     return this.source.slice(startIdx, endIdx);
   },
 
-  intervalFrom: function(startIdx) {
-    return new Interval(this, startIdx, this.pos);
+  interval: function(startIdx, optEndIdx) {
+    return new Interval(this, startIdx, optEndIdx ? optEndIdx : this.pos);
   }
 };
 

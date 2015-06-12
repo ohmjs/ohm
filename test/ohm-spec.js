@@ -779,11 +779,11 @@ test('obj', function(t) {
 
   test('string props', function(t) {
     it('recognition', function() {
-      t.equal(m.match({foos: 'fo', bar: 'bar'}, 'withStringProps').failed(), true);
-      t.ok(m.match({foos: 'foo', bar: 'bar'}, 'withStringProps'));
-      t.equal(m.match({foos: 'foofo', bar: 'bar'}, 'withStringProps').failed(), true);
-      t.ok(m.match({foos: 'foofoo', bar: 'bar'}, 'withStringProps'));
-      t.ok(m.match({foos: 'foofoofoofoofoofoo', bar: 'bar'}, 'withStringProps'));
+      t.equal(m.match({foos: 'fo', bar: 'bar'}, 'withStringProps').succeeded(), false);
+      t.equal(m.match({foos: 'foo', bar: 'bar'}, 'withStringProps').succeeded(), true);
+      t.equal(m.match({foos: 'foofo', bar: 'bar'}, 'withStringProps').succeeded(), false);
+      t.equal(m.match({foos: 'foofoo', bar: 'bar'}, 'withStringProps').succeeded(), true);
+      t.equal(m.match({foos: 'foofoofoofoofoo', bar: 'bar'}, 'withStringProps').succeeded(), true);
     });
 
     it('semantic actions', function() {
