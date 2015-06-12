@@ -18,7 +18,7 @@ var TerminalNode = nodes.TerminalNode;
 
 var applySpaces_ = new pexprs.Apply('spaces_');
 
-function skipSpacesIfAppropriate(state) {
+function skipSpacesIfInSyntacticRule(state) {
   var currentApplication = state.applicationStack[state.applicationStack.length - 1];
   var ruleName = currentApplication.ruleName || '';
   if (typeof state.inputStream.source === 'string' && common.isSyntactic(ruleName)) {
@@ -141,7 +141,7 @@ pexprs.Alt.prototype._eval = function(state, inputStream, origPos) {
 
 pexprs.Seq.prototype._eval = function(state, inputStream, origPos) {
   for (var idx = 0; idx < this.factors.length; idx++) {
-    skipSpacesIfAppropriate(state);
+    skipSpacesIfInSyntacticRule(state);
     var factor = this.factors[idx];
     if (!factor.eval(state)) {
       return false;
@@ -160,7 +160,7 @@ pexprs.Iter.prototype._eval = function(state, inputStream, origPos) {
   var idx;
   while (numMatches < this.maxNumMatches) {
     var backtrackPos = inputStream.pos;
-    skipSpacesIfAppropriate(state);
+    skipSpacesIfInSyntacticRule(state);
     if (this.expr.eval(state)) {
       numMatches++;
       var row = state.bindings.splice(state.bindings.length - arity, arity);
@@ -232,7 +232,8 @@ pexprs.Str.prototype._eval = function(state, inputStream, origPos) {
   if (typeof obj === 'string') {
     var strInputStream = InputStream.newFor(obj);
     state.pushInputStream(strInputStream);
-    var ans = this.expr.eval(state) && (skipSpacesIfAppropriate(state), state.inputStream.atEnd());
+    var ans =
+        this.expr.eval(state) && (skipSpacesIfInSyntacticRule(state), state.inputStream.atEnd());
     state.popInputStream();
     return ans;
   } else {
