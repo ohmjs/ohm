@@ -54,7 +54,6 @@ Ohm {
   Prim
     = keyword
     | string
-    | regExp
     | number
 
   Props
@@ -108,13 +107,6 @@ Ohm {
     | "\\t"                                      -- tab
     | "\\u" hexDigit hexDigit hexDigit hexDigit  -- unicodeEscape
     | "\\x" hexDigit hexDigit                    -- hexEscape
-
-  regExp  (a regular expression)
-    = "/" reCharClass "/"
-
-  reCharClass
-    = "\\p{" /[A-Za-z]/+ "}"    -- unicode
-    | "[" ("\\]" | ~"]" _)* "]" -- ordinary
 
   number  (a number)
     = "-"? digit+

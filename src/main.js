@@ -9,7 +9,6 @@
 var Builder = require('./Builder');
 var Grammar = require('./Grammar');
 var Namespace = require('./Namespace');
-var UnicodeCategories = require('../third_party/unicode').UnicodeCategories;
 var common = require('./common');
 var errors = require('./errors');
 var util = require('./util');
@@ -251,17 +250,6 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
 
     escapeChar: function(_) {
       return this.interval.contents;
-    },
-
-    regExp: function(open, e, close) {
-      return e.visit();
-    },
-
-    reCharClass_unicode: function(open, unicodeClass, close) {
-      return UnicodeCategories[unicodeClass.visit().join('')];
-    },
-    reCharClass_ordinary: function(open, _, close) {
-      return new RegExp(this.interval.contents);
     },
 
     number: function(_, digits) {

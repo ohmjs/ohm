@@ -255,12 +255,6 @@ s.addOperation('viz', {
   string:            function(_, cs, _) {
                        add('string', escape(eval(this.interval.contents)));
                      },
-  regExp:            function(_, e, _) {
-                       e.viz();
-                     },
-  reCharClass:       function(_) {
-                       add('charClass', this.interval.contents);
-                     },
   number:            function(_, _) {
                        add('prim', this.interval.contents);
                      },

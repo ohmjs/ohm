@@ -428,56 +428,6 @@ test('string', function(t) {
   t.end();
 });
 
-test('regexp', function(t) {
-  var m = ohm.grammar('M { myDigit = /[0-9]/ myLetter = /\\p{L}/ myLF = /\\p{LF}/ }');
-
-  test('direct match, no stream', function(t) {
-    it('recognition', function() {
-      t.equal(m.match(/[0-9]/).failed(), true);
-      t.ok(m.match('4'));
-      t.equal(m.match(4).failed(), true);
-      t.equal(m.match('a').failed(), true);
-      t.equal(m.match('a4').failed(), true);
-    });
-    t.end();
-  });
-
-  test('match in string stream', function(t) {
-    it('recognition', function() {
-      t.ok(m.match('4'));
-      t.equal(m.match('a').failed(), true);
-      t.equal(m.match('a4').failed(), true);
-    });
-
-    it('semantic actions', function() {
-      var s = m.semantics().addAttribute('v', {});
-      var cst = m.match('4');
-      t.equal(s(cst).v, '4');
-    });
-    t.end();
-  });
-
-  test('unicode match in string stream', function(t) {
-    it('recognition', function() {
-      t.equal(m.match('4', 'myLetter').failed(), true);
-      t.ok(m.match('a', 'myLetter'));
-      t.equal(m.match('a4', 'myLetter').failed(), true);
-      t.ok(m.match('\u03e6', 'myLetter'));
-      t.equal(m.match('\u226a', 'myLetter').failed(), true);
-      t.ok(m.match('\n', 'myLF'));
-      t.equal(m.match('x', 'myLF').failed(), true);
-    });
-
-    it('semantic actions', function() {
-      var s = m.semantics().addAttribute('v', {});
-      var cst = m.match('a', 'myLetter');
-      t.equal(s(cst).v, 'a');
-    });
-    t.end();
-  });
-  t.end();
-});
-
 test('ranges', function(t) {
   var m = ohm.grammar('M { charRange = "0".."9"  intRange = 5..131  strRange = ["bb".."foobar"] }');
 
@@ -996,7 +946,7 @@ test('apply', function(t) {
       '  addExpRec = addExp "+" mulExp',
       '  mulExp = mulExpRec | priExp',
       '  mulExpRec = mulExp "*" priExp',
-      '  priExp = /[0-9]/',
+      '  priExp = "0".."9"',
       '  sss = &addExp addExp',
       '}'
     ]);
@@ -1102,7 +1052,7 @@ test('apply', function(t) {
       '  g = h',
       '  h = priExp',
       '  mulExpRec = mulExp "*" priExp',
-      '  priExp = /[0-9]/',
+      '  priExp = "0".."9"',
       '}'
     ]);
 
@@ -1218,7 +1168,7 @@ test('inheritance', function(t) {
 
   test('override', function(t) {
     var ns = makeGrammars(['G1 { number = digit+ }',
-                           'G2 <: G1 { digit := /[a-z]/ }']);
+                           'G2 <: G1 { digit := "a".."z" }']);
 
     it('should check that rule exists in super-grammar', function() {
       try {
@@ -1815,7 +1765,7 @@ test('rule invocation interval', function(t) {
     'G {',
     '  foo = bar',
     '  beep = letter bar',
-    '  bar = "a" | "blah" | /[a-z]/ -- baz',
+    '  bar = "a" | "blah" | "a".."z" -- baz',
     '}'
   ]);
 
@@ -1835,34 +1785,34 @@ test('rule invocation interval', function(t) {
     t.deepEqual(fromLoc(barBody.terms[1]), [50, 56]);
 
     var barBazBody = g.ruleDict.bar_baz;
-    t.deepEqual(fromLoc(barBazBody), [59, 66]);
+    t.deepEqual(fromLoc(barBazBody), [59, 67]);
   });
   t.deepEqual(fromLoc(beepBody), [25, 35], 'works for seq');
-  t.deepEqual(fromLoc(barBody), [44, 73], 'works for alt');
+  t.deepEqual(fromLoc(barBody), [44, 74], 'works for alt');
   t.end();
 });
 
 test('toDisplayString', function(t) {
-  var g = ohm.grammar('G { start = "ab" | letter* | /[a-z]/ }');
+  var g = ohm.grammar('G { start = "ab" | letter* | "a".."z" }');
   it('does the right thing', function() {
     var seq = g.ruleDict.start;
-    t.equal(seq.toDisplayString(), '"ab" | letter* | /[a-z]/');
+    t.equal(seq.toDisplayString(), '"ab" | letter* | "a".."z"');
     t.equal(seq.terms[0].toDisplayString(), '"ab"');
 
     var many = seq.terms[1];
     t.equal(many.toDisplayString(), 'letter*');
     t.equal(many.expr.toDisplayString(), 'letter');
 
-    t.equal(seq.terms[2].toDisplayString(), '/[a-z]/');
+    t.equal(seq.terms[2].toDisplayString(), '"a".."z"');
   });
   t.end();
 });
 
 test('pexpr.toString()', function(t) {
   var g = makeGrammar(
-      'G { start = &"a" ~(2 | 3?) ``b a\'\' [c {e: b, ...} {g: /[a-z]/}]  a = 1  b = 2  c = 3 }');
+      'G { start = &"a" ~(2 | 3?) ``b a\'\' [c {e: b, ...} {g: "a".."z"}]  a = 1  b = 2  c = 3 }');
   var e = g.ruleDict.start;
-  t.equal(e.toString(), '(&"a" ~(2 | 3?) ``(b a)\'\' [(c {"e": b, ...} {"g": /[a-z]/})])');
+  t.equal(e.toString(), '(&"a" ~(2 | 3?) ``(b a)\'\' [(c {"e": b, ...} {"g": "a".."z"})])');
   t.end();
 });
 
