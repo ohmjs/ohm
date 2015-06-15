@@ -18,12 +18,9 @@
 
 // Adapted to Ohm by Tony Garnock-Jones <tonygarnockjones@gmail.com> 2014.
 
-// abstract syntax trees (ASTs) are stored in JSONML format. For details see:
-// http://code.google.com/p/es-lab/wiki/JsonMLASTFormat
-
 ES5 {
 
-  Program = Directive* SourceElement* skipToEnd
+  Program = Directive* SourceElement* end
 
   // A.1 Lexical Grammar
 
@@ -53,13 +50,7 @@ ES5 {
 
   comment = multiLineComment | singleLineComment
 
-  multiLineComment = "/*" (multiLineCommentChars | empty) "*/"
-  multiLineCommentChars = multiLineNotAsteriskChar (multiLineCommentChars | empty)
-                       | "*" (postAsteriskCommentChars | &"*/")
-  postAsteriskCommentChars = multiLineNotForwardSlashOrAsteriskChar (multiLineCommentChars | empty)
-                          | "*" (postAsteriskCommentChars | &"*/")
-  multiLineNotAsteriskChar = ~("*") sourceCharacter
-  multiLineNotForwardSlashOrAsteriskChar = ~("/" | "*") sourceCharacter
+  multiLineComment = "/*" (~"*/" sourceCharacter)* "*/"
   singleLineComment = "//" (~lineTerminator sourceCharacter)*
 
   identifier = ~reservedWord identifierName
@@ -195,13 +186,7 @@ ES5 {
 
   // === Implementation-level rules (not part of the spec) ===
 
-  multiLineCommentNoNL = "/*" (multiLineCommentCharsNoNL | empty) "*/"
-  multiLineCommentCharsNoNL = multiLineNotAsteriskCharNoNL (multiLineCommentCharsNoNL | empty)
-                           | "*" postAsteriskCommentCharsNoNL
-  postAsteriskCommentCharsNoNL = multiLineNotForwardSlashOrAsteriskCharNoNL (multiLineCommentCharsNoNL | empty)
-                              | "*" postAsteriskCommentCharsNoNL
-  multiLineNotAsteriskCharNoNL = ~("*") ~lineTerminator sourceCharacter
-  multiLineNotForwardSlashOrAsteriskCharNoNL = ~("/" | "*") ~lineTerminator sourceCharacter
+  multiLineCommentNoNL = "/*" (~("*/" | lineTerminator) sourceCharacter)* "*/"
 
   // see section 14.1: Directive Prologues and the Use Strict Directive
   // Some directives (like the Use Strict Directive) may require access to the
@@ -216,8 +201,6 @@ ES5 {
 
   // does not accept lineTerminators, not even implicit ones in a multiLineComment (cf. section 7.4)
   skipNoLine = (whitespace | singleLineComment | multiLineCommentNoNL)*
-
-  skipToEnd = skip end
 
   // a semicolon is "automatically inserted" if a newline is reached
   // the end of the input stream is reached, or the offending token is "}"
@@ -257,9 +240,11 @@ ES5 {
 
   // A.3 Expressions
 
+  justThis = "this" ~identifierPart
+
   // @returns an AST
-  PrimaryExpression = "this" ~identifierPart  -- thisExpr
-                    | scanIdentifier          -- idExpr
+  PrimaryExpression = justThis
+                    | scanIdentifier  -- idExpr
                     | scanLiteral
                       // ( litToken.type === "regexp"
                       //   ? this.ast(_fromIdx, "RegExpExpr",{body:  litToken.value.body
@@ -268,7 +253,7 @@ ES5 {
                       //                             value: litToken.value}, []) )
                     | ArrayLiteral
                     | ObjectLiteral
-                    | "(" Expression ")"      -- parenExpr
+                    | "(" Expression ")"  -- parenExpr
 
   // @returns an ArrayExpr AST
   ArrayLiteral = "[" AssignmentExpressionOrElisionComma* "]" -- trailingComma
@@ -551,11 +536,6 @@ ES5 {
   Declaration = FunctionDeclaration
 
   Directive = scanDirective sc
-
-  // === Implementation-level rules (not part of the spec) ===
-
-  // useful for parsing only expressions and making sure the parser sees all input
-  ExpressionOnly = Expression skipToEnd
 }
 
 ES5Lax <: ES5 {

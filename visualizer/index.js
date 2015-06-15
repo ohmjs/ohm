@@ -356,15 +356,20 @@ var errorMarks = {
 
 function hideError(category, editor) {
   if (errorMarks[category]) {
-    clearMark(editor, errorMarks[category]);
+    clearMark(editor, errorMarks[category].interval);
+    errorMarks[category].widget.clear();
+    errorMarks[category] = null;
   }
-  $('#' + category + 'Error').innerHTML = '';
 }
 
 function showError(category, editor, message, interval) {
-  var el = $('#' + category + 'Error').appendChild(createElement('.errorItem'));
+  var el = createElement('.errorItem');
   el.textContent = message;
-  errorMarks[category] = markInterval(editor, interval, 'error', false);
+  var pos = editor.posFromIndex(interval.endIdx);
+  errorMarks[category] = {
+    interval: markInterval(editor, interval, 'error', false),
+    widget: editor.addLineWidget(pos.line, el)
+  };
 }
 
 function useLocalStorage() {

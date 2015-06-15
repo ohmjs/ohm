@@ -337,7 +337,7 @@ pexprs.Apply.prototype._eval = function(state) {
 
   var memoRec = origPosInfo.memo[memoKey];
   var currentLR;
-  if (memoRec && origPosInfo.shouldUseMemoizedResult(memoRec)) {
+  if (memoRec && origPosInfo.shouldUseMemoizedResult(this, memoRec)) {
     return useMemoizedResult(state, this, memoRec);
   } else if (origPosInfo.isActive(app)) {
     currentLR = origPosInfo.getCurrentLeftRecursion();
