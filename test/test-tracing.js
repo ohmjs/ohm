@@ -7,6 +7,7 @@
 var test = require('tape-catch');
 
 var ohm = require('..');
+var common = require('../src/common');
 
 // --------------------------------------------------------------------
 // Tests
@@ -42,7 +43,7 @@ test('basic tracing', function(t) {
 
 test('tracing with memoization', function(t) {
   var g = ohm.grammar('G { start = letter ~letter | letter* }');
-  var trace = g.trace('ab', 'start');
+  var trace = g.trace('aB', 'start');
 
   var alt = trace.children[0];
   t.equal(alt.children[0].succeeded, false);
@@ -57,11 +58,17 @@ test('tracing with memoization', function(t) {
   // the the trace is still recorded properly.
   t.equal(many.children[0].succeeded, true);
   t.equal(many.children[0].children.length, 1);
-  t.equal(many.children[0].children[0].displayString, '/[a-zA-Z]/');
+  t.equal(many.children[0].children[0].children.length, 1);
+  t.equal(many.children[0].children[0].children[0].children.length, 1);
+  t.equal(many.children[0].children[0].children[0].children[0].displayString, '"a".."z"');
 
   t.equal(many.children[1].succeeded, true);
   t.equal(many.children[1].children.length, 1);
-  t.equal(many.children[1].children[0].displayString, '/[a-zA-Z]/');
+  t.equal(many.children[1].children[0].children.length, 2);
+  t.equal(many.children[1].children[0].children[0].children.length, 1);
+  t.equal(many.children[1].children[0].children[0].children[0].displayString, '"a".."z"');
+  t.equal(many.children[1].children[0].children[1].children.length, 1);
+  t.equal(many.children[1].children[0].children[1].children[0].displayString, '"A".."Z"');
   t.end();
 });
 
@@ -103,13 +110,17 @@ test('toString', function(t) {
       'start',
       'a',  // Failed.
       'letter*',
-      'letter', '/[a-zA-Z]/',
-      'letter', '/[a-zA-Z]/',
-      'letter', '/[a-zA-Z]/',  // Failed.
+      'letter', 'lower', '"a".."z"',
+      'letter', 'lower', '"a".."z"',
+      'letter', 'lower', '"a".."z"',  // Failed.
+                'upper', '"A".."Z"',  // Failed.
       'end'], 'expressions');
 
   var excerpts = lines.map(function(l) { return l.split(/\s+/)[0]; });
-  t.deepEqual(excerpts, ['hi', 'hi', 'hi', 'hi', 'hi', 'i', 'i', '', '', ''], 'excerpts');
+  t.deepEqual(
+      excerpts,
+      common.repeat('hi', 6).concat(common.repeat('i', 3)).concat(common.repeat('', 6)),
+      'excerpts');
 
   // Test that newlines are escaped in the trace output.
   g = ohm.grammar('G { start = space* }');

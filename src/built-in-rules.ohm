@@ -1,22 +1,26 @@
 BuiltInRules {
 
   alnum  (an alpha-numeric character)
-    = /[0-9a-zA-Z]/
+    = letter
+    | digit
 
   letter  (a letter)
-    = /[a-zA-Z]/
+    = lower
+    | upper
 
   lower  (a lower-case letter)
-    = /[a-z]/
+    = "a".."z"
 
   upper  (an upper-case letter)
-    = /[A-Z]/
+    = "A".."Z"
 
   digit  (a digit)
-    = /[0-9]/
+    = "0".."9"
 
   hexDigit  (a hexadecimal digit)
-    = /[0-9a-fA-F]/
+    = digit
+    | "a".."f"
+    | "A".."F"
 
   ListOf<elem, sep>
     = elem (sep elem)*  -- some

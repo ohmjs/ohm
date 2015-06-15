@@ -26,6 +26,10 @@ pexprs.Prim.prototype.assertAllApplicationsAreValid = function(ruleName, grammar
   // no-op
 };
 
+pexprs.Range.prototype.assertAllApplicationsAreValid = function(ruleName, grammar) {
+  // no-op
+};
+
 pexprs.Param.prototype.assertAllApplicationsAreValid = function(ruleName, grammar) {
   // no-op
 };

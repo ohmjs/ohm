@@ -117,6 +117,21 @@ pexprs.RegExpPrim.prototype.match = function(inputStream) {
   return inputStream.matchRegExp(this.obj);
 };
 
+pexprs.Range.prototype._eval = function(state) {
+  var origPos = state.skipSpacesIfInSyntacticRule();
+  var inputStream = state.inputStream;
+  var obj = inputStream.next();
+  if (typeof obj === typeof this.from &&
+      this.from <= obj && obj <= this.to) {
+    var interval = inputStream.interval(origPos);
+    state.bindings.push(new TerminalNode(state.grammar, obj, interval));
+    return true;
+  } else {
+    state.recordFailure(origPos, this);
+    return false;
+  }
+};
+
 pexprs.Param.prototype._eval = function(state, inputStream) {
   var currentApplication = state.applicationStack[state.applicationStack.length - 1];
   return currentApplication.params[this.index].eval(state);

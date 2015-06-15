@@ -58,6 +58,14 @@ function RegExpPrim(obj) {
 }
 inherits(RegExpPrim, Prim);
 
+// Ranges
+
+function Range(from, to) {
+  this.from = from;
+  this.to = to;
+}
+inherits(Range, PExpr);
+
 // Parameters
 
 function Param(index) {
@@ -197,6 +205,7 @@ exports.end = end;
 exports.Prim = Prim;
 exports.StringPrim = StringPrim;
 exports.RegExpPrim = RegExpPrim;
+exports.Range = Range;
 exports.Param = Param;
 exports.Alt = Alt;
 exports.Extend = Extend;

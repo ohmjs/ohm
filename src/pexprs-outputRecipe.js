@@ -27,6 +27,14 @@ pexprs.Prim.prototype.outputRecipe = function(sb, formals) {
   sb.append(')');
 };
 
+pexprs.Range.prototype.outputRecipe = function(sb, formals) {
+  sb.append('this.range(');
+  sb.append(JSON.stringify(this.from));
+  sb.append(', ');
+  sb.append(JSON.stringify(this.to));
+  sb.append(')');
+};
+
 pexprs.Param.prototype.outputRecipe = function(sb, formals) {
   sb.append('this.param(' + this.index + ')');
 };

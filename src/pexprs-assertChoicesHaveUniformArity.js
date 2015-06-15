@@ -17,6 +17,7 @@ pexprs.PExpr.prototype.assertChoicesHaveUniformArity = common.abstract;
 pexprs.anything.assertChoicesHaveUniformArity =
 pexprs.end.assertChoicesHaveUniformArity =
 pexprs.Prim.prototype.assertChoicesHaveUniformArity =
+pexprs.Range.prototype.assertChoicesHaveUniformArity =
 pexprs.Param.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   // no-op
 };

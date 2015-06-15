@@ -43,12 +43,19 @@ Ohm {
 
   Base
     = ident Params? ~(ruleDescr? "=" | ":=" | "+=")  -- application
-    | (keyword | string | regExp | number)           -- prim
+    | Prim ".." Prim                                 -- range
+    | Prim                                           -- prim
     | "(" Alt ")"                                    -- paren
     | "[" Alt "]"                                    -- arr
     | "``" Alt "''"                                  -- str
     | "{" "..."? "}"                                 -- obj
     | "{" Props ("," "...")? "}"                     -- objWithProps
+
+  Prim
+    = keyword
+    | string
+    | regExp
+    | number
 
   Props
     = Prop ("," Prop)*

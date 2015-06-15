@@ -478,6 +478,50 @@ test('regexp', function(t) {
   t.end();
 });
 
+test('ranges', function(t) {
+  var m = ohm.grammar('M { charRange = "0".."9"  intRange = 5..131  strRange = ["bb".."foobar"] }');
+
+  test('recognition', function(t) {
+    t.equal(m.match('6', 'charRange').succeeded(), true);
+    t.equal(m.match('x', 'charRange').succeeded(), false);
+    t.equal(m.match(6, 'charRange').succeeded(), false);
+
+    t.equal(m.match(5, 'intRange').succeeded(), true);
+    t.equal(m.match(6, 'intRange').succeeded(), true);
+    t.equal(m.match(120, 'intRange').succeeded(), true);
+    t.equal(m.match(131, 'intRange').succeeded(), true);
+    t.equal(m.match(132, 'intRange').succeeded(), false);
+    t.equal(m.match('x', 'intRange').succeeded(), false);
+    t.equal(m.match('100', 'intRange').succeeded(), false);
+
+    t.equal(m.match(['aa'], 'strRange').succeeded(), false);
+    t.equal(m.match(['bb'], 'strRange').succeeded(), true);
+    t.equal(m.match(['bc'], 'strRange').succeeded(), true);
+    t.equal(m.match(['cc'], 'strRange').succeeded(), true);
+    t.equal(m.match(['ccsa'], 'strRange').succeeded(), true);
+    t.equal(m.match(['doo-a-dee-dee'], 'strRange').succeeded(), true);
+    t.equal(m.match(['foo'], 'strRange').succeeded(), true);
+    t.equal(m.match(['foobar'], 'strRange').succeeded(), true);
+    t.equal(m.match(['foobaar'], 'strRange').succeeded(), true);
+    t.equal(m.match(['foobarr'], 'strRange').succeeded(), false);
+    t.equal(m.match(['xxasdf'], 'strRange').succeeded(), false);
+    t.equal(m.match([4]).succeeded(), false);
+    t.equal(m.match(['foo']).succeeded(), false);
+
+    t.end();
+  });
+
+  test('semantic actions', function(t) {
+    var s = m.semantics().addAttribute('v', {});
+    t.equal(s(m.match('4', 'charRange')).v, '4');
+    t.equal(s(m.match(40, 'intRange')).v, 40);
+    t.equal(s(m.match(['foo'], 'strRange')).v, 'foo');
+    t.end();
+  });
+
+  t.end();
+});
+
 test('alt', function(t) {
   var m = ohm.grammar('M { altTest = "a" | "b" }');
 

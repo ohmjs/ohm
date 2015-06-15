@@ -30,6 +30,10 @@ Builder.prototype = {
     return pexprs.makePrim(x);
   },
 
+  range: function(from, to) {
+    return new pexprs.Range(from, to);
+  },
+
   param: function(index) {
     return new pexprs.Param(index);
   },

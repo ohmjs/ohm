@@ -26,6 +26,11 @@ pexprs.Prim.prototype.toExpected = function(ruleDict) {
   return JSON.stringify(this.obj);
 };
 
+pexprs.Range.prototype.toExpected = function(ruleDict) {
+  // TODO: come up with something better
+  return JSON.stringify(this.from) + '..' + JSON.stringify(this.to);
+};
+
 pexprs.Not.prototype.toExpected = function(ruleDict) {
   if (this.expr === pexprs.anything) {
     return 'nothing';

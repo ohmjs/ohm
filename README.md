@@ -133,11 +133,16 @@ result of `g.trace('ab')` for the grammar `G { start = letter+ }`:
 ab         ✓ start ⇒  "ab"
 ab           ✓ letter+ ⇒  "ab"
 ab             ✓ letter ⇒  "a"
-ab               ✓ /[a-zA-Z]/ ⇒  "a"
+ab                 ✓ lower ⇒  "a"
+ab                   ✓ "a".."z" ⇒  "a"
 b              ✓ letter ⇒  "b"
-b                ✓ /[a-zA-Z]/ ⇒  "b"
+b                  ✓ lower ⇒  "b"
+b                    ✓ "a".."z" ⇒  "b"
                ✗ letter
-                 ✗ /[a-zA-Z]/
+                   ✗ lower
+                     ✗ "a".."z"
+                   ✗ upper
+                     ✗ "A".."Z"
              ✓ end ⇒  ""
 ```
 

@@ -32,12 +32,16 @@ pexprs.Prim.prototype.toString = function() {
   return JSON.stringify(this.obj);
 };
 
-pexprs.Param.prototype.toString = function() {
-  return '#' + this.index;
-};
-
 pexprs.RegExpPrim.prototype.toString = function() {
   return this.obj.toString();
+};
+
+pexprs.Range.prototype.toString = function() {
+  return JSON.stringify(this.from) + '..' + JSON.stringify(this.to);
+};
+
+pexprs.Param.prototype.toString = function() {
+  return '#' + this.index;
 };
 
 pexprs.Alt.prototype.toString = function() {
