@@ -1,0 +1,19 @@
+ES6 <: ES5 {
+  AssignmentExpression
+    := ArrowFunction
+     | LeftHandSideExpression AssignmentOperator AssignmentExpression -- assignment
+     | ConditionalExpression
+
+  ArrowFunction = ArrowParameters /* no newline */ "=>" ConciseBody
+
+  ConciseBody = ~"{" AssignmentExpression  -- noBraces
+              | "{" FunctionBody "}"       -- withBraces
+
+  ArrowParameters = identifier  // TODO: Should be BindingIdentifier.
+                  | CoverParenthesizedExpressionAndArrowParameterList
+
+  CoverParenthesizedExpressionAndArrowParameterList
+    = "(" Expression ")"           -- expression
+    | "(" ")"                      -- parens
+    | "(" FormalParameterList ")"  -- params
+}
