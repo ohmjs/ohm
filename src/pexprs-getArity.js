@@ -4,13 +4,21 @@
 // Imports
 // --------------------------------------------------------------------
 
+var common = require('./common');
 var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
 
-pexprs.PExpr.prototype.getArity = function() {
+pexprs.PExpr.prototype.getArity = common.abstract;
+
+pexprs.anything.getArity =
+pexprs.end.getArity =
+pexprs.Prim.prototype.getArity =
+pexprs.Range.prototype.getArity =
+pexprs.Param.prototype.getArity =
+pexprs.Apply.prototype.getArity = function() {
   return 1;
 };
 

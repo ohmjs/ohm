@@ -4,6 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
+var common = require('./common');
 var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
@@ -15,7 +16,15 @@ pexprs.PExpr.prototype.isNullable = function(grammar) {
   return this._isNullable(grammar, Object.create(null));
 };
 
-pexprs.PExpr.prototype._isNullable = function(grammar, memo) {
+pexprs.PExpr.prototype._isNullable = common.abstract;
+
+pexprs.anything._isNullable =
+pexprs.Prim.prototype._isNullable =
+pexprs.Range.prototype._isNullable =
+pexprs.Param.prototype._isNullable =
+pexprs.Plus.prototype._isNullable =
+pexprs.Arr.prototype._isNullable =
+pexprs.Obj.prototype._isNullable = function(grammar, memo) {
   return false;
 };
 

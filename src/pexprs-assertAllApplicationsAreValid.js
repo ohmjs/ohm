@@ -5,8 +5,8 @@
 // --------------------------------------------------------------------
 
 var common = require('./common');
-var pexprs = require('./pexprs');
 var errors = require('./errors');
+var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations
@@ -14,22 +14,10 @@ var errors = require('./errors');
 
 pexprs.PExpr.prototype.assertAllApplicationsAreValid = common.abstract;
 
-pexprs.anything.assertAllApplicationsAreValid = function(ruleName, grammar) {
-  // no-op
-};
-
-pexprs.end.assertAllApplicationsAreValid = function(ruleName, grammar) {
-  // no-op
-};
-
-pexprs.Prim.prototype.assertAllApplicationsAreValid = function(ruleName, grammar) {
-  // no-op
-};
-
-pexprs.Range.prototype.assertAllApplicationsAreValid = function(ruleName, grammar) {
-  // no-op
-};
-
+pexprs.anything.assertAllApplicationsAreValid =
+pexprs.end.assertAllApplicationsAreValid =
+pexprs.Prim.prototype.assertAllApplicationsAreValid =
+pexprs.Range.prototype.assertAllApplicationsAreValid =
 pexprs.Param.prototype.assertAllApplicationsAreValid = function(ruleName, grammar) {
   // no-op
 };

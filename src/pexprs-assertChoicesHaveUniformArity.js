@@ -5,8 +5,8 @@
 // --------------------------------------------------------------------
 
 var common = require('./common');
-var pexprs = require('./pexprs');
 var errors = require('./errors');
+var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations

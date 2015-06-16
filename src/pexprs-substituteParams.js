@@ -4,13 +4,20 @@
 // Imports
 // --------------------------------------------------------------------
 
+var common = require('./common');
 var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
 
-pexprs.PExpr.prototype.substituteParams = function(actuals) {
+pexprs.PExpr.prototype.substituteParams = common.abstract;
+
+pexprs.anything.substituteParams =
+pexprs.end.substituteParams =
+pexprs.Prim.prototype.substituteParams =
+pexprs.Range.prototype.substituteParams =
+pexprs.Prim.prototype.substituteParams = function(actuals) {
   return this;
 };
 

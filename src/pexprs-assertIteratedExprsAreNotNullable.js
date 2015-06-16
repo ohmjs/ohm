@@ -4,14 +4,22 @@
 // Imports
 // --------------------------------------------------------------------
 
-var pexprs = require('./pexprs');
+var common = require('./common');
 var errors = require('./errors');
+var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
 
-pexprs.PExpr.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleName) {
+pexprs.PExpr.prototype.assertIteratedExprsAreNotNullable = common.abstract;
+
+pexprs.anything.assertIteratedExprsAreNotNullable =
+pexprs.end.assertIteratedExprsAreNotNullable =
+pexprs.Prim.prototype.assertIteratedExprsAreNotNullable =
+pexprs.Prim.prototype.assertIteratedExprsAreNotNullable =
+pexprs.Range.prototype.assertIteratedExprsAreNotNullable =
+pexprs.Param.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleName) {
   // no-op
 };
 

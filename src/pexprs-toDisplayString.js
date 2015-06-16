@@ -4,6 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
+var common = require('./common');
 var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
@@ -11,7 +12,16 @@ var pexprs = require('./pexprs');
 // --------------------------------------------------------------------
 
 // Returns a string representing the PExpr, for use as a UI label, etc.
-pexprs.PExpr.prototype.toDisplayString = function() {
+pexprs.PExpr.prototype.toDisplayString = common.abstract;
+
+pexprs.Alt.prototype.toDisplayString =
+pexprs.Seq.prototype.toDisplayString =
+pexprs.Iter.prototype.toDisplayString =
+pexprs.Not.prototype.toDisplayString =
+pexprs.Lookahead.prototype.toDisplayString =
+pexprs.Arr.prototype.toDisplayString =
+pexprs.Str.prototype.toDisplayString =
+pexprs.Obj.prototype.toDisplayString = function() {
   if (this.interval) {
     return this.interval.trimmed().contents;
   }

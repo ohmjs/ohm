@@ -4,6 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
+var common = require('./common');
 var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
@@ -12,7 +13,13 @@ var pexprs = require('./pexprs');
 
 // NOTE: the `introduceParams` method modifies the receiver in place.
 
-pexprs.PExpr.prototype.introduceParams = function(formals) {
+pexprs.PExpr.prototype.introduceParams = common.abstract;
+
+pexprs.anything.introduceParams =
+pexprs.end.introduceParams =
+pexprs.Prim.prototype.introduceParams =
+pexprs.Range.prototype.introduceParams =
+pexprs.Param.prototype.introduceParams = function(formals) {
   return this;
 };
 

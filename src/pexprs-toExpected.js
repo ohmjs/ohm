@@ -4,15 +4,14 @@
 // Imports
 // --------------------------------------------------------------------
 
+var common = require('./common');
 var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
 
-pexprs.PExpr.prototype.toExpected = function(ruleDict) {
-  return undefined;
-};
+pexprs.PExpr.prototype.toExpected = common.abstract;
 
 pexprs.anything.toExpected = function(ruleDict) {
   return 'any object';
