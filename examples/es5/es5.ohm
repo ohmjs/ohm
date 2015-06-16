@@ -215,16 +215,7 @@ ES5 {
   scanPunctNoLineTerminatorMM = skipNoLine "--"
 
   // @returns a string
-  scanIdentifier = skip identifier
-
-  // @returns a string
-  scanIdentifierName = skip identifierName
-
-  // @returns a string
   scanIdentifierNoLineTerminator = skipNoLine identifier
-
-  // @returns a literal token
-  scanLiteral = skip literal
 
   // @returns an object {value: string, directive: string}
   // where 'value' contains the interpreted string value
@@ -242,8 +233,8 @@ ES5 {
 
   // @returns an AST
   PrimaryExpression = justThis
-                    | scanIdentifier  -- idExpr
-                    | scanLiteral
+                    | identifier  -- idExpr
+                    | literal
                       // ( litToken.type === "regexp"
                       //   ? this.ast(_fromIdx, "RegExpExpr",{body:  litToken.value.body
                       //                            flags: litToken.value.flags}, [])
@@ -270,7 +261,7 @@ ES5 {
                      | PropertyName ":" AssignmentExpression                            -- simple
 
   // @returns a string
-  PropertyName = scanIdentifierName
+  PropertyName = identifierName
                | stringLiteral
                | numericLiteral
 
@@ -291,10 +282,10 @@ ES5 {
                 | justNew NewExpression -- newExp
 
   // @returns an AST
-  CallExpression = CallExpression "[" Expression "]"     -- arrayRefExp
-                 | CallExpression "." scanIdentifierName -- propRefExp
-                 | CallExpression Arguments              -- callExpExp
-                 | MemberExpression Arguments            -- memberExpExp
+  CallExpression = CallExpression "[" Expression "]"  -- arrayRefExp
+                 | CallExpression "." identifierName  -- propRefExp
+                 | CallExpression Arguments           -- callExpExp
+                 | MemberExpression Arguments         -- memberExpExp
 
   // @returns an array of ASTs
   Arguments = "(" ")"                -- empty
@@ -427,13 +418,10 @@ ES5 {
 
   // @returns an AST
   VariableDeclaration = InitPattern -- initialValue
-                      | IdPattern -- noInitialValue
+                      | identifier -- noInitialValue
 
   // @returns an AST
-  InitPattern = IdPattern Initialiser
-
-  // @returns an AST
-  IdPattern = scanIdentifier
+  InitPattern = identifier Initialiser
 
   // @returns an AST
   Initialiser = "=" AssignmentExpression
@@ -483,7 +471,7 @@ ES5 {
 
   DefaultClause = "default" ":" Statement*
 
-  LabelledStatement = scanIdentifier ":" Statement
+  LabelledStatement = identifier ":" Statement
 
   ThrowStatement = "throw" Expression sc   -- throwExpr
 
@@ -502,11 +490,11 @@ ES5 {
 
   // A.5 Functions and Programs
 
-  FunctionDeclaration = "function" IdPattern
+  FunctionDeclaration = "function" identifier
                         "(" FormalParameterList ")"
                         "{" FunctionBody "}"
 
-  FunctionExpression = "function" IdPattern
+  FunctionExpression = "function" identifier
                        "(" FormalParameterList ")"
                        "{" FunctionBody "}"                                 -- named
                      | "function" "(" FormalParameterList ")"
@@ -519,7 +507,7 @@ ES5 {
   CommaFormalParameter = "," FormalParameter
 
   // @returns an AST
-  FormalParameter = IdPattern
+  FormalParameter = identifier
 
   // @returns an array of ASTs
   FunctionBody = Directive* SourceElement*
