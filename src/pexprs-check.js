@@ -30,14 +30,6 @@ pexprs.Prim.prototype.check = function(grammar, vals) {
          vals[0].primitiveValue === this.obj;
 };
 
-pexprs.RegExpPrim.prototype.check = function(grammar, vals) {
-  // TODO: more efficient "total match checker" than the use of .replace here
-  return vals[0] instanceof nodes.Node &&
-         vals[0].isTerminal() &&
-         typeof vals[0].primitiveValue === 'string' &&
-         vals[0].primitiveValue.replace(this.obj, '') === '';
-};
-
 pexprs.Range.prototype.check = function(grammar, vals) {
   return vals[0] instanceof nodes.Node &&
          vals[0].isTerminal() &&

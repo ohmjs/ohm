@@ -97,9 +97,7 @@ pexprs.Prim.prototype._eval = function(state) {
     return false;
   } else {
     var interval = inputStream.interval(origPos);
-    var primitiveValue = this instanceof pexprs.RegExpPrim ?
-        inputStream.source[origPos] :
-        this.obj;
+    var primitiveValue = this.obj;
     state.bindings.push(new TerminalNode(state.grammar, primitiveValue, interval));
     return true;
   }
@@ -111,10 +109,6 @@ pexprs.Prim.prototype.match = function(inputStream) {
 
 pexprs.StringPrim.prototype.match = function(inputStream) {
   return inputStream.matchString(this.obj);
-};
-
-pexprs.RegExpPrim.prototype.match = function(inputStream) {
-  return inputStream.matchRegExp(this.obj);
 };
 
 pexprs.Range.prototype._eval = function(state) {

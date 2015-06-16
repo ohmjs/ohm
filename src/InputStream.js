@@ -73,14 +73,6 @@ StringInputStream.prototype = Object.create(InputStream.prototype, {
       }
       return true;
     }
-  },
-
-  matchRegExp: {
-    value: function(e) {
-      // IMPORTANT: e must be a non-global, one-character expression, e.g., /./ and /[0-9]/
-      var c = this.next();
-      return c !== common.fail && e.test(c) ? true : common.fail;
-    }
   }
 });
 
@@ -93,12 +85,6 @@ ListInputStream.prototype = Object.create(InputStream.prototype, {
     value: function(s) {
       return this.matchExactly(s);
     }
-  },
-
-  matchRegExp: {
-    value: function(e) {
-      return this.matchExactly(e);
-    }
   }
 });
 
@@ -107,4 +93,3 @@ ListInputStream.prototype = Object.create(InputStream.prototype, {
 // --------------------------------------------------------------------
 
 module.exports = InputStream;
-

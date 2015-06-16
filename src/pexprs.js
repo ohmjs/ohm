@@ -53,11 +53,6 @@ function StringPrim(obj) {
 }
 inherits(StringPrim, Prim);
 
-function RegExpPrim(obj) {
-  this.obj = obj;
-}
-inherits(RegExpPrim, Prim);
-
 // Ranges
 
 function Range(from, to) {
@@ -192,8 +187,6 @@ Apply.prototype.toMemoKey = function() {
 exports.makePrim = function(obj) {
   if (typeof obj === 'string' && obj.length !== 1) {
     return new StringPrim(obj);
-  } else if (obj instanceof RegExp) {
-    return new RegExpPrim(obj);
   } else {
     return new Prim(obj);
   }
@@ -204,7 +197,6 @@ exports.anything = anything;
 exports.end = end;
 exports.Prim = Prim;
 exports.StringPrim = StringPrim;
-exports.RegExpPrim = RegExpPrim;
 exports.Range = Range;
 exports.Param = Param;
 exports.Alt = Alt;

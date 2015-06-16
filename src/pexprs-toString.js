@@ -32,10 +32,6 @@ pexprs.Prim.prototype.toString = function() {
   return JSON.stringify(this.obj);
 };
 
-pexprs.RegExpPrim.prototype.toString = function() {
-  return this.obj.toString();
-};
-
 pexprs.Range.prototype.toString = function() {
   return JSON.stringify(this.from) + '..' + JSON.stringify(this.to);
 };
