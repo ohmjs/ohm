@@ -91,6 +91,12 @@ pexprs.Lookahead.prototype.outputRecipe = function(sb, formals) {
   sb.append(')');
 };
 
+pexprs.Lex.prototype.outputRecipe = function(sb, formals) {
+  sb.append('this.lex(');
+  this.expr.outputRecipe(sb, formals);
+  sb.append(')');
+};
+
 pexprs.Arr.prototype.outputRecipe = function(sb, formals) {
   sb.append('this.arr(');
   this.expr.outputRecipe(sb, formals);

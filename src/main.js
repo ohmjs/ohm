@@ -180,6 +180,10 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return builder.la(x.visit()).withInterval(this.interval);
     },
 
+    Lex_lex: function(_, x) {
+      return builder.lex(x.visit()).withInterval(this.interval);
+    },
+
     Base_application: function(rule, ps) {
       return builder.app(rule.visit(), ps.visit()[0] || []).withInterval(this.interval);
     },

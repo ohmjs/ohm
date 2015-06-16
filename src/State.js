@@ -6,7 +6,6 @@
 
 var PosInfo = require('./PosInfo');
 var Trace = require('./Trace');
-var common = require('./common');
 var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
@@ -38,13 +37,16 @@ State.prototype = {
     }
   },
 
+  currentApplication: function() {
+    return this.applicationStack[this.applicationStack.length - 1];
+  },
+
   inSyntacticRule: function() {
-    var applicationStack = this.applicationStack;
-    if (typeof this.inputStream.source !== 'string' || applicationStack.length === 0) {
+    if (typeof this.inputStream.source !== 'string') {
       return false;
     }
-    var currentApplication = applicationStack[applicationStack.length - 1];
-    return common.isSyntactic(currentApplication.ruleName);
+    var currentApplication = this.currentApplication();
+    return currentApplication && currentApplication.isSyntactic();
   },
 
   skipSpaces: function() {
@@ -55,7 +57,7 @@ State.prototype = {
     return this.inputStream.pos;
   },
 
-  skipSpacesIfInSyntacticRule: function() {
+  skipSpacesIfInSyntacticContext: function() {
     if (this.inSyntacticRule()) {
       this.skipSpaces();
     }

@@ -38,6 +38,7 @@ pexprs.Seq.prototype.substituteParams = function(actuals) {
 pexprs.Iter.prototype.substituteParams =
 pexprs.Not.prototype.substituteParams =
 pexprs.Lookahead.prototype.substituteParams =
+pexprs.Lex.prototype.substituteParams =
 pexprs.Arr.prototype.substituteParams =
 pexprs.Str.prototype.substituteParams = function(actuals) {
   return new this.constructor(this.expr.substituteParams(actuals));

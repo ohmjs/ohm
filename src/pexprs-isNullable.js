@@ -54,6 +54,10 @@ pexprs.Lookahead.prototype._isNullable = function(grammar, memo) {
   return true;
 };
 
+pexprs.Lex.prototype._isNullable = function(grammar, memo) {
+  return this.expr._isNullable(grammar, memo);
+};
+
 pexprs.Str.prototype._isNullable = function(grammar, memo) {
   // This is also an over-simplification that is only correct when the input is a string.
   return this.expr._isNullable(grammar, memo);

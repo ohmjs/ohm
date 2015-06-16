@@ -37,8 +37,12 @@ Ohm {
     | Pred
 
   Pred
-    = "~" Base  -- not
-    | "&" Base  -- lookahead
+    = "~" Lex  -- not
+    | "&" Lex  -- lookahead
+    | Lex
+
+  Lex
+    = "#" Base  -- lex
     | Base
 
   Base

@@ -63,7 +63,7 @@ pexprs.PExpr.prototype.eval = function(state) {
 pexprs.PExpr.prototype._eval = common.abstract;
 
 pexprs.anything._eval = function(state) {
-  var origPos = state.skipSpacesIfInSyntacticRule();
+  var origPos = state.skipSpacesIfInSyntacticContext();
   var inputStream = state.inputStream;
   var value = inputStream.next();
   if (value === common.fail) {
@@ -77,7 +77,7 @@ pexprs.anything._eval = function(state) {
 };
 
 pexprs.end._eval = function(state) {
-  var origPos = state.skipSpacesIfInSyntacticRule();
+  var origPos = state.skipSpacesIfInSyntacticContext();
   var inputStream = state.inputStream;
   if (inputStream.atEnd()) {
     var interval = inputStream.interval(inputStream.pos);
@@ -90,7 +90,7 @@ pexprs.end._eval = function(state) {
 };
 
 pexprs.Prim.prototype._eval = function(state) {
-  var origPos = state.skipSpacesIfInSyntacticRule();
+  var origPos = state.skipSpacesIfInSyntacticContext();
   var inputStream = state.inputStream;
   if (this.match(inputStream) === common.fail) {
     state.recordFailure(origPos, this);
@@ -112,11 +112,10 @@ pexprs.StringPrim.prototype.match = function(inputStream) {
 };
 
 pexprs.Range.prototype._eval = function(state) {
-  var origPos = state.skipSpacesIfInSyntacticRule();
+  var origPos = state.skipSpacesIfInSyntacticContext();
   var inputStream = state.inputStream;
   var obj = inputStream.next();
-  if (typeof obj === typeof this.from &&
-      this.from <= obj && obj <= this.to) {
+  if (typeof obj === typeof this.from && this.from <= obj && obj <= this.to) {
     var interval = inputStream.interval(origPos);
     state.bindings.push(new TerminalNode(state.grammar, obj, interval));
     return true;
@@ -127,8 +126,7 @@ pexprs.Range.prototype._eval = function(state) {
 };
 
 pexprs.Param.prototype._eval = function(state, inputStream) {
-  var currentApplication = state.applicationStack[state.applicationStack.length - 1];
-  return currentApplication.params[this.index].eval(state);
+  return state.currentApplication().params[this.index].eval(state);
 };
 
 pexprs.Alt.prototype._eval = function(state) {
@@ -223,6 +221,14 @@ pexprs.Lookahead.prototype._eval = function(state) {
   }
 };
 
+pexprs.Lex.prototype._eval = function(state) {
+  var app = state.currentApplication();
+  app.lexify();
+  var ans = this.expr.eval(state);
+  app.unlexify();
+  return ans;
+};
+
 pexprs.Arr.prototype._eval = function(state) {
   var obj = state.inputStream.next();
   if (Array.isArray(obj)) {
@@ -315,14 +321,14 @@ pexprs.Apply.prototype._eval = function(state) {
   var grammar = state.grammar;
   var bindings = state.bindings;
 
-  var actuals = state.applicationStack.length > 1 ?
-      state.applicationStack[state.applicationStack.length - 1].params :
-      [];
+  var caller = state.currentApplication();
+  var actuals = caller ? caller.params : [];
+
   var app = this.substituteParams(actuals);
   var ruleName = app.ruleName;
   var memoKey = app.toMemoKey();
 
-  if (this !== state.applySpaces_ && (state.inSyntacticRule() || common.isSyntactic(ruleName))) {
+  if (this !== state.applySpaces_ && (caller && caller.isSyntactic() || app.isSyntactic())) {
     state.skipSpaces();
   }
 
@@ -382,8 +388,8 @@ pexprs.Apply.prototype._eval = function(state) {
     var ans;
     if (value) {
       bindings.push(value);
-      if (state.applicationStack.length === 1) {
-        if (common.isSyntactic(ruleName)) {
+      if (!caller) {
+        if (app.isSyntactic()) {
           state.skipSpaces();
         }
         // Only succeed if the top-level rule has consumed all of the input.

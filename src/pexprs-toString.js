@@ -37,7 +37,11 @@ pexprs.Range.prototype.toString = function() {
 };
 
 pexprs.Param.prototype.toString = function() {
-  return '#' + this.index;
+  return '$' + this.index;
+};
+
+pexprs.Lex.prototype.toString = function() {
+  return '#(' + this.expr.toString() + ')';
 };
 
 pexprs.Alt.prototype.toString = function() {

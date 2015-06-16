@@ -1434,30 +1434,46 @@ test('lexical vs. syntactic rules', function(t) {
 
   it("lexical rules don't skip spaces implicitly", function() {
     var g = ohm.grammar('G { start = "foo" "bar" }');
-    t.ok(g.match('foobar', 'start'));
-    t.equal(g.match('foo bar', 'start').failed(), true);
-    t.equal(g.match(' foo bar   ', 'start').failed(), true);
+    t.ok(g.match('foobar', 'start').succeeded());
+    t.equal(g.match('foo bar').failed(), true);
+    t.equal(g.match(' foo bar   ').failed(), true);
   });
 
   it('syntactic rules skip spaces implicitly', function() {
     var g = ohm.grammar('G { Start = "foo" "bar" }');
-    t.ok(g.match('foobar', 'Start'));
-    t.ok(g.match('foo bar', 'Start'));
-    t.ok(g.match(' foo bar   ', 'Start'));
+    t.ok(g.match('foobar').succeeded());
+    t.ok(g.match('foo bar').succeeded());
+    t.ok(g.match(' foo bar   ').succeeded());
   });
 
   it('mixing lexical and syntactic rules works as expected', function() {
     var g = makeGrammar([
       'G {',
+      '  Start = foo bar',
       '  foo = "foo"',
       '  bar = "bar"',
-      '  Start = foo bar',
       '}'
     ]);
-    t.ok(g.match('foobar', 'Start'));
-    t.ok(g.match('foo bar', 'Start'));
-    t.ok(g.match(' foo bar   ', 'Start'));
+    t.ok(g.match('foobar').succeeded());
+    t.ok(g.match('foo bar').succeeded());
+    t.ok(g.match(' foo bar   ').succeeded());
   });
+
+  // TODO: write more tests for this operator (e.g., to ensure that it's "transparent", arity-wise)
+  // and maybe move it somewhere else.
+  it('lexification operator works as expected', function() {
+    var g = makeGrammar([
+      'G {',
+      '  ArrowFun = name #(spacesNoNl "=>") "{}"',
+      '  name = "x" | "y"',
+      '  spacesNoNl = " "*',
+      '}'
+    ]);
+    t.ok(g.match('x => {}').succeeded());
+    t.ok(g.match(' y  =>    \n\n  \n{}').succeeded());
+    t.ok(g.match('x \n  => {}').failed());
+  });
+
   t.end();
 });
 

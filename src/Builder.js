@@ -84,6 +84,10 @@ Builder.prototype = {
     return new pexprs.Lookahead(expr);
   },
 
+  lex: function(expr) {
+    return new pexprs.Lex(expr);
+  },
+
   arr: function(expr) {
     return new pexprs.Arr(expr);
   },

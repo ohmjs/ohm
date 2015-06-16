@@ -40,6 +40,7 @@ pexprs.Seq.prototype.introduceParams = function(formals) {
 pexprs.Iter.prototype.introduceParams =
 pexprs.Not.prototype.introduceParams =
 pexprs.Lookahead.prototype.introduceParams =
+pexprs.Lex.prototype.introduceParams =
 pexprs.Arr.prototype.introduceParams =
 pexprs.Str.prototype.introduceParams = function(formals) {
   this.expr = this.expr.introduceParams(formals);

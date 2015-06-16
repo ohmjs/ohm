@@ -37,6 +37,7 @@ pexprs.Seq.prototype.assertAllApplicationsAreValid = function(ruleName, grammar)
 pexprs.Iter.prototype.assertAllApplicationsAreValid =
 pexprs.Not.prototype.assertAllApplicationsAreValid =
 pexprs.Lookahead.prototype.assertAllApplicationsAreValid =
+pexprs.Lex.prototype.assertAllApplicationsAreValid =
 pexprs.Arr.prototype.assertAllApplicationsAreValid =
 pexprs.Str.prototype.assertAllApplicationsAreValid = function(ruleName, grammar) {
   this.expr.assertAllApplicationsAreValid(ruleName, grammar);

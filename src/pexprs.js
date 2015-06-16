@@ -136,6 +136,13 @@ function Lookahead(expr) {
 }
 inherits(Lookahead, PExpr);
 
+// "Lexification"
+
+function Lex(expr) {
+  this.expr = expr;
+}
+inherits(Lex, PExpr);
+
 // Array decomposition
 
 function Arr(expr) {
@@ -169,8 +176,21 @@ inherits(Obj, PExpr);
 function Apply(ruleName, optParams) {
   this.ruleName = ruleName;
   this.params = optParams || [];
+  this.lexifyCount = 0;
 }
 inherits(Apply, PExpr);
+
+Apply.prototype.lexify = function() {
+  this.lexifyCount++;
+};
+
+Apply.prototype.unlexify = function() {
+  this.lexifyCount--;
+};
+
+Apply.prototype.isSyntactic = function() {
+  return this.lexifyCount === 0 && common.isSyntactic(this.ruleName);
+};
 
 // This method just caches the result of `this.toString()` in a non-enumerable property.
 Apply.prototype.toMemoKey = function() {
@@ -208,6 +228,7 @@ exports.Plus = Plus;
 exports.Opt = Opt;
 exports.Not = Not;
 exports.Lookahead = Lookahead;
+exports.Lex = Lex;
 exports.Arr = Arr;
 exports.Str = Str;
 exports.Obj = Obj;
