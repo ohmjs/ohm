@@ -27,8 +27,6 @@ ES5 {
   // input characters are represented as ES3 characters, which can be any unicode character
   sourceCharacter = _
 
-  empty =
-
   // // 7: Goal production in contexts where a leading "/" or "/=" is permitted
   // // Note: not used by the parser
   // InputElementDiv = whitespace | lineTerminator | comment | token | DivPunctuator
@@ -121,8 +119,8 @@ ES5 {
                  |                       "." decimalDigit* exponentPart -- decimalsOnly
                  | decimalIntegerLiteral                   exponentPart -- integerOnly
 
-  decimalIntegerLiteral = nonZeroDigit (decimalDigit* | empty) -- nonZero
-                        | "0"                                  -- zero
+  decimalIntegerLiteral = nonZeroDigit decimalDigit*  -- nonZero
+                        | "0"                         -- zero
   decimalDigit = /[0123456789]/
   nonZeroDigit = /[123456789]/
 
@@ -256,8 +254,8 @@ ES5 {
                     | "(" Expression ")"  -- parenExpr
 
   // @returns an ArrayExpr AST
-  ArrayLiteral = "[" AssignmentExpressionOrElisionComma* "]" -- trailingComma
-               | "[" AssignmentExpressionOrElisionComma* AssignmentExpression "]" -- noTrailingComma
+  ArrayLiteral = "[" AssignmentExpressionOrElisionComma* "]"                       -- trailingComma
+               | "[" AssignmentExpressionOrElisionComma* AssignmentExpression "]"  -- noTrailingComma
   AssignmentExpressionOrElisionComma = (AssignmentExpression | Elision) ","
   Elision =
 
@@ -267,9 +265,9 @@ ES5 {
   PropertyAssignmentComma = PropertyAssignment ","
 
   // @returns a *Prop AST
-  PropertyAssignment = "get" PropertyName "(" ")" "{" FunctionBody "}"                 -- getter
-                     | "set" PropertyName "(" FormalParameter ")" "{" FunctionBody "}" -- setter
-                     | PropertyName ":" AssignmentExpression                           -- simple
+  PropertyAssignment = "get" PropertyName "(" ")" "{" FunctionBody "}"                  -- getter
+                     | "set" PropertyName "(" FormalParameter ")" "{" FunctionBody "}"  -- setter
+                     | PropertyName ":" AssignmentExpression                            -- simple
 
   // @returns a string
   PropertyName = scanIdentifierName
@@ -378,13 +376,13 @@ ES5 {
   LogicalORExpression = LogicalORExpression "||" LogicalANDExpression -- lor
 		      | LogicalANDExpression
 
-  ConditionalExpression = LogicalORExpression "?"
-                            AssignmentExpression ":" AssignmentExpression -- conditional
-                        | LogicalORExpression
+  ConditionalExpression
+    = LogicalORExpression "?" AssignmentExpression ":" AssignmentExpression -- conditional
+    | LogicalORExpression
 
-  AssignmentExpression = LeftHandSideExpression
-                           AssignmentOperator AssignmentExpression -- assignment
-                       | ConditionalExpression
+  AssignmentExpression
+    = LeftHandSideExpression AssignmentOperator AssignmentExpression -- assignment
+    | ConditionalExpression
 
   Expression = Expression "," AssignmentExpression -- commaExp
              | AssignmentExpression
@@ -451,18 +449,18 @@ ES5 {
               | "if" "(" Expression ")" Statement                  -- ifThen
 
   // @returns an AST
-  IterationStatement = "do" Statement "while" "(" Expression ")" sc     -- doWhile
-                     | "while" "(" Expression ")" Statement             -- whileDo
-                     | "for" "(" (Expression | empty) ";"
-                                 (Expression | empty) ";"
-                                 (Expression | empty) ")" Statement     -- for3
+  IterationStatement = "do" Statement "while" "(" Expression ")" sc  -- doWhile
+                     | "while" "(" Expression ")" Statement          -- whileDo
+                     | "for" "(" Expression? ";"
+                                 Expression? ";"
+                                 Expression? ")" Statement           -- for3
                      | "for" "(" "var" VariableDeclarationList ";"
-                                 (Expression | empty) ";"
-                                 (Expression | empty) ")" Statement     -- for3var
+                                 Expression? ";"
+                                 Expression? ")" Statement           -- for3var
                      | "for" "(" LeftHandSideExpression "in"
-                                 Expression ")" Statement               -- forIn
+                                 Expression ")" Statement            -- forIn
                      | "for" "(" "var" VariableDeclaration "in"
-                                 Expression ")" Statement               -- forInVar
+                                 Expression ")" Statement            -- forInVar
 
   ContinueStatement = "continue" sc                                 -- unlabelled
                     | "continue" scanIdentifierNoLineTerminator sc  -- labelled
@@ -487,11 +485,7 @@ ES5 {
 
   LabelledStatement = scanIdentifier ":" Statement
 
-  ThrowStatement = "throw" skipNoLine
-                              scanLineTerminator ~empty // fails explicitly
-                   // TODO: what on earth is this rule for?
-                                             -- throwShouldNeverMatch
-                 | "throw" Expression sc   -- throwExpr
+  ThrowStatement = "throw" Expression sc   -- throwExpr
 
   TryStatement = "try" Block Catch Finally  -- tryCatchFinally
                | "try" Block Finally        -- tryFinally
