@@ -417,8 +417,8 @@ ES5 {
   VariableDeclarationComma = VariableDeclaration ","
 
   // @returns an AST
-  VariableDeclaration = InitPattern -- initialValue
-                      | identifier -- noInitialValue
+  VariableDeclaration = InitPattern  -- initialValue
+                      | identifier   -- noInitialValue
 
   // @returns an AST
   InitPattern = identifier Initialiser
@@ -456,8 +456,8 @@ ES5 {
   BreakStatement = "break" sc                                 -- unlabelled
                  | "break" scanIdentifierNoLineTerminator sc  -- labelled
 
-  ReturnStatement = "return" sc                        -- returnVoid
-                  | "return" skipNoLine Expression sc  -- returnExpr
+  ReturnStatement = "return" sc                        -- empty
+                  | "return" skipNoLine Expression sc  -- withExpr
 
   WithStatement = "with" "(" Expression ")" Statement
 
