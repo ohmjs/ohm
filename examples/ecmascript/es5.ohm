@@ -73,7 +73,7 @@ ES5 {
   unicodeConnectorPunctuation = "\u005F" | "\u203F".."\u2040" | "\u30FB" | "\uFE33".."\uFE34" | "\uFE4D".."\uFE4F" | "\uFF3F" | "\uFF65"
   unicodeSpaceSeparator = "\u2000".."\u200B" | "\u3000"
 
-  reservedWord = (keyword | futureReservedWord | nullLiteral | booleanLiteral) ~identifierPart
+  reservedWord = keyword | futureReservedWord | nullLiteral | booleanLiteral
 
   // Note: keywords that are the complete prefix of another keyword should
   // be prioritized (e.g. 'in' should come before 'instanceof')
@@ -202,47 +202,56 @@ ES5 {
   rawStringLiteral = "\"" (~"\"" sourceCharacter)* "\""
                   | "'" (~"'" sourceCharacter)* "'"
 
-  // used by parser to parse actual tokens
-
-  skip = space*
-
   // does not accept lineTerminators, not even implicit ones in a multiLineComment (cf. section 7.4)
-  skipNoLine = (whitespace | singleLineComment | multiLineCommentNoNL)*
+  spacesNoNL = (whitespace | singleLineComment | multiLineCommentNoNL)*
 
-  // a semicolon is "automatically inserted" if a newline is reached
-  // the end of the input stream is reached, or the offending token is "}"
-  // Note: don't use ";" as this is equivalent to token(";")
-  // which would allow line terminators to be eaten as well
-  sc = skipNoLine ";"
-     | skipNoLine (scanLineTerminator | end | &"}")
+  // A semicolon is "automatically inserted" if a newline is reached the end of the input stream
+  // is reached, or the offending token is "}".
+  // See http://ecma-international.org/ecma-262/5.1/#sec-7.9 for more information.
+  // NOTE: Applications of this rule *must* appear in a lexical context -- either in the body of a
+  // lexical rule, or inside `#()`.
+  sc = spacesNoNL ";"
+     | spacesNoNL (lineTerminator | ~multiLineCommentNoNL multiLineComment | end | &"}")
 
-  // All rules starting with 'scan' skip whitespace, then scan the appropriate tokens
+  // Convenience rules for parsing keyword tokens.
+  break = "break" ~identifierPart
+  do = "do" ~identifierPart
+  instanceof = "instanceof" ~identifierPart
+  typeof = "typeof" ~identifierPart
+  case = "case" ~identifierPart
+  else = "else" ~identifierPart
+  new = "new" ~identifierPart
+  var = "var" ~identifierPart
+  catch = "catch" ~identifierPart
+  finally = "finally" ~identifierPart
+  return = "return" ~identifierPart
+  void = "void" ~identifierPart
+  continue = "continue" ~identifierPart
+  for = "for" ~identifierPart
+  switch = "switch" ~identifierPart
+  while = "while" ~identifierPart
+  debugger = "debugger" ~identifierPart
+  function = "function" ~identifierPart
+  this = "this" ~identifierPart
+  with = "with" ~identifierPart
+  default = "default" ~identifierPart
+  if = "if" ~identifierPart
+  throw = "throw" ~identifierPart
+  delete = "delete" ~identifierPart
+  in = "in" ~identifierPart
+  try = "try" ~identifierPart
+  get = "get" ~identifierPart
+  set = "set" ~identifierPart
 
-  scanLineTerminator = lineTerminator | ~multiLineCommentNoNL multiLineComment
-
-  scanPunctNoLineTerminatorPP = skipNoLine "++"
-  scanPunctNoLineTerminatorMM = skipNoLine "--"
-
-  // @returns a string
-  scanIdentifierNoLineTerminator = skipNoLine identifier
-
-  // @returns an object {value: string, directive: string}
-  // where 'value' contains the interpreted string value
-  // and 'directive' contains the uninterpreted ('raw') string value
-  scanDirective = skip &(rawStringLiteral) stringLiteral
-
-  // ========== end of the lexer ==========
-
+  // ========== end of lexical rules ==========
 
   // === ECMAScript 5 Parser ===
 
   // A.3 Expressions
 
-  justThis = "this" ~identifierPart
-
   // @returns an AST
-  PrimaryExpression = justThis
-                    | identifier  -- idExpr
+  PrimaryExpression = this
+                    | identifier
                     | literal
                       // ( litToken.type === "regexp"
                       //   ? this.ast(_fromIdx, "RegExpExpr",{body:  litToken.value.body
@@ -265,30 +274,25 @@ ES5 {
   PropertyAssignmentComma = PropertyAssignment ","
 
   // @returns a *Prop AST
-  PropertyAssignment = "get" PropertyName "(" ")" "{" FunctionBody "}"                  -- getter
-                     | "set" PropertyName "(" FormalParameter ")" "{" FunctionBody "}"  -- setter
-                     | PropertyName ":" AssignmentExpression                            -- simple
+  PropertyAssignment = get PropertyName "(" ")" "{" FunctionBody "}"                  -- getter
+                     | set PropertyName "(" FormalParameter ")" "{" FunctionBody "}"  -- setter
+                     | PropertyName ":" AssignmentExpression                          -- simple
 
   // @returns a string
   PropertyName = identifierName
                | stringLiteral
                | numericLiteral
 
-  // Due to the way Ohm currently skips whitespace, this rule is needed to properly handle
-  // "new" inside a syntactic rule (e.g. in MemberExpression and NewExpression).
-  // TODO: Consider removing this when we change the way whitespace skipping works.
-  justNew = "new" ~identifierPart
-
   // @returns an AST
   MemberExpression = MemberExpression "[" Expression "]"  -- arrayRefExp
                    | MemberExpression "." identifierName  -- propRefExp
-                   | justNew MemberExpression Arguments   -- newExp
+                   | new MemberExpression Arguments       -- newExp
                    | FunctionExpression
                    | PrimaryExpression
 
   // @returns an AST
   NewExpression = MemberExpression
-                | justNew NewExpression -- newExp
+                | new NewExpression -- newExp
 
   // @returns an AST
   CallExpression = CallExpression "[" Expression "]"  -- arrayRefExp
@@ -309,19 +313,19 @@ ES5 {
   LeftHandSideExpression = CallExpression
                          | NewExpression
 
-  PostfixExpression = LeftHandSideExpression scanPunctNoLineTerminatorPP -- postIncrement
-                    | LeftHandSideExpression scanPunctNoLineTerminatorMM -- postDecrement
+  PostfixExpression = #(LeftHandSideExpression spacesNoNL "++")  -- postIncrement
+                    | #(LeftHandSideExpression spacesNoNL "--")  -- postDecrement
                     | LeftHandSideExpression
 
-  UnaryExpression = "delete"   UnaryExpression     -- deleteExp
-                  | "void"     UnaryExpression     -- voidExp
-                  | "typeof"   UnaryExpression     -- typeofExp
-                  | "++"          UnaryExpression  -- preIncrement
-                  | "--"          UnaryExpression  -- preDecrement
-                  | "+" UnaryExpression            -- unaryPlus
-                  | "-" UnaryExpression            -- unaryMinus
-                  | "~" UnaryExpression            -- bnot
-                  | "!" UnaryExpression            -- lnot
+  UnaryExpression = delete UnaryExpression  -- deleteExp
+                  | void   UnaryExpression  -- voidExp
+                  | typeof UnaryExpression  -- typeofExp
+                  | "++"   UnaryExpression  -- preIncrement
+                  | "--"   UnaryExpression  -- preDecrement
+                  | "+"    UnaryExpression  -- unaryPlus
+                  | "-"    UnaryExpression  -- unaryMinus
+                  | "~"    UnaryExpression  -- bnot
+                  | "!"    UnaryExpression  -- lnot
                   | PostfixExpression
 
   MultiplicativeExpression = MultiplicativeExpression "*" UnaryExpression -- mul
@@ -439,75 +443,68 @@ ES5 {
   EmptyStatement = ";" // note: this semicolon eats newlines
 
   // @returns an Expression AST
-  ExpressionStatement = ~("{" | "function") Expression sc
+  ExpressionStatement = ~("{" | function) #(Expression sc)
 
   // @returns an AST
-  IfStatement = "if" "(" Expression ")" Statement "else" Statement -- ifThenElse
-              | "if" "(" Expression ")" Statement                  -- ifThen
+  IfStatement = if "(" Expression ")" Statement else Statement  -- ifThenElse
+              | if "(" Expression ")" Statement                 -- ifThen
 
   // @returns an AST
-  IterationStatement = "do" Statement "while" "(" Expression ")" sc  -- doWhile
-                     | "while" "(" Expression ")" Statement          -- whileDo
-                     | "for" "(" Expression? ";"
+  IterationStatement = do Statement while "(" Expression #(")" sc)  -- doWhile
+                     | while "(" Expression ")" Statement           -- whileDo
+                     | for "(" Expression? ";"
                                  Expression? ";"
-                                 Expression? ")" Statement           -- for3
-                     | "for" "(" "var" VariableDeclarationList ";"
+                                 Expression? ")" Statement          -- for3
+                     | for "(" var VariableDeclarationList ";"
                                  Expression? ";"
-                                 Expression? ")" Statement           -- for3var
-                     | "for" "(" LeftHandSideExpression "in"
-                                 Expression ")" Statement            -- forIn
-                     | "for" "(" "var" VariableDeclaration "in"
-                                 Expression ")" Statement            -- forInVar
+                                 Expression? ")" Statement          -- for3var
+                     | for "(" LeftHandSideExpression in
+                                 Expression ")" Statement           -- forIn
+                     | for "(" var VariableDeclaration in
+                                 Expression ")" Statement           -- forInVar
 
-  ContinueStatement = "continue" sc                                 -- unlabelled
-                    | "continue" scanIdentifierNoLineTerminator sc  -- labelled
+  ContinueStatement = #(continue (spacesNoNL identifier)? sc)
 
-  BreakStatement = "break" sc                                 -- unlabelled
-                 | "break" scanIdentifierNoLineTerminator sc  -- labelled
+  BreakStatement = #(break (spacesNoNL identifier)? sc)
 
-  ReturnStatement = "return" sc                        -- empty
-                  | "return" skipNoLine Expression sc  -- withExpr
+  ReturnStatement = #(return (spacesNoNL Expression)? sc)
 
-  WithStatement = "with" "(" Expression ")" Statement
+  WithStatement = with "(" Expression ")" Statement
 
-  SwitchStatement = "switch" "(" Expression ")" CaseBlock
+  SwitchStatement = switch "(" Expression ")" CaseBlock
 
   // @return an array of ASTs
   CaseBlock = "{" CaseClause* DefaultClause CaseClause* "}"  -- withDefault
             | "{"                           CaseClause* "}"  -- withoutDefault
 
-  CaseClause = "case" Expression ":" Statement*
+  CaseClause = case Expression ":" Statement*
 
-  DefaultClause = "default" ":" Statement*
+  DefaultClause = default ":" Statement*
 
   LabelledStatement = identifier ":" Statement
 
-  ThrowStatement = "throw" Expression sc   -- throwExpr
+  ThrowStatement = throw #(Expression sc)  -- throwExpr
 
-  TryStatement = "try" Block Catch Finally  -- tryCatchFinally
-               | "try" Block Finally        -- tryFinally
-               | "try" Block Catch          -- tryCatch
+  TryStatement = try Block Catch Finally  -- tryCatchFinally
+               | try Block Finally        -- tryFinally
+               | try Block Catch          -- tryCatch
 
   // @returns a CatchClause AST
-  Catch = "catch" "(" FormalParameter ")" Block
+  Catch = catch "(" FormalParameter ")" Block
 
   // @returns a Block AST
-  Finally = "finally" Block
+  Finally = finally Block
 
-  DebuggerStatement = "debugger" sc
-
+  DebuggerStatement = #(debugger sc)
 
   // A.5 Functions and Programs
 
-  FunctionDeclaration = "function" identifier
-                        "(" FormalParameterList ")"
-                        "{" FunctionBody "}"
+  FunctionDeclaration
+    = function identifier "(" FormalParameterList ")" "{" FunctionBody "}"
 
-  FunctionExpression = "function" identifier
-                       "(" FormalParameterList ")"
-                       "{" FunctionBody "}"                                 -- named
-                     | "function" "(" FormalParameterList ")"
-                       "{" FunctionBody "}"                                 -- anonymous
+  FunctionExpression
+    = function identifier "(" FormalParameterList ")" "{" FunctionBody "}"  -- named
+    | function "(" FormalParameterList ")" "{" FunctionBody "}"             -- anonymous
 
   // @returns an array of ASTs
   FormalParameterList = FormalParameter (CommaFormalParameter)* -- many
@@ -526,7 +523,7 @@ ES5 {
   // Broken out so es6 can override to include ConstDecl and LetDecl
   Declaration = FunctionDeclaration
 
-  Directive = scanDirective sc
+  Directive = &(rawStringLiteral) #(stringLiteral sc)
 }
 
 ES5Lax <: ES5 {
