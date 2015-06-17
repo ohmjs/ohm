@@ -3,11 +3,10 @@
 'use strict';
 
 var assert = require('assert');
-var fs = require('fs');
 var join = require('path').join;
 var ohm = require('../..');
 
-var g = ohm.grammar(fs.readFileSync(join(__dirname, 'csv.ohm')).toString());
+var g = ohm.grammarFromFile(join(__dirname, 'csv.ohm'));
 
 var semantics = g.semantics().addOperation('value', {
   csv: function(r, _, rs, eol) {

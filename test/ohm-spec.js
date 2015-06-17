@@ -1667,6 +1667,17 @@ test('instantiating grammars from different types of objects', function(t) {
   t.end();
 });
 
+test('loading grammars from files', function(t) {
+  var g = ohm.grammarFromFile('test/arithmetic.ohm');
+  t.equal(g.match('1+2').succeeded(), true, 'grammarFromFile works when the file exists');
+  t.throws(function() { ohm.grammarFromFile('doesNotExist~~~~'); });
+
+  var ns = ohm.grammarsFromFile('test/arithmetic.ohm');
+  t.equal(ns.Arithmetic.match('1+2').succeeded(), true);
+  t.throws(function() { ohm.grammarsFromFile('doesNotExist~~~~'); });
+  t.end();
+});
+
 test('bootstrap', function(t) {
   var ns = makeGrammars(ohmGrammarSource);
 

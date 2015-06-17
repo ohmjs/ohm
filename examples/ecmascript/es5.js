@@ -6,7 +6,6 @@
 // Imports
 // --------------------------------------------------------------------
 
-var fs = require('fs');
 var path = require('path');
 
 var ohm = require('../..');
@@ -68,7 +67,7 @@ var modifiedSourceActions = {
 };
 
 // Instantiate the ES5 grammar.
-var g = ohm.grammars(fs.readFileSync(path.join(__dirname, 'es5.ohm'))).ES5;
+var g = ohm.grammarsFromFile(path.join(__dirname, 'es5.ohm')).ES5;
 var semantics = g.semantics();
 
 // An attribute whose value is either a string representing the modified source code for the
