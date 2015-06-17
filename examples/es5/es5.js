@@ -36,7 +36,7 @@ function compareByInterval(node, otherNode) {
   return node.interval.startIdx - otherNode.interval.startIdx;
 }
 
-// Semantic actions for the `modifiedSource` attribute.
+// Semantic actions for the `modifiedSource` attribute (see below).
 var modifiedSourceActions = {
   _default: function(children) {
     var flatChildren = flattenIterNodes(children).sort(compareByInterval);
@@ -49,11 +49,11 @@ var modifiedSourceActions = {
     for (var i = 0; i < flatChildren.length; ++i) {
       if (childResults[i] == null) {
         // Grow the interval to include this node.
-        interval = flatChildren[i].interval.collapsedRight();
-        // TODO: Maybe grow to i+1.start?
+        interval = interval.coverageWith(flatChildren[i].interval.collapsedRight());
       } else {
-        code += interval.contents + childResults[i];
-        interval = flatChildren[i].interval.collapsedLeft();
+        interval = interval.coverageWith(flatChildren[i].interval.collapsedLeft());
+        code +=  interval.contents + childResults[i];
+        interval = flatChildren[i].interval.collapsedRight();
       }
     }
     code += interval.contents;
