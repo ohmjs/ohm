@@ -55,29 +55,31 @@ function loadModule(name) {
 
   // Read in the source of all the files, so that we can time just the matching.
   var files = filenames.map(function(name) {
-    return {
-      name: name,
-      contents: removeShebang(fs.readFileSync(name).toString())
-    };
+    return [name, removeShebang(fs.readFileSync(name).toString())];
   });
 
-  var filename;
-  var result;
+  var matchStartTime = Date.now();
 
-  console.time('Matching');
-  var ok = files.every(function(f) {
-    filename = f.name;
-    result = lang.grammar.match(f.contents, 'Program');
-    return result.succeeded();
+  // Parsing -- bails out when the first error is encountered.
+  var results = [];
+  var succeeded = files.every(function(arr) {
+    var result = lang.grammar.match(arr[1], 'Program');
+    if (result.succeeded()) {
+      results.push(result);
+      return true;
+    }
+    console.log(arr[0] + ':\n' + result.message);
   });
-  if (ok) {
-    console.timeEnd('Matching');
-    console.time('Codegen');
-    var code = lang.semantics(result).asES5;
-    // console.log(code);
-    console.timeEnd('Codegen');
-    console.log(code.length + ' bytes');
-  } else {
-    console.log(filename + ':\n' + result.message);
+
+  if (succeeded) {
+    console.error('Matching:', (Date.now() - matchStartTime) + 'ms');
+
+    // Codegen
+    var code = '';
+    var codegenStartTime = Date.now();
+    results.forEach(function(r) { code += ';\n' + lang.semantics(r).asES5; });
+    console.error('Codegen:', (Date.now() - codegenStartTime) + 'ms');
+
+    console.log(code);
   }
 })();
