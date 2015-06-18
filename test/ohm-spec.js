@@ -428,6 +428,41 @@ test('string', function(t) {
   t.end();
 });
 
+test('unicode', function(t) {
+  var m = ohm.grammar('M {}');
+
+  test('recognition', function(t) {
+    t.equal(m.match('a', 'lower').succeeded(), true);
+    t.equal(m.match('\u00E9', 'lower').succeeded(), true, 'small letter e with acute');
+    t.equal(m.match('\u03C9', 'lower').succeeded(), true, 'Greek small letter Omega');
+    t.equal(m.match('`', 'lower').succeeded(), false);
+    t.equal(m.match('\u20AC', 'lower').succeeded(), false, 'Euro sign');
+    t.equal(m.match('\u01C0', 'lower').succeeded(), false, 'Latin letter dental click');
+
+    t.equal(m.match('Z', 'upper').succeeded(), true);
+    t.equal(m.match('\u03A9', 'upper').succeeded(), true, 'Greek capital letter Omega');
+    t.equal(m.match('[', 'upper').succeeded(), false);
+    t.equal(m.match('\u20AC', 'upper').succeeded(), false, 'Euro sign');
+    t.equal(m.match('\u01C0', 'upper').succeeded(), false, 'Latin letter dental click');
+
+    t.equal(m.match('\u01C0', 'letter').succeeded(), true, 'dental click is a letter');
+    t.equal(m.match(['\u01C0'], 'letter').succeeded(), true, 'dental click in a list');
+    t.end();
+  });
+
+  test('semantic actions', function(t) {
+    var s = m.semantics().addAttribute('v', {
+      _terminal: function() {
+        return this.primitiveValue + this.primitiveValue;
+      }
+    });
+    var r = m.match('\u01C0', 'letter');
+    t.equal(s(r).v, '\u01C0\u01C0');
+    t.end();
+  });
+  t.end();
+});
+
 test('ranges', function(t) {
   var m = ohm.grammar('M { charRange = "0".."9"  intRange = 5..131  strRange = ["bb".."foobar"] }');
 
@@ -1528,10 +1563,6 @@ test('action dictionary templates', function(t) {
     '  },\n' +
     '  letter: function(_) {\n' +
     '  },\n' +
-    '  lower: function(_) {\n' +
-    '  },\n' +
-    '  upper: function(_) {\n' +
-    '  },\n' +
     '  digit: function(_) {\n' +
     '  },\n' +
     '  hexDigit: function(_) {\n' +
@@ -1553,6 +1584,12 @@ test('action dictionary templates', function(t) {
     '  end: function(_) {\n' +
     '  },\n' +
     '  space: function(_) {\n' +
+    '  },\n' +
+    '  lower: function(_) {\n' +
+    '  },\n' +
+    '  upper: function(_) {\n' +
+    '  },\n' +
+    '  unicodeLtmo: function(_) {\n' +
     '  }\n' +
     '}');
   t.equal(ns.G2.toAttributeActionDictionaryTemplate(),
@@ -1577,10 +1614,6 @@ test('action dictionary templates', function(t) {
     '  },\n' +
     '  letter: function(_) {\n' +
     '  },\n' +
-    '  lower: function(_) {\n' +
-    '  },\n' +
-    '  upper: function(_) {\n' +
-    '  },\n' +
     '  digit: function(_) {\n' +
     '  },\n' +
     '  hexDigit: function(_) {\n' +
@@ -1602,6 +1635,12 @@ test('action dictionary templates', function(t) {
     '  end: function(_) {\n' +
     '  },\n' +
     '  space: function(_) {\n' +
+    '  },\n' +
+    '  lower: function(_) {\n' +
+    '  },\n' +
+    '  upper: function(_) {\n' +
+    '  },\n' +
+    '  unicodeLtmo: function(_) {\n' +
     '  }\n' +
     '}');
   t.end();

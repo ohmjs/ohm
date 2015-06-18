@@ -60,15 +60,18 @@ test('tracing with memoization', function(t) {
   t.equal(many.children[0].children.length, 1);
   t.equal(many.children[0].children[0].children.length, 1);
   t.equal(many.children[0].children[0].children[0].children.length, 1);
-  t.equal(many.children[0].children[0].children[0].children[0].displayString, '"a".."z"');
+  t.equal(many.children[0].children[0].children[0].children[0].displayString,
+          'Unicode {Ll} character');
 
   t.equal(many.children[1].succeeded, true);
   t.equal(many.children[1].children.length, 1);
   t.equal(many.children[1].children[0].children.length, 2);
   t.equal(many.children[1].children[0].children[0].children.length, 1);
-  t.equal(many.children[1].children[0].children[0].children[0].displayString, '"a".."z"');
+  t.equal(many.children[1].children[0].children[0].children[0].displayString,
+          'Unicode {Ll} character');
   t.equal(many.children[1].children[0].children[1].children.length, 1);
-  t.equal(many.children[1].children[0].children[1].children[0].displayString, '"A".."Z"');
+  t.equal(many.children[1].children[0].children[1].children[0].displayString,
+          'Unicode {Lu} character');
   t.end();
 });
 
@@ -110,16 +113,17 @@ test('toString', function(t) {
       'start',
       'a',  // Failed.
       'letter*',
-      'letter', 'lower', '"a".."z"',
-      'letter', 'lower', '"a".."z"',
-      'letter', 'lower', '"a".."z"',  // Failed.
-                'upper', '"A".."Z"',  // Failed.
+      'letter', 'lower', 'Unicode',
+      'letter', 'lower', 'Unicode',
+      'letter', 'lower', 'Unicode',  // Failed.
+                'upper', 'Unicode',  // Failed.
+                'unicodeLtmo', 'Unicode',  // Failed.
       'end'], 'expressions');
 
   var excerpts = lines.map(function(l) { return l.split(/\s+/)[0]; });
   t.deepEqual(
       excerpts,
-      common.repeat('hi', 6).concat(common.repeat('i', 3)).concat(common.repeat('', 6)),
+      common.repeat('hi', 6).concat(common.repeat('i', 3)).concat(common.repeat('', 8)),
       'excerpts');
 
   // Test that newlines are escaped in the trace output.

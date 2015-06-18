@@ -108,3 +108,7 @@ pexprs.Apply.prototype.toString = function() {
     return this.ruleName;
   }
 };
+
+pexprs.UnicodeChar.prototype.toString = function() {
+  return '\\p{' + this.category + '}';
+};

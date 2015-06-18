@@ -452,3 +452,17 @@ pexprs.Apply.prototype.handleLeftRecursion = function(body, state, origPos, curr
   }
   return currentLR.value;
 };
+
+pexprs.UnicodeChar.prototype._eval = function(state) {
+  var origPos = state.skipSpacesIfInSyntacticContext();
+  var inputStream = state.inputStream;
+  var value = inputStream.next();
+  if (value === common.fail || !this.pattern.test(value)) {
+    state.recordFailure(origPos, this);
+    return false;
+  } else {
+    var interval = inputStream.interval(origPos);
+    state.bindings.push(new TerminalNode(state.grammar, value, interval));
+    return true;
+  }
+};

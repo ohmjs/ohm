@@ -42,7 +42,7 @@ pexprs.Prim.prototype.toDisplayString = function() {
 };
 
 pexprs.StringPrim.prototype.toDisplayString = function() {
-  return '"' + this.obj + '"';
+  return JSON.stringify(this.obj);
 };
 
 pexprs.Range.prototype.toDisplayString = function() {
@@ -55,4 +55,8 @@ pexprs.Param.prototype.toDisplayString = function() {
 
 pexprs.Apply.prototype.toDisplayString = function() {
   return this.ruleName;
+};
+
+pexprs.UnicodeChar.prototype.toDisplayString = function() {
+  return 'Unicode {' + this.category + '} character';
 };

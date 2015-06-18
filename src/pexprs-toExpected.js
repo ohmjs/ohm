@@ -50,3 +50,6 @@ pexprs.Apply.prototype.toExpected = function(ruleDict) {
   }
 };
 
+pexprs.UnicodeChar.prototype.toExpected = function(ruleDict) {
+  return 'a ' + this.toDisplayString();
+};

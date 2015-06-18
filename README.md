@@ -134,15 +134,17 @@ ab         ✓ start ⇒  "ab"
 ab           ✓ letter+ ⇒  "ab"
 ab             ✓ letter ⇒  "a"
 ab                 ✓ lower ⇒  "a"
-ab                   ✓ "a".."z" ⇒  "a"
+ab                   ✓ Unicode {Ll} character ⇒  "a"
 b              ✓ letter ⇒  "b"
 b                  ✓ lower ⇒  "b"
-b                    ✓ "a".."z" ⇒  "b"
+b                    ✓ Unicode {Ll} character ⇒  "b"
                ✗ letter
                    ✗ lower
-                     ✗ "a".."z"
+                     ✗ Unicode {Ll} character
                    ✗ upper
-                     ✗ "A".."Z"
+                     ✗ Unicode {Lu} character
+                   ✗ unicodeLtmo
+                     ✗ Unicode {Ltmo} character
              ✓ end ⇒  ""
 ```
 
