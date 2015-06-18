@@ -9,7 +9,7 @@ ES6 <: ES5 {
   ConciseBody = ~"{" AssignmentExpression  -- noBraces
               | "{" FunctionBody "}"       -- withBraces
 
-  ArrowParameters = identifier  // TODO: Should be BindingIdentifier.
+  ArrowParameters = identifier /* TODO: Should be BindingIdentifier. */  -- unparenthesized
                   | CoverParenthesizedExpressionAndArrowParameterList
 
   CoverParenthesizedExpressionAndArrowParameterList
