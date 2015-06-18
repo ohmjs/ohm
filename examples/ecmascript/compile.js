@@ -37,25 +37,30 @@ function loadModule(name) {
 // Main
 // --------------------------------------------------------------------
 
-(function main() {
-  var args = process.argv.slice(2);
+function compile(args) {
   var filenames = [];
-  var opts = {};
+  var opts = {
+    grammar: null,
+    b: false,  // Benchmark (print matching times).
+    v: false   // Verbose
+  };
 
   // Super basic command line option parsing.
   for (var i = 0; i < args.length; ++i) {
     if (args[i] === '-g') {
-      opts.g = args[++i];
+      opts.grammar = args[++i];
+    } else if (args[i][0] === '-' && opts.hasOwnProperty(args[i][1])) {
+      opts[args[i][1]] = true;
     } else {
       filenames.push(args[i]);
     }
   }
 
-  var lang = opts.g ? loadModule(opts.g) : es5;
+  var lang = opts.grammar ? loadModule(opts.grammar) : es5;
 
-  // Read in the source of all the files, so that we can time just the matching.
   var files = filenames.map(function(name) {
-    return [name, removeShebang(fs.readFileSync(name).toString())];
+    // If benchmarking, read in all the files at once, so that we can just time the matching.
+    return [name, opts.b ? removeShebang(fs.readFileSync(name).toString()) : null];
   });
 
   var matchStartTime = Date.now();
@@ -63,7 +68,9 @@ function loadModule(name) {
   // Parsing -- bails out when the first error is encountered.
   var results = [];
   var succeeded = files.every(function(arr) {
-    var result = lang.grammar.match(arr[1], 'Program');
+    var source = arr[1] || removeShebang(fs.readFileSync(arr[0]).toString());
+    if (opts.v) { console.log(arr[0]); }
+    var result = lang.grammar.match(source, 'Program');
     if (result.succeeded()) {
       results.push(result);
       return true;
@@ -72,14 +79,22 @@ function loadModule(name) {
   });
 
   if (succeeded) {
-    console.error('Matching:', (Date.now() - matchStartTime) + 'ms');
+    if (opts.b) { console.error('Matching:', (Date.now() - matchStartTime) + 'ms'); }
 
     // Codegen
     var code = '';
     var codegenStartTime = Date.now();
     results.forEach(function(r) { code += ';\n' + lang.semantics(r).asES5; });
-    console.error('Codegen:', (Date.now() - codegenStartTime) + 'ms');
-
-    console.log(code);
+    if (opts.b) {
+      console.error('Codegen:', (Date.now() - codegenStartTime) + 'ms');
+    } else {
+      console.log(code);
+    }
   }
-})();
+}
+
+module.exports = compile;
+
+if (require.main === module) {
+  compile(process.argv.slice(2));
+}
