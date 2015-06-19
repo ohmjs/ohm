@@ -8,7 +8,7 @@ var path = require('path');
 // Semantic actions for the `mentionsThis` attribute, which returns true for a node
 // if the `this` keyword appears anywhere in the node's subtree, and otherwise false.
 var mentionsThisActions = {
-  'this': function(_) { return true; },
+  this: function(_) { return true; },
   _terminal: function() { return false; },
   _default: anyNodesMentionThis,
   _iter: anyNodesMentionThis
