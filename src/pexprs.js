@@ -24,7 +24,9 @@ PExpr.prototype.withDescription = function(description) {
 };
 
 PExpr.prototype.withInterval = function(interval) {
-  this.interval = interval.trimmed();
+  if (interval) {
+    this.interval = interval.trimmed();
+  }
   return this;
 };
 
@@ -78,6 +80,9 @@ inherits(Alt, PExpr);
 // Extend is an implementation detail of rule extension
 
 function Extend(superGrammar, name, body) {
+  this.superGrammar = superGrammar;
+  this.name = name;
+  this.body = body;
   var origBody = superGrammar.ruleDict[name];
   this.terms = [body, origBody];
 }
@@ -176,20 +181,11 @@ inherits(Obj, PExpr);
 function Apply(ruleName, optParams) {
   this.ruleName = ruleName;
   this.params = optParams || [];
-  this.lexifyCount = 0;
 }
 inherits(Apply, PExpr);
 
-Apply.prototype.lexify = function() {
-  this.lexifyCount++;
-};
-
-Apply.prototype.unlexify = function() {
-  this.lexifyCount--;
-};
-
 Apply.prototype.isSyntactic = function() {
-  return this.lexifyCount === 0 && common.isSyntactic(this.ruleName);
+  return common.isSyntactic(this.ruleName);
 };
 
 // This method just caches the result of `this.toString()` in a non-enumerable property.

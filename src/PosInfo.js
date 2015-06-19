@@ -4,8 +4,8 @@
 // Private stuff
 // --------------------------------------------------------------------
 
-function PosInfo(globalApplicationStack) {
-  this.globalApplicationStack = globalApplicationStack;
+function PosInfo(state) {
+  this.state = state;
   this.applicationStack = [];
   this.memo = {};
 
@@ -21,13 +21,13 @@ PosInfo.prototype = {
   },
 
   enter: function(application) {
-    this.globalApplicationStack.push(application);
+    this.state.enter(application);
     this.applicationStack.push(application);
     this.activeApplications.push(application.toMemoKey());
   },
 
   exit: function() {
-    this.globalApplicationStack.pop();
+    this.state.exit();
     this.applicationStack.pop();
     this.activeApplications.pop();
   },

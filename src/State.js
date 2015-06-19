@@ -29,12 +29,33 @@ State.prototype = {
     this.posInfosStack = [];
     this.pushInputStream(this.origInputStream);
     this.applicationStack = [];
+    this.lexifyCountStack = [];
     this.bindings = [];
     this.failures = optFailuresArray;
     this.ignoreFailuresCount = 0;
     if (this.isTracing()) {
       this.trace = [];
     }
+  },
+
+  enter: function(app) {
+    this.applicationStack.push(app);
+    this.lexifyCountStack.push(0);
+  },
+
+  exit: function() {
+    this.applicationStack.pop();
+    this.lexifyCountStack.pop();
+  },
+
+  enterLexicalContext: function() {
+    var idx = this.lexifyCountStack.length - 1;
+    this.lexifyCountStack[idx]++;
+  },
+
+  exitLexicalContext: function() {
+    var idx = this.lexifyCountStack.length - 1;
+    this.lexifyCountStack[idx]--;
   },
 
   currentApplication: function() {
@@ -49,6 +70,15 @@ State.prototype = {
     return currentApplication && currentApplication.isSyntactic();
   },
 
+  inSyntacticContext: function() {
+    return this.inSyntacticRule() && !this.inLexifiedContext();
+  },
+
+  inLexifiedContext: function() {
+    var len = this.lexifyCountStack.length;
+    return len > 0 && this.lexifyCountStack[len - 1] > 0;
+  },
+
   skipSpaces: function() {
     this.ignoreFailures();
     applySpaces_.eval(this);
@@ -58,7 +88,7 @@ State.prototype = {
   },
 
   skipSpacesIfInSyntacticContext: function() {
-    if (this.inSyntacticRule()) {
+    if (this.inSyntacticContext()) {
       this.skipSpaces();
     }
     return this.inputStream.pos;
@@ -88,7 +118,7 @@ State.prototype = {
 
   getPosInfo: function(pos) {
     var posInfo = this.posInfos[pos];
-    return posInfo || (this.posInfos[pos] = new PosInfo(this.applicationStack));
+    return posInfo || (this.posInfos[pos] = new PosInfo(this));
   },
 
   recordFailure: function(pos, expr) {

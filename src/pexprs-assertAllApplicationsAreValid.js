@@ -12,44 +12,56 @@ var pexprs = require('./pexprs');
 // Operations
 // --------------------------------------------------------------------
 
-pexprs.PExpr.prototype.assertAllApplicationsAreValid = common.abstract;
+var lexifyCount;
 
-pexprs.anything.assertAllApplicationsAreValid =
-pexprs.end.assertAllApplicationsAreValid =
-pexprs.Prim.prototype.assertAllApplicationsAreValid =
-pexprs.Range.prototype.assertAllApplicationsAreValid =
-pexprs.Param.prototype.assertAllApplicationsAreValid = function(ruleName, grammar) {
+pexprs.PExpr.prototype.assertAllApplicationsAreValid = function(ruleName, grammar) {
+  lexifyCount = 0;
+  this._assertAllApplicationsAreValid(ruleName, grammar);
+};
+
+pexprs.PExpr.prototype._assertAllApplicationsAreValid = common.abstract;
+
+pexprs.anything._assertAllApplicationsAreValid =
+pexprs.end._assertAllApplicationsAreValid =
+pexprs.Prim.prototype._assertAllApplicationsAreValid =
+pexprs.Range.prototype._assertAllApplicationsAreValid =
+pexprs.Param.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
   // no-op
 };
 
-pexprs.Alt.prototype.assertAllApplicationsAreValid = function(ruleName, grammar) {
+pexprs.Lex.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
+  lexifyCount++;
+  this.expr._assertAllApplicationsAreValid(ruleName, grammar);
+  lexifyCount--;
+};
+
+pexprs.Alt.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
   for (var idx = 0; idx < this.terms.length; idx++) {
-    this.terms[idx].assertAllApplicationsAreValid(ruleName, grammar);
+    this.terms[idx]._assertAllApplicationsAreValid(ruleName, grammar);
   }
 };
 
-pexprs.Seq.prototype.assertAllApplicationsAreValid = function(ruleName, grammar) {
+pexprs.Seq.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
   for (var idx = 0; idx < this.factors.length; idx++) {
-    this.factors[idx].assertAllApplicationsAreValid(ruleName, grammar);
+    this.factors[idx]._assertAllApplicationsAreValid(ruleName, grammar);
   }
 };
 
-pexprs.Iter.prototype.assertAllApplicationsAreValid =
-pexprs.Not.prototype.assertAllApplicationsAreValid =
-pexprs.Lookahead.prototype.assertAllApplicationsAreValid =
-pexprs.Lex.prototype.assertAllApplicationsAreValid =
-pexprs.Arr.prototype.assertAllApplicationsAreValid =
-pexprs.Str.prototype.assertAllApplicationsAreValid = function(ruleName, grammar) {
-  this.expr.assertAllApplicationsAreValid(ruleName, grammar);
+pexprs.Iter.prototype._assertAllApplicationsAreValid =
+pexprs.Not.prototype._assertAllApplicationsAreValid =
+pexprs.Lookahead.prototype._assertAllApplicationsAreValid =
+pexprs.Arr.prototype._assertAllApplicationsAreValid =
+pexprs.Str.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
+  this.expr._assertAllApplicationsAreValid(ruleName, grammar);
 };
 
-pexprs.Obj.prototype.assertAllApplicationsAreValid = function(ruleName, grammar) {
+pexprs.Obj.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
   for (var idx = 0; idx < this.properties.length; idx++) {
-    this.properties[idx].pattern.assertAllApplicationsAreValid(ruleName, grammar);
+    this.properties[idx].pattern._assertAllApplicationsAreValid(ruleName, grammar);
   }
 };
 
-pexprs.Apply.prototype.assertAllApplicationsAreValid = function(ruleName, grammar) {
+pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
   var body = grammar.ruleDict[this.ruleName];
 
   // Make sure that the rule exists
@@ -58,8 +70,8 @@ pexprs.Apply.prototype.assertAllApplicationsAreValid = function(ruleName, gramma
   }
 
   // ... and that this application is allowed
-  if (!common.isSyntactic(ruleName) && common.isSyntactic(this.ruleName)) {
-    throw new errors.ApplicationOfSyntacticRuleFromLexicalRule(ruleName, this.ruleName, this);
+  if (common.isSyntactic(this.ruleName) && (!common.isSyntactic(ruleName) || lexifyCount > 0)) {
+    throw new errors.ApplicationOfSyntacticRuleFromLexicalContext(this.ruleName, this);
   }
 
   // ... and that this application has the correct number of parameters
@@ -72,7 +84,7 @@ pexprs.Apply.prototype.assertAllApplicationsAreValid = function(ruleName, gramma
   // ... and that all of the parameter expressions only have valid applications and have arity 1
   var self = this;
   this.params.forEach(function(param) {
-    param.assertAllApplicationsAreValid(ruleName, grammar);
+    param._assertAllApplicationsAreValid(ruleName, grammar);
     if (param.getArity() !== 1) {
       throw new errors.InvalidParameter(self.ruleName, param);
     }

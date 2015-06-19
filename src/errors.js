@@ -194,16 +194,14 @@ var InvalidParameter = makeCustomError(
 
 // Application of syntactic rule from lexical rule
 
-var ApplicationOfSyntacticRuleFromLexicalRule = makeCustomError(
-    'ohm.error.ApplicationOfSyntacticRuleFromLexicalRule',
-    function(lexicalRuleName, syntacticRuleName, applyExpr) {
-      this.lexicalRuleName = lexicalRuleName;
-      this.syntacticRuleName = syntacticRuleName;
+var ApplicationOfSyntacticRuleFromLexicalContext = makeCustomError(
+    'ohm.error.ApplicationOfSyntacticRuleFromLexicalContext',
+    function(ruleName, applyExpr) {
+      this.ruleName = ruleName;
       this.applyExpr = applyExpr;
       this.interval = applyExpr.interval;
       this.shortMessage =
-          'Cannot apply syntactic rule ' + syntacticRuleName +
-          ' from the body of lexical rule ' + lexicalRuleName;
+          'Cannot apply syntactic rule ' + ruleName + ' from here (inside a lexical context)';
       this.message = applyExpr.interval.getLineAndColumnMessage() + this.shortMessage;
     }
 );
@@ -281,7 +279,7 @@ var MultipleErrors = makeCustomError(
 // --------------------------------------------------------------------
 
 module.exports = {
-  ApplicationOfSyntacticRuleFromLexicalRule: ApplicationOfSyntacticRuleFromLexicalRule,
+  ApplicationOfSyntacticRuleFromLexicalContext: ApplicationOfSyntacticRuleFromLexicalContext,
   CannotExtendUndeclaredRule: CannotExtendUndeclaredRule,
   CannotOverrideUndeclaredRule: CannotOverrideUndeclaredRule,
   DuplicateGrammarDeclaration: DuplicateGrammarDeclaration,

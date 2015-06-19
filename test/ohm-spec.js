@@ -1426,7 +1426,7 @@ test('lexical vs. syntactic rules', function(t) {
     t.ok(ohm.grammar('G { foo = bar  bar = "bar" }'), 'lexical calling lexical');
     t.throws(
         function() { ohm.grammar('G { foo = Bar  Bar = "bar" }'); },
-        /Cannot apply syntactic rule Bar from the body of lexical rule foo/,
+        /Cannot apply syntactic rule Bar from here \(inside a lexical context\)/,
         'lexical calling syntactic');
     t.ok(ohm.grammar('G { Foo = bar  bar = "bar" }'), 'syntactic calling lexical');
     t.ok(ohm.grammar('G { Foo = Bar  Bar = "bar" }'), 'syntactic calling syntactic');
@@ -1472,6 +1472,18 @@ test('lexical vs. syntactic rules', function(t) {
     t.ok(g.match('x => {}').succeeded());
     t.ok(g.match(' y  =>    \n\n  \n{}').succeeded());
     t.ok(g.match('x \n  => {}').failed());
+
+    t.throws(
+        function() {
+          makeGrammar([
+            'G {',
+            '  R',
+            '    = #("a" R)',
+            '    | "b" "c"',
+            '}'
+          ]);
+        },
+        /Cannot apply syntactic rule R from here \(inside a lexical context\)/);
   });
 
   t.end();

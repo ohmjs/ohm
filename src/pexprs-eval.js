@@ -125,8 +125,15 @@ pexprs.Range.prototype._eval = function(state) {
   }
 };
 
-pexprs.Param.prototype._eval = function(state, inputStream) {
+pexprs.Param.prototype._eval = function(state) {
   return state.currentApplication().params[this.index].eval(state);
+};
+
+pexprs.Lex.prototype._eval = function(state) {
+  state.enterLexicalContext();
+  var ans = this.expr.eval(state);
+  state.exitLexicalContext();
+  return ans;
 };
 
 pexprs.Alt.prototype._eval = function(state) {
@@ -219,14 +226,6 @@ pexprs.Lookahead.prototype._eval = function(state) {
   } else {
     return false;
   }
-};
-
-pexprs.Lex.prototype._eval = function(state) {
-  var app = state.currentApplication();
-  app.lexify();
-  var ans = this.expr.eval(state);
-  app.unlexify();
-  return ans;
 };
 
 pexprs.Arr.prototype._eval = function(state) {
@@ -328,7 +327,7 @@ pexprs.Apply.prototype._eval = function(state) {
   var ruleName = app.ruleName;
   var memoKey = app.toMemoKey();
 
-  if (this !== state.applySpaces_ && (caller && caller.isSyntactic() || app.isSyntactic())) {
+  if (this !== state.applySpaces_ && (state.inSyntacticContext() || app.isSyntactic())) {
     state.skipSpaces();
   }
 
