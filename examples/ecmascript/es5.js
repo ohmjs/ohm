@@ -37,7 +37,7 @@ function compareByInterval(node, otherNode) {
 
 // Semantic actions for the `modifiedSource` attribute (see below).
 var modifiedSourceActions = {
-  _default: function(children) {
+  _nonterminal: function(children) {
     var flatChildren = flattenIterNodes(children).sort(compareByInterval);
     var childResults = flatChildren.map(function(n) { return n.modifiedSource; });
     if (flatChildren.length === 0 || childResults.every(isUndefined)) {
@@ -77,7 +77,7 @@ semantics.addAttribute('modifiedSource', modifiedSourceActions);
 // A simple wrapper around the `modifiedSource` attribute, which always returns a string
 // containing the ES5 source code for the node.
 semantics.addAttribute('asES5', {
-  _default: function(children) {
+  _nonterminal: function(children) {
     return isUndefined(this.modifiedSource) ? this.interval.contents : this.modifiedSource;
   }
 });

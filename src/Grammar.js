@@ -92,7 +92,7 @@ Grammar.prototype = {
           stack.pop();
           this._node.parent = stack[stack.length - 1];
         },
-        _default: function(children) {
+        _nonterminal: function(children) {
           stack.push(this._node);
           children.forEach(function(child) { child.setParents(); });
           stack.pop();
@@ -129,7 +129,7 @@ Grammar.prototype = {
   // a function of the correct arity. If not, throw an exception.
   _checkTopDownActionDict: function(what, name, actionDict) {
     function isSpecialAction(name) {
-      return name === '_terminal' || name === '_iter' || name === '_default';
+      return name === '_iter' || name === '_terminal' || name === '_nonterminal';
     }
 
     var problems = [];
@@ -161,9 +161,9 @@ Grammar.prototype = {
   },
 
   // Return the expected arity for a semantic action named `actionName`, which
-  // is either a rule name or a special action name like '_default'.
+  // is either a rule name or a special action name like '_nonterminal'.
   _topDownActionArity: function(actionName) {
-    if (actionName === '_default' || actionName === '_iter') {
+    if (actionName === '_nonterminal' || actionName === '_iter') {
       return 1;
     } else if (actionName === '_terminal') {
       return 0;

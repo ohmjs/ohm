@@ -183,8 +183,8 @@ Semantics.prototype.addOperationOrAttribute = function(type, name, actionDict) {
   this.assertNewName(name, type);
 
   // Create the action dictionary for this operation / attribute. We begin by defining the default
-  // behavior of terminal and iteration nodes, and add a '_default' action that throws an error if
-  // a rule in the grammar doesn't have a corresponding action in this operation / attribute...
+  // behavior of terminal and iteration nodes, and add a '_nonterminal' action that throws an error
+  // if a rule in the grammar doesn't have a corresponding action in this operation / attribute...
   var realActionDict = {
     _terminal: function() {
       return this.primitiveValue;
@@ -196,7 +196,7 @@ Semantics.prototype.addOperationOrAttribute = function(type, name, actionDict) {
       var thisThing = thisSemantics[typePlural][name];
       return children.map(function(child) { return thisThing.execute(thisSemantics, child); });
     },
-    _default: function(children) {
+    _nonterminal: function(children) {
       if (children.length === 1) {
         var thisSemantics = this._semantics;
         var thisThing = thisSemantics[typePlural][name];
@@ -371,9 +371,8 @@ Operation.prototype.execute = function(semantics, nodeWrapper) {
   }
 
   // The action dictionary does not contain a semantic action for this specific type of node, so
-  // invoke the '_default' semantic action. The built-in implementation of the `_default` semantic
-  // action just throws an error, but the programmer may have overridden it.
-  return this.doAction(semantics, nodeWrapper, this.actionDict._default, true);
+  // invoke the '_nonterminal' semantic action.
+  return this.doAction(semantics, nodeWrapper, this.actionDict._nonterminal, true);
 };
 
 // Invoke `actionFn` on the CST node that corresponds to `nodeWrapper`, in the context of

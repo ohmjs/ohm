@@ -10,7 +10,7 @@ var path = require('path');
 var mentionsThisActions = {
   this: function(_) { return true; },
   _terminal: function() { return false; },
-  _default: anyNodesMentionThis,
+  _nonterminal: anyNodesMentionThis,
   _iter: anyNodesMentionThis
 };
 

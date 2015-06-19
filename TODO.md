@@ -70,19 +70,6 @@ if (ans.isFailure()) {
 
 * Once we have start rules, you should be able to omit the 2nd argument to `Grammar.prototype.match`.
 
-### Missing arity checks
-
-* `_many` and `_default` must take exactly 1 argument (an array of wrappers)
-* `_terminal` must take 0 arguments (you can get its value via `this.node.primitiveValue`)
-
-### Terminal nodes, etc.
-
-* Add `TerminalNode`, which inherits from `Node`.
-* All `TerminalNode`s should have a `primitiveValue` property.
-* Rename `Node.prototype.isValue()` to `isTerminal()`
-* Remove `Node.prototype.value()`
-* Rename `ohm.actions.getValue` to `getPrimitiveValue`
-
 ### Error conditions for Semantics
 
 `Grammar.prototype.createSemantics(parentSemantics)` creates a new instance of `Semantics` that inherits all of the operations and attributes from `parentSemantics`. **Note that all of the inherited operations and attributes that haven't been `extend`ed explicitly must go through the *arity* and *superfluous method* checks the first time any of the operations or attributes of the "child" `Semantics` is used.**
@@ -200,7 +187,7 @@ var s = g.semantics().addInheritedAttribute('foo', {
       return 123;
     }
   ],
-  _default: function(child) { ... }
+  _nonterminal: function(child) { ... }
 });
 
 // Client-side:

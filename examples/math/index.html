@@ -333,12 +333,13 @@ s.addAttribute('asLisp', {
   number:        function(_)       { return this.interval.contents; },
 
   /*
-    When you create an operation or an attribute, you can optionally provide a `_default` semantic
-    action that will be invoked when your action dictionary does not have a method that corresponds
-    to the type of a CST node. The receiver (`this`) of the _default method will be that CST node,
-    and `_default`'s only argument will be an array that contains the children of that node.
+    When you create an operation or an attribute, you can optionally provide a `_nonterminal`
+    semantic action that will be invoked when your action dictionary does not have a method that
+    corresponds to the rule that created a CST node. The receiver (`this`) of the _nonterminal
+    method will be that CST node, and `_nonterminal`'s only argument will be an array that contains
+    the children of that node.
   */
-  _default:      function(children) {
+  _nonterminal:  function(children) {
     if (children.length === 1) {
       // If this node has only one child, just return the Lisp-like tree of its child. This lets us
       // avoid writing semantic actions for the `Exp`, `AddExp`, `MulExp`, `ExpExp`, and `PriExp`
@@ -405,9 +406,9 @@ s.addOperation('toTwoD', {
                                       return elt('ident', text === 'pi' ? '\u03C0' : text); },
   number:        function(_)        { return elt('number', this.interval.contents); }
 
-  // Remember the `_default` semantic action that we wrote for the `interpret` operation above?
+  // Remember the `_nonterminal` semantic action that we wrote for the `interpret` operation above?
   // Turns out that's so convenient that the Ohm people decided to give it to you "for free", i.e.,
-  // if you don't write a `_default` semantic action, you get that one automatically. Of course
+  // if you don't write a `_nonterminal` semantic action, you get that one automatically. Of course
   // you're free to override it if that's not what you want, but in this case, it's exactly what
   // we want.
 });

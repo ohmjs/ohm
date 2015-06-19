@@ -95,7 +95,7 @@ var symbolTableIn = g.inheritedAttribute({
   _base: function(s) {
     symbolTableIn.set([]);
   },
-  _default: function(child) {
+  _nonterminal: function(child) {
     if (child === this.firstChild()) {
       symbolTableIn.set(symbolTableIn(this));
     } else {
@@ -111,7 +111,7 @@ var symbolTableOut = g.synthesizedAttribute({
   Stmt_var: function(_, n, _, e, _) {
     return [].concat(symbolTableIn(this)).concat([n.interval.contents]);
   },
-  _default: function() {
+  _nonterminal: function() {
     return this.hasNoChildren() ? symbolTableIn(this) : symbolTableOut(this.lastChild());
   },
   _terminal: function() {
@@ -183,7 +183,7 @@ var codeOut = g.synthesizedAttribute({
   number: function(_) {
     return ['pushLit(' + parseFloat(this.interval.contents) + ')'];
   },
-  _default: ohm.actions.passThrough
+  _nonterminal: ohm.actions.passThrough
 });
 
 // ---------------------------------------------------------------------------------------------------------------------

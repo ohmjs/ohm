@@ -50,7 +50,7 @@ function it(desc, fn) {
 function buildTreeNodeWithUniqueId(g) {
   var nextId = 0;
   var s = g.semantics().addAttribute('tree', {
-    _default: function(children) {
+    _nonterminal: function(children) {
       return ['id', nextId++, this.ctorName]
           .concat(children.map(function(child) { return child.tree; }));
     }
@@ -64,7 +64,7 @@ function buildTreeNodeWithUniqueId(g) {
 test('grammar constructors dictionary', function(t) {
   var m = makeGrammar(arithmeticGrammarSource);
 
-  it('exists and has a _default entry', function() {
+  it('exists and has a _nonterminal entry', function() {
     t.ok(m.constructors);
   });
 
@@ -80,11 +80,11 @@ test('grammar constructors dictionary', function(t) {
     t.equal(m.constructors.foobar, undefined);
   });
 
-  it('_default entry rejects nonexistent rule name', function() {
+  it('_nonterminal entry rejects nonexistent rule name', function() {
     t.throws(function() { m.construct('foobar', []); }, errors.InvalidConstructorCall);
   });
 
-  it('_default entry works when called correctly', function() {
+  it('_nonterminal entry works when called correctly', function() {
     t.ok(m.construct('addExp', [m.match('1+2', 'addExp_plus')._cst]) instanceof nodes.Node);
   });
 

@@ -168,7 +168,10 @@ test('_iter nodes', function(t) {
       return l.interval.contents;
     }
   });
-  t.deepEqual(s(m).op(), ['a', 'b', 'c'], 'works with pass-through default behavior of _default');
+  t.deepEqual(
+      s(m).op(),
+      ['a', 'b', 'c'],
+      'works with pass-through default behavior of _nonterminal');
 
   s = g.semantics().addOperation('op', {
     letters: function(ls) {
@@ -226,8 +229,11 @@ test('semantic action arity checks', function(t) {
       /not a valid semantic action/,
       'superfluous action dictionary keys are not allowed');
 
-  t.throws(function() { makeOperation(g, {_default: ignore0}); }, /arity/, '_default is checked');
-  t.ok(makeOperation(g, {_default: ignore1}), '_default works with one arg');
+  t.throws(
+      function() { makeOperation(g, {_nonterminal: ignore0}); },
+      /arity/,
+     '_nonterminal is checked');
+  t.ok(makeOperation(g, {_nonterminal: ignore1}), '_nonterminal works with one arg');
 
   t.throws(function() {
     makeOperation(g, {_terminal: ignore1});
@@ -289,7 +295,7 @@ test('extending semantics', function(t) {
         two: function(_) { return 2; }
       }).
       addOperation('valueTimesTwo', {
-        _default: function(children) { return this.value() * 2; }
+        _nonterminal: function(children) { return this.value() * 2; }
       });
   t.throws(function() { ns.G2.extendSemantics(s).addOperation('value', {}); }, /already exists/);
   t.throws(function() { ns.G2.extendSemantics(s).extendOperation('foo', {}); }, /did not inherit/);
@@ -330,7 +336,7 @@ test('extending semantics', function(t) {
         two: function(_) { return 2; }
       }).
       addAttribute('valueTimesTwo', {
-        _default: function(children) { return this.value * 2; }
+        _nonterminal: function(children) { return this.value * 2; }
       });
   t.throws(function() { ns.G2.extendSemantics(s).addAttribute('value', {}); }, /already exists/);
   t.throws(function() { ns.G2.extendSemantics(s).extendAttribute('value', {}); }, /wrong arity/);

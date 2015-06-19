@@ -274,7 +274,7 @@ s.addOperation('viz', {
 });
 
 s.addOperation('vizChoice', {
-  _default:          function(children) {
+  _nonterminal:      function(children) {
                        enter('choice');
                          this.viz();
                        leave();
