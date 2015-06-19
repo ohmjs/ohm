@@ -54,14 +54,12 @@ ES5 {
   identifier = ~reservedWord identifierName
   identifierName = identifierStart identifierPart*
 
-  identifierStart = unicodeLetter | "$" | "_"
+  identifierStart = letter | "$" | "_"
                   | "\\" unicodeEscapeSequence -- escaped
   identifierPart = identifierStart | unicodeCombiningMark
                  | unicodeDigit | unicodeConnectorPunctuation
                  | "\u200C" | "\u200D"
-  unicodeLetter (a letter)
-    = letter  // TODO: Actually make this Unicode letters (category L).
-    | unicodeCategoryNl
+ letter += unicodeCategoryNl
   unicodeCategoryNl
     = "\u2160".."\u2182" | "\u3007" | "\u3021".."\u3029"
   unicodeDigit (a digit)

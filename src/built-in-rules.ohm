@@ -7,12 +7,7 @@ BuiltInRules {
   letter  (a letter)
     = lower
     | upper
-
-  lower  (a lower-case letter)
-    = "a".."z"
-
-  upper  (an upper-case letter)
-    = "A".."Z"
+    | unicodeLtmo
 
   digit  (a digit)
     = "0".."9"

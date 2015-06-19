@@ -19,7 +19,8 @@ pexprs.end.assertIteratedExprsAreNotNullable =
 pexprs.Prim.prototype.assertIteratedExprsAreNotNullable =
 pexprs.Prim.prototype.assertIteratedExprsAreNotNullable =
 pexprs.Range.prototype.assertIteratedExprsAreNotNullable =
-pexprs.Param.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleName) {
+pexprs.Param.prototype.assertIteratedExprsAreNotNullable =
+pexprs.UnicodeChar.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleName) {
   // no-op
 };
 

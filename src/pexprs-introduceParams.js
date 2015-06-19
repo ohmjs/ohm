@@ -19,7 +19,8 @@ pexprs.anything.introduceParams =
 pexprs.end.introduceParams =
 pexprs.Prim.prototype.introduceParams =
 pexprs.Range.prototype.introduceParams =
-pexprs.Param.prototype.introduceParams = function(formals) {
+pexprs.Param.prototype.introduceParams =
+pexprs.UnicodeChar.prototype.introduceParams = function(formals) {
   return this;
 };
 

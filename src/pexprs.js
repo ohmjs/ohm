@@ -4,6 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
+var UnicodeCategories = require('../third_party/UnicodeCategories');
 var common = require('./common');
 var errors = require('./errors');
 var inherits = require('inherits');
@@ -196,6 +197,14 @@ Apply.prototype.toMemoKey = function() {
   return this._memoKey;
 };
 
+// Unicode character
+
+function UnicodeChar(category) {
+  this.category = category;
+  this.pattern = UnicodeCategories[category];
+}
+inherits(UnicodeChar, PExpr);
+
 // --------------------------------------------------------------------
 // Exports
 // --------------------------------------------------------------------
@@ -229,6 +238,7 @@ exports.Arr = Arr;
 exports.Str = Str;
 exports.Obj = Obj;
 exports.Apply = Apply;
+exports.UnicodeChar = UnicodeChar;
 
 // --------------------------------------------------------------------
 // Extensions

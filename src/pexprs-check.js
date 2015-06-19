@@ -133,3 +133,9 @@ pexprs.Apply.prototype.check = function(grammar, vals) {
   var body = grammar.ruleDict[this.ruleName];
   return body.check(grammar, ruleNode.children) && ruleNode.numChildren() === body.getArity();
 };
+
+pexprs.UnicodeChar.prototype.check = function(grammar, vals) {
+  return vals[0] instanceof nodes.Node &&
+         vals[0].isTerminal() &&
+         typeof vals[0].primitiveValue === 'string';
+};

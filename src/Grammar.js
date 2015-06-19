@@ -291,7 +291,15 @@ Grammar.ProtoBuiltInRules = new Grammar('ProtoBuiltInRules', undefined, {
   spaces_: new pexprs.Star(new pexprs.Apply('space')).withFormals([]),
 
   // The `space` rule must be defined here because it's referenced by `spaces_`.
-  space: new pexprs.Range('\x00', ' ').withFormals([]).withDescription('a space')
+  space: new pexprs.Range('\x00', ' ').withFormals([]).withDescription('a space'),
+
+  // These rules are implemented natively because they use UnicodeChar directly, which is
+  // not part of the Ohm grammar.
+  lower: new pexprs.UnicodeChar('Ll').withFormals([]).withDescription('a lowercase letter'),
+  upper: new pexprs.UnicodeChar('Lu').withFormals([]).withDescription('an uppercase letter'),
+
+  // The union of Lt (titlecase), Lm (modifier), and Lo (other), i.e. any letter not in Ll or Lu.
+  unicodeLtmo: new pexprs.UnicodeChar('Ltmo').withFormals([])
 });
 
 // --------------------------------------------------------------------

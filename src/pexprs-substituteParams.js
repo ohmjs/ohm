@@ -17,7 +17,8 @@ pexprs.anything.substituteParams =
 pexprs.end.substituteParams =
 pexprs.Prim.prototype.substituteParams =
 pexprs.Range.prototype.substituteParams =
-pexprs.Prim.prototype.substituteParams = function(actuals) {
+pexprs.Prim.prototype.substituteParams =
+pexprs.UnicodeChar.prototype.substituteParams = function(actuals) {
   return this;
 };
 

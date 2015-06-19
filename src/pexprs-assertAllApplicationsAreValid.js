@@ -21,11 +21,12 @@ pexprs.PExpr.prototype.assertAllApplicationsAreValid = function(ruleName, gramma
 
 pexprs.PExpr.prototype._assertAllApplicationsAreValid = common.abstract;
 
-pexprs.anything._assertAllApplicationsAreValid =
-pexprs.end._assertAllApplicationsAreValid =
-pexprs.Prim.prototype._assertAllApplicationsAreValid =
-pexprs.Range.prototype._assertAllApplicationsAreValid =
-pexprs.Param.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
+pexprs.anything.assertAllApplicationsAreValid =
+pexprs.end.assertAllApplicationsAreValid =
+pexprs.Prim.prototype.assertAllApplicationsAreValid =
+pexprs.Range.prototype.assertAllApplicationsAreValid =
+pexprs.Param.prototype.assertAllApplicationsAreValid =
+pexprs.UnicodeChar.prototype.assertAllApplicationsAreValid = function(ruleName, grammar) {
   // no-op
 };
 
