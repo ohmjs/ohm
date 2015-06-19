@@ -83,16 +83,7 @@ Grammar.prototype = {
       // Link every CSTNode to its parent.
       var stack = [undefined];
       var helpers = this.semantics().addOperation('setParents', {
-        _terminal: function() {
-          this._node.parent = stack[stack.length - 1];
-        },
-        _iter: function(children) {
-          stack.push(this._node);
-          children.forEach(function(child) { child.setParents(); });
-          stack.pop();
-          this._node.parent = stack[stack.length - 1];
-        },
-        _nonterminal: function(children) {
+        _default: function(children) {
           stack.push(this._node);
           children.forEach(function(child) { child.setParents(); });
           stack.pop();
@@ -128,8 +119,8 @@ Grammar.prototype = {
   // Check that every key in `actionDict` corresponds to a semantic action, and that it maps to
   // a function of the correct arity. If not, throw an exception.
   _checkTopDownActionDict: function(what, name, actionDict) {
-    function isSpecialAction(name) {
-      return name === '_iter' || name === '_terminal' || name === '_nonterminal';
+    function isSpecialAction(a) {
+      return a === '_iter' || a === '_terminal' || a === '_nonterminal' || a === '_default';
     }
 
     var problems = [];
@@ -163,7 +154,7 @@ Grammar.prototype = {
   // Return the expected arity for a semantic action named `actionName`, which
   // is either a rule name or a special action name like '_nonterminal'.
   _topDownActionArity: function(actionName) {
-    if (actionName === '_nonterminal' || actionName === '_iter') {
+    if (actionName === '_iter' || actionName === '_nonterminal' || actionName === '_default') {
       return 1;
     } else if (actionName === '_terminal') {
       return 0;

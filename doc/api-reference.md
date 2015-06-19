@@ -159,10 +159,11 @@ var actions = {
   assert.equal(semantics(g.match('Guy Incognito')).x(), 'INCOGNITO, Guy');
 </script>
 
-The value of an operation or attribute for a node is the result of invoking the node's _matching semantic action_, which is chosen as follows:
+The value of an operation or attribute for a node is the result of invoking the node's matching _semantic action_, which is chosen as follows:
 
-- On a _rule application_ node, first look for a semantic action with the same name as the rule (e.g., 'FullName'). If the action dictionary does not have a property with that name, use the action named '_default'.
-- On a terminal node (e.g., a node produced by the parsing expression `"-"`), use the semantic action named '_terminal' if it exists, otherwise use '_default'.
+- On a _rule application_ node, first look for a semantic action with the same name as the rule (e.g., 'FullName'). If the action dictionary does not have a property with that name, use the action named '_nonterminal'.
+- On a terminal node (e.g., a node produced by the parsing expression `"-"`), use the semantic action named '_terminal'. If the action dictionary does not have a property with that name, you will automatically get one that just returns the node's *primitive value*.
+- On an iteration node (e.g., a node produced by the parsing expression `(letter | "-" | ".")+`), use the semantic action named '_iter'. If the action dictionary does not have a property with that name, you will automatically get one that returns an array containing the results of applying your operation or attribute to each child node.
 
 #### Arity
 

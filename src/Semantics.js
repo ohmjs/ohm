@@ -77,6 +77,12 @@ Wrapper.prototype.isTerminal = function() {
   return this._node.isTerminal();
 };
 
+// Returns `true` if the CST node associated with this wrapper is a nonterminal node, `false`
+// otherwise.
+Wrapper.prototype.isNonterminal = function() {
+  return !this.isTerminal() && !this.isIteration();
+};
+
 Object.defineProperties(Wrapper.prototype, {
   // Returns an array containing the children of this CST node.
   children: {get: function() { return this._children(); }},
@@ -182,27 +188,38 @@ Semantics.prototype.addOperationOrAttribute = function(type, name, actionDict) {
 
   this.assertNewName(name, type);
 
-  // Create the action dictionary for this operation / attribute. We begin by defining the default
-  // behavior of terminal and iteration nodes, and add a '_nonterminal' action that throws an error
-  // if a rule in the grammar doesn't have a corresponding action in this operation / attribute...
+  // Create the action dictionary for this operation / attribute that contains a `_default` action
+  // which defines the default behavior of iteration, terminal, and non-terminal nodes...
   var realActionDict = {
-    _terminal: function() {
-      return this.primitiveValue;
-    },
-    _iter: function(children) {
-      // This CST node corresponds to an iteration expression in the grammar (*, +, or ?). The
-      // default behavior is to map this operation or attribute over all of its child nodes.
+    _default: function(children) {
       var thisSemantics = this._semantics;
       var thisThing = thisSemantics[typePlural][name];
-      return children.map(function(child) { return thisThing.execute(thisSemantics, child); });
-    },
-    _nonterminal: function(children) {
-      if (children.length === 1) {
-        var thisSemantics = this._semantics;
-        var thisThing = thisSemantics[typePlural][name];
-        return thisThing.execute(thisSemantics, children[0]);
+
+      if (this.isIteration()) {
+        // This CST node corresponds to an iteration expression in the grammar (*, +, or ?). The
+        // default behavior is to map this operation or attribute over all of its child nodes.
+        return children.map(function(child) { return thisThing.execute(thisSemantics, child); });
       }
-      throw new Error('missing semantic action for ' + this.ctorName + ' in ' + name + ' ' + type);
+
+      if (this.isTerminal()) {
+        // This CST node corresponds to a terminal expression in the grammar (e.g., "+"). The
+        // default behavior is to return that terminal's primitive value.
+        return this.primitiveValue;
+      }
+
+      // This CST node corresponds to a non-terminal in the grammar (e.g., AddExpr). The fact that
+      // we got here means that this action dictionary doesn't have an action for this particular
+      // non-terminal or a generic `_nonterminal` action.
+      if (children.length === 1) {
+        // As a convenience, if this node only has one child, we just return the result of
+        // applying this operation / attribute to the child node.
+        return thisThing.execute(thisSemantics, children[0]);
+      } else {
+        // Otherwise, we throw an exception to let the programmer know that we don't know what
+        // to do with this node.
+        throw new Error(
+            'Missing semantic action for ' + this.ctorName + ' in ' + name + ' ' + type);
+      }
     }
   };
   // ... and add in the actions supplied by the programmer, which may override some or all of the
@@ -370,9 +387,16 @@ Operation.prototype.execute = function(semantics, nodeWrapper) {
     return this.doAction(semantics, nodeWrapper, actionFn, nodeWrapper.isIteration());
   }
 
-  // The action dictionary does not contain a semantic action for this specific type of node, so
-  // invoke the '_nonterminal' semantic action.
-  return this.doAction(semantics, nodeWrapper, this.actionDict._nonterminal, true);
+  // The action dictionary does not contain a semantic action for this specific type of node.
+  // If this is a nonterminal node and the programmer has provided a `_nonterminal` semantic
+  // action, we invoke it:
+  if (nodeWrapper.isNonterminal() && this.actionDict._nonterminal) {
+    actionFn = this.actionDict._nonterminal;
+    return this.doAction(semantics, nodeWrapper, actionFn, true);
+  }
+
+  // Otherwise, we invoke the '_default' semantic action.
+  return this.doAction(semantics, nodeWrapper, this.actionDict._default, true);
 };
 
 // Invoke `actionFn` on the CST node that corresponds to `nodeWrapper`, in the context of
