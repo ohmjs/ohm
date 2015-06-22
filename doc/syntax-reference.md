@@ -1,5 +1,18 @@
 # Syntax Reference
 
+This document describes the syntax of the _Ohm language_, which is a variant of parsing expression grammars (PEGs). If you have experience with PEGs, the Ohm syntax will mostly look familiar, but there are a few important differences to note:
+
+- When naming rules, **case matters**: whitespace is implicitly skipped inside a rule application if the rule name begins with an uppercase letter. For further information, see [Syntactic vs. Lexical Rules](#syntactic-lexical).
+- Grammars are purely about recognition: they do not contain semantic actions (those are defined separately) or bindings. The separation of semantic actions is one of the defining features of Ohm -- we believe that it improves modularity and makes both grammars and semantics easier to understand.
+- Alternation expressions support _case names_, which are used in [inline rule declarations](#inline-rules). This makes semantic actions for alternation expressions simpler and less error-prone.
+- Ohm does not (yet) support semantic predicates.
+
+Ohm is closely related to OMeta, another PEG-based language for parsing and pattern matching. Like OMeta, Ohm supports a few features not supported by many PEG parsing frameworks:
+
+- [Rule applications](#rule-application) can accept parameters. This makes it possible to write higher-order rules, such as the built-in `ListOf` rule.
+- Grammars can be extended in an object-oriented way -- see [Defining, Extending, and Overriding Rules](#defining-extending-and-overriding-rules).
+- [Object](#objects) and [array](#arrays) patterns allow grammars to match structured data.
+
 ## Terminology
 
 <script type="text/markscript">
