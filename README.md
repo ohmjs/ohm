@@ -25,8 +25,7 @@ Usage
 
 For Node.js and io.js (**Note:** As soon as Ohm is ready for release, it will be published on NPM):
 
-    git clone https://github.com/cdglabs/ohm.git
-    npm install -g --ignore-scripts ./ohm
+    npm install -g https://github.com/cdglabs/ohm.git
 
 Then require it from anywhere:
 
