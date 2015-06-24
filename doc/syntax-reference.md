@@ -36,19 +36,25 @@ This is a grammar named "Arithmetic", which has a single rule named "Expr". The 
 
 Here is a full list of the different kinds of parsing expressions supported by Ohm:
 
-### String Literal
+### Terminals
+
+These are the fundamental building blocks of Ohm grammars.
+
+#### String literal
 
 `"hello there"`
 
 Matches exactly the characters contained inside the quotation marks.
 
-### Number
+Special characters (e.g. `"`, `\`, and `'`) can be escaped with a backslash -- e.g., `\"` will match a literal quote character in the input stream. Other valid escape sequences are: `\b` (backspace), `\f` (form feed), `\n` (line feed), `\r` (carriage return), and `\t` (tab).
+
+#### Number literal
 
 `-42`
 
 Matches a positive or negative integer value.
 
-### Keywords
+#### Keywords
 
 `true`: Matches the boolean value `true`.
 
@@ -64,7 +70,7 @@ Matches the body of the rule named _ruleName_. For example, the built-in rule `l
 
 <code><i>ruleName</i>&lt;<i>expr1</i>&gt;</code>
 
-Matches the body of the _parameterized rule_ named _ruleName_, substituting the parsing expression _expr_ as its first parameter. For parameterized rules with more than one parameter, the expressions are comma-separated, e.g. `ListOf<elem, ",">`.
+Matches the body of the _parameterized rule_ named _ruleName_, substituting the parsing expression _expr_ as its first parameter. For parameterized rules with more than one parameter, the parameters are comma-separated, e.g. `ListOf<field, ";">`.
 
 ### Repetition operators
 

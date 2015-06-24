@@ -8,7 +8,7 @@ Instantiating Grammars
 
 <b><pre class="api">ohm.grammar(source: string, optNamespace?: object) &rarr; Grammar</pre></b>
 
-Instantiate the Grammar defined by `source`. If specified, `optNamespace` is the Namespace to use when resolving external references in the grammar. For more information, see the documentation on [Namespace objects](#namespace) below.
+Instantiate the Grammar defined by `source`. If specified, `optNamespace` is the Namespace to use when resolving external references in the grammar. For more information, see the documentation on [Namespace objects](#namespace-objects) below.
 
 <b><pre class="api">ohm.grammarFromScriptElement(optNode?: Node, optNamespace?: object) &rarr; Grammar</pre></b>
 
@@ -30,7 +30,8 @@ Create a new Namespace containing Grammar instances for all of the grammars defi
 
 Create a new Namespace containing Grammar instances for all of the grammars defined in the file specified by `filename`. `optNamespace` has the same meaning as in `ohm.grammars`. Not available when running in a browser.
 
-<h2 id="namespace">Namespace objects</h2>
+Namespace objects
+-----------------
 
 When instantiating a grammar that refers to another grammar -- e.g. `MyJava <: Java { keyword += "async" }` -- the supergrammar name ('Java') is resolved to a grammar by looking up the name in a Namespace. In Ohm/JS, Namespaces are a plain old JavaScript objects, and an object literal like `{Java: myJavaGrammar}` can be passed to any API that expects a Namespace. For convenience, Ohm also has the following methods for working with namespaces:
 
@@ -63,7 +64,10 @@ Create a new [Semantics](#semantics) object for `g`.
 
 Create a new [Semantics](#semantics) object for `g` that inherits all of the operations and attributes in `superSemantics`. `g` must be a descendent of the grammar associated with `superSemantics`.
 
-<h2 id="MatchResult">MatchResult objects</h2>
+MatchResult objects
+-------------------
+
+Internally, a successful MatchResult contains a _parse tree_, which is made up of _parse nodes_. Parse trees are not directly exposed -- instead, they are inspected indirectly through _operations_ and _attributes_, which are described in the next section.
 
 A MatchResult instance `r` has the following methods:
 
@@ -89,15 +93,16 @@ Contains an abbreviated version of `r.message` that does not include an excerpt 
 
 <h2 id="semantics">Semantics, Operations, and Attributes</h2>
 
-Internally, a successful MatchResult contains a _parse tree_, which is made up of _parse nodes_. Each parse node is associated with a particular _parsing expression_ (a fragment of an Ohm grammar), and the node captures any input that was successfully parsed by that expression. Parse trees are not directly exposed -- instead, they are inspected indirectly through _operations_ and _attributes_.
-
-An Operation represents a function that can be applied to a successful match result. Like a [Visitor](http://en.wikipedia.org/wiki/Visitor_pattern), an operation is evaluated by recursively walking the parse tree, and at each node, invoking the matching semantic action from its *action dictionary*.
+An Operation represents a function that can be applied to a successful match result. Like a [Visitor](http://en.wikipedia.org/wiki/Visitor_pattern), an operation is evaluated by recursively walking the parse tree, and at each node, invoking the matching semantic action from its _action dictionary_.
 
 An Attribute is an Operation whose result is memoized, i.e., it is evaluated at most once for any given node.
 
 A Semantics is a family of operations and/or attributes for a given grammar. A grammar may have any number of Semantics instances associated with it -- this means that the clients of a grammar (even in the same program) never have to worry about operation/attribute name clashes.
 
-Operations and attributes are accessed by applying a semantics instance to a [MatchResult](#MatchResult). This returns an object whose properties correspond to the operations and attributes of the semantics. For example, to invoke an operation named 'prettyPrint': `mySemantics(matchResult).prettyPrint()`. Attributes are accessed using property syntax -- e.g., for an attribute named 'value': `mySemantics(matchResult).value`.
+### Semantics objects
+
+Operations and attributes are accessed by applying a semantics instance to a [MatchResult](#matchresult-objects).
+This returns a parse node, whose properties correspond to the operations and attributes of the semantics. For example, to invoke an operation named 'prettyPrint': `mySemantics(matchResult).prettyPrint()`. Attributes are accessed using property syntax -- e.g., for an attribute named 'value': `mySemantics(matchResult).value`.
 
 A Semantics instance `s` has the following methods, which all return `this` so they can be chained:
 
@@ -117,9 +122,15 @@ Extend the Operation named `name` with the semantic actions contained in `action
 
 Exactly like `semantics.extendOperation`, except it will extend an Attribute of the super semantics rather than an Operation.
 
-<h3 id="semantic-actions">Semantic Actions</h3>
+### Semantic Actions
 
-A semantic action is a function that computes the value of an operation or attribute for a specific type of node in the parse tree. Generally, you write a semantic action for each rule in your grammar, and store them together in an _action dictionary_. For example, given the following grammar:
+A semantic action is a function that computes the value of an operation or attribute for a specific type of node in the parse tree. There are three different types of parse nodes:
+
+- _Rule application_, or _non-terminal_ nodes, which correspond to rule application expressions
+- _Terminal_ nodes, for string and number literals, and keyword expressions
+- _Iteration_ nodes, which are associated with expressions inside a [repetition operator](#repetition-operators) (`*`, `+`, and `?`)
+
+Generally, you write a semantic action for each rule in your grammar, and store them together in an _action dictionary_. For example, given the following grammar:
 
 <script type="text/markscript">
   // Take the grammar below and instantiate it as `g` in the markscript environment.
@@ -159,21 +170,19 @@ var actions = {
   assert.equal(semantics(g.match('Guy Incognito')).x(), 'INCOGNITO, Guy');
 </script>
 
-The value of an operation or attribute for a node is the result of invoking the node's matching _semantic action_, which is chosen as follows:
+The value of an operation or attribute for a node is the result of invoking the node's matching semantic action. In the grammar above, the body of the `FullName` rule produces two values -- one for each application of the `name` rule. The values are represented as parse nodes, which are passed as arguments when the semantic action is invoked. An error is thrown if the function arity does not match the number of values produced by the expression.
 
-- On a _rule application_ node, first look for a semantic action with the same name as the rule (e.g., 'FullName'). If the action dictionary does not have a property with that name, use the action named '_nonterminal'.
-- On a terminal node (e.g., a node produced by the parsing expression `"-"`), use the semantic action named '_terminal'. If the action dictionary does not have a property with that name, you will automatically get one that just returns the node's *primitive value*.
-- On an iteration node (e.g., a node produced by the parsing expression `(letter | "-" | ".")+`), use the semantic action named '_iter'. If the action dictionary does not have a property with that name, you will automatically get one that returns an array containing the results of applying your operation or attribute to each child node.
+The matching semantic action for a particular node is chosen as follows:
 
-#### Arity
-
-When a semantic action is invoked, the arity of the function must equal the number of values produced by the corresponding parsing expression. Unlike many other parsing frameworks, Ohm does not have a syntax for binding/capturing -- every parsing expression captures all the input it consumes, and produces a fixed number of values. In the grammar above, the body of the `FullName` rule produces two values -- one for each application of the `name` rule -- so the semantic action `FullName` must have two arguments.
-
-The `*` (zero or more) and `+` (one or more) operators do not change the arity: the expressions `"a" "b"` and `("a" "b")+` both produce two values.
+- On a _rule application_ node, first look for a semantic action with the same name as the rule (e.g., 'FullName'). If the action dictionary does not have a property with that name, use the action named '_nonterminal', if it exists. If not, the default action is used, which returns the result of applying the operation or attribute to the node's only child. There is no default action for non-terminal nodes that have no children, or more than one child.
+- On a terminal node (e.g., a node produced by the parsing expression `"-"`), use the semantic action named '_terminal'. If the action dictionary does not have a property with that name, the default action returns the node's *primitive value*.
+- On an iteration node (e.g., a node produced by the parsing expression `(letter | "-" | ".")+`), use the semantic action named '_iter'. If the action dictionary does not have a property with that name, the default action returns an array containing the results of applying the operation or attribute to each child node.
 
 ### Parse Nodes
 
-When a semantic action is invoked, the arguments are the child nodes of the current node, and `this` is bound to the current node. There are three types of node: _terminal_, _rule application_ nodes, and _iteration_ nodes. No matter what the type, a node `n` has the following methods and properties:
+Each parse node is associated with a particular _parsing expression_ (a fragment of an Ohm grammar), and the node captures any input that was successfully parsed by that expression. Unlike many parsing frameworks, Ohm does not have a syntax for binding/capturing -- every parsing expression captures all the input it consumes, and produces a fixed number of values.
+
+A node `n` has the following methods and properties:
 
 <b><pre class="api">n.child(idx: number) &rarr; Node</pre></b>
 
@@ -185,8 +194,7 @@ Get the child at index `idx`.
 
 <b><pre class="api">n.isIteration() &rarr; boolean</pre></b>
 
-`true` if the node is an _iteration_ node (i.e., if it corresponds to a `*`, `+`, or `?` expression
-in the grammar), otherwise `false`.
+`true` if the node is an iteration node (i.e., if it associated with a repetition operator in the grammar), otherwise `false`.
 
 <b><pre class="api">n.children: Array</pre></b>
 
@@ -207,6 +215,3 @@ The number of child nodes that the node has.
 #### Operations and Attributes
 
 In addition to the properties listed above, within a given semantics, every node also has a method/property corresponding to each operation/attribute in the semantics. For example, in a semantics that has an operation named 'prettyPrint' and an attribute named 'freeVars', every node has a `prettyPrint()` method and a `freeVars` property.
-
-**If a Node `n` returns `true` to `n.isIteration()`**, operations and attributes return an Array
-containing the attribute values for all of the node's children.
