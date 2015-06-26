@@ -46,7 +46,7 @@ These are the fundamental building blocks of Ohm grammars.
 
 Matches exactly the characters contained inside the quotation marks.
 
-Special characters (e.g. `"`, `\`, and `'`) can be escaped with a backslash -- e.g., `\"` will match a literal quote character in the input stream. Other valid escape sequences are: `\b` (backspace), `\f` (form feed), `\n` (line feed), `\r` (carriage return), and `\t` (tab).
+Special characters (`"`, `\`, and `'`) can be escaped with a backslash -- e.g., `"\""` will match a literal quote character in the input stream. Other valid escape sequences are: `\b` (backspace), `\f` (form feed), `\n` (line feed), `\r` (carriage return), and `\t` (tab).
 
 #### Number literal
 
