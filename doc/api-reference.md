@@ -128,7 +128,7 @@ A semantic action is a function that computes the value of an operation or attri
 
 - _Rule application_, or _non-terminal_ nodes, which correspond to rule application expressions
 - _Terminal_ nodes, for string and number literals, and keyword expressions
-- _Iteration_ nodes, which are associated with expressions inside a [repetition operator](#repetition-operators) (`*`, `+`, and `?`)
+- _Iteration_ nodes, which are associated with expressions inside a [repetition operator](./syntax-reference.md#repetition-operators) (`*`, `+`, and `?`)
 
 Generally, you write a semantic action for each rule in your grammar, and store them together in an _action dictionary_. For example, given the following grammar:
 
