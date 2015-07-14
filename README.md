@@ -50,7 +50,7 @@ To use Ohm, you need a grammar that is written in the Ohm language. The grammar 
 definition of the language or data format that you want to parse. There are a few different ways
 you can define an Ohm grammar:
 
-- **Simplest:** Define the grammar directly in a JavaScript string and instantiate it using `ohm.grammar()`:
+- Define the grammar directly in a JavaScript string and instantiate it using `ohm.grammar()`:
 
     ```js
     var myGrammar = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
@@ -123,7 +123,7 @@ To see the text trace for a grammar `g`, just use the [`g.trace()`](./doc/api-re
 method instead of `g.match`. It takes the same arguments, but instead of returning a MatchResult
 object, it returns a Trace object -- calling its `toString` method returns a string describing
 all of the decisions the parser made when trying to match the input. For example, here is the
-result of `g.trace('ab')` for the grammar `G { start = letter+ }`:
+result of `g.trace('ab').toString()` for the grammar `G { start = letter+ }`:
 
 <script type="text/markscript">
   markscript.transformNextBlock(function(code) {
