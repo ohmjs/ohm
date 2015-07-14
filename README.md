@@ -21,7 +21,12 @@ easier to read and understand.
 Usage
 -----
 
-### Getting Started
+The easiest way to get started with Ohm is to play with one of the following examples on JSFiddle:
+
+- [Basic parsing example](http://jsfiddle.net/pdubroy/p3b1v2xb/)
+- [Arithmetic example with semantics](http://jsfiddle.net/pdubroy/15k63qae/)
+
+### Installation
 
 For Node.js and io.js (**Note:** As soon as Ohm is ready for release, it will be published on NPM):
 
