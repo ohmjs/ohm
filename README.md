@@ -44,49 +44,52 @@ If you are using Node.js, you can just install the `ohm-js` package using [npm](
 
 ### Basics
 
-#### Instantiating Grammars
+#### Defining Grammars
 
-To use Ohm, you'll need a grammar that is written in the Ohm language. The grammar provides a formal
-definition of the language or data format that you want to parse. In the examples above, the grammar
-was simply stored as a string literal in the source code. This works for simple examples, but for
-larger grammars, you'll probably want to do things differently. If you are using Node or io.js, you
-can store the grammar in a separate file (e.g. 'myGrammar.ohm') and use it like this:
+To use Ohm, you need a grammar that is written in the Ohm language. The grammar provides a formal
+definition of the language or data format that you want to parse. There are a few different ways
+you can define an Ohm grammar:
 
-```js
-var fs = require('fs');
-var ohm = require('ohm');
-var myGrammar = ohm.grammar(fs.readFileSync('myGrammar.ohm').toString());
-```
+- **Simplest:** Define the grammar directly in a JavaScript string and instantiate it using `ohm.grammar()`:
 
-In the browser, you can put the grammar into a separate script element, with `type="text/ohm-js"`:
+    ```js
+    var myGrammar = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
+    ```
 
-```html
-<script type="text/ohm-js" id="grammarSrc">
-  MyGrammar {
-    greeting = "Hello" | "Hola"
-  }
-</script>
-```
+    This is the simplest option, but it can be awkward to define larger grammars this way.
 
-Then, you can instantiate the grammar like this:
+- **Recommended when running in the browser:** Embed the grammar source inside its own `<script>` tag with the attribute `type="text/ohm-js"`, and instantiate it using `ohm.grammarFromScriptElement()`:
 
-```js
-var myGrammar = ohm.grammarFromScriptElement();
-```
+    ```html
+    <script type="text/ohm-js">
+      MyGrammar {
+        greeting = "Hello" | "Hola"
+      }
+    </script>
+    <script>
+      var myGrammar = ohm.grammarFromScriptElement();
+    </script>
+    ```
 
-If you have more than one script tag with `type="text/ohm-js"` in your document, you will need to
-pass the appropriate script tag as an argument:
+- **Recommended with Node.js:** Define the grammar in a separate file, and instantiate it using `ohm.grammarFromFile()`:
 
-```js
-var myGrammar = ohm.grammarFromScriptElement(document.querySelector('#grammarSrc'));
-```
+    In `myGrammar.ohm`:
 
-To instantiate multiple grammars at once, use `ohm.grammars()` and
-`ohm.grammarsFromScriptElements()`.
+        MyGrammar {
+          greeting = "Hello" | "Hola"
+        }
+
+    In JavaScript:
+
+    ```js
+    var myGrammar = ohm.grammarFromFile('myGrammar.ohm');
+    ```
+
+For more information, see [Instantiating Grammars](doc/api-reference.md#instantiating-grammars) in the API reference.
 
 #### Using Grammars
 
-Once you've instantiated a grammar object, you can use the grammar's `match()` method:
+Once you've instantiated a grammar object, use the grammar's `match()` method to parse input:
 
 ```js
 var userInput = 'Hello';
@@ -98,7 +101,7 @@ if (m.succeeded()) {
 }
 ```
 
-For more information, see [main documentation](./doc/index.md).
+For more information, see [main documentation](doc/index.md).
 
 ### Debugging
 
