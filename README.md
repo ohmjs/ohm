@@ -28,30 +28,19 @@ The easiest way to get started with Ohm is to play with one of the following exa
 
 ### Installation
 
-For Node.js and io.js (**Note:** As soon as Ohm is ready for release, it will be published on NPM):
+For use in the browser: 
 
-    npm install -g https://github.com/cdglabs/ohm.git
+-  Download [dist/ohm.js](./dist/ohm.js) (development version, with full source and comments) or [dist/ohm.min.js](./dist/ohm.min.js) (a minified version for faster page loads).
+-  Add a new script tag to your page, and set the `src` attribute to the path of the file you just downloaded. E.g.:
+    ```html
+    <script src="ohm.js"></script>
+    ```
 
-Then require it from anywhere:
+    This creates a global variable named `ohm`.
 
-```js
-var ohm = require('ohm');
-var g = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
-var result = g.match('Hallo');
-if (result.failed()) console.log(result.message);
-```
+If you are using Node.js, you can just install the `ohm-js` package using [npm](http://npmjs.org):
 
-For use in the browser, simply download [dist/ohm.js](./dist/ohm.js) or
-[dist/ohm.min.js](./dist/ohm.min.js), and add it as a script tag to your page:
-
-```html
-<script src="ohm.min.js"></script>
-<script>
-  var g = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
-  var result = g.match('hola');
-  if (result.failed()) console.log(result.message);
-</script>
-```
+    npm install https://github.com/cdglabs/ohm.git
 
 ### Basics
 
