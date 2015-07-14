@@ -89,6 +89,13 @@ For more information, see [Instantiating Grammars](doc/api-reference.md#instanti
 
 #### Using Grammars
 
+<script type="text/markscript">
+  // The duplication here is required because Markscript only executes top-level code blocks.
+  // TODO: Consider fixing this in Markscript.
+  var ohm = require('ohm');
+  var myGrammar = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
+</script>
+
 Once you've instantiated a grammar object, use the grammar's `match()` method to parse input:
 
 ```js
@@ -101,7 +108,7 @@ if (m.succeeded()) {
 }
 ```
 
-For more information, see [main documentation](doc/index.md).
+For more information, see the [main documentation](doc/index.md).
 
 ### Debugging
 
