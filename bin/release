@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Script to version, tag, and release a new version of the package.
+# Arguments are the same as `npm version` (https://docs.npmjs.com/cli/version).
+
+set -e
+
+function cleanup {
+  echo
+  git tag -d $(git log -1 --pretty=%B)  # Delete the last tag
+  git reset --hard HEAD^
+  exit 1
+}
+
+if [ "$#" -ne "1" ]; then
+  echo "usage: $0 <newversion> | major | minor | patch | premajor"
+  echo "<newversion> must be in semver format, e.g. 1.2.0."
+  exit 1
+fi
+
+if [ "$(git status --porcelain | grep -v '??')" != "" ]; then
+  echo "Error: git working directory not clean -- run 'git status' for more info."
+  exit 1
+fi
+
+npm run prepublish
+npm version "$@" -m "v%s"
+trap cleanup INT
+read -p "Press [Enter] to publish this release..."
+git push --tags
+npm publish
