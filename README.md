@@ -16,7 +16,7 @@ actions. In Ohm, a grammar defines a language, and semantic actions specify what
 inputs in that language. Semantic actions are written in the _host language_ -- e.g., for Ohm/JS,
 the host language is JavaScript. Ohm grammars, on the other hand, work without modification in any
 host language. This separation improves modularity, and makes both grammars and semantic actions
-easier to read and understand. _(More on the Ohm philosophy [here](doc/ohm-philosophy.md).)_
+easier to read and understand. _(More on the Ohm philosophy [here](doc/philosophy.md).)_
 
 Getting Started
 ---------------
