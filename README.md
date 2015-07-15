@@ -16,15 +16,22 @@ actions. In Ohm, a grammar defines a language, and semantic actions specify what
 inputs in that language. Semantic actions are written in the _host language_ -- e.g., for Ohm/JS,
 the host language is JavaScript. Ohm grammars, on the other hand, work without modification in any
 host language. This separation improves modularity, and makes both grammars and semantic actions
-easier to read and understand.
+easier to read and understand. _(More on the Ohm philosophy [here](doc/ohm-philosophy.md).)_
 
-Usage
------
+Getting Started
+---------------
 
 The easiest way to get started with Ohm is to play with one of the following examples on JSFiddle:
 
 - [Basic parsing example](http://jsfiddle.net/pdubroy/p3b1v2xb/)
 - [Arithmetic example with semantics](http://jsfiddle.net/pdubroy/15k63qae/)
+
+### Resources
+
+- There's no tutorial yet, but the [math example](examples/math/index.html) is extensively commented and is probably the best place to start.
+- [Examples](examples/)
+- [Documentation](doc/index.md)
+- Ask questions and give us feedback in the [Ohm Google Group](https://groups.google.com/a/cdglabs.org/forum/#!forum/ohm).
 
 ### Installation
 
