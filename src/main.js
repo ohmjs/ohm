@@ -1,4 +1,4 @@
-/* global document, Buffer, XMLHttpRequest */
+/* global document, XMLHttpRequest */
 
 'use strict';
 
@@ -12,6 +12,8 @@ var Namespace = require('./Namespace');
 var common = require('./common');
 var errors = require('./errors');
 var util = require('./util');
+
+var isBuffer = require('is-buffer');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -314,7 +316,7 @@ function grammars(source, optNamespace) {
   var ns = Namespace.extend(Namespace.asNamespace(optNamespace));
   if (typeof source !== 'string') {
     // For convenience, detect Node.js Buffer objects and automatically call toString().
-    if (Buffer && Buffer.isBuffer(source)) {
+    if (isBuffer(source)) {
       source = source.toString();
     } else {
       throw new TypeError(

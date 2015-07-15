@@ -2,7 +2,7 @@
   "name": "ohm",
   "version": "0.0.0",
   "description": "An object-oriented language for parsing and pattern matching",
-  "repository": "cdglabs/ohm",
+  "repository": "https://github.com/cdglabs/ohm",
   "keywords": [
     "parser",
     "compiler",
@@ -15,7 +15,6 @@
     "rapid",
     "prototyping"
   ],
-  "repository": "https://github.com/cdglabs/ohm",
   "homepage": "http://cdglabs.org/ohm",
   "bugs": "https://github.com/cdglabs/ohm/issues",
   "main": "src/main.js",
@@ -49,9 +48,10 @@
     "Yoshiki Ohshima <Yoshiki.Ohshima@acm.org>"
   ],
   "dependencies": {
-    "util-extend": "^1.0.1",
+    "es6-symbol": "^2.0.1",
     "inherits": "^2.0.1",
-    "symbol": ""
+    "is-buffer": "^1.0.2",
+    "util-extend": "^1.0.1"
   },
   "devDependencies": {
     "browser-sync": "^2.4.0",

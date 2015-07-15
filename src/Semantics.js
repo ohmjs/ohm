@@ -4,7 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-var Symbol = require('symbol');  // eslint-disable-line no-undef
+var Symbol = require('es6-symbol');  // eslint-disable-line no-undef
 var inherits = require('inherits');
 
 var MatchResult = require('./MatchResult');
