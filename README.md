@@ -30,7 +30,7 @@ The easiest way to get started with Ohm is to play with one of the following exa
 
 For use in the browser: 
 
--  Download [dist/ohm.js](./dist/ohm.js) (development version, with full source and comments) or [dist/ohm.min.js](./dist/ohm.min.js) (a minified version for faster page loads).
+-  Download [ohm.js](https://cdglabs.github.io/ohm/dist/ohm.js) (development version, with full source and comments) or [ohm.min.js](https://cdglabs.github.io/ohm/dist/ohm.min.js) (a minified version for faster page loads).
 -  Add a new script tag to your page, and set the `src` attribute to the path of the file you just downloaded. E.g.:
     ```html
     <script src="ohm.js"></script>
