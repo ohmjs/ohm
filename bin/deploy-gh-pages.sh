@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 # Check if we are running on the CI server (e.g., Travis).
 if [ -n "$CI" ]; then
   # Commit anything generated during the build.
@@ -21,5 +19,5 @@ git checkout gh-pages &&
     git checkout master -- doc dist &&
     git commit -am "Update from master@$(git rev-parse --short master)" &&
     git push origin gh-pages
-  ); git checkout -
+  ); git checkout -q -
 )
