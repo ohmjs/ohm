@@ -1,13 +1,13 @@
 # Ohm Documentation
 
-* There's no tutorial yet, but the [math example](doc/math/index.html) is extensively commented and is probably the best place to start.
+* There's no tutorial yet, but the [math example](../examples/math/index.html) is extensively commented and is probably the best place to start.
 * [Ohm/JS API Reference](./api-reference.md)
 * [Ohm Syntax Reference](./syntax-reference.md)
-* Learn more about the [Ohm philosophy](doc/ohm-philosophy.md)
+* Learn more about the [Ohm philosophy](./philosophy.md)
 
 ## Examples
 
-Here are some quick sample of what it's like to work with Ohm. For more in-depth examples, see the [examples directory](examples/).
+Here are some quick samples of what it's like to work with Ohm. For more in-depth examples, see the [examples directory](../examples/).
 
 ### Matching Strings
 
@@ -78,10 +78,8 @@ Arithmetic {
 We can create an operation named 'eval' to evaluate arithmetic expressions that match the grammar:
 
 ```js
-var fs = require('fs');
-
 // Instantiate the grammar.
-var g = ohm.grammar(fs.readFileSync('arithmetic.ohm').toString());
+var g = ohm.grammarFromFile('arithmetic.ohm');
 
 // Create an operation that evaluates the expression. An operation always belongs to a Semantics,
 // which is a family of related operations and attributes for a particular grammar.
