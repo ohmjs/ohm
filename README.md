@@ -47,7 +47,7 @@ For use in the browser:
 
 If you are using Node.js, you can just install the `ohm-js` package using [npm](http://npmjs.org):
 
-    npm install https://github.com/cdglabs/ohm.git
+    npm install ohm-js
 
 ### Basics
 
