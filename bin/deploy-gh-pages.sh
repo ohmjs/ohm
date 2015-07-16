@@ -16,7 +16,7 @@ git rev-parse --quiet --verify gh-pages > /dev/null || (echo "No gh-pages branch
 git checkout gh-pages &&
 (
   (
-    git checkout master -- doc dist &&
+    git checkout master -- doc dist visualizer &&
     git commit -am "Update from master@$(git rev-parse --short master)" &&
     git push origin gh-pages
   ); git checkout -q -
