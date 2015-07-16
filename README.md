@@ -113,7 +113,7 @@ For more information, see [Instantiating Grammars](doc/api-reference.md#instanti
   var myGrammar = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
 </script>
 
-Once you've instantiated a grammar object, use the grammar's `match()` method to parse input:
+Once you've instantiated a grammar object, use the grammar's `match()` method to recognize input:
 
 ```js
 var userInput = 'Hello';
@@ -124,6 +124,8 @@ if (m.succeeded()) {
   console.log("That's not a greeting!");
 }
 ```
+
+The result is a MatchResult object. You can use the `succeeded()` and `failed()` methods to see whether the input was recognized or not.
 
 For more information, see the [main documentation](doc/index.md).
 
