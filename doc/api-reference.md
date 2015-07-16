@@ -135,7 +135,7 @@ Generally, you write a semantic action for each rule in your grammar, and store 
 <script type="text/markscript">
   // Take the grammar below and instantiate it as `g` in the markscript environment.
   markscript.transformNextBlock(function(code) {
-    return "var g = require('ohm').grammar('" + code.replace(/\n/g, '\\n') + "');";
+    return "var g = require('ohm-js').grammar('" + code.replace(/\n/g, '\\n') + "');";
   });
 </script>
 

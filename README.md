@@ -99,7 +99,7 @@ For more information, see [Instantiating Grammars](doc/api-reference.md#instanti
 <script type="text/markscript">
   // The duplication here is required because Markscript only executes top-level code blocks.
   // TODO: Consider fixing this in Markscript.
-  var ohm = require('ohm');
+  var ohm = require('ohm-js');
   var myGrammar = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
 </script>
 

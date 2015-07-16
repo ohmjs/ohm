@@ -30,8 +30,8 @@ var markscriptConfig = {
   // Expose the fake document object to scripts inside Markdown.
   globals: {document: fakeDocument},
 
-  // Make `require('ohm')` work properly from inside Markdown.
-  moduleAliases: {ohm: '..'},
+  // Make `require('ohm-js')` work properly from inside Markdown.
+  moduleAliases: {'ohm-js': '..'},
   workingDir: scriptRel('data')
 };
 

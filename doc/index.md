@@ -14,7 +14,7 @@ Here are some quick samples of what it's like to work with Ohm. For more in-dept
 Instantiate a grammar from a string using `ohm.grammar()`, and check inputs using the grammar's `match()` method:
 
 ```js
-var ohm = require('ohm');
+var ohm = require('ohm-js');
 var g = ohm.grammar(
     'Laugh {' +
     '  laugh = lol | "lmao"' +

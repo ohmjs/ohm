@@ -16,7 +16,7 @@ Ohm is closely related to OMeta, another PEG-based language for parsing and patt
 ## Terminology
 
 <script type="text/markscript">
-  var ohm = require('ohm');
+  var ohm = require('ohm-js');
   function checkGrammar(source) {
   	assert(ohm.grammar(source));
   	return '';
