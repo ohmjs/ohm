@@ -49,6 +49,12 @@ If you are using Node.js, you can just install the `ohm-js` package using [npm](
 
     npm install ohm-js
 
+This will install Ohm in the local node_modules folder. Use `require` to access it from a Node script:
+
+    ```js
+    var ohm = require('ohm-js');
+    ```
+
 ### Basics
 
 #### Defining Grammars
