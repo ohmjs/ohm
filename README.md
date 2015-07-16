@@ -59,6 +59,8 @@ This will install Ohm in the local node_modules folder. Use `require` to access 
 
 #### Defining Grammars
 
+![Instantiating a grammar](http://www.cdglabs.org/ohm/doc/images/instantiating-grammars.png)
+
 To use Ohm, you need a grammar that is written in the Ohm language. The grammar provides a formal
 definition of the language or data format that you want to parse. There are a few different ways
 you can define an Ohm grammar:
@@ -101,6 +103,8 @@ you can define an Ohm grammar:
 For more information, see [Instantiating Grammars](doc/api-reference.md#instantiating-grammars) in the API reference.
 
 #### Using Grammars
+
+![Matching input](http://www.cdglabs.org/ohm/doc/images/matching.png)
 
 <script type="text/markscript">
   // The duplication here is required because Markscript only executes top-level code blocks.
