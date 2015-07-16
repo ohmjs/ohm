@@ -134,9 +134,9 @@ For more information, see the [main documentation](doc/index.md).
 Ohm has two tools to help you debug grammars: a text trace, and a graphical visualizer. The
 visualizer is still under development (i.e., it might be buggy!) but it can still be useful.
 
-![Ohm Visualizer](http://www.cdglabs.org/ohm/doc/images/visualizer-small.png)
+[![Ohm Visualizer](http://www.cdglabs.org/ohm/doc/images/visualizer-small.png)](http://www.cdglabs.org/ohm/visualizer/)
 
-To run the visualizer, just open `visualizer/index.html` in your web browser.
+You can [try the visualizer online](http://www.cdglabs.org/ohm/visualizer/), or if you have an Ohm checkout, open `visualizer/index.html` in your web browser.
 
 To see the text trace for a grammar `g`, just use the [`g.trace()`](./doc/api-reference.md#trace)
 method instead of `g.match`. It takes the same arguments, but instead of returning a MatchResult
