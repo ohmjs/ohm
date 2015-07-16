@@ -302,9 +302,6 @@ function useMemoizedResult(state, application, memoRecOrLR) {
   var bindings = state.bindings;
 
   inputStream.pos = memoRecOrLR.pos;
-  if (memoRecOrLR.failureDescriptor) {
-    state.recordFailures(memoRecOrLR.failureDescriptor, application);
-  }
   if (state.isTracing()) {
     state.trace.push(memoRecOrLR.traceEntry);
   }
