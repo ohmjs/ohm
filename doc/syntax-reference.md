@@ -68,7 +68,7 @@ Matches a positive or negative integer value.
 
 Matches the body of the rule named _ruleName_. For example, the built-in rule `letter` will parse a string of length 1 that is a letter.
 
-<code><i>ruleName</i>&lt;<i>expr1</i>&gt;</code>
+<code><i>ruleName</i>&lt;<i>expr</i>&gt;</code>
 
 Matches the body of the _parameterized rule_ named _ruleName_, substituting the parsing expression _expr_ as its first parameter. For parameterized rules with more than one parameter, the parameters are comma-separated, e.g. `ListOf<field, ";">`.
 
@@ -88,7 +88,7 @@ As with the `*` operator, spaces are skipped when used in a [syntactic rule](#sy
 
 <code><i>expr</i> ?</code>
 
-Tries to match the expression _expr_, succeeding whether it matches or not. E.g., `letter?` will match both `'a'` and `'9'`.
+Tries to match the expression _expr_, succeeding whether it matches or not. No input is consumed if it does not match.
 
 ### Sequence
 
@@ -114,7 +114,7 @@ Succeeds if the expression `expr` can be matched, but does not consume anything 
 
 <code>~ <i>expr</i></code>
 
-Succeeds if the expression `expr` cannot be matched, and does not consume anything from the input stream. Usually used as part of a sequence, e.g. `~"\n" _` will consume any single character that is not a new line character.
+Succeeds if the expression `expr` cannot be matched, and does not consume anything from the input stream. Usually used as part of a sequence, e.g., `~"\n" _` will consume any single character that is not a new line character.
 
 ### Arrays
 
@@ -209,11 +209,11 @@ A _syntactic rule_ is a rule whose name begins with an uppercase letter, and _le
 
 For the purposes of a syntactic rule, a "whitespace character" is anything that matches its enclosing grammar's "space" rule. The default implementation of "space" matches ' ', '\t', '\n', '\r', and any other character that is considered whitespace in the [ES5 spec](http://ecma-international.org/ecma-262/5.1/#sec-7.2).
 
-### Inline Rules
+### Inline Rule Declarations
 
 <code><i>expr</i> -- <i>caseName</i></code>
 
-When a parsing expression is followed by the characters `--` and a name, it signals an _inline rule declaration_. This is most commonly used in Alt expressions to ensure that each branch has the same arity. For example, the following declaration:
+When a parsing expression is followed by the characters `--` and a name, it signals an _inline rule declaration_. This is most commonly used in alternation expressions to ensure that each branch has the same arity. For example, the following declaration:
 
 <pre><code>AddExp = AddExp "+" MulExp  -- plus
        | MulExp
