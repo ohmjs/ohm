@@ -32,7 +32,7 @@ State.prototype = {
     this.lexifyCountStack = [];
     this.bindings = [];
     this.failures = optFailuresArray;
-    this.ignoreFailuresCount = 0;
+    this.doNotRecordFailuresCount = 0;  // should not record failures if this is > 0
     if (this.isTracing()) {
       this.trace = [];
     }
@@ -80,10 +80,10 @@ State.prototype = {
   },
 
   skipSpaces: function() {
-    this.ignoreFailures();
+    this.doNotRecordFailures();
     applySpaces_.eval(this);
     this.bindings.pop();
-    this.recordFailures();
+    this.doRecordFailures();
     return this.inputStream.pos;
   },
 
@@ -122,7 +122,7 @@ State.prototype = {
   },
 
   recordFailure: function(pos, expr) {
-    if (this.ignoreFailuresCount > 0) {
+    if (this.doNotRecordFailuresCount > 0) {
       return;
     }
     if (pos < this.rightmostFailPos) {
@@ -171,12 +171,12 @@ State.prototype = {
     exprsAndStacks.push({expr: expr, stacks: [stack]});
   },
 
-  ignoreFailures: function() {
-    this.ignoreFailuresCount++;
+  doNotRecordFailures: function() {
+    this.doNotRecordFailuresCount++;
   },
 
-  recordFailures: function() {
-    this.ignoreFailuresCount--;
+  doRecordFailures: function() {
+    this.doNotRecordFailuresCount--;
   },
 
   getFailuresPos: function() {

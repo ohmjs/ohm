@@ -204,9 +204,9 @@ pexprs.Not.prototype._eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   var origNumBindings = state.bindings.length;
-  state.ignoreFailures();
+  state.doNotRecordFailures();
   var ans = this.expr.eval(state);
-  state.recordFailures();
+  state.doRecordFailures();
   if (ans) {
     state.recordFailure(origPos, this);
     state.truncateBindings(origNumBindings);
@@ -348,7 +348,7 @@ pexprs.Apply.prototype._eval = function(state) {
     var body = grammar.ruleDict[ruleName];
     origPosInfo.enter(app);
     if (body.description) {
-      state.ignoreFailures();
+      state.doNotRecordFailures();
     }
     var value = app.evalOnce(body, state);
     currentLR = origPosInfo.getCurrentLeftRecursion();
@@ -369,7 +369,7 @@ pexprs.Apply.prototype._eval = function(state) {
       origPosInfo.memo[memoKey] = {pos: inputStream.pos, value: value};
     }
     if (body.description) {
-      state.recordFailures();
+      state.doRecordFailures();
       if (!value) {
         state.recordFailure(origPos, app);
       }
