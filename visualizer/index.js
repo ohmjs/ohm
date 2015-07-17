@@ -348,7 +348,15 @@ function shouldNodeBeVisible(traceNode) {
 }
 
 function isPrimitive(expr) {
-  return expr.constructor.name.indexOf('Prim') >= 0;
+  switch (expr.constructor.name) {
+    case 'Prim':
+    case 'Range':
+    case 'StringPrim':
+    case 'UnicodeChar':
+      return true;
+    default:
+      return false;
+  }
 }
 
 // Hides or shows the grammar error.
