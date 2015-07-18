@@ -41,7 +41,7 @@ pexprs.Iter.prototype.assertIteratedExprsAreNotNullable = function(grammar, rule
   // It is overridden for `Opt` below.
   this.expr.assertIteratedExprsAreNotNullable(grammar, ruleName);
   if (this.expr.isNullable(grammar)) {
-    throw new errors.KleeneExprHasNullableOperand(this, ruleName);
+    throw errors.kleeneExprHasNullableOperand(this, ruleName);
   }
 };
 

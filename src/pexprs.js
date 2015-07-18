@@ -169,7 +169,7 @@ function Obj(properties, isLenient) {
   var names = properties.map(function(property) { return property.name; });
   var duplicates = common.getDuplicates(names);
   if (duplicates.length > 0) {
-    throw new errors.DuplicatePropertyNames(duplicates);
+    throw errors.duplicatePropertyNames(duplicates);
   } else {
     this.properties = properties;
     this.isLenient = isLenient;

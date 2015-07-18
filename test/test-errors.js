@@ -7,7 +7,6 @@
 var test = require('tape-catch');
 
 var ohm = require('..');
-var errors = require('../src/errors');
 
 // --------------------------------------------------------------------
 // Helpers
@@ -64,23 +63,26 @@ test('match failure', function(t) {
 });
 
 test('undeclared rules', function(t) {
-  t.throws(function() { makeRuleWithBody('undeclaredRule'); }, errors.UndeclaredRule);
-
-  try {
-    makeRuleWithBody('undeclaredRule');
-    t.fail('Expected an exception to be thrown');
-  } catch (e) {
-    t.equal(e.message, 'Rule undeclaredRule is not declared in grammar G');
-  }
+  t.throws(
+      function() { makeRuleWithBody('undeclaredRule'); },
+      /Rule undeclaredRule is not declared in grammar G/);
 
   t.end();
 });
 
 test('many expressions with nullable operands', function(t) {
-  t.throws(function() { makeRuleWithBody('("a"*)*'); }, errors.ManyExprHasNullableOperand);
-  t.throws(function() { makeRuleWithBody('("a"?)*'); }, errors.ManyExprHasNullableOperand);
-  t.throws(function() { makeRuleWithBody('("a"*)+'); }, errors.ManyExprHasNullableOperand);
-  t.throws(function() { makeRuleWithBody('("a"?)+'); }, errors.ManyExprHasNullableOperand);
+  t.throws(
+      function() { makeRuleWithBody('("a"*)*'); },
+      /Nullable expression "a"\* is not allowed inside '\*'/);
+  t.throws(
+      function() { makeRuleWithBody('("a"?)*'); },
+      /Nullable expression "a"\? is not allowed inside '\*'/);
+  t.throws(
+      function() { makeRuleWithBody('("a"*)+'); },
+      /Nullable expression "a"\* is not allowed inside '\+'/);
+  t.throws(
+      function() { makeRuleWithBody('("a"?)+'); },
+      /Nullable expression "a"\? is not allowed inside '\+'/);
 
   try {
     makeRuleWithBody('("a"?)*');
@@ -106,7 +108,7 @@ test('many expressions with nullable operands', function(t) {
 
   t.throws(
       function() { ohm.grammar('G { x = y+  y = undeclaredRule }'); },
-      errors.UndeclaredRule,
+      /Rule * is not declared in grammar G/,
       'undeclared rule prevents ManyExprHasNullableOperand check');
 
   t.end();

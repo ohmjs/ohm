@@ -24,7 +24,7 @@ Interval.coverage = function(/* interval1, interval2, ... */) {
   for (var idx = 1; idx < arguments.length; idx++) {
     var interval = arguments[idx];
     if (interval.inputStream !== inputStream) {
-      throw new errors.IntervalSourcesDontMatch();
+      throw errors.intervalSourcesDontMatch();
     } else {
       startIdx = Math.min(startIdx, arguments[idx].startIdx);
       endIdx = Math.max(endIdx, arguments[idx].endIdx);

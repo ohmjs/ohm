@@ -84,7 +84,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       var g = decl.build();
       g.definitionInterval = this.interval.trimmed();
       if (grammarName in namespace) {
-        throw new errors.DuplicateGrammarDeclaration(g, namespace);
+        throw errors.duplicateGrammarDeclaration(g, namespace);
       }
       namespace[grammarName] = g;
       return g;
@@ -96,7 +96,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
         decl.withSuperGrammar(null);
       } else {
         if (!namespace || !(superGrammarName in namespace)) {
-          throw new errors.UndeclaredGrammar(superGrammarName, namespace, n.interval);
+          throw errors.undeclaredGrammar(superGrammarName, namespace, n.interval);
         }
         decl.withSuperGrammar(namespace[superGrammarName]);
       }
@@ -279,7 +279,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
 function compileAndLoad(source, namespace) {
   var m = ohmGrammar.match(source, 'Grammars');
   if (m.failed()) {
-    throw new errors.GrammarSyntaxError(m);
+    throw errors.grammarSyntaxError(m);
   }
   return buildGrammar(m, namespace);
 }
@@ -373,7 +373,6 @@ function makeRecipe(recipeFn) {
 
 module.exports = {
   createNamespace: Namespace.createNamespace,
-  error: errors,
   grammar: grammar,
   grammars: grammars,
   grammarFromScriptElement: grammarFromScriptElement,

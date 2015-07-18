@@ -21,18 +21,6 @@ function GrammarDecl(name) {
 
 // Helpers
 
-function onOhmError(doFn, onErrorFn) {
-  try {
-    doFn();
-  } catch (e) {
-    if (e instanceof errors.Error) {
-      onErrorFn(e);
-    } else {
-      throw e;
-    }
-  }
-}
-
 GrammarDecl.prototype.ensureSuperGrammar = function() {
   if (!this.superGrammar) {
     this.withSuperGrammar(
@@ -49,11 +37,11 @@ GrammarDecl.prototype.ensureSuperGrammar = function() {
 GrammarDecl.prototype.installOverriddenOrExtendedRule = function(name, formals, body) {
   var duplicateParameterNames = common.getDuplicates(formals);
   if (duplicateParameterNames.length > 0) {
-    throw new errors.DuplicateParameterNames(name, duplicateParameterNames, body);
+    throw errors.duplicateParameterNames(name, duplicateParameterNames, body);
   }
   var baseRule = this.ensureSuperGrammar().ruleDict[name];
   if (formals.length !== baseRule.formals.length) {
-    throw new errors.WrongNumberOfParameters(name, baseRule.formals.length, formals.length, body);
+    throw errors.wrongNumberOfParameters(name, baseRule.formals.length, formals.length, body);
   }
   return this.install(name, formals, baseRule.description, body);
 };
@@ -100,23 +88,27 @@ GrammarDecl.prototype.build = function() {
   var grammarHasInvalidApplications = false;
   Object.keys(grammar.ruleDict).forEach(function(ruleName) {
     var body = grammar.ruleDict[ruleName];
-    onOhmError(
-        function() { body.assertChoicesHaveUniformArity(ruleName); },
-        function(e) { grammarErrors.push(e); });
-    onOhmError(
-        function() { body.assertAllApplicationsAreValid(ruleName, grammar); },
-        function(e) {
-          grammarErrors.push(e);
-          grammarHasInvalidApplications = true;
-        });
+    try {
+      body.assertChoicesHaveUniformArity(ruleName);
+    } catch (e) {
+      grammarErrors.push(e);
+    }
+    try {
+      body.assertAllApplicationsAreValid(ruleName, grammar);
+    } catch (e) {
+      grammarErrors.push(e);
+      grammarHasInvalidApplications = true;
+    }
   });
   if (!grammarHasInvalidApplications) {
     // The following check can only be done if the grammar has no invalid applications.
     Object.keys(grammar.ruleDict).forEach(function(ruleName) {
       var body = grammar.ruleDict[ruleName];
-      onOhmError(
-          function() { body.assertIteratedExprsAreNotNullable(grammar, ruleName); },
-          function(e) { grammarErrors.push(e); });
+      try {
+        body.assertIteratedExprsAreNotNullable(grammar, ruleName);
+      } catch (e) {
+        grammarErrors.push(e);
+      }
     });
   }
   if (grammarErrors.length > 0) {
@@ -130,13 +122,13 @@ GrammarDecl.prototype.build = function() {
 GrammarDecl.prototype.define = function(name, formals, body, optDescr) {
   this.ensureSuperGrammar();
   if (this.superGrammar.ruleDict[name]) {
-    throw new errors.DuplicateRuleDeclaration(name, this.name, this.superGrammar.name, body);
+    throw errors.duplicateRuleDeclaration(name, this.name, this.superGrammar.name, body);
   } else if (this.ruleDict[name]) {
-    throw new errors.DuplicateRuleDeclaration(name, this.name, this.name, body);
+    throw errors.duplicateRuleDeclaration(name, this.name, this.name, body);
   }
   var duplicateParameterNames = common.getDuplicates(formals);
   if (duplicateParameterNames.length > 0) {
-    throw new errors.DuplicateParameterNames(name, duplicateParameterNames, body);
+    throw errors.duplicateParameterNames(name, duplicateParameterNames, body);
   }
   return this.install(name, formals, optDescr, body);
 };
@@ -144,7 +136,7 @@ GrammarDecl.prototype.define = function(name, formals, body, optDescr) {
 GrammarDecl.prototype.override = function(name, formals, body) {
   var baseRule = this.ensureSuperGrammar().ruleDict[name];
   if (!baseRule) {
-    throw new errors.CannotOverrideUndeclaredRule(name, this.superGrammar.name, body);
+    throw errors.cannotOverrideUndeclaredRule(name, this.superGrammar.name, body);
   }
   this.installOverriddenOrExtendedRule(name, formals, body);
   return this;
@@ -153,7 +145,7 @@ GrammarDecl.prototype.override = function(name, formals, body) {
 GrammarDecl.prototype.extend = function(name, formals, body) {
   var baseRule = this.ensureSuperGrammar().ruleDict[name];
   if (!baseRule) {
-    throw new errors.CannotExtendUndeclaredRule(name, this.superGrammar.name, body);
+    throw errors.cannotExtendUndeclaredRule(name, this.superGrammar.name, body);
   }
   this.installOverriddenOrExtendedRule(
       name, formals, new pexprs.Extend(this.superGrammar, name, body));

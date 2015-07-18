@@ -8,7 +8,6 @@
 
 var test = require('tape-catch');
 
-var errors = require('../src/errors');
 var testUtil = require('./testUtil');
 
 // --------------------------------------------------------------------
@@ -21,18 +20,18 @@ test('require same number of params when overriding and extending', function(t) 
   // Too few arguments
   t.throws(
       function() { testUtil.makeGrammar('G2 <: G { Foo<x> := "oops!" }', ns); },
-      errors.WrongNumberOfParameters);
+      /Wrong number of parameters for rule Foo \(expected 2, got 1\)/);
   t.throws(
       function() { testUtil.makeGrammar('G2 <: G { Foo<x> += "oops!" }', ns); },
-      errors.WrongNumberOfParameters);
+      /Wrong number of parameters for rule Foo \(expected 2, got 1\)/);
 
   // Too many arguments
   t.throws(
       function() { testUtil.makeGrammar('G2 <: G { Foo<x, y, z> := "oops!" }', ns); },
-      errors.WrongNumberOfParameters);
+      /Wrong number of parameters for rule Foo \(expected 2, got 3\)/);
   t.throws(
       function() { testUtil.makeGrammar('G2 <: G { Foo<x, y, z> += "oops!" }', ns); },
-      errors.WrongNumberOfParameters);
+      /Wrong number of parameters for rule Foo \(expected 2, got 3\)/);
 
   // Just right
   t.ok(testUtil.makeGrammar('G2 <: G { Foo<x, y> := "yay!" }', ns));
@@ -43,11 +42,11 @@ test('require same number of params when overriding and extending', function(t) 
 test('require same number of params when applying', function(t) {
   var ns = testUtil.makeGrammars('G { Foo<x, y> = x y }');
   t.throws(
-      function() { testUtil.makeGrammar('G2 <: G { Foo<x> += "oops!" }', ns); },
-      errors.WrongNumberOfParameters);
+      function() { testUtil.makeGrammar('G2 <: G { Bar = Foo<"a"> }', ns); },
+      /Wrong number of parameters for rule Foo \(expected 2, got 1\)/);
   t.throws(
-      function() { testUtil.makeGrammar('G2 <: G { Foo<x, y, z> += "oops!" }', ns); },
-      errors.WrongNumberOfParameters);
+      function() { testUtil.makeGrammar('G2 <: G { Bar = Foo<"a", "b", "c"> }', ns); },
+      /Wrong number of parameters for rule Foo \(expected 2, got 3\)/);
   t.end();
 });
 
@@ -60,7 +59,7 @@ test('require arguments to have arity 1', function(t) {
           '  Start = Foo<digit digit>\n' +
           '}');
       },
-      errors.InvalidParameter);
+      /Invalid parameter to rule Foo/);
   t.end();
 });
 
@@ -72,7 +71,7 @@ test('require the rules referenced in arguments to be declared', function(t) {
           '  start = listOf<asdlfk, ",">\n' +
           '}');
       },
-      errors.UndeclaredRule);
+      /Rule asdlfk is not declared in grammar G/);
   t.end();
 });
 

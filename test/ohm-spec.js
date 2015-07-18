@@ -1,6 +1,5 @@
 var test = require('tape-catch');
 
-var errors = require('../src/errors');
 var fs = require('fs');
 var ohm = require('..');
 var testUtil = require('./testUtil');
@@ -81,7 +80,9 @@ test('grammar constructors dictionary', function(t) {
   });
 
   it('_nonterminal entry rejects nonexistent rule name', function() {
-    t.throws(function() { m.construct('foobar', []); }, errors.InvalidConstructorCall);
+    t.throws(
+        function() { m.construct('foobar', []); },
+        /Attempt to invoke constructor foobar with invalid or unexpected arguments/);
   });
 
   it('_nonterminal entry works when called correctly', function() {
@@ -195,9 +196,9 @@ test('intervals', function(t) {
     it('brotha from anotha motha', function() {
       var interval1 = makeInterval('abc', 0, 3);
       var interval2 = makeInterval('xyz', 1, 2);
-      t.throws(function() {
-        Interval.coverage(interval1, interval2);
-      }, errors.IntervalSourcesDontMatch);
+      t.throws(
+          function() { Interval.coverage(interval1, interval2) },
+          /Interval sources don't match/);
     });
 
     it('coverageWith (same method as above but as a method of an interval)', function() {
@@ -829,13 +830,9 @@ test('obj', function(t) {
   });
 
   it('duplicate property names are not allowed', function() {
-    try {
-      m = ohm.grammar('M { duh = {x: 1, x: 2, y: 3, ...} }');
-      t.fail('Expected an exception to be thrown');
-    } catch (e) {
-      t.ok(e instanceof errors.DuplicatePropertyNames);
-      t.deepEqual(e.duplicates, ['x']);
-    }
+    t.throws(
+        function() { ohm.grammar('M { duh = {x: 1, x: 2, y: 3, ...} }'); },
+        /Object pattern has duplicate property names: x/);
   });
   t.end();
 });
@@ -1161,42 +1158,29 @@ test('apply', function(t) {
 test('inheritance', function(t) {
   test('super-grammar does not exist', function(t) {
     it('no namespace', function() {
-      try {
-        ohm.grammar('G2 <: G1 {}');
-        t.fail('Expected an exception to be thrown');
-      } catch (e) {
-        t.equal(e.constructor, errors.UndeclaredGrammar);
-        t.equal(e.grammarName, 'G1');
-      };
+      t.throws(
+          function() { ohm.grammar('G2 <: G1 {}'); },
+          /Grammar G1 is not declared/);
     });
 
     it('empty namespace', function() {
-      try {
-        ohm.grammar('G2 <: G1 {}', {});
-        t.fail('Expected an exception to be thrown');
-      } catch (e) {
-        t.equal(e.constructor, errors.UndeclaredGrammar);
-        t.equal(e.grammarName, 'G1');
-      };
+      t.throws(
+          function() { ohm.grammar('G2 <: G1 {}', {}); },
+          /Grammar G1 is not declared in namespace/);
     });
     t.end();
   });
 
   test('define', function(t) {
     it('should check that rule does not already exist in super-grammar', function() {
-      var ns;
-      try {
-        ns = makeGrammars([
-          'G1 { foo = "foo" }',
-          'G2 <: G1 { foo = "bar" }'
-        ]);
-        t.fail('Expected an exception to be thrown');
-      } catch (e) {
-        t.equal(e.constructor, errors.DuplicateRuleDeclaration);
-        t.equal(e.ruleName, 'foo');
-        t.equal(e.offendingGrammarName, 'G2');
-        t.equal(e.declGrammarName, 'G1');
-      };
+      t.throws(
+          function() {
+            makeGrammars([
+              'G1 { foo = "foo" }',
+              'G2 <: G1 { foo = "bar" }'
+            ]);
+          },
+          /Duplicate declaration for rule 'foo' in grammar 'G2' \(originally declared in 'G1'\)/);
     });
     t.end();
   });
@@ -1206,14 +1190,9 @@ test('inheritance', function(t) {
                            'G2 <: G1 { digit := "a".."z" }']);
 
     it('should check that rule exists in super-grammar', function() {
-      try {
-        ns.G3 = ohm.grammar('G3 <: G1 { foo := "foo" }', ns);
-        t.fail('Expected an exception to be thrown');
-      } catch (e) {
-        t.equal(e.constructor, errors.CannotOverrideUndeclaredRule);
-        t.equal(e.ruleName, 'foo');
-        t.equal(e.grammarName, 'G1');
-      };
+      t.throws(
+          function() { ohm.grammar('G3 <: G1 { foo := "foo" }', ns); },
+          /Cannot override rule foo because it is not declared in G1/);
     });
 
     it("shouldn't matter if arities aren't the same", function() {
@@ -1281,14 +1260,9 @@ test('inheritance', function(t) {
     });
 
     it('should check that rule exists in super-grammar', function() {
-      try {
-        ohm.grammar('G3 <: G1 { bar += "bar" }', ns);
-        t.fail('Expected an exception to be thrown');
-      } catch (e) {
-        t.equal(e.constructor, errors.CannotExtendUndeclaredRule);
-        t.equal(e.ruleName, 'bar');
-        t.equal(e.grammarName, 'G1');
-      }
+      t.throws(
+          function() { ohm.grammar('G3 <: G1 { bar += "bar" }', ns); },
+          /Cannot extend rule bar because it is not declared in G1/);
     });
 
     it('should make sure rule arities are compatible', function() {
@@ -1298,27 +1272,16 @@ test('inheritance', function(t) {
 
       // Too many:
       ns.M1 = ohm.grammar('M1 { foo = "foo"  bar = "bar"  baz = "baz" }');
-      try {
-        ohm.grammar('M2 <: M1 { foo += bar baz }', ns);
-        t.fail('Expected an exception to be thrown');
-      } catch (e) {
-        t.equal(e.constructor, errors.InconsistentArity);
-        t.equal(e.ruleName, 'foo');
-        t.equal(e.expected, 1);
-        t.equal(e.actual, 2);
-      }
+
+      t.throws(
+        function() { ohm.grammar('M2 <: M1 { foo += bar baz }', ns); },
+        /Rule foo involves an alternation which has inconsistent arity \(expected 1, got 2\)/);
 
       // Too few:
       ns.M3 = ohm.grammar('M3 { foo = digit digit }');
-      try {
-        ohm.grammar('M4 <: M3 { foo += digit }', ns);
-        t.fail('Expected an exception to be thrown');
-      } catch (e) {
-        t.equal(e.constructor, errors.InconsistentArity);
-        t.equal(e.ruleName, 'foo');
-        t.equal(e.expected, 2);
-        t.equal(e.actual, 1);
-      }
+      t.throws(
+        function() { ohm.grammar('M4 <: M3 { foo += digit }', ns); },
+        /Rule foo involves an alternation which has inconsistent arity \(expected 2, got 1\)/);
     });
 
     it('should be ok to add new cases', function() {
@@ -1332,15 +1295,9 @@ test('inheritance', function(t) {
 
 test('bindings', function(t) {
   it('inconsistent arity in alts is an error', function() {
-    try {
-      ohm.grammar('G { foo = "a" "c" | "b" }');
-      t.fail('Expected an exception to be thrown');
-    } catch (e) {
-      t.equal(e.constructor, errors.InconsistentArity);
-      t.equal(e.ruleName, 'foo');
-      t.deepEqual(e.expected, 2);
-      t.deepEqual(e.actual, 1);
-    }
+    t.throws(
+      function() { ohm.grammar('G { foo = "a" "c" | "b" }'); },
+      /Rule foo involves an alternation which has inconsistent arity \(expected 2, got 1\)/);
   });
 
   it('by default, bindings are evaluated lazily', function() {
@@ -1444,15 +1401,10 @@ test('inline rule declarations', function(t) {
     ], ns);
   t.equal(makeEval(m2)(m2.match('2*3~4')), 2);
 
-  try {
-    ohm.grammar('Bad <: Arithmetic { addExp += addExp "~" mulExp  -- minus }', ns);
-    t.fail('Expected an exception to be thrown');
-  } catch (e) {
-    t.ok(e instanceof errors.DuplicateRuleDeclaration);
-    t.equal(e.ruleName, 'addExp_minus');
-    t.equal(e.offendingGrammarName, 'Bad');
-    t.equal(e.declGrammarName, 'Arithmetic');
-  };
+  t.throws(
+    function() { ohm.grammar('Bad <: Arithmetic { addExp += addExp "~" mulExp  -- minus }', ns); },
+    /rule 'addExp_minus' in grammar 'Bad' \(originally declared in 'Arithmetic'\)/);
+
   t.end();
 });
 
@@ -1652,13 +1604,9 @@ test('namespaces', function(t) {
 
   var ns2 = ohm.grammars('ccc { foo = "foo" }', ns);
   t.ok(ns2);
-  try {
-    ohm.grammar('ccc { bar = "bar" }', ns2);
-    t.fail('throws exception on duplicate grammar');
-  } catch (e) {
-    t.equal(e.constructor, errors.DuplicateGrammarDeclaration);
-    t.equal(e.grammarName, 'ccc');
-  }
+  t.throws(
+      function() { ohm.grammar('ccc { bar = "bar" }', ns2); },
+      /Grammar ccc is already declared in namespace/);
   t.ok(ns2.G, 'ns2 delegates to ns1');
 
   var ns3 = ohm.grammars('ccc { start = "x" }', ns);

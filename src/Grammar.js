@@ -36,7 +36,7 @@ Grammar.prototype = {
   construct: function(ruleName, children) {
     var body = this.ruleDict[ruleName];
     if (!body || !body.check(this, children) || children.length !== body.getArity()) {
-      throw new errors.InvalidConstructorCall(this, ruleName, children);
+      throw errors.invalidConstructorCall(this, ruleName, children);
     }
     var interval = new Interval(InputStream.newFor(children), 0, children.length);
     return new nodes.Node(this, ruleName, children, interval);

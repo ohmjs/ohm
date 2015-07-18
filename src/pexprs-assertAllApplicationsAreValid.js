@@ -67,19 +67,19 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, gramm
 
   // Make sure that the rule exists
   if (!body) {
-    throw new errors.UndeclaredRule(this.ruleName, grammar.name, this);
+    throw errors.undeclaredRule(this.ruleName, grammar.name, this);
   }
 
   // ... and that this application is allowed
   if (common.isSyntactic(this.ruleName) && (!common.isSyntactic(ruleName) || lexifyCount > 0)) {
-    throw new errors.ApplicationOfSyntacticRuleFromLexicalContext(this.ruleName, this);
+    throw errors.applicationOfSyntacticRuleFromLexicalContext(this.ruleName, this);
   }
 
   // ... and that this application has the correct number of parameters
   var actual = this.params.length;
   var expected = body.formals.length;
   if (actual !== expected) {
-    throw new errors.WrongNumberOfParameters(this.ruleName, expected, actual, this);
+    throw errors.wrongNumberOfParameters(this.ruleName, expected, actual, this);
   }
 
   // ... and that all of the parameter expressions only have valid applications and have arity 1
@@ -87,7 +87,7 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, gramm
   this.params.forEach(function(param) {
     param._assertAllApplicationsAreValid(ruleName, grammar);
     if (param.getArity() !== 1) {
-      throw new errors.InvalidParameter(self.ruleName, param);
+      throw errors.invalidParameter(self.ruleName, param);
     }
   });
 };
