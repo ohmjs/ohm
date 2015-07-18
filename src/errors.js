@@ -11,18 +11,13 @@ var Namespace = require('./Namespace');
 // --------------------------------------------------------------------
 
 function createError(message, optInterval) {
-  var e = new Error(message);
+  var e;
   if (optInterval) {
+    e = new Error(optInterval.getLineAndColumnMessage() + message);
+    e.shortMessage = message;
     e.interval = optInterval;
-  }
-  return e;
-}
-
-function createErrorWithLazyMessage(messageFn, optInterval) {
-  var e = new Error();
-  Object.defineProperty(e, 'message', {get: messageFn});
-  if (optInterval) {
-    e.interval = optInterval;
+  } else {
+    e = new Error(message);
   }
   return e;
 }
@@ -38,9 +33,13 @@ function intervalSourcesDontMatch() {
 // Grammar syntax error
 
 function grammarSyntaxError(matchFailure) {
-  return createErrorWithLazyMessage(
-      function() { return 'Failed to parse grammar:\n' + matchFailure.message; },
-      matchFailure.getInterval());
+  var e = new Error();
+  Object.defineProperty(e, 'message', {get: function() { return matchFailure.message; }});
+  Object.defineProperty(e, 'shortMessage', {get: function() {
+    return 'Expected ' + matchFailure.getExpectedText();
+  }});
+  e.interval = matchFailure.getInterval();
+  return e;
 }
 
 // Undeclared grammar
@@ -55,10 +54,7 @@ function undeclaredGrammar(grammarName, namespace, interval) {
 // Duplicate grammar declaration
 
 function duplicateGrammarDeclaration(grammar, namespace) {
-  return createError(
-      'Grammar ' + grammar.name + ' is already declared in namespace ' +
-          Namespace.toString(namespace),
-      grammar.definitionInterval);
+  return createError('Grammar ' + grammar.name + ' is already declared in this namespace');
 }
 
 // ----------------- rules -----------------
@@ -104,6 +100,8 @@ function wrongNumberOfParameters(ruleName, expected, actual, body) {
   return createError(
       'Wrong number of parameters for rule ' + ruleName +
           ' (expected ' + expected + ', got ' + actual + ')',
+      // FIXME: the definition interval is OK if this error is about a definition, but not a call.
+      // Should probably split this up into two errors.
       body.definitionInterval);
 }
 
@@ -128,8 +126,7 @@ function invalidParameter(ruleName, expr) {
 
 function applicationOfSyntacticRuleFromLexicalContext(ruleName, applyExpr) {
   return createError(
-      applyExpr.interval.getLineAndColumnMessage() +
-          'Cannot apply syntactic rule ' + ruleName + ' from here (inside a lexical context)',
+      'Cannot apply syntactic rule ' + ruleName + ' from here (inside a lexical context)',
       applyExpr.interval);
 }
 
@@ -137,8 +134,7 @@ function applicationOfSyntacticRuleFromLexicalContext(ruleName, applyExpr) {
 
 function kleeneExprHasNullableOperand(kleeneExpr) {
   return createError(
-      kleeneExpr.expr.interval.getLineAndColumnMessage() +
-          'Nullable expression ' + kleeneExpr.expr.interval.contents + " is not allowed inside '" +
+      'Nullable expression ' + kleeneExpr.expr.interval.contents + " is not allowed inside '" +
           kleeneExpr.operator + "' (possible infinite loop)",
       kleeneExpr.expr.interval);
 }

@@ -135,7 +135,6 @@ test('errors from makeGrammar()', function(t) {
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.equal(e.message, [
-      'Failed to parse grammar:',
       'Line 1, col 4:',
       '> 1 | G {',
       '         ^',
@@ -152,7 +151,6 @@ test('unrecognized escape sequences', function(t) {
       t.fail('Expected an exception to be thrown');
     } catch (e) {
       t.equal(e.message, [
-        'Failed to parse grammar:',
         'Line 1, col 19:',
         '> 1 | G { start = "hello' + bes + 'world" }',
         '                        ^',

@@ -406,7 +406,7 @@ test('string', function(t) {
     });
 
     it('unrecognized escape characters are parse errors', function() {
-      t.throws(function() { ohm.grammar('G { r = "\\w" }'); }, /Failed to parse grammar/);
+      t.throws(function() { ohm.grammar('G { r = "\\w" }'); }, /Expected an escape sequence/);
     });
 
     t.end();
@@ -1606,7 +1606,7 @@ test('namespaces', function(t) {
   t.ok(ns2);
   t.throws(
       function() { ohm.grammar('ccc { bar = "bar" }', ns2); },
-      /Grammar ccc is already declared in namespace/);
+      /Grammar ccc is already declared in this namespace/);
   t.ok(ns2.G, 'ns2 delegates to ns1');
 
   var ns3 = ohm.grammars('ccc { start = "x" }', ns);
