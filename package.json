@@ -54,8 +54,8 @@
     "util-extend": "^1.0.1"
   },
   "devDependencies": {
-    "browser-sync": "^2.4.0",
-    "browserify": "^3.30.4",
+    "browser-sync": "^2.8.0",
+    "browserify": "^11.0.0",
     "eslint": "^0.17.1",
     "eslint-plugin-no-extension-in-require": "^0.2.0",
     "jscs": "^1.12.0",
@@ -65,7 +65,7 @@
     "tape": "^3.5.0",
     "tape-catch": "^1.0.4",
     "uglify-js": "^2.4.12",
-    "watchify": "^0.6.1",
+    "watchify": "^3.3.0",
     "watchy": "^0.6.1"
   },
   "engines": {
