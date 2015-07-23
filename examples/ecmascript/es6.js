@@ -19,7 +19,7 @@ function anyNodesMentionThis(nodes) {
 }
 
 var modifiedSourceActions = {
-  ArrowFunction: function(params, _, body) {
+  ArrowFunction: function(params, _, arrow, body) {
     var source = 'function ' + params.asES5 + ' ' + body.asES5;
     // Only use `bind` if necessary.
     return body.mentionsThis ? source + '.bind(this)' : source;

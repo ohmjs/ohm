@@ -4,13 +4,15 @@ ES6 <: ES5 {
      | LeftHandSideExpression AssignmentOperator AssignmentExpression -- assignment
      | ConditionalExpression
 
-  ArrowFunction = ArrowParameters /* no newline */ "=>" ConciseBody
+  ArrowFunction = #(ArrowParameters spacesNoNL "=>") ConciseBody
 
   ConciseBody = ~"{" AssignmentExpression  -- noBraces
               | "{" FunctionBody "}"       -- withBraces
 
-  ArrowParameters = identifier /* TODO: Should be BindingIdentifier. */  -- unparenthesized
+  ArrowParameters = BindingIdentifier  -- unparenthesized
                   | CoverParenthesizedExpressionAndArrowParameterList
+
+  BindingIdentifier = identifier  // TODO: Implement this properly.
 
   CoverParenthesizedExpressionAndArrowParameterList
     = "(" Expression ")"           -- expression
