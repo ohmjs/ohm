@@ -39,9 +39,15 @@ ES5 {
   // token = identifierName | Punctuator | numericLiteral | stringLiteral
 
   // Override Ohm's built-in definition of space.
-  space := (whitespace | lineTerminator /* whitespaceOrLineTerminator */ | comment)
+  space := whitespace | lineTerminator | comment
 
-  whitespace = "\t" | "\x0B" | "\x0C" | " " | "\x0A" | "\uFEFF" | unicodeSpaceSeparator
+  whitespace = "\t"
+             | "\x0B"    -- verticalTab
+             | "\x0C"    -- formFeed
+             | " "
+             | "\u00A0"  -- noBreakSpace
+             | "\uFEFF"  -- byteOrderMark
+             | unicodeSpaceSeparator
 
   lineTerminator = "\n" | "\r" | "\u2028" | "\u2029"
   lineTerminatorSequence = "\n" | "\r" ~"\n" | "\u2028" | "\u2029" | "\r\n"
@@ -419,7 +425,7 @@ ES5 {
   // StatementList = Statement*
 
   // @returns a Var AST
-  VariableStatement = "var" VariableDeclarationList sc
+  VariableStatement = "var" #(VariableDeclarationList sc)
 
   // @returns an array of ASTs
   VariableDeclarationList = VariableDeclarationComma* VariableDeclaration -- many
