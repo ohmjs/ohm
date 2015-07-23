@@ -27,7 +27,7 @@ npm run prepublish
 npm version "$@" -m "v%s"
 trap cleanup INT
 read -p "Press [Enter] to publish this release..."
-git push --tags
+git push && git push --tags
 npm publish
 
 $(dirname $0)/deploy-gh-pages.sh
