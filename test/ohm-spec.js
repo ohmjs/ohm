@@ -1433,7 +1433,7 @@ test('lexical vs. syntactic rules', function(t) {
     t.ok(g.match(' foo bar   ').succeeded());
   });
 
-  it('mixing lexical and syntactic rules works as expected', function() {
+  it('mixing lexical and syntactic rules', function() {
     var g = makeGrammar([
       'G {',
       '  Start = foo bar',
@@ -1448,7 +1448,7 @@ test('lexical vs. syntactic rules', function(t) {
 
   // TODO: write more tests for this operator (e.g., to ensure that it's "transparent", arity-wise)
   // and maybe move it somewhere else.
-  it('lexification operator works as expected', function() {
+  it('lexification operator', function() {
     var g = makeGrammar([
       'G {',
       '  ArrowFun = name #(spacesNoNl "=>") "{}"',
@@ -1460,17 +1460,10 @@ test('lexical vs. syntactic rules', function(t) {
     t.ok(g.match(' y  =>    \n\n  \n{}').succeeded());
     t.ok(g.match('x \n  => {}').failed());
 
-    t.throws(
-        function() {
-          makeGrammar([
-            'G {',
-            '  R',
-            '    = #("a" R)',
-            '    | "b" "c"',
-            '}'
-          ]);
-        },
-        /Cannot apply syntactic rule R from here \(inside a lexical context\)/);
+    t.ok(ohm.grammar('G { R = #(R) }'), 'applying syntactic rule inside lexical context');
+
+    // TODO: Should this throw an error? The lex operator is unncessary inside a lexical rule.
+    t.ok(ohm.grammar('G { r = #(ListOf<"a", ",">) }'));
   });
 
   t.end();
