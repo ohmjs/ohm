@@ -94,3 +94,12 @@ test('pl0 example', function(t) {
   });
 });
 */
+
+test('ecmascript examples', function(t) {
+  var exampleDir = path.join(EXAMPLE_ROOT, 'ecmascript');
+  var compile = require(path.join(exampleDir, 'compile.js'));
+
+  t.ok(compile([__filename]), 'ES5 grammar works');
+  t.ok(compile(['-g', 'es6', path.join(exampleDir, 'test.es6')]), 'ES6 grammar works');
+  t.end();
+});
