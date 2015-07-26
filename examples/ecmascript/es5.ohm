@@ -394,12 +394,6 @@ ES5 {
 
   // A.4 Statements
 
-
-  // @returns a Block AST
-  // Note: the ES5 spec prescribes that a block is a StatementList, not a SourceElement list
-  // this precludes nested function declarations
-  // This parser explicitly deviates from the spec to enable nested function declarations
-  Block = "{" SourceElement* "}"
   Statement (a statement)
     = Block
     | VariableStatement
@@ -417,7 +411,9 @@ ES5 {
     | TryStatement
     | DebuggerStatement
 
-  // StatementList = Statement*
+  Block = "{" StatementList "}"
+
+  StatementList = Statement*
 
   // @returns a Var AST
   VariableStatement = "var" #(VariableDeclarationList sc)
