@@ -207,8 +207,8 @@ ES5 {
   // See http://ecma-international.org/ecma-262/5.1/#sec-7.9 for more information.
   // NOTE: Applications of this rule *must* appear in a lexical context -- either in the body of a
   // lexical rule, or inside `#()`.
-  sc = spacesNoNL ";"
-     | spacesNoNL (lineTerminator | ~multiLineCommentNoNL multiLineComment | end | &"}")
+  sc = space* (";" | end)
+     | spacesNoNL (lineTerminator | ~multiLineCommentNoNL multiLineComment | &"}")
 
   // Convenience rules for parsing keyword tokens.
   break = "break" ~identifierPart
