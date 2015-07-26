@@ -157,10 +157,10 @@ ES5 {
                         | "\\" escapeSequence                            -- escaped
                         | lineContinuation                               -- lineContinuation
   lineContinuation = "\\" lineTerminatorSequence
-  escapeSequence = characterEscapeSequence
-                 | ~decimalDigit "0" // -> ( String.fromCharCode(0000) ) /*\u0000*/
+  escapeSequence = "0" ~decimalDigit
                  | hexEscapeSequence
                  | unicodeEscapeSequence
+                 | characterEscapeSequence  // Must come last.
   characterEscapeSequence = singleEscapeCharacter
                           | nonEscapeCharacter
   singleEscapeCharacter = "'"  // -> ( String.fromCharCode(0039) ) /*\u0027*/
