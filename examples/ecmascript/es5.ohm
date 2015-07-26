@@ -416,7 +416,7 @@ ES5 {
   StatementList = Statement*
 
   // @returns a Var AST
-  VariableStatement = "var" VariableDeclarationList #(sc)
+  VariableStatement = var VariableDeclarationList #(sc)
 
   // @returns an array of ASTs
   VariableDeclarationList = VariableDeclarationComma* VariableDeclaration -- many
