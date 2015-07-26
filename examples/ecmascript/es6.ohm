@@ -4,7 +4,7 @@ ES6 <: ES5 {
      | LeftHandSideExpression AssignmentOperator AssignmentExpression -- assignment
      | ConditionalExpression
 
-  ArrowFunction = #(ArrowParameters spacesNoNL "=>") ConciseBody
+  ArrowFunction = ArrowParameters #(spacesNoNL "=>") ConciseBody
 
   ConciseBody = ~"{" AssignmentExpression  -- noBraces
               | "{" FunctionBody "}"       -- withBraces
