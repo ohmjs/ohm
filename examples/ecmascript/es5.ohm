@@ -199,13 +199,6 @@ ES5 {
 
   multiLineCommentNoNL = "/*" (~("*/" | lineTerminator) sourceCharacter)* "*/"
 
-  // see section 14.1: Directive Prologues and the Use Strict Directive
-  // Some directives (like the Use Strict Directive) may require access to the
-  // raw string value, without interpretation of escapeSequences or lineContinuations
-  // @returns the raw string value (not a String Literal AST)
-  rawStringLiteral = "\"" (~"\"" sourceCharacter)* "\""
-                  | "'" (~"'" sourceCharacter)* "'"
-
   // does not accept lineTerminators, not even implicit ones in a multiLineComment (cf. section 7.4)
   spacesNoNL = (whitespace | singleLineComment | multiLineCommentNoNL)*
 
@@ -527,7 +520,7 @@ ES5 {
   // Broken out so es6 can override to include ConstDecl and LetDecl
   Declaration = FunctionDeclaration
 
-  Directive = &(rawStringLiteral) #(stringLiteral sc)
+  Directive = #(stringLiteral sc)
 }
 
 ES5Lax <: ES5 {
