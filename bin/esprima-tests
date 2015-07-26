@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# This script tests the Esprima tests against the Ohm ES5 grammar.
+
+ROOT=$(npm prefix)
+
+if [ "$#" -ne "1" ]; then
+  echo "usage: $(basename $0) <path_to_esprima>"
+  echo "Checks the Ohm ES5 grammar against the Esprima test cases."
+fi
+
+# Some tests are currently ignored -- here are the reasons:
+# - Numerics are ignored because octal literals are not officially allowed by ES5
+# - String literal ones ignored b/c they use octal escapes (also not allowed)
+# - Object literals use ES6 syntax
+# - 'if' 0003 is not valid strict mode code
+# - const_forin.js ignored b/c it uses const
+# - iteration/migrated_0003 - ES5 grammar appears to require ; after do-while. FIXME
+# - iteration/migrated_0012 - uses 'let'
+# - iteration/migrated_0019-0023 - FIXME, weirdness with for-in
+# - iteration/pattern-in-for-in.js - FIXME, uses ES6 patterns
+# - variable/complex-pattern-requires-init.js - ES6
+# - variable/migrated_0005-0006 - uses non-strict identifier names
+
+find "$1/test/fixtures" -name \*.js \
+    -not -path '*/numeric/migrated_0018.js' \
+    -not -path '*/numeric/migrated_0019.js' \
+    -not -path '*/numeric/migrated_0020.js' \
+    -not -path '*/numeric/migrated_0021.js' \
+    -not -path '*/numeric/migrated_0022.js' \
+    -not -path '*/numeric/migrated_0023.js' \
+    -not -path '*/numeric/migrated_0024.js' \
+    -not -path '*/literal/string/migrated_0008.js' \
+    -not -path '*/literal/string/migrated_0009.js' \
+    -not -path '*/literal/string/migrated_0010.js' \
+    -not -path '*/literal/string/migrated_0011.js' \
+    -not -path '*/literal/string/migrated_0012.js' \
+    -not -path '*/literal/string/migrated_0013.js' \
+    -not -path '*/literal/string/migrated_0015.js' \
+    -not -path '*/literal/string/migrated_0018.js' \
+    -not -path '*/primary/object/migrated_0034.js' \
+    -not -path '*/primary/object/migrated_0035.js' \
+    -not -path '*/primary/object/migrated_0036.js' \
+    -not -path '*/primary/object/migrated_0038.js' \
+    -not -path '*/invalid-syntax/*' \
+    -not -path '*/source-type-module/*' \
+    -not -path '*/if/migrated_0003.js' \
+    -not -path '*/iteration/const_forin.js' \
+    -not -path '*/iteration/migrated_0003.js' \
+    -not -path '*/iteration/migrated_0012.js' \
+    -not -path '*/iteration/migrated_0019.js' \
+    -not -path '*/iteration/migrated_0020.js' \
+    -not -path '*/iteration/migrated_0021.js' \
+    -not -path '*/iteration/migrated_0022.js' \
+    -not -path '*/iteration/migrated_0023.js' \
+    -not -path '*/iteration/pattern-in-for-in.js' \
+    -not -path '*/variable/complex-pattern-requires-init.js' \
+    -not -path '*/variable/migrated_0005.js' \
+    -not -path '*/variable/migrated_0006.js' \
+    -not -path '*/tokenize/*' \
+    -not -path '*/tolerant-parse/*' \
+    -exec node $ROOT/examples/ecmascript/compile.js {} +
