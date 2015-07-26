@@ -7,6 +7,7 @@ ROOT=$(npm prefix)
 if [ "$#" -ne "1" ]; then
   echo "usage: $(basename $0) <path_to_esprima>"
   echo "Checks the Ohm ES5 grammar against the Esprima test cases."
+  exit 1
 fi
 
 # Some tests are currently ignored -- here are the reasons:
