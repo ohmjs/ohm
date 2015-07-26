@@ -310,8 +310,8 @@ ES5 {
   LeftHandSideExpression = CallExpression
                          | NewExpression
 
-  PostfixExpression = #(LeftHandSideExpression spacesNoNL "++")  -- postIncrement
-                    | #(LeftHandSideExpression spacesNoNL "--")  -- postDecrement
+  PostfixExpression = LeftHandSideExpression #(spacesNoNL "++")  -- postIncrement
+                    | LeftHandSideExpression #(spacesNoNL "--")  -- postDecrement
                     | LeftHandSideExpression
 
   UnaryExpression = delete UnaryExpression  -- deleteExp
@@ -416,7 +416,7 @@ ES5 {
   StatementList = Statement*
 
   // @returns a Var AST
-  VariableStatement = "var" #(VariableDeclarationList sc)
+  VariableStatement = "var" VariableDeclarationList #(sc)
 
   // @returns an array of ASTs
   VariableDeclarationList = VariableDeclarationComma* VariableDeclaration -- many
@@ -438,14 +438,14 @@ ES5 {
   EmptyStatement = ";" // note: this semicolon eats newlines
 
   // @returns an Expression AST
-  ExpressionStatement = ~("{" | function) #(Expression sc)
+  ExpressionStatement = ~("{" | function) Expression #(sc)
 
   // @returns an AST
   IfStatement = if "(" Expression ")" Statement else Statement  -- ifThenElse
               | if "(" Expression ")" Statement                 -- ifThen
 
   // @returns an AST
-  IterationStatement = do Statement while "(" Expression #(")" sc)  -- doWhile
+  IterationStatement = do Statement while "(" Expression ")" #(sc)  -- doWhile
                      | while "(" Expression ")" Statement           -- whileDo
                      | for "(" Expression? ";"
                                  Expression? ";"
@@ -458,11 +458,11 @@ ES5 {
                      | for "(" var VariableDeclaration in
                                  Expression ")" Statement           -- forInVar
 
-  ContinueStatement = #(continue (spacesNoNL identifier)? sc)
+  ContinueStatement = continue #((spacesNoNL identifier)? sc)
 
-  BreakStatement = #(break (spacesNoNL identifier)? sc)
+  BreakStatement = break #((spacesNoNL identifier)? sc)
 
-  ReturnStatement = #(return (spacesNoNL Expression)? sc)
+  ReturnStatement = return (#(spacesNoNL ~space) Expression)? #(sc)
 
   WithStatement = with "(" Expression ")" Statement
 
@@ -478,7 +478,7 @@ ES5 {
 
   LabelledStatement = identifier ":" Statement
 
-  ThrowStatement = throw #(Expression sc)  -- throwExpr
+  ThrowStatement = throw Expression #(sc)  -- throwExpr
 
   TryStatement = try Block Catch Finally  -- tryCatchFinally
                | try Block Finally        -- tryFinally
@@ -518,7 +518,7 @@ ES5 {
   // Broken out so es6 can override to include ConstDecl and LetDecl
   Declaration = FunctionDeclaration
 
-  Directive = #(stringLiteral sc)
+  Directive = stringLiteral #(sc)
 }
 
 ES5Lax <: ES5 {
