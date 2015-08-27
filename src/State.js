@@ -24,14 +24,16 @@ function State(grammar, inputStream, startRule, tracingEnabled) {
 }
 
 State.prototype = {
-  init: function(optFailuresArray) {
+  init: function(optRecordFailures) {
     this.inputStreamStack = [];
     this.posInfosStack = [];
     this.pushInputStream(this.origInputStream);
     this.applicationStack = [];
     this.lexifyCountStack = [];
     this.bindings = [];
-    this.failures = optFailuresArray;
+    if (optRecordFailures) {
+      this.failures = [];
+    }
     this.doNotRecordFailuresCount = 0;  // should not record failures if this is > 0
     if (this.isTracing()) {
       this.trace = [];
@@ -124,51 +126,20 @@ State.prototype = {
   recordFailure: function(pos, expr) {
     if (this.doNotRecordFailuresCount > 0) {
       return;
-    }
-    if (pos < this.rightmostFailPos) {
-      // it would be useless to record this failure, so don't do it
-      return;
-    } else if (pos > this.rightmostFailPos) {
-      // new rightmost failure!
-      this.rightmostFailPos = pos;
-    }
-    if (!this.failures) {
-      // we're not really recording failures, so we're done
-      return;
-    }
-
-    // TODO: consider making this code more OO, e.g., add an ExprAndStacks class
-    // that supports an addStack(stack) method.
-    function addStack(stack, stacks) {
-      for (var idx = 0; idx < stacks.length; idx++) {
-        var otherStack = stacks[idx];
-        if (stack.length !== otherStack.length) {
-          continue;
-        }
-        for (var idx2 = 0; idx2 < stack.length; idx2++) {
-          if (stack[idx2] !== otherStack[idx2]) {
-            break;
-          }
-        }
-        if (idx2 === stack.length) {
-          // found it, no need to add
-          return;
-        }
+    } else if (this.failures) {
+      // only interested in failures at the rightmost position that haven't already been recorded
+      if (pos === this.rightmostFailPos &&
+          !this.failures.some(function(failure) { return failure.expr === expr; })) {
+        this.failures.push({expr: expr, fluffy: false});
       }
-      stacks.push(stack);
-    }
-
-    // Another failure at right-most position -- record it if it wasn't already.
-    var stack = this.applicationStack.slice();
-    var exprsAndStacks = this.failures;
-    for (var idx = 0; idx < exprsAndStacks.length; idx++) {
-      var exprAndStacks = exprsAndStacks[idx];
-      if (exprAndStacks.expr === expr) {
-        addStack(stack, exprAndStacks.stacks);
-        return;
+    } else {
+      // this.failures === undefined, i.e., we're still trying to find out what the rightmost error
+      // position is.
+      if (pos > this.rightmostFailPos) {
+        // new rightmost failure!
+        this.rightmostFailPos = pos;
       }
     }
-    exprsAndStacks.push({expr: expr, stacks: [stack]});
   },
 
   doNotRecordFailures: function() {
@@ -183,17 +154,26 @@ State.prototype = {
     return this.rightmostFailPos;
   },
 
-  getFailures: function() {
+  getFailures: function(optIncludeFluffy) {
     if (!this.failures) {
       // Rewind, then try to match the input again, recording failures.
-      this.init([]);
+      this.init(true);
       this.tracingEnabled = false;
       var succeeded = new pexprs.Apply(this.startRule).eval(this);
       if (succeeded) {
         this.failures = [];
       }
     }
-    return this.failures;
+
+    var fs = this.failures;
+    if (!optIncludeFluffy) {
+      fs = fs.filter(function(f) { return !f.fluffy; });
+    }
+    return fs.map(function(f) { return f.expr; });
+  },
+
+  getAllFailures: function() {
+    return this.getFailures(true);
   },
 
   // Returns the memoized trace entry for `pos` and `expr`, if one exists.

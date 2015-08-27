@@ -44,8 +44,11 @@ MatchResult.prototype.succeeded = function() {
 
 function MatchFailure(state) {
   this.state = state;
-  common.defineLazyProperty(this, '_exprsAndStacks', function() {
+  common.defineLazyProperty(this, '_failures', function() {
     return this.state.getFailures();
+  });
+  common.defineLazyProperty(this, '_allFailures', function() {
+    return this.state.getAllFailures();
   });
   common.defineLazyProperty(this, 'message', function() {
     var source = this.state.inputStream.source;
@@ -103,11 +106,12 @@ MatchFailure.prototype.getExpectedText = function() {
 
 // Return an Array of unique strings representing the terminals or rules that
 // were expected to be matched.
-MatchFailure.prototype.getExpected = function() {
+MatchFailure.prototype.getExpected = function(optIncludeFluffy) {
   var expected = {};
   var ruleDict = this.state.grammar.ruleDict;
-  this._exprsAndStacks.forEach(function(obj) {
-    expected[obj.expr.toExpected(ruleDict)] = true;
+  var failures = optIncludeFluffy ? this._allFailures : this._failures;
+  failures.forEach(function(expr) {
+    expected[expr.toExpected(ruleDict)] = true;
   });
   return Object.keys(expected);
 };
