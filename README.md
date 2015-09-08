@@ -38,7 +38,7 @@ The easiest way to get started with Ohm is to play with one of the following exa
 
 ### Installation
 
-For use in the browser: 
+For use in the browser:
 
 -  Download [ohm.js](https://cdglabs.github.io/ohm/dist/ohm.js) (development version, with full source and comments) or [ohm.min.js](https://cdglabs.github.io/ohm/dist/ohm.min.js) (a minified version for faster page loads).
 -  Add a new script tag to your page, and set the `src` attribute to the path of the file you just downloaded. E.g.:
@@ -89,7 +89,7 @@ you can define an Ohm grammar:
     </script>
     ```
 
-- **Recommended with Node.js:** Define the grammar in a separate file, and instantiate it using `ohm.grammarFromFile()`:
+- **Recommended with Node.js:** Define the grammar in a separate file, read the file's contents and instantiate it using `ohm.grammar(contents)`:
 
     In `myGrammar.ohm`:
 
@@ -100,7 +100,9 @@ you can define an Ohm grammar:
     In JavaScript:
 
     ```js
-    var myGrammar = ohm.grammarFromFile('myGrammar.ohm');
+    var fs = require('fs');
+    var contents = fs.readFileSync('myGrammar.ohm');
+    var myGrammar = ohm.grammar(contents);
     ```
 
 For more information, see [Instantiating Grammars](doc/api-reference.md#instantiating-grammars) in the API reference.

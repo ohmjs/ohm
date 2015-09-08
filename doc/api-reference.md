@@ -14,10 +14,6 @@ Instantiate the Grammar defined by `source`. If specified, `optNamespace` is the
 
 Convenience method for creating a Grammar instance from the contents of a `<script>` tag. `optNode`, if specified, is a script tag with the attribute `type="text/ohm-js"`. If it is not specified, the result of `document.querySelector(script[type="text/ohm-js"])` will be used instead. `optNamespace` has the same meaning as in `ohm.grammar`.
 
-<b><pre class="api">ohm.grammarFromFile(filename: string, optNamespace?: object) &rarr; Grammar</pre></b>
-
-Convenience method for creating a Grammar instance from the contents of the file specified by `filename`. `optNamespace` has the same meaning as in `ohm.grammar`. Not available when running in a browser.
-
 <b><pre class="api">ohm.grammars(source: string, optNamespace?: object) &rarr; Namespace</pre></b>
 
 Create a new Namespace containing Grammar instances for all of the grammars defined in `source`. If `optNamespace` is specified, it will be the prototype of the new Namespace.
@@ -25,10 +21,6 @@ Create a new Namespace containing Grammar instances for all of the grammars defi
 <b><pre class="api">ohm.grammarsFromScriptElements(optNodeList?: NodeList, optNamespace?: object) &rarr; Namespace</pre></b>
 
 Create a new Namespace containing Grammar instances for all of the grammars defined in the `<script>` tags in `optNodeList`. If `optNodeList` is not specified, the result of `document.querySelectorAll('script[type="text/ohm-js"]')` will be used. `optNamespace` has the same meaning as in `ohm.grammars`.
-
-<b><pre class="api">ohm.grammarsFromFile(filename: string, optNamespace?: object) &rarr; Namespace</pre></b>
-
-Create a new Namespace containing Grammar instances for all of the grammars defined in the file specified by `filename`. `optNamespace` has the same meaning as in `ohm.grammars`. Not available when running in a browser.
 
 Namespace objects
 -----------------

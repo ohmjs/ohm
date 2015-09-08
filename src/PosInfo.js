@@ -25,7 +25,7 @@ PosInfo.prototype = {
     this.applicationStack.pop();
   },
 
-  shouldUseMemoizedResult: function(application, memoRec) {
+  shouldUseMemoizedResult: function(memoRec) {
     var involvedApplications = memoRec.involvedApplications;
     if (involvedApplications != null) {
       var keys = Object.keys(involvedApplications);
