@@ -180,7 +180,7 @@ State.prototype = {
   getMemoizedTraceEntry: function(pos, expr) {
     var posInfo = this.posInfos[pos];
     if (posInfo && expr.ruleName) {
-      var memoRec = posInfo.memo[expr.ruleName];
+      var memoRec = posInfo.memo[expr.toMemoKey()];
       if (memoRec) {
         return memoRec.traceEntry;
       }
