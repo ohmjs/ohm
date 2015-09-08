@@ -54,7 +54,7 @@ pexprs.Param.prototype.toDisplayString = function() {
 };
 
 pexprs.Apply.prototype.toDisplayString = function() {
-  return this.ruleName;
+  return this.toString();
 };
 
 pexprs.UnicodeChar.prototype.toDisplayString = function() {
