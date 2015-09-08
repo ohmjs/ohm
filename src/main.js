@@ -381,19 +381,6 @@ module.exports = {
   util: util
 };
 
-// Stuff that's only available when running under Node.js.
-if (typeof process === 'object') {
-  var fs = require('fs');
-  if (typeof fs.readFileSync === 'function') {
-    module.exports.grammarFromFile = function(filename, optNamespace) {
-      return grammar(fs.readFileSync(filename).toString(), optNamespace);
-    };
-    module.exports.grammarsFromFile = function(filename, optNamespace) {
-      return grammars(fs.readFileSync(filename).toString(), optNamespace);
-    };
-  }
-}
-
 // Stuff that's only here for bootstrapping, testing, etc.
 Grammar.BuiltInRules = require('../dist/built-in-rules');
 ohmGrammar = require('../dist/ohm-grammar');
