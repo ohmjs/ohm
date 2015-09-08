@@ -80,8 +80,7 @@ We can create an operation named 'eval' to evaluate arithmetic expressions that 
 ```js
 // Instantiate the grammar.
 var fs = require('fs');
-var contents = fs.readFileSync('arithmetic.ohm');
-var g = ohm.grammar(contents);
+var g = ohm.grammar(fs.readFileSync('arithmetic.ohm'));
 
 // Create an operation that evaluates the expression. An operation always belongs to a Semantics,
 // which is a family of related operations and attributes for a particular grammar.
