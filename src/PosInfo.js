@@ -6,23 +6,30 @@
 
 function PosInfo(state) {
   this.state = state;
-  this.applicationStack = [];  // a stack of "memo keys" of the active applications
+  this.applicationStack = [];
   this.memo = {};
+
+  // Redundant (could be generated from applicationStack) but it makes things simpler.
+  // Note: this used to a dictionary, but that caused V8 to deoptimize the entire function,
+  // so using an Array is actually faster (for now).
+  this.activeApplications = [];
 }
 
 PosInfo.prototype = {
   isActive: function(application) {
-    return this.applicationStack.indexOf(application.toMemoKey()) !== -1;
+    return this.activeApplications.indexOf(application.toMemoKey()) !== -1;
   },
 
   enter: function(application) {
     this.state.enter(application);
-    this.applicationStack.push(application.toMemoKey());
+    this.applicationStack.push(application);
+    this.activeApplications.push(application.toMemoKey());
   },
 
   exit: function() {
     this.state.exit();
     this.applicationStack.pop();
+    this.activeApplications.pop();
   },
 
   shouldUseMemoizedResult: function(memoRec) {
@@ -31,7 +38,7 @@ PosInfo.prototype = {
       var keys = Object.keys(involvedApplications);
       for (var i = 0; i < keys.length; ++i) {
         var memoKey = keys[i];
-        if (involvedApplications[memoKey] && this.applicationStack.indexOf(memoKey) !== -1) {
+        if (involvedApplications[memoKey] && this.activeApplications.indexOf(memoKey) !== -1) {
           return false;
         }
       }
@@ -67,7 +74,7 @@ PosInfo.prototype = {
     var lrApplicationMemoKey = currentLeftRecursion.memoKey;
     var idx = this.applicationStack.length - 1;
     while (true) {
-      var memoKey = this.applicationStack[idx--];
+      var memoKey = this.applicationStack[idx--].toMemoKey();
       if (memoKey === lrApplicationMemoKey) {
         break;
       }

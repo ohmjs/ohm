@@ -26,42 +26,6 @@ test('basic tracing', function(t) {
   var alt = trace[0].children[0];
   t.equal(alt.displayString, '"a" | letter*');
   t.equal(alt.succeeded, true);
-  t.equal(alt.children.length, 2);
-  t.equal(alt.children[0].succeeded, false);
-  t.equal(alt.children[1].succeeded, true);
-
-  var many = alt.children[1];
-  t.equal(many.displayString, 'letter*');
-  t.equal(many.interval.contents, 'hallo');
-  t.equal(many.children.length, 6);
-
-  var childrenSucceeded = many.children.map(function(c) {
-    return c.succeeded;
-  });
-  t.deepEqual(childrenSucceeded, [true, true, true, true, true, false]);
-  t.end();
-});
-
-test('tracing with parameterized rules', function(t) {
-  var g = ohm.grammar('G { start = foo<123>  foo<x> = "a" | letter* }');
-  var state = g.trace('hallo', 'start').state;
-  var trace = state.trace;
-
-  t.equal(trace.length, 1);
-  t.equal(trace[0].displayString, 'start');
-  t.equal(trace[0].succeeded, true);
-  t.equal(trace[0].pos, 0);
-
-  var app = trace[0].children[0];
-  t.equal(app.displayString, 'foo<123>');
-  t.equal(app.succeeded, true);
-  t.equal(app.children.length, 1);
-  t.equal(app.children[0].succeeded, true);
-
-  var alt = app.children[0];
-  t.equal(alt.displayString, '"a" | letter*');
-  t.equal(alt.succeeded, true);
-  t.equal(alt.children.length, 2);
   t.equal(alt.children[0].succeeded, false);
   t.equal(alt.children[1].succeeded, true);
 
@@ -107,42 +71,6 @@ test('tracing with memoization', function(t) {
           'Unicode {Ll} character');
   t.equal(many.children[1].children[0].children[1].children.length, 1);
   t.equal(many.children[1].children[0].children[1].children[0].displayString,
-          'Unicode {Lu} character');
-  t.end();
-});
-
-test('tracing with parameterized rules and memoization', function(t) {
-  var g = ohm.grammar('G { start = foo<123> ~foo<123> | foo<123>*  foo<x> = letter }');
-  var trace = g.trace('aB', 'start');
-
-  var alt = trace.children[0];
-  t.equal(alt.children[0].succeeded, false);
-  t.equal(alt.children[1].succeeded, true);
-  t.equal(alt.children.length, 2);
-
-  var many = alt.children[1];
-  t.equal(many.children.length, 3);
-
-  // The 'letter*' should succeed, but its first two children should be
-  // memoized from the other size of the Alt (letter ~letter). Ensure
-  // the the trace is still recorded properly.
-  t.equal(many.children[0].succeeded, true);
-  t.equal(many.children[0].children.length, 1);
-  t.equal(many.children[0].children[0].children.length, 1);
-  t.equal(many.children[0].children[0].children[0].children.length, 1);
-  t.equal(many.children[0].children[0].children[0].children[0].children.length, 1);
-  t.equal(many.children[0].children[0].children[0].children[0].children[0].displayString,
-          'Unicode {Ll} character');
-
-  t.equal(many.children[1].succeeded, true);
-  t.equal(many.children[1].children.length, 1);
-  t.equal(many.children[1].children[0].children.length, 1);
-  t.equal(many.children[1].children[0].children[0].children.length, 2);
-  t.equal(many.children[1].children[0].children[0].children[0].children.length, 1);
-  t.equal(many.children[1].children[0].children[0].children[0].children[0].displayString,
-          'Unicode {Ll} character');
-  t.equal(many.children[1].children[0].children[0].children[1].children.length, 1);
-  t.equal(many.children[1].children[0].children[0].children[1].children[0].displayString,
           'Unicode {Lu} character');
   t.end();
 });
