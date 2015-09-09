@@ -29,7 +29,7 @@ State.prototype = {
     this.posInfosStack = [];
     this.pushInputStream(this.origInputStream);
     this.applicationStack = [];
-    this.lexifyCountStack = [];
+    this.inLexifiedContextStack = [false];
     this.bindings = [];
     if (optRecordFailures) {
       this.failures = [];
@@ -42,22 +42,20 @@ State.prototype = {
 
   enter: function(app) {
     this.applicationStack.push(app);
-    this.lexifyCountStack.push(0);
+    this.inLexifiedContextStack.push(false);
   },
 
   exit: function() {
     this.applicationStack.pop();
-    this.lexifyCountStack.pop();
+    this.inLexifiedContextStack.pop();
   },
 
-  enterLexicalContext: function() {
-    var idx = this.lexifyCountStack.length - 1;
-    this.lexifyCountStack[idx]++;
+  enterLexifiedContext: function() {
+    this.inLexifiedContextStack.push(true);
   },
 
-  exitLexicalContext: function() {
-    var idx = this.lexifyCountStack.length - 1;
-    this.lexifyCountStack[idx]--;
+  exitLexifiedContext: function() {
+    this.inLexifiedContextStack.pop();
   },
 
   currentApplication: function() {
@@ -77,8 +75,7 @@ State.prototype = {
   },
 
   inLexifiedContext: function() {
-    var len = this.lexifyCountStack.length;
-    return len > 0 && this.lexifyCountStack[len - 1] > 0;
+    return this.inLexifiedContextStack[this.inLexifiedContextStack.length - 1];
   },
 
   skipSpaces: function() {

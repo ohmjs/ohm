@@ -130,9 +130,9 @@ pexprs.Param.prototype._eval = function(state) {
 };
 
 pexprs.Lex.prototype._eval = function(state) {
-  state.enterLexicalContext();
+  state.enterLexifiedContext();
   var ans = this.expr.eval(state);
-  state.exitLexicalContext();
+  state.exitLexifiedContext();
   return ans;
 };
 
