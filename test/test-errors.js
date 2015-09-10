@@ -162,3 +162,21 @@ test('unrecognized escape sequences', function(t) {
   testBadEscapeSequence('\\w');
   t.end();
 });
+
+test('failures are memoized', function(t) {
+  var g = ohm.grammar(
+    'G {\n' +
+    '  S = ~A "b"  -- c1\n' +
+    '    | A       -- c2\n' +
+    '  A = "a"\n' +
+    '}');
+  var e = g.match('');
+  t.equal(e.failed(), true);
+  t.equal(e.message, [
+    'Line 1, col 1:',
+    '> 1 | ',
+    '      ^',
+    'Expected "a" or "b"'
+  ].join('\n'));
+  t.end();
+});

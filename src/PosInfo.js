@@ -6,80 +6,68 @@
 
 function PosInfo(state) {
   this.state = state;
-  this.applicationStack = [];
+  this.applicationMemoKeyStack = [];  // a stack of "memo keys" of the active applications
   this.memo = {};
-
-  // Redundant (could be generated from applicationStack) but it makes things simpler.
-  // Note: this used to a dictionary, but that caused V8 to deoptimize the entire function,
-  // so using an Array is actually faster (for now).
-  this.activeApplications = [];
+  this.currentLeftRecursion = undefined;
 }
 
 PosInfo.prototype = {
   isActive: function(application) {
-    return this.activeApplications.indexOf(application.toMemoKey()) !== -1;
+    return this.applicationMemoKeyStack.indexOf(application.toMemoKey()) >= 0;
   },
 
   enter: function(application) {
     this.state.enter(application);
-    this.applicationStack.push(application);
-    this.activeApplications.push(application.toMemoKey());
+    this.applicationMemoKeyStack.push(application.toMemoKey());
   },
 
   exit: function() {
     this.state.exit();
-    this.applicationStack.pop();
-    this.activeApplications.pop();
+    this.applicationMemoKeyStack.pop();
   },
 
-  shouldUseMemoizedResult: function(memoRec) {
-    var involvedApplications = memoRec.involvedApplications;
-    if (involvedApplications != null) {
-      var keys = Object.keys(involvedApplications);
-      for (var i = 0; i < keys.length; ++i) {
-        var memoKey = keys[i];
-        if (involvedApplications[memoKey] && this.activeApplications.indexOf(memoKey) !== -1) {
-          return false;
+  startLeftRecursion: function(headApplication, memoRec) {
+    memoRec.isLeftRecursion = true;
+    memoRec.headApplication = headApplication;
+    memoRec.nextLeftRecursion = this.currentLeftRecursion;
+    this.currentLeftRecursion = memoRec;
+
+    var applicationMemoKeyStack = this.applicationMemoKeyStack;
+    var indexOfFirstInvolvedRule = applicationMemoKeyStack.indexOf(headApplication.toMemoKey()) + 1;
+    var involvedApplicationMemoKeys = applicationMemoKeyStack.slice(indexOfFirstInvolvedRule);
+
+    memoRec.isInvolved = function(applicationMemoKey) {
+      return involvedApplicationMemoKeys.indexOf(applicationMemoKey) >= 0;
+    };
+
+    memoRec.updateInvolvedApplicationMemoKeys = function() {
+      for (var idx = indexOfFirstInvolvedRule; idx < applicationMemoKeyStack.length; idx++) {
+        var applicationMemoKey = applicationMemoKeyStack[idx];
+        if (!this.isInvolved(applicationMemoKey)) {
+          involvedApplicationMemoKeys.push(applicationMemoKey);
         }
+      }
+    };
+  },
+
+  endLeftRecursion: function() {
+    this.currentLeftRecursion = this.currentLeftRecursion.nextLeftRecursion;
+  },
+
+  // Note: this method doesn't get called for the "head" of a left recursion -- for LR heads,
+  // the memoized result (which starts out being a failure) is always used.
+  shouldUseMemoizedResult: function(memoRec) {
+    if (!memoRec.isLeftRecursion) {
+      return true;
+    }
+    var applicationMemoKeyStack = this.applicationMemoKeyStack;
+    for (var idx = 0; idx < applicationMemoKeyStack.length; idx++) {
+      var applicationMemoKey = applicationMemoKeyStack[idx];
+      if (memoRec.isInvolved(applicationMemoKey)) {
+        return false;
       }
     }
     return true;
-  },
-
-  getCurrentLeftRecursion: function() {
-    if (this.leftRecursionStack) {
-      return this.leftRecursionStack[this.leftRecursionStack.length - 1];
-    }
-  },
-
-  startLeftRecursion: function(application) {
-    if (!this.leftRecursionStack) {
-      this.leftRecursionStack = [];
-    }
-    this.leftRecursionStack.push({
-        memoKey: application.toMemoKey(),
-        value: false,
-        pos: -1,
-        involvedApplications: {}});
-    this.updateInvolvedApplications();
-  },
-
-  endLeftRecursion: function(application) {
-    this.leftRecursionStack.pop();
-  },
-
-  updateInvolvedApplications: function() {
-    var currentLeftRecursion = this.getCurrentLeftRecursion();
-    var involvedApplications = currentLeftRecursion.involvedApplications;
-    var lrApplicationMemoKey = currentLeftRecursion.memoKey;
-    var idx = this.applicationStack.length - 1;
-    while (true) {
-      var memoKey = this.applicationStack[idx--].toMemoKey();
-      if (memoKey === lrApplicationMemoKey) {
-        break;
-      }
-      involvedApplications[memoKey] = true;
-    }
   }
 };
 

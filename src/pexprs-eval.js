@@ -5,7 +5,9 @@
 // --------------------------------------------------------------------
 
 var InputStream = require('./InputStream');
+var Trace = require('./Trace');
 var common = require('./common');
+var fsets = require('./fsets');
 var nodes = require('./nodes');
 var pexprs = require('./pexprs');
 
@@ -270,94 +272,100 @@ pexprs.Obj.prototype.eval = function(state) {
 };
 
 pexprs.Apply.prototype.eval = function(state) {
-  var inputStream = state.inputStream;
-  var grammar = state.grammar;
-  var bindings = state.bindings;
-
   var caller = state.currentApplication();
   var actuals = caller ? caller.params : [];
-
   var app = this.substituteParams(actuals);
-  var ruleName = app.ruleName;
-  var memoKey = app.toMemoKey();
 
-  if (this !== state.applySpaces_ && (state.inSyntacticContext() || app.isSyntactic())) {
+  // Skip whitespace at the application site, if the rule that's being applied is syntactic
+  if (app !== state.applySpaces_ && (app.isSyntactic() || state.inSyntacticContext())) {
     state.skipSpaces();
   }
 
+  var posInfo = state.getCurrentPosInfo();
+  if (posInfo.isActive(app)) {
+    // This rule is already active at this position, i.e., it is left-recursive.
+    return app.handleCycle(state);
+  }
+
+  var memoKey = app.toMemoKey();
+  var memoRec = posInfo.memo[memoKey];
+  return memoRec && posInfo.shouldUseMemoizedResult(memoRec) ?
+      state.useMemoizedResult(memoRec) :
+      app.reallyEval(state, !caller);
+};
+
+pexprs.Apply.prototype.handleCycle = function(state) {
+  var posInfo = state.getCurrentPosInfo();
+  var currentLeftRecursion = posInfo.currentLeftRecursion;
+  var memoKey = this.toMemoKey();
+  var memoRec = posInfo.memo[memoKey];
+
+  if (currentLeftRecursion && currentLeftRecursion.headApplication.toMemoKey() === memoKey) {
+    // We already know about this left recursion, but it's possible there are "involved
+    // applications" that we don't already know about, so...
+    memoRec.updateInvolvedApplicationMemoKeys();
+  } else if (!memoRec) {
+    // New left recursion detected! Memoize a failure to try to get a seed parse.
+    memoRec = posInfo.memo[memoKey] =
+        {pos: -1, value: false, failuresAtRightmostPosition: fsets.empty};
+    posInfo.startLeftRecursion(this, memoRec);
+  }
+  return state.useMemoizedResult(memoRec);
+};
+
+pexprs.Apply.prototype.reallyEval = function(state, isTopLevelApplication) {
+  var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   var origPosInfo = state.getCurrentPosInfo();
+  var body = state.grammar.ruleDict[this.ruleName];
 
-  var memoRec = origPosInfo.memo[memoKey];
-  var currentLR;
-  if (memoRec && origPosInfo.shouldUseMemoizedResult(memoRec)) {
-    return state.useMemoizedResult(memoRec);
-  } else if (origPosInfo.isActive(app)) {
-    currentLR = origPosInfo.getCurrentLeftRecursion();
-    if (currentLR && currentLR.memoKey === memoKey) {
-      origPosInfo.updateInvolvedApplications();
-      return state.useMemoizedResult(currentLR);
-    } else {
-      origPosInfo.startLeftRecursion(app);
-      return false;
-    }
+  origPosInfo.enter(this);
+
+  if (body.description) {
+    var origFailuresInfo = state.getFailuresInfo();
+  }
+
+  var value = this.evalOnce(body, state);
+  var currentLR = origPosInfo.currentLeftRecursion;
+  var memoKey = this.toMemoKey();
+  var isHeadOfLeftRecursion = currentLR && currentLR.headApplication.toMemoKey() === memoKey;
+  var memoized = true;
+  if (isHeadOfLeftRecursion) {
+    value = this.growSeedResult(body, state, origPos, currentLR, value);
+    origPosInfo.endLeftRecursion();
+  } else if (currentLR && currentLR.isInvolved(memoKey)) {
+    // Don't memoize the result
+    memoized = false;
   } else {
-    var body = grammar.ruleDict[ruleName];
-    origPosInfo.enter(app);
-    if (body.description) {
-      var origFailuresInfo = state.getFailuresInfo();
-    }
-    var value = app.evalOnce(body, state);
-    currentLR = origPosInfo.getCurrentLeftRecursion();
-    if (currentLR) {
-      if (currentLR.memoKey === memoKey) {
-        value = app.handleLeftRecursion(body, state, origPos, currentLR, value);
-        origPosInfo.memo[memoKey] = {
-          pos: inputStream.pos,
-          value: value,
-          involvedApplications: currentLR.involvedApplications
-        };
-        origPosInfo.endLeftRecursion(app);
-      } else if (!currentLR.involvedApplications[memoKey]) {
-        // Only memoize if this application is not involved in the current left recursion
-        origPosInfo.memo[memoKey] = {pos: inputStream.pos, value: value};
-      }
-    } else {
-      origPosInfo.memo[memoKey] = {pos: inputStream.pos, value: value};
-    }
-    if (body.description) {
-      state.restoreFailuresInfo(origFailuresInfo);
-      if (!value) {
-        state.processFailure(origPos, app);
-      }
-    }
-    // Record trace information in the memo table, so that it is
-    // available if the memoized result is used later.
-    if (state.isTracing() && origPosInfo.memo[memoKey]) {
-      var entry = state.getTraceEntry(origPos, app, value);
-      entry.setLeftRecursive(currentLR && currentLR.memoKey === memoKey);
-      origPosInfo.memo[memoKey].traceEntry = entry;
-    }
-    var ans;
-    if (value) {
-      bindings.push(value);
-      if (!caller) {
-        if (app.isSyntactic()) {
-          state.skipSpaces();
-        }
-        // Only succeed if the top-level rule has consumed all of the input.
-        // (The following will ignore spaces if the rule is syntactic.)
-        ans = state.eval(pexprs.end);
-        bindings.pop();  // pop the binding that was added by `end` in the statement above
-      } else {
-        ans = true;
-      }
-    } else {
-      ans = false;
-    }
+    origPosInfo.memo[memoKey] =
+        {pos: inputStream.pos, value: value, failuresAtRightmostPosition: state.rightmostFailures};
+  }
 
-    origPosInfo.exit();
-    return ans;
+  if (body.description) {
+    state.restoreFailuresInfo(origFailuresInfo);
+    if (!value) {
+      state.processFailure(origPos, this);
+      if (memoized) {
+        origPosInfo.memo[memoKey].failuresAtRightmostPosition = state.rightmostFailures;
+      }
+    }
+  }
+
+  // Record trace information in the memo table, so that it is available if the memoized result
+  // is used later.
+  if (state.isTracing() && origPosInfo.memo[memoKey]) {
+    var entry = state.getTraceEntry(origPos, this, value);
+    entry.setLeftRecursive(isHeadOfLeftRecursion);
+    origPosInfo.memo[memoKey].traceEntry = entry;
+  }
+
+  origPosInfo.exit();
+
+  if (value) {
+    state.bindings.push(value);
+    return !isTopLevelApplication || this.entireInputWasConsumed(state);
+  } else {
+    return false;
   }
 };
 
@@ -374,37 +382,44 @@ pexprs.Apply.prototype.evalOnce = function(expr, state) {
   }
 };
 
-pexprs.Apply.prototype.handleLeftRecursion = function(body, state, origPos, currentLR, seedValue) {
-  if (!seedValue) {
-    return seedValue;
+pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec, newValue) {
+  if (!newValue) {
+    return false;
   }
 
   var inputStream = state.inputStream;
-  var value = seedValue;
-  currentLR.value = seedValue;
-  currentLR.pos = inputStream.pos;
 
   while (true) {
+    lrMemoRec.pos = inputStream.pos;
+    lrMemoRec.value = newValue;
+    lrMemoRec.failuresAtRightmostPosition = state.failuresAtRightmostPosition;
     if (state.isTracing()) {
-      currentLR.traceEntry = common.clone(state.trace[state.trace.length - 1]);
+      var children = state.trace[state.trace.length - 1].children.slice();
+      lrMemoRec.traceEntry = new Trace(state.inputStream, origPos, this, newValue, children);
     }
-
     inputStream.pos = origPos;
-    value = this.evalOnce(body, state);
-    if (value && inputStream.pos > currentLR.pos) {
-      // The left-recursive result was expanded -- keep looping.
-      currentLR.value = value;
-      currentLR.pos = inputStream.pos;
-    } else {
-      // Failed to expand the result.
-      inputStream.pos = currentLR.pos;
-      if (state.isTracing()) {
-        state.trace.pop();  // Drop last trace entry since `value` was unused.
-      }
+    newValue = this.evalOnce(body, state);
+    if (inputStream.pos <= lrMemoRec.pos) {
       break;
     }
   }
-  return currentLR.value;
+  if (state.isTracing()) {
+    state.trace.pop();  // Drop last trace entry since `value` was unused.
+    lrMemoRec.traceEntry = null;
+  }
+  inputStream.pos = lrMemoRec.pos;
+  return lrMemoRec.value;
+};
+
+pexprs.Apply.prototype.entireInputWasConsumed = function(state) {
+  if (this.isSyntactic()) {
+    state.skipSpaces();
+  }
+  if (!state.eval(pexprs.end)) {
+    return false;
+  }
+  state.bindings.pop();  // discard the binding that was added by `end` in the check above
+  return true;
 };
 
 pexprs.UnicodeChar.prototype.eval = function(state) {

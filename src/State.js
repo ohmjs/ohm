@@ -146,7 +146,7 @@ State.prototype = {
       // We're only interested in failures at the rightmost failure position that haven't
       // already been recorded.
       if (pos === this.rightmostFailurePosition && !this.rightmostFailures.includes(expr)) {
-        this.rightmostFailures = this.rightmostFailures.union(new fsets.Singleton(expr));
+        this.rightmostFailures = new fsets.Singleton(expr).union(this.rightmostFailures);
       }
     }
   },
@@ -191,13 +191,17 @@ State.prototype = {
     return this.tracingEnabled;
   },
 
-  useMemoizedResult: function(memoRecOrLR) {
+  useMemoizedResult: function(memoRec) {
     if (this.isTracing()) {
-      this.trace.push(memoRecOrLR.traceEntry);
+      this.trace.push(memoRec.traceEntry);
     }
-    this.inputStream.pos = memoRecOrLR.pos;
-    if (memoRecOrLR.value) {
-      this.bindings.push(memoRecOrLR.value);
+    if (this.recordingMode === RM_RIGHTMOST_FAILURES) {
+      this.rightmostFailures = this.rightmostFailures.union(memoRec.failuresAtRightmostPosition);
+    }
+
+    if (memoRec.value) {
+      this.inputStream.pos = memoRec.pos;
+      this.bindings.push(memoRec.value);
       return true;
     }
     return false;
@@ -211,6 +215,11 @@ State.prototype = {
     var origPos = inputStream.pos;
     var origNumBindings = this.bindings.length;
 
+    if (this.recordingMode === RM_RIGHTMOST_FAILURES) {
+      var origFailures = this.rightmostFailures;
+      this.rightmostFailures = fsets.empty;
+    }
+
     if (this.isTracing()) {
       var origTrace = this.trace;
       this.trace = [];
@@ -223,6 +232,10 @@ State.prototype = {
       var traceEntry = this.getTraceEntry(origPos, expr, ans);
       origTrace.push(traceEntry);
       this.trace = origTrace;
+    }
+
+    if (this.recordingMode === RM_RIGHTMOST_FAILURES) {
+      this.rightmostFailures = origFailures.union(this.rightmostFailures);
     }
 
     if (!ans) {
