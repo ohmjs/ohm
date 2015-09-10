@@ -297,7 +297,7 @@ pexprs.Obj.prototype._eval = function(state) {
   }
 };
 
-function useMemoizedResult(state, application, memoRecOrLR) {
+function useMemoizedResult(state, memoRecOrLR) {
   var inputStream = state.inputStream;
   var bindings = state.bindings;
 
@@ -334,12 +334,12 @@ pexprs.Apply.prototype._eval = function(state) {
   var memoRec = origPosInfo.memo[memoKey];
   var currentLR;
   if (memoRec && origPosInfo.shouldUseMemoizedResult(memoRec)) {
-    return useMemoizedResult(state, this, memoRec);
+    return useMemoizedResult(state, memoRec);
   } else if (origPosInfo.isActive(app)) {
     currentLR = origPosInfo.getCurrentLeftRecursion();
     if (currentLR && currentLR.memoKey === memoKey) {
       origPosInfo.updateInvolvedApplications();
-      return useMemoizedResult(state, this, currentLR);
+      return useMemoizedResult(state, currentLR);
     } else {
       origPosInfo.startLeftRecursion(app);
       return false;
