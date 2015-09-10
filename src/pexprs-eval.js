@@ -16,58 +16,30 @@ var TerminalNode = nodes.TerminalNode;
 // Operations
 // --------------------------------------------------------------------
 
-/**
- *  Evaluate the expression and return `true` if it succeeded, `false` otherwise. On success, the
- *  bindings will have `this.arity` more elements than before, and the position may have increased.
- *  On failure, the bindings and position will be unchanged.
- */
-pexprs.PExpr.prototype.eval = function(state) {
-  var inputStream = state.inputStream;
-  var origPos = inputStream.pos;
-  var origNumBindings = state.bindings.length;
-  var origTrace = state.trace;
+/*
+  Evaluate the expression and return `true` if it succeeds, `false` otherwise. This method should
+  only be called directly by `State.prototype.eval(expr)`, which also updates the data structures
+  that are used for tracing. (Making those updates in a method of `State` enables the trace-specific
+  data structures to be "secrets" of that class, which is good for modularity.)
 
-  if (state.isTracing()) {
-    state.trace = [];
-  }
+  The contract of this method is as follows:
+  * When the return value is `true`,
+    - the state object will have `expr.getArity()` more bindings than it did before the call.
+  * When the return value is `false`,
+    - the state object may have more bindings than it did before the call, and
+    - its input stream's position may be anywhere.
 
-  // Do the actual evaluation.
-  var ans = this._eval(state);
+  Note that `State.prototype.eval(expr)`, unlike this method, guarantees that neither the state
+  object's bindings nor its input stream's position will change if the expression fails to match.
+*/
+pexprs.PExpr.prototype.eval = common.abstract;  // function(state) { ... }
 
-  if (state.isTracing()) {
-    var traceEntry = state.getTraceEntry(origPos, this, ans);
-    origTrace.push(traceEntry);
-    state.trace = origTrace;
-  }
-
-  if (!ans) {
-    // Reset the position and the bindings.
-    inputStream.pos = origPos;
-    state.truncateBindings(origNumBindings);
-  }
-
-  return ans;
-};
-
-/**
- *  Evaluate the expression and return true if it succeeded, false otherwise.
- *  This method should not be called directly except by `eval`.
- *
- *  The contract of this method is as follows:
- *  - When the return value is true:
- *    - bindings will have expr.arity more elements than before
- *  - When the return value is false:
- *    - bindings may have more elements than before this call
- *    - position could be anywhere
- */
-pexprs.PExpr.prototype._eval = common.abstract;
-
-pexprs.anything._eval = function(state) {
+pexprs.anything.eval = function(state) {
   var origPos = state.skipSpacesIfInSyntacticContext();
   var inputStream = state.inputStream;
   var value = inputStream.next();
   if (value === common.fail) {
-    state.recordFailure(origPos, this);
+    state.processFailure(origPos, this);
     return false;
   } else {
     var interval = inputStream.interval(origPos);
@@ -76,7 +48,7 @@ pexprs.anything._eval = function(state) {
   }
 };
 
-pexprs.end._eval = function(state) {
+pexprs.end.eval = function(state) {
   var origPos = state.skipSpacesIfInSyntacticContext();
   var inputStream = state.inputStream;
   if (inputStream.atEnd()) {
@@ -84,16 +56,16 @@ pexprs.end._eval = function(state) {
     state.bindings.push(new TerminalNode(state.grammar, undefined, interval));
     return true;
   } else {
-    state.recordFailure(origPos, this);
+    state.processFailure(origPos, this);
     return false;
   }
 };
 
-pexprs.Prim.prototype._eval = function(state) {
+pexprs.Prim.prototype.eval = function(state) {
   var origPos = state.skipSpacesIfInSyntacticContext();
   var inputStream = state.inputStream;
   if (this.match(inputStream) === common.fail) {
-    state.recordFailure(origPos, this);
+    state.processFailure(origPos, this);
     return false;
   } else {
     var interval = inputStream.interval(origPos);
@@ -111,7 +83,7 @@ pexprs.StringPrim.prototype.match = function(inputStream) {
   return inputStream.matchString(this.obj);
 };
 
-pexprs.Range.prototype._eval = function(state) {
+pexprs.Range.prototype.eval = function(state) {
   var origPos = state.skipSpacesIfInSyntacticContext();
   var inputStream = state.inputStream;
   var obj = inputStream.next();
@@ -120,42 +92,42 @@ pexprs.Range.prototype._eval = function(state) {
     state.bindings.push(new TerminalNode(state.grammar, obj, interval));
     return true;
   } else {
-    state.recordFailure(origPos, this);
+    state.processFailure(origPos, this);
     return false;
   }
 };
 
-pexprs.Param.prototype._eval = function(state) {
-  return state.currentApplication().params[this.index].eval(state);
+pexprs.Param.prototype.eval = function(state) {
+  return state.eval(state.currentApplication().params[this.index]);
 };
 
-pexprs.Lex.prototype._eval = function(state) {
+pexprs.Lex.prototype.eval = function(state) {
   state.enterLexifiedContext();
-  var ans = this.expr.eval(state);
+  var ans = state.eval(this.expr);
   state.exitLexifiedContext();
   return ans;
 };
 
-pexprs.Alt.prototype._eval = function(state) {
+pexprs.Alt.prototype.eval = function(state) {
   for (var idx = 0; idx < this.terms.length; idx++) {
-    if (this.terms[idx].eval(state)) {
+    if (state.eval(this.terms[idx])) {
       return true;
     }
   }
   return false;
 };
 
-pexprs.Seq.prototype._eval = function(state) {
+pexprs.Seq.prototype.eval = function(state) {
   for (var idx = 0; idx < this.factors.length; idx++) {
     var factor = this.factors[idx];
-    if (!factor.eval(state)) {
+    if (!state.eval(factor)) {
       return false;
     }
   }
   return true;
 };
 
-pexprs.Iter.prototype._eval = function(state) {
+pexprs.Iter.prototype.eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   var arity = this.getArity();
@@ -165,7 +137,7 @@ pexprs.Iter.prototype._eval = function(state) {
   }
   var numMatches = 0;
   var idx;
-  while (numMatches < this.maxNumMatches && this.expr.eval(state)) {
+  while (numMatches < this.maxNumMatches && state.eval(this.expr)) {
     numMatches++;
     var row = state.bindings.splice(state.bindings.length - arity, arity);
     for (idx = 0; idx < row.length; idx++) {
@@ -191,7 +163,7 @@ pexprs.Iter.prototype._eval = function(state) {
   return true;
 };
 
-pexprs.Not.prototype._eval = function(state) {
+pexprs.Not.prototype.eval = function(state) {
   /*
     TODO:
     - Right now we're just throwing away all of the failures that happen inside a `not`, and
@@ -203,24 +175,24 @@ pexprs.Not.prototype._eval = function(state) {
 
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  var origNumBindings = state.bindings.length;
-  state.doNotRecordFailures();
-  var ans = this.expr.eval(state);
-  state.doRecordFailures();
+  var failuresInfo = state.getFailuresInfo();
+
+  var ans = state.eval(this.expr);
+
+  state.restoreFailuresInfo(failuresInfo);
   if (ans) {
-    state.recordFailure(origPos, this);
-    state.truncateBindings(origNumBindings);
+    state.processFailure(origPos, this);
     return false;
-  } else {
-    inputStream.pos = origPos;
-    return true;
   }
+
+  inputStream.pos = origPos;
+  return true;
 };
 
-pexprs.Lookahead.prototype._eval = function(state) {
+pexprs.Lookahead.prototype.eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  if (this.expr.eval(state)) {
+  if (state.eval(this.expr)) {
     inputStream.pos = origPos;
     return true;
   } else {
@@ -228,12 +200,12 @@ pexprs.Lookahead.prototype._eval = function(state) {
   }
 };
 
-pexprs.Arr.prototype._eval = function(state) {
+pexprs.Arr.prototype.eval = function(state) {
   var obj = state.inputStream.next();
   if (Array.isArray(obj)) {
     var objInputStream = InputStream.newFor(obj);
     state.pushInputStream(objInputStream);
-    var ans = this.expr.eval(state) && objInputStream.atEnd();
+    var ans = state.eval(this.expr) && objInputStream.atEnd();
     state.popInputStream();
     return ans;
   } else {
@@ -241,12 +213,12 @@ pexprs.Arr.prototype._eval = function(state) {
   }
 };
 
-pexprs.Str.prototype._eval = function(state) {
+pexprs.Str.prototype.eval = function(state) {
   var obj = state.inputStream.next();
   if (typeof obj === 'string') {
     var strInputStream = InputStream.newFor(obj);
     state.pushInputStream(strInputStream);
-    var ans = this.expr.eval(state) && pexprs.end.eval(state);
+    var ans = state.eval(this.expr) && state.eval(pexprs.end);
     if (ans) {
       // Pop the binding that was added by `end`, which we don't want.
       state.bindings.pop();
@@ -258,7 +230,7 @@ pexprs.Str.prototype._eval = function(state) {
   }
 };
 
-pexprs.Obj.prototype._eval = function(state) {
+pexprs.Obj.prototype.eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   var obj = inputStream.next();
@@ -272,7 +244,7 @@ pexprs.Obj.prototype._eval = function(state) {
       var value = obj[property.name];
       var valueInputStream = InputStream.newFor([value]);
       state.pushInputStream(valueInputStream);
-      var matched = property.pattern.eval(state) && valueInputStream.atEnd();
+      var matched = state.eval(property.pattern) && valueInputStream.atEnd();
       state.popInputStream();
       if (!matched) {
         return false;
@@ -297,22 +269,7 @@ pexprs.Obj.prototype._eval = function(state) {
   }
 };
 
-function useMemoizedResult(state, memoRecOrLR) {
-  var inputStream = state.inputStream;
-  var bindings = state.bindings;
-
-  inputStream.pos = memoRecOrLR.pos;
-  if (state.isTracing()) {
-    state.trace.push(memoRecOrLR.traceEntry);
-  }
-  if (memoRecOrLR.value) {
-    bindings.push(memoRecOrLR.value);
-    return true;
-  }
-  return false;
-}
-
-pexprs.Apply.prototype._eval = function(state) {
+pexprs.Apply.prototype.eval = function(state) {
   var inputStream = state.inputStream;
   var grammar = state.grammar;
   var bindings = state.bindings;
@@ -334,12 +291,12 @@ pexprs.Apply.prototype._eval = function(state) {
   var memoRec = origPosInfo.memo[memoKey];
   var currentLR;
   if (memoRec && origPosInfo.shouldUseMemoizedResult(memoRec)) {
-    return useMemoizedResult(state, memoRec);
+    return state.useMemoizedResult(memoRec);
   } else if (origPosInfo.isActive(app)) {
     currentLR = origPosInfo.getCurrentLeftRecursion();
     if (currentLR && currentLR.memoKey === memoKey) {
       origPosInfo.updateInvolvedApplications();
-      return useMemoizedResult(state, currentLR);
+      return state.useMemoizedResult(currentLR);
     } else {
       origPosInfo.startLeftRecursion(app);
       return false;
@@ -348,7 +305,7 @@ pexprs.Apply.prototype._eval = function(state) {
     var body = grammar.ruleDict[ruleName];
     origPosInfo.enter(app);
     if (body.description) {
-      state.doNotRecordFailures();
+      var origFailuresInfo = state.getFailuresInfo();
     }
     var value = app.evalOnce(body, state);
     currentLR = origPosInfo.getCurrentLeftRecursion();
@@ -369,16 +326,16 @@ pexprs.Apply.prototype._eval = function(state) {
       origPosInfo.memo[memoKey] = {pos: inputStream.pos, value: value};
     }
     if (body.description) {
-      state.doRecordFailures();
+      state.restoreFailuresInfo(origFailuresInfo);
       if (!value) {
-        state.recordFailure(origPos, app);
+        state.processFailure(origPos, app);
       }
     }
     // Record trace information in the memo table, so that it is
     // available if the memoized result is used later.
     if (state.isTracing() && origPosInfo.memo[memoKey]) {
       var entry = state.getTraceEntry(origPos, app, value);
-      entry.setLeftRecursive(currentLR && (currentLR.memoKey === memoKey));
+      entry.setLeftRecursive(currentLR && currentLR.memoKey === memoKey);
       origPosInfo.memo[memoKey].traceEntry = entry;
     }
     var ans;
@@ -390,7 +347,7 @@ pexprs.Apply.prototype._eval = function(state) {
         }
         // Only succeed if the top-level rule has consumed all of the input.
         // (The following will ignore spaces if the rule is syntactic.)
-        ans = pexprs.end.eval(state);
+        ans = state.eval(pexprs.end);
         bindings.pop();  // pop the binding that was added by `end` in the statement above
       } else {
         ans = true;
@@ -407,7 +364,7 @@ pexprs.Apply.prototype._eval = function(state) {
 pexprs.Apply.prototype.evalOnce = function(expr, state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  if (expr.eval(state)) {
+  if (state.eval(expr)) {
     var arity = expr.getArity();
     var bindings = state.bindings.splice(state.bindings.length - arity, arity);
     var ans = new Node(state.grammar, this.ruleName, bindings, inputStream.interval(origPos));
@@ -450,12 +407,12 @@ pexprs.Apply.prototype.handleLeftRecursion = function(body, state, origPos, curr
   return currentLR.value;
 };
 
-pexprs.UnicodeChar.prototype._eval = function(state) {
+pexprs.UnicodeChar.prototype.eval = function(state) {
   var origPos = state.skipSpacesIfInSyntacticContext();
   var inputStream = state.inputStream;
   var value = inputStream.next();
   if (value === common.fail || !this.pattern.test(value)) {
-    state.recordFailure(origPos, this);
+    state.processFailure(origPos, this);
     return false;
   } else {
     var interval = inputStream.interval(origPos);

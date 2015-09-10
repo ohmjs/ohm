@@ -416,7 +416,9 @@ test('string', function(t) {
     });
 
     it('unrecognized escape characters are parse errors', function() {
-      t.throws(function() { ohm.grammar('G { r = "\\w" }'); }, /Expected an escape sequence/);
+      t.throws(
+          function() { ohm.grammar('G { r = "\\w" }'); },
+          /Expected \"\\\"\", not \"\\\\\", or an escape sequence/);
     });
 
     t.end();

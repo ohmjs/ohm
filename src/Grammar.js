@@ -78,7 +78,7 @@ Grammar.prototype = {
   _match: function(obj, startRule, tracingEnabled) {
     var inputStream = InputStream.newFor(typeof obj === 'string' ? obj : [obj]);
     var state = new State(this, inputStream, startRule, tracingEnabled);
-    var succeeded = new pexprs.Apply(startRule).eval(state);
+    var succeeded = state.eval(new pexprs.Apply(startRule));
     if (succeeded) {
       // Link every CSTNode to its parent.
       var stack = [undefined];

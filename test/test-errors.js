@@ -138,7 +138,7 @@ test('errors from makeGrammar()', function(t) {
       'Line 1, col 4:',
       '> 1 | G {',
       '         ^',
-      'Expected an identifier or "}"'].join('\n'));
+      'Expected "}" or an identifier'].join('\n'));
   }
 
   t.end();
@@ -154,7 +154,7 @@ test('unrecognized escape sequences', function(t) {
         'Line 1, col 19:',
         '> 1 | G { start = "hello' + bes + 'world" }',
         '                        ^',
-        'Expected an escape sequence, not "\\\\", or \"\\"\"'].join('\n'));
+        'Expected \"\\"\", not "\\\\", or an escape sequence'].join('\n'));
     }
   }
   testBadEscapeSequence('\\$');
