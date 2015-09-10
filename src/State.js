@@ -96,18 +96,10 @@ State.prototype = {
   },
 
   skipSpaces: function() {
-    if (this.recordingMode === RM_RIGHTMOST_FAILURE_POSITION) {
-      var origRightmostFailurePosition = this.rightmostFailurePosition;
-    } else /* if (this.recordingMode === RM_RIGHTMOST_FAILURES) */ {
-      var origRighmostFailures = this.rightmostFailures;
-    }
+    var origFailuresInfo = this.getFailuresInfo();
     this.eval(applySpaces_);
     this.bindings.pop();
-    if (this.recordingMode === RM_RIGHTMOST_FAILURE_POSITION) {
-      this.rightmostFailurePosition = origRightmostFailurePosition;
-    } else /* if (this.recordingMode === RM_RIGHTMOST_FAILURES) */ {
-      this.rightmostFailures = origRighmostFailures;
-    }
+    this.restoreFailuresInfo(origFailuresInfo);
     return this.inputStream.pos;
   },
 
