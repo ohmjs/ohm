@@ -34,7 +34,7 @@
     "pretest": "bin/update-env.sh && npm run build-debug",
     "test": "tape test/*.js | tap-spec",
     "test-watch": "watchy -w README.md,example,doc,src,test -- npm test",
-    "postinstall": "bin/dev-setup.sh; touch .install-timestamp",
+    "postinstall": "bash bin/postinstall",
     "prepublish": "npm run lint && npm run build && npm run bootstrap",
     "unsafe-bootstrap": "bin/bootstrap",
     "visualizer": "npm run watch & bin/ohm-visualizer",

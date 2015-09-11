@@ -7,10 +7,6 @@
 EXEC_NAME=$(basename $0)
 ROOT=$(npm prefix)
 
-# If .gitignore does not exist, we are not in developer mode.
-# See .npmignore for more details.
-if [ ! -f "$ROOT/.gitignore" ]; then exit; fi
-
 GIT_DIR=$(git rev-parse --git-dir 2> /dev/null)
 
 if [ "$GIT_DIR" == "" ]; then

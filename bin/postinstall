@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# If .gitignore does not exist, we are not in developer mode.
+# See .npmignore for more details.
+if [ -f "$(npm prefix)/.gitignore" ]; then
+  bin/dev-setup.sh
+  touch .install-timestamp
+fi
