@@ -418,7 +418,7 @@ test('string', function(t) {
     it('unrecognized escape characters are parse errors', function() {
       t.throws(
           function() { ohm.grammar('G { r = "\\w" }'); },
-          'Expected \"\\\"\"');
+          /Expected \"\\\"\", not \"\\\\\", or an escape sequence/);
     });
 
     t.end();
@@ -844,7 +844,7 @@ test('obj', function(t) {
   it('duplicate property names are not allowed', function() {
     t.throws(
         function() { ohm.grammar('M { duh = {x: 1, x: 2, y: 3, ...} }'); },
-        'Object pattern has duplicate property names: x');
+        /Object pattern has duplicate property names: x/);
   });
   t.end();
 });
@@ -1173,13 +1173,13 @@ test('inheritance', function(t) {
     it('no namespace', function() {
       t.throws(
           function() { ohm.grammar('G2 <: G1 {}'); },
-          'Grammar G1 is not declared');
+          /Grammar G1 is not declared/);
     });
 
     it('empty namespace', function() {
       t.throws(
           function() { ohm.grammar('G2 <: G1 {}', {}); },
-          'Grammar G1 is not declared in namespace');
+          /Grammar G1 is not declared in namespace/);
     });
     t.end();
   });
@@ -1193,7 +1193,7 @@ test('inheritance', function(t) {
               'G2 <: G1 { foo = "bar" }'
             ]);
           },
-          "Duplicate declaration for rule 'foo' in grammar 'G2' \(originally declared in 'G1'\)");
+          /Duplicate declaration for rule 'foo' in grammar 'G2' \(originally declared in 'G1'\)/);
     });
     t.end();
   });
@@ -1205,7 +1205,7 @@ test('inheritance', function(t) {
     it('should check that rule exists in super-grammar', function() {
       t.throws(
           function() { ohm.grammar('G3 <: G1 { foo := "foo" }', ns); },
-          'Cannot override rule foo because it is not declared in G1');
+          /Cannot override rule foo because it is not declared in G1/);
     });
 
     it("shouldn't matter if arities aren't the same", function() {
@@ -1275,7 +1275,7 @@ test('inheritance', function(t) {
     it('should check that rule exists in super-grammar', function() {
       t.throws(
           function() { ohm.grammar('G3 <: G1 { bar += "bar" }', ns); },
-          'Cannot extend rule bar because it is not declared in G1');
+          /Cannot extend rule bar because it is not declared in G1/);
     });
 
     it('should make sure rule arities are compatible', function() {
@@ -1288,13 +1288,13 @@ test('inheritance', function(t) {
 
       t.throws(
         function() { ohm.grammar('M2 <: M1 { foo += bar baz }', ns); },
-        'Rule foo involves an alternation which has inconsistent arity (expected 1, got 2)');
+        /Rule foo involves an alternation which has inconsistent arity \(expected 1, got 2\)/);
 
       // Too few:
       ns.M3 = ohm.grammar('M3 { foo = digit digit }');
       t.throws(
         function() { ohm.grammar('M4 <: M3 { foo += digit }', ns); },
-        'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)');
+        /Rule foo involves an alternation which has inconsistent arity \(expected 2, got 1\)/);
     });
 
     it('should be ok to add new cases', function() {
@@ -1310,7 +1310,7 @@ test('bindings', function(t) {
   it('inconsistent arity in alts is an error', function() {
     t.throws(
       function() { ohm.grammar('G { foo = "a" "c" | "b" }'); },
-      'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)');
+      /Rule foo involves an alternation which has inconsistent arity \(expected 2, got 1\)/);
   });
 
   it('by default, bindings are evaluated lazily', function() {
@@ -1416,7 +1416,7 @@ test('inline rule declarations', function(t) {
 
   t.throws(
     function() { ohm.grammar('Bad <: Arithmetic { addExp += addExp "~" mulExp  -- minus }', ns); },
-    "rule 'addExp_minus' in grammar 'Bad' (originally declared in 'Arithmetic')");
+    /rule 'addExp_minus' in grammar 'Bad' \(originally declared in 'Arithmetic'\)/);
 
   t.end();
 });
@@ -1426,7 +1426,7 @@ test('lexical vs. syntactic rules', function(t) {
     t.ok(ohm.grammar('G { foo = bar  bar = "bar" }'), 'lexical calling lexical');
     t.throws(
         function() { ohm.grammar('G { foo = Bar  Bar = "bar" }'); },
-        'Cannot apply syntactic rule Bar from here (inside a lexical context)',
+        /Cannot apply syntactic rule Bar from here \(inside a lexical context\)/,
         'lexical calling syntactic');
     t.ok(ohm.grammar('G { Foo = bar  bar = "bar" }'), 'syntactic calling lexical');
     t.ok(ohm.grammar('G { Foo = Bar  Bar = "bar" }'), 'syntactic calling syntactic');
@@ -1483,7 +1483,7 @@ test('lexical vs. syntactic rules', function(t) {
             '}'
           ]);
         },
-        'Cannot apply syntactic rule R from here (inside a lexical context)');
+        /Cannot apply syntactic rule R from here \(inside a lexical context\)/);
   });
 
   t.end();
@@ -1619,7 +1619,7 @@ test('namespaces', function(t) {
   t.ok(ns2);
   t.throws(
       function() { ohm.grammar('ccc { bar = "bar" }', ns2); },
-      'Grammar ccc is already declared in this namespace');
+      /Grammar ccc is already declared in this namespace/);
   t.ok(ns2.G, 'ns2 delegates to ns1');
 
   var ns3 = ohm.grammars('ccc { start = "x" }', ns);
@@ -1663,18 +1663,18 @@ test('instantiating grammars from different types of objects', function(t) {
 
   // Try with some objects where 'toString' won't work.
   t.throws(function() { ohm.grammar({toString: 3}); },
-      'Expected string as first argument, got [object Object]', 'object with invalid toString');
+      /Expected string as first argument, got \[object Object\]/, 'object with invalid toString');
   t.throws(function() { ohm.grammar(Object.create(null)); },
-      'Expected string as first argument, got [object Object]', 'object with no toString');
+      /Expected string as first argument, got \[object Object\]/, 'object with no toString');
 
   t.throws(function() { ohm.grammar([1, 2]); },
-      'Expected string as first argument, got Array: "1,2"', 'Array with valid toString');
+      /Expected string as first argument, got Array: "1,2"/, 'Array with valid toString');
 
   function Foo() {
     this.toString = function() { return 'Foo!'; };
   };
   t.throws(function() { ohm.grammar(new Foo()); },
-      'Expected string as first argument, got Foo: "Foo!"', 'Custom objects with toString');
+      /Expected string as first argument, got Foo: "Foo!"/, 'Custom objects with toString');
 
   t.end();
 });

@@ -236,7 +236,7 @@ State.prototype = {
 
     if (ans) {
       if (this.recordingMode === RM_RIGHTMOST_FAILURES &&
-          inputStream.pos === this.rightmostFailurePosition) {
+          inputStream.pos === this.rightmostFailurePostion) {
         this.rightmostFailures = this.rightmostFailures.asFluffy();
       }
     } else {

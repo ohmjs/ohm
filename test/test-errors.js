@@ -4,7 +4,6 @@
 // Imports
 // --------------------------------------------------------------------
 
-var fs = require('fs');
 var test = require('tape-catch');
 
 var ohm = require('..');
@@ -66,7 +65,7 @@ test('match failure', function(t) {
 test('undeclared rules', function(t) {
   t.throws(
       function() { makeRuleWithBody('undeclaredRule'); },
-      'Rule undeclaredRule is not declared in grammar G');
+      /Rule undeclaredRule is not declared in grammar G/);
 
   t.end();
 });
@@ -109,7 +108,7 @@ test('many expressions with nullable operands', function(t) {
 
   t.throws(
       function() { ohm.grammar('G { x = y+  y = undeclaredRule }'); },
-      'Rule * is not declared in grammar G',
+      /Rule * is not declared in grammar G/,
       'undeclared rule prevents ManyExprHasNullableOperand check');
 
   t.end();
@@ -139,7 +138,7 @@ test('errors from makeGrammar()', function(t) {
       'Line 1, col 4:',
       '> 1 | G {',
       '         ^',
-      'Expected "}"'].join('\n'));
+      'Expected "}" or an identifier'].join('\n'));
   }
 
   t.end();
@@ -155,7 +154,7 @@ test('unrecognized escape sequences', function(t) {
         'Line 1, col 19:',
         '> 1 | G { start = "hello' + bes + 'world" }',
         '                        ^',
-        'Expected \"\\"\"'].join('\n'));
+        'Expected \"\\"\", not "\\\\", or an escape sequence'].join('\n'));
     }
   }
   testBadEscapeSequence('\\$');
@@ -179,23 +178,5 @@ test('failures are memoized', function(t) {
     '      ^',
     'Expected "a" or "b"'
   ].join('\n'));
-  t.end();
-});
-
-test('non-fluffy failures subsume fluffy failures, etc.', function(t) {
-  var g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
-  var r = g.match('(1');
-  var failures = r.getRightmostFailures();
-  t.equal(failures.length, 5);
-  t.equal(failures[0].getText(), ')');
-  t.equal(failures[0].type, 'string');
-  t.equal(failures[1].getText(), '-');
-  t.equal(failures[1].type, 'string');
-  t.equal(failures[2].getText(), '/');
-  t.equal(failures[2].type, 'string');
-  t.equal(failures[3].getText(), '*');
-  t.equal(failures[3].type, 'string');
-  t.equal(failures[4].getText(), '+');
-  t.equal(failures[4].type, 'string');
   t.end();
 });
