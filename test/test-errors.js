@@ -26,7 +26,7 @@ test('non-string input', function(t) {
   var e = g.match(42);
   t.equal(e.failed(), true);
   t.equal(e.message, 'match failed at position 0');
-  t.equal(e.getPos(), 0);
+  t.equal(e.getRightmostFailurePosition(), 0);
   t.end();
 });
 
@@ -42,7 +42,7 @@ test('match failure', function(t) {
     '        ^',
     'Expected "c"'].join('\n'));
   t.equal(e.shortMessage, 'Line 1, col 3: expected "c"');
-  t.equal(e.getPos(), 2);
+  t.equal(e.getRightmostFailurePosition(), 2);
 
   e = g.match('abcde');
   t.equal(e.failed(), true);
@@ -53,7 +53,7 @@ test('match failure', function(t) {
     '          ^',
     'Expected end of input'].join('\n'));
   t.equal(e.shortMessage, 'Line 1, col 5: expected end of input');
-  t.equal(e.getPos(), 4);
+  t.equal(e.getRightmostFailurePosition(), 4);
 
   var m = g.match('abcd');
   t.equal(m.succeeded(), true, 'succeeded() is true for root CST node');
