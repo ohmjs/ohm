@@ -21,6 +21,7 @@ var EXAMPLE_ROOT = path.normalize(path.join(__dirname, '../examples/'));
 // implementation of the WHATWG DOM and HTML standards. Some things may behave slightly
 // differently than a real browser environment.
 function runExample(relativePath, testObj, cb) {
+  var errors = [];
   jsdom.env({
     file: path.join(EXAMPLE_ROOT, relativePath),
     features: {
@@ -30,29 +31,23 @@ function runExample(relativePath, testObj, cb) {
       // referenced by relative path.
       SkipExternalResources: /^http/
     },
-    created: function(errors, window) {
-      if (errors) {
-        cb(errors);
+    created: function(error, window) {
+      if (error) {
+        cb([error]);
       } else {
         jsdom.getVirtualConsole(window).sendTo(console);
+        window.addEventListener('error', function(evt) {
+          console.error(
+              'In ' + evt.filename + '\n' +
+              'at line ' + evt.lineno + ' (relative to start of script), col ' + evt.colno + ':');
+          errors.push(evt.error);
+        });
       }
     },
-    loaded: function(errors, window) {
-      if (errors) {
-        errors.forEach(function(e) {
-          // Try to print a more useful error message for errors that occur in the
-          // example itself.
-          if (e.data && e.data.error) {
-            console.log(e.data.error);
-          } else {
-            console.log(e);
-          }
-        });
-      } else {
-        // If the example specifies an inline test, run it.
-        if (window.test) {
-          testObj.test('test in ' + relativePath, window.test);
-        }
+    onload: function(window) {
+      // If the example specifies an inline test, run it.
+      if (window.test) {
+        testObj.test('test in ' + relativePath, window.test);
       }
       cb(errors);
       window.close();
@@ -66,14 +61,14 @@ function runExample(relativePath, testObj, cb) {
 
 test('math example', function(t) {
   runExample('math/index.html', t, function(errors) {
-    t.equal(errors, null, 'runs without errors');
+    t.deepEqual(errors, [], 'runs without errors');
     t.end();
   });
 });
 
 test('viz example', function(t) {
   runExample('viz/index.html', t, function(errors) {
-    t.equal(errors, null, 'runs without errors');
+    t.deepEqual(errors, [], 'runs without errors');
     t.end();
   });
 });
