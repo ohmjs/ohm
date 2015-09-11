@@ -91,7 +91,10 @@ var g = ohm.grammarFromScriptElement();
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-var symbolTableIn = g.inheritedAttribute({
+var s = g.semantics();
+
+/*
+s.addInheritedAttribute('symbolTableIn', {
   _base: function(s) {
     symbolTableIn.set([]);
   },
@@ -99,51 +102,52 @@ var symbolTableIn = g.inheritedAttribute({
     if (child === this.firstChild()) {
       symbolTableIn.set(symbolTableIn(this));
     } else {
-      symbolTableIn.set(symbolTableOut(this.childBefore(child)));
+      symbolTableIn.set(this.childBefore(child).symbolTableOut);
     }
   }
 });
+*/
 
-var symbolTableOut = g.synthesizedAttribute({
+s.addAttribute('symbolTableOut', {
   Start: function(q) {
-    return symbolTableOut(q);
+    return q.symbolTableOut;
   },
   Stmt_var: function(_, n, _, e, _) {
     return [].concat(symbolTableIn(this)).concat([n.interval.contents]);
   },
-  _nonterminal: function() {
-    return this.hasNoChildren() ? symbolTableIn(this) : symbolTableOut(this.lastChild());
+  _nonterminal: function(children) {
+    return this.hasNoChildren() ? symbolTableIn(this) : this.lastChild().symbolTableOut;
   },
   _terminal: function() {
     return symbolTableIn(this);
   }
 });
 
-var codeOut = g.synthesizedAttribute({
+s.addAttribute('codeOut', {
   Start: function(q) {
-    return codeOut(q);
+    return q.codeOut;
   },
   Seq_seq: function(s, q) {
-    return [].concat(codeOut(s)).concat(['pop']).concat(codeOut(q));
+    return [].concat(s.codeOut).concat(['pop']).concat(q.codeOut);
   },
   Seq_base: function(s) {
-    return codeOut(s);
+    return s.codeOut;
   },
   Stmt_var: function(_, n, _, e, _) {
-    return [].concat(codeOut(e))
-             .concat(['pushLit(' + symbolTableOut(this).indexOf(n.interval.contents) + ')', 'store']);
+    return [].concat(e.codeOut)
+             .concat(['pushLit(' + this.symbolTableOut.indexOf(n.interval.contents) + ')', 'store']);
   },
   Stmt_print: function(_, e, _) {
-    return [].concat(codeOut(e)).concat(['print']);
+    return [].concat(e.codeOut).concat(['print']);
   },
   Stmt_assign: function(n, _, e, _) {
-    return [].concat(codeOut(e))
-             .concat(['pushLit(' + symbolTableOut(this).indexOf(n.interval.contents) + ')', 'store']);
+    return [].concat(e.codeOut(e))
+             .concat(['pushLit(' + this.symbolTableOut.indexOf(n.interval.contents) + ')', 'store']);
   },
   Stmt_if3: function(_, c, _, t, _, f) {
-    var tCode = codeOut(t);
-    var fCode = codeOut(f);
-    return [].concat(codeOut(c))
+    var tCode = t.codeOut;
+    var fCode = f.codeOut;
+    return [].concat(c.codeOut)
              .concat(['jmp0(' + (tCode.length + 1) + ')'])
              .concat(tCode)
              .concat(['jmp(' + fCode.length + ')'])
@@ -151,39 +155,38 @@ var codeOut = g.synthesizedAttribute({
   },
 
   Stmt_if2: function(_, c, _, t) {
-    var tCode = codeOut(t);
-    return [].concat(codeOut(c))
+    var tCode = t.codeOut;
+    return [].concat(c.codeOut)
              .concat(['jmp0(' + tCode.length + ')'])
              .concat(tCode);
   },
   AddExpr_plus: function(x, _, y) {
-    return [].concat(codeOut(x)).concat(codeOut(y)).concat(['add']);
+    return [].concat(x.codeOut).concat(y.codeOut).concat(['add']);
   },
   AddExpr_minus: function(x, _, y) {
-    return [].concat(codeOut(x)).concat(codeOut(y)).concat(['sub']);
+    return [].concat(x.codeOut).concat(y.codeOut).concat(['sub']);
   },
   MulExpr_times: function(x, _, y) {
-    return [].concat(codeOut(x)).concat(codeOut(y)).concat(['mul']);
+    return [].concat(x.codeOut).concat(y.codeOut).concat(['mul']);
   },
   MulExpr_divide: function(x, _, y) {
-    return [].concat(codeOut(x)).concat(codeOut(y)).concat(['div']);
+    return [].concat(x.codeOut).concat(y.codeOut).concat(['div']);
   },
   PriExpr_paren: function(_, e, _) {
-    return codeOut(e);
+    return e.codeOut;
   },
   PriExpr_pos: function(_, e) {
-    return codeOut(e);
+    return e.codeOut;
   },
   PriExpr_neg: function(_, e) {
-    return [].concat([codeOut(e)]).concat(['neg']);
+    return [].concat([e.codeOut]).concat(['neg']);
   },
   ident: function(_, _) {
-    return ['pushReg(' + symbolTableOut(this).indexOf(this.interval.contents) + ')'];
+    return ['pushReg(' + this.symbolTableOut.indexOf(this.interval.contents) + ')'];
   },
   number: function(_) {
     return ['pushLit(' + parseFloat(this.interval.contents) + ')'];
-  },
-  _nonterminal: ohm.actions.passThrough
+  }
 });
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -204,7 +207,7 @@ input.oninput = function() {
     this.className = 'error';
     showError(m);
   } else {
-    show('value', codeOut(m).join('\n'));
+    show('value', s(m).codeOut.join('\n'));
   }
 };
 
@@ -212,17 +215,17 @@ function hideError() {
   errorDiv.className = errorDiv.className = 'hidden';
 }
 
-function showError(failure) {
+function showError(r) {
   setTimeout(function() {
     // Position the error bubble to line up with the offending input
-    spaces.innerHTML = repeat(' ', failure.getPos());
+    spaces.innerHTML = repeat(' ', r.getRightmostFailurePosition());
 
     // Set up the details, i.e., what input was expected at that position
     removeChildren(errorDetails);
-    failure.getExpected().forEach(function(text, idx, expected) {
-      var element = createExpectedElement(text);
+    r.getRightmostFailures().forEach(function(failure, idx, failures) {
+      var element = createExpectedElement(failure);
       if (idx > 0) {
-        errorDetails.appendChild(makeElement('light', idx === expected.length - 1 ? ', or ' : ', '));
+        errorDetails.appendChild(makeElement('light', idx === failures.length - 1 ? ', or ' : ', '));
       }
       errorDetails.appendChild(element);
     });
@@ -232,15 +235,18 @@ function showError(failure) {
   }, 0);
 }
 
-function createExpectedElement(s) {
-  if (s.charAt(0) === '"' && s.charAt(s.length - 1) === '"' ||
-      s.charAt(0) === "'" && s.charAt(s.length - 1) === "'") {
-    return makeElement('literal',
-      makeElement('light', '"'),
-      makeElement('code', s.substr(1, s.length - 2)),
-      makeElement('light', '"'));
+var elt = makeElement;
+
+function createExpectedElement(failure) {
+  if (failure.isStringTerminal()) {
+    return elt('literal',
+      elt('light', '"'),
+      elt('code', failure.getText()),
+      elt('light', '"'));
+  } else if (failure.isCode()) {
+    return elt('code', failure.getText());
   } else {
-    return makeElement('description', s);
+    return elt('description', failure.getText());
   }
 }
 
