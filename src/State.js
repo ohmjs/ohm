@@ -151,7 +151,7 @@ State.prototype = {
     }
   },
 
-  getRightmostFailurePosition: function() {
+  getFailuresPos: function() {
     return this.rightmostFailurePosition;
   },
 
@@ -162,7 +162,7 @@ State.prototype = {
       this.eval(new pexprs.Apply(this.startRule));
     }
 
-    return this.rightmostFailures.toFailuresArray(this.grammar.ruleDict);
+    return this.rightmostFailures.toArray();
   },
 
   // Returns the memoized trace entry for `expr` at `pos`, if one exists, `null` otherwise.
@@ -234,19 +234,14 @@ State.prototype = {
       this.trace = origTrace;
     }
 
-    if (ans) {
-      if (this.recordingMode === RM_RIGHTMOST_FAILURES &&
-          inputStream.pos === this.rightmostFailurePostion) {
-        this.rightmostFailures = this.rightmostFailures.asFluffy();
-      }
-    } else {
+    if (this.recordingMode === RM_RIGHTMOST_FAILURES) {
+      this.rightmostFailures = origFailures.union(this.rightmostFailures);
+    }
+
+    if (!ans) {
       // Reset the position and the bindings.
       inputStream.pos = origPos;
       this.truncateBindings(origNumBindings);
-    }
-
-    if (this.recordingMode === RM_RIGHTMOST_FAILURES) {
-      this.rightmostFailures = origFailures.union(this.rightmostFailures);
     }
 
     return ans;

@@ -473,19 +473,19 @@ function hideError() {
   errorDiv.className = errorDiv.className = 'hidden';
 }
 
-function showError(r) {
+function showError(failure) {
   input.className = 'error';
   setTimeout(function() {
     // Position the error bubble to line up with the offending input.
-    spaces.innerHTML = repeat(' ', r.getRightmostFailurePosition());
+    spaces.innerHTML = repeat(' ', failure.getPos());
 
     // Set up the details, i.e., what input was expected at that position.
     removeChildren(errorDetails);
-    var failures = r.getRightmostFailures();
-    failures.forEach(function(failure, idx) {
-      var element = createExpectedElement(failure);
+    var expected = failure.getExpected();
+    expected.forEach(function(text, idx) {
+      var element = createExpectedElement(text);
       if (idx > 0) {
-        errorDetails.appendChild(elt('light', idx === failures.length - 1 ? ', or ' : ', '));
+        errorDetails.appendChild(elt('light', idx === expected.length - 1 ? ', or ' : ', '));
       }
       errorDetails.appendChild(element);
     });
@@ -495,16 +495,15 @@ function showError(r) {
   }, 0);
 }
 
-function createExpectedElement(failure) {
-  if (failure.isStringTerminal()) {
+function createExpectedElement(s) {
+  if (s.charAt(0) === '"' && s.charAt(s.length - 1) === '"' ||
+      s.charAt(0) === "'" && s.charAt(s.length - 1) === "'") {
     return elt('literal',
       elt('light', '"'),
-      elt('code', failure.getText()),
+      elt('code', s.substr(1, s.length - 2)),
       elt('light', '"'));
-  } else if (failure.isCode()) {
-    return elt('code', failure.getText());
   } else {
-    return elt('description', failure.getText());
+    return elt('description', s);
   }
 }
 

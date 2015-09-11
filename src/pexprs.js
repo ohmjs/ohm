@@ -38,11 +38,11 @@ PExpr.prototype.withFormals = function(formals) {
 
 // Anything
 
-var anything = Object.create(PExpr.prototype).withDescription('any object');
+var anything = Object.create(PExpr.prototype);
 
 // End
 
-var end = Object.create(PExpr.prototype).withDescription('end of input');
+var end = Object.create(PExpr.prototype);
 
 // Primitives
 
@@ -255,5 +255,5 @@ require('./pexprs-introduceParams');
 require('./pexprs-isNullable');
 require('./pexprs-substituteParams');
 require('./pexprs-toDisplayString');
-require('./pexprs-toFailure');
+require('./pexprs-toExpected');
 require('./pexprs-toString');
