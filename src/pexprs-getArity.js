@@ -13,7 +13,7 @@ var pexprs = require('./pexprs');
 
 pexprs.PExpr.prototype.getArity = common.abstract;
 
-pexprs.anything.getArity =
+pexprs.any.getArity =
 pexprs.end.getArity =
 pexprs.Prim.prototype.getArity =
 pexprs.Range.prototype.getArity =

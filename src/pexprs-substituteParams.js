@@ -13,7 +13,7 @@ var pexprs = require('./pexprs');
 
 pexprs.PExpr.prototype.substituteParams = common.abstract;
 
-pexprs.anything.substituteParams =
+pexprs.any.substituteParams =
 pexprs.end.substituteParams =
 pexprs.Prim.prototype.substituteParams =
 pexprs.Range.prototype.substituteParams =

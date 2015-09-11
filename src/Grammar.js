@@ -273,8 +273,8 @@ Grammar.prototype = {
 // isn't specified.
 Grammar.ProtoBuiltInRules = new Grammar('ProtoBuiltInRules', undefined, {
   // The following rules can't be written in userland because they reference
-  // `anything` and `end` directly.
-  _: pexprs.anything.withFormals([]),
+  // `any` and `end` directly.
+  any: pexprs.any.withFormals([]),
   end: pexprs.end.withFormals([]),
 
   // The following rule is part of the Ohm implementation. Its name ends with '_' to

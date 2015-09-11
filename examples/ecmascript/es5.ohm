@@ -25,7 +25,7 @@ ES5 {
   // A.1 Lexical Grammar
 
   // input characters are represented as ES3 characters, which can be any unicode character
-  sourceCharacter = _
+  sourceCharacter = any
 
   // // 7: Goal production in contexts where a leading "/" or "/=" is permitted
   // // Note: not used by the parser

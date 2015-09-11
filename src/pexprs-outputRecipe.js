@@ -13,12 +13,12 @@ var pexprs = require('./pexprs');
 
 pexprs.PExpr.prototype.outputRecipe = common.abstract;
 
-pexprs.anything.outputRecipe = function(sb, formals) {
-  sb.append('this.anything()');
+pexprs.any.outputRecipe = function(sb, formals) {
+  throw new Error('should never output a recipe for `any` expression');
 };
 
 pexprs.end.outputRecipe = function(sb, formals) {
-  sb.append('this.end()');
+  throw new Error('should never output a recipe for `end` expression');
 };
 
 pexprs.Prim.prototype.outputRecipe = function(sb, formals) {

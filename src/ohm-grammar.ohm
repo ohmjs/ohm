@@ -70,7 +70,7 @@ Ohm {
     = "(" ruleDescrText ")"
 
   ruleDescrText
-    = (~")" _)*
+    = (~")" any)*
 
   caseName
     = "--" (~"\n" space)* name (~"\n" space)* ("\n" | &"}")
@@ -99,7 +99,7 @@ Ohm {
 
   strChar
     = escapeChar
-    | ~"\\" ~"\"" ~"\n" _
+    | ~"\\" ~"\"" ~"\n" any
 
   escapeChar  (an escape sequence)
     = "\\\\"                                     -- backslash
@@ -116,7 +116,7 @@ Ohm {
     = "-"? digit+
 
   space
-   += "//" (~"\n" _)* "\n"  -- singleLine
-    | "/*" (~"*/" _)* "*/"  -- multiLine
+   += "//" (~"\n" any)* "\n"  -- singleLine
+    | "/*" (~"*/" any)* "*/"  -- multiLine
 
 }

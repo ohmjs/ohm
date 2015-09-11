@@ -15,7 +15,7 @@ var pexprs = require('./pexprs');
 
 pexprs.PExpr.prototype.introduceParams = common.abstract;
 
-pexprs.anything.introduceParams =
+pexprs.any.introduceParams =
 pexprs.end.introduceParams =
 pexprs.Prim.prototype.introduceParams =
 pexprs.Range.prototype.introduceParams =

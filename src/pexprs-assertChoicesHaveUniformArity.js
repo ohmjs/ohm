@@ -14,7 +14,7 @@ var pexprs = require('./pexprs');
 
 pexprs.PExpr.prototype.assertChoicesHaveUniformArity = common.abstract;
 
-pexprs.anything.assertChoicesHaveUniformArity =
+pexprs.any.assertChoicesHaveUniformArity =
 pexprs.end.assertChoicesHaveUniformArity =
 pexprs.Prim.prototype.assertChoicesHaveUniformArity =
 pexprs.Range.prototype.assertChoicesHaveUniformArity =

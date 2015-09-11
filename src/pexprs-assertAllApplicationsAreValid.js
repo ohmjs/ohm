@@ -21,7 +21,7 @@ pexprs.PExpr.prototype.assertAllApplicationsAreValid = function(ruleName, gramma
 
 pexprs.PExpr.prototype._assertAllApplicationsAreValid = common.abstract;
 
-pexprs.anything._assertAllApplicationsAreValid =
+pexprs.any._assertAllApplicationsAreValid =
 pexprs.end._assertAllApplicationsAreValid =
 pexprs.Prim.prototype._assertAllApplicationsAreValid =
 pexprs.Range.prototype._assertAllApplicationsAreValid =

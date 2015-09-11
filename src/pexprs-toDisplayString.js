@@ -29,8 +29,8 @@ pexprs.Obj.prototype.toDisplayString = function() {
   return '[' + this.constructor.name + ']';
 };
 
-pexprs.anything.toDisplayString = function() {
-  return '_';
+pexprs.any.toDisplayString = function() {
+  return 'any';
 };
 
 pexprs.end.toDisplayString = function() {

@@ -37,7 +37,7 @@ module.exports = ohm.makeRecipe(function() {
     .define("Props", [], this.seq(this.app("Prop"), this.star(this.seq(this.prim(","), this.app("Prop")))))
     .define("Prop", [], this.seq(this.alt(this.app("name"), this.app("string")), this.prim(":"), this.app("Alt")))
     .define("ruleDescr", [], this.seq(this.prim("("), this.app("ruleDescrText"), this.prim(")")), "a rule description")
-    .define("ruleDescrText", [], this.star(this.seq(this.not(this.prim(")")), this.app("_"))))
+    .define("ruleDescrText", [], this.star(this.seq(this.not(this.prim(")")), this.app("any"))))
     .define("caseName", [], this.seq(this.prim("--"), this.star(this.seq(this.not(this.prim("\n")), this.app("space"))), this.app("name"), this.star(this.seq(this.not(this.prim("\n")), this.app("space"))), this.alt(this.prim("\n"), this.la(this.prim("}")))))
     .define("name", [], this.seq(this.app("nameFirst"), this.star(this.app("nameRest"))), "a name")
     .define("nameFirst", [], this.alt(this.prim("_"), this.app("letter")))
@@ -48,7 +48,7 @@ module.exports = ohm.makeRecipe(function() {
     .define("keyword_false", [], this.seq(this.prim("false"), this.not(this.app("nameRest"))))
     .define("keyword", [], this.alt(this.app("keyword_null"), this.app("keyword_true"), this.app("keyword_false")))
     .define("string", [], this.seq(this.prim("\""), this.star(this.app("strChar")), this.prim("\"")))
-    .define("strChar", [], this.alt(this.app("escapeChar"), this.seq(this.not(this.prim("\\")), this.not(this.prim("\"")), this.not(this.prim("\n")), this.app("_"))))
+    .define("strChar", [], this.alt(this.app("escapeChar"), this.seq(this.not(this.prim("\\")), this.not(this.prim("\"")), this.not(this.prim("\n")), this.app("any"))))
     .define("escapeChar_backslash", [], this.prim("\\\\"))
     .define("escapeChar_doubleQuote", [], this.prim("\\\""))
     .define("escapeChar_singleQuote", [], this.prim("\\'"))
@@ -60,8 +60,8 @@ module.exports = ohm.makeRecipe(function() {
     .define("escapeChar_hexEscape", [], this.seq(this.prim("\\x"), this.app("hexDigit"), this.app("hexDigit")))
     .define("escapeChar", [], this.alt(this.app("escapeChar_backslash"), this.app("escapeChar_doubleQuote"), this.app("escapeChar_singleQuote"), this.app("escapeChar_backspace"), this.app("escapeChar_lineFeed"), this.app("escapeChar_carriageReturn"), this.app("escapeChar_tab"), this.app("escapeChar_unicodeEscape"), this.app("escapeChar_hexEscape")), "an escape sequence")
     .define("number", [], this.seq(this.opt(this.prim("-")), this.plus(this.app("digit"))), "a number")
-    .define("space_singleLine", [], this.seq(this.prim("//"), this.star(this.seq(this.not(this.prim("\n")), this.app("_"))), this.prim("\n")))
-    .define("space_multiLine", [], this.seq(this.prim("/*"), this.star(this.seq(this.not(this.prim("*/")), this.app("_"))), this.prim("*/")))
+    .define("space_singleLine", [], this.seq(this.prim("//"), this.star(this.seq(this.not(this.prim("\n")), this.app("any"))), this.prim("\n")))
+    .define("space_multiLine", [], this.seq(this.prim("/*"), this.star(this.seq(this.not(this.prim("*/")), this.app("any"))), this.prim("*/")))
     .extend("space", [], this.alt(this.alt(this.app("space_singleLine"), this.app("space_multiLine")), this.range("\u0000", " ")), "a space")
     .build();
 });

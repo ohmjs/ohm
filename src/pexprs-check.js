@@ -14,7 +14,7 @@ var pexprs = require('./pexprs');
 
 pexprs.PExpr.prototype.check = common.abstract;
 
-pexprs.anything.check = function(grammar, vals) {
+pexprs.any.check = function(grammar, vals) {
   return vals.length >= 1;
 };
 

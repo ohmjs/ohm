@@ -14,12 +14,9 @@ var pexprs = require('./pexprs');
 
 pexprs.PExpr.prototype.toFailure = common.abstract;
 
-pexprs.anything.toFailure = function(ruleDict) {
-  return new Failure('any object', 'description');
-};
-
+pexprs.any.toFailure =
 pexprs.end.toFailure = function(ruleDict) {
-  return new Failure('end of input', 'description');
+  return new Failure(this.description, 'description');
 };
 
 pexprs.Prim.prototype.toFailure = function(ruleDict) {
@@ -34,7 +31,7 @@ pexprs.Range.prototype.toFailure = function(ruleDict) {
 };
 
 pexprs.Not.prototype.toFailure = function(ruleDict) {
-  var description = this.expr === pexprs.anything ?
+  var description = this.expr === pexprs.any ?
       'nothing' :
       'not ' + this.expr.toFailure(ruleDict);
   return new Failure(description, 'description');

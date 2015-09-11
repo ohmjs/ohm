@@ -82,7 +82,7 @@ test('grammar constructors dictionary', function(t) {
     t.ok(m.constructors.addExp_minus);
     t.ok(m.constructors.priExp);
     t.ok(m.constructors.digit);
-    t.ok(m.constructors._);
+    t.ok(m.constructors.any);
   });
 
   it('lacks entries for nonexistent rules', function() {
@@ -229,44 +229,44 @@ test('intervals', function(t) {
 });
 
 test('primitive patterns', function(t) {
-  test('anything', function(t) {
+  test('any', function(t) {
     var m = ohm.grammar('M { }');
 
     test('direct match, no stream', function(t) {
       it('recognition', function() {
-        assertSucceeds(t, m.match(5, '_'), '_ matches 5');
-        assertSucceeds(t, m.match(null, '_'), '_ matches null');
+        assertSucceeds(t, m.match(5, 'any'), 'any matches 5');
+        assertSucceeds(t, m.match(null, 'any'), 'any matches null');
       });
 
       it('semantic actions', function() {
         var s = m.semantics().addAttribute('v', {});
-        t.equal(s(m.match(5, '_')).v, 5, 'SA on 5');
-        t.equal(s(m.match(null, '_')).v, null, 'SA on null');
+        t.equal(s(m.match(5, 'any')).v, 5, 'SA on 5');
+        t.equal(s(m.match(null, 'any')).v, null, 'SA on null');
       });
       t.end();
     });
 
     test('match in string stream', function(t) {
       it('recognition', function() {
-        assertSucceeds(t, m.match('5', '_'));
-        assertFails(t, m.match('', '_'));
+        assertSucceeds(t, m.match('5', 'any'));
+        assertFails(t, m.match('', 'any'));
       });
 
       it('semantic actions', function() {
         var s = m.semantics().addAttribute('v', {});
-        t.equal(s(m.match('5', '_')).v, '5');
+        t.equal(s(m.match('5', 'any')).v, '5');
       });
       t.end();
     });
 
     test('match in list stream', function(t) {
       it('recognition', function() {
-        assertSucceeds(t, m.match(['123'], '_'));
+        assertSucceeds(t, m.match(['123'], 'any'));
       });
 
       it('semantic actions', function() {
         var s = m.semantics().addAttribute('v', {});
-        t.deepEqual(s(m.match(['123'], '_')).v, ['123']);
+        t.deepEqual(s(m.match(['123'], 'any')).v, ['123']);
       });
       t.end();
     });
@@ -704,7 +704,7 @@ test('opt', function(t) {
 });
 
 test('not', function(t) {
-  var m = ohm.grammar('M { start = ~"hello" _* }');
+  var m = ohm.grammar('M { start = ~"hello" any* }');
 
   it('recognition', function() {
     assertSucceeds(t, m.match('yello world'));
@@ -723,7 +723,7 @@ test('not', function(t) {
 });
 
 test('lookahead', function(t) {
-  var m = ohm.grammar('M { start = &"hello" _* }');
+  var m = ohm.grammar('M { start = &"hello" any* }');
 
   it('recognition', function() {
     assertSucceeds(t, m.match('hello world'));
@@ -742,7 +742,7 @@ test('lookahead', function(t) {
 });
 
 test('arr', function(t) {
-  var m = ohm.grammar('M { start = ["abc" &_ ["d" "ef"] "g"] }');
+  var m = ohm.grammar('M { start = ["abc" &any ["d" "ef"] "g"] }');
 
   it('recognition', function() {
     assertSucceeds(t, m.match(['abc', ['d', 'ef'], 'g']));
@@ -1544,7 +1544,7 @@ test('action dictionary templates', function(t) {
     '  },\n' +
     '  listOf: function(_) {\n' +
     '  },\n' +
-    '  _: function(_) {\n' +
+    '  any: function(_) {\n' +
     '  },\n' +
     '  end: function(_) {\n' +
     '  },\n' +
@@ -1595,7 +1595,7 @@ test('action dictionary templates', function(t) {
     '  },\n' +
     '  listOf: function(_) {\n' +
     '  },\n' +
-    '  _: function(_) {\n' +
+    '  any: function(_) {\n' +
     '  },\n' +
     '  end: function(_) {\n' +
     '  },\n' +
@@ -1869,17 +1869,17 @@ test('default start rule', function(t) {
   t.equal(g4.defaultStartRule, 'foo', 'start rule inherited from super-supergrammar');
   assertSucceeds(t, g4.match('a'));
 
-  g = ohm.grammar('G { digit += _ }');
+  g = ohm.grammar('G { digit += any }');
   t.equal(g.defaultStartRule, undefined, "extending alone doesn't set the start rule");
   t.throws(function() { g.match('a'); }, /Missing start rule/, 'match throws with no start rule');
-  g = makeGrammar(['G { digit += _', 'blah = "3" }'])
+  g = makeGrammar(['G { digit += any', 'blah = "3" }'])
   t.equal(g.defaultStartRule, 'blah', 'rule defined after extending becomes start rule');
   assertSucceeds(t, g.match('3'));
 
-  g = ohm.grammar('G { digit := _ }');
+  g = ohm.grammar('G { digit := any }');
   t.equal(g.defaultStartRule, undefined, "overriding alone doesn't set the start rule");
   t.throws(function() { g.match('a'); }, /Missing start rule/, 'match throws with no start rule');
-  g = makeGrammar(['G { digit := _', 'blah = "3" }'])
+  g = makeGrammar(['G { digit := any', 'blah = "3" }'])
   t.equal(g.defaultStartRule, 'blah', 'rule defined after overriding becomes start rule');
   assertSucceeds(t, g.match('3'));
 

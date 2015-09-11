@@ -114,7 +114,7 @@ Succeeds if the expression `expr` can be matched, but does not consume anything 
 
 <code>~ <i>expr</i></code>
 
-Succeeds if the expression `expr` cannot be matched, and does not consume anything from the input stream. Usually used as part of a sequence, e.g., `~"\n" _` will consume any single character that is not a new line character.
+Succeeds if the expression `expr` cannot be matched, and does not consume anything from the input stream. Usually used as part of a sequence, e.g., `~"\n" any` will consume any single character that is not a new line character.
 
 ### Arrays
 
@@ -134,15 +134,15 @@ If _expr_ is a Sequence, it will match successive elements in the Array, beginni
 
 <code>{ <i>key</i>: <i>expr</i> } </code>
 
-Matches an object with an [own property](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/hasOwnProperty) named _key_ whose value matches the parsing expression _expr_, and no other properties. E.g., `{"name": _}` matches the object `{name: 'Manuel'}`, but not the object `{name: 'Philip', age: 31}`.
+Matches an object with an [own property](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/hasOwnProperty) named _key_ whose value matches the parsing expression _expr_, and no other properties. E.g., `{"name": any}` matches the object `{name: 'Manuel'}`, but not the object `{name: 'Philip', age: 31}`.
 
 <code>{ <i>key</i>: <i>expr</i>, ... }</code>
 
 Like above, but will still match if the object has other properties. E.g., `{stars: 4, ...}` will match the object `{stars: 2, name: 'Noma'}`.
 
 <script type="text/markscript">
-  assert(ohm.grammar('G { start = {"name": _} }').match({name: 'Manuel'}).succeeded());
-  assert(ohm.grammar('G { start = {"name": _} }').match({name: 'Philip', age: 31}).failed());
+  assert(ohm.grammar('G { start = {"name": any} }').match({name: 'Manuel'}).succeeded());
+  assert(ohm.grammar('G { start = {"name": any} }').match({name: 'Philip', age: 31}).failed());
   assert(ohm.grammar('G { start = {stars: 2, ...} }').match({stars: 2, name: 'Noma'}).succeeded());
 </script>
 
@@ -152,7 +152,7 @@ Any number of comma-separated key/expression pairs can be specified. Other valid
 
 (See [src/built-in-rules.ohm](../src/built-in-rules.ohm).)
 
-`_`: Matches a single item from the input stream. For a string, it will match any one character.
+`any`: Matches a single item from the input stream. For a string, it will match any one character.
 
 `letter`: Matches a single character which is a letter (either uppercase or lowercase).
 
@@ -168,7 +168,7 @@ Any number of comma-separated key/expression pairs can be specified. Other valid
 
 `space`: Matches a single whitespace character (e.g., space, tab, newline, etc.)
 
-`end`: Matches the end of the input stream. Equivalent to `~ _`.
+`end`: Matches the end of the input stream. Equivalent to `~ any`.
 
 <code>ListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Matches the expression _elem_ zero or more times, separated by something that matches the expression _sep_. E.g., `ListOf<letter, ",">` will match `''`, `'a'`, and `'a, b, c'`.
 

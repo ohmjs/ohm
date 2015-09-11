@@ -30,7 +30,7 @@ assert(g.match('loooooool').succeeded());
 You can match against arbitrary objects (not just strings):
 
 ```js
-var g = ohm.grammar('Named { named = { name: _, ... } }');
+var g = ohm.grammar('Named { named = { name: any, ... } }');
 assert(g.match({name: 'Manuel', age: 29}).succeeded());
 assert(g.match({}).failed());
 ```

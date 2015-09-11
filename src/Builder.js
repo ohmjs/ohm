@@ -18,14 +18,6 @@ Builder.prototype = {
     return new GrammarDecl(name);
   },
 
-  anything: function() {
-    return pexprs.anything;
-  },
-
-  end: function() {
-    return pexprs.end;
-  },
-
   prim: function(x) {
     return pexprs.makePrim(x);
   },

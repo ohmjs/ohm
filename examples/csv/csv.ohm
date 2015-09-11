@@ -2,6 +2,6 @@ CSV {
   csv = row (eol ~end row)* eol?
   row = col ("," col)*
   col = colChar*
-  colChar = ~(eol | ",") _
+  colChar = ~(eol | ",") any
   eol = "\r"? "\n"
 }

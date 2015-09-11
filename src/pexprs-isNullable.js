@@ -18,7 +18,7 @@ pexprs.PExpr.prototype.isNullable = function(grammar) {
 
 pexprs.PExpr.prototype._isNullable = common.abstract;
 
-pexprs.anything._isNullable =
+pexprs.any._isNullable =
 pexprs.Prim.prototype._isNullable =
 pexprs.Range.prototype._isNullable =
 pexprs.Param.prototype._isNullable =

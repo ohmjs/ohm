@@ -36,7 +36,7 @@ var TerminalNode = nodes.TerminalNode;
 */
 pexprs.PExpr.prototype.eval = common.abstract;  // function(state) { ... }
 
-pexprs.anything.eval = function(state) {
+pexprs.any.eval = function(state) {
   var origPos = state.skipSpacesIfInSyntacticContext();
   var inputStream = state.inputStream;
   var value = inputStream.next();

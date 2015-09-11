@@ -20,8 +20,8 @@ var pexprs = require('./pexprs');
 */
 pexprs.PExpr.prototype.toString = common.abstract;
 
-pexprs.anything.toString = function() {
-  return '_';
+pexprs.any.toString = function() {
+  return 'any';
 };
 
 pexprs.end.toString = function() {

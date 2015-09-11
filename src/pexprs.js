@@ -36,9 +36,9 @@ PExpr.prototype.withFormals = function(formals) {
   return this;
 };
 
-// Anything
+// Any
 
-var anything = Object.create(PExpr.prototype).withDescription('any object');
+var any = Object.create(PExpr.prototype).withDescription('any object');
 
 // End
 
@@ -218,7 +218,7 @@ exports.makePrim = function(obj) {
 };
 
 exports.PExpr = PExpr;
-exports.anything = anything;
+exports.any = any;
 exports.end = end;
 exports.Prim = Prim;
 exports.StringPrim = StringPrim;
