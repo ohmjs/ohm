@@ -22,7 +22,7 @@ host language. This separation improves modularity, and makes both grammars and 
 easier to read and understand. Currently, JavaScript is the only host language, but as the API
 stabilizes, we hope to have implementations for other languages.
 
-Learn more on the Ohm philosophy [here](doc/philosophy.md).
+Learn more about the Ohm philosophy [here](doc/philosophy.md).
 
 Getting Started
 ---------------
