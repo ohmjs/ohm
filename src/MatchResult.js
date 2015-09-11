@@ -90,6 +90,12 @@ MatchFailure.prototype.getRightmostFailures = function() {
 MatchFailure.prototype.getExpectedText = function() {
   var sb = new common.StringBuffer();
   var failures = this.getRightmostFailures();
+
+  // Filter out the fluffy failures to make the default error messages more useful
+  failures = failures.filter(function(failure) {
+    return !failure.isFluffy();
+  });
+
   for (var idx = 0; idx < failures.length; idx++) {
     if (idx > 0) {
       if (idx === failures.length - 1) {
