@@ -1,6 +1,9 @@
 Ohm
 ===
 
+[![Build Status](https://img.shields.io/travis/cdglabs/ohm.svg?style=flat-square)](https://travis-ci.org/cdglabs/ohm) 
+[![NPM](https://img.shields.io/npm/v/ohm-js.svg?style=flat-square)](https://www.npmjs.com/package/ohm-js)
+
 [Ohm](https://github.com/cdglabs/ohm) is a library and domain-specific language for parsing and
 pattern matching. You can use it to parse custom file formats, transform complex data structures,
 and quickly build parsers, interpreters, and compilers for programming languages. The _Ohm language_
