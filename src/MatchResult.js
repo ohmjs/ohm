@@ -50,66 +50,62 @@ function MatchFailure(state) {
   common.defineLazyProperty(this, 'message', function() {
     var source = this.state.inputStream.source;
     if (typeof source !== 'string') {
-      return 'match failed at position ' + this.getPos();
+      return 'match failed at position ' + this.getRightmostFailurePosition();
     }
 
     var detail = 'Expected ' + this.getExpectedText();
-    return util.getLineAndColumnMessage(source, this.getPos()) + detail;
+    return util.getLineAndColumnMessage(source, this.getRightmostFailurePosition()) + detail;
   });
   common.defineLazyProperty(this, 'shortMessage', function() {
     if (typeof this.state.inputStream.source !== 'string') {
-      return 'match failed at position ' + this.getPos();
+      return 'match failed at position ' + this.getRightmostFailurePosition();
     }
     var detail = 'expected ' + this.getExpectedText();
-    return getShortMatchErrorMessage(this.getPos(), this.state.inputStream.source, detail);
+    return getShortMatchErrorMessage(
+        this.getRightmostFailurePosition(),
+        this.state.inputStream.source,
+        detail);
   });
 }
 inherits(MatchFailure, MatchResult);
 
 MatchFailure.prototype.toString = function() {
-  return '[MatchFailure at position ' + this.getPos() + ']';
+  return '[MatchFailure at position ' + this.getRightmostFailurePosition() + ']';
 };
 
 MatchFailure.prototype.failed = function() {
   return true;
 };
 
-MatchFailure.prototype.getPos = function() {
-  return this.state.getFailuresPos();
+MatchFailure.prototype.getRightmostFailurePosition = function() {
+  return this.state.getRightmostFailurePosition();
 };
 
-MatchFailure.prototype.getInterval = function() {
-  var pos = this.state.getFailuresPos();
-  return new Interval(this.state.inputStream, pos, pos);
+MatchFailure.prototype.getRightmostFailures = function() {
+  return this._failures;
 };
 
 // Return a string summarizing the expected contents of the input stream when
 // the match failure occurred.
 MatchFailure.prototype.getExpectedText = function() {
   var sb = new common.StringBuffer();
-  var expected = this.getExpected();
-  for (var idx = 0; idx < expected.length; idx++) {
+  var failures = this.getRightmostFailures();
+  for (var idx = 0; idx < failures.length; idx++) {
     if (idx > 0) {
-      if (idx === expected.length - 1) {
-        sb.append((expected.length > 2 ? ', or ' : ' or '));
+      if (idx === failures.length - 1) {
+        sb.append((failures.length > 2 ? ', or ' : ' or '));
       } else {
         sb.append(', ');
       }
     }
-    sb.append(expected[idx]);
+    sb.append(failures[idx].toString());
   }
   return sb.contents();
 };
 
-// Return an Array of unique strings representing the terminals or rules that
-// were expected to be matched.
-MatchFailure.prototype.getExpected = function() {
-  var expected = {};
-  var ruleDict = this.state.grammar.ruleDict;
-  this._failures.forEach(function(expr) {
-    expected[expr.toExpected(ruleDict)] = true;
-  });
-  return Object.keys(expected);
+MatchFailure.prototype.getInterval = function() {
+  var pos = this.state.getRightmostFailurePosition();
+  return new Interval(this.state.inputStream, pos, pos);
 };
 
 // --------------------------------------------------------------------

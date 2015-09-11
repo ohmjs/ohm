@@ -345,9 +345,9 @@ pexprs.Apply.prototype.reallyEval = function(state, isTopLevelApplication) {
     state.restoreFailuresInfo(origFailuresInfo);
     if (!value) {
       state.processFailure(origPos, this);
-      if (memoized) {
-        origPosInfo.memo[memoKey].failuresAtRightmostPosition = state.rightmostFailures;
-      }
+    }
+    if (memoized) {
+      origPosInfo.memo[memoKey].failuresAtRightmostPosition = state.rightmostFailures;
     }
   }
 
@@ -392,7 +392,7 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
   while (true) {
     lrMemoRec.pos = inputStream.pos;
     lrMemoRec.value = newValue;
-    lrMemoRec.failuresAtRightmostPosition = state.failuresAtRightmostPosition;
+    lrMemoRec.failuresAtRightmostPosition = state.rightmostFailures;
     if (state.isTracing()) {
       var children = state.trace[state.trace.length - 1].children.slice();
       lrMemoRec.traceEntry = new Trace(state.inputStream, origPos, this, newValue, children);
