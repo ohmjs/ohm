@@ -5,7 +5,12 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="third_party/codemirror-5.1/lib/codemirror.css">
   <style>
+    html, body {
+      height: 100%;
+    }
     body {
+      display: flex;
+      flex-direction: column;
       font-family: Helvetica, Arial, sans-serif;
       margin: 0;
       padding: 0;
@@ -159,6 +164,7 @@
 
     #bottomSection {
       border-top: 1px solid #ddd;
+      flex: 1;
       overflow: scroll;
     }
 
