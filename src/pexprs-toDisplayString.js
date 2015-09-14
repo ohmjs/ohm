@@ -38,10 +38,6 @@ pexprs.end.toDisplayString = function() {
 };
 
 pexprs.Prim.prototype.toDisplayString = function() {
-  return String(this.obj);
-};
-
-pexprs.StringPrim.prototype.toDisplayString = function() {
   return JSON.stringify(this.obj);
 };
 

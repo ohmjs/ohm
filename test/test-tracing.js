@@ -183,7 +183,7 @@ test('toString', function(t) {
   var exprs = lines.map(function(l) { return l.split(/\s+/)[2]; });
   t.deepEqual(exprs, [
       'start',
-      'a',  // Failed.
+      '"a"',  // Failed.
       'letter*',
       'letter', 'lower', 'Unicode',
       'letter', 'lower', 'Unicode',

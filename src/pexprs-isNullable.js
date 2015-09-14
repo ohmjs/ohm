@@ -19,7 +19,6 @@ pexprs.PExpr.prototype.isNullable = function(grammar) {
 pexprs.PExpr.prototype._isNullable = common.abstract;
 
 pexprs.any._isNullable =
-pexprs.Prim.prototype._isNullable =
 pexprs.Range.prototype._isNullable =
 pexprs.Param.prototype._isNullable =
 pexprs.Plus.prototype._isNullable =
@@ -33,10 +32,14 @@ pexprs.end._isNullable = function(grammar, memo) {
   return true;
 };
 
-pexprs.StringPrim.prototype._isNullable = function(grammar, memo) {
-  // This is an over-simplification: it's only correct if the input is a string. If it's an array
-  // or an object, then the empty string parsing expression is not nullable.
-  return this.obj === '';
+pexprs.Prim.prototype._isNullable = function(grammar, memo) {
+  if (typeof this.obj === 'string') {
+    // This is an over-simplification: it's only correct if the input is a string. If it's an array
+    // or an object, then the empty string parsing expression is not nullable.
+    return this.obj === '';
+  } else {
+    return false;
+  }
 };
 
 pexprs.Alt.prototype._isNullable = function(grammar, memo) {

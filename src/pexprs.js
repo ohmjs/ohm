@@ -51,11 +51,6 @@ function Prim(obj) {
 }
 inherits(Prim, PExpr);
 
-function StringPrim(obj) {
-  this.obj = obj;
-}
-inherits(StringPrim, Prim);
-
 // Ranges
 
 function Range(from, to) {
@@ -209,19 +204,10 @@ inherits(UnicodeChar, PExpr);
 // Exports
 // --------------------------------------------------------------------
 
-exports.makePrim = function(obj) {
-  if (typeof obj === 'string' && obj.length !== 1) {
-    return new StringPrim(obj);
-  } else {
-    return new Prim(obj);
-  }
-};
-
 exports.PExpr = PExpr;
 exports.any = any;
 exports.end = end;
 exports.Prim = Prim;
-exports.StringPrim = StringPrim;
 exports.Range = Range;
 exports.Param = Param;
 exports.Alt = Alt;

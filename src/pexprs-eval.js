@@ -78,11 +78,9 @@ pexprs.Prim.prototype.eval = function(state) {
 };
 
 pexprs.Prim.prototype.match = function(inputStream) {
-  return inputStream.matchExactly(this.obj);
-};
-
-pexprs.StringPrim.prototype.match = function(inputStream) {
-  return inputStream.matchString(this.obj);
+  return typeof this.obj === 'string' ?
+      inputStream.matchString(this.obj) :
+      inputStream.matchExactly(this.obj);
 };
 
 pexprs.Range.prototype.eval = function(state) {

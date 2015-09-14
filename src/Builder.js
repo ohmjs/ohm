@@ -19,7 +19,7 @@ Builder.prototype = {
   },
 
   prim: function(x) {
-    return pexprs.makePrim(x);
+    return new pexprs.Prim(x);
   },
 
   range: function(from, to) {
