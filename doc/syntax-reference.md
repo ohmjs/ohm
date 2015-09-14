@@ -168,7 +168,7 @@ Any number of comma-separated key/expression pairs can be specified. Other valid
 
 `space`: Matches a single whitespace character (e.g., space, tab, newline, etc.)
 
-`end`: Matches the end of the input stream. Equivalent to `~ any`.
+`end`: Matches the end of the input stream. Equivalent to `~any`.
 
 <code>ListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Matches the expression _elem_ zero or more times, separated by something that matches the expression _sep_. E.g., `ListOf<letter, ",">` will match `''`, `'a'`, and `'a, b, c'`.
 
