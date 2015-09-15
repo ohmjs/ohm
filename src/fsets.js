@@ -62,7 +62,7 @@ Singleton.prototype.isFluffy = function(pexpr) {
   return false;
 };
 Singleton.prototype.toFailuresArray = function(ruleDict) {
-  return [this.pexpr.toFailure(ruleDict, false)];
+  return [this.pexpr.toFailure(ruleDict)];
 };
 
 // Fluffy FSet
