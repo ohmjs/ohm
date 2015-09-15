@@ -10,20 +10,30 @@ var ohm = require('..');
 var common = require('../src/common');
 
 // --------------------------------------------------------------------
+// Private stuff
+// --------------------------------------------------------------------
+
+function descendant(traceNode /* ...path */) {
+  var path = Array.prototype.slice.call(arguments, 1);
+  for (var i = 0; i < path.length; ++i) {
+    traceNode = traceNode.children[path[i]];
+  }
+  return traceNode;
+}
+
+// --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
 
 test('basic tracing', function(t) {
   var g = ohm.grammar('G { start = "a" | letter* }');
-  var state = g.trace('hallo', 'start').state;
-  var trace = state.trace;
+  var trace = g.trace('hallo');
 
-  t.equal(trace.length, 1);
-  t.equal(trace[0].displayString, 'start');
-  t.equal(trace[0].succeeded, true);
-  t.equal(trace[0].pos, 0);
+  t.equal(trace.displayString, 'start');
+  t.equal(trace.succeeded, true);
+  t.equal(trace.pos, 0);
 
-  var alt = trace[0].children[0];
+  var alt = trace.children[0];
   t.equal(alt.displayString, '"a" | letter*');
   t.equal(alt.succeeded, true);
   t.equal(alt.children.length, 2);
@@ -44,15 +54,13 @@ test('basic tracing', function(t) {
 
 test('tracing with parameterized rules', function(t) {
   var g = ohm.grammar('G { start = foo<123>  foo<x> = "a" | letter* }');
-  var state = g.trace('hallo', 'start').state;
-  var trace = state.trace;
+  var trace = g.trace('hallo');
 
-  t.equal(trace.length, 1);
-  t.equal(trace[0].displayString, 'start');
-  t.equal(trace[0].succeeded, true);
-  t.equal(trace[0].pos, 0);
+  t.equal(trace.displayString, 'start');
+  t.equal(trace.succeeded, true);
+  t.equal(trace.pos, 0);
 
-  var app = trace[0].children[0];
+  var app = trace.children[0];
   t.equal(app.displayString, 'foo<123>');
   t.equal(app.succeeded, true);
   t.equal(app.children.length, 1);
@@ -79,7 +87,7 @@ test('tracing with parameterized rules', function(t) {
 
 test('tracing with memoization', function(t) {
   var g = ohm.grammar('G { start = letter ~letter | letter* }');
-  var trace = g.trace('aB', 'start');
+  var trace = g.trace('aB');
 
   var alt = trace.children[0];
   t.equal(alt.children[0].succeeded, false);
@@ -94,26 +102,23 @@ test('tracing with memoization', function(t) {
   // the the trace is still recorded properly.
   t.equal(many.children[0].succeeded, true);
   t.equal(many.children[0].children.length, 1);
-  t.equal(many.children[0].children[0].children.length, 1);
-  t.equal(many.children[0].children[0].children[0].children.length, 1);
-  t.equal(many.children[0].children[0].children[0].children[0].displayString,
-          'Unicode {Ll} character');
+  t.equal(descendant(many, 0, 0).children.length, 1);
+  t.equal(descendant(many, 0, 0, 0).children.length, 1);
+  t.equal(descendant(many, 0, 0, 0, 0).displayString, 'Unicode {Ll} character');
 
   t.equal(many.children[1].succeeded, true);
   t.equal(many.children[1].children.length, 1);
-  t.equal(many.children[1].children[0].children.length, 2);
-  t.equal(many.children[1].children[0].children[0].children.length, 1);
-  t.equal(many.children[1].children[0].children[0].children[0].displayString,
-          'Unicode {Ll} character');
-  t.equal(many.children[1].children[0].children[1].children.length, 1);
-  t.equal(many.children[1].children[0].children[1].children[0].displayString,
-          'Unicode {Lu} character');
+  t.equal(descendant(many, 1, 0).children.length, 2);
+  t.equal(descendant(many, 1, 0, 0).children.length, 1);
+  t.equal(descendant(many, 1, 0, 0, 0).displayString, 'Unicode {Ll} character');
+  t.equal(descendant(many, 1, 0, 1).children.length, 1);
+  t.equal(descendant(many, 1, 0, 1, 0).displayString, 'Unicode {Lu} character');
   t.end();
 });
 
 test('tracing with parameterized rules and memoization', function(t) {
   var g = ohm.grammar('G { start = foo<123> ~foo<123> | foo<123>*  foo<x> = letter }');
-  var trace = g.trace('aB', 'start');
+  var trace = g.trace('aB');
 
   var alt = trace.children[0];
   t.equal(alt.children[0].succeeded, false);
@@ -128,28 +133,25 @@ test('tracing with parameterized rules and memoization', function(t) {
   // the the trace is still recorded properly.
   t.equal(many.children[0].succeeded, true);
   t.equal(many.children[0].children.length, 1);
-  t.equal(many.children[0].children[0].children.length, 1);
-  t.equal(many.children[0].children[0].children[0].children.length, 1);
-  t.equal(many.children[0].children[0].children[0].children[0].children.length, 1);
-  t.equal(many.children[0].children[0].children[0].children[0].children[0].displayString,
-          'Unicode {Ll} character');
+  t.equal(descendant(many, 0, 0).children.length, 1);
+  t.equal(descendant(many, 0, 0, 0).children.length, 1);
+  t.equal(descendant(many, 0, 0, 0, 0).children.length, 1);
+  t.equal(descendant(many, 0, 0, 0, 0, 0).displayString, 'Unicode {Ll} character');
 
   t.equal(many.children[1].succeeded, true);
   t.equal(many.children[1].children.length, 1);
-  t.equal(many.children[1].children[0].children.length, 1);
-  t.equal(many.children[1].children[0].children[0].children.length, 2);
-  t.equal(many.children[1].children[0].children[0].children[0].children.length, 1);
-  t.equal(many.children[1].children[0].children[0].children[0].children[0].displayString,
-          'Unicode {Ll} character');
-  t.equal(many.children[1].children[0].children[0].children[1].children.length, 1);
-  t.equal(many.children[1].children[0].children[0].children[1].children[0].displayString,
-          'Unicode {Lu} character');
+  t.equal(descendant(many, 1, 0).children.length, 1);
+  t.equal(descendant(many, 1, 0, 0).children.length, 2);
+  t.equal(descendant(many, 1, 0, 0, 0).children.length, 1);
+  t.equal(descendant(many, 1, 0, 0, 0, 0).displayString, 'Unicode {Ll} character');
+  t.equal(descendant(many, 1, 0, 0, 1).children.length, 1);
+  t.equal(descendant(many, 1, 0, 0, 1, 0).displayString, 'Unicode {Lu} character');
   t.end();
 });
 
 test('tracing with left recursion', function(t) {
   var g = ohm.grammar('G { id = id letter -- rec\n    | letter }');
-  var trace = g.trace('abc', 'id');
+  var trace = g.trace('abc');
 
   var children = trace.children;
   t.ok(trace.isLeftRecursive);
