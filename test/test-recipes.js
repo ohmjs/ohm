@@ -24,10 +24,10 @@ test('simple recipes', function(t) {
   t.ok(toGrammar(g.toRecipe()).match('', 'end'), 'grammar with no rules');
 
   g = ohm.grammar('G { start = end }');
-  t.ok(toGrammar(g.toRecipe()).match('', 'start'), 'grammar with one rule');
+  t.ok(toGrammar(g.toRecipe()).match('', 'start').succeeded(), 'grammar with one rule');
 
   g = ohm.grammar('MyGrammar { start = x\n  x = "a" }');
-  t.ok(toGrammar(g.toRecipe()).match('a', 'start'), 'grammar with multiple rules');
+  t.ok(toGrammar(g.toRecipe()).match('a', 'start').succeeded(), 'grammar with multiple rules');
 
   t.end();
 });
@@ -37,10 +37,22 @@ test('recipes with supergrammars', function(t) {
   ns.G = ohm.grammar('G { start = end }');
   ns.G2 = ohm.grammar('G2 <: G { start := "a" }', ns);
 
-  t.ok(toGrammar(ns.G2.toRecipe()).match('a', 'start'), 'one level of inheritance');
+  t.ok(toGrammar(ns.G2.toRecipe()).match('a', 'start').succeeded(), 'one level of inheritance');
 
   ns.G3 = ohm.grammar('G3 <: G2 { begin = a b\n  a = "a"\n  b = "b" }', ns);
-  t.ok(toGrammar(ns.G3.toRecipe()).match('ab', 'begin'), 'two levels of inheritance');
+  t.ok(toGrammar(ns.G3.toRecipe()).match('ab', 'begin').succeeded(), 'two levels of inheritance');
 
+  t.end();
+});
+
+test('recipes involving parameterized rules', function(t) {
+  var g = ohm.grammar(
+      'G {\n' +
+      '  foo = bar<"0", "1">\n' +
+      '  bar<x, y> = "a" x -- one\n' +
+      '            | "b" y -- two\n' +
+      '}');
+  t.ok(toGrammar(g.toRecipe()).match('a0').succeeded());
+  t.ok(toGrammar(g.toRecipe()).match('b1').succeeded());
   t.end();
 });
