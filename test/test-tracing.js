@@ -21,6 +21,10 @@ function descendant(traceNode /* ...path */) {
   return traceNode;
 }
 
+function displayString(traceNode) {
+  return traceNode.displayString;
+}
+
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
@@ -49,6 +53,30 @@ test('basic tracing', function(t) {
     return c.succeeded;
   });
   t.deepEqual(childrenSucceeded, [true, true, true, true, true, false]);
+  t.end();
+});
+
+test('space skipping', function(t) {
+  var trace = ohm.grammar('G { Start = "a"  }').trace('a');
+  t.deepEqual(trace.children.map(displayString), ['spaces_', '"a"', 'spaces_', 'end']);
+  t.deepEqual(trace.children[1].children.map(displayString),
+              ['spaces_'],
+              'primitive node in syntactic rule has spaces_ child');
+
+  trace = ohm.grammar('G { start = "a" }').trace('a');
+  t.deepEqual(trace.children.map(displayString), ['"a"', 'end'], 'no spaces_ in lexical context');
+  t.equal(trace.children[0].children.length, 0, 'prim node has no children in lexical context');
+
+  trace = ohm.grammar('G { Start = foo\n  foo = "a" "b" }').trace('  ab ');
+  t.deepEqual(trace.children.map(displayString), ['spaces_', 'foo', 'spaces_', 'end']);
+  var fooAppl = trace.children[1];
+  t.deepEqual(fooAppl.children.map(displayString),
+              ['spaces_', '"a" "b"'],
+              'spaces_ occurs at beginning of a rule application');
+  t.deepEqual(fooAppl.children[1].children.map(displayString),
+              ['"a"', '"b"'],
+              'no spaces_ between childen of a lexical rule');
+
   t.end();
 });
 
