@@ -43,13 +43,15 @@ GrammarDecl.prototype.installOverriddenOrExtendedRule = function(name, formals, 
   if (formals.length !== baseRule.formals.length) {
     throw errors.wrongNumberOfParameters(name, baseRule.formals.length, formals.length, body);
   }
-  return this.install(name, formals, baseRule.description, body);
+  return this.install(name, formals, body);
 };
 
-GrammarDecl.prototype.install = function(name, formals, description, body) {
+GrammarDecl.prototype.install = function(name, formals, body, optDescription) {
   body = body.introduceParams(formals);
   body.formals = formals;
-  body.description = description;
+  if (optDescription) {
+    this.ruleDescriptions[name] = optDescription;
+  }
   this.ruleBodies[name] = body;
   return this;
 };
@@ -62,6 +64,7 @@ GrammarDecl.prototype.withSuperGrammar = function(superGrammar) {
   }
   this.superGrammar = superGrammar;
   this.ruleBodies = Object.create(superGrammar.ruleBodies);
+  this.ruleDescriptions = Object.create(superGrammar.ruleDescriptions);
 
   // Grammars with an explicit supergrammar inherit a default start rule.
   if (!superGrammar.isBuiltIn()) {
@@ -77,8 +80,12 @@ GrammarDecl.prototype.withDefaultStartRule = function(ruleName) {
 
 // Creates a Grammar instance, and if it passes the sanity checks, returns it.
 GrammarDecl.prototype.build = function() {
-  var grammar =
-      new Grammar(this.name, this.ensureSuperGrammar(), this.ruleBodies, this.defaultStartRule);
+  var grammar = new Grammar(
+      this.name,
+      this.ensureSuperGrammar(),
+      this.ruleBodies,
+      this.ruleDescriptions,
+      this.defaultStartRule);
   // TODO: change the pexpr.prototype.assert... methods to make them add
   // exceptions to an array that's provided as an arg. Then we'll be able to
   // show more than one error of the same type at a time.
@@ -130,7 +137,7 @@ GrammarDecl.prototype.define = function(name, formals, body, optDescr) {
   if (duplicateParameterNames.length > 0) {
     throw errors.duplicateParameterNames(name, duplicateParameterNames, body);
   }
-  return this.install(name, formals, optDescr, body);
+  return this.install(name, formals, body, optDescr);
 };
 
 GrammarDecl.prototype.override = function(name, formals, body) {

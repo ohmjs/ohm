@@ -1889,11 +1889,11 @@ test('default start rule', function(t) {
   // Test passing the default start rule as an argument to the Grammar constructor.
   var root = Grammar.BuiltInRules;
   t.throws(function() {
-    new Grammar('G', root, {}, 'nonexistentRule');
+    new Grammar('G', root, {}, {}, 'nonexistentRule');
   }, /Invalid start rule/, 'throws when start rule is not in the grammar');
-  t.ok(new Grammar('G', root, {aRule:null}, 'aRule'), 'works when rule is in the ruleBodies');
+  t.ok(new Grammar('G', root, {aRule:null}, {}, 'aRule'), 'works when rule is in the ruleBodies');
   var ruleBodies = Object.create(root.ruleBodies);
-  t.ok(new Grammar('G', root, ruleBodies, 'digit'), 'works when rule is in the supergrammar');
+  t.ok(new Grammar('G', root, ruleBodies, {}, 'digit'), 'works when rule is in the supergrammar');
 
   t.end();
 });

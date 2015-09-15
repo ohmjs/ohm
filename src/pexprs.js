@@ -19,11 +19,6 @@ function PExpr() {
   throw new Error("PExpr cannot be instantiated -- it's abstract");
 }
 
-PExpr.prototype.withDescription = function(description) {
-  this.description = description;
-  return this;
-};
-
 PExpr.prototype.withInterval = function(interval) {
   if (interval) {
     this.interval = interval.trimmed();
@@ -38,11 +33,11 @@ PExpr.prototype.withFormals = function(formals) {
 
 // Any
 
-var any = Object.create(PExpr.prototype).withDescription('any object');
+var any = Object.create(PExpr.prototype);
 
 // End
 
-var end = Object.create(PExpr.prototype).withDescription('end of input');
+var end = Object.create(PExpr.prototype);
 
 // Primitives
 

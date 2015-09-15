@@ -316,10 +316,11 @@ pexprs.Apply.prototype.reallyEval = function(state, isTopLevelApplication) {
   var origPos = inputStream.pos;
   var origPosInfo = state.getCurrentPosInfo();
   var body = state.grammar.ruleBodies[this.ruleName];
+  var description = state.grammar.ruleDescriptions[this.ruleName];
 
   origPosInfo.enter(this);
 
-  if (body.description) {
+  if (description) {
     var origFailuresInfo = state.getFailuresInfo();
   }
 
@@ -339,7 +340,7 @@ pexprs.Apply.prototype.reallyEval = function(state, isTopLevelApplication) {
         {pos: inputStream.pos, value: value, failuresAtRightmostPosition: state.rightmostFailures};
   }
 
-  if (body.description) {
+  if (description) {
     state.restoreFailuresInfo(origFailuresInfo);
     if (!value) {
       state.processFailure(origPos, this);

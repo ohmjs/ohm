@@ -12,7 +12,7 @@
   - asFluffy() : FSet
   - isFluffy(PExpr) : bool
   - includes(PExpr) : bool
-  - toFailuresArray(ruleBodies) : [Failure]
+  - toFailuresArray(grammar) : [Failure]
 */
 
 var empty;
@@ -45,7 +45,7 @@ empty.asFluffy = function() {
 empty.isFluffy = function(pexpr) {
   throw new Error('uh-oh');
 };
-empty.toFailuresArray = function(ruleBodies) {
+empty.toFailuresArray = function(grammar) {
   return [];
 };
 
@@ -61,8 +61,8 @@ Singleton.prototype.includes = function(pexpr) {
 Singleton.prototype.isFluffy = function(pexpr) {
   return false;
 };
-Singleton.prototype.toFailuresArray = function(ruleBodies) {
-  return [this.pexpr.toFailure(ruleBodies)];
+Singleton.prototype.toFailuresArray = function(grammar) {
+  return [this.pexpr.toFailure(grammar)];
 };
 
 // Fluffy FSet
@@ -80,8 +80,8 @@ Fluffy.prototype.asFluffy = function() {
 Fluffy.prototype.isFluffy = function(pexpr) {
   return true;
 };
-Fluffy.prototype.toFailuresArray = function(ruleBodies) {
-  var fs = this.fs.toFailuresArray(ruleBodies);
+Fluffy.prototype.toFailuresArray = function(grammar) {
+  var fs = this.fs.toFailuresArray(grammar);
   fs.forEach(function(f) {
     f.makeFluffy();
   });
@@ -102,9 +102,9 @@ Union.prototype.isFluffy = function(pexpr) {
   return !(this.fs1.includes(pexpr) && !this.fs1.isFluffy(pexpr) ||
            this.fs2.includes(pexpr) && !this.fs2.isFluffy(pexpr));
 };
-Union.prototype.toFailuresArray = function(ruleBodies) {
-  var arr = this.fs1.toFailuresArray(ruleBodies);
-  var fs = this.fs2.toFailuresArray(ruleBodies);
+Union.prototype.toFailuresArray = function(grammar) {
+  var arr = this.fs1.toFailuresArray(grammar);
+  var fs = this.fs2.toFailuresArray(grammar);
   fs.forEach(function(f) {
     for (var idx = 0; idx < arr.length; idx++) {
       var otherF = arr[idx];
