@@ -73,6 +73,10 @@ function Trace(inputStream, pos, expr, ans, optChildren) {
   this.succeeded = !!ans;
 }
 
+// A value that can be returned from visitor functions to indicate that a
+// node should not be recursed into.
+Trace.prototype.SKIP = {};
+
 Object.defineProperty(Trace.prototype, 'displayString', {
   get: function() { return this.expr.toDisplayString(); }
 });
@@ -99,16 +103,21 @@ Trace.prototype.walk = function(visitorObjOrFn, optThisArg) {
     visitor = {enter: visitor};
   }
   return (function _walk(node, parent, depth) {
+    var recurse = true;
     if (visitor.enter) {
-      visitor.enter.call(optThisArg, node, parent, depth);
-    }
-    node.children.forEach(function(c) {
-      if (c && ('walk' in c)) {
-        _walk(c, node, depth + 1);
+      if (visitor.enter.call(optThisArg, node, parent, depth) === Trace.prototype.SKIP) {
+        recurse = false;
       }
-    });
-    if (visitor.exit) {
-      visitor.exit.call(optThisArg, node, parent, depth);
+    }
+    if (recurse) {
+      node.children.forEach(function(c) {
+        if (c && ('walk' in c)) {
+          _walk(c, node, depth + 1);
+        }
+      });
+      if (visitor.exit) {
+        visitor.exit.call(optThisArg, node, parent, depth);
+      }
     }
   })(this, null, 0);
 };

@@ -242,8 +242,8 @@ function toggleTraceElement(el) {
       });
 }
 
-function createTraceElement(traceNode, container, input) {
-  var wrapper = container.appendChild(createElement('.pexpr'));
+function createTraceElement(traceNode, parent, input) {
+  var wrapper = parent.appendChild(createElement('.pexpr'));
   wrapper.classList.add(traceNode.expr.constructor.name.toLowerCase());
   if (!traceNode.succeeded) {
     wrapper.classList.add('failed');
@@ -273,7 +273,7 @@ function createTraceElement(traceNode, container, input) {
     }
     var ruleName = traceNode.expr.ruleName;
     if (ruleName) {
-      var defInterval = grammar.ruleDict[ruleName].definitionInterval;
+      var defInterval = grammar.ruleBodies[ruleName].definitionInterval;
       if (defInterval) {
         defMark = markInterval(grammarEditor, defInterval, 'active-definition', true);
         scrollToInterval(grammarEditor, defInterval);
@@ -351,7 +351,6 @@ function isPrimitive(expr) {
   switch (expr.constructor.name) {
     case 'Prim':
     case 'Range':
-    case 'StringPrim':
     case 'UnicodeChar':
       return true;
     default:
@@ -473,73 +472,55 @@ function setEditorValueFromLocalStorage(editor, key) {
       options[checkbox.name] = checkbox.checked;
     }
 
-    (function walkTraceNodes(nodes, container, inputContainer, showTrace, printInput, parent) {
-      nodes.forEach(function(node) {
-        if (!node) {
-          // FIXME -- What's going on here??
-          return;
-        }
+    var inputStack = [$('#expandedInput')];
+    var containerStack = [$('#parseResults')];
+
+    trace.walk({
+      enter: function(node, parent, depth) {
+        // Don't recurse into nodes that didn't succeed unless "Show failures" is enabled.
         if (!(options.showFailures || node.succeeded)) {
-          return;
-        }
-        var contents = '';
-        if (node.succeeded) {
-          contents = isPrimitive(node.expr) ? node.interval.contents : '';
+          return node.SKIP;
         }
         var childInput;
-        var shouldPrintInput = printInput && node.succeeded && !node.replacedBy;
-        var isWhitespace = contents.length > 0 && contents.trim().length === 0;
-        if (shouldPrintInput) {
+        var isLeaf = isPrimitive(node.expr) || isBlackhole(node);
+        var isWhitespace = node.displayString === 'spaces_';
+
+        // If the node or its descendants successfully consumed input, create a span to wrap
+        // all the input that was consumed.
+        if (node.succeeded && !node.replacedBy) {
+          var contents = isLeaf ? node.interval.contents : '';
+          var inputContainer = inputStack[inputStack.length - 1];
           childInput = inputContainer.appendChild(createElement('span.input', contents));
-          if (isWhitespace) {
+
+          // Represent any non-empty run of whitespace as a single dot.
+          if (isWhitespace && contents.length > 0) {
             childInput.innerHTML = '&#xb7;';  // Unicode Character 'MIDDLE DOT'
             childInput.classList.add('whitespace');
           }
         }
-
-        var shouldShowTrace = showTrace && !isBlackhole(node);
-        var childContainer = container;
-
-        if (shouldShowTrace || isWhitespace || nodes === trace) {
-          var el = createTraceElement(node, container, childInput);
-          childContainer = el.appendChild(createElement('.children'));
-          if (!shouldNodeBeVisible(node)) {
-            el.classList.add('hidden');
-          }
-          if (isWhitespace) {
-            el.classList.add('whitespace');
-          }
-          if (!node.succeeded) {
-            el.classList.add('failed');
-          }
+        var container = containerStack[containerStack.length - 1];
+        var el = createTraceElement(node, container, childInput);
+        if (!shouldNodeBeVisible(node)) {
+          el.classList.add('hidden');
         }
-        walkTraceNodes(
-            node.children, childContainer, childInput, shouldShowTrace, shouldPrintInput, node);
-
-        // For Seq nodes, also display children that weren't evaluated.
-        // TODO: Consider handling this when the trace is being recorded.
-        if (options.showFailures && node.expr.constructor.name === 'Seq') {
-          var factors = node.expr.factors;
-
-          // Due to implicit rules like `spaces_`, the accounting here is a bit
-          // tricky. This should probably be handled inside PExpr eval, not here.
-          var skipCount = childContainer.querySelectorAll('.pexpr').length;
-
-          for (var i = skipCount; i < factors.length; ++i) {
-            var wrapper = createElement('.pexpr.unevaluated');
-            wrapper.appendChild(createElement('.label', factors[i].toDisplayString()));
-            childContainer.appendChild(wrapper);
-          }
-          if (parent && parent.expr.constructor.name === 'Apply') {
-            var ruleName = parent.expr.ruleName;
-            var caseName = ruleName.slice(ruleName.lastIndexOf('_') + 1);
-            if (caseName !== ruleName) {
-              childContainer.appendChild(createElement('.caseName', caseName));
-            }
-          }
+        if (isWhitespace) {
+          el.classList.add('whitespace');
         }
-      });
-    })([trace], $('#parseResults'), $('#expandedInput'), true, true, null);
+        if (!node.succeeded) {
+          el.classList.add('failed');
+        }
+        if (isLeaf) {
+          return node.SKIP;
+        }
+        inputStack.push(childInput);
+        containerStack.push(el.appendChild(createElement('.children')));
+      },
+      exit: function(node, parent, depth) {
+        containerStack.pop();
+        inputStack.pop();
+      }
+    });
+
     initializeWidths();
   }
   refresh();
