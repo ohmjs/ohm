@@ -26,11 +26,6 @@ PExpr.prototype.withInterval = function(interval) {
   return this;
 };
 
-PExpr.prototype.withFormals = function(formals) {
-  this.formals = formals;
-  return this;
-};
-
 // Any
 
 var any = Object.create(PExpr.prototype);

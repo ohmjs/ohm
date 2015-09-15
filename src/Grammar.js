@@ -18,10 +18,17 @@ var pexprs = require('./pexprs');
 // Private stuff
 // --------------------------------------------------------------------
 
-function Grammar(name, superGrammar, ruleBodies, ruleDescriptions, optDefaultStartRule) {
+function Grammar(
+    name,
+    superGrammar,
+    ruleBodies,
+    ruleFormals,
+    ruleDescriptions,
+    optDefaultStartRule) {
   this.name = name;
   this.superGrammar = superGrammar;
   this.ruleBodies = ruleBodies;
+  this.ruleFormals = ruleFormals;
   this.ruleDescriptions = ruleDescriptions;
   if (optDefaultStartRule) {
     if (!(optDefaultStartRule in ruleBodies)) {
@@ -208,9 +215,10 @@ Grammar.prototype = {
       } else {
         sb.append('define');
       }
-      var formals = '[' + body.formals.map(JSON.stringify).join(', ') + ']';
-      sb.append('(' + JSON.stringify(ruleName) + ', ' + formals + ', ');
-      body.outputRecipe(sb, body.formals);
+      var formals = self.ruleFormals[ruleName];
+      var formalsString = '[' + formals.map(JSON.stringify).join(', ') + ']';
+      sb.append('(' + JSON.stringify(ruleName) + ', ' + formalsString + ', ');
+      body.outputRecipe(sb, formals);
       if (!self.superGrammar.ruleBodies[ruleName] && self.ruleDescriptions[ruleName]) {
         sb.append(', ' + JSON.stringify(self.ruleDescriptions[ruleName]));
       }
@@ -280,24 +288,35 @@ Grammar.ProtoBuiltInRules = new Grammar(
     {
       // The following rules can't be written in userland because they reference
       // `any` and `end` directly.
-      any: pexprs.any.withFormals([]),
-      end: pexprs.end.withFormals([]),
+      any: pexprs.any,
+      end: pexprs.end,
 
       // The following rule is part of the Ohm implementation. Its name ends with '_' to
       // discourage programmers from invoking, extending, and overriding it.
-      spaces_: new pexprs.Star(new pexprs.Apply('space')).withFormals([]),
+      spaces_: new pexprs.Star(new pexprs.Apply('space')),
 
       // The `space` rule must be defined here because it's referenced by `spaces_`.
-      space: new pexprs.Range('\x00', ' ').withFormals([]),
+      space: new pexprs.Range('\x00', ' '),
 
       // These rules are implemented natively because they use UnicodeChar directly, which is
       // not part of the Ohm grammar.
-      lower: new pexprs.UnicodeChar('Ll').withFormals([]),
-      upper: new pexprs.UnicodeChar('Lu').withFormals([]),
+      lower: new pexprs.UnicodeChar('Ll'),
+      upper: new pexprs.UnicodeChar('Lu'),
 
       // The union of Lt (titlecase), Lm (modifier), and Lo (other), i.e. any letter not
       // in Ll or Lu.
-      unicodeLtmo: new pexprs.UnicodeChar('Ltmo').withFormals([])
+      unicodeLtmo: new pexprs.UnicodeChar('Ltmo')
+    },
+
+    // rule formal arguments
+    {
+      any: [],
+      end: [],
+      spaces_: [],
+      space: [],
+      lower: [],
+      upper: [],
+      unicodeLtmo: []
     },
 
     // rule descriptions

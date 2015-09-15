@@ -39,16 +39,17 @@ GrammarDecl.prototype.installOverriddenOrExtendedRule = function(name, formals, 
   if (duplicateParameterNames.length > 0) {
     throw errors.duplicateParameterNames(name, duplicateParameterNames, body);
   }
-  var baseRule = this.ensureSuperGrammar().ruleBodies[name];
-  if (formals.length !== baseRule.formals.length) {
-    throw errors.wrongNumberOfParameters(name, baseRule.formals.length, formals.length, body);
+  var expectedFormals = this.ensureSuperGrammar().ruleFormals[name];
+  var expectedNumFormals = expectedFormals ? expectedFormals.length : 0;
+  if (formals.length !== expectedNumFormals) {
+    throw errors.wrongNumberOfParameters(name, expectedNumFormals, formals.length, body);
   }
   return this.install(name, formals, body);
 };
 
 GrammarDecl.prototype.install = function(name, formals, body, optDescription) {
   body = body.introduceParams(formals);
-  body.formals = formals;
+  this.ruleFormals[name] = formals;
   if (optDescription) {
     this.ruleDescriptions[name] = optDescription;
   }
@@ -64,6 +65,7 @@ GrammarDecl.prototype.withSuperGrammar = function(superGrammar) {
   }
   this.superGrammar = superGrammar;
   this.ruleBodies = Object.create(superGrammar.ruleBodies);
+  this.ruleFormals = Object.create(superGrammar.ruleFormals);
   this.ruleDescriptions = Object.create(superGrammar.ruleDescriptions);
 
   // Grammars with an explicit supergrammar inherit a default start rule.
@@ -84,6 +86,7 @@ GrammarDecl.prototype.build = function() {
       this.name,
       this.ensureSuperGrammar(),
       this.ruleBodies,
+      this.ruleFormals,
       this.ruleDescriptions,
       this.defaultStartRule);
   // TODO: change the pexpr.prototype.assert... methods to make them add

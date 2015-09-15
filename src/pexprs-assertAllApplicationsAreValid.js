@@ -77,7 +77,7 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, gramm
 
   // ... and that this application has the correct number of parameters
   var actual = this.params.length;
-  var expected = body.formals.length;
+  var expected = grammar.ruleFormals[this.ruleName].length;
   if (actual !== expected) {
     throw errors.wrongNumberOfParameters(this.ruleName, expected, actual, this);
   }
