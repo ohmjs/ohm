@@ -315,7 +315,7 @@ pexprs.Apply.prototype.reallyEval = function(state, isTopLevelApplication) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   var origPosInfo = state.getCurrentPosInfo();
-  var body = state.grammar.ruleDict[this.ruleName];
+  var body = state.grammar.ruleBodies[this.ruleName];
 
   origPosInfo.enter(this);
 

@@ -79,7 +79,7 @@ function Extend(superGrammar, name, body) {
   this.superGrammar = superGrammar;
   this.name = name;
   this.body = body;
-  var origBody = superGrammar.ruleDict[name];
+  var origBody = superGrammar.ruleBodies[name];
   this.terms = [body, origBody];
 }
 inherits(Extend, Alt);

@@ -39,7 +39,7 @@ GrammarDecl.prototype.installOverriddenOrExtendedRule = function(name, formals, 
   if (duplicateParameterNames.length > 0) {
     throw errors.duplicateParameterNames(name, duplicateParameterNames, body);
   }
-  var baseRule = this.ensureSuperGrammar().ruleDict[name];
+  var baseRule = this.ensureSuperGrammar().ruleBodies[name];
   if (formals.length !== baseRule.formals.length) {
     throw errors.wrongNumberOfParameters(name, baseRule.formals.length, formals.length, body);
   }
@@ -50,7 +50,7 @@ GrammarDecl.prototype.install = function(name, formals, description, body) {
   body = body.introduceParams(formals);
   body.formals = formals;
   body.description = description;
-  this.ruleDict[name] = body;
+  this.ruleBodies[name] = body;
   return this;
 };
 
@@ -61,7 +61,7 @@ GrammarDecl.prototype.withSuperGrammar = function(superGrammar) {
     throw new Error('the super grammar of a GrammarDecl cannot be set more than once');
   }
   this.superGrammar = superGrammar;
-  this.ruleDict = Object.create(superGrammar.ruleDict);
+  this.ruleBodies = Object.create(superGrammar.ruleBodies);
 
   // Grammars with an explicit supergrammar inherit a default start rule.
   if (!superGrammar.isBuiltIn()) {
@@ -78,7 +78,7 @@ GrammarDecl.prototype.withDefaultStartRule = function(ruleName) {
 // Creates a Grammar instance, and if it passes the sanity checks, returns it.
 GrammarDecl.prototype.build = function() {
   var grammar =
-      new Grammar(this.name, this.ensureSuperGrammar(), this.ruleDict, this.defaultStartRule);
+      new Grammar(this.name, this.ensureSuperGrammar(), this.ruleBodies, this.defaultStartRule);
   // TODO: change the pexpr.prototype.assert... methods to make them add
   // exceptions to an array that's provided as an arg. Then we'll be able to
   // show more than one error of the same type at a time.
@@ -86,8 +86,8 @@ GrammarDecl.prototype.build = function() {
   // the part of the source that caused it.
   var grammarErrors = [];
   var grammarHasInvalidApplications = false;
-  Object.keys(grammar.ruleDict).forEach(function(ruleName) {
-    var body = grammar.ruleDict[ruleName];
+  Object.keys(grammar.ruleBodies).forEach(function(ruleName) {
+    var body = grammar.ruleBodies[ruleName];
     try {
       body.assertChoicesHaveUniformArity(ruleName);
     } catch (e) {
@@ -102,8 +102,8 @@ GrammarDecl.prototype.build = function() {
   });
   if (!grammarHasInvalidApplications) {
     // The following check can only be done if the grammar has no invalid applications.
-    Object.keys(grammar.ruleDict).forEach(function(ruleName) {
-      var body = grammar.ruleDict[ruleName];
+    Object.keys(grammar.ruleBodies).forEach(function(ruleName) {
+      var body = grammar.ruleBodies[ruleName];
       try {
         body.assertIteratedExprsAreNotNullable(grammar, ruleName);
       } catch (e) {
@@ -121,9 +121,9 @@ GrammarDecl.prototype.build = function() {
 
 GrammarDecl.prototype.define = function(name, formals, body, optDescr) {
   this.ensureSuperGrammar();
-  if (this.superGrammar.ruleDict[name]) {
+  if (this.superGrammar.ruleBodies[name]) {
     throw errors.duplicateRuleDeclaration(name, this.name, this.superGrammar.name, body);
-  } else if (this.ruleDict[name]) {
+  } else if (this.ruleBodies[name]) {
     throw errors.duplicateRuleDeclaration(name, this.name, this.name, body);
   }
   var duplicateParameterNames = common.getDuplicates(formals);
@@ -134,7 +134,7 @@ GrammarDecl.prototype.define = function(name, formals, body, optDescr) {
 };
 
 GrammarDecl.prototype.override = function(name, formals, body) {
-  var baseRule = this.ensureSuperGrammar().ruleDict[name];
+  var baseRule = this.ensureSuperGrammar().ruleBodies[name];
   if (!baseRule) {
     throw errors.cannotOverrideUndeclaredRule(name, this.superGrammar.name, body);
   }
@@ -143,7 +143,7 @@ GrammarDecl.prototype.override = function(name, formals, body) {
 };
 
 GrammarDecl.prototype.extend = function(name, formals, body) {
-  var baseRule = this.ensureSuperGrammar().ruleDict[name];
+  var baseRule = this.ensureSuperGrammar().ruleBodies[name];
   if (!baseRule) {
     throw errors.cannotExtendUndeclaredRule(name, this.superGrammar.name, body);
   }

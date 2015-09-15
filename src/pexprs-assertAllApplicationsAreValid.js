@@ -63,7 +63,7 @@ pexprs.Obj.prototype._assertAllApplicationsAreValid = function(ruleName, grammar
 };
 
 pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
-  var body = grammar.ruleDict[this.ruleName];
+  var body = grammar.ruleBodies[this.ruleName];
 
   // Make sure that the rule exists
   if (!body) {

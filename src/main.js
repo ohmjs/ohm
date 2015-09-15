@@ -130,7 +130,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       currentRuleFormals = fs.visit()[0] || [];
       var body = b.visit();
       var ans = decl.extend(currentRuleName, currentRuleFormals, body);
-      decl.ruleDict[currentRuleName].definitionInterval = this.interval.trimmed();
+      decl.ruleBodies[currentRuleName].definitionInterval = this.interval.trimmed();
       return ans;
     },
 
@@ -151,7 +151,8 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       var inlineRuleName = currentRuleName + '_' + n.visit();
       var body = b.visit();
       body.definitionInterval = this.interval.trimmed();
-      var isNewRuleDeclaration = !(decl.superGrammar && decl.superGrammar.ruleDict[inlineRuleName]);
+      var isNewRuleDeclaration =
+          !(decl.superGrammar && decl.superGrammar.ruleBodies[inlineRuleName]);
       if (overriding && !isNewRuleDeclaration) {
         decl.override(inlineRuleName, currentRuleFormals, body);
       } else {

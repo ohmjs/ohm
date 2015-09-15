@@ -130,7 +130,7 @@ pexprs.Apply.prototype.check = function(grammar, vals) {
   // TODO: think about *not* doing the following checks, i.e., trusting that the rule
   // was correctly constructed.
   var ruleNode = vals[0];
-  var body = grammar.ruleDict[this.ruleName];
+  var body = grammar.ruleBodies[this.ruleName];
   return body.check(grammar, ruleNode.children) && ruleNode.numChildren() === body.getArity();
 };
 

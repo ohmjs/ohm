@@ -21,7 +21,7 @@ function makeInterval(thing, startIdx, endIdx) {
 function compareGrammars(t, expected, actual) {
   // The other property on grammars is "constructors", which contains
   // closures which cause spurious test failures if we compare
-  // them. So we ignore that property here, concentrating on ruleDict
+  // them. So we ignore that property here, concentrating on ruleBodies
   // and other "real" properties of each grammar.
 
   t.equal(typeof actual, typeof expected);
@@ -31,7 +31,7 @@ function compareGrammars(t, expected, actual) {
     compareGrammars(t, expected.superGrammar, actual.superGrammar);
     // In the list below, we exclude superGrammar (just tested above)
     // and constructors (for reasons given above).
-    ['namespaceName', 'name', 'ruleDecls', 'ruleDict'].forEach(function(prop) {
+    ['namespaceName', 'name', 'ruleDecls', 'ruleBodies'].forEach(function(prop) {
       t.deepEqual(actual[prop], expected[prop]);
     });
   }
@@ -1763,7 +1763,7 @@ test('definitionInterval', function(t) {
   ]);
 
   function definitionLoc(grammar, ruleName) {
-    var interval = grammar.ruleDict[ruleName].definitionInterval;
+    var interval = grammar.ruleBodies[ruleName].definitionInterval;
     return [interval.startIdx, interval.endIdx];
   }
   it('works for regular rules', function() {
@@ -1800,9 +1800,9 @@ test('rule invocation interval', function(t) {
   function fromLoc(pexpr) {
     return [pexpr.interval.startIdx, pexpr.interval.endIdx];
   }
-  var fooBody = g.ruleDict.foo;
-  var beepBody = g.ruleDict.beep;
-  var barBody = g.ruleDict.bar;
+  var fooBody = g.ruleBodies.foo;
+  var beepBody = g.ruleBodies.beep;
+  var barBody = g.ruleBodies.bar;
   it('works for regular rule applications', function() {
     t.deepEqual(fromLoc(fooBody), [12, 15]);
     t.deepEqual(fromLoc(beepBody.factors[1]), [32, 35]);
@@ -1812,7 +1812,7 @@ test('rule invocation interval', function(t) {
     t.deepEqual(fromLoc(barBody.terms[0]), [44, 47]);
     t.deepEqual(fromLoc(barBody.terms[1]), [50, 56]);
 
-    var barBazBody = g.ruleDict.bar_baz;
+    var barBazBody = g.ruleBodies.bar_baz;
     t.deepEqual(fromLoc(barBazBody), [59, 67]);
   });
   t.deepEqual(fromLoc(beepBody), [25, 35], 'works for seq');
@@ -1823,7 +1823,7 @@ test('rule invocation interval', function(t) {
 test('toDisplayString', function(t) {
   var g = ohm.grammar('G { start = "ab" | letter* | "a".."z" }');
   it('does the right thing', function() {
-    var seq = g.ruleDict.start;
+    var seq = g.ruleBodies.start;
     t.equal(seq.toDisplayString(), '"ab" | letter* | "a".."z"');
     t.equal(seq.terms[0].toDisplayString(), '"ab"');
 
@@ -1839,7 +1839,7 @@ test('toDisplayString', function(t) {
 test('pexpr.toString()', function(t) {
   var g = makeGrammar(
       'G { start = &"a" ~(2 | 3?) ``b a\'\' [c {e: b, ...} {g: "a".."z"}]  a = 1  b = 2  c = 3 }');
-  var e = g.ruleDict.start;
+  var e = g.ruleBodies.start;
   t.equal(e.toString(), '(&"a" ~(2 | 3?) ``(b a)\'\' [(c {"e": b, ...} {"g": "a".."z"})])');
   t.end();
 });
@@ -1891,9 +1891,9 @@ test('default start rule', function(t) {
   t.throws(function() {
     new Grammar('G', root, {}, 'nonexistentRule');
   }, /Invalid start rule/, 'throws when start rule is not in the grammar');
-  t.ok(new Grammar('G', root, {aRule:null}, 'aRule'), 'works when rule is in the ruleDict');
-  var ruleDict = Object.create(root.ruleDict);
-  t.ok(new Grammar('G', root, ruleDict, 'digit'), 'works when rule is in the supergrammar');
+  t.ok(new Grammar('G', root, {aRule:null}, 'aRule'), 'works when rule is in the ruleBodies');
+  var ruleBodies = Object.create(root.ruleBodies);
+  t.ok(new Grammar('G', root, ruleBodies, 'digit'), 'works when rule is in the supergrammar');
 
   t.end();
 });

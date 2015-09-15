@@ -162,7 +162,7 @@ State.prototype = {
       this.eval(new pexprs.Apply(this.startRule));
     }
 
-    return this.rightmostFailures.toFailuresArray(this.grammar.ruleDict);
+    return this.rightmostFailures.toFailuresArray(this.grammar.ruleBodies);
   },
 
   // Returns the memoized trace entry for `expr` at `pos`, if one exists, `null` otherwise.

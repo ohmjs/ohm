@@ -70,7 +70,7 @@ pexprs.Str.prototype._isNullable = function(grammar, memo) {
 pexprs.Apply.prototype._isNullable = function(grammar, memo) {
   var key = this.toMemoKey();
   if (!Object.prototype.hasOwnProperty.call(memo, key)) {
-    var body = grammar.ruleDict[this.ruleName];
+    var body = grammar.ruleBodies[this.ruleName];
     var inlined = body.substituteParams(this.params);
     memo[key] = false;
     memo[key] = inlined._isNullable(grammar, memo);

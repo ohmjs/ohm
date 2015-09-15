@@ -18,12 +18,12 @@ var pexprs = require('./pexprs');
 // Private stuff
 // --------------------------------------------------------------------
 
-function Grammar(name, superGrammar, ruleDict, optDefaultStartRule) {
+function Grammar(name, superGrammar, ruleBodies, optDefaultStartRule) {
   this.name = name;
   this.superGrammar = superGrammar;
-  this.ruleDict = ruleDict;
+  this.ruleBodies = ruleBodies;
   if (optDefaultStartRule) {
-    if (!(optDefaultStartRule in ruleDict)) {
+    if (!(optDefaultStartRule in ruleBodies)) {
       throw new Error("Invalid start rule: '" + optDefaultStartRule +
                       "' is not a rule in grammar '" + name + "'");
     }
@@ -34,7 +34,7 @@ function Grammar(name, superGrammar, ruleDict, optDefaultStartRule) {
 
 Grammar.prototype = {
   construct: function(ruleName, children) {
-    var body = this.ruleDict[ruleName];
+    var body = this.ruleBodies[ruleName];
     if (!body || !body.check(this, children) || children.length !== body.getArity()) {
       throw errors.invalidConstructorCall(this, ruleName, children);
     }
@@ -52,7 +52,7 @@ Grammar.prototype = {
       };
     }
 
-    for (var ruleName in this.ruleDict) {
+    for (var ruleName in this.ruleBodies) {
       // We want *all* properties, not just own properties, because of
       // supergrammars.
       constructors[ruleName] = makeConstructor(ruleName);
@@ -126,7 +126,7 @@ Grammar.prototype = {
     var problems = [];
     for (var k in actionDict) {
       var v = actionDict[k];
-      if (!isSpecialAction(k) && !(k in this.ruleDict)) {
+      if (!isSpecialAction(k) && !(k in this.ruleBodies)) {
         problems.push("'" + k + "' is not a valid semantic action for '" + this.name + "'");
       } else if (typeof v !== 'function') {
         problems.push(
@@ -159,7 +159,7 @@ Grammar.prototype = {
     } else if (actionName === '_terminal') {
       return 0;
     }
-    return this.ruleDict[actionName].getArity();
+    return this.ruleBodies[actionName].getArity();
   },
 
   _inheritsFrom: function(grammar) {
@@ -199,10 +199,10 @@ Grammar.prototype = {
     }
 
     var self = this;
-    Object.keys(this.ruleDict).forEach(function(ruleName) {
-      var body = self.ruleDict[ruleName];
+    Object.keys(this.ruleBodies).forEach(function(ruleName) {
+      var body = self.ruleBodies[ruleName];
       sb.append('    .');
-      if (self.superGrammar.ruleDict[ruleName]) {
+      if (self.superGrammar.ruleBodies[ruleName]) {
         sb.append(body instanceof pexprs.Extend ? 'extend' : 'override');
       } else {
         sb.append('define');
@@ -236,12 +236,12 @@ Grammar.prototype = {
     sb.append('{');
 
     var first = true;
-    for (var ruleName in this.ruleDict) {
+    for (var ruleName in this.ruleBodies) {
       if (ruleName === 'spaces_') {
         // This rule is not for the user, it's more of an implementation detail of syntactic rules.
         continue;
       }
-      var body = this.ruleDict[ruleName];
+      var body = this.ruleBodies[ruleName];
       if (first) {
         first = false;
       } else {
