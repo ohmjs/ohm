@@ -68,15 +68,13 @@ function markInterval(cm, interval, className, canHighlightBlocks) {
   if (canHighlightBlocks && isBlockSelectable(cm, startPos, endPos)) {
     return markBlock(cm, startPos.line, endPos.line, className);
   }
-  cm.getWrapperElement().classList.add('highlighting');
   return cm.markText(startPos, endPos, {className: className});
 }
 
-function clearMark(cm, mark) {
+function clearMark(mark) {
   if (mark) {
     mark.clear();
   }
-  cm.getWrapperElement().classList.remove('highlighting');
 }
 
 function indexToHeight(cm, index) {
@@ -266,9 +264,11 @@ function createTraceElement(traceNode, parent, input) {
     }
     if (traceNode.interval) {
       inputMark = markInterval(inputEditor, traceNode.interval, 'highlight', false);
+      inputEditor.getWrapperElement().classList.add('highlighting');
     }
     if (traceNode.expr.interval) {
       grammarMark = markInterval(grammarEditor, traceNode.expr.interval, 'active-appl', false);
+      grammarEditor.getWrapperElement().classList.add('highlighting');
       scrollToInterval(grammarEditor, traceNode.expr.interval);
     }
     var ruleName = traceNode.expr.ruleName;
@@ -285,9 +285,11 @@ function createTraceElement(traceNode, parent, input) {
     if (input) {
       input.classList.remove('highlight');
     }
-    clearMark(inputEditor, inputMark);
-    clearMark(grammarEditor, grammarMark);
-    clearMark(grammarEditor, defMark);
+    inputMark = clearMark(inputMark);
+    grammarMark = clearMark(grammarMark);
+    defMark = clearMark(defMark);
+    grammarEditor.getWrapperElement().classList.remove('highlighting');
+    inputEditor.getWrapperElement().classList.remove('highlighting');
   });
   wrapper._input = input;
 
@@ -358,28 +360,37 @@ function isPrimitive(expr) {
   }
 }
 
-// Hides or shows the grammar error.
 var errorMarks = {
   grammar: null,
   input: null
 };
 
 function hideError(category, editor) {
-  if (errorMarks[category]) {
-    clearMark(editor, errorMarks[category].interval);
-    errorMarks[category].widget.clear();
+  var errInfo = errorMarks[category];
+  if (errInfo) {
+    errInfo.mark.clear();
+    clearTimeout(errInfo.timeout);
+    if (errInfo.widget) {
+      errInfo.widget.clear();
+    }
     errorMarks[category] = null;
   }
 }
 
-function showError(category, editor, message, interval) {
-  var el = createElement('.errorItem');
-  el.textContent = message;
-  var pos = editor.posFromIndex(interval.endIdx);
+function setError(category, editor, interval, message) {
+  hideError(category, editor);
+
   errorMarks[category] = {
-    interval: markInterval(editor, interval, 'error', false),
-    widget: editor.addLineWidget(pos.line, el)
+    mark: markInterval(editor, interval, 'error-interval', false),
+    timeout: setTimeout(function() { showError(category, editor, interval, message); }, 1500),
+    widget: null
   };
+}
+
+function showError(category, editor, interval, message) {
+  var errorEl = createElement('.error', message);
+  var line = editor.posFromIndex(interval.endIdx).line;
+  errorMarks[category].widget = editor.addLineWidget(line, errorEl);
 }
 
 function useLocalStorage() {
@@ -397,6 +408,14 @@ function setEditorValueFromLocalStorage(editor, key) {
   }
 }
 
+function hideBottomOverlay() {
+  $('#bottomSection .overlay').style.width = 0;
+}
+
+function showBottomOverlay() {
+  $('#bottomSection .overlay').style.width = '100%';
+}
+
 // Main
 // ----
 
@@ -406,6 +425,7 @@ function setEditorValueFromLocalStorage(editor, key) {
   var grammarChanged = true;
 
   function triggerRefresh(delay) {
+    showBottomOverlay();
     if (refreshTimeout) {
       clearTimeout(refreshTimeout);
     }
@@ -418,16 +438,14 @@ function setEditorValueFromLocalStorage(editor, key) {
   setEditorValueFromLocalStorage(inputEditor, 'input');
   setEditorValueFromLocalStorage(grammarEditor, 'grammar');
 
-  inputEditor.on('change', function() { triggerRefresh(150); });
+  inputEditor.on('change', function() { triggerRefresh(250); });
   grammarEditor.on('change', function() {
     grammarChanged = true;
-    triggerRefresh(150);
+    hideError('grammar', grammarEditor);
+    triggerRefresh(250);
   });
 
   function refresh() {
-    $('#expandedInput').innerHTML = '';
-    $('#parseResults').innerHTML = '';
-
     hideError('input', inputEditor);
     if (useLocalStorage()) {
       localStorage.setItem('input', inputEditor.getValue());
@@ -436,7 +454,6 @@ function setEditorValueFromLocalStorage(editor, key) {
     if (grammarChanged) {
       grammarChanged = false;
 
-      hideError('grammar', grammarEditor);
       var grammarSrc = grammarEditor.getValue();
       if (useLocalStorage()) {
         localStorage.setItem('grammar', grammarSrc);
@@ -447,8 +464,8 @@ function setEditorValueFromLocalStorage(editor, key) {
         console.log(e);  // eslint-disable-line no-console
 
         var message = e.shortMessage ? e.shortMessage : e.message;
-        showError('grammar', grammarEditor, message, e.interval);
-        // If the grammar is unusable, prevent the input to be parsed.
+        setError('grammar', grammarEditor, e.interval, message);
+        // If the grammar is unusable, prevent the input from being parsed.
         grammar = null;
         return;
       }
@@ -457,13 +474,16 @@ function setEditorValueFromLocalStorage(editor, key) {
     if (!grammar) {
       return;
     }
+    hideBottomOverlay();
+    $('#expandedInput').innerHTML = '';
+    $('#parseResults').innerHTML = '';
 
     var trace = grammar.trace(inputEditor.getValue());
     if (trace.result.failed()) {
       // Intervals with start == end won't show up in CodeMirror.
       var interval = trace.result.getInterval();
       interval.endIdx += 1;
-      showError('input', inputEditor, 'Expected: ' + trace.result.getExpectedText(), interval);
+      setError('input', inputEditor, interval, 'Expected ' + trace.result.getExpectedText());
     }
 
     // Refresh the option values.

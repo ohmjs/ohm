@@ -167,6 +167,17 @@
       border-top: 1px solid #ddd;
       flex: 1;
       overflow: auto;
+      position: relative;
+    }
+
+    #bottomSection .overlay {
+      background-color: white;
+      height: 100%;
+      left: 0;
+      opacity: 0.4;
+      position: absolute;
+      top: 0;
+      width: 0;
     }
 
     #grammarContainer,
@@ -187,9 +198,8 @@
       border-right: 1px solid #ddd;
     }
 
-    .errorItem {
-      text-align: center;
-      background-color: #FCF68B;
+    .CodeMirror .error-interval {
+      border-bottom: 1px dashed #C7254E;
     }
 
     .CodeMirror.highlighting {
@@ -201,8 +211,11 @@
     }
 
     .CodeMirror .error {
-      background-color: #C7254E;
-      color: #F9F2F4;
+      background-color: #FBE3EA;
+      border-radius: 2px;
+      color: #C7254E;
+      margin: 2px 4px;
+      padding: 12px;
     }
 
     .CodeMirror .active-definition {
@@ -252,6 +265,7 @@ MyLang {
   <div id="bottomSection">
     <div id="expandedInput"></div>
     <div id="parseResults"></div>
+    <div class="overlay"></div>
   </div>
   <div id="options">
 <!--    <label><input type="checkbox" name="showFailures"> Show failures</label> -->
