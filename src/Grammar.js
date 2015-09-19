@@ -86,20 +86,7 @@ Grammar.prototype = {
   _match: function(obj, startRule, tracingEnabled) {
     var inputStream = InputStream.newFor(typeof obj === 'string' ? obj : [obj]);
     var state = new State(this, inputStream, startRule, tracingEnabled);
-    var succeeded = state.eval(new pexprs.Apply(startRule));
-    if (succeeded) {
-      // Link every CSTNode to its parent.
-      var stack = [undefined];
-      var helpers = this.semantics().addOperation('setParents', {
-        _default: function(children) {
-          stack.push(this._node);
-          children.forEach(function(child) { child.setParents(); });
-          stack.pop();
-          this._node.parent = stack[stack.length - 1];
-        }
-      });
-      helpers(MatchResult.newFor(state)).setParents();
-    }
+    state.eval(new pexprs.Apply(startRule));
     return state;
   },
 
