@@ -67,7 +67,7 @@ wrapper {
   z-index: 2000;
   bottom: 8pt;
   right: 8pt;
-  padding: 3pt;
+  padding: 4pt;
   border: 1px solid #ccc;
   border-radius: 4px;
   box-shadow: 2px 2px 10px 0px #ccc;
@@ -101,6 +101,8 @@ wrapper {
 }
 
 #error label {
+  display: block;
+  margin-bottom: 4pt;
   font-weight: bold;
 }
 
@@ -121,6 +123,12 @@ wrapper {
   opacity: 1;
   color: maroon;
   font-family: Monaco, "Lucida Console", monospace;
+}
+
+#errorDetails > * {
+  display: block;
+  margin-left: 10pt;
+  margin-right: 10pt;
 }
 
 #value::before, #lisp::before, #tree::before, #twoD::before {

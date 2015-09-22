@@ -419,7 +419,7 @@ s.addOperation('toTwoD', {
     <div id="errorDiv">
       <div id="spaces"></div>
       <wrapperWrapper><wrapper>
-        <div id="error"><label>Expected: </label><span id="errorDetails"></span></div>
+        <div id="error"><label>Expected:</label><span id="errorDetails"></span></div>
       </wrapper></wrapperWrapper>
     </div>
     <div id="value"></div>
@@ -481,18 +481,23 @@ function showError(r) {
 
     // Set up the details, i.e., what input was expected at that position.
     removeChildren(errorDetails);
-    var failures = r.getRightmostFailures();
-    failures.forEach(function(failure, idx) {
-      var element = createExpectedElement(failure);
-      if (idx > 0) {
-        errorDetails.appendChild(elt('light', idx === failures.length - 1 ? ', or ' : ', '));
-      }
-      errorDetails.appendChild(element);
-    });
+
+    // Add the non-fluffy failures first...
+    var nonFluffyFailures = r.getRightmostFailures().filter(function(failure) { return !failure.isFluffy(); });
+    nonFluffyFailures.forEach(addErrorDetails);
+
+    // ... then the fluffy ones
+    var fluffyFailures = r.getRightmostFailures().filter(function(failure) { return failure.isFluffy(); });
+    fluffyFailures.forEach(addErrorDetails);
 
     // Show the error balloon.
     errorDiv.className = 'visible';
   }, 0);
+}
+
+function addErrorDetails(failure) {
+  var element = createExpectedElement(failure);
+  errorDetails.appendChild(element);
 }
 
 function createExpectedElement(failure) {
