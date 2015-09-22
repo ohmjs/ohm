@@ -58,6 +58,79 @@ test('operations', function(t) {
   t.deepEqual(s(Arithmetic.match('9')).numberValues(), [9]);
   t.deepEqual(s(Arithmetic.match('13+10*2*3')).numberValues(), [13, 10, 2, 3]);
 
+  // An operation that (like the others above) doesn't take any arguments.
+  s.addOperation('noArgs', {
+    addExp_plus: function(x, op, y) {
+      return x.noArgs() + y.noArgs();
+    },
+    mulExp_times: function(x, op, y) {
+      return x.noArgs(1);  // should result in an error
+    },
+    number: function(n) {
+      return '#';
+    }
+  });
+  t.equal(s(Arithmetic.match('1+2')).noArgs(), '##');
+  t.throws(
+      function() { s(Arithmetic.match('1*2')).noArgs(); },
+      'Invalid number of arguments passed to noArgs operation (expected 0, got 1)');
+
+  t.end();
+});
+
+test('operations with arguments', function(t) {
+  var Arithmetic = ohm.grammar(arithmeticGrammarSource);
+  var s = Arithmetic.semantics();
+
+  s.addOperation('op1(level)', {
+    number: function(n) {
+      return this.interval.contents + '@L' + this.args.level;
+    },
+    _default: function(children) {
+      var self = this;
+      var ans = [];
+      children.forEach(function(child) {
+        ans = ans.concat(child.op1(self.args.level + 1));
+      });
+      return ans;
+    }
+  });
+  t.deepEqual(s(Arithmetic.match('1+2*3')).op1(0), ['1@L6', '2@L7', '3@L6']);
+  t.throws(
+      function() { s(Arithmetic.match('(5)-2')).op1(); },
+      'Invalid number of arguments passed to operation op1 (expected 1, got 0)');
+  t.throws(
+      function() { s(Arithmetic.match('(5)-2')).op1(1, 2); },
+      'Invalid number of arguments passed to operation op1 (expected 1, got 2)');
+
+  s.addOperation('op2(a, b)', {
+    number: function(n) {
+      return this.args.a * 100 + this.args.b * 10 + parseInt(this.interval.contents);
+    }
+  });
+  t.throws(
+      function() { s(Arithmetic.match('(5)-2')).op2(); },
+      'Invalid number of arguments passed to operation op2 (expected 2, got 0)');
+  t.throws(
+      function() { s(Arithmetic.match('(5)-2')).op2(1); },
+      'Invalid number of arguments passed to operation op2 (expected 2, got 1)');
+  t.equal(s(Arithmetic.match('3')).op2(1, 2), 123);
+  t.throws(
+      function() { s(Arithmetic.match('(5)-2')).op1(1, 2, 3); },
+      'Invalid number of arguments passed to operation op2 (expected 2, got 3)');
+
+  s.addOperation('op3(foo, bar, baz)', {
+    _default: function(children) {
+      var oldArgs = this.args;
+      this.op1(0);
+      t.deepEquals(
+          this.args,
+          oldArgs,
+          "make sure that calling other operations doesn't clobber the arguments of the caller");
+    }
+  });
+  s(Arithmetic.match('(5)-2')).op3(1, 2, 3);
+
   t.end();
 });
 
@@ -98,6 +171,11 @@ test('attributes', function(t) {
   t.deepEqual(s(simple).value, 3);
   t.deepEqual(s(complicated).value, 73);
   t.equal(count, oldCount);
+
+  t.throws(
+      function() { Arithmetic.semantics().addAttribute('badAttribute(x, y)', {}); },
+      /Expected end of input/,
+      'attributes are not allowed to have arguments');
 
   t.end();
 });
@@ -328,6 +406,9 @@ test('extending semantics', function(t) {
   // Make sure you can't extend the same operation again
   t.throws(function() { s2.extendOperation('value', {}); }, /again/);
 
+  // Make sure you can't specify arguments when you extend an operation
+  t.throws(function() { s2.extendOperation('value(x)', {}); }, /Expected end of input/);
+
   // Make sure attributes behave as expected
 
   s = ns.G.semantics().
@@ -372,6 +453,9 @@ test('extending semantics', function(t) {
   t.equal(s2(m).valueTimesTwo, 42);
   t.equal(s3(m).value, 123);
   t.equal(s3(m).valueTimesTwo, 246);
+
+  // Make sure you can't specify arguments when you extend an attribute
+  t.throws(function() { s2.extendAttribute('value(x)', {}); }, /Expected end of input/);
 
   t.end();
 });

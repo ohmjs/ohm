@@ -1,0 +1,23 @@
+OperationsAndAttributes {
+
+  NameNoFormals =
+    name
+
+  NameAndFormals =
+    name Formals?
+
+  Formals
+    = "(" ListOf<name, ","> ")"
+
+  name  (a name)
+    = nameFirst nameRest*
+
+  nameFirst
+    = "_"
+    | letter
+
+  nameRest
+    = "_"
+    | alnum
+
+}

@@ -383,7 +383,13 @@ module.exports = {
 };
 
 // Stuff that's only here for bootstrapping, testing, etc.
+
 Grammar.BuiltInRules = require('../dist/built-in-rules');
+
+var Semantics = require('./Semantics');
+var operationsAndAttributesGrammar = require('../dist/operations-and-attributes');
+Semantics.initPrototypeParser(operationsAndAttributesGrammar);
+
 ohmGrammar = require('../dist/ohm-grammar');
 module.exports._buildGrammar = buildGrammar;
 module.exports._setDocumentInterfaceForTesting = function(doc) { documentInterface = doc; };

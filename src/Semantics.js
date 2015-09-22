@@ -182,9 +182,69 @@ Semantics.prototype.checkActionDicts = function() {
   }
 };
 
-Semantics.prototype.addOperationOrAttribute = function(type, name, actionDict) {
+var prototypeGrammar;
+var prototypeGrammarSemantics;
+
+// This method is called from main.js once Ohm has loaded.
+Semantics.initPrototypeParser = function(grammar) {
+  prototypeGrammarSemantics = grammar.semantics().addOperation('parse', {
+    NameNoFormals: function(n) {
+      return {
+        name: n.parse(),
+        formals: []
+      };
+    },
+    NameAndFormals: function(n, fs) {
+      return {
+        name: n.parse(),
+        formals: fs.parse()[0] || []
+      };
+    },
+    Formals: function(oparen, fs, cparen) {
+      return fs.parse();
+    },
+    name: function(first, rest) {
+      return this.interval.contents;
+    },
+    ListOf_none: function() {
+      return [];
+    },
+    ListOf_some: function(x, _, xs) {
+      return [x.parse()].concat(xs.parse());
+    }
+  });
+  prototypeGrammar = grammar;
+};
+
+function parsePrototype(nameAndFormalArgs, allowFormals) {
+  if (!prototypeGrammar) {
+    // The Operations and Attributes grammar won't be available while Ohm is loading,
+    // but we can get away the following simplification b/c none of the operations
+    // that are used while loading take arguments.
+    return {
+      name: nameAndFormalArgs,
+      formals: []
+    };
+  }
+
+  var r = prototypeGrammar.match(
+      nameAndFormalArgs,
+      allowFormals ? 'NameAndFormals' : 'NameNoFormals');
+  if (r.failed()) {
+    throw new Error(r.message);
+  }
+
+  return prototypeGrammarSemantics(r).parse();
+}
+
+Semantics.prototype.addOperationOrAttribute = function(type, nameAndFormalArgs, actionDict) {
   var typePlural = type + 's';
-  var Ctor = type === 'operation' ? Operation : Attribute;
+
+  var parsedNameAndFormalArgs = parsePrototype(nameAndFormalArgs, type === 'operation');
+  var name = parsedNameAndFormalArgs.name;
+  var formals = parsedNameAndFormalArgs.formals;
+
+  // TODO: check that there are no duplicate formal arguments
 
   this.assertNewName(name, type);
 
@@ -192,13 +252,16 @@ Semantics.prototype.addOperationOrAttribute = function(type, name, actionDict) {
   // which defines the default behavior of iteration, terminal, and non-terminal nodes...
   var realActionDict = {
     _default: function(children) {
-      var thisSemantics = this._semantics;
-      var thisThing = thisSemantics[typePlural][name];
+      var self = this;
+      var thisThing = this._semantics[typePlural][name];
+      var args = thisThing.formals.map(function(formal) {
+        return self.args[formal];
+      });
 
       if (this.isIteration()) {
         // This CST node corresponds to an iteration expression in the grammar (*, +, or ?). The
         // default behavior is to map this operation or attribute over all of its child nodes.
-        return children.map(function(child) { return thisThing.execute(thisSemantics, child); });
+        return children.map(function(child) { return doIt.apply(child, args); });
       }
 
       if (this.isTerminal()) {
@@ -213,7 +276,7 @@ Semantics.prototype.addOperationOrAttribute = function(type, name, actionDict) {
       if (children.length === 1) {
         // As a convenience, if this node only has one child, we just return the result of
         // applying this operation / attribute to the child node.
-        return thisThing.execute(thisSemantics, children[0]);
+        return doIt.apply(children[0], args);
       } else {
         // Otherwise, we throw an exception to let the programmer know that we don't know what
         // to do with this node.
@@ -228,7 +291,9 @@ Semantics.prototype.addOperationOrAttribute = function(type, name, actionDict) {
     realActionDict[name] = actionDict[name];
   });
 
-  this[typePlural][name] = new Ctor(name, realActionDict);
+  this[typePlural][name] = type === 'operation' ?
+      new Operation(name, formals, realActionDict) :
+      new Attribute(name, realActionDict);
 
   // The following check is not strictly necessary (it will happen later anyway) but it's better to
   // catch errors early.
@@ -238,7 +303,27 @@ Semantics.prototype.addOperationOrAttribute = function(type, name, actionDict) {
     // Dispatch to most specific version of this operation / attribute -- it may have been
     // overridden by a sub-semantics.
     var thisThing = this._semantics[typePlural][name];
-    return thisThing.execute(this._semantics, this);
+
+    // Check that the caller passed the correct number of arguments.
+    if (arguments.length !== thisThing.formals.length) {
+      throw new Error(
+          'Invalid number of arguments passed to ' + name + ' ' + type + ' (expected ' +
+          thisThing.formals.length + ', got ' + arguments.length + ')');
+    }
+
+    // Create an "arguments object" from the arguments that were passed to this
+    // operation / attribute.
+    var args = Object.create(null);
+    for (var idx = 0; idx < arguments.length; idx++) {
+      var formal = thisThing.formals[idx];
+      args[formal] = arguments[idx];
+    }
+
+    var oldArgs = this.args;
+    this.args = args;
+    var ans = thisThing.execute(this._semantics, this);
+    this.args = oldArgs;
+    return ans;
   }
 
   if (type === 'operation') {
@@ -254,7 +339,9 @@ Semantics.prototype.addOperationOrAttribute = function(type, name, actionDict) {
 
 Semantics.prototype.extendOperationOrAttribute = function(type, name, actionDict) {
   var typePlural = type + 's';
-  var Ctor = type === 'operation' ? Operation : Attribute;
+
+  // Make sure that `name` really is just a name, i.e., that it doesn't also contain formals.
+  parsePrototype(name, false);
 
   if (!(this.super && name in this.super[typePlural])) {
     throw new Error('Cannot extend ' + type + " '" + name +
@@ -266,13 +353,16 @@ Semantics.prototype.extendOperationOrAttribute = function(type, name, actionDict
 
   // Create a new operation / attribute whose actionDict delegates to the super operation /
   // attribute's actionDict, and which has all the keys from `inheritedActionDict`.
+  var inheritedFormals = this[typePlural][name].formals;
   var inheritedActionDict = this[typePlural][name].actionDict;
   var newActionDict = Object.create(inheritedActionDict);
   Object.keys(actionDict).forEach(function(name) {
     newActionDict[name] = actionDict[name];
   });
 
-  this[typePlural][name] = new Ctor(name, newActionDict);
+  this[typePlural][name] = type === 'operation' ?
+      new Operation(name, inheritedFormals, newActionDict) :
+      new Attribute(name, newActionDict);
 
   // The following check is not strictly necessary (it will happen later anyway) but it's better to
   // catch errors early.
@@ -329,8 +419,8 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
   };
 
   // Forward public methods from the proxy to the semantics instance.
-  proxy.addOperation = function(name, actionDict) {
-    s.addOperationOrAttribute.call(s, 'operation', name, actionDict);
+  proxy.addOperation = function(nameAndFormalArgs, actionDict) {
+    s.addOperationOrAttribute.call(s, 'operation', nameAndFormalArgs, actionDict);
     return proxy;
   };
   proxy.extendOperation = function(name, actionDict) {
@@ -364,8 +454,9 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
 // recursively walking the CST, and at each node, invoking the matching semantic action from
 // `actionDict`. See `Operation.prototype.execute` for details of how a CST node's matching semantic
 // action is found.
-function Operation(name, actionDict) {
+function Operation(name, formals, actionDict) {
   this.name = name;
+  this.formals = formals;
   this.actionDict = actionDict;
 }
 
@@ -400,7 +491,7 @@ Operation.prototype.execute = function(semantics, nodeWrapper) {
 };
 
 // Invoke `actionFn` on the CST node that corresponds to `nodeWrapper`, in the context of
-// `semantics`. If `optPassChildrenAsArray` is true, `actionFn` will be called with a single
+// `semantics`. If `optPassChildrenAsArray` is truthy, `actionFn` will be called with a single
 // argument, which is an array of wrappers. Otherwise, the number of arguments to `actionFn` will
 // be equal to the number of children in the CST node.
 Operation.prototype.doAction = function(semantics, nodeWrapper, actionFn, optPassChildrenAsArray) {
@@ -415,6 +506,7 @@ Operation.prototype.doAction = function(semantics, nodeWrapper, actionFn, optPas
 // the semantic action for a CST node will be invoked no more than once.
 function Attribute(name, actionDict) {
   this.name = name;
+  this.formals = [];
   this.actionDict = actionDict;
 }
 inherits(Attribute, Operation);
