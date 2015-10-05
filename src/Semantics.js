@@ -53,18 +53,6 @@ Wrapper.prototype._children = function() {
   return this._childWrappers;
 };
 
-// Returns the wrapper of the first child node. Throws an exception if the node associated with this
-// wrapper doesn't have exactly one child.
-Wrapper.prototype._onlyChild = function() {
-  if (this._node.numChildren() !== 1) {
-    throw new Error(
-        'cannot get only child of a node of type ' + this.ctorName() +
-        ' (it has ' + this._node.numChildren() + ' children)');
-  } else {
-    return this.child(0);
-  }
-};
-
 // Returns `true` if the CST node associated with this wrapper corresponds to an iteration
 // expression, i.e., a Kleene-*, Kleene-+, or an optional. Returns `false` otherwise.
 Wrapper.prototype.isIteration = function() {
