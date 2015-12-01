@@ -1168,6 +1168,48 @@ test('apply', function(t) {
   t.end();
 });
 
+test('built-in types', function(t) {
+  var g = ohm.grammar('G {Start = [Boolean Number String]}');
+
+  // Boolean
+  t.equal(g.match(true, 'Boolean').succeeded(), true);
+  t.equal(g.match(false, 'Boolean').succeeded(), true);
+  t.equal(g.match(0, 'Boolean').failed(), true);
+  t.equal(g.match({}, 'Boolean').failed(), true);
+
+  // Number
+  t.equal(g.match(0, 'Number').succeeded(), true, 'zero');
+  t.equal(g.match(Math.PI, 'Number').succeeded(), true, 'pi');
+  t.equal(g.match(Math.sqrt(-1), 'Number').succeeded(), true, 'NaN');
+  t.equal(g.match('1', 'Number').failed(), true);
+  t.equal(g.match(false, 'Number').failed(), true);
+  t.equal(g.match(null, 'Number').failed(), true);
+
+  // String
+  // TODO(dubroy): Get these working.
+  // t.equal(g.match('', 'String').succeeded(), true);
+  // t.equal(g.match('blah', 'String').succeeded(), true);
+  // t.equal(g.match(0, 'String').failed(), true);
+
+  var result = g.match([true, 99.99, 'blah']);
+  t.equal(result.succeeded(), true, 'matching inside an Array');
+  // TODO: The binding given to these actions should be the value itself, not an instance
+  // of pexprs.TypeCheck.
+  var s = g.semantics().addAttribute('val', {
+    Start: function(bool, num, str) { return [bool.val, num.val, str.val]; },
+    Boolean: function(typeCheck) { return typeCheck.val; },
+    Number: function(typeCheck) { return typeCheck.val; },
+    String: function(typeCheck) { return typeCheck.val; }
+  });
+  t.looseEqual(s(result).val, [true, 99.99, 'blah'], 'semantics');
+
+  g = ohm.grammar('G {number = digit}');
+  t.equal(g.match('1', 'number').succeeded(), true);
+  t.equal(g.match(99, 'Number').succeeded(), true);
+
+  t.end();
+});
+
 test('inheritance', function(t) {
   test('super-grammar does not exist', function(t) {
     it('no namespace', function() {
@@ -1548,13 +1590,19 @@ test('action dictionary templates', function(t) {
     '  },\n' +
     '  end: function(_) {\n' +
     '  },\n' +
+    '  lower: function(_) {\n' +
+    '  },\n' +
     '  space: function(_) {\n' +
     '  },\n' +
-    '  lower: function(_) {\n' +
+    '  unicodeLtmo: function(_) {\n' +
     '  },\n' +
     '  upper: function(_) {\n' +
     '  },\n' +
-    '  unicodeLtmo: function(_) {\n' +
+    '  Boolean: function(_) {\n' +
+    '  },\n' +
+    '  Number: function(_) {\n' +
+    '  },\n' +
+    '  String: function(_) {\n' +
     '  }\n' +
     '}');
   t.equal(ns.G2.toAttributeActionDictionaryTemplate(),
@@ -1599,13 +1647,19 @@ test('action dictionary templates', function(t) {
     '  },\n' +
     '  end: function(_) {\n' +
     '  },\n' +
+    '  lower: function(_) {\n' +
+    '  },\n' +
     '  space: function(_) {\n' +
     '  },\n' +
-    '  lower: function(_) {\n' +
+    '  unicodeLtmo: function(_) {\n' +
     '  },\n' +
     '  upper: function(_) {\n' +
     '  },\n' +
-    '  unicodeLtmo: function(_) {\n' +
+    '  Boolean: function(_) {\n' +
+    '  },\n' +
+    '  Number: function(_) {\n' +
+    '  },\n' +
+    '  String: function(_) {\n' +
     '  }\n' +
     '}');
   t.end();

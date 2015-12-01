@@ -273,10 +273,9 @@ Grammar.ProtoBuiltInRules = new Grammar(
 
     // rule bodies
     {
-      // The following rules can't be written in userland because they reference
-      // `any` and `end` directly.
       any: pexprs.any,
       end: pexprs.end,
+      lower: new pexprs.UnicodeChar('Ll'),
 
       // The following rule is part of the Ohm implementation. Its name ends with '_' to
       // discourage programmers from invoking, extending, and overriding it.
@@ -285,14 +284,15 @@ Grammar.ProtoBuiltInRules = new Grammar(
       // The `space` rule must be defined here because it's referenced by `spaces_`.
       space: new pexprs.Range('\x00', ' '),
 
-      // These rules are implemented natively because they use UnicodeChar directly, which is
-      // not part of the Ohm grammar.
-      lower: new pexprs.UnicodeChar('Ll'),
-      upper: new pexprs.UnicodeChar('Lu'),
-
       // The union of Lt (titlecase), Lm (modifier), and Lo (other), i.e. any letter not
       // in Ll or Lu.
-      unicodeLtmo: new pexprs.UnicodeChar('Ltmo')
+      unicodeLtmo: new pexprs.UnicodeChar('Ltmo'),
+
+      upper: new pexprs.UnicodeChar('Lu'),
+
+      Boolean: new pexprs.TypeCheck('boolean'),
+      Number: new pexprs.TypeCheck('number'),
+      String: new pexprs.TypeCheck('string')
     },
 
     // rule formal arguments
@@ -302,8 +302,11 @@ Grammar.ProtoBuiltInRules = new Grammar(
       spaces_: [],
       space: [],
       lower: [],
+      unicodeLtmo: [],
       upper: [],
-      unicodeLtmo: []
+      Boolean: [],
+      Number: [],
+      String: []
     },
 
     // rule descriptions

@@ -139,3 +139,8 @@ pexprs.UnicodeChar.prototype.check = function(grammar, vals) {
          vals[0].isTerminal() &&
          typeof vals[0].primitiveValue === 'string';
 };
+
+pexprs.TypeCheck.prototype.check = function(grammar, vals) {
+  return vals[0] instanceof nodes.Node &&
+         typeof vals[0].primitiveValue === this.type;
+};

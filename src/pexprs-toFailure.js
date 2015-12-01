@@ -54,3 +54,7 @@ pexprs.Apply.prototype.toFailure = function(grammar) {
 pexprs.UnicodeChar.prototype.toFailure = function(grammar) {
   return new Failure(this.toDisplayString(), 'description');
 };
+
+pexprs.TypeCheck.prototype.toFailure = function(grammar) {
+  return new Failure('a value of type ' + JSON.stringify(this.type), 'description');
+};

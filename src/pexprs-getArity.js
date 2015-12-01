@@ -19,6 +19,7 @@ pexprs.Prim.prototype.getArity =
 pexprs.Range.prototype.getArity =
 pexprs.Param.prototype.getArity =
 pexprs.Apply.prototype.getArity =
+pexprs.TypeCheck.prototype.getArity =
 pexprs.UnicodeChar.prototype.getArity = function() {
   return 1;
 };

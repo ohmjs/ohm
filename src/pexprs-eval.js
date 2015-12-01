@@ -434,3 +434,17 @@ pexprs.UnicodeChar.prototype.eval = function(state) {
     return true;
   }
 };
+
+pexprs.TypeCheck.prototype.eval = function(state) {
+  var inputStream = state.inputStream;
+  var origPos = inputStream.pos;
+  var value = inputStream.next();
+  if (typeof value === this.type) {
+    var interval = inputStream.interval(origPos);
+    state.bindings.push(new TerminalNode(state.grammar, value, interval));
+    return true;
+  } else {
+    state.processFailure(origPos, this);
+    return false;
+  }
+};

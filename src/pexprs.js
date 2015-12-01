@@ -183,12 +183,17 @@ Apply.prototype.toMemoKey = function() {
 };
 
 // Unicode character
-
 function UnicodeChar(category) {
   this.category = category;
   this.pattern = UnicodeCategories[category];
 }
 inherits(UnicodeChar, PExpr);
+
+// Matches a value of a particular type (using `typeof`).
+function TypeCheck(t) {
+  this.type = t;
+}
+inherits(TypeCheck, PExpr);
 
 // --------------------------------------------------------------------
 // Exports
@@ -215,6 +220,7 @@ exports.Str = Str;
 exports.Obj = Obj;
 exports.Apply = Apply;
 exports.UnicodeChar = UnicodeChar;
+exports.TypeCheck = TypeCheck;
 
 // --------------------------------------------------------------------
 // Extensions

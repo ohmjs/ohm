@@ -24,6 +24,7 @@ pexprs.Param.prototype._isNullable =
 pexprs.Plus.prototype._isNullable =
 pexprs.Arr.prototype._isNullable =
 pexprs.Obj.prototype._isNullable =
+pexprs.TypeCheck.prototype._isNullable =
 pexprs.UnicodeChar.prototype._isNullable = function(grammar, memo) {
   return false;
 };
