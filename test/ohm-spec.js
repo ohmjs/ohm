@@ -1169,7 +1169,12 @@ test('apply', function(t) {
 });
 
 test('built-in types', function(t) {
-  var g = ohm.grammar('G {Start = [Boolean Number String]}');
+  var g = makeGrammar([
+    'G {',
+    '  Arr = [Boolean Number String]',
+    '  Obj = {b: Boolean, n: Number, s: String}',
+    '  Amb = "foo" String',
+    '}']);
 
   // Boolean
   t.equal(g.match(true, 'Boolean').succeeded(), true);
@@ -1186,26 +1191,36 @@ test('built-in types', function(t) {
   t.equal(g.match(null, 'Number').failed(), true);
 
   // String
-  // TODO(dubroy): Get these working.
-  // t.equal(g.match('', 'String').succeeded(), true);
-  // t.equal(g.match('blah', 'String').succeeded(), true);
-  // t.equal(g.match(0, 'String').failed(), true);
+  t.equal(g.match('', 'String').succeeded(), true);
+  t.equal(g.match('blah', 'String').succeeded(), true);
+  t.equal(g.match(0, 'String').failed(), true);
 
-  var result = g.match([true, 99.99, 'blah']);
+  var result = g.match([true, 99.99, 'blah'], 'Arr');
   t.equal(result.succeeded(), true, 'matching inside an Array');
   // TODO: The binding given to these actions should be the value itself, not an instance
   // of pexprs.TypeCheck.
   var s = g.semantics().addAttribute('val', {
-    Start: function(bool, num, str) { return [bool.val, num.val, str.val]; },
+    Arr: function(bool, num, str) { return [bool.val, num.val, str.val]; },
+    Obj: function(bool, num, str) { return [bool.val, num.val, str.val]; },
     Boolean: function(typeCheck) { return typeCheck.val; },
     Number: function(typeCheck) { return typeCheck.val; },
     String: function(typeCheck) { return typeCheck.val; }
   });
-  t.looseEqual(s(result).val, [true, 99.99, 'blah'], 'semantics');
+  t.looseEqual(s(result).val, [true, 99.99, 'blah'], 'array match with semantics');
 
-  g = ohm.grammar('G {number = digit}');
-  t.equal(g.match('1', 'number').succeeded(), true);
-  t.equal(g.match(99, 'Number').succeeded(), true);
+  result = g.match({b: false, n: -0, s: 'zzz'}, 'Obj');
+  t.equal(result.succeeded(), true, 'matching inside an object');
+  t.looseEqual(s(result).val, [false, -0, 'zzz'], 'obj match with semantics');
+
+  // When the first argument to `match` is a string, we create a a StringInputStream as the root,
+  // but we allow it to behave like a ListInputStream in certain cases. For more details, see
+  // StringInputStream.nextStringValue().
+  g = ohm.grammar('G {X = &"foo" String\nObj = {x: X}\nArr = [X]}');
+  t.equals(g.match('fooz', 'X').succeeded(), true, 'matching String on a StringInputStream');
+
+  // TODO: Maybe these should also work?
+  // t.equals(g.match({x: 'fooz'}, 'Obj').succeeded(), true);
+  // t.equals(g.match(['fooz'], 'Arr').succeeded(), true);
 
   t.end();
 });

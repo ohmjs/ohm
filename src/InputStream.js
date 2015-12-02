@@ -4,6 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
+var inherits = require('inherits');
+
 var common = require('./common');
 var Interval = require('./Interval');
 
@@ -62,31 +64,41 @@ InputStream.prototype = {
 function StringInputStream(source) {
   this.init(source);
 }
+inherits(StringInputStream, InputStream);
 
-StringInputStream.prototype = Object.create(InputStream.prototype, {
-  matchString: {
-    value: function(s) {
-      for (var idx = 0; idx < s.length; idx++) {
-        if (this.matchExactly(s[idx]) === common.fail) {
-          return common.fail;
-        }
-      }
-      return true;
+StringInputStream.prototype.matchString = function(s) {
+  for (var idx = 0; idx < s.length; idx++) {
+    if (this.matchExactly(s[idx]) === common.fail) {
+      return common.fail;
     }
   }
-});
+  return true;
+};
+
+// In some cases, it's not clear whether we should instantiate a StringInputStream or a
+// ListInputStream. To address this ambiguity, this method allows a StringInputStream to
+// behave like a ListInputStream with a single string value in certain cases.
+StringInputStream.prototype.nextStringValue = function() {
+  if (this.pos === 0) {
+    this.pos = this.source.length;
+    return this.sourceSlice(0);
+  }
+  return null;
+};
 
 function ListInputStream(source) {
   this.init(source);
 }
+inherits(ListInputStream, InputStream);
 
-ListInputStream.prototype = Object.create(InputStream.prototype, {
-  matchString: {
-    value: function(s) {
-      return this.matchExactly(s);
-    }
-  }
-});
+ListInputStream.prototype.matchString = function(s) {
+  return this.matchExactly(s);
+};
+
+ListInputStream.prototype.nextStringValue = function() {
+  var value = this.next();
+  return typeof value === 'string' ? value : null;
+};
 
 // --------------------------------------------------------------------
 // Exports
