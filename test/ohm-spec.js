@@ -73,9 +73,7 @@ function assertFails(t, matchResult, optMessage) {
 test('grammar constructors dictionary', function(t) {
   var m = makeGrammar(arithmeticGrammarSource);
 
-  it('exists and has a _nonterminal entry', function() {
-    t.ok(m.constructors);
-  });
+  t.ok(m.constructors, 'constructor dict exists');
 
   it('has an entry for each of a few carefully chosen rules', function() {
     t.ok(m.constructors.addExp);
@@ -85,19 +83,11 @@ test('grammar constructors dictionary', function(t) {
     t.ok(m.constructors.any);
   });
 
-  it('lacks entries for nonexistent rules', function() {
-    t.equal(m.constructors.foobar, undefined);
-  });
-
-  it('_nonterminal entry rejects nonexistent rule name', function() {
-    t.throws(
-        function() { m.construct('foobar', []); },
-        /Attempt to invoke constructor foobar with invalid or unexpected arguments/);
-  });
-
-  it('_nonterminal entry works when called correctly', function() {
-    t.ok(m.construct('addExp', [m.match('1+2', 'addExp_plus')._cst]) instanceof nodes.Node);
-  });
+  t.equal(m.constructors.foobar, undefined, 'no entries for nonexistent rules');
+  t.throws(function() { m.construct('foobar', []); },
+           /Attempt to invoke constructor foobar with invalid or unexpected arguments/,
+           'exception when calling construct() with a nonexistent rule name');
+  t.ok(m.construct('addExp', [m.match('1+2', 'addExp_plus')._cst]) instanceof nodes.Node);
 
   it('particular entries work when called', function() {
     var n = m.match('1+2*3', 'addExp')._cst;
@@ -106,6 +96,38 @@ test('grammar constructors dictionary', function(t) {
     var p = n.children[0];
     t.equal(p.ctorName, 'addExp_plus');
     t.equal(p.numChildren(), 3);
+  });
+
+  it('constructing nodes by matching', function() {
+    var addExp = m.constructors.addExp;
+    var n = addExp('10+2');
+    t.equal(n.ctorName, 'addExp', 'constructing a node from a string');
+    t.equal(n.children[0].ctorName, 'addExp_plus');
+
+    t.throws(function() { addExp('10+'); }, /invalid or unexpected arguments/);
+
+    t.equal(addExp('123', '+', '2').ctorName, 'addExp', 'passing a string for each child');
+    t.throws(function() { addExp('1', '+', '+'); }, /invalid or unexpected arguments/);
+    t.throws(function() { addExp('1', '+', '2', '+'); }, /invalid or unexpected arguments/);
+
+    var g = makeGrammar([
+      'G {',
+      '  Foo = Maybe<Number>',
+      '  Maybe<exp> = exp -- some',
+      '             |     -- none',
+      '}']);
+    n = g.constructors.Foo(99);
+    t.equal(n.ctorName, 'Foo', 'ADT-style contructor');
+    t.equal(n.children[0].children[0].children[0].ctorName, 'Number');
+
+    n = g.constructors.Foo();
+    t.equal(n.ctorName, 'Foo', 'works with no args');
+    t.equal(n.children[0].children[0].ctorName, 'Maybe_none');
+    t.equal(n.children[0].children[0].children.length, 0);
+
+    t.throws(function() { g.constructors.Foo('99'); }, /invalid or unexpected arguments/);
+    t.throws(function() { g.constructors.Foo(['99']); }, /invalid or unexpected arguments/);
+    t.throws(function() { g.constructors.Foo([99]); }, /invalid or unexpected arguments/);
   });
 
   t.end();

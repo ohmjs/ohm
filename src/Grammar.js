@@ -43,11 +43,27 @@ function Grammar(
 Grammar.prototype = {
   construct: function(ruleName, children) {
     var body = this.ruleBodies[ruleName];
-    if (!body || !body.check(this, children) || children.length !== body.getArity()) {
-      throw errors.invalidConstructorCall(this, ruleName, children);
+
+    // If the arguments are Node instances, try to construct the Node directly.
+    if (children.length > 0 && children[0] instanceof nodes.Node) {
+      if (body && body.check(this, children) && children.length === body.getArity()) {
+        var interval = new Interval(InputStream.newFor(children), 0, children.length);
+        return new nodes.Node(this, ruleName, children, interval);
+      }
+    } else if (body) {
+      // Try to construct the node by matching the rule against the arguments.
+      // If there is a single string argument, attempt to match that directly. Otherwise,
+      // match against the array of children.
+      var input = children;
+      if (children.length === 1 && typeof children[0] === 'string') {
+        input = children[0];
+      }
+      var state = new State(this, InputStream.newFor(input), ruleName, false);
+      if (state.eval(new pexprs.Apply(ruleName))) {
+        return state.bindings[0];
+      }
     }
-    var interval = new Interval(InputStream.newFor(children), 0, children.length);
-    return new nodes.Node(this, ruleName, children, interval);
+    throw errors.invalidConstructorCall(this, ruleName, children);
   },
 
   createConstructors: function() {
