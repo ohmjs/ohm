@@ -3,4 +3,4 @@
 dist/*
 
 // TODO: Fix up errors and stop ignoring this file.
-test/ohm-spec.js
+test/test-ohm-syntax.js
