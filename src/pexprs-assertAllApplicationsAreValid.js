@@ -68,7 +68,7 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, gramm
 
   // Make sure that the rule exists
   if (!body) {
-    throw errors.undeclaredRule(this.ruleName, grammar.name, this);
+    throw errors.undeclaredRule(this.ruleName, grammar.name, this.interval);
   }
 
   // ... and that this application is allowed

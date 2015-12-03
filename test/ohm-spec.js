@@ -85,7 +85,7 @@ test('grammar constructors dictionary', function(t) {
 
   t.equal(m.constructors.foobar, undefined, 'no entries for nonexistent rules');
   t.throws(function() { m.construct('foobar', []); },
-           /Attempt to invoke constructor foobar with invalid or unexpected arguments/,
+           /Rule foobar is not declared in grammar Arithmetic/,
            'exception when calling construct() with a nonexistent rule name');
   t.ok(m.construct('addExp', [m.match('1+2', 'addExp_plus')._cst]) instanceof nodes.Node);
 

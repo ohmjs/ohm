@@ -43,27 +43,48 @@ function Grammar(
 Grammar.prototype = {
   construct: function(ruleName, children) {
     var body = this.ruleBodies[ruleName];
+    if (!body) {
+      throw errors.undeclaredRule(ruleName, this.name);
+    }
 
     // If the arguments are Node instances, try to construct the Node directly.
+    // Otherwise, try to construct the node by matching the rule against the arguments.
+    var ans;
     if (children.length > 0 && children[0] instanceof nodes.Node) {
-      if (body && body.check(this, children) && children.length === body.getArity()) {
-        var interval = new Interval(InputStream.newFor(children), 0, children.length);
-        return new nodes.Node(this, ruleName, children, interval);
-      }
-    } else if (body) {
-      // Try to construct the node by matching the rule against the arguments.
-      // If there is a single string argument, attempt to match that directly. Otherwise,
-      // match against the array of children.
-      var input = children;
-      if (children.length === 1 && typeof children[0] === 'string') {
-        input = children[0];
-      }
-      var state = new State(this, InputStream.newFor(input), ruleName, false);
-      if (state.eval(new pexprs.Apply(ruleName))) {
-        return state.bindings[0];
-      }
+      ans = this._constructWithChildNodes(ruleName, body, children);
+    } else {
+      ans = this._constructByMatching(ruleName, children);
     }
-    throw errors.invalidConstructorCall(this, ruleName, children);
+    if (!ans) {
+      throw errors.invalidConstructorCall(this, ruleName, children);
+    }
+    return ans;
+  },
+
+  // Try to match `ctorArgs` with the body of the rule given by `ruleName`.
+  // Return the resulting CST node if it succeeds, otherwise return null.
+  _constructByMatching: function(ruleName, ctorArgs) {
+    // If there is a single string argument, attempt to match that directly. Otherwise,
+    // match against the array of arguments.
+    var input = ctorArgs;
+    if (input.length === 1 && typeof input[0] === 'string') {
+      input = input[0];
+    }
+    var state = new State(this, InputStream.newFor(input), ruleName, false);
+    if (!state.eval(new pexprs.Apply(ruleName))) {
+      return null;
+    }
+    return state.bindings[0];
+  },
+
+  // Construct a CST node for `ruleName` with the child nodes given in `children`.
+  // Returns the node, or null if `children` are not correct for this type of node.
+  _constructWithChildNodes: function(ruleName, ruleBody, children) {
+    if (!ruleBody.check(this, children) || children.length !== ruleBody.getArity()) {
+      return null;
+    }
+    var interval = new Interval(InputStream.newFor(children), 0, children.length);
+    return new nodes.Node(this, ruleName, children, interval);
   },
 
   createConstructors: function() {

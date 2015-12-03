@@ -61,10 +61,10 @@ function duplicateGrammarDeclaration(grammar, namespace) {
 
 // Undeclared rule
 
-function undeclaredRule(ruleName, grammarName, expr) {
+function undeclaredRule(ruleName, grammarName, optInterval) {
   return createError(
       'Rule ' + ruleName + ' is not declared in grammar ' + grammarName,
-      expr.interval);
+      optInterval);
 }
 
 // Cannot override undeclared rule
