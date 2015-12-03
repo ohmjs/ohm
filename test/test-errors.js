@@ -14,7 +14,7 @@ var ohm = require('..');
 // --------------------------------------------------------------------
 
 function makeRuleWithBody(expr) {
-  ohm.grammar('G { start = ' + expr + '}');
+  return ohm.grammar('G { start = ' + expr + '}');
 }
 
 // --------------------------------------------------------------------
@@ -67,7 +67,8 @@ test('undeclared rules', function(t) {
   t.throws(
       function() { makeRuleWithBody('undeclaredRule'); },
       'Rule undeclaredRule is not declared in grammar G');
-
+  var g = makeRuleWithBody('digit');
+  t.throws(function() { g.match(null, 'x'); }, /Rule x is not declared in grammar G/);
   t.end();
 });
 

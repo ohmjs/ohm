@@ -121,6 +121,9 @@ Grammar.prototype = {
   },
 
   _match: function(obj, startRule, tracingEnabled) {
+    if (!(startRule in this.ruleBodies)) {
+      throw errors.undeclaredRule(startRule, this.name);
+    }
     var inputStream = InputStream.newFor(typeof obj === 'string' ? obj : [obj]);
     var state = new State(this, inputStream, startRule, tracingEnabled);
     state.eval(new pexprs.Apply(startRule));
