@@ -692,6 +692,15 @@ test('obj', function(t) {
         function() { ohm.grammar('M { duh = {x: 1, x: 2, y: 3, ...} }'); },
         'Object pattern has duplicate property names: x');
   });
+
+  var obj = Object.create(null);
+  obj.x = 1;
+  obj.y = 2;
+  assertSucceeds(t, m.match(obj), 'object with null prototype');
+
+  obj = {hasOwnProperty: null, x: 1, y: 2};
+  assertSucceeds(t, m.match(obj, 'lenient'), 'object overriding hasOwnProperty');
+
   t.end();
 });
 

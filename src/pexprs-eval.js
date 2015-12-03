@@ -18,6 +18,9 @@ var TerminalNode = nodes.TerminalNode;
 // Operations
 // --------------------------------------------------------------------
 
+// A safer version of hasOwnProperty.
+var hasOwnProp = Object.prototype.hasOwnProperty;
+
 /*
   Evaluate the expression and return `true` if it succeeds, `false` otherwise. This method should
   only be called directly by `State.prototype.eval(expr)`, which also updates the data structures
@@ -238,7 +241,7 @@ pexprs.Obj.prototype.eval = function(state) {
     var numOwnPropertiesMatched = 0;
     for (var idx = 0; idx < this.properties.length; idx++) {
       var property = this.properties[idx];
-      if (!obj.hasOwnProperty(property.name)) {
+      if (!hasOwnProp.call(obj, property.name)) {
         return false;
       }
       var value = obj[property.name];
@@ -254,7 +257,7 @@ pexprs.Obj.prototype.eval = function(state) {
     if (this.isLenient) {
       var remainder = {};
       for (var p in obj) {
-        if (obj.hasOwnProperty(p) && this.properties.indexOf(p) < 0) {
+        if (hasOwnProp.call(obj, p) && this.properties.indexOf(p) < 0) {
           remainder[p] = obj[p];
         }
       }
