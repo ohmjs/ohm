@@ -62,7 +62,7 @@ module.exports = ohm.makeRecipe(function() {
     .define("number", [], this.seq(this.opt(this.prim("-")), this.plus(this.app("digit"))), "a number")
     .define("space_singleLine", [], this.seq(this.prim("//"), this.star(this.seq(this.not(this.prim("\n")), this.app("any"))), this.prim("\n")))
     .define("space_multiLine", [], this.seq(this.prim("/*"), this.star(this.seq(this.not(this.prim("*/")), this.app("any"))), this.prim("*/")))
-    .extend("space", [], this.alt(this.alt(this.app("space_singleLine"), this.app("space_multiLine")), this.range("\u0000", " ")), "a space")
+    .extend("space", [], this.alt(this.alt(this.app("space_singleLine"), this.app("space_multiLine")), this.range("\u0000", " ")))
     .build();
 });
 

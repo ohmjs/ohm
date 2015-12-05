@@ -2,6 +2,8 @@
 
 var inherits = require('inherits');
 
+var common = require('./common');
+
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
@@ -87,11 +89,21 @@ Node.prototype.isTerminal = function() {
   return false;
 };
 
+Node.prototype.isNonterminal = function() {
+  return false;
+};
+
+Node.prototype.isIteration = function() {
+  return false;
+};
+
 Node.prototype.toJSON = function() {
   var r = {};
   r[this.ctorName] = this.children;
   return r;
 };
+
+// Terminals
 
 function TerminalNode(grammar, value, interval) {
   Node.call(this, grammar, '_terminal', [], interval);
@@ -103,8 +115,43 @@ TerminalNode.prototype.isTerminal = function() {
   return true;
 };
 
+// Nonterminals
+
+function NonterminalNode(grammar, ruleName, children, interval) {
+  Node.call(this, grammar, ruleName, children, interval);
+}
+inherits(NonterminalNode, Node);
+
+NonterminalNode.prototype.isNonterminal = function() {
+  return true;
+};
+
+NonterminalNode.prototype.isLexical = function() {
+  return common.isLexical(this.ctorName);
+};
+
+NonterminalNode.prototype.isSyntactic = function() {
+  return common.isSyntactic(this.ctorName);
+};
+
+// Iterations
+
+function IterationNode(grammar, children, interval) {
+  Node.call(this, grammar, '_iter', children, interval);
+}
+inherits(IterationNode, Node);
+
+IterationNode.prototype.isIteration = function() {
+  return true;
+};
+
 // --------------------------------------------------------------------
 // Exports
 // --------------------------------------------------------------------
 
-module.exports = {Node: Node, TerminalNode: TerminalNode};
+module.exports = {
+  Node: Node,
+  TerminalNode: TerminalNode,
+  NonterminalNode: NonterminalNode,
+  IterationNode: IterationNode
+};

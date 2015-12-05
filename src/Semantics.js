@@ -56,7 +56,7 @@ Wrapper.prototype._children = function() {
 // Returns `true` if the CST node associated with this wrapper corresponds to an iteration
 // expression, i.e., a Kleene-*, Kleene-+, or an optional. Returns `false` otherwise.
 Wrapper.prototype.isIteration = function() {
-  return this._node.ctorName === '_iter';
+  return this._node.isIteration();
 };
 
 // Returns `true` if the CST node associated with this wrapper is a terminal node, `false`
@@ -68,7 +68,19 @@ Wrapper.prototype.isTerminal = function() {
 // Returns `true` if the CST node associated with this wrapper is a nonterminal node, `false`
 // otherwise.
 Wrapper.prototype.isNonterminal = function() {
-  return !this.isTerminal() && !this.isIteration();
+  return this._node.isNonterminal();
+};
+
+// Returns `true` if the CST node associated with this wrapper is a nonterminal node
+// corresponding to a syntactic rule, `false` otherwise.
+Wrapper.prototype.isSyntactic = function() {
+  return this.isNonterminal() && this._node.isSyntactic();
+};
+
+// Returns `true` if the CST node associated with this wrapper is a nonterminal node
+// corresponding to a lexical rule, `false` otherwise.
+Wrapper.prototype.isLexical = function() {
+  return this.isNonterminal() && this._node.isLexical();
 };
 
 Object.defineProperties(Wrapper.prototype, {
@@ -469,9 +481,19 @@ Operation.prototype.execute = function(semantics, nodeWrapper) {
   // The action dictionary does not contain a semantic action for this specific type of node.
   // If this is a nonterminal node and the programmer has provided a `_nonterminal` semantic
   // action, we invoke it:
-  if (nodeWrapper.isNonterminal() && this.actionDict._nonterminal) {
+  if (nodeWrapper.isNonterminal()) {
     actionFn = this.actionDict._nonterminal;
-    return this.doAction(semantics, nodeWrapper, actionFn, true);
+    // Well, actually, the `_nonterminal` semantic action may be overridden by the `_lexical` or
+    // `_syntactic` semantic action, depending on whether this node belongs to a lexical or
+    // syntactic rule, respectively.
+    if (nodeWrapper.isLexical() && this.actionDict._lexical) {
+      actionFn = this.actionDict._lexical;
+    } else if (nodeWrapper.isSyntactic() && this.actionDict._syntactic) {
+      actionFn = this.actionDict._syntactic;
+    }
+    if (actionFn) {
+      return this.doAction(semantics, nodeWrapper, actionFn, true);
+    }
   }
 
   // Otherwise, we invoke the '_default' semantic action.

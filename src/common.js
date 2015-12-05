@@ -97,7 +97,11 @@ exports.fail = {};
 
 exports.isSyntactic = function(ruleName) {
   var firstChar = ruleName[0];
-  return ('A' <= firstChar && firstChar <= 'Z');
+  return firstChar === firstChar.toUpperCase();
+};
+
+exports.isLexical = function(ruleName) {
+  return !exports.isSyntactic(ruleName);
 };
 
 exports.padLeft = function(str, len, optChar) {

@@ -84,7 +84,7 @@ Grammar.prototype = {
       return null;
     }
     var interval = new Interval(InputStream.newFor(children), 0, children.length);
-    return new nodes.Node(this, ruleName, children, interval);
+    return new nodes.NonterminalNode(this, ruleName, children, interval);
   },
 
   createConstructors: function() {
