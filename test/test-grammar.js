@@ -140,6 +140,8 @@ test('action dictionary templates', function(t) {
     '  },\n' +
     '  lower: function(_) {\n' +
     '  },\n' +
+    '  spaces: function(_) {\n' +
+    '  },\n' +
     '  space: function(_) {\n' +
     '  },\n' +
     '  unicodeLtmo: function(_) {\n' +
@@ -196,6 +198,8 @@ test('action dictionary templates', function(t) {
     '  end: function(_) {\n' +
     '  },\n' +
     '  lower: function(_) {\n' +
+    '  },\n' +
+    '  spaces: function(_) {\n' +
     '  },\n' +
     '  space: function(_) {\n' +
     '  },\n' +

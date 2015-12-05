@@ -273,10 +273,6 @@ Grammar.prototype = {
 
     var first = true;
     for (var ruleName in this.ruleBodies) {
-      if (ruleName === 'spaces_') {
-        // This rule is not for the user, it's more of an implementation detail of syntactic rules.
-        continue;
-      }
       var body = this.ruleBodies[ruleName];
       if (first) {
         first = false;
@@ -317,11 +313,10 @@ Grammar.ProtoBuiltInRules = new Grammar(
       end: pexprs.end,
       lower: new pexprs.UnicodeChar('Ll'),
 
-      // The following rule is part of the Ohm implementation. Its name ends with '_' to
-      // discourage programmers from invoking, extending, and overriding it.
-      spaces_: new pexprs.Star(new pexprs.Apply('space')),
+      // The following rule is invoked implicitly by syntactic rules to skip spaces.
+      spaces: new pexprs.Star(new pexprs.Apply('space')),
 
-      // The `space` rule must be defined here because it's referenced by `spaces_`.
+      // The `space` rule must be defined here because it's referenced by `spaces`.
       space: new pexprs.Range('\x00', ' '),
 
       // The union of Lt (titlecase), Lm (modifier), and Lo (other), i.e. any letter not
@@ -339,7 +334,7 @@ Grammar.ProtoBuiltInRules = new Grammar(
     {
       any: [],
       end: [],
-      spaces_: [],
+      spaces: [],
       space: [],
       lower: [],
       unicodeLtmo: [],

@@ -74,7 +74,7 @@ MatchResult.prototype.getDiscardedSpaces = function() {
   // Now `intervals` holds the intervals of the input stream that were skipped over by syntactic
   // rules, because they contained spaces.
 
-  // Next, we want to match the contents of each of those intervals with the grammar's `spaces_`
+  // Next, we want to match the contents of each of those intervals with the grammar's `spaces`
   // rule, to reconstruct the CST nodes that were discarded by syntactic rules. But if we simply
   // pass each interval's `contents` to the grammar's `match` method, the resulting nodes and
   // their children will have intervals that are associated with a different input, i.e., a
@@ -95,7 +95,7 @@ MatchResult.prototype.getDiscardedSpaces = function() {
 
   // Now we're finally ready to reconstruct the discarded CST nodes.
   var discardedNodes = intervals.map(function(interval) {
-    var r = grammar.match(interval.contents, 'spaces_');
+    var r = grammar.match(interval.contents, 'spaces');
     s(r).fixIntervals(interval.startIdx);
     return r._cst;
   });

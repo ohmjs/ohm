@@ -279,7 +279,7 @@ pexprs.Apply.prototype.eval = function(state) {
   var app = this.substituteParams(actuals);
 
   // Skip whitespace at the application site, if the rule that's being applied is syntactic
-  if (app !== state.applySpaces_ && (app.isSyntactic() || state.inSyntacticContext())) {
+  if (app !== state.applySpaces && (app.isSyntactic() || state.inSyntacticContext())) {
     state.skipSpaces();
   }
 

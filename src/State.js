@@ -16,7 +16,7 @@ var pexprs = require('./pexprs');
 var RM_RIGHTMOST_FAILURE_POSITION = 0;
 var RM_RIGHTMOST_FAILURES = 1;
 
-var applySpaces_ = new pexprs.Apply('spaces_');
+var applySpaces = new pexprs.Apply('spaces');
 
 function State(grammar, inputStream, startRule, tracingEnabled) {
   this.grammar = grammar;
@@ -97,7 +97,7 @@ State.prototype = {
 
   skipSpaces: function() {
     var origFailuresInfo = this.getFailuresInfo();
-    this.eval(applySpaces_);
+    this.eval(applySpaces);
     this.bindings.pop();
     this.restoreFailuresInfo(origFailuresInfo);
     return this.inputStream.pos;
@@ -268,7 +268,7 @@ State.prototype = {
     }
   },
 
-  applySpaces_: applySpaces_
+  applySpaces: applySpaces
 };
 
 // --------------------------------------------------------------------
