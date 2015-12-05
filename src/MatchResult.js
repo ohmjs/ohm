@@ -7,6 +7,7 @@
 var inherits = require('inherits');
 
 var common = require('./common');
+var nodes = require('./nodes');
 var util = require('./util');
 var Interval = require('./Interval');
 
@@ -38,6 +39,87 @@ MatchResult.prototype.failed = function() {
 
 MatchResult.prototype.succeeded = function() {
   return !this.failed();
+};
+
+// Returns a `MatchResult` that can be fed into operations or attributes that care
+// about the whitespace that was implicitly skipped over by syntactic rules. This
+// is useful for doing things with comments, e.g., syntax highlighting.
+MatchResult.prototype.getDiscardedSpaces = function() {
+  if (this.failed()) {
+    return [];
+  }
+
+  var state = this.state;
+  var grammar = state.grammar;
+  var inputStream = state.inputStream;
+
+  var intervals = [new Interval(inputStream, 0, inputStream.source.length)];
+
+  // Subtract the interval of each terminal from the set of intervals above.
+  var s = grammar.semantics().addOperation('subtractTerminals', {
+    _nonterminal: function(children) {
+      children.forEach(function(child) {
+        child.subtractTerminals();
+      });
+    },
+    _terminal: function() {
+      var t = this;
+      intervals = intervals.
+          map(function(interval) { return interval.minus(t.interval); }).
+          reduce(function(xs, ys) { return xs.concat(ys); }, []);
+    }
+  });
+  s(this).subtractTerminals();
+
+  // Now `intervals` holds the intervals of the input stream that were skipped over by syntactic
+  // rules, because they contained spaces.
+
+  // Next, we want to match the contents of each of those intervals with the grammar's `spaces_`
+  // rule, to reconstruct the CST nodes that were discarded by syntactic rules. But if we simply
+  // pass each interval's `contents` to the grammar's `match` method, the resulting nodes and
+  // their children will have intervals that are associated with a different input, i.e., a
+  // substring of the original input. The following operation will fix this problem for us.
+  s.addOperation('fixIntervals(idxOffset)', {
+    _default: function(children) {
+      var idxOffset = this.args.idxOffset;
+      this.interval.inputStream = inputStream;
+      this.interval.startIdx += idxOffset;
+      this.interval.endIdx += idxOffset;
+      if (!this.isTerminal()) {
+        children.forEach(function(child) {
+          child.fixIntervals(idxOffset);
+        });
+      }
+    }
+  });
+
+  // Now we're finally ready to reconstruct the discarded CST nodes.
+  var discardedNodes = intervals.map(function(interval) {
+    var r = grammar.match(interval.contents, 'spaces_');
+    s(r).fixIntervals(interval.startIdx);
+    return r._cst;
+  });
+
+  // Rather than return a bunch of CST nodes and make the caller of this method loop over them,
+  // we can construct a single CST node that is the parent of all of the discarded nodes. An
+  // `IterationNode` is the obvious choice for this.
+  discardedNodes = new nodes.IterationNode(
+      grammar,
+      discardedNodes,
+      discardedNodes.length === 0 ?
+          new Interval(inputStream, 0, 0) :
+          new Interval(
+              inputStream,
+              discardedNodes[0].interval.startIdx,
+              discardedNodes[discardedNodes.length - 1].interval.endIdx));
+
+  // But remember that a CST node can't be used directly by clients. What we really need to return
+  // from this method is a successful `MatchResult` that can be used with the clients' semantics.
+  // We already have one -- `this` -- but it's got a different CST node inside. So we create a new
+  // object that delegates to `this`, and override its `_cst` property.
+  var r = Object.create(this);
+  r._cst = discardedNodes;
+  return r;
 };
 
 // ----------------- MatchFailure -----------------
