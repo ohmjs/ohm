@@ -5,13 +5,11 @@
 // --------------------------------------------------------------------
 
 var InputStream = require('./InputStream');
-var Interval = require('./Interval');
 var MatchResult = require('./MatchResult');
 var Semantics = require('./Semantics');
 var State = require('./State');
 var common = require('./common');
 var errors = require('./errors');
-var nodes = require('./nodes');
 var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
@@ -47,14 +45,7 @@ Grammar.prototype = {
       throw errors.undeclaredRule(ruleName, this.name);
     }
 
-    // If the arguments are Node instances, try to construct the Node directly.
-    // Otherwise, try to construct the node by matching the rule against the arguments.
-    var ans;
-    if (children.length > 0 && children[0] instanceof nodes.Node) {
-      ans = this._constructWithChildNodes(ruleName, body, children);
-    } else {
-      ans = this._constructByMatching(ruleName, children);
-    }
+    var ans = this._constructByMatching(ruleName, children);
     if (!ans) {
       throw errors.invalidConstructorCall(this, ruleName, children);
     }
@@ -70,21 +61,11 @@ Grammar.prototype = {
     if (input.length === 1 && typeof input[0] === 'string') {
       input = input[0];
     }
-    var state = new State(this, InputStream.newFor(input), ruleName, false);
+    var state = new State(this, InputStream.newFor(input), ruleName, {matchNodes: true});
     if (!state.eval(new pexprs.Apply(ruleName))) {
       return null;
     }
     return state.bindings[0];
-  },
-
-  // Construct a CST node for `ruleName` with the child nodes given in `children`.
-  // Returns the node, or null if `children` are not correct for this type of node.
-  _constructWithChildNodes: function(ruleName, ruleBody, children) {
-    if (!ruleBody.check(this, children) || children.length !== ruleBody.getArity()) {
-      return null;
-    }
-    var interval = new Interval(InputStream.newFor(children), 0, children.length);
-    return new nodes.NonterminalNode(this, ruleName, children, interval);
   },
 
   createConstructors: function() {
@@ -116,16 +97,16 @@ Grammar.prototype = {
     if (!startRule) {
       throw new Error('Missing start rule argument -- the grammar has no default start rule.');
     }
-    var state = this._match(obj, startRule, false);
+    var state = this._match(obj, startRule, {});
     return MatchResult.newFor(state);
   },
 
-  _match: function(obj, startRule, tracingEnabled) {
+  _match: function(obj, startRule, opts) {
     if (!(startRule in this.ruleBodies)) {
       throw errors.undeclaredRule(startRule, this.name);
     }
     var inputStream = InputStream.newFor(typeof obj === 'string' ? obj : [obj]);
-    var state = new State(this, inputStream, startRule, tracingEnabled);
+    var state = new State(this, inputStream, startRule, opts);
     state.eval(new pexprs.Apply(startRule));
     return state;
   },
@@ -135,7 +116,7 @@ Grammar.prototype = {
     if (!startRule) {
       throw new Error('Missing start rule argument -- the grammar has no default start rule.');
     }
-    var state = this._match(obj, startRule, true);
+    var state = this._match(obj, startRule, {trace: true});
 
     var rootTrace = state.trace[0];
     rootTrace.state = state;

@@ -18,11 +18,12 @@ var RM_RIGHTMOST_FAILURES = 1;
 
 var applySpaces = new pexprs.Apply('spaces');
 
-function State(grammar, inputStream, startRule, tracingEnabled) {
+function State(grammar, inputStream, startRule, opts) {
   this.grammar = grammar;
   this.origInputStream = inputStream;
   this.startRule = startRule;
-  this.tracingEnabled = tracingEnabled;
+  this.tracingEnabled = opts.trace || false;
+  this.matchNodes = opts.matchNodes || false;
   this.init(RM_RIGHTMOST_FAILURE_POSITION);
 }
 
