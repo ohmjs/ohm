@@ -206,10 +206,10 @@ Semantics.initPrototypeParser = function(grammar) {
     name: function(first, rest) {
       return this.interval.contents;
     },
-    ListOf_none: function() {
+    EmptyListOf: function() {
       return [];
     },
-    ListOf_some: function(x, _, xs) {
+    NonemptyListOf: function(x, _, xs) {
       return [x.parse()].concat(xs.parse());
     }
   });

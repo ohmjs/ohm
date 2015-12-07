@@ -267,10 +267,10 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     space_multiLine: function(start, _, end) {},
     space_singleLine: function(start, _, end) {},
 
-    ListOf_some: function(x, _, xs) {
+    NonemptyListOf: function(x, _, xs) {
       return [x.visit()].concat(xs.visit());
     },
-    ListOf_none: function() {
+    EmptyListOf: function() {
       return [];
     }
   });

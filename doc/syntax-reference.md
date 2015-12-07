@@ -170,7 +170,9 @@ Any number of comma-separated key/expression pairs can be specified. Other valid
 
 `end`: Matches the end of the input stream. Equivalent to `~any`.
 
-<code>ListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Matches the expression _elem_ zero or more times, separated by something that matches the expression _sep_. E.g., `ListOf<letter, ",">` will match `''`, `'a'`, and `'a, b, c'`.
+<code>ListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Matches the expression _elem_ zero or more times, separated by something that matches the expression _sep_. E.g., `ListOf<letter, ",">` will match `''`, `'a'`, and `'a, b, c'`.  Additionally there is <code>NonemptyListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code> that matches _elem_ at least one time.
+
+<code>listOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Similar to `ListOf<elem, sep>` but interpreted as [lexical rule](#syntactic-lexical).
 
 ## Grammar Syntax
 

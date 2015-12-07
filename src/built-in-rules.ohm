@@ -18,11 +18,23 @@ BuiltInRules {
     | "A".."F"
 
   ListOf<elem, sep>
-    = elem (sep elem)*  -- some
-    |                   -- none
+    = NonemptyListOf<elem, sep>
+    | EmptyListOf<elem, sep>
+
+  NonemptyListOf<elem, sep>
+    = elem (sep elem)*
+
+  EmptyListOf<elem, sep>
+    =
 
   listOf<elem, sep>
-    = elem (sep elem)*  -- some
-    |                   -- none
+    = nonemptyListOf<elem, sep>
+    | emptyListOf<elem, sep>
+
+  nonemptyListOf<elem, sep>
+    = elem (sep elem)*
+
+  emptyListOf<elem, sep>
+    =
 
 }
