@@ -119,6 +119,10 @@ MatchResult.prototype.getDiscardedSpaces = function() {
   // object that delegates to `this`, and override its `_cst` property.
   var r = Object.create(this);
   r._cst = discardedNodes;
+
+  // We also override its `getDiscardedSpaces` method, in case someone decides to call it.
+  r.getDiscardedSpaces = function() { return r; };
+
   return r;
 };
 
