@@ -116,7 +116,10 @@ Ohm {
     = "-"? digit+
 
   space
-   += "//" (~"\n" any)* "\n"  -- singleLine
+   += comment
+
+  comment
+    = "//" (~"\n" any)* "\n"  -- singleLine
     | "/*" (~"*/" any)* "*/"  -- multiLine
 
 }

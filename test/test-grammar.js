@@ -137,17 +137,17 @@ test('action dictionary templates', function(t) {
     '  },\n' +
     '  hexDigit: function(_) {\n' +
     '  },\n' +
+    '  ListOf: function(_) {\n' +
+    '  },\n' +
     '  NonemptyListOf: function(_, _, _) {\n' +
     '  },\n' +
     '  EmptyListOf: function() {\n' +
     '  },\n' +
-    '  ListOf: function(_) {\n' +
+    '  listOf: function(_) {\n' +
     '  },\n' +
     '  nonemptyListOf: function(_, _, _) {\n' +
     '  },\n' +
     '  emptyListOf: function() {\n' +
-    '  },\n' +
-    '  listOf: function(_) {\n' +
     '  },\n' +
     '  any: function(_) {\n' +
     '  },\n' +
@@ -196,17 +196,17 @@ test('action dictionary templates', function(t) {
     '  },\n' +
     '  hexDigit: function(_) {\n' +
     '  },\n' +
+    '  ListOf: function(_) {\n' +
+    '  },\n' +
     '  NonemptyListOf: function(_, _, _) {\n' +
     '  },\n' +
     '  EmptyListOf: function() {\n' +
     '  },\n' +
-    '  ListOf: function(_) {\n' +
+    '  listOf: function(_) {\n' +
     '  },\n' +
     '  nonemptyListOf: function(_, _, _) {\n' +
     '  },\n' +
     '  emptyListOf: function() {\n' +
-    '  },\n' +
-    '  listOf: function(_) {\n' +
     '  },\n' +
     '  any: function(_) {\n' +
     '  },\n' +

@@ -263,10 +263,6 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return parseInt(this.interval.contents);
     },
 
-    space: function(expr) {},
-    space_multiLine: function(start, _, end) {},
-    space_singleLine: function(start, _, end) {},
-
     NonemptyListOf: function(x, _, xs) {
       return [x.visit()].concat(xs.visit());
     },

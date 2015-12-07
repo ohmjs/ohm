@@ -25,7 +25,7 @@ BuiltInRules {
     = elem (sep elem)*
 
   EmptyListOf<elem, sep>
-    =
+    = /* nothing */
 
   listOf<elem, sep>
     = nonemptyListOf<elem, sep>
@@ -35,6 +35,6 @@ BuiltInRules {
     = elem (sep elem)*
 
   emptyListOf<elem, sep>
-    =
+    = /* nothing */
 
 }
