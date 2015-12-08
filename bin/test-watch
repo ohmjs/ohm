@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Start watchify in a subshell, and then execute `npm test` whenever the
+# browserified bundle changes, or any of the test sources change.
+npm run watch &
+watchy -w dist/ohm.js,test,example,doc,README.md -- npm test
