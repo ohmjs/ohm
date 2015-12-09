@@ -228,7 +228,12 @@ test('semantics', function(t) {
 });
 
 test('_iter nodes', function(t) {
-  var g = ohm.grammar('G { letters = letter* }');
+  var g = testUtil.makeGrammar([
+    'G {',
+    '  letters = letter*',
+    '  optLetter = letter?',
+    '  ident = letter+',
+    '}']);
   var s = g.semantics().addOperation('op', {
     letter: function(l) {
       return l.interval.contents;
@@ -263,6 +268,23 @@ test('_iter nodes', function(t) {
     }
   });
   t.equal(s(m).op(), 'a,b,c');
+
+  var m2 = g.match('', 'optLetter');
+  var m3 = g.match('ab', 'ident');
+  s = g.semantics().addOperation('op', {
+    letters: function(ls) {
+      return ls.isOptional();
+    },
+    optLetter: function(ls) {
+      return ls.isOptional();
+    },
+    ident: function(ls) {
+      return ls.isOptional();
+    }
+  });
+  t.notOk(s(m).op(), '`ls` should NOT be optional for *');
+  t.ok(s(m2).op(), '`ls` should be optional for ?');
+  t.notOk(s(m3).op(), '`ls` should NOT be optional for +');
 
   t.end();
 });

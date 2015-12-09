@@ -97,6 +97,10 @@ Node.prototype.isIteration = function() {
   return false;
 };
 
+Node.prototype.isOptional = function() {
+  return false;
+};
+
 Node.prototype.toJSON = function() {
   var r = {};
   r[this.ctorName] = this.children;
@@ -136,13 +140,18 @@ NonterminalNode.prototype.isSyntactic = function() {
 
 // Iterations
 
-function IterationNode(grammar, children, interval) {
+function IterationNode(grammar, children, interval, optional) {
   Node.call(this, grammar, '_iter', children, interval);
+  this.optional = optional;
 }
 inherits(IterationNode, Node);
 
 IterationNode.prototype.isIteration = function() {
   return true;
+};
+
+IterationNode.prototype.isOptional = function() {
+  return this.optional;
 };
 
 // --------------------------------------------------------------------
