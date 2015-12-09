@@ -206,15 +206,15 @@ The number of child nodes that the node has.
 
 <b><pre class="api">n.minNumChildren: number</pre></b>
 
-For an iterator node, the minimal number of child nodes possible.
+For an iterator node, the minimum number of child nodes possible.
 
 <b><pre class="api">n.maxNumChildren: number</pre></b>
 
-For an iterator node, the maximal number of child nodes possible.
+For an iterator node, the maximum number of child nodes possible.
 
 <b><pre class="api">n.primitiveValue: number|string|...</pre></b>
 
-For a terminal node, the primitive value that the node has.
+For a terminal node, the raw value that was consumed from the input stream.
 
 #### Operations and Attributes
 
