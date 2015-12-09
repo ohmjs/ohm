@@ -136,8 +136,10 @@ NonterminalNode.prototype.isSyntactic = function() {
 
 // Iterations
 
-function IterationNode(grammar, children, interval) {
+function IterationNode(grammar, children, interval, minMatches, maxMatches) {
   Node.call(this, grammar, '_iter', children, interval);
+  this.minMatches = minMatches;
+  this.maxMatches = maxMatches;
 }
 inherits(IterationNode, Node);
 

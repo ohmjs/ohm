@@ -264,6 +264,14 @@ test('_iter nodes', function(t) {
   });
   t.equal(s(m).op(), 'a,b,c');
 
+  s = g.semantics().addOperation('op', {
+    letters: function(ls) {
+      return [ls.minNumChildren, ls.maxNumChildren, ls.numChildren];
+    }
+  });
+  t.deepEquals(s(m).op(), [0, Number.POSITIVE_INFINITY, 3],
+    '`ls` has minNumChildren and maxNumChildren');
+
   t.end();
 });
 

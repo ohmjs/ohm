@@ -96,6 +96,30 @@ Object.defineProperties(Wrapper.prototype, {
   // Returns the number of children of this CST node.
   numChildren: {get: function() { return this._node.numChildren(); }},
 
+  // Returns the minimum number of children for this CST node, if it's an iterator node.
+  // Otherwise, throws an exception.
+  minNumChildren: {
+    get: function() {
+      if (this.isIteration()) {
+        return this._node.minMatches;
+      }
+      throw new TypeError(
+          "tried to access the 'minNumChildren' attribute of a non-iterator CST node");
+    }
+  },
+
+  // Returns the maximum number of children for this CST node, if it's an iterator node.
+  // Otherwise, throws an exception.
+  maxNumChildren: {
+    get: function() {
+      if (this.isIteration()) {
+        return this._node.maxMatches;
+      }
+      throw new TypeError(
+          "tried to access the 'maxNumChildren' attribute of a non-iterator CST node");
+    }
+  },
+
   // Returns the primitive value of this CST node, if it's a terminal node. Otherwise,
   // throws an exception.
   primitiveValue: {
