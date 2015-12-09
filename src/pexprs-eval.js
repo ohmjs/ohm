@@ -162,7 +162,8 @@ pexprs.Iter.prototype.eval = function(state) {
         lastCol[lastCol.length - 1].interval.endIdx);
   }
   for (idx = 0; idx < cols.length; idx++) {
-    state.bindings.push(new IterationNode(state.grammar, cols[idx], interval));
+    state.bindings.push(new IterationNode(state.grammar, cols[idx], interval,
+      this.minNumMatches, this.maxNumMatches));
   }
   return true;
 };

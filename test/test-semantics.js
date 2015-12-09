@@ -228,7 +228,12 @@ test('semantics', function(t) {
 });
 
 test('_iter nodes', function(t) {
-  var g = ohm.grammar('G { letters = letter* }');
+  var g = testUtil.makeGrammar([
+    'G {',
+    '  letters = letter*',
+    '  optLetter = letter?',
+    '  ident = letter+',
+    '}']);
   var s = g.semantics().addOperation('op', {
     letter: function(l) {
       return l.interval.contents;
@@ -263,6 +268,26 @@ test('_iter nodes', function(t) {
     }
   });
   t.equal(s(m).op(), 'a,b,c');
+
+  var m2 = g.match('', 'optLetter');
+  var m3 = g.match('ab', 'ident');
+  s = g.semantics().addOperation('op', {
+    letters: function(ls) {
+      return [ls.minNumChildren, ls.maxNumChildren, ls.numChildren];
+    },
+    optLetter: function(ls) {
+      return [ls.minNumChildren, ls.maxNumChildren, ls.numChildren];
+    },
+    ident: function(ls) {
+      return [ls.minNumChildren, ls.maxNumChildren, ls.numChildren];
+    }
+  });
+  t.deepEquals(s(m).op(), [0, Number.POSITIVE_INFINITY, 3],
+    '`ls` has minNumChildren and maxNumChildren for *');
+  t.deepEquals(s(m2).op(), [0, 1, 0],
+    '`ls` has minNumChildren and maxNumChildren for ?');
+  t.deepEquals(s(m3).op(), [1, Number.POSITIVE_INFINITY, 2],
+    '`ls` has minNumChildren and maxNumChildren for +');
 
   t.end();
 });
