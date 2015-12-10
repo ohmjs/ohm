@@ -1047,7 +1047,6 @@ test('built-in types', function(t) {
     'G {',
     '  Arr = [Boolean Number String]',
     '  Obj = {b: Boolean, n: Number, s: String}',
-    '  Amb = "foo" String',
     '}']);
 
   // Boolean
@@ -1085,16 +1084,6 @@ test('built-in types', function(t) {
   result = g.match({b: false, n: -0, s: 'zzz'}, 'Obj');
   t.equal(result.succeeded(), true, 'matching inside an object');
   t.looseEqual(s(result).val, [false, -0, 'zzz'], 'obj match with semantics');
-
-  // When the first argument to `match` is a string, we create a a StringInputStream as the root,
-  // but we allow it to behave like a ListInputStream in certain cases. For more details, see
-  // StringInputStream.nextStringValue().
-  g = ohm.grammar('G {X = &"foo" String\nObj = {x: X}\nArr = [X]}');
-  t.equals(g.match('fooz', 'X').succeeded(), true, 'matching String on a StringInputStream');
-
-  // TODO: Maybe these should also work?
-  // t.equals(g.match({x: 'fooz'}, 'Obj').succeeded(), true);
-  // t.equals(g.match(['fooz'], 'Arr').succeeded(), true);
 
   t.end();
 });
