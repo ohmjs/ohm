@@ -207,9 +207,8 @@ pexprs.Lookahead.prototype.eval = function(state) {
 pexprs.Arr.prototype.eval = function(state) {
   var obj = state.inputStream.next();
   if (Array.isArray(obj)) {
-    var objInputStream = InputStream.newFor(obj);
-    state.pushInputStream(objInputStream);
-    var ans = state.eval(this.expr) && objInputStream.atEnd();
+    state.pushInputStream(InputStream.newFor(obj));
+    var ans = state.eval(this.expr) && state.inputStream.atEnd();
     state.popInputStream();
     return ans;
   } else {
@@ -217,16 +216,11 @@ pexprs.Arr.prototype.eval = function(state) {
   }
 };
 
-pexprs.Str.prototype.eval = function(state) {
+pexprs.Value.prototype.eval = function(state) {
   var obj = state.inputStream.next();
   if (typeof obj === 'string') {
-    var strInputStream = InputStream.newFor(obj);
-    state.pushInputStream(strInputStream);
-    var ans = state.eval(this.expr) && state.eval(pexprs.end);
-    if (ans) {
-      // Pop the binding that was added by `end`, which we don't want.
-      state.bindings.pop();
-    }
+    state.pushInputStream(InputStream.newFor(obj));
+    var ans = state.eval(this.expr) && state.inputStream.atEnd();
     state.popInputStream();
     return ans;
   } else {
@@ -246,9 +240,9 @@ pexprs.Obj.prototype.eval = function(state) {
         return false;
       }
       var value = obj[property.name];
-      var valueInputStream = InputStream.newFor([value]);
-      state.pushInputStream(valueInputStream);
-      var matched = state.eval(property.pattern) && valueInputStream.atEnd();
+      var expr = property.pattern;
+      state.pushInputStream(expr.newInputStreamFor([value], state.grammar));
+      var matched = state.eval(expr) && state.inputStream.atEnd();
       state.popInputStream();
       if (!matched) {
         return false;

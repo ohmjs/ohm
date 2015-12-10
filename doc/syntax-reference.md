@@ -141,9 +141,9 @@ Matches an object with an [own property](https://developer.mozilla.org/en-US/doc
 Like above, but will still match if the object has other properties. E.g., `{stars: 4, ...}` will match the object `{stars: 2, name: 'Noma'}`.
 
 <script type="text/markscript">
-  assert(ohm.grammar('G { start = {"name": any} }').match({name: 'Manuel'}).succeeded());
-  assert(ohm.grammar('G { start = {"name": any} }').match({name: 'Philip', age: 31}).failed());
-  assert(ohm.grammar('G { start = {stars: 2, ...} }').match({stars: 2, name: 'Noma'}).succeeded());
+  assert(ohm.grammar('G { Start = {name: String} }').match({name: 'Manuel'}).succeeded());
+  assert(ohm.grammar('G { Start = {name: String} }').match({name: 'Philip', age: 31}).failed());
+  assert(ohm.grammar('G { Start = {stars: 2, ...} }').match({stars: 2, name: 'Noma'}).succeeded());
 </script>
 
 Any number of comma-separated key/expression pairs can be specified. Other valid patterns are `{}`, which matches an object with no properties, and `{...}`, which matches any object. **NOTE:** In Ohm/JS, object patterns will also match Array objects.

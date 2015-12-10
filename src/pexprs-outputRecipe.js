@@ -97,14 +97,14 @@ pexprs.Lex.prototype.outputRecipe = function(sb, formals) {
   sb.append(')');
 };
 
-pexprs.Arr.prototype.outputRecipe = function(sb, formals) {
-  sb.append('this.arr(');
+pexprs.Value.prototype.outputRecipe = function(sb, formals) {
+  sb.append('this.val(');
   this.expr.outputRecipe(sb, formals);
   sb.append(')');
 };
 
-pexprs.Str.prototype.outputRecipe = function(sb, formals) {
-  sb.append('this.str(');
+pexprs.Arr.prototype.outputRecipe = function(sb, formals) {
+  sb.append('this.arr(');
   this.expr.outputRecipe(sb, formals);
   sb.append(')');
 };

@@ -22,6 +22,7 @@ pexprs.any._isNullable =
 pexprs.Range.prototype._isNullable =
 pexprs.Param.prototype._isNullable =
 pexprs.Plus.prototype._isNullable =
+pexprs.Value.prototype._isNullable =
 pexprs.Arr.prototype._isNullable =
 pexprs.Obj.prototype._isNullable =
 pexprs.TypeCheck.prototype._isNullable =
@@ -63,17 +64,12 @@ pexprs.Lex.prototype._isNullable = function(grammar, memo) {
   return this.expr._isNullable(grammar, memo);
 };
 
-pexprs.Str.prototype._isNullable = function(grammar, memo) {
-  // This is also an over-simplification that is only correct when the input is a string.
-  return this.expr._isNullable(grammar, memo);
-};
-
 pexprs.Apply.prototype._isNullable = function(grammar, memo) {
   var key = this.toMemoKey();
   if (!Object.prototype.hasOwnProperty.call(memo, key)) {
     var body = grammar.ruleBodies[this.ruleName];
     var inlined = body.substituteParams(this.params);
-    memo[key] = false;
+    memo[key] = false;  // Prevent infinite recursion for recursive rules.
     memo[key] = inlined._isNullable(grammar, memo);
   }
   return memo[key];

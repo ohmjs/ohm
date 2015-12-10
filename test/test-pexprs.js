@@ -83,9 +83,13 @@ test('toDisplayString', function(t) {
 });
 
 test('toString', function(t) {
-  var g = makeGrammar(
-      'G { start = &"a" ~(2 | 3?) ``b a\'\' [c {e: b, ...} {g: "a".."z"}]  a = 1  b = 2  c = 3 }');
+  var g = makeGrammar([
+    'G { start = &"a" ~(2 | 3?) $(b #a) [c {e: b, ...} {g: "a".."z"}]',
+    'a = "a"',
+    'b = "b"',
+    'c = 3',
+  '}']);
   var e = g.ruleBodies.start;
-  t.equal(e.toString(), '(&"a" ~(2 | 3?) ``(b a)\'\' [(c {"e": b, ...} {"g": "a".."z"})])');
+  t.equal(e.toString(), '(&"a" ~(2 | 3?) $((b #(a))) [(c {"e": b, ...} {"g": "a".."z"})])');
   t.end();
 });

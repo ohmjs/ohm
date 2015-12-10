@@ -4,7 +4,6 @@
 // Imports
 // --------------------------------------------------------------------
 
-var InputStream = require('./InputStream');
 var MatchResult = require('./MatchResult');
 var Semantics = require('./Semantics');
 var State = require('./State');
@@ -55,17 +54,11 @@ Grammar.prototype = {
   // Try to match `ctorArgs` with the body of the rule given by `ruleName`.
   // Return the resulting CST node if it succeeds, otherwise return null.
   _constructByMatching: function(ruleName, ctorArgs) {
-    // If there is a single string argument, attempt to match that directly. Otherwise,
-    // match against the array of arguments.
-    var input = ctorArgs;
-    if (input.length === 1 && typeof input[0] === 'string') {
-      input = input[0];
+    var state = this._match(ctorArgs, ruleName, {matchNodes: true});
+    if (state.bindings.length === 1) {
+      return state.bindings[0];
     }
-    var state = new State(this, InputStream.newFor(input), ruleName, {matchNodes: true});
-    if (!state.eval(new pexprs.Apply(ruleName))) {
-      return null;
-    }
-    return state.bindings[0];
+    return null;
   },
 
   createConstructors: function() {
@@ -97,17 +90,17 @@ Grammar.prototype = {
     if (!startRule) {
       throw new Error('Missing start rule argument -- the grammar has no default start rule.');
     }
-    var state = this._match(obj, startRule, {});
+    var state = this._match([obj], startRule, {});
     return MatchResult.newFor(state);
   },
 
-  _match: function(obj, startRule, opts) {
+  _match: function(values, startRule, opts) {
     if (!(startRule in this.ruleBodies)) {
       throw errors.undeclaredRule(startRule, this.name);
     }
-    var inputStream = InputStream.newFor(typeof obj === 'string' ? obj : [obj]);
-    var state = new State(this, inputStream, startRule, opts);
-    state.eval(new pexprs.Apply(startRule));
+    var expr = new pexprs.Apply(startRule);
+    var state = new State(this, expr.newInputStreamFor(values, this), startRule, opts);
+    state.eval(expr);
     return state;
   },
 
@@ -116,7 +109,7 @@ Grammar.prototype = {
     if (!startRule) {
       throw new Error('Missing start rule argument -- the grammar has no default start rule.');
     }
-    var state = this._match(obj, startRule, {trace: true});
+    var state = this._match([obj], startRule, {trace: true});
 
     var rootTrace = state.trace[0];
     rootTrace.state = state;

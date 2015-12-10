@@ -17,16 +17,8 @@ function InputStream() {
   throw new Error('InputStream cannot be instantiated -- it\'s abstract');
 }
 
-InputStream.newFor = function(obj) {
-  if (typeof obj === 'string') {
-    return new StringInputStream(obj);
-  } else if (Array.isArray(obj)) {
-    return new ListInputStream(obj);
-  } else if (obj instanceof InputStream) {
-    return obj;
-  } else {
-    throw new Error('cannot make input stream for ' + obj);
-  }
+InputStream.newFor = function(arrOrStr) {
+  return Array.isArray(arrOrStr) ? new ListInputStream(arrOrStr) : new StringInputStream(arrOrStr);
 };
 
 InputStream.prototype = {

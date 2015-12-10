@@ -4,6 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
+var InputStream = require('./InputStream');
 var UnicodeCategories = require('../third_party/UnicodeCategories');
 var common = require('./common');
 var errors = require('./errors');
@@ -24,6 +25,15 @@ PExpr.prototype.withInterval = function(interval) {
     this.interval = interval.trimmed();
   }
   return this;
+};
+
+// Allocate the appropriate input stream for this expression and the given values.
+PExpr.prototype.newInputStreamFor = function(values, grammar) {
+  if (values.length === 1 && typeof values[0] === 'string' && !this.isValueExpr(grammar)) {
+    return InputStream.newFor(values[0]);
+  } else {
+    return InputStream.newFor(values);
+  }
 };
 
 // Any
@@ -134,6 +144,13 @@ function Lex(expr) {
 }
 inherits(Lex, PExpr);
 
+// "Value-ification"
+
+function Value(expr) {
+  this.expr = expr;
+}
+inherits(Value, PExpr);
+
 // Array decomposition
 
 function Arr(expr) {
@@ -215,6 +232,7 @@ exports.Opt = Opt;
 exports.Not = Not;
 exports.Lookahead = Lookahead;
 exports.Lex = Lex;
+exports.Value = Value;
 exports.Arr = Arr;
 exports.Str = Str;
 exports.Obj = Obj;
@@ -235,6 +253,7 @@ require('./pexprs-getArity');
 require('./pexprs-outputRecipe');
 require('./pexprs-introduceParams');
 require('./pexprs-isNullable');
+require('./pexprs-isValueExpr');
 require('./pexprs-substituteParams');
 require('./pexprs-toDisplayString');
 require('./pexprs-toFailure');

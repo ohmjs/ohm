@@ -96,8 +96,8 @@ pexprs.Not.prototype.check = function(grammar, vals) {
 
 pexprs.Lookahead.prototype.check =
 pexprs.Lex.prototype.check =
-pexprs.Arr.prototype.check =
-pexprs.Str.prototype.check = function(grammar, vals) {
+pexprs.Value.prototype.check =
+pexprs.Arr.prototype.check = function(grammar, vals) {
   return this.expr.check(grammar, vals);
 };
 

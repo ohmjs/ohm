@@ -37,12 +37,13 @@ Ohm {
     | Pred
 
   Pred
-    = "~" Lex  -- not
-    | "&" Lex  -- lookahead
-    | Lex
+    = "~" Modifier  -- not
+    | "&" Modifier  -- lookahead
+    | Modifier
 
-  Lex
+  Modifier
     = "#" Base  -- lex
+    | "$" Base  -- val
     | Base
 
   Base
@@ -51,7 +52,6 @@ Ohm {
     | Prim                                           -- prim
     | "(" Alt ")"                                    -- paren
     | "[" Alt "]"                                    -- arr
-    | "``" Alt "''"                                  -- str
     | "{" "..."? "}"                                 -- obj
     | "{" Props ("," "...")? "}"                     -- objWithProps
 
