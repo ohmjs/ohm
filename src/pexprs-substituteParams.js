@@ -11,7 +11,13 @@ var pexprs = require('./pexprs');
 // Operations
 // --------------------------------------------------------------------
 
-pexprs.PExpr.prototype.substituteParams = common.abstract;
+/*
+  Returns a PExpr that results from recursively replacing every formal parameter (i.e., instance
+  of `Param`) inside this PExpr with its actual value from `actuals` (an Array).
+
+  The receiver must not be modified; a new PExpr must be returned if any replacement is necessary.
+*/
+pexprs.PExpr.prototype.substituteParams = common.abstract;  // function (actuals) { ... }
 
 pexprs.any.substituteParams =
 pexprs.end.substituteParams =
