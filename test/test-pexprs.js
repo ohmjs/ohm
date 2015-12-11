@@ -93,3 +93,29 @@ test('toString', function(t) {
   t.equal(e.toString(), '(&"a" ~(2 | 3?) $((b #(a))) [(c {"e": b, ...} {"g": "a".."z"})])');
   t.end();
 });
+
+test('isValueExpr', function(t) {
+  var g = makeGrammar([
+    'G {',
+    '  str = listOf<alnum*, ",">',
+    '  Str2 = Maybe<"ab">',
+    '  Str3 = MaybeTwice<"ab">',
+    '  Val = ListOf<String, null>',
+    '  Val2 = Maybe<Boolean>',
+    '  Val3 = MaybeTwice<Number>',
+    '  Maybe<x> = x  -- some',
+    '           |    -- none',
+    '  MaybeTwice<exp> = Maybe<exp> Maybe<exp>',
+    '}'
+  ]);
+  function isValueExpr(ruleName) {
+    return g.ruleBodies[ruleName].isValueExpr(g);
+  }
+  t.equal(isValueExpr('str'), false);
+  t.equal(isValueExpr('Str2'), false);
+  t.equal(isValueExpr('Str3'), false);
+  t.equal(isValueExpr('Val'), true);
+  t.equal(isValueExpr('Val2'), true);
+  t.equal(isValueExpr('Val3'), true);
+  t.end();
+});

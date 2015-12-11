@@ -17,7 +17,6 @@ pexprs.PExpr.prototype.assertIteratedExprsAreNotNullable = common.abstract;
 pexprs.any.assertIteratedExprsAreNotNullable =
 pexprs.end.assertIteratedExprsAreNotNullable =
 pexprs.Prim.prototype.assertIteratedExprsAreNotNullable =
-pexprs.Prim.prototype.assertIteratedExprsAreNotNullable =
 pexprs.Range.prototype.assertIteratedExprsAreNotNullable =
 pexprs.Param.prototype.assertIteratedExprsAreNotNullable =
 pexprs.TypeCheck.prototype.assertIteratedExprsAreNotNullable =
