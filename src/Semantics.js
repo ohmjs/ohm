@@ -297,7 +297,12 @@ Semantics.prototype.addOperationOrAttribute = function(type, nameAndFormalArgs, 
 
   // The following check is not strictly necessary (it will happen later anyway) but it's better to
   // catch errors early.
-  this[typePlural][name].checkActionDict(this.grammar);
+  try {
+    this[typePlural][name].checkActionDict(this.grammar);
+  } catch (e) {
+    delete this[typePlural][name];
+    throw e;
+  }
 
   function doIt() {
     // Dispatch to most specific version of this operation / attribute -- it may have been

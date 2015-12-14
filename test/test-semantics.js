@@ -75,6 +75,22 @@ test('operations', function(t) {
       function() { s(Arithmetic.match('1*2')).noArgs(); },
       'Invalid number of arguments passed to noArgs operation (expected 0, got 1)');
 
+  // An operation that failed checks when first added but then succeeds
+  t.throws(function() {
+    s.addOperation('failSuccess', {
+      exp: function() {
+      }
+    });
+  }, /wrong arity/);
+  t.notOk(s(Arithmetic.match('1+2')).failSuccess, 'failed operation not added');
+  s.addOperation('failSuccess', {
+    exp: function(arg) {
+      return arg.value();
+    }
+  });
+  t.ok(s(Arithmetic.match('1+2')).failSuccess, 'operation added successfully');
+  t.equal(s(Arithmetic.match('1+2')).failSuccess(), 3, 'corrected operation');
+
   t.end();
 });
 
