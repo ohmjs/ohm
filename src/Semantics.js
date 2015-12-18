@@ -488,14 +488,6 @@ Operation.prototype.execute = function(semantics, nodeWrapper) {
   // action, we invoke it:
   if (nodeWrapper.isNonterminal()) {
     actionFn = this.actionDict._nonterminal;
-    // Well, actually, the `_nonterminal` semantic action may be overridden by the `_lexical` or
-    // `_syntactic` semantic action, depending on whether this node belongs to a lexical or
-    // syntactic rule, respectively.
-    if (nodeWrapper.isLexical() && this.actionDict._lexical) {
-      actionFn = this.actionDict._lexical;
-    } else if (nodeWrapper.isSyntactic() && this.actionDict._syntactic) {
-      actionFn = this.actionDict._syntactic;
-    }
     if (actionFn) {
       return this.doAction(semantics, nodeWrapper, actionFn, true);
     }

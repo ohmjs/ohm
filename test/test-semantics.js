@@ -308,42 +308,6 @@ test('_terminal nodes', function(t) {
   t.end();
 });
 
-test('_syntatic and _lexical nodes', function(t) {
-  var g = ohm.grammar('G { Words = word+ word = letter+ }');
-  var s = g.semantics().addOperation('checksum', {});
-  var m = g.match('abc is not def');
-
-  t.throws(function() {
-    g.semantics().addOperation('checksum', {
-      _syntactic: function() {}
-    });
-  }, /wrong arity/);
-
-  t.throws(function() {
-    g.semantics().addOperation('checksum', {
-      _lexical: function() {}
-    });
-  }, /wrong arity/);
-
-  s = g.semantics().addOperation('checksum', {
-    _syntactic: function(children) {
-      t.equal(this.ctorName, 'Words', 'ctorName is not "Words"');
-      t.equal(children.length, 1, 'node has no children');
-      return children[0].checksum().reduce(function(prod, word) {
-        return prod * word.length;
-      }, 1);
-    },
-    _lexical: function(children) {
-      t.equal(this.ctorName, 'word', 'ctorName is not "word"');
-      t.equal(children.length, 1, 'node has no children');
-      return children[0].interval.contents; // stop descent
-    }
-  });
-  t.deepEqual(s(m).checksum(), 3 * 2 * 3 * 3, s(m).checksum());
-
-  t.end();
-});
-
 test('semantic action arity checks', function(t) {
   var g = ohm.grammar('G {}');
   function makeOperation(grammar, actions) {
