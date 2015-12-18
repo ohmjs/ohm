@@ -16,6 +16,12 @@ var inherits = require('inherits');
 
 // General stuff
 
+// Constants representing the type of a PExpr. See pexprs-getExprType.js for
+// more information.
+var TYPE_ANY = 0;
+var TYPE_STRING = 1;
+var TYPE_VALUE = 2;
+
 function PExpr() {
   throw new Error("PExpr cannot be instantiated -- it's abstract");
 }
@@ -29,7 +35,8 @@ PExpr.prototype.withInterval = function(interval) {
 
 // Allocate the appropriate input stream for this expression and the given values.
 PExpr.prototype.newInputStreamFor = function(values, grammar) {
-  if (values.length === 1 && typeof values[0] === 'string' && !this.isValueExpr(grammar)) {
+  var exprType = this.getExprType(grammar);
+  if (values.length === 1 && typeof values[0] === 'string' && exprType !== TYPE_VALUE) {
     return InputStream.newFor(values[0]);
   } else {
     return InputStream.newFor(values);
@@ -216,6 +223,11 @@ inherits(TypeCheck, PExpr);
 // Exports
 // --------------------------------------------------------------------
 
+exports.TYPE_ANY = TYPE_ANY;
+exports.TYPE_STRING = TYPE_STRING;
+exports.TYPE_VALUE = TYPE_VALUE;
+exports.TYPE_INCONSISTENT = TYPE_STRING | TYPE_VALUE;
+
 exports.PExpr = PExpr;
 exports.any = any;
 exports.end = end;
@@ -247,13 +259,14 @@ exports.TypeCheck = TypeCheck;
 require('./pexprs-assertAllApplicationsAreValid');
 require('./pexprs-assertChoicesHaveUniformArity');
 require('./pexprs-assertIteratedExprsAreNotNullable');
+require('./pexprs-assertValuesAndStringsAreNotMixed');
 require('./pexprs-check');
 require('./pexprs-eval');
 require('./pexprs-getArity');
+require('./pexprs-getExprType');
 require('./pexprs-outputRecipe');
 require('./pexprs-introduceParams');
 require('./pexprs-isNullable');
-require('./pexprs-isValueExpr');
 require('./pexprs-substituteParams');
 require('./pexprs-toDisplayString');
 require('./pexprs-toFailure');

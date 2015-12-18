@@ -105,7 +105,7 @@ test('action dictionary templates', function(t) {
     '  qux = quux 123',
     '  quux = 42',
     '  aaa = "duh"',
-    '  bbb = ~aaa qux  -- blah',
+    '  bbb = ~null qux  -- blah',
     '}',
     'G2 <: G1 {',
     '  qux := 100',

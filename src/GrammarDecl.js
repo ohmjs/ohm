@@ -119,6 +119,16 @@ GrammarDecl.prototype.build = function() {
       } catch (e) {
         grammarErrors.push(e);
       }
+      // For now, only check the bodies of unparameterized rules, because the checks can't deal
+      // properly with parameters that don't have a concrete value.
+      // TODO: Fix this.
+      if (grammar.ruleFormals[ruleName].length === 0) {
+        try {
+          body.assertValuesAndStringsAreNotMixed(grammar, ruleName);
+        } catch (e) {
+          grammarErrors.push(e);
+        }
+      }
     });
   }
   if (grammarErrors.length > 0) {
