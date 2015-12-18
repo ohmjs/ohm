@@ -129,8 +129,7 @@ Grammar.prototype = {
   // a function of the correct arity. If not, throw an exception.
   _checkTopDownActionDict: function(what, name, actionDict) {
     function isSpecialAction(a) {
-      return a === '_iter' || a === '_terminal' || a === '_nonterminal' ||
-        a === '_syntactic' || a === '_lexical' || a === '_default';
+      return a === '_iter' || a === '_terminal' || a === '_nonterminal' || a === '_default';
     }
 
     var problems = [];
@@ -164,8 +163,7 @@ Grammar.prototype = {
   // Return the expected arity for a semantic action named `actionName`, which
   // is either a rule name or a special action name like '_nonterminal'.
   _topDownActionArity: function(actionName) {
-    if (actionName === '_iter' || actionName === '_nonterminal' ||
-      actionName === '_syntactic' || actionName === '_lexical' || actionName === '_default') {
+    if (actionName === '_iter' || actionName === '_nonterminal' || actionName === '_default') {
       return 1;
     } else if (actionName === '_terminal') {
       return 0;

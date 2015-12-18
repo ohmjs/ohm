@@ -166,8 +166,8 @@ The value of an operation or attribute for a node is the result of invoking the 
 
 The matching semantic action for a particular node is chosen as follows:
 
-- On a _rule application_ node, first look for a semantic action with the same name as the rule (e.g., 'FullName'). If the action dictionary does not have a property with that name, use the action named '_syntactic' or '_lexical' or fall back to '_nonterminal', if any of them exist. If not, the '_default' action is used, which returns the result of applying the operation or attribute to the node's only child. There is no default action for non-terminal nodes that have no children, or more than one child.
-- On a terminal node (e.g., a node produced by the parsing expression `"-"`), use the semantic action named '_terminal'. If the action dictionary does not have a property with that name, the '_default' action returns the node's *primitive value*.
+- On a _rule application_ node, first look for a semantic action with the same name as the rule (e.g., 'FullName'). If the action dictionary does not have a property with that name, use the action named '_nonterminal', if it exists. If not, the '_default' action is used, which returns the result of applying the operation or attribute to the node's only child. There is no default action for non-terminal nodes that have no children, or more than one child.
+- On a terminal node (e.g., a node produced by the parsing expression `"hello"`), use the semantic action named '_terminal'. If the action dictionary does not have a property with that name, the '_default' action returns the node's *primitive value*.
 - On an iteration node (e.g., a node produced by the parsing expression `(letter | "-" | ".")+`), use the semantic action named '_iter'. If the action dictionary does not have a property with that name, the '_default' action returns an array containing the results of applying the operation or attribute to each child node.
 
 ### Parse Nodes
