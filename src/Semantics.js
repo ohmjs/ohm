@@ -291,18 +291,15 @@ Semantics.prototype.addOperationOrAttribute = function(type, nameAndFormalArgs, 
     realActionDict[name] = actionDict[name];
   });
 
-  this[typePlural][name] = type === 'operation' ?
+  var entry = type === 'operation' ?
       new Operation(name, formals, realActionDict) :
       new Attribute(name, realActionDict);
 
   // The following check is not strictly necessary (it will happen later anyway) but it's better to
   // catch errors early.
-  try {
-    this[typePlural][name].checkActionDict(this.grammar);
-  } catch (e) {
-    delete this[typePlural][name];
-    throw e;
-  }
+  entry.checkActionDict(this.grammar);
+
+  this[typePlural][name] = entry;
 
   function doIt() {
     // Dispatch to most specific version of this operation / attribute -- it may have been
