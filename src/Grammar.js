@@ -204,7 +204,7 @@ Grammar.prototype = {
     sb.append(superGrammarDecl);
 
     if (this.defaultStartRule) {
-      sb.append("    .withDefaultStartRule('" + this.defaultStartRule + "')\n");
+      sb.append('    .withDefaultStartRule("' + this.defaultStartRule + '")\n');
     }
 
     var self = this;
