@@ -83,6 +83,13 @@ Wrapper.prototype.isLexical = function() {
   return this.isNonterminal() && this._node.isLexical();
 };
 
+// Returns `true` if the CST node associated with this wrapper is an iterator node
+// having either one or no child (? operator), `false` otherwise.
+// Otherwise, throws an exception.
+Wrapper.prototype.isOptional = function() {
+  return this._node.isOptional();
+};
+
 Object.defineProperties(Wrapper.prototype, {
   // Returns an array containing the children of this CST node.
   children: {get: function() { return this._children(); }},
