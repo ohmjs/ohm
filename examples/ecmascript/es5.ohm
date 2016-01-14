@@ -126,10 +126,10 @@ ES5 {
   // Note that the ordering of hexIntegerLiteral and decimalLiteral is reversed w.r.t. the spec
   // This is intentional: the order decimalLiteral | hexIntegerLiteral will parse
   // "0x..." as a decimal literal "0" followed by "x..."
-  numericLiteral = hexIntegerLiteral | decimalLiteral
+  numericLiteral = octalIntegerLiteral | hexIntegerLiteral | decimalLiteral
 
   decimalLiteral = decimalIntegerLiteral "." decimalDigit* exponentPart -- bothParts
-                 |                       "." decimalDigit* exponentPart -- decimalsOnly
+                 |                       "." decimalDigit+ exponentPart -- decimalsOnly
                  | decimalIntegerLiteral                   exponentPart -- integerOnly
 
   decimalIntegerLiteral = nonZeroDigit decimalDigit*  -- nonZero
@@ -144,8 +144,14 @@ ES5 {
                 | "-" decimalDigit* -- negative
                 |     decimalDigit+ -- noSign
 
-  hexIntegerLiteral = "0x" hexDigit*
-                    | "0X" hexDigit*
+  hexIntegerLiteral = "0x" hexDigit+
+                    | "0X" hexDigit+
+
+  // hexDigit defined in Ohm's built-in rules (otherwise: hexDigit = "0".."9" | "a".."f" | "A".."F")
+
+  octalIntegerLiteral = "0" octalDigit+
+
+  octalDigit = "0".."7"
 
   // For semantics on how string literals are constructed, see section 7.8.4
   stringLiteral = "\"" doubleStringCharacter* "\""
@@ -157,9 +163,9 @@ ES5 {
                         | "\\" escapeSequence                            -- escaped
                         | lineContinuation                               -- lineContinuation
   lineContinuation = "\\" lineTerminatorSequence
-  escapeSequence = "0" ~decimalDigit
+  escapeSequence = unicodeEscapeSequence
                  | hexEscapeSequence
-                 | unicodeEscapeSequence
+                 | octalEscapeSequence
                  | characterEscapeSequence  // Must come last.
   characterEscapeSequence = singleEscapeCharacter
                           | nonEscapeCharacter
@@ -174,8 +180,15 @@ ES5 {
                         | "v"  // -> ( String.fromCharCode(0011) ) /*\u000B*/
   nonEscapeCharacter = ~(escapeCharacter | lineTerminator) sourceCharacter
   escapeCharacter = singleEscapeCharacter | decimalDigit | "x" | "u"
+  octalEscapeSequence = zeroToThree octalDigit octalDigit    -- whole
+                      | fourToSeven octalDigit               -- eightTimesfourToSeven
+                      | zeroToThree octalDigit ~decimalDigit -- eightTimesZeroToThree
+                      | octalDigit ~decimalDigit             -- octal
   hexEscapeSequence = "x" hexDigit hexDigit
   unicodeEscapeSequence = "u" hexDigit hexDigit hexDigit hexDigit
+
+  zeroToThree = "0".."3"
+  fourToSeven = "4".."7"
 
   // section 7.8.5
 
