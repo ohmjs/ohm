@@ -178,8 +178,14 @@ b                    ✓ Unicode {Ll} character ⇒  "b"
              ✓ end ⇒  ""
 ```
 
-Contributing
-------------
+Publishing Grammars
+-------------------
+
+If you've written an Ohm grammar that you'd like to share with others, see
+our [suggestions for publishing grammars](./doc/publishing-grammars.md).
+
+Contributing to Ohm
+-------------------
 
 All you need to get started:
 
