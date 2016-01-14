@@ -9,22 +9,22 @@ for other people to use and build upon, here's what we suggest:
 By convention, modules should export an object with a `grammar` property, and
 optionally a `semantics` property. For example, see the [ES5](https://github.com/cdglabs/ohm/blob/master/examples/ecmascript/es5.js)
 module in the `examples/` directory. If a single package contains multiple
-languages, each language should be exported in a separate object. E.g., a
+languages, each language should be exported as a separate object. E.g., a
 package supporting multiple versions of Python might be used like this:
 
 ```js
-var python2 = require('./ohm-python').python2;
+var python2 = require('./your-python-package').python2;
 var result = python2.grammar.match('print 3');
 python2.semantics(result).eval();
 ```
 
-For a package containing a single primary language along with other variants,
-you can expose the primary language from the top-level module, and the other
-languages as separate modules within the same package:
+To package a single primary language along with other variants, you can expose
+the primary language from the top-level module, and the other languages as
+separate modules within the same package:
 
 ```js
-var smalltalk = require('./ohm-smalltalk');
-var smalltalk72 = require('./ohm-smalltalk/smalltalk72');
+var smalltalk = require('./your-smalltalk-package');
+var smalltalk72 = require('./your-smalltalk-package/smalltalk72');
 ```
 
 ## Package Naming
