@@ -273,15 +273,13 @@ ES5 {
                     | "(" Expression ")"  -- parenExpr
 
   // @returns an ArrayExpr AST
-  ArrayLiteral = "[" AssignmentExpressionOrElisionComma* "]"                       -- trailingComma
-               | "[" AssignmentExpressionOrElisionComma* AssignmentExpression "]"  -- noTrailingComma
-  AssignmentExpressionOrElisionComma = (AssignmentExpression | Elision) ","
-  Elision =
+  ArrayLiteral = "[" ListOf<AssignmentExpressionOrElision, ","> "]"
+  AssignmentExpressionOrElision = AssignmentExpression
+                                |                       -- elision
 
   // @returns an ObjectExpr AST
-  ObjectLiteral = "{" PropertyAssignmentComma* "}" -- trailingComma
-                | "{" PropertyAssignmentComma* PropertyAssignment "}" -- noTrailingComma
-  PropertyAssignmentComma = PropertyAssignment ","
+  ObjectLiteral = "{" ListOf<PropertyAssignment, ","> "}"              -- noTrailingComma
+                | "{" NonemptyListOf<PropertyAssignment, ","> "," "}"  -- trailingComma
 
   // @returns a *Prop AST
   PropertyAssignment = get PropertyName "(" ")" "{" FunctionBody "}"                  -- getter
@@ -311,14 +309,7 @@ ES5 {
                  | MemberExpression Arguments         -- memberExpExp
 
   // @returns an array of ASTs
-  Arguments = "(" ")"                -- empty
-            | "(" ArgumentList ")"   -- nonEmpty
-
-  // @returns an array of ASTs
-  ArgumentList = AssignmentExpressionComma* AssignmentExpression -- many
-               | AssignmentExpression                            -- one
-
-  AssignmentExpressionComma = AssignmentExpression ","
+  Arguments = "(" ListOf<AssignmentExpression, ","> ")"
 
   LeftHandSideExpression = CallExpression
                          | NewExpression
@@ -432,17 +423,10 @@ ES5 {
   VariableStatement = var VariableDeclarationList #(sc)
 
   // @returns an array of ASTs
-  VariableDeclarationList = VariableDeclarationComma* VariableDeclaration -- many
-                          | VariableDeclaration
-
-  VariableDeclarationComma = VariableDeclaration ","
+  VariableDeclarationList = NonemptyListOf<VariableDeclaration, ",">
 
   // @returns an AST
-  VariableDeclaration = InitPattern  -- initialValue
-                      | identifier   -- noInitialValue
-
-  // @returns an AST
-  InitPattern = identifier Initialiser
+  VariableDeclaration = identifier Initialiser?
 
   // @returns an AST
   Initialiser = "=" AssignmentExpression
@@ -454,8 +438,7 @@ ES5 {
   ExpressionStatement = ~("{" | function) Expression #(sc)
 
   // @returns an AST
-  IfStatement = if "(" Expression ")" Statement else Statement  -- ifThenElse
-              | if "(" Expression ")" Statement                 -- ifThen
+  IfStatement = if "(" Expression ")" Statement (else Statement)?
 
   // @returns an AST
   IterationStatement = do Statement while "(" Expression ")" #(sc)  -- doWhile
@@ -515,10 +498,7 @@ ES5 {
     | function "(" FormalParameterList ")" "{" FunctionBody "}"             -- anonymous
 
   // @returns an array of ASTs
-  FormalParameterList = FormalParameter (CommaFormalParameter)* -- many
-                      |                                         -- zero
-
-  CommaFormalParameter = "," FormalParameter
+  FormalParameterList = ListOf<FormalParameter, ",">
 
   // @returns an AST
   FormalParameter = identifier
