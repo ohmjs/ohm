@@ -20,7 +20,7 @@
   "main": "src/main.js",
   "bin": "src/ohm-cmd.js",
   "browserify": {
-    "options": "src/main.js --debug --standalone ohm -o dist/ohm.js"
+    "options": "src/main.js extras/index.js --debug --standalone ohm -o dist/ohm.js"
   },
   "scripts": {
     "prebootstrap": "bash bin/prebootstrap",
@@ -32,7 +32,7 @@
     "deploy-gh-pages": "bin/deploy-gh-pages.sh",
     "lint": "eslint --rulesdir eslint_rules . && jscs --preset=google .",
     "pretest": "bash bin/update-env.sh",
-    "test": "tape test/*.js | tap-spec",
+    "test": "tape test/*.js test/**/*.js | tap-spec",
     "test-watch": "bash bin/test-watch",
     "postinstall": "bash bin/postinstall",
     "prepublish": "npm run lint && npm run build && npm run bootstrap",
@@ -45,7 +45,8 @@
   "contributors": [
     "Patrick Dubroy <pdubroy@gmail.com>",
     "Tony Garnock-Jones <tonygarnockjones@gmail.com>",
-    "Yoshiki Ohshima <Yoshiki.Ohshima@acm.org>"
+    "Yoshiki Ohshima <Yoshiki.Ohshima@acm.org>",
+    "Marko Röder <m.roeder@photon-software.de>"
   ],
   "dependencies": {
     "es6-symbol": "^2.0.1",
