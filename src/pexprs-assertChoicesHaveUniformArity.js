@@ -35,7 +35,7 @@ pexprs.Alt.prototype.assertChoicesHaveUniformArity = function(ruleName) {
     term.assertChoicesHaveUniformArity();
     var otherArity = term.getArity();
     if (arity !== otherArity) {
-      throw errors.inconsistentArity(ruleName, arity, otherArity, this);
+      throw errors.inconsistentArity(ruleName, arity, otherArity, term);
     }
   }
 };
@@ -46,7 +46,7 @@ pexprs.Extend.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   var actualArity = this.terms[0].getArity();
   var expectedArity = this.terms[1].getArity();
   if (actualArity !== expectedArity) {
-    throw errors.inconsistentArity(ruleName, expectedArity, actualArity, this);
+    throw errors.inconsistentArity(ruleName, expectedArity, actualArity, this.terms[0]);
   }
 };
 

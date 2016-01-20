@@ -1205,16 +1205,31 @@ test('inheritance', function(t) {
 
       // Too many:
       ns.M1 = ohm.grammar('M1 { foo = "foo"  bar = "bar"  baz = "baz" }');
-
-      t.throws(
-        function() { ohm.grammar('M2 <: M1 { foo += bar baz }', ns); },
-        'Rule foo involves an alternation which has inconsistent arity (expected 1, got 2)');
+      try {
+        ohm.grammar('M2 <: M1 { foo += bar baz }', ns);
+        t.fail('Expected an exception to be thrown');
+      } catch (e) {
+        t.equal(e.message, [
+          'Line 1, col 19:',
+          '> 1 | M2 <: M1 { foo += bar baz }',
+          '                        ^~~~~~~',
+          'Rule foo involves an alternation which has inconsistent arity (expected 1, got 2)'
+        ].join('\n'));
+      }
 
       // Too few:
       ns.M3 = ohm.grammar('M3 { foo = digit digit }');
-      t.throws(
-        function() { ohm.grammar('M4 <: M3 { foo += digit }', ns); },
-        'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)');
+      try {
+        ohm.grammar('M4 <: M3 { foo += digit }', ns);
+        t.fail('Expected an exception to be thrown');
+      } catch (e) {
+        t.equal(e.message, [
+          'Line 1, col 19:',
+          '> 1 | M4 <: M3 { foo += digit }',
+          '                        ^~~~~',
+          'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)'
+        ].join('\n'));
+      }
     });
 
     it('should be ok to add new cases', function() {
@@ -1228,9 +1243,16 @@ test('inheritance', function(t) {
 
 test('bindings', function(t) {
   it('inconsistent arity in alts is an error', function() {
-    t.throws(
-      function() { ohm.grammar('G { foo = "a" "c" | "b" }'); },
-      'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)');
+    try {
+      ohm.grammar('G { foo = "a" "c" | "b" }');
+    } catch (e) {
+      t.equal(e.message, [
+        'Line 1, col 21:',
+        '> 1 | G { foo = "a" "c" | "b" }',
+        '                          ^~~',
+        'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)'
+      ].join('\n'));
+    }
   });
 
   it('by default, bindings are evaluated lazily', function() {
