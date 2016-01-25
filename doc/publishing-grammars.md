@@ -29,4 +29,4 @@ var smalltalk72 = require('./your-smalltalk-package/smalltalk72');
 
 ## Package Naming
 
-TODO
+To help users find your package, we suggest using a name of the form "ohm-grammar-someLanguage". E.g., the ES5 grammar in the `examples` directory is published on NPM as [ohm-grammar-ecmascript](https://www.npmjs.com/package/ohm-grammar-ecmascript).
