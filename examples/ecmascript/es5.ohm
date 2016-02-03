@@ -86,21 +86,23 @@ ES5 {
 
   // Note: keywords that are the complete prefix of another keyword should
   // be prioritized (e.g. 'in' should come before 'instanceof')
-  keyword = ("break"   | "do"        | "instanceof" | "typeof"
-          | "case"     | "else"      | "new"        | "var"
-          | "catch"    | "finally"   | "return"     | "void"
-          | "continue" | "for"       | "switch"     | "while"
-          | "debugger" | "function"  | "this"       | "with"
-          | "default"  | "if"        | "throw"
-          | "delete"   | "in"        | "try") ~identifierPart
+  keyword = break    | do        | instanceof | typeof
+          | case     | else      | new        | var
+          | catch    | finally   | return     | void
+          | continue | for       | switch     | while
+          | debugger | function  | this       | with
+          | default  | if        | throw
+          | delete   | in        | try
 
-  futureReservedWordLax = ("class" | "enum"  | "extends"
-                        | "super"  | "const" | "export"
-                        | "import" ) ~identifierPart
-  futureReservedWordStrict = (futureReservedWordLax
-                           |  "implements" | "let"     | "private"   | "public"
-                           |  "interface"  | "package" | "protected" | "static"
-                           |  "yield" ) ~identifierPart
+  futureReservedWordLax = class  | enum  | extends
+                        | super  | const | export
+                        | import
+
+  futureReservedWordStrict = futureReservedWordLax
+                           | implements | let     | private   | public
+                           | interface  | package | protected | static
+                           | yield
+
   futureReservedWord = futureReservedWordStrict
 
   /*
@@ -243,7 +245,23 @@ ES5 {
   try = "try" ~identifierPart
   get = "get" ~identifierPart
   set = "set" ~identifierPart
-
+  class = "class" ~identifierPart
+  enum = "enum" ~identifierPart
+  extends = "extends" ~identifierPart
+  super = "super" ~identifierPart
+  const = "const" ~identifierPart
+  export = "export" ~identifierPart
+  import = "import" ~identifierPart
+  implements = "implements" ~identifierPart
+  let = "let" ~identifierPart
+  private = "private" ~identifierPart
+  public = "public" ~identifierPart
+  interface = "interface" ~identifierPart
+  package = "package" ~identifierPart
+  protected = "protected" ~identifierPart
+  static = "static" ~identifierPart
+  yield = "yield" ~identifierPart
+  
   // end of lexical rules
 
   // §A.3 Expressions -- http://ecma-international.org/ecma-262/5.1/#sec-A.3
