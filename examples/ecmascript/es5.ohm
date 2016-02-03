@@ -1,5 +1,3 @@
-
-
 /*
   This grammar was originally based on Tom Van Cutsem's ES5 parser from the
   es-lab project (https://github.com/tvcutsem/es-lab/blob/master/src/parser/es5parser.ojs),
