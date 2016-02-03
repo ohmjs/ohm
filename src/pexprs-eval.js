@@ -7,7 +7,6 @@
 var InputStream = require('./InputStream');
 var Trace = require('./Trace');
 var common = require('./common');
-var fsets = require('./fsets');
 var nodes = require('./nodes');
 var pexprs = require('./pexprs');
 
@@ -304,7 +303,7 @@ pexprs.Apply.prototype.handleCycle = function(state) {
   } else if (!memoRec) {
     // New left recursion detected! Memoize a failure to try to get a seed parse.
     memoRec = posInfo.memo[memoKey] =
-        {pos: -1, value: false, failuresAtRightmostPosition: fsets.empty};
+        {pos: -1, value: false};
     posInfo.startLeftRecursion(this, memoRec);
   }
   return state.useMemoizedResult(memoRec);
@@ -328,6 +327,12 @@ pexprs.Apply.prototype.reallyEval = function(state, isTopLevelApplication) {
   var memoKey = this.toMemoKey();
   var isHeadOfLeftRecursion = currentLR && currentLR.headApplication.toMemoKey() === memoKey;
   var memoized = true;
+  if (state.rightmostFailures) {
+    var rightmostFailures = {};
+    Object.keys(state.rightmostFailures).forEach(function(failureText) {
+      rightmostFailures[failureText] = state.rightmostFailures[failureText].clone();
+    });
+  }
   if (isHeadOfLeftRecursion) {
     value = this.growSeedResult(body, state, origPos, currentLR, value);
     origPosInfo.endLeftRecursion();
@@ -336,7 +341,7 @@ pexprs.Apply.prototype.reallyEval = function(state, isTopLevelApplication) {
     memoized = false;
   } else {
     origPosInfo.memo[memoKey] =
-        {pos: inputStream.pos, value: value, failuresAtRightmostPosition: state.rightmostFailures};
+        {pos: inputStream.pos, value: value, failuresAtRightmostPosition: rightmostFailures};
   }
 
   if (description) {
@@ -344,8 +349,13 @@ pexprs.Apply.prototype.reallyEval = function(state, isTopLevelApplication) {
     if (!value) {
       state.processFailure(origPos, this);
     }
-    if (memoized) {
-      origPosInfo.memo[memoKey].failuresAtRightmostPosition = state.rightmostFailures;
+
+    if (memoized && state.rightmostFailures) {
+      origPosInfo.memo[memoKey].failuresAtRightmostPosition = {};
+      Object.keys(state.rightmostFailures).forEach(function(failureText) {
+        origPosInfo.memo[memoKey].failuresAtRightmostPosition[failureText] =
+          state.rightmostFailures[failureText].clone();
+      });
     }
   }
 
@@ -405,7 +415,14 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
   while (true) {
     lrMemoRec.pos = inputStream.pos;
     lrMemoRec.value = newValue;
-    lrMemoRec.failuresAtRightmostPosition = state.rightmostFailures;
+    if (state.rightmostFailures) {
+      var keys = Object.keys(state.rightmostFailures);
+      lrMemoRec.failuresAtRightmostPosition = {};
+      for (var idx = 0; idx < keys.length; idx++) {
+        lrMemoRec.failuresAtRightmostPosition[keys[idx]] =
+          state.rightmostFailures[keys[idx]].clone();
+      }
+    }
     if (state.isTracing()) {
       var children = state.trace[state.trace.length - 1].children.slice();
       lrMemoRec.traceEntry = new Trace(state.inputStream, origPos, this, newValue, children);
