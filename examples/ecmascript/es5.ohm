@@ -1,4 +1,13 @@
 
+
+/*
+  This grammar was originally based on Tom Van Cutsem's ES5 parser from the
+  es-lab project (https://github.com/tvcutsem/es-lab/blob/master/src/parser/es5parser.ojs),
+  and was adapted to Ohm by Tony Garnock-Jones <tonygarnockjones@gmail.com> in 2014.
+
+  The original copyright and license follows:
+*/
+
 // Copyright (C) 2009 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,30 +22,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// OMeta/JS parser for Ecmascript 5
-// @author Tom Van Cutsem
-
-// Adapted to Ohm by Tony Garnock-Jones <tonygarnockjones@gmail.com> 2014.
+/* (end of original copyright and license) */
 
 ES5 {
 
-  Program = Directive* SourceElement* end
+  Program = Directive* SourceElement*
 
-  // A.1 Lexical Grammar
+  // §A.1 Lexical Grammar -- http://ecma-international.org/ecma-262/5.1/#sec-A.1
 
-  // input characters are represented as ES3 characters, which can be any unicode character
+  /*
+    Note: the following lexical conventions (see http://ecma-international.org/ecma-262/5.1/#sec-7)
+    are not implemented in this parser.
+
+    // Goal production in contexts where a leading "/" or "/=" is permitted:
+    InputElementDiv = whitespace | lineTerminator | comment | token | DivPunctuator
+
+    // Goal production in contexts where a leading "/" or "/=' is not permitted:
+    InputElementRegExp = whitespace | lineTerminator | comment | token | regularExpressionLiteral
+  */
+
   sourceCharacter = any
-
-  // // 7: Goal production in contexts where a leading "/" or "/=" is permitted
-  // // Note: not used by the parser
-  // InputElementDiv = whitespace | lineTerminator | comment | token | DivPunctuator
-
-  // // 7: Goal production in contexts where a leading "/" or "/=' is not permitted
-  // // Note: not used by the parser
-  // InputElementRegExp = whitespace | lineTerminator | comment | token | regularExpressionLiteral
-
-  // // Note: not currently used by the parser
-  // token = identifierName | Punctuator | numericLiteral | stringLiteral
 
   // Override Ohm's built-in definition of space.
   space := whitespace | lineTerminator | comment
@@ -89,32 +94,19 @@ ES5 {
           | "default"  | "if"        | "throw"
           | "delete"   | "in"        | "try") ~identifierPart
 
-  futureReservedWordLax = ("class"| "enum"  | "extends"
-                        | "super" | "const" | "export"
+  futureReservedWordLax = ("class" | "enum"  | "extends"
+                        | "super"  | "const" | "export"
                         | "import" ) ~identifierPart
   futureReservedWordStrict = (futureReservedWordLax
-                           |  "implements"| "let"     | "private"   | "public"
-                           |  "interface" | "package" | "protected" | "static"
+                           |  "implements" | "let"     | "private"   | "public"
+                           |  "interface"  | "package" | "protected" | "static"
                            |  "yield" ) ~identifierPart
   futureReservedWord = futureReservedWordStrict
 
-  // Note: beware of the ordering of punctuators with a common prefix!
-  // OMeta is a PEG, so "|" denotes prioritized choice.
-  // E.g. if "+" would come before "++" then the string "++5"
-  // would be parsed as "+(+(5))" rather than "++(5)"
-  // Punctuators comprised of more characters are prioritized
-  // Note: the Punctuator and DivPunctuator rules are not currently used by the parser
-  // Punctuator = (">>>="
-  //            | ">>=" | ">>>" | "===" | "!=="| "<<="
-  //            | "+="  | "-="  | "*="  | "%=" | ">="
-  //            | "=="  | "!="  | "++"  | "--" | "<<"
-  //            | ">>"  | "<="  | "&="  | "|=" | "^="
-  //            | "&&"  | "||"
-  //            | "{"     | "}"     | "("     | ")"    | "["   | "]"
-  //            | "."     | ";"     | ","     | "<"    | ">"   | "!"
-  //            | "~"     | "="     | "&"     | "|"    | "^"   | "?"
-  //            | ":"     | "*"     | "%"     | "+"    | "-")
-  // DivPunctuator = ("/=" | "/")
+  /*
+    Note: Punctuator and DivPunctuator (see https://es5.github.io/x7.html#x7.7) are
+    not currently used by this grammar.
+  */
 
   literal = nullLiteral | booleanLiteral | numericLiteral
           | stringLiteral | regularExpressionLiteral // spec forgot Regexp literals in appendix?
@@ -190,9 +182,8 @@ ES5 {
   zeroToThree = "0".."3"
   fourToSeven = "4".."7"
 
-  // section 7.8.5
+  // §7.8.5 Regular Expression Literals -- http://ecma-international.org/ecma-262/5.1/#sec-7.8.5
 
-  // body and flags are left uninterpreted while parsing (they are parsed as strings)
   regularExpressionLiteral = "/" regularExpressionBody "/" regularExpressionFlags
   regularExpressionBody = regularExpressionFirstChar regularExpressionChar*
   regularExpressionFirstChar = ~("*" | "\\" | "/" | "[") regularExpressionNonTerminator
@@ -253,13 +244,10 @@ ES5 {
   get = "get" ~identifierPart
   set = "set" ~identifierPart
 
-  // ========== end of lexical rules ==========
+  // end of lexical rules
 
-  // === ECMAScript 5 Parser ===
+  // §A.3 Expressions -- http://ecma-international.org/ecma-262/5.1/#sec-A.3
 
-  // A.3 Expressions
-
-  // @returns an AST
   PrimaryExpression = this
                     | identifier
                     | literal
@@ -272,43 +260,35 @@ ES5 {
                     | ObjectLiteral
                     | "(" Expression ")"  -- parenExpr
 
-  // @returns an ArrayExpr AST
   ArrayLiteral = "[" ListOf<AssignmentExpressionOrElision, ","> "]"
   AssignmentExpressionOrElision = AssignmentExpression
                                 |                       -- elision
 
-  // @returns an ObjectExpr AST
   ObjectLiteral = "{" ListOf<PropertyAssignment, ","> "}"              -- noTrailingComma
                 | "{" NonemptyListOf<PropertyAssignment, ","> "," "}"  -- trailingComma
 
-  // @returns a *Prop AST
   PropertyAssignment = get PropertyName "(" ")" "{" FunctionBody "}"                  -- getter
                      | set PropertyName "(" FormalParameter ")" "{" FunctionBody "}"  -- setter
                      | PropertyName ":" AssignmentExpression                          -- simple
 
-  // @returns a string
   PropertyName = identifierName
                | stringLiteral
                | numericLiteral
 
-  // @returns an AST
   MemberExpression = MemberExpression "[" Expression "]"  -- arrayRefExp
                    | MemberExpression "." identifierName  -- propRefExp
                    | new MemberExpression Arguments       -- newExp
                    | FunctionExpression
                    | PrimaryExpression
 
-  // @returns an AST
   NewExpression = MemberExpression
                 | new NewExpression -- newExp
 
-  // @returns an AST
   CallExpression = CallExpression "[" Expression "]"  -- arrayRefExp
                  | CallExpression "." identifierName  -- propRefExp
                  | CallExpression Arguments           -- callExpExp
                  | MemberExpression Arguments         -- memberExpExp
 
-  // @returns an array of ASTs
   Arguments = "(" ListOf<AssignmentExpression, ","> ")"
 
   LeftHandSideExpression = CallExpression
@@ -396,7 +376,7 @@ ES5 {
   AssignmentOperator = "=" | ">>>=" | "<<=" | ">>="
                      | "*=" | "/=" | "%=" | "+=" | "-=" | "&=" | "^=" | "|="
 
-  // A.4 Statements
+  // §A.4 Statements -- http://ecma-international.org/ecma-262/5.1/#sec-A.4
 
   Statement (a statement)
     = Block
@@ -419,28 +399,20 @@ ES5 {
 
   StatementList = Statement*
 
-  // @returns a Var AST
   VariableStatement = var VariableDeclarationList #(sc)
 
-  // @returns an array of ASTs
   VariableDeclarationList = NonemptyListOf<VariableDeclaration, ",">
 
-  // @returns an AST
   VariableDeclaration = identifier Initialiser?
 
-  // @returns an AST
   Initialiser = "=" AssignmentExpression
 
-  // @returns an AST
   EmptyStatement = ";" // note: this semicolon eats newlines
 
-  // @returns an Expression AST
   ExpressionStatement = ~("{" | function) Expression #(sc)
 
-  // @returns an AST
   IfStatement = if "(" Expression ")" Statement (else Statement)?
 
-  // @returns an AST
   IterationStatement = do Statement while "(" Expression ")" #(sc)  -- doWhile
                      | while "(" Expression ")" Statement           -- whileDo
                      | for "(" Expression? ";"
@@ -464,7 +436,6 @@ ES5 {
 
   SwitchStatement = switch "(" Expression ")" CaseBlock
 
-  // @return an array of ASTs
   CaseBlock = "{" CaseClause* DefaultClause CaseClause* "}"  -- withDefault
             | "{"                           CaseClause* "}"  -- withoutDefault
 
@@ -480,15 +451,13 @@ ES5 {
                | try Block Finally        -- tryFinally
                | try Block Catch          -- tryCatch
 
-  // @returns a CatchClause AST
   Catch = catch "(" FormalParameter ")" Block
 
-  // @returns a Block AST
   Finally = finally Block
 
   DebuggerStatement = #(debugger sc)
 
-  // A.5 Functions and Programs
+  // §A.5 Functions and Programs -- http://ecma-international.org/ecma-262/5.1/#sec-A.5
 
   FunctionDeclaration
     = function identifier "(" FormalParameterList ")" "{" FunctionBody "}"
@@ -497,13 +466,10 @@ ES5 {
     = function identifier "(" FormalParameterList ")" "{" FunctionBody "}"  -- named
     | function "(" FormalParameterList ")" "{" FunctionBody "}"             -- anonymous
 
-  // @returns an array of ASTs
   FormalParameterList = ListOf<FormalParameter, ",">
 
-  // @returns an AST
   FormalParameter = identifier
 
-  // @returns an array of ASTs
   FunctionBody = Directive* SourceElement*
 
   SourceElement = Declaration | Statement
