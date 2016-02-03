@@ -1,0 +1,4 @@
+#!/bin/bash
+
+ROOT=$(npm prefix)
+node "$ROOT/examples/ecmascript/compile.js" -b "$ROOT/dist/ohm.js" > /dev/null
