@@ -26,6 +26,9 @@
     #expandedInput .highlight {
       background-color: #B5D5FF;
     }
+    #bottomSection {
+      padding: 2px;
+    }
     .pexpr {
       cursor: pointer;
       color: #333;
@@ -40,7 +43,7 @@
       flex-grow: 0;
     }
     .pexpr + .pexpr {
-      margin-left: 1px;
+      margin-left: 2px;
     }
     .pexpr.alt > .children > .pexpr {
       margin-left: 0;
@@ -66,8 +69,7 @@
     }
     .pexpr > .label {
       background-color: #efefef;
-      border-left: 1px solid #ccc;
-      border-right: 1px solid #ccc;
+      border-bottom: 1px solid #efefef;
       box-sizing: border-box;
       display: block;
       margin: 1px 0;
@@ -77,17 +79,15 @@
     }
     .pexpr > .label:hover {
       background-color: #dfdfdf;
+      border-color: #dfdfdf;
     }
     .pexpr > .label.prim {
       background-color: transparent;
-      border-left: none;
-      border-right: none;
+      border-color: transparent;
       color: SeaGreen;
+      cursor: default;
     }
     .pexpr.failed > .label.prim {
-      background-color: transparent;
-      border-left: none;
-      border-right: none;
       color: #d44950;
     }
     .pexpr.unevaluated > .label {
@@ -101,8 +101,11 @@
     }
     .pexpr > .label.spaces {
       color: #aaa;
-      height: 13px;
+      height: 14px;
       padding-bottom: 0;
+    }
+    .pexpr.collapsed > .label {
+      border-color: #bbb;
     }
     .pexpr > .children {
       display: flex;

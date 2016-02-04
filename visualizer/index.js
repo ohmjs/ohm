@@ -142,7 +142,7 @@ function initializeWidths() {
   for (var i = 0; i < els.length; ++i) {
     var el = els[i];
     if (!el._input) {
-      el.style.minWidth = '0px';
+      el.style.minWidth = '0';
     } else {
       el.style.minWidth = measureInput(el._input).width + 'px';
     }
@@ -198,8 +198,8 @@ function measureInput(inputEl) {
   var span = measuringDiv.appendChild(createElement('span.input'));
   span.innerHTML = inputEl.textContent;
   var result = {
-    width: span.offsetWidth,
-    height: span.offsetHeight
+    width: span.clientWidth,
+    height: span.clientHeight
   };
   measuringDiv.removeChild(span);
   return result;
@@ -209,6 +209,7 @@ function measureInput(inputEl) {
 function toggleTraceElement(el) {
   var children = el.lastChild;
   var showing = children.hidden;
+  el.classList.toggle('collapsed', !showing && children.childNodes.length > 0);
 
   var childrenSize = measureChildren(el);
   var newWidth = showing ? childrenSize.width : measureLabel(el).width;
@@ -250,10 +251,11 @@ function createTraceElement(traceNode, parent, input) {
   var pexpr = traceNode.expr;
   wrapper.classList.add(pexpr.constructor.name.toLowerCase());
   wrapper.classList.toggle('failed', !traceNode.succeeded);
+
   wrapper.addEventListener('click', function(e) {
     if (e.altKey && !(e.shiftKey || e.metaKey)) {
       console.log(traceNode);  // eslint-disable-line no-console
-    } else {
+    } else if (pexpr.constructor.name !== 'Prim') {
       toggleTraceElement(wrapper);
     }
     e.stopPropagation();
