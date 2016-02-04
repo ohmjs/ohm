@@ -11,6 +11,11 @@ var inputEditor = CodeMirror.fromTextArea($('#input'));
 var grammarEditor = CodeMirror.fromTextArea($('#grammar'));
 var grammar;
 
+var UnicodeChars = {
+  HORIZONTAL_ELLIPSIS: '\u2026',
+  WHITE_BULLET: '\u25E6'
+};
+
 // D3 Helpers
 // ----------
 
@@ -242,11 +247,9 @@ function toggleTraceElement(el) {
 
 function createTraceElement(traceNode, parent, input) {
   var wrapper = parent.appendChild(createElement('.pexpr'));
-  wrapper.classList.add(traceNode.expr.constructor.name.toLowerCase());
-  if (!traceNode.succeeded) {
-    wrapper.classList.add('failed');
-  }
-
+  var pexpr = traceNode.expr;
+  wrapper.classList.add(pexpr.constructor.name.toLowerCase());
+  wrapper.classList.toggle('failed', !traceNode.succeeded);
   wrapper.addEventListener('click', function(e) {
     if (e.altKey && !(e.shiftKey || e.metaKey)) {
       console.log(traceNode);  // eslint-disable-line no-console
@@ -266,12 +269,12 @@ function createTraceElement(traceNode, parent, input) {
       inputMark = markInterval(inputEditor, traceNode.interval, 'highlight', false);
       inputEditor.getWrapperElement().classList.add('highlighting');
     }
-    if (traceNode.expr.interval) {
-      grammarMark = markInterval(grammarEditor, traceNode.expr.interval, 'active-appl', false);
+    if (pexpr.interval) {
+      grammarMark = markInterval(grammarEditor, pexpr.interval, 'active-appl', false);
       grammarEditor.getWrapperElement().classList.add('highlighting');
-      scrollToInterval(grammarEditor, traceNode.expr.interval);
+      scrollToInterval(grammarEditor, pexpr.interval);
     }
-    var ruleName = traceNode.expr.ruleName;
+    var ruleName = pexpr.ruleName;
     if (ruleName) {
       var defInterval = grammar.ruleBodies[ruleName].definitionInterval;
       if (defInterval) {
@@ -293,14 +296,18 @@ function createTraceElement(traceNode, parent, input) {
   });
   wrapper._input = input;
 
-  var text = (traceNode.displayString.length > 20 && traceNode.displayString.indexOf(' ') !== -1) ?
-      (traceNode.displayString.slice(0, 20) + '\u2026') : traceNode.displayString;
-  var label = wrapper.appendChild(createElement('.label', text));
-  label.setAttribute('title', traceNode.displayString);
-  if (isPrimitive(traceNode.expr)) {
-    label.classList.add('prim');
+  var text = pexpr.ruleName === 'spaces' ? UnicodeChars.WHITE_BULLET : traceNode.displayString;
+  // Truncate the label if it is too long.
+  if (text.length > 20 && text.indexOf(' ') >= 0) {
+    text = text.slice(0, 20) + UnicodeChars.HORIZONTAL_ELLIPSIS;
   }
 
+  var label = wrapper.appendChild(createElement('.label', text));
+  label.setAttribute('title', traceNode.displayString);
+  toggleClasses(label, {
+    prim: isPrimitive(traceNode.expr),
+    spaces: pexpr.ruleName === 'spaces'
+  });
   return wrapper;
 }
 
@@ -416,6 +423,14 @@ function showBottomOverlay() {
   $('#bottomSection .overlay').style.width = '100%';
 }
 
+function toggleClasses(el, map) {
+  for (var k in map) {
+    if (map.hasOwnProperty(k)) {
+      el.classList.toggle(k, map[k]);
+    }
+  }
+}
+
 // Main
 // ----
 
@@ -520,15 +535,11 @@ function showBottomOverlay() {
         }
         var container = containerStack[containerStack.length - 1];
         var el = createTraceElement(node, container, childInput);
-        if (!shouldNodeBeVisible(node)) {
-          el.classList.add('hidden');
-        }
-        if (isWhitespace) {
-          el.classList.add('whitespace');
-        }
-        if (!node.succeeded) {
-          el.classList.add('failed');
-        }
+        toggleClasses(el, {
+          failed: !node.succeeded,
+          hidden: !shouldNodeBeVisible(node),
+          whitespace: isWhitespace
+        });
         if (isLeaf) {
           return node.SKIP;
         }
