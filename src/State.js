@@ -145,7 +145,7 @@ State.prototype = {
           // already been recorded.
 
           this.addRightmostFailure(expr);
-      }
+        }
   },
 
   addRightmostFailure: function(expr) {
