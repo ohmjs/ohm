@@ -327,12 +327,7 @@ pexprs.Apply.prototype.reallyEval = function(state, isTopLevelApplication) {
   var memoKey = this.toMemoKey();
   var isHeadOfLeftRecursion = currentLR && currentLR.headApplication.toMemoKey() === memoKey;
   var memoized = true;
-  if (state.rightmostFailures) {
-    var rightmostFailures = {};
-    Object.keys(state.rightmostFailures).forEach(function(failureText) {
-      rightmostFailures[failureText] = state.rightmostFailures[failureText].clone();
-    });
-  }
+
   if (isHeadOfLeftRecursion) {
     value = this.growSeedResult(body, state, origPos, currentLR, value);
     origPosInfo.endLeftRecursion();
@@ -340,6 +335,14 @@ pexprs.Apply.prototype.reallyEval = function(state, isTopLevelApplication) {
     // Don't memoize the result
     memoized = false;
   } else {
+    var rightmostFailures;
+    if (state.rightmostFailures) {
+      rightmostFailures = {};
+      Object.keys(state.rightmostFailures).forEach(function(failureText) {
+        rightmostFailures[failureText] = state.rightmostFailures[failureText].clone();
+      });
+    }
+
     origPosInfo.memo[memoKey] =
         {pos: inputStream.pos, value: value, failuresAtRightmostPosition: rightmostFailures};
   }

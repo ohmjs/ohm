@@ -85,7 +85,7 @@ Failure.prototype.clone = function() {
 };
 
 Failure.prototype.toKey = function() {
-  return this.toString() + '|' + this.type;
+  return this.toString() + '#' + this.type;
 };
 
 // --------------------------------------------------------------------

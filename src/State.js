@@ -139,21 +139,45 @@ State.prototype = {
       if (pos > this.rightmostFailurePosition) {
         this.rightmostFailurePosition = pos;
       }
-    } else /* if (this.recordingMode === RM_RIGHTMOST_FAILURES) */ {
+    } else /* if (this.recordingMode === RM_RIGHTMOST_FAILURES) */ 
+      if (pos === this.rightmostFailurePosition) {
       // We're only interested in failures at the rightmost failure position that haven't
       // already been recorded.
-      var failure = expr.toFailure(this.grammar);
-      var key = failure.toKey();
 
-      if (!this.rightmostFailures) {
-        this.rightmostFailures = {};
-      }
+      this.addRightmostFailure(expr);
 
-      if (pos === this.rightmostFailurePosition &&
-           (!this.rightmostFailures[key] || this.rightmostFailures[key].isFluffy())) {
-        this.rightmostFailures[key] = failure;
-      }
     }
+  },
+
+  addRightmostFailure: function(expr) {
+    var failure = expr.toFailure(this.grammar);
+    var key = failure.toKey();
+
+    if (!this.rightmostFailures) {
+      this.rightmostFailures = {};
+    }
+
+    if (!this.rightmostFailures[key] || this.rightmostFailures[key].isFluffy()) {
+      this.rightmostFailures[key] = failure;
+    }
+
+  },
+
+  addRightmostFailures: function(failures, withClone) {
+    if (!failures)
+      return;
+
+    var rightmostFailures = this.rightmostFailures || {};
+    Object.keys(failures).forEach(function(failureKey) {
+      if (!rightmostFailures[failureKey]) {
+        rightmostFailures[failureKey] = withClone ? 
+                                          failures[failureKey].clone() :
+                                          failures[failureKey];
+      }else if (!failures[failureKey].isFluffy()) {
+        rightmostFailures[failureKey].clearFluffy();
+      }
+    });
+    this.rightmostFailures = rightmostFailures;
   },
 
   getRightmostFailurePosition: function() {
@@ -172,8 +196,8 @@ State.prototype = {
     }
 
     var rightmostFailures = this.rightmostFailures;
-    return Object.keys(this.rightmostFailures).map(function(failureText) {
-      return rightmostFailures[failureText];
+    return Object.keys(this.rightmostFailures).map(function(failureKey) {
+      return rightmostFailures[failureKey];
     });
   },
 
@@ -209,26 +233,7 @@ State.prototype = {
     }
 
     if (this.recordingMode === RM_RIGHTMOST_FAILURES) {
-      var rightmostFailures = this.rightmostFailures;
-      if (memoRec.failuresAtRightmostPosition) {
-        Object.keys(memoRec.failuresAtRightmostPosition).forEach(function(failureText) {
-          if (!rightmostFailures) {
-            rightmostFailures = {};
-          }
-          if (!rightmostFailures[failureText]) {
-
-            rightmostFailures[failureText] =
-              memoRec.failuresAtRightmostPosition[failureText].clone();
-
-          }else if (!memoRec.failuresAtRightmostPosition[failureText].isFluffy()) {
-
-            rightmostFailures[failureText].clearFluffy();
-
-          }
-        });
-
-        this.rightmostFailures = rightmostFailures;
-      }
+      this.addRightmostFailures(memoRec.failuresAtRightmostPosition, true);
     }
 
     if (memoRec.value) {
@@ -271,8 +276,8 @@ State.prototype = {
       if (this.rightmostFailures &&
           inputStream.pos === this.rightmostFailurePosition) {
         rightmostFailures = this.rightmostFailures;
-        Object.keys(this.rightmostFailures).forEach(function(failureText) {
-          rightmostFailures[failureText].makeFluffy();
+        Object.keys(this.rightmostFailures).forEach(function(failureKey) {
+          rightmostFailures[failureKey].makeFluffy();
         });
       }
     } else {
@@ -282,17 +287,7 @@ State.prototype = {
     }
 
     if (this.recordingMode === RM_RIGHTMOST_FAILURES) {
-      if (origFailures) {
-        rightmostFailures = this.rightmostFailures || {};
-        Object.keys(origFailures).forEach(function(failureText) {
-          if (rightmostFailures[failureText] && !origFailures[failureText].isFluffy()) {
-            rightmostFailures[failureText].clearFluffy();
-          }else {
-            rightmostFailures[failureText] = origFailures[failureText];
-          }
-        });
-        this.rightmostFailures = rightmostFailures;
-      }
+      this.addRightmostFailures(origFailures, false);
     }
 
     return ans;
