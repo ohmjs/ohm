@@ -262,6 +262,9 @@ ES5 {
   
   // end of lexical rules
 
+  noIn = (~in)
+  withIn =
+
   // §A.3 Expressions -- http://ecma-international.org/ecma-262/5.1/#sec-A.3
 
   PrimaryExpression = this
@@ -274,10 +277,10 @@ ES5 {
                       //                             value: litToken.value}, []) )
                     | ArrayLiteral
                     | ObjectLiteral
-                    | "(" Expression ")"  -- parenExpr
+                    | "(" Expression<withIn> ")"  -- parenExpr
 
   ArrayLiteral = "[" ListOf<AssignmentExpressionOrElision, ","> "]"
-  AssignmentExpressionOrElision = AssignmentExpression
+  AssignmentExpressionOrElision = AssignmentExpression<withIn>
                                 |                       -- elision
 
   ObjectLiteral = "{" ListOf<PropertyAssignment, ","> "}"              -- noTrailingComma
@@ -285,13 +288,13 @@ ES5 {
 
   PropertyAssignment = get PropertyName "(" ")" "{" FunctionBody "}"                  -- getter
                      | set PropertyName "(" FormalParameter ")" "{" FunctionBody "}"  -- setter
-                     | PropertyName ":" AssignmentExpression                          -- simple
+                     | PropertyName ":" AssignmentExpression<withIn>                  -- simple
 
   PropertyName = identifierName
                | stringLiteral
                | numericLiteral
 
-  MemberExpression = MemberExpression "[" Expression "]"  -- arrayRefExp
+  MemberExpression = MemberExpression "[" Expression<withIn> "]"  -- arrayRefExp
                    | MemberExpression "." identifierName  -- propRefExp
                    | new MemberExpression Arguments       -- newExp
                    | FunctionExpression
@@ -300,12 +303,12 @@ ES5 {
   NewExpression = MemberExpression
                 | new NewExpression -- newExp
 
-  CallExpression = CallExpression "[" Expression "]"  -- arrayRefExp
+  CallExpression = CallExpression "[" Expression<withIn> "]"  -- arrayRefExp
                  | CallExpression "." identifierName  -- propRefExp
                  | CallExpression Arguments           -- callExpExp
                  | MemberExpression Arguments         -- memberExpExp
 
-  Arguments = "(" ListOf<AssignmentExpression, ","> ")"
+  Arguments = "(" ListOf<AssignmentExpression<withIn>, ","> ")"
 
   LeftHandSideExpression = CallExpression
                          | NewExpression
@@ -331,8 +334,8 @@ ES5 {
                            | UnaryExpression
 
   AdditiveExpression = AdditiveExpression "+" MultiplicativeExpression -- add
-		     | AdditiveExpression "-" MultiplicativeExpression -- sub
-		     | MultiplicativeExpression
+                     | AdditiveExpression "-" MultiplicativeExpression -- sub
+                     | MultiplicativeExpression
 
   ShiftExpression = ShiftExpression "<<" AdditiveExpression  -- lsl
                   | ShiftExpression ">>>" AdditiveExpression -- lsr
@@ -346,48 +349,53 @@ ES5 {
   // post-parse-pass. A little like rejecting unbound variables in a
   // postpass, or implementing a type checker.
 
-  RelationalExpression =
-      RelationalExpression "<" ShiftExpression           -- lt
-    | RelationalExpression ">" ShiftExpression           -- gt
-    | RelationalExpression "<=" ShiftExpression          -- le
-    | RelationalExpression ">=" ShiftExpression          -- ge
-    | RelationalExpression "instanceof" ShiftExpression  -- instanceOfExp
-    | RelationalExpression "in" ShiftExpression          -- inExp
+  RelationalExpression<guardIn> =
+      RelationalExpression<guardIn> "<" ShiftExpression           -- lt
+    | RelationalExpression<guardIn> ">" ShiftExpression           -- gt
+    | RelationalExpression<guardIn> "<=" ShiftExpression          -- le
+    | RelationalExpression<guardIn> ">=" ShiftExpression          -- ge
+    | RelationalExpression<guardIn> "instanceof" ShiftExpression  -- instanceOfExp
+    | RelationalExpression<guardIn> guardIn "in" ShiftExpression  -- inExp
     | ShiftExpression
 
-  EqualityExpression =
-      EqualityExpression "==" RelationalExpression  -- equal
-    | EqualityExpression "!=" RelationalExpression  -- notEqual
-    | EqualityExpression "===" RelationalExpression -- eq
-    | EqualityExpression "!==" RelationalExpression -- notEq
-    | RelationalExpression
+  EqualityExpression<guardIn> =
+      EqualityExpression<guardIn> "==" RelationalExpression<guardIn>  -- equal
+    | EqualityExpression<guardIn> "!=" RelationalExpression<guardIn>  -- notEqual
+    | EqualityExpression<guardIn> "===" RelationalExpression<guardIn> -- eq
+    | EqualityExpression<guardIn> "!==" RelationalExpression<guardIn> -- notEq
+    | RelationalExpression<guardIn>
 
-  BitwiseANDExpression = BitwiseANDExpression "&" EqualityExpression -- band
-		       | EqualityExpression
+  BitwiseANDExpression<guardIn> =
+      BitwiseANDExpression<guardIn> "&" EqualityExpression<guardIn> -- band
+    | EqualityExpression<guardIn>
 
-  BitwiseXORExpression = BitwiseXORExpression "^" BitwiseANDExpression -- bxor
-		       | BitwiseANDExpression
+  BitwiseXORExpression<guardIn> =
+      BitwiseXORExpression<guardIn> "^" BitwiseANDExpression<guardIn> -- bxor
+    | BitwiseANDExpression<guardIn>
 
-  BitwiseORExpression = BitwiseORExpression "|" BitwiseXORExpression -- bor
-		      | BitwiseXORExpression
+  BitwiseORExpression<guardIn> =
+      BitwiseORExpression<guardIn> "|" BitwiseXORExpression<guardIn> -- bor
+    | BitwiseXORExpression<guardIn>
 
-  LogicalANDExpression = LogicalANDExpression "&&" BitwiseORExpression -- land
-		       | BitwiseORExpression
+  LogicalANDExpression<guardIn> =
+      LogicalANDExpression<guardIn> "&&" BitwiseORExpression<guardIn> -- land
+    | BitwiseORExpression<guardIn>
 
-  LogicalORExpression = LogicalORExpression "||" LogicalANDExpression -- lor
-		      | LogicalANDExpression
+  LogicalORExpression<guardIn> =
+      LogicalORExpression<guardIn> "||" LogicalANDExpression<guardIn> -- lor
+    | LogicalANDExpression<guardIn>
 
-  ConditionalExpression
-    = LogicalORExpression "?" AssignmentExpression ":" AssignmentExpression -- conditional
-    | LogicalORExpression
+  ConditionalExpression<guardIn> =
+      LogicalORExpression<guardIn> "?" AssignmentExpression<withIn> ":" AssignmentExpression<guardIn> -- conditional
+    | LogicalORExpression<guardIn>
 
-  AssignmentExpression
-    = LeftHandSideExpression AssignmentOperator AssignmentExpression -- assignment
-    | ConditionalExpression
+  AssignmentExpression<guardIn> =
+      LeftHandSideExpression AssignmentOperator AssignmentExpression<guardIn> -- assignment
+    | ConditionalExpression<guardIn>
 
-  Expression (an expression)
-    = Expression "," AssignmentExpression -- commaExp
-    | AssignmentExpression
+  Expression<guardIn> (an expression) =
+      Expression<guardIn> "," AssignmentExpression<guardIn> -- commaExp
+    | AssignmentExpression<guardIn>
 
   AssignmentOperator = "=" | ">>>=" | "<<=" | ">>="
                      | "*=" | "/=" | "%=" | "+=" | "-=" | "&=" | "^=" | "|="
@@ -415,53 +423,53 @@ ES5 {
 
   StatementList = Statement*
 
-  VariableStatement = var VariableDeclarationList #(sc)
+  VariableStatement = var VariableDeclarationList<withIn> #(sc)
 
-  VariableDeclarationList = NonemptyListOf<VariableDeclaration, ",">
+  VariableDeclarationList<guardIn> = NonemptyListOf<VariableDeclaration<guardIn>, ",">
 
-  VariableDeclaration = identifier Initialiser?
+  VariableDeclaration<guardIn> = identifier Initialiser<guardIn>?
 
-  Initialiser = "=" AssignmentExpression
+  Initialiser<guardIn> = "=" AssignmentExpression<guardIn>
 
   EmptyStatement = ";" // note: this semicolon eats newlines
 
-  ExpressionStatement = ~("{" | function) Expression #(sc)
+  ExpressionStatement = ~("{" | function) Expression<withIn> #(sc)
 
-  IfStatement = if "(" Expression ")" Statement (else Statement)?
+  IfStatement = if "(" Expression<withIn> ")" Statement (else Statement)?
 
-  IterationStatement = do Statement while "(" Expression ")" #(sc)  -- doWhile
-                     | while "(" Expression ")" Statement           -- whileDo
-                     | for "(" Expression? ";"
-                                 Expression? ";"
-                                 Expression? ")" Statement          -- for3
-                     | for "(" var VariableDeclarationList ";"
-                                 Expression? ";"
-                                 Expression? ")" Statement          -- for3var
+  IterationStatement = do Statement while "(" Expression<withIn> ")" #(sc)  -- doWhile
+                     | while "(" Expression<withIn> ")" Statement           -- whileDo
+                     | for "(" Expression<noIn>? ";"
+                                 Expression<withIn>? ";"
+                                 Expression<withIn>? ")" Statement          -- for3
+                     | for "(" var VariableDeclarationList<noIn> ";"
+                                 Expression<withIn>? ";"
+                                 Expression<withIn>? ")" Statement          -- for3var
                      | for "(" LeftHandSideExpression in
-                                 Expression ")" Statement           -- forIn
-                     | for "(" var VariableDeclaration in
-                                 Expression ")" Statement           -- forInVar
+                                 Expression<withIn> ")" Statement           -- forIn
+                     | for "(" var VariableDeclaration<noIn> in
+                                 Expression<withIn> ")" Statement           -- forInVar
 
   ContinueStatement = continue #((spacesNoNL identifier)? sc)
 
   BreakStatement = break #((spacesNoNL identifier)? sc)
 
-  ReturnStatement = return (#(spacesNoNL ~space) Expression)? #(sc)
+  ReturnStatement = return (#(spacesNoNL ~space) Expression<withIn>)? #(sc)
 
-  WithStatement = with "(" Expression ")" Statement
+  WithStatement = with "(" Expression<withIn> ")" Statement
 
-  SwitchStatement = switch "(" Expression ")" CaseBlock
+  SwitchStatement = switch "(" Expression<withIn> ")" CaseBlock
 
   CaseBlock = "{" CaseClause* DefaultClause CaseClause* "}"  -- withDefault
             | "{"                           CaseClause* "}"  -- withoutDefault
 
-  CaseClause = case Expression ":" Statement*
+  CaseClause = case Expression<withIn> ":" Statement*
 
   DefaultClause = default ":" Statement*
 
   LabelledStatement = identifier ":" Statement
 
-  ThrowStatement = throw Expression #(sc)  -- throwExpr
+  ThrowStatement = throw Expression<withIn> #(sc)  -- throwExpr
 
   TryStatement = try Block Catch Finally  -- tryCatchFinally
                | try Block Finally        -- tryFinally
