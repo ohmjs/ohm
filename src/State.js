@@ -139,14 +139,13 @@ State.prototype = {
       if (pos > this.rightmostFailurePosition) {
         this.rightmostFailurePosition = pos;
       }
-    } else /* if (this.recordingMode === RM_RIGHTMOST_FAILURES) */ 
+    } else /* if (this.recordingMode === RM_RIGHTMOST_FAILURES) */
       if (pos === this.rightmostFailurePosition) {
-      // We're only interested in failures at the rightmost failure position that haven't
-      // already been recorded.
+        // We're only interested in failures at the rightmost failure position that haven't
+        // already been recorded.
 
-      this.addRightmostFailure(expr);
-
-    }
+        this.addRightmostFailure(expr);
+      }
   },
 
   addRightmostFailure: function(expr) {
@@ -164,13 +163,14 @@ State.prototype = {
   },
 
   addRightmostFailures: function(failures, withClone) {
-    if (!failures)
+    if (!failures) {
       return;
+    }
 
     var rightmostFailures = this.rightmostFailures || {};
     Object.keys(failures).forEach(function(failureKey) {
       if (!rightmostFailures[failureKey]) {
-        rightmostFailures[failureKey] = withClone ? 
+        rightmostFailures[failureKey] = withClone ?
                                           failures[failureKey].clone() :
                                           failures[failureKey];
       }else if (!failures[failureKey].isFluffy()) {
