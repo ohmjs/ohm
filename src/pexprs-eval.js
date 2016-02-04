@@ -335,16 +335,16 @@ pexprs.Apply.prototype.reallyEval = function(state, isTopLevelApplication) {
     // Don't memoize the result
     memoized = false;
   } else {
-    var rightmostFailures;
+    var rightmostFailuresCopy;
     if (state.rightmostFailures) {
-      rightmostFailures = {};
+      rightmostFailuresCopy = Object.create(null);
       Object.keys(state.rightmostFailures).forEach(function(failureText) {
-        rightmostFailures[failureText] = state.rightmostFailures[failureText].clone();
+        rightmostFailuresCopy[failureText] = state.rightmostFailures[failureText].clone();
       });
     }
 
     origPosInfo.memo[memoKey] =
-        {pos: inputStream.pos, value: value, failuresAtRightmostPosition: rightmostFailures};
+        {pos: inputStream.pos, value: value, failuresAtRightmostPosition: rightmostFailuresCopy};
   }
 
   if (description) {
@@ -354,7 +354,7 @@ pexprs.Apply.prototype.reallyEval = function(state, isTopLevelApplication) {
     }
 
     if (memoized && state.rightmostFailures) {
-      origPosInfo.memo[memoKey].failuresAtRightmostPosition = {};
+      origPosInfo.memo[memoKey].failuresAtRightmostPosition = Object.create(null);
       Object.keys(state.rightmostFailures).forEach(function(failureText) {
         origPosInfo.memo[memoKey].failuresAtRightmostPosition[failureText] =
           state.rightmostFailures[failureText].clone();
@@ -419,8 +419,8 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
     lrMemoRec.pos = inputStream.pos;
     lrMemoRec.value = newValue;
     if (state.rightmostFailures) {
+      lrMemoRec.failuresAtRightmostPosition = Object.create(null);
       var keys = Object.keys(state.rightmostFailures);
-      lrMemoRec.failuresAtRightmostPosition = {};
       for (var idx = 0; idx < keys.length; idx++) {
         lrMemoRec.failuresAtRightmostPosition[keys[idx]] =
           state.rightmostFailures[keys[idx]].clone();
