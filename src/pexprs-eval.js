@@ -336,9 +336,9 @@ pexprs.Apply.prototype.reallyEval = function(state, isTopLevelApplication) {
     memoized = false;
   } else {
     origPosInfo.memo[memoKey] = {
-        pos: inputStream.pos,
-        value: value,
-        failuresAtRightmostPosition: state.cloneRightmostFailures()
+      pos: inputStream.pos,
+      value: value,
+      failuresAtRightmostPosition: state.cloneRightmostFailures()
     };
   }
 
@@ -410,7 +410,7 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
     lrMemoRec.pos = inputStream.pos;
     lrMemoRec.value = newValue;
     lrMemoRec.failuresAtRightmostPosition = state.cloneRightmostFailures();
-    
+
     if (state.isTracing()) {
       var children = state.trace[state.trace.length - 1].children.slice();
       lrMemoRec.traceEntry = new Trace(state.inputStream, origPos, this, newValue, children);
