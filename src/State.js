@@ -144,42 +144,44 @@ State.prototype = {
           // We're only interested in failures at the rightmost failure position that haven't
           // already been recorded.
 
-          this.addRightmostFailure(expr);
+          this.addRightmostFailure(expr.toFailure(this.grammar), false);
         }
   },
 
-  addRightmostFailure: function(expr) {
-    var failure = expr.toFailure(this.grammar);
-    var key = failure.toKey();
-
+  ensureRightmostFailures: function() {
     if (!this.rightmostFailures) {
       this.rightmostFailures = Object.create(null);
     }
-
-    if (!this.rightmostFailures[key] || this.rightmostFailures[key].isFluffy()) {
-      this.rightmostFailures[key] = failure;
-    }
-
   },
 
-  addRightmostFailures: function(failures, withClone) {
-    if (!failures) {
-      return;
+  addRightmostFailure: function(failure, shouldCloneIfNew) {
+    this.ensureRightmostFailures();
+    var key = failure.toKey();
+    if (!this.rightmostFailures[key]) {
+      this.rightmostFailures[key] = shouldCloneIfNew ? failure.clone() : failure;
+    } else if (this.rightmostFailures[key].isFluffy() && !failure.isFluffy()) {
+      this.rightmostFailures[key].clearFluffy();
     }
+  },
+
+  addRightmostFailures: function(failures, shouldCloneIfNew) {
+    var self = this;
+    Object.keys(failures).forEach(function(key) {
+      self.addRightmostFailure(failures[key], shouldCloneIfNew);
+    });
+  },
+
+  cloneRightmostFailures: function() {
     if (!this.rightmostFailures) {
-      this.rightmostFailures = Object.create(null);
+      return undefined;
     }
 
+    var ans = Object.create(null);
     var self = this;
-    Object.keys(failures).forEach(function(failureKey) {
-      if (!self.rightmostFailures[failureKey]) {
-        self.rightmostFailures[failureKey] = withClone ?
-            failures[failureKey].clone() :
-            failures[failureKey];
-      } else if (!failures[failureKey].isFluffy()) {
-        self.rightmostFailures[failureKey].clearFluffy();
-      }
+    Object.keys(this.rightmostFailures).forEach(function(key) {
+      ans[key] = self.rightmostFailures[key].clone();
     });
+    return ans;
   },
 
   getRightmostFailurePosition: function() {
@@ -193,13 +195,10 @@ State.prototype = {
       this.eval(new pexprs.Apply(this.startRule));
     }
 
-    if (!this.rightmostFailures) {
-      return [];
-    }
-
+    this.ensureRightmostFailures();
     var self = this;
-    return Object.keys(this.rightmostFailures).map(function(failureKey) {
-      return self.rightmostFailures[failureKey];
+    return Object.keys(this.rightmostFailures).map(function(key) {
+      return self.rightmostFailures[key];
     });
   },
 
@@ -234,7 +233,7 @@ State.prototype = {
       this.trace.push(memoRec.traceEntry);
     }
 
-    if (this.recordingMode === RM_RIGHTMOST_FAILURES) {
+    if (this.recordingMode === RM_RIGHTMOST_FAILURES && memoRec.failuresAtRightmostPosition) {
       this.addRightmostFailures(memoRec.failuresAtRightmostPosition, true);
     }
 
@@ -277,8 +276,8 @@ State.prototype = {
       if (this.rightmostFailures &&
           inputStream.pos === this.rightmostFailurePosition) {
         var self = this;
-        Object.keys(this.rightmostFailures).forEach(function(failureKey) {
-          self.rightmostFailures[failureKey].makeFluffy();
+        Object.keys(this.rightmostFailures).forEach(function(key) {
+          self.rightmostFailures[key].makeFluffy();
         });
       }
     } else {
@@ -287,7 +286,7 @@ State.prototype = {
       this.truncateBindings(origNumBindings);
     }
 
-    if (this.recordingMode === RM_RIGHTMOST_FAILURES) {
+    if (this.recordingMode === RM_RIGHTMOST_FAILURES && origFailures) {
       this.addRightmostFailures(origFailures, false);
     }
 

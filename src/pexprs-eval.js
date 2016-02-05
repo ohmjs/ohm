@@ -335,16 +335,11 @@ pexprs.Apply.prototype.reallyEval = function(state, isTopLevelApplication) {
     // Don't memoize the result
     memoized = false;
   } else {
-    var rightmostFailuresCopy;
-    if (state.rightmostFailures) {
-      rightmostFailuresCopy = Object.create(null);
-      Object.keys(state.rightmostFailures).forEach(function(failureText) {
-        rightmostFailuresCopy[failureText] = state.rightmostFailures[failureText].clone();
-      });
-    }
-
-    origPosInfo.memo[memoKey] =
-        {pos: inputStream.pos, value: value, failuresAtRightmostPosition: rightmostFailuresCopy};
+    origPosInfo.memo[memoKey] = {
+        pos: inputStream.pos,
+        value: value,
+        failuresAtRightmostPosition: state.cloneRightmostFailures()
+    };
   }
 
   if (description) {
@@ -353,12 +348,8 @@ pexprs.Apply.prototype.reallyEval = function(state, isTopLevelApplication) {
       state.processFailure(origPos, this);
     }
 
-    if (memoized && state.rightmostFailures) {
-      origPosInfo.memo[memoKey].failuresAtRightmostPosition = Object.create(null);
-      Object.keys(state.rightmostFailures).forEach(function(failureText) {
-        origPosInfo.memo[memoKey].failuresAtRightmostPosition[failureText] =
-          state.rightmostFailures[failureText].clone();
-      });
+    if (memoized) {
+      origPosInfo.memo[memoKey].failuresAtRightmostPosition = state.cloneRightmostFailures();
     }
   }
 
@@ -418,14 +409,8 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
   while (true) {
     lrMemoRec.pos = inputStream.pos;
     lrMemoRec.value = newValue;
-    if (state.rightmostFailures) {
-      lrMemoRec.failuresAtRightmostPosition = Object.create(null);
-      var keys = Object.keys(state.rightmostFailures);
-      for (var idx = 0; idx < keys.length; idx++) {
-        lrMemoRec.failuresAtRightmostPosition[keys[idx]] =
-          state.rightmostFailures[keys[idx]].clone();
-      }
-    }
+    lrMemoRec.failuresAtRightmostPosition = state.cloneRightmostFailures();
+    
     if (state.isTracing()) {
       var children = state.trace[state.trace.length - 1].children.slice();
       lrMemoRec.traceEntry = new Trace(state.inputStream, origPos, this, newValue, children);
