@@ -60,6 +60,10 @@ Failure.prototype.makeFluffy = function() {
   this.fluffy = true;
 };
 
+Failure.prototype.clearFluffy = function() {
+  this.fluffy = false;
+};
+
 Failure.prototype.subsumes = function(that) {
   return this.getText() === that.getText() &&
       this.type === that.type &&
@@ -70,6 +74,18 @@ Failure.prototype.toString = function() {
   return this.type === 'string' ?
     JSON.stringify(this.getText()) :
     this.getText();
+};
+
+Failure.prototype.clone = function() {
+  var failure = new Failure(this.text, this.type);
+  if (this.isFluffy()) {
+    failure.makeFluffy();
+  }
+  return failure;
+};
+
+Failure.prototype.toKey = function() {
+  return this.toString() + '#' + this.type;
 };
 
 // --------------------------------------------------------------------
