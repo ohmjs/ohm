@@ -311,8 +311,8 @@ function refreshParseTree(grammar, input) {  // eslint-disable-line no-unused-va
         return node.SKIP;
       }
       var childInput;
-      var isLeaf = isPrimitive(node.expr) || isBlackhole(node);
       var isWhitespace = node.displayString === 'spaces_';
+      var isLeaf = isPrimitive(node.expr) || isBlackhole(node) || node.children.length === 0;
 
       // If the node or its descendants successfully consumed input, create a span to wrap
       // all the input that was consumed.
