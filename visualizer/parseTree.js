@@ -1,6 +1,6 @@
 /* eslint-env browser */
-/* global clearMark, createElement, d3, getWidthDependentElements, grammarEditor, inputEditor */
-/* global markInterval, options, scrollToInterval, setError */
+/* global cmUtil, createElement, d3, getWidthDependentElements, grammarEditor, inputEditor */
+/* global options, setError */
 
 'use strict';
 
@@ -247,20 +247,20 @@ function createTraceElement(grammar, traceNode, parent, input) {
       input.classList.add('highlight');
     }
     if (traceNode.interval) {
-      inputMark = markInterval(inputEditor, traceNode.interval, 'highlight', false);
+      inputMark = cmUtil.markInterval(inputEditor, traceNode.interval, 'highlight', false);
       inputEditor.getWrapperElement().classList.add('highlighting');
     }
     if (pexpr.interval) {
-      grammarMark = markInterval(grammarEditor, pexpr.interval, 'active-appl', false);
+      grammarMark = cmUtil.markInterval(grammarEditor, pexpr.interval, 'active-appl', false);
       grammarEditor.getWrapperElement().classList.add('highlighting');
-      scrollToInterval(grammarEditor, pexpr.interval);
+      cmUtil.scrollToInterval(grammarEditor, pexpr.interval);
     }
     var ruleName = pexpr.ruleName;
     if (ruleName) {
       var defInterval = grammar.ruleBodies[ruleName].definitionInterval;
       if (defInterval) {
-        defMark = markInterval(grammarEditor, defInterval, 'active-definition', true);
-        scrollToInterval(grammarEditor, defInterval);
+        defMark = cmUtil.markInterval(grammarEditor, defInterval, 'active-definition', true);
+        cmUtil.scrollToInterval(grammarEditor, defInterval);
       }
     }
     e.stopPropagation();
@@ -269,9 +269,9 @@ function createTraceElement(grammar, traceNode, parent, input) {
     if (input) {
       input.classList.remove('highlight');
     }
-    inputMark = clearMark(inputMark);
-    grammarMark = clearMark(grammarMark);
-    defMark = clearMark(defMark);
+    inputMark = cmUtil.clearMark(inputMark);
+    grammarMark = cmUtil.clearMark(grammarMark);
+    defMark = cmUtil.clearMark(defMark);
     grammarEditor.getWrapperElement().classList.remove('highlighting');
     inputEditor.getWrapperElement().classList.remove('highlighting');
   });

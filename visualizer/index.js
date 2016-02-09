@@ -1,5 +1,5 @@
 /* eslint-env browser */
-/* global CodeMirror, ohm, refreshParseTree, Storage */
+/* global cmUtil, CodeMirror, ohm, refreshParseTree, Storage */
 
 'use strict';
 
@@ -9,72 +9,6 @@ var options = {};
 var inputEditor = CodeMirror.fromTextArea($('#input'));
 var grammarEditor = CodeMirror.fromTextArea($('#grammar'));
 var grammar;
-
-// CodeMirror Helpers
-// ------------------
-
-function countLeadingWhitespace(str) {
-  return str.match(/^\s*/)[0].length;
-}
-
-function countTrailingWhitespace(str) {
-  return str.match(/\s*$/)[0].length;
-}
-
-function isBlockSelectable(cm, startPos, endPos) {
-  var lastLine = cm.getLine(endPos.line);
-  return countLeadingWhitespace(cm.getLine(startPos.line)) === startPos.ch &&
-         (lastLine.length - countTrailingWhitespace(lastLine)) === endPos.ch;
-}
-
-// Mark a block of text with `className` by marking entire lines.
-function markBlock(cm, startLine, endLine, className) {
-  for (var i = startLine; i <= endLine; ++i) {
-    cm.addLineClass(i, 'wrap', className);
-  }
-  return {
-    clear: function() {
-      for (var i = startLine; i <= endLine; ++i) {
-        cm.removeLineClass(i, 'wrap', className);
-      }
-    }
-  };
-}
-
-function markInterval(cm, interval, className, canHighlightBlocks) {
-  var startPos = cm.posFromIndex(interval.startIdx);
-  var endPos = cm.posFromIndex(interval.endIdx);
-
-  // See if the selection can be expanded to a block selection.
-  if (canHighlightBlocks && isBlockSelectable(cm, startPos, endPos)) {
-    return markBlock(cm, startPos.line, endPos.line, className);
-  }
-  return cm.markText(startPos, endPos, {className: className});
-}
-
-function clearMark(mark) {  // eslint-disable-line no-unused-vars
-  if (mark) {
-    mark.clear();
-  }
-}
-
-function indexToHeight(cm, index) {
-  var pos = cm.posFromIndex(index);
-  return cm.heightAtLine(pos.line, 'local');
-}
-
-function scrollToInterval(cm, interval) {  // eslint-disable-line no-unused-vars
-  var startHeight = indexToHeight(cm, interval.startIdx);
-  var endHeight = indexToHeight(cm, interval.endIdx);
-  var scrollInfo = cm.getScrollInfo();
-  var margin = scrollInfo.clientHeight - (endHeight - startHeight);
-  if (startHeight < scrollInfo.top  ||
-      endHeight > (scrollInfo.top + scrollInfo.clientHeight)) {
-    cm.scrollIntoView({left: 0, top: startHeight,
-                       right: 0, bottom: endHeight},
-                      margin > 0 ? margin / 2 : undefined);
-  }
-}
 
 // Misc Helpers
 // ------------
@@ -115,7 +49,7 @@ function setError(category, editor, interval, message) {
   hideError(category, editor);
 
   errorMarks[category] = {
-    mark: markInterval(editor, interval, 'error-interval', false),
+    mark: cmUtil.markInterval(editor, interval, 'error-interval', false),
     timeout: setTimeout(function() { showError(category, editor, interval, message); }, 1500),
     widget: null
   };
