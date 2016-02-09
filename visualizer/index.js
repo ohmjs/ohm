@@ -8,7 +8,6 @@ var options = {};
 
 var inputEditor = CodeMirror.fromTextArea($('#input'));
 var grammarEditor = CodeMirror.fromTextArea($('#grammar'));
-var grammar;
 
 // Misc Helpers
 // ------------
@@ -90,6 +89,7 @@ function showBottomOverlay() {
 (function main() {
   var checkboxes = document.querySelectorAll('#options input[type=checkbox]');
   var refreshTimeout;
+  var grammar;
   var grammarChanged = true;
 
   function triggerRefresh(delay) {
