@@ -134,16 +134,19 @@ function saveEditorState(editor, stateObj, key) {
 
       var grammarSrc = grammarEditor.getValue();
       saveEditorState(grammarEditor, hashVars, 'grammar');
-      try {
-        grammar = ohm.grammar(grammarSrc);
-      } catch (e) {
-        console.log(e);  // eslint-disable-line no-console
 
-        var message = e.shortMessage ? e.shortMessage : e.message;
-        setError('grammar', grammarEditor, e.interval, message);
-        // If the grammar is unusable, prevent the input from being parsed.
-        grammar = null;
-        return;
+      if (grammarSrc.length > 0) {
+        try {
+          grammar = ohm.grammar(grammarSrc);
+        } catch (e) {
+          console.log(e);  // eslint-disable-line no-console
+
+          var message = e.shortMessage ? e.shortMessage : e.message;
+          setError('grammar', grammarEditor, e.interval, message);
+          // If the grammar is unusable, prevent the input from being parsed.
+          grammar = null;
+          return;
+        }
       }
     }
 
