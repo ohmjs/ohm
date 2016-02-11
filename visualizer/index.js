@@ -107,7 +107,7 @@ function saveEditorState(editor, stateObj, key) {
     cb.addEventListener('click', function(e) { triggerRefresh(); });
   });
 
-  var hashVars = QueryString.parse(window.location.search.slice(1));
+  var hashVars = QueryString.parse(window.location.hash.slice(1));
   restoreEditorState(inputEditor, hashVars, 'input');
   restoreEditorState(grammarEditor, hashVars, 'grammar');
 
