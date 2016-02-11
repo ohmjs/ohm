@@ -1,5 +1,5 @@
 /* eslint-env browser */
-/* global cmUtil, CodeMirror, ohm, refreshParseTree, Storage */
+/* global cmUtil, CodeMirror, escape, ohm, QueryString, refreshParseTree, unescape */
 
 'use strict';
 
@@ -60,27 +60,31 @@ function showError(category, editor, interval, message) {
   errorMarks[category].widget = editor.addLineWidget(line, errorEl);
 }
 
-function useLocalStorage() {
-  return typeof localStorage !== 'undefined' &&
-         typeof Storage === 'function' &&
-         localStorage instanceof Storage;
-}
-
-function setEditorValueFromLocalStorage(editor, key) {
-  if (useLocalStorage()) {
-    var contents = localStorage.getItem(key);
-    if (contents != null) {
-      editor.setValue(contents);
-    }
-  }
-}
-
 function hideBottomOverlay() {
   $('#bottomSection .overlay').style.width = 0;
 }
 
 function showBottomOverlay() {
   $('#bottomSection .overlay').style.width = '100%';
+}
+
+function fromBase64(str) {
+  return decodeURIComponent(unescape(atob(str)));
+}
+
+function toBase64(str) {
+  return btoa(escape(encodeURIComponent(str)));
+}
+
+function restoreEditorState(editor, stateObj, key) {
+  if (stateObj.hasOwnProperty(key)) {
+    editor.setValue(fromBase64(stateObj[key]));
+  }
+}
+
+function saveEditorState(editor, stateObj, key) {
+  stateObj[key] = toBase64(editor.getValue());
+  history.replaceState(null, '', '?' + QueryString.stringify(stateObj));
 }
 
 // Main
@@ -103,8 +107,9 @@ function showBottomOverlay() {
     cb.addEventListener('click', function(e) { triggerRefresh(); });
   });
 
-  setEditorValueFromLocalStorage(inputEditor, 'input');
-  setEditorValueFromLocalStorage(grammarEditor, 'grammar');
+  var queryVars = QueryString.parse(window.location.search.slice(1));
+  restoreEditorState(inputEditor, queryVars, 'input');
+  restoreEditorState(grammarEditor, queryVars, 'grammar');
 
   inputEditor.on('change', function() { triggerRefresh(250); });
   grammarEditor.on('change', function() {
@@ -115,9 +120,8 @@ function showBottomOverlay() {
 
   function refresh() {
     hideError('input', inputEditor);
-    if (useLocalStorage()) {
-      localStorage.setItem('input', inputEditor.getValue());
-    }
+
+    saveEditorState(inputEditor, queryVars, 'input');
 
     // Refresh the option values.
     for (var i = 0; i < checkboxes.length; ++i) {
@@ -129,9 +133,7 @@ function showBottomOverlay() {
       grammarChanged = false;
 
       var grammarSrc = grammarEditor.getValue();
-      if (useLocalStorage()) {
-        localStorage.setItem('grammar', grammarSrc);
-      }
+      saveEditorState(grammarEditor, queryVars, 'grammar');
       try {
         grammar = ohm.grammar(grammarSrc);
       } catch (e) {
