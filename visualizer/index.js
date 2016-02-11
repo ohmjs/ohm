@@ -79,6 +79,11 @@ function toBase64(str) {
 function restoreEditorState(editor, stateObj, key) {
   if (stateObj.hasOwnProperty(key)) {
     editor.setValue(fromBase64(stateObj[key]));
+  } else if (localStorage && typeof localStorage.getItem === 'function') {
+    var value = localStorage.getItem(key);
+    if (value) {
+      editor.setValue(value);
+    }
   }
 }
 
