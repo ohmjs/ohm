@@ -6,8 +6,8 @@
 function $(sel) { return document.querySelector(sel); }
 var options = {};
 
-var inputEditor = CodeMirror.fromTextArea($('#input'));
-var grammarEditor = CodeMirror.fromTextArea($('#grammar'));
+var inputEditor = CodeMirror($('#inputContainer .editorWrapper'));
+var grammarEditor = CodeMirror($('#grammarContainer .editorWrapper'));
 
 // Misc Helpers
 // ------------

@@ -32,6 +32,10 @@
 
     "global-strict": 0,
 
+    // Don't require `new` when calling functions whose name starts with a
+    // capital letter.
+    "new-cap": [2, {capIsNew: false}],
+
     // Allow things like `while(true)`.
     "no-constant-condition": 0,
 

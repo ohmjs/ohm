@@ -2,7 +2,6 @@
 <html>
 <head>
   <title>Ohm</title>
-  <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="third_party/codemirror-5.11/lib/codemirror.css">
   <style>
     html, body {
@@ -162,6 +161,8 @@
 
     #topSection {
       border-bottom: 1px solid #ddd;
+      display: flex;
+      flex: 1;
     }
 
     #bottomSection {
@@ -183,7 +184,7 @@
 
     #grammarContainer,
     #inputContainer {
-      display: inline-flex;
+      display: flex;
       flex-direction: column;
       box-sizing: border-box;
       width: 50%;
@@ -197,6 +198,21 @@
     }
     #inputContainer {
       border-right: 1px solid #ddd;
+    }
+
+    /*
+      Hack to fix a problem with `height: 100%` in flex items.
+      See https://github.com/codemirror/CodeMirror/issues/3679
+     */
+    .flex-fix {
+      flex: 1;
+      position: relative;
+    }
+
+    .editorWrapper .CodeMirror {
+      height: 100%;
+      position: absolute;  /* See .flex-fix above. */
+      width: 100%;
     }
 
     .CodeMirror .error-interval {
@@ -234,33 +250,16 @@
     .CodeMirror-lines pre {
       padding-left: 14px;
     }
-
   </style>
 </head>
 <body>
   <div id="topSection">
     <div id="inputContainer">
       <h2>Test Input</h2>
-      <textarea id="input">if (foobar) [x] = [3] else [x, y, z] = [foo, bar, baz]</textarea>
+      <div class="flex-fix"><div class="editorWrapper"></div></div>
     </div><div id="grammarContainer">
       <h2>Grammar</h2>
-      <textarea id="grammar">
-MyLang {
-  Expr = IfExpr | AssignmentExpr | ValueExpr
-  ValueExpr = number | ArrayLiteral | id
-  AssignmentExpr = AssignmentPattern "=" Expr
-  AssignmentPattern
-    = id
-    | "[" AssignmentPattern ("," AssignmentPattern)* "]" -- rec
-  IfExpr
-    = "if" "(" Expr ")" Expr "else" Expr -- withElse
-    | "if" "(" Expr ")"                  -- plain
-  ArrayLiteral = "[" ValueExpr ("," ValueExpr)* "]"
-  id = letter (letter | number)*
-  number = number digit -- rec
-         | digit
-}
-</textarea>
+      <div class="flex-fix"><div class="editorWrapper"></div></div>
     </div>
   </div>
   <div id="bottomSection">
