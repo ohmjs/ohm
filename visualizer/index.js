@@ -84,7 +84,7 @@ function restoreEditorState(editor, stateObj, key) {
 
 function saveEditorState(editor, stateObj, key) {
   stateObj[key] = toBase64(editor.getValue());
-  history.replaceState(null, '', '?' + QueryString.stringify(stateObj));
+  history.replaceState(null, '', '#' + QueryString.stringify(stateObj));
 }
 
 // Main
@@ -107,9 +107,9 @@ function saveEditorState(editor, stateObj, key) {
     cb.addEventListener('click', function(e) { triggerRefresh(); });
   });
 
-  var queryVars = QueryString.parse(window.location.search.slice(1));
-  restoreEditorState(inputEditor, queryVars, 'input');
-  restoreEditorState(grammarEditor, queryVars, 'grammar');
+  var hashVars = QueryString.parse(window.location.search.slice(1));
+  restoreEditorState(inputEditor, hashVars, 'input');
+  restoreEditorState(grammarEditor, hashVars, 'grammar');
 
   inputEditor.on('change', function() { triggerRefresh(250); });
   grammarEditor.on('change', function() {
@@ -121,7 +121,7 @@ function saveEditorState(editor, stateObj, key) {
   function refresh() {
     hideError('input', inputEditor);
 
-    saveEditorState(inputEditor, queryVars, 'input');
+    saveEditorState(inputEditor, hashVars, 'input');
 
     // Refresh the option values.
     for (var i = 0; i < checkboxes.length; ++i) {
@@ -133,7 +133,7 @@ function saveEditorState(editor, stateObj, key) {
       grammarChanged = false;
 
       var grammarSrc = grammarEditor.getValue();
-      saveEditorState(grammarEditor, queryVars, 'grammar');
+      saveEditorState(grammarEditor, hashVars, 'grammar');
       try {
         grammar = ohm.grammar(grammarSrc);
       } catch (e) {
