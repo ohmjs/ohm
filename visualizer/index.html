@@ -250,6 +250,38 @@
     .CodeMirror-lines pre {
       padding-left: 14px;
     }
+
+    .footer {
+      align-items: stretch;
+      background-color: #ececec;
+      border-top: 1px solid #ddd;
+      color: #666;
+      display: flex;
+      margin-top: 1px;
+      overflow: hidden;
+      padding: 5px 6px 4px 6px;
+    }
+    .footer[hidden] {
+      display: none;
+    }
+    .footer [type=search] {
+      border: 1px solid hsl(225,10%,85%);
+      border-radius: 3px;
+      flex: 1;
+      height: 19px;
+      margin-right: 4px;
+      padding: 2px 3px 2px 0;
+    }
+    .footer [type=button] {
+      position: relative;
+      top: 1px;
+    }
+    .footer [type=search]:focus {
+      box-shadow: 0 0 0 1px hsla(216,89%,62%,.5) inset,
+                  0 0 0 1px hsla(216,89%,62%,.5);
+      border-color: hsl(217,60%,71%);
+      outline: none;
+    }
   </style>
 </head>
 <body>
@@ -274,12 +306,21 @@
     <div class="pexpr"></div>
   </div>
 
+  <div id="protos">
+    <div class="footer" hidden>
+      <input type="search"></input><input class="closeButton" type="button" value="Done"></input>
+    </div>
+  </div>
+
   <script src="../dist/ohm.js"></script>
   <script src="third_party/d3.min.js"></script>
   <script src="third_party/codemirror-5.11/lib/codemirror.js"></script>
+  <script src="third_party/codemirror-5.11/addon/search/search.js"></script>
+  <script src="third_party/codemirror-5.11/addon/search/searchCursor.js"></script>
   <script src="third_party/querystring.js"></script>
   <script src="cmUtil.js"></script>
   <script src="parseTree.js"></script>
+  <script src="searchBar.js"></script>
   <script src="index.js"></script>
 </body>
 </html>
