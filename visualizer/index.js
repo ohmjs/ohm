@@ -1,5 +1,5 @@
 /* eslint-env browser */
-/* global cmUtil, CodeMirror, escape, ohm, QueryString, refreshParseTree, unescape */
+/* global cmUtil, CodeMirror, escape, ohm, QueryString, refreshParseTree, searchBar, unescape */
 
 'use strict';
 
@@ -100,6 +100,9 @@ function saveEditorState(editor, stateObj, key) {
   var refreshTimeout;
   var grammar;
   var grammarChanged = true;
+
+  searchBar.initializeForEditor(inputEditor);
+  searchBar.initializeForEditor(grammarEditor);
 
   function triggerRefresh(delay) {
     showBottomOverlay();

@@ -2,7 +2,7 @@
 
 /* global $, CodeMirror */
 
-(function() {
+var searchBar = (function() {  // eslint-disable-line no-unused-vars
   // Returns the first ancestor node of `el` that has class `className`.
   function ancestorWithClassName(el, className) {
     var node = el;
@@ -43,14 +43,14 @@
     // refocus the search bar rather than starting a new search.
     var keyMap = {};
     keyMap['Cmd-F'] = function(cm) {
-      var selection = editor.getSelection();
+      var selection = cm.getSelection();
 
       // If there's no selection or it's the same as the current search, refocus the search bar.
       // Otherwise, start a new search.
       if (selection.length === 0 || selection === input.value) {
         input.select();
       } else {
-        editor.execCommand('find');
+        cm.execCommand('findPersistent');
       }
     };
 
@@ -65,20 +65,12 @@
       closeButton.onclick = closeFooter;
       editor.addKeyMap(keyMap);
 
-      var prevQuery;
       input.onkeydown = function(e) {
         if (e.keyCode === ESC_KEY) {
           closeFooter();
           editor.focus();
-        }
-        if (e.keyCode === ENTER_KEY) {
-          // If the input hasn't changed, hitting enter invokes findNext.
-          if (input.value === prevQuery) {
-            editor.execCommand('findNext');
-          } else {
-            prevQuery = input.value;
-            callback(input.value, e);  // Start the search.
-          }
+        } else if (e.keyCode === ENTER_KEY) {
+          callback(input.value, e);
         }
       };
     }
@@ -90,4 +82,14 @@
     return closeButton.onclick;
   });
 
+  // A keymap which maps Ctrl-F/Cmd-F to 'findPersistent' (rather than 'find').
+  var editorKeyMap = {};
+  editorKeyMap['Ctrl-F'] = editorKeyMap['Cmd-F'] = 'findPersistent';
+
+  return {
+    // Initialize the search bar for the CodeMirror instance `cm`.
+    initializeForEditor: function(cm) {
+      cm.addKeyMap(editorKeyMap);
+    }
+  };
 })();
