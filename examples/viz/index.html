@@ -117,7 +117,7 @@ function add(/* tagName, child1, child2, ... */) {
 var s = ohm.ohmGrammar.semantics();
 
 s.addOperation('viz', {
-  Grammar:           function(n, s, _, rs, _) {
+  Grammar:           function(n, s, _l, rs, _r) {
                        enter('grammar');
                          add('name', n.viz());
                          s.viz();
@@ -155,7 +155,7 @@ s.addOperation('viz', {
                          b.viz();
                        leave();
                      },
-  ruleDescr:         function(_, t, _) {
+  ruleDescr:         function(_l, t, _r) {
                        add('description', t.viz());
                      },
   ruleDescrText:     function(_) {
@@ -174,7 +174,7 @@ s.addOperation('viz', {
                        x.viz();
                        n.viz();
                      },
-  caseName:          function(_, _, n, _, _) {
+  caseName:          function(_d, _s1, n, _s2, _t) {
                        add('caseName', n.viz());
                      },
   Seq:               function(expr) {
@@ -222,20 +222,20 @@ s.addOperation('viz', {
   Base_prim:         function(expr) {
                        expr.viz();
                      },
-  Base_paren:        function(_, x, _) {
+  Base_paren:        function(_l, x, _r) {
                        enter('paren');
                          x.viz();
                        leave();
                      },
-  Base_arr:          function(_, x, _) {
+  Base_arr:          function(_l, x, _r) {
                        enter('arr');
                          x.viz();
                        leave();
                      },
-  Base_obj:          function(_, lenient, _) {
+  Base_obj:          function(_l, lenient, _r) {
                        throw 'TODO';
                      },
-  Base_objWithProps: function(_, ps, _, lenient, _) {
+  Base_objWithProps: function(_l, ps, _c, lenient, _r) {
                        throw 'TODO';
                      },
   Props:             function(p, _, ps) {
@@ -244,13 +244,13 @@ s.addOperation('viz', {
   ident:             function(n) {
                        return n.viz();
                      },
-  name:              function(_, _) {
+  name:              function(_first, _rest) {
                        return this.interval.contents;
                      },
-  string:            function(_, cs, _) {
+  string:            function(_lq, cs, _rq) {
                        add('string', escape(eval(this.interval.contents)));
                      },
-  number:            function(_, _) {
+  number:            function(_neg, _digits) {
                        add('prim', this.interval.contents);
                      },
   keyword:           function(expr) {
