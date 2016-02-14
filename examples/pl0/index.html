@@ -112,7 +112,7 @@ s.addAttribute('symbolTableOut', {
   Start: function(q) {
     return q.symbolTableOut;
   },
-  Stmt_var: function(_, n, _, e, _) {
+  Stmt_var: function(_var, n, _eq, e, _sc) {
     return [].concat(symbolTableIn(this)).concat([n.interval.contents]);
   },
   _nonterminal: function(children) {
@@ -133,18 +133,18 @@ s.addAttribute('codeOut', {
   Seq_base: function(s) {
     return s.codeOut;
   },
-  Stmt_var: function(_, n, _, e, _) {
+  Stmt_var: function(_var, n, _eq, e, _sc) {
     return [].concat(e.codeOut)
              .concat(['pushLit(' + this.symbolTableOut.indexOf(n.interval.contents) + ')', 'store']);
   },
-  Stmt_print: function(_, e, _) {
+  Stmt_print: function(_print, e, _sc) {
     return [].concat(e.codeOut).concat(['print']);
   },
-  Stmt_assign: function(n, _, e, _) {
+  Stmt_assign: function(n, _eq, e, _sc) {
     return [].concat(e.codeOut(e))
              .concat(['pushLit(' + this.symbolTableOut.indexOf(n.interval.contents) + ')', 'store']);
   },
-  Stmt_if3: function(_, c, _, t, _, f) {
+  Stmt_if3: function(_if, c, _then, t, _else, f) {
     var tCode = t.codeOut;
     var fCode = f.codeOut;
     return [].concat(c.codeOut)
@@ -154,7 +154,7 @@ s.addAttribute('codeOut', {
              .concat(fCode);
   },
 
-  Stmt_if2: function(_, c, _, t) {
+  Stmt_if2: function(_if, c, _then, t) {
     var tCode = t.codeOut;
     return [].concat(c.codeOut)
              .concat(['jmp0(' + tCode.length + ')'])
@@ -172,7 +172,7 @@ s.addAttribute('codeOut', {
   MulExpr_divide: function(x, _, y) {
     return [].concat(x.codeOut).concat(y.codeOut).concat(['div']);
   },
-  PriExpr_paren: function(_, e, _) {
+  PriExpr_paren: function(_l, e, _r) {
     return e.codeOut;
   },
   PriExpr_pos: function(_, e) {
@@ -181,7 +181,7 @@ s.addAttribute('codeOut', {
   PriExpr_neg: function(_, e) {
     return [].concat([e.codeOut]).concat(['neg']);
   },
-  ident: function(_, _) {
+  ident: function(_l, _ns) {
     return ['pushReg(' + this.symbolTableOut.indexOf(this.interval.contents) + ')'];
   },
   number: function(_) {
