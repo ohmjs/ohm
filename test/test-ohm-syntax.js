@@ -1115,7 +1115,7 @@ test('inheritance', function(t) {
               'G2 <: G1 { foo = "bar" }'
             ]);
           },
-          "Duplicate declaration for rule 'foo' in grammar 'G2' \(originally declared in 'G1'\)");
+          "Duplicate declaration for rule 'foo' in grammar 'G2' (originally declared in 'G1')");
     });
     t.end();
   });
