@@ -268,15 +268,15 @@ s.addOperation(
       /*
         The following semantic actions are more of the same...
       */
-      MulExp:        function(e)       { return e.interpret(); },
-      MulExp_times:  function(x, _, y) { return x.interpret() * y.interpret(); },
-      MulExp_divide: function(x, _, y) { return x.interpret() / y.interpret(); },
-      ExpExp:        function(e)       { return e.interpret(); },
-      ExpExp_power:  function(x, _, y) { return Math.pow(x.interpret(), y.interpret()); },
-      PriExp:        function(e)       { return e.interpret(); },
-      PriExp_paren:  function(_, e, _) { return e.interpret(); },
-      PriExp_pos:    function(_, e)    { return e.interpret(); },
-      PriExp_neg:    function(_, e)    { return -e.interpret(); },
+      MulExp:        function(e)         { return e.interpret(); },
+      MulExp_times:  function(x, _, y)   { return x.interpret() * y.interpret(); },
+      MulExp_divide: function(x, _, y)   { return x.interpret() / y.interpret(); },
+      ExpExp:        function(e)         { return e.interpret(); },
+      ExpExp_power:  function(x, _, y)   { return Math.pow(x.interpret(), y.interpret()); },
+      PriExp:        function(e)         { return e.interpret(); },
+      PriExp_paren:  function(_l, e, _r) { return e.interpret(); },
+      PriExp_pos:    function(_, e)      { return e.interpret(); },
+      PriExp_neg:    function(_, e)      { return -e.interpret(); },
 
       /*
         All CST nodes have an `interval` property whose value is an object that contains information
@@ -293,7 +293,7 @@ s.addOperation(
         In other words, `this` is the parent of each of the CST nodes that are passed as arguments
         to the semantic action.)
       */
-      ident: function(_, _) {
+      ident: function(_l, _ns) {
         // Look up the value of a named constant, e.g., 'pi'.
         return constants[this.interval.contents] || 0;
       },
@@ -321,16 +321,16 @@ console.log(n.interpret()); // ... on which you can access the functionality pro
 */
 
 s.addAttribute('asLisp', {
-  AddExp_plus:   function(x, _, y) { return ['+', x.asLisp, y.asLisp]; },
-  AddExp_minus:  function(x, _, y) { return ['-', x.asLisp, y.asLisp]; },
-  MulExp_times:  function(x, _, y) { return ['*', x.asLisp, y.asLisp]; },
-  MulExp_divide: function(x, _, y) { return ['/', x.asLisp, y.asLisp]; },
-  ExpExp_power:  function(x, _, y) { return ['pow', x.asLisp, y.asLisp]; },
-  PriExp_paren:  function(_, e, _) { return e.asLisp; },
-  PriExp_pos:    function(_, e)    { return e.asLisp; },
-  PriExp_neg:    function(_, e)    { return ['neg', e.asLisp]; },
-  ident:         function(_, _)    { return this.interval.contents; },
-  number:        function(_)       { return this.interval.contents; },
+  AddExp_plus:   function(x, _, y)   { return ['+', x.asLisp, y.asLisp]; },
+  AddExp_minus:  function(x, _, y)   { return ['-', x.asLisp, y.asLisp]; },
+  MulExp_times:  function(x, _, y)   { return ['*', x.asLisp, y.asLisp]; },
+  MulExp_divide: function(x, _, y)   { return ['/', x.asLisp, y.asLisp]; },
+  ExpExp_power:  function(x, _, y)   { return ['pow', x.asLisp, y.asLisp]; },
+  PriExp_paren:  function(_l, e, _r) { return e.asLisp; },
+  PriExp_pos:    function(_, e)      { return e.asLisp; },
+  PriExp_neg:    function(_, e)      { return ['neg', e.asLisp]; },
+  ident:         function(_l, _ns)   { return this.interval.contents; },
+  number:        function(_)         { return this.interval.contents; },
 
   /*
     When you create an operation or an attribute, you can optionally provide a `_nonterminal`
@@ -380,31 +380,31 @@ s.addOperation('toTree', {
   PriExp_paren:  function(op, e, cp) { return elt('paren', op.toTree(), e.toTree(), cp.toTree()); },
   PriExp_pos:    function(sign, e)   { return elt('pos', sign.toTree(), e.toTree()); },
   PriExp_neg:    function(sign, e)   { return elt('neg', sign.toTree(), e.toTree()); },
-  ident:         function(_, _)      { return elt('ident', this.interval.contents); },
+  ident:         function(_l, _ns)   { return elt('ident', this.interval.contents); },
   number:        function(_)         { return elt('number', this.interval.contents); }
 });
 
 // -------------------------------------------------------------------------------------------------
 
 s.addOperation('toTwoD', {
-  AddExp_plus:   function(x, op, y) { var operator = elt('operator', op.toTwoD());
-                                      return elt('plus', x.toTwoD(), operator, y.toTwoD()); },
-  AddExp_minus:  function(x, op, y) { var operator = elt('operator', '\u2212');
-                                      return elt('minus', x.toTwoD(), operator, y.toTwoD()); },
-  MulExp_times:  function(x, op, y) { var operator = elt('operator', '\u00D7');
-                                      return elt('times', x.toTwoD(), operator, y.toTwoD()); },
-  MulExp_divide: function(x, op, y) { var numerator = elt('numerator', x.toTwoD());
-                                      var denominator = elt('denominator', y.toTwoD());
-                                      return elt('fraction', numerator, denominator); },
-  ExpExp_power:  function(x, op, y) { var base = elt('theBase', x.toTwoD());
-                                      var exponent = elt('exponent', y.toTwoD());
-                                      return elt('power', base, exponent); },
-  PriExp_paren:  function(_, e, _)  { return elt('paren', e.toTwoD()); },
-  PriExp_pos:    function(sign, e)  { return elt('pos', sign.toTwoD(), e.toTwoD()); },
-  PriExp_neg:    function(sign, e)  { return elt('neg', sign.toTwoD(), e.toTwoD()); },
-  ident:         function(_, _)     { var text = this.interval.contents;
-                                      return elt('ident', text === 'pi' ? '\u03C0' : text); },
-  number:        function(_)        { return elt('number', this.interval.contents); }
+  AddExp_plus:   function(x, op, y)   { var operator = elt('operator', op.toTwoD());
+                                        return elt('plus', x.toTwoD(), operator, y.toTwoD()); },
+  AddExp_minus:  function(x, op, y)   { var operator = elt('operator', '\u2212');
+                                        return elt('minus', x.toTwoD(), operator, y.toTwoD()); },
+  MulExp_times:  function(x, op, y)   { var operator = elt('operator', '\u00D7');
+                                        return elt('times', x.toTwoD(), operator, y.toTwoD()); },
+  MulExp_divide: function(x, op, y)   { var numerator = elt('numerator', x.toTwoD());
+                                        var denominator = elt('denominator', y.toTwoD());
+                                        return elt('fraction', numerator, denominator); },
+  ExpExp_power:  function(x, op, y)   { var base = elt('theBase', x.toTwoD());
+                                        var exponent = elt('exponent', y.toTwoD());
+                                        return elt('power', base, exponent); },
+  PriExp_paren:  function(_l, e, _r)  { return elt('paren', e.toTwoD()); },
+  PriExp_pos:    function(sign, e)    { return elt('pos', sign.toTwoD(), e.toTwoD()); },
+  PriExp_neg:    function(sign, e)    { return elt('neg', sign.toTwoD(), e.toTwoD()); },
+  ident:         function(_l, _ns)    { var text = this.interval.contents;
+                                        return elt('ident', text === 'pi' ? '\u03C0' : text); },
+  number:        function(_)          { return elt('number', this.interval.contents); }
 
   // Remember the `_nonterminal` semantic action that we wrote for the `interpret` operation above?
   // Turns out that's so convenient that the Ohm people decided to give it to you "for free", i.e.,
