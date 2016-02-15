@@ -1,3 +1,5 @@
+'use strict';
+
 var test = require('tape-catch');
 
 var fs = require('fs');
@@ -420,8 +422,8 @@ test('seq', function(t) {
     it('semantic actions', function() {
       var f = m.match('abcz');
       var s = m.semantics().addAttribute('v', {
-        start: function(x, _, _) {
-          return x.primitiveValue;
+        start: function(a, _bc, _z) {
+          return a.primitiveValue;
         }
       });
       t.deepEqual(s(f).v, 'a');
@@ -468,7 +470,7 @@ test('alts and seqs together', function(t) {
       start: function(x, _, y) {
         return [x.primitiveValue, y.primitiveValue];
       }
-    })
+    });
     t.deepEqual(s(m.match('abc')).v, ['a', 'c']);
     t.deepEqual(s(m.match('123')).v, ['1', '3']);
   });
@@ -603,7 +605,7 @@ test('arr', function(t) {
 
   it('semantic actions', function() {
     var s = m.semantics().addAttribute('v', {
-      start: function(_, y, x, _, _) {
+      start: function(_abc, y, x, _ef, _g) {
         return [x.v, y.v];
       }
     });
@@ -1113,7 +1115,7 @@ test('inheritance', function(t) {
               'G2 <: G1 { foo = "bar" }'
             ]);
           },
-          "Duplicate declaration for rule 'foo' in grammar 'G2' \(originally declared in 'G1'\)");
+          "Duplicate declaration for rule 'foo' in grammar 'G2' (originally declared in 'G1')");
     });
     t.end();
   });
