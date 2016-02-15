@@ -5,10 +5,6 @@ var test = require('tape-catch');
 var fs = require('fs');
 var ohm = require('..');
 var testUtil = require('./testUtil');
-var nodes = require('../src/nodes');
-var Grammar = require('../src/Grammar');
-var InputStream = require('../src/InputStream');
-var Interval = require('../src/Interval');
 
 var arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
 var ohmGrammarSource = fs.readFileSync('src/ohm-grammar.ohm').toString();
@@ -1336,7 +1332,7 @@ test('inline rule declarations', function(t) {
       },
       digit: function(expr) {
         return expr.v.charCodeAt(0) - '0'.charCodeAt(0);
-      },
+      }
     });
     return function(node) {
       return s(node).v;

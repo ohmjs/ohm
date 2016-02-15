@@ -1,6 +1,3 @@
 **/third_party/**
 **/node_modules/**
 dist/*
-
-// TODO: Fix up errors and stop ignoring this file.
-test/test-ohm-syntax.js
