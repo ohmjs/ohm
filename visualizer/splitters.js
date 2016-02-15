@@ -3,6 +3,9 @@
 'use strict';
 
 (function() {
+  function toStorageKey(el, suffix) {
+    return 'splitter-' + el.id + '-' + suffix;
+  }
 
   // Initializes a splitter element by patching the DOM and installing event handlers.
   function initializeSplitter(el) {
@@ -21,7 +24,6 @@
       dragging = true;
       dragOverlay.style.display = 'block';
       dragOverlay.style.cursor = isVertical ? 'ew-resize' : 'ns-resize';
-      e.preventDefault();
     };
     window.addEventListener('mousemove', function(e) {
       if (dragging) {
@@ -31,12 +33,28 @@
         prevEl.style.flexGrow = pos;
         e.preventDefault();
         e.stopPropagation();
+
+        if (el.id) {
+          // Store the positions into localStorage.
+          localStorage.setItem(toStorageKey(el, 'next'), nextEl.style.flexGrow);
+          localStorage.setItem(toStorageKey(el, 'prev'), prevEl.style.flexGrow);
+        }
       }
     });
     window.addEventListener('mouseup', function(e) {
       dragging = false;
       dragOverlay.removeAttribute('style');
     });
+
+    // Restore the positions from localStorage.
+    if (el.id) {
+      var nextPos = localStorage.getItem(toStorageKey(el, 'next'));
+      var prevPos = localStorage.getItem(toStorageKey(el, 'prev'));
+      if (nextPos && prevPos) {
+        nextEl.style.flexGrow = nextPos;
+        prevEl.style.flexGrow = prevPos;
+      }
+    }
   }
 
   // Initialize all the splitters on the page.

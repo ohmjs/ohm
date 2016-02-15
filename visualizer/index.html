@@ -324,13 +324,13 @@
       <h2>Test Input</h2>
       <div class="flex-fix"><div class="editorWrapper"></div></div>
     </div>
-    <div class="splitter vertical"></div>
+    <div id="topSplitter" class="splitter vertical"></div>
     <div id="grammarContainer">
       <h2>Grammar</h2>
       <div class="flex-fix"><div class="editorWrapper"></div></div>
     </div>
   </div>
-  <div class="splitter"></div>
+  <div id="mainSplitter" class="splitter"></div>
   <div id="bottomSection">
     <div id="expandedInput"></div>
     <div id="parseResults"></div>
@@ -352,6 +352,8 @@
     </div>
   </div>
 
+  <script src="splitters.js"></script>
+
   <script src="../dist/ohm.js"></script>
   <script src="third_party/d3.min.js"></script>
   <script src="third_party/codemirror-5.11/lib/codemirror.js"></script>
@@ -360,7 +362,6 @@
   <script src="cmUtil.js"></script>
   <script src="parseTree.js"></script>
   <script src="searchBar.js"></script>
-  <script src="splitters.js"></script>
   <script src="index.js"></script>
 </body>
 </html>
