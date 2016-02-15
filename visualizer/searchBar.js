@@ -1,6 +1,6 @@
-'use strict';
-
 /* global $, CodeMirror */
+
+'use strict';
 
 var searchBar = (function() {  // eslint-disable-line no-unused-vars
   // Returns the first ancestor node of `el` that has class `className`.

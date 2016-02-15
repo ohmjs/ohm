@@ -1,6 +1,6 @@
-'use strict';
+/* eslint-env browser */
 
-/* global document, window */
+'use strict';
 
 (function() {
 
