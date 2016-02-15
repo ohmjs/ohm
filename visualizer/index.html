@@ -15,6 +15,17 @@
       overflow: hidden;
       padding: 0;
     }
+    #dragOverlay {
+      bottom: 0;
+      display: none;
+      left: 0;
+      position: absolute;
+      right: 0;
+      top: 0;
+
+      /* Must be greater than the z-index for .splitter divs and everything in codemirror.css. */
+      z-index: 11;
+    }
     #expandedInput {
       box-sizing: border-box;
       font-size: 100%;
@@ -160,13 +171,11 @@
     }
 
     #topSection {
-      border-bottom: 1px solid #ddd;
       display: flex;
       flex: 1;
     }
 
     #bottomSection {
-      border-top: 1px solid #ddd;
       flex: 1;
       overflow: auto;
       position: relative;
@@ -186,8 +195,7 @@
     #inputContainer {
       display: flex;
       flex-direction: column;
-      box-sizing: border-box;
-      width: 50%;
+      flex: 1;
     }
 
     #grammarContainer h2,
@@ -196,10 +204,6 @@
       font-size: 1em;
       margin: 12px 12px 6px;
     }
-    #inputContainer {
-      border-right: 1px solid #ddd;
-    }
-
     /*
       Hack to fix a problem with `height: 100%` in flex items.
       See https://github.com/codemirror/CodeMirror/issues/3679
@@ -282,6 +286,36 @@
       border-color: hsl(217,60%,71%);
       outline: none;
     }
+
+    .splitter {
+      background-color: #ddd;
+      height: 1px;
+      min-height: 1px;
+      overflow: visible;
+      position: relative;
+    }
+    .vertical.splitter {
+      height: auto;
+      min-height: auto;
+      min-width: 1px;
+      width: 1px;
+    }
+    .splitter .handle {
+      bottom: -2px;
+      cursor: ns-resize;
+      left: 0;
+      position: absolute;
+      right: 0;
+      top: -2px;
+      z-index: 10;
+    }
+    .vertical.splitter .handle {
+      bottom: 0;
+      cursor: ew-resize;
+      left: -2px;
+      right: -2px;
+      top: 0;
+    }
   </style>
 </head>
 <body>
@@ -289,19 +323,25 @@
     <div id="inputContainer">
       <h2>Test Input</h2>
       <div class="flex-fix"><div class="editorWrapper"></div></div>
-    </div><div id="grammarContainer">
+    </div>
+    <div class="splitter vertical"></div>
+    <div id="grammarContainer">
       <h2>Grammar</h2>
       <div class="flex-fix"><div class="editorWrapper"></div></div>
     </div>
   </div>
+  <div class="splitter"></div>
   <div id="bottomSection">
     <div id="expandedInput"></div>
     <div id="parseResults"></div>
     <div class="overlay"></div>
   </div>
+  <div id="dragOverlay"></div>
+  <!--
   <div id="options">
-<!--    <label><input type="checkbox" name="showFailures"> Show failures</label> -->
+    <label><input type="checkbox" name="showFailures"> Show failures</label>
   </div>
+  -->
   <div id="measuringDiv">
     <div class="pexpr"></div>
   </div>
@@ -321,6 +361,7 @@
   <script src="cmUtil.js"></script>
   <script src="parseTree.js"></script>
   <script src="searchBar.js"></script>
+  <script src="splitters.js"></script>
   <script src="index.js"></script>
 </body>
 </html>
