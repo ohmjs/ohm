@@ -23,8 +23,8 @@
       right: 0;
       top: 0;
 
-      /* Must be greater than the z-index for .splitter divs and everything in codemirror.css. */
-      z-index: 11;
+      /* Must be less than the .splitter z-index, but greater than everything in codemirror.css. */
+      z-index: 9;
     }
     #expandedInput {
       box-sizing: border-box;

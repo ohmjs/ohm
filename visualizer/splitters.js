@@ -20,25 +20,30 @@
 
     var dragOverlay = document.querySelector('#dragOverlay');
 
+    // Set the size of one of the splitter element's siblings to the given value.
+    // `which` must be one of 'next' or 'prev'.
+    function setSiblingSize(which, value) {
+      var node = which === 'prev' ? prevEl : nextEl;
+      node.style.flexGrow = value;
+      if (el.id) {
+        localStorage.setItem(toStorageKey(el, which), value);
+      }
+    }
+
     handle.onmousedown = function(e) {
       dragging = true;
       dragOverlay.style.display = 'block';
       dragOverlay.style.cursor = isVertical ? 'ew-resize' : 'ns-resize';
+      e.preventDefault();
     };
     window.addEventListener('mousemove', function(e) {
       if (dragging) {
         var innerSize = isVertical ? window.innerWidth : window.innerHeight;
         var pos = isVertical ? e.clientX : e.clientY;
-        nextEl.style.flexGrow = innerSize - pos;
-        prevEl.style.flexGrow = pos;
+        setSiblingSize('next', innerSize - pos);
+        setSiblingSize('prev', pos);
         e.preventDefault();
         e.stopPropagation();
-
-        if (el.id) {
-          // Store the positions into localStorage.
-          localStorage.setItem(toStorageKey(el, 'next'), nextEl.style.flexGrow);
-          localStorage.setItem(toStorageKey(el, 'prev'), prevEl.style.flexGrow);
-        }
       }
     });
     window.addEventListener('mouseup', function(e) {
@@ -46,7 +51,13 @@
       dragOverlay.removeAttribute('style');
     });
 
-    // Restore the positions from localStorage.
+    // Reset the sizes to 50% when the handle is double-clicked.
+    handle.ondblclick = function(e) {
+      setSiblingSize('next', 1);
+      setSiblingSize('prev', 1);
+    };
+
+    // Restore the sizes from localStorage.
     if (el.id) {
       var nextPos = localStorage.getItem(toStorageKey(el, 'next'));
       var prevPos = localStorage.getItem(toStorageKey(el, 'prev'));
