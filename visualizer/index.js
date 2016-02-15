@@ -1,5 +1,5 @@
 /* eslint-env browser */
-/* global cmUtil, CodeMirror, escape, ohm, QueryString, refreshParseTree, searchBar, unescape */
+/* global cmUtil, CodeMirror, ohm, refreshParseTree, searchBar */
 
 'use strict';
 
@@ -68,28 +68,15 @@ function showBottomOverlay() {
   $('#bottomSection .overlay').style.width = '100%';
 }
 
-function fromBase64(str) {
-  return decodeURIComponent(unescape(atob(str)));
-}
-
-function toBase64(str) {
-  return btoa(escape(encodeURIComponent(str)));
-}
-
-function restoreEditorState(editor, stateObj, key) {
-  if (stateObj.hasOwnProperty(key)) {
-    editor.setValue(fromBase64(stateObj[key]));
-  } else if (localStorage && typeof localStorage.getItem === 'function') {
-    var value = localStorage.getItem(key);
-    if (value) {
-      editor.setValue(value);
-    }
+function restoreEditorState(editor, key) {
+  var value = localStorage.getItem(key);
+  if (value) {
+    editor.setValue(value);
   }
 }
 
-function saveEditorState(editor, stateObj, key) {
-  stateObj[key] = toBase64(editor.getValue());
-  history.replaceState(null, '', '#' + QueryString.stringify(stateObj));
+function saveEditorState(editor, key) {
+  localStorage.setItem(key, editor.getValue());
 }
 
 // Main
@@ -115,9 +102,8 @@ function saveEditorState(editor, stateObj, key) {
     cb.addEventListener('click', function(e) { triggerRefresh(); });
   });
 
-  var hashVars = QueryString.parse(window.location.hash.slice(1));
-  restoreEditorState(inputEditor, hashVars, 'input');
-  restoreEditorState(grammarEditor, hashVars, 'grammar');
+  restoreEditorState(inputEditor, 'input');
+  restoreEditorState(grammarEditor, 'grammar');
 
   inputEditor.on('change', function() { triggerRefresh(250); });
   grammarEditor.on('change', function() {
@@ -129,7 +115,7 @@ function saveEditorState(editor, stateObj, key) {
   function refresh() {
     hideError('input', inputEditor);
 
-    saveEditorState(inputEditor, hashVars, 'input');
+    saveEditorState(inputEditor, 'input');
 
     // Refresh the option values.
     for (var i = 0; i < checkboxes.length; ++i) {
@@ -141,7 +127,7 @@ function saveEditorState(editor, stateObj, key) {
       grammarChanged = false;
 
       var grammarSrc = grammarEditor.getValue();
-      saveEditorState(grammarEditor, hashVars, 'grammar');
+      saveEditorState(grammarEditor, 'grammar');
 
       if (grammarSrc.length > 0) {
         try {
