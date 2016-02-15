@@ -352,6 +352,42 @@
     </div>
   </div>
 
+  <div hidden>
+    <pre id="sampleGrammar">Arithmetic {
+Exp
+  = AddExp
+
+AddExp
+  = AddExp "+" MulExp  -- plus
+  | AddExp "-" MulExp  -- minus
+  | MulExp
+
+MulExp
+  = MulExp "*" ExpExp  -- times
+  | MulExp "/" ExpExp  -- divide
+  | ExpExp
+
+ExpExp
+  = PriExp "^" ExpExp  -- power
+  | PriExp
+
+PriExp
+  = "(" Exp ")"  -- paren
+  | "+" PriExp   -- pos
+  | "-" PriExp   -- neg
+  | ident
+  | number
+
+ident  (an identifier)
+  = letter alnum*
+
+number  (a number)
+  = digit* "." digit+  -- fract
+  | digit+             -- whole
+}</pre>
+    <pre id="sampleInput">2 * (42 - 1) / 9</pre>
+  </div>
+
   <script src="splitters.js"></script>
 
   <script src="../dist/ohm.js"></script>

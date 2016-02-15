@@ -68,10 +68,12 @@ function showBottomOverlay() {
   $('#bottomSection .overlay').style.width = '100%';
 }
 
-function restoreEditorState(editor, key) {
+function restoreEditorState(editor, key, defaultEl) {
   var value = localStorage.getItem(key);
   if (value) {
     editor.setValue(value);
+  } else if (defaultEl) {
+    editor.setValue(defaultEl.textContent);
   }
 }
 
@@ -102,8 +104,8 @@ function saveEditorState(editor, key) {
     cb.addEventListener('click', function(e) { triggerRefresh(); });
   });
 
-  restoreEditorState(inputEditor, 'input');
-  restoreEditorState(grammarEditor, 'grammar');
+  restoreEditorState(inputEditor, 'input', $('#sampleInput'));
+  restoreEditorState(grammarEditor, 'grammar', $('#sampleGrammar'));
 
   inputEditor.on('change', function() { triggerRefresh(250); });
   grammarEditor.on('change', function() {
