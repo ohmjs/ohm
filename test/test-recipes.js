@@ -37,10 +37,20 @@ test('recipes with supergrammars', function(t) {
   ns.G = ohm.grammar('G { start = end }');
   ns.G2 = ohm.grammar('G2 <: G { start := "a" }', ns);
 
-  t.ok(toGrammar(ns.G2.toRecipe()).match('a', 'start').succeeded(), 'one level of inheritance');
+  var g2 = toGrammar(ns.G2.toRecipe());
+  t.ok(g2.match('a', 'start').succeeded(), 'one level of inheritance');
+  t.equals(ns.G2.toRecipe(), g2.toRecipe(), 'grammar and grammar from recipe (with override)');
 
   ns.G3 = ohm.grammar('G3 <: G2 { begin = a b\n  a = "a"\n  b = "b" }', ns);
-  t.ok(toGrammar(ns.G3.toRecipe()).match('ab', 'begin').succeeded(), 'two levels of inheritance');
+  var g3 = toGrammar(ns.G3.toRecipe());
+  t.ok(g3.match('ab', 'begin').succeeded(), 'two levels of inheritance');
+  t.equals(ns.G3.toRecipe(), g3.toRecipe(), 'grammar and grammar from recipe (with more rules)');
+
+  ns.G4 = ohm.grammar('G4 <: G { start += "a" }', ns);
+  var g4 = toGrammar(ns.G4.toRecipe());
+  t.ok(g4.match('', 'start').succeeded(), 'original rule matching');
+  t.ok(g4.match('a', 'start').succeeded(), 'extended rule mathing');
+  t.equals(ns.G4.toRecipe(), g4.toRecipe(), 'grammar and grammar from recipe (with extension)');
 
   t.end();
 });

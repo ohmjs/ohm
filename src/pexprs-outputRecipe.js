@@ -50,6 +50,11 @@ pexprs.Alt.prototype.outputRecipe = function(sb, formals) {
   sb.append(')');
 };
 
+pexprs.Extend.prototype.outputRecipe = function(sb, formals) {
+  var extension = this.terms[0]; // [extension, orginal]
+  extension.outputRecipe(sb, formals);
+};
+
 pexprs.Seq.prototype.outputRecipe = function(sb, formals) {
   sb.append('this.seq(');
   for (var idx = 0; idx < this.factors.length; idx++) {
