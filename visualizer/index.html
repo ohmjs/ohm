@@ -318,6 +318,16 @@
       right: -2px;
       top: 0;
     }
+
+    .externalRules {
+      color: #999;
+      margin: 0;
+      padding-top: 14px;
+    }
+    .externalRules .content {
+      border-top: 1px solid #eee;
+      padding-top: 14px;
+    }
   </style>
 </head>
 <body>
@@ -348,10 +358,11 @@
     <div class="pexpr"></div>
   </div>
 
-  <div id="protos">
-    <div class="footer" hidden>
+  <div id="protos" hidden>
+    <div class="footer">
       <input type="search"></input><input class="closeButton" type="button" value="Done"></input>
     </div>
+    <div class="externalRules"><div class="content"></div></div>
   </div>
 
   <div hidden>
@@ -399,6 +410,7 @@ number  (a number)
   <script src="third_party/codemirror-5.11/addon/search/searchcursor.js"></script>
   <script src="cmUtil.js"></script>
   <script src="parseTree.js"></script>
+  <script src="externalRules.js"></script>
   <script src="searchBar.js"></script>
   <script src="index.js"></script>
 </body>

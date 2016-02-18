@@ -1,5 +1,5 @@
 /* eslint-env browser */
-/* global cmUtil, CodeMirror, ohm, refreshParseTree, searchBar */
+/* global cmUtil, CodeMirror, ohm, refreshParseTree, searchBar, updateExternalRules */
 
 'use strict';
 
@@ -57,7 +57,7 @@ function setError(category, editor, interval, message) {
 function showError(category, editor, interval, message) {
   var errorEl = createElement('.error', message);
   var line = editor.posFromIndex(interval.endIdx).line;
-  errorMarks[category].widget = editor.addLineWidget(line, errorEl);
+  errorMarks[category].widget = editor.addLineWidget(line, errorEl, {insertAt: 0});
 }
 
 function hideBottomOverlay() {
@@ -79,6 +79,36 @@ function restoreEditorState(editor, key, defaultEl) {
 
 function saveEditorState(editor, key) {
   localStorage.setItem(key, editor.getValue());
+}
+
+function parseGrammar(source) {
+  var matchResult = ohm.ohmGrammar.match(source);
+  var grammar;
+  var err;
+
+  if (matchResult.succeeded()) {
+    var ns = {};
+    try {
+      ohm._buildGrammar(matchResult, ns);
+      var firstProp = Object.keys(ns)[0];
+      if (firstProp) {
+        grammar = ns[firstProp];
+      }
+    } catch (ex) {
+      err = ex;
+    }
+  } else {
+    err = {
+      message: matchResult.message,
+      shortMessage: matchResult.shortMessage,
+      interval: matchResult.getInterval()
+    };
+  }
+  return {
+    matchResult: matchResult,
+    grammar: grammar,
+    error: err
+  };
 }
 
 // Main
@@ -116,7 +146,6 @@ function saveEditorState(editor, key) {
 
   function refresh() {
     hideError('input', inputEditor);
-
     saveEditorState(inputEditor, 'input');
 
     // Refresh the option values.
@@ -127,33 +156,26 @@ function saveEditorState(editor, key) {
 
     if (grammarChanged) {
       grammarChanged = false;
-
-      var grammarSrc = grammarEditor.getValue();
       saveEditorState(grammarEditor, 'grammar');
 
-      if (grammarSrc.length > 0) {
-        try {
-          grammar = ohm.grammar(grammarSrc);
-        } catch (e) {
-          console.log(e);  // eslint-disable-line no-console
-
-          var message = e.shortMessage ? e.shortMessage : e.message;
-          setError('grammar', grammarEditor, e.interval, message);
-          // If the grammar is unusable, prevent the input from being parsed.
-          grammar = null;
-          return;
-        }
+      var result = parseGrammar(grammarEditor.getValue());
+      grammar = result.grammar;
+      if (result.error) {
+        var err = result.error;
+        console.log(err.message);  // eslint-disable-line no-console
+        setError('grammar', grammarEditor, err.interval, err.shortMessage || err.message);
+        return;
       }
+      updateExternalRules(grammarEditor, result, grammar);
     }
 
-    if (!grammar) {
-      return;
-    }
-    hideBottomOverlay();
-    $('#expandedInput').innerHTML = '';
-    $('#parseResults').innerHTML = '';
+    if (grammar) {
+      hideBottomOverlay();
+      $('#expandedInput').innerHTML = '';
+      $('#parseResults').innerHTML = '';
 
-    refreshParseTree(grammar, inputEditor.getValue());
+      refreshParseTree(grammar, inputEditor.getValue());
+    }
   }
   refresh();
 })();
