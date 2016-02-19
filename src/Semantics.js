@@ -14,6 +14,37 @@ var common = require('./common');
 // Private stuff
 // --------------------------------------------------------------------
 
+// ----------------- Sequence -----------------
+
+// A sequence of wrapper elements, which itself implements the wrapper API.
+// This is similar to an _iter node, except that Sequences come from semantic actions,
+// not from parsing.
+function Sequence(optElements) {
+  this._elements = optElements || [];
+}
+
+Sequence.prototype.ctorName = 'Sequence';
+
+Sequence.prototype.childAt = function(idx) {
+  return this._elements[idx];
+};
+
+Sequence.prototype.numChildren = function() {
+  return this._elements.length;
+};
+
+Sequence.prototype.isIteration = function() {
+  return true;
+};
+
+Sequence.prototype.isNonterminal = function() {
+  return false;
+};
+
+Sequence.prototype.isTerminal = function() {
+  return false;
+};
+
 // ----------------- Wrappers -----------------
 
 // Wrappers decorate CST nodes with all of the functionality (i.e., operations and attributes)
@@ -26,7 +57,7 @@ var common = require('./common');
 function Wrapper() {}
 
 Wrapper.prototype.toString = function() {
-  return '[semantics wrapper for ' + this._node.grammar.name + ']';
+  return '[semantics wrapper for ' + this._node.ctorName + ']';
 };
 
 // Returns the wrapper of the specified child node. Child wrappers are created lazily and cached in
@@ -90,6 +121,11 @@ Wrapper.prototype.isOptional = function() {
   return this._node.isOptional();
 };
 
+// Create a new Sequence in the same semantics as this wrapper.
+Wrapper.prototype.sequence = function(optElements) {
+  return this._semantics.wrap(new Sequence(optElements));
+};
+
 Object.defineProperties(Wrapper.prototype, {
   // Returns an array containing the children of this CST node.
   children: {get: function() { return this._children(); }},
@@ -141,8 +177,10 @@ function Semantics(grammar, optSuperSemantics) {
     this._childWrappers = [];
   };
 
-  if (optSuperSemantics) {
-    this.super = optSuperSemantics;
+  var superSemantics = optSuperSemantics || Semantics.BuiltInSemantics;
+
+  if (superSemantics) {
+    this.super = superSemantics;
     if (grammar !== this.super.grammar && !grammar._inheritsFrom(this.super.grammar)) {
       throw new Error(
           "Cannot extend a semantics for grammar '" + this.super.grammar.name +
@@ -228,6 +266,7 @@ function parsePrototype(nameAndFormalArgs, allowFormals) {
     // The Operations and Attributes grammar won't be available while Ohm is loading,
     // but we can get away the following simplification b/c none of the operations
     // that are used while loading take arguments.
+    common.assert(nameAndFormalArgs.indexOf('(') === -1);
     return {
       name: nameAndFormalArgs,
       formals: []
@@ -394,8 +433,9 @@ Semantics.prototype.assertNewName = function(name, type) {
 };
 
 // Returns a wrapper for the given CST `node` in this semantics.
+// If `node` is already a wrapper, returns `node` itself.
 Semantics.prototype.wrap = function(node) {
-  return new this.Wrapper(node);
+  return node instanceof this.Wrapper ? node : new this.Wrapper(node);
 };
 
 // Creates a new Semantics instance for `grammar`, inheriting operations and attributes from
@@ -454,6 +494,26 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
   };
 
   return proxy;
+};
+
+Semantics.initBuiltInSemantics = function(builtInRules) {
+  var s = Semantics.BuiltInSemantics = new Semantics(builtInRules);
+
+  var actions = {
+    empty: function() {
+      return this.sequence();
+    },
+    nonEmpty: function(first, _, rest) {
+      return this.sequence([first].concat(rest.children));
+    }
+  };
+
+  s.addOperationOrAttribute('attribute', 'asSequence', {
+    emptyListOf: actions.empty,
+    nonemptyListOf: actions.nonEmpty,
+    EmptyListOf: actions.empty,
+    NonemptyListOf: actions.nonEmpty
+  });
 };
 
 // ----------------- Operation -----------------

@@ -527,3 +527,53 @@ test('mixing nodes from one grammar with semantics from another', function(t) {
 
   t.end();
 });
+
+test('asSequence', function(t) {
+  var g = testUtil.makeGrammar([
+    'G {',
+    '  Start = ListOf<letter, ","> listOf<any, ".">',
+    '  anyTwo = any any',
+    '  anyThree = any any any',
+    '}'
+  ]);
+  var s = g.semantics().addAttribute('value', {
+    Start: function(list1, list2) {
+      var arr1 = list1.asSequence.value;
+      var arr2 = list2.asSequence.value;
+      return arr1.join('') + arr2.join('');
+    },
+    letter: function(_) {
+      return this.interval.contents;
+    }
+  });
+  t.equal(s(g.match('a, b, c')).value, 'abc', 'one nonempty, one empty');
+  t.equal(s(g.match('a, b, c 1.2.3')).value, 'abc123', 'baby you and me');
+  t.equal(s(g.match('')).value, '', 'both empty');
+
+  // Check that we can override asSequence for ListOf, and extend it with an action
+  // for a rule of our own.
+  s.extendAttribute('asSequence', {
+    NonemptyListOf: function(first, _, rest) {
+      return this.sequence([first].concat(rest.children).reverse());
+    },
+    anyTwo: function(a, b) {
+      return this.sequence([b, a]);
+    }
+  });
+  s.addAttribute('reversedValue', {
+    anyTwo: function(a, b) {
+      var arr = this.asSequence.value;
+      return arr.join('');
+    }
+  });
+  t.equal(s(g.match('a, b, c')).value, 'cba', 'overriding works');
+  t.equal(s(g.match('z9', 'anyTwo')).reversedValue, '9z');
+
+  t.throws(function() { s.addAttribute('asSequence', {}); }, /already exists/);
+  t.throws(function() { s.addOperation('asSequence', {}); }, /already exists/);
+  t.throws(function() {
+    s(g.match('xxx', 'anyThree')).asSequence;  // eslint-disable-line no-unused-expressions
+  }, /Missing semantic action/);
+
+  t.end();
+});

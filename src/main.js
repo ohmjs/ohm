@@ -385,6 +385,7 @@ Grammar.BuiltInRules = require('../dist/built-in-rules');
 var Semantics = require('./Semantics');
 var operationsAndAttributesGrammar = require('../dist/operations-and-attributes');
 Semantics.initPrototypeParser(operationsAndAttributesGrammar);
+Semantics.initBuiltInSemantics(Grammar.BuiltInRules);
 
 ohmGrammar = require('../dist/ohm-grammar');
 module.exports._buildGrammar = buildGrammar;
