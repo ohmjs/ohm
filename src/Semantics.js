@@ -246,16 +246,10 @@ Semantics.initPrototypeParser = function(grammar) {
       };
     },
     Formals: function(oparen, fs, cparen) {
-      return fs.parse();
+      return fs.asSequence.parse();
     },
     name: function(first, rest) {
       return this.interval.contents;
-    },
-    EmptyListOf: function() {
-      return [];
-    },
-    NonemptyListOf: function(x, _, xs) {
-      return [x.parse()].concat(xs.parse());
     }
   });
   prototypeGrammar = grammar;

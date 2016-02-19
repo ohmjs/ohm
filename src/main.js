@@ -367,7 +367,6 @@ function makeRecipe(recipeFn) {
 // --------------------------------------------------------------------
 
 // Stuff that users should know about
-
 module.exports = {
   createNamespace: Namespace.createNamespace,
   grammar: grammar,
@@ -375,19 +374,21 @@ module.exports = {
   grammarFromScriptElement: grammarFromScriptElement,
   grammarsFromScriptElements: grammarsFromScriptElements,
   makeRecipe: makeRecipe,
+  ohmGrammar: null,  // Initialized below, after Grammar.BuiltInRules.
   util: util
 };
 
-// Stuff that's only here for bootstrapping, testing, etc.
+// Stuff for testing, etc.
+module.exports._buildGrammar = buildGrammar;
+module.exports._setDocumentInterfaceForTesting = function(doc) { documentInterface = doc; };
+
+// Late initialization for stuff that is bootstrapped.
 
 Grammar.BuiltInRules = require('../dist/built-in-rules');
 
 var Semantics = require('./Semantics');
 var operationsAndAttributesGrammar = require('../dist/operations-and-attributes');
-Semantics.initPrototypeParser(operationsAndAttributesGrammar);
 Semantics.initBuiltInSemantics(Grammar.BuiltInRules);
+Semantics.initPrototypeParser(operationsAndAttributesGrammar);  // requires BuiltInSemantics.
 
-ohmGrammar = require('../dist/ohm-grammar');
-module.exports._buildGrammar = buildGrammar;
-module.exports._setDocumentInterfaceForTesting = function(doc) { documentInterface = doc; };
-module.exports.ohmGrammar = ohmGrammar;
+module.exports.ohmGrammar = ohmGrammar = require('../dist/ohm-grammar');
