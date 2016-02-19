@@ -200,3 +200,13 @@ test('non-fluffy failures subsume fluffy failures, etc.', function(t) {
   t.equal(failures[4].type, 'string');
   t.end();
 });
+
+test('trailing space should not influence the result', function(t) {
+  var g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
+  var r = g.match('(1  ');
+  var failures = r.getRightmostFailures().filter(function(failure) { return !failure.isFluffy(); });
+  t.equal(failures.length, 1);
+  t.equal(failures[0].getText(), ')');
+  t.equal(failures[0].type, 'string');
+  t.end();
+});

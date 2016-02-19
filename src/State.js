@@ -274,7 +274,8 @@ State.prototype = {
 
     if (ans) {
       if (this.rightmostFailures &&
-          inputStream.pos === this.rightmostFailurePosition) {
+        (inputStream.pos === this.rightmostFailurePosition ||
+         this.skipSpacesIfInSyntacticContext() === this.rightmostFailurePosition)) {
         var self = this;
         Object.keys(this.rightmostFailures).forEach(function(key) {
           self.rightmostFailures[key].makeFluffy();
