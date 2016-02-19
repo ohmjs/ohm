@@ -9,6 +9,9 @@ var options = {};
 var inputEditor = CodeMirror($('#inputContainer .editorWrapper'));
 var grammarEditor = CodeMirror($('#grammarContainer .editorWrapper'));
 
+// Expose the grammar globally so that it can easily be accessed from the console.
+var grammar = null;
+
 // Misc Helpers
 // ------------
 
@@ -117,7 +120,6 @@ function parseGrammar(source) {
 (function main() {
   var checkboxes = document.querySelectorAll('#options input[type=checkbox]');
   var refreshTimeout;
-  var grammar;
   var grammarChanged = true;
 
   searchBar.initializeForEditor(inputEditor);
@@ -162,7 +164,6 @@ function parseGrammar(source) {
       grammar = result.grammar;
       if (result.error) {
         var err = result.error;
-        console.log(err.message);  // eslint-disable-line no-console
         setError('grammar', grammarEditor, err.interval, err.shortMessage || err.message);
         return;
       }
@@ -177,5 +178,14 @@ function parseGrammar(source) {
       refreshParseTree(grammar, inputEditor.getValue());
     }
   }
+
+  /* eslint-disable no-console */
+  console.log('%cOhm visualizer', 'color: #e0a; font-family: Avenir; font-size: 18px;');
+  console.log([
+    '- `ohm` is the Ohm library',
+    '- `grammar` is the current grammar object (if the source is valid)'
+  ].join('\n'));
+  /* eslint-enable no-console */
+
   refresh();
 })();
