@@ -11,8 +11,11 @@ var pexprs = require('./pexprs');
 // Operations
 // --------------------------------------------------------------------
 
-// NOTE: the `introduceParams` method modifies the receiver in place.
-
+/*
+  Called at grammar creation time to rewrite a rule body, replacing each reference to a formal
+  parameter with a `Param` node. Returns a PExpr -- either a new one, or the original one if
+  it was modified in place.
+*/
 pexprs.PExpr.prototype.introduceParams = common.abstract;
 
 pexprs.any.introduceParams =
@@ -60,7 +63,8 @@ pexprs.Apply.prototype.introduceParams = function(formals) {
   var index = formals.indexOf(this.ruleName);
   if (index >= 0) {
     if (this.params.length > 0) {
-      throw new Error('FIXME: should catch this earlier');
+      // TODO: Should this be supported? See issue #64.
+      throw new Error('Parameterized rules cannot be passed as arguments to another rule.');
     }
     return new pexprs.Param(index);
   } else {
