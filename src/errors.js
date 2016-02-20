@@ -100,9 +100,16 @@ function wrongNumberOfParameters(ruleName, expected, actual, body) {
   return createError(
       'Wrong number of parameters for rule ' + ruleName +
           ' (expected ' + expected + ', got ' + actual + ')',
-      // FIXME: the definition interval is OK if this error is about a definition, but not a call.
-      // Should probably split this up into two errors.
       body.definitionInterval);
+}
+
+// Wrong number of arguments
+
+function wrongNumberOfArguments(ruleName, expected, actual, expr) {
+  return createError(
+      'Wrong number of arguments for rule ' + ruleName +
+          ' (expected ' + expected + ', got ' + actual + ')',
+      expr.interval);
 }
 
 // Duplicate parameter names
@@ -198,6 +205,7 @@ module.exports = {
   kleeneExprHasNullableOperand: kleeneExprHasNullableOperand,
   undeclaredGrammar: undeclaredGrammar,
   undeclaredRule: undeclaredRule,
+  wrongNumberOfArguments: wrongNumberOfArguments,
   wrongNumberOfParameters: wrongNumberOfParameters,
 
   throwErrors: function(errors) {

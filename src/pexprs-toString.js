@@ -101,8 +101,8 @@ pexprs.Obj.prototype.toString = function() {
 };
 
 pexprs.Apply.prototype.toString = function() {
-  if (this.params.length > 0) {
-    var ps = this.params.map(function(param) { return param.toString(); });
+  if (this.args.length > 0) {
+    var ps = this.args.map(function(arg) { return arg.toString(); });
     return this.ruleName + '<' + ps.join(',') + '>';
   } else {
     return this.ruleName;

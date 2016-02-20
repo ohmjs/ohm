@@ -66,29 +66,29 @@ pexprs.Obj.prototype._assertAllApplicationsAreValid = function(ruleName, grammar
 pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
   var body = grammar.ruleBodies[this.ruleName];
 
-  // Make sure that the rule exists
+  // Make sure that the rule exists...
   if (!body) {
     throw errors.undeclaredRule(this.ruleName, grammar.name, this.interval);
   }
 
-  // ... and that this application is allowed
+  // ...and that this application is allowed
   if (common.isSyntactic(this.ruleName) && (!common.isSyntactic(ruleName) || lexifyCount > 0)) {
     throw errors.applicationOfSyntacticRuleFromLexicalContext(this.ruleName, this);
   }
 
-  // ... and that this application has the correct number of parameters
-  var actual = this.params.length;
+  // ...and that this application has the correct number of arguments
+  var actual = this.args.length;
   var expected = grammar.ruleFormals[this.ruleName].length;
   if (actual !== expected) {
-    throw errors.wrongNumberOfParameters(this.ruleName, expected, actual, this);
+    throw errors.wrongNumberOfArguments(this.ruleName, expected, actual, this);
   }
 
-  // ... and that all of the parameter expressions only have valid applications and have arity 1
+  // ...and that all of the argument expressions only have valid applications and have arity 1.
   var self = this;
-  this.params.forEach(function(param) {
-    param._assertAllApplicationsAreValid(ruleName, grammar);
-    if (param.getArity() !== 1) {
-      throw errors.invalidParameter(self.ruleName, param);
+  this.args.forEach(function(arg) {
+    arg._assertAllApplicationsAreValid(ruleName, grammar);
+    if (arg.getArity() !== 1) {
+      throw errors.invalidParameter(self.ruleName, arg);
     }
   });
 };

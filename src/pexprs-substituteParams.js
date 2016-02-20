@@ -63,11 +63,11 @@ pexprs.Obj.prototype.substituteParams = function(actuals) {
 };
 
 pexprs.Apply.prototype.substituteParams = function(actuals) {
-  if (this.params.length === 0) {
+  if (this.args.length === 0) {
     // Avoid making a copy of this application, as an optimization
     return this;
   } else {
-    var params = this.params.map(function(param) { return param.substituteParams(actuals); });
-    return new pexprs.Apply(this.ruleName, params);
+    var args = this.args.map(function(arg) { return arg.substituteParams(actuals); });
+    return new pexprs.Apply(this.ruleName, args);
   }
 };

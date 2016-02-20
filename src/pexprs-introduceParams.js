@@ -62,14 +62,14 @@ pexprs.Obj.prototype.introduceParams = function(formals) {
 pexprs.Apply.prototype.introduceParams = function(formals) {
   var index = formals.indexOf(this.ruleName);
   if (index >= 0) {
-    if (this.params.length > 0) {
+    if (this.args.length > 0) {
       // TODO: Should this be supported? See issue #64.
       throw new Error('Parameterized rules cannot be passed as arguments to another rule.');
     }
     return new pexprs.Param(index);
   } else {
-    this.params.forEach(function(param, idx, params) {
-      params[idx] = param.introduceParams(formals);
+    this.args.forEach(function(arg, idx, args) {
+      args[idx] = arg.introduceParams(formals);
     });
     return this;
   }

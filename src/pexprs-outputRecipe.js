@@ -142,13 +142,13 @@ pexprs.Apply.prototype.outputRecipe = function(sb, formals) {
     var apps = formals.
         map(function(formal) { return 'this.app(' + JSON.stringify(formal) + ')'; });
     sb.append(', [' + apps.join(', ') + ']');
-  } else if (this.params.length > 0) {
+  } else if (this.args.length > 0) {
     sb.append(', [');
-    this.params.forEach(function(param, idx) {
+    this.args.forEach(function(arg, idx) {
       if (idx > 0) {
         sb.append(', ');
       }
-      param.outputRecipe(sb, formals);
+      arg.outputRecipe(sb, formals);
     });
     sb.append(']');
   }

@@ -188,9 +188,9 @@ inherits(Obj, PExpr);
 
 // Rule application
 
-function Apply(ruleName, optParams) {
+function Apply(ruleName, optArgs) {
   this.ruleName = ruleName;
-  this.params = optParams || [];
+  this.args = optArgs || [];
 }
 inherits(Apply, PExpr);
 

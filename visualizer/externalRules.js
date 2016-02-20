@@ -28,10 +28,10 @@ var updateExternalRules = (function() {  // eslint-disable-line no-unused-vars
   // Semantic actions for collecting all of the rule names referenced
   // within a grammar.
   var referencedRulesActions = {
-    Base_application: function(ident, params) {
+    Base_application: function(ident, args) {
       var rules = {};
       rules[ident.interval.contents] = true;
-      return extend(rules, params.referencedRules);
+      return extend(rules, args.referencedRules);
     },
     _iter: combineChildResults,
     _nonterminal: combineChildResults,

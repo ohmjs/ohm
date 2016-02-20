@@ -101,7 +101,7 @@ pexprs.Range.prototype.eval = function(state) {
 };
 
 pexprs.Param.prototype.eval = function(state) {
-  return state.eval(state.currentApplication().params[this.index]);
+  return state.eval(state.currentApplication().args[this.index]);
 };
 
 pexprs.Lex.prototype.eval = function(state) {
@@ -269,7 +269,7 @@ pexprs.Obj.prototype.eval = function(state) {
 
 pexprs.Apply.prototype.eval = function(state) {
   var caller = state.currentApplication();
-  var actuals = caller ? caller.params : [];
+  var actuals = caller ? caller.args : [];
   var app = this.substituteParams(actuals);
 
   // Skip whitespace at the application site, if the rule that's being applied is syntactic

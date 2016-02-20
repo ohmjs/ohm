@@ -17,7 +17,7 @@ var testUtil = require('./testUtil');
 test('require same number of params when overriding and extending', function(t) {
   var ns = testUtil.makeGrammars('G { Foo<x, y> = x y }');
 
-  // Too few arguments
+  // Too few parameters
   t.throws(
       function() { testUtil.makeGrammar('G2 <: G { Foo<x> := "oops!" }', ns); },
       /Wrong number of parameters for rule Foo \(expected 2, got 1\)/);
@@ -25,7 +25,7 @@ test('require same number of params when overriding and extending', function(t) 
       function() { testUtil.makeGrammar('G2 <: G { Foo<x> += "oops!" }', ns); },
       /Wrong number of parameters for rule Foo \(expected 2, got 1\)/);
 
-  // Too many arguments
+  // Too many parameters
   t.throws(
       function() { testUtil.makeGrammar('G2 <: G { Foo<x, y, z> := "oops!" }', ns); },
       /Wrong number of parameters for rule Foo \(expected 2, got 3\)/);
@@ -39,14 +39,14 @@ test('require same number of params when overriding and extending', function(t) 
   t.end();
 });
 
-test('require same number of params when applying', function(t) {
+test('require same number of args when applying', function(t) {
   var ns = testUtil.makeGrammars('G { Foo<x, y> = x y }');
   t.throws(
       function() { testUtil.makeGrammar('G2 <: G { Bar = Foo<"a"> }', ns); },
-      /Wrong number of parameters for rule Foo \(expected 2, got 1\)/);
+      /Wrong number of arguments for rule Foo \(expected 2, got 1\)/);
   t.throws(
       function() { testUtil.makeGrammar('G2 <: G { Bar = Foo<"a", "b", "c"> }', ns); },
-      /Wrong number of parameters for rule Foo \(expected 2, got 3\)/);
+      /Wrong number of arguments for rule Foo \(expected 2, got 3\)/);
   t.end();
 });
 

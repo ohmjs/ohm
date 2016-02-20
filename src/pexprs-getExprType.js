@@ -102,7 +102,7 @@ pexprs.Param.prototype._calculateExprType = function(grammar, memo) {
 pexprs.Apply.prototype._calculateExprType = function(grammar, memo) {
   var key = this.toMemoKey();
   if (!Object.prototype.hasOwnProperty.call(memo, key)) {
-    var inlinedBody = grammar.ruleBodies[this.ruleName].substituteParams(this.params);
+    var inlinedBody = grammar.ruleBodies[this.ruleName].substituteParams(this.args);
 
     // Initialize a memo value to prevent infinite recursion for recursive rules.
     // Use TYPE_ANY because it is the identity of the bitwise 'or' operator, ensuring that a rule
