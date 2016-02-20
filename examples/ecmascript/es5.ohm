@@ -262,7 +262,7 @@ ES5 {
   
   // end of lexical rules
 
-  noIn = (~in)
+  noIn = ~in
   withIn =
 
   // §A.3 Expressions -- http://ecma-international.org/ecma-262/5.1/#sec-A.3
@@ -342,15 +342,8 @@ ES5 {
                   | ShiftExpression ">>" AdditiveExpression  -- asr
                   | AdditiveExpression
 
-  // Ohm doesn't support parameterized rules, but we don't want to
-  // duplicate our expression-parsing rules. Instead, we're
-  // experimenting with just permitting 'x in y' expressions *even in
-  // contexts where they're illegal*, and rejecting them in a
-  // post-parse-pass. A little like rejecting unbound variables in a
-  // postpass, or implementing a type checker.
-
-  RelationalExpression<guardIn> =
-      RelationalExpression<guardIn> "<" ShiftExpression           -- lt
+  RelationalExpression<guardIn>
+    = RelationalExpression<guardIn> "<" ShiftExpression           -- lt
     | RelationalExpression<guardIn> ">" ShiftExpression           -- gt
     | RelationalExpression<guardIn> "<=" ShiftExpression          -- le
     | RelationalExpression<guardIn> ">=" ShiftExpression          -- ge
@@ -358,43 +351,43 @@ ES5 {
     | RelationalExpression<guardIn> guardIn "in" ShiftExpression  -- inExp
     | ShiftExpression
 
-  EqualityExpression<guardIn> =
-      EqualityExpression<guardIn> "==" RelationalExpression<guardIn>  -- equal
+  EqualityExpression<guardIn>
+    = EqualityExpression<guardIn> "==" RelationalExpression<guardIn>  -- equal
     | EqualityExpression<guardIn> "!=" RelationalExpression<guardIn>  -- notEqual
     | EqualityExpression<guardIn> "===" RelationalExpression<guardIn> -- eq
     | EqualityExpression<guardIn> "!==" RelationalExpression<guardIn> -- notEq
     | RelationalExpression<guardIn>
 
-  BitwiseANDExpression<guardIn> =
-      BitwiseANDExpression<guardIn> "&" EqualityExpression<guardIn> -- band
+  BitwiseANDExpression<guardIn>
+    = BitwiseANDExpression<guardIn> "&" EqualityExpression<guardIn> -- band
     | EqualityExpression<guardIn>
 
-  BitwiseXORExpression<guardIn> =
-      BitwiseXORExpression<guardIn> "^" BitwiseANDExpression<guardIn> -- bxor
+  BitwiseXORExpression<guardIn>
+    = BitwiseXORExpression<guardIn> "^" BitwiseANDExpression<guardIn> -- bxor
     | BitwiseANDExpression<guardIn>
 
-  BitwiseORExpression<guardIn> =
-      BitwiseORExpression<guardIn> "|" BitwiseXORExpression<guardIn> -- bor
+  BitwiseORExpression<guardIn>
+    = BitwiseORExpression<guardIn> "|" BitwiseXORExpression<guardIn> -- bor
     | BitwiseXORExpression<guardIn>
 
-  LogicalANDExpression<guardIn> =
-      LogicalANDExpression<guardIn> "&&" BitwiseORExpression<guardIn> -- land
+  LogicalANDExpression<guardIn>
+    = LogicalANDExpression<guardIn> "&&" BitwiseORExpression<guardIn> -- land
     | BitwiseORExpression<guardIn>
 
-  LogicalORExpression<guardIn> =
-      LogicalORExpression<guardIn> "||" LogicalANDExpression<guardIn> -- lor
+  LogicalORExpression<guardIn>
+    = LogicalORExpression<guardIn> "||" LogicalANDExpression<guardIn> -- lor
     | LogicalANDExpression<guardIn>
 
-  ConditionalExpression<guardIn> =
-      LogicalORExpression<guardIn> "?" AssignmentExpression<withIn> ":" AssignmentExpression<guardIn> -- conditional
+  ConditionalExpression<guardIn>
+    = LogicalORExpression<guardIn> "?" AssignmentExpression<withIn> ":" AssignmentExpression<guardIn> -- conditional
     | LogicalORExpression<guardIn>
 
-  AssignmentExpression<guardIn> =
-      LeftHandSideExpression AssignmentOperator AssignmentExpression<guardIn> -- assignment
+  AssignmentExpression<guardIn>
+    = LeftHandSideExpression AssignmentOperator AssignmentExpression<guardIn> -- assignment
     | ConditionalExpression<guardIn>
 
-  Expression<guardIn> (an expression) =
-      Expression<guardIn> "," AssignmentExpression<guardIn> -- commaExp
+  Expression<guardIn> (an expression)
+    = Expression<guardIn> "," AssignmentExpression<guardIn> -- commaExp
     | AssignmentExpression<guardIn>
 
   AssignmentOperator = "=" | ">>>=" | "<<=" | ">>="
