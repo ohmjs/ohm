@@ -8,42 +8,12 @@ var Symbol = require('es6-symbol');  // eslint-disable-line no-undef
 var inherits = require('inherits');
 
 var MatchResult = require('./MatchResult');
+var IterationNode = require('./nodes').IterationNode;
 var common = require('./common');
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
-
-// ----------------- Sequence -----------------
-
-// A sequence of wrapper elements, which itself implements the wrapper API.
-// This is similar to an _iter node, except that Sequences come from semantic actions,
-// not from parsing.
-function Sequence(optElements) {
-  this._elements = optElements || [];
-}
-
-Sequence.prototype.ctorName = 'Sequence';
-
-Sequence.prototype.childAt = function(idx) {
-  return this._elements[idx];
-};
-
-Sequence.prototype.numChildren = function() {
-  return this._elements.length;
-};
-
-Sequence.prototype.isIteration = function() {
-  return true;
-};
-
-Sequence.prototype.isNonterminal = function() {
-  return false;
-};
-
-Sequence.prototype.isTerminal = function() {
-  return false;
-};
 
 // ----------------- Wrappers -----------------
 
@@ -57,7 +27,7 @@ Sequence.prototype.isTerminal = function() {
 function Wrapper() {}
 
 Wrapper.prototype.toString = function() {
-  return '[semantics wrapper for ' + this._node.ctorName + ']';
+  return '[semantics wrapper for ' + this._node.grammar.name + ']';
 };
 
 // Returns the wrapper of the specified child node. Child wrappers are created lazily and cached in
@@ -121,9 +91,10 @@ Wrapper.prototype.isOptional = function() {
   return this._node.isOptional();
 };
 
-// Create a new Sequence in the same semantics as this wrapper.
-Wrapper.prototype.sequence = function(optElements) {
-  return this._semantics.wrap(new Sequence(optElements));
+// Create a new IterationNode in the same semantics as this wrapper.
+Wrapper.prototype.iteration = function(optElements) {
+  var iter = new IterationNode(this._node.grammar, optElements || [], this.interval, false);
+  return this._semantics.wrap(iter);
 };
 
 Object.defineProperties(Wrapper.prototype, {
@@ -160,7 +131,7 @@ Object.defineProperties(Wrapper.prototype, {
 // recursive. This constructor should not be called directly except from
 // `Semantics.createSemantics`. The normal ways to create a Semantics, given a grammar 'g', are
 // `g.semantics()` and `g.extendSemantics(parentSemantics)`.
-function Semantics(grammar, optSuperSemantics) {
+function Semantics(grammar, superSemantics) {
   var self = this;
   this.grammar = grammar;
   this.checkedActionDicts = false;
@@ -177,10 +148,8 @@ function Semantics(grammar, optSuperSemantics) {
     this._childWrappers = [];
   };
 
-  var superSemantics = optSuperSemantics || Semantics.BuiltInSemantics;
-
+  this.super = superSemantics;
   if (superSemantics) {
-    this.super = superSemantics;
     if (grammar !== this.super.grammar && !grammar._inheritsFrom(this.super.grammar)) {
       throw new Error(
           "Cannot extend a semantics for grammar '" + this.super.grammar.name +
@@ -246,7 +215,7 @@ Semantics.initPrototypeParser = function(grammar) {
       };
     },
     Formals: function(oparen, fs, cparen) {
-      return fs.asSequence.parse();
+      return fs.asIteration().parse();
     },
     name: function(first, rest) {
       return this.interval.contents;
@@ -427,7 +396,7 @@ Semantics.prototype.assertNewName = function(name, type) {
 };
 
 // Returns a wrapper for the given CST `node` in this semantics.
-// If `node` is already a wrapper, returns `node` itself.
+// If `node` is already a wrapper, returns `node` itself.  // TODO: why is this needed?
 Semantics.prototype.wrap = function(node) {
   return node instanceof this.Wrapper ? node : new this.Wrapper(node);
 };
@@ -438,7 +407,11 @@ Semantics.prototype.wrap = function(node) {
 // a wrapper for that node which gives access to the operations and attributes provided by this
 // semantics.
 Semantics.createSemantics = function(grammar, optSuperSemantics) {
-  var s = new Semantics(grammar, optSuperSemantics);
+  var s = new Semantics(
+      grammar,
+      optSuperSemantics !== undefined ?
+          optSuperSemantics :
+          Semantics.BuiltInSemantics._getSemantics());
 
   // To enable clients to invoke a semantics like a function, return a function that acts as a proxy
   // for `s`, which is the real `Semantics` instance.
@@ -491,23 +464,23 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
 };
 
 Semantics.initBuiltInSemantics = function(builtInRules) {
-  var s = Semantics.BuiltInSemantics = new Semantics(builtInRules);
-
   var actions = {
     empty: function() {
-      return this.sequence();
+      return this.iteration();
     },
     nonEmpty: function(first, _, rest) {
-      return this.sequence([first].concat(rest.children));
+      return this.iteration([first].concat(rest.children));
     }
   };
 
-  s.addOperationOrAttribute('attribute', 'asSequence', {
-    emptyListOf: actions.empty,
-    nonemptyListOf: actions.nonEmpty,
-    EmptyListOf: actions.empty,
-    NonemptyListOf: actions.nonEmpty
-  });
+  Semantics.BuiltInSemantics = Semantics
+      .createSemantics(builtInRules, null)
+      .addOperation('asIteration', {
+        emptyListOf: actions.empty,
+        nonemptyListOf: actions.nonEmpty,
+        EmptyListOf: actions.empty,
+        NonemptyListOf: actions.nonEmpty
+      });
 };
 
 // ----------------- Operation -----------------

@@ -528,7 +528,7 @@ test('mixing nodes from one grammar with semantics from another', function(t) {
   t.end();
 });
 
-test('asSequence', function(t) {
+test('asIteration', function(t) {
   var g = testUtil.makeGrammar([
     'G {',
     '  Start = ListOf<letter, ","> listOf<any, ".">',
@@ -538,8 +538,8 @@ test('asSequence', function(t) {
   ]);
   var s = g.semantics().addAttribute('value', {
     Start: function(list1, list2) {
-      var arr1 = list1.asSequence.value;
-      var arr2 = list2.asSequence.value;
+      var arr1 = list1.asIteration().value;
+      var arr2 = list2.asIteration().value;
       return arr1.join('') + arr2.join('');
     },
     letter: function(_) {
@@ -550,29 +550,29 @@ test('asSequence', function(t) {
   t.equal(s(g.match('a, b, c 1.2.3')).value, 'abc123', 'baby you and me');
   t.equal(s(g.match('')).value, '', 'both empty');
 
-  // Check that we can override asSequence for ListOf, and extend it with an action
+  // Check that we can override asIteration for ListOf, and extend it with an action
   // for a rule of our own.
-  s.extendAttribute('asSequence', {
+  s.extendOperation('asIteration', {
     NonemptyListOf: function(first, _, rest) {
-      return this.sequence([first].concat(rest.children).reverse());
+      return this.iteration([first].concat(rest.children).reverse());
     },
     anyTwo: function(a, b) {
-      return this.sequence([b, a]);
+      return this.iteration([b, a]);
     }
   });
   s.addAttribute('reversedValue', {
     anyTwo: function(a, b) {
-      var arr = this.asSequence.value;
+      var arr = this.asIteration().value;
       return arr.join('');
     }
   });
   t.equal(s(g.match('a, b, c')).value, 'cba', 'overriding works');
   t.equal(s(g.match('z9', 'anyTwo')).reversedValue, '9z');
 
-  t.throws(function() { s.addAttribute('asSequence', {}); }, /already exists/);
-  t.throws(function() { s.addOperation('asSequence', {}); }, /already exists/);
+  t.throws(function() { s.addAttribute('asIteration', {}); }, /already exists/);
+  t.throws(function() { s.addOperation('asIteration', {}); }, /already exists/);
   t.throws(function() {
-    s(g.match('xxx', 'anyThree')).asSequence;  // eslint-disable-line no-unused-expressions
+    s(g.match('xxx', 'anyThree')).asIteration();  // eslint-disable-line no-unused-expressions
   }, /Missing semantic action/);
 
   t.end();
