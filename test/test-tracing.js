@@ -8,6 +8,7 @@ var test = require('tape-catch');
 
 var ohm = require('..');
 var common = require('../src/common');
+var testUtil = require('./testUtil');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -203,6 +204,11 @@ test('tracing with left recursion', function(t) {
   t.equal(seq.children.length, 2);
   t.equal(seq.children[0].displayString, 'id');
   t.equal(seq.children[1].displayString, 'letter');
+
+  trace = g.trace('a');
+  t.ok(trace.isLeftRecursive);
+  t.equal(trace.children.length, 2);
+
   t.end();
 });
 
@@ -236,6 +242,38 @@ test('toString', function(t) {
   lines = g.trace('\n\n', 'space').toString().split('\n');
   t.equal(lines.length, 4, 'trace is still four lines long');
   t.equal(lines[lines.length - 1], '', 'last line is empty');
+
+  t.end();
+});
+
+test('memoization', function(t) {
+  var g = testUtil.makeGrammar([
+    'G {',
+    '  start = &id id',
+    '  id = id alnum  -- rec',
+    '     | letter',
+    '}'
+  ]);
+  var trace = g.trace('a9');
+  var seq = trace.children[0];
+  var lookahead = seq.children[0];
+  var applyId = lookahead.children[0];
+
+  t.equal(applyId.expr.ruleName, 'id');
+  t.equal(applyId.isLeftRecursive, true);
+  t.equal(applyId.expr.interval.startIdx, 15);
+  t.equal(applyId.expr.interval.endIdx, 17);
+
+  var applyId2 = seq.children[1];
+  t.equal(applyId2.expr.ruleName, 'id');
+  t.equal(applyId2.isLeftRecursive, true);
+  t.equal(applyId2.expr.interval.startIdx, 18);
+  t.equal(applyId2.expr.interval.endIdx, 20);
+
+  t.equal(applyId.pos, 0);
+  t.equal(applyId2.pos, 0);
+  t.ok(applyId.succeeded);
+  t.ok(applyId2.succeeded);
 
   t.end();
 });

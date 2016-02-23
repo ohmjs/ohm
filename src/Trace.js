@@ -81,6 +81,15 @@ Object.defineProperty(Trace.prototype, 'displayString', {
   get: function() { return this.expr.toDisplayString(); }
 });
 
+Trace.prototype.cloneWithExpr = function(expr) {
+  var ans = new Trace(this.inputStream, this.pos, expr, this.succeeded, this.children);
+  ans.isLeftRecursive = this.isLeftRecursive;
+  ans.isMemoized = true;
+  return ans;
+};
+
+// Set the value of `isLeftRecursive` for this node.
+// If true, each child of this node represents one iteration of the "growing the seed" loop.
 Trace.prototype.setLeftRecursive = function(leftRecursive) {
   this.isLeftRecursive = leftRecursive;
   if (leftRecursive) {

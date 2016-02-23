@@ -214,14 +214,11 @@ State.prototype = {
     return null;
   },
 
-  // Returns the memoized trace entry for `expr` at `pos`, if one exists, or a new trace entry
-  // whose children is the currently active trace array.
+  // Returns a new trace entry, with the currently active trace array as its children.
   getTraceEntry: function(pos, expr, result) {
-    var entry = this.getMemoizedTraceEntry(pos, expr);
-    if (!entry) {
-      entry = new Trace(this.inputStream, pos, expr, result, this.trace);
-    }
-    return entry;
+    var memoEntry = this.getMemoizedTraceEntry(pos, expr);
+    return memoEntry ? memoEntry.cloneWithExpr(expr)
+                     : new Trace(this.inputStream, pos, expr, result, this.trace);
   },
 
   isTracing: function() {
