@@ -1,7 +1,7 @@
 var ohm = require('..');
 module.exports = ohm.makeRecipe(function() {
   return new this.newGrammar("Ohm")
-    .withDefaultStartRule('Grammars')
+    .withDefaultStartRule("Grammars")
     .define("Grammars", [], this.star(this.app("Grammar")))
     .define("Grammar", [], this.seq(this.app("ident"), this.opt(this.app("SuperGrammar")), this.prim("{"), this.star(this.app("Rule")), this.prim("}")))
     .define("SuperGrammar", [], this.seq(this.prim("<:"), this.app("ident")))
@@ -60,7 +60,7 @@ module.exports = ohm.makeRecipe(function() {
     .define("escapeChar_hexEscape", [], this.seq(this.prim("\\x"), this.app("hexDigit"), this.app("hexDigit")))
     .define("escapeChar", [], this.alt(this.app("escapeChar_backslash"), this.app("escapeChar_doubleQuote"), this.app("escapeChar_singleQuote"), this.app("escapeChar_backspace"), this.app("escapeChar_lineFeed"), this.app("escapeChar_carriageReturn"), this.app("escapeChar_tab"), this.app("escapeChar_unicodeEscape"), this.app("escapeChar_hexEscape")), "an escape sequence")
     .define("number", [], this.seq(this.opt(this.prim("-")), this.plus(this.app("digit"))), "a number")
-    .extend("space", [], this.alt(this.app("comment"), this.range("\u0000", " ")))
+    .extend("space", [], this.app("comment"))
     .define("comment_singleLine", [], this.seq(this.prim("//"), this.star(this.seq(this.not(this.prim("\n")), this.app("any"))), this.prim("\n")))
     .define("comment_multiLine", [], this.seq(this.prim("/*"), this.star(this.seq(this.not(this.prim("*/")), this.app("any"))), this.prim("*/")))
     .define("comment", [], this.alt(this.app("comment_singleLine"), this.app("comment_multiLine")))
