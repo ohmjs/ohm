@@ -8,6 +8,19 @@ var common = require('./common');
 var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
+// Private stuff
+// --------------------------------------------------------------------
+
+function escapeString(str) {
+  var output = JSON.stringify(str);
+  output = output.replace(/[\u2028\u2029]/g, function(char, pos, str) {
+    var hex = char.codePointAt(0).toString(16);
+    return '\\u' + '0000'.slice(hex.length) + hex;
+  });
+  return output;
+}
+
+// --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
 
@@ -23,7 +36,7 @@ pexprs.end.outputRecipe = function(sb, formals) {
 
 pexprs.Prim.prototype.outputRecipe = function(sb, formals) {
   sb.append('this.prim(');
-  sb.append(typeof this.obj === 'string' ? JSON.stringify(this.obj) : '' + this.obj);
+  sb.append(typeof this.obj === 'string' ? escapeString(this.obj) : '' + this.obj);
   sb.append(')');
 };
 
