@@ -170,7 +170,7 @@ function parseGrammar(source) {
       }
     }
 
-    if (grammar) {
+    if (grammar && grammar.defaultStartRule) {
       hideBottomOverlay();
       $('#expandedInput').innerHTML = '';
       $('#parseResults').innerHTML = '';
