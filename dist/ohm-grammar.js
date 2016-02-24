@@ -64,6 +64,10 @@ module.exports = ohm.makeRecipe(function() {
     .define("comment_singleLine", [], this.seq(this.prim("//"), this.star(this.seq(this.not(this.prim("\n")), this.app("any"))), this.prim("\n")))
     .define("comment_multiLine", [], this.seq(this.prim("/*"), this.star(this.seq(this.not(this.prim("*/")), this.app("any"))), this.prim("*/")))
     .define("comment", [], this.alt(this.app("comment_singleLine"), this.app("comment_multiLine")))
+    .define("tokens", [], this.star(this.app("token")))
+    .define("token", [], this.alt(this.app("caseName"), this.app("comment"), this.app("ident"), this.app("keyword"), this.app("number"), this.app("operator"), this.app("punctuation"), this.app("string"), this.app("any")))
+    .define("operator", [], this.alt(this.prim("<:"), this.prim("="), this.prim(":="), this.prim("+="), this.prim("*"), this.prim("+"), this.prim("?"), this.prim("~"), this.prim("&")))
+    .define("punctuation", [], this.alt(this.prim("<"), this.prim(">"), this.prim(","), this.prim("--")))
     .build();
 });
 

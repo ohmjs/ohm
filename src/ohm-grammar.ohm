@@ -122,4 +122,11 @@ Ohm {
     = "//" (~"\n" any)* "\n"  -- singleLine
     | "/*" (~"*/" any)* "*/"  -- multiLine
 
+  tokens = token*
+
+  token = caseName | comment | ident | keyword | number | operator | punctuation | string | any
+
+  operator = "<:" | "=" | ":=" | "+=" | "*" | "+" | "?" | "~" | "&"
+
+  punctuation = "<" | ">" | "," | "--"
 }
