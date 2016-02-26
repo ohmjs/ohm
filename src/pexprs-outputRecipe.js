@@ -138,7 +138,7 @@ pexprs.Apply.prototype.outputRecipe = function(sb, formals, grammarInterval) {
   sb.append(JSON.stringify(this.ruleName));
   if (this.ruleName.indexOf('_') >= 0 && formals.length > 0) {
     var apps = formals.
-        map(function(formal) { return 'this.app(' + JSON.stringify(formal) + ')'; });
+        map(function(_, idx) { return 'this.param(' + idx + ')'; });
     sb.append(', [' + apps.join(', ') + ']');
   } else if (this.args.length > 0) {
     sb.append(', [');

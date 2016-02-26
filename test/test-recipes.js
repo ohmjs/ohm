@@ -64,8 +64,14 @@ test('recipes involving parameterized rules', function(t) {
     '            | "b" y -- two',
     '}'
   ]);
-  t.ok(toGrammar(g.toRecipe()).match('a0').succeeded());
-  t.ok(toGrammar(g.toRecipe()).match('b1').succeeded());
+  var recipe = g.toRecipe();
+  t.ok(toGrammar(recipe).match('a0').succeeded(), 'matches one paramater');
+  t.ok(toGrammar(recipe).match('b1').succeeded(), 'matches multiple parameters');
+  t.ok(toGrammar(recipe).match('a2').failed(), 'parameters shadow global rules');
+  // .define("bar", ["x", "y"], this.alt(this.app("bar_one", [this.param(0), this.param(1)]), ...
+  //   INSTEAD OF
+  // .define("bar", ["x", "y"], this.alt(this.app("bar_one", [this.app("x"), this.app("y")]), ...
+  t.ok(recipe.match(/define\("bar".*\[this.param/), 'forwards parameters instead of applications');
   t.end();
 });
 
