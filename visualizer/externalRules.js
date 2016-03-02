@@ -66,7 +66,8 @@ var updateExternalRules = (function() {  // eslint-disable-line no-unused-vars
     var ans = {};
     Object.keys(rulesObj).forEach(function(ruleName) {
       if (ruleName in builtInRules.ruleBodies) {
-        ans[ruleName] = builtInRules.ruleBodies[ruleName].toString();
+        var body = builtInRules.ruleBodies[ruleName];
+        ans[ruleName] = body.interval ? body.interval.contents : body.toString();
       }
     });
     return ans;
