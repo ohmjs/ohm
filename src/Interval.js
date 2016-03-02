@@ -4,6 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
+var assert = require('./common').assert;
 var errors = require('./errors');
 var util = require('./util');
 
@@ -84,6 +85,19 @@ Interval.prototype = {
         this
       ];
     }
+  },
+
+  // Returns a new Interval that has the same extent as this one, but which is relative
+  // to `that`, an Interval that fully covers this one.
+  relativeTo: function(that, newInputStream) {
+    if (this.inputStream !== that.inputStream) {
+      throw errors.intervalSourcesDontMatch();
+    }
+    assert(this.startIdx >= that.startIdx && this.endIdx <= that.endIdx,
+           'other interval does not cover this one');
+    return new Interval(newInputStream,
+                        this.startIdx - that.startIdx,
+                        this.endIdx - that.startIdx);
   },
 
   // Returns a new Interval which contains the same contents as this one,

@@ -187,7 +187,6 @@ Grammar.prototype = {
       throw new Error(
           'Why would anyone want to generate a recipe for the ' + this.name + ' grammar?!?!');
     }
-
     var sb = new common.StringBuffer();
     if (optVarName) {
       sb.append('var ' + optVarName + ' = ');
@@ -200,12 +199,18 @@ Grammar.prototype = {
       sb.append(this.superGrammar.toRecipe('buildSuperGrammar'));
       superGrammarDecl = '    .withSuperGrammar(buildSuperGrammar.call(this))\n';
     }
-    sb.append('  return new this.newGrammar(' + JSON.stringify(this.name) + ')\n');
+    sb.append('  var decl = this.newGrammar(' + JSON.stringify(this.name) + ')\n');
+
+    // Include the grammar source if it is available.
+    if (this.definitionInterval) {
+      sb.append('    .withSource(' + JSON.stringify(this.definitionInterval.contents) + ')\n');
+    }
     sb.append(superGrammarDecl);
 
     if (this.defaultStartRule) {
       sb.append('    .withDefaultStartRule("' + this.defaultStartRule + '")\n');
     }
+    sb.append('  return decl\n');
 
     var self = this;
     Object.keys(this.ruleBodies).forEach(function(ruleName) {
@@ -219,7 +224,8 @@ Grammar.prototype = {
       var formals = self.ruleFormals[ruleName];
       var formalsString = '[' + formals.map(JSON.stringify).join(', ') + ']';
       sb.append('(' + JSON.stringify(ruleName) + ', ' + formalsString + ', ');
-      body.outputRecipe(sb, formals);
+      body.outputRecipe(sb, formals, self.definitionInterval);
+
       if (!self.superGrammar.ruleBodies[ruleName] && self.ruleDescriptions[ruleName]) {
         sb.append(', ' + JSON.stringify(self.ruleDescriptions[ruleName]));
       }

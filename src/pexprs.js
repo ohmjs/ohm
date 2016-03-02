@@ -26,6 +26,7 @@ function PExpr() {
   throw new Error("PExpr cannot be instantiated -- it's abstract");
 }
 
+// Set the `interval` property to the interval containing the source for this expression.
 PExpr.prototype.withInterval = function(interval) {
   if (interval) {
     this.interval = interval.trimmed();

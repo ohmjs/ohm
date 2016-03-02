@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------
 
 var Grammar = require('./Grammar');
+var InputStream = require('./InputStream');
 var common = require('./common');
 var errors = require('./errors');
 var pexprs = require('./pexprs');
@@ -20,6 +21,11 @@ function GrammarDecl(name) {
 }
 
 // Helpers
+
+GrammarDecl.prototype.sourceInterval = function(startIdx, endIdx) {
+  var inputStream = this.interval.inputStream;
+  return inputStream.interval(startIdx, endIdx);
+};
 
 GrammarDecl.prototype.ensureSuperGrammar = function() {
   if (!this.superGrammar) {
@@ -80,6 +86,11 @@ GrammarDecl.prototype.withDefaultStartRule = function(ruleName) {
   return this;
 };
 
+GrammarDecl.prototype.withSource = function(source) {
+  this.interval = InputStream.newFor(source).interval(0, source.length);
+  return this;
+};
+
 // Creates a Grammar instance, and if it passes the sanity checks, returns it.
 GrammarDecl.prototype.build = function() {
   var grammar = new Grammar(
@@ -134,6 +145,10 @@ GrammarDecl.prototype.build = function() {
   if (grammarErrors.length > 0) {
     errors.throwErrors(grammarErrors);
   }
+  if (this.interval) {
+    grammar.definitionInterval = this.interval;
+  }
+
   return grammar;
 };
 
@@ -162,13 +177,14 @@ GrammarDecl.prototype.override = function(name, formals, body) {
   return this;
 };
 
-GrammarDecl.prototype.extend = function(name, formals, body) {
+GrammarDecl.prototype.extend = function(name, formals, fragment) {
   var baseRule = this.ensureSuperGrammar().ruleBodies[name];
   if (!baseRule) {
-    throw errors.cannotExtendUndeclaredRule(name, this.superGrammar.name, body);
+    throw errors.cannotExtendUndeclaredRule(name, this.superGrammar.name, fragment);
   }
-  this.installOverriddenOrExtendedRule(
-      name, formals, new pexprs.Extend(this.superGrammar, name, body));
+  var body = new pexprs.Extend(this.superGrammar, name, fragment);
+  body.interval = fragment.interval;
+  this.installOverriddenOrExtendedRule(name, formals, body);
   return this;
 };
 
