@@ -10,32 +10,39 @@ var updateRuleHyperlinks = (function() {  // eslint-disable-line no-unused-vars
   var grammarPosInfos;  // Holds the memo table from the last successful parse.
   var mouseCoords;
   var mark;
-  var defMark;
+  var markWordInfo;
 
-  var markNode = document.createElement('span');
-  markNode.style = 'text-decoration: underline; color: #268BD2; cursor: pointer;';
+  var isMouseDown;
+
+  function isPlatformMac() {
+    return /Mac/.test(navigator.platform);
+  }
 
   function areLinksEnabled(e) {
-    return e.metaKey && !e.shiftKey && !e.altKey && !e.ctrlKey;
+    var modifierKey = isPlatformMac() ? e.metaKey : e.ctrlKey;
+    return modifierKey && !e.shiftKey && !e.altKey && !e.ctrlKey;
   }
 
   function updateLinks(cm, e) {
     cmUtil.clearMark(mark);
-    cmUtil.clearMark(defMark);
+    markWordInfo = null;
 
     if (mouseCoords && grammarPosInfos && areLinksEnabled(e)) {
       var wordInfo = getWordUnderPoint(cm, mouseCoords.x, mouseCoords.y);
       if (isRuleApplication(wordInfo)) {
-        var ruleName = wordInfo.value;
-        markNode.textContent = ruleName;
-        mark = cm.markText(wordInfo.startPos, wordInfo.endPos, {replacedWith: markNode});
+        mark = cm.markText(wordInfo.startPos, wordInfo.endPos, {
+          css: 'text-decoration: underline; color: #268BD2; cursor: pointer;'
+        });
+        markWordInfo = wordInfo;
       }
     }
   }
 
   function handleMouseMove(cm, e) {
     mouseCoords = {x: e.clientX, y: e.clientY};
-    updateLinks(cm, e);
+    if (!isMouseDown) {
+      updateLinks(cm, e);
+    }
   }
 
   function getWordUnderPoint(cm, x, y) {
@@ -59,22 +66,45 @@ var updateRuleHyperlinks = (function() {  // eslint-disable-line no-unused-vars
     return false;
   }
 
-  function handleLinkClick(e) {
-    var ruleName = e.target.textContent;
+  function goToRuleDefinition(ruleName) {
     var interval = grammar.ruleBodies[ruleName].definitionInterval;
     if (interval) {
-      defMark = cmUtil.markInterval(grammarEditor, interval, 'active-definition', true);
+      var defMark = cmUtil.markInterval(grammarEditor, interval, 'active-definition', true);
+      setTimeout(defMark.clear.bind(defMark), 1000);
       cmUtil.scrollToInterval(grammarEditor, interval);
     }
-    e.preventDefault();
-    e.stopPropagation();
+  }
+
+  function isSameWord(cm, a, b) {
+    return cm.indexFromPos(a.startPos) === cm.indexFromPos(b.startPos) &&
+           cm.indexFromPos(a.endPos) === cm.indexFromPos(b.endPos);
   }
 
   function registerListeners(editor) {
     editor.getWrapperElement().addEventListener('mousemove', handleMouseMove.bind(null, editor));
     window.addEventListener('keydown', updateLinks.bind(null, editor));
     window.addEventListener('keyup', updateLinks.bind(null, editor));
-    markNode.onclick = handleLinkClick;
+
+    // Prevent CodeMirror's default behaviour for Cmd-click, which is to place an additional
+    // cursor at the clicked location. This must be done during the capture phase.
+    editor.on('mousedown', function(cm, e) {
+      isMouseDown = true;
+      if (areLinksEnabled(e)) {
+        e.preventDefault();
+      }
+    }, true);
+
+    // It's not possible to capture `click` events inside the editor window, so do link
+    // navigation on mouseup.
+    editor.getWrapperElement().addEventListener('mouseup', function(e) {
+      isMouseDown = false;
+      if (markWordInfo) {
+        var wordInfo = getWordUnderPoint(editor, e.clientX, e.clientY);
+        if (isSameWord(editor, wordInfo, markWordInfo)) {
+          goToRuleDefinition(markWordInfo.value);
+        }
+      }
+    });
   }
 
   // Export a function to be called when the grammar contents change.
