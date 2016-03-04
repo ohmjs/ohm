@@ -1,5 +1,6 @@
 /* eslint-env browser */
-/* global cmUtil, CodeMirror, ohm, refreshParseTree, searchBar, updateExternalRules */
+/* global cmUtil, CodeMirror, ohm, refreshParseTree, searchBar */
+/* global updateExternalRules, updateRuleHyperlinks */
 
 'use strict';
 
@@ -163,6 +164,7 @@ function parseGrammar(source) {
       var result = parseGrammar(grammarEditor.getValue());
       grammar = result.grammar;
       updateExternalRules(grammarEditor, result.matchResult, grammar);
+      updateRuleHyperlinks(grammarEditor, result.matchResult, grammar);
       if (result.error) {
         var err = result.error;
         setError('grammar', grammarEditor, err.interval, err.shortMessage || err.message);
