@@ -382,6 +382,62 @@ test('alt', function(t) {
   t.end();
 });
 
+test('rule bodies in defs can start with a |, and it\'s a no-op', function(t) {
+  var m = ohm.grammar('M { altTest = | "a" | "b" }');
+
+  it('recognition', function() {
+    assertFails(t, m.match(''));
+    assertSucceeds(t, m.match('a'));
+    assertSucceeds(t, m.match('b'));
+    assertFails(t, m.match('ab'));
+  });
+
+  it('semantic actions', function() {
+    var s = m.semantics().addAttribute('v', {});
+    t.equal(s(m.match('a')).v, 'a');
+    t.equal(s(m.match('b')).v, 'b');
+  });
+  t.end();
+});
+
+test('rule bodies in overrides can start with a |, and it\'s a no-op', function(t) {
+  var m = ohm.grammar('M { space := | "a" | "b" }');
+
+  it('recognition', function() {
+    assertFails(t, m.match('', 'space'));
+    assertSucceeds(t, m.match('a', 'space'));
+    assertSucceeds(t, m.match('b', 'space'));
+    assertFails(t, m.match(' ', 'space'));
+    assertFails(t, m.match('\t', 'space'));
+  });
+
+  it('semantic actions', function() {
+    var s = m.semantics().addAttribute('v', {});
+    t.equal(s(m.match('a', 'space')).v, 'a');
+    t.equal(s(m.match('b', 'space')).v, 'b');
+  });
+  t.end();
+});
+
+test('rule bodies in extends can start with a |, and it\'s a no-op', function(t) {
+  var m = ohm.grammar('M { space += | "a" | "b" }');
+
+  it('recognition', function() {
+    assertFails(t, m.match('', 'space'));
+    assertSucceeds(t, m.match('a', 'space'));
+    assertSucceeds(t, m.match('b', 'space'));
+    assertSucceeds(t, m.match(' ', 'space'));
+    assertSucceeds(t, m.match('\t', 'space'));
+  });
+
+  it('semantic actions', function() {
+    var s = m.semantics().addAttribute('v', {});
+    t.equal(s(m.match('a', 'space')).v, 'a');
+    t.equal(s(m.match('b', 'space')).v, 'b');
+  });
+  t.end();
+});
+
 test('seq', function(t) {
   test('without bindings', function(t) {
     var m = ohm.grammar('M { start = "a" "bc" "z" }');

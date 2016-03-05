@@ -10,9 +10,9 @@ Ohm {
     = "<:" ident
 
   Rule
-    = ident Formals? ruleDescr? "="  Alt  -- define
-    | ident Formals?            ":=" Alt  -- override
-    | ident Formals?            "+=" Alt  -- extend
+    = ident Formals? ruleDescr? "="  "|"? Alt  -- define
+    | ident Formals?            ":=" "|"? Alt  -- override
+    | ident Formals?            "+=" "|"? Alt  -- extend
 
   Formals
     = "<" ListOf<ident, ","> ">"

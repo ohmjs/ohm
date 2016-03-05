@@ -102,7 +102,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       }
     },
 
-    Rule_define: function(n, fs, d, _, b) {
+    Rule_define: function(n, fs, d, _equals, _optBar, b) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
       // If there is no default start rule yet, set it now. This must be done before visiting
@@ -115,7 +115,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       var description = d.visit()[0];
       return decl.define(currentRuleName, currentRuleFormals, body, description);
     },
-    Rule_override: function(n, fs, _, b) {
+    Rule_override: function(n, fs, _colonEquals, _optBar, b) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
       overriding = true;
@@ -125,7 +125,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       overriding = false;
       return ans;
     },
-    Rule_extend: function(n, fs, _, b) {
+    Rule_extend: function(n, fs, _plusEquals, _optBar, b) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
       var body = b.visit();

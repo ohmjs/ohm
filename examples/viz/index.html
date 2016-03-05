@@ -136,20 +136,20 @@ s.addOperation('viz', {
                          expr.viz();
                        leave();
                      },
-  Rule_define:       function(n, fs, d, _, b) {
+  Rule_define:       function(n, fs, d, _equals, _optBar, b) {
                        add('name', n.viz());
                        d.viz();
                        enter('ruleDefineBody');
                          b.viz();
                        leave();
                      },
-  Rule_override:     function(n, fs, _, b) {
+  Rule_override:     function(n, fs, _colonEquals, _optBar, b) {
                        add('name', n.viz());
                        enter('ruleOverrideBody');
                          b.viz();
                        leave();
                      },
-  Rule_extend:       function(n, fs, _, b) {
+  Rule_extend:       function(n, fs, _plusEquals, _optBar, b) {
                        add('name', n.viz());
                        enter('ruleExtendBody');
                          b.viz();
