@@ -177,34 +177,29 @@ function isBlackhole(traceNode) {
 
   var desc = traceNode.displayString;
   if (desc) {
-    return desc[desc.length - 1] === '_' ||
-           desc === 'space' ||
-           desc === 'empty';
+    return desc === 'space' || desc === 'empty';
   }
   return false;
 }
 
-function shouldNodeBeVisible(traceNode) {
-  // TODO: We need to distinguish between nodes that nodes that should be
-  // hidden and nodes that should be collapsed by default.
-
+function shouldNodeBeLabeled(traceNode) {
   if (isBlackhole(traceNode)) {
     return false;
   }
 
   var expr = traceNode.expr;
 
-  // Don't show Seq and Alt nodes, only their descendants.
+  // Don't label Seq and Alt nodes.
   if (expr instanceof ohm.pexprs.Seq || expr instanceof ohm.pexprs.Alt) {
     return false;
   }
 
-  // Don't show a separate node for failed inline rule applications.
+  // Don't label failed inline rule applications.
   if (expr instanceof ohm.pexprs.Apply) {
     return traceNode.succeeded;
   }
 
-  // Hide things that don't correspond to something the user wrote.
+  // Hide labels for nodes that don't correspond to something the user wrote.
   if (!expr.interval) {
     return false;
   }
@@ -331,7 +326,7 @@ function refreshParseTree(grammar, input) {  // eslint-disable-line no-unused-va
       var el = createTraceElement(grammar, node, container, childInput);
       toggleClasses(el, {
         failed: !node.succeeded,
-        hidden: !shouldNodeBeVisible(node),
+        hidden: !shouldNodeBeLabeled(node),
         whitespace: isWhitespace
       });
       if (isLeaf) {
