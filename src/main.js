@@ -11,6 +11,7 @@ var Grammar = require('./Grammar');
 var Namespace = require('./Namespace');
 var common = require('./common');
 var errors = require('./errors');
+var pexprs = require('./pexprs');
 var util = require('./util');
 
 var isBuffer = require('is-buffer');
@@ -375,6 +376,7 @@ module.exports = {
   grammarsFromScriptElements: grammarsFromScriptElements,
   makeRecipe: makeRecipe,
   ohmGrammar: null,  // Initialized below, after Grammar.BuiltInRules.
+  pexprs: pexprs,
   util: util
 };
 

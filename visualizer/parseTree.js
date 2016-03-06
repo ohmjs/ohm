@@ -1,6 +1,6 @@
 /* eslint-env browser */
 /* global cmUtil, createElement, d3, getWidthDependentElements, grammarEditor, inputEditor */
-/* global options, setError */
+/* global ohm, options, setError */
 
 'use strict';
 
@@ -171,12 +171,6 @@ function toggleTraceElement(el) {
 
 // A blackhole node is hidden and makes all its descendents hidden too.
 function isBlackhole(traceNode) {
-  if (traceNode.expr.constructor.name === 'Many' && !options.showFailures) {
-    // Not sure if this is exactly right. Maybe better would be to hide the
-    // node if it doesn't have any visible children.
-    return !traceNode.interval || traceNode.interval.contents.length === 0;
-  }
-
   if (traceNode.replacedBy) {
     return true;
   }
@@ -198,31 +192,29 @@ function shouldNodeBeVisible(traceNode) {
     return false;
   }
 
-  switch (traceNode.expr.constructor.name) {
-    case 'Seq':
-    case 'Alt':
-      return false;
-    case 'Apply':
-      // Don't show a separate node for failed inline rule applications.
-      return traceNode.succeeded || traceNode.expr.ruleName.indexOf('_') === -1;
-    default:
-      // Hide things that don't correspond to something the user wrote.
-      if (!traceNode.expr.interval) {
-        return false;
-      }
+  var expr = traceNode.expr;
+
+  // Don't show Seq and Alt nodes, only their descendants.
+  if (expr instanceof ohm.pexprs.Seq || expr instanceof ohm.pexprs.Alt) {
+    return false;
+  }
+
+  // Don't show a separate node for failed inline rule applications.
+  if (expr instanceof ohm.pexprs.Apply) {
+    return traceNode.succeeded;
+  }
+
+  // Hide things that don't correspond to something the user wrote.
+  if (!expr.interval) {
+    return false;
   }
   return true;
 }
 
 function isPrimitive(expr) {
-  switch (expr.constructor.name) {
-    case 'Prim':
-    case 'Range':
-    case 'UnicodeChar':
-      return true;
-    default:
-      return false;
-  }
+  return expr instanceof ohm.pexprs.Prim ||
+         expr instanceof ohm.pexprs.Range ||
+         expr instanceof ohm.pexprs.UnicodeChar;
 }
 
 function createTraceElement(grammar, traceNode, parent, input) {
@@ -234,7 +226,7 @@ function createTraceElement(grammar, traceNode, parent, input) {
   wrapper.addEventListener('click', function(e) {
     if (e.altKey && !(e.shiftKey || e.metaKey)) {
       console.log(traceNode);  // eslint-disable-line no-console
-    } else if (pexpr.constructor.name !== 'Prim') {
+    } else if (!isPrimitive(pexpr)) {
       toggleTraceElement(wrapper);
     }
     e.stopPropagation();
