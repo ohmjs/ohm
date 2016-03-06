@@ -177,7 +177,14 @@ function parseGrammar(source) {
       $('#expandedInput').innerHTML = '';
       $('#parseResults').innerHTML = '';
 
-      refreshParseTree(grammar, inputEditor.getValue());
+      var trace = grammar.trace(inputEditor.getValue());
+      if (trace.result.failed()) {
+        // Intervals with start == end won't show up in CodeMirror.
+        var interval = trace.result.getInterval();
+        interval.endIdx += 1;
+        setError('input', inputEditor, interval, 'Expected ' + trace.result.getExpectedText());
+      }
+      refreshParseTree(grammar, trace);
     }
   }
 
