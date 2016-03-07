@@ -16,21 +16,6 @@ var grammar = null;
 // Misc Helpers
 // ------------
 
-function createElement(sel, optContent) {
-  var parts = sel.split('.');
-  var tagName = parts[0];
-  if (tagName.length === 0) {
-    tagName = 'div';
-  }
-
-  var el = document.createElement(tagName);
-  el.className = parts.slice(1).join(' ');
-  if (optContent) {
-    el.textContent = optContent;
-  }
-  return el;
-}
-
 var errorMarks = {
   grammar: null,
   input: null
@@ -59,7 +44,9 @@ function setError(category, editor, interval, message) {
 }
 
 function showError(category, editor, interval, message) {
-  var errorEl = createElement('.error', message);
+  var errorEl = document.createElement('div');
+  errorEl.className = 'error';
+  errorEl.textContent = message;
   var line = editor.posFromIndex(interval.endIdx).line;
   errorMarks[category].widget = editor.addLineWidget(line, errorEl, {insertAt: 0});
 }
@@ -126,6 +113,11 @@ function parseGrammar(source) {
   searchBar.initializeForEditor(inputEditor);
   searchBar.initializeForEditor(grammarEditor);
 
+  var ui = {
+    grammarEditor: grammarEditor,
+    inputEditor: inputEditor
+  };
+
   function triggerRefresh(delay) {
     showBottomOverlay();
     if (refreshTimeout) {
@@ -184,7 +176,7 @@ function parseGrammar(source) {
         interval.endIdx += 1;
         setError('input', inputEditor, interval, 'Expected ' + trace.result.getExpectedText());
       }
-      refreshParseTree(grammar, trace);
+      refreshParseTree(ui, grammar, trace, options.showFailures);
     }
   }
 

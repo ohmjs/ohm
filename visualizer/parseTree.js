@@ -1,9 +1,14 @@
-/* eslint-env browser */
-/* global cmUtil, createElement, d3, grammarEditor, inputEditor, ohm, options */
-
 'use strict';
 
-var refreshParseTree = (function() {  // eslint-disable-line no-unused-vars
+// Wrap the module in a universal module definition (UMD), allowing us to
+// either include it as a <script> or to `require` it as a CommonJS module.
+(function(root, name, initModule) {
+  if (typeof exports === 'object') {
+    module.exports = initModule;
+  } else {
+    root[name] = initModule(root.ohm, root.document, root.cmUtil, root.d3);
+  }
+})(this, 'refreshParseTree', function(ohm, document, cmUtil, d3) {
   var ArrayProto = Array.prototype;
   function $(sel) { return document.querySelector(sel); }
 
@@ -11,6 +16,24 @@ var refreshParseTree = (function() {  // eslint-disable-line no-unused-vars
     HORIZONTAL_ELLIPSIS: '\u2026',
     WHITE_BULLET: '\u25E6'
   };
+
+  // DOM Helpers
+  // -----------
+
+  function createElement(sel, optContent) {
+    var parts = sel.split('.');
+    var tagName = parts[0];
+    if (tagName.length === 0) {
+      tagName = 'div';
+    }
+
+    var el = document.createElement(tagName);
+    el.className = parts.slice(1).join(' ');
+    if (optContent) {
+      el.textContent = optContent;
+    }
+    return el;
+  }
 
   // D3 Helpers
   // ----------
@@ -212,7 +235,7 @@ var refreshParseTree = (function() {  // eslint-disable-line no-unused-vars
            expr instanceof ohm.pexprs.UnicodeChar;
   }
 
-  function createTraceElement(grammar, traceNode, parent, input) {
+  function createTraceElement(ui, grammar, traceNode, parent, input) {
     var wrapper = parent.appendChild(createElement('.pexpr'));
     var pexpr = traceNode.expr;
     wrapper.classList.add(pexpr.constructor.name.toLowerCase());
@@ -228,26 +251,28 @@ var refreshParseTree = (function() {  // eslint-disable-line no-unused-vars
       e.preventDefault();
     });
 
-    var inputMark, grammarMark, defMark;
+    var inputMark;
+    var grammarMark;
+    var defMark;
     wrapper.addEventListener('mouseover', function(e) {
       if (input) {
         input.classList.add('highlight');
       }
       if (traceNode.interval) {
-        inputMark = cmUtil.markInterval(inputEditor, traceNode.interval, 'highlight', false);
-        inputEditor.getWrapperElement().classList.add('highlighting');
+        inputMark = cmUtil.markInterval(ui.inputEditor, traceNode.interval, 'highlight', false);
+        ui.inputEditor.getWrapperElement().classList.add('highlighting');
       }
       if (pexpr.interval) {
-        grammarMark = cmUtil.markInterval(grammarEditor, pexpr.interval, 'active-appl', false);
-        grammarEditor.getWrapperElement().classList.add('highlighting');
-        cmUtil.scrollToInterval(grammarEditor, pexpr.interval);
+        grammarMark = cmUtil.markInterval(ui.grammarEditor, pexpr.interval, 'active-appl', false);
+        ui.grammarEditor.getWrapperElement().classList.add('highlighting');
+        cmUtil.scrollToInterval(ui.grammarEditor, pexpr.interval);
       }
       var ruleName = pexpr.ruleName;
       if (ruleName) {
         var defInterval = grammar.ruleBodies[ruleName].definitionInterval;
         if (defInterval) {
-          defMark = cmUtil.markInterval(grammarEditor, defInterval, 'active-definition', true);
-          cmUtil.scrollToInterval(grammarEditor, defInterval);
+          defMark = cmUtil.markInterval(ui.grammarEditor, defInterval, 'active-definition', true);
+          cmUtil.scrollToInterval(ui.grammarEditor, defInterval);
         }
       }
       e.stopPropagation();
@@ -259,8 +284,8 @@ var refreshParseTree = (function() {  // eslint-disable-line no-unused-vars
       inputMark = cmUtil.clearMark(inputMark);
       grammarMark = cmUtil.clearMark(grammarMark);
       defMark = cmUtil.clearMark(defMark);
-      grammarEditor.getWrapperElement().classList.remove('highlighting');
-      inputEditor.getWrapperElement().classList.remove('highlighting');
+      ui.grammarEditor.getWrapperElement().classList.remove('highlighting');
+      ui.inputEditor.getWrapperElement().classList.remove('highlighting');
     });
     wrapper._input = input;
 
@@ -279,14 +304,14 @@ var refreshParseTree = (function() {  // eslint-disable-line no-unused-vars
     return wrapper;
   }
 
-  return function refresh(grammar, trace) {
+  return function refreshParseTree(ui, grammar, trace, showFailures) {
     var inputStack = [$('#expandedInput')];
     var containerStack = [$('#parseResults')];
 
     trace.walk({
       enter: function(node, parent, depth) {
         // Don't recurse into nodes that didn't succeed unless "Show failures" is enabled.
-        if (!(options.showFailures || node.succeeded)) {
+        if (!showFailures && !node.succeeded) {
           return node.SKIP;
         }
         var childInput;
@@ -315,7 +340,7 @@ var refreshParseTree = (function() {  // eslint-disable-line no-unused-vars
           }
         }
         var container = containerStack[containerStack.length - 1];
-        var el = createTraceElement(grammar, node, container, childInput);
+        var el = createTraceElement(ui, grammar, node, container, childInput);
         toggleClasses(el, {
           failed: !node.succeeded,
           hidden: !shouldNodeBeLabeled(node),
@@ -334,4 +359,4 @@ var refreshParseTree = (function() {  // eslint-disable-line no-unused-vars
     });
     initializeWidths();
   };
-})();
+});
