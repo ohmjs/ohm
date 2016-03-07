@@ -52,24 +52,18 @@ function visualChildren(node) {
   return flattenParseNodes(ArrayProto.slice.call(childrenDiv.children));
 }
 
-// Recursively compares the DOM tree rooted at `traceNode` with an expected value.
-// `expected` is an Array of the form ['someLabel', children...].
-function compareTree(t, traceNode, expected) {
-  // The first element in `expected` is the expected label.
-  t.equal(label(traceNode), expected[0]);
-
-  // The remaining elements are the expected children.
-  var childNodes = visualChildren(traceNode);
-  assert.equal(childNodes.length, expected.length - 1, 'wrong number of children');
-
-  expected.slice(1).forEach(function(obj, i) {
-    compareTree(t, childNodes[i], obj);
-  });
+// Recursively serializes the DOM tree rooted at `traceNode`.
+// For each node, returns an Array of the form ['theLabel', children...].
+// NOTE: The serialized form represents the visual structure of the tree, rather than the
+// action structure of the DOM -- see `visualChildren`.
+function serializeTree(traceNode, expected) {
+  var children = visualChildren(traceNode);
+  return [label(traceNode)].concat(children.map(serializeTree));
 }
 
-function compareTrace(t, resultNode, expected) {
+function serializeTrace(resultNode) {
   assert.equal(resultNode.children.length, 1, 'single node at root');
-  compareTree(t, resultNode.firstChild, expected);
+  return serializeTree(resultNode.firstChild);
 }
 
 // --------------------------------------------------------------------
@@ -88,7 +82,7 @@ test('simple parse tree', function(t) {
   refreshParseTree(null, g, g.trace('a99'), false);
   t.equal(doc.querySelector('#expandedInput').textContent, 'a99');
 
-  compareTrace(t, doc.querySelector('#parseResults'), [
+  t.deepEqual(serializeTrace(doc.querySelector('#parseResults')), [
     'start', [
       'start_x',
         ['letter', ['lower']],
