@@ -304,6 +304,29 @@
     return wrapper;
   }
 
+  // To make it easier to navigate around the parse tree, handle mousewheel events
+  // and translate vertical overscroll into horizontal movement. I.e., when scrolled all
+  // the way down, further downwards scrolling instead moves to the right -- and similarly
+  // with up and left.
+  $('#parseResults').addEventListener('wheel', function(e) {
+    var el = e.currentTarget;
+    var overscroll;
+    var scrollingDown = e.deltaY > 0;
+
+    if (scrollingDown) {
+      var scrollBottom = el.scrollHeight - el.clientHeight - el.scrollTop;
+      overscroll = e.deltaY - scrollBottom;
+      if (overscroll > 0) {
+        el.scrollLeft += overscroll;
+      }
+    } else {
+      overscroll = el.scrollTop + e.deltaY;
+      if (overscroll < 0) {
+        el.scrollLeft += overscroll;
+      }
+    }
+  });
+
   return function refreshParseTree(ui, grammar, trace, showFailures) {
     var inputStack = [$('#expandedInput')];
     var containerStack = [$('#parseResults')];
