@@ -26,17 +26,20 @@
       /* Must be less than the .splitter z-index, but greater than everything in codemirror.css. */
       z-index: 9;
     }
+    #expandedInputWrapper {
+      border-bottom: 1px solid #ddd;
+    }
     #expandedInput {
-      box-sizing: border-box;
       font-size: 100%;
-      margin-bottom: 1px;
       outline: none;
-      padding: 8px 0 8px 0;
+      padding: 8px 0;
     }
     #expandedInput .highlight {
       background-color: #B5D5FF;
     }
-    #bottomSection {
+    #parseResults {
+      flex: 1;
+      overflow: auto;
       padding: 2px;
     }
     .pexpr {
@@ -157,7 +160,6 @@
     #expandedInput, #expandedInput span {
       display: inline-block;
       text-align: center;
-      white-space: pre;
     }
     #measuringDiv {
       height: auto;
@@ -176,8 +178,9 @@
     }
 
     #bottomSection {
+      display: flex;
       flex: 1;
-      overflow: auto;
+      flex-direction: column;
       position: relative;
     }
 
@@ -348,7 +351,9 @@
   </div>
   <div id="mainSplitter" class="splitter"></div>
   <div id="bottomSection">
-    <div id="expandedInput"></div>
+    <div id="expandedInputWrapper">
+      <div id="expandedInput"></div>
+    </div>
     <div id="parseResults"></div>
     <div class="overlay"></div>
   </div>
