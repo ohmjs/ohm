@@ -335,6 +335,9 @@
       border-top: 1px solid #eee;
       padding-top: 14px;
     }
+    .hiddenDuringLoading {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -351,7 +354,7 @@
   </div>
   <div id="mainSplitter" class="splitter"></div>
   <div id="bottomSection">
-    <div id="expandedInputWrapper">
+    <div id="expandedInputWrapper" class="hiddenDuringLoading">
       <div id="expandedInput"></div>
     </div>
     <div id="parseResults"></div>

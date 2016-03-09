@@ -5,6 +5,7 @@
 'use strict';
 
 function $(sel) { return document.querySelector(sel); }
+function $$(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
 var options = {};
 
 var inputEditor = CodeMirror($('#inputContainer .editorWrapper'));
@@ -165,6 +166,8 @@ function parseGrammar(source) {
     }
 
     if (grammar && grammar.defaultStartRule) {
+      // TODO: Move this stuff to parseTree.js. We probably want a proper event system,
+      // with events like 'beforeGrammarParse' and 'afterGrammarParse'.
       hideBottomOverlay();
       $('#expandedInput').innerHTML = '';
       $('#parseResults').innerHTML = '';
@@ -189,4 +192,8 @@ function parseGrammar(source) {
   /* eslint-enable no-console */
 
   refresh();
+
+  $$('.hiddenDuringLoading').forEach(function(el) {
+    el.classList.remove('hiddenDuringLoading');
+  });
 })();
