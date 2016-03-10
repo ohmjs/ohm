@@ -20,7 +20,7 @@
   "main": "src/main.js",
   "bin": "src/ohm-cmd.js",
   "browserify": {
-    "options": "src/main.js extras/index.js --debug --standalone ohm -o dist/ohm.js"
+    "options": "src/main.js --debug --standalone ohm -o dist/ohm.js"
   },
   "scripts": {
     "prebootstrap": "bash bin/prebootstrap",
