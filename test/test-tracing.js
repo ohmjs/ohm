@@ -38,10 +38,10 @@ test('basic tracing', function(t) {
   t.equal(trace.succeeded, true);
   t.equal(trace.pos, 0);
 
-  var CSTNode = trace.cst;
-  t.equal(CSTNode.isNonterminal(), true);
-  t.equal(CSTNode.numChildren(), 1);
-  t.equal(CSTNode.ctorName, 'start');
+  var cstNode = trace.cst;
+  t.equal(cstNode.isNonterminal(), true);
+  t.equal(cstNode.numChildren(), 1);
+  t.equal(cstNode.ctorName, 'start');
 
   var alt = trace.children[0];
   t.equal(alt.displayString, '"a" | letter*');
@@ -60,17 +60,17 @@ test('basic tracing', function(t) {
   t.equal(many.children.length, 6);
 
   var manyCSTNode = many.cst;
-  t.equal(manyCSTNode === altCSTNode, true);
+  t.equal(manyCSTNode, altCSTNode);
 
   var childrenSucceeded = many.children.map(function(c) {
     return c.succeeded;
   });
   t.deepEqual(childrenSucceeded, [true, true, true, true, true, false]);
 
-  var CSTChildrenName = manyCSTNode.children.map(function(c) {
+  var cstChildrenName = manyCSTNode.children.map(function(c) {
     return c.ctorName === 'letter';
   });
-  t.deepEqual(CSTChildrenName, [true, true, true, true, true]);
+  t.deepEqual(cstChildrenName, [true, true, true, true, true]);
   t.end();
 });
 
@@ -137,10 +137,10 @@ test('tracing with parameterized rules', function(t) {
   });
   t.deepEqual(childrenSucceeded, [true, true, true, true, true, false]);
 
-  var CSTChildrenName = many.cst.children.map(function(c) {
+  var cstChildrenName = many.cst.children.map(function(c) {
     return c.ctorName === 'letter';
   });
-  t.deepEqual(CSTChildrenName, [true, true, true, true, true]);
+  t.deepEqual(cstChildrenName, [true, true, true, true, true]);
   t.end();
 });
 

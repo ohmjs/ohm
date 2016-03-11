@@ -264,9 +264,8 @@ State.prototype = {
     var ans = expr.eval(this);
 
     if (this.isTracing()) {
-      var traceEntry = this.getTraceEntry(origPos,
-        expr,
-        ans && this.bindings[this.bindings.length - 1]);
+      var result = ans && this.bindings[this.bindings.length - 1];
+      var traceEntry = this.getTraceEntry(origPos, expr, result);
       origTrace.push(traceEntry);
       this.trace = origTrace;
     }

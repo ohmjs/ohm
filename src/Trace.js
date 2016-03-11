@@ -61,17 +61,17 @@ function asEscapedString(obj) {
 
 // ----------------- Trace -----------------
 
-function Trace(inputStream, pos, expr, ans, optChildren) {
+function Trace(inputStream, pos, expr, result, optChildren) {
   this.children = optChildren || [];
   this.expr = expr;
-  if (ans) {
+  if (result) {
     this.interval = new Interval(inputStream, pos, inputStream.pos);
-    this.cst = ans;
+    this.cst = result;
   }
   this.isLeftRecursive = false;
   this.pos = pos;
   this.inputStream = inputStream;
-  this.succeeded = !!ans;
+  this.succeeded = !!result;
 }
 
 // A value that can be returned from visitor functions to indicate that a
