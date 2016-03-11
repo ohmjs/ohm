@@ -377,7 +377,8 @@ module.exports = {
   makeRecipe: makeRecipe,
   ohmGrammar: null,  // Initialized below, after Grammar.BuiltInRules.
   pexprs: pexprs,
-  util: util
+  util: util,
+  extras: require('../extras')
 };
 
 // Stuff for testing, etc.
