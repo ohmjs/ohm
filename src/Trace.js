@@ -66,6 +66,7 @@ function Trace(inputStream, pos, expr, ans, optChildren) {
   this.expr = expr;
   if (ans) {
     this.interval = new Interval(inputStream, pos, inputStream.pos);
+    this.cst = ans;
   }
   this.isLeftRecursive = false;
   this.pos = pos;
@@ -82,7 +83,7 @@ Object.defineProperty(Trace.prototype, 'displayString', {
 });
 
 Trace.prototype.cloneWithExpr = function(expr) {
-  var ans = new Trace(this.inputStream, this.pos, expr, this.succeeded, this.children);
+  var ans = new Trace(this.inputStream, this.pos, expr, this.cst, this.children);
   ans.isLeftRecursive = this.isLeftRecursive;
   ans.isMemoized = true;
   return ans;
