@@ -215,10 +215,10 @@ State.prototype = {
   },
 
   // Returns a new trace entry, with the currently active trace array as its children.
-  getTraceEntry: function(pos, expr, result) {
+  getTraceEntry: function(pos, expr, cstNode) {
     var memoEntry = this.getMemoizedTraceEntry(pos, expr);
     return memoEntry ? memoEntry.cloneWithExpr(expr)
-                     : new Trace(this.inputStream, pos, expr, result, this.trace);
+                     : new Trace(this.inputStream, pos, expr, cstNode, this.trace);
   },
 
   isTracing: function() {
@@ -264,7 +264,8 @@ State.prototype = {
     var ans = expr.eval(this);
 
     if (this.isTracing()) {
-      var traceEntry = this.getTraceEntry(origPos, expr, ans);
+      var cstNode = ans ? this.bindings[this.bindings.length - 1] : null;
+      var traceEntry = this.getTraceEntry(origPos, expr, cstNode);
       origTrace.push(traceEntry);
       this.trace = origTrace;
     }

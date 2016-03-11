@@ -61,16 +61,17 @@ function asEscapedString(obj) {
 
 // ----------------- Trace -----------------
 
-function Trace(inputStream, pos, expr, ans, optChildren) {
+function Trace(inputStream, pos, expr, cstNode, optChildren) {
   this.children = optChildren || [];
   this.expr = expr;
-  if (ans) {
+  if (cstNode) {
     this.interval = new Interval(inputStream, pos, inputStream.pos);
+    this.cstNode = cstNode;
   }
   this.isLeftRecursive = false;
   this.pos = pos;
   this.inputStream = inputStream;
-  this.succeeded = !!ans;
+  this.succeeded = !!cstNode;
 }
 
 // A value that can be returned from visitor functions to indicate that a
@@ -82,7 +83,7 @@ Object.defineProperty(Trace.prototype, 'displayString', {
 });
 
 Trace.prototype.cloneWithExpr = function(expr) {
-  var ans = new Trace(this.inputStream, this.pos, expr, this.succeeded, this.children);
+  var ans = new Trace(this.inputStream, this.pos, expr, this.cstNode, this.children);
   ans.isLeftRecursive = this.isLeftRecursive;
   ans.isMemoized = true;
   return ans;
