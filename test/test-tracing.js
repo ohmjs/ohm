@@ -26,6 +26,15 @@ function displayString(traceNode) {
   return traceNode.displayString;
 }
 
+function succeeded(traceNode) {
+  return traceNode.succeeded;
+}
+
+function onlyChild(traceNode) {
+  common.assert(traceNode.children.length === 1, 'expected only 1 child');
+  return traceNode.children[0];
+}
+
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
@@ -75,11 +84,11 @@ test('basic tracing', function(t) {
 });
 
 test('space skipping', function(t) {
-  var trace = ohm.grammar('G { Start = "a"  }').trace('a');
+  var g = ohm.grammar('G { Start = "a"  }');
+  var trace = g.trace('a');
+
   t.deepEqual(trace.children.map(displayString), ['spaces', '"a"', 'spaces', 'end']);
-  t.deepEqual(trace.children[1].children.map(displayString),
-              ['spaces'],
-              'primitive node in syntactic rule has spaces child');
+  t.equal(trace.children[1].children.length, 0, 'primitive node has no children');
 
   trace = ohm.grammar('G { start = "a" }').trace('a');
   t.deepEqual(trace.children.map(displayString), ['"a"', 'end'], 'no spaces in lexical context');
@@ -89,12 +98,7 @@ test('space skipping', function(t) {
   t.deepEqual(trace.children.map(displayString), ['spaces', 'foo', 'spaces', 'end']);
   var fooAppl = trace.children[1];
   t.deepEqual(fooAppl.children.map(displayString),
-              ['spaces', '"a" "b"'],
-              'spaces occurs at beginning of a rule application');
-  t.deepEqual(fooAppl.children[1].children.map(displayString),
-              ['"a"', '"b"'],
-              'no spaces between childen of a lexical rule');
-
+              ['"a" "b"'], 'no spaces under lexical rule appl');
   t.end();
 });
 
@@ -132,53 +136,52 @@ test('tracing with parameterized rules', function(t) {
   t.equal(many.cstNode.ctorName, '_iter');
   t.equal(many.cstNode.numChildren(), 5);
 
-  var childrenSucceeded = many.children.map(function(c) {
-    return c.succeeded;
-  });
-  t.deepEqual(childrenSucceeded, [true, true, true, true, true, false]);
+  t.deepEqual(many.children.map(succeeded), [true, true, true, true, true, false]);
 
   var cstChildrenName = many.cstNode.children.map(function(c) {
     return c.ctorName === 'letter';
   });
   t.deepEqual(cstChildrenName, [true, true, true, true, true]);
+
   t.end();
 });
 
 test('tracing with memoization', function(t) {
-  var g = ohm.grammar('G { start = letter ~letter | letter* }');
-  var trace = g.trace('aB');
+  var g = ohm.grammar('G { Start = letter ~letter | letter* }');
+  var trace = g.trace(' aB');
+
+  t.deepEqual(trace.children.map(displayString),
+              ['letter ~letter | letter*', 'spaces', 'end']);
 
   var alt = trace.children[0];
+  t.deepEqual(alt.children.map(displayString), ['letter ~letter', 'letter*']);
   t.equal(alt.children[0].succeeded, false);
   t.equal(alt.children[1].succeeded, true);
-  t.equal(alt.children.length, 2);
   t.equal(alt.cstNode.isIteration(), true);
 
-  var many = alt.children[1];
-  t.equal(many.children.length, 3);
-  t.equal(many.cstNode.isIteration(), true);
+  var star = alt.children[1];
+  t.equal(star.cstNode.isIteration(), true);
+  t.deepEqual(star.children.map(displayString),
+              ['spaces', 'letter', 'spaces', 'letter', 'spaces', 'letter']);
 
-  // The 'letter*' should succeed, but its first two children should be
+  // The 'letter*' should succeed, and its 'letter' children should be
   // memoized from the other size of the Alt (letter ~letter). Ensure
   // the the trace is still recorded properly.
-  t.equal(many.children[0].succeeded, true);
-  t.equal(many.children[0].children.length, 1);
-  t.equal(many.children[0].cstNode.ctorName, 'letter');
-  t.equal(many.children[0].cstNode.numChildren(), 1);
+  t.deepEqual(star.children.map(succeeded), [true, true, true, true, true, false]);
 
-  t.equal(descendant(many, 0, 0).children.length, 1);
-  t.equal(descendant(many, 0, 0, 0).children.length, 1);
-  t.equal(descendant(many, 0, 0, 0, 0).displayString, 'Unicode {Ll} character');
+  t.equal(star.children[1].cstNode.ctorName, 'letter');
+  t.equal(star.children[1].cstNode.numChildren(), 1);
 
-  t.equal(many.children[1].succeeded, true);
-  t.equal(many.children[1].children.length, 1);
-  t.equal(many.children[1].cstNode.ctorName, 'letter');
-  t.equal(many.children[1].cstNode.numChildren(), 1);
-  t.equal(descendant(many, 1, 0).children.length, 2);
-  t.equal(descendant(many, 1, 0, 0).children.length, 1);
-  t.equal(descendant(many, 1, 0, 0, 0).displayString, 'Unicode {Ll} character');
-  t.equal(descendant(many, 1, 0, 1).children.length, 1);
-  t.equal(descendant(many, 1, 0, 1, 0).displayString, 'Unicode {Lu} character');
+  t.deepEqual(descendant(star, 1).children.map(displayString),
+              ['lower\n    | upper\n    | unicodeLtmo']);
+  t.deepEqual(descendant(star, 1, 0).children.map(displayString), ['lower']);
+  t.deepEqual(descendant(star, 1, 0, 0).children.map(displayString), ['Unicode {Ll} character']);
+
+  t.deepEqual(descendant(star, 3).children.map(displayString),
+              ['lower\n    | upper\n    | unicodeLtmo']);
+  t.deepEqual(descendant(star, 3, 0).children.map(displayString), ['lower', 'upper']);
+  t.deepEqual(descendant(star, 3, 0, 0).children.map(displayString), ['Unicode {Ll} character']);
+
   t.end();
 });
 
@@ -225,8 +228,13 @@ test('tracing with left recursion', function(t) {
   // left-recursive result. There should be one entry for each iteration of
   // the loop.
   t.equal(children.length, 4);
-  t.equal(children[0].replacedBy, children[1]);
-  t.equal(children[1].replacedBy, children[2]);
+
+  // The first three nodes should have the same expr and pos.
+  t.equal(children[1].expr, children[0].expr);
+  t.equal(children[2].expr, children[0].expr);
+  t.equal(children[1].pos, children[0].pos);
+  t.equal(children[1].pos, children[0].pos);
+
   t.equal(children[3].interval.contents, '', 'last entry is <end>');
 
   var choice = children[2];
@@ -251,6 +259,42 @@ test('tracing with left recursion', function(t) {
   trace = g.trace('a');
   t.ok(trace.isLeftRecursive);
   t.equal(trace.children.length, 2);
+
+  t.end();
+});
+
+test('tracing with left recursion and leading space', function(t) {
+  var g = testUtil.makeGrammar([
+    'G {',
+    '  Foo = Foo "x"  -- x',
+    '      | Foo "y" -- y',
+    '      | "z"',
+    '}'
+  ]);
+  var trace = g.trace(' zy');
+  t.equal(trace.isLeftRecursive, true);
+
+  // The first child is the seed, second child is its enlarged replacement.
+  t.equal(trace.children[0].expr, trace.children[1].expr);
+  t.equal(trace.children[0].pos, trace.children[1].pos);
+  t.equal(trace.children[0].succeeded, true);
+  t.equal(trace.children[1].succeeded, true);
+
+  var alt = trace.children[1];
+
+  t.deepEqual(alt.children.map(displayString), ['spaces', 'Foo_x', 'spaces', 'Foo_y']);
+  t.deepEqual(alt.children.map(succeeded), [true, false, true, true]);
+
+  var seq = onlyChild(alt.children[3]);
+  t.deepEqual(seq.children.map(displayString), ['spaces', 'Foo', 'spaces', '"y"']);
+
+  var applyFoo = seq.children[1];
+
+  alt = onlyChild(applyFoo);
+  t.deepEqual(alt.children.map(displayString),
+              ['spaces', 'Foo_x', 'spaces', 'Foo_y', 'spaces', '"z"']);
+  t.deepEqual(alt.children.map(succeeded), [true, false, true, false, true, true]);
+  t.equal(alt.children[5].children.length, 0);
 
   t.end();
 });

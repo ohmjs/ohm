@@ -40,8 +40,8 @@ var hasOwnProp = Object.prototype.hasOwnProperty;
 pexprs.PExpr.prototype.eval = common.abstract;  // function(state) { ... }
 
 pexprs.any.eval = function(state) {
-  var origPos = state.skipSpacesIfInSyntacticContext();
   var inputStream = state.inputStream;
+  var origPos = inputStream.pos;
   var value = inputStream.next();
   if (value === common.fail) {
     state.processFailure(origPos, this);
@@ -54,8 +54,8 @@ pexprs.any.eval = function(state) {
 };
 
 pexprs.end.eval = function(state) {
-  var origPos = state.skipSpacesIfInSyntacticContext();
   var inputStream = state.inputStream;
+  var origPos = inputStream.pos;
   if (inputStream.atEnd()) {
     var interval = inputStream.interval(inputStream.pos);
     state.bindings.push(new TerminalNode(state.grammar, undefined, interval));
@@ -67,8 +67,8 @@ pexprs.end.eval = function(state) {
 };
 
 pexprs.Prim.prototype.eval = function(state) {
-  var origPos = state.skipSpacesIfInSyntacticContext();
   var inputStream = state.inputStream;
+  var origPos = inputStream.pos;
   if (this.match(inputStream) === common.fail) {
     state.processFailure(origPos, this);
     return false;
@@ -87,8 +87,8 @@ pexprs.Prim.prototype.match = function(inputStream) {
 };
 
 pexprs.Range.prototype.eval = function(state) {
-  var origPos = state.skipSpacesIfInSyntacticContext();
   var inputStream = state.inputStream;
+  var origPos = inputStream.pos;
   var obj = inputStream.next();
   if (typeof obj === typeof this.from && this.from <= obj && obj <= this.to) {
     var interval = inputStream.interval(origPos);
@@ -272,11 +272,6 @@ pexprs.Apply.prototype.eval = function(state) {
   var actuals = caller ? caller.args : [];
   var app = this.substituteParams(actuals);
 
-  // Skip whitespace at the application site, if the rule that's being applied is syntactic
-  if (app !== state.applySpaces && (app.isSyntactic() || state.inSyntacticContext())) {
-    state.skipSpaces();
-  }
-
   var posInfo = state.getCurrentPosInfo();
   if (posInfo.isActive(app)) {
     // This rule is already active at this position, i.e., it is left-recursive.
@@ -285,9 +280,11 @@ pexprs.Apply.prototype.eval = function(state) {
 
   var memoKey = app.toMemoKey();
   var memoRec = posInfo.memo[memoKey];
+  var isTopLevelApplication =
+      !caller && this !== state.applySpaces && this !== pexprs.end;
   return memoRec && posInfo.shouldUseMemoizedResult(memoRec) ?
       state.useMemoizedResult(memoRec) :
-      app.reallyEval(state, !caller);
+      app.reallyEval(state, isTopLevelApplication);
 };
 
 pexprs.Apply.prototype.handleCycle = function(state) {
@@ -302,8 +299,7 @@ pexprs.Apply.prototype.handleCycle = function(state) {
     memoRec.updateInvolvedApplicationMemoKeys();
   } else if (!memoRec) {
     // New left recursion detected! Memoize a failure to try to get a seed parse.
-    memoRec = posInfo.memo[memoKey] =
-        {pos: -1, value: false};
+    memoRec = posInfo.memo[memoKey] = {pos: -1, value: false};
     posInfo.startLeftRecursion(this, memoRec);
   }
   return state.useMemoizedResult(memoRec);
@@ -357,7 +353,7 @@ pexprs.Apply.prototype.reallyEval = function(state, isTopLevelApplication) {
   // is used later.
   if (state.isTracing() && origPosInfo.memo[memoKey]) {
     var entry = state.getTraceEntry(origPos, this, value);
-    entry.setLeftRecursive(isHeadOfLeftRecursion);
+    entry.isLeftRecursive = isHeadOfLeftRecursion;
     origPosInfo.memo[memoKey].traceEntry = entry;
   }
 
@@ -412,7 +408,10 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
     lrMemoRec.failuresAtRightmostPosition = state.cloneRightmostFailures();
 
     if (state.isTracing()) {
-      var children = state.trace[state.trace.length - 1].children.slice();
+      // Before evaluating the body again, add a trace node for this application to the memo entry.
+      // Its only child is the trace node from `newValue`, which will always be the last element
+      // in `state.trace`.
+      var children = state.trace.slice(-1);
       lrMemoRec.traceEntry = new Trace(state.inputStream, origPos, this, newValue, children);
     }
     inputStream.pos = origPos;
@@ -441,8 +440,8 @@ pexprs.Apply.prototype.entireInputWasConsumed = function(state) {
 };
 
 pexprs.UnicodeChar.prototype.eval = function(state) {
-  var origPos = state.skipSpacesIfInSyntacticContext();
   var inputStream = state.inputStream;
+  var origPos = inputStream.pos;
   var value = inputStream.next();
   if (value === common.fail || !this.pattern.test(value)) {
     state.processFailure(origPos, this);

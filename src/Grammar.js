@@ -133,7 +133,11 @@ Grammar.prototype = {
     }
     var state = this._match([obj], startRule, {trace: true});
 
-    var rootTrace = state.trace[0];
+    // The trace node for the start rule is always the last entry. If it is a syntactic rule,
+    // the first entry is for an application of 'spaces'.
+    // TODO(pdubroy): Clean this up by introducing a special `Match<startAppl>` rule, which will
+    // ensure that there is always a single root trace node.
+    var rootTrace = state.trace[state.trace.length - 1];
     rootTrace.state = state;
     rootTrace.result = MatchResult.newFor(state);
     return rootTrace;

@@ -196,10 +196,6 @@
 
   // A blackhole node is hidden and makes all its descendents hidden too.
   function isBlackhole(traceNode) {
-    if (traceNode.replacedBy) {
-      return true;
-    }
-
     var desc = traceNode.displayString;
     if (desc) {
       return desc === 'space' || desc === 'empty';
@@ -438,7 +434,7 @@
 
         // If the node or its descendants successfully consumed input, create a span to wrap
         // all the input that was consumed.
-        if (node.succeeded && !node.replacedBy) {
+        if (node.succeeded) {
           var contents = isLeaf ? node.interval.contents : '';
           var inputContainer = inputStack[inputStack.length - 1];
           childInput = inputContainer.appendChild(createElement('span.input', contents));

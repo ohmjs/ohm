@@ -20,17 +20,6 @@ var SYMBOL_FOR_HORIZONTAL_TABULATION = '\u2409';
 var SYMBOL_FOR_LINE_FEED = '\u240A';
 var SYMBOL_FOR_CARRIAGE_RETURN = '\u240D';
 
-function linkLeftRecursiveChildren(children) {
-  for (var i = 0; i < children.length; ++i) {
-    var child = children[i];
-    var nextChild = children[i + 1];
-
-    if (nextChild && child.expr === nextChild.expr) {
-      child.replacedBy = nextChild;
-    }
-  }
-}
-
 function spaces(n) {
   return common.repeat(' ', n).join('');
 }
@@ -89,15 +78,6 @@ Trace.prototype.cloneWithExpr = function(expr) {
   return ans;
 };
 
-// Set the value of `isLeftRecursive` for this node.
-// If true, each child of this node represents one iteration of the "growing the seed" loop.
-Trace.prototype.setLeftRecursive = function(leftRecursive) {
-  this.isLeftRecursive = leftRecursive;
-  if (leftRecursive) {
-    linkLeftRecursiveChildren(this.children);
-  }
-};
-
 // Recursively traverse this trace node and all its descendents, calling a visitor function
 // for each node that is visited. If `vistorObjOrFn` is an object, then its 'enter' property
 // is a function to call before visiting the children of a node, and its 'exit' property is
@@ -120,9 +100,13 @@ Trace.prototype.walk = function(visitorObjOrFn, optThisArg) {
       }
     }
     if (recurse) {
-      node.children.forEach(function(c) {
-        if (c && ('walk' in c)) {
-          _walk(c, node, depth + 1);
+      node.children.forEach(function(child, i) {
+        var nextChild = node.children[i + 1];
+        if (nextChild && nextChild.expr === child.expr && nextChild.pos === child.pos) {
+          // Skip this child -- it is an intermediate left-recursive result.
+          common.assert(node.isLeftRecursive);
+        } else {
+          _walk(child, node, depth + 1);
         }
       });
       if (visitor.exit) {

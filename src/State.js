@@ -106,6 +106,16 @@ State.prototype = {
         this.inputStream.pos;
   },
 
+  maybeSkipSpacesBefore: function(expr) {
+    if (expr instanceof pexprs.Apply && expr.isSyntactic()) {
+      return this.skipSpaces();
+    } else if (expr.allowsSkippingPrecedingSpace() && expr !== this.applySpaces) {
+      return this.skipSpacesIfInSyntacticContext();
+    } else {
+      return this.inputStream.pos;
+    }
+  },
+
   truncateBindings: function(newLength) {
     // TODO: is this really faster than setting the `length` property?
     while (this.bindings.length > newLength) {
@@ -247,13 +257,14 @@ State.prototype = {
   // have increased. On failure, `bindings` and position will be unchanged.
   eval: function(expr) {
     var inputStream = this.inputStream;
-    var origPos = inputStream.pos;
     var origNumBindings = this.bindings.length;
 
     if (this.recordingMode === RM_RIGHTMOST_FAILURES) {
       var origFailures = this.rightmostFailures;
       this.rightmostFailures = undefined;
     }
+
+    var origPos = this.maybeSkipSpacesBefore(expr);
 
     if (this.isTracing()) {
       var origTrace = this.trace;
