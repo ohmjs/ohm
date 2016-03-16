@@ -85,20 +85,34 @@ Grammar.prototype = {
     return this === Grammar.ProtoBuiltInRules || this === Grammar.BuiltInRules;
   },
 
-  match: function(obj, optStartRule) {
-    var startRule = optStartRule || this.defaultStartRule;
-    if (!startRule) {
+  match: function(obj, optStartApplication) {
+    var startApplication = optStartApplication || this.defaultStartRule;
+    if (!startApplication) {
       throw new Error('Missing start rule argument -- the grammar has no default start rule.');
     }
-    var state = this._match([obj], startRule, {});
+    var state = this._match([obj], startApplication, {});
     return MatchResult.newFor(state);
   },
 
-  _match: function(values, startRule, opts) {
+  _match: function(values, startApplication, opts) {
+    var expr;
+    if (startApplication.indexOf('<') === -1) { // do not run in circles
+      // simple application
+      expr = new pexprs.Apply(startApplication);
+    } else {
+      // parameterized application
+      var ohm = require('./main'); // 'late require' to have access to ohm.ohmGrammar
+      var cst = ohm.ohmGrammar.match(startApplication, 'Base_application');
+      expr = ohm._buildGrammar(cst, ohm.createNamespace());
+    }
+
+    var startRule = expr.ruleName;
     if (!(startRule in this.ruleBodies)) {
       throw errors.undeclaredRule(startRule, this.name);
+    } else if (this.ruleFormals[startRule].length !== expr.args.length) {
+      throw errors.wrongNumberOfParameters(startRule,
+        this.ruleFormals[startRule].length, expr.args.length);
     }
-    var expr = new pexprs.Apply(startRule);
     var state = new State(this, expr.newInputStreamFor(values, this), startRule, opts);
     state.eval(expr);
     return state;

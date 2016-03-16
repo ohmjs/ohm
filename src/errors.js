@@ -100,7 +100,7 @@ function wrongNumberOfParameters(ruleName, expected, actual, body) {
   return createError(
       'Wrong number of parameters for rule ' + ruleName +
           ' (expected ' + expected + ', got ' + actual + ')',
-      body.definitionInterval);
+      body && body.definitionInterval);
 }
 
 // Wrong number of arguments
