@@ -67,7 +67,7 @@ function load(url) {
 // The grammar will be assigned into `namespace` under the name of the grammar
 // as specified in the source.
 function buildGrammar(match, namespace, optOhmGrammarForTesting) {
-  var builder;
+  var builder = new Builder();
   var decl;
   var currentRuleName;
   var currentRuleFormals;
@@ -77,7 +77,6 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
   // A visitor that produces a Grammar instance from the CST.
   var helpers = metaGrammar.semantics().addOperation('visit', {
     Grammar: function(n, s, open, rs, close) {
-      builder = new Builder();
       var grammarName = n.visit();
       decl = builder.newGrammar(grammarName, namespace);
       s.visit();
@@ -395,3 +394,4 @@ Semantics.initBuiltInSemantics(Grammar.BuiltInRules);
 Semantics.initPrototypeParser(operationsAndAttributesGrammar);  // requires BuiltInSemantics
 
 module.exports.ohmGrammar = ohmGrammar = require('../dist/ohm-grammar');
+Grammar.initStartRuleParser(ohmGrammar, buildGrammar);

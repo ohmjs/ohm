@@ -89,6 +89,26 @@ test('simple examples', function(t) {
   t.end();
 });
 
+test('start matching from parameterized rule', function(t) {
+  var g = testUtil.makeGrammar(
+      'G {\n' +
+      '  App<arg> = arg\n' +
+      '  Simple = App<"x">\n' +
+      '  z = "z"\n' +
+      '}');
+  t.throws(
+    function() { g.match('x'); },
+    /Wrong number of parameters for rule App \(expected 1, got 0\)/,
+    'parameterized default start rule does not work');
+  t.throws(
+    function() { g.match('y', 'App'); },
+    /Wrong number of parameters for rule App \(expected 1, got 0\)/,
+    'parameterized rule does not work as simple rule');
+  t.ok(g.match('y', 'App<"y">').succeeded(), 'matching with primitive parameter');
+  t.ok(g.match('z', 'App<"z">').succeeded(), 'matching with rule parameter');
+  t.end();
+});
+
 test('inline rule declarations', function(t) {
   var g = testUtil.makeGrammar(
       'G {\n' +
