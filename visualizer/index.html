@@ -26,6 +26,27 @@
       /* Must be less than the .splitter z-index, but greater than everything in codemirror.css. */
       z-index: 9;
     }
+    #zoom {
+      background-color: white;
+      outline: none;
+      border: 0;
+      padding: 3px;
+      margin-top: 5px;
+      margin-right: 10px;
+      margin-left: 10px;
+      left: 20px;
+      cursor: pointer;
+      font-size: 18px;
+      color: black;
+      text-align: center;
+      flex-direction: column;
+    }
+    #zoom:hover {
+      font-weight: bold;
+    }
+    #visualizerBody {
+      flex-direction: column;
+    }
     #expandedInputWrapper {
       border-bottom: 1px solid #ddd;
     }
@@ -51,6 +72,12 @@
       font-size: 9px;
       overflow: hidden;
       white-space: nowrap;
+    }
+    .pexpr.zoomBorder {
+      border: 2px solid blue;
+    }
+    button.zoom {
+      margin-left: 4pt;
     }
     .pexpr.seq.failed {
       flex-grow: 0;
@@ -180,7 +207,6 @@
     #bottomSection {
       display: flex;
       flex: 1;
-      flex-direction: column;
       position: relative;
     }
 
@@ -354,10 +380,13 @@
   </div>
   <div id="mainSplitter" class="splitter"></div>
   <div id="bottomSection">
-    <div id="expandedInputWrapper" class="hiddenDuringLoading">
-      <div id="expandedInput"></div>
+    <button id="zoom" type="button" hidden></button>
+    <div id="visualizerBody">
+       <div id="expandedInputWrapper" class="hiddenDuringLoading">
+        <div id="expandedInput"></div>
+      </div>
+     <div id="parseResults"></div>
     </div>
-    <div id="parseResults"></div>
     <div class="overlay"></div>
   </div>
   <div id="dragOverlay"></div>

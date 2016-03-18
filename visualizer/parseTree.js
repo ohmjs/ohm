@@ -14,7 +14,9 @@
 
   var UnicodeChars = {
     HORIZONTAL_ELLIPSIS: '\u2026',
-    WHITE_BULLET: '\u25E6'
+    WHITE_BULLET: '\u25E6',
+    BACK: '\u21BA',
+    ZOOM: '\u2315'
   };
 
   // DOM Helpers
@@ -235,11 +237,61 @@
            expr instanceof ohm.pexprs.UnicodeChar;
   }
 
-  function createTraceElement(ui, grammar, traceNode, parent, input) {
+  function couldZoom(currentRootTrace, traceNode) {
+    return !(currentRootTrace === traceNode ||
+            !(traceNode.expr instanceof ohm.pexprs.Apply));
+  }
+
+  function zoomIn(ui, grammar, rootTrace, showFailures, traceNode) {
+    var zoomNode = $('#zoom');
+    zoomNode.textContent = UnicodeChars.BACK;
+    zoomNode._trace = traceNode;
+    zoomNode.hidden = false;
+
+    zoomNode.addEventListener('click', function(e) {
+      zoomNode.hidden = true;
+      zoomNode._trace = undefined;
+      /* eslint-disable no-undef */
+      refreshParseTree(ui, grammar, rootTrace, showFailures);
+      /* eslint-enable no-undef */
+      e.stopPropagation();
+      e.preventDefault();
+    });
+    zoomNode.addEventListener('mouseover', function(e) {
+      var zoomState = {zoomTrace: zoomNode._trace, previewOnly: true};
+      /* eslint-disable no-undef */
+      refreshParseTree(ui, grammar, rootTrace, showFailures, zoomState);
+      /* eslint-enable no-undef */
+      e.stopPropagation();
+      e.preventDefault();
+    });
+    zoomNode.addEventListener('mouseout', function(e) {
+      var zoomState = zoomNode._trace && {zoomTrace: zoomNode._trace};
+      /* eslint-disable no-undef */
+      refreshParseTree(ui, grammar, rootTrace, showFailures, zoomState);
+      /* eslint-enable no-undef */
+      e.stopPropagation();
+      e.preventDefault();
+    });
+
+    /* eslint-disable no-undef */
+    refreshParseTree(ui, grammar, rootTrace, showFailures, {zoomTrace: traceNode});
+    /* eslint-enable no-undef */
+  }
+
+  function createTraceElement(ui, grammar, rootTrace, traceNode, parent, input,
+    showFailures, optZoomState) {
     var wrapper = parent.appendChild(createElement('.pexpr'));
     var pexpr = traceNode.expr;
     wrapper.classList.add(pexpr.constructor.name.toLowerCase());
     wrapper.classList.toggle('failed', !traceNode.succeeded);
+
+    if (optZoomState && optZoomState.zoomTrace === traceNode && optZoomState.previewOnly) {
+      if (input) {
+        input.classList.add('highlight');
+      }
+      wrapper.classList.add('zoomBorder');
+    }
 
     wrapper.addEventListener('click', function(e) {
       if (e.altKey && !(e.shiftKey || e.metaKey)) {
@@ -277,7 +329,7 @@
       }
       e.stopPropagation();
     });
-    wrapper.addEventListener('mouseout', function(e) {
+    function clearMarks() {
       if (input) {
         input.classList.remove('highlight');
       }
@@ -286,7 +338,8 @@
       defMark = cmUtil.clearMark(defMark);
       ui.grammarEditor.getWrapperElement().classList.remove('highlighting');
       ui.inputEditor.getWrapperElement().classList.remove('highlighting');
-    });
+    }
+    wrapper.addEventListener('mouseout', clearMarks);
     wrapper._input = input;
 
     var text = pexpr.ruleName === 'spaces' ? UnicodeChars.WHITE_BULLET : traceNode.displayString;
@@ -301,6 +354,30 @@
       prim: isPrimitive(traceNode.expr),
       spaces: pexpr.ruleName === 'spaces'
     });
+
+    var zoomButton = label.appendChild(createElement('button.zoom', UnicodeChars.ZOOM + ' zoom'));
+    zoomButton.hidden = true;
+    zoomButton.addEventListener('click', function(e) {
+      var currentRootTrace = optZoomState && optZoomState.zoomTrace || rootTrace;
+      if (couldZoom(currentRootTrace, traceNode)) {
+        zoomIn(ui, grammar, rootTrace, showFailures, traceNode);
+        clearMarks();
+      }
+      e.stopPropagation();
+      e.preventDefault();
+    });
+
+    label.addEventListener('mouseover', function(e) {
+      var currentRootTrace = optZoomState && optZoomState.zoomTrace || rootTrace;
+      if (couldZoom(currentRootTrace, traceNode)) {
+        zoomButton.hidden = false;
+      }
+    });
+
+    label.addEventListener('mouseout', function(e) {
+      zoomButton.hidden = true;
+    });
+
     return wrapper;
   }
 
@@ -327,59 +404,69 @@
     }
   });
 
-  return function refreshParseTree(ui, grammar, trace, showFailures) {
-    var inputStack = [$('#expandedInput')];
-    var containerStack = [$('#parseResults')];
+  return function refreshParseTree(ui, grammar, rootTrace, showFailures, optZoomState) {
+      $('#expandedInput').innerHTML = '';
+      $('#parseResults').innerHTML = '';
 
-    trace.walk({
-      enter: function(node, parent, depth) {
-        // Don't recurse into nodes that didn't succeed unless "Show failures" is enabled.
-        if (!showFailures && !node.succeeded) {
-          return node.SKIP;
-        }
-        var childInput;
-        var isWhitespace = node.expr.ruleName === 'spaces';
-        var isLeaf = isPrimitive(node.expr) ||
-                     isBlackhole(node) ||
-                     isWhitespace ||
-                     node.children.length === 0;
-
-        // Don't bother showing whitespace nodes that didn't consume anything.
-        if (isWhitespace && node.interval.contents.length === 0) {
-          return node.SKIP;
-        }
-
-        // If the node or its descendants successfully consumed input, create a span to wrap
-        // all the input that was consumed.
-        if (node.succeeded && !node.replacedBy) {
-          var contents = isLeaf ? node.interval.contents : '';
-          var inputContainer = inputStack[inputStack.length - 1];
-          childInput = inputContainer.appendChild(createElement('span.input', contents));
-
-          // Represent any non-empty run of whitespace as a single dot.
-          if (isWhitespace && contents.length > 0) {
-            childInput.innerHTML = '&#xb7;';  // Unicode Character 'MIDDLE DOT'
-            childInput.classList.add('whitespace');
-          }
-        }
-        var container = containerStack[containerStack.length - 1];
-        var el = createTraceElement(ui, grammar, node, container, childInput);
-        toggleClasses(el, {
-          failed: !node.succeeded,
-          hidden: !shouldNodeBeLabeled(node),
-          whitespace: isWhitespace
-        });
-        if (isLeaf) {
-          return node.SKIP;
-        }
-        inputStack.push(childInput);
-        containerStack.push(el.appendChild(createElement('.children')));
-      },
-      exit: function(node, parent, depth) {
-        containerStack.pop();
-        inputStack.pop();
+      var trace;
+      if (optZoomState && !optZoomState.previewOnly) {
+        trace = optZoomState.zoomTrace;
+      } else {
+        trace = rootTrace;
       }
-    });
-    initializeWidths();
-  };
+
+      var inputStack = [$('#expandedInput')];
+      var containerStack = [$('#parseResults')];
+      trace.walk({
+        enter: function(node, parent, depth) {
+          // Don't recurse into nodes that didn't succeed unless "Show failures" is enabled.
+          if (!showFailures && !node.succeeded) {
+            return node.SKIP;
+          }
+          var childInput;
+          var isWhitespace = node.expr.ruleName === 'spaces';
+          var isLeaf = isPrimitive(node.expr) ||
+                       isBlackhole(node) ||
+                       isWhitespace ||
+                       node.children.length === 0;
+
+          // Don't bother showing whitespace nodes that didn't consume anything.
+          if (isWhitespace && node.interval.contents.length === 0) {
+            return node.SKIP;
+          }
+
+          // If the node or its descendants successfully consumed input, create a span to wrap
+          // all the input that was consumed.
+          if (node.succeeded && !node.replacedBy) {
+            var contents = isLeaf ? node.interval.contents : '';
+            var inputContainer = inputStack[inputStack.length - 1];
+            childInput = inputContainer.appendChild(createElement('span.input', contents));
+
+            // Represent any non-empty run of whitespace as a single dot.
+            if (isWhitespace && contents.length > 0) {
+              childInput.innerHTML = '&#xb7;';  // Unicode Character 'MIDDLE DOT'
+              childInput.classList.add('whitespace');
+            }
+          }
+          var container = containerStack[containerStack.length - 1];
+          var el = createTraceElement(ui, grammar, rootTrace, node, container,
+            childInput, showFailures, optZoomState);
+          toggleClasses(el, {
+            failed: !node.succeeded,
+            hidden: !shouldNodeBeLabeled(node),
+            whitespace: isWhitespace
+          });
+          if (isLeaf) {
+            return node.SKIP;
+          }
+          inputStack.push(childInput);
+          containerStack.push(el.appendChild(createElement('.children')));
+        },
+        exit: function(node, parent, depth) {
+          containerStack.pop();
+          inputStack.pop();
+        }
+      });
+      initializeWidths();
+    };
 });

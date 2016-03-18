@@ -166,11 +166,7 @@ function parseGrammar(source) {
     }
 
     if (grammar && grammar.defaultStartRule) {
-      // TODO: Move this stuff to parseTree.js. We probably want a proper event system,
-      // with events like 'beforeGrammarParse' and 'afterGrammarParse'.
       hideBottomOverlay();
-      $('#expandedInput').innerHTML = '';
-      $('#parseResults').innerHTML = '';
 
       var trace = grammar.trace(inputEditor.getValue());
       if (trace.result.failed()) {
@@ -179,6 +175,7 @@ function parseGrammar(source) {
         interval.endIdx += 1;
         setError('input', inputEditor, interval, 'Expected ' + trace.result.getExpectedText());
       }
+
       refreshParseTree(ui, grammar, trace, options.showFailures);
     }
   }
