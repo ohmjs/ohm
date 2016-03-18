@@ -37,6 +37,15 @@ function Grammar(
   this.constructors = this.ctors = this.createConstructors();
 }
 
+var ohmGrammar;
+var buildGrammar;
+
+// This method is called from main.js once Ohm has loaded.
+Grammar.initStartRuleParser = function(grammar, builderFn) {
+  ohmGrammar = grammar;
+  buildGrammar = builderFn;
+};
+
 Grammar.prototype = {
   construct: function(ruleName, children) {
     var body = this.ruleBodies[ruleName];
@@ -101,9 +110,8 @@ Grammar.prototype = {
       expr = new pexprs.Apply(startApplication);
     } else {
       // parameterized application
-      var ohm = require('./main'); // 'late require' to have access to ohm.ohmGrammar
-      var cst = ohm.ohmGrammar.match(startApplication, 'Base_application');
-      expr = ohm._buildGrammar(cst, ohm.createNamespace());
+      var cst = ohmGrammar.match(startApplication, 'Base_application');
+      expr = buildGrammar(cst, {});
     }
 
     var startRule = expr.ruleName;
