@@ -281,6 +281,7 @@
 
   function createTraceElement(ui, grammar, rootTrace, traceNode, parent, input,
     showFailures, optZoomState) {
+
     var wrapper = parent.appendChild(createElement('.pexpr'));
     var pexpr = traceNode.expr;
     wrapper.classList.add(pexpr.constructor.name.toLowerCase());
@@ -405,68 +406,68 @@
   });
 
   return function refreshParseTree(ui, grammar, rootTrace, showFailures, optZoomState) {
-      $('#expandedInput').innerHTML = '';
-      $('#parseResults').innerHTML = '';
+    $('#expandedInput').innerHTML = '';
+    $('#parseResults').innerHTML = '';
 
-      var trace;
-      if (optZoomState && !optZoomState.previewOnly) {
-        trace = optZoomState.zoomTrace;
-      } else {
-        trace = rootTrace;
-      }
+    var trace;
+    if (optZoomState && !optZoomState.previewOnly) {
+      trace = optZoomState.zoomTrace;
+    } else {
+      trace = rootTrace;
+    }
 
-      var inputStack = [$('#expandedInput')];
-      var containerStack = [$('#parseResults')];
-      trace.walk({
-        enter: function(node, parent, depth) {
-          // Don't recurse into nodes that didn't succeed unless "Show failures" is enabled.
-          if (!showFailures && !node.succeeded) {
-            return node.SKIP;
-          }
-          var childInput;
-          var isWhitespace = node.expr.ruleName === 'spaces';
-          var isLeaf = isPrimitive(node.expr) ||
-                       isBlackhole(node) ||
-                       isWhitespace ||
-                       node.children.length === 0;
-
-          // Don't bother showing whitespace nodes that didn't consume anything.
-          if (isWhitespace && node.interval.contents.length === 0) {
-            return node.SKIP;
-          }
-
-          // If the node or its descendants successfully consumed input, create a span to wrap
-          // all the input that was consumed.
-          if (node.succeeded && !node.replacedBy) {
-            var contents = isLeaf ? node.interval.contents : '';
-            var inputContainer = inputStack[inputStack.length - 1];
-            childInput = inputContainer.appendChild(createElement('span.input', contents));
-
-            // Represent any non-empty run of whitespace as a single dot.
-            if (isWhitespace && contents.length > 0) {
-              childInput.innerHTML = '&#xb7;';  // Unicode Character 'MIDDLE DOT'
-              childInput.classList.add('whitespace');
-            }
-          }
-          var container = containerStack[containerStack.length - 1];
-          var el = createTraceElement(ui, grammar, rootTrace, node, container,
-            childInput, showFailures, optZoomState);
-          toggleClasses(el, {
-            failed: !node.succeeded,
-            hidden: !shouldNodeBeLabeled(node),
-            whitespace: isWhitespace
-          });
-          if (isLeaf) {
-            return node.SKIP;
-          }
-          inputStack.push(childInput);
-          containerStack.push(el.appendChild(createElement('.children')));
-        },
-        exit: function(node, parent, depth) {
-          containerStack.pop();
-          inputStack.pop();
+    var inputStack = [$('#expandedInput')];
+    var containerStack = [$('#parseResults')];
+    trace.walk({
+      enter: function(node, parent, depth) {
+        // Don't recurse into nodes that didn't succeed unless "Show failures" is enabled.
+        if (!showFailures && !node.succeeded) {
+          return node.SKIP;
         }
-      });
-      initializeWidths();
-    };
+        var childInput;
+        var isWhitespace = node.expr.ruleName === 'spaces';
+        var isLeaf = isPrimitive(node.expr) ||
+                     isBlackhole(node) ||
+                     isWhitespace ||
+                     node.children.length === 0;
+
+        // Don't bother showing whitespace nodes that didn't consume anything.
+        if (isWhitespace && node.interval.contents.length === 0) {
+          return node.SKIP;
+        }
+
+        // If the node or its descendants successfully consumed input, create a span to wrap
+        // all the input that was consumed.
+        if (node.succeeded && !node.replacedBy) {
+          var contents = isLeaf ? node.interval.contents : '';
+          var inputContainer = inputStack[inputStack.length - 1];
+          childInput = inputContainer.appendChild(createElement('span.input', contents));
+
+          // Represent any non-empty run of whitespace as a single dot.
+          if (isWhitespace && contents.length > 0) {
+            childInput.innerHTML = '&#xb7;';  // Unicode Character 'MIDDLE DOT'
+            childInput.classList.add('whitespace');
+          }
+        }
+        var container = containerStack[containerStack.length - 1];
+        var el = createTraceElement(ui, grammar, rootTrace, node, container, childInput,
+          showFailures, optZoomState);
+        toggleClasses(el, {
+          failed: !node.succeeded,
+          hidden: !shouldNodeBeLabeled(node),
+          whitespace: isWhitespace
+        });
+        if (isLeaf) {
+          return node.SKIP;
+        }
+        inputStack.push(childInput);
+        containerStack.push(el.appendChild(createElement('.children')));
+      },
+      exit: function(node, parent, depth) {
+        containerStack.pop();
+        inputStack.pop();
+      }
+    });
+    initializeWidths();
+  };
 });
