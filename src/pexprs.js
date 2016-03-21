@@ -257,6 +257,7 @@ exports.TypeCheck = TypeCheck;
 // Extensions
 // --------------------------------------------------------------------
 
+require('./pexprs-allowsSkippingPrecedingSpace');
 require('./pexprs-assertAllApplicationsAreValid');
 require('./pexprs-assertChoicesHaveUniformArity');
 require('./pexprs-assertIteratedExprsAreNotNullable');
