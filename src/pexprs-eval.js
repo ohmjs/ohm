@@ -280,7 +280,7 @@ pexprs.Apply.prototype.eval = function(state) {
 
   var memoKey = app.toMemoKey();
   var memoRec = posInfo.memo[memoKey];
-  var isTopLevelApplication = !caller && this instanceof pexprs.Apply;
+  var isTopLevelApplication = !caller;
   return memoRec && posInfo.shouldUseMemoizedResult(memoRec) ?
       state.useMemoizedResult(memoRec) :
       app.reallyEval(state, isTopLevelApplication);
