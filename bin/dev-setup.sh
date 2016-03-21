@@ -14,6 +14,13 @@ if [ "$GIT_DIR" == "" ]; then
   exit 1
 fi
 
+# `npm prefix` should always point to the ohm-js directory. Only install the hooks
+# if the Git top level is the same.
+if [ "$(git rev-parse --show-toplevel)" != "$ROOT" ]; then
+  echo "$EXEC_NAME: Not installing hooks -- Git top level != npm prefix"
+  exit 0
+fi
+
 # Install a merge driver called "ours" that is just an alias to `true`.
 # This is referenced by .gitattributes, to prevent conflicts with files
 # that are generated during the build process.
