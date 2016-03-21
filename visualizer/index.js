@@ -166,6 +166,8 @@ function parseGrammar(source) {
     }
 
     if (grammar && grammar.defaultStartRule) {
+      // TODO: Move this stuff to parseTree.js. We probably want a proper event system,
+      // with events like 'beforeGrammarParse' and 'afterGrammarParse'.
       hideBottomOverlay();
 
       var trace = grammar.trace(inputEditor.getValue());

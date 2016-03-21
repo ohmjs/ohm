@@ -15,8 +15,8 @@
   var UnicodeChars = {
     HORIZONTAL_ELLIPSIS: '\u2026',
     WHITE_BULLET: '\u25E6',
-    BACK: '\u21BA',
-    ZOOM: '\u2315'
+    ANTICLOCKWISE_OPEN_CIRCLE_ARROW: '\u21BA',
+    TELEPHONE_RECORDER: '\u2315'
   };
 
   // DOM Helpers
@@ -244,39 +244,31 @@
 
   function zoomIn(ui, grammar, rootTrace, showFailures, traceNode) {
     var zoomNode = $('#zoom');
-    zoomNode.textContent = UnicodeChars.BACK;
+    zoomNode.textContent = UnicodeChars.ANTICLOCKWISE_OPEN_CIRCLE_ARROW;
     zoomNode._trace = traceNode;
     zoomNode.hidden = false;
 
     zoomNode.addEventListener('click', function(e) {
       zoomNode.hidden = true;
       zoomNode._trace = undefined;
-      /* eslint-disable no-undef */
       refreshParseTree(ui, grammar, rootTrace, showFailures);
-      /* eslint-enable no-undef */
       e.stopPropagation();
       e.preventDefault();
     });
     zoomNode.addEventListener('mouseover', function(e) {
       var zoomState = {zoomTrace: zoomNode._trace, previewOnly: true};
-      /* eslint-disable no-undef */
       refreshParseTree(ui, grammar, rootTrace, showFailures, zoomState);
-      /* eslint-enable no-undef */
       e.stopPropagation();
       e.preventDefault();
     });
     zoomNode.addEventListener('mouseout', function(e) {
       var zoomState = zoomNode._trace && {zoomTrace: zoomNode._trace};
-      /* eslint-disable no-undef */
       refreshParseTree(ui, grammar, rootTrace, showFailures, zoomState);
-      /* eslint-enable no-undef */
       e.stopPropagation();
       e.preventDefault();
     });
 
-    /* eslint-disable no-undef */
     refreshParseTree(ui, grammar, rootTrace, showFailures, {zoomTrace: traceNode});
-    /* eslint-enable no-undef */
   }
 
   function createTraceElement(ui, grammar, rootTrace, traceNode, parent, input,
@@ -356,7 +348,8 @@
       spaces: pexpr.ruleName === 'spaces'
     });
 
-    var zoomButton = label.appendChild(createElement('button.zoom', UnicodeChars.ZOOM + ' zoom'));
+    var zoomButton = label.appendChild(createElement('button.zoom',
+      UnicodeChars.TELEPHONE_RECORDER + ' zoom'));
     zoomButton.hidden = true;
     zoomButton.addEventListener('click', function(e) {
       var currentRootTrace = optZoomState && optZoomState.zoomTrace || rootTrace;
@@ -405,7 +398,7 @@
     }
   });
 
-  return function refreshParseTree(ui, grammar, rootTrace, showFailures, optZoomState) {
+  function refreshParseTree(ui, grammar, rootTrace, showFailures, optZoomState) {
     $('#expandedInput').innerHTML = '';
     $('#parseResults').innerHTML = '';
 
@@ -469,5 +462,7 @@
       }
     });
     initializeWidths();
-  };
+  }
+
+  return refreshParseTree;
 });
