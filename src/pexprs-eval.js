@@ -280,10 +280,9 @@ pexprs.Apply.prototype.eval = function(state) {
 
   var memoKey = app.toMemoKey();
   var memoRec = posInfo.memo[memoKey];
-  var isTopLevelApplication = !caller;
   return memoRec && posInfo.shouldUseMemoizedResult(memoRec) ?
       state.useMemoizedResult(memoRec) :
-      app.reallyEval(state, isTopLevelApplication);
+      app.reallyEval(state);
 };
 
 pexprs.Apply.prototype.handleCycle = function(state) {
@@ -304,7 +303,7 @@ pexprs.Apply.prototype.handleCycle = function(state) {
   return state.useMemoizedResult(memoRec);
 };
 
-pexprs.Apply.prototype.reallyEval = function(state, isTopLevelApplication) {
+pexprs.Apply.prototype.reallyEval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   var origPosInfo = state.getCurrentPosInfo();
@@ -360,9 +359,7 @@ pexprs.Apply.prototype.reallyEval = function(state, isTopLevelApplication) {
 
   if (value) {
     state.bindings.push(value);
-    return !isTopLevelApplication ||
-        this === state.applySpaces ||
-        this.entireInputWasConsumed(state);
+    return true;
   } else {
     return false;
   }
@@ -427,17 +424,6 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
   }
   inputStream.pos = lrMemoRec.pos;
   return lrMemoRec.value;
-};
-
-pexprs.Apply.prototype.entireInputWasConsumed = function(state) {
-  if (this.isSyntactic()) {
-    state.skipSpaces();
-  }
-  if (!state.eval(pexprs.end)) {
-    return false;
-  }
-  state.bindings.pop();  // discard the binding that was added by `end` in the check above
-  return true;
 };
 
 pexprs.UnicodeChar.prototype.eval = function(state) {

@@ -41,18 +41,18 @@ function onlyChild(traceNode) {
 
 test('basic tracing', function(t) {
   var g = ohm.grammar('G { start = "a" | letter* }');
-  var trace = g.trace('hallo');
+  var start = g.trace('hallo').children[0];
 
-  t.equal(trace.displayString, 'start');
-  t.equal(trace.succeeded, true);
-  t.equal(trace.pos, 0);
+  t.equal(start.displayString, 'start');
+  t.equal(start.succeeded, true);
+  t.equal(start.pos, 0);
 
-  var cstNode = trace.cstNode;
+  var cstNode = start.cstNode;
   t.equal(cstNode.isNonterminal(), true);
   t.equal(cstNode.numChildren(), 1);
   t.equal(cstNode.ctorName, 'start');
 
-  var alt = trace.children[0];
+  var alt = start.children[0];
   t.equal(alt.displayString, '"a" | letter*');
   t.equal(alt.succeeded, true);
   t.equal(alt.children.length, 2);
@@ -87,16 +87,23 @@ test('space skipping', function(t) {
   var g = ohm.grammar('G { Start = "a"  }');
   var trace = g.trace('a');
 
-  t.deepEqual(trace.children.map(displayString), ['spaces', '"a"', 'spaces', 'end']);
-  t.equal(trace.children[1].children.length, 0, 'primitive node has no children');
+  t.deepEqual(trace.children.map(displayString), ['spaces', 'Start', 'spaces', 'end']);
+  var start = trace.children[1];
+  t.deepEqual(start.children.map(displayString), ['spaces', '"a"']);
+  t.equal(start.children[1].children.length, 0, 'primitive node has no children');
 
   trace = ohm.grammar('G { start = "a" }').trace('a');
-  t.deepEqual(trace.children.map(displayString), ['"a"', 'end'], 'no spaces in lexical context');
-  t.equal(trace.children[0].children.length, 0, 'prim node has no children in lexical context');
+  t.deepEqual(trace.children.map(displayString), ['start', 'end']);
+  start = trace.children[0];
+  t.deepEqual(start.children.map(displayString), ['"a"'], 'no spaces in lexical context');
+  t.equal(start.children[0].children.length, 0, 'prim node has no children in lexical context');
 
   trace = ohm.grammar('G { Start = foo\n  foo = "a" "b" }').trace('  ab ');
-  t.deepEqual(trace.children.map(displayString), ['spaces', 'foo', 'spaces', 'end']);
-  var fooAppl = trace.children[1];
+  t.deepEqual(trace.children.map(displayString), ['spaces', 'Start', 'spaces', 'end']);
+
+  start = trace.children[1];
+  t.deepEqual(start.children.map(displayString), ['spaces', 'foo']);
+  var fooAppl = start.children[1];
   t.deepEqual(fooAppl.children.map(displayString),
               ['"a" "b"'], 'no spaces under lexical rule appl');
   t.end();
@@ -104,15 +111,15 @@ test('space skipping', function(t) {
 
 test('tracing with parameterized rules', function(t) {
   var g = ohm.grammar('G { start = foo<123>  foo<x> = "a" | letter* }');
-  var trace = g.trace('hallo');
+  var start = g.trace('hallo').children[0];
 
-  t.equal(trace.displayString, 'start');
-  t.equal(trace.succeeded, true);
-  t.equal(trace.pos, 0);
-  t.equal(trace.cstNode.ctorName, 'start');
-  t.equal(trace.cstNode.numChildren(), 1);
+  t.equal(start.displayString, 'start');
+  t.equal(start.succeeded, true);
+  t.equal(start.pos, 0);
+  t.equal(start.cstNode.ctorName, 'start');
+  t.equal(start.cstNode.numChildren(), 1);
 
-  var app = trace.children[0];
+  var app = start.children[0];
   t.equal(app.displayString, 'foo<123>');
   t.equal(app.succeeded, true);
   t.equal(app.children.length, 1);
@@ -148,12 +155,11 @@ test('tracing with parameterized rules', function(t) {
 
 test('tracing with memoization', function(t) {
   var g = ohm.grammar('G { Start = letter ~letter | letter* }');
-  var trace = g.trace(' aB');
+  var start = g.trace(' aB').children[1];
 
-  t.deepEqual(trace.children.map(displayString),
-              ['letter ~letter | letter*', 'spaces', 'end']);
+  t.deepEqual(start.children.map(displayString), ['letter ~letter | letter*']);
 
-  var alt = trace.children[0];
+  var alt = start.children[0];
   t.deepEqual(alt.children.map(displayString), ['letter ~letter', 'letter*']);
   t.equal(alt.children[0].succeeded, false);
   t.equal(alt.children[1].succeeded, true);
@@ -187,9 +193,9 @@ test('tracing with memoization', function(t) {
 
 test('tracing with parameterized rules and memoization', function(t) {
   var g = ohm.grammar('G { start = foo<123> ~foo<123> | foo<123>*  foo<x> = letter }');
-  var trace = g.trace('aB');
+  var start = g.trace('aB').children[0];
 
-  var alt = trace.children[0];
+  var alt = start.children[0];
   t.equal(alt.children[0].succeeded, false);
   t.equal(alt.children[1].succeeded, true);
   t.equal(alt.children.length, 2);
@@ -220,22 +226,20 @@ test('tracing with parameterized rules and memoization', function(t) {
 
 test('tracing with left recursion', function(t) {
   var g = ohm.grammar('G { id = id letter -- rec\n    | letter }');
-  var trace = g.trace('abc');
+  var id = g.trace('abc').children[0];
 
-  var children = trace.children;
-  t.ok(trace.isLeftRecursive);
   // At the top-level recursive application, there is a loop which grows the
   // left-recursive result. There should be one entry for each iteration of
   // the loop.
-  t.equal(children.length, 4);
+  t.ok(id.isLeftRecursive);
+  t.equal(id.children.length, 3);
 
   // The first three nodes should have the same expr and pos.
+  var children = id.children;
   t.equal(children[1].expr, children[0].expr);
   t.equal(children[2].expr, children[0].expr);
   t.equal(children[1].pos, children[0].pos);
   t.equal(children[1].pos, children[0].pos);
-
-  t.equal(children[3].interval.contents, '', 'last entry is <end>');
 
   var choice = children[2];
   t.equal(choice.children.length, 1);
@@ -256,9 +260,9 @@ test('tracing with left recursion', function(t) {
   t.equal(seq.children[0].children[0].cstNode.ctorName, 'id_rec');
   t.equal(seq.children[0].children[0].cstNode.numChildren(), 2);
 
-  trace = g.trace('a');
-  t.ok(trace.isLeftRecursive);
-  t.equal(trace.children.length, 2);
+  id = g.trace('a').children[0];
+  t.ok(id.isLeftRecursive);
+  t.equal(id.children.length, 1);
 
   t.end();
 });
@@ -271,16 +275,16 @@ test('tracing with left recursion and leading space', function(t) {
     '      | "z"',
     '}'
   ]);
-  var trace = g.trace(' zy');
-  t.equal(trace.isLeftRecursive, true);
+  var foo = g.trace(' zy').children[1];  // First child is 'spaces'.
+  t.equal(foo.isLeftRecursive, true);
 
   // The first child is the seed, second child is its enlarged replacement.
-  t.equal(trace.children[0].expr, trace.children[1].expr);
-  t.equal(trace.children[0].pos, trace.children[1].pos);
-  t.equal(trace.children[0].succeeded, true);
-  t.equal(trace.children[1].succeeded, true);
+  t.equal(foo.children[0].expr, foo.children[1].expr);
+  t.equal(foo.children[0].pos, foo.children[1].pos);
+  t.equal(foo.children[0].succeeded, true);
+  t.equal(foo.children[1].succeeded, true);
 
-  var alt = trace.children[1];
+  var alt = foo.children[1];
 
   t.deepEqual(alt.children.map(displayString), ['spaces', 'Foo_x', 'spaces', 'Foo_y']);
   t.deepEqual(alt.children.map(succeeded), [true, false, true, true]);
@@ -341,8 +345,8 @@ test('memoization', function(t) {
     '     | letter',
     '}'
   ]);
-  var trace = g.trace('a9');
-  var seq = trace.children[0];
+  var start = g.trace('a9').children[0];
+  var seq = start.children[0];
   var lookahead = seq.children[0];
   var applyId = lookahead.children[0];
   t.equal(applyId.expr.ruleName, 'id');

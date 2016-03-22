@@ -394,4 +394,4 @@ Semantics.initBuiltInSemantics(Grammar.BuiltInRules);
 Semantics.initPrototypeParser(operationsAndAttributesGrammar);  // requires BuiltInSemantics
 
 module.exports.ohmGrammar = ohmGrammar = require('../dist/ohm-grammar');
-Grammar.initStartRuleParser(ohmGrammar, buildGrammar);
+Grammar.initApplicationParser(ohmGrammar, buildGrammar);

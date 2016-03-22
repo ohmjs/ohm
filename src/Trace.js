@@ -57,10 +57,13 @@ function Trace(inputStream, pos, expr, cstNode, optChildren) {
     this.interval = new Interval(inputStream, pos, inputStream.pos);
     this.cstNode = cstNode;
   }
-  this.isLeftRecursive = false;
   this.pos = pos;
   this.inputStream = inputStream;
   this.succeeded = !!cstNode;
+
+  this.isLeftRecursive = false;
+  this.isRootNode = false;
+  this.isMemoized = false;
 }
 
 // A value that can be returned from visitor functions to indicate that a
@@ -74,6 +77,7 @@ Object.defineProperty(Trace.prototype, 'displayString', {
 Trace.prototype.cloneWithExpr = function(expr) {
   var ans = new Trace(this.inputStream, this.pos, expr, this.cstNode, this.children);
   ans.isLeftRecursive = this.isLeftRecursive;
+  ans.isRootNode = this.isRootNode;
   ans.isMemoized = true;
   return ans;
 };
@@ -92,7 +96,8 @@ Trace.prototype.walk = function(visitorObjOrFn, optThisArg) {
   if (typeof visitor === 'function') {
     visitor = {enter: visitor};
   }
-  return (function _walk(node, parent, depth) {
+
+  function _walk(node, parent, depth) {
     var recurse = true;
     if (visitor.enter) {
       if (visitor.enter.call(optThisArg, node, parent, depth) === Trace.prototype.SKIP) {
@@ -113,7 +118,13 @@ Trace.prototype.walk = function(visitorObjOrFn, optThisArg) {
         visitor.exit.call(optThisArg, node, parent, depth);
       }
     }
-  })(this, null, 0);
+  }
+  if (this.isRootNode) {
+    // Don't visit the root node itself, only its children.
+    this.children.forEach(function(c) { _walk(c, null, 0); });
+  } else {
+    _walk(this, null, 0);
+  }
 };
 
 // Return a string representation of the trace.

@@ -29,7 +29,7 @@ function MatchResult(state) {
 }
 
 MatchResult.newFor = function(state) {
-  var succeeded = state.bindings.length === 1;
+  var succeeded = state.bindings.length > 0;
   return succeeded ? new MatchResult(state) : new MatchFailure(state);
 };
 

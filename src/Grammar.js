@@ -41,7 +41,7 @@ var ohmGrammar;
 var buildGrammar;
 
 // This method is called from main.js once Ohm has loaded.
-Grammar.initStartRuleParser = function(grammar, builderFn) {
+Grammar.initApplicationParser = function(grammar, builderFn) {
   ohmGrammar = grammar;
   buildGrammar = builderFn;
 };
@@ -63,8 +63,8 @@ Grammar.prototype = {
   // Try to match `ctorArgs` with the body of the rule given by `ruleName`.
   // Return the resulting CST node if it succeeds, otherwise return null.
   _constructByMatching: function(ruleName, ctorArgs) {
-    var state = this._match(ctorArgs, ruleName, {matchNodes: true});
-    if (state.bindings.length === 1) {
+    var state = this._match(ctorArgs, {startApplication: ruleName, matchNodes: true});
+    if (state.bindings.length > 0) {
       return state.bindings[0];
     }
     return null;
@@ -94,44 +94,19 @@ Grammar.prototype = {
     return this === Grammar.ProtoBuiltInRules || this === Grammar.BuiltInRules;
   },
 
-  match: function(obj, optStartApplication) {
-    var startApplication = optStartApplication || this.defaultStartRule;
-    if (!startApplication) {
-      throw new Error('Missing start rule argument -- the grammar has no default start rule.');
-    }
-    var state = this._match([obj], startApplication, {});
-    return MatchResult.newFor(state);
-  },
-
-  _match: function(values, startApplication, opts) {
-    var expr;
-    if (startApplication.indexOf('<') === -1) { // do not run in circles
-      // simple application
-      expr = new pexprs.Apply(startApplication);
-    } else {
-      // parameterized application
-      var cst = ohmGrammar.match(startApplication, 'Base_application');
-      expr = buildGrammar(cst, {});
-    }
-
-    var startRule = expr.ruleName;
-    if (!(startRule in this.ruleBodies)) {
-      throw errors.undeclaredRule(startRule, this.name);
-    } else if (this.ruleFormals[startRule].length !== expr.args.length) {
-      throw errors.wrongNumberOfParameters(startRule,
-        this.ruleFormals[startRule].length, expr.args.length);
-    }
-    var state = new State(this, expr.newInputStreamFor(values, this), startRule, opts);
-    state.eval(expr);
+  _match: function(values, opts) {
+    var state = new State(this, values, opts);
+    state.evalFromStart();
     return state;
   },
 
-  trace: function(obj, optStartRule) {
-    var startRule = optStartRule || this.defaultStartRule;
-    if (!startRule) {
-      throw new Error('Missing start rule argument -- the grammar has no default start rule.');
-    }
-    var state = this._match([obj], startRule, {trace: true});
+  match: function(obj, optStartApplication) {
+    var state = this._match([obj], {startApplication: optStartApplication});
+    return MatchResult.newFor(state);
+  },
+
+  trace: function(obj, optStartApplication) {
+    var state = this._match([obj], {startApplication: optStartApplication, trace: true});
 
     // The trace node for the start rule is always the last entry. If it is a syntactic rule,
     // the first entry is for an application of 'spaces'.
@@ -301,6 +276,29 @@ Grammar.prototype = {
     sb.append(common.repeat('_', arity).join(', '));
     sb.append(') {\n');
     sb.append('  }');
+  },
+
+  // Parse a string which expresses a rule application in this grammar, and return the
+  // resulting Apply node.
+  parseApplication: function(str) {
+    var app;
+    if (str.indexOf('<') === -1) {
+      // simple application
+      app = new pexprs.Apply(str);
+    } else {
+      // parameterized application
+      var cst = ohmGrammar.match(str, 'Base_application');
+      app = buildGrammar(cst, {});
+    }
+
+    // Ensure that the application is valid.
+    if (!(app.ruleName in this.ruleBodies)) {
+      throw errors.undeclaredRule(app.ruleName, this.name);
+    } else if (this.ruleFormals[app.ruleName].length !== app.args.length) {
+      throw errors.wrongNumberOfParameters(
+          app.ruleName, this.ruleFormals[app.ruleName].length, app.args.length);
+    }
+    return app;
   }
 };
 

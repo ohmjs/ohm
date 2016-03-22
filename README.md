@@ -175,7 +175,7 @@ b                    ✓ Unicode {Ll} character ⇒  "b"
                      ✗ Unicode {Lu} character
                    ✗ unicodeLtmo
                      ✗ Unicode {Ltmo} character
-             ✓ end ⇒  ""
+           ✓ end ⇒  ""
 ```
 
 Publishing Grammars

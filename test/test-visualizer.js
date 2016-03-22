@@ -62,7 +62,7 @@ function serializeTree(traceNode, expected) {
 }
 
 function serializeTrace(resultNode) {
-  assert.equal(resultNode.children.length, 1, 'single node at root');
+  assert.equal(resultNode.children.length, 2, 'root has two nodes');
   return serializeTree(resultNode.firstChild);
 }
 

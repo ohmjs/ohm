@@ -7,6 +7,7 @@
 var PosInfo = require('./PosInfo');
 var Trace = require('./Trace');
 var pexprs = require('./pexprs');
+
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
@@ -16,10 +17,10 @@ var RM_RIGHTMOST_FAILURES = 1;
 
 var applySpaces = new pexprs.Apply('spaces');
 
-function State(grammar, inputStream, startRule, opts) {
+function State(grammar, input, opts) {
   this.grammar = grammar;
-  this.origInputStream = inputStream;
-  this.startRule = startRule;
+  this.startExpr = this._getStartExpr(grammar, opts.startApplication);
+  this.origInputStream = this.startExpr.newInputStreamFor(input, this.grammar);
   this.tracingEnabled = opts.trace || false;
   this.matchNodes = opts.matchNodes || false;
   this.init(RM_RIGHTMOST_FAILURE_POSITION);
@@ -76,16 +77,17 @@ State.prototype = {
     return this.applicationStack[this.applicationStack.length - 1];
   },
 
-  inSyntacticRule: function() {
+  inSyntacticContext: function() {
     if (typeof this.inputStream.source !== 'string') {
       return false;
     }
     var currentApplication = this.currentApplication();
-    return currentApplication && currentApplication.isSyntactic();
-  },
-
-  inSyntacticContext: function() {
-    return this.inSyntacticRule() && !this.inLexifiedContext();
+    if (currentApplication) {
+      return currentApplication.isSyntactic() && !this.inLexifiedContext();
+    } else {
+      // The top-level context is syntactic if the start application is.
+      return this.startExpr.factors[0].isSyntactic();
+    }
   },
 
   inLexifiedContext: function() {
@@ -109,7 +111,7 @@ State.prototype = {
   maybeSkipSpacesBefore: function(expr) {
     if (expr instanceof pexprs.Apply && expr.isSyntactic()) {
       return this.skipSpaces();
-    } else if (expr.allowsSkippingPrecedingSpace() && expr !== this.applySpaces) {
+    } else if (expr.allowsSkippingPrecedingSpace() && expr !== applySpaces) {
       return this.skipSpacesIfInSyntacticContext();
     } else {
       return this.inputStream.pos;
@@ -202,7 +204,7 @@ State.prototype = {
     if (this.recordingMode === RM_RIGHTMOST_FAILURE_POSITION) {
       // Rewind, then try to match the input again, recording failures.
       this.init(RM_RIGHTMOST_FAILURES);
-      this.eval(new pexprs.Apply(this.startRule));
+      this.evalFromStart(this.origInput);
     }
 
     this.ensureRightmostFailures();
@@ -277,6 +279,7 @@ State.prototype = {
     if (this.isTracing()) {
       var cstNode = ans ? this.bindings[this.bindings.length - 1] : null;
       var traceEntry = this.getTraceEntry(origPos, expr, cstNode);
+      traceEntry.isRootNode = expr === this.startExpr;
       origTrace.push(traceEntry);
       this.trace = origTrace;
     }
@@ -303,6 +306,23 @@ State.prototype = {
     return ans;
   },
 
+  // Return the starting expression for this grammar. If `optStartApplication` is specified, it
+  // is a string expressing a rule application in the grammar. If not specified, the grammar's
+  // default start rule will be used.
+  _getStartExpr: function(grammar, optStartApplication) {
+    var applicationStr = optStartApplication || grammar.defaultStartRule;
+    if (!applicationStr) {
+      throw new Error('Missing start rule argument -- the grammar has no default start rule.');
+    }
+
+    var startApp = grammar.parseApplication(applicationStr);
+    return new pexprs.Seq([startApp, pexprs.end]);
+  },
+
+  evalFromStart: function() {
+    this.eval(this.startExpr);
+  },
+
   getFailuresInfo: function() {
     if (this.recordingMode === RM_RIGHTMOST_FAILURE_POSITION) {
       return this.rightmostFailurePosition;
@@ -317,9 +337,7 @@ State.prototype = {
     } else /* if (this.recordingMode === RM_RIGHTMOST_FAILURES) */ {
       this.rightmostFailures = failuresInfo;
     }
-  },
-
-  applySpaces: applySpaces
+  }
 };
 
 // --------------------------------------------------------------------
