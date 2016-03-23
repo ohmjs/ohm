@@ -50,16 +50,14 @@ function asEscapedString(obj) {
 
 // ----------------- Trace -----------------
 
-function Trace(inputStream, pos, expr, cstNode, optChildren) {
-  this.children = optChildren || [];
-  this.expr = expr;
-  if (cstNode) {
-    this.interval = new Interval(inputStream, pos, inputStream.pos);
-    this.cstNode = cstNode;
-  }
-  this.pos = pos;
+function Trace(inputStream, pos, expr, succeeded, bindings, optChildren) {
   this.inputStream = inputStream;
-  this.succeeded = !!cstNode;
+  this.pos = pos;
+  this.interval = new Interval(inputStream, pos, inputStream.pos);
+  this.expr = expr;
+  this.succeeded = succeeded;
+  this.bindings = bindings;
+  this.children = optChildren || [];
 
   this.isLeftRecursive = false;
   this.isRootNode = false;
@@ -75,7 +73,8 @@ Object.defineProperty(Trace.prototype, 'displayString', {
 });
 
 Trace.prototype.cloneWithExpr = function(expr) {
-  var ans = new Trace(this.inputStream, this.pos, expr, this.cstNode, this.children);
+  var ans = new Trace(
+      this.inputStream, this.pos, expr, this.succeeded, this.bindings, this.children);
   ans.isLeftRecursive = this.isLeftRecursive;
   ans.isRootNode = this.isRootNode;
   ans.isMemoized = true;

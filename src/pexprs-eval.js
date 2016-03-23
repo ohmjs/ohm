@@ -350,7 +350,8 @@ pexprs.Apply.prototype.reallyEval = function(state) {
   // Record trace information in the memo table, so that it is available if the memoized result
   // is used later.
   if (state.isTracing() && origPosInfo.memo[memoKey]) {
-    var entry = state.getTraceEntry(origPos, this, value);
+    var succeeded = !!value;
+    var entry = state.getTraceEntry(origPos, this, succeeded, succeeded ? [value] : []);
     entry.isLeftRecursive = isHeadOfLeftRecursion;
     origPosInfo.memo[memoKey].traceEntry = entry;
   }
@@ -410,7 +411,8 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
       // Its only child is the trace node from `newValue`, which will always be the last element
       // in `state.trace`.
       var children = state.trace.slice(-1);
-      lrMemoRec.traceEntry = new Trace(state.inputStream, origPos, this, newValue, children);
+      lrMemoRec.traceEntry = new Trace(
+          state.inputStream, origPos, this, true, [newValue], children);
     }
     inputStream.pos = origPos;
     newValue = this.evalOnce(body, state);
