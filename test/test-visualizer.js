@@ -76,10 +76,11 @@ var HTML = '<div id="expandedInput"></div><div id="parseResults"></div>' +
 
 test('simple parse tree', function(t) {
   var doc = jsdom.jsdom(HTML);
-  var refreshParseTree = parseTree(ohm, doc, null, null);
+  var ohmEditor = {};
+  parseTree(ohm, ohmEditor, doc, null, null);
   var g = ohm.grammar('G { start = letter digit+  -- x\n| digit }');
 
-  refreshParseTree(null, g, g.trace('a99'), false);
+  ohmEditor.refreshParseTree(null, g, g.trace('a99'), false);
   t.equal(doc.querySelector('#expandedInput').textContent, 'a99');
 
   t.deepEqual(serializeTrace(doc.querySelector('#parseResults')), [

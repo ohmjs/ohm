@@ -2,13 +2,14 @@
 
 // Wrap the module in a universal module definition (UMD), allowing us to
 // either include it as a <script> or to `require` it as a CommonJS module.
-(function(root, name, initModule) {
+(function(root, initModule) {
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    root[name] = initModule(root.ohm, root.document, root.cmUtil, root.d3);
+    root.ohmEditor = root.ohmEditor || {};
+    initModule(root.ohm, root.ohmEditor, root.document, root.cmUtil, root.d3);
   }
-})(this, 'refreshParseTree', function(ohm, document, cmUtil, d3) {
+})(this, function(ohm, ohmEditor, document, cmUtil, d3) {
   var ArrayProto = Array.prototype;
   function $(sel) { return document.querySelector(sel); }
 
@@ -456,5 +457,5 @@
     initializeWidths();
   }
 
-  return refreshParseTree;
+  ohmEditor.refreshParseTree = refreshParseTree;
 });
