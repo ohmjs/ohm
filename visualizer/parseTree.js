@@ -235,34 +235,28 @@
 
   function couldZoom(currentRootTrace, traceNode) {
     return !(currentRootTrace === traceNode ||
-            !(traceNode.expr instanceof ohm.pexprs.Apply));
+           !(traceNode.expr instanceof ohm.pexprs.Apply));
   }
 
   function zoomIn(ui, grammar, rootTrace, showFailures, traceNode) {
-    var zoomNode = $('#zoom');
-    zoomNode.textContent = UnicodeChars.ANTICLOCKWISE_OPEN_CIRCLE_ARROW;
-    zoomNode._trace = traceNode;
-    zoomNode.hidden = false;
+    var zoomOutButton = $('#zoomOutButton');
+    zoomOutButton.textContent = UnicodeChars.ANTICLOCKWISE_OPEN_CIRCLE_ARROW;
+    zoomOutButton._trace = traceNode;
+    zoomOutButton.hidden = false;
 
-    zoomNode.addEventListener('click', function(e) {
-      zoomNode.hidden = true;
-      zoomNode._trace = undefined;
+    zoomOutButton.onclick = function(e) {
+      zoomOutButton.hidden = true;
+      zoomOutButton._trace = undefined;
       refreshParseTree(ui, grammar, rootTrace, showFailures);
-      e.stopPropagation();
-      e.preventDefault();
-    });
-    zoomNode.addEventListener('mouseover', function(e) {
-      var zoomState = {zoomTrace: zoomNode._trace, previewOnly: true};
+    };
+    zoomOutButton.onmouseover = function(e) {
+      var zoomState = {zoomTrace: zoomOutButton._trace, previewOnly: true};
       refreshParseTree(ui, grammar, rootTrace, showFailures, zoomState);
-      e.stopPropagation();
-      e.preventDefault();
-    });
-    zoomNode.addEventListener('mouseout', function(e) {
-      var zoomState = zoomNode._trace && {zoomTrace: zoomNode._trace};
+    };
+    zoomOutButton.onmouseout = function(e) {
+      var zoomState = zoomOutButton._trace && {zoomTrace: zoomOutButton._trace};
       refreshParseTree(ui, grammar, rootTrace, showFailures, zoomState);
-      e.stopPropagation();
-      e.preventDefault();
-    });
+    };
 
     refreshParseTree(ui, grammar, rootTrace, showFailures, {zoomTrace: traceNode});
   }

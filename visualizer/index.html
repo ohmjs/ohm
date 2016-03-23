@@ -26,7 +26,7 @@
       /* Must be less than the .splitter z-index, but greater than everything in codemirror.css. */
       z-index: 9;
     }
-    #zoom {
+    #zoomOutButton {
       background-color: white;
       outline: none;
       border: 0;
@@ -41,7 +41,7 @@
       text-align: center;
       flex-direction: column;
     }
-    #zoom:hover {
+    #zoomOutButton:hover {
       font-weight: bold;
     }
     #visualizerBody {
@@ -380,7 +380,7 @@
   </div>
   <div id="mainSplitter" class="splitter"></div>
   <div id="bottomSection">
-    <button id="zoom" type="button" hidden></button>
+    <button id="zoomOutButton" type="button" hidden></button>
     <div id="visualizerBody">
        <div id="expandedInputWrapper" class="hiddenDuringLoading">
         <div id="expandedInput"></div>
