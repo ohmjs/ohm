@@ -220,10 +220,12 @@
       return traceNode.succeeded;
     }
 
-    // Hide labels for nodes that don't correspond to something the user wrote.
-    if (!expr.interval) {
+    // Hide labels for nodes that don't correspond to something the user wrote, and
+    // nodes that have no bindings.
+    if (!expr.interval || traceNode.bindings.length === 0) {
       return false;
     }
+
     return true;
   }
 
