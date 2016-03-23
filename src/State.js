@@ -204,7 +204,7 @@ State.prototype = {
     if (this.recordingMode === RM_RIGHTMOST_FAILURE_POSITION) {
       // Rewind, then try to match the input again, recording failures.
       this.init(RM_RIGHTMOST_FAILURES);
-      this.evalFromStart(this.origInput);
+      this.evalFromStart();
     }
 
     this.ensureRightmostFailures();
