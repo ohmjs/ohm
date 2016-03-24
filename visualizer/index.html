@@ -31,23 +31,17 @@
       outline: none;
       border: 0;
       padding: 3px;
-      margin-top: 5px;
-      margin-right: 10px;
-      margin-left: 10px;
-      left: 20px;
+      margin: 5px 10px 0 10px;
       cursor: pointer;
       font-size: 18px;
       color: black;
       text-align: center;
-      flex-direction: column;
+      align-self: flex-start;
     }
     #zoomOutButton:hover {
       font-weight: bold;
     }
-    #visualizerBody {
-      flex-direction: column;
-      overflow: auto;
-    }
+
     #expandedInputWrapper {
       border-bottom: 1px solid #ddd;
     }
@@ -168,42 +162,39 @@
 
     #actions {
       display: flex;
-      flex: 1;
       position: fixed;
-      right: 20px;
+      right: 2px;
       margin-top: 40px;
     }
     #actions .actionColumn {
-      margin-left: 15px;
+      margin-right: 15px;
     }
     #actions .actionEntries {
+      display: flex;
       flex-direction: column;
-      align-self: flex-start;
       background-color: white;
       color: black;
       font-family: Menlo, Monaco, sans-serif;
       font-style: normal;
       border-radius: 3px;
-      padding: 2px 0px 1px 0px;
+      padding: 2px 0px 2px 0px;
+      background-color: rgba(0, 0, 0, 0);
     }
 
     textarea.action {
-      height: 12px;
       resize: none;
       outline: none;
-      padding-top: 1px;
-      padding-bottom: 1px;
-      margin-bottom: 4px;
+      margin: 4px 4px 4px 0;
       height: 16px;
-      border: 1px solid #555;
+      border: 1px solid #999;
       border-radius: 10px;
       display:block;
-      clear:both;
       text-align: center;
+      background-color: white;
     }
     textarea.action[readOnly] {
       cursor: pointer;
-      background-color: #EEEEEE;
+      background-color: #FBFFD7;
     }
     textarea.action.selected {
       border-color: #83BFFC;
@@ -252,7 +243,8 @@
     #bottomSection {
       display: flex;
       flex: 1;
-      position: relative;
+      overflow-x: auto;
+      position: relative;  /* For absolute positioning of .overlay */
     }
 
     #bottomSection .overlay {
@@ -263,6 +255,12 @@
       position: absolute;
       top: 0;
       width: 0;
+    }
+
+    #visualizerBody {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
     }
 
     #grammarContainer,
@@ -278,6 +276,7 @@
       font-size: 1em;
       margin: 12px 12px 6px;
     }
+
     /*
       Hack to fix a problem with `height: 100%` in flex items.
       See https://github.com/codemirror/CodeMirror/issues/3679
@@ -427,20 +426,20 @@
   <div id="bottomSection">
     <button id="zoomOutButton" type="button" hidden></button>
     <div id="visualizerBody">
-       <div id="expandedInputWrapper" class="hiddenDuringLoading">
+      <div id="expandedInputWrapper" class="hiddenDuringLoading">
         <div id="expandedInput"></div>
       </div>
-     <div id="parseResults"></div>
+      <div id="parseResults"></div>
     </div>
     <div id="actions">
-    <div class="actionColumn">
-      <button id="addAttribute">Add Attribute</button>
-      <div id="attributes" class="actionEntries"></div>
-    </div>
-    <div class="actionColumn">
-      <button id="addOperation">Add Operation</button>
-      <div id="operations" class="actionEntries"></div>
-    </div>
+      <div class="actionColumn">
+        <button id="addAttribute">Add Attribute</button>
+        <div id="attributes" class="actionEntries"></div>
+      </div>
+      <div class="actionColumn">
+        <button id="addOperation">Add Operation</button>
+        <div id="operations" class="actionEntries"></div>
+      </div>
     </div>
     <div class="overlay"></div>
   </div>

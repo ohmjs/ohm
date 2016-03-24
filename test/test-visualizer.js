@@ -71,7 +71,8 @@ function serializeTrace(resultNode) {
 // --------------------------------------------------------------------
 
 // Stripped down DOM containing only the markup that is required to show the parse tree.
-var HTML = '<div id="expandedInput"></div><div id="parseResults"></div>' +
+var HTML = '<button id="zoomOutButton" type="button" hidden></button>' +
+           '<div id="expandedInput"></div><div id="parseResults"></div>' +
            '<div id="measuringDiv"><div class="pexpr"></div></div>';
 
 test('simple parse tree', function(t) {

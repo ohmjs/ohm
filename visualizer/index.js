@@ -140,11 +140,12 @@ function parseGrammar(source) {
     triggerRefresh(250);
   });
 
+  // TODO: Move this code into parseTree.js
   var actionContainers = document.querySelectorAll('.actionEntries');
   Array.prototype.forEach.call(actionContainers, function(actionContainer) {
     actionContainer.addEventListener('click', function() { triggerRefresh(); });
     actionContainer.addEventListener('keypress', function(event) {
-      if (event.keyCode ===  13) {
+      if (event.keyCode === 13) {
         triggerRefresh();
       }
     });

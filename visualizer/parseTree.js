@@ -394,6 +394,11 @@
     $('#expandedInput').innerHTML = '';
     $('#parseResults').innerHTML = '';
 
+    if (!optZoomState) {
+      $('#zoomOutButton').hidden = true;
+      $('#zoomOutButton')._trace = undefined;
+    }
+
     var trace;
     if (optZoomState && !optZoomState.previewOnly) {
       trace = optZoomState.zoomTrace;
