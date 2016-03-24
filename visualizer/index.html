@@ -39,13 +39,9 @@
       font-size: 18px;
       color: black;
       text-align: center;
-      flex-direction: column;
     }
     #zoomOutButton:hover {
       font-weight: bold;
-    }
-    #visualizerBody {
-      flex-direction: column;
     }
     #expandedInputWrapper {
       border-bottom: 1px solid #ddd;
@@ -207,7 +203,8 @@
     #bottomSection {
       display: flex;
       flex: 1;
-      position: relative;
+      flex-direction: column;
+      position: relative;  /* For absolute positioning of .overlay */
     }
 
     #bottomSection .overlay {
@@ -218,6 +215,12 @@
       position: absolute;
       top: 0;
       width: 0;
+    }
+
+    #visualizerBody {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
     }
 
     #grammarContainer,
@@ -233,6 +236,7 @@
       font-size: 1em;
       margin: 12px 12px 6px;
     }
+
     /*
       Hack to fix a problem with `height: 100%` in flex items.
       See https://github.com/codemirror/CodeMirror/issues/3679
