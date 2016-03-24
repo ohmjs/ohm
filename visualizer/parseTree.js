@@ -253,14 +253,14 @@
     };
     zoomOutButton.onmouseover = function(e) {
       var zoomState = {zoomTrace: zoomOutButton._trace, previewOnly: true};
-      refreshParseTree(ui, grammar, rootTrace, showFailures, zoomState);
+      refreshParseTree(ui, grammar, rootTrace, showFailures, null, zoomState);
     };
     zoomOutButton.onmouseout = function(e) {
       var zoomState = zoomOutButton._trace && {zoomTrace: zoomOutButton._trace};
-      refreshParseTree(ui, grammar, rootTrace, showFailures, zoomState);
+      refreshParseTree(ui, grammar, rootTrace, showFailures, null, zoomState);
     };
 
-    refreshParseTree(ui, grammar, rootTrace, showFailures, {zoomTrace: traceNode});
+    refreshParseTree(ui, grammar, rootTrace, showFailures, null, {zoomTrace: traceNode});
   }
 
   function createTraceElement(ui, grammar, rootTrace, traceNode, parent, input,
@@ -390,7 +390,7 @@
     }
   });
 
-  function refreshParseTree(ui, grammar, rootTrace, showFailures, optZoomState) {
+  function refreshParseTree(ui, grammar, rootTrace, showFailures, optActionName, optZoomState) {
     $('#expandedInput').innerHTML = '';
     $('#parseResults').innerHTML = '';
 

@@ -46,6 +46,7 @@
     }
     #visualizerBody {
       flex-direction: column;
+      overflow: auto;
     }
     #expandedInputWrapper {
       border-bottom: 1px solid #ddd;
@@ -163,6 +164,50 @@
     .highlightApplication {
       background-color: CornflowerBlue;
       color: white;
+    }
+
+    #actions {
+      display: flex;
+      flex: 1;
+      position: fixed;
+      right: 20px;
+      margin-top: 40px;
+    }
+    #actions .actionColumn {
+      margin-left: 15px;
+    }
+    #actions .actionEntries {
+      flex-direction: column;
+      align-self: flex-start;
+      background-color: white;
+      color: black;
+      font-family: Menlo, Monaco, sans-serif;
+      font-style: normal;
+      border-radius: 3px;
+      padding: 2px 0px 1px 0px;
+    }
+
+    textarea.action {
+      height: 12px;
+      resize: none;
+      outline: none;
+      padding-top: 1px;
+      padding-bottom: 1px;
+      margin-bottom: 4px;
+      height: 16px;
+      border: 1px solid #555;
+      border-radius: 10px;
+      display:block;
+      clear:both;
+      text-align: center;
+    }
+    textarea.action[readOnly] {
+      cursor: pointer;
+      background-color: #EEEEEE;
+    }
+    textarea.action.selected {
+      border-color: #83BFFC;
+      border-width: 2px;
     }
 
     #options {
@@ -387,6 +432,16 @@
       </div>
      <div id="parseResults"></div>
     </div>
+    <div id="actions">
+    <div class="actionColumn">
+      <button id="addAttribute">Add Attribute</button>
+      <div id="attributes" class="actionEntries"></div>
+    </div>
+    <div class="actionColumn">
+      <button id="addOperation">Add Operation</button>
+      <div id="operations" class="actionEntries"></div>
+    </div>
+    </div>
     <div class="overlay"></div>
   </div>
   <div id="dragOverlay"></div>
@@ -454,6 +509,7 @@ number  (a number)
   <script src="externalRules.js"></script>
   <script src="ruleHyperlinks.js"></script>
   <script src="searchBar.js"></script>
+  <script src="actionButton.js"></script>
   <script src="index.js"></script>
 </body>
 </html>

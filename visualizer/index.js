@@ -140,6 +140,16 @@ function parseGrammar(source) {
     triggerRefresh(250);
   });
 
+  var actionContainers = document.querySelectorAll('.actionEntries');
+  Array.prototype.forEach.call(actionContainers, function(actionContainer) {
+    actionContainer.addEventListener('click', function() { triggerRefresh(); });
+    actionContainer.addEventListener('keypress', function(event) {
+      if (event.keyCode ===  13) {
+        triggerRefresh();
+      }
+    });
+  });
+
   function refresh() {
     hideError('input', inputEditor);
     saveEditorState(inputEditor, 'input');
@@ -149,6 +159,13 @@ function parseGrammar(source) {
       var checkbox = checkboxes[i];
       options[checkbox.name] = checkbox.checked;
     }
+
+    // Check selected action
+    var actionNodes = document.querySelectorAll('textarea.action');
+    var selectedActionNode = Array.prototype.filter.call(actionNodes, function(actionNode) {
+      return actionNode.readOnly && actionNode.classList.contains('selected');
+    })[0];
+    var actionName = selectedActionNode && selectedActionNode.value;
 
     if (grammarChanged) {
       grammarChanged = false;
@@ -178,7 +195,7 @@ function parseGrammar(source) {
         setError('input', inputEditor, interval, 'Expected ' + trace.result.getExpectedText());
       }
 
-      refreshParseTree(ui, grammar, trace, options.showFailures);
+      refreshParseTree(ui, grammar, trace, options.showFailures, actionName);
     }
   }
 
