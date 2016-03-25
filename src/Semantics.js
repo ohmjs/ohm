@@ -30,6 +30,14 @@ Wrapper.prototype.toString = function() {
   return '[semantics wrapper for ' + this._node.grammar.name + ']';
 };
 
+Wrapper.prototype._forgetMemoizedResultFor = function(attributeName) {
+  delete this[attributeName];
+  delete this._node[this._semantics.attributeKeys[attributeName]];
+  this.children.forEach(function(child) {
+    child._forgetMemoizedResultFor(attributeName);
+  });
+};
+
 // Returns the wrapper of the specified child node. Child wrappers are created lazily and cached in
 // the parent wrapper's `_childWrappers` instance variable.
 Wrapper.prototype.child = function(idx) {
@@ -380,6 +388,17 @@ Semantics.prototype.extendOperationOrAttribute = function(type, name, actionDict
   this[typePlural][name].checkActionDict(this.grammar);
 };
 
+Semantics.prototype.getOperationOrAttribute = function(operationOrAttributeName) {
+  if (operationOrAttributeName in this.attributes) {
+    return this.attributes[operationOrAttributeName];
+  } else if (operationOrAttributeName in this.operations) {
+    return this.operations[operationOrAttributeName];
+  } else {
+    throw new Error('Cannot find operation or attribute has name ' +
+      operationOrAttributeName);
+  }
+};
+
 Semantics.prototype.assertNewName = function(name, type) {
   if (Wrapper.prototype.hasOwnProperty(name)) {
     throw new Error(
@@ -450,6 +469,10 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
   proxy.extendAttribute = function(name, actionDict) {
     s.extendOperationOrAttribute.call(s, 'attribute', name, actionDict);
     return proxy;
+  };
+
+  proxy.get = function(operationOrAttributeName) {
+    return s.getOperationOrAttribute.call(s, operationOrAttributeName);
   };
 
   // Make the proxy's toString() work.

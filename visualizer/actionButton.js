@@ -34,12 +34,6 @@
     });
 
     actionNode.addEventListener('keypress', function(e) {
-      if (e.keyCode === 13 && actionNode.value) {
-        // TODO ...
-        // addActionToSemantics(semantics, actionType, actionName);
-        actionNode.readOnly = true;
-      }
-
       // No enter for action name
       if (e.keyCode === 13) {
         e.preventDefault();
