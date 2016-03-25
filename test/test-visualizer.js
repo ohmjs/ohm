@@ -80,7 +80,7 @@ test('simple parse tree', function(t) {
   var refreshParseTree = parseTree(ohm, doc, null, null);
   var g = ohm.grammar('G { start = letter digit+  -- x\n| digit }');
 
-  refreshParseTree(null, g, g.trace('a99'), false);
+  refreshParseTree(null, g, g.semantics(), g.trace('a99'), false);
   t.equal(doc.querySelector('#expandedInput').textContent, 'a99');
 
   t.deepEqual(serializeTrace(doc.querySelector('#parseResults')), [

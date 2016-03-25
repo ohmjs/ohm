@@ -110,6 +110,7 @@ function parseGrammar(source) {
   var checkboxes = document.querySelectorAll('#options input[type=checkbox]');
   var refreshTimeout;
   var grammarChanged = true;
+  var semantics;
 
   searchBar.initializeForEditor(inputEditor);
   searchBar.initializeForEditor(grammarEditor);
@@ -138,17 +139,6 @@ function parseGrammar(source) {
     grammarChanged = true;
     hideError('grammar', grammarEditor);
     triggerRefresh(250);
-  });
-
-  // TODO: Move this code into parseTree.js
-  var actionContainers = document.querySelectorAll('.actionEntries');
-  Array.prototype.forEach.call(actionContainers, function(actionContainer) {
-    actionContainer.addEventListener('click', function() { triggerRefresh(); });
-    actionContainer.addEventListener('keypress', function(event) {
-      if (event.keyCode === 13) {
-        triggerRefresh();
-      }
-    });
   });
 
   function refresh() {
@@ -181,6 +171,8 @@ function parseGrammar(source) {
         setError('grammar', grammarEditor, err.interval, err.shortMessage || err.message);
         return;
       }
+
+      semantics = grammar.semantics();
     }
 
     if (grammar && grammar.defaultStartRule) {
@@ -196,7 +188,7 @@ function parseGrammar(source) {
         setError('input', inputEditor, interval, 'Expected ' + trace.result.getExpectedText());
       }
 
-      refreshParseTree(ui, grammar, trace, options.showFailures, actionName);
+      refreshParseTree(ui, grammar, semantics, trace, options.showFailures, actionName);
     }
   }
 
