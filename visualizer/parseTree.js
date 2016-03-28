@@ -295,8 +295,10 @@
     var argumentString = argumentsExpr.toArgumentString();
     if (argumentsExpr instanceof ohm.pexprs.Seq) {
       defaultArgStrs = argumentString.split(',');
-    } else {
+    } else if (argumentString) {
       defaultArgStrs = argumentString.length === 0 ? ['$1'] : [argumentString];
+    } else {
+      defaultArgStrs = [];
     }
 
     return defaultArgStrs;
@@ -319,10 +321,6 @@
     var bodyStartIdx = actionFnStr.indexOf('\n') + 1;
     var bodyEndIdx = actionFnStr.lastIndexOf('\n');
     actionFnStrObj.body = actionFnStr.substring(bodyStartIdx, bodyEndIdx);
-    if (actionFnStrObj.body.indexOf('return ') === 0) {
-      // remove `return` and trailing `;`
-      actionFnStrObj.body = actionFnStrObj.body.substring(7, actionFnStrObj.body.length - 1);
-    }
 
     return actionFnStrObj;
   }
@@ -358,6 +356,10 @@
     var argDisplays = getArgumentsDisplay(traceNode);
     var defaultArgStrs = getDefaultArguments(traceNode);
     argDisplays.forEach(function(argDisplay, idx) {
+      if (idx >= realArgStrs.length) {
+        return;
+      }
+
       var argBlock = editorHeader.appendChild(createElement('.block'));
       var argTag = argBlock.appendChild(createElement('span.name', argDisplay));
       var argEditor = argBlock.appendChild(createElement('textarea.rename'));
@@ -383,7 +385,7 @@
     });
   }
 
-  function retreiveArguementsFromHeader(editorHeader) {
+  function retrieveArguementsFromHeader(editorHeader) {
     var argumentStrs = [];
     Array.prototype.forEach.call(editorHeader.children, function(block, idx) {
       if (idx === 0) {
@@ -649,7 +651,7 @@
   function saveSemanticAction(semantics, traceNode, actionName, editorBody) {
     var editorBodyCM = editorBody.firstChild.CodeMirror;
     var actionFnStr = editorBodyCM.getValue();
-    var args = retreiveArguementsFromHeader(editorBody.previousElementSibling);
+    var args = retrieveArguementsFromHeader(editorBody.previousElementSibling);
 
     var actionFnWrapper = semanticsActionHelpers.getActionFnWrapper(actionName, args, actionFnStr);
     var actionKey = traceNode.bindings[0].ctorName;

@@ -133,6 +133,8 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
       var actionFn, actionFnWrapper;
 
       var argumentStrs = '(' + args.join(', ') + ')';
+      var origActionFnStr = 'function' + argumentStrs + '{\n' + actionFnStr + '\n}';
+
       if (actionFnStr.trim()) {
         var bodyMatchResult = funcBodyGrammar.match(actionFnStr, 'BodyExpression');
         if (bodyMatchResult.succeeded()) {
@@ -170,7 +172,7 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
         };
 
         actionFnWrapper.toString = function() {
-          return actionFnStr;
+          return origActionFnStr;
         };
       }
 
