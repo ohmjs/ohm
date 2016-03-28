@@ -1,9 +1,16 @@
 /* eslint-env browser */
-/* global $, ohm */
+/* global $ */
 
 'use strict';
 
-var updateExternalRules = (function() {  // eslint-disable-line no-unused-vars
+(function(root, initModule) {
+  if (typeof exports === 'object') {
+    module.exports = initModule;
+  } else {
+    root.ohmEditor = root.ohmEditor || {};
+    initModule(root.ohm, root.ohmEditor);
+  }
+})(this, function(ohm, ohmEditor) {
   var ohmGrammar = ohm.ohmGrammar;
   var builtInRules = ohm.grammar('G {}').superGrammar;
 
@@ -133,10 +140,10 @@ var updateExternalRules = (function() {  // eslint-disable-line no-unused-vars
   var widget;
 
   // Export: a function to be called when the grammar contents change.
-  return function(editor, matchResult, grammar) {
+  ohmEditor.updateExternalRules = function(editor, matchResult, grammar) {
     if (!widget) {
       widget = new LastLineWidget(editor);
     }
     widget.update(editor, matchResult, grammar);
   };
-})();
+});
