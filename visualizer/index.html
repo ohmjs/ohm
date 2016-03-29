@@ -31,18 +31,17 @@
       outline: none;
       border: 0;
       padding: 3px;
-      margin-top: 5px;
-      margin-right: 10px;
-      margin-left: 10px;
-      left: 20px;
+      margin: 5px 10px 0 10px;
       cursor: pointer;
       font-size: 18px;
       color: black;
       text-align: center;
+      align-self: flex-start;
     }
     #zoomOutButton:hover {
       font-weight: bold;
     }
+
     #expandedInputWrapper {
       border-bottom: 1px solid #ddd;
     }
@@ -161,6 +160,46 @@
       color: white;
     }
 
+    #actions {
+      display: flex;
+      position: fixed;
+      right: 2px;
+      margin-top: 40px;
+    }
+    #actions .actionColumn {
+      margin-right: 15px;
+    }
+    #actions .actionEntries {
+      display: flex;
+      flex-direction: column;
+      color: black;
+      font-family: Menlo, Monaco, sans-serif;
+      font-style: normal;
+      border-radius: 3px;
+      padding: 2px 0px 2px 0px;
+      background-color: rgba(0, 0, 0, 0);
+    }
+
+    textarea.action {
+      resize: none;
+      outline: none;
+      margin: 4px 4px 4px 0;
+      height: 16px;
+      border: 1px solid #999;
+      border-radius: 10px;
+      display: block;
+      text-align: center;
+      background-color: white;
+    }
+    textarea.action[readOnly] {
+      cursor: pointer;
+      background-color: #FBFFD7;
+    }
+    textarea.action.selected {
+      border-color: #83BFFC;
+      border-width: 2px;
+    }
+
     #options {
       background-color: white;
       border-radius: 3px;
@@ -203,7 +242,7 @@
     #bottomSection {
       display: flex;
       flex: 1;
-      flex-direction: column;
+      overflow-x: auto;
       position: relative;  /* For absolute positioning of .overlay */
     }
 
@@ -391,6 +430,16 @@
       </div>
       <div id="parseResults"></div>
     </div>
+    <div id="actions">
+      <div class="actionColumn">
+        <button id="addAttribute">Add Attribute</button>
+        <div id="attributes" class="actionEntries"></div>
+      </div>
+      <div class="actionColumn">
+        <button id="addOperation">Add Operation</button>
+        <div id="operations" class="actionEntries"></div>
+      </div>
+    </div>
     <div class="overlay"></div>
   </div>
   <div id="dragOverlay"></div>
@@ -458,6 +507,7 @@ number  (a number)
   <script src="externalRules.js"></script>
   <script src="ruleHyperlinks.js"></script>
   <script src="searchBar.js"></script>
+  <script src="actionButton.js"></script>
   <script src="index.js"></script>
 </body>
 </html>
