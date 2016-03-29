@@ -19,7 +19,7 @@ Then, install the dev dependencies:
     npm install
 
 _Note: the `postinstall` script (which is automatically run by `npm install`)
-will install a git pre-commit hook. See [here](#pre-commit-hook) for more
+will install a git pre-commit hook. See [here](#pre-commit-checks) for more
 information._
 
 ## Useful Scripts
