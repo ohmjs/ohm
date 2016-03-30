@@ -359,16 +359,18 @@
     var overscroll;
     var scrollingDown = e.deltaY > 0;
 
+    var bottomSection = $('#bottomSection');
+
     if (scrollingDown) {
       var scrollBottom = el.scrollHeight - el.clientHeight - el.scrollTop;
       overscroll = e.deltaY - scrollBottom;
       if (overscroll > 0) {
-        el.scrollLeft += overscroll;
+        bottomSection.scrollLeft += overscroll;
       }
     } else {
       overscroll = el.scrollTop + e.deltaY;
       if (overscroll < 0) {
-        el.scrollLeft += overscroll;
+        bottomSection.scrollLeft += overscroll;
       }
     }
   });
@@ -427,8 +429,11 @@
   }
 
   function refreshParseTree(ui, grammar, rootTrace, showFailures, optActionName, optZoomState) {
-    $('#expandedInput').innerHTML = '';
-    $('#parseResults').innerHTML = '';
+    var expandedInputDiv = $('#expandedInput');
+    var parseResultsDiv = $('#parseResults');
+
+    expandedInputDiv.innerHTML = '';
+    parseResultsDiv.innerHTML = '';
 
     initializeZoomOutButton(rootTrace, optActionName, optZoomState);
 
@@ -440,8 +445,8 @@
     }
 
     intializeActionButtonEvent(rootTrace, optActionName, optZoomState);
-    var inputStack = [$('#expandedInput')];
-    var containerStack = [$('#parseResults')];
+    var inputStack = [expandedInputDiv];
+    var containerStack = [parseResultsDiv];
     trace.walk({
       enter: function(node, parent, depth) {
         // Don't recurse into nodes that didn't succeed unless "Show failures" is enabled.
@@ -493,6 +498,10 @@
       }
     });
     initializeWidths();
+
+    // Hack to ensure that the vertical scroll bar doesn't overlap the parse tree contents.
+    parseResultsDiv.style.paddingRight =
+        2 + parseResultsDiv.scrollWidth - parseResultsDiv.clientWidth + 'px';
   }
 
   ohmEditor.refreshParseTree = refreshParseTree;

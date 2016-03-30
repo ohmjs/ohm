@@ -55,7 +55,11 @@
     }
     #parseResults {
       flex: 1;
-      overflow: auto;
+
+      /* Handle only vertical scrolling. */
+      overflow-x: hidden;
+      overflow-y: auto;
+
       padding: 2px;
     }
     .pexpr {
@@ -242,7 +246,11 @@
     #bottomSection {
       display: flex;
       flex: 1;
+
+      /* Handle only horizontal scrolling, so that #expandedInput is fixed to the top. */
       overflow-x: auto;
+      overflow-y: hidden;
+
       position: relative;  /* For absolute positioning of .overlay */
     }
 
