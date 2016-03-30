@@ -1,3 +1,6 @@
+/* eslint-env browser */
+/* global CodeMirror, semanticsActionHelpers */
+
 'use strict';
 
 // Wrap the module in a universal module definition (UMD), allowing us to
@@ -19,6 +22,8 @@
     ANTICLOCKWISE_OPEN_CIRCLE_ARROW: '\u21BA',
     TELEPHONE_RECORDER: '\u2315'
   };
+
+  var zoomOutButton = $('#zoomOutButton');
 
   // DOM Helpers
   // -----------
@@ -154,6 +159,30 @@
     }
   }
 
+  function toggleSemanticEditor(el) {
+    if (el.children.length <= 2) {
+      return;
+    }
+
+    var semanticsEditor = el.children[1];
+    if (semanticsEditor.classList.contains('resultOnly')) {
+      semanticsEditor.classList.remove('resultOnly');
+    } else if (semanticsEditor.children[2].classList.contains('alwaysShow')) {
+      semanticsEditor.classList.add('resultOnly');
+    } else {
+      semanticsEditor.hidden = !semanticsEditor.hidden;
+    }
+
+    // Refresh CodeMirror to show its contents
+    if (!semanticsEditor.hidden && !semanticsEditor.classList.contains('resultOnly')) {
+      var editorBodyCM = semanticsEditor.children[1].firstChild.CodeMirror;
+      editorBodyCM.refresh();
+      if (!editorBodyCM.getValue()) {
+        editorBodyCM.focus();
+      }
+    }
+  }
+
   // Hides or shows the children of `el`, which is a div.pexpr.
   function toggleTraceElement(el) {
     var children = el.lastChild;
@@ -243,7 +272,182 @@
            traceNode.expr.ruleName !== 'spaces';
   }
 
-  function createTraceElement(ui, grammar, rootTrace, traceNode, parent, input,
+  function getArgumentsExpr(traceNode) {
+    var pexpr = traceNode.expr;
+
+    // Get rule body of the Apply rule.
+    if (pexpr instanceof ohm.pexprs.Apply) {
+      var lastTraceChild = traceNode.children[traceNode.children.length - 1];
+      pexpr = lastTraceChild.expr;
+
+      // Get the succeed term of Alt rule.
+      if (pexpr instanceof ohm.pexprs.Alt) {
+        pexpr = lastTraceChild.children[lastTraceChild.children.length - 1].expr;
+      }
+    }
+
+    return pexpr;
+  }
+
+  function getDefaultArguments(traceNode) {
+    var defaultArgStrs;
+
+    var argumentsExpr = getArgumentsExpr(traceNode);
+    var argumentString = argumentsExpr.toArgumentString();
+    if (argumentsExpr instanceof ohm.pexprs.Seq) {
+      defaultArgStrs = argumentString.split(',');
+    } else if (argumentString) {
+      defaultArgStrs = argumentString.length === 0 ? ['$1'] : [argumentString];
+    } else {
+      defaultArgStrs = [];
+    }
+
+    return defaultArgStrs;
+  }
+
+  function retrieveActionFnStrObj(traceNode, actionName, semantics) {
+    var ruleName = traceNode.expr.ruleName;
+
+    var actionFnStrObj = Object.create(null);
+    var actionFn = semantics.get(actionName).actionDict[ruleName];
+    if (!actionFn) {
+      actionFnStrObj.args = getDefaultArguments(traceNode);
+      return actionFnStrObj;
+    }
+
+    var actionFnStr = actionFn.toString();
+    var argStr = actionFnStr.substring(actionFnStr.indexOf('(') + 1, actionFnStr.indexOf(')'));
+    actionFnStrObj.args = argStr.split(',').map(function(arg) { return arg.trim(); });
+
+    var bodyStartIdx = actionFnStr.indexOf('\n') + 1;
+    var bodyEndIdx = actionFnStr.lastIndexOf('\n');
+    actionFnStrObj.body = actionFnStr.substring(bodyStartIdx, bodyEndIdx);
+
+    return actionFnStrObj;
+  }
+
+  function getArgumentsDisplay(traceNode) {
+    var argumentsDisplay = [];
+
+    var argumentsExpr = getArgumentsExpr(traceNode);
+    if (argumentsExpr instanceof ohm.pexprs.Seq) {
+      argumentsExpr.factors.forEach(function(factor) {
+        if (factor instanceof ohm.pexprs.Not ||
+          factor instanceof ohm.pexprs.Lookahead ||
+          factor === ohm.pexprs.end) {
+          return;
+        }
+
+        argumentsDisplay.push(factor.toDisplayString());
+      });
+    } else if (!(argumentsExpr instanceof ohm.pexprs.Not ||
+                 argumentsExpr instanceof ohm.pexprs.Lookahead ||
+                 argumentsExpr === ohm.pexprs.end)) {
+
+      argumentsDisplay.push(argumentsExpr.toDisplayString());
+    }
+
+    return argumentsDisplay;
+  }
+
+  function loadEditorHeader(traceNode, editorHeader, realArgStrs) {
+    var ruleNameBlock = editorHeader.appendChild(createElement('.block'));
+    ruleNameBlock.appendChild(createElement('span.name', traceNode.displayString + ' ='));
+
+    var argDisplays = getArgumentsDisplay(traceNode);
+    var defaultArgStrs = getDefaultArguments(traceNode);
+    argDisplays.forEach(function(argDisplay, idx) {
+      if (idx >= realArgStrs.length) {
+        return;
+      }
+
+      var argBlock = editorHeader.appendChild(createElement('.block'));
+      var argTag = argBlock.appendChild(createElement('span.name', argDisplay));
+      var argEditor = argBlock.appendChild(createElement('textarea.rename'));
+      if (realArgStrs[idx] === defaultArgStrs[idx]) {
+        argEditor.hidden = true;
+      }
+      if (realArgStrs[idx] !== argDisplay) {
+        argEditor.value = realArgStrs[idx];
+      }
+
+      argEditor.autofocus = true;
+      argEditor.cols = Math.max(argEditor.value.length, 1);
+      argEditor.addEventListener('keyup', function() {
+        argEditor.cols = Math.max(argEditor.value.length, 1);
+      });
+      argTag.addEventListener('click', function(e) {
+        argEditor.hidden = !argEditor.hidden;
+        if (!argEditor.hidden && argEditor.value.length === 0) {
+          argEditor.focus();
+        }
+        e.stopPropagation();
+      });
+    });
+  }
+
+  function retrieveArguementsFromHeader(editorHeader) {
+    var argumentStrs = [];
+    Array.prototype.forEach.call(editorHeader.children, function(block, idx) {
+      if (idx === 0) {
+        return;
+      }
+      argumentStrs.push(block.lastChild.value || block.firstChild.textContent);
+    });
+    return argumentStrs;
+  }
+
+  function loadActionResult(traceNode, actionName, actionResultContainer) {
+    var result = semanticsActionHelpers.getActionResult(traceNode, actionName);
+
+    // Mark the label if it's one of the next steps
+    if (semanticsActionHelpers.isNextStep(result, traceNode, actionName)) {
+      actionResultContainer.parentElement.previousElementSibling.classList.add('nextStepMark');
+    }
+
+    if (result && result.isErrorWrapper) {
+      actionResultContainer.classList.add('error');
+      actionResultContainer.textContent = result;
+    } else if (result && result.isFailure) {
+      actionResultContainer.classList.add('error');
+    } else {
+      // TODO: only has reserved result, put the reserved result, and style it
+      actionResultContainer.innerHTML = JSON.stringify(result);
+    }
+  }
+
+  function appendSemanticsEditor(semantics, wrapper, traceNode, actionName) {
+    var semanticsEditor = wrapper.appendChild(createElement('.semanticsEditor'));
+    semanticsEditor._traceNode = traceNode;
+
+    var actionFnStrObj = retrieveActionFnStrObj(traceNode, actionName, semantics);
+    var editorHeader = semanticsEditor.appendChild(createElement('.header'));
+    loadEditorHeader(traceNode, editorHeader, actionFnStrObj.args);
+
+    var editorBody = semanticsEditor.appendChild(createElement('.body'));
+    var editorBodyCM = CodeMirror(editorBody);
+    editorBodyCM.setValue(actionFnStrObj.body || '');
+
+    var actionResultContainer = semanticsEditor.appendChild(createElement('.result'));
+    loadActionResult(traceNode, actionName, actionResultContainer);
+
+    semanticsEditor.appendChild(createElement('button.save', 'save'));
+
+    if (semanticsActionHelpers.isPassThrough(traceNode, actionName)) {
+      wrapper.firstElementChild.classList.add('passThrough');
+      semanticsEditor.hidden = true;
+    }
+
+    if (semanticsActionHelpers.haveNoResult(traceNode, actionName) ||
+      actionResultContainer.classList.contains('error')) {
+      semanticsEditor.hidden = true;
+    } else if (!semanticsEditor.hidden) {
+      semanticsEditor.classList.add('resultOnly');
+      actionResultContainer.classList.add('alwaysShow');
+    }
+  }
+
+  function createTraceElement(ui, grammar, semantics, rootTrace, traceNode, parent, input,
     optActionName, optZoomState) {
 
     var wrapper = parent.appendChild(createElement('.pexpr'));
@@ -258,29 +462,18 @@
       wrapper.classList.add('zoomBorder');
     }
 
-    wrapper.addEventListener('click', function(e) {
-      if (e.altKey && !(e.shiftKey || e.metaKey)) {
-        console.log(traceNode);  // eslint-disable-line no-console
-      } else if (!isPrimitive(pexpr)) {
-        toggleTraceElement(wrapper);
-      }
-      e.stopPropagation();
-      e.preventDefault();
-    });
-
-    var inputMark;
-    var grammarMark;
-    var defMark;
     wrapper.addEventListener('mouseover', function(e) {
       if (input) {
         input.classList.add('highlight');
       }
       if (traceNode.interval) {
-        inputMark = cmUtil.markInterval(ui.inputEditor, traceNode.interval, 'highlight', false);
+        wrapper._inputMark =
+          cmUtil.markInterval(ui.inputEditor, traceNode.interval, 'highlight', false);
         ui.inputEditor.getWrapperElement().classList.add('highlighting');
       }
       if (pexpr.interval) {
-        grammarMark = cmUtil.markInterval(ui.grammarEditor, pexpr.interval, 'active-appl', false);
+        wrapper._grammarMark =
+          cmUtil.markInterval(ui.grammarEditor, pexpr.interval, 'active-appl', false);
         ui.grammarEditor.getWrapperElement().classList.add('highlighting');
         cmUtil.scrollToInterval(ui.grammarEditor, pexpr.interval);
       }
@@ -288,23 +481,28 @@
       if (ruleName) {
         var defInterval = grammar.ruleBodies[ruleName].definitionInterval;
         if (defInterval) {
-          defMark = cmUtil.markInterval(ui.grammarEditor, defInterval, 'active-definition', true);
+          wrapper._defMark =
+            cmUtil.markInterval(ui.grammarEditor, defInterval, 'active-definition', true);
           cmUtil.scrollToInterval(ui.grammarEditor, defInterval);
         }
       }
       e.stopPropagation();
     });
-    function clearMarks() {
-      if (input) {
-        input.classList.remove('highlight');
+
+    wrapper._clearMarks = function() {
+      if (wrapper._input) {
+        wrapper._input.classList.remove('highlight');
       }
-      inputMark = cmUtil.clearMark(inputMark);
-      grammarMark = cmUtil.clearMark(grammarMark);
-      defMark = cmUtil.clearMark(defMark);
+      wrapper._inputMark = cmUtil.clearMark(wrapper._inputMark);
+      wrapper._grammarMark = cmUtil.clearMark(wrapper._grammarMark);
+      wrapper._defMark = cmUtil.clearMark(wrapper._defMark);
       ui.grammarEditor.getWrapperElement().classList.remove('highlighting');
       ui.inputEditor.getWrapperElement().classList.remove('highlighting');
-    }
-    wrapper.addEventListener('mouseout', clearMarks);
+    };
+
+    wrapper.addEventListener('mouseout', function(e) {
+      wrapper._clearMarks();
+    });
     wrapper._input = input;
 
     var text = pexpr.ruleName === 'spaces' ? UnicodeChars.WHITE_BULLET : traceNode.displayString;
@@ -326,11 +524,11 @@
     zoomButton.addEventListener('click', function(e) {
       var currentRootTrace = optZoomState && optZoomState.zoomTrace || rootTrace;
       if (couldZoom(currentRootTrace, traceNode)) {
-        $('#zoomOutButton')._trace = traceNode;
-        $('#zoomOutButton').hidden = false;
-        refreshParseTree(ui, grammar, rootTrace, ohmEditor.options.showFailures, optActionName,
-          {zoomTrace: traceNode});
-        clearMarks();
+        zoomOutButton._trace = traceNode;
+        zoomOutButton.hidden = false;
+        refreshParseTree(ui, grammar, semantics, rootTrace, ohmEditor.options.showFailures,
+          optActionName, {zoomTrace: traceNode});
+        wrapper._clearMarks();
       }
       e.stopPropagation();
       e.preventDefault();
@@ -347,6 +545,25 @@
       zoomButton.hidden = true;
     });
 
+    label.addEventListener('click', function(e) {
+      if (e.altKey && !(e.shiftKey || e.metaKey)) {
+        console.log(traceNode);  // eslint-disable-line no-console
+      } else if (e.metaKey && !e.shiftKey && optActionName) {
+        toggleSemanticEditor(wrapper); // cmd + click to open or close semantic editor
+      } else if (!isPrimitive(pexpr)) {
+        toggleTraceElement(wrapper);
+      }
+      e.stopPropagation();
+      e.preventDefault();
+    });
+
+    var couldAppendSemanticsEditor = shouldNodeBeLabeled(traceNode) &&
+                                     !isPrimitive(pexpr) &&
+                                     pexpr.ruleName !== 'spaces';
+    if (optActionName && couldAppendSemanticsEditor) {
+      semanticsActionHelpers.populateActionResult(semantics, traceNode, optActionName);
+      appendSemanticsEditor(semantics, wrapper, traceNode, optActionName);
+    }
     return wrapper;
   }
 
@@ -373,8 +590,7 @@
     }
   });
 
-  function initializeZoomOutButton(rootTrace, optActionName, optZoomState) {
-    var zoomOutButton = $('#zoomOutButton');
+  function initializeZoomOutButton(semantics, rootTrace, optActionName, optZoomState) {
     zoomOutButton.textContent = UnicodeChars.ANTICLOCKWISE_OPEN_CIRCLE_ARROW;
     if (!optZoomState) {
       zoomOutButton.hidden = true;
@@ -384,53 +600,118 @@
     zoomOutButton.onclick = function(e) {
       zoomOutButton.hidden = true;
       zoomOutButton._trace = undefined;
-      refreshParseTree(ohmEditor.ui, ohmEditor.grammar, rootTrace, ohmEditor.options.showFailures,
-        optActionName);
+      refreshParseTree(ohmEditor.ui, ohmEditor.grammar, semantics, rootTrace,
+        ohmEditor.options.showFailures, optActionName);
     };
 
     zoomOutButton.onmouseover = function(e) {
       var zoomState = {zoomTrace: zoomOutButton._trace, previewOnly: true};
-      refreshParseTree(ohmEditor.ui, ohmEditor.grammar, rootTrace, ohmEditor.options.showFailures,
-        optActionName, zoomState);
+      refreshParseTree(ohmEditor.ui, ohmEditor.grammar, semantics, rootTrace,
+        ohmEditor.options.showFailures, optActionName, zoomState);
     };
 
     zoomOutButton.onmouseout = function(e) {
       var zoomState = zoomOutButton._trace && {zoomTrace: zoomOutButton._trace};
-      refreshParseTree(ohmEditor.ui, ohmEditor.grammar, rootTrace, ohmEditor.options.showFailures,
-        optActionName, zoomState);
+      refreshParseTree(ohmEditor.ui, ohmEditor.grammar, semantics, rootTrace,
+        ohmEditor.options.showFailures, optActionName, zoomState);
     };
   }
 
-  function intializeActionButtonEvent(rootTrace, optActionName, optZoomState) {
+  function intializeActionButtonEvent(semantics, rootTrace, optActionName, optZoomState) {
     var actionContainers = document.querySelectorAll('.actionEntries');
     Array.prototype.forEach.call(actionContainers, function(actionContainer) {
       actionContainer.onclick = function(event) {
         var actionName = event.target.value;
         if (optActionName === actionName) {
-          refreshParseTree(ohmEditor.ui, ohmEditor.grammar, rootTrace,
+          refreshParseTree(ohmEditor.ui, ohmEditor.grammar, semantics, rootTrace,
             ohmEditor.options.showFailures, null, optZoomState);
         } else {
-          refreshParseTree(ohmEditor.ui, ohmEditor.grammar, rootTrace,
+          refreshParseTree(ohmEditor.ui, ohmEditor.grammar, semantics, rootTrace,
             ohmEditor.options.showFailures, actionName, optZoomState);
         }
       };
 
       actionContainer.onkeypress = function(event) {
-        if (event.keyCode === 13 && event.target.value && !event.target.readOnly) {
+        if (event.keyCode !== 13) {
+          return;
+        }
+        var actionType = actionContainer.id === 'operations' ? 'Operation' : 'Attribute';
+        var actionName = event.target.value;
+        if (actionName && !event.target.readOnly) {
           event.target.readOnly = true;
-          var actionName = event.target.value;
-          refreshParseTree(ohmEditor.ui, ohmEditor.grammar, rootTrace,
-            ohmEditor.options.showFailures, actionName, optZoomState);
+          try {
+            semanticsActionHelpers.addNewAction(semantics, actionType, actionName);
+            refreshParseTree(ohmEditor.ui, ohmEditor.grammar, semantics, rootTrace,
+              ohmEditor.options.showFailures, actionName, optZoomState);
+
+          } catch (error) {
+            event.target.readOnly = false;
+            window.alert(error); // eslint-disable-line no-alert
+            event.target.select();
+          }
         }
       };
     });
   }
 
-  function refreshParseTree(ui, grammar, rootTrace, showFailures, optActionName, optZoomState) {
+  function saveSemanticAction(semantics, traceNode, actionName, editorBody) {
+    var editorBodyCM = editorBody.firstChild.CodeMirror;
+    var actionFnStr = editorBodyCM.getValue();
+    var args = retrieveArguementsFromHeader(editorBody.previousElementSibling);
+
+    var actionFnWrapper = semanticsActionHelpers.getActionFnWrapper(actionName, args, actionFnStr);
+    var actionKey = traceNode.bindings[0].ctorName;
+    semantics.get(actionName).actionDict[actionKey] = actionFnWrapper;
+    return true;
+  }
+
+  function addActionSavingEvent(semantics, rootTrace, actionName, optZoomState) {
+
+    function handleSavingEvent(editorBody) {
+      var nodeWrapper = editorBody.parentElement.parentElement;
+      var traceNode = editorBody.parentElement._traceNode;
+
+      // Save the actionFn if there is no syntax error, otherwise show the error
+      try {
+        saveSemanticAction(semantics, traceNode, actionName, editorBody);
+        semanticsActionHelpers.initializeActionLog();
+        semanticsActionHelpers.populateActionResult(semantics, traceNode, actionName);
+        var result = semanticsActionHelpers.getActionResult(traceNode, actionName);
+
+        // Keep the editor open if there still has an error
+        if (semanticsActionHelpers.isNextStep(result, traceNode, actionName)) {
+          loadActionResult(traceNode, actionName, editorBody.nextElementSibling);
+        } else {
+          refreshParseTree(ohmEditor.ui, ohmEditor.grammar, semantics, rootTrace,
+            ohmEditor.options.showFailures, actionName, optZoomState);
+        }
+      } catch (error) {
+        editorBody.nextElementSibling.classList.add('error');
+        editorBody.nextElementSibling.textContent = error.message;
+      } finally {
+        nodeWrapper._clearMarks();
+      }
+    }
+
+    var editorBodys = document.querySelectorAll('.semanticsEditor .body');
+    Array.prototype.forEach.call(editorBodys, function(editorBody) {
+      var editorBodyCM = editorBody.firstChild.CodeMirror;
+      editorBodyCM.setOption('extraKeys', {
+        'Cmd-S': function() { handleSavingEvent(editorBody); }
+      });
+
+      var saveButton = editorBody.nextElementSibling.nextElementSibling;
+      saveButton.onclick = function(e) { handleSavingEvent(editorBody); };
+    });
+  }
+
+  function refreshParseTree(ui, grammar, semantics, rootTrace, showFailures,
+    optActionName, optZoomState) {
+
     $('#expandedInput').innerHTML = '';
     $('#parseResults').innerHTML = '';
 
-    initializeZoomOutButton(rootTrace, optActionName, optZoomState);
+    initializeZoomOutButton(semantics, rootTrace, optActionName, optZoomState);
 
     var trace;
     if (optZoomState && !optZoomState.previewOnly) {
@@ -439,7 +720,11 @@
       trace = rootTrace;
     }
 
-    intializeActionButtonEvent(rootTrace, optActionName, optZoomState);
+    intializeActionButtonEvent(semantics, rootTrace, optActionName, optZoomState);
+    if (optActionName) {
+      semanticsActionHelpers.initializeActionLog();
+    }
+
     var inputStack = [$('#expandedInput')];
     var containerStack = [$('#parseResults')];
     trace.walk({
@@ -474,8 +759,9 @@
           }
         }
         var container = containerStack[containerStack.length - 1];
-        var el = createTraceElement(ui, grammar, rootTrace, node, container, childInput,
+        var el = createTraceElement(ui, grammar, semantics, rootTrace, node, container, childInput,
           optActionName, optZoomState);
+
         toggleClasses(el, {
           failed: !node.succeeded,
           hidden: !shouldNodeBeLabeled(node),
@@ -493,6 +779,9 @@
       }
     });
     initializeWidths();
+    if (optActionName) {
+      addActionSavingEvent(semantics, rootTrace, optActionName, optZoomState);
+    }
   }
 
   ohmEditor.refreshParseTree = refreshParseTree;

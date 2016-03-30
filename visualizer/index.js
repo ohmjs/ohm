@@ -14,11 +14,10 @@ function $(sel) { return document.querySelector(sel); }
 })(this, function(ohm, ohmEditor, cmUtil, CodeMirror) {
   function $$(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
 
-  var checkboxes, grammarChanged;
+  var checkboxes, grammarChanged, semantics;
 
   // EXPORTS
   // -------
-
   ohmEditor.options = {};
   ohmEditor.ui = {
     inputEditor: CodeMirror($('#inputContainer .editorWrapper')),
@@ -88,6 +87,8 @@ function $(sel) { return document.querySelector(sel); }
           err.shortMessage || err.message);
         return;
       }
+
+      semantics = this.grammar.semantics();
     }
 
     if (this.grammar && this.grammar.defaultStartRule) {
@@ -104,7 +105,8 @@ function $(sel) { return document.querySelector(sel); }
           'Expected ' + trace.result.getExpectedText());
       }
 
-      this.refreshParseTree(this.ui, this.grammar, trace, this.options.showFailures, actionName);
+      this.refreshParseTree(this.ui, this.grammar, semantics, trace, this.options.showFailures,
+        actionName);
     }
   };
 

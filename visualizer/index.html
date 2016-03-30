@@ -116,6 +116,17 @@
       background-color: #dfdfdf;
       border-color: #dfdfdf;
     }
+    .pexpr > .label.nextStepMark {
+      border: 1px solid red;
+      background: rgba(255, 215, 222, 0.63);
+    }
+    .pexpr > .label.nextStepMark:hover {
+      background: rgb(255, 215, 222);
+    }
+    .pexpr > .label.passThrough {
+      border-bottom: 1px solid #9E9E9E;
+      margin-bottom: 0px;
+    }
     .pexpr > .label.prim {
       background-color: transparent;
       border-color: transparent;
@@ -158,6 +169,65 @@
     .highlightApplication {
       background-color: CornflowerBlue;
       color: white;
+    }
+
+    .semanticsEditor.resultOnly .header,
+    .semanticsEditor.resultOnly .body,
+    .semanticsEditor.resultOnly .save {
+      display: none;
+    }
+
+    .semanticsEditor .header {
+      font-family: Menlo, Monaco, sans-serif;
+      font-size: 12px;
+      display: flex;
+      height: 24px;
+      margin-bottom: 8px;
+    }
+    .semanticsEditor .header .block {
+      padding-top: 5px;
+      padding-bottom: 5px;
+      float: left;
+      margin-left: 5px;
+    }
+    span.name {
+      color: rgb(123, 123, 123);
+      float: left;
+    }
+    textarea.rename {
+      height: 12px;
+      resize: none;
+      outline: none;
+      margin-top: 8px;
+      font: italic 12px Menlo, Monaco, sans-serif;
+      color:  #FF8D00;
+      border: white;
+    }
+
+    .semanticsEditor .body {
+      margin-top: 3px;
+      border: 1px solid #ddd;
+      height: 100px;
+      min-width: 300px;
+      overflow: auto
+    }
+
+    .semanticsEditor .result {
+      padding-bottom: 2px;
+      text-align: center;
+      color: #4CAF50;
+      height: 13px;
+    }
+    .semanticsEditor .result.error {
+      background-color: rgb(255, 215, 222);
+      color: red;
+    }
+
+    .semanticsEditor button.save {
+      width: 100%;
+    }
+    .semanticsEditor button.save:hover {
+      text-decoration: underline;
     }
 
     #actions {
@@ -293,6 +363,12 @@
       width: 100%;
     }
 
+    .semanticsEditor .CodeMirror {
+      font-family: Menlo, Monaco, sans-serif;
+      font-size: 12px;
+      width: auto;
+    }
+
     .CodeMirror .error-interval {
       border-bottom: 1px dashed #C7254E;
     }
@@ -326,11 +402,19 @@
       position: relative;
       color: black;
     }
+
     .CodeMirror-lines {
       padding-top: 0;
     }
+    .semanticsEditor .body .CodeMirror-lines {
+      padding: 8px;
+    }
+
     .CodeMirror-lines pre {
       padding-left: 14px;
+    }
+    .semanticsEditor .body .CodeMirror-lines pre{
+      padding-left: 0px;
     }
 
     .footer {
@@ -498,11 +582,13 @@ number  (a number)
   <script src="splitters.js"></script>
 
   <script src="../dist/ohm.js"></script>
+  <script src="third_party/bodyGrammar.js"></script>
   <script src="third_party/d3.min.js"></script>
   <script src="third_party/codemirror-5.11/lib/codemirror.js"></script>
   <script src="third_party/codemirror-5.11/addon/search/search.js"></script>
   <script src="third_party/codemirror-5.11/addon/search/searchcursor.js"></script>
   <script src="cmUtil.js"></script>
+  <script src="semanticsActionHelpers.js"></script>
   <script src="parseTree.js"></script>
   <script src="externalRules.js"></script>
   <script src="ruleHyperlinks.js"></script>
