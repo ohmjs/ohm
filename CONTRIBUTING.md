@@ -17,7 +17,7 @@ an email to the mailing list) before submitting a pull request.
 Also, please ensure the tests pass (using `npm test`) and that there are no
 lint errors -- though the pre-commit hook should do this automatically.
 
-### Formatting
+## Formatting
 
 To make the review process easier and maximize the chances that your pull
 request is accepted, here are some guidelines:
@@ -36,7 +36,7 @@ request is accepted, here are some guidelines:
 - Try to keep your pull requests small -- anything more than a few hundred lines
   is too big. If necessary, break your changes up into several small PRs.
 
-### Review Process
+## Review Process
 
 When you submit a pull request, one of the Ohm developers will review it and
 (most likely) leave comments on it. Don't worry -- this is not about judging
