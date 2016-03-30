@@ -237,35 +237,14 @@
   }
 
   function couldZoom(currentRootTrace, traceNode) {
-    return !(currentRootTrace === traceNode ||
-           !(traceNode.expr instanceof ohm.pexprs.Apply));
-  }
-
-  function zoomIn(ui, grammar, rootTrace, showFailures, traceNode) {
-    var zoomOutButton = $('#zoomOutButton');
-    zoomOutButton.textContent = UnicodeChars.ANTICLOCKWISE_OPEN_CIRCLE_ARROW;
-    zoomOutButton._trace = traceNode;
-    zoomOutButton.hidden = false;
-
-    zoomOutButton.onclick = function(e) {
-      zoomOutButton.hidden = true;
-      zoomOutButton._trace = undefined;
-      refreshParseTree(ui, grammar, rootTrace, showFailures);
-    };
-    zoomOutButton.onmouseover = function(e) {
-      var zoomState = {zoomTrace: zoomOutButton._trace, previewOnly: true};
-      refreshParseTree(ui, grammar, rootTrace, showFailures, zoomState);
-    };
-    zoomOutButton.onmouseout = function(e) {
-      var zoomState = zoomOutButton._trace && {zoomTrace: zoomOutButton._trace};
-      refreshParseTree(ui, grammar, rootTrace, showFailures, zoomState);
-    };
-
-    refreshParseTree(ui, grammar, rootTrace, showFailures, {zoomTrace: traceNode});
+    return currentRootTrace !== traceNode &&
+           traceNode.succeeded &&
+           !isPrimitive(traceNode.expr) &&
+           traceNode.expr.ruleName !== 'spaces';
   }
 
   function createTraceElement(ui, grammar, rootTrace, traceNode, parent, input,
-    showFailures, optZoomState) {
+    optActionName, optZoomState) {
 
     var wrapper = parent.appendChild(createElement('.pexpr'));
     var pexpr = traceNode.expr;
@@ -347,7 +326,10 @@
     zoomButton.addEventListener('click', function(e) {
       var currentRootTrace = optZoomState && optZoomState.zoomTrace || rootTrace;
       if (couldZoom(currentRootTrace, traceNode)) {
-        zoomIn(ui, grammar, rootTrace, showFailures, traceNode);
+        $('#zoomOutButton')._trace = traceNode;
+        $('#zoomOutButton').hidden = false;
+        refreshParseTree(ui, grammar, rootTrace, ohmEditor.options.showFailures, optActionName,
+          {zoomTrace: traceNode});
         clearMarks();
       }
       e.stopPropagation();
@@ -391,15 +373,64 @@
     }
   });
 
-  function refreshParseTree(ui, grammar, rootTrace, showFailures, optZoomState) {
-    $('#expandedInput').innerHTML = '';
-    $('#parseResults').innerHTML = '';
-
+  function initializeZoomOutButton(rootTrace, optActionName, optZoomState) {
     var zoomOutButton = $('#zoomOutButton');
-    if (!optZoomState && !zoomOutButton.hidden) {
+    zoomOutButton.textContent = UnicodeChars.ANTICLOCKWISE_OPEN_CIRCLE_ARROW;
+    if (!optZoomState) {
       zoomOutButton.hidden = true;
       zoomOutButton._trace = undefined;
     }
+
+    zoomOutButton.onclick = function(e) {
+      zoomOutButton.hidden = true;
+      zoomOutButton._trace = undefined;
+      refreshParseTree(ohmEditor.ui, ohmEditor.grammar, rootTrace, ohmEditor.options.showFailures,
+        optActionName);
+    };
+
+    zoomOutButton.onmouseover = function(e) {
+      var zoomState = {zoomTrace: zoomOutButton._trace, previewOnly: true};
+      refreshParseTree(ohmEditor.ui, ohmEditor.grammar, rootTrace, ohmEditor.options.showFailures,
+        optActionName, zoomState);
+    };
+
+    zoomOutButton.onmouseout = function(e) {
+      var zoomState = zoomOutButton._trace && {zoomTrace: zoomOutButton._trace};
+      refreshParseTree(ohmEditor.ui, ohmEditor.grammar, rootTrace, ohmEditor.options.showFailures,
+        optActionName, zoomState);
+    };
+  }
+
+  function intializeActionButtonEvent(rootTrace, optActionName, optZoomState) {
+    var actionContainers = document.querySelectorAll('.actionEntries');
+    Array.prototype.forEach.call(actionContainers, function(actionContainer) {
+      actionContainer.onclick = function(event) {
+        var actionName = event.target.value;
+        if (optActionName === actionName) {
+          refreshParseTree(ohmEditor.ui, ohmEditor.grammar, rootTrace,
+            ohmEditor.options.showFailures, null, optZoomState);
+        } else {
+          refreshParseTree(ohmEditor.ui, ohmEditor.grammar, rootTrace,
+            ohmEditor.options.showFailures, actionName, optZoomState);
+        }
+      };
+
+      actionContainer.onkeypress = function(event) {
+        if (event.keyCode === 13 && event.target.value && !event.target.readOnly) {
+          event.target.readOnly = true;
+          var actionName = event.target.value;
+          refreshParseTree(ohmEditor.ui, ohmEditor.grammar, rootTrace,
+            ohmEditor.options.showFailures, actionName, optZoomState);
+        }
+      };
+    });
+  }
+
+  function refreshParseTree(ui, grammar, rootTrace, showFailures, optActionName, optZoomState) {
+    $('#expandedInput').innerHTML = '';
+    $('#parseResults').innerHTML = '';
+
+    initializeZoomOutButton(rootTrace, optActionName, optZoomState);
 
     var trace;
     if (optZoomState && !optZoomState.previewOnly) {
@@ -408,6 +439,7 @@
       trace = rootTrace;
     }
 
+    intializeActionButtonEvent(rootTrace, optActionName, optZoomState);
     var inputStack = [$('#expandedInput')];
     var containerStack = [$('#parseResults')];
     trace.walk({
@@ -443,7 +475,7 @@
         }
         var container = containerStack[containerStack.length - 1];
         var el = createTraceElement(ui, grammar, rootTrace, node, container, childInput,
-          showFailures, optZoomState);
+          optActionName, optZoomState);
         toggleClasses(el, {
           failed: !node.succeeded,
           hidden: !shouldNodeBeLabeled(node),
