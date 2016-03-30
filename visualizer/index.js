@@ -104,7 +104,7 @@ function $(sel) { return document.querySelector(sel); }
           'Expected ' + trace.result.getExpectedText());
       }
 
-      this.refreshParseTree(this.ui, this.grammar, trace, this.options.showFailures, actionName);
+      this.refreshParseTree(trace, actionName);
     }
   };
 

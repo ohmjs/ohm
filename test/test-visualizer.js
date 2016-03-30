@@ -77,11 +77,11 @@ var HTML = '<button id="zoomOutButton" type="button" hidden></button>' +
 
 test('simple parse tree', function(t) {
   var doc = jsdom.jsdom(HTML);
-  var ohmEditor = {};
+  var ohmEditor = {options: {}, ui: {}};
   parseTree(ohm, ohmEditor, doc, null, null);
   var g = ohm.grammar('G { start = letter digit+  -- x\n| digit }');
 
-  ohmEditor.refreshParseTree(null, g, g.trace('a99'), false);
+  ohmEditor.refreshParseTree(g.trace('a99'));
   t.equal(doc.querySelector('#expandedInput').textContent, 'a99');
 
   t.deepEqual(serializeTrace(doc.querySelector('#parseResults')), [

@@ -243,8 +243,9 @@
            traceNode.expr.ruleName !== 'spaces';
   }
 
-  function createTraceElement(ui, grammar, rootTrace, traceNode, parent, input,
-    optActionName, optZoomState) {
+  function createTraceElement(rootTrace, traceNode, parent, input, optActionName, optZoomState) {
+    var grammarEditor = ohmEditor.ui.grammarEditor;
+    var inputEditor = ohmEditor.ui.inputEditor;
 
     var wrapper = parent.appendChild(createElement('.pexpr'));
     var pexpr = traceNode.expr;
@@ -276,24 +277,25 @@
         input.classList.add('highlight');
       }
       if (traceNode.interval) {
-        inputMark = cmUtil.markInterval(ui.inputEditor, traceNode.interval, 'highlight', false);
-        ui.inputEditor.getWrapperElement().classList.add('highlighting');
+        inputMark = cmUtil.markInterval(inputEditor, traceNode.interval, 'highlight', false);
+        inputEditor.getWrapperElement().classList.add('highlighting');
       }
       if (pexpr.interval) {
-        grammarMark = cmUtil.markInterval(ui.grammarEditor, pexpr.interval, 'active-appl', false);
-        ui.grammarEditor.getWrapperElement().classList.add('highlighting');
-        cmUtil.scrollToInterval(ui.grammarEditor, pexpr.interval);
+        grammarMark = cmUtil.markInterval(grammarEditor, pexpr.interval, 'active-appl', false);
+        grammarEditor.getWrapperElement().classList.add('highlighting');
+        cmUtil.scrollToInterval(grammarEditor, pexpr.interval);
       }
       var ruleName = pexpr.ruleName;
       if (ruleName) {
-        var defInterval = grammar.ruleBodies[ruleName].definitionInterval;
+        var defInterval = ohmEditor.grammar.ruleBodies[ruleName].definitionInterval;
         if (defInterval) {
-          defMark = cmUtil.markInterval(ui.grammarEditor, defInterval, 'active-definition', true);
-          cmUtil.scrollToInterval(ui.grammarEditor, defInterval);
+          defMark = cmUtil.markInterval(grammarEditor, defInterval, 'active-definition', true);
+          cmUtil.scrollToInterval(grammarEditor, defInterval);
         }
       }
       e.stopPropagation();
     });
+
     function clearMarks() {
       if (input) {
         input.classList.remove('highlight');
@@ -301,8 +303,8 @@
       inputMark = cmUtil.clearMark(inputMark);
       grammarMark = cmUtil.clearMark(grammarMark);
       defMark = cmUtil.clearMark(defMark);
-      ui.grammarEditor.getWrapperElement().classList.remove('highlighting');
-      ui.inputEditor.getWrapperElement().classList.remove('highlighting');
+      grammarEditor.getWrapperElement().classList.remove('highlighting');
+      inputEditor.getWrapperElement().classList.remove('highlighting');
     }
     wrapper.addEventListener('mouseout', clearMarks);
     wrapper._input = input;
@@ -328,8 +330,7 @@
       if (couldZoom(currentRootTrace, traceNode)) {
         $('#zoomOutButton')._trace = traceNode;
         $('#zoomOutButton').hidden = false;
-        refreshParseTree(ui, grammar, rootTrace, ohmEditor.options.showFailures, optActionName,
-          {zoomTrace: traceNode});
+        refreshParseTree(rootTrace, optActionName, {zoomTrace: traceNode});
         clearMarks();
       }
       e.stopPropagation();
@@ -386,20 +387,17 @@
     zoomOutButton.onclick = function(e) {
       zoomOutButton.hidden = true;
       zoomOutButton._trace = undefined;
-      refreshParseTree(ohmEditor.ui, ohmEditor.grammar, rootTrace, ohmEditor.options.showFailures,
-        optActionName);
+      refreshParseTree(rootTrace, optActionName);
     };
 
     zoomOutButton.onmouseover = function(e) {
       var zoomState = {zoomTrace: zoomOutButton._trace, previewOnly: true};
-      refreshParseTree(ohmEditor.ui, ohmEditor.grammar, rootTrace, ohmEditor.options.showFailures,
-        optActionName, zoomState);
+      refreshParseTree(rootTrace, optActionName, zoomState);
     };
 
     zoomOutButton.onmouseout = function(e) {
       var zoomState = zoomOutButton._trace && {zoomTrace: zoomOutButton._trace};
-      refreshParseTree(ohmEditor.ui, ohmEditor.grammar, rootTrace, ohmEditor.options.showFailures,
-        optActionName, zoomState);
+      refreshParseTree(rootTrace, optActionName, zoomState);
     };
   }
 
@@ -409,11 +407,9 @@
       actionContainer.onclick = function(event) {
         var actionName = event.target.value;
         if (optActionName === actionName) {
-          refreshParseTree(ohmEditor.ui, ohmEditor.grammar, rootTrace,
-            ohmEditor.options.showFailures, null, optZoomState);
+          refreshParseTree(rootTrace, null, optZoomState);
         } else {
-          refreshParseTree(ohmEditor.ui, ohmEditor.grammar, rootTrace,
-            ohmEditor.options.showFailures, actionName, optZoomState);
+          refreshParseTree(rootTrace, actionName, optZoomState);
         }
       };
 
@@ -421,14 +417,14 @@
         if (event.keyCode === 13 && event.target.value && !event.target.readOnly) {
           event.target.readOnly = true;
           var actionName = event.target.value;
-          refreshParseTree(ohmEditor.ui, ohmEditor.grammar, rootTrace,
-            ohmEditor.options.showFailures, actionName, optZoomState);
+          refreshParseTree(rootTrace, actionName, optZoomState);
         }
       };
     });
   }
 
-  function refreshParseTree(ui, grammar, rootTrace, showFailures, optActionName, optZoomState) {
+  // Re-render the parse tree starting with the trace at `rootTrace`.
+  function refreshParseTree(rootTrace, optActionName, optZoomState) {
     var expandedInputDiv = $('#expandedInput');
     var parseResultsDiv = $('#parseResults');
 
@@ -450,7 +446,7 @@
     trace.walk({
       enter: function(node, parent, depth) {
         // Don't recurse into nodes that didn't succeed unless "Show failures" is enabled.
-        if (!showFailures && !node.succeeded) {
+        if (!ohmEditor.options.showFailures && !node.succeeded) {
           return node.SKIP;
         }
         var childInput;
@@ -479,8 +475,8 @@
           }
         }
         var container = containerStack[containerStack.length - 1];
-        var el = createTraceElement(ui, grammar, rootTrace, node, container, childInput,
-          optActionName, optZoomState);
+        var el = createTraceElement(
+            rootTrace, node, container, childInput, optActionName, optZoomState);
         toggleClasses(el, {
           failed: !node.succeeded,
           hidden: !shouldNodeBeLabeled(node),
