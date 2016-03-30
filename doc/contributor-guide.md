@@ -33,6 +33,29 @@ information._
 * When editing Ohm's own grammar (in `src/ohm-grammar.ohm`), run
   `npm run bootstrap` to re-build Ohm and test your changes.
 
+## Doing Development
+
+Here's the typical flow for developing a new Ohm feature:
+
+- Create a new feature branch off master, giving it a descriptive name.
+  E.g., `git checkout -b incremental-parsing master`.
+- Commit to your feature branch.
+- Use `git rebase` to keep your branch up to date with development that is
+  taking place on the master branch. (You can also use `git merge`, if you
+  prefer, but that will result in merge commits which you'll need to remove
+  before review.)
+- When your feature is ready for review, push your branch and submit a pull
+  request. Before pushing, make sure that your commit history is clean -- it
+  should contain one commit for each _logical_ unit of work:
+
+    * A single commit is preferable. For larger features, more than one
+      commit is ok.
+    * Do NOT include merge commits, or commits with mistakes that are fixed
+      by a later commit.
+    * If necessary, you can use `git rebase -i` and/or `git merge --squash`
+      to clean up your history. See [Git - Rewriting History](https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History)
+      for more information.
+
 ### Pre-commit Checks
 
 When you run `npm install` in an Ohm checkout, it will automatically install

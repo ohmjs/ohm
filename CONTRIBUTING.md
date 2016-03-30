@@ -15,7 +15,8 @@ For new features, it's also best to discuss the idea with us (via an issue or
 an email to the mailing list) before submitting a pull request.
 
 Also, please ensure the tests pass (using `npm test`) and that there are no
-lint errors -- though the pre-commit hook should do this automatically.
+lint errors -- though the [pre-commit hook](doc/contributor-guide.md#pre-commit-checks)
+should do this automatically.
 
 ## Formatting
 
