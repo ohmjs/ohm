@@ -4,6 +4,8 @@ var ohm = require('..');
 var pexprs = require('../src/pexprs');
 var test = require('tape');
 
+require('../src/pexprs-toArgumentNameList');
+
 var makeGrammar = require('./testUtil').makeGrammar;
 
 // --------------------------------------------------------------------
@@ -94,6 +96,45 @@ test('toString', function(t) {
     ]);
   var e = g.ruleBodies.start;
   t.equal(e.toString(), '(~(2 | 3?) $((&"a" b #(a))) [(c {"e": $(b), ...} {"g": $("a".."z")})])');
+  t.end();
+});
+
+test.only('toArgumentNameList', function(t) {
+  var g =  makeGrammar([
+    'G {',
+    ' Start = &((foo bars foo)+)',
+    ' foo = "ab" | letter* | "a".."z"',
+    ' bars = ~"a" (letter "b"| digit "b") foo? "+"',
+    ' plus = foo "+" bars',
+    ' MoreOpts = ("+" Start)?',
+    ' }'
+    ]);
+
+  var iter = g.ruleBodies.Start;
+  t.deepEqual(iter.toArgumentNameList(1), ['foo_1s', 'barses', 'foo_2s']);
+
+  var alt = g.ruleBodies.foo;
+  t.deepEqual(alt.toArgumentNameList(1), ['_ab_or_letters_or_a_to_z']);
+  t.deepEqual(alt.terms[0].toArgumentNameList(1), ['_ab']);
+
+  var many = alt.terms[1];
+  t.deepEqual(many.toArgumentNameList(1), ['letters']);
+  t.deepEqual(many.expr.toArgumentNameList(1), ['letter']);
+
+  var range = alt.terms[2];
+  t.deepEqual(range.toArgumentNameList(1), ['a_to_z']);
+
+  var seq = g.ruleBodies.bars;
+  t.deepEqual(seq.toArgumentNameList(1), ['letter_or_digit', '_b', 'optFoo', '$4']);
+  t.deepEqual(seq.factors[2].toArgumentNameList(1), ['optFoo']);
+  t.deepEqual(seq.factors[3].toArgumentNameList(1), ['$1']);
+
+  var plus = g.ruleBodies.plus;
+  t.deepEqual(plus.toArgumentNameList(1), ['foo', '$2', 'bars']);
+
+  var opts = g.ruleBodies.MoreOpts;
+  t.deepEqual(opts.toArgumentNameList(1), ['opt$1', 'optStart']);
+
   t.end();
 });
 
