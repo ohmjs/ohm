@@ -18,7 +18,11 @@ var parseTree = require('../visualizer/parseTree');
 var ArrayProto = Array.prototype;
 
 function label(node) {
-  var labelNode = node.firstChild;
+  var selfNode = node.firstChild;
+  assert(selfNode.classList.contains('self'),
+       "Expected node with class 'self', found '" + selfNode.className + "'");
+
+  var labelNode = selfNode.firstChild;
   assert(labelNode.classList.contains('label'),
          "Expected node with class 'label', found '" + labelNode.className + "'");
   // Special handling for inline rules.
@@ -96,7 +100,7 @@ test('simple parse tree', function(t) {
   };
   parseTree(ohm, ohmEditor, doc, null, null);
 
-  ohmEditor.refreshParseTree(g.trace('a99'));
+  ohmEditor.refreshParseTree(g.semantics(), g.trace('a99'));
   t.equal(doc.querySelector('#expandedInput').textContent, 'a99');
 
   t.deepEqual(serializeTrace(doc.querySelector('#parseResults')), [

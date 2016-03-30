@@ -55,7 +55,13 @@ pexprs.Prim.prototype.toArgumentNameList = function(firstArgIndex) {
 };
 
 pexprs.Range.prototype.toArgumentNameList = function(firstArgIndex) {
-  return [this.from + '_to_' + this.to];
+  var argName = this.from + '_to_' + this.to;
+  // If the `argName` doesn't start with an valid character, i.e. alphabet or `_`,
+  // then prepending a `_` to it.
+  if (!/[_$a-zA-Z]/.test(argName[0])) {
+    argName = '_' + argName;
+  }
+  return [argName];
 };
 
 pexprs.Alt.prototype.toArgumentNameList = function(firstArgIndex) {
