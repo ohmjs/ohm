@@ -93,6 +93,16 @@ exports.getDuplicates = function(array) {
   return duplicates;
 };
 
+exports.copyWithoutDuplicates = function(array) {
+  var noDuplicates = [];
+  array.forEach(function(entry) {
+    if (noDuplicates.indexOf(entry) < 0) {
+      noDuplicates.push(entry);
+    }
+  });
+  return noDuplicates;
+};
+
 exports.fail = {};
 
 exports.isSyntactic = function(ruleName) {
