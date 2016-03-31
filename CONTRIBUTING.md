@@ -28,12 +28,10 @@ request is accepted, here are some guidelines:
 - Include only the changes that are relevant to your bug/feature. Before
   submitting, take a look over the diff to ensure that you haven't included
   any unrelated changes.
-- Ideally, use **one commit per pull request**. You can use `git rebase` to
-  [squash work-in-progress commits](http://gitready.com/advanced/2009/02/10/squashing-commits-with-rebase.html).
-  The commit(s) should reflect a "logical" history, not necessarily the exact
-  sequence of changes that you made in your local branch.
-- **Do not include merge commits**. You can prevent merge commits by using
-  `git rebase` to keep your feature branch up to date.
+- Ideally, use **one commit per pull request**.
+- **Do not include merge commits** or commits containing mistakes that are
+  fixed in a later commit. See [our Git workflow tips](https://github.com/cdglabs/ohm/wiki/Git-Workflow)
+  for more information.
 - Try to keep your pull requests small -- anything more than a few hundred lines
   is too big. If necessary, break your changes up into several small PRs.
 
