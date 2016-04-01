@@ -4,8 +4,6 @@ var ohm = require('..');
 var pexprs = require('../src/pexprs');
 var test = require('tape');
 
-require('../src/pexprs-toArgumentNameList');
-
 var makeGrammar = require('./testUtil').makeGrammar;
 
 // --------------------------------------------------------------------
