@@ -20,6 +20,8 @@
     TELEPHONE_RECORDER: '\u2315'
   };
 
+  var zoomState = {};
+
   // DOM Helpers
   // -----------
 
@@ -195,6 +197,21 @@
         });
   }
 
+  function updateZoomState(newState) {
+    for (var k in newState) {
+      if (newState.hasOwnProperty(k)) {
+        zoomState[k] = newState[k];
+      }
+    }
+    refreshParseTree(zoomState.rootTrace);
+  }
+
+  function clearZoomState() {
+    var oldZoomState = zoomState;
+    zoomState = {};
+    refreshParseTree(oldZoomState.rootTrace);
+  }
+
   // A blackhole node is hidden and makes all its descendents hidden too.
   function isBlackhole(traceNode) {
     var desc = traceNode.displayString;
@@ -264,7 +281,7 @@
            traceNode.expr.ruleName !== 'spaces';
   }
 
-  function createTraceElement(rootTrace, traceNode, parent, input, optActionName, optZoomState) {
+  function createTraceElement(rootTrace, traceNode, parent, input, optActionName) {
     var grammarEditor = ohmEditor.ui.grammarEditor;
     var inputEditor = ohmEditor.ui.inputEditor;
 
@@ -272,7 +289,7 @@
     var pexpr = traceNode.expr;
     wrapper.classList.add(pexpr.constructor.name.toLowerCase());
 
-    if (optZoomState && optZoomState.zoomTrace === traceNode && optZoomState.previewOnly) {
+    if (zoomState.zoomTrace === traceNode && zoomState.previewOnly) {
       if (input) {
         input.classList.add('highlight');
       }
@@ -346,11 +363,10 @@
       UnicodeChars.TELEPHONE_RECORDER + ' zoom'));
     zoomButton.hidden = true;
     zoomButton.addEventListener('click', function(e) {
-      var currentRootTrace = optZoomState && optZoomState.zoomTrace || rootTrace;
+      var currentRootTrace = zoomState.zoomTrace || rootTrace;
       if (couldZoom(currentRootTrace, traceNode)) {
-        $('#zoomOutButton')._trace = traceNode;
-        $('#zoomOutButton').hidden = false;
-        refreshParseTree(rootTrace, optActionName, {zoomTrace: traceNode});
+        updateZoomState({zoomTrace: traceNode, rootTrace: rootTrace});
+        refreshParseTree(rootTrace, optActionName);
         clearMarks();
       }
       e.stopPropagation();
@@ -358,7 +374,7 @@
     });
 
     label.addEventListener('mouseover', function(e) {
-      var currentRootTrace = optZoomState && optZoomState.zoomTrace || rootTrace;
+      var currentRootTrace = zoomState.zoomTrace || rootTrace;
       if (couldZoom(currentRootTrace, traceNode)) {
         zoomButton.hidden = false;
       }
@@ -396,40 +412,30 @@
     }
   });
 
-  function initializeZoomOutButton(rootTrace, optActionName, optZoomState) {
-    var zoomOutButton = $('#zoomOutButton');
-    zoomOutButton.textContent = UnicodeChars.ANTICLOCKWISE_OPEN_CIRCLE_ARROW;
-    if (!optZoomState) {
-      zoomOutButton.hidden = true;
-      zoomOutButton._trace = undefined;
+  // Intialize the zoom out button.
+  var zoomOutButton = $('#zoomOutButton');
+  zoomOutButton.textContent = UnicodeChars.ANTICLOCKWISE_OPEN_CIRCLE_ARROW;
+  zoomOutButton.onclick = function(e) { clearZoomState(); };
+  zoomOutButton.onmouseover = function(e) {
+    if (zoomState.zoomTrace) {
+      updateZoomState({previewOnly: true});
     }
+  };
+  zoomOutButton.onmouseout = function(e) {
+    if (zoomState.zoomTrace) {
+      updateZoomState({previewOnly: false});
+    }
+  };
 
-    zoomOutButton.onclick = function(e) {
-      zoomOutButton.hidden = true;
-      zoomOutButton._trace = undefined;
-      refreshParseTree(rootTrace, optActionName);
-    };
-
-    zoomOutButton.onmouseover = function(e) {
-      var zoomState = {zoomTrace: zoomOutButton._trace, previewOnly: true};
-      refreshParseTree(rootTrace, optActionName, zoomState);
-    };
-
-    zoomOutButton.onmouseout = function(e) {
-      var zoomState = zoomOutButton._trace && {zoomTrace: zoomOutButton._trace};
-      refreshParseTree(rootTrace, optActionName, zoomState);
-    };
-  }
-
-  function intializeActionButtonEvent(rootTrace, optActionName, optZoomState) {
+  function intializeActionButtonEvent(rootTrace, optActionName) {
     var actionContainers = document.querySelectorAll('.actionEntries');
     Array.prototype.forEach.call(actionContainers, function(actionContainer) {
       actionContainer.onclick = function(event) {
         var actionName = event.target.value;
         if (optActionName === actionName) {
-          refreshParseTree(rootTrace, null, optZoomState);
+          refreshParseTree(rootTrace, null);
         } else {
-          refreshParseTree(rootTrace, actionName, optZoomState);
+          refreshParseTree(rootTrace, actionName);
         }
       };
 
@@ -437,30 +443,30 @@
         if (event.keyCode === 13 && event.target.value && !event.target.readOnly) {
           event.target.readOnly = true;
           var actionName = event.target.value;
-          refreshParseTree(rootTrace, actionName, optZoomState);
+          refreshParseTree(rootTrace, actionName);
         }
       };
     });
   }
 
   // Re-render the parse tree starting with the trace at `rootTrace`.
-  function refreshParseTree(rootTrace, optActionName, optZoomState) {
+  function refreshParseTree(rootTrace, optActionName) {
     var expandedInputDiv = $('#expandedInput');
     var parseResultsDiv = $('#parseResults');
 
     expandedInputDiv.innerHTML = '';
     parseResultsDiv.innerHTML = '';
 
-    initializeZoomOutButton(rootTrace, optActionName, optZoomState);
+    zoomOutButton.hidden = !zoomState.zoomTrace;
 
     var trace;
-    if (optZoomState && !optZoomState.previewOnly) {
-      trace = optZoomState.zoomTrace;
+    if (zoomState.zoomTrace && !zoomState.previewOnly) {
+      trace = zoomState.zoomTrace;
     } else {
       trace = rootTrace;
     }
 
-    intializeActionButtonEvent(rootTrace, optActionName, optZoomState);
+    intializeActionButtonEvent(rootTrace, optActionName);
     var inputStack = [expandedInputDiv];
     var containerStack = [parseResultsDiv];
 
@@ -503,8 +509,7 @@
         }
 
         var container = containerStack[containerStack.length - 1];
-        var el = createTraceElement(
-            rootTrace, node, container, childInput, optActionName, optZoomState);
+        var el = createTraceElement(rootTrace, node, container, childInput, optActionName);
 
         toggleClasses(el, {
           failed: !node.succeeded,
