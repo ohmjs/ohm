@@ -89,16 +89,37 @@
     }
     .pexpr.failed > .label {
       background-color: transparent;
-      border-right: 1px solid transparent;
-      border-left: 1px solid transparent;
-      display: inline-block;
+      border-bottom: 1px solid transparent;
       color: #d44950;
+      text-align: left;
     }
-    .pexpr.failed .pexpr:not(.failed):not(.unevaluated) > .label {
+    .pexpr.failed > .label:hover {
+      border-bottom: 1px solid #ddd;
+    }
+
+    /* A successful expression in a failed branch */
+    .pexpr.failed .pexpr:not(.failed):not(.unevaluated) > .label:not(.prim) {
       background-color: #FFD7DE;
       border-left-color: pink;
       border-right-color: pink;
     }
+
+    /* Rules to distinguish vertically-stacked choices from parent/childen relationships. */
+    .pexpr.visibleChoice {
+      position: relative;  /* For positioning the ::before element */
+    }
+    .pexpr.visibleChoice::before {
+      /* Use a border as a way to draw a vertical bar. */
+      border-left: 1px solid #ddd;
+      content: '\a0';
+      left: 2px;
+      position: absolute;
+      top: 3px;
+    }
+    .pexpr.visibleChoice {
+      padding-left: 6px;
+    }
+
     .caseName {
       margin: 1px 0;
       padding: 1px 6px 0 6px;
@@ -112,11 +133,11 @@
       box-sizing: border-box;
       display: block;
       margin: 1px 0;
-      padding: 2px 2px 0 2px;
+      padding: 2px 2px 1px 2px;
       position: relative;
       text-align: center;
     }
-    .pexpr > .label:hover {
+    .pexpr:not(.failed) > .label:not(.prim):hover {
       background-color: #dfdfdf;
       border-color: #dfdfdf;
     }
@@ -150,7 +171,7 @@
       display: flex;
       flex-direction: row;
     }
-    .pexpr.alt.failed > .children {
+    .pexpr.alt > .children {
       flex-direction: column;
     }
     .pexpr > .children[hidden] {
@@ -451,11 +472,9 @@
     <div class="overlay"></div>
   </div>
   <div id="dragOverlay"></div>
-  <!--
   <div id="options">
     <label><input type="checkbox" name="showFailures"> Show failures</label>
   </div>
-  -->
   <div id="measuringDiv">
     <div class="pexpr"></div>
   </div>

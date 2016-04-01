@@ -204,30 +204,51 @@
     return false;
   }
 
-  function shouldNodeBeLabeled(traceNode) {
+  function shouldNodeBeLabeled(traceNode, parent) {
     if (isBlackhole(traceNode)) {
       return false;
     }
 
     var expr = traceNode.expr;
+    var isStartApplication = !parent && expr instanceof ohm.pexprs.Apply;
 
     // Don't label Seq and Alt nodes.
     if (expr instanceof ohm.pexprs.Seq || expr instanceof ohm.pexprs.Alt) {
       return false;
     }
 
-    // Don't label failed inline rule applications.
-    if (expr instanceof ohm.pexprs.Apply) {
-      return traceNode.succeeded;
+    // Hide labels for nodes that don't correspond to something the user wrote, unless
+    // it is the start application node.
+    if (!isStartApplication && !expr.interval) {
+      return false;
     }
 
-    // Hide labels for nodes that don't correspond to something the user wrote, and
-    // nodes that have no bindings.
-    if (!expr.interval || traceNode.bindings.length === 0) {
+    if (traceNode.succeeded && traceNode.bindings.length === 0) {
       return false;
     }
 
     return true;
+  }
+
+  /*
+    When showing failures, the nodes representing the branches (choices) of an Alt node are
+    stacked vertically. E.g., for a rule `width = pctWidth | pxWidth` where `pctWidth` fails,
+    the nodes are layed out like this:
+
+       width
+       pctWidth
+       pxWidth
+
+    Since this could be confused with `pctWidth` being the parent node of `pxWidth`, we need
+    to distinguish choice nodes visually when showing failures. This function returns true
+    if `traceNode` is a choice that needs to be visually distinguished, otherwise false.
+  */
+  function isVisibleChoice(traceNode, parent) {
+    if (!(parent && parent.expr instanceof ohm.pexprs.Alt)) {
+      return false;  // It's not even a choice.
+    }
+    // Make choices visible when showing failures and the first choice didn't succeed.
+    return ohmEditor.options.showFailures && !parent.children[0].succeeded;
   }
 
   function isPrimitive(expr) {
@@ -250,7 +271,6 @@
     var wrapper = parent.appendChild(createElement('.pexpr'));
     var pexpr = traceNode.expr;
     wrapper.classList.add(pexpr.constructor.name.toLowerCase());
-    wrapper.classList.toggle('failed', !traceNode.succeeded);
 
     if (optZoomState && optZoomState.zoomTrace === traceNode && optZoomState.previewOnly) {
       if (input) {
@@ -443,11 +463,17 @@
     intializeActionButtonEvent(rootTrace, optActionName, optZoomState);
     var inputStack = [expandedInputDiv];
     var containerStack = [parseResultsDiv];
+
     trace.walk({
       enter: function(node, parent, depth) {
-        // Don't recurse into nodes that didn't succeed unless "Show failures" is enabled.
+        // Don't recurse into nodes that didn't succeed, unless "Show failures" is enabled.
         if (!ohmEditor.options.showFailures && !node.succeeded) {
           return node.SKIP;
+        }
+        // Undefined nodes identify the base case for left recursion -- skip them.
+        // TODO: Figure out a better way to handle this when generating traces.
+        if (!node) {
+          return trace.SKIP;
         }
         var childInput;
         var isWhitespace = node.expr.ruleName === 'spaces';
@@ -461,11 +487,12 @@
           return node.SKIP;
         }
 
-        // If the node or its descendants successfully consumed input, create a span to wrap
-        // all the input that was consumed.
-        if (node.succeeded) {
+        // Get the span that contain the parent node's input. If it is undefined, it means that
+        // this node is in a failed branch.
+        var inputContainer = inputStack[inputStack.length - 1];
+
+        if (inputContainer && node.succeeded) {
           var contents = isLeaf ? node.interval.contents : '';
-          var inputContainer = inputStack[inputStack.length - 1];
           childInput = inputContainer.appendChild(createElement('span.input', contents));
 
           // Represent any non-empty run of whitespace as a single dot.
@@ -474,12 +501,15 @@
             childInput.classList.add('whitespace');
           }
         }
+
         var container = containerStack[containerStack.length - 1];
         var el = createTraceElement(
             rootTrace, node, container, childInput, optActionName, optZoomState);
+
         toggleClasses(el, {
           failed: !node.succeeded,
-          hidden: !shouldNodeBeLabeled(node),
+          hidden: !shouldNodeBeLabeled(node, parent),
+          visibleChoice: isVisibleChoice(node, parent),
           whitespace: isWhitespace
         });
         if (isLeaf) {
