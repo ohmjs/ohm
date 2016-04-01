@@ -22,7 +22,7 @@
     // Turn off the regular camelcase rule, and use a custom rule which
     // allows semantic actions to be named like `RuleName_caseName`.
     "camelcase": 0,
-    "camelcase-ohm": 2,
+    "camelcase-ohm": 2,  // Defined in ./eslint_rules/camelcase-ohm.js
 
     // Enforce the name 'self' when assigning `this` to a local variable.
     "consistent-this": [0, "self"],
@@ -50,6 +50,9 @@
 
     // Allow variable shadowing.
     "no-shadow": 0,
+
+    // Don't allow `test.only`.
+    "no-test-only": 2,  // Defined in ./eslint_rules/no-test-only.js
 
     // Restrict what kind of objects can be used with 'throw'.
     "no-throw-literal": 2,
