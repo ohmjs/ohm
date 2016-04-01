@@ -271,5 +271,6 @@ require('./pexprs-introduceParams');
 require('./pexprs-isNullable');
 require('./pexprs-substituteParams');
 require('./pexprs-toDisplayString');
+require('./pexprs-toArgumentNameList');
 require('./pexprs-toFailure');
 require('./pexprs-toString');

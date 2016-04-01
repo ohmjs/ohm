@@ -188,6 +188,22 @@ test('attributes', function(t) {
   t.deepEqual(s(complicated).value, 73);
   t.equal(count, oldCount);
 
+  // Remove memoized attributes
+  s(simple)._forgetMemoizedResultFor('value');
+  s(complicated)._forgetMemoizedResultFor('value');
+
+  // Change the action function for `addExp_plus`
+  s._getActionDict('value').addExp_plus = function(x, op, y) {
+    return 1 + x.value + y.value;
+  };
+
+  t.equal(s(simple).value, 4, 'new value for single addExp');
+  t.equal(s(complicated).value, 74, 'new value for more complicated case');
+
+  t.throws(
+    function() { s._getActionDict('eval'); },
+    '"eval" is not a valid operation or attribute name in this semantics for "Arithmetic"');
+
   t.throws(
       function() { Arithmetic.semantics().addAttribute('badAttribute(x, y)', {}); },
       /Expected end of input/,

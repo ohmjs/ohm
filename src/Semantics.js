@@ -30,6 +30,14 @@ Wrapper.prototype.toString = function() {
   return '[semantics wrapper for ' + this._node.grammar.name + ']';
 };
 
+Wrapper.prototype._forgetMemoizedResultFor = function(attributeName) {
+  // Remove the memoized attribute from the cstNode and all its children.
+  delete this._node[this._semantics.attributeKeys[attributeName]];
+  this.children.forEach(function(child) {
+    child._forgetMemoizedResultFor(attributeName);
+  });
+};
+
 // Returns the wrapper of the specified child node. Child wrappers are created lazily and cached in
 // the parent wrapper's `_childWrappers` instance variable.
 Wrapper.prototype.child = function(idx) {
@@ -450,6 +458,14 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
   proxy.extendAttribute = function(name, actionDict) {
     s.extendOperationOrAttribute.call(s, 'attribute', name, actionDict);
     return proxy;
+  };
+  proxy._getActionDict = function(operationOrAttributeName) {
+    var action = s.operations[operationOrAttributeName] || s.attributes[operationOrAttributeName];
+    if (!action) {
+      throw new Error('"' + operationOrAttributeName + '" is not a valid operation or attribute ' +
+        'name in this semantics for "' + grammar.name + '"');
+    }
+    return action.actionDict;
   };
 
   // Make the proxy's toString() work.
