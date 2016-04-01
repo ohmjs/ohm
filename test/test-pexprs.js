@@ -99,7 +99,7 @@ test('toString', function(t) {
   t.end();
 });
 
-test.only('toArgumentNameList', function(t) {
+test('toArgumentNameList', function(t) {
   var g =  makeGrammar([
     'G {',
     ' Start = &((foo bars foo)+)',
