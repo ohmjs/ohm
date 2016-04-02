@@ -431,7 +431,7 @@
     }
   };
 
-  function intializeActionButtonEvent(rootTrace, optActionName) {
+  function initializeActionButtonEvent(rootTrace, optActionName) {
     var actionContainers = document.querySelectorAll('.actionEntries');
     Array.prototype.forEach.call(actionContainers, function(actionContainer) {
       actionContainer.onclick = function(event) {
@@ -470,7 +470,7 @@
       trace = rootTrace;
     }
 
-    intializeActionButtonEvent(rootTrace, optActionName);
+    initializeActionButtonEvent(rootTrace, optActionName);
     var inputStack = [expandedInputDiv];
     var containerStack = [parseResultsDiv];
 
