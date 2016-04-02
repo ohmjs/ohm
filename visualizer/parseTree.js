@@ -22,6 +22,10 @@
 
   var zoomState = {};
 
+  var inputMark;
+  var grammarMark;
+  var defMark;
+
   // DOM Helpers
   // -----------
 
@@ -156,6 +160,14 @@
     }
   }
 
+  function clearMarks() {
+    inputMark = cmUtil.clearMark(inputMark);
+    grammarMark = cmUtil.clearMark(grammarMark);
+    defMark = cmUtil.clearMark(defMark);
+    ohmEditor.ui.grammarEditor.getWrapperElement().classList.remove('highlighting');
+    ohmEditor.ui.inputEditor.getWrapperElement().classList.remove('highlighting');
+  }
+
   // Hides or shows the children of `el`, which is a div.pexpr.
   function toggleTraceElement(el) {
     var children = el.lastChild;
@@ -282,9 +294,6 @@
   }
 
   function createTraceElement(rootTrace, traceNode, parent, input, optActionName) {
-    var grammarEditor = ohmEditor.ui.grammarEditor;
-    var inputEditor = ohmEditor.ui.inputEditor;
-
     var wrapper = parent.appendChild(createElement('.pexpr'));
     var pexpr = traceNode.expr;
     wrapper.classList.add(pexpr.constructor.name.toLowerCase());
@@ -306,10 +315,10 @@
       e.preventDefault();
     });
 
-    var inputMark;
-    var grammarMark;
-    var defMark;
     wrapper.addEventListener('mouseover', function(e) {
+      var grammarEditor = ohmEditor.ui.grammarEditor;
+      var inputEditor = ohmEditor.ui.inputEditor;
+
       if (input) {
         input.classList.add('highlight');
       }
@@ -333,17 +342,12 @@
       e.stopPropagation();
     });
 
-    function clearMarks() {
+    wrapper.addEventListener('mouseout', function(e) {
       if (input) {
         input.classList.remove('highlight');
       }
-      inputMark = cmUtil.clearMark(inputMark);
-      grammarMark = cmUtil.clearMark(grammarMark);
-      defMark = cmUtil.clearMark(defMark);
-      grammarEditor.getWrapperElement().classList.remove('highlighting');
-      inputEditor.getWrapperElement().classList.remove('highlighting');
-    }
-    wrapper.addEventListener('mouseout', clearMarks);
+      clearMarks();
+    });
     wrapper._input = input;
 
     var text = pexpr.ruleName === 'spaces' ? UnicodeChars.WHITE_BULLET : traceNode.displayString;
