@@ -14,10 +14,14 @@
   function $(sel) { return document.querySelector(sel); }
 
   var UnicodeChars = {
-    HORIZONTAL_ELLIPSIS: '\u2026',
-    WHITE_BULLET: '\u25E6',
     ANTICLOCKWISE_OPEN_CIRCLE_ARROW: '\u21BA',
-    TELEPHONE_RECORDER: '\u2315'
+    HORIZONTAL_ELLIPSIS: '\u2026',
+    WHITE_BULLET: '\u25E6'
+  };
+
+  var KeyCode = {
+    ENTER: 13,
+    ESC: 27
   };
 
   var zoomState = {};
@@ -293,6 +297,30 @@
            traceNode.expr.ruleName !== 'spaces';
   }
 
+  // Handle the 'contextmenu' event `e` for the DOM node associated with `traceNode`.
+  function handleContextMenu(e, rootTrace, traceNode, optActionName) {
+    var menuDiv = $('#contextMenu');
+    menuDiv.style.left = e.clientX + 'px';
+    menuDiv.style.top = e.clientY - 6 + 'px';
+    menuDiv.hidden = false;
+
+    var zoomItem = menuDiv.querySelector('#zoomItem');
+    zoomItem.onclick = function() {
+      var currentRootTrace = zoomState.zoomTrace || rootTrace;
+      if (couldZoom(currentRootTrace, traceNode)) {
+        updateZoomState({zoomTrace: traceNode, rootTrace: rootTrace});
+        refreshParseTree(rootTrace, optActionName);
+        clearMarks();
+      }
+    };
+    e.preventDefault();
+    e.stopPropagation();  // Prevent ancestor wrappers from handling.
+  }
+
+  function hideContextMenu() {
+    $('#contextMenu').hidden = true;
+  }
+
   function createTraceElement(rootTrace, traceNode, parent, input, optActionName) {
     var wrapper = parent.appendChild(createElement('.pexpr'));
     var pexpr = traceNode.expr;
@@ -363,29 +391,8 @@
       spaces: pexpr.ruleName === 'spaces'
     });
 
-    var zoomButton = label.appendChild(createElement('button.zoom',
-      UnicodeChars.TELEPHONE_RECORDER + ' zoom'));
-    zoomButton.hidden = true;
-    zoomButton.addEventListener('click', function(e) {
-      var currentRootTrace = zoomState.zoomTrace || rootTrace;
-      if (couldZoom(currentRootTrace, traceNode)) {
-        updateZoomState({zoomTrace: traceNode, rootTrace: rootTrace});
-        refreshParseTree(rootTrace, optActionName);
-        clearMarks();
-      }
-      e.stopPropagation();
-      e.preventDefault();
-    });
-
-    label.addEventListener('mouseover', function(e) {
-      var currentRootTrace = zoomState.zoomTrace || rootTrace;
-      if (couldZoom(currentRootTrace, traceNode)) {
-        zoomButton.hidden = false;
-      }
-    });
-
-    label.addEventListener('mouseout', function(e) {
-      zoomButton.hidden = true;
+    wrapper.addEventListener('contextmenu', function(e) {
+      handleContextMenu(e, rootTrace, traceNode, optActionName);
     });
 
     return wrapper;
@@ -413,6 +420,16 @@
       if (overscroll < 0) {
         bottomSection.scrollLeft += overscroll;
       }
+    }
+  });
+
+  // Hide the context menu when Esc is pressed, any click happens, or another
+  // context menu is brought up.
+  document.addEventListener('click', hideContextMenu);
+  document.addEventListener('contextmenu', hideContextMenu);
+  document.addEventListener('keydown', function(e) {
+    if (e.keyCode === KeyCode.ESC) {
+      hideContextMenu();
     }
   });
 
@@ -444,7 +461,7 @@
       };
 
       actionContainer.onkeypress = function(event) {
-        if (event.keyCode === 13 && event.target.value && !event.target.readOnly) {
+        if (event.keyCode === KeyCode.ENTER && event.target.value && !event.target.readOnly) {
           event.target.readOnly = true;
           var actionName = event.target.value;
           refreshParseTree(rootTrace, actionName);

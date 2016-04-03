@@ -75,9 +75,6 @@
     .pexpr.zoomBorder {
       border: 2px solid blue;
     }
-    button.zoom {
-      margin-left: 4pt;
-    }
     .pexpr.seq.failed {
       flex-grow: 0;
     }
@@ -436,6 +433,39 @@
     .hiddenDuringLoading {
       display: none;
     }
+
+    #contextMenu {
+      background-color: #f0f0f0;
+      border: 1px solid #bbb;
+      border-radius: 4px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+      position: fixed;
+      left: 20px;
+      top: 20px;
+      z-index: 11;  /* Must be great than .splitter .handle */
+    }
+    #contextMenu > ul {
+      margin: 6px 0;
+      padding: 0;
+    }
+    #contextMenu li {
+      display: flex;
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      padding: 2px 20px;
+    }
+    #contextMenu li.disabled {
+      color: #aaa;
+    }
+    #contextMenu li:hover {
+      cursor: default;
+    }
+    #contextMenu li:hover:not(.disabled) {
+      background-color: #4f9dfb;
+    }
+    #contextMenu li:hover:not(.disabled) * {
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -450,7 +480,9 @@
       <div class="flex-fix"><div class="editorWrapper"></div></div>
     </div>
   </div>
+
   <div id="mainSplitter" class="splitter"></div>
+
   <div id="bottomSection">
     <button id="zoomOutButton" type="button" hidden></button>
     <div id="visualizerBody">
@@ -471,10 +503,13 @@
     </div>
     <div class="overlay"></div>
   </div>
+
   <div id="dragOverlay"></div>
+
   <div id="options">
     <label><input type="checkbox" name="showFailures"> Show failures</label>
   </div>
+
   <div id="measuringDiv">
     <div class="pexpr"></div>
   </div>
@@ -484,6 +519,13 @@
       <input type="search"></input><input class="closeButton" type="button" value="Done"></input>
     </div>
     <div class="externalRules"><div class="content"></div></div>
+  </div>
+
+  <div id="contextMenu" hidden>
+    <ul>
+      <li id="showInfoItem" class="disabled"><label>Show info</label></li>
+      <li id="zoomItem"><label>Zoom to node</label></li>
+    </ul>
   </div>
 
   <div hidden>
