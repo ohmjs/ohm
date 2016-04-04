@@ -243,7 +243,6 @@
     }
 
     var expr = traceNode.expr;
-    var isStartApplication = !parent && expr instanceof ohm.pexprs.Apply;
 
     // Don't label Seq and Alt nodes.
     if (expr instanceof ohm.pexprs.Seq || expr instanceof ohm.pexprs.Alt) {
@@ -251,8 +250,8 @@
     }
 
     // Hide labels for nodes that don't correspond to something the user wrote, unless
-    // it is the start application node.
-    if (!isStartApplication && !expr.interval) {
+    // it's a top-level node.
+    if (parent && !expr.interval) {
       return false;
     }
 
@@ -321,10 +320,18 @@
     $('#contextMenu').hidden = true;
   }
 
+  // Create the DOM node that contains the parse tree for `traceNode` and all its children.
+  function createTraceWrapper(traceNode) {
+    var el = createElement('.pexpr');
+    var ctorName = traceNode.expr.constructor.name;
+    el.classList.add(ctorName.toLowerCase());
+    return el;
+  }
+
   function createTraceElement(rootTrace, traceNode, parent, input, optActionName) {
-    var wrapper = parent.appendChild(createElement('.pexpr'));
     var pexpr = traceNode.expr;
-    wrapper.classList.add(pexpr.constructor.name.toLowerCase());
+    var wrapper = parent.appendChild(createTraceWrapper(traceNode));
+    wrapper._input = input;
 
     if (zoomState.zoomTrace === traceNode && zoomState.previewOnly) {
       if (input) {
@@ -376,7 +383,6 @@
       }
       clearMarks();
     });
-    wrapper._input = input;
 
     var text = pexpr.ruleName === 'spaces' ? UnicodeChars.WHITE_BULLET : traceNode.displayString;
     // Truncate the label if it is too long.
@@ -487,9 +493,12 @@
       trace = rootTrace;
     }
 
+    var rootWrapper = parseResultsDiv.appendChild(createTraceWrapper(trace));
+    var rootContainer = rootWrapper.appendChild(createElement('.children'));
+
     initializeActionButtonEvent(rootTrace, optActionName);
     var inputStack = [expandedInputDiv];
-    var containerStack = [parseResultsDiv];
+    var containerStack = [rootContainer];
 
     trace.walk({
       enter: function(node, parent, depth) {

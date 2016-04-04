@@ -62,8 +62,13 @@ function serializeTree(traceNode, expected) {
 }
 
 function serializeTrace(resultNode) {
-  assert.equal(resultNode.children.length, 2, 'root has two nodes');
-  return serializeTree(resultNode.firstChild);
+  var rootWrapper = resultNode.firstChild;
+  assert.equal(resultNode.children.length, 1, 'root DOM node has exactly one child');
+
+  var rootContainer = rootWrapper.firstChild;
+  assert(rootContainer.classList.contains('children'), "root container has class 'children'");
+
+  return ArrayProto.map.call(rootContainer.children, function(c) { return serializeTree(c); });
 }
 
 // --------------------------------------------------------------------
@@ -85,11 +90,12 @@ test('simple parse tree', function(t) {
   t.equal(doc.querySelector('#expandedInput').textContent, 'a99');
 
   t.deepEqual(serializeTrace(doc.querySelector('#parseResults')), [
-    'start', [
+    ['start', [
       'start_x',
         ['letter', ['lower']],
         ['digit+', ['digit', ['"0".."9"']],
-        ['digit', ['"0".."9"']]]]
+        ['digit', ['"0".."9"']]]]],
+    ['end']
   ]);
 
   t.end();
