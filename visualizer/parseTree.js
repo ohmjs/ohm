@@ -340,17 +340,30 @@
       wrapper.classList.add('zoomBorder');
     }
 
-    wrapper.addEventListener('click', function(e) {
+    var label = wrapper.appendChild(createElement('.label'));
+    // label.setAttribute('title', traceNode.displayString);
+    toggleClasses(label, {
+      prim: isPrimitive(pexpr),
+      spaces: pexpr.ruleName === 'spaces'
+    });
+
+    var text = pexpr.ruleName === 'spaces' ? UnicodeChars.WHITE_BULLET : traceNode.displayString;
+    // Truncate the label if it is too long.
+    if (text.length > 20 && text.indexOf(' ') >= 0) {
+      text = text.slice(0, 20) + UnicodeChars.HORIZONTAL_ELLIPSIS;
+    }
+    label.textContent = text;
+
+    label.addEventListener('click', function(e) {
       if (e.altKey && !(e.shiftKey || e.metaKey)) {
         console.log(traceNode);  // eslint-disable-line no-console
       } else if (!isPrimitive(pexpr)) {
         toggleTraceElement(wrapper);
       }
-      e.stopPropagation();
       e.preventDefault();
     });
 
-    wrapper.addEventListener('mouseover', function(e) {
+    label.addEventListener('mouseover', function(e) {
       var grammarEditor = ohmEditor.ui.grammarEditor;
       var inputEditor = ohmEditor.ui.inputEditor;
 
@@ -377,27 +390,14 @@
       e.stopPropagation();
     });
 
-    wrapper.addEventListener('mouseout', function(e) {
+    label.addEventListener('mouseout', function(e) {
       if (input) {
         input.classList.remove('highlight');
       }
       clearMarks();
     });
 
-    var text = pexpr.ruleName === 'spaces' ? UnicodeChars.WHITE_BULLET : traceNode.displayString;
-    // Truncate the label if it is too long.
-    if (text.length > 20 && text.indexOf(' ') >= 0) {
-      text = text.slice(0, 20) + UnicodeChars.HORIZONTAL_ELLIPSIS;
-    }
-
-    var label = wrapper.appendChild(createElement('.label', text));
-    // label.setAttribute('title', traceNode.displayString);
-    toggleClasses(label, {
-      prim: isPrimitive(traceNode.expr),
-      spaces: pexpr.ruleName === 'spaces'
-    });
-
-    wrapper.addEventListener('contextmenu', function(e) {
+    label.addEventListener('contextmenu', function(e) {
       handleContextMenu(e, rootTrace, traceNode, optActionName);
     });
 
