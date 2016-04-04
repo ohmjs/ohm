@@ -305,15 +305,18 @@
     menuDiv.style.top = e.clientY - 6 + 'px';
     menuDiv.hidden = false;
 
+    var currentRootTrace = zoomState.zoomTrace || rootTrace;
+    var zoomEnabled = couldZoom(currentRootTrace, traceNode);
+
     var zoomItem = menuDiv.querySelector('#zoomItem');
-    zoomItem.onclick = function() {
-      var currentRootTrace = zoomState.zoomTrace || rootTrace;
-      if (couldZoom(currentRootTrace, traceNode)) {
+    zoomItem.classList.toggle('disabled', !zoomEnabled);
+    if (zoomEnabled) {
+      zoomItem.onclick = function() {
         updateZoomState({zoomTrace: traceNode, rootTrace: rootTrace});
         refreshParseTree(rootTrace, optActionName);
         clearMarks();
-      }
-    };
+      };
+    }
     e.preventDefault();
     e.stopPropagation();  // Prevent ancestor wrappers from handling.
   }
