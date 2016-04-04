@@ -353,7 +353,7 @@
     }
 
     var label = wrapper.appendChild(createElement('.label', text));
-    label.setAttribute('title', traceNode.displayString);
+    // label.setAttribute('title', traceNode.displayString);
     toggleClasses(label, {
       prim: isPrimitive(traceNode.expr),
       spaces: pexpr.ruleName === 'spaces'
