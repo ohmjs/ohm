@@ -16,7 +16,7 @@
   var UnicodeChars = {
     ANTICLOCKWISE_OPEN_CIRCLE_ARROW: '\u21BA',
     HORIZONTAL_ELLIPSIS: '\u2026',
-    WHITE_BULLET: '\u25E6'
+    MIDDLE_DOT: '\u00B7'
   };
 
   var KeyCode = {
@@ -228,20 +228,7 @@
     refreshParseTree(oldZoomState.rootTrace);
   }
 
-  // A blackhole node is hidden and makes all its descendents hidden too.
-  function isBlackhole(traceNode) {
-    var desc = traceNode.displayString;
-    if (desc) {
-      return desc === 'space' || desc === 'empty';
-    }
-    return false;
-  }
-
   function shouldNodeBeLabeled(traceNode, parent) {
-    if (isBlackhole(traceNode)) {
-      return false;
-    }
-
     var expr = traceNode.expr;
 
     // Don't label Seq and Alt nodes.
@@ -249,13 +236,13 @@
       return false;
     }
 
-    // Hide labels for nodes that don't correspond to something the user wrote, unless
-    // it's a top-level node.
-    if (parent && !expr.interval) {
+    // Hide successful nodes that have no bindings.
+    if (traceNode.succeeded && traceNode.bindings.length === 0) {
       return false;
     }
 
-    if (traceNode.succeeded && traceNode.bindings.length === 0) {
+    // Hide 'spaces' nodes unless "Show spaces" is enabled.
+    if (expr.ruleName === 'spaces' && !ohmEditor.options.showSpaces) {
       return false;
     }
 
@@ -283,6 +270,22 @@
     return ohmEditor.options.showFailures && !parent.children[0].succeeded;
   }
 
+  // Return true if `traceNode` should be treated as a leaf node in the parse tree.
+  function isLeaf(traceNode) {
+    var pexpr = traceNode.expr;
+    if (isPrimitive(pexpr)) {
+      return true;
+    }
+    if (pexpr instanceof ohm.pexprs.Apply) {
+      // If the rule body has no interval, treat its implementation as opaque.
+      var body = ohmEditor.grammar.ruleBodies[pexpr.ruleName];
+      if (!body.interval) {
+        return true;
+      }
+    }
+    return traceNode.children.length === 0;
+  }
+
   function isPrimitive(expr) {
     return expr instanceof ohm.pexprs.Prim ||
            expr instanceof ohm.pexprs.Range ||
@@ -292,8 +295,7 @@
   function couldZoom(currentRootTrace, traceNode) {
     return currentRootTrace !== traceNode &&
            traceNode.succeeded &&
-           !isPrimitive(traceNode.expr) &&
-           traceNode.expr.ruleName !== 'spaces';
+           !isLeaf(traceNode);
   }
 
   // Handle the 'contextmenu' event `e` for the DOM node associated with `traceNode`.
@@ -341,23 +343,24 @@
     }
 
     var label = wrapper.appendChild(createElement('.label'));
-    // label.setAttribute('title', traceNode.displayString);
     toggleClasses(label, {
-      prim: isPrimitive(pexpr),
-      spaces: pexpr.ruleName === 'spaces'
+      leaf: isLeaf(traceNode),
+      prim: isPrimitive(pexpr)
     });
 
-    var text = pexpr.ruleName === 'spaces' ? UnicodeChars.WHITE_BULLET : traceNode.displayString;
-    // Truncate the label if it is too long.
-    if (text.length > 20 && text.indexOf(' ') >= 0) {
-      text = text.slice(0, 20) + UnicodeChars.HORIZONTAL_ELLIPSIS;
+    var labelText = traceNode.displayString;
+
+    // Truncate the label if it is too long, and show the full label in the tooltip.
+    if (labelText.length > 20 && labelText.indexOf(' ') >= 0) {
+      label.setAttribute('title', labelText);
+      labelText = labelText.slice(0, 20) + UnicodeChars.HORIZONTAL_ELLIPSIS;
     }
-    label.textContent = text;
+    label.textContent = labelText;
 
     label.addEventListener('click', function(e) {
       if (e.altKey && !(e.shiftKey || e.metaKey)) {
         console.log(traceNode);  // eslint-disable-line no-console
-      } else if (!isPrimitive(pexpr)) {
+      } else if (!isLeaf(traceNode)) {
         toggleTraceElement(wrapper);
       }
       e.preventDefault();
@@ -513,10 +516,7 @@
         }
         var childInput;
         var isWhitespace = node.expr.ruleName === 'spaces';
-        var isLeaf = isPrimitive(node.expr) ||
-                     isBlackhole(node) ||
-                     isWhitespace ||
-                     node.children.length === 0;
+        var isLeafNode = isLeaf(node);
 
         // Don't bother showing whitespace nodes that didn't consume anything.
         if (isWhitespace && node.interval.contents.length === 0) {
@@ -528,12 +528,12 @@
         var inputContainer = inputStack[inputStack.length - 1];
 
         if (inputContainer && node.succeeded) {
-          var contents = isLeaf ? node.interval.contents : '';
+          var contents = isLeafNode ? node.interval.contents : '';
           childInput = inputContainer.appendChild(createElement('span.input', contents));
 
           // Represent any non-empty run of whitespace as a single dot.
           if (isWhitespace && contents.length > 0) {
-            childInput.innerHTML = '&#xb7;';  // Unicode Character 'MIDDLE DOT'
+            childInput.innerHTML = UnicodeChars.MIDDLE_DOT;
             childInput.classList.add('whitespace');
           }
         }
@@ -544,10 +544,9 @@
         toggleClasses(el, {
           failed: !node.succeeded,
           hidden: !shouldNodeBeLabeled(node, parent),
-          visibleChoice: isVisibleChoice(node, parent),
-          whitespace: isWhitespace
+          visibleChoice: isVisibleChoice(node, parent)
         });
-        if (isLeaf) {
+        if (isLeafNode) {
           return node.SKIP;
         }
         inputStack.push(childInput);

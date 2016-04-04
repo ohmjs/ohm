@@ -89,7 +89,7 @@
       color: #d44950;
       text-align: left;
     }
-    .pexpr.failed > .label:hover {
+    .pexpr.failed > .label:not(.leaf):hover {
       border-bottom: 1px solid #ddd;
     }
 
@@ -156,11 +156,6 @@
     .pexpr.hidden > .label {
       display: none;
     }
-    .pexpr > .label.spaces {
-      color: #aaa;
-      height: 13px;
-      padding-bottom: 0;
-    }
     .pexpr.collapsed > .label {
       border-color: #bbb;
     }
@@ -226,18 +221,23 @@
       background-color: white;
       border-radius: 3px;
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-      padding: 2px 6px 1px 6px;
+      font-size: 14px;
+      padding: 10px;
       position: fixed;
       bottom: 20px;
       right: 20px;
     }
-    #options label {
-      font-size: 0.75em;
-    }
     #options input[type=checkbox] {
       position: relative;
+      margin: 0 6px 0 0;
       top: -1px;
     }
+    #options ul {
+      list-style: none;
+      margin: 0.3em 1em 0 0;
+      padding: 0;
+    }
+
     .input {
       font-family: Menlo, Monaco, sans-serif;
     }
@@ -507,7 +507,11 @@
   <div id="dragOverlay"></div>
 
   <div id="options">
-    <label><input type="checkbox" name="showFailures"> Show failures</label>
+    Show:
+    <ul>
+      <li><input type="checkbox" name="showFailures"><label>Failures</label></li>
+      <li><input type="checkbox" name="showSpaces"><label>Spaces</label></li>
+    </ul>
   </div>
 
   <div id="measuringDiv">

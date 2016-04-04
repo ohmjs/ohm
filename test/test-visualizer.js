@@ -21,7 +21,8 @@ function label(node) {
   var labelNode = node.firstChild;
   assert(labelNode.classList.contains('label'),
          "Expected node with class 'label', found '" + labelNode.className + "'");
-  return labelNode.firstChild.textContent;
+  // Use the 'title' (tooltip) if available, otherwise the textContent.
+  return labelNode.title || labelNode.textContent;
 }
 
 function flattenParseNodes(nodeOrArray) {
@@ -82,9 +83,13 @@ var HTML = '<button id="zoomOutButton" type="button" hidden></button>' +
 
 test('simple parse tree', function(t) {
   var doc = jsdom.jsdom(HTML);
-  var ohmEditor = {options: {}, ui: {}};
-  parseTree(ohm, ohmEditor, doc, null, null);
   var g = ohm.grammar('G { start = letter digit+  -- x\n| digit }');
+  var ohmEditor = {
+    grammar: g,
+    options: {},
+    ui: {}
+  };
+  parseTree(ohm, ohmEditor, doc, null, null);
 
   ohmEditor.refreshParseTree(g.trace('a99'));
   t.equal(doc.querySelector('#expandedInput').textContent, 'a99');
