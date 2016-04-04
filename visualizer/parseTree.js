@@ -333,6 +333,33 @@
     return el;
   }
 
+  function createTraceLabel(traceNode) {
+    var pexpr = traceNode.expr;
+    var label = createElement('.label');
+
+    var isInlineRule = pexpr.ruleName && pexpr.ruleName.indexOf('_') >= 0;
+
+    if (isInlineRule) {
+      var parts = pexpr.ruleName.split('_');
+      label.textContent = parts[0];
+      label.appendChild(createElement('span.caseName', parts[1]));
+    } else {
+      var labelText = traceNode.displayString;
+
+      // Truncate the label if it is too long, and show the full label in the tooltip.
+      if (labelText.length > 20 && labelText.indexOf(' ') >= 0) {
+        label.setAttribute('title', labelText);
+        labelText = labelText.slice(0, 20) + UnicodeChars.HORIZONTAL_ELLIPSIS;
+      }
+      label.textContent = labelText;
+    }
+    toggleClasses(label, {
+      leaf: isLeaf(traceNode),
+      prim: isPrimitive(pexpr)
+    });
+    return label;
+  }
+
   function createTraceElement(rootTrace, traceNode, parent, input, optActionName) {
     var pexpr = traceNode.expr;
     var wrapper = parent.appendChild(createTraceWrapper(traceNode));
@@ -345,20 +372,7 @@
       wrapper.classList.add('zoomBorder');
     }
 
-    var label = wrapper.appendChild(createElement('.label'));
-    toggleClasses(label, {
-      leaf: isLeaf(traceNode),
-      prim: isPrimitive(pexpr)
-    });
-
-    var labelText = traceNode.displayString;
-
-    // Truncate the label if it is too long, and show the full label in the tooltip.
-    if (labelText.length > 20 && labelText.indexOf(' ') >= 0) {
-      label.setAttribute('title', labelText);
-      labelText = labelText.slice(0, 20) + UnicodeChars.HORIZONTAL_ELLIPSIS;
-    }
-    label.textContent = labelText;
+    var label = wrapper.appendChild(createTraceLabel(traceNode));
 
     label.addEventListener('click', function(e) {
       if (e.altKey && !(e.shiftKey || e.metaKey)) {

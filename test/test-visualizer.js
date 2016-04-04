@@ -21,6 +21,11 @@ function label(node) {
   var labelNode = node.firstChild;
   assert(labelNode.classList.contains('label'),
          "Expected node with class 'label', found '" + labelNode.className + "'");
+  // Special handling for inline rules.
+  var caseName = labelNode.querySelector('.caseName');
+  if (caseName) {
+    return labelNode.firstChild.textContent + '_' + caseName.textContent;
+  }
   // Use the 'title' (tooltip) if available, otherwise the textContent.
   return labelNode.title || labelNode.textContent;
 }

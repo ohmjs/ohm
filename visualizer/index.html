@@ -116,13 +116,6 @@
       padding-left: 6px;
     }
 
-    .caseName {
-      margin: 1px 0;
-      padding: 1px 6px 0 6px;
-    }
-    .caseName::before {
-      content: '-- ';
-    }
     .pexpr > .label {
       background-color: #efefef;
       border-bottom: 1px solid #efefef;
@@ -133,6 +126,14 @@
       padding: 2px 2px 1px 2px;
       position: relative;
       text-align: center;
+    }
+    .pexpr > .label .caseName::before {
+      content: '\2014';
+      padding: 0 0.5em;
+    }
+    .pexpr > .label .caseName {
+      font-style: italic;
+      opacity: 0.7;
     }
     .pexpr:not(.failed) > .label:not(.prim):hover {
       background-color: #dfdfdf;
