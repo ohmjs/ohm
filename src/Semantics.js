@@ -210,16 +210,16 @@ var prototypeGrammarSemantics;
 // This method is called from main.js once Ohm has loaded.
 Semantics.initPrototypeParser = function(grammar) {
   prototypeGrammarSemantics = grammar.semantics().addOperation('parse', {
-    NameNoFormals: function(n) {
+    AttributeSignature: function(name) {
       return {
-        name: n.parse(),
+        name: name.parse(),
         formals: []
       };
     },
-    NameAndFormals: function(n, fs) {
+    OperationSignature: function(name, optFormals) {
       return {
-        name: n.parse(),
-        formals: fs.parse()[0] || []
+        name: name.parse(),
+        formals: optFormals.parse()[0] || []
       };
     },
     Formals: function(oparen, fs, cparen) {
@@ -232,21 +232,21 @@ Semantics.initPrototypeParser = function(grammar) {
   prototypeGrammar = grammar;
 };
 
-function parsePrototype(nameAndFormalArgs, allowFormals) {
+function parseSignature(signature, type) {
   if (!prototypeGrammar) {
     // The Operations and Attributes grammar won't be available while Ohm is loading,
     // but we can get away the following simplification b/c none of the operations
     // that are used while loading take arguments.
-    common.assert(nameAndFormalArgs.indexOf('(') === -1);
+    common.assert(signature.indexOf('(') === -1);
     return {
-      name: nameAndFormalArgs,
+      name: signature,
       formals: []
     };
   }
 
   var r = prototypeGrammar.match(
-      nameAndFormalArgs,
-      allowFormals ? 'NameAndFormals' : 'NameNoFormals');
+      signature,
+      type === 'operation' ? 'OperationSignature' : 'AttributeSignature');
   if (r.failed()) {
     throw new Error(r.message);
   }
@@ -254,10 +254,10 @@ function parsePrototype(nameAndFormalArgs, allowFormals) {
   return prototypeGrammarSemantics(r).parse();
 }
 
-Semantics.prototype.addOperationOrAttribute = function(type, nameAndFormalArgs, actionDict) {
+Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDict) {
   var typePlural = type + 's';
 
-  var parsedNameAndFormalArgs = parsePrototype(nameAndFormalArgs, type === 'operation');
+  var parsedNameAndFormalArgs = parseSignature(signature, type);
   var name = parsedNameAndFormalArgs.name;
   var formals = parsedNameAndFormalArgs.formals;
 
@@ -360,7 +360,7 @@ Semantics.prototype.extendOperationOrAttribute = function(type, name, actionDict
   var typePlural = type + 's';
 
   // Make sure that `name` really is just a name, i.e., that it doesn't also contain formals.
-  parsePrototype(name, false);
+  parseSignature(name, 'attribute');
 
   if (!(this.super && name in this.super[typePlural])) {
     throw new Error('Cannot extend ' + type + " '" + name +
@@ -443,8 +443,8 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
   };
 
   // Forward public methods from the proxy to the semantics instance.
-  proxy.addOperation = function(nameAndFormalArgs, actionDict) {
-    s.addOperationOrAttribute.call(s, 'operation', nameAndFormalArgs, actionDict);
+  proxy.addOperation = function(signature, actionDict) {
+    s.addOperationOrAttribute.call(s, 'operation', signature, actionDict);
     return proxy;
   };
   proxy.extendOperation = function(name, actionDict) {

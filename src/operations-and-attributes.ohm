@@ -1,9 +1,9 @@
 OperationsAndAttributes {
 
-  NameNoFormals =
+  AttributeSignature =
     name
 
-  NameAndFormals =
+  OperationSignature =
     name Formals?
 
   Formals
