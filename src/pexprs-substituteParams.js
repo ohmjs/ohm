@@ -17,7 +17,7 @@ var pexprs = require('./pexprs');
 
   The receiver must not be modified; a new PExpr must be returned if any replacement is necessary.
 */
-pexprs.PExpr.prototype.substituteParams = common.abstract;  // function (actuals) { ... }
+pexprs.PExpr.prototype.substituteParams = common.abstract;  // function(actuals) { ... }
 
 pexprs.any.substituteParams =
 pexprs.end.substituteParams =
