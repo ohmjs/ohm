@@ -82,7 +82,7 @@
   function toggleClasses(el, map) {
     for (var k in map) {
       if (map.hasOwnProperty(k)) {
-        el.classList.toggle(k, map[k]);
+        el.classList.toggle(k, !!map[k]);
       }
     }
   }
@@ -289,9 +289,9 @@
     stacked vertically. E.g., for a rule `width = pctWidth | pxWidth` where `pctWidth` fails,
     the nodes are layed out like this:
 
-       width
-       pctWidth
-       pxWidth
+        width
+        pctWidth
+        pxWidth
 
     Since this could be confused with `pctWidth` being the parent node of `pxWidth`, we need
     to distinguish choice nodes visually when showing failures. This function returns true
@@ -301,8 +301,13 @@
     if (!(parent && parent.expr instanceof ohm.pexprs.Alt)) {
       return false;  // It's not even a choice.
     }
-    // Make choices visible when showing failures and the first choice didn't succeed.
-    return ohmEditor.options.showFailures && !parent.children[0].succeeded;
+    if (ohmEditor.options.showFailures) {
+      // Make the choice visible if the first (real) choice failed.
+      return parent.children.some(function(c) {
+        return !c.isImplicitSpaces && !c.succeeded;
+      });
+    }
+    return false;
   }
 
   // Return true if `traceNode` should be treated as a leaf node in the parse tree.
