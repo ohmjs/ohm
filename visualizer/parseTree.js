@@ -254,11 +254,6 @@
       return false;
     }
 
-    // Hide 'spaces' nodes unless "Show spaces" is enabled.
-    if (expr.ruleName === 'spaces' && !ohmEditor.options.showSpaces) {
-      return false;
-    }
-
     return true;
   }
 
@@ -563,14 +558,15 @@
 
     trace.walk({
       enter: function(node, parent, depth) {
-        // Don't recurse into nodes that didn't succeed, unless "Show failures" is enabled.
-        if (!ohmEditor.options.showFailures && !node.succeeded) {
-          return node.SKIP;
-        }
         // Undefined nodes identify the base case for left recursion -- skip them.
         // TODO: Figure out a better way to handle this when generating traces.
         if (!node) {
           return trace.SKIP;
+        }
+        // Don't recurse into nodes that didn't succeed, unless "Show failures" is enabled.
+        if ((!node.succeeded && !ohmEditor.options.showFailures) ||
+            (node.isImplicitSpaces && !ohmEditor.options.showSpaces)) {
+          return node.SKIP;
         }
         var childInput;
         var isWhitespace = node.expr.ruleName === 'spaces';
