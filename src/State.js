@@ -279,6 +279,7 @@ State.prototype = {
     if (this.isTracing()) {
       var bindings = this.bindings.slice(origNumBindings);
       var traceEntry = this.getTraceEntry(origPos, expr, ans, bindings);
+      traceEntry.isImplicitSpaces = expr === applySpaces;
       traceEntry.isRootNode = expr === this.startExpr;
       origTrace.push(traceEntry);
       this.trace = origTrace;

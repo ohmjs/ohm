@@ -59,9 +59,10 @@ function Trace(inputStream, pos, expr, succeeded, bindings, optChildren) {
   this.bindings = bindings;
   this.children = optChildren || [];
 
+  this.isImplicitSpaces = false;
   this.isLeftRecursive = false;
-  this.isRootNode = false;
   this.isMemoized = false;
+  this.isRootNode = false;
 }
 
 // A value that can be returned from visitor functions to indicate that a
