@@ -281,12 +281,6 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
         return children.map(function(child) { return doIt.apply(child, args); });
       }
 
-      if (this.isTerminal()) {
-        // This CST node corresponds to a terminal expression in the grammar (e.g., "+"). The
-        // default behavior is to return that terminal's primitive value.
-        return this.primitiveValue;
-      }
-
       // This CST node corresponds to a non-terminal in the grammar (e.g., AddExpr). The fact that
       // we got here means that this action dictionary doesn't have an action for this particular
       // non-terminal or a generic `_nonterminal` action.

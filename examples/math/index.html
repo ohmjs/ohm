@@ -381,7 +381,13 @@ s.addOperation('toTree', {
   PriExp_pos:    function(sign, e)   { return elt('pos', sign.toTree(), e.toTree()); },
   PriExp_neg:    function(sign, e)   { return elt('neg', sign.toTree(), e.toTree()); },
   ident:         function(_l, _ns)   { return elt('ident', this.interval.contents); },
-  number:        function(_)         { return elt('number', this.interval.contents); }
+  number:        function(_)         { return elt('number', this.interval.contents); },
+
+  // The _terminal semantic action specifies what your operation or attribute should do with
+  // (you guessed it) terminals. Here, we return the terminal's `primitiveValue` property,
+  // which for a string terminal is the string itself. For a number terminal `t`,
+  // `t.primitiveValue` evaluates to the corresponding (JavaScript) number, and so on.
+  _terminal:     function()          { return this.primitiveValue; }
 });
 
 // -------------------------------------------------------------------------------------------------
@@ -404,7 +410,8 @@ s.addOperation('toTwoD', {
   PriExp_neg:    function(sign, e)    { return elt('neg', sign.toTwoD(), e.toTwoD()); },
   ident:         function(_l, _ns)    { var text = this.interval.contents;
                                         return elt('ident', text === 'pi' ? '\u03C0' : text); },
-  number:        function(_)          { return elt('number', this.interval.contents); }
+  number:        function(_)          { return elt('number', this.interval.contents); },
+  _terminal:     function()           { return this.primitiveValue; }
 
   // Remember the `_nonterminal` semantic action that we wrote for the `interpret` operation above?
   // Turns out that's so convenient that the Ohm people decided to give it to you "for free", i.e.,

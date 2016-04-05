@@ -35,8 +35,8 @@ test('operations', function(t) {
     number_rec: function(n, d) {
       return n.value() * 10 + d.value();
     },
-    digit: function(expr) {
-      return expr.value().charCodeAt(0) - '0'.charCodeAt(0);
+    digit: function(_) {
+      return this.interval.contents.charCodeAt(0) - '0'.charCodeAt(0);
     }
   });
 
@@ -53,6 +53,9 @@ test('operations', function(t) {
     },
     number: function(n) {
       return [n.value()];
+    },
+    digit: function(d) {
+      return this.interval.contents;
     }
   });
   t.deepEqual(s(Arithmetic.match('9')).numberValues(), [9]);
@@ -297,6 +300,9 @@ test('_iter nodes', function(t) {
         return typeof l.op === 'function';
       }), 'children is an array of wrappers');
       return ls.children.map(function(l) { return l.op(); }).join(',');
+    },
+    letter: function(l) {
+      return l.interval.contents;
     }
   });
   t.equal(s(m).op(), 'a,b,c');
@@ -325,7 +331,10 @@ test('_terminal nodes', function(t) {
   var g = ohm.grammar('G { letters = letter* }');
   var s = g.semantics().addOperation('op', {});
   var m = g.match('abc', 'letters');
-  t.deepEqual(s(m).op(), ['a', 'b', 'c'], 'default behavior is to return `primitiveValue`');
+
+  t.throws(function() {
+    g.semantics().addOperation('op', {})(m).op();
+  }, /Missing semantic action for _terminal/);
 
   t.throws(function() {
     g.semantics().addOperation('op', {
@@ -559,6 +568,9 @@ test('asIteration', function(t) {
       return arr1.join('') + arr2.join('');
     },
     letter: function(_) {
+      return this.interval.contents;
+    },
+    any: function(_) {
       return this.interval.contents;
     }
   });

@@ -14,6 +14,10 @@ var extend = require('util-extend');
 // --------------------------------------------------------------------
 
 var defaultOperation = {
+  _terminal: function() {
+    return this.primitiveValue;
+  },
+
   _nonterminal: function(children) {
     var ctorName = this._node.ctorName;
     var mapping = this.args.mapping;

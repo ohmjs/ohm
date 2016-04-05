@@ -50,6 +50,9 @@ function buildTreeNodeWithUniqueId(g) {
     _nonterminal: function(children) {
       return ['id', nextId++, this.ctorName]
           .concat(children.map(function(child) { return child.tree; }));
+    },
+    _terminal: function() {
+      return this.primitiveValue;
     }
   });
 
@@ -75,6 +78,11 @@ function assertFails(t, matchResult, optMessage) {
 test('primitive patterns', function(t) {
   test('any', function(t) {
     var m = ohm.grammar('M { }');
+    var s = m.semantics().addAttribute('v', {
+      _terminal: function() {
+        return this.primitiveValue;
+      }
+    });
 
     test('direct match, no stream', function(t) {
       it('recognition', function() {
@@ -83,7 +91,6 @@ test('primitive patterns', function(t) {
       });
 
       it('semantic actions', function() {
-        var s = m.semantics().addAttribute('v', {});
         t.equal(s(m.match(5, 'any')).v, 5, 'SA on 5');
         t.equal(s(m.match(null, 'any')).v, null, 'SA on null');
       });
@@ -97,7 +104,6 @@ test('primitive patterns', function(t) {
       });
 
       it('semantic actions', function() {
-        var s = m.semantics().addAttribute('v', {});
         t.equal(s(m.match('5', 'any')).v, '5');
       });
       t.end();
@@ -109,7 +115,6 @@ test('primitive patterns', function(t) {
       });
 
       it('semantic actions', function() {
-        var s = m.semantics().addAttribute('v', {});
         t.deepEqual(s(m.match(['123'], 'any')).v, ['123']);
       });
       t.end();
@@ -126,6 +131,11 @@ test('primitive patterns', function(t) {
       '  _null = null',
       '}'
     ]);
+    var s = m.semantics().addAttribute('v', {
+      _terminal: function() {
+        return this.primitiveValue;
+      }
+    });
 
     it('recognition', function() {
       assertSucceeds(t, m.match(5));
@@ -174,7 +184,6 @@ test('primitive patterns', function(t) {
     });
 
     it('semantic actions', function() {
-      var s = m.semantics().addAttribute('v', {});
       t.equal(s(m.match(5)).v, 5);
       t.equal(s(m.match(true, '_true')).v, true);
       t.equal(s(m.match(false, '_false')).v, false);
@@ -192,6 +201,7 @@ test('primitive patterns', function(t) {
       '  _null = null',
       '}'
     ]);
+
     it('recognition', function() {
       assertFails(t, m.match('!'));
       assertFails(t, m.match('5'));
@@ -208,6 +218,11 @@ test('primitive patterns', function(t) {
 
 test('char', function(t) {
   var m = ohm.grammar('M { bang = "!" }');
+  var s = m.semantics().addAttribute('v', {
+    _terminal: function() {
+      return this.primitiveValue;
+    }
+  });
 
   test('direct match, no stream', function(t) {
     it('recognition', function() {
@@ -218,7 +233,6 @@ test('char', function(t) {
     });
 
     it('semantic actions', function() {
-      var s = m.semantics().addAttribute('v', {});
       var cst = m.match('!');
       t.equal(s(cst).v, '!');
     });
@@ -233,7 +247,6 @@ test('char', function(t) {
     });
 
     it('semantic actions', function() {
-      var s = m.semantics().addAttribute('v', {});
       var cst = m.match('!');
       t.equal(s(cst).v, '!');
     });
@@ -244,6 +257,11 @@ test('char', function(t) {
 
 test('string', function(t) {
   var m = ohm.grammar('M { foo = "foo\\b\\n\\r\\t\\\\\\\"\\u01bcff\\x8f" }');
+  var s = m.semantics().addAttribute('v', {
+    _terminal: function() {
+      return this.primitiveValue;
+    }
+  });
 
   test('direct match, no stream', function(t) {
     it('recognition', function() {
@@ -254,7 +272,6 @@ test('string', function(t) {
     });
 
     it('semantic actions', function() {
-      var s = m.semantics().addAttribute('v', {});
       var cst = m.match('foo\b\n\r\t\\"\u01bcff\x8f');
       t.equal(s(cst).v, 'foo\b\n\r\t\\"\u01bcff\x8f');
     });
@@ -276,7 +293,6 @@ test('string', function(t) {
     });
 
     it('semantic actions', function() {
-      var s = m.semantics().addAttribute('v', {});
       var cst = m.match('foo\b\n\r\t\\"\u01bcff\x8f');
       t.equal(s(cst).v, 'foo\b\n\r\t\\"\u01bcff\x8f');
     });
@@ -322,6 +338,11 @@ test('unicode', function(t) {
 
 test('ranges', function(t) {
   var m = ohm.grammar('M { charRange = "0".."9"  intRange = 5..131  strRange = ["bb".."foobar"] }');
+  var s = m.semantics().addAttribute('v', {
+    _terminal: function() {
+      return this.primitiveValue;
+    }
+  });
 
   test('recognition', function(t) {
     assertSucceeds(t, m.match('6', 'charRange'));
@@ -354,7 +375,6 @@ test('ranges', function(t) {
   });
 
   test('semantic actions', function(t) {
-    var s = m.semantics().addAttribute('v', {});
     t.equal(s(m.match('4', 'charRange')).v, '4');
     t.equal(s(m.match(40, 'intRange')).v, 40);
     t.equal(s(m.match(['foo'], 'strRange')).v, 'foo');
@@ -366,6 +386,11 @@ test('ranges', function(t) {
 
 test('alt', function(t) {
   var m = ohm.grammar('M { altTest = "a" | "b" }');
+  var s = m.semantics().addAttribute('v', {
+    _terminal: function() {
+      return this.primitiveValue;
+    }
+  });
 
   it('recognition', function() {
     assertFails(t, m.match(''));
@@ -375,7 +400,6 @@ test('alt', function(t) {
   });
 
   it('semantic actions', function() {
-    var s = m.semantics().addAttribute('v', {});
     t.equal(s(m.match('a')).v, 'a');
     t.equal(s(m.match('b')).v, 'b');
   });
@@ -384,6 +408,11 @@ test('alt', function(t) {
 
 test('rule bodies in defs can start with a |, and it\'s a no-op', function(t) {
   var m = ohm.grammar('M { altTest = | "a" | "b" }');
+  var s = m.semantics().addAttribute('v', {
+    _terminal: function() {
+      return this.primitiveValue;
+    }
+  });
 
   it('recognition', function() {
     assertFails(t, m.match(''));
@@ -393,7 +422,6 @@ test('rule bodies in defs can start with a |, and it\'s a no-op', function(t) {
   });
 
   it('semantic actions', function() {
-    var s = m.semantics().addAttribute('v', {});
     t.equal(s(m.match('a')).v, 'a');
     t.equal(s(m.match('b')).v, 'b');
   });
@@ -402,6 +430,11 @@ test('rule bodies in defs can start with a |, and it\'s a no-op', function(t) {
 
 test('rule bodies in overrides can start with a |, and it\'s a no-op', function(t) {
   var m = ohm.grammar('M { space := | "a" | "b" }');
+  var s = m.semantics().addAttribute('v', {
+    _terminal: function() {
+      return this.primitiveValue;
+    }
+  });
 
   it('recognition', function() {
     assertFails(t, m.match('', 'space'));
@@ -412,7 +445,6 @@ test('rule bodies in overrides can start with a |, and it\'s a no-op', function(
   });
 
   it('semantic actions', function() {
-    var s = m.semantics().addAttribute('v', {});
     t.equal(s(m.match('a', 'space')).v, 'a');
     t.equal(s(m.match('b', 'space')).v, 'b');
   });
@@ -421,6 +453,11 @@ test('rule bodies in overrides can start with a |, and it\'s a no-op', function(
 
 test('rule bodies in extends can start with a |, and it\'s a no-op', function(t) {
   var m = ohm.grammar('M { space += | "a" | "b" }');
+  var s = m.semantics().addAttribute('v', {
+    _terminal: function() {
+      return this.primitiveValue;
+    }
+  });
 
   it('recognition', function() {
     assertFails(t, m.match('', 'space'));
@@ -431,7 +468,6 @@ test('rule bodies in extends can start with a |, and it\'s a no-op', function(t)
   });
 
   it('semantic actions', function() {
-    var s = m.semantics().addAttribute('v', {});
     t.equal(s(m.match('a', 'space')).v, 'a');
     t.equal(s(m.match('b', 'space')).v, 'b');
   });
@@ -558,6 +594,9 @@ test('kleene-* and kleene-+', function(t) {
       },
       digit: function(expr) {
         return ['digit', expr.v];
+      },
+      _terminal: function() {
+        return this.primitiveValue;
       }
     });
     t.deepEqual(s(m.match('1234', 'number')).v, [
@@ -595,6 +634,9 @@ test('opt', function(t) {
     var s = m.semantics().addAttribute('v', {
       name: function(title, last) {
         return [title.children.length === 1 ? title.v[0] : undefined, last.primitiveValue];
+      },
+      _terminal: function() {
+        return this.primitiveValue;
       }
     });
     t.deepEqual(s(m.match('drwarth')).v, ['dr', 'warth']);
@@ -659,6 +701,9 @@ test('arr', function(t) {
     var s = m.semantics().addAttribute('v', {
       start: function(_abc, y, x, _ef, _g) {
         return [x.v, y.v];
+      },
+      _terminal: function() {
+        return this.primitiveValue;
       }
     });
     t.deepEqual(s(m.match(['abc', ['d', 'ef'], 'g'])).v, ['d', ['d', 'ef']]);
@@ -732,6 +777,9 @@ test('obj', function(t) {
       var s = m.semantics().addAttribute('v', {
         withStringProps: function(foos, bar) {
           return [foos.v, bar.v];
+        },
+        _terminal: function() {
+          return this.primitiveValue;
         }
       });
       t.deepEqual(s(m.match({foos: 'foofoo', bar: 'bar'}, 'withStringProps')).v, [
@@ -799,6 +847,9 @@ test('apply', function(t) {
         },
         foo: function(expr) {
           return ['foo', expr.v];
+        },
+        _terminal: function() {
+          return this.primitiveValue;
         }
       });
       t.deepEqual(s(m.match('foo')).v, ['easy', ['foo', 'foo']]);
@@ -831,6 +882,9 @@ test('apply', function(t) {
         },
         digit: function(expr) {
           return expr.v.charCodeAt(0) - '0'.charCodeAt(0);
+        },
+        _terminal: function() {
+          return this.primitiveValue;
         }
       }).addAttribute('t', {
         number: function(expr) {
@@ -838,6 +892,9 @@ test('apply', function(t) {
         },
         numberRec: function(n, d) {
           return ['numberRec', n.t, d.t];
+        },
+        _terminal: function() {
+          return this.primitiveValue;
         }
       });
       t.equal(s(f).v, 1234);
@@ -875,6 +932,9 @@ test('apply', function(t) {
       var s = m.semantics().addAttribute('v', {
         addRec: function(x, _, y) {
           return [x.v, '+', y.v];
+        },
+        _terminal: function() {
+          return this.primitiveValue;
         }
       });
       t.deepEqual(s(m.match('x+y+x', 'add')).v, [['x', '+', 'y'], '+', 'x']);
@@ -905,6 +965,9 @@ test('apply', function(t) {
       var s = m.semantics().addAttribute('v', {
         numberRec: function(n, d) {
           return [n.v, d.v];
+        },
+        _terminal: function() {
+          return this.primitiveValue;
         }
       });
       t.deepEqual(s(m.match('1234', 'number')).v, [[['1', '2'], '3'], '4']);
@@ -946,6 +1009,9 @@ test('apply', function(t) {
         },
         mulExpRec: function(x, _, y) {
           return ['mulExpRec', x.t, y.t];
+        },
+        _terminal: function() {
+          return this.primitiveValue;
         }
       }).addAttribute('v', {
         addExp: function(expr) {
@@ -962,6 +1028,9 @@ test('apply', function(t) {
         },
         priExp: function(expr) {
           return parseInt(expr.v);
+        },
+        _terminal: function() {
+          return this.primitiveValue;
         }
       }).addAttribute('p', {
         addExpRec: function(x, _, y) {
@@ -969,6 +1038,9 @@ test('apply', function(t) {
         },
         mulExpRec: function(x, _, y) {
           return '(' + x.p + '*' + y.p + ')';
+        },
+        _terminal: function() {
+          return this.primitiveValue;
         }
       });
       t.deepEqual(s(f).t,
@@ -1044,6 +1116,9 @@ test('apply', function(t) {
         },
         mulExpRec: function(x, _, y) {
           return [x.t, '*', y.t];
+        },
+        _terminal: function() {
+          return this.primitiveValue;
         }
       });
       t.deepEqual(s(m.match('7+8*9+0')).t, [['7', '+', ['8', '*', '9']], '+', '0']);
@@ -1084,6 +1159,9 @@ test('apply', function(t) {
         },
         barRec: function(x, y) {
           return ['barRec', x.t, y.t];
+        },
+        _terminal: function() {
+          return this.primitiveValue;
         }
       });
       t.deepEqual(s(f).t,
@@ -1131,7 +1209,8 @@ test('built-in types', function(t) {
     Obj: function(bool, num, str) { return [bool.val, num.val, str.val]; },
     Boolean: function(typeCheck) { return typeCheck.val; },
     Number: function(typeCheck) { return typeCheck.val; },
-    String: function(typeCheck) { return typeCheck.val; }
+    String: function(typeCheck) { return typeCheck.val; },
+    _terminal: function() { return this.primitiveValue; }
   });
   t.looseEqual(s(result).val, [true, 99.99, 'blah'], 'array match with semantics');
 
@@ -1216,6 +1295,9 @@ test('inheritance', function(t) {
         },
         digit: function(expr) {
           return ['digit', expr.v];
+        },
+        _terminal: function() {
+          return this.primitiveValue;
         }
       });
       var expected = ['number', [['digit', 'a'], ['digit', 'b'], ['digit', 'c'], ['digit', 'd']]];
@@ -1333,6 +1415,9 @@ test('bindings', function(t) {
       },
       baz: function(expr) {
         return ['baz', expr.v, id++];
+      },
+      _terminal: function() {
+        return this.primitiveValue;
       }
     });
     t.deepEqual(s(g.match('ab')).v, {
@@ -1355,6 +1440,9 @@ test('bindings', function(t) {
       },
       baz: function(expr) {
         return ['baz', expr.v, id++];
+      },
+      _terminal: function() {
+        return this.primitiveValue;
       }
     });
     t.deepEqual(s(g.match('ab')).v, {
@@ -1388,6 +1476,9 @@ test('inline rule declarations', function(t) {
       },
       digit: function(expr) {
         return expr.v.charCodeAt(0) - '0'.charCodeAt(0);
+      },
+      _terminal: function() {
+        return this.primitiveValue;
       }
     });
     return function(node) {
@@ -1561,6 +1652,9 @@ test('bootstrap', function(t) {
       },
       digit: function(expr) {
         return expr.v.charCodeAt(0) - '0'.charCodeAt(0);
+      },
+      _terminal: function() {
+        return this.primitiveValue;
       }
     });
     t.equal(s(Arithmetic.match('10*(2+123)-4/5')).v, 1249.2);

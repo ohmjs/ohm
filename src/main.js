@@ -268,6 +268,10 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
     EmptyListOf: function() {
       return [];
+    },
+
+    _terminal: function() {
+      return this.primitiveValue;
     }
   });
   return helpers(match).visit();
