@@ -266,7 +266,8 @@ State.prototype = {
       this.rightmostFailures = undefined;
     }
 
-    var origPos = this.maybeSkipSpacesBefore(expr);
+    var origPos = inputStream.pos;
+    var memoPos = this.maybeSkipSpacesBefore(expr);
 
     if (this.isTracing()) {
       var origTrace = this.trace;
@@ -278,7 +279,7 @@ State.prototype = {
 
     if (this.isTracing()) {
       var bindings = this.bindings.slice(origNumBindings);
-      var traceEntry = this.getTraceEntry(origPos, expr, ans, bindings);
+      var traceEntry = this.getTraceEntry(memoPos, expr, ans, bindings);
       traceEntry.isImplicitSpaces = expr === applySpaces;
       traceEntry.isRootNode = expr === this.startExpr;
       origTrace.push(traceEntry);

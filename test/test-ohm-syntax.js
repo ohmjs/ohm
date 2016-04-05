@@ -1576,6 +1576,20 @@ test('lexical vs. syntactic rules', function(t) {
   t.end();
 });
 
+test('space skipping semantics', function(t) {
+  var g = makeGrammar([
+    'G {',
+    ' Iter = ">" letter+ #(space)',
+    ' Lookahead = ">" &letter #(space letter)',
+    ' NegLookahead = ">" ~digit #(space letter)',
+    '}'
+  ]);
+  assertSucceeds(t, g.match('> a b ', 'Iter'), "iter doesn't consume trailing space");
+  assertSucceeds(t, g.match('> a', 'Lookahead'), "lookahead doesn't consume anything");
+  assertSucceeds(t, g.match('> a', 'NegLookahead'), "negative lookahead doesn't consume anything");
+  t.end();
+});
+
 test('strings vs. value exprs', function(t) {
   var g = makeGrammar([
     'G {',
