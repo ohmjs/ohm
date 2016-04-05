@@ -48,6 +48,16 @@
     return el;
   }
 
+  function closestElementMatching(sel, startEl) {
+    var el = startEl;
+    while (el != null) {
+      if (el.matches(sel)) {
+        return el;
+      }
+      el = el.parentElement;
+    }
+  }
+
   // D3 Helpers
   // ----------
 
@@ -173,10 +183,10 @@
   }
 
   // Hides or shows the children of `el`, which is a div.pexpr.
-  function toggleTraceElement(el) {
+  function toggleTraceElement(el, optDurationInMs) {
     var children = el.lastChild;
     var showing = children.hidden;
-    el.classList.toggle('collapsed', !showing && children.childNodes.length > 0);
+    el.classList.toggle('collapsed', !showing);
 
     var childrenSize = measureChildren(el);
     var newWidth = showing ? childrenSize.width : measureLabel(el).width;
@@ -185,10 +195,10 @@
     newWidth = Math.max(newWidth, measureInput(el._input).width);
 
     var widthDeps = getWidthDependentElements(el);
+    var duration = optDurationInMs != null ? optDurationInMs : 500;
 
     d3.select(el)
-        .transition()
-        .duration(500)
+        .transition().duration(duration)
         .styleTween('width', tweenWithCallback(newWidth + 'px', function(v) {
           updateInputWidths(widthDeps);
         }))
@@ -200,9 +210,9 @@
         });
 
     var height = showing ? childrenSize.height : 0;
-    d3.select(el.lastChild).style('height', currentHeightPx)
-        .transition()
-        .duration(500)
+    d3.select(el.lastChild)
+        .style('height', currentHeightPx)
+        .transition().duration(duration)
         .style('height', height + 'px')
         .each('start', function() { if (showing) { this.hidden = false; } })
         .each('end', function() {
@@ -211,6 +221,10 @@
           }
           this.style.height = '';
         });
+
+    if (duration === 0) {
+      d3.timer.flush();
+    }
   }
 
   function updateZoomState(newState) {
@@ -247,6 +261,33 @@
     }
 
     return true;
+  }
+
+  function isSyntactic(expr) {
+    if (expr instanceof ohm.pexprs.Apply) {
+      return expr.isSyntactic();
+    }
+    if (expr instanceof ohm.pexprs.Iter ||
+        expr instanceof ohm.pexprs.Lookahead ||
+        expr instanceof ohm.pexprs.Not) {
+      return isSyntactic(expr.expr);
+    }
+    return false;
+  }
+
+  // Return true if the trace element `el` should be collapsed by default.
+  function shouldTraceElementBeCollapsed(el) {
+    // Don't collapse unlabeled nodes (they can't be expanded), or nodes with a collapsed ancestor.
+    if (el.classList.contains('hidden') || closestElementMatching('.collapsed', el) != null) {
+      return false;
+    }
+
+    // Collapse the trace if the next labeled ancestor is syntactic, but the node itself isn't.
+    var visualParent = closestElementMatching('.pexpr:not(.hidden)', el.parentElement);
+    if (visualParent && visualParent._traceNode) {
+      return isSyntactic(visualParent._traceNode.expr) && !isSyntactic(el._traceNode.expr);
+    }
+    return false;
   }
 
   /*
@@ -364,6 +405,7 @@
     var pexpr = traceNode.expr;
     var wrapper = parent.appendChild(createTraceWrapper(traceNode));
     wrapper._input = input;
+    wrapper._traceNode = traceNode;
 
     if (zoomState.zoomTrace === traceNode && zoomState.previewOnly) {
       if (input) {
@@ -568,6 +610,10 @@
         }
         inputStack.push(childInput);
         containerStack.push(el.appendChild(createElement('.children')));
+
+        if (shouldTraceElementBeCollapsed(el)) {
+          toggleTraceElement(el, 0);
+        }
       },
       exit: function(node, parent, depth) {
         containerStack.pop();
