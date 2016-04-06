@@ -538,13 +538,16 @@
   }
 
   // Re-render the parse tree starting with the trace at `rootTrace`.
-  function refreshParseTree(rootTrace, optActionName) {
+  function refreshParseTree(rootTrace, optActionName, clearZoomTrace) {
     var expandedInputDiv = $('#expandedInput');
     var parseResultsDiv = $('#parseResults');
 
     expandedInputDiv.innerHTML = '';
     parseResultsDiv.innerHTML = '';
 
+    if (clearZoomTrace) {
+      zoomState = {};
+    }
     zoomOutButton.hidden = !zoomState.zoomTrace;
 
     var trace;
