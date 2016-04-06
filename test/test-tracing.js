@@ -350,6 +350,26 @@ test('toString', function(t) {
   t.end();
 });
 
+test('toString with left recursion', function(t) {
+  var g = ohm.grammar('G { start = start letter  -- rec\n | letter }');
+  var lines = g.trace('a').toString().split('\n').slice(0, -1);
+
+  // TODO: Augment the trace with the missing information about growing the seed.
+  // We show the initial failure due to left recursion, but not the retry which fails
+  // to grow the seed.
+  t.deepEqual(lines, [
+      'a          ✓ start (LR) ⇒  "a"',
+      'a              ✗ start_rec',
+      'a                ✗ start letter',
+      'a                  ✗ start',  // Left-recursive base case.
+      'a              ✓ letter ⇒  "a"',
+      'a                  ✓ lower ⇒  "a"',
+      'a                    ✓ Unicode {Ll} character ⇒  "a"',
+      '           ✓ end ⇒  ""']);
+
+  t.end();
+});
+
 test('memoization', function(t) {
   var g = testUtil.makeGrammar([
     'G {',

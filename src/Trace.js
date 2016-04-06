@@ -135,9 +135,13 @@ Trace.prototype.walk = function(visitorObjOrFn, optThisArg) {
 Trace.prototype.toString = function() {
   var sb = new common.StringBuffer();
   this.walk(function(node, parent, depth) {
+    if (!node) {
+      return this.SKIP;
+    }
     var ctorName = node.expr.constructor.name;
+    // Don't print anything for Alt nodes.
     if (ctorName === 'Alt') {
-      return;  // Don't print anything for Alt nodes.
+      return;  // eslint-disable-line consistent-return
     }
     sb.append(getInputExcerpt(node.inputStream, node.pos, 10) + spaces(depth * 2 + 1));
     sb.append((node.succeeded ? CHECK_MARK : BALLOT_X) + ' ' + node.displayString);
@@ -150,7 +154,7 @@ Trace.prototype.toString = function() {
       sb.append(typeof contents === 'string' ? '"' + contents + '"' : contents);
     }
     sb.append('\n');
-  });
+  }.bind(this));
   return sb.contents();
 };
 
