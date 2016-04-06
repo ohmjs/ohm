@@ -67,13 +67,6 @@ function $(sel) { return document.querySelector(sel); }
       this.options[checkbox.name] = checkbox.checked;
     }
 
-    // Check selected action
-    var actionNodes = document.querySelectorAll('textarea.action');
-    var selectedActionNode = Array.prototype.filter.call(actionNodes, function(actionNode) {
-      return actionNode.readOnly && actionNode.classList.contains('selected');
-    })[0];
-    var actionName = selectedActionNode && selectedActionNode.value;
-
     if (grammarChanged) {
       grammarChanged = false;
       saveEditorState(this.ui.grammarEditor, 'grammar');
@@ -104,7 +97,14 @@ function $(sel) { return document.querySelector(sel); }
           'Expected ' + trace.result.getExpectedText());
       }
 
-      this.refreshParseTree(trace, actionName);
+      // Check selected action
+      var actionNodes = document.querySelectorAll('textarea.action');
+      var selectedActionNode = Array.prototype.filter.call(actionNodes, function(actionNode) {
+        return actionNode.readOnly && actionNode.classList.contains('selected');
+      })[0];
+      var actionName = selectedActionNode && selectedActionNode.value;
+
+      this.refreshParseTree(trace, actionName, true);
     }
   };
 
