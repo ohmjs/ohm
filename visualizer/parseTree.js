@@ -189,12 +189,13 @@
     // if one of its descendants is `next step`.
     // Otherwise, if the node is expanded,  then remove its temporary
     // `next step` mark if there is any.
-    // TODO: if this node has reserved result, then don't mark it no matter what
     var resultDiv = selfWrapper.querySelector('.result');
     if (!resultDiv) {
       return;
     }
+
     var shouldMark = !showing &&
+        !resultDiv.classList.contains('reserved') &&
         (resultDiv.classList.contains('error') ||
         resultDiv.classList.contains('failure'));
     selfWrapper.classList.toggle('tmpNextStepMark', shouldMark);
@@ -255,13 +256,13 @@
         zoomState[k] = newState[k];
       }
     }
-    refreshParseTree(semantics, zoomState.rootTrace, optActionName);
+    refreshParseTree(semantics, zoomState.rootTrace, optActionName, true);
   }
 
   function clearZoomState(semantics, optActionName) {
     var oldZoomState = zoomState;
     zoomState = {};
-    refreshParseTree(semantics, oldZoomState.rootTrace, optActionName);
+    refreshParseTree(semantics, oldZoomState.rootTrace, optActionName, true);
   }
 
   function shouldNodeBeLabeled(traceNode, parent) {
@@ -387,6 +388,38 @@
       };
     }
 
+    var showResult = menuDiv.querySelector('#showResult');
+    // Find the `label` element from the event target, if the target is the child of label, i.e.
+    // `casename`, then the event target's parent element is the `label` we want.
+    var label = e.target;
+    if (!label.classList.contains('label')) {
+      label = e.target.parentElement;
+    }
+    var semanticsEditor = label.nextElementSibling;
+
+    // If we didn't select any action, or there is already an action result showed for this node,
+    // then we disable the `Get action result` option.
+    if (!optActionName || !semanticsEditor.hidden) {
+      showResult.classList.add('disabled');
+    } else {
+      // Try to force to get the semantics action result, if succeed, show the result in `grey`.
+      try {
+        var result = semanticsActionHelpers.getActionResultForce(semantics, optActionName,
+            traceNode);
+        var resultDiv = semanticsEditor.querySelector('.result');
+        showResult.onclick = function() {
+          resultDiv.innerHTML = JSON.stringify(result);
+          resultDiv.classList.add('reserved');
+          semanticsEditor.hidden = false;
+          semanticsEditor.classList.add('resultOnly');
+        };
+        showResult.classList.remove('disabled');
+      } catch (error) {
+        // If we could not force to get a result for this node, then disable the `Get action
+        // result` option.
+        showResult.classList.add('disabled');
+      }
+    }
     e.preventDefault();
     e.stopPropagation();  // Prevent ancestor wrappers from handling.
   }
@@ -430,34 +463,6 @@
     return label;
   }
 
-  // Returns an object represent the action function in string
-  // `args` is a list of argument names of the action function
-  // `body` is the action function body in string
-  function retrieveActionFnStrObj(traceNode, actionName, semantics) {
-    var actionKey = traceNode.bindings[0].ctorName;
-
-    var actionFnStrObj = Object.create(null);
-    var actionFn = semantics._getActionDict(actionName)[actionKey];
-
-    // If we don't have the semantic action for the `actionKey`, or the semantics action is
-    // default, then returns the object with default arguments
-    if (!actionFn ||
-        actionFn.toString().indexOf('// DEFAULT') + 10 === actionFn.toString().indexOf('\n')) {
-      actionFnStrObj.args = getArgumentsExpr(traceNode).toArgumentNameList(1);
-      return actionFnStrObj;
-    }
-
-    var actionFnStr = actionFn.toString();
-    var argStr = actionFnStr.substring(actionFnStr.indexOf('(') + 1, actionFnStr.indexOf(')'));
-    actionFnStrObj.args = argStr.split(',').map(function(arg) { return arg.trim(); });
-
-    var bodyStartIdx = actionFnStr.indexOf('\n') + 1;
-    var bodyEndIdx = actionFnStr.lastIndexOf('\n');
-    actionFnStrObj.body = actionFnStr.substring(bodyStartIdx, bodyEndIdx);
-
-    return actionFnStrObj;
-  }
-
   // Returns the pexpr that represent the arguments of semantics action function
   // of the receiver (i.e. traceNode.expr)
   function getArgumentsExpr(traceNode) {
@@ -473,7 +478,6 @@
         pexpr = lastTraceChild.children[lastTraceChild.children.length - 1].expr;
       }
     }
-
     return pexpr;
   }
 
@@ -489,7 +493,6 @@
       // We skip `Not` as it won't be a semantics action function argument.
       argumentsDisplay.push(argumentsExpr.toDisplayString());
     }
-
     return argumentsDisplay;
   }
 
@@ -545,6 +548,34 @@
     });
   }
 
+  // Returns an object represent the action function in string
+  // `args` is a list of argument names of the action function
+  // `body` is the action function body in string
+  function retrieveActionFnStrObj(traceNode, actionName, semantics) {
+    var actionKey = traceNode.bindings[0].ctorName;
+
+    var actionFnStrObj = Object.create(null);
+    var actionFn = semantics._getActionDict(actionName)[actionKey];
+
+    // If we don't have the semantic action for the `actionKey`, or the semantics action is
+    // default, then returns the object with default arguments
+    if (!actionFn ||
+        actionFn.toString().indexOf('// DEFAULT') + 10 === actionFn.toString().indexOf('\n')) {
+      actionFnStrObj.args = getArgumentsExpr(traceNode).toArgumentNameList(1);
+      return actionFnStrObj;
+    }
+
+    var actionFnStr = actionFn.toString();
+    var argStr = actionFnStr.substring(actionFnStr.indexOf('(') + 1, actionFnStr.indexOf(')'));
+    actionFnStrObj.args = argStr.split(',').map(function(arg) { return arg.trim(); });
+
+    var bodyStartIdx = actionFnStr.indexOf('\n') + 1;
+    var bodyEndIdx = actionFnStr.lastIndexOf('\n');
+    actionFnStrObj.body = actionFnStr.substring(bodyStartIdx, bodyEndIdx);
+
+    return actionFnStrObj;
+  }
+
   function retrieveArguementsFromHeader(editorHeader) {
     var argumentStrs = [];
     Array.prototype.forEach.call(editorHeader.children, function(block, idx) {
@@ -571,21 +602,26 @@
     var traceNode = editorBody.parentElement.parentElement.parentElement._traceNode;
     try {
       saveSemanticAction(semantics, traceNode, actionName, editorBody);
-      // If there has an run time error, then put it to `_runtimeError` of the trace,
-      // so when refresh the tree, we could load the error, and keep the editor open
-      // for users to revise its action.
-      semanticsActionHelpers.initializeActionLog(true);
-      semanticsActionHelpers.populateActionResult(semantics, traceNode, actionName);
-      var result = semanticsActionHelpers.getActionResult(traceNode, actionName);
-      if (semanticsActionHelpers.isNextStep(result, traceNode, actionName)) {
-        traceNode._runtimeError = result;
-      }
-      refreshParseTree(semantics, rootTrace, actionName);
+      semanticsActionHelpers.getActionResultForce(semantics, actionName, traceNode);
+      refreshParseTree(semantics, rootTrace, actionName, true);
     } catch (error) {
-      // If there is an syntax error in the semantics action code, then load the error
-      // message to the result container.
-      editorBody.nextElementSibling.classList.add('error');
-      editorBody.nextElementSibling.textContent = error.message;
+      if (error instanceof Error && error.message) {
+        // If there is an syntax error in the semantics action code, then load the error
+        // message to the result container.
+        editorBody.nextElementSibling.classList.add('error');
+        editorBody.nextElementSibling.textContent = error.message;
+      } else {
+        // If there is a run time error for executing the semantics action, then refresh
+        // the parse tree.
+        if (!(error instanceof Error)) {
+          // If the run time error is caused by the node itself (i.e. the node is still the
+          // logical next step after saving the semantics action), then put the error to
+          // `_runtimeError` of the trace, so when refresh the tree, we could load the error,
+          // and keep the editor open for users to revise its action.
+          traceNode._runtimeError = error;
+        }
+        refreshParseTree(semantics, rootTrace, actionName, true);
+      }
     } finally {
       clearMarks();
     }
@@ -661,7 +697,7 @@
     }
   }
 
-  // Loads action result to the semantics result containter, also style the label and the
+  // Loads action result to the semantics result containter, also style the selfWrapper and the
   // container according to the result
   function loadActionResult(traceNode, actionName, actionResultContainer) {
     // If there is no action result for this node, and it's not the one we edited before refresh,
@@ -683,27 +719,30 @@
       selfWrapper.classList.add('nextStepMark');
     }
 
+    if (semanticsActionHelpers.shouldUseReservedResult(traceNode, actionName)) {
+      actionResultContainer.classList.add('reserved');
+      result = semanticsActionHelpers.getReservedResult(traceNode, actionName);
+    }
+
     if (result && result.isErrorWrapper) {
-      actionResultContainer.classList.add('error');
-      actionResultContainer.textContent = result;
-    } else if (result && result.isFailure) {
-      actionResultContainer.classList.add('error');
-    } else {
-      // TODO: only has reserved result, put the reserved result, and style it
+      actionResultContainer.innerHTML = result;
+    } else if (!(result && result.isFailure)) {
       actionResultContainer.innerHTML = JSON.stringify(result);
     }
+
+    var isError = !!(result && (result.isErrorWrapper || result.isFailure));
+    actionResultContainer.classList.toggle('error', isError);
+
+    var isPassThrough = !!semanticsActionHelpers.isPassThrough(traceNode, actionName);
+    selfWrapper.classList.toggle('passThrough', isPassThrough);
   }
 
   // Appends an semantic editor to the label of node wrapper
   function appendSemanticsEditor(semantics, wrapper, rootTrace, actionName) {
     var traceNode = wrapper.parentElement._traceNode;
     var semanticsEditor = wrapper.appendChild(createElement('.semanticsEditor'));
-
     var actionResultContainer = semanticsEditor.appendChild(createElement('.result'));
     loadActionResult(traceNode, actionName, actionResultContainer);
-
-    var isPassThrough = !!semanticsActionHelpers.isPassThrough(traceNode, actionName);
-    wrapper.classList.toggle('passThrough', isPassThrough);
 
     // If there is no result for the traceNode, or the result is an error,
     // then hides the whole editor. Otherwise, only shows the result.
@@ -847,12 +886,14 @@
     zoomOutButton.onclick = function(e) { clearZoomState(semantics, optActionName); };
     zoomOutButton.onmouseover = function(e) {
       if (zoomState.zoomTrace) {
+        semanticsActionHelpers.reserveResults();
         updateZoomState({previewOnly: true}, semantics, optActionName);
       }
     };
     zoomOutButton.onmouseout = function(e) {
       if (zoomState.zoomTrace) {
         updateZoomState({previewOnly: false}, semantics, optActionName);
+        semanticsActionHelpers.clearCurrentReservedResults();
       }
     };
   }
@@ -863,9 +904,9 @@
       actionContainer.onclick = function(event) {
         var actionName = event.target.value;
         if (optActionName === actionName || !event.target.readOnly) {
-          refreshParseTree(semantics, rootTrace);
+          refreshParseTree(semantics, rootTrace, null, false);
         } else {
-          refreshParseTree(semantics, rootTrace, actionName);
+          refreshParseTree(semantics, rootTrace, actionName, false);
         }
       };
 
@@ -879,7 +920,7 @@
           event.target.readOnly = true;
           try {
             semanticsActionHelpers.addNewAction(semantics, actionType, actionName);
-            refreshParseTree(semantics, rootTrace, actionName);
+            refreshParseTree(semantics, rootTrace, actionName, false);
           } catch (error) {
             event.target.readOnly = false;
             window.alert(error); // eslint-disable-line no-alert
@@ -891,7 +932,8 @@
   }
 
   // Re-render the parse tree starting with the trace at `rootTrace`.
-  function refreshParseTree(semantics, rootTrace, optActionName, clearZoomTrace) {
+  function refreshParseTree(
+      semantics, rootTrace, optActionName, keepReservedResults, clearZoomTrace) {
     var expandedInputDiv = $('#expandedInput');
     var parseResultsDiv = $('#parseResults');
 
@@ -915,12 +957,11 @@
 
     initializeActionButtonEvent(semantics, rootTrace, optActionName);
     if (optActionName) {
-      semanticsActionHelpers.initializeActionLog();
+      semanticsActionHelpers.initializeActionLog(keepReservedResults);
     }
 
     var inputStack = [expandedInputDiv];
     var containerStack = [rootContainer];
-
     trace.walk({
       enter: function(node, parent, depth) {
         // Undefined nodes identify the base case for left recursion -- skip them.

@@ -277,17 +277,18 @@
       padding: 0;
     }
 
-    .pexpr:not(.failed) > .self:hover .semanticsEditor .header,
-    .pexpr:not(.failed) > .self:hover .semanticsEditor .body,
-    .pexpr:not(.failed) > .self:hover .semanticsEditor .result {
-      border-color: #dfdfdf;
-    }
     .semanticsEditor .result.error {
       background-color: rgb(255, 215, 222);
       color: red;
     }
     .semanticsEditor .result.reserved {
       color: #999;
+    }
+
+    .pexpr:not(.failed) > .self:hover .semanticsEditor .header,
+    .pexpr:not(.failed) > .self:hover .semanticsEditor .body,
+    .pexpr:not(.failed) > .self:hover .semanticsEditor .result {
+      border-color: #dfdfdf;
     }
 
     .semanticsEditor button.save {
@@ -686,6 +687,7 @@
   <div id="contextMenu" hidden>
     <ul>
       <li id="showInfoItem" class="disabled"><label>Show info</label></li>
+      <li id="showResult" class="disabled"><label>Get action result</label></li>
       <li id="zoomItem"><label>Zoom to node</label></li>
     </ul>
   </div>

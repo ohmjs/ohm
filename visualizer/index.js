@@ -18,7 +18,6 @@ function $(sel) { return document.querySelector(sel); }
 
   // EXPORTS
   // -------
-
   ohmEditor.options = {};
   ohmEditor.ui = {
     inputEditor: CodeMirror($('#inputContainer .editorWrapper')),
@@ -112,7 +111,7 @@ function $(sel) { return document.querySelector(sel); }
       })[0];
       var actionName = selectedActionNode && selectedActionNode.value;
 
-      this.refreshParseTree(semantics, trace, actionName, true);
+      this.refreshParseTree(semantics, trace, actionName, false, true);
     }
   };
 

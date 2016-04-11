@@ -7,7 +7,24 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
 
   // Private helpers
   // ---------------
-  var resultMap, todo, passThrough;
+  var resultMap, todo, passThrough, reservedResults;
+  function saveActionLog() {
+    var origActionLog = {
+      resultMap: resultMap,
+      todo: todo,
+      passThrough: passThrough
+    };
+    resultMap = undefined;
+    todo = undefined;
+    passThrough = undefined;
+    return origActionLog;
+  }
+
+  function reloadActionLog(origActionLog) {
+    resultMap = origActionLog.resultMap;
+    todo = origActionLog.todo;
+    passThrough = origActionLog.passThrough;
+  }
 
   // Action result type that represents missing
   // semantic action
@@ -65,7 +82,7 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
   // the children of the `cstNode`
   function noResultForChildrenOf(cstNode, actionName) {
     var hasNoResult = cstNode.children.every(function(child) {
-      return !resultMap.hasOwnProperty(toKey(child, actionName));
+      return !(toKey(child, actionName) in resultMap);
     });
     return hasNoResult;
   }
@@ -73,10 +90,13 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
   // Exports
   // -------
   return {
-    initializeActionLog: function() {
+    initializeActionLog: function(keepReservedResults) {
       resultMap = undefined;
       todo = undefined;
       passThrough = undefined;
+      if (!keepReservedResults) {
+        reservedResults = undefined;
+      }
     },
 
     addNewAction: function(semantics, actionType, actionName) {
@@ -165,7 +185,8 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
         return;
       }
 
-      resultMap = {};
+      resultMap = Object.create(null);
+
       try {
         var nodeWrapper = semantics._getSemantics().wrap(traceNode.bindings[0]);
         if (actionName in semantics._getSemantics().operations) {
@@ -176,6 +197,33 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
         }
       } catch (error) {
       }
+    },
+
+    reserveResults: function() {
+      if (!resultMap) {
+        return;
+      }
+
+      if (!reservedResults) {
+        reservedResults = Object.create(null);
+      }
+
+      Object.keys(resultMap).forEach(function(key) {
+        reservedResults[key] = {
+          result: resultMap[key],
+          isPassThrough: passThrough && passThrough.includes(key)
+        };
+      });
+    },
+
+    clearCurrentReservedResults: function() {
+      if (!reservedResults) {
+        return;
+      }
+
+      Object.keys(resultMap).forEach(function(key) {
+        delete reservedResults[key];
+      });
     },
 
     getActionFnWrapper: function(actionName, args, actionFnStr) {
@@ -228,16 +276,60 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
       return actionFnWrapper;
     },
 
+    shouldUseReservedResult: function(traceNode, actionName) {
+      var key = toKey(traceNode.bindings[0], actionName);
+      return !(key in resultMap) && reservedResults && (key in reservedResults);
+    },
+
+    getReservedResult: function(traceNode, actionName) {
+      var key = toKey(traceNode.bindings[0], actionName);
+      return reservedResults[key].result;
+    },
+
     getActionResult: function(traceNode, actionName) {
       var cstNode = traceNode.bindings[0];
       var key = toKey(cstNode, actionName);
       return resultMap[key];
     },
 
+    getActionResultForce: function(semantics, actionName, traceNode) {
+      var key = toKey(traceNode.bindings[0], actionName);
+      var origActionLog = saveActionLog();
+
+      // If there is a reserved result for this node, we want to remove it and
+      // re-evaluate the node.
+      if (reservedResults) {
+        delete reservedResults[key];
+      }
+
+      this.populateActionResult(semantics, traceNode, actionName);
+      var result = this.getActionResult(traceNode, actionName);
+
+      // If the result is an error (either an ErrorWrapper, or failure). Then
+      // either throw the result or null. This is used for caller to distinguish
+      // between error that caused by executing the semantics action on the node
+      // itself or its descendents.
+      if (this.isNextStep(result, traceNode, actionName)) {
+        // If the traceNode is the next step after executing the semantics
+        // action, the throw the result (which will either by a ErrorWrapper, or
+        // failure).
+        reloadActionLog(origActionLog);
+        throw result;
+      } else if (result instanceof ErrorWrapper || result === failure) {
+        // If the result is an error, and it's not going to be the next step after
+        // executing the semantics action. Then throw null.
+        reloadActionLog(origActionLog);
+        throw new Error();
+      }
+      this.reserveResults();
+      reloadActionLog(origActionLog);
+      return result;
+    },
+
     isNextStep: function(result, traceNode, actionName) {
       var cstNode = traceNode.bindings[0];
       var key = toKey(cstNode, actionName);
-      if (!resultMap.hasOwnProperty(key)) {
+      if (!(key in resultMap)) {
         return false;
       }
 
@@ -251,12 +343,15 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
 
     isPassThrough: function(traceNode, actionName) {
       var key = toKey(traceNode.bindings[0], actionName);
+      if (this.shouldUseReservedResult(traceNode, actionName)) {
+        return reservedResults[key].isPassThrough;
+      }
       return passThrough && passThrough.includes(key);
     },
 
     hasNoResult: function(traceNode, actionName) {
       var key = toKey(traceNode.bindings[0], actionName);
-      return !resultMap.hasOwnProperty(key);
+      return !(key in resultMap) && (!reservedResults || !(key in reservedResults));
     }
   };
 })();
