@@ -1,3 +1,6 @@
+/* eslint-env browser */
+/* global CodeMirror, semanticsActionHelpers */
+
 'use strict';
 
 // Wrap the module in a universal module definition (UMD), allowing us to
@@ -181,11 +184,32 @@
     ohmEditor.ui.inputEditor.getWrapperElement().classList.remove('highlighting');
   }
 
+  function updateNextStepNode(selfWrapper, showing) {
+    // If the node is collapsed, then mark it as temporary `next step`
+    // if one of its descendants is `next step`.
+    // Otherwise, if the node is expanded,  then remove its temporary
+    // `next step` mark if there is any.
+    var resultDiv = selfWrapper.querySelector('.result');
+    if (!resultDiv) {
+      return;
+    }
+
+    var shouldMark = !showing &&
+        !resultDiv.classList.contains('reserved') &&
+        (resultDiv.classList.contains('error') ||
+        resultDiv.classList.contains('failure'));
+    selfWrapper.classList.toggle('tmpNextStepMark', shouldMark);
+  }
+
   // Hides or shows the children of `el`, which is a div.pexpr.
-  function toggleTraceElement(el, optDurationInMs) {
+  function toggleTraceElement(el, optActionName, optDurationInMs) {
     var children = el.lastChild;
     var showing = children.hidden;
     el.classList.toggle('collapsed', !showing);
+    el._traceNode._collapsed = !showing;
+    if (optActionName) {
+      updateNextStepNode(el.firstElementChild, showing);
+    }
 
     var childrenSize = measureChildren(el);
     var newWidth = showing ? childrenSize.width : measureLabel(el).width;
@@ -226,19 +250,19 @@
     }
   }
 
-  function updateZoomState(newState) {
+  function updateZoomState(newState, semantics, optActionName) {
     for (var k in newState) {
       if (newState.hasOwnProperty(k)) {
         zoomState[k] = newState[k];
       }
     }
-    refreshParseTree(zoomState.rootTrace);
+    refreshParseTree(semantics, zoomState.rootTrace, optActionName, true);
   }
 
-  function clearZoomState() {
+  function clearZoomState(semantics, optActionName) {
     var oldZoomState = zoomState;
     zoomState = {};
-    refreshParseTree(oldZoomState.rootTrace);
+    refreshParseTree(semantics, oldZoomState.rootTrace, optActionName, true);
   }
 
   function shouldNodeBeLabeled(traceNode, parent) {
@@ -271,6 +295,13 @@
 
   // Return true if the trace element `el` should be collapsed by default.
   function shouldTraceElementBeCollapsed(el) {
+    // Collapse/un-collapse accordingly if this node was a memoized `collapsed state`
+    if (el._traceNode._collapsed === true) {
+      return true;
+    } else if (el._traceNode._collapsed === false) {
+      return false;
+    }
+
     // Don't collapse unlabeled nodes (they can't be expanded), or nodes with a collapsed ancestor.
     if (el.classList.contains('hidden') || closestElementMatching('.collapsed', el) != null) {
       return false;
@@ -339,7 +370,7 @@
   }
 
   // Handle the 'contextmenu' event `e` for the DOM node associated with `traceNode`.
-  function handleContextMenu(e, rootTrace, traceNode, optActionName) {
+  function handleContextMenu(e, semantics, rootTrace, traceNode, optActionName) {
     var menuDiv = $('#contextMenu');
     menuDiv.style.left = e.clientX + 'px';
     menuDiv.style.top = e.clientY - 6 + 'px';
@@ -352,10 +383,42 @@
     zoomItem.classList.toggle('disabled', !zoomEnabled);
     if (zoomEnabled) {
       zoomItem.onclick = function() {
-        updateZoomState({zoomTrace: traceNode, rootTrace: rootTrace});
-        refreshParseTree(rootTrace, optActionName);
+        updateZoomState({zoomTrace: traceNode, rootTrace: rootTrace}, semantics, optActionName);
         clearMarks();
       };
+    }
+
+    var showResult = menuDiv.querySelector('#showResult');
+    // Find the `label` element from the event target, if the target is the child of label, i.e.
+    // `casename`, then the event target's parent element is the `label` we want.
+    var label = e.target;
+    if (!label.classList.contains('label')) {
+      label = e.target.parentElement;
+    }
+    var semanticsEditor = label.nextElementSibling;
+
+    // If we didn't select any action, or there is already an action result showed for this node,
+    // then we disable the `Get action result` option.
+    if (!optActionName || !semanticsEditor.hidden) {
+      showResult.classList.add('disabled');
+    } else {
+      // Try to force to get the semantics action result, if succeed, show the result in `grey`.
+      try {
+        var result = semanticsActionHelpers.getActionResultForce(semantics, optActionName,
+            traceNode);
+        var resultDiv = semanticsEditor.querySelector('.result');
+        showResult.onclick = function() {
+          resultDiv.innerHTML = JSON.stringify(result);
+          resultDiv.classList.add('reserved');
+          semanticsEditor.hidden = false;
+          semanticsEditor.classList.add('resultOnly');
+        };
+        showResult.classList.remove('disabled');
+      } catch (error) {
+        // If we could not force to get a result for this node, then disable the `Get action
+        // result` option.
+        showResult.classList.add('disabled');
+      }
     }
     e.preventDefault();
     e.stopPropagation();  // Prevent ancestor wrappers from handling.
@@ -400,7 +463,307 @@
     return label;
   }
 
-  function createTraceElement(rootTrace, traceNode, parent, input, optActionName) {
+  // Returns the pexpr that represent the arguments of semantics action function
+  // of the receiver (i.e. traceNode.expr)
+  function getArgumentsExpr(traceNode) {
+    var pexpr = traceNode.expr;
+
+    // Get rule body of the Apply expression.
+    if (pexpr instanceof ohm.pexprs.Apply) {
+      var lastTraceChild = traceNode.children[traceNode.children.length - 1];
+      pexpr = lastTraceChild.expr;
+
+      // If the rule body is an Alt expression, then get the succeed term of it.
+      if (pexpr instanceof ohm.pexprs.Alt) {
+        pexpr = lastTraceChild.children[lastTraceChild.children.length - 1].expr;
+      }
+    }
+    return pexpr;
+  }
+
+  // Returns the arguments display format of the expression `argumentsExpr`
+  function getArgumentsDisplay(argumentsExpr) {
+    var argumentsDisplay = [];
+
+    if (argumentsExpr instanceof ohm.pexprs.Seq) {
+      argumentsExpr.factors.forEach(function(factor) {
+        argumentsDisplay = argumentsDisplay.concat(getArgumentsDisplay(factor));
+      });
+    } else if (!(argumentsExpr instanceof ohm.pexprs.Not)) {
+      // We skip `Not` as it won't be a semantics action function argument.
+      argumentsDisplay.push(argumentsExpr.toDisplayString());
+    }
+    return argumentsDisplay;
+  }
+
+  // Loads the semantic editor header with the format: `<ruleName> = <ruleBody>`
+  function loadEditorHeader(traceNode, editorHeader, realArgStrs) {
+    var ruleNameBlock = editorHeader.appendChild(createElement('.block'));
+    ruleNameBlock.appendChild(createElement('span.name', traceNode.displayString + ' ='));
+
+    var argumentsExpr = getArgumentsExpr(traceNode);
+    var argDisplays = getArgumentsDisplay(argumentsExpr);
+    var defaultArgStrs = argumentsExpr.toArgumentNameList(1);
+    argDisplays.forEach(function(argDisplay, idx) {
+      if (idx >= realArgStrs.length) {
+        return;
+      }
+
+      // Each `block` represent a argument, inside block there are:
+      // `span.name`, which is the argument display string
+      // `textarea.rename`, which is the argument rename editor
+      var argBlock = editorHeader.appendChild(createElement('.block'));
+      var argTag = argBlock.appendChild(createElement('span.name', argDisplay));
+      var argEditor = argBlock.appendChild(createElement('argEditor'));
+
+      // Make the argument editor element editable
+      argEditor.setAttribute('contenteditable', true);
+      argEditor.addEventListener('keydown', function(e) {
+        if (e.keyCode === 13 || e.keyCode === 32) {
+          // Disable the ENTER and space keys
+          e.preventDefault();
+        }
+      });
+
+      // Default argument name is hidden by defalut
+      if (realArgStrs[idx] === defaultArgStrs[idx]) {
+        argEditor.style.display = 'none';
+      }
+
+      // Display the real argument name, if it is different from the argument's
+      // display string.
+      if (realArgStrs[idx] !== argDisplay) {
+        argEditor.textContent = realArgStrs[idx];
+      }
+
+      // Shows or hides the argument editor by clicking the argument.
+      argTag.addEventListener('click', function(e) {
+        var shouldBeVisible = argEditor.style.display === 'none';
+        argEditor.style.display = shouldBeVisible ? 'inline-block' : 'none';
+        if (shouldBeVisible) {
+          argEditor.focus();
+        }
+        e.stopPropagation();
+      });
+    });
+  }
+
+  // Returns an object represent the action function in string
+  // `args` is a list of argument names of the action function
+  // `body` is the action function body in string
+  function retrieveActionFnStrObj(traceNode, actionName, semantics) {
+    var actionKey = traceNode.bindings[0].ctorName;
+
+    var actionFnStrObj = Object.create(null);
+    var actionFn = semantics._getActionDict(actionName)[actionKey];
+
+    // If we don't have the semantic action for the `actionKey`, or the semantics action is
+    // default, then returns the object with default arguments
+    if (!actionFn ||
+        actionFn.toString().indexOf('// DEFAULT') + 10 === actionFn.toString().indexOf('\n')) {
+      actionFnStrObj.args = getArgumentsExpr(traceNode).toArgumentNameList(1);
+      return actionFnStrObj;
+    }
+
+    var actionFnStr = actionFn.toString();
+    var argStr = actionFnStr.substring(actionFnStr.indexOf('(') + 1, actionFnStr.indexOf(')'));
+    actionFnStrObj.args = argStr.split(',').map(function(arg) { return arg.trim(); });
+
+    var bodyStartIdx = actionFnStr.indexOf('\n') + 1;
+    var bodyEndIdx = actionFnStr.lastIndexOf('\n');
+    actionFnStrObj.body = actionFnStr.substring(bodyStartIdx, bodyEndIdx);
+
+    return actionFnStrObj;
+  }
+
+  function retrieveArguementsFromHeader(editorHeader) {
+    var argumentStrs = [];
+    Array.prototype.forEach.call(editorHeader.children, function(block, idx) {
+      if (idx === 0) {
+        return;
+      }
+      argumentStrs.push(block.lastChild.textContent || block.firstChild.textContent);
+    });
+    return argumentStrs;
+  }
+
+  // Wraps the actual semantics action function and put it to the corresponding action dictionary
+  function saveSemanticAction(semantics, traceNode, actionName, editorBody) {
+    var editorBodyCM = editorBody.firstChild.CodeMirror;
+    var actionFnStr = editorBodyCM.getValue();
+    var args = retrieveArguementsFromHeader(editorBody.previousElementSibling);
+
+    var actionFnWrapper = semanticsActionHelpers.getActionFnWrapper(actionName, args, actionFnStr);
+    var actionKey = traceNode.bindings[0].ctorName;
+    semantics._getActionDict(actionName)[actionKey] = actionFnWrapper;
+  }
+
+  function addSavingEvent(editorBody, semantics, rootTrace, actionName) {
+    var traceNode = editorBody.parentElement.parentElement.parentElement._traceNode;
+    try {
+      saveSemanticAction(semantics, traceNode, actionName, editorBody);
+      semanticsActionHelpers.getActionResultForce(semantics, actionName, traceNode);
+      refreshParseTree(semantics, rootTrace, actionName, true);
+    } catch (error) {
+      if (error instanceof Error && error.message) {
+        // If there is an syntax error in the semantics action code, then load the error
+        // message to the result container.
+        editorBody.nextElementSibling.classList.add('error');
+        editorBody.nextElementSibling.textContent = error.message;
+      } else {
+        // If there is a run time error for executing the semantics action, then refresh
+        // the parse tree.
+        if (!(error instanceof Error)) {
+          // If the run time error is caused by the node itself (i.e. the node is still the
+          // logical next step after saving the semantics action), then put the error to
+          // `_runtimeError` of the trace, so when refresh the tree, we could load the error,
+          // and keep the editor open for users to revise its action.
+          traceNode._runtimeError = error;
+        }
+        refreshParseTree(semantics, rootTrace, actionName, true);
+      }
+    } finally {
+      clearMarks();
+    }
+  }
+
+  // Insert semantics editor body to the semantics editor, which includes: `header`, `body`
+  // and `save` button
+  function insertSemanticsEditorBody(semanticsEditor, semantics, rootTrace, actionName) {
+    semanticsEditor.parentElement.classList.add('selected');
+    var traceNode = semanticsEditor.parentElement.parentElement._traceNode;
+    var resultDiv = semanticsEditor.querySelector('.result');
+
+    var actionFnStrObj = retrieveActionFnStrObj(traceNode, actionName, semantics);
+    var editorHeader = semanticsEditor.insertBefore(createElement('.header'), resultDiv);
+    loadEditorHeader(traceNode, editorHeader, actionFnStrObj.args);
+
+    var editorBody = semanticsEditor.insertBefore(createElement('.body'), resultDiv);
+    var editorBodyCM = CodeMirror(editorBody);
+    editorBodyCM.setValue(actionFnStrObj.body || '');
+    editorBodyCM.setCursor({line: editorBodyCM.lineCount()});
+    editorBodyCM.focus();
+
+    // Hooks the saving action to key `Cmd-S` of semantic editor
+    editorBodyCM.setOption('extraKeys', {
+      'Cmd-S': function() {
+        addSavingEvent(editorBody, semantics, rootTrace, actionName);
+      }
+    });
+
+    var saveButton = semanticsEditor.appendChild(createElement('button.save', 'save'));
+    // Hooks the saving action to the `save` button of semantic editor
+    saveButton.onclick = function() {
+      addSavingEvent(editorBody, semantics, rootTrace, actionName);
+    };
+  }
+
+  function removeSemanticsEditorBody(semanticsEditor) {
+    semanticsEditor.parentElement.classList.remove('selected');
+    var header = semanticsEditor.querySelector('.header');
+    var body = semanticsEditor.querySelector('.body');
+    semanticsEditor.removeChild(header);
+    semanticsEditor.removeChild(body);
+  }
+
+  // Hides or shows the semantics editor of `el`, which is a div.pexpr.
+  function toggleSemanticsEditor(el, semantics, rootTrace, actionName) {
+    var semanticsEditor = el.querySelector('.semanticsEditor');
+    if (!semanticsEditor || semanticsEditor.parentNode !== el) {
+      // If there is no semantics editor (e.g., for a implicit space cst node), do nothing.
+      return;
+    }
+
+    var resultDiv = semanticsEditor.querySelector('.result');
+    if (semanticsEditor.classList.contains('resultOnly')) {
+      // Show the result if there is one and the editor body is toggle to hide.
+      resultDiv.hidden = true;
+      semanticsEditor.classList.remove('resultOnly');
+    } else if (resultDiv.classList.contains('alwaysShow')) {
+      // Hide the result if we toggle to show the editor body.
+      resultDiv.hidden = false;
+      semanticsEditor.classList.add('resultOnly');
+    } else {
+      semanticsEditor.hidden = !semanticsEditor.hidden;
+    }
+
+    // Insert or remove the editor body. This avoids having too many CodeMirror.
+    if (!semanticsEditor.hidden && !semanticsEditor.classList.contains('resultOnly')) {
+      // If we toggle to show the semantics editor of `el`, insert the editor body
+      insertSemanticsEditorBody(semanticsEditor, semantics, rootTrace, actionName);
+    } else {
+      // If we toggle to hide the semantics editor of `el`, remove the editor body
+      removeSemanticsEditorBody(semanticsEditor);
+    }
+  }
+
+  // Loads action result to the semantics result containter, also style the selfWrapper and the
+  // container according to the result
+  function loadActionResult(traceNode, actionName, actionResultContainer) {
+    // If there is no action result for this node, and it's not the one we edited before refresh,
+    // then return
+    if (semanticsActionHelpers.hasNoResult(traceNode, actionName) && !traceNode._runtimeError) {
+      return;
+    }
+
+    // If this node was edited before refresh, and there was runtime error for runing
+    // its semantics action, then load the runtime error to its result container.
+    // Otherwise, get actual action result.
+    var result = traceNode._runtimeError ?
+        traceNode._runtimeError :
+        semanticsActionHelpers.getActionResult(traceNode, actionName);
+
+    // Mark the selfWrapper if it's one of the next steps
+    var selfWrapper = actionResultContainer.parentElement.parentElement;
+    if (semanticsActionHelpers.isNextStep(result, traceNode, actionName)) {
+      selfWrapper.classList.add('nextStepMark');
+    }
+
+    if (semanticsActionHelpers.shouldUseReservedResult(traceNode, actionName)) {
+      actionResultContainer.classList.add('reserved');
+      result = semanticsActionHelpers.getReservedResult(traceNode, actionName);
+    }
+
+    if (result && result.isErrorWrapper) {
+      actionResultContainer.innerHTML = result;
+    } else if (!(result && result.isFailure)) {
+      actionResultContainer.innerHTML = JSON.stringify(result);
+    }
+
+    var isError = !!(result && (result.isErrorWrapper || result.isFailure));
+    actionResultContainer.classList.toggle('error', isError);
+
+    var isPassThrough = !!semanticsActionHelpers.isPassThrough(traceNode, actionName);
+    selfWrapper.classList.toggle('passThrough', isPassThrough);
+  }
+
+  // Appends an semantic editor to the label of node wrapper
+  function appendSemanticsEditor(semantics, wrapper, rootTrace, actionName) {
+    var traceNode = wrapper.parentElement._traceNode;
+    var semanticsEditor = wrapper.appendChild(createElement('.semanticsEditor'));
+    var actionResultContainer = semanticsEditor.appendChild(createElement('.result'));
+    loadActionResult(traceNode, actionName, actionResultContainer);
+
+    // If there is no result for the traceNode, or the result is an error,
+    // then hides the whole editor. Otherwise, only shows the result.
+    if (semanticsActionHelpers.hasNoResult(traceNode, actionName) ||
+        wrapper.classList.contains('passThrough') ||
+        actionResultContainer.classList.contains('error')) {
+      semanticsEditor.hidden = true;
+    } else if (!semanticsEditor.hidden) {
+      semanticsEditor.classList.add('resultOnly');
+      actionResultContainer.classList.add('alwaysShow');
+    }
+
+    // If this node was edited before refresh, and there was runtime error for runing
+    // its semantics action, then keep its semantics editor open.
+    if (traceNode._runtimeError) {
+      toggleSemanticsEditor(wrapper, semantics, rootTrace, actionName);
+      delete traceNode._runtimeError;
+    }
+  }
+
+  function createTraceElement(semantics, rootTrace, traceNode, parent, input, optActionName) {
     var pexpr = traceNode.expr;
     var wrapper = parent.appendChild(createTraceWrapper(traceNode));
     wrapper._input = input;
@@ -413,18 +776,22 @@
       wrapper.classList.add('zoomBorder');
     }
 
-    var label = wrapper.appendChild(createTraceLabel(traceNode));
+    var selfWrapper = wrapper.appendChild(createElement('.self'));
+    var label = selfWrapper.appendChild(createTraceLabel(traceNode));
 
     label.addEventListener('click', function(e) {
       if (e.altKey && !(e.shiftKey || e.metaKey)) {
         console.log(traceNode);  // eslint-disable-line no-console
+      } else if (e.metaKey && !e.shiftKey && optActionName) {
+        // cmd + click to open or close semantic editor
+        toggleSemanticsEditor(selfWrapper, semantics, rootTrace, optActionName);
       } else if (!isLeaf(traceNode)) {
-        toggleTraceElement(wrapper);
+        toggleTraceElement(wrapper, optActionName);
       }
       e.preventDefault();
     });
 
-    label.addEventListener('mouseover', function(e) {
+    selfWrapper.addEventListener('mouseover', function(e) {
       var grammarEditor = ohmEditor.ui.grammarEditor;
       var inputEditor = ohmEditor.ui.inputEditor;
 
@@ -449,9 +816,10 @@
         }
       }
       e.stopPropagation();
+
     });
 
-    label.addEventListener('mouseout', function(e) {
+    selfWrapper.addEventListener('mouseout', function(e) {
       if (input) {
         input.classList.remove('highlight');
       }
@@ -459,9 +827,18 @@
     });
 
     label.addEventListener('contextmenu', function(e) {
-      handleContextMenu(e, rootTrace, traceNode, optActionName);
+      handleContextMenu(e, semantics, rootTrace, traceNode, optActionName);
     });
 
+    var couldAppendSemanticsEditor =
+        shouldNodeBeLabeled(traceNode) &&
+        traceNode.succeeded &&
+        pexpr.ruleName !== 'spaces';
+
+    if (optActionName && couldAppendSemanticsEditor) {
+      semanticsActionHelpers.populateActionResult(semantics, traceNode, optActionName);
+      appendSemanticsEditor(semantics, selfWrapper, rootTrace, optActionName);
+    }
     return wrapper;
   }
 
@@ -503,42 +880,60 @@
   // Intialize the zoom out button.
   var zoomOutButton = $('#zoomOutButton');
   zoomOutButton.textContent = UnicodeChars.ANTICLOCKWISE_OPEN_CIRCLE_ARROW;
-  zoomOutButton.onclick = function(e) { clearZoomState(); };
-  zoomOutButton.onmouseover = function(e) {
-    if (zoomState.zoomTrace) {
-      updateZoomState({previewOnly: true});
-    }
-  };
-  zoomOutButton.onmouseout = function(e) {
-    if (zoomState.zoomTrace) {
-      updateZoomState({previewOnly: false});
-    }
-  };
+  function initializeZoomOutButton(semantics, optActionName) {
+    zoomOutButton.hidden = !zoomState.zoomTrace;
 
-  function initializeActionButtonEvent(rootTrace, optActionName) {
+    zoomOutButton.onclick = function(e) { clearZoomState(semantics, optActionName); };
+    zoomOutButton.onmouseover = function(e) {
+      if (zoomState.zoomTrace) {
+        semanticsActionHelpers.reserveResults();
+        updateZoomState({previewOnly: true}, semantics, optActionName);
+      }
+    };
+    zoomOutButton.onmouseout = function(e) {
+      if (zoomState.zoomTrace) {
+        updateZoomState({previewOnly: false}, semantics, optActionName);
+        semanticsActionHelpers.clearCurrentReservedResults();
+      }
+    };
+  }
+
+  function initializeActionButtonEvent(semantics, rootTrace, optActionName) {
     var actionContainers = document.querySelectorAll('.actionEntries');
     Array.prototype.forEach.call(actionContainers, function(actionContainer) {
       actionContainer.onclick = function(event) {
         var actionName = event.target.value;
-        if (optActionName === actionName) {
-          refreshParseTree(rootTrace, null);
+        if (optActionName === actionName || !event.target.readOnly) {
+          refreshParseTree(semantics, rootTrace, null, false);
         } else {
-          refreshParseTree(rootTrace, actionName);
+          refreshParseTree(semantics, rootTrace, actionName, false);
         }
       };
 
       actionContainer.onkeypress = function(event) {
-        if (event.keyCode === KeyCode.ENTER && event.target.value && !event.target.readOnly) {
+        if (event.keyCode !== 13) {
+          return;
+        }
+        var actionType = actionContainer.id === 'operations' ? 'Operation' : 'Attribute';
+        var actionName = event.target.value;
+        if (actionName && !event.target.readOnly) {
           event.target.readOnly = true;
-          var actionName = event.target.value;
-          refreshParseTree(rootTrace, actionName);
+          try {
+            semanticsActionHelpers.addNewAction(semantics, actionType, actionName);
+            refreshParseTree(semantics, rootTrace, actionName, false);
+          } catch (error) {
+            event.target.readOnly = false;
+            window.alert(error); // eslint-disable-line no-alert
+            event.target.select();
+          }
         }
       };
     });
   }
 
   // Re-render the parse tree starting with the trace at `rootTrace`.
-  function refreshParseTree(rootTrace, optActionName, clearZoomTrace) {
+  function refreshParseTree(
+      semantics, rootTrace, optActionName, keepReservedResults, clearZoomTrace) {
     var expandedInputDiv = $('#expandedInput');
     var parseResultsDiv = $('#parseResults');
 
@@ -548,7 +943,7 @@
     if (clearZoomTrace) {
       zoomState = {};
     }
-    zoomOutButton.hidden = !zoomState.zoomTrace;
+    initializeZoomOutButton(semantics, optActionName);
 
     var trace;
     if (zoomState.zoomTrace && !zoomState.previewOnly) {
@@ -560,10 +955,13 @@
     var rootWrapper = parseResultsDiv.appendChild(createTraceWrapper(trace));
     var rootContainer = rootWrapper.appendChild(createElement('.children'));
 
-    initializeActionButtonEvent(rootTrace, optActionName);
+    initializeActionButtonEvent(semantics, rootTrace, optActionName);
+    if (optActionName) {
+      semanticsActionHelpers.initializeActionLog(keepReservedResults);
+    }
+
     var inputStack = [expandedInputDiv];
     var containerStack = [rootContainer];
-
     trace.walk({
       enter: function(node, parent, depth) {
         // Undefined nodes identify the base case for left recursion -- skip them.
@@ -601,8 +999,8 @@
         }
 
         var container = containerStack[containerStack.length - 1];
-        var el = createTraceElement(rootTrace, node, container, childInput, optActionName);
-
+        var el = createTraceElement(
+            semantics, rootTrace, node, container, childInput, optActionName);
         toggleClasses(el, {
           failed: !node.succeeded,
           hidden: !shouldNodeBeLabeled(node, parent),
@@ -615,7 +1013,7 @@
         containerStack.push(el.appendChild(createElement('.children')));
 
         if (shouldTraceElementBeCollapsed(el)) {
-          toggleTraceElement(el, 0);
+          toggleTraceElement(el, optActionName, 0);
         }
       },
       exit: function(node, parent, depth) {

@@ -14,11 +14,10 @@ function $(sel) { return document.querySelector(sel); }
 })(this, function(ohm, ohmEditor, cmUtil, CodeMirror) {
   function $$(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
 
-  var checkboxes, grammarChanged;
+  var checkboxes, grammarChanged, semantics;
 
   // EXPORTS
   // -------
-
   ohmEditor.options = {};
   ohmEditor.ui = {
     inputEditor: CodeMirror($('#inputContainer .editorWrapper')),
@@ -81,6 +80,14 @@ function $(sel) { return document.querySelector(sel); }
           err.shortMessage || err.message);
         return;
       }
+
+      // TODO: load semantics & action buttons
+      // If the grammar changes, re-initialize semantics, and clear all the semantics actions.
+      semantics = this.grammar.semantics();
+      var actionEntries = document.querySelectorAll('.actionEntries');
+      Array.prototype.forEach.call(actionEntries, function(actionEntry) {
+        actionEntry.innerHTML = '';
+      });
     }
 
     if (this.grammar && this.grammar.defaultStartRule) {
@@ -97,14 +104,14 @@ function $(sel) { return document.querySelector(sel); }
           'Expected ' + trace.result.getExpectedText());
       }
 
-      // Check selected action
+      // Check selected semantics action name
       var actionNodes = document.querySelectorAll('textarea.action');
       var selectedActionNode = Array.prototype.filter.call(actionNodes, function(actionNode) {
         return actionNode.readOnly && actionNode.classList.contains('selected');
       })[0];
       var actionName = selectedActionNode && selectedActionNode.value;
 
-      this.refreshParseTree(trace, actionName, true);
+      this.refreshParseTree(semantics, trace, actionName, false, true);
     }
   };
 
