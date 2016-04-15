@@ -89,21 +89,72 @@
       flex-direction: column;
     }
 
-    #grammarContainer,
-    #inputContainer {
+    #exampleContainer,
+    #grammarContainer {
       display: flex;
       flex-direction: column;
       flex: 1;
     }
 
-    #grammarContainer h2,
-    #inputContainer h2 {
+    #exampleContainer[hidden] {
+      display: none;
+    }
+
+    #exampleContainer .editorWrapper {
+      margin-top: 10px;
+    }
+
+    #topSection h2 {
       color: #e0a;
       font-size: 1em;
-      margin: 12px 12px 6px;
+      margin: 12px 12px 10px;
       -moz-user-select: none;
       -ms-user-select: none;
       -webkit-user-select: none;
+    }
+
+    #exampleList {
+      list-style: none;
+      border-top: 1px solid #ddd;
+      margin: 0;
+      padding: 0;
+    }
+
+    #exampleList .example {
+      border-bottom: 1px solid #eee;
+      color: #333;
+      display: flex;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    #exampleList .example code {
+      border-left: 4px solid #bbb;
+      cursor: default;
+      flex: 1;
+      overflow: hidden;
+      padding: 6px 4px 6px 8px;
+      text-overflow: ellipsis;
+
+      /* Weirdly, it won't shrink smaller than its content unless we give it an explicit width. */
+      width: 1px;
+    }
+
+    #exampleList .example.fail code {
+      border-left: 4px solid #d44950;
+    }
+
+    #exampleList .example.pass code {
+      border-left: 4px solid #58B958;
+    }
+
+    #exampleList .example.selected {
+      background-color: #ddd;
+    }
+
+    #exampleList code {
+      font-family: Menlo, Monaco, sans-serif;
+      font-size: 12px;
     }
 
     /*
@@ -335,8 +386,9 @@
       <div class="flex-fix"><div class="editorWrapper"></div></div>
     </div>
     <div id="topSplitter" class="splitter vertical"></div>
-    <div id="inputContainer">
-      <h2>Test Input</h2>
+    <div id="exampleContainer">
+      <h2>Examples</h2>
+      <ul id="exampleList"></ul>
       <div class="flex-fix"><div class="editorWrapper"></div></div>
     </div>
   </div>
@@ -450,6 +502,7 @@ number  (a number)
   <script src="searchBar.js"></script>
   <script src="actionButton.js"></script>
   <script src="editorErrors.js"></script>
+  <script src="examples.js"></script>
   <script src="index.js"></script>
 </body>
 </html>
