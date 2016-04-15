@@ -498,9 +498,6 @@
 
   // Loads the semantic editor header with the format: `<ruleName> = <ruleBody>`
   function loadEditorHeader(traceNode, editorHeader, realArgStrs) {
-    var ruleNameBlock = editorHeader.appendChild(createElement('.block'));
-    ruleNameBlock.appendChild(createElement('span.name', traceNode.displayString + ' ='));
-
     var argumentsExpr = getArgumentsExpr(traceNode);
     var argDisplays = getArgumentsDisplay(argumentsExpr);
     var defaultArgStrs = argumentsExpr.toArgumentNameList(1);
@@ -579,9 +576,6 @@
   function retrieveArguementsFromHeader(editorHeader) {
     var argumentStrs = [];
     Array.prototype.forEach.call(editorHeader.children, function(block, idx) {
-      if (idx === 0) {
-        return;
-      }
       argumentStrs.push(block.lastChild.textContent || block.firstChild.textContent);
     });
     return argumentStrs;
