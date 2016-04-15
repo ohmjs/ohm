@@ -11,6 +11,7 @@
   }
 })(this, function(ohm, ohmEditor) {
   var idCounter = 0;
+  var selectedId;
   var exampleValues = Object.create(null);
 
   function uniqueId() {
@@ -36,6 +37,21 @@
     li.appendChild(document.createElement('code'));
     li.onmousedown = handleMouseDown;
 
+    var del = document.createElement('div');
+    del.className = 'delete';
+    del.innerHTML = '&#x2716;';
+    del.onmousedown = function(e) {
+      e.stopPropagation();
+    };
+    del.onclick = function() {
+      li.remove();
+      saveExamples();
+      if (selectedId === id) {
+        selectedId = null;
+      }
+    };
+    li.appendChild(del);
+
     document.querySelector('#exampleContainer ul').appendChild(li);
 
     exampleValues[id] = null;
@@ -54,6 +70,7 @@
     }
     exampleValues[id] = value;
     var code = getListEl(id).querySelector(' code');
+    code.parentElement.classList.remove('pass', 'fail');
     if (value.length > 0) {
       code.textContent = value;
     } else {
@@ -63,6 +80,7 @@
 
   function setSelected(id) {
     var value = getExample(id);
+    selectedId = id;
     ohmEditor.ui.inputEditor.setValue(value);
 
     // Update the DOM.
@@ -76,9 +94,49 @@
     }
   }
 
-  setExample(addExample(), 'var x = 3;');
-  setExample(addExample(), 'var y = function() { return "y"; }');
-  setExample(addExample(), '"hello"');
+  // TODO: How will I know about these commands? (UI for "save as new"?)
+  ohmEditor.ui.inputEditor.setOption('extraKeys', {
+    'Cmd-S': function(ed) { // save
+      if (selectedId) {
+        setExample(selectedId, ed.doc.getValue());
+      } else {
+        var newId = addExample();
+        setExample(newId, ed.doc.getValue());
+        setSelected(newId);
+      }
+    },
+    'Shift-Cmd-S': function(ed) { // save as new
+      var newId = addExample();
+      setExample(newId, ed.doc.getValue());
+      setSelected(newId);
+    }
+  });
+
+  function restoreExamples(editor, key, defaultEl) {
+    var value = localStorage.getItem(key);
+    var examples = [];
+    if (value && value !== '[]') {
+      examples = JSON.parse(value);
+    } else if (defaultEl) {
+      examples = [].slice.apply(defaultEl.querySelectorAll('pre')).
+        map(function(elem) {
+          return elem.textContent;
+        });
+    }
+    examples.forEach(function(ex) {
+      setExample(addExample(), ex);
+    });
+  }
+
+  function saveExamples(elem, key) {
+    var elems = document.querySelectorAll('#exampleContainer ul li code');
+    var examples = [].slice.apply(elems).map(function(elem) {
+      return elem.textContent;
+    });
+    localStorage.setItem('examples', JSON.stringify(examples));
+  }
+
+  restoreExamples(ohmEditor.ui.inputEditor, 'examples', document.querySelector('#sampleExamples'));
 
   // Exports
   // -------
@@ -87,6 +145,7 @@
     addExample: addExample,
     getExample: getExample,
     setExample: setExample,
-    setSelected: setSelected
+    setSelected: setSelected,
+    saveExamples: saveExamples
   };
 });

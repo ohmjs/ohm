@@ -122,7 +122,7 @@
 
     #exampleList .example {
       border-bottom: 1px solid #eee;
-      color: #333;
+      color: #999;
       display: flex;
       margin: 0;
       white-space: nowrap;
@@ -149,12 +149,28 @@
     }
 
     #exampleList .example.selected {
-      background-color: #ddd;
+      color: #333;
+      background-color: #f7f7f7;
     }
 
     #exampleList code {
       font-family: Menlo, Monaco, sans-serif;
       font-size: 12px;
+    }
+
+    #exampleList .example .delete {
+      color: #d44950;
+      padding: 4px;
+      cursor: default;
+      display: none;
+    }
+
+    #exampleList .example:hover {
+      background-color: #f7f7f7;
+    }
+
+    #exampleList .example:hover .delete {
+      display: block;
     }
 
     /*
@@ -479,7 +495,14 @@ number  (a number)
   = digit* "." digit+  -- fract
   | digit+             -- whole
 }</pre>
-    <pre id="sampleInput">2 * (42 - 1) / 9</pre>
+    <!-- <pre id="sampleInput">2 * (42 - 1) / 9</pre> -->
+    <pre id="sampleExamples">
+      <pre>2 * (42 - 1) / 9</pre>
+      <pre>1+2*3</pre>
+      <pre>I CAN HAS CHEEZBURGER?</pre>
+      <pre> (  	123   ) </pre>
+      <pre>(2+4)*7</pre>
+    </pre>
   </div>
 
   <script src="splitters.js"></script>

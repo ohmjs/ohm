@@ -133,7 +133,6 @@
     });
   });
 
-  restoreEditorState(ohmEditor.ui.inputEditor, 'input', $('#sampleInput'));
   restoreEditorState(ohmEditor.ui.grammarEditor, 'grammar', $('#sampleGrammar'));
 
   ohmEditor.ui.inputEditor.on('change', function(cm) {
