@@ -24,6 +24,20 @@
     e.preventDefault();
   }
 
+  function checkExample(elem) {
+    var example = elem.textContent;
+    try {
+      var mr = ohmEditor.grammar.match(example);
+      if (mr.succeeded()) {
+        elem.parentElement.classList.add('pass');
+      } else {
+        throw new Error('Match failed');
+      }
+    } catch (e) {
+      elem.parentElement.classList.add('fail');
+    }
+  }
+
   function getListEl(exampleId) {
     return document.querySelector('#' + exampleId);
   }
@@ -71,6 +85,7 @@
     exampleValues[id] = value;
     var code = getListEl(id).querySelector(' code');
     code.parentElement.classList.remove('pass', 'fail');
+    setTimeout(checkExample.bind(null, code), 0);
     if (value.length > 0) {
       code.textContent = value;
     } else {
