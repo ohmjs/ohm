@@ -232,13 +232,13 @@
         zoomState[k] = newState[k];
       }
     }
-    refreshParseTree(zoomState.rootTrace);
+    refreshParseTree(zoomState.rootTrace, false);
   }
 
   function clearZoomState() {
     var oldZoomState = zoomState;
     zoomState = {};
-    refreshParseTree(oldZoomState.rootTrace);
+    refreshParseTree(oldZoomState.rootTrace, false);
   }
 
   function shouldNodeBeLabeled(traceNode, parent) {
@@ -339,7 +339,7 @@
   }
 
   // Handle the 'contextmenu' event `e` for the DOM node associated with `traceNode`.
-  function handleContextMenu(e, rootTrace, traceNode, optActionName) {
+  function handleContextMenu(e, rootTrace, traceNode) {
     var menuDiv = $('#contextMenu');
     menuDiv.style.left = e.clientX + 'px';
     menuDiv.style.top = e.clientY - 6 + 'px';
@@ -353,7 +353,7 @@
     if (zoomEnabled) {
       zoomItem.onclick = function() {
         updateZoomState({zoomTrace: traceNode, rootTrace: rootTrace});
-        refreshParseTree(rootTrace, optActionName);
+        refreshParseTree(rootTrace, false);
         clearMarks();
       };
     }
@@ -400,7 +400,7 @@
     return label;
   }
 
-  function createTraceElement(rootTrace, traceNode, parent, input, optActionName) {
+  function createTraceElement(rootTrace, traceNode, parent, input) {
     var pexpr = traceNode.expr;
     var wrapper = parent.appendChild(createTraceWrapper(traceNode));
     wrapper._input = input;
@@ -459,7 +459,7 @@
     });
 
     label.addEventListener('contextmenu', function(e) {
-      handleContextMenu(e, rootTrace, traceNode, optActionName);
+      handleContextMenu(e, rootTrace, traceNode);
     });
 
     return wrapper;
@@ -515,37 +515,15 @@
     }
   };
 
-  function initializeActionButtonEvent(rootTrace, optActionName) {
-    var actionContainers = document.querySelectorAll('.actionEntries');
-    Array.prototype.forEach.call(actionContainers, function(actionContainer) {
-      actionContainer.onclick = function(event) {
-        var actionName = event.target.value;
-        if (optActionName === actionName) {
-          refreshParseTree(rootTrace, null);
-        } else {
-          refreshParseTree(rootTrace, actionName);
-        }
-      };
-
-      actionContainer.onkeypress = function(event) {
-        if (event.keyCode === KeyCode.ENTER && event.target.value && !event.target.readOnly) {
-          event.target.readOnly = true;
-          var actionName = event.target.value;
-          refreshParseTree(rootTrace, actionName);
-        }
-      };
-    });
-  }
-
   // Re-render the parse tree starting with the trace at `rootTrace`.
-  function refreshParseTree(rootTrace, optActionName, clearZoomTrace) {
+  function refreshParseTree(rootTrace, clearZoomState) {
     var expandedInputDiv = $('#expandedInput');
     var parseResultsDiv = $('#parseResults');
 
     expandedInputDiv.innerHTML = '';
     parseResultsDiv.innerHTML = '';
 
-    if (clearZoomTrace) {
+    if (clearZoomState) {
       zoomState = {};
     }
     zoomOutButton.hidden = !zoomState.zoomTrace;
@@ -560,7 +538,6 @@
     var rootWrapper = parseResultsDiv.appendChild(createTraceWrapper(trace));
     var rootContainer = rootWrapper.appendChild(createElement('.children'));
 
-    initializeActionButtonEvent(rootTrace, optActionName);
     var inputStack = [expandedInputDiv];
     var containerStack = [rootContainer];
 
@@ -601,7 +578,7 @@
         }
 
         var container = containerStack[containerStack.length - 1];
-        var el = createTraceElement(rootTrace, node, container, childInput, optActionName);
+        var el = createTraceElement(rootTrace, node, container, childInput);
 
         toggleClasses(el, {
           failed: !node.succeeded,
