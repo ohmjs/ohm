@@ -63,8 +63,9 @@
       padding: 2px;
     }
     .self.selected {
-      box-shadow: -14px 10px 5px #aaa;
-      margin: 10px 0 15px 11px;
+      _box-shadow: -14px 10px 5px #aaa;
+      box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+      margin: 10px 8px;
     }
     .pexpr {
       color: #333;
@@ -211,7 +212,7 @@
 
     .semanticsEditor .header {
       font-family: Menlo, Monaco, sans-serif;
-      font-size: 12px;
+      font-size: 16px;
       display: flex;
       height: 24px;
       padding-bottom: 3px;
@@ -262,12 +263,13 @@
       display: block;
       height: auto;
       color: slateblue;
+      font-size: 16px;
     }
 
     .semanticsEditor .result {
       text-align: center;
       color: slateblue;
-      font-size: 10pt;
+      font-size: 16px;
       border: 1px solid #efefef;
       border-top: none;
       margin-top: -1px;
@@ -687,7 +689,7 @@
   <div id="contextMenu" hidden>
     <ul>
       <li id="showInfoItem" class="disabled"><label>Show info</label></li>
-      <li id="showResult" class="disabled"><label>Get action result</label></li>
+      <li id="showResult" class="disabled"><label>Force Evaluation</label></li>
       <li id="zoomItem"><label>Zoom to node</label></li>
     </ul>
   </div>
