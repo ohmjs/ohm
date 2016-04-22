@@ -693,11 +693,16 @@
 
   // Loads action result to the semantics result containter, also style the selfWrapper and the
   // container according to the result
-  function loadActionResult(traceNode, actionName, actionResultContainer) {
+  function loadActionResult(semantics, traceNode, actionName, actionResultContainer) {
     // If there is no action result for this node, and it's not the one we edited before refresh,
     // then return
-    if (semanticsActionHelpers.hasNoResult(traceNode, actionName) && !traceNode._runtimeError) {
-      return;
+    if (semanticsActionHelpers.hasNoResult(traceNode, actionName, true) &&
+        !traceNode._runtimeError) {
+      try {
+        semanticsActionHelpers.getActionResultForce(semantics, actionName, traceNode);
+      } catch (error) {
+        return;
+      }
     }
 
     // If this node was edited before refresh, and there was runtime error for runing
@@ -736,7 +741,7 @@
     var traceNode = wrapper.parentElement._traceNode;
     var semanticsEditor = wrapper.appendChild(createElement('.semanticsEditor'));
     var actionResultContainer = semanticsEditor.appendChild(createElement('.result'));
-    loadActionResult(traceNode, actionName, actionResultContainer);
+    loadActionResult(semantics, traceNode, actionName, actionResultContainer);
 
     // If there is no result for the traceNode, or the result is an error,
     // then hides the whole editor. Otherwise, only shows the result.

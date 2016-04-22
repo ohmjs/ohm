@@ -311,11 +311,11 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
       // itself or its descendents.
       if (this.isNextStep(result, traceNode, actionName)) {
         // If the traceNode is the next step after executing the semantics
-        // action, the throw the result (which will either by a ErrorWrapper, or
-        // failure).
+        // action, the throw the result (which will either by an ErrorWrapper, or
+        // a failure).
         reloadActionLog(origActionLog);
         throw result;
-      } else if (result instanceof ErrorWrapper || result === failure) {
+      } else if (!(key in resultMap) || result instanceof ErrorWrapper || result === failure) {
         // If the result is an error, and it's not going to be the next step after
         // executing the semantics action. Then throw null.
         reloadActionLog(origActionLog);
@@ -349,9 +349,13 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
       return passThrough && passThrough.includes(key);
     },
 
-    hasNoResult: function(traceNode, actionName) {
+    hasNoResult: function(traceNode, actionName, excludesReserve) {
       var key = toKey(traceNode.bindings[0], actionName);
-      return !(key in resultMap) && (!reservedResults || !(key in reservedResults));
+      var ans = !(key in resultMap);
+      if (!excludesReserve) {
+        ans = ans && (!reservedResults || !(key in reservedResults));
+      }
+      return ans;
     }
   };
 })();
