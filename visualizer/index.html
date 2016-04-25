@@ -131,6 +131,9 @@
       padding: 2px 2px 1px 2px;
       position: relative;
       text-align: center;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      -webkit-user-select: none;
     }
     .pexpr > .self .label .caseName::before {
       content: '\2014';
@@ -624,8 +627,21 @@
     #contextMenu li:hover:not(.disabled) {
       background-color: #4f9dfb;
     }
-    #contextMenu li:hover:not(.disabled) * {
+    #contextMenu li:hover:not(.disabled) > label {
       color: white;
+    }
+
+    #showResult ul {
+      position: absolute;
+      margin-left: 20px;
+      margin-top: 5px;
+      padding-left: 0;
+      visibility: hidden;
+    }
+    #showResult:hover:not(.disabled) ul {
+      visibility: visible;
+      background-color: #f0f0f0;
+      width: auto;
     }
   </style>
 </head>
@@ -689,7 +705,9 @@
   <div id="contextMenu" hidden>
     <ul>
       <li id="showInfoItem" class="disabled"><label>Show info</label></li>
-      <li id="showResult" class="disabled"><label>Force Evaluation</label></li>
+      <li id="showResult" class="disabled"><label>Force Evaluation</label>
+        <ul></ul>
+      </li>
       <li id="zoomItem"><label>Zoom to node</label></li>
     </ul>
   </div>

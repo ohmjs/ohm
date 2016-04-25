@@ -402,23 +402,35 @@
     if (!optActionName || !semanticsEditor.hidden) {
       showResult.classList.add('disabled');
     } else {
-      // Try to force to get the semantics action result, if succeed, show the result in `grey`.
-      try {
-        var result = semanticsActionHelpers.getActionResultForce(semantics, optActionName,
-            traceNode);
-        var resultDiv = semanticsEditor.querySelector('.result');
-        showResult.onclick = function() {
-          resultDiv.innerHTML = JSON.stringify(result);
-          resultDiv.classList.add('reserved');
-          semanticsEditor.hidden = false;
-          semanticsEditor.classList.add('resultOnly');
-        };
-        showResult.classList.remove('disabled');
-      } catch (error) {
-        // If we could not force to get a result for this node, then disable the `Get action
-        // result` option.
-        showResult.classList.add('disabled');
-      }
+      var actionDivs = showResult.querySelectorAll('li');
+      var noDisplay = true;
+      Array.prototype.forEach.call(actionDivs, function(actionDiv) {
+        var actionName = actionDiv.textContent;
+        if (actionName === optActionName) {
+          actionDiv.style.display = 'none';
+          return;
+        }
+        noDisplay = false;
+        actionDiv.style.display = 'flex';
+        // Try to force to get the semantics action result, if succeed, show the result in `grey`.
+        try {
+          var result = semanticsActionHelpers.getActionResultForce(semantics, actionName,
+              traceNode);
+          var resultDiv = semanticsEditor.querySelector('.result');
+          actionDiv.onclick = function() {
+            resultDiv.innerHTML = JSON.stringify(result);
+            resultDiv.classList.add('reserved');
+            semanticsEditor.hidden = false;
+            semanticsEditor.classList.add('resultOnly');
+          };
+          actionDiv.classList.remove('disabled');
+        } catch (error) {
+          // If we could not force to get a result for this node, then disable the `Get action
+          // result` option.
+          actionDiv.classList.add('disabled');
+        }
+      });
+      showResult.classList.toggle('disabled', noDisplay);
     }
     e.preventDefault();
     e.stopPropagation();  // Prevent ancestor wrappers from handling.
@@ -598,12 +610,14 @@
       saveSemanticAction(semantics, traceNode, actionName, editorBody);
       semanticsActionHelpers.getActionResultForce(semantics, actionName, traceNode);
       refreshParseTree(semantics, rootTrace, actionName, true);
+      clearMarks();
     } catch (error) {
       if (error instanceof Error && error.message) {
         // If there is an syntax error in the semantics action code, then load the error
         // message to the result container.
         editorBody.nextElementSibling.classList.add('error');
         editorBody.nextElementSibling.textContent = error.message;
+        clearMarks();
       } else {
         // If there is a run time error for executing the semantics action, then refresh
         // the parse tree.
@@ -615,9 +629,8 @@
           traceNode._runtimeError = error;
         }
         refreshParseTree(semantics, rootTrace, actionName, true);
+        clearMarks();
       }
-    } finally {
-      clearMarks();
     }
   }
 
@@ -790,7 +803,7 @@
       e.preventDefault();
     });
 
-    selfWrapper.addEventListener('mouseover', function(e) {
+    label.addEventListener('mouseover', function(e) {
       var grammarEditor = ohmEditor.ui.grammarEditor;
       var inputEditor = ohmEditor.ui.inputEditor;
 
@@ -815,10 +828,9 @@
         }
       }
       e.stopPropagation();
-
     });
 
-    selfWrapper.addEventListener('mouseout', function(e) {
+    label.addEventListener('mouseout', function(e) {
       if (input) {
         input.classList.remove('highlight');
       }
@@ -897,6 +909,15 @@
     };
   }
 
+  function addActionToContextMenu(actionName) {
+    var showResult = document.querySelector('#showResult');
+    var contents = showResult.querySelector('ul');
+
+    var actionDiv = createElement('li');
+    actionDiv.appendChild(createElement('label', actionName));
+    contents.appendChild(actionDiv);
+  }
+
   function initializeActionButtonEvent(semantics, rootTrace, optActionName) {
     var actionContainers = document.querySelectorAll('.actionEntries');
     Array.prototype.forEach.call(actionContainers, function(actionContainer) {
@@ -919,6 +940,7 @@
           event.target.readOnly = true;
           try {
             semanticsActionHelpers.addNewAction(semantics, actionType, actionName);
+            addActionToContextMenu(actionName);
             refreshParseTree(semantics, rootTrace, actionName, false);
           } catch (error) {
             event.target.readOnly = false;
