@@ -184,6 +184,9 @@ Declares a grammar named `grammarName` which inherits from `supergrammarName`.
 
 ### Defining, Extending, and Overriding Rules
 
+In the three forms below, the rule body may optionally begin with a `|` character, which will be
+ignored.
+
 <code><i>ruleName</i> = <i>expr</i></code>
 
 Defines a new rule named `ruleName` in the grammar, with the parsing expression `expr` as the rule body. Throws an error if a rule with that name already exists in the grammar or one of its supergrammars.
