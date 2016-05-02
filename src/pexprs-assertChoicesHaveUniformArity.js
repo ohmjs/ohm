@@ -20,7 +20,6 @@ pexprs.Prim.prototype.assertChoicesHaveUniformArity =
 pexprs.Range.prototype.assertChoicesHaveUniformArity =
 pexprs.Param.prototype.assertChoicesHaveUniformArity =
 pexprs.Lex.prototype.assertChoicesHaveUniformArity =
-pexprs.TypeCheck.prototype.assertChoicesHaveUniformArity =
 pexprs.UnicodeChar.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   // no-op
 };

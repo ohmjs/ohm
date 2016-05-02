@@ -42,7 +42,6 @@ pexprs.Not.prototype.allowsSkippingPrecedingSpace =
 pexprs.Obj.prototype.allowsSkippingPrecedingSpace =
 pexprs.Param.prototype.allowsSkippingPrecedingSpace =
 pexprs.Seq.prototype.allowsSkippingPrecedingSpace =
-pexprs.TypeCheck.prototype.allowsSkippingPrecedingSpace =
 pexprs.Value.prototype.allowsSkippingPrecedingSpace = function() {
   return false;
 };

@@ -142,9 +142,6 @@ test('getExprType', function(t) {
     '  str = listOf<alnum*, ",">',
     '  Str2 = Maybe<"ab">',
     '  Str3 = MaybeTwice<"ab">',
-    '  Val = ListOf<String, null>',
-    '  Val2 = Maybe<Boolean>',
-    '  Val3 = MaybeTwice<Number>',
     '  Maybe<x> = x  -- some',
     '           |    -- none',
     '  MaybeTwice<exp> = Maybe<exp> Maybe<exp>',
@@ -163,19 +160,12 @@ test('getExprType', function(t) {
   t.equal(getExprType('Str3'), pexprs.TYPE_STRING);
   t.equal(getExprType('leftRecStr'), pexprs.TYPE_STRING);
 
-  t.equal(getExprType('Val'), pexprs.TYPE_VALUE);
-  t.equal(getExprType('Val2'), pexprs.TYPE_VALUE);
-  t.equal(getExprType('Val3'), pexprs.TYPE_VALUE);
   t.equal(getExprType('leftRecVal'), pexprs.TYPE_VALUE);
 
   t.equal(getExprType('nothing'), pexprs.TYPE_ANY);
   t.equal(getExprType('end'), pexprs.TYPE_ANY);
   t.equal(getExprType('any'), pexprs.TYPE_STRING);
   t.equal(getExprType('leftRecAny'), pexprs.TYPE_ANY);
-
-  t.equal(getExprType('String'), pexprs.TYPE_VALUE);
-  t.equal(getExprType('Number'), pexprs.TYPE_VALUE);
-  t.equal(getExprType('Boolean'), pexprs.TYPE_VALUE);
 
   t.equal(getExprType('letter'), pexprs.TYPE_STRING, 'letter');
   t.equal(getExprType('nil'), pexprs.TYPE_VALUE, 'null');

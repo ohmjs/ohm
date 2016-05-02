@@ -56,7 +56,3 @@ pexprs.Apply.prototype.toDisplayString = function() {
 pexprs.UnicodeChar.prototype.toDisplayString = function() {
   return 'Unicode {' + this.category + '} character';
 };
-
-pexprs.TypeCheck.prototype.toDisplayString = function() {
-  return 'TypeCheck(' + JSON.stringify(this.type) + ')';
-};

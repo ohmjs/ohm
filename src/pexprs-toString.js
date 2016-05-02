@@ -112,7 +112,3 @@ pexprs.Apply.prototype.toString = function() {
 pexprs.UnicodeChar.prototype.toString = function() {
   return '\\p{' + this.category + '}';
 };
-
-pexprs.TypeCheck.prototype.toString = function() {
-  return 'TypeCheck(' + JSON.stringify(this.type) + ')';
-};

@@ -1174,53 +1174,6 @@ test('apply', function(t) {
   t.end();
 });
 
-test('built-in types', function(t) {
-  var g = makeGrammar([
-    'G {',
-    '  Arr = [Boolean Number String]',
-    '  Obj = {b: Boolean, n: Number, s: String}',
-    '}']);
-
-  // Boolean
-  t.equal(g.match(true, 'Boolean').succeeded(), true);
-  t.equal(g.match(false, 'Boolean').succeeded(), true);
-  t.equal(g.match(0, 'Boolean').failed(), true);
-  t.equal(g.match({}, 'Boolean').failed(), true);
-
-  // Number
-  t.equal(g.match(0, 'Number').succeeded(), true, 'zero');
-  t.equal(g.match(Math.PI, 'Number').succeeded(), true, 'pi');
-  t.equal(g.match(Math.sqrt(-1), 'Number').succeeded(), true, 'NaN');
-  t.equal(g.match('1', 'Number').failed(), true);
-  t.equal(g.match(false, 'Number').failed(), true);
-  t.equal(g.match(null, 'Number').failed(), true);
-
-  // String
-  t.equal(g.match('', 'String').succeeded(), true);
-  t.equal(g.match('blah', 'String').succeeded(), true);
-  t.equal(g.match(0, 'String').failed(), true);
-
-  var result = g.match([true, 99.99, 'blah'], 'Arr');
-  t.equal(result.succeeded(), true, 'matching inside an Array');
-  // TODO: The binding given to these actions should be the value itself, not an instance
-  // of pexprs.TypeCheck.
-  var s = g.semantics().addAttribute('val', {
-    Arr: function(bool, num, str) { return [bool.val, num.val, str.val]; },
-    Obj: function(bool, num, str) { return [bool.val, num.val, str.val]; },
-    Boolean: function(typeCheck) { return typeCheck.val; },
-    Number: function(typeCheck) { return typeCheck.val; },
-    String: function(typeCheck) { return typeCheck.val; },
-    _terminal: function() { return this.primitiveValue; }
-  });
-  t.looseEqual(s(result).val, [true, 99.99, 'blah'], 'array match with semantics');
-
-  result = g.match({b: false, n: -0, s: 'zzz'}, 'Obj');
-  t.equal(result.succeeded(), true, 'matching inside an object');
-  t.looseEqual(s(result).val, [false, -0, 'zzz'], 'obj match with semantics');
-
-  t.end();
-});
-
 test('inheritance', function(t) {
   test('super-grammar does not exist', function(t) {
     it('no namespace', function() {

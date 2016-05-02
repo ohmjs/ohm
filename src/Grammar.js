@@ -313,9 +313,10 @@ Grammar.ProtoBuiltInRules = new Grammar(
 
     // rule bodies
     {
+      // The following rules can't be written in userland because they reference
+      // `any` and `end` directly.
       any: pexprs.any,
       end: pexprs.end,
-      lower: new pexprs.UnicodeChar('Ll'),
 
       // The following rule is invoked implicitly by syntactic rules to skip spaces.
       spaces: new pexprs.Star(new pexprs.Apply('space')),
@@ -323,15 +324,14 @@ Grammar.ProtoBuiltInRules = new Grammar(
       // The `space` rule must be defined here because it's referenced by `spaces`.
       space: new pexprs.Range('\x00', ' '),
 
-      // The union of Lt (titlecase), Lm (modifier), and Lo (other), i.e. any letter not
-      // in Ll or Lu.
-      unicodeLtmo: new pexprs.UnicodeChar('Ltmo'),
-
+      // These rules are implemented natively because they use UnicodeChar directly, which is
+      // not part of the Ohm grammar.
+      lower: new pexprs.UnicodeChar('Ll'),
       upper: new pexprs.UnicodeChar('Lu'),
 
-      Boolean: new pexprs.TypeCheck('boolean'),
-      Number: new pexprs.TypeCheck('number'),
-      String: new pexprs.TypeCheck('string')
+      // The union of Lt (titlecase), Lm (modifier), and Lo (other), i.e. any letter not
+      // in Ll or Lu.
+      unicodeLtmo: new pexprs.UnicodeChar('Ltmo')
     },
 
     // rule formal arguments
@@ -341,11 +341,8 @@ Grammar.ProtoBuiltInRules = new Grammar(
       spaces: [],
       space: [],
       lower: [],
-      unicodeLtmo: [],
       upper: [],
-      Boolean: [],
-      Number: [],
-      String: []
+      unicodeLtmo: []
     },
 
     // rule descriptions

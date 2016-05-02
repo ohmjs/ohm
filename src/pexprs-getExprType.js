@@ -57,7 +57,6 @@ pexprs.Range.prototype._calculateExprType = function(grammar, memo) {
 
 pexprs.Arr.prototype._calculateExprType =
 pexprs.Obj.prototype._calculateExprType =
-pexprs.TypeCheck.prototype._calculateExprType =
 pexprs.Value.prototype._calculateExprType = function(grammar, memo) {
   return pexprs.TYPE_VALUE;
 };
