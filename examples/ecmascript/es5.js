@@ -9,8 +9,6 @@
 var fs = require('fs');
 var path = require('path');
 
-var ohm = require('../..');
-
 // --------------------------------------------------------------------
 // Helpers
 // --------------------------------------------------------------------
@@ -67,24 +65,26 @@ var modifiedSourceActions = {
   }
 };
 
-// Instantiate the ES5 grammar.
-var contents = fs.readFileSync(path.join(__dirname, 'es5.ohm'));
-var g = ohm.grammars(contents).ES5;
-var semantics = g.semantics();
+module.exports = function es5(ohm, ns, s) {
+  // Instantiate the ES5 grammar.
+  var contents = fs.readFileSync(path.join(__dirname, 'es5.ohm'));
+  var g = ohm.grammars(contents, ns).ES5;
+  var semantics = g.semantics(s);
 
-// An attribute whose value is either a string representing the modified source code for the
-// node, or undefined (which means that the original source code should be used).
-semantics.addAttribute('modifiedSource', modifiedSourceActions);
+  // An attribute whose value is either a string representing the modified source code for the
+  // node, or undefined (which means that the original source code should be used).
+  semantics.addAttribute('modifiedSource', modifiedSourceActions);
 
-// A simple wrapper around the `modifiedSource` attribute, which always returns a string
-// containing the ES5 source code for the node.
-semantics.addAttribute('asES5', {
-  _nonterminal: function(children) {
-    return isUndefined(this.modifiedSource) ? this.interval.contents : this.modifiedSource;
-  }
-});
+  // A simple wrapper around the `modifiedSource` attribute, which always returns a string
+  // containing the ES5 source code for the node.
+  semantics.addAttribute('asES5', {
+    _nonterminal: function(children) {
+      return isUndefined(this.modifiedSource) ? this.interval.contents : this.modifiedSource;
+    }
+  });
 
-module.exports = {
-  grammar: g,
-  semantics: semantics
+  return {
+    grammar: g,
+    semantics: semantics
+  };
 };
