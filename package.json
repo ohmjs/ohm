@@ -46,8 +46,7 @@
     "Patrick Dubroy <pdubroy@gmail.com>",
     "Tony Garnock-Jones <tonygarnockjones@gmail.com>",
     "Yoshiki Ohshima <Yoshiki.Ohshima@acm.org>",
-    "Marko Röder <m.roeder@photon-software.de>",
-    "Justin Chase <justin.m.chase@gmail.com>"
+    "Marko Röder <m.roeder@photon-software.de>"
   ],
   "dependencies": {
     "es6-symbol": "^2.0.1",
