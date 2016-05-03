@@ -9,8 +9,8 @@
 var fs = require('fs');
 var path = require('path');
 
-var es5 = require('./es5');
 var ohm = require('../..');
+var es5 = require('./es5')(ohm);
 
 // --------------------------------------------------------------------
 // Helpers
