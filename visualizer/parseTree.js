@@ -250,19 +250,19 @@
     }
   }
 
-  function updateZoomState(newState, semantics, optActionName) {
+  function updateZoomState(newState, semantics, optActionName, optActionArguments) {
     for (var k in newState) {
       if (newState.hasOwnProperty(k)) {
         zoomState[k] = newState[k];
       }
     }
-    refreshParseTree(semantics, zoomState.rootTrace, optActionName, true);
+    refreshParseTree(semantics, zoomState.rootTrace, optActionName, optActionArguments, true);
   }
 
-  function clearZoomState(semantics, optActionName) {
+  function clearZoomState(semantics, optActionName, optActionArguments) {
     var oldZoomState = zoomState;
     zoomState = {};
-    refreshParseTree(semantics, oldZoomState.rootTrace, optActionName, true);
+    refreshParseTree(semantics, oldZoomState.rootTrace, optActionName, optActionArguments, true);
   }
 
   function shouldNodeBeLabeled(traceNode, parent) {
@@ -369,9 +369,59 @@
            !isLeaf(traceNode);
   }
 
+  // Handle the clicking event associated with an action entry in `Force evaluation` of
+  // context menu.
+  function handleEventsOfActionEntry(actionDiv, semantics, traceNode, semanticsEditor, result) {
+    var actionName = actionDiv.querySelector('label').textContent;
+    var resultDiv = semanticsEditor.querySelector('.result');
+    actionDiv.onclick = function(e) {
+      if (actionDiv.querySelector('.args')) {
+        // For actions that have arguments, click it will hide/show its arguments list
+        actionDiv.querySelector('.args').hidden = !actionDiv.querySelector('.args').hidden;
+        e.preventDefault();
+        e.stopPropagation();
+      } else {
+        // For actions that don't have arguments, click it to show result of
+        // `Force evaluation`
+        resultDiv.title = actionName;
+        resultDiv.innerHTML = JSON.stringify(result);
+        resultDiv.classList.add('reserved');
+        semanticsEditor.hidden = false;
+        semanticsEditor.classList.add('resultOnly');
+      }
+    };
+
+    // For those actions that have arguments, set the arguments and press `enter` to
+    // force the evaluation
+    actionDiv.onkeypress = function(e) {
+      if (e.keyCode !== 13) {
+        return;
+      }
+      var args = Object.create(null);
+      Array.prototype.forEach.call(actionDiv.querySelectorAll('li'), function(argPair) {
+        var argName = argPair.querySelector('.name').textContent;
+        var argValue =
+            eval(argPair.querySelector('.value').value); // eslint-disable-line no-eval
+        args[argName] = argValue;
+      });
+      try {
+        result = semanticsActionHelpers.getActionResultForce(semantics, actionName,
+            args, traceNode);
+        resultDiv.innerHTML = JSON.stringify(result);
+        resultDiv.classList.add('reserved');
+        semanticsEditor.hidden = false;
+        semanticsEditor.classList.add('resultOnly');
+        resultDiv.title = actionName + '(' + Object.keys(args).map(function(key) {
+          return args[key] || '_';
+        }) + ')';
+      } catch (error) { }
+    };
+  }
+
   // Handle the 'contextmenu' event `e` for the DOM node associated with `traceNode`.
-  function handleContextMenu(e, semantics, rootTrace, traceNode, optActionName) {
-    var menuDiv = $('#contextMenu');
+  function handleContextMenu(e, semantics, rootTrace, traceNode,
+      optActionName, optActionArguments) {
+    var menuDiv = $('#node.contextMenu');
     menuDiv.style.left = e.clientX + 'px';
     menuDiv.style.top = e.clientY - 6 + 'px';
     menuDiv.hidden = false;
@@ -383,7 +433,8 @@
     zoomItem.classList.toggle('disabled', !zoomEnabled);
     if (zoomEnabled) {
       zoomItem.onclick = function() {
-        updateZoomState({zoomTrace: traceNode, rootTrace: rootTrace}, semantics, optActionName);
+        updateZoomState({zoomTrace: traceNode, rootTrace: rootTrace}, semantics,
+          optActionName, optActionArguments);
         clearMarks();
       };
     }
@@ -399,30 +450,35 @@
 
     // If we didn't select any action, or there is already an action result showed for this node,
     // then we disable the `Get action result` option.
-    if (!optActionName || !semanticsEditor.hidden) {
+    var hasArguments = optActionArguments && Object.keys(optActionArguments).length !== 0;
+    if (!optActionName) {
       showResult.classList.add('disabled');
     } else {
-      var actionDivs = showResult.querySelectorAll('li');
+      var actionDivs = showResult.querySelectorAll('.action');
       var noDisplay = true;
       Array.prototype.forEach.call(actionDivs, function(actionDiv) {
-        var actionName = actionDiv.textContent;
-        if (actionName === optActionName) {
+        var actionName = actionDiv.querySelector('label').textContent;
+        if (actionName === optActionName && !hasArguments) {
           actionDiv.style.display = 'none';
           return;
         }
         noDisplay = false;
         actionDiv.style.display = 'flex';
-        // Try to force to get the semantics action result, if succeed, show the result in `grey`.
+        // Check whether this action entry should be enabled based on if there is an action result
+        // for this cstNode. If so, handle the clicking event associated with this action entry.
         try {
+          var args = Object.create(null);
+          Array.prototype.forEach.call(actionDiv.querySelectorAll('li'), function(argPair) {
+            var argName = argPair.querySelector('.name').textContent;
+            var argValue =
+                eval(argPair.querySelector('.value').value); // eslint-disable-line no-eval
+            args[argName] = argValue;
+          });
           var result = semanticsActionHelpers.getActionResultForce(semantics, actionName,
-              traceNode);
-          var resultDiv = semanticsEditor.querySelector('.result');
-          actionDiv.onclick = function() {
-            resultDiv.innerHTML = JSON.stringify(result);
-            resultDiv.classList.add('reserved');
-            semanticsEditor.hidden = false;
-            semanticsEditor.classList.add('resultOnly');
-          };
+              args, traceNode);
+
+          handleEventsOfActionEntry(actionDiv, semantics, traceNode, semanticsEditor, result);
+
           actionDiv.classList.remove('disabled');
         } catch (error) {
           // If we could not force to get a result for this node, then disable the `Get action
@@ -437,7 +493,8 @@
   }
 
   function hideContextMenu() {
-    $('#contextMenu').hidden = true;
+    $('#node.contextMenu').hidden = true;
+    $('#action.contextMenu').hidden = true;
   }
 
   // Create the DOM node that contains the parse tree for `traceNode` and all its children.
@@ -604,12 +661,13 @@
     semantics._getActionDict(actionName)[actionKey] = actionFnWrapper;
   }
 
-  function addSavingEvent(editorBody, semantics, rootTrace, actionName) {
+  function addSavingEvent(editorBody, semantics, rootTrace, actionName, optActionArguments) {
     var traceNode = editorBody.parentElement.parentElement.parentElement._traceNode;
     try {
       saveSemanticAction(semantics, traceNode, actionName, editorBody);
-      semanticsActionHelpers.getActionResultForce(semantics, actionName, traceNode);
-      refreshParseTree(semantics, rootTrace, actionName, true);
+      semanticsActionHelpers.getActionResultForce(semantics, actionName,
+          optActionArguments, traceNode);
+      refreshParseTree(semantics, rootTrace, actionName, optActionArguments, true);
       clearMarks();
     } catch (error) {
       if (error instanceof Error && error.message) {
@@ -628,7 +686,7 @@
           // and keep the editor open for users to revise its action.
           traceNode._runtimeError = error;
         }
-        refreshParseTree(semantics, rootTrace, actionName, true);
+        refreshParseTree(semantics, rootTrace, actionName, optActionArguments, true);
         clearMarks();
       }
     }
@@ -636,7 +694,8 @@
 
   // Insert semantics editor body to the semantics editor, which includes: `header`, `body`
   // and `save` button
-  function insertSemanticsEditorBody(semanticsEditor, semantics, rootTrace, actionName) {
+  function insertSemanticsEditorBody(semanticsEditor, semantics, rootTrace,
+      actionName, optActionArguments) {
     semanticsEditor.parentElement.classList.add('selected');
     var traceNode = semanticsEditor.parentElement.parentElement._traceNode;
     var resultDiv = semanticsEditor.querySelector('.result');
@@ -654,14 +713,14 @@
     // Hooks the saving action to key `Cmd-S` of semantic editor
     editorBodyCM.setOption('extraKeys', {
       'Cmd-S': function() {
-        addSavingEvent(editorBody, semantics, rootTrace, actionName);
+        addSavingEvent(editorBody, semantics, rootTrace, actionName, optActionArguments);
       }
     });
 
     var saveButton = semanticsEditor.appendChild(createElement('button.save', 'save'));
     // Hooks the saving action to the `save` button of semantic editor
     saveButton.onclick = function() {
-      addSavingEvent(editorBody, semantics, rootTrace, actionName);
+      addSavingEvent(editorBody, semantics, rootTrace, actionName, optActionArguments);
     };
   }
 
@@ -674,7 +733,7 @@
   }
 
   // Hides or shows the semantics editor of `el`, which is a div.pexpr.
-  function toggleSemanticsEditor(el, semantics, rootTrace, actionName) {
+  function toggleSemanticsEditor(el, semantics, rootTrace, actionName, optActionArguments) {
     var semanticsEditor = el.querySelector('.semanticsEditor');
     if (!semanticsEditor || semanticsEditor.parentNode !== el) {
       // If there is no semantics editor (e.g., for a implicit space cst node), do nothing.
@@ -697,22 +756,35 @@
     // Insert or remove the editor body. This avoids having too many CodeMirror.
     if (!semanticsEditor.hidden && !semanticsEditor.classList.contains('resultOnly')) {
       // If we toggle to show the semantics editor of `el`, insert the editor body
-      insertSemanticsEditorBody(semanticsEditor, semantics, rootTrace, actionName);
+      insertSemanticsEditorBody(semanticsEditor, semantics, rootTrace, actionName,
+          optActionArguments);
     } else {
       // If we toggle to hide the semantics editor of `el`, remove the editor body
       removeSemanticsEditorBody(semanticsEditor);
     }
+
   }
 
   // Loads action result to the semantics result containter, also style the selfWrapper and the
   // container according to the result
-  function loadActionResult(semantics, traceNode, actionName, actionResultContainer) {
+  function loadActionResult(semantics, traceNode, actionName,
+      optActionArguments, actionResultContainer) {
+
+    actionResultContainer.title = actionName;
+    if (optActionArguments && Object.keys(optActionArguments).length > 0) {
+      actionResultContainer.title = actionName + '(' + Object.keys(optActionArguments).map(
+        function(key) {
+          return optActionArguments[key] || '_';
+        }) + ')';
+    }
+
     // If there is no action result for this node, and it's not the one we edited before refresh,
     // then return
-    if (semanticsActionHelpers.hasNoResult(traceNode, actionName, true) &&
+    if (semanticsActionHelpers.hasNoResult(traceNode, actionName, optActionArguments, true) &&
         !traceNode._runtimeError) {
       try {
-        semanticsActionHelpers.getActionResultForce(semantics, actionName, traceNode);
+        semanticsActionHelpers.getActionResultForce(semantics, actionName,
+            optActionArguments, traceNode);
       } catch (error) {
         return;
       }
@@ -723,17 +795,17 @@
     // Otherwise, get actual action result.
     var result = traceNode._runtimeError ?
         traceNode._runtimeError :
-        semanticsActionHelpers.getActionResult(traceNode, actionName);
+        semanticsActionHelpers.getActionResult(traceNode, actionName, optActionArguments);
 
     // Mark the selfWrapper if it's one of the next steps
     var selfWrapper = actionResultContainer.parentElement.parentElement;
-    if (semanticsActionHelpers.isNextStep(result, traceNode, actionName)) {
+    if (semanticsActionHelpers.isNextStep(result, traceNode, actionName, optActionArguments)) {
       selfWrapper.classList.add('nextStepMark');
     }
 
-    if (semanticsActionHelpers.shouldUseReservedResult(traceNode, actionName)) {
+    if (semanticsActionHelpers.shouldUseReservedResult(traceNode, actionName, optActionArguments)) {
       actionResultContainer.classList.add('reserved');
-      result = semanticsActionHelpers.getReservedResult(traceNode, actionName);
+      result = semanticsActionHelpers.getReservedResult(traceNode, actionName, optActionArguments);
     }
 
     if (result && result.isErrorWrapper) {
@@ -745,24 +817,25 @@
     var isError = !!(result && (result.isErrorWrapper || result.isFailure));
     actionResultContainer.classList.toggle('error', isError);
 
-    var isPassThrough = !!semanticsActionHelpers.isPassThrough(traceNode, actionName);
+    var isPassThrough = !!semanticsActionHelpers.isPassThrough(traceNode, actionName,
+        optActionArguments);
     selfWrapper.classList.toggle('passThrough', isPassThrough);
   }
 
   // Appends an semantic editor to the label of node wrapper
-  function appendSemanticsEditor(semantics, wrapper, rootTrace, actionName) {
+  function appendSemanticsEditor(semantics, wrapper, rootTrace, actionName, optActionArguments) {
     var traceNode = wrapper.parentElement._traceNode;
     var semanticsEditor = wrapper.appendChild(createElement('.semanticsEditor'));
     var actionResultContainer = semanticsEditor.appendChild(createElement('.result'));
-    loadActionResult(semantics, traceNode, actionName, actionResultContainer);
+    loadActionResult(semantics, traceNode, actionName, optActionArguments, actionResultContainer);
 
     // If there is no result for the traceNode, or the result is an error,
     // then hides the whole editor. Otherwise, only shows the result.
-    if (semanticsActionHelpers.hasNoResult(traceNode, actionName) ||
+    if (semanticsActionHelpers.hasNoResult(traceNode, actionName, optActionArguments) ||
         wrapper.classList.contains('passThrough') ||
         actionResultContainer.classList.contains('error')) {
       semanticsEditor.hidden = true;
-    } else if (!semanticsEditor.hidden) {
+    } else {
       semanticsEditor.classList.add('resultOnly');
       actionResultContainer.classList.add('alwaysShow');
     }
@@ -770,12 +843,13 @@
     // If this node was edited before refresh, and there was runtime error for runing
     // its semantics action, then keep its semantics editor open.
     if (traceNode._runtimeError) {
-      toggleSemanticsEditor(wrapper, semantics, rootTrace, actionName);
+      toggleSemanticsEditor(wrapper, semantics, rootTrace, actionName, optActionArguments);
       delete traceNode._runtimeError;
     }
   }
 
-  function createTraceElement(semantics, rootTrace, traceNode, parent, input, optActionName) {
+  function createTraceElement(semantics, rootTrace, traceNode, parent, input,
+      optActionName, optActionArguments) {
     var pexpr = traceNode.expr;
     var wrapper = parent.appendChild(createTraceWrapper(traceNode));
     wrapper._input = input;
@@ -796,7 +870,7 @@
         console.log(traceNode);  // eslint-disable-line no-console
       } else if (e.metaKey && !e.shiftKey && optActionName) {
         // cmd + click to open or close semantic editor
-        toggleSemanticsEditor(selfWrapper, semantics, rootTrace, optActionName);
+        toggleSemanticsEditor(selfWrapper, semantics, rootTrace, optActionName, optActionArguments);
       } else if (!isLeaf(traceNode)) {
         toggleTraceElement(wrapper, optActionName);
       }
@@ -838,7 +912,7 @@
     });
 
     label.addEventListener('contextmenu', function(e) {
-      handleContextMenu(e, semantics, rootTrace, traceNode, optActionName);
+      handleContextMenu(e, semantics, rootTrace, traceNode, optActionName, optActionArguments);
     });
 
     var couldAppendSemanticsEditor =
@@ -847,8 +921,9 @@
         pexpr.ruleName !== 'spaces';
 
     if (optActionName && couldAppendSemanticsEditor) {
-      semanticsActionHelpers.populateActionResult(semantics, traceNode, optActionName);
-      appendSemanticsEditor(semantics, selfWrapper, rootTrace, optActionName);
+      semanticsActionHelpers.populateActionResult(semantics, traceNode,
+          optActionName, optActionArguments);
+      appendSemanticsEditor(semantics, selfWrapper, rootTrace, optActionName, optActionArguments);
     }
     return wrapper;
   }
@@ -883,7 +958,7 @@
   document.addEventListener('click', hideContextMenu);
   document.addEventListener('contextmenu', hideContextMenu);
   document.addEventListener('keydown', function(e) {
-    if (e.keyCode === KeyCode.ESC) {
+    if (e.keyCode === KeyCode.ESC || e.keyCode === KeyCode.ENTER) {
       hideContextMenu();
     }
   });
@@ -891,42 +966,179 @@
   // Intialize the zoom out button.
   var zoomOutButton = $('#zoomOutButton');
   zoomOutButton.textContent = UnicodeChars.ANTICLOCKWISE_OPEN_CIRCLE_ARROW;
-  function initializeZoomOutButton(semantics, optActionName) {
+  function initializeZoomOutButton(semantics, optActionName, optActionArguments) {
     zoomOutButton.hidden = !zoomState.zoomTrace;
 
-    zoomOutButton.onclick = function(e) { clearZoomState(semantics, optActionName); };
+    zoomOutButton.onclick = function(e) {
+      clearZoomState(semantics, optActionName, optActionArguments);
+    };
     zoomOutButton.onmouseover = function(e) {
       if (zoomState.zoomTrace) {
         semanticsActionHelpers.reserveResults();
-        updateZoomState({previewOnly: true}, semantics, optActionName);
+        updateZoomState({previewOnly: true}, semantics, optActionName, optActionArguments);
       }
     };
     zoomOutButton.onmouseout = function(e) {
       if (zoomState.zoomTrace) {
-        updateZoomState({previewOnly: false}, semantics, optActionName);
+        updateZoomState({previewOnly: false}, semantics, optActionName, optActionArguments);
         semanticsActionHelpers.clearCurrentReservedResults();
       }
     };
   }
 
-  function addActionToContextMenu(actionName) {
-    var showResult = document.querySelector('#showResult');
-    var contents = showResult.querySelector('ul');
+  // Constract the arguments entries in node context menu for
+  // actions that have arguments
+  function formArgumentsEntries(args) {
+    var argList = createElement('ul.args');
 
-    var actionDiv = createElement('li');
-    actionDiv.appendChild(createElement('label', actionName));
-    contents.appendChild(actionDiv);
+    Object.keys(args).forEach(function(name) {
+      var argNameValuePair = createElement('li.nameValuePair');
+
+      var argName = document.createElement('div');
+      argName.className = 'name';
+      argName.textContent = name;
+      argNameValuePair.appendChild(argName);
+
+      var assign = document.createElement('img');
+      assign.src = 'third_party/left-arrow.png';
+      assign.className = 'assign';
+      argNameValuePair.appendChild(assign);
+
+      var argValue = document.createElement('textarea');
+      argValue.className = 'value';
+      argValue.placeholder = 'value';
+      argValue.cols = 5;
+      argValue.addEventListener('keyup', function(e) {
+        argValue.cols = Math.max(argValue.value.length, 5);
+      });
+      argValue.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      argValue.addEventListener('keypress', function(e) {
+        if (e.keyCode === 13) {
+          e.preventDefault();
+        }
+      });
+      argNameValuePair.appendChild(argValue);
+
+      argList.appendChild(argNameValuePair);
+    });
+    argList.hidden = true;
+
+    return argList;
   }
 
-  function initializeActionButtonEvent(semantics, rootTrace, optActionName) {
+  // Add a new action to the `Force evaluation` of node context menu.
+  // If the action name already exist, change the existing entry to this
+  // new one.
+  function addActionToContextMenu(actionName, args) {
+    var showResult = document.querySelector('#showResult');
+    var entries = showResult.querySelector('ul');
+
+    var actionDiv = createElement('li.action');
+    // If there is an existed entry with the same `actionName`, clear
+    // its content to prepare for filling with new `args` information.
+    Array.prototype.forEach.call(entries.querySelectorAll('li.action'),
+        function(action) {
+          if (action.querySelector('label').textContent === actionName) {
+            action.innerHTML = '';
+            actionDiv = action;
+          }
+        });
+
+    actionDiv.appendChild(createElement('label', actionName));
+    entries.appendChild(actionDiv);
+
+    // If there is no arguments, then we are done
+    if (!args || Object.keys(args).length === 0) {
+      return;
+    }
+
+    var argList = formArgumentsEntries(args);
+    actionDiv.appendChild(argList);
+  }
+
+  // Remove action that has name `actionName` from the context menu
+  function removeActionFromContextMenu(actionName) {
+    var showResult = document.querySelector('#showResult');
+    var contents = showResult.querySelector('ul');
+    var actionDivs = contents.querySelectorAll('li.action');
+    var actionDiv = Array.prototype.filter.call(actionDivs, function(div) {
+      return div.querySelector('label').textContent === actionName;
+    })[0];
+    contents.removeChild(actionDiv);
+  }
+
+  function retrieveActionArgs(actionWrapper) {
+    var argumentsContainer = actionWrapper.querySelector('.arguments');
+    if (!argumentsContainer) {
+      return null;
+    }
+    var argNameValuePairs = actionWrapper.querySelectorAll('.nameValuePair');
+    var args = Object.create(null);
+    Array.prototype.forEach.call(argNameValuePairs, function(argNameValuePair) {
+      var nameContainer = argNameValuePair.querySelector('.name');
+      var valueContainer = argNameValuePair.querySelector('.value');
+      if (nameContainer.value &&
+          /^[_a-zA-Z0-9]+$/.test(nameContainer.value) &&
+          !(nameContainer.value in args)) {
+        args[nameContainer.value] = eval(valueContainer.value);  // eslint-disable-line no-eval
+        nameContainer.readOnly = true;
+      } else {
+        // TODO: maybe overwrite duplicates?
+        argumentsContainer.removeChild(argNameValuePair);
+      }
+    });
+    return args;
+  }
+
+  function removeAction(semantics, rootTrace, actionType, actionName) {
+    var action = semantics._removeAction(actionName);
+    if (actionType === 'Attribute') {
+      semantics._getSemantics().wrap(rootTrace.bindings[0])._forgetMemoizedResultFor(actionName);
+    }
+    removeActionFromContextMenu(actionName);
+    return action;
+  }
+
+  // Relax the action node to make every part editable
+  function relaxActionNode(actionWrapper, action) {
+    var actionNode = actionWrapper.querySelector('.action');
+    actionNode.classList.add('editing');
+    actionNode._mergeAction = action;
+    actionNode.readOnly = false;
+    actionNode.select();
+    actionWrapper.querySelector('.arguments').hidden = false;
+    Array.prototype.forEach.call(actionWrapper.querySelectorAll('.nameValuePair'),
+        function(pair, idx) {
+          pair.querySelector('.name').readOnly = false;
+        });
+    var buttonWrapper = actionWrapper.querySelector('.buttonWrapper');
+    buttonWrapper.querySelector('.add').hidden = false;
+    buttonWrapper.querySelector('.arrow').hidden = true;
+    buttonWrapper.hidden = false;
+  }
+
+  function initializeActionButtonEvent(semantics, rootTrace, optActionName, optActionArguments) {
     var actionContainers = document.querySelectorAll('.actionEntries');
     Array.prototype.forEach.call(actionContainers, function(actionContainer) {
+      var actionType = actionContainer.id === 'operations' ? 'Operation' : 'Attribute';
       actionContainer.onclick = function(event) {
+        // Handle `click` only if it happens on an action button
+        if (!event.target.classList.contains('action')) {
+          return;
+        }
+        var actionWrapper = event.target.parentElement;
         var actionName = event.target.value;
         if (optActionName === actionName || !event.target.readOnly) {
-          refreshParseTree(semantics, rootTrace, null, false);
+          // If we click on an action that was selected before, or an action
+          // that hasn't been saved (press `enter` to save an action), we don't
+          // show semantics action result on the example
+          refreshParseTree(semantics, rootTrace, null, null, false);
         } else {
-          refreshParseTree(semantics, rootTrace, actionName, false);
+          var args = retrieveActionArgs(actionWrapper);
+          refreshParseTree(semantics, rootTrace, actionName, args, false);
         }
       };
 
@@ -934,27 +1146,158 @@
         if (event.keyCode !== 13) {
           return;
         }
-        var actionType = actionContainer.id === 'operations' ? 'Operation' : 'Attribute';
-        var actionName = event.target.value;
-        if (actionName && !event.target.readOnly) {
-          event.target.readOnly = true;
-          try {
-            semanticsActionHelpers.addNewAction(semantics, actionType, actionName);
-            addActionToContextMenu(actionName);
-            refreshParseTree(semantics, rootTrace, actionName, false);
-          } catch (error) {
-            event.target.readOnly = false;
-            window.alert(error); // eslint-disable-line no-alert
-            event.target.select();
+
+        // Retrieve action wrapper from event target: an argument name/value, or an action name
+        var actionWrapper = event.target;
+        if (actionWrapper.classList.contains('value') ||
+            actionWrapper.classList.contains('name')) {
+          actionWrapper = actionWrapper.parentElement.parentElement.parentElement;
+        } else if (actionWrapper.classList.contains('action')) {
+          actionWrapper = actionWrapper.parentElement;
+        }
+
+        var argumentValueChange = event.target.classList.contains('value') &&
+              event.target.parentElement.querySelector('.name').readOnly;
+
+        var actionNode = actionWrapper.querySelector('.action');
+        var actionName = actionNode.value;
+        var args = retrieveActionArgs(actionWrapper);
+        if (!actionName) {
+          actionContainer.removeChild(actionWrapper);
+          refreshParseTree(semantics, rootTrace, null, null, false);
+          return;
+        } else if (argumentValueChange) {
+          // If the event target is an argument value, and its name is saved,
+          // then the user is just changing an argument value, so we just
+          // refresh the tree with new arguments values
+          refreshParseTree(semantics, rootTrace, actionName, args, false);
+          return;
+        }
+
+        actionNode.readOnly = true;
+
+        // If the user is editing an action (i.e. changing name, or edit arguments),
+        // we keep what already implemented for the semantics action, and merge it to
+        // the new action that's going to be saved (i.e. call `addNewAction` with
+        // `mergeAction`)
+        var mergeAction;
+        if (actionNode.classList.contains('editing')) {
+          actionNode.classList.remove('editing');
+          mergeAction = actionNode._mergeAction;
+          delete actionNode._mergeAction;
+        }
+
+        // If the action is an operation, switching the button from `add` to `arrow` if there is
+        // any arguments, or we hide both buttons.
+        if (actionType === 'Operation') {
+          var argNames = Object.keys(args);
+          if (argNames.length === 0) {
+            actionWrapper.querySelector('.buttonWrapper').hidden = true;
+          } else {
+            actionWrapper.querySelector('.buttonWrapper').querySelector('.add').hidden = true;
+            actionWrapper.querySelector('.buttonWrapper').querySelector('.arrow').hidden = false;
           }
         }
+
+        try {
+          semanticsActionHelpers.addNewAction(semantics, actionType, actionName, args, mergeAction);
+          addActionToContextMenu(actionName, args);
+          refreshParseTree(semantics, rootTrace, actionName, args, false);
+        } catch (error) {
+          // Show alert if we couldn't add the new action with name `actionName`
+          // and arguments `args`.
+          event.target.readOnly = false;
+          window.alert(error);  // eslint-disable-line no-alert
+          event.target.select();
+        }
       };
+
+      // Handle `edit`/`delete` action on action node
+      actionContainer.oncontextmenu = function(event) {
+        var actionContextMenu = $('#action.contextMenu');
+        actionContextMenu.style.left = event.clientX + 'px';
+        actionContextMenu.style.top = event.clientY - 6 + 'px';
+        actionContextMenu.hidden = false;
+
+        var del = actionContextMenu.querySelector('#delete');
+        var edit = actionContextMenu.querySelector('#edit');
+        var actionWrapper, actionName;
+        if (event.target.classList.contains('action')) {
+          // Click on the action node needs to handle the operation
+          // on entire action
+          actionWrapper = event.target.parentElement;
+          actionName = event.target.value;
+          del.onclick = function(event) {
+            removeAction(semantics, rootTrace, actionType, actionName);
+
+            actionContainer.removeChild(actionWrapper);
+            if (actionName === optActionArguments) {
+              refreshParseTree(semantics, rootTrace, null, null, false);
+            } else {
+              refreshParseTree(semantics, rootTrace, optActionName, optActionArguments, false);
+            }
+          };
+
+          edit.onclick = function(event) {
+            var action = removeAction(semantics, rootTrace, actionType, actionName);
+            relaxActionNode(actionWrapper, action);
+          };
+        } else {
+          // Click on the attribute node needs to handle the operation
+          // on the attribute
+          var nameValuePair = event.target;
+          if (event.target.classList.contains('name') ||
+            event.target.classList.contains('assign') ||
+            event.target.classList.contains('value')) {
+            nameValuePair = event.target.parentElement;
+          }
+          actionName = nameValuePair.parentElement.previousElementSibling.value;
+          actionWrapper = nameValuePair.parentElement.parentElement;
+
+          del.onclick = function(event) {
+            nameValuePair.parentElement.removeChild(nameValuePair);
+            // If the deleted argument is the only argument for the action, then
+            // hide all the buttons that operate on arguments (i.e. add, arrows)
+            if (actionWrapper.querySelector('.arguments').children.length === 0) {
+              actionWrapper.querySelector('.buttonWrapper').hidden = true;
+            }
+
+            // Change the entry that corresponding this action in the `Force evaluation` list
+            // of contextmenu accordingly.
+            var args = retrieveActionArgs(actionWrapper);
+            addActionToContextMenu(actionName, args);
+            // Remove the current action and add a new one with the same name, with different
+            // arguments
+            var action = semantics._removeAction(actionName);
+            semanticsActionHelpers.addNewAction(semantics, actionType, actionName, args, action);
+
+            optActionArguments = actionName === optActionName ? args : optActionArguments;
+            refreshParseTree(semantics, rootTrace, optActionName, optActionArguments, false);
+          };
+
+          edit.onclick = function(event) {
+            // Relax the name container, so it could be editable
+            nameValuePair.querySelector('.name').readOnly = false;
+            nameValuePair.querySelector('.name').select();
+
+            // Keep the current `action`, so we won't lose our implementation
+            // after refresh (happens when press `enter`)
+            var actionNode = actionWrapper.querySelector('.action');
+            var action = semantics._removeAction(actionName);
+            actionNode.classList.add('editing');
+            actionNode._mergeAction = action;
+          };
+        }
+        event.preventDefault();
+        event.stopPropagation();  // Prevent ancestor wrappers from handling.
+      };
+
     });
   }
 
   // Re-render the parse tree starting with the trace at `rootTrace`.
-  function refreshParseTree(
-      semantics, rootTrace, optActionName, keepReservedResults, clearZoomTrace) {
+  function refreshParseTree(semantics,
+      rootTrace, optActionName, optActionArguments, keepReservedResults, clearZoomTrace) {
     var expandedInputDiv = $('#expandedInput');
     var parseResultsDiv = $('#parseResults');
 
@@ -964,7 +1307,7 @@
     if (clearZoomTrace) {
       zoomState = {};
     }
-    initializeZoomOutButton(semantics, optActionName);
+    initializeZoomOutButton(semantics, optActionName, optActionArguments);
 
     var trace;
     if (zoomState.zoomTrace && !zoomState.previewOnly) {
@@ -976,7 +1319,7 @@
     var rootWrapper = parseResultsDiv.appendChild(createTraceWrapper(trace));
     var rootContainer = rootWrapper.appendChild(createElement('.children'));
 
-    initializeActionButtonEvent(semantics, rootTrace, optActionName);
+    initializeActionButtonEvent(semantics, rootTrace, optActionName, optActionArguments);
     if (optActionName) {
       semanticsActionHelpers.initializeActionLog(keepReservedResults);
     }
@@ -1021,7 +1364,7 @@
 
         var container = containerStack[containerStack.length - 1];
         var el = createTraceElement(
-            semantics, rootTrace, node, container, childInput, optActionName);
+            semantics, rootTrace, node, container, childInput, optActionName, optActionArguments);
         toggleClasses(el, {
           failed: !node.succeeded,
           hidden: !shouldNodeBeLabeled(node, parent),

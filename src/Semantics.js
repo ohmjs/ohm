@@ -461,6 +461,17 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
     }
     return action.actionDict;
   };
+  proxy._removeAction = function(operationOrAttributeName) {
+    var action;
+    if (operationOrAttributeName in s.operations) {
+      action = s.operations[operationOrAttributeName];
+      delete s.operations[operationOrAttributeName];
+    } else if (operationOrAttributeName in s.attributes) {
+      action = s.attributes[operationOrAttributeName];
+      delete s.attributes[operationOrAttributeName];
+    }
+    return action;
+  };
 
   // Make the proxy's toString() work.
   proxy.toString = s.toString.bind(s);

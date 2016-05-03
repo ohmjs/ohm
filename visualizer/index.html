@@ -167,12 +167,11 @@
     }
     .pexpr:not(.failed) > .self.nextStepMark .label,
     .pexpr:not(.failed) > .self.tmpNextStepMark .label {
-      border: 1px solid red;
-      background: rgba(255, 215, 222, 0.9);
+      background: rgba(100,149,237,0.4);
     }
     .pexpr:not(.failed) > .self.nextStepMark:hover .label,
     .pexpr:not(.failed) > .self.tmpNextStepMark:hover .label {
-      background: rgb(255, 215, 222);
+      background: rgba(100,149,237,0.6);
     }
     .pexpr:not(.collapsed) > .self.passThrough .label {
       border-bottom: 1px solid #ddd;
@@ -183,7 +182,7 @@
     }
     .pexpr.collapsed > .self.nextStepMark,
     .pexpr.collapsed > .self.tmpNextStepMark {
-      border-bottom: 2px dashed red;
+      border-bottom: 2px dashed rgb(193, 212, 248);
     }
 
     .pexpr > .children {
@@ -338,10 +337,18 @@
       background-color: rgba(0, 0, 0, 0);
       min-width: 92px;
     }
+    .actionEntries .actionWrap {
+      margin: 4px 4px 4px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
     textarea.action {
       resize: none;
       outline: none;
-      margin: 4px 4px 4px 0;
+      _margin: 4px 4px 4px 0;
       height: 16px;
       border: 1px solid #c1c1c1;
       border-radius: 3px;
@@ -353,7 +360,7 @@
       /* Styles for the "isometric button" effect. */
       position: relative;
       top: -2px;
-      box-shadow: 0 2px 0 #c1c1c1;
+      _box-shadow: 0 2px 0 #c1c1c1;
     }
     textarea.action[readOnly] {
       color: #888;
@@ -365,6 +372,60 @@
       border-color: #aaa;
       box-shadow: none;
       top: 0;
+    }
+
+    img.cross {
+      visibility: hidden;
+      width: 10px;
+      position: absolute;
+      top: 0;
+      right: 0;
+      cursor: pointer;
+    }
+    .nodeWrapper:hover img.cross {
+      visibility: visible;
+    }
+
+    .arguments:not(:empty) {
+      border: 1px solid #888;
+      border-radius: 0 0 10px 10px;
+      border-top: 0;
+      margin-top: -2px;
+    }
+    .nameValuePair:not(:first-child) {
+      border-top: 1px solid rgba(136, 136, 136, 0.19);
+    }
+    .nameValuePair .assign {
+      width: 10px;
+      height: 5px;
+      margin-bottom: 2px;
+    }
+    .arguments textarea,
+    textarea.value {
+      resize: none;
+      outline: none;
+      height: 12px;
+      text-align: center;
+      border: 0;
+    }
+
+    .buttonWrapper {
+      height: 9px;
+      width: 50px;
+      border: 1px solid #888;
+      border-top: 0;
+      border-radius: 0 0 20px 20px;
+    }
+    .buttonWrapper img {
+      opacity: 0.5;
+      height: 8px;
+      position: absolute;
+      margin: 0 auto;
+      left: 0;
+      right: 0;
+    }
+    .buttonWrapper img:hover {
+      opacity: 1;
     }
 
     #options {
@@ -598,7 +659,7 @@
       display: none;
     }
 
-    #contextMenu {
+    .contextMenu {
       background-color: #f0f0f0;
       border: 1px solid #bbb;
       border-radius: 4px;
@@ -608,40 +669,59 @@
       top: 20px;
       z-index: 11;  /* Must be great than .splitter .handle */
     }
-    #contextMenu > ul {
+    .contextMenu > ul {
       margin: 6px 0;
       padding: 0;
     }
-    #contextMenu li {
+    .contextMenu li {
       display: flex;
       font-family: Helvetica, Arial, sans-serif;
       font-size: 14px;
       padding: 2px 20px;
     }
-    #contextMenu li.disabled {
+    .contextMenu li.disabled {
       color: #aaa;
     }
-    #contextMenu li:hover {
+    .contextMenu li:hover {
       cursor: default;
     }
-    #contextMenu li:hover:not(.disabled) {
+    .contextMenu > ul > li:hover:not(.disabled) {
       background-color: #4f9dfb;
     }
-    #contextMenu li:hover:not(.disabled) > label {
+    .contextMenu > ul > li:hover:not(.disabled) > label {
       color: white;
     }
 
-    #showResult ul {
+    #showResult > ul {
       position: absolute;
       margin-left: 20px;
       margin-top: 5px;
       padding-left: 0;
       visibility: hidden;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
     }
-    #showResult:hover:not(.disabled) ul {
+    #showResult:hover:not(.disabled) > ul {
       visibility: visible;
       background-color: #f0f0f0;
       width: auto;
+    }
+
+    #showResult > ul > li {
+      display: flex;
+      flex-direction: column;
+    }
+    #showResult > ul > li > ul {
+      padding-left: 5px;
+      background-color: white;
+    }
+    #showResult > ul > li > ul > li {
+      padding: 2px 5px;
+    }
+    #showResult > ul > li:hover label {
+      text-decoration: underline;
+    }
+    #showResult > ul > li > ul > li .assign {
+      margin: 6px 0 6px 2px;
     }
   </style>
 </head>
@@ -702,13 +782,20 @@
     <div class="externalRules"><div class="content"></div></div>
   </div>
 
-  <div id="contextMenu" hidden>
+  <div id="node" class="contextMenu" hidden>
     <ul>
       <li id="showInfoItem" class="disabled"><label>Show info</label></li>
       <li id="showResult" class="disabled"><label>Force Evaluation</label>
         <ul></ul>
       </li>
       <li id="zoomItem"><label>Zoom to node</label></li>
+    </ul>
+  </div>
+
+  <div id="action" class="contextMenu" hidden>
+    <ul>
+      <li id="delete"><label>Delete</label></li>
+      <li id="edit"><label>Edit</label></li>
     </ul>
   </div>
 

@@ -110,8 +110,17 @@ function $(sel) { return document.querySelector(sel); }
         return actionNode.readOnly && actionNode.classList.contains('selected');
       })[0];
       var actionName = selectedActionNode && selectedActionNode.value;
-
-      this.refreshParseTree(semantics, trace, actionName, false, true);
+      var args = Object.create(null);
+      if (selectedActionNode) {
+        Array.prototype.forEach.call(
+            selectedActionNode.parentElement.querySelector('.arguments').children,
+            function(pair) {
+          var nameContainer = pair.querySelector('.name');
+          var valueContainer = pair.querySelector('.value');
+          args[nameContainer.value] = eval(valueContainer.value); // eslint-disable-line no-eval
+        });
+      }
+      this.refreshParseTree(semantics, trace, actionName, args, false, true);
     }
   };
 
