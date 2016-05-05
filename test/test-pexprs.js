@@ -132,23 +132,3 @@ test('toArgumentNameList', function(t) {
 
   t.end();
 });
-
-test('isValueExpr', function(t) {
-  var g = makeGrammar([
-    'G {',
-    '  str = listOf<alnum*, ",">',
-    '  Str2 = Maybe<"ab">',
-    '  Str3 = MaybeTwice<"ab">',
-    '  Maybe<x> = x  -- some',
-    '           |    -- none',
-    '  MaybeTwice<exp> = Maybe<exp> Maybe<exp>',
-    '}'
-  ]);
-  function isValueExpr(ruleName) {
-    return g.ruleBodies[ruleName].isValueExpr(g);
-  }
-  t.equal(isValueExpr('str'), false);
-  t.equal(isValueExpr('Str2'), false);
-  t.equal(isValueExpr('Str3'), false);
-  t.end();
-});
