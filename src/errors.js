@@ -137,13 +137,6 @@ function applicationOfSyntacticRuleFromLexicalContext(ruleName, applyExpr) {
       applyExpr.interval);
 }
 
-function exprMixesValueAndStringExpressions(expr, optRuleName) {
-  // TODO: Improve the reporting here.
-  var desc =
-      (optRuleName ? 'Rule ' + optRuleName : 'Expression') + ' mixes value and string expressions';
-  return createError(desc, expr.interval);
-}
-
 // ----------------- Kleene operators -----------------
 
 function kleeneExprHasNullableOperand(kleeneExpr) {
@@ -196,7 +189,6 @@ module.exports = {
   duplicateParameterNames: duplicateParameterNames,
   duplicatePropertyNames: duplicatePropertyNames,
   duplicateRuleDeclaration: duplicateRuleDeclaration,
-  exprMixesValueAndStringExpressions: exprMixesValueAndStringExpressions,
   inconsistentArity: inconsistentArity,
   intervalSourcesDontMatch: intervalSourcesDontMatch,
   invalidConstructorCall: invalidConstructorCall,

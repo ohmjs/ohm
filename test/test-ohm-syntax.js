@@ -1543,26 +1543,6 @@ test('space skipping semantics', function(t) {
   t.end();
 });
 
-test('strings vs. value exprs', function(t) {
-  var g = makeGrammar([
-    'G {',
-    '  amb = ',
-    '  str = "a" amb',
-    '  arr = [amb]',
-    '  obj = {x: amb}',
-    '  obj2 = {x: arr}',
-    '}'
-  ]);
-  t.equal(g.match('', 'amb').succeeded(), true);
-  t.equal(g.match('a', 'str').succeeded(), true);
-  t.equal(g.match([], 'arr').succeeded(), true);
-  t.equal(g.match({x: ''}, 'obj').succeeded(), true);
-  t.equal(g.match({x: []}, 'obj').failed(), true);
-  t.equal(g.match({x: []}, 'obj2').succeeded(), true);
-
-  t.end();
-});
-
 test('bootstrap', function(t) {
   var ns = makeGrammars(ohmGrammarSource);
 

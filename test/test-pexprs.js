@@ -1,7 +1,6 @@
 'use strict';
 
 var ohm = require('..');
-var pexprs = require('../src/pexprs');
 var test = require('tape');
 
 var makeGrammar = require('./testUtil').makeGrammar;
@@ -85,15 +84,13 @@ test('toDisplayString', function(t) {
 
 test('toString', function(t) {
   var g = makeGrammar([
-    'G {',
-    '  start = ~(2 | 3?) $(&"a" b #a) [c {e: $b, ...} {g: $("a".."z")}]',
-    '  a = "a"',
-    '  b = "b"',
-    '  c = 3',
-    '}'
-    ]);
+    'G { start = &"a" ~(2 | 3?) $(b #a) [c {e: b, ...} {g: "a".."z"}]',
+    'a = "a"',
+    'b = "b"',
+    'c = 3',
+  '}']);
   var e = g.ruleBodies.start;
-  t.equal(e.toString(), '(~(2 | 3?) $((&"a" b #(a))) [(c {"e": $(b), ...} {"g": $("a".."z")})])');
+  t.equal(e.toString(), '(&"a" ~(2 | 3?) $((b #(a))) [(c {"e": b, ...} {"g": "a".."z"})])');
   t.end();
 });
 
@@ -136,7 +133,7 @@ test('toArgumentNameList', function(t) {
   t.end();
 });
 
-test('getExprType', function(t) {
+test('isValueExpr', function(t) {
   var g = makeGrammar([
     'G {',
     '  str = listOf<alnum*, ",">',
@@ -145,33 +142,13 @@ test('getExprType', function(t) {
     '  Maybe<x> = x  -- some',
     '           |    -- none',
     '  MaybeTwice<exp> = Maybe<exp> Maybe<exp>',
-    '  nothing = ',
-    '  nil = null',
-    '  leftRecStr = leftRecStr | str',
-    '  leftRecVal = leftRecVal | 3',
-    '  leftRecAny = leftRecAny | nothing',
     '}'
   ]);
-  function getExprType(ruleName) {
-    return g.ruleBodies[ruleName].getExprType(g);
+  function isValueExpr(ruleName) {
+    return g.ruleBodies[ruleName].isValueExpr(g);
   }
-  t.equal(getExprType('str'), pexprs.TYPE_STRING);
-  t.equal(getExprType('Str2'), pexprs.TYPE_STRING);
-  t.equal(getExprType('Str3'), pexprs.TYPE_STRING);
-  t.equal(getExprType('leftRecStr'), pexprs.TYPE_STRING);
-
-  t.equal(getExprType('leftRecVal'), pexprs.TYPE_VALUE);
-
-  t.equal(getExprType('nothing'), pexprs.TYPE_ANY);
-  t.equal(getExprType('end'), pexprs.TYPE_ANY);
-  t.equal(getExprType('any'), pexprs.TYPE_STRING);
-  t.equal(getExprType('leftRecAny'), pexprs.TYPE_ANY);
-
-  t.equal(getExprType('letter'), pexprs.TYPE_STRING, 'letter');
-  t.equal(getExprType('nil'), pexprs.TYPE_VALUE, 'null');
-
-  t.throws(function() { ohm.grammar('G2 <: G { x = "a" null }', {G: g}); });
-  t.throws(function() { ohm.grammar('G2 <: G { x = Str2 Val2 }', {G: g}); });
-
+  t.equal(isValueExpr('str'), false);
+  t.equal(isValueExpr('Str2'), false);
+  t.equal(isValueExpr('Str3'), false);
   t.end();
 });
