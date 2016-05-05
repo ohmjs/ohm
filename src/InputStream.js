@@ -67,6 +67,17 @@ StringInputStream.prototype.matchString = function(s) {
   return true;
 };
 
+// In some cases, it's not clear whether we should instantiate a StringInputStream or a
+// ListInputStream. To address this ambiguity, this method allows a StringInputStream to
+// behave like a ListInputStream with a single string value in certain cases.
+StringInputStream.prototype.nextStringValue = function() {
+  if (this.pos === 0) {
+    this.pos = this.source.length;
+    return this.sourceSlice(0);
+  }
+  return null;
+};
+
 function ListInputStream(source) {
   this.init(source);
 }
@@ -74,6 +85,11 @@ inherits(ListInputStream, InputStream);
 
 ListInputStream.prototype.matchString = function(s) {
   return this.matchExactly(s);
+};
+
+ListInputStream.prototype.nextStringValue = function() {
+  var value = this.next();
+  return typeof value === 'string' ? value : null;
 };
 
 // --------------------------------------------------------------------
