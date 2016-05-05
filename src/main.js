@@ -183,11 +183,8 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return builder.la(x.visit()).withInterval(this.interval);
     },
 
-    Modifier_lex: function(_, x) {
+    Lex_lex: function(_, x) {
       return builder.lex(x.visit()).withInterval(this.interval);
-    },
-    Modifier_val: function(_, x) {
-      return builder.val(x.visit()).withInterval(this.interval);
     },
 
     Base_application: function(rule, ps) {
@@ -204,6 +201,9 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
     Base_arr: function(open, x, close) {
       return builder.arr(x.visit()).withInterval(this.interval);
+    },
+    Base_str: function(open, x, close) {
+      return builder.str(x.visit());
     },
     Base_obj: function(open, lenient, close) {
       return builder.obj([], lenient.visit()[0]);

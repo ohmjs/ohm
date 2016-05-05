@@ -4,6 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
+var InputStream = require('./InputStream');
 var MatchResult = require('./MatchResult');
 var Semantics = require('./Semantics');
 var State = require('./State');
@@ -63,11 +64,17 @@ Grammar.prototype = {
   // Try to match `ctorArgs` with the body of the rule given by `ruleName`.
   // Return the resulting CST node if it succeeds, otherwise return null.
   _constructByMatching: function(ruleName, ctorArgs) {
-    var state = this._match(ctorArgs, {startApplication: ruleName, matchNodes: true});
-    if (state.bindings.length > 0) {
-      return state.bindings[0];
+    // If there is a single string argument, attempt to match that directly. Otherwise,
+    // match against the array of arguments.
+    var input = ctorArgs;
+    if (input.length === 1 && typeof input[0] === 'string') {
+      input = input[0];
     }
-    return null;
+    var state = new State(this, InputStream.newFor(input), ruleName, {matchNodes: true});
+    if (!state.eval(new pexprs.Apply(ruleName))) {
+      return null;
+    }
+    return state.bindings[0];
   },
 
   createConstructors: function() {

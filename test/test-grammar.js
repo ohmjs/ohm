@@ -31,7 +31,6 @@ test('constructors dictionary', function(t) {
   t.throws(function() { m.construct('foobar', []); },
            /Rule foobar is not declared in grammar Arithmetic/,
            'exception when calling construct() with a nonexistent rule name');
-  t.ok(m.construct('addExp', [m.match('1+2', 'addExp_plus')._cst]) instanceof nodes.Node);
 
   var n = m.match('1+2*3', 'addExp')._cst;
   t.equal(n.ctorName, 'addExp', 'ctorName');
@@ -43,7 +42,8 @@ test('constructors dictionary', function(t) {
   t.end();
 });
 
-test('constructing nodes by matching', function(t) {
+// TODO: Remove this test when the feature is removed.
+test.skip('constructing nodes by matching', function(t) {
   var unexpectedArgs = /invalid or unexpected arguments/;
   var m = makeGrammar(arithmeticGrammarSource);
 

@@ -232,6 +232,11 @@ s.addOperation('viz', {
                          x.viz();
                        leave();
                      },
+  Base_str:          function(_, x, _) {
+                       enter('str');
+                         x.viz();
+                       leave();
+                     },
   Base_obj:          function(_l, lenient, _r) {
                        throw 'TODO';
                      },

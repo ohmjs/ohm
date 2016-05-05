@@ -51,8 +51,8 @@ pexprs.Seq.prototype._assertAllApplicationsAreValid = function(ruleName, grammar
 pexprs.Iter.prototype._assertAllApplicationsAreValid =
 pexprs.Not.prototype._assertAllApplicationsAreValid =
 pexprs.Lookahead.prototype._assertAllApplicationsAreValid =
-pexprs.Value.prototype._assertAllApplicationsAreValid =
-pexprs.Arr.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
+pexprs.Arr.prototype._assertAllApplicationsAreValid =
+pexprs.Str.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
   this.expr._assertAllApplicationsAreValid(ruleName, grammar);
 };
 

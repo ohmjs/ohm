@@ -45,8 +45,8 @@ pexprs.Iter.prototype.introduceParams =
 pexprs.Not.prototype.introduceParams =
 pexprs.Lookahead.prototype.introduceParams =
 pexprs.Lex.prototype.introduceParams =
-pexprs.Value.prototype.introduceParams =
-pexprs.Arr.prototype.introduceParams = function(formals) {
+pexprs.Arr.prototype.introduceParams =
+pexprs.Str.prototype.introduceParams = function(formals) {
   this.expr = this.expr.introduceParams(formals);
   return this;
 };

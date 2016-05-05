@@ -44,10 +44,6 @@ pexprs.Lex.prototype.toString = function() {
   return '#(' + this.expr.toString() + ')';
 };
 
-pexprs.Value.prototype.toString = function() {
-  return '$(' + this.expr.toString() + ')';
-};
-
 pexprs.Alt.prototype.toString = function() {
   return this.terms.length === 1 ?
     this.terms[0].toString() :
@@ -74,6 +70,10 @@ pexprs.Lookahead.prototype.toString = function() {
 
 pexprs.Arr.prototype.toString = function() {
   return '[' + this.expr.toString() + ']';
+};
+
+pexprs.Str.prototype.toString = function() {
+  return '``' + this.expr.toString() + "''";
 };
 
 pexprs.Obj.prototype.toString = function() {

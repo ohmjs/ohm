@@ -22,7 +22,6 @@ pexprs.any._isNullable =
 pexprs.Range.prototype._isNullable =
 pexprs.Param.prototype._isNullable =
 pexprs.Plus.prototype._isNullable =
-pexprs.Value.prototype._isNullable =
 pexprs.Arr.prototype._isNullable =
 pexprs.Obj.prototype._isNullable =
 pexprs.UnicodeChar.prototype._isNullable = function(grammar, memo) {
@@ -60,6 +59,11 @@ pexprs.Lookahead.prototype._isNullable = function(grammar, memo) {
 };
 
 pexprs.Lex.prototype._isNullable = function(grammar, memo) {
+  return this.expr._isNullable(grammar, memo);
+};
+
+pexprs.Str.prototype._isNullable = function(grammar, memo) {
+  // This is also an over-simplification that is only correct when the input is a string.
   return this.expr._isNullable(grammar, memo);
 };
 

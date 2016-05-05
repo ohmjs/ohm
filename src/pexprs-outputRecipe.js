@@ -106,8 +106,8 @@ pexprs.Lookahead.prototype.outputRecipe = function(sb, formals, grammarInterval)
   sb.append(')' + getIntervalInfo(this, grammarInterval));
 };
 
-pexprs.Value.prototype.outputRecipe = function(sb, formals, grammarInterval) {
-  sb.append('this.val(');
+pexprs.Str.prototype.outputRecipe = function(sb, formals) {
+  sb.append('this.str(');
   this.expr.outputRecipe(sb, formals, grammarInterval);
   sb.append(')' + getIntervalInfo(this, grammarInterval));
 };

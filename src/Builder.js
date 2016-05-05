@@ -80,10 +80,6 @@ Builder.prototype = {
     return new pexprs.Lex(expr);
   },
 
-  val: function(expr) {
-    return new pexprs.Value(expr);
-  },
-
   arr: function(expr) {
     return new pexprs.Arr(expr);
   },

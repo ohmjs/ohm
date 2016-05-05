@@ -46,8 +46,8 @@ pexprs.Iter.prototype.substituteParams =
 pexprs.Not.prototype.substituteParams =
 pexprs.Lookahead.prototype.substituteParams =
 pexprs.Lex.prototype.substituteParams =
-pexprs.Value.prototype.substituteParams =
-pexprs.Arr.prototype.substituteParams = function(actuals) {
+pexprs.Arr.prototype.substituteParams =
+pexprs.Str.prototype.substituteParams = function(actuals) {
   return new this.constructor(this.expr.substituteParams(actuals));
 };
 

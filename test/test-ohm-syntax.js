@@ -716,7 +716,7 @@ test('obj', function(t) {
     'M {',
     '  strict  = {x: 1, y: (2)}',
     '  lenient = {x: 1, y: (2), ...}',
-    '  withStringProps = {foos: $("foo"*), bar: $"bar"}',
+    '  withStringProps = {foos: ``"foo"*\'\', bar: "bar"}',
     '}'
   ]);
 
@@ -802,25 +802,6 @@ test('obj', function(t) {
 
   obj = {hasOwnProperty: null, x: 1, y: 2};
   assertSucceeds(t, m.match(obj, 'lenient'), 'object overriding hasOwnProperty');
-
-  t.end();
-});
-
-test('val', function(t) {
-  var g = makeGrammar([
-    'G {',
-    '  start = $blah',
-    '  blah = "ab"',
-    '  blahTwice = $(blah blah)',
-    '  twoStrings = $blah $blah',
-    '  arrOfTwoStrings = [twoStrings]',
-    '}'
-  ]);
-  t.equals(g.match('ab').succeeded(), true);
-  t.equals(g.match('abab', 'twoStrings').failed(), true);
-  t.equals(g.match('abab', 'blahTwice').succeeded(), true);
-  t.equals(g.match(['ab', 'ab'], 'twoStrings').failed(), true);
-  t.equals(g.match(['ab', 'ab'], 'arrOfTwoStrings').succeeded(), true);
 
   t.end();
 });

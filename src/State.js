@@ -4,6 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
+var InputStream = require('./InputStream');
 var PosInfo = require('./PosInfo');
 var Trace = require('./Trace');
 var pexprs = require('./pexprs');
@@ -20,7 +21,8 @@ var applySpaces = new pexprs.Apply('spaces');
 function State(grammar, input, opts) {
   this.grammar = grammar;
   this.startExpr = this._getStartExpr(grammar, opts.startApplication);
-  this.origInputStream = this.startExpr.newInputStreamFor(input, this.grammar);
+  this.origInputStream = InputStream.newFor(
+      input.length === 1 && typeof input[0] === 'string' ? input[0] : input);
   this.tracingEnabled = opts.trace || false;
   this.matchNodes = opts.matchNodes || false;
   this.init(RM_RIGHTMOST_FAILURE_POSITION);
