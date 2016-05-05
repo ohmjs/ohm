@@ -45,20 +45,8 @@ pexprs.Seq.prototype.substituteParams = function(actuals) {
 pexprs.Iter.prototype.substituteParams =
 pexprs.Not.prototype.substituteParams =
 pexprs.Lookahead.prototype.substituteParams =
-pexprs.Lex.prototype.substituteParams =
-pexprs.Arr.prototype.substituteParams =
-pexprs.Str.prototype.substituteParams = function(actuals) {
+pexprs.Lex.prototype.substituteParams = function(actuals) {
   return new this.constructor(this.expr.substituteParams(actuals));
-};
-
-pexprs.Obj.prototype.substituteParams = function(actuals) {
-  var properties = this.properties.map(function(property) {
-    return {
-      name: property.name,
-      pattern: property.pattern.substituteParams(actuals)
-    };
-  });
-  return new pexprs.Obj(properties, this.isLenient);
 };
 
 pexprs.Apply.prototype.substituteParams = function(actuals) {

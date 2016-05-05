@@ -84,9 +84,9 @@ test('toDisplayString', function(t) {
 
 test('toString', function(t) {
   var g = makeGrammar(
-      'G { start = &"a" ~(2 | 3?) ``b a\'\' [c {e: b, ...} {g: "a".."z"}]  a = 1  b = 2  c = 3 }');
+      'G { start = &"a" ~(2 | 3?) "a".."z"  a = 1  b = 2  c = 3 }');
   var e = g.ruleBodies.start;
-  t.equal(e.toString(), '(&"a" ~(2 | 3?) ``(b a)\'\' [(c {"e": b, ...} {"g": "a".."z"})])');
+  t.equal(e.toString(), '(&"a" ~(2 | 3?) "a".."z")');
   t.end();
 });
 

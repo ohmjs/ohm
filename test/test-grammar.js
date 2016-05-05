@@ -5,7 +5,6 @@ var test = require('tape');
 
 var Grammar = require('../src/Grammar');
 var ohm = require('..');
-var nodes = require('../src/nodes');
 var testUtil = require('./testUtil');
 
 var arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();

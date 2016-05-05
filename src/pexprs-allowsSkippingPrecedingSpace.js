@@ -34,14 +34,11 @@ pexprs.UnicodeChar.prototype.allowsSkippingPrecedingSpace = function() {
   don't operate on string input streams (e.g. Obj and Arr).
 */
 pexprs.Alt.prototype.allowsSkippingPrecedingSpace =
-pexprs.Arr.prototype.allowsSkippingPrecedingSpace =
 pexprs.Iter.prototype.allowsSkippingPrecedingSpace =
 pexprs.Lex.prototype.allowsSkippingPrecedingSpace =
 pexprs.Lookahead.prototype.allowsSkippingPrecedingSpace =
 pexprs.Not.prototype.allowsSkippingPrecedingSpace =
-pexprs.Obj.prototype.allowsSkippingPrecedingSpace =
 pexprs.Param.prototype.allowsSkippingPrecedingSpace =
-pexprs.Seq.prototype.allowsSkippingPrecedingSpace =
-pexprs.Str.prototype.allowsSkippingPrecedingSpace = function() {
+pexprs.Seq.prototype.allowsSkippingPrecedingSpace = function() {
   return false;
 };

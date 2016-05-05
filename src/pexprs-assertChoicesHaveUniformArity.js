@@ -63,16 +63,8 @@ pexprs.Not.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   // no-op (not required b/c the nested expr doesn't show up in the CST)
 };
 
-pexprs.Lookahead.prototype.assertChoicesHaveUniformArity =
-pexprs.Arr.prototype.assertChoicesHaveUniformArity =
-pexprs.Str.prototype.assertChoicesHaveUniformArity = function(ruleName) {
+pexprs.Lookahead.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   this.expr.assertChoicesHaveUniformArity(ruleName);
-};
-
-pexprs.Obj.prototype.assertChoicesHaveUniformArity = function(ruleName) {
-  for (var idx = 0; idx < this.properties.length; idx++) {
-    this.properties[idx].pattern.assertChoicesHaveUniformArity(ruleName);
-  }
 };
 
 pexprs.Apply.prototype.assertChoicesHaveUniformArity = function(ruleName) {

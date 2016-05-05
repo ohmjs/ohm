@@ -4,7 +4,6 @@
 // Imports
 // --------------------------------------------------------------------
 
-var InputStream = require('./InputStream');
 var Trace = require('./Trace');
 var common = require('./common');
 var nodes = require('./nodes');
@@ -17,9 +16,6 @@ var IterationNode = nodes.IterationNode;
 // --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
-
-// A safer version of hasOwnProperty.
-var hasOwnProp = Object.prototype.hasOwnProperty;
 
 /*
   Evaluate the expression and return `true` if it succeeds, `false` otherwise. This method should
@@ -199,75 +195,6 @@ pexprs.Lookahead.prototype.eval = function(state) {
   if (state.eval(this.expr)) {
     inputStream.pos = origPos;
     return true;
-  } else {
-    return false;
-  }
-};
-
-pexprs.Arr.prototype.eval = function(state) {
-  var obj = state.inputStream.next();
-  if (Array.isArray(obj)) {
-    var objInputStream = InputStream.newFor(obj);
-    state.pushInputStream(objInputStream);
-    var ans = state.eval(this.expr) && objInputStream.atEnd();
-    state.popInputStream();
-    return ans;
-  } else {
-    return false;
-  }
-};
-
-pexprs.Str.prototype.eval = function(state) {
-  var obj = state.inputStream.next();
-  if (typeof obj === 'string') {
-    var strInputStream = InputStream.newFor(obj);
-    state.pushInputStream(strInputStream);
-    var ans = state.eval(this.expr) && state.eval(pexprs.end);
-    if (ans) {
-      // Pop the binding that was added by `end`, which we don't want.
-      state.bindings.pop();
-    }
-    state.popInputStream();
-    return ans;
-  } else {
-    return false;
-  }
-};
-
-pexprs.Obj.prototype.eval = function(state) {
-  var inputStream = state.inputStream;
-  var origPos = inputStream.pos;
-  var obj = inputStream.next();
-  if (obj !== common.fail && obj && (typeof obj === 'object' || typeof obj === 'function')) {
-    var numOwnPropertiesMatched = 0;
-    for (var idx = 0; idx < this.properties.length; idx++) {
-      var property = this.properties[idx];
-      if (!hasOwnProp.call(obj, property.name)) {
-        return false;
-      }
-      var value = obj[property.name];
-      var valueInputStream = InputStream.newFor([value]);
-      state.pushInputStream(valueInputStream);
-      var matched = state.eval(property.pattern) && valueInputStream.atEnd();
-      state.popInputStream();
-      if (!matched) {
-        return false;
-      }
-      numOwnPropertiesMatched++;
-    }
-    if (this.isLenient) {
-      var remainder = {};
-      for (var p in obj) {
-        if (hasOwnProp.call(obj, p) && this.properties.indexOf(p) < 0) {
-          remainder[p] = obj[p];
-        }
-      }
-      var interval = inputStream.interval(origPos);
-      state.bindings.push(new TerminalNode(state.grammar, remainder, interval));
-      return true;
-    } else {
-      return numOwnPropertiesMatched === Object.keys(obj).length;
-    }
   } else {
     return false;
   }

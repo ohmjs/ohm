@@ -227,25 +227,6 @@ s.addOperation('viz', {
                          x.viz();
                        leave();
                      },
-  Base_arr:          function(_l, x, _r) {
-                       enter('arr');
-                         x.viz();
-                       leave();
-                     },
-  Base_str:          function(_, x, _) {
-                       enter('str');
-                         x.viz();
-                       leave();
-                     },
-  Base_obj:          function(_l, lenient, _r) {
-                       throw 'TODO';
-                     },
-  Base_objWithProps: function(_l, ps, _c, lenient, _r) {
-                       throw 'TODO';
-                     },
-  Props:             function(p, _, ps) {
-                       throw 'TODO';
-                     },
   ident:             function(n) {
                        return n.viz();
                      },
@@ -269,8 +250,7 @@ s.addOperation('viz', {
                      },
   keyword_false:     function(_) {
                        add('prim', 'false');
-                     },
-  Prop:              function(n, _, p) {}
+                     }
 });
 
 s.addOperation('vizChoice', {

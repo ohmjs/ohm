@@ -46,16 +46,6 @@ pexprs.Not.prototype.getArity = function() {
 };
 
 pexprs.Lookahead.prototype.getArity =
-pexprs.Lex.prototype.getArity =
-pexprs.Arr.prototype.getArity =
-pexprs.Str.prototype.getArity = function() {
+pexprs.Lex.prototype.getArity = function() {
   return this.expr.getArity();
-};
-
-pexprs.Obj.prototype.getArity = function() {
-  var arity = this.isLenient ? 1 : 0;
-  for (var idx = 0; idx < this.properties.length; idx++) {
-    arity += this.properties[idx].pattern.getArity();
-  }
-  return arity;
 };

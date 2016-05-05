@@ -48,16 +48,8 @@ pexprs.Iter.prototype.assertIteratedExprsAreNotNullable = function(grammar, rule
 pexprs.Opt.prototype.assertIteratedExprsAreNotNullable =
 pexprs.Not.prototype.assertIteratedExprsAreNotNullable =
 pexprs.Lookahead.prototype.assertIteratedExprsAreNotNullable =
-pexprs.Lex.prototype.assertIteratedExprsAreNotNullable =
-pexprs.Arr.prototype.assertIteratedExprsAreNotNullable =
-pexprs.Str.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleName) {
+pexprs.Lex.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleName) {
   this.expr.assertIteratedExprsAreNotNullable(grammar, ruleName);
-};
-
-pexprs.Obj.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleName) {
-  for (var idx = 0; idx < this.properties.length; idx++) {
-    this.properties[idx].pattern.assertIteratedExprsAreNotNullable(grammar, ruleName);
-  }
 };
 
 pexprs.Apply.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleName) {

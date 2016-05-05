@@ -50,21 +50,11 @@ Ohm {
     | Prim ".." Prim                                 -- range
     | Prim                                           -- prim
     | "(" Alt ")"                                    -- paren
-    | "[" Alt "]"                                    -- arr
-    | "``" Alt "''"                                  -- str
-    | "{" "..."? "}"                                 -- obj
-    | "{" Props ("," "...")? "}"                     -- objWithProps
 
   Prim
     = keyword
     | string
     | number
-
-  Props
-    = Prop ("," Prop)*
-
-  Prop
-    = (name | string) ":" Alt
 
   ruleDescr  (a rule description)
     = "(" ruleDescrText ")"

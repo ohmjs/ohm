@@ -44,17 +44,8 @@ pexprs.Seq.prototype.introduceParams = function(formals) {
 pexprs.Iter.prototype.introduceParams =
 pexprs.Not.prototype.introduceParams =
 pexprs.Lookahead.prototype.introduceParams =
-pexprs.Lex.prototype.introduceParams =
-pexprs.Arr.prototype.introduceParams =
-pexprs.Str.prototype.introduceParams = function(formals) {
+pexprs.Lex.prototype.introduceParams = function(formals) {
   this.expr = this.expr.introduceParams(formals);
-  return this;
-};
-
-pexprs.Obj.prototype.introduceParams = function(formals) {
-  this.properties.forEach(function(property, idx) {
-    property.pattern = property.pattern.introduceParams(formals);
-  });
   return this;
 };
 

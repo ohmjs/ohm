@@ -68,38 +68,6 @@ pexprs.Lookahead.prototype.toString = function() {
   return '&' + this.expr;
 };
 
-pexprs.Arr.prototype.toString = function() {
-  return '[' + this.expr.toString() + ']';
-};
-
-pexprs.Str.prototype.toString = function() {
-  return '``' + this.expr.toString() + "''";
-};
-
-pexprs.Obj.prototype.toString = function() {
-  var parts = ['{'];
-
-  var first = true;
-  function emit(part) {
-    if (first) {
-      first = false;
-    } else {
-      parts.push(', ');
-    }
-    parts.push(part);
-  }
-
-  this.properties.forEach(function(property) {
-    emit(JSON.stringify(property.name) + ': ' + property.pattern.toString());
-  });
-  if (this.isLenient) {
-    emit('...');
-  }
-
-  parts.push('}');
-  return parts.join('');
-};
-
 pexprs.Apply.prototype.toString = function() {
   if (this.args.length > 0) {
     var ps = this.args.map(function(arg) { return arg.toString(); });

@@ -199,26 +199,6 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     Base_paren: function(open, x, close) {
       return x.visit();
     },
-    Base_arr: function(open, x, close) {
-      return builder.arr(x.visit()).withInterval(this.interval);
-    },
-    Base_str: function(open, x, close) {
-      return builder.str(x.visit());
-    },
-    Base_obj: function(open, lenient, close) {
-      return builder.obj([], lenient.visit()[0]);
-    },
-
-    Base_objWithProps: function(open, ps, _, lenient, close) {
-      return builder.obj(ps.visit(), lenient.visit()[0]).withInterval(this.interval);
-    },
-
-    Props: function(p, _, ps) {
-      return [p.visit()].concat(ps.visit());
-    },
-    Prop: function(n, _, p) {
-      return {name: n.visit(), pattern: p.visit()};
-    },
 
     ruleDescr: function(open, t, close) {
       return t.visit();
