@@ -16,7 +16,7 @@ pexprs.PExpr.prototype.assertIteratedExprsAreNotNullable = common.abstract;
 
 pexprs.any.assertIteratedExprsAreNotNullable =
 pexprs.end.assertIteratedExprsAreNotNullable =
-pexprs.Prim.prototype.assertIteratedExprsAreNotNullable =
+pexprs.Terminal.prototype.assertIteratedExprsAreNotNullable =
 pexprs.Range.prototype.assertIteratedExprsAreNotNullable =
 pexprs.Param.prototype.assertIteratedExprsAreNotNullable =
 pexprs.UnicodeChar.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleName) {
@@ -47,16 +47,8 @@ pexprs.Iter.prototype.assertIteratedExprsAreNotNullable = function(grammar, rule
 pexprs.Opt.prototype.assertIteratedExprsAreNotNullable =
 pexprs.Not.prototype.assertIteratedExprsAreNotNullable =
 pexprs.Lookahead.prototype.assertIteratedExprsAreNotNullable =
-pexprs.Lex.prototype.assertIteratedExprsAreNotNullable =
-pexprs.Value.prototype.assertIteratedExprsAreNotNullable =
-pexprs.Arr.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleName) {
+pexprs.Lex.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleName) {
   this.expr.assertIteratedExprsAreNotNullable(grammar, ruleName);
-};
-
-pexprs.Obj.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleName) {
-  for (var idx = 0; idx < this.properties.length; idx++) {
-    this.properties[idx].pattern.assertIteratedExprsAreNotNullable(grammar, ruleName);
-  }
 };
 
 pexprs.Apply.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleName) {

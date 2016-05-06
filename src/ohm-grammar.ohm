@@ -37,34 +37,19 @@ Ohm {
     | Pred
 
   Pred
-    = "~" Modifier  -- not
-    | "&" Modifier  -- lookahead
-    | Modifier
+    = "~" Lex  -- not
+    | "&" Lex  -- lookahead
+    | Lex
 
-  Modifier
+  Lex
     = "#" Base  -- lex
-    | "$" Base  -- val
     | Base
 
   Base
     = ident Params? ~(ruleDescr? "=" | ":=" | "+=")  -- application
-    | Prim ".." Prim                                 -- range
-    | Prim                                           -- prim
+    | terminal ".." terminal                         -- range
+    | terminal                                       -- terminal
     | "(" Alt ")"                                    -- paren
-    | "[" Alt "]"                                    -- arr
-    | "{" "..."? "}"                                 -- obj
-    | "{" Props ("," "...")? "}"                     -- objWithProps
-
-  Prim
-    = keyword
-    | string
-    | number
-
-  Props
-    = Prop ("," Prop)*
-
-  Prop
-    = (name | string) ":" Alt
 
   ruleDescr  (a rule description)
     = "(" ruleDescrText ")"
@@ -87,17 +72,12 @@ Ohm {
     | alnum
 
   ident  (an identifier)
-    = ~keyword name
+    = name
 
-  keyword
-    = "null" ~nameRest   -- null
-    | "true" ~nameRest   -- true
-    | "false" ~nameRest  -- false
+  terminal
+    = "\"" terminalChar* "\""
 
-  string
-    = "\"" strChar* "\""
-
-  strChar
+  terminalChar
     = escapeChar
     | ~"\\" ~"\"" ~"\n" any
 
@@ -112,9 +92,6 @@ Ohm {
     | "\\u" hexDigit hexDigit hexDigit hexDigit  -- unicodeEscape
     | "\\x" hexDigit hexDigit                    -- hexEscape
 
-  number  (a number)
-    = "-"? digit+
-
   space
    += comment
 
@@ -124,7 +101,7 @@ Ohm {
 
   tokens = token*
 
-  token = caseName | comment | ident | keyword | number | operator | punctuation | string | any
+  token = caseName | comment | ident | operator | punctuation | terminal | any
 
   operator = "<:" | "=" | ":=" | "+=" | "*" | "+" | "?" | "~" | "&"
 

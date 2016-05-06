@@ -19,10 +19,7 @@ pexprs.Seq.prototype.toDisplayString =
 pexprs.Iter.prototype.toDisplayString =
 pexprs.Not.prototype.toDisplayString =
 pexprs.Lookahead.prototype.toDisplayString =
-pexprs.Lex.prototype.toDisplayString =
-pexprs.Value.prototype.toDisplayString =
-pexprs.Arr.prototype.toDisplayString =
-pexprs.Obj.prototype.toDisplayString = function() {
+pexprs.Lex.prototype.toDisplayString = function() {
   if (this.interval) {
     return this.interval.trimmed().contents;
   }
@@ -37,7 +34,7 @@ pexprs.end.toDisplayString = function() {
   return 'end';
 };
 
-pexprs.Prim.prototype.toDisplayString = function() {
+pexprs.Terminal.prototype.toDisplayString = function() {
   return JSON.stringify(this.obj);
 };
 

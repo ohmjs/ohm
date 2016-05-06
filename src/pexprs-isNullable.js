@@ -22,9 +22,6 @@ pexprs.any._isNullable =
 pexprs.Range.prototype._isNullable =
 pexprs.Param.prototype._isNullable =
 pexprs.Plus.prototype._isNullable =
-pexprs.Value.prototype._isNullable =
-pexprs.Arr.prototype._isNullable =
-pexprs.Obj.prototype._isNullable =
 pexprs.UnicodeChar.prototype._isNullable = function(grammar, memo) {
   return false;
 };
@@ -33,7 +30,7 @@ pexprs.end._isNullable = function(grammar, memo) {
   return true;
 };
 
-pexprs.Prim.prototype._isNullable = function(grammar, memo) {
+pexprs.Terminal.prototype._isNullable = function(grammar, memo) {
   if (typeof this.obj === 'string') {
     // This is an over-simplification: it's only correct if the input is a string. If it's an array
     // or an object, then the empty string parsing expression is not nullable.

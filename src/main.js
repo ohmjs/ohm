@@ -183,11 +183,8 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return builder.la(x.visit()).withInterval(this.interval);
     },
 
-    Modifier_lex: function(_, x) {
+    Lex_lex: function(_, x) {
       return builder.lex(x.visit()).withInterval(this.interval);
-    },
-    Modifier_val: function(_, x) {
-      return builder.val(x.visit()).withInterval(this.interval);
     },
 
     Base_application: function(rule, ps) {
@@ -196,28 +193,11 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     Base_range: function(from, _, to) {
       return builder.range(from.visit(), to.visit()).withInterval(this.interval);
     },
-    Base_prim: function(expr) {
-      return builder.prim(expr.visit()).withInterval(this.interval);
+    Base_terminal: function(expr) {
+      return builder.terminal(expr.visit()).withInterval(this.interval);
     },
     Base_paren: function(open, x, close) {
       return x.visit();
-    },
-    Base_arr: function(open, x, close) {
-      return builder.arr(x.visit()).withInterval(this.interval);
-    },
-    Base_obj: function(open, lenient, close) {
-      return builder.obj([], lenient.visit()[0]);
-    },
-
-    Base_objWithProps: function(open, ps, _, lenient, close) {
-      return builder.obj(ps.visit(), lenient.visit()[0]).withInterval(this.interval);
-    },
-
-    Props: function(p, _, ps) {
-      return [p.visit()].concat(ps.visit());
-    },
-    Prop: function(n, _, p) {
-      return {name: n.visit(), pattern: p.visit()};
     },
 
     ruleDescr: function(open, t, close) {
@@ -237,30 +217,16 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     nameFirst: function(expr) {},
     nameRest: function(expr) {},
 
-    keyword_null: function(_) {
-      return null;
-    },
-    keyword_true: function(_) {
-      return true;
-    },
-    keyword_false: function(_) {
-      return false;
-    },
-
-    string: function(open, cs, close) {
+    terminal: function(open, cs, close) {
       return cs.visit().map(function(c) { return common.unescapeChar(c); }).join('');
     },
 
-    strChar: function(_) {
+    terminalChar: function(_) {
       return this.interval.contents;
     },
 
     escapeChar: function(_) {
       return this.interval.contents;
-    },
-
-    number: function(_, digits) {
-      return parseInt(this.interval.contents);
     },
 
     NonemptyListOf: function(x, _, xs) {

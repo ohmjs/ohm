@@ -28,7 +28,7 @@ pexprs.end.toString = function() {
   return 'end';
 };
 
-pexprs.Prim.prototype.toString = function() {
+pexprs.Terminal.prototype.toString = function() {
   return JSON.stringify(this.obj);
 };
 
@@ -42,10 +42,6 @@ pexprs.Param.prototype.toString = function() {
 
 pexprs.Lex.prototype.toString = function() {
   return '#(' + this.expr.toString() + ')';
-};
-
-pexprs.Value.prototype.toString = function() {
-  return '$(' + this.expr.toString() + ')';
 };
 
 pexprs.Alt.prototype.toString = function() {
@@ -70,34 +66,6 @@ pexprs.Not.prototype.toString = function() {
 
 pexprs.Lookahead.prototype.toString = function() {
   return '&' + this.expr;
-};
-
-pexprs.Arr.prototype.toString = function() {
-  return '[' + this.expr.toString() + ']';
-};
-
-pexprs.Obj.prototype.toString = function() {
-  var parts = ['{'];
-
-  var first = true;
-  function emit(part) {
-    if (first) {
-      first = false;
-    } else {
-      parts.push(', ');
-    }
-    parts.push(part);
-  }
-
-  this.properties.forEach(function(property) {
-    emit(JSON.stringify(property.name) + ': ' + property.pattern.toString());
-  });
-  if (this.isLenient) {
-    emit('...');
-  }
-
-  parts.push('}');
-  return parts.join('');
 };
 
 pexprs.Apply.prototype.toString = function() {

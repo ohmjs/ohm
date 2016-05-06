@@ -5,7 +5,6 @@ var test = require('tape');
 
 var Grammar = require('../src/Grammar');
 var ohm = require('..');
-var nodes = require('../src/nodes');
 var testUtil = require('./testUtil');
 
 var arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
@@ -31,7 +30,6 @@ test('constructors dictionary', function(t) {
   t.throws(function() { m.construct('foobar', []); },
            /Rule foobar is not declared in grammar Arithmetic/,
            'exception when calling construct() with a nonexistent rule name');
-  t.ok(m.construct('addExp', [m.match('1+2', 'addExp_plus')._cst]) instanceof nodes.Node);
 
   var n = m.match('1+2*3', 'addExp')._cst;
   t.equal(n.ctorName, 'addExp', 'ctorName');
@@ -67,13 +65,13 @@ test('action dictionary templates', function(t) {
     '  foo = bar',
     '  bar = baz baz baz',
     '  baz = qux',
-    '  qux = quux 123',
-    '  quux = 42',
+    '  qux = quux "123"',
+    '  quux = "42"',
     '  aaa = "duh"',
-    '  bbb = ~null qux  -- blah',
+    '  bbb = ~aaa qux  -- blah',
     '}',
     'G2 <: G1 {',
-    '  qux := 100',
+    '  qux := "100"',
     '}'
   ]);
   t.equal(ns.G1.toOperationActionDictionaryTemplate(),

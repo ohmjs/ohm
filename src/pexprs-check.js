@@ -24,7 +24,7 @@ pexprs.end.check = function(grammar, vals) {
          vals[0].primitiveValue === undefined;
 };
 
-pexprs.Prim.prototype.check = function(grammar, vals) {
+pexprs.Terminal.prototype.check = function(grammar, vals) {
   return vals[0] instanceof nodes.Node &&
          vals[0].isTerminal() &&
          vals[0].primitiveValue === this.obj;
@@ -95,29 +95,8 @@ pexprs.Not.prototype.check = function(grammar, vals) {
 };
 
 pexprs.Lookahead.prototype.check =
-pexprs.Lex.prototype.check =
-pexprs.Value.prototype.check =
-pexprs.Arr.prototype.check = function(grammar, vals) {
+pexprs.Lex.prototype.check = function(grammar, vals) {
   return this.expr.check(grammar, vals);
-};
-
-pexprs.Obj.prototype.check = function(grammar, vals) {
-  var fixedArity = this.getArity();
-  if (this.isLenient) {
-    fixedArity--;
-  }
-
-  var pos = 0;
-  for (var i = 0; i < fixedArity; i++) {
-    var pattern = this.properties[i].pattern;
-    if (pattern.check(grammar, vals.slice(pos))) {
-      pos += pattern.getArity();
-    } else {
-      return false;
-    }
-  }
-
-  return this.isLenient ? typeof vals[pos] === 'object' && vals[pos] : true;
 };
 
 pexprs.Apply.prototype.check = function(grammar, vals) {

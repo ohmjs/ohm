@@ -25,23 +25,6 @@ assert(!g.match('lmao').failed());
 assert(g.match('loooooool').succeeded());
 ```
 
-### Matching Objects
-
-You can match against arbitrary objects (not just strings):
-
-```js
-var g = ohm.grammar('Named { Named = { name: "Manuel", ... } }');
-assert(g.match({name: 'Manuel', age: 29}).succeeded());
-assert(g.match({}).failed());
-```
-
-Arrays, numbers, and `null` are all valid patterns:
-
-```js
-var g = ohm.grammar('G { start = [13 null] }');
-assert(g.match([13, null]).succeeded());
-```
-
 ### Implementing Semantics
 
 You can use _operations_ and _attributes_ to analyze and extract values from parsed data. For example, take the following grammar in `arithmetic.ohm`:

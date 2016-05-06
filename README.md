@@ -13,14 +13,14 @@ grammars. The _Ohm library_ provides a JavaScript interface (known as Ohm/JS) fo
 interpreters, and more from the grammars you write.
 
 Like its older sibling [OMeta](http://tinlizzie.org/ometa/), Ohm supports object-oriented grammar
-extension and allows pattern matching on structured data as well as strings. One thing that
-distinguishes Ohm from other parsing tools is that it completely separates grammars from semantic
-actions. In Ohm, a grammar defines a language, and semantic actions specify what to do with valid
-inputs in that language. Semantic actions are written in the _host language_ -- e.g., for Ohm/JS,
-the host language is JavaScript. Ohm grammars, on the other hand, work without modification in any
-host language. This separation improves modularity, and makes both grammars and semantic actions
-easier to read and understand. Currently, JavaScript is the only host language, but as the API
-stabilizes, we hope to have implementations for other languages.
+extension. One thing that distinguishes Ohm from other parsing tools is that it completely
+separates grammars from semantic actions. In Ohm, a grammar defines a language, and semantic
+actions specify what to do with valid inputs in that language. Semantic actions are written in the
+_host language_ -- e.g., for Ohm/JS, the host language is JavaScript. Ohm grammars, on the other
+hand, work without modification in any host language. This separation improves modularity, and
+makes both grammars and semantic actions easier to read and understand. Currently, JavaScript is
+the only host language, but as the API stabilizes, we hope to have implementations for other
+languages.
 
 Learn more about the Ohm philosophy [here](doc/philosophy.md).
 
