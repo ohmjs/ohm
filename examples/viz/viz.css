@@ -211,50 +211,22 @@ paren::after {
   content: ')';
 }
 
-arr::before,
-arr::after {
+terminal {
   font-family: Monaco;
 }
 
-arr::before {
-  content: '[';
-}
-
-arr::after {
-  content: ']';
-}
-
-str::before {
-  content: '``';
-}
-
-str::after {
-  content: "''";
-}
-
-prim {
-  font-family: Monaco;
-  _font-size: 85%;
-}
-
-string::before,
-string::after,
-str::before,
-str::after {
+terminal::before,
+terminal::after {
   font-family: "PT Sans", Arial, Helvetica, sans-serif;
   opacity: .30;
 }
 
-string::before {
+terminal::before {
   content: '"';
 }
 
-string::after {
+terminal::after {
   content: '"';
-}
-
-string {
-  font-family: Monaco;
 }
 
 specialChar {
@@ -263,7 +235,6 @@ specialChar {
 
 charClass {
   font-family: Monaco;
-  _font-size: 85%;
 }
 
 charClass::after {
