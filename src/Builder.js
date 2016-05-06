@@ -80,18 +80,6 @@ Builder.prototype = {
     return new pexprs.Lex(expr);
   },
 
-  arr: function(expr) {
-    return new pexprs.Arr(expr);
-  },
-
-  str: function(expr) {
-    return new pexprs.Str(expr);
-  },
-
-  obj: function(properties, isLenient) {
-    return new pexprs.Obj(properties, !!isLenient);
-  },
-
   app: function(ruleName, optParams) {
     return new pexprs.Apply(ruleName, optParams);
   }
