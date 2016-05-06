@@ -1,63 +1,17 @@
 'use strict';
 
-var fs = require('fs');
 var test = require('tape');
 
 var Grammar = require('../src/Grammar');
 var ohm = require('..');
 var testUtil = require('./testUtil');
 
-var arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
 var makeGrammar = testUtil.makeGrammar;
 var makeGrammars = testUtil.makeGrammars;
 
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
-
-test('constructors dictionary', function(t) {
-  var m = makeGrammar(arithmeticGrammarSource);
-
-  t.ok(m.constructors, 'constructor dict exists');
-
-  t.ok(m.constructors.addExp);
-  t.ok(m.constructors.addExp_minus);
-  t.ok(m.constructors.priExp);
-  t.ok(m.constructors.digit);
-  t.ok(m.constructors.any);
-
-  t.equal(m.constructors.foobar, undefined, 'no entries for nonexistent rules');
-  t.throws(function() { m.construct('foobar', []); },
-           /Rule foobar is not declared in grammar Arithmetic/,
-           'exception when calling construct() with a nonexistent rule name');
-
-  var n = m.match('1+2*3', 'addExp')._cst;
-  t.equal(n.ctorName, 'addExp', 'ctorName');
-
-  var p = n.children[0];
-  t.equal(p.ctorName, 'addExp_plus', 'ctorName of child');
-  t.equal(p.numChildren(), 3);
-
-  t.end();
-});
-
-test('constructing nodes by matching', function(t) {
-  var unexpectedArgs = /invalid or unexpected arguments/;
-  var m = makeGrammar(arithmeticGrammarSource);
-
-  var addExp = m.ctors.addExp;
-  var n = addExp('10+2');
-  t.equal(n.ctorName, 'addExp', 'constructing a node from a string');
-  t.equal(n.children[0].ctorName, 'addExp_plus');
-
-  t.throws(function() { addExp('10+'); }, unexpectedArgs);
-
-  t.equal(addExp('123', '+', '2').ctorName, 'addExp', 'passing a string for each child');
-  t.throws(function() { addExp('1', '+', '+'); }, unexpectedArgs);
-  t.throws(function() { addExp('1', '+', '2', '+'); }, unexpectedArgs);
-
-  t.end();
-});
 
 test('action dictionary templates', function(t) {
   var ns = makeGrammars([

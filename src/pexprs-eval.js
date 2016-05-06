@@ -303,19 +303,6 @@ pexprs.Apply.prototype.evalOnce = function(expr, state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
 
-  // If `matchNodes` is true and the next thing in the input stream is a Node whose type matches
-  // this rule, then accept that as a valid match -- but not for the top-level application.
-  if (state.matchNodes && state.applicationStack.length > 1) {
-    var node = inputStream.next();
-    if (node instanceof nodes.Node &&
-        node.grammar === state.grammar &&
-        node.ctorName === this.ruleName) {
-      return node;
-    } else {
-      inputStream.pos = origPos;
-    }
-  }
-
   if (state.eval(expr)) {
     var arity = expr.getArity();
     var bindings = state.bindings.splice(state.bindings.length - arity, arity);

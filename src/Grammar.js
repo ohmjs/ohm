@@ -34,7 +34,6 @@ function Grammar(
     }
     this.defaultStartRule = optDefaultStartRule;
   }
-  this.constructors = this.ctors = this.createConstructors();
 }
 
 var ohmGrammar;
@@ -47,66 +46,25 @@ Grammar.initApplicationParser = function(grammar, builderFn) {
 };
 
 Grammar.prototype = {
-  construct: function(ruleName, children) {
-    var body = this.ruleBodies[ruleName];
-    if (!body) {
-      throw errors.undeclaredRule(ruleName, this.name);
-    }
-
-    var ans = this._constructByMatching(ruleName, children);
-    if (!ans) {
-      throw errors.invalidConstructorCall(this, ruleName, children);
-    }
-    return ans;
-  },
-
-  // Try to match `ctorArgs` with the body of the rule given by `ruleName`.
-  // Return the resulting CST node if it succeeds, otherwise return null.
-  _constructByMatching: function(ruleName, ctorArgs) {
-    var state = this._match(ctorArgs, {startApplication: ruleName, matchNodes: true});
-    if (state.bindings.length > 0) {
-      return state.bindings[0];
-    }
-    return null;
-  },
-
-  createConstructors: function() {
-    var self = this;
-    var constructors = {};
-
-    function makeConstructor(ruleName) {
-      return function(/* val1, val2, ... */) {
-        return self.construct(ruleName, Array.prototype.slice.call(arguments));
-      };
-    }
-
-    for (var ruleName in this.ruleBodies) {
-      // We want *all* properties, not just own properties, because of
-      // supergrammars.
-      constructors[ruleName] = makeConstructor(ruleName);
-    }
-    return constructors;
-  },
-
   // Return true if the grammar is a built-in grammar, otherwise false.
   // NOTE: This might give an unexpected result if called before BuiltInRules is defined!
   isBuiltIn: function() {
     return this === Grammar.ProtoBuiltInRules || this === Grammar.BuiltInRules;
   },
 
-  _match: function(values, opts) {
-    var state = new State(this, values, opts);
+  _match: function(input, opts) {
+    var state = new State(this, input, opts);
     state.evalFromStart();
     return state;
   },
 
-  match: function(obj, optStartApplication) {
-    var state = this._match([obj], {startApplication: optStartApplication});
+  match: function(input, optStartApplication) {
+    var state = this._match(input, {startApplication: optStartApplication});
     return MatchResult.newFor(state);
   },
 
-  trace: function(obj, optStartApplication) {
-    var state = this._match([obj], {startApplication: optStartApplication, trace: true});
+  trace: function(input, optStartApplication) {
+    var state = this._match(input, {startApplication: optStartApplication, trace: true});
 
     // The trace node for the start rule is always the last entry. If it is a syntactic rule,
     // the first entry is for an application of 'spaces'.

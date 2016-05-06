@@ -83,34 +83,13 @@ test('char', function(t) {
     }
   });
 
-  test('direct match, no stream', function(t) {
-    it('recognition', function() {
-      assertSucceeds(t, m.match('!'));
-      assertFails(t, m.match('!a'));
-      assertFails(t, m.match(5));
-      assertFails(t, m.match(''));
-    });
+  assertSucceeds(t, m.match('!'));
+  assertFails(t, m.match('!a'));
+  assertFails(t, m.match(''));
 
-    it('semantic actions', function() {
-      var cst = m.match('!');
-      t.equal(s(cst).v, '!');
-    });
-    t.end();
-  });
+  var cst = m.match('!');
+  t.equal(s(cst).v, '!');
 
-  test('match in string stream', function(t) {
-    it('recognition', function() {
-      assertSucceeds(t, m.match('!'));
-      assertFails(t, m.match('a'));
-      assertFails(t, m.match(''));
-    });
-
-    it('semantic actions', function() {
-      var cst = m.match('!');
-      t.equal(s(cst).v, '!');
-    });
-    t.end();
-  });
   t.end();
 });
 
@@ -122,41 +101,17 @@ test('string', function(t) {
     }
   });
 
-  test('direct match, no stream', function(t) {
-    it('recognition', function() {
-      assertSucceeds(t, m.match('foo\b\n\r\t\\"\u01bcff\x8f'));
-      assertFails(t, m.match('foo1'));
-      assertFails(t, m.match('bar'));
-      assertFails(t, m.match(null));
-    });
+  assertSucceeds(t, m.match('foo\b\n\r\t\\"\u01bcff\x8f'));
+  assertFails(t, m.match('foo1'));
+  assertFails(t, m.match('bar'));
 
-    it('semantic actions', function() {
-      var cst = m.match('foo\b\n\r\t\\"\u01bcff\x8f');
-      t.equal(s(cst).v, 'foo\b\n\r\t\\"\u01bcff\x8f');
-    });
+  var cst = m.match('foo\b\n\r\t\\"\u01bcff\x8f');
+  t.equal(s(cst).v, 'foo\b\n\r\t\\"\u01bcff\x8f');
 
-    it('unrecognized escape characters are parse errors', function() {
-      t.throws(
-          function() { ohm.grammar('G { r = "\\w" }'); },
-          'Expected \"\\\"\"');
-    });
+  t.throws(function() { ohm.grammar('G { r = "\\w" }'); },
+           /Expected \"\\\"\"/,
+           'unrecognized escape characters are parse errors');
 
-    t.end();
-  });
-
-  test('match in string stream', function(t) {
-    it('recognition', function() {
-      assertSucceeds(t, m.match('foo\b\n\r\t\\"\u01bcff\x8f'));
-      assertFails(t, m.match('foo1'));
-      assertFails(t, m.match('bar'));
-    });
-
-    it('semantic actions', function() {
-      var cst = m.match('foo\b\n\r\t\\"\u01bcff\x8f');
-      t.equal(s(cst).v, 'foo\b\n\r\t\\"\u01bcff\x8f');
-    });
-    t.end();
-  });
   t.end();
 });
 
@@ -203,17 +158,9 @@ test('ranges', function(t) {
     }
   });
 
-  test('recognition', function(t) {
-    assertSucceeds(t, m.match('6', 'charRange'));
-    assertFails(t, m.match('x', 'charRange'));
-    assertFails(t, m.match(6, 'charRange'));
-    t.end();
-  });
-
-  test('semantic actions', function(t) {
-    t.equal(s(m.match('4', 'charRange')).v, '4');
-    t.end();
-  });
+  assertSucceeds(t, m.match('6', 'charRange'));
+  assertFails(t, m.match('x', 'charRange'));
+  t.equal(s(m.match('4', 'charRange')).v, '4');
 
   t.end();
 });
