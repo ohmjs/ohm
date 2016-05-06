@@ -41,8 +41,7 @@ test('constructors dictionary', function(t) {
   t.end();
 });
 
-// TODO: Remove this test when the feature is removed.
-test.skip('constructing nodes by matching', function(t) {
+test('constructing nodes by matching', function(t) {
   var unexpectedArgs = /invalid or unexpected arguments/;
   var m = makeGrammar(arithmeticGrammarSource);
 
