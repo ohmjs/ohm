@@ -219,7 +219,7 @@ s.addOperation('viz', {
   Base_application:  function(rule, ps) {
                        add('app', rule.viz());
                      },
-  Base_string:       function(expr) {
+  Base_terminal:     function(expr) {
                        expr.viz();
                      },
   Base_paren:        function(_l, x, _r) {
@@ -233,8 +233,8 @@ s.addOperation('viz', {
   name:              function(_first, _rest) {
                        return this.interval.contents;
                      },
-  string:            function(_lq, cs, _rq) {
-                       add('string', escape(eval(this.interval.contents)));
+  terminal:          function(_lq, cs, _rq) {
+                       add('terminal', escape(eval(this.interval.contents)));
                      }
 });
 

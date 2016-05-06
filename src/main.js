@@ -193,7 +193,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     Base_range: function(from, _, to) {
       return builder.range(from.visit(), to.visit()).withInterval(this.interval);
     },
-    Base_string: function(expr) {
+    Base_terminal: function(expr) {
       return builder.prim(expr.visit()).withInterval(this.interval);
     },
     Base_paren: function(open, x, close) {
@@ -217,11 +217,11 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     nameFirst: function(expr) {},
     nameRest: function(expr) {},
 
-    string: function(open, cs, close) {
+    terminal: function(open, cs, close) {
       return cs.visit().map(function(c) { return common.unescapeChar(c); }).join('');
     },
 
-    strChar: function(_) {
+    terminalChar: function(_) {
       return this.interval.contents;
     },
 

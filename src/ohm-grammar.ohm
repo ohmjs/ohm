@@ -47,8 +47,8 @@ Ohm {
 
   Base
     = ident Params? ~(ruleDescr? "=" | ":=" | "+=")  -- application
-    | string ".." string                             -- range
-    | string                                         -- string
+    | terminal ".." terminal                         -- range
+    | terminal                                       -- terminal
     | "(" Alt ")"                                    -- paren
 
   ruleDescr  (a rule description)
@@ -74,10 +74,10 @@ Ohm {
   ident  (an identifier)
     = name
 
-  string
-    = "\"" strChar* "\""
+  terminal
+    = "\"" terminalChar* "\""
 
-  strChar
+  terminalChar
     = escapeChar
     | ~"\\" ~"\"" ~"\n" any
 
@@ -101,7 +101,7 @@ Ohm {
 
   tokens = token*
 
-  token = caseName | comment | ident | operator | punctuation | string | any
+  token = caseName | comment | ident | operator | punctuation | terminal | any
 
   operator = "<:" | "=" | ":=" | "+=" | "*" | "+" | "?" | "~" | "&"
 
