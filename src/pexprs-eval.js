@@ -65,7 +65,7 @@ pexprs.end.eval = function(state) {
 pexprs.Terminal.prototype.eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  if (!this.match(inputStream)) {
+  if (!inputStream.matchString(this.obj)) {
     state.processFailure(origPos, this);
     return false;
   } else {
@@ -74,10 +74,6 @@ pexprs.Terminal.prototype.eval = function(state) {
     state.bindings.push(new TerminalNode(state.grammar, primitiveValue, interval));
     return true;
   }
-};
-
-pexprs.Terminal.prototype.match = function(inputStream) {
-  return inputStream.matchString(this.obj);
 };
 
 pexprs.Range.prototype.eval = function(state) {

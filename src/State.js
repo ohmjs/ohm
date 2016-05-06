@@ -21,7 +21,7 @@ var applySpaces = new pexprs.Apply('spaces');
 function State(grammar, input, opts) {
   this.grammar = grammar;
   this.startExpr = this._getStartExpr(grammar, opts.startApplication);
-  this.origInputStream = new InputStream(input);
+  this.inputStream = new InputStream(input);
   this.tracingEnabled = opts.trace || false;
   this.matchNodes = opts.matchNodes || false;
   this.init(RM_RIGHTMOST_FAILURE_POSITION);
@@ -29,12 +29,8 @@ function State(grammar, input, opts) {
 
 State.prototype = {
   init: function(recordingMode) {
+    this.posInfos = [];
     this.bindings = [];
-
-    this.inputStreamStack = [];
-    this.posInfosStack = [];
-    this.pushInputStream(this.origInputStream);
-
     this.applicationStack = [];
     this.inLexifiedContextStack = [false];
 
@@ -124,18 +120,6 @@ State.prototype = {
     while (this.bindings.length > newLength) {
       this.bindings.pop();
     }
-  },
-
-  pushInputStream: function(inputStream) {
-    this.inputStreamStack.push(this.inputStream);
-    this.posInfosStack.push(this.posInfos);
-    this.inputStream = inputStream;
-    this.posInfos = [];
-  },
-
-  popInputStream: function() {
-    this.inputStream = this.inputStreamStack.pop();
-    this.posInfos = this.posInfosStack.pop();
   },
 
   getCurrentPosInfo: function() {
