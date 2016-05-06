@@ -4,7 +4,6 @@
 // Imports
 // --------------------------------------------------------------------
 
-var InputStream = require('./InputStream');
 var UnicodeCategories = require('../third_party/UnicodeCategories');
 var common = require('./common');
 var errors = require('./errors');
@@ -15,12 +14,6 @@ var inherits = require('inherits');
 // --------------------------------------------------------------------
 
 // General stuff
-
-// Constants representing the type of a PExpr. See pexprs-getExprType.js for
-// more information.
-var TYPE_ANY = 0;
-var TYPE_STRING = 1;
-var TYPE_VALUE = 2;
 
 function PExpr() {
   throw new Error("PExpr cannot be instantiated -- it's abstract");
@@ -34,16 +27,6 @@ PExpr.prototype.withInterval = function(interval) {
   return this;
 };
 
-// Allocate the appropriate input stream for this expression and the given values.
-PExpr.prototype.newInputStreamFor = function(values, grammar) {
-  var exprType = this.getExprType(grammar);
-  if (values.length === 1 && typeof values[0] === 'string' && exprType !== TYPE_VALUE) {
-    return InputStream.newFor(values[0]);
-  } else {
-    return InputStream.newFor(values);
-  }
-};
-
 // Any
 
 var any = Object.create(PExpr.prototype);
@@ -52,12 +35,12 @@ var any = Object.create(PExpr.prototype);
 
 var end = Object.create(PExpr.prototype);
 
-// Primitives
+// Terminals
 
-function Prim(obj) {
+function Terminal(obj) {
   this.obj = obj;
 }
-inherits(Prim, PExpr);
+inherits(Terminal, PExpr);
 
 // Ranges
 
@@ -152,13 +135,6 @@ function Lex(expr) {
 }
 inherits(Lex, PExpr);
 
-// "Value-ification"
-
-function Value(expr) {
-  this.expr = expr;
-}
-inherits(Value, PExpr);
-
 // Array decomposition
 
 function Arr(expr) {
@@ -208,31 +184,21 @@ Apply.prototype.toMemoKey = function() {
 };
 
 // Unicode character
+
 function UnicodeChar(category) {
   this.category = category;
   this.pattern = UnicodeCategories[category];
 }
 inherits(UnicodeChar, PExpr);
 
-// Matches a value of a particular type (using `typeof`).
-function TypeCheck(t) {
-  this.type = t;
-}
-inherits(TypeCheck, PExpr);
-
 // --------------------------------------------------------------------
 // Exports
 // --------------------------------------------------------------------
 
-exports.TYPE_ANY = TYPE_ANY;
-exports.TYPE_STRING = TYPE_STRING;
-exports.TYPE_VALUE = TYPE_VALUE;
-exports.TYPE_INCONSISTENT = TYPE_STRING | TYPE_VALUE;
-
 exports.PExpr = PExpr;
 exports.any = any;
 exports.end = end;
-exports.Prim = Prim;
+exports.Terminal = Terminal;
 exports.Range = Range;
 exports.Param = Param;
 exports.Alt = Alt;
@@ -245,13 +211,11 @@ exports.Opt = Opt;
 exports.Not = Not;
 exports.Lookahead = Lookahead;
 exports.Lex = Lex;
-exports.Value = Value;
 exports.Arr = Arr;
 exports.Str = Str;
 exports.Obj = Obj;
 exports.Apply = Apply;
 exports.UnicodeChar = UnicodeChar;
-exports.TypeCheck = TypeCheck;
 
 // --------------------------------------------------------------------
 // Extensions
@@ -261,11 +225,9 @@ require('./pexprs-allowsSkippingPrecedingSpace');
 require('./pexprs-assertAllApplicationsAreValid');
 require('./pexprs-assertChoicesHaveUniformArity');
 require('./pexprs-assertIteratedExprsAreNotNullable');
-require('./pexprs-assertValuesAndStringsAreNotMixed');
 require('./pexprs-check');
 require('./pexprs-eval');
 require('./pexprs-getArity');
-require('./pexprs-getExprType');
 require('./pexprs-outputRecipe');
 require('./pexprs-introduceParams');
 require('./pexprs-isNullable');

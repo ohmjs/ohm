@@ -358,7 +358,7 @@
   }
 
   function isPrimitive(expr) {
-    return expr instanceof ohm.pexprs.Prim ||
+    return expr instanceof ohm.pexprs.Terminal ||
            expr instanceof ohm.pexprs.Range ||
            expr instanceof ohm.pexprs.UnicodeChar;
   }
@@ -1304,7 +1304,7 @@
     expandedInputDiv.innerHTML = '';
     parseResultsDiv.innerHTML = '';
 
-    if (clearZoomTrace) {
+    if (clearZoomState) {
       zoomState = {};
     }
     initializeZoomOutButton(semantics, optActionName, optActionArguments);
@@ -1365,6 +1365,7 @@
         var container = containerStack[containerStack.length - 1];
         var el = createTraceElement(
             semantics, rootTrace, node, container, childInput, optActionName, optActionArguments);
+
         toggleClasses(el, {
           failed: !node.succeeded,
           hidden: !shouldNodeBeLabeled(node, parent),

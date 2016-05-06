@@ -23,7 +23,7 @@ pexprs.PExpr.prototype.allowsSkippingPrecedingSpace = common.abstract;
 pexprs.any.allowsSkippingPrecedingSpace =
 pexprs.end.allowsSkippingPrecedingSpace =
 pexprs.Apply.prototype.allowsSkippingPrecedingSpace =
-pexprs.Prim.prototype.allowsSkippingPrecedingSpace =
+pexprs.Terminal.prototype.allowsSkippingPrecedingSpace =
 pexprs.Range.prototype.allowsSkippingPrecedingSpace =
 pexprs.UnicodeChar.prototype.allowsSkippingPrecedingSpace = function() {
   return true;
@@ -34,15 +34,11 @@ pexprs.UnicodeChar.prototype.allowsSkippingPrecedingSpace = function() {
   don't operate on string input streams (e.g. Obj and Arr).
 */
 pexprs.Alt.prototype.allowsSkippingPrecedingSpace =
-pexprs.Arr.prototype.allowsSkippingPrecedingSpace =
 pexprs.Iter.prototype.allowsSkippingPrecedingSpace =
 pexprs.Lex.prototype.allowsSkippingPrecedingSpace =
 pexprs.Lookahead.prototype.allowsSkippingPrecedingSpace =
 pexprs.Not.prototype.allowsSkippingPrecedingSpace =
-pexprs.Obj.prototype.allowsSkippingPrecedingSpace =
 pexprs.Param.prototype.allowsSkippingPrecedingSpace =
-pexprs.Seq.prototype.allowsSkippingPrecedingSpace =
-pexprs.TypeCheck.prototype.allowsSkippingPrecedingSpace =
-pexprs.Value.prototype.allowsSkippingPrecedingSpace = function() {
+pexprs.Seq.prototype.allowsSkippingPrecedingSpace = function() {
   return false;
 };

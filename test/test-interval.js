@@ -9,9 +9,8 @@ var Interval = require('../src/Interval');
 // Helpers
 // --------------------------------------------------------------------
 
-function makeInterval(strOrInputStream, startIdx, endIdx) {
-  var inputStream = strOrInputStream instanceof InputStream ?
-      strOrInputStream : InputStream.newFor(strOrInputStream);
+function makeInterval(thing, startIdx, endIdx) {
+  var inputStream = thing instanceof InputStream ? thing : new InputStream(thing);
   return new Interval(inputStream, startIdx, endIdx);
 }
 

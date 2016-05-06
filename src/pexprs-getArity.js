@@ -15,11 +15,10 @@ pexprs.PExpr.prototype.getArity = common.abstract;
 
 pexprs.any.getArity =
 pexprs.end.getArity =
-pexprs.Prim.prototype.getArity =
+pexprs.Terminal.prototype.getArity =
 pexprs.Range.prototype.getArity =
 pexprs.Param.prototype.getArity =
 pexprs.Apply.prototype.getArity =
-pexprs.TypeCheck.prototype.getArity =
 pexprs.UnicodeChar.prototype.getArity = function() {
   return 1;
 };
@@ -47,16 +46,6 @@ pexprs.Not.prototype.getArity = function() {
 };
 
 pexprs.Lookahead.prototype.getArity =
-pexprs.Lex.prototype.getArity =
-pexprs.Value.prototype.getArity =
-pexprs.Arr.prototype.getArity = function() {
+pexprs.Lex.prototype.getArity = function() {
   return this.expr.getArity();
-};
-
-pexprs.Obj.prototype.getArity = function() {
-  var arity = this.isLenient ? 1 : 0;
-  for (var idx = 0; idx < this.properties.length; idx++) {
-    arity += this.properties[idx].pattern.getArity();
-  }
-  return arity;
 };

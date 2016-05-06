@@ -22,7 +22,7 @@ pexprs.end.toFailure = function(grammar) {
   return new Failure('end of input', 'description');
 };
 
-pexprs.Prim.prototype.toFailure = function(grammar) {
+pexprs.Terminal.prototype.toFailure = function(grammar) {
   return typeof this.obj === 'string' ?
     new Failure(this.obj, 'string') :
     new Failure(JSON.stringify(this.obj), 'code');
@@ -53,8 +53,4 @@ pexprs.Apply.prototype.toFailure = function(grammar) {
 
 pexprs.UnicodeChar.prototype.toFailure = function(grammar) {
   return new Failure(this.toDisplayString(), 'description');
-};
-
-pexprs.TypeCheck.prototype.toFailure = function(grammar) {
-  return new Failure('a value of type ' + JSON.stringify(this.type), 'description');
 };

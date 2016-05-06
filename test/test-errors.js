@@ -21,16 +21,6 @@ function makeRuleWithBody(expr) {
 // Tests
 // --------------------------------------------------------------------
 
-test('non-string input', function(t) {
-  var g = ohm.grammar('G { start = 5 }');
-
-  var e = g.match(42);
-  t.equal(e.failed(), true);
-  t.equal(e.message, 'match failed at position 0');
-  t.equal(e.getRightmostFailurePosition(), 0);
-  t.end();
-});
-
 test('match failure', function(t) {
   var g = ohm.grammar('G { start = "a" "b" "c" "d" }');
 

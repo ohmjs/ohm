@@ -75,147 +75,6 @@ function assertFails(t, matchResult, optMessage) {
 // Tests
 // --------------------------------------------------------------------
 
-test('primitive patterns', function(t) {
-  test('any', function(t) {
-    var m = ohm.grammar('M { }');
-    var s = m.semantics().addAttribute('v', {
-      _terminal: function() {
-        return this.primitiveValue;
-      }
-    });
-
-    test('direct match, no stream', function(t) {
-      it('recognition', function() {
-        assertSucceeds(t, m.match(5, 'any'), 'any matches 5');
-        assertSucceeds(t, m.match(null, 'any'), 'any matches null');
-      });
-
-      it('semantic actions', function() {
-        t.equal(s(m.match(5, 'any')).v, 5, 'SA on 5');
-        t.equal(s(m.match(null, 'any')).v, null, 'SA on null');
-      });
-      t.end();
-    });
-
-    test('match in string stream', function(t) {
-      it('recognition', function() {
-        assertSucceeds(t, m.match('5', 'any'));
-        assertFails(t, m.match('', 'any'));
-      });
-
-      it('semantic actions', function() {
-        t.equal(s(m.match('5', 'any')).v, '5');
-      });
-      t.end();
-    });
-
-    test('match in list stream', function(t) {
-      it('recognition', function() {
-        assertSucceeds(t, m.match(['123'], 'any'));
-      });
-
-      it('semantic actions', function() {
-        t.deepEqual(s(m.match(['123'], 'any')).v, ['123']);
-      });
-      t.end();
-    });
-    t.end();
-  });
-
-  test('direct match, no stream', function(t) {
-    var m = makeGrammar([
-      'M {',
-      '  five = 5',
-      '  _true = true',
-      '  _false = false',
-      '  _null = null',
-      '}'
-    ]);
-    var s = m.semantics().addAttribute('v', {
-      _terminal: function() {
-        return this.primitiveValue;
-      }
-    });
-
-    it('recognition', function() {
-      assertSucceeds(t, m.match(5));
-      assertFails(t, m.match(2));
-      assertFails(t, m.match('a'));
-      assertFails(t, m.match('5'));
-      assertFails(t, m.match('true'));
-      assertFails(t, m.match(true));
-      assertFails(t, m.match('false'));
-      assertFails(t, m.match(false));
-      assertFails(t, m.match(null));
-      assertFails(t, m.match(undefined));
-
-      assertFails(t, m.match(5, '_true'));
-      assertFails(t, m.match(2, '_true'));
-      assertFails(t, m.match('a', '_true'));
-      assertFails(t, m.match('5', '_true'));
-      assertFails(t, m.match('true', '_true'));
-      assertSucceeds(t, m.match(true, '_true'));
-      assertFails(t, m.match('false', '_true'));
-      assertFails(t, m.match(false, '_true'));
-      assertFails(t, m.match(null, '_true'));
-      assertFails(t, m.match(undefined, '_true'));
-
-      assertFails(t, m.match(5, '_false'));
-      assertFails(t, m.match(2, '_false'));
-      assertFails(t, m.match('a', '_false'));
-      assertFails(t, m.match('5', '_false'));
-      assertFails(t, m.match('true', '_false'));
-      assertFails(t, m.match(true, '_false'));
-      assertFails(t, m.match('false', '_false'));
-      assertSucceeds(t, m.match(false, '_false'));
-      assertFails(t, m.match(null, '_false'));
-      assertFails(t, m.match(undefined, '_false'));
-
-      assertFails(t, m.match(5, '_null'));
-      assertFails(t, m.match(2, '_null'));
-      assertFails(t, m.match('a', '_null'));
-      assertFails(t, m.match('5', '_null'));
-      assertFails(t, m.match('true', '_null'));
-      assertFails(t, m.match(true, '_null'));
-      assertFails(t, m.match('false', '_null'));
-      assertFails(t, m.match(false, '_null'));
-      assertSucceeds(t, m.match(null, '_null'));
-      assertFails(t, m.match(undefined, '_null'));
-    });
-
-    it('semantic actions', function() {
-      t.equal(s(m.match(5)).v, 5);
-      t.equal(s(m.match(true, '_true')).v, true);
-      t.equal(s(m.match(false, '_false')).v, false);
-      t.equal(s(m.match(null, '_null')).v, null);
-    });
-    t.end();
-  });
-
-  test('match in string stream', function(t) {
-    var m = makeGrammar([
-      'M {',
-      '  five = 5',
-      '  _true = true',
-      '  _false = false',
-      '  _null = null',
-      '}'
-    ]);
-
-    it('recognition', function() {
-      assertFails(t, m.match('!'));
-      assertFails(t, m.match('5'));
-      assertFails(t, m.match('2'));
-      assertFails(t, m.match(''));
-      assertFails(t, m.match('true', '_true'));
-      assertFails(t, m.match('false', '_false'));
-      assertFails(t, m.match('null', '_null'));
-    });
-    t.end();
-  });
-  t.end();
-});
-
 test('char', function(t) {
   var m = ohm.grammar('M { bang = "!" }');
   var s = m.semantics().addAttribute('v', {
@@ -224,34 +83,11 @@ test('char', function(t) {
     }
   });
 
-  test('direct match, no stream', function(t) {
-    it('recognition', function() {
-      assertSucceeds(t, m.match('!'));
-      assertFails(t, m.match('!a'));
-      assertFails(t, m.match(5));
-      assertFails(t, m.match(''));
-    });
-
-    it('semantic actions', function() {
-      var cst = m.match('!');
-      t.equal(s(cst).v, '!');
-    });
-    t.end();
-  });
-
-  test('match in string stream', function(t) {
-    it('recognition', function() {
-      assertSucceeds(t, m.match('!'));
-      assertFails(t, m.match('a'));
-      assertFails(t, m.match(''));
-    });
-
-    it('semantic actions', function() {
-      var cst = m.match('!');
-      t.equal(s(cst).v, '!');
-    });
-    t.end();
-  });
+  assertSucceeds(t, m.match('!'));
+  assertFails(t, m.match('!a'));
+  assertFails(t, m.match(''));
+  var cst = m.match('!');
+  t.equal(s(cst).v, '!');
   t.end();
 });
 
@@ -263,41 +99,16 @@ test('string', function(t) {
     }
   });
 
-  test('direct match, no stream', function(t) {
-    it('recognition', function() {
-      assertSucceeds(t, m.match('foo\b\n\r\t\\"\u01bcff\x8f'));
-      assertFails(t, m.match('foo1'));
-      assertFails(t, m.match('bar'));
-      assertFails(t, m.match(null));
-    });
+  assertSucceeds(t, m.match('foo\b\n\r\t\\"\u01bcff\x8f'));
+  assertFails(t, m.match('foo1'));
+  assertFails(t, m.match('bar'));
 
-    it('semantic actions', function() {
-      var cst = m.match('foo\b\n\r\t\\"\u01bcff\x8f');
-      t.equal(s(cst).v, 'foo\b\n\r\t\\"\u01bcff\x8f');
-    });
+  var cst = m.match('foo\b\n\r\t\\"\u01bcff\x8f');
+  t.equal(s(cst).v, 'foo\b\n\r\t\\"\u01bcff\x8f');
 
-    it('unrecognized escape characters are parse errors', function() {
-      t.throws(
-          function() { ohm.grammar('G { r = "\\w" }'); },
-          'Expected \"\\\"\"');
-    });
-
-    t.end();
-  });
-
-  test('match in string stream', function(t) {
-    it('recognition', function() {
-      assertSucceeds(t, m.match('foo\b\n\r\t\\"\u01bcff\x8f'));
-      assertFails(t, m.match('foo1'));
-      assertFails(t, m.match('bar'));
-    });
-
-    it('semantic actions', function() {
-      var cst = m.match('foo\b\n\r\t\\"\u01bcff\x8f');
-      t.equal(s(cst).v, 'foo\b\n\r\t\\"\u01bcff\x8f');
-    });
-    t.end();
-  });
+  t.throws(function() { ohm.grammar('G { r = "\\w" }'); },
+           /Expected \"\\\"\"/,
+           'unrecognized escape characters are parse errors');
   t.end();
 });
 
@@ -337,49 +148,16 @@ test('unicode', function(t) {
 });
 
 test('ranges', function(t) {
-  var m = ohm.grammar('M { charRange = "0".."9"  intRange = 5..131  strRange = ["bb".."foobar"] }');
+  var m = ohm.grammar('M { charRange = "0".."9" }');
   var s = m.semantics().addAttribute('v', {
     _terminal: function() {
       return this.primitiveValue;
     }
   });
 
-  test('recognition', function(t) {
-    assertSucceeds(t, m.match('6', 'charRange'));
-    assertFails(t, m.match('x', 'charRange'));
-    assertFails(t, m.match(6, 'charRange'));
-
-    assertSucceeds(t, m.match(5, 'intRange'));
-    assertSucceeds(t, m.match(6, 'intRange'));
-    assertSucceeds(t, m.match(120, 'intRange'));
-    assertSucceeds(t, m.match(131, 'intRange'));
-    assertFails(t, m.match(132, 'intRange'));
-    assertFails(t, m.match('x', 'intRange'));
-    assertFails(t, m.match('100', 'intRange'));
-
-    assertFails(t, m.match(['aa'], 'strRange'));
-    assertSucceeds(t, m.match(['bb'], 'strRange'));
-    assertSucceeds(t, m.match(['bc'], 'strRange'));
-    assertSucceeds(t, m.match(['cc'], 'strRange'));
-    assertSucceeds(t, m.match(['ccsa'], 'strRange'));
-    assertSucceeds(t, m.match(['doo-a-dee-dee'], 'strRange'));
-    assertSucceeds(t, m.match(['foo'], 'strRange'));
-    assertSucceeds(t, m.match(['foobar'], 'strRange'));
-    assertSucceeds(t, m.match(['foobaar'], 'strRange'));
-    assertFails(t, m.match(['foobarr'], 'strRange'));
-    assertFails(t, m.match(['xxasdf'], 'strRange'));
-    assertFails(t, m.match([4]));
-    assertFails(t, m.match(['foo']));
-
-    t.end();
-  });
-
-  test('semantic actions', function(t) {
-    t.equal(s(m.match('4', 'charRange')).v, '4');
-    t.equal(s(m.match(40, 'intRange')).v, 40);
-    t.equal(s(m.match(['foo'], 'strRange')).v, 'foo');
-    t.end();
-  });
+  assertSucceeds(t, m.match('6', 'charRange'));
+  assertFails(t, m.match('x', 'charRange'));
+  t.equal(s(m.match('4', 'charRange')).v, '4');
 
   t.end();
 });
@@ -680,148 +458,6 @@ test('lookahead', function(t) {
     });
     t.equal(s(m.match('hello world')).v, 'hello');
   });
-  t.end();
-});
-
-test('arr', function(t) {
-  var m = ohm.grammar('M { start = ["abc" &any ["d" "ef"] "g"] }');
-
-  it('recognition', function() {
-    assertSucceeds(t, m.match(['abc', ['d', 'ef'], 'g']));
-    assertFails(t, m.match(['abc', ['def'], 'g']));
-    assertFails(t, m.match(['abc', 'def', 'g']));
-    assertFails(t, m.match(['abc', ['d', 'ef', 'oops'], 'g']));
-    assertFails(t, m.match(['abc', ['d', 'ef'], 'gh']));
-    assertFails(t, m.match(['abc', [5], 'g']));
-    assertFails(t, m.match(['abc', [], 'g']));
-    assertFails(t, m.match(['abc', 5, 'g']));
-  });
-
-  it('semantic actions', function() {
-    var s = m.semantics().addAttribute('v', {
-      start: function(_abc, y, x, _ef, _g) {
-        return [x.v, y.v];
-      },
-      _terminal: function() {
-        return this.primitiveValue;
-      }
-    });
-    t.deepEqual(s(m.match(['abc', ['d', 'ef'], 'g'])).v, ['d', ['d', 'ef']]);
-  });
-  t.end();
-});
-
-test('obj', function(t) {
-  var m = makeGrammar([
-    'M {',
-    '  strict  = {x: 1, y: (2)}',
-    '  lenient = {x: 1, y: (2), ...}',
-    '  withStringProps = {foos: $("foo"*), bar: $"bar"}',
-    '}'
-  ]);
-
-  test('strict', function(t) {
-    it('recognition', function() {
-      assertFails(t, m.match('foo', 'strict'));
-      assertFails(t, m.match([], 'strict'));
-      assertFails(t, m.match({y: 2}, 'strict'));
-      assertSucceeds(t, m.match({x: 1, y: 2}, 'strict'));
-      assertSucceeds(t, m.match({y: 2, x: 1}, 'strict'));
-      assertFails(t, m.match({x: 1, y: 2, z: 3}, 'strict'));
-    });
-
-    it('semantic actions', function() {
-      var s = m.semantics().addAttribute('v', {
-        strict: function(a, b) {
-          return [a.primitiveValue, b.primitiveValue];
-        }
-      });
-      t.deepEqual(s(m.match({x: 1, y: 2}, 'strict')).v, [1, 2]);
-      t.deepEqual(s(m.match({y: 2, x: 1}, 'strict')).v, [1, 2]);
-    });
-    t.end();
-  });
-
-  test('lenient', function(t) {
-    it('recognition', function() {
-      assertFails(t, m.match('foo', 'lenient'));
-      assertFails(t, m.match([], 'lenient'));
-      assertFails(t, m.match({y: 2}, 'lenient'));
-      assertSucceeds(t, m.match({x: 1, y: 2}, 'lenient'));
-      assertSucceeds(t, m.match({y: 2, x: 1}, 'lenient'));
-      assertSucceeds(t, m.match({x: 1, y: 2, z: 3}, 'lenient'));
-    });
-
-    it('semantic actions', function() {
-      var s = m.semantics().addAttribute('v', {
-        lenient: function(a, b, _) {
-          return [a.primitiveValue, b.primitiveValue];
-        }
-      });
-      t.deepEqual(s(m.match({x: 1, y: 2}, 'lenient')).v, [1, 2]);
-      t.deepEqual(s(m.match({y: 2, x: 1}, 'lenient')).v, [1, 2]);
-    });
-    t.end();
-  });
-
-  test('string props', function(t) {
-    it('recognition', function() {
-      assertFails(t, m.match({foos: 'fo', bar: 'bar'}, 'withStringProps'));
-      assertSucceeds(t, m.match({foos: 'foo', bar: 'bar'}, 'withStringProps'));
-      assertFails(t, m.match({foos: 'foofo', bar: 'bar'}, 'withStringProps'));
-      assertSucceeds(t, m.match({foos: 'foofoo', bar: 'bar'}, 'withStringProps'));
-      assertSucceeds(t, m.match({foos: 'foofoofoofoofoo', bar: 'bar'}, 'withStringProps'));
-    });
-
-    it('semantic actions', function() {
-      var s = m.semantics().addAttribute('v', {
-        withStringProps: function(foos, bar) {
-          return [foos.v, bar.v];
-        },
-        _terminal: function() {
-          return this.primitiveValue;
-        }
-      });
-      t.deepEqual(s(m.match({foos: 'foofoo', bar: 'bar'}, 'withStringProps')).v, [
-        ['foo', 'foo'], 'bar'
-      ]);
-    });
-    t.end();
-  });
-
-  it('duplicate property names are not allowed', function() {
-    t.throws(
-        function() { ohm.grammar('M { duh = {x: 1, x: 2, y: 3, ...} }'); },
-        'Object pattern has duplicate property names: x');
-  });
-
-  var obj = Object.create(null);
-  obj.x = 1;
-  obj.y = 2;
-  assertSucceeds(t, m.match(obj), 'object with null prototype');
-
-  obj = {hasOwnProperty: null, x: 1, y: 2};
-  assertSucceeds(t, m.match(obj, 'lenient'), 'object overriding hasOwnProperty');
-
-  t.end();
-});
-
-test('val', function(t) {
-  var g = makeGrammar([
-    'G {',
-    '  start = $blah',
-    '  blah = "ab"',
-    '  blahTwice = $(blah blah)',
-    '  twoStrings = $blah $blah',
-    '  arrOfTwoStrings = [twoStrings]',
-    '}'
-  ]);
-  t.equals(g.match('ab').succeeded(), true);
-  t.equals(g.match('abab', 'twoStrings').failed(), true);
-  t.equals(g.match('abab', 'blahTwice').succeeded(), true);
-  t.equals(g.match(['ab', 'ab'], 'twoStrings').failed(), true);
-  t.equals(g.match(['ab', 'ab'], 'arrOfTwoStrings').succeeded(), true);
-
   t.end();
 });
 
@@ -1171,53 +807,6 @@ test('apply', function(t) {
     });
     t.end();
   });
-  t.end();
-});
-
-test('built-in types', function(t) {
-  var g = makeGrammar([
-    'G {',
-    '  Arr = [Boolean Number String]',
-    '  Obj = {b: Boolean, n: Number, s: String}',
-    '}']);
-
-  // Boolean
-  t.equal(g.match(true, 'Boolean').succeeded(), true);
-  t.equal(g.match(false, 'Boolean').succeeded(), true);
-  t.equal(g.match(0, 'Boolean').failed(), true);
-  t.equal(g.match({}, 'Boolean').failed(), true);
-
-  // Number
-  t.equal(g.match(0, 'Number').succeeded(), true, 'zero');
-  t.equal(g.match(Math.PI, 'Number').succeeded(), true, 'pi');
-  t.equal(g.match(Math.sqrt(-1), 'Number').succeeded(), true, 'NaN');
-  t.equal(g.match('1', 'Number').failed(), true);
-  t.equal(g.match(false, 'Number').failed(), true);
-  t.equal(g.match(null, 'Number').failed(), true);
-
-  // String
-  t.equal(g.match('', 'String').succeeded(), true);
-  t.equal(g.match('blah', 'String').succeeded(), true);
-  t.equal(g.match(0, 'String').failed(), true);
-
-  var result = g.match([true, 99.99, 'blah'], 'Arr');
-  t.equal(result.succeeded(), true, 'matching inside an Array');
-  // TODO: The binding given to these actions should be the value itself, not an instance
-  // of pexprs.TypeCheck.
-  var s = g.semantics().addAttribute('val', {
-    Arr: function(bool, num, str) { return [bool.val, num.val, str.val]; },
-    Obj: function(bool, num, str) { return [bool.val, num.val, str.val]; },
-    Boolean: function(typeCheck) { return typeCheck.val; },
-    Number: function(typeCheck) { return typeCheck.val; },
-    String: function(typeCheck) { return typeCheck.val; },
-    _terminal: function() { return this.primitiveValue; }
-  });
-  t.looseEqual(s(result).val, [true, 99.99, 'blah'], 'array match with semantics');
-
-  result = g.match({b: false, n: -0, s: 'zzz'}, 'Obj');
-  t.equal(result.succeeded(), true, 'matching inside an object');
-  t.looseEqual(s(result).val, [false, -0, 'zzz'], 'obj match with semantics');
-
   t.end();
 });
 
@@ -1587,26 +1176,6 @@ test('space skipping semantics', function(t) {
   assertSucceeds(t, g.match('> a b ', 'Iter'), "iter doesn't consume trailing space");
   assertSucceeds(t, g.match('> a', 'Lookahead'), "lookahead doesn't consume anything");
   assertSucceeds(t, g.match('> a', 'NegLookahead'), "negative lookahead doesn't consume anything");
-  t.end();
-});
-
-test('strings vs. value exprs', function(t) {
-  var g = makeGrammar([
-    'G {',
-    '  amb = ',
-    '  str = "a" amb',
-    '  arr = [amb]',
-    '  obj = {x: amb}',
-    '  obj2 = {x: arr}',
-    '}'
-  ]);
-  t.equal(g.match('', 'amb').succeeded(), true);
-  t.equal(g.match('a', 'str').succeeded(), true);
-  t.equal(g.match([], 'arr').succeeded(), true);
-  t.equal(g.match({x: ''}, 'obj').succeeded(), true);
-  t.equal(g.match({x: []}, 'obj').failed(), true);
-  t.equal(g.match({x: []}, 'obj2').succeeded(), true);
-
   t.end();
 });
 

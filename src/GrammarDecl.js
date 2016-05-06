@@ -87,7 +87,7 @@ GrammarDecl.prototype.withDefaultStartRule = function(ruleName) {
 };
 
 GrammarDecl.prototype.withSource = function(source) {
-  this.interval = InputStream.newFor(source).interval(0, source.length);
+  this.interval = new InputStream(source).interval(0, source.length);
   return this;
 };
 
@@ -129,16 +129,6 @@ GrammarDecl.prototype.build = function() {
         body.assertIteratedExprsAreNotNullable(grammar, ruleName);
       } catch (e) {
         grammarErrors.push(e);
-      }
-      // For now, only check the bodies of unparameterized rules, because the checks can't deal
-      // properly with parameters that don't have a concrete value.
-      // TODO: Fix this.
-      if (grammar.ruleFormals[ruleName].length === 0) {
-        try {
-          body.assertValuesAndStringsAreNotMixed(grammar, ruleName);
-        } catch (e) {
-          grammarErrors.push(e);
-        }
       }
     });
   }

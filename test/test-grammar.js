@@ -1,14 +1,11 @@
 'use strict';
 
-var fs = require('fs');
 var test = require('tape');
 
 var Grammar = require('../src/Grammar');
 var ohm = require('..');
-var nodes = require('../src/nodes');
 var testUtil = require('./testUtil');
 
-var arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
 var makeGrammar = testUtil.makeGrammar;
 var makeGrammars = testUtil.makeGrammars;
 
@@ -16,99 +13,19 @@ var makeGrammars = testUtil.makeGrammars;
 // Tests
 // --------------------------------------------------------------------
 
-test('constructors dictionary', function(t) {
-  var m = makeGrammar(arithmeticGrammarSource);
-
-  t.ok(m.constructors, 'constructor dict exists');
-
-  t.ok(m.constructors.addExp);
-  t.ok(m.constructors.addExp_minus);
-  t.ok(m.constructors.priExp);
-  t.ok(m.constructors.digit);
-  t.ok(m.constructors.any);
-
-  t.equal(m.constructors.foobar, undefined, 'no entries for nonexistent rules');
-  t.throws(function() { m.construct('foobar', []); },
-           /Rule foobar is not declared in grammar Arithmetic/,
-           'exception when calling construct() with a nonexistent rule name');
-  t.ok(m.construct('addExp', [m.match('1+2', 'addExp_plus')._cst]) instanceof nodes.Node);
-
-  var n = m.match('1+2*3', 'addExp')._cst;
-  t.equal(n.ctorName, 'addExp', 'ctorName');
-
-  var p = n.children[0];
-  t.equal(p.ctorName, 'addExp_plus', 'ctorName of child');
-  t.equal(p.numChildren(), 3);
-
-  t.end();
-});
-
-test('constructing nodes by matching', function(t) {
-  var unexpectedArgs = /invalid or unexpected arguments/;
-  var m = makeGrammar(arithmeticGrammarSource);
-
-  var addExp = m.ctors.addExp;
-  var n = addExp('10+2');
-  t.equal(n.ctorName, 'addExp', 'constructing a node from a string');
-  t.equal(n.children[0].ctorName, 'addExp_plus');
-
-  t.throws(function() { addExp('10+'); }, unexpectedArgs);
-
-  t.equal(addExp('123', '+', '2').ctorName, 'addExp', 'passing a string for each child');
-  t.throws(function() { addExp('1', '+', '+'); }, unexpectedArgs);
-  t.throws(function() { addExp('1', '+', '2', '+'); }, unexpectedArgs);
-
-  var g = makeGrammar([
-    'G {',
-    '  Foo = Maybe<Number>',
-    '  Maybe<exp> = exp -- some',
-    '             |     -- none',
-    '  WrappedFoo = [Foo]',
-    '}']);
-  /* eslint-disable new-cap */
-  n = g.ctors.Foo(99);
-  t.equal(n.ctorName, 'Foo', 'ADT-style contructor');
-  t.equal(n.children[0].children[0].children[0].ctorName, 'Number');
-
-  n = g.ctors.Foo();
-  t.equal(n.ctorName, 'Foo', 'works with no args');
-  t.equal(n.children[0].children[0].ctorName, 'Maybe_none');
-  t.equal(n.children[0].children[0].children.length, 0);
-
-  t.throws(function() { g.ctors.Foo('99'); }, unexpectedArgs);
-  t.throws(function() { g.ctors.Foo(['99']); }, unexpectedArgs);
-  t.throws(function() { g.ctors.Foo([99]); }, unexpectedArgs);
-
-  // Try calling a constructor with a Node as an argument, but one that requires further
-  // matching to be a valid child (in this case, to turn it into a Maybe<Number>).
-  t.ok(g.ctors.Foo(g.ctors.Number(99)), 'node arg still requiring matching');
-
-  // A similar case: the arg is a normal value that contains a node.
-  t.ok(g.ctors.WrappedFoo([g.ctors.Foo()]), 'node inside an Array');
-
-  // The constructor should not match a node a fully-parsed node as an argument.
-  t.throws(function() { g.ctors.Foo(g.ctors.Foo()); }, unexpectedArgs);
-
-  var g2 = ohm.grammar('G { Foo = }');
-  t.throws(function() { g.ctors.WrappedFoo([g2.ctors.Foo()]); }, unexpectedArgs);
-  /* eslint-enable new-cap */
-
-  t.end();
-});
-
 test('action dictionary templates', function(t) {
   var ns = makeGrammars([
     'G1 {',
     '  foo = bar',
     '  bar = baz baz baz',
     '  baz = qux',
-    '  qux = quux 123',
-    '  quux = 42',
+    '  qux = quux "123"',
+    '  quux = "42"',
     '  aaa = "duh"',
-    '  bbb = ~null qux  -- blah',
+    '  bbb = ~aaa qux  -- blah',
     '}',
     'G2 <: G1 {',
-    '  qux := 100',
+    '  qux := "100"',
     '}'
   ]);
   t.equal(ns.G1.toOperationActionDictionaryTemplate(),
@@ -153,21 +70,15 @@ test('action dictionary templates', function(t) {
     '  },\n' +
     '  end: function(_) {\n' +
     '  },\n' +
-    '  lower: function(_) {\n' +
-    '  },\n' +
     '  spaces: function(_) {\n' +
     '  },\n' +
     '  space: function(_) {\n' +
     '  },\n' +
-    '  unicodeLtmo: function(_) {\n' +
+    '  lower: function(_) {\n' +
     '  },\n' +
     '  upper: function(_) {\n' +
     '  },\n' +
-    '  Boolean: function(_) {\n' +
-    '  },\n' +
-    '  Number: function(_) {\n' +
-    '  },\n' +
-    '  String: function(_) {\n' +
+    '  unicodeLtmo: function(_) {\n' +
     '  }\n' +
     '}');
   t.equal(ns.G2.toAttributeActionDictionaryTemplate(),
@@ -212,21 +123,15 @@ test('action dictionary templates', function(t) {
     '  },\n' +
     '  end: function(_) {\n' +
     '  },\n' +
-    '  lower: function(_) {\n' +
-    '  },\n' +
     '  spaces: function(_) {\n' +
     '  },\n' +
     '  space: function(_) {\n' +
     '  },\n' +
-    '  unicodeLtmo: function(_) {\n' +
+    '  lower: function(_) {\n' +
     '  },\n' +
     '  upper: function(_) {\n' +
     '  },\n' +
-    '  Boolean: function(_) {\n' +
-    '  },\n' +
-    '  Number: function(_) {\n' +
-    '  },\n' +
-    '  String: function(_) {\n' +
+    '  unicodeLtmo: function(_) {\n' +
     '  }\n' +
     '}');
   t.end();

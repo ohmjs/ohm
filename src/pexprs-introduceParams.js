@@ -20,10 +20,9 @@ pexprs.PExpr.prototype.introduceParams = common.abstract;
 
 pexprs.any.introduceParams =
 pexprs.end.introduceParams =
-pexprs.Prim.prototype.introduceParams =
+pexprs.Terminal.prototype.introduceParams =
 pexprs.Range.prototype.introduceParams =
 pexprs.Param.prototype.introduceParams =
-pexprs.TypeCheck.prototype.introduceParams =
 pexprs.UnicodeChar.prototype.introduceParams = function(formals) {
   return this;
 };
@@ -45,17 +44,8 @@ pexprs.Seq.prototype.introduceParams = function(formals) {
 pexprs.Iter.prototype.introduceParams =
 pexprs.Not.prototype.introduceParams =
 pexprs.Lookahead.prototype.introduceParams =
-pexprs.Lex.prototype.introduceParams =
-pexprs.Value.prototype.introduceParams =
-pexprs.Arr.prototype.introduceParams = function(formals) {
+pexprs.Lex.prototype.introduceParams = function(formals) {
   this.expr = this.expr.introduceParams(formals);
-  return this;
-};
-
-pexprs.Obj.prototype.introduceParams = function(formals) {
-  this.properties.forEach(function(property, idx) {
-    property.pattern = property.pattern.introduceParams(formals);
-  });
   return this;
 };
 

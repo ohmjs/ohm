@@ -44,7 +44,7 @@ pexprs.end.toArgumentNameList = function(firstArgIndex) {
   return ['end'];
 };
 
-pexprs.Prim.prototype.toArgumentNameList = function(firstArgIndex) {
+pexprs.Terminal.prototype.toArgumentNameList = function(firstArgIndex) {
   if (typeof this.obj === 'string' && /^[_a-zA-Z0-9]+$/.test(this.obj)) {
     // If this terminal is a valid suffix for a JS identifier, just prepend it with '_'
     return ['_' + this.obj];

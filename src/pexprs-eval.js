@@ -4,7 +4,6 @@
 // Imports
 // --------------------------------------------------------------------
 
-var InputStream = require('./InputStream');
 var Trace = require('./Trace');
 var common = require('./common');
 var nodes = require('./nodes');
@@ -17,9 +16,6 @@ var IterationNode = nodes.IterationNode;
 // --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
-
-// A safer version of hasOwnProperty.
-var hasOwnProp = Object.prototype.hasOwnProperty;
 
 /*
   Evaluate the expression and return `true` if it succeeds, `false` otherwise. This method should
@@ -42,14 +38,14 @@ pexprs.PExpr.prototype.eval = common.abstract;  // function(state) { ... }
 pexprs.any.eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  var value = inputStream.next();
-  if (value === common.fail) {
+  var ch = inputStream.next();
+  if (ch) {
+    var interval = inputStream.interval(origPos);
+    state.bindings.push(new TerminalNode(state.grammar, ch, interval));
+    return true;
+  } else {
     state.processFailure(origPos, this);
     return false;
-  } else {
-    var interval = inputStream.interval(origPos);
-    state.bindings.push(new TerminalNode(state.grammar, value, interval));
-    return true;
   }
 };
 
@@ -66,10 +62,10 @@ pexprs.end.eval = function(state) {
   }
 };
 
-pexprs.Prim.prototype.eval = function(state) {
+pexprs.Terminal.prototype.eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  if (this.match(inputStream) === common.fail) {
+  if (!inputStream.matchString(this.obj)) {
     state.processFailure(origPos, this);
     return false;
   } else {
@@ -80,19 +76,13 @@ pexprs.Prim.prototype.eval = function(state) {
   }
 };
 
-pexprs.Prim.prototype.match = function(inputStream) {
-  return typeof this.obj === 'string' ?
-      inputStream.matchString(this.obj) :
-      inputStream.matchExactly(this.obj);
-};
-
 pexprs.Range.prototype.eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  var obj = inputStream.next();
-  if (typeof obj === typeof this.from && this.from <= obj && obj <= this.to) {
+  var ch = inputStream.next();
+  if (ch && this.from <= ch && ch <= this.to) {
     var interval = inputStream.interval(origPos);
-    state.bindings.push(new TerminalNode(state.grammar, obj, interval));
+    state.bindings.push(new TerminalNode(state.grammar, ch, interval));
     return true;
   } else {
     state.processFailure(origPos, this);
@@ -204,69 +194,6 @@ pexprs.Lookahead.prototype.eval = function(state) {
   }
 };
 
-pexprs.Arr.prototype.eval = function(state) {
-  var obj = state.inputStream.next();
-  if (Array.isArray(obj)) {
-    state.pushInputStream(InputStream.newFor(obj));
-    var ans = state.eval(this.expr) && state.inputStream.atEnd();
-    state.popInputStream();
-    return ans;
-  } else {
-    return false;
-  }
-};
-
-pexprs.Value.prototype.eval = function(state) {
-  var obj = state.inputStream.next();
-  if (typeof obj === 'string') {
-    state.pushInputStream(InputStream.newFor(obj));
-    var ans = state.eval(this.expr) && state.inputStream.atEnd();
-    state.popInputStream();
-    return ans;
-  } else {
-    return false;
-  }
-};
-
-pexprs.Obj.prototype.eval = function(state) {
-  var inputStream = state.inputStream;
-  var origPos = inputStream.pos;
-  var obj = inputStream.next();
-  if (obj !== common.fail && obj && (typeof obj === 'object' || typeof obj === 'function')) {
-    var numOwnPropertiesMatched = 0;
-    for (var idx = 0; idx < this.properties.length; idx++) {
-      var property = this.properties[idx];
-      if (!hasOwnProp.call(obj, property.name)) {
-        return false;
-      }
-      var value = obj[property.name];
-      var expr = property.pattern;
-      state.pushInputStream(expr.newInputStreamFor([value], state.grammar));
-      var matched = state.eval(expr) && state.inputStream.atEnd();
-      state.popInputStream();
-      if (!matched) {
-        return false;
-      }
-      numOwnPropertiesMatched++;
-    }
-    if (this.isLenient) {
-      var remainder = {};
-      for (var p in obj) {
-        if (hasOwnProp.call(obj, p) && this.properties.indexOf(p) < 0) {
-          remainder[p] = obj[p];
-        }
-      }
-      var interval = inputStream.interval(origPos);
-      state.bindings.push(new TerminalNode(state.grammar, remainder, interval));
-      return true;
-    } else {
-      return numOwnPropertiesMatched === Object.keys(obj).length;
-    }
-  } else {
-    return false;
-  }
-};
-
 pexprs.Apply.prototype.eval = function(state) {
   var caller = state.currentApplication();
   var actuals = caller ? caller.args : [];
@@ -370,19 +297,6 @@ pexprs.Apply.prototype.evalOnce = function(expr, state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
 
-  // If `matchNodes` is true and the next thing in the input stream is a Node whose type matches
-  // this rule, then accept that as a valid match -- but not for the top-level application.
-  if (state.matchNodes && state.applicationStack.length > 1) {
-    var node = inputStream.next();
-    if (node instanceof nodes.Node &&
-        node.grammar === state.grammar &&
-        node.ctorName === this.ruleName) {
-      return node;
-    } else {
-      inputStream.pos = origPos;
-    }
-  }
-
   if (state.eval(expr)) {
     var arity = expr.getArity();
     var bindings = state.bindings.splice(state.bindings.length - arity, arity);
@@ -431,24 +345,10 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
 pexprs.UnicodeChar.prototype.eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  var value = inputStream.next();
-  if (value === common.fail || !this.pattern.test(value)) {
-    state.processFailure(origPos, this);
-    return false;
-  } else {
+  var ch = inputStream.next();
+  if (ch && this.pattern.test(ch)) {
     var interval = inputStream.interval(origPos);
-    state.bindings.push(new TerminalNode(state.grammar, value, interval));
-    return true;
-  }
-};
-
-pexprs.TypeCheck.prototype.eval = function(state) {
-  var inputStream = state.inputStream;
-  var origPos = inputStream.pos;
-  var value = inputStream.next();
-  if (typeof value === this.type) {
-    var interval = inputStream.interval(origPos);
-    state.bindings.push(new TerminalNode(state.grammar, value, interval));
+    state.bindings.push(new TerminalNode(state.grammar, ch, interval));
     return true;
   } else {
     state.processFailure(origPos, this);

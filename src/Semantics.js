@@ -204,6 +204,71 @@ Semantics.prototype.checkActionDicts = function() {
   }
 };
 
+Semantics.prototype.toRecipe = function(semanticsOnly) {
+  function hasSuperSemantics(s) {
+    return s.super !== Semantics.BuiltInSemantics._getSemantics();
+  }
+
+  var str = '(function(g) {\n';
+  if (hasSuperSemantics(this)) {
+    str += '  var semantics = ' + this.super.toRecipe(true) + '(g';
+
+    var superSemanticsGrammar = this.super.grammar;
+    var relatedGrammar = this.grammar;
+    while (relatedGrammar !== superSemanticsGrammar) {
+      str += '.superGrammar';
+      relatedGrammar = relatedGrammar.superGrammar;
+    }
+
+    str += ');\n';
+    str += '  return g.extendSemantics(semantics)';
+  } else {
+    str += '  return g.semantics()';
+  }
+  ['Operation', 'Attribute'].forEach(function(type) {
+    var semanticOperations = this[type.toLowerCase() + 's'];
+    Object.keys(semanticOperations).forEach(function(name) {
+      var signature = name;
+      if (semanticOperations[name].formals.length > 0) {
+        signature += '(' + semanticOperations[name].formals.join(', ') + ')';
+      }
+
+      var method;
+      if (hasSuperSemantics(this) && this.super[type.toLowerCase() + 's'][name]) {
+        method = 'extend' + type;
+      } else {
+        method = 'add' + type;
+      }
+      str += '\n    .' + method + '(' + JSON.stringify(signature) + ', {';
+
+      var actions = semanticOperations[name].actionDict;
+      var srcArray = [];
+      Object.keys(actions).forEach(function(actionName) {
+        if (semanticOperations[name].builtInDefault !== actions[actionName]) {
+          srcArray.push('\n      ' + JSON.stringify(actionName) + ': ' +
+            actions[actionName].toString());
+        }
+      });
+      str += srcArray.join(',');
+
+      str += '\n    })';
+    }, this);
+  }, this);
+  str += ';\n  })';
+
+  if (!semanticsOnly) {
+    str =
+      '(function() {\n' +
+      '  var buildGrammar = ' + this.grammar.toRecipe() +
+      '  var grammar = buildGrammar.call(this);\n' +
+      '  var semantics = ' + str + '(grammar);\n' +
+      '  return semantics;\n' +
+      '});\n';
+  }
+
+  return str;
+};
+
 var prototypeGrammar;
 var prototypeGrammarSemantics;
 
@@ -254,6 +319,36 @@ function parseSignature(signature, type) {
   return prototypeGrammarSemantics(r).parse();
 }
 
+function newDefaultAction(type, name, doIt) {
+  return function(children) {
+    var self = this;
+    var thisThing = this._semantics.operations[name] || this._semantics.attributes[name];
+    var args = thisThing.formals.map(function(formal) {
+      return self.args[formal];
+    });
+
+    if (this.isIteration()) {
+      // This CST node corresponds to an iteration expression in the grammar (*, +, or ?). The
+      // default behavior is to map this operation or attribute over all of its child nodes.
+      return children.map(function(child) { return doIt.apply(child, args); });
+    }
+
+    // This CST node corresponds to a non-terminal in the grammar (e.g., AddExpr). The fact that
+    // we got here means that this action dictionary doesn't have an action for this particular
+    // non-terminal or a generic `_nonterminal` action.
+    if (children.length === 1) {
+      // As a convenience, if this node only has one child, we just return the result of
+      // applying this operation / attribute to the child node.
+      return doIt.apply(children[0], args);
+    } else {
+      // Otherwise, we throw an exception to let the programmer know that we don't know what
+      // to do with this node.
+      throw new Error(
+          'Missing semantic action for ' + this.ctorName + ' in ' + name + ' ' + type);
+    }
+  };
+}
+
 Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDict) {
   var typePlural = type + 's';
 
@@ -267,35 +362,8 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
 
   // Create the action dictionary for this operation / attribute that contains a `_default` action
   // which defines the default behavior of iteration, terminal, and non-terminal nodes...
-  var realActionDict = {
-    _default: function(children) {
-      var self = this;
-      var thisThing = this._semantics[typePlural][name];
-      var args = thisThing.formals.map(function(formal) {
-        return self.args[formal];
-      });
-
-      if (this.isIteration()) {
-        // This CST node corresponds to an iteration expression in the grammar (*, +, or ?). The
-        // default behavior is to map this operation or attribute over all of its child nodes.
-        return children.map(function(child) { return doIt.apply(child, args); });
-      }
-
-      // This CST node corresponds to a non-terminal in the grammar (e.g., AddExpr). The fact that
-      // we got here means that this action dictionary doesn't have an action for this particular
-      // non-terminal or a generic `_nonterminal` action.
-      if (children.length === 1) {
-        // As a convenience, if this node only has one child, we just return the result of
-        // applying this operation / attribute to the child node.
-        return doIt.apply(children[0], args);
-      } else {
-        // Otherwise, we throw an exception to let the programmer know that we don't know what
-        // to do with this node.
-        throw new Error(
-            'Missing semantic action for ' + this.ctorName + ' in ' + name + ' ' + type);
-      }
-    }
-  };
+  var builtInDefault = newDefaultAction(type, name, doIt);
+  var realActionDict = {_default: builtInDefault};
   // ... and add in the actions supplied by the programmer, which may override some or all of the
   // default ones.
   Object.keys(actionDict).forEach(function(name) {
@@ -303,8 +371,8 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
   });
 
   var entry = type === 'operation' ?
-      new Operation(name, formals, realActionDict) :
-      new Attribute(name, realActionDict);
+      new Operation(name, formals, realActionDict, builtInDefault) :
+      new Attribute(name, realActionDict, builtInDefault);
 
   // The following check is not strictly necessary (it will happen later anyway) but it's better to
   // catch errors early.
@@ -453,6 +521,38 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
     s.extendOperationOrAttribute.call(s, 'attribute', name, actionDict);
     return proxy;
   };
+  proxy.getOperationNames = function() {
+    return Object.keys(s.operations);
+  };
+  proxy.getAttributeNames = function() {
+    return Object.keys(s.attributes);
+  };
+  proxy.getGrammar = function() {
+    return s.grammar;
+  };
+  proxy.toRecipe = function(semanticsOnly) {
+    return s.toRecipe(semanticsOnly);
+  };
+  proxy.getOperationNames = function() {
+    return Object.keys(s.operations);
+  };
+  proxy.getAttributeNames = function() {
+    return Object.keys(s.attributes);
+  };
+  proxy.getGrammar = function() {
+    return s.grammar;
+  };
+  proxy.toRecipe = function(semanticsOnly) {
+    return s.toRecipe(semanticsOnly);
+  };
+
+  // Make the proxy's toString() work.
+  proxy.toString = s.toString.bind(s);
+
+  // Returns the semantics for the proxy.
+  proxy._getSemantics = function() {
+    return s;
+  };
   proxy._getActionDict = function(operationOrAttributeName) {
     var action = s.operations[operationOrAttributeName] || s.attributes[operationOrAttributeName];
     if (!action) {
@@ -471,14 +571,6 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
       delete s.attributes[operationOrAttributeName];
     }
     return action;
-  };
-
-  // Make the proxy's toString() work.
-  proxy.toString = s.toString.bind(s);
-
-  // Returns the semantics for the proxy.
-  proxy._getSemantics = function() {
-    return s;
   };
 
   return proxy;
@@ -511,10 +603,11 @@ Semantics.initBuiltInSemantics = function(builtInRules) {
 // recursively walking the CST, and at each node, invoking the matching semantic action from
 // `actionDict`. See `Operation.prototype.execute` for details of how a CST node's matching semantic
 // action is found.
-function Operation(name, formals, actionDict) {
+function Operation(name, formals, actionDict, builtInDefault) {
   this.name = name;
   this.formals = formals;
   this.actionDict = actionDict;
+  this.builtInDefault = builtInDefault;
 }
 
 Operation.prototype.typeName = 'operation';
@@ -563,10 +656,11 @@ Operation.prototype.doAction = function(semantics, nodeWrapper, actionFn, optPas
 
 // Attributes are Operations whose results are memoized. This means that, for any given semantics,
 // the semantic action for a CST node will be invoked no more than once.
-function Attribute(name, actionDict) {
+function Attribute(name, actionDict, builtInDefault) {
   this.name = name;
   this.formals = [];
   this.actionDict = actionDict;
+  this.builtInDefault = builtInDefault;
 }
 inherits(Attribute, Operation);
 

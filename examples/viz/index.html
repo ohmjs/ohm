@@ -219,7 +219,7 @@ s.addOperation('viz', {
   Base_application:  function(rule, ps) {
                        add('app', rule.viz());
                      },
-  Base_prim:         function(expr) {
+  Base_terminal:     function(expr) {
                        expr.viz();
                      },
   Base_paren:        function(_l, x, _r) {
@@ -227,45 +227,15 @@ s.addOperation('viz', {
                          x.viz();
                        leave();
                      },
-  Base_arr:          function(_l, x, _r) {
-                       enter('arr');
-                         x.viz();
-                       leave();
-                     },
-  Base_obj:          function(_l, lenient, _r) {
-                       throw 'TODO';
-                     },
-  Base_objWithProps: function(_l, ps, _c, lenient, _r) {
-                       throw 'TODO';
-                     },
-  Props:             function(p, _, ps) {
-                       throw 'TODO';
-                     },
   ident:             function(n) {
                        return n.viz();
                      },
   name:              function(_first, _rest) {
                        return this.interval.contents;
                      },
-  string:            function(_lq, cs, _rq) {
-                       add('string', escape(eval(this.interval.contents)));
-                     },
-  number:            function(_neg, _digits) {
-                       add('prim', this.interval.contents);
-                     },
-  keyword:           function(expr) {
-                       expr.viz();
-                     },
-  keyword_null:      function(_) {
-                       add('prim', 'null');
-                     },
-  keyword_true:      function(_) {
-                       add('prim', 'true');
-                     },
-  keyword_false:     function(_) {
-                       add('prim', 'false');
-                     },
-  Prop:              function(n, _, p) {}
+  terminal:          function(_lq, cs, _rq) {
+                       add('terminal', escape(eval(this.interval.contents)));
+                     }
 });
 
 s.addOperation('vizChoice', {

@@ -44,8 +44,8 @@ pexprs.end.outputRecipe = function(sb, formals, grammarInterval) {
   throw new Error('should never output a recipe for `end` expression');
 };
 
-pexprs.Prim.prototype.outputRecipe = function(sb, formals, grammarInterval) {
-  sb.append('this.prim(');
+pexprs.Terminal.prototype.outputRecipe = function(sb, formals, grammarInterval) {
+  sb.append('this.terminal(');
   sb.append(typeof this.obj === 'string' ? escapeString(this.obj) : '' + this.obj);
   sb.append(')' + getIntervalInfo(this, grammarInterval));
 };
@@ -93,8 +93,7 @@ pexprs.Star.prototype.outputRecipe =
 pexprs.Plus.prototype.outputRecipe =
 pexprs.Opt.prototype.outputRecipe =
 pexprs.Not.prototype.outputRecipe =
-pexprs.Lex.prototype.outputRecipe =
-pexprs.Arr.prototype.outputRecipe = function(sb, formals, grammarInterval) {
+pexprs.Lex.prototype.outputRecipe = function(sb, formals, grammarInterval) {
   sb.append('this.' + this.constructor.name.toLowerCase() + '(');
   this.expr.outputRecipe(sb, formals, grammarInterval);
   sb.append(')' + getIntervalInfo(this, grammarInterval));
@@ -103,33 +102,6 @@ pexprs.Arr.prototype.outputRecipe = function(sb, formals, grammarInterval) {
 pexprs.Lookahead.prototype.outputRecipe = function(sb, formals, grammarInterval) {
   sb.append('this.la(');
   this.expr.outputRecipe(sb, formals, grammarInterval);
-  sb.append(')' + getIntervalInfo(this, grammarInterval));
-};
-
-pexprs.Value.prototype.outputRecipe = function(sb, formals, grammarInterval) {
-  sb.append('this.val(');
-  this.expr.outputRecipe(sb, formals, grammarInterval);
-  sb.append(')' + getIntervalInfo(this, grammarInterval));
-};
-
-pexprs.Obj.prototype.outputRecipe = function(sb, formals, grammarInterval) {
-  function outputPropertyRecipe(prop) {
-    sb.append('{name: ');
-    sb.append(JSON.stringify(prop.name));
-    sb.append(', pattern: ');
-    prop.pattern.outputRecipe(sb, formals, grammarInterval);
-    sb.append('}');
-  }
-
-  sb.append('this.obj([');
-  for (var idx = 0; idx < this.properties.length; idx++) {
-    if (idx > 0) {
-      sb.append(', ');
-    }
-    outputPropertyRecipe(this.properties[idx]);
-  }
-  sb.append('], ');
-  sb.append(!!this.isLenient);
   sb.append(')' + getIntervalInfo(this, grammarInterval));
 };
 

@@ -18,8 +18,8 @@ Builder.prototype = {
     return new GrammarDecl(name);
   },
 
-  prim: function(x) {
-    return new pexprs.Prim(x);
+  terminal: function(x) {
+    return new pexprs.Terminal(x);
   },
 
   range: function(from, to) {
@@ -78,22 +78,6 @@ Builder.prototype = {
 
   lex: function(expr) {
     return new pexprs.Lex(expr);
-  },
-
-  val: function(expr) {
-    return new pexprs.Value(expr);
-  },
-
-  arr: function(expr) {
-    return new pexprs.Arr(expr);
-  },
-
-  str: function(expr) {
-    return new pexprs.Str(expr);
-  },
-
-  obj: function(properties, isLenient) {
-    return new pexprs.Obj(properties, !!isLenient);
   },
 
   app: function(ruleName, optParams) {

@@ -116,38 +116,6 @@ Succeeds if the expression `expr` can be matched, but does not consume anything 
 
 Succeeds if the expression `expr` cannot be matched, and does not consume anything from the input stream. Usually used as part of a sequence, e.g., `~"\n" any` will consume any single character that is not a new line character.
 
-### Arrays
-
-<code>[ <i>expr</i> ]</code>
-
-Matches an Array object whose contents match _expr_. E.g., `["hey"]` will match an Array having the string `'hey'` as its only element.
-
-If _expr_ is a Sequence, it will match successive elements in the Array, beginning at index 0. E.g., `["a" "b" "c"]` will match the array `['a', 'b', 'c']`.
-
-<script type="text/markscript">
-  assert(ohm.grammar('G { start = ["a" "b" "c"] }').match(['a', 'b', 'c']).succeeded());
-  assert(ohm.grammar('G { start = ["a" "b" "c"] }').match(['a', 'b', 'c', 'd']).failed());
-  assert(ohm.grammar('G { start = ["a" "bc"] }').match(['a', 'b', 'c', 'd']).failed());
-</script>
-
-### Objects
-
-<code>{ <i>key</i>: <i>expr</i> } </code>
-
-Matches an object with an [own property](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/hasOwnProperty) named _key_ whose value matches the parsing expression _expr_, and no other properties. E.g., `{"name": any}` matches the object `{name: 'Manuel'}`, but not the object `{name: 'Philip', age: 31}`.
-
-<code>{ <i>key</i>: <i>expr</i>, ... }</code>
-
-Like above, but will still match if the object has other properties. E.g., `{stars: 4, ...}` will match the object `{stars: 2, name: 'Noma'}`.
-
-<script type="text/markscript">
-  assert(ohm.grammar('G { Start = {name: String} }').match({name: 'Manuel'}).succeeded());
-  assert(ohm.grammar('G { Start = {name: String} }').match({name: 'Philip', age: 31}).failed());
-  assert(ohm.grammar('G { Start = {stars: 2, ...} }').match({stars: 2, name: 'Noma'}).succeeded());
-</script>
-
-Any number of comma-separated key/expression pairs can be specified. Other valid patterns are `{}`, which matches an object with no properties, and `{...}`, which matches any object. **NOTE:** In Ohm/JS, object patterns will also match Array objects.
-
 ## Built-in Rules
 
 (See [src/built-in-rules.ohm](../src/built-in-rules.ohm).)
@@ -183,6 +151,9 @@ Any number of comma-separated key/expression pairs can be specified. Other valid
 Declares a grammar named `grammarName` which inherits from `supergrammarName`.
 
 ### Defining, Extending, and Overriding Rules
+
+In the three forms below, the rule body may optionally begin with a `|` character, which will be
+ignored.
 
 <code><i>ruleName</i> = <i>expr</i></code>
 

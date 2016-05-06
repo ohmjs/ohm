@@ -103,8 +103,6 @@ exports.copyWithoutDuplicates = function(array) {
   return noDuplicates;
 };
 
-exports.fail = {};
-
 exports.isSyntactic = function(ruleName) {
   var firstChar = ruleName[0];
   return firstChar === firstChar.toUpperCase();

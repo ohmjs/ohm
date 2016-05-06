@@ -110,7 +110,7 @@ test('space skipping', function(t) {
 });
 
 test('tracing with parameterized rules', function(t) {
-  var g = ohm.grammar('G { start = foo<123>  foo<x> = "a" | letter* }');
+  var g = ohm.grammar('G { start = foo<"123">  foo<x> = "a" | letter* }');
   var start = g.trace('hallo').children[0];
 
   t.equal(start.displayString, 'start');
@@ -122,7 +122,7 @@ test('tracing with parameterized rules', function(t) {
   t.equal(cstNode.numChildren(), 1);
 
   var app = start.children[0];
-  t.equal(app.displayString, 'foo<123>');
+  t.equal(app.displayString, 'foo<"123">');
   t.equal(app.succeeded, true);
   t.equal(app.children.length, 1);
   t.equal(app.children[0].succeeded, true);
@@ -199,7 +199,7 @@ test('tracing with memoization', function(t) {
 });
 
 test('tracing with parameterized rules and memoization', function(t) {
-  var g = ohm.grammar('G { start = foo<123> ~foo<123> | foo<123>*  foo<x> = letter }');
+  var g = ohm.grammar('G { start = foo<"123"> ~foo<"123"> | foo<"123">*  foo<x> = letter }');
   var start = g.trace('aB').children[0];
 
   var alt = start.children[0];
