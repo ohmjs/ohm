@@ -4,52 +4,34 @@
 // Imports
 // --------------------------------------------------------------------
 
-var inherits = require('inherits');
-
-var common = require('./common');
 var Interval = require('./Interval');
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
-function InputStream() {
-  throw new Error('InputStream cannot be instantiated -- it\'s abstract');
+function InputStream(source) {
+  this.source = source;
+  this.pos = 0;
+  this.posInfos = [];
 }
 
-InputStream.newFor = function(obj) {
-  if (typeof obj === 'string') {
-    return new StringInputStream(obj);
-  } else if (Array.isArray(obj)) {
-    return new ListInputStream(obj);
-  } else if (obj instanceof InputStream) {
-    return obj;
-  } else {
-    throw new Error('cannot make input stream for ' + obj);
-  }
-};
-
 InputStream.prototype = {
-  init: function(source) {
-    this.source = source;
-    this.pos = 0;
-    this.posInfos = [];
-  },
-
   atEnd: function() {
     return this.pos === this.source.length;
   },
 
   next: function() {
-    if (this.atEnd()) {
-      return common.fail;
-    } else {
-      return this.source[this.pos++];
-    }
+    return this.source[this.pos++];
   },
 
-  matchExactly: function(x) {
-    return this.next() === x ? true : common.fail;
+  matchString: function(s) {
+    for (var idx = 0; idx < s.length; idx++) {
+      if (this.next() !== s[idx]) {
+        return false;
+      }
+    }
+    return true;
   },
 
   sourceSlice: function(startIdx, endIdx) {
@@ -59,45 +41,6 @@ InputStream.prototype = {
   interval: function(startIdx, optEndIdx) {
     return new Interval(this, startIdx, optEndIdx ? optEndIdx : this.pos);
   }
-};
-
-function StringInputStream(source) {
-  this.init(source);
-}
-inherits(StringInputStream, InputStream);
-
-StringInputStream.prototype.matchString = function(s) {
-  for (var idx = 0; idx < s.length; idx++) {
-    if (this.matchExactly(s[idx]) === common.fail) {
-      return common.fail;
-    }
-  }
-  return true;
-};
-
-// In some cases, it's not clear whether we should instantiate a StringInputStream or a
-// ListInputStream. To address this ambiguity, this method allows a StringInputStream to
-// behave like a ListInputStream with a single string value in certain cases.
-StringInputStream.prototype.nextStringValue = function() {
-  if (this.pos === 0) {
-    this.pos = this.source.length;
-    return this.sourceSlice(0);
-  }
-  return null;
-};
-
-function ListInputStream(source) {
-  this.init(source);
-}
-inherits(ListInputStream, InputStream);
-
-ListInputStream.prototype.matchString = function(s) {
-  return this.matchExactly(s);
-};
-
-ListInputStream.prototype.nextStringValue = function() {
-  var value = this.next();
-  return typeof value === 'string' ? value : null;
 };
 
 // --------------------------------------------------------------------

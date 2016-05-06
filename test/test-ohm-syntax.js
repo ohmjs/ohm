@@ -86,10 +86,8 @@ test('char', function(t) {
   assertSucceeds(t, m.match('!'));
   assertFails(t, m.match('!a'));
   assertFails(t, m.match(''));
-
   var cst = m.match('!');
   t.equal(s(cst).v, '!');
-
   t.end();
 });
 
@@ -111,7 +109,6 @@ test('string', function(t) {
   t.throws(function() { ohm.grammar('G { r = "\\w" }'); },
            /Expected \"\\\"\"/,
            'unrecognized escape characters are parse errors');
-
   t.end();
 });
 

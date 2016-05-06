@@ -38,14 +38,14 @@ pexprs.PExpr.prototype.eval = common.abstract;  // function(state) { ... }
 pexprs.any.eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  var value = inputStream.next();
-  if (value === common.fail) {
+  var ch = inputStream.next();
+  if (ch) {
+    var interval = inputStream.interval(origPos);
+    state.bindings.push(new TerminalNode(state.grammar, ch, interval));
+    return true;
+  } else {
     state.processFailure(origPos, this);
     return false;
-  } else {
-    var interval = inputStream.interval(origPos);
-    state.bindings.push(new TerminalNode(state.grammar, value, interval));
-    return true;
   }
 };
 
@@ -65,7 +65,7 @@ pexprs.end.eval = function(state) {
 pexprs.Terminal.prototype.eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  if (this.match(inputStream) === common.fail) {
+  if (!this.match(inputStream)) {
     state.processFailure(origPos, this);
     return false;
   } else {
@@ -77,18 +77,16 @@ pexprs.Terminal.prototype.eval = function(state) {
 };
 
 pexprs.Terminal.prototype.match = function(inputStream) {
-  return typeof this.obj === 'string' ?
-      inputStream.matchString(this.obj) :
-      inputStream.matchExactly(this.obj);
+  return inputStream.matchString(this.obj);
 };
 
 pexprs.Range.prototype.eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  var obj = inputStream.next();
-  if (typeof obj === typeof this.from && this.from <= obj && obj <= this.to) {
+  var ch = inputStream.next();
+  if (ch && this.from <= ch && ch <= this.to) {
     var interval = inputStream.interval(origPos);
-    state.bindings.push(new TerminalNode(state.grammar, obj, interval));
+    state.bindings.push(new TerminalNode(state.grammar, ch, interval));
     return true;
   } else {
     state.processFailure(origPos, this);
@@ -351,13 +349,13 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
 pexprs.UnicodeChar.prototype.eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  var value = inputStream.next();
-  if (value === common.fail || !this.pattern.test(value)) {
+  var ch = inputStream.next();
+  if (ch && this.pattern.test(ch)) {
+    var interval = inputStream.interval(origPos);
+    state.bindings.push(new TerminalNode(state.grammar, ch, interval));
+    return true;
+  } else {
     state.processFailure(origPos, this);
     return false;
-  } else {
-    var interval = inputStream.interval(origPos);
-    state.bindings.push(new TerminalNode(state.grammar, value, interval));
-    return true;
   }
 };

@@ -87,7 +87,7 @@ GrammarDecl.prototype.withDefaultStartRule = function(ruleName) {
 };
 
 GrammarDecl.prototype.withSource = function(source) {
-  this.interval = InputStream.newFor(source).interval(0, source.length);
+  this.interval = new InputStream(source).interval(0, source.length);
   return this;
 };
 
