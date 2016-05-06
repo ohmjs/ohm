@@ -108,6 +108,19 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
     return hasNoResult;
   }
 
+  // Constructing code in string, which represents renaming the action arguments
+  // from this.args.<argument name> to <argument name>
+  function getArgsRenamingCode(args) {
+    if (!args) {
+      return '';
+    }
+
+    var argRenamingCodes = Object.keys(args).map(function(argName) {
+      return 'var ' + argName + ' = this.args.' + argName + ';';
+    });
+    return argRenamingCodes.join('\n');
+  }
+
   // Exports
   // -------
   return {
@@ -311,8 +324,6 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
     },
 
     getActionFnWrapper: function(actionName, args, actionFnStr) {
-      var actionFn, actionFnWrapper;
-
       var argumentStrs = '(' + args.join(', ') + ')';
       var origActionFnStr = 'function' + argumentStrs + '{\n' + actionFnStr + '\n}';
 
@@ -321,13 +332,15 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
         if (bodyMatchResult.succeeded()) {
           actionFnStr = 'return ' + actionFnStr + ';';
         }
-        actionFnStr = 'function' + argumentStrs + '{\n' + actionFnStr + '\n}';
-        actionFn = eval('(' +  actionFnStr + ')');  // eslint-disable-line no-eval
 
-        actionFnWrapper = function(/* arguments */) {
+        var actionFnWrapper = function(/* arguments */) {
           var ans;
           var key = toKey(this, actionName, this.args);
           var keyPrefix = toKey(this, actionName, this.args);
+          var argsRenamingCode = getArgsRenamingCode(this.args);
+          var fnStr = 'function' + argumentStrs + '{\n' + argsRenamingCode +
+              '\n' + actionFnStr + '\n}';
+          var actionFn = eval('(' + fnStr + ')');    // eslint-disable-line no-eval
           try {
             ans = actionFn.apply(this, arguments);
             var aChildFailed = this.children.some(function(child) {
