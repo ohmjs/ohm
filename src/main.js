@@ -193,7 +193,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     Base_range: function(from, _, to) {
       return builder.range(from.visit(), to.visit()).withInterval(this.interval);
     },
-    Base_prim: function(expr) {
+    Base_string: function(expr) {
       return builder.prim(expr.visit()).withInterval(this.interval);
     },
     Base_paren: function(open, x, close) {
@@ -217,16 +217,6 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     nameFirst: function(expr) {},
     nameRest: function(expr) {},
 
-    keyword_null: function(_) {
-      return null;
-    },
-    keyword_true: function(_) {
-      return true;
-    },
-    keyword_false: function(_) {
-      return false;
-    },
-
     string: function(open, cs, close) {
       return cs.visit().map(function(c) { return common.unescapeChar(c); }).join('');
     },
@@ -237,10 +227,6 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
 
     escapeChar: function(_) {
       return this.interval.contents;
-    },
-
-    number: function(_, digits) {
-      return parseInt(this.interval.contents);
     },
 
     NonemptyListOf: function(x, _, xs) {

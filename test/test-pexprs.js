@@ -84,9 +84,9 @@ test('toDisplayString', function(t) {
 
 test('toString', function(t) {
   var g = makeGrammar(
-      'G { start = &"a" ~(2 | 3?) "a".."z"  a = 1  b = 2  c = 3 }');
+      'G { start = &"a" ~("b" | #c?) "a".."z"  c = "c" }');
   var e = g.ruleBodies.start;
-  t.equal(e.toString(), '(&"a" ~(2 | 3?) "a".."z")');
+  t.equal(e.toString(), '(&"a" ~("b" | #(c)?) "a".."z")');
   t.end();
 });
 

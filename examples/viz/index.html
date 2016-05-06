@@ -219,7 +219,7 @@ s.addOperation('viz', {
   Base_application:  function(rule, ps) {
                        add('app', rule.viz());
                      },
-  Base_prim:         function(expr) {
+  Base_string:       function(expr) {
                        expr.viz();
                      },
   Base_paren:        function(_l, x, _r) {
@@ -235,21 +235,6 @@ s.addOperation('viz', {
                      },
   string:            function(_lq, cs, _rq) {
                        add('string', escape(eval(this.interval.contents)));
-                     },
-  number:            function(_neg, _digits) {
-                       add('prim', this.interval.contents);
-                     },
-  keyword:           function(expr) {
-                       expr.viz();
-                     },
-  keyword_null:      function(_) {
-                       add('prim', 'null');
-                     },
-  keyword_true:      function(_) {
-                       add('prim', 'true');
-                     },
-  keyword_false:     function(_) {
-                       add('prim', 'false');
                      }
 });
 

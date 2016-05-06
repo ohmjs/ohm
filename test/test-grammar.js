@@ -66,13 +66,13 @@ test('action dictionary templates', function(t) {
     '  foo = bar',
     '  bar = baz baz baz',
     '  baz = qux',
-    '  qux = quux 123',
-    '  quux = 42',
+    '  qux = quux "123"',
+    '  quux = "42"',
     '  aaa = "duh"',
     '  bbb = ~aaa qux  -- blah',
     '}',
     'G2 <: G1 {',
-    '  qux := 100',
+    '  qux := "100"',
     '}'
   ]);
   t.equal(ns.G1.toOperationActionDictionaryTemplate(),
