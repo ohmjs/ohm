@@ -28,7 +28,7 @@ pexprs.end.toString = function() {
   return 'end';
 };
 
-pexprs.Prim.prototype.toString = function() {
+pexprs.Terminal.prototype.toString = function() {
   return JSON.stringify(this.obj);
 };
 

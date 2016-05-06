@@ -44,8 +44,8 @@ pexprs.end.outputRecipe = function(sb, formals, grammarInterval) {
   throw new Error('should never output a recipe for `end` expression');
 };
 
-pexprs.Prim.prototype.outputRecipe = function(sb, formals, grammarInterval) {
-  sb.append('this.prim(');
+pexprs.Terminal.prototype.outputRecipe = function(sb, formals, grammarInterval) {
+  sb.append('this.terminal(');
   sb.append(typeof this.obj === 'string' ? escapeString(this.obj) : '' + this.obj);
   sb.append(')' + getIntervalInfo(this, grammarInterval));
 };

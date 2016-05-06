@@ -24,7 +24,7 @@ pexprs.end.check = function(grammar, vals) {
          vals[0].primitiveValue === undefined;
 };
 
-pexprs.Prim.prototype.check = function(grammar, vals) {
+pexprs.Terminal.prototype.check = function(grammar, vals) {
   return vals[0] instanceof nodes.Node &&
          vals[0].isTerminal() &&
          vals[0].primitiveValue === this.obj;

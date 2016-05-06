@@ -23,7 +23,7 @@ pexprs.PExpr.prototype.allowsSkippingPrecedingSpace = common.abstract;
 pexprs.any.allowsSkippingPrecedingSpace =
 pexprs.end.allowsSkippingPrecedingSpace =
 pexprs.Apply.prototype.allowsSkippingPrecedingSpace =
-pexprs.Prim.prototype.allowsSkippingPrecedingSpace =
+pexprs.Terminal.prototype.allowsSkippingPrecedingSpace =
 pexprs.Range.prototype.allowsSkippingPrecedingSpace =
 pexprs.UnicodeChar.prototype.allowsSkippingPrecedingSpace = function() {
   return true;

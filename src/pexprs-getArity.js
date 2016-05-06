@@ -15,7 +15,7 @@ pexprs.PExpr.prototype.getArity = common.abstract;
 
 pexprs.any.getArity =
 pexprs.end.getArity =
-pexprs.Prim.prototype.getArity =
+pexprs.Terminal.prototype.getArity =
 pexprs.Range.prototype.getArity =
 pexprs.Param.prototype.getArity =
 pexprs.Apply.prototype.getArity =

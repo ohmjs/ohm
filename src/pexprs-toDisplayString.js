@@ -34,7 +34,7 @@ pexprs.end.toDisplayString = function() {
   return 'end';
 };
 
-pexprs.Prim.prototype.toDisplayString = function() {
+pexprs.Terminal.prototype.toDisplayString = function() {
   return JSON.stringify(this.obj);
 };
 

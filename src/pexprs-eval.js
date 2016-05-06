@@ -62,7 +62,7 @@ pexprs.end.eval = function(state) {
   }
 };
 
-pexprs.Prim.prototype.eval = function(state) {
+pexprs.Terminal.prototype.eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   if (this.match(inputStream) === common.fail) {
@@ -76,7 +76,7 @@ pexprs.Prim.prototype.eval = function(state) {
   }
 };
 
-pexprs.Prim.prototype.match = function(inputStream) {
+pexprs.Terminal.prototype.match = function(inputStream) {
   return typeof this.obj === 'string' ?
       inputStream.matchString(this.obj) :
       inputStream.matchExactly(this.obj);

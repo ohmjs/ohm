@@ -327,7 +327,7 @@
   }
 
   function isPrimitive(expr) {
-    return expr instanceof ohm.pexprs.Prim ||
+    return expr instanceof ohm.pexprs.Terminal ||
            expr instanceof ohm.pexprs.Range ||
            expr instanceof ohm.pexprs.UnicodeChar;
   }

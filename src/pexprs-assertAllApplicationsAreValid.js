@@ -23,7 +23,7 @@ pexprs.PExpr.prototype._assertAllApplicationsAreValid = common.abstract;
 
 pexprs.any._assertAllApplicationsAreValid =
 pexprs.end._assertAllApplicationsAreValid =
-pexprs.Prim.prototype._assertAllApplicationsAreValid =
+pexprs.Terminal.prototype._assertAllApplicationsAreValid =
 pexprs.Range.prototype._assertAllApplicationsAreValid =
 pexprs.Param.prototype._assertAllApplicationsAreValid =
 pexprs.UnicodeChar.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {

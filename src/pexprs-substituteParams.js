@@ -21,9 +21,9 @@ pexprs.PExpr.prototype.substituteParams = common.abstract;  // function(actuals)
 
 pexprs.any.substituteParams =
 pexprs.end.substituteParams =
-pexprs.Prim.prototype.substituteParams =
+pexprs.Terminal.prototype.substituteParams =
 pexprs.Range.prototype.substituteParams =
-pexprs.Prim.prototype.substituteParams =
+pexprs.Terminal.prototype.substituteParams =
 pexprs.UnicodeChar.prototype.substituteParams = function(actuals) {
   return this;
 };

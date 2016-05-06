@@ -30,7 +30,7 @@ pexprs.end._isNullable = function(grammar, memo) {
   return true;
 };
 
-pexprs.Prim.prototype._isNullable = function(grammar, memo) {
+pexprs.Terminal.prototype._isNullable = function(grammar, memo) {
   if (typeof this.obj === 'string') {
     // This is an over-simplification: it's only correct if the input is a string. If it's an array
     // or an object, then the empty string parsing expression is not nullable.

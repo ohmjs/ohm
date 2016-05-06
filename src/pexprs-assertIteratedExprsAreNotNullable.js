@@ -16,8 +16,7 @@ pexprs.PExpr.prototype.assertIteratedExprsAreNotNullable = common.abstract;
 
 pexprs.any.assertIteratedExprsAreNotNullable =
 pexprs.end.assertIteratedExprsAreNotNullable =
-pexprs.Prim.prototype.assertIteratedExprsAreNotNullable =
-pexprs.Prim.prototype.assertIteratedExprsAreNotNullable =
+pexprs.Terminal.prototype.assertIteratedExprsAreNotNullable =
 pexprs.Range.prototype.assertIteratedExprsAreNotNullable =
 pexprs.Param.prototype.assertIteratedExprsAreNotNullable =
 pexprs.UnicodeChar.prototype.assertIteratedExprsAreNotNullable = function(grammar, ruleName) {

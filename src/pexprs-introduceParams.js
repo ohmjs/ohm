@@ -20,7 +20,7 @@ pexprs.PExpr.prototype.introduceParams = common.abstract;
 
 pexprs.any.introduceParams =
 pexprs.end.introduceParams =
-pexprs.Prim.prototype.introduceParams =
+pexprs.Terminal.prototype.introduceParams =
 pexprs.Range.prototype.introduceParams =
 pexprs.Param.prototype.introduceParams =
 pexprs.UnicodeChar.prototype.introduceParams = function(formals) {

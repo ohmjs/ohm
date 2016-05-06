@@ -194,7 +194,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return builder.range(from.visit(), to.visit()).withInterval(this.interval);
     },
     Base_terminal: function(expr) {
-      return builder.prim(expr.visit()).withInterval(this.interval);
+      return builder.terminal(expr.visit()).withInterval(this.interval);
     },
     Base_paren: function(open, x, close) {
       return x.visit();

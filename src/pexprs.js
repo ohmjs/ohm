@@ -35,12 +35,12 @@ var any = Object.create(PExpr.prototype);
 
 var end = Object.create(PExpr.prototype);
 
-// Primitives
+// Terminals
 
-function Prim(obj) {
+function Terminal(obj) {
   this.obj = obj;
 }
-inherits(Prim, PExpr);
+inherits(Terminal, PExpr);
 
 // Ranges
 
@@ -198,7 +198,7 @@ inherits(UnicodeChar, PExpr);
 exports.PExpr = PExpr;
 exports.any = any;
 exports.end = end;
-exports.Prim = Prim;
+exports.Terminal = Terminal;
 exports.Range = Range;
 exports.Param = Param;
 exports.Alt = Alt;

@@ -18,8 +18,8 @@ Builder.prototype = {
     return new GrammarDecl(name);
   },
 
-  prim: function(x) {
-    return new pexprs.Prim(x);
+  terminal: function(x) {
+    return new pexprs.Terminal(x);
   },
 
   range: function(from, to) {
