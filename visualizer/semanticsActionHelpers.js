@@ -92,7 +92,7 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
     var hasFailureAtCSTNode = actions.some(function(action) {
       var keyPrefix = toKey(cstNode, action.name);
       return Object.keys(resultMap).some(function(key) {
-        return key.indexOf(keyPrefix) === 0 && resultMap[key] === failure;
+        return key.indexOf(keyPrefix) === 0 && resultMap[key].ans === failure;
       });
     });
     return hasFailureAtCSTNode;
@@ -195,7 +195,7 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
                 passThrough.push(key);
               }
             }
-            resultMap[key] = ans;
+            resultMap[key] = {ans: ans, args: this.args};
           }
           return ans;
         },
@@ -206,7 +206,7 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
             todo = [];
           }
           todo.push(keyPrefix);
-          resultMap[keyPrefix] = failure;
+          resultMap[keyPrefix] = {ans: failure, args: this.args};
           return failure;
         },
 
@@ -243,7 +243,7 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
             if (ans instanceof ErrorWrapper || ans === failure) {
               key = keyPrefix;
             }
-            resultMap[key] = ans;
+            resultMap[key] = {ans: ans, args: this.args};
           }
           return ans;
         }
@@ -364,7 +364,7 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
             if (ans instanceof ErrorWrapper || ans === failure) {
               key = keyPrefix;
             }
-            resultMap[key] = ans;
+            resultMap[key] = {ans: ans, args: this.args};
           }
           return ans;
         };
@@ -424,7 +424,7 @@ var semanticsActionHelpers = (function() {  // eslint-disable-line no-unused-var
       // either throw the result or null. This is used for caller to distinguish
       // between error that caused by executing the semantics action on the node
       // itself or its descendents.
-      if (this.isNextStep(result, traceNode, actionName, args)) {
+      if (this.isNextStep(result && result.ans, traceNode, actionName, args)) {
         // If the traceNode is the next step after executing the semantics
         // action, the throw the result (which will either by an ErrorWrapper, or
         // a failure).

@@ -384,10 +384,11 @@
         // For actions that don't have arguments, click it to show result of
         // `Force evaluation`
         resultDiv.title = actionName;
-        resultDiv.innerHTML = JSON.stringify(result);
+        resultDiv.innerHTML = JSON.stringify(result.ans);
         resultDiv.classList.add('reserved');
         semanticsEditor.hidden = false;
         semanticsEditor.classList.add('resultOnly');
+        resultDiv._result = result;
       }
     };
 
@@ -407,13 +408,14 @@
       try {
         result = semanticsActionHelpers.getActionResultForce(semantics, actionName,
             args, traceNode);
-        resultDiv.innerHTML = JSON.stringify(result);
+        resultDiv.innerHTML = JSON.stringify(result.ans);
         resultDiv.classList.add('reserved');
         semanticsEditor.hidden = false;
         semanticsEditor.classList.add('resultOnly');
         resultDiv.title = actionName + '(' + Object.keys(args).map(function(key) {
           return args[key] || '_';
         }) + ')';
+        resultDiv._result = result;
       } catch (error) { }
     };
   }
@@ -654,7 +656,7 @@
   function saveSemanticAction(semantics, traceNode, actionName, editorBody) {
     var editorBodyCM = editorBody.firstChild.CodeMirror;
     var actionFnStr = editorBodyCM.getValue();
-    var args = retrieveArguementsFromHeader(editorBody.previousElementSibling);
+    var args = retrieveArguementsFromHeader(editorBody.parentElement.querySelector('.header'));
 
     var actionFnWrapper = semanticsActionHelpers.getActionFnWrapper(actionName, args, actionFnStr);
     var actionKey = traceNode.bindings[0].ctorName;
@@ -692,6 +694,31 @@
     }
   }
 
+  function loadEditorArgTags(argTags, args) {
+    Object.keys(args).forEach(function(argName) {
+      var argTag = createElement('.argTag');
+      argTag.innerHTML = argName;
+
+      var valueSpan = createElement('span');
+      valueSpan.innerHTML = JSON.stringify(args[argName]);
+      argTag.appendChild(valueSpan);
+      argTag.onmouseover = function(event) {
+        argTag.style.marginRight = '12px';
+      };
+      argTag.onmouseout = function(event) {
+        if (valueSpan.classList.contains('show')) {
+          return;
+        }
+        argTag.style.marginRight = '0px';
+      };
+      argTag.onclick = function(event) {
+        var showing = valueSpan.classList.contains('show');
+        valueSpan.classList.toggle('show', !showing);
+      };
+      argTags.appendChild(argTag);
+    });
+  }
+
   // Insert semantics editor body to the semantics editor, which includes: `header`, `body`
   // and `save` button
   function insertSemanticsEditorBody(semanticsEditor, semantics, rootTrace,
@@ -703,6 +730,9 @@
     var actionFnStrObj = retrieveActionFnStrObj(traceNode, actionName, semantics);
     var editorHeader = semanticsEditor.insertBefore(createElement('.header'), resultDiv);
     loadEditorHeader(traceNode, editorHeader, actionFnStrObj.args);
+
+    var argTags = semanticsEditor.insertBefore(createElement('.argTags'), resultDiv);
+    loadEditorArgTags(argTags, resultDiv._result.args);
 
     var editorBody = semanticsEditor.insertBefore(createElement('.body'), resultDiv);
     var editorBodyCM = CodeMirror(editorBody);
@@ -727,8 +757,10 @@
   function removeSemanticsEditorBody(semanticsEditor) {
     semanticsEditor.parentElement.classList.remove('selected');
     var header = semanticsEditor.querySelector('.header');
+    var argTags = semanticsEditor.querySelector('.argTags');
     var body = semanticsEditor.querySelector('.body');
     semanticsEditor.removeChild(header);
+    semanticsEditor.removeChild(argTags);
     semanticsEditor.removeChild(body);
   }
 
@@ -799,7 +831,8 @@
 
     // Mark the selfWrapper if it's one of the next steps
     var selfWrapper = actionResultContainer.parentElement.parentElement;
-    if (semanticsActionHelpers.isNextStep(result, traceNode, actionName, optActionArguments)) {
+    if (semanticsActionHelpers.isNextStep(result && result.ans, traceNode, actionName,
+        optActionArguments)) {
       selfWrapper.classList.add('nextStepMark');
     }
 
@@ -808,18 +841,21 @@
       result = semanticsActionHelpers.getReservedResult(traceNode, actionName, optActionArguments);
     }
 
-    if (result && result.isErrorWrapper) {
-      actionResultContainer.innerHTML = result;
-    } else if (!(result && result.isFailure)) {
-      actionResultContainer.innerHTML = JSON.stringify(result);
+    var ans = result && result.ans;
+    if (ans && ans.isErrorWrapper) {
+      actionResultContainer.innerHTML = ans;
+    } else if (!(ans && ans.isFailure)) {
+      actionResultContainer.innerHTML = JSON.stringify(ans);
     }
 
-    var isError = !!(result && (result.isErrorWrapper || result.isFailure));
+    var isError = !!(result && (ans.isErrorWrapper || ans.isFailure));
     actionResultContainer.classList.toggle('error', isError);
 
     var isPassThrough = !!semanticsActionHelpers.isPassThrough(traceNode, actionName,
         optActionArguments);
     selfWrapper.classList.toggle('passThrough', isPassThrough);
+
+    actionResultContainer._result = result;
   }
 
   // Appends an semantic editor to the label of node wrapper
