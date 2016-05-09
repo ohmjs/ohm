@@ -29,7 +29,7 @@ Getting Started
 
 The easiest way to get started with Ohm is to play with one of the following examples on JSFiddle:
 
-- [Basic parsing example](http://jsfiddle.net/pdubroy/p3b1v2xb/)
+- [Basic parsing example](http://jsfiddle.net/fpbd91qe/3/)
 - [Arithmetic example with semantics](http://jsfiddle.net/pdubroy/15k63qae/)
 
 ### Resources
