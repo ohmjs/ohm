@@ -1,3 +1,3 @@
-#!/bin/bash
+#!/bin/bash -i
 
-PATH=/usr/local/bin:$PATH npm run prepublish
+npm run prepublish
