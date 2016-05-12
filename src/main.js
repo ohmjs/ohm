@@ -102,7 +102,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       }
     },
 
-    Rule_define: function(n, fs, d, _equals, _optBar, b) {
+    Rule_define: function(n, fs, d, _, b) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
       // If there is no default start rule yet, set it now. This must be done before visiting
@@ -115,7 +115,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       var description = d.visit()[0];
       return decl.define(currentRuleName, currentRuleFormals, body, description);
     },
-    Rule_override: function(n, fs, _colonEquals, _optBar, b) {
+    Rule_override: function(n, fs, _, b) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
       overriding = true;
@@ -125,13 +125,17 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       overriding = false;
       return ans;
     },
-    Rule_extend: function(n, fs, _plusEquals, _optBar, b) {
+    Rule_extend: function(n, fs, _, b) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
       var body = b.visit();
       var ans = decl.extend(currentRuleName, currentRuleFormals, body);
       decl.ruleBodies[currentRuleName].definitionInterval = this.interval.trimmed();
       return ans;
+    },
+    RuleBody: function(_, term, _bars, terms) {
+      var args = [term.visit()].concat(terms.visit());
+      return builder.alt.apply(builder, args).withInterval(this.interval);
     },
 
     Formals: function(opointy, fs, cpointy) {
@@ -142,12 +146,12 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return ps.visit();
     },
 
-    Alt: function(term, _, terms) {
-      var args = [term.visit()].concat(terms.visit());
+    Alt: function(seq, _, seqs) {
+      var args = [seq.visit()].concat(seqs.visit());
       return builder.alt.apply(builder, args).withInterval(this.interval);
     },
 
-    Term_inline: function(b, n) {
+    TopLevelTerm_inline: function(b, n) {
       var inlineRuleName = currentRuleName + '_' + n.visit();
       var body = b.visit();
       body.definitionInterval = this.interval.trimmed();

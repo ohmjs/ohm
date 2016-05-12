@@ -10,9 +10,16 @@ Ohm {
     = "<:" ident
 
   Rule
-    = ident Formals? ruleDescr? "="  "|"? Alt  -- define
-    | ident Formals?            ":=" "|"? Alt  -- override
-    | ident Formals?            "+=" "|"? Alt  -- extend
+    = ident Formals? ruleDescr? "="  RuleBody  -- define
+    | ident Formals?            ":=" RuleBody  -- override
+    | ident Formals?            "+=" RuleBody  -- extend
+
+  RuleBody
+    = "|"? TopLevelTerm ("|" TopLevelTerm)*
+
+  TopLevelTerm
+    = Seq caseName  -- inline
+    | Seq
 
   Formals
     = "<" ListOf<ident, ","> ">"
@@ -21,11 +28,7 @@ Ohm {
     = "<" ListOf<Seq, ","> ">"
 
   Alt
-    = Term ("|" Term)*
-
-  Term
-    = Seq caseName -- inline
-    | Seq
+    = Seq ("|" Seq)*
 
   Seq
     = Iter*

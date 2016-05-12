@@ -1094,6 +1094,10 @@ test('inline rule declarations', function(t) {
     function() { ohm.grammar('Bad <: Arithmetic { addExp += addExp "~" mulExp  -- minus }', ns); },
     "rule 'addExp_minus' in grammar 'Bad' (originally declared in 'Arithmetic')");
 
+  t.throws(
+    function() { ohm.grammar('Bad { start = "a" ("b" -- bad\n) }'); },
+    'inline rules must be at the top level');
+
   t.end();
 });
 
