@@ -66,6 +66,7 @@
     "tape": "^3.5.0",
     "tape-catch": "^1.0.4",
     "uglify-js": "^2.4.12",
+    "walk-sync": "^0.2.6",
     "watchify": "^3.3.0",
     "watchy": "^0.6.1"
   },

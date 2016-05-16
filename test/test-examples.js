@@ -7,8 +7,12 @@
 // --------------------------------------------------------------------
 
 var test = require('tape-catch');
+
+var exec = require('child_process').exec;
+var fs = require('fs');
 var jsdom = require('jsdom');
 var path = require('path');
+var walkSync = require('walk-sync');
 
 // --------------------------------------------------------------------
 // Helpers
@@ -55,11 +59,29 @@ function runExample(relativePath, testObj, cb) {
   });
 }
 
+// Executes `npm run build` if any of the files in src/ are older than the browserified bundle.
+function rebuildIfModified() {
+  // Get a sorted list of last-modified times for every file in the 'src' dir.
+  var srcEntries = walkSync.entries(path.join(__dirname, '../src'));
+  var mtimes = srcEntries.map(function(entry) { return entry.mtime; });
+  mtimes.sort(function(a, b) { return a - b; });
+
+  var srcDate = new Date(mtimes.pop());
+  var bundleDate = fs.statSync(path.join(__dirname, '../dist/ohm.js')).mtime;
+
+  if (bundleDate < srcDate) {
+    var p = exec('npm run build');
+    p.stdout.on('data', function() { /* ignore */ });
+    p.stderr.pipe(process.stderr);
+  }
+}
+
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
 
 test('math example', function(t) {
+  rebuildIfModified();
   runExample('math/index.html', t, function(errors) {
     t.deepEqual(errors, [], 'runs without errors');
     t.end();
@@ -67,6 +89,7 @@ test('math example', function(t) {
 });
 
 test('viz example', function(t) {
+  rebuildIfModified();
   runExample('viz/index.html', t, function(errors) {
     t.deepEqual(errors, [], 'runs without errors');
     t.end();
