@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.11.0 - May 16, 2016
+
+### Notable changes:
+
+Language changes:
+- [5d972f6]: Inline rule declarations are now only allowed in top-level alternation nodes.
+  * Previously, the grammar allowed inline rule declarations in any alternation, but it
+    only really makes sense at the top level.
+- [fdf4381]: Matching on structured data (Objects, Arrays, etc.) is no longer supported.
+  * This was a feature that Ohm inherited from OMeta, but we found that we almost never
+    used it in Ohm. Removing it allows significant simplification to the language, code,
+    and documentation.
+
+API changes:
+- [e497d47]: Like grammars, Semantics instances now have a `toRecipe` method
+
 ## v0.10.0 - May 2, 2016
 
 ### Notable changes:
