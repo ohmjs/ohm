@@ -12,7 +12,9 @@ var pexprs = require('./pexprs');
 // Operations
 // --------------------------------------------------------------------
 
-pexprs.PExpr.prototype.assertIteratedExprsAreNotNullable = common.abstract;
+pexprs.PExpr.prototype.assertIteratedExprsAreNotNullable = common.abstract(
+  'assertIteratedExprsAreNotNullable'
+);
 
 pexprs.any.assertIteratedExprsAreNotNullable =
 pexprs.end.assertIteratedExprsAreNotNullable =

@@ -19,7 +19,9 @@ pexprs.PExpr.prototype.assertAllApplicationsAreValid = function(ruleName, gramma
   this._assertAllApplicationsAreValid(ruleName, grammar);
 };
 
-pexprs.PExpr.prototype._assertAllApplicationsAreValid = common.abstract;
+pexprs.PExpr.prototype._assertAllApplicationsAreValid = common.abstract(
+  '_assertAllApplicationsAreValid'
+);
 
 pexprs.any._assertAllApplicationsAreValid =
 pexprs.end._assertAllApplicationsAreValid =

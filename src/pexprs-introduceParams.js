@@ -16,7 +16,7 @@ var pexprs = require('./pexprs');
   parameter with a `Param` node. Returns a PExpr -- either a new one, or the original one if
   it was modified in place.
 */
-pexprs.PExpr.prototype.introduceParams = common.abstract;
+pexprs.PExpr.prototype.introduceParams = common.abstract('introduceParams');
 
 pexprs.any.introduceParams =
 pexprs.end.introduceParams =

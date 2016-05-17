@@ -11,7 +11,7 @@ var pexprs = require('./pexprs');
 // Operations
 // --------------------------------------------------------------------
 
-pexprs.PExpr.prototype.getArity = common.abstract;
+pexprs.PExpr.prototype.getArity = common.abstract('getArity');
 
 pexprs.any.getArity =
 pexprs.end.getArity =

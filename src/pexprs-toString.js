@@ -18,7 +18,7 @@ var pexprs = require('./pexprs');
   ~"b" "a" and "a" are interchangeable in any grammar,
   both in terms of the languages they accept and their arities.
 */
-pexprs.PExpr.prototype.toString = common.abstract;
+pexprs.PExpr.prototype.toString = common.abstract('toString');
 
 pexprs.any.toString = function() {
   return 'any';

@@ -16,7 +16,7 @@ pexprs.PExpr.prototype.isNullable = function(grammar) {
   return this._isNullable(grammar, Object.create(null));
 };
 
-pexprs.PExpr.prototype._isNullable = common.abstract;
+pexprs.PExpr.prototype._isNullable = common.abstract('_isNullable');
 
 pexprs.any._isNullable =
 pexprs.Range.prototype._isNullable =

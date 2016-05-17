@@ -12,7 +12,7 @@ var pexprs = require('./pexprs');
 // Operations
 // --------------------------------------------------------------------
 
-pexprs.PExpr.prototype.toFailure = common.abstract;
+pexprs.PExpr.prototype.toFailure = common.abstract('toFailure');
 
 pexprs.any.toFailure = function(grammar) {
   return new Failure('any object', 'description');

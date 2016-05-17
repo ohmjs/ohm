@@ -200,3 +200,16 @@ test('trailing space should not influence the result', function(t) {
   t.equal(failures[0].type, 'string');
   t.end();
 });
+
+test('method name displayed on abstract function failure', function(t) {
+  var g = ohm.ohmGrammar;
+  var seq = g.ruleBodies.Grammar;
+  try {
+    seq.toFailure();
+    t.fail('Expected an exception to be thrown');
+  } catch (e) {
+    t.equal(e.message,
+      'this method toFailure is abstract! (it has no implementation in class Seq)');
+  }
+  t.end();
+});
