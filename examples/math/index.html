@@ -490,11 +490,13 @@ function showError(r) {
     removeChildren(errorDetails);
 
     // Add the non-fluffy failures first...
-    var nonFluffyFailures = r.getRightmostFailures().filter(function(failure) { return !failure.isFluffy(); });
+    var nonFluffyFailures =
+        r.getRightmostFailures().filter(function(failure) { return !failure.isFluffy(); });
     nonFluffyFailures.forEach(addErrorDetails);
 
     // ... then the fluffy ones
-    var fluffyFailures = r.getRightmostFailures().filter(function(failure) { return failure.isFluffy(); });
+    var fluffyFailures =
+        r.getRightmostFailures().filter(function(failure) { return failure.isFluffy(); });
     fluffyFailures.forEach(addErrorDetails);
 
     // Show the error balloon.
