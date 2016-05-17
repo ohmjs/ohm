@@ -56,7 +56,6 @@
     var grammarSource = grammarEditor.getValue();
     var inputSource = inputEditor.getValue();
 
-    hideError('input', inputEditor);
     saveEditorState(inputEditor, 'input');
 
     // Refresh the option values.
@@ -77,59 +76,13 @@
 
       var result = parseGrammar(grammarSource);
       ohmEditor.grammar = result.grammar;
-      ohmEditor.emit('parse:grammar', result.matchResult, result.grammar);
-
-      if (result.error) {
-        var err = result.error;
-        setError('grammar', grammarEditor, err.interval, err.shortMessage || err.message);
-      }
+      ohmEditor.emit('parse:grammar', result.matchResult, result.grammar, result.error);
     }
 
     if (ohmEditor.grammar && ohmEditor.grammar.defaultStartRule) {
       var trace = ohmEditor.grammar.trace(inputSource);
       ohmEditor.emit('parse:input', trace.result, trace);
-      if (trace.result.failed()) {
-        // Intervals with start == end won't show up in CodeMirror.
-        var interval = trace.result.getInterval();
-        interval.endIdx += 1;
-        setError('input', inputEditor, interval, 'Expected ' + trace.result.getExpectedText());
-      }
     }
-  }
-
-  var errorMarks = {
-    grammar: null,
-    input: null
-  };
-
-  function hideError(category, editor) {
-    var errInfo = errorMarks[category];
-    if (errInfo) {
-      errInfo.mark.clear();
-      clearTimeout(errInfo.timeout);
-      if (errInfo.widget) {
-        errInfo.widget.clear();
-      }
-      errorMarks[category] = null;
-    }
-  }
-
-  function setError(category, editor, interval, message) {
-    hideError(category, editor);
-
-    errorMarks[category] = {
-      mark: cmUtil.markInterval(editor, interval, 'error-interval', false),
-      timeout: setTimeout(showError.bind(null, category, editor, interval, message), 1500),
-      widget: null
-    };
-  }
-
-  function showError(category, editor, interval, message) {
-    var errorEl = document.createElement('div');
-    errorEl.className = 'error';
-    errorEl.textContent = message;
-    var line = editor.posFromIndex(interval.endIdx).line;
-    errorMarks[category].widget = editor.addLineWidget(line, errorEl, {insertAt: 0});
   }
 
   function restoreEditorState(editor, key, defaultEl) {
@@ -164,16 +117,14 @@
   restoreEditorState(ohmEditor.ui.inputEditor, 'input', $('#sampleInput'));
   restoreEditorState(ohmEditor.ui.grammarEditor, 'grammar', $('#sampleGrammar'));
 
-  ohmEditor.ui.inputEditor.on('change', function() {
+  ohmEditor.ui.inputEditor.on('change', function(cm) {
     inputChanged = true;
-    ohmEditor.emit('change:inputEditor', ohmEditor.ui.inputEditor);
-    hideError('input', ohmEditor.ui.inputEditor);
+    ohmEditor.emit('change:inputEditor', cm);
     triggerRefresh(250);
   });
-  ohmEditor.ui.grammarEditor.on('change', function() {
+  ohmEditor.ui.grammarEditor.on('change', function(cm) {
     grammarChanged = true;
-    ohmEditor.emit('change:grammarEditor', ohmEditor.ui.grammarEditor);
-    hideError('grammar', ohmEditor.ui.grammarEditor);
+    ohmEditor.emit('change:grammarEditor', cm);
     triggerRefresh(250);
   });
 
