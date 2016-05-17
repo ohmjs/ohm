@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------
 
 var assert = require('assert');
+var fbemitter = require('fbemitter');
 var jsdom = require('jsdom');
 var test = require('tape');
 
@@ -77,26 +78,32 @@ function serializeTrace(resultNode) {
   return ArrayProto.map.call(rootContainer.children, function(c) { return serializeTree(c); });
 }
 
+function refreshParseTree(emitter, trace) {
+  emitter.emit('parse:input', trace.result, trace);
+}
+
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
 
 // Stripped down DOM containing only the markup that is required to show the parse tree.
-var HTML = '<button id="zoomOutButton" type="button" hidden></button>' +
-           '<div id="expandedInput"></div><div id="parseResults"></div>' +
-           '<div id="measuringDiv"><div class="pexpr"></div></div>';
+var HTML = '<div id="bottomSection">' +
+           '  <button id="zoomOutButton" type="button" hidden></button>' +
+           '  <div id="expandedInput"></div><div id="parseResults"></div>' +
+           '  <div id="measuringDiv"><div class="pexpr"></div></div>' +
+           '  <div class="overlay"></div>' +
+           '</div>';
 
 test('simple parse tree', function(t) {
   var doc = jsdom.jsdom(HTML);
   var g = ohm.grammar('G { start = letter digit+  -- x\n| digit }');
-  var ohmEditor = {
-    grammar: g,
-    options: {},
-    ui: {}
-  };
-  parseTree(ohm, ohmEditor, doc, null, null);
+  var ohmEditor = new fbemitter.EventEmitter();
+  ohmEditor.grammar = g;
+  ohmEditor.options = {};
+  ohmEditor.ui = {};
+  parseTree(ohm, ohmEditor, doc, null, null);  // Initialize the module.
 
-  ohmEditor.refreshParseTree(g.trace('a99'));
+  refreshParseTree(ohmEditor, g.trace('a99'));
   t.equal(doc.querySelector('#expandedInput').textContent, 'a99');
 
   t.deepEqual(serializeTrace(doc.querySelector('#parseResults')), [

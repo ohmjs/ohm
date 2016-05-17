@@ -1,5 +1,4 @@
 /* eslint-env browser */
-/* global $$, $ */
 
 'use strict';
 
@@ -16,6 +15,9 @@
 
   // Helpers
   // -------
+
+  function $(sel) { return document.querySelector(sel); }
+  function $$(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
 
   function parseGrammar(source) {
     var matchResult = ohm.ohmGrammar.match(source);
@@ -75,7 +77,7 @@
 
       var result = parseGrammar(grammarSource);
       ohmEditor.grammar = result.grammar;
-      ohmEditor.emit('parse:grammar', result.grammar, result.matchResult);
+      ohmEditor.emit('parse:grammar', result.matchResult, result.grammar);
 
       if (result.error) {
         var err = result.error;
@@ -84,19 +86,14 @@
     }
 
     if (ohmEditor.grammar && ohmEditor.grammar.defaultStartRule) {
-      // TODO: Move this stuff to parseTree.js. We probably want a proper event system,
-      // with events like 'beforeGrammarParse' and 'afterGrammarParse'.
-      hideBottomOverlay();
-
       var trace = ohmEditor.grammar.trace(inputSource);
+      ohmEditor.emit('parse:input', trace.result, trace);
       if (trace.result.failed()) {
         // Intervals with start == end won't show up in CodeMirror.
         var interval = trace.result.getInterval();
         interval.endIdx += 1;
         setError('input', inputEditor, interval, 'Expected ' + trace.result.getExpectedText());
       }
-
-      ohmEditor.refreshParseTree(trace, true);
     }
   }
 
@@ -135,14 +132,6 @@
     errorMarks[category].widget = editor.addLineWidget(line, errorEl, {insertAt: 0});
   }
 
-  function hideBottomOverlay() {
-    $('#bottomSection .overlay').style.width = 0;
-  }
-
-  function showBottomOverlay() {
-    $('#bottomSection .overlay').style.width = '100%';
-  }
-
   function restoreEditorState(editor, key, defaultEl) {
     var value = localStorage.getItem(key);
     if (value) {
@@ -161,7 +150,6 @@
 
   var refreshTimeout;
   function triggerRefresh(delay) {
-    showBottomOverlay();
     if (refreshTimeout) {
       clearTimeout(refreshTimeout);
     }
@@ -178,11 +166,13 @@
 
   ohmEditor.ui.inputEditor.on('change', function() {
     inputChanged = true;
+    ohmEditor.emit('change:inputEditor', ohmEditor.ui.inputEditor);
     hideError('input', ohmEditor.ui.inputEditor);
     triggerRefresh(250);
   });
   ohmEditor.ui.grammarEditor.on('change', function() {
     grammarChanged = true;
+    ohmEditor.emit('change:grammarEditor', ohmEditor.ui.grammarEditor);
     hideError('grammar', ohmEditor.ui.grammarEditor);
     triggerRefresh(250);
   });

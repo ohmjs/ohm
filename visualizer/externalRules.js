@@ -1,5 +1,4 @@
 /* eslint-env browser */
-/* global $ */
 
 'use strict';
 
@@ -83,7 +82,7 @@
   // the document, no matter what edits are made.
   function LastLineWidget(editor) {
     this.editor = editor;
-    this.node = $('#protos .externalRules').cloneNode(true);
+    this.node = document.querySelector('#protos .externalRules').cloneNode(true);
     this.widget = null;
 
     // Create a bound version of `_placeWidget` for use with on() and off().
@@ -138,7 +137,7 @@
   // The singleton widget (since there's only one grammar editor).
   var widget;
 
-  ohmEditor.addListener('parse:grammar', function(grammar, matchResult) {
+  ohmEditor.addListener('parse:grammar', function(matchResult, grammar) {
     var grammarEditor = ohmEditor.ui.grammarEditor;
     widget = widget || new LastLineWidget(grammarEditor);
     widget.update(grammarEditor, matchResult, grammar);

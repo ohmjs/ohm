@@ -606,5 +606,17 @@
         2 + parseResultsDiv.scrollWidth - parseResultsDiv.clientWidth + 'px';
   }
 
-  ohmEditor.refreshParseTree = refreshParseTree;
+  // When the user makes a change in either editor, show the bottom overlay to indicate
+  // that the parse tree is out of date.
+  function showBottomOverlay() {
+    $('#bottomSection .overlay').style.width = '100%';
+  }
+  ohmEditor.addListener('change:inputEditor', showBottomOverlay);
+  ohmEditor.addListener('change:grammarEditor', showBottomOverlay);
+
+  // Refresh the parse tree after attempting to parse the input.
+  ohmEditor.addListener('parse:input', function(matchResult, trace) {
+    $('#bottomSection .overlay').style.width = 0;  // Hide the overlay.
+    refreshParseTree(trace, true);
+  });
 });

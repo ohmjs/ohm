@@ -67,6 +67,7 @@
     "browserify": "^11.0.0",
     "eslint": "^0.17.1",
     "eslint-plugin-no-extension-in-require": "^0.2.0",
+    "fbemitter": "^2.0.2",
     "jscs": "^1.12.0",
     "jsdom": "^6.3.0",
     "json": "^9.0.3",
