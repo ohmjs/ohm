@@ -101,7 +101,7 @@ test('simple parse tree', function(t) {
   ohmEditor.grammar = g;
   ohmEditor.options = {};
   ohmEditor.ui = {};
-  parseTree(ohm, ohmEditor, doc, null, null);  // Initialize the module.
+  parseTree(ohm, ohmEditor, fbemitter, doc, null, null);  // Initialize the module.
 
   refreshParseTree(ohmEditor, g.trace('a99'));
   t.equal(doc.querySelector('#expandedInput').textContent, 'a99');

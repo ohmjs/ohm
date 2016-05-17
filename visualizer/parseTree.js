@@ -6,9 +6,9 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohm, root.ohmEditor, root.document, root.cmUtil, root.d3);
+    initModule(root.ohm, root.ohmEditor, root.fbemitter, root.document, root.cmUtil, root.d3);
   }
-})(this, function(ohm, ohmEditor, document, cmUtil, d3) {
+})(this, function(ohm, ohmEditor, fbemitter, document, cmUtil, d3) {
   var ArrayProto = Array.prototype;
   function $(sel) { return document.querySelector(sel); }
 
@@ -186,6 +186,8 @@
     var showing = children.hidden;
     el.classList.toggle('collapsed', !showing);
 
+    ohmEditor.parseTree.emit((showing ? 'expand' : 'collapse') + ':traceElement', el);
+
     var childrenSize = measureChildren(el);
     var newWidth = showing ? childrenSize.width : measureLabel(el).width;
 
@@ -337,6 +339,29 @@
            !isLeaf(traceNode);
   }
 
+  // Permanently add a menu item to the context menu.
+  // `id` is the value to use as the 'id' attribute of the DOM node.
+  // `label` is the text label of the item.
+  // `onClick` is a function to use as the onclick handler for the item.
+  // If an item with the same id was already added, then the old item will be updated
+  // with the new values from `label`, `enabled`, and `onClick`.
+  function addMenuItem(id, label, enabled, onClick) {
+    var itemList = $('#contextMenu ul');
+    var li = itemList.querySelector('#' + id);
+    if (!li) {
+      li = itemList.appendChild(document.createElement('li'));
+      li.id = id;
+    }
+    // Set the label.
+    li.innerHTML = '<label></label>';
+    li.firstChild.textContent = label;
+
+    li.classList.toggle('disabled', !enabled);
+    if (enabled) {
+      li.onclick = onClick;
+    }
+  }
+
   // Handle the 'contextmenu' event `e` for the DOM node associated with `traceNode`.
   function handleContextMenu(e, rootTrace, traceNode) {
     var menuDiv = $('#contextMenu');
@@ -347,15 +372,14 @@
     var currentRootTrace = zoomState.zoomTrace || rootTrace;
     var zoomEnabled = couldZoom(currentRootTrace, traceNode);
 
-    var zoomItem = menuDiv.querySelector('#zoomItem');
-    zoomItem.classList.toggle('disabled', !zoomEnabled);
-    if (zoomEnabled) {
-      zoomItem.onclick = function() {
-        updateZoomState({zoomTrace: traceNode, rootTrace: rootTrace});
-        refreshParseTree(rootTrace, false);
-        clearMarks();
-      };
-    }
+    addMenuItem('getInfoItem', 'Get Info', false);
+    addMenuItem('zoomItem', 'Zoom to Node', zoomEnabled, function() {
+      updateZoomState({zoomTrace: traceNode, rootTrace: rootTrace});
+      refreshParseTree(rootTrace, false);
+      clearMarks();
+    });
+    ohmEditor.parseTree.emit('contextMenu', rootTrace, traceNode, addMenuItem);
+
     e.preventDefault();
     e.stopPropagation();  // Prevent ancestor wrappers from handling.
   }
@@ -578,6 +602,7 @@
 
         var container = containerStack[containerStack.length - 1];
         var el = createTraceElement(rootTrace, node, container, childInput);
+        ohmEditor.parseTree.emit('create:traceElement', el, rootTrace, node);
 
         toggleClasses(el, {
           failed: !node.succeeded,
@@ -619,4 +644,22 @@
     $('#bottomSection .overlay').style.width = 0;  // Hide the overlay.
     refreshParseTree(trace, true);
   });
+
+  // Exports
+  // -------
+
+  /*
+    Events:
+
+    * 'create:traceElement' (el, rootTrace, traceNode)
+      - Emitted when a new trace element `el` is created for `traceNode`.
+    * 'expand:traceElement' (el)
+    * 'collapse:traceElement' (el)
+      - Emitted when a trace element is expanded or collapsed.
+    * 'contextMenu' (rootTrace, traceNode, addMenuItem)
+      - Emitted when the contextMenu for the trace element of `traceNode` is about to be shown.
+        `addMenuItem` can be called to add a menu item to the menu.
+   */
+  ohmEditor.parseTree = new fbemitter.EventEmitter();
+  ohmEditor.parseTree.refresh = refreshParseTree;
 });
