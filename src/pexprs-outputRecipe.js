@@ -34,7 +34,7 @@ function getIntervalInfo(expr, grammarInterval) {
 // Operations
 // --------------------------------------------------------------------
 
-pexprs.PExpr.prototype.outputRecipe = common.abstract;
+pexprs.PExpr.prototype.outputRecipe = common.abstract('outputRecipe');
 
 pexprs.any.outputRecipe = function(sb, formals, grammarInterval) {
   throw new Error('should never output a recipe for `any` expression');

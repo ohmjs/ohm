@@ -30,10 +30,15 @@ escapeStringFor['\u000b'.charCodeAt(0)] = '\\v';
 // Exports
 // --------------------------------------------------------------------
 
-exports.abstract = function() {
-  throw new Error(
-      'this method is abstract! ' +
+exports.abstract = function(methodName) {
+  if (!methodName) {
+    methodName = '';
+  }
+  return function() {
+    throw new Error(
+      'this method(' + methodName + ') is abstract! ' +
       '(it has no implementation in class ' + this.constructor.name + ')');
+  };
 };
 
 exports.assert = function(cond, message) {

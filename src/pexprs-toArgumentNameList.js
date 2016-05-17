@@ -34,7 +34,8 @@ var copyWithoutDuplicates = common.copyWithoutDuplicates;
     not have any Alt sub-expressions with inconsistent arities.
   * e.getArity() === e.toArgumentNameList(1).length
 */
-pexprs.PExpr.prototype.toArgumentNameList = common.abstract;  // function(firstArgIndex) { ... }
+// function(firstArgIndex) { ... }
+pexprs.PExpr.prototype.toArgumentNameList = common.abstract('toArgumentNameList');
 
 pexprs.any.toArgumentNameList = function(firstArgIndex) {
   return ['any'];

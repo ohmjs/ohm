@@ -12,7 +12,7 @@ var pexprs = require('./pexprs');
 // Operations
 // --------------------------------------------------------------------
 
-pexprs.PExpr.prototype.check = common.abstract;
+pexprs.PExpr.prototype.check = common.abstract('check');
 
 pexprs.any.check = function(grammar, vals) {
   return vals.length >= 1;

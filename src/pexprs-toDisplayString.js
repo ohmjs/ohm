@@ -12,7 +12,7 @@ var pexprs = require('./pexprs');
 // --------------------------------------------------------------------
 
 // Returns a string representing the PExpr, for use as a UI label, etc.
-pexprs.PExpr.prototype.toDisplayString = common.abstract;
+pexprs.PExpr.prototype.toDisplayString = common.abstract('toDisplayString');
 
 pexprs.Alt.prototype.toDisplayString =
 pexprs.Seq.prototype.toDisplayString =

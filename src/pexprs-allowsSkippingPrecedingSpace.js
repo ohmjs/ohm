@@ -14,7 +14,9 @@ var pexprs = require('./pexprs');
 /*
   Return true if we should skip spaces preceding this expression in a syntactic context.
 */
-pexprs.PExpr.prototype.allowsSkippingPrecedingSpace = common.abstract;
+pexprs.PExpr.prototype.allowsSkippingPrecedingSpace = common.abstract(
+  'allowsSkippingPrecedingSpace'
+);
 
 /*
   Generally, these are all first-order expressions that operate on strings and (with the
