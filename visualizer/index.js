@@ -1,21 +1,21 @@
 /* eslint-env browser */
+/* global $$, $ */
 
 'use strict';
-
-function $(sel) { return document.querySelector(sel); }
 
 (function(root, initModule) {
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohm, root.ohmEditor, root.cmUtil, root.CodeMirror);
+    initModule(root.ohm, root.ohmEditor, root.cmUtil);
   }
-})(this, function(ohm, ohmEditor, cmUtil, CodeMirror) {
-  function $$(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
-
+})(this, function(ohm, ohmEditor, cmUtil) {
   var checkboxes;
   var grammarChanged = true;
   var inputChanged = true;
+
+  // Helpers
+  // -------
 
   function parseGrammar(source) {
     var matchResult = ohm.ohmGrammar.match(source);
@@ -47,19 +47,9 @@ function $(sel) { return document.querySelector(sel); }
     };
   }
 
-  // EXPORTS
-  // -------
-
-  ohmEditor.options = {};
-  ohmEditor.ui = {
-    inputEditor: CodeMirror($('#inputContainer .editorWrapper')),
-    grammarEditor: CodeMirror($('#grammarContainer .editorWrapper'))
-  };
-  ohmEditor.grammar = null;
-
-  ohmEditor.refresh = function() {
-    var grammarEditor = this.ui.grammarEditor;
-    var inputEditor = this.ui.inputEditor;
+  function refresh() {
+    var grammarEditor = ohmEditor.ui.grammarEditor;
+    var inputEditor = ohmEditor.ui.inputEditor;
 
     var grammarSource = grammarEditor.getValue();
     var inputSource = inputEditor.getValue();
@@ -70,7 +60,7 @@ function $(sel) { return document.querySelector(sel); }
     // Refresh the option values.
     for (var i = 0; i < checkboxes.length; ++i) {
       var checkbox = checkboxes[i];
-      this.options[checkbox.name] = checkbox.checked;
+      ohmEditor.options[checkbox.name] = checkbox.checked;
     }
 
     if (inputChanged) {
@@ -84,7 +74,7 @@ function $(sel) { return document.querySelector(sel); }
       saveEditorState(grammarEditor, 'grammar');
 
       var result = parseGrammar(grammarSource);
-      this.grammar = result.grammar;
+      ohmEditor.grammar = result.grammar;
       ohmEditor.emit('parse:grammar', result.grammar, result.matchResult);
 
       if (result.error) {
@@ -93,12 +83,12 @@ function $(sel) { return document.querySelector(sel); }
       }
     }
 
-    if (this.grammar && this.grammar.defaultStartRule) {
+    if (ohmEditor.grammar && ohmEditor.grammar.defaultStartRule) {
       // TODO: Move this stuff to parseTree.js. We probably want a proper event system,
       // with events like 'beforeGrammarParse' and 'afterGrammarParse'.
       hideBottomOverlay();
 
-      var trace = this.grammar.trace(inputSource);
+      var trace = ohmEditor.grammar.trace(inputSource);
       if (trace.result.failed()) {
         // Intervals with start == end won't show up in CodeMirror.
         var interval = trace.result.getInterval();
@@ -106,12 +96,9 @@ function $(sel) { return document.querySelector(sel); }
         setError('input', inputEditor, interval, 'Expected ' + trace.result.getExpectedText());
       }
 
-      this.refreshParseTree(trace, true);
+      ohmEditor.refreshParseTree(trace, true);
     }
-  };
-
-  // Misc Helpers
-  // ------------
+  }
 
   var errorMarks = {
     grammar: null,
@@ -178,16 +165,13 @@ function $(sel) { return document.querySelector(sel); }
     if (refreshTimeout) {
       clearTimeout(refreshTimeout);
     }
-    refreshTimeout = setTimeout(ohmEditor.refresh.bind(ohmEditor), delay || 0);
+    refreshTimeout = setTimeout(refresh.bind(ohmEditor), delay || 0);
   }
 
   checkboxes = document.querySelectorAll('#options input[type=checkbox]');
   Array.prototype.forEach.call(checkboxes, function(cb) {
     cb.addEventListener('click', function(e) { triggerRefresh(); });
   });
-
-  ohmEditor.emit('init:inputEditor', ohmEditor.ui.inputEditor);
-  ohmEditor.emit('init:grammarEditor', ohmEditor.ui.grammarEditor);
 
   restoreEditorState(ohmEditor.ui.inputEditor, 'input', $('#sampleInput'));
   restoreEditorState(ohmEditor.ui.grammarEditor, 'grammar', $('#sampleGrammar'));
@@ -213,7 +197,7 @@ function $(sel) { return document.querySelector(sel); }
   ].join('\n'));
   /* eslint-enable no-console */
 
-  ohmEditor.refresh();
+  refresh();
 
   $$('.hiddenDuringLoading').forEach(function(el) {
     el.classList.remove('hiddenDuringLoading');
