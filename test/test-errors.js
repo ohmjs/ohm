@@ -209,7 +209,7 @@ test('method name displayed on abstract function failure', function(t) {
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.equal(e.message,
-      'this method(toFailure) is abstract! (it has no implementation in class Seq)');
+      'this method toFailure is abstract! (it has no implementation in class Seq)');
   }
   t.end();
 });
