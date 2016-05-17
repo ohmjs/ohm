@@ -8,26 +8,16 @@ function $(sel) { return document.querySelector(sel); }
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    root.ohmEditor = root.ohmEditor || {};
     initModule(root.ohm, root.ohmEditor, root.cmUtil, root.CodeMirror);
   }
 })(this, function(ohm, ohmEditor, cmUtil, CodeMirror) {
   function $$(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
 
-  var checkboxes, grammarChanged;
+  var checkboxes;
+  var grammarChanged = true;
+  var inputChanged = true;
 
-  // EXPORTS
-  // -------
-
-  ohmEditor.options = {};
-  ohmEditor.ui = {
-    inputEditor: CodeMirror($('#inputContainer .editorWrapper')),
-    grammarEditor: CodeMirror($('#grammarContainer .editorWrapper'))
-  };
-  ohmEditor.grammar = null;
-
-  ohmEditor.parseGrammar = function() {
-    var source = this.ui.grammarEditor.getValue();
+  function parseGrammar(source) {
     var matchResult = ohm.ohmGrammar.match(source);
     var grammar;
     var err;
@@ -55,11 +45,27 @@ function $(sel) { return document.querySelector(sel); }
       grammar: grammar,
       error: err
     };
+  }
+
+  // EXPORTS
+  // -------
+
+  ohmEditor.options = {};
+  ohmEditor.ui = {
+    inputEditor: CodeMirror($('#inputContainer .editorWrapper')),
+    grammarEditor: CodeMirror($('#grammarContainer .editorWrapper'))
   };
+  ohmEditor.grammar = null;
 
   ohmEditor.refresh = function() {
-    hideError('input', this.ui.inputEditor);
-    saveEditorState(this.ui.inputEditor, 'input');
+    var grammarEditor = this.ui.grammarEditor;
+    var inputEditor = this.ui.inputEditor;
+
+    var grammarSource = grammarEditor.getValue();
+    var inputSource = inputEditor.getValue();
+
+    hideError('input', inputEditor);
+    saveEditorState(inputEditor, 'input');
 
     // Refresh the option values.
     for (var i = 0; i < checkboxes.length; ++i) {
@@ -67,19 +73,23 @@ function $(sel) { return document.querySelector(sel); }
       this.options[checkbox.name] = checkbox.checked;
     }
 
+    if (inputChanged) {
+      inputChanged = false;
+      ohmEditor.emit('change:input', inputSource);
+    }
+
     if (grammarChanged) {
       grammarChanged = false;
-      saveEditorState(this.ui.grammarEditor, 'grammar');
+      ohmEditor.emit('change:grammar', grammarSource);
+      saveEditorState(grammarEditor, 'grammar');
 
-      var result = this.parseGrammar();
+      var result = parseGrammar(grammarSource);
       this.grammar = result.grammar;
-      this.updateExternalRules(this.ui.grammarEditor, result.matchResult, this.grammar);
-      this.updateRuleHyperlinks(this.ui.grammarEditor, result.matchResult, this.grammar);
+      ohmEditor.emit('parse:grammar', result.grammar, result.matchResult);
+
       if (result.error) {
         var err = result.error;
-        setError('grammar', this.ui.grammarEditor, err.interval,
-          err.shortMessage || err.message);
-        return;
+        setError('grammar', grammarEditor, err.interval, err.shortMessage || err.message);
       }
     }
 
@@ -88,13 +98,12 @@ function $(sel) { return document.querySelector(sel); }
       // with events like 'beforeGrammarParse' and 'afterGrammarParse'.
       hideBottomOverlay();
 
-      var trace = this.grammar.trace(this.ui.inputEditor.getValue());
+      var trace = this.grammar.trace(inputSource);
       if (trace.result.failed()) {
         // Intervals with start == end won't show up in CodeMirror.
         var interval = trace.result.getInterval();
         interval.endIdx += 1;
-        setError('input', this.ui.inputEditor, interval,
-          'Expected ' + trace.result.getExpectedText());
+        setError('input', inputEditor, interval, 'Expected ' + trace.result.getExpectedText());
       }
 
       this.refreshParseTree(trace, true);
@@ -177,13 +186,14 @@ function $(sel) { return document.querySelector(sel); }
     cb.addEventListener('click', function(e) { triggerRefresh(); });
   });
 
-  ohmEditor.searchBar.initializeForEditor(ohmEditor.ui.inputEditor);
-  ohmEditor.searchBar.initializeForEditor(ohmEditor.ui.grammarEditor);
+  ohmEditor.emit('init:inputEditor', ohmEditor.ui.inputEditor);
+  ohmEditor.emit('init:grammarEditor', ohmEditor.ui.grammarEditor);
 
   restoreEditorState(ohmEditor.ui.inputEditor, 'input', $('#sampleInput'));
   restoreEditorState(ohmEditor.ui.grammarEditor, 'grammar', $('#sampleGrammar'));
 
   ohmEditor.ui.inputEditor.on('change', function() {
+    inputChanged = true;
     hideError('input', ohmEditor.ui.inputEditor);
     triggerRefresh(250);
   });
@@ -203,7 +213,6 @@ function $(sel) { return document.querySelector(sel); }
   ].join('\n'));
   /* eslint-enable no-console */
 
-  grammarChanged = true;
   ohmEditor.refresh();
 
   $$('.hiddenDuringLoading').forEach(function(el) {

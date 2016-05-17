@@ -7,7 +7,6 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    root.ohmEditor = root.ohmEditor || {};
     initModule(root.ohm, root.ohmEditor);
   }
 })(this, function(ohm, ohmEditor) {
@@ -139,11 +138,9 @@
   // The singleton widget (since there's only one grammar editor).
   var widget;
 
-  // Export: a function to be called when the grammar contents change.
-  ohmEditor.updateExternalRules = function(editor, matchResult, grammar) {
-    if (!widget) {
-      widget = new LastLineWidget(editor);
-    }
-    widget.update(editor, matchResult, grammar);
-  };
+  ohmEditor.addListener('parse:grammar', function(grammar, matchResult) {
+    var grammarEditor = ohmEditor.ui.grammarEditor;
+    widget = widget || new LastLineWidget(grammarEditor);
+    widget.update(grammarEditor, matchResult, grammar);
+  });
 });

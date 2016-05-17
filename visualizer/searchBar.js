@@ -6,7 +6,6 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    root.ohmEditor = root.ohmEditor || {};
     initModule(root.ohmEditor, root.CodeMirror);
   }
 })(this, function(ohmEditor, CodeMirror) {
@@ -110,10 +109,9 @@
   var editorKeyMap = {};
   editorKeyMap['Ctrl-F'] = editorKeyMap['Cmd-F'] = 'findPersistent';
 
-  ohmEditor.searchBar = {
-    // Initialize the search bar for the CodeMirror instance `cm`.
-    initializeForEditor: function(cm) {
-      cm.addKeyMap(editorKeyMap);
-    }
+  var handleEditorInit = function(cm) {
+    cm.addKeyMap(editorKeyMap);
   };
+  ohmEditor.addListener('init:inputEditor', handleEditorInit);
+  ohmEditor.addListener('init:grammarEditor', handleEditorInit);
 });

@@ -6,7 +6,6 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    root.ohmEditor = root.ohmEditor || {};
     initModule(root.ohm, root.ohmEditor, root.document, root.cmUtil, root.d3);
   }
 })(this, function(ohm, ohmEditor, document, cmUtil, d3) {
