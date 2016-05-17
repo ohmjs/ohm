@@ -137,7 +137,7 @@
   // The singleton widget (since there's only one grammar editor).
   var widget;
 
-  ohmEditor.addListener('parse:grammar', function(matchResult, grammar) {
+  ohmEditor.addListener('parse:grammar', function(matchResult, grammar, err) {
     var grammarEditor = ohmEditor.ui.grammarEditor;
     widget = widget || new LastLineWidget(grammarEditor);
     widget.update(grammarEditor, matchResult, grammar);

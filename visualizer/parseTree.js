@@ -6,9 +6,9 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohm, root.ohmEditor, root.fbemitter, root.document, root.cmUtil, root.d3);
+    initModule(root.ohm, root.ohmEditor, root.CheckedEmitter, root.document, root.cmUtil, root.d3);
   }
-})(this, function(ohm, ohmEditor, fbemitter, document, cmUtil, d3) {
+})(this, function(ohm, ohmEditor, CheckedEmitter, document, cmUtil, d3) {
   var ArrayProto = Array.prototype;
   function $(sel) { return document.querySelector(sel); }
 
@@ -633,7 +633,7 @@
 
   // When the user makes a change in either editor, show the bottom overlay to indicate
   // that the parse tree is out of date.
-  function showBottomOverlay() {
+  function showBottomOverlay(changedEditor) {
     $('#bottomSection .overlay').style.width = '100%';
   }
   ohmEditor.addListener('change:inputEditor', showBottomOverlay);
@@ -648,18 +648,17 @@
   // Exports
   // -------
 
-  /*
-    Events:
+  var parseTree = ohmEditor.parseTree = new CheckedEmitter();
+  parseTree.refresh = refreshParseTree;
 
-    * 'create:traceElement' (el, rootTrace, traceNode)
-      - Emitted when a new trace element `el` is created for `traceNode`.
-    * 'expand:traceElement' (el)
-    * 'collapse:traceElement' (el)
-      - Emitted when a trace element is expanded or collapsed.
-    * 'contextMenu' (rootTrace, traceNode, addMenuItem)
-      - Emitted when the contextMenu for the trace element of `traceNode` is about to be shown.
-        `addMenuItem` can be called to add a menu item to the menu.
-   */
-  ohmEditor.parseTree = new fbemitter.EventEmitter();
-  ohmEditor.parseTree.refresh = refreshParseTree;
+  // Emitted when a new trace element `el` is created for `traceNode`.
+  parseTree.register('create:traceElement', 'el', 'rootTrace', 'traceNode');
+
+  // Emitted when a trace element is expanded or collapsed.
+  parseTree.register('expand:traceElement', 'el');
+  parseTree.register('collapse:traceElement', 'el');
+
+  // Emitted when the contextMenu for the trace element of `traceNode` is about to be shown.
+  // `addMenuItem` can be called to add a menu item to the menu.
+  parseTree.register('contextMenu', 'rootTrace', 'traceNode', 'addMenuItem');
 });

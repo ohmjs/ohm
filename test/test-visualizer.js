@@ -4,8 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
+var CheckedEmitter = require('checked-emitter');
 var assert = require('assert');
-var fbemitter = require('fbemitter');
 var jsdom = require('jsdom');
 var test = require('tape');
 
@@ -97,11 +97,14 @@ var HTML = '<div id="bottomSection">' +
 test('simple parse tree', function(t) {
   var doc = jsdom.jsdom(HTML);
   var g = ohm.grammar('G { start = letter digit+  -- x\n| digit }');
-  var ohmEditor = new fbemitter.EventEmitter();
+  var ohmEditor = new CheckedEmitter();
+  ohmEditor.register('parse:input', 'matchResult', 'trace');
+  ohmEditor.register('change:inputEditor', 'codeMirror');
+  ohmEditor.register('change:grammarEditor', 'codeMirror');
   ohmEditor.grammar = g;
   ohmEditor.options = {};
   ohmEditor.ui = {};
-  parseTree(ohm, ohmEditor, fbemitter, doc, null, null);  // Initialize the module.
+  parseTree(ohm, ohmEditor, CheckedEmitter, doc, null, null);  // Initialize the module.
 
   refreshParseTree(ohmEditor, g.trace('a99'));
   t.equal(doc.querySelector('#expandedInput').textContent, 'a99');

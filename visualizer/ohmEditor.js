@@ -1,34 +1,26 @@
 /* eslint-env browser */
-/* global CodeMirror, fbemitter */
+/* global CheckedEmitter, CodeMirror */
 
 'use strict';
 
-/*
-  Events:
+var ohmEditor = new CheckedEmitter();
 
-  * 'init:inputEditor' (codeMirror)
-    - Emitted when the CodeMirror instance for the input has been initialized.
-  * 'init:grammarEditor' (codeMirror)
-    - Emitted when the CodeMirror instance for the grammar has been initialized.
+// Emitted when the CodeMirror instances for the input and grammar have been initialized.
+ohmEditor.register('init:inputEditor', 'codeMirror');
+ohmEditor.register('init:grammarEditor', 'codeMirror');
 
-  * 'change:inputEditor' (codeMirror)
-    - Emitted as soon as the user has made a change in the input editor. Any listeners which
-      may be long running should use 'change:input' instead.
-  * 'change:grammarEditor' (codeMirror)
-    - Emitted as soon as the user has made a change in the grammar editor. Any listeners which
-      may be long running should use 'change:grammar' instead.
+// Emitted as soon as the user has made a change in the respective editor. Any listeners which
+// may be long running should use 'change:input' or 'change:grammar' instead.
+ohmEditor.register('change:inputEditor', 'codeMirror');
+ohmEditor.register('change:grammarEditor', 'codeMirror');
 
-  * 'change:grammar' (grammarSource)
-    - Emitted after a short delay when one or more 'change:grammarEditor' events have occurred.
-  * 'parse:grammar' (matchResult, grammar)
-    - Emitted after attempting to parse the grammar.
+// Emitted after a short delay when one or more editor change events have occurred.
+ohmEditor.register('change:grammar', 'grammarSource');
+ohmEditor.register('change:input', 'inputSource');
 
-  * 'change:input' (inputSource)
-    - Emitted after a short delay when one or more 'change:inputEditor' events have occurred.
-  * 'parse:input' (matchResult, trace)
-    - Emitted after attempting to parse the input.
- */
-var ohmEditor = new fbemitter.EventEmitter();
+// Emitted after attempting to parse the grammar and the input, respectively.
+ohmEditor.register('parse:grammar', 'matchResult', 'grammar', 'err');
+ohmEditor.register('parse:input', 'matchResult', 'trace');
 
 ohmEditor.grammar = null;
 ohmEditor.options = {};

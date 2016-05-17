@@ -111,7 +111,7 @@
     });
   }
 
-  ohmEditor.addListener('parse:grammar', function(matchResult, g) {
+  ohmEditor.addListener('parse:grammar', function(matchResult, g, err) {
     if (!grammarEditor) {
       grammarEditor = ohmEditor.ui.grammarEditor;
       registerListeners(grammarEditor);
