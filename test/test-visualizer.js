@@ -98,9 +98,11 @@ test('simple parse tree', function(t) {
   var doc = jsdom.jsdom(HTML);
   var g = ohm.grammar('G { start = letter digit+  -- x\n| digit }');
   var ohmEditor = new CheckedEmitter();
-  ohmEditor.register('parse:input', 'matchResult', 'trace');
-  ohmEditor.register('change:inputEditor', 'codeMirror');
-  ohmEditor.register('change:grammarEditor', 'codeMirror');
+  ohmEditor.registerEvents({
+    'parse:input': ['matchResult', 'trace'],
+    'change:inputEditor': ['codeMirror'],
+    'change:grammarEditor': ['codeMirror']
+  });
   ohmEditor.grammar = g;
   ohmEditor.options = {};
   ohmEditor.ui = {};

@@ -633,7 +633,7 @@ process.umask = function() { return 0; };
 
 'use strict';
 
-var fbemitter = require('fbemitter');
+var EventEmitter = require('fbemitter').EventEmitter;
 var inherits = require('inherits');
 
 var ArrayProto = Array.prototype;
@@ -642,20 +642,40 @@ var ArrayProto = Array.prototype;
 // --------------
 
 function CheckedEmitter() {
-  CheckedEmitter.super_.call(this);
+  EventEmitter.call(this);
   this._eventTypes = Object.create(null);
 }
-inherits(CheckedEmitter, fbemitter.EventEmitter);
+inherits(CheckedEmitter, EventEmitter);
+var SUPER_PROTO = EventEmitter.prototype;
 
 // Register a new event type `eventType`. The remaining arguments are
 // descriptive names of the arguments that will be passed to the callback.
 // E.g., `e.register('propchange', 'propName', 'oldValue', 'newValue')`.
-CheckedEmitter.prototype.register = function(eventType /* ...args */) {
+CheckedEmitter.prototype.registerEvent = function(eventType /* ...args */) {
   if (eventType in this._eventTypes) {
     throw new Error(
         "Event type '" + eventType + "' has already been registered");
   }
-  this._eventTypes[eventType] = ArrayProto.slice.call(arguments, 1);
+  var params = ArrayProto.slice.call(arguments, 1);
+  this._eventTypes[eventType] = {name: eventType, params: params};
+};
+
+// Shorthand for registering multiple events at once.
+// `obj` is a map of event types to an Array of event parameters.
+CheckedEmitter.prototype.registerEvents = function(obj) {
+  var self = this;
+  Object.keys(obj).forEach(function(name) {
+    self.registerEvent.apply(self, [name].concat(obj[name]));
+  });
+};
+
+// Return an Array of objects representing every event that has been
+// registered on this emitter.
+CheckedEmitter.prototype.events = function() {
+  var self = this;
+  return Object.keys(this._eventTypes).map(function(name) {
+    return self._eventTypes[name];
+  });
 };
 
 CheckedEmitter.prototype._checkEventType = function(type, optArrLike, what) {
@@ -663,10 +683,10 @@ CheckedEmitter.prototype._checkEventType = function(type, optArrLike, what) {
     throw new TypeError("'" + type + "' is not a registered event type");
   }
   if (optArrLike) {
-    var args = this._eventTypes[type];
-    if (args.length !== optArrLike.length) {
+    var evt = this._eventTypes[type];
+    if (evt.params.length !== optArrLike.length) {
       var message = 'Wrong ' + what + " for '" + type + "': " +
-          'expected ' + args.length + ', got ' + optArrLike.length;
+          'expected ' + evt.params.length + ', got ' + optArrLike.length;
       throw new TypeError(message);
     }
   }
@@ -678,31 +698,30 @@ CheckedEmitter.prototype._checkEventType = function(type, optArrLike, what) {
 
 CheckedEmitter.prototype.addListener = function(eventType, callback) {
   this._checkEventType(eventType, callback, 'callback arity');
-  return CheckedEmitter.super_.prototype.addListener.apply(this, arguments);
+  return SUPER_PROTO.addListener.apply(this, arguments);
 };
 
 CheckedEmitter.prototype.once = function(eventType, callback) {
   this._checkEventType(eventType, callback, 'callback arity');
-  return CheckedEmitter.super_.prototype.once.apply(this, arguments);
+  return SUPER_PROTO.once.apply(this, arguments);
 };
 
 CheckedEmitter.prototype.removeAllListeners = function(optEventType) {
   if (optEventType) {
     this._checkEventType(optEventType);
   }
-  return CheckedEmitter.super_.prototype.removeAllListeners.apply(
-      this, arguments);
+  return SUPER_PROTO.removeAllListeners.apply(this, arguments);
 };
 
 CheckedEmitter.prototype.listeners = function(eventType) {
   this._checkEventType(eventType);
-  return CheckedEmitter.super_.prototype.listeners.apply(this, arguments);
+  return SUPER_PROTO.listeners.apply(this, arguments);
 };
 
 CheckedEmitter.prototype.emit = function(eventType /* ...args */) {
   var args = ArrayProto.slice.call(arguments, 1);
   this._checkEventType(eventType, args, 'number of arguments');
-  return CheckedEmitter.super_.prototype.emit.apply(this, arguments);
+  return SUPER_PROTO.emit.apply(this, arguments);
 };
 
 module.exports = CheckedEmitter;

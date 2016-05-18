@@ -651,14 +651,17 @@
   var parseTree = ohmEditor.parseTree = new CheckedEmitter();
   parseTree.refresh = refreshParseTree;
 
-  // Emitted when a new trace element `el` is created for `traceNode`.
-  parseTree.register('create:traceElement', 'el', 'rootTrace', 'traceNode');
+  parseTree.registerEvents({
+    // Emitted when a new trace element `el` is created for `traceNode`.
+    'create:traceElement': ['el', 'rootTrace', 'traceNode'],
 
-  // Emitted when a trace element is expanded or collapsed.
-  parseTree.register('expand:traceElement', 'el');
-  parseTree.register('collapse:traceElement', 'el');
+    // Emitted when a trace element is expanded or collapsed.
+    'expand:traceElement': ['el'],
+    'collapse:traceElement': ['el'],
 
-  // Emitted when the contextMenu for the trace element of `traceNode` is about to be shown.
-  // `addMenuItem` can be called to add a menu item to the menu.
-  parseTree.register('contextMenu', 'rootTrace', 'traceNode', 'addMenuItem');
+    // Emitted when the contextMenu for the trace element of `traceNode` is about to be shown.
+    // `addMenuItem` can be called to add a menu item to the menu.
+    // TODO: The key should be quoted to be consistent, but JSCS complains.
+    contextMenu: ['rootTrace', 'traceNode', 'addMenuItem']
+  });
 });
