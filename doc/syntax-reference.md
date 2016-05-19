@@ -141,7 +141,7 @@ Declares a grammar named `grammarName` which inherits from `supergrammarName`.
 ### Defining, Extending, and Overriding Rules
 
 In the three forms below, the rule body may optionally begin with a `|` character, which will be
-ignored.
+ignored. Also note that in rule names,[**case is significant**](#syntactic-lexical).
 
 <pre><code><i>ruleName</i> = <i>expr</i></code></pre>
 
@@ -154,6 +154,12 @@ Defines a rule named `ruleName`, overriding a rule of the same name in a supergr
 <pre><code><i>ruleName</i> += <i>expr</i></code></pre>
 
 Extends a supergrammar rule named `ruleName`, throwing an error if no rule with that name exists in a supergrammar. The rule body will effectively be <code><i>expr</i> | <i>oldBody</i></code>, where `oldBody` is the rule body as defined in the supergrammar.
+
+#### Parameterized Rules
+
+<pre><code><i>ruleName</i>&lt;<i>arg1</i>, ..., <i>argN</i>&gt; = <i>expr</i></code></pre>
+
+Defines a new rule named `ruleName` which has _n_ parameters. In the rule body _expr_, the parameter names (e.g. _arg1_) may be used as rule applications. E.g., `Repeat<x> = x x`.
 
 #### Rule Descriptions
 
@@ -171,13 +177,7 @@ ident (an identifier)
   = ~keyword name
 ```
 
-<h3 id="syntactic-lexical">Syntactic vs. Lexical Rules</h3>
-
-A _syntactic rule_ is a rule whose name begins with an uppercase letter, and _lexical rule_ is one whose name begins with a lowercase letter. The difference between lexical and syntactic rules is that syntactic rules implicitly skip whitespace characters.
-
-For the purposes of a syntactic rule, a "whitespace character" is anything that matches its enclosing grammar's "space" rule. The default implementation of "space" matches ' ', '\t', '\n', '\r', and any other character that is considered whitespace in the [ES5 spec](http://ecma-international.org/ecma-262/5.1/#sec-7.2).
-
-### Inline Rule Declarations
+#### Inline Rule Declarations
 
 <pre><code><i>expr</i> -- <i>caseName</i></code></pre>
 
@@ -200,6 +200,8 @@ AddExp = AddExp_plus
 AddExp_plus = AddExp "+" MulExp
 ```
 
-### Parameterized Rules
+<h3 id="syntactic-lexical">Syntactic vs. Lexical Rules</h3>
 
-TODO
+A _syntactic rule_ is a rule whose name begins with an uppercase letter, and _lexical rule_ is one whose name begins with a lowercase letter. The difference between lexical and syntactic rules is that syntactic rules implicitly skip whitespace characters.
+
+For the purposes of a syntactic rule, a "whitespace character" is anything that matches its enclosing grammar's "space" rule. The default implementation of "space" matches ' ', '\t', '\n', '\r', and any other character that is considered whitespace in the [ES5 spec](http://ecma-international.org/ecma-262/5.1/#sec-7.2).
