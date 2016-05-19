@@ -41,7 +41,7 @@ These are the fundamental building blocks of Ohm grammars.
 
 #### String literal
 
-`"hello there"`
+    "hello there"
 
 Matches exactly the characters contained inside the quotation marks.
 
@@ -49,41 +49,41 @@ Special characters (`"`, `\`, and `'`) can be escaped with a backslash -- e.g., 
 
 #### Number literal
 
-`-42`
+    -42
 
 Matches a positive or negative integer value.
 
 ### Rule Application
 
-<code><i>ruleName</i></code>
+<pre><code><i>ruleName</i></code></pre>
 
 Matches the body of the rule named _ruleName_. For example, the built-in rule `letter` will parse a string of length 1 that is a letter.
 
-<code><i>ruleName</i>&lt;<i>expr</i>&gt;</code>
+<pre><code><i>ruleName</i>&lt;<i>expr</i>&gt;</code></pre>
 
 Matches the body of the _parameterized rule_ named _ruleName_, substituting the parsing expression _expr_ as its first parameter. For parameterized rules with more than one parameter, the parameters are comma-separated, e.g. `ListOf<field, ";">`.
 
 ### Repetition operators
 
-<code><i>expr</i> *</code>
+<pre><code><i>expr</i> *</code></pre>
 
 Matches the expression _expr_ repeated 0 or more times. E.g., `"a"*` will match `''`, `'a'`, `'aa'`, ...
 
 Inside a _syntactic rule_ -- any rule whose name begins with an upper-case letter -- spaces before a match are automatically skipped. E.g., `"a"*` will match `" a a"` as well as `"aa"`. See the documentation on [syntactic and lexical rules](#syntactic-lexical) for more information.
 
-<code><i>expr</i> +</code>
+<pre><code><i>expr</i> +</code></pre>
 
 Matches the expression _expr_ repeated 1 or more times. E.g., `letter+` will match `'x'`, `'xA'`, ...
 
 As with the `*` operator, spaces are skipped when used in a [syntactic rule](#syntactic-lexical).
 
-<code><i>expr</i> ?</code>
+<pre><code><i>expr</i> ?</code></pre>
 
 Tries to match the expression _expr_, succeeding whether it matches or not. No input is consumed if it does not match.
 
 ### Sequence
 
-<code><i>expr1</i> <i>expr2</i></code>
+<pre><code><i>expr1</i> <i>expr2</i></code></pre>
 
 Matches the expression `expr1` followed by `expr2`. E.g., `"grade" letter` will match `'gradeA'`, `'gradeB'`, ...
 
@@ -91,19 +91,19 @@ As with the `*` and `+` operators, spaces are skipped when used in a [syntactic 
 
 ### Alternation
 
-<code><i>expr1</i> | <i>expr2</i></code>
+<pre><code><i>expr1</i> | <i>expr2</i></code></pre>
 
 Matches the expression `expr1`, and if that does not succeed, matches the expression `expr2`. E.g., `letter | number` will match `'a'`, `'9'`, ...
 
 ### Lookahead
 
-<code>& <i>expr</i></code>
+<pre><code>& <i>expr</i></code></pre>
 
 Succeeds if the expression `expr` can be matched, but does not consume anything from the input stream. Usually used as part of a sequence, e.g. `letter &number` will match `'a9'`, but only consume 'a'. `&"a" letter+` will match any string of letters that begins with 'a'.
 
 ### Negative Lookahead
 
-<code>~ <i>expr</i></code>
+<pre><code>~ <i>expr</i></code></pre>
 
 Succeeds if the expression `expr` cannot be matched, and does not consume anything from the input stream. Usually used as part of a sequence, e.g., `~"\n" any` will consume any single character that is not a new line character.
 
@@ -137,7 +137,7 @@ Succeeds if the expression `expr` cannot be matched, and does not consume anythi
 
 ### Grammar Inheritance
 
-<code><i>grammarName</i> &lt;: <i>supergrammarName</i> { ... }</code>
+<pre><code><i>grammarName</i> &lt;: <i>supergrammarName</i> { ... }</code></pre>
 
 Declares a grammar named `grammarName` which inherits from `supergrammarName`.
 
@@ -146,15 +146,15 @@ Declares a grammar named `grammarName` which inherits from `supergrammarName`.
 In the three forms below, the rule body may optionally begin with a `|` character, which will be
 ignored.
 
-<code><i>ruleName</i> = <i>expr</i></code>
+<pre><code><i>ruleName</i> = <i>expr</i></code></pre>
 
 Defines a new rule named `ruleName` in the grammar, with the parsing expression `expr` as the rule body. Throws an error if a rule with that name already exists in the grammar or one of its supergrammars.
 
-<code><i>ruleName</i> := <i>expr</i></code>
+<pre><code><i>ruleName</i> := <i>expr</i></code></pre>
 
 Defines a rule named `ruleName`, overriding a rule of the same name in a supergrammar. Throws an error if no rule with that name exists in a supergrammar.
 
-<code><i>ruleName</i> += <i>expr</i></code>
+<pre><code><i>ruleName</i> += <i>expr</i></code></pre>
 
 Extends a supergrammar rule named `ruleName`, throwing an error if no rule with that name exists in a supergrammar. The rule body will effectively be <code><i>expr</i> | <i>oldBody</i></code>, where `oldBody` is the rule body as defined in the supergrammar.
 
@@ -162,10 +162,10 @@ Extends a supergrammar rule named `ruleName`, throwing an error if no rule with 
 
 Rule declarations may optionally have a description, which is a parenthesized "comment" following the name of the rule in its declaration. Rule descriptions are used to produce better error messages for end users of a language when input is not recognized. For example:
 
-<code>
+```
 ident  (an identifier)
   = ~keyword name
-</code>
+```
 
 <h3 id="syntactic-lexical">Syntactic vs. Lexical Rules</h3>
 
@@ -175,20 +175,22 @@ For the purposes of a syntactic rule, a "whitespace character" is anything that 
 
 ### Inline Rule Declarations
 
-<code><i>expr</i> -- <i>caseName</i></code>
+<pre><code><i>expr</i> -- <i>caseName</i></code></pre>
 
 When a parsing expression is followed by the characters `--` and a name, it signals an _inline rule declaration_. This is most commonly used in alternation expressions to ensure that each branch has the same arity. For example, the following declaration:
 
-<pre><code>AddExp = AddExp "+" MulExp  -- plus
+```
+AddExp = AddExp "+" MulExp  -- plus
        | MulExp
-</code></pre>
+```
 
 is equivalent to:
 
-<pre><code>AddExp = AddExp_plus
+```
+AddExp = AddExp_plus
        | MulExp
 AddExp_plus = AddExp "+" MulExp
-</code></pre>
+```
 
 ### Parameterized Rules
 
