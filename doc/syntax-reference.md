@@ -141,7 +141,7 @@ Declares a grammar named `grammarName` which inherits from `supergrammarName`.
 ### Defining, Extending, and Overriding Rules
 
 In the three forms below, the rule body may optionally begin with a `|` character, which will be
-ignored. Also note that in rule names,[**case is significant**](#syntactic-lexical).
+ignored. Also note that in rule names, [**case is significant**](#syntactic-lexical).
 
 <pre><code><i>ruleName</i> = <i>expr</i></code></pre>
 
