@@ -11,7 +11,6 @@ Ohm is closely related to [OMeta](http://tinlizzie.org/ometa/), another PEG-base
 
 - [Rule applications](#rule-application) can accept parameters. This makes it possible to write higher-order rules, such as the built-in `ListOf` rule.
 - Grammars can be extended in an object-oriented way -- see [Defining, Extending, and Overriding Rules](#defining-extending-and-overriding-rules).
-- [Object](#objects) and [array](#arrays) patterns allow grammars to match structured data.
 
 ## Terminology
 
@@ -53,14 +52,6 @@ Special characters (`"`, `\`, and `'`) can be escaped with a backslash -- e.g., 
 `-42`
 
 Matches a positive or negative integer value.
-
-#### Keywords
-
-`true`: Matches the boolean value `true`.
-
-`false`: Matches the boolean value `false`.
-
-`null`: Matches a null value (or the equivalent in the host language).
 
 ### Rule Application
 
