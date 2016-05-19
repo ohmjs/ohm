@@ -1,0 +1,117 @@
+#addOperation,
+#addAttribute {
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+  width: 102px;
+  margin-right: 4px;
+}
+#addOperation:hover,
+#addAttribute:hover {
+  text-decoration: underline;
+}
+
+#semantics {
+  display: flex;
+  position: fixed;
+  right: 2px;
+  margin-top: 40px;
+  font-size: 14px;
+}
+#semantics .column {
+  margin-right: 15px;
+}
+#semantics .entries {
+  display: flex;
+  flex-direction: column;
+  color: black;
+  font-family: Menlo, Monaco, sans-serif;
+  font-style: normal;
+  border-radius: 3px;
+  padding: 2px 0px 2px 0px;
+  background-color: rgba(0, 0, 0, 0);
+  min-width: 92px;
+}
+#semantics .wrapper {
+  margin: 4px 4px 4px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+#semantics .wrapper textarea.opName {
+  resize: none;
+  outline: none;
+  _margin: 4px 4px 4px 0;
+  height: 16px;
+  border: 1px solid #c1c1c1;
+  border-radius: 3px;
+  display: block;
+  background-color: white;
+  padding: 4px 4px 2px 4px;
+  text-align: center;
+  /* Styles for the "isometric button" effect. */
+  position: relative;
+  top: -2px;
+  _box-shadow: 0 2px 0 #c1c1c1;
+}
+#semantics .wrapper textarea.opName[readOnly] {
+  color: #888;
+  cursor: pointer;
+  -webkit-user-select: none;
+}
+#semantics .wrapper textarea.opName.selected {
+  color: black;
+  border-color: #aaa;
+  box-shadow: none;
+  top: 0;
+}
+
+#semantics .arguments:not(:empty) {
+  border: 1px solid #888;
+  border-radius: 0 0 10px 10px;
+  border-top: 0;
+  margin-top: -2px;
+}
+
+#semantics .arguments textarea{
+  resize: none;
+  outline: none;
+  height: 12px;
+  text-align: center;
+  border: 0;
+}
+
+#semantics .nameValuePair {
+  display: flex;
+  padding: 1px;
+}
+#semantics .nameValuePair * {
+  background-color: transparent;
+}
+#semantics .nameValuePair:not(:first-child) {
+  border-top: 1px solid rgba(136, 136, 136, 0.19);
+}
+#semantics .nameValuePair .assign {
+  width: 10px;
+  height: 5px;
+  margin-bottom: 2px;
+}
+
+#semantics .buttonWrapper {
+  height: 9px;
+  width: 50px;
+  border: 1px solid #888;
+  border-top: 0;
+  border-radius: 0 0 20px 20px;
+}
+#semantics .buttonWrapper .button {
+  opacity: 0.5;
+  cursor: pointer;
+  text-align: center;
+  margin-top: -5px;
+}
+#semantics .buttonWrapper .button:hover {
+  opacity: 1;
+}

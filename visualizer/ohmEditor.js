@@ -22,6 +22,7 @@ ohmEditor.registerEvents({
   // Emitted after attempting to parse the grammar and the input, respectively.
   'parse:grammar': ['matchResult', 'grammar', 'err'],
   'parse:input': ['matchResult', 'trace']
+
 });
 
 ohmEditor.grammar = null;
