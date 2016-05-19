@@ -37,21 +37,11 @@ Here is a full list of the different kinds of parsing expressions supported by O
 
 ### Terminals
 
-These are the fundamental building blocks of Ohm grammars.
-
-#### String literal
-
     "hello there"
 
 Matches exactly the characters contained inside the quotation marks.
 
 Special characters (`"`, `\`, and `'`) can be escaped with a backslash -- e.g., `"\""` will match a literal quote character in the input stream. Other valid escape sequences are: `\b` (backspace), `\f` (form feed), `\n` (line feed), `\r` (carriage return), and `\t` (tab).
-
-#### Number literal
-
-    -42
-
-Matches a positive or negative integer value.
 
 ### Rule Application
 
