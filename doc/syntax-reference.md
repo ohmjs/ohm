@@ -18,7 +18,6 @@ Ohm is closely related to [OMeta](http://tinlizzie.org/ometa/), another PEG-base
   var ohm = require('ohm-js');
   function checkGrammar(source) {
   	assert(ohm.grammar(source));
-  	return '';
   }
   markscript.transformNextBlock(checkGrammar);
 </script>
@@ -160,8 +159,15 @@ Extends a supergrammar rule named `ruleName`, throwing an error if no rule with 
 
 Rule declarations may optionally have a description, which is a parenthesized "comment" following the name of the rule in its declaration. Rule descriptions are used to produce better error messages for end users of a language when input is not recognized. For example:
 
+<script type="text/markscript">
+  function checkRule(source) {
+    assert(ohm.ohmGrammar.match(source, 'Rule').succeeded());
+  }
+  markscript.transformNextBlock(checkRule);
+</script>
+
 ```
-ident  (an identifier)
+ident (an identifier)
   = ~keyword name
 ```
 
@@ -177,6 +183,10 @@ For the purposes of a syntactic rule, a "whitespace character" is anything that 
 
 When a parsing expression is followed by the characters `--` and a name, it signals an _inline rule declaration_. This is most commonly used in alternation expressions to ensure that each branch has the same arity. For example, the following declaration:
 
+<script type="text/markscript">
+  markscript.transformNextBlock(checkRule);
+</script>
+
 ```
 AddExp = AddExp "+" MulExp  -- plus
        | MulExp
@@ -184,7 +194,7 @@ AddExp = AddExp "+" MulExp  -- plus
 
 is equivalent to:
 
-```
+```ohm
 AddExp = AddExp_plus
        | MulExp
 AddExp_plus = AddExp "+" MulExp
