@@ -63,7 +63,7 @@ Matches the body of the rule named _ruleName_. For example, the built-in rule `l
 
 Matches the body of the _parameterized rule_ named _ruleName_, substituting the parsing expression _expr_ as its first parameter. For parameterized rules with more than one parameter, the parameters are comma-separated, e.g. `ListOf<field, ";">`.
 
-### Repetition operators
+### Repetition operators: *, +, ?
 
 <pre><code><i>expr</i> *</code></pre>
 
@@ -95,17 +95,23 @@ As with the `*` and `+` operators, spaces are skipped when used in a [syntactic 
 
 Matches the expression `expr1`, and if that does not succeed, matches the expression `expr2`. E.g., `letter | number` will match `'a'`, `'9'`, ...
 
-### Lookahead
+### Lookahead: &
 
 <pre><code>& <i>expr</i></code></pre>
 
 Succeeds if the expression `expr` can be matched, but does not consume anything from the input stream. Usually used as part of a sequence, e.g. `letter &number` will match `'a9'`, but only consume 'a'. `&"a" letter+` will match any string of letters that begins with 'a'.
 
-### Negative Lookahead
+### Negative Lookahead: ~
 
 <pre><code>~ <i>expr</i></code></pre>
 
 Succeeds if the expression `expr` cannot be matched, and does not consume anything from the input stream. Usually used as part of a sequence, e.g., `~"\n" any` will consume any single character that is not a new line character.
+
+### Lexification: <span>#</span>
+
+<pre><code># <i>expr</i></code></pre>
+
+Matches _expr_ as if in a lexical context. This can be used to prevent whitespace skipping before an expression that appears in the body of a syntactic rule. For further information, see [Syntactic vs. Lexical Rules](#syntactic-lexical).
 
 ## Built-in Rules
 
@@ -129,7 +135,9 @@ Succeeds if the expression `expr` cannot be matched, and does not consume anythi
 
 `end`: Matches the end of the input stream. Equivalent to `~any`.
 
-<code>ListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Matches the expression _elem_ zero or more times, separated by something that matches the expression _sep_. E.g., `ListOf<letter, ",">` will match `''`, `'a'`, and `'a, b, c'`.  Additionally there is <code>NonemptyListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code> that matches _elem_ at least one time.
+<code>ListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Matches the expression _elem_ zero or more times, separated by something that matches the expression _sep_. E.g., `ListOf<letter, ",">` will match `''`, `'a'`, and `'a, b, c'`.
+
+<code>NonemptyListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Like `ListOf`, but matches _elem_ at least one time.
 
 <code>listOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Similar to `ListOf<elem, sep>` but interpreted as [lexical rule](#syntactic-lexical).
 
