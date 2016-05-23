@@ -9,6 +9,7 @@ var assert = require('assert');
 var jsdom = require('jsdom');
 var test = require('tape');
 
+var domUtil = require('../visualizer/domUtil');
 var ohm = require('..');
 var parseTree = require('../visualizer/parseTree');
 
@@ -106,7 +107,9 @@ test('simple parse tree', function(t) {
   ohmEditor.grammar = g;
   ohmEditor.options = {};
   ohmEditor.ui = {};
-  parseTree(ohm, ohmEditor, CheckedEmitter, doc, null, null);  // Initialize the module.
+
+  // Initialize the parseTree module.
+  parseTree(ohm, ohmEditor, CheckedEmitter, doc, null, null, domUtil(doc));
 
   refreshParseTree(ohmEditor, g.trace('a99'));
   t.equal(doc.querySelector('#expandedInput').textContent, 'a99');

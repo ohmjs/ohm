@@ -6,9 +6,10 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohm, root.ohmEditor, root.CheckedEmitter, root.document, root.cmUtil, root.d3);
+    initModule(root.ohm, root.ohmEditor, root.CheckedEmitter, root.document, root.cmUtil, root.d3,
+               root.domUtil);
   }
-})(this, function(ohm, ohmEditor, CheckedEmitter, document, cmUtil, d3) {
+})(this, function(ohm, ohmEditor, CheckedEmitter, document, cmUtil, d3, domUtil) {
   var ArrayProto = Array.prototype;
   function $(sel) { return document.querySelector(sel); }
 
@@ -28,34 +29,6 @@
   var inputMark;
   var grammarMark;
   var defMark;
-
-  // DOM Helpers
-  // -----------
-
-  function createElement(sel, optContent) {
-    var parts = sel.split('.');
-    var tagName = parts[0];
-    if (tagName.length === 0) {
-      tagName = 'div';
-    }
-
-    var el = document.createElement(tagName);
-    el.className = parts.slice(1).join(' ');
-    if (optContent) {
-      el.textContent = optContent;
-    }
-    return el;
-  }
-
-  function closestElementMatching(sel, startEl) {
-    var el = startEl;
-    while (el != null) {
-      if (el.matches(sel)) {
-        return el;
-      }
-      el = el.parentElement;
-    }
-  }
 
   // D3 Helpers
   // ----------
@@ -77,14 +50,6 @@
 
   // Parse tree helpers
   // ------------------
-
-  function toggleClasses(el, map) {
-    for (var k in map) {
-      if (map.hasOwnProperty(k)) {
-        el.classList.toggle(k, !!map[k]);
-      }
-    }
-  }
 
   function measureLabel(wrapperEl) {
     var tempWrapper = $('#measuringDiv .pexpr');
@@ -117,7 +82,7 @@
       return 0;
     }
     var measuringDiv = $('#measuringDiv');
-    var span = measuringDiv.appendChild(createElement('span.input'));
+    var span = measuringDiv.appendChild(domUtil.createElement('span.input'));
     span.innerHTML = inputEl.textContent;
     var result = {
       width: span.clientWidth,
@@ -273,12 +238,13 @@
   // Return true if the trace element `el` should be collapsed by default.
   function shouldTraceElementBeCollapsed(el) {
     // Don't collapse unlabeled nodes (they can't be expanded), or nodes with a collapsed ancestor.
-    if (el.classList.contains('hidden') || closestElementMatching('.collapsed', el) != null) {
+    if (el.classList.contains('hidden') ||
+        domUtil.closestElementMatching('.collapsed', el) != null) {
       return false;
     }
 
     // Collapse the trace if the next labeled ancestor is syntactic, but the node itself isn't.
-    var visualParent = closestElementMatching('.pexpr:not(.hidden)', el.parentElement);
+    var visualParent = domUtil.closestElementMatching('.pexpr:not(.hidden)', el.parentElement);
     if (visualParent && visualParent._traceNode) {
       return isSyntactic(visualParent._traceNode.expr) && !isSyntactic(el._traceNode.expr);
     }
@@ -349,7 +315,7 @@
     var itemList = $('#contextMenu ul');
     var li = itemList.querySelector('#' + id);
     if (!li) {
-      li = itemList.appendChild(document.createElement('li'));
+      li = itemList.appendChild(domUtil.createElement('li'));
       li.id = id;
     }
     // Set the label.
@@ -390,7 +356,7 @@
 
   // Create the DOM node that contains the parse tree for `traceNode` and all its children.
   function createTraceWrapper(traceNode) {
-    var el = createElement('.pexpr');
+    var el = domUtil.createElement('.pexpr');
     var ctorName = traceNode.expr.constructor.name;
     el.classList.add(ctorName.toLowerCase());
     return el;
@@ -398,14 +364,14 @@
 
   function createTraceLabel(traceNode) {
     var pexpr = traceNode.expr;
-    var label = createElement('.label');
+    var label = domUtil.createElement('.label');
 
     var isInlineRule = pexpr.ruleName && pexpr.ruleName.indexOf('_') >= 0;
 
     if (isInlineRule) {
       var parts = pexpr.ruleName.split('_');
       label.textContent = parts[0];
-      label.appendChild(createElement('span.caseName', parts[1]));
+      label.appendChild(domUtil.createElement('span.caseName', parts[1]));
     } else {
       var labelText = traceNode.displayString;
 
@@ -416,7 +382,7 @@
       }
       label.textContent = labelText;
     }
-    toggleClasses(label, {
+    domUtil.toggleClasses(label, {
       leaf: isLeaf(traceNode),
       prim: isPrimitive(pexpr)
     });
@@ -559,7 +525,7 @@
     }
 
     var rootWrapper = parseResultsDiv.appendChild(createTraceWrapper(trace));
-    var rootContainer = rootWrapper.appendChild(createElement('.children'));
+    var rootContainer = rootWrapper.appendChild(domUtil.createElement('.children'));
 
     var inputStack = [expandedInputDiv];
     var containerStack = [rootContainer];
@@ -591,7 +557,7 @@
 
         if (inputContainer && node.succeeded) {
           var contents = isLeafNode ? node.interval.contents : '';
-          childInput = inputContainer.appendChild(createElement('span.input', contents));
+          childInput = inputContainer.appendChild(domUtil.createElement('span.input', contents));
 
           // Represent any non-empty run of whitespace as a single dot.
           if (isWhitespace && contents.length > 0) {
@@ -604,7 +570,7 @@
         var el = createTraceElement(rootTrace, node, container, childInput);
         ohmEditor.parseTree.emit('create:traceElement', el, rootTrace, node);
 
-        toggleClasses(el, {
+        domUtil.toggleClasses(el, {
           failed: !node.succeeded,
           hidden: !shouldNodeBeLabeled(node, parent),
           visibleChoice: isVisibleChoice(node, parent)
@@ -613,7 +579,7 @@
           return node.SKIP;
         }
         inputStack.push(childInput);
-        containerStack.push(el.appendChild(createElement('.children')));
+        containerStack.push(el.appendChild(domUtil.createElement('.children')));
 
         if (shouldTraceElementBeCollapsed(el)) {
           toggleTraceElement(el, 0);
