@@ -84,18 +84,18 @@
     .pexpr.alt > .children > .pexpr {
       margin-left: 0;
     }
-    .pexpr.failed > .label {
+    .pexpr.failed > .self .label {
       background-color: transparent;
       border-bottom: 1px solid transparent;
       color: #d44950;
       text-align: left;
     }
-    .pexpr.failed > .label:not(.leaf):hover {
+    .pexpr.failed > .self .label:not(.leaf):hover {
       border-bottom: 1px solid #ddd;
     }
 
     /* A successful expression in a failed branch */
-    .pexpr.failed .pexpr:not(.failed):not(.unevaluated) > .label:not(.prim) {
+    .pexpr.failed .pexpr:not(.failed):not(.unevaluated) > .self .label:not(.prim) {
       background-color: #FFD7DE;
       border-left-color: pink;
       border-right-color: pink;
@@ -117,7 +117,7 @@
       padding-left: 6px;
     }
 
-    .pexpr > .label {
+    .pexpr > .self .label {
       background-color: #efefef;
       border-bottom: 1px solid #efefef;
       box-sizing: border-box;
@@ -128,37 +128,37 @@
       position: relative;
       text-align: center;
     }
-    .pexpr > .label .caseName::before {
+    .pexpr > .self .label .caseName::before {
       content: '\2014';
       padding: 0 0.5em;
     }
-    .pexpr > .label .caseName {
+    .pexpr > .self .label .caseName {
       font-style: italic;
       opacity: 0.7;
     }
-    .pexpr:not(.failed) > .label:not(.prim):hover {
+    .pexpr:not(.failed) > .self .label:not(.prim):hover {
       background-color: #dfdfdf;
       border-color: #dfdfdf;
     }
-    .pexpr > .label.prim {
+    .pexpr > .self .label.prim {
       background-color: transparent;
       border-color: transparent;
       color: SeaGreen;
       cursor: default;
     }
-    .pexpr.failed > .label.prim {
+    .pexpr.failed > .self .label.prim {
       color: #d44950;
     }
-    .pexpr.unevaluated > .label {
+    .pexpr.unevaluated > .self .label {
       background-color: transparent;
       border-left: 1px transparent;
       border-right: 1px transparent;
       color: #aaa;
     }
-    .pexpr.hidden > .label {
+    .pexpr.hidden > .self .label {
       display: none;
     }
-    .pexpr.collapsed > .label {
+    .pexpr.collapsed > .self .label {
       border-color: #bbb;
     }
     .pexpr > .children {
@@ -432,6 +432,7 @@
       color: white;
     }
   </style>
+  <link rel="stylesheet" href="style/semanticsEditor.css">
 </head>
 <body>
   <div id="topSection">
@@ -539,8 +540,9 @@ number  (a number)
   <script src="ohmEditor.js"></script>
   <script src="cmUtil.js"></script>
   <script src="domUtil.js"></script>
-  <script src="semanticsHelper.js"></script>
   <script src="parseTree.js"></script>
+  <script src="semanticsEditor.js"></script>
+  <script src="semanticsHelper.js"></script>
   <script src="externalRules.js"></script>
   <script src="ruleHyperlinks.js"></script>
   <script src="searchBar.js"></script>

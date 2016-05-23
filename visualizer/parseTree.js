@@ -402,11 +402,15 @@
       wrapper.classList.add('zoomBorder');
     }
 
-    var label = wrapper.appendChild(createTraceLabel(traceNode));
+    var selfWrapper = wrapper.appendChild(domUtil.createElement('.self'));
+    var label = selfWrapper.appendChild(createTraceLabel(traceNode));
 
     label.addEventListener('click', function(e) {
       if (e.altKey && !(e.shiftKey || e.metaKey)) {
         console.log(traceNode);  // eslint-disable-line no-console
+      } else if (e.metaKey && !(e.altKey || e.shiftKey)) {
+        // cmd + click to open or close semantic editor
+        ohmEditor.parseTree.emit('cmdclick:traceElement', wrapper);
       } else if (!isLeaf(traceNode)) {
         toggleTraceElement(wrapper);
       }
@@ -530,6 +534,7 @@
     var inputStack = [expandedInputDiv];
     var containerStack = [rootContainer];
 
+    ohmEditor.parseTree.emit('render:parseTree', trace);
     trace.walk({
       enter: function(node, parent, depth) {
         // Undefined nodes identify the base case for left recursion -- skip them.
@@ -568,13 +573,14 @@
 
         var container = containerStack[containerStack.length - 1];
         var el = createTraceElement(rootTrace, node, container, childInput);
-        ohmEditor.parseTree.emit('create:traceElement', el, rootTrace, node);
 
         domUtil.toggleClasses(el, {
           failed: !node.succeeded,
           hidden: !shouldNodeBeLabeled(node, parent),
           visibleChoice: isVisibleChoice(node, parent)
         });
+
+        ohmEditor.parseTree.emit('create:traceElement', el, rootTrace, node);
         if (isLeafNode) {
           return node.SKIP;
         }
@@ -628,6 +634,12 @@
     // Emitted when the contextMenu for the trace element of `traceNode` is about to be shown.
     // `addMenuItem` can be called to add a menu item to the menu.
     // TODO: The key should be quoted to be consistent, but JSCS complains.
-    contextMenu: ['rootTrace', 'traceNode', 'addMenuItem']
+    contextMenu: ['rootTrace', 'traceNode', 'addMenuItem'],
+
+    // Emitted before start rendering the parse tree
+    'render:parseTree': ['traceNode'],
+
+    // Emitted after cmd + 'click' on a label
+    'cmdclick:traceElement': ['wrapper']
   });
 });

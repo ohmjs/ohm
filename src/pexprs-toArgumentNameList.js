@@ -10,6 +10,14 @@ var pexprs = require('./pexprs');
 var copyWithoutDuplicates = common.copyWithoutDuplicates;
 
 // --------------------------------------------------------------------
+// Private stuff
+// --------------------------------------------------------------------
+
+function isRestrictedJSIdentifier(str) {
+  return /^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(str);
+}
+
+// --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
 
@@ -56,7 +64,16 @@ pexprs.Terminal.prototype.toArgumentNameList = function(firstArgIndex) {
 };
 
 pexprs.Range.prototype.toArgumentNameList = function(firstArgIndex) {
-  return [this.from + '_to_' + this.to];
+  var argName = this.from + '_to_' + this.to;
+  // If the `argName` is not valid then try to prepend a `_`.
+  if (!isRestrictedJSIdentifier(argName)) {
+    argName = '_' + argName;
+  }
+  // If the `argName` still not valid after prepending a `_`, then name it positionally.
+  if (!isRestrictedJSIdentifier(argName)) {
+    argName = '$' + firstArgIndex;
+  }
+  return [argName];
 };
 
 pexprs.Alt.prototype.toArgumentNameList = function(firstArgIndex) {
