@@ -6,9 +6,12 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohmEditor);
+    initModule(root.ohmEditor, root.document, root.domUtil);
   }
-})(this, function(ohmEditor) {
+})(this, function(ohmEditor, document, domUtil) {
+
+  // Privates
+  // --------
   var rootTrace = null;
   ohmEditor.addListener('parse:input', function(matchResult, trace) {
     rootTrace = trace;
@@ -22,8 +25,7 @@
   };
 
   function createSemanticNameContainer() {
-    var nameContainer = document.createElement('textarea');
-    nameContainer.className = 'opName';
+    var nameContainer = domUtil.createElement('textarea.opName');
     nameContainer.cols = 15;
     nameContainer.addEventListener('keyup', function(e) {
       nameContainer.cols = Math.max(nameContainer.value.length, 15);
@@ -33,34 +35,30 @@
 
   // Create the add button for adding new (name, value) pair
   function createAddButton() {
-    var addButton = document.createElement('div');
-    addButton.classList.add('add');
-    addButton.classList.add('button');
+    var addButton = domUtil.createElement('div.add.button');
     addButton.innerHTML = UnicodeChars.PLUS_SIGN;
 
     // Add new (name, value) pair to the argument list when clicking on the
     // add button
     addButton.onclick = function(e) {
-      var nameValPair = document.createElement('div');
-      nameValPair.className = 'nameValuePair';
+      var nameValPair = domUtil.createElement('div.nameValuePair');
 
       // Create the argument name container of the (name, value) pair
-      var argName = nameValPair.appendChild(document.createElement('textarea'));
-      argName.className = argName.placeholder = 'name';
+      var argName = nameValPair.appendChild(domUtil.createElement('textarea.name'));
       argName.cols = 5;
+      argName.placeholder = 'name';
       argName.addEventListener('keyup', function(e) {
         argName.cols = Math.max(argName.value.length, 5);
       });
 
       // Add a left arrow (<-) in each (name, value) pair (i.e. name <- value)
-      var assign = nameValPair.appendChild(document.createElement('div'));
+      var assign = nameValPair.appendChild(domUtil.createElement('div.assign'));
       assign.innerHTML = UnicodeChars.LEFTWARDS_ARROW;
-      assign.className = 'assign';
 
       // Create the argument value container of the (name, value) pair
-      var argValue = nameValPair.appendChild(document.createElement('textarea'));
-      argValue.className = argValue.placeholder = 'value';
+      var argValue = nameValPair.appendChild(domUtil.createElement('textarea.value'));
       argValue.cols = 5;
+      argValue.placeholder = 'value';
       argValue.addEventListener('keyup', function(e) {
         argValue.cols = Math.max(argValue.value.length, 5);
       });
@@ -75,10 +73,8 @@
 
   // Create the arrow button for hide/show the argument list
   function createArrowButton() {
-    var arrowButton = document.createElement('div');
+    var arrowButton = domUtil.createElement('.arrow.button');
     arrowButton.innerHTML = UnicodeChars.BLACK_UP_POINTING_TRIANGLE;
-    arrowButton.classList.add('arrow');
-    arrowButton.classList.add('button');
     arrowButton.onclick = function(event) {
       var argList = arrowButton.parentElement.previousElementSibling;
       argList.hidden = !argList.hidden;
@@ -93,8 +89,7 @@
   }
 
   function createButtons() {
-    var buttonWrapper = document.createElement('div');
-    buttonWrapper.className = 'buttonWrapper';
+    var buttonWrapper = domUtil.createElement('div.buttonWrapper');
 
     // Create the add button, and append it to the button wrapper
     buttonWrapper.appendChild(createAddButton());
@@ -178,8 +173,7 @@
     }
 
     // Create a new semantic button
-    var wrapper = document.createElement('div');
-    wrapper.className = 'wrapper';
+    var wrapper = domUtil.createElement('div.wrapper');
     container.insertBefore(wrapper, container.firstChild);
     // TODO: handleContextMenuOnAction
 
@@ -189,8 +183,7 @@
     if (type === 'Operation') {
       // Create the div to contain the list of arguments, and append it to
       // the wrapper
-      var argList = wrapper.appendChild(document.createElement('div'));
-      argList.className = 'arguments';
+      var argList = wrapper.appendChild(domUtil.createElement('div.arguments'));
       // TODO: handleContextMenuOnArgument
 
       // Create the div that contains all the arguments related buttons, and append
@@ -222,6 +215,7 @@
         // If the user is just changing an argument value, so we just
         // refresh the tree with new arguments values
         // TODO: update argument values
+        ohmEditor.semantics.emit('change:semanticOperation', null, args);
         ohmEditor.parseTree.refresh(rootTrace, false);
         return;
       }
@@ -241,12 +235,11 @@
       try {
         ohmEditor.semantics.emit('add:semanticOperation', type, name, args);
         nameContainer.readOnly = true;
+        ohmEditor.parseTree.refresh(rootTrace, false);
       } catch (error) {
         relaxButton(wrapper);
         window.alert(error);  // eslint-disable-line no-alert
       }
-
-      ohmEditor.parseTree.refresh(rootTrace, false);
     });
 
     nameContainer.addEventListener('click', function(event) {
@@ -263,7 +256,9 @@
               UnicodeChars.BLACK_DOWN_POINTING_TRIANGLE;
         }
 
-        // TODO: change the calling semantics action
+        var name = nameContainer.value;
+        var args = type === 'Operation' ? retrieveArgs(wrapper) : undefined;
+        ohmEditor.semantics.emit('change:semanticOperation', name, args);
         ohmEditor.parseTree.refresh(rootTrace, false);
       } else {
         nameContainer.classList.add('selected');

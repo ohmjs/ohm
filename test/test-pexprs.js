@@ -98,6 +98,7 @@ test('toArgumentNameList', function(t) {
     ' bars = ~"a" (letter "b"| digit "b") foo? "+"',
     ' plus = foo "+" bars',
     ' MoreOpts = ("+" Start)?',
+    ' ranges = "1".."9" | "!".."@"',
     ' }'
     ]);
 
@@ -126,5 +127,8 @@ test('toArgumentNameList', function(t) {
   var opts = g.ruleBodies.MoreOpts;
   t.deepEqual(opts.toArgumentNameList(1), ['opt$1', 'optStart']);
 
+  var ranges = g.ruleBodies.ranges;
+  t.deepEqual(ranges.terms[0].toArgumentNameList(1), ['_1_to_9']);
+  t.deepEqual(ranges.terms[1].toArgumentNameList(1), ['$1']);
   t.end();
 });

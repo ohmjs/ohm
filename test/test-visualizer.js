@@ -20,7 +20,11 @@ var parseTree = require('../visualizer/parseTree');
 var ArrayProto = Array.prototype;
 
 function label(node) {
-  var labelNode = node.firstChild;
+  var selfNode = node.firstChild;
+  assert(selfNode.classList.contains('self'),
+       "Expected node with class 'self', found '" + selfNode.className + "'");
+
+  var labelNode = selfNode.firstChild;
   assert(labelNode.classList.contains('label'),
          "Expected node with class 'label', found '" + labelNode.className + "'");
   // Special handling for inline rules.
