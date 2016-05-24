@@ -30,6 +30,12 @@
   var grammarMark;
   var defMark;
 
+  // Information about the individual parsing steps, for use with the timeline.
+  var parsingSteps;
+  var stepsByNodeId = {};
+
+  var nextNodeId = 0;
+
   // D3 Helpers
   // ----------
 
@@ -50,6 +56,10 @@
 
   // Parse tree helpers
   // ------------------
+
+  function getFreshNodeId() {
+    return 'node-' + nextNodeId++;
+  }
 
   function measureLabel(wrapperEl) {
     var tempWrapper = $('#measuringDiv .pexpr');
@@ -148,13 +158,18 @@
   // Hides or shows the children of `el`, which is a div.pexpr.
   function toggleTraceElement(el, optDurationInMs) {
     var children = el.lastChild;
-    var showing = children.hidden;
-    el.classList.toggle('collapsed', !showing);
+    var isCollapsed = children.hidden;
+    setTraceElementCollapsed(el, !isCollapsed, optDurationInMs);
+  }
 
-    ohmEditor.parseTree.emit((showing ? 'expand' : 'collapse') + ':traceElement', el);
+  // Hides or shows the children of `el`, which is a div.pexpr.
+  function setTraceElementCollapsed(el, collapse, optDurationInMs) {
+    el.classList.toggle('collapsed', collapse);
+
+    ohmEditor.parseTree.emit((collapse ? 'collapse' : 'expand') + ':traceElement', el);
 
     var childrenSize = measureChildren(el);
-    var newWidth = showing ? childrenSize.width : measureLabel(el).width;
+    var newWidth = collapse ? measureLabel(el).width : childrenSize.width;
 
     // The pexpr can't be smaller than the input text.
     newWidth = Math.max(newWidth, measureInput(el._input).width);
@@ -174,14 +189,14 @@
           this.style.width = '';
         });
 
-    var height = showing ? childrenSize.height : 0;
+    var height = collapse ? 0 : childrenSize.height;
     d3.select(el.lastChild)
         .style('height', currentHeightPx)
         .transition().duration(duration)
         .style('height', height + 'px')
-        .each('start', function() { if (showing) { this.hidden = false; } })
+        .each('start', function() { if (!collapse) { this.hidden = false; } })
         .each('end', function() {
-          if (!showing) {
+          if (collapse) {
             this.hidden = true;
           }
           this.style.height = '';
@@ -236,18 +251,26 @@
   }
 
   // Return true if the trace element `el` should be collapsed by default.
-  function shouldTraceElementBeCollapsed(el) {
-    // Don't collapse unlabeled nodes (they can't be expanded), or nodes with a collapsed ancestor.
+  function shouldTraceElementBeCollapsed(el, traceNode) {
+    // Don't collapse unlabeled nodes (they can't be expanded), nodes with a collapsed ancestor,
+    // or leaf nodes.
     if (el.classList.contains('hidden') ||
-        domUtil.closestElementMatching('.collapsed', el) != null) {
+        domUtil.closestElementMatching('.collapsed', el) != null ||
+        isLeaf(traceNode)) {
       return false;
+    }
+
+    // Collapse uppermost failure nodes.
+    if (!traceNode.succeeded) {
+      return true;
     }
 
     // Collapse the trace if the next labeled ancestor is syntactic, but the node itself isn't.
     var visualParent = domUtil.closestElementMatching('.pexpr:not(.hidden)', el.parentElement);
     if (visualParent && visualParent._traceNode) {
-      return isSyntactic(visualParent._traceNode.expr) && !isSyntactic(el._traceNode.expr);
+      return isSyntactic(visualParent._traceNode.expr) && !isSyntactic(traceNode.expr);
     }
+
     return false;
   }
 
@@ -394,6 +417,7 @@
     var wrapper = parent.appendChild(createTraceWrapper(traceNode));
     wrapper._input = input;
     wrapper._traceNode = traceNode;
+    wrapper.id = getFreshNodeId();
 
     if (zoomState.zoomTrace === traceNode && zoomState.previewOnly) {
       if (input) {
@@ -441,6 +465,7 @@
           cmUtil.scrollToInterval(grammarEditor, defInterval);
         }
       }
+
       e.stopPropagation();
     });
 
@@ -516,6 +541,9 @@
     expandedInputDiv.innerHTML = '';
     parseResultsDiv.innerHTML = '';
 
+    parsingSteps = [];
+    stepsByNodeId = {};
+
     if (clearZoomState) {
       zoomState = {};
     }
@@ -550,6 +578,7 @@
         var childInput;
         var isWhitespace = node.expr.ruleName === 'spaces';
         var isLeafNode = isLeaf(node);
+        var isLabeled = shouldNodeBeLabeled(node, parent);
 
         // Don't bother showing whitespace nodes that didn't consume anything.
         if (isWhitespace && node.interval.contents.length === 0) {
@@ -576,27 +605,46 @@
 
         domUtil.toggleClasses(el, {
           failed: !node.succeeded,
-          hidden: !shouldNodeBeLabeled(node, parent),
+          hidden: !isLabeled,
           visibleChoice: isVisibleChoice(node, parent)
         });
 
+        var children = el.appendChild(domUtil.createElement('.children'));
+
+        var isCollapsed = shouldTraceElementBeCollapsed(el, node);
+        if (isCollapsed) {
+          setTraceElementCollapsed(el, true, 0);
+        }
+
         ohmEditor.parseTree.emit('create:traceElement', el, rootTrace, node);
+
+        // If the node is labeled, record it as a distinct "step" in the parsing timeline.
+        if (isLabeled) {
+          stepsByNodeId[el.id] = {enter: parsingSteps.length};
+          parsingSteps.push({type: 'enter', el: el, node: node, collapsed: isCollapsed});
+        }
+
         if (isLeafNode) {
           return node.SKIP;
         }
         inputStack.push(childInput);
-        containerStack.push(el.appendChild(domUtil.createElement('.children')));
-
-        if (shouldTraceElementBeCollapsed(el)) {
-          toggleTraceElement(el, 0);
-        }
+        containerStack.push(children);
       },
       exit: function(node, parent, depth) {
-        containerStack.pop();
+        var childContainer = containerStack.pop();
+        var el = childContainer.parentElement;
+        if (el.id in stepsByNodeId) {
+          stepsByNodeId[el.id].exit = parsingSteps.length;
+          parsingSteps.push({type: 'exit', node: node, el: el});
+        }
+
         inputStack.pop();
       }
     });
     initializeWidths();
+
+    var slider = $('#timeSlider');
+    slider.value = slider.max = parsingSteps.length;
 
     // Hack to ensure that the vertical scroll bar doesn't overlap the parse tree contents.
     parseResultsDiv.style.paddingRight =
@@ -616,6 +664,54 @@
     $('#bottomSection .overlay').style.width = 0;  // Hide the overlay.
     refreshParseTree(trace, true);
   });
+
+  // When the time slider is scrubbed, move backwards/forwards through the
+  // individual parsing steps.
+  $('#timeSlider').oninput = function(e) {
+    var currentStep = parseInt(e.target.value, 10);
+    for (var i = 0; i < parsingSteps.length; ++i) {
+      var cmd = parsingSteps[i];
+      var el = cmd.el;
+      var isStepComplete = i <= currentStep;
+
+      switch (cmd.type) {
+        case 'enter':
+          el.hidden = !isStepComplete;
+          // Mark the element as undecided, unless it is a leaf node.
+          // Leaf nodes become decided as soon as control moves to them.
+          if (!isLeaf(cmd.node)) {
+            el.classList.add('undecided');
+          }
+          break;
+        case 'exit':
+          if (isStepComplete) {
+            el.classList.remove('undecided');
+          }
+          break;
+      }
+    }
+    // Highlight the currently-active step (unhighlighting the previous one first).
+    var stepEl = $('.currentParseStep');
+    if (stepEl) {
+      stepEl.classList.remove('currentParseStep');
+
+      // Re-collapse anything that was expanded just to make the current step visible.
+      while ((stepEl = domUtil.closestElementMatching('.pexpr.should-collapse', stepEl))) {
+        stepEl.classList.remove('should-collapse');
+        setTraceElementCollapsed(stepEl, true, 0);
+      }
+    }
+    if (currentStep !== parsingSteps.length) {
+      stepEl = parsingSteps[currentStep].el;
+      stepEl.classList.add('currentParseStep');
+
+      // Make sure the current step is not hidden in a collapsed tree.
+      while ((stepEl = domUtil.closestElementMatching('.pexpr.collapsed', stepEl))) {
+        stepEl.classList.add('should-collapse');
+        setTraceElementCollapsed(stepEl, false, 0);
+      }
+    }
+  };
 
   // Exports
   // -------

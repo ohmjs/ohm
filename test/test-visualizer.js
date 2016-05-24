@@ -95,6 +95,7 @@ function refreshParseTree(emitter, trace) {
 var HTML = '<div id="bottomSection">' +
            '  <button id="zoomOutButton" type="button" hidden></button>' +
            '  <div id="expandedInput"></div><div id="parseResults"></div>' +
+           '  <input id="timeSlider" type="range" step="1">' +
            '  <div id="measuringDiv"><div class="pexpr"></div></div>' +
            '  <div class="overlay"></div>' +
            '</div>';

@@ -45,6 +45,7 @@
 
     #expandedInputWrapper {
       border-bottom: 1px solid #ddd;
+      white-space: nowrap;
     }
     #expandedInput {
       font-size: 100%;
@@ -78,17 +79,16 @@
     .pexpr.seq.failed {
       flex-grow: 0;
     }
-    .pexpr + .pexpr {
-      margin-left: 2px;
-    }
     .pexpr.alt > .children > .pexpr {
       margin-left: 0;
     }
     .pexpr.failed > .self .label {
       background-color: transparent;
-      border-bottom: 1px solid transparent;
       color: #d44950;
       text-align: left;
+    }
+    .pexpr.failed.visibleChoice > .self .label {
+      border-bottom-color: transparent;  /* Prevent dashed border */
     }
     .pexpr.failed > .self .label:not(.leaf):hover {
       border-bottom: 1px solid #ddd;
@@ -103,27 +103,44 @@
 
     /* Rules to distinguish vertically-stacked choices from parent/childen relationships. */
     .pexpr.visibleChoice {
+      padding-left: 8px;
       position: relative;  /* For positioning the ::before element */
     }
     .pexpr.visibleChoice::before {
-      /* Use a border as a way to draw a vertical bar. */
-      border-left: 1px solid #ddd;
-      content: '\a0';
-      left: 2px;
+      color: #ccc;
+      content: '\25BC';  /* Black Down-pointing triangle */
+      left: 0;
       position: absolute;
-      top: 3px;
+      top: 2px;
     }
-    .pexpr.visibleChoice {
-      padding-left: 6px;
+    .pexpr.collapsed.visibleChoice::before {
+      content: '\25B6';  /* Black Right-pointing triangle */
     }
 
+    /*
+      By default, give .self a transparent border to enforce spacing between nodes.
+      It can also be used to put a border around a label without affecting the layout.
+     */
+    .pexpr:not(.hidden) > .self {
+      border: 1px solid transparent;
+    }
+    .pexpr.currentParseStep > .self {
+      border: 1px solid rgb(53, 151, 255) !important;
+    }
+
+    .pexpr.undecided > .self .label {
+      background-color: transparent;
+      border-bottom: 1px solid #dfdfdf;
+      color: #aaa;
+      font-style: italic;
+    }
     .pexpr > .self .label {
       background-color: #efefef;
       border-bottom: 1px solid #efefef;
       box-sizing: border-box;
       cursor: pointer;
       display: block;
-      margin: 1px 0;
+      margin: 0;
       padding: 2px 2px 1px 2px;
       position: relative;
       text-align: center;
@@ -138,8 +155,11 @@
     }
     .pexpr:not(.failed) > .self .label:not(.prim):hover {
       background-color: #dfdfdf;
-      border-color: #dfdfdf;
     }
+    .pexpr:not(.collapsed) > .self .label:not(.prim):hover {
+      border-bottom-color: #dfdfdf;
+    }
+
     .pexpr > .self .label.prim {
       background-color: transparent;
       border-color: transparent;
@@ -151,15 +171,16 @@
     }
     .pexpr.unevaluated > .self .label {
       background-color: transparent;
-      border-left: 1px transparent;
-      border-right: 1px transparent;
       color: #aaa;
+    }
+    .pexpr[hidden] {
+      visibility: hidden;
     }
     .pexpr.hidden > .self .label {
       display: none;
     }
     .pexpr.collapsed > .self .label {
-      border-color: #bbb;
+      border-bottom: 1px dashed #bbb;
     }
     .pexpr > .children {
       display: flex;
@@ -186,8 +207,8 @@
       font-size: 14px;
       padding: 10px;
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: 25px;
+      right: 15px;
     }
     #options input[type=checkbox] {
       position: relative;
@@ -350,8 +371,8 @@
       top: 1px;
     }
     .footer [type=search]:focus {
-      box-shadow: 0 0 0 1px hsla(216,89%,62%,.5) inset,
-                  0 0 0 1px hsla(216,89%,62%,.5);
+      box-shadow: 0 0 0 1px hsla(216, 89%, 62%, .5) inset,
+                  0 0 0 1px hsla(216, 89%, 62%, .5);
       border-color: hsl(217,60%,71%);
       outline: none;
     }
@@ -431,6 +452,45 @@
     #contextMenu li:hover:not(.disabled) * {
       color: white;
     }
+
+    #timeline {
+      display: flex;
+      height: 20px;
+      margin: 5px 10px;
+    }
+    #timeSlider {
+      flex: 1;
+    }
+
+    /*
+      Use media query hack to enable custom styling on WebKit/Blink only.
+      Other browsers will ignore these rules.
+     */
+    @media screen and (-webkit-min-device-pixel-ratio: 0) {
+      #timeSlider {
+        -webkit-appearance: none;
+        background-color: #ccc;
+        height: 1px;
+        position: relative;
+        top: 50%;
+      }
+      #timeSlider::-webkit-slider-thumb {
+         -webkit-appearance: none;
+        background-color: #aaa;
+        border-radius: 5px;
+        height: 10px;
+        position: relative;
+        top: -1px;
+        width: 10px;
+      }
+      #timeSlider:focus::-webkit-slider-thumb {
+        background-color: rgb(53, 151, 255);
+        box-shadow: 0 0 0 4px rgba(53, 151, 255, 0.4);
+      }
+      #timeSlider:focus {
+        outline: none;
+      }
+    }
   </style>
   <link rel="stylesheet" href="style/semanticsEditor.css">
 </head>
@@ -469,6 +529,7 @@
     </div>
     <div class="overlay"></div>
   </div>
+  <div id="timeline"><input id="timeSlider" type="range" step="1"></div>
 
   <div id="dragOverlay"></div>
 
