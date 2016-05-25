@@ -332,8 +332,16 @@ function grammarsFromScriptElements(optNodeOrNodeList) {
   return ns;
 }
 
-function makeRecipe(recipeFn) {
-  return recipeFn.call(new Builder());
+function makeRecipe(recipe) {
+  if (typeof recipe === 'function') {
+    return recipe.call(new Builder());
+  } else {
+    if (typeof recipe === 'string') {
+      // stringified JSON recipe
+      recipe = JSON.parse(recipe);
+    }
+    return (new Builder()).fromRecipe(recipe);
+  }
 }
 
 // --------------------------------------------------------------------

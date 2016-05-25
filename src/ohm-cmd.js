@@ -23,4 +23,4 @@ try {
 
 var grammar = ohm.grammar(source);
 console.log("var ohm = require('..');");
-console.log('module.exports = ohm.makeRecipe' + grammar.toRecipe());
+console.log('module.exports = ohm.makeRecipe(' + grammar.toRecipe() + ');');

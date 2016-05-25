@@ -259,8 +259,7 @@ Semantics.prototype.toRecipe = function(semanticsOnly) {
   if (!semanticsOnly) {
     str =
       '(function() {\n' +
-      '  var buildGrammar = ' + this.grammar.toRecipe() +
-      '  var grammar = buildGrammar.call(this);\n' +
+      '  var grammar = this.fromRecipe(' + this.grammar.toRecipe() + ');\n' +
       '  var semantics = ' + str + '(grammar);\n' +
       '  return semantics;\n' +
       '});\n';

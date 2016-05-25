@@ -146,52 +146,70 @@ Grammar.prototype = {
       throw new Error(
           'Why would anyone want to generate a recipe for the ' + this.name + ' grammar?!?!');
     }
-    var sb = new common.StringBuffer();
-    if (optVarName) {
-      sb.append('var ' + optVarName + ' = ');
-    }
-    sb.append('(function() {\n');
 
-    // Include the supergrammar in the recipe if it's not a built-in grammar.
-    var superGrammarDecl = '';
-    if (!this.superGrammar.isBuiltIn()) {
-      sb.append(this.superGrammar.toRecipe('buildSuperGrammar'));
-      superGrammarDecl = '    .withSuperGrammar(buildSuperGrammar.call(this))\n';
-    }
-    sb.append('  var decl = this.newGrammar(' + JSON.stringify(this.name) + ')\n');
+    var recipe = [
+      'grammar',
+      {}, // meta-info
+      this.name
+      // super-grammar
+      // default start rule
+      // rules obj
+    ];
 
     // Include the grammar source if it is available.
     if (this.definitionInterval) {
-      sb.append('    .withSource(' + JSON.stringify(this.definitionInterval.contents) + ')\n');
+      recipe[1].source = this.definitionInterval.contents;
     }
-    sb.append(superGrammarDecl);
+
+    if (!this.superGrammar.isBuiltIn()) {
+      recipe.push(JSON.parse(this.superGrammar.toRecipe()));
+    } else {
+      recipe.push(null);
+    }
 
     if (this.defaultStartRule) {
-      sb.append('    .withDefaultStartRule("' + this.defaultStartRule + '")\n');
+      recipe.push(this.defaultStartRule);
+    } else {
+      recipe.push(null);
     }
-    sb.append('  return decl\n');
+
+    var rules = {};
+    recipe.push(rules);
 
     var self = this;
     Object.keys(this.ruleBodies).forEach(function(ruleName) {
       var body = self.ruleBodies[ruleName];
-      sb.append('    .');
+      var rule = [
+        // "define"/"extend"/"override"
+        // meta-info
+        // description
+        // array of formals
+        // array of cases (rule body)
+      ];
+      rules[ruleName] = rule;
+
       if (self.superGrammar.ruleBodies[ruleName]) {
-        sb.append(body instanceof pexprs.Extend ? 'extend' : 'override');
+        rule.push(body instanceof pexprs.Extend ? 'extend' : 'override');
       } else {
-        sb.append('define');
+        rule.push('define');
       }
-      var formals = self.ruleFormals[ruleName];
-      var formalsString = '[' + formals.map(JSON.stringify).join(', ') + ']';
-      sb.append('(' + JSON.stringify(ruleName) + ', ' + formalsString + ', ');
-      body.outputRecipe(sb, formals, self.definitionInterval);
+
+      // TODO: add meta-info
+      rule.push({});
 
       if (!self.superGrammar.ruleBodies[ruleName] && self.ruleDescriptions[ruleName]) {
-        sb.append(', ' + JSON.stringify(self.ruleDescriptions[ruleName]));
+        rule.push(self.ruleDescriptions[ruleName]);
+      } else {
+        rule.push(null);
       }
-      sb.append(')\n');
+
+      var formals = self.ruleFormals[ruleName];
+      rule.push(formals);
+
+      rule.push(body.outputRecipe(formals, self.definitionInterval));
     });
-    sb.append('    .build();\n});\n');
-    return sb.contents();
+
+    return JSON.stringify(recipe);
   },
 
   // TODO: Come up with better names for these methods.
