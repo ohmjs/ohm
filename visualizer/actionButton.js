@@ -12,10 +12,6 @@
 
   // Privates
   // --------
-  var rootTrace = null;
-  ohmEditor.addListener('parse:input', function(matchResult, trace) {
-    rootTrace = trace;
-  });
 
   var UnicodeChars = {
     BLACK_UP_POINTING_TRIANGLE: '\u25B2',
@@ -216,7 +212,7 @@
         // refresh the tree with new arguments values
         // TODO: update argument values
         ohmEditor.semantics.emit('change:semanticOperation', null, args);
-        ohmEditor.parseTree.refresh(rootTrace, false);
+        ohmEditor.parseTree.refresh();
         return;
       }
 
@@ -235,7 +231,7 @@
       try {
         ohmEditor.semantics.emit('add:semanticOperation', type, name, args);
         nameContainer.readOnly = true;
-        ohmEditor.parseTree.refresh(rootTrace, false);
+        ohmEditor.parseTree.refresh();
       } catch (error) {
         relaxButton(wrapper);
         window.alert(error);  // eslint-disable-line no-alert
@@ -259,7 +255,7 @@
         var name = nameContainer.value;
         var args = type === 'Operation' ? retrieveArgs(wrapper) : undefined;
         ohmEditor.semantics.emit('change:semanticOperation', name, args);
-        ohmEditor.parseTree.refresh(rootTrace, false);
+        ohmEditor.parseTree.refresh();
       } else {
         nameContainer.classList.add('selected');
         nameContainer.select();

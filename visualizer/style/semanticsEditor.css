@@ -1,7 +1,9 @@
-.pexpr:not(.failed) > .self.nextStep .label{
+.pexpr:not(.failed) > .self.nextStep .label,
+.pexpr:not(.failed) > .self.tmpNextStep .label {
   background: rgba(100, 149, 237, 0.4);
 }
-.pexpr:not(.failed) > .self.nextStep .label:hover {
+.pexpr:not(.failed) > .self.nextStep .label:hover,
+.pexpr:not(.failed) > .self.tmpNextStep .label:hover {
   background: rgba(100, 149, 237, 0.6);
   border-color: rgba(100, 149, 237, 0.6);
 }
@@ -20,10 +22,6 @@
 }
 
 .semanticsEditor.resultOnly:not(.showing) > *:not(.result) {
-  display: none;
-}
-
-.semanticsEditor.showing .result:not(:empty) {
   display: none;
 }
 
@@ -181,21 +179,24 @@ headerBlock real {
 .semanticsEditor .result:empty {
   padding: 0;
 }
+.semanticsEditor.showing .result:not(:empty) {
+  display: none;
+}
 
 .result resultBlock {
   display: flex;
   flex-direction: column;
   flex: 1;
 }
-.result resultBlock:empty {
-  margin: -4px;
-}
-.result resultBlock:not(:first-child) {
+.result resultBlock.leftBorder {
   padding-left: 2px;
   border-left: 1px solid #276f9e;
 }
 .result resultBlock:not(:last-child) {
   padding-right: 2px;
+}
+.result resultBlock:empty {
+  display: none;
 }
 
 .result resultBlock operation {
