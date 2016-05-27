@@ -60,7 +60,7 @@ ES5 {
   multiLineComment = "/*" (~"*/" sourceCharacter)* "*/"
   singleLineComment = "//" (~lineTerminator sourceCharacter)*
 
-  identifier (an indentifier) = ~reservedWord identifierName
+  identifier (an identifier) = ~reservedWord identifierName
   identifierName = identifierStart identifierPart*
 
   identifierStart = letter | "$" | "_"
