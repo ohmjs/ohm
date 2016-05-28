@@ -60,7 +60,7 @@ ES5 {
   multiLineComment = "/*" (~"*/" sourceCharacter)* "*/"
   singleLineComment = "//" (~lineTerminator sourceCharacter)*
 
-  identifier (an indentifier) = ~reservedWord identifierName
+  identifier (an identifier) = ~reservedWord identifierName
   identifierName = identifierStart identifierPart*
 
   identifierStart = letter | "$" | "_"
@@ -395,7 +395,7 @@ ES5 {
 
   // §A.4 Statements -- http://ecma-international.org/ecma-262/5.1/#sec-A.4
 
-  Statement (a statement)
+  Statement
     = Block
     | VariableStatement
     | EmptyStatement
