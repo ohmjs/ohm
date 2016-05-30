@@ -24,6 +24,9 @@
     ESC: 27
   };
 
+  // The root trace node from the last time the input was parsed (not affected by zooming).
+  var rootTrace;
+
   var zoomState = {};
 
   var inputMark;
@@ -213,13 +216,12 @@
         zoomState[k] = newState[k];
       }
     }
-    refreshParseTree(zoomState.rootTrace, false);
+    refreshParseTree(rootTrace);
   }
 
   function clearZoomState() {
-    var oldZoomState = zoomState;
     zoomState = {};
-    refreshParseTree(oldZoomState.rootTrace, false);
+    refreshParseTree(rootTrace);
   }
 
   function shouldNodeBeLabeled(traceNode, parent) {
@@ -352,7 +354,7 @@
   }
 
   // Handle the 'contextmenu' event `e` for the DOM node associated with `traceNode`.
-  function handleContextMenu(e, rootTrace, traceNode) {
+  function handleContextMenu(e, traceNode) {
     var menuDiv = $('#contextMenu');
     menuDiv.style.left = e.clientX + 'px';
     menuDiv.style.top = e.clientY - 6 + 'px';
@@ -363,11 +365,10 @@
 
     addMenuItem('getInfoItem', 'Get Info', false);
     addMenuItem('zoomItem', 'Zoom to Node', zoomEnabled, function() {
-      updateZoomState({zoomTrace: traceNode, rootTrace: rootTrace});
-      refreshParseTree(rootTrace, false);
+      updateZoomState({zoomTrace: traceNode});
       clearMarks();
     });
-    ohmEditor.parseTree.emit('contextMenu', rootTrace, traceNode, addMenuItem);
+    ohmEditor.parseTree.emit('contextMenu', traceNode, addMenuItem);
 
     e.preventDefault();
     e.stopPropagation();  // Prevent ancestor wrappers from handling.
@@ -412,7 +413,7 @@
     return label;
   }
 
-  function createTraceElement(rootTrace, traceNode, parent, input) {
+  function createTraceElement(traceNode, parent, input) {
     var pexpr = traceNode.expr;
     var wrapper = parent.appendChild(createTraceWrapper(traceNode));
     wrapper._input = input;
@@ -477,7 +478,7 @@
     });
 
     label.addEventListener('contextmenu', function(e) {
-      handleContextMenu(e, rootTrace, traceNode);
+      handleContextMenu(e, traceNode);
     });
 
     return wrapper;
@@ -521,7 +522,9 @@
   // Intialize the zoom out button.
   var zoomOutButton = $('#zoomOutButton');
   zoomOutButton.textContent = UnicodeChars.ANTICLOCKWISE_OPEN_CIRCLE_ARROW;
-  zoomOutButton.onclick = function(e) { clearZoomState(); };
+  zoomOutButton.onclick = function(e) {
+    clearZoomState();
+  };
   zoomOutButton.onmouseover = function(e) {
     if (zoomState.zoomTrace) {
       updateZoomState({previewOnly: true});
@@ -533,8 +536,8 @@
     }
   };
 
-  // Re-render the parse tree starting with the trace at `rootTrace`.
-  function refreshParseTree(rootTrace, clearZoomState) {
+  // Re-render the parse tree starting with `trace` as the root.
+  function refreshParseTree(trace) {
     var expandedInputDiv = $('#expandedInput');
     var parseResultsDiv = $('#parseResults');
 
@@ -544,26 +547,20 @@
     parsingSteps = [];
     stepsByNodeId = {};
 
-    if (clearZoomState) {
-      zoomState = {};
-    }
-    zoomOutButton.hidden = !zoomState.zoomTrace;
-
-    var trace;
+    var renderedTrace = trace;
     if (zoomState.zoomTrace && !zoomState.previewOnly) {
-      trace = zoomState.zoomTrace;
-    } else {
-      trace = rootTrace;
+      renderedTrace = zoomState.zoomTrace;
     }
+    zoomOutButton.hidden = zoomState.zoomTrace == null;
 
-    var rootWrapper = parseResultsDiv.appendChild(createTraceWrapper(trace));
+    var rootWrapper = parseResultsDiv.appendChild(createTraceWrapper(renderedTrace));
     var rootContainer = rootWrapper.appendChild(domUtil.createElement('.children'));
 
     var inputStack = [expandedInputDiv];
     var containerStack = [rootContainer];
 
-    ohmEditor.parseTree.emit('render:parseTree', trace);
-    trace.walk({
+    ohmEditor.parseTree.emit('render:parseTree', renderedTrace);
+    renderedTrace.walk({
       enter: function(node, parent, depth) {
         // Undefined nodes identify the base case for left recursion -- skip them.
         // TODO: Figure out a better way to handle this when generating traces.
@@ -601,7 +598,7 @@
         }
 
         var container = containerStack[containerStack.length - 1];
-        var el = createTraceElement(rootTrace, node, container, childInput);
+        var el = createTraceElement(node, container, childInput);
 
         domUtil.toggleClasses(el, {
           failed: !node.succeeded,
@@ -662,7 +659,8 @@
   // Refresh the parse tree after attempting to parse the input.
   ohmEditor.addListener('parse:input', function(matchResult, trace) {
     $('#bottomSection .overlay').style.width = 0;  // Hide the overlay.
-    refreshParseTree(trace, true);
+    rootTrace = trace;
+    clearZoomState();
   });
 
   // When the time slider is scrubbed, move backwards/forwards through the
@@ -730,7 +728,7 @@
     // Emitted when the contextMenu for the trace element of `traceNode` is about to be shown.
     // `addMenuItem` can be called to add a menu item to the menu.
     // TODO: The key should be quoted to be consistent, but JSCS complains.
-    contextMenu: ['rootTrace', 'traceNode', 'addMenuItem'],
+    contextMenu: ['traceNode', 'addMenuItem'],
 
     // Emitted before start rendering the parse tree
     'render:parseTree': ['traceNode'],
