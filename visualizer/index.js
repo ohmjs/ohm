@@ -13,6 +13,8 @@
   var grammarChanged = true;
   var inputChanged = true;
 
+  var showFailuresImplicitly = true;
+
   // Helpers
   // -------
 
@@ -64,6 +66,10 @@
       ohmEditor.options[checkbox.name] = checkbox.checked;
     }
 
+    if (inputChanged || grammarChanged) {
+      showFailuresImplicitly = true;  // Reset to default.
+    }
+
     if (inputChanged) {
       inputChanged = false;
       ohmEditor.emit('change:input', inputSource);
@@ -81,6 +87,13 @@
 
     if (ohmEditor.grammar && ohmEditor.grammar.defaultStartRule) {
       var trace = ohmEditor.grammar.trace(inputSource);
+
+      // When the input fails to parse, turn on "show failures" automatically.
+      if (trace.result.failed() && showFailuresImplicitly) {
+        ohmEditor.options.showFailures = true;
+        $('input[name=showFailures]').checked = true;
+      }
+
       ohmEditor.emit('parse:input', trace.result, trace);
     }
   }
@@ -111,7 +124,13 @@
 
   checkboxes = document.querySelectorAll('#options input[type=checkbox]');
   Array.prototype.forEach.call(checkboxes, function(cb) {
-    cb.addEventListener('click', function(e) { triggerRefresh(); });
+    cb.addEventListener('click', function(e) {
+      // If the user manually disables "show failures", don't implicitly re-enable it.
+      if (e.target.name === 'showFailures' && !e.target.checked) {
+        showFailuresImplicitly = false;
+      }
+      triggerRefresh();
+    });
   });
 
   restoreEditorState(ohmEditor.ui.inputEditor, 'input', $('#sampleInput'));
