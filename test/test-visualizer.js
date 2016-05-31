@@ -94,7 +94,9 @@ function refreshParseTree(emitter, trace) {
 // Stripped down DOM containing only the markup that is required to show the parse tree.
 var HTML = '<div id="bottomSection">' +
            '  <button id="zoomOutButton" type="button" hidden></button>' +
-           '  <div id="expandedInput"></div><div id="parseResults"></div>' +
+           '  <div id="expandedInput"></div>' +
+           '  <div id="parseResults"></div>' +
+           '  <div id="semantics" hidden></div>' +
            '  <input id="timeSlider" type="range" step="1">' +
            '  <div id="measuringDiv"><div class="pexpr"></div></div>' +
            '  <div class="overlay"></div>' +

@@ -18,6 +18,9 @@
   margin-top: 40px;
   font-size: 14px;
 }
+#semantics[hidden] {
+  display: none;
+}
 #semantics .column {
   margin-right: 15px;
 }

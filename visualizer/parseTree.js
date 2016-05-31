@@ -659,6 +659,7 @@
   // Refresh the parse tree after attempting to parse the input.
   ohmEditor.addListener('parse:input', function(matchResult, trace) {
     $('#bottomSection .overlay').style.width = 0;  // Hide the overlay.
+    $('#semantics').hidden = !ohmEditor.options.semantics;
     rootTrace = trace;
     clearZoomState();
   });
