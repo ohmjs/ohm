@@ -22,15 +22,19 @@ function isValidType(type) {
   return type === 'description' || type === 'string' || type === 'code';
 }
 
-function Failure(text, type) {
+function Failure(pexpr, text, type) {
   if (!isValidType(type)) {
     throw new Error('invalid Failure type: ' + type);
   }
-
+  this.pexpr = pexpr;
   this.text = text;
   this.type = type;
   this.fluffy = false;
 }
+
+Failure.prototype.getPExpr = function() {
+  return this.pexpr;
+};
 
 Failure.prototype.getText = function() {
   return this.text;
@@ -77,7 +81,7 @@ Failure.prototype.toString = function() {
 };
 
 Failure.prototype.clone = function() {
-  var failure = new Failure(this.text, this.type);
+  var failure = new Failure(this.pexpr, this.text, this.type);
   if (this.isFluffy()) {
     failure.makeFluffy();
   }
