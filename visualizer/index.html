@@ -27,178 +27,6 @@
       /* Must be less than the .splitter z-index, but greater than everything in codemirror.css. */
       z-index: 9;
     }
-    #zoomOutButton {
-      background-color: white;
-      outline: none;
-      border: 0;
-      padding: 3px;
-      margin: 5px 10px 0 10px;
-      cursor: pointer;
-      font-size: 18px;
-      color: black;
-      text-align: center;
-      align-self: flex-start;
-    }
-    #zoomOutButton:hover {
-      font-weight: bold;
-    }
-
-    #expandedInputWrapper {
-      border-bottom: 1px solid #ddd;
-      white-space: nowrap;
-    }
-    #expandedInput {
-      font-size: 100%;
-      outline: none;
-      padding: 8px 0;
-    }
-    #expandedInput .highlight {
-      background-color: #B5D5FF;
-    }
-    #parseResults {
-      flex: 1;
-
-      /* Handle only vertical scrolling. */
-      overflow-x: hidden;
-      overflow-y: auto;
-
-      padding: 2px;
-    }
-    .pexpr {
-      color: #333;
-      display: inline-block;
-      flex-grow: 1;
-      font-family: Menlo, Monaco, sans-serif;
-      font-size: 9px;
-      overflow: hidden;
-      white-space: nowrap;
-    }
-    .pexpr.zoomBorder {
-      border: 2px solid blue;
-    }
-    .pexpr.seq.failed {
-      flex-grow: 0;
-    }
-    .pexpr.alt > .children > .pexpr {
-      margin-left: 0;
-    }
-    .pexpr.failed > .self .label {
-      background-color: transparent;
-      color: #d44950;
-      text-align: left;
-    }
-    .pexpr.failed.visibleChoice > .self .label {
-      border-bottom-color: transparent;  /* Prevent dashed border */
-    }
-    .pexpr.failed > .self .label:not(.leaf):hover {
-      border-bottom: 1px solid #ddd;
-    }
-
-    /* A successful expression in a failed branch */
-    .pexpr.failed .pexpr:not(.failed):not(.unevaluated) > .self .label:not(.prim) {
-      background-color: #FFD7DE;
-      border-left-color: pink;
-      border-right-color: pink;
-    }
-
-    /* Rules to distinguish vertically-stacked choices from parent/childen relationships. */
-    .pexpr.visibleChoice {
-      padding-left: 8px;
-      position: relative;  /* For positioning the ::before element */
-    }
-    .pexpr.visibleChoice::before {
-      color: #ccc;
-      content: '\25BC';  /* Black Down-pointing triangle */
-      left: 0;
-      position: absolute;
-      top: 2px;
-    }
-    .pexpr.collapsed.visibleChoice::before {
-      content: '\25B6';  /* Black Right-pointing triangle */
-    }
-
-    /*
-      By default, give .self a transparent border to enforce spacing between nodes.
-      It can also be used to put a border around a label without affecting the layout.
-     */
-    .pexpr:not(.hidden) > .self {
-      border: 1px solid transparent;
-    }
-    .pexpr.currentParseStep > .self {
-      border: 1px solid rgb(53, 151, 255) !important;
-    }
-
-    .pexpr.undecided > .self .label {
-      background-color: transparent;
-      border-bottom: 1px solid #dfdfdf;
-      color: #aaa;
-      font-style: italic;
-    }
-    .pexpr > .self .label {
-      background-color: #efefef;
-      border-bottom: 1px solid #efefef;
-      box-sizing: border-box;
-      cursor: pointer;
-      display: block;
-      margin: 0;
-      padding: 2px 2px 1px 2px;
-      position: relative;
-      text-align: center;
-    }
-    .pexpr > .self .label .caseName::before {
-      content: '\2014';
-      padding: 0 0.5em;
-    }
-    .pexpr > .self .label .caseName {
-      font-style: italic;
-      opacity: 0.7;
-    }
-    .pexpr:not(.failed) > .self .label:not(.prim):hover {
-      background-color: #dfdfdf;
-    }
-    .pexpr:not(.collapsed) > .self .label:not(.prim):hover {
-      border-bottom-color: #dfdfdf;
-    }
-
-    .pexpr > .self .label.prim {
-      background-color: transparent;
-      border-color: transparent;
-      color: SeaGreen;
-      cursor: default;
-    }
-    .pexpr.failed > .self .label.prim {
-      color: #d44950;
-    }
-    .pexpr.unevaluated > .self .label {
-      background-color: transparent;
-      color: #aaa;
-    }
-    .pexpr[hidden] {
-      visibility: hidden;
-    }
-    .pexpr.hidden > .self .label {
-      display: none;
-    }
-    .pexpr.collapsed > .self .label {
-      border-bottom: 1px dashed #bbb;
-    }
-    .pexpr > .children {
-      display: flex;
-      flex-direction: row;
-    }
-    .pexpr.alt > .children {
-      flex-direction: column;
-    }
-    .pexpr > .children[hidden] {
-      display: none;
-    }
-    .highlightRule {
-      background-color: #B5D5FF;
-    }
-    .highlightApplication {
-      background-color: CornflowerBlue;
-      color: white;
-    }
 
     #options {
       background-color: white;
@@ -221,22 +49,12 @@
       padding: 0;
     }
 
-    .input {
-      font-family: Menlo, Monaco, sans-serif;
-    }
-    #expandedInput, #expandedInput span {
-      display: inline-block;
-      text-align: center;
-    }
     #measuringDiv {
       height: auto;
       position: absolute;
       visibility: hidden;
       white-space: nowrap;
       width: auto;
-    }
-    #expandedInput .whitespace {
-      color: #ccc;
     }
 
     #topSection {
@@ -492,6 +310,7 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="style/parseTree.css">
   <link rel="stylesheet" href="style/semanticsEditor.css">
 </head>
 <body>
