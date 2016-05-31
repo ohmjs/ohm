@@ -23,9 +23,7 @@ pexprs.end.toFailure = function(grammar) {
 };
 
 pexprs.Terminal.prototype.toFailure = function(grammar) {
-  return typeof this.obj === 'string' ?
-    new Failure(this.obj, 'string') :
-    new Failure(JSON.stringify(this.obj), 'code');
+  return new Failure(this.obj, 'string');
 };
 
 pexprs.Range.prototype.toFailure = function(grammar) {
@@ -39,8 +37,6 @@ pexprs.Not.prototype.toFailure = function(grammar) {
       'not ' + this.expr.toFailure(grammar);
   return new Failure(description, 'description');
 };
-
-// TODO: think about Arr, Str, and Obj
 
 pexprs.Apply.prototype.toFailure = function(grammar) {
   var description = grammar.ruleDescriptions[this.ruleName];
