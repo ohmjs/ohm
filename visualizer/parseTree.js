@@ -337,7 +337,7 @@
   // If an item with the same id was already added, then the old item will be updated
   // with the new values from `label`, `enabled`, and `onClick`.
   function addMenuItem(id, label, enabled, onClick) {
-    var itemList = $('#contextMenu ul');
+    var itemList = $('#parseTreeMenu ul');
     var li = itemList.querySelector('#' + id);
     if (!li) {
       li = itemList.appendChild(domUtil.createElement('li'));
@@ -355,7 +355,7 @@
 
   // Handle the 'contextmenu' event `e` for the DOM node associated with `traceNode`.
   function handleContextMenu(e, traceNode) {
-    var menuDiv = $('#contextMenu');
+    var menuDiv = $('#parseTreeMenu');
     menuDiv.style.left = e.clientX + 'px';
     menuDiv.style.top = e.clientY - 6 + 'px';
     menuDiv.hidden = false;
@@ -375,7 +375,7 @@
   }
 
   function hideContextMenu() {
-    $('#contextMenu').hidden = true;
+    $('#parseTreeMenu').hidden = true;
   }
 
   // Create the DOM node that contains the parse tree for `traceNode` and all its children.

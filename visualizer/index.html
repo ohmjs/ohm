@@ -238,7 +238,7 @@
       display: none;
     }
 
-    #contextMenu {
+    .contextMenu {
       background-color: #f0f0f0;
       border: 1px solid #bbb;
       border-radius: 4px;
@@ -248,26 +248,26 @@
       top: 20px;
       z-index: 11;  /* Must be great than .splitter .handle */
     }
-    #contextMenu > ul {
+    .contextMenu > ul {
       margin: 6px 0;
       padding: 0;
     }
-    #contextMenu li {
+    .contextMenu li {
       display: flex;
       font-family: Helvetica, Arial, sans-serif;
       font-size: 14px;
       padding: 2px 20px;
     }
-    #contextMenu li.disabled {
+    .contextMenu li.disabled {
       color: #aaa;
     }
-    #contextMenu li:hover {
+    .contextMenu li:hover {
       cursor: default;
     }
-    #contextMenu li:hover:not(.disabled) {
+    .contextMenu li:hover:not(.disabled) {
       background-color: #4f9dfb;
     }
-    #contextMenu li:hover:not(.disabled) * {
+    .contextMenu li:hover:not(.disabled) * {
       color: white;
     }
 
@@ -372,8 +372,13 @@
     <div class="externalRules"><div class="content"></div></div>
   </div>
 
-  <div id="contextMenu" hidden><ul></ul></div>
-
+  <div id="parseTreeMenu" class="contextMenu" hidden><ul></ul></div>
+  <div id="operationMenu" class="contextMenu" hidden>
+    <ul>
+      <li id="delete"><label>Delete</label></li>
+      <li id="edit"><label>Edit</label><li>
+    </ul>
+  </div>
   <div hidden>
     <pre id="sampleGrammar">Arithmetic {
 Exp

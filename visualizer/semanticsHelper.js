@@ -120,8 +120,8 @@
     resultWrapper.forced = forcing;
     resultWrapper.forCallingSemantic = opName === name;
     resultWrapper.missingSemanticsAction = result === failure;
-    resultWrapper.isError = result.isErrorWrapper || result === failure;
-    resultWrapper.isNextStep = name === opName &&
+    resultWrapper.isError = result && result.isErrorWrapper || result === failure;
+    resultWrapper.isNextStep = name === opName && result &&
       ((result.isErrorWrapper && result.causedBy(nOpKey)) ||
       (todoList && todoList.includes(nOpKey)));
     if (!forcing || result !== failure) {
@@ -201,8 +201,23 @@
     return defaults;
   }
 
+  // Merge the actions in the `optActionDict` into `actionDict`
+  function mergeActionDict(name, actionDict, optActionDict) {
+    if (!optActionDict) {
+      return;
+    }
+    Object.keys(optActionDict).forEach(function(key) {
+      if (actionDict[key]) {
+        return;
+      }
+      var actionArguments = optActionDict[key]._actionArguments;
+      var actionBody = optActionDict[key]._actionBody;
+      actionDict[key] = wrapAction(name, actionArguments, actionBody);
+    });
+  }
+
   // Add new operation/attribute to the semantics
-  function addSemanticOperation(type, name, optArguments) {
+  function addSemanticOperation(type, name, optArguments, optOrigActionDict) {
     var signature = name;
     if (type === 'Operation' && optArguments) {
       var argumentNames = Object.keys(optArguments);
@@ -210,12 +225,25 @@
         signature += '(' + argumentNames.join(',') + ')';
       }
     }
+
     semantics['add' + type](signature, initActionDict(type, name));
+    mergeActionDict(name, semantics._getActionDict(name), optOrigActionDict);
   }
-  ohmEditor.semantics.addListener('add:semanticOperation', function(type, name, optArguments) {
+
+  // Check if an operation name is a restrict JS identifier
+  // TODO: it less restrictive in the future
+  function isOperationNameValid(name) {
+    return /^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(name);
+  }
+  ohmEditor.semantics.addListener('add:semanticOperation', function(type, name, optArguments,
+      origActionDict) {
+    // Throw a more clear and readable error message if the name is not a valid operation name.
+    if (!isOperationNameValid(name)) {
+      throw new Error('Cannot add ' + type + " '" + name + "': that's an invalid name");
+    }
+    addSemanticOperation(type, name, optArguments, origActionDict);
     opName = name;
     opArguments = optArguments;
-    addSemanticOperation(type, name, optArguments);
   });
 
   function populateSemanticsResult(traceNode, optOpName, optArguments) {
@@ -304,6 +332,7 @@
       return undefined;
     }
 
+    var origActionBody = actionBody;
     var enclosedActionArgStr = '(' + actionArguments.join(',') + ')';
     var realAction = 'function' + enclosedActionArgStr + '{\n' + actionBody + '\n}';
     var isExpression = es6.match(actionBody, 'AssignmentExpression<withIn>').succeeded();
@@ -353,19 +382,39 @@
     wrapper.toString = function() {
       return realAction;
     };
+    wrapper._actionArguments = actionArguments;
+    wrapper._actionBody = origActionBody;
     return wrapper;
   }
 
   function saveAction(traceNode, currentOpName, actionArguments, actionBody) {
-    var actionWrapper = wrapAction(currentOpName, actionArguments, actionBody);
-
     var actionKey = traceNode.bindings[0].ctorName;
+    var actionWrapper = wrapAction(currentOpName, actionArguments, actionBody);
     semantics._getActionDict(currentOpName)[actionKey] = actionWrapper;
   }
   ohmEditor.semantics.addListener('save:semanticAction', function(traceNode, actionArguments,
       actionBody) {
     saveAction(traceNode, opName,  actionArguments, actionBody);
   });
+
+  function editSemanticsOperation(wrapper, operationName, opDescription) {
+    wrapper._origActionDict = semantics._getActionDict(operationName);
+    semantics._remove(operationName);
+
+    if (opDescription) {
+      var type = opDescription.type;
+      var optArguments = opDescription.args;
+      addSemanticOperation(type, operationName, optArguments, wrapper._origActionDict);
+      delete wrapper._origActionDict;
+      if (operationName === opName) {
+        opArguments = ohmEditor.semantics.opArguments = optArguments;
+      }
+    } else if (operationName === opName) {
+      opName = null;
+      opArguments = null;
+    }
+  }
+  ohmEditor.semantics.addListener('edit:semanticOperation', editSemanticsOperation);
 
   // Exports
   // -------

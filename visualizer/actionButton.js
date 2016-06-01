@@ -6,12 +6,16 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohmEditor, root.document, root.domUtil);
+    initModule(root.ohmEditor, root.document, root.domUtil, root.es6);
   }
-})(this, function(ohmEditor, document, domUtil) {
+})(this, function(ohmEditor, document, domUtil, es6) {
 
   // Privates
   // --------
+  var KeyCode = {
+    ENTER: 13,
+    ESC: 27
+  };
 
   var UnicodeChars = {
     BLACK_UP_POINTING_TRIANGLE: '\u25B2',
@@ -20,13 +24,187 @@
     LEFTWARDS_ARROW: '\u2190'
   };
 
-  function createSemanticNameContainer() {
+  var deleteEntry = document.querySelector('#operationMenu #delete');
+  var editEntry = document.querySelector('#operationMenu #edit');
+
+  function unselectOtherSemanticButtons(targetNameContainer) {
+    var wrappers = document.querySelectorAll('#semantics .wrapper');
+    Array.prototype.forEach.call(wrappers, function(wrapper) {
+      var nameContainer = wrapper.querySelector('textarea.opName');
+      if (targetNameContainer === nameContainer) {
+        return;
+      }
+      wrapper.classList.remove('selected');
+
+      // Hide the argument list if there is one
+      var arrowButton = wrapper.querySelector('.arrow');
+      if (arrowButton) {
+        arrowButton.innerHTML = UnicodeChars.BLACK_DOWN_POINTING_TRIANGLE;
+        wrapper.querySelector('.arguments').hidden = true;
+      }
+    });
+  }
+
+  // Check if the given argument name is a restrict JS identifier.
+  // TODO: it less restrictive in the future
+  function isArgumentNameValid(argName, args) {
+    return /^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(argName);
+  }
+
+  // Retrieve operation arguments from the operation button wrapper
+  function retrieveArgs(wrapper, ignoreInvalidValue) {
+    var argList = wrapper.querySelector('.arguments');
+    var nameValPairs = wrapper.querySelectorAll('.nameValuePair');
+    var args = Object.create(null);
+    Array.prototype.forEach.call(nameValPairs, function(nameValPair) {
+      var argNameContainer = nameValPair.querySelector('.name');
+      var argName = argNameContainer.value;
+      if (!argName || argName in args) {
+        // Remove the entry if there is no argument name, or it is already exist.
+        // TODO: maybe overwrite duplicates? or throw an error?
+        argList.removeChild(nameValPair);
+        return;
+      } else if (!isArgumentNameValid(argName)) {
+        // Throw an error if it's not a valid argument name. This will provide
+        // a more clear readable error message.
+        argNameContainer.select();
+        throw new Error(argName + ' is not a valid argument name.');
+      }
+
+      var valueContainer = nameValPair.querySelector('.value');
+      var value = valueContainer.value;
+      // If the value is not a valid es6 `assignmentExpression`, and we are not ignoring
+      // invalid value, throw an error. This provides a clear and readable error message.
+      var isExpression = es6.match(value, 'AssignmentExpression<withIn>').succeeded();
+      if (value && !isExpression) {
+        if (ignoreInvalidValue) {
+          value = undefined;
+        } else {
+          valueContainer.select();
+          throw new Error(value + ' is not a valid expression for argument assignment.');
+        }
+      }
+
+      var returnStmt = 'return ' + value + ';';
+      args[argName] = new Function(returnStmt)();    // eslint-disable-line no-new-func
+      argNameContainer.readOnly = true;
+    });
+    return args;
+  }
+
+  function createSemanticNameContainer(type) {
     var nameContainer = domUtil.createElement('textarea.opName');
     nameContainer.cols = 15;
     nameContainer.addEventListener('keyup', function(e) {
       nameContainer.cols = Math.max(nameContainer.value.length, 15);
     });
+
+    nameContainer.addEventListener('click', function(event) {
+      if (!nameContainer.readOnly) {
+        return;
+      }
+
+      var wrapper = domUtil.closestElementMatching('.wrapper', nameContainer);
+      var argList = wrapper.querySelector('.arguments');
+      if (!nameContainer.readOnly) {
+        nameContainer.select();
+        return;
+      }
+      // Hide/Show the argument list (if there is any) base on whether
+      // the node is selected or not
+      var arrowButton = wrapper.querySelector('.buttonWrapper .arrow');
+      if (arrowButton) {
+        argList.hidden = wrapper.classList.contains('selected');
+        arrowButton.innerHTML = argList.hidden ?
+            UnicodeChars.BLACK_DOWN_POINTING_TRIANGLE : UnicodeChars.BLACK_UP_POINTING_TRIANGLE;
+      }
+      var name = nameContainer.value;
+      var args;
+      // If there is an invalid argument detacted, and the user is trying to evaluate the
+      // operation, then just alert the user.
+      try {
+        args = type === 'Operation' ? retrieveArgs(wrapper) : undefined;
+      } catch (error) {
+        if (!wrapper.classList.contains('selected')) {
+          window.alert(error);    // eslint-disable-line no-alert
+          return;
+        }
+      }
+
+      unselectOtherSemanticButtons(nameContainer);
+      wrapper.classList.toggle('selected');
+      ohmEditor.semantics.emit('change:semanticOperation', name, args);
+      ohmEditor.parseTree.refresh(ohmEditor.parseTree.rootTrace, false);
+    });
+
+    nameContainer.oncontextmenu = function(event) {
+      showActionMenu(event);
+      handleContextMenuOnAction(nameContainer);
+      event.preventDefault();
+      event.stopPropagation();  // Prevent ancestor wrappers from handling.
+    };
     return nameContainer;
+  }
+
+  function showActionMenu(e) {
+    var actionMenu = document.querySelector('#operationMenu');
+    actionMenu.style.left = e.clientX + 'px';
+    actionMenu.style.top = e.clientY - 6 + 'px';
+    actionMenu.hidden = false;
+  }
+
+  function handleContextMenuOnArgument(target, argList) {
+    var wrapper = domUtil.closestElementMatching('.wrapper', argList);
+    var operationName = wrapper.querySelector('.opName').value;
+    var nameValPair = domUtil.closestElementMatching('.nameValuePair', target);
+
+    deleteEntry.onclick = function(e) {
+      argList.removeChild(nameValPair);
+
+      // If the deleted argument is the only argument for the action, then
+      // hide all the buttons that operate on arguments (i.e. add, arrows)
+      if (wrapper.querySelector('.arguments').children.length === 0) {
+        wrapper.querySelector('.buttonWrapper').hidden = true;
+      }
+      // TODO: Change `Force evaluation` list
+
+      var args;
+      try {
+        args = retrieveArgs(wrapper);
+      } catch (error) {
+        // Assign `undefined` to the corresponding argument name, and alert user with the
+        // corresponding error message.
+        args = retrieveArgs(wrapper, true);
+        window.alert(error);    // eslint-disable-line no-alert
+      }
+      var opDescription = {
+          type: 'Operation',
+          args: args
+        };
+      ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, opDescription);
+      ohmEditor.parseTree.refresh(ohmEditor.parseTree.rootTrace, false);
+    };
+    editEntry.onclick = function(e) {
+      // Relax the name container, so it could be editable
+      var argNameContainer = nameValPair.querySelector('.name');
+      argNameContainer.readOnly = false;
+      argNameContainer.select();
+      // TODO: Change `Force evaluation` list
+
+      ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, undefined);
+    };
+  }
+
+  // Create the div to contain the list of arguments
+  function createArgumentList() {
+    var argList = domUtil.createElement('div.arguments');
+    argList.oncontextmenu = function(event) {
+      showActionMenu(event);
+      handleContextMenuOnArgument(event.target, argList);
+      event.preventDefault();
+      event.stopPropagation();  // Prevent ancestor wrappers from handling.
+    };
+    return argList;
   }
 
   // Create the add button for adding new (name, value) pair
@@ -59,7 +237,8 @@
         argValue.cols = Math.max(argValue.value.length, 5);
       });
 
-      var argList = addButton.parentElement.previousElementSibling;
+      var wrapper = domUtil.closestElementMatching('.wrapper', addButton);
+      var argList = wrapper.querySelector('.arguments');
       argList.appendChild(nameValPair);
       argName.focus();
     };
@@ -72,7 +251,8 @@
     var arrowButton = domUtil.createElement('.arrow.button');
     arrowButton.innerHTML = UnicodeChars.BLACK_UP_POINTING_TRIANGLE;
     arrowButton.onclick = function(event) {
-      var argList = arrowButton.parentElement.previousElementSibling;
+      var wrapper = domUtil.closestElementMatching('.wrapper', arrowButton);
+      var argList = wrapper.querySelector('.arguments');
       argList.hidden = !argList.hidden;
       if (argList.hidden) {
         arrowButton.innerHTML = UnicodeChars.BLACK_DOWN_POINTING_TRIANGLE;
@@ -84,6 +264,7 @@
     return arrowButton;
   }
 
+  // Create the div that contains all the arguments related buttons
   function createButtons() {
     var buttonWrapper = domUtil.createElement('div.buttonWrapper');
 
@@ -95,50 +276,10 @@
     return buttonWrapper;
   }
 
-  // Unselect all the semantics buttons, except the target semantic button
-  function unselectOtherSemanticButtons(targetNameContainer) {
-    var nameContainers = document.querySelectorAll('textarea.opName');
-    Array.prototype.forEach.call(nameContainers, function(nameContainer) {
-      if (targetNameContainer === nameContainer) {
-        return;
-      }
-      nameContainer.classList.remove('selected');
-
-      // Hide the argument list if there is one
-      var arrowButton = nameContainer.parentElement.querySelector('.arrow');
-      if (arrowButton) {
-        arrowButton.innerHTML = UnicodeChars.BLACK_DOWN_POINTING_TRIANGLE;
-        nameContainer.parentElement.querySelector('.arguments').hidden = true;
-      }
-    });
-  }
-
-  function retrieveArgs(wrapper) {
-    var argList = wrapper.querySelector('.arguments');
-    var nameValPairs = wrapper.querySelectorAll('.nameValuePair');
-    var args = Object.create(null);
-    Array.prototype.forEach.call(nameValPairs, function(nameValPair) {
-      var argNameContainer = nameValPair.querySelector('.name');
-      var argName = argNameContainer.value;
-
-      var valueContainer = nameValPair.querySelector('.value');
-      var value = valueContainer.value;
-      if (argName && /^[_a-zA-Z0-9]+$/.test(argName) && !(argName in args)) {
-        args[argName] = eval(value);  // eslint-disable-line no-eval
-        argNameContainer.readOnly = true;
-      } else {
-        // TODO: maybe overwrite duplicates?
-        argList.removeChild(nameValPair);
-      }
-    });
-    return args;
-  }
-
   // Relax the semantic button to make every part editable
   function relaxButton(wrapper) {
     var nameContainer = wrapper.querySelector('textarea.opName');
     nameContainer.readOnly = false;
-    nameContainer.select();
     if (!wrapper.querySelector('.arguments')) {
       return;
     }
@@ -152,6 +293,25 @@
     buttonWrapper.querySelector('.add').hidden = false;
     buttonWrapper.querySelector('.arrow').hidden = true;
     buttonWrapper.hidden = false;
+  }
+
+  function handleContextMenuOnAction(nameContainer) {
+    var operationName = nameContainer.value;
+    var wrapper = domUtil.closestElementMatching('.wrapper', nameContainer);
+    var container = domUtil.closestElementMatching('.entries', nameContainer);
+    deleteEntry.onclick = function(event) {
+      container.removeChild(wrapper);
+      // TODO: handle 'force evaluation'
+      ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, undefined);
+      ohmEditor.parseTree.refresh(ohmEditor.parseTree.rootTrace, false);
+    };
+
+    editEntry.onclick = function(event) {
+      nameContainer.select();
+      relaxButton(wrapper);
+      // TODO: handle 'force evaluation'
+      ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, undefined);
+    };
   }
 
   // Add new operation or attribute wrapper
@@ -171,19 +331,12 @@
     // Create a new semantic button
     var wrapper = domUtil.createElement('div.wrapper');
     container.insertBefore(wrapper, container.firstChild);
-    // TODO: handleContextMenuOnAction
 
     // Create the div that contains the name of the new semantic, and append it to
     // the wrapper as an semantic button
-    var nameContainer = wrapper.appendChild(createSemanticNameContainer());
+    var nameContainer = wrapper.appendChild(createSemanticNameContainer(type));
     if (type === 'Operation') {
-      // Create the div to contain the list of arguments, and append it to
-      // the wrapper
-      var argList = wrapper.appendChild(domUtil.createElement('div.arguments'));
-      // TODO: handleContextMenuOnArgument
-
-      // Create the div that contains all the arguments related buttons, and append
-      // it to the wrapper
+      wrapper.appendChild(createArgumentList());
       wrapper.appendChild(createButtons());
     }
 
@@ -197,21 +350,33 @@
         event.preventDefault();
       }
 
-      unselectOtherSemanticButtons(nameContainer);
-      nameContainer.classList.add('selected');
-
-      var argumentValueChangeOnly = event.target.classList.contains('value') &&
-            event.target.parentElement.querySelector('.name').readOnly;
+      var target = event.target;
+      var argumentChangeOnly = target.classList.contains('value') &&
+          target.parentElement.querySelector('.name').readOnly;
       var name = nameContainer.value;
-      var args = type === 'Operation' ? retrieveArgs(wrapper) : undefined;
+      var args;
+
+      // Alert user if there is an invalid argument name, or value.
+      try {
+        args = type === 'Operation' ? retrieveArgs(wrapper) : undefined;
+      } catch (error) {
+        if (!argumentChangeOnly) {
+          relaxButton(wrapper);
+        }
+        window.alert(error);    // eslint-disable-line no-alert
+        return;
+      }
+
       if (!name) {
         container.removeChild(wrapper);
         return;
-      } else if (argumentValueChangeOnly) {
+      } else if (argumentChangeOnly) {
         // If the user is just changing an argument value, so we just
         // refresh the tree with new arguments values
-        // TODO: update argument values
-        ohmEditor.semantics.emit('change:semanticOperation', null, args);
+        var operationName = wrapper.classList.contains('selected') ? null : name;
+        ohmEditor.semantics.emit('change:semanticOperation', operationName, args);
+        unselectOtherSemanticButtons(nameContainer);
+        wrapper.classList.add('selected');
         ohmEditor.parseTree.refresh();
         return;
       }
@@ -223,43 +388,25 @@
         if (!argNames || argNames.length === 0) {
           wrapper.querySelector('.buttonWrapper').hidden = true;
         } else {
-          wrapper.querySelector('.buttonWrapper').querySelector('.add').hidden = true;
-          wrapper.querySelector('.buttonWrapper').querySelector('.arrow').hidden = false;
+          wrapper.querySelector('.buttonWrapper .add').hidden = true;
+          wrapper.querySelector('.buttonWrapper .arrow').hidden = false;
         }
       }
       // TODO: add operation/attribute to force evaluation menu
+      var origActionDict = wrapper._origActionDict;
       try {
-        ohmEditor.semantics.emit('add:semanticOperation', type, name, args);
-        nameContainer.readOnly = true;
-        ohmEditor.parseTree.refresh();
+        ohmEditor.semantics.emit('add:semanticOperation', type, name, args, origActionDict);
       } catch (error) {
-        relaxButton(wrapper);
-        window.alert(error);  // eslint-disable-line no-alert
-      }
-    });
-
-    nameContainer.addEventListener('click', function(event) {
-      unselectOtherSemanticButtons(nameContainer);
-      if (nameContainer.readOnly) {
-        nameContainer.classList.toggle('selected');
-        // Hide/Show the argument list (if there is any) base on whether
-        // the node is selected or not
-        var arrowButton = wrapper.querySelector('.buttonWrapper .arrow');
-        if (arrowButton) {
-          argList.hidden = !nameContainer.classList.contains('selected');
-          arrowButton.innerHTML = nameContainer.classList.contains('selected') ?
-              UnicodeChars.BLACK_UP_POINTING_TRIANGLE :
-              UnicodeChars.BLACK_DOWN_POINTING_TRIANGLE;
-        }
-
-        var name = nameContainer.value;
-        var args = type === 'Operation' ? retrieveArgs(wrapper) : undefined;
-        ohmEditor.semantics.emit('change:semanticOperation', name, args);
-        ohmEditor.parseTree.refresh();
-      } else {
-        nameContainer.classList.add('selected');
         nameContainer.select();
+        relaxButton(wrapper);
+        window.alert(error);    // eslint-disable-line no-alert
+        return;
       }
+      delete wrapper._origActionDict;
+      nameContainer.readOnly = true;
+      unselectOtherSemanticButtons(nameContainer);
+      wrapper.classList.add('selected');
+      ohmEditor.parseTree.refresh();
     });
   }
 
@@ -279,4 +426,17 @@
     document.querySelector('#operations').innerHTML = '';
     document.querySelector('#attributes').innerHTML = '';
   });
+
+  // Hide the action context menu when Esc or Enter is pressed, any click happens, or another
+  // context menu is brought up.
+  document.addEventListener('click', hideContextMenu);
+  document.addEventListener('contextmenu', hideContextMenu);
+  document.addEventListener('keydown', function(e) {
+    if (e.keyCode === KeyCode.ESC || e.keyCode === KeyCode.ENTER) {
+      hideContextMenu();
+    }
+  });
+  function hideContextMenu() {
+    document.querySelector('#operationMenu').hidden = true;
+  }
 });

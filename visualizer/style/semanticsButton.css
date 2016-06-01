@@ -42,6 +42,9 @@
   align-items: center;
   position: relative;
 }
+#semantics .wrapper:not(.selected) *{
+  color: #888;
+}
 
 #semantics .wrapper textarea.opName {
   resize: none;
@@ -59,13 +62,11 @@
   top: -2px;
   _box-shadow: 0 2px 0 #c1c1c1;
 }
-#semantics .wrapper textarea.opName[readOnly] {
-  color: #888;
+#semantics .wrapper textarea[readOnly] {
   cursor: pointer;
   -webkit-user-select: none;
 }
-#semantics .wrapper textarea.opName.selected {
-  color: black;
+#semantics .wrapper.selected textarea.opName {
   border-color: #aaa;
   box-shadow: none;
   top: 0;
