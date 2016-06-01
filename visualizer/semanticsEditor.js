@@ -20,7 +20,10 @@
     var block = domUtil.createElement('resultBlock');
     domUtil.toggleClasses(block, {
       error: resultWrapper.isError,
-      forced: resultWrapper.forced
+      forced: resultWrapper.forced,
+      passThrough: resultWrapper.isPassThrough,
+      optNextStep: !resultWrapper.forced && resultWrapper.isError &&
+          resultWrapper.forCallingSemantic
     });
     if (resultWrapper.missingSemanticsAction) {
       return block;
@@ -45,25 +48,34 @@
 
   // Creates semantics editor result container and fills it the with `resultBlock`,
   // each of which reprensents a semantic result on this node.
-  function createAndLoadSemanticResult(traceNode, selfWrapper) {
+  function createAndLoadResultContainer(traceNode, selfWrapper) {
     var resultContainer = domUtil.createElement('.result');
     var results = ohmEditor.semantics.getResults(traceNode);
     if (!results) {
       return resultContainer;
     }
+    var idx = 0;
     Object.keys(results).forEach(function(opName) {
       var resultList = results[opName];
       resultList.forEach(function(resultWrapper) {
-        resultContainer.appendChild(createResultBlock(opName, resultWrapper));
-        if (resultWrapper.isNextStep) {
+        var resultBlock = resultContainer.appendChild(createResultBlock(opName, resultWrapper));
+        // If the result block is not the first one that contains a result, then add a left border
+        // to it to seperate it from its former block
+        if (resultBlock.textContent) {
+          resultBlock.classList.toggle('leftBorder', idx++ > 0);
+        }
+        if (!resultWrapper.forced && resultWrapper.isNextStep) {
           selfWrapper.classList.add('nextStep');
         }
-        selfWrapper.classList.toggle('passThrough', resultWrapper.isPassThrough);
+
         if (resultWrapper.forCallingSemantic) {
           selfWrapper._args = resultWrapper.args;
+          selfWrapper.classList.toggle('passThrough', resultWrapper.isPassThrough);
+          resultContainer._nextStep = resultWrapper.isNextStep && resultBlock;
         }
       });
     });
+
     if (resultContainer.textContent.length === 0) {
       resultContainer.style.padding = '0';
     }
@@ -73,25 +85,49 @@
   // Append a semantics editor after the `label`, a semantics editor contains a
   // resultContainer, and conditionally (i.e. user cmd + click to open an editor)
   // contains a header container, a argument tags container, and a editor body container.
-  function appendSemanticsEditor(wrapper, rootTrace) {
+  function appendSemanticsEditor(wrapper) {
     var selfWrapper = wrapper.querySelector('.self');
     var traceNode = wrapper._traceNode;
 
     var editorWrapper = selfWrapper.appendChild(domUtil.createElement('.semanticsEditor'));
-    editorWrapper.appendChild(createAndLoadSemanticResult(traceNode, selfWrapper));
+    var resultContainer = editorWrapper.appendChild(createAndLoadResultContainer(traceNode,
+        selfWrapper));
 
-    if (selfWrapper.querySelector('.passThrough') || selfWrapper.querySelector('.error')) {
+    if (selfWrapper.querySelector('.passThrough') ||
+        resultContainer.children.length === 1 && resultContainer.querySelector('.error')) {
       editorWrapper.hidden = true;
     } else {
       editorWrapper.classList.add('resultOnly');
     }
+
+    // If the node is collapsed, and its children is one of the next steps, then mark it as a
+    // temperary next step
+    if (selfWrapper.parentElement.classList.contains('collapsed')) {
+      selfWrapper.classList.toggle('tmpNextStep', !!resultContainer.querySelector('.optNextStep'));
+    }
+
+    // If the node's semantic was edited before refresh, and it's still the next step after the
+    // editing, then keep the semantics editor open.
+    if (traceNode._lastEdited && resultContainer._nextStep) {
+      toggleSemanticsEditor(wrapper);
+      // Only shows the result, i.e. the error, for evaluating the current semantic operation at
+      // the node.
+      resultContainer.style.display = 'flex';
+      Array.prototype.forEach.call(resultContainer.children, function(child) {
+        if (child !== resultContainer._nextStep) {
+          child.style.display = 'none';
+        } else {
+          child.classList.remove('leftBorder');
+        }
+      });
+    }
   }
-  ohmEditor.parseTree.addListener('create:traceElement', function(wrapper, rootTrace, traceNode) {
+  ohmEditor.parseTree.addListener('create:traceElement', function(wrapper, traceNode) {
     var shouldHaveSemanticsEditor = ohmEditor.semantics.appendEditor &&
         !wrapper.classList.contains('hidden') &&
         !wrapper.classList.contains('failed');
     if (shouldHaveSemanticsEditor) {
-      appendSemanticsEditor(wrapper, rootTrace);
+      appendSemanticsEditor(wrapper);
     }
   });
 
@@ -223,16 +259,32 @@
     return argTagContainer;
   }
 
+  function retrieveArgumentsFromHeader(editorWrapper) {
+    var header = editorWrapper.querySelector('.header');
+    return Array.prototype.map.call(header.children, function(headerBlock) {
+      return headerBlock.lastChild.textContent || headerBlock.firstChild.textContent;
+    });
+  }
+
   // Create the action editor, and load it with user defined action * default
   // action won't show
-  function createAndLoadActionEditor() {
+  function createAndLoadActionEditor(traceNode) {
     var actionEditorDiv = domUtil.createElement('.body');
     var actionEditorCM = CodeMirror(actionEditorDiv);
 
     // Load action
-    actionEditorCM.setValue('');
+    actionEditorCM.setValue(ohmEditor.semantics.getActionBody(traceNode));
     actionEditorCM.setCursor({line: actionEditorCM.lineCount()});
 
+    actionEditorCM.setOption('extraKeys', {
+      'Cmd-S': function(cm) {
+        var actionArguments = retrieveArgumentsFromHeader(actionEditorDiv.parentElement);
+        ohmEditor.semantics.emit('save:semanticAction', traceNode, actionArguments, cm.getValue());
+        traceNode._lastEdited = true;
+        ohmEditor.parseTree.refresh();
+        delete traceNode._lastEdited;
+      }
+    });
     return actionEditorDiv;
   }
 
@@ -255,12 +307,11 @@
     editorWrapper.insertBefore(createAndLoadArgTags(selfWrapper), resultContainer);
 
     // Create and load action editor
-    var actionEditor = editorWrapper.insertBefore(createAndLoadActionEditor(), resultContainer);
+    var actionEditor = editorWrapper.insertBefore(createAndLoadActionEditor(traceNode),
+        resultContainer);
     var actionEditorCM = actionEditor.firstChild.CodeMirror;
     actionEditorCM.focus();
     actionEditorCM.refresh();
-
-    // TODO: Hooks the saving action to key `Cmd-S` of semantic editor
   }
 
   // Remove `header`, `argTags`, and `body` from the editor wrapper
@@ -298,7 +349,7 @@
     }
 
     // Insert or remove the editor body. This avoids having too many CodeMirror.
-    if (showing || !editorWrapper.hidden) {
+    if (showing || !resultOnly && !editorWrapper.hidden) {
       // If we toggle to show the semantics editor of `el`, insert the editor body
       insertEditorBody(selfWrapper);
     } else {
@@ -309,6 +360,22 @@
   }
   ohmEditor.parseTree.addListener('cmdclick:traceElement', toggleSemanticsEditor);
 
+  // Remove the node's `tmpNextStep` mark if there is any.
+  ohmEditor.parseTree.addListener('expand:traceElement', function(wrapper) {
+    var selfWrapper = wrapper.querySelector('.self');
+    selfWrapper.classList.remove('tmpNextStep');
+  });
+
+  // If one of the node's descendants is `next step`, mark it as temporary `next step`.
+  ohmEditor.parseTree.addListener('collapse:traceElement', function(wrapper) {
+    var selfWrapper = wrapper.querySelector('.self');
+    var resultContainer = selfWrapper.querySelector('.semanticsEditor .result');
+    if (!resultContainer) {
+      return;
+    }
+    var shouldMark = resultContainer.querySelector('.optNextStep');
+    selfWrapper.classList.toggle('tmpNextStep', !!shouldMark);
+  });
   // Exports
   // -------
   ohmEditor.semantics = new CheckedEmitter();
@@ -317,6 +384,8 @@
     'add:semanticOperation': ['type', 'name', 'optArguments'],
 
     // Emitted after changing to another semantic operation
-    'change:semanticOperation': ['targetName', 'optArguments']
+    'change:semanticOperation': ['targetName', 'optArguments'],
+
+    'save:semanticAction': ['traceNode', 'actionArguments', 'actionBody']
   });
 });

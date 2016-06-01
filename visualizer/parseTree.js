@@ -613,7 +613,7 @@
           setTraceElementCollapsed(el, true, 0);
         }
 
-        ohmEditor.parseTree.emit('create:traceElement', el, rootTrace, node);
+        ohmEditor.parseTree.emit('create:traceElement', el, node);
 
         // If the node is labeled, record it as a distinct "step" in the parsing timeline.
         if (isLabeled) {
@@ -716,11 +716,13 @@
   // -------
 
   var parseTree = ohmEditor.parseTree = new CheckedEmitter();
-  parseTree.refresh = refreshParseTree;
-
+  parseTree.refresh = function() {
+    clearMarks();
+    refreshParseTree(rootTrace);
+  };
   parseTree.registerEvents({
     // Emitted when a new trace element `el` is created for `traceNode`.
-    'create:traceElement': ['el', 'rootTrace', 'traceNode'],
+    'create:traceElement': ['el', 'traceNode'],
 
     // Emitted when a trace element is expanded or collapsed.
     'expand:traceElement': ['el'],
