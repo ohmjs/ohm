@@ -1,3 +1,4 @@
 **/third_party/**
 **/node_modules/**
+example_generator/*
 dist/*
