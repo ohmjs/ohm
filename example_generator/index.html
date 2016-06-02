@@ -1,0 +1,215 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Example Generator</title>
+  <style>
+    examples, examplesForRule, example {
+      display: block;
+    }
+
+    examplesForRule {
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      font-weight: bold;
+      border-bottom: 1px dashed black;
+    }
+
+    example {
+      font-weight: normal;
+    }
+
+    example::before, example::after{
+      content: '"';
+      font-weight: bold;
+      color: #6495ED;
+    }
+
+    example:first-child {
+      margin-top: 5px;
+    }
+
+    body {
+      padding-left: 100px;
+    }
+
+    ul {
+      list-style: none;
+    }
+
+  </style>
+
+  <!--
+  <script type="text/ohm-js">
+  Arithmetic {
+    Exp
+    = AddExp
+
+    AddExp
+    = AddExp "+" MulExp  -- plus
+    | AddExp "-" MulExp  -- minus
+    | MulExp
+
+    MulExp
+    = MulExp "*" ExpExp  -- times
+    | MulExp "/" ExpExp  -- divide
+    | ExpExp
+
+    ExpExp
+    = PriExp "^" ExpExp  -- power
+    | PriExp
+
+    PriExp
+    = "(" Exp ")"  -- paren
+    | "+" PriExp   -- pos
+    | "-" PriExp   -- neg
+    | ident
+    | number
+
+    ident  (an identifier)
+    = letter alnum*
+
+    number  (a number)
+    = digit* "." digit+  -- fract
+    | digit+             -- whole
+  }
+  </script>
+-->
+
+<script type="text/ohm-js">
+O {
+
+Program
+  = Stmts
+
+Stmts
+  = Stmt* Exp?
+
+Stmt
+  = class ident (extends ident)? (with NonemptyListOf<ident, ",">)? ";"  -- classDecl
+  | def ident "." ident "(" ListOf<ident, ","> ")" MethodBody            -- methodDeclJava
+  | def ident (ident ":" ident)+ MethodBody                              -- methodDeclKeyword
+  | def ident binSelector ident MethodBody                               -- methodDeclBinary
+  | def ident "(" ListOf<ident, ","> ")" MethodBody                      -- methodDeclCall
+  | var ident "=" Exp ";"                                                -- varDecl
+  | ident "=" Exp ";"                                                    -- varAssign
+  | this "." ident "=" Exp ";"                                           -- instVarAssign
+  | return Exp ";"                                                       -- return
+  | Exp ";"                                                              -- exp
+
+MethodBody
+  = "=" Exp ";"    -- exp
+  | "{" Stmts "}"  -- stmt
+
+Exp
+  = KWSendExp
+
+KWSendExp
+  = EqExp (ident ":" EqExp)+  -- send
+  | super (ident ":" EqExp)+  -- super
+  | EqExp
+
+EqExp
+  = RelExp ("==" | "!=") RelExp  -- eq
+  | RelExp
+
+RelExp
+  = AddExp ("<=" | "<" | ">=" | ">") AddExp  -- rel
+  | AddExp
+
+AddExp
+  = AddExp ("+" | "-") MulExp  -- add
+  | MulExp
+
+MulExp
+  = MulExp ("*" | "/" | "%") DotExp  -- mul
+  | DotExp
+
+DotExp
+  = DotExp "." ident "(" Actuals ")"  -- send
+  | super "." ident "(" Actuals ")"   -- super
+  | this "." ident  ~"("              -- instVarAccess
+  | UnExp
+
+UnExp
+  = "-" CallExp  -- neg
+  | CallExp
+
+CallExp
+  = CallExp "(" Actuals ")"  -- call
+  | PriExp
+
+PriExp
+  = "(" Exp ")"                  -- paren
+  | "{" BlockArgNames Stmts "}"  -- block
+  | new ident "(" Actuals ")"    -- new
+  | string                       -- str
+  | ident                        -- ident
+  | number                       -- number
+  | this                         -- this
+  | trueK                        -- true
+  | falseK                       -- false
+  | nullK                        -- null
+
+Actuals
+  = ListOf<Exp, ",">
+
+BlockArgNames
+  = NonemptyListOf<ident, ","> "|"  -- some
+  |                         -- none
+
+// Lexical rules
+
+ident  (an identifier)
+  = ~keyword letter alnum*
+
+string  (a string literal)
+  = "\"" (~"\"" ~"\n" any)* "\""
+
+number  (a number literal)
+  = digit* "." digit+  -- fract
+  | digit+             -- whole
+
+binSelector  (a binary selector)
+  = "==" | "!=" | "<=" | "<" | ">=" | ">" | "+"  | "-"  | "*"  | "/" | "%" | "@"
+
+class = "class" ~alnum
+def = "def" ~alnum
+extends = "extends" ~alnum
+falseK = "false" ~alnum
+new = "new" ~alnum
+nullK = "null" ~alnum
+return = "return" ~alnum
+super = "super" ~alnum
+this = "this" ~alnum
+trueK = "true" ~alnum
+var = "var" ~alnum
+with = "with" ~alnum
+
+keyword
+  = class | def | extends | falseK | new | nullK | return | super | this | trueK | var | with
+
+space
+ += comment
+
+comment
+  = "/*" (~"*/" any)* "*/"  -- multiLine
+  | "//" (~"\n" any)*       -- singleLine
+
+tokens
+  = (keyword | ident | number | comment | any)*
+
+}
+</script>
+</head>
+<body>
+<ul id="exampleRequests"></ul>
+<h2>examples</h2>
+<pre id="examples"></pre>
+
+<script src="../dist/ohm.js"></script>
+<script src="utils.js"></script>
+<script src="grammar.js"></script>
+<script src="errorCheckingTextBox.js"></script>
+<script src="index.js"></script>
+</body>
+</html>
