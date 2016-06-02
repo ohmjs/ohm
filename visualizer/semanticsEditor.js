@@ -6,12 +6,19 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohm, root.ohmEditor, root.CodeMirror, root.CheckedEmitter, root.domUtil);
+    initModule(root.ohm, root.ohmEditor, root.CodeMirror, root.CheckedEmitter, root.domUtil,
+        root.es6);
   }
-})(this, function(ohm, ohmEditor, CodeMirror, CheckedEmitter, domUtil) {
+})(this, function(ohm, ohmEditor, CodeMirror, CheckedEmitter, domUtil, es6) {
 
   // Privates
   // --------
+
+  var UnicodeChars = {
+    PLUS_SIGN: '\u002B',
+    HYPHEN_MINUS: '\u002D',
+    LEFTWARDS_ARROW: '\u2190'
+  };
 
   // Creates a single `resultBlock`, which contains,
   // `value`: the actual result container
@@ -123,7 +130,8 @@
     }
   }
   ohmEditor.parseTree.addListener('create:traceElement', function(wrapper, traceNode) {
-    var shouldHaveSemanticsEditor = ohmEditor.semantics.appendEditor &&
+    var shouldHaveSemanticsEditor = ohmEditor.options.semantics &&
+        ohmEditor.semantics.appendEditor &&
         !wrapper.classList.contains('hidden') &&
         !wrapper.classList.contains('failed');
     if (shouldHaveSemanticsEditor) {
@@ -242,6 +250,7 @@
       var showing = valueSpan.classList.contains('show');
       valueSpan.classList.toggle('show', !showing);
     };
+
     return argTag;
   }
 
@@ -360,6 +369,188 @@
   }
   ohmEditor.parseTree.addListener('cmdclick:traceElement', toggleSemanticsEditor);
 
+  // Retrieve arguments from the menu entry's submenu
+  function retrieveArgumentsFromSubList(entry) {
+    var argumentWrappers = entry.querySelectorAll('ul li');
+    if (!argumentWrappers) {
+      return undefined;
+    }
+
+    var operationArguments = Object.create(null);
+    Array.prototype.forEach.call(argumentWrappers, function(argumentWrapper) {
+      var name = argumentWrapper.querySelector('.name').textContent;
+      var valueContainer = argumentWrapper.querySelector('.value');
+      var value = valueContainer.value;
+      // If the value is not a valid es6 `assignmentExpression`, and we are not ignoring
+      // invalid value, throw an error. This provides a clear and readable error message.
+      var isExpression = es6.match(value, 'AssignmentExpression<withIn>').succeeded();
+      valueContainer.classList.toggle('error', value && !isExpression);
+      if (value && !isExpression) {
+        throw new Error(value + ' is not a valid expression for argument assignment.');
+      }
+      var returnStmt = 'return ' + value + ';';
+      operationArguments[name] = new Function(returnStmt)();    // eslint-disable-line no-new-func
+    });
+    return operationArguments;
+  }
+
+  // Create a menu entry that wraps the argument name and a textarea for user to enter
+  // corresponding value.
+  function createArgumentWrapper(name) {
+    var wrapper = domUtil.createElement('li');
+    wrapper.appendChild(domUtil.createElement('.name', name));
+    wrapper.appendChild(domUtil.createElement('.assign', UnicodeChars.LEFTWARDS_ARROW));
+    var valueContainer = wrapper.appendChild(domUtil.createElement('textarea.value'));
+    valueContainer.placeholder = 'value';
+    valueContainer.cols = 5;
+    valueContainer.onkeyup = function(e) {
+      valueContainer.cols = Math.max(valueContainer.value.length, 5);
+    };
+    valueContainer.onclick = function(e) {
+      valueContainer.classList.remove('error');
+      e.stopPropagation();
+    };
+    valueContainer.onkeypress = function(e) {
+      valueContainer.classList.remove('error');
+      if (e.keyCode === 13) {
+        e.preventDefault();
+      }
+    };
+    return wrapper;
+  }
+
+  // Create a submenu that wraps the list of arguments.
+  function createArgumentsWrapper(formals) {
+    var argumentsWrapper = domUtil.createElement('ul');
+    formals.forEach(function(name) {
+      argumentsWrapper.appendChild(createArgumentWrapper(name));
+    });
+    argumentsWrapper.hidden = true;
+    return argumentsWrapper;
+  }
+
+  // Append a `resultBlock` to the result container of the editor
+  function appendSingleResult(editorWrapper, entry, traceNode, name) {
+    var args = retrieveArgumentsFromSubList(entry);
+    var resultWrapper = !ohmEditor.semantics.getResult(traceNode, name, args) &&
+          ohmEditor.semantics.forceResult(traceNode, name, args);
+    // If the result already showed, return.
+    if (!resultWrapper) {
+      return;
+    }
+
+    var resultContainer = editorWrapper.querySelector('.result');
+    var resultBlock = resultContainer.appendChild(createResultBlock(name, resultWrapper));
+    var resultBlocks = resultContainer.querySelectorAll('resultBlock');
+    var hasLeftBorder = false;
+    Array.prototype.forEach.call(resultBlocks, function(block) {
+      if (block.textContent && block !== resultBlock) {
+        hasLeftBorder = true;
+      } else if (block === resultBlock) {
+        resultBlock.classList.toggle('leftBorder', hasLeftBorder);
+      }
+    });
+    editorWrapper.hidden = false;
+    editorWrapper.classList.add('resultOnly');
+  }
+
+  // Create an menu entry that corresponding a semantic operation
+  function createSemanticEntry(semanticOperation, traceNode, editorWrapper) {
+    var name = semanticOperation.name;
+    var entry = domUtil.createElement('li');
+    var formals = semanticOperation.formals;
+    entry.innerHTML = '<label></label>';
+    entry.firstChild.textContent = name;
+    entry.appendChild(createArgumentsWrapper(formals));
+
+    var args = retrieveArgumentsFromSubList(entry);
+    var resultWrapper = ohmEditor.semantics.getResult(traceNode, name, args);
+    var missingSemanticsAction = ohmEditor.semantics.missingSemanticsAction(traceNode, name);
+    if (resultWrapper || missingSemanticsAction) {
+      entry.classList.toggle('disabled',
+          missingSemanticsAction ||    // Missing the semantics action for the node.
+          formals.length === 0);       // The semantic result for the node already showed.
+    }
+
+    entry.onclick = function(event) {
+      event.stopPropagation();
+      if (entry.classList.contains('disabled')) {
+        return;
+      }
+      try {
+        appendSingleResult(editorWrapper, entry, traceNode, name);
+      } catch (error) {
+        window.alert(error);    // eslint-disable-line no-alert
+        return;
+      }
+      if (formals.length === 0) {
+        entry.classList.add('disabled');
+      }
+      document.querySelector('#parseTreeMenu').hidden = true;
+    };
+
+    entry.onkeypress = function(event) {
+      event.stopPropagation();
+      if (event.keyCode !== 13) {
+        return;
+      }
+      event.preventDefault();
+      try {
+        appendSingleResult(editorWrapper, entry, traceNode, name);
+      } catch (error) {
+        window.alert(error);    // eslint-disable-line no-alert
+        return;
+      }
+      document.querySelector('#parseTreeMenu').hidden = true;
+    };
+    return entry;
+  }
+
+  // Add all the semantics to the submenu of `Force evaluation`
+  function addSemanticEntries(entryWrapper, traceNode, editorWrapper) {
+    var semanticOperations = ohmEditor.semantics.getSemantics();
+    var operations = semanticOperations.operations;
+    Object.keys(operations).forEach(function(operationName) {
+      entryWrapper.appendChild(createSemanticEntry(operations[operationName], traceNode,
+          editorWrapper));
+    });
+
+    var attributes = semanticOperations.attributes;
+    Object.keys(attributes).forEach(function(attributeName) {
+      entryWrapper.appendChild(createSemanticEntry(attributes[attributeName], traceNode,
+          editorWrapper));
+    });
+  }
+  ohmEditor.parseTree.addListener('contextMenu', function(target, traceNode, addMenuItem) {
+    var selfWrapper = domUtil.closestElementMatching('.self', target);
+    var editorWrapper = selfWrapper.querySelector('.semanticsEditor');
+    var evaluatingSemantics = ohmEditor.semantics.appendEditor;
+    var forceEntryContent = 'Force Evaluation';
+    forceEntryContent += '<span>' + (evaluatingSemantics ? UnicodeChars.PLUS_SIGN : '') +
+        '</span>';
+    var forceEntry = addMenuItem('forceEvaluation', forceEntryContent, evaluatingSemantics,
+        function(event) { event.stopPropagation(); });
+    forceEntry.querySelector('span').className = 'sign';
+    if (!evaluatingSemantics) {
+      return;
+    }
+    // Hover the `Force Evaluation` entry to show forcing options
+    forceEntry.onmouseover = function() {
+      forceEntry.querySelector('label span').innerHTML = UnicodeChars.HYPHEN_MINUS;
+      var entryWrapper;
+      if (forceEntry.querySelector('ul')) {
+        entryWrapper = forceEntry.querySelector('ul');
+      } else {
+        entryWrapper = forceEntry.appendChild(domUtil.createElement('ul'));
+        entryWrapper.hidden = true;
+        addSemanticEntries(entryWrapper, traceNode, editorWrapper);
+      }
+    };
+    forceEntry.onmouseout = function() {
+      forceEntry.querySelector('label span').innerHTML = UnicodeChars.PLUS_SIGN;
+    };
+  });
+
   // Remove the node's `tmpNextStep` mark if there is any.
   ohmEditor.parseTree.addListener('expand:traceElement', function(wrapper) {
     var selfWrapper = wrapper.querySelector('.self');
@@ -376,6 +567,7 @@
     var shouldMark = resultContainer.querySelector('.optNextStep');
     selfWrapper.classList.toggle('tmpNextStep', !!shouldMark);
   });
+
   // Exports
   // -------
   ohmEditor.semantics = new CheckedEmitter();
@@ -386,8 +578,10 @@
     // Emitted after changing to another semantic operation
     'change:semanticOperation': ['targetName', 'optArguments'],
 
-    'save:semanticAction': ['traceNode', 'actionArguments', 'actionBody'],
+    // Emitted after editing the semantics operation button
+    'edit:semanticOperation': ['wrapper', 'operationName', 'opDescription'],
 
-    'edit:semanticOperation': ['wrapper', 'operationName', 'opDescription']
+    // Emitted after pressing cmd-S in semantics editor
+    'save:semanticAction': ['traceNode', 'actionArguments', 'actionBody']
   });
 });

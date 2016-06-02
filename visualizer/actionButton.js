@@ -27,6 +27,7 @@
   var deleteEntry = document.querySelector('#operationMenu #delete');
   var editEntry = document.querySelector('#operationMenu #edit');
 
+  // Unselect all the semantics buttons, except the target semantic button
   function unselectOtherSemanticButtons(targetNameContainer) {
     var wrappers = document.querySelectorAll('#semantics .wrapper');
     Array.prototype.forEach.call(wrappers, function(wrapper) {
@@ -166,7 +167,6 @@
       if (wrapper.querySelector('.arguments').children.length === 0) {
         wrapper.querySelector('.buttonWrapper').hidden = true;
       }
-      // TODO: Change `Force evaluation` list
 
       var args;
       try {
@@ -189,8 +189,6 @@
       var argNameContainer = nameValPair.querySelector('.name');
       argNameContainer.readOnly = false;
       argNameContainer.select();
-      // TODO: Change `Force evaluation` list
-
       ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, undefined);
     };
   }
@@ -301,7 +299,6 @@
     var container = domUtil.closestElementMatching('.entries', nameContainer);
     deleteEntry.onclick = function(event) {
       container.removeChild(wrapper);
-      // TODO: handle 'force evaluation'
       ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, undefined);
       ohmEditor.parseTree.refresh(ohmEditor.parseTree.rootTrace, false);
     };
@@ -309,7 +306,6 @@
     editEntry.onclick = function(event) {
       nameContainer.select();
       relaxButton(wrapper);
-      // TODO: handle 'force evaluation'
       ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, undefined);
     };
   }
@@ -392,7 +388,6 @@
           wrapper.querySelector('.buttonWrapper .arrow').hidden = false;
         }
       }
-      // TODO: add operation/attribute to force evaluation menu
       var origActionDict = wrapper._origActionDict;
       try {
         ohmEditor.semantics.emit('add:semanticOperation', type, name, args, origActionDict);
