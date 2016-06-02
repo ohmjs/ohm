@@ -413,7 +413,10 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
       return '[' + name + ' operation]';
     };
   } else {
-    Object.defineProperty(this.Wrapper.prototype, name, {get: doIt});
+    Object.defineProperty(this.Wrapper.prototype, name, {
+        get: doIt,
+        configurable: true  // So the property can be deleted.
+      });
     this.attributeKeys[name] = Symbol();
   }
 };
@@ -528,6 +531,18 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
         'name in this semantics for "' + grammar.name + '"');
     }
     return action.actionDict;
+  };
+  proxy._remove = function(operationOrAttributeName) {
+    var semantic;
+    if (operationOrAttributeName in s.operations) {
+      semantic = s.operations[operationOrAttributeName];
+      delete s.operations[operationOrAttributeName];
+    } else if (operationOrAttributeName in s.attributes) {
+      semantic = s.attributes[operationOrAttributeName];
+      delete s.attributes[operationOrAttributeName];
+    }
+    delete s.Wrapper.prototype[operationOrAttributeName];
+    return semantic;
   };
   proxy.getOperationNames = function() {
     return Object.keys(s.operations);

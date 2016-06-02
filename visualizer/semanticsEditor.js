@@ -381,11 +381,13 @@
   ohmEditor.semantics = new CheckedEmitter();
   ohmEditor.semantics.registerEvents({
     // Emitted after adding an new operation/attribute
-    'add:semanticOperation': ['type', 'name', 'optArguments'],
+    'add:semanticOperation': ['type', 'name', 'optArguments', 'optOrigActionDict'],
 
     // Emitted after changing to another semantic operation
     'change:semanticOperation': ['targetName', 'optArguments'],
 
-    'save:semanticAction': ['traceNode', 'actionArguments', 'actionBody']
+    'save:semanticAction': ['traceNode', 'actionArguments', 'actionBody'],
+
+    'edit:semanticOperation': ['wrapper', 'operationName', 'opDescription']
   });
 });
