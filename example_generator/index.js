@@ -70,19 +70,7 @@ var refreshExampleRequests = function(){
   clearDOMNode(exampleRequests);
   let needed = allExamplesNeeded().filter(neededRuleName=>
     grammar.ruleBodies.hasOwnProperty(neededRuleName));
-
-  needed.forEach(neededRuleName=> {
-    let exampleRequest = new ErrorCheckingTextBox(grammar, neededRuleName);
-    exampleRequests.appendChild(_('li', {}, exampleRequest.domNode));
-
-    exampleRequest.on('validSubmit', function(event){
-      exampleRequest.domNode.value = '';
-      processExample(event.text, event.ruleName);
-      refresh();
-    });
-  });
-
-  return needed.length;
+  return needed;
 }
 
 var processExample = function(example){
@@ -95,18 +83,32 @@ var processExample = function(example){
 };
 
 var displayExamples = function(examples){
-  return _('examples', {},
-    ...objectMap(examples, function(ruleName, examples){
-      return _('examplesForRule', {class: ruleName},
-        ...[t(ruleName), ...examples.map(example=> _('example', {}, t(example)))]
-      )
-    })
-  )
+  return _('div', {}, ...objectMap(grammar.ruleBodies, function(ruleName){
+    let ruleExamples = examples[ruleName];
+    let exampleRequest = new ErrorCheckingTextBox(grammar, ruleName);
+    exampleRequest.on('validSubmit', function(event){
+      exampleRequest.domNode.value = '';
+      processExample(event.text, event.ruleName);
+      refresh();
+    });
+
+    let rendered;
+    if(ruleExamples){
+      rendered = _('examplesForRule', {class: ruleName},
+        exampleRequest.domNode,
+        ...ruleExamples.map(example=> _('example', {}, t(example)))
+      );
+    } else {
+      rendered = _('examplesForRule', {class: ruleName}, exampleRequest.domNode);
+    }
+
+    return rendered;
+  }));
 }
 
 var refresh = function(){
-  let numReqs = refreshExampleRequests();
-  let coverage = 1 - numReqs/(Object.keys(grammar.ruleBodies).length);
+  let needed = refreshExampleRequests();
+  let coverage = 1 - needed.length/(Object.keys(grammar.ruleBodies).length);
   clearDOMNode($('#examples'));
   $('#examples').appendChild(_('h3', {}, t(`coverage: ${Math.floor(coverage*100)}%`)));
   $('#examples').appendChild(displayExamples(examples));

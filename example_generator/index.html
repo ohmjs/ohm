@@ -28,6 +28,10 @@
       margin-top: 5px;
     }
 
+    pre {
+      font-family: "input mono compressed", monospace;
+    }
+
     .invalid {
       background-color: red;
     }
@@ -81,8 +85,8 @@
 
   stmt = "continue" sc --cont
        | "break" sc    --brk
-       | ident "." ident ("("")")? sc --id
-       | "{"stmt+"}" --blk
+       | ident ("." ident)? ("("number*")")? sc --id
+       | "{" space* stmt+ space*"}" --blk
 
   sc = (~"\n" space)* (";" | "\n" | &"}" | end )
 
