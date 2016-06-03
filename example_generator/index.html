@@ -28,6 +28,10 @@
       margin-top: 5px;
     }
 
+    .invalid {
+      background-color: red;
+    }
+
     body {
       padding-left: 100px;
     }
@@ -38,7 +42,6 @@
 
   </style>
 
-  <!--
   <script type="text/ohm-js">
   Arithmetic {
     Exp
@@ -72,133 +75,147 @@
     = digit* "." digit+  -- fract
     | digit+             -- whole
   }
-  </script>
--->
 
-<script type="text/ohm-js">
-O {
+  Logical_Semicolon {
+  Stmts = stmt*
 
-Program
-  = Stmts
+  stmt = "continue" sc --cont
+       | "break" sc    --brk
+       | ident "." ident ("("")")? sc --id
+       | "{"stmt+"}" --blk
 
-Stmts
-  = Stmt* Exp?
+  sc = (~"\n" space)* (";" | "\n" | &"}" | end )
 
-Stmt
-  = class ident (extends ident)? (with NonemptyListOf<ident, ",">)? ";"  -- classDecl
-  | def ident "." ident "(" ListOf<ident, ","> ")" MethodBody            -- methodDeclJava
-  | def ident (ident ":" ident)+ MethodBody                              -- methodDeclKeyword
-  | def ident binSelector ident MethodBody                               -- methodDeclBinary
-  | def ident "(" ListOf<ident, ","> ")" MethodBody                      -- methodDeclCall
-  | var ident "=" Exp ";"                                                -- varDecl
-  | ident "=" Exp ";"                                                    -- varAssign
-  | this "." ident "=" Exp ";"                                           -- instVarAssign
-  | return Exp ";"                                                       -- return
-  | Exp ";"                                                              -- exp
+  ident  (an identifier)
+    = ~"continue" ~"break" letter alnum*
 
-MethodBody
-  = "=" Exp ";"    -- exp
-  | "{" Stmts "}"  -- stmt
+  number  (a number)
+    = digit+             -- whole
+  }
 
-Exp
-  = KWSendExp
+  O {
 
-KWSendExp
-  = EqExp (ident ":" EqExp)+  -- send
-  | super (ident ":" EqExp)+  -- super
-  | EqExp
+  Program
+    = Stmts
 
-EqExp
-  = RelExp ("==" | "!=") RelExp  -- eq
-  | RelExp
+  Stmts
+    = Stmt* Exp?
 
-RelExp
-  = AddExp ("<=" | "<" | ">=" | ">") AddExp  -- rel
-  | AddExp
+  Stmt
+    = class ident (extends ident)? (with NonemptyListOf<ident, ",">)? ";"  -- classDecl
+    | def ident "." ident "(" ListOf<ident, ","> ")" MethodBody            -- methodDeclJava
+    | def ident (ident ":" ident)+ MethodBody                              -- methodDeclKeyword
+    | def ident binSelector ident MethodBody                               -- methodDeclBinary
+    | def ident "(" ListOf<ident, ","> ")" MethodBody                      -- methodDeclCall
+    | var ident "=" Exp ";"                                                -- varDecl
+    | ident "=" Exp ";"                                                    -- varAssign
+    | this "." ident "=" Exp ";"                                           -- instVarAssign
+    | return Exp ";"                                                       -- return
+    | Exp ";"                                                              -- exp
 
-AddExp
-  = AddExp ("+" | "-") MulExp  -- add
-  | MulExp
+  MethodBody
+    = "=" Exp ";"    -- exp
+    | "{" Stmts "}"  -- stmt
 
-MulExp
-  = MulExp ("*" | "/" | "%") DotExp  -- mul
-  | DotExp
+  Exp
+    = KWSendExp
 
-DotExp
-  = DotExp "." ident "(" Actuals ")"  -- send
-  | super "." ident "(" Actuals ")"   -- super
-  | this "." ident  ~"("              -- instVarAccess
-  | UnExp
+  KWSendExp
+    = EqExp (ident ":" EqExp)+  -- send
+    | super (ident ":" EqExp)+  -- super
+    | EqExp
 
-UnExp
-  = "-" CallExp  -- neg
-  | CallExp
+  EqExp
+    = RelExp ("==" | "!=") RelExp  -- eq
+    | RelExp
 
-CallExp
-  = CallExp "(" Actuals ")"  -- call
-  | PriExp
+  RelExp
+    = AddExp ("<=" | "<" | ">=" | ">") AddExp  -- rel
+    | AddExp
 
-PriExp
-  = "(" Exp ")"                  -- paren
-  | "{" BlockArgNames Stmts "}"  -- block
-  | new ident "(" Actuals ")"    -- new
-  | string                       -- str
-  | ident                        -- ident
-  | number                       -- number
-  | this                         -- this
-  | trueK                        -- true
-  | falseK                       -- false
-  | nullK                        -- null
+  AddExp
+    = AddExp ("+" | "-") MulExp  -- add
+    | MulExp
 
-Actuals
-  = ListOf<Exp, ",">
+  MulExp
+    = MulExp ("*" | "/" | "%") DotExp  -- mul
+    | DotExp
 
-BlockArgNames
-  = NonemptyListOf<ident, ","> "|"  -- some
-  |                         -- none
+  DotExp
+    = DotExp "." ident "(" Actuals ")"  -- send
+    | super "." ident "(" Actuals ")"   -- super
+    | this "." ident  ~"("              -- instVarAccess
+    | UnExp
 
-// Lexical rules
+  UnExp
+    = "-" CallExp  -- neg
+    | CallExp
 
-ident  (an identifier)
-  = ~keyword letter alnum*
+  CallExp
+    = CallExp "(" Actuals ")"  -- call
+    | PriExp
 
-string  (a string literal)
-  = "\"" (~"\"" ~"\n" any)* "\""
+  PriExp
+    = "(" Exp ")"                  -- paren
+    | "{" BlockArgNames Stmts "}"  -- block
+    | new ident "(" Actuals ")"    -- new
+    | string                       -- str
+    | ident                        -- ident
+    | number                       -- number
+    | this                         -- this
+    | trueK                        -- true
+    | falseK                       -- false
+    | nullK                        -- null
 
-number  (a number literal)
-  = digit* "." digit+  -- fract
-  | digit+             -- whole
+  Actuals
+    = ListOf<Exp, ",">
 
-binSelector  (a binary selector)
-  = "==" | "!=" | "<=" | "<" | ">=" | ">" | "+"  | "-"  | "*"  | "/" | "%" | "@"
+  BlockArgNames
+    = NonemptyListOf<ident, ","> "|"  -- some
+    |                         -- none
 
-class = "class" ~alnum
-def = "def" ~alnum
-extends = "extends" ~alnum
-falseK = "false" ~alnum
-new = "new" ~alnum
-nullK = "null" ~alnum
-return = "return" ~alnum
-super = "super" ~alnum
-this = "this" ~alnum
-trueK = "true" ~alnum
-var = "var" ~alnum
-with = "with" ~alnum
+  // Lexical rules
 
-keyword
-  = class | def | extends | falseK | new | nullK | return | super | this | trueK | var | with
+  ident  (an identifier)
+    = ~keyword letter alnum*
 
-space
- += comment
+  string  (a string literal)
+    = "\"" (~"\"" ~"\n" any)* "\""
 
-comment
-  = "/*" (~"*/" any)* "*/"  -- multiLine
-  | "//" (~"\n" any)*       -- singleLine
+  number  (a number literal)
+    = digit* "." digit+  -- fract
+    | digit+             -- whole
 
-tokens
-  = (keyword | ident | number | comment | any)*
+  binSelector  (a binary selector)
+    = "==" | "!=" | "<=" | "<" | ">=" | ">" | "+"  | "-"  | "*"  | "/" | "%" | "@"
 
-}
+  class = "class" ~alnum
+  def = "def" ~alnum
+  extends = "extends" ~alnum
+  falseK = "false" ~alnum
+  new = "new" ~alnum
+  nullK = "null" ~alnum
+  return = "return" ~alnum
+  super = "super" ~alnum
+  this = "this" ~alnum
+  trueK = "true" ~alnum
+  var = "var" ~alnum
+  with = "with" ~alnum
+
+  keyword
+    = class | def | extends | falseK | new | nullK | return | super | this | trueK | var | with
+
+  space
+   += comment
+
+  comment
+    = "/*" (~"*/" any)* "*/"  -- multiLine
+    | "//" (~"\n" any)*       -- singleLine
+
+  tokens
+    = (keyword | ident | number | comment | any)*
+
+  }
 </script>
 </head>
 <body>
