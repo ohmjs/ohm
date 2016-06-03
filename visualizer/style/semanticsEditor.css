@@ -1,3 +1,11 @@
+textarea {
+  resize: none;
+  outline: none;
+  height: 12px;
+  text-align: center;
+  border: 0;
+}
+
 .pexpr:not(.failed) > .self.nextStep .label,
 .pexpr:not(.failed) > .self.tmpNextStep .label {
   background: rgba(100, 149, 237, 0.4);
@@ -209,3 +217,19 @@ headerBlock real {
   color: #999;
 }
 
+/* `Force Evaluation` entry in `parseTreeMenu` */
+.contextMenu label .sign {
+  margin-left: 10px;
+}
+.contextMenu li div:not(:first-child), li textarea {
+  margin-left: 10px;
+}
+.contextMenu ul ul ul li:hover div{
+  color: white;
+}
+.contextMenu ul li textarea{
+  border: 1px solid #C5C5C5;
+}
+.contextMenu li .value.error{
+  color: red;
+}

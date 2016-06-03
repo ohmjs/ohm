@@ -66,7 +66,6 @@
   };
   ErrorWrapper.prototype.isErrorWrapper = true;
 
-  // TODO: add 'forced' marker?
   var resultMap, forcing, todoList, errorList, passThroughList;
   function initializeSemanticsLog() {
     resultMap = Object.create(null);
@@ -87,17 +86,42 @@
     return nodeKey + '_at_' + operationName;
   }
 
-  function addResult(result, key, name, optArguments) {
+  // Return the corresponding result that is already recorded (* this also be used for
+  // result existance checking).
+  function getResult(key, name, optArgs) {
+    if (!(key in resultMap) || !(name in resultMap[key])) {
+      return undefined;
+    }
+
+    var resultList = resultMap[key][name].filter(function(resultWrapper) {
+      if (!resultWrapper.args ||
+          JSON.stringify(resultWrapper.args) === JSON.stringify(optArgs)) {
+        // Alternate the `forced` property, to make sure is result is only forced
+        // when all the path that could get the result is forced.
+        resultWrapper.forced = resultWrapper.forced && forcing;
+        return true;
+      }
+      return false;
+    });
+    return resultList[0];
+  }
+
+  function addResult(result, key, name, optArgs) {
+    // Return without adding duplicated results.
+    if (getResult(key, name, optArgs)) {
+      return;
+    }
+
     // Initialize entry to prepare for the new result
     resultMap[key] = resultMap[key] || Object.create(null);
     resultMap[key][name] = resultMap[key][name] || [];
 
-    // Check if the result is already recorded (* as `forceResult` is called without
+    // Check if the result is already recorded (* as `forceResults` is called without
     // checking duplications).
     var isDuplicated = false;
     resultMap[key][name].forEach(function(resultWrapper) {
       if (!resultWrapper.args ||
-          JSON.stringify(resultWrapper.args) === JSON.stringify(optArguments)) {
+          JSON.stringify(resultWrapper.args) === JSON.stringify(optArgs)) {
         isDuplicated = true;
         // Alternate the `forced` property, to make sure is result is only forced
         // when all the path that could get the result is forced.
@@ -112,8 +136,8 @@
     // Wrap actual result into an object, which may contain
     // arguments, and markers.
     var resultWrapper = {result: result};
-    if (optArguments && Object.keys(optArguments).length > 0) {
-      resultWrapper.args = optArguments;
+    if (optArgs && Object.keys(optArgs).length > 0) {
+      resultWrapper.args = optArgs;
     }
 
     var nOpKey = nodeOpKey(key, name);
@@ -217,10 +241,10 @@
   }
 
   // Add new operation/attribute to the semantics
-  function addSemanticOperation(type, name, optArguments, optOrigActionDict) {
+  function addSemanticOperation(type, name, optArgs, optOrigActionDict) {
     var signature = name;
-    if (type === 'Operation' && optArguments) {
-      var argumentNames = Object.keys(optArguments);
+    if (type === 'Operation' && optArgs) {
+      var argumentNames = Object.keys(optArgs);
       if (argumentNames.length > 0) {
         signature += '(' + argumentNames.join(',') + ')';
       }
@@ -235,27 +259,27 @@
   function isOperationNameValid(name) {
     return /^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(name);
   }
-  ohmEditor.semantics.addListener('add:semanticOperation', function(type, name, optArguments,
+  ohmEditor.semantics.addListener('add:semanticOperation', function(type, name, optArgs,
       origActionDict) {
     // Throw a more clear and readable error message if the name is not a valid operation name.
     if (!isOperationNameValid(name)) {
       throw new Error('Cannot add ' + type + " '" + name + "': that's an invalid name");
     }
-    addSemanticOperation(type, name, optArguments, origActionDict);
+    addSemanticOperation(type, name, optArgs, origActionDict);
     opName = name;
-    opArguments = optArguments;
+    opArguments = optArgs;
   });
 
-  function populateSemanticsResult(traceNode, optOpName, optArguments) {
+  function populateSemanticsResult(traceNode, optOpName, optArgs) {
     var operationName = optOpName || opName;
     try {
       var nodeWrapper = semantics._getSemantics().wrap(traceNode.bindings[0]);
       if (operationName in semantics._getSemantics().operations) {
         var argValues;
         if (operationName === opName) {
-          argValues = toValueList(opArguments || Object.create(null));
+          argValues = toValueList(optArgs || opArguments || Object.create(null));
         } else {
-          argValues = toValueList(optArguments || Object.create(null));
+          argValues = toValueList(optArgs || Object.create(null));
         }
         nodeWrapper[operationName].apply(nodeWrapper, argValues);
       } else {
@@ -276,7 +300,7 @@
     populateSemanticsResult(traceNode);
   });
 
-  function forceResult(traceNode) {
+  function forceResults(traceNode) {
     forcing = true;
     var semanticsNameList = semantics.getOperationNames().concat(semantics.getAttributeNames());
     semanticsNameList.forEach(function(name) {
@@ -285,7 +309,7 @@
     forcing = false;
   }
 
-  function allForced(resultMap, key) {
+  function allForced(key) {
     var results = resultMap[key];
     var forced = Object.keys(results).every(function(operationName) {
       var resultList = results[operationName];
@@ -403,11 +427,11 @@
 
     if (opDescription) {
       var type = opDescription.type;
-      var optArguments = opDescription.args;
-      addSemanticOperation(type, operationName, optArguments, wrapper._origActionDict);
+      var optArgs = opDescription.args;
+      addSemanticOperation(type, operationName, optArgs, wrapper._origActionDict);
       delete wrapper._origActionDict;
       if (operationName === opName) {
-        opArguments = ohmEditor.semantics.opArguments = optArguments;
+        opArguments = ohmEditor.semantics.opArguments = optArgs;
       }
     } else if (operationName === opName) {
       opName = null;
@@ -419,13 +443,32 @@
   // Exports
   // -------
 
+  ohmEditor.semantics.forceResult = function(traceNode, name, optArgs) {
+    var key = nodeKey(traceNode.bindings[0]);
+    forcing = true;
+    populateSemanticsResult(traceNode, name, optArgs);
+    var resultWrapper = getResult(key, name, optArgs);
+    forcing = false;
+    return resultWrapper;
+  };
+
+  ohmEditor.semantics.getResult = function(traceNode, name, optArgs) {
+    var key = nodeKey(traceNode.bindings[0]);
+    return getResult(key, name, optArgs);
+  };
+
+  ohmEditor.semantics.missingSemanticsAction = function(traceNode, name) {
+    var actionKey = traceNode.bindings[0].ctorName;
+    return !semantics._getActionDict(name)[actionKey];
+  };
+
   ohmEditor.semantics.getResults = function(traceNode) {
     var key = nodeKey(traceNode.bindings[0]);
     // If the node has not been evaluated yet, or all its existing semantic results are
     // forced, then we force the evaluation on it to make sure all the available operations
     // are evaluated at this node.
-    if (!(key in resultMap) || allForced(resultMap, key)) {
-      forceResult(traceNode);
+    if (!(key in resultMap) || allForced(key)) {
+      forceResults(traceNode);
     }
     return resultMap[key];
   };
@@ -461,5 +504,13 @@
     var actionBodyStartIdx = actionStr.indexOf('\n') + 1;
     var actionBodyEndIdx = actionStr.lastIndexOf('\n');
     return actionStr.substring(actionBodyStartIdx, actionBodyEndIdx);
+  };
+
+  ohmEditor.semantics.getSemantics = function() {
+    var semanticOperations = {
+      operations: semantics._getSemantics().operations,
+      attributes: semantics._getSemantics().attributes
+    };
+    return semanticOperations;
   };
 });

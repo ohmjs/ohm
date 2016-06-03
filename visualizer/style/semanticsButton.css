@@ -79,14 +79,6 @@
   margin-top: -2px;
 }
 
-#semantics .arguments textarea{
-  resize: none;
-  outline: none;
-  height: 12px;
-  text-align: center;
-  border: 0;
-}
-
 #semantics .nameValuePair {
   display: flex;
   padding: 1px;

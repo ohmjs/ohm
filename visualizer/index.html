@@ -252,7 +252,19 @@
       margin: 6px 0;
       padding: 0;
     }
+    .contextMenu ul ul {
+      left: 100%;
+      top: 0;
+      padding: 0;
+      margin-top: -1px;  /* For aligning diff caused by 1px border */
+      position: absolute;
+      border-radius: 4px;
+      border: 1px solid #bbb;
+      border-left-color: rgba(187, 187, 187, 0.26);
+      background-color: #f0f0f0;
+    }
     .contextMenu li {
+      position: relative;  /* For position submenus */
       display: flex;
       font-family: Helvetica, Arial, sans-serif;
       font-size: 14px;
@@ -267,8 +279,11 @@
     .contextMenu li:hover:not(.disabled) {
       background-color: #4f9dfb;
     }
-    .contextMenu li:hover:not(.disabled) * {
+    .contextMenu li:hover:not(.disabled) > label {
       color: white;
+    }
+    .contextMenu li:not(.disabled):hover > ul {
+      display: block;
     }
 
     #timeline {

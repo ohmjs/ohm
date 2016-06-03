@@ -345,12 +345,13 @@
     }
     // Set the label.
     li.innerHTML = '<label></label>';
-    li.firstChild.textContent = label;
+    li.firstChild.innerHTML = label;
 
     li.classList.toggle('disabled', !enabled);
     if (enabled) {
       li.onclick = onClick;
     }
+    return li;
   }
 
   // Handle the 'contextmenu' event `e` for the DOM node associated with `traceNode`.
@@ -368,7 +369,7 @@
       updateZoomState({zoomTrace: traceNode});
       clearMarks();
     });
-    ohmEditor.parseTree.emit('contextMenu', traceNode, addMenuItem);
+    ohmEditor.parseTree.emit('contextMenu', e.target, traceNode, addMenuItem);
 
     e.preventDefault();
     e.stopPropagation();  // Prevent ancestor wrappers from handling.
@@ -731,7 +732,7 @@
     // Emitted when the contextMenu for the trace element of `traceNode` is about to be shown.
     // `addMenuItem` can be called to add a menu item to the menu.
     // TODO: The key should be quoted to be consistent, but JSCS complains.
-    contextMenu: ['traceNode', 'addMenuItem'],
+    contextMenu: ['target', 'traceNode', 'addMenuItem'],
 
     // Emitted before start rendering the parse tree
     'render:parseTree': ['traceNode'],
