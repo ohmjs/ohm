@@ -29,11 +29,14 @@ var allExamplesNeeded = function(){
     if(example.hasOwnProperty('examplesNeeded')){
       example.examplesNeeded.forEach(neededRuleName => needed.add(neededRuleName));
     }
-    if(example.hasOwnProperty('needHigherExample')){
-      needed.add(ruleName);
-    }
+    console.log(`generated ${ruleName} (${example.example})`);
     if(example.hasOwnProperty('example')){
+      if(!(grammar.match(example.example, ruleName).succeeded())){
+        needed.add(ruleName);
+      }
       processExample(example.example);
+    } else if(!examples.hasOwnProperty(ruleName)) { //if we can't make an example and don't have any others
+      needed.add(ruleName);
     }
   });
 
@@ -45,7 +48,7 @@ var allExamplesNeeded = function(){
 };
 
 var attemptGeneration = function(needed){
-  for(neededRuleName of needed){
+  for(let neededRuleName of needed){
     if(grammar.ruleBodies.hasOwnProperty(neededRuleName)){
       let example = grammar.ruleBodies[neededRuleName].generateExample(
         grammar, examples, isSyntactic(neededRuleName)

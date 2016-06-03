@@ -29,12 +29,12 @@ function categorizeExamples(examples) {
                                    .map(function(item) { return item.example; });
   // could check examples here, here's an example that's invalid
 
-  var needHigherExample = examples.some(function(item) { return item.needHigherExample; });
+  var needHelp = examples.some(function(item) { return item.needHelp; });
 
   return {
     examplesNeeded: examplesNeeded,
     successfulExamples: successfulExamples,
-    needHigherExample: needHigherExample
+    needHelp: needHelp
   };
 }
 
@@ -48,7 +48,6 @@ pexprs.Alt.prototype.generateExample = function(grammar, examples, inSyntacticCo
 
   var examplesNeeded = categorizedExamples.examplesNeeded;
   var successfulExamples = categorizedExamples.successfulExamples;
-  var needHigherExample = categorizedExamples.needHigherExample;
 
   var returnObj = {};
 
@@ -60,7 +59,6 @@ pexprs.Alt.prototype.generateExample = function(grammar, examples, inSyntacticCo
   if (examplesNeeded.length > 0) {
     returnObj.examplesNeeded = examplesNeeded;
   }
-  returnObj.needHigherExample = needHigherExample;
 
   return returnObj;
 };
@@ -76,14 +74,12 @@ pexprs.Seq.prototype.generateExample = function(grammar, examples, inSyntacticCo
 
   var examplesNeeded = categorizedExamples.examplesNeeded;
   var successfulExamples = categorizedExamples.successfulExamples;
-  var needHigherExample = categorizedExamples.needHigherExample;
 
   var returnObj = {};
 
   // in a Seq, all pieces must succeed in order to have a successful example
-  if (examplesNeeded.length > 0) { // } || needHigherExample){
+  if (examplesNeeded.length > 0) {
     returnObj.examplesNeeded = examplesNeeded;
-    returnObj.needHigherExample = needHigherExample;
   } else {
     returnObj.example = successfulExamples.join(inSyntacticContext ? ' ' : '');
   }
@@ -123,15 +119,15 @@ pexprs.Range.prototype.generateExample = function(grammar, examples, inSyntactic
 
 // these all fail for now
 pexprs.Not.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
-  return {needHigherExample: true};
+  return {example: ''};
 };
 
 pexprs.Lookahead.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
-  return {needHigherExample: true};
+  return {example: ''};
 };
 
 pexprs.Param.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
-  return {needHigherExample: true};
+  return {};
 };
 
 function repeat(n, fn) {
@@ -152,7 +148,6 @@ var generateNExamples = function(that, grammar, examples, inSyntacticContext, nu
 
   var examplesNeeded = categorizedExamples.examplesNeeded;
   var successfulExamples = categorizedExamples.successfulExamples;
-  var needHigherExample = categorizedExamples.needHigherExample;
 
   var returnObj = {};
 
@@ -164,7 +159,6 @@ var generateNExamples = function(that, grammar, examples, inSyntacticContext, nu
     returnObj.examplesNeeded = examplesNeeded;
   }
 
-  returnObj.needHigherExample = needHigherExample;
   return returnObj;
 };
 
@@ -182,37 +176,3 @@ pexprs.Opt.prototype.generateExample = function(grammar, examples, inSyntacticCo
   return generateNExamples(this, grammar, examples, inSyntacticContext,
                            Math.floor(Math.random() * 2));
 };
-
-/*
-exports.any = any; //any char
-exports.end = end; //end of input (~any)
-exports.Terminal = Terminal; *
-  yields itself
-
-exports.Range = Range; *
-exports.Param = Param; //param *
-exports.Alt = Alt; *
-  stochastic choose
-
-exports.Extend = Extend;
-exports.Seq = Seq; *
-  concat
-
-exports.Iter = Iter;*
-exports.Star = Star;*
-  star, minimum=0 (random from 0 to three)
-
-exports.Plus = Plus;*
-  star, minimum=1
-
-exports.Opt = Opt;*
-  star, minimum=0, maximum=1
-
-exports.Not = Not; //fail *
-exports.Lookahead = Lookahead; //fail *
-exports.Lex = Lex; '#' puts you into a lexical context (inside pound, don't skip whitespace)
-exports.Apply = Apply; *
-  generate application of rule
-
-exports.UnicodeChar = UnicodeChar; //generates itself
-*/
