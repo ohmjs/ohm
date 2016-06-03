@@ -29,12 +29,11 @@ var allExamplesNeeded = function(){
     if(example.hasOwnProperty('examplesNeeded')){
       example.examplesNeeded.forEach(neededRuleName => needed.add(neededRuleName));
     }
-    console.log(`generated ${ruleName} (${example.example})`);
     if(example.hasOwnProperty('example')){
+      processExample(example.example);
       if(!(grammar.match(example.example, ruleName).succeeded())){
         needed.add(ruleName);
       }
-      processExample(example.example);
     } else if(!examples.hasOwnProperty(ruleName)) { //if we can't make an example and don't have any others
       needed.add(ruleName);
     }
@@ -43,18 +42,23 @@ var allExamplesNeeded = function(){
   //try generating examples in needed list
   while(needed.size > 0 && attemptGeneration(needed));
 
-
   return Array.from(needed);
 };
 
 var attemptGeneration = function(needed){
   for(let neededRuleName of needed){
     if(grammar.ruleBodies.hasOwnProperty(neededRuleName)){
+      if(examples.hasOwnProperty(neededRuleName)){
+        needed.delete(neededRuleName);
+        return true;
+      }
+
       let example = grammar.ruleBodies[neededRuleName].generateExample(
         grammar, examples, isSyntactic(neededRuleName)
       );
 
-      if(example.hasOwnProperty('example')){
+      if(example.hasOwnProperty('example')
+         && grammar.match(example.example, neededRuleName).succeeded()){
         processExample(example.example);
         needed.delete(neededRuleName);
         return true;
@@ -83,7 +87,8 @@ var processExample = function(example){
 };
 
 var displayExamples = function(examples){
-  return _('div', {}, ...objectMap(grammar.ruleBodies, function(ruleName){
+  return _('div', {},
+    ...objectMap(grammar.ruleBodies, function(ruleName){
     let ruleExamples = examples[ruleName];
     let exampleRequest = new ErrorCheckingTextBox(grammar, ruleName);
     exampleRequest.on('validSubmit', function(event){
@@ -116,6 +121,16 @@ var refresh = function(){
   let coverage = 1 - needed.length/(Object.keys(grammar.ruleBodies).length);
   clearDOMNode($('#examples'));
   $('#examples').appendChild(_('h3', {}, t(`coverage: ${Math.floor(coverage*100)}%`)));
+  $('#examples').appendChild(_('ul', {}, ...needed.map(ruleName=>{
+    let exampleRequest = new ErrorCheckingTextBox(grammar, ruleName);
+    exampleRequest.on('validSubmit', function(event){
+      exampleRequest.domNode.value = '';
+      processExample(event.text, event.ruleName);
+      refresh();
+    });
+    return _('li', {}, exampleRequest.domNode);
+  })));
+  $('#examples').appendChild(_('hr'))
   $('#examples').appendChild(displayExamples(examples));
 }
 

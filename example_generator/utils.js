@@ -10,7 +10,8 @@ window.objectMap = function(obj, func){
 
 
 window.$ = function(query){ return document.querySelector(query) };
-window._ = function(tagName, attributes, ...children){
+window._ = function(tagName, attributes = {}, ...children){
+  children = children || [];
   let element = document.createElement(tagName);
   objectForEach(attributes, (attr, val)=> {
     element.setAttribute(attr, val);

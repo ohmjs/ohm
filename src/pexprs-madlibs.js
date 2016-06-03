@@ -91,8 +91,10 @@ pexprs.Seq.prototype.generateExample = function(grammar, examples, inSyntacticCo
 // what we really want is a hierarchical, structured needExamples?
 //  but don't want to deal with double-asking
 
-pexprs.Apply.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
+pexprs.Apply.prototype.generateExample = function(grammar, examples, inSyntacticContext, ruleArgs) {
   var returnObj = {};
+
+  let ruleName = ruleNameOf(this);
 
   if (!examples.hasOwnProperty(this.ruleName)) {
     returnObj.examplesNeeded = [this.ruleName];
@@ -104,6 +106,18 @@ pexprs.Apply.prototype.generateExample = function(grammar, examples, inSyntactic
 
   return returnObj;
 };
+
+function ruleNameOf(pexpr, args){
+  if(pexpr instanceof pexprs.Apply && pexpr.args && pexpr.args.length){
+    return pexpr.ruleName + '<' + pexpr.args.map(function(argPexpr, args) {
+      return ruleNameOf(argPexpr, args);
+    }).join(',') + '>';
+  } else if (pexpr instanceof pexprs.Apply) {
+    return pexpr.ruleName;
+  } else if (pexpr instanceof pexprs.Param) {
+    return args[pexpr.index];
+  }
+}
 
 // assumes that terminal's object is always a string
 pexprs.Terminal.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
@@ -126,8 +140,20 @@ pexprs.Lookahead.prototype.generateExample = function(grammar, examples, inSynta
   return {example: ''};
 };
 
-pexprs.Param.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
-  return {};
+pexprs.Param.prototype.generateExample = function(grammar, examples, inSyntacticContext, ruleArgs) {
+  let ruleName = ruleArgs[this.index];
+
+  var returnObj = {};
+
+  if (!examples.hasOwnProperty(this.ruleName)) {
+    returnObj.examplesNeeded = [this.ruleName];
+  } else {
+    var relevantExamples = examples[this.ruleName];
+    var i = Math.floor(Math.random() * relevantExamples.length);
+    returnObj.example = relevantExamples[i];
+  }
+
+  return returnObj;
 };
 
 function repeat(n, fn) {
