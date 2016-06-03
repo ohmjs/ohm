@@ -96,10 +96,15 @@ var displayExamples = function(examples){
     if(ruleExamples){
       rendered = _('examplesForRule', {class: ruleName},
         exampleRequest.domNode,
+        _('h4', {}, t('= '+grammar.ruleBodies[ruleName].interval.contents)),
         ...ruleExamples.map(example=> _('example', {}, t(example)))
       );
     } else {
-      rendered = _('examplesForRule', {class: ruleName}, exampleRequest.domNode);
+      exampleRequest.domNode.classList.add('request');
+      rendered = _('examplesForRule', {class: ruleName},
+        exampleRequest.domNode,
+        _('h4', {}, t('= '+grammar.ruleBodies[ruleName].interval.contents))
+      );
     }
 
     return rendered;
