@@ -1,4 +1,4 @@
 'use strict';
 
-window.grammar = ohm.grammarsFromScriptElements().Logical_Semicolon;
+window.grammar = ohm.grammarsFromScriptElements().O;
 window.semantics = grammar.semantics();

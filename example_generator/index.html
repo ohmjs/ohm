@@ -20,7 +20,11 @@
 
     example::before, example::after{
       content: '"';
-      font-weight: bold;
+      /*font-weight: bold;*/
+      color: #6495ED;
+    }
+
+    h4 {
       color: #6495ED;
     }
 
@@ -28,16 +32,22 @@
       margin-top: 5px;
     }
 
-    pre {
+    pre, textarea {
       font-family: "input mono compressed", monospace;
+      font-size: 15px;
     }
 
     .invalid {
       background-color: red;
     }
 
+    .request {
+      background-color: #FFAE17;
+    }
+
     body {
       padding-left: 100px;
+      font-size: 15px;
     }
 
     ul {
