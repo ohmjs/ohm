@@ -67,6 +67,20 @@
     var blockClassId = generateResultBlockClassId(opName, resultWrapper.args);
     block.classList.add(blockClassId);
 
+    // Hover the block, and all the blocks that represent the results for the same operation
+    // signature will be highlighted.
+    block.onmouseover = function(event) {
+      var blocks = document.querySelectorAll('.semanticsEditor .result .' + blockClassId);
+      Array.prototype.forEach.call(blocks, function(b) {
+        b.classList.add('highlight');
+      });
+    };
+    block.onmouseout = function(event) {
+      var blocks = document.querySelectorAll('.semanticsEditor .result .' + blockClassId);
+      Array.prototype.forEach.call(blocks, function(b) {
+        b.classList.remove('highlight');
+      });
+    };
     return block;
   }
 

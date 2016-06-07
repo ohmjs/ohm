@@ -167,6 +167,7 @@ headerBlock real {
   border-top: none;
   margin-top: -1px;
   padding: 4px;
+  cursor: default;
 }
 /* Result container is hide by default when editor body is open */
 .semanticsEditor.showing .result:not(.showing) {
@@ -180,6 +181,10 @@ headerBlock real {
   display: flex;
   flex-direction: column;
   flex: 1;
+}
+.result resultBlock.highlight {
+  background: rgba(255, 255, 0, 0.19);
+  font-weight: bolder;
 }
 .result resultBlock.leftBorder {
   padding-left: 2px;
