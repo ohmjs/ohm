@@ -231,26 +231,6 @@
     var valueSpan = argTag.appendChild(domUtil.createElement('span'));
     valueSpan.innerHTML = JSON.stringify(argValue);
 
-    // If the value is hidden, hover the tag to temporarily show the argument value
-    argTag.onmouseover = function(event) {
-      if (!valueSpan.classList.contains('show')) {
-        argTag.style.marginRight = valueSpan.scrollWidth + 12 + 'px';
-      }
-    };
-
-    // Move out the mouse the argument value will hide again if it's temporarily showed up
-    argTag.onmouseout = function(event) {
-      if (!valueSpan.classList.contains('show')) {
-        argTag.style.marginRight = '0';
-      }
-    };
-
-    // Click the argument name to hide or show the corresponding value
-    argTag.onclick = function(event) {
-      var showing = valueSpan.classList.contains('show');
-      valueSpan.classList.toggle('show', !showing);
-    };
-
     return argTag;
   }
 
