@@ -452,16 +452,6 @@
     return resultWrapper;
   };
 
-  ohmEditor.semantics.getResult = function(traceNode, name, optArgs) {
-    var key = nodeKey(traceNode.bindings[0]);
-    return getResult(key, name, optArgs);
-  };
-
-  ohmEditor.semantics.missingSemanticsAction = function(traceNode, name) {
-    var actionKey = traceNode.bindings[0].ctorName;
-    return !semantics._getActionDict(name)[actionKey];
-  };
-
   ohmEditor.semantics.getResults = function(traceNode) {
     var key = nodeKey(traceNode.bindings[0]);
     // If the node has not been evaluated yet, or all its existing semantic results are

@@ -20,6 +20,20 @@
     LEFTWARDS_ARROW: '\u2190'
   };
 
+  // Generate a class name for the result block which used to identify the
+  // semantic operation that generates the result.
+  // Format: 'operationName_' <operation name> ('_' <arg#i>)*
+  function generateResultBlockClassId(name, args) {
+    var blockClassId = name;
+    if (args) {
+      var argValues = Object.keys(args).map(function(key) {
+          return args[key];
+        });
+      blockClassId += '_' + argValues.join('_');
+    }
+    return 'operationName_' + blockClassId;
+  }
+
   // Creates a single `resultBlock`, which contains,
   // `value`: the actual result container
   // `operation`: the semantic operation for the result
@@ -49,6 +63,9 @@
     }
     var opNameContainer = block.appendChild(domUtil.createElement('operation'));
     opNameContainer.innerHTML = opSignature;
+
+    var blockClassId = generateResultBlockClassId(opName, resultWrapper.args);
+    block.classList.add(blockClassId);
 
     return block;
   }
@@ -412,9 +429,13 @@
   // Append a `resultBlock` to the result container of the editor
   function appendSingleResult(editorWrapper, entry, traceNode, name) {
     var args = retrieveArgumentsFromSubList(entry);
-    var resultWrapper = !ohmEditor.semantics.getResult(traceNode, name, args) &&
-          ohmEditor.semantics.forceResult(traceNode, name, args);
     // If the result already showed, return.
+    var blockClassId = generateResultBlockClassId(name, args);
+    if (editorWrapper.querySelector('.result .' + blockClassId)) {
+      return;
+    }
+
+    var resultWrapper = ohmEditor.semantics.forceResult(traceNode, name, args);
     if (!resultWrapper) {
       return;
     }
@@ -443,14 +464,16 @@
     entry.firstChild.textContent = name;
     entry.appendChild(createArgumentsWrapper(formals));
 
+    // Mark the entry `disabled` if semantics action of the operation is missiong for the node,
+    // or the result for the node already showed. * For the operation with arguments, we only need
+    // to check if the semantics action is missing.
+    var resultBlock = editorWrapper.querySelector('.result .operationName_' + name);
     var args = retrieveArgumentsFromSubList(entry);
-    var resultWrapper = ohmEditor.semantics.getResult(traceNode, name, args);
-    var missingSemanticsAction = ohmEditor.semantics.missingSemanticsAction(traceNode, name);
-    if (resultWrapper || missingSemanticsAction) {
-      entry.classList.toggle('disabled',
-          missingSemanticsAction ||    // Missing the semantics action for the node.
-          formals.length === 0);       // The semantic result for the node already showed.
-    }
+    var resultWrapper = ohmEditor.semantics.forceResult(traceNode, name, args);
+    var missingSemanticsAction = resultWrapper.missingSemanticsAction;
+    entry.classList.toggle('disabled',
+        missingSemanticsAction ||    // Missing the semantics action for the node.
+        resultBlock);                // The semantic result for the node already showed.
 
     entry.onclick = function(event) {
       event.stopPropagation();
