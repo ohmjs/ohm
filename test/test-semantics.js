@@ -254,10 +254,10 @@ test('semantics', function(t) {
 
   // Cannot use the semantics on nodes from another grammar...
   var g = ohm.grammar('G {}');
-  t.throws(function() { s(g.match('a', 'letter')); }, /Cannot use a CST node created by grammar/);
+  t.throws(function() { s(g.match('a', 'letter')); }, /Cannot use a MatchResult from grammar/);
   // ... even if it's a sub-grammar
   g = ohm.grammar('Arithmetic2 <: Arithmetic {}', {Arithmetic: Arithmetic});
-  t.throws(function() { s(g.match('1+2', 'exp')); }, /Cannot use a CST node created by grammar/);
+  t.throws(function() { s(g.match('1+2', 'exp')); }, /Cannot use a MatchResult from grammar/);
 
   t.end();
 });
@@ -545,10 +545,10 @@ test('mixing nodes from one grammar with semantics from another', function(t) {
   t.equal(s(m).value(), 'aaachoo!');
 
   m = ns.GPrime.match('bbb', 'start');
-  t.throws(function() { s(m).value(); }, /Cannot use a CST node created by grammar/);
+  t.throws(function() { s(m).value(); }, /Cannot use a MatchResult from grammar/);
 
   m = ns.Unrelated.match('asdf', 'start');
-  t.throws(function() { s(m).value(); }, /Cannot use a CST node created by grammar/);
+  t.throws(function() { s(m).value(); }, /Cannot use a MatchResult from grammar/);
 
   t.end();
 });

@@ -501,7 +501,7 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
     var cst = matchResult._cst;
     if (cst.grammar !== grammar) {
       throw new Error(
-          "Cannot use a CST node created by grammar '" + cst.grammar.name +
+          "Cannot use a MatchResult from grammar '" + cst.grammar.name +
           "' with a semantics for '" + grammar.name + "'");
     }
     return s.wrap(cst);
