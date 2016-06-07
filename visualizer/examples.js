@@ -6,7 +6,6 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    root.ohmEditor = root.ohmEditor || {};
     initModule(root.ohm, root.ohmEditor);
   }
 })(this, function(ohm, ohmEditor) {
@@ -133,10 +132,9 @@
     if (value && value !== '[]') {
       examples = JSON.parse(value);
     } else if (defaultEl) {
-      examples = [].slice.apply(defaultEl.querySelectorAll('pre')).
-        map(function(elem) {
-          return elem.textContent;
-        });
+      examples = Array.prototype.map.call(defaultEl.querySelectorAll('pre'), function(elem) {
+        return elem.textContent;
+      });
     }
     examples.forEach(function(ex) {
       setExample(addExample(), ex);
