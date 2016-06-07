@@ -501,15 +501,15 @@
           editorWrapper));
     });
   }
-  ohmEditor.parseTree.addListener('contextMenu', function(target, traceNode, addMenuItem) {
+  ohmEditor.parseTree.addListener('contextMenu', function(target, traceNode) {
     var selfWrapper = domUtil.closestElementMatching('.self', target);
     var editorWrapper = selfWrapper.querySelector('.semanticsEditor');
     var evaluatingSemantics = ohmEditor.semantics.appendEditor;
     var forceEntryContent = 'Force Evaluation';
     forceEntryContent += '<span>' + (evaluatingSemantics ? UnicodeChars.PLUS_SIGN : '') +
         '</span>';
-    var forceEntry = addMenuItem('forceEvaluation', forceEntryContent, evaluatingSemantics,
-        function(event) { event.stopPropagation(); });
+    var forceEntry = domUtil.addMenuItem('parseTreeMenu', 'forceEvaluation', forceEntryContent,
+        evaluatingSemantics, function(event) { event.stopPropagation(); });
     forceEntry.querySelector('span').className = 'sign';
     if (!evaluatingSemantics) {
       return;

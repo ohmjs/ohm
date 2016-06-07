@@ -12,10 +12,6 @@
 
   // Privates
   // --------
-  var KeyCode = {
-    ENTER: 13,
-    ESC: 27
-  };
 
   var UnicodeChars = {
     BLACK_UP_POINTING_TRIANGLE: '\u25B2',
@@ -23,9 +19,6 @@
     PLUS_SIGN: '\u002B',
     LEFTWARDS_ARROW: '\u2190'
   };
-
-  var deleteEntry = document.querySelector('#operationMenu #delete');
-  var editEntry = document.querySelector('#operationMenu #edit');
 
   // Unselect all the semantics buttons, except the target semantic button
   function unselectOtherSemanticButtons(targetNameContainer) {
@@ -93,6 +86,13 @@
     return args;
   }
 
+  function showActionMenu(e) {
+    var actionMenu = document.querySelector('#operationMenu');
+    actionMenu.style.left = e.clientX + 'px';
+    actionMenu.style.top = e.clientY - 6 + 'px';
+    actionMenu.hidden = false;
+  }
+
   function createSemanticNameContainer(type) {
     var nameContainer = domUtil.createElement('textarea.opName');
     nameContainer.cols = 15;
@@ -147,19 +147,12 @@
     return nameContainer;
   }
 
-  function showActionMenu(e) {
-    var actionMenu = document.querySelector('#operationMenu');
-    actionMenu.style.left = e.clientX + 'px';
-    actionMenu.style.top = e.clientY - 6 + 'px';
-    actionMenu.hidden = false;
-  }
-
   function handleContextMenuOnArgument(target, argList) {
     var wrapper = domUtil.closestElementMatching('.wrapper', argList);
     var operationName = wrapper.querySelector('.opName').value;
     var nameValPair = domUtil.closestElementMatching('.nameValuePair', target);
 
-    deleteEntry.onclick = function(e) {
+    domUtil.addMenuItem('operationMenu', 'delete', 'Delete', true, function(event) {
       argList.removeChild(nameValPair);
 
       // If the deleted argument is the only argument for the action, then
@@ -183,14 +176,15 @@
         };
       ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, opDescription);
       ohmEditor.parseTree.refresh(ohmEditor.parseTree.rootTrace, false);
-    };
-    editEntry.onclick = function(e) {
+    });
+
+    domUtil.addMenuItem('operationMenu', 'edit', 'Edit', true, function(event) {
       // Relax the name container, so it could be editable
       var argNameContainer = nameValPair.querySelector('.name');
       argNameContainer.readOnly = false;
       argNameContainer.select();
       ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, undefined);
-    };
+    });
   }
 
   // Create the div to contain the list of arguments
@@ -297,17 +291,17 @@
     var operationName = nameContainer.value;
     var wrapper = domUtil.closestElementMatching('.wrapper', nameContainer);
     var container = domUtil.closestElementMatching('.entries', nameContainer);
-    deleteEntry.onclick = function(event) {
-      container.removeChild(wrapper);
-      ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, undefined);
-      ohmEditor.parseTree.refresh(ohmEditor.parseTree.rootTrace, false);
-    };
+    domUtil.addMenuItem('operationMenu', 'delete', 'Delete', true, function(event) {
+        container.removeChild(wrapper);
+        ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, undefined);
+        ohmEditor.parseTree.refresh(ohmEditor.parseTree.rootTrace, false);
+      });
 
-    editEntry.onclick = function(event) {
+    domUtil.addMenuItem('operationMenu', 'edit', 'Edit', true, function(event) {
       nameContainer.select();
       relaxButton(wrapper);
       ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, undefined);
-    };
+    });
   }
 
   // Add new operation or attribute wrapper
@@ -365,6 +359,7 @@
 
       if (!name) {
         container.removeChild(wrapper);
+        ohmEditor.parseTree.refresh();
         return;
       } else if (argumentChangeOnly) {
         // If the user is just changing an argument value, so we just
@@ -421,17 +416,4 @@
     document.querySelector('#operations').innerHTML = '';
     document.querySelector('#attributes').innerHTML = '';
   });
-
-  // Hide the action context menu when Esc or Enter is pressed, any click happens, or another
-  // context menu is brought up.
-  document.addEventListener('click', hideContextMenu);
-  document.addEventListener('contextmenu', hideContextMenu);
-  document.addEventListener('keydown', function(e) {
-    if (e.keyCode === KeyCode.ESC || e.keyCode === KeyCode.ENTER) {
-      hideContextMenu();
-    }
-  });
-  function hideContextMenu() {
-    document.querySelector('#operationMenu').hidden = true;
-  }
 });

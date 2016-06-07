@@ -19,11 +19,6 @@
     MIDDLE_DOT: '\u00B7'
   };
 
-  var KeyCode = {
-    ENTER: 13,
-    ESC: 27
-  };
-
   // The root trace node from the last time the input was parsed (not affected by zooming).
   var rootTrace;
 
@@ -330,30 +325,6 @@
            !isLeaf(traceNode);
   }
 
-  // Permanently add a menu item to the context menu.
-  // `id` is the value to use as the 'id' attribute of the DOM node.
-  // `label` is the text label of the item.
-  // `onClick` is a function to use as the onclick handler for the item.
-  // If an item with the same id was already added, then the old item will be updated
-  // with the new values from `label`, `enabled`, and `onClick`.
-  function addMenuItem(id, label, enabled, onClick) {
-    var itemList = $('#parseTreeMenu ul');
-    var li = itemList.querySelector('#' + id);
-    if (!li) {
-      li = itemList.appendChild(domUtil.createElement('li'));
-      li.id = id;
-    }
-    // Set the label.
-    li.innerHTML = '<label></label>';
-    li.firstChild.innerHTML = label;
-
-    li.classList.toggle('disabled', !enabled);
-    if (enabled) {
-      li.onclick = onClick;
-    }
-    return li;
-  }
-
   // Handle the 'contextmenu' event `e` for the DOM node associated with `traceNode`.
   function handleContextMenu(e, traceNode) {
     var menuDiv = $('#parseTreeMenu');
@@ -364,19 +335,15 @@
     var currentRootTrace = zoomState.zoomTrace || rootTrace;
     var zoomEnabled = couldZoom(currentRootTrace, traceNode);
 
-    addMenuItem('getInfoItem', 'Get Info', false);
-    addMenuItem('zoomItem', 'Zoom to Node', zoomEnabled, function() {
+    domUtil.addMenuItem('parseTreeMenu', 'getInfoItem', 'Get Info', false);
+    domUtil.addMenuItem('parseTreeMenu', 'zoomItem', 'Zoom to Node', zoomEnabled, function() {
       updateZoomState({zoomTrace: traceNode});
       clearMarks();
     });
-    ohmEditor.parseTree.emit('contextMenu', e.target, traceNode, addMenuItem);
+    ohmEditor.parseTree.emit('contextMenu', e.target, traceNode);
 
     e.preventDefault();
     e.stopPropagation();  // Prevent ancestor wrappers from handling.
-  }
-
-  function hideContextMenu() {
-    $('#parseTreeMenu').hidden = true;
   }
 
   // Create the DOM node that contains the parse tree for `traceNode` and all its children.
@@ -507,16 +474,6 @@
       if (overscroll < 0) {
         bottomSection.scrollLeft += overscroll;
       }
-    }
-  });
-
-  // Hide the context menu when Esc is pressed, any click happens, or another
-  // context menu is brought up.
-  document.addEventListener('click', hideContextMenu);
-  document.addEventListener('contextmenu', hideContextMenu);
-  document.addEventListener('keydown', function(e) {
-    if (e.keyCode === KeyCode.ESC) {
-      hideContextMenu();
     }
   });
 
@@ -730,9 +687,8 @@
     'collapse:traceElement': ['el'],
 
     // Emitted when the contextMenu for the trace element of `traceNode` is about to be shown.
-    // `addMenuItem` can be called to add a menu item to the menu.
     // TODO: The key should be quoted to be consistent, but JSCS complains.
-    contextMenu: ['target', 'traceNode', 'addMenuItem'],
+    contextMenu: ['target', 'traceNode'],
 
     // Emitted before start rendering the parse tree
     'render:parseTree': ['traceNode'],
