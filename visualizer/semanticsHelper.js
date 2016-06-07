@@ -148,11 +148,7 @@
     resultWrapper.isNextStep = name === opName && result &&
       ((result.isErrorWrapper && result.causedBy(nOpKey)) ||
       (todoList && todoList.includes(nOpKey)));
-    if (!forcing || result !== failure) {
-      resultWrapper.isPassThrough = !!passThroughList && passThroughList.includes(nOpKey);
-    } else {
-      resultWrapper.isPassThrough = false;
-    }
+    resultWrapper.isPassThrough = !!passThroughList && passThroughList.includes(nOpKey);
     resultMap[key][name].push(resultWrapper);
   }
 

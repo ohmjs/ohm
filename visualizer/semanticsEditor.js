@@ -94,11 +94,20 @@
 
         if (resultWrapper.forCallingSemantic) {
           selfWrapper._args = resultWrapper.args;
-          selfWrapper.classList.toggle('passThrough', resultWrapper.isPassThrough);
           resultContainer._nextStep = resultWrapper.isNextStep && resultBlock;
         }
       });
     });
+
+    // A `self` wrapper is marked as `passThrough` if all the results fot the node satisfied
+    // two condition:
+    // a. It is a pass through result.
+    // b. If the reuslt is forced, then it must not be a missing semantics action error.
+    selfWrapper.classList.toggle('passThrough',
+      Array.prototype.every.call(resultContainer.children, function(child) {
+        return child.classList.contains('passThrough') &&
+            (child.classList.contains('forced') ? child.textContent : true);
+      }));
 
     if (resultContainer.textContent.length === 0) {
       resultContainer.style.padding = '0';
@@ -117,11 +126,8 @@
     var resultContainer = editorWrapper.appendChild(createAndLoadResultContainer(traceNode,
         selfWrapper));
 
-    if (selfWrapper.querySelector('.passThrough') ||
-        resultContainer.children.length === 1 && resultContainer.querySelector('.error')) {
+    if (resultContainer.querySelector('.error')) {
       editorWrapper.hidden = true;
-    } else {
-      editorWrapper.classList.add('resultOnly');
     }
 
     // If the node is collapsed, and its children is one of the next steps, then mark it as a
@@ -346,23 +352,23 @@
       return;
     }
 
-    var resultOnly = editorWrapper.classList.contains('resultOnly');
-    var showing = resultOnly && !editorWrapper.classList.contains('showing');
-    if (resultOnly) {
-      editorWrapper.classList.toggle('showing', showing);
-    } else {
+    // Remove `showing` from the result container class list, which is added by forcing
+    // evaluation
+    editorWrapper.querySelector('.result').classList.remove('showing');
+
+    editorWrapper.classList.toggle('showing');
+    if (editorWrapper.querySelector('.result .error')) {
       editorWrapper.hidden = !editorWrapper.hidden;
     }
 
     // Insert or remove the editor body. This avoids having too many CodeMirror.
-    if (showing || !resultOnly && !editorWrapper.hidden) {
-      // If we toggle to show the semantics editor of `el`, insert the editor body
+    var showEditorBody = editorWrapper.querySelector('.result .error') ?
+        !editorWrapper.hidden : editorWrapper.classList.contains('showing');
+    if (showEditorBody) {
       insertEditorBody(selfWrapper);
     } else {
-      // If we toggle to hide the semantics editor of `el`, remove the editor body
       removeEditorBody(selfWrapper);
     }
-
   }
   ohmEditor.parseTree.addListener('cmdclick:traceElement', toggleSemanticsEditor);
 
@@ -428,6 +434,9 @@
 
   // Append a `resultBlock` to the result container of the editor
   function appendSingleResult(editorWrapper, entry, traceNode, name) {
+    editorWrapper.hidden = false;
+    editorWrapper.querySelector('.result').classList.add('showing');
+
     var args = retrieveArgumentsFromSubList(entry);
     // If the result already showed, return.
     var blockClassId = generateResultBlockClassId(name, args);
@@ -451,8 +460,6 @@
         resultBlock.classList.toggle('leftBorder', hasLeftBorder);
       }
     });
-    editorWrapper.hidden = false;
-    editorWrapper.classList.add('resultOnly');
   }
 
   // Create an menu entry that corresponding a semantic operation

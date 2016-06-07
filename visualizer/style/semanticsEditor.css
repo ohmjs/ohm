@@ -25,7 +25,8 @@ textarea {
   margin: 4px 6px 10px 6px;
 }
 
-.semanticsEditor.resultOnly:not(.showing) > *:not(.result) {
+/* Show only the part marked by `showing` for passThrought node */
+.self.passThrough > .semanticsEditor:not(.showing) > *:not(.showing) {
   display: none;
 }
 
@@ -167,14 +168,12 @@ headerBlock real {
   margin-top: -1px;
   padding: 4px;
 }
-.semanticsEditor .result.hidden {
+/* Result container is hide by default when editor body is open */
+.semanticsEditor.showing .result:not(.showing) {
   display: none;
 }
 .semanticsEditor .result:empty {
   padding: 0;
-}
-.semanticsEditor.showing .result:not(:empty) {
-  display: none;
 }
 
 .result resultBlock {
