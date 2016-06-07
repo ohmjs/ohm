@@ -139,6 +139,10 @@
     examples.forEach(function(ex) {
       setExample(addExample(), ex);
     });
+
+    // Select the first example.
+    var firstId = document.querySelector('#exampleList li:first-child').id;
+    setSelected(firstId);
   }
 
   function saveExamples(elem, key) {
