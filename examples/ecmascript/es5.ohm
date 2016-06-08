@@ -161,15 +161,7 @@ ES5 {
                  | characterEscapeSequence  // Must come last.
   characterEscapeSequence = singleEscapeCharacter
                           | nonEscapeCharacter
-  singleEscapeCharacter = "'"  // -> ( String.fromCharCode(0039) ) /*\u0027*/
-                        | "\"" // -> ( String.fromCharCode(0034) ) /*\u0022*/
-                        | "\\" // -> ( String.fromCharCode(0092) ) /*\u005C*/
-                        | "b"  // -> ( String.fromCharCode(0008) ) /*\u0008*/
-                        | "f"  // -> ( String.fromCharCode(0012) ) /*\u000C*/
-                        | "n"  // -> ( String.fromCharCode(0010) ) /*\u000A*/
-                        | "r"  // -> ( String.fromCharCode(0013) ) /*\u000D*/
-                        | "t"  // -> ( String.fromCharCode(0009) ) /*\u0009*/
-                        | "v"  // -> ( String.fromCharCode(0011) ) /*\u000B*/
+  singleEscapeCharacter = "'" | "\"" | "\\" | "b" | "f" | "n" | "r" | "t" | "v"
   nonEscapeCharacter = ~(escapeCharacter | lineTerminator) sourceCharacter
   escapeCharacter = singleEscapeCharacter | decimalDigit | "x" | "u"
   octalEscapeSequence = zeroToThree octalDigit octalDigit    -- whole
