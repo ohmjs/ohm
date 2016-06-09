@@ -84,7 +84,7 @@ function compile(args) {
     // Codegen
     var code = '';
     var codegenStartTime = Date.now();
-    results.forEach(function(r) { code += ';\n' + lang.semantics(r).asES5; });
+    results.forEach(function(r) { code += ';\n' + lang.semantics(r).toES5(); });
     if (opts.b) {
       console.error('Codegen:', (Date.now() - codegenStartTime) + 'ms');
     }

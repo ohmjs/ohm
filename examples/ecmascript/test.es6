@@ -7,4 +7,6 @@ var obj = {
   foo: () => 'foo:' + this,
   blah: x => function() { return '' + this; }
 };
-[1, 2, 3].forEach(x => x + 1, this);
+[1,
+ 2,
+ 3].forEach(x => x + 1, this);
