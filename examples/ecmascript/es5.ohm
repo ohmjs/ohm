@@ -198,8 +198,8 @@ ES5 {
   // does not accept lineTerminators, not even implicit ones in a multiLineComment (cf. section 7.4)
   spacesNoNL = (whitespace | singleLineComment | multiLineCommentNoNL)*
 
-  // A semicolon is "automatically inserted" if a newline is reached the end of the input stream
-  // is reached, or the offending token is "}".
+  // A semicolon is "automatically inserted" if a newline or the end of the input stream is
+  // reached, or the offending token is "}".
   // See http://ecma-international.org/ecma-262/5.1/#sec-7.9 for more information.
   // NOTE: Applications of this rule *must* appear in a lexical context -- either in the body of a
   // lexical rule, or inside `#()`.
@@ -408,7 +408,7 @@ ES5 {
 
   StatementList = Statement*
 
-  VariableStatement = var VariableDeclarationList<withIn> #(sc)
+  VariableStatement = var VariableDeclarationList<withIn> #sc
 
   VariableDeclarationList<guardIn> = NonemptyListOf<VariableDeclaration<guardIn>, ",">
 
@@ -418,11 +418,11 @@ ES5 {
 
   EmptyStatement = ";" // note: this semicolon eats newlines
 
-  ExpressionStatement = ~("{" | function) Expression<withIn> #(sc)
+  ExpressionStatement = ~("{" | function) Expression<withIn> #sc
 
   IfStatement = if "(" Expression<withIn> ")" Statement (else Statement)?
 
-  IterationStatement = do Statement while "(" Expression<withIn> ")" #(sc)  -- doWhile
+  IterationStatement = do Statement while "(" Expression<withIn> ")" #sc  -- doWhile
                      | while "(" Expression<withIn> ")" Statement           -- whileDo
                      | for "(" Expression<noIn>? ";"
                                  Expression<withIn>? ";"
@@ -439,7 +439,7 @@ ES5 {
 
   BreakStatement = break #((spacesNoNL identifier)? sc)
 
-  ReturnStatement = return (#(spacesNoNL ~space) Expression<withIn>)? #(sc)
+  ReturnStatement = return (#(spacesNoNL ~space) Expression<withIn>)? #sc
 
   WithStatement = with "(" Expression<withIn> ")" Statement
 
@@ -454,7 +454,7 @@ ES5 {
 
   LabelledStatement = identifier ":" Statement
 
-  ThrowStatement = throw Expression<withIn> #(sc)  -- throwExpr
+  ThrowStatement = throw Expression<withIn> #sc  -- throwExpr
 
   TryStatement = try Block Catch Finally  -- tryCatchFinally
                | try Block Finally        -- tryFinally
@@ -486,7 +486,7 @@ ES5 {
   // Broken out so es6 can override to include ConstDecl and LetDecl
   Declaration = FunctionDeclaration
 
-  Directive = stringLiteral #(sc)
+  Directive = stringLiteral #sc
 }
 
 ES5Lax <: ES5 {

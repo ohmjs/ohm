@@ -1,8 +1,5 @@
 ES6 <: ES5 {
-  AssignmentExpression<guardIn>
-    := ArrowFunction<guardIn>
-     | LeftHandSideExpression AssignmentOperator AssignmentExpression<guardIn> -- assignment
-     | ConditionalExpression<guardIn>
+  AssignmentExpression<guardIn> += ArrowFunction<guardIn>
 
   ArrowFunction<guardIn> = ArrowParameters<guardIn> #(spacesNoNL "=>") ConciseBody<guardIn>
 
