@@ -5,23 +5,14 @@
 var fs = require('fs');
 var path = require('path');
 
-function anyNodesMentionThis(nodes) {
-  return nodes.some(function(n) { return n.mentionsThis(); });
-}
-
-module.exports = function(ohm, ns, s) {
+module.exports = function(ohm, ns, es5semantics) {
   var g = ohm.grammar(fs.readFileSync(path.join(__dirname, 'es6.ohm')).toString(), ns);
-  var semantics = g.extendSemantics(s);
 
-  // Returns true if the `this` keyword appears anywhere in the node's subtree, otherwise false.
-  semantics.addOperation('mentionsThis()', {
-    this: function(_) { return true; },
-    _terminal: function() { return false; },
-    _nonterminal: anyNodesMentionThis,
-    _iter: anyNodesMentionThis
-  });
+// Cut and paste below here
 
-semantics.extendOperation('toES5', {
+var s = g.extendSemantics(es5semantics);
+
+s.extendOperation('toES5', {
   ArrowFunction(params, _, arrow, body) {
     var def =
         'function ' + params.toES5() +
@@ -39,8 +30,21 @@ semantics.extendOperation('toES5', {
   }
 });
 
+s.addOperation('mentionsThis()', {
+  this(_) { return true; },
+  _terminal() { return false; },
+  _nonterminal(c) {
+    return c.some(n => n.mentionsThis());
+  },
+  _iter(arr) {
+    return arr.some(n => n.mentionsThis());
+  }
+});
+
+// -----------
+
   return {
     grammar: g,
-    semantics: semantics
+    semantics: s
   };
 };

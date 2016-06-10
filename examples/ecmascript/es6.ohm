@@ -1,18 +1,29 @@
 ES6 <: ES5 {
   AssignmentExpression<guardIn> += ArrowFunction<guardIn>
 
-  ArrowFunction<guardIn> = ArrowParameters<guardIn> #(spacesNoNL "=>") ConciseBody<guardIn>
+  ArrowFunction<guardIn> = ArrowParameters #(spacesNoNL "=>") ConciseBody<guardIn>
 
   ConciseBody<guardIn> = ~"{" AssignmentExpression<guardIn>  -- noBraces
                        | "{" FunctionBody "}"                -- withBraces
 
-  ArrowParameters<guardIn> = BindingIdentifier<guardIn>  -- unparenthesized
-                           | CoverParenthesizedExpressionAndArrowParameterList<guardIn>
+  ArrowParameters = BindingIdentifier  -- unparenthesized
+                  | CoverParenthesizedExpressionAndArrowParameterList
 
-  BindingIdentifier<guardIn> = identifier  // TODO: Implement this properly.
+  BindingIdentifier = identifier
 
-  CoverParenthesizedExpressionAndArrowParameterList<guardIn>
-    = "(" Expression<guardIn> ")"  -- expression
-    | "(" ")"                      -- parens
-    | "(" FormalParameterList ")"  -- params
+  CoverParenthesizedExpressionAndArrowParameterList
+    = "(" Expression<withIn> ")"       -- expression
+    | "(" ")"                          -- parens
+    | "(" "..." BindingIdentifier ")"  -- justRest
+    | "(" Expression<withIn> "," "..." BindingIdentifier ")"  -- params
+
+  PrimaryExpression += CoverParenthesizedExpressionAndArrowParameterList
+
+  /*
+    `yield` is a valid identifier name outside of generator functions.
+    To handle it properly at parse time, we'd need to add a new guard parameter to almost every
+    rule in the ES5 grammar. Instead, just accept it as an identifier, and handle the error
+    during semantic analysis.
+   */
+  identifier += yield
 }
