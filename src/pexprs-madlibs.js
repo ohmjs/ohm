@@ -13,6 +13,12 @@ var pexprs = require('./pexprs');
 
 pexprs.PExpr.prototype.generateExample = common.abstract;
 
+pexprs.any.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
+  return {example: String.fromCharCode(Math.floor(Math.random()*255))};
+}
+
+//
+
 function categorizeExamples(examples) {
   var examplesNeeded = examples.filter(function(example) {
                                   return example.hasOwnProperty('examplesNeeded');
@@ -38,16 +44,17 @@ function categorizeExamples(examples) {
   };
 }
 
-pexprs.Alt.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
+pexprs.Alt.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
   // items -> termExamples
   var termExamples = this.terms.map(function(term) {
-    return term.generateExample(grammar, examples, inSyntacticContext);
+    return term.generateExample(grammar, examples, inSyntacticContext, actuals);
   });
 
   var categorizedExamples = categorizeExamples(termExamples);
 
   var examplesNeeded = categorizedExamples.examplesNeeded;
   var successfulExamples = categorizedExamples.successfulExamples;
+  var needHelp = categorizedExamples.needHelp;
 
   var returnObj = {};
 
@@ -59,6 +66,7 @@ pexprs.Alt.prototype.generateExample = function(grammar, examples, inSyntacticCo
   if (examplesNeeded.length > 0) {
     returnObj.examplesNeeded = examplesNeeded;
   }
+  returnObj.needHelp = needHelp;
 
   return returnObj;
 };
@@ -66,20 +74,22 @@ pexprs.Alt.prototype.generateExample = function(grammar, examples, inSyntacticCo
 // safe thing to do might just be to omit whitespace period?
 // for lexical rules, should we request their components?
 
-pexprs.Seq.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
+pexprs.Seq.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
   var factorExamples = this.factors.map(function(factor) {
-    return factor.generateExample(grammar, examples, inSyntacticContext);
+    return factor.generateExample(grammar, examples, inSyntacticContext, actuals);
   });
   var categorizedExamples = categorizeExamples(factorExamples);
 
   var examplesNeeded = categorizedExamples.examplesNeeded;
   var successfulExamples = categorizedExamples.successfulExamples;
+  var needHelp = categorizedExamples.needHelp;
 
   var returnObj = {};
 
   // in a Seq, all pieces must succeed in order to have a successful example
-  if (examplesNeeded.length > 0) {
-    returnObj.examplesNeeded = examplesNeeded;
+  if (examplesNeeded.length > 0 || needHelp) {
+    returnObj.examplesNeeded = examplesNeeded
+    returnObj.needHelp = needHelp;
   } else {
     returnObj.example = successfulExamples.join(inSyntacticContext ? ' ' : '');
   }
@@ -87,19 +97,15 @@ pexprs.Seq.prototype.generateExample = function(grammar, examples, inSyntacticCo
   return returnObj;
 };
 
-// TODO: how to deal with args?
-// what we really want is a hierarchical, structured needExamples?
-//  but don't want to deal with double-asking
-
-pexprs.Apply.prototype.generateExample = function(grammar, examples, inSyntacticContext, ruleArgs) {
+pexprs.Apply.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
   var returnObj = {};
 
-  let ruleName = ruleNameOf(this);
+  var ruleName = this.substituteParams(actuals).toString();
 
-  if (!examples.hasOwnProperty(this.ruleName)) {
-    returnObj.examplesNeeded = [this.ruleName];
+  if (!examples.hasOwnProperty(ruleName)) {
+    returnObj.examplesNeeded = [ruleName];
   } else {
-    var relevantExamples = examples[this.ruleName];
+    var relevantExamples = examples[ruleName];
     var i = Math.floor(Math.random() * relevantExamples.length);
     returnObj.example = relevantExamples[i];
   }
@@ -107,17 +113,6 @@ pexprs.Apply.prototype.generateExample = function(grammar, examples, inSyntactic
   return returnObj;
 };
 
-function ruleNameOf(pexpr, args){
-  if(pexpr instanceof pexprs.Apply && pexpr.args && pexpr.args.length){
-    return pexpr.ruleName + '<' + pexpr.args.map(function(argPexpr, args) {
-      return ruleNameOf(argPexpr, args);
-    }).join(',') + '>';
-  } else if (pexpr instanceof pexprs.Apply) {
-    return pexpr.ruleName;
-  } else if (pexpr instanceof pexprs.Param) {
-    return args[pexpr.index];
-  }
-}
 
 // assumes that terminal's object is always a string
 pexprs.Terminal.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
@@ -140,20 +135,8 @@ pexprs.Lookahead.prototype.generateExample = function(grammar, examples, inSynta
   return {example: ''};
 };
 
-pexprs.Param.prototype.generateExample = function(grammar, examples, inSyntacticContext, ruleArgs) {
-  let ruleName = ruleArgs[this.index];
-
-  var returnObj = {};
-
-  if (!examples.hasOwnProperty(this.ruleName)) {
-    returnObj.examplesNeeded = [this.ruleName];
-  } else {
-    var relevantExamples = examples[this.ruleName];
-    var i = Math.floor(Math.random() * relevantExamples.length);
-    returnObj.example = relevantExamples[i];
-  }
-
-  return returnObj;
+pexprs.Param.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
+  return actuals[this.index].generateExample(grammar, examples, inSyntacticContext, actuals);
 };
 
 function repeat(n, fn) {
@@ -164,10 +147,10 @@ function repeat(n, fn) {
   }
 }
 
-var generateNExamples = function(that, grammar, examples, inSyntacticContext, numTimes) {
+var generateNExamples = function(that, grammar, examples, inSyntacticContext, actuals, numTimes) {
   var items = [];
   repeat(numTimes, function() {
-    items.push(that.expr.generateExample(grammar, examples, inSyntacticContext));
+    items.push(that.expr.generateExample(grammar, examples, inSyntacticContext, actuals));
   });
 
   var categorizedExamples = categorizeExamples(items);
@@ -188,17 +171,42 @@ var generateNExamples = function(that, grammar, examples, inSyntacticContext, nu
   return returnObj;
 };
 
-pexprs.Star.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
-  return generateNExamples(this, grammar, examples, inSyntacticContext,
+pexprs.Star.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
+  return generateNExamples(this, grammar, examples, inSyntacticContext, actuals,
                            Math.floor(Math.random() * 4));
 };
 
-pexprs.Plus.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
-  return generateNExamples(this, grammar, examples, inSyntacticContext,
+pexprs.Plus.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
+  return generateNExamples(this, grammar, examples, inSyntacticContext, actuals,
                            Math.floor(Math.random() * 3 + 1));
 };
 
-pexprs.Opt.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
-  return generateNExamples(this, grammar, examples, inSyntacticContext,
+pexprs.Opt.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
+  return generateNExamples(this, grammar, examples, inSyntacticContext, actuals,
                            Math.floor(Math.random() * 2));
 };
+
+pexprs.UnicodeChar.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals){
+  var char;
+  switch(this.category){
+    case 'Lu': char='Á'; break;
+    case 'Ll': char='ŏ'; break;
+    case 'Lt': char='ǅ'; break;
+    case 'Lm': char='ˮ'; break;
+    case 'Lo': char='ƻ'; break;
+
+    case 'Nl': char='ↂ'; break;
+    case 'Nd': char='½'; break;
+
+    case 'Mn': char='\u0487'; break;
+    case 'Mc': char='ि'; break;
+
+    case 'Pc': char='⁀'; break;
+
+    case 'Zs': char='\u2001'; break;
+
+    case 'L': char='Á'; break;
+    case 'Ltmo': char='ǅ'; break;
+  }
+  return {example: char};//💩
+}

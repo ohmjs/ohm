@@ -18,19 +18,44 @@ semantics.addOperation('addPiecesToDict(dict)', {
   }, _terminal(){}
 });
 
+var addPiecesToDict = function(trace, examples){
+  if(trace.expr.constructor.name === 'Terminal'){
+    return;
+  } else {
+    if(trace.expr.constructor.name === 'Apply'){
+      let ruleName = trace.expr.toString();
+      if(!examples.hasOwnProperty(ruleName)){
+        examples[ruleName] = [];
+      }
+
+      if(!examples[ruleName].includes(trace.interval.contents)){
+        examples[ruleName].push(trace.interval.contents);
+      }
+    }
+    trace.children
+         .filter(child=> child.succeeded)
+         .forEach(child=> addPiecesToDict(child, examples));
+  }
+}
+
 var isSyntactic = function(ruleName){
   return ruleName.charAt(0).toUpperCase() === ruleName.charAt(0);
 };
 
+var parseToPExpr = function(ruleName){
+  return ohm._buildGrammar(ohm.ohmGrammar.match(ruleName, 'Base_application'));
+}
+
+
 var allExamplesNeeded = function(){
   let needed = new Set();
   objectForEach(grammar.ruleBodies, (ruleName, rule)=>{
-    let example = rule.generateExample(grammar, examples, isSyntactic(ruleName));
+    let example = rule.generateExample(grammar, examples, isSyntactic(ruleName), []);
     if(example.hasOwnProperty('examplesNeeded')){
       example.examplesNeeded.forEach(neededRuleName => needed.add(neededRuleName));
     }
-    if(example.hasOwnProperty('example')){
-      processExample(example.example);
+    if(example.hasOwnProperty('example') && example.example !== undefined){
+      processExample(example.example, ruleName);
       if(!(grammar.match(example.example, ruleName).succeeded())){
         needed.add(ruleName);
       }
@@ -38,6 +63,7 @@ var allExamplesNeeded = function(){
       needed.add(ruleName);
     }
   });
+  console.log(Array.from(needed));
 
   //try generating examples in needed list
   while(needed.size > 0 && attemptGeneration(needed));
@@ -46,28 +72,82 @@ var allExamplesNeeded = function(){
 };
 
 var attemptGeneration = function(needed){
+  let r = false;
   for(let neededRuleName of needed){
-    if(grammar.ruleBodies.hasOwnProperty(neededRuleName)){
-      if(examples.hasOwnProperty(neededRuleName)){
-        needed.delete(neededRuleName);
-        return true;
-      }
+    if(examples.hasOwnProperty(neededRuleName)){
+      needed.delete(neededRuleName);
+      return true;
+    }
 
-      let example = grammar.ruleBodies[neededRuleName].generateExample(
-        grammar, examples, isSyntactic(neededRuleName)
-      );
+    let rulePExpr = parseToPExpr(neededRuleName);
 
-      if(example.hasOwnProperty('example')
-         && grammar.match(example.example, neededRuleName).succeeded()){
-        processExample(example.example);
-        needed.delete(neededRuleName);
-        return true;
+    let example = grammar.ruleBodies[rulePExpr.ruleName].generateExample(
+      grammar, examples, isSyntactic(rulePExpr.ruleName), rulePExpr.args
+    );
+
+    if(example.hasOwnProperty('example') && example.example !== undefined
+       && grammar.match(example.example, neededRuleName).succeeded()){
+      console.log(neededRuleName);
+      processExample(example.example, neededRuleName);
+      needed.delete(neededRuleName);
+      return true;
+    } else if(example.hasOwnProperty('examplesNeeded')) {
+      let sizeBefore = needed.size;
+      example.examplesNeeded.forEach(ruleName=> needed.add(ruleName));
+      if(needed.size > sizeBefore){
+        r = true;
       }
     }
   }
-  return false;
+  return r;
 }
 
+var processExample = function(example, optRuleName){
+  if(optRuleName){
+    // console.log(optRuleName);
+    console.log(example, optRuleName);
+    let trace = grammar.match(example, optRuleName);
+    if(trace.succeeded()){
+      console.log(example, optRuleName);
+      if(!examples.hasOwnProperty(optRuleName)){
+        examples[optRuleName] = [];
+      }
+
+      if(!examples[optRuleName].includes(example)){
+        examples[optRuleName].push(example);
+      }
+      // addPiecesToDict(trace, examples);
+    }
+  }
+
+  // objectForEach(grammar.ruleBodies, function(ruleName){
+  //   let trace = grammar.trace(example, ruleName);
+  //   if(trace.succeeded){
+  //     addPiecesToDict(trace, examples);
+  //   }
+  // });
+};
+
+var processExampleFromUser = function(example, optRuleName){
+  if(optRuleName){
+    console.log(optRuleName);
+    let trace = grammar.trace(example, optRuleName);
+    if(trace.succeeded){
+      console.log(example, optRuleName);
+      addPiecesToDict(trace, examples);
+    }
+  }
+
+  // objectForEach(grammar.ruleBodies, function(ruleName){
+  //   let trace = grammar.trace(example, ruleName);
+  //   if(trace.succeeded){
+  //     addPiecesToDict(trace, examples);
+  //   }
+  // });
+};
+
+
+//DISPLAY FUNCTIONS
 
 var refreshExampleRequests = function(){
   let exampleRequests = $('#exampleRequests');
@@ -77,13 +157,10 @@ var refreshExampleRequests = function(){
   return needed;
 }
 
-var processExample = function(example){
-  objectForEach(grammar.ruleBodies, function(ruleName){
-    let match = grammar.match(example, ruleName);
-    if(match.succeeded()){
-      semantics(match).addPiecesToDict(examples);
-    }
-  });
+var submitHandler = function(event){
+  this.domNode.value = '';
+  processExampleFromUser(event.text, event.ruleName);
+  refresh();
 };
 
 var displayExamples = function(examples){
@@ -91,11 +168,7 @@ var displayExamples = function(examples){
     ...objectMap(grammar.ruleBodies, function(ruleName){
     let ruleExamples = examples[ruleName];
     let exampleRequest = new ErrorCheckingTextBox(grammar, ruleName);
-    exampleRequest.on('validSubmit', function(event){
-      exampleRequest.domNode.value = '';
-      processExample(event.text, event.ruleName);
-      refresh();
-    });
+    exampleRequest.on('validSubmit', submitHandler.bind(exampleRequest));
 
     let rendered;
     if(ruleExamples){
@@ -123,17 +196,12 @@ var refresh = function(){
   $('#examples').appendChild(_('h3', {}, t(`coverage: ${Math.floor(coverage*100)}%`)));
   $('#examples').appendChild(_('ul', {}, ...needed.map(ruleName=>{
     let exampleRequest = new ErrorCheckingTextBox(grammar, ruleName);
-    exampleRequest.on('validSubmit', function(event){
-      exampleRequest.domNode.value = '';
-      processExample(event.text, event.ruleName);
-      refresh();
-    });
+    exampleRequest.on('validSubmit', submitHandler.bind(exampleRequest));
     return _('li', {}, exampleRequest.domNode);
   })));
   $('#examples').appendChild(_('hr'))
   $('#examples').appendChild(displayExamples(examples));
 }
 
-refresh();
 
-//$('#examples').textContent = JSON.stringify(examples, null, 2);
+refresh();
