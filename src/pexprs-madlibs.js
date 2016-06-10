@@ -14,10 +14,8 @@ var pexprs = require('./pexprs');
 pexprs.PExpr.prototype.generateExample = common.abstract;
 
 pexprs.any.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
-  return {example: String.fromCharCode(Math.floor(Math.random()*255))};
-}
-
-//
+  return {example: String.fromCharCode(Math.floor(Math.random() * 255))};
+};
 
 function categorizeExamples(examples) {
   var examplesNeeded = examples.filter(function(example) {
@@ -88,7 +86,7 @@ pexprs.Seq.prototype.generateExample = function(grammar, examples, inSyntacticCo
 
   // in a Seq, all pieces must succeed in order to have a successful example
   if (examplesNeeded.length > 0 || needHelp) {
-    returnObj.examplesNeeded = examplesNeeded
+    returnObj.examplesNeeded = examplesNeeded;
     returnObj.needHelp = needHelp;
   } else {
     returnObj.example = successfulExamples.join(inSyntacticContext ? ' ' : '');
@@ -102,7 +100,7 @@ pexprs.Apply.prototype.generateExample = function(grammar, examples, inSyntactic
 
   var ruleName = this.substituteParams(actuals).toString();
 
-  if (!examples.hasOwnProperty(ruleName)) {\
+  if (!examples.hasOwnProperty(ruleName)) {
     returnObj.examplesNeeded = [ruleName];
   } else {
     var relevantExamples = examples[ruleName];
@@ -112,7 +110,6 @@ pexprs.Apply.prototype.generateExample = function(grammar, examples, inSyntactic
 
   return returnObj;
 };
-
 
 // assumes that terminal's object is always a string
 pexprs.Terminal.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
@@ -186,27 +183,29 @@ pexprs.Opt.prototype.generateExample = function(grammar, examples, inSyntacticCo
                            Math.floor(Math.random() * 2));
 };
 
-pexprs.UnicodeChar.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals){
+pexprs.UnicodeChar.prototype.generateExample = function(
+  grammar, examples, inSyntacticContext, actuals
+) {
   var char;
-  switch(this.category){
-    case 'Lu': char='Á'; break;
-    case 'Ll': char='ŏ'; break;
-    case 'Lt': char='ǅ'; break;
-    case 'Lm': char='ˮ'; break;
-    case 'Lo': char='ƻ'; break;
+  switch (this.category){
+    case 'Lu': char = 'Á'; break;
+    case 'Ll': char = 'ŏ'; break;
+    case 'Lt': char = 'ǅ'; break;
+    case 'Lm': char = 'ˮ'; break;
+    case 'Lo': char = 'ƻ'; break;
 
-    case 'Nl': char='ↂ'; break;
-    case 'Nd': char='½'; break;
+    case 'Nl': char = 'ↂ'; break;
+    case 'Nd': char = '½'; break;
 
-    case 'Mn': char='\u0487'; break;
-    case 'Mc': char='ि'; break;
+    case 'Mn': char = '\u0487'; break;
+    case 'Mc': char = 'ि'; break;
 
-    case 'Pc': char='⁀'; break;
+    case 'Pc': char = '⁀'; break;
 
-    case 'Zs': char='\u2001'; break;
+    case 'Zs': char = '\u2001'; break;
 
-    case 'L': char='Á'; break;
-    case 'Ltmo': char='ǅ'; break;
+    case 'L': char = 'Á'; break;
+    case 'Ltmo': char = 'ǅ'; break;
   }
-  return {example: char};//💩
-}
+  return {example: char}; // 💩
+};
