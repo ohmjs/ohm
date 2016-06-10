@@ -102,7 +102,7 @@ pexprs.Apply.prototype.generateExample = function(grammar, examples, inSyntactic
 
   var ruleName = this.substituteParams(actuals).toString();
 
-  if (!examples.hasOwnProperty(ruleName)) {
+  if (!examples.hasOwnProperty(ruleName)) {\
     returnObj.examplesNeeded = [ruleName];
   } else {
     var relevantExamples = examples[ruleName];
