@@ -90,6 +90,8 @@
     }
 
     #exampleContainer,
+    #exampleRequestContainer,
+    #userExampleContainer,
     #grammarContainer {
       display: flex;
       flex-direction: column;
@@ -402,10 +404,19 @@
       <div class="flex-fix"><div class="editorWrapper"></div></div>
     </div>
     <div id="topSplitter" class="splitter vertical"></div>
-    <div id="exampleContainer">
-      <h2>Examples</h2>
-      <ul id="exampleList"></ul>
-      <div class="flex-fix"><div class="editorWrapper"></div></div>
+    <div id="ExampleContainer">
+      <div id="ExampleRequestContainer">
+        <h2>Need Examples For:</h2>
+        <div id="exampleRequests">
+          <ul></ul>
+        </div>
+      </div>
+      <div id="exampleSplitter" class="splitter"></div>
+      <div id="UserExampleContainer">
+        <h2>Examples</h2>
+        <ul id="exampleList"></ul>
+        <div class="flex-fix"><div class="editorWrapper"></div></div>
+      </div>
     </div>
   </div>
 

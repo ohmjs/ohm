@@ -43,8 +43,6 @@ var generateForRule = function(rules, ruleName){
 
   let example;
   if(overrides.hasOwnProperty(ruleName)){
-    //  && (grammar.ruleBodies[ruleName] ===
-    //      ohm.ohmGrammar.superGrammar.ruleBodies[ruleName])){
     example = overrides[ruleName](
       grammar, examples, isSyntactic(rulePExpr.ruleName), rulePExpr.args
     );
@@ -78,7 +76,7 @@ var generateForRule = function(rules, ruleName){
 var runGenerationPass = function(rules){
   console.info('*********NEW GENERATION PASS*******')
   for(let ruleName of rules){
-    repeat(3, ()=>{
+    repeat(2, ()=>{
       generateForRule(rules, ruleName);
     });
   }
@@ -136,7 +134,6 @@ var refreshExampleRequests = function(){
 var submitHandler = function(event){
   this.domNode.value = '';
   processExampleFromUser(event.text, event.ruleName);
-  propagateExamples(0.1);
   refresh();
 };
 
@@ -164,19 +161,30 @@ var displayExamples = function(examples){
 
     return rendered;
   }));
-}
+};
+
+var displayRequests = function(ruleNames) {
+  return _('div', {className: 'requests'},
+    ...ruleNames.map(ruleName=>{
+      let exampleRequest = new ErrorCheckingTextBox(grammar, ruleName);
+      exampleRequest.on('validSubmit', submitHandler.bind(exampleRequest));
+      return exampleRequest.domNode;
+    })
+  );
+};
 
 var refresh = function(){
-  // let needed = refreshExampleRequests();
-  // let coverage = 1 - needed.length/(Object.keys(grammar.ruleBodies).length);
+  propagateExamples(0.3);
+  let neededExamples = difference(
+    Object.keys(grammar.ruleBodies),
+    Object.keys(examples)
+  );
   clearDOMNode($('#examples'));
-  // $('#examples').appendChild(_('h3', {}, t(`coverage: ${Math.floor(coverage*100)}%`)));
-  // $('#examples').appendChild(_('ul', {}, ...needed.map(ruleName=>{
-  //   let exampleRequest = new ErrorCheckingTextBox(grammar, ruleName);
-  //   exampleRequest.on('validSubmit', submitHandler.bind(exampleRequest));
-  //   return _('li', {}, exampleRequest.domNode);
-  // })));
-  $('#examples').appendChild(_('hr'))
+  $('#examples').appendChild(_('hr'));
+  $('#examples').appendChild(_('h1', {}, t('Missing Examples For:')));
+  $('#examples').appendChild(displayRequests(neededExamples));
+  $('#examples').appendChild(_('h1', {}, t('Examples')));
+  $('#examples').appendChild(_('hr'));
   $('#examples').appendChild(displayExamples(examples));
 }
 
@@ -192,5 +200,4 @@ var propagateExamples = function(multiplier){
   });
 }
 
-propagateExamples(0.3);
 refresh();

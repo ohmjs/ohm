@@ -65,7 +65,7 @@
     };
     li.appendChild(del);
 
-    document.querySelector('#exampleContainer ul').appendChild(li);
+    document.querySelector('#UserExampleContainer ul').appendChild(li);
 
     exampleValues[id] = null;
     setExample(id, '');

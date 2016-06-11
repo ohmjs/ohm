@@ -47,3 +47,8 @@ window.shuffle = function(a) {
         a[j] = x;
     }
 }
+
+// same as a\b
+window.difference = function(a, b) {
+  return a.filter(item=> !b.includes(item));
+}
