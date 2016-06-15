@@ -124,6 +124,11 @@ Builder.prototype = {
   },
 
   la: function(expr) {
+    // TODO: temporary to still be able to read old recipes
+    return this.lookahead(expr);
+  },
+
+  lookahead: function(expr) {
     if (!(expr instanceof pexprs.PExpr)) {
       expr = this.fromRecipe(expr);
     }

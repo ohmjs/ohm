@@ -184,7 +184,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return builder.not(x.visit()).withInterval(this.interval);
     },
     Pred_lookahead: function(_, x) {
-      return builder.la(x.visit()).withInterval(this.interval);
+      return builder.lookahead(x.visit()).withInterval(this.interval);
     },
 
     Lex_lex: function(_, x) {

@@ -147,35 +147,22 @@ Grammar.prototype = {
           'Why would anyone want to generate a recipe for the ' + this.name + ' grammar?!?!');
     }
 
-    var recipe = [
-      'grammar',
-      {}, // meta-info
-      this.name
-      // super-grammar
-      // default start rule
-      // rules obj
-    ];
-
-    // Include the grammar source if it is available.
+    var metaInfo = {};
     if (this.definitionInterval) {
-      recipe[1].source = this.definitionInterval.contents;
+      metaInfo.source = this.definitionInterval.contents;
     }
 
+    var superGrammar = null;
     if (!this.superGrammar.isBuiltIn()) {
-      recipe.push(JSON.parse(this.superGrammar.toRecipe()));
-    } else {
-      recipe.push(null);
+      superGrammar = JSON.parse(this.superGrammar.toRecipe());
     }
 
+    var startRule = null;
     if (this.defaultStartRule) {
-      recipe.push(this.defaultStartRule);
-    } else {
-      recipe.push(null);
+      startRule = this.defaultStartRule;
     }
 
     var rules = {};
-    recipe.push(rules);
-
     var self = this;
     Object.keys(this.ruleBodies).forEach(function(ruleName) {
       var body = self.ruleBodies[ruleName];
@@ -209,7 +196,14 @@ Grammar.prototype = {
       rule.push(body.outputRecipe(formals, self.definitionInterval));
     });
 
-    return JSON.stringify(recipe);
+    return JSON.stringify([
+      'grammar',
+      metaInfo,
+      this.name,
+      superGrammar,
+      startRule,
+      rules
+    ]);
   },
 
   // TODO: Come up with better names for these methods.

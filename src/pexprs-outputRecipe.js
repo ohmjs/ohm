@@ -88,17 +88,10 @@ pexprs.Star.prototype.outputRecipe =
 pexprs.Plus.prototype.outputRecipe =
 pexprs.Opt.prototype.outputRecipe =
 pexprs.Not.prototype.outputRecipe =
+pexprs.Lookahead.prototype.outputRecipe =
 pexprs.Lex.prototype.outputRecipe = function(formals, grammarInterval) {
   return [
     this.constructor.name.toLowerCase(),
-    getMetaInfo(this, grammarInterval),
-    this.expr.outputRecipe(formals, grammarInterval)
-  ];
-};
-
-pexprs.Lookahead.prototype.outputRecipe = function(formals, grammarInterval) {
-  return [
-    'la',
     getMetaInfo(this, grammarInterval),
     this.expr.outputRecipe(formals, grammarInterval)
   ];
