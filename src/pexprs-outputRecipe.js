@@ -15,9 +15,7 @@ function getMetaInfo(expr, grammarInterval) {
   var metaInfo = {};
   if (expr.interval && grammarInterval) {
     var adjusted = expr.interval.relativeTo(grammarInterval);
-    var start = adjusted.startIdx;
-    var end = adjusted.endIdx;
-    metaInfo.sourceInterval = [start, end];
+    metaInfo.sourceInterval = [adjusted.startIdx, adjusted.endIdx];
   }
   return metaInfo;
 }
@@ -106,10 +104,4 @@ pexprs.Apply.prototype.outputRecipe = function(formals, grammarInterval) {
       return arg.outputRecipe(formals, grammarInterval);
     })
   ];
-  // TODO: fold this into the main recipe creation (since _ indicates case)
-  // if (this.ruleName.indexOf('_') >= 0 && formals.length > 0) {
-  //   var apps = formals.
-  //       map(function(_, idx) { return 'this.param(' + idx + ')'; });
-  //   sb.append(', [' + apps.join(', ') + ']');
-  // }
 };

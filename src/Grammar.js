@@ -148,6 +148,7 @@ Grammar.prototype = {
     }
 
     var metaInfo = {};
+    // Include the grammar source if it is available.
     if (this.definitionInterval) {
       metaInfo.source = this.definitionInterval.contents;
     }
@@ -166,34 +167,35 @@ Grammar.prototype = {
     var self = this;
     Object.keys(this.ruleBodies).forEach(function(ruleName) {
       var body = self.ruleBodies[ruleName];
-      var rule = [
-        // "define"/"extend"/"override"
-        // meta-info
-        // description
-        // array of formals
-        // array of cases (rule body)
-      ];
-      rules[ruleName] = rule;
 
+      var operation;
       if (self.superGrammar.ruleBodies[ruleName]) {
-        rule.push(body instanceof pexprs.Extend ? 'extend' : 'override');
+        operation = body instanceof pexprs.Extend ? 'extend' : 'override';
       } else {
-        rule.push('define');
+        operation = 'define';
       }
 
-      // TODO: add meta-info
-      rule.push({});
+      var metaInfo = {};
+      if (body.definitionInterval && self.definitionInterval) {
+        var adjusted = body.definitionInterval.relativeTo(self.definitionInterval);
+        metaInfo.sourceInterval = [adjusted.startIdx, adjusted.endIdx];
+      }
 
+      var description = null;
       if (!self.superGrammar.ruleBodies[ruleName] && self.ruleDescriptions[ruleName]) {
-        rule.push(self.ruleDescriptions[ruleName]);
-      } else {
-        rule.push(null);
+        description = self.ruleDescriptions[ruleName];
       }
 
       var formals = self.ruleFormals[ruleName];
-      rule.push(formals);
+      var ruleBody = body.outputRecipe(formals, self.definitionInterval);
 
-      rule.push(body.outputRecipe(formals, self.definitionInterval));
+      rules[ruleName] = [
+        operation, // "define"/"extend"/"override"
+        metaInfo,
+        description,
+        formals,
+        ruleBody
+      ];
     });
 
     return JSON.stringify([

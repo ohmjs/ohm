@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------
 
 var GrammarDecl = require('./GrammarDecl');
+var Interval = require('./Interval');
 var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
@@ -38,14 +39,16 @@ Builder.prototype = {
       var ruleRecipe = rules[ruleName];
 
       var action = ruleRecipe[0]; // define/extend/override
-      // var metaInfo = ruleRecipe[1]; // TODO: us and handle meta-info
+      var metaInfo = ruleRecipe[1];
       var optDescription = ruleRecipe[2];
       var formals = ruleRecipe[3];
-      var cases = ruleRecipe.slice(4).map(function(recipe) {
-        return self.fromRecipe(recipe);
-      })[0];
+      var body = self.fromRecipe(ruleRecipe[4]);
+      if (gDecl.interval && metaInfo && metaInfo.sourceInterval) {
+        body.definitionInterval = new Interval(gDecl.interval.inputStream,
+          metaInfo.sourceInterval[0], metaInfo.sourceInterval[1]);
+      }
 
-      gDecl[action](ruleName, formals, cases, optDescription);
+      gDecl[action](ruleName, formals, body, optDescription);
     });
     this.currentDecl = null;
     return gDecl.build();

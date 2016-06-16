@@ -174,6 +174,7 @@ GrammarDecl.prototype.extend = function(name, formals, fragment) {
   }
   var body = new pexprs.Extend(this.superGrammar, name, fragment);
   body.interval = fragment.interval;
+  body.definitionInterval = fragment.definitionInterval;
   this.installOverriddenOrExtendedRule(name, formals, body);
   return this;
 };
