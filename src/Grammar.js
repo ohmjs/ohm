@@ -162,12 +162,13 @@ Grammar.prototype = {
     var self = this;
     Object.keys(this.ruleBodies).forEach(function(ruleName) {
       var body = self.ruleBodies[ruleName];
+      var isDefinition = !self.superGrammar || !self.superGrammar.ruleBodies[ruleName];
 
       var operation;
-      if (self.superGrammar && self.superGrammar.ruleBodies[ruleName]) {
-        operation = body instanceof pexprs.Extend ? 'extend' : 'override';
-      } else {
+      if (isDefinition) {
         operation = 'define';
+      } else {
+        operation = body instanceof pexprs.Extend ? 'extend' : 'override';
       }
 
       var metaInfo = {};
@@ -177,8 +178,7 @@ Grammar.prototype = {
       }
 
       var description = null;
-      if (!(self.superGrammar && self.superGrammar.ruleBodies[ruleName]) &&
-          self.ruleDescriptions[ruleName]) {
+      if (isDefinition && self.ruleDescriptions[ruleName]) {
         description = self.ruleDescriptions[ruleName];
       }
 
