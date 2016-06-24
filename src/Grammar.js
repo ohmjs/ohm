@@ -198,7 +198,7 @@ Grammar.prototype = {
       'grammar',
       metaInfo,
       this.name,
-      superGrammar || null,
+      superGrammar,
       startRule,
       rules
     ]);
