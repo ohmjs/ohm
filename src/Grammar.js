@@ -142,11 +142,6 @@ Grammar.prototype = {
   },
 
   toRecipe: function(optVarName) {
-    if (this.isBuiltIn()) {
-      throw new Error(
-          'Why would anyone want to generate a recipe for the ' + this.name + ' grammar?!?!');
-    }
-
     var metaInfo = {};
     // Include the grammar source if it is available.
     if (this.definitionInterval) {
@@ -154,7 +149,7 @@ Grammar.prototype = {
     }
 
     var superGrammar = null;
-    if (!this.superGrammar.isBuiltIn()) {
+    if (this.superGrammar && !this.superGrammar.isBuiltIn()) {
       superGrammar = JSON.parse(this.superGrammar.toRecipe());
     }
 
@@ -169,7 +164,7 @@ Grammar.prototype = {
       var body = self.ruleBodies[ruleName];
 
       var operation;
-      if (self.superGrammar.ruleBodies[ruleName]) {
+      if (self.superGrammar && self.superGrammar.ruleBodies[ruleName]) {
         operation = body instanceof pexprs.Extend ? 'extend' : 'override';
       } else {
         operation = 'define';
@@ -182,7 +177,8 @@ Grammar.prototype = {
       }
 
       var description = null;
-      if (!self.superGrammar.ruleBodies[ruleName] && self.ruleDescriptions[ruleName]) {
+      if (!(self.superGrammar && self.superGrammar.ruleBodies[ruleName]) &&
+          self.ruleDescriptions[ruleName]) {
         description = self.ruleDescriptions[ruleName];
       }
 
@@ -202,7 +198,7 @@ Grammar.prototype = {
       'grammar',
       metaInfo,
       this.name,
-      superGrammar,
+      superGrammar || null,
       startRule,
       rules
     ]);

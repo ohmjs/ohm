@@ -27,11 +27,17 @@ function getMetaInfo(expr, grammarInterval) {
 pexprs.PExpr.prototype.outputRecipe = common.abstract('outputRecipe');
 
 pexprs.any.outputRecipe = function(formals, grammarInterval) {
-  throw new Error('should never output a recipe for `any` expression');
+  return [
+    'any',
+    getMetaInfo(this, grammarInterval)
+  ];
 };
 
 pexprs.end.outputRecipe = function(formals, grammarInterval) {
-  throw new Error('should never output a recipe for `end` expression');
+  return [
+    'end',
+    getMetaInfo(this, grammarInterval)
+  ];
 };
 
 pexprs.Terminal.prototype.outputRecipe = function(formals, grammarInterval) {
@@ -103,5 +109,13 @@ pexprs.Apply.prototype.outputRecipe = function(formals, grammarInterval) {
     this.args.map(function(arg) {
       return arg.outputRecipe(formals, grammarInterval);
     })
+  ];
+};
+
+pexprs.UnicodeChar.prototype.outputRecipe = function(formals, grammarInterval) {
+  return [
+    'unicodeChar',
+    getMetaInfo(this, grammarInterval),
+    this.category
   ];
 };
