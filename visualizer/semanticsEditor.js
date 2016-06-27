@@ -20,19 +20,37 @@
     LEFTWARDS_ARROW: '\u2190'
   };
 
+  // Generate a class name for the result block which used to identify the
+  // semantic operation that generates the result.
+  // Format: 'operationName_' <operation name> ('_' <arg#i>)*
+  function generateResultBlockClassId(name, args) {
+    var blockClassId = name;
+    if (args) {
+      var argValues = Object.keys(args).map(function(key) {
+        return args[key];
+      });
+      blockClassId += '_' + argValues.join('_');
+    }
+    return 'operationName_' + blockClassId;
+  }
+
   // Creates a single `resultBlock`, which contains,
   // `value`: the actual result container
   // `operation`: the semantic operation for the result
   function createResultBlock(opName, resultWrapper) {
     var block = domUtil.createElement('resultBlock');
     domUtil.toggleClasses(block, {
-      error: resultWrapper.isError,
+      error: resultWrapper.isError && !resultWrapper.missingSemanticsAction,
       forced: resultWrapper.forced,
       passThrough: resultWrapper.isPassThrough,
       optNextStep: !resultWrapper.forced && resultWrapper.isError &&
           resultWrapper.forCallingSemantic
     });
-    if (resultWrapper.missingSemanticsAction) {
+
+    // Return without putting actual result contents if the result is missing semantics action,
+    // or it's an error, which not caused by the associated node.
+    if (resultWrapper.missingSemanticsAction ||
+        block.classList.contains('error') && !resultWrapper.isNextStep) {
       return block;
     }
 
@@ -50,6 +68,23 @@
     var opNameContainer = block.appendChild(domUtil.createElement('operation'));
     opNameContainer.innerHTML = opSignature;
 
+    var blockClassId = generateResultBlockClassId(opName, resultWrapper.args);
+    block.classList.add(blockClassId);
+
+    // Hover the block, and all the blocks that represent the results for the same operation
+    // signature will be highlighted.
+    block.onmouseover = function(event) {
+      var blocks = document.querySelectorAll('.semanticsEditor .result .' + blockClassId);
+      Array.prototype.forEach.call(blocks, function(b) {
+        b.classList.add('highlight');
+      });
+    };
+    block.onmouseout = function(event) {
+      var blocks = document.querySelectorAll('.semanticsEditor .result .' + blockClassId);
+      Array.prototype.forEach.call(blocks, function(b) {
+        b.classList.remove('highlight');
+      });
+    };
     return block;
   }
 
@@ -77,11 +112,23 @@
 
         if (resultWrapper.forCallingSemantic) {
           selfWrapper._args = resultWrapper.args;
-          selfWrapper.classList.toggle('passThrough', resultWrapper.isPassThrough);
           resultContainer._nextStep = resultWrapper.isNextStep && resultBlock;
+          resultBlock.classList.add('current');
         }
       });
     });
+
+    // A `self` wrapper is marked as `passThrough` if all the results for the node satisfy
+    // two conditions:
+    // a. It is a pass through result.
+    // b. If the result is forced, then it must not be a missing semantics action error.
+    var passThroughContainers = resultContainer.querySelectorAll('.passThrough');
+    if (passThroughContainers.length === resultContainer.children.length) {
+      selfWrapper.classList.toggle('passThrough',
+        Array.prototype.some.call(resultContainer.children, function(child) {
+          return child.classList.contains('forced') ? child.textContent : true;
+        }));
+    }
 
     if (resultContainer.textContent.length === 0) {
       resultContainer.style.padding = '0';
@@ -100,13 +147,6 @@
     var resultContainer = editorWrapper.appendChild(createAndLoadResultContainer(traceNode,
         selfWrapper));
 
-    if (selfWrapper.querySelector('.passThrough') ||
-        resultContainer.children.length === 1 && resultContainer.querySelector('.error')) {
-      editorWrapper.hidden = true;
-    } else {
-      editorWrapper.classList.add('resultOnly');
-    }
-
     // If the node is collapsed, and its children is one of the next steps, then mark it as a
     // temperary next step
     if (selfWrapper.parentElement.classList.contains('collapsed')) {
@@ -117,9 +157,13 @@
     // editing, then keep the semantics editor open.
     if (traceNode._lastEdited && resultContainer._nextStep) {
       toggleSemanticsEditor(wrapper);
+
+      if (!resultContainer._nextStep.textContent) {
+        return;
+      }
       // Only shows the result, i.e. the error, for evaluating the current semantic operation at
       // the node.
-      resultContainer.style.display = 'flex';
+      resultContainer.classList.add('showing');
       Array.prototype.forEach.call(resultContainer.children, function(child) {
         if (child !== resultContainer._nextStep) {
           child.style.display = 'none';
@@ -231,26 +275,6 @@
     var valueSpan = argTag.appendChild(domUtil.createElement('span'));
     valueSpan.innerHTML = JSON.stringify(argValue);
 
-    // If the value is hidden, hover the tag to temporarily show the argument value
-    argTag.onmouseover = function(event) {
-      if (!valueSpan.classList.contains('show')) {
-        argTag.style.marginRight = valueSpan.scrollWidth + 12 + 'px';
-      }
-    };
-
-    // Move out the mouse the argument value will hide again if it's temporarily showed up
-    argTag.onmouseout = function(event) {
-      if (!valueSpan.classList.contains('show')) {
-        argTag.style.marginRight = '0';
-      }
-    };
-
-    // Click the argument name to hide or show the corresponding value
-    argTag.onclick = function(event) {
-      var showing = valueSpan.classList.contains('show');
-      valueSpan.classList.toggle('show', !showing);
-    };
-
     return argTag;
   }
 
@@ -321,6 +345,11 @@
     var actionEditorCM = actionEditor.firstChild.CodeMirror;
     actionEditorCM.focus();
     actionEditorCM.refresh();
+
+    // Show the result if the current semantic on the node causes an error.
+    if (resultContainer.querySelector('.error.current')) {
+      resultContainer.classList.add('showing');
+    }
   }
 
   // Remove `header`, `argTags`, and `body` from the editor wrapper
@@ -349,23 +378,18 @@
       return;
     }
 
-    var resultOnly = editorWrapper.classList.contains('resultOnly');
-    var showing = resultOnly && !editorWrapper.classList.contains('showing');
-    if (resultOnly) {
-      editorWrapper.classList.toggle('showing', showing);
-    } else {
-      editorWrapper.hidden = !editorWrapper.hidden;
-    }
+    // Remove `showing` from the result container class list, which is added by forcing
+    // evaluation
+    editorWrapper.querySelector('.result').classList.remove('showing');
+
+    editorWrapper.classList.toggle('showing');
 
     // Insert or remove the editor body. This avoids having too many CodeMirror.
-    if (showing || !resultOnly && !editorWrapper.hidden) {
-      // If we toggle to show the semantics editor of `el`, insert the editor body
+    if (editorWrapper.classList.contains('showing')) {
       insertEditorBody(selfWrapper);
     } else {
-      // If we toggle to hide the semantics editor of `el`, remove the editor body
       removeEditorBody(selfWrapper);
     }
-
   }
   ohmEditor.parseTree.addListener('cmdclick:traceElement', toggleSemanticsEditor);
 
@@ -431,10 +455,17 @@
 
   // Append a `resultBlock` to the result container of the editor
   function appendSingleResult(editorWrapper, entry, traceNode, name) {
+    editorWrapper.hidden = false;
+    editorWrapper.querySelector('.result').classList.add('showing');
+
     var args = retrieveArgumentsFromSubList(entry);
-    var resultWrapper = !ohmEditor.semantics.getResult(traceNode, name, args) &&
-          ohmEditor.semantics.forceResult(traceNode, name, args);
     // If the result already showed, return.
+    var blockClassId = generateResultBlockClassId(name, args);
+    if (editorWrapper.querySelector('.result .' + blockClassId)) {
+      return;
+    }
+
+    var resultWrapper = ohmEditor.semantics.forceResult(traceNode, name, args);
     if (!resultWrapper) {
       return;
     }
@@ -450,8 +481,6 @@
         resultBlock.classList.toggle('leftBorder', hasLeftBorder);
       }
     });
-    editorWrapper.hidden = false;
-    editorWrapper.classList.add('resultOnly');
   }
 
   // Create an menu entry that corresponding a semantic operation
@@ -463,14 +492,16 @@
     entry.firstChild.textContent = name;
     entry.appendChild(createArgumentsWrapper(formals));
 
+    // Mark the entry `disabled` if semantics action of the operation is missing for the node,
+    // or the result for the node already showed. * For the operation with arguments, we only need
+    // to check if the semantics action is missing.
+    var resultBlock = editorWrapper.querySelector('.result .operationName_' + name);
     var args = retrieveArgumentsFromSubList(entry);
-    var resultWrapper = ohmEditor.semantics.getResult(traceNode, name, args);
-    var missingSemanticsAction = ohmEditor.semantics.missingSemanticsAction(traceNode, name);
-    if (resultWrapper || missingSemanticsAction) {
-      entry.classList.toggle('disabled',
-          missingSemanticsAction ||    // Missing the semantics action for the node.
-          formals.length === 0);       // The semantic result for the node already showed.
-    }
+    var resultWrapper = ohmEditor.semantics.forceResult(traceNode, name, args);
+    var missingSemanticsAction = resultWrapper.missingSemanticsAction;
+    entry.classList.toggle('disabled',
+        missingSemanticsAction ||    // Missing the semantics action for the node.
+        resultBlock);                // The semantic result for the node already showed.
 
     entry.onclick = function(event) {
       event.stopPropagation();
@@ -521,15 +552,15 @@
           editorWrapper));
     });
   }
-  ohmEditor.parseTree.addListener('contextMenu', function(target, traceNode, addMenuItem) {
+  ohmEditor.parseTree.addListener('contextMenu', function(target, traceNode) {
     var selfWrapper = domUtil.closestElementMatching('.self', target);
     var editorWrapper = selfWrapper.querySelector('.semanticsEditor');
     var evaluatingSemantics = ohmEditor.semantics.appendEditor;
     var forceEntryContent = 'Force Evaluation';
     forceEntryContent += '<span>' + (evaluatingSemantics ? UnicodeChars.PLUS_SIGN : '') +
         '</span>';
-    var forceEntry = addMenuItem('forceEvaluation', forceEntryContent, evaluatingSemantics,
-        function(event) { event.stopPropagation(); });
+    var forceEntry = domUtil.addMenuItem('parseTreeMenu', 'forceEvaluation', forceEntryContent,
+        evaluatingSemantics, function(event) { event.stopPropagation(); });
     forceEntry.querySelector('span').className = 'sign';
     if (!evaluatingSemantics) {
       return;

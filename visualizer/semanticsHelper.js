@@ -148,11 +148,7 @@
     resultWrapper.isNextStep = name === opName && result &&
       ((result.isErrorWrapper && result.causedBy(nOpKey)) ||
       (todoList && todoList.includes(nOpKey)));
-    if (!forcing || result !== failure) {
-      resultWrapper.isPassThrough = !!passThroughList && passThroughList.includes(nOpKey);
-    } else {
-      resultWrapper.isPassThrough = false;
-    }
+    resultWrapper.isPassThrough = !!passThroughList && passThroughList.includes(nOpKey);
     resultMap[key][name].push(resultWrapper);
   }
 
@@ -450,16 +446,6 @@
     var resultWrapper = getResult(key, name, optArgs);
     forcing = false;
     return resultWrapper;
-  };
-
-  ohmEditor.semantics.getResult = function(traceNode, name, optArgs) {
-    var key = nodeKey(traceNode.bindings[0]);
-    return getResult(key, name, optArgs);
-  };
-
-  ohmEditor.semantics.missingSemanticsAction = function(traceNode, name) {
-    var actionKey = traceNode.bindings[0].ctorName;
-    return !semantics._getActionDict(name)[actionKey];
   };
 
   ohmEditor.semantics.getResults = function(traceNode) {

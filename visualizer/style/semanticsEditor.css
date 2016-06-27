@@ -25,7 +25,8 @@ textarea {
   margin: 4px 6px 10px 6px;
 }
 
-.semanticsEditor.resultOnly:not(.showing) > *:not(.result) {
+/* Show only the part marked by `showing` for passThrought node */
+.self.passThrough > .semanticsEditor:not(.showing) > *:not(.showing) {
   display: none;
 }
 
@@ -73,17 +74,16 @@ headerBlock real {
 }
 
 /* Operation arguments container */
-.semanticsEditor .argTags {
+.semanticsEditor .argTags:not(:empty) {
   height: 100%;
-  display: flex;
+  display: inline-flex;
   flex: 1;
+  flex-direction: column;
   padding-right: 12px;
 }
 .semanticsEditor .argTags .argTag {
   position: relative;
-  float: left;
   margin: 0 0 8px 12px;
-  box-sizing: border-box;
   padding: 0 9px 0 8px;
   font-size: 10px;
   color: #555;
@@ -96,10 +96,6 @@ headerBlock real {
   border-radius: 3px 0 0 3px;
   background-image: linear-gradient(to bottom, #fcfcfc, #f0f0f0);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7), 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-.argTags .argTag:active {
-  margin-top: 1px;
-  margin-bottom: 7px;
 }
 .argTags .argTag:after {
   content: '';
@@ -116,29 +112,24 @@ headerBlock real {
   box-shadow: inset 1px 0 #276f9e;
 }
 .argTag span {
-  box-sizing: border-box;
   position: absolute;
   top: 0;
   left: 100%;
   z-index: 2;
   overflow: hidden;
-  width: 0;
-  padding: 0 0 0 2px;
+  width: auto;
+  padding: 0 6px;
   color: white;
   text-shadow: 0 -1px rgba(0, 0, 0, 0.3);
   background: #56a3d5;
   border: 1px solid;
+  margin-top: -1px;
   border-color: #3591cd #318cc7 #2f86be;
   border-radius: 0 2px 2px 0;
   opacity: .95;
   background-image: linear-gradient(to bottom, #6aaeda, #4298d0);
   transition: 0.3s ease-out;
   transition-property: padding, max-width;
-}
-.argTag:hover span,
-.argTag span.show {
-  width: auto;
-  padding: 0 6px;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15), 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
@@ -167,6 +158,11 @@ headerBlock real {
 }
 
 /* Semantics result container */
+.pexpr:not(.failed) > .self.nextStep .result:not(.showing),
+.pexpr:not(.failed) > .self.tmpNextStep .result:not(.showing) {
+  display: none;
+}
+
 .semanticsEditor .result {
   display: flex;
   text-align: center;
@@ -176,21 +172,24 @@ headerBlock real {
   border-top: none;
   margin-top: -1px;
   padding: 4px;
+  cursor: default;
 }
-.semanticsEditor .result.hidden {
+/* Result container is hide by default when editor body is open */
+.semanticsEditor.showing .result:not(.showing) {
   display: none;
 }
 .semanticsEditor .result:empty {
   padding: 0;
-}
-.semanticsEditor.showing .result:not(:empty) {
-  display: none;
 }
 
 .result resultBlock {
   display: flex;
   flex-direction: column;
   flex: 1;
+}
+.result resultBlock.highlight {
+  background: rgba(255, 255, 0, 0.19);
+  font-weight: bolder;
 }
 .result resultBlock.leftBorder {
   padding-left: 2px;
