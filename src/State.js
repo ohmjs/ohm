@@ -116,7 +116,8 @@ State.prototype = {
   },
 
   truncateBindings: function(newLength) {
-    // TODO: is this really faster than setting the `length` property?
+    // Yes, this is this really faster than setting the `length` property (tested with
+    // bin/es5bench on Node v6.1.0).
     while (this.bindings.length > newLength) {
       this.bindings.pop();
     }
