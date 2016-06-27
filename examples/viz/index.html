@@ -157,9 +157,8 @@ s.addOperation('viz', {
       b.viz();
     leave();
   },
-  RuleBody: function(_, term, _bars, terms) {
+  RuleBody: function(_, terms) {
     enter('alt');
-      term.vizChoice();
       terms.vizChoice();
     leave();
   },
@@ -170,9 +169,8 @@ s.addOperation('viz', {
   ruleDescrText: function(_) {
     return this.interval.contents;
   },
-  Alt: function(x, _, xs) {
+  Alt: function(xs) {
     enter('alt');
-      x.vizChoice();
       xs.vizChoice();
     leave();
   },
@@ -249,6 +247,12 @@ s.addOperation('vizChoice', {
     enter('choice');
       this.viz();
     leave();
+  },
+  NonemptyListOf: function(x, _, xs) {
+    enter('choice');
+      x.viz();
+    leave();
+    xs.vizChoice();
   }
 });
 

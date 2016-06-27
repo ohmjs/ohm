@@ -133,8 +133,8 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       decl.ruleBodies[currentRuleName].definitionInterval = this.interval.trimmed();
       return ans;
     },
-    RuleBody: function(_, term, _bars, terms) {
-      var args = [term.visit()].concat(terms.visit());
+    RuleBody: function(_, terms) {
+      var args = terms.visit();
       return builder.alt.apply(builder, args).withInterval(this.interval);
     },
 
@@ -146,8 +146,8 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return ps.visit();
     },
 
-    Alt: function(seq, _, seqs) {
-      var args = [seq.visit()].concat(seqs.visit());
+    Alt: function(seqs) {
+      var args = seqs.visit();
       return builder.alt.apply(builder, args).withInterval(this.interval);
     },
 

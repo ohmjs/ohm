@@ -15,7 +15,7 @@ Ohm {
     | ident Formals?            "+=" RuleBody  -- extend
 
   RuleBody
-    = "|"? TopLevelTerm ("|" TopLevelTerm)*
+    = "|"? NonemptyListOf<TopLevelTerm, "|">
 
   TopLevelTerm
     = Seq caseName  -- inline
@@ -28,7 +28,7 @@ Ohm {
     = "<" ListOf<Seq, ","> ">"
 
   Alt
-    = Seq ("|" Seq)*
+    = NonemptyListOf<Seq, "|">
 
   Seq
     = Iter*
