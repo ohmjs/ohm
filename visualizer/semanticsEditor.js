@@ -27,8 +27,8 @@
     var blockClassId = name;
     if (args) {
       var argValues = Object.keys(args).map(function(key) {
-          return args[key];
-        });
+        return args[key];
+      });
       blockClassId += '_' + argValues.join('_');
     }
     return 'operationName_' + blockClassId;
@@ -113,10 +113,10 @@
       });
     });
 
-    // A `self` wrapper is marked as `passThrough` if all the results fot the node satisfied
-    // two condition:
+    // A `self` wrapper is marked as `passThrough` if all the results for the node satisfy
+    // two conditions:
     // a. It is a pass through result.
-    // b. If the reuslt is forced, then it must not be a missing semantics action error.
+    // b. If the result is forced, then it must not be a missing semantics action error.
     selfWrapper.classList.toggle('passThrough',
       Array.prototype.every.call(resultContainer.children, function(child) {
         return child.classList.contains('passThrough') &&
