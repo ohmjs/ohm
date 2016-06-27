@@ -158,6 +158,11 @@ headerBlock real {
 }
 
 /* Semantics result container */
+.pexpr:not(.failed) > .self.nextStep .result:not(.showing),
+.pexpr:not(.failed) > .self.tmpNextStep .result:not(.showing) {
+  display: none;
+}
+
 .semanticsEditor .result {
   display: flex;
   text-align: center;

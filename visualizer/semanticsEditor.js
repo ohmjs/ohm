@@ -40,13 +40,17 @@
   function createResultBlock(opName, resultWrapper) {
     var block = domUtil.createElement('resultBlock');
     domUtil.toggleClasses(block, {
-      error: resultWrapper.isError,
+      error: resultWrapper.isError && !resultWrapper.missingSemanticsAction,
       forced: resultWrapper.forced,
       passThrough: resultWrapper.isPassThrough,
       optNextStep: !resultWrapper.forced && resultWrapper.isError &&
           resultWrapper.forCallingSemantic
     });
-    if (resultWrapper.missingSemanticsAction) {
+
+    // Return without putting actual result contents if the result is missing semantics action,
+    // or it's an error, which not caused by the associated node.
+    if (resultWrapper.missingSemanticsAction ||
+        block.classList.contains('error') && !resultWrapper.isNextStep) {
       return block;
     }
 
@@ -109,6 +113,7 @@
         if (resultWrapper.forCallingSemantic) {
           selfWrapper._args = resultWrapper.args;
           resultContainer._nextStep = resultWrapper.isNextStep && resultBlock;
+          resultBlock.classList.add('current');
         }
       });
     });
@@ -117,11 +122,13 @@
     // two conditions:
     // a. It is a pass through result.
     // b. If the result is forced, then it must not be a missing semantics action error.
-    selfWrapper.classList.toggle('passThrough',
-      Array.prototype.every.call(resultContainer.children, function(child) {
-        return child.classList.contains('passThrough') &&
-            (child.classList.contains('forced') ? child.textContent : true);
-      }));
+    var passThroughContainers = resultContainer.querySelectorAll('.passThrough');
+    if (passThroughContainers.length === resultContainer.children.length) {
+      selfWrapper.classList.toggle('passThrough',
+        Array.prototype.some.call(resultContainer.children, function(child) {
+          return child.classList.contains('forced') ? child.textContent : true;
+        }));
+    }
 
     if (resultContainer.textContent.length === 0) {
       resultContainer.style.padding = '0';
@@ -140,10 +147,6 @@
     var resultContainer = editorWrapper.appendChild(createAndLoadResultContainer(traceNode,
         selfWrapper));
 
-    if (resultContainer.querySelector('.error')) {
-      editorWrapper.hidden = true;
-    }
-
     // If the node is collapsed, and its children is one of the next steps, then mark it as a
     // temperary next step
     if (selfWrapper.parentElement.classList.contains('collapsed')) {
@@ -154,9 +157,13 @@
     // editing, then keep the semantics editor open.
     if (traceNode._lastEdited && resultContainer._nextStep) {
       toggleSemanticsEditor(wrapper);
+
+      if (!resultContainer._nextStep.textContent) {
+        return;
+      }
       // Only shows the result, i.e. the error, for evaluating the current semantic operation at
       // the node.
-      resultContainer.style.display = 'flex';
+      resultContainer.classList.add('showing');
       Array.prototype.forEach.call(resultContainer.children, function(child) {
         if (child !== resultContainer._nextStep) {
           child.style.display = 'none';
@@ -338,6 +345,11 @@
     var actionEditorCM = actionEditor.firstChild.CodeMirror;
     actionEditorCM.focus();
     actionEditorCM.refresh();
+
+    // Show the result if the current semantic on the node causes an error.
+    if (resultContainer.querySelector('.error.current')) {
+      resultContainer.classList.add('showing');
+    }
   }
 
   // Remove `header`, `argTags`, and `body` from the editor wrapper
@@ -371,14 +383,9 @@
     editorWrapper.querySelector('.result').classList.remove('showing');
 
     editorWrapper.classList.toggle('showing');
-    if (editorWrapper.querySelector('.result .error')) {
-      editorWrapper.hidden = !editorWrapper.hidden;
-    }
 
     // Insert or remove the editor body. This avoids having too many CodeMirror.
-    var showEditorBody = editorWrapper.querySelector('.result .error') ?
-        !editorWrapper.hidden : editorWrapper.classList.contains('showing');
-    if (showEditorBody) {
+    if (editorWrapper.classList.contains('showing')) {
       insertEditorBody(selfWrapper);
     } else {
       removeEditorBody(selfWrapper);
@@ -485,7 +492,7 @@
     entry.firstChild.textContent = name;
     entry.appendChild(createArgumentsWrapper(formals));
 
-    // Mark the entry `disabled` if semantics action of the operation is missiong for the node,
+    // Mark the entry `disabled` if semantics action of the operation is missing for the node,
     // or the result for the node already showed. * For the operation with arguments, we only need
     // to check if the semantics action is missing.
     var resultBlock = editorWrapper.querySelector('.result .operationName_' + name);
