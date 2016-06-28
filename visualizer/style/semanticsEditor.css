@@ -187,11 +187,14 @@ headerBlock real {
   flex-direction: column;
   flex: 1;
 }
+.result resultBlock.hidden {
+  display: none;
+}
 .result resultBlock.highlight {
   background: rgba(255, 255, 0, 0.19);
   font-weight: bolder;
 }
-.result resultBlock.leftBorder {
+.result resultBlock:not(.showing).leftBorder {
   padding-left: 2px;
   border-left: 1px solid #276f9e;
 }

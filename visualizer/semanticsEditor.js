@@ -34,6 +34,33 @@
     return 'operationName_' + blockClassId;
   }
 
+  // Only show the specified result block.
+  function showSingleResultBlock(targetBlock) {
+    if (!targetBlock) {
+      return;
+    }
+
+    var resultContainer = targetBlock.parentElement;
+    resultContainer.classList.add('showing');
+    Array.prototype.forEach.call(resultContainer.children, function(block) {
+      block.classList.add(block === targetBlock ? 'showing' : 'hidden');
+    });
+  }
+
+  // Remove the "markers" that are used to display a single result block, in order
+  // to display all the results.
+  function showAllResultBlocks(targetBlock) {
+    if (!targetBlock) {
+      return;
+    }
+
+    var resultContainer = targetBlock.parentElement;
+    resultContainer.classList.remove('showing');
+    Array.prototype.forEach.call(resultContainer.children, function(block) {
+      block.classList.remove(block === targetBlock ? 'showing' : 'hidden');
+    });
+  }
+
   // Creates a single `resultBlock`, which contains,
   // `value`: the actual result container
   // `operation`: the semantic operation for the result
@@ -161,16 +188,10 @@
       if (!resultContainer._nextStep.textContent) {
         return;
       }
+
       // Only shows the result, i.e. the error, for evaluating the current semantic operation at
       // the node.
-      resultContainer.classList.add('showing');
-      Array.prototype.forEach.call(resultContainer.children, function(child) {
-        if (child !== resultContainer._nextStep) {
-          child.style.display = 'none';
-        } else {
-          child.classList.remove('leftBorder');
-        }
-      });
+      showSingleResultBlock(resultContainer._nextStep);
     }
   }
   ohmEditor.parseTree.addListener('create:traceElement', function(wrapper, traceNode) {
@@ -347,9 +368,7 @@
     actionEditorCM.refresh();
 
     // Show the result if the current semantic on the node causes an error.
-    if (resultContainer.querySelector('.error.current')) {
-      resultContainer.classList.add('showing');
-    }
+    showSingleResultBlock(resultContainer.querySelector('.error.current'));
   }
 
   // Remove `header`, `argTags`, and `body` from the editor wrapper
@@ -363,6 +382,8 @@
     editorWrapper.removeChild(header);
     editorWrapper.removeChild(argTags);
     editorWrapper.removeChild(body);
+
+    showAllResultBlocks(selfWrapper.querySelector('.result .error.current'));
   }
 
   // Hides or shows the semantics editor of `el`, which is a div.pexpr.
@@ -502,7 +523,6 @@
     entry.classList.toggle('disabled',
         missingSemanticsAction ||    // Missing the semantics action for the node.
         resultBlock);                // The semantic result for the node already showed.
-
     entry.onclick = function(event) {
       event.stopPropagation();
       if (entry.classList.contains('disabled')) {
