@@ -34,6 +34,33 @@
     return 'operationName_' + blockClassId;
   }
 
+  // Only show the specified result block.
+  function showSingleResultBlock(targetBlock) {
+    if (!targetBlock) {
+      return;
+    }
+
+    var resultContainer = targetBlock.parentElement;
+    resultContainer.classList.add('showing');
+    Array.prototype.forEach.call(resultContainer.children, function(block) {
+      block.classList.add(block === targetBlock ? 'showing' : 'hidden');
+    });
+  }
+
+  // Remove the "markers" that are used to display a single result block, in order
+  // to display all the results.
+  function showAllResultBlocks(targetBlock) {
+    if (!targetBlock) {
+      return;
+    }
+
+    var resultContainer = targetBlock.parentElement;
+    resultContainer.classList.remove('showing');
+    Array.prototype.forEach.call(resultContainer.children, function(block) {
+      block.classList.remove(block === targetBlock ? 'showing' : 'hidden');
+    });
+  }
+
   // Creates a single `resultBlock`, which contains,
   // `value`: the actual result container
   // `operation`: the semantic operation for the result
@@ -66,6 +93,12 @@
       opSignature += '(' + argValues.join(',') + ')';
     }
     var opNameContainer = block.appendChild(domUtil.createElement('operation'));
+    var semanticOperations = ohmEditor.semantics.getSemantics();
+    var operationCount = Object.keys(semanticOperations.operations).length +
+        Object.keys(semanticOperations.attributes).length;
+    if (!resultWrapper.args && operationCount === 1) {
+      opNameContainer.hidden = true;
+    }
     opNameContainer.innerHTML = opSignature;
 
     var blockClassId = generateResultBlockClassId(opName, resultWrapper.args);
@@ -118,10 +151,8 @@
       });
     });
 
-    // A `self` wrapper is marked as `passThrough` if all the results for the node satisfy
-    // two conditions:
-    // a. It is a pass through result.
-    // b. If the result is forced, then it must not be a missing semantics action error.
+    // A `self` wrapper is marked as `passThrough` if all the results are passThrough.
+    // Also, if a result is forced, then it could not be a missing semantics error.
     var passThroughContainers = resultContainer.querySelectorAll('.passThrough');
     if (passThroughContainers.length === resultContainer.children.length) {
       selfWrapper.classList.toggle('passThrough',
@@ -161,16 +192,10 @@
       if (!resultContainer._nextStep.textContent) {
         return;
       }
+
       // Only shows the result, i.e. the error, for evaluating the current semantic operation at
       // the node.
-      resultContainer.classList.add('showing');
-      Array.prototype.forEach.call(resultContainer.children, function(child) {
-        if (child !== resultContainer._nextStep) {
-          child.style.display = 'none';
-        } else {
-          child.classList.remove('leftBorder');
-        }
-      });
+      showSingleResultBlock(resultContainer._nextStep);
     }
   }
   ohmEditor.parseTree.addListener('create:traceElement', function(wrapper, traceNode) {
@@ -347,9 +372,7 @@
     actionEditorCM.refresh();
 
     // Show the result if the current semantic on the node causes an error.
-    if (resultContainer.querySelector('.error.current')) {
-      resultContainer.classList.add('showing');
-    }
+    showSingleResultBlock(resultContainer.querySelector('.error.current'));
   }
 
   // Remove `header`, `argTags`, and `body` from the editor wrapper
@@ -363,6 +386,15 @@
     editorWrapper.removeChild(header);
     editorWrapper.removeChild(argTags);
     editorWrapper.removeChild(body);
+
+    var resultContainer = editorWrapper.querySelector('.result');
+    Array.prototype.forEach.call(resultContainer.children, function(block) {
+      if (block._needRemove) {
+        resultContainer.removeChild(block);
+      }
+    });
+
+    showAllResultBlocks(selfWrapper.querySelector('.result .error.current'));
   }
 
   // Hides or shows the semantics editor of `el`, which is a div.pexpr.
@@ -472,6 +504,14 @@
 
     var resultContainer = editorWrapper.querySelector('.result');
     var resultBlock = resultContainer.appendChild(createResultBlock(name, resultWrapper));
+
+    // Mark the newly appended result block if it is a pass through node, i.e. the result
+    // will be hided no matter what.
+    // This will be used by `removeEditorBody` to remove the block at the same time to avoid
+    // confusion.
+    if (domUtil.closestElementMatching('.self.passThrough', editorWrapper)) {
+      resultBlock._needRemove = true;
+    }
     var resultBlocks = resultContainer.querySelectorAll('resultBlock');
     var hasLeftBorder = false;
     Array.prototype.forEach.call(resultBlocks, function(block) {
@@ -502,7 +542,6 @@
     entry.classList.toggle('disabled',
         missingSemanticsAction ||    // Missing the semantics action for the node.
         resultBlock);                // The semantic result for the node already showed.
-
     entry.onclick = function(event) {
       event.stopPropagation();
       if (entry.classList.contains('disabled')) {
