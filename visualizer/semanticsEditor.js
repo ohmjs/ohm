@@ -93,6 +93,12 @@
       opSignature += '(' + argValues.join(',') + ')';
     }
     var opNameContainer = block.appendChild(domUtil.createElement('operation'));
+    var semanticOperations = ohmEditor.semantics.getSemantics();
+    var operationCount = Object.keys(semanticOperations.operations).length +
+        Object.keys(semanticOperations.attributes).length;
+    if (!resultWrapper.args && operationCount === 1) {
+      opNameContainer.hidden = true;
+    }
     opNameContainer.innerHTML = opSignature;
 
     var blockClassId = generateResultBlockClassId(opName, resultWrapper.args);
