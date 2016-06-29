@@ -145,10 +145,8 @@
       });
     });
 
-    // A `self` wrapper is marked as `passThrough` if all the results for the node satisfy
-    // two conditions:
-    // a. It is a pass through result.
-    // b. If the result is forced, then it must not be a missing semantics action error.
+    // A `self` wrapper is marked as `passThrough` if all the results are passThrough.
+    // Also, if a result is forced, then it could not be a missing semantics error.
     var passThroughContainers = resultContainer.querySelectorAll('.passThrough');
     if (passThroughContainers.length === resultContainer.children.length) {
       selfWrapper.classList.toggle('passThrough',
@@ -383,6 +381,13 @@
     editorWrapper.removeChild(argTags);
     editorWrapper.removeChild(body);
 
+    var resultContainer = editorWrapper.querySelector('.result');
+    Array.prototype.forEach.call(resultContainer.children, function(block) {
+      if (block._needRemove) {
+        resultContainer.removeChild(block);
+      }
+    });
+
     showAllResultBlocks(selfWrapper.querySelector('.result .error.current'));
   }
 
@@ -493,6 +498,14 @@
 
     var resultContainer = editorWrapper.querySelector('.result');
     var resultBlock = resultContainer.appendChild(createResultBlock(name, resultWrapper));
+
+    // Mark the newly appended result block if it is a pass through node, i.e. the result
+    // will be hided no matter what.
+    // This will be used by `removeEditorBody` to remove the block at the same time to avoid
+    // confusion.
+    if (domUtil.closestElementMatching('.self.passThrough', editorWrapper)) {
+      resultBlock._needRemove = true;
+    }
     var resultBlocks = resultContainer.querySelectorAll('resultBlock');
     var hasLeftBorder = false;
     Array.prototype.forEach.call(resultBlocks, function(block) {
