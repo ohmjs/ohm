@@ -310,6 +310,12 @@
         return true;
       }
     }
+    var children = traceNode.children;
+
+    // Base case for left recursion -- treat as a leaf node.
+    if (children.length === 1 && children[0] == null) {
+      return true;
+    }
     return traceNode.children.length === 0;
   }
 
@@ -374,10 +380,7 @@
       }
       label.textContent = labelText;
     }
-    domUtil.toggleClasses(label, {
-      leaf: isLeaf(traceNode),
-      prim: isPrimitive(pexpr)
-    });
+    label.classList.toggle('leaf', isLeaf(traceNode));
     return label;
   }
 

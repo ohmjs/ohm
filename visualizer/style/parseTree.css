@@ -71,12 +71,24 @@
 .pexpr.failed.visibleChoice > .self .label {
   border-bottom-color: transparent;  /* Prevent dashed border */
 }
-.pexpr.failed > .self .label:not(.leaf):hover {
-  border-bottom: 1px solid #ddd;
+.pexpr:not(.failed) > .self .label:hover {
+  background-color: #ddd;
+}
+.pexpr:not(.collapsed) > .self .label:hover {
+  border-bottom-color: #ddd;
+}
+.pexpr.failed > .self .label:hover {
+  border-bottom: 1px solid #ccc;
+}
+
+.pexpr > .self .label.leaf,
+.pexpr > .self .label.leaf:hover {
+  border-bottom-color: transparent;
+  cursor: default;
 }
 
 /* A successful expression in a failed branch */
-.pexpr.failed .pexpr:not(.failed):not(.unevaluated) > .self .label:not(.prim) {
+.pexpr.failed .pexpr:not(.failed):not(.unevaluated) > .self .label {
   background-color: #FFD7DE;
   border-left-color: pink;
   border-right-color: pink;
@@ -116,8 +128,8 @@
   font-style: italic;
 }
 .pexpr > .self .label {
-  background-color: #efefef;
-  border-bottom: 1px solid #efefef;
+  background-color: #eaeaea;
+  border-bottom: 1px solid #eaeaea;
   box-sizing: border-box;
   cursor: pointer;
   display: block;
@@ -134,22 +146,7 @@
   font-style: italic;
   opacity: 0.7;
 }
-.pexpr:not(.failed) > .self .label:not(.prim):hover {
-  background-color: #dfdfdf;
-}
-.pexpr:not(.collapsed) > .self .label:not(.prim):hover {
-  border-bottom-color: #dfdfdf;
-}
 
-.pexpr > .self .label.prim {
-  background-color: transparent;
-  border-color: transparent;
-  color: SeaGreen;
-  cursor: default;
-}
-.pexpr.failed > .self .label.prim {
-  color: #d44950;
-}
 .pexpr.unevaluated > .self .label {
   background-color: transparent;
   color: #aaa;
@@ -161,7 +158,7 @@
   display: none;
 }
 .pexpr.collapsed > .self .label {
-  border-bottom: 1px dashed #bbb;
+  border-bottom: 1px dashed #999;
 }
 .pexpr > .children {
   display: flex;
