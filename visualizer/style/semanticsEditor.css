@@ -101,7 +101,7 @@ headerBlock real {
   content: '';
   z-index: 2;
   position: absolute;
-  top: 5px;
+  top: 3px;
   right: -2px;
   width: 5px;
   height: 6px;
@@ -165,7 +165,6 @@ headerBlock real {
 
 .semanticsEditor .result {
   display: flex;
-  text-align: center;
   color: slateblue;
   font-size: 16px;
   border: 1px solid #efefef;
@@ -184,7 +183,7 @@ headerBlock real {
 
 .result resultBlock {
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   flex: 1;
 }
 .result resultBlock.hidden {
@@ -196,7 +195,7 @@ headerBlock real {
 }
 .result resultBlock:not(.showing).leftBorder {
   padding-left: 2px;
-  border-left: 1px solid #276f9e;
+  border-left: 1px solid rgba(39, 111, 158, 0.4);
 }
 .result resultBlock:not(:last-child) {
   padding-right: 2px;
@@ -206,9 +205,15 @@ headerBlock real {
 }
 
 .result resultBlock operation {
-  border-top: 1px solid;
-  font-size: 8px;
-  color: #276f9e;
+  font-size: 6px;
+  color: orchid;
+  margin-left: 4px;
+}
+.result resultBlock.highlight operation{
+  font-size: 10px;
+}
+.result resultBlock.showing operation {
+  display: none;
 }
 
 .semanticsEditor .result resultBlock.error value {
