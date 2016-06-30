@@ -208,16 +208,58 @@
     }
   });
 
+  function copyWithoutDuplicates(array) {
+    var noDuplicates = [];
+    array.forEach(function(entry) {
+      if (noDuplicates.indexOf(entry) < 0) {
+        noDuplicates.push(entry);
+      }
+    });
+    return noDuplicates;
+  }
+
   function getArgDisplayList(defaultArgExp) {
     var argDisplayList = [];
 
+    // Treat `Iter` expression as an iteration on each of its sub-expression,
+    // and `Lookahead` expression as a look ahead on each of its sub-expression
+    if (defaultArgExp instanceof ohm.pexprs.Iter) {
+      var pending = defaultArgExp.operator;
+      defaultArgExp = defaultArgExp.expr;
+    } else if (defaultArgExp instanceof ohm.pexprs.Lookahead) {
+      var prePending = '&';
+      defaultArgExp = defaultArgExp.expr;
+    }
+
     if (defaultArgExp instanceof ohm.pexprs.Seq) {
       defaultArgExp.factors.forEach(function(factor) {
-        argDisplayList = argDisplayList.concat(getArgDisplayList(factor));
+        var factorDisplayList = getArgDisplayList(factor).map(function(display) {
+          return (prePending || '') + display + (pending || '');
+        });
+        argDisplayList = argDisplayList.concat(factorDisplayList);
       });
+    } else if (defaultArgExp instanceof ohm.pexprs.Alt) {
+      // Handle the `Alt` expression the same way as the `toArgNameList`, i.e.
+      // split each list into columns, and combine argument displays for the same column
+      // as a single argument.
+      var termArgDisplayLists = defaultArgExp.terms.map(function(term) {
+        return getArgDisplayList(term);
+      });
+      var numArgs = termArgDisplayLists[0].length;
+      for (var colIdx = 0; colIdx < numArgs; colIdx++) {
+        var col = [];
+        for (var rowIdx = 0; rowIdx < defaultArgExp.terms.length; rowIdx++) {
+          col.push(termArgDisplayLists[rowIdx][colIdx]);
+        }
+        var uniqueNames = copyWithoutDuplicates(col).join('|');
+        if (pending || prePending) {
+          uniqueNames = (prePending || '') + '(' + uniqueNames + ')' + (pending || '');
+        }
+        argDisplayList.push(uniqueNames);
+      }
     } else if (!(defaultArgExp instanceof ohm.pexprs.Not)) {
       // We skip `Not` as it won't be a semantics action function argument.
-      argDisplayList.push(defaultArgExp.toDisplayString());
+      argDisplayList.push((prePending || '') + defaultArgExp.toDisplayString() + (pending || ''));
     }
     return argDisplayList;
   }
