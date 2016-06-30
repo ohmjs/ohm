@@ -95,7 +95,9 @@ test('toArgumentNameList', function(t) {
     'G {',
     ' Start = &((foo bars foo)+)',
     ' foo = "ab" | letter* | "a".."z"',
+    ' MoreAlt = "a" "b" | "c" "c" ',
     ' bars = ~"a" (letter "b"| digit "b") foo? "+"',
+    ' MoreSeq = &(foo "a" foo) foo "a" foo',
     ' plus = foo "+" bars',
     ' MoreOpts = ("+" Start)?',
     ' ranges = "1".."9" | "!".."@"',
@@ -109,6 +111,9 @@ test('toArgumentNameList', function(t) {
   t.deepEqual(alt.toArgumentNameList(1), ['_ab_or_letters_or_a_to_z']);
   t.deepEqual(alt.terms[0].toArgumentNameList(1), ['_ab']);
 
+  var moreAlt = g.ruleBodies.MoreAlt;
+  t.deepEqual(moreAlt.toArgumentNameList(1), ['_a_or__c', '_b_or__c']);
+
   var many = alt.terms[1];
   t.deepEqual(many.toArgumentNameList(1), ['letters']);
   t.deepEqual(many.expr.toArgumentNameList(1), ['letter']);
@@ -121,6 +126,10 @@ test('toArgumentNameList', function(t) {
   t.deepEqual(seq.factors[2].toArgumentNameList(1), ['optFoo']);
   t.deepEqual(seq.factors[3].toArgumentNameList(1), ['$1']);
 
+  var moreSeq = g.ruleBodies.MoreSeq;
+  t.deepEqual(moreSeq.toArgumentNameList(1),
+              ['foo_1', '_a_1', 'foo_2', 'foo_3', '_a_2', 'foo_4']);
+
   var plus = g.ruleBodies.plus;
   t.deepEqual(plus.toArgumentNameList(1), ['foo', '$2', 'bars']);
 
@@ -130,5 +139,6 @@ test('toArgumentNameList', function(t) {
   var ranges = g.ruleBodies.ranges;
   t.deepEqual(ranges.terms[0].toArgumentNameList(1), ['_1_to_9']);
   t.deepEqual(ranges.terms[1].toArgumentNameList(1), ['$1']);
+
   t.end();
 });
