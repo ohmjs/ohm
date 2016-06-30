@@ -11,7 +11,7 @@
   }
 })(this, function(ohm, ohmEditor, CheckedEmitter, document, cmUtil, d3, domUtil) {
   var ArrayProto = Array.prototype;
-  function $(sel) { return document.querySelector(sel); }
+  var $ = domUtil.$;
 
   var UnicodeChars = {
     ANTICLOCKWISE_OPEN_CIRCLE_ARROW: '\u21BA',

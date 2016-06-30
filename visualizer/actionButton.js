@@ -12,6 +12,8 @@
 
   // Privates
   // --------
+  var $ = domUtil.$;
+  var $$ = domUtil.$$;
 
   var UnicodeChars = {
     BLACK_UP_POINTING_TRIANGLE: '\u25B2',
@@ -22,8 +24,7 @@
 
   // Unselect all the semantics buttons, except the target semantic button
   function unselectOtherSemanticButtons(targetNameContainer) {
-    var wrappers = document.querySelectorAll('#semantics .wrapper');
-    Array.prototype.forEach.call(wrappers, function(wrapper) {
+    $$('#semantics .wrapper').forEach(function(wrapper) {
       var nameContainer = wrapper.querySelector('textarea.opName');
       if (targetNameContainer === nameContainer) {
         return;
@@ -87,7 +88,7 @@
   }
 
   function showActionMenu(e) {
-    var actionMenu = document.querySelector('#operationMenu');
+    var actionMenu = $('#operationMenu');
     actionMenu.style.left = e.clientX + 'px';
     actionMenu.style.top = e.clientY - 6 + 'px';
     actionMenu.hidden = false;
@@ -306,9 +307,7 @@
 
   // Add new operation or attribute wrapper
   function addNewSemanticButton(type) {
-    var container = type === 'Operation' ?
-        document.querySelector('#operations') :
-        document.querySelector('#attributes');
+    var container = type === 'Operation' ? $('#operations') : $('#attributes');
 
     // If the first semantic button in the list is not saved yet, return
     // without create a new one
@@ -400,20 +399,20 @@
     });
   }
 
-  var addOperationButton = document.querySelector('#addOperation');
+  var addOperationButton = $('#addOperation');
   addOperationButton.addEventListener('click', function(e) {
     addNewSemanticButton('Operation');
-    document.querySelector('#operations').firstElementChild.querySelector('.opName').focus();
+    $('#operations').firstElementChild.querySelector('.opName').focus();
   });
 
-  var addAttributeButton = document.querySelector('#addAttribute');
+  var addAttributeButton = $('#addAttribute');
   addAttributeButton.addEventListener('click', function(e) {
     addNewSemanticButton('Attribute');
-    document.querySelector('#attributes').firstElementChild.querySelector('.opName').focus();
+    $('#attributes').firstElementChild.querySelector('.opName').focus();
   });
 
   ohmEditor.addListener('parse:grammar', function(matchResult, grammar, error) {
-    document.querySelector('#operations').innerHTML = '';
-    document.querySelector('#attributes').innerHTML = '';
+    $('#operations').innerHTML = '';
+    $('#attributes').innerHTML = '';
   });
 });

@@ -13,6 +13,8 @@
 
   // Privates
   // --------
+  var $ = domUtil.$;
+  var $$ = domUtil.$$;
 
   var UnicodeChars = {
     PLUS_SIGN: '\u002B',
@@ -107,14 +109,12 @@
     // Hover the block, and all the blocks that represent the results for the same operation
     // signature will be highlighted.
     block.onmouseover = function(event) {
-      var blocks = document.querySelectorAll('.semanticsEditor .result .' + blockClassId);
-      Array.prototype.forEach.call(blocks, function(b) {
+      $$('.semanticsEditor .result .' + blockClassId).forEach(function(b) {
         b.classList.add('highlight');
       });
     };
     block.onmouseout = function(event) {
-      var blocks = document.querySelectorAll('.semanticsEditor .result .' + blockClassId);
-      Array.prototype.forEach.call(blocks, function(b) {
+      $$('.semanticsEditor .result .' + blockClassId).forEach(function(b) {
         b.classList.remove('highlight');
       });
     };
@@ -598,7 +598,7 @@
       if (formals.length === 0) {
         entry.classList.add('disabled');
       }
-      document.querySelector('#parseTreeMenu').hidden = true;
+      $('#parseTreeMenu').hidden = true;
     };
 
     entry.onkeypress = function(event) {
@@ -613,7 +613,7 @@
         window.alert(error);    // eslint-disable-line no-alert
         return;
       }
-      document.querySelector('#parseTreeMenu').hidden = true;
+      $('#parseTreeMenu').hidden = true;
     };
     return entry;
   }
