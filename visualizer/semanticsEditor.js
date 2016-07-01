@@ -106,18 +106,21 @@
     var blockClassId = generateResultBlockClassId(opName, resultWrapper.args);
     block.classList.add(blockClassId);
 
-    // Hover the block, and all the blocks that represent the results for the same operation
-    // signature will be highlighted.
-    block.onmouseover = function(event) {
-      $$('.semanticsEditor .result .' + blockClassId).forEach(function(b) {
-        b.classList.add('highlight');
-      });
-    };
-    block.onmouseout = function(event) {
-      $$('.semanticsEditor .result .' + blockClassId).forEach(function(b) {
-        b.classList.remove('highlight');
-      });
-    };
+    // If there are more than one operations, or the only opertaion has arguments, then hover
+    // the block, and all the blocks that represent the results for the same operation signature
+    // will be highlighted.
+    if (operationCount > 1 || resultWrapper.args) {
+      block.onmouseover = function(event) {
+        $$('.semanticsEditor .result .' + blockClassId).forEach(function(b) {
+          b.classList.add('highlight');
+        });
+      };
+      block.onmouseout = function(event) {
+        $$('.semanticsEditor .result .' + blockClassId).forEach(function(b) {
+          b.classList.remove('highlight');
+        });
+      };
+    }
     return block;
   }
 
