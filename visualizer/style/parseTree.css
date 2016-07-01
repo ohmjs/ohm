@@ -69,10 +69,6 @@
   text-align: left;
 }
 
-.pexpr.failed.visibleChoice > .self .label,
-.visibleLR > .pexpr.failed > .self .label {
-  border-bottom-color: transparent;  /* Prevent dashed border */
-}
 .pexpr:not(.failed) > .self .label:hover {
   background-color: #ddd;
 }
@@ -94,22 +90,21 @@
   background-color: #FFD7DE;
 }
 
-/* Rules to distinguish vertically-stacked choices from parent/childen relationships. */
-.pexpr.visibleChoice,
-.visibleLR > .pexpr {
+/*
+  Use disclosures to distinguish vertically-stacked siblings from parent/children relationships.
+ */
+.pexpr.disclosure {
   padding-left: 8px;
   position: relative;  /* For positioning the ::before element */
 }
-.pexpr.visibleChoice::before,
-.visibleLR > .pexpr::before {
+.pexpr.disclosure::before {
   color: #bbb;
   content: '\25BC';  /* Black Down-pointing triangle */
   left: 0;
   position: absolute;
   top: 2px;
 }
-.pexpr.collapsed.visibleChoice::before,
-.visibleLR > .pexpr.collapsed::before {
+.pexpr.disclosure.collapsed::before {
   content: '\25B6';  /* Black Right-pointing triangle */
 }
 
@@ -162,6 +157,9 @@
 }
 .pexpr.collapsed > .self .label {
   border-bottom: 1px dashed #999;
+}
+.pexpr.failed.disclosure.collapsed > .self .label {
+  border-bottom-color: transparent;  /* Prevent dashed border */
 }
 .pexpr > .children {
   display: flex;

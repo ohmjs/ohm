@@ -63,6 +63,7 @@ function Trace(inputStream, pos, expr, succeeded, bindings, optChildren) {
   this.isImplicitSpaces = false;
   this.isMemoized = false;
   this.isRootNode = false;
+  this.terminatesLR = false;
   this.terminatingLREntry = null;
 }
 
@@ -86,6 +87,7 @@ Trace.prototype.cloneWithExpr = function(expr) {
   ans.isImplicitSpaces = this.isImplicitSpaces;
   ans.isMemoized = this.isMemoized;
   ans.isRootNode = this.isRootNode;
+  ans.terminatesLR = this.terminatesLR;
   ans.terminatingLREntry = this.terminatingLREntry;
   return ans;
 };
@@ -94,6 +96,7 @@ Trace.prototype.cloneWithExpr = function(expr) {
 Trace.prototype.recordLRTermination = function(ruleBodyTrace, value) {
   this.terminatingLREntry =
       new Trace(this.inputStream, this.pos, this.expr, false, [value], [ruleBodyTrace]);
+  this.terminatingLREntry.terminatesLR = true;
 };
 
 // Recursively traverse this trace node and all its descendents, calling a visitor function

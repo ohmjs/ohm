@@ -281,17 +281,14 @@
         pxWidth
 
     Since this could be confused with `pctWidth` being the parent node of `pxWidth`, we need
-    to distinguish choice nodes visually when showing failures. This function returns true
-    if `traceNode` is a choice that needs to be visually distinguished, otherwise false.
+    to distinguish choice nodes visually when showing failures. This function returns true if
+    `traceNode` is an Alt node whose children should be visually distinguished.
   */
-  function isVisibleChoice(traceNode, parent) {
-    if (!(parent && parent.expr instanceof ohm.pexprs.Alt)) {
-      return false;  // It's not even a choice.
-    }
-    if (ohmEditor.options.showFailures) {
-      // Make the choice visible if any of the (real) choices failed.
-      return parent.children.some(function(c) {
-        return !c.isImplicitSpaces && !c.succeeded;
+  function hasVisibleChoice(traceNode) {
+    if (traceNode.expr instanceof ohm.pexprs.Alt && ohmEditor.options.showFailures) {
+      // If there's any failed child, we need to show multiple children.
+      return traceNode.children.some(function(c) {
+        return !c.succeeded;
       });
     }
     return false;
@@ -326,10 +323,6 @@
     // If the children are exactly `[undefined]`, it's the base case for left recursion.
     // TODO: Figure out a better way to handle this when generating traces.
     return traceNode.children.length === 1 && traceNode.children[0] == null;
-  }
-
-  function isGrowLREntry(traceNode, container) {
-    return container.classList.contains('visibleLR') && !traceNode.succeeded;
   }
 
   function hasVisibleLeftRecursion(traceNode) {
@@ -375,6 +368,11 @@
     var pexpr = traceNode.expr;
     var label = domUtil.createElement('.label');
 
+    if (traceNode.terminatesLR) {
+      label.textContent = '[Grow LR]';
+      return label;
+    }
+
     var isInlineRule = pexpr.ruleName && pexpr.ruleName.indexOf('_') >= 0;
 
     if (isInlineRule) {
@@ -415,9 +413,7 @@
       wrapper.classList.add('zoomBorder');
     }
 
-    var info = isLRBaseCase(traceNode) ? '[LR]' :
-               isGrowLREntry(traceNode, parent) ? '[Grow LR]' :
-               null;
+    var info = isLRBaseCase(traceNode) ? '[LR]' : null;
 
     var selfWrapper = wrapper.appendChild(domUtil.createElement('.self'));
     var label = selfWrapper.appendChild(createTraceLabel(traceNode, info));
@@ -549,20 +545,21 @@
             (node.isImplicitSpaces && !ohmEditor.options.showSpaces)) {
           return node.SKIP;
         }
-        var childInput;
-        var isWhitespace = node.expr.ruleName === 'spaces';
-        var isLeafNode = isLeaf(node);
-        var isLabeled = shouldNodeBeLabeled(node, parent);
-
         // Don't bother showing whitespace nodes that didn't consume anything.
+        var isWhitespace = node.expr.ruleName === 'spaces';
         if (isWhitespace && node.interval.contents.length === 0) {
           return node.SKIP;
         }
+        var isLabeled = shouldNodeBeLabeled(node, parent);
+        var isLeafNode = isLeaf(node);
+        var visibleChoice = hasVisibleChoice(node);
+        var visibleLR = hasVisibleLeftRecursion(node);
 
         // Get the span that contain the parent node's input. If it is undefined, it means that
         // this node is in a failed branch.
         var inputContainer = inputStack[inputStack.length - 1];
 
+        var childInput;
         if (inputContainer && node.succeeded) {
           var contents = isLeafNode ? node.interval.contents : '';
           childInput = inputContainer.appendChild(domUtil.createElement('span.input', contents));
@@ -575,25 +572,20 @@
         }
 
         var container = containerStack[containerStack.length - 1];
-
-        // Put nodes with visible left recursion into a special container, so that we can
-        // render the last (unused) iteration of the LR loop as a sibling to the node for
-        // the previous iteration (i.e., the node representing the actual result of the LR).
-        // See the `exit` action below for more.
-        if (hasVisibleLeftRecursion(node)) {
-          container = container.appendChild(domUtil.createElement('.vbox.visibleLR'));
-        }
-
         var el = createTraceElement(node, container, childInput);
 
+        // Use a disclosure arrow if it's a non-leaf in a vbox -- unless the node is an Alt
+        // with visible choice, because that would result in a double arrow.
+        var useDisclosure = !isLeafNode && container.classList.contains('vbox') && !visibleChoice;
+
         domUtil.toggleClasses(el, {
+          disclosure: useDisclosure,
           failed: !node.succeeded,
-          hidden: !isLabeled,
-          visibleChoice: isVisibleChoice(node, parent)
+          hidden: !isLabeled
         });
 
         var children = el.appendChild(domUtil.createElement('.children'));
-        children.classList.toggle('vbox', node.expr instanceof ohm.pexprs.Alt);
+        children.classList.toggle('vbox', visibleChoice || visibleLR);
 
         var isCollapsed = shouldTraceElementBeCollapsed(el, node);
         if (isCollapsed) {
@@ -615,6 +607,11 @@
         containerStack.push(children);
       },
       exit: function(node, parent, depth) {
+        // If necessary, render the "Grow LR" trace as a pseudo-child, after the real child.
+        if (hasVisibleLeftRecursion(node)) {
+          node.terminatingLREntry.walk(renderActions);
+        }
+
         var childContainer = containerStack.pop();
         var el = childContainer.parentElement;
         if (el.id in stepsByNodeId) {
@@ -622,15 +619,6 @@
           parsingSteps.push({type: 'exit', node: node, el: el});
         }
         inputStack.pop();
-
-        if (hasVisibleLeftRecursion(node)) {
-          // Push the vbox to the container stack and render the "terminating entry" of the
-          // left recursion inside it.
-          var vbox = el.parentElement;
-          containerStack.push(vbox);
-          node.terminatingLREntry.walk(renderActions);
-          containerStack.pop();
-        }
       }
     };
     renderedTrace.walk(renderActions);
