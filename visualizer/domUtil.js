@@ -33,6 +33,10 @@
   // -------
 
   return {
+    $: function(sel) { return document.querySelector(sel); },
+
+    $$: function(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); },
+
     createElement: function(sel, optContent) {
       var parts = sel.split('.');
       var tagName = parts[0];
