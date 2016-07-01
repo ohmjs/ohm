@@ -68,7 +68,9 @@
   color: #d44950;
   text-align: left;
 }
-.pexpr.failed.visibleChoice > .self .label {
+
+.pexpr.failed.visibleChoice > .self .label,
+.visibleLR > .pexpr.failed > .self .label {
   border-bottom-color: transparent;  /* Prevent dashed border */
 }
 .pexpr:not(.failed) > .self .label:hover {
@@ -90,23 +92,24 @@
 /* A successful expression in a failed branch */
 .pexpr.failed .pexpr:not(.failed):not(.unevaluated) > .self .label {
   background-color: #FFD7DE;
-  border-left-color: pink;
-  border-right-color: pink;
 }
 
 /* Rules to distinguish vertically-stacked choices from parent/childen relationships. */
-.pexpr.visibleChoice {
+.pexpr.visibleChoice,
+.visibleLR > .pexpr {
   padding-left: 8px;
   position: relative;  /* For positioning the ::before element */
 }
-.pexpr.visibleChoice::before {
-  color: #ccc;
+.pexpr.visibleChoice::before,
+.visibleLR > .pexpr::before {
+  color: #bbb;
   content: '\25BC';  /* Black Down-pointing triangle */
   left: 0;
   position: absolute;
   top: 2px;
 }
-.pexpr.collapsed.visibleChoice::before {
+.pexpr.collapsed.visibleChoice::before,
+.visibleLR > .pexpr.collapsed::before {
   content: '\25B6';  /* Black Right-pointing triangle */
 }
 
@@ -164,9 +167,10 @@
   display: flex;
   flex-direction: row;
 }
-.pexpr.alt > .children {
-  flex-direction: column;
-}
 .pexpr > .children[hidden] {
   display: none;
+}
+.pexpr .vbox {
+  display: flex;
+  flex-direction: column;
 }

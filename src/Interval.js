@@ -120,6 +120,10 @@ Object.defineProperties(Interval.prototype, {
       return this._contents;
     },
     enumerable: true
+  },
+  length: {
+    get: function() { return this.endIdx - this.startIdx; },
+    enumerable: true
   }
 });
 

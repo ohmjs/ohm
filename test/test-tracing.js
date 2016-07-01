@@ -235,20 +235,21 @@ test('tracing with left recursion', function(t) {
   var g = ohm.grammar('G { id = id letter -- rec\n    | letter }');
   var id = g.trace('abc').children[0];
 
-  // At the top-level recursive application, there is a loop which grows the
-  // left-recursive result. There should be one entry for each iteration of
-  // the loop.
-  t.ok(id.isLeftRecursive);
-  t.equal(id.children.length, 3);
+  t.equal(id.isHeadOfLeftRecursion, true);
 
-  // The first three nodes should have the same expr and pos.
-  var children = id.children;
-  t.equal(children[1].expr, children[0].expr);
-  t.equal(children[2].expr, children[0].expr);
-  t.equal(children[1].pos, children[0].pos);
-  t.equal(children[1].pos, children[0].pos);
+  // For successful left recursion, there is an extra entry holding the trace for the
+  // last iteration of the loop, which failed to grow the seed result.
+  var terminatingEntry = id.terminatingLREntry;
+  t.ok(terminatingEntry, 'has an entry for the last iteration of the growSeedResult loop');
+  t.equal(terminatingEntry.expr, id.expr, 'it is for the same expression');
+  t.equal(terminatingEntry.succeeded, false, 'but marked as a failure');
+  t.equal(terminatingEntry.isHeadOfLeftRecursion, false);
+  t.equal(terminatingEntry.pos, id.pos);
+  t.ok(terminatingEntry.interval.length <= id.interval.length, 'its interval is not longer');
 
-  var choice = children[2];
+  t.equal(id.children.length, 1, 'has a single child');
+
+  var choice = id.children[0];
   t.equal(choice.children.length, 1);
 
   var recApply = choice.children[0];
@@ -263,6 +264,7 @@ test('tracing with left recursion', function(t) {
   t.equal(seq.interval.contents, 'abc');
   t.equal(seq.children.length, 2);
   t.equal(seq.children[0].displayString, 'id');
+  t.equal(seq.children[0].isHeadOfLeftRecursion, false);
   t.equal(seq.children[1].displayString, 'letter');
 
   cstNode = seq.children[0].bindings[0];
@@ -274,8 +276,13 @@ test('tracing with left recursion', function(t) {
   t.equal(cstNode.numChildren(), 2);
 
   id = g.trace('a').children[0];
-  t.ok(id.isLeftRecursive);
+  t.equal(id.isHeadOfLeftRecursion, true);
   t.equal(id.children.length, 1);
+
+  id = g.trace('9').children[0];
+  t.equal(id.succeeded, false);
+  t.equal(id.isHeadOfLeftRecursion, true, 'failed LR node is still an LR head');
+  t.looseEqual(id.terminatingLREntry, null, 'it has no terminatingLREntry');
 
   t.end();
 });
@@ -289,16 +296,10 @@ test('tracing with left recursion and leading space', function(t) {
     '}'
   ]);
   var foo = g.trace(' zy').children[1];  // First child is 'spaces'.
-  t.equal(foo.isLeftRecursive, true);
+  t.equal(foo.isHeadOfLeftRecursion, true);
+  t.equal(foo.children.length, 1);
 
-  // The first child is the seed, second child is its enlarged replacement.
-  t.equal(foo.children[0].expr, foo.children[1].expr);
-  t.equal(foo.children[0].pos, foo.children[1].pos);
-  t.equal(foo.children[0].succeeded, true);
-  t.equal(foo.children[1].succeeded, true);
-
-  var alt = foo.children[1];
-
+  var alt = foo.children[0];
   t.deepEqual(alt.children.map(displayString), ['spaces', 'Foo_x', 'spaces', 'Foo_y']);
   t.deepEqual(alt.children.map(succeeded), [true, false, true, true]);
 
@@ -383,7 +384,7 @@ test('memoization', function(t) {
   var lookahead = seq.children[0];
   var applyId = lookahead.children[0];
   t.equal(applyId.expr.ruleName, 'id');
-  t.equal(applyId.isLeftRecursive, true);
+  t.equal(applyId.isHeadOfLeftRecursion, true);
   t.equal(applyId.expr.interval.startIdx, 15);
   t.equal(applyId.expr.interval.endIdx, 17);
 
@@ -394,7 +395,7 @@ test('memoization', function(t) {
 
   var applyId2 = seq.children[1];
   t.equal(applyId2.expr.ruleName, 'id');
-  t.equal(applyId2.isLeftRecursive, true);
+  t.equal(applyId2.isHeadOfLeftRecursion, true);
   t.equal(applyId2.expr.interval.startIdx, 18);
   t.equal(applyId2.expr.interval.endIdx, 20);
 

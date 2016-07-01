@@ -289,7 +289,7 @@
       return false;  // It's not even a choice.
     }
     if (ohmEditor.options.showFailures) {
-      // Make the choice visible if the first (real) choice failed.
+      // Make the choice visible if any of the (real) choices failed.
       return parent.children.some(function(c) {
         return !c.isImplicitSpaces && !c.succeeded;
       });
@@ -310,10 +310,7 @@
         return true;
       }
     }
-    var children = traceNode.children;
-
-    // Base case for left recursion -- treat as a leaf node.
-    if (children.length === 1 && children[0] == null) {
+    if (isLRBaseCase(traceNode)) {
       return true;
     }
     return traceNode.children.length === 0;
@@ -323,6 +320,20 @@
     return expr instanceof ohm.pexprs.Terminal ||
            expr instanceof ohm.pexprs.Range ||
            expr instanceof ohm.pexprs.UnicodeChar;
+  }
+
+  function isLRBaseCase(traceNode) {
+    // If the children are exactly `[undefined]`, it's the base case for left recursion.
+    // TODO: Figure out a better way to handle this when generating traces.
+    return traceNode.children.length === 1 && traceNode.children[0] == null;
+  }
+
+  function isGrowLREntry(traceNode, container) {
+    return container.classList.contains('visibleLR') && !traceNode.succeeded;
+  }
+
+  function hasVisibleLeftRecursion(traceNode) {
+    return ohmEditor.options.showFailures && traceNode.terminatingLREntry != null;
   }
 
   function couldZoom(currentRootTrace, traceNode) {
@@ -360,7 +371,7 @@
     return el;
   }
 
-  function createTraceLabel(traceNode) {
+  function createTraceLabel(traceNode, optExtraInfo) {
     var pexpr = traceNode.expr;
     var label = domUtil.createElement('.label');
 
@@ -370,6 +381,9 @@
       var parts = pexpr.ruleName.split('_');
       label.textContent = parts[0];
       label.appendChild(domUtil.createElement('span.caseName', parts[1]));
+      if (optExtraInfo) {
+        label.appendChild(domUtil.createElement('span.info', ' ' + optExtraInfo));
+      }
     } else {
       var labelText = traceNode.displayString;
 
@@ -379,6 +393,9 @@
         labelText = labelText.slice(0, 20) + UnicodeChars.HORIZONTAL_ELLIPSIS;
       }
       label.textContent = labelText;
+      if (optExtraInfo) {
+        label.textContent += optExtraInfo;
+      }
     }
     label.classList.toggle('leaf', isLeaf(traceNode));
     return label;
@@ -398,8 +415,12 @@
       wrapper.classList.add('zoomBorder');
     }
 
+    var info = isLRBaseCase(traceNode) ? '[LR]' :
+               isGrowLREntry(traceNode, parent) ? '[Grow LR]' :
+               null;
+
     var selfWrapper = wrapper.appendChild(domUtil.createElement('.self'));
-    var label = selfWrapper.appendChild(createTraceLabel(traceNode));
+    var label = selfWrapper.appendChild(createTraceLabel(traceNode, info));
 
     label.addEventListener('click', function(e) {
       if (e.altKey && !(e.shiftKey || e.metaKey)) {
@@ -521,14 +542,9 @@
     var containerStack = [rootContainer];
 
     ohmEditor.parseTree.emit('render:parseTree', renderedTrace);
-    renderedTrace.walk({
-      enter: function(node, parent, depth) {
-        // Undefined nodes identify the base case for left recursion -- skip them.
-        // TODO: Figure out a better way to handle this when generating traces.
-        if (!node) {
-          return trace.SKIP;
-        }
-        // Don't recurse into nodes that didn't succeed, unless "Show failures" is enabled.
+    var renderActions = {
+      enter: function handleEnter(node, parent, depth) {
+        // Don't show or recurse into nodes that didn't succeed, unless "Show failures" is enabled.
         if ((!node.succeeded && !ohmEditor.options.showFailures) ||
             (node.isImplicitSpaces && !ohmEditor.options.showSpaces)) {
           return node.SKIP;
@@ -559,6 +575,15 @@
         }
 
         var container = containerStack[containerStack.length - 1];
+
+        // Put nodes with visible left recursion into a special container, so that we can
+        // render the last (unused) iteration of the LR loop as a sibling to the node for
+        // the previous iteration (i.e., the node representing the actual result of the LR).
+        // See the `exit` action below for more.
+        if (hasVisibleLeftRecursion(node)) {
+          container = container.appendChild(domUtil.createElement('.vbox.visibleLR'));
+        }
+
         var el = createTraceElement(node, container, childInput);
 
         domUtil.toggleClasses(el, {
@@ -568,6 +593,7 @@
         });
 
         var children = el.appendChild(domUtil.createElement('.children'));
+        children.classList.toggle('vbox', node.expr instanceof ohm.pexprs.Alt);
 
         var isCollapsed = shouldTraceElementBeCollapsed(el, node);
         if (isCollapsed) {
@@ -595,10 +621,19 @@
           stepsByNodeId[el.id].exit = parsingSteps.length;
           parsingSteps.push({type: 'exit', node: node, el: el});
         }
-
         inputStack.pop();
+
+        if (hasVisibleLeftRecursion(node)) {
+          // Push the vbox to the container stack and render the "terminating entry" of the
+          // left recursion inside it.
+          var vbox = el.parentElement;
+          containerStack.push(vbox);
+          node.terminatingLREntry.walk(renderActions);
+          containerStack.pop();
+        }
       }
-    });
+    };
+    renderedTrace.walk(renderActions);
     initializeWidths();
 
     var slider = $('#timeSlider');

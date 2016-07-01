@@ -59,10 +59,11 @@ function Trace(inputStream, pos, expr, succeeded, bindings, optChildren) {
   this.bindings = bindings;
   this.children = optChildren || [];
 
+  this.isHeadOfLeftRecursion = false;  // Is this the outermost LR application?
   this.isImplicitSpaces = false;
-  this.isLeftRecursive = false;
   this.isMemoized = false;
   this.isRootNode = false;
+  this.terminatingLREntry = null;
 }
 
 // A value that can be returned from visitor functions to indicate that a
@@ -73,13 +74,26 @@ Object.defineProperty(Trace.prototype, 'displayString', {
   get: function() { return this.expr.toDisplayString(); }
 });
 
+Trace.prototype.clone = function() {
+  return this.cloneWithExpr(this.expr);
+};
+
 Trace.prototype.cloneWithExpr = function(expr) {
   var ans = new Trace(
       this.inputStream, this.pos, expr, this.succeeded, this.bindings, this.children);
-  ans.isLeftRecursive = this.isLeftRecursive;
+
+  ans.isHeadOfLeftRecursion = this.isHeadOfLeftRecursion;
+  ans.isImplicitSpaces = this.isImplicitSpaces;
+  ans.isMemoized = this.isMemoized;
   ans.isRootNode = this.isRootNode;
-  ans.isMemoized = true;
+  ans.terminatingLREntry = this.terminatingLREntry;
   return ans;
+};
+
+// Record the trace information for the terminating condition of the LR loop.
+Trace.prototype.recordLRTermination = function(ruleBodyTrace, value) {
+  this.terminatingLREntry =
+      new Trace(this.inputStream, this.pos, this.expr, false, [value], [ruleBodyTrace]);
 };
 
 // Recursively traverse this trace node and all its descendents, calling a visitor function
@@ -105,14 +119,8 @@ Trace.prototype.walk = function(visitorObjOrFn, optThisArg) {
       }
     }
     if (recurse) {
-      node.children.forEach(function(child, i) {
-        var nextChild = node.children[i + 1];
-        if (nextChild && nextChild.expr === child.expr && nextChild.pos === child.pos) {
-          // Skip this child -- it is an intermediate left-recursive result.
-          common.assert(node.isLeftRecursive);
-        } else {
-          _walk(child, node, depth + 1);
-        }
+      node.children.forEach(function(child) {
+        _walk(child, node, depth + 1);
       });
       if (visitor.exit) {
         visitor.exit.call(optThisArg, node, parent, depth);
@@ -145,7 +153,7 @@ Trace.prototype.toString = function() {
     }
     sb.append(getInputExcerpt(node.inputStream, node.pos, 10) + spaces(depth * 2 + 1));
     sb.append((node.succeeded ? CHECK_MARK : BALLOT_X) + ' ' + node.displayString);
-    if (node.isLeftRecursive) {
+    if (node.isHeadOfLeftRecursion) {
       sb.append(' (LR)');
     }
     if (node.succeeded) {

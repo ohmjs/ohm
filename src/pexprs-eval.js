@@ -246,7 +246,7 @@ pexprs.Apply.prototype.reallyEval = function(state) {
   var value = this.evalOnce(body, state);
   var currentLR = origPosInfo.currentLeftRecursion;
   var memoKey = this.toMemoKey();
-  var isHeadOfLeftRecursion = currentLR && currentLR.headApplication.toMemoKey() === memoKey;
+  var isHeadOfLeftRecursion = !!currentLR && currentLR.headApplication.toMemoKey() === memoKey;
   var memoized = true;
 
   if (isHeadOfLeftRecursion) {
@@ -279,7 +279,10 @@ pexprs.Apply.prototype.reallyEval = function(state) {
   if (state.isTracing() && origPosInfo.memo[memoKey]) {
     var succeeded = !!value;
     var entry = state.getTraceEntry(origPos, this, succeeded, succeeded ? [value] : []);
-    entry.isLeftRecursive = isHeadOfLeftRecursion;
+    if (isHeadOfLeftRecursion) {
+      common.assert(entry.terminatingLREntry != null || !succeeded);
+      entry.isHeadOfLeftRecursion = true;
+    }
     origPosInfo.memo[memoKey].traceEntry = entry;
   }
 
@@ -322,21 +325,24 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
 
     if (state.isTracing()) {
       // Before evaluating the body again, add a trace node for this application to the memo entry.
-      // Its only child is the trace node from `newValue`, which will always be the last element
-      // in `state.trace`.
-      var children = state.trace.slice(-1);
+      // Its only child is a copy of the trace node from `newValue`, which will always be the last
+      // element in `state.trace`.
+      var seedTrace = state.trace[state.trace.length - 1];
       lrMemoRec.traceEntry = new Trace(
-          state.inputStream, origPos, this, true, [newValue], children);
+          state.inputStream, origPos, this, true, [newValue], [seedTrace.clone()]);
     }
     inputStream.pos = origPos;
     newValue = this.evalOnce(body, state);
     if (inputStream.pos <= lrMemoRec.pos) {
       break;
     }
+    if (state.isTracing()) {
+      state.trace.splice(-2, 1);  // Drop the trace for the old seed.
+    }
   }
   if (state.isTracing()) {
-    state.trace.pop();  // Drop last trace entry since `value` was unused.
-    lrMemoRec.traceEntry = null;
+    // The last entry is for an unused result -- pop it and save it in the "real" entry.
+    lrMemoRec.traceEntry.recordLRTermination(state.trace.pop(), newValue);
   }
   inputStream.pos = lrMemoRec.pos;
   return lrMemoRec.value;
