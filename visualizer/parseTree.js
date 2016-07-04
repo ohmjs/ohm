@@ -32,6 +32,9 @@
   var parsingSteps;
   var stepsByNodeId = {};
 
+  // Maps from a Failure key to the parsing step for that failure.
+  var stepsByFailureKey = {};
+
   var nextNodeId = 0;
 
   // D3 Helpers
@@ -524,6 +527,7 @@
 
     parsingSteps = [];
     stepsByNodeId = {};
+    stepsByFailureKey = {};
 
     var renderedTrace = trace;
     if (zoomState.zoomTrace && !zoomState.previewOnly) {
@@ -596,6 +600,7 @@
 
         // If the node is labeled, record it as a distinct "step" in the parsing timeline.
         if (isLabeled) {
+          maybeRecordFailureStep(trace.result, node);
           stepsByNodeId[el.id] = {enter: parsingSteps.length};
           parsingSteps.push({type: 'enter', el: el, node: node, collapsed: isCollapsed});
         }
@@ -615,6 +620,7 @@
         var childContainer = containerStack.pop();
         var el = childContainer.parentElement;
         if (el.id in stepsByNodeId) {
+          maybeRecordFailureStep(trace.result, node);
           stepsByNodeId[el.id].exit = parsingSteps.length;
           parsingSteps.push({type: 'exit', node: node, el: el});
         }
@@ -651,11 +657,15 @@
   // When the time slider is scrubbed, move backwards/forwards through the
   // individual parsing steps.
   $('#timeSlider').oninput = function(e) {
-    var currentStep = parseInt(e.target.value, 10);
+    gotoTimestep(parseInt(e.target.value, 10));
+  };
+
+  function gotoTimestep(step) {
+    $('#timeSlider').value = step;
     for (var i = 0; i < parsingSteps.length; ++i) {
       var cmd = parsingSteps[i];
       var el = cmd.el;
-      var isStepComplete = i <= currentStep;
+      var isStepComplete = i <= step;
 
       switch (cmd.type) {
         case 'enter':
@@ -684,8 +694,8 @@
         setTraceElementCollapsed(stepEl, true, 0);
       }
     }
-    if (currentStep !== parsingSteps.length) {
-      stepEl = parsingSteps[currentStep].el;
+    if (step < parsingSteps.length) {
+      stepEl = parsingSteps[step].el;
       stepEl.classList.add('currentParseStep');
 
       // Make sure the current step is not hidden in a collapsed tree.
@@ -694,7 +704,43 @@
         setTraceElementCollapsed(stepEl, false, 0);
       }
     }
-  };
+  }
+
+  // If matching failed and `node` corresponds to one of the rightmost failures, record
+  // the current parsing step in the `stepsByFailureKey` map. This makes it possible
+  // to jump to the step when the user hovers over the failure message.
+  function maybeRecordFailureStep(result, node) {
+    if (result.failed() && !node.succeeded) {
+      if (node.pos === result.getRightmostFailurePosition()) {
+        result.getRightmostFailures().find(function(f) {
+          if (f.pexpr === node.expr) {
+            stepsByFailureKey[f.toKey()] = parsingSteps.length;
+            return true;
+          }
+        });
+      }
+    }
+  }
+
+  var oldStep;
+
+  ohmEditor.addListener('peek:failure', function(failure) {
+    oldStep = $('#timeSlider').value;
+    gotoTimestep(stepsByFailureKey[failure.toKey()]);
+  });
+
+  ohmEditor.addListener('unpeek:failure', function() {
+    if (oldStep !== -1) {
+      gotoTimestep(oldStep);
+      oldStep = -1;
+    }
+  });
+
+  ohmEditor.addListener('goto:failure', function(failure) {
+    gotoTimestep(stepsByFailureKey[failure.toKey()]);
+    oldStep = -1;
+    $('#timeSlider').focus();
+  });
 
   // Exports
   // -------

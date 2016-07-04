@@ -21,8 +21,17 @@ ohmEditor.registerEvents({
 
   // Emitted after attempting to parse the grammar and the input, respectively.
   'parse:grammar': ['matchResult', 'grammar', 'err'],
-  'parse:input': ['matchResult', 'trace']
+  'parse:input': ['matchResult', 'trace'],
 
+  // Emitted when the user indicates they want to preview contextual information about a
+  // Failure, e.g. when hovering over the failure message.
+  'peek:failure': ['failure'],
+  'unpeek:failure': [],  // Ends the preview.
+
+  // Emitted when the user indicates they want jump to a location relevant to a Failure.
+  // Usually comes after a 'peek:failure' event, and if so, it implies that there will be
+  // no matching 'unpeek:failure'.
+  'goto:failure': ['failure']
 });
 
 ohmEditor.grammar = null;
