@@ -28,13 +28,6 @@
   var grammarMark;
   var defMark;
 
-  // Information about the individual parsing steps, for use with the timeline.
-  var parsingSteps;
-  var stepsByNodeId = {};
-
-  // Maps from a Failure key to the parsing step for that failure.
-  var stepsByFailureKey = {};
-
   var nextNodeId = 0;
 
   // D3 Helpers
@@ -398,7 +391,6 @@
         label.textContent += optExtraInfo;
       }
     }
-    label.classList.toggle('leaf', isLeaf(traceNode));
     return label;
   }
 
@@ -525,10 +517,6 @@
     expandedInputDiv.innerHTML = '';
     parseResultsDiv.innerHTML = '';
 
-    parsingSteps = [];
-    stepsByNodeId = {};
-    stepsByFailureKey = {};
-
     var renderedTrace = trace;
     if (zoomState.zoomTrace && !zoomState.previewOnly) {
       renderedTrace = zoomState.zoomTrace;
@@ -585,7 +573,8 @@
         domUtil.toggleClasses(el, {
           disclosure: useDisclosure,
           failed: !node.succeeded,
-          hidden: !isLabeled
+          hidden: !isLabeled,
+          leaf: isLeafNode
         });
 
         var children = el.appendChild(domUtil.createElement('.children'));
@@ -598,13 +587,6 @@
 
         ohmEditor.parseTree.emit('create:traceElement', el, node);
 
-        // If the node is labeled, record it as a distinct "step" in the parsing timeline.
-        if (isLabeled) {
-          maybeRecordFailureStep(trace.result, node);
-          stepsByNodeId[el.id] = {enter: parsingSteps.length};
-          parsingSteps.push({type: 'enter', el: el, node: node, collapsed: isCollapsed});
-        }
-
         if (isLeafNode) {
           return node.SKIP;
         }
@@ -616,22 +598,15 @@
         if (hasVisibleLeftRecursion(node)) {
           node.terminatingLREntry.walk(renderActions);
         }
-
         var childContainer = containerStack.pop();
         var el = childContainer.parentElement;
-        if (el.id in stepsByNodeId) {
-          maybeRecordFailureStep(trace.result, node);
-          stepsByNodeId[el.id].exit = parsingSteps.length;
-          parsingSteps.push({type: 'exit', node: node, el: el});
-        }
         inputStack.pop();
+
+        ohmEditor.parseTree.emit('exit:traceElement', el, node);
       }
     };
     renderedTrace.walk(renderActions);
     initializeWidths();
-
-    var slider = $('#timeSlider');
-    slider.value = slider.max = parsingSteps.length;
 
     // Hack to ensure that the vertical scroll bar doesn't overlap the parse tree contents.
     parseResultsDiv.style.paddingRight =
@@ -654,94 +629,6 @@
     clearZoomState();
   });
 
-  // When the time slider is scrubbed, move backwards/forwards through the
-  // individual parsing steps.
-  $('#timeSlider').oninput = function(e) {
-    gotoTimestep(parseInt(e.target.value, 10));
-  };
-
-  function gotoTimestep(step) {
-    $('#timeSlider').value = step;
-    for (var i = 0; i < parsingSteps.length; ++i) {
-      var cmd = parsingSteps[i];
-      var el = cmd.el;
-      var isStepComplete = i <= step;
-
-      switch (cmd.type) {
-        case 'enter':
-          el.hidden = !isStepComplete;
-          // Mark the element as undecided, unless it is a leaf node.
-          // Leaf nodes become decided as soon as control moves to them.
-          if (!isLeaf(cmd.node)) {
-            el.classList.add('undecided');
-          }
-          break;
-        case 'exit':
-          if (isStepComplete) {
-            el.classList.remove('undecided');
-          }
-          break;
-      }
-    }
-    // Highlight the currently-active step (unhighlighting the previous one first).
-    var stepEl = $('.currentParseStep');
-    if (stepEl) {
-      stepEl.classList.remove('currentParseStep');
-
-      // Re-collapse anything that was expanded just to make the current step visible.
-      while ((stepEl = domUtil.closestElementMatching('.pexpr.should-collapse', stepEl))) {
-        stepEl.classList.remove('should-collapse');
-        setTraceElementCollapsed(stepEl, true, 0);
-      }
-    }
-    if (step < parsingSteps.length) {
-      stepEl = parsingSteps[step].el;
-      stepEl.classList.add('currentParseStep');
-
-      // Make sure the current step is not hidden in a collapsed tree.
-      while ((stepEl = domUtil.closestElementMatching('.pexpr.collapsed', stepEl))) {
-        stepEl.classList.add('should-collapse');
-        setTraceElementCollapsed(stepEl, false, 0);
-      }
-    }
-  }
-
-  // If matching failed and `node` corresponds to one of the rightmost failures, record
-  // the current parsing step in the `stepsByFailureKey` map. This makes it possible
-  // to jump to the step when the user hovers over the failure message.
-  function maybeRecordFailureStep(result, node) {
-    if (result.failed() && !node.succeeded) {
-      if (node.pos === result.getRightmostFailurePosition()) {
-        result.getRightmostFailures().find(function(f) {
-          if (f.pexpr === node.expr) {
-            stepsByFailureKey[f.toKey()] = parsingSteps.length;
-            return true;
-          }
-        });
-      }
-    }
-  }
-
-  var oldStep;
-
-  ohmEditor.addListener('peek:failure', function(failure) {
-    oldStep = $('#timeSlider').value;
-    gotoTimestep(stepsByFailureKey[failure.toKey()]);
-  });
-
-  ohmEditor.addListener('unpeek:failure', function() {
-    if (oldStep !== -1) {
-      gotoTimestep(oldStep);
-      oldStep = -1;
-    }
-  });
-
-  ohmEditor.addListener('goto:failure', function(failure) {
-    gotoTimestep(stepsByFailureKey[failure.toKey()]);
-    oldStep = -1;
-    $('#timeSlider').focus();
-  });
-
   // Exports
   // -------
 
@@ -750,9 +637,13 @@
     clearMarks();
     refreshParseTree(rootTrace);
   };
+  parseTree.setTraceElementCollapsed = setTraceElementCollapsed;
   parseTree.registerEvents({
     // Emitted when a new trace element `el` is created for `traceNode`.
     'create:traceElement': ['el', 'traceNode'],
+
+    // Emitted when all of a trace element's subtrees have been created.
+    'exit:traceElement': ['el', 'traceNode'],
 
     // Emitted when a trace element is expanded or collapsed.
     'expand:traceElement': ['el'],

@@ -79,8 +79,8 @@
   border-bottom: 1px solid #ccc;
 }
 
-.pexpr > .self .label.leaf,
-.pexpr > .self .label.leaf:hover {
+.pexpr.leaf > .self .label,
+.pexpr.leaf > .self .label:hover {
   border-bottom-color: transparent;
   cursor: default;
 }
