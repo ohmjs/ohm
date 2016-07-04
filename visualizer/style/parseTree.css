@@ -94,18 +94,20 @@
   Use disclosures to distinguish vertically-stacked siblings from parent/children relationships.
  */
 .pexpr.disclosure {
-  padding-left: 8px;
+  padding-left: 10px;
   position: relative;  /* For positioning the ::before element */
 }
 .pexpr.disclosure::before {
   color: #bbb;
   content: '\25BC';  /* Black Down-pointing triangle */
-  left: 0;
+  left: 2px;
   position: absolute;
   top: 2px;
+  width: 8px;
 }
 .pexpr.disclosure.collapsed::before {
   content: '\25B6';  /* Black Right-pointing triangle */
+  left: 3px;
 }
 
 /*
