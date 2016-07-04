@@ -24,6 +24,8 @@
   var oldStep;
   var slider = domUtil.$('#timeSlider');
 
+  var timelineEnabled;
+
   // Helpers
   // -------
 
@@ -104,15 +106,22 @@
   };
 
   ohmEditor.parseTree.addListener('render:parseTree', function(trace) {
-    matchResult = trace.result;
     parsingSteps = [];
     stepsByNodeId = {};
     stepsByFailureKey = {};
+
+    matchResult = trace.result;
+
+    // If matchResult is not defined, we are not rendering the top-level trace, so disable
+    // the timeline feature.
+    timelineEnabled = matchResult != null;
+    slider.disabled = !timelineEnabled;
+    slider.value = slider.max = 1;
   });
 
   ohmEditor.parseTree.addListener('create:traceElement', function(el, traceNode) {
     // If the node is labeled, record it as a distinct "step" in the parsing timeline.
-    if (!el.classList.contains('hidden')) {
+    if (timelineEnabled && !el.classList.contains('hidden')) {
       maybeRecordFailureStep(matchResult, traceNode);
       stepsByNodeId[el.id] = {enter: parsingSteps.length};
       addParsingStep({
@@ -125,7 +134,7 @@
   });
 
   ohmEditor.parseTree.addListener('exit:traceElement', function(el, traceNode) {
-    if (el.id in stepsByNodeId) {
+    if (timelineEnabled && el.id in stepsByNodeId) {
       // Attempt to record the failure step again, possibly overwriting the previous value.
       // This means that we prefer the 'exit' step over the 'enter' step.
       maybeRecordFailureStep(matchResult, traceNode);
