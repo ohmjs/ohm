@@ -102,6 +102,94 @@
     httpObj.send(data);
   }
 
+  function getStringifiedActionsFor(type, semantics) {
+    // type: operations || attributes
+    var ops = Object.keys(semantics[type]);
+
+    var strObj = {};
+    ops.forEach(function(op) {
+      var actions = semantics[type][op].actionDict;
+      strObj[op] = {};
+      Object.getOwnPropertyNames(actions).filter(function(action) {
+        // exclude visualizer's helper actions
+        return (action !== '_default') && (action !== '_nonterminal') &&
+          (action !== '_terminal') && (action !== '_iter');
+      }).forEach(function(action) {
+        // FIXME: necessary when saving loaded functions again
+        strObj[op][action] = actions[action].toString().replace('function (', 'function(');
+      });
+    });
+    return strObj;
+  }
+
+  function getActionDictFor(operation) {
+    var actionDict = {};
+    Object.keys(operation).forEach(function(actionName) {
+      var action = operation[actionName];
+      var actionStr = action.toString();
+      var match = actionStr.match(/function\s*\((.*?)\)\s*{([\s\S]*)\}$/m);
+
+      var body = match[2];
+      var lines = body.split('\n');
+      if (lines[0].trim() === '') {
+        lines.shift();
+      }
+      if (lines[lines.length - 1].trim() === '') {
+        lines.pop();
+      }
+      var indentLen = lines.reduce(function(min, line) {
+        if (line.trim() === '') {
+          return min;
+        } else {
+          return Math.min(min, line.match(/^\s*/)[0].length);
+        }
+      }, Number.MAX_VALUE);
+      body = lines.map(function(line, idx) {
+        if (line.substr(0, indentLen).trim() === '') {
+          return line.substr(indentLen);
+        } else if (idx === lines.length - 1) {
+          return line.trimLeft();
+        } else {
+          return line;
+        }
+      }).join('\n');
+
+      action._actionArguments = match[1].split(',').map(function(s) { return s.trim(); });
+      action._actionBody = body;
+      actionDict[actionName] = action;
+    });
+    return actionDict;
+  }
+
+  function getSemantics() {
+    var semantics = ohmEditor.semantics.getSemantics();
+    var ops = getStringifiedActionsFor('operations', semantics);
+    var atts = getStringifiedActionsFor('attributes', semantics);
+    return JSON.stringify({operations: ops, attributes: atts});
+  }
+
+  function setSemantics(src) {
+    // FIXME: A worker would be safer here!
+    var semOps = (function() {
+      var module = {};
+      eval(src); // eslint-disable-line no-eval
+      return module.exports;
+    })();
+
+    if (semOps.operations) {
+      Object.getOwnPropertyNames(semOps.operations).forEach(function(opName) {
+        var actionDict = getActionDictFor(semOps.operations[opName]);
+        ohmEditor.semantics.emit('add:semanticOperation', 'Operation', opName, null, actionDict);
+      });
+    }
+    if (semOps.attributes) {
+      Object.getOwnPropertyNames(semOps.attributes).forEach(function(opName) {
+        var actionDict = getActionDictFor(semOps.attributes[opName]);
+        ohmEditor.semantics.emit('add:semanticOperation', 'Attribute', opName, null, actionDict);
+      });
+    }
+  }
+
   $('#grammars').hidden = false;
   $('#grammarName').hidden = true;
   $('#saveIndicator').hidden = false;
@@ -127,6 +215,14 @@
         $('#saveIndicator').classList.remove('edited');
       });
 
+      // TODO: should be ohmEditor.once(...)
+      ohmEditor.addListener('parse:grammar', function(matchResult, ohmGrammar, error) {
+        ohmEditor.removeCurrentListener();
+        getFromURL('../semantics/' + grammar, function(src) {
+          setSemantics(src);
+        });
+      });
+
       ohmEditor.ui.grammarEditor.setValue(src);
     });
   });
@@ -143,6 +239,10 @@
 
       postToURL('../grammars/' + grammar, cm.getValue(), function(response) {
         $('#saveIndicator').classList.remove('edited');
+
+        postToURL('../semantics/' + grammar, getSemantics(), function(response) {
+          // do nothing
+        });
       });
     }
   });

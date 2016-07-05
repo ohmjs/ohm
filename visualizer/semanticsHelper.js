@@ -353,12 +353,12 @@
     }
 
     var origActionBody = actionBody;
-    var enclosedActionArgStr = '(' + actionArguments.join(',') + ')';
-    var realAction = 'function' + enclosedActionArgStr + '{\n' + actionBody + '\n}';
+    var enclosedActionArgStr = '(' + actionArguments.join(', ') + ')';
     var isExpression = es6.match(actionBody, 'AssignmentExpression<withIn>').succeeded();
     if (isExpression) {
       actionBody = 'return ' + actionBody + ';';
     }
+    var realAction = 'function' + enclosedActionArgStr + ' {\n' + actionBody + '\n}';
     var wrapper = function() {
       var key = nodeKey(this);
       var nOpKey = nodeOpKey(key, currentOpName);
@@ -404,6 +404,11 @@
     };
     wrapper._actionArguments = actionArguments;
     wrapper._actionBody = origActionBody;
+    // fake number of arguments so Ohm's checkActionDict will be happy
+    Object.defineProperty(wrapper, 'length', {get: function() {
+      return wrapper._actionArguments.length;
+    }});
+
     return wrapper;
   }
 

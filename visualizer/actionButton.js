@@ -314,7 +314,7 @@
     if (container.childElementCount > 0 &&
         !container.querySelector('textarea.opName').readOnly) {
       container.querySelector('textarea.opName').select();
-      return;
+      return null;
     }
 
     // Create a new semantic button
@@ -397,6 +397,25 @@
       wrapper.classList.add('selected');
       ohmEditor.parseTree.refresh();
     });
+
+    return wrapper;
+  }
+
+  ohmEditor.semantics.addListener('add:semanticOperation', function(type, name, optArgs,
+      origActionDict) {
+    if (origActionDict) { // is undefined if manually created
+      ensureSemanticsUI(type, name, optArgs);
+    }
+  });
+
+  function ensureSemanticsUI(type, operationName, optArgs) {
+    var wrapper = addNewSemanticButton(type);
+    var buttonLabel = wrapper.querySelector('.opName');
+    buttonLabel.textContent = operationName;
+    buttonLabel.readOnly = true;
+    unselectOtherSemanticButtons(buttonLabel);
+    wrapper.classList.add('selected');
+    ohmEditor.parseTree.refresh();
   }
 
   var addOperationButton = $('#addOperation');
