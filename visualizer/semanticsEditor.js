@@ -106,18 +106,21 @@
     var blockClassId = generateResultBlockClassId(opName, resultWrapper.args);
     block.classList.add(blockClassId);
 
-    // Hover the block, and all the blocks that represent the results for the same operation
-    // signature will be highlighted.
-    block.onmouseover = function(event) {
-      $$('.semanticsEditor .result .' + blockClassId).forEach(function(b) {
-        b.classList.add('highlight');
-      });
-    };
-    block.onmouseout = function(event) {
-      $$('.semanticsEditor .result .' + blockClassId).forEach(function(b) {
-        b.classList.remove('highlight');
-      });
-    };
+    // If there are more than one operations, or the only opertaion has arguments, then hover
+    // the block, and all the blocks that represent the results for the same operation signature
+    // will be highlighted.
+    if (operationCount > 1 || resultWrapper.args) {
+      block.onmouseover = function(event) {
+        $$('.semanticsEditor .result .' + blockClassId).forEach(function(b) {
+          b.classList.add('highlight');
+        });
+      };
+      block.onmouseout = function(event) {
+        $$('.semanticsEditor .result .' + blockClassId).forEach(function(b) {
+          b.classList.remove('highlight');
+        });
+      };
+    }
     return block;
   }
 
@@ -221,20 +224,24 @@
   function getArgDisplayList(defaultArgExp) {
     var argDisplayList = [];
 
-    // Treat `Iter` expression as an iteration on each of its sub-expression,
-    // and `Lookahead` expression as a look ahead on each of its sub-expression
+    var iterOp = '';
+    var lookaheadOp = '';
     if (defaultArgExp instanceof ohm.pexprs.Iter) {
-      var pending = defaultArgExp.operator;
+      // Treat `Iter` expression as an iteration on each of its sub-expression,
+      // i.e.  `("a" "b")+` shown as `"a"+ "b"+`
+      iterOp = defaultArgExp.operator;
       defaultArgExp = defaultArgExp.expr;
     } else if (defaultArgExp instanceof ohm.pexprs.Lookahead) {
-      var prePending = '&';
+      // Treat `Lookahead` expression as a lookahead on each of its sub-expression,
+      // i.e. `&("a" "b")` shown as `&"a" &"b"`
+      lookaheadOp = '&';
       defaultArgExp = defaultArgExp.expr;
     }
 
     if (defaultArgExp instanceof ohm.pexprs.Seq) {
       defaultArgExp.factors.forEach(function(factor) {
         var factorDisplayList = getArgDisplayList(factor).map(function(display) {
-          return (prePending || '') + display + (pending || '');
+          return lookaheadOp + display + iterOp;
         });
         argDisplayList = argDisplayList.concat(factorDisplayList);
       });
@@ -252,14 +259,14 @@
           col.push(termArgDisplayLists[rowIdx][colIdx]);
         }
         var uniqueNames = copyWithoutDuplicates(col).join('|');
-        if (pending || prePending) {
-          uniqueNames = (prePending || '') + '(' + uniqueNames + ')' + (pending || '');
+        if (lookaheadOp || iterOp) {
+          uniqueNames = lookaheadOp + '(' + uniqueNames + ')' + iterOp;
         }
         argDisplayList.push(uniqueNames);
       }
     } else if (!(defaultArgExp instanceof ohm.pexprs.Not)) {
       // We skip `Not` as it won't be a semantics action function argument.
-      argDisplayList.push((prePending || '') + defaultArgExp.toDisplayString() + (pending || ''));
+      argDisplayList.push(lookaheadOp + defaultArgExp.toDisplayString() + iterOp);
     }
     return argDisplayList;
   }

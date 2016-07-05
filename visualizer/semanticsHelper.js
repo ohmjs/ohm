@@ -263,7 +263,7 @@
     }
     addSemanticOperation(type, name, optArgs, origActionDict);
     opName = name;
-    opArguments = optArgs;
+    opArguments = ohmEditor.semantics.opArguments = optArgs;
   });
 
   function populateSemanticsResult(traceNode, optOpName, optArgs) {
