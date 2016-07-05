@@ -58,14 +58,14 @@
     };
     del.onclick = function() {
       li.remove();
-      saveExamples();
+      saveExamples(ohmEditor.ui.inputEditor, 'examples');
       if (selectedId === id) {
         selectedId = null;
       }
     };
     li.appendChild(del);
 
-    document.querySelector('#UserExampleContainer ul').appendChild(li);
+    document.querySelector('#userExampleContainer ul').appendChild(li);
 
     exampleValues[id] = null;
     setExample(id, '');
@@ -118,11 +118,29 @@
         setExample(newId, ed.doc.getValue());
         setSelected(newId);
       }
+      saveExamples(ohmEditor.ui.inputEditor, 'examples');
     },
     'Shift-Cmd-S': function(ed) { // save as new
       var newId = addExample();
       setExample(newId, ed.doc.getValue());
       setSelected(newId);
+      saveExamples(ohmEditor.ui.inputEditor, 'examples');
+    },
+    'Alt-S': function(ed) { // save
+      if (selectedId) {
+        setExample(selectedId, ed.doc.getValue());
+      } else {
+        var newId = addExample();
+        setExample(newId, ed.doc.getValue());
+        setSelected(newId);
+      }
+      saveExamples(ohmEditor.ui.inputEditor, 'examples');
+    },
+    'Shift-Alt-S': function(ed) { // save as new
+      var newId = addExample();
+      setExample(newId, ed.doc.getValue());
+      setSelected(newId);
+      saveExamples(ohmEditor.ui.inputEditor, 'examples');
     }
   });
 

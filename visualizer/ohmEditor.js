@@ -28,7 +28,7 @@ ohmEditor.registerEvents({
 ohmEditor.grammar = null;
 ohmEditor.options = {};
 ohmEditor.ui = {
-  inputEditor: CodeMirror(document.querySelector('#UserExampleContainer .editorWrapper')),
+  inputEditor: CodeMirror(document.querySelector('#userExampleContainer .editorWrapper')),
   grammarEditor: CodeMirror(document.querySelector('#grammarContainer .editorWrapper'))
 };
 ohmEditor.emit('init:inputEditor', ohmEditor.ui.inputEditor);
