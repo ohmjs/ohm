@@ -72,6 +72,7 @@
     "jsdom": "^6.3.0",
     "json": "^9.0.3",
     "markscript": "0.4.2",
+    "node-static": "^0.7.7",
     "nodemon": "^1.9.2",
     "tap-spec": "^2.2.2",
     "tape": "^3.5.0",

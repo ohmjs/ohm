@@ -28,6 +28,25 @@
       z-index: 9;
     }
 
+    #grammars {
+      color: black;
+      font-family: Menlo, Monaco, sans-serif;
+      font-style: normal;
+      border-radius: 3px;
+      padding: 2px 6px 1px 6px;
+      position: fixed;
+      top: 8px;
+      right: 50%;
+      display: none;
+    }
+    #grammars label {
+      font-size: 0.75em;
+    }
+    #grammars label.unnamed {
+      font-style: italic;
+      color: #999;
+    }
+
     #options {
       background-color: white;
       border-radius: 3px;
@@ -451,6 +470,12 @@
     </ul>
   </div>
 
+  <div id="grammars">
+    <label id="grammarName" class="unnamed">unnamed grammar</label>
+    <button id="loadGrammar">Load ...</button>
+    <button id="saveGrammar">Save ...</button>
+  </div>
+
   <div id="measuringDiv">
     <div class="pexpr"></div>
   </div>
@@ -529,6 +554,7 @@ number  (a number)
   <script src="editorErrors.js"></script>
   <script src="examples.js"></script>
   <script src="timeline.js"></script>
+  <script src="persistence.js"></script>
   <script src="index.js"></script>
 </body>
 </html>
