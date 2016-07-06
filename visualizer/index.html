@@ -177,6 +177,10 @@
       font-size: 12px;
     }
 
+    #exampleList code:empty::before {
+      content: '\a0';  /* Insert &nbsp; to keep the correct height. */
+    }
+
     #exampleList .example .delete {
       color: #d44950;
       padding: 4px;
@@ -417,6 +421,12 @@
         outline: none;
       }
     }
+
+    #addExampleButton {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+    }
   </style>
   <link rel="stylesheet" href="style/parseTree.css">
   <link rel="stylesheet" href="style/semanticsEditor.css">
@@ -430,6 +440,7 @@
     <div id="topSplitter" class="splitter vertical"></div>
     <div id="exampleContainer">
       <h2>Examples</h2>
+      <input id="addExampleButton" type="button" value="+">
       <ul id="exampleList"></ul>
       <div class="flex-fix"><div class="editorWrapper"></div></div>
     </div>
