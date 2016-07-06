@@ -88,9 +88,10 @@
     var measuringDiv = $('#measuringDiv');
     var span = measuringDiv.appendChild(domUtil.createElement('span.input'));
     span.innerHTML = inputEl.textContent;
+    var bounds = span.getBoundingClientRect();
     var result = {
-      width: span.clientWidth,
-      height: span.clientHeight
+      width: bounds.width,
+      height: bounds.height
     };
     measuringDiv.removeChild(span);
     return result;
