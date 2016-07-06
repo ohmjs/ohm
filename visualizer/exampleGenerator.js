@@ -28,7 +28,7 @@ postMessage('WORKER IMPORTED');
       return {needHelp: true};
     },
     letter: function(g, ex, syn, args) {
-      if(Math.floor(Math.random() * 2) === 0){
+      if (Math.floor(Math.random() * 2) === 0) {
         return {example: String.fromCharCode(Math.floor(26 * Math.random()) + 'a'.charCodeAt(0))};
       } else {
         return {example: String.fromCharCode(Math.floor(26 * Math.random()) + 'A'.charCodeAt(0))};
@@ -36,13 +36,16 @@ postMessage('WORKER IMPORTED');
     }
   };
 
-
   self.addEventListener('message', function(e) {
-    switch(e.data.name){
+    switch (e.data.name) {
       case 'initialize':
         // create grammar from recipe
         postMessage('INITIALIZED');
+
+        /* eslint-disable no-eval */
         grammar = ohm.makeRecipe(eval(e.data.recipe));
+        /* eslint-enable no-eval */
+
         start();
         break;
       case 'examplesFor':
@@ -64,40 +67,40 @@ postMessage('WORKER IMPORTED');
         postMessage('RECEIVED USER EXAMPLE');
         processExampleFromUser(e.data.example, e.data.ruleName);
         break;
-      case 'echo':
-        self.postMessage(echo.message);
+      case 'echo': // TODO: remove this. for debugging only
+        self.postMessage(e.message);
         break;
     }
     // schedule next task
   }, false);
 
   function processExampleFromUser(example, optRuleName) {
-    if(optRuleName){
+    if (optRuleName) {
       var trace = grammar.trace(example, optRuleName);
-      if(trace.succeeded){
+      if (trace.succeeded) {
         addPiecesToDict(trace, examplePieces);
       }
     }
 
     utils.objectForEach(grammar.ruleBodies, function(ruleName) {
       var trace = grammar.trace(example, ruleName);
-      if(trace.succeeded){
+      if (trace.succeeded) {
         addPiecesToDict(trace, examplePieces);
       }
     });
   }
 
   function addPiecesToDict(trace, examples) {
-    if(trace.expr.constructor.name === 'Terminal'){
+    if (trace.expr.constructor.name === 'Terminal') {
       return;
     } else {
-      if(trace.expr.constructor.name === 'Apply'){
+      if (trace.expr.constructor.name === 'Apply') {
         var ruleName = trace.expr.toString();
-        if(!examples.hasOwnProperty(ruleName)){
+        if (!examples.hasOwnProperty(ruleName)) {
           examples[ruleName] = [];
         }
 
-        if(!examples[ruleName].includes(trace.interval.contents)){
+        if (!examples[ruleName].includes(trace.interval.contents)) {
           examples[ruleName].push(trace.interval.contents);
         }
       }
@@ -106,10 +109,6 @@ postMessage('WORKER IMPORTED');
            .forEach(function(child) { return addPiecesToDict(child, examples); });
     }
   }
-
-  /////////////////////////////////////////////////////////////////
-
-  // task state
 
   function ExampleGenerator(examplePieces) {
     this.examplePieces = examplePieces;
@@ -142,7 +141,7 @@ postMessage('WORKER IMPORTED');
       generator.next();
     });
 
-    if(generator.examplesNeeded.length > 0){
+    if (generator.examplesNeeded.length > 0) {
       setTimeout(function() { runComputationStep(generator, n); }, 0);
     }
   }
@@ -152,14 +151,12 @@ postMessage('WORKER IMPORTED');
     runComputationStep(generator, 500);
   }
 
-
   // HELPER FUNCTIONS
-  /////////////////////
 
   function initialRules(grammar) {
     var rules = [];
     utils.objectForEach(grammar.ruleBodies, function(ruleName, ruleBody) {
-      if(!parametrized(ruleName, grammar)){
+      if (!parametrized(ruleName, grammar)) {
         rules.push(ruleName);
       }
     });
@@ -170,7 +167,7 @@ postMessage('WORKER IMPORTED');
     var rulePExpr = parseToPExpr(ruleName);
 
     var example;
-    if(overrides.hasOwnProperty(ruleName)){
+    if (overrides.hasOwnProperty(ruleName)) {
       example = overrides[ruleName](
         grammar, examplePieces, isSyntactic(rulePExpr.ruleName),
         rulePExpr.args
@@ -182,27 +179,28 @@ postMessage('WORKER IMPORTED');
       );
     }
 
-    if(example.hasOwnProperty('example')
-       && grammar.match(example.example, ruleName).succeeded()){
-      if(examplesNeeded.includes(ruleName)){
+    if (example.hasOwnProperty('example') &&
+        grammar.match(example.example, ruleName).succeeded()) {
+      if (examplesNeeded.includes(ruleName)) {
         examplesNeeded = examplesNeeded.filter(function(rn) {
           return rn !== ruleName;
         });
-        self.postMessage('generated '+ruleName+' '+JSON.stringify(examplesNeeded));
+        self.postMessage('generated ' + ruleName +
+                         ' ' + JSON.stringify(examplesNeeded));
         self.postMessage({name: 'examplesNeeded',
                           examplesNeeded: examplesNeeded});
       }
-      if(!examplePieces.hasOwnProperty(ruleName)){
+      if (!examplePieces.hasOwnProperty(ruleName)) {
         examplePieces[ruleName] = [];
       }
-      if(!examplePieces[ruleName].includes(example.example)){
+      if (!examplePieces[ruleName].includes(example.example)) {
         examplePieces[ruleName].push(example.example);
       }
     }
 
-    if(example.hasOwnProperty('examplesNeeded')) {
+    if (example.hasOwnProperty('examplesNeeded')) {
       example.examplesNeeded.forEach(function(needed) {
-        if(!rules.includes(needed)){
+        if (!rules.includes(needed)) {
           rules.push(needed);
         }
       });
@@ -210,7 +208,6 @@ postMessage('WORKER IMPORTED');
 
     return examplesNeeded;
   }
-
 
   function parametrized(ruleName, grammar) {
     return grammar.ruleFormals[ruleName].length > 0;

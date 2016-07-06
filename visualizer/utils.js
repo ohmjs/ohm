@@ -1,27 +1,35 @@
 'use strict';
 
+/* eslint-disable no-unused-vars */
 var utils = (function() {
-  function objectForEach(obj, func){
+  /* eslint-enable no-unused-vars */
+
+  function objectForEach(obj, func) {
     Object.keys(obj).forEach(function(key) {
       return func(key, obj[key], obj);
     });
   }
-  
+
   return {
     objectForEach: objectForEach,
-    objectMap: function(obj, func){
+    objectMap: function(obj, func) {
       return Object.keys(obj).map(function(key) {
         return func(key, obj[key], obj);
       });
     },
 
-    $: function(query){ return document.querySelector(query) },
+    /* eslint-disable no-undef */
+    $: function(query) { return document.querySelector(query); },
+    /* eslint-enable no-undef */
 
-    _: function(tagName, attributes){
+    _: function(tagName, attributes) {
       var children = Array.prototype.slice.call(arguments, 2);
       attributes = attributes || {};
       children = children || [];
+
+      /* eslint-disable no-undef */
       var element = document.createElement(tagName);
+      /* eslint-enable no-undef */
       objectForEach(attributes, function(attr, val) {
         element.setAttribute(attr, val);
       });
@@ -31,12 +39,14 @@ var utils = (function() {
       return element;
     },
 
-    t: function(text){
+    t: function(text) {
+      /* eslint-disable no-undef */
       return document.createTextNode(text);
+      /* eslint-enable no-undef */
     },
 
-    clearDOMNode: function(domNode){
-      while(domNode.firstChild){
+    clearDOMNode: function(domNode) {
+      while (domNode.firstChild) {
         domNode.removeChild(domNode.firstChild);
       }
     },
@@ -65,5 +75,5 @@ var utils = (function() {
         return !b.includes(item);
       });
     }
-  }
+  };
 })();
