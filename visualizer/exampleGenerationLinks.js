@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* eslint-env browser */
+
 'use strict';
 
 var grammar;

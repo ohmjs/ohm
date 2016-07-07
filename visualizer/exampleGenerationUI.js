@@ -29,15 +29,17 @@
   });
 
   function onWorkerMessage(event) {
+    // jscs:disable
     switch (event.data.name) {
     case 'examplesNeeded':
       onExamplesNeeded(event);
       break;
     default:
       /* eslint-disable no-console */
-      console.log('WORKER:', event.data);
-    /* eslint-enable no-console */
+      console.debug('WORKER:', event.data);
+      /* eslint-enable no-console */
     }
+    // jscs:enable
   }
 
   var timeout = null;
