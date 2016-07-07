@@ -171,7 +171,7 @@
   }
 
   // Append a semantics editor after the `label`, a semantics editor contains a
-  // resultContainer, and conditionally (i.e. user cmd + click to open an editor)
+  // resultContainer, and conditionally (i.e. user cmd/ctrl + click to open an editor)
   // contains a header container, a argument tags container, and a editor body container.
   function appendSemanticsEditor(wrapper) {
     var selfWrapper = wrapper.querySelector('.self');
@@ -383,15 +383,19 @@
     actionEditorCM.setValue(ohmEditor.semantics.getActionBody(traceNode));
     actionEditorCM.setCursor({line: actionEditorCM.lineCount()});
 
-    actionEditorCM.setOption('extraKeys', {
-      'Cmd-S': function(cm) {
-        var actionArguments = retrieveArgumentsFromHeader(actionEditorDiv.parentElement);
-        ohmEditor.semantics.emit('save:semanticAction', traceNode, actionArguments, cm.getValue());
-        traceNode._lastEdited = true;
-        ohmEditor.parseTree.refresh();
-        delete traceNode._lastEdited;
-      }
-    });
+    var saveAction = function(cm) {
+      var actionArguments = retrieveArgumentsFromHeader(actionEditorDiv.parentElement);
+      ohmEditor.semantics.emit('save:semanticAction', traceNode, actionArguments, cm.getValue());
+      traceNode._lastEdited = true;
+      ohmEditor.parseTree.refresh();
+      delete traceNode._lastEdited;
+    };
+    var isPlatformMac = /Mac/.test(navigator.platform);
+    if (isPlatformMac) {
+      actionEditorCM.setOption('extraKeys', {'Cmd-S': saveAction});
+    } else {
+      actionEditorCM.setOption('extraKeys', {'Ctrl-S': saveAction});
+    }
     return actionEditorDiv;
   }
 
@@ -472,7 +476,7 @@
       removeEditorBody(selfWrapper);
     }
   }
-  ohmEditor.parseTree.addListener('cmdclick:traceElement', toggleSemanticsEditor);
+  ohmEditor.parseTree.addListener('cmdOrCtrlClick:traceElement', toggleSemanticsEditor);
 
   // Retrieve arguments from the menu entry's submenu
   function retrieveArgumentsFromSubList(entry) {
@@ -700,7 +704,7 @@
     // Emitted after editing the semantics operation button
     'edit:semanticOperation': ['wrapper', 'operationName', 'opDescription'],
 
-    // Emitted after pressing cmd-S in semantics editor
+    // Emitted after pressing cmd/ctrl-S in semantics editor
     'save:semanticAction': ['traceNode', 'actionArguments', 'actionBody']
   });
 });

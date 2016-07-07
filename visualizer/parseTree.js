@@ -1,3 +1,5 @@
+/* eslint-env browser */
+
 'use strict';
 
 // Wrap the module in a universal module definition (UMD), allowing us to
@@ -414,11 +416,14 @@
     var label = selfWrapper.appendChild(createTraceLabel(traceNode, info));
 
     label.addEventListener('click', function(e) {
+      var isPlatformMac = /Mac/.test(navigator.platform);
+      var modifierKey = isPlatformMac ? e.metaKey : e.ctrlKey;
+
       if (e.altKey && !(e.shiftKey || e.metaKey)) {
         console.log(traceNode);  // eslint-disable-line no-console
-      } else if (e.metaKey && !(e.altKey || e.shiftKey)) {
-        // cmd + click to open or close semantic editor
-        ohmEditor.parseTree.emit('cmdclick:traceElement', wrapper);
+      } else if (modifierKey && !(e.altKey || e.shiftKey)) {
+        // cmd/ctrl + click to open or close semantic editor
+        ohmEditor.parseTree.emit('cmdOrCtrlClick:traceElement', wrapper);
       } else if (!isLeaf(traceNode)) {
         toggleTraceElement(wrapper);
       }
@@ -656,7 +661,7 @@
     // Emitted before start rendering the parse tree
     'render:parseTree': ['traceNode'],
 
-    // Emitted after cmd + 'click' on a label
-    'cmdclick:traceElement': ['wrapper']
+    // Emitted after cmd/ctrl + 'click' on a label
+    'cmdOrCtrlClick:traceElement': ['wrapper']
   });
 });
