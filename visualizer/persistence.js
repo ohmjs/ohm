@@ -2,13 +2,78 @@
 
 'use strict';
 
-(function(root, initModule) {
+(function(root, initLocal, initServer) {
   if (typeof exports === 'object') {
-    module.exports = initModule;
+    module.exports = {
+      local: initLocal,
+      server: initServer
+    };
   } else {
-    initModule(root.ohmEditor, root.CheckedEmitter);
+    checkForServerGrammars(initServer, initLocal);
   }
-})(this, function(ohmEditor, CheckedEmitter) {
+
+  function checkForServerGrammars(success, fail) {
+    var httpObj = new XMLHttpRequest();
+    httpObj.onreadystatechange = function() {
+      if (httpObj.readyState === 4) {
+        if (httpObj.status === 200) {
+          var grammars = [];
+          try {
+            grammars = JSON.parse(httpObj.responseText);
+          } catch (e) { }
+          success(root.ohmEditor, root.CheckedEmitter, root.domUtil, grammars);
+        } else {
+          fail(root.ohmEditor, root.CheckedEmitter, root.domUtil, root.saveAs);
+        }
+      }
+    };
+    httpObj.open('GET', '../grammars/', true);
+    httpObj.send();
+  }
+})(this, function initLocal(ohmEditor, CheckedEmitter, domUtil, saveAs) {
+  var $ = domUtil.$;
+
+  $('#grammars').hidden = false;
+
+  var loadedGrammar = 'unnamed.ohm';
+  var grammarName = $('#grammarName');
+
+  var loadButton = $('#loadGrammar');
+  var grammarFile = $('#grammarFile');
+  loadButton.addEventListener('click', function(e) {
+    grammarFile.click();
+  });
+  grammarFile.addEventListener('change', function(e) {
+    var file = e.target.files[0];
+    if (!file) {
+      return;
+    }
+    var reader = new FileReader();
+    var filename = file.name;
+    reader.onload = function(e) {
+      var src = e.target.result;
+      loadedGrammar = filename;
+      grammarName.textContent = filename;
+      grammarName.classList.remove('unnamed');
+
+      ohmEditor.ui.grammarEditor.setValue(src);
+    };
+    reader.readAsText(file);
+  }, false);
+
+  var saveButton = $('#saveGrammar');
+  saveButton.addEventListener('click', function(e) {
+    var src = ohmEditor.ui.grammarEditor.getValue();
+    // var url = 'data:application/stream;base64,' + btoa(src);
+    // window.location = url;
+
+    // use application/octet-stream to force download (not text/ohm-js;charset=utf-8)
+    var blob = new Blob([src], {type: 'application/octet-stream'});
+    saveAs(blob, loadedGrammar);
+  });
+}, function initServer(ohmEditor, CheckedEmitter, domUtil, grammars) {
+  var $ = domUtil.$;
+
   function getFromURL(url, cb) {
     var httpObj = new XMLHttpRequest();
     httpObj.onreadystatechange = function() {
@@ -32,38 +97,40 @@
     httpObj.send(data);
   }
 
-  document.querySelector('#grammars').style.setProperty('display', 'block');
+  $('#grammars').hidden = false;
+  $('#grammarName').hidden = true;
 
-  var loadedGrammar = 'ohm';
-  var grammarName = document.querySelector('#grammarName');
-
-  var loadButton = document.querySelector('#loadGrammar');
-  loadButton.addEventListener('click', function(e) {
-    var grammar = window.prompt('Grammar to load:', loadedGrammar); // eslint-disable-line no-alert
-    if (grammar === null) {
+  var grammarList = $('#grammarList');
+  grammarList.hidden = false;
+  grammars.forEach(function(grammar) {
+    var option = document.createElement('option');
+    option.text = grammar;
+    grammarList.add(option);
+  });
+  grammarList.addEventListener('change', function(e) {
+    var grammar = e.target.options[e.target.selectedIndex].value;
+    if (grammar === '') {
       return;
     }
 
     getFromURL('../grammars/' + grammar, function(src) {
-      loadedGrammar = grammar;
-      grammarName.textContent = grammar;
-      grammarName.classList.remove('unnamed');
-
       ohmEditor.ui.grammarEditor.setValue(src);
     });
   });
 
-  var saveButton = document.querySelector('#saveGrammar');
-  saveButton.addEventListener('click', function(e) {
-    var grammar = window.prompt('Save grammar as:', loadedGrammar); // eslint-disable-line no-alert
-    if (grammar === null) {
-      return;
-    }
+  $('#loadGrammar').hidden = true;
+  $('#saveGrammar').hidden = true;
 
-    postToURL('../grammars/' + grammar, ohmEditor.ui.grammarEditor.getValue(), function(response) {
-      loadedGrammar = grammar;
-      grammarName.textContent = grammar;
-      grammarName.classList.remove('unnamed');
-    });
+  ohmEditor.ui.grammarEditor.setOption('extraKeys', {
+    'Cmd-S': function(cm) {
+      var grammar = grammarList.options[grammarList.selectedIndex].value;
+      if (grammar === '') {
+        return;
+      }
+
+      postToURL('../grammars/' + grammar, cm.getValue(), function(response) {
+        // do nothing
+      });
+    }
   });
 });
