@@ -49,9 +49,9 @@ postMessage('WORKER IMPORTED');
         start();
         break;
       case 'examplesFor':
-        var examplesForRule = examplePieces[e.ruleName] || null;
+        var examplesForRule = examplePieces[e.data.ruleName] || null;
         self.postMessage({name: 'examplesFor',
-                          ruleName: e.ruleName,
+                          ruleName: e.data.ruleName,
                           examples: examplesForRule});
         break;
       case 'examplesNeeded':

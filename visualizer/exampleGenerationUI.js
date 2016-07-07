@@ -8,9 +8,14 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohm, root.ohmEditor, root.utils, root.autosize);
+    root.exampleGenerationUI = initModule(root.ohm, root.ohmEditor, root.utils, root.autosize);
   }
 })(this, function(ohm, ohmEditor, utils, autosize) {
+  ohmEditor.registerEvents({
+    'fetch:examples': ['ruleName'],
+    'fetched:examples': ['ruleName', 'examples']
+  });
+
   var exampleGenerator = new Worker('exampleGenerator.js');
   /* eslint-disable no-unused-vars */
   var examplesNeeded = null;
@@ -28,11 +33,18 @@
     });
   });
 
+  ohmEditor.addListener('fetch:examples', function(ruleName) {
+    exampleGenerator.postMessage({name: 'examplesFor', ruleName: ruleName});
+  });
+
   function onWorkerMessage(event) {
     // jscs:disable
     switch (event.data.name) {
     case 'examplesNeeded':
       onExamplesNeeded(event);
+      break;
+    case 'examplesFor':
+      ohmEditor.emit('fetched:examples', event.data.ruleName, event.data.examples);
       break;
     default:
       /* eslint-disable no-console */
@@ -171,5 +183,9 @@
 
   // TODO: add event for new example/example change
 
-  // TODO: add linewidgets
+  return {
+    examplesNeeded: function() {
+      return examplesNeeded;
+    }
+  };
 });
