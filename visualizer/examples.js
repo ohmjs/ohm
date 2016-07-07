@@ -117,13 +117,13 @@
   }
 
   // Restore the examples from localStorage.
-  function restoreExamples(editor, key, defaultEl) {
+  function restoreExamples(editor, key) {
     var value = localStorage.getItem(key);
     var examples = [];
-    if (value && value !== '[]') {
+    if (value) {
       examples = JSON.parse(value);
-    } else if (defaultEl) {
-      examples = Array.prototype.map.call(defaultEl.querySelectorAll('pre'), function(elem) {
+    } else {
+      examples = domUtil.$$('#sampleExamples pre').map(function(elem) {
         return elem.textContent;
       });
     }
@@ -172,5 +172,5 @@
     });
   });
 
-  restoreExamples(ohmEditor.ui.inputEditor, 'examples', domUtil.$('#sampleExamples'));
+  restoreExamples(ohmEditor.ui.inputEditor, 'examples');
 });
