@@ -90,8 +90,8 @@
     }
 
     #exampleContainer,
-    #exampleRequestContainer,
-    #userExampleContainer,
+    #ExampleRequestContainer,
+    #UserExampleContainer,
     #grammarContainer {
       display: flex;
       flex-direction: column;
@@ -104,6 +104,10 @@
 
     #userExampleContainer .editorWrapper {
       margin-top: 10px;
+    }
+
+    #exampleRequests {
+      border-top: 1px solid #ddd;
     }
 
     #exampleRequests ul {
@@ -144,6 +148,19 @@
     #exampleRequests ul textarea:-moz-placeholder { /* Firefox 18- */
       margin-left: 15px;
       text-align: left;
+    }
+
+    .requestContainer {
+      height: 100%;
+      width: 100%;
+      position: absolute;
+    }
+
+    .requestScroll {
+      box-sizing: content-box;
+      overflow: scroll !important;
+      position: relative;
+      height: 100%;
     }
 
     #topSection h2 {
@@ -447,9 +464,15 @@
     <div id="exampleContainer">
       <div id="ExampleRequestContainer">
         <h2>Need Examples For:</h2>
-        <div id="exampleRequests">
-          <ul></ul>
-        </div>
+        <div class="flex-fix"><div id="exampleRequests">
+          <div class="requestContainer">
+            <div class="requestScroll">
+              <div class="requestContent">
+                <ul></ul>
+              </div>
+            </div>
+          </div>
+        </div></div>
       </div>
       <div id="exampleSplitter" class="splitter"></div>
       <div id="userExampleContainer">
