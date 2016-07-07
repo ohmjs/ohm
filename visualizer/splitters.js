@@ -17,6 +17,7 @@
     var dragging = false;
     var prevEl = el.previousElementSibling;
     var nextEl = el.nextElementSibling;
+    var parentEl = el.parentElement;
 
     var dragOverlay = document.querySelector('#dragOverlay');
 
@@ -37,9 +38,14 @@
       e.preventDefault();
     };
     window.addEventListener('mousemove', function(e) {
-      if (dragging) {
-        var innerSize = isVertical ? window.innerWidth : window.innerHeight;
-        var pos = isVertical ? e.clientX : e.clientY;
+      var parentElBounds = parentEl.getBoundingClientRect();
+      var relativeX = e.clientX - parentElBounds.left;
+      var relativeY = e.clientY - parentElBounds.top;
+
+      var innerSize = isVertical ? parentElBounds.width : parentElBounds.height;
+      var pos = isVertical ? relativeX : relativeY;
+
+      if (dragging && pos > 0 && pos < innerSize) {
         setSiblingSize('next', innerSize - pos);
         setSiblingSize('prev', pos);
         e.preventDefault();
