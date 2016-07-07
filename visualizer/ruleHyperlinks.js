@@ -24,7 +24,7 @@
 
   function areLinksEnabled(e) {
     var modifierKey = isPlatformMac() ? e.metaKey : e.ctrlKey;
-    return modifierKey && !e.shiftKey && !e.altKey && !(isPlatformMac()? e.ctrlKey: e.metaKey);
+    return modifierKey && !e.shiftKey && !e.altKey && !(isPlatformMac() ? e.ctrlKey : e.metaKey);
   }
 
   function updateLinks(cm, e) {

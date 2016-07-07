@@ -1,3 +1,6 @@
+/* eslint-disable */
+/* eslint-env browser */
+'use strict';
 
 var grammar;
 var grammarEditor;
@@ -16,7 +19,7 @@ function isPlatformMac() {
 // modifier+Shift
 function areLinksEnabled(e) {
   var modifierKey = isPlatformMac() ? e.metaKey : e.ctrlKey;
-  return modifierKey && e.shiftKey && !e.altKey && !(isPlatformMac()? e.ctrlKey: e.metaKey);
+  return modifierKey && e.shiftKey && !e.altKey && !(isPlatformMac() ? e.ctrlKey : e.metaKey);
 }
 
 function updateLinks(cm, e) {
@@ -27,7 +30,7 @@ function updateLinks(cm, e) {
     var wordInfo = getWordUnderPoint(cm, mouseCoords.x, mouseCoords.y);
     var ruleDef = ruleDefinitionFor(wordInfo);
     if (ruleDef) {
-      //mark the rule definition
+      // mark the rule definition
       var startPos = cm.posFromIndex(ruleDef.interval.startIdx);
       var endPos = cm.posFromIndex(ruleDef.interval.endIdx);
       mark = cm.markText(startPos, endPos, {
