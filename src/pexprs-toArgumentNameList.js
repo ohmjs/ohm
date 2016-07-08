@@ -53,6 +53,10 @@ function resolveDuplicatedNames(argumentNameList) {
   pexpr. It enables us to name arguments positionally, e.g., if the second argument is a
   non-alphanumeric terminal like "+", it will be named '$2'.
 
+  `noDupCheck` is true if the caller of `toArgumentNameList` is not a top level caller. It enables
+  us to avoid nested duplication subscripts appending, e.g., '_1_1', '_1_2', by only checking
+  duplicates at the top level.
+
   Here is a more elaborate example that illustrates how this method works:
   `(a "+" b).toArgumentNameList(1)` evaluates to `['a', '$2', 'b']` with the following recursive
   calls:
@@ -66,7 +70,7 @@ function resolveDuplicatedNames(argumentNameList) {
     not have any Alt sub-expressions with inconsistent arities.
   * e.getArity() === e.toArgumentNameList(1).length
 */
-// function(firstArgIndex) { ... }
+// function(firstArgIndex, noDupCheck) { ... }
 pexprs.PExpr.prototype.toArgumentNameList = common.abstract('toArgumentNameList');
 
 pexprs.any.toArgumentNameList = function(firstArgIndex, noDupCheck) {
@@ -173,7 +177,11 @@ pexprs.Apply.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) 
 };
 
 pexprs.UnicodeChar.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
-  return '$' + firstArgIndex;
+  return ['$' + firstArgIndex];
+};
+
+pexprs.Param.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
+  return ['param' + this.index];
 };
 
 // "Value pexprs" (Value, Str, Arr, Obj) are going away soon, so we don't worry about them here.

@@ -101,6 +101,7 @@ test('toArgumentNameList', function(t) {
     ' plus = foo "+" bars',
     ' MoreOpts = ("+" Start)?',
     ' ranges = "1".."9" | "!".."@"',
+    ' Pair<elem> = "(" elem "," elem ")"',
     ' }'
     ]);
 
@@ -140,5 +141,7 @@ test('toArgumentNameList', function(t) {
   t.deepEqual(ranges.terms[0].toArgumentNameList(1), ['_1_to_9']);
   t.deepEqual(ranges.terms[1].toArgumentNameList(1), ['$1']);
 
+  var pair = g.ruleBodies.Pair;
+  t.deepEqual(pair.toArgumentNameList(1), ['$1', 'param0_1', '$3', 'param0_2', '$5']);
   t.end();
 });
