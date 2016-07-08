@@ -1,5 +1,6 @@
-'use strict';
+/* eslint-disable */
 
+'use strict';
 // Wrap the module in a universal module definition (UMD), allowing us to
 // either include it as a <script> or to `require` it as a CommonJS module.
 (function(root, initModule) {
@@ -136,6 +137,28 @@
         continue;
       }
       el._input.style.minWidth = el.offsetWidth + 'px';
+
+      // if (!el.classList.contains('hidden') && el._traceNode.parent &&
+      //     el._traceNode.parent.children.filter(function(child) {
+      //       return child.succeeded && child.interval.contents !== '';
+      //     })[0] === el._traceNode) { // TODO
+      //   var elParent = el.parentNode;
+      //   if (elParent) {
+      //     elParent = elParent.closest('.pexpr:not(.hidden)');
+      //   }
+      //   var elBounds = el.getBoundingClientRect();
+      //   var elParentBounds = elParent.getBoundingClientRect();
+      /* jscs:disable maximumLineLength */
+      //   var elOffsetX = (elBounds.left + parseInt(window.getComputedStyle(el).paddingLeft)) -
+      //                   (elParentBounds.left + parseInt(window.getComputedStyle(elParent).paddingLeft));
+      /* jscs:enable maximumLineLength */
+      //   elOffsetX = elOffsetX < 0 ? 0 : elOffsetX;
+      //   if (elOffsetX > 0) {
+      //     console.log(elOffsetX, el._traceNode.interval.contents);
+      //   }
+      //   el._input.style.marginLeft = elOffsetX + 'px';
+      // }
+
       if (!el.style.minWidth) {
         el.style.minWidth = measureInput(el._input).width + 'px';
       }
@@ -353,6 +376,16 @@
     e.stopPropagation();  // Prevent ancestor wrappers from handling.
   }
 
+  function augmentWithParent(traceNode, parent) {
+    parent = parent || null;
+    traceNode.parent = parent;
+    traceNode.children.forEach(function(child) {
+      if (child) {
+        augmentWithParent(child, traceNode);
+      }
+    });
+  }
+
   // Create the DOM node that contains the parse tree for `traceNode` and all its children.
   function createTraceWrapper(traceNode) {
     var el = domUtil.createElement('.pexpr');
@@ -421,7 +454,7 @@
         // cmd + click to open or close semantic editor
         ohmEditor.parseTree.emit('cmdclick:traceElement', wrapper);
       } else if (!isLeaf(traceNode)) {
-        toggleTraceElement(wrapper);
+        toggleTraceElement(wrapper); // TODO
       }
       e.preventDefault();
     });
@@ -627,6 +660,7 @@
     $('#bottomSection .overlay').style.width = 0;  // Hide the overlay.
     $('#semantics').hidden = !ohmEditor.options.semantics;
     rootTrace = trace;
+    augmentWithParent(trace);
     clearZoomState();
   });
 
