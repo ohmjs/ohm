@@ -6,9 +6,10 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohmEditor, root.cmUtil, root.utils, root.d3, root.exampleGenerationUI);
+    initModule(root.ohmEditor, root.exampleWorkerManager,
+               root.cmUtil, root.utils, root.d3);
   }
-})(this, function(ohmEditor, cmUtil, utils, d3, exampleGenerationUI) {
+})(this, function(ohmEditor, exampleWorkerManager, cmUtil, utils, d3) {
   var grammar;
   var grammarEditor;
   var grammarPosInfos;  // Holds the memo table from the last successful parse.
@@ -37,7 +38,7 @@
     if (mouseCoords && grammarPosInfos && areLinksEnabled(e)) {
       var position = getPointPosition(cm, mouseCoords.x, mouseCoords.y);
       var ruleDef = ruleDefinitionFor(cm, position);
-      if (ruleDef && !exampleGenerationUI.examplesNeeded().includes(ruleDef.ruleName)) {
+      if (ruleDef && !exampleWorkerManager.neededExamples.includes(ruleDef.ruleName)) {
         var startPos = cm.posFromIndex(ruleDef.definitionInterval.startIdx);
         var endPos = cm.posFromIndex(ruleDef.definitionInterval.endIdx);
         mark = cm.markText(startPos, endPos, {
@@ -81,8 +82,8 @@
   }
 
   function showExamplesFor(position) {
-    // ruleDef, lineNo
-    ohmEditor.emit('fetch:examples', ruleDefinitionFor(grammarEditor, position).ruleName);
+    exampleWorkerManager.emit('request:examples',
+                              ruleDefinitionFor(grammarEditor, position).ruleName);
   }
 
   function makeExampleDisplay(ruleName, examples) {
@@ -143,7 +144,7 @@
   });
 
   // TODO: toggle for same line
-  ohmEditor.addListener('fetched:examples', function(ruleName, examples) {
+  exampleWorkerManager.addListener('received:examples', function(ruleName, examples) {
     examples = examples || [];
     if (lineWidget) {
       lineWidget.clear();

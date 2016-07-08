@@ -8,55 +8,16 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    root.exampleGenerationUI = initModule(root.ohm, root.ohmEditor, root.utils, root.autosize);
+    initModule(root.ohm, root.ohmEditor, root.exampleWorkerManager,
+               root.utils, root.autosize);
   }
-})(this, function(ohm, ohmEditor, utils, autosize) {
-  ohmEditor.registerEvents({
-    'fetch:examples': ['ruleName'],
-    'fetched:examples': ['ruleName', 'examples']
-  });
+})(this, function(ohm, ohmEditor, exampleWorkerManager, utils, autosize) {
 
-  var exampleGenerator = new Worker('exampleGenerator.js');
-  /* eslint-disable no-unused-vars */
-  var examplesNeeded = null;
-  /* eslint-enable no-unused-vars */
   var focusedElement = null;
   var focusedRuleName = '';
 
-  // TODO: may want to reset current worker instead
-  ohmEditor.addListener('parse:grammar', function(_, grammar, __) {
-    exampleGenerator.terminate();
-    exampleGenerator = new Worker('exampleGenerator.js');
-    exampleGenerator.onmessage = onWorkerMessage;
-    exampleGenerator.postMessage({
-      name: 'initialize', recipe: grammar.toRecipe()
-    });
-  });
-
-  ohmEditor.addListener('fetch:examples', function(ruleName) {
-    exampleGenerator.postMessage({name: 'examplesFor', ruleName: ruleName});
-  });
-
-  function onWorkerMessage(event) {
-    // jscs:disable
-    switch (event.data.name) {
-    case 'examplesNeeded':
-      onExamplesNeeded(event);
-      break;
-    case 'examplesFor':
-      ohmEditor.emit('fetched:examples', event.data.ruleName, event.data.examples);
-      break;
-    default:
-      /* eslint-disable no-console */
-      console.debug('WORKER:', event.data);
-      /* eslint-enable no-console */
-    }
-    // jscs:enable
-  }
-
   var timeout = null;
-  function onExamplesNeeded(event) {
-    examplesNeeded = event.data.examplesNeeded;
+  exampleWorkerManager.addListener('received:neededExamples', function(neededExamples) {
     if (timeout) {
       clearTimeout(timeout);
     }
@@ -71,7 +32,7 @@
         }
       });
 
-      event.data.examplesNeeded.filter(function(ruleName) {
+      neededExamples.filter(function(ruleName) {
         return ruleName !== focusedRuleName;
       }).forEach(function(ruleName) {
         neededExampleList.appendChild(
@@ -79,7 +40,7 @@
         );
       });
     }, 200);
-  }
+  });
 
   function makeExampleRequest(ruleName) {
     var request = new ExampleRequest(ohmEditor.grammar, ruleName);
@@ -92,17 +53,11 @@
       focusedElement = null;
       focusedRuleName = '';
 
-      exampleGenerator.postMessage({
-        name: 'examplesNeeded'
-      });
+      exampleWorkerManager.emit('update:neededExamples');
     });
     request.addListener('validSubmit', function(event) {
       request.domNode.value = '';
-      exampleGenerator.postMessage({
-        name: 'userExample',
-        example: event.text,
-        ruleName: request.ruleName
-      });
+      exampleWorkerManager.emit('add:userExample', request.ruleName, event.text);
     });
 
     return request.domNode;
@@ -182,10 +137,4 @@
   };
 
   // TODO: add event for new example/example change
-
-  return {
-    examplesNeeded: function() {
-      return examplesNeeded;
-    }
-  };
 });

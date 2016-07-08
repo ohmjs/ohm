@@ -2,9 +2,7 @@
 
 'use strict';
 
-postMessage('WOKER IMPORTING`');
 self.importScripts('../dist/ohm.js', 'utils.js');
-postMessage('WORKER IMPORTED');
 
 // Web Worker that generates examples.
 // communicates with 'exampleGenerationUI.js'
@@ -37,41 +35,37 @@ postMessage('WORKER IMPORTED');
   };
 
   self.addEventListener('message', function(e) {
+    postMessage(e.data.name);
     switch (e.data.name) {
       case 'initialize':
-        // create grammar from recipe
-        postMessage('INITIALIZED');
-
         /* eslint-disable no-eval */
         grammar = ohm.makeRecipe(eval(e.data.recipe));
         /* eslint-enable no-eval */
 
         start();
         break;
-      case 'examplesFor':
-        var examplesForRule = examplePieces[e.data.ruleName] || null;
-        self.postMessage({name: 'examplesFor',
-                          ruleName: e.data.ruleName,
-                          examples: examplesForRule});
+      case 'request:examples':
+        var ruleName = e.data.args[0];
+
+        var examplesForRule = examplePieces[ruleName] || null;
+        self.postMessage({name: 'received:examples',
+                          args: [ruleName, examplesForRule]});
         break;
-      case 'examplesNeeded':
-        var examplesNeeded = utils.difference(
+      case 'update:neededExamples':
+        var neededExamples = utils.difference(
           Object.keys(grammar.ruleBodies),
           Object.keys(examplePieces)
         );
 
-        self.postMessage({name: 'examplesNeeded',
-                          examplesNeeded: examplesNeeded});
+        self.postMessage({name: 'received:neededExamples',
+                          args: [neededExamples]});
         break;
-      case 'userExample':
-        postMessage('RECEIVED USER EXAMPLE');
-        processExampleFromUser(e.data.example, e.data.ruleName);
-        break;
-      case 'echo': // TODO: remove this. for debugging only
-        self.postMessage(e.message);
+      case 'add:userExample':
+        ruleName = e.data.args[0];
+        var example = e.data.args[1];
+        processExampleFromUser(example, ruleName);
         break;
     }
-    // schedule next task
   }, false);
 
   function processExampleFromUser(example, optRuleName) {
@@ -187,8 +181,8 @@ postMessage('WORKER IMPORTED');
         });
         self.postMessage('generated ' + ruleName +
                          ' ' + JSON.stringify(examplesNeeded));
-        self.postMessage({name: 'examplesNeeded',
-                          examplesNeeded: examplesNeeded});
+        self.postMessage({name: 'received:neededExamples',
+                          args: [examplesNeeded]});
       }
       if (!examplePieces.hasOwnProperty(ruleName)) {
         examplePieces[ruleName] = [];
