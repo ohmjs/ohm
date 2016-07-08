@@ -58,7 +58,7 @@
     var grammarSource = grammarEditor.getValue();
     var inputSource = inputEditor.getValue();
 
-    saveEditorState(inputEditor, 'input');
+    ohmEditor.saveState(inputEditor, 'input');
 
     // Refresh the option values.
     for (var i = 0; i < checkboxes.length; ++i) {
@@ -78,7 +78,6 @@
     if (grammarChanged) {
       grammarChanged = false;
       ohmEditor.emit('change:grammar', grammarSource);
-      saveEditorState(grammarEditor, 'grammar');
 
       var result = parseGrammar(grammarSource);
       ohmEditor.grammar = result.grammar;
@@ -98,18 +97,18 @@
     }
   }
 
-  function restoreEditorState(editor, key, defaultEl) {
+  ohmEditor.restoreState = function(editor, key, defaultEl) {
     var value = localStorage.getItem(key);
     if (value) {
       editor.setValue(value);
     } else if (defaultEl) {
       editor.setValue(defaultEl.textContent);
     }
-  }
+  };
 
-  function saveEditorState(editor, key) {
+  ohmEditor.saveState = function(editor, key) {
     localStorage.setItem(key, editor.getValue());
-  }
+  };
 
   // Main
   // ----
@@ -133,7 +132,7 @@
     });
   });
 
-  restoreEditorState(ohmEditor.ui.grammarEditor, 'grammar', $('#sampleGrammar'));
+  ohmEditor.restoreState(ohmEditor.ui.grammarEditor, 'grammar', $('#sampleGrammar'));
 
   ohmEditor.ui.inputEditor.on('change', function(cm) {
     inputChanged = true;

@@ -71,6 +71,11 @@
     var blob = new Blob([src], {type: 'application/octet-stream'});
     saveAs(blob, loadedGrammar);
   });
+
+  // local storage
+  ohmEditor.addListener('change:grammar', function(source) {
+    ohmEditor.saveState(ohmEditor.ui.grammarEditor, 'grammar');
+  });
 }, function initServer(ohmEditor, CheckedEmitter, domUtil, grammars) {
   var $ = domUtil.$;
 
@@ -109,7 +114,8 @@
   });
   grammarList.addEventListener('change', function(e) {
     var grammar = e.target.options[e.target.selectedIndex].value;
-    if (grammar === '') {
+    if (grammar === '') { // local storage
+      ohmEditor.restoreState(ohmEditor.ui.grammarEditor, 'grammar', $('#sampleGrammar'));
       return;
     }
 
@@ -131,6 +137,13 @@
       postToURL('../grammars/' + grammar, cm.getValue(), function(response) {
         // do nothing
       });
+    }
+  });
+
+  ohmEditor.addListener('change:grammar', function(source) {
+    var grammar = grammarList.options[grammarList.selectedIndex].value;
+    if (grammar === '') { // local storage
+      ohmEditor.saveState(ohmEditor.ui.grammarEditor, 'grammar');
     }
   });
 });
