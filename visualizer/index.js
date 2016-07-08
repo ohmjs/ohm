@@ -89,9 +89,9 @@
       var trace = ohmEditor.grammar.trace(inputSource);
 
       // When the input fails to parse, turn on "show failures" automatically.
-      if (trace.result.failed() && showFailuresImplicitly) {
-        ohmEditor.options.showFailures = true;
-        $('input[name=showFailures]').checked = true;
+      if (showFailuresImplicitly) {
+        var checked = $('input[name=showFailures]').checked = trace.result.failed();
+        ohmEditor.options.showFailures = checked;
       }
 
       ohmEditor.emit('parse:input', trace.result, trace);
@@ -125,8 +125,8 @@
   checkboxes = $$('#options input[type=checkbox]');
   checkboxes.forEach(function(cb) {
     cb.addEventListener('click', function(e) {
-      // If the user manually disables "show failures", don't implicitly re-enable it.
-      if (e.target.name === 'showFailures' && !e.target.checked) {
+      // Respect the user's wishes if they automatically enable/disable "show failures".
+      if (e.target.name === 'showFailures') {
         showFailuresImplicitly = false;
       }
       triggerRefresh();
