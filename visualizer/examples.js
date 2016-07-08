@@ -10,7 +10,7 @@
   }
 })(this, function(ohm, ohmEditor, domUtil) {
   var idCounter = 0;
-  var selectedId;
+  var selectedId = -1;
 
   // Helpers
   // -------
@@ -97,12 +97,13 @@
   function setSelected(id) {
     var el;
     var value = '';
+    var inputEditor = ohmEditor.ui.inputEditor;
     if (id !== -1) {
       value = getExample(id);
       el = getListEl(id);
     }
     selectedId = id;
-    ohmEditor.ui.inputEditor.setValue(value);
+    inputEditor.setValue(value);
 
     // Update the DOM.
     var current = domUtil.$('#exampleContainer .selected');
@@ -114,6 +115,8 @@
         el.classList.add('selected');
       }
     }
+    inputEditor.getWrapperElement().hidden = !el;
+    inputEditor.focus();
   }
 
   // Restore the examples from localStorage.
@@ -132,7 +135,8 @@
     });
 
     // Select the first example.
-    var firstId = domUtil.$('#exampleList li:first-child').id;
+    var first = domUtil.$('#exampleList li:first-child');
+    var firstId = first ? first.id : -1;
     setSelected(firstId);
   }
 
@@ -171,6 +175,9 @@
       }
     });
   });
+
+  // Hide the inputEditor by default, only showing it when there is a selected example.
+  ohmEditor.ui.inputEditor.getWrapperElement().hidden = true;
 
   restoreExamples(ohmEditor.ui.inputEditor, 'examples');
 });
