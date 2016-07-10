@@ -91,6 +91,10 @@
       position: relative;  /* For absolute positioning of .overlay */
     }
 
+    #expandedInput:empty::before {
+      content: '\a0';  /* Insert &nbsp; to keep the correct height. */
+    }
+
     #bottomSection .overlay {
       background-color: white;
       height: 100%;
