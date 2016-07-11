@@ -50,3 +50,9 @@ pexprs.Apply.prototype.toFailure = function(grammar) {
 pexprs.UnicodeChar.prototype.toFailure = function(grammar) {
   return new Failure(this, this.toDisplayString(), 'description');
 };
+
+pexprs.Alt.prototype.toFailure = function(grammar) {
+  var fs = this.terms.map(function(t) { return t.toFailure().getText(); });
+  var desc = '(' + fs.join(' or ') + ')';
+  return new Failure(this, desc, 'description');
+};
