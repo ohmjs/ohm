@@ -142,6 +142,18 @@ State.prototype = {
           // We're only interested in failures at the rightmost failure position that haven't
           // already been recorded.
 
+          var app = this.currentApplication();
+          if (app) {
+            // Substitute parameters with the actual pexprs that were passed to
+            // the current rule.
+            expr = expr.substituteParams(app.args);
+          } else {
+            // This branch is only reached for the "end-check" that is
+            // performed after the top-level application. In that case,
+            // expr === pexprs.end so there is no need to substitute
+            // parameters.
+          }
+
           this.addRightmostFailure(expr.toFailure(this.grammar), false);
         }
   },

@@ -220,5 +220,16 @@ test('errors for Not-of-<PExpr>', function(t) {
   t.equal(r.failed(), true);
   t.equal(typeof r.message, 'string'); // implicitly requires that r.message not throw
   t.ok(/Expected not \("b" or "c"\)/.exec(r.message), 'reasonable failure report for Not-of-Alt');
+
+  var notParamG = ohm.grammar(
+    'G {\n' +
+    '  S = Not<"a">\n' +
+    '  Not<elem> = ~elem\n' +
+    '}');
+  r = notParamG.match('a');
+  t.equal(r.failed(), true);
+  t.equal(typeof r.message, 'string');
+  t.ok(/Expected not "a"/.exec(r.message), 'reasonable failure report for Not-of-Param');
+
   t.end();
 });
