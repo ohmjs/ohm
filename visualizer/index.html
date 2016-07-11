@@ -232,30 +232,6 @@
       display: block;
     }
 
-    .exampleDisplay {
-      transition: height 0.5s ease !important;
-      background-color: hsl(0, 0%, 92%) !important;
-      padding: 10px;
-      padding-left: 20px;
-    }
-
-    .exampleList {
-      list-style: none;
-      padding-left: 10px;
-    }
-
-    .exampleList > li::before {
-      content: '"';
-      font-weight: bold;
-      color: hsl(0, 0%, 70%);
-    }
-
-    .exampleList > li::after {
-      content: '"';
-      font-weight: bold;
-      color: hsl(0, 0%, 70%);
-    }
-
     /*
       Hack to fix a problem with `height: 100%` in flex items.
       See https://github.com/codemirror/CodeMirror/issues/3679
@@ -477,6 +453,7 @@
   </style>
   <link rel="stylesheet" href="style/parseTree.css">
   <link rel="stylesheet" href="style/semanticsEditor.css">
+  <link rel="stylesheet" href="style/exampleGenerationLinks.css">
 </head>
 <body>
   <div id="topSection">

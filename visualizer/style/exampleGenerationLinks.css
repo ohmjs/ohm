@@ -1,0 +1,38 @@
+.currentExampleLink.clickableExampleLink {
+  text-decoration: underline;
+  color: #268BD2;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.clickableExampleLink {
+  text-decoration: underline;
+  /*color: hsl(0, 0%, 50%);*/
+  cursor: pointer;
+  font-weight: normal;
+}
+
+
+.exampleDisplay {
+  transition: height 0.5s ease !important;
+  background-color: hsl(0, 0%, 92%) !important;
+  padding: 10px;
+  padding-left: 20px;
+}
+
+.exampleList {
+  list-style: none;
+  padding-left: 10px;
+}
+
+.exampleList > li::before {
+  content: '"';
+  font-weight: bold;
+  color: hsl(0, 0%, 70%);
+}
+
+.exampleList > li::after {
+  content: '"';
+  font-weight: bold;
+  color: hsl(0, 0%, 70%);
+}

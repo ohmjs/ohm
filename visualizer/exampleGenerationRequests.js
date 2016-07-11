@@ -53,11 +53,11 @@
       focusedElement = null;
       focusedRuleName = '';
 
-      exampleWorkerManager.emit('update:neededExamples');
+      exampleWorkerManager.updateNeededExamples();
     });
     request.addListener('validSubmit', function(event) {
       request.domNode.value = '';
-      exampleWorkerManager.emit('add:userExample', request.ruleName, event.text);
+      exampleWorkerManager.addUserExample(request.ruleName, event.text);
     });
 
     return request.domNode;
@@ -136,5 +136,5 @@
     }
   };
 
-  // TODO: add event for new example/example change
+  // TODO: add events for new example/example change
 });

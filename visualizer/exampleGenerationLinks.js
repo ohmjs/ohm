@@ -1,5 +1,12 @@
 /* eslint-env browser */
 
+// TODO: sane variable naming
+// TODO: organize state better
+// TODO: fix UI timing issues
+// TODO: update selectable links on neededExamples
+// TODO: in indicator, don't highlight all cases if rule is doable
+// TODO: fix line bug
+
 'use strict';
 
 (function(root, initModule) {
@@ -12,11 +19,22 @@
 })(this, function(ohmEditor, exampleWorkerManager, cmUtil, utils, d3) {
   var grammar;
   var grammarEditor;
-  var grammarPosInfos;  // Holds the memo table from the last successful parse.
+
   var mouseCoords;
-  var mark;
-  var markPosition;
-  var lineWidget;
+
+  var mousePositionInfo = {
+    mark: null,
+    rule: null,
+    position: null,
+  };
+
+  var clickableMarks;
+
+  var exampleDisplay = {
+    lineWidget: null,
+    DOM: null,
+    rule: null
+  };
 
   var isMouseDown;
 
@@ -32,21 +50,51 @@
   }
 
   function updateLinks(cm, e) {
-    cmUtil.clearMark(mark);
-    markPosition = null;
+    cmUtil.clearMark(mousePositionInfo.mark);
+    mousePositionInfo.markRule = null;
+    mousePositionInfo.markPosition = null;
 
-    if (mouseCoords && grammarPosInfos && areLinksEnabled(e)) {
+    if (mouseCoords && areLinksEnabled(e)) {
       var position = getPointPosition(cm, mouseCoords.x, mouseCoords.y);
-      var ruleDef = ruleDefinitionFor(cm, position);
-      if (ruleDef && !exampleWorkerManager.neededExamples.includes(ruleDef.ruleName)) {
-        var startPos = cm.posFromIndex(ruleDef.definitionInterval.startIdx);
-        var endPos = cm.posFromIndex(ruleDef.definitionInterval.endIdx);
-        mark = cm.markText(startPos, endPos, {
-          css: 'text-decoration: underline; color: #268BD2; cursor: pointer;'
-        });
-        markPosition = position;
+      var rule = ruleDefinitionFor(cm, position);
+      if (rule && !exampleWorkerManager.neededExamples.includes(rule.ruleName)) {
+        mousePositionInfo.mark = markRuleBody(cm, rule, 'currentExampleLink');
+        mousePositionInfo.rule = rule;
+        mousePositionInfo.position = position;
       }
     }
+  }
+
+  function updateLinkIndicators(cm, e) {
+    if (mouseCoords && areLinksEnabled(e)) {
+      if (!clickableMarks) {
+        var availableExamples = utils.difference(
+          Object.keys(grammar.ruleBodies),
+          exampleWorkerManager.neededExamples
+        );
+        var availableExampleBodies = availableExamples.map(function(ruleName) {
+          return grammar.ruleBodies[ruleName];
+        });
+        clickableMarks = availableExampleBodies.map(function(rule) {
+          return markRuleBody(cm, rule, 'clickableExampleLink');
+        })
+      }
+    } else {
+      if (clickableMarks) {
+        clickableMarks.forEach(function(clickableMark) {
+          cmUtil.clearMark(clickableMark);
+        });
+        clickableMarks = null;
+      }
+    }
+  }
+
+  function markRuleBody(cm, ruleBody, className) {
+    var startPos = cm.posFromIndex(ruleBody.definitionInterval.startIdx);
+    var endPos = cm.posFromIndex(ruleBody.definitionInterval.endIdx);
+    return cm.markText(startPos, endPos, {
+      className: className
+    });
   }
 
   function handleMouseMove(cm, e) {
@@ -81,16 +129,43 @@
     }
   }
 
-  function showExamplesFor(position) {
-    exampleWorkerManager.emit('request:examples',
-                              ruleDefinitionFor(grammarEditor, position).ruleName);
+  function toggleExamplesFor(position) {
+    if (exampleDisplay.lineWidget) {
+      exampleDisplay.DOM.style.height = 0;
+      setTimeout(function() {
+        exampleDisplay.lineWidget.clear();
+        exampleDisplay.lineWidget = null;
+        exampleDisplay.DOM = null;
+        exampleDisplay.rule = null;
+      }, 500);
+    }
+    if ((exampleDisplay.rule && exampleDisplay.rule.ruleName !== markRule.ruleName) ||
+        !exampleDisplay.rule) {
+      exampleWorkerManager.requestExamples(
+        ruleDefinitionFor(grammarEditor, position).ruleName
+      );
+    }
   }
+
+
+  // TODO: toggle for same line
+  exampleWorkerManager.addListener('received:examples', function(ruleName, examples) {
+    examples = examples || [];
+    exampleDisplay.DOM = makeExampleDisplay(ruleName, examples.filter(function(_, i) {
+      return i < 10;
+    }));
+    exampleDisplay.lineWidget = grammarEditor.addLineWidget(
+      mousePositionInfo.position.line, exampleDisplay.DOM
+    );
+    exampleDisplay.rule = rule;
+    exampleDisplay.DOM.style.height = 0;
+    setTimeout(function() { exampleDisplay.DOM.style.height = 'auto'; }, 0);
+  });
 
   function makeExampleDisplay(ruleName, examples) {
     return utils._('div', {
       class: 'exampleDisplay'
-    }, utils._('h3', {}, utils.t(ruleName)),
-       makeExampleList(examples));
+    }, utils._('h3', {}, utils.t(ruleName)), makeExampleList(examples));
   }
 
   function makeExampleList(examples) {
@@ -110,6 +185,9 @@
     window.addEventListener('keydown', updateLinks.bind(null, editor));
     window.addEventListener('keyup', updateLinks.bind(null, editor));
 
+    window.addEventListener('keydown', updateLinkIndicators.bind(null, editor));
+    window.addEventListener('keyup', updateLinkIndicators.bind(null, editor));
+
     // Prevent CodeMirror's default behaviour for Cmd-click, which is to place an additional
     // cursor at the clicked location. This must be done during the capture phase.
     editor.on('mousedown', function(cm, e) {
@@ -123,13 +201,12 @@
     // navigation on mouseup.
     editor.getWrapperElement().addEventListener('mouseup', function(e) {
       isMouseDown = false;
-      if (markPosition) {
-        // check for a relatively close click ( same line? )
-        showExamplesFor(getPointPosition(editor, e.clientX, e.clientY));
-        // var wordInfo = getWordUnderPoint(editor, e.clientX, e.clientY);
-        // if (isSameWord(editor, wordInfo, markWordInfo)) {
-        //   goToRuleDefinition(markWordInfo.value);
-        // }
+      if (mousePositionInfo.mark) {
+        var position = getPointPosition(editor, mouseCoords.x, mouseCoords.y);
+        var rule = ruleDefinitionFor(editor, position);
+        if (rule.ruleName === mousePositionInfo.rule.ruleName) {
+          toggleExamplesFor(getPointPosition(editor, e.clientX, e.clientY));
+        }
       }
     });
   }
@@ -140,21 +217,7 @@
       registerListeners(grammarEditor);
     }
     grammar = g;
-    grammarPosInfos = matchResult.succeeded() ? matchResult.state.posInfos : null;
   });
 
-  // TODO: toggle for same line
-  exampleWorkerManager.addListener('received:examples', function(ruleName, examples) {
-    examples = examples || [];
-    if (lineWidget) {
-      lineWidget.clear();
-    }
-    var exampleDisplay = makeExampleDisplay(ruleName, examples.filter(function(_, i) {
-      return i < 10;
-    }));
-    lineWidget = grammarEditor.addLineWidget(markPosition.line, exampleDisplay);
-    exampleDisplay.style.height = 0;
-    setTimeout(function() { exampleDisplay.style.height = 'auto'; }, 0);
-  });
 
 });

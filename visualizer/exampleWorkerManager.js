@@ -15,14 +15,8 @@
   var exampleWorkerManager = new CheckedEmitter();
 
   exampleWorkerManager.registerEvents({
-
-    'request:examples': ['ruleName'],
     'received:examples': ['ruleName', 'examples'],
-
-    'update:neededExamples': [],
-    'received:neededExamples': ['neededExamples'],
-
-    'add:userExample': ['ruleName', 'example']
+    'received:neededExamples': ['neededExamples']
   });
 
   var eventsToEmit = ['received:examples', 'received:neededExamples'];
@@ -53,17 +47,17 @@
     }
   }
 
-  exampleWorkerManager.addListener('request:examples', function(ruleName) {
+  exampleWorkerManager.requestExamples = function(ruleName) {
     relayEvent('request:examples', [ruleName]);
-  });
+  }
 
-  exampleWorkerManager.addListener('update:neededExamples', function() {
+  exampleWorkerManager.updateNeededExamples = function() {
     relayEvent('update:neededExamples', []);
-  });
+  }
 
-  exampleWorkerManager.addListener('add:userExample', function(ruleName, example) {
+  exampleWorkerManager.addUserExample = function(ruleName, example) {
     relayEvent('add:userExample', [ruleName, example]);
-  });
+  }
 
   function relayEvent(eventName, args) {
     exampleWorker.postMessage({
@@ -75,6 +69,7 @@
   exampleWorkerManager.neededExamples = null;
   exampleWorkerManager.addListener('received:neededExamples', function(neededExamples) {
     exampleWorkerManager.neededExamples = neededExamples;
+
   });
 
   return exampleWorkerManager;
