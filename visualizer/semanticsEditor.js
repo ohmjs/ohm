@@ -17,8 +17,7 @@
   var $$ = domUtil.$$;
 
   var UnicodeChars = {
-    PLUS_SIGN: '\u002B',
-    HYPHEN_MINUS: '\u002D',
+    BLACK_RIGHT_POINTING_TRIANGLE: '\u25B6',
     LEFTWARDS_ARROW: '\u2190'
   };
 
@@ -581,8 +580,7 @@
     var name = semanticOperation.name;
     var entry = domUtil.createElement('li');
     var formals = semanticOperation.formals;
-    entry.innerHTML = '<label></label>';
-    entry.firstChild.textContent = name;
+    entry.appendChild(domUtil.createElement('label', name));
     entry.appendChild(createArgumentsWrapper(formals));
 
     // Mark the entry `disabled` if semantics action of the operation is missing for the node,
@@ -649,17 +647,15 @@
     var editorWrapper = selfWrapper.querySelector('.semanticsEditor');
     var evaluatingSemantics = ohmEditor.semantics.appendEditor;
     var forceEntryContent = 'Force Evaluation';
-    forceEntryContent += '<span>' + (evaluatingSemantics ? UnicodeChars.PLUS_SIGN : '') +
-        '</span>';
+    forceEntryContent +=
+        '<span class="triangle">' + UnicodeChars.BLACK_RIGHT_POINTING_TRIANGLE + '</span>';
     var forceEntry = domUtil.addMenuItem('parseTreeMenu', 'forceEvaluation', forceEntryContent,
         evaluatingSemantics, function(event) { event.stopPropagation(); });
-    forceEntry.querySelector('span').className = 'sign';
     if (!evaluatingSemantics) {
       return;
     }
     // Hover the `Force Evaluation` entry to show forcing options
     forceEntry.onmouseover = function() {
-      forceEntry.querySelector('label span').innerHTML = UnicodeChars.HYPHEN_MINUS;
       var entryWrapper;
       if (forceEntry.querySelector('ul')) {
         entryWrapper = forceEntry.querySelector('ul');
@@ -668,9 +664,6 @@
         entryWrapper.hidden = true;
         addSemanticEntries(entryWrapper, traceNode, editorWrapper);
       }
-    };
-    forceEntry.onmouseout = function() {
-      forceEntry.querySelector('label span').innerHTML = UnicodeChars.PLUS_SIGN;
     };
   });
 
