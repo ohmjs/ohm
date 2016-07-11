@@ -14,6 +14,13 @@
 })(this, function(ohm, ohmEditor, CheckedEmitter, document, cmUtil, d3, domUtil) {
   var performance = {now: function() { return 0; }};
 
+  // Fake getComputedStyle() for node (required for unit tests)
+  if (typeof window === 'undefined') {
+    var window = global;
+  }
+
+  var getComputedStyle = window.getComputedStyle || function(elt) { return {}; };
+
   var ArrayProto = Array.prototype;
   var $ = domUtil.$;
 
