@@ -145,13 +145,3 @@ test('toArgumentNameList', function(t) {
   t.deepEqual(pair.toArgumentNameList(1), ['$1', 'param0_1', '$3', 'param0_2', '$5']);
   t.end();
 });
-
-test('toFailure', function(t) {
-  var g = makeGrammar('G { start = ~("b" | "c") "d" }');
-  var r = g.match('b');
-  t.equal(r.failed(), true);
-  t.equal(typeof r.message, 'string'); // implicitly requires that r.message not throw
-  // t.comment(r.message);
-  t.ok(/Expected not \(b or c\)/.exec(r.message), 'reasonable failure report for Not-of-Alt');
-  t.end();
-});

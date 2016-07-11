@@ -52,7 +52,7 @@ pexprs.UnicodeChar.prototype.toFailure = function(grammar) {
 };
 
 pexprs.Alt.prototype.toFailure = function(grammar) {
-  var fs = this.terms.map(function(t) { return t.toFailure().getText(); });
+  var fs = this.terms.map(function(t) { return t.toFailure(); });
   var desc = '(' + fs.join(' or ') + ')';
   return new Failure(this, desc, 'description');
 };

@@ -213,3 +213,12 @@ test('method name displayed on abstract function failure', function(t) {
   }
   t.end();
 });
+
+test('errors for Not-of-<PExpr>', function(t) {
+  var notAltG = ohm.grammar('G { start = ~("b" | "c") "d" }');
+  var r = notAltG.match('b');
+  t.equal(r.failed(), true);
+  t.equal(typeof r.message, 'string'); // implicitly requires that r.message not throw
+  t.ok(/Expected not \("b" or "c"\)/.exec(r.message), 'reasonable failure report for Not-of-Alt');
+  t.end();
+});
