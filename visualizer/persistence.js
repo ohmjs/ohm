@@ -104,6 +104,7 @@
 
   $('#grammars').hidden = false;
   $('#grammarName').hidden = true;
+  $('#saveIndicator').hidden = false;
 
   var grammarList = $('#grammarList');
   grammarList.hidden = false;
@@ -120,6 +121,12 @@
     }
 
     getFromURL('../grammars/' + grammar, function(src) {
+      // TODO: should be ohmEditor.once(...)
+      ohmEditor.addListener('change:grammar', function(source) {
+        ohmEditor.removeCurrentListener();
+        $('#saveIndicator').classList.remove('edited');
+      });
+
       ohmEditor.ui.grammarEditor.setValue(src);
     });
   });
@@ -135,7 +142,7 @@
       }
 
       postToURL('../grammars/' + grammar, cm.getValue(), function(response) {
-        // do nothing
+        $('#saveIndicator').classList.remove('edited');
       });
     }
   });
@@ -144,6 +151,8 @@
     var grammar = grammarList.options[grammarList.selectedIndex].value;
     if (grammar === '') { // local storage
       ohmEditor.saveState(ohmEditor.ui.grammarEditor, 'grammar');
+    } else {
+      $('#saveIndicator').classList.add('edited');
     }
   });
 });
