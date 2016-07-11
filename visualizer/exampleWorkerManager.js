@@ -49,15 +49,15 @@
 
   exampleWorkerManager.requestExamples = function(ruleName) {
     relayEvent('request:examples', [ruleName]);
-  }
+  };
 
   exampleWorkerManager.updateNeededExamples = function() {
     relayEvent('update:neededExamples', []);
-  }
+  };
 
   exampleWorkerManager.addUserExample = function(ruleName, example) {
     relayEvent('add:userExample', [ruleName, example]);
-  }
+  };
 
   function relayEvent(eventName, args) {
     exampleWorker.postMessage({

@@ -25,7 +25,7 @@
   var mousePositionInfo = {
     mark: null,
     rule: null,
-    position: null,
+    position: null
   };
 
   var clickableMarks;
@@ -77,7 +77,7 @@
         });
         clickableMarks = availableExampleBodies.map(function(rule) {
           return markRuleBody(cm, rule, 'clickableExampleLink');
-        })
+        });
       }
     } else {
       if (clickableMarks) {
@@ -139,14 +139,14 @@
         exampleDisplay.rule = null;
       }, 500);
     }
-    if ((exampleDisplay.rule && exampleDisplay.rule.ruleName !== markRule.ruleName) ||
+    if ((exampleDisplay.rule &&
+         exampleDisplay.rule.ruleName !== mousePositionInfo.rule.ruleName) ||
         !exampleDisplay.rule) {
       exampleWorkerManager.requestExamples(
         ruleDefinitionFor(grammarEditor, position).ruleName
       );
     }
   }
-
 
   // TODO: toggle for same line
   exampleWorkerManager.addListener('received:examples', function(ruleName, examples) {
@@ -157,7 +157,7 @@
     exampleDisplay.lineWidget = grammarEditor.addLineWidget(
       mousePositionInfo.position.line, exampleDisplay.DOM
     );
-    exampleDisplay.rule = rule;
+    exampleDisplay.rule = grammar.ruleBody[ruleName];
     exampleDisplay.DOM.style.height = 0;
     setTimeout(function() { exampleDisplay.DOM.style.height = 'auto'; }, 0);
   });
@@ -218,6 +218,5 @@
     }
     grammar = g;
   });
-
 
 });
