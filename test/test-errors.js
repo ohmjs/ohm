@@ -202,14 +202,14 @@ test('trailing space should not influence the result', function(t) {
 });
 
 test('method name displayed on abstract function failure', function(t) {
-  var g = ohm.ohmGrammar;
-  var seq = g.ruleBodies.Grammar;
+  var g = ohm.ohmGrammar.superGrammar;
+  var param = g.ruleBodies.NonemptyListOf.factors[0];
   try {
-    seq.toFailure();
+    param.toFailure();
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.equal(e.message,
-      'this method toFailure is abstract! (it has no implementation in class Seq)');
+      'this method toFailure is abstract! (it has no implementation in class Param)');
   }
   t.end();
 });
@@ -230,6 +230,24 @@ test('errors for Not-of-<PExpr>', function(t) {
   t.equal(r.failed(), true);
   t.equal(typeof r.message, 'string');
   t.ok(/Expected not "a"/.exec(r.message), 'reasonable failure report for Not-of-Param');
+
+  var notLookaheadG = ohm.grammar('G { start = ~(&"a") "b" }');
+  r = notLookaheadG.match('a');
+  t.equal(r.failed(), true);
+  t.equal(typeof r.message, 'string');
+  t.ok(/Expected not "a"/.exec(r.message), 'reasonable failure report for Not-of-Lookahead');
+
+  var notSeqG = ohm.grammar('G { start = ~("a" "b") "c" }');
+  r = notSeqG.match('ab');
+  t.equal(r.failed(), true);
+  t.equal(typeof r.message, 'string');
+  t.ok(/Expected not \("a" "b"\)/.exec(r.message), 'reasonable failure report for Not-of-Seq');
+
+  var notIterG = ohm.grammar('G { start = ~("a"*) "b" }');
+  r = notIterG.match('a');
+  t.equal(r.failed(), true);
+  t.equal(typeof r.message, 'string');
+  t.ok(/Expected not \("a"\*\)/.exec(r.message), 'reasonable failure report for Not-of-Iter');
 
   t.end();
 });
