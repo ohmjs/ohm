@@ -1,4 +1,5 @@
 /* eslint-disable */
+/* eslint-env browser */
 
 'use strict';
 // Wrap the module in a universal module definition (UMD), allowing us to
@@ -11,6 +12,8 @@
                root.domUtil);
   }
 })(this, function(ohm, ohmEditor, CheckedEmitter, document, cmUtil, d3, domUtil) {
+  var performance = {now: function() { return 0; }};
+
   var ArrayProto = Array.prototype;
   var $ = domUtil.$;
 
@@ -89,11 +92,17 @@
     var measuringDiv = $('#measuringDiv');
     var span = measuringDiv.appendChild(domUtil.createElement('span.input'));
     span.innerHTML = inputEl.textContent;
+
+    span.style.fontFamily = getComputedStyle(inputEl).fontFamily;
+    span.style.fontSize = getComputedStyle(inputEl).fontSize;
+    span.style.fontWeight = getComputedStyle(inputEl).fontWeight;
     var bounds = span.getBoundingClientRect();
+
     var result = {
       width: bounds.width,
       height: bounds.height
     };
+
     measuringDiv.removeChild(span);
     return result;
   }
@@ -136,27 +145,19 @@
       if (!el._input) {
         continue;
       }
-      el._input.style.minWidth = el.offsetWidth + 'px';
 
-      // if (!el.classList.contains('hidden') && el._traceNode.parent &&
-      //     el._traceNode.parent.children.filter(function(child) {
-      //       return child.succeeded && child.interval.contents !== '';
-      //     })[0] === el._traceNode) { // TODO
-      //   var elParent = el.parentNode;
-      //   if (elParent) {
-      //     elParent = elParent.closest('.pexpr:not(.hidden)');
-      //   }
-      //   var elBounds = el.getBoundingClientRect();
-      //   var elParentBounds = elParent.getBoundingClientRect();
-      /* jscs:disable maximumLineLength */
-      //   var elOffsetX = (elBounds.left + parseInt(window.getComputedStyle(el).paddingLeft)) -
-      //                   (elParentBounds.left + parseInt(window.getComputedStyle(elParent).paddingLeft));
-      /* jscs:enable maximumLineLength */
-      //   elOffsetX = elOffsetX < 0 ? 0 : elOffsetX;
-      //   if (elOffsetX > 0) {
-      //     console.log(elOffsetX, el._traceNode.interval.contents);
-      //   }
-      //   el._input.style.marginLeft = elOffsetX + 'px';
+      if (!el.classList.contains('hidden') &&
+          domUtil.closestElementMatching('.collapsed', el) == null) {
+        var elPaddingLeft = parseFloat(getComputedStyle(el).paddingLeft);
+        var elPaddingRight = parseFloat(getComputedStyle(el).paddingRight);
+        var elMarginLeft = parseFloat(getComputedStyle(el).marginLeft);
+        var elMarginRight = parseFloat(getComputedStyle(el).marginRight);
+        var totalPadding = elPaddingRight + elPaddingLeft;
+
+        el._input.style.minWidth = (el.getBoundingClientRect().width - totalPadding) + 'px';
+        el._input.style.marginLeft = (elPaddingLeft + elMarginLeft) + 'px';
+        el._input.style.marginRight = (elPaddingRight + elMarginRight) + 'px';
+      }// TODO: bad ==
       // }
 
       if (!el.style.minWidth) {
@@ -563,9 +564,16 @@
     var inputStack = [expandedInputDiv];
     var containerStack = [rootContainer];
 
+    var avgEnter = 0;
+    var nEnter = 0;
+    var avgExit = 0;
+    var nExit = 0;
+    var lastTime = 0;
+    var execTime = 0;
     ohmEditor.parseTree.emit('render:parseTree', renderedTrace);
     var renderActions = {
       enter: function handleEnter(node, parent, depth) {
+        lastTime = performance.now();
         // Don't show or recurse into nodes that didn't succeed, unless "Show failures" is enabled.
         if ((!node.succeeded && !ohmEditor.options.showFailures) ||
             (node.isImplicitSpaces && !ohmEditor.options.showSpaces)) {
@@ -626,8 +634,12 @@
         }
         inputStack.push(childInput);
         containerStack.push(children);
+
+        execTime = performance.now() - lastTime;
+        avgEnter = avgEnter + (execTime - avgEnter) /  ++nEnter;
       },
       exit: function(node, parent, depth) {
+        lastTime = performance.now();
         // If necessary, render the "Grow LR" trace as a pseudo-child, after the real child.
         if (hasVisibleLeftRecursion(node)) {
           node.terminatingLREntry.walk(renderActions);
@@ -637,11 +649,24 @@
         inputStack.pop();
 
         ohmEditor.parseTree.emit('exit:traceElement', el, node);
+
+        execTime = performance.now() - lastTime;
+        avgExit = avgExit + (execTime - avgExit) /  ++nExit;
       }
     };
-    renderedTrace.walk(renderActions);
-    initializeWidths();
 
+    var beforeWalk = performance.now();
+    renderedTrace.walk(renderActions);
+    var afterWalk = performance.now();
+
+    var beforeInitWidths = performance.now();
+    initializeWidths();
+    var afterInitWidths = performance.now();
+
+    console.log('average time spent in enter:', avgEnter);
+    console.log('average time spent in exit:', avgExit);
+    console.log('total walk time:', afterWalk - beforeWalk);
+    console.log('total initializeWidths time:', afterInitWidths - beforeInitWidths);
     // Hack to ensure that the vertical scroll bar doesn't overlap the parse tree contents.
     parseResultsDiv.style.paddingRight =
         2 + parseResultsDiv.scrollWidth - parseResultsDiv.clientWidth + 'px';

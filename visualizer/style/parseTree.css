@@ -22,7 +22,7 @@
   font-family: Menlo, Monaco, sans-serif;
   font-size: 100%;
   outline: none;
-  padding: 8px 0;
+  padding: 8px 0 8px 3px;
 }
 #expandedInput,
 #expandedInput span {
@@ -34,6 +34,10 @@
 }
 #expandedInput .highlight {
   background-color: #B5D5FF;
+}
+
+.input {
+  display: inline-block;
 }
 
 #parseResults {
