@@ -38,6 +38,10 @@ pexprs.Not.prototype.toFailure = function(grammar) {
   return new Failure(this, description, 'description');
 };
 
+pexprs.Lookahead.prototype.toFailure = function(grammar) {
+  return this.expr.toFailure(grammar);
+};
+
 pexprs.Apply.prototype.toFailure = function(grammar) {
   var description = grammar.ruleDescriptions[this.ruleName];
   if (!description) {
@@ -52,7 +56,18 @@ pexprs.UnicodeChar.prototype.toFailure = function(grammar) {
 };
 
 pexprs.Alt.prototype.toFailure = function(grammar) {
-  var fs = this.terms.map(function(t) { return t.toFailure().getText(); });
-  var desc = '(' + fs.join(' or ') + ')';
-  return new Failure(this, desc, 'description');
+  var fs = this.terms.map(function(t) { return t.toFailure(); });
+  var description = '(' + fs.join(' or ') + ')';
+  return new Failure(this, description, 'description');
+};
+
+pexprs.Seq.prototype.toFailure = function(grammar) {
+  var fs = this.factors.map(function(f) { return f.toFailure(); });
+  var description = '(' + fs.join(' ') + ')';
+  return new Failure(this, description, 'description');
+};
+
+pexprs.Iter.prototype.toFailure = function(grammar) {
+  var description = '(' + this.expr.toFailure() + this.operator + ')';
+  return new Failure(this, description, 'description');
 };
