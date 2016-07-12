@@ -16,6 +16,20 @@
   var focusedElement = null;
   var focusedRuleName = '';
 
+  // TODO: clicking off of textarea triggers refresh, deleting content
+
+  // logic for arrow to open drawer and show needed examples menu
+  var examplesNeededDrawer = utils.$('#examplesNeededDrawer');
+  var examplesNeededIndicator = utils.$('#examplesNeededDrawer .indicator');
+  var exampleSplitter = utils.$('#exampleSplitter');
+  examplesNeededDrawer.addEventListener('click', function() {
+    var ExampleRequestContainer = utils.$('#ExampleRequestContainer');
+    ExampleRequestContainer.classList.toggle('hidden');
+    exampleSplitter.classList.toggle('disabled',
+      ExampleRequestContainer.classList.contains('hidden')
+    );
+  });
+
   var timeout = null;
   exampleWorkerManager.addListener('received:neededExamples', function(neededExamples) {
     if (timeout) {
@@ -39,6 +53,12 @@
           utils._('li', {}, makeExampleRequest(ruleName))
         );
       });
+
+      if (neededExamples.length === 0) {
+        examplesNeededIndicator.classList.remove('active');
+      } else {
+        examplesNeededIndicator.classList.add('active');
+      }
     }, 200);
   });
 
@@ -63,6 +83,8 @@
     return request.domNode;
   }
 
+  // ExampleRequest is a textarea with the ability to check if its contents are valid
+  //  according to a rule. If not, the background is turned pink.
   function ExampleRequest(grammar, ruleName) {
     this.ruleName = ruleName;
     this.grammar = grammar;
@@ -135,6 +157,4 @@
       });
     }
   };
-
-  // TODO: add events for new example/example change
 });

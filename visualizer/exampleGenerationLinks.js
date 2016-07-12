@@ -1,10 +1,9 @@
 /* eslint-env browser */
 
-// TODO: fix UI timing issues
-//   * caching example info
-//   * reducing time for chunk execution on worker
 // TODO: update selectable links on neededExamples
 // TODO: in indicator, don't highlight all cases if rule is doable
+// TODO: nicer formatting for example display
+// TODO: live-updating example displays
 
 'use strict';
 

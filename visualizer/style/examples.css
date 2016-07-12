@@ -1,0 +1,84 @@
+#exampleList {
+  list-style: none;
+  border-top: 1px solid #ddd;
+  margin: 0;
+  padding: 0;
+}
+
+#exampleList .example {
+  border-bottom: 1px solid #eee;
+  color: #999;
+  display: flex;
+  margin: 0;
+  white-space: nowrap;
+}
+
+#exampleList .example code {
+  border-left: 4px solid #bbb;
+  cursor: default;
+  flex: 1;
+  overflow: hidden;
+  padding: 6px 4px 6px 8px;
+  text-overflow: ellipsis;
+
+  /* Weirdly, it won't shrink smaller than its content unless we give it an explicit width. */
+  width: 1px;
+}
+
+#exampleList .example.fail code {
+  border-left: 4px solid #d44950;
+}
+
+#exampleList .example.pass code {
+  border-left: 4px solid #58B958;
+}
+
+#exampleList .example.selected {
+  color: #333;
+  background-color: #f7f7f7;
+}
+
+#exampleList code {
+  font-family: Menlo, Monaco, sans-serif;
+  font-size: 12px;
+}
+
+#exampleList .example .delete {
+  color: #d44950;
+  padding: 4px;
+  cursor: default;
+  display: none;
+}
+
+#exampleList .example:hover {
+  background-color: #f7f7f7;
+}
+
+#exampleList .example:hover .delete {
+  display: block;
+}
+
+/* Additions for example generation */
+
+#examplesNeededDrawer {
+  float: right;
+  cursor: pointer;
+  color: hsl(0, 0%, 30%);
+  font-weight: normal;
+}
+
+#examplesNeededDrawer .indicator {
+  transition: color 0.5s ease;
+}
+
+#examplesNeededDrawer .indicator.active {
+  color: hsl(219, 100%, 70%);
+}
+
+#ExampleRequestContainer {
+  width: 0px;
+}
+
+#ExampleRequestContainer.hidden {
+  flex-grow: 0 !important;
+}

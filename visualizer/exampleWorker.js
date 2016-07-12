@@ -7,9 +7,6 @@ self.importScripts('../dist/ohm.js', 'utils.js');
 // Web Worker that generates examples.
 // communicates with 'exampleGenerationUI.js'
 
-// TODO: prevent this from generating forever
-// TODO: implement 'WYSIWIH' approach to example changes
-
 (function(root, initModule) {
   if (typeof exports === 'object') {
     module.exports = initModule;

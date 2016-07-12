@@ -89,7 +89,12 @@
       flex-direction: column;
     }
 
-    #exampleContainer,
+    #exampleContainer {
+        display: flex;
+        flex-direction: row;
+        flex: 1;
+    }
+
     #ExampleRequestContainer,
     #userExampleContainer,
     #grammarContainer {
@@ -170,66 +175,6 @@
       -moz-user-select: none;
       -ms-user-select: none;
       -webkit-user-select: none;
-    }
-
-    #exampleList {
-      list-style: none;
-      border-top: 1px solid #ddd;
-      margin: 0;
-      padding: 0;
-    }
-
-    #exampleList .example {
-      border-bottom: 1px solid #eee;
-      color: #999;
-      display: flex;
-      margin: 0;
-      white-space: nowrap;
-    }
-
-    #exampleList .example code {
-      border-left: 4px solid #bbb;
-      cursor: default;
-      flex: 1;
-      overflow: hidden;
-      padding: 6px 4px 6px 8px;
-      text-overflow: ellipsis;
-
-      /* Weirdly, it won't shrink smaller than its content unless we give it an explicit width. */
-      width: 1px;
-    }
-
-    #exampleList .example.fail code {
-      border-left: 4px solid #d44950;
-    }
-
-    #exampleList .example.pass code {
-      border-left: 4px solid #58B958;
-    }
-
-    #exampleList .example.selected {
-      color: #333;
-      background-color: #f7f7f7;
-    }
-
-    #exampleList code {
-      font-family: Menlo, Monaco, sans-serif;
-      font-size: 12px;
-    }
-
-    #exampleList .example .delete {
-      color: #d44950;
-      padding: 4px;
-      cursor: default;
-      display: none;
-    }
-
-    #exampleList .example:hover {
-      background-color: #f7f7f7;
-    }
-
-    #exampleList .example:hover .delete {
-      display: block;
     }
 
     /*
@@ -451,6 +396,7 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="style/examples.css">
   <link rel="stylesheet" href="style/parseTree.css">
   <link rel="stylesheet" href="style/semanticsEditor.css">
   <link rel="stylesheet" href="style/exampleGenerationLinks.css">
@@ -463,8 +409,16 @@
     </div>
     <div id="topSplitter" class="splitter vertical"></div>
     <div id="exampleContainer">
-      <div id="ExampleRequestContainer">
-        <h2>Need Examples For:</h2>
+      <div id="userExampleContainer">
+        <h2>Examples
+          <span id="examplesNeededDrawer">Needed Examples <span class="indicator">&#x2B05;</span></span>
+        </h2>
+        <ul id="exampleList"></ul>
+        <div class="flex-fix"><div class="editorWrapper"></div></div>
+      </div>
+      <div id="exampleSplitter" class="splitter vertical disabled"></div>
+      <div id="ExampleRequestContainer" class="hidden">
+        <!-- <h2>Need Examples For:</h2> -->
         <div class="flex-fix"><div id="exampleRequests">
           <div class="requestContainer">
             <div class="requestScroll">
@@ -474,12 +428,6 @@
             </div>
           </div>
         </div></div>
-      </div>
-      <div id="exampleSplitter" class="splitter"></div>
-      <div id="userExampleContainer">
-        <h2>Examples</h2>
-        <ul id="exampleList"></ul>
-        <div class="flex-fix"><div class="editorWrapper"></div></div>
       </div>
     </div>
   </div>

@@ -31,12 +31,14 @@
       }
     }
 
-    handle.onmousedown = function(e) {
-      dragging = true;
-      dragOverlay.style.display = 'block';
-      dragOverlay.style.cursor = isVertical ? 'ew-resize' : 'ns-resize';
-      e.preventDefault();
-    };
+    handle.addEventListener('mousedown', function(e) {
+      if (!el.classList.contains('disabled')) {
+        dragging = true;
+        dragOverlay.style.display = 'block';
+        dragOverlay.style.cursor = isVertical ? 'ew-resize' : 'ns-resize';
+        e.preventDefault();
+      }
+    });
     window.addEventListener('mousemove', function(e) {
       var parentElBounds = parentEl.getBoundingClientRect();
       var relativeX = e.clientX - parentElBounds.left;
