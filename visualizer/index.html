@@ -32,7 +32,7 @@
       color: black;
       font-style: normal;
       border-radius: 3px;
-      padding: 2px 6px 1px 6px;
+      padding: 2px 12px 1px 6px;
       position: fixed;
       top: 8px;
       right: 50%;
@@ -47,22 +47,19 @@
       font-style: italic;
       color: #999;
     }
+
     #saveIndicator {
       color: #999;
+      display: inline-block;
+      overflow: hidden;
+      vertical-align: middle;
     }
-    #saveIndicator #saved {
-      display: inline;
+    #saveIndicator > * {
+      overflow: hidden;
     }
-    #saveIndicator #edited {
-      color: #e0a;
-      font-weight: bold;
-      display: none;
-    }
-    #saveIndicator.edited #edited {
-      display: inline;
-    }
-    #saveIndicator.edited #saved {
-      display: none;
+    #saveIndicator.edited #saved,
+    #saveIndicator:not(.edited) #edited {
+      height: 0;
     }
 
     #options {
@@ -509,7 +506,10 @@
     <input id="grammarFile" type="file" accept=".ohm" hidden>
     <button id="loadGrammar">Load...</button>
     <button id="saveGrammar">Save...</button>
-    <label id="saveIndicator" hidden><span id="saved">Saved.</span><span id="edited">Edited</span></label>
+    <label id="saveIndicator" hidden>
+      <div id="saved">Saved</div>
+      <div id="edited">Edited</div>
+    </label>
   </div>
 
   <div id="measuringDiv">
