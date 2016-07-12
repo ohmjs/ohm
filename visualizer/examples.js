@@ -6,9 +6,32 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohm, root.ohmEditor);
+    initModule(root.ohm, root.ohmEditor, root.CheckedEmitter);
   }
-})(this, function(ohm, ohmEditor) {
+})(this, function(ohm, ohmEditor, CheckedEmitter) {
+
+  // Exports
+  // -------
+
+  ohmEditor.examples = Object.assign(new CheckedEmitter(), {
+    addExample: addExample,
+    getExample: getExample,
+    getExamples: getExamples,
+    setExample: setExample,
+    setSelected: setSelected,
+    saveExamples: saveExamples
+  });
+
+  ohmEditor.examples.registerEvents({
+    'add:example': ['id'],
+    'set:example': ['id', 'oldValue', 'newValue'],
+    'set:selected': ['id'],
+    'remove:example': ['id']
+  });
+
+  // Helpers
+  // -------
+
   var idCounter = 0;
   var selectedId;
   var exampleValues = Object.create(null);
@@ -62,6 +85,9 @@
       if (selectedId === id) {
         selectedId = null;
       }
+
+      delete exampleValues[id];
+      ohmEditor.examples.emit('remove:example', id);
     };
     li.appendChild(del);
 
@@ -70,6 +96,8 @@
     exampleValues[id] = null;
     setExample(id, '');
 
+    ohmEditor.examples.emit('add:example', id);
+
     return id;
   }
 
@@ -77,10 +105,15 @@
     return exampleValues[id];
   }
 
+  function getExamples() {
+    return exampleValues;
+  }
+
   function setExample(id, value) {
     if (!(id in exampleValues)) {
       throw new Error(id + ' is not a valid example id');
     }
+    var oldValue = exampleValues[id];
     exampleValues[id] = value;
     var code = getListEl(id).querySelector(' code');
     code.parentElement.classList.remove('pass', 'fail');
@@ -90,6 +123,8 @@
     } else {
       code.innerHTML = '&nbsp;';
     }
+
+    ohmEditor.examples.emit('set:example', id, oldValue, value);
   }
 
   function setSelected(id) {
@@ -106,6 +141,8 @@
       }
       el.classList.add('selected');
     }
+
+    ohmEditor.examples.emit('set:selected', id);
   }
 
   // TODO: How will I know about these commands? (UI for "save as new"?)
@@ -159,8 +196,11 @@
     });
 
     // Select the first example.
-    var firstId = document.querySelector('#exampleList li:first-child').id;
-    setSelected(firstId);
+    var firstIDDOM = document.querySelector('#exampleList li:first-child');
+    if (firstIDDOM) {
+      var firstId = firstIDDOM.id;
+      setSelected(firstId);
+    }
   }
 
   function saveExamples(elem, key) {
@@ -173,14 +213,4 @@
 
   restoreExamples(ohmEditor.ui.inputEditor, 'examples', document.querySelector('#sampleExamples'));
 
-  // Exports
-  // -------
-
-  ohmEditor.examples = {
-    addExample: addExample,
-    getExample: getExample,
-    setExample: setExample,
-    setSelected: setSelected,
-    saveExamples: saveExamples
-  };
 });

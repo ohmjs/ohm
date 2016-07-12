@@ -3,6 +3,7 @@
 'use strict';
 
 // TODO: handle invalid grammar in textbox
+// TODO: fix needed eamples bug (need force update to get rid of ident)
 
 (function(root, initModule) {
   if (typeof exports === 'object') {
@@ -27,13 +28,46 @@
   /* eslint-enable no-unused-vars */
 
   // TODO: may want to reset current worker instead
-  ohmEditor.addListener('parse:grammar', function(_, grammar, __) {
-    exampleWorker.terminate();
+
+  var grammar;
+
+  function resetWorker(grammar) {
+    if (exampleWorker) {
+      exampleWorker.terminate();
+    }
     exampleWorker = new Worker('exampleWorker.js');
     exampleWorker.onmessage = onWorkerMessage;
     exampleWorker.postMessage({
       name: 'initialize', recipe: grammar.toRecipe()
     });
+
+    Object.values(ohmEditor.examples.getExamples()).forEach(function(example) {
+      if (grammar.match(example).succeeded()) {
+        exampleWorkerManager.addUserExample(grammar.defaultStartRule, example);
+      }
+    });
+  }
+
+  ohmEditor.addListener('parse:grammar', function(_, g, __) {
+    grammar = g;
+    resetWorker(g);
+  });
+
+  ohmEditor.examples.addListener('set:example', function(_, oldValue, newValue) {
+    if (newValue.trim() === '') {
+      return;
+    } else if (oldValue.trim() === '') {
+      var grammar = ohmEditor.grammar;
+      if (grammar.match(newValue).succeeded()) {
+        exampleWorkerManager.addUserExample(grammar.defaultStartRule, newValue);
+      }
+    } else {
+      resetWorker(grammar);
+    }
+  });
+
+  ohmEditor.examples.addListener('remove:example', function(_) {
+    resetWorker(grammar);
   });
 
   function onWorkerMessage(event) {

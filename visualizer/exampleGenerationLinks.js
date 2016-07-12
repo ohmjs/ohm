@@ -1,11 +1,10 @@
 /* eslint-env browser */
 
-// TODO: sane variable naming
-// TODO: organize state better
 // TODO: fix UI timing issues
+//   * caching example info
+//   * reducing time for chunk execution on worker
 // TODO: update selectable links on neededExamples
 // TODO: in indicator, don't highlight all cases if rule is doable
-// TODO: fix line bug
 
 'use strict';
 
@@ -37,6 +36,7 @@
   };
 
   var isMouseDown;
+  var linksEnabled;
 
   // TODO: spin off common functionality as helpers
   function isPlatformMac() {
@@ -46,7 +46,9 @@
   // modifier+Shift
   function areLinksEnabled(e) {
     var modifierKey = isPlatformMac() ? e.metaKey : e.ctrlKey;
-    return modifierKey && e.shiftKey && !e.altKey && !(isPlatformMac() ? e.ctrlKey : e.metaKey);
+    linksEnabled = modifierKey && e.shiftKey && !e.altKey &&
+                   !(isPlatformMac() ? e.ctrlKey : e.metaKey);
+    return linksEnabled;
   }
 
   function updateLinks(cm, e) {
@@ -132,12 +134,10 @@
   function toggleExamplesFor(position) {
     if (exampleDisplay.lineWidget) {
       exampleDisplay.DOM.style.height = 0;
-      setTimeout(function() {
-        exampleDisplay.lineWidget.clear();
-        exampleDisplay.lineWidget = null;
-        exampleDisplay.DOM = null;
-        exampleDisplay.rule = null;
-      }, 500);
+      exampleDisplay.lineWidget.clear();
+      exampleDisplay.lineWidget = null;
+      exampleDisplay.DOM = null;
+      // exampleDisplay.rule = null;
     }
     if ((exampleDisplay.rule &&
          exampleDisplay.rule.ruleName !== mousePositionInfo.rule.ruleName) ||
@@ -145,6 +145,8 @@
       exampleWorkerManager.requestExamples(
         ruleDefinitionFor(grammarEditor, position).ruleName
       );
+    } else {
+      exampleDisplay.rule = null;
     }
   }
 
@@ -157,7 +159,7 @@
     exampleDisplay.lineWidget = grammarEditor.addLineWidget(
       mousePositionInfo.position.line, exampleDisplay.DOM
     );
-    exampleDisplay.rule = grammar.ruleBody[ruleName];
+    exampleDisplay.rule = Object.assign({}, grammar.ruleBodies[ruleName], {ruleName: ruleName});
     exampleDisplay.DOM.style.height = 0;
     setTimeout(function() { exampleDisplay.DOM.style.height = 'auto'; }, 0);
   });
@@ -201,10 +203,10 @@
     // navigation on mouseup.
     editor.getWrapperElement().addEventListener('mouseup', function(e) {
       isMouseDown = false;
-      if (mousePositionInfo.mark) {
+      if (linksEnabled && mousePositionInfo.mark) {
         var position = getPointPosition(editor, mouseCoords.x, mouseCoords.y);
         var rule = ruleDefinitionFor(editor, position);
-        if (rule.ruleName === mousePositionInfo.rule.ruleName) {
+        if (rule && rule.ruleName === mousePositionInfo.rule.ruleName) {
           toggleExamplesFor(getPointPosition(editor, e.clientX, e.clientY));
         }
       }

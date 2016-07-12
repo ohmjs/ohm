@@ -8,6 +8,7 @@ self.importScripts('../dist/ohm.js', 'utils.js');
 // communicates with 'exampleGenerationUI.js'
 
 // TODO: prevent this from generating forever
+// TODO: implement 'WYSIWIH' approach to example changes
 
 (function(root, initModule) {
   if (typeof exports === 'object') {
@@ -20,6 +21,7 @@ self.importScripts('../dist/ohm.js', 'utils.js');
   var grammar;
 
   var examplePieces = {};
+  var generator;
 
   var overrides = {
     ident: function(g, ex, syn, args) {
@@ -63,26 +65,10 @@ self.importScripts('../dist/ohm.js', 'utils.js');
       case 'add:userExample':
         ruleName = e.data.args[0];
         var example = e.data.args[1];
-        processExampleFromUser(example, ruleName);
+        generator.processExampleFromUser(example, ruleName);
         break;
     }
   }, false);
-
-  function processExampleFromUser(example, optRuleName) {
-    if (optRuleName) {
-      var trace = grammar.trace(example, optRuleName);
-      if (trace.succeeded) {
-        addPiecesToDict(trace, examplePieces);
-      }
-    }
-
-    utils.objectForEach(grammar.ruleBodies, function(ruleName) {
-      var trace = grammar.trace(example, ruleName);
-      if (trace.succeeded) {
-        addPiecesToDict(trace, examplePieces);
-      }
-    });
-  }
 
   function addPiecesToDict(trace, examples) {
     if (trace.expr.constructor.name === 'Terminal') {
@@ -114,6 +100,31 @@ self.importScripts('../dist/ohm.js', 'utils.js');
     this.currentRuleIndex = 0;
   }
 
+  ExampleGenerator.prototype.processExampleFromUser = function(example, optRuleName) {
+    if (optRuleName) {
+      var trace = grammar.trace(example, optRuleName);
+      if (trace.succeeded) {
+        addPiecesToDict(trace, examplePieces);
+      }
+    }
+
+    utils.objectForEach(grammar.ruleBodies, function(ruleName) {
+      var trace = grammar.trace(example, ruleName);
+      if (trace.succeeded) {
+        addPiecesToDict(trace, examplePieces);
+      }
+    });
+
+    var oldSize = this.examplesNeeded.length;
+    this.examplesNeeded = this.examplesNeeded.filter(function(ruleName) {
+      return !examplePieces.hasOwnProperty(ruleName);
+    });
+    if (this.examplesNeeded.length < oldSize) {
+      self.postMessage({name: 'received:neededExamples',
+                        args: [this.examplesNeeded]});
+    }
+  };
+
   ExampleGenerator.prototype.next = function() {
     var that = this;
     var currentRuleName = this.rules[this.currentRuleIndex];
@@ -141,8 +152,8 @@ self.importScripts('../dist/ohm.js', 'utils.js');
   }
 
   function start() {
-    var generator = new ExampleGenerator(examplePieces);
-    runComputationStep(generator, 500);
+    generator = new ExampleGenerator(examplePieces);
+    runComputationStep(generator, 100);
   }
 
   // HELPER FUNCTIONS
