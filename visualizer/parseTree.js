@@ -233,6 +233,10 @@
     return true;
   }
 
+  function isAlt(expr) {
+    return expr instanceof ohm.pexprs.Alt;
+  }
+
   function isSyntactic(expr) {
     if (expr instanceof ohm.pexprs.Apply) {
       return expr.isSyntactic();
@@ -283,7 +287,7 @@
     `traceNode` is an Alt node whose children should be visually distinguished.
   */
   function hasVisibleChoice(traceNode) {
-    if (traceNode.expr instanceof ohm.pexprs.Alt && ohmEditor.options.showFailures) {
+    if (isAlt(traceNode.expr) && ohmEditor.options.showFailures) {
       // If there's any failed child, we need to show multiple children.
       return traceNode.children.some(function(c) {
         return !c.succeeded;
@@ -571,9 +575,8 @@
         var container = containerStack[containerStack.length - 1];
         var el = createTraceElement(node, container, childInput);
 
-        // Use a disclosure arrow if it's a non-leaf in a vbox -- unless the node is an Alt
-        // with visible choice, because that would result in a double arrow.
-        var useDisclosure = !isLeafNode && container.classList.contains('vbox') && !visibleChoice;
+        var isVBoxItem = container.classList.contains('vbox');
+        var useDisclosure = isLabeled && isVBoxItem;
 
         domUtil.toggleClasses(el, {
           disclosure: useDisclosure,
@@ -583,7 +586,8 @@
         });
 
         var children = el.appendChild(domUtil.createElement('.children'));
-        children.classList.toggle('vbox', visibleChoice || visibleLR);
+        children.classList.toggle(
+            'vbox', visibleChoice || visibleLR || (isAlt(node.expr) && isVBoxItem));
 
         var isCollapsed = shouldTraceElementBeCollapsed(el, node);
         if (isCollapsed) {
