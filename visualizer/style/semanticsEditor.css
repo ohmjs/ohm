@@ -225,8 +225,13 @@ headerBlock real {
 }
 
 /* `Force Evaluation` entry in `parseTreeMenu` */
-.contextMenu label .sign {
-  margin-left: 10px;
+.contextMenu label .triangle {
+  float: right;
+  font-size: 12px;
+  margin-left: 1em;
+  position: relative;
+  right: -10px;
+  top: 1px;
 }
 .contextMenu li div:not(:first-child), li textarea {
   margin-left: 10px;
