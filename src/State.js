@@ -23,7 +23,6 @@ function State(grammar, input, opts) {
   this.startExpr = this._getStartExpr(grammar, opts.startApplication);
   this.inputStream = new InputStream(input);
   this.tracingEnabled = opts.trace || false;
-  this.matchNodes = opts.matchNodes || false;
   this.init(RM_RIGHTMOST_FAILURE_POSITION);
 }
 
