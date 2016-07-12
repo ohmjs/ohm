@@ -615,6 +615,14 @@
       }
     };
     renderedTrace.walk(renderActions);
+
+    // If the match failed, add the unconsumed input to #expandedInput.
+    if (trace.result.failed()) {
+      var firstFailedEl = domUtil.$('#parseResults > .pexpr > .children > .pexpr.failed');
+      var remainingInput = trace.inputStream.sourceSlice(firstFailedEl._traceNode.pos);
+      expandedInputDiv.appendChild(domUtil.createElement('span.input.unconsumed', remainingInput));
+    }
+
     initializeWidths();
 
     // Hack to ensure that the vertical scroll bar doesn't overlap the parse tree contents.

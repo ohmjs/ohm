@@ -30,10 +30,13 @@
   text-align: center;
 }
 #expandedInput .whitespace {
-  color: #ccc;
+  color: #bbb;
 }
 #expandedInput .highlight {
   background-color: #B5D5FF;
+}
+#expandedInput .unconsumed {
+  color: #bbb;
 }
 
 #parseResults {
