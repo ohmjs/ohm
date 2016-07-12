@@ -1,7 +1,6 @@
 /* eslint-env browser */
 
 // TODO: update selectable links on neededExamples
-// TODO: in indicator, don't highlight all cases if rule is doable
 // TODO: nicer formatting for example display
 // TODO: live-updating example displays
 
@@ -76,8 +75,9 @@
         var availableExampleBodies = availableExamples.map(function(ruleName) {
           return grammar.ruleBodies[ruleName];
         });
-        clickableMarks = availableExampleBodies.map(function(rule) {
-          return markRuleBody(cm, rule, 'clickableExampleLink');
+        clickableMarks = availableExampleBodies.map(function(rule, i) {
+          var augmentedRuleBody = Object.assign({}, rule, {ruleName: availableExamples[i]});
+          return markRuleBody(cm, augmentedRuleBody, 'clickableExampleLink');
         });
       }
     } else {
@@ -91,8 +91,9 @@
   }
 
   function markRuleBody(cm, ruleBody, className) {
-    var startPos = cm.posFromIndex(ruleBody.definitionInterval.startIdx);
-    var endPos = cm.posFromIndex(ruleBody.definitionInterval.endIdx);
+    var name = nameInterval(ruleBody);
+    var startPos = cm.posFromIndex(name.startIdx);
+    var endPos = cm.posFromIndex(name.endIdx);
     return cm.markText(startPos, endPos, {
       className: className
     });
@@ -130,6 +131,34 @@
     }
   }
 
+  function nameInterval(ruleDefinition) {
+    var defString = ruleDefinition.definitionInterval.contents;
+    var startIdx, endIdx;
+    if (ruleDefinition.ruleName.includes('_')) {
+      // next token after --
+      var beginName = defString.lastIndexOf('--');
+      var afterDashes = defString.slice(beginName + 2);
+      var afterDashesTrimmed = afterDashes.trim();
+      var afterDashesTrIdx = afterDashes.indexOf(afterDashesTrimmed);
+
+      startIdx = beginName + 2 + afterDashesTrIdx;
+      endIdx = startIdx + afterDashesTrimmed.length;
+    } else {
+      // first token before =
+      var beforeEquals = defString.slice(0, defString.indexOf('='));
+      var beforeEqualsTrimmed = beforeEquals.trim();
+      var beforeEqualsTrIdx = beforeEquals.indexOf(beforeEqualsTrimmed);
+
+      startIdx = beforeEqualsTrIdx;
+      endIdx = startIdx + beforeEqualsTrimmed.length;
+    }
+
+    return {
+      startIdx: ruleDefinition.definitionInterval.startIdx + startIdx,
+      endIdx: ruleDefinition.definitionInterval.startIdx + endIdx
+    };
+  }
+
   function toggleExamplesFor(position) {
     if (exampleDisplay.lineWidget) {
       exampleDisplay.DOM.style.height = 0;
@@ -149,7 +178,6 @@
     }
   }
 
-  // TODO: toggle for same line
   exampleWorkerManager.addListener('received:examples', function(ruleName, examples) {
     examples = examples || [];
     exampleDisplay.DOM = makeExampleDisplay(ruleName, examples.filter(function(_, i) {

@@ -13,6 +13,8 @@
   }
 })(this, function(ohm, ohmEditor, exampleWorkerManager, utils, autosize) {
 
+  var neededExamples = [];
+
   var focusedElement = null;
   var focusedRuleName = '';
 
@@ -31,7 +33,7 @@
   });
 
   var timeout = null;
-  exampleWorkerManager.addListener('received:neededExamples', function(neededExamples) {
+  exampleWorkerManager.addListener('received:neededExamples', function(updatedNeededExamples) {
     if (timeout) {
       clearTimeout(timeout);
     }
@@ -39,12 +41,14 @@
     timeout = setTimeout(function() {
       var neededExampleList = utils.$('#exampleRequests ul');
 
+      neededExamples = updatedNeededExamples;
+
       Array.prototype.slice.call(neededExampleList.children)
-      .forEach(function(childNode) {
-        if (childNode.firstChild !== focusedElement) {
-          neededExampleList.removeChild(childNode);
-        }
-      });
+        .forEach(function(childNode) {
+          if (childNode.firstChild !== focusedElement) {
+            neededExampleList.removeChild(childNode);
+          }
+        });
 
       neededExamples.filter(function(ruleName) {
         return ruleName !== focusedRuleName;
@@ -73,11 +77,17 @@
       focusedElement = null;
       focusedRuleName = '';
 
-      exampleWorkerManager.updateNeededExamples();
+      if (request.domNode.value.trim() === '' &&
+          !neededExamples.includes(ruleName)) {
+        request.domNode.parentNode.removeChild(request.domNode);
+      }
+      // if this is not part of examples needed, and is empty,
+      // remove it
     });
     request.addListener('validSubmit', function(event) {
       request.domNode.value = '';
       exampleWorkerManager.addUserExample(request.ruleName, event.text);
+      exampleWorkerManager.updateNeededExamples();
     });
 
     return request.domNode;

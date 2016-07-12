@@ -41,7 +41,9 @@
       name: 'initialize', recipe: grammar.toRecipe()
     });
 
-    Object.values(ohmEditor.examples.getExamples()).forEach(function(example) {
+    var examples = ohmEditor.examples.getExamples();
+    Object.keys(examples).forEach(function(id) {
+      var example = examples[id];
       if (grammar.match(example).succeeded()) {
         exampleWorkerManager.addUserExample(grammar.defaultStartRule, example);
       }
