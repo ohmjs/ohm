@@ -12,14 +12,8 @@
                root.domUtil);
   }
 })(this, function(ohm, ohmEditor, CheckedEmitter, document, cmUtil, d3, domUtil) {
-  var performance = {now: function() { return 0; }};
-
   // Fake getComputedStyle() for node (required for unit tests)
-  if (typeof window === 'undefined') {
-    var window = global;
-  }
-
-  var getComputedStyle = window.getComputedStyle || function(elt) { return {}; };
+  var getComputedStyle = getComputedStyle || function(elt) { return {}; };
 
   var ArrayProto = Array.prototype;
   var $ = domUtil.$;
@@ -100,9 +94,10 @@
     var span = measuringDiv.appendChild(domUtil.createElement('span.input'));
     span.innerHTML = inputEl.textContent;
 
-    span.style.fontFamily = getComputedStyle(inputEl).fontFamily;
-    span.style.fontSize = getComputedStyle(inputEl).fontSize;
-    span.style.fontWeight = getComputedStyle(inputEl).fontWeight;
+    measuringDiv.classList.add('expandedInputFont');
+    // span.style.fontFamily = getComputedStyle(inputEl).fontFamily;
+    // span.style.fontSize = getComputedStyle(inputEl).fontSize;
+    // span.style.fontWeight = getComputedStyle(inputEl).fontWeight;
     var bounds = span.getBoundingClientRect();
 
     var result = {
@@ -111,6 +106,7 @@
     };
 
     measuringDiv.removeChild(span);
+    measuringDiv.classList.remove('expandedInputFont');
     return result;
   }
 
@@ -155,13 +151,16 @@
 
       if (!el.classList.contains('hidden') &&
           domUtil.closestElementMatching('.collapsed', el) == null) {
-        var elPaddingLeft = parseFloat(getComputedStyle(el).paddingLeft);
-        var elPaddingRight = parseFloat(getComputedStyle(el).paddingRight);
-        var elMarginLeft = parseFloat(getComputedStyle(el).marginLeft);
-        var elMarginRight = parseFloat(getComputedStyle(el).marginRight);
+        var elStyle = getComputedStyle(el);
+
+        var elPaddingLeft = parseFloat(elStyle.paddingLeft);
+        var elPaddingRight = parseFloat(elStyle.paddingRight);
+        var elMarginLeft = parseFloat(elStyle.marginLeft);
+        var elMarginRight = parseFloat(elStyle.marginRight);
+
         var totalPadding = elPaddingRight + elPaddingLeft;
 
-        el._input.style.minWidth = (el.getBoundingClientRect().width - totalPadding) + 'px';
+        el._input.style.minWidth = (el.clientWidth - totalPadding) + 'px';
         el._input.style.marginLeft = (elPaddingLeft + elMarginLeft) + 'px';
         el._input.style.marginRight = (elPaddingRight + elMarginRight) + 'px';
       }// TODO: bad ==
@@ -580,7 +579,6 @@
     ohmEditor.parseTree.emit('render:parseTree', renderedTrace);
     var renderActions = {
       enter: function handleEnter(node, parent, depth) {
-        lastTime = performance.now();
         // Don't show or recurse into nodes that didn't succeed, unless "Show failures" is enabled.
         if ((!node.succeeded && !ohmEditor.options.showFailures) ||
             (node.isImplicitSpaces && !ohmEditor.options.showSpaces)) {
@@ -641,12 +639,8 @@
         }
         inputStack.push(childInput);
         containerStack.push(children);
-
-        execTime = performance.now() - lastTime;
-        avgEnter = avgEnter + (execTime - avgEnter) /  ++nEnter;
       },
       exit: function(node, parent, depth) {
-        lastTime = performance.now();
         // If necessary, render the "Grow LR" trace as a pseudo-child, after the real child.
         if (hasVisibleLeftRecursion(node)) {
           node.terminatingLREntry.walk(renderActions);
@@ -656,24 +650,12 @@
         inputStack.pop();
 
         ohmEditor.parseTree.emit('exit:traceElement', el, node);
-
-        execTime = performance.now() - lastTime;
-        avgExit = avgExit + (execTime - avgExit) /  ++nExit;
       }
     };
 
-    var beforeWalk = performance.now();
     renderedTrace.walk(renderActions);
-    var afterWalk = performance.now();
-
-    var beforeInitWidths = performance.now();
     initializeWidths();
-    var afterInitWidths = performance.now();
 
-    console.log('average time spent in enter:', avgEnter);
-    console.log('average time spent in exit:', avgExit);
-    console.log('total walk time:', afterWalk - beforeWalk);
-    console.log('total initializeWidths time:', afterInitWidths - beforeInitWidths);
     // Hack to ensure that the vertical scroll bar doesn't overlap the parse tree contents.
     parseResultsDiv.style.paddingRight =
         2 + parseResultsDiv.scrollWidth - parseResultsDiv.clientWidth + 'px';

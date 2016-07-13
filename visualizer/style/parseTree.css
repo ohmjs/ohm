@@ -24,6 +24,13 @@
   outline: none;
   padding: 8px 0 8px 3px;
 }
+
+.expandedInputFont {
+  font-family: Menlo, Monaco, sans-serif;
+  font-size: 100%;
+  outline: none;
+}
+
 #expandedInput,
 #expandedInput span {
   display: inline-block;
