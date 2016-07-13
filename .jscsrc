@@ -1,6 +1,4 @@
 {
-  "preset": "google",
-
   "disallowKeywords": ["with"],
   "disallowQuotedKeysInObjects": true,
   "disallowSpaceAfterObjectKeys": true,
