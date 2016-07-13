@@ -13,7 +13,7 @@
   var grammarChanged = true;
   var inputChanged = true;
 
-  var showFailuresImplicitly = true;
+  var showFailuresImplicitly = false; // true;
 
   // Helpers
   // -------
@@ -52,6 +52,7 @@
   }
 
   function refresh() {
+
     var grammarEditor = ohmEditor.ui.grammarEditor;
     var inputEditor = ohmEditor.ui.inputEditor;
 
@@ -67,7 +68,8 @@
     }
 
     if (inputChanged || grammarChanged) {
-      showFailuresImplicitly = true;  // Reset to default.
+      // showFailuresImplicitly = true;  // Reset to default.
+      showFailuresImplicitly = false;
     }
 
     if (inputChanged) {
