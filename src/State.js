@@ -116,7 +116,8 @@ State.prototype = {
   },
 
   truncateBindings: function(newLength) {
-    // TODO: is this really faster than setting the `length` property?
+    // Yes, this is this really faster than setting the `length` property (tested with
+    // bin/es5bench on Node v6.1.0).
     while (this.bindings.length > newLength) {
       this.bindings.pop();
     }
@@ -204,8 +205,10 @@ State.prototype = {
     var posInfo = this.posInfos[pos];
     if (posInfo && expr.ruleName) {
       var memoRec = posInfo.memo[expr.toMemoKey()];
-      if (memoRec) {
-        return memoRec.traceEntry;
+      if (memoRec && memoRec.traceEntry) {
+        var entry = memoRec.traceEntry.cloneWithExpr(expr);
+        entry.isMemoized = true;
+        return entry;
       }
     }
     return null;
@@ -213,9 +216,8 @@ State.prototype = {
 
   // Returns a new trace entry, with the currently active trace array as its children.
   getTraceEntry: function(pos, expr, succeeded, bindings) {
-    var memoEntry = this.getMemoizedTraceEntry(pos, expr);
-    return memoEntry ? memoEntry.cloneWithExpr(expr)
-                     : new Trace(this.inputStream, pos, expr, succeeded, bindings, this.trace);
+    return this.getMemoizedTraceEntry(pos, expr) ||
+           new Trace(this.inputStream, pos, expr, succeeded, bindings, this.trace);
   },
 
   isTracing: function() {

@@ -1,5 +1,7 @@
-'use strict';
+/* eslint-disable */
+/* eslint-env browser */
 
+'use strict';
 // Wrap the module in a universal module definition (UMD), allowing us to
 // either include it as a <script> or to `require` it as a CommonJS module.
 (function(root, initModule) {
@@ -10,18 +12,16 @@
                root.domUtil);
   }
 })(this, function(ohm, ohmEditor, CheckedEmitter, document, cmUtil, d3, domUtil) {
+  // Fake getComputedStyle() for node (required for unit tests)
+  var getComputedStyle = getComputedStyle || function(elt) { return {}; };
+
   var ArrayProto = Array.prototype;
-  function $(sel) { return document.querySelector(sel); }
+  var $ = domUtil.$;
 
   var UnicodeChars = {
     ANTICLOCKWISE_OPEN_CIRCLE_ARROW: '\u21BA',
     HORIZONTAL_ELLIPSIS: '\u2026',
     MIDDLE_DOT: '\u00B7'
-  };
-
-  var KeyCode = {
-    ENTER: 13,
-    ESC: 27
   };
 
   // The root trace node from the last time the input was parsed (not affected by zooming).
@@ -32,10 +32,6 @@
   var inputMark;
   var grammarMark;
   var defMark;
-
-  // Information about the individual parsing steps, for use with the timeline.
-  var parsingSteps;
-  var stepsByNodeId = {};
 
   var nextNodeId = 0;
 
@@ -97,11 +93,20 @@
     var measuringDiv = $('#measuringDiv');
     var span = measuringDiv.appendChild(domUtil.createElement('span.input'));
     span.innerHTML = inputEl.textContent;
+
+    measuringDiv.classList.add('expandedInputFont');
+    // span.style.fontFamily = getComputedStyle(inputEl).fontFamily;
+    // span.style.fontSize = getComputedStyle(inputEl).fontSize;
+    // span.style.fontWeight = getComputedStyle(inputEl).fontWeight;
+    var bounds = span.getBoundingClientRect();
+
     var result = {
-      width: span.clientWidth,
-      height: span.clientHeight
+      width: bounds.width,
+      height: bounds.height
     };
+
     measuringDiv.removeChild(span);
+    measuringDiv.classList.remove('expandedInputFont');
     return result;
   }
 
@@ -143,7 +148,24 @@
       if (!el._input) {
         continue;
       }
-      el._input.style.minWidth = el.offsetWidth + 'px';
+
+      if (!el.classList.contains('hidden') &&
+          domUtil.closestElementMatching('.collapsed', el) == null) {
+        var elStyle = getComputedStyle(el);
+
+        var elPaddingLeft = parseFloat(elStyle.paddingLeft);
+        var elPaddingRight = parseFloat(elStyle.paddingRight);
+        var elMarginLeft = parseFloat(elStyle.marginLeft);
+        var elMarginRight = parseFloat(elStyle.marginRight);
+
+        var totalPadding = elPaddingRight + elPaddingLeft;
+
+        el._input.style.minWidth = (el.clientWidth - totalPadding) + 'px';
+        el._input.style.marginLeft = (elPaddingLeft + elMarginLeft) + 'px';
+        el._input.style.marginRight = (elPaddingRight + elMarginRight) + 'px';
+      }// TODO: bad ==
+      // }
+
       if (!el.style.minWidth) {
         el.style.minWidth = measureInput(el._input).width + 'px';
       }
@@ -286,17 +308,14 @@
         pxWidth
 
     Since this could be confused with `pctWidth` being the parent node of `pxWidth`, we need
-    to distinguish choice nodes visually when showing failures. This function returns true
-    if `traceNode` is a choice that needs to be visually distinguished, otherwise false.
+    to distinguish choice nodes visually when showing failures. This function returns true if
+    `traceNode` is an Alt node whose children should be visually distinguished.
   */
-  function isVisibleChoice(traceNode, parent) {
-    if (!(parent && parent.expr instanceof ohm.pexprs.Alt)) {
-      return false;  // It's not even a choice.
-    }
-    if (ohmEditor.options.showFailures) {
-      // Make the choice visible if the first (real) choice failed.
-      return parent.children.some(function(c) {
-        return !c.isImplicitSpaces && !c.succeeded;
+  function hasVisibleChoice(traceNode) {
+    if (traceNode.expr instanceof ohm.pexprs.Alt && ohmEditor.options.showFailures) {
+      // If there's any failed child, we need to show multiple children.
+      return traceNode.children.some(function(c) {
+        return !c.succeeded;
       });
     }
     return false;
@@ -315,6 +334,9 @@
         return true;
       }
     }
+    if (isLRBaseCase(traceNode)) {
+      return true;
+    }
     return traceNode.children.length === 0;
   }
 
@@ -324,34 +346,20 @@
            expr instanceof ohm.pexprs.UnicodeChar;
   }
 
+  function isLRBaseCase(traceNode) {
+    // If the children are exactly `[undefined]`, it's the base case for left recursion.
+    // TODO: Figure out a better way to handle this when generating traces.
+    return traceNode.children.length === 1 && traceNode.children[0] == null;
+  }
+
+  function hasVisibleLeftRecursion(traceNode) {
+    return ohmEditor.options.showFailures && traceNode.terminatingLREntry != null;
+  }
+
   function couldZoom(currentRootTrace, traceNode) {
     return currentRootTrace !== traceNode &&
            traceNode.succeeded &&
            !isLeaf(traceNode);
-  }
-
-  // Permanently add a menu item to the context menu.
-  // `id` is the value to use as the 'id' attribute of the DOM node.
-  // `label` is the text label of the item.
-  // `onClick` is a function to use as the onclick handler for the item.
-  // If an item with the same id was already added, then the old item will be updated
-  // with the new values from `label`, `enabled`, and `onClick`.
-  function addMenuItem(id, label, enabled, onClick) {
-    var itemList = $('#parseTreeMenu ul');
-    var li = itemList.querySelector('#' + id);
-    if (!li) {
-      li = itemList.appendChild(domUtil.createElement('li'));
-      li.id = id;
-    }
-    // Set the label.
-    li.innerHTML = '<label></label>';
-    li.firstChild.innerHTML = label;
-
-    li.classList.toggle('disabled', !enabled);
-    if (enabled) {
-      li.onclick = onClick;
-    }
-    return li;
   }
 
   // Handle the 'contextmenu' event `e` for the DOM node associated with `traceNode`.
@@ -364,19 +372,25 @@
     var currentRootTrace = zoomState.zoomTrace || rootTrace;
     var zoomEnabled = couldZoom(currentRootTrace, traceNode);
 
-    addMenuItem('getInfoItem', 'Get Info', false);
-    addMenuItem('zoomItem', 'Zoom to Node', zoomEnabled, function() {
+    domUtil.addMenuItem('parseTreeMenu', 'getInfoItem', 'Get Info', false);
+    domUtil.addMenuItem('parseTreeMenu', 'zoomItem', 'Zoom to Node', zoomEnabled, function() {
       updateZoomState({zoomTrace: traceNode});
       clearMarks();
     });
-    ohmEditor.parseTree.emit('contextMenu', e.target, traceNode, addMenuItem);
+    ohmEditor.parseTree.emit('contextMenu', e.target, traceNode);
 
     e.preventDefault();
     e.stopPropagation();  // Prevent ancestor wrappers from handling.
   }
 
-  function hideContextMenu() {
-    $('#parseTreeMenu').hidden = true;
+  function augmentWithParent(traceNode, parent) {
+    parent = parent || null;
+    traceNode.parent = parent;
+    traceNode.children.forEach(function(child) {
+      if (child) {
+        augmentWithParent(child, traceNode);
+      }
+    });
   }
 
   // Create the DOM node that contains the parse tree for `traceNode` and all its children.
@@ -387,9 +401,14 @@
     return el;
   }
 
-  function createTraceLabel(traceNode) {
+  function createTraceLabel(traceNode, optExtraInfo) {
     var pexpr = traceNode.expr;
     var label = domUtil.createElement('.label');
+
+    if (traceNode.terminatesLR) {
+      label.textContent = '[Grow LR]';
+      return label;
+    }
 
     var isInlineRule = pexpr.ruleName && pexpr.ruleName.indexOf('_') >= 0;
 
@@ -397,6 +416,9 @@
       var parts = pexpr.ruleName.split('_');
       label.textContent = parts[0];
       label.appendChild(domUtil.createElement('span.caseName', parts[1]));
+      if (optExtraInfo) {
+        label.appendChild(domUtil.createElement('span.info', ' ' + optExtraInfo));
+      }
     } else {
       var labelText = traceNode.displayString;
 
@@ -406,11 +428,10 @@
         labelText = labelText.slice(0, 20) + UnicodeChars.HORIZONTAL_ELLIPSIS;
       }
       label.textContent = labelText;
+      if (optExtraInfo) {
+        label.textContent += optExtraInfo;
+      }
     }
-    domUtil.toggleClasses(label, {
-      leaf: isLeaf(traceNode),
-      prim: isPrimitive(pexpr)
-    });
     return label;
   }
 
@@ -428,8 +449,10 @@
       wrapper.classList.add('zoomBorder');
     }
 
+    var info = isLRBaseCase(traceNode) ? '[LR]' : null;
+
     var selfWrapper = wrapper.appendChild(domUtil.createElement('.self'));
-    var label = selfWrapper.appendChild(createTraceLabel(traceNode));
+    var label = selfWrapper.appendChild(createTraceLabel(traceNode, info));
 
     label.addEventListener('click', function(e) {
       if (e.altKey && !(e.shiftKey || e.metaKey)) {
@@ -438,7 +461,7 @@
         // cmd + click to open or close semantic editor
         ohmEditor.parseTree.emit('cmdclick:traceElement', wrapper);
       } else if (!isLeaf(traceNode)) {
-        toggleTraceElement(wrapper);
+        toggleTraceElement(wrapper); // TODO
       }
       e.preventDefault();
     });
@@ -510,16 +533,6 @@
     }
   });
 
-  // Hide the context menu when Esc is pressed, any click happens, or another
-  // context menu is brought up.
-  document.addEventListener('click', hideContextMenu);
-  document.addEventListener('contextmenu', hideContextMenu);
-  document.addEventListener('keydown', function(e) {
-    if (e.keyCode === KeyCode.ESC) {
-      hideContextMenu();
-    }
-  });
-
   // Intialize the zoom out button.
   var zoomOutButton = $('#zoomOutButton');
   zoomOutButton.textContent = UnicodeChars.ANTICLOCKWISE_OPEN_CIRCLE_ARROW;
@@ -545,9 +558,6 @@
     expandedInputDiv.innerHTML = '';
     parseResultsDiv.innerHTML = '';
 
-    parsingSteps = [];
-    stepsByNodeId = {};
-
     var renderedTrace = trace;
     if (zoomState.zoomTrace && !zoomState.previewOnly) {
       renderedTrace = zoomState.zoomTrace;
@@ -560,33 +570,35 @@
     var inputStack = [expandedInputDiv];
     var containerStack = [rootContainer];
 
+    var avgEnter = 0;
+    var nEnter = 0;
+    var avgExit = 0;
+    var nExit = 0;
+    var lastTime = 0;
+    var execTime = 0;
     ohmEditor.parseTree.emit('render:parseTree', renderedTrace);
-    renderedTrace.walk({
-      enter: function(node, parent, depth) {
-        // Undefined nodes identify the base case for left recursion -- skip them.
-        // TODO: Figure out a better way to handle this when generating traces.
-        if (!node) {
-          return trace.SKIP;
-        }
-        // Don't recurse into nodes that didn't succeed, unless "Show failures" is enabled.
+    var renderActions = {
+      enter: function handleEnter(node, parent, depth) {
+        // Don't show or recurse into nodes that didn't succeed, unless "Show failures" is enabled.
         if ((!node.succeeded && !ohmEditor.options.showFailures) ||
             (node.isImplicitSpaces && !ohmEditor.options.showSpaces)) {
           return node.SKIP;
         }
-        var childInput;
-        var isWhitespace = node.expr.ruleName === 'spaces';
-        var isLeafNode = isLeaf(node);
-        var isLabeled = shouldNodeBeLabeled(node, parent);
-
         // Don't bother showing whitespace nodes that didn't consume anything.
+        var isWhitespace = node.expr.ruleName === 'spaces';
         if (isWhitespace && node.interval.contents.length === 0) {
           return node.SKIP;
         }
+        var isLabeled = shouldNodeBeLabeled(node, parent);
+        var isLeafNode = isLeaf(node);
+        var visibleChoice = hasVisibleChoice(node);
+        var visibleLR = hasVisibleLeftRecursion(node);
 
         // Get the span that contain the parent node's input. If it is undefined, it means that
         // this node is in a failed branch.
         var inputContainer = inputStack[inputStack.length - 1];
 
+        var childInput;
         if (inputContainer && node.succeeded) {
           var contents = isLeafNode ? node.interval.contents : '';
           childInput = inputContainer.appendChild(domUtil.createElement('span.input', contents));
@@ -601,13 +613,19 @@
         var container = containerStack[containerStack.length - 1];
         var el = createTraceElement(node, container, childInput);
 
+        // Use a disclosure arrow if it's a non-leaf in a vbox -- unless the node is an Alt
+        // with visible choice, because that would result in a double arrow.
+        var useDisclosure = !isLeafNode && container.classList.contains('vbox') && !visibleChoice;
+
         domUtil.toggleClasses(el, {
+          disclosure: useDisclosure,
           failed: !node.succeeded,
           hidden: !isLabeled,
-          visibleChoice: isVisibleChoice(node, parent)
+          leaf: isLeafNode
         });
 
         var children = el.appendChild(domUtil.createElement('.children'));
+        children.classList.toggle('vbox', visibleChoice || visibleLR);
 
         var isCollapsed = shouldTraceElementBeCollapsed(el, node);
         if (isCollapsed) {
@@ -616,12 +634,6 @@
 
         ohmEditor.parseTree.emit('create:traceElement', el, node);
 
-        // If the node is labeled, record it as a distinct "step" in the parsing timeline.
-        if (isLabeled) {
-          stepsByNodeId[el.id] = {enter: parsingSteps.length};
-          parsingSteps.push({type: 'enter', el: el, node: node, collapsed: isCollapsed});
-        }
-
         if (isLeafNode) {
           return node.SKIP;
         }
@@ -629,20 +641,20 @@
         containerStack.push(children);
       },
       exit: function(node, parent, depth) {
+        // If necessary, render the "Grow LR" trace as a pseudo-child, after the real child.
+        if (hasVisibleLeftRecursion(node)) {
+          node.terminatingLREntry.walk(renderActions);
+        }
         var childContainer = containerStack.pop();
         var el = childContainer.parentElement;
-        if (el.id in stepsByNodeId) {
-          stepsByNodeId[el.id].exit = parsingSteps.length;
-          parsingSteps.push({type: 'exit', node: node, el: el});
-        }
-
         inputStack.pop();
-      }
-    });
-    initializeWidths();
 
-    var slider = $('#timeSlider');
-    slider.value = slider.max = parsingSteps.length;
+        ohmEditor.parseTree.emit('exit:traceElement', el, node);
+      }
+    };
+
+    renderedTrace.walk(renderActions);
+    initializeWidths();
 
     // Hack to ensure that the vertical scroll bar doesn't overlap the parse tree contents.
     parseResultsDiv.style.paddingRight =
@@ -662,56 +674,9 @@
     $('#bottomSection .overlay').style.width = 0;  // Hide the overlay.
     $('#semantics').hidden = !ohmEditor.options.semantics;
     rootTrace = trace;
+    augmentWithParent(trace);
     clearZoomState();
   });
-
-  // When the time slider is scrubbed, move backwards/forwards through the
-  // individual parsing steps.
-  $('#timeSlider').oninput = function(e) {
-    var currentStep = parseInt(e.target.value, 10);
-    for (var i = 0; i < parsingSteps.length; ++i) {
-      var cmd = parsingSteps[i];
-      var el = cmd.el;
-      var isStepComplete = i <= currentStep;
-
-      switch (cmd.type) {
-        case 'enter':
-          el.hidden = !isStepComplete;
-          // Mark the element as undecided, unless it is a leaf node.
-          // Leaf nodes become decided as soon as control moves to them.
-          if (!isLeaf(cmd.node)) {
-            el.classList.add('undecided');
-          }
-          break;
-        case 'exit':
-          if (isStepComplete) {
-            el.classList.remove('undecided');
-          }
-          break;
-      }
-    }
-    // Highlight the currently-active step (unhighlighting the previous one first).
-    var stepEl = $('.currentParseStep');
-    if (stepEl) {
-      stepEl.classList.remove('currentParseStep');
-
-      // Re-collapse anything that was expanded just to make the current step visible.
-      while ((stepEl = domUtil.closestElementMatching('.pexpr.should-collapse', stepEl))) {
-        stepEl.classList.remove('should-collapse');
-        setTraceElementCollapsed(stepEl, true, 0);
-      }
-    }
-    if (currentStep !== parsingSteps.length) {
-      stepEl = parsingSteps[currentStep].el;
-      stepEl.classList.add('currentParseStep');
-
-      // Make sure the current step is not hidden in a collapsed tree.
-      while ((stepEl = domUtil.closestElementMatching('.pexpr.collapsed', stepEl))) {
-        stepEl.classList.add('should-collapse');
-        setTraceElementCollapsed(stepEl, false, 0);
-      }
-    }
-  };
 
   // Exports
   // -------
@@ -721,18 +686,21 @@
     clearMarks();
     refreshParseTree(rootTrace);
   };
+  parseTree.setTraceElementCollapsed = setTraceElementCollapsed;
   parseTree.registerEvents({
     // Emitted when a new trace element `el` is created for `traceNode`.
     'create:traceElement': ['el', 'traceNode'],
+
+    // Emitted when all of a trace element's subtrees have been created.
+    'exit:traceElement': ['el', 'traceNode'],
 
     // Emitted when a trace element is expanded or collapsed.
     'expand:traceElement': ['el'],
     'collapse:traceElement': ['el'],
 
     // Emitted when the contextMenu for the trace element of `traceNode` is about to be shown.
-    // `addMenuItem` can be called to add a menu item to the menu.
     // TODO: The key should be quoted to be consistent, but JSCS complains.
-    contextMenu: ['target', 'traceNode', 'addMenuItem'],
+    contextMenu: ['target', 'traceNode'],
 
     // Emitted before start rendering the parse tree
     'render:parseTree': ['traceNode'],

@@ -109,7 +109,10 @@ test('simple parse tree', function(t) {
   ohmEditor.registerEvents({
     'parse:input': ['matchResult', 'trace'],
     'change:inputEditor': ['codeMirror'],
-    'change:grammarEditor': ['codeMirror']
+    'change:grammarEditor': ['codeMirror'],
+    'peek:failure': ['failure'],
+    'unpeek:failure': [],
+    'goto:failure': ['failure']
   });
   ohmEditor.grammar = g;
   ohmEditor.options = {};

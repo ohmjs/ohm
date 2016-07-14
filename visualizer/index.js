@@ -6,20 +6,20 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohm, root.ohmEditor, root.cmUtil);
+    initModule(root.ohm, root.ohmEditor, root.cmUtil, root.domUtil);
   }
-})(this, function(ohm, ohmEditor, cmUtil) {
+})(this, function(ohm, ohmEditor, cmUtil, domUtil) {
   var checkboxes;
   var grammarChanged = true;
   var inputChanged = true;
 
   var showFailuresImplicitly = false; // true;
 
+  var $ = domUtil.$;
+  var $$ = domUtil.$$;
+
   // Helpers
   // -------
-
-  function $(sel) { return document.querySelector(sel); }
-  function $$(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
 
   function parseGrammar(source) {
     var matchResult = ohm.ohmGrammar.match(source);
@@ -124,8 +124,8 @@
     refreshTimeout = setTimeout(refresh.bind(ohmEditor), delay || 0);
   }
 
-  checkboxes = document.querySelectorAll('#options input[type=checkbox]');
-  Array.prototype.forEach.call(checkboxes, function(cb) {
+  checkboxes = $$('#options input[type=checkbox]');
+  checkboxes.forEach(function(cb) {
     cb.addEventListener('click', function(e) {
       // If the user manually disables "show failures", don't implicitly re-enable it.
       if (e.target.name === 'showFailures' && !e.target.checked) {

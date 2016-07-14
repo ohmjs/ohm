@@ -133,8 +133,8 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       decl.ruleBodies[currentRuleName].definitionInterval = this.interval.trimmed();
       return ans;
     },
-    RuleBody: function(_, term, _bars, terms) {
-      var args = [term.visit()].concat(terms.visit());
+    RuleBody: function(_, terms) {
+      var args = terms.visit();
       return builder.alt.apply(builder, args).withInterval(this.interval);
     },
 
@@ -146,8 +146,8 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return ps.visit();
     },
 
-    Alt: function(seq, _, seqs) {
-      var args = [seq.visit()].concat(seqs.visit());
+    Alt: function(seqs) {
+      var args = seqs.visit();
       return builder.alt.apply(builder, args).withInterval(this.interval);
     },
 
@@ -184,7 +184,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return builder.not(x.visit()).withInterval(this.interval);
     },
     Pred_lookahead: function(_, x) {
-      return builder.la(x.visit()).withInterval(this.interval);
+      return builder.lookahead(x.visit()).withInterval(this.interval);
     },
 
     Lex_lex: function(_, x) {
@@ -332,8 +332,16 @@ function grammarsFromScriptElements(optNodeOrNodeList) {
   return ns;
 }
 
-function makeRecipe(recipeFn) {
-  return recipeFn.call(new Builder());
+function makeRecipe(recipe) {
+  if (typeof recipe === 'function') {
+    return recipe.call(new Builder());
+  } else {
+    if (typeof recipe === 'string') {
+      // stringified JSON recipe
+      recipe = JSON.parse(recipe);
+    }
+    return (new Builder()).fromRecipe(recipe);
+  }
 }
 
 // --------------------------------------------------------------------

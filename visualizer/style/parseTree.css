@@ -22,8 +22,15 @@
   font-family: Menlo, Monaco, sans-serif;
   font-size: 100%;
   outline: none;
-  padding: 8px 0;
+  padding: 8px 0 8px 3px;
 }
+
+.expandedInputFont {
+  font-family: Menlo, Monaco, sans-serif;
+  font-size: 100%;
+  outline: none;
+}
+
 #expandedInput,
 #expandedInput span {
   display: inline-block;
@@ -34,6 +41,10 @@
 }
 #expandedInput .highlight {
   background-color: #B5D5FF;
+}
+
+.input {
+  display: inline-block;
 }
 
 #parseResults {
@@ -68,34 +79,46 @@
   color: #d44950;
   text-align: left;
 }
-.pexpr.failed.visibleChoice > .self .label {
-  border-bottom-color: transparent;  /* Prevent dashed border */
+
+.pexpr:not(.failed) > .self .label:hover {
+  background-color: #ddd;
 }
-.pexpr.failed > .self .label:not(.leaf):hover {
-  border-bottom: 1px solid #ddd;
+.pexpr:not(.collapsed) > .self .label:hover {
+  border-bottom-color: #ddd;
+}
+.pexpr.failed > .self .label:hover {
+  border-bottom: 1px solid #ccc;
+}
+
+.pexpr.leaf > .self .label,
+.pexpr.leaf > .self .label:hover {
+  border-bottom-color: transparent;
+  cursor: default;
 }
 
 /* A successful expression in a failed branch */
-.pexpr.failed .pexpr:not(.failed):not(.unevaluated) > .self .label:not(.prim) {
+.pexpr.failed .pexpr:not(.failed):not(.unevaluated) > .self .label {
   background-color: #FFD7DE;
-  border-left-color: pink;
-  border-right-color: pink;
 }
 
-/* Rules to distinguish vertically-stacked choices from parent/childen relationships. */
-.pexpr.visibleChoice {
-  padding-left: 8px;
+/*
+  Use disclosures to distinguish vertically-stacked siblings from parent/children relationships.
+ */
+.pexpr.disclosure {
+  padding-left: 10px;
   position: relative;  /* For positioning the ::before element */
 }
-.pexpr.visibleChoice::before {
-  color: #ccc;
+.pexpr.disclosure::before {
+  color: #bbb;
   content: '\25BC';  /* Black Down-pointing triangle */
-  left: 0;
+  left: 2px;
   position: absolute;
   top: 2px;
+  width: 8px;
 }
-.pexpr.collapsed.visibleChoice::before {
+.pexpr.disclosure.collapsed::before {
   content: '\25B6';  /* Black Right-pointing triangle */
+  left: 3px;
 }
 
 /*
@@ -116,8 +139,8 @@
   font-style: italic;
 }
 .pexpr > .self .label {
-  background-color: #efefef;
-  border-bottom: 1px solid #efefef;
+  background-color: #eaeaea;
+  border-bottom: 1px solid #eaeaea;
   box-sizing: border-box;
   cursor: pointer;
   display: block;
@@ -134,22 +157,7 @@
   font-style: italic;
   opacity: 0.7;
 }
-.pexpr:not(.failed) > .self .label:not(.prim):hover {
-  background-color: #dfdfdf;
-}
-.pexpr:not(.collapsed) > .self .label:not(.prim):hover {
-  border-bottom-color: #dfdfdf;
-}
 
-.pexpr > .self .label.prim {
-  background-color: transparent;
-  border-color: transparent;
-  color: SeaGreen;
-  cursor: default;
-}
-.pexpr.failed > .self .label.prim {
-  color: #d44950;
-}
 .pexpr.unevaluated > .self .label {
   background-color: transparent;
   color: #aaa;
@@ -161,15 +169,19 @@
   display: none;
 }
 .pexpr.collapsed > .self .label {
-  border-bottom: 1px dashed #bbb;
+  border-bottom: 1px dashed #999;
+}
+.pexpr.failed.disclosure.collapsed > .self .label {
+  border-bottom-color: transparent;  /* Prevent dashed border */
 }
 .pexpr > .children {
   display: flex;
   flex-direction: row;
 }
-.pexpr.alt > .children {
-  flex-direction: column;
-}
 .pexpr > .children[hidden] {
   display: none;
+}
+.pexpr .vbox {
+  display: flex;
+  flex-direction: column;
 }

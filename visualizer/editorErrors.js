@@ -7,9 +7,9 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohmEditor, root.cmUtil);
+    initModule(root.ohmEditor, root.cmUtil, root.domUtil);
   }
-})(this, function(ohmEditor, cmUtil) {
+})(this, function(ohmEditor, cmUtil, domUtil) {
   var errorMarks = {
     grammar: null,
     input: null
@@ -27,22 +27,42 @@
     }
   }
 
-  function setError(category, editor, interval, message) {
+  function setError(category, editor, interval, messageOrNode) {
     hideError(category, editor);
 
     errorMarks[category] = {
       mark: cmUtil.markInterval(editor, interval, 'error-interval', false),
-      timeout: setTimeout(showError.bind(null, category, editor, interval, message), 1500),
+      timeout: setTimeout(showError.bind(null, category, editor, interval, messageOrNode), 1500),
       widget: null
     };
   }
 
-  function showError(category, editor, interval, message) {
-    var errorEl = document.createElement('div');
-    errorEl.className = 'error';
-    errorEl.textContent = message;
+  function showError(category, editor, interval, messageOrNode) {
+    var errorEl = domUtil.createElement('.error');
+    if (typeof messageOrNode === 'string') {
+      errorEl.textContent = messageOrNode;
+    } else {
+      errorEl.appendChild(messageOrNode);
+    }
     var line = editor.posFromIndex(interval.endIdx).line;
     errorMarks[category].widget = editor.addLineWidget(line, errorEl, {insertAt: 0});
+  }
+
+  function createErrorEl(result, pos) {
+    var el = domUtil.createElement('span', 'Expected ');
+
+    var failures = result._failures;
+    failures.forEach(function(f, i) {
+      var prefix = i === failures.length - 1 ? ', or ' :
+                   i > 0 ? ', ' :
+                   '';
+      el.appendChild(document.createTextNode(prefix));
+      var link = el.appendChild(domUtil.createElement('span.link', f.toString()));
+      link.onclick = function() { ohmEditor.emit('goto:failure', f); };
+      link.onmouseenter = function() { ohmEditor.emit('peek:failure', f); };
+      link.onmouseout = function() { ohmEditor.emit('unpeek:failure'); };
+    });
+    return el;
   }
 
   // Hide errors in the editors as soon as the user starts typing again.
@@ -70,7 +90,8 @@
       // Intervals with start == end won't show up in CodeMirror.
       var interval = trace.result.getInterval();
       interval.endIdx += 1;
-      setError('input', editor, interval, 'Expected ' + trace.result.getExpectedText());
+
+      setError('input', editor, interval, createErrorEl(trace.result));
     }
   });
 });

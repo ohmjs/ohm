@@ -55,6 +55,7 @@
       visibility: hidden;
       white-space: nowrap;
       width: auto;
+      font-size: 100%;
     }
 
     #topSection {
@@ -212,6 +213,13 @@
       color: #C7254E;
       margin: 2px 4px;
       padding: 12px;
+    }
+    .CodeMirror .error .link {
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .CodeMirror .error .link:active {
+      color: #941B3A;  /* #C7254E, but 20% darker. */
     }
 
     .CodeMirror div {
@@ -479,12 +487,7 @@
   </div>
 
   <div id="parseTreeMenu" class="contextMenu" hidden><ul></ul></div>
-  <div id="operationMenu" class="contextMenu" hidden>
-    <ul>
-      <li id="delete"><label>Delete</label></li>
-      <li id="edit"><label>Edit</label><li>
-    </ul>
-  </div>
+  <div id="operationMenu" class="contextMenu" hidden><ul></ul></div>
   <div hidden>
     <pre id="sampleGrammar">Arithmetic {
 Exp
@@ -551,11 +554,10 @@ number  (a number)
   <script src="actionButton.js"></script>
   <script src="editorErrors.js"></script>
   <script src="examples.js"></script>
-
   <script src="exampleWorkerManager.js"></script>
   <script src="exampleGenerationRequests.js"></script>
   <script src="exampleGenerationLinks.js"></script>
-
+  <script src="timeline.js"></script>
   <script src="index.js"></script>
 </body>
 </html>

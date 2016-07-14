@@ -1,14 +1,12 @@
-/* global $ */
-
 'use strict';
 
 (function(root, initModule) {
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohmEditor, root.CodeMirror);
+    initModule(root.ohmEditor, root.domUtil, root.CodeMirror);
   }
-})(this, function(ohmEditor, CodeMirror) {
+})(this, function(ohmEditor, domUtil, CodeMirror) {
   // Returns the first ancestor node of `el` that has class `className`.
   function ancestorWithClassName(el, className) {
     var node = el;
@@ -89,7 +87,7 @@
     var container = ancestorWithClassName(editor.getWrapperElement(), 'flex-fix').parentNode;
     var footer = container.querySelector('.footer');
     if (!footer) {
-      footer = $('#protos .footer').cloneNode(true);
+      footer = domUtil.$('#protos .footer').cloneNode(true);
       container.appendChild(footer);
       footer.removeAttribute('hidden');
       installEventHandlers(editor, footer, callback);
