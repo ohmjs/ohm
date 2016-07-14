@@ -1,4 +1,3 @@
-/* eslint-disable */
 /* eslint-env browser */
 
 'use strict';
@@ -9,12 +8,9 @@
     module.exports = initModule;
   } else {
     initModule(root.ohm, root.ohmEditor, root.CheckedEmitter, root.document, root.cmUtil, root.d3,
-               root.domUtil);
+               root.domUtil, root.getComputedStyle);
   }
-})(this, function(ohm, ohmEditor, CheckedEmitter, document, cmUtil, d3, domUtil) {
-  // Fake getComputedStyle() for node (required for unit tests)
-  var getComputedStyle = getComputedStyle || function(elt) { return {}; };
-
+})(this, function(ohm, ohmEditor, CheckedEmitter, document, cmUtil, d3, domUtil, getComputedStyle) {
   var ArrayProto = Array.prototype;
   var $ = domUtil.$;
 
@@ -93,11 +89,6 @@
     var measuringDiv = $('#measuringDiv');
     var span = measuringDiv.appendChild(domUtil.createElement('span.input'));
     span.innerHTML = inputEl.textContent;
-
-    measuringDiv.classList.add('expandedInputFont');
-    // span.style.fontFamily = getComputedStyle(inputEl).fontFamily;
-    // span.style.fontSize = getComputedStyle(inputEl).fontSize;
-    // span.style.fontWeight = getComputedStyle(inputEl).fontWeight;
     var bounds = span.getBoundingClientRect();
 
     var result = {
@@ -106,7 +97,6 @@
     };
 
     measuringDiv.removeChild(span);
-    measuringDiv.classList.remove('expandedInputFont');
     return result;
   }
 
@@ -151,20 +141,19 @@
 
       if (!el.classList.contains('hidden') &&
           domUtil.closestElementMatching('.collapsed', el) == null) {
-        var elStyle = getComputedStyle(el);
+        var style = getComputedStyle(el);
 
-        var elPaddingLeft = parseFloat(elStyle.paddingLeft);
-        var elPaddingRight = parseFloat(elStyle.paddingRight);
-        var elMarginLeft = parseFloat(elStyle.marginLeft);
-        var elMarginRight = parseFloat(elStyle.marginRight);
+        var paddingLeft = parseInt(style.paddingLeft);
+        var paddingRight = parseInt(style.paddingRight);
+        var marginLeft = parseInt(style.marginLeft);
+        var marginRight = parseInt(style.marginRight);
 
-        var totalPadding = elPaddingRight + elPaddingLeft;
+        var totalPadding = paddingRight + paddingLeft;
 
         el._input.style.minWidth = (el.clientWidth - totalPadding) + 'px';
-        el._input.style.marginLeft = (elPaddingLeft + elMarginLeft) + 'px';
-        el._input.style.marginRight = (elPaddingRight + elMarginRight) + 'px';
-      }// TODO: bad ==
-      // }
+        el._input.style.marginLeft = (paddingLeft + marginLeft) + 'px';
+        el._input.style.marginRight = (paddingRight + marginRight) + 'px';
+      }
 
       if (!el.style.minWidth) {
         el.style.minWidth = measureInput(el._input).width + 'px';
@@ -383,16 +372,6 @@
     e.stopPropagation();  // Prevent ancestor wrappers from handling.
   }
 
-  function augmentWithParent(traceNode, parent) {
-    parent = parent || null;
-    traceNode.parent = parent;
-    traceNode.children.forEach(function(child) {
-      if (child) {
-        augmentWithParent(child, traceNode);
-      }
-    });
-  }
-
   // Create the DOM node that contains the parse tree for `traceNode` and all its children.
   function createTraceWrapper(traceNode) {
     var el = domUtil.createElement('.pexpr');
@@ -461,7 +440,7 @@
         // cmd + click to open or close semantic editor
         ohmEditor.parseTree.emit('cmdclick:traceElement', wrapper);
       } else if (!isLeaf(traceNode)) {
-        toggleTraceElement(wrapper); // TODO
+        toggleTraceElement(wrapper);
       }
       e.preventDefault();
     });
@@ -570,12 +549,6 @@
     var inputStack = [expandedInputDiv];
     var containerStack = [rootContainer];
 
-    var avgEnter = 0;
-    var nEnter = 0;
-    var avgExit = 0;
-    var nExit = 0;
-    var lastTime = 0;
-    var execTime = 0;
     ohmEditor.parseTree.emit('render:parseTree', renderedTrace);
     var renderActions = {
       enter: function handleEnter(node, parent, depth) {
@@ -674,7 +647,6 @@
     $('#bottomSection .overlay').style.width = 0;  // Hide the overlay.
     $('#semantics').hidden = !ohmEditor.options.semantics;
     rootTrace = trace;
-    augmentWithParent(trace);
     clearZoomState();
   });
 
