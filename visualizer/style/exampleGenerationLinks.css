@@ -1,15 +1,21 @@
-.currentExampleLink.clickableExampleLink {
+.currentExampleLink.coveredExampleLink {
   text-decoration: underline;
   color: #268BD2;
   cursor: pointer;
   font-weight: bold;
 }
 
-.clickableExampleLink {
+.coveredExampleLink {
   text-decoration: underline;
   /*color: hsl(0, 0%, 50%);*/
   cursor: pointer;
   font-weight: normal;
+}
+
+.coverageIndicator {
+  color: hsl(0,100%,50%);
+  /*cursor: pointer;*/
+  /*font-weight: normal;*/
 }
 
 
@@ -25,14 +31,24 @@
   padding-left: 10px;
 }
 
-.exampleList > li::before {
+.exampleList > li > span.exampleText::before {
   content: '"';
   font-weight: bold;
   color: hsl(0, 0%, 70%);
 }
 
-.exampleList > li::after {
+.exampleList > li > span.exampleText::after {
   content: '"';
   font-weight: bold;
   color: hsl(0, 0%, 70%);
+}
+
+
+.exampleList .addExample {
+  cursor: pointer;
+  color: hsl(137, 100%, 35%);
+  font-weight: bolder;
+  font-size: 140%;
+  line-height: 0px;
+  padding-left: 10px;
 }

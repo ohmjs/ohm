@@ -58,7 +58,8 @@
       var position = getPointPosition(cm, mouseCoords.x, mouseCoords.y);
       var rule = ruleDefinitionFor(cm, position);
       if (rule && !exampleWorkerManager.neededExamples.includes(rule.ruleName)) {
-        mousePositionInfo.mark = markRuleBody(cm, rule, 'currentExampleLink');
+        mousePositionInfo.mark = cmUtil.markInterval(cm,
+          nameInterval(rule), 'currentExampleLink', false);
         mousePositionInfo.rule = rule;
         mousePositionInfo.position = position;
       }
@@ -73,11 +74,19 @@
           exampleWorkerManager.neededExamples
         );
         var availableExampleBodies = availableExamples.map(function(ruleName) {
-          return grammar.ruleBodies[ruleName];
+          return Object.assign({}, grammar.ruleBodies[ruleName], {ruleName: ruleName});
         });
-        clickableMarks = availableExampleBodies.map(function(rule, i) {
-          var augmentedRuleBody = Object.assign({}, rule, {ruleName: availableExamples[i]});
-          return markRuleBody(cm, augmentedRuleBody, 'clickableExampleLink');
+        var neededExampleBodies = exampleWorkerManager.neededExamples.map(function(ruleName) {
+          return Object.assign({}, grammar.ruleBodies[ruleName], {ruleName: ruleName});
+        });
+
+        clickableMarks = availableExampleBodies.map(function(rule) {
+          return cmUtil.markInterval(cm, nameInterval(rule), 'coveredExampleLink', false);
+        });
+        neededExampleBodies.forEach(function(rule) {
+          clickableMarks.push(
+            cmUtil.markInterval(cm, indicatorInterval(rule), 'coverageIndicator', false)
+          );
         });
       }
     } else {
@@ -88,15 +97,6 @@
         clickableMarks = null;
       }
     }
-  }
-
-  function markRuleBody(cm, ruleBody, className) {
-    var name = nameInterval(ruleBody);
-    var startPos = cm.posFromIndex(name.startIdx);
-    var endPos = cm.posFromIndex(name.endIdx);
-    return cm.markText(startPos, endPos, {
-      className: className
-    });
   }
 
   function handleMouseMove(cm, e) {
@@ -128,6 +128,21 @@
       return relevantRuleDefinitions.reduce(function(agg, b) {
         return agg.ruleName.length > b.ruleName.length ? agg : b;
       });
+    }
+  }
+
+  function indicatorInterval(ruleDefinition) {
+    var defString = ruleDefinition.definitionInterval.contents;
+    var startIdx, endIdx;
+    if (ruleDefinition.ruleName.includes('_')) {
+      startIdx = ruleDefinition.definitionInterval.startIdx + defString.lastIndexOf('--');
+      endIdx = startIdx + 2;
+      return {
+        startIdx: startIdx,
+        endIdx: endIdx
+      };
+    } else {
+      return nameInterval(ruleDefinition);
     }
   }
 
@@ -203,7 +218,25 @@
     }
 
     var args = ['ul', {class: 'exampleList'}].concat(examples.map(function(example) {
-      return utils._('li', {}, utils.t(example));
+      var DOMNode = utils._('li', {},
+                      utils._('span', {class: 'exampleText'}, utils.t(example)),
+                      utils._('span', {class: 'addExample'}, utils.t('+')));
+      var addExampleButton = DOMNode.querySelector('span.addExample');
+
+      var id;
+      addExampleButton.addEventListener('click', function(e) {
+        var examples = ohmEditor.examples.getExamples();
+        examples = utils.objectMap(examples, function(_, value) { return value; });
+        if (!examples.includes(example)) {
+          id = ohmEditor.examples.addExample();
+          ohmEditor.examples.setExample(id, example);
+          ohmEditor.examples.saveExamples();
+        }
+
+        ohmEditor.examples.setSelected(id);
+      });
+
+      return DOMNode;
     }));
 
     return utils._.apply(utils, args);

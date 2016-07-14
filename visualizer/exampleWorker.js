@@ -24,6 +24,9 @@ self.importScripts('../dist/ohm.js', 'utils.js');
     ident: function(g, ex, syn, args) {
       return {needHelp: true};
     },
+    ctor: function(g, ex, syn, args) {
+      return {needHelp: true};
+    },
     letter: function(g, ex, syn, args) {
       if (Math.floor(Math.random() * 2) === 0) {
         return {example: String.fromCharCode(Math.floor(26 * Math.random()) + 'a'.charCodeAt(0))};
