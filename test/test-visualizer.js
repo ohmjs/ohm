@@ -112,7 +112,9 @@ test('simple parse tree', function(t) {
     'change:grammarEditor': ['codeMirror'],
     'peek:failure': ['failure'],
     'unpeek:failure': [],
-    'goto:failure': ['failure']
+    'goto:failure': ['failure'],
+    'highlight:ruleDefinition': ['ruleName'],
+    'unhighlight:ruleDefinition': []
   });
   ohmEditor.grammar = g;
   ohmEditor.options = {};

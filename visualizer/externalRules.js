@@ -6,9 +6,12 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohm, root.ohmEditor);
+    initModule(root.ohm, root.ohmEditor, root.domUtil);
   }
-})(this, function(ohm, ohmEditor) {
+})(this, function(ohm, ohmEditor, domUtil) {
+  var $ = domUtil.$;
+  var $$ = domUtil.$$;
+
   var ohmGrammar = ohm.ohmGrammar;
   var builtInRules = ohm.grammar('G {}').superGrammar;
 
@@ -82,7 +85,7 @@
   // the document, no matter what edits are made.
   function LastLineWidget(editor) {
     this.editor = editor;
-    this.node = document.querySelector('#protos .externalRules').cloneNode(true);
+    this.node = $('#protos .externalRules').cloneNode(true);
     this.widget = null;
 
     // Create a bound version of `_placeWidget` for use with on() and off().
@@ -129,7 +132,8 @@
 
     for (var ruleName in this._rules) {
       var pre = document.createElement('pre');
-      pre.textContent = ruleName + ' = ' + this._rules[ruleName] + '\n\n';
+      pre.setAttribute('id', 'externalRules-' + ruleName);
+      pre.textContent = ruleName + ' = ' + this._rules[ruleName] + '\n';
       container.appendChild(pre);
     }
   };
@@ -141,5 +145,20 @@
     var grammarEditor = ohmEditor.ui.grammarEditor;
     widget = widget || new LastLineWidget(grammarEditor);
     widget.update(grammarEditor, matchResult, grammar);
+  });
+
+  ohmEditor.addListener('highlight:ruleDefinition', function(ruleName) {
+    if (!ohmEditor.grammar.ruleBodies.hasOwnProperty(ruleName)) {
+      var elem = $('#externalRules-' + ruleName);
+      if (elem) {
+        elem.classList.add('active-definition');
+      }
+    }
+  });
+
+  ohmEditor.addListener('unhighlight:ruleDefinition', function() {
+    $$('.externalRules pre').forEach(function(elem) {
+      elem.classList.remove('active-definition');
+    });
   });
 });
