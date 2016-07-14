@@ -39,7 +39,7 @@
     } else {
       // If the user is just change the arguments, i.e. `targetName` is `null`, keep the `opName`
       opName = targetName || opName;
-      opArguments = ohmEditor.semantics.opArguments = optArgs;
+      opArguments = optArgs;
     }
   });
 
@@ -145,10 +145,9 @@
 
     var nOpKey = nodeOpKey(key, name);
     resultWrapper.forced = forcing;
-    resultWrapper.forCallingSemantic = opName === name;
     resultWrapper.missingSemanticsAction = result === failure;
     resultWrapper.isError = result && result.isErrorWrapper || result === failure;
-    resultWrapper.isNextStep = name === opName && result &&
+    resultWrapper.isNextStep = result &&
       ((result.isErrorWrapper && result.causedBy(nOpKey)) ||
       (todoList && todoList.includes(nOpKey)));
     resultWrapper.isPassThrough = !!passThroughList && passThroughList.includes(nOpKey);
@@ -266,20 +265,14 @@
     }
     addSemanticOperation(type, name, optArgs, origActionDict);
     opName = name;
-    opArguments = ohmEditor.semantics.opArguments = optArgs;
+    opArguments = optArgs;
   });
 
-  function populateSemanticsResult(traceNode, optOpName, optArgs) {
-    var operationName = optOpName || opName;
+  function populateSemanticsResult(traceNode, operationName, args) {
     try {
       var nodeWrapper = semantics._getSemantics().wrap(traceNode.bindings[0]);
       if (operationName in semantics._getSemantics().operations) {
-        var argValues;
-        if (operationName === opName) {
-          argValues = toValueList(optArgs || opArguments || Object.create(null));
-        } else {
-          argValues = toValueList(optArgs || Object.create(null));
-        }
+        var argValues = toValueList(args);
         nodeWrapper[operationName].apply(nodeWrapper, argValues);
       } else {
         nodeWrapper._forgetMemoizedResultFor(operationName);
@@ -296,21 +289,33 @@
     }
     ohmEditor.semantics.appendEditor = true;
     initializeSemanticsLog();
-    populateSemanticsResult(traceNode);
+    populateSemanticsResult(traceNode, opName, opArguments || Object.create(null));
   });
 
   function forceResults(traceNode) {
     forcing = true;
     var semanticsNameList = semantics.getOperationNames().concat(semantics.getAttributeNames());
     semanticsNameList.forEach(function(name) {
-      populateSemanticsResult(traceNode, name);
+      var args = Object.create(null);
+      if (name in semantics._getSemantics().operations) {
+        semantics._getSemantics().operations[name].formals.forEach(function(formal) {
+          args[formal] = undefined;
+        });
+      }
+      populateSemanticsResult(traceNode, name, args);
     });
     forcing = false;
   }
 
-  function allForced(key) {
+  function allForced(key, optOperationName) {
     var results = resultMap[key];
     var forced = Object.keys(results).every(function(operationName) {
+      // If the operation name is specified already, we only check the
+      // result of the specified operation, all the other result are skipped.
+      if (optOperationName && optOperationName !== operationName) {
+        return true;
+      }
+
       var resultList = results[operationName];
       return resultList.every(function(resultWrapper) {
         return resultWrapper.forced;
@@ -417,21 +422,19 @@
     semantics._getActionDict(currentOpName)[actionKey] = actionWrapper;
   }
   ohmEditor.semantics.addListener('save:semanticAction', function(traceNode, actionArguments,
-      actionBody) {
-    saveAction(traceNode, opName, actionArguments, actionBody);
+      actionBody, operationName) {
+    saveAction(traceNode, operationName,  actionArguments, actionBody);
   });
 
-  function editSemanticsOperation(wrapper, operationName, opDescription) {
+  function editSemanticsOperation(wrapper, operationName, optArgs) {
     wrapper._origActionDict = semantics._getActionDict(operationName);
     semantics._remove(operationName);
 
-    if (opDescription) {
-      var type = opDescription.type;
-      var optArgs = opDescription.args;
-      addSemanticOperation(type, operationName, optArgs, wrapper._origActionDict);
+    if (optArgs) {
+      addSemanticOperation('Operation', operationName, optArgs, wrapper._origActionDict);
       delete wrapper._origActionDict;
       if (operationName === opName) {
-        opArguments = ohmEditor.semantics.opArguments = optArgs;
+        opArguments = optArgs;
       }
     } else if (operationName === opName) {
       opName = null;
@@ -446,7 +449,7 @@
   ohmEditor.semantics.forceResult = function(traceNode, name, optArgs) {
     var key = nodeKey(traceNode.bindings[0]);
     forcing = true;
-    populateSemanticsResult(traceNode, name, optArgs);
+    populateSemanticsResult(traceNode, name, optArgs || Object.create(null));
     var resultWrapper = getResult(key, name, optArgs);
     forcing = false;
     return resultWrapper;
@@ -465,12 +468,12 @@
 
   // If there is no user added action for the rule, return default argument list,
   // Otherwise, return the argument list that user renamed before
-  ohmEditor.semantics.getActionArgPairedList = function(traceNode) {
+  ohmEditor.semantics.getActionArgPairedList = function(traceNode, operationName) {
     var actionKey = traceNode.bindings[0].ctorName;
     var defaultArgExpression = getDefaultArgExpression(traceNode);
 
     var argPairList = {argExpr: defaultArgExpression};
-    var action = semantics._getActionDict(opName)[actionKey];
+    var action = semantics._getActionDict(operationName)[actionKey];
     if (!action || action._isDefault) {
       return argPairList;
     }
@@ -483,9 +486,10 @@
     return argPairList;
   };
 
-  ohmEditor.semantics.getActionBody = function(traceNode) {
+  ohmEditor.semantics.getActionBody = function(traceNode, operationName) {
     var actionKey = traceNode.bindings[0].ctorName;
-    var action = semantics._getActionDict(opName)[actionKey];
+    var operation = operationName;
+    var action = semantics._getActionDict(operation)[actionKey];
     if (!action || action._isDefault) {
       return '';
     }
@@ -502,5 +506,39 @@
       attributes: semantics._getSemantics().attributes
     };
     return semanticOperations;
+  };
+
+  ohmEditor.semantics.retrieveOperations = function(traceNode) {
+    var key = nodeKey(traceNode.bindings[0]);
+    if (!(key in resultMap) || allForced(key)) {
+      return [opName];
+    }
+    var operationNames = semantics.getOperationNames().concat(semantics.getAttributeNames());
+    var evaluatedOperations = operationNames.filter(function(name) {
+      return !allForced(key, name);
+    });
+
+    return evaluatedOperations;
+  };
+
+  ohmEditor.semantics.retrieveArguments = function(name, traceNode) {
+    var operation = semantics._getSemantics().operations[name];
+    if (!operation || operation.formals.length === 0) {
+      return undefined;
+    }
+    var emptyArg = Object.create(null);
+    operation.formals.forEach(function(formal) {
+      emptyArg[formal] = undefined;
+    });
+    var key = nodeKey(traceNode.bindings[0]);
+    if (!(key in resultMap) || !(name in resultMap[key])) {
+      return [emptyArg];
+    }
+    var wrappers = resultMap[key][name].filter(function(resultWrapper) {
+      return !resultWrapper.forced;
+    });
+    return wrappers.length > 0 ?
+      wrappers.map(function(wrapper) { return wrapper.args; }) :
+      [emptyArg];
   };
 });

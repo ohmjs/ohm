@@ -6,20 +6,163 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohm, root.ohmEditor, root.CodeMirror, root.CheckedEmitter, root.domUtil,
+    initModule(root.ohm, root.ohmEditor, root.CodeMirror, root.domUtil,
         root.es6);
   }
-})(this, function(ohm, ohmEditor, CodeMirror, CheckedEmitter, domUtil, es6) {
+})(this, function(ohm, ohmEditor, CodeMirror, domUtil, es6) {
 
   // Privates
   // --------
   var $ = domUtil.$;
   var $$ = domUtil.$$;
 
+  var semanticsEditor = $('.semanticsEditor');
+
   var UnicodeChars = {
     BLACK_RIGHT_POINTING_TRIANGLE: '\u25B6',
-    LEFTWARDS_ARROW: '\u2190'
+    LEFTWARDS_ARROW: '\u2190',
+    BLACK_DOWN_POINTING_TRIANGLE: '\u25BC'
   };
+
+  function generateOperationSignature(opName, optFormals) {
+    return optFormals ? opName + '(' + optFormals.join(', ') + ')' : opName;
+  }
+
+  function addEditorMovingListener() {
+    var offsetY = 0;
+    var offsetX = 0;
+    var prepareToMove = false;
+
+    var header = semanticsEditor.querySelector('.header');
+    window.onmousedown = function(event) {
+      if (event.target === header) {
+        prepareToMove = true;
+        offsetY = event.clientY - semanticsEditor.offsetTop;
+        offsetX = event.clientX - semanticsEditor.offsetLeft;
+      }
+    };
+
+    window.onmousemove = function(event) {
+      if (!prepareToMove) {
+        return;
+      }
+      semanticsEditor.style.left = event.clientX - offsetX + 'px';
+      semanticsEditor.style.top = event.clientY - offsetY + 'px';
+    };
+
+    window.onmouseup = function(event) {
+      prepareToMove = false;
+      offsetY = 0;
+      offsetX = 0;
+    };
+  }
+
+  function closeEditor() {
+    var preSelected = $('.self.selected');
+    if (preSelected) {
+      preSelected.classList.remove('selected');
+    }
+
+    semanticsEditor.classList.remove('showing');
+  }
+
+  function createHeader() {
+    var container = domUtil.createElement('.header');
+
+    // TODO: ADD back and forward buttom for navigating through editing process.
+    container.appendChild(domUtil.createElement('directBt'));
+
+    container.appendChild(domUtil.createElement('select.names'));
+
+    var close = container.appendChild(domUtil.createElement('closeBT', 'X'));
+    close.onclick = function(event) { closeEditor(); };
+
+    return container;
+  }
+
+  function createMainBody() {
+    var container = domUtil.createElement('.mainBody');
+
+    // Create editor header.
+    container.appendChild(domUtil.createElement('.rule'));
+
+    // Create argument tags.
+    container.appendChild(domUtil.createElement('.argTags'));
+
+    // Create action editor and add CodeMirror to it.
+    var actionEditorDiv = container.appendChild(domUtil.createElement('.body'));
+    CodeMirror(actionEditorDiv);
+
+    // Create action result container.
+    container.appendChild(domUtil.createElement('.result'));
+
+    return container;
+  }
+
+  // TODO: table[operation, subexpression]
+  function createFooter() {
+    var container = domUtil.createElement('.footer');
+
+    return container;
+  }
+
+  // Add `header`, `body`, and `footer` to the editor as containers for different
+  // parts of the semanticsEditor
+  function initializeSemanticsEditor() {
+    semanticsEditor.innerHTML = '';
+    semanticsEditor.appendChild(createHeader());
+    semanticsEditor.appendChild(createMainBody());
+    semanticsEditor.appendChild(createFooter());
+
+    addEditorMovingListener();
+  }
+
+  // Initialize the semantics editor when semantics is initialized, to prepared
+  // for semantics editing.
+  ohmEditor.addListener('parse:grammar', function(matchResult, grammar, error) {
+    if (grammar && grammar.defaultStartRule) {
+      initializeSemanticsEditor();
+    }
+  });
+
+  // Check if an operation name is a restrict JS identifier
+  // TODO: it less restrictive in the future
+  function isOperationNameValid(name) {
+    return /^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(name);
+  }
+  function addToOperationList(type, name, optArgs) {
+    var opList = $('.semanticsEditor .header .names');
+    var operation = generateOperationSignature(name, optArgs && Object.keys(optArgs));
+    var entry = opList.appendChild(domUtil.createElement('option.name', operation));
+    entry.value = name;
+  }
+  ohmEditor.semantics.addListener('add:semanticOperation', function(type, name, optArgs,
+      origActionDict) {
+    closeEditor();
+    if (!isOperationNameValid(name)) {
+      return;
+    }
+    addToOperationList(type, name, optArgs);
+  });
+
+  ohmEditor.semantics.addListener('change:semanticOperation', function(targetName, optArgs) {
+    closeEditor();
+  });
+
+  ohmEditor.semantics.addListener('edit:semanticOperation', function(wrapper, operationName,
+    optArgs) {
+    closeEditor();
+
+    var opList = $('.semanticsEditor .header .names');
+    var entry = Array.prototype.filter.call(opList.children, function(child) {
+      return child.value === operationName;
+    })[0];
+
+    opList.removeChild(entry);
+    if (optArgs) {
+      addToOperationList('Operation', operationName, optArgs);
+    }
+  });
 
   // Generate a class name for the result block which used to identify the
   // semantic operation that generates the result.
@@ -35,33 +178,6 @@
     return 'operationName_' + blockClassId;
   }
 
-  // Only show the specified result block.
-  function showSingleResultBlock(targetBlock) {
-    if (!targetBlock) {
-      return;
-    }
-
-    var resultContainer = targetBlock.parentElement;
-    resultContainer.classList.add('showing');
-    Array.prototype.forEach.call(resultContainer.children, function(block) {
-      block.classList.add(block === targetBlock ? 'showing' : 'hidden');
-    });
-  }
-
-  // Remove the "markers" that are used to display a single result block, in order
-  // to display all the results.
-  function showAllResultBlocks(targetBlock) {
-    if (!targetBlock) {
-      return;
-    }
-
-    var resultContainer = targetBlock.parentElement;
-    resultContainer.classList.remove('showing');
-    Array.prototype.forEach.call(resultContainer.children, function(block) {
-      block.classList.remove(block === targetBlock ? 'showing' : 'hidden');
-    });
-  }
-
   // Creates a single `resultBlock`, which contains,
   // `value`: the actual result container
   // `operation`: the semantic operation for the result
@@ -71,9 +187,11 @@
       error: resultWrapper.isError && !resultWrapper.missingSemanticsAction,
       forced: resultWrapper.forced,
       passThrough: resultWrapper.isPassThrough,
-      optNextStep: !resultWrapper.forced && resultWrapper.isError &&
-          resultWrapper.forCallingSemantic
+      optNextStep: !resultWrapper.forced && resultWrapper.isError
     });
+
+    var blockClassId = generateResultBlockClassId(opName, resultWrapper.args);
+    block.classList.add(blockClassId);
 
     // Return without putting actual result contents if the result is missing semantics action,
     // or it's an error, which not caused by the associated node.
@@ -89,8 +207,8 @@
     var opSignature = opName;
     if (resultWrapper.args) {
       var argValues = Object.keys(resultWrapper.args).map(function(key) {
-        return resultWrapper.args[key];
-      });
+          return String(resultWrapper.args[key]);
+        });
       opSignature += '(' + argValues.join(',') + ')';
     }
     var opNameContainer = block.appendChild(domUtil.createElement('operation'));
@@ -102,20 +220,17 @@
     }
     opNameContainer.innerHTML = opSignature;
 
-    var blockClassId = generateResultBlockClassId(opName, resultWrapper.args);
-    block.classList.add(blockClassId);
-
     // If there are more than one operations, or the only opertaion has arguments, then hover
     // the block, and all the blocks that represent the results for the same operation signature
     // will be highlighted.
     if (operationCount > 1 || resultWrapper.args) {
       block.onmouseover = function(event) {
-        $$('.semanticsEditor .result .' + blockClassId).forEach(function(b) {
+        $$('.self .result .' + blockClassId).forEach(function(b) {
           b.classList.add('highlight');
         });
       };
       block.onmouseout = function(event) {
-        $$('.semanticsEditor .result .' + blockClassId).forEach(function(b) {
+        $$('.self .result .' + blockClassId).forEach(function(b) {
           b.classList.remove('highlight');
         });
       };
@@ -144,12 +259,6 @@
         if (!resultWrapper.forced && resultWrapper.isNextStep) {
           selfWrapper.classList.add('nextStep');
         }
-
-        if (resultWrapper.forCallingSemantic) {
-          selfWrapper._args = resultWrapper.args;
-          resultContainer._nextStep = resultWrapper.isNextStep && resultBlock;
-          resultBlock.classList.add('current');
-        }
       });
     });
 
@@ -159,25 +268,22 @@
     if (passThroughContainers.length === resultContainer.children.length) {
       selfWrapper.classList.toggle('passThrough',
         Array.prototype.some.call(resultContainer.children, function(child) {
-          return child.classList.contains('forced') ? child.textContent : true;
+          return child.classList.contains('forced') ? !!child.textContent : true;
         }));
     }
 
     if (resultContainer.textContent.length === 0) {
       resultContainer.style.padding = '0';
+      resultContainer.style.margin  = '0';
     }
     return resultContainer;
   }
 
-  // Append a semantics editor after the `label`, a semantics editor contains a
-  // resultContainer, and conditionally (i.e. user cmd/ctrl + click to open an editor)
-  // contains a header container, a argument tags container, and a editor body container.
-  function appendSemanticsEditor(wrapper) {
+  function appendResultContainer(wrapper) {
     var selfWrapper = wrapper.querySelector('.self');
     var traceNode = wrapper._traceNode;
 
-    var editorWrapper = selfWrapper.appendChild(domUtil.createElement('.semanticsEditor'));
-    var resultContainer = editorWrapper.appendChild(createAndLoadResultContainer(traceNode,
+    var resultContainer = selfWrapper.appendChild(createAndLoadResultContainer(traceNode,
         selfWrapper));
 
     // If the node is collapsed, and its children is one of the next steps, then mark it as a
@@ -186,18 +292,8 @@
       selfWrapper.classList.toggle('tmpNextStep', !!resultContainer.querySelector('.optNextStep'));
     }
 
-    // If the node's semantic was edited before refresh, and it's still the next step after the
-    // editing, then keep the semantics editor open.
-    if (traceNode._lastEdited && resultContainer._nextStep) {
-      toggleSemanticsEditor(wrapper);
-
-      if (!resultContainer._nextStep.textContent) {
-        return;
-      }
-
-      // Only shows the result, i.e. the error, for evaluating the current semantic operation at
-      // the node.
-      showSingleResultBlock(resultContainer._nextStep);
+    if (traceNode._lastEdited) {
+      selfWrapper.classList.add('selected');
     }
   }
   ohmEditor.parseTree.addListener('create:traceElement', function(wrapper, traceNode) {
@@ -206,7 +302,7 @@
         !wrapper.classList.contains('hidden') &&
         !wrapper.classList.contains('failed');
     if (shouldHaveSemanticsEditor) {
-      appendSemanticsEditor(wrapper);
+      appendResultContainer(wrapper);
     }
   });
 
@@ -313,37 +409,11 @@
     return realArgContainer;
   }
 
-  // Creates semantics editor header and fills it the with `headerblock`, each of which
-  // represents an action argument.
-  // TODO: Maybe get back the `<ruleName> = <ruleBody>` format, so
-  // we'll be able to show _iter/_terminal nodes
-  function createAndLoadEditorHeader(traceNode) {
-    var header = domUtil.createElement('.header');
-    var actionArgPairedList = ohmEditor.semantics.getActionArgPairedList(traceNode);
-
-    // Fill the header contiainter with `headerBlock`
-    // Each `headerBlock` represent an argument, inside there are:
-    // `span.display`, which contains the argument display name
-    // `real`, which is the argument rename editor that contains the real arg name
-    var argDefaultList = actionArgPairedList.argExpr.toArgumentNameList(1);
-    var argRealList = actionArgPairedList.real;
-    var argDisplayList = getArgDisplayList(actionArgPairedList.argExpr);
-    argDisplayList.forEach(function(argDisplay, idx) {
-      var argReal = argRealList ? argRealList[idx] : argDefaultList[idx];
-      var argDefault = argDefaultList[idx];
-      var block = header.appendChild(domUtil.createElement('headerBlock'));
-      block.appendChild(createArgDisplayContainer(argDisplay));
-      block.appendChild(createRealArgContainer(argDisplay, argReal, argDefault));
-    });
-
-    return header;
-  }
-
   // Creates a single operation argument tag, which contains a argument name, and
   // corresponding value.
   function createAndLoadArgTag(argName, argValue) {
     var argTag = domUtil.createElement('.argTag');
-    argTag.innerHTML = argName;
+    argTag.innerHTML = argTag._name = argName;
 
     var valueSpan = argTag.appendChild(domUtil.createElement('span'));
     valueSpan.innerHTML = JSON.stringify(argValue);
@@ -351,102 +421,202 @@
     return argTag;
   }
 
-  // Creates a operation argument tag container, and fills it with argument tags
-  function createAndLoadArgTags(selfWrapper) {
-    var argTagContainer = domUtil.createElement('.argTags');
-    var args = selfWrapper._args || ohmEditor.semantics.opArguments;
+  function retrieveArgumentsFromHeader() {
+    var blocks = semanticsEditor.querySelector('.mainBody .rule blocks');
+    return Array.prototype.map.call(blocks.children, function(block) {
+      return block.lastChild.textContent || block.firstChild.textContent;
+    });
+  }
+
+  function updateRule(traceNode, operation) {
+    var ruleContainer = $('.semanticsEditor .mainBody .rule');
+    ruleContainer.innerHTML = '';
+
+    var cstNodeName = getCSTNodeName(traceNode);
+    ruleContainer.appendChild(domUtil.createElement('cstNodeName', cstNodeName));
+
+    // Fill the container with `block`
+    // Each `block` represent an argument, inside there are:
+    // `span.display`, which contains the argument display name
+    // `real`, which is the argument rename editor that contains the real arg name
+    var blocks = ruleContainer.appendChild(domUtil.createElement('blocks'));
+    var actionArgPairedList = ohmEditor.semantics.getActionArgPairedList(traceNode, operation);
+    var argDefaultList = actionArgPairedList.argExpr.toArgumentNameList(1);
+    var argRealList = actionArgPairedList.real;
+    var argDisplayList = getArgDisplayList(actionArgPairedList.argExpr);
+    argDisplayList.forEach(function(argDisplay, idx) {
+      var argReal = argRealList ? argRealList[idx] : argDefaultList[idx];
+      var argDefault = argDefaultList[idx];
+      var block = blocks.appendChild(domUtil.createElement('block'));
+      block.appendChild(createArgDisplayContainer(argDisplay));
+      block.appendChild(createRealArgContainer(argDisplay, argReal, argDefault));
+    });
+  }
+
+  // TODO
+  function updateArgTags(args) {
+    var argTagContainer = $('.semanticsEditor .mainBody .argTags');
+    argTagContainer.innerHTML = '';
     if (!args) {
-      return argTagContainer;
+      return;
     }
 
     Object.keys(args).forEach(function(argName) {
       argTagContainer.appendChild(createAndLoadArgTag(argName, args[argName]));
     });
-    return argTagContainer;
   }
 
-  function retrieveArgumentsFromHeader(editorWrapper) {
-    var header = editorWrapper.querySelector('.header');
-    return Array.prototype.map.call(header.children, function(headerBlock) {
-      return headerBlock.lastChild.textContent || headerBlock.firstChild.textContent;
-    });
+  // TODO
+  function updateActionResult(selfWrapper, operation, args) {
+    var editorResultContainer = $('.semanticsEditor .mainBody .result');
+    editorResultContainer.classList.remove('error');
+    editorResultContainer.textContent = '';
+    var targetBlockId = generateResultBlockClassId(operation, args);
+    Array.prototype.forEach.call(selfWrapper.querySelectorAll('resultblock.' + targetBlockId),
+      function(resultBlock) {
+        if (resultBlock.classList.contains('error') && !resultBlock.classList.contains('forced')) {
+          editorResultContainer.classList.add('error');
+          editorResultContainer.textContent = resultBlock.querySelector('value').textContent;
+        }
+      });
   }
 
-  // Create the action editor, and load it with user defined action * default
-  // action won't show
-  function createAndLoadActionEditor(traceNode) {
-    var actionEditorDiv = domUtil.createElement('.body');
-    var actionEditorCM = CodeMirror(actionEditorDiv);
+  function retrieveSelectedOperation() {
+    var entries = $$('.semanticsEditor .header .name');
+    var selectedEntry = entries.filter(function(entry) {
+      return entry.selected;
+    })[0];
+    return selectedEntry.value;
+  }
 
-    // Load action
-    actionEditorCM.setValue(ohmEditor.semantics.getActionBody(traceNode));
+  // TODO
+  function updateMainBody(selfWrapper) {
+    var operation = retrieveSelectedOperation();
+    var traceNode = selfWrapper.parentElement._traceNode;
+    updateRule(traceNode, operation);
+
+    // TODO: handle calling the same operation with multi-set of argument, all of them are unforced
+    var argList = ohmEditor.semantics.retrieveArguments(operation, traceNode);
+    var args = argList && argList[0];
+    updateArgTags(args);
+
+    var actionEditorCM = $('.semanticsEditor .mainBody .body').firstChild.CodeMirror;
+    actionEditorCM.setValue(ohmEditor.semantics.getActionBody(traceNode, operation));
     actionEditorCM.setCursor({line: actionEditorCM.lineCount()});
 
     var saveAction = function(cm) {
-      var actionArguments = retrieveArgumentsFromHeader(actionEditorDiv.parentElement);
-      ohmEditor.semantics.emit('save:semanticAction', traceNode, actionArguments, cm.getValue());
+      var actionArguments = retrieveArgumentsFromHeader();
+      var operationName = $$('.semanticsEditor .header .name').filter(function(entry) {
+        return entry.selected;
+      })[0].value;
+      ohmEditor.semantics.emit('save:semanticAction', traceNode, actionArguments, cm.getValue(),
+          operationName);
+
       traceNode._lastEdited = true;
       ohmEditor.parseTree.refresh();
       delete traceNode._lastEdited;
+
+      // Load the result if there is an run time error
+      var operationArgs;
+      if ($('.semanticsEditor .mainBody .argTags').textContent) {
+        operationArgs = Object.create(null);
+        $$('.semanticsEditor .mainBody .argTag').forEach(function(tag) {
+          var returnStmt = 'return ' + tag.querySelector('span').textContent + ';';
+          operationArgs[tag._name] = new Function(returnStmt)(); // eslint-disable-line no-new-func
+        });
+      }
+
+      var resultWrapper = ohmEditor.semantics.forceResult(traceNode, operationName, operationArgs);
+      var editorResultContainer = $('.semanticsEditor .mainBody .result');
+      editorResultContainer.classList.remove('error');
+      editorResultContainer.textContent = '';
+      if (resultWrapper.isError && !resultWrapper.missingSemanticsAction &&
+        resultWrapper.isNextStep) {
+        editorResultContainer.classList.add('error');
+        editorResultContainer.textContent = resultWrapper.result;
+      }
     };
+
     var isPlatformMac = /Mac/.test(navigator.platform);
     if (isPlatformMac) {
       actionEditorCM.setOption('extraKeys', {'Cmd-S': saveAction});
     } else {
       actionEditorCM.setOption('extraKeys', {'Ctrl-S': saveAction});
     }
-    return actionEditorDiv;
+
+    updateActionResult(selfWrapper, operation, args);
   }
 
-  // Insert semantics editor body to the editor wrapper, which includes:
-  // `header`: the rule body that alows for renaming
-  // `argTags`: the argument tags shows the arguments' names with values
-  // `body`: the cm that for editing semantics action
-  function insertEditorBody(selfWrapper) {
-    // Mark the `selfWrapper` for the shadow styling
-    selfWrapper.classList.add('selected');
-
-    var editorWrapper = selfWrapper.querySelector('.semanticsEditor');
+  function updateBodyContents(operationName, selfWrapper) {
     var traceNode = selfWrapper.parentElement._traceNode;
-    var resultContainer = editorWrapper.querySelector('.result');
+    // TODO: handle calling the same operation with multi-set of argument, all of them are unforced
+    var argList = ohmEditor.semantics.retrieveArguments(operationName, traceNode);
+    var args =  argList && argList[0];
+    updateArgTags(args);
 
-    // Ceate and load editor header
-    editorWrapper.insertBefore(createAndLoadEditorHeader(traceNode), resultContainer);
-
-    // Ceate and load argument tags
-    editorWrapper.insertBefore(createAndLoadArgTags(selfWrapper), resultContainer);
-
-    // Create and load action editor
-    var actionEditor = editorWrapper.insertBefore(createAndLoadActionEditor(traceNode),
-        resultContainer);
-    var actionEditorCM = actionEditor.firstChild.CodeMirror;
+    var actionEditorCM = $('.semanticsEditor .mainBody .body').firstChild.CodeMirror;
+    actionEditorCM.setValue(ohmEditor.semantics.getActionBody(traceNode, operationName));
+    actionEditorCM.setCursor({line: actionEditorCM.lineCount()});
     actionEditorCM.focus();
     actionEditorCM.refresh();
 
-    // Show the result if the current semantic on the node causes an error.
-    showSingleResultBlock(resultContainer.querySelector('.error.current'));
+    updateActionResult(selfWrapper, operationName, args);
   }
 
-  // Remove `header`, `argTags`, and `body` from the editor wrapper
-  function removeEditorBody(selfWrapper) {
-    selfWrapper.classList.remove('selected');
+  function updateOperationList(selfWrapper) {
+    var opList = semanticsEditor.querySelector('.header .names');
 
-    var editorWrapper = selfWrapper.querySelector('.semanticsEditor');
-    var header = editorWrapper.querySelector('.header');
-    var argTags = editorWrapper.querySelector('.argTags');
-    var body = editorWrapper.querySelector('.body');
-    editorWrapper.removeChild(header);
-    editorWrapper.removeChild(argTags);
-    editorWrapper.removeChild(body);
+    // Update the selected operation.
+    var traceNode = selfWrapper.parentElement._traceNode;
+    // TODO: handle calling the multi-operation
+    var opName = ohmEditor.semantics.retrieveOperations(traceNode)[0];
+    if (opName) {
+      var entry = Array.prototype.filter.call(opList.children, function(e) {
+        return e.value === opName;
+      })[0];
+      entry.selected = true;
+    }
 
-    var resultContainer = editorWrapper.querySelector('.result');
-    Array.prototype.forEach.call(resultContainer.children, function(block) {
-      if (block._needRemove) {
-        resultContainer.removeChild(block);
-      }
-    });
+    // Update the event listener of operation list.
+    opList.onchange = function(event) {
+      var entry = Array.prototype.filter.call(opList.children, function(e) {
+        return e.selected;
+      })[0];
+      updateBodyContents(entry.value, selfWrapper);
+    };
+  }
 
-    showAllResultBlocks(selfWrapper.querySelector('.result .error.current'));
+  // TODO: remove???
+  function updateHeader(selfWrapper) {
+    updateOperationList(selfWrapper);
+    // TODO: ADD back and forward buttom for navigating through editing process.
+  }
+
+  // TODO: make sure all cases covered
+  function getCSTNodeName(traceNode) {
+    var pexpr = traceNode.expr;
+    if (pexpr instanceof ohm.pexprs.Iter) {
+      return '_iter';
+    } else if (pexpr instanceof ohm.pexprs.Terminal) {
+      return '_terminal';
+    } else {
+      return pexpr.toDisplayString();
+    }
+  }
+
+  function updateSemanticsEditor(selfWrapper) {
+
+    // TODO: <-       eval()        X
+    updateHeader(selfWrapper);
+
+    updateMainBody(selfWrapper);
+
+    // TODO: table[operation, subexpression]
+
+    var actionEditor = $('.semanticsEditor .mainBody .body');
+    var actionEditorCM = actionEditor.firstChild.CodeMirror;
+    actionEditorCM.focus();
+    actionEditorCM.refresh();
   }
 
   // Hides or shows the semantics editor of `el`, which is a div.pexpr.
@@ -456,23 +626,13 @@
       return;
     }
 
-    var editorWrapper = selfWrapper.querySelector('.semanticsEditor');
-    // If there is no semantics editor (e.g., for a implicit space cst node), do nothing.
-    if (!editorWrapper || editorWrapper.parentElement !== selfWrapper) {
-      return;
-    }
-
-    // Remove `showing` from the result container class list, which is added by forcing
-    // evaluation
-    editorWrapper.querySelector('.result').classList.remove('showing');
-
-    editorWrapper.classList.toggle('showing');
-
     // Insert or remove the editor body. This avoids having too many CodeMirror.
-    if (editorWrapper.classList.contains('showing')) {
-      insertEditorBody(selfWrapper);
-    } else {
-      removeEditorBody(selfWrapper);
+    var closeOnly = selfWrapper.classList.contains('selected');
+    closeEditor();
+    if (!closeOnly) {
+      selfWrapper.classList.add('selected');
+      semanticsEditor.classList.add('showing');
+      updateSemanticsEditor(selfWrapper);
     }
   }
   ohmEditor.parseTree.addListener('cmdOrCtrlClick:traceElement', toggleSemanticsEditor);
@@ -538,14 +698,14 @@
   }
 
   // Append a `resultBlock` to the result container of the editor
-  function appendSingleResult(editorWrapper, entry, traceNode, name) {
-    editorWrapper.hidden = false;
-    editorWrapper.querySelector('.result').classList.add('showing');
+  function appendSingleResult(resultContainer, entry, traceNode, name) {
+    resultContainer.hidden = false;
+    resultContainer.classList.add('showing');
 
     var args = retrieveArgumentsFromSubList(entry);
     // If the result already showed, return.
     var blockClassId = generateResultBlockClassId(name, args);
-    if (editorWrapper.querySelector('.result .' + blockClassId)) {
+    if (resultContainer.querySelector('.' + blockClassId)) {
       return;
     }
 
@@ -554,14 +714,13 @@
       return;
     }
 
-    var resultContainer = editorWrapper.querySelector('.result');
     var resultBlock = resultContainer.appendChild(createResultBlock(name, resultWrapper));
 
     // Mark the newly appended result block if it is a pass through node, i.e. the result
     // will be hided no matter what.
     // This will be used by `removeEditorBody` to remove the block at the same time to avoid
     // confusion.
-    if (domUtil.closestElementMatching('.self.passThrough', editorWrapper)) {
+    if (domUtil.closestElementMatching('.self.passThrough', resultContainer)) {
       resultBlock._needRemove = true;
     }
     var resultBlocks = resultContainer.querySelectorAll('resultBlock');
@@ -576,7 +735,7 @@
   }
 
   // Create an menu entry that corresponding a semantic operation
-  function createSemanticEntry(semanticOperation, traceNode, editorWrapper) {
+  function createSemanticEntry(semanticOperation, traceNode, resultContainer) {
     var name = semanticOperation.name;
     var entry = domUtil.createElement('li');
     var formals = semanticOperation.formals;
@@ -586,7 +745,7 @@
     // Mark the entry `disabled` if semantics action of the operation is missing for the node,
     // or the result for the node already showed. * For the operation with arguments, we only need
     // to check if the semantics action is missing.
-    var resultBlock = editorWrapper.querySelector('.result .operationName_' + name);
+    var resultBlock = resultContainer.querySelector('.operationName_' + name);
     var args = retrieveArgumentsFromSubList(entry);
     var resultWrapper = ohmEditor.semantics.forceResult(traceNode, name, args);
     var missingSemanticsAction = resultWrapper.missingSemanticsAction;
@@ -599,7 +758,7 @@
         return;
       }
       try {
-        appendSingleResult(editorWrapper, entry, traceNode, name);
+        appendSingleResult(resultContainer, entry, traceNode, name);
       } catch (error) {
         window.alert(error);    // eslint-disable-line no-alert
         return;
@@ -617,7 +776,7 @@
       }
       event.preventDefault();
       try {
-        appendSingleResult(editorWrapper, entry, traceNode, name);
+        appendSingleResult(resultContainer, entry, traceNode, name);
       } catch (error) {
         window.alert(error);    // eslint-disable-line no-alert
         return;
@@ -628,23 +787,23 @@
   }
 
   // Add all the semantics to the submenu of `Force evaluation`
-  function addSemanticEntries(entryWrapper, traceNode, editorWrapper) {
+  function addSemanticEntries(entryWrapper, traceNode, resultContainer) {
     var semanticOperations = ohmEditor.semantics.getSemantics();
     var operations = semanticOperations.operations;
     Object.keys(operations).forEach(function(operationName) {
       entryWrapper.appendChild(createSemanticEntry(operations[operationName], traceNode,
-          editorWrapper));
+          resultContainer));
     });
 
     var attributes = semanticOperations.attributes;
     Object.keys(attributes).forEach(function(attributeName) {
       entryWrapper.appendChild(createSemanticEntry(attributes[attributeName], traceNode,
-          editorWrapper));
+          resultContainer));
     });
   }
   ohmEditor.parseTree.addListener('contextMenu', function(target, traceNode) {
     var selfWrapper = domUtil.closestElementMatching('.self', target);
-    var editorWrapper = selfWrapper.querySelector('.semanticsEditor');
+    var resultContainer = selfWrapper.querySelector('.result');
     var evaluatingSemantics = ohmEditor.semantics.appendEditor;
     var forceEntryContent = 'Force Evaluation';
     forceEntryContent +=
@@ -662,7 +821,7 @@
       } else {
         entryWrapper = forceEntry.appendChild(domUtil.createElement('ul'));
         entryWrapper.hidden = true;
-        addSemanticEntries(entryWrapper, traceNode, editorWrapper);
+        addSemanticEntries(entryWrapper, traceNode, resultContainer);
       }
     };
   });
@@ -676,7 +835,7 @@
   // If one of the node's descendants is `next step`, mark it as temporary `next step`.
   ohmEditor.parseTree.addListener('collapse:traceElement', function(wrapper) {
     var selfWrapper = wrapper.querySelector('.self');
-    var resultContainer = selfWrapper.querySelector('.semanticsEditor .result');
+    var resultContainer = selfWrapper.querySelector('.result');
     if (!resultContainer) {
       return;
     }
@@ -684,20 +843,4 @@
     selfWrapper.classList.toggle('tmpNextStep', !!shouldMark);
   });
 
-  // Exports
-  // -------
-  ohmEditor.semantics = new CheckedEmitter();
-  ohmEditor.semantics.registerEvents({
-    // Emitted after adding an new operation/attribute
-    'add:semanticOperation': ['type', 'name', 'optArguments', 'optOrigActionDict'],
-
-    // Emitted after changing to another semantic operation
-    'change:semanticOperation': ['targetName', 'optArguments'],
-
-    // Emitted after editing the semantics operation button
-    'edit:semanticOperation': ['wrapper', 'operationName', 'opDescription'],
-
-    // Emitted after pressing cmd/ctrl-S in semantics editor
-    'save:semanticAction': ['traceNode', 'actionArguments', 'actionBody']
-  });
 });

@@ -5,6 +5,9 @@
   text-decoration: none;
   width: 102px;
   margin-right: 4px;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-user-select: none;
 }
 #addOperation:hover,
 #addAttribute:hover {

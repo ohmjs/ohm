@@ -9,50 +9,113 @@ textarea {
 .pexpr:not(.failed) > .self.nextStep .label,
 .pexpr:not(.failed) > .self.tmpNextStep .label {
   background: rgba(100, 149, 237, 0.4);
+  border-bottom: 0px;
 }
 .pexpr:not(.failed) > .self.nextStep .label:hover,
 .pexpr:not(.failed) > .self.tmpNextStep .label:hover {
   background: rgba(100, 149, 237, 0.6);
   border-color: rgba(100, 149, 237, 0.6);
 }
-.pexpr:not(.collapsed) > .self.passThrough {
+.pexpr:not(.collapsed) > .self.passThrough:not(.selected) {
   border-bottom: 1px solid #ddd;
-  margin-bottom: -1px;
+}
+.pexpr:not(.collapsed) > .self.passThrough {
+   margin-bottom: -1px;
 }
 
-.self.selected {
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-  margin: 4px 6px 10px 6px;
+.pexpr > .self.selected {
+  _box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  _margin: 4px 6px 10px 6px;
+  border: 2px solid rgb(53, 151, 255);
 }
 
 /* Show only the part marked by `showing` for passThrought node */
-.self.passThrough > .semanticsEditor:not(.showing) > *:not(.showing) {
+/*.self.passThrough > .semanticsEditor:not(.showing) > *:not(.showing) {
   display: none;
+}
+*/
+.self.passThrough > .result:not(.showing) {
+  display: none;
+}
+
+.semanticsEditor {
+  display: none;
+  position: absolute;
+  left: 30%;
+  top: 12%;
+  border: 2px solid #ccc;
+  padding: 4px 8px;
+  background: white;
+  border-radius: 10px 10px 6px 6px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+.semanticsEditor.showing {
+  display: block;
 }
 
 /* Editor header container */
 .semanticsEditor .header {
+  position: relative;
+  display: flex;
+  font-size: 15px;
+  background: #ececec;
+  padding: 4px 8px;
+  margin: -4px -8px 0;
+  border-radius: 10px 10px 0 0;
+  cursor: default;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-user-select: none;
+}
+.semanticsEditor .header .names {
+  margin: 0 auto;  /* This is for align the names to center */
+  color: rgb(82, 82, 82);
+  font: message-box;
+}
+.semanticsEditor .header closeBT {
+  color: lightgray;
+  cursor: default;
+}
+.semanticsEditor .header closeBT:hover {
+  color: #999;
+}
+
+.mainBody .rule {
   font-family: Menlo, Monaco, sans-serif;
   font-size: 16px;
   display: flex;
-  height: 24px;
-  padding-bottom: 3px;
-  margin-top: -1px;
-  border: 1px solid #efefef;
-  border-top: none;
-  border-bottom: none;
+  flex-direction: column;
+  margin: 2px 8px;
 }
-.semanticsEditor .header headerBlock {
+.mainBody .rule cstNodeName::after {
+  content: '\003D';
+  clear: both;
+  margin: 0 3px;
+}
+.mainBody .rule blocks {
+  margin-left: 20px;
+}
+.mainBody .rule blocks::after {
+  float: left;
+  margin-left: 2px;
+  margin-top: -2px;
+  font-family: Optima;
+  content: '\2192';
+  color: slateblue;
+  font-size: 16pt;
+}
+.mainBody .rule block {
   padding-top: 5px;
   padding-bottom: 5px;
   float: left;
   margin-left: 5px;
 }
-headerBlock span.display {
+.mainBody .rule block span.display,
+.mainBody .rule cstNodeName {
   color: rgb(123, 123, 123);
   float: left;
 }
-headerBlock real {
+.mainBody .rule block real {
   display: inline-block;
   height: 12px;
   outline: none;
@@ -63,25 +126,16 @@ headerBlock real {
   padding-right: 2px;
   width: auto;
 }
-.semanticsEditor .header::after {
-  float: left;
-  margin-left: 2px;
-  margin-top: -2px;
-  font-family: Optima;
-  content: '\2192';
-  color: slateblue;
-  font-size: 16pt;
-}
 
 /* Operation arguments container */
-.semanticsEditor .argTags:not(:empty) {
+.mainBody .argTags:not(:empty) {
   height: 100%;
   display: inline-flex;
   flex: 1;
   flex-direction: column;
   padding-right: 12px;
 }
-.semanticsEditor .argTags .argTag {
+.mainBody .argTags .argTag {
   position: relative;
   margin: 0 0 8px 12px;
   padding: 0 9px 0 8px;
@@ -134,14 +188,11 @@ headerBlock real {
 }
 
 /* Action editor container */
-.semanticsEditor .body {
-  margin-top: 0px;
-  border: 1px solid #efefef;
-  border-top: none;
+.mainBody .body {
   padding-left: 10pt;
   overflow: visible;
 }
-.semanticsEditor .body .CodeMirror {
+.mainBody .body .CodeMirror {
   cursor: default;
   display: block;
   height: auto;
@@ -150,10 +201,10 @@ headerBlock real {
   font-size: 16px;
   font-family: Menlo, Monaco, sans-serif;
 }
-.semanticsEditor .body .CodeMirror-lines {
+.mainBody .body .CodeMirror-lines {
   padding: 8px;
 }
-.semanticsEditor .body .CodeMirror-lines pre{
+.mainBody .body .CodeMirror-lines pre{
   padding-left: 0px;
 }
 
@@ -163,21 +214,22 @@ headerBlock real {
   display: none;
 }
 
-.semanticsEditor .result {
+.self .result {
   display: flex;
   color: slateblue;
   font-size: 16px;
-  border: 1px solid #efefef;
-  border-top: none;
   margin-top: -1px;
   padding: 4px;
   cursor: default;
 }
-/* Result container is hide by default when editor body is open */
+/* TODO: Remove; 
+   Result container is hide by default when editor body is open
 .semanticsEditor.showing .result:not(.showing) {
   display: none;
 }
-.semanticsEditor .result:empty {
+*/
+.semanticsEditor .result:empty,
+.self .result:empty {
   padding: 0;
 }
 
@@ -216,11 +268,14 @@ headerBlock real {
   display: none;
 }
 
-.semanticsEditor .result resultBlock.error value {
+.semanticsEditor .result.error,
+.self .result resultBlock.error value {
   background-color: rgb(255, 215, 222);
   color: red;
+  text-align: center;
 }
-.semanticsEditor .result resultBlock.forced value {
+
+.self .result resultBlock.forced value {
   color: #999;
 }
 

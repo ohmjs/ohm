@@ -171,11 +171,8 @@
         args = retrieveArgs(wrapper, true);
         window.alert(error);    // eslint-disable-line no-alert
       }
-      var opDescription = {
-        type: 'Operation',
-        args: args
-      };
-      ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, opDescription);
+
+      ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, args);
       ohmEditor.parseTree.refresh(ohmEditor.parseTree.rootTrace, false);
     });
 
