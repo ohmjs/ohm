@@ -8,12 +8,9 @@
     module.exports = initModule;
   } else {
     initModule(root.ohm, root.ohmEditor, root.CheckedEmitter, root.document, root.cmUtil, root.d3,
-               root.domUtil);
+               root.domUtil, root.getComputedStyle);
   }
-})(this, function(ohm, ohmEditor, CheckedEmitter, document, cmUtil, d3, domUtil) {
-  // Fake getComputedStyle() for node (required for unit tests)
-  var getComputedStyle = getComputedStyle || function(elt) { return {}; };
-
+})(this, function(ohm, ohmEditor, CheckedEmitter, document, cmUtil, d3, domUtil, getComputedStyle) {
   var ArrayProto = Array.prototype;
   var $ = domUtil.$;
 
@@ -92,8 +89,6 @@
     var measuringDiv = $('#measuringDiv');
     var span = measuringDiv.appendChild(domUtil.createElement('span.input'));
     span.innerHTML = inputEl.textContent;
-
-    measuringDiv.classList.add('expandedInputFont');
     var bounds = span.getBoundingClientRect();
 
     var result = {
@@ -102,7 +97,6 @@
     };
 
     measuringDiv.removeChild(span);
-    measuringDiv.classList.remove('expandedInputFont');
     return result;
   }
 
@@ -147,18 +141,18 @@
 
       if (!el.classList.contains('hidden') &&
           domUtil.closestElementMatching('.collapsed', el) == null) {
-        var elStyle = getComputedStyle(el);
+        var style = getComputedStyle(el);
 
-        var elPaddingLeft = parseFloat(elStyle.paddingLeft);
-        var elPaddingRight = parseFloat(elStyle.paddingRight);
-        var elMarginLeft = parseFloat(elStyle.marginLeft);
-        var elMarginRight = parseFloat(elStyle.marginRight);
+        var paddingLeft = parseInt(style.paddingLeft);
+        var paddingRight = parseInt(style.paddingRight);
+        var marginLeft = parseInt(style.marginLeft);
+        var marginRight = parseInt(style.marginRight);
 
-        var totalPadding = elPaddingRight + elPaddingLeft;
+        var totalPadding = paddingRight + paddingLeft;
 
         el._input.style.minWidth = (el.clientWidth - totalPadding) + 'px';
-        el._input.style.marginLeft = (elPaddingLeft + elMarginLeft) + 'px';
-        el._input.style.marginRight = (elPaddingRight + elMarginRight) + 'px';
+        el._input.style.marginLeft = (paddingLeft + marginLeft) + 'px';
+        el._input.style.marginRight = (paddingRight + marginRight) + 'px';
       }
 
       if (!el.style.minWidth) {

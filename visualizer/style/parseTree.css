@@ -25,10 +25,11 @@
   padding: 8px 0 8px 3px;
 }
 
-.expandedInputFont {
+#measuringDiv .input {
   font-family: Menlo, Monaco, sans-serif;
   font-size: 100%;
   outline: none;
+  display: inline-block;
 }
 
 #expandedInput,
@@ -41,10 +42,6 @@
 }
 #expandedInput .highlight {
   background-color: #B5D5FF;
-}
-
-.input {
-  display: inline-block;
 }
 
 #parseResults {
