@@ -140,7 +140,7 @@
       }
 
       if (!el.classList.contains('hidden') &&
-          domUtil.closestElementMatching('.collapsed', el) == null) {
+          domUtil.closestElementMatching('.collapsed', el.parentElement) == null) {
         var style = getComputedStyle(el);
 
         var paddingLeft = parseInt(style.paddingLeft);
@@ -153,6 +153,10 @@
         el._input.style.minWidth = (el.clientWidth - totalPadding) + 'px';
         el._input.style.marginLeft = (paddingLeft + marginLeft) + 'px';
         el._input.style.marginRight = (paddingRight + marginRight) + 'px';
+      } else {
+        el._input.style.minWidth = 0 + 'px';
+        el._input.style.marginLeft = '';
+        el._input.style.marginRight = '';
       }
 
       if (!el.style.minWidth) {
