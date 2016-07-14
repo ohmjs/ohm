@@ -446,6 +446,14 @@
       right: 12px;
       top: 12px;
     }
+    /* Prevent things from looking terrible when zoomed in (looking at you, Chrome). */
+    @media screen and (-webkit-min-device-pixel-ratio: 1.01) {
+      #addExampleButton {
+        background-color: white;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+      }
+    }
   </style>
   <link rel="stylesheet" href="style/parseTree.css">
   <link rel="stylesheet" href="style/semanticsEditor.css">
