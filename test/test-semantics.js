@@ -605,3 +605,17 @@ test('asIteration', function(t) {
 
   t.end();
 });
+
+test('sourceString', function(t) {
+  var g = ohm.grammar('G { Start = "a" "b"* }');
+
+  // An operation that calls `sourceString` on a nonterminal, terminal, and iter node.
+  var s = g.semantics().addOperation('foo', {
+    Start: function(a, bs) {
+      return this.sourceString + a.sourceString + bs.sourceString;
+    }
+  });
+  t.equals(s(g.match('abb')).foo(), 'abbabb');
+
+  t.end();
+});

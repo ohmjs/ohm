@@ -128,7 +128,10 @@ Object.defineProperties(Wrapper.prototype, {
       throw new TypeError(
           "tried to access the 'primitiveValue' attribute of a non-terminal CST node");
     }
-  }
+  },
+
+  // Returns the contents of the input stream consumed by this CST node.
+  sourceString: {get: function() { return this.interval.contents; }}
 });
 
 // ----------------- Semantics -----------------
