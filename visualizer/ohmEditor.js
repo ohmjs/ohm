@@ -31,7 +31,11 @@ ohmEditor.registerEvents({
   // Emitted when the user indicates they want jump to a location relevant to a Failure.
   // Usually comes after a 'peek:failure' event, and if so, it implies that there will be
   // no matching 'unpeek:failure'.
-  'goto:failure': ['failure']
+  'goto:failure': ['failure'],
+
+  // Emitted when a rule should be highlighted in the grammar editor
+  'highlight:ruleDefinition': ['ruleName'],
+  'unhighlight:ruleDefinition': []
 });
 
 ohmEditor.grammar = null;

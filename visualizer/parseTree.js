@@ -455,11 +455,7 @@
       }
       var ruleName = pexpr.ruleName;
       if (ruleName) {
-        var defInterval = ohmEditor.grammar.ruleBodies[ruleName].definitionInterval;
-        if (defInterval) {
-          defMark = cmUtil.markInterval(grammarEditor, defInterval, 'active-definition', true);
-          cmUtil.scrollToInterval(grammarEditor, defInterval);
-        }
+        ohmEditor.emit('highlight:ruleDefinition', ruleName);
       }
 
       e.stopPropagation();
@@ -469,7 +465,7 @@
       if (input) {
         input.classList.remove('highlight');
       }
-      clearMarks();
+      ohmEditor.emit('unhighlight:ruleDefinition');
     });
 
     label.addEventListener('contextmenu', function(e) {
@@ -647,6 +643,21 @@
     $('#semantics').hidden = !ohmEditor.options.semantics;
     rootTrace = trace;
     clearZoomState();
+  });
+
+  ohmEditor.addListener('highlight:ruleDefinition', function(ruleName) {
+    if (ohmEditor.grammar.ruleBodies.hasOwnProperty(ruleName)) {
+      var defInterval = ohmEditor.grammar.ruleBodies[ruleName].definitionInterval;
+      if (defInterval) {
+        var grammarEditor = ohmEditor.ui.grammarEditor;
+        defMark = cmUtil.markInterval(grammarEditor, defInterval, 'active-definition', true);
+        cmUtil.scrollToInterval(grammarEditor, defInterval);
+      }
+    }
+  });
+
+  ohmEditor.addListener('unhighlight:ruleDefinition', function() {
+    clearMarks();
   });
 
   // Exports
