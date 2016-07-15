@@ -113,8 +113,8 @@ test('simple parse tree', function(t) {
     'peek:failure': ['failure'],
     'unpeek:failure': [],
     'goto:failure': ['failure'],
-    'highlight:ruleDefinition': ['ruleName'],
-    'unhighlight:ruleDefinition': []
+    'peek:ruleDefinition': ['ruleName'],
+    'unpeek:ruleDefinition': []
   });
   ohmEditor.grammar = g;
   ohmEditor.options = {};

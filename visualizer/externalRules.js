@@ -132,7 +132,7 @@
 
     for (var ruleName in this._rules) {
       var pre = document.createElement('pre');
-      pre.setAttribute('id', 'externalRules-' + ruleName);
+      pre.id = 'externalRules-' + ruleName;
       pre.textContent = ruleName + ' = ' + this._rules[ruleName] + '\n';
       container.appendChild(pre);
     }
@@ -147,7 +147,7 @@
     widget.update(grammarEditor, matchResult, grammar);
   });
 
-  ohmEditor.addListener('highlight:ruleDefinition', function(ruleName) {
+  ohmEditor.addListener('peek:ruleDefinition', function(ruleName) {
     if (!ohmEditor.grammar.ruleBodies.hasOwnProperty(ruleName)) {
       var elem = $('#externalRules-' + ruleName);
       if (elem) {
@@ -156,7 +156,7 @@
     }
   });
 
-  ohmEditor.addListener('unhighlight:ruleDefinition', function() {
+  ohmEditor.addListener('unpeek:ruleDefinition', function() {
     $$('.externalRules pre').forEach(function(elem) {
       elem.classList.remove('active-definition');
     });

@@ -33,9 +33,10 @@ ohmEditor.registerEvents({
   // no matching 'unpeek:failure'.
   'goto:failure': ['failure'],
 
-  // Emitted when a rule should be highlighted in the grammar editor
-  'highlight:ruleDefinition': ['ruleName'],
-  'unhighlight:ruleDefinition': []
+  // Emitted when the user indicates they want to preview a rule definition, e.g. when
+  // hovering over a node in the visualizer.
+  'peek:ruleDefinition': ['ruleName'],
+  'unpeek:ruleDefinition': []  // Ends the preview.
 });
 
 ohmEditor.grammar = null;

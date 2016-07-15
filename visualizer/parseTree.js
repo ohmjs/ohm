@@ -455,7 +455,7 @@
       }
       var ruleName = pexpr.ruleName;
       if (ruleName) {
-        ohmEditor.emit('highlight:ruleDefinition', ruleName);
+        ohmEditor.emit('peek:ruleDefinition', ruleName);
       }
 
       e.stopPropagation();
@@ -465,7 +465,7 @@
       if (input) {
         input.classList.remove('highlight');
       }
-      ohmEditor.emit('unhighlight:ruleDefinition');
+      ohmEditor.emit('unpeek:ruleDefinition');
     });
 
     label.addEventListener('contextmenu', function(e) {
@@ -645,7 +645,7 @@
     clearZoomState();
   });
 
-  ohmEditor.addListener('highlight:ruleDefinition', function(ruleName) {
+  ohmEditor.addListener('peek:ruleDefinition', function(ruleName) {
     if (ohmEditor.grammar.ruleBodies.hasOwnProperty(ruleName)) {
       var defInterval = ohmEditor.grammar.ruleBodies[ruleName].definitionInterval;
       if (defInterval) {
@@ -656,9 +656,7 @@
     }
   });
 
-  ohmEditor.addListener('unhighlight:ruleDefinition', function() {
-    clearMarks();
-  });
+  ohmEditor.addListener('unpeek:ruleDefinition', clearMarks);
 
   // Exports
   // -------
