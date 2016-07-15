@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Deploys portions of this repository (e.g., doc/) to ohmlang.github.io.
+# To run this, you need a checkout of https://github.com/ohmlang/ohmlang.github.io.
+
+# Accepts an optional argument, which is the path to the ohmlang.github.io repository root.
+# If not specified, it looks for a directory named ohmlang.github.io in the same directory
+# as this repository.
+
 set -e
 
 ROOT=$(npm prefix)
