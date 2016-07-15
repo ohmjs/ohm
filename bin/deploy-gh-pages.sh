@@ -17,6 +17,7 @@ fi
 
 git pull --ff-only --no-stat
 cp -r "$ROOT/doc" "$ROOT/dist" "$ROOT/visualizer" .
-git add doc dist visualizer
+mv visualizer editor  # Temporary until main repo is changed.
+git add doc dist editor visualizer
 git commit -m "Update from master@${OHM_REV}"
 git push origin master
