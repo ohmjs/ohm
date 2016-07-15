@@ -4,8 +4,8 @@ Ohm
 [![Build Status](https://img.shields.io/travis/cdglabs/ohm.svg?style=flat-square)](https://travis-ci.org/cdglabs/ohm) 
 [![NPM](https://img.shields.io/npm/v/ohm-js.svg?style=flat-square)](https://www.npmjs.com/package/ohm-js)
 
-[Ohm](https://github.com/cdglabs/ohm) is a library and domain-specific language for building parsers,
-interpreters, and more. The _Ohm language_ is based on [parsing expression grammars](http://en.wikipedia.org/wiki/Parsing_expression_grammar)
+[Ohm](https://github.com/cdglabs/ohm) is a parser generator consisting of a library and a domain-specific language.
+You can use it to parse custom file formats or quickly build parsers, interpreters, and compilers for programming languages. The _Ohm language_ is based on [parsing expression grammars](http://en.wikipedia.org/wiki/Parsing_expression_grammar)
 (PEGs), which are a formal way of describing syntax, similar to regular expressions and context-free
 grammars. The _Ohm library_ provides a JavaScript interface (known as Ohm/JS) for creating parsers,
 interpreters, and more from the grammars you write.
