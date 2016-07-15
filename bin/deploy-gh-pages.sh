@@ -1,23 +1,22 @@
 #!/bin/bash
 
-# Check if we are running on the CI server (e.g., Travis).
-if [ -n "$CI" ]; then
-  # Commit anything generated during the build.
-  git commit -am --no-verify "Add missing files from master@$(git rev-parse --short master)"
+set -e
 
-  # Create the gh-pages branch.
-  git remote set-branches --add origin gh-pages &&
-  git fetch origin &&
-  git branch gh-pages origin/gh-pages
+ROOT=$(npm prefix)
+PAGES_DIR=${1:-"$ROOT/../ohmlang.github.io"}
+OHM_REV=$(git rev-parse --short master)
+
+if [ ! -d $PAGES_DIR ]; then
+  echo "No such directory: $PAGES_DIR" && exit 1
 fi
 
-git rev-parse --quiet --verify gh-pages > /dev/null || (echo "No gh-pages branch found."; exit 1)
+cd $PAGES_DIR
+if ! git rev-parse --quiet --verify master > /dev/null; then
+  echo "Not a git repository: $PAGES_DIR" && exit 1
+fi
 
-git checkout gh-pages &&
-(
-  (
-    git checkout master -- doc dist visualizer &&
-    git commit -am "Update from master@$(git rev-parse --short master)" &&
-    git push origin gh-pages
-  ); git checkout -q -
-)
+git pull --ff-only --no-stat
+cp -r "$ROOT/doc" "$ROOT/dist" "$ROOT/visualizer" .
+git add doc dist visualizer
+git commit -m "Update from master@${OHM_REV}"
+git push origin master
