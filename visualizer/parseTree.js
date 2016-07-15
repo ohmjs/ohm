@@ -246,7 +246,10 @@
         expr instanceof ohm.pexprs.Not) {
       return isSyntactic(expr.expr);
     }
-    return false;
+    if (expr instanceof ohm.pexprs.Seq) {
+      return expr.factors.some(isSyntactic);
+    }
+    return expr instanceof ohm.pexprs.Param;
   }
 
   // Return true if the trace element `el` should be collapsed by default.
