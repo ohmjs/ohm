@@ -15,7 +15,7 @@
 .coverageIndicator {
   color: hsl(0,100%,50%);
   /*cursor: pointer;*/
-  /*font-weight: normal;*/
+  font-weight: bolder;
 }
 
 

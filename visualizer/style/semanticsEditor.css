@@ -32,7 +32,7 @@ textarea {
 
 /* Editor header container */
 .semanticsEditor .header {
-  font-family: Menlo, Monaco, sans-serif;
+  font-family: Menlo, Monaco, monospace;
   font-size: 16px;
   display: flex;
   height: 24px;
@@ -57,7 +57,7 @@ headerBlock real {
   height: 12px;
   outline: none;
   padding-top: 8px;
-  font: italic 12px Menlo, Monaco, sans-serif;
+  font: italic 12px Menlo, Monaco, monospace;
   color:  slateblue;
   border: white;
   padding-right: 2px;
@@ -148,7 +148,7 @@ headerBlock real {
   width: auto;
   color: slateblue;
   font-size: 16px;
-  font-family: Menlo, Monaco, sans-serif;
+  font-family: Menlo, Monaco, monospace;
 }
 .semanticsEditor .body .CodeMirror-lines {
   padding: 8px;

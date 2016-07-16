@@ -28,7 +28,7 @@
   display: flex;
   flex-direction: column;
   color: black;
-  font-family: Menlo, Monaco, sans-serif;
+  font-family: Menlo, Monaco, monospace;
   font-style: normal;
   border-radius: 3px;
   padding: 2px 0px 2px 0px;
