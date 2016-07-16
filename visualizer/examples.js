@@ -49,7 +49,11 @@
   function checkExample(elem) {
     var example = elem.textContent;
     try {
-      var mr = ohmEditor.grammar.match(example);
+      if (elem.startRule) {
+        var mr = ohmEditor.grammar.match(example, elem.startRule);
+      } else {
+        mr = ohmEditor.grammar.match(example);
+      }
       if (mr.succeeded()) {
         elem.parentElement.classList.add('pass');
       } else {
@@ -109,17 +113,24 @@
     return exampleValues;
   }
 
-  function setExample(id, value) {
+  function setExample(id, text, optStartRule) {
     if (!(id in exampleValues)) {
       throw new Error(id + ' is not a valid example id');
     }
+
+    var startRule = optStartRule || null;
     var oldValue = exampleValues[id];
-    exampleValues[id] = value;
+    var value = exampleValues[id] = {
+      text: text,
+      startRule: startRule
+    };
+
     var code = getListEl(id).querySelector(' code');
+    code.startRule = startRule;
     code.parentElement.classList.remove('pass', 'fail');
     setTimeout(checkExample.bind(null, code), 0);
-    if (value.length > 0) {
-      code.textContent = value;
+    if (value.text.length > 0) {
+      code.textContent = text;
     } else {
       code.innerHTML = '&nbsp;';
     }
@@ -130,7 +141,9 @@
   function setSelected(id) {
     var value = getExample(id);
     selectedId = id;
-    ohmEditor.ui.inputEditor.setValue(value);
+
+    ohmEditor.startRule = value.startRule;
+    ohmEditor.ui.inputEditor.setValue(value.text);
 
     // Update the DOM.
     var el = getListEl(id);
@@ -188,11 +201,14 @@
       examples = JSON.parse(value);
     } else if (defaultEl) {
       examples = Array.prototype.map.call(defaultEl.querySelectorAll('pre'), function(elem) {
-        return elem.textContent;
+        return {
+          text: elem.textContent,
+          startRule: null
+        };
       });
     }
     examples.forEach(function(ex) {
-      setExample(addExample(), ex);
+      setExample(addExample(), ex.text, ex.startRule);
     });
 
     // Select the first example.
@@ -206,7 +222,10 @@
   function saveExamples(elem, key) {
     var elems = document.querySelectorAll('#exampleContainer ul li code');
     var examples = [].slice.apply(elems).map(function(elem) {
-      return elem.textContent;
+      return {
+        text: elem.textContent,
+        startRule: elem.startRule
+      };
     });
     localStorage.setItem('examples', JSON.stringify(examples));
   }

@@ -44,8 +44,15 @@
     var examples = ohmEditor.examples.getExamples();
     Object.keys(examples).forEach(function(id) {
       var example = examples[id];
-      if (grammar.match(example).succeeded()) {
-        exampleWorkerManager.addUserExample(grammar.defaultStartRule, example);
+      if (example.startRule) {
+        var match = grammar.match(example.text, example.startRule);
+      } else {
+        match = grammar.match(example.text);
+      }
+
+      if (match.succeeded()) {
+        exampleWorkerManager.addUserExample(example.startRule || grammar.defaultStartRule,
+                                            example.text);
       }
     });
   }
@@ -56,12 +63,13 @@
   });
 
   ohmEditor.examples.addListener('set:example', function(_, oldValue, newValue) {
-    if (newValue.trim() === '') {
+    if (newValue.text.trim() === '') {
       return;
-    } else if (oldValue.trim() === '') {
+    } else if (oldValue.text.trim() === '') {
       var grammar = ohmEditor.grammar;
-      if (grammar.match(newValue).succeeded()) {
-        exampleWorkerManager.addUserExample(grammar.defaultStartRule, newValue);
+      if (grammar.match(newValue.text, newValue.startRule).succeeded()) {
+        exampleWorkerManager.addUserExample(newValue.startRule || grammar.defaultStartRule,
+                                            newValue);
       }
     } else {
       resetWorker(grammar);

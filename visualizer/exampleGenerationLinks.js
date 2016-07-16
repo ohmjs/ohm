@@ -209,10 +209,10 @@
   function makeExampleDisplay(ruleName, examples) {
     return utils._('div', {
       class: 'exampleDisplay'
-    }, utils._('h3', {}, utils.t(ruleName)), makeExampleList(examples));
+    }, utils._('h3', {}, utils.t(ruleName)), makeExampleList(examples, ruleName));
   }
 
-  function makeExampleList(examples) {
+  function makeExampleList(examples, ruleName) {
     if (examples.length === 0) {
       return utils.t('No Examples Found');
     }
@@ -229,7 +229,7 @@
         examples = utils.objectMap(examples, function(_, value) { return value; });
         if (!examples.includes(example)) {
           id = ohmEditor.examples.addExample();
-          ohmEditor.examples.setExample(id, example);
+          ohmEditor.examples.setExample(id, example, ruleName);
           ohmEditor.examples.saveExamples();
         }
 

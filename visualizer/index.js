@@ -88,7 +88,11 @@
     }
 
     if (ohmEditor.grammar && ohmEditor.grammar.defaultStartRule) {
-      var trace = ohmEditor.grammar.trace(inputSource);
+      if (ohmEditor.startRule) {
+        var trace = ohmEditor.grammar.trace(inputSource, ohmEditor.startRule);
+      } else {
+        trace = ohmEditor.grammar.trace(inputSource);
+      }
 
       // When the input fails to parse, turn on "show failures" automatically.
       if (trace.result.failed() && showFailuresImplicitly) {
