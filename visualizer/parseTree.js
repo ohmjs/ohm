@@ -537,6 +537,8 @@
     var inputStack = [expandedInputDiv];
     var containerStack = [rootContainer];
 
+    var currentLR = {};
+
     ohmEditor.parseTree.emit('render:parseTree', renderedTrace);
     var renderActions = {
       enter: function handleEnter(node, parent, depth) {
@@ -554,6 +556,14 @@
         var isLeafNode = isLeaf(node);
         var visibleChoice = hasVisibleChoice(node);
         var visibleLR = hasVisibleLeftRecursion(node);
+
+        if (node.isMemoized) {
+          var memoKey = node.expr.toMemoKey();
+          var stack = currentLR[memoKey];
+          if (stack && stack[stack.length - 1] === node.pos) {
+            isLeafNode = true;
+          }
+        }
 
         // Get the span that contain the parent node's input. If it is undefined, it means that
         // this node is in a failed branch.
@@ -603,8 +613,15 @@
       },
       exit: function(node, parent, depth) {
         // If necessary, render the "Grow LR" trace as a pseudo-child, after the real child.
+        // To avoid exponential growth of the tree, when we encounter a memoized entry that
+        // is a copy of the head of left recursion, treat it as a leaf.
         if (hasVisibleLeftRecursion(node)) {
+          var memoKey = node.expr.toMemoKey();
+          var stack = currentLR[memoKey] || [];
+          currentLR[memoKey] = stack;
+          stack.push(node.pos);
           node.terminatingLREntry.walk(renderActions);
+          stack.pop();
         }
         var childContainer = containerStack.pop();
         var el = childContainer.parentElement;
