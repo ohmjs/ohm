@@ -65,7 +65,7 @@
   "devDependencies": {
     "browser-sync": "^2.8.0",
     "browserify": "^11.0.0",
-    "checked-emitter": "^1.0.0",
+    "checked-emitter": "^1.0.1",
     "eslint": "^0.17.1",
     "eslint-plugin-no-extension-in-require": "^0.2.0",
     "jscs": "^1.12.0",

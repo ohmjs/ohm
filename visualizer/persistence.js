@@ -121,9 +121,7 @@
     }
 
     getFromURL('../grammars/' + grammar, function(src) {
-      // TODO: should be ohmEditor.once(...)
-      ohmEditor.addListener('change:grammar', function(source) {
-        ohmEditor.removeCurrentListener();
+      ohmEditor.once('change:grammar', function(_) {
         $('#saveIndicator').classList.remove('edited');
       });
 
