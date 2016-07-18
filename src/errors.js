@@ -72,7 +72,7 @@ function undeclaredRule(ruleName, grammarName, optInterval) {
 function cannotOverrideUndeclaredRule(ruleName, grammarName, body) {
   return createError(
       'Cannot override rule ' + ruleName + ' because it is not declared in ' + grammarName,
-      body.definitionInterval);
+      body.ruleSource);
 }
 
 // Cannot extend undeclared rule
@@ -80,7 +80,7 @@ function cannotOverrideUndeclaredRule(ruleName, grammarName, body) {
 function cannotExtendUndeclaredRule(ruleName, grammarName, body) {
   return createError(
       'Cannot extend rule ' + ruleName + ' because it is not declared in ' + grammarName,
-      body.definitionInterval);
+      body.ruleSource);
 }
 
 // Duplicate rule declaration
@@ -91,7 +91,7 @@ function duplicateRuleDeclaration(ruleName, offendingGrammarName, declGrammarNam
   if (offendingGrammarName !== declGrammarName) {
     message += " (originally declared in '" + declGrammarName + "')";
   }
-  return createError(message, body.definitionInterval);
+  return createError(message, body.ruleSource);
 }
 
 // Wrong number of parameters
@@ -100,7 +100,7 @@ function wrongNumberOfParameters(ruleName, expected, actual, body) {
   return createError(
       'Wrong number of parameters for rule ' + ruleName +
           ' (expected ' + expected + ', got ' + actual + ')',
-      body && body.definitionInterval);
+      body && body.ruleSource);
 }
 
 // Wrong number of arguments
@@ -117,7 +117,7 @@ function wrongNumberOfArguments(ruleName, expected, actual, expr) {
 function duplicateParameterNames(ruleName, duplicates, body) {
   return createError(
       'Duplicate parameter names in rule ' + ruleName + ': ' + duplicates.join(','),
-      body.definitionInterval);
+      body.ruleSource);
 }
 
 // Invalid parameter expression

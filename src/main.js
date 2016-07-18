@@ -82,7 +82,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       s.visit();
       rs.visit();
       var g = decl.build();
-      g.definitionInterval = this.source.trimmed();
+      g.source = this.source.trimmed();
       if (grammarName in namespace) {
         throw errors.duplicateGrammarDeclaration(g, namespace);
       }
@@ -111,7 +111,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
         decl.withDefaultStartRule(currentRuleName);
       }
       var body = b.visit();
-      body.definitionInterval = this.source.trimmed();
+      body.ruleSource = this.source.trimmed();
       var description = d.visit()[0];
       return decl.define(currentRuleName, currentRuleFormals, body, description);
     },
@@ -120,7 +120,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       currentRuleFormals = fs.visit()[0] || [];
       overriding = true;
       var body = b.visit();
-      body.definitionInterval = this.source.trimmed();
+      body.ruleSource = this.source.trimmed();
       var ans = decl.override(currentRuleName, currentRuleFormals, body);
       overriding = false;
       return ans;
@@ -130,7 +130,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       currentRuleFormals = fs.visit()[0] || [];
       var body = b.visit();
       var ans = decl.extend(currentRuleName, currentRuleFormals, body);
-      decl.ruleBodies[currentRuleName].definitionInterval = this.source.trimmed();
+      decl.ruleBodies[currentRuleName].ruleSource = this.source.trimmed();
       return ans;
     },
     RuleBody: function(_, terms) {
@@ -154,7 +154,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     TopLevelTerm_inline: function(b, n) {
       var inlineRuleName = currentRuleName + '_' + n.visit();
       var body = b.visit();
-      body.definitionInterval = this.source.trimmed();
+      body.ruleSource = this.source.trimmed();
       var isNewRuleDeclaration =
           !(decl.superGrammar && decl.superGrammar.ruleBodies[inlineRuleName]);
       if (overriding && !isNewRuleDeclaration) {
@@ -275,7 +275,7 @@ function grammar(source, optNamespace) {
     throw new Error('Missing grammar definition');
   } else if (grammarNames.length > 1) {
     var secondGrammar = ns[grammarNames[1]];
-    var interval = secondGrammar.definitionInterval;
+    var interval = secondGrammar.source;
     throw new Error(
         util.getLineAndColumnMessage(interval.inputStream.source, interval.startIdx) +
         'Found more than one grammar definition -- use ohm.grammars() instead.');

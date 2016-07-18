@@ -136,7 +136,7 @@ GrammarDecl.prototype.build = function() {
     errors.throwErrors(grammarErrors);
   }
   if (this.source) {
-    grammar.definitionInterval = this.source;
+    grammar.source = this.source;
   }
 
   return grammar;
@@ -174,7 +174,7 @@ GrammarDecl.prototype.extend = function(name, formals, fragment) {
   }
   var body = new pexprs.Extend(this.superGrammar, name, fragment);
   body.source = fragment.source;
-  body.definitionInterval = fragment.definitionInterval;
+  body.ruleSource = fragment.ruleSource;
   this.installOverriddenOrExtendedRule(name, formals, body);
   return this;
 };

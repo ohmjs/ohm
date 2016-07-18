@@ -94,20 +94,20 @@ test('grammar recipes with source', function(t) {
   t.equal(g.ruleBodies.ident.source.contents, 'letter /* foo */ identPart*');
 
   // Try re-parsing the grammar based on the source retained in the recipe.
-  var reconsitutedGrammar = ohm.grammar(g.definitionInterval.contents);
+  var reconsitutedGrammar = ohm.grammar(g.source.contents);
   t.equal(reconsitutedGrammar.toRecipe(), ns.G.toRecipe());
 
   var g2 = ohm.makeRecipe(ns.G2.toRecipe());
   t.equal(g2.ruleBodies.Start.source.contents, '(ident | number)*', 'overridden rule');
 
   t.equal(g2.ruleBodies.identPart.source.contents, '"$"', 'extended rule');
-  reconsitutedGrammar = ohm.grammar(g2.definitionInterval.contents, {G: ns.G});
+  reconsitutedGrammar = ohm.grammar(g2.source.contents, {G: ns.G});
   t.equal(reconsitutedGrammar.toRecipe(), ns.G2.toRecipe());
 
   // Check that recipes without source still work fine.
   g = ohm.makeRecipe(
     '["grammar",{},"G",null,"start",{"start":["define",{},null,[],["app",{},"any",[]]]}]');
-  t.equal(g.definitionInterval, undefined, 'grammar definitionInterval is undefined');
+  t.equal(g.source, undefined, 'grammar `source` property is undefined');
   t.equal(g.ruleBodies.start.source, undefined, 'ruleBodies.start.source is undefined');
   t.ok(ohm.makeRecipe(g.toRecipe()), 'recipe still works fine');
 

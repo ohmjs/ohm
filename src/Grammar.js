@@ -144,8 +144,8 @@ Grammar.prototype = {
   toRecipe: function(optVarName) {
     var metaInfo = {};
     // Include the grammar source if it is available.
-    if (this.definitionInterval) {
-      metaInfo.source = this.definitionInterval.contents;
+    if (this.source) {
+      metaInfo.source = this.source.contents;
     }
 
     var superGrammar = null;
@@ -172,8 +172,8 @@ Grammar.prototype = {
       }
 
       var metaInfo = {};
-      if (body.definitionInterval && self.definitionInterval) {
-        var adjusted = body.definitionInterval.relativeTo(self.definitionInterval);
+      if (body.ruleSource && self.source) {
+        var adjusted = body.ruleSource.relativeTo(self.source);
         metaInfo.sourceInterval = [adjusted.startIdx, adjusted.endIdx];
       }
 
@@ -183,7 +183,7 @@ Grammar.prototype = {
       }
 
       var formals = self.ruleFormals[ruleName];
-      var ruleBody = body.outputRecipe(formals, self.definitionInterval);
+      var ruleBody = body.outputRecipe(formals, self.source);
 
       rules[ruleName] = [
         operation, // "define"/"extend"/"override"
