@@ -163,7 +163,7 @@ Builder.prototype = {
     var metaInfo = recipe[1];
     if (metaInfo) {
       if (metaInfo.sourceInterval && this.currentDecl) {
-        result.withInterval(
+        result.withSource(
           this.currentDecl.sourceInterval.apply(this.currentDecl, metaInfo.sourceInterval)
         );
       }

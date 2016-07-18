@@ -135,7 +135,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
     RuleBody: function(_, terms) {
       var args = terms.visit();
-      return builder.alt.apply(builder, args).withInterval(this.source);
+      return builder.alt.apply(builder, args).withSource(this.source);
     },
 
     Formals: function(opointy, fs, cpointy) {
@@ -148,7 +148,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
 
     Alt: function(seqs) {
       var args = seqs.visit();
-      return builder.alt.apply(builder, args).withInterval(this.source);
+      return builder.alt.apply(builder, args).withSource(this.source);
     },
 
     TopLevelTerm_inline: function(b, n) {
@@ -163,42 +163,42 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
         decl.define(inlineRuleName, currentRuleFormals, body);
       }
       var params = currentRuleFormals.map(function(formal) { return builder.app(formal); });
-      return builder.app(inlineRuleName, params).withInterval(body.source);
+      return builder.app(inlineRuleName, params).withSource(body.source);
     },
 
     Seq: function(expr) {
-      return builder.seq.apply(builder, expr.visit()).withInterval(this.source);
+      return builder.seq.apply(builder, expr.visit()).withSource(this.source);
     },
 
     Iter_star: function(x, _) {
-      return builder.star(x.visit()).withInterval(this.source);
+      return builder.star(x.visit()).withSource(this.source);
     },
     Iter_plus: function(x, _) {
-      return builder.plus(x.visit()).withInterval(this.source);
+      return builder.plus(x.visit()).withSource(this.source);
     },
     Iter_opt: function(x, _) {
-      return builder.opt(x.visit()).withInterval(this.source);
+      return builder.opt(x.visit()).withSource(this.source);
     },
 
     Pred_not: function(_, x) {
-      return builder.not(x.visit()).withInterval(this.source);
+      return builder.not(x.visit()).withSource(this.source);
     },
     Pred_lookahead: function(_, x) {
-      return builder.lookahead(x.visit()).withInterval(this.source);
+      return builder.lookahead(x.visit()).withSource(this.source);
     },
 
     Lex_lex: function(_, x) {
-      return builder.lex(x.visit()).withInterval(this.source);
+      return builder.lex(x.visit()).withSource(this.source);
     },
 
     Base_application: function(rule, ps) {
-      return builder.app(rule.visit(), ps.visit()[0] || []).withInterval(this.source);
+      return builder.app(rule.visit(), ps.visit()[0] || []).withSource(this.source);
     },
     Base_range: function(from, _, to) {
-      return builder.range(from.visit(), to.visit()).withInterval(this.source);
+      return builder.range(from.visit(), to.visit()).withSource(this.source);
     },
     Base_terminal: function(expr) {
-      return builder.terminal(expr.visit()).withInterval(this.source);
+      return builder.terminal(expr.visit()).withSource(this.source);
     },
     Base_paren: function(open, x, close) {
       return x.visit();

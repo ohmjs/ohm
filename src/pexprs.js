@@ -19,10 +19,10 @@ function PExpr() {
   throw new Error("PExpr cannot be instantiated -- it's abstract");
 }
 
-// Set the `interval` property to the interval containing the source for this expression.
-PExpr.prototype.withInterval = function(interval) {
+// Set the `source` property to the interval containing the source for this expression.
+PExpr.prototype.withSource = function(interval) {
   if (interval) {
-    this.source = this.interval = interval.trimmed();
+    this.source = interval.trimmed();
   }
   return this;
 };
