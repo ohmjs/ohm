@@ -167,7 +167,7 @@ s.addOperation('viz', {
     add('description', t.viz());
   },
   ruleDescrText: function(_) {
-    return this.interval.contents;
+    return this.sourceString;
   },
   Alt: function(xs) {
     enter('alt');
@@ -235,10 +235,10 @@ s.addOperation('viz', {
     return n.viz();
   },
   name: function(_first, _rest) {
-    return this.interval.contents;
+    return this.sourceString;
   },
   terminal: function(_lq, cs, _rq) {
-    add('terminal', escape(eval(this.interval.contents)));
+    add('terminal', escape(eval(this.sourceString)));
   }
 });
 

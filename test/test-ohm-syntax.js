@@ -267,7 +267,7 @@ test('seq', function(t) {
       var f = m.match('abcz');
       var s = m.semantics().addAttribute('v', {
         start: function(x, y, z) {
-          return [x.interval.contents, y.interval.contents, z.interval.contents];
+          return [x.sourceString, y.sourceString, z.sourceString];
         }
       });
       t.deepEqual(s(f).v, ['a', 'bc', 'z']);
@@ -433,9 +433,7 @@ test('not', function(t) {
 
   it('semantic actions', function() {
     var s = m.semantics().addAttribute('v', {
-      start: function(x) {
-        return x.interval.contents;
-      }
+      start: function(x) { return x.sourceString; }
     });
     t.equal(s(m.match('yello world')).v, 'yello world');
   });

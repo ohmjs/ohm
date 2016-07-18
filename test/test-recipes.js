@@ -133,7 +133,7 @@ test('semantics recipes', function(t) {
     })
     .addAttribute('value', {
       number: function(digits) {
-        return parseFloat(this.interval.contents);
+        return parseFloat(this.sourceString);
       }
     });
 

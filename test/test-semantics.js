@@ -36,7 +36,7 @@ test('operations', function(t) {
       return n.value() * 10 + d.value();
     },
     digit: function(_) {
-      return this.interval.contents.charCodeAt(0) - '0'.charCodeAt(0);
+      return this.sourceString.charCodeAt(0) - '0'.charCodeAt(0);
     }
   });
 
@@ -55,7 +55,7 @@ test('operations', function(t) {
       return [n.value()];
     },
     digit: function(d) {
-      return this.interval.contents;
+      return this.sourceString;
     }
   });
   t.deepEqual(s(Arithmetic.match('9')).numberValues(), [9]);
@@ -103,7 +103,7 @@ test('operations with arguments', function(t) {
 
   s.addOperation('op1(level)', {
     number: function(n) {
-      return this.interval.contents + '@L' + this.args.level;
+      return this.sourceString + '@L' + this.args.level;
     },
     _default: function(children) {
       var self = this;
@@ -124,7 +124,7 @@ test('operations with arguments', function(t) {
 
   s.addOperation('op2(a, b)', {
     number: function(n) {
-      return this.args.a * 100 + this.args.b * 10 + parseInt(this.interval.contents);
+      return this.args.a * 100 + this.args.b * 10 + parseInt(this.sourceString);
     }
   });
   t.throws(
@@ -271,7 +271,7 @@ test('_iter nodes', function(t) {
     '}']);
   var s = g.semantics().addOperation('op', {
     letter: function(l) {
-      return l.interval.contents;
+      return l.sourceString;
     },
     letters: function(ls) {
       return ls.op();
@@ -283,7 +283,7 @@ test('_iter nodes', function(t) {
 
   s = g.semantics().addOperation('op', {
     letter: function(l) {
-      return l.interval.contents;
+      return l.sourceString;
     }
   });
   t.deepEqual(
@@ -302,7 +302,7 @@ test('_iter nodes', function(t) {
       return ls.children.map(function(l) { return l.op(); }).join(',');
     },
     letter: function(l) {
-      return l.interval.contents;
+      return l.sourceString;
     }
   });
   t.equal(s(m).op(), 'a,b,c');
@@ -568,10 +568,10 @@ test('asIteration', function(t) {
       return arr1.join('') + arr2.join('');
     },
     letter: function(_) {
-      return this.interval.contents;
+      return this.sourceString;
     },
     any: function(_) {
-      return this.interval.contents;
+      return this.sourceString;
     }
   });
   t.equal(s(g.match('a, b, c')).value, 'abc', 'one nonempty, one empty');

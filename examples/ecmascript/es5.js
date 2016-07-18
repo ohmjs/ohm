@@ -80,7 +80,7 @@ semantics.addAttribute('modifiedSource', modifiedSourceActions);
 // containing the ES5 source code for the node.
 semantics.addAttribute('asES5', {
   _nonterminal: function(children) {
-    return isUndefined(this.modifiedSource) ? this.interval.contents : this.modifiedSource;
+    return isUndefined(this.modifiedSource) ? this.sourceString : this.modifiedSource;
   }
 });
 

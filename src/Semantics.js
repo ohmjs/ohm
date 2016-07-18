@@ -293,7 +293,7 @@ Semantics.initPrototypeParser = function(grammar) {
       return fs.asIteration().parse();
     },
     name: function(first, rest) {
-      return this.interval.contents;
+      return this.sourceString;
     }
   });
   prototypeGrammar = grammar;

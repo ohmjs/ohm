@@ -83,7 +83,7 @@ test('simple examples', function(t) {
       '}');
   var s = g.semantics().addOperation('v', {
     Pair: function(oparen, x, comma, y, cparen) { return [x.v(), y.v()]; },
-    digit: function(_) { return this.interval.contents; }
+    digit: function(_) { return this.sourceString; }
   });
   var cst = g.match('(1,2)', 'Start');
   t.deepEqual(s(cst).v(), ['1', '2']);

@@ -43,7 +43,7 @@
   semantics.addAttribute('referencedRules', {
     Base_application: function(ident, args) {
       var ans = {};
-      ans[ident.interval.contents] = true;
+      ans[ident.sourceString] = true;
       return extend(ans, args.referencedRules);
     },
     _iter: combineChildResults('referencedRules'),
@@ -58,7 +58,7 @@
   semantics.addAttribute('identifiers', {
     ident: function(_) {
       var ans = {};
-      ans[this.interval.contents] = true;
+      ans[this.sourceString] = true;
       return ans;
     },
     _iter: combineChildResults('identifiers'),
@@ -75,7 +75,7 @@
     Object.keys(rulesObj).forEach(function(ruleName) {
       if (ruleName in builtInRules.ruleBodies) {
         var body = builtInRules.ruleBodies[ruleName];
-        ans[ruleName] = body.interval ? body.interval.contents : body.toString();
+        ans[ruleName] = body.source ? body.source.contents : body.toString();
       }
     });
     return ans;

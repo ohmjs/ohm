@@ -31,7 +31,7 @@ var defaultOperation = {
 
       // lexical rule
       if (this.isLexical()) {
-        return this.interval.contents;
+        return this.sourceString;
       }
 
       // singular node (e.g. only surrounded by literals or lookaheads)

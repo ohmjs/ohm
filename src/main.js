@@ -208,7 +208,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return t.visit();
     },
     ruleDescrText: function(_) {
-      return this.interval.contents.trim();
+      return this.sourceString.trim();
     },
 
     caseName: function(_, space1, n, space2, end) {
@@ -216,7 +216,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
 
     name: function(first, rest) {
-      return this.interval.contents;
+      return this.sourceString;
     },
     nameFirst: function(expr) {},
     nameRest: function(expr) {},
@@ -226,11 +226,11 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
 
     terminalChar: function(_) {
-      return this.interval.contents;
+      return this.sourceString;
     },
 
     escapeChar: function(_) {
-      return this.interval.contents;
+      return this.sourceString;
     },
 
     NonemptyListOf: function(x, _, xs) {

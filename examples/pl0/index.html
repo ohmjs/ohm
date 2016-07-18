@@ -113,7 +113,7 @@ s.addAttribute('symbolTableOut', {
     return q.symbolTableOut;
   },
   Stmt_var: function(_var, n, _eq, e, _sc) {
-    return [].concat(symbolTableIn(this)).concat([n.interval.contents]);
+    return [].concat(symbolTableIn(this)).concat([n.sourceString]);
   },
   _nonterminal: function(children) {
     return this.hasNoChildren() ? symbolTableIn(this) : this.lastChild().symbolTableOut;
@@ -135,14 +135,14 @@ s.addAttribute('codeOut', {
   },
   Stmt_var: function(_var, n, _eq, e, _sc) {
     return [].concat(e.codeOut)
-             .concat(['pushLit(' + this.symbolTableOut.indexOf(n.interval.contents) + ')', 'store']);
+             .concat(['pushLit(' + this.symbolTableOut.indexOf(n.sourceString) + ')', 'store']);
   },
   Stmt_print: function(_print, e, _sc) {
     return [].concat(e.codeOut).concat(['print']);
   },
   Stmt_assign: function(n, _eq, e, _sc) {
     return [].concat(e.codeOut(e))
-             .concat(['pushLit(' + this.symbolTableOut.indexOf(n.interval.contents) + ')', 'store']);
+             .concat(['pushLit(' + this.symbolTableOut.indexOf(n.sourceString) + ')', 'store']);
   },
   Stmt_if3: function(_if, c, _then, t, _else, f) {
     var tCode = t.codeOut;
@@ -182,10 +182,10 @@ s.addAttribute('codeOut', {
     return [].concat([e.codeOut]).concat(['neg']);
   },
   ident: function(_l, _ns) {
-    return ['pushReg(' + this.symbolTableOut.indexOf(this.interval.contents) + ')'];
+    return ['pushReg(' + this.symbolTableOut.indexOf(this.sourceString) + ')'];
   },
   number: function(_) {
-    return ['pushLit(' + parseFloat(this.interval.contents) + ')'];
+    return ['pushLit(' + parseFloat(this.sourceString) + ')'];
   }
 });
 

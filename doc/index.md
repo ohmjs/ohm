@@ -87,7 +87,7 @@ var semantics = g.semantics().addOperation('eval', {
     return exp.eval();
   },
   number: function(chars) {
-    return parseInt(this.interval.contents, 10);
+    return parseInt(this.sourceString, 10);
   },
 });
 var match = g.match('1 + (2 - 3) + 4');
