@@ -385,8 +385,8 @@ test('memoization', function(t) {
   var applyId = lookahead.children[0];
   t.equal(applyId.expr.ruleName, 'id');
   t.equal(applyId.isHeadOfLeftRecursion, true);
-  t.equal(applyId.expr.interval.startIdx, 15);
-  t.equal(applyId.expr.interval.endIdx, 17);
+  t.equal(applyId.expr.source.startIdx, 15);
+  t.equal(applyId.expr.source.endIdx, 17);
 
   var cstNode = applyId.bindings[0];
   t.equal(cstNode.ctorName, 'id');
@@ -396,8 +396,8 @@ test('memoization', function(t) {
   var applyId2 = seq.children[1];
   t.equal(applyId2.expr.ruleName, 'id');
   t.equal(applyId2.isHeadOfLeftRecursion, true);
-  t.equal(applyId2.expr.interval.startIdx, 18);
-  t.equal(applyId2.expr.interval.endIdx, 20);
+  t.equal(applyId2.expr.source.startIdx, 18);
+  t.equal(applyId2.expr.source.endIdx, 20);
 
   cstNode = applyId2.bindings[0];
   t.equal(cstNode.ctorName, 'id');

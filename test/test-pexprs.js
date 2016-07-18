@@ -38,7 +38,7 @@ test('definitionInterval', function(t) {
   t.end();
 });
 
-test('rule invocation interval', function(t) {
+test('rule application source', function(t) {
   var g = makeGrammar([
     'G {',
     '  foo = bar',
@@ -48,7 +48,7 @@ test('rule invocation interval', function(t) {
   ]);
 
   function fromLoc(pexpr) {
-    return [pexpr.interval.startIdx, pexpr.interval.endIdx];
+    return [pexpr.source.startIdx, pexpr.source.endIdx];
   }
   var fooBody = g.ruleBodies.foo;
   var beepBody = g.ruleBodies.beep;

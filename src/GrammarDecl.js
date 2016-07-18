@@ -23,7 +23,7 @@ function GrammarDecl(name) {
 // Helpers
 
 GrammarDecl.prototype.sourceInterval = function(startIdx, endIdx) {
-  var inputStream = this.interval.inputStream;
+  var inputStream = this.source.inputStream;
   return inputStream.interval(startIdx, endIdx);
 };
 
@@ -87,7 +87,7 @@ GrammarDecl.prototype.withDefaultStartRule = function(ruleName) {
 };
 
 GrammarDecl.prototype.withSource = function(source) {
-  this.interval = new InputStream(source).interval(0, source.length);
+  this.source = new InputStream(source).interval(0, source.length);
   return this;
 };
 
@@ -135,8 +135,8 @@ GrammarDecl.prototype.build = function() {
   if (grammarErrors.length > 0) {
     errors.throwErrors(grammarErrors);
   }
-  if (this.interval) {
-    grammar.definitionInterval = this.interval;
+  if (this.source) {
+    grammar.definitionInterval = this.source;
   }
 
   return grammar;
@@ -173,7 +173,7 @@ GrammarDecl.prototype.extend = function(name, formals, fragment) {
     throw errors.cannotExtendUndeclaredRule(name, this.superGrammar.name, fragment);
   }
   var body = new pexprs.Extend(this.superGrammar, name, fragment);
-  body.interval = fragment.interval;
+  body.source = fragment.source;
   body.definitionInterval = fragment.definitionInterval;
   this.installOverriddenOrExtendedRule(name, formals, body);
   return this;

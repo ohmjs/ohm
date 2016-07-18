@@ -109,7 +109,7 @@ function wrongNumberOfArguments(ruleName, expected, actual, expr) {
   return createError(
       'Wrong number of arguments for rule ' + ruleName +
           ' (expected ' + expected + ', got ' + actual + ')',
-      expr.interval);
+      expr.source);
 }
 
 // Duplicate parameter names
@@ -126,7 +126,7 @@ function invalidParameter(ruleName, expr) {
   return createError(
       'Invalid parameter to rule ' + ruleName + ': ' + expr + ' has arity ' + expr.getArity() +
           ', but parameter expressions ' + 'must have arity 1',
-      expr.interval);
+      expr.source);
 }
 
 // Application of syntactic rule from lexical rule
@@ -134,16 +134,16 @@ function invalidParameter(ruleName, expr) {
 function applicationOfSyntacticRuleFromLexicalContext(ruleName, applyExpr) {
   return createError(
       'Cannot apply syntactic rule ' + ruleName + ' from here (inside a lexical context)',
-      applyExpr.interval);
+      applyExpr.source);
 }
 
 // ----------------- Kleene operators -----------------
 
 function kleeneExprHasNullableOperand(kleeneExpr) {
   return createError(
-      'Nullable expression ' + kleeneExpr.expr.interval.contents + " is not allowed inside '" +
+      'Nullable expression ' + kleeneExpr.expr.source.contents + " is not allowed inside '" +
           kleeneExpr.operator + "' (possible infinite loop)",
-      kleeneExpr.expr.interval);
+      kleeneExpr.expr.source);
 }
 
 // ----------------- arity -----------------
@@ -152,7 +152,7 @@ function inconsistentArity(ruleName, expected, actual, expr) {
   return createError(
       'Rule ' + ruleName + ' involves an alternation which has inconsistent arity ' +
           '(expected ' + expected + ', got ' + actual + ')',
-      expr.interval);
+      expr.source);
 }
 
 // ----------------- properties -----------------

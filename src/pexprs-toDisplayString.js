@@ -20,8 +20,8 @@ pexprs.Iter.prototype.toDisplayString =
 pexprs.Not.prototype.toDisplayString =
 pexprs.Lookahead.prototype.toDisplayString =
 pexprs.Lex.prototype.toDisplayString = function() {
-  if (this.interval) {
-    return this.interval.trimmed().contents;
+  if (this.source) {
+    return this.source.trimmed().contents;
   }
   return '[' + this.constructor.name + ']';
 };

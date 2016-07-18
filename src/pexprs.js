@@ -22,7 +22,7 @@ function PExpr() {
 // Set the `interval` property to the interval containing the source for this expression.
 PExpr.prototype.withInterval = function(interval) {
   if (interval) {
-    this.interval = interval.trimmed();
+    this.source = this.interval = interval.trimmed();
   }
   return this;
 };

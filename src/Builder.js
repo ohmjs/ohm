@@ -43,8 +43,8 @@ Builder.prototype = {
       var optDescription = ruleRecipe[2];
       var formals = ruleRecipe[3];
       var body = self.fromRecipe(ruleRecipe[4]);
-      if (gDecl.interval && metaInfo && metaInfo.sourceInterval) {
-        body.definitionInterval = new Interval(gDecl.interval.inputStream,
+      if (gDecl.source && metaInfo && metaInfo.sourceInterval) {
+        body.definitionInterval = new Interval(gDecl.source.inputStream,
           metaInfo.sourceInterval[0], metaInfo.sourceInterval[1]);
       }
 

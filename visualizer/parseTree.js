@@ -306,9 +306,9 @@
       return true;
     }
     if (pexpr instanceof ohm.pexprs.Apply) {
-      // If the rule body has no interval, treat its implementation as opaque.
+      // If the rule body has no source, treat its implementation as opaque.
       var body = ohmEditor.grammar.ruleBodies[pexpr.ruleName];
-      if (!body.interval) {
+      if (!body.source) {
         return true;
       }
     }
@@ -449,10 +449,10 @@
         inputMark = cmUtil.markInterval(inputEditor, traceNode.source, 'highlight', false);
         inputEditor.getWrapperElement().classList.add('highlighting');
       }
-      if (pexpr.interval) {
-        grammarMark = cmUtil.markInterval(grammarEditor, pexpr.interval, 'active-appl', false);
+      if (pexpr.source) {
+        grammarMark = cmUtil.markInterval(grammarEditor, pexpr.source, 'active-appl', false);
         grammarEditor.getWrapperElement().classList.add('highlighting');
-        cmUtil.scrollToInterval(grammarEditor, pexpr.interval);
+        cmUtil.scrollToInterval(grammarEditor, pexpr.source);
       }
       var ruleName = pexpr.ruleName;
       if (ruleName) {
