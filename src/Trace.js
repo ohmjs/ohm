@@ -53,7 +53,7 @@ function asEscapedString(obj) {
 function Trace(inputStream, pos, expr, succeeded, bindings, optChildren) {
   this.inputStream = inputStream;
   this.pos = pos;
-  this.interval = new Interval(inputStream, pos, inputStream.pos);
+  this.source = new Interval(inputStream, pos, inputStream.pos);
   this.expr = expr;
   this.succeeded = succeeded;
   this.bindings = bindings;
@@ -160,7 +160,7 @@ Trace.prototype.toString = function() {
       sb.append(' (LR)');
     }
     if (node.succeeded) {
-      var contents = asEscapedString(node.interval.contents);
+      var contents = asEscapedString(node.source.contents);
       sb.append(' ' + RIGHTWARDS_DOUBLE_ARROW + '  ');
       sb.append(typeof contents === 'string' ? '"' + contents + '"' : contents);
     }

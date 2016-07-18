@@ -444,8 +444,9 @@
       if (input) {
         input.classList.add('highlight');
       }
-      if (traceNode.interval) {
-        inputMark = cmUtil.markInterval(inputEditor, traceNode.interval, 'highlight', false);
+      // TODO: Can `source` ever be undefine/null here?
+      if (traceNode.source) {
+        inputMark = cmUtil.markInterval(inputEditor, traceNode.source, 'highlight', false);
         inputEditor.getWrapperElement().classList.add('highlighting');
       }
       if (pexpr.interval) {
@@ -549,7 +550,7 @@
         }
         // Don't bother showing whitespace nodes that didn't consume anything.
         var isWhitespace = node.expr.ruleName === 'spaces';
-        if (isWhitespace && node.interval.contents.length === 0) {
+        if (isWhitespace && node.source.contents.length === 0) {
           return node.SKIP;
         }
         var isLabeled = shouldNodeBeLabeled(node, parent);
@@ -571,7 +572,7 @@
 
         var childInput;
         if (inputContainer && node.succeeded) {
-          var contents = isLeafNode ? node.interval.contents : '';
+          var contents = isLeafNode ? node.source.contents : '';
           childInput = inputContainer.appendChild(domUtil.createElement('span.input', contents));
 
           // Represent any non-empty run of whitespace as a single dot.

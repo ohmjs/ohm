@@ -65,7 +65,7 @@ test('basic tracing', function(t) {
 
   var many = alt.children[1];
   t.equal(many.displayString, 'letter*');
-  t.equal(many.interval.contents, 'hallo');
+  t.equal(many.source.contents, 'hallo');
   t.equal(many.children.length, 6);
 
   var manyCSTNode = many.bindings[0];
@@ -144,7 +144,7 @@ test('tracing with parameterized rules', function(t) {
 
   var many = alt.children[1];
   t.equal(many.displayString, 'letter*');
-  t.equal(many.interval.contents, 'hallo');
+  t.equal(many.source.contents, 'hallo');
   t.equal(many.children.length, 6);
 
   cstNode = many.bindings[0];
@@ -245,7 +245,7 @@ test('tracing with left recursion', function(t) {
   t.equal(terminatingEntry.succeeded, false, 'but marked as a failure');
   t.equal(terminatingEntry.isHeadOfLeftRecursion, false);
   t.equal(terminatingEntry.pos, id.pos);
-  t.ok(terminatingEntry.interval.length <= id.interval.length, 'its interval is not longer');
+  t.ok(terminatingEntry.source.length <= id.source.length, 'its source interval is not longer');
 
   t.equal(id.children.length, 1, 'has a single child');
 
@@ -261,7 +261,7 @@ test('tracing with left recursion', function(t) {
   t.equal(cstNode.numChildren(), 2);
 
   var seq = recApply.children[0];
-  t.equal(seq.interval.contents, 'abc');
+  t.equal(seq.source.contents, 'abc');
   t.equal(seq.children.length, 2);
   t.equal(seq.children[0].displayString, 'id');
   t.equal(seq.children[0].isHeadOfLeftRecursion, false);
