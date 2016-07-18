@@ -33,7 +33,7 @@ function flattenIterNodes(nodes) {
 
 // Comparison function for sorting nodes based on their interval's start index.
 function compareByInterval(node, otherNode) {
-  return node.interval.startIdx - otherNode.interval.startIdx;
+  return node.source.startIdx - otherNode.source.startIdx;
 }
 
 // Semantic actions for the `modifiedSource` attribute (see below).
@@ -45,15 +45,15 @@ var modifiedSourceActions = {
       return undefined;
     }
     var code = '';
-    var interval = flatChildren[0].interval.collapsedLeft();
+    var interval = flatChildren[0].source.collapsedLeft();
     for (var i = 0; i < flatChildren.length; ++i) {
       if (childResults[i] == null) {
         // Grow the interval to include this node.
-        interval = interval.coverageWith(flatChildren[i].interval.collapsedRight());
+        interval = interval.coverageWith(flatChildren[i].source.collapsedRight());
       } else {
-        interval = interval.coverageWith(flatChildren[i].interval.collapsedLeft());
+        interval = interval.coverageWith(flatChildren[i].source.collapsedLeft());
         code +=  interval.contents + childResults[i];
-        interval = flatChildren[i].interval.collapsedRight();
+        interval = flatChildren[i].source.collapsedRight();
       }
     }
     code += interval.contents;

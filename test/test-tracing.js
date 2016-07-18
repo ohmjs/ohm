@@ -390,8 +390,8 @@ test('memoization', function(t) {
 
   var cstNode = applyId.bindings[0];
   t.equal(cstNode.ctorName, 'id');
-  t.equal(cstNode.interval.startIdx, 0);
-  t.equal(cstNode.interval.endIdx, 2);
+  t.equal(cstNode.source.startIdx, 0);
+  t.equal(cstNode.source.endIdx, 2);
 
   var applyId2 = seq.children[1];
   t.equal(applyId2.expr.ruleName, 'id');
@@ -401,8 +401,8 @@ test('memoization', function(t) {
 
   cstNode = applyId2.bindings[0];
   t.equal(cstNode.ctorName, 'id');
-  t.equal(cstNode.interval.startIdx, 0);
-  t.equal(cstNode.interval.endIdx, 2);
+  t.equal(cstNode.source.startIdx, 0);
+  t.equal(cstNode.source.endIdx, 2);
 
   t.equal(applyId.pos, 0);
   t.equal(applyId2.pos, 0);
@@ -417,7 +417,7 @@ test('bindings', function(t) {
   var trace = g.trace('ab');
   t.equal(trace.succeeded, true);
   t.equal(trace.bindings.length, 2, 'top-level Seq has two bindings (start appl + end)');
-  t.equal(trace.bindings[0].interval.contents, 'ab');
+  t.equal(trace.bindings[0].source.contents, 'ab');
 
   var start = trace.children[0];
   t.equal(start.displayString, 'start');
@@ -427,16 +427,16 @@ test('bindings', function(t) {
   var alt = start.children[0];
   t.equal(alt.expr.constructor, ohm.pexprs.Alt);
   t.equal(alt.bindings.length, 2, 'alt has two bindings');
-  t.equal(alt.bindings[0].interval.contents, 'a');
-  t.equal(alt.bindings[1].interval.contents, 'b');
+  t.equal(alt.bindings[0].source.contents, 'a');
+  t.equal(alt.bindings[1].source.contents, 'b');
   t.deepEqual(alt.bindings.map(function(b) { return b.ctorName; }), ['_terminal', '_terminal']);
 
   trace = g.trace('cd');
   alt = trace.children[0].children[0];
   t.equal(alt.expr.constructor, ohm.pexprs.Alt);
   t.equal(alt.bindings.length, 2, 'alt has two bindings');
-  t.equal(alt.bindings[0].interval.contents, 'c');
-  t.equal(alt.bindings[1].interval.contents, 'd');
+  t.equal(alt.bindings[0].source.contents, 'c');
+  t.equal(alt.bindings[1].source.contents, 'd');
   t.deepEqual(alt.bindings.map(function(b) { return b.ctorName; }), ['_terminal', 'notX']);
 
   var notX = alt.children[1];

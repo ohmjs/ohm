@@ -196,7 +196,7 @@ An array containing the node's children.
 
 The name of grammar rule that created the node.
 
-<b><pre class="api">n.interval: Interval</pre></b>
+<b><pre class="api">n.source: Interval</pre></b>
 
 Captures the portion of the input that was consumed by the node.
 

@@ -82,7 +82,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       s.visit();
       rs.visit();
       var g = decl.build();
-      g.definitionInterval = this.interval.trimmed();
+      g.definitionInterval = this.source.trimmed();
       if (grammarName in namespace) {
         throw errors.duplicateGrammarDeclaration(g, namespace);
       }
@@ -96,7 +96,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
         decl.withSuperGrammar(null);
       } else {
         if (!namespace || !(superGrammarName in namespace)) {
-          throw errors.undeclaredGrammar(superGrammarName, namespace, n.interval);
+          throw errors.undeclaredGrammar(superGrammarName, namespace, n.source);
         }
         decl.withSuperGrammar(namespace[superGrammarName]);
       }
@@ -111,7 +111,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
         decl.withDefaultStartRule(currentRuleName);
       }
       var body = b.visit();
-      body.definitionInterval = this.interval.trimmed();
+      body.definitionInterval = this.source.trimmed();
       var description = d.visit()[0];
       return decl.define(currentRuleName, currentRuleFormals, body, description);
     },
@@ -120,7 +120,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       currentRuleFormals = fs.visit()[0] || [];
       overriding = true;
       var body = b.visit();
-      body.definitionInterval = this.interval.trimmed();
+      body.definitionInterval = this.source.trimmed();
       var ans = decl.override(currentRuleName, currentRuleFormals, body);
       overriding = false;
       return ans;
@@ -130,12 +130,12 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       currentRuleFormals = fs.visit()[0] || [];
       var body = b.visit();
       var ans = decl.extend(currentRuleName, currentRuleFormals, body);
-      decl.ruleBodies[currentRuleName].definitionInterval = this.interval.trimmed();
+      decl.ruleBodies[currentRuleName].definitionInterval = this.source.trimmed();
       return ans;
     },
     RuleBody: function(_, terms) {
       var args = terms.visit();
-      return builder.alt.apply(builder, args).withInterval(this.interval);
+      return builder.alt.apply(builder, args).withInterval(this.source);
     },
 
     Formals: function(opointy, fs, cpointy) {
@@ -148,13 +148,13 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
 
     Alt: function(seqs) {
       var args = seqs.visit();
-      return builder.alt.apply(builder, args).withInterval(this.interval);
+      return builder.alt.apply(builder, args).withInterval(this.source);
     },
 
     TopLevelTerm_inline: function(b, n) {
       var inlineRuleName = currentRuleName + '_' + n.visit();
       var body = b.visit();
-      body.definitionInterval = this.interval.trimmed();
+      body.definitionInterval = this.source.trimmed();
       var isNewRuleDeclaration =
           !(decl.superGrammar && decl.superGrammar.ruleBodies[inlineRuleName]);
       if (overriding && !isNewRuleDeclaration) {
@@ -163,42 +163,42 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
         decl.define(inlineRuleName, currentRuleFormals, body);
       }
       var params = currentRuleFormals.map(function(formal) { return builder.app(formal); });
-      return builder.app(inlineRuleName, params).withInterval(body.interval);
+      return builder.app(inlineRuleName, params).withInterval(body.source);
     },
 
     Seq: function(expr) {
-      return builder.seq.apply(builder, expr.visit()).withInterval(this.interval);
+      return builder.seq.apply(builder, expr.visit()).withInterval(this.source);
     },
 
     Iter_star: function(x, _) {
-      return builder.star(x.visit()).withInterval(this.interval);
+      return builder.star(x.visit()).withInterval(this.source);
     },
     Iter_plus: function(x, _) {
-      return builder.plus(x.visit()).withInterval(this.interval);
+      return builder.plus(x.visit()).withInterval(this.source);
     },
     Iter_opt: function(x, _) {
-      return builder.opt(x.visit()).withInterval(this.interval);
+      return builder.opt(x.visit()).withInterval(this.source);
     },
 
     Pred_not: function(_, x) {
-      return builder.not(x.visit()).withInterval(this.interval);
+      return builder.not(x.visit()).withInterval(this.source);
     },
     Pred_lookahead: function(_, x) {
-      return builder.lookahead(x.visit()).withInterval(this.interval);
+      return builder.lookahead(x.visit()).withInterval(this.source);
     },
 
     Lex_lex: function(_, x) {
-      return builder.lex(x.visit()).withInterval(this.interval);
+      return builder.lex(x.visit()).withInterval(this.source);
     },
 
     Base_application: function(rule, ps) {
-      return builder.app(rule.visit(), ps.visit()[0] || []).withInterval(this.interval);
+      return builder.app(rule.visit(), ps.visit()[0] || []).withInterval(this.source);
     },
     Base_range: function(from, _, to) {
-      return builder.range(from.visit(), to.visit()).withInterval(this.interval);
+      return builder.range(from.visit(), to.visit()).withInterval(this.source);
     },
     Base_terminal: function(expr) {
-      return builder.terminal(expr.visit()).withInterval(this.interval);
+      return builder.terminal(expr.visit()).withInterval(this.source);
     },
     Base_paren: function(open, x, close) {
       return x.visit();
