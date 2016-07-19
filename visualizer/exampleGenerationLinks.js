@@ -160,7 +160,15 @@
       endIdx = startIdx + afterDashesTrimmed.length;
     } else {
       // first token before =
-      var beforeEquals = defString.slice(0, defString.indexOf('='));
+      var equalsIndex = defString.indexOf('+=');
+      if (equalsIndex === -1) {
+        equalsIndex = defString.indexOf(':=');
+      }
+      if (equalsIndex === -1) {
+        equalsIndex = defString.indexOf('=');
+      }
+
+      var beforeEquals = defString.slice(0, equalsIndex);
       var beforeEqualsTrimmed = beforeEquals.trim();
       var beforeEqualsTrIdx = beforeEquals.indexOf(beforeEqualsTrimmed);
 
@@ -180,7 +188,6 @@
       exampleDisplay.lineWidget.clear();
       exampleDisplay.lineWidget = null;
       exampleDisplay.DOM = null;
-      // exampleDisplay.rule = null;
     }
     if ((exampleDisplay.rule &&
          exampleDisplay.rule.ruleName !== mousePositionInfo.rule.ruleName) ||
@@ -221,10 +228,9 @@
       var DOMNode = utils._('li', {},
                       utils._('span', {class: 'exampleText'}, utils.t(example)),
                       utils._('span', {class: 'addExample'}, utils.t('+')));
-      var addExampleButton = DOMNode.querySelector('span.addExample');
 
       var id;
-      addExampleButton.addEventListener('click', function(e) {
+      DOMNode.addEventListener('click', function(e) {
         var examples = ohmEditor.examples.getExamples();
         examples = utils.objectMap(examples, function(_, value) { return value; });
         if (!examples.includes(example)) {

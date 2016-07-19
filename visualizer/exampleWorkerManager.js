@@ -69,7 +69,7 @@
       var grammar = ohmEditor.grammar;
       if (grammar.match(newValue.text, newValue.startRule).succeeded()) {
         exampleWorkerManager.addUserExample(newValue.startRule || grammar.defaultStartRule,
-                                            newValue);
+                                            newValue.text);
       }
     } else {
       resetWorker(grammar);
