@@ -233,7 +233,9 @@
       DOMNode.addEventListener('click', function(e) {
         var examples = ohmEditor.examples.getExamples();
         examples = utils.objectMap(examples, function(_, value) { return value; });
-        if (!examples.includes(example)) {
+        if (!examples.some(function(ex) {
+               return ex.text === example;
+             })) {
           id = ohmEditor.examples.addExample();
           ohmEditor.examples.setExample(id, example, ruleName);
           ohmEditor.examples.saveExamples();
