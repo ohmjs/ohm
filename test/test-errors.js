@@ -203,7 +203,7 @@ test('trailing space should not influence the result', function(t) {
 
 test('method name displayed on abstract function failure', function(t) {
   var g = ohm.ohmGrammar.superGrammar;
-  var param = g.ruleBodies.NonemptyListOf.factors[0];
+  var param = g.rules.NonemptyListOf.body.factors[0];
   try {
     param.toFailure();
     t.fail('Expected an exception to be thrown');

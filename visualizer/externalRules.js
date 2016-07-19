@@ -73,8 +73,8 @@
   function getExternalRules(rulesObj) {
     var ans = {};
     Object.keys(rulesObj).forEach(function(ruleName) {
-      if (ruleName in builtInRules.ruleBodies) {
-        var body = builtInRules.ruleBodies[ruleName];
+      if (ruleName in builtInRules.rules) {
+        var body = builtInRules.rules[ruleName].body;
         ans[ruleName] = body.source ? body.source.contents : body.toString();
       }
     });
@@ -148,7 +148,7 @@
   });
 
   ohmEditor.addListener('peek:ruleDefinition', function(ruleName) {
-    if (!ohmEditor.grammar.ruleBodies.hasOwnProperty(ruleName)) {
+    if (!ohmEditor.grammar.rules.hasOwnProperty(ruleName)) {
       var elem = $('#externalRules-' + ruleName);
       if (elem) {
         elem.classList.add('active-definition');

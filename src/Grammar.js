@@ -18,17 +18,13 @@ var pexprs = require('./pexprs');
 function Grammar(
     name,
     superGrammar,
-    ruleBodies,
-    ruleFormals,
-    ruleDescriptions,
+    rules,
     optDefaultStartRule) {
   this.name = name;
   this.superGrammar = superGrammar;
-  this.ruleBodies = ruleBodies;
-  this.ruleFormals = ruleFormals;
-  this.ruleDescriptions = ruleDescriptions;
+  this.rules = rules;
   if (optDefaultStartRule) {
-    if (!(optDefaultStartRule in ruleBodies)) {
+    if (!(optDefaultStartRule in rules)) {
       throw new Error("Invalid start rule: '" + optDefaultStartRule +
                       "' is not a rule in grammar '" + name + "'");
     }
@@ -94,7 +90,7 @@ Grammar.prototype = {
     var problems = [];
     for (var k in actionDict) {
       var v = actionDict[k];
-      if (!isSpecialAction(k) && !(k in this.ruleBodies)) {
+      if (!isSpecialAction(k) && !(k in this.rules)) {
         problems.push("'" + k + "' is not a valid semantic action for '" + this.name + "'");
       } else if (typeof v !== 'function') {
         problems.push(
@@ -127,7 +123,7 @@ Grammar.prototype = {
     } else if (actionName === '_terminal') {
       return 0;
     }
-    return this.ruleBodies[actionName].getArity();
+    return this.rules[actionName].body.getArity();
   },
 
   _inheritsFrom: function(grammar) {
@@ -160,9 +156,10 @@ Grammar.prototype = {
 
     var rules = {};
     var self = this;
-    Object.keys(this.ruleBodies).forEach(function(ruleName) {
-      var body = self.ruleBodies[ruleName];
-      var isDefinition = !self.superGrammar || !self.superGrammar.ruleBodies[ruleName];
+    Object.keys(this.rules).forEach(function(ruleName) {
+      var ruleInfo = self.rules[ruleName];
+      var body = ruleInfo.body;
+      var isDefinition = !self.superGrammar || !self.superGrammar.rules[ruleName];
 
       var operation;
       if (isDefinition) {
@@ -177,20 +174,15 @@ Grammar.prototype = {
         metaInfo.sourceInterval = [adjusted.startIdx, adjusted.endIdx];
       }
 
-      var description = null;
-      if (isDefinition && self.ruleDescriptions[ruleName]) {
-        description = self.ruleDescriptions[ruleName];
-      }
-
-      var formals = self.ruleFormals[ruleName];
-      var ruleBody = body.outputRecipe(formals, self.source);
+      var description = isDefinition ? ruleInfo.description : null;
+      var bodyRecipe = body.outputRecipe(ruleInfo.formals, self.source);
 
       rules[ruleName] = [
         operation, // "define"/"extend"/"override"
         metaInfo,
         description,
-        formals,
-        ruleBody
+        ruleInfo.formals,
+        bodyRecipe
       ];
     });
 
@@ -221,8 +213,8 @@ Grammar.prototype = {
     sb.append('{');
 
     var first = true;
-    for (var ruleName in this.ruleBodies) {
-      var body = this.ruleBodies[ruleName];
+    for (var ruleName in this.rules) {
+      var body = this.rules[ruleName].body;
       if (first) {
         first = false;
       } else {
@@ -260,11 +252,12 @@ Grammar.prototype = {
     }
 
     // Ensure that the application is valid.
-    if (!(app.ruleName in this.ruleBodies)) {
+    if (!(app.ruleName in this.rules)) {
       throw errors.undeclaredRule(app.ruleName, this.name);
-    } else if (this.ruleFormals[app.ruleName].length !== app.args.length) {
-      throw errors.wrongNumberOfParameters(
-          app.ruleName, this.ruleFormals[app.ruleName].length, app.args.length);
+    }
+    var formals = this.rules[app.ruleName].formals;
+    if (formals.length !== app.args.length) {
+      throw errors.wrongNumberOfParameters(app.ruleName, formals.length, app.args.length);
     }
     return app;
   }
@@ -278,48 +271,44 @@ Grammar.prototype = {
 Grammar.ProtoBuiltInRules = new Grammar(
     'ProtoBuiltInRules',  // name
     undefined,  // supergrammar
-
-    // rule bodies
     {
       // The following rules can't be written in userland because they reference
       // `any` and `end` directly.
-      any: pexprs.any,
-      end: pexprs.end,
+      any: {body: pexprs.any, formals: [], description: 'any object'},
+      end: {body: pexprs.end, formals: [], description: 'end of input'},
 
       // The following rule is invoked implicitly by syntactic rules to skip spaces.
-      spaces: new pexprs.Star(new pexprs.Apply('space')),
+      spaces: {
+        body: new pexprs.Star(new pexprs.Apply('space')),
+        formals: []
+      },
 
       // The `space` rule must be defined here because it's referenced by `spaces`.
-      space: new pexprs.Range('\x00', ' '),
+      space: {
+        body: new pexprs.Range('\x00', ' '),
+        formals: [],
+        description: 'a space'
+      },
 
       // These rules are implemented natively because they use UnicodeChar directly, which is
       // not part of the Ohm grammar.
-      lower: new pexprs.UnicodeChar('Ll'),
-      upper: new pexprs.UnicodeChar('Lu'),
+      lower: {
+        body: new pexprs.UnicodeChar('Ll'),
+        formals: [],
+        description: 'a lowercase letter'
+      },
+      upper: {
+        body: new pexprs.UnicodeChar('Lu'),
+        formals: [],
+        description: 'an uppercase letter'
+      },
 
       // The union of Lt (titlecase), Lm (modifier), and Lo (other), i.e. any letter not
       // in Ll or Lu.
-      unicodeLtmo: new pexprs.UnicodeChar('Ltmo')
-    },
-
-    // rule formal arguments
-    {
-      any: [],
-      end: [],
-      spaces: [],
-      space: [],
-      lower: [],
-      upper: [],
-      unicodeLtmo: []
-    },
-
-    // rule descriptions
-    {
-      any: 'any object',
-      end: 'end of input',
-      space: 'a space',
-      lower: 'a lowercase letter',
-      upper: 'an uppercase letter'
+      unicodeLtmo: {
+        body: new pexprs.UnicodeChar('Ltmo'),
+        formals: []
+      }
     }
 );
 

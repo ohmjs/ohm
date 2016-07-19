@@ -63,7 +63,7 @@ pexprs.Lex.prototype._isNullable = function(grammar, memo) {
 pexprs.Apply.prototype._isNullable = function(grammar, memo) {
   var key = this.toMemoKey();
   if (!Object.prototype.hasOwnProperty.call(memo, key)) {
-    var body = grammar.ruleBodies[this.ruleName];
+    var body = grammar.rules[this.ruleName].body;
     var inlined = body.substituteParams(this.args);
     memo[key] = false;  // Prevent infinite recursion for recursive rules.
     memo[key] = inlined._isNullable(grammar, memo);

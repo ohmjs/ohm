@@ -234,8 +234,9 @@ pexprs.Apply.prototype.reallyEval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   var origPosInfo = state.getCurrentPosInfo();
-  var body = state.grammar.ruleBodies[this.ruleName];
-  var description = state.grammar.ruleDescriptions[this.ruleName];
+  var ruleInfo = state.grammar.rules[this.ruleName];
+  var body = ruleInfo.body;
+  var description = ruleInfo.description;
 
   origPosInfo.enter(this);
 

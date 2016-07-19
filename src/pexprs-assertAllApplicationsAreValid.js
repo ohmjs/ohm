@@ -57,10 +57,10 @@ pexprs.Lookahead.prototype._assertAllApplicationsAreValid = function(ruleName, g
 };
 
 pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
-  var body = grammar.ruleBodies[this.ruleName];
+  var ruleInfo = grammar.rules[this.ruleName];
 
   // Make sure that the rule exists...
-  if (!body) {
+  if (!ruleInfo) {
     throw errors.undeclaredRule(this.ruleName, grammar.name, this.source);
   }
 
@@ -71,7 +71,7 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, gramm
 
   // ...and that this application has the correct number of arguments
   var actual = this.args.length;
-  var expected = grammar.ruleFormals[this.ruleName].length;
+  var expected = ruleInfo.formals.length;
   if (actual !== expected) {
     throw errors.wrongNumberOfArguments(this.ruleName, expected, actual, this);
   }

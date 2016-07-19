@@ -307,7 +307,7 @@
     }
     if (pexpr instanceof ohm.pexprs.Apply) {
       // If the rule body has no source, treat its implementation as opaque.
-      var body = ohmEditor.grammar.ruleBodies[pexpr.ruleName];
+      var body = ohmEditor.grammar.rules[pexpr.ruleName].body;
       if (!body.source) {
         return true;
       }
@@ -664,8 +664,8 @@
   });
 
   ohmEditor.addListener('peek:ruleDefinition', function(ruleName) {
-    if (ohmEditor.grammar.ruleBodies.hasOwnProperty(ruleName)) {
-      var defInterval = ohmEditor.grammar.ruleBodies[ruleName].ruleSource;
+    if (ohmEditor.grammar.rules.hasOwnProperty(ruleName)) {
+      var defInterval = ohmEditor.grammar.rules[ruleName].body.ruleSource;
       if (defInterval) {
         var grammarEditor = ohmEditor.ui.grammarEditor;
         defMark = cmUtil.markInterval(grammarEditor, defInterval, 'active-definition', true);

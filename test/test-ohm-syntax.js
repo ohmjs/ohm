@@ -19,7 +19,7 @@ var makeGrammars = testUtil.makeGrammars;
 function compareGrammars(t, expected, actual) {
   // The other property on grammars is "constructors", which contains
   // closures which cause spurious test failures if we compare
-  // them. So we ignore that property here, concentrating on ruleBodies
+  // them. So we ignore that property here, concentrating on `rules`
   // and other "real" properties of each grammar.
 
   t.equal(typeof actual, typeof expected);
@@ -29,7 +29,7 @@ function compareGrammars(t, expected, actual) {
     compareGrammars(t, expected.superGrammar, actual.superGrammar);
     // In the list below, we exclude superGrammar (just tested above)
     // and constructors (for reasons given above).
-    ['namespaceName', 'name', 'ruleDecls', 'ruleBodies'].forEach(function(prop) {
+    ['namespaceName', 'name', 'ruleDecls', 'rules'].forEach(function(prop) {
       t.deepEqual(actual[prop], expected[prop]);
     });
   }

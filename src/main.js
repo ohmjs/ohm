@@ -130,7 +130,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       currentRuleFormals = fs.visit()[0] || [];
       var body = b.visit();
       var ans = decl.extend(currentRuleName, currentRuleFormals, body);
-      decl.ruleBodies[currentRuleName].ruleSource = this.source.trimmed();
+      decl.rules[currentRuleName].body.ruleSource = this.source.trimmed();
       return ans;
     },
     RuleBody: function(_, terms) {
@@ -156,7 +156,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       var body = b.visit();
       body.ruleSource = this.source.trimmed();
       var isNewRuleDeclaration =
-          !(decl.superGrammar && decl.superGrammar.ruleBodies[inlineRuleName]);
+          !(decl.superGrammar && decl.superGrammar.rules[inlineRuleName]);
       if (overriding && !isNewRuleDeclaration) {
         decl.override(inlineRuleName, currentRuleFormals, body);
       } else {
