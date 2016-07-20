@@ -665,7 +665,7 @@
 
   ohmEditor.addListener('peek:ruleDefinition', function(ruleName) {
     if (ohmEditor.grammar.rules.hasOwnProperty(ruleName)) {
-      var defInterval = ohmEditor.grammar.rules[ruleName].body.ruleSource;
+      var defInterval = ohmEditor.grammar.rules[ruleName].source;
       if (defInterval) {
         var grammarEditor = ohmEditor.ui.grammarEditor;
         defMark = cmUtil.markInterval(grammarEditor, defInterval, 'active-definition', true);

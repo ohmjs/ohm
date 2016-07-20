@@ -169,8 +169,8 @@ Grammar.prototype = {
       }
 
       var metaInfo = {};
-      if (body.ruleSource && self.source) {
-        var adjusted = body.ruleSource.relativeTo(self.source);
+      if (ruleInfo.source && self.source) {
+        var adjusted = ruleInfo.source.relativeTo(self.source);
         metaInfo.sourceInterval = [adjusted.startIdx, adjusted.endIdx];
       }
 
@@ -257,7 +257,8 @@ Grammar.prototype = {
     }
     var formals = this.rules[app.ruleName].formals;
     if (formals.length !== app.args.length) {
-      throw errors.wrongNumberOfParameters(app.ruleName, formals.length, app.args.length);
+      var source = this.rules[app.ruleName].source;
+      throw errors.wrongNumberOfParameters(app.ruleName, formals.length, app.args.length, source);
     }
     return app;
   }

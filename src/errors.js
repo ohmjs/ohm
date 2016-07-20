@@ -69,38 +69,38 @@ function undeclaredRule(ruleName, grammarName, optInterval) {
 
 // Cannot override undeclared rule
 
-function cannotOverrideUndeclaredRule(ruleName, grammarName, body) {
+function cannotOverrideUndeclaredRule(ruleName, grammarName, optSource) {
   return createError(
       'Cannot override rule ' + ruleName + ' because it is not declared in ' + grammarName,
-      body.ruleSource);
+      optSource);
 }
 
 // Cannot extend undeclared rule
 
-function cannotExtendUndeclaredRule(ruleName, grammarName, body) {
+function cannotExtendUndeclaredRule(ruleName, grammarName, optSource) {
   return createError(
       'Cannot extend rule ' + ruleName + ' because it is not declared in ' + grammarName,
-      body.ruleSource);
+      optSource);
 }
 
 // Duplicate rule declaration
 
-function duplicateRuleDeclaration(ruleName, offendingGrammarName, declGrammarName, body) {
+function duplicateRuleDeclaration(ruleName, grammarName, declGrammarName, body, optSource) {
   var message = "Duplicate declaration for rule '" + ruleName +
-      "' in grammar '" + offendingGrammarName + "'";
-  if (offendingGrammarName !== declGrammarName) {
+      "' in grammar '" + grammarName + "'";
+  if (grammarName !== declGrammarName) {
     message += " (originally declared in '" + declGrammarName + "')";
   }
-  return createError(message, body.ruleSource);
+  return createError(message, optSource);
 }
 
 // Wrong number of parameters
 
-function wrongNumberOfParameters(ruleName, expected, actual, body) {
+function wrongNumberOfParameters(ruleName, expected, actual, body, source) {
   return createError(
       'Wrong number of parameters for rule ' + ruleName +
           ' (expected ' + expected + ', got ' + actual + ')',
-      body && body.ruleSource);
+      source);
 }
 
 // Wrong number of arguments
@@ -114,10 +114,10 @@ function wrongNumberOfArguments(ruleName, expected, actual, expr) {
 
 // Duplicate parameter names
 
-function duplicateParameterNames(ruleName, duplicates, body) {
+function duplicateParameterNames(ruleName, duplicates, body, source) {
   return createError(
       'Duplicate parameter names in rule ' + ruleName + ': ' + duplicates.join(','),
-      body.ruleSource);
+      source);
 }
 
 // Invalid parameter expression

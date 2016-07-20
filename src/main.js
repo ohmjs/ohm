@@ -111,17 +111,17 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
         decl.withDefaultStartRule(currentRuleName);
       }
       var body = b.visit();
-      body.ruleSource = this.source.trimmed();
       var description = d.visit()[0];
-      return decl.define(currentRuleName, currentRuleFormals, body, description);
+      var source = this.source.trimmed();
+      return decl.define(currentRuleName, currentRuleFormals, body, description, source);
     },
     Rule_override: function(n, fs, _, b) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
       overriding = true;
       var body = b.visit();
-      body.ruleSource = this.source.trimmed();
-      var ans = decl.override(currentRuleName, currentRuleFormals, body);
+      var source = this.source.trimmed();
+      var ans = decl.override(currentRuleName, currentRuleFormals, body, null, source);
       overriding = false;
       return ans;
     },
@@ -129,8 +129,8 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
       var body = b.visit();
-      var ans = decl.extend(currentRuleName, currentRuleFormals, body);
-      decl.rules[currentRuleName].body.ruleSource = this.source.trimmed();
+      var source = this.source.trimmed();
+      var ans = decl.extend(currentRuleName, currentRuleFormals, body, null, source);
       return ans;
     },
     RuleBody: function(_, terms) {
@@ -154,13 +154,13 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     TopLevelTerm_inline: function(b, n) {
       var inlineRuleName = currentRuleName + '_' + n.visit();
       var body = b.visit();
-      body.ruleSource = this.source.trimmed();
+      var source = this.source.trimmed();
       var isNewRuleDeclaration =
           !(decl.superGrammar && decl.superGrammar.rules[inlineRuleName]);
       if (overriding && !isNewRuleDeclaration) {
-        decl.override(inlineRuleName, currentRuleFormals, body);
+        decl.override(inlineRuleName, currentRuleFormals, body, null, source);
       } else {
-        decl.define(inlineRuleName, currentRuleFormals, body);
+        decl.define(inlineRuleName, currentRuleFormals, body, null, source);
       }
       var params = currentRuleFormals.map(function(formal) { return builder.app(formal); });
       return builder.app(inlineRuleName, params).withSource(body.source);

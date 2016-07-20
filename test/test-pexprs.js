@@ -9,7 +9,7 @@ var makeGrammar = require('./testUtil').makeGrammar;
 // Tests
 // --------------------------------------------------------------------
 
-test('ruleSource', function(t) {
+test('rule definition source', function(t) {
   var g = makeGrammar([
     'G {',
     '  foo = bar',
@@ -18,7 +18,7 @@ test('ruleSource', function(t) {
   ]);
 
   function definitionLoc(grammar, ruleName) {
-    var interval = grammar.rules[ruleName].body.ruleSource;
+    var interval = grammar.rules[ruleName].source;
     return [interval.startIdx, interval.endIdx];
   }
   t.deepEqual(definitionLoc(g, 'foo'), [6, 15], 'regular rule');
