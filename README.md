@@ -4,10 +4,8 @@ Ohm
 [![Build Status](https://img.shields.io/travis/cdglabs/ohm.svg?style=flat-square)](https://travis-ci.org/cdglabs/ohm) 
 [![NPM](https://img.shields.io/npm/v/ohm-js.svg?style=flat-square)](https://www.npmjs.com/package/ohm-js)
 
-[Ohm](https://github.com/cdglabs/ohm) is a library and domain-specific language for parsing and
-pattern matching. You can use it to parse custom file formats, transform complex data structures,
-and quickly build parsers, interpreters, and compilers for programming languages. The _Ohm language_
-is based on [parsing expression grammars](http://en.wikipedia.org/wiki/Parsing_expression_grammar)
+[Ohm](https://github.com/cdglabs/ohm) is a parser generator consisting of a library and a domain-specific language.
+You can use it to parse custom file formats or quickly build parsers, interpreters, and compilers for programming languages. The _Ohm language_ is based on [parsing expression grammars](http://en.wikipedia.org/wiki/Parsing_expression_grammar)
 (PEGs), which are a formal way of describing syntax, similar to regular expressions and context-free
 grammars. The _Ohm library_ provides a JavaScript interface (known as Ohm/JS) for creating parsers,
 interpreters, and more from the grammars you write.
@@ -144,7 +142,7 @@ visualizer is still under development (i.e., it might be buggy!) but it can stil
 
 [![Ohm Visualizer](http://www.cdglabs.org/ohm/doc/images/visualizer-small.png)](http://www.cdglabs.org/ohm/visualizer/)
 
-You can [try the visualizer online](http://www.cdglabs.org/ohm/visualizer/), or if you have an Ohm checkout, open `visualizer/index.html` in your web browser.
+You can [try the visualizer online](https://ohmlang.github.io/editor), or if you have an Ohm checkout, open `visualizer/index.html` in your web browser.
 
 To see the text trace for a grammar `g`, just use the [`g.trace()`](./doc/api-reference.md#trace)
 method instead of `g.match`. It takes the same arguments, but instead of returning a MatchResult

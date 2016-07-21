@@ -71,7 +71,7 @@
   }
 
   function goToRuleDefinition(ruleName) {
-    var interval = grammar.ruleBodies[ruleName].definitionInterval;
+    var interval = grammar.rules[ruleName].source;
     if (interval) {
       var defMark = cmUtil.markInterval(grammarEditor, interval, 'active-definition', true);
       setTimeout(defMark.clear.bind(defMark), 1000);

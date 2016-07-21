@@ -69,38 +69,38 @@ function undeclaredRule(ruleName, grammarName, optInterval) {
 
 // Cannot override undeclared rule
 
-function cannotOverrideUndeclaredRule(ruleName, grammarName, body) {
+function cannotOverrideUndeclaredRule(ruleName, grammarName, optSource) {
   return createError(
       'Cannot override rule ' + ruleName + ' because it is not declared in ' + grammarName,
-      body.definitionInterval);
+      optSource);
 }
 
 // Cannot extend undeclared rule
 
-function cannotExtendUndeclaredRule(ruleName, grammarName, body) {
+function cannotExtendUndeclaredRule(ruleName, grammarName, optSource) {
   return createError(
       'Cannot extend rule ' + ruleName + ' because it is not declared in ' + grammarName,
-      body.definitionInterval);
+      optSource);
 }
 
 // Duplicate rule declaration
 
-function duplicateRuleDeclaration(ruleName, offendingGrammarName, declGrammarName, body) {
+function duplicateRuleDeclaration(ruleName, grammarName, declGrammarName, body, optSource) {
   var message = "Duplicate declaration for rule '" + ruleName +
-      "' in grammar '" + offendingGrammarName + "'";
-  if (offendingGrammarName !== declGrammarName) {
+      "' in grammar '" + grammarName + "'";
+  if (grammarName !== declGrammarName) {
     message += " (originally declared in '" + declGrammarName + "')";
   }
-  return createError(message, body.definitionInterval);
+  return createError(message, optSource);
 }
 
 // Wrong number of parameters
 
-function wrongNumberOfParameters(ruleName, expected, actual, body) {
+function wrongNumberOfParameters(ruleName, expected, actual, body, source) {
   return createError(
       'Wrong number of parameters for rule ' + ruleName +
           ' (expected ' + expected + ', got ' + actual + ')',
-      body && body.definitionInterval);
+      source);
 }
 
 // Wrong number of arguments
@@ -109,15 +109,15 @@ function wrongNumberOfArguments(ruleName, expected, actual, expr) {
   return createError(
       'Wrong number of arguments for rule ' + ruleName +
           ' (expected ' + expected + ', got ' + actual + ')',
-      expr.interval);
+      expr.source);
 }
 
 // Duplicate parameter names
 
-function duplicateParameterNames(ruleName, duplicates, body) {
+function duplicateParameterNames(ruleName, duplicates, body, source) {
   return createError(
       'Duplicate parameter names in rule ' + ruleName + ': ' + duplicates.join(','),
-      body.definitionInterval);
+      source);
 }
 
 // Invalid parameter expression
@@ -126,7 +126,7 @@ function invalidParameter(ruleName, expr) {
   return createError(
       'Invalid parameter to rule ' + ruleName + ': ' + expr + ' has arity ' + expr.getArity() +
           ', but parameter expressions ' + 'must have arity 1',
-      expr.interval);
+      expr.source);
 }
 
 // Application of syntactic rule from lexical rule
@@ -134,16 +134,16 @@ function invalidParameter(ruleName, expr) {
 function applicationOfSyntacticRuleFromLexicalContext(ruleName, applyExpr) {
   return createError(
       'Cannot apply syntactic rule ' + ruleName + ' from here (inside a lexical context)',
-      applyExpr.interval);
+      applyExpr.source);
 }
 
 // ----------------- Kleene operators -----------------
 
 function kleeneExprHasNullableOperand(kleeneExpr) {
   return createError(
-      'Nullable expression ' + kleeneExpr.expr.interval.contents + " is not allowed inside '" +
+      'Nullable expression ' + kleeneExpr.expr.source.contents + " is not allowed inside '" +
           kleeneExpr.operator + "' (possible infinite loop)",
-      kleeneExpr.expr.interval);
+      kleeneExpr.expr.source);
 }
 
 // ----------------- arity -----------------
@@ -152,7 +152,7 @@ function inconsistentArity(ruleName, expected, actual, expr) {
   return createError(
       'Rule ' + ruleName + ' involves an alternation which has inconsistent arity ' +
           '(expected ' + expected + ', got ' + actual + ')',
-      expr.interval);
+      expr.source);
 }
 
 // ----------------- properties -----------------

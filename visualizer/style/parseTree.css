@@ -38,10 +38,13 @@
   text-align: center;
 }
 #expandedInput .whitespace {
-  color: #ccc;
+  color: #bbb;
 }
 #expandedInput .highlight {
   background-color: #B5D5FF;
+}
+#expandedInput .unconsumed {
+  color: #bbb;
 }
 
 #parseResults {
@@ -108,9 +111,10 @@
 .pexpr.disclosure::before {
   color: #bbb;
   content: '\25BC';  /* Black Down-pointing triangle */
+  font-size: 10px;
   left: 2px;
   position: absolute;
-  top: 2px;
+  top: 1px;
   width: 8px;
 }
 .pexpr.disclosure.collapsed::before {

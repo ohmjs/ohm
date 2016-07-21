@@ -68,7 +68,7 @@ self.importScripts('../dist/ohm.js', 'utils.js');
         break;
       case 'update:neededExamples':
         var neededExamples = utils.difference(
-          Object.keys(grammar.ruleBodies),
+          Object.keys(grammar.rules),
           Object.keys(examplePieces)
         );
 
@@ -93,8 +93,8 @@ self.importScripts('../dist/ohm.js', 'utils.js');
           examples[ruleName] = [];
         }
 
-        if (!examples[ruleName].includes(trace.interval.contents)) {
-          examples[ruleName].push(trace.interval.contents);
+        if (!examples[ruleName].includes(trace.source.contents)) {
+          examples[ruleName].push(trace.source.contents);
         }
       }
       trace.children
@@ -107,7 +107,7 @@ self.importScripts('../dist/ohm.js', 'utils.js');
     this.examplePieces = examplePieces;
     this.rules = initialRules(grammar);
     this.examplesNeeded = utils.difference(
-      Object.keys(grammar.ruleBodies),
+      Object.keys(grammar.rules),
       Object.keys(examplePieces)
     );
     this.currentRuleIndex = 0;
@@ -121,7 +121,7 @@ self.importScripts('../dist/ohm.js', 'utils.js');
       }
     }
 
-    utils.objectForEach(grammar.ruleBodies, function(ruleName) {
+    utils.objectForEach(grammar.rules, function(ruleName) {
       var trace = grammar.trace(example, ruleName);
       if (trace.succeeded) {
         addPiecesToDict(trace, examplePieces);
@@ -173,7 +173,7 @@ self.importScripts('../dist/ohm.js', 'utils.js');
 
   function initialRules(grammar) {
     var rules = [];
-    utils.objectForEach(grammar.ruleBodies, function(ruleName, ruleBody) {
+    utils.objectForEach(grammar.rules, function(ruleName, _) {
       if (!parametrized(ruleName, grammar)) {
         rules.push(ruleName);
       }
@@ -191,7 +191,7 @@ self.importScripts('../dist/ohm.js', 'utils.js');
         rulePExpr.args
       );
     } else {
-      example = grammar.ruleBodies[rulePExpr.ruleName].generateExample(
+      example = grammar.rules[rulePExpr.ruleName].body.generateExample(
         grammar, examplePieces, isSyntactic(rulePExpr.ruleName),
         rulePExpr.args
       );
@@ -228,7 +228,7 @@ self.importScripts('../dist/ohm.js', 'utils.js');
   }
 
   function parametrized(ruleName, grammar) {
-    return grammar.ruleFormals[ruleName].length > 0;
+    return grammar.rules[ruleName].formals.length > 0;
   }
 
   function parseToPExpr(ruleName) {

@@ -1,5 +1,4 @@
 /* eslint-env browser */
-
 'use strict';
 // Wrap the module in a universal module definition (UMD), allowing us to
 // either include it as a <script> or to `require` it as a CommonJS module.
@@ -255,6 +254,10 @@
     return true;
   }
 
+  function isAlt(expr) {
+    return expr instanceof ohm.pexprs.Alt;
+  }
+
   function isSyntactic(expr) {
     if (expr instanceof ohm.pexprs.Apply) {
       return expr.isSyntactic();
@@ -264,7 +267,10 @@
         expr instanceof ohm.pexprs.Not) {
       return isSyntactic(expr.expr);
     }
-    return false;
+    if (expr instanceof ohm.pexprs.Seq) {
+      return expr.factors.some(isSyntactic);
+    }
+    return expr instanceof ohm.pexprs.Param;
   }
 
   // Return true if the trace element `el` should be collapsed by default.
@@ -305,7 +311,7 @@
     `traceNode` is an Alt node whose children should be visually distinguished.
   */
   function hasVisibleChoice(traceNode) {
-    if (traceNode.expr instanceof ohm.pexprs.Alt && ohmEditor.options.showFailures) {
+    if (isAlt(traceNode.expr) && ohmEditor.options.showFailures) {
       // If there's any failed child, we need to show multiple children.
       return traceNode.children.some(function(c) {
         return !c.succeeded;
@@ -321,9 +327,9 @@
       return true;
     }
     if (pexpr instanceof ohm.pexprs.Apply) {
-      // If the rule body has no interval, treat its implementation as opaque.
-      var body = ohmEditor.grammar.ruleBodies[pexpr.ruleName];
-      if (!body.interval) {
+      // If the rule body has no source, treat its implementation as opaque.
+      var body = ohmEditor.grammar.rules[pexpr.ruleName].body;
+      if (!body.source) {
         return true;
       }
     }
@@ -438,11 +444,14 @@
     var label = selfWrapper.appendChild(createTraceLabel(traceNode, info));
 
     label.addEventListener('click', function(e) {
+      var isPlatformMac = /Mac/.test(navigator.platform);
+      var modifierKey = isPlatformMac ? e.metaKey : e.ctrlKey;
+
       if (e.altKey && !(e.shiftKey || e.metaKey)) {
         console.log(traceNode);  // eslint-disable-line no-console
-      } else if (e.metaKey && !(e.altKey || e.shiftKey)) {
-        // cmd + click to open or close semantic editor
-        ohmEditor.parseTree.emit('cmdclick:traceElement', wrapper);
+      } else if (modifierKey && !(e.altKey || e.shiftKey)) {
+        // cmd/ctrl + click to open or close semantic editor
+        ohmEditor.parseTree.emit('cmdOrCtrlClick:traceElement', wrapper);
       } else if (!isLeaf(traceNode)) {
         toggleTraceElement(wrapper);
       }
@@ -456,22 +465,19 @@
       if (input) {
         input.classList.add('highlight');
       }
-      if (traceNode.interval) {
-        inputMark = cmUtil.markInterval(inputEditor, traceNode.interval, 'highlight', false);
+      // TODO: Can `source` ever be undefine/null here?
+      if (traceNode.source) {
+        inputMark = cmUtil.markInterval(inputEditor, traceNode.source, 'highlight', false);
         inputEditor.getWrapperElement().classList.add('highlighting');
       }
-      if (pexpr.interval) {
-        grammarMark = cmUtil.markInterval(grammarEditor, pexpr.interval, 'active-appl', false);
+      if (pexpr.source) {
+        grammarMark = cmUtil.markInterval(grammarEditor, pexpr.source, 'active-appl', false);
         grammarEditor.getWrapperElement().classList.add('highlighting');
-        cmUtil.scrollToInterval(grammarEditor, pexpr.interval);
+        cmUtil.scrollToInterval(grammarEditor, pexpr.source);
       }
       var ruleName = pexpr.ruleName;
       if (ruleName) {
-        var defInterval = ohmEditor.grammar.ruleBodies[ruleName].definitionInterval;
-        if (defInterval) {
-          defMark = cmUtil.markInterval(grammarEditor, defInterval, 'active-definition', true);
-          cmUtil.scrollToInterval(grammarEditor, defInterval);
-        }
+        ohmEditor.emit('peek:ruleDefinition', ruleName);
       }
 
       e.stopPropagation();
@@ -481,7 +487,7 @@
       if (input) {
         input.classList.remove('highlight');
       }
-      clearMarks();
+      ohmEditor.emit('unpeek:ruleDefinition');
     });
 
     label.addEventListener('contextmenu', function(e) {
@@ -553,6 +559,8 @@
     var inputStack = [expandedInputDiv];
     var containerStack = [rootContainer];
 
+    var currentLR = {};
+
     ohmEditor.parseTree.emit('render:parseTree', renderedTrace);
     var renderActions = {
       enter: function handleEnter(node, parent, depth) {
@@ -563,7 +571,7 @@
         }
         // Don't bother showing whitespace nodes that didn't consume anything.
         var isWhitespace = node.expr.ruleName === 'spaces';
-        if (isWhitespace && node.interval.contents.length === 0) {
+        if (isWhitespace && node.source.contents.length === 0) {
           return node.SKIP;
         }
         var isLabeled = shouldNodeBeLabeled(node, parent);
@@ -571,13 +579,21 @@
         var visibleChoice = hasVisibleChoice(node);
         var visibleLR = hasVisibleLeftRecursion(node);
 
+        if (node.isMemoized) {
+          var memoKey = node.expr.toMemoKey();
+          var stack = currentLR[memoKey];
+          if (stack && stack[stack.length - 1] === node.pos) {
+            isLeafNode = true;
+          }
+        }
+
         // Get the span that contain the parent node's input. If it is undefined, it means that
         // this node is in a failed branch.
         var inputContainer = inputStack[inputStack.length - 1];
 
         var childInput;
         if (inputContainer && node.succeeded) {
-          var contents = isLeafNode ? node.interval.contents : '';
+          var contents = isLeafNode ? node.source.contents : '';
           childInput = inputContainer.appendChild(domUtil.createElement('span.input', contents));
 
           // Represent any non-empty run of whitespace as a single dot.
@@ -590,9 +606,8 @@
         var container = containerStack[containerStack.length - 1];
         var el = createTraceElement(node, container, childInput);
 
-        // Use a disclosure arrow if it's a non-leaf in a vbox -- unless the node is an Alt
-        // with visible choice, because that would result in a double arrow.
-        var useDisclosure = !isLeafNode && container.classList.contains('vbox') && !visibleChoice;
+        var isVBoxItem = container.classList.contains('vbox');
+        var useDisclosure = isLabeled && isVBoxItem;
 
         domUtil.toggleClasses(el, {
           disclosure: useDisclosure,
@@ -602,7 +617,8 @@
         });
 
         var children = el.appendChild(domUtil.createElement('.children'));
-        children.classList.toggle('vbox', visibleChoice || visibleLR);
+        children.classList.toggle(
+            'vbox', visibleChoice || visibleLR || (isAlt(node.expr) && isVBoxItem));
 
         var isCollapsed = shouldTraceElementBeCollapsed(el, node);
         if (isCollapsed) {
@@ -619,8 +635,15 @@
       },
       exit: function(node, parent, depth) {
         // If necessary, render the "Grow LR" trace as a pseudo-child, after the real child.
+        // To avoid exponential growth of the tree, when we encounter a memoized entry that
+        // is a copy of the head of left recursion, treat it as a leaf.
         if (hasVisibleLeftRecursion(node)) {
+          var memoKey = node.expr.toMemoKey();
+          var stack = currentLR[memoKey] || [];
+          currentLR[memoKey] = stack;
+          stack.push(node.pos);
           node.terminatingLREntry.walk(renderActions);
+          stack.pop();
         }
         var childContainer = containerStack.pop();
         var el = childContainer.parentElement;
@@ -631,6 +654,14 @@
     };
 
     renderedTrace.walk(renderActions);
+
+    // If the match failed, add the unconsumed input to #expandedInput.
+    if (trace.result.failed()) {
+      var firstFailedEl = domUtil.$('#parseResults > .pexpr > .children > .pexpr.failed');
+      var remainingInput = trace.inputStream.sourceSlice(firstFailedEl._traceNode.pos);
+      expandedInputDiv.appendChild(domUtil.createElement('span.input.unconsumed', remainingInput));
+    }
+
     initializeWidths();
 
     // Hack to ensure that the vertical scroll bar doesn't overlap the parse tree contents.
@@ -653,6 +684,19 @@
     rootTrace = trace;
     clearZoomState();
   });
+
+  ohmEditor.addListener('peek:ruleDefinition', function(ruleName) {
+    if (ohmEditor.grammar.rules.hasOwnProperty(ruleName)) {
+      var defInterval = ohmEditor.grammar.rules[ruleName].source;
+      if (defInterval) {
+        var grammarEditor = ohmEditor.ui.grammarEditor;
+        defMark = cmUtil.markInterval(grammarEditor, defInterval, 'active-definition', true);
+        cmUtil.scrollToInterval(grammarEditor, defInterval);
+      }
+    }
+  });
+
+  ohmEditor.addListener('unpeek:ruleDefinition', clearMarks);
 
   // Exports
   // -------
@@ -681,7 +725,7 @@
     // Emitted before start rendering the parse tree
     'render:parseTree': ['traceNode'],
 
-    // Emitted after cmd + 'click' on a label
-    'cmdclick:traceElement': ['wrapper']
+    // Emitted after cmd/ctrl + 'click' on a label
+    'cmdOrCtrlClick:traceElement': ['wrapper']
   });
 });

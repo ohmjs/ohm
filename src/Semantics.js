@@ -101,7 +101,7 @@ Wrapper.prototype.isOptional = function() {
 
 // Create a new IterationNode in the same semantics as this wrapper.
 Wrapper.prototype.iteration = function(optElements) {
-  var iter = new IterationNode(this._node.grammar, optElements || [], this.interval, false);
+  var iter = new IterationNode(this._node.grammar, optElements || [], this.source, false);
   return this._semantics.wrap(iter);
 };
 
@@ -113,7 +113,7 @@ Object.defineProperties(Wrapper.prototype, {
   ctorName: {get: function() { return this._node.ctorName; }},
 
   // Returns the interval consumed by the CST node associated with this wrapper.
-  interval: {get: function() { return this._node.interval; }},
+  source: {get: function() { return this._node.source; }},
 
   // Returns the number of children of this CST node.
   numChildren: {get: function() { return this._node.numChildren(); }},
@@ -128,7 +128,10 @@ Object.defineProperties(Wrapper.prototype, {
       throw new TypeError(
           "tried to access the 'primitiveValue' attribute of a non-terminal CST node");
     }
-  }
+  },
+
+  // Returns the contents of the input stream consumed by this CST node.
+  sourceString: {get: function() { return this.source.contents; }}
 });
 
 // ----------------- Semantics -----------------
@@ -290,7 +293,7 @@ Semantics.initPrototypeParser = function(grammar) {
       return fs.asIteration().parse();
     },
     name: function(first, rest) {
-      return this.interval.contents;
+      return this.sourceString;
     }
   });
   prototypeGrammar = grammar;

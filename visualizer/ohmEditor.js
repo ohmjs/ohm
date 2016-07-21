@@ -31,7 +31,12 @@ ohmEditor.registerEvents({
   // Emitted when the user indicates they want jump to a location relevant to a Failure.
   // Usually comes after a 'peek:failure' event, and if so, it implies that there will be
   // no matching 'unpeek:failure'.
-  'goto:failure': ['failure']
+  'goto:failure': ['failure'],
+
+  // Emitted when the user indicates they want to preview a rule definition, e.g. when
+  // hovering over a node in the visualizer.
+  'peek:ruleDefinition': ['ruleName'],
+  'unpeek:ruleDefinition': []  // Ends the preview.
 });
 
 ohmEditor.grammar = null;

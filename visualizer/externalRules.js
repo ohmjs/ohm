@@ -6,9 +6,12 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohm, root.ohmEditor);
+    initModule(root.ohm, root.ohmEditor, root.domUtil);
   }
-})(this, function(ohm, ohmEditor) {
+})(this, function(ohm, ohmEditor, domUtil) {
+  var $ = domUtil.$;
+  var $$ = domUtil.$$;
+
   var ohmGrammar = ohm.ohmGrammar;
   var builtInRules = ohm.grammar('G {}').superGrammar;
 
@@ -40,7 +43,7 @@
   semantics.addAttribute('referencedRules', {
     Base_application: function(ident, args) {
       var ans = {};
-      ans[ident.interval.contents] = true;
+      ans[ident.sourceString] = true;
       return extend(ans, args.referencedRules);
     },
     _iter: combineChildResults('referencedRules'),
@@ -55,7 +58,7 @@
   semantics.addAttribute('identifiers', {
     ident: function(_) {
       var ans = {};
-      ans[this.interval.contents] = true;
+      ans[this.sourceString] = true;
       return ans;
     },
     _iter: combineChildResults('identifiers'),
@@ -70,9 +73,9 @@
   function getExternalRules(rulesObj) {
     var ans = {};
     Object.keys(rulesObj).forEach(function(ruleName) {
-      if (ruleName in builtInRules.ruleBodies) {
-        var body = builtInRules.ruleBodies[ruleName];
-        ans[ruleName] = body.interval ? body.interval.contents : body.toString();
+      if (ruleName in builtInRules.rules) {
+        var body = builtInRules.rules[ruleName].body;
+        ans[ruleName] = body.source ? body.source.contents : body.toString();
       }
     });
     return ans;
@@ -82,7 +85,7 @@
   // the document, no matter what edits are made.
   function LastLineWidget(editor) {
     this.editor = editor;
-    this.node = document.querySelector('#protos .externalRules').cloneNode(true);
+    this.node = $('#protos .externalRules').cloneNode(true);
     this.widget = null;
 
     // Create a bound version of `_placeWidget` for use with on() and off().
@@ -129,7 +132,8 @@
 
     for (var ruleName in this._rules) {
       var pre = document.createElement('pre');
-      pre.textContent = ruleName + ' = ' + this._rules[ruleName] + '\n\n';
+      pre.id = 'externalRules-' + ruleName;
+      pre.textContent = ruleName + ' = ' + this._rules[ruleName] + '\n';
       container.appendChild(pre);
     }
   };
@@ -141,5 +145,20 @@
     var grammarEditor = ohmEditor.ui.grammarEditor;
     widget = widget || new LastLineWidget(grammarEditor);
     widget.update(grammarEditor, matchResult, grammar);
+  });
+
+  ohmEditor.addListener('peek:ruleDefinition', function(ruleName) {
+    if (!ohmEditor.grammar.rules.hasOwnProperty(ruleName)) {
+      var elem = $('#externalRules-' + ruleName);
+      if (elem) {
+        elem.classList.add('active-definition');
+      }
+    }
+  });
+
+  ohmEditor.addListener('unpeek:ruleDefinition', function() {
+    $$('.externalRules pre').forEach(function(elem) {
+      elem.classList.remove('active-definition');
+    });
   });
 });

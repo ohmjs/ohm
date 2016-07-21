@@ -28,12 +28,46 @@
       z-index: 9;
     }
 
+    #grammars {
+      color: black;
+      font-style: normal;
+      border-radius: 3px;
+      padding: 2px 12px 1px 6px;
+      position: fixed;
+      top: 8px;
+      right: 50%;
+    }
+    #grammars label {
+      font-size: 0.75em;
+    }
+    #grammarName {
+      font-family: Menlo, Monaco, sans-serif;
+    }
+    #grammarName.unnamed {
+      font-style: italic;
+      color: #999;
+    }
+
+    #saveIndicator {
+      color: #999;
+      display: inline-block;
+      overflow: hidden;
+      vertical-align: middle;
+    }
+    #saveIndicator > * {
+      overflow: hidden;
+    }
+    #saveIndicator.edited #saved,
+    #saveIndicator:not(.edited) #edited {
+      height: 0;
+    }
+
     #options {
       background-color: white;
       border-radius: 3px;
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
       font-size: 14px;
-      padding: 10px;
+      padding: 8px 12px 10px 10px;
       position: fixed;
       bottom: 25px;
       right: 15px;
@@ -45,7 +79,7 @@
     }
     #options ul {
       list-style: none;
-      margin: 0.3em 1em 0 0;
+      margin: 0.3em 0 0 0;
       padding: 0;
     }
 
@@ -72,6 +106,10 @@
       overflow-y: hidden;
 
       position: relative;  /* For absolute positioning of .overlay */
+    }
+
+    #expandedInput:empty::before {
+      content: '\a0';  /* Insert &nbsp; to keep the correct height. */
     }
 
     #bottomSection .overlay {
@@ -102,6 +140,7 @@
       display: flex;
       flex-direction: column;
       flex: 1;
+      overflow: hidden;
     }
 
     #exampleContainer[hidden] {
@@ -160,6 +199,17 @@
       height: 100%;
       width: 100%;
       position: absolute;
+    }
+
+    #exampleList code:empty::before {
+      content: '\a0';  /* Insert &nbsp; to keep the correct height. */
+    }
+
+    #exampleList .example .delete {
+      color: #d44950;
+      padding: 4px;
+      cursor: default;
+      display: none;
     }
 
     .requestScroll {
@@ -313,6 +363,9 @@
       border-top: 1px solid #eee;
       padding-top: 14px;
     }
+    .externalRules pre {
+      margin-bottom: 14px;
+    }
     .hiddenDuringLoading {
       display: none;
     }
@@ -403,6 +456,20 @@
         outline: none;
       }
     }
+
+    #addExampleButton {
+      /*position: absolute;*/
+      right: 12px;
+      top: 12px;
+    }
+    /* Prevent things from looking terrible when zoomed in (looking at you, Chrome). */
+    @media screen and (-webkit-min-device-pixel-ratio: 1.01) {
+      #addExampleButton {
+        background-color: white;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+      }
+    }
   </style>
   <link rel="stylesheet" href="style/examples.css">
   <link rel="stylesheet" href="style/parseTree.css">
@@ -419,6 +486,7 @@
     <div id="exampleContainer">
       <div id="userExampleContainer">
         <h2>Examples
+          <input id="addExampleButton" type="button" value="+"></input>
           <span id="examplesNeededDrawer">Needed Examples <span class="indicator">&#x2B05;</span></span>
         </h2>
         <ul id="exampleList"></ul>
@@ -467,12 +535,23 @@
   <div id="dragOverlay"></div>
 
   <div id="options">
-    Show:
     <ul>
-      <li><input type="checkbox" name="showFailures"><label>Failures</label></li>
-      <li><input type="checkbox" name="showSpaces"><label>Implicit spaces</label></li>
-      <li><input type="checkbox" name="semantics"><label>Semantics</label></li>
+      <li><input type="checkbox" name="showFailures"><label>Explain parse</label></li>
+      <li><input type="checkbox" name="showSpaces"><label>Show spaces</label></li>
+      <li><input type="checkbox" name="semantics"><label>Enable semantics</label></li>
     </ul>
+  </div>
+
+  <div id="grammars" hidden>
+    <select id="grammarList" hidden><option value="">[local storage]</option></select>
+    <label id="grammarName" class="unnamed">no file loaded</label>
+    <input id="grammarFile" type="file" accept=".ohm" hidden>
+    <button id="loadGrammar">Load...</button>
+    <button id="saveGrammar">Save...</button>
+    <label id="saveIndicator" hidden>
+      <div id="saved">Saved</div>
+      <div id="edited">Edited</div>
+    </label>
   </div>
 
   <div id="measuringDiv">
@@ -533,13 +612,14 @@ number  (a number)
 
   <script src="splitters.js"></script>
 
-  <script src="../dist/ohm.js"></script>
+  <script src="../dist/ohm.min.js"></script>
   <script src="third_party/es6.js"></script>
   <script src="third_party/d3.min.js"></script>
+  <script src="third_party/FileSaver.js"></script>
   <script src="third_party/codemirror-5.11/lib/codemirror.js"></script>
   <script src="third_party/codemirror-5.11/addon/search/search.js"></script>
   <script src="third_party/codemirror-5.11/addon/search/searchcursor.js"></script>
-  <script src="third_party/checked-emitter-1.0.0.js"></script>
+  <script src="third_party/checked-emitter-1.0.1.js"></script>
   <script src="third_party/autosize.min.js"></script>
   <script src="ohmEditor.js"></script>
   <script src="cmUtil.js"></script>
@@ -558,6 +638,7 @@ number  (a number)
   <script src="exampleGenerationRequests.js"></script>
   <script src="exampleGenerationLinks.js"></script>
   <script src="timeline.js"></script>
+  <script src="persistence.js"></script>
   <script src="index.js"></script>
 </body>
 </html>

@@ -82,7 +82,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       s.visit();
       rs.visit();
       var g = decl.build();
-      g.definitionInterval = this.interval.trimmed();
+      g.source = this.source.trimmed();
       if (grammarName in namespace) {
         throw errors.duplicateGrammarDeclaration(g, namespace);
       }
@@ -96,7 +96,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
         decl.withSuperGrammar(null);
       } else {
         if (!namespace || !(superGrammarName in namespace)) {
-          throw errors.undeclaredGrammar(superGrammarName, namespace, n.interval);
+          throw errors.undeclaredGrammar(superGrammarName, namespace, n.source);
         }
         decl.withSuperGrammar(namespace[superGrammarName]);
       }
@@ -111,17 +111,17 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
         decl.withDefaultStartRule(currentRuleName);
       }
       var body = b.visit();
-      body.definitionInterval = this.interval.trimmed();
       var description = d.visit()[0];
-      return decl.define(currentRuleName, currentRuleFormals, body, description);
+      var source = this.source.trimmed();
+      return decl.define(currentRuleName, currentRuleFormals, body, description, source);
     },
     Rule_override: function(n, fs, _, b) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
       overriding = true;
       var body = b.visit();
-      body.definitionInterval = this.interval.trimmed();
-      var ans = decl.override(currentRuleName, currentRuleFormals, body);
+      var source = this.source.trimmed();
+      var ans = decl.override(currentRuleName, currentRuleFormals, body, null, source);
       overriding = false;
       return ans;
     },
@@ -129,13 +129,13 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
       var body = b.visit();
-      var ans = decl.extend(currentRuleName, currentRuleFormals, body);
-      decl.ruleBodies[currentRuleName].definitionInterval = this.interval.trimmed();
+      var source = this.source.trimmed();
+      var ans = decl.extend(currentRuleName, currentRuleFormals, body, null, source);
       return ans;
     },
     RuleBody: function(_, terms) {
       var args = terms.visit();
-      return builder.alt.apply(builder, args).withInterval(this.interval);
+      return builder.alt.apply(builder, args).withSource(this.source);
     },
 
     Formals: function(opointy, fs, cpointy) {
@@ -148,57 +148,57 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
 
     Alt: function(seqs) {
       var args = seqs.visit();
-      return builder.alt.apply(builder, args).withInterval(this.interval);
+      return builder.alt.apply(builder, args).withSource(this.source);
     },
 
     TopLevelTerm_inline: function(b, n) {
       var inlineRuleName = currentRuleName + '_' + n.visit();
       var body = b.visit();
-      body.definitionInterval = this.interval.trimmed();
+      var source = this.source.trimmed();
       var isNewRuleDeclaration =
-          !(decl.superGrammar && decl.superGrammar.ruleBodies[inlineRuleName]);
+          !(decl.superGrammar && decl.superGrammar.rules[inlineRuleName]);
       if (overriding && !isNewRuleDeclaration) {
-        decl.override(inlineRuleName, currentRuleFormals, body);
+        decl.override(inlineRuleName, currentRuleFormals, body, null, source);
       } else {
-        decl.define(inlineRuleName, currentRuleFormals, body);
+        decl.define(inlineRuleName, currentRuleFormals, body, null, source);
       }
       var params = currentRuleFormals.map(function(formal) { return builder.app(formal); });
-      return builder.app(inlineRuleName, params).withInterval(body.interval);
+      return builder.app(inlineRuleName, params).withSource(body.source);
     },
 
     Seq: function(expr) {
-      return builder.seq.apply(builder, expr.visit()).withInterval(this.interval);
+      return builder.seq.apply(builder, expr.visit()).withSource(this.source);
     },
 
     Iter_star: function(x, _) {
-      return builder.star(x.visit()).withInterval(this.interval);
+      return builder.star(x.visit()).withSource(this.source);
     },
     Iter_plus: function(x, _) {
-      return builder.plus(x.visit()).withInterval(this.interval);
+      return builder.plus(x.visit()).withSource(this.source);
     },
     Iter_opt: function(x, _) {
-      return builder.opt(x.visit()).withInterval(this.interval);
+      return builder.opt(x.visit()).withSource(this.source);
     },
 
     Pred_not: function(_, x) {
-      return builder.not(x.visit()).withInterval(this.interval);
+      return builder.not(x.visit()).withSource(this.source);
     },
     Pred_lookahead: function(_, x) {
-      return builder.lookahead(x.visit()).withInterval(this.interval);
+      return builder.lookahead(x.visit()).withSource(this.source);
     },
 
     Lex_lex: function(_, x) {
-      return builder.lex(x.visit()).withInterval(this.interval);
+      return builder.lex(x.visit()).withSource(this.source);
     },
 
     Base_application: function(rule, ps) {
-      return builder.app(rule.visit(), ps.visit()[0] || []).withInterval(this.interval);
+      return builder.app(rule.visit(), ps.visit()[0] || []).withSource(this.source);
     },
     Base_range: function(from, _, to) {
-      return builder.range(from.visit(), to.visit()).withInterval(this.interval);
+      return builder.range(from.visit(), to.visit()).withSource(this.source);
     },
     Base_terminal: function(expr) {
-      return builder.terminal(expr.visit()).withInterval(this.interval);
+      return builder.terminal(expr.visit()).withSource(this.source);
     },
     Base_paren: function(open, x, close) {
       return x.visit();
@@ -208,7 +208,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return t.visit();
     },
     ruleDescrText: function(_) {
-      return this.interval.contents.trim();
+      return this.sourceString.trim();
     },
 
     caseName: function(_, space1, n, space2, end) {
@@ -216,7 +216,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
 
     name: function(first, rest) {
-      return this.interval.contents;
+      return this.sourceString;
     },
     nameFirst: function(expr) {},
     nameRest: function(expr) {},
@@ -226,11 +226,11 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
 
     terminalChar: function(_) {
-      return this.interval.contents;
+      return this.sourceString;
     },
 
     escapeChar: function(_) {
-      return this.interval.contents;
+      return this.sourceString;
     },
 
     NonemptyListOf: function(x, _, xs) {
@@ -275,7 +275,7 @@ function grammar(source, optNamespace) {
     throw new Error('Missing grammar definition');
   } else if (grammarNames.length > 1) {
     var secondGrammar = ns[grammarNames[1]];
-    var interval = secondGrammar.definitionInterval;
+    var interval = secondGrammar.source;
     throw new Error(
         util.getLineAndColumnMessage(interval.inputStream.source, interval.startIdx) +
         'Found more than one grammar definition -- use ohm.grammars() instead.');

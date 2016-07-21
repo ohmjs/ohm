@@ -52,10 +52,14 @@
     var el = domUtil.createElement('span', 'Expected ');
 
     var failures = result._failures;
+    var sep = ', ';
+    var lastSep = failures.length >= 3 ? ', or ' : ' or ';  // Oxford comma.
+
     failures.forEach(function(f, i) {
-      var prefix = i === failures.length - 1 ? ', or ' :
-                   i > 0 ? ', ' :
-                   '';
+      var prefix = '';
+      if (i > 0) {
+        prefix = i === failures.length - 1 ? lastSep : sep;
+      }
       el.appendChild(document.createTextNode(prefix));
       var link = el.appendChild(domUtil.createElement('span.link', f.toString()));
       link.onclick = function() { ohmEditor.emit('goto:failure', f); };

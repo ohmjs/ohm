@@ -65,7 +65,8 @@
   ohmEditor.examples.addListener('set:example', function(_, oldValue, newValue) {
     if (newValue.text.trim() === '') {
       return;
-    } else if (oldValue.text.trim() === '') {
+    } else if (oldValue && oldValue.text.trim() === '' ||
+               !oldValue) {
       var grammar = ohmEditor.grammar;
       if (grammar.match(newValue.text, newValue.startRule).succeeded()) {
         exampleWorkerManager.addUserExample(newValue.startRule || grammar.defaultStartRule,

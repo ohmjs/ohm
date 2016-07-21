@@ -145,7 +145,7 @@ A set of semantic actions for this grammar might look like this:
   // so that we can be sure that the code actually works.
   markscript.transformNextBlock(function(code) {
     return code.replace('...', "return lastName.x().toUpperCase() + ', ' + firstName.x()")
-               .replace('...', "return this.interval.contents;")
+               .replace('...', "return this.sourceString;")
   });
 </script>
 
@@ -196,7 +196,7 @@ An array containing the node's children.
 
 The name of grammar rule that created the node.
 
-<b><pre class="api">n.interval: Interval</pre></b>
+<b><pre class="api">n.source: Interval</pre></b>
 
 Captures the portion of the input that was consumed by the node.
 

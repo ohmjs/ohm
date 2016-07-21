@@ -19,10 +19,10 @@ function PExpr() {
   throw new Error("PExpr cannot be instantiated -- it's abstract");
 }
 
-// Set the `interval` property to the interval containing the source for this expression.
-PExpr.prototype.withInterval = function(interval) {
+// Set the `source` property to the interval containing the source for this expression.
+PExpr.prototype.withSource = function(interval) {
   if (interval) {
-    this.interval = interval.trimmed();
+    this.source = interval.trimmed();
   }
   return this;
 };
@@ -70,7 +70,7 @@ function Extend(superGrammar, name, body) {
   this.superGrammar = superGrammar;
   this.name = name;
   this.body = body;
-  var origBody = superGrammar.ruleBodies[name];
+  var origBody = superGrammar.rules[name].body;
   this.terms = [body, origBody];
 }
 inherits(Extend, Alt);

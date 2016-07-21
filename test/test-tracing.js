@@ -65,7 +65,7 @@ test('basic tracing', function(t) {
 
   var many = alt.children[1];
   t.equal(many.displayString, 'letter*');
-  t.equal(many.interval.contents, 'hallo');
+  t.equal(many.source.contents, 'hallo');
   t.equal(many.children.length, 6);
 
   var manyCSTNode = many.bindings[0];
@@ -144,7 +144,7 @@ test('tracing with parameterized rules', function(t) {
 
   var many = alt.children[1];
   t.equal(many.displayString, 'letter*');
-  t.equal(many.interval.contents, 'hallo');
+  t.equal(many.source.contents, 'hallo');
   t.equal(many.children.length, 6);
 
   cstNode = many.bindings[0];
@@ -245,7 +245,7 @@ test('tracing with left recursion', function(t) {
   t.equal(terminatingEntry.succeeded, false, 'but marked as a failure');
   t.equal(terminatingEntry.isHeadOfLeftRecursion, false);
   t.equal(terminatingEntry.pos, id.pos);
-  t.ok(terminatingEntry.interval.length <= id.interval.length, 'its interval is not longer');
+  t.ok(terminatingEntry.source.length <= id.source.length, 'its source interval is not longer');
 
   t.equal(id.children.length, 1, 'has a single child');
 
@@ -261,7 +261,7 @@ test('tracing with left recursion', function(t) {
   t.equal(cstNode.numChildren(), 2);
 
   var seq = recApply.children[0];
-  t.equal(seq.interval.contents, 'abc');
+  t.equal(seq.source.contents, 'abc');
   t.equal(seq.children.length, 2);
   t.equal(seq.children[0].displayString, 'id');
   t.equal(seq.children[0].isHeadOfLeftRecursion, false);
@@ -385,24 +385,24 @@ test('memoization', function(t) {
   var applyId = lookahead.children[0];
   t.equal(applyId.expr.ruleName, 'id');
   t.equal(applyId.isHeadOfLeftRecursion, true);
-  t.equal(applyId.expr.interval.startIdx, 15);
-  t.equal(applyId.expr.interval.endIdx, 17);
+  t.equal(applyId.expr.source.startIdx, 15);
+  t.equal(applyId.expr.source.endIdx, 17);
 
   var cstNode = applyId.bindings[0];
   t.equal(cstNode.ctorName, 'id');
-  t.equal(cstNode.interval.startIdx, 0);
-  t.equal(cstNode.interval.endIdx, 2);
+  t.equal(cstNode.source.startIdx, 0);
+  t.equal(cstNode.source.endIdx, 2);
 
   var applyId2 = seq.children[1];
   t.equal(applyId2.expr.ruleName, 'id');
   t.equal(applyId2.isHeadOfLeftRecursion, true);
-  t.equal(applyId2.expr.interval.startIdx, 18);
-  t.equal(applyId2.expr.interval.endIdx, 20);
+  t.equal(applyId2.expr.source.startIdx, 18);
+  t.equal(applyId2.expr.source.endIdx, 20);
 
   cstNode = applyId2.bindings[0];
   t.equal(cstNode.ctorName, 'id');
-  t.equal(cstNode.interval.startIdx, 0);
-  t.equal(cstNode.interval.endIdx, 2);
+  t.equal(cstNode.source.startIdx, 0);
+  t.equal(cstNode.source.endIdx, 2);
 
   t.equal(applyId.pos, 0);
   t.equal(applyId2.pos, 0);
@@ -417,7 +417,7 @@ test('bindings', function(t) {
   var trace = g.trace('ab');
   t.equal(trace.succeeded, true);
   t.equal(trace.bindings.length, 2, 'top-level Seq has two bindings (start appl + end)');
-  t.equal(trace.bindings[0].interval.contents, 'ab');
+  t.equal(trace.bindings[0].source.contents, 'ab');
 
   var start = trace.children[0];
   t.equal(start.displayString, 'start');
@@ -427,16 +427,16 @@ test('bindings', function(t) {
   var alt = start.children[0];
   t.equal(alt.expr.constructor, ohm.pexprs.Alt);
   t.equal(alt.bindings.length, 2, 'alt has two bindings');
-  t.equal(alt.bindings[0].interval.contents, 'a');
-  t.equal(alt.bindings[1].interval.contents, 'b');
+  t.equal(alt.bindings[0].source.contents, 'a');
+  t.equal(alt.bindings[1].source.contents, 'b');
   t.deepEqual(alt.bindings.map(function(b) { return b.ctorName; }), ['_terminal', '_terminal']);
 
   trace = g.trace('cd');
   alt = trace.children[0].children[0];
   t.equal(alt.expr.constructor, ohm.pexprs.Alt);
   t.equal(alt.bindings.length, 2, 'alt has two bindings');
-  t.equal(alt.bindings[0].interval.contents, 'c');
-  t.equal(alt.bindings[1].interval.contents, 'd');
+  t.equal(alt.bindings[0].source.contents, 'c');
+  t.equal(alt.bindings[1].source.contents, 'd');
   t.deepEqual(alt.bindings.map(function(b) { return b.ctorName; }), ['_terminal', 'notX']);
 
   var notX = alt.children[1];

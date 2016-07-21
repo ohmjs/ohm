@@ -182,14 +182,14 @@ test('default start rule', function(t) {
   // Test passing the default start rule as an argument to the Grammar constructor.
   var root = Grammar.BuiltInRules;
   t.throws(function() {
-    new Grammar('G', root, {}, {}, {}, 'nonexistentRule');  // eslint-disable-line no-new
+    new Grammar('G', root, {}, 'nonexistentRule');  // eslint-disable-line no-new
   }, /Invalid start rule/, 'throws when start rule is not in the grammar');
   t.ok(
-      new Grammar('G', root, {aRule: null}, {}, {}, 'aRule'),
-     'works when rule is in the ruleBodies');
-  var ruleBodies = Object.create(root.ruleBodies);
+      new Grammar('G', root, {aRule: null}, 'aRule'),
+     'works when it is in the `rules` dict');
+  var rules = Object.create(root.rules);
   t.ok(
-      new Grammar('G', root, ruleBodies, {}, {}, 'digit'),
+      new Grammar('G', root, rules, 'digit'),
       'works when rule is in the supergrammar');
 
   t.end();

@@ -1,23 +1,30 @@
 #!/bin/bash
 
-# Check if we are running on the CI server (e.g., Travis).
-if [ -n "$CI" ]; then
-  # Commit anything generated during the build.
-  git commit -am --no-verify "Add missing files from master@$(git rev-parse --short master)"
+# Deploys portions of this repository (e.g., doc/) to ohmlang.github.io.
+# To run this, you need a checkout of https://github.com/ohmlang/ohmlang.github.io.
 
-  # Create the gh-pages branch.
-  git remote set-branches --add origin gh-pages &&
-  git fetch origin &&
-  git branch gh-pages origin/gh-pages
+# Accepts an optional argument, which is the path to the ohmlang.github.io repository root.
+# If not specified, it looks for a directory named ohmlang.github.io in the same directory
+# as this repository.
+
+set -e
+
+ROOT=$(npm prefix)
+PAGES_DIR=${1:-"$ROOT/../ohmlang.github.io"}
+OHM_REV=$(git rev-parse --short master)
+
+if [ ! -d $PAGES_DIR ]; then
+  echo "No such directory: $PAGES_DIR" && exit 1
 fi
 
-git rev-parse --quiet --verify gh-pages > /dev/null || (echo "No gh-pages branch found."; exit 1)
+cd $PAGES_DIR
+if ! git rev-parse --quiet --verify master > /dev/null; then
+  echo "Not a git repository: $PAGES_DIR" && exit 1
+fi
 
-git checkout gh-pages &&
-(
-  (
-    git checkout master -- doc dist visualizer &&
-    git commit -am "Update from master@$(git rev-parse --short master)" &&
-    git push origin gh-pages
-  ); git checkout -q -
-)
+git pull --ff-only --no-stat
+cp -r "$ROOT/doc" "$ROOT/dist" .
+cp -r "$ROOT/visualizer/" ./editor  # Temporary until main repo is changed.
+git add doc dist editor
+git commit -m "Update from master@${OHM_REV}"
+git push origin master

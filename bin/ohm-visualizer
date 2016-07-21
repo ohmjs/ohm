@@ -1,17 +1,111 @@
 #!/usr/bin/env node
 
-var browserSync = require('browser-sync'),
-    path = require('path');
+/* global Buffer, process */
+'use strict';
 
-var baseDir = path.normalize(__dirname + '/..');
+var Server = require('node-static').Server;
+var http = require('http');
+var path = require('path');
+var fs = require('fs');
 
-// Launch the Ohm visualizer in the default browser, reloading the page
-// whenever any of the source files change.
-browserSync({
-  files: [
-    path.join(baseDir, 'visualizer/*'),
-    path.join(baseDir, 'dist/ohm.js')
-  ],
-  server: {baseDir: baseDir},
-  startPath: 'visualizer/index.html'
-});
+var port = 8080;
+var grammarRoute = '/grammars/';
+var fileServer = new Server('.');
+
+var server = http.createServer(handleRequest);
+
+var mapping = {};
+
+function handleRequest(req, res) {
+  if (req.url === grammarRoute) {
+    // list all the grammars as JSON array
+    var grammarNames = Object.getOwnPropertyNames(mapping);
+    res.end(JSON.stringify(grammarNames, null, 2));
+    return;
+  } else if (req.url.indexOf(grammarRoute) === 0) {
+    var filename = req.url.slice(grammarRoute.length);
+    if (mapping.hasOwnProperty(filename)) {
+      handleGrammarRequest(filename, req, res);
+      return;
+    }
+  }
+
+  // fallback to filesystem
+  req.addListener('end', function() {
+    fileServer.serve(req, res, function(err, result) {
+      if (err) {
+        console.error('Error serving %s - %s', req.url, err.message); // eslint-disable-line no-console
+        res.statusCode = err.status;
+        res.end(String(err.status));
+        return;
+      }
+      console.log('%s', req.url); // eslint-disable-line no-console
+    });
+  }).resume();
+}
+
+function handleGrammarRequest(filename, req, res) {
+  if (req.method !== 'POST') {
+    // read the grammar
+    fileServer
+      .serveFile('/' + mapping[filename].grammar, 200, {'Content-type': 'text/ohm-js'}, req, res)
+      .on('error', function (err) {
+        console.error('Error serving %s - %s', req.url, err.message); // eslint-disable-line no-console
+        res.statusCode = 404;
+        res.end();
+      });
+  } else {
+    // write the grammar
+    (function() {
+      var body = [];
+      req.on('data', function(chunk) {
+        body.push(chunk);
+      }).on('end', function() {
+        body = Buffer.concat(body);
+        fs.writeFile(mapping[filename].grammar, body);
+        res.statusCode = 200;
+        res.end();
+      });
+    })();
+  }
+}
+
+function tryNextPort(err) {
+  if (err.code === 'EADDRINUSE' || err.code === 'EACCES') {
+    server.listen(++port);
+  }
+}
+
+function serve(args) {
+  var nextIsGrammar = false;
+
+  // Super basic command line option parsing.
+  for (var i = 0; i < args.length; ++i) {
+    if (args[i] === '-g') {
+      nextIsGrammar = true;
+    } else if (args[i][0] === '-') {
+      nextIsGrammar = false;
+      console.log('Unknown option:', args[i]); // eslint-disable-line no-console
+    } else if (nextIsGrammar) {
+      var grammarName = path.basename(args[i]);
+      mapping[grammarName] = {
+        grammar: args[i]
+      }
+    } else {
+      console.log('Unknown arg:', args[i]); // eslint-disable-line no-console
+    }
+  }
+
+  server.on('error', tryNextPort);
+  server.on('listening', function() {
+    server.removeListener('error', tryNextPort);
+    console.log('Ohm Visualizer is running at http://localhost:' + port + '/visualizer/'); // eslint-disable-line no-console
+  });
+  server.listen(port);
+
+  return mapping;
+}
+
+if (require.main === module) {
+  serve(process.argv.slice(2));
+}

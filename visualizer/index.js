@@ -59,7 +59,7 @@
     var grammarSource = grammarEditor.getValue();
     var inputSource = inputEditor.getValue();
 
-    saveEditorState(inputEditor, 'input');
+    ohmEditor.saveState(inputEditor, 'input');
 
     // Refresh the option values.
     for (var i = 0; i < checkboxes.length; ++i) {
@@ -80,7 +80,6 @@
     if (grammarChanged) {
       grammarChanged = false;
       ohmEditor.emit('change:grammar', grammarSource);
-      saveEditorState(grammarEditor, 'grammar');
 
       var result = parseGrammar(grammarSource);
       ohmEditor.grammar = result.grammar;
@@ -95,27 +94,27 @@
       }
 
       // When the input fails to parse, turn on "show failures" automatically.
-      if (trace.result.failed() && showFailuresImplicitly) {
-        ohmEditor.options.showFailures = true;
-        $('input[name=showFailures]').checked = true;
+      if (showFailuresImplicitly) {
+        var checked = $('input[name=showFailures]').checked = trace.result.failed();
+        ohmEditor.options.showFailures = checked;
       }
 
       ohmEditor.emit('parse:input', trace.result, trace);
     }
   }
 
-  function restoreEditorState(editor, key, defaultEl) {
+  ohmEditor.restoreState = function(editor, key, defaultEl) {
     var value = localStorage.getItem(key);
     if (value) {
       editor.setValue(value);
     } else if (defaultEl) {
       editor.setValue(defaultEl.textContent);
     }
-  }
+  };
 
-  function saveEditorState(editor, key) {
+  ohmEditor.saveState = function(editor, key) {
     localStorage.setItem(key, editor.getValue());
-  }
+  };
 
   // Main
   // ----
@@ -131,15 +130,15 @@
   checkboxes = $$('#options input[type=checkbox]');
   checkboxes.forEach(function(cb) {
     cb.addEventListener('click', function(e) {
-      // If the user manually disables "show failures", don't implicitly re-enable it.
-      if (e.target.name === 'showFailures' && !e.target.checked) {
+      // Respect the user's wishes if they automatically enable/disable "show failures".
+      if (e.target.name === 'showFailures') {
         showFailuresImplicitly = false;
       }
       triggerRefresh();
     });
   });
 
-  restoreEditorState(ohmEditor.ui.grammarEditor, 'grammar', $('#sampleGrammar'));
+  ohmEditor.restoreState(ohmEditor.ui.grammarEditor, 'grammar', $('#sampleGrammar'));
 
   ohmEditor.ui.inputEditor.on('change', function(cm) {
     inputChanged = true;

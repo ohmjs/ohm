@@ -18,7 +18,7 @@ var semantics = g.semantics().addOperation('value', {
     return [c.value()].concat(cs.value());
   },
   col: function(_) {
-    return this.interval.contents;
+    return this.sourceString;
   }
 });
 

@@ -70,14 +70,14 @@
     if (mouseCoords && areLinksEnabled(e)) {
       if (!clickableMarks) {
         var availableExamples = utils.difference(
-          Object.keys(grammar.ruleBodies),
+          Object.keys(grammar.rules),
           exampleWorkerManager.neededExamples
         );
         var availableExampleBodies = availableExamples.map(function(ruleName) {
-          return Object.assign({}, grammar.ruleBodies[ruleName], {ruleName: ruleName});
+          return Object.assign({}, grammar.rules[ruleName], {ruleName: ruleName});
         });
         var neededExampleBodies = exampleWorkerManager.neededExamples.map(function(ruleName) {
-          return Object.assign({}, grammar.ruleBodies[ruleName], {ruleName: ruleName});
+          return Object.assign({}, grammar.rules[ruleName], {ruleName: ruleName});
         });
 
         clickableMarks = availableExampleBodies.map(function(rule) {
@@ -113,10 +113,10 @@
   function ruleDefinitionFor(cm, position) {
     var index = cm.indexFromPos(position);
     var relevantRuleDefinitions = [];
-    utils.objectForEach(grammar.ruleBodies, function(ruleName, ruleBody) {
-      if (ruleBody.definitionInterval.startIdx <= index &&
-          ruleBody.definitionInterval.endIdx > index) {
-        relevantRuleDefinitions.push(Object.assign({}, ruleBody, {ruleName: ruleName}));
+    utils.objectForEach(grammar.rules, function(ruleName, rule) {
+      if (rule.source.startIdx <= index &&
+          rule.source.endIdx > index) {
+        relevantRuleDefinitions.push(Object.assign({}, rule, {ruleName: ruleName}));
       }
     });
 
@@ -131,25 +131,25 @@
     }
   }
 
-  function indicatorInterval(ruleDefinition) {
-    var defString = ruleDefinition.definitionInterval.contents;
+  function indicatorInterval(rule) {
+    var defString = rule.source.contents;
     var startIdx, endIdx;
-    if (ruleDefinition.ruleName.includes('_')) {
-      startIdx = ruleDefinition.definitionInterval.startIdx + defString.lastIndexOf('--');
+    if (rule.ruleName.includes('_')) {
+      startIdx = rule.source.startIdx + defString.lastIndexOf('--');
       endIdx = startIdx + 2;
       return {
         startIdx: startIdx,
         endIdx: endIdx
       };
     } else {
-      return nameInterval(ruleDefinition);
+      return nameInterval(rule);
     }
   }
 
-  function nameInterval(ruleDefinition) {
-    var defString = ruleDefinition.definitionInterval.contents;
+  function nameInterval(rule) {
+    var defString = rule.source.contents;
     var startIdx, endIdx;
-    if (ruleDefinition.ruleName.includes('_')) {
+    if (rule.ruleName.includes('_')) {
       // next token after --
       var beginName = defString.lastIndexOf('--');
       var afterDashes = defString.slice(beginName + 2);
@@ -177,8 +177,8 @@
     }
 
     return {
-      startIdx: ruleDefinition.definitionInterval.startIdx + startIdx,
-      endIdx: ruleDefinition.definitionInterval.startIdx + endIdx
+      startIdx: rule.source.startIdx + startIdx,
+      endIdx: rule.source.startIdx + endIdx
     };
   }
 
@@ -208,7 +208,7 @@
     exampleDisplay.lineWidget = grammarEditor.addLineWidget(
       mousePositionInfo.position.line, exampleDisplay.DOM
     );
-    exampleDisplay.rule = Object.assign({}, grammar.ruleBodies[ruleName], {ruleName: ruleName});
+    exampleDisplay.rule = Object.assign({}, grammar.rules[ruleName], {ruleName: ruleName});
     exampleDisplay.DOM.style.height = 0;
     setTimeout(function() { exampleDisplay.DOM.style.height = 'auto'; }, 0);
   });

@@ -77,9 +77,8 @@
 
   function nodeKey(cstNode) {
     var ctorName = cstNode.ctorName;
-    var startIdx = cstNode.interval.startIdx;
-    var endIdx = cstNode.interval.endIdx;
-    return ctorName + '_from_' + startIdx + '_to_' + endIdx;
+    var source = cstNode.source;
+    return ctorName + '_from_' + source.startIdx + '_to_' + source.endIdx;
   }
 
   function nodeOpKey(nodeKey, operationName) {

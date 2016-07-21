@@ -638,6 +638,9 @@ var inherits = require('inherits');
 
 var ArrayProto = Array.prototype;
 
+// When set to true, skip checks in certain cases.
+var relaxed = false;
+
 // CheckedEmitter
 // --------------
 
@@ -697,13 +700,21 @@ CheckedEmitter.prototype._checkEventType = function(type, optArrLike, what) {
 // See https://github.com/facebook/emitter for more info.
 
 CheckedEmitter.prototype.addListener = function(eventType, callback) {
-  this._checkEventType(eventType, callback, 'callback arity');
+  if (!relaxed) {
+    this._checkEventType(eventType, callback, 'callback arity');
+  }
   return SUPER_PROTO.addListener.apply(this, arguments);
 };
 
 CheckedEmitter.prototype.once = function(eventType, callback) {
   this._checkEventType(eventType, callback, 'callback arity');
-  return SUPER_PROTO.once.apply(this, arguments);
+
+  // The super `once` implementation calls addListener with a wrapped callback.
+  // Relax the checks to avoid raising a spurious error.
+  relaxed = true;
+  var result = SUPER_PROTO.once.apply(this, arguments);
+  relaxed = false;
+  return result;
 };
 
 CheckedEmitter.prototype.removeAllListeners = function(optEventType) {
