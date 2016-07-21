@@ -19,11 +19,19 @@
   white-space: nowrap;
 }
 #expandedInput {
-  font-family: Menlo, Monaco, sans-serif;
+  font-family: Menlo, Monaco, monospace;
   font-size: 100%;
   outline: none;
-  padding: 8px 0;
+  padding: 8px 0 8px 3px;
 }
+
+#measuringDiv .input {
+  font-family: Menlo, Monaco, monospace;
+  font-size: 100%;
+  outline: none;
+  display: inline-block;
+}
+
 #expandedInput,
 #expandedInput span {
   display: inline-block;
@@ -52,7 +60,7 @@
   color: #333;
   display: inline-block;
   flex-grow: 1;
-  font-family: Menlo, Monaco, sans-serif;
+  font-family: Menlo, Monaco, monospace;
   font-size: 9px;
   overflow: hidden;
   white-space: nowrap;

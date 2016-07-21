@@ -84,6 +84,7 @@
     }
 
     #measuringDiv {
+      font-size: 100%;
       height: auto;
       position: absolute;
       visibility: hidden;
@@ -127,7 +128,14 @@
       flex-direction: column;
     }
 
-    #exampleContainer,
+    #exampleContainer {
+        display: flex;
+        flex-direction: row;
+        flex: 1;
+    }
+
+    #ExampleRequestContainer,
+    #userExampleContainer,
     #grammarContainer {
       display: flex;
       flex-direction: column;
@@ -139,62 +147,58 @@
       display: none;
     }
 
-    #exampleContainer .editorWrapper {
+    #userExampleContainer .editorWrapper {
       margin-top: 10px;
     }
 
-    #topSection h2 {
-      color: #e0a;
-      font-size: 1em;
-      margin: 12px 12px 10px;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      -webkit-user-select: none;
-    }
-
-    #exampleList {
-      list-style: none;
+    #exampleRequests {
       border-top: 1px solid #ddd;
-      margin: 0;
-      padding: 0;
     }
 
-    #exampleList .example {
-      border-bottom: 1px solid #eee;
-      color: #999;
-      display: flex;
-      margin: 0;
-      white-space: nowrap;
+    #exampleRequests ul {
+      list-style: none;
+      padding: 0px;
     }
 
-    #exampleList .example code {
-      border-left: 4px solid #bbb;
-      cursor: default;
-      flex: 1;
-      overflow: hidden;
-      padding: 6px 4px 6px 8px;
-      text-overflow: ellipsis;
-
-      /* Weirdly, it won't shrink smaller than its content unless we give it an explicit width. */
-      width: 1px;
-    }
-
-    #exampleList .example.fail code {
-      border-left: 4px solid #d44950;
-    }
-
-    #exampleList .example.pass code {
-      border-left: 4px solid #58B958;
-    }
-
-    #exampleList .example.selected {
-      color: #333;
-      background-color: #f7f7f7;
-    }
-
-    #exampleList code {
-      font-family: Menlo, Monaco, sans-serif;
+    #exampleRequests ul textarea {
+      font-family: Menlo, Monaco, monospace;
       font-size: 12px;
+      display: block;
+      border: none;
+      border-bottom: 1px solid hsl(0, 0%, 10%);
+      margin: 5px 10px 0px 10px;
+      text-align: left;
+      height: 20px;
+      width: 95%;
+    }
+
+    #exampleRequests ul textarea.invalid {
+      background-color: #FDE0E0 !important;
+    }
+
+    #exampleRequests ul textarea::-webkit-input-placeholder { /* Chrome/Opera/Safari */
+      margin-left: 15px;
+      text-align: left;
+    }
+
+    #exampleRequests ul textarea::-moz-placeholder { /* Firefox 19+ */
+      margin-left: 15px;
+      text-align: left;
+    }
+    #exampleRequests ul textarea:-ms-input-placeholder { /* IE 10+ */
+      margin-left: 15px;
+      text-align: left;
+    }
+
+    #exampleRequests ul textarea:-moz-placeholder { /* Firefox 18- */
+      margin-left: 15px;
+      text-align: left;
+    }
+
+    .requestContainer {
+      height: 100%;
+      width: 100%;
+      position: absolute;
     }
 
     #exampleList code:empty::before {
@@ -208,12 +212,20 @@
       display: none;
     }
 
-    #exampleList .example:hover {
-      background-color: #f7f7f7;
+    .requestScroll {
+      box-sizing: content-box;
+      overflow: scroll !important;
+      position: relative;
+      height: 100%;
     }
 
-    #exampleList .example:hover .delete {
-      display: block;
+    #topSection h2 {
+      color: #e0a;
+      font-size: 1em;
+      margin: 12px 12px 10px;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      -webkit-user-select: none;
     }
 
     /*
@@ -226,7 +238,7 @@
     }
 
     .editorWrapper .CodeMirror {
-      font-family: Menlo, Monaco, sans-serif;
+      font-family: Menlo, Monaco, monospace;
       font-size: 12px;
       height: 100%;
       position: absolute;  /* See .flex-fix above. */
@@ -428,7 +440,7 @@
         top: 50%;
       }
       #timeSlider::-webkit-slider-thumb {
-         -webkit-appearance: none;
+        -webkit-appearance: none;
         background-color: #aaa;
         border-radius: 5px;
         height: 10px;
@@ -446,7 +458,7 @@
     }
 
     #addExampleButton {
-      position: absolute;
+      /*position: absolute;*/
       right: 12px;
       top: 12px;
     }
@@ -459,8 +471,10 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="style/examples.css">
   <link rel="stylesheet" href="style/parseTree.css">
   <link rel="stylesheet" href="style/semanticsEditor.css">
+  <link rel="stylesheet" href="style/exampleGenerationLinks.css">
 </head>
 <body>
   <div id="topSection">
@@ -470,10 +484,27 @@
     </div>
     <div id="topSplitter" class="splitter vertical"></div>
     <div id="exampleContainer">
-      <h2>Examples</h2>
-      <input id="addExampleButton" type="button" value="+">
-      <ul id="exampleList"></ul>
-      <div class="flex-fix"><div class="editorWrapper"></div></div>
+      <div id="userExampleContainer">
+        <h2>Examples
+          <input id="addExampleButton" type="button" value="+"></input>
+          <span id="examplesNeededDrawer">Needed Examples <span class="indicator">&#x2B05;</span></span>
+        </h2>
+        <ul id="exampleList"></ul>
+        <div class="flex-fix"><div class="editorWrapper"></div></div>
+      </div>
+      <div id="exampleSplitter" class="splitter vertical disabled"></div>
+      <div id="ExampleRequestContainer" class="hidden">
+        <!-- <h2>Need Examples For:</h2> -->
+        <div class="flex-fix"><div id="exampleRequests">
+          <div class="requestContainer">
+            <div class="requestScroll">
+              <div class="requestContent">
+                <ul></ul>
+              </div>
+            </div>
+          </div>
+        </div></div>
+      </div>
     </div>
   </div>
 
@@ -571,11 +602,11 @@ number  (a number)
 }</pre>
     <!-- <pre id="sampleInput">2 * (42 - 1) / 9</pre> -->
     <pre id="sampleExamples">
-      <pre>2 * (42 - 1) / 9</pre>
+      <!-- <pre>2 * (42 - 1) / 9</pre>
       <pre>1+2*3</pre>
       <pre>I CAN HAS CHEEZBURGER?</pre>
       <pre> (  	123   ) </pre>
-      <pre>(2+4)*7</pre>
+      <pre>(2+4)*7</pre> -->
     </pre>
   </div>
 
@@ -589,9 +620,11 @@ number  (a number)
   <script src="third_party/codemirror-5.11/addon/search/search.js"></script>
   <script src="third_party/codemirror-5.11/addon/search/searchcursor.js"></script>
   <script src="third_party/checked-emitter-1.0.1.js"></script>
+  <script src="third_party/autosize.min.js"></script>
   <script src="ohmEditor.js"></script>
   <script src="cmUtil.js"></script>
   <script src="domUtil.js"></script>
+  <script src="utils.js"></script>
   <script src="parseTree.js"></script>
   <script src="semanticsEditor.js"></script>
   <script src="semanticsHelper.js"></script>
@@ -601,6 +634,9 @@ number  (a number)
   <script src="actionButton.js"></script>
   <script src="editorErrors.js"></script>
   <script src="examples.js"></script>
+  <script src="exampleWorkerManager.js"></script>
+  <script src="exampleGenerationRequests.js"></script>
+  <script src="exampleGenerationLinks.js"></script>
   <script src="timeline.js"></script>
   <script src="persistence.js"></script>
   <script src="index.js"></script>

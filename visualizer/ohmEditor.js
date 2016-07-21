@@ -40,9 +40,10 @@ ohmEditor.registerEvents({
 });
 
 ohmEditor.grammar = null;
+ohmEditor.startRule = null;
 ohmEditor.options = {};
 ohmEditor.ui = {
-  inputEditor: CodeMirror(document.querySelector('#exampleContainer .editorWrapper')),
+  inputEditor: CodeMirror(document.querySelector('#userExampleContainer .editorWrapper')),
   grammarEditor: CodeMirror(document.querySelector('#grammarContainer .editorWrapper'))
 };
 ohmEditor.emit('init:inputEditor', ohmEditor.ui.inputEditor);

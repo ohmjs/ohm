@@ -13,7 +13,7 @@
   var grammarChanged = true;
   var inputChanged = true;
 
-  var showFailuresImplicitly = true;
+  var showFailuresImplicitly = false; // true;
 
   var $ = domUtil.$;
   var $$ = domUtil.$$;
@@ -52,6 +52,7 @@
   }
 
   function refresh() {
+
     var grammarEditor = ohmEditor.ui.grammarEditor;
     var inputEditor = ohmEditor.ui.inputEditor;
 
@@ -67,7 +68,8 @@
     }
 
     if (inputChanged || grammarChanged) {
-      showFailuresImplicitly = true;  // Reset to default.
+      // showFailuresImplicitly = true;  // Reset to default.
+      showFailuresImplicitly = false;
     }
 
     if (inputChanged) {
@@ -85,7 +87,11 @@
     }
 
     if (ohmEditor.grammar && ohmEditor.grammar.defaultStartRule) {
-      var trace = ohmEditor.grammar.trace(inputSource);
+      if (ohmEditor.startRule) {
+        var trace = ohmEditor.grammar.trace(inputSource, ohmEditor.startRule);
+      } else {
+        trace = ohmEditor.grammar.trace(inputSource);
+      }
 
       // When the input fails to parse, turn on "show failures" automatically.
       if (showFailuresImplicitly) {
