@@ -61,11 +61,20 @@ textarea {
   background: #ececec;
   padding: 4px 8px;
   margin: -4px -8px 0;
-  border-radius: 10px 10px 0 0;
+  border-radius: 8px 8px 0 0;
   cursor: default;
   -moz-user-select: none;
   -ms-user-select: none;
   -webkit-user-select: none;
+}
+.semanticsEditor .header directBt {
+  display: flex;
+}
+.semanticsEditor .header directBt .disabled {
+  color: #c1c1c1;
+}
+.semanticsEditor .header directBt *:not(.disabled):hover {
+  font-weight: bolder;
 }
 .semanticsEditor .header .names {
   margin: 0 auto;  /* This is for align the names to center */
@@ -222,12 +231,7 @@ textarea {
   padding: 4px;
   cursor: default;
 }
-/* TODO: Remove; 
-   Result container is hide by default when editor body is open
-.semanticsEditor.showing .result:not(.showing) {
-  display: none;
-}
-*/
+
 .semanticsEditor .result:empty,
 .self .result:empty {
   padding: 0;
@@ -277,6 +281,101 @@ textarea {
 
 .self .result resultBlock.forced value {
   color: #999;
+}
+
+.semanticsEditor .footer {
+  margin: 0 -8px -4px;
+  border-radius: 0 0 6px 6px;
+}
+.semanticsEditor .footer .info {
+  padding: 4px 8px;
+  font-size: 10px;
+  text-align: center;
+  display:flex;
+  flex: 1;
+}
+.semanticsEditor .footer .info col {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+.semanticsEditor .footer .info col.node,
+.semanticsEditor .footer .info col operationCell {
+  font-size: 12px;
+  color: rgb(53, 151, 255);
+}
+.semanticsEditor .footer .info col .resultCell {
+  display: flex;
+}
+.semanticsEditor .footer .info col .resultCell * {
+  flex: 1;
+}
+.semanticsEditor .footer .info col > * {
+  min-height: 14px;
+}
+.semanticsEditor .footer .info col:not(:last-child) > * {
+  border-right: 1px solid black;
+}
+.semanticsEditor .footer .info col > *:not(:last-child) {
+  border-bottom: 1px solid black;
+}
+.semanticsEditor .footer .info * {
+  font-weight: inherit;
+}
+.semanticsEditor .footer .info editorClickable {
+  font-style: italic;
+  text-decoration: underline;
+  cursor: pointer;
+  text-align: center;
+  color: blue;
+}
+.semanticsEditor .footer .info editorClickable:hover {
+  font-weight: bolder;
+}
+.semanticsEditor .footer .info editorClickable.add:not(:first-child) {
+  border-left: 1px solid black;
+  padding-left: 4px;
+}
+.semanticsEditor .footer .resultCell pair {
+  display: flex;
+  flex: 1;
+  margin-right: 4px;
+}
+.semanticsEditor .footer .resultCell pair result.default {
+  font-style: italic;
+  color: #c1c1c1; 
+}
+.semanticsEditor .footer .resultCell pair:not(:first-child) {
+  border-left: 1px solid black;
+  margin-left: 2px;
+}
+.semanticsEditor .footer .resultCell args {
+  display: flex;
+  flex: 1;
+}
+.semanticsEditor .footer .resultCell args:before {
+  content: '\0028';
+  margin-left: 2px;
+}
+.semanticsEditor .footer .resultCell args:after {
+  content: '\0029\2192';
+  margin-right: 2px;
+}
+.semanticsEditor .footer .resultCell .arg {
+  padding: 0 2px;
+  outline: none;
+}
+.semanticsEditor .footer .resultCell .arg:not(:first-child) {
+  padding-left: 4px;
+}
+.semanticsEditor .footer .resultCell .arg:not(:last-child):after {
+  content: '\002C';
+  margin-left: 2px;
+}
+.semanticsEditor .footer .resultCell .arg[placeholder]:empty:before {
+  content: attr(placeholder);
+  font-style: italic;
+  color: #c1c1c1; 
 }
 
 /* `Force Evaluation` entry in `parseTreeMenu` */

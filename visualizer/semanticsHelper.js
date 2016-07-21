@@ -268,9 +268,9 @@
     opArguments = optArgs;
   });
 
-  function populateSemanticsResult(traceNode, operationName, args) {
+  function populateSemanticsResult(cstNode, operationName, args) {
     try {
-      var nodeWrapper = semantics._getSemantics().wrap(traceNode.bindings[0]);
+      var nodeWrapper = semantics._getSemantics().wrap(cstNode);
       if (operationName in semantics._getSemantics().operations) {
         var argValues = toValueList(args);
         nodeWrapper[operationName].apply(nodeWrapper, argValues);
@@ -289,10 +289,10 @@
     }
     ohmEditor.semantics.appendEditor = true;
     initializeSemanticsLog();
-    populateSemanticsResult(traceNode, opName, opArguments || Object.create(null));
+    populateSemanticsResult(traceNode.bindings[0], opName, opArguments || Object.create(null));
   });
 
-  function forceResults(traceNode) {
+  function forceResults(cstNode) {
     forcing = true;
     var semanticsNameList = semantics.getOperationNames().concat(semantics.getAttributeNames());
     semanticsNameList.forEach(function(name) {
@@ -302,7 +302,7 @@
           args[formal] = undefined;
         });
       }
-      populateSemanticsResult(traceNode, name, args);
+      populateSemanticsResult(cstNode, name, args);
     });
     forcing = false;
   }
@@ -324,21 +324,22 @@
     return forced;
   }
 
-  function getDefaultArgExpression(traceNode) {
+  function getDefaultArgExpressionTrace(traceNode) {
+    var trace = traceNode;
     var pexpr = traceNode.expr;
 
     // Get rule body of the Apply expression.
     if (pexpr instanceof ohm.pexprs.Apply) {
-      var succeedChild = traceNode.children[traceNode.children.length - 1];
-      pexpr = succeedChild.expr;
+      trace = traceNode.children[traceNode.children.length - 1];
+      pexpr = trace.expr;
 
       // If the rule body is an Alt expression, then get its succeed term.
       if (pexpr instanceof ohm.pexprs.Alt) {
-        pexpr = succeedChild.children[succeedChild.children.length - 1].expr;
+        trace = trace.children[trace.children.length - 1];
       }
     }
 
-    return pexpr;
+    return trace;
   }
 
   // Build the action that called from the wrapper, which includes renaming the
@@ -416,14 +417,14 @@
     return wrapper;
   }
 
-  function saveAction(traceNode, currentOpName, actionArguments, actionBody) {
-    var actionKey = traceNode.bindings[0].ctorName;
+  function saveAction(cstNode, currentOpName, actionArguments, actionBody) {
+    var actionKey = cstNode.ctorName;
     var actionWrapper = wrapAction(currentOpName, actionArguments, actionBody);
     semantics._getActionDict(currentOpName)[actionKey] = actionWrapper;
   }
   ohmEditor.semantics.addListener('save:semanticAction', function(traceNode, actionArguments,
       actionBody, operationName) {
-    saveAction(traceNode, operationName,  actionArguments, actionBody);
+    saveAction(traceNode.bindings[0], operationName,  actionArguments, actionBody);
   });
 
   function editSemanticsOperation(wrapper, operationName, optArgs) {
@@ -446,22 +447,30 @@
   // Exports
   // -------
 
-  ohmEditor.semantics.forceResult = function(traceNode, name, optArgs) {
-    var key = nodeKey(traceNode.bindings[0]);
+  ohmEditor.semantics.forceResult = function(cstNode, name, optArgs) {
+    var key = nodeKey(cstNode);
     forcing = true;
-    populateSemanticsResult(traceNode, name, optArgs || Object.create(null));
+    if (!optArgs) {
+      optArgs = Object.create(null);
+      if (name in semantics._getSemantics().operations) {
+        semantics._getSemantics().operations[name].formals.forEach(function(formal) {
+          optArgs[formal] = undefined;
+        });
+      }
+    }
+    populateSemanticsResult(cstNode, name, optArgs);
     var resultWrapper = getResult(key, name, optArgs);
     forcing = false;
     return resultWrapper;
   };
 
-  ohmEditor.semantics.getResults = function(traceNode) {
-    var key = nodeKey(traceNode.bindings[0]);
+  ohmEditor.semantics.getResults = function(cstNode) {
+    var key = nodeKey(cstNode);
     // If the node has not been evaluated yet, or all its existing semantic results are
     // forced, then we force the evaluation on it to make sure all the available operations
     // are evaluated at this node.
     if (!(key in resultMap) || allForced(key)) {
-      forceResults(traceNode);
+      forceResults(cstNode);
     }
     return resultMap[key];
   };
@@ -470,9 +479,9 @@
   // Otherwise, return the argument list that user renamed before
   ohmEditor.semantics.getActionArgPairedList = function(traceNode, operationName) {
     var actionKey = traceNode.bindings[0].ctorName;
-    var defaultArgExpression = getDefaultArgExpression(traceNode);
+    var defaultArgExpressionTrace = getDefaultArgExpressionTrace(traceNode);
 
-    var argPairList = {argExpr: defaultArgExpression};
+    var argPairList = {argExprTrace: defaultArgExpressionTrace};
     var action = semantics._getActionDict(operationName)[actionKey];
     if (!action || action._isDefault) {
       return argPairList;
@@ -486,8 +495,8 @@
     return argPairList;
   };
 
-  ohmEditor.semantics.getActionBody = function(traceNode, operationName) {
-    var actionKey = traceNode.bindings[0].ctorName;
+  ohmEditor.semantics.getActionBody = function(cstNode, operationName) {
+    var actionKey = cstNode.ctorName;
     var operation = operationName;
     var action = semantics._getActionDict(operation)[actionKey];
     if (!action || action._isDefault) {
@@ -508,8 +517,8 @@
     return semanticOperations;
   };
 
-  ohmEditor.semantics.retrieveOperations = function(traceNode) {
-    var key = nodeKey(traceNode.bindings[0]);
+  ohmEditor.semantics.retrieveOperations = function(cstNode) {
+    var key = nodeKey(cstNode);
     if (!(key in resultMap) || allForced(key)) {
       return [opName];
     }
@@ -521,7 +530,7 @@
     return evaluatedOperations;
   };
 
-  ohmEditor.semantics.retrieveArguments = function(name, traceNode) {
+  ohmEditor.semantics.retrieveArguments = function(name, cstNode) {
     var operation = semantics._getSemantics().operations[name];
     if (!operation || operation.formals.length === 0) {
       return undefined;
@@ -530,7 +539,7 @@
     operation.formals.forEach(function(formal) {
       emptyArg[formal] = undefined;
     });
-    var key = nodeKey(traceNode.bindings[0]);
+    var key = nodeKey(cstNode);
     if (!(key in resultMap) || !(name in resultMap[key])) {
       return [emptyArg];
     }
