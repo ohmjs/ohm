@@ -20,9 +20,7 @@ self.importScripts('../dist/ohm.js', 'utils.js');
   var examplePieces = {};
   var generator;
 
-  var overrides;
-
-  var overridesNonArithmetic = {
+  var overrides = {
     ident: function(g, ex, syn, args) {
       return {needHelp: true};
     },
@@ -38,12 +36,6 @@ self.importScripts('../dist/ohm.js', 'utils.js');
     }
   };
 
-  var overridesArithmetic = Object.assign({
-    number: function(g, ex, syn, args) {
-      return {needHelp: true};
-    }
-  }, overridesNonArithmetic);
-
   self.addEventListener('message', function(e) {
     postMessage(e.data.name);
     switch (e.data.name) {
@@ -51,11 +43,6 @@ self.importScripts('../dist/ohm.js', 'utils.js');
         /* eslint-disable no-eval */
         grammar = ohm.makeRecipe(eval(e.data.recipe));
         /* eslint-enable no-eval */
-        if (grammar.name === 'Arithmetic') {
-          overrides = overridesArithmetic;
-        } else {
-          overrides = overridesNonArithmetic;
-        }
 
         start();
         break;
