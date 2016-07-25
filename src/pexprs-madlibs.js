@@ -158,9 +158,7 @@ var generateNExamples = function(that, grammar, examples, inSyntacticContext, ac
   var returnObj = {};
 
   // it's always either one or the other
-  if (successfulExamples.length > 0) {
-    returnObj.example = successfulExamples.join(inSyntacticContext ? ' ' : '');
-  }
+  returnObj.example = successfulExamples.join(inSyntacticContext ? ' ' : '');
   if (examplesNeeded.length > 0) {
     returnObj.examplesNeeded = examplesNeeded;
   }
