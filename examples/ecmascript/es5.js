@@ -70,7 +70,7 @@ var modifiedSourceActions = {
 // Instantiate the ES5 grammar.
 var contents = fs.readFileSync(path.join(__dirname, 'es5.ohm'));
 var g = ohm.grammars(contents).ES5;
-var semantics = g.semantics();
+var semantics = g.createSemantics();
 
 // An attribute whose value is either a string representing the modified source code for the
 // node, or undefined (which means that the original source code should be used).

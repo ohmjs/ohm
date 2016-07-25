@@ -123,7 +123,7 @@ function toAST(res, mapping) {
     }
   }
   var g = res._cst.grammar;
-  var s = g.semantics().addOperation('toAST(mapping)', operation);
+  var s = g.createSemantics().addOperation('toAST(mapping)', operation);
   return s(res).toAST(mapping);
 }
 
@@ -133,7 +133,7 @@ function semanticsForToAST(g) {
     throw new Error('semanticsToAST() expects a Grammar as parameter');
   }
 
-  return g.semantics().addOperation('toAST(mapping)', defaultOperation);
+  return g.createSemantics().addOperation('toAST(mapping)', defaultOperation);
 }
 
 module.exports = {

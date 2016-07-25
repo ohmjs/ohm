@@ -22,7 +22,7 @@
 
   ohmEditor.addListener('parse:grammar', function(matchResult, grammar, error) {
     if (grammar && grammar.defaultStartRule) {
-      semantics = grammar.semantics();
+      semantics = grammar.createSemantics();
       opName = null;
       opArguments = null;
     }

@@ -141,7 +141,7 @@ Object.defineProperties(Wrapper.prototype, {
 // and attributes in isolation) and extensibility even when operations and attributes are mutually-
 // recursive. This constructor should not be called directly except from
 // `Semantics.createSemantics`. The normal ways to create a Semantics, given a grammar 'g', are
-// `g.semantics()` and `g.extendSemantics(parentSemantics)`.
+// `g.createSemantics()` and `g.extendSemantics(parentSemantics)`.
 function Semantics(grammar, superSemantics) {
   var self = this;
   this.grammar = grammar;
@@ -226,7 +226,7 @@ Semantics.prototype.toRecipe = function(semanticsOnly) {
     str += ');\n';
     str += '  return g.extendSemantics(semantics)';
   } else {
-    str += '  return g.semantics()';
+    str += '  return g.createSemantics()';
   }
   ['Operation', 'Attribute'].forEach(function(type) {
     var semanticOperations = this[type.toLowerCase() + 's'];
@@ -276,7 +276,7 @@ var prototypeGrammarSemantics;
 
 // This method is called from main.js once Ohm has loaded.
 Semantics.initPrototypeParser = function(grammar) {
-  prototypeGrammarSemantics = grammar.semantics().addOperation('parse', {
+  prototypeGrammarSemantics = grammar.createSemantics().addOperation('parse', {
     AttributeSignature: function(name) {
       return {
         name: name.parse(),

@@ -75,7 +75,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
   var metaGrammar = optOhmGrammarForTesting || ohmGrammar;
 
   // A visitor that produces a Grammar instance from the CST.
-  var helpers = metaGrammar.semantics().addOperation('visit', {
+  var helpers = metaGrammar.createSemantics().addOperation('visit', {
     Grammar: function(n, s, open, rs, close) {
       var grammarName = n.visit();
       decl = builder.newGrammar(grammarName, namespace);

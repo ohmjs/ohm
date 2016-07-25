@@ -48,7 +48,7 @@ Try to match `obj` against `g`, returning a MatchResult. If `optStartRule` is gi
 
 Try to match `obj` against `g`, returning a Trace object. `optNamespace` has the same meaning as in `ohm.grammar`. Trace objects have a `toString()` method, which returns a string which summarizes each parsing step (useful for debugging).
 
-<b><pre class="api">g.semantics() &rarr; Semantics</pre></b>
+<b><pre class="api">g.createSemantics() &rarr; Semantics</pre></b>
 
 Create a new [Semantics](#semantics) object for `g`.
 
@@ -158,7 +158,7 @@ var actions = {
 
 <script type="text/markscript">
   // Verify that the action dict actually works.
-  var semantics = g.semantics().addOperation('x', actions);
+  var semantics = g.createSemantics().addOperation('x', actions);
   assert.equal(semantics(g.match('Guy Incognito')).x(), 'INCOGNITO, Guy');
 </script>
 

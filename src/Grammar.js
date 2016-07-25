@@ -73,6 +73,11 @@ Grammar.prototype = {
   },
 
   semantics: function() {
+    // TODO: Remove this eventually! Deprecated in v0.12.
+    throw new Error('semantics() is deprecated -- use createSemantics() instead.');
+  },
+
+  createSemantics: function() {
     return Semantics.createSemantics(this);
   },
 

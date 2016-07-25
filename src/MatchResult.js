@@ -56,7 +56,7 @@ MatchResult.prototype.getDiscardedSpaces = function() {
   var intervals = [new Interval(inputStream, 0, inputStream.source.length)];
 
   // Subtract the interval of each terminal from the set of intervals above.
-  var s = grammar.semantics().addOperation('subtractTerminals', {
+  var s = grammar.createSemantics().addOperation('subtractTerminals', {
     _nonterminal: function(children) {
       children.forEach(function(child) {
         child.subtractTerminals();

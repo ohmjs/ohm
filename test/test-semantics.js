@@ -22,7 +22,7 @@ var arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
 
 test('operations', function(t) {
   var Arithmetic = ohm.grammar(arithmeticGrammarSource);
-  var s = Arithmetic.semantics();
+  var s = Arithmetic.createSemantics();
 
   // An operation that evaluates an expression
   s.addOperation('value', {
@@ -99,7 +99,7 @@ test('operations', function(t) {
 
 test('operations with arguments', function(t) {
   var Arithmetic = ohm.grammar(arithmeticGrammarSource);
-  var s = Arithmetic.semantics();
+  var s = Arithmetic.createSemantics();
 
   s.addOperation('op1(level)', {
     number: function(n) {
@@ -156,7 +156,7 @@ test('operations with arguments', function(t) {
 test('attributes', function(t) {
   var Arithmetic = ohm.grammar(arithmeticGrammarSource);
   var count = 0;
-  var s = Arithmetic.semantics().addAttribute('value', {
+  var s = Arithmetic.createSemantics().addAttribute('value', {
     addExp_plus: function(x, op, y) {
       count++;
       return x.value + y.value;
@@ -208,7 +208,7 @@ test('attributes', function(t) {
     '"eval" is not a valid operation or attribute name in this semantics for "Arithmetic"');
 
   t.throws(
-      function() { Arithmetic.semantics().addAttribute('badAttribute(x, y)', {}); },
+      function() { Arithmetic.createSemantics().addAttribute('badAttribute(x, y)', {}); },
       /Expected end of input/,
       'attributes are not allowed to have arguments');
 
@@ -217,7 +217,7 @@ test('attributes', function(t) {
 
 test('semantics', function(t) {
   var Arithmetic = ohm.grammar(arithmeticGrammarSource);
-  var s = Arithmetic.semantics();
+  var s = Arithmetic.createSemantics();
 
   t.equal(s.addOperation('op', {}), s, 'addOperation returns the receiver');
   t.equal(s.addAttribute('attr', {}), s, 'addAttribute returns the receiver');
@@ -269,7 +269,7 @@ test('_iter nodes', function(t) {
     '  optLetter = letter?',
     '  ident = letter+',
     '}']);
-  var s = g.semantics().addOperation('op', {
+  var s = g.createSemantics().addOperation('op', {
     letter: function(l) {
       return l.sourceString;
     },
@@ -281,7 +281,7 @@ test('_iter nodes', function(t) {
   var m = g.match('abc', 'letters');
   t.deepEqual(s(m).op(), ['a', 'b', 'c'], 'operations are mapped over children');
 
-  s = g.semantics().addOperation('op', {
+  s = g.createSemantics().addOperation('op', {
     letter: function(l) {
       return l.sourceString;
     }
@@ -291,7 +291,7 @@ test('_iter nodes', function(t) {
       ['a', 'b', 'c'],
       'works with pass-through default behavior of _nonterminal');
 
-  s = g.semantics().addOperation('op', {
+  s = g.createSemantics().addOperation('op', {
     letters: function(ls) {
       t.equal(ls.ctorName, '_iter', '`ls` is an _iter node');
       t.ok(ls.isIteration(), '`ls.isIteration()` returns a truthy value');
@@ -309,7 +309,7 @@ test('_iter nodes', function(t) {
 
   var m2 = g.match('', 'optLetter');
   var m3 = g.match('ab', 'ident');
-  s = g.semantics().addOperation('op', {
+  s = g.createSemantics().addOperation('op', {
     letters: function(ls) {
       return ls.isOptional();
     },
@@ -329,20 +329,20 @@ test('_iter nodes', function(t) {
 
 test('_terminal nodes', function(t) {
   var g = ohm.grammar('G { letters = letter* }');
-  var s = g.semantics().addOperation('op', {});
+  var s = g.createSemantics().addOperation('op', {});
   var m = g.match('abc', 'letters');
 
   t.throws(function() {
-    g.semantics().addOperation('op', {})(m).op();
+    g.createSemantics().addOperation('op', {})(m).op();
   }, /Missing semantic action for _terminal/);
 
   t.throws(function() {
-    g.semantics().addOperation('op', {
+    g.createSemantics().addOperation('op', {
       _terminal: function(x) {}
     });
   }, /wrong arity/);
 
-  s = g.semantics().addOperation('op', {
+  s = g.createSemantics().addOperation('op', {
     _terminal: function() {
       t.equal(arguments.length, 0, 'there are no arguments');
       t.equal(this.ctorName, '_terminal');
@@ -358,7 +358,7 @@ test('_terminal nodes', function(t) {
 test('semantic action arity checks', function(t) {
   var g = ohm.grammar('G {}');
   function makeOperation(grammar, actions) {
-    return grammar.semantics().addOperation('op' + testUtil.uniqueId(), actions);
+    return grammar.createSemantics().addOperation('op' + testUtil.uniqueId(), actions);
   }
   function ignore0() {}
   function ignore1(a) {}
@@ -430,7 +430,7 @@ test('extending semantics', function(t) {
 
   // Make sure operations behave as expected
 
-  var s = ns.G.semantics().
+  var s = ns.G.createSemantics().
       addOperation('value', {
         one: function(_) { return 1; },
         two: function(_) { return 2; }
@@ -440,7 +440,7 @@ test('extending semantics', function(t) {
       });
   t.throws(function() { ns.G2.extendSemantics(s).addOperation('value', {}); }, /already exists/);
   t.throws(function() { ns.G2.extendSemantics(s).extendOperation('foo', {}); }, /did not inherit/);
-  t.throws(function() { ns.G.semantics().extendOperation('value', {}); }, /did not inherit/);
+  t.throws(function() { ns.G.createSemantics().extendOperation('value', {}); }, /did not inherit/);
   t.ok(ns.G3.extendSemantics(s));
   t.throws(function() { ns.G4.extendSemantics(s); }, /not a sub-grammar/);
 
@@ -474,7 +474,7 @@ test('extending semantics', function(t) {
 
   // Make sure attributes behave as expected
 
-  s = ns.G.semantics().
+  s = ns.G.createSemantics().
       addAttribute('value', {
         one: function(_) { return 1; },
         two: function(_) { return 2; }
@@ -485,7 +485,7 @@ test('extending semantics', function(t) {
   t.throws(function() { ns.G2.extendSemantics(s).addAttribute('value', {}); }, /already exists/);
   t.throws(function() { ns.G2.extendSemantics(s).extendAttribute('value', {}); }, /wrong arity/);
   t.throws(function() { ns.G2.extendSemantics(s).extendAttribute('foo', {}); }, /did not inherit/);
-  t.throws(function() { ns.G.semantics().extendAttribute('value', {}); }, /did not inherit/);
+  t.throws(function() { ns.G.createSemantics().extendAttribute('value', {}); }, /did not inherit/);
 
   s2 = ns.G2.extendSemantics(s).extendAttribute('value', {
     one: function(str, _) { return 21; },  // overriding
@@ -536,7 +536,7 @@ test('mixing nodes from one grammar with semantics from another', function(t) {
     '}'
   ]);
 
-  var s = ns.G.semantics().addOperation('value', {
+  var s = ns.G.createSemantics().addOperation('value', {
     start: function(x) { return x.value() + 'choo!'; },
     _terminal: function() { return this.primitiveValue; }
   });
@@ -561,7 +561,7 @@ test('asIteration', function(t) {
     '  anyThree = any any any',
     '}'
   ]);
-  var s = g.semantics().addAttribute('value', {
+  var s = g.createSemantics().addAttribute('value', {
     Start: function(list1, list2) {
       var arr1 = list1.asIteration().value;
       var arr2 = list2.asIteration().value;
@@ -610,7 +610,7 @@ test('sourceString', function(t) {
   var g = ohm.grammar('G { Start = "a" "b"* }');
 
   // An operation that calls `sourceString` on a nonterminal, terminal, and iter node.
-  var s = g.semantics().addOperation('foo', {
+  var s = g.createSemantics().addOperation('foo', {
     Start: function(a, bs) {
       return this.sourceString + a.sourceString + bs.sourceString;
     }

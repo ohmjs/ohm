@@ -53,7 +53,7 @@ function printParams(open, paramList, close) {
 // Semantics
 // ---------
 
-var semantics = ohm.ohmGrammar.semantics();
+var semantics = ohm.ohmGrammar.createSemantics();
 semantics.addOperation('prettyPrint()', {
   Grammar: function(name, superGrammar, open, rules, close) {
     var decl = name.sourceString + superGrammar.prettyPrint();

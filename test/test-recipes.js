@@ -116,7 +116,7 @@ test('grammar recipes with source', function(t) {
 
 test('semantics recipes', function(t) {
   var g1 = ohm.grammar('G { Add = number "+" number  number = digit+ }');
-  var s1 = g1.semantics()
+  var s1 = g1.createSemantics()
     .addOperation('eval', {
       Add: function(a, _, b) {
         return a.value + b.value;
@@ -167,7 +167,7 @@ test('semantics recipes with extensions', function(t) {
     'G3 <: G2 {',
     '  one := "elf"',
     '}']);
-  var s = ns.G.semantics()
+  var s = ns.G.createSemantics()
     .addAttribute('value', {
       one: function(_) { return 1; },
       two: function(_) { return 2; },

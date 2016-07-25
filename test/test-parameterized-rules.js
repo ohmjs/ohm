@@ -81,7 +81,7 @@ test('simple examples', function(t) {
       '  Pair<elem> = "(" elem "," elem ")"\n' +
       '  Start = Pair<digit>\n' +
       '}');
-  var s = g.semantics().addOperation('v', {
+  var s = g.createSemantics().addOperation('v', {
     Pair: function(oparen, x, comma, y, cparen) { return [x.v(), y.v()]; },
     digit: function(_) { return this.sourceString; }
   });
@@ -119,7 +119,7 @@ test('inline rule declarations', function(t) {
       '  Start\n' +
       '    = List<"x", ",">\n' +
       '}');
-  var s = g.semantics().addOperation('v', {
+  var s = g.createSemantics().addOperation('v', {
     List_some: function(x, sep, xs) { return [x.v()].concat(xs.v()); },
     List_none: function() { return []; },
     _terminal: function() { return this.primitiveValue; }
@@ -138,7 +138,7 @@ test('left recursion', function(t) {
       '  Start\n' +
       '    = LeftAssoc<digit, "+">\n' +
       '}');
-  var s = g.semantics().addOperation('v', {
+  var s = g.createSemantics().addOperation('v', {
     LeftAssoc_rec: function(x, op, y) { return [op.v(), x.v(), y.v()]; },
     LeftAssoc_base: function(x) { return x.v(); },
     _terminal: function() { return this.primitiveValue; }
@@ -154,7 +154,7 @@ test('complex parameters', function(t) {
       '  start = two<~"5" digit>\n' +
       '  two<x> = x x\n' +
       '}');
-  var s = g.semantics().addOperation('v', {
+  var s = g.createSemantics().addOperation('v', {
     two: function(x, y) { return [x.v(), y.v()]; },
     _terminal: function() { return this.primitiveValue; }
   });
