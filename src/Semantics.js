@@ -112,6 +112,11 @@ Object.defineProperties(Wrapper.prototype, {
   // Returns the name of grammar rule that created this CST node.
   ctorName: {get: function() { return this._node.ctorName; }},
 
+  // TODO: Remove this eventually (deprecated in v0.12).
+  interval: {get: function() {
+    throw new Error('The `interval` property is deprecated -- use `source` instead');
+  }},
+
   // Returns the interval consumed by the CST node associated with this wrapper.
   source: {get: function() { return this._node.source; }},
 
