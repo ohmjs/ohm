@@ -228,6 +228,7 @@ require('./pexprs-assertIteratedExprsAreNotNullable');
 require('./pexprs-check');
 require('./pexprs-eval');
 require('./pexprs-getArity');
+require('./pexprs-madlibs');
 require('./pexprs-outputRecipe');
 require('./pexprs-introduceParams');
 require('./pexprs-isNullable');
