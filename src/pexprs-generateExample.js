@@ -8,31 +8,50 @@ var common = require('./common');
 var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
+// Helpers
+// --------------------------------------------------------------------
+
+function flatten(listOfLists) {
+  return [].concat.apply([], listOfLists);
+}
+
+// --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
 
-pexprs.PExpr.prototype.generateExample = common.abstract;
+pexprs.PExpr.prototype.generateExample = common.abstract('generateExample');
 
 pexprs.any.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
-  return {example: String.fromCharCode(Math.floor(Math.random() * 255))};
+  return {value: String.fromCharCode(Math.floor(Math.random() * 255))};
 };
 
 function categorizeExamples(examples) {
+  // a list of rules that the system needs examples of, in order to generate an example
+  //   for the current rule
   var examplesNeeded = examples.filter(function(example) {
-                                  return example.hasOwnProperty('examplesNeeded');
-                                })
-                               .map(function(example) { return example.examplesNeeded; });
-  examplesNeeded = [].concat.apply([], examplesNeeded)
-                            .filter(function(value, index, arr) {
-                              return arr.indexOf(value) === index;
-                            });
+    return example.hasOwnProperty('examplesNeeded');
+  })
+  .map(function(example) { return example.examplesNeeded; });
 
+  examplesNeeded = flatten(examplesNeeded);
+
+  var uniqueExamplesNeeded = {};
+  for (var i = 0; i < examplesNeeded.length; i++) {
+    var currentExampleNeeded = examplesNeeded[i];
+    uniqueExamplesNeeded[currentExampleNeeded] = true;
+  }
+  examplesNeeded = Object.keys(uniqueExamplesNeeded);
+
+  // a list of successfully generated examples
   var successfulExamples = examples.filter(function(example) {
-                                      return example.hasOwnProperty('example');
-                                    })
-                                   .map(function(item) { return item.example; });
-  // could check examples here, here's an example that's invalid
+    return example.hasOwnProperty('value');
+  })
+  .map(function(item) { return item.value; });
 
+  // this flag returns true if the system cannot generate the rule it is currently
+  //   attempting to generate, regardless of whether or not it has the examples it needs.
+  //   currently, this is only used in overriding generators to prevent the system from
+  //   generating examples for certain rules (e.g. 'ident')
   var needHelp = examples.some(function(item) { return item.needHelp; });
 
   return {
@@ -54,19 +73,19 @@ pexprs.Alt.prototype.generateExample = function(grammar, examples, inSyntacticCo
   var successfulExamples = categorizedExamples.successfulExamples;
   var needHelp = categorizedExamples.needHelp;
 
-  var returnObj = {};
+  var ans = {};
 
   // Alt can contain both an example and a request for examples
   if (successfulExamples.length > 0) {
     var i = Math.floor(Math.random() * successfulExamples.length);
-    returnObj.example = successfulExamples[i];
+    ans.value = successfulExamples[i];
   }
   if (examplesNeeded.length > 0) {
-    returnObj.examplesNeeded = examplesNeeded;
+    ans.examplesNeeded = examplesNeeded;
   }
-  returnObj.needHelp = needHelp;
+  ans.needHelp = needHelp;
 
-  return returnObj;
+  return ans;
 };
 
 // safe thing to do might just be to omit whitespace period?
@@ -82,89 +101,85 @@ pexprs.Seq.prototype.generateExample = function(grammar, examples, inSyntacticCo
   var successfulExamples = categorizedExamples.successfulExamples;
   var needHelp = categorizedExamples.needHelp;
 
-  var returnObj = {};
+  var ans = {};
 
   // in a Seq, all pieces must succeed in order to have a successful example
   if (examplesNeeded.length > 0 || needHelp) {
-    returnObj.examplesNeeded = examplesNeeded;
-    returnObj.needHelp = needHelp;
+    ans.examplesNeeded = examplesNeeded;
+    ans.needHelp = needHelp;
   } else {
-    returnObj.example = successfulExamples.join(inSyntacticContext ? ' ' : '');
+    ans.value = successfulExamples.join(inSyntacticContext ? ' ' : '');
   }
 
-  return returnObj;
+  return ans;
 };
 
 pexprs.Apply.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
-  var returnObj = {};
+  var ans = {};
 
   var ruleName = this.substituteParams(actuals).toString();
 
   if (!examples.hasOwnProperty(ruleName)) {
-    returnObj.examplesNeeded = [ruleName];
+    ans.examplesNeeded = [ruleName];
   } else {
     var relevantExamples = examples[ruleName];
     var i = Math.floor(Math.random() * relevantExamples.length);
-    returnObj.example = relevantExamples[i];
+    ans.value = relevantExamples[i];
   }
 
-  return returnObj;
+  return ans;
 };
 
 // assumes that terminal's object is always a string
 pexprs.Terminal.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
-  return {example: this.obj};
+  return {value: this.obj};
 };
 
 pexprs.Range.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
   var rangeSize = this.to.charCodeAt(0) - this.from.charCodeAt(0);
-  return {example: String.fromCharCode(
+  return {value: String.fromCharCode(
     this.from.charCodeAt(0) + Math.floor(rangeSize * Math.random())
   )};
 };
 
-// these all fail for now
+// TODO: make 'Not' and 'Lookahead' behaviour smarter
+// right now, 'Not' and 'Lookahead' generate nothing and assume that whatever follows will
+//   work according to the encoded constraints.
 pexprs.Not.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
-  return {example: ''};
+  return {value: ''};
 };
 
 pexprs.Lookahead.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
-  return {example: ''};
+  return {value: ''};
 };
 
 pexprs.Param.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
   return actuals[this.index].generateExample(grammar, examples, inSyntacticContext, actuals);
 };
 
-function repeat(n, fn) {
-  if (n < 0) { return; }
-  while (n > 0) {
-    fn(n);
-    n--;
-  }
-}
-
-var generateNExamples = function(that, grammar, examples, inSyntacticContext, actuals, numTimes) {
+function generateNExamples(pexpr, grammar, examples, inSyntacticContext, actuals, numTimes) {
   var items = [];
-  repeat(numTimes, function() {
-    items.push(that.expr.generateExample(grammar, examples, inSyntacticContext, actuals));
-  });
+
+  for (var i = 0; i < numTimes; i++) {
+    items.push(pexpr.expr.generateExample(grammar, examples, inSyntacticContext, actuals));
+  }
 
   var categorizedExamples = categorizeExamples(items);
 
   var examplesNeeded = categorizedExamples.examplesNeeded;
   var successfulExamples = categorizedExamples.successfulExamples;
 
-  var returnObj = {};
+  var ans = {};
 
   // it's always either one or the other
-  returnObj.example = successfulExamples.join(inSyntacticContext ? ' ' : '');
+  // TODO: instead of ' ', call 'spaces.generateExample()'
+  ans.value = successfulExamples.join(inSyntacticContext ? ' ' : '');
   if (examplesNeeded.length > 0) {
-    returnObj.examplesNeeded = examplesNeeded;
+    ans.examplesNeeded = examplesNeeded;
   }
 
-  return returnObj;
-};
+  return ans;
+}
 
 pexprs.Star.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
   return generateNExamples(this, grammar, examples, inSyntacticContext, actuals,
@@ -205,5 +220,5 @@ pexprs.UnicodeChar.prototype.generateExample = function(
     case 'L': char = 'Á'; break;
     case 'Ltmo': char = 'ǅ'; break;
   }
-  return {example: char}; // 💩
+  return {value: char}; // 💩
 };
