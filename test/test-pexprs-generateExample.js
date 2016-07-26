@@ -8,8 +8,6 @@ var makeGrammar = require('./testUtil').makeGrammar;
 // Tests
 // --------------------------------------------------------------------
 
-// test('PExpr');
-//
 test('Alt', function(t) {
   var random = Math.random;
 
@@ -20,7 +18,7 @@ test('Alt', function(t) {
       '}'
     ]);
 
-    // stubbed out random functions force the 'generateExample()' function
+    // Stubbed out random functions force the 'generateExample()' function
     //   to take one path or another. In this case:
     //   floor(0.6 * 2) = 1, making 'generateExample()' select the second path.
     Math.random = function() { return 0.6; };
@@ -134,6 +132,7 @@ test('Star', function(t) {
     // Here, a stubbed 'Math.random()' makes 'generateExample()' repeat 'a'
     //   a certain number of times. for example:
     //   floor(4 * 0.76) = 3, and floor(4 * 0.1) = 0
+    // Note: the system only generates up to 3 repetitions in an iter node
     Math.random = function() { return 0.76; };
     var example = g.rules.star.body.generateExample(g, {}, false, []);
     t.equal(example.value, 'aaa');

@@ -12,7 +12,7 @@ var pexprs = require('./pexprs');
 // --------------------------------------------------------------------
 
 function flatten(listOfLists) {
-  return [].concat.apply([], listOfLists);
+  return Array.prototype.concat.apply([], listOfLists);
 }
 
 // --------------------------------------------------------------------
@@ -26,7 +26,7 @@ pexprs.any.generateExample = function(grammar, examples, inSyntacticContext, act
 };
 
 function categorizeExamples(examples) {
-  // a list of rules that the system needs examples of, in order to generate an example
+  // A list of rules that the system needs examples of, in order to generate an example
   //   for the current rule
   var examplesNeeded = examples.filter(function(example) {
     return example.hasOwnProperty('examplesNeeded');
@@ -42,16 +42,16 @@ function categorizeExamples(examples) {
   }
   examplesNeeded = Object.keys(uniqueExamplesNeeded);
 
-  // a list of successfully generated examples
+  // A list of successfully generated examples
   var successfulExamples = examples.filter(function(example) {
     return example.hasOwnProperty('value');
   })
   .map(function(item) { return item.value; });
 
-  // this flag returns true if the system cannot generate the rule it is currently
+  // This flag returns true if the system cannot generate the rule it is currently
   //   attempting to generate, regardless of whether or not it has the examples it needs.
-  //   currently, this is only used in overriding generators to prevent the system from
-  //   generating examples for certain rules (e.g. 'ident')
+  //   Currently, this is only used in overriding generators to prevent the system from
+  //   generating examples for certain rules (e.g. 'ident').
   var needHelp = examples.some(function(item) { return item.needHelp; });
 
   return {
@@ -88,9 +88,6 @@ pexprs.Alt.prototype.generateExample = function(grammar, examples, inSyntacticCo
   return ans;
 };
 
-// safe thing to do might just be to omit whitespace period?
-// for lexical rules, should we request their components?
-
 pexprs.Seq.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
   var factorExamples = this.factors.map(function(factor) {
     return factor.generateExample(grammar, examples, inSyntacticContext, actuals);
@@ -103,7 +100,7 @@ pexprs.Seq.prototype.generateExample = function(grammar, examples, inSyntacticCo
 
   var ans = {};
 
-  // in a Seq, all pieces must succeed in order to have a successful example
+  // In a Seq, all pieces must succeed in order to have a successful example.
   if (examplesNeeded.length > 0 || needHelp) {
     ans.examplesNeeded = examplesNeeded;
     ans.needHelp = needHelp;
@@ -130,7 +127,7 @@ pexprs.Apply.prototype.generateExample = function(grammar, examples, inSyntactic
   return ans;
 };
 
-// assumes that terminal's object is always a string
+// Assumes that terminal's object is always a string
 pexprs.Terminal.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
   return {value: this.obj};
 };
@@ -143,7 +140,7 @@ pexprs.Range.prototype.generateExample = function(grammar, examples, inSyntactic
 };
 
 // TODO: make 'Not' and 'Lookahead' behaviour smarter
-// right now, 'Not' and 'Lookahead' generate nothing and assume that whatever follows will
+// Right now, 'Not' and 'Lookahead' generate nothing and assume that whatever follows will
 //   work according to the encoded constraints.
 pexprs.Not.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
   return {value: ''};
@@ -171,7 +168,7 @@ function generateNExamples(pexpr, grammar, examples, inSyntacticContext, actuals
 
   var ans = {};
 
-  // it's always either one or the other
+  // It's always either one or the other.
   // TODO: instead of ' ', call 'spaces.generateExample()'
   ans.value = successfulExamples.join(inSyntacticContext ? ' ' : '');
   if (examplesNeeded.length > 0) {
