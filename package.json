@@ -44,17 +44,18 @@
   "author": "Alex Warth <alexwarth@gmail.com> (http://tinlizzie.org/~awarth)",
   "contributors": [
     "Patrick Dubroy <pdubroy@gmail.com>",
-    "Alex Warth <alexwarth@gmail.com>",
-    "Tony Garnock-Jones <tonygarnockjones@gmail.com>",
     "Meixian Li <lmeixian@gmail.com>",
+    "Tony Garnock-Jones <tonygarnockjones@gmail.com>",
     "Marko Röder <m.roeder@photon-software.de>",
     "Lionel Landwerlin <llandwerlin@gmail.com>",
     "Jason Merrill <jwmerrill@gmail.com>",
     "Yoshiki Ohshima <Yoshiki.Ohshima@acm.org>",
-    "codeZeilen <codeZeilen@users.noreply.github.com>",
+    "mroeder <m.roeder@photon-software.de>",
+    "Saketh Kasibatla <sakekasi@ucla.edu>",
     "Stephan Seidt <stephan.seidt@gmail.com>",
-    "Justin Chase <justin.m.chase@gmail.com>",
-    "Daniel Tomlinson <DanielTomlinson@me.com>"
+    "Daniel Tomlinson <DanielTomlinson@me.com>",
+    "codeZeilen <codeZeilen@users.noreply.github.com>",
+    "Justin Chase <justin.m.chase@gmail.com>"
   ],
   "dependencies": {
     "es6-symbol": "^2.0.1",
