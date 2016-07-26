@@ -19,8 +19,8 @@ pexprs.PExpr.prototype.allowsSkippingPrecedingSpace = common.abstract(
 );
 
 /*
-  Generally, these are all first-order expressions that operate on strings and (with the
-  exception of Apply) directly read from the input stream.
+  Generally, these are all first-order expressions and (with the exception of Apply)
+  directly read from the input stream.
 */
 pexprs.any.allowsSkippingPrecedingSpace =
 pexprs.end.allowsSkippingPrecedingSpace =
@@ -32,8 +32,7 @@ pexprs.UnicodeChar.prototype.allowsSkippingPrecedingSpace = function() {
 };
 
 /*
-  Higher-order expressions that don't directly consume input, and expressions that
-  don't operate on string input streams (e.g. Obj and Arr).
+  Higher-order expressions that don't directly consume input.
 */
 pexprs.Alt.prototype.allowsSkippingPrecedingSpace =
 pexprs.Iter.prototype.allowsSkippingPrecedingSpace =
