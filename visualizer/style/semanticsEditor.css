@@ -16,7 +16,7 @@ textarea {
   background: rgba(100, 149, 237, 0.6);
   border-color: rgba(100, 149, 237, 0.6);
 }
-.pexpr:not(.collapsed) > .self.passThrough:not(.selected) {
+.pexpr:not(.collapsed) > .self.passThrough:not(.selected):not(.preSelected) {
   border-bottom: 1px solid #ddd;
 }
 .pexpr:not(.collapsed) > .self.passThrough {
@@ -24,9 +24,11 @@ textarea {
 }
 
 .pexpr > .self.selected {
-  _box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-  _margin: 4px 6px 10px 6px;
   border: 2px solid rgb(53, 151, 255);
+}
+
+.pexpr > .self.preSelected {
+  border: 2px solid rgba(53, 151, 255, 0.5);
 }
 
 /* Show only the part marked by `showing` for passThrought node */
@@ -43,6 +45,7 @@ textarea {
   position: absolute;
   left: 30%;
   top: 12%;
+  min-width: 120px;
   border: 2px solid #ccc;
   padding: 4px 8px;
   background: white;
@@ -96,7 +99,7 @@ textarea {
   flex-direction: column;
   margin: 2px 8px;
 }
-.mainBody .rule cstNodeName::after {
+.mainBody .rule cstNodeName:not(.default)::after {
   content: '\003D';
   clear: both;
   margin: 0 3px;
@@ -230,6 +233,11 @@ textarea {
   margin-top: -1px;
   padding: 4px;
   cursor: default;
+  border: 1px solid #efefef;
+  border-top: none;
+}
+.self:hover .result {
+  border-color: #ddd;
 }
 
 .semanticsEditor .result:empty,
@@ -263,7 +271,7 @@ textarea {
 .result resultBlock operation {
   font-size: 6px;
   color: orchid;
-  margin-left: 4px;
+  align-self: flex-end;
 }
 .result resultBlock.highlight operation{
   font-size: 10px;
@@ -299,6 +307,9 @@ textarea {
   flex: 1;
   flex-direction: column;
 }
+.semanticsEditor .footer .info col > * {
+  padding: 2px 4px;
+}
 .semanticsEditor .footer .info col.node,
 .semanticsEditor .footer .info col operationCell {
   font-size: 12px;
@@ -323,14 +334,23 @@ textarea {
   font-weight: inherit;
 }
 .semanticsEditor .footer .info editorClickable {
-  font-style: italic;
-  text-decoration: underline;
   cursor: pointer;
   text-align: center;
+}
+.semanticsEditor .footer .info editorClickable:not(.result) {
+  font-style: italic;
+  text-decoration: underline;
   color: blue;
 }
 .semanticsEditor .footer .info editorClickable:hover {
   font-weight: bolder;
+}
+.semanticsEditor .footer .info editorClickable.result:hover {
+  color: blue;
+}
+.semanticsEditor .footer .info editorClickable.result:before {
+  content: '\270E';
+  margin-right: 2px;
 }
 .semanticsEditor .footer .info editorClickable.add:not(:first-child) {
   border-left: 1px solid black;
@@ -398,4 +418,10 @@ textarea {
 }
 .contextMenu li .value.error{
   color: red;
+}
+
+/* node list */
+#nodeList li span {
+  margin-left: 4px;
+  opacity: 0.5;
 }

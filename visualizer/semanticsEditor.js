@@ -24,7 +24,8 @@
     BLACK_DOWN_POINTING_TRIANGLE: '\u25BC',
     PLUS_SIGN: '\u002B',
     LESS_THAN_SIGN: '\u003C',
-    GREATER_THAN_SIGN: '\u003E'
+    GREATER_THAN_SIGN: '\u003E',
+    BLACK_CIRCLE: '\u25CF'
   };
 
   function generateOperationSignature(opName, optFormals) {
@@ -68,7 +69,7 @@
 
     semanticsEditor.classList.remove('showing');
 
-    if (clearDirectionHistory) {
+    if (clearDirectionHistory && semanticsEditor.querySelector('.header back')) {
       var backButton = semanticsEditor.querySelector('.header back');
       backButton._stack = [];
       backButton.classList.add('disabled');
@@ -78,6 +79,9 @@
       forwardButton.classList.add('disabled');
     }
   }
+  ohmEditor.addListener('parse:input', function(matchResult, trace) {
+    closeEditor(true);
+  });
 
   function createDirectButton() {
     var container = domUtil.createElement('directBt');
@@ -139,7 +143,6 @@
   function createHeader() {
     var container = domUtil.createElement('.header');
 
-    // TODO: ADD back and forward buttom for navigating through editing process.
     container.appendChild(createDirectButton());
 
     container.appendChild(domUtil.createElement('select.names'));
@@ -169,7 +172,6 @@
     return container;
   }
 
-  // TODO: table[operation, subexpression]
   function createFooter() {
     var container = domUtil.createElement('.footer');
     var table = container.appendChild(domUtil.createElement('.info'));
@@ -195,6 +197,7 @@
   // for semantics editing.
   ohmEditor.addListener('parse:grammar', function(matchResult, grammar, error) {
     if (grammar && grammar.defaultStartRule) {
+      closeEditor(true);
       initializeSemanticsEditor();
     }
   });
@@ -235,19 +238,18 @@
   ohmEditor.semantics.addListener('edit:semanticOperation', function(wrapper, operationName,
     optArgs) {
     closeEditor(true);
-
     // Remove corresponding entry from the enditor header.
     var opList = $('.semanticsEditor .header .names');
-    var entry = Array.prototype.filter.call(opList.children, function(child) {
+    var entry = Array.prototype.find.call(opList.children, function(child) {
       return child.value === operationName;
-    })[0];
+    });
     opList.removeChild(entry);
 
     // Remove corresponding entry from the info table in the enditor footer.
     var infoTable = semanticsEditor.querySelector('.semanticsEditor .footer .info');
-    var column = Array.prototype.filter.call(infoTable.children, function(child) {
+    var column = Array.prototype.find.call(infoTable.children, function(child) {
       return child._operation === operationName;
-    })[0];
+    });
     infoTable.removeChild(column);
 
     if (optArgs) {
@@ -526,13 +528,18 @@
     ruleContainer.innerHTML = '';
 
     var cstNodeName = getCSTNodeName(traceNode);
-    ruleContainer.appendChild(domUtil.createElement('cstNodeName', cstNodeName));
+    var nameContainer = ruleContainer.appendChild(domUtil.createElement('cstNodeName',
+      cstNodeName));
 
     // Fill the container with `block`
     // Each `block` represent an argument, inside there are:
     // `span.display`, which contains the argument display name
     // `real`, which is the argument rename editor that contains the real arg name
     var blocks = ruleContainer.appendChild(domUtil.createElement('blocks'));
+    if (cstNodeName === '_iter' || cstNodeName === '_terminal') {
+      nameContainer.classList.add('default');
+      return;
+    }
     var actionArgPairedList = ohmEditor.semantics.getActionArgPairedList(traceNode, operation);
     var argDefaultList = actionArgPairedList.argExprTrace.expr.toArgumentNameList(1);
     var argRealList = actionArgPairedList.real;
@@ -547,7 +554,6 @@
     });
   }
 
-  // TODO
   function updateArgTags(args) {
     var argTagContainer = $('.semanticsEditor .mainBody .argTags');
     argTagContainer.innerHTML = '';
@@ -560,7 +566,6 @@
     });
   }
 
-  // TODO
   function updateActionResult(selfWrapper, operation, args) {
     var editorResultContainer = $('.semanticsEditor .mainBody .result');
     editorResultContainer.classList.remove('error');
@@ -577,13 +582,12 @@
 
   function retrieveSelectedOperation() {
     var entries = $$('.semanticsEditor .header .name');
-    var selectedEntry = entries.filter(function(entry) {
+    var selectedEntry = entries.find(function(entry) {
       return entry.selected;
-    })[0];
+    });
     return selectedEntry.value;
   }
 
-  // TODO
   function updateMainBody(selfWrapper) {
     var operation = retrieveSelectedOperation();
     var traceNode = selfWrapper.parentElement._traceNode;
@@ -601,9 +605,9 @@
 
     var saveAction = function(cm) {
       var actionArguments = retrieveArgumentsFromHeader();
-      var operationName = $$('.semanticsEditor .header .name').filter(function(entry) {
+      var operationName = $$('.semanticsEditor .header .name').find(function(entry) {
         return entry.selected;
-      })[0].value;
+      }).value;
       ohmEditor.semantics.emit('save:semanticAction', traceNode, actionArguments, cm.getValue(),
           operationName);
 
@@ -671,25 +675,20 @@
     // TODO: handle calling the multi-operation
     var opName = optOperation || ohmEditor.semantics.retrieveOperations(cstNode)[0];
     if (opName) {
-      var entry = Array.prototype.filter.call(opList.children, function(e) {
+      var entry = Array.prototype.find.call(opList.children, function(e) {
         return e.value === opName;
-      })[0];
+      });
       entry.selected = true;
     }
 
     // Update the event listener of operation list.
     opList.onchange = function(event) {
-      var entry = Array.prototype.filter.call(opList.children, function(e) {
+      var entry = Array.prototype.find.call(opList.children, function(e) {
         return e.selected;
-      })[0];
+      });
       updateBodyContents(entry.value, selfWrapper);
+      updateFooter(selfWrapper);
     };
-  }
-
-  // TODO: remove???
-  function updateHeader(selfWrapper, optOperation) {
-    updateOperationList(selfWrapper, optOperation);
-    // TODO: ADD back and forward buttom for navigating through editing process.
   }
 
   // TODO: make sure all cases covered
@@ -705,7 +704,12 @@
   }
 
   function retrieveTargetWrapper(selfWrapper, cstNode) {
-    var rootWrapper = selfWrapper.nextElementSibling;
+    var rootWrapper = selfWrapper.parentElement;
+    if (rootWrapper._traceNode.bindings.length === 1 &&
+        rootWrapper._traceNode.bindings[0] === cstNode) {
+      return rootWrapper;
+    }
+
     var targetWrapper = Array.prototype.find.call(rootWrapper.querySelectorAll('.pexpr'),
       function(wrapper) {
         return !wrapper.classList.contains('hidden') &&
@@ -715,38 +719,101 @@
     return targetWrapper;
   }
 
-  function createEditLink(cstNode, col) {
-    var container = domUtil.createElement('editorClickable', 'Edit');
-    container.onclick = function(event) {
-      var selfWrapper = $('.self.selected');
+  function handleEditorDirectEvent(cstNode, operation) {
+    var selfWrapper = $('.self.selected');
+    var targetWrapper = retrieveTargetWrapper(selfWrapper, cstNode);
+    if (!targetWrapper && cstNode.isIteration()) {
+      cstNode = cstNode.children[0];
+      targetWrapper = retrieveTargetWrapper(selfWrapper, cstNode);
+    }
+    if (!targetWrapper) {
+      return;
+    }
+    selfWrapper.classList.remove('selected');
+    targetWrapper.querySelector('.self').classList.add('selected');
 
-      var targetWrapper = retrieveTargetWrapper(selfWrapper, cstNode);
-      if (!targetWrapper && cstNode.isIteration()) {
-        cstNode = cstNode.children[0];
-        targetWrapper = retrieveTargetWrapper(selfWrapper, cstNode);
-      }
-      if (!targetWrapper) {
-        return;
-      }
-      selfWrapper.classList.remove('selected');
-      targetWrapper.querySelector('.self').classList.add('selected');
-
-      var backButton = semanticsEditor.querySelector('.header directBt back');
-      var selectedOperation = Array.prototype.find.call(
-        semanticsEditor.querySelectorAll('.header .name'),
-        function(entry) {
-          return entry.selected;
-        });
-      backButton._stack.push({
-        wrapper: selfWrapper,
-        opertaion: selectedOperation.value
+    var backButton = semanticsEditor.querySelector('.header directBt back');
+    var selectedOperation = Array.prototype.find.call(
+      semanticsEditor.querySelectorAll('.header .name'),
+      function(entry) {
+        return entry.selected;
       });
-      backButton.classList.remove('disabled');
-      var forwardButton = semanticsEditor.querySelector('.header directBt forward');
-      forwardButton._stack = [];
-      forwardButton.classList.add('disabled');
-      updateSemanticsEditor(targetWrapper.querySelector('.self'), col._operation);
-    };
+    backButton._stack.push({
+      wrapper: selfWrapper,
+      opertaion: selectedOperation.value
+    });
+    backButton.classList.remove('disabled');
+    var forwardButton = semanticsEditor.querySelector('.header directBt forward');
+    forwardButton._stack = [];
+    forwardButton.classList.add('disabled');
+    updateSemanticsEditor(targetWrapper.querySelector('.self'), operation);
+  }
+
+  function createResultLink(linkContent, cstNode, operation) {
+    var container = domUtil.createElement('editorClickable', linkContent.content);
+    container.classList.add(linkContent.type);
+    if (!cstNode.isIteration() && cstNode.children.length !== 1 ||
+        ohmEditor.semantics.getActionBody(cstNode, operation).length !== 0) {
+      container.onmouseover = function(event) {
+        $('#nodeList').hidden = true;
+      };
+      container.onclick = function(event) {
+        handleEditorDirectEvent(cstNode, operation);
+      };
+    } else {
+      container.onmouseover = function(event) {
+        var nodeList = $('#nodeList');
+        if (nodeList.hidden || nodeList._container !== container) {
+          nodeList.style.left = event.clientX + 'px';
+          nodeList.style.top = event.clientY + 'px';
+          nodeList._container = container;
+          nodeList.hidden = false;
+        }
+        nodeList.innerHTML = '';
+
+        var selfWrapper = $('.self.selected');
+        var node = cstNode;
+        var nList = [];
+        while (true) {
+          nList.push(node);
+          if (node.isIteration()) {
+            node = node.children[0];
+            continue;
+          }
+
+          if (node.children.length !== 1 ||
+              ohmEditor.semantics.getActionBody(node, operation).length !== 0) {
+            break;
+          }
+          node = node.children[0];
+        }
+        nList.forEach(function(n, idx) {
+          var targetWrapper = retrieveTargetWrapper(selfWrapper, n);
+          if (!targetWrapper && n.isIteration()) {
+            n = n.children[0];
+            targetWrapper = retrieveTargetWrapper(selfWrapper, n);
+          }
+          if (!targetWrapper) {
+            return;
+          }
+          var entry = nodeList.appendChild(domUtil.createElement('li',
+            targetWrapper._traceNode.expr.toDisplayString()));
+          if (idx === nList.length - 1) {
+            entry.appendChild(domUtil.createElement('span', UnicodeChars.BLACK_CIRCLE));
+          }
+          entry.onclick = function(event) {
+            handleEditorDirectEvent(n, operation);
+          };
+          entry.onmouseover = function(event) {
+            targetWrapper.querySelector('.self').classList.add('preSelected');
+          };
+          entry.onmouseout = function(event) {
+            targetWrapper.querySelector('.self').classList.remove('preSelected');
+          };
+        });
+      };
+    }
+
     return container;
   }
 
@@ -815,16 +882,17 @@
   function createAddButton(col, resultsContainer, cstNode) {
     var button = domUtil.createElement('editorClickable.add', UnicodeChars.PLUS_SIGN);
     button.onclick = function(event) {
-      resultsContainer.insertBefore(createNewArgResPair(col, cstNode), button);
+      var pair = resultsContainer.insertBefore(createNewArgResPair(col, cstNode), button);
+      pair.querySelector('.arg').focus();
     };
     return button;
   }
 
   function updateFooter(selfWrapper) {
     var traceNode = selfWrapper.parentElement._traceNode;
-    var selectedOperation = $$('.semanticsEditor .header .name').filter(function(option) {
+    var selectedOperation = $$('.semanticsEditor .header .name').find(function(option) {
       return option.selected;
-    })[0].value;
+    }).value;
     $$('.semanticsEditor .footer .info col.operation').forEach(function(opResList) {
       opResList.innerHTML = opResList.firstChild.outerHTML;
     });
@@ -840,28 +908,36 @@
 
     var operationCols = $$('.semanticsEditor .footer .info .operation');
     operationCols.forEach(function(col) {
-      // TODO: handle operation with arguments.
+      var operation = col._operation;
       Array.prototype.forEach.call(firstCol.children, function(nodeCell, idx) {
         if (idx === 0) {
           return;
         }
         var resultsContainer = col.appendChild(domUtil.createElement('.resultCell'));
         var cstNode = nodeCell._cstNode || traceNode.bindings[0];
-        var resultWrapper = ohmEditor.semantics.forceResult(cstNode, col._operation);
+        if (operation === selectedOperation && nodeCell === firstCol.children[1]) {
+          resultsContainer.appendChild(domUtil.createElement('result', 'Editing'));
+          resultsContainer.style.fontStyle = 'italic';
+          return;
+        }
+
+        var resultWrapper = ohmEditor.semantics.forceResult(cstNode, operation);
+        var linkContent = Object.create(null);
         if (resultWrapper.missingSemanticsAction) {
-          if (col._operation === selectedOperation && nodeCell === firstCol.children[1]) {
-            resultsContainer.appendChild(domUtil.createElement('result', 'Editing'));
-            resultsContainer.style.fontStyle = 'italic';
-          } else {
-            resultsContainer.appendChild(createEditLink(cstNode, col));
-          }
+          linkContent.type = 'edit';
+          linkContent.content = 'Edit';
+          resultsContainer.appendChild(createResultLink(linkContent, cstNode, operation));
         } else {
+          linkContent.type = 'result';
           if (col._formals && col._formals.length > 0) {
+            linkContent.content = '';
+            resultsContainer.appendChild(createResultLink(linkContent, cstNode, operation));
             resultsContainer.appendChild(createAddButton(col, resultsContainer, cstNode));
           } else {
-            resultsContainer.appendChild(domUtil.createElement('result', resultWrapper.isError ?
-              resultWrapper.result :
-              JSON.stringify(resultWrapper.result)));
+            linkContent.content = resultWrapper.isError ?
+                resultWrapper.result :
+                JSON.stringify(resultWrapper.result);
+            resultsContainer.appendChild(createResultLink(linkContent, cstNode, operation));
           }
         }
       });
@@ -870,12 +946,12 @@
 
   function updateSemanticsEditor(selfWrapper, optOperation) {
 
-    // TODO: <-       eval()        X
-    updateHeader(selfWrapper, optOperation);
+    // Format: <-       eval()        X
+    updateOperationList(selfWrapper, optOperation);
 
     updateMainBody(selfWrapper);
 
-    // TODO: table[operation, subexpression]
+    // Format: table[operation, subexpression]
     updateFooter(selfWrapper);
 
     var actionEditor = $('.semanticsEditor .mainBody .body');
@@ -887,7 +963,7 @@
   // Hides or shows the semantics editor of `el`, which is a div.pexpr.
   function toggleSemanticsEditor(wrapper) {
     var selfWrapper = wrapper.querySelector('.self');
-    if (selfWrapper.parentElement !== wrapper) {
+    if (selfWrapper.querySelector('.result') && selfWrapper.parentElement !== wrapper) {
       return;
     }
 
@@ -1101,6 +1177,7 @@
     if (!evaluatingSemantics) {
       return;
     }
+
     // Hover the `Force Evaluation` entry to show forcing options
     forceEntry.onmouseover = function() {
       var entryWrapper;

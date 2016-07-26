@@ -96,7 +96,7 @@
       return undefined;
     }
 
-    var resultList = resultMap[key][name].filter(function(resultWrapper) {
+    var result = resultMap[key][name].find(function(resultWrapper) {
       if (!resultWrapper.args ||
           JSON.stringify(resultWrapper.args) === JSON.stringify(optArgs)) {
         // Alternate the `forced` property, to make sure is result is only forced
@@ -106,7 +106,7 @@
       }
       return false;
     });
-    return resultList[0];
+    return result;
   }
 
   function addResult(result, key, name, optArgs) {
@@ -430,7 +430,6 @@
   function editSemanticsOperation(wrapper, operationName, optArgs) {
     wrapper._origActionDict = semantics._getActionDict(operationName);
     semantics._remove(operationName);
-
     if (optArgs) {
       addSemanticOperation('Operation', operationName, optArgs, wrapper._origActionDict);
       delete wrapper._origActionDict;
