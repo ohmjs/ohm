@@ -37,6 +37,12 @@
 
     $$: function(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); },
 
+    clearDOMNode: function(domNode) {
+      while (domNode.firstChild) {
+        domNode.removeChild(domNode.firstChild);
+      }
+    },
+
     createElement: function(sel, optContent) {
       var parts = sel.split('.');
       var tagName = parts[0];
