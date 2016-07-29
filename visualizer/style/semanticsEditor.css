@@ -79,11 +79,26 @@ textarea {
 .semanticsEditor .header directBt *:not(.disabled):hover {
   font-weight: bolder;
 }
-.semanticsEditor .header .names {
+.semanticsEditor .header nameTag {
   margin: 0 auto;  /* This is for align the names to center */
   color: rgb(82, 82, 82);
   font: message-box;
+  border-radius: 6px;
+  padding: 2px 4px;
+  display: flex;
+  background: #fafafa;
+  border-width: 1px 0 1px 1px;
+  border-style: solid;
+  border-color: #dadada #d2d2d2 #c5c5c5;
+  background-image: linear-gradient(to bottom, #fcfcfc, #f0f0f0);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7), 0 1px 2px rgba(0, 0, 0, 0.05);
 }
+.semanticsEditor .header nameTag:after {
+  content: '\25BC';
+  font-size: 9px;
+  margin: 3px 0 0 2px;
+}
+
 .semanticsEditor .header closeBT {
   color: lightgray;
   cursor: default;
@@ -424,4 +439,10 @@ textarea {
 #nodeList li span {
   margin-left: 4px;
   opacity: 0.5;
+}
+
+/* name list */
+#nameList .name.selected:after {
+  content: '\2713';
+  margin-right: 2px;
 }

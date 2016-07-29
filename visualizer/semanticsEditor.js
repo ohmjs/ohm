@@ -99,14 +99,13 @@
       }
       var previousState = backButton._stack.pop();
       backButton.classList.toggle('disabled', backButton._stack.length === 0);
-      var selectedOperation = Array.prototype.find.call(
-        semanticsEditor.querySelectorAll('.header .name'),
+      var selectedOperation = $$('#nameList .name').find(
         function(entry) {
-          return entry.selected;
+          return entry.classList.contains('selected');
         });
       forwardButton._stack.push({
         wrapper: $('.self.selected'),
-        opertaion: selectedOperation.value
+        opertaion: selectedOperation._value
       });
       forwardButton.classList.remove('disabled');
       $('.self.selected').classList.remove('selected');
@@ -123,14 +122,13 @@
       }
       var previousState = button._stack.pop();
       button.classList.toggle('disabled', button._stack.length === 0);
-      var selectedOperation = Array.prototype.find.call(
-        semanticsEditor.querySelectorAll('.header .name'),
+      var selectedOperation = $$('#nameList .name').find(
         function(entry) {
-          return entry.selected;
+          return entry.classList.contains('selected');
         });
       backButton._stack.push({
         wrapper: $('.self.selected'),
-        opertaion: selectedOperation.value
+        opertaion: selectedOperation._value
       });
       backButton.classList.remove('disabled');
       $('.self.selected').classList.remove('selected');
@@ -145,7 +143,16 @@
 
     container.appendChild(createDirectButton());
 
-    container.appendChild(domUtil.createElement('select.names'));
+    var nameTag = container.appendChild(domUtil.createElement('nameTag'));
+    // Update the event listener of operation list.
+    nameTag.onclick = function(event) {
+      var opList = $('#nameList');
+      var position = nameTag.getBoundingClientRect();
+      opList.style.left = position.left + 'px';
+      opList.style.top = position.top + 'px';
+      opList.hidden = false;
+      event.stopPropagation();
+    };
 
     var close = container.appendChild(domUtil.createElement('closeBT', 'X'));
     close.onclick = function(event) { closeEditor(true); };
@@ -208,9 +215,15 @@
     return /^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(name);
   }
   function addToOperationList(name, signature) {
-    var opList = $('.semanticsEditor .header .names');
-    var entry = opList.appendChild(domUtil.createElement('option.name', signature));
-    entry.value = name;
+    var opList = $('#nameList ul');
+    var entry = opList.appendChild(domUtil.createElement('li.name', signature));
+    entry._value = name;
+    entry.onclick = function(event) {
+      opList.querySelector('.selected').classList.remove('selected');
+      entry.classList.add('selected');
+      semanticsEditor.querySelector('nameTag').textContent = entry._value;
+      updateBodyContents(entry._value);
+    };
   }
   function addToInfoTable(name, optFormals) {
     var signature = generateOperationSignature(name, optFormals);
@@ -239,9 +252,9 @@
     optArgs) {
     closeEditor(true);
     // Remove corresponding entry from the enditor header.
-    var opList = $('.semanticsEditor .header .names');
+    var opList = $('#nameList ul');
     var entry = Array.prototype.find.call(opList.children, function(child) {
-      return child.value === operationName;
+      return child._value === operationName;
     });
     opList.removeChild(entry);
 
@@ -581,11 +594,11 @@
   }
 
   function retrieveSelectedOperation() {
-    var entries = $$('.semanticsEditor .header .name');
+    var entries = $$('#nameList .name');
     var selectedEntry = entries.find(function(entry) {
-      return entry.selected;
+      return entry.classList.contains('selected');
     });
-    return selectedEntry.value;
+    return selectedEntry._value;
   }
 
   function updateMainBody(selfWrapper) {
@@ -605,9 +618,9 @@
 
     var saveAction = function(cm) {
       var actionArguments = retrieveArgumentsFromHeader();
-      var operationName = $$('.semanticsEditor .header .name').find(function(entry) {
-        return entry.selected;
-      }).value;
+      var operationName = $$('#nameList .name').find(function(entry) {
+        return entry.classList.contains('selected');
+      })._value;
       ohmEditor.semantics.emit('save:semanticAction', traceNode, actionArguments, cm.getValue(),
           operationName);
 
@@ -649,7 +662,8 @@
     updateActionResult(selfWrapper, operation, args);
   }
 
-  function updateBodyContents(operationName, selfWrapper) {
+  function updateBodyContents(operationName) {
+    var selfWrapper = $('.self.selected');
     var traceNode = selfWrapper.parentElement._traceNode;
     var cstNode = traceNode.bindings[0];
     // TODO: handle calling the same operation with multi-set of argument, all of them are unforced
@@ -667,7 +681,10 @@
   }
 
   function updateOperationList(selfWrapper, optOperation) {
-    var opList = semanticsEditor.querySelector('.header .names');
+    var opList = $('#nameList ul');
+    if (opList.querySelector('.selected')) {
+      opList.querySelector('.selected').classList.remove('selected');
+    }
 
     // Update the selected operation.
     var traceNode = selfWrapper.parentElement._traceNode;
@@ -675,20 +692,15 @@
     // TODO: handle calling the multi-operation
     var opName = optOperation || ohmEditor.semantics.retrieveOperations(cstNode)[0];
     if (opName) {
-      var entry = Array.prototype.find.call(opList.children, function(e) {
-        return e.value === opName;
+      Array.prototype.forEach.call(opList.children, function(e) {
+        e.classList.toggle('selected', e._value === opName);
       });
-      entry.selected = true;
+    } else {
+      opList.children[0].classList.add('selected');
     }
 
-    // Update the event listener of operation list.
-    opList.onchange = function(event) {
-      var entry = Array.prototype.find.call(opList.children, function(e) {
-        return e.selected;
-      });
-      updateBodyContents(entry.value, selfWrapper);
-      updateFooter(selfWrapper);
-    };
+    var nameTag = semanticsEditor.querySelector('.header nameTag');
+    nameTag.textContent = opList.querySelector('.selected').textContent;
   }
 
   // TODO: make sure all cases covered
@@ -733,14 +745,13 @@
     targetWrapper.querySelector('.self').classList.add('selected');
 
     var backButton = semanticsEditor.querySelector('.header directBt back');
-    var selectedOperation = Array.prototype.find.call(
-      semanticsEditor.querySelectorAll('.header .name'),
+    var selectedOperation = $$('#nameList .name').find(
       function(entry) {
-        return entry.selected;
+        return entry.classList.contains('selected');
       });
     backButton._stack.push({
       wrapper: selfWrapper,
-      opertaion: selectedOperation.value
+      opertaion: selectedOperation._value
     });
     backButton.classList.remove('disabled');
     var forwardButton = semanticsEditor.querySelector('.header directBt forward');
@@ -764,8 +775,9 @@
       container.onmouseover = function(event) {
         var nodeList = $('#nodeList');
         if (nodeList.hidden || nodeList._container !== container) {
-          nodeList.style.left = event.clientX + 'px';
-          nodeList.style.top = event.clientY + 'px';
+          var position = container.getBoundingClientRect();
+          nodeList.style.left = position.left + 'px';
+          nodeList.style.top = position.top + 'px';
           nodeList._container = container;
           nodeList.hidden = false;
         }
@@ -890,9 +902,9 @@
 
   function updateFooter(selfWrapper) {
     var traceNode = selfWrapper.parentElement._traceNode;
-    var selectedOperation = $$('.semanticsEditor .header .name').find(function(option) {
-      return option.selected;
-    }).value;
+    var selectedOperation = $$('#nameList .name').find(function(option) {
+      return option.classList.contains('selected');
+    })._value;
     $$('.semanticsEditor .footer .info col.operation').forEach(function(opResList) {
       opResList.innerHTML = opResList.firstChild.outerHTML;
     });
@@ -975,14 +987,13 @@
     var forwardButton = semanticsEditor.querySelector('.header directBt forward');
     if (!closeOnly) {
       if (preSelected) {
-        var selectedOperation = Array.prototype.find.call(
-          semanticsEditor.querySelectorAll('.header .name'),
+        var selectedOperation = $$('#nameList .name').find(
           function(entry) {
-            return entry.selected;
+            return entry.classList.contains('selected');
           });
         backButton._stack.push({
           wrapper: preSelected,
-          opertaion: selectedOperation.value
+          opertaion: selectedOperation._value
         });
         backButton.classList.remove('disabled');
 
