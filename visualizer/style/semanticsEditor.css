@@ -157,10 +157,16 @@ textarea {
 /* Operation arguments container */
 .mainBody .argTags:not(:empty) {
   height: 100%;
-  display: inline-flex;
+  display: flex;
   flex: 1;
-  flex-direction: column;
   padding-right: 12px;
+}
+.mainBody .argTags entry {
+  display: flex;
+  flex-direction: column;
+}
+.mainBody .argTags entry:not(:first-child) {
+  border-left: 1px solid #c1d4f8;
 }
 .mainBody .argTags .argTag {
   position: relative;
@@ -445,4 +451,7 @@ textarea {
 #nameList .name.selected:after {
   content: '\2713';
   margin-right: 2px;
+}
+#nameList .name.nextStep {
+  color: blue;
 }

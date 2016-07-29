@@ -221,7 +221,7 @@
     entry.onclick = function(event) {
       opList.querySelector('.selected').classList.remove('selected');
       entry.classList.add('selected');
-      semanticsEditor.querySelector('nameTag').textContent = entry._value;
+      semanticsEditor.querySelector('nameTag').textContent = entry.textContent;
       updateBodyContents(entry._value);
     };
   }
@@ -567,15 +567,24 @@
     });
   }
 
-  function updateArgTags(args) {
+  function updateArgTags(argList) {
     var argTagContainer = $('.semanticsEditor .mainBody .argTags');
     argTagContainer.innerHTML = '';
-    if (!args) {
+    if (!argList) {
       return;
     }
-
-    Object.keys(args).forEach(function(argName) {
-      argTagContainer.appendChild(createAndLoadArgTag(argName, args[argName]));
+    argList.forEach(function(args) {
+      var argListEntry = argTagContainer.appendChild(domUtil.createElement('entry'));
+      Object.keys(args).forEach(function(argName) {
+        argListEntry.appendChild(createAndLoadArgTag(argName, args[argName]));
+      });
+      var rightMargin = 0;
+      Array.prototype.forEach.call(argListEntry.querySelectorAll('span'), function(entry) {
+        if (entry.scrollWidth > rightMargin) {
+          rightMargin = entry.scrollWidth;
+        }
+      });
+      argListEntry.style.marginRight = rightMargin + 12 + 'px';
     });
   }
 
@@ -606,11 +615,9 @@
     var traceNode = selfWrapper.parentElement._traceNode;
     updateRule(traceNode, operation);
 
-    // TODO: handle calling the same operation with multi-set of argument, all of them are unforced
     var cstNode = traceNode.bindings[0];
     var argList = ohmEditor.semantics.retrieveArguments(operation, cstNode);
-    var args = argList && argList[0];
-    updateArgTags(args);
+    updateArgTags(argList);
 
     var actionEditorCM = $('.semanticsEditor .mainBody .body').firstChild.CodeMirror;
     actionEditorCM.setValue(ohmEditor.semantics.getActionBody(cstNode, operation));
@@ -627,7 +634,7 @@
       traceNode._lastEdited = true;
       ohmEditor.parseTree.refresh();
       delete traceNode._lastEdited;
-
+      updateOperationList(selfWrapper, operationName);
       updateFooter(selfWrapper);
 
       // Load the result if there is an run time error
@@ -659,17 +666,16 @@
       actionEditorCM.setOption('extraKeys', {'Ctrl-S': saveAction});
     }
 
-    updateActionResult(selfWrapper, operation, args);
+    updateActionResult(selfWrapper, operation, argList && argList[0]);
   }
 
   function updateBodyContents(operationName) {
     var selfWrapper = $('.self.selected');
     var traceNode = selfWrapper.parentElement._traceNode;
     var cstNode = traceNode.bindings[0];
-    // TODO: handle calling the same operation with multi-set of argument, all of them are unforced
+
     var argList = ohmEditor.semantics.retrieveArguments(operationName, cstNode);
-    var args =  argList && argList[0];
-    updateArgTags(args);
+    updateArgTags(argList);
 
     var actionEditorCM = $('.semanticsEditor .mainBody .body').firstChild.CodeMirror;
     actionEditorCM.setValue(ohmEditor.semantics.getActionBody(cstNode, operationName));
@@ -677,7 +683,7 @@
     actionEditorCM.focus();
     actionEditorCM.refresh();
 
-    updateActionResult(selfWrapper, operationName, args);
+    updateActionResult(selfWrapper, operationName, argList && argList[0]);
   }
 
   function updateOperationList(selfWrapper, optOperation) {
@@ -689,11 +695,13 @@
     // Update the selected operation.
     var traceNode = selfWrapper.parentElement._traceNode;
     var cstNode = traceNode.bindings[0];
-    // TODO: handle calling the multi-operation
-    var opName = optOperation || ohmEditor.semantics.retrieveOperations(cstNode)[0];
+
+    var opNameList = ohmEditor.semantics.retrieveOperations(cstNode);
+    var opName = optOperation || opNameList[0];
     if (opName) {
       Array.prototype.forEach.call(opList.children, function(e) {
         e.classList.toggle('selected', e._value === opName);
+        e.classList.toggle('nextStep', opNameList.includes(e._value));
       });
     } else {
       opList.children[0].classList.add('selected');
