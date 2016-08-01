@@ -475,8 +475,11 @@
   }
 
   // Create the DOM node that contains action argument display name
-  function createArgDisplayContainer(display) {
-    var argDisplayContainer = domUtil.createElement('span.display', display);
+  function createArgDisplayContainer(display, cstNode) {
+    var argDisplayContainer = domUtil.createElement('div');
+    argDisplayContainer.appendChild(domUtil.createElement('.display', display));
+    argDisplayContainer.appendChild(domUtil.createElement('span',
+      JSON.stringify(cstNode.source.contents)));
 
     // Shows or hides the argument editor by clicking the argument.
     argDisplayContainer.addEventListener('click', function(e) {
@@ -532,7 +535,7 @@
   function retrieveArgumentsFromHeader() {
     var blocks = semanticsEditor.querySelector('.mainBody .rule blocks');
     return Array.prototype.map.call(blocks.children, function(block) {
-      return block.lastChild.textContent || block.firstChild.textContent;
+      return block.lastChild.textContent || block.querySelector('.display').textContent;
     });
   }
 
@@ -546,7 +549,7 @@
 
     // Fill the container with `block`
     // Each `block` represent an argument, inside there are:
-    // `span.display`, which contains the argument display name
+    // `.display`, which contains the argument display name
     // `real`, which is the argument rename editor that contains the real arg name
     var blocks = ruleContainer.appendChild(domUtil.createElement('blocks'));
     if (cstNodeName === '_iter' || cstNodeName === '_terminal') {
@@ -561,7 +564,8 @@
       var argReal = argRealList ? argRealList[idx] : argDefaultList[idx];
       var argDefault = argDefaultList[idx];
       var block = blocks.appendChild(domUtil.createElement('block'));
-      var displayContainer = block.appendChild(createArgDisplayContainer(argDisplay));
+      var displayContainer = block.appendChild(createArgDisplayContainer(argDisplay,
+        actionArgPairedList.argExprTrace.bindings[idx]));
       displayContainer._cstNode = actionArgPairedList.argExprTrace.bindings[idx];
       block.appendChild(createRealArgContainer(argDisplay, argReal, argDefault));
     });
@@ -935,7 +939,7 @@
 
     $$('.semanticsEditor .mainBody .rule block .display').forEach(function(display) {
       var nodeCell = firstCol.appendChild(domUtil.createElement('div', display.textContent));
-      nodeCell._cstNode = display._cstNode;
+      nodeCell._cstNode = display.parentElement._cstNode;
     });
 
     var operationCols = $$('.semanticsEditor .footer .info .operation');

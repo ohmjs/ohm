@@ -137,10 +137,28 @@ textarea {
   float: left;
   margin-left: 5px;
 }
-.mainBody .rule block span.display,
+.mainBody .rule block div,
 .mainBody .rule cstNodeName {
   color: rgb(123, 123, 123);
   float: left;
+}
+.mainBody .rule block div {
+  display: flex;
+  flex-direction: column;
+  cursor: default;
+}
+.mainBody .rule block div > * {
+  flex: 1;
+}
+.mainBody .rule block div span {
+  color: orange;
+  border-top: 1px solid;
+  font-size: 6px;
+  float: right;
+}
+.mainBody .rule block div:hover span {
+  font-weight: bolder;
+  font-size: 9px;
 }
 .mainBody .rule block real {
   display: inline-block;
