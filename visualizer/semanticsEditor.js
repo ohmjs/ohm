@@ -773,8 +773,20 @@
     container.classList.add(linkContent.type);
     if (!cstNode.isIteration() && cstNode.children.length !== 1 ||
         ohmEditor.semantics.getActionBody(cstNode, operation).length !== 0) {
+      var selfWrapper = $('.self.selected');
+      var targetWrapper = retrieveTargetWrapper(selfWrapper, cstNode);
       container.onmouseover = function(event) {
         $('#nodeList').hidden = true;
+        if (!targetWrapper) {
+          return;
+        }
+        targetWrapper.querySelector('.self').classList.add('preSelected');
+      };
+      container.onmouseout = function(event) {
+        if (!targetWrapper) {
+          return;
+        }
+        targetWrapper.querySelector('.self').classList.remove('preSelected');
       };
       container.onclick = function(event) {
         handleEditorDirectEvent(cstNode, operation);

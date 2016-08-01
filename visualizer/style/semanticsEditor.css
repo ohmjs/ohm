@@ -325,7 +325,7 @@ textarea {
 }
 .semanticsEditor .footer .info col {
   display: flex;
-  flex: 1;
+  flex: 1 auto;
   flex-direction: column;
 }
 .semanticsEditor .footer .info col > * {
@@ -343,9 +343,9 @@ textarea {
   flex: 1;
 }
 .semanticsEditor .footer .info col > * {
-  min-height: 14px;
+  height: 14px;
 }
-.semanticsEditor .footer .info col:not(:last-child) > * {
+.semanticsEditor .footer .info col:not(:last-child) {
   border-right: 1px solid black;
 }
 .semanticsEditor .footer .info col > *:not(:last-child) {
