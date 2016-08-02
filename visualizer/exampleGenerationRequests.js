@@ -63,7 +63,11 @@
   });
 
   function makeExampleRequest(ruleName) {
-    var request = new ExampleRequest(ohmEditor.grammar, ruleName);
+    var request = new ExampleRequest(ohmEditor.grammar, ruleName, function(event) {
+      request.domNode.value = '';
+      exampleWorkerManager.addUserExample(request.ruleName, event.text);
+      exampleWorkerManager.updateNeededExamples();
+    });
 
     request.domNode.addEventListener('focusin', function() {
       focusedElement = request.domNode;
@@ -78,18 +82,13 @@
         request.domNode.parentNode.removeChild(request.domNode);
       }
     });
-    request.addListener('validSubmit', function(event) {
-      request.domNode.value = '';
-      exampleWorkerManager.addUserExample(request.ruleName, event.text);
-      exampleWorkerManager.updateNeededExamples();
-    });
 
     return request.domNode;
   }
 
   // ExampleRequest is a textarea with the ability to check if its contents are valid
   //  according to a rule. If not, the background is turned pink.
-  function ExampleRequest(grammar, ruleName) {
+  function ExampleRequest(grammar, ruleName, validSubmitListener) {
     this.ruleName = ruleName;
     this.grammar = grammar;
     this.domNode = domUtil.createElement('textarea');
@@ -97,7 +96,7 @@
     this.domNode.placeholder = ruleName;
     autosize(this.domNode);
 
-    this.listeners = {};
+    this.validSubmitListener = validSubmitListener;
 
     var that = this;
     this.domNode.addEventListener('keydown', function(kbevent) {
@@ -110,7 +109,10 @@
       if (that._previousTimeout) {
         clearTimeout(that._previousTimeout);
       }
-      that.onSettledChange(kbevent);
+      that._previousTimeout = setTimeout(function() {
+        that._previousTimeout = null;
+        that.onSettledChange(kbevent);
+      });
     });
   }
 
@@ -121,7 +123,7 @@
   ExampleRequest.prototype.onChange = function(kbevent) {
     if (kbevent.code === 'Enter' && kbevent.ctrlKey) {
       if (this.isValid()) {
-        this.emit('validSubmit', {
+        this.validSubmitListener({
           text: this.domNode.value,
           ruleName: this.ruleName
         });
@@ -134,30 +136,6 @@
       this.domNode.classList.remove('invalid');
     } else {
       this.domNode.classList.add('invalid');
-    }
-  };
-
-  ExampleRequest.prototype.addListener = function(eventName, listener) {
-    if (!this.listeners.hasOwnProperty(eventName)) {
-      this.listeners[eventName] = [];
-    }
-
-    this.listeners[eventName].push(listener);
-  };
-
-  ExampleRequest.prototype.removeListener = function(eventName, listener) {
-    if (this.listeners.hasOwnProperty(eventName)) {
-      this.listeners[eventName] = this.listeners[eventName].filter(function(l) {
-        return l !== listener;
-      });
-    }
-  };
-
-  ExampleRequest.prototype.emit = function(eventName, event) {
-    if (this.listeners.hasOwnProperty(eventName)) {
-      this.listeners[eventName].forEach(function(listener) {
-        listener(event);
-      });
     }
   };
 });
