@@ -127,7 +127,14 @@
       flex-direction: column;
     }
 
-    #exampleContainer,
+    #exampleContainer {
+        display: flex;
+        flex-direction: row;
+        flex: 1;
+    }
+
+    #exampleRequestContainer,
+    #userExampleContainer,
     #grammarContainer {
       display: flex;
       flex-direction: column;
@@ -143,7 +150,7 @@
       display: none;
     }
 
-    #exampleContainer .editorWrapper {
+    #userExampleContainer .editorWrapper {
       margin-top: 10px;
     }
 
@@ -154,70 +161,6 @@
       -moz-user-select: none;
       -ms-user-select: none;
       -webkit-user-select: none;
-    }
-
-    #exampleList {
-      list-style: none;
-      border-top: 1px solid #ddd;
-      margin: 0;
-      padding: 0;
-    }
-
-    #exampleList .example {
-      border-bottom: 1px solid #eee;
-      color: #999;
-      display: flex;
-      margin: 0;
-      white-space: nowrap;
-    }
-
-    #exampleList .example code {
-      border-left: 4px solid #bbb;
-      cursor: default;
-      flex: 1;
-      overflow: hidden;
-      padding: 6px 4px 6px 8px;
-      text-overflow: ellipsis;
-
-      /* Weirdly, it won't shrink smaller than its content unless we give it an explicit width. */
-      width: 1px;
-    }
-
-    #exampleList .example.fail code {
-      border-left: 4px solid #d44950;
-    }
-
-    #exampleList .example.pass code {
-      border-left: 4px solid #58B958;
-    }
-
-    #exampleList .example.selected {
-      color: #333;
-      background-color: #f7f7f7;
-    }
-
-    #exampleList code {
-      font-family: Menlo, Monaco, sans-serif;
-      font-size: 12px;
-    }
-
-    #exampleList code:empty::before {
-      content: '\a0';  /* Insert &nbsp; to keep the correct height. */
-    }
-
-    #exampleList .example .delete {
-      color: #d44950;
-      padding: 4px;
-      cursor: default;
-      display: none;
-    }
-
-    #exampleList .example:hover {
-      background-color: #f7f7f7;
-    }
-
-    #exampleList .example:hover .delete {
-      display: block;
     }
 
     /*
@@ -448,21 +391,8 @@
         outline: none;
       }
     }
-
-    #addExampleButton {
-      position: absolute;
-      right: 12px;
-      top: 12px;
-    }
-    /* Prevent things from looking terrible when zoomed in (looking at you, Chrome). */
-    @media screen and (-webkit-min-device-pixel-ratio: 1.01) {
-      #addExampleButton {
-        background-color: white;
-        border: 1px solid #ccc;
-        border-radius: 3px;
-      }
-    }
   </style>
+  <link rel="stylesheet" href="style/examples.css">
   <link rel="stylesheet" href="style/parseTree.css">
   <link rel="stylesheet" href="style/semanticsEditor.css">
 </head>
@@ -485,10 +415,27 @@
     </div>
     <div id="topSplitter" class="splitter vertical"></div>
     <div id="exampleContainer">
-      <h2>Examples</h2>
-      <input id="addExampleButton" type="button" value="+">
-      <ul id="exampleList"></ul>
-      <div class="flex-fix"><div class="editorWrapper"></div></div>
+      <div id="userExampleContainer">
+        <h2>Examples
+          <input id="addExampleButton" type="button" value="+"></input>
+          <span id="examplesNeededDrawer">Needed Examples <span class="indicator">&#x2B05;</span></span>
+        </h2>
+        <ul id="exampleList"></ul>
+        <div class="flex-fix"><div class="editorWrapper"></div></div>
+      </div>
+      <div id="exampleSplitter" class="splitter vertical disabled"></div>
+      <div id="exampleRequestContainer" class="hidden">
+        <!-- <h2>Need Examples For:</h2> -->
+        <div class="flex-fix"><div id="exampleRequests">
+          <div class="requestContainer">
+            <div class="requestScroll">
+              <div class="requestContent">
+                <ul></ul>
+              </div>
+            </div>
+          </div>
+        </div></div>
+      </div>
     </div>
   </div>
 
@@ -592,9 +539,11 @@ number  (a number)
   <script src="third_party/codemirror-5.11/addon/search/search.js"></script>
   <script src="third_party/codemirror-5.11/addon/search/searchcursor.js"></script>
   <script src="third_party/checked-emitter-1.0.1.js"></script>
+  <script src="third_party/autosize.min.js"></script>
   <script src="ohmEditor.js"></script>
   <script src="cmUtil.js"></script>
   <script src="domUtil.js"></script>
+  <script src="utils.js"></script>
   <script src="parseTree.js"></script>
   <script src="semanticsEditor.js"></script>
   <script src="semanticsHelper.js"></script>
@@ -604,6 +553,8 @@ number  (a number)
   <script src="actionButton.js"></script>
   <script src="editorErrors.js"></script>
   <script src="examples.js"></script>
+  <script src="exampleWorkerManager.js"></script>
+  <script src="exampleGenerationRequests.js"></script>
   <script src="timeline.js"></script>
   <script src="persistence.js"></script>
   <script src="index.js"></script>
