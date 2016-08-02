@@ -45,17 +45,16 @@
   "contributors": [
     "Patrick Dubroy <pdubroy@gmail.com>",
     "Meixian Li <lmeixian@gmail.com>",
-    "Tony Garnock-Jones <tonygarnockjones@gmail.com>",
     "Marko Röder <m.roeder@photon-software.de>",
+    "Tony Garnock-Jones <tonygarnockjones@gmail.com>",
     "Lionel Landwerlin <llandwerlin@gmail.com>",
     "Jason Merrill <jwmerrill@gmail.com>",
+    "Saketh Kasibatla <sake.kasi@gmail.com>",
     "Yoshiki Ohshima <Yoshiki.Ohshima@acm.org>",
-    "mroeder <m.roeder@photon-software.de>",
-    "Saketh Kasibatla <sakekasi@ucla.edu>",
-    "Stephan Seidt <stephan.seidt@gmail.com>",
-    "Daniel Tomlinson <DanielTomlinson@me.com>",
     "codeZeilen <codeZeilen@users.noreply.github.com>",
-    "Justin Chase <justin.m.chase@gmail.com>"
+    "Justin Chase <justin.m.chase@gmail.com>",
+    "Daniel Tomlinson <DanielTomlinson@me.com>",
+    "Stephan Seidt <stephan.seidt@gmail.com>"
   ],
   "dependencies": {
     "es6-symbol": "^2.0.1",
