@@ -1,6 +1,6 @@
 {
   "name": "ohm-js",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "dependencies": {
     "es6-symbol": {
       "version": "2.0.1",
