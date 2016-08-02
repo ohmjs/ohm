@@ -91,9 +91,10 @@
   function ExampleRequest(grammar, ruleName, validSubmitListener) {
     this.ruleName = ruleName;
     this.grammar = grammar;
+
     this.domNode = domUtil.createElement('textarea');
-    this.domNode.type = 'text';
-    this.domNode.placeholder = ruleName;
+    this.domNode.setAttribute('type', 'text');
+    this.domNode.setAttribute('placeholder', ruleName);
     autosize(this.domNode);
 
     this.validSubmitListener = validSubmitListener;
@@ -112,7 +113,7 @@
       that._previousTimeout = setTimeout(function() {
         that._previousTimeout = null;
         that.onSettledChange(kbevent);
-      });
+      }, 500);
     });
   }
 
