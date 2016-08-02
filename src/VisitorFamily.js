@@ -13,13 +13,40 @@ var assert = require('./common').assert;
 // Helpers
 
 function getProp(name, thing, fn) {
-  return [fn(thing[name])];
+  return fn(thing[name]);
 }
 
-function getProps(propNames, thing, fn) {
-  return propNames.map(function(n) {
-    return fn(thing[n]);
+function mapProp(name, thing, fn) {
+  return thing[name].map(fn);
+}
+
+// Returns a function that will walk a single property of a node.
+// `descriptor` is a string indicating the property name, optionally ending
+// with '[]' (e.g., 'children[]').
+function getPropWalkFn(descriptor) {
+  var parts = descriptor.split(/ ?\[\]/);
+  if (parts.length === 2) {
+    return mapProp.bind(null, parts[0]);
+  }
+  return getProp.bind(null, descriptor);
+}
+
+function getProps(walkFns, thing, fn) {
+  return walkFns.map(function(walkFn) {
+    return walkFn(thing, fn);
   });
+}
+
+function getWalkFn(shape) {
+  if (typeof shape === 'string') {
+    return getProps.bind(null, [getPropWalkFn(shape)]);
+  } else if (Array.isArray(shape)) {
+    return getProps.bind(null, shape.map(getPropWalkFn));
+  } else {
+    assert(typeof shape === 'function', 'Expected a string, Array, or function');
+    assert(shape.length === 2, 'Expected a function of arity 2, got ' + shape.length);
+    return shape;
+  }
 }
 
 /*
@@ -41,6 +68,9 @@ function VisitorFamily(config) {
     this._adaptee = thing;
     this._family = family;
   };
+  this.Adapter.prototype.valueOf = function() {
+    throw new Error('heeey!');
+  };
   this.operations = {};
 
   this._arities = Object.create(null);
@@ -49,16 +79,11 @@ function VisitorFamily(config) {
   var self = this;
   Object.keys(this._shapes).forEach(function(k) {
     var shape = self._shapes[k];
-    if (typeof shape === 'string') {
-      self._arities[k] = 1;
-      self._getChildren[k] = getProp.bind(null, shape);
-    } else if (Array.isArray(shape)) {
-      self._arities[k] = shape.length;
-      self._getChildren[k] = getProps.bind(null, shape);
-    } else {
-      assert(typeof shape === 'function', 'Expected a string, Array, or function');
-      assert(shape.length === 2, 'Expected a function of arity 2, got ' + shape.length);
-      self._getChildren[k] = shape;
+    self._getChildren[k] = getWalkFn(shape);
+
+    // A function means the arity isn't fixed, so don't put an entry in the arity map.
+    if (typeof shape !== 'function') {
+      self._arities[k] = Array.isArray(shape) ? shape.length : 1;
     }
   });
   this._wrap = function(thing) { return new self.Adapter(thing, self); };

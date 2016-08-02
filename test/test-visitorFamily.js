@@ -40,8 +40,41 @@ test('basic', t => {
   })
 
   var tree = {l: 'one', r: {l: 'two', r: 'three'}};
-
   t.equal(family.wrap(tree).visit(), 'one two three');
+
+  t.end();
+});
+
+test('array props', t => {
+  var family = new VisitorFamily({
+    shapes: {
+      leaf: [],
+      tree: 'children[]'
+    },
+    getTag: x => typeof x === 'string' ? 'leaf' : 'tree'
+  });
+  family.addOperation('visit', {
+    leaf() { return this._adaptee; },
+    tree(children) { return children.map(function(c) { return c.visit(); })}
+  });
+  var tree = {children: ['a', {children: ['b', 'c']}, 'd']};
+  t.deepEqual(family.wrap(tree).visit(), ['a', ['b', 'c'], 'd']);
+
+  var family = new VisitorFamily({
+    shapes: {
+      leaf: [],
+      tree: ['children[]', 'extra']
+    },
+    getTag: x => typeof x === 'string' ? 'leaf' : 'tree'
+  });
+  family.addOperation('visit', {
+    leaf() { return this._adaptee; },
+    tree(children, extra) {
+      return children.map(function(c) { return c.visit(); }).concat(extra.visit());
+    }
+  });
+  var tree = {children: ['a', {children: ['b', 'c'], extra: 'd'}], extra: 'e'};
+  t.deepEqual(family.wrap(tree).visit(), ['a', ['b', 'c', 'd'], 'e']);
 
   t.end();
 });

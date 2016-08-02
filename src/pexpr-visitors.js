@@ -23,16 +23,10 @@ var VisitorFamily = require('./VisitorFamily');
 var shapes = {
   any: [],
   end: [],
-  Alt: function(alt, fn) {
-    return alt.terms.map(fn);
-  },
-  Apply: function(app, fn) {
-    return app.args.map(fn);
-  },
+  Alt: 'terms[]',
+  Apply: 'args[]',
   Iter: 'expr',
-  Extend: function(ext, fn) {
-    return ext.terms.map(fn);
-  },
+  Extend: 'terms[]',
   Lex: 'expr',
   Lookahead: 'expr',
   Not: 'expr',
@@ -40,9 +34,7 @@ var shapes = {
   Param: [],
   Plus: 'expr',
   Range: [],
-  Seq: function(seq, fn) {
-    return seq.factors.map(fn);
-  },
+  Seq: 'factors[]',
   Star: 'expr',
   Terminal: [],
   UnicodeChar: []
