@@ -94,7 +94,10 @@
 
     li.appendChild(del);
 
-    exampleValues[id] = null;
+    exampleValues[id] = {
+      text: '',
+      startRule: null
+    };
     domUtil.$('#exampleContainer ul').appendChild(li);
     ohmEditor.ui.inputEditor.focus();
 
@@ -205,11 +208,11 @@
 
   // Save the current contents of all examples to localStorage.
   function saveExamples() {
-    var elems = domUtil.$$('#exampleContainer ul li code');
-    var examples = elems.map(function(elem) {
-      return elem.textContent;
-    });
-    localStorage.setItem('examples', JSON.stringify(examples));
+    localStorage.setItem('examples', JSON.stringify(
+      Object.keys(exampleValues).map(function(key) {
+        return exampleValues[key];
+      })
+    ));
   }
 
   // Main
