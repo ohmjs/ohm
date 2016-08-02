@@ -25,10 +25,10 @@
   var examplesNeededIndicator = domUtil.$('#examplesNeededDrawer .indicator');
   var exampleSplitter = domUtil.$('#exampleSplitter');
   examplesNeededDrawer.addEventListener('click', function() {
-    var ExampleRequestContainer = domUtil.$('#ExampleRequestContainer');
-    ExampleRequestContainer.classList.toggle('hidden');
+    var exampleRequestContainer = domUtil.$('#exampleRequestContainer');
+    exampleRequestContainer.classList.toggle('hidden');
     exampleSplitter.classList.toggle('disabled',
-      ExampleRequestContainer.classList.contains('hidden')
+      exampleRequestContainer.classList.contains('hidden')
     );
   });
 
@@ -58,11 +58,7 @@
         neededExampleList.appendChild(li);
       });
 
-      if (neededExamples.length === 0) {
-        examplesNeededIndicator.classList.remove('active');
-      } else {
-        examplesNeededIndicator.classList.add('active');
-      }
+      examplesNeededIndicator.classList.toggle('active', neededExamples.length !== 0);
     }, 200);
   });
 
@@ -97,8 +93,8 @@
     this.ruleName = ruleName;
     this.grammar = grammar;
     this.domNode = domUtil.createElement('textarea');
-    this.domNode.setAttribute('type', 'text');
-    this.domNode.setAttribute('placeholder', ruleName);
+    this.domNode.type = 'text';
+    this.domNode.placeholder = ruleName;
     autosize(this.domNode);
 
     this.listeners = {};

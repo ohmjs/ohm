@@ -58,6 +58,10 @@
   display: block;
 }
 
+#exampleList code:empty::before {
+  content: '\a0';  /* Insert &nbsp; to keep the correct height. */
+}
+
 /* Additions for example generation */
 
 #examplesNeededDrawer {
@@ -108,20 +112,9 @@
   background-color: #FDE0E0 !important;
 }
 
-#exampleRequests ul textarea::-webkit-input-placeholder { /* Chrome/Opera/Safari */
-  margin-left: 15px;
-  text-align: left;
-}
-
-#exampleRequests ul textarea::-moz-placeholder { /* Firefox 19+ */
-  margin-left: 15px;
-  text-align: left;
-}
-#exampleRequests ul textarea:-ms-input-placeholder { /* IE 10+ */
-  margin-left: 15px;
-  text-align: left;
-}
-
+#exampleRequests ul textarea::-webkit-input-placeholder, /* Chrome/Opera/Safari */
+#exampleRequests ul textarea::-moz-placeholder, /* Firefox 19+ */
+#exampleRequests ul textarea:-ms-input-placeholder, /* IE 10+ */
 #exampleRequests ul textarea:-moz-placeholder { /* Firefox 18- */
   margin-left: 15px;
   text-align: left;

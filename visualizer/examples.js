@@ -25,6 +25,9 @@
     saveExamples: saveExamples
   });
 
+  // each of these events is emitted after the action they refer to
+  //   takes place. For example, 'add:example' is emitted after an
+  //   example is added to the list.
   ohmEditor.examples.registerEvents({
     'add:example': ['id'],
     'set:example': ['id', 'oldValue', 'newValue'],
@@ -51,11 +54,7 @@
     var el = getListEl(id);
     var succeeded;
     try {
-      if (startRule) {
-        var matchResult = ohmEditor.grammar.match(text, startRule);
-      } else {
-        matchResult = ohmEditor.grammar.match(text);
-      }
+      var matchResult = ohmEditor.grammar.match(text, startRule);
       succeeded = matchResult.succeeded();
     } catch (e) {
       succeeded = false;
@@ -199,8 +198,8 @@
     });
 
     // Select the first example.
-    var firstIDDOM = domUtil.$('#exampleList li:first-child');
-    var firstId = firstIDDOM ? firstIDDOM.id : -1;
+    var firstEl = domUtil.$('#exampleList li:first-child');
+    var firstId = firstEl ? firstEl.id : -1;
     setSelected(firstId);
   }
 
@@ -220,19 +219,16 @@
     setSelected(addExample());
   };
 
-  ohmEditor.ui.inputEditor.setOption('extraKeys', {
-    'Cmd-S': function(cm) { // save
-      if (selectedId) {
-        setExample(selectedId, cm.getValue());
-        saveExamples();
-      }
-    },
-    'Alt-S': function(cm) { // save (windows)
-      if (selectedId) {
-        setExample(selectedId, cm.getValue());
-        saveExamples();
-      }
+  var uiSave = function(cm) {
+    if (selectedId) {
+      setExample(selectedId, cm.getValue());
+      saveExamples();
     }
+  };
+
+  ohmEditor.ui.inputEditor.setOption('extraKeys', {
+    'Cmd-S': uiSave,
+    'Ctrl-S': uiSave
   });
 
   ohmEditor.addListener('parse:grammar', function(matchResult, grammar, err) {
