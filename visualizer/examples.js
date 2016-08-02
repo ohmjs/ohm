@@ -235,12 +235,12 @@
   });
 
   ohmEditor.addListener('parse:grammar', function(matchResult, grammar, err) {
-    var exampleEls = domUtil.$$('#exampleContainer ul li');
-    exampleEls.forEach(function(el) {
+    Object.keys(exampleValues).forEach(function(id) {
+      var el = getListEl(id);
       if (err) {
         el.classList.remove('pass', 'fail');
       } else {
-        checkExample(el.id);
+        checkExample(id);
       }
     });
   });
