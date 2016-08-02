@@ -93,8 +93,7 @@
     this.grammar = grammar;
 
     this.domNode = domUtil.createElement('textarea');
-    this.domNode.setAttribute('type', 'text');
-    this.domNode.setAttribute('placeholder', ruleName);
+    this.domNode.placeholder = ruleName;
     autosize(this.domNode);
 
     this.validSubmitListener = validSubmitListener;
