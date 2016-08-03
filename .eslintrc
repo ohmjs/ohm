@@ -1,7 +1,13 @@
 {
+  parserOptions: {
+    ecmaVersion: 5,
+    sourceType: "script"
+  },
+
   // To minimize dependencies on Node- or browser-specific features, leave the
   // env empty, and instead define globals as needed.
   "env": {},
+  "extends": "google",
 
   // Project-wide globals. If other globals are necessary, prefer putting them
   // in a comment at the top of the file rather than adding them here.
@@ -14,66 +20,56 @@
   "plugins": [
     "eslint-plugin-no-extension-in-require"
   ],
-  "rules": {
-    // Enforce "one true brace style", allowing start and end braces to be
-    // on the same line.
-    "brace-style": [2, "1tbs", {"allowSingleLine": true}],
+  rules: {
+    // Enforce "one true brace style", allowing start and end braces to be on the same line.
+    brace-style: ["error", "1tbs", {allowSingleLine: true}],
 
     // Turn off the regular camelcase rule, and use a custom rule which
     // allows semantic actions to be named like `RuleName_caseName`.
-    "camelcase": 0,
-    "camelcase-ohm": 2,  // Defined in ./eslint_rules/camelcase-ohm.js
+    camelcase: 0,
+    'camelcase-ohm': 2,  // Defined in ./eslint_rules/camelcase-ohm.js
 
-    // Enforce the name 'self' when assigning `this` to a local variable.
-    "consistent-this": [0, "self"],
+    consistent-this: 0,
+    default-case: 0,
 
-    // Enforce two-space indentation.
-    "indent": [2, 2, {indentSwitchCase: true}],
+    // Allow use of `==` and `!=` only with null.
+    eqeqeq: ["error", "allow-null"],
 
-    "global-strict": 0,
+    guard-for-in: 0,
 
-    // Don't require `new` when calling functions whose name starts with a
-    // capital letter.
-    "new-cap": [2, {capIsNew: false}],
+    max-len: ["error", {code: 100, ignoreUrls: true}],
+    max-statements-per-line: ["error", {max: 2}],
 
-    // Allow things like `while(true)`.
-    "no-constant-condition": 0,
+    // Don't require `new` when calling functions whose name starts with a capital letter.
+    new-cap: ["error", {capIsNew: false}],
 
-    // Allow empty block statements.
-    "no-empty": 0,
+    no-constant-condition: 0,  // Allow things like `while(true)`.
+    no-else-return: 0,  // Allow `else` after a return statement.
+    no-eq-null: 0,
 
     // Don't allow require() statements to include the '.js' extension.
-    "no-extension-in-require/main": 2,
+    'no-extension-in-require/main': 2,
 
-    // Allow extra spaces to be used for aligning variables.
-    "no-multi-spaces": 0,
-
-    // Allow variable shadowing.
-    "no-shadow": 0,
-
-    // Don't allow `test.only`.
-    "no-test-only": 2,  // Defined in ./eslint_rules/no-test-only.js
-
-    // Restrict what kind of objects can be used with 'throw'.
-    "no-throw-literal": 2,
-
-    // Allow identifiers with leading or trailing underscores.
-    "no-underscore-dangle": 0,
+    no-implicit-coercion: 0,
+    no-negated-condition: 0,
+    no-nested-ternary: 0,
+    // Don't allow `test.only` (defined in ./eslint_rules/no-test-only.js).
+    no-test-only: 2,
 
     // Allow unused parameters, but not unused variables.
-    "no-unused-vars": [2, {"vars": "all", "args": "none"}],
+    no-unused-vars: ["error", {vars: "all", args: "none"}],
 
-    // Allow functions to be used before they are defined.
-    "no-use-before-define": [2, "nofunc"],
+    no-warning-comments: ["error", {terms: ["xxx", "fixme"]}],
 
-    // Use single quotes, except when escaping would be necessary.
-    "quotes": [2, "single", "avoid-escape"],
+    operator-linebreak: ["error", "after", {overrides: { ":": "ignore"}}],
+    padded-blocks: 0,
+    quotes: ["error", "single", "avoid-escape"],
+    radix: 0,
+    require-jsdoc: 0,
 
-    "strict": [2, "global"],
+    "strict": ["error", "global"],
 
-    // Force IIFEs to be wrapped in parentheses.
-    "wrap-iife": [2, "inside"],
-
-    "yoda": 0
+    // We would use `["error", "never", {exceptRange: true}]` here, but it doesn't seem to work.
+    yoda: 0,
   }
 }

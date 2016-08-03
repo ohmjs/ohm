@@ -146,7 +146,7 @@ test('unrecognized escape sequences', function(t) {
         'Line 1, col 19:',
         '> 1 | G { start = "hello' + bes + 'world" }',
         '                        ^',
-        'Expected \"\\"\"'].join('\n'));
+        'Expected "\\""'].join('\n'));
     }
   }
   testBadEscapeSequence('\\$');

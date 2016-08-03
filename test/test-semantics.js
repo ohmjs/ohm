@@ -430,12 +430,12 @@ test('extending semantics', function(t) {
 
   // Make sure operations behave as expected
 
-  var s = ns.G.createSemantics().
-      addOperation('value', {
+  var s = ns.G.createSemantics()
+      .addOperation('value', {
         one: function(_) { return 1; },
         two: function(_) { return 2; }
-      }).
-      addOperation('valueTimesTwo', {
+      })
+      .addOperation('valueTimesTwo', {
         _nonterminal: function(children) { return this.value() * 2; }
       });
   t.throws(function() { ns.G2.extendSemantics(s).addOperation('value', {}); }, /already exists/);
@@ -474,12 +474,12 @@ test('extending semantics', function(t) {
 
   // Make sure attributes behave as expected
 
-  s = ns.G.createSemantics().
-      addAttribute('value', {
+  s = ns.G.createSemantics()
+      .addAttribute('value', {
         one: function(_) { return 1; },
         two: function(_) { return 2; }
-      }).
-      addAttribute('valueTimesTwo', {
+      })
+      .addAttribute('valueTimesTwo', {
         _nonterminal: function(children) { return this.value * 2; }
       });
   t.throws(function() { ns.G2.extendSemantics(s).addAttribute('value', {}); }, /already exists/);

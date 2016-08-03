@@ -194,10 +194,9 @@ pexprs.Opt.prototype.generateExample = function(grammar, examples, inSyntacticCo
 };
 
 pexprs.UnicodeChar.prototype.generateExample = function(
-  grammar, examples, inSyntacticContext, actuals
-) {
+    grammar, examples, inSyntacticContext, actuals) {
   var char;
-  switch (this.category){
+  switch (this.category) {
     case 'Lu': char = 'Á'; break;
     case 'Ll': char = 'ŏ'; break;
     case 'Lt': char = 'ǅ'; break;

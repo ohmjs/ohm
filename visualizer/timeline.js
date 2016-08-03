@@ -45,6 +45,7 @@
             stepsByFailureKey[f.toKey()] = parsingSteps.length;
             return true;
           }
+          return false;
         });
       }
     }

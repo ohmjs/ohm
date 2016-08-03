@@ -275,47 +275,47 @@ Grammar.prototype = {
 // `digit`, and is implicitly the super-grammar of any grammar whose super-grammar
 // isn't specified.
 Grammar.ProtoBuiltInRules = new Grammar(
-    'ProtoBuiltInRules',  // name
-    undefined,  // supergrammar
-    {
-      // The following rules can't be written in userland because they reference
-      // `any` and `end` directly.
-      any: {body: pexprs.any, formals: [], description: 'any object'},
-      end: {body: pexprs.end, formals: [], description: 'end of input'},
+  'ProtoBuiltInRules',  // name
+  undefined,  // supergrammar
+  {
+    // The following rules can't be written in userland because they reference
+    // `any` and `end` directly.
+    any: {body: pexprs.any, formals: [], description: 'any object'},
+    end: {body: pexprs.end, formals: [], description: 'end of input'},
 
-      // The following rule is invoked implicitly by syntactic rules to skip spaces.
-      spaces: {
-        body: new pexprs.Star(new pexprs.Apply('space')),
-        formals: []
-      },
+    // The following rule is invoked implicitly by syntactic rules to skip spaces.
+    spaces: {
+      body: new pexprs.Star(new pexprs.Apply('space')),
+      formals: []
+    },
 
-      // The `space` rule must be defined here because it's referenced by `spaces`.
-      space: {
-        body: new pexprs.Range('\x00', ' '),
-        formals: [],
-        description: 'a space'
-      },
+    // The `space` rule must be defined here because it's referenced by `spaces`.
+    space: {
+      body: new pexprs.Range('\x00', ' '),
+      formals: [],
+      description: 'a space'
+    },
 
-      // These rules are implemented natively because they use UnicodeChar directly, which is
-      // not part of the Ohm grammar.
-      lower: {
-        body: new pexprs.UnicodeChar('Ll'),
-        formals: [],
-        description: 'a lowercase letter'
-      },
-      upper: {
-        body: new pexprs.UnicodeChar('Lu'),
-        formals: [],
-        description: 'an uppercase letter'
-      },
+    // These rules are implemented natively because they use UnicodeChar directly, which is
+    // not part of the Ohm grammar.
+    lower: {
+      body: new pexprs.UnicodeChar('Ll'),
+      formals: [],
+      description: 'a lowercase letter'
+    },
+    upper: {
+      body: new pexprs.UnicodeChar('Lu'),
+      formals: [],
+      description: 'an uppercase letter'
+    },
 
-      // The union of Lt (titlecase), Lm (modifier), and Lo (other), i.e. any letter not
-      // in Ll or Lu.
-      unicodeLtmo: {
-        body: new pexprs.UnicodeChar('Ltmo'),
-        formals: []
-      }
+    // The union of Lt (titlecase), Lm (modifier), and Lo (other), i.e. any letter not
+    // in Ll or Lu.
+    unicodeLtmo: {
+      body: new pexprs.UnicodeChar('Ltmo'),
+      formals: []
     }
+  }
 );
 
 // --------------------------------------------------------------------

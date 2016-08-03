@@ -66,7 +66,11 @@
   };
   ErrorWrapper.prototype.isErrorWrapper = true;
 
-  var resultMap, forcing, todoList, errorList, passThroughList;
+  var resultMap;
+  var forcing;
+  var todoList;
+  var errorList;
+  var passThroughList;
   function initializeSemanticsLog() {
     resultMap = Object.create(null);
     todoList = undefined;
@@ -179,7 +183,7 @@
         var aChildError = result.some(function(childResult) {
           return childResult && childResult.isErrorWrapper;
         });
-        result =  aChildFailed ? failure : (aChildError ? errorList[0] : result);
+        result = aChildFailed ? failure : (aChildError ? errorList[0] : result);
         addResult(result, key, name, this.args);
         return result;
       },
@@ -337,7 +341,7 @@
   function buildAction(opArgs, actionArguments, actionBody) {
     // Constructs the code that renames the operation arguments, so we could refer
     // them by name directly. i.e. `var <argument name> = this.args.<argument name>`
-    var renameOpArgStr = opArgs &&  Object.keys(opArgs).map(function(argName) {
+    var renameOpArgStr = opArgs && Object.keys(opArgs).map(function(argName) {
       return 'var ' + argName + ' = this.args.' + argName + ';';
     }).join('\n');
 
@@ -361,7 +365,8 @@
     var wrapper = function() {
       var key = nodeKey(this);
       var nOpKey = nodeOpKey(key, currentOpName);
-      var result, action;
+      var result;
+      var action;
 
       // Build the semantic action, if there is a syntactic error, then
       // record it and return.
@@ -413,7 +418,7 @@
   }
   ohmEditor.semantics.addListener('save:semanticAction', function(traceNode, actionArguments,
       actionBody) {
-    saveAction(traceNode, opName,  actionArguments, actionBody);
+    saveAction(traceNode, opName, actionArguments, actionBody);
   });
 
   function editSemanticsOperation(wrapper, operationName, opDescription) {

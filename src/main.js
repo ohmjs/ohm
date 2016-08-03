@@ -36,7 +36,7 @@ function isElement(obj) {
 }
 
 function isUndefined(obj) {
-  return obj === void 0;
+  return obj === void 0;  // eslint-disable-line no-void
 }
 
 var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;

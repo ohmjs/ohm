@@ -48,7 +48,9 @@ var utils = (function() {
     },
 
     shuffle: function(a) {
-      var j, x, i;
+      var j;
+      var x;
+      var i;
       for (i = a.length; i; i -= 1) {
         j = Math.floor(Math.random() * i);
         x = a[i - 1];

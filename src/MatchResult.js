@@ -64,9 +64,9 @@ MatchResult.prototype.getDiscardedSpaces = function() {
     },
     _terminal: function() {
       var t = this;
-      intervals = intervals.
-          map(function(interval) { return interval.minus(t.interval); }).
-          reduce(function(xs, ys) { return xs.concat(ys); }, []);
+      intervals = intervals
+          .map(function(interval) { return interval.minus(t.interval); })
+          .reduce(function(xs, ys) { return xs.concat(ys); }, []);
     }
   });
   s(this).subtractTerminals();

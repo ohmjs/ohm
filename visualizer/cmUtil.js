@@ -64,7 +64,7 @@ var cmUtil = (function() {  // eslint-disable-line no-unused-vars
       var endHeight = indexToHeight(cm, interval.endIdx);
       var scrollInfo = cm.getScrollInfo();
       var margin = scrollInfo.clientHeight - (endHeight - startHeight);
-      if (startHeight < scrollInfo.top  ||
+      if (startHeight < scrollInfo.top ||
           endHeight > (scrollInfo.top + scrollInfo.clientHeight)) {
         cm.scrollIntoView({left: 0, top: startHeight,
                            right: 0, bottom: endHeight},

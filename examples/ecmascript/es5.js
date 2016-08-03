@@ -15,7 +15,7 @@ var ohm = require('../..');
 // Helpers
 // --------------------------------------------------------------------
 
-function isUndefined(x) { return x === void 0; }
+function isUndefined(x) { return x === void 0; }  // eslint-disable-line no-void
 
 // Take an Array of nodes, and whenever an _iter node is encountered, splice in its
 // recursively-flattened children instead.
@@ -52,7 +52,7 @@ var modifiedSourceActions = {
         interval = interval.coverageWith(flatChildren[i].source.collapsedRight());
       } else {
         interval = interval.coverageWith(flatChildren[i].source.collapsedLeft());
-        code +=  interval.contents + childResults[i];
+        code += interval.contents + childResults[i];
         interval = flatChildren[i].source.collapsedRight();
       }
     }

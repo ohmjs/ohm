@@ -323,15 +323,15 @@ test('toString', function(t) {
 
   var exprs = lines.map(function(l) { return l.split(/\s+/)[2]; });
   t.deepEqual(exprs, [
-      'start',
-      '"a"',  // Failed.
-      'letter*',
-      'letter', 'lower', 'Unicode',
-      'letter', 'lower', 'Unicode',
-      'letter', 'lower', 'Unicode',  // Failed.
-                'upper', 'Unicode',  // Failed.
-                'unicodeLtmo', 'Unicode',  // Failed.
-      'end'], 'expressions');
+    'start',
+    '"a"',  // Failed.
+    'letter*',
+    'letter', 'lower', 'Unicode',
+    'letter', 'lower', 'Unicode',
+    'letter', 'lower', 'Unicode',  // Failed.
+    'upper', 'Unicode',  // Failed.
+    'unicodeLtmo', 'Unicode',  // Failed.
+    'end'], 'expressions');
 
   var excerpts = lines.map(function(l) { return l.split(/\s+/)[0]; });
   t.deepEqual(
@@ -359,14 +359,14 @@ test('toString with left recursion', function(t) {
   // We show the initial failure due to left recursion, but not the retry which fails
   // to grow the seed.
   t.deepEqual(lines, [
-      'a          ✓ start (LR) ⇒  "a"',
-      'a              ✗ start_rec',
-      'a                ✗ start letter',
-      'a                  ✗ start',  // Left-recursive base case.
-      'a              ✓ letter ⇒  "a"',
-      'a                  ✓ lower ⇒  "a"',
-      'a                    ✓ Unicode {Ll} character ⇒  "a"',
-      '           ✓ end ⇒  ""']);
+    'a          ✓ start (LR) ⇒  "a"',
+    'a              ✗ start_rec',
+    'a                ✗ start letter',
+    'a                  ✗ start',  // Left-recursive base case.
+    'a              ✓ letter ⇒  "a"',
+    'a                  ✓ lower ⇒  "a"',
+    'a                    ✓ Unicode {Ll} character ⇒  "a"',
+    '           ✓ end ⇒  ""']);
 
   t.end();
 });

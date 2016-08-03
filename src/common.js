@@ -16,8 +16,8 @@ var escapeStringFor = {};
 for (var c = 0; c < 128; c++) {
   escapeStringFor[c] = String.fromCharCode(c);
 }
-escapeStringFor["'".charCodeAt(0)]  = "\\'";
-escapeStringFor['"'.charCodeAt(0)]  = '\\"';
+escapeStringFor["'".charCodeAt(0)] = "\\'";
+escapeStringFor['"'.charCodeAt(0)] = '\\"';
 escapeStringFor['\\'.charCodeAt(0)] = '\\\\';
 escapeStringFor['\b'.charCodeAt(0)] = '\\b';
 escapeStringFor['\f'.charCodeAt(0)] = '\\f';
@@ -163,7 +163,7 @@ exports.unescapeChar = function(s) {
       case 'v': return '\v';
       case 'x': return String.fromCharCode(parseInt(s.substring(2, 4), 16));
       case 'u': return String.fromCharCode(parseInt(s.substring(2, 6), 16));
-      default:   return s.charAt(1);
+      default: return s.charAt(1);
     }
   } else {
     return s;

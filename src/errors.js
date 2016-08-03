@@ -125,7 +125,7 @@ function duplicateParameterNames(ruleName, duplicates, body, source) {
 function invalidParameter(ruleName, expr) {
   return createError(
       'Invalid parameter to rule ' + ruleName + ': ' + expr + ' has arity ' + expr.getArity() +
-          ', but parameter expressions ' + 'must have arity 1',
+         ', but parameter expressions must have arity 1',
       expr.source);
 }
 

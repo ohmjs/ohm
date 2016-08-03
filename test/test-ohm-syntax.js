@@ -92,7 +92,7 @@ test('char', function(t) {
 });
 
 test('string', function(t) {
-  var m = ohm.grammar('M { foo = "foo\\b\\n\\r\\t\\\\\\\"\\u01bcff\\x8f" }');
+  var m = ohm.grammar('M { foo = "foo\\b\\n\\r\\t\\\\\\"\\u01bcff\\x8f" }');
   var s = m.createSemantics().addAttribute('v', {
     _terminal: function() {
       return this.primitiveValue;
@@ -107,7 +107,7 @@ test('string', function(t) {
   t.equal(s(cst).v, 'foo\b\n\r\t\\"\u01bcff\x8f');
 
   t.throws(function() { ohm.grammar('G { r = "\\w" }'); },
-           /Expected \"\\\"\"/,
+           /Expected "\\""/,
            'unrecognized escape characters are parse errors');
   t.end();
 });
@@ -1081,11 +1081,10 @@ test('inline rule declarations', function(t) {
       makeEval(Arithmetic)(Arithmetic.match('10*(2+123)-4/5')), 1249.2, 'semantic action works');
 
   var m2 = makeGrammar([
-      'Good <: Arithmetic {',
-      '  addExp := addExp "~" mulExp  -- minus',
-      '           | mulExp',
-      '}'
-    ], ns);
+    'Good <: Arithmetic {',
+    '  addExp := addExp "~" mulExp  -- minus',
+    '           | mulExp',
+    '}'], ns);
   t.equal(makeEval(m2)(m2.match('2*3~4')), 2);
 
   t.throws(

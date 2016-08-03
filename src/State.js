@@ -128,7 +128,10 @@ State.prototype = {
 
   getPosInfo: function(pos) {
     var posInfo = this.posInfos[pos];
-    return posInfo || (this.posInfos[pos] = new PosInfo(this));
+    if (!posInfo) {
+      posInfo = this.posInfos[pos] = new PosInfo(this);
+    }
+    return posInfo;
   },
 
   processFailure: function(pos, expr) {
@@ -259,16 +262,18 @@ State.prototype = {
     var inputStream = this.inputStream;
     var origNumBindings = this.bindings.length;
 
+    var origFailures;
     if (this.recordingMode === RM_RIGHTMOST_FAILURES) {
-      var origFailures = this.rightmostFailures;
+      origFailures = this.rightmostFailures;
       this.rightmostFailures = undefined;
     }
 
     var origPos = inputStream.pos;
     var memoPos = this.maybeSkipSpacesBefore(expr);
 
+    var origTrace;
     if (this.isTracing()) {
-      var origTrace = this.trace;
+      origTrace = this.trace;
       this.trace = [];
     }
 

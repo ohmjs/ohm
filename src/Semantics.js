@@ -204,7 +204,8 @@ Semantics.prototype.checkActionDictsIfHaventAlready = function() {
 // including the ones that were inherited from the super-semantics, agree with the grammar.
 // Throws an exception if one or more of them doesn't.
 Semantics.prototype.checkActionDicts = function() {
-  for (var name in this.operations) {
+  var name;
+  for (name in this.operations) {
     this.operations[name].checkActionDict(this.grammar);
   }
   for (name in this.attributes) {
@@ -421,9 +422,9 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
     };
   } else {
     Object.defineProperty(this.Wrapper.prototype, name, {
-        get: doIt,
-        configurable: true  // So the property can be deleted.
-      });
+      get: doIt,
+      configurable: true  // So the property can be deleted.
+    });
     this.attributeKeys[name] = Symbol();
   }
 };
@@ -516,19 +517,19 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
 
   // Forward public methods from the proxy to the semantics instance.
   proxy.addOperation = function(signature, actionDict) {
-    s.addOperationOrAttribute.call(s, 'operation', signature, actionDict);
+    s.addOperationOrAttribute('operation', signature, actionDict);
     return proxy;
   };
   proxy.extendOperation = function(name, actionDict) {
-    s.extendOperationOrAttribute.call(s, 'operation', name, actionDict);
+    s.extendOperationOrAttribute('operation', name, actionDict);
     return proxy;
   };
   proxy.addAttribute = function(name, actionDict) {
-    s.addOperationOrAttribute.call(s, 'attribute', name, actionDict);
+    s.addOperationOrAttribute('attribute', name, actionDict);
     return proxy;
   };
   proxy.extendAttribute = function(name, actionDict) {
-    s.extendOperationOrAttribute.call(s, 'attribute', name, actionDict);
+    s.extendOperationOrAttribute('attribute', name, actionDict);
     return proxy;
   };
   proxy._getActionDict = function(operationOrAttributeName) {

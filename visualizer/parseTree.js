@@ -697,8 +697,7 @@
     'collapse:traceElement': ['el'],
 
     // Emitted when the contextMenu for the trace element of `traceNode` is about to be shown.
-    // TODO: The key should be quoted to be consistent, but JSCS complains.
-    contextMenu: ['target', 'traceNode'],
+    'contextMenu': ['target', 'traceNode'],
 
     // Emitted before start rendering the parse tree
     'render:parseTree': ['traceNode'],
