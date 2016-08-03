@@ -6,11 +6,34 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohm, root.ohmEditor, root.domUtil);
+    initModule(root.ohm, root.ohmEditor, root.domUtil, root.CheckedEmitter);
   }
-})(this, function(ohm, ohmEditor, domUtil) {
+})(this, function(ohm, ohmEditor, domUtil, CheckedEmitter) {
   var idCounter = 0;
   var selectedId = -1;
+  var exampleValues = Object.create(null);
+
+  // Exports
+  // -------
+
+  ohmEditor.examples = Object.assign(new CheckedEmitter(), {
+    addExample: addExample,
+    getExample: getExample,
+    getExamples: getExamples,
+    setExample: setExample,
+    setSelected: setSelected,
+    saveExamples: saveExamples
+  });
+
+  // each of these events is emitted after the action they refer to
+  //   takes place. For example, 'add:example' is emitted after an
+  //   example is added to the list.
+  ohmEditor.examples.registerEvents({
+    'add:example': ['id'],
+    'set:example': ['id', 'oldValue', 'newValue'],
+    'set:selected': ['id'],
+    'remove:example': ['id']
+  });
 
   // Helpers
   // -------
@@ -26,13 +49,16 @@
 
   function checkExample(id) {
     var example = getExample(id);
+    var text = example.text;
+    var startRule = example.startRule;
+    var el = getListEl(id);
     var succeeded;
     try {
-      succeeded = ohmEditor.grammar.match(example).succeeded();
+      var matchResult = ohmEditor.grammar.match(text, startRule);
+      succeeded = matchResult.succeeded();
     } catch (e) {
       succeeded = false;
     }
-    var el = getListEl(id);
     el.classList.toggle('pass', succeeded);
     el.classList.toggle('fail', !succeeded);
   }
@@ -57,53 +83,86 @@
     del.onclick = function() {
       var elToSelect = li.previousSibling || li.nextSibling;
       li.remove();
-      saveExamples();
+      delete exampleValues[id];
+      saveExamples(ohmEditor.ui.inputEditor, 'examples');
       if (selectedId === id) {
         setSelected(elToSelect ? elToSelect.id : -1);
       }
+
+      ohmEditor.examples.emit('remove:example', id);
+    };
+
+    li.appendChild(del);
+
+    exampleValues[id] = {
+      text: '',
+      startRule: null
     };
     domUtil.$('#exampleContainer ul').appendChild(li);
     ohmEditor.ui.inputEditor.focus();
+
+    ohmEditor.examples.emit('add:example', id);
 
     return id;
   }
 
   // Return the contents of the example with the given id.
   function getExample(id) {
-    var el = getListEl(id);
-    if (!el) {
+    if (!(id in exampleValues)) {
       throw new Error(id + ' is not a valid example id');
+    } else {
+      return exampleValues[id];
     }
-    return el.querySelector('code').textContent;
+  }
+
+  // Return the dicationary of all examples. Used in
+  //   'exampleGenerationRequests.js'
+  function getExamples() {
+    return exampleValues;
   }
 
   // Set the contents of an example the given id to `value`.
-  function setExample(id, value) {
-    var el = getListEl(id);
-    if (!el) {
+  function setExample(id, text, optStartRule) {
+    if (!(id in exampleValues)) {
       throw new Error(id + ' is not a valid example id');
     }
-    var code = el.querySelector('code');
-    el.classList.remove('pass', 'fail');
+
+    var startRule = optStartRule || null;
+    var oldValue = exampleValues[id];
+    var value = exampleValues[id] = {
+      text: text,
+      startRule: startRule
+    };
+
+    var code = getListEl(id).querySelector(' code');
+    code.startRule = startRule;
+    code.parentElement.classList.remove('pass', 'fail');
     setTimeout(checkExample.bind(null, id), 0);
-    if (value.length > 0) {
-      code.textContent = value;
+    if (value.text.length > 0) {
+      code.textContent = text;
     } else {
       code.innerHTML = '&nbsp;';
     }
+
+    ohmEditor.examples.emit('set:example', id, oldValue, value);
   }
 
   // Select the example with the given id.
   function setSelected(id) {
     var el;
-    var value = '';
+    var value = {
+      text: '',
+      startRule: null
+    };
     var inputEditor = ohmEditor.ui.inputEditor;
     if (id !== -1) {
       value = getExample(id);
       el = getListEl(id);
     }
     selectedId = id;
-    inputEditor.setValue(value);
+
+    ohmEditor.startRule = value.startRule;
+    inputEditor.setValue(value.text);
 
     // Update the DOM.
     var current = domUtil.$('#exampleContainer .selected');
@@ -115,8 +174,11 @@
         el.classList.add('selected');
       }
     }
+
     inputEditor.getWrapperElement().hidden = !el;
     inputEditor.focus();
+
+    ohmEditor.examples.emit('set:selected', id);
   }
 
   // Restore the examples from localStorage.
@@ -127,26 +189,30 @@
       examples = JSON.parse(value);
     } else {
       examples = domUtil.$$('#sampleExamples pre').map(function(elem) {
-        return elem.textContent;
+        return {
+          text: elem.textContent,
+          startRule: null
+        };
       });
     }
+
     examples.forEach(function(ex) {
-      setExample(addExample(), ex);
+      setExample(addExample(), ex.text, ex.startRule);
     });
 
     // Select the first example.
-    var first = domUtil.$('#exampleList li:first-child');
-    var firstId = first ? first.id : -1;
+    var firstEl = domUtil.$('#exampleList li:first-child');
+    var firstId = firstEl ? firstEl.id : -1;
     setSelected(firstId);
   }
 
   // Save the current contents of all examples to localStorage.
   function saveExamples() {
-    var elems = domUtil.$$('#exampleContainer ul li code');
-    var examples = elems.map(function(elem) {
-      return elem.textContent;
-    });
-    localStorage.setItem('examples', JSON.stringify(examples));
+    localStorage.setItem('examples', JSON.stringify(
+      Object.keys(exampleValues).map(function(key) {
+        return exampleValues[key];
+      })
+    ));
   }
 
   // Main
@@ -156,22 +222,25 @@
     setSelected(addExample());
   };
 
-  ohmEditor.ui.inputEditor.setOption('extraKeys', {
-    'Cmd-S': function(cm) { // save
-      if (selectedId) {
-        setExample(selectedId, cm.getValue());
-        saveExamples();
-      }
+  var uiSave = function(cm) {
+    if (selectedId) {
+      setExample(selectedId, cm.getValue());
+      saveExamples();
     }
+  };
+
+  ohmEditor.ui.inputEditor.setOption('extraKeys', {
+    'Cmd-S': uiSave,
+    'Ctrl-S': uiSave
   });
 
   ohmEditor.addListener('parse:grammar', function(matchResult, grammar, err) {
-    var exampleEls = domUtil.$$('#exampleContainer ul li');
-    exampleEls.forEach(function(el) {
+    Object.keys(exampleValues).forEach(function(id) {
+      var el = getListEl(id);
       if (err) {
         el.classList.remove('pass', 'fail');
       } else {
-        checkExample(el.id);
+        checkExample(id);
       }
     });
   });

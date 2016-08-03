@@ -184,7 +184,7 @@
 
     if (example.hasOwnProperty('examplesNeeded')) {
       example.examplesNeeded.forEach(function(needed) {
-        if (!utils.incldues(that.rules, needed)) {
+        if (!utils.includes(that.rules, needed)) {
           that.rules.push(needed);
         }
       });
