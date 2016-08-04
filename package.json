@@ -64,7 +64,7 @@
   },
   "devDependencies": {
     "browser-sync": "^2.8.0",
-    "browserify": "^11.0.0",
+    "browserify": "^13.1.0",
     "checked-emitter": "^1.0.1",
     "eslint": "^3.2.2",
     "eslint-config-google": "^0.6.0",
@@ -74,11 +74,11 @@
     "markscript": "0.4.2",
     "node-static": "^0.7.7",
     "nodemon": "^1.9.2",
-    "tap-spec": "^2.2.2",
-    "tape": "^3.5.0",
+    "tap-spec": "^4.1.1",
+    "tape": "^4.6.0",
     "tape-catch": "^1.0.4",
     "uglify-js": "^2.4.12",
-    "walk-sync": "^0.2.6",
+    "walk-sync": "^0.3.0",
     "watchify": "^3.3.0"
   },
   "engines": {
