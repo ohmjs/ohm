@@ -49,6 +49,29 @@ function getWalkFn(shape) {
   }
 }
 
+function isRestrictedIdentifier(str) {
+  return /^[a-zA-Z_][0-9a-zA-Z_]*$/.test(str);
+}
+
+function trim(s) {
+  return s.trim();
+}
+
+function parseSignature(sig) {
+  var parts = sig.split(/[()]/).map(trim);
+  if (parts.length === 3 && parts[2] === '') {
+    var name = parts[0];
+    var params = [];
+    if (parts[1].length > 0) {
+      params = parts[1].split(',').map(trim);
+    }
+    if (isRestrictedIdentifier(name) && params.every(isRestrictedIdentifier)) {
+      return {name: name, formals: params};
+    }
+  }
+  throw new Error('Invalid operation signature: ' + sig);
+}
+
 /*
   A VisitorFamily contains a set of recursive operations that are defined over some kind of
   tree structure. The `config` parameter specifies how to walk the tree:
@@ -108,9 +131,15 @@ VisitorFamily.prototype._checkActionDict = function(dict) {
   });
 };
 
-VisitorFamily.prototype.addOperation = function(name, actions) {
+VisitorFamily.prototype.addOperation = function(signature, actions) {
+  var sig = parseSignature(signature);
+  var name = sig.name;
   this._checkActionDict(actions);
-  this.operations[name] = actions;
+  this.operations[name] = {
+    name: name,
+    formals: sig.formals,
+    actions: actions
+  };
 
   var family = this;
   this.Adapter.prototype[name] = function() {
@@ -118,8 +147,18 @@ VisitorFamily.prototype.addOperation = function(name, actions) {
     assert(tag in family._getChildren, "getTag returned unrecognized tag '" + tag + "'");
     assert(tag in actions, "No action for '" + tag + "' in operation '" + name + "'");
 
-    var args = family._getChildren[tag](this._adaptee, family._wrap);
-    return actions[tag].apply(this, args);
+    // Create an "arguments object" from the arguments that were passed to this
+    // operation / attribute.
+    var args = Object.create(null);
+    for (var i = 0; i < arguments.length; i++) {
+      args[sig.formals[i]] = arguments[i];
+    }
+
+    var oldArgs = this.args;
+    this.args = args;
+    var ans = actions[tag].apply(this, family._getChildren[tag](this._adaptee, family._wrap));
+    this.args = oldArgs;
+    return ans;
   };
   return this;
 };

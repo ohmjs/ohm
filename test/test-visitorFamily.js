@@ -30,7 +30,7 @@ test('basic', t => {
     getTag: x => typeof x === 'string' ? 'leaf' : 'tree',
   });
 
-  family.addOperation('visit', {
+  family.addOperation('visit()', {
     leaf() {
       return this._adaptee;
     },
@@ -53,7 +53,7 @@ test('array props', t => {
     },
     getTag: x => typeof x === 'string' ? 'leaf' : 'tree'
   });
-  family.addOperation('visit', {
+  family.addOperation('visit()', {
     leaf() { return this._adaptee; },
     tree(children) { return children.map(function(c) { return c.visit(); })}
   });
@@ -67,7 +67,7 @@ test('array props', t => {
     },
     getTag: x => typeof x === 'string' ? 'leaf' : 'tree'
   });
-  family.addOperation('visit', {
+  family.addOperation('visit()', {
     leaf() { return this._adaptee; },
     tree(children, extra) {
       return children.map(function(c) { return c.visit(); }).concat(extra.visit());
@@ -81,9 +81,9 @@ test('array props', t => {
 
 test('arity checks', t => {
   var family = new VisitorFamily({shapes: {x: arr1, y: arr2}});
-  t.throws(() => family.addOperation('foo', {x: noop0}),
+  t.throws(() => family.addOperation('foo()', {x: noop0}),
       /Action 'x' has the wrong arity: expected 1, got 0/);
-  t.throws(() => family.addOperation('foo', {x: noop1, y: noop0}),
+  t.throws(() => family.addOperation('foo()', {x: noop1, y: noop0}),
       /Action 'y' has the wrong arity: expected 2, got 0/);
 
   t.end();
@@ -91,8 +91,8 @@ test('arity checks', t => {
 
 test('unknown action names', t => {
   var family = new VisitorFamily({shapes: {x: arr1, y: arr2}});
-  t.throws(() => family.addOperation('foo', {z: null}), /Unrecognized action name 'z'/);
-  t.throws(() => family.addOperation('foo', {toString: null}),
+  t.throws(() => family.addOperation('foo()', {z: null}), /Unrecognized action name 'z'/);
+  t.throws(() => family.addOperation('foo()', {toString: null}),
       /Unrecognized action name 'toString'/);
 
   t.end();
@@ -100,12 +100,19 @@ test('unknown action names', t => {
 
 test('unrecognized tags', t => {
   var v = new VisitorFamily({shapes: {}, getTag: x => 'bad'});
-  v.addOperation('foo', {});
+  v.addOperation('foo()', {});
   t.throws(() => { v.wrap(0).foo() }, /getTag returned unrecognized tag 'bad'/);
 
   v = new VisitorFamily({shapes: {}, getTag: x => 'toString'});
-  v.addOperation('foo', {});
+  v.addOperation('foo()', {});
   t.throws(() => { v.wrap(0).foo() }, /getTag returned unrecognized tag 'toString'/);
 
+  t.end();
+});
+
+test.only('operations with arguments', t => {
+  var v = new VisitorFamily({shapes: {hello: []}, getTag: x => 'hello'});
+  v.addOperation('greet(n)', {hello() { return 'hello ' + this.args.n; }});
+  t.equal(v.wrap(0).greet('donald'), 'hello donald');
   t.end();
 });

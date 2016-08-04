@@ -58,7 +58,7 @@ actions.UnicodeChar = function() {
 // Operations
 // --------------------------------------------------------------------
 
-pexprVisitors.addOperation('getArity', actions);
+pexprVisitors.addOperation('getArity()', actions);
 
 // For now, install getArity as a regular method on PExpr, so that other code
 // does not need to be aware of pexprVisitors.
