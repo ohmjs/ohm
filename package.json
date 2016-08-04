@@ -1,6 +1,6 @@
 {
   "name": "ohm-js",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "An object-oriented language for parsing and pattern matching",
   "repository": "https://github.com/cdglabs/ohm",
   "keywords": [
@@ -30,7 +30,7 @@
     "build-debug": "bash bin/build-debug.sh",
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
     "deploy-gh-pages": "bin/deploy-gh-pages.sh",
-    "lint": "eslint --rulesdir eslint_rules . && jscs --preset=google .",
+    "lint": "eslint --rulesdir eslint_rules .",
     "pretest": "bash bin/update-env.sh",
     "test": "tape test/*.js test/**/*.js | tap-spec",
     "test-watch": "bash bin/test-watch",
@@ -44,17 +44,17 @@
   "author": "Alex Warth <alexwarth@gmail.com> (http://tinlizzie.org/~awarth)",
   "contributors": [
     "Patrick Dubroy <pdubroy@gmail.com>",
-    "Alex Warth <alexwarth@gmail.com>",
-    "Tony Garnock-Jones <tonygarnockjones@gmail.com>",
     "Meixian Li <lmeixian@gmail.com>",
     "Marko Röder <m.roeder@photon-software.de>",
+    "Tony Garnock-Jones <tonygarnockjones@gmail.com>",
     "Lionel Landwerlin <llandwerlin@gmail.com>",
     "Jason Merrill <jwmerrill@gmail.com>",
+    "Saketh Kasibatla <sake.kasi@gmail.com>",
     "Yoshiki Ohshima <Yoshiki.Ohshima@acm.org>",
     "codeZeilen <codeZeilen@users.noreply.github.com>",
-    "Stephan Seidt <stephan.seidt@gmail.com>",
     "Justin Chase <justin.m.chase@gmail.com>",
-    "Daniel Tomlinson <DanielTomlinson@me.com>"
+    "Daniel Tomlinson <DanielTomlinson@me.com>",
+    "Stephan Seidt <stephan.seidt@gmail.com>"
   ],
   "dependencies": {
     "es6-symbol": "^2.0.1",
@@ -66,9 +66,9 @@
     "browser-sync": "^2.8.0",
     "browserify": "^11.0.0",
     "checked-emitter": "^1.0.1",
-    "eslint": "^0.17.1",
+    "eslint": "^3.2.2",
+    "eslint-config-google": "^0.6.0",
     "eslint-plugin-no-extension-in-require": "^0.2.0",
-    "jscs": "^1.12.0",
     "jsdom": "^6.3.0",
     "json": "^9.0.3",
     "markscript": "0.4.2",

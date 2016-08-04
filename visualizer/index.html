@@ -495,6 +495,17 @@
         </label>
       </div>
       <h2>Grammar</h2>
+      <div id="grammars" hidden>
+        <select id="grammarList" hidden><option value="">[local storage]</option></select>
+        <label id="grammarName" class="unnamed">no file loaded</label>
+        <input id="grammarFile" type="file" accept=".ohm" hidden>
+        <button id="loadGrammar">Load...</button>
+        <button id="saveGrammar">Save...</button>
+        <label id="saveIndicator" hidden>
+          <div id="saved">Saved</div>
+          <div id="edited">Edited</div>
+        </label>
+      </div>
       <div class="flex-fix"><div class="editorWrapper"></div></div>
     </div>
     <div id="topSplitter" class="splitter vertical"></div>
@@ -556,8 +567,6 @@
       <li><input type="checkbox" name="semantics"><label>Enable semantics</label></li>
     </ul>
   </div>
-
-
 
   <div id="measuringDiv">
     <div class="pexpr"></div>

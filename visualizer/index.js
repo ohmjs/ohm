@@ -87,8 +87,9 @@
     }
 
     if (ohmEditor.grammar && ohmEditor.grammar.defaultStartRule) {
+      var trace;
       if (ohmEditor.startRule) {
-        var trace = ohmEditor.grammar.trace(inputSource, ohmEditor.startRule);
+        trace = ohmEditor.grammar.trace(inputSource, ohmEditor.startRule);
       } else {
         trace = ohmEditor.grammar.trace(inputSource);
       }

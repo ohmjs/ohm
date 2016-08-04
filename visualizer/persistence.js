@@ -9,7 +9,11 @@
       server: initServer
     };
   } else {
-    checkForServerGrammars(initServer, initLocal);
+    try {
+      checkForServerGrammars(initServer, initLocal);
+    } catch (e) {
+      initLocal(root.ohmEditor, root.CheckedEmitter, root.domUtil, root.saveAs);
+    }
   }
 
   function checkForServerGrammars(success, fail) {

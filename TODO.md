@@ -49,7 +49,7 @@ respectively.
 * (We'll need to design the API of `Failure`s. Let's try to think about this while Pat's still in town.)
 
 ```
-var s = g.semantics()...;
+var s = g.createSemantics()...;
 var ans = g.match('...');
 if (ans.isFailure()) {
   // deal with it
@@ -95,7 +95,7 @@ To enable extensibilty, operations and attributes should always belong to an ins
 
 ```
 var g1 = ohm.grammar(...);
-var s1 = g1.semantics()
+var s1 = g1.createSemantics()
   .addOperation('eval', {
     AddExp_plus: function(x, _, y) {
       return x.eval() + y.eval();
@@ -111,7 +111,7 @@ The `Semantics` objects act as a family of operations and attributes. Recursive 
 * Here's how you access / use the operations and attributes defined by a `Semantics`:
 
 ```
-  var s = g.semantics()...;
+  var s = g.createSemantics()...;
   var cst = g.match(...);
   // Now we "wrap" the CST and access the functionality that's defined in the Semantics obj.
   s(cst).value;  // attribute
@@ -123,13 +123,13 @@ To extend an operation or an attribute, you create a new `Semantics` object that
 
 ```
 var g2 = ... // some grammar that extends g1
-var s2 = g2.semantics(s1)
+var s2 = g2.createSemantics(s1)
   .extend("eval", {
     AddExp_foo: function(x, _, y) { ... }
   });
 ```
 
-A *derived* `Semantics` instance -- i.e., one that is created by passing an existing `Semantics` to `Grammar.prototype.semantics()` -- automatically inherits all of the operations and attributes from the parent `Semantics`.
+A *derived* `Semantics` instance -- i.e., one that is created by passing an existing `Semantics` to `Grammar.prototype.createSemantics()` -- automatically inherits all of the operations and attributes from the parent `Semantics`.
 
 ### Parameterized rules
 
@@ -176,7 +176,7 @@ Maybe now the stuff that's done in `src/bootstrap.js` can be done for any gramma
 * A couple of changes: (i) get rid of the `$idx` syntax and use arrays instead, and (ii) get rid of the attribute's `set` method, just use return values instead. E.g.,
 
 ```
-var s = g.semantics().addInheritedAttribute('foo', {
+var s = g.createSemantics().addInheritedAttribute('foo', {
   _base: function(child) { ... },
   AddExpr_plus: [
     function(x) {

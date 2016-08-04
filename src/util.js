@@ -102,9 +102,9 @@ exports.getLineAndColumnMessage = function(str, offset /* ...ranges */) {
 
   // An array of the previous, current, and next line numbers as strings of equal length.
   var lineNumbers = padNumbersToEqualLength([
-      lineAndCol.prevLine == null ? 0 : lineAndCol.lineNum - 1,
-      lineAndCol.lineNum,
-      lineAndCol.nextLine == null ? 0 : lineAndCol.lineNum + 1
+    lineAndCol.prevLine == null ? 0 : lineAndCol.lineNum - 1,
+    lineAndCol.lineNum,
+    lineAndCol.nextLine == null ? 0 : lineAndCol.lineNum + 1
   ]);
 
   // Helper for appending formatting input lines to the buffer.

@@ -89,8 +89,8 @@
     var opSignature = opName;
     if (resultWrapper.args) {
       var argValues = Object.keys(resultWrapper.args).map(function(key) {
-          return resultWrapper.args[key];
-        });
+        return resultWrapper.args[key];
+      });
       opSignature += '(' + argValues.join(',') + ')';
     }
     var opNameContainer = block.appendChild(domUtil.createElement('operation'));

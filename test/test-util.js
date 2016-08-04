@@ -16,67 +16,67 @@ var getLineAndColumnMessage = util.getLineAndColumnMessage;
 
 test('getLineAndColumnMessage', function(t) {
   t.equal(getLineAndColumnMessage('', 0), [
-      'Line 1, col 1:',
-      '> 1 | ',
-      '      ^',
-      ''].join('\n'), 'empty input');
+    'Line 1, col 1:',
+    '> 1 | ',
+    '      ^',
+    ''].join('\n'), 'empty input');
 
   var expected = [
-      'Line 1, col 1:',
-      '> 1 | ',
-      '      ^',
-      '  2 | ',
-      ''].join('\n');
+    'Line 1, col 1:',
+    '> 1 | ',
+    '      ^',
+    '  2 | ',
+    ''].join('\n');
   t.equal(getLineAndColumnMessage('\n', 0), expected, 'past last char on empty line');
   t.equal(getLineAndColumnMessage('\r\n', 0), expected, '...and with CRLF, offset at CR');
   t.equal(getLineAndColumnMessage('\r\n', 1), expected, '...and with CRLF, offset at LF');
 
   expected = [
-      'Line 2, col 1:',
-      '  1 | a',
-      '> 2 | foo',
-      '      ^',
-      '  3 | ',
-      ''].join('\n');
+    'Line 2, col 1:',
+    '  1 | a',
+    '> 2 | foo',
+    '      ^',
+    '  3 | ',
+    ''].join('\n');
   t.equal(getLineAndColumnMessage('a\nfoo\n', 2), expected, 'char after an empty line');
   t.equal(getLineAndColumnMessage('a\r\nfoo\r\n', 3), expected, '...and with CRLF');
 
   expected = [
-      'Line 2, col 1:',
-      '  1 | ',
-      '> 2 | ',
-      '      ^',
-      ''].join('\n');
+    'Line 2, col 1:',
+    '  1 | ',
+    '> 2 | ',
+    '      ^',
+    ''].join('\n');
   t.equal(getLineAndColumnMessage('\n', 1), expected, 'past last char on 2nd empty line');
   t.equal(getLineAndColumnMessage('\r\n', 2), expected, '...and with CRLF');
 
   expected = [
-      'Line 1, col 1:',
-      '> 1 | a',
-      '      ^',
-      '  2 | ',
-      ''].join('\n');
+    'Line 1, col 1:',
+    '> 1 | a',
+    '      ^',
+    '  2 | ',
+    ''].join('\n');
   t.equal(getLineAndColumnMessage('a\n\n', 0), expected, 'two trailing empty lines');
   t.equal(getLineAndColumnMessage('a\r\n\r\n', 0), expected, '...and with CRLF');
 
   var input = new Array(9).join('\n') + 'a\nhi!\nb';
   expected = [
-      'Line 10, col 1:',
-      '   9 | a',
-      '> 10 | hi!',
-      '       ^',
-      '  11 | b',
-      ''].join('\n');
+    'Line 10, col 1:',
+    '   9 | a',
+    '> 10 | hi!',
+    '       ^',
+    '  11 | b',
+    ''].join('\n');
   t.equal(getLineAndColumnMessage(input, 10), expected, 'prev line num has fewer digits');
 
   input = new Array(99).join('\n') + 'hi!\n';
   expected = [
-      'Line 99, col 1:',
-      '   98 | ',
-      '>  99 | hi!',
-      '        ^',
-      '  100 | ',
-      ''].join('\n');
+    'Line 99, col 1:',
+    '   98 | ',
+    '>  99 | hi!',
+    '        ^',
+    '  100 | ',
+    ''].join('\n');
   t.equal(getLineAndColumnMessage(input, 98), expected, 'next line num has more digits');
 
   expected = [

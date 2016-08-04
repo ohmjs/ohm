@@ -76,6 +76,7 @@ function compile(args) {
       return true;
     }
     console.error(arr[0] + ':\n' + result.message);
+    return false;
   });
 
   if (succeeded) {

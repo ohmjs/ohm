@@ -51,9 +51,10 @@
     var startRule = example.startRule;
     var el = getListEl(id);
     var succeeded;
+    var matchResult;
     try {
       if (startRule) {
-        var matchResult = ohmEditor.grammar.match(text, startRule);
+        matchResult = ohmEditor.grammar.match(text, startRule);
       } else {
         matchResult = ohmEditor.grammar.match(text);
       }

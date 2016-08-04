@@ -36,7 +36,7 @@ function isElement(obj) {
 }
 
 function isUndefined(obj) {
-  return obj === void 0;
+  return obj === void 0;  // eslint-disable-line no-void
 }
 
 var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
@@ -75,7 +75,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
   var metaGrammar = optOhmGrammarForTesting || ohmGrammar;
 
   // A visitor that produces a Grammar instance from the CST.
-  var helpers = metaGrammar.semantics().addOperation('visit', {
+  var helpers = metaGrammar.createSemantics().addOperation('visit', {
     Grammar: function(n, s, open, rs, close) {
       var grammarName = n.visit();
       decl = builder.newGrammar(grammarName, namespace);

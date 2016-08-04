@@ -116,7 +116,7 @@ test('grammar recipes with source', function(t) {
 
 test('semantics recipes', function(t) {
   var g1 = ohm.grammar('G { Add = number "+" number  number = digit+ }');
-  var s1 = g1.semantics()
+  var s1 = g1.createSemantics()
     .addOperation('eval', {
       Add: function(a, _, b) {
         return a.value + b.value;
@@ -167,7 +167,7 @@ test('semantics recipes with extensions', function(t) {
     'G3 <: G2 {',
     '  one := "elf"',
     '}']);
-  var s = ns.G.semantics()
+  var s = ns.G.createSemantics()
     .addAttribute('value', {
       one: function(_) { return 1; },
       two: function(_) { return 2; },
@@ -179,11 +179,11 @@ test('semantics recipes with extensions', function(t) {
       _nonterminal: function(children) { return this.value * 2; }
     });
   var s2 = ns.G2.extendSemantics(s).addOperation('eval', {
-      Add: function(one, _, two) { return one.value + two.value; }
-    });
+    Add: function(one, _, two) { return one.value + two.value; }
+  });
   var s3 = ns.G3.extendSemantics(s2).extendAttribute('value', {
-      one: function(str) { return 11; }  // overriding
-    });
+    one: function(str) { return 11; }  // overriding
+  });
 
   var sRe = makeRecipe(s3.toRecipe());
   var gRe = sRe.getGrammar();
@@ -200,8 +200,8 @@ test('semantics recipes with extensions', function(t) {
 
   // Check extension of semantic without changing to super grammar
   var s4 = ns.G.extendSemantics(s).extendAttribute('value', {
-      two: function(str) { return 22; }   // overriding
-    });
+    two: function(str) { return 22; }   // overriding
+  });
 
   sRe = makeRecipe(s4.toRecipe());
   gRe = sRe.getGrammar();

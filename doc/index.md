@@ -67,7 +67,7 @@ var g = ohm.grammar(fs.readFileSync('arithmetic.ohm'));
 
 // Create an operation that evaluates the expression. An operation always belongs to a Semantics,
 // which is a family of related operations and attributes for a particular grammar.
-var semantics = g.semantics().addOperation('eval', {
+var semantics = g.createSemantics().addOperation('eval', {
   Exp: function(e) {
     return e.eval();
   },

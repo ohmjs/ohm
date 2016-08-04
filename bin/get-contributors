@@ -4,7 +4,7 @@ git shortlog -s -n -e --no-merges |        # List contributors by commits
     awk '$1="";1' |                        # Remove the number column
     # 1. Remove Alex's name
     # 2. Strip leading spaces
-    # 3. Add indentatio, quotation marks, and comma at EOL
+    # 3. Add indentation, quotation marks, and comma at EOL
     # 4. Delete the trailing comma
     sed -e '/Alessandro Warth/d' \
         -e 's/^[ ]*//'           \

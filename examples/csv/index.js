@@ -10,7 +10,7 @@ var ohm = require('../..');
 var contents = fs.readFileSync(join(__dirname, 'csv.ohm'));
 var g = ohm.grammar(contents);
 
-var semantics = g.semantics().addOperation('value', {
+var semantics = g.createSemantics().addOperation('value', {
   csv: function(r, _, rs, eol) {
     return [r.value()].concat(rs.value());
   },

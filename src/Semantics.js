@@ -112,6 +112,11 @@ Object.defineProperties(Wrapper.prototype, {
   // Returns the name of grammar rule that created this CST node.
   ctorName: {get: function() { return this._node.ctorName; }},
 
+  // TODO: Remove this eventually (deprecated in v0.12).
+  interval: {get: function() {
+    throw new Error('The `interval` property is deprecated -- use `source` instead');
+  }},
+
   // Returns the interval consumed by the CST node associated with this wrapper.
   source: {get: function() { return this._node.source; }},
 
@@ -141,7 +146,7 @@ Object.defineProperties(Wrapper.prototype, {
 // and attributes in isolation) and extensibility even when operations and attributes are mutually-
 // recursive. This constructor should not be called directly except from
 // `Semantics.createSemantics`. The normal ways to create a Semantics, given a grammar 'g', are
-// `g.semantics()` and `g.extendSemantics(parentSemantics)`.
+// `g.createSemantics()` and `g.extendSemantics(parentSemantics)`.
 function Semantics(grammar, superSemantics) {
   var self = this;
   this.grammar = grammar;
@@ -199,7 +204,8 @@ Semantics.prototype.checkActionDictsIfHaventAlready = function() {
 // including the ones that were inherited from the super-semantics, agree with the grammar.
 // Throws an exception if one or more of them doesn't.
 Semantics.prototype.checkActionDicts = function() {
-  for (var name in this.operations) {
+  var name;
+  for (name in this.operations) {
     this.operations[name].checkActionDict(this.grammar);
   }
   for (name in this.attributes) {
@@ -226,7 +232,7 @@ Semantics.prototype.toRecipe = function(semanticsOnly) {
     str += ');\n';
     str += '  return g.extendSemantics(semantics)';
   } else {
-    str += '  return g.semantics()';
+    str += '  return g.createSemantics()';
   }
   ['Operation', 'Attribute'].forEach(function(type) {
     var semanticOperations = this[type.toLowerCase() + 's'];
@@ -276,7 +282,7 @@ var prototypeGrammarSemantics;
 
 // This method is called from main.js once Ohm has loaded.
 Semantics.initPrototypeParser = function(grammar) {
-  prototypeGrammarSemantics = grammar.semantics().addOperation('parse', {
+  prototypeGrammarSemantics = grammar.createSemantics().addOperation('parse', {
     AttributeSignature: function(name) {
       return {
         name: name.parse(),
@@ -416,9 +422,9 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
     };
   } else {
     Object.defineProperty(this.Wrapper.prototype, name, {
-        get: doIt,
-        configurable: true  // So the property can be deleted.
-      });
+      get: doIt,
+      configurable: true  // So the property can be deleted.
+    });
     this.attributeKeys[name] = Symbol();
   }
 };
@@ -511,19 +517,19 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
 
   // Forward public methods from the proxy to the semantics instance.
   proxy.addOperation = function(signature, actionDict) {
-    s.addOperationOrAttribute.call(s, 'operation', signature, actionDict);
+    s.addOperationOrAttribute('operation', signature, actionDict);
     return proxy;
   };
   proxy.extendOperation = function(name, actionDict) {
-    s.extendOperationOrAttribute.call(s, 'operation', name, actionDict);
+    s.extendOperationOrAttribute('operation', name, actionDict);
     return proxy;
   };
   proxy.addAttribute = function(name, actionDict) {
-    s.addOperationOrAttribute.call(s, 'attribute', name, actionDict);
+    s.addOperationOrAttribute('attribute', name, actionDict);
     return proxy;
   };
   proxy.extendAttribute = function(name, actionDict) {
-    s.extendOperationOrAttribute.call(s, 'attribute', name, actionDict);
+    s.extendOperationOrAttribute('attribute', name, actionDict);
     return proxy;
   };
   proxy._getActionDict = function(operationOrAttributeName) {

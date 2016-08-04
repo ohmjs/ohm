@@ -89,13 +89,11 @@
           );
         });
       }
-    } else {
-      if (clickableMarks) {
-        clickableMarks.forEach(function(clickableMark) {
-          cmUtil.clearMark(clickableMark);
-        });
-        clickableMarks = null;
-      }
+    } else if (clickableMarks) {
+      clickableMarks.forEach(function(clickableMark) {
+        cmUtil.clearMark(clickableMark);
+      });
+      clickableMarks = null;
     }
   }
 
@@ -133,7 +131,8 @@
 
   function indicatorInterval(rule) {
     var defString = rule.source.contents;
-    var startIdx, endIdx;
+    var startIdx;
+    var endIdx;
     if (rule.ruleName.includes('_')) {
       startIdx = rule.source.startIdx + defString.lastIndexOf('--');
       endIdx = startIdx + 2;
@@ -148,7 +147,8 @@
 
   function nameInterval(rule) {
     var defString = rule.source.contents;
-    var startIdx, endIdx;
+    var startIdx;
+    var endIdx;
     if (rule.ruleName.includes('_')) {
       // next token after --
       var beginName = defString.lastIndexOf('--');
@@ -234,8 +234,8 @@
         var examples = ohmEditor.examples.getExamples();
         examples = utils.objectMap(examples, function(_, value) { return value; });
         if (!examples.some(function(ex) {
-               return ex.text === example;
-             })) {
+          return ex.text === example;
+        })) {
           id = ohmEditor.examples.addExample();
           ohmEditor.examples.setExample(id, example, ruleName);
           ohmEditor.examples.saveExamples();

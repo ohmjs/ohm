@@ -240,8 +240,9 @@ pexprs.Apply.prototype.reallyEval = function(state) {
 
   origPosInfo.enter(this);
 
+  var origFailuresInfo;
   if (description) {
-    var origFailuresInfo = state.getFailuresInfo();
+    origFailuresInfo = state.getFailuresInfo();
   }
 
   var value = this.evalOnce(body, state);

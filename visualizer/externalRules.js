@@ -36,7 +36,7 @@
     };
   }
 
-  var semantics = ohmGrammar.semantics();
+  var semantics = ohmGrammar.createSemantics();
 
   // An attribute for collecting all of the rule names referenced within a grammar.
   // Returns an object whose own properties represent all the referenced rule names.

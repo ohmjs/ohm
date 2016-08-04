@@ -91,7 +91,7 @@ test('toString', function(t) {
 });
 
 test('toArgumentNameList', function(t) {
-  var g =  makeGrammar([
+  var g = makeGrammar([
     'G {',
     ' Start = &((foo bars foo)+)',
     ' foo = "ab" | letter* | "a".."z"',
@@ -103,7 +103,7 @@ test('toArgumentNameList', function(t) {
     ' ranges = "1".."9" | "!".."@"',
     ' Pair<elem> = "(" elem "," elem ")"',
     ' }'
-    ]);
+  ]);
 
   var iter = g.rules.Start.body;
   t.deepEqual(iter.toArgumentNameList(1), ['foo_1s', 'barses', 'foo_2s']);

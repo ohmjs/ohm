@@ -133,7 +133,7 @@ g.match(' (  \t123   ) ', 'PriExp').succeeded();  // evaluates to `true`
   Below, we create a new semantics `s` for our arithmetic grammar.
 */
 
-var s = g.semantics();
+var s = g.createSemantics();
 
 /*
   But a semantics without any operations or attributes is not very interesting: it doesn't do

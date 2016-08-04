@@ -28,11 +28,9 @@ test('semantic action', function(t) {
 });
 
 test('default', function(t) {
-  var matchResult, ast, expected;
-
-  matchResult = g.match('10 + 20');
-  ast = toAST(matchResult);
-  expected = {
+  var matchResult = g.match('10 + 20');
+  var ast = toAST(matchResult);
+  var expected = {
     0: '10',
     2: '20',
     type: 'AddExp_plus'
@@ -55,16 +53,14 @@ test('default', function(t) {
 });
 
 test('mapping', function(t) {
-  var matchResult, ast, expected;
-
-  matchResult = g.match('10 + 20');
-  ast = toAST(matchResult, {
+  var matchResult = g.match('10 + 20');
+  var ast = toAST(matchResult, {
     AddExp_plus: {
       expr1: 0,
       expr2: 2
     }
   });
-  expected = {
+  var expected = {
     expr1: '10',
     expr2: '20',
     type: 'AddExp_plus'
@@ -207,9 +203,8 @@ test('mapping', function(t) {
 
 test('real examples (combinations)', function(t) {
   var matchResult = g.match('10 + 20 - 30');
-  var ast, expected;
 
-  ast = toAST(matchResult, {
+  var ast = toAST(matchResult, {
     AddExp_plus: {
       expr1: 0,
       op: 1,
@@ -223,7 +218,7 @@ test('real examples (combinations)', function(t) {
       type: 'Expression'
     }
   });
-  expected = {
+  var expected = {
     expr1: {
       expr1: '10',
       expr2: '20',

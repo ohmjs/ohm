@@ -15,7 +15,7 @@ var ohm = require('../..');
 // Helpers
 // --------------------------------------------------------------------
 
-function isUndefined(x) { return x === void 0; }
+function isUndefined(x) { return x === void 0; }  // eslint-disable-line no-void
 
 // Take an Array of nodes, and whenever an _iter node is encountered, splice in its
 // recursively-flattened children instead.
@@ -52,7 +52,7 @@ var modifiedSourceActions = {
         interval = interval.coverageWith(flatChildren[i].source.collapsedRight());
       } else {
         interval = interval.coverageWith(flatChildren[i].source.collapsedLeft());
-        code +=  interval.contents + childResults[i];
+        code += interval.contents + childResults[i];
         interval = flatChildren[i].source.collapsedRight();
       }
     }
@@ -70,7 +70,7 @@ var modifiedSourceActions = {
 // Instantiate the ES5 grammar.
 var contents = fs.readFileSync(path.join(__dirname, 'es5.ohm'));
 var g = ohm.grammars(contents).ES5;
-var semantics = g.semantics();
+var semantics = g.createSemantics();
 
 // An attribute whose value is either a string representing the modified source code for the
 // node, or undefined (which means that the original source code should be used).

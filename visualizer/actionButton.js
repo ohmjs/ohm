@@ -172,9 +172,9 @@
         window.alert(error);    // eslint-disable-line no-alert
       }
       var opDescription = {
-          type: 'Operation',
-          args: args
-        };
+        type: 'Operation',
+        args: args
+      };
       ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, opDescription);
       ohmEditor.parseTree.refresh(ohmEditor.parseTree.rootTrace, false);
     });
@@ -293,10 +293,10 @@
     var wrapper = domUtil.closestElementMatching('.wrapper', nameContainer);
     var container = domUtil.closestElementMatching('.entries', nameContainer);
     domUtil.addMenuItem('operationMenu', 'delete', 'Delete', true, function(event) {
-        container.removeChild(wrapper);
-        ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, undefined);
-        ohmEditor.parseTree.refresh(ohmEditor.parseTree.rootTrace, false);
-      });
+      container.removeChild(wrapper);
+      ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, undefined);
+      ohmEditor.parseTree.refresh(ohmEditor.parseTree.rootTrace, false);
+    });
 
     domUtil.addMenuItem('operationMenu', 'edit', 'Edit', true, function(event) {
       nameContainer.select();

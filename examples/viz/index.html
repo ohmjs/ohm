@@ -114,7 +114,7 @@ function add(/* tagName, child1, child2, ... */) {
   addNode(makeElement.apply(this, arguments));
 }
 
-var s = ohm.ohmGrammar.semantics();
+var s = ohm.ohmGrammar.createSemantics();
 
 s.addOperation('viz', {
   Grammar: function(n, s, _l, rs, _r) {

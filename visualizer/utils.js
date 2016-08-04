@@ -1,9 +1,7 @@
+/* eslint-env browser */
 'use strict';
 
-/* eslint-disable no-unused-vars */
 var utils = (function() {
-  /* eslint-enable no-unused-vars */
-
   // polyfill for Object.assign (taken from mdn)
   if (typeof Object.assign !== 'function') {
     Object.assign = function(target) {
@@ -40,49 +38,18 @@ var utils = (function() {
       });
     },
 
-    /* eslint-disable no-undef */
-    $: function(query) { return document.querySelector(query); },
-    /* eslint-enable no-undef */
-
-    _: function(tagName, attributes) {
-      var children = Array.prototype.slice.call(arguments, 2);
-      attributes = attributes || {};
-      children = children || [];
-
-      /* eslint-disable no-undef */
-      var element = document.createElement(tagName);
-      /* eslint-enable no-undef */
-      objectForEach(attributes, function(attr, val) {
-        element.setAttribute(attr, val);
-      });
-      children.forEach(function(child) {
-        element.appendChild(child);
-      });
-      return element;
-    },
-
-    t: function(text) {
-      /* eslint-disable no-undef */
-      return document.createTextNode(text);
-      /* eslint-enable no-undef */
-    },
-
-    clearDOMNode: function(domNode) {
-      while (domNode.firstChild) {
-        domNode.removeChild(domNode.firstChild);
-      }
-    },
-
     repeat: function(n, fn) {
       if (n < 0) { return; }
       while (n > 0) {
-        fn(n);
+        fn();
         n--;
       }
     },
 
     shuffle: function(a) {
-      var j, x, i;
+      var j;
+      var x;
+      var i;
       for (i = a.length; i; i -= 1) {
         j = Math.floor(Math.random() * i);
         x = a[i - 1];
@@ -94,8 +61,16 @@ var utils = (function() {
     // same as a\b
     difference: function(a, b) {
       return a.filter(function(item) {
-        return !b.includes(item);
+        return b.indexOf(item) === -1;
       });
+    },
+
+    includes: function(array, item) {
+      return array.indexOf(item) !== -1;
     }
   };
 })();
+
+if (typeof exports === 'object') {
+  module.exports = utils;
+}

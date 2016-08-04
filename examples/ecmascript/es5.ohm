@@ -24,7 +24,7 @@
 
 ES5 {
 
-  Program = Directive* SourceElement*
+  Program = &(Directive*) SourceElement*
 
   // §A.1 Lexical Grammar -- http://ecma-international.org/ecma-262/5.1/#sec-A.1
 
@@ -375,14 +375,14 @@ ES5 {
     | LogicalORExpression<guardIn>
 
   AssignmentExpression<guardIn>
-    = LeftHandSideExpression AssignmentOperator AssignmentExpression<guardIn> -- assignment
+    = LeftHandSideExpression assignmentOperator AssignmentExpression<guardIn> -- assignment
     | ConditionalExpression<guardIn>
 
   Expression<guardIn> (an expression)
     = Expression<guardIn> "," AssignmentExpression<guardIn> -- commaExp
     | AssignmentExpression<guardIn>
 
-  AssignmentOperator = "=" | ">>>=" | "<<=" | ">>="
+  assignmentOperator = "=" | ">>>=" | "<<=" | ">>="
                      | "*=" | "/=" | "%=" | "+=" | "-=" | "&=" | "^=" | "|="
 
   // §A.4 Statements -- http://ecma-international.org/ecma-262/5.1/#sec-A.4
@@ -479,7 +479,7 @@ ES5 {
 
   FormalParameter = identifier
 
-  FunctionBody = Directive* SourceElement*
+  FunctionBody = &(Directive*) SourceElement*
 
   SourceElement = Declaration | Statement
 

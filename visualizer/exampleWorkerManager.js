@@ -23,13 +23,8 @@
   var eventsToEmit = ['received:examples', 'received:neededExamples'];
 
   var exampleWorker = new Worker('exampleWorker.js');
-  /* eslint-disable no-unused-vars */
-  var examplesNeeded = null;
-  /* eslint-enable no-unused-vars */
 
   // TODO: may want to reset current worker instead
-
-  var grammar;
 
   function resetWorker(grammar) {
     if (exampleWorker) {
@@ -44,11 +39,7 @@
     var examples = ohmEditor.examples.getExamples();
     Object.keys(examples).forEach(function(id) {
       var example = examples[id];
-      if (example.startRule) {
-        var match = grammar.match(example.text, example.startRule);
-      } else {
-        match = grammar.match(example.text);
-      }
+      var match = grammar.match(example.text, example.startRule);
 
       if (match.succeeded()) {
         exampleWorkerManager.addUserExample(example.startRule || grammar.defaultStartRule,
@@ -58,27 +49,27 @@
   }
 
   ohmEditor.addListener('parse:grammar', function(_, g, __) {
-    grammar = g;
     resetWorker(g);
   });
 
   ohmEditor.examples.addListener('set:example', function(_, oldValue, newValue) {
+    var grammar;
     if (newValue.text.trim() === '') {
       return;
     } else if (oldValue && oldValue.text.trim() === '' ||
                !oldValue) {
-      var grammar = ohmEditor.grammar;
+      grammar = ohmEditor.grammar;
       if (grammar.match(newValue.text, newValue.startRule).succeeded()) {
         exampleWorkerManager.addUserExample(newValue.startRule || grammar.defaultStartRule,
                                             newValue.text);
       }
     } else {
-      resetWorker(grammar);
+      resetWorker(ohmEditor.grammar);
     }
   });
 
   ohmEditor.examples.addListener('remove:example', function(_) {
-    resetWorker(grammar);
+    resetWorker(ohmEditor.grammar);
   });
 
   function onWorkerMessage(event) {

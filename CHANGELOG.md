@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.12.0 - August 16, 2016
+
+- [17d1e32]: Grammar.prototype.semantics renamed to `createSemantics`.
+- [e98ba04]: Combine ruleBodies, ruleFormals, ruleDescriptions properties of Grammar
+  objects into a single 'rules' property.
+- [555dc22, 6ef0bce, 17ee66f]: The 'interval' property of CST nodes & semantic wrappers
+  is now called 'source'.
+- [7b34725]: Add 'sourceString' property to Wrappers, as an alias for `source.contents`
+  (formerly `interval.contents`)
+- [7797eba]: Grammar recipe format is now pure JSON, rather than JavaScript source.
+
 ## v0.11.0 - May 16, 2016
 
 ### Notable changes:
