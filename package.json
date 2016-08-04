@@ -57,10 +57,10 @@
     "Stephan Seidt <stephan.seidt@gmail.com>"
   ],
   "dependencies": {
-    "es6-symbol": "^2.0.1",
+    "es6-symbol": "^3.1.0",
     "inherits": "^2.0.1",
-    "is-buffer": "^1.0.2",
-    "util-extend": "^1.0.1"
+    "is-buffer": "^1.1.4",
+    "util-extend": "^1.0.3"
   },
   "devDependencies": {
     "browser-sync": "^2.8.0",
