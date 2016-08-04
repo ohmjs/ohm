@@ -69,7 +69,7 @@
     "eslint": "^3.2.2",
     "eslint-config-google": "^0.6.0",
     "eslint-plugin-no-extension-in-require": "^0.2.0",
-    "jsdom": "^6.3.0",
+    "jsdom": "^9.4.1",
     "json": "^9.0.3",
     "markscript": "0.4.2",
     "node-static": "^0.7.7",
