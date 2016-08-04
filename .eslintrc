@@ -43,6 +43,7 @@
     // Don't require `new` when calling functions whose name starts with a capital letter.
     new-cap: ["error", {capIsNew: false}],
 
+    no-console: 2,
     no-constant-condition: 0,  // Allow things like `while(true)`.
     no-else-return: 0,  // Allow `else` after a return statement.
     no-eq-null: 0,

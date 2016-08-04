@@ -6,6 +6,8 @@
 var ohm = require('./main');
 var fs = require('fs');
 
+/* eslint-disable no-console */
+
 var args = process.argv.slice(2);
 if (args.length !== 1) {
   console.error('usage: ' + process.argv[0] + ' ' + process.argv[1] +

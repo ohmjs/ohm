@@ -37,6 +37,8 @@ function loadModule(name) {
 // Main
 // --------------------------------------------------------------------
 
+/* eslint-disable no-console */
+
 function compile(args) {
   var filenames = [];
   var opts = {

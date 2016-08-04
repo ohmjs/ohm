@@ -41,9 +41,11 @@ function runExample(relativePath, testObj, cb) {
       } else {
         jsdom.getVirtualConsole(window).sendTo(console);
         window.addEventListener('error', function(evt) {
+          /* eslint-disable no-console */
           console.error(
               'In ' + evt.filename + '\n' +
               'at line ' + evt.lineno + ' (relative to start of script), col ' + evt.colno + ':');
+          /* eslint-enable no-console */
           errors.push(evt.error);
         });
       }

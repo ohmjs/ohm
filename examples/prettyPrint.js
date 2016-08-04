@@ -57,7 +57,6 @@ var semantics = ohm.ohmGrammar.createSemantics();
 semantics.addOperation('prettyPrint()', {
   Grammar: function(name, superGrammar, open, rules, close) {
     var decl = name.sourceString + superGrammar.prettyPrint();
-    console.log(superGrammar.prettyPrint().length);
     return decl + ' {\n' + rules.prettyPrint().join('\n') + '\n}';
   },
   SuperGrammar: function(_, ident) {
@@ -131,11 +130,13 @@ if (require.main === module) {
   var source = fs.readFileSync(filename).toString();
   var result = prettyPrint(source, filename);
 
+  /* eslint-disable no-console, no-process-exit */
   if (typeof result === 'string') {
     console.log(result);
   } else {
     console.error('Not an Ohm grammar: ' + filename);
     console.error(result.message);
-    process.exit(1);  // eslint-disable-line no-process-exit
+    process.exit(1);
   }
+  /* eslint-enable no-console */
 }
