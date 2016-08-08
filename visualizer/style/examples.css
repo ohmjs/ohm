@@ -79,11 +79,15 @@
   color: hsl(219, 100%, 70%);
 }
 
-#ExampleRequestContainer {
+#exampleRequestContainer {
   width: 0px;
 }
 
-#ExampleRequestContainer.hidden {
+.exampleGeneratorUI.hidden {
+  visibility: hidden;
+}
+
+#exampleRequestContainer.hidden {
   flex-grow: 0 !important;
 }
 

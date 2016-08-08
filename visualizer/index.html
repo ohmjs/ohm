@@ -3,6 +3,9 @@
 <head>
   <title>Ohm</title>
   <link rel="stylesheet" href="style/semanticsButton.css">
+  <link rel="stylesheet" href="style/examples.css">
+  <link rel="stylesheet" href="style/exampleGenerationLinks.css">
+  <link rel="stylesheet" href="style/parseTree.css">
   <link rel="stylesheet" href="third_party/codemirror-5.11/lib/codemirror.css">
   <style>
     html, body {
@@ -418,13 +421,13 @@
       <div id="userExampleContainer">
         <h2>Examples
           <input id="addExampleButton" type="button" value="+"></input>
-          <span id="examplesNeededDrawer">Needed Examples <span class="indicator">&#x2B05;</span></span>
+          <span id="examplesNeededDrawer" class="exampleGeneratorUI hidden">Needed Examples <span class="indicator">&#x2B05;</span></span>
         </h2>
         <ul id="exampleList"></ul>
         <div class="flex-fix"><div class="editorWrapper"></div></div>
       </div>
       <div id="exampleSplitter" class="splitter vertical disabled"></div>
-      <div id="exampleRequestContainer" class="hidden">
+      <div id="exampleRequestContainer" class="exampleGeneratorUI hidden">
         <!-- <h2>Need Examples For:</h2> -->
         <div class="flex-fix"><div id="exampleRequests">
           <div class="requestContainer">
@@ -467,6 +470,7 @@
 
   <div id="options">
     <ul>
+      <li><input type="checkbox" name="showExampleGenerator"><label>Show example generator</label></li>
       <li><input type="checkbox" name="showFailures"><label>Explain parse</label></li>
       <li><input type="checkbox" name="showSpaces"><label>Show spaces</label></li>
       <li><input type="checkbox" name="semantics"><label>Enable semantics</label></li>
@@ -555,6 +559,7 @@ number  (a number)
   <script src="examples.js"></script>
   <script src="exampleWorkerManager.js"></script>
   <script src="exampleGenerationRequests.js"></script>
+  <script src="exampleGenerationLinks.js"></script>
   <script src="timeline.js"></script>
   <script src="persistence.js"></script>
   <script src="index.js"></script>

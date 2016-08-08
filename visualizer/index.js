@@ -127,6 +127,10 @@
       // Respect the user's wishes if they automatically enable/disable "show failures".
       if (e.target.name === 'showFailures') {
         showFailuresImplicitly = false;
+      } else if (e.target.name === 'showExampleGenerator') {
+        $$('.exampleGeneratorUI').forEach(function(el) {
+          el.classList.toggle('hidden', !e.target.checked);
+        });
       }
       triggerRefresh();
     });

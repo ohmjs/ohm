@@ -1,0 +1,57 @@
+.currentExampleLink.coveredExampleLink {
+  color: #268BD2;
+  font-weight: bold;
+}
+
+.coveredExampleLink {
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.coverageIndicator {
+  color: hsl(0,100%,50%);
+  font-weight: bolder;
+}
+
+
+.exampleDisplay {
+  transition: height 0.5s ease !important;
+  background-color: hsl(0, 0%, 92%) !important;
+  padding: 10px;
+  padding-left: 20px;
+}
+
+.exampleList {
+  list-style: none;
+  padding-left: 10px;
+}
+
+.exampleList li {
+  cursor: pointer;
+}
+
+.exampleList > li > span.exampleText::before {
+  content: '"';
+  font-weight: bold;
+  color: hsl(0, 0%, 70%);
+}
+
+.exampleList > li > span.exampleText::after {
+  content: '"';
+  font-weight: bold;
+  color: hsl(0, 0%, 70%);
+}
+
+.exampleList > li:hover > .addExample {
+  visibility: visible;
+}
+
+.exampleList > li > .addExample {
+  visibility: hidden;
+  color: hsl(137, 100%, 35%);
+  font-weight: bolder;
+  font-size: 140%;
+  line-height: 0px;
+  padding-left: 10px;
+}
