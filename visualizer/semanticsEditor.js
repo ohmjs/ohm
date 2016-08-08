@@ -171,7 +171,7 @@
 
     // Create action editor and add CodeMirror to it.
     var actionEditorDiv = container.appendChild(domUtil.createElement('.body'));
-    CodeMirror(actionEditorDiv);
+    CodeMirror(actionEditorDiv, {mode: {name: 'javascript', globalVars: true}});
 
     // Create action result container.
     container.appendChild(domUtil.createElement('.result'));
@@ -315,8 +315,8 @@
     var opSignature = opName;
     if (resultWrapper.args) {
       var argValues = Object.keys(resultWrapper.args).map(function(key) {
-          return String(resultWrapper.args[key]);
-        });
+        return String(resultWrapper.args[key]);
+      });
       opSignature += '(' + argValues.join(',') + ')';
     }
     var opNameContainer = block.appendChild(domUtil.createElement('operation'));
@@ -382,7 +382,7 @@
 
     if (resultContainer.textContent.length === 0) {
       resultContainer.style.padding = '0';
-      resultContainer.style.margin  = '0';
+      resultContainer.style.margin = '0';
     }
     return resultContainer;
   }

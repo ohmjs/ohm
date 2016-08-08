@@ -424,7 +424,7 @@
   }
   ohmEditor.semantics.addListener('save:semanticAction', function(traceNode, actionArguments,
       actionBody, operationName) {
-    saveAction(traceNode.bindings[0], operationName,  actionArguments, actionBody);
+    saveAction(traceNode.bindings[0], operationName, actionArguments, actionBody);
   });
 
   function editSemanticsOperation(wrapper, operationName, optArgs) {

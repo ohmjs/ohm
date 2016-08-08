@@ -291,10 +291,10 @@
     var wrapper = domUtil.closestElementMatching('.wrapper', nameContainer);
     var container = domUtil.closestElementMatching('.entries', nameContainer);
     domUtil.addMenuItem('operationMenu', 'delete', 'Delete', true, function(event) {
-        container.removeChild(wrapper);
-        ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, undefined);
-        ohmEditor.parseTree.refresh();
-      });
+      container.removeChild(wrapper);
+      ohmEditor.semantics.emit('edit:semanticOperation', wrapper, operationName, undefined);
+      ohmEditor.parseTree.refresh();
+    });
 
     domUtil.addMenuItem('operationMenu', 'edit', 'Edit', true, function(event) {
       nameContainer.select();

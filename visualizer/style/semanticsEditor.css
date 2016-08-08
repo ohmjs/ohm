@@ -473,3 +473,14 @@ textarea {
 #nameList .name.nextStep {
   color: blue;
 }
+
+/* auto-complete */
+#completions {
+  position: fixed;
+  z-index: 10;  /* this make sure the auto-complete suggestions showed on top */
+  box-shadow: 2px 3px 5px rgba(0,0,0,.2);
+}
+
+#completions select {
+  outline: none;
+}

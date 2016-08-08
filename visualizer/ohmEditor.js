@@ -43,8 +43,10 @@ ohmEditor.grammar = null;
 ohmEditor.startRule = null;
 ohmEditor.options = {};
 ohmEditor.ui = {
-  inputEditor: CodeMirror(document.querySelector('#exampleContainer .editorWrapper')),
-  grammarEditor: CodeMirror(document.querySelector('#grammarContainer .editorWrapper'))
+  inputEditor: CodeMirror(document.querySelector('#exampleContainer .editorWrapper'),
+    {mode: undefined}),
+  grammarEditor: CodeMirror(document.querySelector('#grammarContainer .editorWrapper'),
+    {mode: undefined})
 };
 ohmEditor.emit('init:inputEditor', ohmEditor.ui.inputEditor);
 ohmEditor.emit('init:grammarEditor', ohmEditor.ui.grammarEditor);
