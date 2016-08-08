@@ -83,6 +83,10 @@
   width: 0px;
 }
 
+.exampleGeneratorUI.hidden {
+  visibility: hidden;
+}
+
 #exampleRequestContainer.hidden {
   flex-grow: 0 !important;
 }

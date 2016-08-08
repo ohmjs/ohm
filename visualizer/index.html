@@ -420,13 +420,13 @@
       <div id="userExampleContainer">
         <h2>Examples
           <input id="addExampleButton" type="button" value="+"></input>
-          <span id="examplesNeededDrawer">Needed Examples <span class="indicator">&#x2B05;</span></span>
+          <span id="examplesNeededDrawer" class="exampleGeneratorUI hidden">Needed Examples <span class="indicator">&#x2B05;</span></span>
         </h2>
         <ul id="exampleList"></ul>
         <div class="flex-fix"><div class="editorWrapper"></div></div>
       </div>
       <div id="exampleSplitter" class="splitter vertical disabled"></div>
-      <div id="exampleRequestContainer" class="hidden">
+      <div id="exampleRequestContainer" class="exampleGeneratorUI hidden">
         <!-- <h2>Need Examples For:</h2> -->
         <div class="flex-fix"><div id="exampleRequests">
           <div class="requestContainer">
@@ -469,6 +469,7 @@
 
   <div id="options">
     <ul>
+      <li><input type="checkbox" name="showExampleGenerator"><label>Show Example Generator</label></li>
       <li><input type="checkbox" name="showFailures"><label>Explain parse</label></li>
       <li><input type="checkbox" name="showSpaces"><label>Show spaces</label></li>
       <li><input type="checkbox" name="semantics"><label>Enable semantics</label></li>
