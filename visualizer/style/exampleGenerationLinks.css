@@ -1,20 +1,16 @@
 .currentExampleLink.coveredExampleLink {
-  text-decoration: underline;
   color: #268BD2;
-  cursor: pointer;
   font-weight: bold;
 }
 
 .coveredExampleLink {
   text-decoration: underline;
-  /*color: hsl(0, 0%, 50%);*/
   cursor: pointer;
   font-weight: normal;
 }
 
 .coverageIndicator {
   color: hsl(0,100%,50%);
-  /*cursor: pointer;*/
   font-weight: bolder;
 }
 

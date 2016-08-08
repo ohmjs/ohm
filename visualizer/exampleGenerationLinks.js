@@ -42,7 +42,7 @@
   }
 
   // modifier+Shift
-  function areLinksEnabled(e) {
+  function updateLinksEnabled(e) {
     var modifierKey = isPlatformMac() ? e.metaKey : e.ctrlKey;
     linksEnabled = modifierKey && e.shiftKey && !e.altKey &&
                    !(isPlatformMac() ? e.ctrlKey : e.metaKey);
@@ -54,7 +54,7 @@
     mousePositionInfo.markRule = null;
     mousePositionInfo.markPosition = null;
 
-    if (mouseCoords && areLinksEnabled(e)) {
+    if (mouseCoords && updateLinksEnabled(e)) {
       var position = getPointPosition(cm, mouseCoords.x, mouseCoords.y);
       var rule = ruleDefinitionFor(cm, position);
       if (rule && !exampleWorkerManager.neededExamples.includes(rule.ruleName)) {
@@ -67,7 +67,7 @@
   }
 
   function updateLinkIndicators(cm, e) {
-    if (mouseCoords && areLinksEnabled(e)) {
+    if (mouseCoords && updateLinksEnabled(e)) {
       if (!clickableMarks) {
         var availableExamples = utils.difference(
           Object.keys(grammar.rules),
@@ -265,7 +265,7 @@
     // cursor at the clicked location. This must be done during the capture phase.
     editor.on('mousedown', function(cm, e) {
       isMouseDown = true;
-      if (areLinksEnabled(e)) {
+      if (updateLinksEnabled(e)) {
         e.preventDefault();
       }
     }, true);
