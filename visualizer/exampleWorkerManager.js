@@ -48,8 +48,10 @@
     });
   }
 
-  ohmEditor.addListener('parse:grammar', function(_, g, __) {
-    resetWorker(g);
+  ohmEditor.addListener('parse:grammar', function(_, g, err) {
+    if (!err) {
+      resetWorker(g);
+    }
   });
 
   ohmEditor.examples.addListener('set:example', function(_, oldValue, newValue) {
