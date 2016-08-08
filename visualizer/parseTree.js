@@ -9,9 +9,9 @@
     module.exports = initModule;
   } else {
     initModule(root.ohm, root.ohmEditor, root.CheckedEmitter, root.document, root.cmUtil, root.d3,
-               root.domUtil);
+               root.domUtil, root.getComputedStyle);
   }
-})(this, function(ohm, ohmEditor, CheckedEmitter, document, cmUtil, d3, domUtil) {
+})(this, function(ohm, ohmEditor, CheckedEmitter, document, cmUtil, d3, domUtil, getComputedStyle) {
   var ArrayProto = Array.prototype;
   var $ = domUtil.$;
 
@@ -90,10 +90,13 @@
     var measuringDiv = $('#measuringDiv');
     var span = measuringDiv.appendChild(domUtil.createElement('span.input'));
     span.innerHTML = inputEl.textContent;
+    var bounds = span.getBoundingClientRect();
+
     var result = {
-      width: span.clientWidth,
-      height: span.clientHeight
+      width: bounds.width,
+      height: bounds.height
     };
+
     measuringDiv.removeChild(span);
     return result;
   }
@@ -136,7 +139,27 @@
       if (!el._input) {
         continue;
       }
-      el._input.style.minWidth = el.offsetWidth + 'px';
+
+      if (!el.classList.contains('hidden') &&
+          domUtil.closestElementMatching('.collapsed', el.parentElement) == null) {
+        var style = getComputedStyle(el);
+
+        var paddingLeft = parseInt(style.paddingLeft);
+        var paddingRight = parseInt(style.paddingRight);
+        var marginLeft = parseInt(style.marginLeft);
+        var marginRight = parseInt(style.marginRight);
+
+        var totalPadding = paddingRight + paddingLeft;
+
+        el._input.style.minWidth = (el.clientWidth - totalPadding) + 'px';
+        el._input.style.marginLeft = (paddingLeft + marginLeft) + 'px';
+        el._input.style.marginRight = (paddingRight + marginRight) + 'px';
+      } else {
+        el._input.style.minWidth = 0 + 'px';
+        el._input.style.marginLeft = '';
+        el._input.style.marginRight = '';
+      }
+
       if (!el.style.minWidth) {
         el.style.minWidth = measureInput(el._input).width + 'px';
       }

@@ -22,8 +22,16 @@
   font-family: Menlo, Monaco, sans-serif;
   font-size: 100%;
   outline: none;
-  padding: 8px 0;
+  padding: 8px 0 8px 3px;
 }
+
+#measuringDiv .input {
+  font-family: Menlo, Monaco, sans-serif;
+  font-size: 100%;
+  outline: none;
+  display: inline-block;
+}
+
 #expandedInput,
 #expandedInput span {
   display: inline-block;
