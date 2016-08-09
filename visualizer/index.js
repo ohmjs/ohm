@@ -85,7 +85,7 @@
     }
 
     if (ohmEditor.grammar && ohmEditor.grammar.defaultStartRule) {
-      var trace = ohmEditor.grammar.trace(inputSource);
+      var trace = ohmEditor.grammar.trace(inputSource, ohmEditor.startRule);
 
       // When the input fails to parse, turn on "show failures" automatically.
       if (showFailuresImplicitly) {
