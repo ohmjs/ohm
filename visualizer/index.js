@@ -6,9 +6,9 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohm, root.ohmEditor, root.cmUtil, root.domUtil);
+    initModule(root.ohm, root.ohmEditor, root.cmUtil, root.domUtil, root.CodeMirror);
   }
-})(this, function(ohm, ohmEditor, cmUtil, domUtil) {
+})(this, function(ohm, ohmEditor, cmUtil, domUtil, CodeMirror) {
   var checkboxes;
   var grammarChanged = true;
   var inputChanged = true;
@@ -99,11 +99,13 @@
 
   ohmEditor.restoreState = function(editor, key, defaultEl) {
     var value = localStorage.getItem(key);
+    var doc;
     if (value) {
-      editor.setValue(value);
+      doc = CodeMirror.Doc(value, 'null');
     } else if (defaultEl) {
-      editor.setValue(defaultEl.textContent);
+      doc = CodeMirror.Doc(defaultEl.textContent, 'null');
     }
+    ohmEditor.ui.grammarEditor.swapDoc(doc);
   };
 
   ohmEditor.saveState = function(editor, key) {

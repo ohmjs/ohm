@@ -25,7 +25,7 @@
           try {
             grammars = JSON.parse(httpObj.responseText);
           } catch (e) { }
-          success(root.ohmEditor, root.CheckedEmitter, root.domUtil, grammars);
+          success(root.ohmEditor, root.CheckedEmitter, root.domUtil, root.CodeMirror, grammars);
         } else {
           fail(root.ohmEditor, root.CheckedEmitter, root.domUtil, root.saveAs);
         }
@@ -80,7 +80,7 @@
   ohmEditor.addListener('change:grammar', function(source) {
     ohmEditor.saveState(ohmEditor.ui.grammarEditor, 'grammar');
   });
-}, function initServer(ohmEditor, CheckedEmitter, domUtil, grammars) {
+}, function initServer(ohmEditor, CheckedEmitter, domUtil, CodeMirror, grammars) {
   var $ = domUtil.$;
 
   function getFromURL(url, cb) {
@@ -129,7 +129,8 @@
         $('#saveIndicator').classList.remove('edited');
       });
 
-      ohmEditor.ui.grammarEditor.setValue(src);
+      var doc = CodeMirror.Doc(src, 'null');
+      ohmEditor.ui.grammarEditor.swapDoc(doc);
     });
   });
 
