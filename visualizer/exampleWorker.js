@@ -149,7 +149,6 @@
     var that = this;
     var lastExamplesNeeded = this.examplesNeeded.slice();
     utils.repeat(2, function() {
-      self.postMessage('trying to generate example for ' + currentRuleName);
       that.generateExampleForRule(currentRuleName);
     });
 
