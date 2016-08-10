@@ -15,6 +15,19 @@ var common = require('./common');
 // Private stuff
 // --------------------------------------------------------------------
 
+// JSON is not a valid subset of JavaScript because there are two possible line terminators,
+// U+2028 (line separator) and U+2029 (paragraph separator) that are allowed in JSON strings
+// but not in JavaScript strings.
+// jsonToJS() properly encodes those two characters in JSON so that it can seamlessly be
+// inserted into JavaScript code (plus the encoded version is still valid JSON)
+function jsonToJS(str) {
+  var output = str.replace(/[\u2028\u2029]/g, function(char, pos, str) {
+    var hex = char.codePointAt(0).toString(16);
+    return '\\u' + '0000'.slice(hex.length) + hex;
+  });
+  return output;
+}
+
 // ----------------- Wrappers -----------------
 
 // Wrappers decorate CST nodes with all of the functionality (i.e., operations and attributes)
@@ -268,7 +281,7 @@ Semantics.prototype.toRecipe = function(semanticsOnly) {
   if (!semanticsOnly) {
     str =
       '(function() {\n' +
-      '  var grammar = this.fromRecipe(' + this.grammar.toRecipe() + ');\n' +
+      '  var grammar = this.fromRecipe(' + jsonToJS(this.grammar.toRecipe()) + ');\n' +
       '  var semantics = ' + str + '(grammar);\n' +
       '  return semantics;\n' +
       '});\n';

@@ -154,6 +154,29 @@ test('semantics recipes', function(t) {
   t.end();
 });
 
+test('semantics recipes (special cases)', function(t) {
+  var ns = testUtil.makeGrammars([
+    'G { special = "\u2028" }',
+    'G2 <: G { special += "\u2029" }'
+  ]);
+
+  var s = ns.G.createSemantics();
+  t.doesNotThrow(
+    function() { makeRecipe(s.toRecipe()); },
+    undefined,
+    'special handling of line separator characters (U+2028)'
+  );
+
+  s = ns.G2.createSemantics();
+  t.doesNotThrow(
+    function() { makeRecipe(s.toRecipe()); },
+    undefined,
+    'special handling of paragraph separator characters (U+2029)'
+  );
+
+  t.end();
+});
+
 test('semantics recipes with extensions', function(t) {
   var ns = testUtil.makeGrammars([
     'G { ',
