@@ -128,11 +128,13 @@
     });
 
     this.rules = initialRules(grammar);
+    this.numStepsWithoutChange = 0;
     this.currentRuleIndex = 0;
   }
 
   ExampleGenerator.prototype.processExampleFromUser = function(example, optRuleName) {
     var that = this;
+
     if (optRuleName) {
       var match = grammar.match(example, optRuleName);
       if (match.succeeded()) {
@@ -156,15 +158,31 @@
       self.postMessage({name: 'received:neededExamples',
                         args: [this.examplesNeeded]});
     }
+
+    // resume generation process on user example
+    if (this.paused) {
+      this.paused = false;
+      runComputationStep(generator, 100);
+    }
   };
 
   ExampleGenerator.prototype.next = function() {
     var currentRuleName = this.rules[this.currentRuleIndex];
 
     var that = this;
+    var lastExamplesNeeded = this.examplesNeeded.slice();
     utils.repeat(2, function() {
       that.generateExampleForRule(currentRuleName);
     });
+
+    if (this.examplesNeeded.length !== lastExamplesNeeded.length) {
+      this.numStepsWithoutChange = 0;
+    } else {
+      this.numStepsWithoutChange++;
+      if (this.numStepsWithoutChange > 2 * this.rules.length) {
+        this.paused = true;
+      }
+    }
 
     this.currentRuleIndex = (this.currentRuleIndex + 1) % this.rules.length;
   };
@@ -225,7 +243,7 @@
       generator.next();
     });
 
-    if (generator.examplesNeeded.length > 0) {
+    if (generator.examplesNeeded.length > 0 && !generator.paused) {
       setTimeout(function() { runComputationStep(generator, n); }, 0);
     }
   }
