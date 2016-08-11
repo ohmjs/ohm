@@ -619,3 +619,37 @@ test('sourceString', function(t) {
 
   t.end();
 });
+
+test('getDiscardedSpaces', function(t) {
+  var g = ohm.grammar('G { Start = word+  word = letter+ }');
+
+  var content = g.match(' This  is   a    sentence     ');
+  var s = g.createSemantics().addOperation('allWords', {
+    word: function(letters) {
+      return this.sourceString;
+    }
+  });
+  t.deepEqual(s(content).allWords(), ['This', 'is', 'a', 'sentence'], 'only words');
+
+  var spaces = content.getDiscardedSpaces(); // only has `space` and `spaces`
+
+  s.addOperation('allSpaces', {
+    spaces: function(spaces) {
+      return this.sourceString;
+    }
+  });
+  s.addOperation('numberOfSpaces', {
+    space: function(_) {
+      return 1;
+    },
+    _iter: function(children) {
+      return children.reduce(function(sum, child) {
+        return sum + child.numberOfSpaces();
+      }, 0);
+    }
+  });
+  t.deepEqual(s(spaces).allSpaces(), [' ', '  ', '   ', '    ', '     '], 'only spaces');
+  t.deepEqual(s(spaces).numberOfSpaces(), 15, 'count space(s)');
+
+  t.end();
+});

@@ -65,7 +65,7 @@ MatchResult.prototype.getDiscardedSpaces = function() {
     _terminal: function() {
       var t = this;
       intervals = intervals
-          .map(function(interval) { return interval.minus(t.interval); })
+          .map(function(interval) { return interval.minus(t.source); })
           .reduce(function(xs, ys) { return xs.concat(ys); }, []);
     }
   });
@@ -82,9 +82,9 @@ MatchResult.prototype.getDiscardedSpaces = function() {
   s.addOperation('fixIntervals(idxOffset)', {
     _default: function(children) {
       var idxOffset = this.args.idxOffset;
-      this.interval.inputStream = inputStream;
-      this.interval.startIdx += idxOffset;
-      this.interval.endIdx += idxOffset;
+      this.source.inputStream = inputStream;
+      this.source.startIdx += idxOffset;
+      this.source.endIdx += idxOffset;
       if (!this.isTerminal()) {
         children.forEach(function(child) {
           child.fixIntervals(idxOffset);
@@ -110,8 +110,8 @@ MatchResult.prototype.getDiscardedSpaces = function() {
           new Interval(inputStream, 0, 0) :
           new Interval(
               inputStream,
-              discardedNodes[0].interval.startIdx,
-              discardedNodes[discardedNodes.length - 1].interval.endIdx));
+              discardedNodes[0].source.startIdx,
+              discardedNodes[discardedNodes.length - 1].source.endIdx));
 
   // But remember that a CST node can't be used directly by clients. What we really need to return
   // from this method is a successful `MatchResult` that can be used with the clients' semantics.
