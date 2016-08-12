@@ -119,6 +119,12 @@ TerminalNode.prototype.isTerminal = function() {
   return true;
 };
 
+TerminalNode.prototype.toJSON = function() {
+  var r = {};
+  r[this.ctorName] = this.primitiveValue;
+  return r;
+};
+
 // Nonterminals
 
 function NonterminalNode(grammar, ruleName, children, source) {
