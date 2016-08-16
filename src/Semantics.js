@@ -43,6 +43,11 @@ Wrapper.prototype.toString = function() {
   return '[semantics wrapper for ' + this._node.grammar.name + ']';
 };
 
+// This is used by ohm editor to display a node wrapper appropriately.
+Wrapper.prototype.toJSON = function() {
+  return this.toString();
+};
+
 Wrapper.prototype._forgetMemoizedResultFor = function(attributeName) {
   // Remove the memoized attribute from the cstNode and all its children.
   delete this._node[this._semantics.attributeKeys[attributeName]];
