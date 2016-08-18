@@ -14,7 +14,6 @@
                root.cmUtil, root.utils, root.d3);
   }
 })(this, function(ohmEditor, exampleWorkerManager, cmUtil, utils, d3) {
-  var grammar;
   var grammarEditor;
 
   var mouseCoords;
@@ -70,14 +69,14 @@
     if (mouseCoords && areLinksEnabled(e)) {
       if (!clickableMarks) {
         var availableExamples = utils.difference(
-          Object.keys(grammar.rules),
+          Object.keys(ohmEditor.grammar.rules),
           exampleWorkerManager.neededExamples
         );
         var availableExampleBodies = availableExamples.map(function(ruleName) {
-          return Object.assign({}, grammar.rules[ruleName], {ruleName: ruleName});
+          return Object.assign({}, ohmEditor.grammar.rules[ruleName], {ruleName: ruleName});
         });
         var neededExampleBodies = exampleWorkerManager.neededExamples.map(function(ruleName) {
-          return Object.assign({}, grammar.rules[ruleName], {ruleName: ruleName});
+          return Object.assign({}, ohmEditor.grammar.rules[ruleName], {ruleName: ruleName});
         });
 
         clickableMarks = availableExampleBodies.map(function(rule) {
@@ -111,7 +110,7 @@
   function ruleDefinitionFor(cm, position) {
     var index = cm.indexFromPos(position);
     var relevantRuleDefinitions = [];
-    utils.objectForEach(grammar.rules, function(ruleName, rule) {
+    utils.objectForEach(ohmEditor.grammar.rules, function(ruleName, rule) {
       if (rule.source.startIdx <= index &&
           rule.source.endIdx > index) {
         relevantRuleDefinitions.push(Object.assign({}, rule, {ruleName: ruleName}));
@@ -208,7 +207,7 @@
     exampleDisplay.lineWidget = grammarEditor.addLineWidget(
       mousePositionInfo.position.line, exampleDisplay.DOM
     );
-    exampleDisplay.rule = Object.assign({}, grammar.rules[ruleName], {ruleName: ruleName});
+    exampleDisplay.rule = Object.assign({}, ohmEditor.grammar.rules[ruleName], {ruleName: ruleName});
     exampleDisplay.DOM.style.height = 0;
     setTimeout(function() { exampleDisplay.DOM.style.height = 'auto'; }, 0);
   });
@@ -286,7 +285,6 @@
       grammarEditor = ohmEditor.ui.grammarEditor;
       registerListeners(grammarEditor);
     }
-    grammar = g;
   });
 
 });

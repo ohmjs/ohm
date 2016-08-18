@@ -38,6 +38,39 @@ var utils = (function() {
       });
     },
 
+    /* eslint-disable no-undef */
+    $: function(query) { return document.querySelector(query); },
+    /* eslint-enable no-undef */
+
+    _: function(tagName, attributes) {
+      var children = Array.prototype.slice.call(arguments, 2);
+      attributes = attributes || {};
+      children = children || [];
+
+      /* eslint-disable no-undef */
+      var element = document.createElement(tagName);
+      /* eslint-enable no-undef */
+      objectForEach(attributes, function(attr, val) {
+        element.setAttribute(attr, val);
+      });
+      children.forEach(function(child) {
+        element.appendChild(child);
+      });
+      return element;
+    },
+
+    t: function(text) {
+      /* eslint-disable no-undef */
+      return document.createTextNode(text);
+      /* eslint-enable no-undef */
+    },
+
+    clearDOMNode: function(domNode) {
+      while (domNode.firstChild) {
+        domNode.removeChild(domNode.firstChild);
+      }
+    },
+
     repeat: function(n, fn) {
       if (n < 0) { return; }
       while (n > 0) {

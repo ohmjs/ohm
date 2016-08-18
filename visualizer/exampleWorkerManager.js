@@ -32,9 +32,12 @@
     }
     exampleWorker = new Worker('exampleWorker.js');
     exampleWorker.onmessage = onWorkerMessage;
-    exampleWorker.postMessage({
-      name: 'initialize', recipe: grammar.toRecipe()
-    });
+    saveGrammarToDB(grammar)
+      .then(function() {
+        exampleWorker.postMessage({
+          name: 'initialize', recipe: grammar.name
+        });
+      });
 
     var examples = ohmEditor.examples.getExamples();
     Object.keys(examples).forEach(function(id) {
@@ -48,8 +51,15 @@
     });
   }
 
-  ohmEditor.addListener('parse:grammar', function(_, g, __) {
-    resetWorker(g);
+  function saveGrammarToDB(grammar) {
+    return httpUtil.$http(this.baseUrl + '/_design/ohm/_rewrite/grammars/' + grammar.name)
+      .post({});
+  }
+
+  ohmEditor.addListener('parse:grammar', function(_, g, err) {
+    if (!err) {
+      resetWorker(g);
+    }
   });
 
   ohmEditor.examples.addListener('set:example', function(_, oldValue, newValue) {

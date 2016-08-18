@@ -9,10 +9,16 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else { // inside web worker
-    root.importScripts('../dist/ohm.js', 'utils.js');
-    initModule(root.ohm, root.utils, root, root.overrides);
+    root.importScripts(
+      '../dist/ohm.js',
+      './third_party/promise-polyfill/promise.js',
+      'utils.js',
+      './httpUtil.js',
+      './codbUtil.js'
+    );
+    initModule(root, root.ohm, root.utils, root.codbUtilroot.overrides);
   }
-})(this, function(ohm, utils, workerGlobalScope, optOverrides) {
+})(this, function(workerGlobalScope, ohm, utils, root.codbUtil, optOverrides) {
   var self = workerGlobalScope;
 
   // -------------------------------------------------------
@@ -37,6 +43,7 @@
 
   self.postMessage('WORKER STARTED');
   var grammar;
+  var grammarName;
   var semantics;
 
   var generator;
@@ -61,30 +68,36 @@
     self.postMessage(e.data.name);
     switch (e.data.name) {
       case 'initialize':
-        grammar = ohm.makeRecipe(e.data.recipe);
-        initializeSemantics(grammar);
+        grammarName = e.data.grammarName;
+        var fetchGrammar = httpUtil.$http(this.baseUrl + '_design/ohm/_rewrite/grammars/' + grammarName)
+          .get({})
+          .then(function(grammarString) {
+            grammar = ohm.grammar(grammarString);
+            initializeSemantics(grammar);
 
-        // flag to disable starting of process for testing
-        var runStart = true;
-        if (e.data.hasOwnProperty('start')) {
-          runStart = e.data.runStart;
-        }
+            // flag to disable starting of process for testing
+            var runStart = true;
+            if (e.data.hasOwnProperty('start')) {
+              runStart = e.data.runStart;
+            }
 
-        if (runStart) {
-          start();
-        }
+            if (runStart) {
+              start();
+            }
+          }, errorWithPrefix('GET grammar ' + this.grammarName + ': '))
+
         break;
       case 'request:examples':
         var ruleName = e.data.args[0];
 
-        var examplesForRule = generator.examplePieces[ruleName] || null;
+        var examplesForRule = generator.exampleDB.getExamples(ruleName);
         self.postMessage({name: 'received:examples',
                           args: [ruleName, examplesForRule]});
         break;
       case 'update:neededExamples':
         var neededExamples = utils.difference(
           Object.keys(grammar.rules),
-          Object.keys(generator.examplePieces)
+          Object.keys(generator.exampleDB.examples)
         );
 
         self.postMessage({name: 'received:neededExamples',
@@ -98,36 +111,46 @@
     }
   });
 
-  function ExampleGenerator(examplePieces) {
-    this.examplePieces = examplePieces;
-    this.rules = initialRules(grammar);
-    this.examplesNeeded = utils.difference(
-      Object.keys(grammar.rules),
-      Object.keys(examplePieces)
-    );
-    this.currentRuleIndex = 0;
+  function ExampleGenerator() {
+    this.exampleDB = new codbUtil.ExampleDatabase(grammar, codbUrl); // TODO: codbUrl
+    this.exampleDB.initialization
+      .then(function() {
+        this.examplesNeeded = utils.difference(
+          Object.keys(grammar.rules),
+          Object.keys(exampleDB.examples)
+        );
+      });
+
+      this.rules = initialRules(grammar);
+      this.currentRuleIndex = 0;
   }
+
+  Object.defineProperty(ExampleGenerator.prototype, 'initialization', {
+    get: function() {
+      return this.exampleDB.initialization;
+    }
+  })
 
   ExampleGenerator.prototype.processExampleFromUser = function(example, optRuleName) {
     var that = this;
     if (optRuleName) {
       var match = grammar.match(example, optRuleName);
       if (match.succeeded()) {
-        semantics(match).addPiecesToDict(this.examplePieces);
+        semantics(match).addPiecesToDict(this.exampleDB);
       }
     } else {
       // try all rules
       Object.keys(grammar.rules).forEach(function(ruleName) {
         var match = grammar.match(example, ruleName);
         if (match.succeeded()) {
-          semantics(match).addPiecesToDict(this.examplePieces);
+          semantics(match).addPiecesToDict(this.exampleDB);
         }
       });
     }
 
     var oldSize = this.examplesNeeded.length;
     this.examplesNeeded = this.examplesNeeded.filter(function(ruleName) {
-      return !that.examplePieces.hasOwnProperty(ruleName);
+      return !that.exampleDB.examples.hasOwnProperty(ruleName);
     });
     if (this.examplesNeeded.length < oldSize) {
       self.postMessage({name: 'received:neededExamples',
@@ -153,12 +176,12 @@
     var example;
     if (overrides.hasOwnProperty(ruleName)) {
       example = overrides[ruleName](
-        grammar, this.examplePieces, isSyntactic(rulePExpr.ruleName),
+        grammar, this.exampleDB.examples, isSyntactic(rulePExpr.ruleName),
         rulePExpr.args
       );
     } else {
       example = grammar.rules[rulePExpr.ruleName].body.generateExample(
-        grammar, this.examplePieces, isSyntactic(rulePExpr.ruleName),
+        grammar, this.exampleDB.examples, isSyntactic(rulePExpr.ruleName),
         rulePExpr.args
       );
     }
@@ -174,17 +197,12 @@
         self.postMessage({name: 'received:neededExamples',
                           args: [this.examplesNeeded]});
       }
-      if (!this.examplePieces.hasOwnProperty(ruleName)) {
-        this.examplePieces[ruleName] = [];
-      }
-      if (!utils.includes(this.examplePieces[ruleName], example.value)) {
-        this.examplePieces[ruleName].push(example.value);
-      }
+      this.exampleDB.addExample(ruleName, example.value);
     }
 
     if (example.hasOwnProperty('examplesNeeded')) {
       example.examplesNeeded.forEach(function(needed) {
-        if (!utils.incldues(that.rules, needed)) {
+        if (!utils.includes(that.rules, needed)) {
           that.rules.push(needed);
         }
       });
@@ -192,8 +210,11 @@
   };
 
   function start() {
-    generator = new ExampleGenerator({});
-    runComputationStep(generator, 100);
+    generator = new ExampleGenerator();
+    generator.initialization
+      .then(function() {
+        runComputationStep(generator, 100);
+      });
   }
 
   function runComputationStep(generator, n) {
@@ -217,18 +238,12 @@
   function initializeSemantics(grammar) {
     semantics = grammar.createSemantics();
 
-    semantics.addOperation('addPiecesToDict(dict)', {
+    semantics.addOperation('addPiecesToDict(db)', {
       _nonterminal: function(children) {
         var ruleName = this.ctorName;
-        var dict = this.args.dict;
+        var db = this.args.db;
 
-        if (!dict.hasOwnProperty(ruleName)) {
-          dict[ruleName] = [];
-        }
-
-        if (!utils.includes(dict[ruleName], this.source.contents)) {
-          dict[ruleName].push(this.source.contents);
-        }
+        db.addExample(ruleName, this.source.contents);
 
         children.forEach(function(child) {
           child.addPiecesToDict(dict);
