@@ -219,7 +219,9 @@
   // ----
 
   domUtil.$('#addExampleButton').onclick = function(e) {
-    setSelected(addExample());
+    var newExampleId = addExample();
+    setSelected(newExampleId);
+    domUtil.$('#exampleList').scrollTop = getListEl(newExampleId).offsetTop;
   };
 
   var uiSave = function(cm) {

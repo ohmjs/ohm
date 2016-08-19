@@ -132,9 +132,8 @@
 }
 
 #addExampleButton {
-  /*position: absolute;*/
-  right: 12px;
-  top: 12px;
+  height: 20px;
+  flex-shrink: 0;
 }
 
 /* Prevent things from looking terrible when zoomed in (looking at you, Chrome). */
