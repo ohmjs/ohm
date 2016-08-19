@@ -151,7 +151,7 @@
 
         var totalPadding = paddingRight + paddingLeft;
 
-        el._input.style.minWidth = (el.clientWidth - totalPadding) + 'px';
+        el._input.style.minWidth = (el.getBoundingClientRect().width - totalPadding) + 'px';
         el._input.style.marginLeft = (paddingLeft + marginLeft) + 'px';
         el._input.style.marginRight = (paddingRight + marginRight) + 'px';
       } else {
@@ -667,7 +667,7 @@
 
     // Hack to ensure that the vertical scroll bar doesn't overlap the parse tree contents.
     parseResultsDiv.style.paddingRight =
-        2 + parseResultsDiv.scrollWidth - parseResultsDiv.clientWidth + 'px';
+        2 + parseResultsDiv.scrollWidth - parseResultsDiv.getBoundingClientRect().width + 'px';
   }
 
   // When the user makes a change in either editor, show the bottom overlay to indicate
