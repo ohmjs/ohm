@@ -120,8 +120,10 @@ test('simple parse tree', function(t) {
   ohmEditor.options = {};
   ohmEditor.ui = {};
 
+  var getComputedStyleStub = function() { return {}; };
+
   // Initialize the parseTree module.
-  parseTree(ohm, ohmEditor, CheckedEmitter, doc, null, null, domUtil(doc));
+  parseTree(ohm, ohmEditor, CheckedEmitter, doc, null, null, domUtil(doc), getComputedStyleStub);
 
   refreshParseTree(ohmEditor, g.trace('a99'));
   t.equal(doc.querySelector('#expandedInput').textContent, 'a99');
