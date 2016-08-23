@@ -43,13 +43,13 @@ GrammarDecl.prototype.ensureSuperGrammar = function() {
 GrammarDecl.prototype.installOverriddenOrExtendedRule = function(name, formals, body, source) {
   var duplicateParameterNames = common.getDuplicates(formals);
   if (duplicateParameterNames.length > 0) {
-    throw errors.duplicateParameterNames(name, duplicateParameterNames, body, source);
+    throw errors.duplicateParameterNames(name, duplicateParameterNames, source);
   }
   var ruleInfo = this.ensureSuperGrammar().rules[name];
   var expectedFormals = ruleInfo.formals;
   var expectedNumFormals = expectedFormals ? expectedFormals.length : 0;
   if (formals.length !== expectedNumFormals) {
-    throw errors.wrongNumberOfParameters(name, expectedNumFormals, formals.length, body, source);
+    throw errors.wrongNumberOfParameters(name, expectedNumFormals, formals.length, source);
   }
   return this.install(name, formals, body, ruleInfo.description, source);
 };
@@ -145,13 +145,13 @@ GrammarDecl.prototype.build = function() {
 GrammarDecl.prototype.define = function(name, formals, body, description, source) {
   this.ensureSuperGrammar();
   if (this.superGrammar.rules[name]) {
-    throw errors.duplicateRuleDeclaration(name, this.name, this.superGrammar.name, body, source);
+    throw errors.duplicateRuleDeclaration(name, this.name, this.superGrammar.name, source);
   } else if (this.rules[name]) {
-    throw errors.duplicateRuleDeclaration(name, this.name, this.name, body, source);
+    throw errors.duplicateRuleDeclaration(name, this.name, this.name, source);
   }
   var duplicateParameterNames = common.getDuplicates(formals);
   if (duplicateParameterNames.length > 0) {
-    throw errors.duplicateParameterNames(name, duplicateParameterNames, body, source);
+    throw errors.duplicateParameterNames(name, duplicateParameterNames, source);
   }
   return this.install(name, formals, body, description, source);
 };
@@ -159,7 +159,7 @@ GrammarDecl.prototype.define = function(name, formals, body, description, source
 GrammarDecl.prototype.override = function(name, formals, body, descIgnored, source) {
   var ruleInfo = this.ensureSuperGrammar().rules[name];
   if (!ruleInfo) {
-    throw errors.cannotOverrideUndeclaredRule(name, this.superGrammar.name, body, source);
+    throw errors.cannotOverrideUndeclaredRule(name, this.superGrammar.name, source);
   }
   this.installOverriddenOrExtendedRule(name, formals, body, source);
   return this;
@@ -168,7 +168,7 @@ GrammarDecl.prototype.override = function(name, formals, body, descIgnored, sour
 GrammarDecl.prototype.extend = function(name, formals, fragment, descIgnored, source) {
   var ruleInfo = this.ensureSuperGrammar().rules[name];
   if (!ruleInfo) {
-    throw errors.cannotExtendUndeclaredRule(name, this.superGrammar.name, fragment, source);
+    throw errors.cannotExtendUndeclaredRule(name, this.superGrammar.name, source);
   }
   var body = new pexprs.Extend(this.superGrammar, name, fragment);
   body.source = fragment.source;

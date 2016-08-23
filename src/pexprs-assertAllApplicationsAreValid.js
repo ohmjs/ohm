@@ -73,7 +73,7 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, gramm
   var actual = this.args.length;
   var expected = ruleInfo.formals.length;
   if (actual !== expected) {
-    throw errors.wrongNumberOfArguments(this.ruleName, expected, actual, this);
+    throw errors.wrongNumberOfArguments(this.ruleName, expected, actual, this.source);
   }
 
   // ...and that all of the argument expressions only have valid applications and have arity 1.

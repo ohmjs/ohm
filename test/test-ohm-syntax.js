@@ -813,28 +813,27 @@ test('inheritance', function(t) {
     it('no namespace', function() {
       t.throws(
           function() { ohm.grammar('G2 <: G1 {}'); },
-          'Grammar G1 is not declared');
+          /Grammar G1 is not declared/);
     });
 
     it('empty namespace', function() {
       t.throws(
           function() { ohm.grammar('G2 <: G1 {}', {}); },
-          'Grammar G1 is not declared in namespace');
+          /Grammar G1 is not declared in namespace/);
     });
     t.end();
   });
 
   test('define', function(t) {
-    it('should check that rule does not already exist in super-grammar', function() {
-      t.throws(
-          function() {
-            makeGrammars([
-              'G1 { foo = "foo" }',
-              'G2 <: G1 { foo = "bar" }'
-            ]);
-          },
-          "Duplicate declaration for rule 'foo' in grammar 'G2' (originally declared in 'G1')");
-    });
+    t.throws(
+        function() {
+          makeGrammars([
+            'G1 { foo = "foo" }',
+            'G2 <: G1 { foo = "bar" }'
+          ]);
+        },
+        /Duplicate declaration for rule 'foo' in grammar 'G2' \(originally declared in 'G1'\)/,
+        'throws if rule is already declared in super-grammar');
     t.end();
   });
 
@@ -845,7 +844,7 @@ test('inheritance', function(t) {
     it('should check that rule exists in super-grammar', function() {
       t.throws(
           function() { ohm.grammar('G3 <: G1 { foo := "foo" }', ns); },
-          'Cannot override rule foo because it is not declared in G1');
+          /Cannot override rule foo because it is not declared in G1/);
     });
 
     it("shouldn't matter if arities aren't the same", function() {
@@ -918,7 +917,7 @@ test('inheritance', function(t) {
     it('should check that rule exists in super-grammar', function() {
       t.throws(
           function() { ohm.grammar('G3 <: G1 { bar += "bar" }', ns); },
-          'Cannot extend rule bar because it is not declared in G1');
+          /Cannot extend rule bar because it is not declared in G1/);
     });
 
     it('should make sure rule arities are compatible', function() {

@@ -85,7 +85,7 @@ function cannotExtendUndeclaredRule(ruleName, grammarName, optSource) {
 
 // Duplicate rule declaration
 
-function duplicateRuleDeclaration(ruleName, grammarName, declGrammarName, body, optSource) {
+function duplicateRuleDeclaration(ruleName, grammarName, declGrammarName, optSource) {
   var message = "Duplicate declaration for rule '" + ruleName +
       "' in grammar '" + grammarName + "'";
   if (grammarName !== declGrammarName) {
@@ -96,7 +96,7 @@ function duplicateRuleDeclaration(ruleName, grammarName, declGrammarName, body, 
 
 // Wrong number of parameters
 
-function wrongNumberOfParameters(ruleName, expected, actual, body, source) {
+function wrongNumberOfParameters(ruleName, expected, actual, source) {
   return createError(
       'Wrong number of parameters for rule ' + ruleName +
           ' (expected ' + expected + ', got ' + actual + ')',
@@ -114,9 +114,9 @@ function wrongNumberOfArguments(ruleName, expected, actual, expr) {
 
 // Duplicate parameter names
 
-function duplicateParameterNames(ruleName, duplicates, body, source) {
+function duplicateParameterNames(ruleName, duplicates, source) {
   return createError(
-      'Duplicate parameter names in rule ' + ruleName + ': ' + duplicates.join(','),
+      'Duplicate parameter names in rule ' + ruleName + ': ' + duplicates.join(', '),
       source);
 }
 

@@ -162,3 +162,21 @@ test('complex parameters', function(t) {
   t.equal(g.match('45').failed(), true);
   t.end();
 });
+
+test('duplicate parameter names', function(t) {
+  t.throws(
+      function() { testUtil.makeGrammar('G { Foo<a, b, a, b> = a }'); },
+      /Duplicate parameter names in rule Foo: a, b/,
+      'defining');
+  t.throws(
+      function() { testUtil.makeGrammar('G { ListOf<a, a> := a }'); },
+      /Duplicate parameter names in rule ListOf: a/,
+      'overriding');
+  t.throws(
+      function() { testUtil.makeGrammar('G { ListOf<a, a> += a }'); },
+      /Duplicate parameter names in rule ListOf: a/,
+      'extending');
+
+  t.end();
+});
+
