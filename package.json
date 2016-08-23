@@ -48,13 +48,14 @@
     "Marko Röder <m.roeder@photon-software.de>",
     "Tony Garnock-Jones <tonygarnockjones@gmail.com>",
     "Lionel Landwerlin <llandwerlin@gmail.com>",
-    "Jason Merrill <jwmerrill@gmail.com>",
     "Saketh Kasibatla <sake.kasi@gmail.com>",
+    "Jason Merrill <jwmerrill@gmail.com>",
     "Yoshiki Ohshima <Yoshiki.Ohshima@acm.org>",
+    "Stephan Seidt <stephan.seidt@gmail.com>",
     "codeZeilen <codeZeilen@users.noreply.github.com>",
     "Justin Chase <justin.m.chase@gmail.com>",
     "Daniel Tomlinson <DanielTomlinson@me.com>",
-    "Stephan Seidt <stephan.seidt@gmail.com>"
+    "Arthur Carabott <arthurc@gmail.com>"
   ],
   "dependencies": {
     "es6-symbol": "^3.1.0",
