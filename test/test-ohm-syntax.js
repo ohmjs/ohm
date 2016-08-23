@@ -1088,10 +1088,11 @@ test('inline rule declarations', function(t) {
 
   t.throws(
     function() { ohm.grammar('Bad <: Arithmetic { addExp += addExp "~" mulExp  -- minus }', ns); },
-    "rule 'addExp_minus' in grammar 'Bad' (originally declared in 'Arithmetic')");
+    /rule 'addExp_minus' in grammar 'Bad' \(originally declared in 'Arithmetic'\)/);
 
   t.throws(
     function() { ohm.grammar('Bad { start = "a" ("b" -- bad\n) }'); },
+    /Error/,
     'inline rules must be at the top level');
 
   t.end();
@@ -1102,7 +1103,7 @@ test('lexical vs. syntactic rules', function(t) {
     t.ok(ohm.grammar('G { foo = bar  bar = "bar" }'), 'lexical calling lexical');
     t.throws(
         function() { ohm.grammar('G { foo = Bar  Bar = "bar" }'); },
-        'Cannot apply syntactic rule Bar from here (inside a lexical context)',
+        /Cannot apply syntactic rule Bar from here \(inside a lexical context\)/,
         'lexical calling syntactic');
     t.ok(ohm.grammar('G { Foo = bar  bar = "bar" }'), 'syntactic calling lexical');
     t.ok(ohm.grammar('G { Foo = Bar  Bar = "bar" }'), 'syntactic calling syntactic');
@@ -1159,7 +1160,7 @@ test('lexical vs. syntactic rules', function(t) {
             '}'
           ]);
         },
-        'Cannot apply syntactic rule R from here (inside a lexical context)');
+        /Cannot apply syntactic rule R from here \(inside a lexical context\)/);
   });
 
   t.end();
