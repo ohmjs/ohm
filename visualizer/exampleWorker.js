@@ -16,9 +16,9 @@
       './httpUtil.js',
       './codbUtil.js'
     );
-    initModule(root, root.ohm, root.utils, root.codbUtilroot.overrides);
+    initModule(root, root.ohm, root.utils, root.httpUtil, root.codbUtil, root.overrides);
   }
-})(this, function(workerGlobalScope, ohm, utils, root.codbUtil, optOverrides) {
+})(this, function(workerGlobalScope, ohm, utils, httpUtil, codbUtil, optOverrides) {
   var self = workerGlobalScope;
 
   // -------------------------------------------------------
@@ -69,7 +69,8 @@
     switch (e.data.name) {
       case 'initialize':
         grammarName = e.data.grammarName;
-        var fetchGrammar = httpUtil.$http(this.baseUrl + '_design/ohm/_rewrite/grammars/' + grammarName)
+        var baseUrl = this.baseUrl || codbUtil.localUrl;
+        httpUtil.$http(baseUrl + '/_design/ohm/_rewrite/grammars/' + grammarName)
           .get({})
           .then(function(grammarString) {
             grammar = ohm.grammar(grammarString);
@@ -84,7 +85,8 @@
             if (runStart) {
               start();
             }
-          }, errorWithPrefix('GET grammar ' + this.grammarName + ': '))
+            self.postMessage('started:worker');
+          }, codbUtil.errorWithPrefix('GET grammar ' + this.grammarName + ': '));
 
         break;
       case 'request:examples':
@@ -112,24 +114,26 @@
   });
 
   function ExampleGenerator() {
-    this.exampleDB = new codbUtil.ExampleDatabase(grammar, codbUrl); // TODO: codbUrl
+    var self = this;
+    var codbUrl = codbUtil.localUrl; // TODO: codbUrl
+    this.exampleDB = new codbUtil.ExampleDatabase(grammar, codbUrl);
     this.exampleDB.initialization
       .then(function() {
-        this.examplesNeeded = utils.difference(
+        self.examplesNeeded = utils.difference(
           Object.keys(grammar.rules),
-          Object.keys(exampleDB.examples)
+          Object.keys(self.exampleDB.examples)
         );
       });
 
-      this.rules = initialRules(grammar);
-      this.currentRuleIndex = 0;
+    this.rules = initialRules(grammar);
+    this.currentRuleIndex = 0;
   }
 
   Object.defineProperty(ExampleGenerator.prototype, 'initialization', {
     get: function() {
       return this.exampleDB.initialization;
     }
-  })
+  });
 
   ExampleGenerator.prototype.processExampleFromUser = function(example, optRuleName) {
     var that = this;

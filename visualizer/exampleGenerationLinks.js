@@ -207,7 +207,9 @@
     exampleDisplay.lineWidget = grammarEditor.addLineWidget(
       mousePositionInfo.position.line, exampleDisplay.DOM
     );
-    exampleDisplay.rule = Object.assign({}, ohmEditor.grammar.rules[ruleName], {ruleName: ruleName});
+    exampleDisplay.rule = Object.assign({}, ohmEditor.grammar.rules[ruleName], {
+      ruleName: ruleName
+    });
     exampleDisplay.DOM.style.height = 0;
     setTimeout(function() { exampleDisplay.DOM.style.height = 'auto'; }, 0);
   });

@@ -16,7 +16,7 @@
   function errorWithPrefix(prefix) {
     return function(error) {
       throw new Error(prefix + error);
-    }
+    };
   }
 
   // ---------
@@ -32,23 +32,24 @@
 
     // TODO: move this to worker
 
-
-    var fetchExamples = httpUtil.$http(this.baseUrl + '_design/' + this.grammar.name + '/_rewrite/examples/')
+    var self = this;
+    var url = this.baseUrl + '/_design/ohm/_rewrite/examples/' + this.grammar.name;
+    var fetchExamples = httpUtil.$http(url)
       .get({}) // no args = get them all
       .then(function(examplesString) {
-        this.examples = JSON.parse(examplesString);
+        self.examples = JSON.parse(examplesString);
       });
 
     // can check flag to see if initialized, or can add 'then' to initialization promise
-    this.initialization = fetchExamples;
+    this.initialization = fetchExamples
       .then(function(_) {
-        this.initialized = true;
+        self.initialized = true;
         return true;
       }, errorWithPrefix('Failed Initialization: '));
     this.initialized = false;
   }
 
-  ExampleDatabase.prototype.addExample(ruleName, example) {
+  ExampleDatabase.prototype.addExample = function(ruleName, example) {
     if (!this.examples.hasOwnProperty(ruleName)) {
       this.examples[ruleName] = [];
     }
@@ -57,11 +58,13 @@
       this.examples[ruleName].push(example);
       this._addExampleToServer(ruleName, example);
     }
-  }
+  };
 
-  ExampleDatabase.prototype._addExampleToServer(ruleName, example) {
-    httpUtil.$http(this.baseUrl + '_design/' + this.grammarName + '/_rewrite/examples/')
-      .put({}) // TODO: add parameters
+  ExampleDatabase.prototype._addExampleToServer = function(ruleName, example) {
+    var url = this.baseUrl + '/_design/ohm/_rewrite/examples/' + this.grammar.name +
+      '/' + ruleName;
+    httpUtil.$http(url)
+    .post(example) // TODO: add parameters
       .catch(function(reason) {
         errorWithPrefix('Failed to add example: ')(reason);
         if (!this.failedExamples.hasOwnProperty(ruleName)) {
@@ -70,11 +73,15 @@
 
         this.failedExamples[ruleName].push(example);
       });
-  }
+  };
 
-  ExampleDatabase.prototype.getExamples(ruleName) { return this.examples[ruleName] || []; }
+  ExampleDatabase.prototype.getExamples = function(ruleName) {
+    return this.examples[ruleName] || [];
+  };
 
   return {
-    ExampleDatabase: ExampleDatabase
+    localUrl: location.toString().match(/^(.*)\/_design\//)[1],
+    ExampleDatabase: ExampleDatabase,
+    errorWithPrefix: errorWithPrefix
   };
 });

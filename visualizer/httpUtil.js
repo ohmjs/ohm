@@ -9,14 +9,14 @@
   }
 })(this, function(Promise) {
   return {
-    '$http': function(url) {
+    $http: function(url) {
       var core = {
-        ajax: function (method, url, args) {
-          var promise = new Promise( function (resolve, reject) {
+        ajax: function(method, url, args) {
+          var promise = new Promise(function(resolve, reject) {
             var client = new XMLHttpRequest();
             var uri = url;
 
-            if (args && (method === 'POST' || method === 'PUT')) {
+            if (typeof args === 'object' && (method === 'POST' || method === 'PUT')) {
               uri += '?';
               var argcount = 0;
               for (var key in args) {
@@ -30,16 +30,20 @@
             }
 
             client.open(method, uri);
-            client.send();
+            if (typeof args === 'string' && (method === 'POST' || method === 'PUT')) {
+              client.send(args);
+            } else {
+              client.send();
+            }
 
-            client.onload = function () {
+            client.onload = function() {
               if (this.status >= 200 && this.status < 300) {
                 resolve(this.response);
               } else {
                 reject(this.statusText);
               }
             };
-            client.onerror = function () {
+            client.onerror = function() {
               reject(this.statusText);
             };
           });
@@ -48,14 +52,14 @@
         }
       };
 
-      return {
-        'get': function(args) {
+      return { // eslint-disable quote-props
+        get: function(args) {
           return core.ajax('GET', url, args);
         },
-        'post': function(args) {
+        post: function(args) {
           return core.ajax('POST', url, args);
         },
-        'put': function(args) {
+        put: function(args) {
           return core.ajax('PUT', url, args);
         },
         'delete': function(args) {

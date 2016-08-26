@@ -10,17 +10,18 @@
     module.exports = initModule;
   } else {
     root.exampleWorkerManager = initModule(root.ohm, root.ohmEditor,
-                                           root.utils, root.CheckedEmitter);
+                                           root.utils, root.httpUtil, root.CheckedEmitter);
   }
-})(this, function(ohm, ohmEditor, utils, CheckedEmitter) {
+})(this, function(ohm, ohmEditor, utils, httpUtil, CheckedEmitter) {
   var exampleWorkerManager = new CheckedEmitter();
 
   exampleWorkerManager.registerEvents({
     'received:examples': ['ruleName', 'examples'],
-    'received:neededExamples': ['neededExamples']
+    'received:neededExamples': ['neededExamples'],
+    'started:worker': []
   });
 
-  var eventsToEmit = ['received:examples', 'received:neededExamples'];
+  var eventsToEmit = ['received:examples', 'received:neededExamples', 'started:worker'];
 
   var exampleWorker = new Worker('exampleWorker.js');
 
@@ -35,25 +36,15 @@
     saveGrammarToDB(grammar)
       .then(function() {
         exampleWorker.postMessage({
-          name: 'initialize', recipe: grammar.name
+          name: 'initialize', grammarName: grammar.name
         });
       });
-
-    var examples = ohmEditor.examples.getExamples();
-    Object.keys(examples).forEach(function(id) {
-      var example = examples[id];
-      var match = grammar.match(example.text, example.startRule);
-
-      if (match.succeeded()) {
-        exampleWorkerManager.addUserExample(example.startRule || grammar.defaultStartRule,
-                                            example.text);
-      }
-    });
   }
 
   function saveGrammarToDB(grammar) {
-    return httpUtil.$http(this.baseUrl + '/_design/ohm/_rewrite/grammars/' + grammar.name)
-      .post({});
+    var baseUrl = location.toString().match(/^(.*)\/_design\//)[1];
+    return httpUtil.$http(baseUrl + '/_design/ohm/_rewrite/grammars/' + grammar.name)
+      .post(grammar.source.contents);
   }
 
   ohmEditor.addListener('parse:grammar', function(_, g, err) {
@@ -116,6 +107,19 @@
   exampleWorkerManager.addListener('received:neededExamples', function(neededExamples) {
     exampleWorkerManager.neededExamples = neededExamples;
 
+  });
+
+  exampleWorkerManager.addListener('started:worker', function() {
+    var examples = ohmEditor.examples.getExamples();
+    Object.keys(examples).forEach(function(id) {
+      var example = examples[id];
+      var match = grammar.match(example.text, example.startRule);
+
+      if (match.succeeded()) {
+        exampleWorkerManager.addUserExample(example.startRule || grammar.defaultStartRule,
+                                            example.text);
+      }
+    });
   });
 
   return exampleWorkerManager;
