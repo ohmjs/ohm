@@ -263,7 +263,7 @@
         db.addExample(ruleName, this.source.contents);
 
         children.forEach(function(child) {
-          child.addPiecesToDict(dict);
+          child.addPiecesToDict(db);
         });
       },
       _terminal: function() {
