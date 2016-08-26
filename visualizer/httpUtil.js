@@ -5,65 +5,84 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    root.httpUtil = initModule(root.Promise);
+    root.httpUtil = initModule();
   }
-})(this, function(Promise) {
+})(this, function() {
+  var MAX_REQUESTS = 100;
+  var queue = [];
+  var activeRequests = 0;
+
   return {
     $http: function(url) {
-      var core = {
-        ajax: function(method, url, args) {
-          var promise = new Promise(function(resolve, reject) {
-            var client = new XMLHttpRequest();
-            var uri = url;
-
-            if (typeof args === 'object' && (method === 'POST' || method === 'PUT')) {
-              uri += '?';
-              var argcount = 0;
-              for (var key in args) {
-                if (args.hasOwnProperty(key)) {
-                  if (argcount++) {
-                    uri += '&';
-                  }
-                  uri += encodeURIComponent(key) + '=' + encodeURIComponent(args[key]);
-                }
-              }
-            }
-
-            client.open(method, uri);
-            if (typeof args === 'string' && (method === 'POST' || method === 'PUT')) {
-              client.send(args);
-            } else {
-              client.send();
-            }
-
-            client.onload = function() {
-              if (this.status >= 200 && this.status < 300) {
-                resolve(this.response);
-              } else {
-                reject(this.statusText);
-              }
-            };
-            client.onerror = function() {
-              reject(this.statusText);
-            };
-          });
-
-          return promise;
+      function bufferedAjax() {
+        if (activeRequests >= MAX_REQUESTS) {
+          queue.push(Array.prototype.slice.call(arguments));
+        } else {
+          activeRequests++;
+          ajax.apply(this, arguments);
         }
-      };
+      }
 
-      return { // eslint-disable quote-props
-        get: function(args) {
-          return core.ajax('GET', url, args);
+      function dequeue() {
+        if (queue.length > 0) {
+          var next = queue.shift();
+          next.unshift(ajax, 0);
+          setTimeout.apply(this, next);
+        } else {
+          activeRequests--;
+        }
+      }
+
+      function ajax(method, url, args, cb) {
+        var client = new XMLHttpRequest();
+        var uri = url;
+
+        if (typeof args === 'object' && (method === 'POST' || method === 'PUT')) {
+          uri += '?';
+          var argcount = 0;
+          for (var key in args) {
+            if (args.hasOwnProperty(key)) {
+              if (argcount++) {
+                uri += '&';
+              }
+              uri += encodeURIComponent(key) + '=' + encodeURIComponent(args[key]);
+            }
+          }
+        }
+
+        client.open(method, uri);
+        if (typeof args === 'string' && (method === 'POST' || method === 'PUT')) {
+          client.send(args);
+        } else {
+          client.send();
+        }
+
+        client.onload = function() {
+          dequeue();
+          if (this.status >= 200 && this.status < 300) {
+            cb(null, this.response);
+          } else {
+            cb(this.statusText);
+          }
+        };
+        client.onerror = function() {
+          dequeue();
+          cb(this.statusText);
+        };
+      }
+
+      return {
+        get: function(args, cb) {
+          bufferedAjax('GET', url, args, cb);
         },
-        post: function(args) {
-          return core.ajax('POST', url, args);
+        post: function(args, cb) {
+          bufferedAjax('POST', url, args, cb);
         },
-        put: function(args) {
-          return core.ajax('PUT', url, args);
+        put: function(args, cb) {
+          bufferedAjax('PUT', url, args, cb);
         },
-        'delete': function(args) {
-          return core.ajax('DELETE', url, args);
+        delete: function(args, cb) {
+          bufferedAjax('DELETE', url, args, cb);
         }
       };
     }

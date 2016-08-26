@@ -14,37 +14,35 @@
   }
 })(this, function(ohm, ohmEditor, utils, httpUtil, CheckedEmitter) {
   var exampleWorkerManager = new CheckedEmitter();
-
   exampleWorkerManager.registerEvents({
     'received:examples': ['ruleName', 'examples'],
     'received:neededExamples': ['neededExamples'],
     'started:worker': []
   });
-
   var eventsToEmit = ['received:examples', 'received:neededExamples', 'started:worker'];
 
   var exampleWorker = new Worker('exampleWorker.js');
 
   // TODO: may want to reset current worker instead
-
   function resetWorker(grammar) {
     if (exampleWorker) {
       exampleWorker.terminate();
     }
     exampleWorker = new Worker('exampleWorker.js');
     exampleWorker.onmessage = onWorkerMessage;
-    saveGrammarToDB(grammar)
-      .then(function() {
-        exampleWorker.postMessage({
-          name: 'initialize', grammarName: grammar.name
-        });
+    saveGrammarToDB(grammar, function(err) {
+      if (err) return;
+
+      exampleWorker.postMessage({
+        name: 'initialize', grammarName: grammar.name
       });
+    });
   }
 
-  function saveGrammarToDB(grammar) {
+  function saveGrammarToDB(grammar, cb) {
     var baseUrl = location.toString().match(/^(.*)\/_design\//)[1];
     return httpUtil.$http(baseUrl + '/_design/ohm/_rewrite/grammars/' + grammar.name)
-      .post(grammar.source.contents);
+      .post(grammar.source.contents, cb);
   }
 
   ohmEditor.addListener('parse:grammar', function(_, g, err) {

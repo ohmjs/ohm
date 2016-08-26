@@ -5,9 +5,9 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    root.codbUtil = initModule(root.Promise, root.httpUtil, root.ohm);
+    root.codbUtil = initModule(root.httpUtil, root.utils, root.CheckedEmitter, root.ohm);
   }
-})(this, function(Promise, httpUtil, ohm) {
+})(this, function(httpUtil, utils, CheckedEmitter, ohm) {
 
   // ---------
   // Helpers
@@ -29,24 +29,31 @@
 
     this.examples = {};
     this.failedExamples = {};
+    this.initialized = false;
 
     // TODO: move this to worker
 
     var self = this;
     var url = this.baseUrl + '/_design/ohm/_rewrite/examples/' + this.grammar.name;
-    var fetchExamples = httpUtil.$http(url)
-      .get({}) // no args = get them all
-      .then(function(examplesString) {
-        self.examples = JSON.parse(examplesString);
-      });
 
-    // can check flag to see if initialized, or can add 'then' to initialization promise
-    this.initialization = fetchExamples
-      .then(function(_) {
+    this.events = new CheckedEmitter();
+    this.events.registerEvents({
+      'initialized:DB': []
+    });
+
+    httpUtil.$http(url)
+      .get({}, function(err, examplesString) {
+        if (err) {
+          errorWithPrefix('Failed Initialization: ')(err);
+          return;
+        }
+
+        self.examples = JSON.parse(examplesString);
+
+        // can check flag to see if initialized
         self.initialized = true;
-        return true;
-      }, errorWithPrefix('Failed Initialization: '));
-    this.initialized = false;
+        self.events.emit('initialized:DB');
+      });
   }
 
   ExampleDatabase.prototype.addExample = function(ruleName, example) {
@@ -64,14 +71,15 @@
     var url = this.baseUrl + '/_design/ohm/_rewrite/examples/' + this.grammar.name +
       '/' + ruleName;
     httpUtil.$http(url)
-    .post(example) // TODO: add parameters
-      .catch(function(reason) {
-        errorWithPrefix('Failed to add example: ')(reason);
-        if (!this.failedExamples.hasOwnProperty(ruleName)) {
-          this.failedExamples[ruleName] = [];
-        }
+      .post(example, function(err) { // TODO: add parameters
+        if (err) {
+          errorWithPrefix('Failed to add example: ')(err);
+          if (!this.failedExamples.hasOwnProperty(ruleName)) {
+            this.failedExamples[ruleName] = [];
+          }
 
-        this.failedExamples[ruleName].push(example);
+          this.failedExamples[ruleName].push(example);
+        }
       });
   };
 

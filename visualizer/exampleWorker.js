@@ -11,8 +11,8 @@
   } else { // inside web worker
     root.importScripts(
       '../dist/ohm.js',
-      './third_party/promise-polyfill/promise.js',
       'utils.js',
+      'third_party/checked-emitter-1.0.1.js',
       './httpUtil.js',
       './codbUtil.js'
     );
@@ -71,8 +71,12 @@
         grammarName = e.data.grammarName;
         var baseUrl = this.baseUrl || codbUtil.localUrl;
         httpUtil.$http(baseUrl + '/_design/ohm/_rewrite/grammars/' + grammarName)
-          .get({})
-          .then(function(grammarString) {
+          .get({}, function(err, grammarString) {
+            if (err) {
+              codbUtil.errorWithPrefix('GET grammar ' + this.grammarName + ': ')(err);
+              return;
+            }
+
             grammar = ohm.grammar(grammarString);
             initializeSemantics(grammar);
 
@@ -86,8 +90,7 @@
               start();
             }
             self.postMessage('started:worker');
-          }, codbUtil.errorWithPrefix('GET grammar ' + this.grammarName + ': '));
-
+          });
         break;
       case 'request:examples':
         var ruleName = e.data.args[0];
@@ -117,23 +120,16 @@
     var self = this;
     var codbUrl = codbUtil.localUrl; // TODO: codbUrl
     this.exampleDB = new codbUtil.ExampleDatabase(grammar, codbUrl);
-    this.exampleDB.initialization
-      .then(function() {
-        self.examplesNeeded = utils.difference(
-          Object.keys(grammar.rules),
-          Object.keys(self.exampleDB.examples)
-        );
-      });
+    this.exampleDB.events.addListener('initialized:DB', function() {
+      self.examplesNeeded = utils.difference(
+        Object.keys(grammar.rules),
+        Object.keys(self.exampleDB.examples)
+      );
+    });
 
     this.rules = initialRules(grammar);
     this.currentRuleIndex = 0;
   }
-
-  Object.defineProperty(ExampleGenerator.prototype, 'initialization', {
-    get: function() {
-      return this.exampleDB.initialization;
-    }
-  });
 
   ExampleGenerator.prototype.processExampleFromUser = function(example, optRuleName) {
     var that = this;
@@ -215,10 +211,9 @@
 
   function start() {
     generator = new ExampleGenerator();
-    generator.initialization
-      .then(function() {
-        runComputationStep(generator, 100);
-      });
+    generator.exampleDB.events.addListener('initialized:DB', function() {
+      runComputationStep(generator, 100);
+    });
   }
 
   function runComputationStep(generator, n) {
