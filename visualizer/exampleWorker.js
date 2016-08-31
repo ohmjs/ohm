@@ -82,13 +82,13 @@
                           args: [ruleName, examplesForRule]});
         break;
       case 'update:neededExamples':
-        var neededExamples = utils.difference(
+        generator.examplesNeeded = utils.difference(
           Object.keys(grammar.rules),
           Object.keys(generator.examplePieces)
         );
 
         self.postMessage({name: 'received:neededExamples',
-                          args: [neededExamples]});
+                          args: [generator.examplesNeeded]});
         break;
       case 'add:userExample':
         ruleName = e.data.args[0];
@@ -106,6 +106,9 @@
       Object.keys(grammar.rules),
       Object.keys(examplePieces)
     );
+    self.postMessage({name: 'received:neededExamples',
+                      args: [this.examplesNeeded]});
+
     this.currentRuleIndex = 0;
   }
 
