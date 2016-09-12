@@ -520,6 +520,11 @@ test('extending semantics', function(t) {
   // Make sure you can't specify arguments when you extend an attribute
   t.throws(function() { s2.extendAttribute('value(x)', {}); }, /Expected end of input/);
 
+  // Make sure that semantics from the same grammar source are considered compatible.
+  var arith1 = ohm.grammar(arithmeticGrammarSource);
+  var arith2 = ohm.grammar(arithmeticGrammarSource);
+  t.ok(arith2.extendSemantics(arith1.createSemantics()));
+
   t.end();
 });
 

@@ -184,7 +184,7 @@ function Semantics(grammar, superSemantics) {
 
   this.super = superSemantics;
   if (superSemantics) {
-    if (grammar !== this.super.grammar && !grammar._inheritsFrom(this.super.grammar)) {
+    if (!(grammar.equals(this.super.grammar) || grammar._inheritsFrom(this.super.grammar))) {
       throw new Error(
           "Cannot extend a semantics for grammar '" + this.super.grammar.name +
           "' for use with grammar '" + grammar.name + "' (not a sub-grammar)");

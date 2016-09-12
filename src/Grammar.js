@@ -15,6 +15,10 @@ var pexprs = require('./pexprs');
 // Private stuff
 // --------------------------------------------------------------------
 
+function getSortedRuleValues(grammar) {
+  return Object.keys(grammar.rules).sort().map(function(name) { return grammar.rules[name]; });
+}
+
 function Grammar(
     name,
     superGrammar,
@@ -46,6 +50,26 @@ Grammar.prototype = {
   // NOTE: This might give an unexpected result if called before BuiltInRules is defined!
   isBuiltIn: function() {
     return this === Grammar.ProtoBuiltInRules || this === Grammar.BuiltInRules;
+  },
+
+  equals: function(g) {
+    if (this === g) {
+      return true;
+    }
+    // Do the cheapest comparisons first.
+    if (g == null ||
+        this.name !== g.name ||
+        this.defaultStartRule !== g.defaultStartRule ||
+        !(this.superGrammar === g.superGrammar || this.superGrammar.equals(g.superGrammar))) {
+      return false;
+    }
+    var myRules = getSortedRuleValues(this);
+    var otherRules = getSortedRuleValues(g);
+    return myRules.length === otherRules.length && myRules.every(function(rule, i) {
+      return rule.description === otherRules[i].description &&
+             rule.formals.join(',') === otherRules[i].formals.join(',') &&
+             rule.body.toString() === otherRules[i].body.toString();
+    });
   },
 
   _match: function(input, opts) {
@@ -134,7 +158,7 @@ Grammar.prototype = {
   _inheritsFrom: function(grammar) {
     var g = this.superGrammar;
     while (g) {
-      if (g === grammar) {
+      if (g.equals(grammar, true)) {
         return true;
       }
       g = g.superGrammar;

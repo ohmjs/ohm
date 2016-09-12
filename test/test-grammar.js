@@ -1,5 +1,6 @@
 'use strict';
 
+var fs = require('fs');
 var test = require('tape');
 
 var Grammar = require('../src/Grammar');
@@ -191,6 +192,39 @@ test('default start rule', function(t) {
   t.ok(
       new Grammar('G', root, rules, 'digit'),
       'works when rule is in the supergrammar');
+
+  t.end();
+});
+
+test('grammar equality', function(t) {
+  var source = fs.readFileSync('test/arithmetic.ohm').toString();
+  var a = ohm.grammar(source);
+  var b = ohm.grammar(source);
+  t.equal(a.equals(b), true, 'two grammars from same source');
+  t.equal(a.equals(), false, 'comparing to undefined');
+  t.equal(a.equals(null), false, 'comparing to null');
+
+  var c = ohm.grammar(source.replace('digit', '(digit)'));
+  t.equal(a.equals(c), true, 'still equal after meaningless source change');
+
+  var exp = a.rules.exp;
+  delete a.rules.exp;
+
+  t.equals(a.equals(b), false, 'not equal after deleting a rule');
+
+  a.rules.exp = exp;
+  t.equals(a.equals(b), true, 'equal aftering adding rule back');
+
+  a.rules.exp.description = 'doyyy';
+  t.equals(a.equals(b), false, 'not equal after changing a description');
+
+  b.rules.zzz = {};
+  t.equals(b.equals(c), false, 'not equal after adding additional rule');
+  delete b.rules.zzz;
+  t.equals(b.equals(c), true);
+
+  b.defaultStartRule = '';
+  t.equals(b.equals(c), false, 'not equal after changing defaultStartRule');
 
   t.end();
 });
