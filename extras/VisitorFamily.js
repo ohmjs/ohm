@@ -4,7 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-var assert = require('./common').assert;
+var assert = require('../src/common').assert;
 
 // --------------------------------------------------------------------
 // Private stuff

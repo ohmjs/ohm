@@ -5,7 +5,7 @@
 // --------------------------------------------------------------------
 
 var test = require('tape');
-var VisitorFamily = require('../src/VisitorFamily');
+var VisitorFamily = require('../../extras/VisitorFamily');
 
 // --------------------------------------------------------------------
 // Helpers
