@@ -209,3 +209,17 @@ test('Param', function(t) {
 
   t.end();
 });
+
+test('Lex', function(t) {
+  var g = makeGrammar([
+    'G {',
+    '  A = #("a" "b")',
+    '}'
+  ]);
+
+  var example = g.rules.A.body.generateExample(g, {}, true, []);
+
+  t.equal(example.value, 'ab');
+
+  t.end();
+});

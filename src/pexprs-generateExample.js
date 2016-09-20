@@ -163,7 +163,9 @@ pexprs.Lookahead.prototype.generateExample = function(grammar, examples, inSynta
   return {value: ''};
 };
 
-// LEX
+pexprs.Lex.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
+  return this.expr.generateExample(grammar, examples, false, actuals);
+};
 
 pexprs.Apply.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
   var ans = {};
