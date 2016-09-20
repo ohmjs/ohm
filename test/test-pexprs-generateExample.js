@@ -131,7 +131,7 @@ test('Star', function(t) {
 
     // Here, a stubbed 'Math.random()' makes 'generateExample()' repeat 'a'
     //   a certain number of times. for example:
-    //   floor(4 * 0.76) = 3, and floor(4 * 0.1) = 0
+    //   floor(4 * 0.76) = 3, and floor(3 * 0.1) = 0
     // Note: the system only generates up to 3 repetitions in an iter node
     Math.random = function() { return 0.76; };
     var example = g.rules.star.body.generateExample(g, {}, false, []);
@@ -163,7 +163,7 @@ test('Plus', function(t) {
 
     Math.random = function() { return 0.76; };
     example = g.rules.plus.body.generateExample(g, {}, false, []);
-    t.equal(example.value, 'aaa');
+    t.equal(example.value, 'aaaa');
   } finally {
     Math.random = random;
   }
