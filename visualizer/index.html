@@ -395,6 +395,22 @@
         outline: none;
       }
     }
+
+    #exampleBottom {
+      display: flex;
+      flex-direction: row;
+    }
+
+    #exampleBottom > .editorWrapper {
+      flex: 1;
+      position: relative;
+    }
+
+    #exampleBottom > #neededExamples {
+      border-left: 1px solid hsl(0, 0%, 62%);
+      /*width: 100px;*/
+      z-index: 10;
+    }
   </style>
   <link rel="stylesheet" href="style/examples.css">
   <link rel="stylesheet" href="style/parseTree.css">
@@ -425,7 +441,12 @@
           <span id="examplesNeededDrawer" class="exampleGeneratorUI hidden">Needed Examples <span class="indicator">&#x2B05;</span></span>
         </h2>
         <ul id="exampleList"></ul>
-        <div class="flex-fix"><div class="editorWrapper"></div></div>
+        <div id="exampleBottom" class="flex-fix">
+          <div class="editorWrapper"></div>
+          <div id="neededExamples">
+            <ul></ul>
+          </div>
+        </div>
       </div>
       <div id="exampleSplitter" class="splitter vertical disabled"></div>
       <div id="exampleRequestContainer" class="exampleGeneratorUI hidden">

@@ -40,13 +40,28 @@
 
     timeout = setTimeout(function() {
       var neededExampleList = domUtil.$('#exampleRequests ul');
+      var inputList = domUtil.$('#neededExamples > ul');
+      var startRuleDropdown = domUtil.$('#startRuleDropdown');
 
       neededExamples = updatedNeededExamples;
+
+      if (startRuleDropdown) {
+        startRuleDropdown.parentElement.removeChild(startRuleDropdown);
+      }
+      inputList.parentElement.insertBefore(
+        makeStartRuleDropdown(ohmEditor.grammar, neededExamples), inputList
+      );
 
       Array.prototype.slice.call(neededExampleList.children)
         .forEach(function(childNode) {
           if (childNode.firstChild !== focusedElement) {
             neededExampleList.removeChild(childNode);
+          }
+        });
+      Array.prototype.slice.call(inputList.children)
+        .forEach(function(childNode) {
+          if (childNode.firstChild !== focusedElement) {
+            inputList.removeChild(childNode);
           }
         });
 
@@ -56,6 +71,7 @@
         var li = domUtil.createElement('li');
         li.appendChild(makeExampleRequest(ruleName));
         neededExampleList.appendChild(li);
+        inputList.appendChild(domUtil.createElement('li', ruleName));
       });
 
       examplesNeededIndicator.classList.toggle('active', neededExamples.length !== 0);
@@ -138,4 +154,22 @@
       this.domNode.classList.add('invalid');
     }
   };
+
+  function makeStartRuleDropdown(grammar, neededExamples) {
+    var dropdown = domUtil.createElement('select');
+    dropdown.id = 'startRuleDropdown';
+
+    Object.keys(grammar.rules).forEach(function(ruleName) {
+      var item = domUtil.createElement('option', ruleName);
+      item.value = ruleName;
+
+      if (neededExamples.includes(ruleName)) {
+        item.classList.add('needed');
+      }
+
+      dropdown.appendChild(item);
+    });
+
+    return dropdown;
+  }
 });
