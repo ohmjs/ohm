@@ -21,10 +21,6 @@ function flatten(listOfLists) {
 
 pexprs.PExpr.prototype.generateExample = common.abstract('generateExample');
 
-pexprs.any.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
-  return {value: String.fromCharCode(Math.floor(Math.random() * 255))};
-};
-
 function categorizeExamples(examples) {
   // A list of rules that the system needs examples of, in order to generate an example
   //   for the current rule
@@ -60,6 +56,26 @@ function categorizeExamples(examples) {
     needHelp: needHelp
   };
 }
+
+pexprs.any.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
+  return {value: String.fromCharCode(Math.floor(Math.random() * 255))};
+};
+
+// Assumes that terminal's object is always a string
+pexprs.Terminal.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
+  return {value: this.obj};
+};
+
+pexprs.Range.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
+  var rangeSize = this.to.charCodeAt(0) - this.from.charCodeAt(0);
+  return {value: String.fromCharCode(
+    this.from.charCodeAt(0) + Math.floor(rangeSize * Math.random())
+  )};
+};
+
+pexprs.Param.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
+  return actuals[this.index].generateExample(grammar, examples, inSyntacticContext, actuals);
+};
 
 pexprs.Alt.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
   // items -> termExamples
@@ -111,54 +127,13 @@ pexprs.Seq.prototype.generateExample = function(grammar, examples, inSyntacticCo
   return ans;
 };
 
-pexprs.Apply.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
-  var ans = {};
-
-  var ruleName = this.substituteParams(actuals).toString();
-
-  if (!examples.hasOwnProperty(ruleName)) {
-    ans.examplesNeeded = [ruleName];
-  } else {
-    var relevantExamples = examples[ruleName];
-    var i = Math.floor(Math.random() * relevantExamples.length);
-    ans.value = relevantExamples[i];
-  }
-
-  return ans;
-};
-
-// Assumes that terminal's object is always a string
-pexprs.Terminal.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
-  return {value: this.obj};
-};
-
-pexprs.Range.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
-  var rangeSize = this.to.charCodeAt(0) - this.from.charCodeAt(0);
-  return {value: String.fromCharCode(
-    this.from.charCodeAt(0) + Math.floor(rangeSize * Math.random())
-  )};
-};
-
-// TODO: make 'Not' and 'Lookahead' behaviour smarter
-// Right now, 'Not' and 'Lookahead' generate nothing and assume that whatever follows will
-//   work according to the encoded constraints.
-pexprs.Not.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
-  return {value: ''};
-};
-
-pexprs.Lookahead.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
-  return {value: ''};
-};
-
-pexprs.Param.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
-  return actuals[this.index].generateExample(grammar, examples, inSyntacticContext, actuals);
-};
-
-function generateNExamples(pexpr, grammar, examples, inSyntacticContext, actuals, numTimes) {
+pexprs.Iter.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
+  var rangeTimes = Math.min(this.maxNumMatches - this.minNumMatches, 3);
+  var numTimes = Math.floor(Math.random() * (rangeTimes + 1) + this.minNumMatches);
   var items = [];
 
   for (var i = 0; i < numTimes; i++) {
-    items.push(pexpr.expr.generateExample(grammar, examples, inSyntacticContext, actuals));
+    items.push(this.expr.generateExample(grammar, examples, inSyntacticContext, actuals));
   }
 
   var categorizedExamples = categorizeExamples(items);
@@ -176,21 +151,36 @@ function generateNExamples(pexpr, grammar, examples, inSyntacticContext, actuals
   }
 
   return ans;
-}
-
-pexprs.Star.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
-  return generateNExamples(this, grammar, examples, inSyntacticContext, actuals,
-                           Math.floor(Math.random() * 4));
 };
 
-pexprs.Plus.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
-  return generateNExamples(this, grammar, examples, inSyntacticContext, actuals,
-                           Math.floor(Math.random() * 3 + 1));
+// Right now, 'Not' and 'Lookahead' generate nothing and assume that whatever follows will
+//   work according to the encoded constraints.
+pexprs.Not.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
+  return {value: ''};
 };
 
-pexprs.Opt.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
-  return generateNExamples(this, grammar, examples, inSyntacticContext, actuals,
-                           Math.floor(Math.random() * 2));
+pexprs.Lookahead.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
+  return {value: ''};
+};
+
+pexprs.Lex.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
+  return this.expr.generateExample(grammar, examples, false, actuals);
+};
+
+pexprs.Apply.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
+  var ans = {};
+
+  var ruleName = this.substituteParams(actuals).toString();
+
+  if (!examples.hasOwnProperty(ruleName)) {
+    ans.examplesNeeded = [ruleName];
+  } else {
+    var relevantExamples = examples[ruleName];
+    var i = Math.floor(Math.random() * relevantExamples.length);
+    ans.value = relevantExamples[i];
+  }
+
+  return ans;
 };
 
 pexprs.UnicodeChar.prototype.generateExample = function(
