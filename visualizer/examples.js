@@ -43,7 +43,7 @@
   }
 
   function handleMouseDown(e) {
-    var li = e.target.parentElement;
+    var li = e.target.closest('li.example');
     setSelected(li.id);
   }
 
@@ -73,7 +73,12 @@
     var id = li.id = uniqueId();
     li.onmousedown = handleMouseDown;
 
-    li.appendChild(domUtil.createElement('code'));
+    var codeEl = li.appendChild(domUtil.createElement('code'));
+    var exampleTextEl = codeEl.appendChild(domUtil.createElement('span.code'));
+    var startRuleEl = codeEl.appendChild(domUtil.createElement('span.startRule'));
+
+    exampleTextEl.onmousedown = handleMouseDown;
+    startRuleEl.onmousedown = handleMouseDown;
 
     var del = li.appendChild(domUtil.createElement('div.delete'));
     del.innerHTML = '&#x2716;';
@@ -134,7 +139,10 @@
       startRule: startRule
     };
 
-    var code = getListEl(id).querySelector(' code');
+    var listItem = getListEl(id);
+    var code = listItem.querySelector('code > span.code');
+    var startRuleEl = listItem.querySelector('code > span.startRule');
+
     code.startRule = startRule;
     code.parentElement.classList.remove('pass', 'fail');
     setTimeout(checkExample.bind(null, id), 0);
@@ -142,6 +150,12 @@
       code.textContent = text;
     } else {
       code.innerHTML = '&nbsp;';
+    }
+
+    if (startRule !== null) {
+      startRuleEl.textContent = startRule;
+    } else {
+      startRuleEl.textContent = '';
     }
 
     ohmEditor.examples.emit('set:example', id, oldValue, value);

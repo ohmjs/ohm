@@ -22,6 +22,8 @@
   padding: 6px 4px 6px 8px;
   text-overflow: ellipsis;
 
+  display: inline-flex;
+
   /* Weirdly, it won't shrink smaller than its content unless we give it an explicit width. */
   width: 1px;
 }
@@ -48,7 +50,9 @@
   color: #d44950;
   padding: 4px;
   cursor: default;
-  display: none;
+  /*display: none;*/
+  display: block;
+  visibility: hidden;
 }
 
 #exampleList .example:hover {
@@ -56,7 +60,7 @@
 }
 
 #exampleList .example:hover .delete {
-  display: block;
+  visibility: visible;
 }
 
 #exampleList code:empty::before {
@@ -144,4 +148,18 @@
     border: 1px solid #ccc;
     border-radius: 3px;
   }
+}
+
+.selected span.startRule {
+  color: hsl(0, 0%, 75%);
+}
+
+span.startRule {
+  margin-left: 10px;
+  flex: 0.5;
+  color: hsl(0, 0%, 85%);
+}
+
+span.code {
+  flex: 1;
 }
