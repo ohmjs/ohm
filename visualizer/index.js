@@ -162,8 +162,4 @@
   /* eslint-enable no-console */
 
   refresh();
-
-  $$('.hiddenDuringLoading').forEach(function(el) {
-    el.classList.remove('hiddenDuringLoading');
-  });
 });

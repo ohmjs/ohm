@@ -8,10 +8,10 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohm, root.ohmEditor, root.CheckedEmitter, root.document, root.cmUtil, root.d3,
-               root.domUtil);
+    initModule(root.ohm, root.ohmEditor, root.CheckedEmitter, window, root.document, root.cmUtil,
+               root.d3, root.domUtil);
   }
-})(this, function(ohm, ohmEditor, CheckedEmitter, document, cmUtil, d3, domUtil) {
+})(this, function(ohm, ohmEditor, CheckedEmitter, window, document, cmUtil, d3, domUtil) {
   var ArrayProto = Array.prototype;
   var $ = domUtil.$;
 
@@ -32,6 +32,9 @@
 
   var nextNodeId = 0;
 
+  var parseResultsDiv = $('#parseResults');
+  var inputCtx = $('#expandedInput').getContext('2d');
+
   // D3 Helpers
   // ----------
 
@@ -43,8 +46,8 @@
     return function tween(d, i, a) {
       var interp = d3.interpolate(a, endValue);
       return function(t) {
-        var stepValue = interp.apply(this, arguments);
-        cb(stepValue);
+        var stepValue = interp.call(this, t);
+        cb(t);
         return stepValue;
       };
     };
@@ -55,6 +58,10 @@
 
   function getFreshNodeId() {
     return 'node-' + nextNodeId++;
+  }
+
+  function isRectInViewport(rect) {
+    return rect.right > 0 && rect.left < window.innerWidth;
   }
 
   function measureLabel(wrapperEl) {
@@ -83,64 +90,43 @@
     return result;
   }
 
-  function measureInput(inputEl) {
-    if (!inputEl) {
-      return 0;
+  function getPixelRatio() {
+    return window.devicePixelRatio || 1;
+  }
+
+  function measureInputText(text) {
+    // Always update the font before measuring -- devicePixelRatio may have changed.
+    inputCtx.font = 16 * getPixelRatio() + 'px Menlo, Monaco, monospace';
+    return inputCtx.measureText(text).width / getPixelRatio();
+  }
+
+  function renderInputText(text, rect, optAlpha) {
+    var textWidth = measureInputText(text);
+    var letterPadding = (rect.right - rect.left - textWidth) / text.length / 2;
+    var charWidth = textWidth / text.length;
+
+    inputCtx.fillStyle = 'rgba(51, 51, 51, ' + (optAlpha == null ? 1 : optAlpha) + ')';
+
+    var x = rect.left;
+    for (var i = 0; i < text.length; i++) {
+      x += letterPadding;
+      inputCtx.fillText(text[i], x * getPixelRatio(), 0);
+      x += charWidth + letterPadding;
     }
-    var measuringDiv = $('#measuringDiv');
-    var span = measuringDiv.appendChild(domUtil.createElement('span.input'));
-    span.innerHTML = inputEl.textContent;
-    var result = {
-      width: span.clientWidth,
-      height: span.clientHeight
+    return x <= window.innerWidth;
+  }
+
+  function renderHighlight(el) {
+    var elBounds = el.getBoundingClientRect();
+    var pixelRatio = getPixelRatio();
+    var rect = {
+      x: elBounds.left * pixelRatio,
+      y: 0,
+      width: (elBounds.right - elBounds.left) * pixelRatio,
+      height: $('#expandedInput').height
     };
-    measuringDiv.removeChild(span);
-    return result;
-  }
-
-  function initializeWidths() {
-    var els = getWidthDependentElements($('.pexpr'));
-
-    // First, ensure that each pexpr node must be as least as wide as the width
-    // of its associated input text.
-    for (var i = 0; i < els.length; ++i) {
-      var el = els[i];
-      el.style.minWidth = measureInput(el._input).width + 'px';
-    }
-
-    // Then, set the initial widths of all the input elements.
-    updateInputWidths(els);
-  }
-
-  // Returns an array of elements whose width could depend on `el`, including
-  // the element itself.
-  function getWidthDependentElements(el) {
-    var els = [el];
-    // Add all ancestor pexpr nodes.
-    var node = el;
-    while ((node = node.parentNode) !== document) {
-      if (node.classList.contains('pexpr')) {
-        els.push(node);
-      }
-    }
-    // And add all descendent pexpr nodes.
-    return els.concat(ArrayProto.slice.call(el.querySelectorAll('.pexpr')));
-  }
-
-  // For each pexpr div in `els`, updates the width of its associated input
-  // span based on the current width of the pexpr. This ensures the input text
-  // for each pexpr node appears directly above it in the visualization.
-  function updateInputWidths(els) {
-    for (var i = 0; i < els.length; ++i) {
-      var el = els[i];
-      if (!el._input) {
-        continue;
-      }
-      el._input.style.minWidth = el.offsetWidth + 'px';
-      if (!el.style.minWidth) {
-        el.style.minWidth = measureInput(el._input).width + 'px';
-      }
-    }
+    inputCtx.fillStyle = '#B5D5FF';
+    inputCtx.fillRect(rect.x, rect.y, rect.width, rect.height);
   }
 
   function clearMarks() {
@@ -160,29 +146,31 @@
 
   // Hides or shows the children of `el`, which is a div.pexpr.
   function setTraceElementCollapsed(el, collapse, optDurationInMs) {
-    el.classList.toggle('collapsed', collapse);
-
-    ohmEditor.parseTree.emit((collapse ? 'collapse' : 'expand') + ':traceElement', el);
-
+    var duration = optDurationInMs != null ? optDurationInMs : 500;
     var childrenSize = measureChildren(el);
     var newWidth = collapse ? measureLabel(el).width : childrenSize.width;
 
-    // The pexpr can't be smaller than the input text.
-    newWidth = Math.max(newWidth, measureInput(el._input).width);
-
-    var widthDeps = getWidthDependentElements(el);
-    var duration = optDurationInMs != null ? optDurationInMs : 500;
+    function emitEvent() {
+      el.classList.toggle('collapsed', collapse);
+      ohmEditor.parseTree.emit((collapse ? 'collapse' : 'expand') + ':traceElement', el);
+    }
 
     d3.select(el)
         .transition().duration(duration)
-        .styleTween('width', tweenWithCallback(newWidth + 'px', function(v) {
-          updateInputWidths(widthDeps);
+        .styleTween('width', tweenWithCallback(newWidth + 'px', function(t) {
+          // NOTE: This code is only executed if `duration` is > 0.
+          updateExpandedInput(el, collapse, t);
         }))
+        .each('start', function() {
+          this.style.width = this.offsetWidth + 'px';
+          if (!collapse) { emitEvent(); }
+        })
         .each('end', function() {
           // Remove the width and allow the flexboxes to adjust to the correct
           // size. If there is a glitch when this happens, we haven't calculated
           // `newWidth` correctly.
           this.style.width = '';
+          if (collapse) { emitEvent(); }
         });
 
     var height = collapse ? 0 : childrenSize.height;
@@ -196,6 +184,7 @@
             this.hidden = true;
           }
           this.style.height = '';
+          updateExpandedInput();
         });
 
     if (duration === 0) {
@@ -400,20 +389,18 @@
         label.textContent += optExtraInfo;
       }
     }
+    // Make sure the label is at least as wide as the input it consumed.
+    label.style.minWidth = measureInputText(traceNode.source.contents) + 'px';
     return label;
   }
 
-  function createTraceElement(traceNode, parent, input) {
+  function createTraceElement(traceNode, parent) {
     var pexpr = traceNode.expr;
     var wrapper = parent.appendChild(createTraceWrapper(traceNode));
-    wrapper._input = input;
     wrapper._traceNode = traceNode;
     wrapper.id = getFreshNodeId();
 
     if (zoomState.zoomTrace === traceNode && zoomState.previewOnly) {
-      if (input) {
-        input.classList.add('highlight');
-      }
       wrapper.classList.add('zoomBorder');
     }
 
@@ -441,9 +428,8 @@
       var grammarEditor = ohmEditor.ui.grammarEditor;
       var inputEditor = ohmEditor.ui.inputEditor;
 
-      if (input) {
-        input.classList.add('highlight');
-      }
+      updateExpandedInput();
+
       // TODO: Can `source` ever be undefine/null here?
       if (traceNode.source) {
         inputMark = cmUtil.markInterval(inputEditor, traceNode.source, 'highlight', false);
@@ -463,9 +449,7 @@
     });
 
     label.addEventListener('mouseout', function(e) {
-      if (input) {
-        input.classList.remove('highlight');
-      }
+      updateExpandedInput();
       ohmEditor.emit('unpeek:ruleDefinition');
     });
 
@@ -480,25 +464,29 @@
   // and translate vertical overscroll into horizontal movement. I.e., when scrolled all
   // the way down, further downwards scrolling instead moves to the right -- and similarly
   // with up and left.
-  $('#parseResults').addEventListener('wheel', function(e) {
+  parseResultsDiv.onwheel = function(e) {
     var el = e.currentTarget;
     var overscroll;
     var scrollingDown = e.deltaY > 0;
-
-    var bottomSection = $('#bottomSection');
 
     if (scrollingDown) {
       var scrollBottom = el.scrollHeight - el.clientHeight - el.scrollTop;
       overscroll = e.deltaY - scrollBottom;
       if (overscroll > 0) {
-        bottomSection.scrollLeft += overscroll;
+        this.scrollLeft += overscroll;
       }
     } else {
       overscroll = el.scrollTop + e.deltaY;
       if (overscroll < 0) {
-        bottomSection.scrollLeft += overscroll;
+        this.scrollLeft += overscroll;
       }
     }
+  };
+  parseResultsDiv.onscroll = function(e) {
+    updateExpandedInput();
+  };
+  window.addEventListener('resize', function(e) {
+    updateExpandedInput();
   });
 
   // Intialize the zoom out button.
@@ -520,10 +508,6 @@
 
   // Re-render the parse tree starting with `trace` as the root.
   function refreshParseTree(trace) {
-    var expandedInputDiv = $('#expandedInput');
-    var parseResultsDiv = $('#parseResults');
-
-    expandedInputDiv.innerHTML = '';
     parseResultsDiv.innerHTML = '';
 
     var renderedTrace = trace;
@@ -535,9 +519,7 @@
     var rootWrapper = parseResultsDiv.appendChild(createTraceWrapper(renderedTrace));
     var rootContainer = rootWrapper.appendChild(domUtil.createElement('.children'));
 
-    var inputStack = [expandedInputDiv];
     var containerStack = [rootContainer];
-
     var currentLR = {};
 
     ohmEditor.parseTree.emit('render:parseTree', renderedTrace);
@@ -566,24 +548,8 @@
           }
         }
 
-        // Get the span that contain the parent node's input. If it is undefined, it means that
-        // this node is in a failed branch.
-        var inputContainer = inputStack[inputStack.length - 1];
-
-        var childInput;
-        if (inputContainer && node.succeeded) {
-          var contents = isLeafNode ? node.source.contents : '';
-          childInput = inputContainer.appendChild(domUtil.createElement('span.input', contents));
-
-          // Represent any non-empty run of whitespace as a single dot.
-          if (isWhitespace && contents.length > 0) {
-            childInput.innerHTML = UnicodeChars.MIDDLE_DOT;
-            childInput.classList.add('whitespace');
-          }
-        }
-
         var container = containerStack[containerStack.length - 1];
-        var el = createTraceElement(node, container, childInput);
+        var el = createTraceElement(node, container);
 
         var isVBoxItem = container.classList.contains('vbox');
         var useDisclosure = isLabeled && isVBoxItem;
@@ -609,7 +575,6 @@
         if (isLeafNode) {
           return node.SKIP;
         }
-        inputStack.push(childInput);
         containerStack.push(children);
       },
       exit: function(node, parent, depth) {
@@ -626,25 +591,98 @@
         }
         var childContainer = containerStack.pop();
         var el = childContainer.parentElement;
-        inputStack.pop();
 
         ohmEditor.parseTree.emit('exit:traceElement', el, node);
       }
     };
     renderedTrace.walk(renderActions);
-
-    // If the match failed, add the unconsumed input to #expandedInput.
-    if (trace.result.failed()) {
-      var firstFailedEl = domUtil.$('#parseResults > .pexpr > .children > .pexpr.failed');
-      var remainingInput = trace.inputStream.sourceSlice(firstFailedEl._traceNode.pos);
-      expandedInputDiv.appendChild(domUtil.createElement('span.input.unconsumed', remainingInput));
-    }
-
-    initializeWidths();
+    updateExpandedInput();
 
     // Hack to ensure that the vertical scroll bar doesn't overlap the parse tree contents.
     parseResultsDiv.style.paddingRight =
         2 + parseResultsDiv.scrollWidth - parseResultsDiv.clientWidth + 'px';
+  }
+
+  function updateExpandedInput(optAnimatingEl, isCollapsing, t) {
+    var canvasEl = $('#expandedInput');
+    var sizer = $('#expandedInputWrapper > #sizer');
+    var pixelRatio = getPixelRatio();
+    canvasEl.width = sizer.offsetWidth * pixelRatio;
+    canvasEl.height = sizer.offsetHeight * pixelRatio;
+    canvasEl.style.width = sizer.offsetWidth + 'px';
+    canvasEl.style.height = sizer.offsetHeight + 'px';
+
+    inputCtx.textBaseline = 'top';
+
+    // If a parse tree node is currently being hovered, highlight it. If not, highlight
+    // the node that has .zoomBorder, if one exists.
+    var hovered = $('.pexpr > .self:hover');
+    var highlightEl = hovered ? hovered.parentNode : $('.zoomBorder');
+
+    // If there is an animating element, crossfade its input with the input of its
+    // descendents -- fade in when collapsing, fade out when expanding.
+    var animatingElAlpha = 0;
+    if (optAnimatingEl) {
+      animatingElAlpha = isCollapsing ? t : 1 - t;
+    }
+
+    var root = $('.pexpr');
+    var firstFailedEl = domUtil.$('#parseResults > .pexpr > .children > .pexpr.failed');
+
+    (function renderInput(el, isAncestorAnimating) {
+      var rect = el.getBoundingClientRect();
+
+      // Skip anything that falls outside the viewport, and any failed nodes apart
+      // from the first top-level failure.
+      if (!isRectInViewport(rect) ||
+          (el.classList.contains('failed') && el !== firstFailedEl)) {
+        return;
+      }
+
+      if (el === highlightEl) {
+        renderHighlight(el);
+      }
+
+      if (el.classList.contains('leaf') || el.classList.contains('collapsed')) {
+        if (el === firstFailedEl) {
+          renderFailedInputText(el, rect);
+        } else {
+          var alpha = isAncestorAnimating ? 1 - animatingElAlpha : 1;
+          renderInputText(getConsumedInput(el), rect, alpha);
+        }
+      } else {
+        // Is `el` currently animating?
+        var isAnimating = el === optAnimatingEl;
+
+        // Render the input of the animating element, even though it's not a leaf.
+        if (isAnimating) {
+          renderInputText(getConsumedInput(el), rect, animatingElAlpha);
+        }
+
+        // Ask the subtrees to render.
+        var children = el.lastChild.childNodes;
+        ArrayProto.forEach.call(children, function(childEl) {
+          renderInput(childEl, isAnimating || isAncestorAnimating);
+        });
+      }
+    })(root, false);
+  }
+
+  function renderFailedInputText(el, rect) {
+    var text = el._traceNode.inputStream.sourceSlice(el._traceNode.pos);
+    var renderRect = {
+      bottom: rect.bottom,
+      left: rect.left,
+      right: rect.left + measureInputText(text),
+      top: rect.top
+    };
+    renderInputText(text, renderRect, 0.5);
+  }
+
+  function getConsumedInput(el) {
+    if (el._traceNode) {
+      return el._traceNode.source.contents;
+    }
   }
 
   // When the user makes a change in either editor, show the bottom overlay to indicate

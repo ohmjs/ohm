@@ -103,15 +103,7 @@
       display: flex;
       flex: 1;
 
-      /* Handle only horizontal scrolling, so that #expandedInput is fixed to the top. */
-      overflow-x: auto;
-      overflow-y: hidden;
-
       position: relative;  /* For absolute positioning of .overlay */
-    }
-
-    #expandedInput:empty::before {
-      content: '\a0';  /* Insert &nbsp; to keep the correct height. */
     }
 
     #bottomSection .overlay {
@@ -122,12 +114,6 @@
       position: absolute;
       top: 0;
       width: 0;
-    }
-
-    #visualizerBody {
-      display: flex;
-      flex: 1;
-      flex-direction: column;
     }
 
     #exampleContainer {
@@ -305,9 +291,6 @@
     .externalRules pre {
       margin-bottom: 14px;
     }
-    .hiddenDuringLoading {
-      display: none;
-    }
 
     .contextMenu {
       background-color: #f0f0f0;
@@ -448,8 +431,9 @@
   <div id="bottomSection">
     <button id="zoomOutButton" type="button" hidden></button>
     <div id="visualizerBody">
-      <div id="expandedInputWrapper" class="hiddenDuringLoading">
-        <div id="expandedInput"></div>
+      <div id="expandedInputWrapper">
+        <div id="sizer">&nbsp;</div>
+        <canvas id="expandedInput" width="1" height="1"></canvas>
       </div>
       <div id="parseResults"></div>
     </div>
