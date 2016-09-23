@@ -6,9 +6,10 @@
   if (typeof exports === 'object') {
     module.exports = initModule;
   } else {
-    initModule(root.ohm, root.ohmEditor, root.domUtil, root.CheckedEmitter);
+    initModule(root.ohm, root.ohmEditor, root.domUtil,
+      root.CheckedEmitter, root.exampleWorkerManager);
   }
-})(this, function(ohm, ohmEditor, domUtil, CheckedEmitter) {
+})(this, function(ohm, ohmEditor, domUtil, CheckedEmitter, exampleWorkerManager) {
   var idCounter = 0;
   var selectedId = -1;
   var exampleValues = Object.create(null);
@@ -22,6 +23,7 @@
     getExamples: getExamples,
     setExample: setExample,
     setSelected: setSelected,
+    getSelected: getSelected,
     saveExamples: saveExamples
   });
 
@@ -161,6 +163,14 @@
     ohmEditor.examples.emit('set:example', id, oldValue, value);
   }
 
+  function getSelected() {
+    if (selectedId !== -1) {
+      return exampleValues[selectedId];
+    } else {
+      return null;
+    }
+  }
+
   // Select the example with the given id.
   function setSelected(id) {
     var el;
@@ -175,7 +185,6 @@
     }
     selectedId = id;
 
-    ohmEditor.startRule = value.startRule;
     inputEditor.setValue(value.text);
 
     // Update the DOM.
@@ -238,7 +247,10 @@
 
   var uiSave = function(cm) {
     if (selectedId) {
-      setExample(selectedId, cm.getValue());
+      var selectEl = domUtil.$('#startRuleDropdown');
+      var value = cm.getValue();
+      var startRule = selectEl.options[selectEl.selectedIndex].value;
+      setExample(selectedId, value, startRule);
       saveExamples();
     }
   };
