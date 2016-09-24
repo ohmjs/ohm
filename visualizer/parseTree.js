@@ -147,30 +147,35 @@
   // Hides or shows the children of `el`, which is a div.pexpr.
   function setTraceElementCollapsed(el, collapse, optDurationInMs) {
     var duration = optDurationInMs != null ? optDurationInMs : 500;
-    var childrenSize = measureChildren(el);
-    var newWidth = collapse ? measureLabel(el).width : childrenSize.width;
 
     function emitEvent() {
       el.classList.toggle('collapsed', collapse);
       ohmEditor.parseTree.emit((collapse ? 'collapse' : 'expand') + ':traceElement', el);
     }
 
+    if (duration === 0) {
+      el.lastChild.hidden = !collapse;
+      emitEvent();
+      el.lastChild.hidden = collapse;
+      return;
+    }
+
+    var childrenSize = measureChildren(el);
+    var newWidth = collapse ? measureLabel(el).width : childrenSize.width;
+
     d3.select(el)
         .transition().duration(duration)
         .styleTween('width', tweenWithCallback(newWidth + 'px', function(t) {
-          // NOTE: This code is only executed if `duration` is > 0.
           updateExpandedInput(el, collapse, t);
         }))
         .each('start', function() {
           this.style.width = this.offsetWidth + 'px';
-          if (!collapse) { emitEvent(); }
         })
         .each('end', function() {
           // Remove the width and allow the flexboxes to adjust to the correct
           // size. If there is a glitch when this happens, we haven't calculated
           // `newWidth` correctly.
           this.style.width = '';
-          if (collapse) { emitEvent(); }
         });
 
     var height = collapse ? 0 : childrenSize.height;
@@ -178,18 +183,20 @@
         .style('height', currentHeightPx)
         .transition().duration(duration)
         .style('height', height + 'px')
-        .each('start', function() { if (!collapse) { this.hidden = false; } })
+        .each('start', function() {
+          if (!collapse) {
+            emitEvent();
+            this.hidden = false;
+          }
+        })
         .each('end', function() {
+          this.style.height = '';
           if (collapse) {
             this.hidden = true;
+            emitEvent();
           }
-          this.style.height = '';
           updateExpandedInput();
         });
-
-    if (duration === 0) {
-      d3.timer.flush();
-    }
   }
 
   function updateZoomState(newState) {
