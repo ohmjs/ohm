@@ -26,10 +26,10 @@ ES5 {
 
   Program = &(Directive*) SourceElement*
 
-  // §A.1 Lexical Grammar -- http://ecma-international.org/ecma-262/5.1/#sec-A.1
+  // §A.1 Lexical Grammar -- https://es5.github.io/#A.1
 
   /*
-    Note: the following lexical conventions (see http://ecma-international.org/ecma-262/5.1/#sec-7)
+    Note: the following lexical conventions (see https://es5.github.io/#x7)
     are not implemented in this parser.
 
     // Goal production in contexts where a leading "/" or "/=" is permitted:
@@ -174,7 +174,7 @@ ES5 {
   zeroToThree = "0".."3"
   fourToSeven = "4".."7"
 
-  // §7.8.5 Regular Expression Literals -- http://ecma-international.org/ecma-262/5.1/#sec-7.8.5
+  // §7.8.5 Regular Expression Literals -- https://es5.github.io/#x7.8.5
 
   regularExpressionLiteral = "/" regularExpressionBody "/" regularExpressionFlags
   regularExpressionBody = regularExpressionFirstChar regularExpressionChar*
@@ -200,7 +200,7 @@ ES5 {
 
   // A semicolon is "automatically inserted" if a newline or the end of the input stream is
   // reached, or the offending token is "}".
-  // See http://ecma-international.org/ecma-262/5.1/#sec-7.9 for more information.
+  // See https://es5.github.io/#x7.9 for more information.
   // NOTE: Applications of this rule *must* appear in a lexical context -- either in the body of a
   // lexical rule, or inside `#()`.
   sc = space* (";" | end)
@@ -257,7 +257,7 @@ ES5 {
   noIn = ~in
   withIn =
 
-  // §A.3 Expressions -- http://ecma-international.org/ecma-262/5.1/#sec-A.3
+  // §A.3 Expressions -- https://es5.github.io/#A.3
 
   PrimaryExpression = this
                     | identifier
@@ -385,7 +385,7 @@ ES5 {
   assignmentOperator = "=" | ">>>=" | "<<=" | ">>="
                      | "*=" | "/=" | "%=" | "+=" | "-=" | "&=" | "^=" | "|="
 
-  // §A.4 Statements -- http://ecma-international.org/ecma-262/5.1/#sec-A.4
+  // §A.4 Statements -- https://es5.github.io/#A.4
 
   Statement
     = Block
@@ -466,7 +466,7 @@ ES5 {
 
   DebuggerStatement = #(debugger sc)
 
-  // §A.5 Functions and Programs -- http://ecma-international.org/ecma-262/5.1/#sec-A.5
+  // §A.5 Functions and Programs -- https://es5.github.io/#A.5
 
   FunctionDeclaration
     = function identifier "(" FormalParameterList ")" "{" FunctionBody "}"
@@ -479,6 +479,10 @@ ES5 {
 
   FormalParameter = identifier
 
+  /*
+    Note: The Directive Prologue is the longest sequence of ExpressionStatement
+    productions occurring as the initial SourceElement (see https://es5.github.io/#x14.1)
+  */
   FunctionBody = &(Directive*) SourceElement*
 
   SourceElement = Declaration | Statement
