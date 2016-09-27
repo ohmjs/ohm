@@ -405,24 +405,16 @@
       <div id="userExampleContainer">
         <h2>Examples
           <input id="addExampleButton" type="button" value="+"></input>
-          <span id="examplesNeededDrawer" class="exampleGeneratorUI hidden">Needed Examples <span class="indicator">&#x2B05;</span></span>
         </h2>
         <ul id="exampleList"></ul>
-        <div class="flex-fix"><div class="editorWrapper"></div></div>
+        <div id="exampleBottom" class="flex-fix">
+          <div class="editorWrapper"></div>
+          <div id="neededExamples">
+            <ul class="exampleGeneratorUI hidden"></ul>
+          </div>
+        </div>
       </div>
       <div id="exampleSplitter" class="splitter vertical disabled"></div>
-      <div id="exampleRequestContainer" class="exampleGeneratorUI hidden">
-        <!-- <h2>Need Examples For:</h2> -->
-        <div class="flex-fix"><div id="exampleRequests">
-          <div class="requestContainer">
-            <div class="requestScroll">
-              <div class="requestContent">
-                <ul></ul>
-              </div>
-            </div>
-          </div>
-        </div></div>
-      </div>
     </div>
   </div>
 

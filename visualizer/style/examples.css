@@ -3,7 +3,8 @@
   border-top: 1px solid #ddd;
   margin: 0;
   padding: 0;
-  overflow: scroll;
+  overflow-y: scroll;
+  overflow-x: auto;
 }
 
 #exampleList .example {
@@ -21,6 +22,8 @@
   overflow: hidden;
   padding: 6px 4px 6px 8px;
   text-overflow: ellipsis;
+
+  display: inline-flex;
 
   /* Weirdly, it won't shrink smaller than its content unless we give it an explicit width. */
   width: 1px;
@@ -48,7 +51,8 @@
   color: #d44950;
   padding: 4px;
   cursor: default;
-  display: none;
+  display: block;
+  visibility: hidden;
 }
 
 #exampleList .example:hover {
@@ -56,7 +60,7 @@
 }
 
 #exampleList .example:hover .delete {
-  display: block;
+  visibility: visible;
 }
 
 #exampleList code:empty::before {
@@ -144,4 +148,64 @@
     border: 1px solid #ccc;
     border-radius: 3px;
   }
+}
+
+.selected span.startRule {
+  color: hsl(0, 0%, 75%);
+}
+
+span.startRule {
+  margin-left: 10px;
+  flex: 0.5;
+  color: hsl(0, 0%, 85%);
+}
+
+span.code {
+  flex: 1;
+}
+
+
+#neededExamples > ul {
+  list-style-type: none;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  padding-left: 0px;
+}
+
+#neededExamples > ul > li {
+  text-align: center;
+}
+
+option.needed {
+  color: hsl(38, 86%, 55%);
+  font-weight: bold;
+}
+
+#neededExamples select option {
+  text-align: center;
+}
+
+#neededExamples select {
+  text-align: center;
+  background: none;
+  border: none;
+  border-bottom: 1px solid hsl(0, 0%, 0%);
+}
+
+#neededExamples {
+  padding: 7px;
+}
+
+#exampleBottom {
+  display: flex;
+  flex-direction: row;
+}
+
+#exampleBottom > .editorWrapper {
+  flex: 1;
+  position: relative;
+}
+
+#exampleBottom > #neededExamples {
+  z-index: 10;
 }
