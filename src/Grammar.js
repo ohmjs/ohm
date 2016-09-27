@@ -47,6 +47,10 @@ Grammar.initApplicationParser = function(grammar, builderFn) {
 };
 
 Grammar.prototype = {
+  incrementalMatcher: function() {
+    return new IncrementalMatcher(this);
+  },
+
   // Return true if the grammar is a built-in grammar, otherwise false.
   // NOTE: This might give an unexpected result if called before BuiltInRules is defined!
   isBuiltIn: function() {
@@ -347,6 +351,26 @@ Grammar.ProtoBuiltInRules = new Grammar(
     }
   }
 );
+
+function IncrementalMatcher(g) {
+  this.grammar = g;
+  this.input = '';
+}
+
+IncrementalMatcher.prototype = {
+  replace: function(startIdx, endIdx, str) {
+    if (startIdx < 0 || startIdx > this.input.length ||
+        endIdx < 0 || endIdx > this.input.length ||
+        startIdx > endIdx) {
+      throw new Error('Invalid indices: ' + startIdx + ' and ' + endIdx);
+    }
+    this.input = this.input.substring(0, startIdx) + str + this.input.substring(endIdx);
+  },
+
+  match: function(optRuleName) {
+    return this.grammar.match(this.input, optRuleName);
+  }
+};
 
 // --------------------------------------------------------------------
 // Exports
