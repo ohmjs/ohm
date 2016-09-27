@@ -395,20 +395,6 @@
         outline: none;
       }
     }
-
-    #exampleBottom {
-      display: flex;
-      flex-direction: row;
-    }
-
-    #exampleBottom > .editorWrapper {
-      flex: 1;
-      position: relative;
-    }
-
-    #exampleBottom > #neededExamples {
-      z-index: 10;
-    }
   </style>
   <link rel="stylesheet" href="style/examples.css">
   <link rel="stylesheet" href="style/parseTree.css">
@@ -436,7 +422,6 @@
       <div id="userExampleContainer">
         <h2>Examples
           <input id="addExampleButton" type="button" value="+"></input>
-          <!-- <span id="examplesNeededDrawer" class="exampleGeneratorUI hidden">Needed Examples <span class="indicator">&#x2B05;</span></span> -->
         </h2>
         <ul id="exampleList"></ul>
         <div id="exampleBottom" class="flex-fix">

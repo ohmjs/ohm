@@ -51,7 +51,6 @@
   color: #d44950;
   padding: 4px;
   cursor: default;
-  /*display: none;*/
   display: block;
   visibility: hidden;
 }
@@ -168,7 +167,7 @@ span.code {
 
 #neededExamples > ul {
   list-style-type: none;
-  font-family: Menlo, Monaco, sans-serif;
+  font-family: Helvetica, Arial, sans-serif;
   font-size: 12px;
   padding-left: 0px;
 }
@@ -195,4 +194,18 @@ option.needed {
 
 #neededExamples {
   padding: 7px;
+}
+
+#exampleBottom {
+  display: flex;
+  flex-direction: row;
+}
+
+#exampleBottom > .editorWrapper {
+  flex: 1;
+  position: relative;
+}
+
+#exampleBottom > #neededExamples {
+  z-index: 10;
 }
