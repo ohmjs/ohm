@@ -92,7 +92,8 @@
     });
 
     if (startRule !== null) {
-      var option = Array.prototype.slice.call(dropdown.options).find(
+      var option = Array.prototype.find.call(
+        dropdown.options,
         function(option) { return option.value === startRule; }
       );
       option.selected = true;
