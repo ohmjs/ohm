@@ -45,7 +45,7 @@ test('basic incremental parsing', function(t) {
   t.end();
 });
 
-test('rightmostPos - no LR', function(t) {
+test('examinedLength - no LR', function(t) {
   var g = makeGrammar([
     'G {',
     '  start = notLastLetter* letter',
@@ -53,7 +53,7 @@ test('rightmostPos - no LR', function(t) {
     '}'
   ]);
   var result = g.match('yip');
-  var positions = pluckMemoProp(result, 'rightmostPos');
+  var positions = pluckMemoProp(result, 'examinedLength');
   t.deepEqual(positions, [
     {letter: 1, lower: 1, notLastLetter: 2, start: 4},
     {letter: 1, lower: 1, notLastLetter: 2},
@@ -64,7 +64,7 @@ test('rightmostPos - no LR', function(t) {
   t.end();
 });
 
-test('rightmostPos - simple LR', function(t) {
+test('examinedLength - simple LR', function(t) {
   var g = makeGrammar([
     'G {',
     '  start = start letter  -- rec',
@@ -73,7 +73,7 @@ test('rightmostPos - simple LR', function(t) {
   var result = g.match('yo');
   t.equal(result.succeeded(), true);
 
-  var positions = pluckMemoProp(result, 'rightmostPos');
+  var positions = pluckMemoProp(result, 'examinedLength');
   t.deepEqual(positions, [
     {letter: 1, lower: 1, start: 3},
     {letter: 1, lower: 1},
@@ -83,7 +83,7 @@ test('rightmostPos - simple LR', function(t) {
   t.end();
 });
 
-test('rightmostPos - complicated LR', function(t) {
+test('examinedLength - complicated LR', function(t) {
   var g = makeGrammar([
     'G {',
     '  start = start foo  -- rec',
@@ -94,7 +94,7 @@ test('rightmostPos - complicated LR', function(t) {
   var result = g.match('yo');
   t.equal(result.succeeded(), true);
 
-  var positions = pluckMemoProp(result, 'rightmostPos');
+  var positions = pluckMemoProp(result, 'examinedLength');
   t.deepEqual(positions, [
     {any: 1, foo: 3, start: 3},
     {letter: 1, lower: 1},
@@ -104,7 +104,7 @@ test('rightmostPos - complicated LR', function(t) {
   t.end();
 });
 
-test.skip('relative pos', function(t) {
+test('matchLength', function(t) {
   var g = makeGrammar([
     'G {',
     '  start = notLast* any',
@@ -114,7 +114,7 @@ test.skip('relative pos', function(t) {
   var result = g.match('woo');
   t.equal(result.succeeded(), true);
 
-  var positions = pluckMemoProp(result, 'pos');
+  var positions = pluckMemoProp(result, 'matchLength');
   t.deepEqual(positions, [
     {any: 1, notLast: 1, start: 3},
     {any: 1, notLast: 1},
