@@ -45,7 +45,7 @@ test('basic incremental parsing', function(t) {
   t.end();
 });
 
-test('rightmostPos - simple', function(t) {
+test('rightmostPos - no LR', function(t) {
   var g = makeGrammar([
     'G {',
     '  start = notLastLetter* letter',
@@ -58,13 +58,13 @@ test('rightmostPos - simple', function(t) {
     {letter: 1, lower: 1, notLastLetter: 2, start: 4},
     {letter: 1, lower: 1, notLastLetter: 2},
     {letter: 1, lower: 1, notLastLetter: 2},
-    {letter: 1, lower: 1, unicodeLtmo: 1, upper: 1} // TODO: Where is `end`?
+    {letter: 1, lower: 1, upper: 1, unicodeLtmo: 1}
   ]);
 
   t.end();
 });
 
-test('rightmostPos - left recursion', function(t) {
+test('rightmostPos - simple LR', function(t) {
   var g = makeGrammar([
     'G {',
     '  start = start letter  -- rec',
@@ -83,8 +83,7 @@ test('rightmostPos - left recursion', function(t) {
   t.end();
 });
 
-// TODO: Discuss w/ Alex!
-test.skip('rightmostPos - complicated left recursion', function(t) {
+test('rightmostPos - complicated LR', function(t) {
   var g = makeGrammar([
     'G {',
     '  start = start foo  -- rec',
@@ -98,8 +97,29 @@ test.skip('rightmostPos - complicated left recursion', function(t) {
   var positions = pluckMemoProp(result, 'rightmostPos');
   t.deepEqual(positions, [
     {any: 1, foo: 3, start: 3},
-    {any: 1},  // Why isn't there an entry for 'foo' here?
-    {any: 1}  // Why is `foo` 0??
+    {letter: 1, lower: 1},
+    {letter: 1, lower: 1, upper: 1, unicodeLtmo: 1, any: 1, foo: 1}
+  ]);
+
+  t.end();
+});
+
+test.skip('relative pos', function(t) {
+  var g = makeGrammar([
+    'G {',
+    '  start = notLast* any',
+    '  notLast = any &any',
+    '}'
+  ]);
+  var result = g.match('woo');
+  t.equal(result.succeeded(), true);
+
+  var positions = pluckMemoProp(result, 'pos');
+  t.deepEqual(positions, [
+    {any: 1, notLast: 1, start: 3},
+    {any: 1, notLast: 1},
+    {any: 1, notLast: 0},
+    {any: 0}
   ]);
 
   t.end();

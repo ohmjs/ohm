@@ -205,8 +205,9 @@ pexprs.Apply.prototype.eval = function(state) {
 
   var memoKey = app.toMemoKey();
   var memoRec = posInfo.memo[memoKey];
+
   return memoRec && posInfo.shouldUseMemoizedResult(memoRec) ?
-      state.useMemoizedResult(memoRec) :
+      state.useMemoizedResult(state.inputStream.pos, memoRec) :
       app.reallyEval(state);
 };
 
@@ -225,7 +226,7 @@ pexprs.Apply.prototype.handleCycle = function(state) {
     memoRec = posInfo.memo[memoKey] = {pos: -1, rightmostPos: 0, value: false};
     posInfo.startLeftRecursion(this, memoRec);
   }
-  return state.useMemoizedResult(memoRec);
+  return state.useMemoizedResult(state.inputStream.pos, memoRec);
 };
 
 pexprs.Apply.prototype.reallyEval = function(state) {
@@ -270,21 +271,24 @@ pexprs.Apply.prototype.reallyEval = function(state) {
       state.processFailure(origPos, this);
     }
 
-    if (memoized) {
-      origPosInfo.memo[memoKey].failuresAtRightmostPosition = state.cloneRightmostFailures();
+    if (memoRec) {
+      memoRec.failuresAtRightmostPosition = state.cloneRightmostFailures();
     }
+  }
+  if (memoRec) {
+    memoRec.rightmostPos = Math.max(inputStream.rightmostPos - origPos, memoRec.rightmostPos);
   }
 
   // Record trace information in the memo table, so that it is available if the memoized result
   // is used later.
-  if (state.isTracing() && origPosInfo.memo[memoKey]) {
+  if (state.isTracing() && memoRec) {
     var succeeded = !!value;
     var entry = state.getTraceEntry(origPos, this, succeeded, succeeded ? [value] : []);
     if (isHeadOfLeftRecursion) {
       common.assert(entry.terminatingLREntry != null || !succeeded);
       entry.isHeadOfLeftRecursion = true;
     }
-    origPosInfo.memo[memoKey].traceEntry = entry;
+    memoRec.traceEntry = entry;
   }
 
   origPosInfo.exit();
