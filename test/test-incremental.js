@@ -5,28 +5,20 @@
 // --------------------------------------------------------------------
 
 var test = require('tape-catch');
-
-var ohm = require('..');
-var common = require('../src/common');
 var testUtil = require('./testUtil');
 
 var makeGrammar = testUtil.makeGrammar;
 
 // --------------------------------------------------------------------
-// Private stuff
-// --------------------------------------------------------------------
-
-
-// --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
 
-test.only('basic incremental parsing', function(t) {
+test('basic incremental parsing', function(t) {
   var g = makeGrammar([
     'G {',
     '  start = notLastLetter* letter',
     '  notLastLetter = letter &letter',
-    '}',
+    '}'
   ]);
   var im = g.incrementalMatcher();
   im.replace(0, 0, 'helloworld');
