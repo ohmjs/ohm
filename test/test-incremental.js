@@ -53,8 +53,8 @@ test('examinedLength - no LR', function(t) {
     '}'
   ]);
   var result = g.match('yip');
-  var positions = pluckMemoProp(result, 'examinedLength');
-  t.deepEqual(positions, [
+  var values = pluckMemoProp(result, 'examinedLength');
+  t.deepEqual(values, [
     {letter: 1, lower: 1, notLastLetter: 2, start: 4},
     {letter: 1, lower: 1, notLastLetter: 2},
     {letter: 1, lower: 1, notLastLetter: 2},
@@ -73,8 +73,8 @@ test('examinedLength - simple LR', function(t) {
   var result = g.match('yo');
   t.equal(result.succeeded(), true);
 
-  var positions = pluckMemoProp(result, 'examinedLength');
-  t.deepEqual(positions, [
+  var values = pluckMemoProp(result, 'examinedLength');
+  t.deepEqual(values, [
     {letter: 1, lower: 1, start: 3},
     {letter: 1, lower: 1},
     {letter: 1, lower: 1, upper: 1, unicodeLtmo: 1}
@@ -94,8 +94,8 @@ test('examinedLength - complicated LR', function(t) {
   var result = g.match('yo');
   t.equal(result.succeeded(), true);
 
-  var positions = pluckMemoProp(result, 'examinedLength');
-  t.deepEqual(positions, [
+  var values = pluckMemoProp(result, 'examinedLength');
+  t.deepEqual(values, [
     {any: 1, foo: 3, start: 3},
     {letter: 1, lower: 1},
     {letter: 1, lower: 1, upper: 1, unicodeLtmo: 1, any: 1, foo: 1}
@@ -114,12 +114,33 @@ test('matchLength', function(t) {
   var result = g.match('woo');
   t.equal(result.succeeded(), true);
 
-  var positions = pluckMemoProp(result, 'matchLength');
-  t.deepEqual(positions, [
+  var values = pluckMemoProp(result, 'matchLength');
+  t.deepEqual(values, [
     {any: 1, notLast: 1, start: 3},
     {any: 1, notLast: 1},
     {any: 1, notLast: 0},
     {any: 0}
+  ]);
+
+  t.end();
+});
+
+test('matchLength - complicated LR', function(t) {
+  var g = makeGrammar([
+    'G {',
+    '  start = start foo  -- rec',
+    '        | foo',
+    '  foo = foo letter  -- rec',
+    '      | any',
+    '}']);
+  var result = g.match('yo');
+  t.equal(result.succeeded(), true);
+
+  var values = pluckMemoProp(result, 'matchLength');
+  t.deepEqual(values, [
+    {any: 1, foo: 2, start: 2},
+    {letter: 1, lower: 1},
+    {letter: 0, lower: 0, upper: 0, unicodeLtmo: 0, any: 0, foo: 0}
   ]);
 
   t.end();
