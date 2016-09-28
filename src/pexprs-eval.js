@@ -223,7 +223,7 @@ pexprs.Apply.prototype.handleCycle = function(state) {
     memoRec.updateInvolvedApplicationMemoKeys();
   } else if (!memoRec) {
     // New left recursion detected! Memoize a failure to try to get a seed parse.
-    memoRec = posInfo.memo[memoKey] = {pos: -1, rightmostPos: 0, value: false};
+    memoRec = posInfo.memo[memoKey] = {matchLength: -1, examinedLength: 0, value: false};
     posInfo.startLeftRecursion(this, memoRec);
   }
   return state.useMemoizedResult(state.inputStream.pos, memoRec);
@@ -258,12 +258,13 @@ pexprs.Apply.prototype.reallyEval = function(state) {
     memoized = false;
   } else {
     origPosInfo.memo[memoKey] = {
-      pos: inputStream.pos,
-      rightmostPos: inputStream.rightmostPos - origPos,
+      matchLength: inputStream.pos - origPos,
+      examinedLength: inputStream.examinedLength - origPos,
       value: value,
       failuresAtRightmostPosition: state.cloneRightmostFailures()
     };
   }
+  var memoRec = memoized ? origPosInfo.memo[memoKey] : null;
 
   if (description) {
     state.restoreFailuresInfo(origFailuresInfo);
@@ -276,7 +277,7 @@ pexprs.Apply.prototype.reallyEval = function(state) {
     }
   }
   if (memoRec) {
-    memoRec.rightmostPos = Math.max(inputStream.rightmostPos - origPos, memoRec.rightmostPos);
+    memoRec.examinedLength = Math.max(inputStream.examinedLength - origPos, memoRec.examinedLength);
   }
 
   // Record trace information in the memo table, so that it is available if the memoized result
@@ -324,7 +325,7 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
   var inputStream = state.inputStream;
 
   while (true) {
-    lrMemoRec.pos = inputStream.pos;
+    lrMemoRec.matchLength = inputStream.pos - origPos;
     lrMemoRec.value = newValue;
     lrMemoRec.failuresAtRightmostPosition = state.cloneRightmostFailures();
 
@@ -338,7 +339,7 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
     }
     inputStream.pos = origPos;
     newValue = this.evalOnce(body, state);
-    if (inputStream.pos <= lrMemoRec.pos) {
+    if (inputStream.pos - origPos <= lrMemoRec.matchLength) {
       break;
     }
     if (state.isTracing()) {
@@ -349,9 +350,9 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
     // The last entry is for an unused result -- pop it and save it in the "real" entry.
     lrMemoRec.traceEntry.recordLRTermination(state.trace.pop(), newValue);
   }
-  lrMemoRec.rightmostPos = inputStream.rightmostPos - origPos;
+  lrMemoRec.examinedLength = inputStream.examinedLength - origPos;
 
-  inputStream.pos = lrMemoRec.pos;
+  inputStream.pos = origPos + lrMemoRec.matchLength;
   return lrMemoRec.value;
 };
 

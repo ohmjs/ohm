@@ -247,11 +247,11 @@ State.prototype = {
       this.addRightmostFailures(memoRec.failuresAtRightmostPosition, true);
     }
 
-    this.inputStream.rightmostPos =
-        Math.max(this.inputStream.rightmostPos, memoRec.rightmostPos + origPos);
+    this.inputStream.examinedLength =
+        Math.max(this.inputStream.examinedLength, memoRec.examinedLength + origPos);
 
     if (memoRec.value) {
-      this.inputStream.pos = memoRec.pos;
+      this.inputStream.pos += memoRec.matchLength;
       this.bindings.push(memoRec.value);
       return true;
     }
