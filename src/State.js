@@ -238,7 +238,7 @@ State.prototype = {
     return this.tracingEnabled;
   },
 
-  useMemoizedResult: function(memoRec) {
+  useMemoizedResult: function(origPos, memoRec) {
     if (this.isTracing()) {
       this.trace.push(memoRec.traceEntry);
     }
@@ -246,6 +246,9 @@ State.prototype = {
     if (this.recordingMode === RM_RIGHTMOST_FAILURES && memoRec.failuresAtRightmostPosition) {
       this.addRightmostFailures(memoRec.failuresAtRightmostPosition, true);
     }
+
+    this.inputStream.rightmostPos =
+        Math.max(this.inputStream.rightmostPos, memoRec.rightmostPos + origPos);
 
     if (memoRec.value) {
       this.inputStream.pos = memoRec.pos;
