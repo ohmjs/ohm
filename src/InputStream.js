@@ -13,16 +13,21 @@ var Interval = require('./Interval');
 function InputStream(source) {
   this.source = source;
   this.pos = 0;
+  this.rightmostPos = 0;
   this.posInfos = [];
 }
 
 InputStream.prototype = {
   atEnd: function() {
-    return this.pos === this.source.length;
+    var ans = this.pos === this.source.length;
+    this.rightmostPos = Math.max(this.rightmostPos, this.pos + 1);
+    return ans;
   },
 
   next: function() {
-    return this.source[this.pos++];
+    var ans = this.source[this.pos++];
+    this.rightmostPos = Math.max(this.rightmostPos, this.pos);
+    return ans;
   },
 
   matchString: function(s, optIgnoreCase) {

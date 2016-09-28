@@ -222,7 +222,7 @@ pexprs.Apply.prototype.handleCycle = function(state) {
     memoRec.updateInvolvedApplicationMemoKeys();
   } else if (!memoRec) {
     // New left recursion detected! Memoize a failure to try to get a seed parse.
-    memoRec = posInfo.memo[memoKey] = {pos: -1, value: false};
+    memoRec = posInfo.memo[memoKey] = {pos: -1, rightmostPos: 0, value: false};
     posInfo.startLeftRecursion(this, memoRec);
   }
   return state.useMemoizedResult(memoRec);
@@ -258,6 +258,7 @@ pexprs.Apply.prototype.reallyEval = function(state) {
   } else {
     origPosInfo.memo[memoKey] = {
       pos: inputStream.pos,
+      rightmostPos: inputStream.rightmostPos - origPos,
       value: value,
       failuresAtRightmostPosition: state.cloneRightmostFailures()
     };
@@ -344,6 +345,8 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
     // The last entry is for an unused result -- pop it and save it in the "real" entry.
     lrMemoRec.traceEntry.recordLRTermination(state.trace.pop(), newValue);
   }
+  lrMemoRec.rightmostPos = inputStream.rightmostPos - origPos;
+
   inputStream.pos = lrMemoRec.pos;
   return lrMemoRec.value;
 };
