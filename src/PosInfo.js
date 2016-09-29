@@ -6,7 +6,7 @@
 
 function PosInfo(state) {
   this.state = state;
-  this.applicationMemoKeyStack = [];  // a stack of "memo keys" of the active applications
+  this.applicationMemoKeyStack = [];  // active applications at this position
   this.memo = {};
   this.currentLeftRecursion = undefined;
 }
@@ -16,13 +16,13 @@ PosInfo.prototype = {
     return this.applicationMemoKeyStack.indexOf(application.toMemoKey()) >= 0;
   },
 
-  enter: function(application) {
-    this.state.enter(application);
+  enter: function(application, origPos) {
+    this.state.enter(application, origPos);
     this.applicationMemoKeyStack.push(application.toMemoKey());
   },
 
-  exit: function() {
-    this.state.exit();
+  exitAndMaybePushBinding: function(binding) {
+    this.state.exitAndMaybePushBinding(binding);
     this.applicationMemoKeyStack.pop();
   },
 

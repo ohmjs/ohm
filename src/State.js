@@ -28,11 +28,10 @@ function State(grammar, input, opts) {
 
 State.prototype = {
   init: function(recordingMode) {
-    this.currentAppPos = 0;
     this.posInfos = [];
     this._bindings = [];
     this._bindingOffsets = [];
-    this.applicationStack = [];
+    this._applicationStack = [0];  // Start with an origPos of 0.
     this.inLexifiedContextStack = [false];
 
     this.recordingMode = recordingMode;
@@ -53,13 +52,17 @@ State.prototype = {
     }
   },
 
-  enter: function(app) {
-    this.applicationStack.push(app);
+  enter: function(app, origPos) {
+    this._applicationStack.push(app, origPos);
     this.inLexifiedContextStack.push(false);
   },
 
-  exit: function() {
-    this.applicationStack.pop();
+  exitAndMaybePushBinding: function(binding) {
+    var origPos = this._applicationStack.pop();
+    this._applicationStack.pop();  // Pop application
+    if (binding) {
+      this.pushBinding(binding, origPos);
+    }
     this.inLexifiedContextStack.pop();
   },
 
@@ -72,7 +75,12 @@ State.prototype = {
   },
 
   currentApplication: function() {
-    return this.applicationStack[this.applicationStack.length - 1];
+    return this._applicationStack[this._applicationStack.length - 2];
+  },
+
+  // Returns the value of `origPos` for the current application.
+  currentApplicationPos: function() {
+    return this._applicationStack[this._applicationStack.length - 1];
   },
 
   inSyntacticContext: function() {
@@ -118,7 +126,7 @@ State.prototype = {
 
   pushBinding: function(node, origPos) {
     this._bindings.push(node);
-    this._bindingOffsets.push(origPos - this.currentAppPos);
+    this._bindingOffsets.push(origPos - this.currentApplicationPos());
   },
 
   popBinding: function() {
