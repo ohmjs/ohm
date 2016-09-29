@@ -25,11 +25,12 @@ function getShortMatchErrorMessage(pos, source, detail) {
 
 function MatchResult(state) {
   this.state = state;
-  this._cst = state.bindings[0];
+  this._cst = state._bindings[0];
+  this._offset = state._bindingOffsets[0];
 }
 
 MatchResult.newFor = function(state) {
-  var succeeded = state.bindings.length > 0;
+  var succeeded = state.numBindings() > 0;
   return succeeded ? new MatchResult(state) : new MatchFailure(state);
 };
 

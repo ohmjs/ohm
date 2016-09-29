@@ -41,7 +41,7 @@ pexprs.any.eval = function(state) {
   var ch = inputStream.next();
   if (ch) {
     var source = inputStream.interval(origPos);
-    state.bindings.push(new TerminalNode(state.grammar, ch, source));
+    state.pushBinding(new TerminalNode(state.grammar, ch, source), origPos);
     return true;
   } else {
     state.processFailure(origPos, this);
@@ -54,7 +54,7 @@ pexprs.end.eval = function(state) {
   var origPos = inputStream.pos;
   if (inputStream.atEnd()) {
     var source = inputStream.interval(inputStream.pos);
-    state.bindings.push(new TerminalNode(state.grammar, undefined, source));
+    state.pushBinding(new TerminalNode(state.grammar, undefined, source), origPos);
     return true;
   } else {
     state.processFailure(origPos, this);
@@ -69,7 +69,9 @@ pexprs.Terminal.prototype.eval = function(state) {
     state.processFailure(origPos, this);
     return false;
   } else {
-    state.bindings.push(new TerminalNode(state.grammar, this.obj, inputStream.interval(origPos)));
+    var source = inputStream.interval(origPos);
+    var primitiveValue = this.obj;
+    state.pushBinding(new TerminalNode(state.grammar, primitiveValue, source), origPos);
     return true;
   }
 };
@@ -80,7 +82,7 @@ pexprs.Range.prototype.eval = function(state) {
   var ch = inputStream.next();
   if (ch && this.from <= ch && ch <= this.to) {
     var source = inputStream.interval(origPos);
-    state.bindings.push(new TerminalNode(state.grammar, ch, source));
+    state.pushBinding(new TerminalNode(state.grammar, ch, source), origPos);
     return true;
   } else {
     state.processFailure(origPos, this);
@@ -123,16 +125,20 @@ pexprs.Iter.prototype.eval = function(state) {
   var origPos = inputStream.pos;
   var arity = this.getArity();
   var cols = [];
+  var colOffsets = [];
   while (cols.length < arity) {
     cols.push([]);
+    colOffsets.push([]);
   }
   var numMatches = 0;
   var idx;
   while (numMatches < this.maxNumMatches && state.eval(this.expr)) {
     numMatches++;
-    var row = state.bindings.splice(state.bindings.length - arity, arity);
+    var row = state._bindings.splice(state._bindings.length - arity, arity);
+    var rowOffsets = state._bindingOffsets.splice(state._bindingOffsets.length - arity, arity);
     for (idx = 0; idx < row.length; idx++) {
       cols[idx].push(row[idx]);
+      colOffsets[idx].push(rowOffsets[idx]);
     }
   }
   if (numMatches < this.minNumMatches) {
@@ -149,8 +155,10 @@ pexprs.Iter.prototype.eval = function(state) {
         lastCol[lastCol.length - 1].source.endIdx);
   }
   for (idx = 0; idx < cols.length; idx++) {
-    state.bindings.push(new IterationNode(state.grammar, cols[idx], source,
-      this instanceof pexprs.Opt));
+    var isOptional = this instanceof pexprs.Opt;
+    state.pushBinding(
+        new IterationNode(state.grammar, cols[idx], colOffsets[idx], source, isOptional),
+        origPos);
   }
   return true;
 };
@@ -237,6 +245,9 @@ pexprs.Apply.prototype.reallyEval = function(state) {
   var body = ruleInfo.body;
   var description = ruleInfo.description;
 
+  var origCurrentAppPos = state.currentAppPos;
+  state.currentAppPos = origPos;
+
   origPosInfo.enter(this);
 
   var origFailuresInfo;
@@ -294,12 +305,14 @@ pexprs.Apply.prototype.reallyEval = function(state) {
 
   origPosInfo.exit();
 
+  // NOTE: pushBinding() must happen *after* this, because it needs to record the position of
+  // this application relative to the parent.
+  state.currentAppPos = origCurrentAppPos;
+
   if (value) {
-    state.bindings.push(value);
-    return true;
-  } else {
-    return false;
+    state.pushBinding(value, origPos);
   }
+  return !!value;
 };
 
 pexprs.Apply.prototype.evalOnce = function(expr, state) {
@@ -308,9 +321,10 @@ pexprs.Apply.prototype.evalOnce = function(expr, state) {
 
   if (state.eval(expr)) {
     var arity = expr.getArity();
-    var bindings = state.bindings.splice(state.bindings.length - arity, arity);
-    var ans =
-        new NonterminalNode(state.grammar, this.ruleName, bindings, inputStream.interval(origPos));
+    var bindings = state._bindings.splice(state._bindings.length - arity, arity);
+    var offsets = state._bindingOffsets.splice(state._bindingOffsets.length - arity, arity);
+    var ans = new NonterminalNode(
+        state.grammar, this.ruleName, bindings, offsets, inputStream.interval(origPos));
     return ans;
   } else {
     return false;
@@ -362,7 +376,7 @@ pexprs.UnicodeChar.prototype.eval = function(state) {
   var ch = inputStream.next();
   if (ch && this.pattern.test(ch)) {
     var source = inputStream.interval(origPos);
-    state.bindings.push(new TerminalNode(state.grammar, ch, source));
+    state.pushBinding(new TerminalNode(state.grammar, ch, source), origPos);
     return true;
   } else {
     state.processFailure(origPos, this);

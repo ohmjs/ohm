@@ -8,10 +8,11 @@ var common = require('./common');
 // Private stuff
 // --------------------------------------------------------------------
 
-function Node(grammar, ctorName, children, source) {
+function Node(grammar, ctorName, children, childOffsets, source) {
   this.grammar = grammar;
   this.ctorName = ctorName;
   this.children = children;
+  this.childOffsets = childOffsets;
   this.source = source;
 }
 
@@ -110,7 +111,7 @@ Node.prototype.toJSON = function() {
 // Terminals
 
 function TerminalNode(grammar, value, source) {
-  Node.call(this, grammar, '_terminal', [], source);
+  Node.call(this, grammar, '_terminal', [], [], source);
   this.primitiveValue = value;
 }
 inherits(TerminalNode, Node);
@@ -127,8 +128,8 @@ TerminalNode.prototype.toJSON = function() {
 
 // Nonterminals
 
-function NonterminalNode(grammar, ruleName, children, source) {
-  Node.call(this, grammar, ruleName, children, source);
+function NonterminalNode(grammar, ruleName, children, childOffsets, source) {
+  Node.call(this, grammar, ruleName, children, childOffsets, source);
 }
 inherits(NonterminalNode, Node);
 
@@ -146,8 +147,8 @@ NonterminalNode.prototype.isSyntactic = function() {
 
 // Iterations
 
-function IterationNode(grammar, children, source, optional) {
-  Node.call(this, grammar, '_iter', children, source);
+function IterationNode(grammar, children, childOffsets, source, optional) {
+  Node.call(this, grammar, '_iter', children, childOffsets, source);
   this.optional = optional;
 }
 inherits(IterationNode, Node);
