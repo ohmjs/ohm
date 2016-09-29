@@ -14,7 +14,6 @@ function InputStream(source) {
   this.source = source;
   this.pos = 0;
   this.examinedLength = 0;
-  this.posInfos = [];
 }
 
 InputStream.prototype = {

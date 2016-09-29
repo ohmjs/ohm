@@ -52,11 +52,17 @@ test('basic incremental parsing', function(t) {
   ]);
   var im = g.incrementalMatcher();
   im.replace(0, 0, 'helloworld');
-  t.equal(im.input, 'helloworld');
+  t.equal(im.getInput(), 'helloworld');
   im.replace(3, 5, 'X');
-  t.equal(im.input, 'helXworld');
+  t.ok(im.match().succeeded());
+
+  t.equal(im.getInput(), 'helXworld');
   t.ok(im.match('start').succeeded());
   t.ok(im.match().succeeded());
+
+  im.replace(0, 4, '');
+  t.ok(im.match().succeeded());
+
   t.end();
 });
 
