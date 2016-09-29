@@ -28,8 +28,10 @@ function State(grammar, input, opts) {
 
 State.prototype = {
   init: function(recordingMode) {
+    this.currentAppPos = 0;
     this.posInfos = [];
-    this.bindings = [];
+    this._bindings = [];
+    this._bindingOffsets = [];
     this.applicationStack = [];
     this.inLexifiedContextStack = [false];
 
@@ -93,7 +95,7 @@ State.prototype = {
   skipSpaces: function() {
     var origFailuresInfo = this.getFailuresInfo();
     this.eval(applySpaces);
-    this.bindings.pop();
+    this.popBinding();
     this.restoreFailuresInfo(origFailuresInfo);
     return this.inputStream.pos;
   },
@@ -114,11 +116,25 @@ State.prototype = {
     }
   },
 
+  pushBinding: function(node, origPos) {
+    this._bindings.push(node);
+    this._bindingOffsets.push(origPos - this.currentAppPos);
+  },
+
+  popBinding: function() {
+    this._bindings.pop();
+    this._bindingOffsets.pop();
+  },
+
+  numBindings: function() {
+    return this._bindings.length;
+  },
+
   truncateBindings: function(newLength) {
     // Yes, this is this really faster than setting the `length` property (tested with
     // bin/es5bench on Node v6.1.0).
-    while (this.bindings.length > newLength) {
-      this.bindings.pop();
+    while (this._bindings.length > newLength) {
+      this.popBinding();
     }
   },
 
@@ -252,7 +268,7 @@ State.prototype = {
 
     if (memoRec.value) {
       this.inputStream.pos += memoRec.matchLength;
-      this.bindings.push(memoRec.value);
+      this.pushBinding(memoRec.value, origPos);
       return true;
     }
     return false;
@@ -263,7 +279,7 @@ State.prototype = {
   // have increased. On failure, `bindings` and position will be unchanged.
   eval: function(expr) {
     var inputStream = this.inputStream;
-    var origNumBindings = this.bindings.length;
+    var origNumBindings = this._bindings.length;
 
     var origFailures;
     if (this.recordingMode === RM_RIGHTMOST_FAILURES) {
@@ -284,7 +300,7 @@ State.prototype = {
     var ans = expr.eval(this);
 
     if (this.isTracing()) {
-      var bindings = this.bindings.slice(origNumBindings);
+      var bindings = this._bindings.slice(origNumBindings);
       var traceEntry = this.getTraceEntry(memoPos, expr, ans, bindings);
       traceEntry.isImplicitSpaces = expr === applySpaces;
       traceEntry.isRootNode = expr === this.startExpr;

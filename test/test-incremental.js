@@ -24,6 +24,21 @@ function pluckMemoProp(result, propName) {
   });
 }
 
+var checkOffsetActions = {
+  _nonterminal: function(children) {
+    var desc = this._node.ctorName + ' @ ' + this.source.startIdx;
+    this.args.t.equal(this.source.startIdx, this.args.startIdx, desc);
+    for (var i = 0; i < children.length; ++i) {
+      var childStartIdx = this.args.startIdx + this._node.childOffsets[i];
+      children[i].checkOffsets(this.args.t, childStartIdx);
+    }
+  },
+  _terminal: function() {
+    var desc = '"' + this.sourceString + '" @ ' + this.source.startIdx;
+    this.args.t.equal(this.source.startIdx, this.args.startIdx, desc);
+  }
+};
+
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
@@ -142,6 +157,26 @@ test('matchLength - complicated LR', function(t) {
     {letter: 1, lower: 1},
     {letter: 0, lower: 0, upper: 0, unicodeLtmo: 0, any: 0, foo: 0}
   ]);
+
+  t.end();
+});
+
+test('binding offsets', function(t) {
+  var g = makeGrammar([
+    'G {',
+    '  start = start foo  -- rec',
+    '        | foo',
+    '  foo = foo letter  -- rec',
+    '      | "oo"',
+    '}']);
+  var result = g.match('oolong');
+  t.equal(result.succeeded(), true);
+
+  var s = g.createSemantics().addOperation('checkOffsets(t, startIdx)', checkOffsetActions);
+  s(result).checkOffsets(t, 0);
+
+  result = g.match('oo');
+  s(result).checkOffsets(t, 0);
 
   t.end();
 });
