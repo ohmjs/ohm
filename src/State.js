@@ -389,6 +389,14 @@ State.prototype = {
     this.posInfos.splice.apply(
         this.posInfos,
         [startIdx, endIdx - startIdx].concat(newValues));
+
+    // Invalidate memoRecs
+    for (var pos = 0; pos < startIdx; pos++) {
+      var posInfo = this.posInfos[pos];
+      if (posInfo) {
+        posInfo.clearObsoleteEntries(pos, startIdx);
+      }
+    }
   }
 };
 
