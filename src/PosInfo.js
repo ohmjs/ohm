@@ -68,6 +68,16 @@ PosInfo.prototype = {
       }
     }
     return true;
+  },
+
+  clearObsoleteEntries: function(pos, invalidatedIdx) {
+    var memo = this.memo;
+    Object.keys(memo).forEach(function(k) {
+      var memoRec = memo[k];
+      if (pos + memoRec.examinedLength > invalidatedIdx) {
+        delete memo[k];
+      }
+    });
   }
 };
 

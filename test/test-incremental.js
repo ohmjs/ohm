@@ -16,6 +16,7 @@ var makeGrammar = testUtil.makeGrammar;
 function pluckMemoProp(result, propName) {
   return result.state.posInfos.map(function(info) {
     var result = {};
+    if (info == null) return {};
     Object.keys(info.memo).forEach(function(ruleName) {
       var memoRec = info.memo[ruleName];
       result[ruleName] = memoRec[propName];
@@ -51,6 +52,7 @@ test('basic incremental parsing', function(t) {
     '}'
   ]);
   var im = g.incrementalMatcher();
+
   im.replace(0, 0, 'helloworld');
   t.equal(im.getInput(), 'helloworld');
   im.replace(3, 5, 'X');
@@ -62,6 +64,12 @@ test('basic incremental parsing', function(t) {
 
   im.replace(0, 4, '');
   t.ok(im.match().succeeded());
+
+  im.replace(0, 0, 'aa');
+  t.ok(im.match().succeeded());
+
+  im.replace(1, 2, '9');
+  t.ok(im.match().failed());
 
   t.end();
 });
