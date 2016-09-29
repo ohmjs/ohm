@@ -362,8 +362,7 @@ IncrementalMatcher.prototype = {
 
   match: function(optStartApplication) {
     var state = this.state;
-    state.startExpr = state._getStartExpr(this.grammar, optStartApplication);
-    state.evalFromStart();
+    state.eval(state._getStartExpr(this.grammar, optStartApplication));
     return MatchResult.newFor(state);
   }
 };

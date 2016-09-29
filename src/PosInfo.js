@@ -16,8 +16,8 @@ PosInfo.prototype = {
     return this.applicationMemoKeyStack.indexOf(application.toMemoKey()) >= 0;
   },
 
-  enter: function(application, origPos) {
-    this.state.enter(application, origPos);
+  enter: function(application) {
+    this.state.enter(application);
     this.applicationMemoKeyStack.push(application.toMemoKey());
   },
 
