@@ -52,16 +52,16 @@ State.prototype = {
     }
   },
 
-  enter: function(app, origPos) {
-    this._applicationStack.push(app, origPos);
+  enter: function(app) {
+    this._applicationStack.push(app, this.inputStream.pos);
     this.inLexifiedContextStack.push(false);
   },
 
-  exitAndMaybePushBinding: function(binding) {
+  exitAndMaybePushBinding: function(optNode) {
     var origPos = this._applicationStack.pop();
     this._applicationStack.pop();  // Pop application
-    if (binding) {
-      this.pushBinding(binding, origPos);
+    if (optNode) {
+      this.pushBinding(optNode, origPos);
     }
     this.inLexifiedContextStack.pop();
   },
@@ -383,7 +383,9 @@ State.prototype = {
         new InputStream(currentInput.slice(0, startIdx) + str + currentInput.slice(endIdx));
 
     // Keep the memo table in sync with the edits.
-    var newValues = Array.apply(null, new Array(str.length));
+    var newValues = Array.apply(null, new Array(str.length));  // Array of `undefined` (wat)
+
+    // Replace the contents from startIdx:endIdx with `newValues`.
     this.posInfos.splice.apply(
         this.posInfos,
         [startIdx, endIdx - startIdx].concat(newValues));

@@ -245,7 +245,7 @@ pexprs.Apply.prototype.reallyEval = function(state) {
   var body = ruleInfo.body;
   var description = ruleInfo.description;
 
-  origPosInfo.enter(this, origPos);
+  origPosInfo.enter(this);
 
   var origFailuresInfo;
   if (description) {
