@@ -369,6 +369,24 @@ State.prototype = {
     } else /* if (this.recordingMode === RM_RIGHTMOST_FAILURES) */ {
       this.rightmostFailures = failuresInfo;
     }
+  },
+
+  replaceInput: function(startIdx, endIdx, str) {
+    var currentInput = this.inputStream.source;
+    if (startIdx < 0 || startIdx > currentInput.length ||
+        endIdx < 0 || endIdx > currentInput.length ||
+        startIdx > endIdx) {
+      throw new Error('Invalid indices: ' + startIdx + ' and ' + endIdx);
+    }
+    // TODO: Consider reusing the same InputStream instance here.
+    this.inputStream =
+        new InputStream(currentInput.slice(0, startIdx) + str + currentInput.slice(endIdx));
+
+    // Keep the memo table in sync with the edits.
+    var newValues = Array.apply(null, new Array(str.length));
+    this.posInfos.splice.apply(
+        this.posInfos,
+        [startIdx, endIdx - startIdx].concat(newValues));
   }
 };
 
