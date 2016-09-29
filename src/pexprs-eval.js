@@ -245,10 +245,7 @@ pexprs.Apply.prototype.reallyEval = function(state) {
   var body = ruleInfo.body;
   var description = ruleInfo.description;
 
-  var origCurrentAppPos = state.currentAppPos;
-  state.currentAppPos = origPos;
-
-  origPosInfo.enter(this);
+  origPosInfo.enter(this, origPos);
 
   var origFailuresInfo;
   if (description) {
@@ -275,14 +272,14 @@ pexprs.Apply.prototype.reallyEval = function(state) {
       failuresAtRightmostPosition: state.cloneRightmostFailures()
     };
   }
+  var succeeded = !!value;
   var memoRec = memoized ? origPosInfo.memo[memoKey] : null;
 
   if (description) {
     state.restoreFailuresInfo(origFailuresInfo);
-    if (!value) {
+    if (!succeeded) {
       state.processFailure(origPos, this);
     }
-
     if (memoRec) {
       memoRec.failuresAtRightmostPosition = state.cloneRightmostFailures();
     }
@@ -294,7 +291,6 @@ pexprs.Apply.prototype.reallyEval = function(state) {
   // Record trace information in the memo table, so that it is available if the memoized result
   // is used later.
   if (state.isTracing() && memoRec) {
-    var succeeded = !!value;
     var entry = state.getTraceEntry(origPos, this, succeeded, succeeded ? [value] : []);
     if (isHeadOfLeftRecursion) {
       common.assert(entry.terminatingLREntry != null || !succeeded);
@@ -303,16 +299,9 @@ pexprs.Apply.prototype.reallyEval = function(state) {
     memoRec.traceEntry = entry;
   }
 
-  origPosInfo.exit();
+  origPosInfo.exitAndMaybePushBinding(value);
 
-  // NOTE: pushBinding() must happen *after* this, because it needs to record the position of
-  // this application relative to the parent.
-  state.currentAppPos = origCurrentAppPos;
-
-  if (value) {
-    state.pushBinding(value, origPos);
-  }
-  return !!value;
+  return succeeded;
 };
 
 pexprs.Apply.prototype.evalOnce = function(expr, state) {
@@ -323,9 +312,8 @@ pexprs.Apply.prototype.evalOnce = function(expr, state) {
     var arity = expr.getArity();
     var bindings = state._bindings.splice(state._bindings.length - arity, arity);
     var offsets = state._bindingOffsets.splice(state._bindingOffsets.length - arity, arity);
-    var ans = new NonterminalNode(
+    return new NonterminalNode(
         state.grammar, this.ruleName, bindings, offsets, inputStream.interval(origPos));
-    return ans;
   } else {
     return false;
   }
