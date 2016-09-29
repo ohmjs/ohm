@@ -161,7 +161,7 @@ test('matchLength - complicated LR', function(t) {
   t.end();
 });
 
-test('binding offsets', function(t) {
+test('binding offsets - lexical rules', function(t) {
   var g = makeGrammar([
     'G {',
     '  start = start foo  -- rec',
@@ -177,6 +177,26 @@ test('binding offsets', function(t) {
 
   result = g.match('oo');
   s(result).checkOffsets(t, 0);
+
+  t.end();
+});
+
+test('binding offsets - syntactic rules', function(t) {
+  var g = makeGrammar([
+    'G {',
+    '  Start = letter NotLast* any',
+    '  NotLast = any &any',
+    '}'
+  ]);
+  var result = g.match('   a 4');
+  t.ok(result.succeeded());
+
+  var s = g.createSemantics().addOperation('checkOffsets(t, startIdx)', checkOffsetActions);
+  s(result).checkOffsets(t, result._offset);
+
+  result = g.match('a   4 ');
+  t.ok(result.succeeded());
+  s(result).checkOffsets(t, result._offset);
 
   t.end();
 });
