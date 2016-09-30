@@ -40,6 +40,12 @@ var checkOffsetActions = {
   }
 };
 
+var ctorTreeActions = {
+  _default: function(children) {
+    return [this.ctorName].concat(children.map(function(c) { return c.ctorTree; }));
+  }
+};
+
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
@@ -109,6 +115,40 @@ test('basic incremental parsing', function(t) {
 
   im.replace(1, 2, '9');
   t.ok(im.match().failed());
+
+  t.end();
+});
+
+test('trickier incremental parsing', function(t) {
+  var g = makeGrammar([
+    'G {',
+    '  start = start letter  -- rec',
+    '        | lookahead',
+    '        | "a"',
+    '  lookahead = &"ac" "a"',
+    '}'
+  ]);
+  var s = g.createSemantics().addAttribute('ctorTree', ctorTreeActions);
+  var im = g.incrementalMatcher();
+  var result;
+
+  im.replace(0, 0, 'ab');
+  result = im.match();
+  t.ok(result.succeeded());
+  t.deepEqual(s(result).ctorTree,
+      ['start',
+        ['start_rec',
+          ['start', ['_terminal']],
+          ['letter', ['lower', ['_terminal']]]]]);
+
+  // When the input is 'ac', the lookahead rule should now succeed.
+  im.replace(1, 2, 'c');
+  result = im.match();
+  t.ok(result.succeeded());
+  t.deepEqual(s(result).ctorTree,
+      ['start',
+        ['start_rec', ['start', ['lookahead', ['_terminal'], ['_terminal']]],
+        ['letter', ['lower', ['_terminal']]]]]);
 
   t.end();
 });
