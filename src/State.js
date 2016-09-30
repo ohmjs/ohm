@@ -52,18 +52,21 @@ State.prototype = {
     }
   },
 
-  enter: function(app) {
+  enter: function(posInfo, app) {
     this._applicationStack.push(app, this.inputStream.pos);
     this.inLexifiedContextStack.push(false);
+    posInfo.enter(app);
   },
 
-  exitAndMaybePushBinding: function(optNode) {
+  exitAndMaybePushBinding: function(posInfo, optNode) {
     var origPos = this._applicationStack.pop();
     this._applicationStack.pop();  // Pop application
+    this.inLexifiedContextStack.pop();
+    posInfo.exit();
+
     if (optNode) {
       this.pushBinding(optNode, origPos);
     }
-    this.inLexifiedContextStack.pop();
   },
 
   enterLexifiedContext: function() {

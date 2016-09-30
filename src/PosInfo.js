@@ -5,7 +5,6 @@
 // --------------------------------------------------------------------
 
 function PosInfo(state) {
-  this.state = state;
   this.applicationMemoKeyStack = [];  // active applications at this position
   this.memo = {};
   this.currentLeftRecursion = undefined;
@@ -17,12 +16,10 @@ PosInfo.prototype = {
   },
 
   enter: function(application) {
-    this.state.enter(application);
     this.applicationMemoKeyStack.push(application.toMemoKey());
   },
 
-  exitAndMaybePushBinding: function(binding) {
-    this.state.exitAndMaybePushBinding(binding);
+  exit: function() {
     this.applicationMemoKeyStack.pop();
   },
 
