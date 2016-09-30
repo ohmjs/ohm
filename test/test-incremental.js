@@ -51,22 +51,61 @@ test('basic incremental parsing', function(t) {
     '  notLastLetter = letter &letter',
     '}'
   ]);
+
+  // Create an operation which reconstructs the matched based on the offsets
+  // stored for each node. This can be compared to the input stored in the matcher.
+  var s = g.createSemantics().addOperation('reconstructInput(input)', {
+    start: function(letters, lastLetter) {
+      var lastLetterOffset = this._node.childOffsets[1];
+      return letters.reconstructInput(this.args.input) +
+          lastLetter.reconstructInput(this.args.input.slice(lastLetterOffset));
+    },
+    notLastLetter: function(letter, _) {
+      return letter.reconstructInput(this.args.input);
+    },
+    _iter: function(children) {
+      var self = this;
+      return this._node.childOffsets.map(function(offset, i) {
+        var c = children[i].reconstructInput(self.args.input.slice(offset));
+        return c;
+      }).join('');
+    },
+    _terminal: function() {
+      var matchLen = this._node.source.length;
+      return this.args.input.slice(0, matchLen);
+    }
+  });
+
   var im = g.incrementalMatcher();
+  var result;
 
   im.replace(0, 0, 'helloworld');
   t.equal(im.getInput(), 'helloworld');
   im.replace(3, 5, 'X');
-  t.ok(im.match().succeeded());
-
   t.equal(im.getInput(), 'helXworld');
+
+  result = im.match();
+  t.equal(s(result).reconstructInput(im.getInput()), 'helXworld');
+
   t.ok(im.match('start').succeeded());
   t.ok(im.match().succeeded());
+  t.equal(s(result).reconstructInput(im.getInput()), 'helXworld');
 
   im.replace(0, 4, '');
-  t.ok(im.match().succeeded());
+  t.equals(im.getInput(), 'world');
 
-  im.replace(0, 0, 'aa');
-  t.ok(im.match().succeeded());
+  result = im.match();
+  t.equal(s(result).reconstructInput(im.getInput()), 'world');
+
+  im.replace(3, 4, ' ');
+  t.equals(im.getInput(), 'wor d');
+  t.ok(im.match().failed());
+
+  im.replace(0, 4, 'aa');
+  t.equals(im.getInput(), 'aad');
+
+  result = im.match();
+  t.equal(s(result).reconstructInput(im.getInput()), 'aad');
 
   im.replace(1, 2, '9');
   t.ok(im.match().failed());

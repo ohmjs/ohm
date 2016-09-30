@@ -245,7 +245,7 @@ pexprs.Apply.prototype.reallyEval = function(state) {
   var body = ruleInfo.body;
   var description = ruleInfo.description;
 
-  origPosInfo.enter(this);
+  state.enter(origPosInfo, this);
 
   var origFailuresInfo;
   if (description) {
@@ -298,8 +298,7 @@ pexprs.Apply.prototype.reallyEval = function(state) {
     }
     memoRec.traceEntry = entry;
   }
-
-  origPosInfo.exitAndMaybePushBinding(value);
+  state.exitAndMaybePushBinding(origPosInfo, value);
 
   return succeeded;
 };
