@@ -4,6 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
+var CaseInsensitiveTerminal = require('./CaseInsensitiveTerminal');
 var MatchResult = require('./MatchResult');
 var Semantics = require('./Semantics');
 var State = require('./State');
@@ -306,6 +307,11 @@ Grammar.ProtoBuiltInRules = new Grammar(
     // `any` and `end` directly.
     any: {body: pexprs.any, formals: [], description: 'any object'},
     end: {body: pexprs.end, formals: [], description: 'end of input'},
+
+    caseInsensitive: {
+      body: new CaseInsensitiveTerminal(new pexprs.Param(0)),
+      formals: ['expr']
+    },
 
     // The following rule is invoked implicitly by syntactic rules to skip spaces.
     spaces: {

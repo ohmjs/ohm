@@ -69,9 +69,7 @@ pexprs.Terminal.prototype.eval = function(state) {
     state.processFailure(origPos, this);
     return false;
   } else {
-    var source = inputStream.interval(origPos);
-    var primitiveValue = this.obj;
-    state.bindings.push(new TerminalNode(state.grammar, primitiveValue, source));
+    state.bindings.push(new TerminalNode(state.grammar, this.obj, inputStream.interval(origPos)));
     return true;
   }
 };

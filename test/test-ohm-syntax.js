@@ -1180,6 +1180,38 @@ test('space skipping semantics', function(t) {
   t.end();
 });
 
+test('case-insensitive matching', function(t) {
+  var g = makeGrammar([
+    'G {',
+    '  start = caseInsensitive<"blerg">',
+    '  WithSpaces = "bl" caseInsensitive<"erg">',
+    '  withUnicode = caseInsensitive<"blërg">',
+    '}'
+  ]);
+  var result = g.match('BLERG');
+  t.equals(result.succeeded(), true);
+
+  var s = g.createSemantics().addAttribute('matchedString', {
+    _terminal: function() { return this.sourceString; },
+    _nonterminal: function(children) {
+      return children.map(function(c) { return c.matchedString; }).join('');
+    }
+  });
+  t.equals(s(result).matchedString, 'BLERG');
+
+  result = g.match('bl ErG', 'WithSpaces');
+  t.equals(result.succeeded(), true);
+  t.equals(s(result).matchedString, 'blErG');
+
+  t.equals(g.match('blËrg', 'withUnicode').succeeded(), true);
+
+  result = g.match('blErg', 'withUnicode');
+  t.equals(result.failed(), true);
+  t.equals(result.shortMessage, 'Line 1, col 1: expected "blërg" (case-insensitive)');
+
+  t.end();
+});
+
 test('bootstrap', function(t) {
   var ns = makeGrammars(ohmGrammarSource);
 

@@ -71,6 +71,8 @@ test('action dictionary templates', function(t) {
     '  },\n' +
     '  end: function(_) {\n' +
     '  },\n' +
+    '  caseInsensitive: function(_) {\n' +
+    '  },\n' +
     '  spaces: function(_) {\n' +
     '  },\n' +
     '  space: function(_) {\n' +
@@ -123,6 +125,8 @@ test('action dictionary templates', function(t) {
     '  any: function(_) {\n' +
     '  },\n' +
     '  end: function(_) {\n' +
+    '  },\n' +
+    '  caseInsensitive: function(_) {\n' +
     '  },\n' +
     '  spaces: function(_) {\n' +
     '  },\n' +
