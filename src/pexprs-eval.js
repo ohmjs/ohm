@@ -255,17 +255,17 @@ pexprs.Apply.prototype.reallyEval = function(state) {
   var value = this.evalOnce(body, state);
   var currentLR = origPosInfo.currentLeftRecursion;
   var memoKey = this.toMemoKey();
-  var isHeadOfLeftRecursion = !!currentLR && currentLR.headApplication.toMemoKey() === memoKey;
-  var memoized = true;
+  var isHeadOfLeftRecursion = currentLR && currentLR.headApplication.toMemoKey() === memoKey;
+  var memoRec;
 
   if (isHeadOfLeftRecursion) {
     value = this.growSeedResult(body, state, origPos, currentLR, value);
     origPosInfo.endLeftRecursion();
-  } else if (currentLR && currentLR.isInvolved(memoKey)) {
-    // Don't memoize the result
-    memoized = false;
-  } else {
-    origPosInfo.memo[memoKey] = {
+    memoRec = currentLR;
+    memoRec.examinedLength = inputStream.examinedLength - origPos;
+  } else if (!currentLR || !currentLR.isInvolved(memoKey)) {
+    // This application is not involved in left recursion, so it's ok to memoize it.
+    memoRec = origPosInfo.memo[memoKey] = {
       matchLength: inputStream.pos - origPos,
       examinedLength: inputStream.examinedLength - origPos,
       value: value,
@@ -273,7 +273,6 @@ pexprs.Apply.prototype.reallyEval = function(state) {
     };
   }
   var succeeded = !!value;
-  var memoRec = memoized ? origPosInfo.memo[memoKey] : null;
 
   if (description) {
     state.restoreFailuresInfo(origFailuresInfo);
@@ -283,9 +282,6 @@ pexprs.Apply.prototype.reallyEval = function(state) {
     if (memoRec) {
       memoRec.failuresAtRightmostPosition = state.cloneRightmostFailures();
     }
-  }
-  if (memoRec) {
-    memoRec.examinedLength = Math.max(inputStream.examinedLength - origPos, memoRec.examinedLength);
   }
 
   // Record trace information in the memo table, so that it is available if the memoized result
@@ -351,8 +347,6 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
     // The last entry is for an unused result -- pop it and save it in the "real" entry.
     lrMemoRec.traceEntry.recordLRTermination(state.trace.pop(), newValue);
   }
-  lrMemoRec.examinedLength = inputStream.examinedLength - origPos;
-
   inputStream.pos = origPos + lrMemoRec.matchLength;
   return lrMemoRec.value;
 };
