@@ -1180,6 +1180,52 @@ test('space skipping semantics', function(t) {
   t.end();
 });
 
+test('case-insensitive matching', function(t) {
+  var g = makeGrammar([
+    'G {',
+    '  start = caseInsensitive<"blerg">',
+    '  WithSpaces = "bl" caseInsensitive<"erg">',
+    '  withUmlaut = caseInsensitive<"blërg">',
+    '  eszett = caseInsensitive<"ß">',
+    '  dotlessI = caseInsensitive<"ı">',
+    '  dottedI = caseInsensitive<"İ">',
+    '}'
+  ]);
+  var result = g.match('BLERG');
+  t.equals(result.succeeded(), true);
+
+  var s = g.createSemantics().addAttribute('matchedString', {
+    _terminal: function() { return this.sourceString; },
+    _nonterminal: function(children) {
+      return children.map(function(c) { return c.matchedString; }).join('');
+    }
+  });
+  t.equals(s(result).matchedString, 'BLERG');
+
+  result = g.match('bl ErG', 'WithSpaces');
+  t.equals(result.succeeded(), true);
+  t.equals(s(result).matchedString, 'blErG');
+
+  t.equals(g.match('blËrg', 'withUmlaut').succeeded(), true);
+
+  result = g.match('blErg', 'withUmlaut');
+  t.equals(result.failed(), true);
+  t.equals(result.shortMessage, 'Line 1, col 1: expected "blërg" (case-insensitive)');
+
+  t.equals(g.match('ı', 'dotlessI').succeeded(), true, 'matches same code point');
+  t.equals(g.match('I', 'dotlessI').succeeded(), true, 'matches uppercase dotless I');
+  t.equals(g.match('İ', 'dottedI').succeeded(), true, 'matches some code point');
+
+  // Getting this right is really tricky. Our implementation currently doesn't treat "i" and "İ"
+  // as being case-insensitive-equal. TODO: Maybe fix this?
+  t.equals(g.match('i', 'dottedI').succeeded(), false, "regular i WON'T match uppercase dotted I");
+
+  t.equals(g.match('s', 'eszett').failed(), true);
+  t.equals(g.match('ss', 'eszett').failed(), true);
+
+  t.end();
+});
+
 test('bootstrap', function(t) {
   var ns = makeGrammars(ohmGrammarSource);
 

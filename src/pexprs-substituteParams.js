@@ -24,7 +24,6 @@ pexprs.any.substituteParams =
 pexprs.end.substituteParams =
 pexprs.Terminal.prototype.substituteParams =
 pexprs.Range.prototype.substituteParams =
-pexprs.Terminal.prototype.substituteParams =
 pexprs.UnicodeChar.prototype.substituteParams = function(actuals) {
   return this;
 };
