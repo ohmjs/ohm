@@ -10,18 +10,6 @@ var Interval = require('./Interval');
 // Private stuff
 // --------------------------------------------------------------------
 
-var regExpCache = Object.create(null);
-
-var IGNORE_CASE = 'i';  // Flag for the RegExp constructor
-
-function regExpForString(s, flags) {
-  if (!(s in regExpCache)) {
-    var pattern = s.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&');  // Escape any special characters
-    regExpCache[s] = new RegExp(pattern, flags);
-  }
-  return regExpCache[s];
-}
-
 function InputStream(source) {
   this.source = source;
   this.pos = 0;
@@ -38,16 +26,28 @@ InputStream.prototype = {
   },
 
   matchString: function(s, optIgnoreCase) {
+    var idx;
     if (optIgnoreCase) {
-      var substring = this.sourceSlice(this.pos, this.pos + s.length);
-      var match = regExpForString(s, IGNORE_CASE).exec(substring);
-      this.pos += s.length;
-      return !!match;
-    }
-    for (var idx = 0; idx < s.length; idx++) {
-      if (this.next() !== s[idx]) {
-        return false;
+      /*
+        Case-insensitive comparison is a tricky business. Some notable gotchas include the
+        "Turkish I" problem (http://www.i18nguy.com/unicode/turkish-i18n.html) and the fact
+        that the German Esszet (ß) turns into "SS" in upper case.
+
+        This is intended to be a locale-invariant comparison, which means it may not obey
+        locale-specific expectations (e.g. "i" => "İ").
+       */
+      for (idx = 0; idx < s.length; idx++) {
+        var actual = this.next();
+        var expected = s[idx];
+        if (actual == null || actual.toUpperCase() !== expected.toUpperCase()) {
+          return false;
+        }
       }
+      return true;
+    }
+    // Default is case-sensitive comparison.
+    for (idx = 0; idx < s.length; idx++) {
+      if (this.next() !== s[idx]) { return false; }
     }
     return true;
   },

@@ -1185,7 +1185,10 @@ test('case-insensitive matching', function(t) {
     'G {',
     '  start = caseInsensitive<"blerg">',
     '  WithSpaces = "bl" caseInsensitive<"erg">',
-    '  withUnicode = caseInsensitive<"blërg">',
+    '  withUmlaut = caseInsensitive<"blërg">',
+    '  eszett = caseInsensitive<"ß">',
+    '  dotlessI = caseInsensitive<"ı">',
+    '  dottedI = caseInsensitive<"İ">',
     '}'
   ]);
   var result = g.match('BLERG');
@@ -1203,11 +1206,22 @@ test('case-insensitive matching', function(t) {
   t.equals(result.succeeded(), true);
   t.equals(s(result).matchedString, 'blErG');
 
-  t.equals(g.match('blËrg', 'withUnicode').succeeded(), true);
+  t.equals(g.match('blËrg', 'withUmlaut').succeeded(), true);
 
-  result = g.match('blErg', 'withUnicode');
+  result = g.match('blErg', 'withUmlaut');
   t.equals(result.failed(), true);
   t.equals(result.shortMessage, 'Line 1, col 1: expected "blërg" (case-insensitive)');
+
+  t.equals(g.match('ı', 'dotlessI').succeeded(), true, 'matches same code point');
+  t.equals(g.match('I', 'dotlessI').succeeded(), true, 'matches uppercase dotless I');
+  t.equals(g.match('İ', 'dottedI').succeeded(), true, 'matches some code point');
+
+  // Getting this right is really tricky. Our implementation currently doesn't treat "i" and "İ"
+  // as being case-insensitive-equal. TODO: Maybe fix this?
+  t.equals(g.match('i', 'dottedI').succeeded(), false, "regular i WON'T match uppercase dotted I");
+
+  t.equals(g.match('s', 'eszett').failed(), true);
+  t.equals(g.match('ss', 'eszett').failed(), true);
 
   t.end();
 });
