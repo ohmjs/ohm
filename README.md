@@ -27,8 +27,8 @@ Getting Started
 
 The easiest way to get started with Ohm is to play with one of the following examples on JSFiddle:
 
-- [Basic parsing example](http://jsfiddle.net/pdubroy/p3b1v2xb/)
-- [Arithmetic example with semantics](http://jsfiddle.net/pdubroy/15k63qae/)
+- [Basic parsing example](https://jsfiddle.net/pdubroy/p3b1v2xb/)
+- [Arithmetic example with semantics](https://jsfiddle.net/pdubroy/15k63qae/)
 
 ### Resources
 
@@ -41,7 +41,7 @@ The easiest way to get started with Ohm is to play with one of the following exa
 
 For use in the browser:
 
--  Download [ohm.js](https://cdglabs.github.io/ohm/dist/ohm.js) (development version, with full source and comments) or [ohm.min.js](https://cdglabs.github.io/ohm/dist/ohm.min.js) (a minified version for faster page loads).
+-  Download [ohm.js](https://unpkg.com/ohm-js@latest/dist/ohm.js) (development version, with full source and comments) or [ohm.min.js](https://unpkg.com/ohm-js@latest/dist/ohm.min.js) (a minified version for faster page loads).
 -  Add a new script tag to your page, and set the `src` attribute to the path of the file you just downloaded. E.g.:
     ```html
     <script src="ohm.js"></script>
