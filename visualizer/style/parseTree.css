@@ -110,7 +110,7 @@
   By default, give .self a transparent border to enforce spacing between nodes.
   It can also be used to put a border around a label without affecting the layout.
  */
-.pexpr:not(.hidden) > .self {
+.pexpr:not(.unlabeled) > .self {
   border: 1px solid transparent;
 }
 .pexpr.currentParseStep > .self {
@@ -150,7 +150,7 @@
 .pexpr[hidden] {
   visibility: hidden;
 }
-.pexpr.hidden > .self .label {
+.pexpr.unlabeled > .self .label {
   display: none;
 }
 .pexpr.collapsed > .self .label {
