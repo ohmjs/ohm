@@ -69,8 +69,10 @@
     if (el.id) {
       var nextPos = localStorage.getItem(toStorageKey(el, 'next'));
       var prevPos = localStorage.getItem(toStorageKey(el, 'prev'));
-      if (nextPos && prevPos) {
+      if (nextPos && nextEl) {
         nextEl.style.flexGrow = nextPos;
+      }
+      if (prevPos && prevEl) {
         prevEl.style.flexGrow = prevPos;
       }
     }
