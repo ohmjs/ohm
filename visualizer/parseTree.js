@@ -246,10 +246,11 @@
   }
 
   // Return true if the trace element `el` should be collapsed by default.
-  function shouldTraceElementBeCollapsed(el, traceNode, context) {
+  function shouldTraceElementBeCollapsed(traceNode, context) {
+    return false; 
     // Don't collapse unlabeled nodes (they can't be expanded), nodes with a collapsed ancestor,
     // or leaf nodes.
-    if (el.data.class.hidden || context.collapsed || isLeaf(traceNode)) {
+    if (context.collapsed || isLeaf(traceNode)) {
       return false;
     }
 
@@ -346,13 +347,23 @@
     e.stopPropagation();  // Prevent ancestor wrappers from handling.
   }
 
-  // Create the DOM node that contains the parse tree for `traceNode` and all its children.
-  function createTraceWrapper(createElement, traceNode, optChildren) {
-    var el = createElement('div', {attrs: {}, class: {'pexpr': true}}, optChildren || []);
-    var ctorName = traceNode.expr.constructor.name;
-    el.data.class[ctorName.toLowerCase()] = true;
-    return el;
-  }
+  var TraceWrapper = Vue.component('trace-wrapper', {
+    functional: true,
+    props: {
+      traceNode: {type: Object, required: true},
+      classes: {type: Object}
+    },
+    mounted: function() {},
+    render: function(createElement, context) {
+      var ctorName = context.props.traceNode.ctorName;
+      var classes = (context.props && context.props.classes) || {};
+      classes.pexpr = true;
+      if (ctorName) {
+        classes[ctorName.toLowerCase()] = true;
+      }
+      return createElement('div', {attrs: {}, class: classes}, context.children);
+    }
+  });
 
   function createTraceLabel(createElement, traceNode, optExtraInfo) {
     var pexpr = traceNode.expr;
@@ -390,22 +401,23 @@
     return label;
   }
 
-  function createTraceElement(createElement, traceNode) {
+  function createTraceElement(createElement, traceNode, classes, childContainer) {
     var pexpr = traceNode.expr;
-    var wrapper = createTraceWrapper(createElement, traceNode);
+
+    var info = isLRBaseCase(traceNode) ? '[LR]' : null;
+    var label = createTraceLabel(createElement, traceNode, info);
+    var selfWrapper = createElement('div', {class: 'self'}, [label]);
+
+    var wrapper = createElement(TraceWrapper, {
+      props: {traceNode: traceNode, classes: classes},
+    }, [selfWrapper, childContainer]);
     wrapper._traceNode = traceNode;
     wrapper.id = getFreshNodeId();
 
+/*
     wrapper.data.class.zoomBorder =
         zoomState.zoomTrace === traceNode && zoomState.previewOnly;
 
-    var info = isLRBaseCase(traceNode) ? '[LR]' : null;
-
-    var label = createTraceLabel(createElement, traceNode, info);
-    var selfWrapper = createElement('div', {class: 'self'}, [label]);
-    wrapper.children.push(selfWrapper);
-
-/*
     label.addEventListener('click', function(e) {
       var isPlatformMac = /Mac/.test(navigator.platform);
       var modifierKey = isPlatformMac ? e.metaKey : e.ctrlKey;
@@ -517,14 +529,18 @@
     }
     zoomOutButton.hidden = zoomState.zoomTrace == null;
 
-    var rootWrapper = createTraceWrapper(createElement, renderedTrace, [
-      createElement('div', {class: 'children'}, [])
-    ]);
+    console.log(!!renderedTrace);
+    var rootContainer = createElement('div', {class: 'children'}, []);
+    var rootWrapper = createElement(
+      TraceWrapper,
+      {props: {traceNode: renderedTrace}},
+      [rootContainer]
+    );
     rootEl.children.push(rootWrapper);
 
     var contextStack = [{
       wrapper: rootWrapper,
-      childContainer: rootWrapper.children[0],
+      childContainer: rootContainer,
       collapsed: false,
       vbox: false
     }];
@@ -544,10 +560,21 @@
         if (isWhitespace && node.source.contents.length === 0) {
           return node.SKIP;
         }
+        var context = contextStack[contextStack.length - 1];
+
         var isLabeled = shouldNodeBeLabeled(node, parent);
         var isLeafNode = isLeaf(node);
-        var visibleChoice = hasVisibleChoice(node);
-        var visibleLR = hasVisibleLeftRecursion(node);
+        var isVBoxItem = context.isVBox;
+        var useDisclosure = isLabeled && isVBoxItem;
+        var collapsed = isLabeled && shouldTraceElementBeCollapsed(node, context);
+
+        var vbox = hasVisibleChoice(node) ||
+            hasVisibleLeftRecursion(node) ||
+            (isAlt(node.expr) && isVBoxItem);
+        var childContainer = createElement('div', {
+          attrs: {hidden: collapsed},
+          class: {children: true, vbox: vbox}
+        }, []);
 
         if (node.isMemoized) {
           var memoKey = node.expr.toMemoKey();
@@ -557,35 +584,18 @@
           }
         }
 
-        var context = contextStack[contextStack.length - 1];
-        var el = createTraceElement(createElement, node);
-        context.childContainer.children.push(el);
-
-        /*
-        domUtil.toggleClasses(el, {
+        var el = createTraceElement(createElement, node, {
+          collapsed: collapsed,
           disclosure: useDisclosure,
           failed: !node.succeeded,
           unlabeled: !isLabeled,
           leaf: isLeafNode
-        });
-        */
-        var collapsed = shouldTraceElementBeCollapsed(el, node, context);
+        }, childContainer);
+        context.childContainer.children.push(el);
+
         if (collapsed) {
-          el.data.class.collapsed = true;
 //          ohmEditor.parseTree.emit((collapse ? 'collapse' : 'expand') + ':traceElement', el);
         }
-
-        var isVBoxItem = context.isVBox;
-        var useDisclosure = isLabeled && isVBoxItem;
-
-        var childContainer = createElement('div', {
-          attrs: {hidden: collapsed},
-          class: {
-            children: true,
-            vbox: visibleChoice || visibleLR || (isAlt(node.expr) && isVBoxItem)
-          }
-        }, []);
-        el.children.push(childContainer);
 
 //        ohmEditor.parseTree.emit('create:traceElement', el, node);
 
@@ -746,7 +756,7 @@
 //    $('#bottomSection .overlay').style.width = 0;  // Hide the overlay.
 //    $('#semantics').hidden = !ohmEditor.options.semantics;
 //    rootTrace = trace;
-    parseTree.vue.rootTrace = trace;
+    parseTree.vue.rootTrace = Object.freeze(trace);
 //    clearZoomState();
   });
 
