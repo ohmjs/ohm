@@ -50,6 +50,17 @@
     };
   }
 
+  // Vue helpers
+  // ----
+
+  function addChildToVNode(vnode, child) {
+    var children = vnode.componentOptions.children;
+    if (!children) {
+      children = vnode.componentOptions.children = [];
+    }
+    children.push(child);
+  }
+
   // Parse tree helpers
   // ------------------
 
@@ -247,7 +258,6 @@
 
   // Return true if the trace element `el` should be collapsed by default.
   function shouldTraceElementBeCollapsed(traceNode, context) {
-    return false; 
     // Don't collapse unlabeled nodes (they can't be expanded), nodes with a collapsed ancestor,
     // or leaf nodes.
     if (context.collapsed || isLeaf(traceNode)) {
@@ -347,33 +357,14 @@
     e.stopPropagation();  // Prevent ancestor wrappers from handling.
   }
 
-  var TraceWrapper = Vue.component('trace-wrapper', {
-    functional: true,
-    props: {
-      traceNode: {type: Object, required: true},
-      classes: {type: Object}
-    },
-    mounted: function() {},
-    render: function(createElement, context) {
-      var ctorName = context.props.traceNode.ctorName;
-      var classes = (context.props && context.props.classes) || {};
-      classes.pexpr = true;
-      if (ctorName) {
-        classes[ctorName.toLowerCase()] = true;
-      }
-      return createElement('div', {attrs: {}, class: classes}, context.children);
-    }
-  });
-
   var TraceLabel = Vue.component('trace-label', {
     functional: true,
     props: {
       traceNode: {type: Object, required: true},
-      extraInfo: {type: String}
     },
     render: function(createElement, context) {
       var traceNode = context.props.traceNode;
-      var extraInfo = context.props.extraInfo;
+      var extraInfo = isLRBaseCase(traceNode) ? '[LR]' : null;
 
       var pexpr = traceNode.expr;
       var label = createElement('div', {class: 'label', attrs: {}});
@@ -414,29 +405,42 @@
   var TraceElement = Vue.component('trace-element', {
     props: {
       traceNode: {type: Object, required: true},
-      classes: {type: Object, required: true},
-      childContainer: {type: Object, required: true}
+      classes: {type: Object, default: Object},
+      isInVBox: {type: Boolean},
+      vbox: {type: Boolean}
     },
-    render: function(createElement) {
-      var traceNode = this.traceNode;
-      var pexpr = traceNode.expr;
-
-      var info = isLRBaseCase(traceNode) ? '[LR]' : null;
-      var label = createElement(TraceLabel, {
-        props: {
-          traceNode: traceNode,
-          extraInfo: info
+    computed: {
+      classObj: function() {
+        var obj = {
+          disclosure: this.classes.labeled && this.isInVBox,
+        };
+        var ctorName = this.traceNode.ctorName;
+        if (ctorName) {
+          obj[ctorName.toLowerCase()] = true;
         }
-      });
-      var selfWrapper = createElement('div', {class: 'self'}, [label]);
+        Object.assign(obj, this.classes);
+        return obj;
+      }
+    },
+    template: ([
+      '<div class="pexpr" :class="classObj">',
+      '  <div v-if="classes.labeled" class="self">',
+      '    <trace-label :traceNode="traceNode" />',
+      '  </div>',
+      '  <div v-if="!classes.leaf"',
+      '       class="children" :class="{vbox: vbox}"',
+      '       :hidden="classes.collapsed">',
+      '    <slot />',
+      '  </div>',
+      '</div>'
+    ].join(''))
+    /*
+    render: function(createElement) {
+//      var traceNode = this.traceNode;
+//      var pexpr = traceNode.expr;
+//      wrapper._traceNode = traceNode;
+//      wrapper.id = getFreshNodeId();
 
-      var wrapper = createElement(TraceWrapper, {
-        props: {traceNode: traceNode, classes: this.classes},
-      }, [selfWrapper, this.childContainer]);
-      wrapper._traceNode = traceNode;
-      wrapper.id = getFreshNodeId();
-
-  /*
       wrapper.data.class.zoomBorder =
           zoomState.zoomTrace === traceNode && zoomState.previewOnly;
 
@@ -487,10 +491,10 @@
       label.addEventListener('contextmenu', function(e) {
         handleContextMenu(e, traceNode);
       });
-      */
 
       return wrapper;
     }
+      */
   });
 
   // To make it easier to navigate around the parse tree, handle mousewheel events
@@ -541,9 +545,9 @@
 
   // Re-render the parse tree starting with `trace` as the root.
   function refreshParseTree(createElement, trace) {
-    var rootEl = createElement('div', []);
+    var rootContainer = createElement('div', []);
     if (!trace) {
-      return rootEl;
+      return rootContainer;
     }
 
     var renderedTrace = trace;
@@ -552,19 +556,15 @@
     }
     zoomOutButton.hidden = zoomState.zoomTrace == null;
 
-    console.log(!!renderedTrace);
-    var rootContainer = createElement('div', {class: 'children'}, []);
-    var rootWrapper = createElement(
-      TraceWrapper,
-      {props: {traceNode: renderedTrace}},
-      [rootContainer]
-    );
-    rootEl.children.push(rootWrapper);
+    var rootElement = createElement(TraceElement, {
+      props: {traceNode: renderedTrace}
+    });
+    rootContainer.children.push(rootElement);
 
     var contextStack = [{
-      wrapper: rootWrapper,
-      childContainer: rootContainer,
+      parent: rootElement,
       collapsed: false,
+      syntactic: false,
       vbox: false
     }];
 
@@ -583,22 +583,16 @@
         if (isWhitespace && node.source.contents.length === 0) {
           return node.SKIP;
         }
-        var context = contextStack[contextStack.length - 1];
 
+        var context = contextStack[contextStack.length - 1];
         var isLabeled = shouldNodeBeLabeled(node, parent);
-        var isLeafNode = isLeaf(node);
-        var isVBoxItem = context.isVBox;
-        var useDisclosure = isLabeled && isVBoxItem;
         var collapsed = isLabeled && shouldTraceElementBeCollapsed(node, context);
 
         var vbox = hasVisibleChoice(node) ||
             hasVisibleLeftRecursion(node) ||
-            (isAlt(node.expr) && isVBoxItem);
-        var childContainer = createElement('div', {
-          attrs: {hidden: collapsed},
-          class: {children: true, vbox: vbox}
-        }, []);
+            (isAlt(node.expr) && context.vbox);
 
+        var isLeafNode = isLeaf(node);
         if (node.isMemoized) {
           var memoKey = node.expr.toMemoKey();
           var stack = currentLR[memoKey];
@@ -607,20 +601,20 @@
           }
         }
 
-        var el = createElement(TraceElement, {
+        var traceElement = createElement(TraceElement, {
           props: {
             traceNode: node,
             classes: {
               collapsed: collapsed,
-              disclosure: useDisclosure,
               failed: !node.succeeded,
-              unlabeled: !isLabeled,
+              labeled: isLabeled,
               leaf: isLeafNode
             },
-            childContainer: childContainer
+            isInVBox: context.vbox,
+            vbox: vbox
           }
         });
-        context.childContainer.children.push(el);
+        addChildToVNode(context.parent, traceElement);
 
         if (collapsed) {
 //          ohmEditor.parseTree.emit((collapse ? 'collapse' : 'expand') + ':traceElement', el);
@@ -632,11 +626,10 @@
           return node.SKIP;
         }
         contextStack.push({
-          wrapper: el,
-          childContainer: childContainer,
+          parent: traceElement,
           collapsed: collapsed,
           syntactic: isLabeled ? isSyntactic(node.expr) : context.syntactic,
-          vbox: childContainer.data.class.vbox
+          vbox: vbox
         });
       },
       exit: function(node, parent, depth) {
@@ -662,7 +655,7 @@
     // Hack to ensure that the vertical scroll bar doesn't overlap the parse tree contents.
 //    parseResultsDiv.style.paddingRight =
 //        2 + parseResultsDiv.scrollWidth - parseResultsDiv.clientWidth + 'px';
-    return rootEl;
+    return rootContainer;
   }
 
   function updateExpandedInput(optAnimatingEl, isCollapsing, t) {
@@ -782,7 +775,7 @@
 
   // Refresh the parse tree after attempting to parse the input.
   ohmEditor.addListener('parse:input', function(matchResult, trace) {
-//    $('#bottomSection .overlay').style.width = 0;  // Hide the overlay.
+    $('#bottomSection .overlay').style.width = 0;  // Hide the overlay.
 //    $('#semantics').hidden = !ohmEditor.options.semantics;
 //    rootTrace = trace;
     parseTree.vue.rootTrace = Object.freeze(trace);
