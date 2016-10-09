@@ -365,110 +365,133 @@
     }
   });
 
-  function createTraceLabel(createElement, traceNode, optExtraInfo) {
-    var pexpr = traceNode.expr;
-    var label = createElement('div', {class: 'label', attrs: {}});
+  var TraceLabel = Vue.component('trace-label', {
+    functional: true,
+    props: {
+      traceNode: {type: Object, required: true},
+      extraInfo: {type: String}
+    },
+    render: function(createElement, context) {
+      var traceNode = context.props.traceNode;
+      var extraInfo = context.props.extraInfo;
 
-    if (traceNode.terminatesLR) {
-      label.text = '[Grow LR]';
+      var pexpr = traceNode.expr;
+      var label = createElement('div', {class: 'label', attrs: {}});
+
+      if (traceNode.terminatesLR) {
+        label.text = '[Grow LR]';
+        return label;
+      }
+
+      var isInlineRule = pexpr.ruleName && pexpr.ruleName.indexOf('_') >= 0;
+
+      if (isInlineRule) {
+        var parts = pexpr.ruleName.split('_');
+        label.text = parts[0];
+        label.children.push(createElement('span', {class: 'caseName'}, parts[1]));
+        if (extraInfo) {
+          label.children.push(createElement('span', {class: 'info'}, ' ' + extraInfo));
+        }
+      } else {
+        var labelText = traceNode.displayString;
+
+        // Truncate the label if it is too long, and show the full label in the tooltip.
+        if (labelText.length > 20 && labelText.indexOf(' ') >= 0) {
+          label.data.attrs.title = labelText;
+          labelText = labelText.slice(0, 20) + UnicodeChars.HORIZONTAL_ELLIPSIS;
+        }
+        label.text = labelText;
+        if (extraInfo) {
+          label.text += extraInfo;
+        }
+      }
+      // Make sure the label is at least as wide as the input it consumed.
+      label.data.attrs.style = {minWidth: measureInputText(traceNode.source.contents) + 'px'};
       return label;
     }
+  });
 
-    var isInlineRule = pexpr.ruleName && pexpr.ruleName.indexOf('_') >= 0;
+  var TraceElement = Vue.component('trace-element', {
+    props: {
+      traceNode: {type: Object, required: true},
+      classes: {type: Object, required: true},
+      childContainer: {type: Object, required: true}
+    },
+    render: function(createElement) {
+      var traceNode = this.traceNode;
+      var pexpr = traceNode.expr;
 
-    if (isInlineRule) {
-      var parts = pexpr.ruleName.split('_');
-      label.text = parts[0];
-      label.children.push(createElement('span', {class: 'caseName'}, parts[1]));
-      if (optExtraInfo) {
-        label.children.push(createElement('span', {class: 'info'}, ' ' + optExtraInfo));
-      }
-    } else {
-      var labelText = traceNode.displayString;
+      var info = isLRBaseCase(traceNode) ? '[LR]' : null;
+      var label = createElement(TraceLabel, {
+        props: {
+          traceNode: traceNode,
+          extraInfo: info
+        }
+      });
+      var selfWrapper = createElement('div', {class: 'self'}, [label]);
 
-      // Truncate the label if it is too long, and show the full label in the tooltip.
-      if (labelText.length > 20 && labelText.indexOf(' ') >= 0) {
-        label.data.attrs.title = labelText;
-        labelText = labelText.slice(0, 20) + UnicodeChars.HORIZONTAL_ELLIPSIS;
-      }
-      label.text = labelText;
-      if (optExtraInfo) {
-        label.text += optExtraInfo;
-      }
+      var wrapper = createElement(TraceWrapper, {
+        props: {traceNode: traceNode, classes: this.classes},
+      }, [selfWrapper, this.childContainer]);
+      wrapper._traceNode = traceNode;
+      wrapper.id = getFreshNodeId();
+
+  /*
+      wrapper.data.class.zoomBorder =
+          zoomState.zoomTrace === traceNode && zoomState.previewOnly;
+
+      label.addEventListener('click', function(e) {
+        var isPlatformMac = /Mac/.test(navigator.platform);
+        var modifierKey = isPlatformMac ? e.metaKey : e.ctrlKey;
+
+        if (e.altKey && !(e.shiftKey || e.metaKey)) {
+          console.log(traceNode);  // eslint-disable-line no-console
+        } else if (modifierKey && !(e.altKey || e.shiftKey)) {
+          // cmd/ctrl + click to open or close semantic editor
+          ohmEditor.parseTree.emit('cmdOrCtrlClick:traceElement', wrapper);
+        } else if (!isLeaf(traceNode)) {
+          toggleTraceElement(wrapper);
+        }
+        e.preventDefault();
+      });
+
+      label.addEventListener('mouseover', function(e) {
+        var grammarEditor = ohmEditor.ui.grammarEditor;
+        var inputEditor = ohmEditor.ui.inputEditor;
+
+        updateExpandedInput();
+
+        // TODO: Can `source` ever be undefine/null here?
+        if (traceNode.source) {
+          inputMark = cmUtil.markInterval(inputEditor, traceNode.source, 'highlight', false);
+          inputEditor.getWrapperElement().classList.add('highlighting');
+        }
+        if (pexpr.source) {
+          grammarMark = cmUtil.markInterval(grammarEditor, pexpr.source, 'active-appl', false);
+          grammarEditor.getWrapperElement().classList.add('highlighting');
+          cmUtil.scrollToInterval(grammarEditor, pexpr.source);
+        }
+        var ruleName = pexpr.ruleName;
+        if (ruleName) {
+          ohmEditor.emit('peek:ruleDefinition', ruleName);
+        }
+
+        e.stopPropagation();
+      });
+
+      label.addEventListener('mouseout', function(e) {
+        updateExpandedInput();
+        ohmEditor.emit('unpeek:ruleDefinition');
+      });
+
+      label.addEventListener('contextmenu', function(e) {
+        handleContextMenu(e, traceNode);
+      });
+      */
+
+      return wrapper;
     }
-    // Make sure the label is at least as wide as the input it consumed.
-    label.data.attrs.style = {minWidth: measureInputText(traceNode.source.contents) + 'px'};
-    return label;
-  }
-
-  function createTraceElement(createElement, traceNode, classes, childContainer) {
-    var pexpr = traceNode.expr;
-
-    var info = isLRBaseCase(traceNode) ? '[LR]' : null;
-    var label = createTraceLabel(createElement, traceNode, info);
-    var selfWrapper = createElement('div', {class: 'self'}, [label]);
-
-    var wrapper = createElement(TraceWrapper, {
-      props: {traceNode: traceNode, classes: classes},
-    }, [selfWrapper, childContainer]);
-    wrapper._traceNode = traceNode;
-    wrapper.id = getFreshNodeId();
-
-/*
-    wrapper.data.class.zoomBorder =
-        zoomState.zoomTrace === traceNode && zoomState.previewOnly;
-
-    label.addEventListener('click', function(e) {
-      var isPlatformMac = /Mac/.test(navigator.platform);
-      var modifierKey = isPlatformMac ? e.metaKey : e.ctrlKey;
-
-      if (e.altKey && !(e.shiftKey || e.metaKey)) {
-        console.log(traceNode);  // eslint-disable-line no-console
-      } else if (modifierKey && !(e.altKey || e.shiftKey)) {
-        // cmd/ctrl + click to open or close semantic editor
-        ohmEditor.parseTree.emit('cmdOrCtrlClick:traceElement', wrapper);
-      } else if (!isLeaf(traceNode)) {
-        toggleTraceElement(wrapper);
-      }
-      e.preventDefault();
-    });
-
-    label.addEventListener('mouseover', function(e) {
-      var grammarEditor = ohmEditor.ui.grammarEditor;
-      var inputEditor = ohmEditor.ui.inputEditor;
-
-      updateExpandedInput();
-
-      // TODO: Can `source` ever be undefine/null here?
-      if (traceNode.source) {
-        inputMark = cmUtil.markInterval(inputEditor, traceNode.source, 'highlight', false);
-        inputEditor.getWrapperElement().classList.add('highlighting');
-      }
-      if (pexpr.source) {
-        grammarMark = cmUtil.markInterval(grammarEditor, pexpr.source, 'active-appl', false);
-        grammarEditor.getWrapperElement().classList.add('highlighting');
-        cmUtil.scrollToInterval(grammarEditor, pexpr.source);
-      }
-      var ruleName = pexpr.ruleName;
-      if (ruleName) {
-        ohmEditor.emit('peek:ruleDefinition', ruleName);
-      }
-
-      e.stopPropagation();
-    });
-
-    label.addEventListener('mouseout', function(e) {
-      updateExpandedInput();
-      ohmEditor.emit('unpeek:ruleDefinition');
-    });
-
-    label.addEventListener('contextmenu', function(e) {
-      handleContextMenu(e, traceNode);
-    });
-    */
-
-    return wrapper;
-  }
+  });
 
   // To make it easier to navigate around the parse tree, handle mousewheel events
   // and translate vertical overscroll into horizontal movement. I.e., when scrolled all
@@ -584,13 +607,19 @@
           }
         }
 
-        var el = createTraceElement(createElement, node, {
-          collapsed: collapsed,
-          disclosure: useDisclosure,
-          failed: !node.succeeded,
-          unlabeled: !isLabeled,
-          leaf: isLeafNode
-        }, childContainer);
+        var el = createElement(TraceElement, {
+          props: {
+            traceNode: node,
+            classes: {
+              collapsed: collapsed,
+              disclosure: useDisclosure,
+              failed: !node.succeeded,
+              unlabeled: !isLabeled,
+              leaf: isLeafNode
+            },
+            childContainer: childContainer
+          }
+        });
         context.childContainer.children.push(el);
 
         if (collapsed) {
