@@ -114,6 +114,7 @@
     var charWidth = textWidth / text.length;
 
     inputCtx.fillStyle = 'rgba(51, 51, 51, ' + (optAlpha == null ? 1 : optAlpha) + ')';
+    inputCtx.textBaseline = 'top';
 
     var x = rect.left;
     for (var i = 0; i < text.length; i++) {
@@ -329,7 +330,7 @@
            !isLeaf(traceNode);
   }
 
-  var TraceLabel = Vue.component('trace-label', {
+  Vue.component('trace-label', {
     props: {
       traceNode: {type: Object, required: true},
     },
@@ -389,11 +390,21 @@
           this.$emit('click');
         }
         e.preventDefault();
+      },
+      onContextMenu: function(e) {
+        this.$emit('showContextMenu', {
+          x: e.clientX,
+          y: e.clientY - 6,
+          traceNode: this.traceNode
+        });
+        e.stopPropagation();
+        e.preventDefault();
       }
     },
     template: [
       '<div class="label" :title="labelData.tooltip" :style="{minWidth: minWidth}"',
-      '     @mouseover="emitHover" @mouseout="emitUnhover" @click="onClick($event)">',
+          ' @mouseover="emitHover" @mouseout="emitUnhover" @click="onClick($event)"',
+          ' @contextmenu="onContextMenu($event)">',
         '{{ labelData.text }}',
         '<span v-if="labelData.caseName" class="caseName">{{ labelData.caseName }}</span>',
         '<span v-if="extraInfo" class="info">{{ extraInfo }}</span>',
@@ -421,15 +432,21 @@
         return obj;
       }
     },
+    mounted: function() {
+      this.$el._traceNode = this.traceNode;
+    },
+    updated: function() {
+      this.$el._traceNode = this.traceNode;
+    },
     methods: {
-      onHover() {
+      onHover: function() {
         var grammarEditor = ohmEditor.ui.grammarEditor;
         var inputEditor = ohmEditor.ui.inputEditor;
 
         var source = this.traceNode.source;
         var pexpr = this.traceNode.expr;
 
-//        updateExpandedInput();
+        updateExpandedInput();
 
         // TODO: Can `source` ever be undefine/null here?
         if (source) {
@@ -446,11 +463,11 @@
           ohmEditor.emit('peek:ruleDefinition', ruleName);
         }
       },
-      onUnhover() {
-//        updateExpandedInput();
+      onUnhover: function() {
+        updateExpandedInput();
         ohmEditor.emit('unpeek:ruleDefinition');
       },
-      onClick(modifier) {
+      onClick: function(modifier) {
         if (modifier === 'alt') {
           console.log(this.traceNode);  // eslint-disable-line no-console
         } else if (modifier === 'cmd') {
@@ -460,26 +477,10 @@
           this.toggleCollapsed();
         }
       },
-      onContextMenu: function(e, traceNode) {
-        var menuDiv = $('#parseTreeMenu');
-        menuDiv.style.left = e.clientX + 'px';
-        menuDiv.style.top = e.clientY - 6 + 'px';
-        menuDiv.hidden = false;
-
-        var currentRootTrace = zoomState.zoomTrace || rootTrace;
-        var zoomEnabled = couldZoom(currentRootTrace, traceNode);
-
-        domUtil.addMenuItem('parseTreeMenu', 'getInfoItem', 'Get Info', false);
-        domUtil.addMenuItem('parseTreeMenu', 'zoomItem', 'Zoom to Node', zoomEnabled, function() {
-          updateZoomState({zoomTrace: traceNode});
-          clearMarks();
-        });
-        ohmEditor.parseTree.emit('contextMenu', e.target, traceNode);
-
-        e.preventDefault();
-        e.stopPropagation();  // Prevent ancestor wrappers from handling.
+      onShowContextMenu: function(pos) {
+        this.$emit('showContextMenu', pos);
       },
-      toggleCollapsed() {
+      toggleCollapsed: function() {
         // Caution: direct DOM manipulation here!
         // TODO: Consider using Vue.js <transition> wrapper element.
         var children = this.$refs.children;
@@ -490,7 +491,8 @@
       '<div class="pexpr" :class="classObj">',
       '  <div v-if="classes.labeled" class="self">',
       '    <trace-label :traceNode="traceNode"',
-      '                 @hover="onHover" @unhover="onUnhover" @click="onClick" />',
+      '                 @hover="onHover" @unhover="onUnhover" @click="onClick"',
+      '                 @showContextMenu="onShowContextMenu" />',
       '  </div>',
       '  <div v-if="!classes.leaf" ref="children"',
       '       class="children" :class="{vbox: vbox}"',
@@ -498,7 +500,7 @@
       '    <slot />',
       '  </div>',
       '</div>'
-    ].join('')
+    ].join(''),
     /*
     render: function(createElement) {
 //      var traceNode = this.traceNode;
@@ -561,125 +563,144 @@
     }
   };
 
-  // Re-render the parse tree starting with `trace` as the root.
-  function refreshParseTree(createElement, trace) {
-    var rootContainer = createElement('div', []);
-    if (!trace) {
+  var ParseTree = Vue.component('parse-tree', {
+    props: {
+      trace: {required: true}
+    },
+    methods: {
+      showContextMenu: function(data) {
+        var currentRootTrace = zoomState.zoomTrace || this.trace;
+        var zoomEnabled = couldZoom(currentRootTrace, data.traceNode);
+
+        var menuDiv = $('#parseTreeMenu');
+        menuDiv.style.left = data.x + 'px';
+        menuDiv.style.top = data.y + 'px';
+        menuDiv.hidden = false;
+
+        domUtil.addMenuItem('parseTreeMenu', 'getInfoItem', 'Get Info', false);
+        domUtil.addMenuItem('parseTreeMenu', 'zoomItem', 'Zoom to Node', zoomEnabled, function() {
+          updateZoomState({zoomTrace: traceNode});
+          clearMarks();
+        });
+  //      ohmEditor.parseTree.emit('contextMenu', this.$el, this.traceNode);
+      }
+    },
+    render: function(createElement) {
+      var rootContainer = createElement('div', []);
+      if (!this.trace) {
+        return rootContainer;
+      }
+
+      var renderedTrace = this.trace;
+      if (zoomState.zoomTrace && !zoomState.previewOnly) {
+        renderedTrace = zoomState.zoomTrace;
+      }
+      zoomOutButton.hidden = zoomState.zoomTrace == null;
+
+      var rootElement = createElement(TraceElement, {
+        props: {
+          traceNode: renderedTrace
+        }
+      });
+      rootContainer.children.push(rootElement);
+
+      var contextStack = [{
+        parent: rootElement,
+        collapsed: false,
+        syntactic: false,
+        vbox: false
+      }];
+
+      var eventHandlers = {showContextMenu: this.showContextMenu};
+      var currentLR = {};
+
+      ohmEditor.parseTree.emit('render:parseTree', renderedTrace);
+      var renderActions = {
+        enter: function handleEnter(node, parent, depth) {
+          // Don't show or recurse into nodes that didn't succeed, unless "Show failures" is enabled.
+          if ((!node.succeeded && !ohmEditor.options.showFailures) ||
+              (node.isImplicitSpaces && !ohmEditor.options.showSpaces)) {
+            return node.SKIP;
+          }
+          // Don't bother showing whitespace nodes that didn't consume anything.
+          var isWhitespace = node.expr.ruleName === 'spaces';
+          if (isWhitespace && node.source.contents.length === 0) {
+            return node.SKIP;
+          }
+
+          var context = contextStack[contextStack.length - 1];
+          var isLabeled = shouldNodeBeLabeled(node, parent);
+          var collapsed = isLabeled && shouldTraceElementBeCollapsed(node, context);
+
+          var vbox = hasVisibleChoice(node) ||
+              hasVisibleLeftRecursion(node) ||
+              (isAlt(node.expr) && context.vbox);
+
+          var isLeafNode = isLeaf(node);
+          if (node.isMemoized) {
+            var memoKey = node.expr.toMemoKey();
+            var stack = currentLR[memoKey];
+            if (stack && stack[stack.length - 1] === node.pos) {
+              isLeafNode = true;
+            }
+          }
+
+          var traceElement = createElement(TraceElement, {
+            props: {
+              traceNode: node,
+              classes: {
+                collapsed: collapsed,
+                failed: !node.succeeded,
+                labeled: isLabeled,
+                leaf: isLeafNode,
+                zoomBorder: zoomState.zoomTrace === node && zoomState.previewOnly
+              },
+              isInVBox: context.vbox,
+              vbox: vbox
+            },
+            on: eventHandlers
+          });
+          addChildToVNode(context.parent, traceElement);
+
+          if (collapsed) {
+  //          ohmEditor.parseTree.emit((collapse ? 'collapse' : 'expand') + ':traceElement', el);
+          }
+
+  //        ohmEditor.parseTree.emit('create:traceElement', el, node);
+
+          if (isLeafNode) {
+            return node.SKIP;
+          }
+          contextStack.push({
+            parent: traceElement,
+            collapsed: collapsed,
+            syntactic: isLabeled ? isSyntactic(node.expr) : context.syntactic,
+            vbox: vbox
+          });
+        },
+        exit: function(node, parent, depth) {
+          // If necessary, render the "Grow LR" trace as a pseudo-child, after the real child.
+          // To avoid exponential growth of the tree, when we encounter a memoized entry that
+          // is a copy of the head of left recursion, treat it as a leaf.
+          if (hasVisibleLeftRecursion(node)) {
+            var memoKey = node.expr.toMemoKey();
+            var stack = currentLR[memoKey] || [];
+            currentLR[memoKey] = stack;
+            stack.push(node.pos);
+            node.terminatingLREntry.walk(renderActions);
+            stack.pop();
+          }
+          var context = contextStack.pop();
+          var el = context.wrapper;
+  //        ohmEditor.parseTree.emit('exit:traceElement', el, node);
+        }
+      };
+      renderedTrace.walk(renderActions);
       return rootContainer;
     }
-
-    var renderedTrace = trace;
-    if (zoomState.zoomTrace && !zoomState.previewOnly) {
-      renderedTrace = zoomState.zoomTrace;
-    }
-    zoomOutButton.hidden = zoomState.zoomTrace == null;
-
-    var rootElement = createElement(TraceElement, {
-      props: {traceNode: renderedTrace}
-    });
-    rootContainer.children.push(rootElement);
-
-    var contextStack = [{
-      parent: rootElement,
-      collapsed: false,
-      syntactic: false,
-      vbox: false
-    }];
-
-    var currentLR = {};
-
-    ohmEditor.parseTree.emit('render:parseTree', renderedTrace);
-    var renderActions = {
-      enter: function handleEnter(node, parent, depth) {
-        // Don't show or recurse into nodes that didn't succeed, unless "Show failures" is enabled.
-        if ((!node.succeeded && !ohmEditor.options.showFailures) ||
-            (node.isImplicitSpaces && !ohmEditor.options.showSpaces)) {
-          return node.SKIP;
-        }
-        // Don't bother showing whitespace nodes that didn't consume anything.
-        var isWhitespace = node.expr.ruleName === 'spaces';
-        if (isWhitespace && node.source.contents.length === 0) {
-          return node.SKIP;
-        }
-
-        var context = contextStack[contextStack.length - 1];
-        var isLabeled = shouldNodeBeLabeled(node, parent);
-        var collapsed = isLabeled && shouldTraceElementBeCollapsed(node, context);
-
-        var vbox = hasVisibleChoice(node) ||
-            hasVisibleLeftRecursion(node) ||
-            (isAlt(node.expr) && context.vbox);
-
-        var isLeafNode = isLeaf(node);
-        if (node.isMemoized) {
-          var memoKey = node.expr.toMemoKey();
-          var stack = currentLR[memoKey];
-          if (stack && stack[stack.length - 1] === node.pos) {
-            isLeafNode = true;
-          }
-        }
-
-        var traceElement = createElement(TraceElement, {
-          props: {
-            traceNode: node,
-            classes: {
-              collapsed: collapsed,
-              failed: !node.succeeded,
-              labeled: isLabeled,
-              leaf: isLeafNode,
-              zoomBorder: zoomState.zoomTrace === node && zoomState.previewOnly
-            },
-            isInVBox: context.vbox,
-            vbox: vbox
-          }
-        });
-        addChildToVNode(context.parent, traceElement);
-
-        if (collapsed) {
-//          ohmEditor.parseTree.emit((collapse ? 'collapse' : 'expand') + ':traceElement', el);
-        }
-
-//        ohmEditor.parseTree.emit('create:traceElement', el, node);
-
-        if (isLeafNode) {
-          return node.SKIP;
-        }
-        contextStack.push({
-          parent: traceElement,
-          collapsed: collapsed,
-          syntactic: isLabeled ? isSyntactic(node.expr) : context.syntactic,
-          vbox: vbox
-        });
-      },
-      exit: function(node, parent, depth) {
-        // If necessary, render the "Grow LR" trace as a pseudo-child, after the real child.
-        // To avoid exponential growth of the tree, when we encounter a memoized entry that
-        // is a copy of the head of left recursion, treat it as a leaf.
-        if (hasVisibleLeftRecursion(node)) {
-          var memoKey = node.expr.toMemoKey();
-          var stack = currentLR[memoKey] || [];
-          currentLR[memoKey] = stack;
-          stack.push(node.pos);
-          node.terminatingLREntry.walk(renderActions);
-          stack.pop();
-        }
-        var context = contextStack.pop();
-        var el = context.wrapper;
-//        ohmEditor.parseTree.emit('exit:traceElement', el, node);
-      }
-    };
-    renderedTrace.walk(renderActions);
-    updateExpandedInput();
-
-    // Hack to ensure that the vertical scroll bar doesn't overlap the parse tree contents.
-//    parseResultsDiv.style.paddingRight =
-//        2 + parseResultsDiv.scrollWidth - parseResultsDiv.clientWidth + 'px';
-    return rootContainer;
-  }
+  });
 
   function updateExpandedInput(optAnimatingEl, isCollapsing, t) {
-    return; // FIXME
-
     var canvasEl = $('#expandedInput');
     var sizer = $('#expandedInputWrapper > #sizer');
     var pixelRatio = getPixelRatio();
@@ -687,8 +708,6 @@
     canvasEl.height = sizer.offsetHeight * pixelRatio;
     canvasEl.style.width = sizer.offsetWidth + 'px';
     canvasEl.style.height = sizer.offsetHeight + 'px';
-
-    inputCtx.textBaseline = 'top';
 
     // If a parse tree node is currently being hovered, highlight it. If not, highlight
     // the node that has .zoomBorder, if one exists.
@@ -789,16 +808,15 @@
       // The root trace node from the last time the input was parsed (not affected by zooming).
       rootTrace: null
     },
-    render: function(createElement) {
-      return refreshParseTree(createElement, this.rootTrace);
-    }
+    template: '<parse-tree :trace="rootTrace" />',
+    mounted: function() { updateExpandedInput(); },
+    updated: function() { updateExpandedInput(); }
   });
 
   // Refresh the parse tree after attempting to parse the input.
   ohmEditor.addListener('parse:input', function(matchResult, trace) {
     $('#bottomSection .overlay').style.width = 0;  // Hide the overlay.
-//    $('#semantics').hidden = !ohmEditor.options.semantics;
-//    rootTrace = trace;
+    $('#semantics').hidden = !ohmEditor.options.semantics;
     parseTree.vue.rootTrace = Object.freeze(trace);
 //    clearZoomState();
   });
