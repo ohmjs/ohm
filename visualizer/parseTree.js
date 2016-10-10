@@ -358,48 +358,53 @@
   }
 
   var TraceLabel = Vue.component('trace-label', {
-    functional: true,
     props: {
       traceNode: {type: Object, required: true},
     },
-    render: function(createElement, context) {
-      var traceNode = context.props.traceNode;
-      var extraInfo = isLRBaseCase(traceNode) ? '[LR]' : null;
-
-      var pexpr = traceNode.expr;
-      var label = createElement('div', {class: 'label', attrs: {}});
-
-      if (traceNode.terminatesLR) {
-        label.text = '[Grow LR]';
-        return label;
-      }
-
-      var isInlineRule = pexpr.ruleName && pexpr.ruleName.indexOf('_') >= 0;
-
-      if (isInlineRule) {
-        var parts = pexpr.ruleName.split('_');
-        label.text = parts[0];
-        label.children.push(createElement('span', {class: 'caseName'}, parts[1]));
-        if (extraInfo) {
-          label.children.push(createElement('span', {class: 'info'}, ' ' + extraInfo));
+    computed: {
+      extraInfo: function() {
+        if (isLRBaseCase(this.traceNode)) {
+          return '[LR]';
         }
-      } else {
-        var labelText = traceNode.displayString;
+      },
+      inlineRuleNameParts: function() {
+        var ruleName = this.traceNode.expr.ruleName;
+        if (ruleName) {
+          return ruleName.split('_');
+        }
+      },
+      labelData: function() {
+        if (this.traceNode.terminatesLR) {
+          return {text: '[Grow LR]'};
+        }
+        if (this.inlineRuleNameParts) {
+          return {
+            text: this.inlineRuleNameParts[0],
+            caseName: this.inlineRuleNameParts[1]
+          };
+        }
+        var fullText = this.traceNode.displayString;
 
         // Truncate the label if it is too long, and show the full label in the tooltip.
-        if (labelText.length > 20 && labelText.indexOf(' ') >= 0) {
-          label.data.attrs.title = labelText;
-          labelText = labelText.slice(0, 20) + UnicodeChars.HORIZONTAL_ELLIPSIS;
+        if (fullText.length > 20 && fullText.indexOf(' ') >= 0) {
+          return {
+            text: fullText.slice(0, 20) + UnicodeChars.HORIZONTAL_ELLIPSIS,
+            tooltip: fullText
+          };
         }
-        label.text = labelText;
-        if (extraInfo) {
-          label.text += extraInfo;
-        }
+        return {text: fullText};
+      },
+      minWidth: function() {
+        return measureInputText(this.traceNode.source.contents) + 'px';
       }
-      // Make sure the label is at least as wide as the input it consumed.
-      label.data.attrs.style = {minWidth: measureInputText(traceNode.source.contents) + 'px'};
-      return label;
-    }
+    },
+    template: [
+      '<div class="label" :title="labelData.tooltip" :style="{minWidth: minWidth}">',
+        '{{ labelData.text }}',
+        '<span v-if="labelData.caseName" class="caseName">{{ labelData.caseName }}</span>',
+        '<span v-if="extraInfo" class="info">{{ extraInfo }}</span>',
+      '</div>',
+    ].join('')
   });
 
   var TraceElement = Vue.component('trace-element', {
@@ -422,7 +427,7 @@
         return obj;
       }
     },
-    template: ([
+    template: [
       '<div class="pexpr" :class="classObj">',
       '  <div v-if="classes.labeled" class="self">',
       '    <trace-label :traceNode="traceNode" />',
@@ -433,7 +438,7 @@
       '    <slot />',
       '  </div>',
       '</div>'
-    ].join(''))
+    ].join('')
     /*
     render: function(createElement) {
 //      var traceNode = this.traceNode;
