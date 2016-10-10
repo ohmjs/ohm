@@ -146,13 +146,6 @@
   }
 
   // Hides or shows the children of `el`, which is a div.pexpr.
-  function toggleTraceElement(el, optDurationInMs) {
-    var children = el.lastChild;
-    var isCollapsed = children.hidden;
-    setTraceElementCollapsed(el, !isCollapsed, optDurationInMs);
-  }
-
-  // Hides or shows the children of `el`, which is a div.pexpr.
   function setTraceElementCollapsed(el, collapse, optDurationInMs) {
     var duration = optDurationInMs != null ? optDurationInMs : 500;
 
@@ -336,27 +329,6 @@
            !isLeaf(traceNode);
   }
 
-  // Handle the 'contextmenu' event `e` for the DOM node associated with `traceNode`.
-  function handleContextMenu(e, traceNode) {
-    var menuDiv = $('#parseTreeMenu');
-    menuDiv.style.left = e.clientX + 'px';
-    menuDiv.style.top = e.clientY - 6 + 'px';
-    menuDiv.hidden = false;
-
-    var currentRootTrace = zoomState.zoomTrace || rootTrace;
-    var zoomEnabled = couldZoom(currentRootTrace, traceNode);
-
-    domUtil.addMenuItem('parseTreeMenu', 'getInfoItem', 'Get Info', false);
-    domUtil.addMenuItem('parseTreeMenu', 'zoomItem', 'Zoom to Node', zoomEnabled, function() {
-      updateZoomState({zoomTrace: traceNode});
-      clearMarks();
-    });
-    ohmEditor.parseTree.emit('contextMenu', e.target, traceNode);
-
-    e.preventDefault();
-    e.stopPropagation();  // Prevent ancestor wrappers from handling.
-  }
-
   var TraceLabel = Vue.component('trace-label', {
     props: {
       traceNode: {type: Object, required: true},
@@ -398,8 +370,30 @@
         return measureInputText(this.traceNode.source.contents) + 'px';
       }
     },
+    methods: {
+      emitHover: function() {
+        this.$emit('hover');
+      },
+      emitUnhover: function() {
+        this.$emit('unhover');
+      },
+      onClick: function(e) {
+        var isPlatformMac = /Mac/.test(navigator.platform);
+        var modifierKey = isPlatformMac ? e.metaKey : e.ctrlKey;
+
+        if (e.altKey && !(e.shiftKey || e.metaKey)) {
+          this.$emit('click', 'alt');
+        } else if (modifierKey && !(e.altKey || e.shiftKey)) {
+          this.$emit('click', 'cmd');
+        } else {
+          this.$emit('click');
+        }
+        e.preventDefault();
+      }
+    },
     template: [
-      '<div class="label" :title="labelData.tooltip" :style="{minWidth: minWidth}">',
+      '<div class="label" :title="labelData.tooltip" :style="{minWidth: minWidth}"',
+      '     @mouseover="emitHover" @mouseout="emitUnhover" @click="onClick($event)">',
         '{{ labelData.text }}',
         '<span v-if="labelData.caseName" class="caseName">{{ labelData.caseName }}</span>',
         '<span v-if="extraInfo" class="info">{{ extraInfo }}</span>',
@@ -427,12 +421,78 @@
         return obj;
       }
     },
+    methods: {
+      onHover() {
+        var grammarEditor = ohmEditor.ui.grammarEditor;
+        var inputEditor = ohmEditor.ui.inputEditor;
+
+        var source = this.traceNode.source;
+        var pexpr = this.traceNode.expr;
+
+//        updateExpandedInput();
+
+        // TODO: Can `source` ever be undefine/null here?
+        if (source) {
+          inputMark = cmUtil.markInterval(inputEditor, source, 'highlight', false);
+          inputEditor.getWrapperElement().classList.add('highlighting');
+        }
+        if (pexpr.source) {
+          grammarMark = cmUtil.markInterval(grammarEditor, pexpr.source, 'active-appl', false);
+          grammarEditor.getWrapperElement().classList.add('highlighting');
+          cmUtil.scrollToInterval(grammarEditor, pexpr.source);
+        }
+        var ruleName = pexpr.ruleName;
+        if (ruleName) {
+          ohmEditor.emit('peek:ruleDefinition', ruleName);
+        }
+      },
+      onUnhover() {
+//        updateExpandedInput();
+        ohmEditor.emit('unpeek:ruleDefinition');
+      },
+      onClick(modifier) {
+        if (modifier === 'alt') {
+          console.log(this.traceNode);  // eslint-disable-line no-console
+        } else if (modifier === 'cmd') {
+          // cmd/ctrl + click to open or close semantic editor
+          ohmEditor.parseTree.emit('cmdOrCtrlClick:traceElement', this.$el);
+        } else if (!isLeaf(this.traceNode)) {
+          this.toggleCollapsed();
+        }
+      },
+      onContextMenu: function(e, traceNode) {
+        var menuDiv = $('#parseTreeMenu');
+        menuDiv.style.left = e.clientX + 'px';
+        menuDiv.style.top = e.clientY - 6 + 'px';
+        menuDiv.hidden = false;
+
+        var currentRootTrace = zoomState.zoomTrace || rootTrace;
+        var zoomEnabled = couldZoom(currentRootTrace, traceNode);
+
+        domUtil.addMenuItem('parseTreeMenu', 'getInfoItem', 'Get Info', false);
+        domUtil.addMenuItem('parseTreeMenu', 'zoomItem', 'Zoom to Node', zoomEnabled, function() {
+          updateZoomState({zoomTrace: traceNode});
+          clearMarks();
+        });
+        ohmEditor.parseTree.emit('contextMenu', e.target, traceNode);
+
+        e.preventDefault();
+        e.stopPropagation();  // Prevent ancestor wrappers from handling.
+      },
+      toggleCollapsed() {
+        // Caution: direct DOM manipulation here!
+        // TODO: Consider using Vue.js <transition> wrapper element.
+        var children = this.$refs.children;
+        setTraceElementCollapsed(this.$el, !children.hidden);
+      }
+    },
     template: [
       '<div class="pexpr" :class="classObj">',
       '  <div v-if="classes.labeled" class="self">',
-      '    <trace-label :traceNode="traceNode" />',
+      '    <trace-label :traceNode="traceNode"',
+      '                 @hover="onHover" @unhover="onUnhover" @click="onClick" />',
       '  </div>',
-      '  <div v-if="!classes.leaf"',
+      '  <div v-if="!classes.leaf" ref="children"',
       '       class="children" :class="{vbox: vbox}"',
       '       :hidden="classes.collapsed">',
       '    <slot />',
@@ -445,53 +505,6 @@
 //      var pexpr = traceNode.expr;
 //      wrapper._traceNode = traceNode;
 //      wrapper.id = getFreshNodeId();
-
-      wrapper.data.class.zoomBorder =
-          zoomState.zoomTrace === traceNode && zoomState.previewOnly;
-
-      label.addEventListener('click', function(e) {
-        var isPlatformMac = /Mac/.test(navigator.platform);
-        var modifierKey = isPlatformMac ? e.metaKey : e.ctrlKey;
-
-        if (e.altKey && !(e.shiftKey || e.metaKey)) {
-          console.log(traceNode);  // eslint-disable-line no-console
-        } else if (modifierKey && !(e.altKey || e.shiftKey)) {
-          // cmd/ctrl + click to open or close semantic editor
-          ohmEditor.parseTree.emit('cmdOrCtrlClick:traceElement', wrapper);
-        } else if (!isLeaf(traceNode)) {
-          toggleTraceElement(wrapper);
-        }
-        e.preventDefault();
-      });
-
-      label.addEventListener('mouseover', function(e) {
-        var grammarEditor = ohmEditor.ui.grammarEditor;
-        var inputEditor = ohmEditor.ui.inputEditor;
-
-        updateExpandedInput();
-
-        // TODO: Can `source` ever be undefine/null here?
-        if (traceNode.source) {
-          inputMark = cmUtil.markInterval(inputEditor, traceNode.source, 'highlight', false);
-          inputEditor.getWrapperElement().classList.add('highlighting');
-        }
-        if (pexpr.source) {
-          grammarMark = cmUtil.markInterval(grammarEditor, pexpr.source, 'active-appl', false);
-          grammarEditor.getWrapperElement().classList.add('highlighting');
-          cmUtil.scrollToInterval(grammarEditor, pexpr.source);
-        }
-        var ruleName = pexpr.ruleName;
-        if (ruleName) {
-          ohmEditor.emit('peek:ruleDefinition', ruleName);
-        }
-
-        e.stopPropagation();
-      });
-
-      label.addEventListener('mouseout', function(e) {
-        updateExpandedInput();
-        ohmEditor.emit('unpeek:ruleDefinition');
-      });
 
       label.addEventListener('contextmenu', function(e) {
         handleContextMenu(e, traceNode);
@@ -613,7 +626,8 @@
               collapsed: collapsed,
               failed: !node.succeeded,
               labeled: isLabeled,
-              leaf: isLeafNode
+              leaf: isLeafNode,
+              zoomBorder: zoomState.zoomTrace === node && zoomState.previewOnly
             },
             isInVBox: context.vbox,
             vbox: vbox
@@ -655,7 +669,7 @@
       }
     };
     renderedTrace.walk(renderActions);
-//    updateExpandedInput();
+    updateExpandedInput();
 
     // Hack to ensure that the vertical scroll bar doesn't overlap the parse tree contents.
 //    parseResultsDiv.style.paddingRight =
@@ -664,6 +678,8 @@
   }
 
   function updateExpandedInput(optAnimatingEl, isCollapsing, t) {
+    return; // FIXME
+
     var canvasEl = $('#expandedInput');
     var sizer = $('#expandedInputWrapper > #sizer');
     var pixelRatio = getPixelRatio();
