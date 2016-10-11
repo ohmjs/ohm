@@ -1,4 +1,5 @@
 /* eslint-env browser */
+/* global Vue */
 
 'use strict';
 
@@ -264,12 +265,12 @@
     },
     template: [
       '<div class="label" :title="labelData.tooltip" :style="{minWidth: minWidth}"',
-          ' @mouseover="emitHover" @mouseout="emitUnhover" @click="onClick($event)"',
-          ' @contextmenu="onContextMenu($event)">',
-        '{{ labelData.text }}',
-        '<span v-if="labelData.caseName" class="caseName">{{ labelData.caseName }}</span>',
-        '<span v-if="extraInfo" class="info">{{ extraInfo }}</span>',
-      '</div>',
+      '     @mouseover="emitHover" @mouseout="emitUnhover" @click="onClick($event)"',
+      '     @contextmenu="onContextMenu($event)">{{',
+      '  labelData.text',
+      '}}<span v-if="labelData.caseName" class="caseName">{{ labelData.caseName }}</span>',
+      '<span v-if="extraInfo" class="info">{{ extraInfo }}</span>',
+      '</div>'
     ].join('')
   });
 
@@ -287,7 +288,7 @@
     computed: {
       classObj: function() {
         var obj = {
-          disclosure: this.classes.labeled && this.isInVBox,
+          disclosure: this.classes.labeled && this.isInVBox
         };
         var ctorName = this.traceNode.ctorName;
         if (ctorName) {
@@ -551,7 +552,7 @@
       ohmEditor.parseTree.emit('render:parseTree', this.trace);
       var renderActions = {
         enter: function handleEnter(node, parent, depth) {
-          // Don't show or recurse into nodes that didn't succeed, unless "Show failures" is enabled.
+          // Don't show or recurse into nodes that failed, unless "Show failures" is enabled.
           if ((!node.succeeded && !ohmEditor.options.showFailures) ||
               (node.isImplicitSpaces && !ohmEditor.options.showSpaces)) {
             return node.SKIP;
@@ -583,7 +584,7 @@
             collapsed: collapsed,
             failed: !node.succeeded,
             labeled: isLabeled,
-            leaf: isLeafNode,
+            leaf: isLeafNode
           };
           if (self.highlightNode && self.highlightNode.node === node) {
             classes[self.highlightNode.class] = true;
@@ -623,9 +624,7 @@
             node.terminatingLREntry.walk(renderActions);
             stack.pop();
           }
-          var context = contextStack.pop();
-          var el = context.wrapper;
-  //        ohmEditor.parseTree.emit('exit:traceElement', el, node);
+          contextStack.pop();
         }
       };
       this.trace.walk(renderActions);
@@ -653,7 +652,7 @@
       '  <div id="sizer">&nbsp;</div>',
       '  <canvas id="expandedInput" width="1" height="1"></canvas>',
       '</div>'
-      ].join(''),
+    ].join(''),
     mounted: function() {
       this.update();
     },
@@ -823,7 +822,7 @@
       '                   @updateExpandedInput="updateExpandedInput"/>',
       '  </div>',
       '</div>'
-      ].join(''),
+    ].join(''),
     mounted: function() {
       window.addEventListener('resize', this.$refs.expandedInput.update);
     },
