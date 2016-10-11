@@ -26,7 +26,22 @@
   var defMark;
 
   var nextNodeId = 0;
-  var inputCtx;
+
+  function getFreshNodeId() {
+    return 'node-' + nextNodeId++;
+  }
+
+  function isRectInViewport(rect) {
+    return rect.right > 0 && rect.left < window.innerWidth;
+  }
+
+  function clearMarks() {
+    inputMark = cmUtil.clearMark(inputMark);
+    grammarMark = cmUtil.clearMark(grammarMark);
+    defMark = cmUtil.clearMark(defMark);
+    ohmEditor.ui.grammarEditor.getWrapperElement().classList.remove('highlighting');
+    ohmEditor.ui.inputEditor.getWrapperElement().classList.remove('highlighting');
+  }
 
   // D3 Helpers
   // ----------
@@ -47,7 +62,7 @@
   }
 
   // Vue helpers
-  // ----
+  // -----------
 
   function addChildToVNode(vnode, child) {
     var children = vnode.componentOptions.children;
@@ -57,145 +72,8 @@
     children.push(child);
   }
 
-  // Parse tree helpers
-  // ------------------
-
-  function getFreshNodeId() {
-    return 'node-' + nextNodeId++;
-  }
-
-  function isRectInViewport(rect) {
-    return rect.right > 0 && rect.left < window.innerWidth;
-  }
-
-  function measureLabel(wrapperEl) {
-    var tempWrapper = $('#measuringDiv .pexpr');
-    var labelClone = wrapperEl.querySelector('.label').cloneNode(true);
-    var clone = tempWrapper.appendChild(labelClone);
-    var result = {
-      width: clone.offsetWidth,
-      height: clone.offsetHeight
-    };
-    tempWrapper.innerHTML = '';
-    return result;
-  }
-
-  function measureChildren(wrapperEl) {
-    var measuringDiv = $('#measuringDiv');
-    var clone = measuringDiv.appendChild(wrapperEl.cloneNode(true));
-    clone.style.width = '';
-    var children = clone.lastChild;
-    children.hidden = !children.hidden;
-    var result = {
-      width: children.offsetWidth,
-      height: children.offsetHeight
-    };
-    measuringDiv.removeChild(clone);
-    return result;
-  }
-
-  function getPixelRatio() {
-    return window.devicePixelRatio || 1;
-  }
-
-  function measureInputText(text) {
-    // Always update the font before measuring -- devicePixelRatio may have changed.
-    inputCtx.font = 16 * getPixelRatio() + 'px Menlo, Monaco, monospace';
-    return inputCtx.measureText(text).width / getPixelRatio();
-  }
-
-  function renderInputText(text, rect, optAlpha) {
-    var textWidth = measureInputText(text);
-    var letterPadding = (rect.right - rect.left - textWidth) / text.length / 2;
-    var charWidth = textWidth / text.length;
-
-    inputCtx.fillStyle = 'rgba(51, 51, 51, ' + (optAlpha == null ? 1 : optAlpha) + ')';
-    inputCtx.textBaseline = 'top';
-
-    var x = rect.left;
-    for (var i = 0; i < text.length; i++) {
-      x += letterPadding;
-      inputCtx.fillText(text[i], x * getPixelRatio(), 0);
-      x += charWidth + letterPadding;
-    }
-    return x <= window.innerWidth;
-  }
-
-  function renderHighlight(el) {
-    var elBounds = el.getBoundingClientRect();
-    var pixelRatio = getPixelRatio();
-    var rect = {
-      x: elBounds.left * pixelRatio,
-      y: 0,
-      width: (elBounds.right - elBounds.left) * pixelRatio,
-      height: $('#expandedInput').height
-    };
-    inputCtx.fillStyle = '#B5D5FF';
-    inputCtx.fillRect(rect.x, rect.y, rect.width, rect.height);
-  }
-
-  function clearMarks() {
-    inputMark = cmUtil.clearMark(inputMark);
-    grammarMark = cmUtil.clearMark(grammarMark);
-    defMark = cmUtil.clearMark(defMark);
-    ohmEditor.ui.grammarEditor.getWrapperElement().classList.remove('highlighting');
-    ohmEditor.ui.inputEditor.getWrapperElement().classList.remove('highlighting');
-  }
-
-  // Hides or shows the children of `el`, which is a div.pexpr.
-  function setTraceElementCollapsed(el, collapse, optDurationInMs) {
-    var duration = optDurationInMs != null ? optDurationInMs : 500;
-
-    function emitEvent() {
-      el.classList.toggle('collapsed', collapse);
-      ohmEditor.parseTree.emit((collapse ? 'collapse' : 'expand') + ':traceElement', el);
-    }
-
-    if (duration === 0) {
-      el.lastChild.hidden = !collapse;
-      emitEvent();
-      el.lastChild.hidden = collapse;
-      return;
-    }
-
-    var childrenSize = measureChildren(el);
-    var newWidth = collapse ? measureLabel(el).width : childrenSize.width;
-
-    d3.select(el)
-        .transition().duration(duration)
-        .styleTween('width', tweenWithCallback(newWidth + 'px', function(t) {
-          updateExpandedInput(el, collapse, t);
-        }))
-        .each('start', function() {
-          this.style.width = this.offsetWidth + 'px';
-        })
-        .each('end', function() {
-          // Remove the width and allow the flexboxes to adjust to the correct
-          // size. If there is a glitch when this happens, we haven't calculated
-          // `newWidth` correctly.
-          this.style.width = '';
-        });
-
-    var height = collapse ? 0 : childrenSize.height;
-    d3.select(el.lastChild)
-        .style('height', currentHeightPx)
-        .transition().duration(duration)
-        .style('height', height + 'px')
-        .each('start', function() {
-          if (!collapse) {
-            emitEvent();
-            this.hidden = false;
-          }
-        })
-        .each('end', function() {
-          this.style.height = '';
-          if (collapse) {
-            this.hidden = true;
-            emitEvent();
-          }
-          updateExpandedInput();
-        });
-  }
+  // Trace element helpers
+  // ---------------------
 
   function shouldNodeBeLabeled(traceNode, parent) {
     var expr = traceNode.expr;
@@ -312,9 +190,13 @@
            !isLeaf(traceNode);
   }
 
+  // trace-label component
+  // ---------------------
+
   Vue.component('trace-label', {
     props: {
       traceNode: {type: Object, required: true},
+      minWidth: {type: String, required: true}
     },
     computed: {
       extraInfo: function() {
@@ -348,9 +230,6 @@
           };
         }
         return {text: fullText};
-      },
-      minWidth: function() {
-        return measureInputText(this.traceNode.source.contents) + 'px';
       }
     },
     methods: {
@@ -394,9 +273,13 @@
     ].join('')
   });
 
-  var TraceElement = Vue.component('trace-element', {
+  // trace-element component
+  // -----------------------
+
+  Vue.component('trace-element', {
     props: {
       traceNode: {type: Object, required: true},
+      measureInputText: {type: Function},
       classes: {type: Object, default: Object},
       isInVBox: {type: Boolean},
       vbox: {type: Boolean}
@@ -412,8 +295,25 @@
         }
         Object.assign(obj, this.classes);
         return obj;
+      },
+      minWidth: function() {
+        return this.measureInputText(this.traceNode.source.contents) + 'px';
       }
     },
+    template: [
+      '<div class="pexpr" :class="classObj">',
+      '  <div v-if="classes.labeled" class="self">',
+      '    <trace-label :traceNode="traceNode" :minWidth="minWidth"',
+      '                 @hover="onHover" @unhover="onUnhover" @click="onClick"',
+      '                 @showContextMenu="onShowContextMenu" />',
+      '  </div>',
+      '  <div v-if="!classes.leaf" ref="children"',
+      '       class="children" :class="{vbox: vbox}"',
+      '       :hidden="classes.collapsed">',
+      '    <slot />',
+      '  </div>',
+      '</div>'
+    ].join(''),
     mounted: function() {
       this.$el._traceNode = this.traceNode;
     },
@@ -427,8 +327,6 @@
 
         var source = this.traceNode.source;
         var pexpr = this.traceNode.expr;
-
-        updateExpandedInput();
 
         // TODO: Can `source` ever be undefine/null here?
         if (source) {
@@ -444,10 +342,11 @@
         if (ruleName) {
           ohmEditor.emit('peek:ruleDefinition', ruleName);
         }
+        this.$emit('hover');
       },
       onUnhover: function() {
-        updateExpandedInput();
         ohmEditor.emit('unpeek:ruleDefinition');
+        this.$emit('unhover');
       },
       onClick: function(modifier) {
         if (modifier === 'alt') {
@@ -466,32 +365,115 @@
         // Caution: direct DOM manipulation here!
         // TODO: Consider using Vue.js <transition> wrapper element.
         var children = this.$refs.children;
-        setTraceElementCollapsed(this.$el, !children.hidden);
+        this.setCollapsed(!children.hidden);
+      },
+      // Hides or shows the children of `el`, which is a div.pexpr.
+      setCollapsed: function(collapse, optDurationInMs) {
+        var duration = optDurationInMs != null ? optDurationInMs : 500;
+        var el = this.$el;
+
+        function emitEvent() {
+          el.classList.toggle('collapsed', collapse);
+          ohmEditor.parseTree.emit((collapse ? 'collapse' : 'expand') + ':traceElement', el);
+        }
+
+        if (duration === 0) {
+          el.lastChild.hidden = !collapse;
+          emitEvent();
+          el.lastChild.hidden = collapse;
+          return;
+        }
+
+        var childrenSize = this.measureChildren();
+        var newWidth = collapse ? this.measureLabel().width : childrenSize.width;
+        var self = this;
+
+        d3.select(el)
+            .transition().duration(duration)
+            .styleTween('width', tweenWithCallback(newWidth + 'px', function(t) {
+              self.$emit('updateExpandedInput', el, collapse, t);
+            }))
+            .each('start', function() {
+              this.style.width = this.offsetWidth + 'px';
+            })
+            .each('end', function() {
+              // Remove the width and allow the flexboxes to adjust to the correct
+              // size. If there is a glitch when this happens, we haven't calculated
+              // `newWidth` correctly.
+              this.style.width = '';
+            });
+
+        var height = collapse ? 0 : childrenSize.height;
+        d3.select(el.lastChild)
+            .style('height', currentHeightPx)
+            .transition().duration(duration)
+            .style('height', height + 'px')
+            .each('start', function() {
+              if (!collapse) {
+                emitEvent();
+                this.hidden = false;
+              }
+            })
+            .each('end', function() {
+              this.style.height = '';
+              if (collapse) {
+                this.hidden = true;
+                emitEvent();
+              }
+              self.$emit('updateExpandedInput');
+            });
+      },
+      measureLabel: function() {
+        var tempWrapper = $('#measuringDiv .pexpr');
+        var labelClone = this.$el.querySelector('.label').cloneNode(true);
+        var clone = tempWrapper.appendChild(labelClone);
+        var result = {
+          width: clone.offsetWidth,
+          height: clone.offsetHeight
+        };
+        tempWrapper.innerHTML = '';
+        return result;
+      },
+
+      measureChildren: function() {
+        var measuringDiv = $('#measuringDiv');
+        var clone = measuringDiv.appendChild(this.$el.cloneNode(true));
+        clone.style.width = '';
+        var children = clone.lastChild;
+        children.hidden = !children.hidden;
+        var result = {
+          width: children.offsetWidth,
+          height: children.offsetHeight
+        };
+        measuringDiv.removeChild(clone);
+        return result;
       }
-    },
-    template: [
-      '<div class="pexpr" :class="classObj">',
-      '  <div v-if="classes.labeled" class="self">',
-      '    <trace-label :traceNode="traceNode"',
-      '                 @hover="onHover" @unhover="onUnhover" @click="onClick"',
-      '                 @showContextMenu="onShowContextMenu" />',
-      '  </div>',
-      '  <div v-if="!classes.leaf" ref="children"',
-      '       class="children" :class="{vbox: vbox}"',
-      '       :hidden="classes.collapsed">',
-      '    <slot />',
-      '  </div>',
-      '</div>'
-    ].join('')
+    }
   });
+
+  // parse-results component
+  // -----------------------
 
   Vue.component('parse-results', {
     props: {
       trace: {required: true},
+      measureInputText: {type: Function, required: true},
 
       // An object {node: traceNode, class: string} that indicates a node to be highlighted,
       // and the class it should be given to indicate the highlight.
       highlightNode: {type: Object}
+    },
+    computed: {
+      // Vue event handlers that are attached to each TraceElement component instance.
+      pexprEventHandlers: function() {
+        var self = this;
+        return {
+          showContextMenu: this.onShowContextMenu,
+          hover: function() { self.emitUpdateExpandedInput(); },
+          unhover: function() { self.emitUpdateExpandedInput(); },
+          updateExpandedInput: this.emitUpdateExpandedInput
+        };
+      }
     },
     methods: {
       // To make it easier to navigate around the parse tree, handle mousewheel events
@@ -516,11 +498,15 @@
           }
         }
       },
-      onScroll: function(e) {
-        updateExpandedInput();
+      onScroll: function() {
+        this.emitUpdateExpandedInput();
       },
       onShowContextMenu: function(data) {
         this.$emit('showContextMenu', data);
+      },
+      emitUpdateExpandedInput: function() {
+        var args = Array.prototype.slice.call(arguments);
+        this.$emit.apply(this, ['updateExpandedInput'].concat(args));
       }
     },
     render: function(createElement) {
@@ -528,10 +514,14 @@
         return createElement('div');
       }
       var rootContainer = createElement('div', {
-        on: {wheel: this.onWheel, scroll: this.onScroll}
+        domProps: {id: 'parseResults'},
+        on: {
+          wheel: this.onWheel,
+          scroll: this.onScroll
+        }
       }, []);
 
-      var rootElement = createElement(TraceElement, {
+      var rootElement = createElement('trace-element', {
         props: {traceNode: this.trace}
       });
       rootContainer.children.push(rootElement);
@@ -544,7 +534,6 @@
       }];
 
       var self = this;
-      var eventHandlers = {showContextMenu: this.onShowContextMenu};
       var currentLR = {};
 
       ohmEditor.parseTree.emit('render:parseTree', this.trace);
@@ -587,21 +576,21 @@
           if (self.highlightNode && self.highlightNode.node === node) {
             classes[self.highlightNode.class] = true;
           }
-          var traceElement = createElement(TraceElement, {
+          var traceElement = createElement('trace-element', {
             props: {
               traceNode: node,
+              measureInputText: self.measureInputText,
               classes: classes,
               isInVBox: context.vbox,
               vbox: vbox
             },
-            on: eventHandlers
+            on: self.pexprEventHandlers
           });
           addChildToVNode(context.parent, traceElement);
 
           if (collapsed) {
   //          ohmEditor.parseTree.emit((collapse ? 'collapse' : 'expand') + ':traceElement', el);
           }
-
   //        ohmEditor.parseTree.emit('create:traceElement', el, node);
 
           if (isLeafNode) {
@@ -632,114 +621,164 @@
         }
       };
       this.trace.walk(renderActions);
-      this.$nextTick(updateExpandedInput);
+      this.$nextTick(function() {
+        this.$emit('updateExpandedInput');
+      });
       return rootContainer;
     }
   });
 
-  function updateExpandedInput(optAnimatingEl, isCollapsing, t) {
-    var canvasEl = $('#expandedInput');
-    var sizer = $('#expandedInputWrapper > #sizer');
-    var pixelRatio = getPixelRatio();
-    canvasEl.width = sizer.offsetWidth * pixelRatio;
-    canvasEl.height = sizer.offsetHeight * pixelRatio;
-    canvasEl.style.width = sizer.offsetWidth + 'px';
-    canvasEl.style.height = sizer.offsetHeight + 'px';
+  // expanded-input component
+  // ------------------------
 
-    // If a parse tree node is currently being hovered, highlight it. If not, highlight
-    // the node that has .zoomBorder, if one exists.
-    var hovered = $('.pexpr > .self:hover');
-    var highlightEl = hovered ? hovered.parentNode : $('.zoomBorder');
-
-    // If there is an animating element, crossfade its input with the input of its
-    // descendents -- fade in when collapsing, fade out when expanding.
-    var animatingElAlpha = 0;
-    if (optAnimatingEl) {
-      animatingElAlpha = isCollapsing ? t : 1 - t;
-    }
-
-    var root = $('.pexpr');
-    var firstFailedEl = domUtil.$('#parseResults > .pexpr > .children > .pexpr.failed');
-
-    (function renderInput(el, isAncestorAnimating) {
-      var rect = el.getBoundingClientRect();
-
-      // Skip anything that falls outside the viewport, and any failed nodes apart
-      // from the first top-level failure.
-      if (!isRectInViewport(rect) ||
-          (el.classList.contains('failed') && el !== firstFailedEl)) {
-        return;
+  Vue.component('expanded-input', {
+    computed: {
+      canvasEl: function() {
+        return this.$el.querySelector('canvas');
+      },
+      inputCtx: function() {
+        return this.canvasEl.getContext('2d');
       }
+    },
+    template: [
+      '<div id="expandedInputWrapper">',
+      '  <div id="sizer">&nbsp;</div>',
+      '  <canvas id="expandedInput" width="1" height="1"></canvas>',
+      '</div>'
+      ].join(''),
+    mounted: function() {
+      this.update();
+    },
+    methods: {
+      getPixelRatio: function() {
+        return window.devicePixelRatio || 1;
+      },
 
-      if (el === highlightEl) {
-        renderHighlight(el);
-      }
+      // Updates the size of the canvas to exactly cover the #sizer element.
+      // As a side effect, the contents of the canvas are cleared.
+      updateCanvasSize: function() {
+        var el = this.canvasEl;
+        var sizer = this.$el.querySelector('#sizer');
+        var pixelRatio = this.getPixelRatio();
+        el.width = sizer.offsetWidth * pixelRatio;
+        el.height = sizer.offsetHeight * pixelRatio;
+        el.style.width = sizer.offsetWidth + 'px';
+        el.style.height = sizer.offsetHeight + 'px';
+      },
+      update: function(optAnimatingEl, isCollapsing, t) {
+        this.updateCanvasSize();
 
-      if (el.classList.contains('leaf') || el.classList.contains('collapsed')) {
-        if (el === firstFailedEl) {
-          renderFailedInputText(el, rect);
-        } else {
-          var alpha = isAncestorAnimating ? 1 - animatingElAlpha : 1;
-          renderInputText(getConsumedInput(el), rect, alpha);
-        }
-      } else {
-        // Is `el` currently animating?
-        var isAnimating = el === optAnimatingEl;
+        // If a parse tree node is currently being hovered, highlight it. If not, highlight
+        // the node that has .zoomBorder, if one exists.
+        var hovered = $('.pexpr > .self:hover');
+        var highlightEl = hovered ? hovered.parentNode : $('.zoomBorder');
 
-        // Render the input of the animating element, even though it's not a leaf.
-        if (isAnimating) {
-          renderInputText(getConsumedInput(el), rect, animatingElAlpha);
+        // If there is an animating element, crossfade its input with the input of its
+        // descendents -- fade in when collapsing, fade out when expanding.
+        var animatingElAlpha = 0;
+        if (optAnimatingEl) {
+          animatingElAlpha = isCollapsing ? t : 1 - t;
         }
 
-        // Ask the subtrees to render.
-        var children = el.lastChild.childNodes;
-        ArrayProto.forEach.call(children, function(childEl) {
-          renderInput(childEl, isAnimating || isAncestorAnimating);
-        });
-      }
-    })(root, false);
-  }
+        var root = $('.pexpr');
+        var firstFailedEl = domUtil.$('#parseResults > .pexpr > .children > .pexpr.failed');
 
-  function renderFailedInputText(el, rect) {
-    var text = el._traceNode.inputStream.sourceSlice(el._traceNode.pos);
-    var renderRect = {
-      bottom: rect.bottom,
-      left: rect.left,
-      right: rect.left + measureInputText(text),
-      top: rect.top
-    };
-    renderInputText(text, renderRect, 0.5);
-  }
+        var self = this;
+        (function renderInput(el, isAncestorAnimating) {
+          var rect = el.getBoundingClientRect();
 
-  function getConsumedInput(el) {
-    if (el._traceNode) {
-      return el._traceNode.source.contents;
-    }
-  }
+          // Skip anything that falls outside the viewport, and any failed nodes apart
+          // from the first top-level failure.
+          if (!isRectInViewport(rect) ||
+              (el.classList.contains('failed') && el !== firstFailedEl)) {
+            return;
+          }
 
-  // When the user makes a change in either editor, show the bottom overlay to indicate
-  // that the parse tree is out of date.
-  function showBottomOverlay(changedEditor) {
-    $('#bottomSection .overlay').style.width = '100%';
-  }
-  ohmEditor.addListener('change:inputEditor', showBottomOverlay);
-  ohmEditor.addListener('change:grammarEditor', showBottomOverlay);
+          if (el === highlightEl) {
+            self.renderHighlight(el);
+          }
 
-  ohmEditor.addListener('peek:ruleDefinition', function(ruleName) {
-    if (ohmEditor.grammar.rules.hasOwnProperty(ruleName)) {
-      var defInterval = ohmEditor.grammar.rules[ruleName].source;
-      if (defInterval) {
-        var grammarEditor = ohmEditor.ui.grammarEditor;
-        defMark = cmUtil.markInterval(grammarEditor, defInterval, 'active-definition', true);
-        cmUtil.scrollToInterval(grammarEditor, defInterval);
+          if (el.classList.contains('leaf') || el.classList.contains('collapsed')) {
+            if (el === firstFailedEl) {
+              self.renderFailedInputText(el, rect);
+            } else {
+              var alpha = isAncestorAnimating ? 1 - animatingElAlpha : 1;
+              self.renderInputText(self.getConsumedInput(el), rect, alpha);
+            }
+          } else {
+            // Is `el` currently animating?
+            var isAnimating = el === optAnimatingEl;
+
+            // Render the input of the animating element, even though it's not a leaf.
+            if (isAnimating) {
+              self.renderInputText(self.getConsumedInput(el), rect, animatingElAlpha);
+            }
+
+            // Ask the subtrees to render.
+            var children = el.lastChild.childNodes;
+            ArrayProto.forEach.call(children, function(childEl) {
+              renderInput(childEl, isAnimating || isAncestorAnimating);
+            });
+          }
+        })(root, false);
+      },
+
+      measureText: function(text) {
+        // Always update the font before measuring -- devicePixelRatio may have changed.
+        this.inputCtx.font = 16 * this.getPixelRatio() + 'px Menlo, Monaco, monospace';
+        return this.inputCtx.measureText(text).width / this.getPixelRatio();
+      },
+
+      renderInputText: function(text, rect, optAlpha) {
+        var textWidth = this.measureText(text);
+        var letterPadding = (rect.right - rect.left - textWidth) / text.length / 2;
+        var charWidth = textWidth / text.length;
+
+        this.inputCtx.fillStyle = 'rgba(51, 51, 51, ' + (optAlpha == null ? 1 : optAlpha) + ')';
+        this.inputCtx.textBaseline = 'top';
+
+        var x = rect.left;
+        for (var i = 0; i < text.length; i++) {
+          x += letterPadding;
+          this.inputCtx.fillText(text[i], x * this.getPixelRatio(), 0);
+          x += charWidth + letterPadding;
+        }
+        return x <= window.innerWidth;
+      },
+
+      renderFailedInputText: function(el, rect) {
+        var text = el._traceNode.inputStream.sourceSlice(el._traceNode.pos);
+        var renderRect = {
+          bottom: rect.bottom,
+          left: rect.left,
+          right: rect.left + this.measureText(text),
+          top: rect.top
+        };
+        this.renderInputText(text, renderRect, 0.5);
+      },
+
+      renderHighlight: function(el) {
+        var elBounds = el.getBoundingClientRect();
+        var pixelRatio = this.getPixelRatio();
+        var rect = {
+          x: elBounds.left * pixelRatio,
+          y: 0,
+          width: (elBounds.right - elBounds.left) * pixelRatio,
+          height: $('#expandedInput').height
+        };
+        this.inputCtx.fillStyle = '#B5D5FF';
+        this.inputCtx.fillRect(rect.x, rect.y, rect.width, rect.height);
+      },
+
+      getConsumedInput: function(el) {
+        if (el._traceNode) {
+          return el._traceNode.source.contents;
+        }
       }
     }
   });
 
-  ohmEditor.addListener('unpeek:ruleDefinition', clearMarks);
-
-  var parseTree = ohmEditor.parseTree = new CheckedEmitter();
-  parseTree.vue = new Vue({
+  var parseTreeVue = new Vue({
     el: '#parseTree',
     data: {
       rootTrace: null,
@@ -761,6 +800,24 @@
           return {node: this.previewedZoomTrace, class: 'zoomBorder'};
         }
       }
+    },
+    template: [
+      '<div id="parseTree">',
+      '  <button v-if="showZoomButton" id="zoomOutButton" type="button"',
+      '          @click="zoomOut" @mouseover="previewZoom" @mouseout="unpreviewZoom">{{',
+      '      zoomButtonLabel',
+      '  }}</button>',
+      '  <div id="visualizerBody">',
+      '    <expanded-input ref="expandedInput" />',
+      '    <parse-results :trace="currentRootTrace" :highlightNode="zoomHighlight"',
+      '                   :measureInputText="measureInputText"',
+      '                   @showContextMenu="showContextMenu"',
+      '                   @updateExpandedInput="updateExpandedInput"/>',
+      '  </div>',
+      '</div>'
+      ].join(''),
+    mounted: function() {
+      window.addEventListener('resize', this.$refs.expandedInput.update);
     },
     methods: {
       zoom: function(traceNode) {
@@ -793,30 +850,38 @@
         });
   //      ohmEditor.parseTree.emit('contextMenu', this.$el, this.traceNode);
       },
-    },
-    template: [
-      '<div id="parseTree">',
-      '  <button v-if="showZoomButton" id="zoomOutButton" type="button"',
-      '          @click="zoomOut" @mouseover="previewZoom" @mouseout="unpreviewZoom">{{',
-      '      zoomButtonLabel',
-      '  }}</button>',
-      '  <div id="visualizerBody">',
-      '    <div id="expandedInputWrapper">',
-      '      <div id="sizer">&nbsp;</div>',
-      '      <canvas id="expandedInput" width="1" height="1"></canvas>',
-      '    </div>',
-      '    <parse-results :trace="currentRootTrace" :highlightNode="zoomHighlight"',
-      '                   @showContextMenu="showContextMenu" />',
-      '  </div>',
-      '</div>'
-      ].join(''),
-    mounted: function() {
-      inputCtx = $('#expandedInput').getContext('2d');
-      window.addEventListener('resize', function(e) {
-        updateExpandedInput();
-      });
+      updateExpandedInput: function(/* ...args */) {
+        this.$refs.expandedInput.update.apply(null, arguments);
+      },
+      measureInputText: function(text) {
+        return this.$refs.expandedInput.measureText(text);
+      }
     }
   });
+
+  var parseTree = ohmEditor.parseTree = new CheckedEmitter();
+  parseTree.vue = parseTreeVue;
+
+  // When the user makes a change in either editor, show the bottom overlay to indicate
+  // that the parse tree is out of date.
+  function showBottomOverlay(changedEditor) {
+    $('#bottomSection .overlay').style.width = '100%';
+  }
+  ohmEditor.addListener('change:inputEditor', showBottomOverlay);
+  ohmEditor.addListener('change:grammarEditor', showBottomOverlay);
+
+  ohmEditor.addListener('peek:ruleDefinition', function(ruleName) {
+    if (ohmEditor.grammar.rules.hasOwnProperty(ruleName)) {
+      var defInterval = ohmEditor.grammar.rules[ruleName].source;
+      if (defInterval) {
+        var grammarEditor = ohmEditor.ui.grammarEditor;
+        defMark = cmUtil.markInterval(grammarEditor, defInterval, 'active-definition', true);
+        cmUtil.scrollToInterval(grammarEditor, defInterval);
+      }
+    }
+  });
+
+  ohmEditor.addListener('unpeek:ruleDefinition', clearMarks);
 
   // Refresh the parse tree after attempting to parse the input.
   ohmEditor.addListener('parse:input', function(matchResult, trace) {
@@ -831,7 +896,9 @@
     refreshParseTree(rootTrace);
   };
   */
-  parseTree.setTraceElementCollapsed = setTraceElementCollapsed;
+  parseTree.setTraceElementCollapsed = function(el, collapsed, optDuration) {
+    el.__vue__.setCollapsed(collapsed, optDuration);
+  };
   parseTree.registerEvents({
     // Emitted when a new trace element `el` is created for `traceNode`.
     'create:traceElement': ['el', 'traceNode'],
