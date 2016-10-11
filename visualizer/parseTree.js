@@ -21,16 +21,12 @@
     MIDDLE_DOT: '\u00B7'
   };
 
-  var zoomState = {};
-
   var inputMark;
   var grammarMark;
   var defMark;
 
   var nextNodeId = 0;
-
-  var parseResultsDiv = $('#parseResults');
-  var inputCtx = $('#expandedInput').getContext('2d');
+  var inputCtx;
 
   // D3 Helpers
   // ----------
@@ -199,20 +195,6 @@
           }
           updateExpandedInput();
         });
-  }
-
-  function updateZoomState(newState) {
-    for (var k in newState) {
-      if (newState.hasOwnProperty(k)) {
-        zoomState[k] = newState[k];
-      }
-    }
-//    refreshParseTree(rootTrace);
-  }
-
-  function clearZoomState() {
-    zoomState = {};
-    refreshParseTree(rootTrace);
   }
 
   function shouldNodeBeLabeled(traceNode, parent) {
@@ -477,8 +459,8 @@
           this.toggleCollapsed();
         }
       },
-      onShowContextMenu: function(pos) {
-        this.$emit('showContextMenu', pos);
+      onShowContextMenu: function(data) {
+        this.$emit('showContextMenu', data);
       },
       toggleCollapsed: function() {
         // Caution: direct DOM manipulation here!
@@ -500,107 +482,57 @@
       '    <slot />',
       '  </div>',
       '</div>'
-    ].join(''),
-    /*
-    render: function(createElement) {
-//      var traceNode = this.traceNode;
-//      var pexpr = traceNode.expr;
-//      wrapper._traceNode = traceNode;
-//      wrapper.id = getFreshNodeId();
-
-      label.addEventListener('contextmenu', function(e) {
-        handleContextMenu(e, traceNode);
-      });
-
-      return wrapper;
-    }
-      */
+    ].join('')
   });
 
-  // To make it easier to navigate around the parse tree, handle mousewheel events
-  // and translate vertical overscroll into horizontal movement. I.e., when scrolled all
-  // the way down, further downwards scrolling instead moves to the right -- and similarly
-  // with up and left.
-  parseResultsDiv.onwheel = function(e) {
-    var el = e.currentTarget;
-    var overscroll;
-    var scrollingDown = e.deltaY > 0;
-
-    if (scrollingDown) {
-      var scrollBottom = el.scrollHeight - el.clientHeight - el.scrollTop;
-      overscroll = e.deltaY - scrollBottom;
-      if (overscroll > 0) {
-        this.scrollLeft += overscroll;
-      }
-    } else {
-      overscroll = el.scrollTop + e.deltaY;
-      if (overscroll < 0) {
-        this.scrollLeft += overscroll;
-      }
-    }
-  };
-  parseResultsDiv.onscroll = function(e) {
-    updateExpandedInput();
-  };
-  window.addEventListener('resize', function(e) {
-    updateExpandedInput();
-  });
-
-  // Intialize the zoom out button.
-  var zoomOutButton = $('#zoomOutButton');
-  zoomOutButton.textContent = UnicodeChars.ANTICLOCKWISE_OPEN_CIRCLE_ARROW;
-  zoomOutButton.onclick = function(e) {
-    clearZoomState();
-  };
-  zoomOutButton.onmouseover = function(e) {
-    if (zoomState.zoomTrace) {
-      updateZoomState({previewOnly: true});
-    }
-  };
-  zoomOutButton.onmouseout = function(e) {
-    if (zoomState.zoomTrace) {
-      updateZoomState({previewOnly: false});
-    }
-  };
-
-  var ParseTree = Vue.component('parse-tree', {
+  Vue.component('parse-results', {
     props: {
-      trace: {required: true}
+      trace: {required: true},
+
+      // An object {node: traceNode, class: string} that indicates a node to be highlighted,
+      // and the class it should be given to indicate the highlight.
+      highlightNode: {type: Object}
     },
     methods: {
-      showContextMenu: function(data) {
-        var currentRootTrace = zoomState.zoomTrace || this.trace;
-        var zoomEnabled = couldZoom(currentRootTrace, data.traceNode);
+      // To make it easier to navigate around the parse tree, handle mousewheel events
+      // and translate vertical overscroll into horizontal movement. I.e., when scrolled all
+      // the way down, further downwards scrolling instead moves to the right -- and similarly
+      // with up and left.
+      onWheel: function(e) {
+        var el = this.$el;
+        var overscroll;
+        var scrollingDown = e.deltaY > 0;
 
-        var menuDiv = $('#parseTreeMenu');
-        menuDiv.style.left = data.x + 'px';
-        menuDiv.style.top = data.y + 'px';
-        menuDiv.hidden = false;
-
-        domUtil.addMenuItem('parseTreeMenu', 'getInfoItem', 'Get Info', false);
-        domUtil.addMenuItem('parseTreeMenu', 'zoomItem', 'Zoom to Node', zoomEnabled, function() {
-          updateZoomState({zoomTrace: traceNode});
-          clearMarks();
-        });
-  //      ohmEditor.parseTree.emit('contextMenu', this.$el, this.traceNode);
+        if (scrollingDown) {
+          var scrollBottom = el.scrollHeight - el.clientHeight - el.scrollTop;
+          overscroll = e.deltaY - scrollBottom;
+          if (overscroll > 0) {
+            this.scrollLeft += overscroll;
+          }
+        } else {
+          overscroll = el.scrollTop + e.deltaY;
+          if (overscroll < 0) {
+            this.scrollLeft += overscroll;
+          }
+        }
+      },
+      onScroll: function(e) {
+        updateExpandedInput();
+      },
+      onShowContextMenu: function(data) {
+        this.$emit('showContextMenu', data);
       }
     },
     render: function(createElement) {
-      var rootContainer = createElement('div', []);
       if (!this.trace) {
-        return rootContainer;
+        return createElement('div');
       }
-
-      var renderedTrace = this.trace;
-      if (zoomState.zoomTrace && !zoomState.previewOnly) {
-        renderedTrace = zoomState.zoomTrace;
-      }
-      zoomOutButton.hidden = zoomState.zoomTrace == null;
+      var rootContainer = createElement('div', {
+        on: {wheel: this.onWheel, scroll: this.onScroll}
+      }, []);
 
       var rootElement = createElement(TraceElement, {
-        props: {
-          traceNode: renderedTrace
-        }
+        props: {traceNode: this.trace}
       });
       rootContainer.children.push(rootElement);
 
@@ -611,10 +543,11 @@
         vbox: false
       }];
 
-      var eventHandlers = {showContextMenu: this.showContextMenu};
+      var self = this;
+      var eventHandlers = {showContextMenu: this.onShowContextMenu};
       var currentLR = {};
 
-      ohmEditor.parseTree.emit('render:parseTree', renderedTrace);
+      ohmEditor.parseTree.emit('render:parseTree', this.trace);
       var renderActions = {
         enter: function handleEnter(node, parent, depth) {
           // Don't show or recurse into nodes that didn't succeed, unless "Show failures" is enabled.
@@ -645,16 +578,19 @@
             }
           }
 
+          var classes = {
+            collapsed: collapsed,
+            failed: !node.succeeded,
+            labeled: isLabeled,
+            leaf: isLeafNode,
+          };
+          if (self.highlightNode && self.highlightNode.node === node) {
+            classes[self.highlightNode.class] = true;
+          }
           var traceElement = createElement(TraceElement, {
             props: {
               traceNode: node,
-              classes: {
-                collapsed: collapsed,
-                failed: !node.succeeded,
-                labeled: isLabeled,
-                leaf: isLeafNode,
-                zoomBorder: zoomState.zoomTrace === node && zoomState.previewOnly
-              },
+              classes: classes,
               isInVBox: context.vbox,
               vbox: vbox
             },
@@ -695,7 +631,8 @@
   //        ohmEditor.parseTree.emit('exit:traceElement', el, node);
         }
       };
-      renderedTrace.walk(renderActions);
+      this.trace.walk(renderActions);
+      this.$nextTick(updateExpandedInput);
       return rootContainer;
     }
   });
@@ -803,14 +740,82 @@
 
   var parseTree = ohmEditor.parseTree = new CheckedEmitter();
   parseTree.vue = new Vue({
-    el: '#parseResults',
+    el: '#parseTree',
     data: {
-      // The root trace node from the last time the input was parsed (not affected by zooming).
-      rootTrace: null
+      rootTrace: null,
+      zoomTrace: null,
+      previewedZoomTrace: null
     },
-    template: '<parse-tree :trace="rootTrace" />',
-    mounted: function() { updateExpandedInput(); },
-    updated: function() { updateExpandedInput(); }
+    computed: {
+      zoomButtonLabel: function() {
+        return UnicodeChars.ANTICLOCKWISE_OPEN_CIRCLE_ARROW;
+      },
+      showZoomButton: function() {
+        return this.zoomTrace || this.previewedZoomTrace;
+      },
+      currentRootTrace: function() {
+        return this.zoomTrace || this.rootTrace;
+      },
+      zoomHighlight: function() {
+        if (this.previewedZoomTrace) {
+          return {node: this.previewedZoomTrace, class: 'zoomBorder'};
+        }
+      }
+    },
+    methods: {
+      zoom: function(traceNode) {
+        this.zoomTrace = traceNode;
+        clearMarks();
+      },
+      zoomOut: function() {
+        this.zoomTrace = this.previewedZoomTrace = null;
+      },
+      previewZoom: function() {
+        this.previewedZoomTrace = this.zoomTrace;
+        this.zoomTrace = null;
+      },
+      unpreviewZoom: function() {
+        this.zoomTrace = this.previewedZoomTrace;
+        this.previewedZoomTrace = null;
+      },
+      showContextMenu: function(data) {
+        var zoomEnabled = couldZoom(this.rootTrace, data.traceNode);
+
+        var menuDiv = $('#parseTreeMenu');
+        menuDiv.style.left = data.x + 'px';
+        menuDiv.style.top = data.y + 'px';
+        menuDiv.hidden = false;
+
+        var self = this;
+        domUtil.addMenuItem('parseTreeMenu', 'getInfoItem', 'Get Info', false);
+        domUtil.addMenuItem('parseTreeMenu', 'zoomItem', 'Zoom to Node', zoomEnabled, function() {
+          self.zoom(data.traceNode);
+        });
+  //      ohmEditor.parseTree.emit('contextMenu', this.$el, this.traceNode);
+      },
+    },
+    template: [
+      '<div id="parseTree">',
+      '  <button v-if="showZoomButton" id="zoomOutButton" type="button"',
+      '          @click="zoomOut" @mouseover="previewZoom" @mouseout="unpreviewZoom">{{',
+      '      zoomButtonLabel',
+      '  }}</button>',
+      '  <div id="visualizerBody">',
+      '    <div id="expandedInputWrapper">',
+      '      <div id="sizer">&nbsp;</div>',
+      '      <canvas id="expandedInput" width="1" height="1"></canvas>',
+      '    </div>',
+      '    <parse-results :trace="currentRootTrace" :highlightNode="zoomHighlight"',
+      '                   @showContextMenu="showContextMenu" />',
+      '  </div>',
+      '</div>'
+      ].join(''),
+    mounted: function() {
+      inputCtx = $('#expandedInput').getContext('2d');
+      window.addEventListener('resize', function(e) {
+        updateExpandedInput();
+      });
+    }
   });
 
   // Refresh the parse tree after attempting to parse the input.
@@ -818,7 +823,6 @@
     $('#bottomSection .overlay').style.width = 0;  // Hide the overlay.
     $('#semantics').hidden = !ohmEditor.options.semantics;
     parseTree.vue.rootTrace = Object.freeze(trace);
-//    clearZoomState();
   });
 
 /*

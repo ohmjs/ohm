@@ -1,3 +1,8 @@
+#parseTree {
+  display: flex;
+  flex: 1;
+}
+
 #zoomOutButton {
   background-color: white;
   outline: none;
