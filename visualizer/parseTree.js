@@ -315,7 +315,20 @@
       '</div>'
     ].join(''),
     mounted: function() {
-      this.$el._traceNode = this.traceNode;
+      var el = this.$el;
+      el._traceNode = this.traceNode;
+
+      ohmEditor.parseTree.emit('create:traceElement', el, el._traceNode);
+      if (this.classes.collapsed) {
+        ohmEditor.parseTree.emit('collapse:traceElement', el, el._traceNode);
+      }
+
+      if (!this.classes.leaf) {
+        // On the next tick, children will be mounted.
+        this.$nextTick(function() {
+          ohmEditor.parseTree.emit('exit:traceElement', el, el._traceNode);
+        });
+      }
     },
     updated: function() {
       this.$el._traceNode = this.traceNode;
@@ -359,6 +372,7 @@
         }
       },
       onShowContextMenu: function(data) {
+        data.el = this.$el;
         this.$emit('showContextMenu', data);
       },
       toggleCollapsed: function() {
@@ -513,21 +527,19 @@
       if (!this.trace) {
         return createElement('div');
       }
+      var rootTraceElement = createElement('trace-element', {
+        props: {traceNode: this.trace}
+      });
       var rootContainer = createElement('div', {
         domProps: {id: 'parseResults'},
         on: {
           wheel: this.onWheel,
           scroll: this.onScroll
         }
-      }, []);
-
-      var rootElement = createElement('trace-element', {
-        props: {traceNode: this.trace}
-      });
-      rootContainer.children.push(rootElement);
+      }, [rootTraceElement]);
 
       var contextStack = [{
-        parent: rootElement,
+        parent: rootTraceElement,
         collapsed: false,
         syntactic: false,
         vbox: false
@@ -577,6 +589,7 @@
             classes[self.highlightNode.class] = true;
           }
           var traceElement = createElement('trace-element', {
+            domProps: {id: getFreshNodeId()},
             props: {
               traceNode: node,
               measureInputText: self.measureInputText,
@@ -587,11 +600,6 @@
             on: self.pexprEventHandlers
           });
           addChildToVNode(context.parent, traceElement);
-
-          if (collapsed) {
-  //          ohmEditor.parseTree.emit((collapse ? 'collapse' : 'expand') + ':traceElement', el);
-          }
-  //        ohmEditor.parseTree.emit('create:traceElement', el, node);
 
           if (isLeafNode) {
             return node.SKIP;
@@ -848,7 +856,7 @@
         domUtil.addMenuItem('parseTreeMenu', 'zoomItem', 'Zoom to Node', zoomEnabled, function() {
           self.zoom(data.traceNode);
         });
-  //      ohmEditor.parseTree.emit('contextMenu', this.$el, this.traceNode);
+        ohmEditor.parseTree.emit('contextMenu', data.el, data.traceNode);
       },
       updateExpandedInput: function(/* ...args */) {
         this.$refs.expandedInput.update.apply(null, arguments);
