@@ -316,7 +316,7 @@
 
       ohmEditor.parseTree.emit('create:traceElement', el, el._traceNode);
       if (this.classes.collapsed) {
-        ohmEditor.parseTree.emit('collapse:traceElement', el, el._traceNode);
+        ohmEditor.parseTree.emit('collapse:traceElement', el);
       }
 
       if (!this.classes.leaf) {
