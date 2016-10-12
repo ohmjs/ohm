@@ -35,6 +35,7 @@ module.exports = {
   debug: true
 };
 
+// Run `NODE_ENV='production' webpack -p` to build the production bundle.
 if (process.env.NODE_ENV === 'production') {
   module.exports.devtool = '#source-map';
 

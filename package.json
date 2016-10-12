@@ -84,7 +84,8 @@
     "vue-loader": "^9.5.3",
     "walk-sync": "^0.3.0",
     "watchify": "^3.3.0",
-    "webpack": "^1.13.2"
+    "webpack": "^1.13.2",
+    "webpack-uglify-js-plugin": "^1.1.9"
   },
   "engines": {
     "node": ">=0.12.1"
