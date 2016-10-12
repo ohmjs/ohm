@@ -67,6 +67,7 @@
     "browser-sync": "^2.8.0",
     "browserify": "^13.1.0",
     "checked-emitter": "^1.0.1",
+    "css-loader": "^0.25.0",
     "eslint": "^3.2.2",
     "eslint-config-google": "^0.6.0",
     "eslint-plugin-no-extension-in-require": "^0.2.0",
@@ -79,8 +80,11 @@
     "tape": "^4.6.0",
     "tape-catch": "^1.0.4",
     "uglify-js": "^2.4.12",
+    "vue": "^2.0.2",
+    "vue-loader": "^9.5.3",
     "walk-sync": "^0.3.0",
-    "watchify": "^3.3.0"
+    "watchify": "^3.3.0",
+    "webpack": "^1.13.2"
   },
   "engines": {
     "node": ">=0.12.1"

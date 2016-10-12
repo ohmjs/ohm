@@ -19,26 +19,6 @@
   font-weight: bold;
 }
 
-#expandedInputWrapper {
-  border-bottom: 1px solid #ddd;
-  padding: 8px 0;
-  position: relative;  /* For positioning #expandedInput. */
-}
-
-/*
-  The sizer serves as a stand-in for the text that will be rendered in the canvas
-  element; the style must be consistent with what is actually rendered.
- */
-#expandedInputWrapper > #sizer {
-  font-family: Menlo, Monaco, sans-serif;
-  font-size: 100%;
-}
-#expandedInput {
-  position: absolute;
-  left: 0;
-  top: 8px;
-}
-
 #parseResults {
   flex: 1;
   overflow: auto;
