@@ -77,8 +77,7 @@ test('basic incremental parsing', function(t) {
       }).join('');
     },
     _terminal: function() {
-      var matchLen = this._node.source.length;
-      return this.args.input.slice(0, matchLen);
+      return this.sourceString;
     }
   });
 
@@ -276,7 +275,7 @@ test('binding offsets - lexical rules', function(t) {
 
 test('binding offsets - syntactic rules', function(t) {
   var g = makeGrammar([
-    'G {',
+    '    G {',
     '  Start = letter NotLast* any',
     '  NotLast = any &any',
     '}'
@@ -285,11 +284,11 @@ test('binding offsets - syntactic rules', function(t) {
   t.ok(result.succeeded());
 
   var s = g.createSemantics().addOperation('checkOffsets(t, startIdx)', checkOffsetActions);
-  s(result).checkOffsets(t, result._offset);
+  s(result).checkOffsets(t, result._cstOffset);
 
   result = g.match('a   4 ');
   t.ok(result.succeeded());
-  s(result).checkOffsets(t, result._offset);
+  s(result).checkOffsets(t, result._cstOffset);
 
   t.end();
 });

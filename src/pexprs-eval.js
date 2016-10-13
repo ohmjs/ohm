@@ -40,8 +40,7 @@ pexprs.any.eval = function(state) {
   var origPos = inputStream.pos;
   var ch = inputStream.next();
   if (ch) {
-    var source = inputStream.interval(origPos);
-    state.pushBinding(new TerminalNode(state.grammar, ch, source), origPos);
+    state.pushBinding(new TerminalNode(state.grammar, ch), origPos);
     return true;
   } else {
     state.processFailure(origPos, this);
@@ -53,8 +52,7 @@ pexprs.end.eval = function(state) {
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
   if (inputStream.atEnd()) {
-    var source = inputStream.interval(inputStream.pos);
-    state.pushBinding(new TerminalNode(state.grammar, undefined, source), origPos);
+    state.pushBinding(new TerminalNode(state.grammar, undefined), origPos);
     return true;
   } else {
     state.processFailure(origPos, this);
@@ -69,9 +67,7 @@ pexprs.Terminal.prototype.eval = function(state) {
     state.processFailure(origPos, this);
     return false;
   } else {
-    var source = inputStream.interval(origPos);
-    var primitiveValue = this.obj;
-    state.pushBinding(new TerminalNode(state.grammar, primitiveValue, source), origPos);
+    state.pushBinding(new TerminalNode(state.grammar, this.obj), origPos);
     return true;
   }
 };
@@ -81,8 +77,7 @@ pexprs.Range.prototype.eval = function(state) {
   var origPos = inputStream.pos;
   var ch = inputStream.next();
   if (ch && this.from <= ch && ch <= this.to) {
-    var source = inputStream.interval(origPos);
-    state.pushBinding(new TerminalNode(state.grammar, ch, source), origPos);
+    state.pushBinding(new TerminalNode(state.grammar, ch), origPos);
     return true;
   } else {
     state.processFailure(origPos, this);
@@ -130,6 +125,7 @@ pexprs.Iter.prototype.eval = function(state) {
     cols.push([]);
     colOffsets.push([]);
   }
+
   var numMatches = 0;
   var idx;
   while (numMatches < this.maxNumMatches && state.eval(this.expr)) {
@@ -144,21 +140,22 @@ pexprs.Iter.prototype.eval = function(state) {
   if (numMatches < this.minNumMatches) {
     return false;
   }
-  var source;
-  if (numMatches === 0) {
-    source = inputStream.interval(origPos, origPos);
-  } else {
-    var firstCol = cols[0];
-    var lastCol = cols[cols.length - 1];
-    source = inputStream.interval(
-        firstCol[0].source.startIdx,
-        lastCol[lastCol.length - 1].source.endIdx);
+  var startIdx = origPos;
+  var matchLength = 0;
+  if (numMatches > 0) {
+    var lastCol = cols[arity - 1];
+    var lastColOffsets = colOffsets[arity - 1];
+
+    var endIdx =
+        lastColOffsets[lastColOffsets.length - 1] + lastCol[lastCol.length - 1].matchLength;
+    startIdx = colOffsets[0][0];
+    matchLength = endIdx - startIdx;
   }
+  var isOptional = this instanceof pexprs.Opt;
   for (idx = 0; idx < cols.length; idx++) {
-    var isOptional = this instanceof pexprs.Opt;
-    state.pushBinding(
-        new IterationNode(state.grammar, cols[idx], colOffsets[idx], source, isOptional),
-        origPos);
+    state._bindings.push(
+        new IterationNode(state.grammar, cols[idx], colOffsets[idx], matchLength, isOptional));
+    state._bindingOffsets.push(state.posToOffset(startIdx));
   }
   return true;
 };
@@ -245,7 +242,7 @@ pexprs.Apply.prototype.reallyEval = function(state) {
   var body = ruleInfo.body;
   var description = ruleInfo.description;
 
-  state.enter(origPosInfo, this);
+  state.enterApplication(origPosInfo, this);
 
   var origFailuresInfo;
   if (description) {
@@ -294,7 +291,7 @@ pexprs.Apply.prototype.reallyEval = function(state) {
     }
     memoRec.traceEntry = entry;
   }
-  state.exitAndMaybePushBinding(origPosInfo, value);
+  state.exitApplication(origPosInfo, value);
 
   return succeeded;
 };
@@ -308,7 +305,7 @@ pexprs.Apply.prototype.evalOnce = function(expr, state) {
     var bindings = state._bindings.splice(state._bindings.length - arity, arity);
     var offsets = state._bindingOffsets.splice(state._bindingOffsets.length - arity, arity);
     return new NonterminalNode(
-        state.grammar, this.ruleName, bindings, offsets, inputStream.interval(origPos));
+        state.grammar, this.ruleName, bindings, offsets, inputStream.pos - origPos);
   } else {
     return false;
   }
@@ -356,8 +353,7 @@ pexprs.UnicodeChar.prototype.eval = function(state) {
   var origPos = inputStream.pos;
   var ch = inputStream.next();
   if (ch && this.pattern.test(ch)) {
-    var source = inputStream.interval(origPos);
-    state.pushBinding(new TerminalNode(state.grammar, ch, source), origPos);
+    state.pushBinding(new TerminalNode(state.grammar, ch), origPos);
     return true;
   } else {
     state.processFailure(origPos, this);

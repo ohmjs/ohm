@@ -65,7 +65,12 @@ Wrapper.prototype.child = function(idx) {
   }
   var childWrapper = this._childWrappers[idx];
   if (!childWrapper) {
-    childWrapper = this._childWrappers[idx] = this._semantics.wrap(this._node.childAt(idx));
+    var childNode = this._node.childAt(idx);
+    var offset = this._node.childOffsets[idx];
+
+    var source = this._baseInterval.subInterval(offset, childNode.matchLength);
+    var base = childNode.isNonterminal() ? source : this._baseInterval;
+    childWrapper = this._childWrappers[idx] = this._semantics.wrap(childNode, source, base);
   }
   return childWrapper;
 };
@@ -117,10 +122,16 @@ Wrapper.prototype.isOptional = function() {
   return this._node.isOptional();
 };
 
-// Create a new IterationNode in the same semantics as this wrapper.
-Wrapper.prototype.iteration = function(optElements) {
-  var iter = new IterationNode(this._node.grammar, optElements || [], this.source, false);
-  return this._semantics.wrap(iter);
+// Create a new _iter wrapper in the same semantics as this wrapper.
+Wrapper.prototype.iteration = function(optChildWrappers) {
+  var childWrappers = optChildWrappers || [];
+
+  var childNodes = childWrappers.map(function(c) { return c._node; });
+  var iter = new IterationNode(this._node.grammar, childNodes, [], -1, false);
+
+  var wrapper = this._semantics.wrap(iter, null, null);
+  wrapper._childWrappers = childWrappers;
+  return wrapper;
 };
 
 Object.defineProperties(Wrapper.prototype, {
@@ -134,9 +145,6 @@ Object.defineProperties(Wrapper.prototype, {
   interval: {get: function() {
     throw new Error('The `interval` property is deprecated -- use `source` instead');
   }},
-
-  // Returns the interval consumed by the CST node associated with this wrapper.
-  source: {get: function() { return this._node.source; }},
 
   // Returns the number of children of this CST node.
   numChildren: {get: function() { return this._node.numChildren(); }},
@@ -175,10 +183,20 @@ function Semantics(grammar, superSemantics) {
   // action is chosen based on both the node's type and the semantics. Wrappers ensure that
   // the `execute` method is called with the correct (most specific) semantics object as an
   // argument.
-  this.Wrapper = function(node) {
+  this.Wrapper = function(node, sourceInterval, baseInterval) {
     self.checkActionDictsIfHaventAlready();
     this._semantics = self;
     this._node = node;
+    this.source = sourceInterval;
+
+    // The interval that the childOffsets of `node` are relative to. It should be the source
+    // of the closest Nonterminal node.
+    this._baseInterval = baseInterval;
+
+    if (node.isNonterminal()) {
+      common.assert(sourceInterval === baseInterval);
+    }
+
     this._childWrappers = [];
   };
 
@@ -496,8 +514,9 @@ Semantics.prototype.assertNewName = function(name, type) {
 
 // Returns a wrapper for the given CST `node` in this semantics.
 // If `node` is already a wrapper, returns `node` itself.  // TODO: why is this needed?
-Semantics.prototype.wrap = function(node) {
-  return node instanceof this.Wrapper ? node : new this.Wrapper(node);
+Semantics.prototype.wrap = function(node, source, optBaseInterval) {
+  var baseInterval = optBaseInterval || source;
+  return node instanceof this.Wrapper ? node : new this.Wrapper(node, source, baseInterval);
 };
 
 // Creates a new Semantics instance for `grammar`, inheriting operations and attributes from
@@ -530,7 +549,8 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
           "Cannot use a MatchResult from grammar '" + cst.grammar.name +
           "' with a semantics for '" + grammar.name + "'");
     }
-    return s.wrap(cst);
+    var inputStream = matchResult.state.inputStream;
+    return s.wrap(cst, inputStream.interval(matchResult._cstOffset));
   };
 
   // Forward public methods from the proxy to the semantics instance.
