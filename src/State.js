@@ -31,7 +31,8 @@ State.prototype = {
     this.posInfos = [];
     this._bindings = [];
     this._bindingOffsets = [];
-    this._applicationStack = [0];  // Start with an origPos of 0.
+    this._applicationStack = [];
+    this._posStack = [0];
     this.inLexifiedContextStack = [false];
 
     this.recordingMode = recordingMode;
@@ -52,15 +53,20 @@ State.prototype = {
     }
   },
 
-  enter: function(posInfo, app) {
-    this._applicationStack.push(app, this.inputStream.pos);
+  posToOffset: function(pos) {
+    return pos - this._posStack[this._posStack.length - 1];
+  },
+
+  enterApplication: function(posInfo, app) {
+    this._posStack.push(this.inputStream.pos);
+    this._applicationStack.push(app);
     this.inLexifiedContextStack.push(false);
     posInfo.enter(app);
   },
 
-  exitAndMaybePushBinding: function(posInfo, optNode) {
-    var origPos = this._applicationStack.pop();
-    this._applicationStack.pop();  // Pop application
+  exitApplication: function(posInfo, optNode) {
+    var origPos = this._posStack.pop();
+    this._applicationStack.pop();
     this.inLexifiedContextStack.pop();
     posInfo.exit();
 
@@ -78,11 +84,6 @@ State.prototype = {
   },
 
   currentApplication: function() {
-    return this._applicationStack[this._applicationStack.length - 2];
-  },
-
-  // Returns the value of `origPos` for the current application.
-  currentApplicationPos: function() {
     return this._applicationStack[this._applicationStack.length - 1];
   },
 
@@ -129,7 +130,7 @@ State.prototype = {
 
   pushBinding: function(node, origPos) {
     this._bindings.push(node);
-    this._bindingOffsets.push(origPos - this.currentApplicationPos());
+    this._bindingOffsets.push(this.posToOffset(origPos));
   },
 
   popBinding: function() {

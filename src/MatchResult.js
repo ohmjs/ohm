@@ -26,7 +26,7 @@ function getShortMatchErrorMessage(pos, source, detail) {
 function MatchResult(state) {
   this.state = state;
   this._cst = state._bindings[0];
-  this._offset = state._bindingOffsets[0];
+  this._cstOffset = state._bindingOffsets[0];
 }
 
 MatchResult.newFor = function(state) {
@@ -104,22 +104,15 @@ MatchResult.prototype.getDiscardedSpaces = function() {
   // Rather than return a bunch of CST nodes and make the caller of this method loop over them,
   // we can construct a single CST node that is the parent of all of the discarded nodes. An
   // `IterationNode` is the obvious choice for this.
-  discardedNodes = new nodes.IterationNode(
-      grammar,
-      discardedNodes,
-      discardedNodes.length === 0 ?
-          new Interval(inputStream, 0, 0) :
-          new Interval(
-              inputStream,
-              discardedNodes[0].source.startIdx,
-              discardedNodes[discardedNodes.length - 1].source.endIdx));
+  discardedNodes = new nodes.IterationNode(grammar, discardedNodes, [], -1, false);
 
   // But remember that a CST node can't be used directly by clients. What we really need to return
   // from this method is a successful `MatchResult` that can be used with the clients' semantics.
   // We already have one -- `this` -- but it's got a different CST node inside. So we create a new
-  // object that delegates to `this`, and override its `_cst` property.
+  // object that delegates to `this`, and override its `_cst` and `_cstOffset` properties.
   var r = Object.create(this);
   r._cst = discardedNodes;
+  r._cstOffset = 0;
 
   // We also override its `getDiscardedSpaces` method, in case someone decides to call it.
   r.getDiscardedSpaces = function() { return r; };

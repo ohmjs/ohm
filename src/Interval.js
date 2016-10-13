@@ -108,6 +108,11 @@ Interval.prototype = {
     var startIdx = this.startIdx + contents.match(/^\s*/)[0].length;
     var endIdx = this.endIdx - contents.match(/\s*$/)[0].length;
     return new Interval(this.inputStream, startIdx, endIdx);
+  },
+
+  subInterval: function(offset, len) {
+    var newStartIdx = this.startIdx + offset;
+    return new Interval(this.inputStream, newStartIdx, newStartIdx + len);
   }
 };
 

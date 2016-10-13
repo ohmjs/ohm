@@ -8,12 +8,12 @@ var common = require('./common');
 // Private stuff
 // --------------------------------------------------------------------
 
-function Node(grammar, ctorName, children, childOffsets, source) {
+function Node(grammar, ctorName, children, childOffsets, matchLength) {
   this.grammar = grammar;
   this.ctorName = ctorName;
-  this.children = children;
-  this.childOffsets = childOffsets;
-  this.source = source;
+  this.children = children || [];
+  this.childOffsets = childOffsets || [];
+  this.matchLength = matchLength;
 }
 
 Node.prototype.numChildren = function() {
@@ -110,8 +110,9 @@ Node.prototype.toJSON = function() {
 
 // Terminals
 
-function TerminalNode(grammar, value, source) {
-  Node.call(this, grammar, '_terminal', [], [], source);
+function TerminalNode(grammar, value) {
+  var matchLength = value ? value.length : 0;
+  Node.call(this, grammar, '_terminal', [], [], matchLength);
   this.primitiveValue = value;
 }
 inherits(TerminalNode, Node);
@@ -128,8 +129,8 @@ TerminalNode.prototype.toJSON = function() {
 
 // Nonterminals
 
-function NonterminalNode(grammar, ruleName, children, childOffsets, source) {
-  Node.call(this, grammar, ruleName, children, childOffsets, source);
+function NonterminalNode(grammar, ruleName, children, childOffsets, matchLength) {
+  Node.call(this, grammar, ruleName, children, childOffsets, matchLength);
 }
 inherits(NonterminalNode, Node);
 
@@ -147,9 +148,9 @@ NonterminalNode.prototype.isSyntactic = function() {
 
 // Iterations
 
-function IterationNode(grammar, children, childOffsets, source, optional) {
-  Node.call(this, grammar, '_iter', children, childOffsets, source);
-  this.optional = optional;
+function IterationNode(grammar, children, childOffsets, matchLength, isOptional) {
+  Node.call(this, grammar, '_iter', children, childOffsets, matchLength);
+  this.optional = isOptional;
 }
 inherits(IterationNode, Node);
 
