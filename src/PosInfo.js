@@ -7,6 +7,7 @@
 function PosInfo(state) {
   this.applicationMemoKeyStack = [];  // active applications at this position
   this.memo = {};
+  this.maxExaminedLength = 0;
   this.currentLeftRecursion = undefined;
 }
 
@@ -69,15 +70,26 @@ PosInfo.prototype = {
 
   memoize: function(memoKey, memoRec) {
     this.memo[memoKey] = memoRec;
+    this.maxExaminedLength = Math.max(this.maxExaminedLength, memoRec.examinedLength);
     return memoRec;
   },
 
   clearObsoleteEntries: function(pos, invalidatedIdx) {
+    if (pos + this.maxExaminedLength <= invalidatedIdx) {
+      // Optimization: none of the rule applications that were memoized here examined the
+      // interval of the input that changed, so nothing has to be invalidated.
+      return;
+    }
+
     var memo = this.memo;
+    this.maxExaminedLength = 0;
+    var self = this;
     Object.keys(memo).forEach(function(k) {
       var memoRec = memo[k];
       if (pos + memoRec.examinedLength > invalidatedIdx) {
         delete memo[k];
+      } else {
+        self.maxExaminedLength = Math.max(self.maxExaminedLength, memoRec.examinedLength);
       }
     });
   }
