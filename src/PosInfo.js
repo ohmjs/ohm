@@ -67,6 +67,11 @@ PosInfo.prototype = {
     return true;
   },
 
+  memoize: function(memoKey, memoRec) {
+    this.memo[memoKey] = memoRec;
+    return memoRec;
+  },
+
   clearObsoleteEntries: function(pos, invalidatedIdx) {
     var memo = this.memo;
     Object.keys(memo).forEach(function(k) {
