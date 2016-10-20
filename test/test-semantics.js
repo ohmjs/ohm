@@ -627,7 +627,7 @@ test('sourceString', function(t) {
 
 // TODO: Re-enable this tests and get them working!
 
-test.skip('getDiscardedSpaces', function(t) {
+test('getDiscardedSpaces', function(t) {
   var g = ohm.grammar('G { Start = word+  word = letter+ }');
 
   var content = g.match(' This  is   a    sentence     ');
@@ -657,6 +657,21 @@ test.skip('getDiscardedSpaces', function(t) {
   });
   t.deepEqual(s(spaces).allSpaces(), [' ', '  ', '   ', '    ', '     '], 'only spaces');
   t.deepEqual(s(spaces).numberOfSpaces(), 15, 'count space(s)');
+
+  t.end();
+});
+
+test('getDiscardedSpaces - lookahead', function(t) {
+  var g = testUtil.makeGrammar([
+    'G {',
+    '  Start = #("ab" &twoSpaces) "cd"',
+    '  twoSpaces = "  "',
+    '}']);
+
+  // Even though the space here is consumed by implicit space skipping, it's not "discarded"
+  // because it's captured by the application of 'twoSpaces'.
+  var result = g.match('ab  cd').getDiscardedSpaces();
+  t.equal(result._cst.children.length, 0);
 
   t.end();
 });

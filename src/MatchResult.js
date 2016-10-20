@@ -72,46 +72,28 @@ MatchResult.prototype.getDiscardedSpaces = function() {
   });
   s(this).subtractTerminals();
 
-  // Now `intervals` holds the intervals of the input stream that were skipped over by syntactic
-  // rules, because they contained spaces.
-
-  // Next, we want to match the contents of each of those intervals with the grammar's `spaces`
-  // rule, to reconstruct the CST nodes that were discarded by syntactic rules. But if we simply
-  // pass each interval's `contents` to the grammar's `match` method, the resulting nodes and
-  // their children will have intervals that are associated with a different input, i.e., a
-  // substring of the original input. The following operation will fix this problem for us.
-  s.addOperation('fixIntervals(idxOffset)', {
-    _default: function(children) {
-      var idxOffset = this.args.idxOffset;
-      this.source.inputStream = inputStream;
-      this.source.startIdx += idxOffset;
-      this.source.endIdx += idxOffset;
-      if (!this.isTerminal()) {
-        children.forEach(function(child) {
-          child.fixIntervals(idxOffset);
-        });
-      }
-    }
+  // Now, at the beginning of each interval, there should be a memo table entry for the 'spaces'
+  // rule, representing the node that was discarded. Collect those along with their offsets.
+  var offsets = intervals.map(function(interval) {
+    return interval.startIdx;
   });
-
-  // Now we're finally ready to reconstruct the discarded CST nodes.
-  var discardedNodes = intervals.map(function(interval) {
-    var r = grammar.match(interval.contents, 'spaces');
-    s(r).fixIntervals(interval.startIdx);
-    return r._cst;
+  var discardedNodes = offsets.map(function(pos) {
+    var posInfo = state.getPosInfo(pos);
+    var memoRec = posInfo.memo.spaces;
+    return memoRec.value;
   });
 
   // Rather than return a bunch of CST nodes and make the caller of this method loop over them,
   // we can construct a single CST node that is the parent of all of the discarded nodes. An
   // `IterationNode` is the obvious choice for this.
-  discardedNodes = new nodes.IterationNode(grammar, discardedNodes, [], -1, false);
+  var iter = new nodes.IterationNode(grammar, discardedNodes, offsets, -1, false);
 
   // But remember that a CST node can't be used directly by clients. What we really need to return
   // from this method is a successful `MatchResult` that can be used with the clients' semantics.
   // We already have one -- `this` -- but it's got a different CST node inside. So we create a new
   // object that delegates to `this`, and override its `_cst` and `_cstOffset` properties.
   var r = Object.create(this);
-  r._cst = discardedNodes;
+  r._cst = iter;
   r._cstOffset = 0;
 
   // We also override its `getDiscardedSpaces` method, in case someone decides to call it.
