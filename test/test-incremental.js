@@ -17,6 +17,9 @@ function pluckMemoProp(result, propName) {
   return result.state.posInfos.map(function(info) {
     var result = {};
     if (info == null) return {};
+    if (propName === 'examinedLength') {
+      result.maxExaminedLength = info.maxExaminedLength;
+    }
     Object.keys(info.memo).forEach(function(ruleName) {
       var memoRec = info.memo[ruleName];
       result[ruleName] = memoRec[propName];
@@ -162,10 +165,10 @@ test('examinedLength - no LR', function(t) {
   var result = g.match('yip');
   var values = pluckMemoProp(result, 'examinedLength');
   t.deepEqual(values, [
-    {letter: 1, lower: 1, notLastLetter: 2, start: 4},
-    {letter: 1, lower: 1, notLastLetter: 2},
-    {letter: 1, lower: 1, notLastLetter: 2},
-    {letter: 1, lower: 1, upper: 1, unicodeLtmo: 1}
+    {maxExaminedLength: 4, letter: 1, lower: 1, notLastLetter: 2, start: 4},
+    {maxExaminedLength: 2, letter: 1, lower: 1, notLastLetter: 2},
+    {maxExaminedLength: 2, letter: 1, lower: 1, notLastLetter: 2},
+    {maxExaminedLength: 1, letter: 1, lower: 1, upper: 1, unicodeLtmo: 1}
   ]);
 
   t.end();
@@ -182,9 +185,9 @@ test('examinedLength - simple LR', function(t) {
 
   var values = pluckMemoProp(result, 'examinedLength');
   t.deepEqual(values, [
-    {letter: 1, lower: 1, start: 3},
-    {letter: 1, lower: 1},
-    {letter: 1, lower: 1, upper: 1, unicodeLtmo: 1}
+    {maxExaminedLength: 3, letter: 1, lower: 1, start: 3},
+    {maxExaminedLength: 1, letter: 1, lower: 1},
+    {maxExaminedLength: 1, letter: 1, lower: 1, upper: 1, unicodeLtmo: 1}
   ]);
 
   t.end();
@@ -203,9 +206,9 @@ test('examinedLength - complicated LR', function(t) {
 
   var values = pluckMemoProp(result, 'examinedLength');
   t.deepEqual(values, [
-    {any: 1, foo: 3, start: 3},
-    {letter: 1, lower: 1},
-    {letter: 1, lower: 1, upper: 1, unicodeLtmo: 1, any: 1, foo: 1}
+    {maxExaminedLength: 3, any: 1, foo: 3, start: 3},
+    {maxExaminedLength: 1, letter: 1, lower: 1},
+    {maxExaminedLength: 1, letter: 1, lower: 1, upper: 1, unicodeLtmo: 1, any: 1, foo: 1}
   ]);
 
   t.end();

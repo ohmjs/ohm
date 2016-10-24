@@ -260,6 +260,7 @@ pexprs.Apply.prototype.reallyEval = function(state) {
     origPosInfo.endLeftRecursion();
     memoRec = currentLR;
     memoRec.examinedLength = inputStream.examinedLength - origPos;
+    origPosInfo.memoize(memoKey, memoRec);  // updates origPosInfo's maxExaminedLength
   } else if (!currentLR || !currentLR.isInvolved(memoKey)) {
     // This application is not involved in left recursion, so it's ok to memoize it.
     memoRec = origPosInfo.memoize(memoKey, {
