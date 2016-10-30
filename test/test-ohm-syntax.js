@@ -1189,6 +1189,8 @@ test('case-insensitive matching', function(t) {
     '  eszett = caseInsensitive<"ß">',
     '  dotlessI = caseInsensitive<"ı">',
     '  dottedI = caseInsensitive<"İ">',
+    '  insideRepetition1 = (caseInsensitive<"a">)+',
+    '  insideRepetition2 = (caseInsensitive<"a">)*',
     '}'
   ]);
   var result = g.match('BLERG');
@@ -1222,6 +1224,9 @@ test('case-insensitive matching', function(t) {
 
   t.equals(g.match('s', 'eszett').failed(), true);
   t.equals(g.match('ss', 'eszett').failed(), true);
+
+  t.equals(g.match('aaaA', 'insideRepetition1').succeeded(), true, 'works inside +');
+  t.equals(g.match('aaaA', 'insideRepetition2').succeeded(), true, 'works inside *');
 
   t.end();
 });
