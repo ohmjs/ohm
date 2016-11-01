@@ -370,7 +370,6 @@ function newDefaultAction(type, name, doIt) {
     } else {
       // Otherwise, we throw an exception to let the programmer know that we don't know what
       // to do with this node.
-
       throw errors.semanticErrors(
           this.ctorName, name, type) ;
     }

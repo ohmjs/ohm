@@ -208,7 +208,7 @@ module.exports = {
   undeclaredGrammar: undeclaredGrammar,
   undeclaredRule: undeclaredRule,
   wrongNumberOfArguments: wrongNumberOfArguments,
-  wrongNumberOfParameters: wrongNumberOfParameters,  
+  wrongNumberOfParameters: wrongNumberOfParameters,
 
   throwErrors: function(errors) {
     if (errors.length === 1) {
