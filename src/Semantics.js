@@ -370,8 +370,8 @@ function newDefaultAction(type, name, doIt) {
     } else {
       // Otherwise, we throw an exception to let the programmer know that we don't know what
       // to do with this node.
-      throw errors.semanticErrors(
-          this.ctorName, name, type) ;
+      throw errors.missingSemanticAction(
+          this.ctorName, name, type);
     }
   };
 }
@@ -430,16 +430,16 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
     var oldArgs = this.args;
     this.args = args;
     try {
-        var ans = thisThing.execute(this._semantics, this);
-    }catch(e) {        
-        if (e.name==='semanticError') {
-          e.message += '\n' + this.ctorName;
-        };
-        throw e;
+      var ans = thisThing.execute(this._semantics, this);
+
+      this.args = oldArgs;
+      return ans;
+    } catch (e) {
+      if (e.name === 'missingSemanticAction') {
+        e.message += '\n' + this.ctorName;
+      }
+      throw e;
     }
-    
-    this.args = oldArgs;
-    return ans;
   }
 
   if (type === 'operation') {
