@@ -18,7 +18,9 @@
     "require": true,
   },
   "plugins": [
-    "eslint-plugin-no-extension-in-require"
+    "camelcase-ohm",
+    "no-extension-in-require",
+    "tape"
   ],
   rules: {
     // Enforce "one true brace style", allowing start and end braces to be on the same line.
@@ -27,7 +29,7 @@
     // Turn off the regular camelcase rule, and use a custom rule which
     // allows semantic actions to be named like `RuleName_caseName`.
     camelcase: 0,
-    'camelcase-ohm': 2,  // Defined in ./eslint_rules/camelcase-ohm.js
+    camelcase-ohm/camelcase-ohm: 2,
 
     consistent-this: 0,
     default-case: 0,
@@ -49,13 +51,11 @@
     no-eq-null: 0,
 
     // Don't allow require() statements to include the '.js' extension.
-    'no-extension-in-require/main': 2,
+    no-extension-in-require/main: 2,
 
     no-implicit-coercion: 0,
     no-negated-condition: 0,
     no-nested-ternary: 0,
-    // Don't allow `test.only` (defined in ./eslint_rules/no-test-only.js).
-    no-test-only: 2,
 
     // Allow unused parameters, but not unused variables.
     no-unused-vars: ["error", {vars: "all", args: "none"}],
@@ -69,6 +69,8 @@
     require-jsdoc: 0,
 
     "strict": ["error", "global"],
+
+    tape/no-only-test: 2,  // Don't allow `test.only`
 
     // We would use `["error", "never", {exceptRange: true}]` here, but it doesn't seem to work.
     yoda: 0,
