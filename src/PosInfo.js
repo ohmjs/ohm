@@ -8,6 +8,7 @@ function PosInfo() {
   this.applicationMemoKeyStack = [];  // active applications at this position
   this.memo = {};
   this.maxExaminedLength = 0;
+  this.maxRightmostFailureOffset = -1;
   this.currentLeftRecursion = undefined;
 }
 
@@ -71,6 +72,8 @@ PosInfo.prototype = {
   memoize: function(memoKey, memoRec) {
     this.memo[memoKey] = memoRec;
     this.maxExaminedLength = Math.max(this.maxExaminedLength, memoRec.examinedLength);
+    this.maxRightmostFailureOffset =
+        Math.max(this.maxRightmostFailureOffset, memoRec.rightmostFailureOffset);
     return memoRec;
   },
 
