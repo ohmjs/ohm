@@ -19,6 +19,8 @@ function pluckMemoProp(result, propName) {
     if (info == null) return {};
     if (propName === 'examinedLength') {
       result.maxExaminedLength = info.maxExaminedLength;
+    } else if (propName === 'rightmostFailureOffset') {
+      result.maxRightmostFailureOffset = info.maxRightmostFailureOffset;
     }
     Object.keys(info.memo).forEach(function(ruleName) {
       var memoRec = info.memo[ruleName];
@@ -209,6 +211,65 @@ test('examinedLength - complicated LR', function(t) {
     {maxExaminedLength: 3, any: 1, foo: 3, start: 3},
     {maxExaminedLength: 1, letter: 1, lower: 1},
     {maxExaminedLength: 1, letter: 1, lower: 1, upper: 1, unicodeLtmo: 1, any: 1, foo: 1}
+  ]);
+
+  t.end();
+});
+
+test('rightmostFailureOffset - no LR', function(t) {
+  var g = makeGrammar([
+    'G {',
+    '  start = notLastLetter* letter',
+    '  notLastLetter = letter &letter',
+    '}'
+  ]);
+  var result = g.match('yip');
+  var values = pluckMemoProp(result, 'rightmostFailureOffset');
+  t.deepEqual(values, [
+    {maxRightmostFailureOffset: 3, letter: -1, lower: -1, notLastLetter: -1, start: 3},
+    {maxRightmostFailureOffset: -1, letter: -1, lower: -1, notLastLetter: -1},
+    {maxRightmostFailureOffset: 1, letter: -1, lower: -1, notLastLetter: 1},
+    {maxRightmostFailureOffset: 0, letter: 0, lower: 0, upper: 0, unicodeLtmo: 0}
+  ]);
+
+  t.end();
+});
+
+test('rightmostFailureOffset - simple LR', function(t) {
+  var g = makeGrammar([
+    'G {',
+    '  start = start letter  -- rec',
+    '        | letter',
+    '}']);
+  var result = g.match('yo');
+  t.equal(result.succeeded(), true);
+
+  var values = pluckMemoProp(result, 'rightmostFailureOffset');
+  t.deepEqual(values, [
+    {maxRightmostFailureOffset: 2, letter: -1, lower: -1, start: 2},
+    {maxRightmostFailureOffset: -1, letter: -1, lower: -1},
+    {maxRightmostFailureOffset: 0, letter: 0, lower: 0, upper: 0, unicodeLtmo: 0}
+  ]);
+
+  t.end();
+});
+
+test('rightmostFailureOffset - complicated LR', function(t) {
+  var g = makeGrammar([
+    'G {',
+    '  start = start foo  -- rec',
+    '        | foo',
+    '  foo = foo letter  -- rec',
+    '      | any',
+    '}']);
+  var result = g.match('yo');
+  t.equal(result.succeeded(), true);
+
+  var values = pluckMemoProp(result, 'rightmostFailureOffset');
+  t.deepEqual(values, [
+    {maxRightmostFailureOffset: 2, any: -1, foo: 2, start: 2},
+    {maxRightmostFailureOffset: -1, letter: -1, lower: -1},
+    {maxRightmostFailureOffset: 0, letter: 0, lower: 0, upper: 0, unicodeLtmo: 0, any: 0, foo: 0}
   ]);
 
   t.end();

@@ -38,6 +38,7 @@ State.prototype = {
     this.recordingMode = recordingMode;
     if (recordingMode === RM_RIGHTMOST_FAILURE_POSITION) {
       this.rightmostFailurePosition = -1;
+      this._rightmostFailurePositionStack = [];
     } else if (recordingMode === RM_RIGHTMOST_FAILURES) {
       // no-op
     } else {
@@ -58,6 +59,10 @@ State.prototype = {
     this._applicationStack.push(app);
     this.inLexifiedContextStack.push(false);
     posInfo.enter(app);
+    if (this.recordingMode === RM_RIGHTMOST_FAILURE_POSITION) {
+      this._rightmostFailurePositionStack.push(this.rightmostFailurePosition);
+      this.rightmostFailurePosition = -1;
+    }
   },
 
   exitApplication: function(posInfo, optNode) {
@@ -65,6 +70,12 @@ State.prototype = {
     this._applicationStack.pop();
     this.inLexifiedContextStack.pop();
     posInfo.exit();
+
+    if (this.recordingMode === RM_RIGHTMOST_FAILURE_POSITION) {
+      this.rightmostFailurePosition = Math.max(
+          this.rightmostFailurePosition,
+          this._rightmostFailurePositionStack.pop());
+    }
 
     if (optNode) {
       this.pushBinding(optNode, origPos);
@@ -223,6 +234,12 @@ State.prototype = {
 
   getRightmostFailurePosition: function() {
     return this.rightmostFailurePosition;
+  },
+
+  _getRightmostFailureOffset: function() {
+    return this.rightmostFailurePosition >= 0 ?
+        this.posToOffset(this.rightmostFailurePosition) :
+        -1;
   },
 
   getFailures: function() {
