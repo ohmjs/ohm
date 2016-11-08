@@ -4,7 +4,7 @@
 // Private stuff
 // --------------------------------------------------------------------
 
-function PosInfo(state) {
+function PosInfo() {
   this.applicationMemoKeyStack = [];  // active applications at this position
   this.memo = {};
   this.maxExaminedLength = 0;

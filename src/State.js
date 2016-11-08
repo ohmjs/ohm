@@ -153,7 +153,7 @@ State.prototype = {
   getPosInfo: function(pos) {
     var posInfo = this.posInfos[pos];
     if (!posInfo) {
-      posInfo = this.posInfos[pos] = new PosInfo(this);
+      posInfo = this.posInfos[pos] = new PosInfo();
     }
     return posInfo;
   },
