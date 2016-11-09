@@ -176,6 +176,23 @@ test('examinedLength - no LR', function(t) {
   t.end();
 });
 
+test('examinedLength - no LR, but non-monotonic', function(t) {
+  var g = makeGrammar([
+    'G {',
+    '  start = "a" "b" "c" | letter letter letter',
+    '}'
+  ]);
+  var result = g.match('abd');
+  var values = pluckMemoProp(result, 'examinedLength');
+  t.deepEqual(values, [
+    {maxExaminedLength: 3, letter: 1, lower: 1, start: 3},
+    {maxExaminedLength: 1, letter: 1, lower: 1},
+    {maxExaminedLength: 1, letter: 1, lower: 1}
+  ]);
+
+  t.end();
+});
+
 test('examinedLength - simple LR', function(t) {
   var g = makeGrammar([
     'G {',

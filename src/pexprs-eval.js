@@ -251,6 +251,11 @@ pexprs.Apply.prototype.reallyEval = function(state) {
     origFailuresInfo = state.getFailuresInfo();
   }
 
+  // Reset the input stream's examinedLength property so that we can track
+  // the examined length of this particular application.
+  var origInputStreamExaminedLength = inputStream.examinedLength;
+  inputStream.examinedLength = 0;
+
   var value = this.evalOnce(body, state);
   var currentLR = origPosInfo.currentLeftRecursion;
   var memoKey = this.toMemoKey();
@@ -296,6 +301,11 @@ pexprs.Apply.prototype.reallyEval = function(state) {
     }
     memoRec.traceEntry = entry;
   }
+
+  // Fix the input stream's examinedLength -- it should be the maximum examined length
+  // across all applications, not just this one.
+  inputStream.examinedLength = Math.max(inputStream.examinedLength, origInputStreamExaminedLength);
+
   state.exitApplication(origPosInfo, value);
 
   return succeeded;
