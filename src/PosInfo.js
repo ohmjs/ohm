@@ -86,6 +86,7 @@ PosInfo.prototype = {
 
     var memo = this.memo;
     this.maxExaminedLength = 0;
+    this.maxRightmostFailureOffset = -1;
     var self = this;
     Object.keys(memo).forEach(function(k) {
       var memoRec = memo[k];
@@ -93,6 +94,8 @@ PosInfo.prototype = {
         delete memo[k];
       } else {
         self.maxExaminedLength = Math.max(self.maxExaminedLength, memoRec.examinedLength);
+        self.maxRightmostFailureOffset =
+            Math.max(self.maxRightmostFailureOffset, memoRec.rightmostFailureOffset);
       }
     });
   }
