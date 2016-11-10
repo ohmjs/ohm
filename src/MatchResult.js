@@ -161,7 +161,7 @@ MatchFailure.prototype.getExpectedText = function() {
   for (var idx = 0; idx < failures.length; idx++) {
     if (idx > 0) {
       if (idx === failures.length - 1) {
-        sb.append((failures.length > 2 ? ', or ' : ' or '));
+        sb.append(failures.length > 2 ? ', or ' : ' or ');
       } else {
         sb.append(', ');
       }
