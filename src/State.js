@@ -175,6 +175,7 @@ State.prototype = {
         this.rightmostFailurePosition = pos;
       }
     } else /* if (this.recordingMode === RM_RIGHTMOST_FAILURES) */ {
+      // eslint-disable-next-line no-lonely-if
       if (pos === this.rightmostFailurePosition) {
         // We're only interested in failures at the rightmost failure position that haven't
         // already been recorded.
