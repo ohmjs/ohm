@@ -93,7 +93,9 @@ exports.getLineAndColumn = function(str, offset) {
 
 // Return a nicely-formatted string describing the line and column for the
 // given offset in `str`.
-exports.getLineAndColumnMessage = function(str, offset /* ...ranges */) {
+exports.getLineAndColumnMessage = function(str, offset /* ...ranges */, includeLineNumbers) {
+  var _includeLineNumbers = typeof includeLineNumbers !== 'undefined' ? includeLineNumbers : true;
+
   var repeatStr = common.repeatStr;
 
   var lineAndCol = exports.getLineAndColumn(str, offset);
@@ -109,7 +111,11 @@ exports.getLineAndColumnMessage = function(str, offset /* ...ranges */) {
 
   // Helper for appending formatting input lines to the buffer.
   function appendLine(num, content, prefix) {
-    sb.append(prefix + lineNumbers[num] + ' | ' + content + '\n');
+    if (_includeLineNumbers) {
+      sb.append(prefix + lineNumbers[num] + ' | ' + content + '\n');
+    } else {
+      sb.append('  ' + content + '\n');
+    }
   }
 
   // Include the previous line for context if possible.
