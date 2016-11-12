@@ -177,6 +177,15 @@ function multipleErrors(errors) {
       errors[0].interval);
 }
 
+// ----------------- semantic -----------------
+
+function missingSemanticAction(ctorName, name, type) {
+  var e = createError(
+      'Missing semantic action for ' + ctorName + ' in ' + name + ' ' + type);
+  e.name = 'missingSemanticAction';
+  return e;
+}
+
 // --------------------------------------------------------------------
 // Exports
 // --------------------------------------------------------------------
@@ -195,6 +204,7 @@ module.exports = {
   invalidParameter: invalidParameter,
   grammarSyntaxError: grammarSyntaxError,
   kleeneExprHasNullableOperand: kleeneExprHasNullableOperand,
+  missingSemanticAction: missingSemanticAction,
   undeclaredGrammar: undeclaredGrammar,
   undeclaredRule: undeclaredRule,
   wrongNumberOfArguments: wrongNumberOfArguments,
