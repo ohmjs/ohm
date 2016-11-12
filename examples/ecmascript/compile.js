@@ -9,13 +9,9 @@
 var fs = require('fs');
 var path = require('path');
 
-var ohm;
-try {
-     ohm = require('../..');
-} catch (e) {
-     ohm = require('ohm-js');
-}
-var es5 = require('./es5')(ohm);
+var es5 = require('./es5');
+var ohm = require('ohm-js');
+
 // --------------------------------------------------------------------
 // Helpers
 // --------------------------------------------------------------------
