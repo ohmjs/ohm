@@ -10,8 +10,8 @@ var assert = require('./common').assert;
 var inherits = require('inherits');
 var pexprs = require('./pexprs');
 
-function CaseInsensitiveTerminal(strOrParam) {
-  this.obj = strOrParam;
+function CaseInsensitiveTerminal(param) {
+  this.obj = param;
 }
 inherits(CaseInsensitiveTerminal, pexprs.PExpr);
 
@@ -63,6 +63,10 @@ CaseInsensitiveTerminal.prototype = {
 
   toFailure: function() {
     return new Failure(this, this.obj.toFailure() + ' (case-insensitive)', 'description');
+  },
+
+  _isNullable: function(grammar, memo) {
+    return this.obj._isNullable(grammar, memo);
   }
 };
 
