@@ -36,8 +36,7 @@ CaseInsensitiveTerminal.prototype = {
       state.processFailure(origPos, this);
       return false;
     } else {
-      state.bindings.push(
-          new TerminalNode(state.grammar, this.obj, inputStream.interval(origPos)));
+      state.pushBinding(new TerminalNode(state.grammar, matchStr), origPos);
       return true;
     }
   },
