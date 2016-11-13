@@ -7,7 +7,7 @@
 var CaseInsensitiveTerminal = require('./CaseInsensitiveTerminal');
 var MatchResult = require('./MatchResult');
 var Semantics = require('./Semantics');
-var State = require('./State');
+var MatchState = require('./MatchState');
 var common = require('./common');
 var errors = require('./errors');
 var pexprs = require('./pexprs');
@@ -78,7 +78,7 @@ Grammar.prototype = {
   },
 
   _match: function(input, opts) {
-    var state = new State(this, input, opts);
+    var state = new MatchState(this, input, opts);
     state.evalFromStart();
     return state;
   },
@@ -354,7 +354,7 @@ Grammar.ProtoBuiltInRules = new Grammar(
 
 function IncrementalMatcher(g) {
   this.grammar = g;
-  this.state = new State(g, '', {});
+  this.state = new MatchState(g, '', {});
 }
 
 IncrementalMatcher.prototype = {
@@ -368,7 +368,7 @@ IncrementalMatcher.prototype = {
 
   match: function(optStartApplication) {
     var oldState = this.state;
-    var state = this.state = new State(oldState.grammar, oldState.inputStream.source, {});
+    var state = this.state = new MatchState(oldState.grammar, oldState.inputStream.source, {});
     state.posInfos = oldState.posInfos;
     state.eval(state._getStartExpr(this.grammar, optStartApplication));
     return MatchResult.newFor(state);

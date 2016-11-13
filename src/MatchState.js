@@ -15,7 +15,7 @@ var pexprs = require('./pexprs');
 
 var applySpaces = new pexprs.Apply('spaces');
 
-function State(grammar, input, opts) {
+function MatchState(grammar, input, opts) {
   this.grammar = grammar;
   this.startExpr = this._getStartExpr(grammar, opts.startApplication);
   this.inputStream = new InputStream(input);
@@ -24,7 +24,7 @@ function State(grammar, input, opts) {
   this.init();
 }
 
-State.prototype = {
+MatchState.prototype = {
   init: function() {
     this.posInfos = [];
     this._bindings = [];
@@ -417,4 +417,4 @@ State.prototype = {
 // Exports
 // --------------------------------------------------------------------
 
-module.exports = State;
+module.exports = MatchState;
