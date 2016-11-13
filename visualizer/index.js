@@ -26,6 +26,13 @@
     var grammar;
     var err;
 
+    try {
+      ohm.grammar(source);
+    } catch (ex) {
+      err = ex;
+    }
+    
+    /*
     if (matchResult.succeeded()) {
       var ns = {};
       try {
@@ -43,7 +50,7 @@
         shortMessage: matchResult.shortMessage,
         interval: matchResult.getInterval()
       };
-    }
+    }*/
     return {
       matchResult: matchResult,
       grammar: grammar,

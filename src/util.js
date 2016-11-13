@@ -146,3 +146,8 @@ exports.getLineAndColumnMessage = function(str, offset /* ...ranges */) {
   }
   return sb.contents();
 };
+
+exports.getShortLineAndColumnMessage = function(str, offset){
+  var errorInfo = exports.getLineAndColumn(str, offset);
+  return 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ': ';
+}

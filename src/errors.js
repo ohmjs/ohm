@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------
 
 var Namespace = require('./Namespace');
+var util = require('./util');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -34,11 +35,40 @@ function intervalSourcesDontMatch() {
 
 function grammarSyntaxError(matchFailure) {
   var e = new Error();
-  Object.defineProperty(e, 'message', {get: function() { return matchFailure.message; }});
-  Object.defineProperty(e, 'shortMessage', {get: function() {
-    return 'Expected ' + matchFailure.getExpectedText();
-  }});
+  
   e.interval = matchFailure.getInterval();
+
+  var message;
+  var shortMessage;
+
+  var source = matchFailure.state.inputStream.source;
+
+  // Iterate through the failures, in an attempt to produce a more relevant error message
+  var reason = null;
+
+  var failures = matchFailure.getRightmostFailures();
+  for(var i = 0; i < failures.length; i++) {
+    var failure = failures[i];
+    if (failure.getPExpr().ruleName === 'escapeChar'){
+      // Failure to match an escape sequence, therefore the grammar contains an invalid escape sequence.
+      var escapeSequence = source.substr(matchFailure.getRightmostFailurePosition(),2);
+      var reason = "Invalid escape sequence \"" + escapeSequence + "\"";
+      break;
+    }
+  }
+  
+  if (reason) {
+      // Use the more relevant reason an the error message
+      message = util.getLineAndColumnMessage(source, matchFailure.getRightmostFailurePosition()) + reason; 
+      shortMessage = util.getShortLineAndColumnMessage(source, matchFailure.getRightmostFailurePosition()) + reason;
+  } else {
+      // Use the default parse failure message for the error. This is usually sufficient.
+      message = matchFailure.message;
+      shortMessage = 'Expected ' + matchFailure.getExpectedText();
+  }
+  
+  Object.defineProperty(e, 'message', {get: function() { return message; }});
+  Object.defineProperty(e, 'shortMessage', {get: function() { return shortMessage; }});
   return e;
 }
 

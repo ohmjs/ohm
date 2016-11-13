@@ -11,16 +11,6 @@ var nodes = require('./nodes');
 var util = require('./util');
 var Interval = require('./Interval');
 
-// --------------------------------------------------------------------
-// Private stuff
-// --------------------------------------------------------------------
-
-// Create a short error message for an error that occurred during matching.
-function getShortMatchErrorMessage(pos, source, detail) {
-  var errorInfo = util.getLineAndColumn(source, pos);
-  return 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ': ' + detail;
-}
-
 // ----------------- MatchFailure -----------------
 
 function MatchResult(state) {
@@ -147,10 +137,7 @@ function MatchFailure(state) {
       return 'match failed at position ' + this.getRightmostFailurePosition();
     }
     var detail = 'expected ' + this.getExpectedText();
-    return getShortMatchErrorMessage(
-        this.getRightmostFailurePosition(),
-        this.state.inputStream.source,
-        detail);
+    return util.getShortLineAndColumnMessage(this.state.inputStream.source, this.getRightmostFailurePosition()) + detail;
   });
 }
 inherits(MatchFailure, MatchResult);
