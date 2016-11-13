@@ -142,7 +142,7 @@ exports.getOptionalLineAndColumnMessage = function(str, offset, includeLineNumbe
 
     indicationLine = strcpy(indicationLine, repeatStr('~', endIdx - startIdx), startIdx);
   }
-  var gutterWidth = 2 + lineNumbers[1].length + 3;
+  var gutterWidth = _includeLineNumbers ? 2 + lineNumbers[1].length + 3 : 2;
   sb.append(repeatStr(' ', gutterWidth));
   indicationLine = strcpy(indicationLine, '^', lineAndCol.colNum - 1);
   sb.append(indicationLine.replace(/ +$/, '') + '\n');
