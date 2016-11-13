@@ -230,6 +230,12 @@ State.prototype = {
 
   // Returns a new trace entry, with the currently active trace array as its children.
   getTraceEntry: function(pos, expr, succeeded, bindings) {
+    if (expr instanceof pexprs.Apply) {
+      var app = this.currentApplication();
+      var actuals = app ? app.args : [];
+      expr = expr.substituteParams(actuals);
+    }
+
     return this.getMemoizedTraceEntry(pos, expr) ||
            new Trace(this.inputStream, pos, expr, succeeded, bindings, this.trace);
   },
