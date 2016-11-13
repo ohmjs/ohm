@@ -93,9 +93,10 @@ exports.getLineAndColumn = function(str, offset) {
 
 // Return a nicely-formatted string describing the line and column for the
 // given offset in `str`.
-exports.getLineAndColumnMessage = function(str, offset /* ...ranges */, includeLineNumbers) {
-  var _includeLineNumbers = typeof includeLineNumbers !== 'undefined' ? includeLineNumbers : true;
 
+exports.getOptionalLineAndColumnMessage = function(str, offset, includeLineNumbers /* ranges */) {
+
+  var _includeLineNumbers = typeof includeLineNumbers !== 'undefined' ? includeLineNumbers : true;
   var repeatStr = common.repeatStr;
 
   var lineAndCol = exports.getLineAndColumn(str, offset);
@@ -129,7 +130,7 @@ exports.getLineAndColumnMessage = function(str, offset /* ...ranges */, includeL
   // Start with a blank line, and indicate each range by overlaying a string of `~` chars.
   var lineLen = lineAndCol.line.length;
   var indicationLine = repeatStr(' ', lineLen + 1);
-  var ranges = Array.prototype.slice.call(arguments, 2);
+  var ranges = Array.prototype.slice.call(arguments, 3);
   for (var i = 0; i < ranges.length; ++i) {
     var startIdx = ranges[i][0];
     var endIdx = ranges[i][1];
@@ -151,4 +152,10 @@ exports.getLineAndColumnMessage = function(str, offset /* ...ranges */, includeL
     appendLine(2, lineAndCol.nextLine, '  ');
   }
   return sb.contents();
+};
+
+exports.getLineAndColumnMessage = function(str, offset /* ...ranges */) {
+  var args = Array.prototype.slice.call(arguments);
+  args.splice(2, 0, true);
+  return exports.getOptionalLineAndColumnMessage.apply(this, args);
 };
