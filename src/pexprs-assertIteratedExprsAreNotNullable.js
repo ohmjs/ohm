@@ -46,6 +46,8 @@ pexprs.Iter.prototype.assertIteratedExprsAreNotNullable = function(grammar, rule
   }
 };
 
+
+pexprs.Syn.prototype.assertIteratedExprsAreNotNullable =
 pexprs.Opt.prototype.assertIteratedExprsAreNotNullable =
 pexprs.Not.prototype.assertIteratedExprsAreNotNullable =
 pexprs.Lookahead.prototype.assertIteratedExprsAreNotNullable =

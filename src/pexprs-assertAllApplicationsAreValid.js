@@ -13,9 +13,11 @@ var pexprs = require('./pexprs');
 // --------------------------------------------------------------------
 
 var lexifyCount;
+var syntactifyCount;
 
 pexprs.PExpr.prototype.assertAllApplicationsAreValid = function(ruleName, grammar) {
   lexifyCount = 0;
+  syntactifyCount = 0;
   this._assertAllApplicationsAreValid(ruleName, grammar);
 };
 
@@ -30,6 +32,12 @@ pexprs.Range.prototype._assertAllApplicationsAreValid =
 pexprs.Param.prototype._assertAllApplicationsAreValid =
 pexprs.UnicodeChar.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
   // no-op
+};
+
+pexprs.Syn.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
+  syntactifyCount++;
+  this.expr._assertAllApplicationsAreValid(ruleName, grammar);
+  syntactifyCount--;
 };
 
 pexprs.Lex.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
@@ -65,7 +73,7 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, gramm
   }
 
   // ...and that this application is allowed
-  if (common.isSyntactic(this.ruleName) && (!common.isSyntactic(ruleName) || lexifyCount > 0)) {
+  if (common.isSyntactic(this.ruleName) && syntactifyCount == 0 && (!common.isSyntactic(ruleName) || lexifyCount > 0)) {
     throw errors.applicationOfSyntacticRuleFromLexicalContext(this.ruleName, this);
   }
 

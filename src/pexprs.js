@@ -135,6 +135,13 @@ function Lex(expr) {
 }
 inherits(Lex, PExpr);
 
+// de - "Lexification"
+
+function Syn(expr) {
+  this.expr = expr;
+}
+inherits(Syn, PExpr);
+
 // Array decomposition
 
 function Arr(expr) {
@@ -211,6 +218,7 @@ exports.Opt = Opt;
 exports.Not = Not;
 exports.Lookahead = Lookahead;
 exports.Lex = Lex;
+exports.Syn = Syn;
 exports.Arr = Arr;
 exports.Str = Str;
 exports.Obj = Obj;

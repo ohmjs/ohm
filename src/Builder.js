@@ -145,6 +145,13 @@ Builder.prototype = {
     return new pexprs.Lex(expr);
   },
 
+  syn: function(expr) {
+    if (!(expr instanceof pexprs.PExpr)) {
+      expr = this.fromRecipe(expr);
+    }
+    return new pexprs.Syn(expr);
+  },
+
   app: function(ruleName, optParams) {
     if (optParams && optParams.length > 0) {
       optParams = optParams.map(function(param) {

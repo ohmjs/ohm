@@ -42,6 +42,7 @@ pexprs.Seq.prototype.substituteParams = function(actuals) {
       this.factors.map(function(factor) { return factor.substituteParams(actuals); }));
 };
 
+pexprs.Syn.prototype.substituteParams =
 pexprs.Iter.prototype.substituteParams =
 pexprs.Not.prototype.substituteParams =
 pexprs.Lookahead.prototype.substituteParams =

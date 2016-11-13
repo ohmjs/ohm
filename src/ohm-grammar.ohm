@@ -46,6 +46,7 @@ Ohm {
 
   Lex
     = "#" Base  -- lex
+    | "@" Base  -- syn
     | Base
 
   Base

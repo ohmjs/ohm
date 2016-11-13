@@ -191,6 +191,10 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return builder.lex(x.visit()).withSource(this.source);
     },
 
+    Lex_syn: function(_, x) {
+      return builder.syn(x.visit()).withSource(this.source);
+    },
+
     Base_application: function(rule, ps) {
       return builder.app(rule.visit(), ps.visit()[0] || []).withSource(this.source);
     },

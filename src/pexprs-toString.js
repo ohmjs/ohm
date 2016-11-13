@@ -40,6 +40,10 @@ pexprs.Param.prototype.toString = function() {
   return '$' + this.index;
 };
 
+pexprs.Syn.prototype.toString = function() {
+  return '@(' + this.expr.toString() + ')';
+};
+
 pexprs.Lex.prototype.toString = function() {
   return '#(' + this.expr.toString() + ')';
 };

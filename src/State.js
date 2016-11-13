@@ -61,6 +61,16 @@ State.prototype = {
     this.inLexifiedContextStack.pop();
   },
 
+  enterDeLexifiedContext: function()
+  {
+    this.inLexifiedContextStack.push(false);
+  },
+
+  exitDeLexifiedContext: function()
+  {
+    this.inLexifiedContextStack.pop();
+  },
+
   enterLexifiedContext: function() {
     this.inLexifiedContextStack.push(true);
   },

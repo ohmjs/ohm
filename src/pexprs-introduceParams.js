@@ -41,6 +41,7 @@ pexprs.Seq.prototype.introduceParams = function(formals) {
   return this;
 };
 
+pexprs.Syn.prototype.introduceParams =
 pexprs.Iter.prototype.introduceParams =
 pexprs.Not.prototype.introduceParams =
 pexprs.Lookahead.prototype.introduceParams =

@@ -82,6 +82,7 @@ pexprs.Seq.prototype.outputRecipe = function(formals, grammarInterval) {
   }));
 };
 
+pexprs.Syn.prototype.outputRecipe =
 pexprs.Star.prototype.outputRecipe =
 pexprs.Plus.prototype.outputRecipe =
 pexprs.Opt.prototype.outputRecipe =

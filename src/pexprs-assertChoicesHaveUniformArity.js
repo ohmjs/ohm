@@ -16,6 +16,7 @@ pexprs.PExpr.prototype.assertChoicesHaveUniformArity = common.abstract(
   'assertChoicesHaveUniformArity'
 );
 
+pexprs.Syn.prototype.assertChoicesHaveUniformArity =
 pexprs.any.assertChoicesHaveUniformArity =
 pexprs.end.assertChoicesHaveUniformArity =
 pexprs.Terminal.prototype.assertChoicesHaveUniformArity =

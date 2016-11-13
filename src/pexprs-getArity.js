@@ -45,6 +45,7 @@ pexprs.Not.prototype.getArity = function() {
   return 0;
 };
 
+pexprs.Syn.prototype.getArity =
 pexprs.Lookahead.prototype.getArity =
 pexprs.Lex.prototype.getArity = function() {
   return this.expr.getArity();

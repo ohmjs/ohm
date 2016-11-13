@@ -92,6 +92,13 @@ pexprs.Param.prototype.eval = function(state) {
   return state.eval(state.currentApplication().args[this.index]);
 };
 
+pexprs.Syn.prototype.eval = function(state) {
+  state.enterDeLexifiedContext();
+  var ans = state.eval(this.expr);
+  state.exitDeLexifiedContext();
+  return ans;
+};
+
 pexprs.Lex.prototype.eval = function(state) {
   state.enterLexifiedContext();
   var ans = state.eval(this.expr);

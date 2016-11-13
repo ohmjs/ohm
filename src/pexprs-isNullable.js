@@ -56,6 +56,7 @@ pexprs.Lookahead.prototype._isNullable = function(grammar, memo) {
   return true;
 };
 
+pexprs.Syn.prototype._isNullable =
 pexprs.Lex.prototype._isNullable = function(grammar, memo) {
   return this.expr._isNullable(grammar, memo);
 };

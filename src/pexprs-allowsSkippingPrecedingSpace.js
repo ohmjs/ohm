@@ -22,6 +22,7 @@ pexprs.PExpr.prototype.allowsSkippingPrecedingSpace = common.abstract(
   Generally, these are all first-order expressions and (with the exception of Apply)
   directly read from the input stream.
 */
+pexprs.Syn.prototype.allowsSkippingPrecedingSpace =
 pexprs.any.allowsSkippingPrecedingSpace =
 pexprs.end.allowsSkippingPrecedingSpace =
 pexprs.Apply.prototype.allowsSkippingPrecedingSpace =
@@ -34,9 +35,9 @@ pexprs.UnicodeChar.prototype.allowsSkippingPrecedingSpace = function() {
 /*
   Higher-order expressions that don't directly consume input.
 */
+pexprs.Lex.prototype.allowsSkippingPrecedingSpace =
 pexprs.Alt.prototype.allowsSkippingPrecedingSpace =
 pexprs.Iter.prototype.allowsSkippingPrecedingSpace =
-pexprs.Lex.prototype.allowsSkippingPrecedingSpace =
 pexprs.Lookahead.prototype.allowsSkippingPrecedingSpace =
 pexprs.Not.prototype.allowsSkippingPrecedingSpace =
 pexprs.Param.prototype.allowsSkippingPrecedingSpace =

@@ -167,6 +167,7 @@ pexprs.Not.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
   return [];
 };
 
+pexprs.Syn.prototype.toArgumentNameList =
 pexprs.Lookahead.prototype.toArgumentNameList =
 pexprs.Lex.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
   return this.expr.toArgumentNameList(firstArgIndex, noDupCheck);
