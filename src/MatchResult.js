@@ -152,13 +152,15 @@ MatchFailure.prototype.getMessage = function(config) {
   if (typeof source !== 'string') {
     return 'match failed at position ' + this.getRightmostFailurePosition();
   }
-  var detail = 'expected ' + this.getExpectedText();
+  var detail = 'Expected ' + this.getExpectedText();
 
   // use default values if not defined
-  var includeSource = typeof config.includeSource !== 'undefined' ?
+  var includeSource = typeof config !== 'undefined' &&
+    typeof config.includeSource !== 'undefined' ?
       config.includeSource : true;
-  var includeLineNumbers = typeof config.includeLineNumbers !== 'undefined' ?
-      config.includeLineNumbers : false;
+  var includeLineNumbers = typeof config !== 'undefined' &&
+    typeof config.includeLineNumbers !== 'undefined' ?
+      config.includeLineNumbers : true;
 
   if (!includeSource) {
     return getShortMatchErrorMessage(
@@ -166,8 +168,7 @@ MatchFailure.prototype.getMessage = function(config) {
         this.state.inputStream.source,
         detail);
   }
-
-  return util.getLineAndColumnMessage(
+  return util.getOptionalLineAndColumnMessage(
       source, this.getRightmostFailurePosition(), includeLineNumbers) + detail;
 };
 

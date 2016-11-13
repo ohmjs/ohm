@@ -358,7 +358,7 @@ function parseSignature(signature, type) {
       signature,
       type === 'operation' ? 'OperationSignature' : 'AttributeSignature');
   if (r.failed()) {
-    throw new Error(r.message);
+    throw new Error(r.getMessage({includeSource: true, includeLineNumbers: true}));
   }
 
   return prototypeGrammarSemantics(r).parse();
