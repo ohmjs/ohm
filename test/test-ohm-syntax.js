@@ -1163,6 +1163,41 @@ test('lexical vs. syntactic rules', function(t) {
         /Cannot apply syntactic rule R from here \(inside a lexical context\)/);
   });
 
+    // Unit test for @ operator
+    it('syntactify operator works as expected', function() {
+      var g = makeGrammar(['G {',
+      'tstr = "`" tstrPart* "`"  ',
+      'tstrPart = "${" @Expr "}" -- expr  ',
+      '| ~("`" | "${") any -- char',
+      'Expr = Exp "*" Exp',
+      'Exp = any',
+      '}'
+      ]);
+      assertSucceeds(t, g.match('`The answer is ${6 * 7}`'));
+      assertSucceeds(t, g.match('`The answer is ${   6 * 7}`'));
+      assertFails(t, g.match('`The answer is ${ 6 * 7 }`'));
+
+      // Test grammar for @operator
+      makeGrammar([
+        'G {',
+        '  foo = #("a" @R)',
+        '    | "b" "c"',
+        'R = any',
+        '}'
+      ]);
+
+      t.throws(
+          function() {
+            makeGrammar([
+              'G {',
+              'foo = @(#(Bar))',
+              'Bar = Bar | "d"',
+              '}'
+            ]);
+          },
+          /Cannot apply syntactic rule Bar from here \(inside a lexical context\)/);
+  });
+
   t.end();
 });
 

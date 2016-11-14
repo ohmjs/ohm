@@ -12,57 +12,62 @@ var pexprs = require('./pexprs');
 // Operations
 // --------------------------------------------------------------------
 
-var lexifyCount;
-var syntactifyCount;
+var inLexifiedStackContext = [];
 
 pexprs.PExpr.prototype.assertAllApplicationsAreValid = function(ruleName, grammar) {
-  lexifyCount = 0;
-  syntactifyCount = 0;
+  inLexifiedStackContext = [];
+  inLexifiedStackContext.push(!common.isSyntactic(ruleName));
   this._assertAllApplicationsAreValid(ruleName, grammar);
 };
 
 pexprs.PExpr.prototype._assertAllApplicationsAreValid = common.abstract(
-  '_assertAllApplicationsAreValid'
+    '_assertAllApplicationsAreValid'
 );
 
 pexprs.any._assertAllApplicationsAreValid =
-pexprs.end._assertAllApplicationsAreValid =
-pexprs.Terminal.prototype._assertAllApplicationsAreValid =
-pexprs.Range.prototype._assertAllApplicationsAreValid =
-pexprs.Param.prototype._assertAllApplicationsAreValid =
-pexprs.UnicodeChar.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
-  // no-op
-};
+    pexprs.end._assertAllApplicationsAreValid =
+        pexprs.Terminal.prototype._assertAllApplicationsAreValid =
+            pexprs.Range.prototype._assertAllApplicationsAreValid =
+                pexprs.Param.prototype._assertAllApplicationsAreValid =
+                    pexprs.UnicodeChar.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
+                      // no-op
+                    };
 
 pexprs.Syn.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
-  syntactifyCount++;
+  inLexifiedStackContext.push(false);
   this.expr._assertAllApplicationsAreValid(ruleName, grammar);
-  syntactifyCount--;
+  inLexifiedStackContext.pop();
 };
 
 pexprs.Lex.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
-  lexifyCount++;
+  inLexifiedStackContext.push(true);
   this.expr._assertAllApplicationsAreValid(ruleName, grammar);
-  lexifyCount--;
+  inLexifiedStackContext.pop();
 };
 
 pexprs.Alt.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
   for (var idx = 0; idx < this.terms.length; idx++) {
+    inLexifiedStackContext.push(inLexifiedStackContext[inLexifiedStackContext.length-1]);
     this.terms[idx]._assertAllApplicationsAreValid(ruleName, grammar);
+    inLexifiedStackContext.pop();
   }
 };
 
 pexprs.Seq.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
   for (var idx = 0; idx < this.factors.length; idx++) {
+    inLexifiedStackContext.push(inLexifiedStackContext[inLexifiedStackContext.length-1]);
     this.factors[idx]._assertAllApplicationsAreValid(ruleName, grammar);
+    inLexifiedStackContext.pop();
   }
 };
 
 pexprs.Iter.prototype._assertAllApplicationsAreValid =
-pexprs.Not.prototype._assertAllApplicationsAreValid =
-pexprs.Lookahead.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
-  this.expr._assertAllApplicationsAreValid(ruleName, grammar);
-};
+    pexprs.Not.prototype._assertAllApplicationsAreValid =
+        pexprs.Lookahead.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
+          inLexifiedStackContext.push(inLexifiedStackContext[inLexifiedStackContext.length-1]);
+          this.expr._assertAllApplicationsAreValid(ruleName, grammar);
+          inLexifiedStackContext.pop();
+        };
 
 pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
   var ruleInfo = grammar.rules[this.ruleName];
@@ -72,8 +77,10 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, gramm
     throw errors.undeclaredRule(this.ruleName, grammar.name, this.source);
   }
 
+  var isMeLexifiedContext = inLexifiedStackContext[inLexifiedStackContext.length - 1];
+  var isParLexifiedContext = inLexifiedStackContext[inLexifiedStackContext.length - 2];
   // ...and that this application is allowed
-  if (common.isSyntactic(this.ruleName) && syntactifyCount == 0 && (!common.isSyntactic(ruleName) || lexifyCount > 0)) {
+  if ((common.isSyntactic(this.ruleName) && isMeLexifiedContext) && (!common.isSyntactic(ruleName) || isParLexifiedContext)) {
     throw errors.applicationOfSyntacticRuleFromLexicalContext(this.ruleName, this);
   }
 
