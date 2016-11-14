@@ -260,19 +260,14 @@ MatchState.prototype = {
     return this.tracingEnabled;
   },
 
-  hasNecessaryInfo: function(memoRec, nnn) {
+  hasNecessaryInfo: function(memoRec) {
     if (this.tracingEnabled && !memoRec.traceEntry) {
       return false;
     }
 
-    if (this.recordedFailures) {
-      //console.log('hasNecessaryInfo(' + nnn + ')?');
-      var memoRecRightmostFailurePosition = this.inputStream.pos + memoRec.rightmostFailureOffset;
-      if (memoRecRightmostFailurePosition === this.positionToRecordFailures) {
-        //console.log('  >> (case 1)', !!memoRec.failuresAtRightmostPosition);
-        return !!memoRec.failuresAtRightmostPosition;
-      }
-      //console.log('  >> (case 2)', true);
+    if (this.recordedFailures &&
+        this.inputStream.pos + memoRec.rightmostFailureOffset === this.positionToRecordFailures) {
+      return !!memoRec.failuresAtRightmostPosition;
     }
 
     return true;

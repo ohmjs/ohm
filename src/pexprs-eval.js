@@ -211,9 +211,13 @@ pexprs.Apply.prototype.eval = function(state) {
   var memoKey = app.toMemoKey();
   var memoRec = posInfo.memo[memoKey];
 
-  return memoRec && posInfo.shouldUseMemoizedResult(memoRec) && state.hasNecessaryInfo(memoRec, memoKey) ?
-      state.useMemoizedResult(state.inputStream.pos, memoRec) :
-      app.reallyEval(state);
+  if (memoRec && posInfo.shouldUseMemoizedResult(memoRec)) {
+    if (state.hasNecessaryInfo(memoRec)) {
+      return state.useMemoizedResult(state.inputStream.pos, memoRec);
+    }
+    delete posInfo.memo[memoKey];
+  }
+  return app.reallyEval(state);
 };
 
 pexprs.Apply.prototype.handleCycle = function(state) {

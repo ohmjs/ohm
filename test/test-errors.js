@@ -180,14 +180,22 @@ test('non-fluffy failures subsume fluffy failures, etc.', function(t) {
   t.equal(failures.length, 5);
   t.equal(failures[0].getText(), ')');
   t.equal(failures[0].type, 'string');
-  t.equal(failures[1].getText(), '/');
+  t.equal(failures[1].getText(), '-');
   t.equal(failures[1].type, 'string');
-  t.equal(failures[2].getText(), '*');
+  t.equal(failures[2].getText(), '+');
   t.equal(failures[2].type, 'string');
-  t.equal(failures[3].getText(), '-');
+  t.equal(failures[3].getText(), '/');
   t.equal(failures[3].type, 'string');
-  t.equal(failures[4].getText(), '+');
+  t.equal(failures[4].getText(), '*');
   t.equal(failures[4].type, 'string');
+  t.end();
+});
+
+test('memo recs that do not contain the necessary info are deleted properly', function(t) {
+  var g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
+  var r = g.match('1+2*#3/4');
+  var failures = r.getRightmostFailures();
+  t.equal(failures.length, 2);
   t.end();
 });
 
