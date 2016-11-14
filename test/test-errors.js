@@ -53,6 +53,21 @@ test('match failure', function(t) {
   t.end();
 });
 
+test('syntax error in added operation', function(t) {
+  var g = ohm.grammar('G { start = "a" "b" "c" "d" }');
+
+  try {
+    g.createSemantics().addOperation('myOperation(x, y', {});
+    t.fail('Expected an exception to be thrown');
+  } catch (e) {
+    t.equal(e, [
+      '\"Line 1, col 17:',
+      'myOperation(x, y',
+      '                  ^',
+      'Expected \")\"\"'].join('\n'));
+    }
+});
+
 test('undeclared rules', function(t) {
   t.throws(
       function() { makeRuleWithBody('undeclaredRule'); },

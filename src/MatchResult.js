@@ -147,20 +147,17 @@ MatchFailure.prototype.getRightmostFailures = function() {
   return this._failures;
 };
 
-MatchFailure.prototype.getMessage = function(config) {
+// optConfig has two options:
+// includeSource=true shows the problematic source code.
+// includeLineNumbers=true shows the problematic line numbers.
+MatchFailure.prototype.getMessage = function(optConfig) {
+  var config = optConfig || {};
   var source = this.state.inputStream.source;
-  if (typeof source !== 'string') {
-    return 'match failed at position ' + this.getRightmostFailurePosition();
-  }
   var detail = 'Expected ' + this.getExpectedText();
 
   // use default values if not defined
-  var includeSource = typeof config !== 'undefined' &&
-    typeof config.includeSource !== 'undefined' ?
-      config.includeSource : true;
-  var includeLineNumbers = typeof config !== 'undefined' &&
-    typeof config.includeLineNumbers !== 'undefined' ?
-      config.includeLineNumbers : true;
+  var includeSource = config.includeSource == null ? true : config.includeSource;
+  var includeLineNumbers = config.includeLineNumbers == null ? true : config.includeLineNumbers;
 
   if (!includeSource) {
     return getShortMatchErrorMessage(
@@ -168,7 +165,7 @@ MatchFailure.prototype.getMessage = function(config) {
         this.state.inputStream.source,
         detail);
   }
-  return util.getOptionalLineAndColumnMessage(
+  return util.describeSourceLocation(
       source, this.getRightmostFailurePosition(), includeLineNumbers) + detail;
 };
 
