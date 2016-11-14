@@ -1,7 +1,7 @@
 Ohm
 ===
 
-[![Build Status](https://img.shields.io/travis/cdglabs/ohm.svg?style=flat-square)](https://travis-ci.org/cdglabs/ohm) 
+[![Build Status](https://img.shields.io/travis/cdglabs/ohm.svg?style=flat-square)](https://travis-ci.org/cdglabs/ohm)
 [![NPM](https://img.shields.io/npm/v/ohm-js.svg?style=flat-square)](https://www.npmjs.com/package/ohm-js)
 
 [Ohm](https://github.com/cdglabs/ohm) is a parser generator consisting of a library and a domain-specific language.
@@ -25,7 +25,7 @@ Learn more about the Ohm philosophy [here](doc/philosophy.md).
 Getting Started
 ---------------
 
-The easiest way to get started with Ohm is to play with one of the following examples on JSFiddle:
+The easiest way to get started with Ohm is to use the [ohm interactive editor](https://ohmlang.github.io/editor/).  Alternatively, play with one of the following examples on JSFiddle:
 
 - [Basic parsing example](https://jsfiddle.net/pdubroy/p3b1v2xb/)
 - [Arithmetic example with semantics](https://jsfiddle.net/pdubroy/15k63qae/)
@@ -102,6 +102,7 @@ you can define an Ohm grammar:
 
     ```js
     var fs = require('fs');
+    var ohm = require('ohm-js');
     var contents = fs.readFileSync('myGrammar.ohm');
     var myGrammar = ohm.grammar(contents);
     ```
