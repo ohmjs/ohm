@@ -339,9 +339,7 @@ MatchState.prototype = {
     }
 
     if (ans) {
-      if (this.recordedFailures &&
-          (inputStream.pos === this.positionToRecordFailures ||
-           this.skipSpacesIfInSyntacticContext() === this.positionToRecordFailures)) {
+      if (this.recordedFailures && inputStream.pos === this.positionToRecordFailures) {
         var self = this;
         Object.keys(this.recordedFailures).forEach(function(key) {
           self.recordedFailures[key].makeFluffy();
