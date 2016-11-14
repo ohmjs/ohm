@@ -94,9 +94,10 @@ exports.getLineAndColumn = function(str, offset) {
 // Return a nicely-formatted string describing the line and column for the
 // given offset in `str`.
 
-exports.getOptionalLineAndColumnMessage = function(str, offset, includeLineNumbers /* ranges */) {
+exports.describeSourceLocation = function(str, offset, optIncludeLineNumbers /* ranges */) {
 
-  var _includeLineNumbers = typeof includeLineNumbers !== 'undefined' ? includeLineNumbers : true;
+  var includeLineNumbers = typeof optIncludeLineNumbers !== 'undefined' ?
+                            optIncludeLineNumbers : true;
   var repeatStr = common.repeatStr;
 
   var lineAndCol = exports.getLineAndColumn(str, offset);
@@ -112,7 +113,7 @@ exports.getOptionalLineAndColumnMessage = function(str, offset, includeLineNumbe
 
   // Helper for appending formatting input lines to the buffer.
   function appendLine(num, content, prefix) {
-    if (_includeLineNumbers) {
+    if (includeLineNumbers) {
       sb.append(prefix + lineNumbers[num] + ' | ' + content + '\n');
     } else {
       sb.append('  ' + content + '\n');
@@ -142,7 +143,7 @@ exports.getOptionalLineAndColumnMessage = function(str, offset, includeLineNumbe
 
     indicationLine = strcpy(indicationLine, repeatStr('~', endIdx - startIdx), startIdx);
   }
-  var gutterWidth = _includeLineNumbers ? 2 + lineNumbers[1].length + 3 : 2;
+  var gutterWidth = includeLineNumbers ? 2 + lineNumbers[1].length + 3 : 2;
   sb.append(repeatStr(' ', gutterWidth));
   indicationLine = strcpy(indicationLine, '^', lineAndCol.colNum - 1);
   sb.append(indicationLine.replace(/ +$/, '') + '\n');
@@ -154,8 +155,8 @@ exports.getOptionalLineAndColumnMessage = function(str, offset, includeLineNumbe
   return sb.contents();
 };
 
-exports.getLineAndColumnMessage = function(str, offset /* ...ranges */) {
+exports.getLineAndColumnMessage = function(str, offset) {
   var args = Array.prototype.slice.call(arguments);
   args.splice(2, 0, true);
-  return exports.getOptionalLineAndColumnMessage.apply(this, args);
+  return exports.describeSourceLocation.apply(this, args);
 };

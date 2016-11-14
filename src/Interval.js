@@ -51,7 +51,7 @@ Interval.prototype = {
 
   getLineAndColumnMessage: function() {
     var range = [this.startIdx, this.endIdx];
-    return util.getLineAndColumnMessage(this.inputStream.source, this.startIdx, range);
+    return util.describeSourceLocation(this.inputStream.source, this.startIdx, true, range);
   },
 
   // Returns an array of 0, 1, or 2 intervals that represents the result of the
