@@ -251,3 +251,28 @@ test('errors for Not-of-<PExpr>', function(t) {
 
   t.end();
 });
+
+test('Error where left-right associativity is unclear', function(t) {
+  try {
+    ohm.grammar(
+      'G {\n' +
+      '  A = A "+" A -- add \n' +
+      '  | B\n' +
+      '  B = "117"\n' +
+      '}');
+    t.fail('Expected an exception to be thrown');
+  } catch (e) {
+    t.equal(e.message, 'Line 2, col 7:\n' +
+    '  1 | G {\n> 2 |   A = A "+" A -- add \n' +
+    '            ^~~~~~~\n  3 |   | B\n' +
+    'Left or Right associativity is unclear. Ensure A is only on either the right or left.');
+  }
+  ohm.grammar(
+    'G {\n' +
+    '  A = A "+" B -- add \n' +
+    '  | B\n' +
+    '  B = "117"\n' +
+    '}');
+  t.end();
+
+});

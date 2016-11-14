@@ -105,6 +105,7 @@ GrammarDecl.prototype.build = function() {
   // the part of the source that caused it.
   var grammarErrors = [];
   var grammarHasInvalidApplications = false;
+  var parents = {};
   Object.keys(grammar.rules).forEach(function(ruleName) {
     var body = grammar.rules[ruleName].body;
     try {
@@ -118,6 +119,11 @@ GrammarDecl.prototype.build = function() {
       grammarErrors.push(e);
       grammarHasInvalidApplications = true;
     }
+    if (body instanceof pexprs.Alt) {
+      for (var idx = 0; idx < body.terms.length; idx++) {
+        parents[body.terms[idx].ruleName] = ruleName;
+      }
+    }
   });
   if (!grammarHasInvalidApplications) {
     // The following check can only be done if the grammar has no invalid applications.
@@ -130,6 +136,15 @@ GrammarDecl.prototype.build = function() {
       }
     });
   }
+
+  Object.keys(grammar.rules).forEach(function(ruleName) {
+    var body = grammar.rules[ruleName].body;
+    try {
+      body.assertProperAssociativity(ruleName, parents[ruleName], body.source);
+    } catch (e) {
+      grammarErrors.push(e);
+    }
+  });
   if (grammarErrors.length > 0) {
     errors.throwErrors(grammarErrors);
   }

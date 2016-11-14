@@ -186,6 +186,16 @@ function missingSemanticAction(ctorName, name, type) {
   return e;
 }
 
+// --------- left-right associativity ambiguousness -----------
+
+function associativityAmbiguousness(parentName, expr) {
+  return createError(
+      'Left or Right associativity is unclear. Ensure ' + parentName +
+      ' is only on either the right or left.',
+      expr
+    );
+}
+
 // --------------------------------------------------------------------
 // Exports
 // --------------------------------------------------------------------
@@ -209,6 +219,7 @@ module.exports = {
   undeclaredRule: undeclaredRule,
   wrongNumberOfArguments: wrongNumberOfArguments,
   wrongNumberOfParameters: wrongNumberOfParameters,
+  associativityAmbiguousness: associativityAmbiguousness,
 
   throwErrors: function(errors) {
     if (errors.length === 1) {

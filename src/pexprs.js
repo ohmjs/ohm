@@ -237,3 +237,4 @@ require('./pexprs-toDisplayString');
 require('./pexprs-toArgumentNameList');
 require('./pexprs-toFailure');
 require('./pexprs-toString');
+require('./pexprs-assertProperAssociativity');
