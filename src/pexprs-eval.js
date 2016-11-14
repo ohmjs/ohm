@@ -172,11 +172,11 @@ pexprs.Not.prototype.eval = function(state) {
 
   var inputStream = state.inputStream;
   var origPos = inputStream.pos;
-  var failuresInfo = state.getFailuresInfo();
+  state.pushFailuresInfo();
 
   var ans = state.eval(this.expr);
 
-  state.restoreFailuresInfo(failuresInfo);
+  state.popFailuresInfo();
   if (ans) {
     state.processFailure(origPos, this);
     return false;
@@ -211,7 +211,7 @@ pexprs.Apply.prototype.eval = function(state) {
   var memoKey = app.toMemoKey();
   var memoRec = posInfo.memo[memoKey];
 
-  return memoRec && posInfo.shouldUseMemoizedResult(memoRec) ?
+  return memoRec && posInfo.shouldUseMemoizedResult(memoRec) && state.hasNecessaryInfo(memoRec, memoKey) ?
       state.useMemoizedResult(state.inputStream.pos, memoRec) :
       app.reallyEval(state);
 };
@@ -248,7 +248,7 @@ pexprs.Apply.prototype.reallyEval = function(state) {
 
   var origFailuresInfo;
   if (description) {
-    origFailuresInfo = state.getFailuresInfo();
+    state.pushFailuresInfo();
   }
 
   // Reset the input stream's examinedLength property so that we can track
@@ -275,19 +275,19 @@ pexprs.Apply.prototype.reallyEval = function(state) {
       matchLength: inputStream.pos - origPos,
       examinedLength: inputStream.examinedLength - origPos,
       value: value,
-      failuresAtRightmostPosition: state.cloneRightmostFailures(),
+      failuresAtRightmostPosition: state.cloneRecordedFailures(),
       rightmostFailureOffset: state._getRightmostFailureOffset()
     });
   }
   var succeeded = !!value;
 
   if (description) {
-    state.restoreFailuresInfo(origFailuresInfo);
+    state.popFailuresInfo();
     if (!succeeded) {
       state.processFailure(origPos, this);
     }
     if (memoRec) {
-      memoRec.failuresAtRightmostPosition = state.cloneRightmostFailures();
+      memoRec.failuresAtRightmostPosition = state.cloneRecordedFailures();
     }
   }
 
@@ -336,7 +336,7 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
   while (true) {
     lrMemoRec.matchLength = inputStream.pos - origPos;
     lrMemoRec.value = newValue;
-    lrMemoRec.failuresAtRightmostPosition = state.cloneRightmostFailures();
+    lrMemoRec.failuresAtRightmostPosition = state.cloneRecordedFailures();
 
     if (state.isTracing()) {
       // Before evaluating the body again, add a trace node for this application to the memo entry.

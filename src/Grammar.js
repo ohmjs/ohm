@@ -78,7 +78,7 @@ Grammar.prototype = {
   },
 
   _match: function(input, opts) {
-    var state = new MatchState(this, input, opts);
+    var state = new MatchState(this, input, [], opts);
     state.evalFromStart();
     return state;
   },
@@ -354,7 +354,7 @@ Grammar.ProtoBuiltInRules = new Grammar(
 
 function IncrementalMatcher(g) {
   this.grammar = g;
-  this.state = new MatchState(g, '', {});
+  this.state = new MatchState(g, '', [], {});
 }
 
 IncrementalMatcher.prototype = {
@@ -368,8 +368,8 @@ IncrementalMatcher.prototype = {
 
   match: function(optStartApplication) {
     var oldState = this.state;
-    var state = this.state = new MatchState(oldState.grammar, oldState.inputStream.source, {});
-    state.posInfos = oldState.posInfos;
+    var state = this.state =
+        new MatchState(oldState.grammar, oldState.inputStream.source, oldState.memoTable, {});
     state.eval(state._getStartExpr(this.grammar, optStartApplication));
     return MatchResult.newFor(state);
   }

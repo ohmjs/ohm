@@ -117,6 +117,6 @@
       registerListeners(grammarEditor);
     }
     grammar = g;
-    grammarPosInfos = matchResult.succeeded() ? matchResult.state.posInfos : null;
+    grammarPosInfos = matchResult.succeeded() ? matchResult.state.memoTable : null;
   });
 });

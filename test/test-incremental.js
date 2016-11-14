@@ -14,7 +14,7 @@ var makeGrammar = testUtil.makeGrammar;
 // --------------------------------------------------------------------
 
 function pluckMemoProp(result, propName) {
-  return result.state.posInfos.map(function(info) {
+  return result.state.memoTable.map(function(info) {
     var result = {};
     if (info == null) return {};
     if (propName === 'examinedLength') {

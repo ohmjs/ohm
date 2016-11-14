@@ -180,11 +180,11 @@ test('non-fluffy failures subsume fluffy failures, etc.', function(t) {
   t.equal(failures.length, 5);
   t.equal(failures[0].getText(), ')');
   t.equal(failures[0].type, 'string');
-  t.equal(failures[1].getText(), '-');
+  t.equal(failures[1].getText(), '/');
   t.equal(failures[1].type, 'string');
-  t.equal(failures[2].getText(), '/');
+  t.equal(failures[2].getText(), '*');
   t.equal(failures[2].type, 'string');
-  t.equal(failures[3].getText(), '*');
+  t.equal(failures[3].getText(), '-');
   t.equal(failures[3].type, 'string');
   t.equal(failures[4].getText(), '+');
   t.equal(failures[4].type, 'string');

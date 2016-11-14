@@ -15,35 +15,35 @@ var pexprs = require('./pexprs');
 
 var applySpaces = new pexprs.Apply('spaces');
 
-function MatchState(grammar, input, opts) {
+function MatchState(grammar, input, memoTable, opts) {
   this.grammar = grammar;
-  this.startExpr = this._getStartExpr(grammar, opts.startApplication);
   this.inputStream = new InputStream(input);
+  this.memoTable = memoTable;
+
+  this.optStartApplication = opts.startApplication;
+  this.startExpr = this._getStartExpr(grammar, opts.startApplication);
+
+  this._bindings = [];
+  this._bindingOffsets = [];
+  this._applicationStack = [];
+  this._posStack = [0];
+  this.inLexifiedContextStack = [false];
+
+  this.rightmostFailurePosition = -1;
+  this._rightmostFailurePositionStack = [];
+  this._recordedFailuresStack = [];
+  if (opts.positionToRecordFailures !== undefined) {
+    this.positionToRecordFailures = opts.positionToRecordFailures;
+    this.recordedFailures = Object.create(null);
+  }
+
   this.tracingEnabled = opts.trace || false;
-  this.failureRecordingEnabled = false;
-  this.init();
+  if (this.tracingEnabled) {
+    this.trace = [];
+  }
 }
 
 MatchState.prototype = {
-  init: function() {
-    this.posInfos = [];
-    this._bindings = [];
-    this._bindingOffsets = [];
-    this._applicationStack = [];
-    this._posStack = [0];
-    this.inLexifiedContextStack = [false];
-
-    if (!this.failureRecordingEnabled) {
-      // We're only interested in tracking the rightmost failure position.
-      this.rightmostFailurePosition = -1;
-      this._rightmostFailurePositionStack = [];
-    }
-
-    if (this.isTracing()) {
-      this.trace = [];
-    }
-  },
-
   posToOffset: function(pos) {
     return pos - this._posStack[this._posStack.length - 1];
   },
@@ -53,11 +53,8 @@ MatchState.prototype = {
     this._applicationStack.push(app);
     this.inLexifiedContextStack.push(false);
     posInfo.enter(app);
-    if (!this.failureRecordingEnabled) {
-      // We're only interested in tracking the rightmost failure position.
-      this._rightmostFailurePositionStack.push(this.rightmostFailurePosition);
-      this.rightmostFailurePosition = -1;
-    }
+    this._rightmostFailurePositionStack.push(this.rightmostFailurePosition);
+    this.rightmostFailurePosition = -1;
   },
 
   exitApplication: function(posInfo, optNode) {
@@ -66,12 +63,9 @@ MatchState.prototype = {
     this.inLexifiedContextStack.pop();
     posInfo.exit();
 
-    if (!this.failureRecordingEnabled) {
-      // We're only interested in tracking the rightmost failure position.
-      this.rightmostFailurePosition = Math.max(
-          this.rightmostFailurePosition,
-          this._rightmostFailurePositionStack.pop());
-    }
+    this.rightmostFailurePosition = Math.max(
+        this.rightmostFailurePosition,
+        this._rightmostFailurePositionStack.pop());
 
     if (optNode) {
       this.pushBinding(optNode, origPos);
@@ -108,10 +102,10 @@ MatchState.prototype = {
   },
 
   skipSpaces: function() {
-    var origFailuresInfo = this.getFailuresInfo();
+    this.pushFailuresInfo();
     this.eval(applySpaces);
     this.popBinding();
-    this.restoreFailuresInfo(origFailuresInfo);
+    this.popFailuresInfo();
     return this.inputStream.pos;
   },
 
@@ -158,21 +152,17 @@ MatchState.prototype = {
   },
 
   getPosInfo: function(pos) {
-    var posInfo = this.posInfos[pos];
+    var posInfo = this.memoTable[pos];
     if (!posInfo) {
-      posInfo = this.posInfos[pos] = new PosInfo();
+      posInfo = this.memoTable[pos] = new PosInfo();
     }
     return posInfo;
   },
 
   processFailure: function(pos, expr) {
-    if (!this.failureRecordingEnabled) {
-      // We're only interested in tracking the rightmost failure position.
-      this.rightmostFailurePosition = Math.max(this.rightmostFailurePosition, pos);
-    } else if (pos === this.rightmostFailurePosition) {
-      // We're only interested in failures at the rightmost failure position that haven't
-      // already been recorded.
+    this.rightmostFailurePosition = Math.max(this.rightmostFailurePosition, pos);
 
+    if (this.recordedFailures && pos === this.positionToRecordFailures) {
       var app = this.currentApplication();
       if (app) {
         // Substitute parameters with the actual pexprs that were passed to
@@ -185,42 +175,35 @@ MatchState.prototype = {
         // parameters.
       }
 
-      this.addRightmostFailure(expr.toFailure(this.grammar), false);
+      this.recordFailure(expr.toFailure(this.grammar), false);
     }
   },
 
-  ensureRightmostFailures: function() {
-    if (!this.rightmostFailures) {
-      this.rightmostFailures = Object.create(null);
-    }
-  },
-
-  addRightmostFailure: function(failure, shouldCloneIfNew) {
-    this.ensureRightmostFailures();
+  recordFailure: function(failure, shouldCloneIfNew) {
     var key = failure.toKey();
-    if (!this.rightmostFailures[key]) {
-      this.rightmostFailures[key] = shouldCloneIfNew ? failure.clone() : failure;
-    } else if (this.rightmostFailures[key].isFluffy() && !failure.isFluffy()) {
-      this.rightmostFailures[key].clearFluffy();
+    if (!this.recordedFailures[key]) {
+      this.recordedFailures[key] = shouldCloneIfNew ? failure.clone() : failure;
+    } else if (this.recordedFailures[key].isFluffy() && !failure.isFluffy()) {
+      this.recordedFailures[key].clearFluffy();
     }
   },
 
-  addRightmostFailures: function(failures, shouldCloneIfNew) {
+  recordFailures: function(failures, shouldCloneIfNew) {
     var self = this;
     Object.keys(failures).forEach(function(key) {
-      self.addRightmostFailure(failures[key], shouldCloneIfNew);
+      self.recordFailure(failures[key], shouldCloneIfNew);
     });
   },
 
-  cloneRightmostFailures: function() {
-    if (!this.rightmostFailures) {
+  cloneRecordedFailures: function() {
+    if (!this.recordedFailures) {
       return undefined;
     }
 
     var ans = Object.create(null);
     var self = this;
-    Object.keys(this.rightmostFailures).forEach(function(key) {
-      ans[key] = self.rightmostFailures[key].clone();
+    Object.keys(this.recordedFailures).forEach(function(key) {
+      ans[key] = self.recordedFailures[key].clone();
     });
     return ans;
   },
@@ -236,23 +219,26 @@ MatchState.prototype = {
   },
 
   getFailures: function() {
-    if (!this.failureRecordingEnabled) {
-      // Rewind, then try to match the input again, recording failures.
-      this.failureRecordingEnabled = true;
-      this.init();
-      this.evalFromStart();
+    if (this.recordedFailures) {
+      var self = this;
+      return Object.keys(this.recordedFailures).map(function(key) {
+        return self.recordedFailures[key];
+      });
+    } else {
+      var matchState = new MatchState(
+          this.grammar,
+          this.inputStream.source,
+          this.memoTable,
+          { startApplication: this.optStartApplication,
+            positionToRecordFailures: this.rightmostFailurePosition });
+      matchState.evalFromStart();
+      return matchState.getFailures();
     }
-
-    this.ensureRightmostFailures();
-    var self = this;
-    return Object.keys(this.rightmostFailures).map(function(key) {
-      return self.rightmostFailures[key];
-    });
   },
 
   // Returns the memoized trace entry for `expr` at `pos`, if one exists, `null` otherwise.
   getMemoizedTraceEntry: function(pos, expr) {
-    var posInfo = this.posInfos[pos];
+    var posInfo = this.memoTable[pos];
     if (posInfo && expr.ruleName) {
       var memoRec = posInfo.memo[expr.toMemoKey()];
       if (memoRec && memoRec.traceEntry) {
@@ -271,19 +257,40 @@ MatchState.prototype = {
   },
 
   isTracing: function() {
-    // We always run in *rightmost failure position* recording mode before running in
-    // *rightmost failures* recording mode. And since the traces generated by each of
-    // these passes would be identical, we only have to record it in the first pass.
-    return this.tracingEnabled && !this.failureRecordingEnabled;
+    return this.tracingEnabled;
   },
 
+  hasNecessaryInfo: function(memoRec, nnn) {
+    if (this.tracingEnabled && !memoRec.traceEntry) {
+      return false;
+    }
+
+    if (this.recordedFailures) {
+      //console.log('hasNecessaryInfo(' + nnn + ')?');
+      var memoRecRightmostFailurePosition = this.inputStream.pos + memoRec.rightmostFailureOffset;
+      if (memoRecRightmostFailurePosition === this.positionToRecordFailures) {
+        //console.log('  >> (case 1)', !!memoRec.failuresAtRightmostPosition);
+        return !!memoRec.failuresAtRightmostPosition;
+      }
+      //console.log('  >> (case 2)', true);
+    }
+
+    return true;
+  },
+
+
   useMemoizedResult: function(origPos, memoRec) {
-    if (this.isTracing()) {
+    if (this.tracingEnabled) {
       this.trace.push(memoRec.traceEntry);
     }
 
-    if (this.failureRecordingEnabled && memoRec.failuresAtRightmostPosition) {
-      this.addRightmostFailures(memoRec.failuresAtRightmostPosition, true);
+    var memoRecRightmostFailurePosition = this.inputStream.pos + memoRec.rightmostFailureOffset;
+    this.rightmostFailurePosition =
+        Math.max(this.rightmostFailurePosition, memoRecRightmostFailurePosition);
+    if (this.recordedFailures &&
+        this.positionToRecordFailures === memoRecRightmostFailurePosition &&
+        memoRec.failuresAtRightmostPosition) {
+      this.recordFailures(memoRec.failuresAtRightmostPosition, true);
     }
 
     this.inputStream.examinedLength =
@@ -304,17 +311,17 @@ MatchState.prototype = {
     var inputStream = this.inputStream;
     var origNumBindings = this._bindings.length;
 
-    var origFailures;
-    if (this.failureRecordingEnabled) {
-      origFailures = this.rightmostFailures;
-      this.rightmostFailures = undefined;
+    var origRecordedFailures;
+    if (this.recordedFailures) {
+      origRecordedFailures = this.recordedFailures;
+      this.recordedFailures = Object.create(null);
     }
 
     var origPos = inputStream.pos;
     var memoPos = this.maybeSkipSpacesBefore(expr);
 
     var origTrace;
-    if (this.isTracing()) {
+    if (this.tracingEnabled) {
       origTrace = this.trace;
       this.trace = [];
     }
@@ -322,7 +329,7 @@ MatchState.prototype = {
     // Do the actual evaluation.
     var ans = expr.eval(this);
 
-    if (this.isTracing()) {
+    if (this.tracingEnabled) {
       var bindings = this._bindings.slice(origNumBindings);
       var traceEntry = this.getTraceEntry(memoPos, expr, ans, bindings);
       traceEntry.isImplicitSpaces = expr === applySpaces;
@@ -332,12 +339,12 @@ MatchState.prototype = {
     }
 
     if (ans) {
-      if (this.rightmostFailures &&
-        (inputStream.pos === this.rightmostFailurePosition ||
-         this.skipSpacesIfInSyntacticContext() === this.rightmostFailurePosition)) {
+      if (this.recordedFailures &&
+          (inputStream.pos === this.positionToRecordFailures ||
+           this.skipSpacesIfInSyntacticContext() === this.positionToRecordFailures)) {
         var self = this;
-        Object.keys(this.rightmostFailures).forEach(function(key) {
-          self.rightmostFailures[key].makeFluffy();
+        Object.keys(this.recordedFailures).forEach(function(key) {
+          self.recordedFailures[key].makeFluffy();
         });
       }
     } else {
@@ -346,8 +353,8 @@ MatchState.prototype = {
       this.truncateBindings(origNumBindings);
     }
 
-    if (this.failureRecordingEnabled && origFailures) {
-      this.addRightmostFailures(origFailures, false);
+    if (this.recordedFailures) {
+      this.recordFailures(origRecordedFailures, false);
     }
 
     return ans;
@@ -370,18 +377,14 @@ MatchState.prototype = {
     this.eval(this.startExpr);
   },
 
-  getFailuresInfo: function() {
-    return this.failureRecordingEnabled ?
-        this.rightmostFailures :
-        this.rightmostFailurePosition;
+  pushFailuresInfo: function() {
+    this._rightmostFailurePositionStack.push(this.rightmostFailurePosition);
+    this._recordedFailuresStack.push(this.recordedFailures);
   },
 
-  restoreFailuresInfo: function(failuresInfo) {
-    if (this.failureRecordingEnabled) {
-      this.rightmostFailures = failuresInfo;
-    } else {
-      this.rightmostFailurePosition = failuresInfo;
-    }
+  popFailuresInfo: function() {
+    this.rightmostFailurePosition = this._rightmostFailurePositionStack.pop();
+    this.recordedFailures = this._recordedFailuresStack.pop();
   },
 
   replaceInput: function(startIdx, endIdx, str) {
@@ -399,13 +402,13 @@ MatchState.prototype = {
     var newValues = Array.apply(null, new Array(str.length));  // Array of `undefined` (wat)
 
     // Replace the contents from startIdx:endIdx with `newValues`.
-    this.posInfos.splice.apply(
-        this.posInfos,
+    this.memoTable.splice.apply(
+        this.memoTable,
         [startIdx, endIdx - startIdx].concat(newValues));
 
     // Invalidate memoRecs
     for (var pos = 0; pos < startIdx; pos++) {
-      var posInfo = this.posInfos[pos];
+      var posInfo = this.memoTable[pos];
       if (posInfo) {
         posInfo.clearObsoleteEntries(pos, startIdx);
       }
