@@ -32,7 +32,7 @@
     "deploy-gh-pages": "bin/deploy-gh-pages.sh",
     "lint": "eslint .",
     "pretest": "bash bin/update-env.sh",
-    "test": "tape test/*.js test/**/*.js | tap-spec",
+    "test": "tape 'test/**/*.js' | tap-spec",
     "test-watch": "bash bin/test-watch",
     "postinstall": "bash bin/postinstall",
     "prepublish": "npm run lint && npm run build && npm run bootstrap",
