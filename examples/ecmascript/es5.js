@@ -9,7 +9,7 @@
 var fs = require('fs');
 var path = require('path');
 
-var ohm = require('../..');
+var ohm = require('ohm-js');
 
 // --------------------------------------------------------------------
 // Helpers
