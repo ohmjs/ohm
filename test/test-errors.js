@@ -58,7 +58,7 @@ test('undeclared rules', function(t) {
       function() { makeRuleWithBody('undeclaredRule'); },
       'Rule undeclaredRule is not declared in grammar G');
   var g = makeRuleWithBody('digit');
-  t.throws(function() { g.match(null, 'x'); }, /Rule x is not declared in grammar G/);
+  t.throws(function() { g.match('hello world', 'x'); }, /Rule x is not declared in grammar G/);
   t.end();
 });
 

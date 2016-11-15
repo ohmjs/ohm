@@ -86,12 +86,12 @@ test('basic incremental parsing', function(t) {
     }
   });
 
-  var im = g.incrementalMatcher();
+  var im = g.matcher();
   var result;
 
-  im.replace(0, 0, 'helloworld');
+  im.replaceInput(0, 0, 'helloworld');
   t.equal(im.getInput(), 'helloworld');
-  im.replace(3, 5, 'X');
+  im.replaceInput(3, 5, 'X');
   t.equal(im.getInput(), 'helXworld');
 
   result = im.match();
@@ -101,23 +101,23 @@ test('basic incremental parsing', function(t) {
   t.ok(im.match().succeeded());
   t.equal(s(result).reconstructInput(im.getInput()), 'helXworld');
 
-  im.replace(0, 4, '');
+  im.replaceInput(0, 4, '');
   t.equals(im.getInput(), 'world');
 
   result = im.match();
   t.equal(s(result).reconstructInput(im.getInput()), 'world');
 
-  im.replace(3, 4, ' ');
+  im.replaceInput(3, 4, ' ');
   t.equals(im.getInput(), 'wor d');
   t.ok(im.match().failed());
 
-  im.replace(0, 4, 'aa');
+  im.replaceInput(0, 4, 'aa');
   t.equals(im.getInput(), 'aad');
 
   result = im.match();
   t.equal(s(result).reconstructInput(im.getInput()), 'aad');
 
-  im.replace(1, 2, '9');
+  im.replaceInput(1, 2, '9');
   t.ok(im.match().failed());
 
   t.end();
@@ -133,10 +133,10 @@ test('trickier incremental parsing', function(t) {
     '}'
   ]);
   var s = g.createSemantics().addAttribute('ctorTree', ctorTreeActions);
-  var im = g.incrementalMatcher();
+  var im = g.matcher();
   var result;
 
-  im.replace(0, 0, 'ab');
+  im.replaceInput(0, 0, 'ab');
   result = im.match();
   t.ok(result.succeeded());
   t.deepEqual(s(result).ctorTree,
@@ -146,7 +146,7 @@ test('trickier incremental parsing', function(t) {
           ['letter', ['lower', ['_terminal']]]]]);
 
   // When the input is 'ac', the lookahead rule should now succeed.
-  im.replace(1, 2, 'c');
+  im.replaceInput(1, 2, 'c');
   result = im.match();
   t.ok(result.succeeded());
   t.deepEqual(s(result).ctorTree,

@@ -21,7 +21,7 @@ function MatchState(grammar, input, memoTable, opts) {
   this.memoTable = memoTable;
 
   this.optStartApplication = opts.startApplication;
-  this.startExpr = this._getStartExpr(grammar, opts.startApplication);
+  this.startExpr = this._getStartExpr(opts.startApplication);
 
   this._bindings = [];
   this._bindingOffsets = [];
@@ -361,13 +361,13 @@ MatchState.prototype = {
   // Return the starting expression for this grammar. If `optStartApplication` is specified, it
   // is a string expressing a rule application in the grammar. If not specified, the grammar's
   // default start rule will be used.
-  _getStartExpr: function(grammar, optStartApplication) {
-    var applicationStr = optStartApplication || grammar.defaultStartRule;
+  _getStartExpr: function(optStartApplication) {
+    var applicationStr = optStartApplication || this.grammar.defaultStartRule;
     if (!applicationStr) {
       throw new Error('Missing start rule argument -- the grammar has no default start rule.');
     }
 
-    var startApp = grammar.parseApplication(applicationStr);
+    var startApp = this.grammar.parseApplication(applicationStr);
     return new pexprs.Seq([startApp, pexprs.end]);
   },
 
@@ -383,34 +383,6 @@ MatchState.prototype = {
   popFailuresInfo: function() {
     this.rightmostFailurePosition = this._rightmostFailurePositionStack.pop();
     this.recordedFailures = this._recordedFailuresStack.pop();
-  },
-
-  replaceInput: function(startIdx, endIdx, str) {
-    var currentInput = this.inputStream.source;
-    if (startIdx < 0 || startIdx > currentInput.length ||
-        endIdx < 0 || endIdx > currentInput.length ||
-        startIdx > endIdx) {
-      throw new Error('Invalid indices: ' + startIdx + ' and ' + endIdx);
-    }
-    // TODO: Consider reusing the same InputStream instance here.
-    this.inputStream =
-        new InputStream(currentInput.slice(0, startIdx) + str + currentInput.slice(endIdx));
-
-    // Keep the memo table in sync with the edits.
-    var newValues = Array.apply(null, new Array(str.length));  // Array of `undefined` (wat)
-
-    // Replace the contents from startIdx:endIdx with `newValues`.
-    this.memoTable.splice.apply(
-        this.memoTable,
-        [startIdx, endIdx - startIdx].concat(newValues));
-
-    // Invalidate memoRecs
-    for (var pos = 0; pos < startIdx; pos++) {
-      var posInfo = this.memoTable[pos];
-      if (posInfo) {
-        posInfo.clearObsoleteEntries(pos, startIdx);
-      }
-    }
   }
 };
 
