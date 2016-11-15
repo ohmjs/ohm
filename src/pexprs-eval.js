@@ -250,7 +250,6 @@ pexprs.Apply.prototype.reallyEval = function(state) {
 
   state.enterApplication(origPosInfo, this);
 
-  var origFailuresInfo;
   if (description) {
     state.pushFailuresInfo();
   }

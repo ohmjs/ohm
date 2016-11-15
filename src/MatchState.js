@@ -229,8 +229,8 @@ MatchState.prototype = {
           this.grammar,
           this.inputStream.source,
           this.memoTable,
-          { startApplication: this.optStartApplication,
-            positionToRecordFailures: this.rightmostFailurePosition });
+          {startApplication: this.optStartApplication,
+           positionToRecordFailures: this.rightmostFailurePosition});
       matchState.evalFromStart();
       return matchState.getFailures();
     }
