@@ -4,8 +4,6 @@
 // Imports
 // --------------------------------------------------------------------
 
-var inherits = require('inherits');
-
 var common = require('./common');
 var nodes = require('./nodes');
 var util = require('./util');
@@ -15,31 +13,56 @@ var Interval = require('./Interval');
 // Private stuff
 // --------------------------------------------------------------------
 
-// Create a short error message for an error that occurred during matching.
-function getShortMatchErrorMessage(pos, source, detail) {
-  var errorInfo = util.getLineAndColumn(source, pos);
-  return 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ': ' + detail;
+function MatchResult(
+    matcher,
+    input,
+    startExpr,
+    cst,
+    cstOffset,
+    rightmostFailurePosition,
+    optRecordedFailures) {
+
+  this.matcher = matcher;
+  this.input = input;
+  this.startExpr = startExpr;
+  this._cst = cst;
+  this._cstOffset = cstOffset;
+  this._rightmostFailurePosition = rightmostFailurePosition;
+  this._rightmostFailures = optRecordedFailures;
+
+  if (this.failed()) {
+    common.defineLazyProperty(this, 'message', function() {
+      var detail = 'Expected ' + this.getExpectedText();
+      return util.getLineAndColumnMessage(this.input, this.getRightmostFailurePosition()) + detail;
+    });
+    common.defineLazyProperty(this, 'shortMessage', function() {
+      var detail = 'expected ' + this.getExpectedText();
+      var errorInfo = util.getLineAndColumn(this.input, this.getRightmostFailurePosition());
+      return 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ': ' + detail;
+    });
+  }
 }
 
-// ----------------- MatchFailure -----------------
-
-function MatchResult(state) {
-  this.state = state;
-  this._cst = state._bindings[0];
-  this._cstOffset = state._bindingOffsets[0];
-}
-
-MatchResult.newFor = function(state) {
-  var succeeded = state.numBindings() > 0;
-  return succeeded ? new MatchResult(state) : new MatchFailure(state);
+MatchResult.prototype.succeeded = function() {
+  return !!this._cst;
 };
 
 MatchResult.prototype.failed = function() {
-  return false;
+  return !this.succeeded();
 };
 
-MatchResult.prototype.succeeded = function() {
-  return !this.failed();
+MatchResult.prototype.getRightmostFailurePosition = function() {
+  return this._rightmostFailurePosition;
+};
+
+MatchResult.prototype.getRightmostFailures = function() {
+  if (!this._rightmostFailures) {
+    this.matcher.setInput(this.input);
+    var matchResultWithFailures =
+        this.matcher._match(this.startExpr, false, this.getRightmostFailurePosition());
+    this._rightmostFailures = matchResultWithFailures.getRightmostFailures();
+  }
+  return this._rightmostFailures;
 };
 
 // Returns a `MatchResult` that can be fed into operations or attributes that care
@@ -47,14 +70,18 @@ MatchResult.prototype.succeeded = function() {
 // is useful for doing things with comments, e.g., syntax highlighting.
 MatchResult.prototype.getDiscardedSpaces = function() {
   if (this.failed()) {
-    return [];
+    throw new Error('Cannot get discarded spaces of failed match result');
   }
 
-  var state = this.state;
-  var grammar = state.grammar;
-  var inputStream = state.inputStream;
+  // Populate the memo table with the info for this match result, in case
+  // it's been invalidated by subsequent matches.
+  this.matcher.setInput(this.input);
+  this.matcher._match(this.startExpr, false);
 
-  var intervals = [new Interval(inputStream, 0, inputStream.source.length)];
+  var grammar = this.matcher.grammar;
+  var memoTable = this.matcher.memoTable;
+
+  var intervals = [new Interval(this.input, 0, this.input.length)];
 
   // Subtract the interval of each terminal from the set of intervals above.
   var s = grammar.createSemantics().addOperation('subtractTerminals', {
@@ -78,7 +105,7 @@ MatchResult.prototype.getDiscardedSpaces = function() {
     return interval.startIdx;
   });
   var discardedNodes = offsets.map(function(pos) {
-    var posInfo = state.getPosInfo(pos);
+    var posInfo = memoTable[pos];
     var memoRec = posInfo.memo.spaces;
     return memoRec.value;
   });
@@ -102,54 +129,19 @@ MatchResult.prototype.getDiscardedSpaces = function() {
   return r;
 };
 
-// ----------------- MatchFailure -----------------
-
-function MatchFailure(state) {
-  this.state = state;
-  common.defineLazyProperty(this, '_failures', function() {
-    return this.state.getFailures();
-  });
-  common.defineLazyProperty(this, 'message', function() {
-    var source = this.state.inputStream.source;
-    if (typeof source !== 'string') {
-      return 'match failed at position ' + this.getRightmostFailurePosition();
-    }
-
-    var detail = 'Expected ' + this.getExpectedText();
-    return util.getLineAndColumnMessage(source, this.getRightmostFailurePosition()) + detail;
-  });
-  common.defineLazyProperty(this, 'shortMessage', function() {
-    if (typeof this.state.inputStream.source !== 'string') {
-      return 'match failed at position ' + this.getRightmostFailurePosition();
-    }
-    var detail = 'expected ' + this.getExpectedText();
-    return getShortMatchErrorMessage(
-        this.getRightmostFailurePosition(),
-        this.state.inputStream.source,
-        detail);
-  });
-}
-inherits(MatchFailure, MatchResult);
-
-MatchFailure.prototype.toString = function() {
-  return '[MatchFailure at position ' + this.getRightmostFailurePosition() + ']';
-};
-
-MatchFailure.prototype.failed = function() {
-  return true;
-};
-
-MatchFailure.prototype.getRightmostFailurePosition = function() {
-  return this.state.getRightmostFailurePosition();
-};
-
-MatchFailure.prototype.getRightmostFailures = function() {
-  return this._failures;
+MatchResult.prototype.toString = function() {
+  return this.succeeded() ?
+      '[match succeeded]' :
+      '[match failed at position ' + this.getRightmostFailurePosition() + ']';
 };
 
 // Return a string summarizing the expected contents of the input stream when
 // the match failure occurred.
-MatchFailure.prototype.getExpectedText = function() {
+MatchResult.prototype.getExpectedText = function() {
+  if (this.succeeded()) {
+    throw new Error('cannot get expected text of a successful MatchResult');
+  }
+
   var sb = new common.StringBuffer();
   var failures = this.getRightmostFailures();
 
@@ -171,9 +163,9 @@ MatchFailure.prototype.getExpectedText = function() {
   return sb.contents();
 };
 
-MatchFailure.prototype.getInterval = function() {
-  var pos = this.state.getRightmostFailurePosition();
-  return new Interval(this.state.inputStream, pos, pos);
+MatchResult.prototype.getInterval = function() {
+  var pos = this.getRightmostFailurePosition();
+  return new Interval(this.input, pos, pos);
 };
 
 // --------------------------------------------------------------------

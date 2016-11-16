@@ -249,7 +249,7 @@ test('semantics', function(t) {
   t.throws(function() { s(3); }, /expected a MatchResult/);
   t.throws(function() { s('asdf'); }, /expected a MatchResult/);
   t.throws(function() { s(Arithmetic.match('barf')); },
-      /cannot apply Semantics to \[MatchFailure at position 0\]/,
+      /cannot apply Semantics to \[match failed at position 0\]/,
       'throws when arg is a MatchFailure');
 
   // Cannot use the semantics on nodes from another grammar...

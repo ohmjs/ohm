@@ -347,7 +347,7 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
       // element in `state.trace`.
       var seedTrace = state.trace[state.trace.length - 1];
       lrMemoRec.traceEntry = new Trace(
-          state.inputStream, origPos, this, true, [newValue], [seedTrace.clone()]);
+          state.input, origPos, inputStream.pos, this, true, [newValue], [seedTrace.clone()]);
     }
     inputStream.pos = origPos;
     newValue = this.evalOnce(body, state);

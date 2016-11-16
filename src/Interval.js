@@ -12,26 +12,26 @@ var util = require('./util');
 // Private stuff
 // --------------------------------------------------------------------
 
-function Interval(inputStream, startIdx, endIdx) {
-  this.inputStream = inputStream;
+function Interval(sourceString, startIdx, endIdx) {
+  this.sourceString = sourceString;
   this.startIdx = startIdx;
   this.endIdx = endIdx;
 }
 
 Interval.coverage = function(/* interval1, interval2, ... */) {
-  var inputStream = arguments[0].inputStream;
+  var sourceString = arguments[0].sourceString;
   var startIdx = arguments[0].startIdx;
   var endIdx = arguments[0].endIdx;
   for (var idx = 1; idx < arguments.length; idx++) {
     var interval = arguments[idx];
-    if (interval.inputStream !== inputStream) {
+    if (interval.sourceString !== sourceString) {
       throw errors.intervalSourcesDontMatch();
     } else {
       startIdx = Math.min(startIdx, arguments[idx].startIdx);
       endIdx = Math.max(endIdx, arguments[idx].endIdx);
     }
   }
-  return new Interval(inputStream, startIdx, endIdx);
+  return new Interval(sourceString, startIdx, endIdx);
 };
 
 Interval.prototype = {
@@ -42,22 +42,22 @@ Interval.prototype = {
   },
 
   collapsedLeft: function() {
-    return new Interval(this.inputStream, this.startIdx, this.startIdx);
+    return new Interval(this.sourceString, this.startIdx, this.startIdx);
   },
 
   collapsedRight: function() {
-    return new Interval(this.inputStream, this.endIdx, this.endIdx);
+    return new Interval(this.sourceString, this.endIdx, this.endIdx);
   },
 
   getLineAndColumnMessage: function() {
     var range = [this.startIdx, this.endIdx];
-    return util.getLineAndColumnMessage(this.inputStream.source, this.startIdx, range);
+    return util.getLineAndColumnMessage(this.sourceString, this.startIdx, range);
   },
 
   // Returns an array of 0, 1, or 2 intervals that represents the result of the
   // interval difference operation.
   minus: function(that) {
-    if (this.inputStream !== that.inputStream) {
+    if (this.sourceString !== that.sourceString) {
       throw errors.intervalSourcesDontMatch();
     } else if (this.startIdx === that.startIdx && this.endIdx === that.endIdx) {
       // `this` and `that` are the same interval!
@@ -66,18 +66,18 @@ Interval.prototype = {
     } else if (this.startIdx < that.startIdx && that.endIdx < this.endIdx) {
       // `that` splits `this` into two intervals
       return [
-        new Interval(this.inputStream, this.startIdx, that.startIdx),
-        new Interval(this.inputStream, that.endIdx, this.endIdx)
+        new Interval(this.sourceString, this.startIdx, that.startIdx),
+        new Interval(this.sourceString, that.endIdx, this.endIdx)
       ];
     } else if (this.startIdx < that.endIdx && that.endIdx < this.endIdx) {
       // `that` contains a prefix of `this`
       return [
-        new Interval(this.inputStream, that.endIdx, this.endIdx)
+        new Interval(this.sourceString, that.endIdx, this.endIdx)
       ];
     } else if (this.startIdx < that.startIdx && that.startIdx < this.endIdx) {
       // `that` contains a suffix of `this`
       return [
-        new Interval(this.inputStream, this.startIdx, that.startIdx)
+        new Interval(this.sourceString, this.startIdx, that.startIdx)
       ];
     } else {
       // `that` and `this` do not overlap
@@ -89,13 +89,13 @@ Interval.prototype = {
 
   // Returns a new Interval that has the same extent as this one, but which is relative
   // to `that`, an Interval that fully covers this one.
-  relativeTo: function(that, newInputStream) {
-    if (this.inputStream !== that.inputStream) {
+  relativeTo: function(that) {
+    if (this.sourceString !== that.sourceString) {
       throw errors.intervalSourcesDontMatch();
     }
     assert(this.startIdx >= that.startIdx && this.endIdx <= that.endIdx,
            'other interval does not cover this one');
-    return new Interval(newInputStream,
+    return new Interval(this.sourceString,
                         this.startIdx - that.startIdx,
                         this.endIdx - that.startIdx);
   },
@@ -107,12 +107,12 @@ Interval.prototype = {
     var contents = this.contents;
     var startIdx = this.startIdx + contents.match(/^\s*/)[0].length;
     var endIdx = this.endIdx - contents.match(/\s*$/)[0].length;
-    return new Interval(this.inputStream, startIdx, endIdx);
+    return new Interval(this.sourceString, startIdx, endIdx);
   },
 
   subInterval: function(offset, len) {
     var newStartIdx = this.startIdx + offset;
-    return new Interval(this.inputStream, newStartIdx, newStartIdx + len);
+    return new Interval(this.sourceString, newStartIdx, newStartIdx + len);
   }
 };
 
@@ -120,7 +120,7 @@ Object.defineProperties(Interval.prototype, {
   contents: {
     get: function() {
       if (this._contents === undefined) {
-        this._contents = this.inputStream.sourceSlice(this.startIdx, this.endIdx);
+        this._contents = this.sourceString.slice(this.startIdx, this.endIdx);
       }
       return this._contents;
     },

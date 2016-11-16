@@ -23,8 +23,7 @@ function GrammarDecl(name) {
 // Helpers
 
 GrammarDecl.prototype.sourceInterval = function(startIdx, endIdx) {
-  var inputStream = this.source.inputStream;
-  return inputStream.interval(startIdx, endIdx);
+  return this.source.subInterval(startIdx, endIdx - startIdx);
 };
 
 GrammarDecl.prototype.ensureSuperGrammar = function() {

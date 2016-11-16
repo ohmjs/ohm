@@ -4,8 +4,9 @@
 // Imports
 // --------------------------------------------------------------------
 
-var MatchResult = require('./MatchResult');
 var MatchState = require('./MatchState');
+
+var pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -21,7 +22,14 @@ Matcher.prototype.getInput = function() {
   return this.input;
 };
 
-Matcher.prototype.replaceInput = function(startIdx, endIdx, str) {
+Matcher.prototype.setInput = function(str) {
+  if (this.input !== str) {
+    this.replaceInputRange(0, this.input.length, str);
+  }
+  return this;
+};
+
+Matcher.prototype.replaceInputRange = function(startIdx, endIdx, str) {
   var currentInput = this.input;
   if (startIdx < 0 || startIdx > currentInput.length ||
       endIdx < 0 || endIdx > currentInput.length ||
@@ -46,39 +54,36 @@ Matcher.prototype.replaceInput = function(startIdx, endIdx, str) {
       posInfo.clearObsoleteEntries(pos, startIdx);
     }
   }
+
+  return this;
 };
 
-Matcher.prototype.match = function(optStartApplication) {
-  var state = new MatchState(
-      this.grammar,
-      this.input,
-      this.memoTable,
-      {
-        startApplication: optStartApplication
-      });
-  state.evalFromStart();
-  return MatchResult.newFor(state);  // TODO: MatchResult should have a Matcher, not a MatchState.
+Matcher.prototype.match = function(optStartApplicationStr) {
+  return this._match(this._getStartExpr(optStartApplicationStr), false);
 };
 
-Matcher.prototype.trace = function(optStartApplication) {
-  var state = new MatchState(
-      this.grammar,
-      this.input,
-      this.memoTable,
-      {
-        startApplication: optStartApplication,
-        trace: true
-      });
-  state.evalFromStart();
+Matcher.prototype.trace = function(optStartApplicationStr) {
+  return this._match(this._getStartExpr(optStartApplicationStr), true);
+};
 
-  // The trace node for the start rule is always the last entry. If it is a syntactic rule,
-  // the first entry is for an application of 'spaces'.
-  // TODO(pdubroy): Clean this up by introducing a special `Match<startAppl>` rule, which will
-  // ensure that there is always a single root trace node.
-  var rootTrace = state.trace[state.trace.length - 1];
-  rootTrace.state = state;
-  rootTrace.result = MatchResult.newFor(state);
-  return rootTrace;
+Matcher.prototype._match = function(startExpr, tracing, optPositionToRecordFailures) {
+  var state = new MatchState(this, startExpr, optPositionToRecordFailures);
+  return tracing ? state.getTrace() : state.getMatchResult();
+};
+
+/*
+  Returns the starting expression for this Matcher's associated grammar. If `optStartApplicationStr`
+  is specified, it is a string expressing a rule application in the grammar. If not specified, the
+  grammar's default start rule will be used.
+*/
+Matcher.prototype._getStartExpr = function(optStartApplicationStr) {
+  var applicationStr = optStartApplicationStr || this.grammar.defaultStartRule;
+  if (!applicationStr) {
+    throw new Error('Missing start rule argument -- the grammar has no default start rule.');
+  }
+
+  var startApp = this.grammar.parseApplication(applicationStr);
+  return new pexprs.Seq([startApp, pexprs.end]);
 };
 
 // --------------------------------------------------------------------

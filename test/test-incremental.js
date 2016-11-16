@@ -14,7 +14,7 @@ var makeGrammar = testUtil.makeGrammar;
 // --------------------------------------------------------------------
 
 function pluckMemoProp(result, propName) {
-  return result.state.memoTable.map(function(info) {
+  return result.matcher.memoTable.map(function(info) {
     var result = {};
     if (info == null) return {};
     if (propName === 'examinedLength') {
@@ -89,9 +89,9 @@ test('basic incremental parsing', function(t) {
   var im = g.matcher();
   var result;
 
-  im.replaceInput(0, 0, 'helloworld');
+  im.replaceInputRange(0, 0, 'helloworld');
   t.equal(im.getInput(), 'helloworld');
-  im.replaceInput(3, 5, 'X');
+  im.replaceInputRange(3, 5, 'X');
   t.equal(im.getInput(), 'helXworld');
 
   result = im.match();
@@ -101,23 +101,23 @@ test('basic incremental parsing', function(t) {
   t.ok(im.match().succeeded());
   t.equal(s(result).reconstructInput(im.getInput()), 'helXworld');
 
-  im.replaceInput(0, 4, '');
+  im.replaceInputRange(0, 4, '');
   t.equals(im.getInput(), 'world');
 
   result = im.match();
   t.equal(s(result).reconstructInput(im.getInput()), 'world');
 
-  im.replaceInput(3, 4, ' ');
+  im.replaceInputRange(3, 4, ' ');
   t.equals(im.getInput(), 'wor d');
   t.ok(im.match().failed());
 
-  im.replaceInput(0, 4, 'aa');
+  im.replaceInputRange(0, 4, 'aa');
   t.equals(im.getInput(), 'aad');
 
   result = im.match();
   t.equal(s(result).reconstructInput(im.getInput()), 'aad');
 
-  im.replaceInput(1, 2, '9');
+  im.replaceInputRange(1, 2, '9');
   t.ok(im.match().failed());
 
   t.end();
@@ -136,7 +136,7 @@ test('trickier incremental parsing', function(t) {
   var im = g.matcher();
   var result;
 
-  im.replaceInput(0, 0, 'ab');
+  im.replaceInputRange(0, 0, 'ab');
   result = im.match();
   t.ok(result.succeeded());
   t.deepEqual(s(result).ctorTree,
@@ -146,7 +146,7 @@ test('trickier incremental parsing', function(t) {
           ['letter', ['lower', ['_terminal']]]]]);
 
   // When the input is 'ac', the lookahead rule should now succeed.
-  im.replaceInput(1, 2, 'c');
+  im.replaceInputRange(1, 2, 'c');
   result = im.match();
   t.ok(result.succeeded());
   t.deepEqual(s(result).ctorTree,

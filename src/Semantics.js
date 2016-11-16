@@ -7,8 +7,9 @@
 var Symbol = require('es6-symbol');  // eslint-disable-line no-undef
 var inherits = require('inherits');
 
-var MatchResult = require('./MatchResult');
+var InputStream = require('./InputStream');
 var IterationNode = require('./nodes').IterationNode;
+var MatchResult = require('./MatchResult');
 var common = require('./common');
 var errors = require('./errors');
 
@@ -547,9 +548,8 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
       throw new TypeError(
           'Semantics expected a MatchResult, but got ' + common.unexpectedObjToString(matchResult));
     }
-    if (!matchResult.succeeded()) {
-      throw new TypeError(
-          'cannot apply Semantics to ' + matchResult.toString());
+    if (matchResult.failed()) {
+      throw new TypeError('cannot apply Semantics to ' + matchResult.toString());
     }
 
     var cst = matchResult._cst;
@@ -558,8 +558,8 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
           "Cannot use a MatchResult from grammar '" + cst.grammar.name +
           "' with a semantics for '" + grammar.name + "'");
     }
-    var inputStream = matchResult.state.inputStream;
-    return s.wrap(cst, inputStream.interval(matchResult._cstOffset));
+    var inputStream = new InputStream(matchResult.input);
+    return s.wrap(cst, inputStream.interval(matchResult._cstOffset, matchResult.input.length));
   };
 
   // Forward public methods from the proxy to the semantics instance.

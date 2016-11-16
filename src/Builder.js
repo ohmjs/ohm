@@ -45,8 +45,9 @@ Builder.prototype = {
 
       var source;
       if (gDecl.source && metaInfo && metaInfo.sourceInterval) {
-        var inputStream = gDecl.source.inputStream;
-        source = inputStream.interval.apply(inputStream, metaInfo.sourceInterval);
+        source = gDecl.source.subInterval(
+            metaInfo.sourceInterval[0],
+            metaInfo.sourceInterval[1] - metaInfo.sourceInterval[0]);
       }
       gDecl[action](ruleName, formals, body, description, source);
     });

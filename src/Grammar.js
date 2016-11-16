@@ -7,7 +7,6 @@
 var CaseInsensitiveTerminal = require('./CaseInsensitiveTerminal');
 var Matcher = require('./Matcher');
 var Semantics = require('./Semantics');
-var MatchState = require('./MatchState');
 var common = require('./common');
 var errors = require('./errors');
 var pexprs = require('./pexprs');
@@ -77,21 +76,15 @@ Grammar.prototype = {
     });
   },
 
-  _match: function(input, opts) {
-    var state = new MatchState(this, input, [], opts);
-    state.evalFromStart();
-    return state;
-  },
-
   match: function(input, optStartApplication) {
     var m = this.matcher();
-    m.replaceInput(0, 0, input);
+    m.replaceInputRange(0, 0, input);
     return m.match(optStartApplication);
   },
 
   trace: function(input, optStartApplication) {
     var m = this.matcher();
-    m.replaceInput(0, 0, input);
+    m.replaceInputRange(0, 0, input);
     return m.trace(optStartApplication);
   },
 
