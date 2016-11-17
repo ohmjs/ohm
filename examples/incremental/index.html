@@ -1,6 +1,8 @@
 <html>
   <body>
 
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+
     <!-- CodeMirror stuff -->
     <link rel="stylesheet" href="http://codemirror.net/lib/codemirror.css">
     <script src="https://codemirror.net/lib/codemirror.js"></script>
@@ -301,6 +303,7 @@ function inputChanged(fromIdx, toIdx, insertedText) {
     var error = document.createElement('parseError');
     error.innerText = spaces(pos.ch) + '^\nExpected: ' + expected;
     parseErrorWidget = editor.addLineWidget(pos.line, error);
+    $(error).hide().delay(2000).slideDown();
   }
 
   updateStats();
