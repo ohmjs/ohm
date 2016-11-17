@@ -113,16 +113,16 @@ F {
     | PriExp
 
   PriExp
-    = ctor                                       -- emptyDatum
-    | "(" Exp ")"                                -- paren
-    | "(" Exp ":" Type ")"                       -- typed
-    | "(" ListOf<Exp, ","> ")"                   -- tuple
-    | "[" Exp "|" Pat "<-" Exp ("," Exp)? "]"    -- listComp
-    | "[" ListOf<Exp, ";"> "]"                   -- list
-    | ident                                      -- ident
-    | number                                     -- number
-    | trueK                                      -- true
-    | falseK                                     -- false
+    = ctor                                     -- emptyDatum
+    | "(" Exp ")"                              -- paren
+    | "(" Exp ":" Type ")"                     -- typed
+    | "(" ListOf<Exp, ","> ")"                 -- tuple
+    | "[" Exp "|" Pat "<-" Exp ("," Exp)? "]"  -- listComp
+    | "[" ListOf<Exp, ";"> "]"                 -- list
+    | ident                                    -- ident
+    | number                                   -- number
+    | trueK                                    -- true
+    | falseK                                   -- false
 
   Type
     = FunType
