@@ -4,6 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
+var fs = require('fs');
+var ohm = require('..');
 var test = require('tape-catch');
 var testUtil = require('./testUtil');
 
@@ -370,6 +372,72 @@ test('binding offsets - syntactic rules', function(t) {
   result = g.match('a   4 ');
   t.ok(result.succeeded());
   s(result).checkOffsets(t, result._cstOffset);
+
+  t.end();
+});
+
+test('incremental parsing + attributes = incremental computation', function(t) {
+  var g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
+
+  var freshlyEvaluated;
+  var s = g.createSemantics().addAttribute('value', {
+    addExp_plus: function(x, _op, y) {
+      var ans = x.value + y.value;
+      freshlyEvaluated.push(this.sourceString);
+      return ans;
+    },
+    addExp_minus: function(x, _op, y) {
+      var ans = x.value - y.value;
+      freshlyEvaluated.push(this.sourceString);
+      return ans;
+    },
+    mulExp_times: function(x, _op, y) {
+      var ans = x.value * y.value;
+      freshlyEvaluated.push(this.sourceString);
+      return ans;
+    },
+    mulExp_divide: function(x, _op, y) {
+      var ans = x.value / y.value;
+      freshlyEvaluated.push(this.sourceString);
+      return ans;
+    },
+    priExp_paren: function(_open, x, _close) {
+      var ans = x.value;
+      freshlyEvaluated.push(this.sourceString);
+      return ans;
+    },
+    number: function(_) {
+      var ans = parseInt(this.sourceString);
+      freshlyEvaluated.push(this.sourceString);
+      return ans;
+    }
+  });
+
+  var m = g.matcher();
+
+  freshlyEvaluated = [];
+  m.replaceInputRange(0, 0, '(1+2)*3-4');
+  t.equal(s(m.match()).value, 5);
+  t.deepEqual(freshlyEvaluated, ['1', '2', '1+2', '(1+2)', '3', '(1+2)*3', '4', '(1+2)*3-4']);
+
+  freshlyEvaluated = [];
+  m.replaceInputRange(8, 9, '9');
+  t.equal(m.getInput(), '(1+2)*3-9');
+  t.equal(s(m.match()).value, 0);
+  t.deepEqual(freshlyEvaluated, ['9', '(1+2)*3-9']);
+
+  freshlyEvaluated = [];
+  m.replaceInputRange(2, 3, '-');
+  t.equal(m.getInput(), '(1-2)*3-9');
+  t.equal(s(m.match()).value, -12);
+  t.deepEqual(freshlyEvaluated, [
+      '1',  // why? because its 'examinedLength' property is 2
+            // (you have to read the next character to know that you're done parsing a number)
+            // and we changed that character from '+' to '-'
+       '1-2',
+       '(1-2)',
+       '(1-2)*3',
+       '(1-2)*3-9']);
 
   t.end();
 });
