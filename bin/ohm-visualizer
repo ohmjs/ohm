@@ -8,38 +8,50 @@ var http = require('http');
 var path = require('path');
 var fs = require('fs');
 
+var BASE_URL = '/visualizer/';
+var GRAMMAR_URL = '/grammars/';
+var OHM_BUNDLE_URL = path.join(BASE_URL, 'assets/ohm.min.js');
+
 var port = 8080;
-var grammarRoute = '/grammars/';
 var fileServer = new Server('.');
 
 var server = http.createServer(handleRequest);
 
 var mapping = {};
 
+function handleError(req, res, err) {
+  console.error('Error serving %s - %s', req.url, err.message); // eslint-disable-line no-console
+  res.statusCode = err.status;
+  res.end(String(err.status));
+}
+
 function handleRequest(req, res) {
-  if (req.url === grammarRoute) {
+  if (req.url === GRAMMAR_URL) {
     // list all the grammars as JSON array
     var grammarNames = Object.getOwnPropertyNames(mapping);
     res.end(JSON.stringify(grammarNames, null, 2));
     return;
-  } else if (req.url.indexOf(grammarRoute) === 0) {
-    var filename = req.url.slice(grammarRoute.length);
+  } else if (req.url.indexOf(GRAMMAR_URL) === 0) {
+    var filename = req.url.slice(GRAMMAR_URL.length);
     if (mapping.hasOwnProperty(filename)) {
       handleGrammarRequest(filename, req, res);
       return;
     }
+  } else if (req.url === OHM_BUNDLE_URL) {
+    fileServer
+      .serveFile('/dist/ohm.min.js', 200, {'Content-type': 'application/javascript'}, req, res)
+      .on('err', function(err) { handleError(req, res, err); });
+    return;
   }
 
   // fallback to filesystem
   req.addListener('end', function() {
     fileServer.serve(req, res, function(err, result) {
       if (err) {
-        console.error('Error serving %s - %s', req.url, err.message); // eslint-disable-line no-console
-        res.statusCode = err.status;
-        res.end(String(err.status));
-        return;
+        handleError(req, res, err);
+      } else {
+        console.log('%s', req.url); // eslint-disable-line no-console
       }
-      console.log('%s', req.url); // eslint-disable-line no-console
     });
   }).resume();
 }
@@ -49,11 +61,7 @@ function handleGrammarRequest(filename, req, res) {
     // read the grammar
     fileServer
       .serveFile('/' + mapping[filename].grammar, 200, {'Content-type': 'text/ohm-js'}, req, res)
-      .on('error', function (err) {
-        console.error('Error serving %s - %s', req.url, err.message); // eslint-disable-line no-console
-        res.statusCode = 404;
-        res.end();
-      });
+      .on('error', function (err) { handleError(req.url, err); });
   } else {
     // write the grammar
     (function() {

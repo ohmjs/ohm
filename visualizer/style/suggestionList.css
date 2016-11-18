@@ -1,0 +1,32 @@
+#suggestions {
+  position: fixed;
+  cursor: default;
+  width: auto;
+  max-height: 300px;
+  z-index: 10;  /* this make sure the auto-complete suggestions showed on top */
+  border: 1px solid gray;
+  background: white;
+  box-shadow: 2px 3px 5px rgba(0,0,0,.2);
+  overflow: scroll;
+}
+#suggestions entry {
+  display: block;
+  padding: 2px 8px;
+  font-family: Menlo, Monaco, sans-serif;
+  font-size: 16px;
+  margin: 0;
+}
+#suggestions entry span {
+  font-style: italic;
+  color: grey;
+}
+#suggestions entry span::before {
+  content: '\2212';
+  margin: 0 4px;
+}
+#suggestions entry.selected {
+  background: #4f9dfb;
+}
+#suggestions entry.selected span {
+  color: white;
+}
