@@ -277,7 +277,7 @@ function grammar(source, optNamespace) {
     var secondGrammar = ns[grammarNames[1]];
     var interval = secondGrammar.source;
     throw new Error(
-        util.getLineAndColumnMessage(interval.inputStream.source, interval.startIdx) +
+        util.getLineAndColumnMessage(interval.sourceString, interval.startIdx) +
         'Found more than one grammar definition -- use ohm.grammars() instead.');
   }
   return ns[grammarNames[0]];  // Return the one and only grammar.

@@ -1,113 +1,35 @@
-#addOperation,
-#addAttribute {
-  display: inline-block;
-  text-align: center;
-  text-decoration: none;
-  width: 102px;
-  margin-right: 4px;
-}
-#addOperation:hover,
-#addAttribute:hover {
-  text-decoration: underline;
+textarea {
+  resize: none;
+  outline: none;
 }
 
 #semantics {
   display: flex;
-  position: fixed;
-  right: 2px;
-  margin-top: 40px;
   font-size: 14px;
 }
-#semantics[hidden] {
-  display: none;
-}
-#semantics .column {
-  margin-right: 15px;
-}
-#semantics .entries {
-  display: flex;
-  flex-direction: column;
-  color: black;
-  font-family: Menlo, Monaco, sans-serif;
-  font-style: normal;
-  border-radius: 3px;
-  padding: 2px 0px 2px 0px;
-  background-color: rgba(0, 0, 0, 0);
-  min-width: 92px;
-}
-#semantics .wrapper {
-  margin: 4px 4px 4px 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-}
-#semantics .wrapper:not(.selected) *{
-  color: #888;
-}
 
-#semantics .wrapper textarea.opName {
-  resize: none;
-  outline: none;
-  _margin: 4px 4px 4px 0;
+#semantics .opName {
   height: 16px;
   border: 1px solid #c1c1c1;
   border-radius: 3px;
   display: block;
   background-color: white;
-  padding: 4px 4px 2px 4px;
+  padding: 2px 4px;
   text-align: center;
+  margin-left: 8px;
   /* Styles for the "isometric button" effect. */
   position: relative;
   top: -2px;
   _box-shadow: 0 2px 0 #c1c1c1;
 }
-#semantics .wrapper textarea[readOnly] {
-  cursor: pointer;
-  -webkit-user-select: none;
-}
-#semantics .wrapper.selected textarea.opName {
-  border-color: #aaa;
+#semantics .opName.selected {
+  border-color: rgb(53, 151, 255);
   box-shadow: none;
   top: 0;
 }
-
-#semantics .arguments:not(:empty) {
-  border: 1px solid #888;
-  border-radius: 0 0 10px 10px;
-  border-top: 0;
-  margin-top: -2px;
-}
-
-#semantics .nameValuePair {
-  display: flex;
-  padding: 1px;
-}
-#semantics .nameValuePair * {
-  background-color: transparent;
-}
-#semantics .nameValuePair:not(:first-child) {
-  border-top: 1px solid rgba(136, 136, 136, 0.19);
-}
-#semantics .nameValuePair .assign {
-  width: 10px;
-  height: 5px;
-  margin-bottom: 2px;
-}
-
-#semantics .buttonWrapper {
-  height: 9px;
-  width: 50px;
-  border: 1px solid #888;
-  border-top: 0;
-  border-radius: 0 0 20px 20px;
-}
-#semantics .buttonWrapper .button {
-  opacity: 0.5;
-  cursor: pointer;
-  text-align: center;
-  margin-top: -5px;
-}
-#semantics .buttonWrapper .button:hover {
-  opacity: 1;
+#semantics div.opName {
+  cursor: default;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-user-select: none;
 }

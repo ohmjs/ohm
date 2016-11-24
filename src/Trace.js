@@ -24,10 +24,10 @@ function spaces(n) {
   return common.repeat(' ', n).join('');
 }
 
-// Return a string representation of a portion of `inputStream` at offset `pos`.
+// Return a string representation of a portion of `input` at offset `pos`.
 // The result will contain exactly `len` characters.
-function getInputExcerpt(inputStream, pos, len) {
-  var excerpt = asEscapedString(inputStream.sourceSlice(pos, pos + len));
+function getInputExcerpt(input, pos, len) {
+  var excerpt = asEscapedString(input.slice(pos, pos + len));
 
   // Pad the output if necessary.
   if (excerpt.length < len) {
@@ -50,10 +50,11 @@ function asEscapedString(obj) {
 
 // ----------------- Trace -----------------
 
-function Trace(inputStream, pos, expr, succeeded, bindings, optChildren) {
-  this.inputStream = inputStream;
-  this.pos = pos;
-  this.source = new Interval(inputStream, pos, inputStream.pos);
+function Trace(input, pos1, pos2, expr, succeeded, bindings, optChildren) {
+  this.input = input;
+  this.pos = this.pos1 = pos1;
+  this.pos2 = pos2;
+  this.source = new Interval(input, pos1, pos2);
   this.expr = expr;
   this.succeeded = succeeded;
   this.bindings = bindings;
@@ -81,7 +82,7 @@ Trace.prototype.clone = function() {
 
 Trace.prototype.cloneWithExpr = function(expr) {
   var ans = new Trace(
-      this.inputStream, this.pos, expr, this.succeeded, this.bindings, this.children);
+      this.input, this.pos, this.pos2, expr, this.succeeded, this.bindings, this.children);
 
   ans.isHeadOfLeftRecursion = this.isHeadOfLeftRecursion;
   ans.isImplicitSpaces = this.isImplicitSpaces;
@@ -95,7 +96,7 @@ Trace.prototype.cloneWithExpr = function(expr) {
 // Record the trace information for the terminating condition of the LR loop.
 Trace.prototype.recordLRTermination = function(ruleBodyTrace, value) {
   this.terminatingLREntry =
-      new Trace(this.inputStream, this.pos, this.expr, false, [value], [ruleBodyTrace]);
+      new Trace(this.input, this.pos, this.pos2, this.expr, false, [value], [ruleBodyTrace]);
   this.terminatingLREntry.terminatesLR = true;
 };
 
@@ -154,7 +155,7 @@ Trace.prototype.toString = function() {
     if (ctorName === 'Alt') {
       return;  // eslint-disable-line consistent-return
     }
-    sb.append(getInputExcerpt(node.inputStream, node.pos, 10) + spaces(depth * 2 + 1));
+    sb.append(getInputExcerpt(node.input, node.pos, 10) + spaces(depth * 2 + 1));
     sb.append((node.succeeded ? CHECK_MARK : BALLOT_X) + ' ' + node.displayString);
     if (node.isHeadOfLeftRecursion) {
       sb.append(' (LR)');

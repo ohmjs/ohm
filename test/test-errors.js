@@ -58,7 +58,7 @@ test('undeclared rules', function(t) {
       function() { makeRuleWithBody('undeclaredRule'); },
       'Rule undeclaredRule is not declared in grammar G');
   var g = makeRuleWithBody('digit');
-  t.throws(function() { g.match(null, 'x'); }, /Rule x is not declared in grammar G/);
+  t.throws(function() { g.match('hello world', 'x'); }, /Rule x is not declared in grammar G/);
   t.end();
 });
 
@@ -169,6 +169,26 @@ test('failures are memoized', function(t) {
     '> 1 | ',
     '      ^',
     'Expected "a" or "b"'
+  ].join('\n'));
+  t.end();
+});
+
+test('multiple MatchResults from the same Matcher', function(t) {
+  var g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
+  var m = g.matcher();
+  var r1 = m.replaceInputRange(0, 0, '(1').match();
+  var r2 = m.replaceInputRange(0, 2, '1+').match();
+  t.equal(r1.message, [
+    'Line 1, col 3:',
+    '> 1 | (1',
+    '        ^',
+    'Expected ")"'
+  ].join('\n'));
+  t.equal(r2.message, [
+    'Line 1, col 3:',
+    '> 1 | 1+',
+    '        ^',
+    'Expected a number or "("'
   ].join('\n'));
   t.end();
 });

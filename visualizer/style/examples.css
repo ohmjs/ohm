@@ -47,12 +47,31 @@
   font-size: 12px;
 }
 
-#exampleList .example .delete {
-  color: #d44950;
-  padding: 4px;
+#exampleList .example .delete, #exampleList .example .sign {
+  padding: 0 4px 0 4px;
   cursor: default;
   display: block;
+}
+
+#exampleList .example .delete {
+  padding: 4px;
+  color: #d44950;
   visibility: hidden;
+}
+
+@media screen and (min-color-index:0) and(-webkit-min-device-pixel-ratio:0) {
+  @media {
+    /* Safari 6.1+ ONLY */
+    #exampleList .example .sign {
+      padding-top: 6px;
+      font-size: 12px;
+    }
+  }
+}
+
+/* Firefox 1+ only */
+#exampleList .example .sign, x:-moz-any-link {
+  padding-top: 4px;
 }
 
 #exampleList .example:hover {

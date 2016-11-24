@@ -1,58 +1,69 @@
-textarea {
-  resize: none;
-  outline: none;
-  height: 12px;
-  text-align: center;
-  border: 0;
+#semanticsContainer editor {
+  border: 2px solid #ccc;
+  padding: 4px 8px;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 1px 1px 8px 0px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  margin: 8px 10px;
+  overflow: scroll;
 }
 
-.pexpr:not(.failed) > .self.nextStep .label,
-.pexpr:not(.failed) > .self.tmpNextStep .label {
-  background: rgba(100, 149, 237, 0.4);
-}
-.pexpr:not(.failed) > .self.nextStep .label:hover,
-.pexpr:not(.failed) > .self.tmpNextStep .label:hover {
-  background: rgba(100, 149, 237, 0.6);
-  border-color: rgba(100, 149, 237, 0.6);
-}
-.pexpr:not(.collapsed) > .self.passThrough {
-  border-bottom: 1px solid #ddd;
-  margin-bottom: -1px;
-}
-
-.self.selected {
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-  margin: 4px 6px 10px 6px;
-}
-
-/* Show only the part marked by `showing` for passThrought node */
-.self.passThrough > .semanticsEditor:not(.showing) > *:not(.showing) {
-  display: none;
-}
-
-/* Editor header container */
-.semanticsEditor .header {
+editor rule {
   font-family: Menlo, Monaco, sans-serif;
   font-size: 16px;
   display: flex;
-  height: 24px;
-  padding-bottom: 3px;
-  margin-top: -1px;
-  border: 1px solid #efefef;
-  border-top: none;
-  border-bottom: none;
+  flex-direction: column;
+  margin: 2px 8px;
 }
-.semanticsEditor .header headerBlock {
+editor rule cstNodeName:not(.default)::after {
+  content: '\003D';
+  clear: both;
+  margin: 0 3px;
+}
+editor rule blocks {
+  margin-left: 20px;
+}
+editor rule blocks::after {
+  float: left;
+  margin-left: 2px;
+  margin-top: -2px;
+  font-family: Optima;
+  content: '\2192';
+  color: slateblue;
+  font-size: 16pt;
+}
+editor rule block {
   padding-top: 5px;
   padding-bottom: 5px;
   float: left;
   margin-left: 5px;
 }
-headerBlock span.display {
+editor rule block div,
+editor rule cstNodeName {
   color: rgb(123, 123, 123);
   float: left;
 }
-headerBlock real {
+editor rule block div {
+  display: flex;
+  flex-direction: column;
+  cursor: default;
+}
+editor rule block div > * {
+  flex: 1;
+}
+editor rule block div span {
+  color: orange;
+  border-top: 1px solid;
+  font-size: 6px;
+  float: right;
+}
+editor rule block div:hover span {
+  font-weight: bolder;
+  font-size: 9px;
+}
+editor rule block real {
   display: inline-block;
   height: 12px;
   outline: none;
@@ -63,185 +74,24 @@ headerBlock real {
   padding-right: 2px;
   width: auto;
 }
-.semanticsEditor .header::after {
-  float: left;
-  margin-left: 2px;
-  margin-top: -2px;
-  font-family: Optima;
-  content: '\2192';
-  color: slateblue;
-  font-size: 16pt;
-}
 
-/* Operation arguments container */
-.semanticsEditor .argTags:not(:empty) {
-  height: 100%;
-  display: inline-flex;
-  flex: 1;
-  flex-direction: column;
-  padding-right: 12px;
-}
-.semanticsEditor .argTags .argTag {
-  position: relative;
-  margin: 0 0 8px 12px;
-  padding: 0 9px 0 8px;
-  font-size: 10px;
-  color: #555;
-  text-decoration: none;
-  text-shadow: 0 1px white;
-  background: #fafafa;
-  border-width: 1px 0 1px 1px;
-  border-style: solid;
-  border-color: #dadada #d2d2d2 #c5c5c5;
-  border-radius: 3px 0 0 3px;
-  background-image: linear-gradient(to bottom, #fcfcfc, #f0f0f0);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7), 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-.argTags .argTag:after {
-  content: '';
-  z-index: 2;
-  position: absolute;
-  top: 3px;
-  right: -2px;
-  width: 5px;
-  height: 6px;
-  opacity: .95;
-  background: #56a3d5;
-  border-radius: 3px 0 0 3px;
-  -webkit-box-shadow: inset 1px 0 #276f9e;
-  box-shadow: inset 1px 0 #276f9e;
-}
-.argTag span {
-  position: absolute;
-  top: 0;
-  left: 100%;
-  z-index: 2;
-  overflow: hidden;
-  width: auto;
-  padding: 0 6px;
-  color: white;
-  text-shadow: 0 -1px rgba(0, 0, 0, 0.3);
-  background: #56a3d5;
-  border: 1px solid;
-  margin-top: -1px;
-  border-color: #3591cd #318cc7 #2f86be;
-  border-radius: 0 2px 2px 0;
-  opacity: .95;
-  background-image: linear-gradient(to bottom, #6aaeda, #4298d0);
-  transition: 0.3s ease-out;
-  transition-property: padding, max-width;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15), 1px 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-/* Action editor container */
-.semanticsEditor .body {
-  margin-top: 0px;
-  border: 1px solid #efefef;
-  border-top: none;
+editor .body {
   padding-left: 10pt;
   overflow: visible;
 }
-.semanticsEditor .body .CodeMirror {
+editor .body .CodeMirror {
   cursor: default;
   display: block;
   height: auto;
   width: auto;
   color: slateblue;
   font-size: 16px;
+  position: relative;
   font-family: Menlo, Monaco, sans-serif;
 }
-.semanticsEditor .body .CodeMirror-lines {
+editor .body .CodeMirror-lines {
   padding: 8px;
 }
-.semanticsEditor .body .CodeMirror-lines pre{
+editor .body .CodeMirror-lines pre{
   padding-left: 0px;
-}
-
-/* Semantics result container */
-.pexpr:not(.failed) > .self.nextStep .result:not(.showing),
-.pexpr:not(.failed) > .self.tmpNextStep .result:not(.showing) {
-  display: none;
-}
-
-.semanticsEditor .result {
-  display: flex;
-  color: slateblue;
-  font-size: 16px;
-  border: 1px solid #efefef;
-  border-top: none;
-  margin-top: -1px;
-  padding: 4px;
-  cursor: default;
-}
-/* Result container is hide by default when editor body is open */
-.semanticsEditor.showing .result:not(.showing) {
-  display: none;
-}
-.semanticsEditor .result:empty {
-  padding: 0;
-}
-
-.result resultBlock {
-  display: flex;
-  justify-content: center;
-  flex: 1;
-}
-.result resultBlock.hidden {
-  display: none;
-}
-.result resultBlock.highlight {
-  background: rgba(255, 255, 0, 0.19);
-  font-weight: bolder;
-}
-.result resultBlock:not(.showing).leftBorder {
-  padding-left: 2px;
-  border-left: 1px solid rgba(39, 111, 158, 0.4);
-}
-.result resultBlock:not(:last-child) {
-  padding-right: 2px;
-}
-.result resultBlock:empty {
-  display: none;
-}
-
-.result resultBlock operation {
-  font-size: 6px;
-  color: orchid;
-  margin-left: 4px;
-}
-.result resultBlock.highlight operation{
-  font-size: 10px;
-}
-.result resultBlock.showing operation {
-  display: none;
-}
-
-.semanticsEditor .result resultBlock.error value {
-  background-color: rgb(255, 215, 222);
-  color: red;
-}
-.semanticsEditor .result resultBlock.forced value {
-  color: #999;
-}
-
-/* `Force Evaluation` entry in `parseTreeMenu` */
-.contextMenu label .triangle {
-  float: right;
-  font-size: 12px;
-  margin-left: 1em;
-  position: relative;
-  right: -10px;
-  top: 1px;
-}
-.contextMenu li div:not(:first-child), li textarea {
-  margin-left: 10px;
-}
-.contextMenu ul ul ul li:hover div{
-  color: white;
-}
-.contextMenu ul li textarea{
-  border: 1px solid #C5C5C5;
-}
-.contextMenu li .value.error{
-  color: red;
 }

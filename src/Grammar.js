@@ -5,9 +5,8 @@
 // --------------------------------------------------------------------
 
 var CaseInsensitiveTerminal = require('./CaseInsensitiveTerminal');
-var MatchResult = require('./MatchResult');
+var Matcher = require('./Matcher');
 var Semantics = require('./Semantics');
-var MatchState = require('./MatchState');
 var common = require('./common');
 var errors = require('./errors');
 var pexprs = require('./pexprs');
@@ -47,8 +46,8 @@ Grammar.initApplicationParser = function(grammar, builderFn) {
 };
 
 Grammar.prototype = {
-  incrementalMatcher: function() {
-    return new IncrementalMatcher(this);
+  matcher: function() {
+    return new Matcher(this);
   },
 
   // Return true if the grammar is a built-in grammar, otherwise false.
@@ -77,28 +76,16 @@ Grammar.prototype = {
     });
   },
 
-  _match: function(input, opts) {
-    var state = new MatchState(this, input, [], opts);
-    state.evalFromStart();
-    return state;
-  },
-
   match: function(input, optStartApplication) {
-    var state = this._match(input, {startApplication: optStartApplication});
-    return MatchResult.newFor(state);
+    var m = this.matcher();
+    m.replaceInputRange(0, 0, input);
+    return m.match(optStartApplication);
   },
 
   trace: function(input, optStartApplication) {
-    var state = this._match(input, {startApplication: optStartApplication, trace: true});
-
-    // The trace node for the start rule is always the last entry. If it is a syntactic rule,
-    // the first entry is for an application of 'spaces'.
-    // TODO(pdubroy): Clean this up by introducing a special `Match<startAppl>` rule, which will
-    // ensure that there is always a single root trace node.
-    var rootTrace = state.trace[state.trace.length - 1];
-    rootTrace.state = state;
-    rootTrace.result = MatchResult.newFor(state);
-    return rootTrace;
+    var m = this.matcher();
+    m.replaceInputRange(0, 0, input);
+    return m.trace(optStartApplication);
   },
 
   semantics: function() {
@@ -351,29 +338,6 @@ Grammar.ProtoBuiltInRules = new Grammar(
     }
   }
 );
-
-function IncrementalMatcher(g) {
-  this.grammar = g;
-  this.state = new MatchState(g, '', [], {});
-}
-
-IncrementalMatcher.prototype = {
-  getInput: function() {
-    return this.state.inputStream.source;
-  },
-
-  replace: function(startIdx, endIdx, str) {
-    this.state.replaceInput(startIdx, endIdx, str);
-  },
-
-  match: function(optStartApplication) {
-    var oldState = this.state;
-    var state = this.state =
-        new MatchState(oldState.grammar, oldState.inputStream.source, oldState.memoTable, {});
-    state.eval(state._getStartExpr(this.grammar, optStartApplication));
-    return MatchResult.newFor(state);
-  }
-};
 
 // --------------------------------------------------------------------
 // Exports

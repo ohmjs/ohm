@@ -35,7 +35,7 @@ The easiest way to get started with Ohm is to use the [ohm interactive editor](h
 - There's no tutorial yet, but the [math example](examples/math/index.html) is extensively commented and is probably the best place to start.
 - [Examples](examples/)
 - [Documentation](doc/index.md)
-- Ask questions and give us feedback in the [Ohm Google Group](https://groups.google.com/a/cdglabs.org/forum/#!forum/ohm).
+- Ask questions and give us feedback in the [Ohm Google Group](https://groups.google.com/a/ycr.org/forum/#!forum/ohm).
 
 ### Installation
 

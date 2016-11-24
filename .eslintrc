@@ -30,6 +30,7 @@
     // allows semantic actions to be named like `RuleName_caseName`.
     camelcase: 0,
     camelcase-ohm/camelcase-ohm: 2,
+    comma-dangle: ["error", "never"],  // Disallow trailing commas.
 
     consistent-this: 0,
     default-case: 0,
@@ -49,6 +50,7 @@
     no-constant-condition: 0,  // Allow things like `while(true)`.
     no-else-return: 0,  // Allow `else` after a return statement.
     no-eq-null: 0,
+    no-invalid-this: 0,  // Allow `this` outside of classes.
 
     // Don't allow require() statements to include the '.js' extension.
     no-extension-in-require/main: 2,
@@ -74,5 +76,11 @@
 
     // We would use `["error", "never", {exceptRange: true}]` here, but it doesn't seem to work.
     yoda: 0,
+
+    // The following rules suggest replacing certain patterns with ES6 features.
+    // They are disabled for now, but we should consider enabling them if/when we move to ES6.
+    no-var: 0,  // Allow the `var` keyword.
+    prefer-rest-params: 0,
+    prefer-spread: 0
   }
 }

@@ -4,6 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
+var fs = require('fs');
+var ohm = require('..');
 var test = require('tape-catch');
 var testUtil = require('./testUtil');
 
@@ -14,7 +16,7 @@ var makeGrammar = testUtil.makeGrammar;
 // --------------------------------------------------------------------
 
 function pluckMemoProp(result, propName) {
-  return result.state.memoTable.map(function(info) {
+  return result.matcher.memoTable.map(function(info) {
     var result = {};
     if (info == null) return {};
     if (propName === 'examinedLength') {
@@ -86,12 +88,12 @@ test('basic incremental parsing', function(t) {
     }
   });
 
-  var im = g.incrementalMatcher();
+  var im = g.matcher();
   var result;
 
-  im.replace(0, 0, 'helloworld');
+  im.replaceInputRange(0, 0, 'helloworld');
   t.equal(im.getInput(), 'helloworld');
-  im.replace(3, 5, 'X');
+  im.replaceInputRange(3, 5, 'X');
   t.equal(im.getInput(), 'helXworld');
 
   result = im.match();
@@ -101,23 +103,23 @@ test('basic incremental parsing', function(t) {
   t.ok(im.match().succeeded());
   t.equal(s(result).reconstructInput(im.getInput()), 'helXworld');
 
-  im.replace(0, 4, '');
+  im.replaceInputRange(0, 4, '');
   t.equals(im.getInput(), 'world');
 
   result = im.match();
   t.equal(s(result).reconstructInput(im.getInput()), 'world');
 
-  im.replace(3, 4, ' ');
+  im.replaceInputRange(3, 4, ' ');
   t.equals(im.getInput(), 'wor d');
   t.ok(im.match().failed());
 
-  im.replace(0, 4, 'aa');
+  im.replaceInputRange(0, 4, 'aa');
   t.equals(im.getInput(), 'aad');
 
   result = im.match();
   t.equal(s(result).reconstructInput(im.getInput()), 'aad');
 
-  im.replace(1, 2, '9');
+  im.replaceInputRange(1, 2, '9');
   t.ok(im.match().failed());
 
   t.end();
@@ -133,10 +135,10 @@ test('trickier incremental parsing', function(t) {
     '}'
   ]);
   var s = g.createSemantics().addAttribute('ctorTree', ctorTreeActions);
-  var im = g.incrementalMatcher();
+  var im = g.matcher();
   var result;
 
-  im.replace(0, 0, 'ab');
+  im.replaceInputRange(0, 0, 'ab');
   result = im.match();
   t.ok(result.succeeded());
   t.deepEqual(s(result).ctorTree,
@@ -146,7 +148,7 @@ test('trickier incremental parsing', function(t) {
           ['letter', ['lower', ['_terminal']]]]]);
 
   // When the input is 'ac', the lookahead rule should now succeed.
-  im.replace(1, 2, 'c');
+  im.replaceInputRange(1, 2, 'c');
   result = im.match();
   t.ok(result.succeeded());
   t.deepEqual(s(result).ctorTree,
@@ -370,6 +372,72 @@ test('binding offsets - syntactic rules', function(t) {
   result = g.match('a   4 ');
   t.ok(result.succeeded());
   s(result).checkOffsets(t, result._cstOffset);
+
+  t.end();
+});
+
+test('incremental parsing + attributes = incremental computation', function(t) {
+  var g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
+
+  var freshlyEvaluated;
+  var s = g.createSemantics().addAttribute('value', {
+    addExp_plus: function(x, _op, y) {
+      var ans = x.value + y.value;
+      freshlyEvaluated.push(this.sourceString);
+      return ans;
+    },
+    addExp_minus: function(x, _op, y) {
+      var ans = x.value - y.value;
+      freshlyEvaluated.push(this.sourceString);
+      return ans;
+    },
+    mulExp_times: function(x, _op, y) {
+      var ans = x.value * y.value;
+      freshlyEvaluated.push(this.sourceString);
+      return ans;
+    },
+    mulExp_divide: function(x, _op, y) {
+      var ans = x.value / y.value;
+      freshlyEvaluated.push(this.sourceString);
+      return ans;
+    },
+    priExp_paren: function(_open, x, _close) {
+      var ans = x.value;
+      freshlyEvaluated.push(this.sourceString);
+      return ans;
+    },
+    number: function(_) {
+      var ans = parseInt(this.sourceString);
+      freshlyEvaluated.push(this.sourceString);
+      return ans;
+    }
+  });
+
+  var m = g.matcher();
+
+  freshlyEvaluated = [];
+  m.replaceInputRange(0, 0, '(1+2)*3-4');
+  t.equal(s(m.match()).value, 5);
+  t.deepEqual(freshlyEvaluated, ['1', '2', '1+2', '(1+2)', '3', '(1+2)*3', '4', '(1+2)*3-4']);
+
+  freshlyEvaluated = [];
+  m.replaceInputRange(8, 9, '9');
+  t.equal(m.getInput(), '(1+2)*3-9');
+  t.equal(s(m.match()).value, 0);
+  t.deepEqual(freshlyEvaluated, ['9', '(1+2)*3-9']);
+
+  freshlyEvaluated = [];
+  m.replaceInputRange(2, 3, '-');
+  t.equal(m.getInput(), '(1-2)*3-9');
+  t.equal(s(m.match()).value, -12);
+  t.deepEqual(freshlyEvaluated, [
+      '1',  // why? because its 'examinedLength' property is 2
+            // (you have to read the next character to know that you're done parsing a number)
+            // and we changed that character from '+' to '-'
+       '1-2',
+       '(1-2)',
+       '(1-2)*3',
+       '(1-2)*3-9']);
 
   t.end();
 });
