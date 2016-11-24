@@ -439,5 +439,56 @@ test('incremental parsing + attributes = incremental computation', function(t) {
        '(1-2)*3',
        '(1-2)*3-9']);
 
+  s.addAttribute('count', {
+    addExp_plus: function(x, _op, y) {
+      var ans = x.count + y.count + 1;
+      freshlyEvaluated.push(this.sourceString);
+      s.state.set('count', s.state.get('count') + ans);
+      return ans;
+    },
+    addExp_minus: function(x, _op, y) {
+      var ans = x.count + y.count + 1;
+      freshlyEvaluated.push(this.sourceString);
+      s.state.set('count', s.state.get('count') + ans);
+      return ans;
+    },
+    mulExp_times: function(x, _op, y) {
+      var ans = x.count + y.count + 1;
+      freshlyEvaluated.push(this.sourceString);
+      s.state.set('count', s.state.get('count') + ans);
+      return ans;
+    },
+    mulExp_divide: function(x, _op, y) {
+      var ans = x.count + y.count + 1;
+      freshlyEvaluated.push(this.sourceString);
+      s.state.set('count', s.state.get('count') + ans);
+      return ans;
+    },
+    priExp_paren: function(_open, x, _close) {
+      var ans = x.count + 1;
+      freshlyEvaluated.push(this.sourceString);
+      s.state.set('count', s.state.get('count') + ans);
+      return ans;
+    },
+    number: function(_) {
+      var ans = 1;
+      freshlyEvaluated.push(this.sourceString);
+      s.state.set('count', s.state.get('count') + ans);
+      return ans;
+    }
+  });
+
+  freshlyEvaluated = [];
+  s.state.set('count', 0);
+  t.equal(s(m.match()).count, 8);
+  t.deepEqual(freshlyEvaluated, ['1', '2', '1-2', '(1-2)', '3', '(1-2)*3', '9', '(1-2)*3-9']);
+
+  freshlyEvaluated = [];
+  s.state.set('count', 0);
+  m.replaceInputRange(8, 9, '7');
+  t.equal(m.getInput(), '(1-2)*3-7');
+  t.equal(s(m.match()).count, 8);
+  t.deepEqual(freshlyEvaluated, ['7', '(1-2)*3-7']);
+
   t.end();
 });

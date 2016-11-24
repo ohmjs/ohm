@@ -136,6 +136,10 @@ Wrapper.prototype.iteration = function(optChildWrappers) {
   return wrapper;
 };
 
+Wrapper.prototype.createObj = function(/* key1, value1, key2, value2, ... */) {
+  return this._semantics.createObj.apply(this._semantics, arguments);
+};
+
 Object.defineProperties(Wrapper.prototype, {
   // Returns an array containing the children of this CST node.
   children: {get: function() { return this._children(); }},
@@ -225,7 +229,98 @@ function Semantics(grammar, superSemantics) {
     this.attributes = Object.create(null);
     this.attributeKeys = Object.create(null);
   }
+
+  this.state = this.createObj();
 }
+
+Semantics.prototype.createObj = function(/* key1, value1, key2, value2, ... */) {
+  var obj = new SObject(this);
+  for (var idx = 0; idx < arguments.length; idx += 2) {
+    var key = arguments[i];
+    var value = arguments[i + 1];
+    obj.set(key, value);
+  }
+  return obj;
+};
+
+Semantics.prototype.logRead = function(obj, key, value) {
+  if (!this.reads) {
+    // We're not evaluating an attribute, so there's nothing to do.
+    return;
+  }
+
+  var readsForObj = this.reads.get(obj);
+  if (!readsForObj) {
+    this.reads.set(obj, readsForObj = {});
+  }
+  if (!readsForObj.hasOwnProperty(key)) {
+    readsForObj[key] = value;
+  }
+};
+
+Semantics.prototype.logWrite = function(obj, key, value) {
+  if (!this.writes) {
+    // We're not evaluating an attribute, so there's nothing to do.
+    return;
+  }
+
+  var writesForObj = this.writes.get(obj);
+  if (!writesForObj) {
+    this.writes.set(obj, writesForObj = {});
+  }
+  writesForObj[key] = value;
+};
+
+// TODO: use for..of when it's available in browserify / uglify-js
+function forOf(iterable, callback) {
+  var iterator = iterable[Symbol.iterator]();
+  while (true) {
+    var entry = iterator.next();
+    if (entry.done) {
+      break;
+    }
+    callback(entry.value);
+  }
+}
+
+Semantics.prototype.checkReads = function(reads) {
+  var ans = true;
+  forOf(reads.keys(), function(obj) {
+    var readValues = reads.get(obj);
+    ans = ans &&
+        Object.keys(readValues).every(function(key) { return readValues[key] === obj.state[key]; });
+  });
+  return ans;
+};
+
+Semantics.prototype._applyReads = function(reads) {
+  if (!this.reads) {
+    // We're not evaluating an attribute, so there's nothing to do.
+    return;
+  }
+
+  var self = this;
+  forOf(reads.keys(), function(obj) {
+    var readValues = reads.get(obj);
+    Object.keys(readValues).forEach(function(key) {
+      self.logRead(obj, key, readValues[key]);
+    });
+  });
+};
+
+Semantics.prototype._applyWrites = function(writes) {
+  if (!this.writes) {
+    // We're not evaluating an attribute, so there's nothing to do.
+    return;
+  }
+
+  forOf(writes.keys(), function(obj) {
+    var writtenValues = writes.get(obj);
+    Object.keys(writtenValues).forEach(function(key) {
+      obj.set(key, writtenValues[key]);
+    });
+  });
+};
 
 Semantics.prototype.toString = function() {
   return '[semantics for ' + this.grammar.name + ']';
@@ -450,7 +545,6 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
     this.args = args;
     try {
       var ans = thisThing.execute(this._semantics, this);
-
       this.args = oldArgs;
       return ans;
     } catch (e) {
@@ -611,6 +705,9 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
   proxy.toRecipe = function(semanticsOnly) {
     return s.toRecipe(semanticsOnly);
   };
+  proxy.createObj = function(/* key1, value1, key2, value2, ... */) {
+    return s.createObj.call(s, arguments);
+  };
 
   // Make the proxy's toString() work.
   proxy.toString = s.toString.bind(s);
@@ -619,6 +716,10 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
   proxy._getSemantics = function() {
     return s;
   };
+
+  Object.defineProperty(proxy, 'state', {
+    get: function() { return s.state; }
+  });
 
   return proxy;
 };
@@ -716,11 +817,55 @@ Attribute.prototype.typeName = 'attribute';
 Attribute.prototype.execute = function(semantics, nodeWrapper) {
   var node = nodeWrapper._node;
   var key = semantics.attributeKeys[this.name];
-  if (!node.hasOwnProperty(key)) {
-    // The following is a super-send -- isn't JS beautiful? :/
-    node[key] = Operation.prototype.execute.call(this, semantics, nodeWrapper);
+  var memo = node[key];
+  if (!memo) {
+    memo = node[key] = [];
   }
-  return node[key];
+  for (var idx = 0; idx < memo.length; idx++) {
+    var m = memo[idx];
+    if (semantics.checkReads(m.reads)) {
+      semantics._applyWrites(m.writes);
+      return m.result;
+    }
+  }
+  var origReads = semantics.reads;
+  var origWrites = semantics.writes;
+  try {
+    semantics.reads = new Map();
+    semantics.writes = new Map();
+    m = {
+      // This is a super-send -- isn't JS beautiful? :/
+      result: Operation.prototype.execute.call(this, semantics, nodeWrapper),
+      reads: semantics.reads,
+      writes: semantics.writes
+    };
+    memo.push(m);
+  } finally {
+    semantics.reads = origReads;
+    semantics.writes = origWrites;
+  }
+  semantics._applyReads(m.reads);
+  semantics._applyWrites(m.writes);
+  return m.result;
+};
+
+// ----------------- SObject -----------------
+
+function SObject(semantics) {
+  this.semantics = semantics;
+  this.state = Object.create(null);
+}
+
+SObject.prototype.get = function(key) {
+  var value = this.state[key];
+  this.semantics.logRead(this, key, value);
+  return value;
+};
+
+SObject.prototype.set = function(key, value) {
+  this.state[key] = value;
+  this.semantics.logWrite(this, key, value);
+  return value;
 };
 
 // --------------------------------------------------------------------
