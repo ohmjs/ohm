@@ -48,16 +48,19 @@ function makeChart(values, height, parent, filled) {
   var pathElm = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   pathElm.setAttribute('d', path);
   pathElm.setAttribute('fill', 'none');
+  pathElm.style.stroke = '#333';
+  pathElm.style.strokeWidth = '1.5px';
   svg.appendChild(pathElm);
 
-  if (filled) {
-    path += ' V ' + height;
-    path += ' L 0 ' + height + ' Z';
-    var e = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    e.setAttribute('d', path);
-    e.setAttribute('stroke', 'none');
-    svg.appendChild(e);
-  }
+  var avg = values.reduce((x, y) => x + y) / values.length;
+  pathElm = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  pathElm.setAttribute('d',
+      'M0 ' + c(avg).toFixed(2) + ' L ' + (values.length - 1) * offset + ' ' + c(avg).toFixed(2));
+  pathElm.setAttribute('fill', 'none');
+  pathElm.style.stroke = 'cornflowerblue';
+  pathElm.style.strokeWidth = '1px';
+  pathElm.style.strokeOpacity = '0.5';
+  svg.appendChild(pathElm);
 
   while (parent.firstChild) {
     parent.removeChild(parent.firstChild);
