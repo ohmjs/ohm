@@ -2,6 +2,7 @@
   <body>
 
     <script src="../../third_party/jquery-3.1.1.min.js"></script>
+    <script src="../../third_party/sparklines.js"></script>
 
     <!-- CodeMirror stuff -->
     <link rel="stylesheet" href="../../third_party/codemirror.css">
@@ -30,6 +31,14 @@ parseError {
   -webkit-user-select: none;
   -moz-user-select: none;
   user-select: none;
+}
+
+.sparkline svg {
+  stroke: mediumseagreen;
+  stroke-width: 1.5px;
+}
+.sparkline-filled svg {
+  fill: rgba(60,179,113,0.25);
 }
 
     </style>
@@ -218,14 +227,15 @@ in
   fact 5</textarea>
     <stats>
       <span id="numParsesSpan">0</span> parses took
-      <span id="totalParseTimeSpan">0</span> ms
-      (<span id="msPerParseSpan">0</span> ms / parse)
+      <span id="totalParseTimeSpan">0</span> ms (<span id="msPerParseSpan">0</span> ms / parse)
+      <span id="parseTimesSparkline" class="sparkline"></span>
     </stats>
     <stats>
       <span id="numGetExpectedTextCallsSpan">0</span> calls to
       <code>MatchResult.getExpectedText()</code> took
       <span id="totalGetExpectedTextTimeSpan">0</span> ms
       (<span id="msPerGetExpectedTextSpan">0</span> ms / call)
+      <span id="getExpectedTextTimesSparkline" class="sparkline"></span>
     </stats>
     <script>
 
@@ -250,21 +260,24 @@ function spaces(n) {
 
 // Declare some variables to keep stats, etc.
 
-var numParses = 0;
-var totalParseTime = 0;
-
-var numGetExpectedTextCalls = 0;
-var totalGetExpectedTextTime = 0;
+var parseTimes = [];
+var getExpectedTextTimes = [];
 
 function updateStats() {
-  numParsesSpan.innerText = numParses;
+  var totalParseTime = parseTimes.reduce((x, y) => x + y, 0);
+  numParsesSpan.innerText = parseTimes.length;
   totalParseTimeSpan.innerText = totalParseTime;
-  msPerParseSpan.innerText = (totalParseTime / numParses).toFixed(2);
+  msPerParseSpan.innerText = (totalParseTime / parseTimes.length).toFixed(2);
+  parseTimesSparkline.setAttribute('data-values', parseTimes);
 
-  numGetExpectedTextCallsSpan.innerText = numGetExpectedTextCalls;
+  var totalGetExpectedTextTime = getExpectedTextTimes.reduce((x, y) => x + y, 0);
+  numGetExpectedTextCallsSpan.innerText = getExpectedTextTimes.length;
   totalGetExpectedTextTimeSpan.innerText = totalGetExpectedTextTime;
   msPerGetExpectedTextSpan.innerText =
-    (totalGetExpectedTextTime / numGetExpectedTextCalls).toFixed(2);
+    (totalGetExpectedTextTime / getExpectedTextTimes.length).toFixed(2);
+  getExpectedTextTimesSparkline.setAttribute('data-values', getExpectedTextTimes);
+
+  updateSparklines();
 }
 
 // Set up our CodeMirror instance, and react to changes in the input
@@ -291,13 +304,11 @@ function inputChanged(fromIdx, toIdx, insertedText) {
   m.replaceInputRange(fromIdx, toIdx, insertedText);
 
   var r;
-  totalParseTime += time(() => { r = m.match(); });
-  numParses++;
+  parseTimes.push(time(() => { r = m.match(); }));
 
   if (r.failed()) {
     var expected;
-    numGetExpectedTextCalls++;
-    totalGetExpectedTextTime += time(() => { expected = r.getExpectedText(); });
+    getExpectedTextTimes.push(time(() => { expected = r.getExpectedText(); }));
 
     var pos = editor.doc.posFromIndex(r.getRightmostFailurePosition());
     var error = document.createElement('parseError');
