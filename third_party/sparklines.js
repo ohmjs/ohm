@@ -49,7 +49,7 @@ function makeChart(values, height, parent, filled) {
   pathElm.setAttribute('d', path);
   pathElm.setAttribute('fill', 'none');
   pathElm.style.stroke = '#333';
-  pathElm.style.strokeWidth = '1.5px';
+  pathElm.style.strokeWidth = '1px';
   svg.appendChild(pathElm);
 
   var avg = values.reduce((x, y) => x + y) / values.length;
