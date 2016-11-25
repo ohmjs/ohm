@@ -16,6 +16,7 @@
 stats {
   display: block;
   text-align: right;
+  margin-top: 2pt;
 }
 
 parseError {
@@ -218,11 +219,10 @@ F {
 in
   fact 5</textarea>
     <stats>
-      <span id="numParsesSpan">0</span> parses took
-      <span id="totalParseTimeSpan">0</span> ms (<span id="msPerParseSpan">0</span> ms / parse)
+      avg <span id="msPerParseSpan">0</span> ms / parse
       <span id="parseTimesSparkline" class="sparkline"></span>
     </stats>
-    <stats>
+    <stats style="display: none;">
       <span id="numGetExpectedTextCallsSpan">0</span> calls to
       <code>MatchResult.getExpectedText()</code> took
       <span id="totalGetExpectedTextTimeSpan">0</span> ms
@@ -257,8 +257,6 @@ var getExpectedTextTimes = [];
 
 function updateStats() {
   var totalParseTime = parseTimes.reduce((x, y) => x + y, 0);
-  numParsesSpan.innerText = parseTimes.length;
-  totalParseTimeSpan.innerText = totalParseTime;
   msPerParseSpan.innerText = (totalParseTime / parseTimes.length).toFixed(2);
   parseTimesSparkline.setAttribute('data-values', parseTimes);
 
