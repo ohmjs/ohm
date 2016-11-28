@@ -1,10 +1,10 @@
 Ohm
 ===
 
-[![Build Status](https://img.shields.io/travis/cdglabs/ohm.svg?style=flat-square)](https://travis-ci.org/cdglabs/ohm)
+[![Build Status](https://img.shields.io/travis/harc/ohm.svg?style=flat-square)](https://travis-ci.org/harc/ohm)
 [![NPM](https://img.shields.io/npm/v/ohm-js.svg?style=flat-square)](https://www.npmjs.com/package/ohm-js)
 
-[Ohm](https://github.com/cdglabs/ohm) is a parser generator consisting of a library and a domain-specific language.
+[Ohm](https://github.com/harc/ohm) is a parser generator consisting of a library and a domain-specific language.
 You can use it to parse custom file formats or quickly build parsers, interpreters, and compilers for programming languages. The _Ohm language_ is based on [parsing expression grammars](http://en.wikipedia.org/wiki/Parsing_expression_grammar)
 (PEGs), which are a formal way of describing syntax, similar to regular expressions and context-free
 grammars. The _Ohm library_ provides a JavaScript interface (known as Ohm/JS) for creating parsers,
@@ -63,7 +63,7 @@ var ohm = require('ohm-js');
 
 #### Defining Grammars
 
-![Instantiating a grammar](http://www.cdglabs.org/ohm/doc/images/instantiating-grammars.png)
+![Instantiating a grammar](http://harc.github.io//ohm/doc/images/instantiating-grammars.png)
 
 To use Ohm, you need a grammar that is written in the Ohm language. The grammar provides a formal
 definition of the language or data format that you want to parse. There are a few different ways
@@ -111,7 +111,7 @@ For more information, see [Instantiating Grammars](doc/api-reference.md#instanti
 
 #### Using Grammars
 
-![Matching input](http://www.cdglabs.org/ohm/doc/images/matching.png)
+![Matching input](http://harc.github.io/ohm/doc/images/matching.png)
 
 <script type="text/markscript">
   // The duplication here is required because Markscript only executes top-level code blocks.
@@ -141,7 +141,7 @@ For more information, see the [main documentation](doc/index.md).
 Ohm has two tools to help you debug grammars: a text trace, and a graphical visualizer. The
 visualizer is still under development (i.e., it might be buggy!) but it can still be useful.
 
-[![Ohm Visualizer](http://www.cdglabs.org/ohm/doc/images/visualizer-small.png)](http://www.cdglabs.org/ohm/visualizer/)
+[![Ohm Visualizer](http://harc.github.io/ohm/doc/images/visualizer-small.png)](http://harc.github.io/ohm/visualizer/)
 
 You can [try the visualizer online](https://ohmlang.github.io/editor), or if you have an Ohm checkout, open `visualizer/index.html` in your web browser.
 
@@ -188,7 +188,7 @@ Contributing to Ohm
 
 All you need to get started:
 
-    git clone https://github.com/cdglabs/ohm.git
+    git clone https://github.com/harc/ohm.git
     cd ohm
     npm install
 
