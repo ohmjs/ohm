@@ -2,7 +2,7 @@
   "name": "ohm-js",
   "version": "0.12.3",
   "description": "An object-oriented language for parsing and pattern matching",
-  "repository": "https://github.com/cdglabs/ohm",
+  "repository": "https://github.com/harc/ohm",
   "keywords": [
     "parser",
     "compiler",
@@ -15,8 +15,8 @@
     "rapid",
     "prototyping"
   ],
-  "homepage": "http://cdglabs.org/ohm",
-  "bugs": "https://github.com/cdglabs/ohm/issues",
+  "homepage": "https://ohmlang.github.io/",
+  "bugs": "https://github.com/harc/ohm/issues",
   "main": "src/main.js",
   "bin": "src/ohm-cmd.js",
   "browserify": {
