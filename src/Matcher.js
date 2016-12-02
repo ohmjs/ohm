@@ -37,15 +37,18 @@ Matcher.prototype.replaceInputRange = function(startIdx, endIdx, str) {
     throw new Error('Invalid indices: ' + startIdx + ' and ' + endIdx);
   }
 
+  // update input
   this.input = currentInput.slice(0, startIdx) + str + currentInput.slice(endIdx);
 
-  // Keep the memo table in sync with the edits.
-  var newValues = Array.apply(null, new Array(str.length));  // Array of `undefined` (wat)
-
-  // Replace the contents from startIdx:endIdx with `newValues`.
-  this.memoTable.splice.apply(
-      this.memoTable,
-      [startIdx, endIdx - startIdx].concat(newValues));
+  // update memo table (similar to the above)
+  var restOfMemoTable = this.memoTable.slice(endIdx);
+  this.memoTable.length = startIdx;
+  for (var idx = 0; idx < str.length; idx++) {
+    this.memoTable.push(undefined);
+  }
+  restOfMemoTable.forEach(
+      function(posInfo) { this.memoTable.push(posInfo); },
+      this);
 
   // Invalidate memoRecs
   for (var pos = 0; pos < startIdx; pos++) {
