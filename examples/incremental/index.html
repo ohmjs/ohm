@@ -219,8 +219,15 @@ F {
 in
   fact 5</textarea>
     <stats>
-      avg <span id="msPerParseSpan">0</span> ms / parse
-      <span id="parseTimesSparkline" class="sparkline"></span>
+      <div>
+        <span style="color: cornflowerblue;">avg parse</span>
+        <span id="msPerParseSpan">0</span> ms
+      </div>
+      <div>
+        <span style="color: #333;">last parse</span>
+        <span id="msForLastParseSpan">0</span> ms
+      </div>
+      <div><span id="parseTimesSparkline" class="sparkline"></span></div>
     </stats>
     <stats style="display: none;">
       <span id="numGetExpectedTextCallsSpan">0</span> calls to
@@ -258,6 +265,7 @@ var getExpectedTextTimes = [];
 function updateStats() {
   var totalParseTime = parseTimes.reduce((x, y) => x + y, 0);
   msPerParseSpan.innerText = (totalParseTime / parseTimes.length).toFixed(2);
+  msForLastParseSpan.innerText = parseTimes[parseTimes.length - 1];
   parseTimesSparkline.setAttribute('data-values', parseTimes);
 
   var totalGetExpectedTextTime = getExpectedTextTimes.reduce((x, y) => x + y, 0);
