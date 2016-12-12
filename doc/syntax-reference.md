@@ -40,7 +40,7 @@ Here is a full list of the different kinds of parsing expressions supported by O
 
 Matches exactly the characters contained inside the quotation marks.
 
-Special characters (`"`, `\`, and `'`) can be escaped with a backslash -- e.g., `"\""` will match a literal quote character in the input stream. Other valid escape sequences are: `\b` (backspace), `\f` (form feed), `\n` (line feed), `\r` (carriage return), and `\t` (tab).
+Special characters (`"`, `\`, and `'`) can be escaped with a backslash -- e.g., `"\""` will match a literal quote character in the input stream. Other valid escape sequences include: `\b` (backspace), `\f` (form feed), `\n` (line feed), `\r` (carriage return), and `\t` (tab), as well as `\x` followed by 2 hex digits and `\u` followed by 4 hex digits, for matching characters by code point.
 
 ### Rule Application
 
