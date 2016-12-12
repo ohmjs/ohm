@@ -306,6 +306,10 @@ function inputChanged(fromIdx, toIdx, insertedText) {
 
   var r;
   parseTimes.push(time(() => { r = m.match(); }));
+  const MAX_WINDOW_SIZE = 50;
+  if (parseTimes.length === MAX_WINDOW_SIZE) {
+    parseTimes.shift();
+  }
 
   if (r.failed()) {
     var expected;
