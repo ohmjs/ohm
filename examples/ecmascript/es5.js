@@ -15,8 +15,6 @@ var ohm = require('ohm-js');
 // Helpers
 // --------------------------------------------------------------------
 
-function isUndefined(x) { return x === void 0; }  // eslint-disable-line no-void
-
 // Take an Array of nodes, and whenever an _iter node is encountered, splice in its
 // recursively-flattened children instead.
 function flattenIterNodes(nodes) {
@@ -36,51 +34,45 @@ function compareByInterval(node, otherNode) {
   return node.source.startIdx - otherNode.source.startIdx;
 }
 
-// Semantic actions for the `modifiedSource` attribute (see below).
-var modifiedSourceActions = {
-  _nonterminal: function(children) {
-    var flatChildren = flattenIterNodes(children).sort(compareByInterval);
-    var childResults = flatChildren.map(function(n) { return n.modifiedSource; });
-    if (flatChildren.length === 0 || childResults.every(isUndefined)) {
-      return undefined;
+function nodeToES5(node, children) {
+  var flatChildren = flattenIterNodes(children).sort(compareByInterval);
+
+  // Keeps track of where the previous sibling ended, so that we can re-insert discarded
+  // whitespace into the final output.
+  var prevEndIdx = node.source.startIdx;
+
+  var code = '';
+  for (var i = 0; i < flatChildren.length; ++i) {
+    var child = flatChildren[i];
+
+    // Restore any discarded whitespace between this node and the previous one.
+    if (child.source.startIdx > prevEndIdx) {
+      code += node.source.sourceString.slice(prevEndIdx, child.source.startIdx);
     }
-    var code = '';
-    var interval = flatChildren[0].source.collapsedLeft();
-    for (var i = 0; i < flatChildren.length; ++i) {
-      if (childResults[i] == null) {
-        // Grow the interval to include this node.
-        interval = interval.coverageWith(flatChildren[i].source.collapsedRight());
-      } else {
-        interval = interval.coverageWith(flatChildren[i].source.collapsedLeft());
-        code += interval.contents + childResults[i];
-        interval = flatChildren[i].source.collapsedRight();
-      }
-    }
-    code += interval.contents;
-    return code;
-  },
-  _iter: function(_) {
-    throw new Error('_iter semantic action should never be hit');
-  },
-  _terminal: function() {
-    return undefined;
+    code += child.toES5();
+    prevEndIdx = child.source.endIdx;
   }
-};
+  return code;
+}
 
 // Instantiate the ES5 grammar.
 var contents = fs.readFileSync(path.join(__dirname, 'es5.ohm'));
 var g = ohm.grammars(contents).ES5;
 var semantics = g.createSemantics();
 
-// An attribute whose value is either a string representing the modified source code for the
-// node, or undefined (which means that the original source code should be used).
-semantics.addAttribute('modifiedSource', modifiedSourceActions);
-
-// A simple wrapper around the `modifiedSource` attribute, which always returns a string
-// containing the ES5 source code for the node.
-semantics.addAttribute('asES5', {
+semantics.addOperation('toES5()', {
+  Program: function(_, sourceElements) {
+    // Top-level leading and trailing whitespace is not handled by nodeToES5(), so do it here.
+    var sourceString = this.source.sourceString;
+    return sourceString.slice(0, this.source.startIdx) +
+           nodeToES5(this, [sourceElements]) +
+           sourceString.slice(this.source.endIdx);
+  },
   _nonterminal: function(children) {
-    return isUndefined(this.modifiedSource) ? this.sourceString : this.modifiedSource;
+    return nodeToES5(this, children);
+  },
+  _terminal: function() {
+    return this.sourceString;
   }
 });
 

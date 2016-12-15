@@ -18,25 +18,25 @@ function anyNodesMentionThis(nodes) {
   return nodes.some(function(n) { return n.mentionsThis; });
 }
 
-var modifiedSourceActions = {
+var toES5Actions = {
   ArrowFunction: function(params, _, arrow, body) {
-    var source = 'function ' + params.asES5 + ' ' + body.asES5;
+    var source = 'function ' + params.toES5() + ' ' + body.toES5();
     // Only use `bind` if necessary.
     return body.mentionsThis ? source + '.bind(this)' : source;
   },
   ArrowParameters_unparenthesized: function(id) {
-    return '(' + id.asES5 + ')';
+    return '(' + id.toES5() + ')';
   },
   ConciseBody_noBraces: function(exp) {
-    return '{ return ' + exp.asES5 + ' }';
+    return '{ return ' + exp.toES5() + ' }';
   }
 };
 
 module.exports = function(ohm, ns, s) {
   var g = ohm.grammar(fs.readFileSync(path.join(__dirname, 'es6.ohm')).toString(), ns);
   var semantics = g.extendSemantics(s);
-  semantics.extendAttribute('modifiedSource', modifiedSourceActions);
   semantics.addAttribute('mentionsThis', mentionsThisActions);
+  semantics.extendOperation('toES5', toES5Actions);
 
   return {
     grammar: g,
