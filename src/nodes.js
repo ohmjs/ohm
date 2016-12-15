@@ -8,20 +8,20 @@ var common = require('./common');
 // Private stuff
 // --------------------------------------------------------------------
 
-function Node(grammar, ctorName, children, childOffsets, matchLength) {
+function Node(grammar, ctorName, matchLength) {
   this.grammar = grammar;
   this.ctorName = ctorName;
-  this.children = children || [];
-  this.childOffsets = childOffsets || [];
   this.matchLength = matchLength;
 }
 
 Node.prototype.numChildren = function() {
-  return this.children.length;
+  return this.children ? this.children.length : 0;
 };
 
 Node.prototype.childAt = function(idx) {
-  return this.children[idx];
+  if (this.children) {
+    return this.children[idx];
+  }
 };
 
 Node.prototype.indexOfChild = function(arg) {
@@ -29,7 +29,7 @@ Node.prototype.indexOfChild = function(arg) {
 };
 
 Node.prototype.hasChildren = function() {
-  return this.children.length > 0;
+  return this.numChildren() > 1;
 };
 
 Node.prototype.hasNoChildren = function() {
@@ -37,7 +37,7 @@ Node.prototype.hasNoChildren = function() {
 };
 
 Node.prototype.onlyChild = function() {
-  if (this.children.length !== 1) {
+  if (this.numChildren() !== 1) {
     throw new Error(
         'cannot get only child of a node of type ' + this.ctorName +
         ' (it has ' + this.numChildren() + ' children)');
@@ -112,7 +112,7 @@ Node.prototype.toJSON = function() {
 
 function TerminalNode(grammar, value) {
   var matchLength = value ? value.length : 0;
-  Node.call(this, grammar, '_terminal', [], [], matchLength);
+  Node.call(this, grammar, '_terminal', matchLength);
   this.primitiveValue = value;
 }
 inherits(TerminalNode, Node);
@@ -130,7 +130,9 @@ TerminalNode.prototype.toJSON = function() {
 // Nonterminals
 
 function NonterminalNode(grammar, ruleName, children, childOffsets, matchLength) {
-  Node.call(this, grammar, ruleName, children, childOffsets, matchLength);
+  Node.call(this, grammar, ruleName, matchLength);
+  this.children = children;
+  this.childOffsets = childOffsets;
 }
 inherits(NonterminalNode, Node);
 
@@ -149,7 +151,9 @@ NonterminalNode.prototype.isSyntactic = function() {
 // Iterations
 
 function IterationNode(grammar, children, childOffsets, matchLength, isOptional) {
-  Node.call(this, grammar, '_iter', children, childOffsets, matchLength);
+  Node.call(this, grammar, '_iter', matchLength);
+  this.children = children;
+  this.childOffsets = childOffsets;
   this.optional = isOptional;
 }
 inherits(IterationNode, Node);
