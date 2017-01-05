@@ -12,7 +12,7 @@ before submitting a PR. If the fix is non-trivial, it's usually best to wait
 for a response before putting a lot of work into a fix.
 
 For new features, it's also best to discuss the idea with us (via an issue or
-an email to the mailing list) before submitting a pull request.
+an email to the [mailing list](https://groups.google.com/a/ycr.org/forum/#!forum/ohm)) before submitting a pull request.
 
 Also, please ensure the tests pass (using `npm test`) and that there are no
 lint errors -- though the [pre-commit hook](doc/contributor-guide.md#pre-commit-checks)
