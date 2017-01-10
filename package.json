@@ -28,6 +28,7 @@
     "build": "npm run build-debug && uglifyjs dist/ohm.js > dist/ohm.min.js",
     "prebuild-debug": "bash bin/update-env.sh",
     "build-debug": "bash bin/build-debug.sh",
+    "ci-test": "npm run lint && npm test",
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
     "deploy-gh-pages": "bin/deploy-gh-pages.sh",
     "lint": "eslint .",
