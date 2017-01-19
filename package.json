@@ -19,6 +19,7 @@
   "bugs": "https://github.com/harc/ohm/issues",
   "main": "src/main.js",
   "bin": "src/ohm-cmd.js",
+  "types": "src/ohm-js.d.ts",
   "browserify": {
     "options": "src/main.js --debug --standalone ohm -o dist/ohm.js"
   },
