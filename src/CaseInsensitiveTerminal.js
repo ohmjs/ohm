@@ -41,7 +41,7 @@ CaseInsensitiveTerminal.prototype = {
     }
   },
 
-  generateExamples: function(grammar, examples, inSyntacticContext, actuals) {
+  generateExample: function(grammar, examples, inSyntacticContext, actuals) {
     // Start with a example generated from the Terminal...
     var str = this.obj.generateExamples(grammar, examples, inSyntacticContext, actuals).value;
 
@@ -59,6 +59,10 @@ CaseInsensitiveTerminal.prototype = {
 
   substituteParams: function(actuals) {
     return new CaseInsensitiveTerminal(this.obj.substituteParams(actuals));
+  },
+
+  toDisplayString: function() {
+    return this.obj.toDisplayString() + ' (case-insensitive)';
   },
 
   toFailure: function() {

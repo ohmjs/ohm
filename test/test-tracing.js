@@ -371,6 +371,20 @@ test('toString with left recursion', function(t) {
   t.end();
 });
 
+test('displayString', function(t) {
+  var g = ohm.grammar('G { start = caseInsensitive<"tk"> }');
+  var start = g.trace('tK').children[0];
+
+  var app = start.children[0];
+  t.equal(app.displayString, 'caseInsensitive<"tk">');
+
+  var caseInsensitive = app.children[0];
+  // TODO: Get this working! It should be equal() here.
+  t.notEqual(caseInsensitive.displayString, '"tk" (case-insensitive)');
+
+  t.end();
+});
+
 // TODO: Get these tests working again for the incremental parser!
 
 test.skip('memoization', function(t) {
