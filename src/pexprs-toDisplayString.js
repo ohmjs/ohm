@@ -15,41 +15,34 @@ var pexprs = require('./pexprs');
 pexprs.PExpr.prototype.toDisplayString = common.abstract('toDisplayString');
 
 pexprs.Alt.prototype.toDisplayString =
-pexprs.Seq.prototype.toDisplayString =
-pexprs.Iter.prototype.toDisplayString =
-pexprs.Not.prototype.toDisplayString =
-pexprs.Lookahead.prototype.toDisplayString =
-pexprs.Lex.prototype.toDisplayString = function() {
+pexprs.Seq.prototype.toDisplayString = function() {
   if (this.source) {
     return this.source.trimmed().contents;
   }
   return '[' + this.constructor.name + ']';
 };
 
-pexprs.any.toDisplayString = function() {
-  return 'any';
-};
-
-pexprs.end.toDisplayString = function() {
-  return 'end';
-};
-
-pexprs.Terminal.prototype.toDisplayString = function() {
-  return JSON.stringify(this.obj);
-};
-
-pexprs.Range.prototype.toDisplayString = function() {
-  return JSON.stringify(this.from) + '..' + JSON.stringify(this.to);
-};
-
+pexprs.any.toDisplayString =
+pexprs.end.toDisplayString =
+pexprs.Iter.prototype.toDisplayString =
+pexprs.Not.prototype.toDisplayString =
+pexprs.Lookahead.prototype.toDisplayString =
+pexprs.Lex.prototype.toDisplayString =
+pexprs.Terminal.prototype.toDisplayString =
+pexprs.Range.prototype.toDisplayString =
 pexprs.Param.prototype.toDisplayString = function() {
-  return '#' + this.index;
-};
-
-pexprs.Apply.prototype.toDisplayString = function() {
   return this.toString();
 };
 
+pexprs.Apply.prototype.toDisplayString = function() {
+  if (this.args.length > 0) {
+    var ps = this.args.map(function(arg) { return arg.toDisplayString(); });
+    return this.ruleName + '<' + ps.join(',') + '>';
+  } else {
+    return this.ruleName;
+  }
+};
+
 pexprs.UnicodeChar.prototype.toDisplayString = function() {
-  return 'Unicode {' + this.category + '} character';
+  return 'Unicode [' + this.category + '] character';
 };

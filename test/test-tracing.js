@@ -188,12 +188,12 @@ test('tracing with memoization', function(t) {
   t.deepEqual(descendant(star, 1).children.map(displayString),
               ['lower\n    | upper\n    | unicodeLtmo']);
   t.deepEqual(descendant(star, 1, 0).children.map(displayString), ['lower']);
-  t.deepEqual(descendant(star, 1, 0, 0).children.map(displayString), ['Unicode {Ll} character']);
+  t.deepEqual(descendant(star, 1, 0, 0).children.map(displayString), ['Unicode [Ll] character']);
 
   t.deepEqual(descendant(star, 3).children.map(displayString),
               ['lower\n    | upper\n    | unicodeLtmo']);
   t.deepEqual(descendant(star, 3, 0).children.map(displayString), ['lower', 'upper']);
-  t.deepEqual(descendant(star, 3, 0, 0).children.map(displayString), ['Unicode {Ll} character']);
+  t.deepEqual(descendant(star, 3, 0, 0).children.map(displayString), ['Unicode [Ll] character']);
 
   t.end();
 });
@@ -218,16 +218,16 @@ test('tracing with parameterized rules and memoization', function(t) {
   t.equal(descendant(many, 0, 0).children.length, 1);
   t.equal(descendant(many, 0, 0, 0).children.length, 1);
   t.equal(descendant(many, 0, 0, 0, 0).children.length, 1);
-  t.equal(descendant(many, 0, 0, 0, 0, 0).displayString, 'Unicode {Ll} character');
+  t.equal(descendant(many, 0, 0, 0, 0, 0).displayString, 'Unicode [Ll] character');
 
   t.equal(many.children[1].succeeded, true);
   t.equal(many.children[1].children.length, 1);
   t.equal(descendant(many, 1, 0).children.length, 1);
   t.equal(descendant(many, 1, 0, 0).children.length, 2);
   t.equal(descendant(many, 1, 0, 0, 0).children.length, 1);
-  t.equal(descendant(many, 1, 0, 0, 0, 0).displayString, 'Unicode {Ll} character');
+  t.equal(descendant(many, 1, 0, 0, 0, 0).displayString, 'Unicode [Ll] character');
   t.equal(descendant(many, 1, 0, 0, 1).children.length, 1);
-  t.equal(descendant(many, 1, 0, 0, 1, 0).displayString, 'Unicode {Lu} character');
+  t.equal(descendant(many, 1, 0, 0, 1, 0).displayString, 'Unicode [Lu] character');
   t.end();
 });
 
@@ -365,7 +365,7 @@ test('toString with left recursion', function(t) {
     'a                  ✗ start',  // Left-recursive base case.
     'a              ✓ letter ⇒  "a"',
     'a                  ✓ lower ⇒  "a"',
-    'a                    ✓ Unicode {Ll} character ⇒  "a"',
+    'a                    ✓ Unicode [Ll] character ⇒  "a"',
     '           ✓ end ⇒  ""']);
 
   t.end();

@@ -163,17 +163,17 @@ ab         ✓ start ⇒  "ab"
 ab           ✓ letter+ ⇒  "ab"
 ab             ✓ letter ⇒  "a"
 ab                 ✓ lower ⇒  "a"
-ab                   ✓ Unicode {Ll} character ⇒  "a"
+ab                   ✓ Unicode [Ll] character ⇒  "a"
 b              ✓ letter ⇒  "b"
 b                  ✓ lower ⇒  "b"
-b                    ✓ Unicode {Ll} character ⇒  "b"
+b                    ✓ Unicode [Ll] character ⇒  "b"
                ✗ letter
                    ✗ lower
-                     ✗ Unicode {Ll} character
+                     ✗ Unicode [Ll] character
                    ✗ upper
-                     ✗ Unicode {Lu} character
+                     ✗ Unicode [Lu] character
                    ✗ unicodeLtmo
-                     ✗ Unicode {Ltmo} character
+                     ✗ Unicode [Ltmo] character
            ✓ end ⇒  ""
 ```
 
