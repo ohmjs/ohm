@@ -294,47 +294,54 @@ Grammar.ProtoBuiltInRules = new Grammar(
   'ProtoBuiltInRules',  // name
   undefined,  // supergrammar
   {
-    // The following rules can't be written in userland because they reference
-    // `any` and `end` directly.
-    any: {body: pexprs.any, formals: [], description: 'any object'},
-    end: {body: pexprs.end, formals: [], description: 'end of input'},
+    any: {
+      body: pexprs.any,
+      formals: [],
+      description: 'any character',
+      primitive: true
+    },
+    end: {
+      body: pexprs.end,
+      formals: [],
+      description: 'end of input',
+      primitive: true
+    },
 
     caseInsensitive: {
       body: new CaseInsensitiveTerminal(new pexprs.Param(0)),
-      formals: ['expr']
+      formals: ['str'],
+      primitive: true
     },
-
-    // The following rule is invoked implicitly by syntactic rules to skip spaces.
-    spaces: {
-      body: new pexprs.Star(new pexprs.Apply('space')),
-      formals: []
-    },
-
-    // The `space` rule must be defined here because it's referenced by `spaces`.
-    space: {
-      body: new pexprs.Range('\x00', ' '),
-      formals: [],
-      description: 'a space'
-    },
-
-    // These rules are implemented natively because they use UnicodeChar directly, which is
-    // not part of the Ohm grammar.
     lower: {
       body: new pexprs.UnicodeChar('Ll'),
       formals: [],
-      description: 'a lowercase letter'
+      description: 'a lowercase letter',
+      primitive: true
     },
     upper: {
       body: new pexprs.UnicodeChar('Lu'),
       formals: [],
-      description: 'an uppercase letter'
+      description: 'an uppercase letter',
+      primitive: true
     },
-
-    // The union of Lt (titlecase), Lm (modifier), and Lo (other), i.e. any letter not
-    // in Ll or Lu.
+    // The union of Lt (titlecase), Lm (modifier), and Lo (other), i.e. any letter not in Ll or Lu.
     unicodeLtmo: {
       body: new pexprs.UnicodeChar('Ltmo'),
+      formals: [],
+      description: 'a Unicode character in Lt, Lm, or Lo',
+      primitive: true
+    },
+
+    // These rules are not truly primitive (they could be written in userland) but are defined
+    // here for bootstrapping purposes.
+    spaces: {
+      body: new pexprs.Star(new pexprs.Apply('space')),
       formals: []
+    },
+    space: {
+      body: new pexprs.Range('\x00', ' '),
+      formals: [],
+      description: 'a space'
     }
   }
 );

@@ -73,15 +73,15 @@ test('action dictionary templates', function(t) {
     '  },\n' +
     '  caseInsensitive: function(_) {\n' +
     '  },\n' +
-    '  spaces: function(_) {\n' +
-    '  },\n' +
-    '  space: function(_) {\n' +
-    '  },\n' +
     '  lower: function(_) {\n' +
     '  },\n' +
     '  upper: function(_) {\n' +
     '  },\n' +
     '  unicodeLtmo: function(_) {\n' +
+    '  },\n' +
+    '  spaces: function(_) {\n' +
+    '  },\n' +
+    '  space: function(_) {\n' +
     '  }\n' +
     '}');
   t.equal(ns.G2.toAttributeActionDictionaryTemplate(),
@@ -128,15 +128,15 @@ test('action dictionary templates', function(t) {
     '  },\n' +
     '  caseInsensitive: function(_) {\n' +
     '  },\n' +
-    '  spaces: function(_) {\n' +
-    '  },\n' +
-    '  space: function(_) {\n' +
-    '  },\n' +
     '  lower: function(_) {\n' +
     '  },\n' +
     '  upper: function(_) {\n' +
     '  },\n' +
     '  unicodeLtmo: function(_) {\n' +
+    '  },\n' +
+    '  spaces: function(_) {\n' +
+    '  },\n' +
+    '  space: function(_) {\n' +
     '  }\n' +
     '}');
   t.end();
