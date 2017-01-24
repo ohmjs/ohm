@@ -43,7 +43,7 @@ CaseInsensitiveTerminal.prototype = {
 
   generateExample: function(grammar, examples, inSyntacticContext, actuals) {
     // Start with a example generated from the Terminal...
-    var str = this.obj.generateExamples(grammar, examples, inSyntacticContext, actuals).value;
+    var str = this.obj.generateExample(grammar, examples, inSyntacticContext, actuals).value;
 
     // ...and randomly switch characters to uppercase/lowercase.
     var value = '';
