@@ -288,11 +288,10 @@ var g = ohm.grammarFromScriptElement();
 var m = g.matcher();
 var parseErrorWidget;
 
-editor.on('change', function(cmInstance, changeObj) {
-  var removedText = changeObj.removed.join('\n');
+editor.on('beforeChange', function(cmInstance, changeObj) {
   var insertedText = changeObj.text.join('\n');
   var fromIdx = editor.indexFromPos(changeObj.from);
-  var toIdx = fromIdx + removedText.length;
+  var toIdx = editor.indexFromPos(changeObj.to);
   inputChanged(fromIdx, toIdx, insertedText);
 });
 
