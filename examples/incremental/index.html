@@ -214,13 +214,7 @@ F {
       incrementally, i.e., the parser makes use of the information in its memo table to avoid
       doing unnecessary work.
     </div>
-    <textarea id="myTextArea">let rec fact =
-  fun x ->
-    match x with
-    | 0 -> 1
-    | _ -> x * fact (x - 1)
-in
-  fact 5</textarea>
+    <textarea id="myTextArea"></textarea>
     <stats>
       <div>
         <span style="color: cornflowerblue;">avg parse</span>
@@ -292,16 +286,14 @@ editor.on('beforeChange', function(cmInstance, changeObj) {
   var insertedText = changeObj.text.join('\n');
   var fromIdx = editor.indexFromPos(changeObj.from);
   var toIdx = editor.indexFromPos(changeObj.to);
-  inputChanged(fromIdx, toIdx, insertedText);
+  m.replaceInputRange(fromIdx, toIdx, insertedText);
 });
 
-function inputChanged(fromIdx, toIdx, insertedText) {
+editor.on('change', function(cmInstance, changeObj) {
   if (parseErrorWidget) {
     editor.removeLineWidget(parseErrorWidget);
     parseErrorWidget = undefined;
   }
-
-  m.replaceInputRange(fromIdx, toIdx, insertedText);
 
   var r;
   parseTimes.push(time(() => { r = m.match(); }));
@@ -322,9 +314,15 @@ function inputChanged(fromIdx, toIdx, insertedText) {
   }
 
   updateStats();
-};
+});
 
-inputChanged(0, 0, editor.getValue());
+editor.setValue(`let rec fact =
+  fun x ->
+    match x with
+    | 0 -> 1
+    | _ -> x * fact (x - 1)
+in
+  fact 5`);
 
     </script>
   </body>
