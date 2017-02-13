@@ -3,7 +3,6 @@
     "ecmaVersion": 6
   },
   "rules": {
-    "no-unused-vars": "off",
-    "arrow-parens": "off"
+    "no-unused-vars": "off"
   }
 }
