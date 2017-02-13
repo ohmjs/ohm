@@ -1,0 +1,27 @@
+<html>
+  <head>
+    <title>Natural-Language Datalog Syntax</title>
+  </head>
+  <body>
+    (See console.)
+    <script src="../../dist/ohm.min.js"></script>
+    <script src=ast-classes.js></script>
+    <script src=parser.js></script>
+    <script>
+
+'use strict';
+
+const ast = NLDatalog.parse(`
+  Homer is Bart's father.
+  Abe is Homer's father.
+  X is Y's parent if X is Y's father.
+  X is Y's grandfather if X is Z's father and Z is Y's parent.
+  X is Y's friend if X knows Y and X is not Y's relative.
+  123 is greater than 42.
+`);
+
+console.log(ast.toString());
+
+    </script>
+  </body>
+</html>
