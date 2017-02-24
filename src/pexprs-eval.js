@@ -140,22 +140,22 @@ pexprs.Iter.prototype.eval = function(state) {
   if (numMatches < this.minNumMatches) {
     return false;
   }
-  var startIdx = origPos;
+  var offset = state.posToOffset(origPos);
   var matchLength = 0;
   if (numMatches > 0) {
     var lastCol = cols[arity - 1];
     var lastColOffsets = colOffsets[arity - 1];
 
-    var endIdx =
+    var endOffset =
         lastColOffsets[lastColOffsets.length - 1] + lastCol[lastCol.length - 1].matchLength;
-    startIdx = colOffsets[0][0];
-    matchLength = endIdx - startIdx;
+    offset = colOffsets[0][0];
+    matchLength = endOffset - offset;
   }
   var isOptional = this instanceof pexprs.Opt;
   for (idx = 0; idx < cols.length; idx++) {
     state._bindings.push(
         new IterationNode(state.grammar, cols[idx], colOffsets[idx], matchLength, isOptional));
-    state._bindingOffsets.push(state.posToOffset(startIdx));
+    state._bindingOffsets.push(offset);
   }
   return true;
 };

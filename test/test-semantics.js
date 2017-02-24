@@ -625,3 +625,23 @@ test('sourceString', function(t) {
   t.end();
 });
 
+// https://github.com/harc/ohm/issues/188
+test('sourceString - issue #188', function(t) {
+  var g = testUtil.makeGrammar([
+    'G {',
+    '  Start = num num',
+    '  num = digit+',
+    '}'
+  ]);
+  var s = g.createSemantics().addOperation('origSource', {
+    Start: function(a, b) {
+      return a.origSource() + b.origSource();
+    },
+    num: function(digits) {
+      return digits.sourceString;
+    }
+  });
+  t.deepEqual(s(g.match('1 22')).origSource(), '122');
+
+  t.end();
+});
