@@ -239,7 +239,7 @@ The number of child nodes that the node has.
 
 `true` if the node is an iterator node having either one or no child (? operator), otherwise `false`.
 
-<b><pre class="api">n.primitiveValue: number|string|...</pre></b>
+<b><pre class="api">n.primitiveValue: string</pre></b>
 
 For a terminal node, the raw value that was consumed from the input stream.
 
