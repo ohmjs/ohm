@@ -81,11 +81,11 @@ Edit the current input string, replacing the characters between `startIdx` and `
 
 <b><pre class="api">m.match(optStartRule?: string) &rarr; MatchResult</pre></b>
 
-Like <a href="Grammar.match">Grammar's `match` method</a>, but operates incrementally.
+Like [Grammar's `match` method](#Grammar.match), but operates incrementally.
 
 <b><pre class="api">m.trace(optStartRule?: string) &rarr; Trace</pre></b>
 
-Like <a href="#Grammar.trace">Grammar's `trace` method</a>, but operates incrementally.
+Like [Grammar's `trace` method](#Grammar.trace), but operates incrementally.
 
 MatchResult objects
 -------------------
