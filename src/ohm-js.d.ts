@@ -1,10 +1,10 @@
-declare module 'ohm-js' {
+declare namespace ohm {
 
   /**
    * Instantiate the Grammar defined by source. If specified, namespace is
    * the Namespace to use when resolving external references in the grammar.
    */
-  function grammar(source: string, namespace?: Namespace): Grammar;
+  export function grammar(source: string, namespace?: Namespace): Grammar;
 
   /**
    * Create a new Namespace containing Grammar instances for all of the
@@ -12,7 +12,7 @@ declare module 'ohm-js' {
    * If namespace is specified, it will be the prototype of the new
    * Namespace.
    */
-  function grammars(source: string, namespace?: Namespace): Namespace;
+  export function grammars(source: string, namespace?: Namespace): Namespace;
 
   /**
    * Create a Grammar instance from the contents of a <script> tag.
@@ -22,7 +22,7 @@ declare module 'ohm-js' {
    * If specified, namespace is
    * the Namespace to use when resolving external references in the grammar.
    */
-  function grammarFromScriptElement(node?: Node, namespace?: Namespace): Grammar;
+  export function grammarFromScriptElement(node?: Node, namespace?: Namespace): Grammar;
 
   /**
    * Create a new Namespace containing Grammar instances for all of the
@@ -32,7 +32,7 @@ declare module 'ohm-js' {
    * If namespace is specified, it will be the prototype of the new
    * Namespace.
    */
-  function grammarFromScriptElements(
+  export function grammarFromScriptElements(
     nodeList?: NodeList,
     namespace?: Namespace): Namespace;
 
@@ -40,13 +40,13 @@ declare module 'ohm-js' {
    * Create a new namespace. If props is specified, all of its properties
    * will be copied to the new namespace.
    */
-  function namespace(props?: Object): Namespace;
+  export function namespace(props?: Object): Namespace;
 
   /**
    * Create a new namespace which inherits from namespace. If props is
    * specified, all of its properties will be copied to the new namespace.
    */
-  function extendNamespace(namespace: Namespace, props?: Object): Namespace;
+  export function extendNamespace(namespace: Namespace, props?: Object): Namespace;
 
   /**
    * A Namespace is a dictionary of Grammars
@@ -66,13 +66,13 @@ declare module 'ohm-js' {
      * supergrammar, or if there is no supergrammar specified, it is the
      * first rule in this grammar.
      */
-    match(input: string | Object, startRule?: string): MatchResult;
+    match(input: string, startRule?: string): MatchResult;
 
     /**
      * Like match() except returns a trace object whose toString() returns
      * a summary of each parsing step useful for debugging.
      */
-    trace(input: string | Object, startRule?: string): Object;
+    trace(input: string, startRule?: string): Object;
 
     /**
      * Create a new Semantics object for this Grammar.
@@ -305,3 +305,5 @@ declare module 'ohm-js' {
     getLineAndColumnMessage(): string;
   }
 }
+
+export default ohm;

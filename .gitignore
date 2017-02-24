@@ -1,6 +1,7 @@
 dist/ohm-grammar.js.*
 dist/*.old
 dist/browserify-cache.json
+dist/test-typings.js
 node_modules
 npm-debug.log
 .install-timestamp
