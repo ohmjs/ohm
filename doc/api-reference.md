@@ -75,7 +75,7 @@ Return the current input string.
 
 Set the input string to `str`.
 
-<b><pre class="api">m.replaceInputRange(startIdx: number, endIdx: number, str, str: string)</pre></b>
+<b><pre class="api">m.replaceInputRange(startIdx: number, endIdx: number, str: string)</pre></b>
 
 Edit the current input string, replacing the characters between `startIdx` and `endIdx` with `str`.
 
