@@ -40,13 +40,17 @@ Grammar objects
 
 A Grammar instance `g` has the following methods:
 
-<b><pre class="api">g.match(obj: string|object, optStartRule?: string) &rarr; MatchResult</pre></b>
+<a name="Grammar.match"><b><pre class="api">g.match(str: string, optStartRule?: string) &rarr; MatchResult</pre></b></a>
 
-Try to match `obj` against `g`, returning a MatchResult. If `optStartRule` is given, it specifies the rule on which to start matching. By default, the start rule is inherited from the supergrammar, or if there is no supergrammar specified, it is the first rule in `g`'s definition.
+Try to match `str` against `g`, returning a MatchResult. If `optStartRule` is given, it specifies the rule on which to start matching. By default, the start rule is inherited from the supergrammar, or if there is no supergrammar specified, it is the first rule in `g`'s definition.
 
-<b><pre class="api" id="trace">g.trace(obj: string|object, optStartRule?: string) &rarr; Trace</pre></b>
+<b><pre class="api">g.matcher()</pre></b>
 
-Try to match `obj` against `g`, returning a Trace object. `optNamespace` has the same meaning as in `ohm.grammar`. Trace objects have a `toString()` method, which returns a string which summarizes each parsing step (useful for debugging).
+Create a new [Matcher](#matcher-objects) object which supports incrementally matching `g` against a changing input string.
+
+<a name="Grammar.trace"><b><pre class="api" id="trace">g.trace(str: string, optStartRule?: string) &rarr; Trace</pre></b></a>
+
+Try to match `str` against `g`, returning a Trace object. `optNamespace` has the same meaning as in `ohm.grammar`. Trace objects have a `toString()` method, which returns a string which summarizes each parsing step (useful for debugging).
 
 <b><pre class="api">g.createSemantics() &rarr; Semantics</pre></b>
 
@@ -55,6 +59,33 @@ Create a new [Semantics](#semantics) object for `g`.
 <b><pre class="api">g.extendSemantics(superSemantics: Semantics) &rarr; Semantics</pre></b>
 
 Create a new [Semantics](#semantics) object for `g` that inherits all of the operations and attributes in `superSemantics`. `g` must be a descendent of the grammar associated with `superSemantics`.
+
+Matcher objects
+---------------
+
+Matcher objects can be used to incrementally match a changing input against the Matcher's grammar, e.g. in an editor or IDE. When a Matcher's input is modified via `replaceInputRange`, further calls to `match` will reuse the partial results of previous calls wherever possible. Generally, this means that small changes to the input will result in very short match times.
+
+A Matcher instance `m` has the following methods:
+
+<b><pre class="api">m.getInput() &rarr; string</pre></b>
+
+Return the current input string.
+
+<b><pre class="api">m.setInput(str: string)</pre></b>
+
+Set the input string to `str`.
+
+<b><pre class="api">m.replaceInputRange(startIdx: number, endIdx: number, str, str: string)</pre></b>
+
+Edit the current input string, replacing the characters between `startIdx` and `endIdx` with `str`.
+
+<b><pre class="api">m.match(optStartRule?: string) &rarr; MatchResult</pre></b>
+
+Like <a href="Grammar.match">Grammar's `match` method</a>, but operates incrementally.
+
+<b><pre class="api">m.trace(optStartRule?: string) &rarr; Trace</pre></b>
+
+Like <a href="#Grammar.trace">Grammar's `trace` method</a>, but operates incrementally.
 
 MatchResult objects
 -------------------
