@@ -1,10 +1,12 @@
+export = ohm;
+export as namespace ohm;
 declare namespace ohm {
 
   /**
    * Instantiate the Grammar defined by source. If specified, namespace is
    * the Namespace to use when resolving external references in the grammar.
    */
-  export function grammar(source: string, namespace?: Namespace): Grammar;
+  function grammar(source: string, namespace?: Namespace): Grammar;
 
   /**
    * Create a Grammar instance from the contents of a <script> tag.
@@ -14,7 +16,7 @@ declare namespace ohm {
    * If specified, namespace is
    * the Namespace to use when resolving external references in the grammar.
    */
-  export function grammarFromScriptElement(node?: Node, namespace?: Namespace): Grammar;
+  function grammarFromScriptElement(node?: Node, namespace?: Namespace): Grammar;
 
   /**
    * Create a new Namespace containing Grammar instances for all of the
@@ -22,7 +24,7 @@ declare namespace ohm {
    * If namespace is specified, it will be the prototype of the new
    * Namespace.
    */
-  export function grammars(source: string, namespace?: Namespace): Namespace;
+  function grammars(source: string, namespace?: Namespace): Namespace;
 
   /**
    * Create a new Namespace containing Grammar instances for all of the
@@ -32,7 +34,7 @@ declare namespace ohm {
    * If namespace is specified, it will be the prototype of the new
    * Namespace.
    */
-  export function grammarFromScriptElements(
+  function grammarFromScriptElements(
     nodeList?: NodeList,
     namespace?: Namespace): Namespace;
 
@@ -40,13 +42,13 @@ declare namespace ohm {
    * Create a new namespace. If props is specified, all of its properties
    * will be copied to the new namespace.
    */
-  export function namespace(props?: Object): Namespace;
+  function namespace(props?: Object): Namespace;
 
   /**
    * Create a new namespace which inherits from namespace. If props is
    * specified, all of its properties will be copied to the new namespace.
    */
-  export function extendNamespace(namespace: Namespace, props?: Object): Namespace;
+  function extendNamespace(namespace: Namespace, props?: Object): Namespace;
 
   /**
    * A Namespace is a dictionary of Grammars
@@ -107,7 +109,7 @@ declare namespace ohm {
     /**
      * Set the input string to `str`.
      */
-    setInput(str: string);
+    setInput(str: string): void;
 
     /**
      * Edit the current input string, replacing the characters between
@@ -263,6 +265,11 @@ declare namespace ohm {
     source: Interval;
 
     /**
+     * Returns the contents of the input stream consumed by this node.
+    */
+    sourceString: string;
+
+    /**
      * The number of child nodes that the node has.
      */
     numChildren: number;
@@ -343,5 +350,3 @@ declare namespace ohm {
     getLineAndColumnMessage(): string;
   }
 }
-
-export default ohm;

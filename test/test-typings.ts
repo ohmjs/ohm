@@ -1,4 +1,4 @@
-import ohm from '..';
+import * as ohm from '..';
 
 const g = ohm.grammar(`
   G {
@@ -14,7 +14,7 @@ const s = g.createSemantics().addOperation('getName', {
 });
 
 const matchResult = g.match('Ahoy-hoy, Alexander!');
-console.log(s(matchResult).getName());
+console.log(s(matchResult)['getName']());
 
 const matcher = g.matcher();
 matcher.setInput('foo');
