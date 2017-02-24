@@ -7,14 +7,6 @@ declare namespace ohm {
   export function grammar(source: string, namespace?: Namespace): Grammar;
 
   /**
-   * Create a new Namespace containing Grammar instances for all of the
-   * grammars defined in source.
-   * If namespace is specified, it will be the prototype of the new
-   * Namespace.
-   */
-  export function grammars(source: string, namespace?: Namespace): Namespace;
-
-  /**
    * Create a Grammar instance from the contents of a <script> tag.
    * node, if specified, is a script tag with the attribute
    * type="text/ohm-js". If it is not specified, the result of
@@ -23,6 +15,14 @@ declare namespace ohm {
    * the Namespace to use when resolving external references in the grammar.
    */
   export function grammarFromScriptElement(node?: Node, namespace?: Namespace): Grammar;
+
+  /**
+   * Create a new Namespace containing Grammar instances for all of the
+   * grammars defined in source.
+   * If namespace is specified, it will be the prototype of the new
+   * Namespace.
+   */
+  export function grammars(source: string, namespace?: Namespace): Namespace;
 
   /**
    * Create a new Namespace containing Grammar instances for all of the
@@ -56,7 +56,7 @@ declare namespace ohm {
   }
 
   /**
-   * An ohm Grammar.
+   * An Ohm Grammar.
    */
   interface Grammar {
     /**
@@ -67,6 +67,12 @@ declare namespace ohm {
      * first rule in this grammar.
      */
     match(input: string, startRule?: string): MatchResult;
+
+    /**
+     * Create a new Matcher object which supports incrementally matching
+     * this grammar against a changing input string.
+     */
+    matcher(): Matcher;
 
     /**
      * Like match() except returns a trace object whose toString() returns
@@ -86,6 +92,40 @@ declare namespace ohm {
      * superSemantics.
      */
     extendSemantics(superSemantics: Semantics): Semantics;
+  }
+
+  /**
+   * Matcher objects are used to incrementally match a changing input
+   * against a Grammar, e.g. in an editor or IDE.
+   */
+  interface Matcher {
+    /**
+     * Return the current input string.
+     */
+    getInput(): string;
+
+    /**
+     * Set the input string to `str`.
+     */
+    setInput(str: string);
+
+    /**
+     * Edit the current input string, replacing the characters between
+     * `startIdx` and `endIdx` with `str`.
+     */
+    replaceInputRange(startIdx: number, endIdx: number, str: string): Matcher;
+
+
+    /**
+     * Like Grammar#match, but operates incrementally.
+     */
+    match(optStartRule?: string): MatchResult;
+
+
+    /**
+     * Like Grammar#trace, but operates incrementally.
+     */
+    trace(optStartRule?: string): Object;
   }
 
   /**
@@ -165,8 +205,6 @@ declare namespace ohm {
     extendAttribute(name: string, actionDict: ActionDict): Semantics;
   }
 
-
-
   /**
    * A dictionary is indexed by strings.
    */
@@ -238,7 +276,7 @@ declare namespace ohm {
      * For a terminal node, the raw value that was consumed from the
      * input stream.
      */
-    primitiveValue: any;
+    primitiveValue: string;
 
     /**
      * In addition to the properties defined above, within a given
