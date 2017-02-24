@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.13.0 - February 24, 2017
+
+### Notable changes:
+
+**Big stuff**
+- Ohm now supports incremental parsing! See the new Matcher class, which
+  can be instantiated for a grammar `g` via `g.matcher()`.
+
+**Language**
+- [75d1bc8] Update built-in `lower`, `upper`, and `unicodeLtmo` rules to be
+  consistent with unicode-9.0.0
+- [4f864a0] Add built-in rule `caseInsensitive` rule for case-insensitive
+  string matching (fixes #162)
+
+**API**
+- [b63aa84] Remove MatchResult.prototype.getDiscardedSpaces()
+- [7b455d2] Remove `children` and `childOffset` from TerminalNodes (fixes #176)
+
+**Misc**
+- [865c948] Add Typescript type declarations (#187)
+- [798ea77] Show action call stack when a semantic action is missing (fixes #53)
+- [482b693] Add VisitorFamily to extras (#156)
+
 ## v0.12.0 - August 16, 2016
 
 - [17d1e32]: Grammar.prototype.semantics renamed to `createSemantics`.
