@@ -39,7 +39,7 @@
     "postinstall": "bash bin/postinstall",
     "prepublish": "npm run lint && npm run build && npm run bootstrap",
     "unsafe-bootstrap": "bash bin/bootstrap",
-    "visualizer": "npm run watch & bin/ohm-visualizer",
+    "visualizer": "bash bin/ohm-visualizer",
     "watch": "bash bin/watch.sh"
   },
   "license": "MIT",
@@ -75,9 +75,7 @@
   },
   "devDependencies": {
     "@types/tape": "^4.2.29",
-    "browser-sync": "^2.18.5",
     "browserify": "^13.1.1",
-    "checked-emitter": "^1.0.1",
     "eslint": "~3.13.1",
     "eslint-config-google": "~0.7.1",
     "eslint-plugin-camelcase-ohm": "~0.2.1",
