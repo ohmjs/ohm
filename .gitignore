@@ -5,3 +5,4 @@ dist/test-typings.js
 node_modules
 npm-debug.log
 .install-timestamp
+apidoc

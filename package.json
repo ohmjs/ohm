@@ -40,7 +40,8 @@
     "prepublish": "npm run lint && npm run build && npm run bootstrap",
     "unsafe-bootstrap": "bash bin/bootstrap",
     "visualizer": "bash bin/ohm-visualizer",
-    "watch": "bash bin/watch.sh"
+    "watch": "bash bin/watch.sh",
+    "apidoc": "typedoc --module commonjs --target ES5 --out apidoc --name ohm --mode file --includeDeclarations --excludeExternals --exclude test/test-typings.ts"
   },
   "license": "MIT",
   "author": "Alex Warth <alexwarth@gmail.com> (http://tinlizzie.org/~awarth)",
@@ -90,6 +91,7 @@
     "tape": "^4.6.3",
     "tape-catch": "^1.0.6",
     "ts-node": "^2.1.0",
+    "typedoc": "^0.5.7",
     "typescript": "^2.2.1",
     "uglify-js": "^2.7.5",
     "walk-sync": "^0.3.1",
