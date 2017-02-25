@@ -29,7 +29,7 @@
     "build": "npm run build-debug && uglifyjs dist/ohm.js > dist/ohm.min.js",
     "prebuild-debug": "bash bin/update-env.sh",
     "build-debug": "bash bin/build-debug.sh",
-    "ci-test": "npm run lint && npm test && tsc --noImplicitAny --outDir dist test/test-typings.ts",
+    "ci-test": "npm run lint && npm test && ts-node test/test-typings.ts",
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
     "deploy-gh-pages": "bin/deploy-gh-pages.sh",
     "lint": "eslint .",
@@ -74,6 +74,7 @@
     "util-extend": "^1.0.3"
   },
   "devDependencies": {
+    "@types/tape": "^4.2.29",
     "browser-sync": "^2.18.5",
     "browserify": "^13.1.1",
     "checked-emitter": "^1.0.1",
@@ -90,6 +91,7 @@
     "tap-spec": "^4.1.1",
     "tape": "^4.6.3",
     "tape-catch": "^1.0.6",
+    "ts-node": "^2.1.0",
     "typescript": "^2.2.1",
     "uglify-js": "^2.7.5",
     "walk-sync": "^0.3.1",
