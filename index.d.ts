@@ -1,5 +1,5 @@
 export = ohm;
-export as namespace ohm;
+
 declare namespace ohm {
 
   /**
