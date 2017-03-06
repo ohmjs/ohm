@@ -50,7 +50,7 @@ Ohm {
 
   Base
     = ident Params? ~(ruleDescr? "=" | ":=" | "+=")  -- application
-    | terminal ".." terminal                         -- range
+    | oneCharTerminal ".." oneCharTerminal           -- range
     | terminal                                       -- terminal
     | "(" Alt ")"                                    -- paren
 
@@ -79,6 +79,9 @@ Ohm {
 
   terminal
     = "\"" terminalChar* "\""
+
+  oneCharTerminal
+    = "\"" terminalChar "\""
 
   terminalChar
     = escapeChar

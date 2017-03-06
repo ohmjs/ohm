@@ -159,6 +159,19 @@ test('ranges', function(t) {
   assertFails(t, m.match('x', 'charRange'));
   t.equal(s(m.match('4', 'charRange')).v, '4');
 
+  t.throws(
+      function() { ohm.grammar('M { charRange = "ab".."c" }'); },
+      /Expected "}"/,
+      'from-terminal must have length 1');
+  t.throws(
+      function() { ohm.grammar('M { charRange = "ab".."cd" }'); },
+      /Expected "}"/,
+      'from-terminal must have length 1');
+  t.throws(
+      function() { ohm.grammar('M { charRange = "a".."bc" }'); },
+      /Expected "\\""/,
+      'to-terminal must have length 1');
+
   t.end();
 });
 

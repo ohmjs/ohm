@@ -222,11 +222,15 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     nameRest: function(expr) {},
 
     terminal: function(open, cs, close) {
-      return cs.visit().map(function(c) { return common.unescapeChar(c); }).join('');
+      return cs.visit().join('');
+    },
+
+    oneCharTerminal: function(open, c, close) {
+      return c.visit();
     },
 
     terminalChar: function(_) {
-      return this.sourceString;
+      return common.unescapeChar(this.sourceString);
     },
 
     escapeChar: function(_) {

@@ -108,6 +108,9 @@ semantics.addOperation('prettyPrint()', {
   },
   terminal: function(open, _, close) {
     return this.sourceString;
+  },
+  oneCharTerminal: function(open, c, close) {
+    return this.sourceString;
   }
 });
 
