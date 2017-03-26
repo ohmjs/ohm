@@ -82,13 +82,13 @@ As with the `*` and `+` operators, spaces are skipped when used in a [syntactic 
 
 <pre><code><i>expr1</i> | <i>expr2</i></code></pre>
 
-Matches the expression `expr1`, and if that does not succeed, matches the expression `expr2`. E.g., `letter | number` will match `'a'`, `'9'`, ...
+Matches the expression `expr1`, and if that does not succeed, matches the expression `expr2`. E.g., `letter | digit` will match `'a'`, `'9'`, ...
 
 ### Lookahead: &
 
 <pre><code>& <i>expr</i></code></pre>
 
-Succeeds if the expression `expr` can be matched, but does not consume anything from the input stream. Usually used as part of a sequence, e.g. `letter &number` will match `'a9'`, but only consume 'a'. `&"a" letter+` will match any string of letters that begins with 'a'.
+Succeeds if the expression `expr` can be matched, but does not consume anything from the input stream. Usually used as part of a sequence, e.g. `letter &digit` will match `'a9'`, but only consume 'a'. `&"a" letter+` will match any string of letters that begins with 'a'.
 
 ### Negative Lookahead: ~
 
