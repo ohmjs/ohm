@@ -104,7 +104,7 @@ Return `true` if the match failed, otherwise `false`.
 
 ### MatchFailure objects
 
-When `r.failed()` is `true`, `r` has the following additional properties:
+When `r.failed()` is `true`, `r` has the following additional properties and methods:
 
 <b><pre class="api">r.message: string</pre></b>
 
@@ -113,6 +113,14 @@ Contains a message indicating where and why the match failed. This message is su
 <b><pre class="api">r.shortMessage: string</pre></b>
 
 Contains an abbreviated version of `r.message` that does not include an excerpt from the invalid input.
+
+<b><pre class="api">r.getRightmostFailurePosition() &rarr; number</pre></b>
+
+Return the index in the input stream at which the match failed.
+
+<b><pre class="api">r.getRightmostFailures() &rarr; Array</pre></b>
+
+Return an array of Failure objects describing the failures the occurred at the rightmost failure position.
 
 <h2 id="semantics">Semantics, Operations, and Attributes</h2>
 
