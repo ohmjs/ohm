@@ -334,7 +334,7 @@ test('_terminal nodes', function(t) {
 
   t.throws(function() {
     g.createSemantics().addOperation('op', {})(m).op();
-  }, /Missing semantic action for _terminal/);
+  }, /Missing semantic action for '_terminal'/);
 
   t.throws(function() {
     g.createSemantics().addOperation('op', {
@@ -642,6 +642,45 @@ test('sourceString - issue #188', function(t) {
     }
   });
   t.deepEqual(s(g.match('1 22')).origSource(), '122');
+
+  t.end();
+});
+
+test('action call stacks', function(t) {
+  var g = ohm.grammar('G { start = digit }');
+  var s = g.createSemantics().addOperation('oops', {});
+
+  var err;
+  try {
+    s(g.match('9')).oops();
+  } catch (e) {
+    err = e;
+  }
+  t.equal(err.message, [
+    "Missing semantic action for '_terminal' in operation 'oops'",
+    'Action stack (most recent call last):',
+    "  oops > default action for 'start'",
+    "  oops > default action for 'digit'",
+    '  oops > _terminal'
+  ].join('\n'));
+
+  s.addOperation('op2', {
+    start: function(d) {
+      return d.oops();
+    }
+  });
+  try {
+    s(g.match('9')).op2();
+  } catch (e) {
+    err = e;
+  }
+  t.equal(err.message, [
+    "Missing semantic action for '_terminal' in operation 'oops'",
+    'Action stack (most recent call last):',
+    '  op2 > start',
+    "  oops > default action for 'digit'",
+    '  oops > _terminal'
+    ].join('\n'));
 
   t.end();
 });

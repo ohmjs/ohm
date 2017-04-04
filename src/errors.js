@@ -179,9 +179,20 @@ function multipleErrors(errors) {
 
 // ----------------- semantic -----------------
 
-function missingSemanticAction(ctorName, name, type) {
-  var e = createError(
-      'Missing semantic action for ' + ctorName + ' in ' + name + ' ' + type);
+function missingSemanticAction(ctorName, name, type, stack) {
+  var stackTrace = stack.slice(0, -1).map(function(info) {
+    var ans = '  ' + info[0].name + ' > ' + info[1];
+    return info.length === 3
+        ? ans + " for '" + info[2] + "'"
+        : ans;
+  }).join('\n');
+  stackTrace += '\n  ' + name + ' > ' + ctorName;
+
+  var where = type + " '" + name + "'";
+  var message = "Missing semantic action for '" + ctorName + "' in " + where + '\n' +
+                'Action stack (most recent call last):\n' + stackTrace;
+
+  var e = createError(message);
   e.name = 'missingSemanticAction';
   return e;
 }

@@ -17,6 +17,8 @@ var errors = require('./errors');
 // Private stuff
 // --------------------------------------------------------------------
 
+var globalActionStack = [];
+
 // JSON is not a valid subset of JavaScript because there are two possible line terminators,
 // U+2028 (line separator) and U+2029 (paragraph separator) that are allowed in JSON strings
 // but not in JavaScript strings.
@@ -389,8 +391,7 @@ function newDefaultAction(type, name, doIt) {
     } else {
       // Otherwise, we throw an exception to let the programmer know that we don't know what
       // to do with this node.
-      throw errors.missingSemanticAction(
-          this.ctorName, name, type);
+      throw errors.missingSemanticAction(this.ctorName, name, type, globalActionStack);
     }
   };
 }
@@ -448,17 +449,9 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
 
     var oldArgs = this.args;
     this.args = args;
-    try {
-      var ans = thisThing.execute(this._semantics, this);
-
-      this.args = oldArgs;
-      return ans;
-    } catch (e) {
-      if (e.name === 'missingSemanticAction') {
-        e.message += '\n' + this.ctorName;
-      }
-      throw e;
-    }
+    var ans = thisThing.execute(this._semantics, this);
+    this.args = oldArgs;
+    return ans;
   }
 
   if (type === 'operation') {
@@ -666,27 +659,39 @@ Operation.prototype.checkActionDict = function(grammar) {
 // Execute this operation on the CST node associated with `nodeWrapper` in the context of the given
 // Semantics instance.
 Operation.prototype.execute = function(semantics, nodeWrapper) {
-  // Look for a semantic action whose name matches the node's constructor name, which is either the
-  // name of a rule in the grammar, or '_terminal' (for a terminal node), or '_iter' (for an
-  // iteration node). In the latter case, the action function receives a single argument, which is
-  // an array containing all of the children of the CST node.
-  var actionFn = this.actionDict[nodeWrapper._node.ctorName];
-  if (actionFn) {
-    return this.doAction(semantics, nodeWrapper, actionFn, nodeWrapper.isIteration());
-  }
-
-  // The action dictionary does not contain a semantic action for this specific type of node.
-  // If this is a nonterminal node and the programmer has provided a `_nonterminal` semantic
-  // action, we invoke it:
-  if (nodeWrapper.isNonterminal()) {
-    actionFn = this.actionDict._nonterminal;
+  try {
+    // Look for a semantic action whose name matches the node's constructor name, which is either
+    // the name of a rule in the grammar, or '_terminal' (for a terminal node), or '_iter' (for an
+    // iteration node). In the latter case, the action function receives a single argument, which
+    // is an array containing all of the children of the CST node.
+    var ctorName = nodeWrapper._node.ctorName;
+    var actionFn = this.actionDict[ctorName];
+    var ans;
     if (actionFn) {
-      return this.doAction(semantics, nodeWrapper, actionFn, true);
+      globalActionStack.push([this, ctorName]);
+      ans = this.doAction(semantics, nodeWrapper, actionFn, nodeWrapper.isIteration());
+      return ans;
     }
-  }
 
-  // Otherwise, we invoke the '_default' semantic action.
-  return this.doAction(semantics, nodeWrapper, this.actionDict._default, true);
+    // The action dictionary does not contain a semantic action for this specific type of node.
+    // If this is a nonterminal node and the programmer has provided a `_nonterminal` semantic
+    // action, we invoke it:
+    if (nodeWrapper.isNonterminal()) {
+      actionFn = this.actionDict._nonterminal;
+      if (actionFn) {
+        globalActionStack.push([this, '_nonterminal', ctorName]);
+        ans = this.doAction(semantics, nodeWrapper, actionFn, true);
+        return ans;
+      }
+    }
+
+    // Otherwise, we invoke the '_default' semantic action.
+    globalActionStack.push([this, 'default action', ctorName]);
+    ans = this.doAction(semantics, nodeWrapper, this.actionDict._default, true);
+    return ans;
+  } finally {
+    globalActionStack.pop();
+  }
 };
 
 // Invoke `actionFn` on the CST node that corresponds to `nodeWrapper`, in the context of

@@ -66,7 +66,7 @@
 
     no-warning-comments: ["error", {terms: ["xxx", "fixme"]}],
 
-    operator-linebreak: ["error", "after", {overrides: { ":": "ignore"}}],
+    operator-linebreak: ["error", "after", {overrides: { ":": "ignore", "?": "ignore"}}],
     padded-blocks: 0,
     quotes: ["error", "single", "avoid-escape"],
     radix: 0,
