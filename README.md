@@ -15,7 +15,7 @@ Like its older sibling [OMeta](http://tinlizzie.org/ometa/), Ohm supports object
 extension. One thing that distinguishes Ohm from other parsing tools is that it completely
 separates grammars from semantic actions. In Ohm, a grammar defines a language, and semantic
 actions specify what to do with valid inputs in that language. Semantic actions are written in the
-_host language_ -- e.g., for Ohm/JS, the host language is JavaScript. Ohm grammars, on the other
+_host language_ — e.g., for Ohm/JS, the host language is JavaScript. Ohm grammars, on the other
 hand, work without modification in any host language. This separation improves modularity, and
 makes both grammars and semantic actions easier to read and understand. Currently, JavaScript is
 the only host language, but as the API stabilizes, we hope to have implementations for other
@@ -148,7 +148,7 @@ You can [try the visualizer online](https://ohmlang.github.io/editor), or if you
 
 To see the text trace for a grammar `g`, just use the [`g.trace()`](./doc/api-reference.md#trace)
 method instead of `g.match`. It takes the same arguments, but instead of returning a MatchResult
-object, it returns a Trace object -- calling its `toString` method returns a string describing
+object, it returns a Trace object — calling its `toString` method returns a string describing
 all of the decisions the parser made when trying to match the input. For example, here is the
 result of `g.trace('ab').toString()` for the grammar `G { start = letter+ }`:
 
