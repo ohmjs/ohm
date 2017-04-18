@@ -158,6 +158,54 @@ Grammar.prototype = {
     return false;
   },
 
+  toJson: function() {
+    var blob = {};
+    blob.name = this.name;
+    if (this.superGrammar) {
+      blob.superGrammar = this.superGrammar.name;
+    }
+    if (this.defaultStartRule) {
+      blob.defaultStartRule = this.defaultStartRule;
+    }
+    var definitions = {};
+    var extensions = {};
+    var overrides = {};
+    blob.definitions = definitions;
+    blob.extensions = extensions;
+    blob.overrides = overrides;
+    var self = this;
+    Object.keys(this.ruleBodies).forEach(function(ruleName) {
+      var body = self.ruleBodies[ruleName];
+      var formals = self.ruleFormals[ruleName];
+      var rule = {};
+      rule.name = ruleName;
+      rule.formals = formals;
+      rule.body = body.toJson(formals);
+      if (self.superGrammar && self.superGrammar.ruleBodies[ruleName]) {
+        (body instanceof pexprs.Extend ? extensions : overrides)[ruleName] = rule;
+      } else {
+        if (self.ruleDescriptions[ruleName]) {
+          rule.description = self.ruleDescriptions[ruleName];
+        }
+        definitions[ruleName] = rule;
+      }
+    });
+    return blob;
+  },
+
+  jsonHierarchy: function() {
+    var grammars = {};
+    var g = this;
+    while (g) {
+      grammars[g.name] = g.toJson();
+      g = g.superGrammar;
+    }
+    return {
+      startGrammar: this.name,
+      grammars: grammars
+    };
+  },
+
   toRecipe: function(optVarName) {
     var metaInfo = {};
     // Include the grammar source if it is available.
