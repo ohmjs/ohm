@@ -10,17 +10,16 @@ var fs = require('fs');
 
 var args = process.argv.slice(2);
 if (args.length !== 1) {
-  console.error('usage: ' + process.argv[0] + ' ' + process.argv[1] +
-                ' { --builtin | <ohm-grammar-file> }');
+  console.error('usage: ' + process.argv[1] + ' { --builtin | <ohm-grammar-file> }');
   process.exit(1);  // eslint-disable-line no-process-exit
 }
 
 var filename = args[0];
-var grammar;
+var grammars;
 
 if (filename === '--builtin') {
   var Grammar = require('./Grammar');
-  grammar = Grammar.ProtoBuiltInRules;
+  grammars = {ProtoBuiltInRules: Grammar.ProtoBuiltInRules};
 } else {
   var source;
   try {
@@ -29,8 +28,18 @@ if (filename === '--builtin') {
     console.error('error: cannot read file', filename);
     process.exit(2);  // eslint-disable-line no-process-exit
   }
-  grammar = ohm.grammar(source);
+  grammars = ohm.grammars(source);
 }
 
 console.log("var ohm = require('..');");
-console.log('module.exports = ohm.makeRecipe(' + grammar.toRecipe() + ');');
+
+var keys = Object.keys(grammars);
+if (keys.length === 1) {
+  console.log('module.exports = ohm.makeRecipe(' + grammar.toRecipe() + ');');
+} else {
+  console.log('module.exports = {');
+  keys.forEach(function(k) {
+    console.log(JSON.stringify(k) + ': ' + grammars[k].toRecipe() + ',');
+  });
+  console.log('};');
+}

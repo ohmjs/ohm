@@ -71,33 +71,9 @@ PosInfo.prototype = {
 
   memoize: function(memoKey, memoRec) {
     this.memo[memoKey] = memoRec;
-    this.maxExaminedLength = Math.max(this.maxExaminedLength, memoRec.examinedLength);
     this.maxRightmostFailureOffset =
         Math.max(this.maxRightmostFailureOffset, memoRec.rightmostFailureOffset);
     return memoRec;
-  },
-
-  clearObsoleteEntries: function(pos, invalidatedIdx) {
-    if (pos + this.maxExaminedLength <= invalidatedIdx) {
-      // Optimization: none of the rule applications that were memoized here examined the
-      // interval of the input that changed, so nothing has to be invalidated.
-      return;
-    }
-
-    var memo = this.memo;
-    this.maxExaminedLength = 0;
-    this.maxRightmostFailureOffset = -1;
-    var self = this;
-    Object.keys(memo).forEach(function(k) {
-      var memoRec = memo[k];
-      if (pos + memoRec.examinedLength > invalidatedIdx) {
-        delete memo[k];
-      } else {
-        self.maxExaminedLength = Math.max(self.maxExaminedLength, memoRec.examinedLength);
-        self.maxRightmostFailureOffset =
-            Math.max(self.maxRightmostFailureOffset, memoRec.rightmostFailureOffset);
-      }
-    });
   }
 };
 

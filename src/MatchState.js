@@ -273,9 +273,6 @@ MatchState.prototype = {
       this.recordFailures(memoRec.failuresAtRightmostPosition, true);
     }
 
-    this.inputStream.examinedLength =
-        Math.max(this.inputStream.examinedLength, memoRec.examinedLength + origPos);
-
     if (memoRec.value) {
       this.inputStream.pos += memoRec.matchLength;
       this.pushBinding(memoRec.value, origPos);

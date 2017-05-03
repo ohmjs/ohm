@@ -234,7 +234,7 @@ pexprs.Apply.prototype.handleCycle = function(state) {
     // New left recursion detected! Memoize a failure to try to get a seed parse.
     memoRec = posInfo.memoize(
         memoKey,
-        {matchLength: 0, examinedLength: 0, value: false, rightmostFailureOffset: -1});
+        {matchLength: 0, value: false, rightmostFailureOffset: -1});
     posInfo.startLeftRecursion(this, memoRec);
   }
   return state.useMemoizedResult(state.inputStream.pos, memoRec);
@@ -254,11 +254,6 @@ pexprs.Apply.prototype.reallyEval = function(state) {
     state.pushFailuresInfo();
   }
 
-  // Reset the input stream's examinedLength property so that we can track
-  // the examined length of this particular application.
-  var origInputStreamExaminedLength = inputStream.examinedLength;
-  inputStream.examinedLength = 0;
-
   var value = this.evalOnce(body, state);
   var currentLR = origPosInfo.currentLeftRecursion;
   var memoKey = this.toMemoKey();
@@ -269,14 +264,12 @@ pexprs.Apply.prototype.reallyEval = function(state) {
     value = this.growSeedResult(body, state, origPos, currentLR, value);
     origPosInfo.endLeftRecursion();
     memoRec = currentLR;
-    memoRec.examinedLength = inputStream.examinedLength - origPos;
     memoRec.rightmostFailureOffset = state._getRightmostFailureOffset();
     origPosInfo.memoize(memoKey, memoRec);  // updates origPosInfo's maxExaminedLength
   } else if (!currentLR || !currentLR.isInvolved(memoKey)) {
     // This application is not involved in left recursion, so it's ok to memoize it.
     memoRec = origPosInfo.memoize(memoKey, {
       matchLength: inputStream.pos - origPos,
-      examinedLength: inputStream.examinedLength - origPos,
       value: value,
       failuresAtRightmostPosition: state.cloneRecordedFailures(),
       rightmostFailureOffset: state._getRightmostFailureOffset()
@@ -304,10 +297,6 @@ pexprs.Apply.prototype.reallyEval = function(state) {
     }
     memoRec.traceEntry = entry;
   }
-
-  // Fix the input stream's examinedLength -- it should be the maximum examined length
-  // across all applications, not just this one.
-  inputStream.examinedLength = Math.max(inputStream.examinedLength, origInputStreamExaminedLength);
 
   state.exitApplication(origPosInfo, value);
 
