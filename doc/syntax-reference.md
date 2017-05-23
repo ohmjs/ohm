@@ -14,13 +14,13 @@ Ohm is closely related to [OMeta](http://tinlizzie.org/ometa/), another PEG-base
 
 ## Terminology
 
-<script type="text/markscript">
+<!-- @markscript
   var ohm = require('ohm-js');
   function checkGrammar(source) {
   	assert(ohm.grammar(source));
   }
   markscript.transformNextBlock(checkGrammar);
-</script>
+-->
 
 ```
 Arithmetic {
@@ -173,12 +173,12 @@ Defines a new rule named `ruleName` which has _n_ parameters. In the rule body _
 
 Rule declarations may optionally have a description, which is a parenthesized "comment" following the name of the rule in its declaration. Rule descriptions are used to produce better error messages for end users of a language when input is not recognized. For example:
 
-<script type="text/markscript">
+<!-- @markscript
   function checkRule(source) {
     assert(ohm.ohmGrammar.match(source, 'Rule').succeeded());
   }
   markscript.transformNextBlock(checkRule);
-</script>
+-->
 
 ```
 ident (an identifier)
@@ -191,9 +191,9 @@ ident (an identifier)
 
 When a parsing expression is followed by the characters `--` and a name, it signals an _inline rule declaration_. This is most commonly used in alternation expressions to ensure that each branch has the same arity. For example, the following declaration:
 
-<script type="text/markscript">
+<!-- @markscript
   markscript.transformNextBlock(checkRule);
-</script>
+-->
 
 ```
 AddExp = AddExp "+" MulExp  -- plus
