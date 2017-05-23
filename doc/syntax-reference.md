@@ -42,6 +42,12 @@ Matches exactly the characters contained inside the quotation marks.
 
 Special characters (`"`, `\`, and `'`) can be escaped with a backslash -- e.g., `"\""` will match a literal quote character in the input stream. Other valid escape sequences include: `\b` (backspace), `\f` (form feed), `\n` (line feed), `\r` (carriage return), and `\t` (tab), as well as `\x` followed by 2 hex digits and `\u` followed by 4 hex digits, for matching characters by code point.
 
+### Terminal Range
+
+<pre><code><i>start</i>..<i>end</i></code></pre>
+
+Matches exactly one character whose character code is between the terminals _start_ and _end_ (inclusive). E.g., `"a".."b"` will match `'a'`, `'b'`, or `'c'`. Note: _start_ and _end_ must be 1-character [Terminal](#terminals) expressions.
+
 ### Rule Application
 
 <pre><code><i>ruleName</i></code></pre>
