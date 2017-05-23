@@ -114,12 +114,12 @@ For more information, see [Instantiating Grammars](doc/api-reference.md#instanti
 
 ![Matching input](http://harc.github.io/ohm/doc/images/matching.png)
 
-<script type="text/markscript">
+<!-- @markscript
   // The duplication here is required because Markscript only executes top-level code blocks.
   // TODO: Consider fixing this in Markscript.
   var ohm = require('ohm-js');
   var myGrammar = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
-</script>
+-->
 
 Once you've instantiated a grammar object, use the grammar's `match()` method to recognize input:
 
@@ -152,12 +152,12 @@ object, it returns a Trace object — calling its `toString` method returns a st
 all of the decisions the parser made when trying to match the input. For example, here is the
 result of `g.trace('ab').toString()` for the grammar `G { start = letter+ }`:
 
-<script type="text/markscript">
+<!-- @markscript
   markscript.transformNextBlock(function(code) {
     var trace = ohm.grammar('G { start = letter+ }').trace('ab');
     assert.equal(trace.toString().trim(), code.trim());
   });
-</script>
+-->
 
 ```
 ab         ✓ start ⇒  "ab"

@@ -29,7 +29,7 @@ assert(g.match('loooooool').succeeded());
 
 You can use _operations_ and _attributes_ to analyze and extract values from parsed data. For example, take the following grammar in `arithmetic.ohm`:
 
-<script type="text/markscript">
+<!-- @markscript
   var fs = require('fs');
   // Make sure the grammar embedded below is the same as in 'arithmetic.ohm'.
   markscript.transformNextBlock(function(code) {
@@ -37,7 +37,7 @@ You can use _operations_ and _attributes_ to analyze and extract values from par
            'arithmetic.ohm does not match grammar in doc');
     return '';  // Don't actually execute anything.
   });
-</script>
+-->
 
 ```
 Arithmetic {

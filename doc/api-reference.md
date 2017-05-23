@@ -163,12 +163,12 @@ A semantic action is a function that computes the value of an operation or attri
 
 Generally, you write a semantic action for each rule in your grammar, and store them together in an _action dictionary_. For example, given the following grammar:
 
-<script type="text/markscript">
+<!-- @markscript
   // Take the grammar below and instantiate it as `g` in the markscript environment.
   markscript.transformNextBlock(function(code) {
     return "var g = require('ohm-js').grammar('" + code.replace(/\n/g, '\\n') + "');";
   });
-</script>
+-->
 
 ```
 Name {
@@ -179,14 +179,14 @@ Name {
 
 A set of semantic actions for this grammar might look like this:
 
-<script type="text/markscript">
+<!-- @markscript
   // Replace '...' in the action dict below with some actual function definitions,
   // so that we can be sure that the code actually works.
   markscript.transformNextBlock(function(code) {
     return code.replace('...', "return lastName.x().toUpperCase() + ', ' + firstName.x()")
                .replace('...', "return this.sourceString;")
   });
-</script>
+-->
 
 ```js
 var actions = {
@@ -195,11 +195,11 @@ var actions = {
 };
 ```
 
-<script type="text/markscript">
+<!-- @markscript
   // Verify that the action dict actually works.
   var semantics = g.createSemantics().addOperation('x', actions);
   assert.equal(semantics(g.match('Guy Incognito')).x(), 'INCOGNITO, Guy');
-</script>
+-->
 
 The value of an operation or attribute for a node is the result of invoking the node's matching semantic action. In the grammar above, the body of the `FullName` rule produces two values -- one for each application of the `name` rule. The values are represented as parse nodes, which are passed as arguments when the semantic action is invoked. An error is thrown if the function arity does not match the number of values produced by the expression.
 
