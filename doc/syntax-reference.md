@@ -46,7 +46,7 @@ Special characters (`"`, `\`, and `'`) can be escaped with a backslash -- e.g., 
 
 <pre><code><i>start</i>..<i>end</i></code></pre>
 
-Matches exactly one character whose character code is between the terminals _start_ and _end_ (inclusive). E.g., `"a".."b"` will match `'a'`, `'b'`, or `'c'`. Note: _start_ and _end_ must be 1-character [Terminal](#terminals) expressions.
+Matches exactly one character whose character code is between the terminals _start_ and _end_ (inclusive). E.g., `"a".."c"` will match `'a'`, `'b'`, or `'c'`. Note: _start_ and _end_ must be 1-character [Terminal](#terminals) expressions.
 
 ### Rule Application
 
