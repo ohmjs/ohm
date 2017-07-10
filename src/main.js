@@ -373,11 +373,7 @@ module.exports._setDocumentInterfaceForTesting = function(doc) { documentInterfa
 // Late initialization for stuff that is bootstrapped.
 
 Grammar.BuiltInRules = require('../dist/built-in-rules');
-
-var Semantics = require('./Semantics');
-var operationsAndAttributesGrammar = require('../dist/operations-and-attributes');
-Semantics.initBuiltInSemantics(Grammar.BuiltInRules);
-Semantics.initPrototypeParser(operationsAndAttributesGrammar);  // requires BuiltInSemantics
+util.announceBuiltInRules(Grammar.BuiltInRules);
 
 module.exports.ohmGrammar = ohmGrammar = require('../dist/ohm-grammar');
 Grammar.initApplicationParser(ohmGrammar, buildGrammar);

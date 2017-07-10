@@ -12,12 +12,15 @@ var IterationNode = require('./nodes').IterationNode;
 var MatchResult = require('./MatchResult');
 var common = require('./common');
 var errors = require('./errors');
+var util = require('./util');
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
 var globalActionStack = [];
+var prototypeGrammar;
+var prototypeGrammarSemantics;
 
 // JSON is not a valid subset of JavaScript because there are two possible line terminators,
 // U+2028 (line separator) and U+2029 (paragraph separator) that are allowed in JSON strings
@@ -317,34 +320,6 @@ Semantics.prototype.toRecipe = function(semanticsOnly) {
   return str;
 };
 
-var prototypeGrammar;
-var prototypeGrammarSemantics;
-
-// This method is called from main.js once Ohm has loaded.
-Semantics.initPrototypeParser = function(grammar) {
-  prototypeGrammarSemantics = grammar.createSemantics().addOperation('parse', {
-    AttributeSignature: function(name) {
-      return {
-        name: name.parse(),
-        formals: []
-      };
-    },
-    OperationSignature: function(name, optFormals) {
-      return {
-        name: name.parse(),
-        formals: optFormals.parse()[0] || []
-      };
-    },
-    Formals: function(oparen, fs, cparen) {
-      return fs.asIteration().parse();
-    },
-    name: function(first, rest) {
-      return this.sourceString;
-    }
-  });
-  prototypeGrammar = grammar;
-};
-
 function parseSignature(signature, type) {
   if (!prototypeGrammar) {
     // The Operations and Attributes grammar won't be available while Ohm is loading,
@@ -616,26 +591,6 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
   return proxy;
 };
 
-Semantics.initBuiltInSemantics = function(builtInRules) {
-  var actions = {
-    empty: function() {
-      return this.iteration();
-    },
-    nonEmpty: function(first, _, rest) {
-      return this.iteration([first].concat(rest.children));
-    }
-  };
-
-  Semantics.BuiltInSemantics = Semantics
-      .createSemantics(builtInRules, null)
-      .addOperation('asIteration', {
-        emptyListOf: actions.empty,
-        nonemptyListOf: actions.nonEmpty,
-        EmptyListOf: actions.empty,
-        NonemptyListOf: actions.nonEmpty
-      });
-};
-
 // ----------------- Operation -----------------
 
 // An Operation represents a function to be applied to a concrete syntax tree (CST) -- it's very
@@ -726,6 +681,58 @@ Attribute.prototype.execute = function(semantics, nodeWrapper) {
     node[key] = Operation.prototype.execute.call(this, semantics, nodeWrapper);
   }
   return node[key];
+};
+
+// ----------------- Deferred initialization -----------------
+
+util.awaitBuiltInRules(function(builtInRules) {
+  var operationsAndAttributesGrammar = require('../dist/operations-and-attributes');
+  initBuiltInSemantics(builtInRules);
+  initPrototypeParser(operationsAndAttributesGrammar);  // requires BuiltInSemantics
+});
+
+function initBuiltInSemantics(builtInRules) {
+  var actions = {
+    empty: function() {
+      return this.iteration();
+    },
+    nonEmpty: function(first, _, rest) {
+      return this.iteration([first].concat(rest.children));
+    }
+  };
+
+  Semantics.BuiltInSemantics = Semantics
+      .createSemantics(builtInRules, null)
+      .addOperation('asIteration', {
+        emptyListOf: actions.empty,
+        nonemptyListOf: actions.nonEmpty,
+        EmptyListOf: actions.empty,
+        NonemptyListOf: actions.nonEmpty
+      });
+}
+
+function initPrototypeParser(grammar) {
+  prototypeGrammarSemantics = grammar.createSemantics().addOperation('parse', {
+    AttributeSignature: function(name) {
+      return {
+        name: name.parse(),
+        formals: []
+      };
+    },
+    OperationSignature: function(name, optFormals) {
+      return {
+        name: name.parse(),
+        formals: optFormals.parse()[0] || []
+      };
+    },
+    Formals: function(oparen, fs, cparen) {
+      return fs.asIteration().parse();
+    },
+    name: function(first, rest) {
+      return this.sourceString;
+    }
+  });
+  prototypeGrammar = grammar;
 };
 
 // --------------------------------------------------------------------

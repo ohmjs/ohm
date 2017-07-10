@@ -35,6 +35,22 @@ function strcpy(dest, src, offset) {
 // Exports
 // --------------------------------------------------------------------
 
+var builtInRulesCallbacks = [];
+
+// Since Grammar.BuiltInRules is bootstrapped, most of Ohm can't directly depend it.
+// This function allows modules that do depend on the built-in rules to register a callback
+// that will be called later in the initialization process.
+exports.awaitBuiltInRules = function(cb) {
+  builtInRulesCallbacks.push(cb);
+};
+
+exports.announceBuiltInRules = function(grammar) {
+  builtInRulesCallbacks.forEach(function(cb) {
+    cb(grammar);
+  });
+  builtInRulesCallbacks = null;
+};
+
 // Return an object with the line and column information for the given
 // offset in `str`.
 exports.getLineAndColumn = function(str, offset) {
