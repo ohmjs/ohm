@@ -1241,6 +1241,15 @@ test('case-insensitive matching', function(t) {
   t.equals(g.match('aaaA', 'insideRepetition1').succeeded(), true, 'works inside +');
   t.equals(g.match('aaaA', 'insideRepetition2').succeeded(), true, 'works inside *');
 
+  t.throws(function() {
+    ohm.grammar('G { start = caseInsensitive<start> }');
+  }, /Incorrect argument type/, 'throws when argument is not a Terminal');
+
+  // TODO: Maybe allow Ranges here?
+  t.throws(function() {
+    ohm.grammar('G { start = caseInsensitive<"a".."z"> }');
+  }, /Incorrect argument type/, 'throws when argument is a Range');
+
   t.end();
 });
 

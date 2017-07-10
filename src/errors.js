@@ -137,6 +137,12 @@ function applicationOfSyntacticRuleFromLexicalContext(ruleName, applyExpr) {
       applyExpr.source);
 }
 
+// Incorrect argument type
+
+function incorrectArgumentType(expectedType, expr) {
+  return createError('Incorrect argument type: expected ' + expectedType, expr.source);
+}
+
 // ----------------- Kleene operators -----------------
 
 function kleeneExprHasNullableOperand(kleeneExpr) {
@@ -210,6 +216,7 @@ module.exports = {
   duplicatePropertyNames: duplicatePropertyNames,
   duplicateRuleDeclaration: duplicateRuleDeclaration,
   inconsistentArity: inconsistentArity,
+  incorrectArgumentType: incorrectArgumentType,
   intervalSourcesDontMatch: intervalSourcesDontMatch,
   invalidConstructorCall: invalidConstructorCall,
   invalidParameter: invalidParameter,

@@ -7,6 +7,11 @@
 var common = require('./common');
 var errors = require('./errors');
 var pexprs = require('./pexprs');
+var util = require('./util');
+
+var BuiltInRules;
+
+util.awaitBuiltInRules(function(g) { BuiltInRules = g; });
 
 // --------------------------------------------------------------------
 // Operations
@@ -84,4 +89,13 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, gramm
       throw errors.invalidParameter(self.ruleName, arg);
     }
   });
+
+  // Extra checks for "special" applications
+
+  // If it's an application of 'caseInsensitive', ensure that the argument is a Terminal.
+  if (BuiltInRules && ruleInfo === BuiltInRules.rules.caseInsensitive) {
+    if (!(this.args[0] instanceof pexprs.Terminal)) {
+      throw errors.incorrectArgumentType('a Terminal (e.g. \"abc\")', this.args[0]);
+    }
+  }
 };
