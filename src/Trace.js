@@ -20,6 +20,15 @@ var SYMBOL_FOR_HORIZONTAL_TABULATION = '\u2409';
 var SYMBOL_FOR_LINE_FEED = '\u240A';
 var SYMBOL_FOR_CARRIAGE_RETURN = '\u240D';
 
+var Flags = {
+  succeeded: 1 << 0,
+  isRootNode: 1 << 1,
+  isImplicitSpaces: 1 << 2,
+  isMemoized: 1 << 3,
+  isHeadOfLeftRecursion: 1 << 4,
+  terminatesLR: 1 << 5
+};
+
 function spaces(n) {
   return common.repeat(' ', n).join('');
 }
@@ -56,16 +65,11 @@ function Trace(input, pos1, pos2, expr, succeeded, bindings, optChildren) {
   this.pos2 = pos2;
   this.source = new Interval(input, pos1, pos2);
   this.expr = expr;
-  this.succeeded = succeeded;
   this.bindings = bindings;
   this.children = optChildren || [];
-
-  this.isHeadOfLeftRecursion = false;  // Is this the outermost LR application?
-  this.isImplicitSpaces = false;
-  this.isMemoized = false;
-  this.isRootNode = false;
-  this.terminatesLR = false;
   this.terminatingLREntry = null;
+
+  this._flags = succeeded ? Flags.succeeded : 0;
 }
 
 // A value that can be returned from visitor functions to indicate that a
@@ -74,6 +78,23 @@ Trace.prototype.SKIP = {};
 
 Object.defineProperty(Trace.prototype, 'displayString', {
   get: function() { return this.expr.toDisplayString(); }
+});
+
+// For convenience, create a getter and setter for the boolean flags in `Flags`.
+Object.keys(Flags).forEach(function(name) {
+  var mask = Flags[name];
+  Object.defineProperty(Trace.prototype, name, {
+    get: function() {
+      return (this._flags & mask) !== 0;
+    },
+    set: function(val) {
+      if (val) {
+        this._flags |= mask;
+      } else {
+        this._flags &= ~mask;
+      }
+    }
+  });
 });
 
 Trace.prototype.clone = function() {
