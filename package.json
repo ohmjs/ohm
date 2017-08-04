@@ -82,7 +82,6 @@
     "eslint-plugin-camelcase-ohm": "~0.2.1",
     "eslint-plugin-no-extension-in-require": "~0.2.0",
     "eslint-plugin-tape": "~1.1.0",
-    "gitconfig": "^2.0.3",
     "husky": "^0.14.3",
     "jsdom": "^9.9.1",
     "json": "^9.0.4",
