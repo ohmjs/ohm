@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-/*eslint-disable */
+'use strict';
 
 var compile = require('../examples/ecmascript/compile');
 
@@ -10,7 +10,7 @@ var ignorePatterns = [
   '/const/',
   '/let/',
   '/ES6/',
-  '/array/migrated_0007',  // Contains some Unicode identifiers.
+  '/array/migrated_0007'  // Contains some Unicode identifiers.
 ];
 
 function shouldTest(filename) {
