@@ -42,7 +42,7 @@ A Grammar instance `g` has the following methods:
 
 <a name="Grammar.match"><b><pre class="api">g.match(str: string, optStartRule?: string) &rarr; MatchResult</pre></b></a>
 
-Try to match `str` against `g`, returning a MatchResult. If `optStartRule` is given, it specifies the rule on which to start matching. By default, the start rule is inherited from the supergrammar, or if there is no supergrammar specified, it is the first rule in `g`'s definition.
+Try to match `str` against `g`, returning a [MatchResult](#matchresult-objects). If `optStartRule` is given, it specifies the rule on which to start matching. By default, the start rule is inherited from the supergrammar, or if there is no supergrammar specified, it is the first rule in `g`'s definition.
 
 <b><pre class="api">g.matcher()</pre></b>
 
