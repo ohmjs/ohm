@@ -6,7 +6,6 @@
 
 var UnicodeCategories = require('../third_party/UnicodeCategories');
 var common = require('./common');
-var errors = require('./errors');
 var inherits = require('inherits');
 
 // --------------------------------------------------------------------
@@ -135,34 +134,6 @@ function Lex(expr) {
 }
 inherits(Lex, PExpr);
 
-// Array decomposition
-
-function Arr(expr) {
-  this.expr = expr;
-}
-inherits(Arr, PExpr);
-
-// String decomposition
-
-function Str(expr) {
-  this.expr = expr;
-}
-inherits(Str, PExpr);
-
-// Object decomposition
-
-function Obj(properties, isLenient) {
-  var names = properties.map(function(property) { return property.name; });
-  var duplicates = common.getDuplicates(names);
-  if (duplicates.length > 0) {
-    throw errors.duplicatePropertyNames(duplicates);
-  } else {
-    this.properties = properties;
-    this.isLenient = isLenient;
-  }
-}
-inherits(Obj, PExpr);
-
 // Rule application
 
 function Apply(ruleName, optArgs) {
@@ -211,9 +182,6 @@ exports.Opt = Opt;
 exports.Not = Not;
 exports.Lookahead = Lookahead;
 exports.Lex = Lex;
-exports.Arr = Arr;
-exports.Str = Str;
-exports.Obj = Obj;
 exports.Apply = Apply;
 exports.UnicodeChar = UnicodeChar;
 
