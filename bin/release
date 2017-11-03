@@ -28,7 +28,7 @@ if [ "$(git status --porcelain | grep -v '??')" != "" ]; then
   exit 1
 fi
 
-npm run prepublish
+npm run prepublishOnly
 npm version "$@" -m "v%s"
 trap cleanup INT
 read -p "Press [Enter] to publish this release..."
