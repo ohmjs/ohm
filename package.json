@@ -37,8 +37,8 @@
     "test": "tape 'test/**/*.js' | tap-spec",
     "test-watch": "bash bin/test-watch",
     "postinstall": "node bin/dev-setup.js",
-    "precommit": "npm run prepublish",
-    "prepublish": "npm run lint && npm run build && npm run bootstrap",
+    "precommit": "npm run prepublishOnly",
+    "prepublishOnly": "npm run lint && npm run build && npm run bootstrap",
     "unsafe-bootstrap": "bash bin/bootstrap",
     "visualizer": "bash bin/ohm-visualizer",
     "watch": "bash bin/watch.sh"
