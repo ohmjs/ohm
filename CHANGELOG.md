@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.14.0 - November 3, 2017
+
+### Notable changes:
+
+**API**
+- [753dc4d] Ohm's version number is now exposed as a top-level 'version' property
+- [c5d7046] missingSemanticAction errors include an action call stack
+- [f06ccbb] Range expressions now only work with single-character terminals. E.g.,
+  `"a".."z"` is valid but `"foo".."bar"` is not.
+
 ## v0.13.0 - February 24, 2017
 
 ### Notable changes:
