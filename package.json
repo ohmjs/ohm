@@ -20,13 +20,10 @@
   "main": "src/main.js",
   "bin": "src/ohm-cmd.js",
   "types": "index.d.ts",
-  "browserify": {
-    "options": "src/main.js --debug --standalone ohm -o dist/ohm.js"
-  },
   "scripts": {
     "prebootstrap": "bash bin/prebootstrap",
     "bootstrap": "bash bin/bootstrap --test || (echo 'Bootstrap failed.' && mv -v dist/ohm-grammar.js.old dist/ohm-grammar.js && mv -v dist/built-in-rules.js.old dist/built-in-rules.js && mv -v dist/operations-and-attributes.js.old dist/operations-and-attributes.js)",
-    "build": "npm run build-debug && uglifyjs dist/ohm.js > dist/ohm.min.js",
+    "build": "node bin/build-debug.js && uglifyjs dist/ohm.js > dist/ohm.min.js",
     "prebuild-debug": "bash bin/update-env.sh",
     "build-debug": "bash bin/build-debug.sh",
     "ci-test": "npm run lint && npm test && ts-node test/test-typings.ts",

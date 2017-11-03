@@ -13,6 +13,7 @@ var common = require('./common');
 var errors = require('./errors');
 var pexprs = require('./pexprs');
 var util = require('./util');
+var version = require('./version');
 
 var isBuffer = require('is-buffer');
 
@@ -363,7 +364,8 @@ module.exports = {
   ohmGrammar: null,  // Initialized below, after Grammar.BuiltInRules.
   pexprs: pexprs,
   util: util,
-  extras: require('../extras')
+  extras: require('../extras'),
+  version: version
 };
 
 // Stuff for testing, etc.
