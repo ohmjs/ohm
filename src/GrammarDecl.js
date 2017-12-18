@@ -123,7 +123,7 @@ GrammarDecl.prototype.build = function() {
     Object.keys(grammar.rules).forEach(function(ruleName) {
       var body = grammar.rules[ruleName].body;
       try {
-        body.assertIteratedExprsAreNotNullable(grammar, ruleName);
+        body.assertIteratedExprsAreNotNullable(grammar);
       } catch (e) {
         grammarErrors.push(e);
       }
