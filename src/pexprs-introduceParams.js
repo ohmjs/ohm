@@ -56,7 +56,7 @@ pexprs.Apply.prototype.introduceParams = function(formals) {
       // TODO: Should this be supported? See issue #64.
       throw new Error('Parameterized rules cannot be passed as arguments to another rule.');
     }
-    return new pexprs.Param(index);
+    return new pexprs.Param(index).withSource(this.source);
   } else {
     this.args.forEach(function(arg, idx, args) {
       args[idx] = arg.introduceParams(formals);
