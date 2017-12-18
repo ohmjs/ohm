@@ -103,6 +103,59 @@ test('many expressions with nullable operands', function(t) {
       'Rule * is not declared in grammar G',
       'undeclared rule prevents ManyExprHasNullableOperand check');
 
+  // Dynamic checks for infinite loops. These are needed because our static checks for nullable
+  // expressions inside kleene +s and *s don't catch cases where the expression is or contains one
+  // or more of the rule's parameters.
+
+  var g1 = ohm.grammar('G { plus<e> = e+  star<e> = e*  inf1 = star<"">  inf2 = plus<"a"*> }');
+  try {
+    g1.match('', 'inf1');
+    t.fail('Expected an exception to be thrown');
+  } catch (e) {
+    t.equal(
+      e.message,
+      'Line 1, col 29:\n' +
+      '> 1 | G { plus<e> = e+  star<e> = e*  inf1 = star<"">  inf2 = plus<"a"*> }\n' +
+      '                                  ^\n' +
+      'Nullable expression "" is not allowed inside \'*\' (possible infinite loop)\n' +
+      'Application stack (most recent application last):\n' +
+      'inf1\n' +
+      'star<"">');
+  }
+  try {
+    g1.match('', 'inf2');
+    t.fail('Expected an exception to be thrown');
+  } catch (e) {
+    t.equal(
+      e.message,
+      'Line 1, col 15:\n' +
+      '> 1 | G { plus<e> = e+  star<e> = e*  inf1 = star<"">  inf2 = plus<"a"*> }\n' +
+      '                    ^\n' +
+      'Nullable expression "a"* is not allowed inside \'+\' (possible infinite loop)\n' +
+      'Application stack (most recent application last):\n' +
+      'inf2\n' +
+      'plus<"a"*>');
+  }
+
+  var g2 = ohm.grammar('G { Start = ListOf<"a"?, ""> }');
+  try {
+    g2.match('whatever');
+    t.fail('Expected an exception to be thrown');
+  } catch (e) {
+    t.equal(
+      e.message,
+      'Line 25, col 13:\n' +
+      '  24 |   NonemptyListOf<elem, sep>\n' +
+      '> 25 |     = elem (sep elem)*\n' +
+      '                   ^~~~~~~~\n' +
+      '  26 | \n' +
+      'Nullable expression ("" "a"?) is not allowed inside \'*\' (possible infinite loop)\n' +
+      'Application stack (most recent application last):\n' +
+      'Start\n' +
+      'ListOf<"a"?,"">\n' +
+      'NonemptyListOf<"a"?,"">');
+  }
+
   t.end();
 });
 

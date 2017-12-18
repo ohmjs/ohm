@@ -4,6 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
+var pexprs = require('./pexprs');
+
 var Namespace = require('./Namespace');
 
 // --------------------------------------------------------------------
@@ -145,11 +147,21 @@ function incorrectArgumentType(expectedType, expr) {
 
 // ----------------- Kleene operators -----------------
 
-function kleeneExprHasNullableOperand(kleeneExpr) {
-  return createError(
-      'Nullable expression ' + kleeneExpr.expr.source.contents + " is not allowed inside '" +
-          kleeneExpr.operator + "' (possible infinite loop)",
-      kleeneExpr.expr.source);
+function kleeneExprHasNullableOperand(kleeneExpr, applicationStack) {
+  var actuals = applicationStack.length > 0 ?
+    applicationStack[applicationStack.length - 1].args :
+    [];
+  var expr = kleeneExpr.expr.substituteParams(actuals);
+  var message =
+    'Nullable expression ' + expr + " is not allowed inside '" +
+    kleeneExpr.operator + "' (possible infinite loop)";
+  if (applicationStack.length > 0) {
+    var stackTrace = applicationStack
+      .map(function(app) { return new pexprs.Apply(app.ruleName, app.args); })
+      .join('\n');
+    message += '\nApplication stack (most recent application last):\n' + stackTrace;
+  }
+  return createError(message, kleeneExpr.expr.source);
 }
 
 // ----------------- arity -----------------

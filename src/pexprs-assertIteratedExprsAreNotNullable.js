@@ -42,7 +42,7 @@ pexprs.Iter.prototype.assertIteratedExprsAreNotNullable = function(grammar) {
   // It is overridden for `Opt` below.
   this.expr.assertIteratedExprsAreNotNullable(grammar);
   if (this.expr.isNullable(grammar)) {
-    throw errors.kleeneExprHasNullableOperand(this);
+    throw errors.kleeneExprHasNullableOperand(this, []);
   }
 };
 

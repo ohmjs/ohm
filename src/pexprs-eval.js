@@ -6,6 +6,7 @@
 
 var Trace = require('./Trace');
 var common = require('./common');
+var errors = require('./errors');
 var nodes = require('./nodes');
 var pexprs = require('./pexprs');
 
@@ -127,8 +128,13 @@ pexprs.Iter.prototype.eval = function(state) {
   }
 
   var numMatches = 0;
+  var prevPos = origPos;
   var idx;
   while (numMatches < this.maxNumMatches && state.eval(this.expr)) {
+    if (inputStream.pos === prevPos) {
+      throw errors.kleeneExprHasNullableOperand(this, state._applicationStack);
+    }
+    prevPos = inputStream.pos;
     numMatches++;
     var row = state._bindings.splice(state._bindings.length - arity, arity);
     var rowOffsets = state._bindingOffsets.splice(state._bindingOffsets.length - arity, arity);
