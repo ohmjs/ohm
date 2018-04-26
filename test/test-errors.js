@@ -332,3 +332,22 @@ test('errors for Not-of-<PExpr>', function(t) {
 
   t.end();
 });
+
+test('complex match failure', function(t) {
+  var g = ohm.grammar([
+    'G {',
+    ' start = term* ',
+    ' term = rule1 | rule2 | rule3 | rule4 ',
+    ' rule1 = int | float ',
+    ' rule2 = "#" alnum* ',
+    ' rule3 = (~("$" | "_" | "#" | space+ | "\\"") any)+ ',
+    ' rule4 = space+ ',
+    ' int = digit+ ',
+    ' float = int ("." digit+) ',
+    '}'
+  ].join('\n'));
+  var r = g.match('fail?"');
+  t.equal(r.failed(), true);
+  t.ok(/Expected /.exec(r.message), 'Should have a message failure');
+  t.end();
+});
