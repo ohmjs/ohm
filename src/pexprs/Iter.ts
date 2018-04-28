@@ -9,6 +9,10 @@ abstract class Iter extends PExpr {
   ) {
     super();
   }
+
+  toString(): string {
+    return this.expr + this.operator;
+  }
 }
 
 export default Iter;

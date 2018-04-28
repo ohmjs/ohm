@@ -19,4 +19,12 @@ export default class Apply extends PExpr {
     }
     return this._memoKey;
   }
+
+  toString(): string {
+    if (this.args.length === 0) {
+      return this.ruleName;
+    }
+    const ps = this.args.map(arg => arg.toString());
+    return this.ruleName + '<' + ps.join(',') + '>';
+  }
 }

@@ -9,4 +9,8 @@ export default class UnicodeChar extends PExpr {
     super();
     this.pattern = UnicodeCategories[category];
   }
+
+  toString(): string {
+    return '\\p{' + this.category + '}';
+  }
 }

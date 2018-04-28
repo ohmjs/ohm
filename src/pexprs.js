@@ -4,9 +4,9 @@
 // Exports
 // --------------------------------------------------------------------
 
-var PExpr = exports.PExpr = require('./pexprs/PExpr').default;
-exports.any = Object.create(PExpr.prototype);
-exports.end = Object.create(PExpr.prototype);
+exports.PExpr = require('./pexprs/PExpr').default;
+exports.any = require('./pexprs/any').default;
+exports.end = require('./pexprs/end').default;
 exports.Terminal = require('./pexprs/Terminal').default;
 exports.Range = require('./pexprs/Range').default;
 exports.Param = require('./pexprs/Param').default;
@@ -42,4 +42,3 @@ require('./pexprs-substituteParams');
 require('./pexprs-toDisplayString');
 require('./pexprs-toArgumentNameList');
 require('./pexprs-toFailure');
-require('./pexprs-toString');
