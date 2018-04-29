@@ -8,7 +8,7 @@ var InputStream = require('./InputStream');
 var MatchResult = require('./MatchResult');
 var PosInfo = require('./PosInfo');
 var Trace = require('./Trace');
-var pexprs = require('./pexprs');
+var pexprs = require('./pexprs').default;
 
 // --------------------------------------------------------------------
 // Private stuff

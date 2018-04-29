@@ -1,15 +1,8 @@
 'use strict';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
 var common = require('./common');
-var pexprs = require('./pexprs');
 
-// --------------------------------------------------------------------
-// Operations
-// --------------------------------------------------------------------
+module.exports = function(pexprs) {
 
 // Returns `true` if this parsing expression may accept without consuming any input.
 pexprs.PExpr.prototype.isNullable = function(grammar) {
@@ -69,4 +62,6 @@ pexprs.Apply.prototype._isNullable = function(grammar, memo) {
     memo[key] = inlined._isNullable(grammar, memo);
   }
   return memo[key];
+};
+
 };

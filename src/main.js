@@ -11,7 +11,7 @@ var Grammar = require('./Grammar');
 var Namespace = require('./Namespace');
 var common = require('./common');
 var errors = require('./errors');
-var pexprs = require('./pexprs');
+var pexprs = require('./pexprs').default;
 var util = require('./util');
 var version = require('./version');
 

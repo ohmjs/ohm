@@ -1,16 +1,9 @@
 'use strict';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
 var common = require('./common');
 var nodes = require('./nodes');
-var pexprs = require('./pexprs');
 
-// --------------------------------------------------------------------
-// Operations
-// --------------------------------------------------------------------
+module.exports = function(pexprs) {
 
 pexprs.PExpr.prototype.check = common.abstract('check');
 
@@ -117,4 +110,6 @@ pexprs.UnicodeChar.prototype.check = function(grammar, vals) {
   return vals[0] instanceof nodes.Node &&
          vals[0].isTerminal() &&
          typeof vals[0].primitiveValue === 'string';
+};
+
 };

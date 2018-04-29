@@ -1,17 +1,6 @@
 'use strict';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
 var common = require('./common');
-var pexprs = require('./pexprs');
-
-var copyWithoutDuplicates = common.copyWithoutDuplicates;
-
-// --------------------------------------------------------------------
-// Private stuff
-// --------------------------------------------------------------------
 
 function isRestrictedJSIdentifier(str) {
   return /^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(str);
@@ -41,9 +30,7 @@ function resolveDuplicatedNames(argumentNameList) {
   });
 }
 
-// --------------------------------------------------------------------
-// Operations
-// --------------------------------------------------------------------
+module.exports = function(pexprs) {
 
 /*
   Returns a list of strings that will be used as the default argument names for its receiver
@@ -118,7 +105,7 @@ pexprs.Alt.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
     for (var rowIdx = 0; rowIdx < this.terms.length; rowIdx++) {
       col.push(termArgNameLists[rowIdx][colIdx]);
     }
-    var uniqueNames = copyWithoutDuplicates(col);
+    var uniqueNames = common.copyWithoutDuplicates(col);
     argumentNameList.push(uniqueNames.join('_or_'));
   }
 
@@ -184,4 +171,4 @@ pexprs.Param.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) 
   return ['param' + this.index];
 };
 
-// "Value pexprs" (Value, Str, Arr, Obj) are going away soon, so we don't worry about them here.
+};

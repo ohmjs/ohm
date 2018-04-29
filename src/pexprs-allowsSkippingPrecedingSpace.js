@@ -1,15 +1,8 @@
 'use strict';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
 var common = require('./common');
-var pexprs = require('./pexprs');
 
-// --------------------------------------------------------------------
-// Operations
-// --------------------------------------------------------------------
+module.exports = function(pexprs) {
 
 /*
   Return true if we should skip spaces preceding this expression in a syntactic context.
@@ -42,4 +35,6 @@ pexprs.Not.prototype.allowsSkippingPrecedingSpace =
 pexprs.Param.prototype.allowsSkippingPrecedingSpace =
 pexprs.Seq.prototype.allowsSkippingPrecedingSpace = function() {
   return false;
+};
+
 };

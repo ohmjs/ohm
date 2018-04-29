@@ -4,7 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-var pexprs = require('../src/pexprs');
+var pexprs = require('../src/pexprs').default;
 var MatchResult = require('../src/MatchResult');
 var Grammar = require('../src/Grammar');
 var extend = require('util-extend');

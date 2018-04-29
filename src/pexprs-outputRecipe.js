@@ -1,15 +1,6 @@
 'use strict';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
 var common = require('./common');
-var pexprs = require('./pexprs');
-
-// --------------------------------------------------------------------
-// Private stuff
-// --------------------------------------------------------------------
 
 function getMetaInfo(expr, grammarInterval) {
   var metaInfo = {};
@@ -20,9 +11,7 @@ function getMetaInfo(expr, grammarInterval) {
   return metaInfo;
 }
 
-// --------------------------------------------------------------------
-// Operations
-// --------------------------------------------------------------------
+module.exports = function(pexprs) {
 
 pexprs.PExpr.prototype.outputRecipe = common.abstract('outputRecipe');
 
@@ -112,4 +101,6 @@ pexprs.UnicodeChar.prototype.outputRecipe = function(formals, grammarInterval) {
     getMetaInfo(this, grammarInterval),
     this.category
   ];
+};
+
 };

@@ -1,21 +1,14 @@
 'use strict';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
 var common = require('./common');
 var errors = require('./errors');
-var pexprs = require('./pexprs');
 var util = require('./util');
+
+module.exports = function(pexprs) {
 
 var BuiltInRules;
 
 util.awaitBuiltInRules(function(g) { BuiltInRules = g; });
-
-// --------------------------------------------------------------------
-// Operations
-// --------------------------------------------------------------------
 
 var lexifyCount;
 
@@ -98,4 +91,6 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, gramm
       throw errors.incorrectArgumentType('a Terminal (e.g. \"abc\")', this.args[0]);
     }
   }
+};
+
 };

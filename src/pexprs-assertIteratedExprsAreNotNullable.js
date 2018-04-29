@@ -1,16 +1,9 @@
 'use strict';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
 var common = require('./common');
 var errors = require('./errors');
-var pexprs = require('./pexprs');
 
-// --------------------------------------------------------------------
-// Operations
-// --------------------------------------------------------------------
+module.exports = function(pexprs) {
 
 pexprs.PExpr.prototype.assertIteratedExprsAreNotNullable = common.abstract(
   'assertIteratedExprsAreNotNullable'
@@ -57,4 +50,6 @@ pexprs.Apply.prototype.assertIteratedExprsAreNotNullable = function(grammar) {
   this.args.forEach(function(arg) {
     arg.assertIteratedExprsAreNotNullable(grammar);
   });
+};
+
 };

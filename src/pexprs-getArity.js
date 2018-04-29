@@ -1,15 +1,8 @@
 'use strict';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
 var common = require('./common');
-var pexprs = require('./pexprs');
 
-// --------------------------------------------------------------------
-// Operations
-// --------------------------------------------------------------------
+module.exports = function(pexprs) {
 
 pexprs.PExpr.prototype.getArity = common.abstract('getArity');
 
@@ -48,4 +41,6 @@ pexprs.Not.prototype.getArity = function() {
 pexprs.Lookahead.prototype.getArity =
 pexprs.Lex.prototype.getArity = function() {
   return this.expr.getArity();
+};
+
 };

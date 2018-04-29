@@ -1,16 +1,9 @@
 'use strict';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
 var common = require('./common');
 var errors = require('./errors');
-var pexprs = require('./pexprs');
 
-// --------------------------------------------------------------------
-// Operations
-// --------------------------------------------------------------------
+module.exports = function(pexprs) {
 
 pexprs.PExpr.prototype.assertChoicesHaveUniformArity = common.abstract(
   'assertChoicesHaveUniformArity'
@@ -72,4 +65,6 @@ pexprs.Lookahead.prototype.assertChoicesHaveUniformArity = function(ruleName) {
 pexprs.Apply.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   // The arities of the parameter expressions is required to be 1 by
   // `assertAllApplicationsAreValid()`.
+};
+
 };

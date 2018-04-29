@@ -4,12 +4,12 @@
 // Imports
 // --------------------------------------------------------------------
 
-var CaseInsensitiveTerminal = require('./CaseInsensitiveTerminal');
+var CaseInsensitiveTerminal = require('./pexprs/CaseInsensitiveTerminal').default;
 var Matcher = require('./Matcher');
 var Semantics = require('./Semantics');
 var common = require('./common');
 var errors = require('./errors');
-var pexprs = require('./pexprs');
+var pexprs = require('./pexprs').default;
 
 // --------------------------------------------------------------------
 // Private stuff

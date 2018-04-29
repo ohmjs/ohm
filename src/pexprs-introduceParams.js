@@ -1,15 +1,8 @@
 'use strict';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
 var common = require('./common');
-var pexprs = require('./pexprs');
 
-// --------------------------------------------------------------------
-// Operations
-// --------------------------------------------------------------------
+module.exports = function(pexprs) {
 
 /*
   Called at grammar creation time to rewrite a rule body, replacing each reference to a formal
@@ -63,4 +56,6 @@ pexprs.Apply.prototype.introduceParams = function(formals) {
     });
     return this;
   }
+};
+
 };

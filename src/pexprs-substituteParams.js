@@ -1,15 +1,8 @@
 'use strict';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
 var common = require('./common');
-var pexprs = require('./pexprs');
 
-// --------------------------------------------------------------------
-// Operations
-// --------------------------------------------------------------------
+module.exports = function(pexprs) {
 
 /*
   Returns a PExpr that results from recursively replacing every formal parameter (i.e., instance
@@ -57,4 +50,6 @@ pexprs.Apply.prototype.substituteParams = function(actuals) {
     var args = this.args.map(function(arg) { return arg.substituteParams(actuals); });
     return new pexprs.Apply(this.ruleName, args);
   }
+};
+
 };

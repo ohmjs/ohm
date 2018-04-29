@@ -4,8 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-var pexprs = require('./pexprs');
-
+var Apply = require('./pexprs/Apply').default;
 var Namespace = require('./Namespace');
 
 // --------------------------------------------------------------------
@@ -157,7 +156,7 @@ function kleeneExprHasNullableOperand(kleeneExpr, applicationStack) {
     kleeneExpr.operator + "' (possible infinite loop)";
   if (applicationStack.length > 0) {
     var stackTrace = applicationStack
-      .map(function(app) { return new pexprs.Apply(app.ruleName, app.args); })
+      .map(function(app) { return new Apply(app.ruleName, app.args); })
       .join('\n');
     message += '\nApplication stack (most recent application last):\n' + stackTrace;
   }

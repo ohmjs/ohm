@@ -24,6 +24,7 @@
     "prebootstrap": "bash bin/prebootstrap",
     "bootstrap": "bash bin/bootstrap --test || (echo 'Bootstrap failed.' && mv -v dist/ohm-grammar.js.old dist/ohm-grammar.js && mv -v dist/built-in-rules.js.old dist/built-in-rules.js && mv -v dist/operations-and-attributes.js.old dist/operations-and-attributes.js)",
     "build": "node bin/build-debug.js && uglifyjs dist/ohm.js > dist/ohm.min.js",
+    "build-ts": "tsc --isolatedModules src/pexprs/*.ts",
     "prebuild-debug": "bash bin/update-env.sh",
     "build-debug": "bash bin/build-debug.sh",
     "ci-test": "npm run lint && npm test && ts-node test/test-typings.ts",

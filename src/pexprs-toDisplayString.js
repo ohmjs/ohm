@@ -1,15 +1,8 @@
 'use strict';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
 var common = require('./common');
-var pexprs = require('./pexprs');
 
-// --------------------------------------------------------------------
-// Operations
-// --------------------------------------------------------------------
+module.exports = function(pexprs) {
 
 // Returns a string representing the PExpr, for use as a UI label, etc.
 pexprs.PExpr.prototype.toDisplayString = common.abstract('toDisplayString');
@@ -45,4 +38,6 @@ pexprs.Apply.prototype.toDisplayString = function() {
 
 pexprs.UnicodeChar.prototype.toDisplayString = function() {
   return 'Unicode [' + this.category + '] character';
+};
+
 };

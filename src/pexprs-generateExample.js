@@ -1,23 +1,12 @@
 'use strict';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
 var common = require('./common');
-var pexprs = require('./pexprs');
-
-// --------------------------------------------------------------------
-// Helpers
-// --------------------------------------------------------------------
 
 function flatten(listOfLists) {
   return Array.prototype.concat.apply([], listOfLists);
 }
 
-// --------------------------------------------------------------------
-// Operations
-// --------------------------------------------------------------------
+module.exports = function(pexprs) {
 
 pexprs.PExpr.prototype.generateExample = common.abstract('generateExample');
 
@@ -207,4 +196,6 @@ pexprs.UnicodeChar.prototype.generateExample = function(
     case 'Ltmo': char = 'ǅ'; break;
   }
   return {value: char}; // 💩
+};
+
 };

@@ -1,16 +1,9 @@
 'use strict';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
 var Failure = require('./Failure');
 var common = require('./common');
-var pexprs = require('./pexprs');
 
-// --------------------------------------------------------------------
-// Operations
-// --------------------------------------------------------------------
+module.exports = function(pexprs) {
 
 pexprs.PExpr.prototype.toFailure = common.abstract('toFailure');
 
@@ -70,4 +63,6 @@ pexprs.Seq.prototype.toFailure = function(grammar) {
 pexprs.Iter.prototype.toFailure = function(grammar) {
   var description = '(' + this.expr.toFailure() + this.operator + ')';
   return new Failure(this, description, 'description');
+};
+
 };

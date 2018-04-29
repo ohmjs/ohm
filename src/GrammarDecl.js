@@ -8,7 +8,7 @@ var Grammar = require('./Grammar');
 var InputStream = require('./InputStream');
 var common = require('./common');
 var errors = require('./errors');
-var pexprs = require('./pexprs');
+var pexprs = require('./pexprs').default;
 
 // --------------------------------------------------------------------
 // Private Stuff

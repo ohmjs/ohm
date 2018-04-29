@@ -6,7 +6,7 @@
 
 var MatchState = require('./MatchState');
 
-var pexprs = require('./pexprs');
+var pexprs = require('./pexprs').default;
 
 // --------------------------------------------------------------------
 // Private stuff

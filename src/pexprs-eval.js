@@ -1,22 +1,15 @@
 'use strict';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
 var Trace = require('./Trace');
 var common = require('./common');
 var errors = require('./errors');
 var nodes = require('./nodes');
-var pexprs = require('./pexprs');
 
 var TerminalNode = nodes.TerminalNode;
 var NonterminalNode = nodes.NonterminalNode;
 var IterationNode = nodes.IterationNode;
 
-// --------------------------------------------------------------------
-// Operations
-// --------------------------------------------------------------------
+module.exports = function(pexprs) {
 
 /*
   Evaluate the expression and return `true` if it succeeds, `false` otherwise. This method should
@@ -383,4 +376,6 @@ pexprs.UnicodeChar.prototype.eval = function(state) {
     state.processFailure(origPos, this);
     return false;
   }
+};
+
 };
