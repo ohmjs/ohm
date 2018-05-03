@@ -65,8 +65,8 @@ CaseInsensitiveTerminal.prototype = {
     return this.obj.toDisplayString() + ' (case-insensitive)';
   },
 
-  toFailure: function() {
-    return new Failure(this, this.obj.toFailure() + ' (case-insensitive)', 'description');
+  toFailure: function(grammar) {
+    return new Failure(this, this.obj.toFailure(grammar) + ' (case-insensitive)', 'description');
   },
 
   _isNullable: function(grammar, memo) {
