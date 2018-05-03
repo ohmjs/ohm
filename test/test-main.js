@@ -59,7 +59,7 @@ test('instantiating grammars from different types of objects', function(t) {
   var g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
   t.equals(g.match('1+2').succeeded(), true, 'works with a Buffer from fs.readFileSync()');
 
-  g = ohm.grammar(new Buffer('G {}'));
+  g = ohm.grammar(Buffer.from('G {}'));
   t.equals(g.match('a', 'letter').succeeded(), true, 'works with a new Buffer');
 
   // Try with some objects where 'toString' won't work.
