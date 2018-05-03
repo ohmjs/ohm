@@ -22,7 +22,7 @@ function removeShebang(source) {
 
 function loadModule(name) {
   var ns = {ES5: es5.grammar};
-  if (fs.exists(name)) {
+  if (fs.existsSync(name)) {
     return require(name)(ohm, ns, es5.semantics);
   }
   var relPath = path.join(__dirname, name);
