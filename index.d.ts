@@ -34,9 +34,9 @@ declare namespace ohm {
    * If namespace is specified, it will be the prototype of the new
    * Namespace.
    */
-  function grammarFromScriptElements(
-    nodeList?: NodeList,
-    namespace?: Namespace): Namespace;
+  // function grammarFromScriptElements(
+  //   nodeList?: NodeList,
+  //   namespace?: Namespace): Namespace;
 
   /**
    * Create a new namespace. If props is specified, all of its properties
@@ -135,14 +135,27 @@ declare namespace ohm {
    */
   interface MatchResult {
     /**
-     * True iff match succeeded
+     * True if match succeeded.
      */
     succeeded(): boolean;
 
     /**
-     * True iff match did not succeed
+     * True if match did not succeed.
      */
     failed(): boolean;
+
+    /**
+     * If match failed, returns the index in the input stream at
+     * which the match failed.
+     */
+    getRightmostFailurePosition(): number;
+
+    /**
+     * If the match failed returns an array of Failure objects,
+     * describing the failures that occurred at the rightmost failure
+     * position.
+     */
+    getRightmostFailures(): Array<object>;
 
     /**
      * If match failed contains an error message indicating where and
