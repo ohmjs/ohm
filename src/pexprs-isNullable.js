@@ -42,11 +42,11 @@ pexprs.Terminal.prototype._isNullable = function(grammar, memo) {
 
 pexprs.Alt.prototype._isNullable = function(grammar, memo) {
   return this.terms.length === 0 ||
-      this.terms.some(function(term) { return term._isNullable(grammar, memo); });
+      this.terms.some(function(term) {return term._isNullable(grammar, memo);});
 };
 
 pexprs.Seq.prototype._isNullable = function(grammar, memo) {
-  return this.factors.every(function(factor) { return factor._isNullable(grammar, memo); });
+  return this.factors.every(function(factor) {return factor._isNullable(grammar, memo);});
 };
 
 pexprs.Star.prototype._isNullable =
@@ -65,7 +65,7 @@ pexprs.Apply.prototype._isNullable = function(grammar, memo) {
   if (!Object.prototype.hasOwnProperty.call(memo, key)) {
     var body = grammar.rules[this.ruleName].body;
     var inlined = body.substituteParams(this.args);
-    memo[key] = false;  // Prevent infinite recursion for recursive rules.
+    memo[key] = false; // Prevent infinite recursion for recursive rules.
     memo[key] = inlined._isNullable(grammar, memo);
   }
   return memo[key];

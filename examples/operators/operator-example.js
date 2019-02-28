@@ -206,7 +206,7 @@ const precedence = {'+': 0, '-': 0, '*': 1, '/': 1, '**': 2};
 // Modified Richards and Whitby-Stevens precedence climbing method.
 function makeTree(left, ops, rights, minPrecedence = 0) {
   while (ops.length > 0 && precedence[ops[0]] >= minPrecedence) {
-    let op = ops.shift();
+    const op = ops.shift();
     let right = rights.shift();
     while (ops.length > 0 && (precedence[ops[0]] > precedence[op] ||
         associativity[ops[0]] === 'R' && precedence[ops[0]] === precedence[op])) {

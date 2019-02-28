@@ -38,7 +38,7 @@ function parse(input) {
 
 assert.deepEqual(parse(someInput),
     [['foo', 'bar', 'baz'], ['foo', 'bar'], [''],
-    ['foo', '', 'baz'], ['', 'bar', 'baz'], ['foo']]);
+      ['foo', '', 'baz'], ['', 'bar', 'baz'], ['foo']]);
 assert.deepEqual(parse(someInput + '\n'),
     [['foo', 'bar', 'baz'], ['foo', 'bar'], [''],
-    ['foo', '', 'baz'], ['', 'bar', 'baz'], ['foo']]);
+      ['foo', '', 'baz'], ['', 'bar', 'baz'], ['foo']]);

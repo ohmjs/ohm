@@ -12,7 +12,7 @@ var args = process.argv.slice(2);
 if (args.length !== 1) {
   console.error('usage: ' + process.argv[0] + ' ' + process.argv[1] +
                 ' { --builtin | <ohm-grammar-file> }');
-  process.exit(1);  // eslint-disable-line no-process-exit
+  process.exit(1); // eslint-disable-line no-process-exit
 }
 
 var filename = args[0];
@@ -27,7 +27,7 @@ if (filename === '--builtin') {
     source = fs.readFileSync(filename).toString();
   } catch (e) {
     console.error('error: cannot read file', filename);
-    process.exit(2);  // eslint-disable-line no-process-exit
+    process.exit(2); // eslint-disable-line no-process-exit
   }
   grammar = ohm.grammar(source);
 }

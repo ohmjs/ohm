@@ -67,7 +67,7 @@ test('operations', function(t) {
       return x.noArgs() + y.noArgs();
     },
     mulExp_times: function(x, op, y) {
-      return x.noArgs(1);  // should result in an error
+      return x.noArgs(1); // should result in an error
     },
     number: function(n) {
       return '#';
@@ -75,7 +75,7 @@ test('operations', function(t) {
   });
   t.equal(s(Arithmetic.match('1+2')).noArgs(), '##');
   t.throws(
-      function() { s(Arithmetic.match('1*2')).noArgs(); },
+      function() {s(Arithmetic.match('1*2')).noArgs();},
       'Invalid number of arguments passed to noArgs operation (expected 0, got 1)');
 
   // An operation that failed checks when first added but then succeeds
@@ -116,10 +116,10 @@ test('operations with arguments', function(t) {
   });
   t.deepEqual(s(Arithmetic.match('1+2*3')).op1(0), ['1@L6', '2@L7', '3@L6']);
   t.throws(
-      function() { s(Arithmetic.match('(5)-2')).op1(); },
+      function() {s(Arithmetic.match('(5)-2')).op1();},
       'Invalid number of arguments passed to operation op1 (expected 1, got 0)');
   t.throws(
-      function() { s(Arithmetic.match('(5)-2')).op1(1, 2); },
+      function() {s(Arithmetic.match('(5)-2')).op1(1, 2);},
       'Invalid number of arguments passed to operation op1 (expected 1, got 2)');
 
   s.addOperation('op2(a, b)', {
@@ -128,14 +128,14 @@ test('operations with arguments', function(t) {
     }
   });
   t.throws(
-      function() { s(Arithmetic.match('(5)-2')).op2(); },
+      function() {s(Arithmetic.match('(5)-2')).op2();},
       'Invalid number of arguments passed to operation op2 (expected 2, got 0)');
   t.throws(
-      function() { s(Arithmetic.match('(5)-2')).op2(1); },
+      function() {s(Arithmetic.match('(5)-2')).op2(1);},
       'Invalid number of arguments passed to operation op2 (expected 2, got 1)');
   t.equal(s(Arithmetic.match('3')).op2(1, 2), 123);
   t.throws(
-      function() { s(Arithmetic.match('(5)-2')).op1(1, 2, 3); },
+      function() {s(Arithmetic.match('(5)-2')).op1(1, 2, 3);},
       'Invalid number of arguments passed to operation op2 (expected 2, got 3)');
 
   s.addOperation('op3(foo, bar, baz)', {
@@ -204,11 +204,11 @@ test('attributes', function(t) {
   t.equal(s(complicated).value, 74, 'new value for more complicated case');
 
   t.throws(
-    function() { s._getActionDict('eval'); },
-    '"eval" is not a valid operation or attribute name in this semantics for "Arithmetic"');
+      function() {s._getActionDict('eval');},
+      '"eval" is not a valid operation or attribute name in this semantics for "Arithmetic"');
 
   t.throws(
-      function() { Arithmetic.createSemantics().addAttribute('badAttribute(x, y)', {}); },
+      function() {Arithmetic.createSemantics().addAttribute('badAttribute(x, y)', {});},
       /Expected end of input/,
       'attributes are not allowed to have arguments');
 
@@ -226,38 +226,38 @@ test('semantics', function(t) {
   t.equal(s.addAttribute('attr2', {}), s, 'can add more than one attribute');
 
   t.throws(
-    function() { s.addOperation('op', {}); },
-    /already exists/,
-    'addOperation throws when name is already used');
+      function() {s.addOperation('op', {});},
+      /already exists/,
+      'addOperation throws when name is already used');
   t.throws(
-    function() { s.addOperation('attr', {}); },
-    /already exists/,
-    'addOperation throws when name is already used, even if it is an attribute');
+      function() {s.addOperation('attr', {});},
+      /already exists/,
+      'addOperation throws when name is already used, even if it is an attribute');
 
   t.throws(
-    function() { s.addAttribute('attr', {}); },
-    /already exists/,
-    'addAttribute throws when name is already used');
+      function() {s.addAttribute('attr', {});},
+      /already exists/,
+      'addAttribute throws when name is already used');
   t.throws(
-    function() { s.addAttribute('attr', {}); },
-    /already exists/,
-    'addAttribute throws when name is already used, even if it is an operation');
+      function() {s.addAttribute('attr', {});},
+      /already exists/,
+      'addAttribute throws when name is already used, even if it is an operation');
 
-  t.throws(function() { s(null); }, /expected a MatchResult/);
-  t.throws(function() { s(false); }, /expected a MatchResult/);
-  t.throws(function() { s(); }, /expected a MatchResult/);
-  t.throws(function() { s(3); }, /expected a MatchResult/);
-  t.throws(function() { s('asdf'); }, /expected a MatchResult/);
-  t.throws(function() { s(Arithmetic.match('barf')); },
+  t.throws(function() {s(null);}, /expected a MatchResult/);
+  t.throws(function() {s(false);}, /expected a MatchResult/);
+  t.throws(function() {s();}, /expected a MatchResult/);
+  t.throws(function() {s(3);}, /expected a MatchResult/);
+  t.throws(function() {s('asdf');}, /expected a MatchResult/);
+  t.throws(function() {s(Arithmetic.match('barf'));},
       /cannot apply Semantics to \[match failed at position 0\]/,
       'throws when arg is a MatchFailure');
 
   // Cannot use the semantics on nodes from another grammar...
   var g = ohm.grammar('G {}');
-  t.throws(function() { s(g.match('a', 'letter')); }, /Cannot use a MatchResult from grammar/);
+  t.throws(function() {s(g.match('a', 'letter'));}, /Cannot use a MatchResult from grammar/);
   // ... even if it's a sub-grammar
   g = ohm.grammar('Arithmetic2 <: Arithmetic {}', {Arithmetic: Arithmetic});
-  t.throws(function() { s(g.match('1+2', 'exp')); }, /Cannot use a MatchResult from grammar/);
+  t.throws(function() {s(g.match('1+2', 'exp'));}, /Cannot use a MatchResult from grammar/);
 
   t.end();
 });
@@ -299,7 +299,7 @@ test('_iter nodes', function(t) {
       t.ok(ls.children.every(function(l) {
         return typeof l.op === 'function';
       }), 'children is an array of wrappers');
-      return ls.children.map(function(l) { return l.op(); }).join(',');
+      return ls.children.map(function(l) {return l.op();}).join(',');
     },
     letter: function(l) {
       return l.sourceString;
@@ -366,14 +366,14 @@ test('semantic action arity checks', function(t) {
 
   t.ok(makeOperation(g, {}), 'empty actions with empty grammar');
   t.throws(
-      function() { makeOperation(g, {foo: null}); },
+      function() {makeOperation(g, {foo: null});},
       /not a valid semantic action/,
       'superfluous action dictionary keys are not allowed');
 
   t.throws(
-      function() { makeOperation(g, {_nonterminal: ignore0}); },
+      function() {makeOperation(g, {_nonterminal: ignore0});},
       /arity/,
-     '_nonterminal is checked');
+      '_nonterminal is checked');
   t.ok(makeOperation(g, {_nonterminal: ignore1}), '_nonterminal works with one arg');
 
   t.throws(function() {
@@ -432,27 +432,27 @@ test('extending semantics', function(t) {
 
   var s = ns.G.createSemantics()
       .addOperation('value', {
-        one: function(_) { return 1; },
-        two: function(_) { return 2; }
+        one: function(_) {return 1;},
+        two: function(_) {return 2;}
       })
       .addOperation('valueTimesTwo', {
-        _nonterminal: function(children) { return this.value() * 2; }
+        _nonterminal: function(children) {return this.value() * 2;}
       });
-  t.throws(function() { ns.G2.extendSemantics(s).addOperation('value', {}); }, /already exists/);
-  t.throws(function() { ns.G2.extendSemantics(s).extendOperation('foo', {}); }, /did not inherit/);
-  t.throws(function() { ns.G.createSemantics().extendOperation('value', {}); }, /did not inherit/);
+  t.throws(function() {ns.G2.extendSemantics(s).addOperation('value', {});}, /already exists/);
+  t.throws(function() {ns.G2.extendSemantics(s).extendOperation('foo', {});}, /did not inherit/);
+  t.throws(function() {ns.G.createSemantics().extendOperation('value', {});}, /did not inherit/);
   t.ok(ns.G3.extendSemantics(s));
-  t.throws(function() { ns.G4.extendSemantics(s); }, /not a sub-grammar/);
+  t.throws(function() {ns.G4.extendSemantics(s);}, /not a sub-grammar/);
 
-  t.throws(function() { ns.G2.extendSemantics(s).extendOperation('value', {}); }, /wrong arity/);
+  t.throws(function() {ns.G2.extendSemantics(s).extendOperation('value', {});}, /wrong arity/);
   // If there is an arity mismatch due to overriding and we don't explicitly extend the operation /
   // attribute, we should catch this error when the derived semantics is applied to its first
   // CST node.
-  t.throws(function() { ns.G2.extendSemantics(s)(ns.G2.match('eins!', 'one')); }, /wrong arity/);
+  t.throws(function() {ns.G2.extendSemantics(s)(ns.G2.match('eins!', 'one'));}, /wrong arity/);
 
   var s2 = ns.G2.extendSemantics(s).extendOperation('value', {
-    one: function(str, _) { return 21; },  // overriding
-    three: function(str) { return 3; }     // adding a new case
+    one: function(str, _) {return 21;}, // overriding
+    three: function(str) {return 3;} // adding a new case
   });
   var m = ns.G2.match('eins!', 'one');
   t.equal(s2(m).value(), 21);
@@ -467,29 +467,29 @@ test('extending semantics', function(t) {
   t.equal(s2(m).valueTimesTwo(), 6);
 
   // Make sure you can't extend the same operation again
-  t.throws(function() { s2.extendOperation('value', {}); }, /again/);
+  t.throws(function() {s2.extendOperation('value', {});}, /again/);
 
   // Make sure you can't specify arguments when you extend an operation
-  t.throws(function() { s2.extendOperation('value(x)', {}); }, /Expected end of input/);
+  t.throws(function() {s2.extendOperation('value(x)', {});}, /Expected end of input/);
 
   // Make sure attributes behave as expected
 
   s = ns.G.createSemantics()
       .addAttribute('value', {
-        one: function(_) { return 1; },
-        two: function(_) { return 2; }
+        one: function(_) {return 1;},
+        two: function(_) {return 2;}
       })
       .addAttribute('valueTimesTwo', {
-        _nonterminal: function(children) { return this.value * 2; }
+        _nonterminal: function(children) {return this.value * 2;}
       });
-  t.throws(function() { ns.G2.extendSemantics(s).addAttribute('value', {}); }, /already exists/);
-  t.throws(function() { ns.G2.extendSemantics(s).extendAttribute('value', {}); }, /wrong arity/);
-  t.throws(function() { ns.G2.extendSemantics(s).extendAttribute('foo', {}); }, /did not inherit/);
-  t.throws(function() { ns.G.createSemantics().extendAttribute('value', {}); }, /did not inherit/);
+  t.throws(function() {ns.G2.extendSemantics(s).addAttribute('value', {});}, /already exists/);
+  t.throws(function() {ns.G2.extendSemantics(s).extendAttribute('value', {});}, /wrong arity/);
+  t.throws(function() {ns.G2.extendSemantics(s).extendAttribute('foo', {});}, /did not inherit/);
+  t.throws(function() {ns.G.createSemantics().extendAttribute('value', {});}, /did not inherit/);
 
   s2 = ns.G2.extendSemantics(s).extendAttribute('value', {
-    one: function(str, _) { return 21; },  // overriding
-    three: function(str) { return 3; }     // adding a new case
+    one: function(str, _) {return 21;}, // overriding
+    three: function(str) {return 3;} // adding a new case
   });
   m = ns.G2.match('eins!', 'one');
   t.equal(s2(m).value, 21);
@@ -504,12 +504,12 @@ test('extending semantics', function(t) {
   t.equal(s2(m).valueTimesTwo, 6);
 
   // Make sure you can't extend the same attribute again
-  t.throws(function() { s2.extendAttribute('value', {}); }, /again/);
+  t.throws(function() {s2.extendAttribute('value', {});}, /again/);
 
   // Make sure an attribute that was inherited from a parent semantics
   // does not share its memo table with its parent.
   var s3 = ns.G2.extendSemantics(s2).extendAttribute('value', {
-    one: function(str, _) { return 123; }
+    one: function(str, _) {return 123;}
   });
   m = ns.G2.match('eins!', 'one');
   t.equal(s2(m).value, 21);
@@ -518,7 +518,7 @@ test('extending semantics', function(t) {
   t.equal(s3(m).valueTimesTwo, 246);
 
   // Make sure you can't specify arguments when you extend an attribute
-  t.throws(function() { s2.extendAttribute('value(x)', {}); }, /Expected end of input/);
+  t.throws(function() {s2.extendAttribute('value(x)', {});}, /Expected end of input/);
 
   // Make sure that semantics from the same grammar source are considered compatible.
   var arith1 = ohm.grammar(arithmeticGrammarSource);
@@ -542,18 +542,18 @@ test('mixing nodes from one grammar with semantics from another', function(t) {
   ]);
 
   var s = ns.G.createSemantics().addOperation('value', {
-    start: function(x) { return x.value() + 'choo!'; },
-    _terminal: function() { return this.primitiveValue; }
+    start: function(x) {return x.value() + 'choo!';},
+    _terminal: function() {return this.primitiveValue;}
   });
 
   var m = ns.G.match('aaa', 'start');
   t.equal(s(m).value(), 'aaachoo!');
 
   m = ns.GPrime.match('bbb', 'start');
-  t.throws(function() { s(m).value(); }, /Cannot use a MatchResult from grammar/);
+  t.throws(function() {s(m).value();}, /Cannot use a MatchResult from grammar/);
 
   m = ns.Unrelated.match('asdf', 'start');
-  t.throws(function() { s(m).value(); }, /Cannot use a MatchResult from grammar/);
+  t.throws(function() {s(m).value();}, /Cannot use a MatchResult from grammar/);
 
   t.end();
 });
@@ -602,10 +602,10 @@ test('asIteration', function(t) {
   t.equal(s(g.match('a, b, c')).value, 'cba', 'overriding works');
   t.equal(s(g.match('z9', 'anyTwo')).reversedValue, '9z');
 
-  t.throws(function() { s.addAttribute('asIteration', {}); }, /already exists/);
-  t.throws(function() { s.addOperation('asIteration', {}); }, /already exists/);
+  t.throws(function() {s.addAttribute('asIteration', {});}, /already exists/);
+  t.throws(function() {s.addOperation('asIteration', {});}, /already exists/);
   t.throws(function() {
-    s(g.match('xxx', 'anyThree')).asIteration();  // eslint-disable-line no-unused-expressions
+    s(g.match('xxx', 'anyThree')).asIteration(); // eslint-disable-line no-unused-expressions
   }, /Missing semantic action/);
 
   t.end();
@@ -680,7 +680,7 @@ test('action call stacks', function(t) {
     '  op2 > start',
     "  oops > default action for 'digit'",
     '  oops > _terminal'
-    ].join('\n'));
+  ].join('\n'));
 
   t.end();
 });

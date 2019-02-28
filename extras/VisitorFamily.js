@@ -109,7 +109,7 @@ function VisitorFamily(config) {
       self._arities[k] = Array.isArray(shape) ? shape.length : 1;
     }
   });
-  this._wrap = function(thing) { return new self.Adapter(thing, self); };
+  this._wrap = function(thing) {return new self.Adapter(thing, self);};
 }
 
 VisitorFamily.prototype.wrap = function(thing) {
@@ -126,7 +126,7 @@ VisitorFamily.prototype._checkActionDict = function(dict) {
       var expected = self._arities[k];
       var actual = dict[k].length;
       assert(actual === expected,
-             "Action '" + k + "' has the wrong arity: expected " + expected + ', got ' + actual);
+          "Action '" + k + "' has the wrong arity: expected " + expected + ', got ' + actual);
     }
   });
 };

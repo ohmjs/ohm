@@ -146,11 +146,11 @@ pexprs.Seq.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
 
 pexprs.Iter.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
   var argumentNameList = this.expr.toArgumentNameList(firstArgIndex, noDupCheck)
-    .map(function(exprArgumentString) {
-      return exprArgumentString[exprArgumentString.length - 1] === 's' ?
+      .map(function(exprArgumentString) {
+        return exprArgumentString[exprArgumentString.length - 1] === 's' ?
           exprArgumentString + 'es' :
           exprArgumentString + 's';
-    });
+      });
   if (!noDupCheck) {
     resolveDuplicatedNames(argumentNameList);
   }

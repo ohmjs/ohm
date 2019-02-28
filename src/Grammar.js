@@ -16,7 +16,7 @@ var pexprs = require('./pexprs');
 // --------------------------------------------------------------------
 
 function getSortedRuleValues(grammar) {
-  return Object.keys(grammar.rules).sort().map(function(name) { return grammar.rules[name]; });
+  return Object.keys(grammar.rules).sort().map(function(name) {return grammar.rules[name];});
 }
 
 function Grammar(
@@ -127,7 +127,7 @@ Grammar.prototype = {
       }
     }
     if (problems.length > 0) {
-      var prettyProblems = problems.map(function(problem) { return '- ' + problem; });
+      var prettyProblems = problems.map(function(problem) {return '- ' + problem;});
       var error = new Error(
           "Found errors in the action dictionary of the '" + name + "' " + what + ':\n' +
           prettyProblems.join('\n'));
@@ -291,59 +291,60 @@ Grammar.prototype = {
 // `digit`, and is implicitly the super-grammar of any grammar whose super-grammar
 // isn't specified.
 Grammar.ProtoBuiltInRules = new Grammar(
-  'ProtoBuiltInRules',  // name
-  undefined,  // supergrammar
-  {
-    any: {
-      body: pexprs.any,
-      formals: [],
-      description: 'any character',
-      primitive: true
-    },
-    end: {
-      body: pexprs.end,
-      formals: [],
-      description: 'end of input',
-      primitive: true
-    },
+    'ProtoBuiltInRules', // name
+    undefined, // supergrammar
+    {
+      any: {
+        body: pexprs.any,
+        formals: [],
+        description: 'any character',
+        primitive: true
+      },
+      end: {
+        body: pexprs.end,
+        formals: [],
+        description: 'end of input',
+        primitive: true
+      },
 
-    caseInsensitive: {
-      body: new CaseInsensitiveTerminal(new pexprs.Param(0)),
-      formals: ['str'],
-      primitive: true
-    },
-    lower: {
-      body: new pexprs.UnicodeChar('Ll'),
-      formals: [],
-      description: 'a lowercase letter',
-      primitive: true
-    },
-    upper: {
-      body: new pexprs.UnicodeChar('Lu'),
-      formals: [],
-      description: 'an uppercase letter',
-      primitive: true
-    },
-    // The union of Lt (titlecase), Lm (modifier), and Lo (other), i.e. any letter not in Ll or Lu.
-    unicodeLtmo: {
-      body: new pexprs.UnicodeChar('Ltmo'),
-      formals: [],
-      description: 'a Unicode character in Lt, Lm, or Lo',
-      primitive: true
-    },
+      caseInsensitive: {
+        body: new CaseInsensitiveTerminal(new pexprs.Param(0)),
+        formals: ['str'],
+        primitive: true
+      },
+      lower: {
+        body: new pexprs.UnicodeChar('Ll'),
+        formals: [],
+        description: 'a lowercase letter',
+        primitive: true
+      },
+      upper: {
+        body: new pexprs.UnicodeChar('Lu'),
+        formals: [],
+        description: 'an uppercase letter',
+        primitive: true
+      },
+      // The union of Lt (titlecase), Lm (modifier), and Lo (other)
+      // , i.e. any letter not in Ll or Lu.
+      unicodeLtmo: {
+        body: new pexprs.UnicodeChar('Ltmo'),
+        formals: [],
+        description: 'a Unicode character in Lt, Lm, or Lo',
+        primitive: true
+      },
 
-    // These rules are not truly primitive (they could be written in userland) but are defined
-    // here for bootstrapping purposes.
-    spaces: {
-      body: new pexprs.Star(new pexprs.Apply('space')),
-      formals: []
-    },
-    space: {
-      body: new pexprs.Range('\x00', ' '),
-      formals: [],
-      description: 'a space'
+      // These rules are not truly primitive (they could be written in userland) but are defined
+      // here for bootstrapping purposes.
+      spaces: {
+        body: new pexprs.Star(new pexprs.Apply('space')),
+        formals: []
+      },
+      space: {
+        body: new pexprs.Range('\x00', ' '),
+        formals: [],
+        description: 'a space'
+      }
     }
-  }
 );
 
 // --------------------------------------------------------------------

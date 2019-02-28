@@ -113,7 +113,7 @@ test('brotha from anotha motha', function(t) {
   var interval1 = new Interval('abc', 0, 3);
   var interval2 = new Interval('xyz', 1, 2);
   t.throws(
-      function() { Interval.coverage(interval1, interval2); },
+      function() {Interval.coverage(interval1, interval2);},
       /Interval sources don't match/);
   t.end();
 });

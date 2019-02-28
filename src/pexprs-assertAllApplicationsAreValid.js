@@ -11,7 +11,7 @@ var util = require('./util');
 
 var BuiltInRules;
 
-util.awaitBuiltInRules(function(g) { BuiltInRules = g; });
+util.awaitBuiltInRules(function(g) {BuiltInRules = g;});
 
 // --------------------------------------------------------------------
 // Operations
@@ -25,7 +25,7 @@ pexprs.PExpr.prototype.assertAllApplicationsAreValid = function(ruleName, gramma
 };
 
 pexprs.PExpr.prototype._assertAllApplicationsAreValid = common.abstract(
-  '_assertAllApplicationsAreValid'
+    '_assertAllApplicationsAreValid'
 );
 
 pexprs.any._assertAllApplicationsAreValid =

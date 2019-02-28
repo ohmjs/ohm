@@ -5,7 +5,7 @@
 // --------------------------------------------------------------------
 
 function PosInfo() {
-  this.applicationMemoKeyStack = [];  // active applications at this position
+  this.applicationMemoKeyStack = []; // active applications at this position
   this.memo = {};
   this.maxExaminedLength = 0;
   this.maxRightmostFailureOffset = -1;

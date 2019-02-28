@@ -49,7 +49,7 @@ var checkOffsetActions = {
 
 var ctorTreeActions = {
   _default: function(children) {
-    return [this.ctorName].concat(children.map(function(c) { return c.ctorTree; }));
+    return [this.ctorName].concat(children.map(function(c) {return c.ctorTree;}));
   }
 };
 
@@ -154,7 +154,7 @@ test('trickier incremental parsing', function(t) {
   t.deepEqual(s(result).ctorTree,
       ['start',
         ['start_rec', ['start', ['lookahead', ['_terminal'], ['_terminal']]],
-        ['letter', ['lower', ['_terminal']]]]]);
+          ['letter', ['lower', ['_terminal']]]]]);
 
   t.end();
 });
@@ -431,13 +431,13 @@ test('incremental parsing + attributes = incremental computation', function(t) {
   t.equal(m.getInput(), '(1-2)*3-9');
   t.equal(s(m.match()).value, -12);
   t.deepEqual(freshlyEvaluated, [
-      '1',  // why? because its 'examinedLength' property is 2
-            // (you have to read the next character to know that you're done parsing a number)
-            // and we changed that character from '+' to '-'
-       '1-2',
-       '(1-2)',
-       '(1-2)*3',
-       '(1-2)*3-9']);
+    '1', // why? because its 'examinedLength' property is 2
+    // (you have to read the next character to know that you're done parsing a number)
+    // and we changed that character from '+' to '-'
+    '1-2',
+    '(1-2)',
+    '(1-2)*3',
+    '(1-2)*3-9']);
 
   t.end();
 });

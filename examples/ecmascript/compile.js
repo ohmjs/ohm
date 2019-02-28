@@ -43,8 +43,8 @@ function compile(args) {
   var filenames = [];
   var opts = {
     grammar: null,
-    b: false,  // Benchmark (print matching times).
-    v: false   // Verbose
+    b: false, // Benchmark (print matching times).
+    v: false // Verbose
   };
 
   // Super basic command line option parsing.
@@ -71,7 +71,7 @@ function compile(args) {
   var results = [];
   var succeeded = files.every(function(arr) {
     var source = arr[1] || removeShebang(fs.readFileSync(arr[0]).toString());
-    if (opts.v) { console.error(arr[0]); }
+    if (opts.v) {console.error(arr[0]);}
     var result = lang.grammar.match(source, 'Program');
     if (result.succeeded()) {
       results.push(result);
@@ -82,12 +82,12 @@ function compile(args) {
   });
 
   if (succeeded) {
-    if (opts.b) { console.error('Matching:', (Date.now() - matchStartTime) + 'ms'); }
+    if (opts.b) {console.error('Matching:', (Date.now() - matchStartTime) + 'ms');}
 
     // Codegen
     var code = '';
     var codegenStartTime = Date.now();
-    results.forEach(function(r) { code += ';\n' + lang.semantics(r).toES5(); });
+    results.forEach(function(r) {code += ';\n' + lang.semantics(r).toES5();});
     if (opts.b) {
       console.error('Codegen:', (Date.now() - codegenStartTime) + 'ms');
     }

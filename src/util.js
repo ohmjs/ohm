@@ -19,7 +19,7 @@ function padNumbersToEqualLength(arr) {
     maxLen = Math.max(maxLen, str.length);
     return str;
   });
-  return strings.map(function(s) { return common.padLeft(s, maxLen); });
+  return strings.map(function(s) {return common.padLeft(s, maxLen);});
 }
 
 // Produce a new string that would be the result of copying the contents
@@ -92,7 +92,7 @@ exports.getLineAndColumn = function(str, offset) {
   // Get the previous line.
   if (prevLineStartOffset >= 0) {
     prevLine = str.slice(prevLineStartOffset, lineStartOffset)
-                  .replace(/\r?\n$/, '');  // Strip trailing EOL char(s).
+        .replace(/\r?\n$/, ''); // Strip trailing EOL char(s).
   }
 
   // Get the target line, stripping a trailing carriage return if necessary.

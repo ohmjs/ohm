@@ -65,15 +65,15 @@ function runExample(relativePath, testObj, cb) {
 function rebuildIfModified() {
   // Get a sorted list of last-modified times for every file in the 'src' dir.
   var srcEntries = walkSync.entries(path.join(__dirname, '../src'));
-  var mtimes = srcEntries.map(function(entry) { return entry.mtime; });
-  mtimes.sort(function(a, b) { return a - b; });
+  var mtimes = srcEntries.map(function(entry) {return entry.mtime;});
+  mtimes.sort(function(a, b) {return a - b;});
 
   var srcDate = new Date(mtimes.pop());
   var bundleDate = fs.statSync(path.join(__dirname, '../dist/ohm.js')).mtime;
 
   if (bundleDate < srcDate) {
     var p = exec('npm run build');
-    p.stdout.on('data', function() { /* ignore */ });
+    p.stdout.on('data', function() {/* ignore */});
     p.stderr.pipe(process.stderr);
   }
 }

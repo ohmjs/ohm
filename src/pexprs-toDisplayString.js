@@ -36,7 +36,7 @@ pexprs.Param.prototype.toDisplayString = function() {
 
 pexprs.Apply.prototype.toDisplayString = function() {
   if (this.args.length > 0) {
-    var ps = this.args.map(function(arg) { return arg.toDisplayString(); });
+    var ps = this.args.map(function(arg) {return arg.toDisplayString();});
     return this.ruleName + '<' + ps.join(',') + '>';
   } else {
     return this.ruleName;

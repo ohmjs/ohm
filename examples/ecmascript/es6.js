@@ -8,14 +8,14 @@ var path = require('path');
 // Semantic actions for the `mentionsThis` attribute, which returns true for a node
 // if the `this` keyword appears anywhere in the node's subtree, and otherwise false.
 var mentionsThisActions = {
-  this: function(_) { return true; },
-  _terminal: function() { return false; },
+  this: function(_) {return true;},
+  _terminal: function() {return false;},
   _nonterminal: anyNodesMentionThis,
   _iter: anyNodesMentionThis
 };
 
 function anyNodesMentionThis(nodes) {
-  return nodes.some(function(n) { return n.mentionsThis; });
+  return nodes.some(function(n) {return n.mentionsThis;});
 }
 
 var toES5Actions = {

@@ -34,7 +34,7 @@ exports.abstract = function(optMethodName) {
   var methodName = optMethodName || '';
   return function() {
     throw new Error(
-      'this method ' + methodName + ' is abstract! ' +
+        'this method ' + methodName + ' is abstract! ' +
       '(it has no implementation in class ' + this.constructor.name + ')');
   };
 };
@@ -82,7 +82,7 @@ exports.repeatStr = function(str, n) {
 };
 
 exports.repeat = function(x, n) {
-  return exports.repeatFn(function() { return x; }, n);
+  return exports.repeatFn(function() {return x;}, n);
 };
 
 exports.getDuplicates = function(array) {
@@ -182,7 +182,7 @@ exports.unexpectedObjToString = function(obj) {
     if (obj.constructor && obj.constructor.name) {
       typeName = obj.constructor.name;
     } else if (baseToString.indexOf('[object ') === 0) {
-      typeName = baseToString.slice(8, -1);  // Extract e.g. "Array" from "[object Array]".
+      typeName = baseToString.slice(8, -1); // Extract e.g. "Array" from "[object Array]".
     } else {
       typeName = typeof obj;
     }

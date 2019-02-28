@@ -165,7 +165,7 @@ Builder.prototype = {
     if (metaInfo) {
       if (metaInfo.sourceInterval && this.currentDecl) {
         result.withSource(
-          this.currentDecl.sourceInterval.apply(this.currentDecl, metaInfo.sourceInterval)
+            this.currentDecl.sourceInterval.apply(this.currentDecl, metaInfo.sourceInterval)
         );
       }
     }

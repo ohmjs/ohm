@@ -19,7 +19,7 @@ test('namespaces', function(t) {
   var ns2 = ohm.grammars('ccc { foo = "foo" }', ns);
   t.ok(ns2);
   t.throws(
-      function() { ohm.grammar('ccc { bar = "bar" }', ns2); },
+      function() {ohm.grammar('ccc { bar = "bar" }', ns2);},
       'Grammar ccc is already declared in this namespace');
   t.ok(ns2.G, 'ns2 delegates to ns1');
 
@@ -34,10 +34,10 @@ test('namespaces', function(t) {
 
 test('loading from script elements', function(t) {
   var script1 = testUtil.fakeScriptTag(['O { number = number digit  -- rec',
-                                    '           | digit',
-                                    '}']);
+    '           | digit',
+    '}']);
   var script2 = testUtil.fakeScriptTag(['M { x = "xx" }',
-                                    'N { y = "yy" }']);
+    'N { y = "yy" }']);
   var ns1 = ohm.grammarsFromScriptElements([script1]);
   var ns2 = ohm.grammarsFromScriptElements([script2]);
   t.equal(ns1.M, undefined, 'M is undefined in ns1');
@@ -63,18 +63,18 @@ test('instantiating grammars from different types of objects', function(t) {
   t.equals(g.match('a', 'letter').succeeded(), true, 'works with a new Buffer');
 
   // Try with some objects where 'toString' won't work.
-  t.throws(function() { ohm.grammar({toString: 3}); },
+  t.throws(function() {ohm.grammar({toString: 3});},
       'Expected string as first argument, got [object Object]', 'object with invalid toString');
-  t.throws(function() { ohm.grammar(Object.create(null)); },
+  t.throws(function() {ohm.grammar(Object.create(null));},
       'Expected string as first argument, got [object Object]', 'object with no toString');
 
-  t.throws(function() { ohm.grammar([1, 2]); },
+  t.throws(function() {ohm.grammar([1, 2]);},
       'Expected string as first argument, got Array: "1,2"', 'Array with valid toString');
 
   function Foo() {
-    this.toString = function() { return 'Foo!'; };
+    this.toString = function() {return 'Foo!';};
   }
-  t.throws(function() { ohm.grammar(new Foo()); },
+  t.throws(function() {ohm.grammar(new Foo());},
       'Expected string as first argument, got Foo: "Foo!"', 'Custom objects with toString');
 
   t.end();

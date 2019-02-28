@@ -13,7 +13,7 @@ var pexprs = require('./pexprs');
 // --------------------------------------------------------------------
 
 pexprs.PExpr.prototype.assertIteratedExprsAreNotNullable = common.abstract(
-  'assertIteratedExprsAreNotNullable'
+    'assertIteratedExprsAreNotNullable'
 );
 
 pexprs.any.assertIteratedExprsAreNotNullable =

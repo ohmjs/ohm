@@ -51,7 +51,7 @@ InputStream.prototype = {
     }
     // Default is case-sensitive comparison.
     for (idx = 0; idx < s.length; idx++) {
-      if (this.next() !== s[idx]) { return false; }
+      if (this.next() !== s[idx]) {return false;}
     }
     return true;
   },

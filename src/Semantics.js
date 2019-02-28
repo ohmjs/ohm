@@ -4,7 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-var Symbol = require('es6-symbol');  // eslint-disable-line no-undef
+var Symbol = require('es6-symbol'); // eslint-disable-line no-undef
 var inherits = require('inherits');
 
 var InputStream = require('./InputStream');
@@ -133,7 +133,7 @@ Wrapper.prototype.isOptional = function() {
 Wrapper.prototype.iteration = function(optChildWrappers) {
   var childWrappers = optChildWrappers || [];
 
-  var childNodes = childWrappers.map(function(c) { return c._node; });
+  var childNodes = childWrappers.map(function(c) {return c._node;});
   var iter = new IterationNode(this._node.grammar, childNodes, [], -1, false);
 
   var wrapper = this._semantics.wrap(iter, null, null);
@@ -143,10 +143,10 @@ Wrapper.prototype.iteration = function(optChildWrappers) {
 
 Object.defineProperties(Wrapper.prototype, {
   // Returns an array containing the children of this CST node.
-  children: {get: function() { return this._children(); }},
+  children: {get: function() {return this._children();}},
 
   // Returns the name of grammar rule that created this CST node.
-  ctorName: {get: function() { return this._node.ctorName; }},
+  ctorName: {get: function() {return this._node.ctorName;}},
 
   // TODO: Remove this eventually (deprecated in v0.12).
   interval: {get: function() {
@@ -154,7 +154,7 @@ Object.defineProperties(Wrapper.prototype, {
   }},
 
   // Returns the number of children of this CST node.
-  numChildren: {get: function() { return this._node.numChildren(); }},
+  numChildren: {get: function() {return this._node.numChildren();}},
 
   // Returns the primitive value of this CST node, if it's a terminal node. Otherwise,
   // throws an exception.
@@ -169,7 +169,7 @@ Object.defineProperties(Wrapper.prototype, {
   },
 
   // Returns the contents of the input stream consumed by this CST node.
-  sourceString: {get: function() { return this.source.contents; }}
+  sourceString: {get: function() {return this.source.contents;}}
 });
 
 // ----------------- Semantics -----------------
@@ -353,7 +353,7 @@ function newDefaultAction(type, name, doIt) {
     if (this.isIteration()) {
       // This CST node corresponds to an iteration expression in the grammar (*, +, or ?). The
       // default behavior is to map this operation or attribute over all of its child nodes.
-      return children.map(function(child) { return doIt.apply(child, args); });
+      return children.map(function(child) {return doIt.apply(child, args);});
     }
 
     // This CST node corresponds to a non-terminal in the grammar (e.g., AddExpr). The fact that
@@ -437,7 +437,7 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
   } else {
     Object.defineProperty(this.Wrapper.prototype, name, {
       get: doIt,
-      configurable: true  // So the property can be deleted.
+      configurable: true // So the property can be deleted.
     });
     this.attributeKeys[name] = Symbol();
   }
@@ -688,7 +688,7 @@ Attribute.prototype.execute = function(semantics, nodeWrapper) {
 util.awaitBuiltInRules(function(builtInRules) {
   var operationsAndAttributesGrammar = require('../dist/operations-and-attributes');
   initBuiltInSemantics(builtInRules);
-  initPrototypeParser(operationsAndAttributesGrammar);  // requires BuiltInSemantics
+  initPrototypeParser(operationsAndAttributesGrammar); // requires BuiltInSemantics
 });
 
 function initBuiltInSemantics(builtInRules) {

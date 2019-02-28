@@ -55,25 +55,25 @@ test('match failure', function(t) {
 
 test('undeclared rules', function(t) {
   t.throws(
-      function() { makeRuleWithBody('undeclaredRule'); },
+      function() {makeRuleWithBody('undeclaredRule');},
       'Rule undeclaredRule is not declared in grammar G');
   var g = makeRuleWithBody('digit');
-  t.throws(function() { g.match('hello world', 'x'); }, /Rule x is not declared in grammar G/);
+  t.throws(function() {g.match('hello world', 'x');}, /Rule x is not declared in grammar G/);
   t.end();
 });
 
 test('many expressions with nullable operands', function(t) {
   t.throws(
-      function() { makeRuleWithBody('("a"*)*'); },
+      function() {makeRuleWithBody('("a"*)*');},
       /Nullable expression "a"\* is not allowed inside '\*'/);
   t.throws(
-      function() { makeRuleWithBody('("a"?)*'); },
+      function() {makeRuleWithBody('("a"?)*');},
       /Nullable expression "a"\? is not allowed inside '\*'/);
   t.throws(
-      function() { makeRuleWithBody('("a"*)+'); },
+      function() {makeRuleWithBody('("a"*)+');},
       /Nullable expression "a"\* is not allowed inside '\+'/);
   t.throws(
-      function() { makeRuleWithBody('("a"?)+'); },
+      function() {makeRuleWithBody('("a"?)+');},
       /Nullable expression "a"\? is not allowed inside '\+'/);
 
   try {
@@ -99,7 +99,7 @@ test('many expressions with nullable operands', function(t) {
   }
 
   t.throws(
-      function() { ohm.grammar('G { x = y+  y = undeclaredRule }'); },
+      function() {ohm.grammar('G { x = y+  y = undeclaredRule }');},
       'Rule * is not declared in grammar G',
       'undeclared rule prevents ManyExprHasNullableOperand check');
 
@@ -113,8 +113,8 @@ test('many expressions with nullable operands', function(t) {
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.equal(
-      e.message,
-      'Line 1, col 29:\n' +
+        e.message,
+        'Line 1, col 29:\n' +
       '> 1 | G { plus<e> = e+  star<e> = e*  inf1 = star<"">  inf2 = plus<"a"*> }\n' +
       '                                  ^\n' +
       'Nullable expression "" is not allowed inside \'*\' (possible infinite loop)\n' +
@@ -127,8 +127,8 @@ test('many expressions with nullable operands', function(t) {
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.equal(
-      e.message,
-      'Line 1, col 15:\n' +
+        e.message,
+        'Line 1, col 15:\n' +
       '> 1 | G { plus<e> = e+  star<e> = e*  inf1 = star<"">  inf2 = plus<"a"*> }\n' +
       '                    ^\n' +
       'Nullable expression "a"* is not allowed inside \'+\' (possible infinite loop)\n' +
@@ -143,8 +143,8 @@ test('many expressions with nullable operands', function(t) {
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.equal(
-      e.message,
-      'Line 25, col 13:\n' +
+        e.message,
+        'Line 25, col 13:\n' +
       '  24 |   NonemptyListOf<elem, sep>\n' +
       '> 25 |     = elem (sep elem)*\n' +
       '                   ^~~~~~~~\n' +
@@ -172,8 +172,8 @@ test('errors from makeGrammar()', function(t) {
       '      ^',
       'Found more than one grammar definition -- use ohm.grammars() instead.'].join('\n'));
   }
-  t.throws(function() { ohm.grammar(''); }, /Missing grammar/);
-  t.throws(function() { ohm.grammar(' \t\n'); }, /Missing grammar/);
+  t.throws(function() {ohm.grammar('');}, /Missing grammar/);
+  t.throws(function() {ohm.grammar(' \t\n');}, /Missing grammar/);
 
   try {
     ohm.grammar('G {');
@@ -210,7 +210,7 @@ test('unrecognized escape sequences', function(t) {
 
 test('failures are memoized', function(t) {
   var g = ohm.grammar(
-    'G {\n' +
+      'G {\n' +
     '  S = ~A "b"  -- c1\n' +
     '    | A       -- c2\n' +
     '  A = "a"\n' +
@@ -275,7 +275,7 @@ test('memo recs that do not contain the necessary info are deleted properly', fu
 test('trailing space should not influence the result', function(t) {
   var g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
   var r = g.match('(1  ');
-  var failures = r.getRightmostFailures().filter(function(failure) { return !failure.isFluffy(); });
+  var failures = r.getRightmostFailures().filter(function(failure) {return !failure.isFluffy();});
   t.equal(failures.length, 1);
   t.equal(failures[0].getText(), ')');
   t.equal(failures[0].type, 'string');
@@ -290,7 +290,7 @@ test('method name displayed on abstract function failure', function(t) {
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.equal(e.message,
-      'this method toFailure is abstract! (it has no implementation in class Param)');
+        'this method toFailure is abstract! (it has no implementation in class Param)');
   }
   t.end();
 });
@@ -303,7 +303,7 @@ test('errors for Not-of-<PExpr>', function(t) {
   t.ok(/Expected not \("b" or "c"\)/.exec(r.message), 'reasonable failure report for Not-of-Alt');
 
   var notParamG = ohm.grammar(
-    'G {\n' +
+      'G {\n' +
     '  S = Not<"a">\n' +
     '  Not<elem> = ~elem\n' +
     '}');

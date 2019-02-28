@@ -21,11 +21,11 @@ test('Alt', function(t) {
     // Stubbed out random functions force the 'generateExample()' function
     //   to take one path or another. In this case:
     //   floor(0.6 * 2) = 1, making 'generateExample()' select the second path.
-    Math.random = function() { return 0.6; };
+    Math.random = function() {return 0.6;};
     var example = g.rules.alt.body.generateExample(g, {}, false, []);
     t.equal(example.value, 'b');
 
-    Math.random = function() { return 0.2; };
+    Math.random = function() {return 0.2;};
     example = g.rules.alt.body.generateExample(g, {}, false, []);
     t.equal(example.value, 'a');
   } finally {
@@ -133,11 +133,11 @@ test('Star', function(t) {
     //   a certain number of times. for example:
     //   floor(4 * 0.76) = 3, and floor(3 * 0.1) = 0
     // Note: the system only generates up to 3 repetitions in an iter node
-    Math.random = function() { return 0.76; };
+    Math.random = function() {return 0.76;};
     var example = g.rules.star.body.generateExample(g, {}, false, []);
     t.equal(example.value, 'aaa');
 
-    Math.random = function() { return 0.1; };
+    Math.random = function() {return 0.1;};
     example = g.rules.star.body.generateExample(g, {}, false, []);
     t.equal(example.value, '');
   } finally {
@@ -157,11 +157,11 @@ test('Plus', function(t) {
       '}'
     ]);
 
-    Math.random = function() { return 0.1; };
+    Math.random = function() {return 0.1;};
     var example = g.rules.plus.body.generateExample(g, {}, false, []);
     t.equal(example.value, 'a');
 
-    Math.random = function() { return 0.76; };
+    Math.random = function() {return 0.76;};
     example = g.rules.plus.body.generateExample(g, {}, false, []);
     t.equal(example.value, 'aaaa');
   } finally {
@@ -181,11 +181,11 @@ test('Opt', function(t) {
       '}'
     ]);
 
-    Math.random = function() { return 0.76; };
+    Math.random = function() {return 0.76;};
     var example = g.rules.opt.body.generateExample(g, {}, false, []);
     t.equal(example.value, 'a');
 
-    Math.random = function() { return 0.1; };
+    Math.random = function() {return 0.1;};
     example = g.rules.opt.body.generateExample(g, {}, false, []);
     t.equal(example.value, '');
   } finally {

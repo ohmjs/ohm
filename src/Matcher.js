@@ -47,7 +47,7 @@ Matcher.prototype.replaceInputRange = function(startIdx, endIdx, str) {
     this.memoTable.push(undefined);
   }
   restOfMemoTable.forEach(
-      function(posInfo) { this.memoTable.push(posInfo); },
+      function(posInfo) {this.memoTable.push(posInfo);},
       this);
 
   // Invalidate memoRecs

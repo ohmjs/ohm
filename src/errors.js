@@ -36,7 +36,7 @@ function intervalSourcesDontMatch() {
 
 function grammarSyntaxError(matchFailure) {
   var e = new Error();
-  Object.defineProperty(e, 'message', {get: function() { return matchFailure.message; }});
+  Object.defineProperty(e, 'message', {get: function() {return matchFailure.message;}});
   Object.defineProperty(e, 'shortMessage', {get: function() {
     return 'Expected ' + matchFailure.getExpectedText();
   }});
@@ -157,8 +157,8 @@ function kleeneExprHasNullableOperand(kleeneExpr, applicationStack) {
     kleeneExpr.operator + "' (possible infinite loop)";
   if (applicationStack.length > 0) {
     var stackTrace = applicationStack
-      .map(function(app) { return new pexprs.Apply(app.ruleName, app.args); })
-      .join('\n');
+        .map(function(app) {return new pexprs.Apply(app.ruleName, app.args);})
+        .join('\n');
     message += '\nApplication stack (most recent application last):\n' + stackTrace;
   }
   return createError(message, kleeneExpr.expr.source);
@@ -189,7 +189,7 @@ function invalidConstructorCall(grammar, ctorName, children) {
 // ----------------- convenience -----------------
 
 function multipleErrors(errors) {
-  var messages = errors.map(function(e) { return e.message; });
+  var messages = errors.map(function(e) {return e.message;});
   return createError(
       ['Errors:'].concat(messages).join('\n- '),
       errors[0].interval);

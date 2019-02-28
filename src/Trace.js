@@ -77,7 +77,7 @@ function Trace(input, pos1, pos2, expr, succeeded, bindings, optChildren) {
 Trace.prototype.SKIP = {};
 
 Object.defineProperty(Trace.prototype, 'displayString', {
-  get: function() { return this.expr.toDisplayString(); }
+  get: function() {return this.expr.toDisplayString();}
 });
 
 // For convenience, create a getter and setter for the boolean flags in `Flags`.
@@ -154,7 +154,7 @@ Trace.prototype.walk = function(visitorObjOrFn, optThisArg) {
   }
   if (this.isRootNode) {
     // Don't visit the root node itself, only its children.
-    this.children.forEach(function(c) { _walk(c, null, 0); });
+    this.children.forEach(function(c) {_walk(c, null, 0);});
   } else {
     _walk(this, null, 0);
   }
@@ -174,7 +174,7 @@ Trace.prototype.toString = function() {
     var ctorName = node.expr.constructor.name;
     // Don't print anything for Alt nodes.
     if (ctorName === 'Alt') {
-      return;  // eslint-disable-line consistent-return
+      return; // eslint-disable-line consistent-return
     }
     sb.append(getInputExcerpt(node.input, node.pos, 10) + spaces(depth * 2 + 1));
     sb.append((node.succeeded ? CHECK_MARK : BALLOT_X) + ' ' + node.displayString);
