@@ -50,7 +50,7 @@ Create a new [Matcher](#matcher-objects) object which supports incrementally mat
 
 <a name="Grammar.trace"><b><pre class="api" id="trace">g.trace(str: string, optStartRule?: string) &rarr; Trace</pre></b></a>
 
-Try to match `str` against `g`, returning a Trace object. `optNamespace` has the same meaning as in `ohm.grammar`. Trace objects have a `toString()` method, which returns a string which summarizes each parsing step (useful for debugging).
+Try to match `str` against `g`, returning a Trace object. `optStartRule` has the same meaning as in `g.match`. Trace objects have a `toString()` method, which returns a string which summarizes each parsing step (useful for debugging).
 
 <b><pre class="api">g.createSemantics() &rarr; Semantics</pre></b>
 
