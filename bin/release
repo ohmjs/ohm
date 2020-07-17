@@ -29,7 +29,7 @@ if [ "$(git status --porcelain | grep -v '??')" != "" ]; then
 fi
 
 npm run prepublishOnly
-npm version "$@" -m "v%s"
+npm version "$@" -m "v%s" --allow-same-version
 trap cleanup INT
 read -p "Press [Enter] to publish this release..."
 git push && git push --tags
