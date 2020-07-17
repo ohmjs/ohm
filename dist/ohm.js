@@ -6813,7 +6813,7 @@ module.exports = typeof browserifyGlobalOhmVersion === 'string'
     ? browserifyGlobalOhmVersion
     : require('../package.json').version;
 
-}).call(this,"0.14.0")
+}).call(this,"0.15.0")
 
 },{"../package.json":undefined}],67:[function(require,module,exports){
 // Based on https://github.com/mathiasbynens/unicode-9.0.0.
