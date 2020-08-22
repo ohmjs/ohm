@@ -21,11 +21,7 @@ if [ "$(git status --porcelain | grep -v '??')" != "" ]; then
   exit 1
 fi
 
-yarn workspace ohm-js run prepublishOnly
-yarn workspace ohm-js version
-trap cleanup INT
-read -p "Press [Enter] to publish this release..."
-git push && git push --tags
 yarn workspace ohm-js publish
+git push && git push --tags
 
 $(dirname $0)/deploy-gh-pages.sh
