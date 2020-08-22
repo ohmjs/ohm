@@ -61,7 +61,7 @@ function runExample(relativePath, testObj, cb) {
   });
 }
 
-// Executes `npm run build` if any of the files in src/ are older than the browserified bundle.
+// Executes `yarn build` if any of the files in src/ are older than the browserified bundle.
 function rebuildIfModified() {
   // Get a sorted list of last-modified times for every file in the 'src' dir.
   var srcEntries = walkSync.entries(path.join(__dirname, '../src'));
@@ -72,7 +72,7 @@ function rebuildIfModified() {
   var bundleDate = fs.statSync(path.join(__dirname, '../dist/ohm.js')).mtime;
 
   if (bundleDate < srcDate) {
-    var p = exec('npm run build');
+    var p = exec('yarn build');
     p.stdout.on('data', function() { /* ignore */ });
     p.stderr.pipe(process.stderr);
   }

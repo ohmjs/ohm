@@ -2,7 +2,7 @@ language: node_js
 node_js:
   - "stable"
 
-script: npm run ci-test
+script: yarn run ci-test
 
 notifications:
   slack:

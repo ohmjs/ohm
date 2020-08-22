@@ -4,6 +4,8 @@
   "description": "Ohm grammars for various editions of ECMAScript (aka JavaScript).",
   "main": "es5.js",
   "scripts": {
+    "build": "true",
+    "ci-test": "node compile.js",
     "test": "node compile.js"
   },
   "repository": {

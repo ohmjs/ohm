@@ -28,11 +28,11 @@ if [ "$(git status --porcelain | grep -v '??')" != "" ]; then
   exit 1
 fi
 
-npm run prepublishOnly
-npm version "$@" -m "v%s" --allow-same-version
+yarn run prepublishOnly
+yarn version "$@" -m "v%s" --allow-same-version
 trap cleanup INT
 read -p "Press [Enter] to publish this release..."
 git push && git push --tags
-npm publish
+yarn publish
 
 $(dirname $0)/deploy-gh-pages.sh
