@@ -27,6 +27,7 @@
     "prebuild-debug": "bash ../bin/update-env.sh",
     "build-debug": "node bin/build-debug.js",
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
+    "lint": "eslint . --ignore-path ../.eslintignore",
     "pretest": "bash ../bin/update-env.sh",
     "test": "(tape 'test/**/*.js' | tap-spec) && ts-node test/test-typings.ts",
     "test-watch": "bash .bin/test-watch",
