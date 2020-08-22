@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "An example showing four ways to implement a language with an operator precedence hiearchy",
   "scripts": {
-    "build": "true",
     "test": "mocha"
   },
   "keywords": [
