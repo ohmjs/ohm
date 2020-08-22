@@ -36,10 +36,18 @@ function intervalSourcesDontMatch() {
 
 function grammarSyntaxError(matchFailure) {
   var e = new Error();
-  Object.defineProperty(e, 'message', {get: function() { return matchFailure.message; }});
-  Object.defineProperty(e, 'shortMessage', {get: function() {
-    return 'Expected ' + matchFailure.getExpectedText();
-  }});
+  Object.defineProperty(e, 'message', {
+    enumerable: true,
+    get: function() {
+      return matchFailure.message;
+    }
+  });
+  Object.defineProperty(e, 'shortMessage', {
+    enumerable: true,
+    get: function() {
+      return 'Expected ' + matchFailure.getExpectedText();
+    }
+  });
   e.interval = matchFailure.getInterval();
   return e;
 }
