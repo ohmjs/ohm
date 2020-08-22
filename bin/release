@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # Script to version, tag, and release a new version of the package.
-# Arguments are the same as `npm version` (https://docs.npmjs.com/cli/version).
 
 set -e
 
@@ -14,12 +13,6 @@ function cleanup {
   exit 1
 }
 
-if [ "$#" -ne "1" ]; then
-  echo "usage: $(basename $0) <newversion> | major | minor | patch | premajor"
-  echo "<newversion> must be in semver format, e.g. 1.2.0."
-  exit 1
-fi
-
 # Update the list of contributors.
 json -I -f ${ROOT}/ohm-js/package.json -e "this.contributors=[$(${ROOT}/bin/get-contributors)]"
 
@@ -29,7 +22,7 @@ if [ "$(git status --porcelain | grep -v '??')" != "" ]; then
 fi
 
 yarn workspace ohm-js run prepublishOnly
-yarn workspace ohm-js version "$@" -m "v%s" --allow-same-version
+yarn workspace ohm-js version
 trap cleanup INT
 read -p "Press [Enter] to publish this release..."
 git push && git push --tags
