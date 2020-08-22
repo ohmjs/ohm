@@ -2,7 +2,7 @@
 
 var test = require('tape');
 
-var prettyPrint = require('../../examples/prettyPrint');
+var prettyPrint = require('../../../examples/prettyPrint');
 
 test('basic', function(t) {
   t.equal(

@@ -1,4 +1,4 @@
 **/node_modules/**
 **/third_party/**
-dist/*
+ohm-js/dist/*
 visualizer/assets/**

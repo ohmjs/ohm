@@ -2,7 +2,7 @@
 
 var test = require('tape-catch');
 
-var es5 = require('../../../examples/ecmascript');
+var es5 = require('ohm-grammar-ecmascript');
 
 test('basic es5 tests', function(t) {
   var results;

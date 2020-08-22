@@ -52,21 +52,21 @@ ohm._setDocumentInterfaceForTesting(fakeDocument);
 // in the documentation run without errors.
 
 test('README.md', function(t) {
-  markscript.evaluateFile(scriptRel('../README.md'), markscriptConfig);
+  markscript.evaluateFile(scriptRel('../../README.md'), markscriptConfig);
   t.end();
 });
 
 test('doc/index.md', function(t) {
-  markscript.evaluateFile(scriptRel('../doc/index.md'), markscriptConfig);
+  markscript.evaluateFile(scriptRel('../../doc/index.md'), markscriptConfig);
   t.end();
 });
 
 test('doc/api-reference.md', function(t) {
-  markscript.evaluateFile(scriptRel('../doc/api-reference.md'), markscriptConfig);
+  markscript.evaluateFile(scriptRel('../../doc/api-reference.md'), markscriptConfig);
   t.end();
 });
 
 test('doc/syntax-reference.md', function(t) {
-  markscript.evaluateFile(scriptRel('../doc/syntax-reference.md'), markscriptConfig);
+  markscript.evaluateFile(scriptRel('../../doc/syntax-reference.md'), markscriptConfig);
   t.end();
 });

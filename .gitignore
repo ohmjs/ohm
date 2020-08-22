@@ -1,7 +1,8 @@
-dist/ohm-grammar.js.*
-dist/*.old
-dist/browserify-cache.json
-dist/test-typings.js
+.install-timestamp
+ohm-js/dist/ohm-grammar.js.*
+ohm-js/dist/*.old
+ohm-js/dist/browserify-cache.json
+ohm-js/dist/test-typings.js
 node_modules
 npm-debug.log
-.install-timestamp
+yarn-error.log

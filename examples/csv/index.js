@@ -5,7 +5,7 @@
 var assert = require('assert');
 var fs = require('fs');
 var join = require('path').join;
-var ohm = require('../..');
+var ohm = require('../../ohm-js');
 
 var contents = fs.readFileSync(join(__dirname, 'csv.ohm'));
 var g = ohm.grammar(contents);
