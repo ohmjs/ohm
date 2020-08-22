@@ -21,18 +21,18 @@ if [ "$#" -ne "1" ]; then
 fi
 
 # Update the list of contributors.
-json -I -f ${ROOT}/package.json -e "this.contributors=[$(${ROOT}/bin/get-contributors)]"
+json -I -f ${ROOT}/ohm-js/package.json -e "this.contributors=[$(${ROOT}/bin/get-contributors)]"
 
 if [ "$(git status --porcelain | grep -v '??')" != "" ]; then
   echo "Error: git working directory not clean -- run 'git status' for more info."
   exit 1
 fi
 
-yarn run prepublishOnly
-yarn version "$@" -m "v%s" --allow-same-version
+yarn workspace ohm-js run prepublishOnly
+yarn workspace ohm-js version "$@" -m "v%s" --allow-same-version
 trap cleanup INT
 read -p "Press [Enter] to publish this release..."
 git push && git push --tags
-yarn publish
+yarn workspace ohm-js publish
 
 $(dirname $0)/deploy-gh-pages.sh
