@@ -31,7 +31,7 @@
     "pretest": "bash ../bin/update-env.sh",
     "test": "(tape 'test/**/*.js' | tap-spec) && ts-node test/test-typings.ts",
     "test-watch": "bash .bin/test-watch",
-    "postinstall": "node ../bin/dev-setup.js",
+    "postinstall": "node bin/dev-setup.js",
     "pre-commit": "yarn run prepublishOnly",
     "prepublishOnly": "yarn run lint && yarn run build && yarn run bootstrap",
     "unsafe-bootstrap": "bash bin/bootstrap",
