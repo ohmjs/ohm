@@ -215,6 +215,21 @@ test('attributes', function(t) {
   t.end();
 });
 
+test("attributes - same-named attributes don't collide", function(t) {
+  var g = ohm.grammar('G { start = }');
+  var s1 = g.createSemantics();
+  var s2 = g.createSemantics();
+
+  s1.addAttribute('attr', {start: function() { return 1; }});
+  s2.addAttribute('attr', {start: function() { return 2; }});
+
+  var m = g.match('');
+  t.equal(s1(m).attr, 1);
+  t.equal(s2(m).attr, 2);
+
+  t.end();
+});
+
 test('semantics', function(t) {
   var Arithmetic = ohm.grammar(arithmeticGrammarSource);
   var s = Arithmetic.createSemantics();

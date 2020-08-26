@@ -30,7 +30,7 @@
     "lint": "eslint . --ignore-path ../.eslintignore",
     "pretest": "bash ../bin/update-env.sh",
     "test": "(tape 'test/**/*.js' | tap-spec) && ts-node test/test-typings.ts",
-    "test-watch": "bash .bin/test-watch",
+    "test-watch": "bash bin/test-watch",
     "postinstall": "node bin/dev-setup.js",
     "pre-commit": "yarn run prepublishOnly",
     "prepublishOnly": "yarn run lint && yarn run build && yarn run bootstrap",
@@ -69,7 +69,6 @@
     "Mike Niebling <(none)>"
   ],
   "dependencies": {
-    "es6-symbol": "^3.1.0",
     "inherits": "^2.0.3",
     "is-buffer": "^1.1.4",
     "util-extend": "^1.0.3"

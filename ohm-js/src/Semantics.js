@@ -4,7 +4,6 @@
 // Imports
 // --------------------------------------------------------------------
 
-var Symbol = require('es6-symbol');  // eslint-disable-line no-undef
 var inherits = require('inherits');
 
 var InputStream = require('./InputStream');
@@ -222,7 +221,9 @@ function Semantics(grammar, superSemantics) {
     // Assign unique symbols for each of the attributes inherited from the super-semantics so that
     // they are memoized independently.
     for (var attributeName in this.attributes) {
-      this.attributeKeys[attributeName] = Symbol();
+      Object.defineProperty(this.attributeKeys, attributeName, {
+        value: util.uniqueId(attributeName)
+      });
     }
   } else {
     inherits(this.Wrapper, Wrapper);
@@ -439,7 +440,9 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
       get: doIt,
       configurable: true  // So the property can be deleted.
     });
-    this.attributeKeys[name] = Symbol();
+    Object.defineProperty(this.attributeKeys, name, {
+      value: util.uniqueId(name)
+    });
   }
 };
 

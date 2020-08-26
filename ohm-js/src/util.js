@@ -162,3 +162,10 @@ exports.getLineAndColumnMessage = function(str, offset /* ...ranges */) {
   }
   return sb.contents();
 };
+
+exports.uniqueId = (function() {
+  var idCounter = 0;
+  return function(prefix) {
+    return '' + prefix + idCounter++;
+  };
+})();
