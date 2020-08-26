@@ -76,7 +76,7 @@
   },
   "devDependencies": {
     "@types/tape": "^4.13.0",
-    "browserify": "^13.1.1",
+    "browserify": "^16.5.2",
     "eslint": "~3.13.1",
     "eslint-config-google": "~0.7.1",
     "eslint-plugin-camelcase-ohm": "~0.2.1",
