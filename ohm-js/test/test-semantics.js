@@ -220,12 +220,16 @@ test("attributes - same-named attributes don't collide", function(t) {
   var s1 = g.createSemantics();
   var s2 = g.createSemantics();
 
-  s1.addAttribute('attr', {start: function() { return 1; }});
-  s2.addAttribute('attr', {start: function() { return 2; }});
+  var val = 1;
+  s1.addAttribute('attr', {start: function() { return val++; }});
+  s2.addAttribute('attr', {start: function() { return val++; }});
 
   var m = g.match('');
   t.equal(s1(m).attr, 1);
   t.equal(s2(m).attr, 2);
+
+  t.equal(s1(m).attr, 1, 's1.attr is memoized');
+  t.equal(s2(m).attr, 2, 's2.attr is memoized');
 
   t.end();
 });
