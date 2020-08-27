@@ -665,6 +665,23 @@ test('sourceString - issue #188', function(t) {
   t.end();
 });
 
+// https://github.com/harc/ohm/issues/204
+test('sourceString - issue #204', function(t) {
+  var g = ohm.grammar('Mu{ List = NonemptyListOf<Item, ","> Item = alnum+ }');
+  var s = g.createSemantics().addOperation('eval()', {
+    NonemptyListOf: function(x, _, xs) {
+        return [x.eval()].concat(xs.eval());
+    },
+    Item: function(value) {
+        return value.sourceString;
+    }
+  });
+  var m = g.match('Aloha, Hi');
+  t.deepEqual(s(m).eval(), ['Aloha', 'Hi']);
+
+  t.end();
+});
+
 test('action call stacks', function(t) {
   var g = ohm.grammar('G { start = digit }');
   var s = g.createSemantics().addOperation('oops', {});
