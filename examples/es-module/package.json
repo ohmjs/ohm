@@ -1,0 +1,15 @@
+{
+  "name": "es-module",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "ohm-js": "^15.0.1"
+  },
+  "scripts": {
+    "test": "node --experimental-modules main.mjs"
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^9.0.0",
+    "rollup": "^2.26.6"
+  }
+}

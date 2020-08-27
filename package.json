@@ -1,6 +1,6 @@
 {
   "private": true,
-  "workspaces": ["ohm-js", "examples/ecmascript", "examples/operators"],
+  "workspaces": ["ohm-js", "examples/ecmascript", "examples/es-module", "examples/operators"],
   "scripts": {
     "build": "yarn workspace ohm-js run build",
     "ci-test": "yarn lint && yarn test",

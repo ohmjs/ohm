@@ -16,5 +16,8 @@
   "license": "MIT",
   "devDependencies": {
     "mocha": "^8.1.1"
+  },
+  "dependencies": {
+    "ohm-js": "^15.0.1"
   }
 }
