@@ -15,7 +15,7 @@ var inherits = require('inherits');
 // General stuff
 
 function PExpr() {
-  throw new Error("PExpr cannot be instantiated -- it's abstract");
+//  throw new Error("PExpr cannot be instantiated -- it's abstract");
 }
 
 // Set the `source` property to the interval containing the source for this expression.

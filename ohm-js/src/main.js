@@ -365,6 +365,7 @@ module.exports = {
   pexprs: pexprs,
   util: util,
   extras: require('../extras'),
+  experimental: require('../experimental'),
   version: version
 };
 

@@ -1,0 +1,6 @@
+GrammarWithPredicates {
+  _dummyStartRule =
+
+  withPredicate<expr, name>
+    = // Primitive
+}
