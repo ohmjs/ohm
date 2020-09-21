@@ -126,7 +126,7 @@ VisitorFamily.prototype._checkActionDict = function(dict) {
       var expected = self._arities[k];
       var actual = dict[k].length;
       assert(actual === expected,
-             "Action '" + k + "' has the wrong arity: expected " + expected + ', got ' + actual);
+          "Action '" + k + "' has the wrong arity: expected " + expected + ', got ' + actual);
     }
   });
 };

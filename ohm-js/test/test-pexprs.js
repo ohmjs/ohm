@@ -129,7 +129,7 @@ test('toArgumentNameList', function(t) {
 
   var moreSeq = g.rules.MoreSeq.body;
   t.deepEqual(moreSeq.toArgumentNameList(1),
-              ['foo_1', '_a_1', 'foo_2', 'foo_3', '_a_2', 'foo_4']);
+      ['foo_1', '_a_1', 'foo_2', 'foo_3', '_a_2', 'foo_4']);
 
   var plus = g.rules.plus.body;
   t.deepEqual(plus.toArgumentNameList(1), ['foo', '$2', 'bars']);

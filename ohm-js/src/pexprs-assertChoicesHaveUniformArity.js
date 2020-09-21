@@ -13,7 +13,7 @@ var pexprs = require('./pexprs');
 // --------------------------------------------------------------------
 
 pexprs.PExpr.prototype.assertChoicesHaveUniformArity = common.abstract(
-  'assertChoicesHaveUniformArity'
+    'assertChoicesHaveUniformArity'
 );
 
 pexprs.any.assertChoicesHaveUniformArity =

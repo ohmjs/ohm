@@ -25,6 +25,8 @@
   rules: {
     arrow-parens: "off",
 
+    block-spacing: ["error", "always"],  // Old Google style.
+
     // Enforce "one true brace style", allowing start and end braces to be on the same line.
     brace-style: ["error", "1tbs", {allowSingleLine: true}],
 

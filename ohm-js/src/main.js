@@ -37,7 +37,7 @@ function isElement(obj) {
 }
 
 function isUndefined(obj) {
-  return obj === void 0;  // eslint-disable-line no-void
+  return obj === void 0; // eslint-disable-line no-void
 }
 
 var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
@@ -285,7 +285,7 @@ function grammar(source, optNamespace) {
         util.getLineAndColumnMessage(interval.sourceString, interval.startIdx) +
         'Found more than one grammar definition -- use ohm.grammars() instead.');
   }
-  return ns[grammarNames[0]];  // Return the one and only grammar.
+  return ns[grammarNames[0]]; // Return the one and only grammar.
 }
 
 function grammars(source, optNamespace) {
@@ -361,7 +361,7 @@ module.exports = {
   grammarFromScriptElement: grammarFromScriptElement,
   grammarsFromScriptElements: grammarsFromScriptElements,
   makeRecipe: makeRecipe,
-  ohmGrammar: null,  // Initialized below, after Grammar.BuiltInRules.
+  ohmGrammar: null, // Initialized below, after Grammar.BuiltInRules.
   pexprs: pexprs,
   util: util,
   extras: require('../extras'),

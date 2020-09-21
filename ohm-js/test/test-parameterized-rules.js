@@ -54,7 +54,7 @@ test('require arguments to have arity 1', function(t) {
   t.throws(
       function() {
         testUtil.makeGrammar(
-          'G {\n' +
+            'G {\n' +
           '  Foo<x> = x x\n' +
           '  Start = Foo<digit digit>\n' +
           '}');
@@ -67,7 +67,7 @@ test('require the rules referenced in arguments to be declared', function(t) {
   t.throws(
       function() {
         testUtil.makeGrammar(
-          'G {\n' +
+            'G {\n' +
           '  start = listOf<asdlfk, ",">\n' +
           '}');
       },
@@ -98,13 +98,13 @@ test('start matching from parameterized rule', function(t) {
       '  z = "z"\n' +
       '}');
   t.throws(
-    function() { g.match('x'); },
-    /Wrong number of parameters for rule App \(expected 1, got 0\)/,
-    'parameterized default start rule does not work');
+      function() { g.match('x'); },
+      /Wrong number of parameters for rule App \(expected 1, got 0\)/,
+      'parameterized default start rule does not work');
   t.throws(
-    function() { g.match('y', 'App'); },
-    /Wrong number of parameters for rule App \(expected 1, got 0\)/,
-    'parameterized rule does not work as simple rule');
+      function() { g.match('y', 'App'); },
+      /Wrong number of parameters for rule App \(expected 1, got 0\)/,
+      'parameterized rule does not work as simple rule');
   t.ok(g.match('y', 'App<"y">').succeeded(), 'matching with primitive parameter');
   t.ok(g.match('z', 'App<"z">').succeeded(), 'matching with rule parameter');
   t.end();

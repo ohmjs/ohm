@@ -438,7 +438,7 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
   } else {
     Object.defineProperty(this.Wrapper.prototype, name, {
       get: doIt,
-      configurable: true  // So the property can be deleted.
+      configurable: true // So the property can be deleted.
     });
     Object.defineProperty(this.attributeKeys, name, {
       value: util.uniqueId(name)
@@ -691,7 +691,7 @@ Attribute.prototype.execute = function(semantics, nodeWrapper) {
 util.awaitBuiltInRules(function(builtInRules) {
   var operationsAndAttributesGrammar = require('../dist/operations-and-attributes');
   initBuiltInSemantics(builtInRules);
-  initPrototypeParser(operationsAndAttributesGrammar);  // requires BuiltInSemantics
+  initPrototypeParser(operationsAndAttributesGrammar); // requires BuiltInSemantics
 });
 
 function initBuiltInSemantics(builtInRules) {

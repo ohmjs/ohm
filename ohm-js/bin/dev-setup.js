@@ -23,7 +23,7 @@ if (inDeveloperMode) {
   var execOpts = {stdio: ['inherit', 'ignore', 'inherit']};
 
   function done() {
-    console.log('Developer setup complete.');  // eslint-disable-line no-console
+    console.log('Developer setup complete.'); // eslint-disable-line no-console
   }
 
   // If merge.ours.driver is not set, set it to true.

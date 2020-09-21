@@ -34,7 +34,7 @@ var IterationNode = nodes.IterationNode;
   Note that `State.prototype.eval(expr)`, unlike this method, guarantees that neither the state
   object's bindings nor its input stream's position will change if the expression fails to match.
 */
-pexprs.PExpr.prototype.eval = common.abstract('eval');  // function(state) { ... }
+pexprs.PExpr.prototype.eval = common.abstract('eval'); // function(state) { ... }
 
 pexprs.any.eval = function(state) {
   var inputStream = state.inputStream;
@@ -277,7 +277,7 @@ pexprs.Apply.prototype.reallyEval = function(state) {
     memoRec = currentLR;
     memoRec.examinedLength = inputStream.examinedLength - origPos;
     memoRec.rightmostFailureOffset = state._getRightmostFailureOffset();
-    origPosInfo.memoize(memoKey, memoRec);  // updates origPosInfo's maxExaminedLength
+    origPosInfo.memoize(memoKey, memoRec); // updates origPosInfo's maxExaminedLength
   } else if (!currentLR || !currentLR.isInvolved(memoKey)) {
     // This application is not involved in left recursion, so it's ok to memoize it.
     memoRec = origPosInfo.memoize(memoKey, {
@@ -361,7 +361,7 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
       break;
     }
     if (state.isTracing()) {
-      state.trace.splice(-2, 1);  // Drop the trace for the old seed.
+      state.trace.splice(-2, 1); // Drop the trace for the old seed.
     }
   }
   if (state.isTracing()) {

@@ -13,7 +13,7 @@ var testUtil = require('./testUtil');
 // --------------------------------------------------------------------
 
 function makeRecipe(recipeString) {
-  return ohm.makeRecipe(eval(recipeString));  // eslint-disable-line no-eval
+  return ohm.makeRecipe(eval(recipeString)); // eslint-disable-line no-eval
 }
 
 // --------------------------------------------------------------------
@@ -72,13 +72,13 @@ test('grammar recipes involving parameterized rules', function(t) {
   //   INSTEAD OF
   // "bar":["define",...,["alt",{...},["app",{},"bar_one",[["app",{},"x"],["app",{},"y"]]]
   t.ok(recipe.match(/\["app",\{.*?\},"bar_one",\[\["param",\{.*?\},0\]/),
-    'forwards parameters instead of applications');
+      'forwards parameters instead of applications');
   t.end();
 });
 
 test('grammar recipes with source', function(t) {
   var ns = testUtil.makeGrammars([
-    ' G {',  // Deliberately start with leading space.
+    ' G {', // Deliberately start with leading space.
     '  Start = ident*',
     '  ident = letter /* foo */ identPart*',
     '  identPart = alnum',
@@ -106,7 +106,7 @@ test('grammar recipes with source', function(t) {
 
   // Check that recipes without source still work fine.
   g = ohm.makeRecipe(
-    '["grammar",{},"G",null,"start",{"start":["define",{},null,[],["app",{},"any",[]]]}]');
+      '["grammar",{},"G",null,"start",{"start":["define",{},null,[],["app",{},"any",[]]]}]');
   t.equal(g.source, undefined);
   t.equal(g.rules.start.body.source, undefined);
   t.ok(ohm.makeRecipe(g.toRecipe()), 'recipe still works fine');
@@ -117,25 +117,25 @@ test('grammar recipes with source', function(t) {
 test('semantics recipes', function(t) {
   var g1 = ohm.grammar('G { Add = number "+" number  number = digit+ }');
   var s1 = g1.createSemantics()
-    .addOperation('eval', {
-      Add: function(a, _, b) {
-        return a.value + b.value;
-      }
-    })
-    .addOperation('evalWith(inc, factor)', {
-      Add: function(a, _, b) {
-        return a.evalWith(this.args.inc, this.args.factor) +
+      .addOperation('eval', {
+        Add: function(a, _, b) {
+          return a.value + b.value;
+        }
+      })
+      .addOperation('evalWith(inc, factor)', {
+        Add: function(a, _, b) {
+          return a.evalWith(this.args.inc, this.args.factor) +
           b.evalWith(this.args.inc, this.args.factor);
-      },
-      number: function(digits) {
-        return (this.value + this.args.inc) * this.args.factor;
-      }
-    })
-    .addAttribute('value', {
-      number: function(digits) {
-        return parseFloat(this.sourceString);
-      }
-    });
+        },
+        number: function(digits) {
+          return (this.value + this.args.inc) * this.args.factor;
+        }
+      })
+      .addAttribute('value', {
+        number: function(digits) {
+          return parseFloat(this.sourceString);
+        }
+      });
 
   var s2 = makeRecipe(s1.toRecipe());
   t.equal(s2.name, 'ASemantics', 'semantics created');
@@ -162,16 +162,16 @@ test('semantics recipes (special cases)', function(t) {
 
   var s = ns.G.createSemantics();
   t.doesNotThrow(
-    function() { makeRecipe(s.toRecipe()); },
-    undefined,
-    'special handling of line separator characters (U+2028)'
+      function() { makeRecipe(s.toRecipe()); },
+      undefined,
+      'special handling of line separator characters (U+2028)'
   );
 
   s = ns.G2.createSemantics();
   t.doesNotThrow(
-    function() { makeRecipe(s.toRecipe()); },
-    undefined,
-    'special handling of paragraph separator characters (U+2029)'
+      function() { makeRecipe(s.toRecipe()); },
+      undefined,
+      'special handling of paragraph separator characters (U+2029)'
   );
 
   t.end();
@@ -191,21 +191,21 @@ test('semantics recipes with extensions', function(t) {
     '  one := "elf"',
     '}']);
   var s = ns.G.createSemantics()
-    .addAttribute('value', {
-      one: function(_) { return 1; },
-      two: function(_) { return 2; },
-      _default: function(children) {
-        return 'default';
-      }
-    })
-    .addOperation('valueTimesTwo', {
-      _nonterminal: function(children) { return this.value * 2; }
-    });
+      .addAttribute('value', {
+        one: function(_) { return 1; },
+        two: function(_) { return 2; },
+        _default: function(children) {
+          return 'default';
+        }
+      })
+      .addOperation('valueTimesTwo', {
+        _nonterminal: function(children) { return this.value * 2; }
+      });
   var s2 = ns.G2.extendSemantics(s).addOperation('eval', {
     Add: function(one, _, two) { return one.value + two.value; }
   });
   var s3 = ns.G3.extendSemantics(s2).extendAttribute('value', {
-    one: function(str) { return 11; }  // overriding
+    one: function(str) { return 11; } // overriding
   });
 
   var sRe = makeRecipe(s3.toRecipe());
@@ -223,7 +223,7 @@ test('semantics recipes with extensions', function(t) {
 
   // Check extension of semantic without changing to super grammar
   var s4 = ns.G.extendSemantics(s).extendAttribute('value', {
-    two: function(str) { return 22; }   // overriding
+    two: function(str) { return 22; } // overriding
   });
 
   sRe = makeRecipe(s4.toRecipe());

@@ -92,7 +92,7 @@ exports.getLineAndColumn = function(str, offset) {
   // Get the previous line.
   if (prevLineStartOffset >= 0) {
     prevLine = str.slice(prevLineStartOffset, lineStartOffset)
-                  .replace(/\r?\n$/, '');  // Strip trailing EOL char(s).
+        .replace(/\r?\n$/, ''); // Strip trailing EOL char(s).
   }
 
   // Get the target line, stripping a trailing carriage return if necessary.

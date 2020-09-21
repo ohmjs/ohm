@@ -113,8 +113,8 @@ test('many expressions with nullable operands', function(t) {
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.equal(
-      e.message,
-      'Line 1, col 29:\n' +
+        e.message,
+        'Line 1, col 29:\n' +
       '> 1 | G { plus<e> = e+  star<e> = e*  inf1 = star<"">  inf2 = plus<"a"*> }\n' +
       '                                  ^\n' +
       'Nullable expression "" is not allowed inside \'*\' (possible infinite loop)\n' +
@@ -127,8 +127,8 @@ test('many expressions with nullable operands', function(t) {
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.equal(
-      e.message,
-      'Line 1, col 15:\n' +
+        e.message,
+        'Line 1, col 15:\n' +
       '> 1 | G { plus<e> = e+  star<e> = e*  inf1 = star<"">  inf2 = plus<"a"*> }\n' +
       '                    ^\n' +
       'Nullable expression "a"* is not allowed inside \'+\' (possible infinite loop)\n' +
@@ -143,8 +143,8 @@ test('many expressions with nullable operands', function(t) {
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.equal(
-      e.message,
-      'Line 25, col 13:\n' +
+        e.message,
+        'Line 25, col 13:\n' +
       '  24 |   NonemptyListOf<elem, sep>\n' +
       '> 25 |     = elem (sep elem)*\n' +
       '                   ^~~~~~~~\n' +
@@ -210,7 +210,7 @@ test('unrecognized escape sequences', function(t) {
 
 test('failures are memoized', function(t) {
   var g = ohm.grammar(
-    'G {\n' +
+      'G {\n' +
     '  S = ~A "b"  -- c1\n' +
     '    | A       -- c2\n' +
     '  A = "a"\n' +
@@ -290,7 +290,7 @@ test('method name displayed on abstract function failure', function(t) {
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.equal(e.message,
-      'this method toFailure is abstract! (it has no implementation in class Param)');
+        'this method toFailure is abstract! (it has no implementation in class Param)');
   }
   t.end();
 });
@@ -303,7 +303,7 @@ test('errors for Not-of-<PExpr>', function(t) {
   t.ok(/Expected not \("b" or "c"\)/.exec(r.message), 'reasonable failure report for Not-of-Alt');
 
   var notParamG = ohm.grammar(
-    'G {\n' +
+      'G {\n' +
     '  S = Not<"a">\n' +
     '  Not<elem> = ~elem\n' +
     '}');

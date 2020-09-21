@@ -94,10 +94,10 @@ Interval.prototype = {
       throw errors.intervalSourcesDontMatch();
     }
     assert(this.startIdx >= that.startIdx && this.endIdx <= that.endIdx,
-           'other interval does not cover this one');
+        'other interval does not cover this one');
     return new Interval(this.sourceString,
-                        this.startIdx - that.startIdx,
-                        this.endIdx - that.startIdx);
+        this.startIdx - that.startIdx,
+        this.endIdx - that.startIdx);
   },
 
   // Returns a new Interval which contains the same contents as this one,

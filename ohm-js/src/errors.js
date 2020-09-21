@@ -165,8 +165,8 @@ function kleeneExprHasNullableOperand(kleeneExpr, applicationStack) {
     kleeneExpr.operator + "' (possible infinite loop)";
   if (applicationStack.length > 0) {
     var stackTrace = applicationStack
-      .map(function(app) { return new pexprs.Apply(app.ruleName, app.args); })
-      .join('\n');
+        .map(function(app) { return new pexprs.Apply(app.ruleName, app.args); })
+        .join('\n');
     message += '\nApplication stack (most recent application last):\n' + stackTrace;
   }
   return createError(message, kleeneExpr.expr.source);

@@ -67,7 +67,7 @@ test('operations', function(t) {
       return x.noArgs() + y.noArgs();
     },
     mulExp_times: function(x, op, y) {
-      return x.noArgs(1);  // should result in an error
+      return x.noArgs(1); // should result in an error
     },
     number: function(n) {
       return '#';
@@ -204,8 +204,8 @@ test('attributes', function(t) {
   t.equal(s(complicated).value, 74, 'new value for more complicated case');
 
   t.throws(
-    function() { s._getActionDict('eval'); },
-    '"eval" is not a valid operation or attribute name in this semantics for "Arithmetic"');
+      function() { s._getActionDict('eval'); },
+      '"eval" is not a valid operation or attribute name in this semantics for "Arithmetic"');
 
   t.throws(
       function() { Arithmetic.createSemantics().addAttribute('badAttribute(x, y)', {}); },
@@ -245,22 +245,22 @@ test('semantics', function(t) {
   t.equal(s.addAttribute('attr2', {}), s, 'can add more than one attribute');
 
   t.throws(
-    function() { s.addOperation('op', {}); },
-    /already exists/,
-    'addOperation throws when name is already used');
+      function() { s.addOperation('op', {}); },
+      /already exists/,
+      'addOperation throws when name is already used');
   t.throws(
-    function() { s.addOperation('attr', {}); },
-    /already exists/,
-    'addOperation throws when name is already used, even if it is an attribute');
+      function() { s.addOperation('attr', {}); },
+      /already exists/,
+      'addOperation throws when name is already used, even if it is an attribute');
 
   t.throws(
-    function() { s.addAttribute('attr', {}); },
-    /already exists/,
-    'addAttribute throws when name is already used');
+      function() { s.addAttribute('attr', {}); },
+      /already exists/,
+      'addAttribute throws when name is already used');
   t.throws(
-    function() { s.addAttribute('attr', {}); },
-    /already exists/,
-    'addAttribute throws when name is already used, even if it is an operation');
+      function() { s.addAttribute('attr', {}); },
+      /already exists/,
+      'addAttribute throws when name is already used, even if it is an operation');
 
   t.throws(function() { s(null); }, /expected a MatchResult/);
   t.throws(function() { s(false); }, /expected a MatchResult/);
@@ -392,7 +392,7 @@ test('semantic action arity checks', function(t) {
   t.throws(
       function() { makeOperation(g, {_nonterminal: ignore0}); },
       /arity/,
-     '_nonterminal is checked');
+      '_nonterminal is checked');
   t.ok(makeOperation(g, {_nonterminal: ignore1}), '_nonterminal works with one arg');
 
   t.throws(function() {
@@ -470,8 +470,8 @@ test('extending semantics', function(t) {
   t.throws(function() { ns.G2.extendSemantics(s)(ns.G2.match('eins!', 'one')); }, /wrong arity/);
 
   var s2 = ns.G2.extendSemantics(s).extendOperation('value', {
-    one: function(str, _) { return 21; },  // overriding
-    three: function(str) { return 3; }     // adding a new case
+    one: function(str, _) { return 21; }, // overriding
+    three: function(str) { return 3; } // adding a new case
   });
   var m = ns.G2.match('eins!', 'one');
   t.equal(s2(m).value(), 21);
@@ -507,8 +507,8 @@ test('extending semantics', function(t) {
   t.throws(function() { ns.G.createSemantics().extendAttribute('value', {}); }, /did not inherit/);
 
   s2 = ns.G2.extendSemantics(s).extendAttribute('value', {
-    one: function(str, _) { return 21; },  // overriding
-    three: function(str) { return 3; }     // adding a new case
+    one: function(str, _) { return 21; }, // overriding
+    three: function(str) { return 3; } // adding a new case
   });
   m = ns.G2.match('eins!', 'one');
   t.equal(s2(m).value, 21);
@@ -624,7 +624,7 @@ test('asIteration', function(t) {
   t.throws(function() { s.addAttribute('asIteration', {}); }, /already exists/);
   t.throws(function() { s.addOperation('asIteration', {}); }, /already exists/);
   t.throws(function() {
-    s(g.match('xxx', 'anyThree')).asIteration();  // eslint-disable-line no-unused-expressions
+    s(g.match('xxx', 'anyThree')).asIteration(); // eslint-disable-line no-unused-expressions
   }, /Missing semantic action/);
 
   t.end();
@@ -670,10 +670,10 @@ test('sourceString - issue #204', function(t) {
   var g = ohm.grammar('Mu{ List = NonemptyListOf<Item, ","> Item = alnum+ }');
   var s = g.createSemantics().addOperation('eval()', {
     NonemptyListOf: function(x, _, xs) {
-        return [x.eval()].concat(xs.eval());
+      return [x.eval()].concat(xs.eval());
     },
     Item: function(value) {
-        return value.sourceString;
+      return value.sourceString;
     }
   });
   var m = g.match('Aloha, Hi');
@@ -716,7 +716,7 @@ test('action call stacks', function(t) {
     '  op2 > start',
     "  oops > default action for 'digit'",
     '  oops > _terminal'
-    ].join('\n'));
+  ].join('\n'));
 
   t.end();
 });

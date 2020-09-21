@@ -40,7 +40,7 @@ function compareGrammars(t, expected, actual) {
 // pass a message argument to the assertion functions (e.g. `t.equal`), or
 // just put checks in a separate call to `test`.
 function it(desc, fn) {
-  console.log(desc);  // eslint-disable-line no-console
+  console.log(desc); // eslint-disable-line no-console
   fn.call();
 }
 
@@ -107,8 +107,8 @@ test('string', function(t) {
   t.equal(s(cst).v, 'foo\b\n\r\t\\"\u01bcff\x8f');
 
   t.throws(function() { ohm.grammar('G { r = "\\w" }'); },
-           /Expected "\\""/,
-           'unrecognized escape characters are parse errors');
+      /Expected "\\""/,
+      'unrecognized escape characters are parse errors');
   t.end();
 });
 
@@ -546,16 +546,16 @@ test('apply', function(t) {
       });
       t.equal(s(f).v, 1234);
       t.deepEqual(s(f).t,
-        ['number',
-          ['numberRec',
-            ['number',
-              ['numberRec',
-                ['number',
-                  ['numberRec',
-                    ['number', '1'],
-                    '2']],
-                '3']],
-            '4']]);
+          ['number',
+            ['numberRec',
+              ['number',
+                ['numberRec',
+                  ['number',
+                    ['numberRec',
+                      ['number', '1'],
+                      '2']],
+                  '3']],
+              '4']]);
     });
     t.end();
   });
@@ -691,13 +691,13 @@ test('apply', function(t) {
         }
       });
       t.deepEqual(s(f).t,
-        ['addExp',
-          ['addExpRec',
-            ['addExp',
-              ['addExpRec',
-                ['addExp', ['mulExp', ['mulExpRec', ['mulExp', '1'], '2']]],
-                ['mulExp', '3']]],
-            ['mulExp', ['mulExpRec', ['mulExp', '4'], '5']]]]);
+          ['addExp',
+            ['addExpRec',
+              ['addExp',
+                ['addExpRec',
+                  ['addExp', ['mulExp', ['mulExpRec', ['mulExp', '1'], '2']]],
+                  ['mulExp', '3']]],
+              ['mulExp', ['mulExpRec', ['mulExp', '4'], '5']]]]);
       t.equal(s(f).v, 25);
       t.equal(s(f).p, '(((1*2)+3)+(4*5))');
     });
@@ -716,13 +716,13 @@ test('apply', function(t) {
                       ['id', 8, 'mulExp',
                         ['id', 9, 'priExp', '1']], '*',
                       ['id', 10, 'priExp', '2']]]], '+',
-                  ['id', 11, 'mulExp',
-                    ['id', 12, 'priExp', '3']]]], '+',
-              ['id', 13, 'mulExp',
-                ['id', 14, 'mulExpRec',
-                  ['id', 15, 'mulExp',
-                    ['id', 16, 'priExp', '4']], '*',
-                  ['id', 17, 'priExp', '5']]]]];
+                ['id', 11, 'mulExp',
+                  ['id', 12, 'priExp', '3']]]], '+',
+            ['id', 13, 'mulExp',
+              ['id', 14, 'mulExpRec',
+                ['id', 15, 'mulExp',
+                  ['id', 16, 'priExp', '4']], '*',
+                ['id', 17, 'priExp', '5']]]]];
       t.deepEqual(a(f), ['id', 0, 'sss', tree, tree]);
       t.equal(a._getNextId(), 18);
     });
@@ -812,9 +812,9 @@ test('apply', function(t) {
         }
       });
       t.deepEqual(s(f).t,
-        ['tricky',
-          ['bar',
-            ['barRec', ['foo', ['fooRec', ['bar', ['barRec', ['foo', '1'], '2']], '3']], '4']]]);
+          ['tricky',
+            ['bar',
+              ['barRec', ['foo', ['fooRec', ['bar', ['barRec', ['foo', '1'], '2']], '3']], '4']]]);
     });
     t.end();
   });
@@ -852,7 +852,7 @@ test('inheritance', function(t) {
 
   test('override', function(t) {
     var ns = makeGrammars(['G1 { number = digit+ }',
-                           'G2 <: G1 { digit := "a".."z" }']);
+      'G2 <: G1 { digit := "a".."z" }']);
 
     it('should check that rule exists in super-grammar', function() {
       t.throws(
@@ -907,7 +907,7 @@ test('inheritance', function(t) {
 
   test('extend', function(t) {
     var ns = makeGrammars(['G1 { foo = "aaa" "bbb" }',
-                                'G2 <: G1 { foo += "111" "222" }']);
+      'G2 <: G1 { foo += "111" "222" }']);
 
     it('recognition', function() {
       assertSucceeds(t, ns.G1.match('aaabbb'));
@@ -1100,13 +1100,15 @@ test('inline rule declarations', function(t) {
   t.equal(makeEval(m2)(m2.match('2*3~4')), 2);
 
   t.throws(
-    function() { ohm.grammar('Bad <: Arithmetic { addExp += addExp "~" mulExp  -- minus }', ns); },
-    /rule 'addExp_minus' in grammar 'Bad' \(originally declared in 'Arithmetic'\)/);
+      function() {
+        ohm.grammar('Bad <: Arithmetic { addExp += addExp "~" mulExp  -- minus }', ns);
+      },
+      /rule 'addExp_minus' in grammar 'Bad' \(originally declared in 'Arithmetic'\)/);
 
   t.throws(
-    function() { ohm.grammar('Bad { start = "a" ("b" -- bad\n) }'); },
-    /Error/,
-    'inline rules must be at the top level');
+      function() { ohm.grammar('Bad { start = "a" ("b" -- bad\n) }'); },
+      /Error/,
+      'inline rules must be at the top level');
 
   t.end();
 });
@@ -1265,14 +1267,14 @@ test('bootstrap', function(t) {
   });
 
   var g = ohm._buildGrammar(ns.Ohm.match(ohmGrammarSource, 'Grammar'),
-                            ohm.createNamespace(),
-                            ns.Ohm);
+      ohm.createNamespace(),
+      ns.Ohm);
   assertSucceeds(t, g.match(ohmGrammarSource, 'Grammar'), 'Ohm grammar can recognize itself');
 
   it('can produce a grammar that works', function() {
     var Arithmetic = ohm._buildGrammar(g.match(arithmeticGrammarSource, 'Grammar'),
-                                       ohm.createNamespace(),
-                                       g);
+        ohm.createNamespace(),
+        g);
     var s = Arithmetic.createSemantics().addAttribute('v', {
       exp: function(expr) {
         return expr.v;
@@ -1319,11 +1321,11 @@ test('bootstrap', function(t) {
 
   it('full bootstrap!', function() {
     var g = ohm._buildGrammar(ns.Ohm.match(ohmGrammarSource, 'Grammar'),
-                              ohm.createNamespace(),
-                              ns.Ohm);
+        ohm.createNamespace(),
+        ns.Ohm);
     var gPrime = ohm._buildGrammar(g.match(ohmGrammarSource, 'Grammar'),
-                                   ohm.createNamespace(),
-                                   g);
+        ohm.createNamespace(),
+        g);
     gPrime.namespaceName = g.namespaceName; // make their namespaceName properties the same
     compareGrammars(t, g, gPrime);
   });

@@ -174,7 +174,7 @@ Trace.prototype.toString = function() {
     var ctorName = node.expr.constructor.name;
     // Don't print anything for Alt nodes.
     if (ctorName === 'Alt') {
-      return;  // eslint-disable-line consistent-return
+      return; // eslint-disable-line consistent-return
     }
     sb.append(getInputExcerpt(node.input, node.pos, 10) + spaces(depth * 2 + 1));
     sb.append((node.succeeded ? CHECK_MARK : BALLOT_X) + ' ' + node.displayString);

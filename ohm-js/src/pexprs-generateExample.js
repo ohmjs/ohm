@@ -27,7 +27,7 @@ function categorizeExamples(examples) {
   var examplesNeeded = examples.filter(function(example) {
     return example.hasOwnProperty('examplesNeeded');
   })
-  .map(function(example) { return example.examplesNeeded; });
+      .map(function(example) { return example.examplesNeeded; });
 
   examplesNeeded = flatten(examplesNeeded);
 
@@ -42,7 +42,7 @@ function categorizeExamples(examples) {
   var successfulExamples = examples.filter(function(example) {
     return example.hasOwnProperty('value');
   })
-  .map(function(item) { return item.value; });
+      .map(function(item) { return item.value; });
 
   // This flag returns true if the system cannot generate the rule it is currently
   //   attempting to generate, regardless of whether or not it has the examples it needs.
@@ -69,7 +69,7 @@ pexprs.Terminal.prototype.generateExample = function(grammar, examples, inSyntac
 pexprs.Range.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
   var rangeSize = this.to.charCodeAt(0) - this.from.charCodeAt(0);
   return {value: String.fromCharCode(
-    this.from.charCodeAt(0) + Math.floor(rangeSize * Math.random())
+      this.from.charCodeAt(0) + Math.floor(rangeSize * Math.random())
   )};
 };
 

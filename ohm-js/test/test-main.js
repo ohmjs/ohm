@@ -34,10 +34,10 @@ test('namespaces', function(t) {
 
 test('loading from script elements', function(t) {
   var script1 = testUtil.fakeScriptTag(['O { number = number digit  -- rec',
-                                    '           | digit',
-                                    '}']);
+    '           | digit',
+    '}']);
   var script2 = testUtil.fakeScriptTag(['M { x = "xx" }',
-                                    'N { y = "yy" }']);
+    'N { y = "yy" }']);
   var ns1 = ohm.grammarsFromScriptElements([script1]);
   var ns2 = ohm.grammarsFromScriptElements([script2]);
   t.equal(ns1.M, undefined, 'M is undefined in ns1');

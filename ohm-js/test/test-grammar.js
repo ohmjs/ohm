@@ -30,7 +30,7 @@ test('action dictionary templates', function(t) {
     '}'
   ]);
   t.equal(ns.G1.toOperationActionDictionaryTemplate(),
-    '{\n' +
+      '{\n' +
     '  foo: function(_) {\n' +
     '  },\n' +
     '  bar: function(_, _, _) {\n' +
@@ -85,7 +85,7 @@ test('action dictionary templates', function(t) {
     '  }\n' +
     '}');
   t.equal(ns.G2.toAttributeActionDictionaryTemplate(),
-    '{\n' +
+      '{\n' +
     '  qux: function(_) {\n' +
     '  },\n' +
     '  foo: function(_) {\n' +
@@ -187,11 +187,11 @@ test('default start rule', function(t) {
   // Test passing the default start rule as an argument to the Grammar constructor.
   var root = Grammar.BuiltInRules;
   t.throws(function() {
-    new Grammar('G', root, {}, 'nonexistentRule');  // eslint-disable-line no-new
+    new Grammar('G', root, {}, 'nonexistentRule'); // eslint-disable-line no-new
   }, /Invalid start rule/, 'throws when start rule is not in the grammar');
   t.ok(
       new Grammar('G', root, {aRule: null}, 'aRule'),
-     'works when it is in the `rules` dict');
+      'works when it is in the `rules` dict');
   var rules = Object.create(root.rules);
   t.ok(
       new Grammar('G', root, rules, 'digit'),

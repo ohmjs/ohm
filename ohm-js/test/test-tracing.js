@@ -105,7 +105,7 @@ test('space skipping', function(t) {
   t.deepEqual(start.children.map(displayString), ['spaces', 'foo']);
   var fooAppl = start.children[1];
   t.deepEqual(fooAppl.children.map(displayString),
-              ['"a" "b"'], 'no spaces under lexical rule appl');
+      ['"a" "b"'], 'no spaces under lexical rule appl');
   t.end();
 });
 
@@ -174,7 +174,7 @@ test('tracing with memoization', function(t) {
   var star = alt.children[1];
   t.equal(star.bindings[0].isIteration(), true);
   t.deepEqual(star.children.map(displayString),
-              ['spaces', 'letter', 'spaces', 'letter', 'spaces', 'letter']);
+      ['spaces', 'letter', 'spaces', 'letter', 'spaces', 'letter']);
 
   // The 'letter*' should succeed, and its 'letter' children should be
   // memoized from the other size of the Alt (letter ~letter). Ensure
@@ -186,12 +186,12 @@ test('tracing with memoization', function(t) {
   t.equal(cstNode.numChildren(), 1);
 
   t.deepEqual(descendant(star, 1).children.map(displayString),
-              ['lower\n    | upper\n    | unicodeLtmo']);
+      ['lower\n    | upper\n    | unicodeLtmo']);
   t.deepEqual(descendant(star, 1, 0).children.map(displayString), ['lower']);
   t.deepEqual(descendant(star, 1, 0, 0).children.map(displayString), ['Unicode [Ll] character']);
 
   t.deepEqual(descendant(star, 3).children.map(displayString),
-              ['lower\n    | upper\n    | unicodeLtmo']);
+      ['lower\n    | upper\n    | unicodeLtmo']);
   t.deepEqual(descendant(star, 3, 0).children.map(displayString), ['lower', 'upper']);
   t.deepEqual(descendant(star, 3, 0, 0).children.map(displayString), ['Unicode [Ll] character']);
 
@@ -295,7 +295,7 @@ test('tracing with left recursion and leading space', function(t) {
     '      | "z"',
     '}'
   ]);
-  var foo = g.trace(' zy').children[1];  // First child is 'spaces'.
+  var foo = g.trace(' zy').children[1]; // First child is 'spaces'.
   t.equal(foo.isHeadOfLeftRecursion, true);
   t.equal(foo.children.length, 1);
 
@@ -310,7 +310,7 @@ test('tracing with left recursion and leading space', function(t) {
 
   alt = onlyChild(applyFoo);
   t.deepEqual(alt.children.map(displayString),
-              ['spaces', 'Foo_x', 'spaces', 'Foo_y', 'spaces', '"z"']);
+      ['spaces', 'Foo_x', 'spaces', 'Foo_y', 'spaces', '"z"']);
   t.deepEqual(alt.children.map(succeeded), [true, false, true, false, true, true]);
   t.equal(alt.children[5].children.length, 0);
 
@@ -324,13 +324,13 @@ test('toString', function(t) {
   var exprs = lines.map(function(l) { return l.split(/\s+/)[2]; });
   t.deepEqual(exprs, [
     'start',
-    '"a"',  // Failed.
+    '"a"', // Failed.
     'letter*',
     'letter', 'lower', 'Unicode',
     'letter', 'lower', 'Unicode',
-    'letter', 'lower', 'Unicode',  // Failed.
-    'upper', 'Unicode',  // Failed.
-    'unicodeLtmo', 'Unicode',  // Failed.
+    'letter', 'lower', 'Unicode', // Failed.
+    'upper', 'Unicode', // Failed.
+    'unicodeLtmo', 'Unicode', // Failed.
     'end'], 'expressions');
 
   var excerpts = lines.map(function(l) { return l.split(/\s+/)[0]; });
@@ -362,7 +362,7 @@ test('toString with left recursion', function(t) {
     'a          ✓ start (LR) ⇒  "a"',
     'a              ✗ start_rec',
     'a                ✗ start letter',
-    'a                  ✗ start',  // Left-recursive base case.
+    'a                  ✗ start', // Left-recursive base case.
     'a              ✓ letter ⇒  "a"',
     'a                  ✓ lower ⇒  "a"',
     'a                    ✓ Unicode [Ll] character ⇒  "a"',

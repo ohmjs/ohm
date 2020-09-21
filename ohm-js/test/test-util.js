@@ -109,8 +109,8 @@ test('getLineAndColumnMessage with ranges', function(t) {
     ''].join('\n'), 'end index out of bounds');
 
   t.equal(getLineAndColumnMessage('3 + 4', 2, [0, 0]),
-          getLineAndColumnMessage('3 + 4', 2),
-          'empty range');
+      getLineAndColumnMessage('3 + 4', 2),
+      'empty range');
 
   t.equal(getLineAndColumnMessage('3 + 4', 0, [0, 3], [1, 5]), [
     'Line 1, col 1:',
