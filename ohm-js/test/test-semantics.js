@@ -4,25 +4,25 @@
 // Imports
 // --------------------------------------------------------------------
 
-var fs = require('fs');
-var test = require('tape');
+const fs = require('fs');
+const test = require('tape');
 
-var ohm = require('..');
-var testUtil = require('./testUtil');
+const ohm = require('..');
+const testUtil = require('./testUtil');
 
 // --------------------------------------------------------------------
 // Helpers
 // --------------------------------------------------------------------
 
-var arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
+const arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
 
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
 
 test('operations', function(t) {
-  var Arithmetic = ohm.grammar(arithmeticGrammarSource);
-  var s = Arithmetic.createSemantics();
+  const Arithmetic = ohm.grammar(arithmeticGrammarSource);
+  const s = Arithmetic.createSemantics();
 
   // An operation that evaluates an expression
   s.addOperation('value', {
@@ -98,16 +98,16 @@ test('operations', function(t) {
 });
 
 test('operations with arguments', function(t) {
-  var Arithmetic = ohm.grammar(arithmeticGrammarSource);
-  var s = Arithmetic.createSemantics();
+  const Arithmetic = ohm.grammar(arithmeticGrammarSource);
+  const s = Arithmetic.createSemantics();
 
   s.addOperation('op1(level)', {
     number: function(n) {
       return this.sourceString + '@L' + this.args.level;
     },
     _default: function(children) {
-      var self = this;
-      var ans = [];
+      const self = this;
+      let ans = [];
       children.forEach(function(child) {
         ans = ans.concat(child.op1(self.args.level + 1));
       });
@@ -140,7 +140,7 @@ test('operations with arguments', function(t) {
 
   s.addOperation('op3(foo, bar, baz)', {
     _default: function(children) {
-      var oldArgs = this.args;
+      const oldArgs = this.args;
       this.op1(0);
       t.deepEquals(
           this.args,
@@ -154,9 +154,9 @@ test('operations with arguments', function(t) {
 });
 
 test('attributes', function(t) {
-  var Arithmetic = ohm.grammar(arithmeticGrammarSource);
-  var count = 0;
-  var s = Arithmetic.createSemantics().addAttribute('value', {
+  const Arithmetic = ohm.grammar(arithmeticGrammarSource);
+  let count = 0;
+  const s = Arithmetic.createSemantics().addAttribute('value', {
     addExp_plus: function(x, op, y) {
       count++;
       return x.value + y.value;
@@ -179,14 +179,14 @@ test('attributes', function(t) {
     }
   });
 
-  var simple = Arithmetic.match('1+2');
-  var complicated = Arithmetic.match('13+10*2*3');
+  const simple = Arithmetic.match('1+2');
+  const complicated = Arithmetic.match('13+10*2*3');
 
   t.equal(s(simple).value, 3, 'single addExp');
   t.equal(s(complicated).value, 73, 'more complicated case');
 
   // Check that attributes are memoized
-  var oldCount = count;
+  const oldCount = count;
   t.deepEqual(s(simple).value, 3);
   t.deepEqual(s(complicated).value, 73);
   t.equal(count, oldCount);
@@ -216,15 +216,15 @@ test('attributes', function(t) {
 });
 
 test("attributes - same-named attributes don't collide", function(t) {
-  var g = ohm.grammar('G { start = }');
-  var s1 = g.createSemantics();
-  var s2 = g.createSemantics();
+  const g = ohm.grammar('G { start = }');
+  const s1 = g.createSemantics();
+  const s2 = g.createSemantics();
 
-  var val = 1;
+  let val = 1;
   s1.addAttribute('attr', {start: function() { return val++; }});
   s2.addAttribute('attr', {start: function() { return val++; }});
 
-  var m = g.match('');
+  const m = g.match('');
   t.equal(s1(m).attr, 1);
   t.equal(s2(m).attr, 2);
 
@@ -235,8 +235,8 @@ test("attributes - same-named attributes don't collide", function(t) {
 });
 
 test('semantics', function(t) {
-  var Arithmetic = ohm.grammar(arithmeticGrammarSource);
-  var s = Arithmetic.createSemantics();
+  const Arithmetic = ohm.grammar(arithmeticGrammarSource);
+  const s = Arithmetic.createSemantics();
 
   t.equal(s.addOperation('op', {}), s, 'addOperation returns the receiver');
   t.equal(s.addAttribute('attr', {}), s, 'addAttribute returns the receiver');
@@ -272,7 +272,7 @@ test('semantics', function(t) {
       'throws when arg is a MatchFailure');
 
   // Cannot use the semantics on nodes from another grammar...
-  var g = ohm.grammar('G {}');
+  let g = ohm.grammar('G {}');
   t.throws(function() { s(g.match('a', 'letter')); }, /Cannot use a MatchResult from grammar/);
   // ... even if it's a sub-grammar
   g = ohm.grammar('Arithmetic2 <: Arithmetic {}', {Arithmetic: Arithmetic});
@@ -282,13 +282,13 @@ test('semantics', function(t) {
 });
 
 test('_iter nodes', function(t) {
-  var g = testUtil.makeGrammar([
+  const g = testUtil.makeGrammar([
     'G {',
     '  letters = letter*',
     '  optLetter = letter?',
     '  ident = letter+',
     '}']);
-  var s = g.createSemantics().addOperation('op', {
+  let s = g.createSemantics().addOperation('op', {
     letter: function(l) {
       return l.sourceString;
     },
@@ -297,7 +297,7 @@ test('_iter nodes', function(t) {
     }
   });
 
-  var m = g.match('abc', 'letters');
+  const m = g.match('abc', 'letters');
   t.deepEqual(s(m).op(), ['a', 'b', 'c'], 'operations are mapped over children');
 
   s = g.createSemantics().addOperation('op', {
@@ -326,8 +326,8 @@ test('_iter nodes', function(t) {
   });
   t.equal(s(m).op(), 'a,b,c');
 
-  var m2 = g.match('', 'optLetter');
-  var m3 = g.match('ab', 'ident');
+  const m2 = g.match('', 'optLetter');
+  const m3 = g.match('ab', 'ident');
   s = g.createSemantics().addOperation('op', {
     letters: function(ls) {
       return ls.isOptional();
@@ -347,9 +347,9 @@ test('_iter nodes', function(t) {
 });
 
 test('_terminal nodes', function(t) {
-  var g = ohm.grammar('G { letters = letter* }');
-  var s = g.createSemantics().addOperation('op', {});
-  var m = g.match('abc', 'letters');
+  const g = ohm.grammar('G { letters = letter* }');
+  let s = g.createSemantics().addOperation('op', {});
+  const m = g.match('abc', 'letters');
 
   t.throws(function() {
     g.createSemantics().addOperation('op', {})(m).op();
@@ -375,7 +375,7 @@ test('_terminal nodes', function(t) {
 });
 
 test('semantic action arity checks', function(t) {
-  var g = ohm.grammar('G {}');
+  let g = ohm.grammar('G {}');
   function makeOperation(grammar, actions) {
     return grammar.createSemantics().addOperation('op' + testUtil.uniqueId(), actions);
   }
@@ -419,13 +419,13 @@ test('semantic action arity checks', function(t) {
     makeOperation(g, {one: ignore1, two: ignore0});
   }, /wrong arity/, "'two' is checked");
 
-  var g2 = ohm.grammar('G2 <: G {}', {G: g});
+  const g2 = ohm.grammar('G2 <: G {}', {G: g});
   t.throws(function() {
     makeOperation(g2, {one: ignore2});
   }, /wrong arity/, 'supergrammar rules are checked');
   t.ok(makeOperation(g2, {one: ignore1}), 'works with one arg');
 
-  var g3 = ohm.grammar('G3 <: G { one := "now" "two" }', {G: g});
+  const g3 = ohm.grammar('G3 <: G { one := "now" "two" }', {G: g});
   t.throws(function() {
     makeOperation(g3, {one: ignore1});
   }, /wrong arity/, 'changing arity in an overridden rule');
@@ -435,7 +435,7 @@ test('semantic action arity checks', function(t) {
 });
 
 test('extending semantics', function(t) {
-  var ns = testUtil.makeGrammars([
+  const ns = testUtil.makeGrammars([
     'G { ',
     '  one = "one"',
     '  two = "two"',
@@ -449,7 +449,7 @@ test('extending semantics', function(t) {
 
   // Make sure operations behave as expected
 
-  var s = ns.G.createSemantics()
+  let s = ns.G.createSemantics()
       .addOperation('value', {
         one: function(_) { return 1; },
         two: function(_) { return 2; }
@@ -469,11 +469,11 @@ test('extending semantics', function(t) {
   // CST node.
   t.throws(function() { ns.G2.extendSemantics(s)(ns.G2.match('eins!', 'one')); }, /wrong arity/);
 
-  var s2 = ns.G2.extendSemantics(s).extendOperation('value', {
+  let s2 = ns.G2.extendSemantics(s).extendOperation('value', {
     one: function(str, _) { return 21; }, // overriding
     three: function(str) { return 3; } // adding a new case
   });
-  var m = ns.G2.match('eins!', 'one');
+  let m = ns.G2.match('eins!', 'one');
   t.equal(s2(m).value(), 21);
   t.equal(s2(m).valueTimesTwo(), 42);
 
@@ -527,7 +527,7 @@ test('extending semantics', function(t) {
 
   // Make sure an attribute that was inherited from a parent semantics
   // does not share its memo table with its parent.
-  var s3 = ns.G2.extendSemantics(s2).extendAttribute('value', {
+  const s3 = ns.G2.extendSemantics(s2).extendAttribute('value', {
     one: function(str, _) { return 123; }
   });
   m = ns.G2.match('eins!', 'one');
@@ -540,15 +540,15 @@ test('extending semantics', function(t) {
   t.throws(function() { s2.extendAttribute('value(x)', {}); }, /Expected end of input/);
 
   // Make sure that semantics from the same grammar source are considered compatible.
-  var arith1 = ohm.grammar(arithmeticGrammarSource);
-  var arith2 = ohm.grammar(arithmeticGrammarSource);
+  const arith1 = ohm.grammar(arithmeticGrammarSource);
+  const arith2 = ohm.grammar(arithmeticGrammarSource);
   t.ok(arith2.extendSemantics(arith1.createSemantics()));
 
   t.end();
 });
 
 test('mixing nodes from one grammar with semantics from another', function(t) {
-  var ns = testUtil.makeGrammars([
+  const ns = testUtil.makeGrammars([
     'G {',
     '  start = "aaa"',
     '}',
@@ -560,12 +560,12 @@ test('mixing nodes from one grammar with semantics from another', function(t) {
     '}'
   ]);
 
-  var s = ns.G.createSemantics().addOperation('value', {
+  const s = ns.G.createSemantics().addOperation('value', {
     start: function(x) { return x.value() + 'choo!'; },
     _terminal: function() { return this.primitiveValue; }
   });
 
-  var m = ns.G.match('aaa', 'start');
+  let m = ns.G.match('aaa', 'start');
   t.equal(s(m).value(), 'aaachoo!');
 
   m = ns.GPrime.match('bbb', 'start');
@@ -578,17 +578,17 @@ test('mixing nodes from one grammar with semantics from another', function(t) {
 });
 
 test('asIteration', function(t) {
-  var g = testUtil.makeGrammar([
+  const g = testUtil.makeGrammar([
     'G {',
     '  Start = ListOf<letter, ","> listOf<any, ".">',
     '  anyTwo = any any',
     '  anyThree = any any any',
     '}'
   ]);
-  var s = g.createSemantics().addAttribute('value', {
+  const s = g.createSemantics().addAttribute('value', {
     Start: function(list1, list2) {
-      var arr1 = list1.asIteration().value;
-      var arr2 = list2.asIteration().value;
+      const arr1 = list1.asIteration().value;
+      const arr2 = list2.asIteration().value;
       return arr1.join('') + arr2.join('');
     },
     letter: function(_) {
@@ -614,7 +614,7 @@ test('asIteration', function(t) {
   });
   s.addAttribute('reversedValue', {
     anyTwo: function(a, b) {
-      var arr = this.asIteration().value;
+      const arr = this.asIteration().value;
       return arr.join('');
     }
   });
@@ -631,10 +631,10 @@ test('asIteration', function(t) {
 });
 
 test('sourceString', function(t) {
-  var g = ohm.grammar('G { Start = "a" "b"* }');
+  const g = ohm.grammar('G { Start = "a" "b"* }');
 
   // An operation that calls `sourceString` on a nonterminal, terminal, and iter node.
-  var s = g.createSemantics().addOperation('foo', {
+  const s = g.createSemantics().addOperation('foo', {
     Start: function(a, bs) {
       return this.sourceString + a.sourceString + bs.sourceString;
     }
@@ -646,13 +646,13 @@ test('sourceString', function(t) {
 
 // https://github.com/harc/ohm/issues/188
 test('sourceString - issue #188', function(t) {
-  var g = testUtil.makeGrammar([
+  const g = testUtil.makeGrammar([
     'G {',
     '  Start = num num',
     '  num = digit+',
     '}'
   ]);
-  var s = g.createSemantics().addOperation('origSource', {
+  const s = g.createSemantics().addOperation('origSource', {
     Start: function(a, b) {
       return a.origSource() + b.origSource();
     },
@@ -667,8 +667,8 @@ test('sourceString - issue #188', function(t) {
 
 // https://github.com/harc/ohm/issues/204
 test('sourceString - issue #204', function(t) {
-  var g = ohm.grammar('Mu{ List = NonemptyListOf<Item, ","> Item = alnum+ }');
-  var s = g.createSemantics().addOperation('eval()', {
+  const g = ohm.grammar('Mu{ List = NonemptyListOf<Item, ","> Item = alnum+ }');
+  const s = g.createSemantics().addOperation('eval()', {
     NonemptyListOf: function(x, _, xs) {
       return [x.eval()].concat(xs.eval());
     },
@@ -676,17 +676,17 @@ test('sourceString - issue #204', function(t) {
       return value.sourceString;
     }
   });
-  var m = g.match('Aloha, Hi');
+  const m = g.match('Aloha, Hi');
   t.deepEqual(s(m).eval(), ['Aloha', 'Hi']);
 
   t.end();
 });
 
 test('action call stacks', function(t) {
-  var g = ohm.grammar('G { start = digit }');
-  var s = g.createSemantics().addOperation('oops', {});
+  const g = ohm.grammar('G { start = digit }');
+  const s = g.createSemantics().addOperation('oops', {});
 
-  var err;
+  let err;
   try {
     s(g.match('9')).oops();
   } catch (e) {

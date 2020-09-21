@@ -1,21 +1,21 @@
 'use strict';
 
-var fs = require('fs');
-var test = require('tape');
+const fs = require('fs');
+const test = require('tape');
 
-var Grammar = require('../src/Grammar');
-var ohm = require('..');
-var testUtil = require('./testUtil');
+const Grammar = require('../src/Grammar');
+const ohm = require('..');
+const testUtil = require('./testUtil');
 
-var makeGrammar = testUtil.makeGrammar;
-var makeGrammars = testUtil.makeGrammars;
+const makeGrammar = testUtil.makeGrammar;
+const makeGrammars = testUtil.makeGrammars;
 
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
 
 test('action dictionary templates', function(t) {
-  var ns = makeGrammars([
+  const ns = makeGrammars([
     'G1 {',
     '  foo = bar',
     '  bar = baz baz baz',
@@ -143,27 +143,27 @@ test('action dictionary templates', function(t) {
 });
 
 test('default start rule', function(t) {
-  var g = ohm.grammar('G {}');
+  let g = ohm.grammar('G {}');
   t.equal(g.defaultStartRule, undefined, 'undefined for an empty grammar');
   t.throws(function() { g.match('a'); }, /Missing start rule/, 'match throws with no start rule');
   t.equal(Grammar.ProtoBuiltInRules.defaultStartRule, undefined, 'undefined for ProtoBuiltInRules');
   t.equal(Grammar.BuiltInRules.defaultStartRule, undefined, 'undefined for BuiltInRules');
 
-  var g2 = ohm.grammar('G2 <: G {}', {G: g});
+  const g2 = ohm.grammar('G2 <: G {}', {G: g});
   t.equal(g2.defaultStartRule, undefined, 'undefined for a subgrammar too');
   t.throws(function() { g2.match('a'); }, /Missing start rule/, 'match throws with no start rule');
 
-  var ns = makeGrammars(['G { foo = "a" }', 'G2 <: G {}']);
+  const ns = makeGrammars(['G { foo = "a" }', 'G2 <: G {}']);
   t.equal(ns.G.defaultStartRule, 'foo', 'only rule becomes default start rule');
   t.equal(ns.G2.defaultStartRule, 'foo', 'start rule is inherited from supergrammar');
   t.equal(ns.G.match('a').succeeded(), true, 'match works without a start rule argument');
   t.equal(ns.G2.match('a').succeeded(), true);
 
-  var g3 = ohm.grammar('G3 <: G { bar = "b" }', ns);
+  const g3 = ohm.grammar('G3 <: G { bar = "b" }', ns);
   t.equal(g3.defaultStartRule, 'foo', 'start rule is still inherited');
   t.equal(g3.match('a').succeeded(), true);
 
-  var g4 = ohm.grammar('G4 <: G3 { blah = "c" }', {G3: g3});
+  const g4 = ohm.grammar('G4 <: G3 { blah = "c" }', {G3: g3});
   t.equal(g4.defaultStartRule, 'foo', 'start rule inherited from super-supergrammar');
   t.equal(g4.match('a').succeeded(), true);
 
@@ -185,14 +185,14 @@ test('default start rule', function(t) {
   t.equal(g.defaultStartRule, 'x', "an inline rule doesn't become the default");
 
   // Test passing the default start rule as an argument to the Grammar constructor.
-  var root = Grammar.BuiltInRules;
+  const root = Grammar.BuiltInRules;
   t.throws(function() {
     new Grammar('G', root, {}, 'nonexistentRule'); // eslint-disable-line no-new
   }, /Invalid start rule/, 'throws when start rule is not in the grammar');
   t.ok(
       new Grammar('G', root, {aRule: null}, 'aRule'),
       'works when it is in the `rules` dict');
-  var rules = Object.create(root.rules);
+  const rules = Object.create(root.rules);
   t.ok(
       new Grammar('G', root, rules, 'digit'),
       'works when rule is in the supergrammar');
@@ -201,17 +201,17 @@ test('default start rule', function(t) {
 });
 
 test('grammar equality', function(t) {
-  var source = fs.readFileSync('test/arithmetic.ohm').toString();
-  var a = ohm.grammar(source);
-  var b = ohm.grammar(source);
+  const source = fs.readFileSync('test/arithmetic.ohm').toString();
+  const a = ohm.grammar(source);
+  const b = ohm.grammar(source);
   t.equal(a.equals(b), true, 'two grammars from same source');
   t.equal(a.equals(), false, 'comparing to undefined');
   t.equal(a.equals(null), false, 'comparing to null');
 
-  var c = ohm.grammar(source.replace('digit', '(digit)'));
+  const c = ohm.grammar(source.replace('digit', '(digit)'));
   t.equal(a.equals(c), true, 'still equal after meaningless source change');
 
-  var exp = a.rules.exp;
+  const exp = a.rules.exp;
   delete a.rules.exp;
 
   t.equals(a.equals(b), false, 'not equal after deleting a rule');

@@ -4,8 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var GrammarDecl = require('./GrammarDecl');
-var pexprs = require('./pexprs');
+const GrammarDecl = require('./GrammarDecl');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -21,7 +21,7 @@ Builder.prototype = {
   },
 
   grammar: function(metaInfo, name, superGrammar, defaultStartRule, rules) {
-    var gDecl = new GrammarDecl(name);
+    const gDecl = new GrammarDecl(name);
     if (superGrammar) {
       gDecl.withSuperGrammar(this.fromRecipe(superGrammar));
     }
@@ -32,18 +32,18 @@ Builder.prototype = {
       gDecl.withSource(metaInfo.source);
     }
 
-    var self = this;
+    const self = this;
     this.currentDecl = gDecl;
     Object.keys(rules).forEach(function(ruleName) {
-      var ruleRecipe = rules[ruleName];
+      const ruleRecipe = rules[ruleName];
 
-      var action = ruleRecipe[0]; // define/extend/override
-      var metaInfo = ruleRecipe[1];
-      var description = ruleRecipe[2];
-      var formals = ruleRecipe[3];
-      var body = self.fromRecipe(ruleRecipe[4]);
+      const action = ruleRecipe[0]; // define/extend/override
+      const metaInfo = ruleRecipe[1];
+      const description = ruleRecipe[2];
+      const formals = ruleRecipe[3];
+      const body = self.fromRecipe(ruleRecipe[4]);
 
-      var source;
+      let source;
       if (gDecl.source && metaInfo && metaInfo.sourceInterval) {
         source = gDecl.source.subInterval(
             metaInfo.sourceInterval[0],
@@ -68,9 +68,9 @@ Builder.prototype = {
   },
 
   alt: function(/* term1, term1, ... */) {
-    var terms = [];
-    for (var idx = 0; idx < arguments.length; idx++) {
-      var arg = arguments[idx];
+    let terms = [];
+    for (let idx = 0; idx < arguments.length; idx++) {
+      let arg = arguments[idx];
       if (!(arg instanceof pexprs.PExpr)) {
         arg = this.fromRecipe(arg);
       }
@@ -84,9 +84,9 @@ Builder.prototype = {
   },
 
   seq: function(/* factor1, factor2, ... */) {
-    var factors = [];
-    for (var idx = 0; idx < arguments.length; idx++) {
-      var arg = arguments[idx];
+    let factors = [];
+    for (let idx = 0; idx < arguments.length; idx++) {
+      let arg = arguments[idx];
       if (!(arg instanceof pexprs.PExpr)) {
         arg = this.fromRecipe(arg);
       }
@@ -158,10 +158,10 @@ Builder.prototype = {
 
   fromRecipe: function(recipe) {
     // the meta-info of 'grammar' is proccessed in Builder.grammar
-    var result = this[recipe[0]].apply(this,
+    const result = this[recipe[0]].apply(this,
       recipe[0] === 'grammar' ? recipe.slice(1) : recipe.slice(2));
 
-    var metaInfo = recipe[1];
+    const metaInfo = recipe[1];
     if (metaInfo) {
       if (metaInfo.sourceInterval && this.currentDecl) {
         result.withSource(

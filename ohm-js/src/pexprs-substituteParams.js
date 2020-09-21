@@ -4,8 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common');
-var pexprs = require('./pexprs');
+const common = require('./common');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations
@@ -54,7 +54,7 @@ pexprs.Apply.prototype.substituteParams = function(actuals) {
     // Avoid making a copy of this application, as an optimization
     return this;
   } else {
-    var args = this.args.map(function(arg) { return arg.substituteParams(actuals); });
+    const args = this.args.map(function(arg) { return arg.substituteParams(actuals); });
     return new pexprs.Apply(this.ruleName, args);
   }
 };

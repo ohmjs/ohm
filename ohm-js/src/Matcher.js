@@ -4,9 +4,9 @@
 // Imports
 // --------------------------------------------------------------------
 
-var MatchState = require('./MatchState');
+const MatchState = require('./MatchState');
 
-var pexprs = require('./pexprs');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -30,7 +30,7 @@ Matcher.prototype.setInput = function(str) {
 };
 
 Matcher.prototype.replaceInputRange = function(startIdx, endIdx, str) {
-  var currentInput = this.input;
+  const currentInput = this.input;
   if (startIdx < 0 || startIdx > currentInput.length ||
       endIdx < 0 || endIdx > currentInput.length ||
       startIdx > endIdx) {
@@ -41,9 +41,9 @@ Matcher.prototype.replaceInputRange = function(startIdx, endIdx, str) {
   this.input = currentInput.slice(0, startIdx) + str + currentInput.slice(endIdx);
 
   // update memo table (similar to the above)
-  var restOfMemoTable = this.memoTable.slice(endIdx);
+  const restOfMemoTable = this.memoTable.slice(endIdx);
   this.memoTable.length = startIdx;
-  for (var idx = 0; idx < str.length; idx++) {
+  for (let idx = 0; idx < str.length; idx++) {
     this.memoTable.push(undefined);
   }
   restOfMemoTable.forEach(
@@ -51,8 +51,8 @@ Matcher.prototype.replaceInputRange = function(startIdx, endIdx, str) {
       this);
 
   // Invalidate memoRecs
-  for (var pos = 0; pos < startIdx; pos++) {
-    var posInfo = this.memoTable[pos];
+  for (let pos = 0; pos < startIdx; pos++) {
+    const posInfo = this.memoTable[pos];
     if (posInfo) {
       posInfo.clearObsoleteEntries(pos, startIdx);
     }
@@ -70,7 +70,7 @@ Matcher.prototype.trace = function(optStartApplicationStr) {
 };
 
 Matcher.prototype._match = function(startExpr, tracing, optPositionToRecordFailures) {
-  var state = new MatchState(this, startExpr, optPositionToRecordFailures);
+  const state = new MatchState(this, startExpr, optPositionToRecordFailures);
   return tracing ? state.getTrace() : state.getMatchResult();
 };
 
@@ -80,12 +80,12 @@ Matcher.prototype._match = function(startExpr, tracing, optPositionToRecordFailu
   grammar's default start rule will be used.
 */
 Matcher.prototype._getStartExpr = function(optStartApplicationStr) {
-  var applicationStr = optStartApplicationStr || this.grammar.defaultStartRule;
+  const applicationStr = optStartApplicationStr || this.grammar.defaultStartRule;
   if (!applicationStr) {
     throw new Error('Missing start rule argument -- the grammar has no default start rule.');
   }
 
-  var startApp = this.grammar.parseApplication(applicationStr);
+  const startApp = this.grammar.parseApplication(applicationStr);
   return new pexprs.Seq([startApp, pexprs.end]);
 };
 

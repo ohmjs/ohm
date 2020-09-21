@@ -4,22 +4,22 @@
 // Imports
 // --------------------------------------------------------------------
 
-var fs = require('fs');
-var test = require('tape-catch');
+const fs = require('fs');
+const test = require('tape-catch');
 
-var ohm = require('../..');
-var toAST = require('../../extras').toAST;
-var semanticsForToAST = require('../../extras').semanticsForToAST;
+const ohm = require('../..');
+const toAST = require('../../extras').toAST;
+const semanticsForToAST = require('../../extras').semanticsForToAST;
 
-var g = ohm.grammar(fs.readFileSync('test/data/arithmetic.ohm'));
+const g = ohm.grammar(fs.readFileSync('test/data/arithmetic.ohm'));
 
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
 
 test('semantic action', function(t) {
-  var semantics = semanticsForToAST(g);
-  var matchResult = g.match('10 + 20');
+  const semantics = semanticsForToAST(g);
+  const matchResult = g.match('10 + 20');
 
   t.ok('toAST' in semantics._getSemantics().operations, 'toAST operation added to semantics');
   t.ok(semantics(matchResult).toAST, 'toAST operation added to match result');
@@ -28,16 +28,16 @@ test('semantic action', function(t) {
 });
 
 test('default', function(t) {
-  var matchResult = g.match('10 + 20');
-  var ast = toAST(matchResult);
-  var expected = {
+  let matchResult = g.match('10 + 20');
+  let ast = toAST(matchResult);
+  let expected = {
     0: '10',
     2: '20',
     type: 'AddExp_plus'
   };
   t.deepEqual(ast, expected, 'proper default AST');
 
-  var g2 = ohm.grammar('G { Mix = a? b* "|" a? b* a = "a" b = "b" }');
+  const g2 = ohm.grammar('G { Mix = a? b* "|" a? b* a = "a" b = "b" }');
   matchResult = g2.match('a|bb');
   ast = toAST(matchResult, {});
   expected = {
@@ -53,14 +53,14 @@ test('default', function(t) {
 });
 
 test('mapping', function(t) {
-  var matchResult = g.match('10 + 20');
-  var ast = toAST(matchResult, {
+  let matchResult = g.match('10 + 20');
+  let ast = toAST(matchResult, {
     AddExp_plus: {
       expr1: 0,
       expr2: 2
     }
   });
-  var expected = {
+  let expected = {
     expr1: '10',
     expr2: '20',
     type: 'AddExp_plus'
@@ -202,9 +202,9 @@ test('mapping', function(t) {
 });
 
 test('real examples (combinations)', function(t) {
-  var matchResult = g.match('10 + 20 - 30');
+  const matchResult = g.match('10 + 20 - 30');
 
-  var ast = toAST(matchResult, {
+  let ast = toAST(matchResult, {
     AddExp_plus: {
       expr1: 0,
       op: 1,
@@ -218,7 +218,7 @@ test('real examples (combinations)', function(t) {
       type: 'Expression'
     }
   });
-  var expected = {
+  let expected = {
     expr1: {
       expr1: '10',
       expr2: '20',

@@ -4,11 +4,11 @@
 // Imports
 // --------------------------------------------------------------------
 
-var Grammar = require('./Grammar');
-var InputStream = require('./InputStream');
-var common = require('./common');
-var errors = require('./errors');
-var pexprs = require('./pexprs');
+const Grammar = require('./Grammar');
+const InputStream = require('./InputStream');
+const common = require('./common');
+const errors = require('./errors');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Private Stuff
@@ -40,13 +40,13 @@ GrammarDecl.prototype.ensureSuperGrammar = function() {
 };
 
 GrammarDecl.prototype.installOverriddenOrExtendedRule = function(name, formals, body, source) {
-  var duplicateParameterNames = common.getDuplicates(formals);
+  const duplicateParameterNames = common.getDuplicates(formals);
   if (duplicateParameterNames.length > 0) {
     throw errors.duplicateParameterNames(name, duplicateParameterNames, source);
   }
-  var ruleInfo = this.ensureSuperGrammar().rules[name];
-  var expectedFormals = ruleInfo.formals;
-  var expectedNumFormals = expectedFormals ? expectedFormals.length : 0;
+  const ruleInfo = this.ensureSuperGrammar().rules[name];
+  const expectedFormals = ruleInfo.formals;
+  const expectedNumFormals = expectedFormals ? expectedFormals.length : 0;
   if (formals.length !== expectedNumFormals) {
     throw errors.wrongNumberOfParameters(name, expectedNumFormals, formals.length, source);
   }
@@ -91,7 +91,7 @@ GrammarDecl.prototype.withSource = function(source) {
 
 // Creates a Grammar instance, and if it passes the sanity checks, returns it.
 GrammarDecl.prototype.build = function() {
-  var grammar = new Grammar(
+  const grammar = new Grammar(
       this.name,
       this.ensureSuperGrammar(),
       this.rules,
@@ -102,10 +102,10 @@ GrammarDecl.prototype.build = function() {
   // show more than one error of the same type at a time.
   // TODO: include the offending pexpr in the errors, that way we can show
   // the part of the source that caused it.
-  var grammarErrors = [];
-  var grammarHasInvalidApplications = false;
+  const grammarErrors = [];
+  let grammarHasInvalidApplications = false;
   Object.keys(grammar.rules).forEach(function(ruleName) {
-    var body = grammar.rules[ruleName].body;
+    const body = grammar.rules[ruleName].body;
     try {
       body.assertChoicesHaveUniformArity(ruleName);
     } catch (e) {
@@ -121,7 +121,7 @@ GrammarDecl.prototype.build = function() {
   if (!grammarHasInvalidApplications) {
     // The following check can only be done if the grammar has no invalid applications.
     Object.keys(grammar.rules).forEach(function(ruleName) {
-      var body = grammar.rules[ruleName].body;
+      const body = grammar.rules[ruleName].body;
       try {
         body.assertIteratedExprsAreNotNullable(grammar, []);
       } catch (e) {
@@ -148,7 +148,7 @@ GrammarDecl.prototype.define = function(name, formals, body, description, source
   } else if (this.rules[name]) {
     throw errors.duplicateRuleDeclaration(name, this.name, this.name, source);
   }
-  var duplicateParameterNames = common.getDuplicates(formals);
+  const duplicateParameterNames = common.getDuplicates(formals);
   if (duplicateParameterNames.length > 0) {
     throw errors.duplicateParameterNames(name, duplicateParameterNames, source);
   }
@@ -156,7 +156,7 @@ GrammarDecl.prototype.define = function(name, formals, body, description, source
 };
 
 GrammarDecl.prototype.override = function(name, formals, body, descIgnored, source) {
-  var ruleInfo = this.ensureSuperGrammar().rules[name];
+  const ruleInfo = this.ensureSuperGrammar().rules[name];
   if (!ruleInfo) {
     throw errors.cannotOverrideUndeclaredRule(name, this.superGrammar.name, source);
   }
@@ -165,11 +165,11 @@ GrammarDecl.prototype.override = function(name, formals, body, descIgnored, sour
 };
 
 GrammarDecl.prototype.extend = function(name, formals, fragment, descIgnored, source) {
-  var ruleInfo = this.ensureSuperGrammar().rules[name];
+  const ruleInfo = this.ensureSuperGrammar().rules[name];
   if (!ruleInfo) {
     throw errors.cannotExtendUndeclaredRule(name, this.superGrammar.name, source);
   }
-  var body = new pexprs.Extend(this.superGrammar, name, fragment);
+  const body = new pexprs.Extend(this.superGrammar, name, fragment);
   body.source = fragment.source;
   this.installOverriddenOrExtendedRule(name, formals, body, source);
   return this;

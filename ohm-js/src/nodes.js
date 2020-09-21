@@ -1,8 +1,8 @@
 'use strict';
 
-var inherits = require('inherits');
+const inherits = require('inherits');
 
-var common = require('./common');
+const common = require('./common');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -65,7 +65,7 @@ Node.prototype.lastChild = function() {
 };
 
 Node.prototype.childBefore = function(child) {
-  var childIdx = this.indexOfChild(child);
+  const childIdx = this.indexOfChild(child);
   if (childIdx < 0) {
     throw new Error('Node.childBefore() called w/ an argument that is not a child');
   } else if (childIdx === 0) {
@@ -76,7 +76,7 @@ Node.prototype.childBefore = function(child) {
 };
 
 Node.prototype.childAfter = function(child) {
-  var childIdx = this.indexOfChild(child);
+  const childIdx = this.indexOfChild(child);
   if (childIdx < 0) {
     throw new Error('Node.childAfter() called w/ an argument that is not a child');
   } else if (childIdx === this.numChildren() - 1) {
@@ -103,7 +103,7 @@ Node.prototype.isOptional = function() {
 };
 
 Node.prototype.toJSON = function() {
-  var r = {};
+  const r = {};
   r[this.ctorName] = this.children;
   return r;
 };
@@ -111,7 +111,7 @@ Node.prototype.toJSON = function() {
 // Terminals
 
 function TerminalNode(grammar, value) {
-  var matchLength = value ? value.length : 0;
+  const matchLength = value ? value.length : 0;
   Node.call(this, grammar, '_terminal', matchLength);
   this.primitiveValue = value;
 }
@@ -122,7 +122,7 @@ TerminalNode.prototype.isTerminal = function() {
 };
 
 TerminalNode.prototype.toJSON = function() {
-  var r = {};
+  const r = {};
   r[this.ctorName] = this.primitiveValue;
   return r;
 };

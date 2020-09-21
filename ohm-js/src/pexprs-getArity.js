@@ -4,8 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common');
-var pexprs = require('./pexprs');
+const common = require('./common');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations
@@ -30,8 +30,8 @@ pexprs.Alt.prototype.getArity = function() {
 };
 
 pexprs.Seq.prototype.getArity = function() {
-  var arity = 0;
-  for (var idx = 0; idx < this.factors.length; idx++) {
+  let arity = 0;
+  for (let idx = 0; idx < this.factors.length; idx++) {
     arity += this.factors[idx].getArity();
   }
   return arity;

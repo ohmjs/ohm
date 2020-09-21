@@ -4,10 +4,10 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common');
-var pexprs = require('./pexprs');
+const common = require('./common');
+const pexprs = require('./pexprs');
 
-var copyWithoutDuplicates = common.copyWithoutDuplicates;
+const copyWithoutDuplicates = common.copyWithoutDuplicates;
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -20,7 +20,7 @@ function isRestrictedJSIdentifier(str) {
 function resolveDuplicatedNames(argumentNameList) {
   // `count` is used to record the number of times each argument name occurs in the list,
   // this is useful for checking duplicated argument name. It maps argument names to ints.
-  var count = Object.create(null);
+  const count = Object.create(null);
   argumentNameList.forEach(function(argName) {
     count[argName] = (count[argName] || 0) + 1;
   });
@@ -32,7 +32,7 @@ function resolveDuplicatedNames(argumentNameList) {
     }
 
     // This name shows up more than once, so add subscripts.
-    var subscript = 1;
+    let subscript = 1;
     argumentNameList.forEach(function(argName, idx) {
       if (argName === dupArgName) {
         argumentNameList[idx] = argName + '_' + subscript++;
@@ -92,7 +92,7 @@ pexprs.Terminal.prototype.toArgumentNameList = function(firstArgIndex, noDupChec
 };
 
 pexprs.Range.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
-  var argName = this.from + '_to_' + this.to;
+  let argName = this.from + '_to_' + this.to;
   // If the `argName` is not valid then try to prepend a `_`.
   if (!isRestrictedJSIdentifier(argName)) {
     argName = '_' + argName;
@@ -107,18 +107,18 @@ pexprs.Range.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) 
 pexprs.Alt.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
   // `termArgNameLists` is an array of arrays where each row is the
   // argument name list that corresponds to a term in this alternation.
-  var termArgNameLists = this.terms.map(function(term) {
+  const termArgNameLists = this.terms.map(function(term) {
     return term.toArgumentNameList(firstArgIndex, true);
   });
 
-  var argumentNameList = [];
-  var numArgs = termArgNameLists[0].length;
-  for (var colIdx = 0; colIdx < numArgs; colIdx++) {
-    var col = [];
-    for (var rowIdx = 0; rowIdx < this.terms.length; rowIdx++) {
+  const argumentNameList = [];
+  const numArgs = termArgNameLists[0].length;
+  for (let colIdx = 0; colIdx < numArgs; colIdx++) {
+    const col = [];
+    for (let rowIdx = 0; rowIdx < this.terms.length; rowIdx++) {
       col.push(termArgNameLists[rowIdx][colIdx]);
     }
-    var uniqueNames = copyWithoutDuplicates(col);
+    const uniqueNames = copyWithoutDuplicates(col);
     argumentNameList.push(uniqueNames.join('_or_'));
   }
 
@@ -130,9 +130,9 @@ pexprs.Alt.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
 
 pexprs.Seq.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
   // Generate the argument name list, without worrying about duplicates.
-  var argumentNameList = [];
+  let argumentNameList = [];
   this.factors.forEach(function(factor) {
-    var factorArgumentNameList = factor.toArgumentNameList(firstArgIndex, true);
+    const factorArgumentNameList = factor.toArgumentNameList(firstArgIndex, true);
     argumentNameList = argumentNameList.concat(factorArgumentNameList);
 
     // Shift the firstArgIndex to take this factor's argument names into account.
@@ -145,7 +145,7 @@ pexprs.Seq.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
 };
 
 pexprs.Iter.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
-  var argumentNameList = this.expr.toArgumentNameList(firstArgIndex, noDupCheck)
+  const argumentNameList = this.expr.toArgumentNameList(firstArgIndex, noDupCheck)
       .map(function(exprArgumentString) {
         return exprArgumentString[exprArgumentString.length - 1] === 's' ?
           exprArgumentString + 'es' :

@@ -4,8 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common');
-var pexprs = require('./pexprs');
+const common = require('./common');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations
@@ -70,7 +70,7 @@ pexprs.Lookahead.prototype.toString = function() {
 
 pexprs.Apply.prototype.toString = function() {
   if (this.args.length > 0) {
-    var ps = this.args.map(function(arg) { return arg.toString(); });
+    const ps = this.args.map(function(arg) { return arg.toString(); });
     return this.ruleName + '<' + ps.join(',') + '>';
   } else {
     return this.ruleName;

@@ -1,8 +1,8 @@
 'use strict';
 
-var test = require('tape');
+const test = require('tape');
 
-var prettyPrint = require('../../../examples/prettyPrint');
+const prettyPrint = require('../../../examples/prettyPrint');
 
 test('basic', function(t) {
   t.equal(

@@ -1,6 +1,6 @@
 {
   parserOptions: {
-    ecmaVersion: 5,
+    ecmaVersion: 6,
     sourceType: "script"
   },
 
@@ -83,7 +83,7 @@
 
     // The following rules suggest replacing certain patterns with ES6 features.
     // They are disabled for now, but we should consider enabling them if/when we move to ES6.
-    no-var: 0,  // Allow the `var` keyword.
+    prefer-const: 2,
     prefer-rest-params: 0,
     prefer-spread: 0
   }

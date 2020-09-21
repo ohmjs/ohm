@@ -4,17 +4,17 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common');
-var pexprs = require('./pexprs');
+const common = require('./common');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
 function getMetaInfo(expr, grammarInterval) {
-  var metaInfo = {};
+  const metaInfo = {};
   if (expr.source && grammarInterval) {
-    var adjusted = expr.source.relativeTo(grammarInterval);
+    const adjusted = expr.source.relativeTo(grammarInterval);
     metaInfo.sourceInterval = [adjusted.startIdx, adjusted.endIdx];
   }
   return metaInfo;
@@ -69,7 +69,7 @@ pexprs.Alt.prototype.outputRecipe = function(formals, grammarInterval) {
 };
 
 pexprs.Extend.prototype.outputRecipe = function(formals, grammarInterval) {
-  var extension = this.terms[0]; // [extension, orginal]
+  const extension = this.terms[0]; // [extension, orginal]
   return extension.outputRecipe(formals, grammarInterval);
 };
 

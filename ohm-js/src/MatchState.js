@@ -4,17 +4,17 @@
 // Imports
 // --------------------------------------------------------------------
 
-var InputStream = require('./InputStream');
-var MatchResult = require('./MatchResult');
-var PosInfo = require('./PosInfo');
-var Trace = require('./Trace');
-var pexprs = require('./pexprs');
+const InputStream = require('./InputStream');
+const MatchResult = require('./MatchResult');
+const PosInfo = require('./PosInfo');
+const Trace = require('./Trace');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
-var applySpaces = new pexprs.Apply('spaces');
+const applySpaces = new pexprs.Apply('spaces');
 
 function MatchState(matcher, startExpr, optPositionToRecordFailures) {
   this.matcher = matcher;
@@ -56,7 +56,7 @@ MatchState.prototype = {
   },
 
   exitApplication: function(posInfo, optNode) {
-    var origPos = this._posStack.pop();
+    const origPos = this._posStack.pop();
     this._applicationStack.pop();
     this.inLexifiedContextStack.pop();
     posInfo.exit();
@@ -86,7 +86,7 @@ MatchState.prototype = {
     if (typeof this.inputStream.source !== 'string') {
       return false;
     }
-    var currentApplication = this.currentApplication();
+    const currentApplication = this.currentApplication();
     if (currentApplication) {
       return currentApplication.isSyntactic() && !this.inLexifiedContext();
     } else {
@@ -150,7 +150,7 @@ MatchState.prototype = {
   },
 
   getPosInfo: function(pos) {
-    var posInfo = this.memoTable[pos];
+    let posInfo = this.memoTable[pos];
     if (!posInfo) {
       posInfo = this.memoTable[pos] = new PosInfo();
     }
@@ -161,7 +161,7 @@ MatchState.prototype = {
     this.rightmostFailurePosition = Math.max(this.rightmostFailurePosition, pos);
 
     if (this.recordedFailures && pos === this.positionToRecordFailures) {
-      var app = this.currentApplication();
+      const app = this.currentApplication();
       if (app) {
         // Substitute parameters with the actual pexprs that were passed to
         // the current rule.
@@ -178,7 +178,7 @@ MatchState.prototype = {
   },
 
   recordFailure: function(failure, shouldCloneIfNew) {
-    var key = failure.toKey();
+    const key = failure.toKey();
     if (!this.recordedFailures[key]) {
       this.recordedFailures[key] = shouldCloneIfNew ? failure.clone() : failure;
     } else if (this.recordedFailures[key].isFluffy() && !failure.isFluffy()) {
@@ -187,7 +187,7 @@ MatchState.prototype = {
   },
 
   recordFailures: function(failures, shouldCloneIfNew) {
-    var self = this;
+    const self = this;
     Object.keys(failures).forEach(function(key) {
       self.recordFailure(failures[key], shouldCloneIfNew);
     });
@@ -198,8 +198,8 @@ MatchState.prototype = {
       return undefined;
     }
 
-    var ans = Object.create(null);
-    var self = this;
+    const ans = Object.create(null);
+    const self = this;
     Object.keys(this.recordedFailures).forEach(function(key) {
       ans[key] = self.recordedFailures[key].clone();
     });
@@ -218,11 +218,11 @@ MatchState.prototype = {
 
   // Returns the memoized trace entry for `expr` at `pos`, if one exists, `null` otherwise.
   getMemoizedTraceEntry: function(pos, expr) {
-    var posInfo = this.memoTable[pos];
+    const posInfo = this.memoTable[pos];
     if (posInfo && expr.ruleName) {
-      var memoRec = posInfo.memo[expr.toMemoKey()];
+      const memoRec = posInfo.memo[expr.toMemoKey()];
       if (memoRec && memoRec.traceEntry) {
-        var entry = memoRec.traceEntry.cloneWithExpr(expr);
+        const entry = memoRec.traceEntry.cloneWithExpr(expr);
         entry.isMemoized = true;
         return entry;
       }
@@ -233,8 +233,8 @@ MatchState.prototype = {
   // Returns a new trace entry, with the currently active trace array as its children.
   getTraceEntry: function(pos, expr, succeeded, bindings) {
     if (expr instanceof pexprs.Apply) {
-      var app = this.currentApplication();
-      var actuals = app ? app.args : [];
+      const app = this.currentApplication();
+      const actuals = app ? app.args : [];
       expr = expr.substituteParams(actuals);
     }
     return this.getMemoizedTraceEntry(pos, expr) ||
@@ -264,7 +264,7 @@ MatchState.prototype = {
       this.trace.push(memoRec.traceEntry);
     }
 
-    var memoRecRightmostFailurePosition = this.inputStream.pos + memoRec.rightmostFailureOffset;
+    const memoRecRightmostFailurePosition = this.inputStream.pos + memoRec.rightmostFailureOffset;
     this.rightmostFailurePosition =
         Math.max(this.rightmostFailurePosition, memoRecRightmostFailurePosition);
     if (this.recordedFailures &&
@@ -288,30 +288,30 @@ MatchState.prototype = {
   // will have `expr.getArity()` more elements than before, and the input stream's position may
   // have increased. On failure, `bindings` and position will be unchanged.
   eval: function(expr) {
-    var inputStream = this.inputStream;
-    var origNumBindings = this._bindings.length;
+    const inputStream = this.inputStream;
+    const origNumBindings = this._bindings.length;
 
-    var origRecordedFailures;
+    let origRecordedFailures;
     if (this.recordedFailures) {
       origRecordedFailures = this.recordedFailures;
       this.recordedFailures = Object.create(null);
     }
 
-    var origPos = inputStream.pos;
-    var memoPos = this.maybeSkipSpacesBefore(expr);
+    const origPos = inputStream.pos;
+    const memoPos = this.maybeSkipSpacesBefore(expr);
 
-    var origTrace;
+    let origTrace;
     if (this.trace) {
       origTrace = this.trace;
       this.trace = [];
     }
 
     // Do the actual evaluation.
-    var ans = expr.eval(this);
+    const ans = expr.eval(this);
 
     if (this.trace) {
-      var bindings = this._bindings.slice(origNumBindings);
-      var traceEntry = this.getTraceEntry(memoPos, expr, ans, bindings);
+      const bindings = this._bindings.slice(origNumBindings);
+      const traceEntry = this.getTraceEntry(memoPos, expr, ans, bindings);
       traceEntry.isImplicitSpaces = expr === applySpaces;
       traceEntry.isRootNode = expr === this.startExpr;
       origTrace.push(traceEntry);
@@ -320,7 +320,7 @@ MatchState.prototype = {
 
     if (ans) {
       if (this.recordedFailures && inputStream.pos === this.positionToRecordFailures) {
-        var self = this;
+        const self = this;
         Object.keys(this.recordedFailures).forEach(function(key) {
           self.recordedFailures[key].makeFluffy();
         });
@@ -340,9 +340,9 @@ MatchState.prototype = {
 
   getMatchResult: function() {
     this.eval(this.startExpr);
-    var rightmostFailures;
+    let rightmostFailures;
     if (this.recordedFailures) {
-      var self = this;
+      const self = this;
       rightmostFailures = Object.keys(this.recordedFailures).map(function(key) {
         return self.recordedFailures[key];
       });
@@ -359,13 +359,13 @@ MatchState.prototype = {
 
   getTrace: function() {
     this.trace = [];
-    var matchResult = this.getMatchResult();
+    const matchResult = this.getMatchResult();
 
     // The trace node for the start rule is always the last entry. If it is a syntactic rule,
     // the first entry is for an application of 'spaces'.
     // TODO(pdubroy): Clean this up by introducing a special `Match<startAppl>` rule, which will
     // ensure that there is always a single root trace node.
-    var rootTrace = this.trace[this.trace.length - 1];
+    const rootTrace = this.trace[this.trace.length - 1];
     rootTrace.result = matchResult;
     return rootTrace;
   },

@@ -4,12 +4,12 @@
 // Imports
 // --------------------------------------------------------------------
 
-var CaseInsensitiveTerminal = require('./CaseInsensitiveTerminal');
-var Matcher = require('./Matcher');
-var Semantics = require('./Semantics');
-var common = require('./common');
-var errors = require('./errors');
-var pexprs = require('./pexprs');
+const CaseInsensitiveTerminal = require('./CaseInsensitiveTerminal');
+const Matcher = require('./Matcher');
+const Semantics = require('./Semantics');
+const common = require('./common');
+const errors = require('./errors');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -36,8 +36,8 @@ function Grammar(
   }
 }
 
-var ohmGrammar;
-var buildGrammar;
+let ohmGrammar;
+let buildGrammar;
 
 // This method is called from main.js once Ohm has loaded.
 Grammar.initApplicationParser = function(grammar, builderFn) {
@@ -67,8 +67,8 @@ Grammar.prototype = {
         !(this.superGrammar === g.superGrammar || this.superGrammar.equals(g.superGrammar))) {
       return false;
     }
-    var myRules = getSortedRuleValues(this);
-    var otherRules = getSortedRuleValues(g);
+    const myRules = getSortedRuleValues(this);
+    const otherRules = getSortedRuleValues(g);
     return myRules.length === otherRules.length && myRules.every(function(rule, i) {
       return rule.description === otherRules[i].description &&
              rule.formals.join(',') === otherRules[i].formals.join(',') &&
@@ -77,13 +77,13 @@ Grammar.prototype = {
   },
 
   match: function(input, optStartApplication) {
-    var m = this.matcher();
+    const m = this.matcher();
     m.replaceInputRange(0, 0, input);
     return m.match(optStartApplication);
   },
 
   trace: function(input, optStartApplication) {
-    var m = this.matcher();
+    const m = this.matcher();
     m.replaceInputRange(0, 0, input);
     return m.trace(optStartApplication);
   },
@@ -108,17 +108,17 @@ Grammar.prototype = {
       return a === '_iter' || a === '_terminal' || a === '_nonterminal' || a === '_default';
     }
 
-    var problems = [];
-    for (var k in actionDict) {
-      var v = actionDict[k];
+    const problems = [];
+    for (const k in actionDict) {
+      const v = actionDict[k];
       if (!isSpecialAction(k) && !(k in this.rules)) {
         problems.push("'" + k + "' is not a valid semantic action for '" + this.name + "'");
       } else if (typeof v !== 'function') {
         problems.push(
             "'" + k + "' must be a function in an action dictionary for '" + this.name + "'");
       } else {
-        var actual = v.length;
-        var expected = this._topDownActionArity(k);
+        const actual = v.length;
+        const expected = this._topDownActionArity(k);
         if (actual !== expected) {
           problems.push(
               "Semantic action '" + k + "' has the wrong arity: " +
@@ -127,8 +127,8 @@ Grammar.prototype = {
       }
     }
     if (problems.length > 0) {
-      var prettyProblems = problems.map(function(problem) { return '- ' + problem; });
-      var error = new Error(
+      const prettyProblems = problems.map(function(problem) { return '- ' + problem; });
+      const error = new Error(
           "Found errors in the action dictionary of the '" + name + "' " + what + ':\n' +
           prettyProblems.join('\n'));
       error.problems = problems;
@@ -148,7 +148,7 @@ Grammar.prototype = {
   },
 
   _inheritsFrom: function(grammar) {
-    var g = this.superGrammar;
+    let g = this.superGrammar;
     while (g) {
       if (g.equals(grammar, true)) {
         return true;
@@ -159,44 +159,44 @@ Grammar.prototype = {
   },
 
   toRecipe: function(optVarName) {
-    var metaInfo = {};
+    const metaInfo = {};
     // Include the grammar source if it is available.
     if (this.source) {
       metaInfo.source = this.source.contents;
     }
 
-    var superGrammar = null;
+    let superGrammar = null;
     if (this.superGrammar && !this.superGrammar.isBuiltIn()) {
       superGrammar = JSON.parse(this.superGrammar.toRecipe());
     }
 
-    var startRule = null;
+    let startRule = null;
     if (this.defaultStartRule) {
       startRule = this.defaultStartRule;
     }
 
-    var rules = {};
-    var self = this;
+    const rules = {};
+    const self = this;
     Object.keys(this.rules).forEach(function(ruleName) {
-      var ruleInfo = self.rules[ruleName];
-      var body = ruleInfo.body;
-      var isDefinition = !self.superGrammar || !self.superGrammar.rules[ruleName];
+      const ruleInfo = self.rules[ruleName];
+      const body = ruleInfo.body;
+      const isDefinition = !self.superGrammar || !self.superGrammar.rules[ruleName];
 
-      var operation;
+      let operation;
       if (isDefinition) {
         operation = 'define';
       } else {
         operation = body instanceof pexprs.Extend ? 'extend' : 'override';
       }
 
-      var metaInfo = {};
+      const metaInfo = {};
       if (ruleInfo.source && self.source) {
-        var adjusted = ruleInfo.source.relativeTo(self.source);
+        const adjusted = ruleInfo.source.relativeTo(self.source);
         metaInfo.sourceInterval = [adjusted.startIdx, adjusted.endIdx];
       }
 
-      var description = isDefinition ? ruleInfo.description : null;
-      var bodyRecipe = body.outputRecipe(ruleInfo.formals, self.source);
+      const description = isDefinition ? ruleInfo.description : null;
+      const bodyRecipe = body.outputRecipe(ruleInfo.formals, self.source);
 
       rules[ruleName] = [
         operation, // "define"/"extend"/"override"
@@ -230,12 +230,12 @@ Grammar.prototype = {
     // TODO: add the super-grammar's templates at the right place, e.g., a case for AddExpr_plus
     // should appear next to other cases of AddExpr.
 
-    var sb = new common.StringBuffer();
+    const sb = new common.StringBuffer();
     sb.append('{');
 
-    var first = true;
-    for (var ruleName in this.rules) {
-      var body = this.rules[ruleName].body;
+    let first = true;
+    for (const ruleName in this.rules) {
+      const body = this.rules[ruleName].body;
       if (first) {
         first = false;
       } else {
@@ -253,7 +253,7 @@ Grammar.prototype = {
   addSemanticActionTemplate: function(ruleName, body, sb) {
     sb.append(ruleName);
     sb.append(': function(');
-    var arity = this._topDownActionArity(ruleName);
+    const arity = this._topDownActionArity(ruleName);
     sb.append(common.repeat('_', arity).join(', '));
     sb.append(') {\n');
     sb.append('  }');
@@ -262,13 +262,13 @@ Grammar.prototype = {
   // Parse a string which expresses a rule application in this grammar, and return the
   // resulting Apply node.
   parseApplication: function(str) {
-    var app;
+    let app;
     if (str.indexOf('<') === -1) {
       // simple application
       app = new pexprs.Apply(str);
     } else {
       // parameterized application
-      var cst = ohmGrammar.match(str, 'Base_application');
+      const cst = ohmGrammar.match(str, 'Base_application');
       app = buildGrammar(cst, {});
     }
 
@@ -276,9 +276,9 @@ Grammar.prototype = {
     if (!(app.ruleName in this.rules)) {
       throw errors.undeclaredRule(app.ruleName, this.name);
     }
-    var formals = this.rules[app.ruleName].formals;
+    const formals = this.rules[app.ruleName].formals;
     if (formals.length !== app.args.length) {
-      var source = this.rules[app.ruleName].source;
+      const source = this.rules[app.ruleName].source;
       throw errors.wrongNumberOfParameters(app.ruleName, formals.length, app.args.length, source);
     }
     return app;

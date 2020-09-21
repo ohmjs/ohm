@@ -4,10 +4,10 @@
 // Imports
 // --------------------------------------------------------------------
 
-var fs = require('fs');
-var test = require('tape-catch');
+const fs = require('fs');
+const test = require('tape-catch');
 
-var ohm = require('..');
+const ohm = require('..');
 
 // --------------------------------------------------------------------
 // Helpers
@@ -22,9 +22,9 @@ function makeRuleWithBody(expr) {
 // --------------------------------------------------------------------
 
 test('match failure', function(t) {
-  var g = ohm.grammar('G { start = "a" "b" "c" "d" }');
+  const g = ohm.grammar('G { start = "a" "b" "c" "d" }');
 
-  var e = g.match('ab');
+  let e = g.match('ab');
   t.equal(e.failed(), true);
   t.equal(e.succeeded(), false);
   t.equal(e.message, [
@@ -46,7 +46,7 @@ test('match failure', function(t) {
   t.equal(e.shortMessage, 'Line 1, col 5: expected end of input');
   t.equal(e.getRightmostFailurePosition(), 4);
 
-  var m = g.match('abcd');
+  const m = g.match('abcd');
   t.equal(m.succeeded(), true, 'succeeded() is true for root CST node');
   t.equal(m.failed(), false, 'failed() is false for root CST node');
 
@@ -57,7 +57,7 @@ test('undeclared rules', function(t) {
   t.throws(
       function() { makeRuleWithBody('undeclaredRule'); },
       'Rule undeclaredRule is not declared in grammar G');
-  var g = makeRuleWithBody('digit');
+  const g = makeRuleWithBody('digit');
   t.throws(function() { g.match('hello world', 'x'); }, /Rule x is not declared in grammar G/);
   t.end();
 });
@@ -107,7 +107,7 @@ test('many expressions with nullable operands', function(t) {
   // expressions inside kleene +s and *s don't catch cases where the expression is or contains one
   // or more of the rule's parameters.
 
-  var g1 = ohm.grammar('G { plus<e> = e+  star<e> = e*  inf1 = star<"">  inf2 = plus<"a"*> }');
+  const g1 = ohm.grammar('G { plus<e> = e+  star<e> = e*  inf1 = star<"">  inf2 = plus<"a"*> }');
   try {
     g1.match('', 'inf1');
     t.fail('Expected an exception to be thrown');
@@ -137,7 +137,7 @@ test('many expressions with nullable operands', function(t) {
       'plus<"a"*>');
   }
 
-  var g2 = ohm.grammar('G { Start = ListOf<"a"?, ""> }');
+  const g2 = ohm.grammar('G { Start = ListOf<"a"?, ""> }');
   try {
     g2.match('whatever');
     t.fail('Expected an exception to be thrown');
@@ -160,7 +160,7 @@ test('many expressions with nullable operands', function(t) {
 });
 
 test('errors from makeGrammar()', function(t) {
-  var source = 'G {}\nG2 <: G {}';
+  const source = 'G {}\nG2 <: G {}';
   try {
     ohm.grammar(source);
     t.fail('Expected an exception to be thrown');
@@ -209,13 +209,13 @@ test('unrecognized escape sequences', function(t) {
 });
 
 test('failures are memoized', function(t) {
-  var g = ohm.grammar(
+  const g = ohm.grammar(
       'G {\n' +
     '  S = ~A "b"  -- c1\n' +
     '    | A       -- c2\n' +
     '  A = "a"\n' +
     '}');
-  var e = g.match('');
+  const e = g.match('');
   t.equal(e.failed(), true);
   t.equal(e.message, [
     'Line 1, col 1:',
@@ -227,10 +227,10 @@ test('failures are memoized', function(t) {
 });
 
 test('multiple MatchResults from the same Matcher', function(t) {
-  var g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
-  var m = g.matcher();
-  var r1 = m.replaceInputRange(0, 0, '(1').match();
-  var r2 = m.replaceInputRange(0, 2, '1+').match();
+  const g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
+  const m = g.matcher();
+  const r1 = m.replaceInputRange(0, 0, '(1').match();
+  const r2 = m.replaceInputRange(0, 2, '1+').match();
   t.equal(r1.message, [
     'Line 1, col 3:',
     '> 1 | (1',
@@ -247,9 +247,9 @@ test('multiple MatchResults from the same Matcher', function(t) {
 });
 
 test('non-fluffy failures subsume fluffy failures, etc.', function(t) {
-  var g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
-  var r = g.match('(1');
-  var failures = r.getRightmostFailures();
+  const g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
+  const r = g.match('(1');
+  const failures = r.getRightmostFailures();
   t.equal(failures.length, 5);
   t.equal(failures[0].getText(), ')');
   t.equal(failures[0].type, 'string');
@@ -265,17 +265,19 @@ test('non-fluffy failures subsume fluffy failures, etc.', function(t) {
 });
 
 test('memo recs that do not contain the necessary info are deleted properly', function(t) {
-  var g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
-  var r = g.match('1+2*#3/4');
-  var failures = r.getRightmostFailures();
+  const g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
+  const r = g.match('1+2*#3/4');
+  const failures = r.getRightmostFailures();
   t.equal(failures.length, 2);
   t.end();
 });
 
 test('trailing space should not influence the result', function(t) {
-  var g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
-  var r = g.match('(1  ');
-  var failures = r.getRightmostFailures().filter(function(failure) { return !failure.isFluffy(); });
+  const g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
+  const r = g.match('(1  ');
+  const failures = r.getRightmostFailures().filter(function(failure) {
+    return !failure.isFluffy();
+  });
   t.equal(failures.length, 1);
   t.equal(failures[0].getText(), ')');
   t.equal(failures[0].type, 'string');
@@ -283,8 +285,8 @@ test('trailing space should not influence the result', function(t) {
 });
 
 test('method name displayed on abstract function failure', function(t) {
-  var g = ohm.ohmGrammar.superGrammar;
-  var param = g.rules.NonemptyListOf.body.factors[0];
+  const g = ohm.ohmGrammar.superGrammar;
+  const param = g.rules.NonemptyListOf.body.factors[0];
   try {
     param.toFailure();
     t.fail('Expected an exception to be thrown');
@@ -296,13 +298,13 @@ test('method name displayed on abstract function failure', function(t) {
 });
 
 test('errors for Not-of-<PExpr>', function(t) {
-  var notAltG = ohm.grammar('G { start = ~("b" | "c") "d" }');
-  var r = notAltG.match('b');
+  const notAltG = ohm.grammar('G { start = ~("b" | "c") "d" }');
+  let r = notAltG.match('b');
   t.equal(r.failed(), true);
   t.equal(typeof r.message, 'string'); // implicitly requires that r.message not throw
   t.ok(/Expected not \("b" or "c"\)/.exec(r.message), 'reasonable failure report for Not-of-Alt');
 
-  var notParamG = ohm.grammar(
+  const notParamG = ohm.grammar(
       'G {\n' +
     '  S = Not<"a">\n' +
     '  Not<elem> = ~elem\n' +
@@ -312,19 +314,19 @@ test('errors for Not-of-<PExpr>', function(t) {
   t.equal(typeof r.message, 'string');
   t.ok(/Expected not "a"/.exec(r.message), 'reasonable failure report for Not-of-Param');
 
-  var notLookaheadG = ohm.grammar('G { start = ~(&"a") "b" }');
+  const notLookaheadG = ohm.grammar('G { start = ~(&"a") "b" }');
   r = notLookaheadG.match('a');
   t.equal(r.failed(), true);
   t.equal(typeof r.message, 'string');
   t.ok(/Expected not "a"/.exec(r.message), 'reasonable failure report for Not-of-Lookahead');
 
-  var notSeqG = ohm.grammar('G { start = ~("a" "b") "c" }');
+  const notSeqG = ohm.grammar('G { start = ~("a" "b") "c" }');
   r = notSeqG.match('ab');
   t.equal(r.failed(), true);
   t.equal(typeof r.message, 'string');
   t.ok(/Expected not \("a" "b"\)/.exec(r.message), 'reasonable failure report for Not-of-Seq');
 
-  var notIterG = ohm.grammar('G { start = ~("a"*) "b" }');
+  const notIterG = ohm.grammar('G { start = ~("a"*) "b" }');
   r = notIterG.match('a');
   t.equal(r.failed(), true);
   t.equal(typeof r.message, 'string');
@@ -334,7 +336,7 @@ test('errors for Not-of-<PExpr>', function(t) {
 });
 
 test('complex match failure', function(t) {
-  var g = ohm.grammar([
+  const g = ohm.grammar([
     'G {',
     ' start = term* ',
     ' term = rule1 | rule2 | rule3 | rule4 ',
@@ -346,7 +348,7 @@ test('complex match failure', function(t) {
     ' float = int ("." digit+) ',
     '}'
   ].join('\n'));
-  var r = g.match('fail?"');
+  const r = g.match('fail?"');
   t.equal(r.failed(), true);
   t.ok(/Expected /.exec(r.message), 'Should have a message failure');
   t.end();

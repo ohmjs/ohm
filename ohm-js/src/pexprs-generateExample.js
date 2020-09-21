@@ -4,8 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common');
-var pexprs = require('./pexprs');
+const common = require('./common');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Helpers
@@ -24,22 +24,22 @@ pexprs.PExpr.prototype.generateExample = common.abstract('generateExample');
 function categorizeExamples(examples) {
   // A list of rules that the system needs examples of, in order to generate an example
   //   for the current rule
-  var examplesNeeded = examples.filter(function(example) {
+  let examplesNeeded = examples.filter(function(example) {
     return example.hasOwnProperty('examplesNeeded');
   })
       .map(function(example) { return example.examplesNeeded; });
 
   examplesNeeded = flatten(examplesNeeded);
 
-  var uniqueExamplesNeeded = {};
-  for (var i = 0; i < examplesNeeded.length; i++) {
-    var currentExampleNeeded = examplesNeeded[i];
+  const uniqueExamplesNeeded = {};
+  for (let i = 0; i < examplesNeeded.length; i++) {
+    const currentExampleNeeded = examplesNeeded[i];
     uniqueExamplesNeeded[currentExampleNeeded] = true;
   }
   examplesNeeded = Object.keys(uniqueExamplesNeeded);
 
   // A list of successfully generated examples
-  var successfulExamples = examples.filter(function(example) {
+  const successfulExamples = examples.filter(function(example) {
     return example.hasOwnProperty('value');
   })
       .map(function(item) { return item.value; });
@@ -48,7 +48,7 @@ function categorizeExamples(examples) {
   //   attempting to generate, regardless of whether or not it has the examples it needs.
   //   Currently, this is only used in overriding generators to prevent the system from
   //   generating examples for certain rules (e.g. 'ident').
-  var needHelp = examples.some(function(item) { return item.needHelp; });
+  const needHelp = examples.some(function(item) { return item.needHelp; });
 
   return {
     examplesNeeded: examplesNeeded,
@@ -67,7 +67,7 @@ pexprs.Terminal.prototype.generateExample = function(grammar, examples, inSyntac
 };
 
 pexprs.Range.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
-  var rangeSize = this.to.charCodeAt(0) - this.from.charCodeAt(0);
+  const rangeSize = this.to.charCodeAt(0) - this.from.charCodeAt(0);
   return {value: String.fromCharCode(
       this.from.charCodeAt(0) + Math.floor(rangeSize * Math.random())
   )};
@@ -79,21 +79,21 @@ pexprs.Param.prototype.generateExample = function(grammar, examples, inSyntactic
 
 pexprs.Alt.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
   // items -> termExamples
-  var termExamples = this.terms.map(function(term) {
+  const termExamples = this.terms.map(function(term) {
     return term.generateExample(grammar, examples, inSyntacticContext, actuals);
   });
 
-  var categorizedExamples = categorizeExamples(termExamples);
+  const categorizedExamples = categorizeExamples(termExamples);
 
-  var examplesNeeded = categorizedExamples.examplesNeeded;
-  var successfulExamples = categorizedExamples.successfulExamples;
-  var needHelp = categorizedExamples.needHelp;
+  const examplesNeeded = categorizedExamples.examplesNeeded;
+  const successfulExamples = categorizedExamples.successfulExamples;
+  const needHelp = categorizedExamples.needHelp;
 
-  var ans = {};
+  const ans = {};
 
   // Alt can contain both an example and a request for examples
   if (successfulExamples.length > 0) {
-    var i = Math.floor(Math.random() * successfulExamples.length);
+    const i = Math.floor(Math.random() * successfulExamples.length);
     ans.value = successfulExamples[i];
   }
   if (examplesNeeded.length > 0) {
@@ -105,16 +105,16 @@ pexprs.Alt.prototype.generateExample = function(grammar, examples, inSyntacticCo
 };
 
 pexprs.Seq.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
-  var factorExamples = this.factors.map(function(factor) {
+  const factorExamples = this.factors.map(function(factor) {
     return factor.generateExample(grammar, examples, inSyntacticContext, actuals);
   });
-  var categorizedExamples = categorizeExamples(factorExamples);
+  const categorizedExamples = categorizeExamples(factorExamples);
 
-  var examplesNeeded = categorizedExamples.examplesNeeded;
-  var successfulExamples = categorizedExamples.successfulExamples;
-  var needHelp = categorizedExamples.needHelp;
+  const examplesNeeded = categorizedExamples.examplesNeeded;
+  const successfulExamples = categorizedExamples.successfulExamples;
+  const needHelp = categorizedExamples.needHelp;
 
-  var ans = {};
+  const ans = {};
 
   // In a Seq, all pieces must succeed in order to have a successful example.
   if (examplesNeeded.length > 0 || needHelp) {
@@ -128,20 +128,20 @@ pexprs.Seq.prototype.generateExample = function(grammar, examples, inSyntacticCo
 };
 
 pexprs.Iter.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
-  var rangeTimes = Math.min(this.maxNumMatches - this.minNumMatches, 3);
-  var numTimes = Math.floor(Math.random() * (rangeTimes + 1) + this.minNumMatches);
-  var items = [];
+  const rangeTimes = Math.min(this.maxNumMatches - this.minNumMatches, 3);
+  const numTimes = Math.floor(Math.random() * (rangeTimes + 1) + this.minNumMatches);
+  const items = [];
 
-  for (var i = 0; i < numTimes; i++) {
+  for (let i = 0; i < numTimes; i++) {
     items.push(this.expr.generateExample(grammar, examples, inSyntacticContext, actuals));
   }
 
-  var categorizedExamples = categorizeExamples(items);
+  const categorizedExamples = categorizeExamples(items);
 
-  var examplesNeeded = categorizedExamples.examplesNeeded;
-  var successfulExamples = categorizedExamples.successfulExamples;
+  const examplesNeeded = categorizedExamples.examplesNeeded;
+  const successfulExamples = categorizedExamples.successfulExamples;
 
-  var ans = {};
+  const ans = {};
 
   // It's always either one or the other.
   // TODO: instead of ' ', call 'spaces.generateExample()'
@@ -168,15 +168,15 @@ pexprs.Lex.prototype.generateExample = function(grammar, examples, inSyntacticCo
 };
 
 pexprs.Apply.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
-  var ans = {};
+  const ans = {};
 
-  var ruleName = this.substituteParams(actuals).toString();
+  const ruleName = this.substituteParams(actuals).toString();
 
   if (!examples.hasOwnProperty(ruleName)) {
     ans.examplesNeeded = [ruleName];
   } else {
-    var relevantExamples = examples[ruleName];
-    var i = Math.floor(Math.random() * relevantExamples.length);
+    const relevantExamples = examples[ruleName];
+    const i = Math.floor(Math.random() * relevantExamples.length);
     ans.value = relevantExamples[i];
   }
 
@@ -185,7 +185,7 @@ pexprs.Apply.prototype.generateExample = function(grammar, examples, inSyntactic
 
 pexprs.UnicodeChar.prototype.generateExample = function(
     grammar, examples, inSyntacticContext, actuals) {
-  var char;
+  let char;
   switch (this.category) {
     case 'Lu': char = 'Á'; break;
     case 'Ll': char = 'ŏ'; break;

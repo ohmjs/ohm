@@ -6,16 +6,16 @@
 // Imports
 // --------------------------------------------------------------------
 
-var Builder = require('./Builder');
-var Grammar = require('./Grammar');
-var Namespace = require('./Namespace');
-var common = require('./common');
-var errors = require('./errors');
-var pexprs = require('./pexprs');
-var util = require('./util');
-var version = require('./version');
+const Builder = require('./Builder');
+const Grammar = require('./Grammar');
+const Namespace = require('./Namespace');
+const common = require('./common');
+const errors = require('./errors');
+const pexprs = require('./pexprs');
+const util = require('./util');
+const version = require('./version');
 
-var isBuffer = require('is-buffer');
+const isBuffer = require('is-buffer');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -23,10 +23,10 @@ var isBuffer = require('is-buffer');
 
 // The metagrammar, i.e. the grammar for Ohm grammars. Initialized at the
 // bottom of this file because loading the grammar requires Ohm itself.
-var ohmGrammar;
+let ohmGrammar;
 
 // An object which makes it possible to stub out the document API for testing.
-var documentInterface = {
+let documentInterface = {
   querySelector: function(sel) { return document.querySelector(sel); },
   querySelectorAll: function(sel) { return document.querySelectorAll(sel); }
 };
@@ -40,19 +40,19 @@ function isUndefined(obj) {
   return obj === void 0; // eslint-disable-line no-void
 }
 
-var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
+const MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
 
 function isArrayLike(obj) {
   if (obj == null) {
     return false;
   }
-  var length = obj.length;
+  const length = obj.length;
   return typeof length === 'number' && length >= 0 && length <= MAX_ARRAY_INDEX;
 }
 
 // TODO: just use the jQuery thing
 function load(url) {
-  var req = new XMLHttpRequest();
+  const req = new XMLHttpRequest();
   req.open('GET', url, false);
   try {
     req.send();
@@ -68,21 +68,21 @@ function load(url) {
 // The grammar will be assigned into `namespace` under the name of the grammar
 // as specified in the source.
 function buildGrammar(match, namespace, optOhmGrammarForTesting) {
-  var builder = new Builder();
-  var decl;
-  var currentRuleName;
-  var currentRuleFormals;
-  var overriding = false;
-  var metaGrammar = optOhmGrammarForTesting || ohmGrammar;
+  const builder = new Builder();
+  let decl;
+  let currentRuleName;
+  let currentRuleFormals;
+  let overriding = false;
+  const metaGrammar = optOhmGrammarForTesting || ohmGrammar;
 
   // A visitor that produces a Grammar instance from the CST.
-  var helpers = metaGrammar.createSemantics().addOperation('visit', {
+  const helpers = metaGrammar.createSemantics().addOperation('visit', {
     Grammar: function(n, s, open, rs, close) {
-      var grammarName = n.visit();
+      const grammarName = n.visit();
       decl = builder.newGrammar(grammarName, namespace);
       s.visit();
       rs.visit();
-      var g = decl.build();
+      const g = decl.build();
       g.source = this.source.trimmed();
       if (grammarName in namespace) {
         throw errors.duplicateGrammarDeclaration(g, namespace);
@@ -92,7 +92,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
 
     SuperGrammar: function(_, n) {
-      var superGrammarName = n.visit();
+      const superGrammarName = n.visit();
       if (superGrammarName === 'null') {
         decl.withSuperGrammar(null);
       } else {
@@ -111,31 +111,31 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       if (!decl.defaultStartRule && decl.ensureSuperGrammar() !== Grammar.ProtoBuiltInRules) {
         decl.withDefaultStartRule(currentRuleName);
       }
-      var body = b.visit();
-      var description = d.visit()[0];
-      var source = this.source.trimmed();
+      const body = b.visit();
+      const description = d.visit()[0];
+      const source = this.source.trimmed();
       return decl.define(currentRuleName, currentRuleFormals, body, description, source);
     },
     Rule_override: function(n, fs, _, b) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
       overriding = true;
-      var body = b.visit();
-      var source = this.source.trimmed();
-      var ans = decl.override(currentRuleName, currentRuleFormals, body, null, source);
+      const body = b.visit();
+      const source = this.source.trimmed();
+      const ans = decl.override(currentRuleName, currentRuleFormals, body, null, source);
       overriding = false;
       return ans;
     },
     Rule_extend: function(n, fs, _, b) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
-      var body = b.visit();
-      var source = this.source.trimmed();
-      var ans = decl.extend(currentRuleName, currentRuleFormals, body, null, source);
+      const body = b.visit();
+      const source = this.source.trimmed();
+      const ans = decl.extend(currentRuleName, currentRuleFormals, body, null, source);
       return ans;
     },
     RuleBody: function(_, terms) {
-      var args = terms.visit();
+      const args = terms.visit();
       return builder.alt.apply(builder, args).withSource(this.source);
     },
 
@@ -148,22 +148,22 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
 
     Alt: function(seqs) {
-      var args = seqs.visit();
+      const args = seqs.visit();
       return builder.alt.apply(builder, args).withSource(this.source);
     },
 
     TopLevelTerm_inline: function(b, n) {
-      var inlineRuleName = currentRuleName + '_' + n.visit();
-      var body = b.visit();
-      var source = this.source.trimmed();
-      var isNewRuleDeclaration =
+      const inlineRuleName = currentRuleName + '_' + n.visit();
+      const body = b.visit();
+      const source = this.source.trimmed();
+      const isNewRuleDeclaration =
           !(decl.superGrammar && decl.superGrammar.rules[inlineRuleName]);
       if (overriding && !isNewRuleDeclaration) {
         decl.override(inlineRuleName, currentRuleFormals, body, null, source);
       } else {
         decl.define(inlineRuleName, currentRuleFormals, body, null, source);
       }
-      var params = currentRuleFormals.map(function(formal) { return builder.app(formal); });
+      const params = currentRuleFormals.map(function(formal) { return builder.app(formal); });
       return builder.app(inlineRuleName, params).withSource(body.source);
     },
 
@@ -253,7 +253,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
 }
 
 function compileAndLoad(source, namespace) {
-  var m = ohmGrammar.match(source, 'Grammars');
+  const m = ohmGrammar.match(source, 'Grammars');
   if (m.failed()) {
     throw errors.grammarSyntaxError(m);
   }
@@ -272,15 +272,15 @@ function getScriptElementContents(el) {
 }
 
 function grammar(source, optNamespace) {
-  var ns = grammars(source, optNamespace);
+  const ns = grammars(source, optNamespace);
 
   // Ensure that the source contained no more than one grammar definition.
-  var grammarNames = Object.keys(ns);
+  const grammarNames = Object.keys(ns);
   if (grammarNames.length === 0) {
     throw new Error('Missing grammar definition');
   } else if (grammarNames.length > 1) {
-    var secondGrammar = ns[grammarNames[1]];
-    var interval = secondGrammar.source;
+    const secondGrammar = ns[grammarNames[1]];
+    const interval = secondGrammar.source;
     throw new Error(
         util.getLineAndColumnMessage(interval.sourceString, interval.startIdx) +
         'Found more than one grammar definition -- use ohm.grammars() instead.');
@@ -289,7 +289,7 @@ function grammar(source, optNamespace) {
 }
 
 function grammars(source, optNamespace) {
-  var ns = Namespace.extend(Namespace.asNamespace(optNamespace));
+  const ns = Namespace.extend(Namespace.asNamespace(optNamespace));
   if (typeof source !== 'string') {
     // For convenience, detect Node.js Buffer objects and automatically call toString().
     if (isBuffer(source)) {
@@ -304,9 +304,9 @@ function grammars(source, optNamespace) {
 }
 
 function grammarFromScriptElement(optNode) {
-  var node = optNode;
+  let node = optNode;
   if (isUndefined(node)) {
-    var nodeList = documentInterface.querySelectorAll('script[type="text/ohm-js"]');
+    const nodeList = documentInterface.querySelectorAll('script[type="text/ohm-js"]');
     if (nodeList.length !== 1) {
       throw new Error(
           'Expected exactly one script tag with type="text/ohm-js", found ' + nodeList.length);
@@ -322,15 +322,15 @@ function grammarsFromScriptElements(optNodeOrNodeList) {
     return grammars(optNodeOrNodeList);
   }
   // Otherwise, it must be either undefined or a NodeList.
-  var nodeList = optNodeOrNodeList;
+  let nodeList = optNodeOrNodeList;
   if (isUndefined(nodeList)) {
     // Find all script elements with type="text/ohm-js".
     nodeList = documentInterface.querySelectorAll('script[type="text/ohm-js"]');
   } else if (typeof nodeList === 'string' || (!isElement(nodeList) && !isArrayLike(nodeList))) {
     throw new TypeError('Expected a Node, NodeList, or Array, but got ' + nodeList);
   }
-  var ns = Namespace.createNamespace();
-  for (var i = 0; i < nodeList.length; ++i) {
+  const ns = Namespace.createNamespace();
+  for (let i = 0; i < nodeList.length; ++i) {
     // Copy the new grammars into `ns` to keep the namespace flat.
     common.extend(ns, grammars(getScriptElementContents(nodeList[i]), ns));
   }

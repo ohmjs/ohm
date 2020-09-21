@@ -31,17 +31,18 @@ PosInfo.prototype = {
     memoRec.nextLeftRecursion = this.currentLeftRecursion;
     this.currentLeftRecursion = memoRec;
 
-    var applicationMemoKeyStack = this.applicationMemoKeyStack;
-    var indexOfFirstInvolvedRule = applicationMemoKeyStack.indexOf(headApplication.toMemoKey()) + 1;
-    var involvedApplicationMemoKeys = applicationMemoKeyStack.slice(indexOfFirstInvolvedRule);
+    const applicationMemoKeyStack = this.applicationMemoKeyStack;
+    const indexOfFirstInvolvedRule =
+        applicationMemoKeyStack.indexOf(headApplication.toMemoKey()) + 1;
+    const involvedApplicationMemoKeys = applicationMemoKeyStack.slice(indexOfFirstInvolvedRule);
 
     memoRec.isInvolved = function(applicationMemoKey) {
       return involvedApplicationMemoKeys.indexOf(applicationMemoKey) >= 0;
     };
 
     memoRec.updateInvolvedApplicationMemoKeys = function() {
-      for (var idx = indexOfFirstInvolvedRule; idx < applicationMemoKeyStack.length; idx++) {
-        var applicationMemoKey = applicationMemoKeyStack[idx];
+      for (let idx = indexOfFirstInvolvedRule; idx < applicationMemoKeyStack.length; idx++) {
+        const applicationMemoKey = applicationMemoKeyStack[idx];
         if (!this.isInvolved(applicationMemoKey)) {
           involvedApplicationMemoKeys.push(applicationMemoKey);
         }
@@ -59,9 +60,9 @@ PosInfo.prototype = {
     if (!memoRec.isLeftRecursion) {
       return true;
     }
-    var applicationMemoKeyStack = this.applicationMemoKeyStack;
-    for (var idx = 0; idx < applicationMemoKeyStack.length; idx++) {
-      var applicationMemoKey = applicationMemoKeyStack[idx];
+    const applicationMemoKeyStack = this.applicationMemoKeyStack;
+    for (let idx = 0; idx < applicationMemoKeyStack.length; idx++) {
+      const applicationMemoKey = applicationMemoKeyStack[idx];
       if (memoRec.isInvolved(applicationMemoKey)) {
         return false;
       }
@@ -84,12 +85,12 @@ PosInfo.prototype = {
       return;
     }
 
-    var memo = this.memo;
+    const memo = this.memo;
     this.maxExaminedLength = 0;
     this.maxRightmostFailureOffset = -1;
-    var self = this;
+    const self = this;
     Object.keys(memo).forEach(function(k) {
-      var memoRec = memo[k];
+      const memoRec = memo[k];
       if (pos + memoRec.examinedLength > invalidatedIdx) {
         delete memo[k];
       } else {

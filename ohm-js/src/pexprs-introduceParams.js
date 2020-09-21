@@ -4,8 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common');
-var pexprs = require('./pexprs');
+const common = require('./common');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations
@@ -50,7 +50,7 @@ pexprs.Lex.prototype.introduceParams = function(formals) {
 };
 
 pexprs.Apply.prototype.introduceParams = function(formals) {
-  var index = formals.indexOf(this.ruleName);
+  const index = formals.indexOf(this.ruleName);
   if (index >= 0) {
     if (this.args.length > 0) {
       // TODO: Should this be supported? See issue #64.

@@ -81,7 +81,7 @@ Failure.prototype.toString = function() {
 };
 
 Failure.prototype.clone = function() {
-  var failure = new Failure(this.pexpr, this.text, this.type);
+  const failure = new Failure(this.pexpr, this.text, this.type);
   if (this.isFluffy()) {
     failure.makeFluffy();
   }

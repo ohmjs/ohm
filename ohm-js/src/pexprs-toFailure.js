@@ -4,9 +4,9 @@
 // Imports
 // --------------------------------------------------------------------
 
-var Failure = require('./Failure');
-var common = require('./common');
-var pexprs = require('./pexprs');
+const Failure = require('./Failure');
+const common = require('./common');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations
@@ -32,7 +32,7 @@ pexprs.Range.prototype.toFailure = function(grammar) {
 };
 
 pexprs.Not.prototype.toFailure = function(grammar) {
-  var description = this.expr === pexprs.any ?
+  const description = this.expr === pexprs.any ?
       'nothing' :
       'not ' + this.expr.toFailure(grammar);
   return new Failure(this, description, 'description');
@@ -43,9 +43,9 @@ pexprs.Lookahead.prototype.toFailure = function(grammar) {
 };
 
 pexprs.Apply.prototype.toFailure = function(grammar) {
-  var description = grammar.rules[this.ruleName].description;
+  let description = grammar.rules[this.ruleName].description;
   if (!description) {
-    var article = (/^[aeiouAEIOU]/.test(this.ruleName) ? 'an' : 'a');
+    const article = (/^[aeiouAEIOU]/.test(this.ruleName) ? 'an' : 'a');
     description = article + ' ' + this.ruleName;
   }
   return new Failure(this, description, 'description');
@@ -56,18 +56,18 @@ pexprs.UnicodeChar.prototype.toFailure = function(grammar) {
 };
 
 pexprs.Alt.prototype.toFailure = function(grammar) {
-  var fs = this.terms.map(function(t) { return t.toFailure(grammar); });
-  var description = '(' + fs.join(' or ') + ')';
+  const fs = this.terms.map(function(t) { return t.toFailure(grammar); });
+  const description = '(' + fs.join(' or ') + ')';
   return new Failure(this, description, 'description');
 };
 
 pexprs.Seq.prototype.toFailure = function(grammar) {
-  var fs = this.factors.map(function(f) { return f.toFailure(grammar); });
-  var description = '(' + fs.join(' ') + ')';
+  const fs = this.factors.map(function(f) { return f.toFailure(grammar); });
+  const description = '(' + fs.join(' ') + ')';
   return new Failure(this, description, 'description');
 };
 
 pexprs.Iter.prototype.toFailure = function(grammar) {
-  var description = '(' + this.expr.toFailure(grammar) + this.operator + ')';
+  const description = '(' + this.expr.toFailure(grammar) + this.operator + ')';
   return new Failure(this, description, 'description');
 };

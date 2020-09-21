@@ -6,18 +6,18 @@
 // Imports
 // --------------------------------------------------------------------
 
-var markscript = require('markscript');
-var path = require('path');
-var test = require('tape-catch');
+const markscript = require('markscript');
+const path = require('path');
+const test = require('tape-catch');
 
-var ohm = require('..');
-var testUtil = require('./testUtil');
+const ohm = require('..');
+const testUtil = require('./testUtil');
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
-var fakeDocument = {
+const fakeDocument = {
   querySelector: function(sel) {
     return testUtil.fakeScriptTag('G { foo = end }');
   },
@@ -26,7 +26,7 @@ var fakeDocument = {
   }
 };
 
-var markscriptConfig = {
+const markscriptConfig = {
   // Expose the fake document object to scripts inside Markdown.
   globals: {document: fakeDocument},
 

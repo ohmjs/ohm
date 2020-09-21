@@ -4,23 +4,23 @@
 // Imports
 // --------------------------------------------------------------------
 
-var pexprs = require('../src/pexprs');
-var MatchResult = require('../src/MatchResult');
-var Grammar = require('../src/Grammar');
-var extend = require('util-extend');
+const pexprs = require('../src/pexprs');
+const MatchResult = require('../src/MatchResult');
+const Grammar = require('../src/Grammar');
+const extend = require('util-extend');
 
 // --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
 
-var defaultOperation = {
+const defaultOperation = {
   _terminal: function() {
     return this.primitiveValue;
   },
 
   _nonterminal: function(children) {
-    var ctorName = this._node.ctorName;
-    var mapping = this.args.mapping;
+    const ctorName = this._node.ctorName;
+    const mapping = this.args.mapping;
 
     // without customization
     if (!mapping.hasOwnProperty(ctorName)) {
@@ -35,7 +35,7 @@ var defaultOperation = {
       }
 
       // singular node (e.g. only surrounded by literals or lookaheads)
-      var realChildren = children.filter(function(child) {
+      const realChildren = children.filter(function(child) {
         return !child.isTerminal();
       });
       if (realChildren.length === 1) {
@@ -51,12 +51,12 @@ var defaultOperation = {
     }
 
     // named/mapped children or unnamed children ('0', '1', '2', ...)
-    var propMap = mapping[ctorName] || children;
-    var node = {
+    const propMap = mapping[ctorName] || children;
+    const node = {
       type: ctorName
     };
-    for (var prop in propMap) {
-      var mappedProp = mapping[ctorName] && mapping[ctorName][prop];
+    for (const prop in propMap) {
+      const mappedProp = mapping[ctorName] && mapping[ctorName][prop];
       if (typeof mappedProp === 'number') {
         // direct forward
         node[prop] = children[mappedProp].toAST(mapping);
@@ -115,15 +115,15 @@ function toAST(res, mapping) {
   }
 
   mapping = extend({}, mapping);
-  var operation = extend({}, defaultOperation);
-  for (var termName in mapping) {
+  const operation = extend({}, defaultOperation);
+  for (const termName in mapping) {
     if (typeof mapping[termName] === 'function') {
       operation[termName] = mapping[termName];
       delete mapping[termName];
     }
   }
-  var g = res._cst.grammar;
-  var s = g.createSemantics().addOperation('toAST(mapping)', operation);
+  const g = res._cst.grammar;
+  const s = g.createSemantics().addOperation('toAST(mapping)', operation);
   return s(res).toAST(mapping);
 }
 

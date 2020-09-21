@@ -4,12 +4,12 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common');
-var errors = require('./errors');
-var pexprs = require('./pexprs');
-var util = require('./util');
+const common = require('./common');
+const errors = require('./errors');
+const pexprs = require('./pexprs');
+const util = require('./util');
 
-var BuiltInRules;
+let BuiltInRules;
 
 util.awaitBuiltInRules(function(g) { BuiltInRules = g; });
 
@@ -17,7 +17,7 @@ util.awaitBuiltInRules(function(g) { BuiltInRules = g; });
 // Operations
 // --------------------------------------------------------------------
 
-var lexifyCount;
+let lexifyCount;
 
 pexprs.PExpr.prototype.assertAllApplicationsAreValid = function(ruleName, grammar) {
   lexifyCount = 0;
@@ -44,13 +44,13 @@ pexprs.Lex.prototype._assertAllApplicationsAreValid = function(ruleName, grammar
 };
 
 pexprs.Alt.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
-  for (var idx = 0; idx < this.terms.length; idx++) {
+  for (let idx = 0; idx < this.terms.length; idx++) {
     this.terms[idx]._assertAllApplicationsAreValid(ruleName, grammar);
   }
 };
 
 pexprs.Seq.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
-  for (var idx = 0; idx < this.factors.length; idx++) {
+  for (let idx = 0; idx < this.factors.length; idx++) {
     this.factors[idx]._assertAllApplicationsAreValid(ruleName, grammar);
   }
 };
@@ -62,7 +62,7 @@ pexprs.Lookahead.prototype._assertAllApplicationsAreValid = function(ruleName, g
 };
 
 pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
-  var ruleInfo = grammar.rules[this.ruleName];
+  const ruleInfo = grammar.rules[this.ruleName];
 
   // Make sure that the rule exists...
   if (!ruleInfo) {
@@ -75,14 +75,14 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, gramm
   }
 
   // ...and that this application has the correct number of arguments
-  var actual = this.args.length;
-  var expected = ruleInfo.formals.length;
+  const actual = this.args.length;
+  const expected = ruleInfo.formals.length;
   if (actual !== expected) {
     throw errors.wrongNumberOfArguments(this.ruleName, expected, actual, this.source);
   }
 
   // ...and that all of the argument expressions only have valid applications and have arity 1.
-  var self = this;
+  const self = this;
   this.args.forEach(function(arg) {
     arg._assertAllApplicationsAreValid(ruleName, grammar);
     if (arg.getArity() !== 1) {

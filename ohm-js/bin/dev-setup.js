@@ -2,15 +2,15 @@
 
 'use strict';
 
-var exec = require('child_process').exec;
-var fs = require('fs');
+const exec = require('child_process').exec;
+const fs = require('fs');
 
 // Return code from `git config` indicating that the key is invalid.
-var RET_CODE_INVALID_KEY = 1;
+const RET_CODE_INVALID_KEY = 1;
 
 // Since .npmignore excludes .gitignore, we know that if the .gitignore file is
 // present we must be in developer mode (i.e., installed manually).
-var inDeveloperMode = fs.existsSync('.gitignore');
+const inDeveloperMode = fs.existsSync('.gitignore');
 
 if (inDeveloperMode) {
   // "touch" a timestamp file
@@ -20,7 +20,7 @@ if (inDeveloperMode) {
   // This is referenced by .gitattributes, to prevent conflicts with files
   // that are generated during the build process.
 
-  var execOpts = {stdio: ['inherit', 'ignore', 'inherit']};
+  const execOpts = {stdio: ['inherit', 'ignore', 'inherit']};
 
   function done() {
     console.log('Developer setup complete.'); // eslint-disable-line no-console

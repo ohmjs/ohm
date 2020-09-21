@@ -1,9 +1,9 @@
 'use strict';
 
-var path = require('path');
-var webpack = require('webpack');
+const path = require('path');
+const webpack = require('webpack');
 
-var version = require('./package.json').version;
+const {version} = require('./package.json');
 
 module.exports = function(env, argv) {
   return {
@@ -12,18 +12,21 @@ module.exports = function(env, argv) {
       rules: [
         {
           test: /\.js$/,
-          include: path.resolve(__dirname, 'src'),
+          include: [
+            path.resolve(__dirname, 'src'),
+            path.resolve(__dirname, 'extras')
+          ],
           use: {
             loader: 'ts-loader',
             options: {
               transpileOnly: true
             }
           }
-        },
-      ],
+        }
+      ]
     },
     resolve: {
-      extensions: ['.ts', '.js'],
+      extensions: ['.ts', '.js']
     },
     output: {
       library: 'ohm',

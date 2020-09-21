@@ -4,9 +4,9 @@
 // Imports
 // --------------------------------------------------------------------
 
-var assert = require('./common').assert;
-var errors = require('./errors');
-var util = require('./util');
+const assert = require('./common').assert;
+const errors = require('./errors');
+const util = require('./util');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -19,11 +19,11 @@ function Interval(sourceString, startIdx, endIdx) {
 }
 
 Interval.coverage = function(/* interval1, interval2, ... */) {
-  var sourceString = arguments[0].sourceString;
-  var startIdx = arguments[0].startIdx;
-  var endIdx = arguments[0].endIdx;
-  for (var idx = 1; idx < arguments.length; idx++) {
-    var interval = arguments[idx];
+  const sourceString = arguments[0].sourceString;
+  let startIdx = arguments[0].startIdx;
+  let endIdx = arguments[0].endIdx;
+  for (let idx = 1; idx < arguments.length; idx++) {
+    const interval = arguments[idx];
     if (interval.sourceString !== sourceString) {
       throw errors.intervalSourcesDontMatch();
     } else {
@@ -36,7 +36,7 @@ Interval.coverage = function(/* interval1, interval2, ... */) {
 
 Interval.prototype = {
   coverageWith: function(/* interval1, interval2, ... */) {
-    var intervals = Array.prototype.slice.call(arguments);
+    const intervals = Array.prototype.slice.call(arguments);
     intervals.push(this);
     return Interval.coverage.apply(undefined, intervals);
   },
@@ -50,7 +50,7 @@ Interval.prototype = {
   },
 
   getLineAndColumnMessage: function() {
-    var range = [this.startIdx, this.endIdx];
+    const range = [this.startIdx, this.endIdx];
     return util.getLineAndColumnMessage(this.sourceString, this.startIdx, range);
   },
 
@@ -104,14 +104,14 @@ Interval.prototype = {
   // but with whitespace trimmed from both ends. (This only makes sense when
   // the input stream is a string.)
   trimmed: function() {
-    var contents = this.contents;
-    var startIdx = this.startIdx + contents.match(/^\s*/)[0].length;
-    var endIdx = this.endIdx - contents.match(/\s*$/)[0].length;
+    const contents = this.contents;
+    const startIdx = this.startIdx + contents.match(/^\s*/)[0].length;
+    const endIdx = this.endIdx - contents.match(/\s*$/)[0].length;
     return new Interval(this.sourceString, startIdx, endIdx);
   },
 
   subInterval: function(offset, len) {
-    var newStartIdx = this.startIdx + offset;
+    const newStartIdx = this.startIdx + offset;
     return new Interval(this.sourceString, newStartIdx, newStartIdx + len);
   }
 };

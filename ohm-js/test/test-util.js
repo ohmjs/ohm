@@ -4,15 +4,15 @@
 // Imports
 // --------------------------------------------------------------------
 
-var test = require('tape-catch');
+const test = require('tape-catch');
 
-var util = require('../src/util');
+const util = require('../src/util');
 
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
 
-var getLineAndColumnMessage = util.getLineAndColumnMessage;
+const getLineAndColumnMessage = util.getLineAndColumnMessage;
 
 test('getLineAndColumnMessage', function(t) {
   t.equal(getLineAndColumnMessage('', 0), [
@@ -21,7 +21,7 @@ test('getLineAndColumnMessage', function(t) {
     '      ^',
     ''].join('\n'), 'empty input');
 
-  var expected = [
+  let expected = [
     'Line 1, col 1:',
     '> 1 | ',
     '      ^',
@@ -59,7 +59,7 @@ test('getLineAndColumnMessage', function(t) {
   t.equal(getLineAndColumnMessage('a\n\n', 0), expected, 'two trailing empty lines');
   t.equal(getLineAndColumnMessage('a\r\n\r\n', 0), expected, '...and with CRLF');
 
-  var input = new Array(9).join('\n') + 'a\nhi!\nb';
+  let input = new Array(9).join('\n') + 'a\nhi!\nb';
   expected = [
     'Line 10, col 1:',
     '   9 | a',

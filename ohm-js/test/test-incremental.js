@@ -4,12 +4,12 @@
 // Imports
 // --------------------------------------------------------------------
 
-var fs = require('fs');
-var ohm = require('..');
-var test = require('tape-catch');
-var testUtil = require('./testUtil');
+const fs = require('fs');
+const ohm = require('..');
+const test = require('tape-catch');
+const testUtil = require('./testUtil');
 
-var makeGrammar = testUtil.makeGrammar;
+const makeGrammar = testUtil.makeGrammar;
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -17,7 +17,7 @@ var makeGrammar = testUtil.makeGrammar;
 
 function pluckMemoProp(result, propName) {
   return result.matcher.memoTable.map(function(info) {
-    var result = {};
+    const result = {};
     if (info == null) return {};
     if (propName === 'examinedLength') {
       result.maxExaminedLength = info.maxExaminedLength;
@@ -25,29 +25,29 @@ function pluckMemoProp(result, propName) {
       result.maxRightmostFailureOffset = info.maxRightmostFailureOffset;
     }
     Object.keys(info.memo).forEach(function(ruleName) {
-      var memoRec = info.memo[ruleName];
+      const memoRec = info.memo[ruleName];
       result[ruleName] = memoRec[propName];
     });
     return result;
   });
 }
 
-var checkOffsetActions = {
+const checkOffsetActions = {
   _nonterminal: function(children) {
-    var desc = this._node.ctorName + ' @ ' + this.source.startIdx;
+    const desc = this._node.ctorName + ' @ ' + this.source.startIdx;
     this.args.t.equal(this.source.startIdx, this.args.startIdx, desc);
-    for (var i = 0; i < children.length; ++i) {
-      var childStartIdx = this.args.startIdx + this._node.childOffsets[i];
+    for (let i = 0; i < children.length; ++i) {
+      const childStartIdx = this.args.startIdx + this._node.childOffsets[i];
       children[i].checkOffsets(this.args.t, childStartIdx);
     }
   },
   _terminal: function() {
-    var desc = '"' + this.sourceString + '" @ ' + this.source.startIdx;
+    const desc = '"' + this.sourceString + '" @ ' + this.source.startIdx;
     this.args.t.equal(this.source.startIdx, this.args.startIdx, desc);
   }
 };
 
-var ctorTreeActions = {
+const ctorTreeActions = {
   _default: function(children) {
     return [this.ctorName].concat(children.map(function(c) { return c.ctorTree; }));
   }
@@ -58,7 +58,7 @@ var ctorTreeActions = {
 // --------------------------------------------------------------------
 
 test('basic incremental parsing', function(t) {
-  var g = makeGrammar([
+  const g = makeGrammar([
     'G {',
     '  start = notLastLetter* letter',
     '  notLastLetter = letter &letter',
@@ -67,9 +67,9 @@ test('basic incremental parsing', function(t) {
 
   // Create an operation which reconstructs the matched based on the offsets
   // stored for each node. This can be compared to the input stored in the matcher.
-  var s = g.createSemantics().addOperation('reconstructInput(input)', {
+  const s = g.createSemantics().addOperation('reconstructInput(input)', {
     start: function(letters, lastLetter) {
-      var lastLetterOffset = this._node.childOffsets[1];
+      const lastLetterOffset = this._node.childOffsets[1];
       return letters.reconstructInput(this.args.input) +
           lastLetter.reconstructInput(this.args.input.slice(lastLetterOffset));
     },
@@ -77,9 +77,9 @@ test('basic incremental parsing', function(t) {
       return letter.reconstructInput(this.args.input);
     },
     _iter: function(children) {
-      var self = this;
+      const self = this;
       return this._node.childOffsets.map(function(offset, i) {
-        var c = children[i].reconstructInput(self.args.input.slice(offset));
+        const c = children[i].reconstructInput(self.args.input.slice(offset));
         return c;
       }).join('');
     },
@@ -88,8 +88,8 @@ test('basic incremental parsing', function(t) {
     }
   });
 
-  var im = g.matcher();
-  var result;
+  const im = g.matcher();
+  let result;
 
   im.replaceInputRange(0, 0, 'helloworld');
   t.equal(im.getInput(), 'helloworld');
@@ -126,7 +126,7 @@ test('basic incremental parsing', function(t) {
 });
 
 test('trickier incremental parsing', function(t) {
-  var g = makeGrammar([
+  const g = makeGrammar([
     'G {',
     '  start = start letter  -- rec',
     '        | lookahead',
@@ -134,9 +134,9 @@ test('trickier incremental parsing', function(t) {
     '  lookahead = &"ac" "a"',
     '}'
   ]);
-  var s = g.createSemantics().addAttribute('ctorTree', ctorTreeActions);
-  var im = g.matcher();
-  var result;
+  const s = g.createSemantics().addAttribute('ctorTree', ctorTreeActions);
+  const im = g.matcher();
+  let result;
 
   im.replaceInputRange(0, 0, 'ab');
   result = im.match();
@@ -160,14 +160,14 @@ test('trickier incremental parsing', function(t) {
 });
 
 test('examinedLength - no LR', function(t) {
-  var g = makeGrammar([
+  const g = makeGrammar([
     'G {',
     '  start = notLastLetter* letter',
     '  notLastLetter = letter &letter',
     '}'
   ]);
-  var result = g.match('yip');
-  var values = pluckMemoProp(result, 'examinedLength');
+  const result = g.match('yip');
+  const values = pluckMemoProp(result, 'examinedLength');
   t.deepEqual(values, [
     {maxExaminedLength: 4, letter: 1, lower: 1, notLastLetter: 2, start: 4},
     {maxExaminedLength: 2, letter: 1, lower: 1, notLastLetter: 2},
@@ -179,13 +179,13 @@ test('examinedLength - no LR', function(t) {
 });
 
 test('examinedLength - no LR, but non-monotonic', function(t) {
-  var g = makeGrammar([
+  const g = makeGrammar([
     'G {',
     '  start = "a" "b" "c" | letter letter letter',
     '}'
   ]);
-  var result = g.match('abd');
-  var values = pluckMemoProp(result, 'examinedLength');
+  const result = g.match('abd');
+  const values = pluckMemoProp(result, 'examinedLength');
   t.deepEqual(values, [
     {maxExaminedLength: 3, letter: 1, lower: 1, start: 3},
     {maxExaminedLength: 1, letter: 1, lower: 1},
@@ -196,15 +196,15 @@ test('examinedLength - no LR, but non-monotonic', function(t) {
 });
 
 test('examinedLength - simple LR', function(t) {
-  var g = makeGrammar([
+  const g = makeGrammar([
     'G {',
     '  start = start letter  -- rec',
     '        | letter',
     '}']);
-  var result = g.match('yo');
+  const result = g.match('yo');
   t.equal(result.succeeded(), true);
 
-  var values = pluckMemoProp(result, 'examinedLength');
+  const values = pluckMemoProp(result, 'examinedLength');
   t.deepEqual(values, [
     {maxExaminedLength: 3, letter: 1, lower: 1, start: 3},
     {maxExaminedLength: 1, letter: 1, lower: 1},
@@ -215,17 +215,17 @@ test('examinedLength - simple LR', function(t) {
 });
 
 test('examinedLength - complicated LR', function(t) {
-  var g = makeGrammar([
+  const g = makeGrammar([
     'G {',
     '  start = start foo  -- rec',
     '        | foo',
     '  foo = foo letter  -- rec',
     '      | any',
     '}']);
-  var result = g.match('yo');
+  const result = g.match('yo');
   t.equal(result.succeeded(), true);
 
-  var values = pluckMemoProp(result, 'examinedLength');
+  const values = pluckMemoProp(result, 'examinedLength');
   t.deepEqual(values, [
     {maxExaminedLength: 3, any: 1, foo: 3, start: 3},
     {maxExaminedLength: 1, letter: 1, lower: 1},
@@ -236,14 +236,14 @@ test('examinedLength - complicated LR', function(t) {
 });
 
 test('rightmostFailureOffset - no LR', function(t) {
-  var g = makeGrammar([
+  const g = makeGrammar([
     'G {',
     '  start = notLastLetter* letter',
     '  notLastLetter = letter &letter',
     '}'
   ]);
-  var result = g.match('yip');
-  var values = pluckMemoProp(result, 'rightmostFailureOffset');
+  const result = g.match('yip');
+  const values = pluckMemoProp(result, 'rightmostFailureOffset');
   t.deepEqual(values, [
     {maxRightmostFailureOffset: 3, letter: -1, lower: -1, notLastLetter: -1, start: 3},
     {maxRightmostFailureOffset: -1, letter: -1, lower: -1, notLastLetter: -1},
@@ -255,15 +255,15 @@ test('rightmostFailureOffset - no LR', function(t) {
 });
 
 test('rightmostFailureOffset - simple LR', function(t) {
-  var g = makeGrammar([
+  const g = makeGrammar([
     'G {',
     '  start = start letter  -- rec',
     '        | letter',
     '}']);
-  var result = g.match('yo');
+  const result = g.match('yo');
   t.equal(result.succeeded(), true);
 
-  var values = pluckMemoProp(result, 'rightmostFailureOffset');
+  const values = pluckMemoProp(result, 'rightmostFailureOffset');
   t.deepEqual(values, [
     {maxRightmostFailureOffset: 2, letter: -1, lower: -1, start: 2},
     {maxRightmostFailureOffset: -1, letter: -1, lower: -1},
@@ -274,17 +274,17 @@ test('rightmostFailureOffset - simple LR', function(t) {
 });
 
 test('rightmostFailureOffset - complicated LR', function(t) {
-  var g = makeGrammar([
+  const g = makeGrammar([
     'G {',
     '  start = start foo  -- rec',
     '        | foo',
     '  foo = foo letter  -- rec',
     '      | any',
     '}']);
-  var result = g.match('yo');
+  const result = g.match('yo');
   t.equal(result.succeeded(), true);
 
-  var values = pluckMemoProp(result, 'rightmostFailureOffset');
+  const values = pluckMemoProp(result, 'rightmostFailureOffset');
   t.deepEqual(values, [
     {maxRightmostFailureOffset: 2, any: -1, foo: 2, start: 2},
     {maxRightmostFailureOffset: -1, letter: -1, lower: -1},
@@ -295,16 +295,16 @@ test('rightmostFailureOffset - complicated LR', function(t) {
 });
 
 test('matchLength', function(t) {
-  var g = makeGrammar([
+  const g = makeGrammar([
     'G {',
     '  start = notLast* any',
     '  notLast = any &any',
     '}'
   ]);
-  var result = g.match('woo');
+  const result = g.match('woo');
   t.equal(result.succeeded(), true);
 
-  var values = pluckMemoProp(result, 'matchLength');
+  const values = pluckMemoProp(result, 'matchLength');
   t.deepEqual(values, [
     {any: 1, notLast: 1, start: 3},
     {any: 1, notLast: 1},
@@ -316,17 +316,17 @@ test('matchLength', function(t) {
 });
 
 test('matchLength - complicated LR', function(t) {
-  var g = makeGrammar([
+  const g = makeGrammar([
     'G {',
     '  start = start foo  -- rec',
     '        | foo',
     '  foo = foo letter  -- rec',
     '      | any',
     '}']);
-  var result = g.match('yo');
+  const result = g.match('yo');
   t.equal(result.succeeded(), true);
 
-  var values = pluckMemoProp(result, 'matchLength');
+  const values = pluckMemoProp(result, 'matchLength');
   t.deepEqual(values, [
     {any: 1, foo: 2, start: 2},
     {letter: 1, lower: 1},
@@ -337,17 +337,17 @@ test('matchLength - complicated LR', function(t) {
 });
 
 test('binding offsets - lexical rules', function(t) {
-  var g = makeGrammar([
+  const g = makeGrammar([
     'G {',
     '  start = start foo  -- rec',
     '        | foo',
     '  foo = foo letter  -- rec',
     '      | "oo"',
     '}']);
-  var result = g.match('oolong');
+  let result = g.match('oolong');
   t.equal(result.succeeded(), true);
 
-  var s = g.createSemantics().addOperation('checkOffsets(t, startIdx)', checkOffsetActions);
+  const s = g.createSemantics().addOperation('checkOffsets(t, startIdx)', checkOffsetActions);
   s(result).checkOffsets(t, 0);
 
   result = g.match('oo');
@@ -357,16 +357,16 @@ test('binding offsets - lexical rules', function(t) {
 });
 
 test('binding offsets - syntactic rules', function(t) {
-  var g = makeGrammar([
+  const g = makeGrammar([
     '    G {',
     '  Start = letter NotLast* any',
     '  NotLast = any &any',
     '}'
   ]);
-  var result = g.match('   a 4');
+  let result = g.match('   a 4');
   t.ok(result.succeeded());
 
-  var s = g.createSemantics().addOperation('checkOffsets(t, startIdx)', checkOffsetActions);
+  const s = g.createSemantics().addOperation('checkOffsets(t, startIdx)', checkOffsetActions);
   s(result).checkOffsets(t, result._cstOffset);
 
   result = g.match('a   4 ');
@@ -377,43 +377,43 @@ test('binding offsets - syntactic rules', function(t) {
 });
 
 test('incremental parsing + attributes = incremental computation', function(t) {
-  var g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
+  const g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
 
-  var freshlyEvaluated;
-  var s = g.createSemantics().addAttribute('value', {
+  let freshlyEvaluated;
+  const s = g.createSemantics().addAttribute('value', {
     addExp_plus: function(x, _op, y) {
-      var ans = x.value + y.value;
+      const ans = x.value + y.value;
       freshlyEvaluated.push(this.sourceString);
       return ans;
     },
     addExp_minus: function(x, _op, y) {
-      var ans = x.value - y.value;
+      const ans = x.value - y.value;
       freshlyEvaluated.push(this.sourceString);
       return ans;
     },
     mulExp_times: function(x, _op, y) {
-      var ans = x.value * y.value;
+      const ans = x.value * y.value;
       freshlyEvaluated.push(this.sourceString);
       return ans;
     },
     mulExp_divide: function(x, _op, y) {
-      var ans = x.value / y.value;
+      const ans = x.value / y.value;
       freshlyEvaluated.push(this.sourceString);
       return ans;
     },
     priExp_paren: function(_open, x, _close) {
-      var ans = x.value;
+      const ans = x.value;
       freshlyEvaluated.push(this.sourceString);
       return ans;
     },
     number: function(_) {
-      var ans = parseInt(this.sourceString);
+      const ans = parseInt(this.sourceString);
       freshlyEvaluated.push(this.sourceString);
       return ans;
     }
   });
 
-  var m = g.matcher();
+  const m = g.matcher();
 
   freshlyEvaluated = [];
   m.replaceInputRange(0, 0, '(1+2)*3-4');
