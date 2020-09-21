@@ -8,6 +8,23 @@ var version = require('./package.json').version;
 module.exports = function(env, argv) {
   return {
     entry: './src/main.js',
+    module: {
+      rules: [
+        {
+          test: /\.js$/,
+          include: path.resolve(__dirname, 'src'),
+          use: {
+            loader: 'ts-loader',
+            options: {
+              transpileOnly: true
+            }
+          }
+        },
+      ],
+    },
+    resolve: {
+      extensions: ['.ts', '.js'],
+    },
     output: {
       library: 'ohm',
       libraryTarget: 'umd',

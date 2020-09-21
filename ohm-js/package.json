@@ -71,6 +71,9 @@
   "dependencies": {
     "inherits": "^2.0.4",
     "is-buffer": "^2.0.4",
+    "ts-loader": "^8.0.4",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.3",
     "util-extend": "^1.0.3"
   },
   "devDependencies": {
@@ -90,8 +93,6 @@
     "tap-spec": "^5.0.0",
     "tape": "^5.0.1",
     "tape-catch": "^1.0.6",
-    "ts-node": "^2.1.0",
-    "typescript": "2.2.1",
     "walk-sync": "^2.2.0",
     "webpack": "^4.44.2",
     "webpack-cli": "^3.3.12"
