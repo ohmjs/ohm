@@ -14,23 +14,23 @@ const testUtil = require('./testUtil');
 // Tests
 // --------------------------------------------------------------------
 
-test('require same number of params when overriding and extending', function(t) {
+test('require same number of params when overriding and extending', t => {
   const ns = testUtil.makeGrammars('G { Foo<x, y> = x y }');
 
   // Too few parameters
   t.throws(
-      function() { testUtil.makeGrammar('G2 <: G { Foo<x> := "oops!" }', ns); },
+      () => { testUtil.makeGrammar('G2 <: G { Foo<x> := "oops!" }', ns); },
       /Wrong number of parameters for rule Foo \(expected 2, got 1\)/);
   t.throws(
-      function() { testUtil.makeGrammar('G2 <: G { Foo<x> += "oops!" }', ns); },
+      () => { testUtil.makeGrammar('G2 <: G { Foo<x> += "oops!" }', ns); },
       /Wrong number of parameters for rule Foo \(expected 2, got 1\)/);
 
   // Too many parameters
   t.throws(
-      function() { testUtil.makeGrammar('G2 <: G { Foo<x, y, z> := "oops!" }', ns); },
+      () => { testUtil.makeGrammar('G2 <: G { Foo<x, y, z> := "oops!" }', ns); },
       /Wrong number of parameters for rule Foo \(expected 2, got 3\)/);
   t.throws(
-      function() { testUtil.makeGrammar('G2 <: G { Foo<x, y, z> += "oops!" }', ns); },
+      () => { testUtil.makeGrammar('G2 <: G { Foo<x, y, z> += "oops!" }', ns); },
       /Wrong number of parameters for rule Foo \(expected 2, got 3\)/);
 
   // Just right
@@ -39,20 +39,20 @@ test('require same number of params when overriding and extending', function(t) 
   t.end();
 });
 
-test('require same number of args when applying', function(t) {
+test('require same number of args when applying', t => {
   const ns = testUtil.makeGrammars('G { Foo<x, y> = x y }');
   t.throws(
-      function() { testUtil.makeGrammar('G2 <: G { Bar = Foo<"a"> }', ns); },
+      () => { testUtil.makeGrammar('G2 <: G { Bar = Foo<"a"> }', ns); },
       /Wrong number of arguments for rule Foo \(expected 2, got 1\)/);
   t.throws(
-      function() { testUtil.makeGrammar('G2 <: G { Bar = Foo<"a", "b", "c"> }', ns); },
+      () => { testUtil.makeGrammar('G2 <: G { Bar = Foo<"a", "b", "c"> }', ns); },
       /Wrong number of arguments for rule Foo \(expected 2, got 3\)/);
   t.end();
 });
 
-test('require arguments to have arity 1', function(t) {
+test('require arguments to have arity 1', t => {
   t.throws(
-      function() {
+      () => {
         testUtil.makeGrammar(
             'G {\n' +
           '  Foo<x> = x x\n' +
@@ -63,9 +63,9 @@ test('require arguments to have arity 1', function(t) {
   t.end();
 });
 
-test('require the rules referenced in arguments to be declared', function(t) {
+test('require the rules referenced in arguments to be declared', t => {
   t.throws(
-      function() {
+      () => {
         testUtil.makeGrammar(
             'G {\n' +
           '  start = listOf<asdlfk, ",">\n' +
@@ -75,7 +75,7 @@ test('require the rules referenced in arguments to be declared', function(t) {
   t.end();
 });
 
-test('simple examples', function(t) {
+test('simple examples', t => {
   const g = testUtil.makeGrammar(
       'G {\n' +
       '  Pair<elem> = "(" elem "," elem ")"\n' +
@@ -90,7 +90,7 @@ test('simple examples', function(t) {
   t.end();
 });
 
-test('start matching from parameterized rule', function(t) {
+test('start matching from parameterized rule', t => {
   const g = testUtil.makeGrammar(
       'G {\n' +
       '  App<arg> = arg\n' +
@@ -98,11 +98,11 @@ test('start matching from parameterized rule', function(t) {
       '  z = "z"\n' +
       '}');
   t.throws(
-      function() { g.match('x'); },
+      () => { g.match('x'); },
       /Wrong number of parameters for rule App \(expected 1, got 0\)/,
       'parameterized default start rule does not work');
   t.throws(
-      function() { g.match('y', 'App'); },
+      () => { g.match('y', 'App'); },
       /Wrong number of parameters for rule App \(expected 1, got 0\)/,
       'parameterized rule does not work as simple rule');
   t.ok(g.match('y', 'App<"y">').succeeded(), 'matching with primitive parameter');
@@ -110,7 +110,7 @@ test('start matching from parameterized rule', function(t) {
   t.end();
 });
 
-test('inline rule declarations', function(t) {
+test('inline rule declarations', t => {
   const g = testUtil.makeGrammar(
       'G {\n' +
       '  List<elem, sep>\n' +
@@ -129,7 +129,7 @@ test('inline rule declarations', function(t) {
   t.end();
 });
 
-test('left recursion', function(t) {
+test('left recursion', t => {
   const g = testUtil.makeGrammar(
       'G {\n' +
       '  LeftAssoc<expr, op>\n' +
@@ -148,7 +148,7 @@ test('left recursion', function(t) {
   t.end();
 });
 
-test('complex parameters', function(t) {
+test('complex parameters', t => {
   const g = testUtil.makeGrammar(
       'G {\n' +
       '  start = two<~"5" digit>\n' +
@@ -163,17 +163,17 @@ test('complex parameters', function(t) {
   t.end();
 });
 
-test('duplicate parameter names', function(t) {
+test('duplicate parameter names', t => {
   t.throws(
-      function() { testUtil.makeGrammar('G { Foo<a, b, a, b> = a }'); },
+      () => { testUtil.makeGrammar('G { Foo<a, b, a, b> = a }'); },
       /Duplicate parameter names in rule Foo: a, b/,
       'defining');
   t.throws(
-      function() { testUtil.makeGrammar('G { ListOf<a, a> := a }'); },
+      () => { testUtil.makeGrammar('G { ListOf<a, a> := a }'); },
       /Duplicate parameter names in rule ListOf: a/,
       'overriding');
   t.throws(
-      function() { testUtil.makeGrammar('G { ListOf<a, a> += a }'); },
+      () => { testUtil.makeGrammar('G { ListOf<a, a> += a }'); },
       /Duplicate parameter names in rule ListOf: a/,
       'extending');
 

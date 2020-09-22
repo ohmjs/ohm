@@ -16,7 +16,7 @@ const makeGrammar = testUtil.makeGrammar;
 // --------------------------------------------------------------------
 
 function pluckMemoProp(result, propName) {
-  return result.matcher.memoTable.map(function(info) {
+  return result.matcher.memoTable.map(info => {
     const result = {};
     if (info == null) return {};
     if (propName === 'examinedLength') {
@@ -24,7 +24,7 @@ function pluckMemoProp(result, propName) {
     } else if (propName === 'rightmostFailureOffset') {
       result.maxRightmostFailureOffset = info.maxRightmostFailureOffset;
     }
-    Object.keys(info.memo).forEach(function(ruleName) {
+    Object.keys(info.memo).forEach(ruleName => {
       const memoRec = info.memo[ruleName];
       result[ruleName] = memoRec[propName];
     });
@@ -49,7 +49,7 @@ const checkOffsetActions = {
 
 const ctorTreeActions = {
   _default: function(children) {
-    return [this.ctorName].concat(children.map(function(c) { return c.ctorTree; }));
+    return [this.ctorName].concat(children.map(c => c.ctorTree));
   }
 };
 
@@ -57,7 +57,7 @@ const ctorTreeActions = {
 // Tests
 // --------------------------------------------------------------------
 
-test('basic incremental parsing', function(t) {
+test('basic incremental parsing', t => {
   const g = makeGrammar([
     'G {',
     '  start = notLastLetter* letter',
@@ -78,7 +78,7 @@ test('basic incremental parsing', function(t) {
     },
     _iter: function(children) {
       const self = this;
-      return this._node.childOffsets.map(function(offset, i) {
+      return this._node.childOffsets.map((offset, i) => {
         const c = children[i].reconstructInput(self.args.input.slice(offset));
         return c;
       }).join('');
@@ -125,7 +125,7 @@ test('basic incremental parsing', function(t) {
   t.end();
 });
 
-test('trickier incremental parsing', function(t) {
+test('trickier incremental parsing', t => {
   const g = makeGrammar([
     'G {',
     '  start = start letter  -- rec',
@@ -159,7 +159,7 @@ test('trickier incremental parsing', function(t) {
   t.end();
 });
 
-test('examinedLength - no LR', function(t) {
+test('examinedLength - no LR', t => {
   const g = makeGrammar([
     'G {',
     '  start = notLastLetter* letter',
@@ -178,7 +178,7 @@ test('examinedLength - no LR', function(t) {
   t.end();
 });
 
-test('examinedLength - no LR, but non-monotonic', function(t) {
+test('examinedLength - no LR, but non-monotonic', t => {
   const g = makeGrammar([
     'G {',
     '  start = "a" "b" "c" | letter letter letter',
@@ -195,7 +195,7 @@ test('examinedLength - no LR, but non-monotonic', function(t) {
   t.end();
 });
 
-test('examinedLength - simple LR', function(t) {
+test('examinedLength - simple LR', t => {
   const g = makeGrammar([
     'G {',
     '  start = start letter  -- rec',
@@ -214,7 +214,7 @@ test('examinedLength - simple LR', function(t) {
   t.end();
 });
 
-test('examinedLength - complicated LR', function(t) {
+test('examinedLength - complicated LR', t => {
   const g = makeGrammar([
     'G {',
     '  start = start foo  -- rec',
@@ -235,7 +235,7 @@ test('examinedLength - complicated LR', function(t) {
   t.end();
 });
 
-test('rightmostFailureOffset - no LR', function(t) {
+test('rightmostFailureOffset - no LR', t => {
   const g = makeGrammar([
     'G {',
     '  start = notLastLetter* letter',
@@ -254,7 +254,7 @@ test('rightmostFailureOffset - no LR', function(t) {
   t.end();
 });
 
-test('rightmostFailureOffset - simple LR', function(t) {
+test('rightmostFailureOffset - simple LR', t => {
   const g = makeGrammar([
     'G {',
     '  start = start letter  -- rec',
@@ -273,7 +273,7 @@ test('rightmostFailureOffset - simple LR', function(t) {
   t.end();
 });
 
-test('rightmostFailureOffset - complicated LR', function(t) {
+test('rightmostFailureOffset - complicated LR', t => {
   const g = makeGrammar([
     'G {',
     '  start = start foo  -- rec',
@@ -294,7 +294,7 @@ test('rightmostFailureOffset - complicated LR', function(t) {
   t.end();
 });
 
-test('matchLength', function(t) {
+test('matchLength', t => {
   const g = makeGrammar([
     'G {',
     '  start = notLast* any',
@@ -315,7 +315,7 @@ test('matchLength', function(t) {
   t.end();
 });
 
-test('matchLength - complicated LR', function(t) {
+test('matchLength - complicated LR', t => {
   const g = makeGrammar([
     'G {',
     '  start = start foo  -- rec',
@@ -336,7 +336,7 @@ test('matchLength - complicated LR', function(t) {
   t.end();
 });
 
-test('binding offsets - lexical rules', function(t) {
+test('binding offsets - lexical rules', t => {
   const g = makeGrammar([
     'G {',
     '  start = start foo  -- rec',
@@ -356,7 +356,7 @@ test('binding offsets - lexical rules', function(t) {
   t.end();
 });
 
-test('binding offsets - syntactic rules', function(t) {
+test('binding offsets - syntactic rules', t => {
   const g = makeGrammar([
     '    G {',
     '  Start = letter NotLast* any',
@@ -376,7 +376,7 @@ test('binding offsets - syntactic rules', function(t) {
   t.end();
 });
 
-test('incremental parsing + attributes = incremental computation', function(t) {
+test('incremental parsing + attributes = incremental computation', t => {
   const g = ohm.grammar(fs.readFileSync('test/arithmetic.ohm'));
 
   let freshlyEvaluated;

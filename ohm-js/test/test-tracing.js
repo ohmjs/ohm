@@ -39,7 +39,7 @@ function onlyChild(traceNode) {
 // Tests
 // --------------------------------------------------------------------
 
-test('basic tracing', function(t) {
+test('basic tracing', t => {
   const g = ohm.grammar('G { start = "a" | letter* }');
   const start = g.trace('hallo').children[0];
 
@@ -71,19 +71,15 @@ test('basic tracing', function(t) {
   const manyCSTNode = many.bindings[0];
   t.equal(manyCSTNode, altCSTNode);
 
-  const childrenSucceeded = many.children.map(function(c) {
-    return c.succeeded;
-  });
+  const childrenSucceeded = many.children.map(c => c.succeeded);
   t.deepEqual(childrenSucceeded, [true, true, true, true, true, false]);
 
-  const cstChildrenName = manyCSTNode.children.map(function(c) {
-    return c.ctorName === 'letter';
-  });
+  const cstChildrenName = manyCSTNode.children.map(c => c.ctorName === 'letter');
   t.deepEqual(cstChildrenName, [true, true, true, true, true]);
   t.end();
 });
 
-test('space skipping', function(t) {
+test('space skipping', t => {
   const g = ohm.grammar('G { Start = "a"  }');
   let trace = g.trace('a');
 
@@ -109,7 +105,7 @@ test('space skipping', function(t) {
   t.end();
 });
 
-test('tracing with parameterized rules', function(t) {
+test('tracing with parameterized rules', t => {
   const g = ohm.grammar('G { start = foo<"123">  foo<x> = "a" | letter* }');
   const start = g.trace('hallo').children[0];
 
@@ -153,13 +149,13 @@ test('tracing with parameterized rules', function(t) {
 
   t.deepEqual(many.children.map(succeeded), [true, true, true, true, true, false]);
 
-  const cstChildrenName = cstNode.children.map(function(c) { return c.ctorName === 'letter'; });
+  const cstChildrenName = cstNode.children.map(c => c.ctorName === 'letter');
   t.deepEqual(cstChildrenName, [true, true, true, true, true]);
 
   t.end();
 });
 
-test('tracing with memoization', function(t) {
+test('tracing with memoization', t => {
   const g = ohm.grammar('G { Start = letter ~letter | letter* }');
   const start = g.trace(' aB').children[1];
 
@@ -198,7 +194,7 @@ test('tracing with memoization', function(t) {
   t.end();
 });
 
-test('tracing with parameterized rules and memoization', function(t) {
+test('tracing with parameterized rules and memoization', t => {
   const g = ohm.grammar('G { start = foo<"123"> ~foo<"123"> | foo<"123">*  foo<x> = letter }');
   const start = g.trace('aB').children[0];
 
@@ -231,7 +227,7 @@ test('tracing with parameterized rules and memoization', function(t) {
   t.end();
 });
 
-test('tracing with left recursion', function(t) {
+test('tracing with left recursion', t => {
   const g = ohm.grammar('G { id = id letter -- rec\n    | letter }');
   let id = g.trace('abc').children[0];
 
@@ -287,7 +283,7 @@ test('tracing with left recursion', function(t) {
   t.end();
 });
 
-test('tracing with left recursion and leading space', function(t) {
+test('tracing with left recursion and leading space', t => {
   const g = testUtil.makeGrammar([
     'G {',
     '  Foo = Foo "x"  -- x',
@@ -317,11 +313,11 @@ test('tracing with left recursion and leading space', function(t) {
   t.end();
 });
 
-test('toString', function(t) {
+test('toString', t => {
   let g = ohm.grammar('G { start = "a" | letter* }');
   let lines = g.trace('hi').toString().split('\n').slice(0, -1);
 
-  const exprs = lines.map(function(l) { return l.split(/\s+/)[2]; });
+  const exprs = lines.map(l => l.split(/\s+/)[2]);
   t.deepEqual(exprs, [
     'start',
     '"a"', // Failed.
@@ -333,7 +329,7 @@ test('toString', function(t) {
     'unicodeLtmo', 'Unicode', // Failed.
     'end'], 'expressions');
 
-  const excerpts = lines.map(function(l) { return l.split(/\s+/)[0]; });
+  const excerpts = lines.map(l => l.split(/\s+/)[0]);
   t.deepEqual(
       excerpts,
       common.repeat('hi', 6).concat(common.repeat('i', 3)).concat(common.repeat('', 8)),
@@ -351,7 +347,7 @@ test('toString', function(t) {
   t.end();
 });
 
-test('toString with left recursion', function(t) {
+test('toString with left recursion', t => {
   const g = ohm.grammar('G { start = start letter  -- rec\n | letter }');
   const lines = g.trace('a').toString().split('\n').slice(0, -1);
 
@@ -371,7 +367,7 @@ test('toString with left recursion', function(t) {
   t.end();
 });
 
-test('displayString', function(t) {
+test('displayString', t => {
   const g = ohm.grammar('G { start = caseInsensitive<"tk"> }');
   const start = g.trace('tK').children[0];
 
@@ -387,7 +383,7 @@ test('displayString', function(t) {
 
 // TODO: Get these tests working again for the incremental parser!
 
-test.skip('memoization', function(t) {
+test.skip('memoization', t => {
   const g = testUtil.makeGrammar([
     'G {',
     '  start = &id id',
@@ -428,7 +424,7 @@ test.skip('memoization', function(t) {
   t.end();
 });
 
-test.skip('bindings', function(t) {
+test.skip('bindings', t => {
   const g = ohm.grammar('G { start = "a" "b" | "c" notX\n  notX = ~"x" any }');
   let trace = g.trace('ab');
   t.equal(trace.succeeded, true);
@@ -445,7 +441,7 @@ test.skip('bindings', function(t) {
   t.equal(alt.bindings.length, 2, 'alt has two bindings');
   t.equal(alt.bindings[0].source.contents, 'a');
   t.equal(alt.bindings[1].source.contents, 'b');
-  t.deepEqual(alt.bindings.map(function(b) { return b.ctorName; }), ['_terminal', '_terminal']);
+  t.deepEqual(alt.bindings.map(b => b.ctorName), ['_terminal', '_terminal']);
 
   trace = g.trace('cd');
   alt = trace.children[0].children[0];
@@ -453,7 +449,7 @@ test.skip('bindings', function(t) {
   t.equal(alt.bindings.length, 2, 'alt has two bindings');
   t.equal(alt.bindings[0].source.contents, 'c');
   t.equal(alt.bindings[1].source.contents, 'd');
-  t.deepEqual(alt.bindings.map(function(b) { return b.ctorName; }), ['_terminal', 'notX']);
+  t.deepEqual(alt.bindings.map(b => b.ctorName), ['_terminal', 'notX']);
 
   const notX = alt.children[1];
   t.deepEqual(notX.children.map(succeeded), [true, true], 'both children succeeded');

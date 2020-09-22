@@ -27,7 +27,7 @@ let prototypeGrammarSemantics;
 // jsonToJS() properly encodes those two characters in JSON so that it can seamlessly be
 // inserted into JavaScript code (plus the encoded version is still valid JSON)
 function jsonToJS(str) {
-  const output = str.replace(/[\u2028\u2029]/g, function(char, pos, str) {
+  const output = str.replace(/[\u2028\u2029]/g, (char, pos, str) => {
     const hex = char.codePointAt(0).toString(16);
     return '\\u' + '0000'.slice(hex.length) + hex;
   });
@@ -57,7 +57,7 @@ Wrapper.prototype.toJSON = function() {
 Wrapper.prototype._forgetMemoizedResultFor = function(attributeName) {
   // Remove the memoized attribute from the cstNode and all its children.
   delete this._node[this._semantics.attributeKeys[attributeName]];
-  this.children.forEach(function(child) {
+  this.children.forEach(child => {
     child._forgetMemoizedResultFor(attributeName);
   });
 };
@@ -132,7 +132,7 @@ Wrapper.prototype.isOptional = function() {
 Wrapper.prototype.iteration = function(optChildWrappers) {
   const childWrappers = optChildWrappers || [];
 
-  const childNodes = childWrappers.map(function(c) { return c._node; });
+  const childNodes = childWrappers.map(c => c._node);
   const iter = new IterationNode(this._node.grammar, childNodes, [], -1, false);
 
   const wrapper = this._semantics.wrap(iter, null, null);
@@ -296,7 +296,7 @@ Semantics.prototype.toRecipe = function(semanticsOnly) {
 
       const actions = semanticOperations[name].actionDict;
       const srcArray = [];
-      Object.keys(actions).forEach(function(actionName) {
+      Object.keys(actions).forEach(actionName => {
         if (semanticOperations[name].builtInDefault !== actions[actionName]) {
           srcArray.push('\n      ' + JSON.stringify(actionName) + ': ' +
             actions[actionName].toString());
@@ -347,14 +347,12 @@ function newDefaultAction(type, name, doIt) {
   return function(children) {
     const self = this;
     const thisThing = this._semantics.operations[name] || this._semantics.attributes[name];
-    const args = thisThing.formals.map(function(formal) {
-      return self.args[formal];
-    });
+    const args = thisThing.formals.map(formal => self.args[formal]);
 
     if (this.isIteration()) {
       // This CST node corresponds to an iteration expression in the grammar (*, +, or ?). The
       // default behavior is to map this operation or attribute over all of its child nodes.
-      return children.map(function(child) { return doIt.apply(child, args); });
+      return children.map(child => doIt.apply(child, args));
     }
 
     // This CST node corresponds to a non-terminal in the grammar (e.g., AddExpr). The fact that
@@ -389,7 +387,7 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
   const realActionDict = {_default: builtInDefault};
   // ... and add in the actions supplied by the programmer, which may override some or all of the
   // default ones.
-  Object.keys(actionDict).forEach(function(name) {
+  Object.keys(actionDict).forEach(name => {
     realActionDict[name] = actionDict[name];
   });
 
@@ -465,7 +463,7 @@ Semantics.prototype.extendOperationOrAttribute = function(type, name, actionDict
   const inheritedFormals = this[typePlural][name].formals;
   const inheritedActionDict = this[typePlural][name].actionDict;
   const newActionDict = Object.create(inheritedActionDict);
-  Object.keys(actionDict).forEach(function(name) {
+  Object.keys(actionDict).forEach(name => {
     newActionDict[name] = actionDict[name];
   });
 
@@ -688,7 +686,7 @@ Attribute.prototype.execute = function(semantics, nodeWrapper) {
 
 // ----------------- Deferred initialization -----------------
 
-util.awaitBuiltInRules(function(builtInRules) {
+util.awaitBuiltInRules(builtInRules => {
   const operationsAndAttributesGrammar = require('../dist/operations-and-attributes');
   initBuiltInSemantics(builtInRules);
   initPrototypeParser(operationsAndAttributesGrammar); // requires BuiltInSemantics

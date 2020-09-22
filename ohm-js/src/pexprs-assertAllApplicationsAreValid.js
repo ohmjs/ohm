@@ -11,7 +11,7 @@ const util = require('./util');
 
 let BuiltInRules;
 
-util.awaitBuiltInRules(function(g) { BuiltInRules = g; });
+util.awaitBuiltInRules(g => { BuiltInRules = g; });
 
 // --------------------------------------------------------------------
 // Operations
@@ -83,7 +83,7 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, gramm
 
   // ...and that all of the argument expressions only have valid applications and have arity 1.
   const self = this;
-  this.args.forEach(function(arg) {
+  this.args.forEach(arg => {
     arg._assertAllApplicationsAreValid(ruleName, grammar);
     if (arg.getArity() !== 1) {
       throw errors.invalidParameter(self.ruleName, arg);

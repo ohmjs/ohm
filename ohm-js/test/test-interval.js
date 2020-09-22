@@ -8,7 +8,7 @@ const Interval = require('../src/Interval');
 // Tests
 // --------------------------------------------------------------------
 
-test('collapsedLeft', function(t) {
+test('collapsedLeft', t => {
   const interval = new Interval('hello world', 0, 5);
   const collapsed = interval.collapsedLeft();
 
@@ -26,7 +26,7 @@ test('collapsedLeft', function(t) {
   t.end();
 });
 
-test('collapsedRight', function(t) {
+test('collapsedRight', t => {
   const interval = new Interval('hello world', 0, 5);
   const collapsed = interval.collapsedRight();
 
@@ -44,7 +44,7 @@ test('collapsedRight', function(t) {
   t.end();
 });
 
-test('coverage - one interval', function(t) {
+test('coverage - one interval', t => {
   const interval = new Interval('hello world', 0, 5);
   const ans = Interval.coverage(interval);
 
@@ -56,7 +56,7 @@ test('coverage - one interval', function(t) {
   t.end();
 });
 
-test('two adjacent intervals', function(t) {
+test('two adjacent intervals', t => {
   const interval1 = new Interval('hello world', 2, 5);
   const interval2 = new Interval(interval1.sourceString, 0, 2);
   const ans = Interval.coverage(interval1, interval2);
@@ -69,7 +69,7 @@ test('two adjacent intervals', function(t) {
   t.end();
 });
 
-test('coverage - two non-adjacent intervals', function(t) {
+test('coverage - two non-adjacent intervals', t => {
   const interval1 = new Interval('hello world', 0, 2);
   const interval2 = new Interval(interval1.sourceString, 4, 5);
   const ans = Interval.coverage(interval1, interval2);
@@ -82,7 +82,7 @@ test('coverage - two non-adjacent intervals', function(t) {
   t.end();
 });
 
-test('coverage - nested intervals', function(t) {
+test('coverage - nested intervals', t => {
   const interval1 = new Interval('hello world', 0, 5);
   const interval2 = new Interval(interval1.sourceString, 3, 4);
   const ans = Interval.coverage(interval1, interval2);
@@ -95,7 +95,7 @@ test('coverage - nested intervals', function(t) {
   t.end();
 });
 
-test('coverage - more intervals', function(t) {
+test('coverage - more intervals', t => {
   const interval1 = new Interval('hello world', 0, 2);
   const interval2 = new Interval(interval1.sourceString, 3, 4);
   const interval3 = new Interval(interval1.sourceString, 6, 10);
@@ -109,16 +109,16 @@ test('coverage - more intervals', function(t) {
   t.end();
 });
 
-test('brotha from anotha motha', function(t) {
+test('brotha from anotha motha', t => {
   const interval1 = new Interval('abc', 0, 3);
   const interval2 = new Interval('xyz', 1, 2);
   t.throws(
-      function() { Interval.coverage(interval1, interval2); },
+      () => { Interval.coverage(interval1, interval2); },
       /Interval sources don't match/);
   t.end();
 });
 
-test('coverageWith', function(t) {
+test('coverageWith', t => {
   const interval1 = new Interval('hello world', 0, 2);
   const interval2 = new Interval(interval1.sourceString, 3, 4);
   const interval3 = new Interval(interval1.sourceString, 6, 10);

@@ -14,12 +14,12 @@ const common = require('./common');
 // right-justified and padded to the same length.
 function padNumbersToEqualLength(arr) {
   let maxLen = 0;
-  const strings = arr.map(function(n) {
+  const strings = arr.map(n => {
     const str = n.toString();
     maxLen = Math.max(maxLen, str.length);
     return str;
   });
-  return strings.map(function(s) { return common.padLeft(s, maxLen); });
+  return strings.map(s => common.padLeft(s, maxLen));
 }
 
 // Produce a new string that would be the result of copying the contents
@@ -45,7 +45,7 @@ exports.awaitBuiltInRules = function(cb) {
 };
 
 exports.announceBuiltInRules = function(grammar) {
-  builtInRulesCallbacks.forEach(function(cb) {
+  builtInRulesCallbacks.forEach(cb => {
     cb(grammar);
   });
   builtInRulesCallbacks = null;

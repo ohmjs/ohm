@@ -17,7 +17,7 @@ const g = ohm.grammar(fs.readFileSync('test/data/arithmetic.ohm'));
 // Tests
 // --------------------------------------------------------------------
 
-test('semantic action', function(t) {
+test('semantic action', t => {
   const semantics = semanticsForToAST(g);
   const matchResult = g.match('10 + 20');
 
@@ -27,7 +27,7 @@ test('semantic action', function(t) {
   t.end();
 });
 
-test('default', function(t) {
+test('default', t => {
   let matchResult = g.match('10 + 20');
   let ast = toAST(matchResult);
   let expected = {
@@ -52,7 +52,7 @@ test('default', function(t) {
   t.end();
 });
 
-test('mapping', function(t) {
+test('mapping', t => {
   let matchResult = g.match('10 + 20');
   let ast = toAST(matchResult, {
     AddExp_plus: {
@@ -201,7 +201,7 @@ test('mapping', function(t) {
   t.end();
 });
 
-test('real examples (combinations)', function(t) {
+test('real examples (combinations)', t => {
   const matchResult = g.match('10 + 20 - 30');
 
   let ast = toAST(matchResult, {

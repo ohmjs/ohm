@@ -54,7 +54,7 @@ pexprs.Lex.prototype.assertIteratedExprsAreNotNullable = function(grammar) {
 };
 
 pexprs.Apply.prototype.assertIteratedExprsAreNotNullable = function(grammar) {
-  this.args.forEach(function(arg) {
+  this.args.forEach(arg => {
     arg.assertIteratedExprsAreNotNullable(grammar);
   });
 };

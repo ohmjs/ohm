@@ -14,7 +14,7 @@ const util = require('../src/util');
 
 const getLineAndColumnMessage = util.getLineAndColumnMessage;
 
-test('getLineAndColumnMessage', function(t) {
+test('getLineAndColumnMessage', t => {
   t.equal(getLineAndColumnMessage('', 0), [
     'Line 1, col 1:',
     '> 1 | ',
@@ -89,7 +89,7 @@ test('getLineAndColumnMessage', function(t) {
   t.end();
 });
 
-test('getLineAndColumnMessage with ranges', function(t) {
+test('getLineAndColumnMessage with ranges', t => {
   t.equal(getLineAndColumnMessage('3 + 4', 2, [0, 1]), [
     'Line 1, col 3:',
     '> 1 | 3 + 4',

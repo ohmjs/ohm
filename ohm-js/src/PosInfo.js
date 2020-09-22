@@ -89,7 +89,7 @@ PosInfo.prototype = {
     this.maxExaminedLength = 0;
     this.maxRightmostFailureOffset = -1;
     const self = this;
-    Object.keys(memo).forEach(function(k) {
+    Object.keys(memo).forEach(k => {
       const memoRec = memo[k];
       if (pos + memoRec.examinedLength > invalidatedIdx) {
         delete memo[k];

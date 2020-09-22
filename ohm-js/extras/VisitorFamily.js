@@ -32,9 +32,7 @@ function getPropWalkFn(descriptor) {
 }
 
 function getProps(walkFns, thing, fn) {
-  return walkFns.map(function(walkFn) {
-    return walkFn(thing, fn);
-  });
+  return walkFns.map(walkFn => walkFn(thing, fn));
 }
 
 function getWalkFn(shape) {
@@ -100,7 +98,7 @@ function VisitorFamily(config) {
   this._getChildren = Object.create(null);
 
   const self = this;
-  Object.keys(this._shapes).forEach(function(k) {
+  Object.keys(this._shapes).forEach(k => {
     const shape = self._shapes[k];
     self._getChildren[k] = getWalkFn(shape);
 
@@ -118,7 +116,7 @@ VisitorFamily.prototype.wrap = function(thing) {
 
 VisitorFamily.prototype._checkActionDict = function(dict) {
   const self = this;
-  Object.keys(dict).forEach(function(k) {
+  Object.keys(dict).forEach(k => {
     assert(k in self._getChildren, "Unrecognized action name '" + k + "'");
     const action = dict[k];
     assert(typeof action === 'function', "Key '" + k + "': expected function, got " + action);

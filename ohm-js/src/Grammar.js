@@ -16,7 +16,7 @@ const pexprs = require('./pexprs');
 // --------------------------------------------------------------------
 
 function getSortedRuleValues(grammar) {
-  return Object.keys(grammar.rules).sort().map(function(name) { return grammar.rules[name]; });
+  return Object.keys(grammar.rules).sort().map(name => grammar.rules[name]);
 }
 
 function Grammar(
@@ -69,7 +69,7 @@ Grammar.prototype = {
     }
     const myRules = getSortedRuleValues(this);
     const otherRules = getSortedRuleValues(g);
-    return myRules.length === otherRules.length && myRules.every(function(rule, i) {
+    return myRules.length === otherRules.length && myRules.every((rule, i) => {
       return rule.description === otherRules[i].description &&
              rule.formals.join(',') === otherRules[i].formals.join(',') &&
              rule.body.toString() === otherRules[i].body.toString();
@@ -127,7 +127,7 @@ Grammar.prototype = {
       }
     }
     if (problems.length > 0) {
-      const prettyProblems = problems.map(function(problem) { return '- ' + problem; });
+      const prettyProblems = problems.map(problem => '- ' + problem);
       const error = new Error(
           "Found errors in the action dictionary of the '" + name + "' " + what + ':\n' +
           prettyProblems.join('\n'));
@@ -177,7 +177,7 @@ Grammar.prototype = {
 
     const rules = {};
     const self = this;
-    Object.keys(this.rules).forEach(function(ruleName) {
+    Object.keys(this.rules).forEach(ruleName => {
       const ruleInfo = self.rules[ruleName];
       const body = ruleInfo.body;
       const isDefinition = !self.superGrammar || !self.superGrammar.rules[ruleName];

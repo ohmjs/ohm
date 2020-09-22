@@ -21,7 +21,7 @@ const arr2 = ['a', 'b'];
 // Tests
 // --------------------------------------------------------------------
 
-test('basic', function(t) {
+test('basic', t => {
   const family = new VisitorFamily({
     shapes: {
       leaf: [],
@@ -45,7 +45,7 @@ test('basic', function(t) {
   t.end();
 });
 
-test('array props', function(t) {
+test('array props', t => {
   let family = new VisitorFamily({
     shapes: {
       leaf: [],
@@ -55,7 +55,7 @@ test('array props', function(t) {
   });
   family.addOperation('visit()', {
     leaf: function() { return this._adaptee; },
-    tree: function(children) { return children.map(function(c) { return c.visit(); }); }
+    tree: function(children) { return children.map(c => c.visit()); }
   });
   let tree = {children: ['a', {children: ['b', 'c']}, 'd']};
   t.deepEqual(family.wrap(tree).visit(), ['a', ['b', 'c'], 'd']);
@@ -70,7 +70,7 @@ test('array props', function(t) {
   family.addOperation('visit()', {
     leaf: function() { return this._adaptee; },
     tree: function(children, extra) {
-      return children.map(function(c) { return c.visit(); }).concat(extra.visit());
+      return children.map(c => c.visit()).concat(extra.visit());
     }
   });
   tree = {children: ['a', {children: ['b', 'c'], extra: 'd'}], extra: 'e'};
@@ -79,39 +79,39 @@ test('array props', function(t) {
   t.end();
 });
 
-test('arity checks', function(t) {
+test('arity checks', t => {
   const family = new VisitorFamily({shapes: {x: arr1, y: arr2}});
-  t.throws(function() { family.addOperation('foo()', {x: noop0}); },
+  t.throws(() => { family.addOperation('foo()', {x: noop0}); },
       /Action 'x' has the wrong arity: expected 1, got 0/);
-  t.throws(function() { family.addOperation('foo()', {x: noop1, y: noop0}); },
+  t.throws(() => { family.addOperation('foo()', {x: noop1, y: noop0}); },
       /Action 'y' has the wrong arity: expected 2, got 0/);
 
   t.end();
 });
 
-test('unknown action names', function(t) {
+test('unknown action names', t => {
   const family = new VisitorFamily({shapes: {x: arr1, y: arr2}});
-  t.throws(function() { family.addOperation('foo()', {z: null}); },
+  t.throws(() => { family.addOperation('foo()', {z: null}); },
       /Unrecognized action name 'z'/);
-  t.throws(function() { family.addOperation('foo()', {toString: null}); },
+  t.throws(() => { family.addOperation('foo()', {toString: null}); },
       /Unrecognized action name 'toString'/);
 
   t.end();
 });
 
-test('unrecognized tags', function(t) {
+test('unrecognized tags', t => {
   let v = new VisitorFamily({shapes: {}, getTag: function(x) { return 'bad'; }});
   v.addOperation('foo()', {});
-  t.throws(function() { v.wrap(0).foo(); }, /getTag returned unrecognized tag 'bad'/);
+  t.throws(() => { v.wrap(0).foo(); }, /getTag returned unrecognized tag 'bad'/);
 
   v = new VisitorFamily({shapes: {}, getTag: function(x) { return 'toString'; }});
   v.addOperation('foo()', {});
-  t.throws(function() { v.wrap(0).foo(); }, /getTag returned unrecognized tag 'toString'/);
+  t.throws(() => { v.wrap(0).foo(); }, /getTag returned unrecognized tag 'toString'/);
 
   t.end();
 });
 
-test('operations with arguments', function(t) {
+test('operations with arguments', t => {
   const v = new VisitorFamily({shapes: {hello: []}, getTag: function(x) { return 'hello'; }});
   const root = {};
   v.addOperation('greet(n)', {hello: function() { return 'hello ' + this.args.n; }});

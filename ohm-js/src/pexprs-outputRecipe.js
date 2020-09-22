@@ -63,9 +63,7 @@ pexprs.Alt.prototype.outputRecipe = function(formals, grammarInterval) {
   return [
     'alt',
     getMetaInfo(this, grammarInterval)
-  ].concat(this.terms.map(function(term) {
-    return term.outputRecipe(formals, grammarInterval);
-  }));
+  ].concat(this.terms.map(term => term.outputRecipe(formals, grammarInterval)));
 };
 
 pexprs.Extend.prototype.outputRecipe = function(formals, grammarInterval) {
@@ -77,9 +75,7 @@ pexprs.Seq.prototype.outputRecipe = function(formals, grammarInterval) {
   return [
     'seq',
     getMetaInfo(this, grammarInterval)
-  ].concat(this.factors.map(function(factor) {
-    return factor.outputRecipe(formals, grammarInterval);
-  }));
+  ].concat(this.factors.map(factor => factor.outputRecipe(formals, grammarInterval)));
 };
 
 pexprs.Star.prototype.outputRecipe =
@@ -100,9 +96,7 @@ pexprs.Apply.prototype.outputRecipe = function(formals, grammarInterval) {
     'app',
     getMetaInfo(this, grammarInterval),
     this.ruleName,
-    this.args.map(function(arg) {
-      return arg.outputRecipe(formals, grammarInterval);
-    })
+    this.args.map(arg => arg.outputRecipe(formals, grammarInterval))
   ];
 };
 

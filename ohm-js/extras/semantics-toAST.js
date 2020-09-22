@@ -35,9 +35,7 @@ const defaultOperation = {
       }
 
       // singular node (e.g. only surrounded by literals or lookaheads)
-      const realChildren = children.filter(function(child) {
-        return !child.isTerminal();
-      });
+      const realChildren = children.filter(child => !child.isTerminal());
       if (realChildren.length === 1) {
         return realChildren[0].toAST(mapping);
       }

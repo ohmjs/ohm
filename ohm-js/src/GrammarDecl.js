@@ -104,7 +104,7 @@ GrammarDecl.prototype.build = function() {
   // the part of the source that caused it.
   const grammarErrors = [];
   let grammarHasInvalidApplications = false;
-  Object.keys(grammar.rules).forEach(function(ruleName) {
+  Object.keys(grammar.rules).forEach(ruleName => {
     const body = grammar.rules[ruleName].body;
     try {
       body.assertChoicesHaveUniformArity(ruleName);
@@ -120,7 +120,7 @@ GrammarDecl.prototype.build = function() {
   });
   if (!grammarHasInvalidApplications) {
     // The following check can only be done if the grammar has no invalid applications.
-    Object.keys(grammar.rules).forEach(function(ruleName) {
+    Object.keys(grammar.rules).forEach(ruleName => {
       const body = grammar.rules[ruleName].body;
       try {
         body.assertIteratedExprsAreNotNullable(grammar, []);

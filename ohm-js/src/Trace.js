@@ -81,7 +81,7 @@ Object.defineProperty(Trace.prototype, 'displayString', {
 });
 
 // For convenience, create a getter and setter for the boolean flags in `Flags`.
-Object.keys(Flags).forEach(function(name) {
+Object.keys(Flags).forEach(name => {
   const mask = Flags[name];
   Object.defineProperty(Trace.prototype, name, {
     get: function() {
@@ -144,7 +144,7 @@ Trace.prototype.walk = function(visitorObjOrFn, optThisArg) {
       }
     }
     if (recurse) {
-      node.children.forEach(function(child) {
+      node.children.forEach(child => {
         _walk(child, node, depth + 1);
       });
       if (visitor.exit) {
@@ -154,7 +154,7 @@ Trace.prototype.walk = function(visitorObjOrFn, optThisArg) {
   }
   if (this.isRootNode) {
     // Don't visit the root node itself, only its children.
-    this.children.forEach(function(c) { _walk(c, null, 0); });
+    this.children.forEach(c => { _walk(c, null, 0); });
   } else {
     _walk(this, null, 0);
   }
@@ -167,7 +167,7 @@ Trace.prototype.walk = function(visitorObjOrFn, optThisArg) {
 //     12⋅+⋅2⋅*⋅3       ✗ addExp_plus
 Trace.prototype.toString = function() {
   const sb = new common.StringBuffer();
-  this.walk(function(node, parent, depth) {
+  this.walk((node, parent, depth) => {
     if (!node) {
       return this.SKIP;
     }
@@ -187,7 +187,7 @@ Trace.prototype.toString = function() {
       sb.append(typeof contents === 'string' ? '"' + contents + '"' : contents);
     }
     sb.append('\n');
-  }.bind(this));
+  });
   return sb.contents();
 };
 

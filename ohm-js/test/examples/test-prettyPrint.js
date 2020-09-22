@@ -4,21 +4,21 @@ const test = require('tape');
 
 const prettyPrint = require('../../../examples/prettyPrint');
 
-test('basic', function(t) {
+test('basic', t => {
   t.equal(
       prettyPrint('G { Start=#("a"|b + ) ? }'),
       'G {\n  Start = #("a" | b+)?\n}');
   t.end();
 });
 
-test('grammar with supergrammar', function(t) {
+test('grammar with supergrammar', t => {
   t.equal(
       prettyPrint('G<:Foo{Start=& (~ digit letter)"\\\\n" * }'),
       'G <: Foo {\n  Start = &(~digit letter) "\\\\n"*\n}');
   t.end();
 });
 
-test('multiple rules', function(t) {
+test('multiple rules', t => {
   t.equal(
       prettyPrint(' G { Start (the start )=a< "b" >--   start\na< arg >=arg "a" .. "z"}'),
       [

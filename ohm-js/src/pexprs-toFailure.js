@@ -56,13 +56,13 @@ pexprs.UnicodeChar.prototype.toFailure = function(grammar) {
 };
 
 pexprs.Alt.prototype.toFailure = function(grammar) {
-  const fs = this.terms.map(function(t) { return t.toFailure(grammar); });
+  const fs = this.terms.map(t => t.toFailure(grammar));
   const description = '(' + fs.join(' or ') + ')';
   return new Failure(this, description, 'description');
 };
 
 pexprs.Seq.prototype.toFailure = function(grammar) {
-  const fs = this.factors.map(function(f) { return f.toFailure(grammar); });
+  const fs = this.factors.map(f => f.toFailure(grammar));
   const description = '(' + fs.join(' ') + ')';
   return new Failure(this, description, 'description');
 };

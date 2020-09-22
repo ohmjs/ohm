@@ -20,7 +20,7 @@ function makeRecipe(recipeString) {
 // Tests
 // --------------------------------------------------------------------
 
-test('simple grammar recipes', function(t) {
+test('simple grammar recipes', t => {
   let g = ohm.grammar('G{}');
   t.ok(ohm.makeRecipe(g.toRecipe()).match('', 'end'), 'grammar with no rules');
 
@@ -33,7 +33,7 @@ test('simple grammar recipes', function(t) {
   t.end();
 });
 
-test('grammar recipes with supergrammars', function(t) {
+test('grammar recipes with supergrammars', t => {
   const ns = ohm.createNamespace();
   ns.G = ohm.grammar('G { start = end }');
   ns.G2 = ohm.grammar('G2 <: G { start := "a" }', ns);
@@ -56,7 +56,7 @@ test('grammar recipes with supergrammars', function(t) {
   t.end();
 });
 
-test('grammar recipes involving parameterized rules', function(t) {
+test('grammar recipes involving parameterized rules', t => {
   const g = testUtil.makeGrammar([
     'G {',
     '  foo = bar<"0", "1">',
@@ -76,7 +76,7 @@ test('grammar recipes involving parameterized rules', function(t) {
   t.end();
 });
 
-test('grammar recipes with source', function(t) {
+test('grammar recipes with source', t => {
   const ns = testUtil.makeGrammars([
     ' G {', // Deliberately start with leading space.
     '  Start = ident*',
@@ -114,7 +114,7 @@ test('grammar recipes with source', function(t) {
   t.end();
 });
 
-test('semantics recipes', function(t) {
+test('semantics recipes', t => {
   const g1 = ohm.grammar('G { Add = number "+" number  number = digit+ }');
   const s1 = g1.createSemantics()
       .addOperation('eval', {
@@ -154,7 +154,7 @@ test('semantics recipes', function(t) {
   t.end();
 });
 
-test('semantics recipes (special cases)', function(t) {
+test('semantics recipes (special cases)', t => {
   const ns = testUtil.makeGrammars([
     'G { special = "\u2028" }',
     'G2 <: G { special += "\u2029" }'
@@ -162,14 +162,14 @@ test('semantics recipes (special cases)', function(t) {
 
   let s = ns.G.createSemantics();
   t.doesNotThrow(
-      function() { makeRecipe(s.toRecipe()); },
+      () => { makeRecipe(s.toRecipe()); },
       undefined,
       'special handling of line separator characters (U+2028)'
   );
 
   s = ns.G2.createSemantics();
   t.doesNotThrow(
-      function() { makeRecipe(s.toRecipe()); },
+      () => { makeRecipe(s.toRecipe()); },
       undefined,
       'special handling of paragraph separator characters (U+2029)'
   );
@@ -177,7 +177,7 @@ test('semantics recipes (special cases)', function(t) {
   t.end();
 });
 
-test('semantics recipes with extensions', function(t) {
+test('semantics recipes with extensions', t => {
   const ns = testUtil.makeGrammars([
     'G { ',
     '  Add = one "and" two',

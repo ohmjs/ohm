@@ -163,7 +163,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       } else {
         decl.define(inlineRuleName, currentRuleFormals, body, null, source);
       }
-      const params = currentRuleFormals.map(function(formal) { return builder.app(formal); });
+      const params = currentRuleFormals.map(formal => builder.app(formal));
       return builder.app(inlineRuleName, params).withSource(body.source);
     },
 

@@ -165,7 +165,7 @@ function kleeneExprHasNullableOperand(kleeneExpr, applicationStack) {
     kleeneExpr.operator + "' (possible infinite loop)";
   if (applicationStack.length > 0) {
     const stackTrace = applicationStack
-        .map(function(app) { return new pexprs.Apply(app.ruleName, app.args); })
+        .map(app => new pexprs.Apply(app.ruleName, app.args))
         .join('\n');
     message += '\nApplication stack (most recent application last):\n' + stackTrace;
   }
@@ -197,7 +197,7 @@ function invalidConstructorCall(grammar, ctorName, children) {
 // ----------------- convenience -----------------
 
 function multipleErrors(errors) {
-  const messages = errors.map(function(e) { return e.message; });
+  const messages = errors.map(e => e.message);
   return createError(
       ['Errors:'].concat(messages).join('\n- '),
       errors[0].interval);
@@ -206,7 +206,7 @@ function multipleErrors(errors) {
 // ----------------- semantic -----------------
 
 function missingSemanticAction(ctorName, name, type, stack) {
-  let stackTrace = stack.slice(0, -1).map(function(info) {
+  let stackTrace = stack.slice(0, -1).map(info => {
     const ans = '  ' + info[0].name + ' > ' + info[1];
     return info.length === 3
         ? ans + " for '" + info[2] + "'"

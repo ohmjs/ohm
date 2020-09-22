@@ -34,7 +34,7 @@ Builder.prototype = {
 
     const self = this;
     this.currentDecl = gDecl;
-    Object.keys(rules).forEach(function(ruleName) {
+    Object.keys(rules).forEach(ruleName => {
       const ruleRecipe = rules[ruleName];
 
       const action = ruleRecipe[0]; // define/extend/override

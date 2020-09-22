@@ -82,7 +82,7 @@ exports.repeatStr = function(str, n) {
 };
 
 exports.repeat = function(x, n) {
-  return exports.repeatFn(function() { return x; }, n);
+  return exports.repeatFn(() => x, n);
 };
 
 exports.getDuplicates = function(array) {
@@ -98,7 +98,7 @@ exports.getDuplicates = function(array) {
 
 exports.copyWithoutDuplicates = function(array) {
   const noDuplicates = [];
-  array.forEach(function(entry) {
+  array.forEach(entry => {
     if (noDuplicates.indexOf(entry) < 0) {
       noDuplicates.push(entry);
     }

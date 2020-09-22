@@ -188,7 +188,7 @@ MatchState.prototype = {
 
   recordFailures: function(failures, shouldCloneIfNew) {
     const self = this;
-    Object.keys(failures).forEach(function(key) {
+    Object.keys(failures).forEach(key => {
       self.recordFailure(failures[key], shouldCloneIfNew);
     });
   },
@@ -200,7 +200,7 @@ MatchState.prototype = {
 
     const ans = Object.create(null);
     const self = this;
-    Object.keys(this.recordedFailures).forEach(function(key) {
+    Object.keys(this.recordedFailures).forEach(key => {
       ans[key] = self.recordedFailures[key].clone();
     });
     return ans;
@@ -321,7 +321,7 @@ MatchState.prototype = {
     if (ans) {
       if (this.recordedFailures && inputStream.pos === this.positionToRecordFailures) {
         const self = this;
-        Object.keys(this.recordedFailures).forEach(function(key) {
+        Object.keys(this.recordedFailures).forEach(key => {
           self.recordedFailures[key].makeFluffy();
         });
       }
@@ -343,9 +343,7 @@ MatchState.prototype = {
     let rightmostFailures;
     if (this.recordedFailures) {
       const self = this;
-      rightmostFailures = Object.keys(this.recordedFailures).map(function(key) {
-        return self.recordedFailures[key];
-      });
+      rightmostFailures = Object.keys(this.recordedFailures).map(key => self.recordedFailures[key]);
     }
     return new MatchResult(
         this.matcher,

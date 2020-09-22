@@ -9,7 +9,7 @@ const makeGrammar = require('./testUtil').makeGrammar;
 // Tests
 // --------------------------------------------------------------------
 
-test('rule definition source', function(t) {
+test('rule definition source', t => {
   const g = makeGrammar([
     'G {',
     '  foo = bar',
@@ -38,7 +38,7 @@ test('rule definition source', function(t) {
   t.end();
 });
 
-test('rule application source', function(t) {
+test('rule application source', t => {
   const g = makeGrammar([
     'G {',
     '  foo = bar',
@@ -67,7 +67,7 @@ test('rule application source', function(t) {
   t.end();
 });
 
-test('toDisplayString', function(t) {
+test('toDisplayString', t => {
   const g = ohm.grammar('G { start = "ab" | letter* | "a".."z" }');
   const seq = g.rules.start.body;
   t.equal(seq.toDisplayString(), '"ab" | letter* | "a".."z"');
@@ -82,7 +82,7 @@ test('toDisplayString', function(t) {
   t.end();
 });
 
-test('toString', function(t) {
+test('toString', t => {
   const g = makeGrammar(
       'G { start = &"a" ~("b" | #c?) "a".."z"  c = "c" }');
   const e = g.rules.start.body;
@@ -90,7 +90,7 @@ test('toString', function(t) {
   t.end();
 });
 
-test('toArgumentNameList', function(t) {
+test('toArgumentNameList', t => {
   const g = makeGrammar([
     'G {',
     ' Start = &((foo bars foo)+)',

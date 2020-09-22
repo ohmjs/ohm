@@ -24,10 +24,8 @@ pexprs.PExpr.prototype.generateExample = common.abstract('generateExample');
 function categorizeExamples(examples) {
   // A list of rules that the system needs examples of, in order to generate an example
   //   for the current rule
-  let examplesNeeded = examples.filter(function(example) {
-    return example.hasOwnProperty('examplesNeeded');
-  })
-      .map(function(example) { return example.examplesNeeded; });
+  let examplesNeeded = examples.filter(example => example.hasOwnProperty('examplesNeeded'))
+      .map(example => example.examplesNeeded);
 
   examplesNeeded = flatten(examplesNeeded);
 
@@ -39,16 +37,14 @@ function categorizeExamples(examples) {
   examplesNeeded = Object.keys(uniqueExamplesNeeded);
 
   // A list of successfully generated examples
-  const successfulExamples = examples.filter(function(example) {
-    return example.hasOwnProperty('value');
-  })
-      .map(function(item) { return item.value; });
+  const successfulExamples = examples.filter(example => example.hasOwnProperty('value'))
+      .map(item => item.value);
 
   // This flag returns true if the system cannot generate the rule it is currently
   //   attempting to generate, regardless of whether or not it has the examples it needs.
   //   Currently, this is only used in overriding generators to prevent the system from
   //   generating examples for certain rules (e.g. 'ident').
-  const needHelp = examples.some(function(item) { return item.needHelp; });
+  const needHelp = examples.some(item => item.needHelp);
 
   return {
     examplesNeeded: examplesNeeded,
@@ -79,7 +75,7 @@ pexprs.Param.prototype.generateExample = function(grammar, examples, inSyntactic
 
 pexprs.Alt.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
   // items -> termExamples
-  const termExamples = this.terms.map(function(term) {
+  const termExamples = this.terms.map(term => {
     return term.generateExample(grammar, examples, inSyntacticContext, actuals);
   });
 
@@ -105,7 +101,7 @@ pexprs.Alt.prototype.generateExample = function(grammar, examples, inSyntacticCo
 };
 
 pexprs.Seq.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
-  const factorExamples = this.factors.map(function(factor) {
+  const factorExamples = this.factors.map(factor => {
     return factor.generateExample(grammar, examples, inSyntacticContext, actuals);
   });
   const categorizedExamples = categorizeExamples(factorExamples);

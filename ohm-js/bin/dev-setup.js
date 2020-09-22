@@ -27,11 +27,11 @@ if (inDeveloperMode) {
   }
 
   // If merge.ours.driver is not set, set it to true.
-  exec('git config --get merge.ours.driver', execOpts, function(err) {
+  exec('git config --get merge.ours.driver', execOpts, err => {
     if (!err) {
       done();
     } else if (err.code === RET_CODE_INVALID_KEY) {
-      exec('git config --add merge.ours.driver true', execOpts, function(err2) {
+      exec('git config --add merge.ours.driver true', execOpts, err2 => {
         if (!err2) {
           done();
         }

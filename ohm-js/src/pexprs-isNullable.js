@@ -42,11 +42,11 @@ pexprs.Terminal.prototype._isNullable = function(grammar, memo) {
 
 pexprs.Alt.prototype._isNullable = function(grammar, memo) {
   return this.terms.length === 0 ||
-      this.terms.some(function(term) { return term._isNullable(grammar, memo); });
+      this.terms.some(term => term._isNullable(grammar, memo));
 };
 
 pexprs.Seq.prototype._isNullable = function(grammar, memo) {
-  return this.factors.every(function(factor) { return factor._isNullable(grammar, memo); });
+  return this.factors.every(factor => factor._isNullable(grammar, memo));
 };
 
 pexprs.Star.prototype._isNullable =

@@ -14,7 +14,7 @@ const makeGrammars = testUtil.makeGrammars;
 // Tests
 // --------------------------------------------------------------------
 
-test('action dictionary templates', function(t) {
+test('action dictionary templates', t => {
   const ns = makeGrammars([
     'G1 {',
     '  foo = bar',
@@ -142,16 +142,16 @@ test('action dictionary templates', function(t) {
   t.end();
 });
 
-test('default start rule', function(t) {
+test('default start rule', t => {
   let g = ohm.grammar('G {}');
   t.equal(g.defaultStartRule, undefined, 'undefined for an empty grammar');
-  t.throws(function() { g.match('a'); }, /Missing start rule/, 'match throws with no start rule');
+  t.throws(() => { g.match('a'); }, /Missing start rule/, 'match throws with no start rule');
   t.equal(Grammar.ProtoBuiltInRules.defaultStartRule, undefined, 'undefined for ProtoBuiltInRules');
   t.equal(Grammar.BuiltInRules.defaultStartRule, undefined, 'undefined for BuiltInRules');
 
   const g2 = ohm.grammar('G2 <: G {}', {G: g});
   t.equal(g2.defaultStartRule, undefined, 'undefined for a subgrammar too');
-  t.throws(function() { g2.match('a'); }, /Missing start rule/, 'match throws with no start rule');
+  t.throws(() => { g2.match('a'); }, /Missing start rule/, 'match throws with no start rule');
 
   const ns = makeGrammars(['G { foo = "a" }', 'G2 <: G {}']);
   t.equal(ns.G.defaultStartRule, 'foo', 'only rule becomes default start rule');
@@ -169,14 +169,14 @@ test('default start rule', function(t) {
 
   g = ohm.grammar('G { digit += any }');
   t.equal(g.defaultStartRule, undefined, "extending alone doesn't set the start rule");
-  t.throws(function() { g.match('a'); }, /Missing start rule/, 'match throws with no start rule');
+  t.throws(() => { g.match('a'); }, /Missing start rule/, 'match throws with no start rule');
   g = makeGrammar(['G { digit += any', 'blah = "3" }']);
   t.equal(g.defaultStartRule, 'blah', 'rule defined after extending becomes start rule');
   t.equal(g.match('3').succeeded(), true);
 
   g = ohm.grammar('G { digit := any }');
   t.equal(g.defaultStartRule, undefined, "overriding alone doesn't set the start rule");
-  t.throws(function() { g.match('a'); }, /Missing start rule/, 'match throws with no start rule');
+  t.throws(() => { g.match('a'); }, /Missing start rule/, 'match throws with no start rule');
   g = makeGrammar(['G { digit := any', 'blah = "3" }']);
   t.equal(g.defaultStartRule, 'blah', 'rule defined after overriding becomes start rule');
   t.equal(g.match('3').succeeded(), true);
@@ -186,7 +186,7 @@ test('default start rule', function(t) {
 
   // Test passing the default start rule as an argument to the Grammar constructor.
   const root = Grammar.BuiltInRules;
-  t.throws(function() {
+  t.throws(() => {
     new Grammar('G', root, {}, 'nonexistentRule'); // eslint-disable-line no-new
   }, /Invalid start rule/, 'throws when start rule is not in the grammar');
   t.ok(
@@ -200,7 +200,7 @@ test('default start rule', function(t) {
   t.end();
 });
 
-test('grammar equality', function(t) {
+test('grammar equality', t => {
   const source = fs.readFileSync('test/arithmetic.ohm').toString();
   const a = ohm.grammar(source);
   const b = ohm.grammar(source);

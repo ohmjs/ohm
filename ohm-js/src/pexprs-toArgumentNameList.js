@@ -21,19 +21,19 @@ function resolveDuplicatedNames(argumentNameList) {
   // `count` is used to record the number of times each argument name occurs in the list,
   // this is useful for checking duplicated argument name. It maps argument names to ints.
   const count = Object.create(null);
-  argumentNameList.forEach(function(argName) {
+  argumentNameList.forEach(argName => {
     count[argName] = (count[argName] || 0) + 1;
   });
 
   // Append subscripts ('_1', '_2', ...) to duplicate argument names.
-  Object.keys(count).forEach(function(dupArgName) {
+  Object.keys(count).forEach(dupArgName => {
     if (count[dupArgName] <= 1) {
       return;
     }
 
     // This name shows up more than once, so add subscripts.
     let subscript = 1;
-    argumentNameList.forEach(function(argName, idx) {
+    argumentNameList.forEach((argName, idx) => {
       if (argName === dupArgName) {
         argumentNameList[idx] = argName + '_' + subscript++;
       }
@@ -107,9 +107,7 @@ pexprs.Range.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) 
 pexprs.Alt.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
   // `termArgNameLists` is an array of arrays where each row is the
   // argument name list that corresponds to a term in this alternation.
-  const termArgNameLists = this.terms.map(function(term) {
-    return term.toArgumentNameList(firstArgIndex, true);
-  });
+  const termArgNameLists = this.terms.map(term => term.toArgumentNameList(firstArgIndex, true));
 
   const argumentNameList = [];
   const numArgs = termArgNameLists[0].length;
@@ -131,7 +129,7 @@ pexprs.Alt.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
 pexprs.Seq.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
   // Generate the argument name list, without worrying about duplicates.
   let argumentNameList = [];
-  this.factors.forEach(function(factor) {
+  this.factors.forEach(factor => {
     const factorArgumentNameList = factor.toArgumentNameList(firstArgIndex, true);
     argumentNameList = argumentNameList.concat(factorArgumentNameList);
 
@@ -146,11 +144,9 @@ pexprs.Seq.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
 
 pexprs.Iter.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
   const argumentNameList = this.expr.toArgumentNameList(firstArgIndex, noDupCheck)
-      .map(function(exprArgumentString) {
-        return exprArgumentString[exprArgumentString.length - 1] === 's' ?
+      .map(exprArgumentString => exprArgumentString[exprArgumentString.length - 1] === 's' ?
           exprArgumentString + 'es' :
-          exprArgumentString + 's';
-      });
+          exprArgumentString + 's');
   if (!noDupCheck) {
     resolveDuplicatedNames(argumentNameList);
   }
@@ -158,7 +154,7 @@ pexprs.Iter.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
 };
 
 pexprs.Opt.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
-  return this.expr.toArgumentNameList(firstArgIndex, noDupCheck).map(function(argName) {
+  return this.expr.toArgumentNameList(firstArgIndex, noDupCheck).map(argName => {
     return 'opt' + argName[0].toUpperCase() + argName.slice(1);
   });
 };

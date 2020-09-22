@@ -8,7 +8,7 @@ const makeGrammar = require('./testUtil').makeGrammar;
 // Tests
 // --------------------------------------------------------------------
 
-test('Alt', function(t) {
+test('Alt', t => {
   const random = Math.random;
 
   try {
@@ -34,7 +34,7 @@ test('Alt', function(t) {
   t.end();
 });
 
-test('Seq', function(t) {
+test('Seq', t => {
   const g = makeGrammar([
     'G {',
     '  seq = "a" "b"',
@@ -48,7 +48,7 @@ test('Seq', function(t) {
   t.end();
 });
 
-test('Apply', function(t) {
+test('Apply', t => {
   const g = makeGrammar([
     'G {',
     '  apply = a ',
@@ -62,7 +62,7 @@ test('Apply', function(t) {
   t.end();
 });
 
-test('Terminal', function(t) {
+test('Terminal', t => {
   const g = makeGrammar([
     'G {',
     '  a = "a"',
@@ -75,7 +75,7 @@ test('Terminal', function(t) {
   t.end();
 });
 
-test('Range', function(t) {
+test('Range', t => {
   const g = makeGrammar([
     'G {',
     '  num = "1" .. "9"',
@@ -91,7 +91,7 @@ test('Range', function(t) {
   t.end();
 });
 
-test('Not', function(t) {
+test('Not', t => {
   const g = makeGrammar([
     'G {',
     '  not = ~"a"',
@@ -105,7 +105,7 @@ test('Not', function(t) {
   t.end();
 });
 
-test('Lookahead', function(t) {
+test('Lookahead', t => {
   const g = makeGrammar([
     'G {',
     '  lookahead = &"a"',
@@ -119,7 +119,7 @@ test('Lookahead', function(t) {
   t.end();
 });
 
-test('Star', function(t) {
+test('Star', t => {
   const random = Math.random;
 
   try {
@@ -147,7 +147,7 @@ test('Star', function(t) {
   t.end();
 });
 
-test('Plus', function(t) {
+test('Plus', t => {
   const random = Math.random;
 
   try {
@@ -171,7 +171,7 @@ test('Plus', function(t) {
   t.end();
 });
 
-test('Opt', function(t) {
+test('Opt', t => {
   const random = Math.random;
 
   try {
@@ -195,7 +195,7 @@ test('Opt', function(t) {
   t.end();
 });
 
-test('Param', function(t) {
+test('Param', t => {
   const g = makeGrammar([
     'G {',
     '  one<x> = x     ',
@@ -210,7 +210,7 @@ test('Param', function(t) {
   t.end();
 });
 
-test('Lex', function(t) {
+test('Lex', t => {
   const g = makeGrammar([
     'G {',
     '  A = #("a" "b")',

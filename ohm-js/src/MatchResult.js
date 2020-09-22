@@ -81,9 +81,7 @@ MatchResult.prototype.getExpectedText = function() {
   let failures = this.getRightmostFailures();
 
   // Filter out the fluffy failures to make the default error messages more useful
-  failures = failures.filter(function(failure) {
-    return !failure.isFluffy();
-  });
+  failures = failures.filter(failure => !failure.isFluffy());
 
   for (let idx = 0; idx < failures.length; idx++) {
     if (idx > 0) {
