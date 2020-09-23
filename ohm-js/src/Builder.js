@@ -16,11 +16,11 @@ function Builder() {}
 Builder.prototype = {
   currentDecl: null,
 
-  newGrammar: function(name) {
+  newGrammar(name) {
     return new GrammarDecl(name);
   },
 
-  grammar: function(metaInfo, name, superGrammar, defaultStartRule, rules) {
+  grammar(metaInfo, name, superGrammar, defaultStartRule, rules) {
     const gDecl = new GrammarDecl(name);
     if (superGrammar) {
       gDecl.withSuperGrammar(this.fromRecipe(superGrammar));
@@ -55,19 +55,19 @@ Builder.prototype = {
     return gDecl.build();
   },
 
-  terminal: function(x) {
+  terminal(x) {
     return new pexprs.Terminal(x);
   },
 
-  range: function(from, to) {
+  range(from, to) {
     return new pexprs.Range(from, to);
   },
 
-  param: function(index) {
+  param(index) {
     return new pexprs.Param(index);
   },
 
-  alt: function(/* term1, term1, ... */) {
+  alt(/* term1, term1, ... */) {
     let terms = [];
     for (let idx = 0; idx < arguments.length; idx++) {
       let arg = arguments[idx];
@@ -83,7 +83,7 @@ Builder.prototype = {
     return terms.length === 1 ? terms[0] : new pexprs.Alt(terms);
   },
 
-  seq: function(/* factor1, factor2, ... */) {
+  seq(/* factor1, factor2, ... */) {
     let factors = [];
     for (let idx = 0; idx < arguments.length; idx++) {
       let arg = arguments[idx];
@@ -99,54 +99,54 @@ Builder.prototype = {
     return factors.length === 1 ? factors[0] : new pexprs.Seq(factors);
   },
 
-  star: function(expr) {
+  star(expr) {
     if (!(expr instanceof pexprs.PExpr)) {
       expr = this.fromRecipe(expr);
     }
     return new pexprs.Star(expr);
   },
 
-  plus: function(expr) {
+  plus(expr) {
     if (!(expr instanceof pexprs.PExpr)) {
       expr = this.fromRecipe(expr);
     }
     return new pexprs.Plus(expr);
   },
 
-  opt: function(expr) {
+  opt(expr) {
     if (!(expr instanceof pexprs.PExpr)) {
       expr = this.fromRecipe(expr);
     }
     return new pexprs.Opt(expr);
   },
 
-  not: function(expr) {
+  not(expr) {
     if (!(expr instanceof pexprs.PExpr)) {
       expr = this.fromRecipe(expr);
     }
     return new pexprs.Not(expr);
   },
 
-  la: function(expr) {
+  la(expr) {
     // TODO: temporary to still be able to read old recipes
     return this.lookahead(expr);
   },
 
-  lookahead: function(expr) {
+  lookahead(expr) {
     if (!(expr instanceof pexprs.PExpr)) {
       expr = this.fromRecipe(expr);
     }
     return new pexprs.Lookahead(expr);
   },
 
-  lex: function(expr) {
+  lex(expr) {
     if (!(expr instanceof pexprs.PExpr)) {
       expr = this.fromRecipe(expr);
     }
     return new pexprs.Lex(expr);
   },
 
-  app: function(ruleName, optParams) {
+  app(ruleName, optParams) {
     if (optParams && optParams.length > 0) {
       optParams = optParams.map(function(param) {
         return param instanceof pexprs.PExpr ? param :
@@ -156,7 +156,7 @@ Builder.prototype = {
     return new pexprs.Apply(ruleName, optParams);
   },
 
-  fromRecipe: function(recipe) {
+  fromRecipe(recipe) {
     // the meta-info of 'grammar' is proccessed in Builder.grammar
     const result = this[recipe[0]].apply(this,
       recipe[0] === 'grammar' ? recipe.slice(1) : recipe.slice(2));

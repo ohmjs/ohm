@@ -27,14 +27,14 @@ test('basic', t => {
       leaf: [],
       tree: ['l', 'r']
     },
-    getTag: function(x) { return typeof x === 'string' ? 'leaf' : 'tree'; }
+    getTag(x) { return typeof x === 'string' ? 'leaf' : 'tree'; }
   });
 
   family.addOperation('visit()', {
-    leaf: function() {
+    leaf() {
       return this._adaptee;
     },
-    tree: function(left, right) {
+    tree(left, right) {
       return left.visit() + ' ' + right.visit();
     }
   });
@@ -51,11 +51,11 @@ test('array props', t => {
       leaf: [],
       tree: 'children[]'
     },
-    getTag: function(x) { return typeof x === 'string' ? 'leaf' : 'tree'; }
+    getTag(x) { return typeof x === 'string' ? 'leaf' : 'tree'; }
   });
   family.addOperation('visit()', {
-    leaf: function() { return this._adaptee; },
-    tree: function(children) { return children.map(c => c.visit()); }
+    leaf() { return this._adaptee; },
+    tree(children) { return children.map(c => c.visit()); }
   });
   let tree = {children: ['a', {children: ['b', 'c']}, 'd']};
   t.deepEqual(family.wrap(tree).visit(), ['a', ['b', 'c'], 'd']);
@@ -65,11 +65,11 @@ test('array props', t => {
       leaf: [],
       tree: ['children[]', 'extra']
     },
-    getTag: function(x) { return typeof x === 'string' ? 'leaf' : 'tree'; }
+    getTag(x) { return typeof x === 'string' ? 'leaf' : 'tree'; }
   });
   family.addOperation('visit()', {
-    leaf: function() { return this._adaptee; },
-    tree: function(children, extra) {
+    leaf() { return this._adaptee; },
+    tree(children, extra) {
       return children.map(c => c.visit()).concat(extra.visit());
     }
   });
@@ -100,11 +100,11 @@ test('unknown action names', t => {
 });
 
 test('unrecognized tags', t => {
-  let v = new VisitorFamily({shapes: {}, getTag: function(x) { return 'bad'; }});
+  let v = new VisitorFamily({shapes: {}, getTag(x) { return 'bad'; }});
   v.addOperation('foo()', {});
   t.throws(() => { v.wrap(0).foo(); }, /getTag returned unrecognized tag 'bad'/);
 
-  v = new VisitorFamily({shapes: {}, getTag: function(x) { return 'toString'; }});
+  v = new VisitorFamily({shapes: {}, getTag(x) { return 'toString'; }});
   v.addOperation('foo()', {});
   t.throws(() => { v.wrap(0).foo(); }, /getTag returned unrecognized tag 'toString'/);
 
@@ -112,9 +112,9 @@ test('unrecognized tags', t => {
 });
 
 test('operations with arguments', t => {
-  const v = new VisitorFamily({shapes: {hello: []}, getTag: function(x) { return 'hello'; }});
+  const v = new VisitorFamily({shapes: {hello: []}, getTag(x) { return 'hello'; }});
   const root = {};
-  v.addOperation('greet(n)', {hello: function() { return 'hello ' + this.args.n; }});
+  v.addOperation('greet(n)', {hello() { return 'hello ' + this.args.n; }});
   t.equal(v.wrap(root).greet('donald'), 'hello donald');
 
   t.end();

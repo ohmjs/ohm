@@ -64,7 +64,7 @@ function parseSignature(sig) {
       params = parts[1].split(',').map(trim);
     }
     if (isRestrictedIdentifier(name) && params.every(isRestrictedIdentifier)) {
-      return {name: name, formals: params};
+      return {name, formals: params};
     }
   }
   throw new Error('Invalid operation signature: ' + sig);
@@ -134,9 +134,9 @@ VisitorFamily.prototype.addOperation = function(signature, actions) {
   const name = sig.name;
   this._checkActionDict(actions);
   this.operations[name] = {
-    name: name,
+    name,
     formals: sig.formals,
-    actions: actions
+    actions
   };
 
   const family = this;

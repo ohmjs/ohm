@@ -283,7 +283,7 @@ pexprs.Apply.prototype.reallyEval = function(state) {
     memoRec = origPosInfo.memoize(memoKey, {
       matchLength: inputStream.pos - origPos,
       examinedLength: inputStream.examinedLength - origPos,
-      value: value,
+      value,
       failuresAtRightmostPosition: state.cloneRecordedFailures(),
       rightmostFailureOffset: state._getRightmostFailureOffset()
     });

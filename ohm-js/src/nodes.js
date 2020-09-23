@@ -171,8 +171,8 @@ IterationNode.prototype.isOptional = function() {
 // --------------------------------------------------------------------
 
 module.exports = {
-  Node: Node,
-  TerminalNode: TerminalNode,
-  NonterminalNode: NonterminalNode,
-  IterationNode: IterationNode
+  Node,
+  TerminalNode,
+  NonterminalNode,
+  IterationNode
 };

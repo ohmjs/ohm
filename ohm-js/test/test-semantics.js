@@ -26,16 +26,16 @@ test('operations', t => {
 
   // An operation that evaluates an expression
   s.addOperation('value', {
-    addExp_plus: function(x, op, y) {
+    addExp_plus(x, op, y) {
       return x.value() + y.value();
     },
-    mulExp_times: function(x, op, y) {
+    mulExp_times(x, op, y) {
       return x.value() * y.value();
     },
-    number_rec: function(n, d) {
+    number_rec(n, d) {
       return n.value() * 10 + d.value();
     },
-    digit: function(_) {
+    digit(_) {
       return this.sourceString.charCodeAt(0) - '0'.charCodeAt(0);
     }
   });
@@ -45,16 +45,16 @@ test('operations', t => {
 
   // An operation that produces a list of the values of all the numbers in the tree.
   s.addOperation('numberValues', {
-    addExp_plus: function(x, op, y) {
+    addExp_plus(x, op, y) {
       return x.numberValues().concat(y.numberValues());
     },
-    mulExp_times: function(x, op, y) {
+    mulExp_times(x, op, y) {
       return x.numberValues().concat(y.numberValues());
     },
-    number: function(n) {
+    number(n) {
       return [n.value()];
     },
-    digit: function(d) {
+    digit(d) {
       return this.sourceString;
     }
   });
@@ -63,13 +63,13 @@ test('operations', t => {
 
   // An operation that (like the others above) doesn't take any arguments.
   s.addOperation('noArgs', {
-    addExp_plus: function(x, op, y) {
+    addExp_plus(x, op, y) {
       return x.noArgs() + y.noArgs();
     },
-    mulExp_times: function(x, op, y) {
+    mulExp_times(x, op, y) {
       return x.noArgs(1); // should result in an error
     },
-    number: function(n) {
+    number(n) {
       return '#';
     }
   });
@@ -81,13 +81,13 @@ test('operations', t => {
   // An operation that failed checks when first added but then succeeds
   t.throws(() => {
     s.addOperation('failSuccess', {
-      exp: function() {
+      exp() {
       }
     });
   }, /wrong arity/);
   t.notOk(s(Arithmetic.match('1+2')).failSuccess, 'failed operation not added');
   s.addOperation('failSuccess', {
-    exp: function(arg) {
+    exp(arg) {
       return arg.value();
     }
   });
@@ -102,10 +102,10 @@ test('operations with arguments', t => {
   const s = Arithmetic.createSemantics();
 
   s.addOperation('op1(level)', {
-    number: function(n) {
+    number(n) {
       return this.sourceString + '@L' + this.args.level;
     },
-    _default: function(children) {
+    _default(children) {
       const self = this;
       let ans = [];
       children.forEach(child => {
@@ -123,7 +123,7 @@ test('operations with arguments', t => {
       'Invalid number of arguments passed to operation op1 (expected 1, got 2)');
 
   s.addOperation('op2(a, b)', {
-    number: function(n) {
+    number(n) {
       return this.args.a * 100 + this.args.b * 10 + parseInt(this.sourceString);
     }
   });
@@ -139,7 +139,7 @@ test('operations with arguments', t => {
       'Invalid number of arguments passed to operation op2 (expected 2, got 3)');
 
   s.addOperation('op3(foo, bar, baz)', {
-    _default: function(children) {
+    _default(children) {
       const oldArgs = this.args;
       this.op1(0);
       t.deepEquals(
@@ -157,23 +157,23 @@ test('attributes', t => {
   const Arithmetic = ohm.grammar(arithmeticGrammarSource);
   let count = 0;
   const s = Arithmetic.createSemantics().addAttribute('value', {
-    addExp_plus: function(x, op, y) {
+    addExp_plus(x, op, y) {
       count++;
       return x.value + y.value;
     },
-    mulExp_times: function(x, op, y) {
+    mulExp_times(x, op, y) {
       count++;
       return x.value * y.value;
     },
-    number_rec: function(n, d) {
+    number_rec(n, d) {
       count++;
       return n.value * 10 + d.value;
     },
-    digit: function(expr) {
+    digit(expr) {
       count++;
       return expr.value.charCodeAt(0) - '0'.charCodeAt(0);
     },
-    _terminal: function() {
+    _terminal() {
       count++;
       return this.primitiveValue;
     }
@@ -221,8 +221,8 @@ test("attributes - same-named attributes don't collide", t => {
   const s2 = g.createSemantics();
 
   let val = 1;
-  s1.addAttribute('attr', {start: function() { return val++; }});
-  s2.addAttribute('attr', {start: function() { return val++; }});
+  s1.addAttribute('attr', {start() { return val++; }});
+  s2.addAttribute('attr', {start() { return val++; }});
 
   const m = g.match('');
   t.equal(s1(m).attr, 1);
@@ -275,7 +275,7 @@ test('semantics', t => {
   let g = ohm.grammar('G {}');
   t.throws(() => { s(g.match('a', 'letter')); }, /Cannot use a MatchResult from grammar/);
   // ... even if it's a sub-grammar
-  g = ohm.grammar('Arithmetic2 <: Arithmetic {}', {Arithmetic: Arithmetic});
+  g = ohm.grammar('Arithmetic2 <: Arithmetic {}', {Arithmetic});
   t.throws(() => { s(g.match('1+2', 'exp')); }, /Cannot use a MatchResult from grammar/);
 
   t.end();
@@ -289,10 +289,10 @@ test('_iter nodes', t => {
     '  ident = letter+',
     '}']);
   let s = g.createSemantics().addOperation('op', {
-    letter: function(l) {
+    letter(l) {
       return l.sourceString;
     },
-    letters: function(ls) {
+    letters(ls) {
       return ls.op();
     }
   });
@@ -301,7 +301,7 @@ test('_iter nodes', t => {
   t.deepEqual(s(m).op(), ['a', 'b', 'c'], 'operations are mapped over children');
 
   s = g.createSemantics().addOperation('op', {
-    letter: function(l) {
+    letter(l) {
       return l.sourceString;
     }
   });
@@ -311,14 +311,14 @@ test('_iter nodes', t => {
       'works with pass-through default behavior of _nonterminal');
 
   s = g.createSemantics().addOperation('op', {
-    letters: function(ls) {
+    letters(ls) {
       t.equal(ls.ctorName, '_iter', '`ls` is an _iter node');
       t.ok(ls.isIteration(), '`ls.isIteration()` returns a truthy value');
       t.equal(typeof ls.op, 'function', '`ls` has an op() method');
       t.ok(ls.children.every(l => typeof l.op === 'function'), 'children is an array of wrappers');
       return ls.children.map(l => l.op()).join(',');
     },
-    letter: function(l) {
+    letter(l) {
       return l.sourceString;
     }
   });
@@ -327,13 +327,13 @@ test('_iter nodes', t => {
   const m2 = g.match('', 'optLetter');
   const m3 = g.match('ab', 'ident');
   s = g.createSemantics().addOperation('op', {
-    letters: function(ls) {
+    letters(ls) {
       return ls.isOptional();
     },
-    optLetter: function(ls) {
+    optLetter(ls) {
       return ls.isOptional();
     },
-    ident: function(ls) {
+    ident(ls) {
       return ls.isOptional();
     }
   });
@@ -355,12 +355,12 @@ test('_terminal nodes', t => {
 
   t.throws(() => {
     g.createSemantics().addOperation('op', {
-      _terminal: function(x) {}
+      _terminal(x) {}
     });
   }, /wrong arity/);
 
   s = g.createSemantics().addOperation('op', {
-    _terminal: function() {
+    _terminal() {
       t.equal(arguments.length, 0, 'there are no arguments');
       t.equal(this.ctorName, '_terminal');
       t.equal(this.children.length, 0, 'node has no children');
@@ -449,11 +449,11 @@ test('extending semantics', t => {
 
   let s = ns.G.createSemantics()
       .addOperation('value', {
-        one: function(_) { return 1; },
-        two: function(_) { return 2; }
+        one(_) { return 1; },
+        two(_) { return 2; }
       })
       .addOperation('valueTimesTwo', {
-        _nonterminal: function(children) { return this.value() * 2; }
+        _nonterminal(children) { return this.value() * 2; }
       });
   t.throws(() => { ns.G2.extendSemantics(s).addOperation('value', {}); }, /already exists/);
   t.throws(() => { ns.G2.extendSemantics(s).extendOperation('foo', {}); }, /did not inherit/);
@@ -468,8 +468,8 @@ test('extending semantics', t => {
   t.throws(() => { ns.G2.extendSemantics(s)(ns.G2.match('eins!', 'one')); }, /wrong arity/);
 
   let s2 = ns.G2.extendSemantics(s).extendOperation('value', {
-    one: function(str, _) { return 21; }, // overriding
-    three: function(str) { return 3; } // adding a new case
+    one(str, _) { return 21; }, // overriding
+    three(str) { return 3; } // adding a new case
   });
   let m = ns.G2.match('eins!', 'one');
   t.equal(s2(m).value(), 21);
@@ -493,11 +493,11 @@ test('extending semantics', t => {
 
   s = ns.G.createSemantics()
       .addAttribute('value', {
-        one: function(_) { return 1; },
-        two: function(_) { return 2; }
+        one(_) { return 1; },
+        two(_) { return 2; }
       })
       .addAttribute('valueTimesTwo', {
-        _nonterminal: function(children) { return this.value * 2; }
+        _nonterminal(children) { return this.value * 2; }
       });
   t.throws(() => { ns.G2.extendSemantics(s).addAttribute('value', {}); }, /already exists/);
   t.throws(() => { ns.G2.extendSemantics(s).extendAttribute('value', {}); }, /wrong arity/);
@@ -505,8 +505,8 @@ test('extending semantics', t => {
   t.throws(() => { ns.G.createSemantics().extendAttribute('value', {}); }, /did not inherit/);
 
   s2 = ns.G2.extendSemantics(s).extendAttribute('value', {
-    one: function(str, _) { return 21; }, // overriding
-    three: function(str) { return 3; } // adding a new case
+    one(str, _) { return 21; }, // overriding
+    three(str) { return 3; } // adding a new case
   });
   m = ns.G2.match('eins!', 'one');
   t.equal(s2(m).value, 21);
@@ -526,7 +526,7 @@ test('extending semantics', t => {
   // Make sure an attribute that was inherited from a parent semantics
   // does not share its memo table with its parent.
   const s3 = ns.G2.extendSemantics(s2).extendAttribute('value', {
-    one: function(str, _) { return 123; }
+    one(str, _) { return 123; }
   });
   m = ns.G2.match('eins!', 'one');
   t.equal(s2(m).value, 21);
@@ -559,8 +559,8 @@ test('mixing nodes from one grammar with semantics from another', t => {
   ]);
 
   const s = ns.G.createSemantics().addOperation('value', {
-    start: function(x) { return x.value() + 'choo!'; },
-    _terminal: function() { return this.primitiveValue; }
+    start(x) { return x.value() + 'choo!'; },
+    _terminal() { return this.primitiveValue; }
   });
 
   let m = ns.G.match('aaa', 'start');
@@ -584,15 +584,15 @@ test('asIteration', t => {
     '}'
   ]);
   const s = g.createSemantics().addAttribute('value', {
-    Start: function(list1, list2) {
+    Start(list1, list2) {
       const arr1 = list1.asIteration().value;
       const arr2 = list2.asIteration().value;
       return arr1.join('') + arr2.join('');
     },
-    letter: function(_) {
+    letter(_) {
       return this.sourceString;
     },
-    any: function(_) {
+    any(_) {
       return this.sourceString;
     }
   });
@@ -603,15 +603,15 @@ test('asIteration', t => {
   // Check that we can override asIteration for ListOf, and extend it with an action
   // for a rule of our own.
   s.extendOperation('asIteration', {
-    NonemptyListOf: function(first, _, rest) {
+    NonemptyListOf(first, _, rest) {
       return this.iteration([first].concat(rest.children).reverse());
     },
-    anyTwo: function(a, b) {
+    anyTwo(a, b) {
       return this.iteration([b, a]);
     }
   });
   s.addAttribute('reversedValue', {
-    anyTwo: function(a, b) {
+    anyTwo(a, b) {
       const arr = this.asIteration().value;
       return arr.join('');
     }
@@ -633,7 +633,7 @@ test('sourceString', t => {
 
   // An operation that calls `sourceString` on a nonterminal, terminal, and iter node.
   const s = g.createSemantics().addOperation('foo', {
-    Start: function(a, bs) {
+    Start(a, bs) {
       return this.sourceString + a.sourceString + bs.sourceString;
     }
   });
@@ -651,10 +651,10 @@ test('sourceString - issue #188', t => {
     '}'
   ]);
   const s = g.createSemantics().addOperation('origSource', {
-    Start: function(a, b) {
+    Start(a, b) {
       return a.origSource() + b.origSource();
     },
-    num: function(digits) {
+    num(digits) {
       return digits.sourceString;
     }
   });
@@ -667,10 +667,10 @@ test('sourceString - issue #188', t => {
 test('sourceString - issue #204', t => {
   const g = ohm.grammar('Mu{ List = NonemptyListOf<Item, ","> Item = alnum+ }');
   const s = g.createSemantics().addOperation('eval()', {
-    NonemptyListOf: function(x, _, xs) {
+    NonemptyListOf(x, _, xs) {
       return [x.eval()].concat(xs.eval());
     },
-    Item: function(value) {
+    Item(value) {
       return value.sourceString;
     }
   });
@@ -699,7 +699,7 @@ test('action call stacks', t => {
   ].join('\n'));
 
   s.addOperation('op2', {
-    start: function(d) {
+    start(d) {
       return d.oops();
     }
   });

@@ -47,9 +47,9 @@ function categorizeExamples(examples) {
   const needHelp = examples.some(item => item.needHelp);
 
   return {
-    examplesNeeded: examplesNeeded,
-    successfulExamples: successfulExamples,
-    needHelp: needHelp
+    examplesNeeded,
+    successfulExamples,
+    needHelp
   };
 }
 

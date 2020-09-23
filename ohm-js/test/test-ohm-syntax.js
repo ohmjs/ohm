@@ -47,11 +47,11 @@ function it(desc, fn) {
 function buildTreeNodeWithUniqueId(g) {
   let nextId = 0;
   const s = g.createSemantics().addAttribute('tree', {
-    _nonterminal: function(children) {
+    _nonterminal(children) {
       return ['id', nextId++, this.ctorName]
           .concat(children.map(child => child.tree));
     },
-    _terminal: function() {
+    _terminal() {
       return this.primitiveValue;
     }
   });
@@ -78,7 +78,7 @@ function assertFails(t, matchResult, optMessage) {
 test('char', t => {
   const m = ohm.grammar('M { bang = "!" }');
   const s = m.createSemantics().addAttribute('v', {
-    _terminal: function() {
+    _terminal() {
       return this.primitiveValue;
     }
   });
@@ -94,7 +94,7 @@ test('char', t => {
 test('string', t => {
   const m = ohm.grammar('M { foo = "foo\\b\\n\\r\\t\\\\\\"\\u01bcff\\x8f" }');
   const s = m.createSemantics().addAttribute('v', {
-    _terminal: function() {
+    _terminal() {
       return this.primitiveValue;
     }
   });
@@ -136,7 +136,7 @@ test('unicode', t => {
 
   test('semantic actions', t => {
     const s = m.createSemantics().addAttribute('v', {
-      _terminal: function() {
+      _terminal() {
         return this.primitiveValue + this.primitiveValue;
       }
     });
@@ -150,7 +150,7 @@ test('unicode', t => {
 test('ranges', t => {
   const m = ohm.grammar('M { charRange = "0".."9" }');
   const s = m.createSemantics().addAttribute('v', {
-    _terminal: function() {
+    _terminal() {
       return this.primitiveValue;
     }
   });
@@ -178,7 +178,7 @@ test('ranges', t => {
 test('alt', t => {
   const m = ohm.grammar('M { altTest = "a" | "b" }');
   const s = m.createSemantics().addAttribute('v', {
-    _terminal: function() {
+    _terminal() {
       return this.primitiveValue;
     }
   });
@@ -200,7 +200,7 @@ test('alt', t => {
 test('rule bodies in defs can start with a |, and it\'s a no-op', t => {
   const m = ohm.grammar('M { altTest = | "a" | "b" }');
   const s = m.createSemantics().addAttribute('v', {
-    _terminal: function() {
+    _terminal() {
       return this.primitiveValue;
     }
   });
@@ -222,7 +222,7 @@ test('rule bodies in defs can start with a |, and it\'s a no-op', t => {
 test('rule bodies in overrides can start with a |, and it\'s a no-op', t => {
   const m = ohm.grammar('M { space := | "a" | "b" }');
   const s = m.createSemantics().addAttribute('v', {
-    _terminal: function() {
+    _terminal() {
       return this.primitiveValue;
     }
   });
@@ -245,7 +245,7 @@ test('rule bodies in overrides can start with a |, and it\'s a no-op', t => {
 test('rule bodies in extends can start with a |, and it\'s a no-op', t => {
   const m = ohm.grammar('M { space += | "a" | "b" }');
   const s = m.createSemantics().addAttribute('v', {
-    _terminal: function() {
+    _terminal() {
       return this.primitiveValue;
     }
   });
@@ -279,7 +279,7 @@ test('seq', t => {
     it('semantic actions', () => {
       const f = m.match('abcz');
       const s = m.createSemantics().addAttribute('v', {
-        start: function(x, y, z) {
+        start(x, y, z) {
           return [x.sourceString, y.sourceString, z.sourceString];
         }
       });
@@ -301,7 +301,7 @@ test('seq', t => {
     it('semantic actions', () => {
       const f = m.match('abcz');
       const s = m.createSemantics().addAttribute('v', {
-        start: function(a, _bc, _z) {
+        start(a, _bc, _z) {
           return a.primitiveValue;
         }
       });
@@ -323,7 +323,7 @@ test('seq', t => {
     it('semantic actions', () => {
       const f = m.match('abcz');
       const s = m.createSemantics().addAttribute('v', {
-        start: function(x, _, y) {
+        start(x, _, y) {
           return [x.primitiveValue, y.primitiveValue];
         }
       });
@@ -346,7 +346,7 @@ test('alts and seqs together', t => {
 
   it('semantic actions', () => {
     const s = m.createSemantics().addAttribute('v', {
-      start: function(x, _, y) {
+      start(x, _, y) {
         return [x.primitiveValue, y.primitiveValue];
       }
     });
@@ -380,13 +380,13 @@ test('kleene-* and kleene-+', t => {
 
   it('semantic actions', () => {
     const s = m.createSemantics().addAttribute('v', {
-      number: function(expr) {
+      number(expr) {
         return ['digits', expr.v];
       },
-      digit: function(expr) {
+      digit(expr) {
         return ['digit', expr.v];
       },
-      _terminal: function() {
+      _terminal() {
         return this.primitiveValue;
       }
     });
@@ -423,10 +423,10 @@ test('opt', t => {
 
   it('semantic actions', () => {
     const s = m.createSemantics().addAttribute('v', {
-      name: function(title, last) {
+      name(title, last) {
         return [title.children.length === 1 ? title.v[0] : undefined, last.primitiveValue];
       },
-      _terminal: function() {
+      _terminal() {
         return this.primitiveValue;
       }
     });
@@ -446,7 +446,7 @@ test('not', t => {
 
   it('semantic actions', () => {
     const s = m.createSemantics().addAttribute('v', {
-      start: function(x) { return x.sourceString; }
+      start(x) { return x.sourceString; }
     });
     t.equal(s(m.match('yello world')).v, 'yello world');
   });
@@ -463,7 +463,7 @@ test('lookahead', t => {
 
   it('semantic actions', () => {
     const s = m.createSemantics().addAttribute('v', {
-      start: function(x, _) {
+      start(x, _) {
         return x.primitiveValue;
       }
     });
@@ -489,13 +489,13 @@ test('apply', t => {
 
     it('semantic actions', () => {
       const s = m.createSemantics().addAttribute('v', {
-        easy: function(expr) {
+        easy(expr) {
           return ['easy', expr.v];
         },
-        foo: function(expr) {
+        foo(expr) {
           return ['foo', expr.v];
         },
-        _terminal: function() {
+        _terminal() {
           return this.primitiveValue;
         }
       });
@@ -524,23 +524,23 @@ test('apply', t => {
     it('semantic actions', () => {
       const f = m.match('1234', 'number');
       const s = m.createSemantics().addAttribute('v', {
-        numberRec: function(n, d) {
+        numberRec(n, d) {
           return n.v * 10 + d.v;
         },
-        digit: function(expr) {
+        digit(expr) {
           return expr.v.charCodeAt(0) - '0'.charCodeAt(0);
         },
-        _terminal: function() {
+        _terminal() {
           return this.primitiveValue;
         }
       }).addAttribute('t', {
-        number: function(expr) {
+        number(expr) {
           return ['number', expr.t];
         },
-        numberRec: function(n, d) {
+        numberRec(n, d) {
           return ['numberRec', n.t, d.t];
         },
-        _terminal: function() {
+        _terminal() {
           return this.primitiveValue;
         }
       });
@@ -577,10 +577,10 @@ test('apply', t => {
 
     it('semantic actions', () => {
       const s = m.createSemantics().addAttribute('v', {
-        addRec: function(x, _, y) {
+        addRec(x, _, y) {
           return [x.v, '+', y.v];
         },
-        _terminal: function() {
+        _terminal() {
           return this.primitiveValue;
         }
       });
@@ -610,10 +610,10 @@ test('apply', t => {
 
     it('semantic actions', () => {
       const s = m.createSemantics().addAttribute('v', {
-        numberRec: function(n, d) {
+        numberRec(n, d) {
           return [n.v, d.v];
         },
-        _terminal: function() {
+        _terminal() {
           return this.primitiveValue;
         }
       });
@@ -645,48 +645,48 @@ test('apply', t => {
     it('semantic actions', () => {
       const f = m.match('1*2+3+4*5');
       const s = m.createSemantics().addAttribute('t', {
-        addExp: function(expr) {
+        addExp(expr) {
           return ['addExp', expr.t];
         },
-        addExpRec: function(x, _, y) {
+        addExpRec(x, _, y) {
           return ['addExpRec', x.t, y.t];
         },
-        mulExp: function(expr) {
+        mulExp(expr) {
           return ['mulExp', expr.t];
         },
-        mulExpRec: function(x, _, y) {
+        mulExpRec(x, _, y) {
           return ['mulExpRec', x.t, y.t];
         },
-        _terminal: function() {
+        _terminal() {
           return this.primitiveValue;
         }
       }).addAttribute('v', {
-        addExp: function(expr) {
+        addExp(expr) {
           return expr.v;
         },
-        addExpRec: function(x, _, y) {
+        addExpRec(x, _, y) {
           return x.v + y.v;
         },
-        mulExp: function(expr) {
+        mulExp(expr) {
           return expr.v;
         },
-        mulExpRec: function(x, _, y) {
+        mulExpRec(x, _, y) {
           return x.v * y.v;
         },
-        priExp: function(expr) {
+        priExp(expr) {
           return parseInt(expr.v);
         },
-        _terminal: function() {
+        _terminal() {
           return this.primitiveValue;
         }
       }).addAttribute('p', {
-        addExpRec: function(x, _, y) {
+        addExpRec(x, _, y) {
           return '(' + x.p + '+' + y.p + ')';
         },
-        mulExpRec: function(x, _, y) {
+        mulExpRec(x, _, y) {
           return '(' + x.p + '*' + y.p + ')';
         },
-        _terminal: function() {
+        _terminal() {
           return this.primitiveValue;
         }
       });
@@ -758,13 +758,13 @@ test('apply', t => {
 
     it('semantic actions', () => {
       const s = m.createSemantics().addAttribute('t', {
-        addExpRec: function(x, _, y) {
+        addExpRec(x, _, y) {
           return [x.t, '+', y.t];
         },
-        mulExpRec: function(x, _, y) {
+        mulExpRec(x, _, y) {
           return [x.t, '*', y.t];
         },
-        _terminal: function() {
+        _terminal() {
           return this.primitiveValue;
         }
       });
@@ -792,22 +792,22 @@ test('apply', t => {
       const f = m.match('1234', 'tricky');
       // TODO: perhaps just use JSON.stringify(f) here, and compare the result?
       const s = m.createSemantics().addAttribute('t', {
-        tricky: function(_, x) {
+        tricky(_, x) {
           return ['tricky', x.t];
         },
-        foo: function(expr) {
+        foo(expr) {
           return ['foo', expr.t];
         },
-        fooRec: function(x, y) {
+        fooRec(x, y) {
           return ['fooRec', x.t, y.t];
         },
-        bar: function(expr) {
+        bar(expr) {
           return ['bar', expr.t];
         },
-        barRec: function(x, y) {
+        barRec(x, y) {
           return ['barRec', x.t, y.t];
         },
-        _terminal: function() {
+        _terminal() {
           return this.primitiveValue;
         }
       });
@@ -889,13 +889,13 @@ test('inheritance', t => {
 
     it('semantic actions', () => {
       const s = ns.G2.createSemantics().addAttribute('v', {
-        number: function(expr) {
+        number(expr) {
           return ['number', expr.v];
         },
-        digit: function(expr) {
+        digit(expr) {
           return ['digit', expr.v];
         },
-        _terminal: function() {
+        _terminal() {
           return this.primitiveValue;
         }
       });
@@ -919,7 +919,7 @@ test('inheritance', t => {
 
     it('semantic actions', () => {
       const s = ns.G2.createSemantics().addAttribute('v', {
-        foo: function(x, y) {
+        foo(x, y) {
           return [x.primitiveValue, y.primitiveValue];
         }
       });
@@ -1001,7 +1001,7 @@ test('bindings', t => {
 
     let id = 0;
     let s = g.createSemantics().addAttribute('v', {
-      foo: function(x, y) {
+      foo(x, y) {
         const xv = x.v;
         const yv = y.v;
         return {
@@ -1009,13 +1009,13 @@ test('bindings', t => {
           y: yv
         };
       },
-      bar: function(expr) {
+      bar(expr) {
         return ['bar', expr.v, id++];
       },
-      baz: function(expr) {
+      baz(expr) {
         return ['baz', expr.v, id++];
       },
-      _terminal: function() {
+      _terminal() {
         return this.primitiveValue;
       }
     });
@@ -1026,7 +1026,7 @@ test('bindings', t => {
 
     id = 0;
     s = g.createSemantics().addAttribute('v', {
-      foo: function(x, y) {
+      foo(x, y) {
         const yv = y.v;
         const xv = x.v;
         return {
@@ -1034,13 +1034,13 @@ test('bindings', t => {
           y: yv
         };
       },
-      bar: function(expr) {
+      bar(expr) {
         return ['bar', expr.v, id++];
       },
-      baz: function(expr) {
+      baz(expr) {
         return ['baz', expr.v, id++];
       },
-      _terminal: function() {
+      _terminal() {
         return this.primitiveValue;
       }
     });
@@ -1055,28 +1055,28 @@ test('bindings', t => {
 test('inline rule declarations', t => {
   function makeEval(g) {
     const s = g.createSemantics().addAttribute('v', {
-      addExp_plus: function(x, op, y) {
+      addExp_plus(x, op, y) {
         return x.v + y.v;
       },
-      addExp_minus: function(x, op, y) {
+      addExp_minus(x, op, y) {
         return x.v - y.v;
       },
-      mulExp_times: function(x, op, y) {
+      mulExp_times(x, op, y) {
         return x.v * y.v;
       },
-      mulExp_divide: function(x, op, y) {
+      mulExp_divide(x, op, y) {
         return x.v / y.v;
       },
-      priExp_paren: function(oparen, e, cparen) {
+      priExp_paren(oparen, e, cparen) {
         return e.v;
       },
-      number_rec: function(n, d) {
+      number_rec(n, d) {
         return n.v * 10 + d.v;
       },
-      digit: function(expr) {
+      digit(expr) {
         return expr.v.charCodeAt(0) - '0'.charCodeAt(0);
       },
-      _terminal: function() {
+      _terminal() {
         return this.primitiveValue;
       }
     });
@@ -1212,8 +1212,8 @@ test('case-insensitive matching', t => {
   t.equals(result.succeeded(), true);
 
   const s = g.createSemantics().addAttribute('matchedString', {
-    _terminal: function() { return this.sourceString; },
-    _nonterminal: function(children) {
+    _terminal() { return this.sourceString; },
+    _nonterminal(children) {
       return children.map(c => c.matchedString).join('');
     }
   });
@@ -1276,43 +1276,43 @@ test('bootstrap', t => {
         ohm.createNamespace(),
         g);
     const s = Arithmetic.createSemantics().addAttribute('v', {
-      exp: function(expr) {
+      exp(expr) {
         return expr.v;
       },
-      addExp: function(expr) {
+      addExp(expr) {
         return expr.v;
       },
-      addExp_plus: function(x, op, y) {
+      addExp_plus(x, op, y) {
         return x.v + y.v;
       },
-      addExp_minus: function(x, op, y) {
+      addExp_minus(x, op, y) {
         return x.v - y.v;
       },
-      mulExp: function(expr) {
+      mulExp(expr) {
         return expr.v;
       },
-      mulExp_times: function(x, op, y) {
+      mulExp_times(x, op, y) {
         return x.v * y.v;
       },
-      mulExp_divide: function(x, op, y) {
+      mulExp_divide(x, op, y) {
         return x.v / y.v;
       },
-      priExp: function(expr) {
+      priExp(expr) {
         return expr.v;
       },
-      priExp_paren: function(oparen, e, cparen) {
+      priExp_paren(oparen, e, cparen) {
         return e.v;
       },
-      number: function(expr) {
+      number(expr) {
         return expr.v;
       },
-      number_rec: function(n, d) {
+      number_rec(n, d) {
         return n.v * 10 + d.v;
       },
-      digit: function(expr) {
+      digit(expr) {
         return expr.v.charCodeAt(0) - '0'.charCodeAt(0);
       },
-      _terminal: function() {
+      _terminal() {
         return this.primitiveValue;
       }
     });

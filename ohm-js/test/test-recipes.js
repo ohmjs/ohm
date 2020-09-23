@@ -118,21 +118,21 @@ test('semantics recipes', t => {
   const g1 = ohm.grammar('G { Add = number "+" number  number = digit+ }');
   const s1 = g1.createSemantics()
       .addOperation('eval', {
-        Add: function(a, _, b) {
+        Add(a, _, b) {
           return a.value + b.value;
         }
       })
       .addOperation('evalWith(inc, factor)', {
-        Add: function(a, _, b) {
+        Add(a, _, b) {
           return a.evalWith(this.args.inc, this.args.factor) +
           b.evalWith(this.args.inc, this.args.factor);
         },
-        number: function(digits) {
+        number(digits) {
           return (this.value + this.args.inc) * this.args.factor;
         }
       })
       .addAttribute('value', {
-        number: function(digits) {
+        number(digits) {
           return parseFloat(this.sourceString);
         }
       });
@@ -192,20 +192,20 @@ test('semantics recipes with extensions', t => {
     '}']);
   const s = ns.G.createSemantics()
       .addAttribute('value', {
-        one: function(_) { return 1; },
-        two: function(_) { return 2; },
-        _default: function(children) {
+        one(_) { return 1; },
+        two(_) { return 2; },
+        _default(children) {
           return 'default';
         }
       })
       .addOperation('valueTimesTwo', {
-        _nonterminal: function(children) { return this.value * 2; }
+        _nonterminal(children) { return this.value * 2; }
       });
   const s2 = ns.G2.extendSemantics(s).addOperation('eval', {
-    Add: function(one, _, two) { return one.value + two.value; }
+    Add(one, _, two) { return one.value + two.value; }
   });
   const s3 = ns.G3.extendSemantics(s2).extendAttribute('value', {
-    one: function(str) { return 11; } // overriding
+    one(str) { return 11; } // overriding
   });
 
   let sRe = makeRecipe(s3.toRecipe());
@@ -223,7 +223,7 @@ test('semantics recipes with extensions', t => {
 
   // Check extension of semantic without changing to super grammar
   const s4 = ns.G.extendSemantics(s).extendAttribute('value', {
-    two: function(str) { return 22; } // overriding
+    two(str) { return 22; } // overriding
   });
 
   sRe = makeRecipe(s4.toRecipe());
@@ -237,12 +237,16 @@ test('semantics recipes with extensions', t => {
 
 // https://github.com/harc/ohm/issues/263
 test('semantics recipes w/ method shorthand', t => {
-  const g = ohm.grammar('G { start = }')
-  const s = g.createSemantics().addOperation('op', { start() {} });
+  const g = ohm.grammar('G { start = }');
+  const s = g.createSemantics().addOperation('op', {
+    start() {}
+  });
   t.ok(makeRecipe(s.toRecipe()), 'recipe parses correctly');
 
   const g2 = ohm.grammar('G { \u01C2 = }');
-  const s2 = g2.createSemantics().addOperation('op', { \u01C2() {} });
+  const s2 = g2.createSemantics().addOperation('op', {
+    \u01C2() {}
+  });
   t.ok(makeRecipe(s2.toRecipe()), 'recipe with an unusual unicode char');
 
   t.end();

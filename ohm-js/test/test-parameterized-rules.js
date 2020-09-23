@@ -82,8 +82,8 @@ test('simple examples', t => {
       '  Start = Pair<digit>\n' +
       '}');
   const s = g.createSemantics().addOperation('v', {
-    Pair: function(oparen, x, comma, y, cparen) { return [x.v(), y.v()]; },
-    digit: function(_) { return this.sourceString; }
+    Pair(oparen, x, comma, y, cparen) { return [x.v(), y.v()]; },
+    digit(_) { return this.sourceString; }
   });
   const cst = g.match('(1,2)', 'Start');
   t.deepEqual(s(cst).v(), ['1', '2']);
@@ -120,9 +120,9 @@ test('inline rule declarations', t => {
       '    = List<"x", ",">\n' +
       '}');
   const s = g.createSemantics().addOperation('v', {
-    List_some: function(x, sep, xs) { return [x.v()].concat(xs.v()); },
-    List_none: function() { return []; },
-    _terminal: function() { return this.primitiveValue; }
+    List_some(x, sep, xs) { return [x.v()].concat(xs.v()); },
+    List_none() { return []; },
+    _terminal() { return this.primitiveValue; }
   });
   const cst = g.match('x, x,x', 'Start');
   t.deepEqual(s(cst).v(), ['x', 'x', 'x']);
@@ -139,9 +139,9 @@ test('left recursion', t => {
       '    = LeftAssoc<digit, "+">\n' +
       '}');
   const s = g.createSemantics().addOperation('v', {
-    LeftAssoc_rec: function(x, op, y) { return [op.v(), x.v(), y.v()]; },
-    LeftAssoc_base: function(x) { return x.v(); },
-    _terminal: function() { return this.primitiveValue; }
+    LeftAssoc_rec(x, op, y) { return [op.v(), x.v(), y.v()]; },
+    LeftAssoc_base(x) { return x.v(); },
+    _terminal() { return this.primitiveValue; }
   });
   const cst = g.match('1 + 2 + 3', 'Start');
   t.deepEqual(s(cst).v(), ['+', ['+', '1', '2'], '3']);
@@ -155,8 +155,8 @@ test('complex parameters', t => {
       '  two<x> = x x\n' +
       '}');
   const s = g.createSemantics().addOperation('v', {
-    two: function(x, y) { return [x.v(), y.v()]; },
-    _terminal: function() { return this.primitiveValue; }
+    two(x, y) { return [x.v(), y.v()]; },
+    _terminal() { return this.primitiveValue; }
   });
   t.deepEqual(s(g.match('42')).v(), ['4', '2']);
   t.equal(g.match('45').failed(), true);

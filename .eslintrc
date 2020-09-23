@@ -71,6 +71,10 @@
 
     no-warning-comments: ["error", {terms: ["xxx", "fixme"]}],
 
+    // Object shorthand is allowed by Google style; we are more opinionated.
+    // https://google.github.io/styleguide/jsguide.html#features-objects-method-shorthand
+    object-shorthand: ["error", "always"],
+
     operator-linebreak: ["error", "after", {overrides: { ":": "ignore", "?": "ignore"}}],
 
     // https://google.github.io/styleguide/jsguide.html#features-functions-arrow-functions
@@ -91,6 +95,6 @@
     // The following rules suggest replacing certain patterns with ES6 features.
     // They are disabled for now, but we should consider enabling them if/when we move to ES6.
     prefer-rest-params: 0,
-    prefer-spread: 0
+    prefer-spread: 0,
   }
 }

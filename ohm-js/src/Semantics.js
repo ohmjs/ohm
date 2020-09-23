@@ -142,23 +142,23 @@ Wrapper.prototype.iteration = function(optChildWrappers) {
 
 Object.defineProperties(Wrapper.prototype, {
   // Returns an array containing the children of this CST node.
-  children: {get: function() { return this._children(); }},
+  children: {get() { return this._children(); }},
 
   // Returns the name of grammar rule that created this CST node.
-  ctorName: {get: function() { return this._node.ctorName; }},
+  ctorName: {get() { return this._node.ctorName; }},
 
   // TODO: Remove this eventually (deprecated in v0.12).
-  interval: {get: function() {
+  interval: {get() {
     throw new Error('The `interval` property is deprecated -- use `source` instead');
   }},
 
   // Returns the number of children of this CST node.
-  numChildren: {get: function() { return this._node.numChildren(); }},
+  numChildren: {get() { return this._node.numChildren(); }},
 
   // Returns the primitive value of this CST node, if it's a terminal node. Otherwise,
   // throws an exception.
   primitiveValue: {
-    get: function() {
+    get() {
       if (this.isTerminal()) {
         return this._node.primitiveValue;
       }
@@ -168,7 +168,7 @@ Object.defineProperties(Wrapper.prototype, {
   },
 
   // Returns the contents of the input stream consumed by this CST node.
-  sourceString: {get: function() { return this.source.contents; }}
+  sourceString: {get() { return this.source.contents; }}
 });
 
 // ----------------- Semantics -----------------
@@ -281,7 +281,7 @@ Semantics.prototype.toRecipe = function(semanticsOnly) {
   ['Operation', 'Attribute'].forEach(type => {
     const semanticOperations = this[type.toLowerCase() + 's'];
     Object.keys(semanticOperations).forEach(name => {
-      const { actionDict, formals, builtInDefault } = semanticOperations[name];
+      const {actionDict, formals, builtInDefault} = semanticOperations[name];
 
       let signature = name;
       if (formals.length > 0) {
@@ -698,10 +698,10 @@ util.awaitBuiltInRules(builtInRules => {
 
 function initBuiltInSemantics(builtInRules) {
   const actions = {
-    empty: function() {
+    empty() {
       return this.iteration();
     },
-    nonEmpty: function(first, _, rest) {
+    nonEmpty(first, _, rest) {
       return this.iteration([first].concat(rest.children));
     }
   };
@@ -718,22 +718,22 @@ function initBuiltInSemantics(builtInRules) {
 
 function initPrototypeParser(grammar) {
   prototypeGrammarSemantics = grammar.createSemantics().addOperation('parse', {
-    AttributeSignature: function(name) {
+    AttributeSignature(name) {
       return {
         name: name.parse(),
         formals: []
       };
     },
-    OperationSignature: function(name, optFormals) {
+    OperationSignature(name, optFormals) {
       return {
         name: name.parse(),
         formals: optFormals.parse()[0] || []
       };
     },
-    Formals: function(oparen, fs, cparen) {
+    Formals(oparen, fs, cparen) {
       return fs.asIteration().parse();
     },
-    name: function(first, rest) {
+    name(first, rest) {
       return this.sourceString;
     }
   });

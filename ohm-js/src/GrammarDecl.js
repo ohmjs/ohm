@@ -56,9 +56,9 @@ GrammarDecl.prototype.installOverriddenOrExtendedRule = function(name, formals, 
 GrammarDecl.prototype.install = function(name, formals, body, description, source) {
   this.rules[name] = {
     body: body.introduceParams(formals),
-    formals: formals,
-    description: description,
-    source: source
+    formals,
+    description,
+    source
   };
   return this;
 };

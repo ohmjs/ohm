@@ -138,7 +138,7 @@ test('mapping', t => {
     AddExp_plus: {
       expr1: 0,
       expr2: 2,
-      str: function(children) {
+      str(children) {
         return children.map(function(child) {
           return child.toAST(this.args.mapping);
         }, this).join('');
@@ -165,7 +165,7 @@ test('mapping', t => {
   t.deepEqual(ast, expected, 'proper AST with forwarded child node');
 
   ast = toAST(matchResult, {
-    AddExp_plus: function(expr1, _, expr2) {
+    AddExp_plus(expr1, _, expr2) {
       expr1 = expr1.toAST(this.args.mapping);
       expr2 = expr2.toAST(this.args.mapping);
       return 'plus(' + expr1 + ', ' + expr2 + ')';

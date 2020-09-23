@@ -14,11 +14,11 @@ const extend = require('util-extend');
 // --------------------------------------------------------------------
 
 const defaultOperation = {
-  _terminal: function() {
+  _terminal() {
     return this.primitiveValue;
   },
 
-  _nonterminal: function(children) {
+  _nonterminal(children) {
     const ctorName = this._node.ctorName;
     const mapping = this.args.mapping;
 
@@ -80,7 +80,7 @@ const defaultOperation = {
     return node;
   },
 
-  _iter: function(children) {
+  _iter(children) {
     if (this._node.isOptional()) {
       if (this.numChildren === 0) {
         return null;
@@ -94,11 +94,11 @@ const defaultOperation = {
     }, this);
   },
 
-  NonemptyListOf: function(first, sep, rest) {
+  NonemptyListOf(first, sep, rest) {
     return [first.toAST(this.args.mapping)].concat(rest.toAST(this.args.mapping));
   },
 
-  EmptyListOf: function() {
+  EmptyListOf() {
     return [];
   }
 };

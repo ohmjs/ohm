@@ -33,7 +33,7 @@ function pluckMemoProp(result, propName) {
 }
 
 const checkOffsetActions = {
-  _nonterminal: function(children) {
+  _nonterminal(children) {
     const desc = this._node.ctorName + ' @ ' + this.source.startIdx;
     this.args.t.equal(this.source.startIdx, this.args.startIdx, desc);
     for (let i = 0; i < children.length; ++i) {
@@ -41,14 +41,14 @@ const checkOffsetActions = {
       children[i].checkOffsets(this.args.t, childStartIdx);
     }
   },
-  _terminal: function() {
+  _terminal() {
     const desc = '"' + this.sourceString + '" @ ' + this.source.startIdx;
     this.args.t.equal(this.source.startIdx, this.args.startIdx, desc);
   }
 };
 
 const ctorTreeActions = {
-  _default: function(children) {
+  _default(children) {
     return [this.ctorName].concat(children.map(c => c.ctorTree));
   }
 };
@@ -68,22 +68,22 @@ test('basic incremental parsing', t => {
   // Create an operation which reconstructs the matched based on the offsets
   // stored for each node. This can be compared to the input stored in the matcher.
   const s = g.createSemantics().addOperation('reconstructInput(input)', {
-    start: function(letters, lastLetter) {
+    start(letters, lastLetter) {
       const lastLetterOffset = this._node.childOffsets[1];
       return letters.reconstructInput(this.args.input) +
           lastLetter.reconstructInput(this.args.input.slice(lastLetterOffset));
     },
-    notLastLetter: function(letter, _) {
+    notLastLetter(letter, _) {
       return letter.reconstructInput(this.args.input);
     },
-    _iter: function(children) {
+    _iter(children) {
       const self = this;
       return this._node.childOffsets.map((offset, i) => {
         const c = children[i].reconstructInput(self.args.input.slice(offset));
         return c;
       }).join('');
     },
-    _terminal: function() {
+    _terminal() {
       return this.sourceString;
     }
   });
@@ -381,32 +381,32 @@ test('incremental parsing + attributes = incremental computation', t => {
 
   let freshlyEvaluated;
   const s = g.createSemantics().addAttribute('value', {
-    addExp_plus: function(x, _op, y) {
+    addExp_plus(x, _op, y) {
       const ans = x.value + y.value;
       freshlyEvaluated.push(this.sourceString);
       return ans;
     },
-    addExp_minus: function(x, _op, y) {
+    addExp_minus(x, _op, y) {
       const ans = x.value - y.value;
       freshlyEvaluated.push(this.sourceString);
       return ans;
     },
-    mulExp_times: function(x, _op, y) {
+    mulExp_times(x, _op, y) {
       const ans = x.value * y.value;
       freshlyEvaluated.push(this.sourceString);
       return ans;
     },
-    mulExp_divide: function(x, _op, y) {
+    mulExp_divide(x, _op, y) {
       const ans = x.value / y.value;
       freshlyEvaluated.push(this.sourceString);
       return ans;
     },
-    priExp_paren: function(_open, x, _close) {
+    priExp_paren(_open, x, _close) {
       const ans = x.value;
       freshlyEvaluated.push(this.sourceString);
       return ans;
     },
-    number: function(_) {
+    number(_) {
       const ans = parseInt(this.sourceString);
       freshlyEvaluated.push(this.sourceString);
       return ans;

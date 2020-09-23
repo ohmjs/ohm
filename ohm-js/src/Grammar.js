@@ -46,17 +46,17 @@ Grammar.initApplicationParser = function(grammar, builderFn) {
 };
 
 Grammar.prototype = {
-  matcher: function() {
+  matcher() {
     return new Matcher(this);
   },
 
   // Return true if the grammar is a built-in grammar, otherwise false.
   // NOTE: This might give an unexpected result if called before BuiltInRules is defined!
-  isBuiltIn: function() {
+  isBuiltIn() {
     return this === Grammar.ProtoBuiltInRules || this === Grammar.BuiltInRules;
   },
 
-  equals: function(g) {
+  equals(g) {
     if (this === g) {
       return true;
     }
@@ -76,34 +76,34 @@ Grammar.prototype = {
     });
   },
 
-  match: function(input, optStartApplication) {
+  match(input, optStartApplication) {
     const m = this.matcher();
     m.replaceInputRange(0, 0, input);
     return m.match(optStartApplication);
   },
 
-  trace: function(input, optStartApplication) {
+  trace(input, optStartApplication) {
     const m = this.matcher();
     m.replaceInputRange(0, 0, input);
     return m.trace(optStartApplication);
   },
 
-  semantics: function() {
+  semantics() {
     // TODO: Remove this eventually! Deprecated in v0.12.
     throw new Error('semantics() is deprecated -- use createSemantics() instead.');
   },
 
-  createSemantics: function() {
+  createSemantics() {
     return Semantics.createSemantics(this);
   },
 
-  extendSemantics: function(superSemantics) {
+  extendSemantics(superSemantics) {
     return Semantics.createSemantics(this, superSemantics._getSemantics());
   },
 
   // Check that every key in `actionDict` corresponds to a semantic action, and that it maps to
   // a function of the correct arity. If not, throw an exception.
-  _checkTopDownActionDict: function(what, name, actionDict) {
+  _checkTopDownActionDict(what, name, actionDict) {
     function isSpecialAction(a) {
       return a === '_iter' || a === '_terminal' || a === '_nonterminal' || a === '_default';
     }
@@ -138,7 +138,7 @@ Grammar.prototype = {
 
   // Return the expected arity for a semantic action named `actionName`, which
   // is either a rule name or a special action name like '_nonterminal'.
-  _topDownActionArity: function(actionName) {
+  _topDownActionArity(actionName) {
     if (actionName === '_iter' || actionName === '_nonterminal' || actionName === '_default') {
       return 1;
     } else if (actionName === '_terminal') {
@@ -147,7 +147,7 @@ Grammar.prototype = {
     return this.rules[actionName].body.getArity();
   },
 
-  _inheritsFrom: function(grammar) {
+  _inheritsFrom(grammar) {
     let g = this.superGrammar;
     while (g) {
       if (g.equals(grammar, true)) {
@@ -158,7 +158,7 @@ Grammar.prototype = {
     return false;
   },
 
-  toRecipe: function(optVarName) {
+  toRecipe(optVarName) {
     const metaInfo = {};
     // Include the grammar source if it is available.
     if (this.source) {
@@ -219,14 +219,14 @@ Grammar.prototype = {
 
   // TODO: Come up with better names for these methods.
   // TODO: Write the analog of these methods for inherited attributes.
-  toOperationActionDictionaryTemplate: function() {
+  toOperationActionDictionaryTemplate() {
     return this._toOperationOrAttributeActionDictionaryTemplate();
   },
-  toAttributeActionDictionaryTemplate: function() {
+  toAttributeActionDictionaryTemplate() {
     return this._toOperationOrAttributeActionDictionaryTemplate();
   },
 
-  _toOperationOrAttributeActionDictionaryTemplate: function() {
+  _toOperationOrAttributeActionDictionaryTemplate() {
     // TODO: add the super-grammar's templates at the right place, e.g., a case for AddExpr_plus
     // should appear next to other cases of AddExpr.
 
@@ -250,7 +250,7 @@ Grammar.prototype = {
     return sb.contents();
   },
 
-  addSemanticActionTemplate: function(ruleName, body, sb) {
+  addSemanticActionTemplate(ruleName, body, sb) {
     sb.append(ruleName);
     sb.append(': function(');
     const arity = this._topDownActionArity(ruleName);
@@ -261,7 +261,7 @@ Grammar.prototype = {
 
   // Parse a string which expresses a rule application in this grammar, and return the
   // resulting Apply node.
-  parseApplication: function(str) {
+  parseApplication(str) {
     let app;
     if (str.indexOf('<') === -1) {
       // simple application

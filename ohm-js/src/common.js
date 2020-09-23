@@ -51,7 +51,7 @@ exports.assert = function(cond, message) {
 exports.defineLazyProperty = function(obj, propName, getterFn) {
   let memo;
   Object.defineProperty(obj, propName, {
-    get: function() {
+    get() {
       if (!memo) {
         memo = getterFn.call(this);
       }

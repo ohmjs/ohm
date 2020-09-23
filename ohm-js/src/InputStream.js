@@ -17,19 +17,19 @@ function InputStream(source) {
 }
 
 InputStream.prototype = {
-  atEnd: function() {
+  atEnd() {
     const ans = this.pos === this.source.length;
     this.examinedLength = Math.max(this.examinedLength, this.pos + 1);
     return ans;
   },
 
-  next: function() {
+  next() {
     const ans = this.source[this.pos++];
     this.examinedLength = Math.max(this.examinedLength, this.pos);
     return ans;
   },
 
-  matchString: function(s, optIgnoreCase) {
+  matchString(s, optIgnoreCase) {
     let idx;
     if (optIgnoreCase) {
       /*
@@ -56,11 +56,11 @@ InputStream.prototype = {
     return true;
   },
 
-  sourceSlice: function(startIdx, endIdx) {
+  sourceSlice(startIdx, endIdx) {
     return this.source.slice(startIdx, endIdx);
   },
 
-  interval: function(startIdx, optEndIdx) {
+  interval(startIdx, optEndIdx) {
     return new Interval(this.source, startIdx, optEndIdx ? optEndIdx : this.pos);
   }
 };

@@ -20,7 +20,7 @@ function fakeScriptTag(contents) {
   return {
     type: 'text/ohm-js',
     innerHTML: Array.isArray(contents) ? contents.join('\n') : contents,
-    getAttribute: function(name) { return undefined; },
+    getAttribute(name) { return undefined; },
     nodeType: 1
   };
 }
@@ -44,8 +44,8 @@ function makeGrammars(source, optNamespace) {
 // --------------------------------------------------------------------
 
 module.exports = {
-  fakeScriptTag: fakeScriptTag,
-  makeGrammar: makeGrammar,
-  makeGrammars: makeGrammars,
-  uniqueId: uniqueId
+  fakeScriptTag,
+  makeGrammar,
+  makeGrammars,
+  uniqueId
 };

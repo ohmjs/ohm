@@ -18,10 +18,10 @@ const testUtil = require('./testUtil');
 // --------------------------------------------------------------------
 
 const fakeDocument = {
-  querySelector: function(sel) {
+  querySelector(sel) {
     return testUtil.fakeScriptTag('G { foo = end }');
   },
-  querySelectorAll: function(sel) {
+  querySelectorAll(sel) {
     return [testUtil.fakeScriptTag('G { foo = end }')];
   }
 };

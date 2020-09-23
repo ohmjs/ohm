@@ -77,17 +77,17 @@ function Trace(input, pos1, pos2, expr, succeeded, bindings, optChildren) {
 Trace.prototype.SKIP = {};
 
 Object.defineProperty(Trace.prototype, 'displayString', {
-  get: function() { return this.expr.toDisplayString(); }
+  get() { return this.expr.toDisplayString(); }
 });
 
 // For convenience, create a getter and setter for the boolean flags in `Flags`.
 Object.keys(Flags).forEach(name => {
   const mask = Flags[name];
   Object.defineProperty(Trace.prototype, name, {
-    get: function() {
+    get() {
       return (this._flags & mask) !== 0;
     },
-    set: function(val) {
+    set(val) {
       if (val) {
         this._flags |= mask;
       } else {

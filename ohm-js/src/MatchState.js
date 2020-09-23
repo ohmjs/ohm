@@ -42,11 +42,11 @@ function MatchState(matcher, startExpr, optPositionToRecordFailures) {
 }
 
 MatchState.prototype = {
-  posToOffset: function(pos) {
+  posToOffset(pos) {
     return pos - this._posStack[this._posStack.length - 1];
   },
 
-  enterApplication: function(posInfo, app) {
+  enterApplication(posInfo, app) {
     this._posStack.push(this.inputStream.pos);
     this._applicationStack.push(app);
     this.inLexifiedContextStack.push(false);
@@ -55,7 +55,7 @@ MatchState.prototype = {
     this.rightmostFailurePosition = -1;
   },
 
-  exitApplication: function(posInfo, optNode) {
+  exitApplication(posInfo, optNode) {
     const origPos = this._posStack.pop();
     this._applicationStack.pop();
     this.inLexifiedContextStack.pop();
@@ -70,19 +70,19 @@ MatchState.prototype = {
     }
   },
 
-  enterLexifiedContext: function() {
+  enterLexifiedContext() {
     this.inLexifiedContextStack.push(true);
   },
 
-  exitLexifiedContext: function() {
+  exitLexifiedContext() {
     this.inLexifiedContextStack.pop();
   },
 
-  currentApplication: function() {
+  currentApplication() {
     return this._applicationStack[this._applicationStack.length - 1];
   },
 
-  inSyntacticContext: function() {
+  inSyntacticContext() {
     if (typeof this.inputStream.source !== 'string') {
       return false;
     }
@@ -95,11 +95,11 @@ MatchState.prototype = {
     }
   },
 
-  inLexifiedContext: function() {
+  inLexifiedContext() {
     return this.inLexifiedContextStack[this.inLexifiedContextStack.length - 1];
   },
 
-  skipSpaces: function() {
+  skipSpaces() {
     this.pushFailuresInfo();
     this.eval(applySpaces);
     this.popBinding();
@@ -107,13 +107,13 @@ MatchState.prototype = {
     return this.inputStream.pos;
   },
 
-  skipSpacesIfInSyntacticContext: function() {
+  skipSpacesIfInSyntacticContext() {
     return this.inSyntacticContext() ?
         this.skipSpaces() :
         this.inputStream.pos;
   },
 
-  maybeSkipSpacesBefore: function(expr) {
+  maybeSkipSpacesBefore(expr) {
     if (expr instanceof pexprs.Apply && expr.isSyntactic()) {
       return this.skipSpaces();
     } else if (expr.allowsSkippingPrecedingSpace() && expr !== applySpaces) {
@@ -123,21 +123,21 @@ MatchState.prototype = {
     }
   },
 
-  pushBinding: function(node, origPos) {
+  pushBinding(node, origPos) {
     this._bindings.push(node);
     this._bindingOffsets.push(this.posToOffset(origPos));
   },
 
-  popBinding: function() {
+  popBinding() {
     this._bindings.pop();
     this._bindingOffsets.pop();
   },
 
-  numBindings: function() {
+  numBindings() {
     return this._bindings.length;
   },
 
-  truncateBindings: function(newLength) {
+  truncateBindings(newLength) {
     // Yes, this is this really faster than setting the `length` property (tested with
     // bin/es5bench on Node v6.1.0).
     while (this._bindings.length > newLength) {
@@ -145,11 +145,11 @@ MatchState.prototype = {
     }
   },
 
-  getCurrentPosInfo: function() {
+  getCurrentPosInfo() {
     return this.getPosInfo(this.inputStream.pos);
   },
 
-  getPosInfo: function(pos) {
+  getPosInfo(pos) {
     let posInfo = this.memoTable[pos];
     if (!posInfo) {
       posInfo = this.memoTable[pos] = new PosInfo();
@@ -157,7 +157,7 @@ MatchState.prototype = {
     return posInfo;
   },
 
-  processFailure: function(pos, expr) {
+  processFailure(pos, expr) {
     this.rightmostFailurePosition = Math.max(this.rightmostFailurePosition, pos);
 
     if (this.recordedFailures && pos === this.positionToRecordFailures) {
@@ -177,7 +177,7 @@ MatchState.prototype = {
     }
   },
 
-  recordFailure: function(failure, shouldCloneIfNew) {
+  recordFailure(failure, shouldCloneIfNew) {
     const key = failure.toKey();
     if (!this.recordedFailures[key]) {
       this.recordedFailures[key] = shouldCloneIfNew ? failure.clone() : failure;
@@ -186,14 +186,14 @@ MatchState.prototype = {
     }
   },
 
-  recordFailures: function(failures, shouldCloneIfNew) {
+  recordFailures(failures, shouldCloneIfNew) {
     const self = this;
     Object.keys(failures).forEach(key => {
       self.recordFailure(failures[key], shouldCloneIfNew);
     });
   },
 
-  cloneRecordedFailures: function() {
+  cloneRecordedFailures() {
     if (!this.recordedFailures) {
       return undefined;
     }
@@ -206,18 +206,18 @@ MatchState.prototype = {
     return ans;
   },
 
-  getRightmostFailurePosition: function() {
+  getRightmostFailurePosition() {
     return this.rightmostFailurePosition;
   },
 
-  _getRightmostFailureOffset: function() {
+  _getRightmostFailureOffset() {
     return this.rightmostFailurePosition >= 0 ?
         this.posToOffset(this.rightmostFailurePosition) :
         -1;
   },
 
   // Returns the memoized trace entry for `expr` at `pos`, if one exists, `null` otherwise.
-  getMemoizedTraceEntry: function(pos, expr) {
+  getMemoizedTraceEntry(pos, expr) {
     const posInfo = this.memoTable[pos];
     if (posInfo && expr.ruleName) {
       const memoRec = posInfo.memo[expr.toMemoKey()];
@@ -231,7 +231,7 @@ MatchState.prototype = {
   },
 
   // Returns a new trace entry, with the currently active trace array as its children.
-  getTraceEntry: function(pos, expr, succeeded, bindings) {
+  getTraceEntry(pos, expr, succeeded, bindings) {
     if (expr instanceof pexprs.Apply) {
       const app = this.currentApplication();
       const actuals = app ? app.args : [];
@@ -241,11 +241,11 @@ MatchState.prototype = {
            new Trace(this.input, pos, this.inputStream.pos, expr, succeeded, bindings, this.trace);
   },
 
-  isTracing: function() {
+  isTracing() {
     return !!this.trace;
   },
 
-  hasNecessaryInfo: function(memoRec) {
+  hasNecessaryInfo(memoRec) {
     if (this.trace && !memoRec.traceEntry) {
       return false;
     }
@@ -259,7 +259,7 @@ MatchState.prototype = {
   },
 
 
-  useMemoizedResult: function(origPos, memoRec) {
+  useMemoizedResult(origPos, memoRec) {
     if (this.trace) {
       this.trace.push(memoRec.traceEntry);
     }
@@ -287,7 +287,7 @@ MatchState.prototype = {
   // Evaluate `expr` and return `true` if it succeeded, `false` otherwise. On success, `bindings`
   // will have `expr.getArity()` more elements than before, and the input stream's position may
   // have increased. On failure, `bindings` and position will be unchanged.
-  eval: function(expr) {
+  eval(expr) {
     const inputStream = this.inputStream;
     const origNumBindings = this._bindings.length;
 
@@ -338,7 +338,7 @@ MatchState.prototype = {
     return ans;
   },
 
-  getMatchResult: function() {
+  getMatchResult() {
     this.eval(this.startExpr);
     let rightmostFailures;
     if (this.recordedFailures) {
@@ -355,7 +355,7 @@ MatchState.prototype = {
         rightmostFailures);
   },
 
-  getTrace: function() {
+  getTrace() {
     this.trace = [];
     const matchResult = this.getMatchResult();
 
@@ -368,12 +368,12 @@ MatchState.prototype = {
     return rootTrace;
   },
 
-  pushFailuresInfo: function() {
+  pushFailuresInfo() {
     this._rightmostFailurePositionStack.push(this.rightmostFailurePosition);
     this._recordedFailuresStack.push(this.recordedFailures);
   },
 
-  popFailuresInfo: function() {
+  popFailuresInfo() {
     this.rightmostFailurePosition = this._rightmostFailurePositionStack.pop();
     this.recordedFailures = this._recordedFailuresStack.pop();
   }

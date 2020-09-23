@@ -3,7 +3,7 @@
 // NOTE: This file must parse as ES5, because the 'ecmascript examples' test below tries to
 // parse the file itself using our ES5 grammar.
 
-/* eslint-disable no-var, prefer-arrow-callback */
+/* eslint-disable no-var, prefer-arrow-callback, object-shorthand */
 
 'use strict';
 
@@ -124,7 +124,12 @@ test('ecmascript examples', function(t) {
   var exampleDir = path.join(EXAMPLE_ROOT, 'ecmascript');
   var compile = require(path.join(exampleDir, 'compile.js'));
 
+  // Test that the ES5 grammar works by compiling *this file*.
+  // NOTE: If there is a test failure here, it's probably because you're using syntax
+  // that is not valid ES5 somewhere in this file!
   t.ok(compile([__filename]), 'ES5 grammar works');
+
   t.ok(compile(['-g', 'es6', path.join(exampleDir, 'test.es6')]), 'ES6 grammar works');
+
   t.end();
 });

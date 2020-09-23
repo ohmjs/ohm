@@ -38,13 +38,13 @@ function grammarSyntaxError(matchFailure) {
   const e = new Error();
   Object.defineProperty(e, 'message', {
     enumerable: true,
-    get: function() {
+    get() {
       return matchFailure.message;
     }
   });
   Object.defineProperty(e, 'shortMessage', {
     enumerable: true,
-    get: function() {
+    get() {
       return 'Expected ' + matchFailure.getExpectedText();
     }
   });
@@ -228,27 +228,27 @@ function missingSemanticAction(ctorName, name, type, stack) {
 // --------------------------------------------------------------------
 
 module.exports = {
-  applicationOfSyntacticRuleFromLexicalContext: applicationOfSyntacticRuleFromLexicalContext,
-  cannotExtendUndeclaredRule: cannotExtendUndeclaredRule,
-  cannotOverrideUndeclaredRule: cannotOverrideUndeclaredRule,
-  duplicateGrammarDeclaration: duplicateGrammarDeclaration,
-  duplicateParameterNames: duplicateParameterNames,
-  duplicatePropertyNames: duplicatePropertyNames,
-  duplicateRuleDeclaration: duplicateRuleDeclaration,
-  inconsistentArity: inconsistentArity,
-  incorrectArgumentType: incorrectArgumentType,
-  intervalSourcesDontMatch: intervalSourcesDontMatch,
-  invalidConstructorCall: invalidConstructorCall,
-  invalidParameter: invalidParameter,
-  grammarSyntaxError: grammarSyntaxError,
-  kleeneExprHasNullableOperand: kleeneExprHasNullableOperand,
-  missingSemanticAction: missingSemanticAction,
-  undeclaredGrammar: undeclaredGrammar,
-  undeclaredRule: undeclaredRule,
-  wrongNumberOfArguments: wrongNumberOfArguments,
-  wrongNumberOfParameters: wrongNumberOfParameters,
+  applicationOfSyntacticRuleFromLexicalContext,
+  cannotExtendUndeclaredRule,
+  cannotOverrideUndeclaredRule,
+  duplicateGrammarDeclaration,
+  duplicateParameterNames,
+  duplicatePropertyNames,
+  duplicateRuleDeclaration,
+  inconsistentArity,
+  incorrectArgumentType,
+  intervalSourcesDontMatch,
+  invalidConstructorCall,
+  invalidParameter,
+  grammarSyntaxError,
+  kleeneExprHasNullableOperand,
+  missingSemanticAction,
+  undeclaredGrammar,
+  undeclaredRule,
+  wrongNumberOfArguments,
+  wrongNumberOfParameters,
 
-  throwErrors: function(errors) {
+  throwErrors(errors) {
     if (errors.length === 1) {
       throw errors[0];
     }

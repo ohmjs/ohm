@@ -99,11 +99,11 @@ exports.getLineAndColumn = function(str, offset) {
   const line = str.slice(lineStartOffset, lineEndOffset).replace(/\r$/, '');
 
   return {
-    lineNum: lineNum,
-    colNum: colNum,
-    line: line,
-    prevLine: prevLine,
-    nextLine: nextLine
+    lineNum,
+    colNum,
+    line,
+    prevLine,
+    nextLine
   };
 };
 

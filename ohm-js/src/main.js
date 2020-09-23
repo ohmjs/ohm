@@ -27,8 +27,8 @@ let ohmGrammar;
 
 // An object which makes it possible to stub out the document API for testing.
 let documentInterface = {
-  querySelector: function(sel) { return document.querySelector(sel); },
-  querySelectorAll: function(sel) { return document.querySelectorAll(sel); }
+  querySelector(sel) { return document.querySelector(sel); },
+  querySelectorAll(sel) { return document.querySelectorAll(sel); }
 };
 
 // Check if `obj` is a DOM element.
@@ -77,7 +77,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
 
   // A visitor that produces a Grammar instance from the CST.
   const helpers = metaGrammar.createSemantics().addOperation('visit', {
-    Grammar: function(n, s, open, rs, close) {
+    Grammar(n, s, open, rs, close) {
       const grammarName = n.visit();
       decl = builder.newGrammar(grammarName, namespace);
       s.visit();
@@ -91,7 +91,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return g;
     },
 
-    SuperGrammar: function(_, n) {
+    SuperGrammar(_, n) {
       const superGrammarName = n.visit();
       if (superGrammarName === 'null') {
         decl.withSuperGrammar(null);
@@ -103,7 +103,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       }
     },
 
-    Rule_define: function(n, fs, d, _, b) {
+    Rule_define(n, fs, d, _, b) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
       // If there is no default start rule yet, set it now. This must be done before visiting
@@ -116,7 +116,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       const source = this.source.trimmed();
       return decl.define(currentRuleName, currentRuleFormals, body, description, source);
     },
-    Rule_override: function(n, fs, _, b) {
+    Rule_override(n, fs, _, b) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
       overriding = true;
@@ -126,7 +126,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       overriding = false;
       return ans;
     },
-    Rule_extend: function(n, fs, _, b) {
+    Rule_extend(n, fs, _, b) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
       const body = b.visit();
@@ -134,25 +134,25 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       const ans = decl.extend(currentRuleName, currentRuleFormals, body, null, source);
       return ans;
     },
-    RuleBody: function(_, terms) {
+    RuleBody(_, terms) {
       const args = terms.visit();
       return builder.alt.apply(builder, args).withSource(this.source);
     },
 
-    Formals: function(opointy, fs, cpointy) {
+    Formals(opointy, fs, cpointy) {
       return fs.visit();
     },
 
-    Params: function(opointy, ps, cpointy) {
+    Params(opointy, ps, cpointy) {
       return ps.visit();
     },
 
-    Alt: function(seqs) {
+    Alt(seqs) {
       const args = seqs.visit();
       return builder.alt.apply(builder, args).withSource(this.source);
     },
 
-    TopLevelTerm_inline: function(b, n) {
+    TopLevelTerm_inline(b, n) {
       const inlineRuleName = currentRuleName + '_' + n.visit();
       const body = b.visit();
       const source = this.source.trimmed();
@@ -167,85 +167,85 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return builder.app(inlineRuleName, params).withSource(body.source);
     },
 
-    Seq: function(expr) {
+    Seq(expr) {
       return builder.seq.apply(builder, expr.visit()).withSource(this.source);
     },
 
-    Iter_star: function(x, _) {
+    Iter_star(x, _) {
       return builder.star(x.visit()).withSource(this.source);
     },
-    Iter_plus: function(x, _) {
+    Iter_plus(x, _) {
       return builder.plus(x.visit()).withSource(this.source);
     },
-    Iter_opt: function(x, _) {
+    Iter_opt(x, _) {
       return builder.opt(x.visit()).withSource(this.source);
     },
 
-    Pred_not: function(_, x) {
+    Pred_not(_, x) {
       return builder.not(x.visit()).withSource(this.source);
     },
-    Pred_lookahead: function(_, x) {
+    Pred_lookahead(_, x) {
       return builder.lookahead(x.visit()).withSource(this.source);
     },
 
-    Lex_lex: function(_, x) {
+    Lex_lex(_, x) {
       return builder.lex(x.visit()).withSource(this.source);
     },
 
-    Base_application: function(rule, ps) {
+    Base_application(rule, ps) {
       return builder.app(rule.visit(), ps.visit()[0] || []).withSource(this.source);
     },
-    Base_range: function(from, _, to) {
+    Base_range(from, _, to) {
       return builder.range(from.visit(), to.visit()).withSource(this.source);
     },
-    Base_terminal: function(expr) {
+    Base_terminal(expr) {
       return builder.terminal(expr.visit()).withSource(this.source);
     },
-    Base_paren: function(open, x, close) {
+    Base_paren(open, x, close) {
       return x.visit();
     },
 
-    ruleDescr: function(open, t, close) {
+    ruleDescr(open, t, close) {
       return t.visit();
     },
-    ruleDescrText: function(_) {
+    ruleDescrText(_) {
       return this.sourceString.trim();
     },
 
-    caseName: function(_, space1, n, space2, end) {
+    caseName(_, space1, n, space2, end) {
       return n.visit();
     },
 
-    name: function(first, rest) {
+    name(first, rest) {
       return this.sourceString;
     },
-    nameFirst: function(expr) {},
-    nameRest: function(expr) {},
+    nameFirst(expr) {},
+    nameRest(expr) {},
 
-    terminal: function(open, cs, close) {
+    terminal(open, cs, close) {
       return cs.visit().join('');
     },
 
-    oneCharTerminal: function(open, c, close) {
+    oneCharTerminal(open, c, close) {
       return c.visit();
     },
 
-    terminalChar: function(_) {
+    terminalChar(_) {
       return common.unescapeChar(this.sourceString);
     },
 
-    escapeChar: function(_) {
+    escapeChar(_) {
       return this.sourceString;
     },
 
-    NonemptyListOf: function(x, _, xs) {
+    NonemptyListOf(x, _, xs) {
       return [x.visit()].concat(xs.visit());
     },
-    EmptyListOf: function() {
+    EmptyListOf() {
       return [];
     },
 
-    _terminal: function() {
+    _terminal() {
       return this.primitiveValue;
     }
   });
@@ -356,16 +356,16 @@ function makeRecipe(recipe) {
 // Stuff that users should know about
 module.exports = {
   createNamespace: Namespace.createNamespace,
-  grammar: grammar,
-  grammars: grammars,
-  grammarFromScriptElement: grammarFromScriptElement,
-  grammarsFromScriptElements: grammarsFromScriptElements,
-  makeRecipe: makeRecipe,
+  grammar,
+  grammars,
+  grammarFromScriptElement,
+  grammarsFromScriptElements,
+  makeRecipe,
   ohmGrammar: null, // Initialized below, after Grammar.BuiltInRules.
-  pexprs: pexprs,
-  util: util,
+  pexprs,
+  util,
   extras: require('../extras'),
-  version: version
+  version
 };
 
 // Stuff for testing, etc.
