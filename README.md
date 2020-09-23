@@ -1,7 +1,7 @@
 Ohm
 ===
 
-[![Build Status](https://img.shields.io/travis/harc/ohm.svg?style=flat-square)](https://travis-ci.org/harc/ohm)
+[![Build Status](https://img.shields.io/travis/harc/ohm/master?style=flat-square)](https://travis-ci.org/harc/ohm)
 [![NPM](https://img.shields.io/npm/v/ohm-js.svg?style=flat-square)](https://www.npmjs.com/package/ohm-js)
 
 [Ohm](https://github.com/harc/ohm) is a parser generator consisting of a library and a domain-specific language.
