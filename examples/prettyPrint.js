@@ -2,8 +2,8 @@
 
 'use strict';
 
-var fs = require('fs');
-var ohm = require('../ohm-js');
+const fs = require('fs');
+const ohm = require('../ohm-js');
 
 /*
   Usage: prettyPrint.js <filename>
@@ -15,14 +15,14 @@ var ohm = require('../ohm-js');
 // -------
 
 function indentLines(arr, depth) {
-  var padding = new Array(depth + 1).join(' ');
+  const padding = new Array(depth + 1).join(' ');
   return arr.join('\n' + padding);
 }
 
 function printRule(name, formals, desc, op, body) {
-  var ans = '  ' + name.sourceString + formals.prettyPrint() + ' ';
+  let ans = '  ' + name.sourceString + formals.prettyPrint() + ' ';
 
-  var indentation;
+  let indentation;
   if (desc.children.length > 0) {
     ans += desc.prettyPrint() + '\n    ';
     indentation = 4;
@@ -31,7 +31,7 @@ function printRule(name, formals, desc, op, body) {
   }
   ans += op.sourceString.trim() + ' ';
 
-  var bodyLines = body.prettyPrint().split('\n');
+  const bodyLines = body.prettyPrint().split('\n');
   return ans + indentLines(bodyLines, indentation);
 }
 
@@ -44,7 +44,7 @@ function printPrefixOp(op, e) {
 }
 
 function printParams(open, paramList, close) {
-  var params = paramList.asIteration().children.map(function(c) {
+  const params = paramList.asIteration().children.map(c => {
     return c.sourceString;
   });
   return params.length === 0 ? '' : '<' + params.join(', ') + '>';
@@ -53,34 +53,34 @@ function printParams(open, paramList, close) {
 // Semantics
 // ---------
 
-var semantics = ohm.ohmGrammar.createSemantics();
+const semantics = ohm.ohmGrammar.createSemantics();
 semantics.addOperation('prettyPrint()', {
-  Grammar: function(name, superGrammar, open, rules, close) {
-    var decl = name.sourceString + superGrammar.prettyPrint();
+  Grammar(name, superGrammar, open, rules, close) {
+    const decl = name.sourceString + superGrammar.prettyPrint();
     return decl + ' {\n' + rules.prettyPrint().join('\n') + '\n}';
   },
-  SuperGrammar: function(_, ident) {
+  SuperGrammar(_, ident) {
     return ' <: ' + ident.sourceString;
   },
   Rule_define: printRule,
-  Rule_override: function(name, formals, op, body) {
+  Rule_override(name, formals, op, body) {
     return printRule(name, formals, null, op, body);
   },
-  Rule_extend: function(name, formals, op, body) {
+  Rule_extend(name, formals, op, body) {
     return printRule(name, formals, null, op, body);
   },
-  RuleBody: function(_, termList) {
+  RuleBody(_, termList) {
     return termList.asIteration().prettyPrint().join('\n| ');
   },
   Formals: printParams,
   Params: printParams,
-  TopLevelTerm_inline: function(seq, caseName) {
+  TopLevelTerm_inline(seq, caseName) {
     return seq.prettyPrint() + '  ' + caseName.prettyPrint();
   },
-  Alt: function(list) {
+  Alt(list) {
     return list.asIteration().prettyPrint().join(' | ');
   },
-  Seq: function(iter) {
+  Seq(iter) {
     return iter.prettyPrint().join(' ');
   },
   Iter_star: printPostfixOp,
@@ -91,25 +91,25 @@ semantics.addOperation('prettyPrint()', {
   Pred_lookahead: printPrefixOp,
   Lex_lex: printPrefixOp,
 
-  Base_application: function(id, params) {
+  Base_application(id, params) {
     return id.sourceString + params.prettyPrint();
   },
-  Base_range: function(t1, _, t2) {
+  Base_range(t1, _, t2) {
     return t1.prettyPrint() + '..' + t2.prettyPrint();
   },
-  Base_paren: function(open, alt, close) {
+  Base_paren(open, alt, close) {
     return '(' + alt.prettyPrint() + ')';
   },
-  caseName: function(_, leading, name, trailing, end) {
+  caseName(_, leading, name, trailing, end) {
     return '-- ' + name.sourceString;
   },
-  ruleDescr: function(open, text, close) {
+  ruleDescr(open, text, close) {
     return '(' + text.sourceString.trim() + ')';
   },
-  terminal: function(open, _, close) {
+  terminal(open, _, close) {
     return this.sourceString;
   },
-  oneCharTerminal: function(open, c, close) {
+  oneCharTerminal(open, c, close) {
     return this.sourceString;
   }
 });
@@ -117,8 +117,8 @@ semantics.addOperation('prettyPrint()', {
 // Exports
 // -------
 
-var prettyPrint = module.exports = function(source) {
-  var matchResult = ohm.ohmGrammar.match(source, 'Grammar');
+const prettyPrint = module.exports = function(source) {
+  const matchResult = ohm.ohmGrammar.match(source, 'Grammar');
   if (matchResult.failed()) {
     return matchResult;
   }
@@ -129,9 +129,9 @@ var prettyPrint = module.exports = function(source) {
 // ----
 
 if (require.main === module) {
-  var filename = process.argv[2];
-  var source = fs.readFileSync(filename).toString();
-  var result = prettyPrint(source, filename);
+  const filename = process.argv[2];
+  const source = fs.readFileSync(filename).toString();
+  const result = prettyPrint(source, filename);
 
   /* eslint-disable no-console, no-process-exit */
   if (typeof result === 'string') {

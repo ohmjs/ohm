@@ -6,10 +6,10 @@
 // Imports
 // --------------------------------------------------------------------
 
-var fs = require('fs');
-var path = require('path');
+const fs = require('fs');
+const path = require('path');
 
-var ohm = require('ohm-js');
+const ohm = require('ohm-js');
 
 // --------------------------------------------------------------------
 // Helpers
@@ -18,8 +18,8 @@ var ohm = require('ohm-js');
 // Take an Array of nodes, and whenever an _iter node is encountered, splice in its
 // recursively-flattened children instead.
 function flattenIterNodes(nodes) {
-  var result = [];
-  for (var i = 0; i < nodes.length; ++i) {
+  const result = [];
+  for (let i = 0; i < nodes.length; ++i) {
     if (nodes[i]._node.ctorName === '_iter') {
       result.push.apply(result, flattenIterNodes(nodes[i].children));
     } else {
@@ -35,15 +35,15 @@ function compareByInterval(node, otherNode) {
 }
 
 function nodeToES5(node, children) {
-  var flatChildren = flattenIterNodes(children).sort(compareByInterval);
+  const flatChildren = flattenIterNodes(children).sort(compareByInterval);
 
   // Keeps track of where the previous sibling ended, so that we can re-insert discarded
   // whitespace into the final output.
-  var prevEndIdx = node.source.startIdx;
+  let prevEndIdx = node.source.startIdx;
 
-  var code = '';
-  for (var i = 0; i < flatChildren.length; ++i) {
-    var child = flatChildren[i];
+  let code = '';
+  for (let i = 0; i < flatChildren.length; ++i) {
+    const child = flatChildren[i];
 
     // Restore any discarded whitespace between this node and the previous one.
     if (child.source.startIdx > prevEndIdx) {
@@ -56,27 +56,27 @@ function nodeToES5(node, children) {
 }
 
 // Instantiate the ES5 grammar.
-var contents = fs.readFileSync(path.join(__dirname, 'es5.ohm'));
-var g = ohm.grammars(contents).ES5;
-var semantics = g.createSemantics();
+const contents = fs.readFileSync(path.join(__dirname, 'es5.ohm'));
+const g = ohm.grammars(contents).ES5;
+const semantics = g.createSemantics();
 
 semantics.addOperation('toES5()', {
-  Program: function(_, sourceElements) {
+  Program(_, sourceElements) {
     // Top-level leading and trailing whitespace is not handled by nodeToES5(), so do it here.
-    var sourceString = this.source.sourceString;
+    const sourceString = this.source.sourceString;
     return sourceString.slice(0, this.source.startIdx) +
            nodeToES5(this, [sourceElements]) +
            sourceString.slice(this.source.endIdx);
   },
-  _nonterminal: function(children) {
+  _nonterminal(children) {
     return nodeToES5(this, children);
   },
-  _terminal: function() {
+  _terminal() {
     return this.sourceString;
   }
 });
 
 module.exports = {
   grammar: g,
-  semantics: semantics
+  semantics
 };

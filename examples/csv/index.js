@@ -2,27 +2,27 @@
 
 'use strict';
 
-var assert = require('assert');
-var fs = require('fs');
-var join = require('path').join;
-var ohm = require('../../ohm-js');
+const assert = require('assert');
+const fs = require('fs');
+const join = require('path').join;
+const ohm = require('../../ohm-js');
 
-var contents = fs.readFileSync(join(__dirname, 'csv.ohm'));
-var g = ohm.grammar(contents);
+const contents = fs.readFileSync(join(__dirname, 'csv.ohm'));
+const g = ohm.grammar(contents);
 
-var semantics = g.createSemantics().addOperation('value', {
-  csv: function(r, _, rs, eol) {
+const semantics = g.createSemantics().addOperation('value', {
+  csv(r, _, rs, eol) {
     return [r.value()].concat(rs.value());
   },
-  row: function(c, _, cs) {
+  row(c, _, cs) {
     return [c.value()].concat(cs.value());
   },
-  col: function(_) {
+  col(_) {
     return this.sourceString;
   }
 });
 
-var someInput =
+const someInput =
     'foo,bar,baz\n' +
     'foo,bar\n' +
     '\n' +
@@ -31,14 +31,14 @@ var someInput =
     'foo';
 
 function parse(input) {
-  var match = g.match(input);
+  const match = g.match(input);
   assert(match.succeeded());
   return semantics(match).value();
 }
 
 assert.deepEqual(parse(someInput),
     [['foo', 'bar', 'baz'], ['foo', 'bar'], [''],
-    ['foo', '', 'baz'], ['', 'bar', 'baz'], ['foo']]);
+      ['foo', '', 'baz'], ['', 'bar', 'baz'], ['foo']]);
 assert.deepEqual(parse(someInput + '\n'),
     [['foo', 'bar', 'baz'], ['foo', 'bar'], [''],
-    ['foo', '', 'baz'], ['', 'bar', 'baz'], ['foo']]);
+      ['foo', '', 'baz'], ['', 'bar', 'baz'], ['foo']]);
