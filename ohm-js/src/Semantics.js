@@ -278,12 +278,14 @@ Semantics.prototype.toRecipe = function(semanticsOnly) {
   } else {
     str += '  return g.createSemantics()';
   }
-  ['Operation', 'Attribute'].forEach(function(type) {
+  ['Operation', 'Attribute'].forEach(type => {
     const semanticOperations = this[type.toLowerCase() + 's'];
-    Object.keys(semanticOperations).forEach(function(name) {
+    Object.keys(semanticOperations).forEach(name => {
+      const { actionDict, formals, builtInDefault } = semanticOperations[name];
+
       let signature = name;
-      if (semanticOperations[name].formals.length > 0) {
-        signature += '(' + semanticOperations[name].formals.join(', ') + ')';
+      if (formals.length > 0) {
+        signature += '(' + formals.join(', ') + ')';
       }
 
       let method;
@@ -294,19 +296,21 @@ Semantics.prototype.toRecipe = function(semanticsOnly) {
       }
       str += '\n    .' + method + '(' + JSON.stringify(signature) + ', {';
 
-      const actions = semanticOperations[name].actionDict;
       const srcArray = [];
-      Object.keys(actions).forEach(actionName => {
-        if (semanticOperations[name].builtInDefault !== actions[actionName]) {
-          srcArray.push('\n      ' + JSON.stringify(actionName) + ': ' +
-            actions[actionName].toString());
+      Object.keys(actionDict).forEach(actionName => {
+        if (actionDict[actionName] !== builtInDefault) {
+          let source = actionDict[actionName].toString().trim();
+
+          // Convert method shorthand to plain old function syntax.
+          // https://github.com/harc/ohm/issues/263
+          source = source.replace(/^.*\(/, 'function(');
+
+          srcArray.push('\n      ' + JSON.stringify(actionName) + ': ' + source);
         }
       });
-      str += srcArray.join(',');
-
-      str += '\n    })';
-    }, this);
-  }, this);
+      str += srcArray.join(',') + '\n    })';
+    });
+  });
   str += ';\n  })';
 
   if (!semanticsOnly) {

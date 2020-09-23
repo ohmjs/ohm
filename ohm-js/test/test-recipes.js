@@ -235,3 +235,15 @@ test('semantics recipes with extensions', t => {
   t.end();
 });
 
+// https://github.com/harc/ohm/issues/263
+test('semantics recipes w/ method shorthand', t => {
+  const g = ohm.grammar('G { start = }')
+  const s = g.createSemantics().addOperation('op', { start() {} });
+  t.ok(makeRecipe(s.toRecipe()), 'recipe parses correctly');
+
+  const g2 = ohm.grammar('G { \u01C2 = }');
+  const s2 = g2.createSemantics().addOperation('op', { \u01C2() {} });
+  t.ok(makeRecipe(s2.toRecipe()), 'recipe with an unusual unicode char');
+
+  t.end();
+});
