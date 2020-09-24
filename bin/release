@@ -8,7 +8,7 @@ ROOT=$(npm prefix)
 
 if [ "$(git status --porcelain | grep -v '??')" != "" ]; then
   echo "Error: git working directory not clean -- run 'git status' for more info."
-#  exit 1
+  exit 1
 fi
 
 # Update the list of contributors.
@@ -27,6 +27,8 @@ git tag "v${new_version}"
 
 cp ${ROOT}/README.md ohm-js
 yarn workspace ohm-js publish
+rm ohm-js/README.md
+
 git push && git push --tags
 
 "$(dirname $0)/deploy-gh-pages.sh"
