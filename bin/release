@@ -23,7 +23,7 @@ yarn workspace ohm-js build
 # Commit everything and tag it with the new version.
 new_version=$(json -f "${ROOT}/ohm-js/package.json" version)
 git commit -am "v${new_version}"
-git tag -am "v${new_version}"
+git tag "v${new_version}"
 
 cp ${ROOT}/README.md ohm-js
 yarn workspace ohm-js publish
