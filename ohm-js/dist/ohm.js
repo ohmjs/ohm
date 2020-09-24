@@ -5999,7 +5999,7 @@ exports.uniqueId = (function () {
 // When running under Node, read the version from package.json. For the browser,
 // use a special global variable defined in the build process (see webpack.config.js).
 module.exports =  true
-    ? "15.0.1"
+    ? "15.1.0"
     : undefined;
 
 
