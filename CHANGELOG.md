@@ -1,5 +1,39 @@
 # Changelog
 
+## v15.1.0 - September 24, 2020
+
+### Notable changes:
+
+- [7fe5b7c] Removed the dependency on the es6-symbol package
+- [5b15169] Converted the Ohm codebase to more modern JS, and switched from Browserify
+  to Webpack for bundling. (#264)
+
+## v15.0.1 - August 23, 2020
+
+The first _official_ stable release of Ohm! 🌭🎉
+
+Going forward, Ohm will follow the [semantic versioning](https://semver.org/) convention.
+This means that breaking changes to either the language or the API will only be introduced
+in a new major version of the `ohm-js` package.
+
+### Notable changes:
+
+(Same as 15.0.0.)
+
+**API**
+
+Features:
+- [1c286f6] The `message` and `shortMessage` properties of errors are now enumerable.
+- [dec2846] Added a TypeScript type definition file (d.ts) for the extras submodule (#214)
+- [369a1de] Prevent infinite loops during parsing, by throwing an error if a [repetition expression](https://github.com/harc/ohm/blob/master/doc/syntax-reference.md#repetition-operators---) consumes no input. (#211)
+
+Fixes:
+- [7857b8f] Fixed `npm install` issue with the 15.0.0 release (#260)
+- [8202eff] Switched to Buffer.from, as `new Buffer` is deprecated in Node v10.
+- [59b28be] CaseInsensitiveTerminal.toFailure() now passes the grammar arg through.
+- [b9499e2] Crash w/ ERR_INVALID_CALLBACK in Node v10.0.0.
+- [db8573c] Undefined errors with nested expression toFailure(...) (#218)
+
 ## v0.14.0 - November 3, 2017
 
 ### Notable changes:
