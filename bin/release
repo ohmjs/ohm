@@ -8,7 +8,7 @@ ROOT=$(npm prefix)
 
 if [ "$(git status --porcelain | grep -v '??')" != "" ]; then
   echo "Error: git working directory not clean -- run 'git status' for more info."
-  exit 1
+#  exit 1
 fi
 
 # Update the list of contributors.
@@ -23,7 +23,7 @@ yarn workspace ohm-js build
 # Commit everything and tag it with the new version.
 new_version=$(json -f "${ROOT}/ohm-js/package.json" version)
 git commit -am "v${new_version}"
-git tag -am "v${new_version}"
+git tag -a -m "v${new_version}"
 
 cp ${ROOT}/README.md ohm-js
 yarn workspace ohm-js publish
