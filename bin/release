@@ -25,6 +25,7 @@ new_version=$(json -f "${ROOT}/ohm-js/package.json" version)
 git commit -am "v${new_version}"
 git tag -am "v${new_version}"
 
+cp ${ROOT}/README.md ohm-js
 yarn workspace ohm-js publish
 git push && git push --tags
 
