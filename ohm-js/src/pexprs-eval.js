@@ -4,15 +4,15 @@
 // Imports
 // --------------------------------------------------------------------
 
-var Trace = require('./Trace');
-var common = require('./common');
-var errors = require('./errors');
-var nodes = require('./nodes');
-var pexprs = require('./pexprs');
+const Trace = require('./Trace');
+const common = require('./common');
+const errors = require('./errors');
+const nodes = require('./nodes');
+const pexprs = require('./pexprs');
 
-var TerminalNode = nodes.TerminalNode;
-var NonterminalNode = nodes.NonterminalNode;
-var IterationNode = nodes.IterationNode;
+const TerminalNode = nodes.TerminalNode;
+const NonterminalNode = nodes.NonterminalNode;
+const IterationNode = nodes.IterationNode;
 
 // --------------------------------------------------------------------
 // Operations
@@ -34,12 +34,12 @@ var IterationNode = nodes.IterationNode;
   Note that `State.prototype.eval(expr)`, unlike this method, guarantees that neither the state
   object's bindings nor its input stream's position will change if the expression fails to match.
 */
-pexprs.PExpr.prototype.eval = common.abstract('eval');  // function(state) { ... }
+pexprs.PExpr.prototype.eval = common.abstract('eval'); // function(state) { ... }
 
 pexprs.any.eval = function(state) {
-  var inputStream = state.inputStream;
-  var origPos = inputStream.pos;
-  var ch = inputStream.next();
+  const inputStream = state.inputStream;
+  const origPos = inputStream.pos;
+  const ch = inputStream.next();
   if (ch) {
     state.pushBinding(new TerminalNode(state.grammar, ch), origPos);
     return true;
@@ -50,8 +50,8 @@ pexprs.any.eval = function(state) {
 };
 
 pexprs.end.eval = function(state) {
-  var inputStream = state.inputStream;
-  var origPos = inputStream.pos;
+  const inputStream = state.inputStream;
+  const origPos = inputStream.pos;
   if (inputStream.atEnd()) {
     state.pushBinding(new TerminalNode(state.grammar, undefined), origPos);
     return true;
@@ -62,8 +62,8 @@ pexprs.end.eval = function(state) {
 };
 
 pexprs.Terminal.prototype.eval = function(state) {
-  var inputStream = state.inputStream;
-  var origPos = inputStream.pos;
+  const inputStream = state.inputStream;
+  const origPos = inputStream.pos;
   if (!inputStream.matchString(this.obj)) {
     state.processFailure(origPos, this);
     return false;
@@ -74,9 +74,9 @@ pexprs.Terminal.prototype.eval = function(state) {
 };
 
 pexprs.Range.prototype.eval = function(state) {
-  var inputStream = state.inputStream;
-  var origPos = inputStream.pos;
-  var ch = inputStream.next();
+  const inputStream = state.inputStream;
+  const origPos = inputStream.pos;
+  const ch = inputStream.next();
   if (ch && this.from <= ch && ch <= this.to) {
     state.pushBinding(new TerminalNode(state.grammar, ch), origPos);
     return true;
@@ -92,13 +92,13 @@ pexprs.Param.prototype.eval = function(state) {
 
 pexprs.Lex.prototype.eval = function(state) {
   state.enterLexifiedContext();
-  var ans = state.eval(this.expr);
+  const ans = state.eval(this.expr);
   state.exitLexifiedContext();
   return ans;
 };
 
 pexprs.Alt.prototype.eval = function(state) {
-  for (var idx = 0; idx < this.terms.length; idx++) {
+  for (let idx = 0; idx < this.terms.length; idx++) {
     if (state.eval(this.terms[idx])) {
       return true;
     }
@@ -107,8 +107,8 @@ pexprs.Alt.prototype.eval = function(state) {
 };
 
 pexprs.Seq.prototype.eval = function(state) {
-  for (var idx = 0; idx < this.factors.length; idx++) {
-    var factor = this.factors[idx];
+  for (let idx = 0; idx < this.factors.length; idx++) {
+    const factor = this.factors[idx];
     if (!state.eval(factor)) {
       return false;
     }
@@ -117,27 +117,27 @@ pexprs.Seq.prototype.eval = function(state) {
 };
 
 pexprs.Iter.prototype.eval = function(state) {
-  var inputStream = state.inputStream;
-  var origPos = inputStream.pos;
-  var arity = this.getArity();
-  var cols = [];
-  var colOffsets = [];
+  const inputStream = state.inputStream;
+  const origPos = inputStream.pos;
+  const arity = this.getArity();
+  const cols = [];
+  const colOffsets = [];
   while (cols.length < arity) {
     cols.push([]);
     colOffsets.push([]);
   }
 
-  var numMatches = 0;
-  var prevPos = origPos;
-  var idx;
+  let numMatches = 0;
+  let prevPos = origPos;
+  let idx;
   while (numMatches < this.maxNumMatches && state.eval(this.expr)) {
     if (inputStream.pos === prevPos) {
       throw errors.kleeneExprHasNullableOperand(this, state._applicationStack);
     }
     prevPos = inputStream.pos;
     numMatches++;
-    var row = state._bindings.splice(state._bindings.length - arity, arity);
-    var rowOffsets = state._bindingOffsets.splice(state._bindingOffsets.length - arity, arity);
+    const row = state._bindings.splice(state._bindings.length - arity, arity);
+    const rowOffsets = state._bindingOffsets.splice(state._bindingOffsets.length - arity, arity);
     for (idx = 0; idx < row.length; idx++) {
       cols[idx].push(row[idx]);
       colOffsets[idx].push(rowOffsets[idx]);
@@ -146,18 +146,18 @@ pexprs.Iter.prototype.eval = function(state) {
   if (numMatches < this.minNumMatches) {
     return false;
   }
-  var offset = state.posToOffset(origPos);
-  var matchLength = 0;
+  let offset = state.posToOffset(origPos);
+  let matchLength = 0;
   if (numMatches > 0) {
-    var lastCol = cols[arity - 1];
-    var lastColOffsets = colOffsets[arity - 1];
+    const lastCol = cols[arity - 1];
+    const lastColOffsets = colOffsets[arity - 1];
 
-    var endOffset =
+    const endOffset =
         lastColOffsets[lastColOffsets.length - 1] + lastCol[lastCol.length - 1].matchLength;
     offset = colOffsets[0][0];
     matchLength = endOffset - offset;
   }
-  var isOptional = this instanceof pexprs.Opt;
+  const isOptional = this instanceof pexprs.Opt;
   for (idx = 0; idx < cols.length; idx++) {
     state._bindings.push(
         new IterationNode(state.grammar, cols[idx], colOffsets[idx], matchLength, isOptional));
@@ -176,11 +176,11 @@ pexprs.Not.prototype.eval = function(state) {
       a failure for 'foo' instead.
   */
 
-  var inputStream = state.inputStream;
-  var origPos = inputStream.pos;
+  const inputStream = state.inputStream;
+  const origPos = inputStream.pos;
   state.pushFailuresInfo();
 
-  var ans = state.eval(this.expr);
+  const ans = state.eval(this.expr);
 
   state.popFailuresInfo();
   if (ans) {
@@ -193,8 +193,8 @@ pexprs.Not.prototype.eval = function(state) {
 };
 
 pexprs.Lookahead.prototype.eval = function(state) {
-  var inputStream = state.inputStream;
-  var origPos = inputStream.pos;
+  const inputStream = state.inputStream;
+  const origPos = inputStream.pos;
   if (state.eval(this.expr)) {
     inputStream.pos = origPos;
     return true;
@@ -204,18 +204,18 @@ pexprs.Lookahead.prototype.eval = function(state) {
 };
 
 pexprs.Apply.prototype.eval = function(state) {
-  var caller = state.currentApplication();
-  var actuals = caller ? caller.args : [];
-  var app = this.substituteParams(actuals);
+  const caller = state.currentApplication();
+  const actuals = caller ? caller.args : [];
+  const app = this.substituteParams(actuals);
 
-  var posInfo = state.getCurrentPosInfo();
+  const posInfo = state.getCurrentPosInfo();
   if (posInfo.isActive(app)) {
     // This rule is already active at this position, i.e., it is left-recursive.
     return app.handleCycle(state);
   }
 
-  var memoKey = app.toMemoKey();
-  var memoRec = posInfo.memo[memoKey];
+  const memoKey = app.toMemoKey();
+  const memoRec = posInfo.memo[memoKey];
 
   if (memoRec && posInfo.shouldUseMemoizedResult(memoRec)) {
     if (state.hasNecessaryInfo(memoRec)) {
@@ -227,10 +227,10 @@ pexprs.Apply.prototype.eval = function(state) {
 };
 
 pexprs.Apply.prototype.handleCycle = function(state) {
-  var posInfo = state.getCurrentPosInfo();
-  var currentLeftRecursion = posInfo.currentLeftRecursion;
-  var memoKey = this.toMemoKey();
-  var memoRec = posInfo.memo[memoKey];
+  const posInfo = state.getCurrentPosInfo();
+  const currentLeftRecursion = posInfo.currentLeftRecursion;
+  const memoKey = this.toMemoKey();
+  let memoRec = posInfo.memo[memoKey];
 
   if (currentLeftRecursion && currentLeftRecursion.headApplication.toMemoKey() === memoKey) {
     // We already know about this left recursion, but it's possible there are "involved
@@ -247,12 +247,12 @@ pexprs.Apply.prototype.handleCycle = function(state) {
 };
 
 pexprs.Apply.prototype.reallyEval = function(state) {
-  var inputStream = state.inputStream;
-  var origPos = inputStream.pos;
-  var origPosInfo = state.getCurrentPosInfo();
-  var ruleInfo = state.grammar.rules[this.ruleName];
-  var body = ruleInfo.body;
-  var description = ruleInfo.description;
+  const inputStream = state.inputStream;
+  const origPos = inputStream.pos;
+  const origPosInfo = state.getCurrentPosInfo();
+  const ruleInfo = state.grammar.rules[this.ruleName];
+  const body = ruleInfo.body;
+  const description = ruleInfo.description;
 
   state.enterApplication(origPosInfo, this);
 
@@ -262,14 +262,14 @@ pexprs.Apply.prototype.reallyEval = function(state) {
 
   // Reset the input stream's examinedLength property so that we can track
   // the examined length of this particular application.
-  var origInputStreamExaminedLength = inputStream.examinedLength;
+  const origInputStreamExaminedLength = inputStream.examinedLength;
   inputStream.examinedLength = 0;
 
-  var value = this.evalOnce(body, state);
-  var currentLR = origPosInfo.currentLeftRecursion;
-  var memoKey = this.toMemoKey();
-  var isHeadOfLeftRecursion = currentLR && currentLR.headApplication.toMemoKey() === memoKey;
-  var memoRec;
+  let value = this.evalOnce(body, state);
+  const currentLR = origPosInfo.currentLeftRecursion;
+  const memoKey = this.toMemoKey();
+  const isHeadOfLeftRecursion = currentLR && currentLR.headApplication.toMemoKey() === memoKey;
+  let memoRec;
 
   if (isHeadOfLeftRecursion) {
     value = this.growSeedResult(body, state, origPos, currentLR, value);
@@ -277,18 +277,18 @@ pexprs.Apply.prototype.reallyEval = function(state) {
     memoRec = currentLR;
     memoRec.examinedLength = inputStream.examinedLength - origPos;
     memoRec.rightmostFailureOffset = state._getRightmostFailureOffset();
-    origPosInfo.memoize(memoKey, memoRec);  // updates origPosInfo's maxExaminedLength
+    origPosInfo.memoize(memoKey, memoRec); // updates origPosInfo's maxExaminedLength
   } else if (!currentLR || !currentLR.isInvolved(memoKey)) {
     // This application is not involved in left recursion, so it's ok to memoize it.
     memoRec = origPosInfo.memoize(memoKey, {
       matchLength: inputStream.pos - origPos,
       examinedLength: inputStream.examinedLength - origPos,
-      value: value,
+      value,
       failuresAtRightmostPosition: state.cloneRecordedFailures(),
       rightmostFailureOffset: state._getRightmostFailureOffset()
     });
   }
-  var succeeded = !!value;
+  const succeeded = !!value;
 
   if (description) {
     state.popFailuresInfo();
@@ -303,7 +303,7 @@ pexprs.Apply.prototype.reallyEval = function(state) {
   // Record trace information in the memo table, so that it is available if the memoized result
   // is used later.
   if (state.isTracing() && memoRec) {
-    var entry = state.getTraceEntry(origPos, this, succeeded, succeeded ? [value] : []);
+    const entry = state.getTraceEntry(origPos, this, succeeded, succeeded ? [value] : []);
     if (isHeadOfLeftRecursion) {
       common.assert(entry.terminatingLREntry != null || !succeeded);
       entry.isHeadOfLeftRecursion = true;
@@ -321,13 +321,13 @@ pexprs.Apply.prototype.reallyEval = function(state) {
 };
 
 pexprs.Apply.prototype.evalOnce = function(expr, state) {
-  var inputStream = state.inputStream;
-  var origPos = inputStream.pos;
+  const inputStream = state.inputStream;
+  const origPos = inputStream.pos;
 
   if (state.eval(expr)) {
-    var arity = expr.getArity();
-    var bindings = state._bindings.splice(state._bindings.length - arity, arity);
-    var offsets = state._bindingOffsets.splice(state._bindingOffsets.length - arity, arity);
+    const arity = expr.getArity();
+    const bindings = state._bindings.splice(state._bindings.length - arity, arity);
+    const offsets = state._bindingOffsets.splice(state._bindingOffsets.length - arity, arity);
     return new NonterminalNode(
         state.grammar, this.ruleName, bindings, offsets, inputStream.pos - origPos);
   } else {
@@ -340,7 +340,7 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
     return false;
   }
 
-  var inputStream = state.inputStream;
+  const inputStream = state.inputStream;
 
   while (true) {
     lrMemoRec.matchLength = inputStream.pos - origPos;
@@ -351,7 +351,7 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
       // Before evaluating the body again, add a trace node for this application to the memo entry.
       // Its only child is a copy of the trace node from `newValue`, which will always be the last
       // element in `state.trace`.
-      var seedTrace = state.trace[state.trace.length - 1];
+      const seedTrace = state.trace[state.trace.length - 1];
       lrMemoRec.traceEntry = new Trace(
           state.input, origPos, inputStream.pos, this, true, [newValue], [seedTrace.clone()]);
     }
@@ -361,7 +361,7 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
       break;
     }
     if (state.isTracing()) {
-      state.trace.splice(-2, 1);  // Drop the trace for the old seed.
+      state.trace.splice(-2, 1); // Drop the trace for the old seed.
     }
   }
   if (state.isTracing()) {
@@ -373,9 +373,9 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
 };
 
 pexprs.UnicodeChar.prototype.eval = function(state) {
-  var inputStream = state.inputStream;
-  var origPos = inputStream.pos;
-  var ch = inputStream.next();
+  const inputStream = state.inputStream;
+  const origPos = inputStream.pos;
+  const ch = inputStream.next();
   if (ch && this.pattern.test(ch)) {
     state.pushBinding(new TerminalNode(state.grammar, ch), origPos);
     return true;

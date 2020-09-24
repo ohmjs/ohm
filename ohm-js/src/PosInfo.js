@@ -5,7 +5,7 @@
 // --------------------------------------------------------------------
 
 function PosInfo() {
-  this.applicationMemoKeyStack = [];  // active applications at this position
+  this.applicationMemoKeyStack = []; // active applications at this position
   this.memo = {};
   this.maxExaminedLength = 0;
   this.maxRightmostFailureOffset = -1;
@@ -13,35 +13,36 @@ function PosInfo() {
 }
 
 PosInfo.prototype = {
-  isActive: function(application) {
+  isActive(application) {
     return this.applicationMemoKeyStack.indexOf(application.toMemoKey()) >= 0;
   },
 
-  enter: function(application) {
+  enter(application) {
     this.applicationMemoKeyStack.push(application.toMemoKey());
   },
 
-  exit: function() {
+  exit() {
     this.applicationMemoKeyStack.pop();
   },
 
-  startLeftRecursion: function(headApplication, memoRec) {
+  startLeftRecursion(headApplication, memoRec) {
     memoRec.isLeftRecursion = true;
     memoRec.headApplication = headApplication;
     memoRec.nextLeftRecursion = this.currentLeftRecursion;
     this.currentLeftRecursion = memoRec;
 
-    var applicationMemoKeyStack = this.applicationMemoKeyStack;
-    var indexOfFirstInvolvedRule = applicationMemoKeyStack.indexOf(headApplication.toMemoKey()) + 1;
-    var involvedApplicationMemoKeys = applicationMemoKeyStack.slice(indexOfFirstInvolvedRule);
+    const applicationMemoKeyStack = this.applicationMemoKeyStack;
+    const indexOfFirstInvolvedRule =
+        applicationMemoKeyStack.indexOf(headApplication.toMemoKey()) + 1;
+    const involvedApplicationMemoKeys = applicationMemoKeyStack.slice(indexOfFirstInvolvedRule);
 
     memoRec.isInvolved = function(applicationMemoKey) {
       return involvedApplicationMemoKeys.indexOf(applicationMemoKey) >= 0;
     };
 
     memoRec.updateInvolvedApplicationMemoKeys = function() {
-      for (var idx = indexOfFirstInvolvedRule; idx < applicationMemoKeyStack.length; idx++) {
-        var applicationMemoKey = applicationMemoKeyStack[idx];
+      for (let idx = indexOfFirstInvolvedRule; idx < applicationMemoKeyStack.length; idx++) {
+        const applicationMemoKey = applicationMemoKeyStack[idx];
         if (!this.isInvolved(applicationMemoKey)) {
           involvedApplicationMemoKeys.push(applicationMemoKey);
         }
@@ -49,19 +50,19 @@ PosInfo.prototype = {
     };
   },
 
-  endLeftRecursion: function() {
+  endLeftRecursion() {
     this.currentLeftRecursion = this.currentLeftRecursion.nextLeftRecursion;
   },
 
   // Note: this method doesn't get called for the "head" of a left recursion -- for LR heads,
   // the memoized result (which starts out being a failure) is always used.
-  shouldUseMemoizedResult: function(memoRec) {
+  shouldUseMemoizedResult(memoRec) {
     if (!memoRec.isLeftRecursion) {
       return true;
     }
-    var applicationMemoKeyStack = this.applicationMemoKeyStack;
-    for (var idx = 0; idx < applicationMemoKeyStack.length; idx++) {
-      var applicationMemoKey = applicationMemoKeyStack[idx];
+    const applicationMemoKeyStack = this.applicationMemoKeyStack;
+    for (let idx = 0; idx < applicationMemoKeyStack.length; idx++) {
+      const applicationMemoKey = applicationMemoKeyStack[idx];
       if (memoRec.isInvolved(applicationMemoKey)) {
         return false;
       }
@@ -69,7 +70,7 @@ PosInfo.prototype = {
     return true;
   },
 
-  memoize: function(memoKey, memoRec) {
+  memoize(memoKey, memoRec) {
     this.memo[memoKey] = memoRec;
     this.maxExaminedLength = Math.max(this.maxExaminedLength, memoRec.examinedLength);
     this.maxRightmostFailureOffset =
@@ -77,19 +78,19 @@ PosInfo.prototype = {
     return memoRec;
   },
 
-  clearObsoleteEntries: function(pos, invalidatedIdx) {
+  clearObsoleteEntries(pos, invalidatedIdx) {
     if (pos + this.maxExaminedLength <= invalidatedIdx) {
       // Optimization: none of the rule applications that were memoized here examined the
       // interval of the input that changed, so nothing has to be invalidated.
       return;
     }
 
-    var memo = this.memo;
+    const memo = this.memo;
     this.maxExaminedLength = 0;
     this.maxRightmostFailureOffset = -1;
-    var self = this;
-    Object.keys(memo).forEach(function(k) {
-      var memoRec = memo[k];
+    const self = this;
+    Object.keys(memo).forEach(k => {
+      const memoRec = memo[k];
       if (pos + memoRec.examinedLength > invalidatedIdx) {
         delete memo[k];
       } else {

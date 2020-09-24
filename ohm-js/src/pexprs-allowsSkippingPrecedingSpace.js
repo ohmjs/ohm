@@ -4,8 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common');
-var pexprs = require('./pexprs');
+const common = require('./common');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations
@@ -15,7 +15,7 @@ var pexprs = require('./pexprs');
   Return true if we should skip spaces preceding this expression in a syntactic context.
 */
 pexprs.PExpr.prototype.allowsSkippingPrecedingSpace = common.abstract(
-  'allowsSkippingPrecedingSpace'
+    'allowsSkippingPrecedingSpace'
 );
 
 /*

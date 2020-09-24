@@ -1,18 +1,18 @@
 'use strict';
 
-var test = require('tape');
+const test = require('tape');
 
-var makeGrammar = require('./testUtil').makeGrammar;
+const makeGrammar = require('./testUtil').makeGrammar;
 
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
 
-test('Alt', function(t) {
-  var random = Math.random;
+test('Alt', t => {
+  const random = Math.random;
 
   try {
-    var g = makeGrammar([
+    const g = makeGrammar([
       'G {',
       '  alt = "a" | "b"',
       '}'
@@ -22,7 +22,7 @@ test('Alt', function(t) {
     //   to take one path or another. In this case:
     //   floor(0.6 * 2) = 1, making 'generateExample()' select the second path.
     Math.random = function() { return 0.6; };
-    var example = g.rules.alt.body.generateExample(g, {}, false, []);
+    let example = g.rules.alt.body.generateExample(g, {}, false, []);
     t.equal(example.value, 'b');
 
     Math.random = function() { return 0.2; };
@@ -34,56 +34,56 @@ test('Alt', function(t) {
   t.end();
 });
 
-test('Seq', function(t) {
-  var g = makeGrammar([
+test('Seq', t => {
+  const g = makeGrammar([
     'G {',
     '  seq = "a" "b"',
     '}'
   ]);
 
-  var example = g.rules.seq.body.generateExample(g, {}, false, []);
+  const example = g.rules.seq.body.generateExample(g, {}, false, []);
 
   t.equal(example.value, 'ab');
 
   t.end();
 });
 
-test('Apply', function(t) {
-  var g = makeGrammar([
+test('Apply', t => {
+  const g = makeGrammar([
     'G {',
     '  apply = a ',
     '  a = "b"*   ',
     '}'
   ]);
 
-  var example = g.rules.apply.body.generateExample(g, {a: ['bbbb']}, false, []);
+  const example = g.rules.apply.body.generateExample(g, {a: ['bbbb']}, false, []);
 
   t.equal(example.value, 'bbbb');
   t.end();
 });
 
-test('Terminal', function(t) {
-  var g = makeGrammar([
+test('Terminal', t => {
+  const g = makeGrammar([
     'G {',
     '  a = "a"',
     '}'
   ]);
 
-  var example = g.rules.a.body.generateExample(g, {}, false, []);
+  const example = g.rules.a.body.generateExample(g, {}, false, []);
 
   t.equal(example.value, 'a');
   t.end();
 });
 
-test('Range', function(t) {
-  var g = makeGrammar([
+test('Range', t => {
+  const g = makeGrammar([
     'G {',
     '  num = "1" .. "9"',
     '}'
   ]);
 
-  var example = g.rules.num.body.generateExample(g, {}, false, []);
-  var charCode = example.value.charCodeAt(0);
+  const example = g.rules.num.body.generateExample(g, {}, false, []);
+  const charCode = example.value.charCodeAt(0);
 
   t.ok(charCode >= '1'.charCodeAt(0));
   t.ok(charCode <= '9'.charCodeAt(0));
@@ -91,39 +91,39 @@ test('Range', function(t) {
   t.end();
 });
 
-test('Not', function(t) {
-  var g = makeGrammar([
+test('Not', t => {
+  const g = makeGrammar([
     'G {',
     '  not = ~"a"',
     '}'
   ]);
 
-  var example = g.rules.not.body.generateExample(g, {}, false, []);
+  const example = g.rules.not.body.generateExample(g, {}, false, []);
 
   t.equal(example.value, '');
 
   t.end();
 });
 
-test('Lookahead', function(t) {
-  var g = makeGrammar([
+test('Lookahead', t => {
+  const g = makeGrammar([
     'G {',
     '  lookahead = &"a"',
     '}'
   ]);
 
-  var example = g.rules.lookahead.body.generateExample(g, {}, false, []);
+  const example = g.rules.lookahead.body.generateExample(g, {}, false, []);
 
   t.equal(example.value, '');
 
   t.end();
 });
 
-test('Star', function(t) {
-  var random = Math.random;
+test('Star', t => {
+  const random = Math.random;
 
   try {
-    var g = makeGrammar([
+    const g = makeGrammar([
       'G {',
       '  star = "a"*',
       '}'
@@ -134,7 +134,7 @@ test('Star', function(t) {
     //   floor(4 * 0.76) = 3, and floor(3 * 0.1) = 0
     // Note: the system only generates up to 3 repetitions in an iter node
     Math.random = function() { return 0.76; };
-    var example = g.rules.star.body.generateExample(g, {}, false, []);
+    let example = g.rules.star.body.generateExample(g, {}, false, []);
     t.equal(example.value, 'aaa');
 
     Math.random = function() { return 0.1; };
@@ -147,18 +147,18 @@ test('Star', function(t) {
   t.end();
 });
 
-test('Plus', function(t) {
-  var random = Math.random;
+test('Plus', t => {
+  const random = Math.random;
 
   try {
-    var g = makeGrammar([
+    const g = makeGrammar([
       'G {',
       '  plus = "a"+',
       '}'
     ]);
 
     Math.random = function() { return 0.1; };
-    var example = g.rules.plus.body.generateExample(g, {}, false, []);
+    let example = g.rules.plus.body.generateExample(g, {}, false, []);
     t.equal(example.value, 'a');
 
     Math.random = function() { return 0.76; };
@@ -171,18 +171,18 @@ test('Plus', function(t) {
   t.end();
 });
 
-test('Opt', function(t) {
-  var random = Math.random;
+test('Opt', t => {
+  const random = Math.random;
 
   try {
-    var g = makeGrammar([
+    const g = makeGrammar([
       'G {',
       '  opt = "a"?',
       '}'
     ]);
 
     Math.random = function() { return 0.76; };
-    var example = g.rules.opt.body.generateExample(g, {}, false, []);
+    let example = g.rules.opt.body.generateExample(g, {}, false, []);
     t.equal(example.value, 'a');
 
     Math.random = function() { return 0.1; };
@@ -195,29 +195,29 @@ test('Opt', function(t) {
   t.end();
 });
 
-test('Param', function(t) {
-  var g = makeGrammar([
+test('Param', t => {
+  const g = makeGrammar([
     'G {',
     '  one<x> = x     ',
     '  m = "m"        ',
     '}'
   ]);
 
-  var example = g.rules.one.body.generateExample(g, {}, false, [g.rules.m.body]);
+  const example = g.rules.one.body.generateExample(g, {}, false, [g.rules.m.body]);
 
   t.equal(example.value, 'm');
 
   t.end();
 });
 
-test('Lex', function(t) {
-  var g = makeGrammar([
+test('Lex', t => {
+  const g = makeGrammar([
     'G {',
     '  A = #("a" "b")',
     '}'
   ]);
 
-  var example = g.rules.A.body.generateExample(g, {}, true, []);
+  const example = g.rules.A.body.generateExample(g, {}, true, []);
 
   t.equal(example.value, 'ab');
 

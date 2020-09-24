@@ -4,9 +4,9 @@
 // Imports
 // --------------------------------------------------------------------
 
-var UnicodeCategories = require('../third_party/UnicodeCategories');
-var common = require('./common');
-var inherits = require('inherits');
+const UnicodeCategories = require('../third_party/UnicodeCategories');
+const common = require('./common');
+const inherits = require('inherits');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -28,11 +28,11 @@ PExpr.prototype.withSource = function(interval) {
 
 // Any
 
-var any = Object.create(PExpr.prototype);
+const any = Object.create(PExpr.prototype);
 
 // End
 
-var end = Object.create(PExpr.prototype);
+const end = Object.create(PExpr.prototype);
 
 // Terminals
 
@@ -69,7 +69,7 @@ function Extend(superGrammar, name, body) {
   this.superGrammar = superGrammar;
   this.name = name;
   this.body = body;
-  var origBody = superGrammar.rules[name].body;
+  const origBody = superGrammar.rules[name].body;
   this.terms = [body, origBody];
 }
 inherits(Extend, Alt);

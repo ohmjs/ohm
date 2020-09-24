@@ -1,6 +1,6 @@
 {
   parserOptions: {
-    ecmaVersion: 5,
+    ecmaVersion: 6,
     sourceType: "script"
   },
 
@@ -23,9 +23,14 @@
     "tape"
   ],
   rules: {
-    arrow-parens: "off",
+    // Google style guide allows omitting parentheses for single-parameter arrow functions.
+    arrow-parens: ["error", "as-needed"],
 
-    // Enforce "one true brace style", allowing start and end braces to be on the same line.
+    // We follow the old Google style guide here.
+    // The default was changed in https://github.com/google/eslint-config-google/pull/23.
+    block-spacing: ["error", "always"],
+
+    // Exception: allow start and end braces to be on the same line.
     brace-style: ["error", "1tbs", {allowSingleLine: true}],
 
     // Turn off the regular camelcase rule, and use a custom rule which
@@ -66,7 +71,15 @@
 
     no-warning-comments: ["error", {terms: ["xxx", "fixme"]}],
 
+    // Object shorthand is allowed by Google style; we are more opinionated.
+    // https://google.github.io/styleguide/jsguide.html#features-objects-method-shorthand
+    object-shorthand: ["error", "always"],
+
     operator-linebreak: ["error", "after", {overrides: { ":": "ignore", "?": "ignore"}}],
+
+    // https://google.github.io/styleguide/jsguide.html#features-functions-arrow-functions
+    prefer-arrow-callback: 2,
+
     padded-blocks: 0,
     quotes: ["error", "single", "avoid-escape"],
     radix: 0,
@@ -81,8 +94,7 @@
 
     // The following rules suggest replacing certain patterns with ES6 features.
     // They are disabled for now, but we should consider enabling them if/when we move to ES6.
-    no-var: 0,  // Allow the `var` keyword.
     prefer-rest-params: 0,
-    prefer-spread: 0
+    prefer-spread: 0,
   }
 }

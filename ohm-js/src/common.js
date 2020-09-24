@@ -4,7 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-var extend = require('util-extend');
+const extend = require('util-extend');
 
 // --------------------------------------------------------------------
 // Private Stuff
@@ -12,8 +12,8 @@ var extend = require('util-extend');
 
 // Helpers
 
-var escapeStringFor = {};
-for (var c = 0; c < 128; c++) {
+const escapeStringFor = {};
+for (let c = 0; c < 128; c++) {
   escapeStringFor[c] = String.fromCharCode(c);
 }
 escapeStringFor["'".charCodeAt(0)] = "\\'";
@@ -31,10 +31,10 @@ escapeStringFor['\u000b'.charCodeAt(0)] = '\\v';
 // --------------------------------------------------------------------
 
 exports.abstract = function(optMethodName) {
-  var methodName = optMethodName || '';
+  const methodName = optMethodName || '';
   return function() {
     throw new Error(
-      'this method ' + methodName + ' is abstract! ' +
+        'this method ' + methodName + ' is abstract! ' +
       '(it has no implementation in class ' + this.constructor.name + ')');
   };
 };
@@ -49,9 +49,9 @@ exports.assert = function(cond, message) {
 // on the object `obj`. `getterFn` will be called to compute the value the
 // first time the property is accessed.
 exports.defineLazyProperty = function(obj, propName, getterFn) {
-  var memo;
+  let memo;
   Object.defineProperty(obj, propName, {
-    get: function() {
+    get() {
       if (!memo) {
         memo = getterFn.call(this);
       }
@@ -70,7 +70,7 @@ exports.clone = function(obj) {
 exports.extend = extend;
 
 exports.repeatFn = function(fn, n) {
-  var arr = [];
+  const arr = [];
   while (n-- > 0) {
     arr.push(fn());
   }
@@ -82,13 +82,13 @@ exports.repeatStr = function(str, n) {
 };
 
 exports.repeat = function(x, n) {
-  return exports.repeatFn(function() { return x; }, n);
+  return exports.repeatFn(() => x, n);
 };
 
 exports.getDuplicates = function(array) {
-  var duplicates = [];
-  for (var idx = 0; idx < array.length; idx++) {
-    var x = array[idx];
+  const duplicates = [];
+  for (let idx = 0; idx < array.length; idx++) {
+    const x = array[idx];
     if (array.lastIndexOf(x) !== idx && duplicates.indexOf(x) < 0) {
       duplicates.push(x);
     }
@@ -97,8 +97,8 @@ exports.getDuplicates = function(array) {
 };
 
 exports.copyWithoutDuplicates = function(array) {
-  var noDuplicates = [];
-  array.forEach(function(entry) {
+  const noDuplicates = [];
+  array.forEach(entry => {
     if (noDuplicates.indexOf(entry) < 0) {
       noDuplicates.push(entry);
     }
@@ -107,7 +107,7 @@ exports.copyWithoutDuplicates = function(array) {
 };
 
 exports.isSyntactic = function(ruleName) {
-  var firstChar = ruleName[0];
+  const firstChar = ruleName[0];
   return firstChar === firstChar.toUpperCase();
 };
 
@@ -116,7 +116,7 @@ exports.isLexical = function(ruleName) {
 };
 
 exports.padLeft = function(str, len, optChar) {
-  var ch = optChar || ' ';
+  const ch = optChar || ' ';
   if (str.length < len) {
     return exports.repeatStr(ch, len - str.length) + str;
   }
@@ -140,7 +140,7 @@ exports.StringBuffer.prototype.contents = function() {
 // Character escaping and unescaping
 
 exports.escapeChar = function(c, optDelim) {
-  var charCode = c.charCodeAt(0);
+  const charCode = c.charCodeAt(0);
   if ((c === '"' || c === "'") && optDelim && c !== optDelim) {
     return c;
   } else if (charCode < 128) {
@@ -176,13 +176,13 @@ exports.unexpectedObjToString = function(obj) {
   if (obj == null) {
     return String(obj);
   }
-  var baseToString = Object.prototype.toString.call(obj);
+  const baseToString = Object.prototype.toString.call(obj);
   try {
-    var typeName;
+    let typeName;
     if (obj.constructor && obj.constructor.name) {
       typeName = obj.constructor.name;
     } else if (baseToString.indexOf('[object ') === 0) {
-      typeName = baseToString.slice(8, -1);  // Extract e.g. "Array" from "[object Array]".
+      typeName = baseToString.slice(8, -1); // Extract e.g. "Array" from "[object Array]".
     } else {
       typeName = typeof obj;
     }

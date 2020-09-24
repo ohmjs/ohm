@@ -4,9 +4,9 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common');
-var nodes = require('./nodes');
-var pexprs = require('./pexprs');
+const common = require('./common');
+const nodes = require('./nodes');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations
@@ -41,8 +41,8 @@ pexprs.Param.prototype.check = function(grammar, vals) {
 };
 
 pexprs.Alt.prototype.check = function(grammar, vals) {
-  for (var i = 0; i < this.terms.length; i++) {
-    var term = this.terms[i];
+  for (let i = 0; i < this.terms.length; i++) {
+    const term = this.terms[i];
     if (term.check(grammar, vals)) {
       return true;
     }
@@ -51,9 +51,9 @@ pexprs.Alt.prototype.check = function(grammar, vals) {
 };
 
 pexprs.Seq.prototype.check = function(grammar, vals) {
-  var pos = 0;
-  for (var i = 0; i < this.factors.length; i++) {
-    var factor = this.factors[i];
+  let pos = 0;
+  for (let i = 0; i < this.factors.length; i++) {
+    const factor = this.factors[i];
     if (factor.check(grammar, vals.slice(pos))) {
       pos += factor.getArity();
     } else {
@@ -64,13 +64,13 @@ pexprs.Seq.prototype.check = function(grammar, vals) {
 };
 
 pexprs.Iter.prototype.check = function(grammar, vals) {
-  var arity = this.getArity();
-  var columns = vals.slice(0, arity);
+  const arity = this.getArity();
+  const columns = vals.slice(0, arity);
   if (columns.length !== arity) {
     return false;
   }
-  var rowCount = columns[0].length;
-  var i;
+  const rowCount = columns[0].length;
+  let i;
   for (i = 1; i < arity; i++) {
     if (columns[i].length !== rowCount) {
       return false;
@@ -78,8 +78,8 @@ pexprs.Iter.prototype.check = function(grammar, vals) {
   }
 
   for (i = 0; i < rowCount; i++) {
-    var row = [];
-    for (var j = 0; j < arity; j++) {
+    const row = [];
+    for (let j = 0; j < arity; j++) {
       row.push(columns[j][i]);
     }
     if (!this.expr.check(grammar, row)) {
@@ -108,8 +108,8 @@ pexprs.Apply.prototype.check = function(grammar, vals) {
 
   // TODO: think about *not* doing the following checks, i.e., trusting that the rule
   // was correctly constructed.
-  var ruleNode = vals[0];
-  var body = grammar.rules[this.ruleName].body;
+  const ruleNode = vals[0];
+  const body = grammar.rules[this.ruleName].body;
   return body.check(grammar, ruleNode.children) && ruleNode.numChildren() === body.getArity();
 };
 

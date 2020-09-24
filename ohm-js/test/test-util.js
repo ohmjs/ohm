@@ -4,24 +4,24 @@
 // Imports
 // --------------------------------------------------------------------
 
-var test = require('tape-catch');
+const test = require('tape-catch');
 
-var util = require('../src/util');
+const util = require('../src/util');
 
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
 
-var getLineAndColumnMessage = util.getLineAndColumnMessage;
+const getLineAndColumnMessage = util.getLineAndColumnMessage;
 
-test('getLineAndColumnMessage', function(t) {
+test('getLineAndColumnMessage', t => {
   t.equal(getLineAndColumnMessage('', 0), [
     'Line 1, col 1:',
     '> 1 | ',
     '      ^',
     ''].join('\n'), 'empty input');
 
-  var expected = [
+  let expected = [
     'Line 1, col 1:',
     '> 1 | ',
     '      ^',
@@ -59,7 +59,7 @@ test('getLineAndColumnMessage', function(t) {
   t.equal(getLineAndColumnMessage('a\n\n', 0), expected, 'two trailing empty lines');
   t.equal(getLineAndColumnMessage('a\r\n\r\n', 0), expected, '...and with CRLF');
 
-  var input = new Array(9).join('\n') + 'a\nhi!\nb';
+  let input = new Array(9).join('\n') + 'a\nhi!\nb';
   expected = [
     'Line 10, col 1:',
     '   9 | a',
@@ -89,7 +89,7 @@ test('getLineAndColumnMessage', function(t) {
   t.end();
 });
 
-test('getLineAndColumnMessage with ranges', function(t) {
+test('getLineAndColumnMessage with ranges', t => {
   t.equal(getLineAndColumnMessage('3 + 4', 2, [0, 1]), [
     'Line 1, col 3:',
     '> 1 | 3 + 4',
@@ -109,8 +109,8 @@ test('getLineAndColumnMessage with ranges', function(t) {
     ''].join('\n'), 'end index out of bounds');
 
   t.equal(getLineAndColumnMessage('3 + 4', 2, [0, 0]),
-          getLineAndColumnMessage('3 + 4', 2),
-          'empty range');
+      getLineAndColumnMessage('3 + 4', 2),
+      'empty range');
 
   t.equal(getLineAndColumnMessage('3 + 4', 0, [0, 3], [1, 5]), [
     'Line 1, col 1:',

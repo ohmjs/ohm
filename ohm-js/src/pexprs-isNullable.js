@@ -4,8 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common');
-var pexprs = require('./pexprs');
+const common = require('./common');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations
@@ -42,11 +42,11 @@ pexprs.Terminal.prototype._isNullable = function(grammar, memo) {
 
 pexprs.Alt.prototype._isNullable = function(grammar, memo) {
   return this.terms.length === 0 ||
-      this.terms.some(function(term) { return term._isNullable(grammar, memo); });
+      this.terms.some(term => term._isNullable(grammar, memo));
 };
 
 pexprs.Seq.prototype._isNullable = function(grammar, memo) {
-  return this.factors.every(function(factor) { return factor._isNullable(grammar, memo); });
+  return this.factors.every(factor => factor._isNullable(grammar, memo));
 };
 
 pexprs.Star.prototype._isNullable =
@@ -61,11 +61,11 @@ pexprs.Lex.prototype._isNullable = function(grammar, memo) {
 };
 
 pexprs.Apply.prototype._isNullable = function(grammar, memo) {
-  var key = this.toMemoKey();
+  const key = this.toMemoKey();
   if (!Object.prototype.hasOwnProperty.call(memo, key)) {
-    var body = grammar.rules[this.ruleName].body;
-    var inlined = body.substituteParams(this.args);
-    memo[key] = false;  // Prevent infinite recursion for recursive rules.
+    const body = grammar.rules[this.ruleName].body;
+    const inlined = body.substituteParams(this.args);
+    memo[key] = false; // Prevent infinite recursion for recursive rules.
     memo[key] = inlined._isNullable(grammar, memo);
   }
   return memo[key];

@@ -4,16 +4,16 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common');
-var errors = require('./errors');
-var pexprs = require('./pexprs');
+const common = require('./common');
+const errors = require('./errors');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
 
 pexprs.PExpr.prototype.assertIteratedExprsAreNotNullable = common.abstract(
-  'assertIteratedExprsAreNotNullable'
+    'assertIteratedExprsAreNotNullable'
 );
 
 pexprs.any.assertIteratedExprsAreNotNullable =
@@ -26,13 +26,13 @@ pexprs.UnicodeChar.prototype.assertIteratedExprsAreNotNullable = function(gramma
 };
 
 pexprs.Alt.prototype.assertIteratedExprsAreNotNullable = function(grammar) {
-  for (var idx = 0; idx < this.terms.length; idx++) {
+  for (let idx = 0; idx < this.terms.length; idx++) {
     this.terms[idx].assertIteratedExprsAreNotNullable(grammar);
   }
 };
 
 pexprs.Seq.prototype.assertIteratedExprsAreNotNullable = function(grammar) {
-  for (var idx = 0; idx < this.factors.length; idx++) {
+  for (let idx = 0; idx < this.factors.length; idx++) {
     this.factors[idx].assertIteratedExprsAreNotNullable(grammar);
   }
 };
@@ -54,7 +54,7 @@ pexprs.Lex.prototype.assertIteratedExprsAreNotNullable = function(grammar) {
 };
 
 pexprs.Apply.prototype.assertIteratedExprsAreNotNullable = function(grammar) {
-  this.args.forEach(function(arg) {
+  this.args.forEach(arg => {
     arg.assertIteratedExprsAreNotNullable(grammar);
   });
 };

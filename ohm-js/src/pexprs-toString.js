@@ -4,8 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common');
-var pexprs = require('./pexprs');
+const common = require('./common');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations
@@ -47,13 +47,13 @@ pexprs.Lex.prototype.toString = function() {
 pexprs.Alt.prototype.toString = function() {
   return this.terms.length === 1 ?
     this.terms[0].toString() :
-    '(' + this.terms.map(function(term) { return term.toString(); }).join(' | ') + ')';
+    '(' + this.terms.map(term => term.toString()).join(' | ') + ')';
 };
 
 pexprs.Seq.prototype.toString = function() {
   return this.factors.length === 1 ?
     this.factors[0].toString() :
-    '(' + this.factors.map(function(factor) { return factor.toString(); }).join(' ') + ')';
+    '(' + this.factors.map(factor => factor.toString()).join(' ') + ')';
 };
 
 pexprs.Iter.prototype.toString = function() {
@@ -70,7 +70,7 @@ pexprs.Lookahead.prototype.toString = function() {
 
 pexprs.Apply.prototype.toString = function() {
   if (this.args.length > 0) {
-    var ps = this.args.map(function(arg) { return arg.toString(); });
+    const ps = this.args.map(arg => arg.toString());
     return this.ruleName + '<' + ps.join(',') + '>';
   } else {
     return this.ruleName;

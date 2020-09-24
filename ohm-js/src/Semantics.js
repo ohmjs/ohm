@@ -4,22 +4,22 @@
 // Imports
 // --------------------------------------------------------------------
 
-var inherits = require('inherits');
+const inherits = require('inherits');
 
-var InputStream = require('./InputStream');
-var IterationNode = require('./nodes').IterationNode;
-var MatchResult = require('./MatchResult');
-var common = require('./common');
-var errors = require('./errors');
-var util = require('./util');
+const InputStream = require('./InputStream');
+const IterationNode = require('./nodes').IterationNode;
+const MatchResult = require('./MatchResult');
+const common = require('./common');
+const errors = require('./errors');
+const util = require('./util');
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
-var globalActionStack = [];
-var prototypeGrammar;
-var prototypeGrammarSemantics;
+const globalActionStack = [];
+let prototypeGrammar;
+let prototypeGrammarSemantics;
 
 // JSON is not a valid subset of JavaScript because there are two possible line terminators,
 // U+2028 (line separator) and U+2029 (paragraph separator) that are allowed in JSON strings
@@ -27,8 +27,8 @@ var prototypeGrammarSemantics;
 // jsonToJS() properly encodes those two characters in JSON so that it can seamlessly be
 // inserted into JavaScript code (plus the encoded version is still valid JSON)
 function jsonToJS(str) {
-  var output = str.replace(/[\u2028\u2029]/g, function(char, pos, str) {
-    var hex = char.codePointAt(0).toString(16);
+  const output = str.replace(/[\u2028\u2029]/g, (char, pos, str) => {
+    const hex = char.codePointAt(0).toString(16);
     return '\\u' + '0000'.slice(hex.length) + hex;
   });
   return output;
@@ -57,7 +57,7 @@ Wrapper.prototype.toJSON = function() {
 Wrapper.prototype._forgetMemoizedResultFor = function(attributeName) {
   // Remove the memoized attribute from the cstNode and all its children.
   delete this._node[this._semantics.attributeKeys[attributeName]];
-  this.children.forEach(function(child) {
+  this.children.forEach(child => {
     child._forgetMemoizedResultFor(attributeName);
   });
 };
@@ -69,13 +69,13 @@ Wrapper.prototype.child = function(idx) {
     // TODO: Consider throwing an exception here.
     return undefined;
   }
-  var childWrapper = this._childWrappers[idx];
+  let childWrapper = this._childWrappers[idx];
   if (!childWrapper) {
-    var childNode = this._node.childAt(idx);
-    var offset = this._node.childOffsets[idx];
+    const childNode = this._node.childAt(idx);
+    const offset = this._node.childOffsets[idx];
 
-    var source = this._baseInterval.subInterval(offset, childNode.matchLength);
-    var base = childNode.isNonterminal() ? source : this._baseInterval;
+    const source = this._baseInterval.subInterval(offset, childNode.matchLength);
+    const base = childNode.isNonterminal() ? source : this._baseInterval;
     childWrapper = this._childWrappers[idx] = this._semantics.wrap(childNode, source, base);
   }
   return childWrapper;
@@ -85,7 +85,7 @@ Wrapper.prototype.child = function(idx) {
 // wrapper.
 Wrapper.prototype._children = function() {
   // Force the creation of all child wrappers
-  for (var idx = 0; idx < this._node.numChildren(); idx++) {
+  for (let idx = 0; idx < this._node.numChildren(); idx++) {
     this.child(idx);
   }
   return this._childWrappers;
@@ -130,35 +130,35 @@ Wrapper.prototype.isOptional = function() {
 
 // Create a new _iter wrapper in the same semantics as this wrapper.
 Wrapper.prototype.iteration = function(optChildWrappers) {
-  var childWrappers = optChildWrappers || [];
+  const childWrappers = optChildWrappers || [];
 
-  var childNodes = childWrappers.map(function(c) { return c._node; });
-  var iter = new IterationNode(this._node.grammar, childNodes, [], -1, false);
+  const childNodes = childWrappers.map(c => c._node);
+  const iter = new IterationNode(this._node.grammar, childNodes, [], -1, false);
 
-  var wrapper = this._semantics.wrap(iter, null, null);
+  const wrapper = this._semantics.wrap(iter, null, null);
   wrapper._childWrappers = childWrappers;
   return wrapper;
 };
 
 Object.defineProperties(Wrapper.prototype, {
   // Returns an array containing the children of this CST node.
-  children: {get: function() { return this._children(); }},
+  children: {get() { return this._children(); }},
 
   // Returns the name of grammar rule that created this CST node.
-  ctorName: {get: function() { return this._node.ctorName; }},
+  ctorName: {get() { return this._node.ctorName; }},
 
   // TODO: Remove this eventually (deprecated in v0.12).
-  interval: {get: function() {
+  interval: {get() {
     throw new Error('The `interval` property is deprecated -- use `source` instead');
   }},
 
   // Returns the number of children of this CST node.
-  numChildren: {get: function() { return this._node.numChildren(); }},
+  numChildren: {get() { return this._node.numChildren(); }},
 
   // Returns the primitive value of this CST node, if it's a terminal node. Otherwise,
   // throws an exception.
   primitiveValue: {
-    get: function() {
+    get() {
       if (this.isTerminal()) {
         return this._node.primitiveValue;
       }
@@ -168,7 +168,7 @@ Object.defineProperties(Wrapper.prototype, {
   },
 
   // Returns the contents of the input stream consumed by this CST node.
-  sourceString: {get: function() { return this.source.contents; }}
+  sourceString: {get() { return this.source.contents; }}
 });
 
 // ----------------- Semantics -----------------
@@ -180,7 +180,7 @@ Object.defineProperties(Wrapper.prototype, {
 // `Semantics.createSemantics`. The normal ways to create a Semantics, given a grammar 'g', are
 // `g.createSemantics()` and `g.extendSemantics(parentSemantics)`.
 function Semantics(grammar, superSemantics) {
-  var self = this;
+  const self = this;
   this.grammar = grammar;
   this.checkedActionDicts = false;
 
@@ -220,7 +220,7 @@ function Semantics(grammar, superSemantics) {
 
     // Assign unique symbols for each of the attributes inherited from the super-semantics so that
     // they are memoized independently.
-    for (var attributeName in this.attributes) {
+    for (const attributeName in this.attributes) {
       Object.defineProperty(this.attributeKeys, attributeName, {
         value: util.uniqueId(attributeName)
       });
@@ -248,7 +248,7 @@ Semantics.prototype.checkActionDictsIfHaventAlready = function() {
 // including the ones that were inherited from the super-semantics, agree with the grammar.
 // Throws an exception if one or more of them doesn't.
 Semantics.prototype.checkActionDicts = function() {
-  var name;
+  let name;
   for (name in this.operations) {
     this.operations[name].checkActionDict(this.grammar);
   }
@@ -262,12 +262,12 @@ Semantics.prototype.toRecipe = function(semanticsOnly) {
     return s.super !== Semantics.BuiltInSemantics._getSemantics();
   }
 
-  var str = '(function(g) {\n';
+  let str = '(function(g) {\n';
   if (hasSuperSemantics(this)) {
     str += '  var semantics = ' + this.super.toRecipe(true) + '(g';
 
-    var superSemanticsGrammar = this.super.grammar;
-    var relatedGrammar = this.grammar;
+    const superSemanticsGrammar = this.super.grammar;
+    let relatedGrammar = this.grammar;
     while (relatedGrammar !== superSemanticsGrammar) {
       str += '.superGrammar';
       relatedGrammar = relatedGrammar.superGrammar;
@@ -278,15 +278,17 @@ Semantics.prototype.toRecipe = function(semanticsOnly) {
   } else {
     str += '  return g.createSemantics()';
   }
-  ['Operation', 'Attribute'].forEach(function(type) {
-    var semanticOperations = this[type.toLowerCase() + 's'];
-    Object.keys(semanticOperations).forEach(function(name) {
-      var signature = name;
-      if (semanticOperations[name].formals.length > 0) {
-        signature += '(' + semanticOperations[name].formals.join(', ') + ')';
+  ['Operation', 'Attribute'].forEach(type => {
+    const semanticOperations = this[type.toLowerCase() + 's'];
+    Object.keys(semanticOperations).forEach(name => {
+      const {actionDict, formals, builtInDefault} = semanticOperations[name];
+
+      let signature = name;
+      if (formals.length > 0) {
+        signature += '(' + formals.join(', ') + ')';
       }
 
-      var method;
+      let method;
       if (hasSuperSemantics(this) && this.super[type.toLowerCase() + 's'][name]) {
         method = 'extend' + type;
       } else {
@@ -294,19 +296,21 @@ Semantics.prototype.toRecipe = function(semanticsOnly) {
       }
       str += '\n    .' + method + '(' + JSON.stringify(signature) + ', {';
 
-      var actions = semanticOperations[name].actionDict;
-      var srcArray = [];
-      Object.keys(actions).forEach(function(actionName) {
-        if (semanticOperations[name].builtInDefault !== actions[actionName]) {
-          srcArray.push('\n      ' + JSON.stringify(actionName) + ': ' +
-            actions[actionName].toString());
+      const srcArray = [];
+      Object.keys(actionDict).forEach(actionName => {
+        if (actionDict[actionName] !== builtInDefault) {
+          let source = actionDict[actionName].toString().trim();
+
+          // Convert method shorthand to plain old function syntax.
+          // https://github.com/harc/ohm/issues/263
+          source = source.replace(/^.*\(/, 'function(');
+
+          srcArray.push('\n      ' + JSON.stringify(actionName) + ': ' + source);
         }
       });
-      str += srcArray.join(',');
-
-      str += '\n    })';
-    }, this);
-  }, this);
+      str += srcArray.join(',') + '\n    })';
+    });
+  });
   str += ';\n  })';
 
   if (!semanticsOnly) {
@@ -333,7 +337,7 @@ function parseSignature(signature, type) {
     };
   }
 
-  var r = prototypeGrammar.match(
+  const r = prototypeGrammar.match(
       signature,
       type === 'operation' ? 'OperationSignature' : 'AttributeSignature');
   if (r.failed()) {
@@ -345,16 +349,14 @@ function parseSignature(signature, type) {
 
 function newDefaultAction(type, name, doIt) {
   return function(children) {
-    var self = this;
-    var thisThing = this._semantics.operations[name] || this._semantics.attributes[name];
-    var args = thisThing.formals.map(function(formal) {
-      return self.args[formal];
-    });
+    const self = this;
+    const thisThing = this._semantics.operations[name] || this._semantics.attributes[name];
+    const args = thisThing.formals.map(formal => self.args[formal]);
 
     if (this.isIteration()) {
       // This CST node corresponds to an iteration expression in the grammar (*, +, or ?). The
       // default behavior is to map this operation or attribute over all of its child nodes.
-      return children.map(function(child) { return doIt.apply(child, args); });
+      return children.map(child => doIt.apply(child, args));
     }
 
     // This CST node corresponds to a non-terminal in the grammar (e.g., AddExpr). The fact that
@@ -373,11 +375,11 @@ function newDefaultAction(type, name, doIt) {
 }
 
 Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDict) {
-  var typePlural = type + 's';
+  const typePlural = type + 's';
 
-  var parsedNameAndFormalArgs = parseSignature(signature, type);
-  var name = parsedNameAndFormalArgs.name;
-  var formals = parsedNameAndFormalArgs.formals;
+  const parsedNameAndFormalArgs = parseSignature(signature, type);
+  const name = parsedNameAndFormalArgs.name;
+  const formals = parsedNameAndFormalArgs.formals;
 
   // TODO: check that there are no duplicate formal arguments
 
@@ -385,15 +387,15 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
 
   // Create the action dictionary for this operation / attribute that contains a `_default` action
   // which defines the default behavior of iteration, terminal, and non-terminal nodes...
-  var builtInDefault = newDefaultAction(type, name, doIt);
-  var realActionDict = {_default: builtInDefault};
+  const builtInDefault = newDefaultAction(type, name, doIt);
+  const realActionDict = {_default: builtInDefault};
   // ... and add in the actions supplied by the programmer, which may override some or all of the
   // default ones.
-  Object.keys(actionDict).forEach(function(name) {
+  Object.keys(actionDict).forEach(name => {
     realActionDict[name] = actionDict[name];
   });
 
-  var entry = type === 'operation' ?
+  const entry = type === 'operation' ?
       new Operation(name, formals, realActionDict, builtInDefault) :
       new Attribute(name, realActionDict, builtInDefault);
 
@@ -406,7 +408,7 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
   function doIt() {
     // Dispatch to most specific version of this operation / attribute -- it may have been
     // overridden by a sub-semantics.
-    var thisThing = this._semantics[typePlural][name];
+    const thisThing = this._semantics[typePlural][name];
 
     // Check that the caller passed the correct number of arguments.
     if (arguments.length !== thisThing.formals.length) {
@@ -417,15 +419,15 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
 
     // Create an "arguments object" from the arguments that were passed to this
     // operation / attribute.
-    var args = Object.create(null);
-    for (var idx = 0; idx < arguments.length; idx++) {
-      var formal = thisThing.formals[idx];
+    const args = Object.create(null);
+    for (let idx = 0; idx < arguments.length; idx++) {
+      const formal = thisThing.formals[idx];
       args[formal] = arguments[idx];
     }
 
-    var oldArgs = this.args;
+    const oldArgs = this.args;
     this.args = args;
-    var ans = thisThing.execute(this._semantics, this);
+    const ans = thisThing.execute(this._semantics, this);
     this.args = oldArgs;
     return ans;
   }
@@ -438,7 +440,7 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
   } else {
     Object.defineProperty(this.Wrapper.prototype, name, {
       get: doIt,
-      configurable: true  // So the property can be deleted.
+      configurable: true // So the property can be deleted.
     });
     Object.defineProperty(this.attributeKeys, name, {
       value: util.uniqueId(name)
@@ -447,7 +449,7 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
 };
 
 Semantics.prototype.extendOperationOrAttribute = function(type, name, actionDict) {
-  var typePlural = type + 's';
+  const typePlural = type + 's';
 
   // Make sure that `name` really is just a name, i.e., that it doesn't also contain formals.
   parseSignature(name, 'attribute');
@@ -462,10 +464,10 @@ Semantics.prototype.extendOperationOrAttribute = function(type, name, actionDict
 
   // Create a new operation / attribute whose actionDict delegates to the super operation /
   // attribute's actionDict, and which has all the keys from `inheritedActionDict`.
-  var inheritedFormals = this[typePlural][name].formals;
-  var inheritedActionDict = this[typePlural][name].actionDict;
-  var newActionDict = Object.create(inheritedActionDict);
-  Object.keys(actionDict).forEach(function(name) {
+  const inheritedFormals = this[typePlural][name].formals;
+  const inheritedActionDict = this[typePlural][name].actionDict;
+  const newActionDict = Object.create(inheritedActionDict);
+  Object.keys(actionDict).forEach(name => {
     newActionDict[name] = actionDict[name];
   });
 
@@ -496,7 +498,7 @@ Semantics.prototype.assertNewName = function(name, type) {
 // Returns a wrapper for the given CST `node` in this semantics.
 // If `node` is already a wrapper, returns `node` itself.  // TODO: why is this needed?
 Semantics.prototype.wrap = function(node, source, optBaseInterval) {
-  var baseInterval = optBaseInterval || source;
+  const baseInterval = optBaseInterval || source;
   return node instanceof this.Wrapper ? node : new this.Wrapper(node, source, baseInterval);
 };
 
@@ -506,7 +508,7 @@ Semantics.prototype.wrap = function(node, source, optBaseInterval) {
 // a wrapper for that node which gives access to the operations and attributes provided by this
 // semantics.
 Semantics.createSemantics = function(grammar, optSuperSemantics) {
-  var s = new Semantics(
+  const s = new Semantics(
       grammar,
       optSuperSemantics !== undefined ?
           optSuperSemantics :
@@ -514,7 +516,7 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
 
   // To enable clients to invoke a semantics like a function, return a function that acts as a proxy
   // for `s`, which is the real `Semantics` instance.
-  var proxy = function ASemantics(matchResult) {
+  const proxy = function ASemantics(matchResult) {
     if (!(matchResult instanceof MatchResult)) {
       throw new TypeError(
           'Semantics expected a MatchResult, but got ' + common.unexpectedObjToString(matchResult));
@@ -523,13 +525,13 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
       throw new TypeError('cannot apply Semantics to ' + matchResult.toString());
     }
 
-    var cst = matchResult._cst;
+    const cst = matchResult._cst;
     if (cst.grammar !== grammar) {
       throw new Error(
           "Cannot use a MatchResult from grammar '" + cst.grammar.name +
           "' with a semantics for '" + grammar.name + "'");
     }
-    var inputStream = new InputStream(matchResult.input);
+    const inputStream = new InputStream(matchResult.input);
     return s.wrap(cst, inputStream.interval(matchResult._cstOffset, matchResult.input.length));
   };
 
@@ -551,7 +553,7 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
     return proxy;
   };
   proxy._getActionDict = function(operationOrAttributeName) {
-    var action = s.operations[operationOrAttributeName] || s.attributes[operationOrAttributeName];
+    const action = s.operations[operationOrAttributeName] || s.attributes[operationOrAttributeName];
     if (!action) {
       throw new Error('"' + operationOrAttributeName + '" is not a valid operation or attribute ' +
         'name in this semantics for "' + grammar.name + '"');
@@ -559,7 +561,7 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
     return action.actionDict;
   };
   proxy._remove = function(operationOrAttributeName) {
-    var semantic;
+    let semantic;
     if (operationOrAttributeName in s.operations) {
       semantic = s.operations[operationOrAttributeName];
       delete s.operations[operationOrAttributeName];
@@ -622,9 +624,9 @@ Operation.prototype.execute = function(semantics, nodeWrapper) {
     // the name of a rule in the grammar, or '_terminal' (for a terminal node), or '_iter' (for an
     // iteration node). In the latter case, the action function receives a single argument, which
     // is an array containing all of the children of the CST node.
-    var ctorName = nodeWrapper._node.ctorName;
-    var actionFn = this.actionDict[ctorName];
-    var ans;
+    const ctorName = nodeWrapper._node.ctorName;
+    let actionFn = this.actionDict[ctorName];
+    let ans;
     if (actionFn) {
       globalActionStack.push([this, ctorName]);
       ans = this.doAction(semantics, nodeWrapper, actionFn, nodeWrapper.isIteration());
@@ -677,8 +679,8 @@ inherits(Attribute, Operation);
 Attribute.prototype.typeName = 'attribute';
 
 Attribute.prototype.execute = function(semantics, nodeWrapper) {
-  var node = nodeWrapper._node;
-  var key = semantics.attributeKeys[this.name];
+  const node = nodeWrapper._node;
+  const key = semantics.attributeKeys[this.name];
   if (!node.hasOwnProperty(key)) {
     // The following is a super-send -- isn't JS beautiful? :/
     node[key] = Operation.prototype.execute.call(this, semantics, nodeWrapper);
@@ -688,18 +690,18 @@ Attribute.prototype.execute = function(semantics, nodeWrapper) {
 
 // ----------------- Deferred initialization -----------------
 
-util.awaitBuiltInRules(function(builtInRules) {
-  var operationsAndAttributesGrammar = require('../dist/operations-and-attributes');
+util.awaitBuiltInRules(builtInRules => {
+  const operationsAndAttributesGrammar = require('../dist/operations-and-attributes');
   initBuiltInSemantics(builtInRules);
-  initPrototypeParser(operationsAndAttributesGrammar);  // requires BuiltInSemantics
+  initPrototypeParser(operationsAndAttributesGrammar); // requires BuiltInSemantics
 });
 
 function initBuiltInSemantics(builtInRules) {
-  var actions = {
-    empty: function() {
+  const actions = {
+    empty() {
       return this.iteration();
     },
-    nonEmpty: function(first, _, rest) {
+    nonEmpty(first, _, rest) {
       return this.iteration([first].concat(rest.children));
     }
   };
@@ -716,22 +718,22 @@ function initBuiltInSemantics(builtInRules) {
 
 function initPrototypeParser(grammar) {
   prototypeGrammarSemantics = grammar.createSemantics().addOperation('parse', {
-    AttributeSignature: function(name) {
+    AttributeSignature(name) {
       return {
         name: name.parse(),
         formals: []
       };
     },
-    OperationSignature: function(name, optFormals) {
+    OperationSignature(name, optFormals) {
       return {
         name: name.parse(),
         formals: optFormals.parse()[0] || []
       };
     },
-    Formals: function(oparen, fs, cparen) {
+    Formals(oparen, fs, cparen) {
       return fs.asIteration().parse();
     },
-    name: function(first, rest) {
+    name(first, rest) {
       return this.sourceString;
     }
   });

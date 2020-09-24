@@ -4,38 +4,38 @@
 // Imports
 // --------------------------------------------------------------------
 
-var fs = require('fs');
-var test = require('tape');
+const fs = require('fs');
+const test = require('tape');
 
-var ohm = require('..');
-var testUtil = require('./testUtil');
+const ohm = require('..');
+const testUtil = require('./testUtil');
 
 // --------------------------------------------------------------------
 // Helpers
 // --------------------------------------------------------------------
 
-var arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
+const arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
 
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
 
-test('operations', function(t) {
-  var Arithmetic = ohm.grammar(arithmeticGrammarSource);
-  var s = Arithmetic.createSemantics();
+test('operations', t => {
+  const Arithmetic = ohm.grammar(arithmeticGrammarSource);
+  const s = Arithmetic.createSemantics();
 
   // An operation that evaluates an expression
   s.addOperation('value', {
-    addExp_plus: function(x, op, y) {
+    addExp_plus(x, op, y) {
       return x.value() + y.value();
     },
-    mulExp_times: function(x, op, y) {
+    mulExp_times(x, op, y) {
       return x.value() * y.value();
     },
-    number_rec: function(n, d) {
+    number_rec(n, d) {
       return n.value() * 10 + d.value();
     },
-    digit: function(_) {
+    digit(_) {
       return this.sourceString.charCodeAt(0) - '0'.charCodeAt(0);
     }
   });
@@ -45,16 +45,16 @@ test('operations', function(t) {
 
   // An operation that produces a list of the values of all the numbers in the tree.
   s.addOperation('numberValues', {
-    addExp_plus: function(x, op, y) {
+    addExp_plus(x, op, y) {
       return x.numberValues().concat(y.numberValues());
     },
-    mulExp_times: function(x, op, y) {
+    mulExp_times(x, op, y) {
       return x.numberValues().concat(y.numberValues());
     },
-    number: function(n) {
+    number(n) {
       return [n.value()];
     },
-    digit: function(d) {
+    digit(d) {
       return this.sourceString;
     }
   });
@@ -63,31 +63,31 @@ test('operations', function(t) {
 
   // An operation that (like the others above) doesn't take any arguments.
   s.addOperation('noArgs', {
-    addExp_plus: function(x, op, y) {
+    addExp_plus(x, op, y) {
       return x.noArgs() + y.noArgs();
     },
-    mulExp_times: function(x, op, y) {
-      return x.noArgs(1);  // should result in an error
+    mulExp_times(x, op, y) {
+      return x.noArgs(1); // should result in an error
     },
-    number: function(n) {
+    number(n) {
       return '#';
     }
   });
   t.equal(s(Arithmetic.match('1+2')).noArgs(), '##');
   t.throws(
-      function() { s(Arithmetic.match('1*2')).noArgs(); },
+      () => { s(Arithmetic.match('1*2')).noArgs(); },
       'Invalid number of arguments passed to noArgs operation (expected 0, got 1)');
 
   // An operation that failed checks when first added but then succeeds
-  t.throws(function() {
+  t.throws(() => {
     s.addOperation('failSuccess', {
-      exp: function() {
+      exp() {
       }
     });
   }, /wrong arity/);
   t.notOk(s(Arithmetic.match('1+2')).failSuccess, 'failed operation not added');
   s.addOperation('failSuccess', {
-    exp: function(arg) {
+    exp(arg) {
       return arg.value();
     }
   });
@@ -97,18 +97,18 @@ test('operations', function(t) {
   t.end();
 });
 
-test('operations with arguments', function(t) {
-  var Arithmetic = ohm.grammar(arithmeticGrammarSource);
-  var s = Arithmetic.createSemantics();
+test('operations with arguments', t => {
+  const Arithmetic = ohm.grammar(arithmeticGrammarSource);
+  const s = Arithmetic.createSemantics();
 
   s.addOperation('op1(level)', {
-    number: function(n) {
+    number(n) {
       return this.sourceString + '@L' + this.args.level;
     },
-    _default: function(children) {
-      var self = this;
-      var ans = [];
-      children.forEach(function(child) {
+    _default(children) {
+      const self = this;
+      let ans = [];
+      children.forEach(child => {
         ans = ans.concat(child.op1(self.args.level + 1));
       });
       return ans;
@@ -116,31 +116,31 @@ test('operations with arguments', function(t) {
   });
   t.deepEqual(s(Arithmetic.match('1+2*3')).op1(0), ['1@L6', '2@L7', '3@L6']);
   t.throws(
-      function() { s(Arithmetic.match('(5)-2')).op1(); },
+      () => { s(Arithmetic.match('(5)-2')).op1(); },
       'Invalid number of arguments passed to operation op1 (expected 1, got 0)');
   t.throws(
-      function() { s(Arithmetic.match('(5)-2')).op1(1, 2); },
+      () => { s(Arithmetic.match('(5)-2')).op1(1, 2); },
       'Invalid number of arguments passed to operation op1 (expected 1, got 2)');
 
   s.addOperation('op2(a, b)', {
-    number: function(n) {
+    number(n) {
       return this.args.a * 100 + this.args.b * 10 + parseInt(this.sourceString);
     }
   });
   t.throws(
-      function() { s(Arithmetic.match('(5)-2')).op2(); },
+      () => { s(Arithmetic.match('(5)-2')).op2(); },
       'Invalid number of arguments passed to operation op2 (expected 2, got 0)');
   t.throws(
-      function() { s(Arithmetic.match('(5)-2')).op2(1); },
+      () => { s(Arithmetic.match('(5)-2')).op2(1); },
       'Invalid number of arguments passed to operation op2 (expected 2, got 1)');
   t.equal(s(Arithmetic.match('3')).op2(1, 2), 123);
   t.throws(
-      function() { s(Arithmetic.match('(5)-2')).op1(1, 2, 3); },
+      () => { s(Arithmetic.match('(5)-2')).op1(1, 2, 3); },
       'Invalid number of arguments passed to operation op2 (expected 2, got 3)');
 
   s.addOperation('op3(foo, bar, baz)', {
-    _default: function(children) {
-      var oldArgs = this.args;
+    _default(children) {
+      const oldArgs = this.args;
       this.op1(0);
       t.deepEquals(
           this.args,
@@ -153,40 +153,40 @@ test('operations with arguments', function(t) {
   t.end();
 });
 
-test('attributes', function(t) {
-  var Arithmetic = ohm.grammar(arithmeticGrammarSource);
-  var count = 0;
-  var s = Arithmetic.createSemantics().addAttribute('value', {
-    addExp_plus: function(x, op, y) {
+test('attributes', t => {
+  const Arithmetic = ohm.grammar(arithmeticGrammarSource);
+  let count = 0;
+  const s = Arithmetic.createSemantics().addAttribute('value', {
+    addExp_plus(x, op, y) {
       count++;
       return x.value + y.value;
     },
-    mulExp_times: function(x, op, y) {
+    mulExp_times(x, op, y) {
       count++;
       return x.value * y.value;
     },
-    number_rec: function(n, d) {
+    number_rec(n, d) {
       count++;
       return n.value * 10 + d.value;
     },
-    digit: function(expr) {
+    digit(expr) {
       count++;
       return expr.value.charCodeAt(0) - '0'.charCodeAt(0);
     },
-    _terminal: function() {
+    _terminal() {
       count++;
       return this.primitiveValue;
     }
   });
 
-  var simple = Arithmetic.match('1+2');
-  var complicated = Arithmetic.match('13+10*2*3');
+  const simple = Arithmetic.match('1+2');
+  const complicated = Arithmetic.match('13+10*2*3');
 
   t.equal(s(simple).value, 3, 'single addExp');
   t.equal(s(complicated).value, 73, 'more complicated case');
 
   // Check that attributes are memoized
-  var oldCount = count;
+  const oldCount = count;
   t.deepEqual(s(simple).value, 3);
   t.deepEqual(s(complicated).value, 73);
   t.equal(count, oldCount);
@@ -204,27 +204,27 @@ test('attributes', function(t) {
   t.equal(s(complicated).value, 74, 'new value for more complicated case');
 
   t.throws(
-    function() { s._getActionDict('eval'); },
-    '"eval" is not a valid operation or attribute name in this semantics for "Arithmetic"');
+      () => { s._getActionDict('eval'); },
+      '"eval" is not a valid operation or attribute name in this semantics for "Arithmetic"');
 
   t.throws(
-      function() { Arithmetic.createSemantics().addAttribute('badAttribute(x, y)', {}); },
+      () => { Arithmetic.createSemantics().addAttribute('badAttribute(x, y)', {}); },
       /Expected end of input/,
       'attributes are not allowed to have arguments');
 
   t.end();
 });
 
-test("attributes - same-named attributes don't collide", function(t) {
-  var g = ohm.grammar('G { start = }');
-  var s1 = g.createSemantics();
-  var s2 = g.createSemantics();
+test("attributes - same-named attributes don't collide", t => {
+  const g = ohm.grammar('G { start = }');
+  const s1 = g.createSemantics();
+  const s2 = g.createSemantics();
 
-  var val = 1;
-  s1.addAttribute('attr', {start: function() { return val++; }});
-  s2.addAttribute('attr', {start: function() { return val++; }});
+  let val = 1;
+  s1.addAttribute('attr', {start() { return val++; }});
+  s2.addAttribute('attr', {start() { return val++; }});
 
-  var m = g.match('');
+  const m = g.match('');
   t.equal(s1(m).attr, 1);
   t.equal(s2(m).attr, 2);
 
@@ -234,9 +234,9 @@ test("attributes - same-named attributes don't collide", function(t) {
   t.end();
 });
 
-test('semantics', function(t) {
-  var Arithmetic = ohm.grammar(arithmeticGrammarSource);
-  var s = Arithmetic.createSemantics();
+test('semantics', t => {
+  const Arithmetic = ohm.grammar(arithmeticGrammarSource);
+  const s = Arithmetic.createSemantics();
 
   t.equal(s.addOperation('op', {}), s, 'addOperation returns the receiver');
   t.equal(s.addAttribute('attr', {}), s, 'addAttribute returns the receiver');
@@ -245,63 +245,63 @@ test('semantics', function(t) {
   t.equal(s.addAttribute('attr2', {}), s, 'can add more than one attribute');
 
   t.throws(
-    function() { s.addOperation('op', {}); },
-    /already exists/,
-    'addOperation throws when name is already used');
+      () => { s.addOperation('op', {}); },
+      /already exists/,
+      'addOperation throws when name is already used');
   t.throws(
-    function() { s.addOperation('attr', {}); },
-    /already exists/,
-    'addOperation throws when name is already used, even if it is an attribute');
+      () => { s.addOperation('attr', {}); },
+      /already exists/,
+      'addOperation throws when name is already used, even if it is an attribute');
 
   t.throws(
-    function() { s.addAttribute('attr', {}); },
-    /already exists/,
-    'addAttribute throws when name is already used');
+      () => { s.addAttribute('attr', {}); },
+      /already exists/,
+      'addAttribute throws when name is already used');
   t.throws(
-    function() { s.addAttribute('attr', {}); },
-    /already exists/,
-    'addAttribute throws when name is already used, even if it is an operation');
+      () => { s.addAttribute('attr', {}); },
+      /already exists/,
+      'addAttribute throws when name is already used, even if it is an operation');
 
-  t.throws(function() { s(null); }, /expected a MatchResult/);
-  t.throws(function() { s(false); }, /expected a MatchResult/);
-  t.throws(function() { s(); }, /expected a MatchResult/);
-  t.throws(function() { s(3); }, /expected a MatchResult/);
-  t.throws(function() { s('asdf'); }, /expected a MatchResult/);
-  t.throws(function() { s(Arithmetic.match('barf')); },
+  t.throws(() => { s(null); }, /expected a MatchResult/);
+  t.throws(() => { s(false); }, /expected a MatchResult/);
+  t.throws(() => { s(); }, /expected a MatchResult/);
+  t.throws(() => { s(3); }, /expected a MatchResult/);
+  t.throws(() => { s('asdf'); }, /expected a MatchResult/);
+  t.throws(() => { s(Arithmetic.match('barf')); },
       /cannot apply Semantics to \[match failed at position 0\]/,
       'throws when arg is a MatchFailure');
 
   // Cannot use the semantics on nodes from another grammar...
-  var g = ohm.grammar('G {}');
-  t.throws(function() { s(g.match('a', 'letter')); }, /Cannot use a MatchResult from grammar/);
+  let g = ohm.grammar('G {}');
+  t.throws(() => { s(g.match('a', 'letter')); }, /Cannot use a MatchResult from grammar/);
   // ... even if it's a sub-grammar
-  g = ohm.grammar('Arithmetic2 <: Arithmetic {}', {Arithmetic: Arithmetic});
-  t.throws(function() { s(g.match('1+2', 'exp')); }, /Cannot use a MatchResult from grammar/);
+  g = ohm.grammar('Arithmetic2 <: Arithmetic {}', {Arithmetic});
+  t.throws(() => { s(g.match('1+2', 'exp')); }, /Cannot use a MatchResult from grammar/);
 
   t.end();
 });
 
-test('_iter nodes', function(t) {
-  var g = testUtil.makeGrammar([
+test('_iter nodes', t => {
+  const g = testUtil.makeGrammar([
     'G {',
     '  letters = letter*',
     '  optLetter = letter?',
     '  ident = letter+',
     '}']);
-  var s = g.createSemantics().addOperation('op', {
-    letter: function(l) {
+  let s = g.createSemantics().addOperation('op', {
+    letter(l) {
       return l.sourceString;
     },
-    letters: function(ls) {
+    letters(ls) {
       return ls.op();
     }
   });
 
-  var m = g.match('abc', 'letters');
+  const m = g.match('abc', 'letters');
   t.deepEqual(s(m).op(), ['a', 'b', 'c'], 'operations are mapped over children');
 
   s = g.createSemantics().addOperation('op', {
-    letter: function(l) {
+    letter(l) {
       return l.sourceString;
     }
   });
@@ -311,31 +311,29 @@ test('_iter nodes', function(t) {
       'works with pass-through default behavior of _nonterminal');
 
   s = g.createSemantics().addOperation('op', {
-    letters: function(ls) {
+    letters(ls) {
       t.equal(ls.ctorName, '_iter', '`ls` is an _iter node');
       t.ok(ls.isIteration(), '`ls.isIteration()` returns a truthy value');
       t.equal(typeof ls.op, 'function', '`ls` has an op() method');
-      t.ok(ls.children.every(function(l) {
-        return typeof l.op === 'function';
-      }), 'children is an array of wrappers');
-      return ls.children.map(function(l) { return l.op(); }).join(',');
+      t.ok(ls.children.every(l => typeof l.op === 'function'), 'children is an array of wrappers');
+      return ls.children.map(l => l.op()).join(',');
     },
-    letter: function(l) {
+    letter(l) {
       return l.sourceString;
     }
   });
   t.equal(s(m).op(), 'a,b,c');
 
-  var m2 = g.match('', 'optLetter');
-  var m3 = g.match('ab', 'ident');
+  const m2 = g.match('', 'optLetter');
+  const m3 = g.match('ab', 'ident');
   s = g.createSemantics().addOperation('op', {
-    letters: function(ls) {
+    letters(ls) {
       return ls.isOptional();
     },
-    optLetter: function(ls) {
+    optLetter(ls) {
       return ls.isOptional();
     },
-    ident: function(ls) {
+    ident(ls) {
       return ls.isOptional();
     }
   });
@@ -346,23 +344,23 @@ test('_iter nodes', function(t) {
   t.end();
 });
 
-test('_terminal nodes', function(t) {
-  var g = ohm.grammar('G { letters = letter* }');
-  var s = g.createSemantics().addOperation('op', {});
-  var m = g.match('abc', 'letters');
+test('_terminal nodes', t => {
+  const g = ohm.grammar('G { letters = letter* }');
+  let s = g.createSemantics().addOperation('op', {});
+  const m = g.match('abc', 'letters');
 
-  t.throws(function() {
+  t.throws(() => {
     g.createSemantics().addOperation('op', {})(m).op();
   }, /Missing semantic action for '_terminal'/);
 
-  t.throws(function() {
+  t.throws(() => {
     g.createSemantics().addOperation('op', {
-      _terminal: function(x) {}
+      _terminal(x) {}
     });
   }, /wrong arity/);
 
   s = g.createSemantics().addOperation('op', {
-    _terminal: function() {
+    _terminal() {
       t.equal(arguments.length, 0, 'there are no arguments');
       t.equal(this.ctorName, '_terminal');
       t.equal(this.children.length, 0, 'node has no children');
@@ -374,8 +372,8 @@ test('_terminal nodes', function(t) {
   t.end();
 });
 
-test('semantic action arity checks', function(t) {
-  var g = ohm.grammar('G {}');
+test('semantic action arity checks', t => {
+  let g = ohm.grammar('G {}');
   function makeOperation(grammar, actions) {
     return grammar.createSemantics().addOperation('op' + testUtil.uniqueId(), actions);
   }
@@ -385,22 +383,22 @@ test('semantic action arity checks', function(t) {
 
   t.ok(makeOperation(g, {}), 'empty actions with empty grammar');
   t.throws(
-      function() { makeOperation(g, {foo: null}); },
+      () => { makeOperation(g, {foo: null}); },
       /not a valid semantic action/,
       'superfluous action dictionary keys are not allowed');
 
   t.throws(
-      function() { makeOperation(g, {_nonterminal: ignore0}); },
+      () => { makeOperation(g, {_nonterminal: ignore0}); },
       /arity/,
-     '_nonterminal is checked');
+      '_nonterminal is checked');
   t.ok(makeOperation(g, {_nonterminal: ignore1}), '_nonterminal works with one arg');
 
-  t.throws(function() {
+  t.throws(() => {
     makeOperation(g, {_terminal: ignore1});
   }, /arity/, '_terminal is checked');
   t.ok(makeOperation(g, {_terminal: ignore0}), '_terminal works with no args');
 
-  t.throws(function() {
+  t.throws(() => {
     makeOperation(g, {letter: ignore0});
   }, /arity/, 'built-in rules are checked');
   t.ok(makeOperation(g, {letter: ignore1}), 'letter works with one arg');
@@ -412,21 +410,21 @@ test('semantic action arity checks', function(t) {
     '}']);
   t.ok(makeOperation(g, {one: ignore1, two: ignore2}));
 
-  t.throws(function() {
+  t.throws(() => {
     makeOperation(g, {one: ignore0, two: ignore2});
   }, /wrong arity/, "'one', is checked");
-  t.throws(function() {
+  t.throws(() => {
     makeOperation(g, {one: ignore1, two: ignore0});
   }, /wrong arity/, "'two' is checked");
 
-  var g2 = ohm.grammar('G2 <: G {}', {G: g});
-  t.throws(function() {
+  const g2 = ohm.grammar('G2 <: G {}', {G: g});
+  t.throws(() => {
     makeOperation(g2, {one: ignore2});
   }, /wrong arity/, 'supergrammar rules are checked');
   t.ok(makeOperation(g2, {one: ignore1}), 'works with one arg');
 
-  var g3 = ohm.grammar('G3 <: G { one := "now" "two" }', {G: g});
-  t.throws(function() {
+  const g3 = ohm.grammar('G3 <: G { one := "now" "two" }', {G: g});
+  t.throws(() => {
     makeOperation(g3, {one: ignore1});
   }, /wrong arity/, 'changing arity in an overridden rule');
   t.ok(makeOperation(g3, {one: ignore2}));
@@ -434,8 +432,8 @@ test('semantic action arity checks', function(t) {
   t.end();
 });
 
-test('extending semantics', function(t) {
-  var ns = testUtil.makeGrammars([
+test('extending semantics', t => {
+  const ns = testUtil.makeGrammars([
     'G { ',
     '  one = "one"',
     '  two = "two"',
@@ -449,31 +447,31 @@ test('extending semantics', function(t) {
 
   // Make sure operations behave as expected
 
-  var s = ns.G.createSemantics()
+  let s = ns.G.createSemantics()
       .addOperation('value', {
-        one: function(_) { return 1; },
-        two: function(_) { return 2; }
+        one(_) { return 1; },
+        two(_) { return 2; }
       })
       .addOperation('valueTimesTwo', {
-        _nonterminal: function(children) { return this.value() * 2; }
+        _nonterminal(children) { return this.value() * 2; }
       });
-  t.throws(function() { ns.G2.extendSemantics(s).addOperation('value', {}); }, /already exists/);
-  t.throws(function() { ns.G2.extendSemantics(s).extendOperation('foo', {}); }, /did not inherit/);
-  t.throws(function() { ns.G.createSemantics().extendOperation('value', {}); }, /did not inherit/);
+  t.throws(() => { ns.G2.extendSemantics(s).addOperation('value', {}); }, /already exists/);
+  t.throws(() => { ns.G2.extendSemantics(s).extendOperation('foo', {}); }, /did not inherit/);
+  t.throws(() => { ns.G.createSemantics().extendOperation('value', {}); }, /did not inherit/);
   t.ok(ns.G3.extendSemantics(s));
-  t.throws(function() { ns.G4.extendSemantics(s); }, /not a sub-grammar/);
+  t.throws(() => { ns.G4.extendSemantics(s); }, /not a sub-grammar/);
 
-  t.throws(function() { ns.G2.extendSemantics(s).extendOperation('value', {}); }, /wrong arity/);
+  t.throws(() => { ns.G2.extendSemantics(s).extendOperation('value', {}); }, /wrong arity/);
   // If there is an arity mismatch due to overriding and we don't explicitly extend the operation /
   // attribute, we should catch this error when the derived semantics is applied to its first
   // CST node.
-  t.throws(function() { ns.G2.extendSemantics(s)(ns.G2.match('eins!', 'one')); }, /wrong arity/);
+  t.throws(() => { ns.G2.extendSemantics(s)(ns.G2.match('eins!', 'one')); }, /wrong arity/);
 
-  var s2 = ns.G2.extendSemantics(s).extendOperation('value', {
-    one: function(str, _) { return 21; },  // overriding
-    three: function(str) { return 3; }     // adding a new case
+  let s2 = ns.G2.extendSemantics(s).extendOperation('value', {
+    one(str, _) { return 21; }, // overriding
+    three(str) { return 3; } // adding a new case
   });
-  var m = ns.G2.match('eins!', 'one');
+  let m = ns.G2.match('eins!', 'one');
   t.equal(s2(m).value(), 21);
   t.equal(s2(m).valueTimesTwo(), 42);
 
@@ -486,29 +484,29 @@ test('extending semantics', function(t) {
   t.equal(s2(m).valueTimesTwo(), 6);
 
   // Make sure you can't extend the same operation again
-  t.throws(function() { s2.extendOperation('value', {}); }, /again/);
+  t.throws(() => { s2.extendOperation('value', {}); }, /again/);
 
   // Make sure you can't specify arguments when you extend an operation
-  t.throws(function() { s2.extendOperation('value(x)', {}); }, /Expected end of input/);
+  t.throws(() => { s2.extendOperation('value(x)', {}); }, /Expected end of input/);
 
   // Make sure attributes behave as expected
 
   s = ns.G.createSemantics()
       .addAttribute('value', {
-        one: function(_) { return 1; },
-        two: function(_) { return 2; }
+        one(_) { return 1; },
+        two(_) { return 2; }
       })
       .addAttribute('valueTimesTwo', {
-        _nonterminal: function(children) { return this.value * 2; }
+        _nonterminal(children) { return this.value * 2; }
       });
-  t.throws(function() { ns.G2.extendSemantics(s).addAttribute('value', {}); }, /already exists/);
-  t.throws(function() { ns.G2.extendSemantics(s).extendAttribute('value', {}); }, /wrong arity/);
-  t.throws(function() { ns.G2.extendSemantics(s).extendAttribute('foo', {}); }, /did not inherit/);
-  t.throws(function() { ns.G.createSemantics().extendAttribute('value', {}); }, /did not inherit/);
+  t.throws(() => { ns.G2.extendSemantics(s).addAttribute('value', {}); }, /already exists/);
+  t.throws(() => { ns.G2.extendSemantics(s).extendAttribute('value', {}); }, /wrong arity/);
+  t.throws(() => { ns.G2.extendSemantics(s).extendAttribute('foo', {}); }, /did not inherit/);
+  t.throws(() => { ns.G.createSemantics().extendAttribute('value', {}); }, /did not inherit/);
 
   s2 = ns.G2.extendSemantics(s).extendAttribute('value', {
-    one: function(str, _) { return 21; },  // overriding
-    three: function(str) { return 3; }     // adding a new case
+    one(str, _) { return 21; }, // overriding
+    three(str) { return 3; } // adding a new case
   });
   m = ns.G2.match('eins!', 'one');
   t.equal(s2(m).value, 21);
@@ -523,12 +521,12 @@ test('extending semantics', function(t) {
   t.equal(s2(m).valueTimesTwo, 6);
 
   // Make sure you can't extend the same attribute again
-  t.throws(function() { s2.extendAttribute('value', {}); }, /again/);
+  t.throws(() => { s2.extendAttribute('value', {}); }, /again/);
 
   // Make sure an attribute that was inherited from a parent semantics
   // does not share its memo table with its parent.
-  var s3 = ns.G2.extendSemantics(s2).extendAttribute('value', {
-    one: function(str, _) { return 123; }
+  const s3 = ns.G2.extendSemantics(s2).extendAttribute('value', {
+    one(str, _) { return 123; }
   });
   m = ns.G2.match('eins!', 'one');
   t.equal(s2(m).value, 21);
@@ -537,18 +535,18 @@ test('extending semantics', function(t) {
   t.equal(s3(m).valueTimesTwo, 246);
 
   // Make sure you can't specify arguments when you extend an attribute
-  t.throws(function() { s2.extendAttribute('value(x)', {}); }, /Expected end of input/);
+  t.throws(() => { s2.extendAttribute('value(x)', {}); }, /Expected end of input/);
 
   // Make sure that semantics from the same grammar source are considered compatible.
-  var arith1 = ohm.grammar(arithmeticGrammarSource);
-  var arith2 = ohm.grammar(arithmeticGrammarSource);
+  const arith1 = ohm.grammar(arithmeticGrammarSource);
+  const arith2 = ohm.grammar(arithmeticGrammarSource);
   t.ok(arith2.extendSemantics(arith1.createSemantics()));
 
   t.end();
 });
 
-test('mixing nodes from one grammar with semantics from another', function(t) {
-  var ns = testUtil.makeGrammars([
+test('mixing nodes from one grammar with semantics from another', t => {
+  const ns = testUtil.makeGrammars([
     'G {',
     '  start = "aaa"',
     '}',
@@ -560,41 +558,41 @@ test('mixing nodes from one grammar with semantics from another', function(t) {
     '}'
   ]);
 
-  var s = ns.G.createSemantics().addOperation('value', {
-    start: function(x) { return x.value() + 'choo!'; },
-    _terminal: function() { return this.primitiveValue; }
+  const s = ns.G.createSemantics().addOperation('value', {
+    start(x) { return x.value() + 'choo!'; },
+    _terminal() { return this.primitiveValue; }
   });
 
-  var m = ns.G.match('aaa', 'start');
+  let m = ns.G.match('aaa', 'start');
   t.equal(s(m).value(), 'aaachoo!');
 
   m = ns.GPrime.match('bbb', 'start');
-  t.throws(function() { s(m).value(); }, /Cannot use a MatchResult from grammar/);
+  t.throws(() => { s(m).value(); }, /Cannot use a MatchResult from grammar/);
 
   m = ns.Unrelated.match('asdf', 'start');
-  t.throws(function() { s(m).value(); }, /Cannot use a MatchResult from grammar/);
+  t.throws(() => { s(m).value(); }, /Cannot use a MatchResult from grammar/);
 
   t.end();
 });
 
-test('asIteration', function(t) {
-  var g = testUtil.makeGrammar([
+test('asIteration', t => {
+  const g = testUtil.makeGrammar([
     'G {',
     '  Start = ListOf<letter, ","> listOf<any, ".">',
     '  anyTwo = any any',
     '  anyThree = any any any',
     '}'
   ]);
-  var s = g.createSemantics().addAttribute('value', {
-    Start: function(list1, list2) {
-      var arr1 = list1.asIteration().value;
-      var arr2 = list2.asIteration().value;
+  const s = g.createSemantics().addAttribute('value', {
+    Start(list1, list2) {
+      const arr1 = list1.asIteration().value;
+      const arr2 = list2.asIteration().value;
       return arr1.join('') + arr2.join('');
     },
-    letter: function(_) {
+    letter(_) {
       return this.sourceString;
     },
-    any: function(_) {
+    any(_) {
       return this.sourceString;
     }
   });
@@ -605,37 +603,37 @@ test('asIteration', function(t) {
   // Check that we can override asIteration for ListOf, and extend it with an action
   // for a rule of our own.
   s.extendOperation('asIteration', {
-    NonemptyListOf: function(first, _, rest) {
+    NonemptyListOf(first, _, rest) {
       return this.iteration([first].concat(rest.children).reverse());
     },
-    anyTwo: function(a, b) {
+    anyTwo(a, b) {
       return this.iteration([b, a]);
     }
   });
   s.addAttribute('reversedValue', {
-    anyTwo: function(a, b) {
-      var arr = this.asIteration().value;
+    anyTwo(a, b) {
+      const arr = this.asIteration().value;
       return arr.join('');
     }
   });
   t.equal(s(g.match('a, b, c')).value, 'cba', 'overriding works');
   t.equal(s(g.match('z9', 'anyTwo')).reversedValue, '9z');
 
-  t.throws(function() { s.addAttribute('asIteration', {}); }, /already exists/);
-  t.throws(function() { s.addOperation('asIteration', {}); }, /already exists/);
-  t.throws(function() {
-    s(g.match('xxx', 'anyThree')).asIteration();  // eslint-disable-line no-unused-expressions
+  t.throws(() => { s.addAttribute('asIteration', {}); }, /already exists/);
+  t.throws(() => { s.addOperation('asIteration', {}); }, /already exists/);
+  t.throws(() => {
+    s(g.match('xxx', 'anyThree')).asIteration(); // eslint-disable-line no-unused-expressions
   }, /Missing semantic action/);
 
   t.end();
 });
 
-test('sourceString', function(t) {
-  var g = ohm.grammar('G { Start = "a" "b"* }');
+test('sourceString', t => {
+  const g = ohm.grammar('G { Start = "a" "b"* }');
 
   // An operation that calls `sourceString` on a nonterminal, terminal, and iter node.
-  var s = g.createSemantics().addOperation('foo', {
-    Start: function(a, bs) {
+  const s = g.createSemantics().addOperation('foo', {
+    Start(a, bs) {
       return this.sourceString + a.sourceString + bs.sourceString;
     }
   });
@@ -645,18 +643,18 @@ test('sourceString', function(t) {
 });
 
 // https://github.com/harc/ohm/issues/188
-test('sourceString - issue #188', function(t) {
-  var g = testUtil.makeGrammar([
+test('sourceString - issue #188', t => {
+  const g = testUtil.makeGrammar([
     'G {',
     '  Start = num num',
     '  num = digit+',
     '}'
   ]);
-  var s = g.createSemantics().addOperation('origSource', {
-    Start: function(a, b) {
+  const s = g.createSemantics().addOperation('origSource', {
+    Start(a, b) {
       return a.origSource() + b.origSource();
     },
-    num: function(digits) {
+    num(digits) {
       return digits.sourceString;
     }
   });
@@ -666,27 +664,27 @@ test('sourceString - issue #188', function(t) {
 });
 
 // https://github.com/harc/ohm/issues/204
-test('sourceString - issue #204', function(t) {
-  var g = ohm.grammar('Mu{ List = NonemptyListOf<Item, ","> Item = alnum+ }');
-  var s = g.createSemantics().addOperation('eval()', {
-    NonemptyListOf: function(x, _, xs) {
-        return [x.eval()].concat(xs.eval());
+test('sourceString - issue #204', t => {
+  const g = ohm.grammar('Mu{ List = NonemptyListOf<Item, ","> Item = alnum+ }');
+  const s = g.createSemantics().addOperation('eval()', {
+    NonemptyListOf(x, _, xs) {
+      return [x.eval()].concat(xs.eval());
     },
-    Item: function(value) {
-        return value.sourceString;
+    Item(value) {
+      return value.sourceString;
     }
   });
-  var m = g.match('Aloha, Hi');
+  const m = g.match('Aloha, Hi');
   t.deepEqual(s(m).eval(), ['Aloha', 'Hi']);
 
   t.end();
 });
 
-test('action call stacks', function(t) {
-  var g = ohm.grammar('G { start = digit }');
-  var s = g.createSemantics().addOperation('oops', {});
+test('action call stacks', t => {
+  const g = ohm.grammar('G { start = digit }');
+  const s = g.createSemantics().addOperation('oops', {});
 
-  var err;
+  let err;
   try {
     s(g.match('9')).oops();
   } catch (e) {
@@ -701,7 +699,7 @@ test('action call stacks', function(t) {
   ].join('\n'));
 
   s.addOperation('op2', {
-    start: function(d) {
+    start(d) {
       return d.oops();
     }
   });
@@ -716,7 +714,7 @@ test('action call stacks', function(t) {
     '  op2 > start',
     "  oops > default action for 'digit'",
     '  oops > _terminal'
-    ].join('\n'));
+  ].join('\n'));
 
   t.end();
 });

@@ -4,23 +4,23 @@
 // Imports
 // --------------------------------------------------------------------
 
-var Interval = require('./Interval');
-var common = require('./common');
+const Interval = require('./Interval');
+const common = require('./common');
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
 // Unicode characters that are used in the `toString` output.
-var BALLOT_X = '\u2717';
-var CHECK_MARK = '\u2713';
-var DOT_OPERATOR = '\u22C5';
-var RIGHTWARDS_DOUBLE_ARROW = '\u21D2';
-var SYMBOL_FOR_HORIZONTAL_TABULATION = '\u2409';
-var SYMBOL_FOR_LINE_FEED = '\u240A';
-var SYMBOL_FOR_CARRIAGE_RETURN = '\u240D';
+const BALLOT_X = '\u2717';
+const CHECK_MARK = '\u2713';
+const DOT_OPERATOR = '\u22C5';
+const RIGHTWARDS_DOUBLE_ARROW = '\u21D2';
+const SYMBOL_FOR_HORIZONTAL_TABULATION = '\u2409';
+const SYMBOL_FOR_LINE_FEED = '\u240A';
+const SYMBOL_FOR_CARRIAGE_RETURN = '\u240D';
 
-var Flags = {
+const Flags = {
   succeeded: 1 << 0,
   isRootNode: 1 << 1,
   isImplicitSpaces: 1 << 2,
@@ -36,7 +36,7 @@ function spaces(n) {
 // Return a string representation of a portion of `input` at offset `pos`.
 // The result will contain exactly `len` characters.
 function getInputExcerpt(input, pos, len) {
-  var excerpt = asEscapedString(input.slice(pos, pos + len));
+  const excerpt = asEscapedString(input.slice(pos, pos + len));
 
   // Pad the output if necessary.
   if (excerpt.length < len) {
@@ -77,17 +77,17 @@ function Trace(input, pos1, pos2, expr, succeeded, bindings, optChildren) {
 Trace.prototype.SKIP = {};
 
 Object.defineProperty(Trace.prototype, 'displayString', {
-  get: function() { return this.expr.toDisplayString(); }
+  get() { return this.expr.toDisplayString(); }
 });
 
 // For convenience, create a getter and setter for the boolean flags in `Flags`.
-Object.keys(Flags).forEach(function(name) {
-  var mask = Flags[name];
+Object.keys(Flags).forEach(name => {
+  const mask = Flags[name];
   Object.defineProperty(Trace.prototype, name, {
-    get: function() {
+    get() {
       return (this._flags & mask) !== 0;
     },
-    set: function(val) {
+    set(val) {
       if (val) {
         this._flags |= mask;
       } else {
@@ -102,7 +102,7 @@ Trace.prototype.clone = function() {
 };
 
 Trace.prototype.cloneWithExpr = function(expr) {
-  var ans = new Trace(
+  const ans = new Trace(
       this.input, this.pos, this.pos2, expr, this.succeeded, this.bindings, this.children);
 
   ans.isHeadOfLeftRecursion = this.isHeadOfLeftRecursion;
@@ -131,20 +131,20 @@ Trace.prototype.recordLRTermination = function(ruleBodyTrace, value) {
 // representing the depth of the node in the tree. (The root node has depth 0.) `optThisArg`, if
 // specified, is the value to use for `this` when executing the visitor functions.
 Trace.prototype.walk = function(visitorObjOrFn, optThisArg) {
-  var visitor = visitorObjOrFn;
+  let visitor = visitorObjOrFn;
   if (typeof visitor === 'function') {
     visitor = {enter: visitor};
   }
 
   function _walk(node, parent, depth) {
-    var recurse = true;
+    let recurse = true;
     if (visitor.enter) {
       if (visitor.enter.call(optThisArg, node, parent, depth) === Trace.prototype.SKIP) {
         recurse = false;
       }
     }
     if (recurse) {
-      node.children.forEach(function(child) {
+      node.children.forEach(child => {
         _walk(child, node, depth + 1);
       });
       if (visitor.exit) {
@@ -154,7 +154,7 @@ Trace.prototype.walk = function(visitorObjOrFn, optThisArg) {
   }
   if (this.isRootNode) {
     // Don't visit the root node itself, only its children.
-    this.children.forEach(function(c) { _walk(c, null, 0); });
+    this.children.forEach(c => { _walk(c, null, 0); });
   } else {
     _walk(this, null, 0);
   }
@@ -166,15 +166,15 @@ Trace.prototype.walk = function(visitorObjOrFn, optThisArg) {
 //     12⋅+⋅2⋅*⋅3   ✓ addExp (LR) ⇒  "12"
 //     12⋅+⋅2⋅*⋅3       ✗ addExp_plus
 Trace.prototype.toString = function() {
-  var sb = new common.StringBuffer();
-  this.walk(function(node, parent, depth) {
+  const sb = new common.StringBuffer();
+  this.walk((node, parent, depth) => {
     if (!node) {
       return this.SKIP;
     }
-    var ctorName = node.expr.constructor.name;
+    const ctorName = node.expr.constructor.name;
     // Don't print anything for Alt nodes.
     if (ctorName === 'Alt') {
-      return;  // eslint-disable-line consistent-return
+      return; // eslint-disable-line consistent-return
     }
     sb.append(getInputExcerpt(node.input, node.pos, 10) + spaces(depth * 2 + 1));
     sb.append((node.succeeded ? CHECK_MARK : BALLOT_X) + ' ' + node.displayString);
@@ -182,12 +182,12 @@ Trace.prototype.toString = function() {
       sb.append(' (LR)');
     }
     if (node.succeeded) {
-      var contents = asEscapedString(node.source.contents);
+      const contents = asEscapedString(node.source.contents);
       sb.append(' ' + RIGHTWARDS_DOUBLE_ARROW + '  ');
       sb.append(typeof contents === 'string' ? '"' + contents + '"' : contents);
     }
     sb.append('\n');
-  }.bind(this));
+  });
   return sb.contents();
 };
 

@@ -4,7 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-var assert = require('../src/common').assert;
+const assert = require('../src/common').assert;
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -24,7 +24,7 @@ function mapProp(name, thing, fn) {
 // `descriptor` is a string indicating the property name, optionally ending
 // with '[]' (e.g., 'children[]').
 function getPropWalkFn(descriptor) {
-  var parts = descriptor.split(/ ?\[\]/);
+  const parts = descriptor.split(/ ?\[\]/);
   if (parts.length === 2) {
     return mapProp.bind(null, parts[0]);
   }
@@ -32,9 +32,7 @@ function getPropWalkFn(descriptor) {
 }
 
 function getProps(walkFns, thing, fn) {
-  return walkFns.map(function(walkFn) {
-    return walkFn(thing, fn);
-  });
+  return walkFns.map(walkFn => walkFn(thing, fn));
 }
 
 function getWalkFn(shape) {
@@ -58,15 +56,15 @@ function trim(s) {
 }
 
 function parseSignature(sig) {
-  var parts = sig.split(/[()]/).map(trim);
+  const parts = sig.split(/[()]/).map(trim);
   if (parts.length === 3 && parts[2] === '') {
-    var name = parts[0];
-    var params = [];
+    const name = parts[0];
+    let params = [];
     if (parts[1].length > 0) {
       params = parts[1].split(',').map(trim);
     }
     if (isRestrictedIdentifier(name) && params.every(isRestrictedIdentifier)) {
-      return {name: name, formals: params};
+      return {name, formals: params};
     }
   }
   throw new Error('Invalid operation signature: ' + sig);
@@ -99,9 +97,9 @@ function VisitorFamily(config) {
   this._arities = Object.create(null);
   this._getChildren = Object.create(null);
 
-  var self = this;
-  Object.keys(this._shapes).forEach(function(k) {
-    var shape = self._shapes[k];
+  const self = this;
+  Object.keys(this._shapes).forEach(k => {
+    const shape = self._shapes[k];
     self._getChildren[k] = getWalkFn(shape);
 
     // A function means the arity isn't fixed, so don't put an entry in the arity map.
@@ -117,46 +115,46 @@ VisitorFamily.prototype.wrap = function(thing) {
 };
 
 VisitorFamily.prototype._checkActionDict = function(dict) {
-  var self = this;
-  Object.keys(dict).forEach(function(k) {
+  const self = this;
+  Object.keys(dict).forEach(k => {
     assert(k in self._getChildren, "Unrecognized action name '" + k + "'");
-    var action = dict[k];
+    const action = dict[k];
     assert(typeof action === 'function', "Key '" + k + "': expected function, got " + action);
     if (k in self._arities) {
-      var expected = self._arities[k];
-      var actual = dict[k].length;
+      const expected = self._arities[k];
+      const actual = dict[k].length;
       assert(actual === expected,
-             "Action '" + k + "' has the wrong arity: expected " + expected + ', got ' + actual);
+          "Action '" + k + "' has the wrong arity: expected " + expected + ', got ' + actual);
     }
   });
 };
 
 VisitorFamily.prototype.addOperation = function(signature, actions) {
-  var sig = parseSignature(signature);
-  var name = sig.name;
+  const sig = parseSignature(signature);
+  const name = sig.name;
   this._checkActionDict(actions);
   this.operations[name] = {
-    name: name,
+    name,
     formals: sig.formals,
-    actions: actions
+    actions
   };
 
-  var family = this;
+  const family = this;
   this.Adapter.prototype[name] = function() {
-    var tag = family._getTag(this._adaptee);
+    const tag = family._getTag(this._adaptee);
     assert(tag in family._getChildren, "getTag returned unrecognized tag '" + tag + "'");
     assert(tag in actions, "No action for '" + tag + "' in operation '" + name + "'");
 
     // Create an "arguments object" from the arguments that were passed to this
     // operation / attribute.
-    var args = Object.create(null);
-    for (var i = 0; i < arguments.length; i++) {
+    const args = Object.create(null);
+    for (let i = 0; i < arguments.length; i++) {
       args[sig.formals[i]] = arguments[i];
     }
 
-    var oldArgs = this.args;
+    const oldArgs = this.args;
     this.args = args;
-    var ans = actions[tag].apply(this, family._getChildren[tag](this._adaptee, family._wrap));
+    const ans = actions[tag].apply(this, family._getChildren[tag](this._adaptee, family._wrap));
     this.args = oldArgs;
     return ans;
   };

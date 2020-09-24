@@ -6,11 +6,11 @@
 // Imports
 // --------------------------------------------------------------------
 
-var fs = require('fs');
-var path = require('path');
+const fs = require('fs');
+const path = require('path');
 
-var es5 = require('./es5');
-var ohm = require('ohm-js');
+const es5 = require('./es5');
+const ohm = require('ohm-js');
 
 // --------------------------------------------------------------------
 // Helpers
@@ -21,12 +21,12 @@ function removeShebang(source) {
 }
 
 function loadModule(name) {
-  var ns = {ES5: es5.grammar};
+  const ns = {ES5: es5.grammar};
   if (fs.existsSync(name)) {
     return require(name)(ohm, ns, es5.semantics);
   }
-  var relPath = path.join(__dirname, name);
-  var modulePath = require.resolve(relPath);
+  const relPath = path.join(__dirname, name);
+  const modulePath = require.resolve(relPath);
   if (modulePath) {
     return require(modulePath)(ohm, ns, es5.semantics);
   }
@@ -40,15 +40,15 @@ function loadModule(name) {
 /* eslint-disable no-console */
 
 function compile(args) {
-  var filenames = [];
-  var opts = {
+  const filenames = [];
+  const opts = {
     grammar: null,
-    b: false,  // Benchmark (print matching times).
-    v: false   // Verbose
+    b: false, // Benchmark (print matching times).
+    v: false // Verbose
   };
 
   // Super basic command line option parsing.
-  for (var i = 0; i < args.length; ++i) {
+  for (let i = 0; i < args.length; ++i) {
     if (args[i] === '-g') {
       opts.grammar = args[++i];
     } else if (args[i][0] === '-' && opts.hasOwnProperty(args[i][1])) {
@@ -58,21 +58,21 @@ function compile(args) {
     }
   }
 
-  var lang = opts.grammar ? loadModule(opts.grammar) : es5;
+  const lang = opts.grammar ? loadModule(opts.grammar) : es5;
 
-  var files = filenames.map(function(name) {
+  const files = filenames.map(name => {
     // If benchmarking, read in all the files at once, so that we can just time the matching.
     return [name, opts.b ? removeShebang(fs.readFileSync(name).toString()) : null];
   });
 
-  var matchStartTime = Date.now();
+  const matchStartTime = Date.now();
 
   // Parsing -- bails out when the first error is encountered.
-  var results = [];
-  var succeeded = files.every(function(arr) {
-    var source = arr[1] || removeShebang(fs.readFileSync(arr[0]).toString());
+  const results = [];
+  const succeeded = files.every(arr => {
+    const source = arr[1] || removeShebang(fs.readFileSync(arr[0]).toString());
     if (opts.v) { console.error(arr[0]); }
-    var result = lang.grammar.match(source, 'Program');
+    const result = lang.grammar.match(source, 'Program');
     if (result.succeeded()) {
       results.push(result);
       return true;
@@ -82,12 +82,16 @@ function compile(args) {
   });
 
   if (succeeded) {
-    if (opts.b) { console.error('Matching:', (Date.now() - matchStartTime) + 'ms'); }
+    if (opts.b) {
+      console.error('Matching:', (Date.now() - matchStartTime) + 'ms');
+    }
 
     // Codegen
-    var code = '';
-    var codegenStartTime = Date.now();
-    results.forEach(function(r) { code += ';\n' + lang.semantics(r).toES5(); });
+    let code = '';
+    const codegenStartTime = Date.now();
+    results.forEach(r => {
+      code += ';\n' + lang.semantics(r).toES5();
+    });
     if (opts.b) {
       console.error('Codegen:', (Date.now() - codegenStartTime) + 'ms');
     }

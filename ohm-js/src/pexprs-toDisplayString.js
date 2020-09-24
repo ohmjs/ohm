@@ -4,8 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common');
-var pexprs = require('./pexprs');
+const common = require('./common');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations
@@ -36,7 +36,7 @@ pexprs.Param.prototype.toDisplayString = function() {
 
 pexprs.Apply.prototype.toDisplayString = function() {
   if (this.args.length > 0) {
-    var ps = this.args.map(function(arg) { return arg.toDisplayString(); });
+    const ps = this.args.map(arg => arg.toDisplayString());
     return this.ruleName + '<' + ps.join(',') + '>';
   } else {
     return this.ruleName;

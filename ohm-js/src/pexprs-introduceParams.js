@@ -4,8 +4,8 @@
 // Imports
 // --------------------------------------------------------------------
 
-var common = require('./common');
-var pexprs = require('./pexprs');
+const common = require('./common');
+const pexprs = require('./pexprs');
 
 // --------------------------------------------------------------------
 // Operations
@@ -28,14 +28,14 @@ pexprs.UnicodeChar.prototype.introduceParams = function(formals) {
 };
 
 pexprs.Alt.prototype.introduceParams = function(formals) {
-  this.terms.forEach(function(term, idx, terms) {
+  this.terms.forEach((term, idx, terms) => {
     terms[idx] = term.introduceParams(formals);
   });
   return this;
 };
 
 pexprs.Seq.prototype.introduceParams = function(formals) {
-  this.factors.forEach(function(factor, idx, factors) {
+  this.factors.forEach((factor, idx, factors) => {
     factors[idx] = factor.introduceParams(formals);
   });
   return this;
@@ -50,7 +50,7 @@ pexprs.Lex.prototype.introduceParams = function(formals) {
 };
 
 pexprs.Apply.prototype.introduceParams = function(formals) {
-  var index = formals.indexOf(this.ruleName);
+  const index = formals.indexOf(this.ruleName);
   if (index >= 0) {
     if (this.args.length > 0) {
       // TODO: Should this be supported? See issue #64.
@@ -58,7 +58,7 @@ pexprs.Apply.prototype.introduceParams = function(formals) {
     }
     return new pexprs.Param(index).withSource(this.source);
   } else {
-    this.args.forEach(function(arg, idx, args) {
+    this.args.forEach((arg, idx, args) => {
       args[idx] = arg.introduceParams(formals);
     });
     return this;

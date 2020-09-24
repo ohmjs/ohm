@@ -4,7 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-var Interval = require('./Interval');
+const Interval = require('./Interval');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -17,20 +17,20 @@ function InputStream(source) {
 }
 
 InputStream.prototype = {
-  atEnd: function() {
-    var ans = this.pos === this.source.length;
+  atEnd() {
+    const ans = this.pos === this.source.length;
     this.examinedLength = Math.max(this.examinedLength, this.pos + 1);
     return ans;
   },
 
-  next: function() {
-    var ans = this.source[this.pos++];
+  next() {
+    const ans = this.source[this.pos++];
     this.examinedLength = Math.max(this.examinedLength, this.pos);
     return ans;
   },
 
-  matchString: function(s, optIgnoreCase) {
-    var idx;
+  matchString(s, optIgnoreCase) {
+    let idx;
     if (optIgnoreCase) {
       /*
         Case-insensitive comparison is a tricky business. Some notable gotchas include the
@@ -41,8 +41,8 @@ InputStream.prototype = {
         locale-specific expectations (e.g. "i" => "İ").
        */
       for (idx = 0; idx < s.length; idx++) {
-        var actual = this.next();
-        var expected = s[idx];
+        const actual = this.next();
+        const expected = s[idx];
         if (actual == null || actual.toUpperCase() !== expected.toUpperCase()) {
           return false;
         }
@@ -56,11 +56,11 @@ InputStream.prototype = {
     return true;
   },
 
-  sourceSlice: function(startIdx, endIdx) {
+  sourceSlice(startIdx, endIdx) {
     return this.source.slice(startIdx, endIdx);
   },
 
-  interval: function(startIdx, optEndIdx) {
+  interval(startIdx, optEndIdx) {
     return new Interval(this.source, startIdx, optEndIdx ? optEndIdx : this.pos);
   }
 };

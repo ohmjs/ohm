@@ -4,7 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-var extend = require('util-extend');
+const extend = require('util-extend');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -33,7 +33,7 @@ Namespace.extend = function(namespace, optProps) {
   if (namespace !== Namespace.prototype && !(namespace instanceof Namespace)) {
     throw new TypeError('not a Namespace object: ' + namespace);
   }
-  var ns = Object.create(namespace, {
+  const ns = Object.create(namespace, {
     constructor: {
       value: Namespace,
       enumerable: false,

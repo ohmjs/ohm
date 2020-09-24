@@ -4,16 +4,16 @@
 // Imports
 // --------------------------------------------------------------------
 
-var pexprs = require('./pexprs');
+const pexprs = require('./pexprs');
 
-var Namespace = require('./Namespace');
+const Namespace = require('./Namespace');
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
 function createError(message, optInterval) {
-  var e;
+  let e;
   if (optInterval) {
     e = new Error(optInterval.getLineAndColumnMessage() + message);
     e.shortMessage = message;
@@ -35,16 +35,16 @@ function intervalSourcesDontMatch() {
 // Grammar syntax error
 
 function grammarSyntaxError(matchFailure) {
-  var e = new Error();
+  const e = new Error();
   Object.defineProperty(e, 'message', {
     enumerable: true,
-    get: function() {
+    get() {
       return matchFailure.message;
     }
   });
   Object.defineProperty(e, 'shortMessage', {
     enumerable: true,
-    get: function() {
+    get() {
       return 'Expected ' + matchFailure.getExpectedText();
     }
   });
@@ -55,7 +55,7 @@ function grammarSyntaxError(matchFailure) {
 // Undeclared grammar
 
 function undeclaredGrammar(grammarName, namespace, interval) {
-  var message = namespace ?
+  const message = namespace ?
       'Grammar ' + grammarName + ' is not declared in namespace ' + Namespace.toString(namespace) :
       'Undeclared grammar ' + grammarName;
   return createError(message, interval);
@@ -96,7 +96,7 @@ function cannotExtendUndeclaredRule(ruleName, grammarName, optSource) {
 // Duplicate rule declaration
 
 function duplicateRuleDeclaration(ruleName, grammarName, declGrammarName, optSource) {
-  var message = "Duplicate declaration for rule '" + ruleName +
+  let message = "Duplicate declaration for rule '" + ruleName +
       "' in grammar '" + grammarName + "'";
   if (grammarName !== declGrammarName) {
     message += " (originally declared in '" + declGrammarName + "')";
@@ -156,17 +156,17 @@ function incorrectArgumentType(expectedType, expr) {
 // ----------------- Kleene operators -----------------
 
 function kleeneExprHasNullableOperand(kleeneExpr, applicationStack) {
-  var actuals = applicationStack.length > 0 ?
+  const actuals = applicationStack.length > 0 ?
     applicationStack[applicationStack.length - 1].args :
     [];
-  var expr = kleeneExpr.expr.substituteParams(actuals);
-  var message =
+  const expr = kleeneExpr.expr.substituteParams(actuals);
+  let message =
     'Nullable expression ' + expr + " is not allowed inside '" +
     kleeneExpr.operator + "' (possible infinite loop)";
   if (applicationStack.length > 0) {
-    var stackTrace = applicationStack
-      .map(function(app) { return new pexprs.Apply(app.ruleName, app.args); })
-      .join('\n');
+    const stackTrace = applicationStack
+        .map(app => new pexprs.Apply(app.ruleName, app.args))
+        .join('\n');
     message += '\nApplication stack (most recent application last):\n' + stackTrace;
   }
   return createError(message, kleeneExpr.expr.source);
@@ -197,7 +197,7 @@ function invalidConstructorCall(grammar, ctorName, children) {
 // ----------------- convenience -----------------
 
 function multipleErrors(errors) {
-  var messages = errors.map(function(e) { return e.message; });
+  const messages = errors.map(e => e.message);
   return createError(
       ['Errors:'].concat(messages).join('\n- '),
       errors[0].interval);
@@ -206,19 +206,19 @@ function multipleErrors(errors) {
 // ----------------- semantic -----------------
 
 function missingSemanticAction(ctorName, name, type, stack) {
-  var stackTrace = stack.slice(0, -1).map(function(info) {
-    var ans = '  ' + info[0].name + ' > ' + info[1];
+  let stackTrace = stack.slice(0, -1).map(info => {
+    const ans = '  ' + info[0].name + ' > ' + info[1];
     return info.length === 3
         ? ans + " for '" + info[2] + "'"
         : ans;
   }).join('\n');
   stackTrace += '\n  ' + name + ' > ' + ctorName;
 
-  var where = type + " '" + name + "'";
-  var message = "Missing semantic action for '" + ctorName + "' in " + where + '\n' +
+  const where = type + " '" + name + "'";
+  const message = "Missing semantic action for '" + ctorName + "' in " + where + '\n' +
                 'Action stack (most recent call last):\n' + stackTrace;
 
-  var e = createError(message);
+  const e = createError(message);
   e.name = 'missingSemanticAction';
   return e;
 }
@@ -228,27 +228,27 @@ function missingSemanticAction(ctorName, name, type, stack) {
 // --------------------------------------------------------------------
 
 module.exports = {
-  applicationOfSyntacticRuleFromLexicalContext: applicationOfSyntacticRuleFromLexicalContext,
-  cannotExtendUndeclaredRule: cannotExtendUndeclaredRule,
-  cannotOverrideUndeclaredRule: cannotOverrideUndeclaredRule,
-  duplicateGrammarDeclaration: duplicateGrammarDeclaration,
-  duplicateParameterNames: duplicateParameterNames,
-  duplicatePropertyNames: duplicatePropertyNames,
-  duplicateRuleDeclaration: duplicateRuleDeclaration,
-  inconsistentArity: inconsistentArity,
-  incorrectArgumentType: incorrectArgumentType,
-  intervalSourcesDontMatch: intervalSourcesDontMatch,
-  invalidConstructorCall: invalidConstructorCall,
-  invalidParameter: invalidParameter,
-  grammarSyntaxError: grammarSyntaxError,
-  kleeneExprHasNullableOperand: kleeneExprHasNullableOperand,
-  missingSemanticAction: missingSemanticAction,
-  undeclaredGrammar: undeclaredGrammar,
-  undeclaredRule: undeclaredRule,
-  wrongNumberOfArguments: wrongNumberOfArguments,
-  wrongNumberOfParameters: wrongNumberOfParameters,
+  applicationOfSyntacticRuleFromLexicalContext,
+  cannotExtendUndeclaredRule,
+  cannotOverrideUndeclaredRule,
+  duplicateGrammarDeclaration,
+  duplicateParameterNames,
+  duplicatePropertyNames,
+  duplicateRuleDeclaration,
+  inconsistentArity,
+  incorrectArgumentType,
+  intervalSourcesDontMatch,
+  invalidConstructorCall,
+  invalidParameter,
+  grammarSyntaxError,
+  kleeneExprHasNullableOperand,
+  missingSemanticAction,
+  undeclaredGrammar,
+  undeclaredRule,
+  wrongNumberOfArguments,
+  wrongNumberOfParameters,
 
-  throwErrors: function(errors) {
+  throwErrors(errors) {
     if (errors.length === 1) {
       throw errors[0];
     }
