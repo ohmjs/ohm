@@ -40,11 +40,11 @@ let builtInRulesCallbacks = [];
 // Since Grammar.BuiltInRules is bootstrapped, most of Ohm can't directly depend it.
 // This function allows modules that do depend on the built-in rules to register a callback
 // that will be called later in the initialization process.
-exports.awaitBuiltInRules = function(cb) {
+exports.awaitBuiltInRules = cb => {
   builtInRulesCallbacks.push(cb);
 };
 
-exports.announceBuiltInRules = function(grammar) {
+exports.announceBuiltInRules = grammar => {
   builtInRulesCallbacks.forEach(cb => {
     cb(grammar);
   });
@@ -53,7 +53,7 @@ exports.announceBuiltInRules = function(grammar) {
 
 // Return an object with the line and column information for the given
 // offset in `str`.
-exports.getLineAndColumn = function(str, offset) {
+exports.getLineAndColumn = (str, offset) => {
   let lineNum = 1;
   let colNum = 1;
 
@@ -124,9 +124,9 @@ exports.getLineAndColumnMessage = function(str, offset /* ...ranges */) {
   ]);
 
   // Helper for appending formatting input lines to the buffer.
-  function appendLine(num, content, prefix) {
+  const appendLine = (num, content, prefix) => {
     sb.append(prefix + lineNumbers[num] + ' | ' + content + '\n');
-  }
+  };
 
   // Include the previous line for context if possible.
   if (lineAndCol.prevLine != null) {
@@ -163,9 +163,7 @@ exports.getLineAndColumnMessage = function(str, offset /* ...ranges */) {
   return sb.contents();
 };
 
-exports.uniqueId = (function() {
+exports.uniqueId = (() => {
   let idCounter = 0;
-  return function(prefix) {
-    return '' + prefix + idCounter++;
-  };
+  return prefix => '' + prefix + idCounter++;
 })();

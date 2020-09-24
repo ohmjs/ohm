@@ -7,7 +7,7 @@
 const common = require('./common');
 const pexprs = require('./pexprs');
 
-const copyWithoutDuplicates = common.copyWithoutDuplicates;
+const {copyWithoutDuplicates} = common;
 
 // --------------------------------------------------------------------
 // Private stuff
