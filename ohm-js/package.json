@@ -69,7 +69,6 @@
     "Mike Niebling <(none)>"
   ],
   "dependencies": {
-    "inherits": "^2.0.4",
     "is-buffer": "^2.0.4",
     "util-extend": "^1.0.3"
   },

@@ -7,26 +7,25 @@
 const Failure = require('./Failure');
 const TerminalNode = require('./nodes').TerminalNode;
 const assert = require('./common').assert;
-const inherits = require('inherits');
-const pexprs = require('./pexprs');
+const {PExpr, Terminal} = require('./pexprs');
 
-function CaseInsensitiveTerminal(param) {
-  this.obj = param;
-}
-inherits(CaseInsensitiveTerminal, pexprs.PExpr);
+class CaseInsensitiveTerminal extends PExpr {
+  constructor(param) {
+    super();
+    this.obj = param;
+  }
 
-CaseInsensitiveTerminal.prototype = {
   _getString(state) {
     const terminal = state.currentApplication().args[this.obj.index];
-    assert(terminal instanceof pexprs.Terminal, 'expected a Terminal expression');
+    assert(terminal instanceof Terminal, 'expected a Terminal expression');
     return terminal.obj;
-  },
+  }
 
   // Implementation of the PExpr API
 
   allowsSkippingPrecedingSpace() {
     return true;
-  },
+  }
 
   eval(state) {
     const inputStream = state.inputStream;
@@ -39,7 +38,7 @@ CaseInsensitiveTerminal.prototype = {
       state.pushBinding(new TerminalNode(state.grammar, matchStr), origPos);
       return true;
     }
-  },
+  }
 
   generateExample(grammar, examples, inSyntacticContext, actuals) {
     // Start with a example generated from the Terminal...
@@ -51,27 +50,27 @@ CaseInsensitiveTerminal.prototype = {
       value += Math.random() < 0.5 ? str[i].toLocaleLowerCase() : str[i].toLocaleUpperCase();
     }
     return {value};
-  },
+  }
 
   getArity() {
     return 1;
-  },
+  }
 
   substituteParams(actuals) {
     return new CaseInsensitiveTerminal(this.obj.substituteParams(actuals));
-  },
+  }
 
   toDisplayString() {
     return this.obj.toDisplayString() + ' (case-insensitive)';
-  },
+  }
 
   toFailure(grammar) {
     return new Failure(this, this.obj.toFailure(grammar) + ' (case-insensitive)', 'description');
-  },
+  }
 
   _isNullable(grammar, memo) {
     return this.obj._isNullable(grammar, memo);
   }
-};
+}
 
 module.exports = CaseInsensitiveTerminal;

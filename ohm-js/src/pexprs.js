@@ -6,7 +6,6 @@
 
 const UnicodeCategories = require('../third_party/UnicodeCategories');
 const common = require('./common');
-const inherits = require('inherits');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -14,17 +13,21 @@ const inherits = require('inherits');
 
 // General stuff
 
-function PExpr() {
-  throw new Error("PExpr cannot be instantiated -- it's abstract");
-}
-
-// Set the `source` property to the interval containing the source for this expression.
-PExpr.prototype.withSource = function(interval) {
-  if (interval) {
-    this.source = interval.trimmed();
+class PExpr {
+  constructor() {
+    if (this.constructor === PExpr) {
+      throw new Error("PExpr cannot be instantiated -- it's abstract");
+    }
   }
-  return this;
-};
+
+  // Set the `source` property to the interval containing the source for this expression.
+  withSource(interval) {
+    if (interval) {
+      this.source = interval.trimmed();
+    }
+    return this;
+  }
+}
 
 // Any
 
@@ -36,72 +39,75 @@ const end = Object.create(PExpr.prototype);
 
 // Terminals
 
-function Terminal(obj) {
-  this.obj = obj;
+class Terminal extends PExpr {
+  constructor(obj) {
+    super();
+    this.obj = obj;
+  }
 }
-inherits(Terminal, PExpr);
 
 // Ranges
 
-function Range(from, to) {
-  this.from = from;
-  this.to = to;
+class Range extends PExpr {
+  constructor(from, to) {
+    super();
+    this.from = from;
+    this.to = to;
+  }
 }
-inherits(Range, PExpr);
 
 // Parameters
 
-function Param(index) {
-  this.index = index;
+class Param extends PExpr {
+  constructor(index) {
+    super();
+    this.index = index;
+  }
 }
-inherits(Param, PExpr);
 
 // Alternation
 
-function Alt(terms) {
-  this.terms = terms;
+class Alt extends PExpr {
+  constructor(terms) {
+    super();
+    this.terms = terms;
+  }
 }
-inherits(Alt, PExpr);
 
 // Extend is an implementation detail of rule extension
 
-function Extend(superGrammar, name, body) {
-  this.superGrammar = superGrammar;
-  this.name = name;
-  this.body = body;
-  const origBody = superGrammar.rules[name].body;
-  this.terms = [body, origBody];
+class Extend extends Alt {
+  constructor(superGrammar, name, body) {
+    const origBody = superGrammar.rules[name].body;
+    super([body, origBody]);
+
+    this.superGrammar = superGrammar;
+    this.name = name;
+    this.body = body;
+  }
 }
-inherits(Extend, Alt);
 
 // Sequences
 
-function Seq(factors) {
-  this.factors = factors;
+class Seq extends PExpr {
+  constructor(factors) {
+    super();
+    this.factors = factors;
+  }
 }
-inherits(Seq, PExpr);
 
 // Iterators and optionals
 
-function Iter(expr) {
-  this.expr = expr;
+class Iter extends PExpr {
+  constructor(expr) {
+    super();
+    this.expr = expr;
+  }
 }
-inherits(Iter, PExpr);
 
-function Star(expr) {
-  this.expr = expr;
-}
-inherits(Star, Iter);
-
-function Plus(expr) {
-  this.expr = expr;
-}
-inherits(Plus, Iter);
-
-function Opt(expr) {
-  this.expr = expr;
-}
-inherits(Opt, Iter);
+class Star extends Iter {}
+class Plus extends Iter {}
+class Opt extends Iter {}
 
 Star.prototype.operator = '*';
 Plus.prototype.operator = '+';
@@ -117,50 +123,60 @@ Opt.prototype.maxNumMatches = 1;
 
 // Predicates
 
-function Not(expr) {
-  this.expr = expr;
+class Not extends PExpr {
+  constructor(expr) {
+    super();
+    this.expr = expr;
+  }
 }
-inherits(Not, PExpr);
 
-function Lookahead(expr) {
-  this.expr = expr;
+class Lookahead extends PExpr {
+  constructor(expr) {
+    super();
+    this.expr = expr;
+  }
 }
-inherits(Lookahead, PExpr);
 
 // "Lexification"
 
-function Lex(expr) {
-  this.expr = expr;
+class Lex extends PExpr {
+  constructor(expr) {
+    super();
+    this.expr = expr;
+  }
 }
-inherits(Lex, PExpr);
 
 // Rule application
 
-function Apply(ruleName, optArgs) {
-  this.ruleName = ruleName;
-  this.args = optArgs || [];
-}
-inherits(Apply, PExpr);
-
-Apply.prototype.isSyntactic = function() {
-  return common.isSyntactic(this.ruleName);
-};
-
-// This method just caches the result of `this.toString()` in a non-enumerable property.
-Apply.prototype.toMemoKey = function() {
-  if (!this._memoKey) {
-    Object.defineProperty(this, '_memoKey', {value: this.toString()});
+class Apply extends PExpr {
+  constructor(ruleName, args=[]) {
+    super();
+    this.ruleName = ruleName;
+    this.args = args;
   }
-  return this._memoKey;
-};
+
+  isSyntactic() {
+    return common.isSyntactic(this.ruleName);
+  }
+
+  // This method just caches the result of `this.toString()` in a non-enumerable property.
+  toMemoKey() {
+    if (!this._memoKey) {
+      Object.defineProperty(this, '_memoKey', {value: this.toString()});
+    }
+    return this._memoKey;
+  }
+}
 
 // Unicode character
 
-function UnicodeChar(category) {
-  this.category = category;
-  this.pattern = UnicodeCategories[category];
+class UnicodeChar extends PExpr {
+  constructor(category) {
+    super();
+    this.category = category;
+    this.pattern = UnicodeCategories[category];
+  }
 }
-inherits(UnicodeChar, PExpr);
 
 // --------------------------------------------------------------------
 // Exports

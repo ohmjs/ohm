@@ -4,8 +4,6 @@
 // Imports
 // --------------------------------------------------------------------
 
-const inherits = require('inherits');
-
 const InputStream = require('./InputStream');
 const IterationNode = require('./nodes').IterationNode;
 const MatchResult = require('./MatchResult');
@@ -43,133 +41,151 @@ function jsonToJS(str) {
 // used to cache the wrapper instances that are created for its child nodes. Setting these instance
 // variables is the responsibility of the constructor of each Semantics-specific subclass of
 // `Wrapper`.
-function Wrapper() {}
+class Wrapper {
+  constructor(node, sourceInterval, baseInterval) {
+    this._node = node;
+    this.source = sourceInterval;
 
-Wrapper.prototype.toString = function() {
-  return '[semantics wrapper for ' + this._node.grammar.name + ']';
-};
+    // The interval that the childOffsets of `node` are relative to. It should be the source
+    // of the closest Nonterminal node.
+    this._baseInterval = baseInterval;
 
-// This is used by ohm editor to display a node wrapper appropriately.
-Wrapper.prototype.toJSON = function() {
-  return this.toString();
-};
-
-Wrapper.prototype._forgetMemoizedResultFor = function(attributeName) {
-  // Remove the memoized attribute from the cstNode and all its children.
-  delete this._node[this._semantics.attributeKeys[attributeName]];
-  this.children.forEach(child => {
-    child._forgetMemoizedResultFor(attributeName);
-  });
-};
-
-// Returns the wrapper of the specified child node. Child wrappers are created lazily and cached in
-// the parent wrapper's `_childWrappers` instance variable.
-Wrapper.prototype.child = function(idx) {
-  if (!(0 <= idx && idx < this._node.numChildren())) {
-    // TODO: Consider throwing an exception here.
-    return undefined;
+    if (node.isNonterminal()) {
+      common.assert(sourceInterval === baseInterval);
+    }
+    this._childWrappers = [];
   }
-  let childWrapper = this._childWrappers[idx];
-  if (!childWrapper) {
-    const childNode = this._node.childAt(idx);
-    const offset = this._node.childOffsets[idx];
 
-    const source = this._baseInterval.subInterval(offset, childNode.matchLength);
-    const base = childNode.isNonterminal() ? source : this._baseInterval;
-    childWrapper = this._childWrappers[idx] = this._semantics.wrap(childNode, source, base);
+  toString() {
+    return '[semantics wrapper for ' + this._node.grammar.name + ']';
+  };
+
+  // This is used by ohm editor to display a node wrapper appropriately.
+  toJSON() {
+    return this.toString();
   }
-  return childWrapper;
-};
 
-// Returns an array containing the wrappers of all of the children of the node associated with this
-// wrapper.
-Wrapper.prototype._children = function() {
-  // Force the creation of all child wrappers
-  for (let idx = 0; idx < this._node.numChildren(); idx++) {
-    this.child(idx);
+  _forgetMemoizedResultFor(attributeName) {
+    // Remove the memoized attribute from the cstNode and all its children.
+    delete this._node[this._semantics.attributeKeys[attributeName]];
+    this.children.forEach(child => {
+      child._forgetMemoizedResultFor(attributeName);
+    });
   }
-  return this._childWrappers;
-};
 
-// Returns `true` if the CST node associated with this wrapper corresponds to an iteration
-// expression, i.e., a Kleene-*, Kleene-+, or an optional. Returns `false` otherwise.
-Wrapper.prototype.isIteration = function() {
-  return this._node.isIteration();
-};
+  // Returns the wrapper of the specified child node. Child wrappers are created lazily and
+  // cached in the parent wrapper's `_childWrappers` instance variable.
+  child(idx) {
+    if (!(0 <= idx && idx < this._node.numChildren())) {
+      // TODO: Consider throwing an exception here.
+      return undefined;
+    }
+    let childWrapper = this._childWrappers[idx];
+    if (!childWrapper) {
+      const childNode = this._node.childAt(idx);
+      const offset = this._node.childOffsets[idx];
 
-// Returns `true` if the CST node associated with this wrapper is a terminal node, `false`
-// otherwise.
-Wrapper.prototype.isTerminal = function() {
-  return this._node.isTerminal();
-};
+      const source = this._baseInterval.subInterval(offset, childNode.matchLength);
+      const base = childNode.isNonterminal() ? source : this._baseInterval;
+      childWrapper = this._childWrappers[idx] = this._semantics.wrap(childNode, source, base);
+    }
+    return childWrapper;
+  }
 
-// Returns `true` if the CST node associated with this wrapper is a nonterminal node, `false`
-// otherwise.
-Wrapper.prototype.isNonterminal = function() {
-  return this._node.isNonterminal();
-};
+  // Returns an array containing the wrappers of all of the children of the node associated
+  // with this wrapper.
+  _children() {
+    // Force the creation of all child wrappers
+    for (let idx = 0; idx < this._node.numChildren(); idx++) {
+      this.child(idx);
+    }
+    return this._childWrappers;
+  }
 
-// Returns `true` if the CST node associated with this wrapper is a nonterminal node
-// corresponding to a syntactic rule, `false` otherwise.
-Wrapper.prototype.isSyntactic = function() {
-  return this.isNonterminal() && this._node.isSyntactic();
-};
+  // Returns `true` if the CST node associated with this wrapper corresponds to an iteration
+  // expression, i.e., a Kleene-*, Kleene-+, or an optional. Returns `false` otherwise.
+  isIteration() {
+    return this._node.isIteration();
+  }
 
-// Returns `true` if the CST node associated with this wrapper is a nonterminal node
-// corresponding to a lexical rule, `false` otherwise.
-Wrapper.prototype.isLexical = function() {
-  return this.isNonterminal() && this._node.isLexical();
-};
+  // Returns `true` if the CST node associated with this wrapper is a terminal node, `false`
+  // otherwise.
+  isTerminal() {
+    return this._node.isTerminal();
+  }
 
-// Returns `true` if the CST node associated with this wrapper is an iterator node
-// having either one or no child (? operator), `false` otherwise.
-// Otherwise, throws an exception.
-Wrapper.prototype.isOptional = function() {
-  return this._node.isOptional();
-};
+  // Returns `true` if the CST node associated with this wrapper is a nonterminal node, `false`
+  // otherwise.
+  isNonterminal() {
+    return this._node.isNonterminal();
+  }
 
-// Create a new _iter wrapper in the same semantics as this wrapper.
-Wrapper.prototype.iteration = function(optChildWrappers) {
-  const childWrappers = optChildWrappers || [];
+  // Returns `true` if the CST node associated with this wrapper is a nonterminal node
+  // corresponding to a syntactic rule, `false` otherwise.
+  isSyntactic() {
+    return this.isNonterminal() && this._node.isSyntactic();
+  }
 
-  const childNodes = childWrappers.map(c => c._node);
-  const iter = new IterationNode(this._node.grammar, childNodes, [], -1, false);
+  // Returns `true` if the CST node associated with this wrapper is a nonterminal node
+  // corresponding to a lexical rule, `false` otherwise.
+  isLexical() {
+    return this.isNonterminal() && this._node.isLexical();
+  }
 
-  const wrapper = this._semantics.wrap(iter, null, null);
-  wrapper._childWrappers = childWrappers;
-  return wrapper;
-};
+  // Returns `true` if the CST node associated with this wrapper is an iterator node
+  // having either one or no child (? operator), `false` otherwise.
+  // Otherwise, throws an exception.
+  isOptional() {
+    return this._node.isOptional();
+  }
 
-Object.defineProperties(Wrapper.prototype, {
+  // Create a new _iter wrapper in the same semantics as this wrapper.
+  iteration(optChildWrappers) {
+    const childWrappers = optChildWrappers || [];
+
+    const childNodes = childWrappers.map(c => c._node);
+    const iter = new IterationNode(this._node.grammar, childNodes, [], -1, false);
+
+    const wrapper = this._semantics.wrap(iter, null, null);
+    wrapper._childWrappers = childWrappers;
+    return wrapper;
+  }
+
   // Returns an array containing the children of this CST node.
-  children: {get() { return this._children(); }},
+  get children() {
+    return this._children();
+  }
 
   // Returns the name of grammar rule that created this CST node.
-  ctorName: {get() { return this._node.ctorName; }},
+  get ctorName() {
+    return this._node.ctorName;
+  }
 
   // TODO: Remove this eventually (deprecated in v0.12).
-  interval: {get() {
+  get interval() {
     throw new Error('The `interval` property is deprecated -- use `source` instead');
-  }},
+  }
 
   // Returns the number of children of this CST node.
-  numChildren: {get() { return this._node.numChildren(); }},
+  get numChildren() {
+    return this._node.numChildren();
+  }
 
   // Returns the primitive value of this CST node, if it's a terminal node. Otherwise,
   // throws an exception.
-  primitiveValue: {
-    get() {
-      if (this.isTerminal()) {
-        return this._node.primitiveValue;
-      }
-      throw new TypeError(
-          "tried to access the 'primitiveValue' attribute of a non-terminal CST node");
+  get primitiveValue() {
+    if (this.isTerminal()) {
+      return this._node.primitiveValue;
     }
-  },
+    throw new TypeError(
+        "tried to access the 'primitiveValue' attribute of a non-terminal CST node");
+  }
 
   // Returns the contents of the input stream consumed by this CST node.
-  sourceString: {get() { return this.source.contents; }}
-});
+  get sourceString() {
+    return this.source.contents;
+  }
+}
 
 // ----------------- Semantics -----------------
 
@@ -189,21 +205,12 @@ function Semantics(grammar, superSemantics) {
   // action is chosen based on both the node's type and the semantics. Wrappers ensure that
   // the `execute` method is called with the correct (most specific) semantics object as an
   // argument.
-  this.Wrapper = function(node, sourceInterval, baseInterval) {
-    self.checkActionDictsIfHaventAlready();
-    this._semantics = self;
-    this._node = node;
-    this.source = sourceInterval;
-
-    // The interval that the childOffsets of `node` are relative to. It should be the source
-    // of the closest Nonterminal node.
-    this._baseInterval = baseInterval;
-
-    if (node.isNonterminal()) {
-      common.assert(sourceInterval === baseInterval);
+  this.Wrapper = class extends (superSemantics ? superSemantics.Wrapper : Wrapper) {
+    constructor(node, sourceInterval, baseInterval) {
+      super(node, sourceInterval, baseInterval);
+      self.checkActionDictsIfHaventAlready();
+      this._semantics = self;
     }
-
-    this._childWrappers = [];
   };
 
   this.super = superSemantics;
@@ -213,7 +220,6 @@ function Semantics(grammar, superSemantics) {
           "Cannot extend a semantics for grammar '" + this.super.grammar.name +
           "' for use with grammar '" + grammar.name + "' (not a sub-grammar)");
     }
-    inherits(this.Wrapper, this.super.Wrapper);
     this.operations = Object.create(this.super.operations);
     this.attributes = Object.create(this.super.attributes);
     this.attributeKeys = Object.create(null);
@@ -226,7 +232,6 @@ function Semantics(grammar, superSemantics) {
       });
     }
   } else {
-    inherits(this.Wrapper, Wrapper);
     this.operations = Object.create(null);
     this.attributes = Object.create(null);
     this.attributeKeys = Object.create(null);
@@ -603,90 +608,91 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
 // recursively walking the CST, and at each node, invoking the matching semantic action from
 // `actionDict`. See `Operation.prototype.execute` for details of how a CST node's matching semantic
 // action is found.
-function Operation(name, formals, actionDict, builtInDefault) {
-  this.name = name;
-  this.formals = formals;
-  this.actionDict = actionDict;
-  this.builtInDefault = builtInDefault;
+class Operation {
+  constructor(name, formals, actionDict, builtInDefault) {
+    this.name = name;
+    this.formals = formals;
+    this.actionDict = actionDict;
+    this.builtInDefault = builtInDefault;
+  }
+
+  checkActionDict(grammar) {
+    grammar._checkTopDownActionDict(this.typeName, this.name, this.actionDict);
+  }
+
+  // Execute this operation on the CST node associated with `nodeWrapper` in the context of the
+  // given Semantics instance.
+  execute(semantics, nodeWrapper) {
+    try {
+      // Look for a semantic action whose name matches the node's constructor name, which is either
+      // the name of a rule in the grammar, or '_terminal' (for a terminal node), or '_iter' (for an
+      // iteration node). In the latter case, the action function receives a single argument, which
+      // is an array containing all of the children of the CST node.
+      const ctorName = nodeWrapper._node.ctorName;
+      let actionFn = this.actionDict[ctorName];
+      let ans;
+      if (actionFn) {
+        globalActionStack.push([this, ctorName]);
+        ans = this.doAction(semantics, nodeWrapper, actionFn, nodeWrapper.isIteration());
+        return ans;
+      }
+
+      // The action dictionary does not contain a semantic action for this specific type of node.
+      // If this is a nonterminal node and the programmer has provided a `_nonterminal` semantic
+      // action, we invoke it:
+      if (nodeWrapper.isNonterminal()) {
+        actionFn = this.actionDict._nonterminal;
+        if (actionFn) {
+          globalActionStack.push([this, '_nonterminal', ctorName]);
+          ans = this.doAction(semantics, nodeWrapper, actionFn, true);
+          return ans;
+        }
+      }
+
+      // Otherwise, we invoke the '_default' semantic action.
+      globalActionStack.push([this, 'default action', ctorName]);
+      ans = this.doAction(semantics, nodeWrapper, this.actionDict._default, true);
+      return ans;
+    } finally {
+      globalActionStack.pop();
+    }
+  }
+
+  // Invoke `actionFn` on the CST node that corresponds to `nodeWrapper`, in the context of
+  // `semantics`. If `optPassChildrenAsArray` is truthy, `actionFn` will be called with a single
+  // argument, which is an array of wrappers. Otherwise, the number of arguments to `actionFn` will
+  // be equal to the number of children in the CST node.
+  doAction(semantics, nodeWrapper, actionFn, optPassChildrenAsArray) {
+    return optPassChildrenAsArray ?
+        actionFn.call(nodeWrapper, nodeWrapper._children()) :
+        actionFn.apply(nodeWrapper, nodeWrapper._children());
+  }
 }
 
 Operation.prototype.typeName = 'operation';
-
-Operation.prototype.checkActionDict = function(grammar) {
-  grammar._checkTopDownActionDict(this.typeName, this.name, this.actionDict);
-};
-
-// Execute this operation on the CST node associated with `nodeWrapper` in the context of the given
-// Semantics instance.
-Operation.prototype.execute = function(semantics, nodeWrapper) {
-  try {
-    // Look for a semantic action whose name matches the node's constructor name, which is either
-    // the name of a rule in the grammar, or '_terminal' (for a terminal node), or '_iter' (for an
-    // iteration node). In the latter case, the action function receives a single argument, which
-    // is an array containing all of the children of the CST node.
-    const ctorName = nodeWrapper._node.ctorName;
-    let actionFn = this.actionDict[ctorName];
-    let ans;
-    if (actionFn) {
-      globalActionStack.push([this, ctorName]);
-      ans = this.doAction(semantics, nodeWrapper, actionFn, nodeWrapper.isIteration());
-      return ans;
-    }
-
-    // The action dictionary does not contain a semantic action for this specific type of node.
-    // If this is a nonterminal node and the programmer has provided a `_nonterminal` semantic
-    // action, we invoke it:
-    if (nodeWrapper.isNonterminal()) {
-      actionFn = this.actionDict._nonterminal;
-      if (actionFn) {
-        globalActionStack.push([this, '_nonterminal', ctorName]);
-        ans = this.doAction(semantics, nodeWrapper, actionFn, true);
-        return ans;
-      }
-    }
-
-    // Otherwise, we invoke the '_default' semantic action.
-    globalActionStack.push([this, 'default action', ctorName]);
-    ans = this.doAction(semantics, nodeWrapper, this.actionDict._default, true);
-    return ans;
-  } finally {
-    globalActionStack.pop();
-  }
-};
-
-// Invoke `actionFn` on the CST node that corresponds to `nodeWrapper`, in the context of
-// `semantics`. If `optPassChildrenAsArray` is truthy, `actionFn` will be called with a single
-// argument, which is an array of wrappers. Otherwise, the number of arguments to `actionFn` will
-// be equal to the number of children in the CST node.
-Operation.prototype.doAction = function(semantics, nodeWrapper, actionFn, optPassChildrenAsArray) {
-  return optPassChildrenAsArray ?
-      actionFn.call(nodeWrapper, nodeWrapper._children()) :
-      actionFn.apply(nodeWrapper, nodeWrapper._children());
-};
 
 // ----------------- Attribute -----------------
 
 // Attributes are Operations whose results are memoized. This means that, for any given semantics,
 // the semantic action for a CST node will be invoked no more than once.
-function Attribute(name, actionDict, builtInDefault) {
-  this.name = name;
-  this.formals = [];
-  this.actionDict = actionDict;
-  this.builtInDefault = builtInDefault;
+class Attribute extends Operation {
+  constructor(name, actionDict, builtInDefault) {
+    super(name, [], actionDict, builtInDefault);
+  }
+
+  execute(semantics, nodeWrapper) {
+    const node = nodeWrapper._node;
+    const key = semantics.attributeKeys[this.name];
+    if (!node.hasOwnProperty(key)) {
+      // The following is a super-send -- isn't JS beautiful? :/
+      node[key] = Operation.prototype.execute.call(this, semantics, nodeWrapper);
+    }
+    return node[key];
+  }
 }
-inherits(Attribute, Operation);
 
 Attribute.prototype.typeName = 'attribute';
 
-Attribute.prototype.execute = function(semantics, nodeWrapper) {
-  const node = nodeWrapper._node;
-  const key = semantics.attributeKeys[this.name];
-  if (!node.hasOwnProperty(key)) {
-    // The following is a super-send -- isn't JS beautiful? :/
-    node[key] = Operation.prototype.execute.call(this, semantics, nodeWrapper);
-  }
-  return node[key];
-};
 
 // ----------------- Deferred initialization -----------------
 
