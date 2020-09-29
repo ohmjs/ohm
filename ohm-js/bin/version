@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Script to version the ohm-js package.
+
+set -e
+
+pushd $(dirname "$0")/.. > /dev/null
+
+if [ "$(git status --porcelain | grep -v '??')" != "" ]; then
+  echo "Error: git working directory not clean -- run 'git status' for more info."
+  exit 1
+fi
+
+echo "👫  Updating the list of contributors..."
+json -I -f "package.json" -e "this.contributors=[$(./bin/get-contributors)]"
+
+# We do something a bit more complicated than just running 'yarn version'
+# because after the version is updated in package.json, we want to build a
+# new bundle that contains that version.
+
+echo "⚙  Running 'yarn version'..."
+yarn version --no-git-tag-version
+
+echo "📦  Creating a new bundle..."
+new_version=$(json -f package.json version)
+yarn build
+
+echo "📝  Committing and tagging the result..."
+git add package.json dist
+git commit -am "v${new_version}"
+
+tag_name="v${new_version}"
+git tag --force "${tag_name}"
+
+echo "✅  ohm-js v${new_version}"
+echo "Next steps:"
+echo "1️⃣  yarn publish"
+echo "2️⃣  git push origin ${tag_name}"

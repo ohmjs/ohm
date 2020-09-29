@@ -35,6 +35,7 @@
     "pre-commit": "yarn run prepublishOnly",
     "prepublishOnly": "yarn run lint && yarn run build && yarn run bootstrap",
     "unsafe-bootstrap": "bash bin/bootstrap",
+    "version-package": "bash bin/version",
     "watch": "webpack --mode=development --watch"
   },
   "license": "MIT",
