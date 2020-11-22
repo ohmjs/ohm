@@ -31,6 +31,8 @@ let documentInterface = {
   querySelectorAll(sel) { return document.querySelectorAll(sel); }
 };
 
+const superSplicePlaceholder = Object.create(pexprs.PExpr.prototype);
+
 // Check if `obj` is a DOM element.
 function isElement(obj) {
   return !!(obj && obj.nodeType === 1);
@@ -138,7 +140,21 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       const args = terms.visit();
       return builder.alt.apply(builder, args).withSource(this.source);
     },
+    OverrideRuleBody(_, terms) {
+      const args = terms.visit();
 
+      // Check if the super-splice operator (`...`) appears in the terms.
+      const expansionPos = args.indexOf(superSplicePlaceholder);
+      if (expansionPos >= 0) {
+        const superGrammar = decl.ensureSuperGrammar();
+        const beforeTerms = args.slice(0, expansionPos);
+        const afterTerms = args.slice(expansionPos + 1);
+        return new pexprs.Splice(
+            superGrammar, currentRuleName, beforeTerms, afterTerms).withSource(this.source);
+      } else {
+        return builder.alt.apply(builder, args).withSource(this.source);
+      }
+    },
     Formals(opointy, fs, cpointy) {
       return fs.visit();
     },
@@ -165,6 +181,9 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       }
       const params = currentRuleFormals.map(formal => builder.app(formal));
       return builder.app(inlineRuleName, params).withSource(body.source);
+    },
+    OverrideTopLevelTerm_superSplice(_) {
+      return superSplicePlaceholder;
     },
 
     Seq(expr) {

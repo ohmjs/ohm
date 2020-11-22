@@ -976,6 +976,47 @@ test('inheritance', t => {
   t.end();
 });
 
+test('override with "..."', t => {
+  let g = ohm.grammar('G { letter := "@" | ... }');
+  t.equal(g.match('@', 'letter').succeeded(), true);
+  t.equal(g.match('a', 'letter').succeeded(), true);
+
+  g = ohm.grammar('G { letter := ... | "@" }');
+  t.equal(g.match('@', 'letter').succeeded(), true);
+  t.equal(g.match('a', 'letter').succeeded(), true);
+
+  g = ohm.grammar('G { letter := "3" | ... | "@" }');
+  t.equal(g.match('@', 'letter').succeeded(), true);
+  t.equal(g.match('3', 'letter').succeeded(), true);
+
+  t.ok(ohm.grammar('G { letter := ... }'), 'it allows `...` as the whole body');
+
+  t.throws(
+      () => ohm.grammar('G { foo = ... }'),
+      /Expected "}"/,
+      "it's not allowed in a rule definition");
+
+  t.throws(
+      () => ohm.grammar('G { letter += ... }'),
+      /Expected "}"/,
+      "it's not allowed when extending");
+
+  t.throws(
+      () => ohm.grammar('G { letter := "@" "#" | ... }'),
+      /inconsistent arity/,
+      'it ensures consistent arity');
+
+  /*
+    TODO:
+    - [ ] improve error message (inconsistent arity seems backwards)
+    - [ ] improve error message when using `...` in a rule defintion/extension
+    - [ ] unify Extend and Combine?
+    - [ ] using '...' when overriding a non-existent rule
+  */
+
+  t.end();
+});
+
 test('bindings', t => {
   it('inconsistent arity in alts is an error', () => {
     try {

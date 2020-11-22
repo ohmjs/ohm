@@ -67,7 +67,7 @@ pexprs.Alt.prototype.outputRecipe = function(formals, grammarInterval) {
 };
 
 pexprs.Extend.prototype.outputRecipe = function(formals, grammarInterval) {
-  const extension = this.terms[0]; // [extension, orginal]
+  const extension = this.terms[0]; // [extension, original]
   return extension.outputRecipe(formals, grammarInterval);
 };
 
