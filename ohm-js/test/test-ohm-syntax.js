@@ -987,9 +987,18 @@ test('override with "..."', t => {
 
   g = ohm.grammar('G { letter := "3" | ... | "@" }');
   t.equal(g.match('@', 'letter').succeeded(), true);
+  t.equal(g.match('a', 'letter').succeeded(), true);
   t.equal(g.match('3', 'letter').succeeded(), true);
 
   t.ok(ohm.grammar('G { letter := ... }'), 'it allows `...` as the whole body');
+
+  // Check that the branches are evaluated in the correct order.
+  g = ohm.grammar('G { letter := "" | ... }');
+  t.equal(g.match('', 'letter').succeeded(), true);
+  t.equal(g.match('a', 'letter').succeeded(), false);
+  g = ohm.grammar('G { letter := ... | "ab" }');
+  t.equal(g.match('a', 'letter').succeeded(), true);
+  t.equal(g.match('ab', 'letter').succeeded(), false);
 
   t.throws(
       () => ohm.grammar('G { foo = ... }'),
@@ -1003,8 +1012,12 @@ test('override with "..."', t => {
 
   t.throws(
       () => ohm.grammar('G { letter := "@" "#" | ... }'),
-      /inconsistent arity/,
-      'it ensures consistent arity');
+      /inconsistent arity/);
+
+  t.throws(
+      () => ohm.grammar('G { letter := ... | "@" | ... }'),
+      /at most once/,
+      "'...' can appear at most once in a rule body");
 
   /*
     TODO:

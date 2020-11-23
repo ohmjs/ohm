@@ -149,6 +149,12 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
         const superGrammar = decl.ensureSuperGrammar();
         const beforeTerms = args.slice(0, expansionPos);
         const afterTerms = args.slice(expansionPos + 1);
+
+        // Ensure it appears no more than once.
+        afterTerms.forEach(t => {
+          if (t === superSplicePlaceholder) throw errors.multipleSuperSplices(t);
+        });
+
         return new pexprs.Splice(
             superGrammar, currentRuleName, beforeTerms, afterTerms).withSource(this.source);
       } else {

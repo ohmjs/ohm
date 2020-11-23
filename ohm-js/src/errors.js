@@ -153,6 +153,12 @@ function incorrectArgumentType(expectedType, expr) {
   return createError('Incorrect argument type: expected ' + expectedType, expr.source);
 }
 
+// Multiple instances of the super-splice operator (`...`) in the rule body.
+
+function multipleSuperSplices(expr) {
+  return createError("'...' can appear at most once in a rule body", expr.source);
+}
+
 // ----------------- Kleene operators -----------------
 
 function kleeneExprHasNullableOperand(kleeneExpr, applicationStack) {
@@ -243,6 +249,7 @@ module.exports = {
   grammarSyntaxError,
   kleeneExprHasNullableOperand,
   missingSemanticAction,
+  multipleSuperSplices,
   undeclaredGrammar,
   undeclaredRule,
   wrongNumberOfArguments,
