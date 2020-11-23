@@ -51,7 +51,7 @@ Builder.prototype = {
             metaInfo.sourceInterval[1] - metaInfo.sourceInterval[0]);
       }
       gDecl[action](ruleName, formals, body, description, source);
-    });    
+    });
     this.currentRuleName = this.currentDecl = null;
     return gDecl.build();
   },
@@ -162,10 +162,10 @@ Builder.prototype = {
   // `this.currentDecl` and `this.currentRuleName` being set.
   splice(beforeTerms, afterTerms) {
     return new pexprs.Splice(
-      this.currentDecl.superGrammar,
-      this.currentRuleName,
-      beforeTerms.map(term => this.fromRecipe(term)),
-      afterTerms.map(term => this.fromRecipe(term)));
+        this.currentDecl.superGrammar,
+        this.currentRuleName,
+        beforeTerms.map(term => this.fromRecipe(term)),
+        afterTerms.map(term => this.fromRecipe(term)));
   },
 
   fromRecipe(recipe) {
