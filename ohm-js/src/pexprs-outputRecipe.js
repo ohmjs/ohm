@@ -67,8 +67,19 @@ pexprs.Alt.prototype.outputRecipe = function(formals, grammarInterval) {
 };
 
 pexprs.Extend.prototype.outputRecipe = function(formals, grammarInterval) {
-  const extension = this.terms[0]; // [extension, orginal]
+  const extension = this.terms[0]; // [extension, original]
   return extension.outputRecipe(formals, grammarInterval);
+};
+
+pexprs.Splice.prototype.outputRecipe = function(formals, grammarInterval) {
+  const beforeTerms = this.terms.slice(0, this.expansionPos);
+  const afterTerms = this.terms.slice(this.expansionPos + 1);
+  return [
+    'splice',
+    getMetaInfo(this, grammarInterval),
+    beforeTerms.map(term => term.outputRecipe(formals, grammarInterval)),
+    afterTerms.map(term => term.outputRecipe(formals, grammarInterval))
+  ];
 };
 
 pexprs.Seq.prototype.outputRecipe = function(formals, grammarInterval) {

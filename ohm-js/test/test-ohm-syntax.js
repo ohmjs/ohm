@@ -976,6 +976,72 @@ test('inheritance', t => {
   t.end();
 });
 
+test('override with "..."', t => {
+  let g = ohm.grammar('G { letter := "@" | ... }');
+  t.equal(g.match('@', 'letter').succeeded(), true);
+  t.equal(g.match('a', 'letter').succeeded(), true);
+
+  g = ohm.grammar('G { letter := ... | "@" }');
+  t.equal(g.match('@', 'letter').succeeded(), true);
+  t.equal(g.match('a', 'letter').succeeded(), true);
+
+  g = ohm.grammar('G { letter := "3" | ... | "@" }');
+  t.equal(g.match('@', 'letter').succeeded(), true);
+  t.equal(g.match('a', 'letter').succeeded(), true);
+  t.equal(g.match('3', 'letter').succeeded(), true);
+
+  t.ok(ohm.grammar('G { letter := ... }'), 'it allows `...` as the whole body');
+
+  // Check that the branches are evaluated in the correct order.
+  g = ohm.grammar('G { letter := "" | ... }');
+  t.equal(g.match('', 'letter').succeeded(), true);
+  t.equal(g.match('a', 'letter').succeeded(), false);
+  g = ohm.grammar('G { letter := ... | "ab" }');
+  t.equal(g.match('a', 'letter').succeeded(), true);
+  t.equal(g.match('ab', 'letter').succeeded(), false);
+
+  g = ohm.grammar(`
+    G {
+      Start = ListOf<letter, ",">
+      ListOf<elem, sep> := "✌️" | ...
+    }`);
+  t.equal(g.match('✌️').succeeded(), true, 'it works on parameterized rules');
+
+  t.throws(
+      () => ohm.grammar('G { doesNotExist := ... }'),
+      /Cannot override rule doesNotExist/,
+      'it gives the correct error message when overriding non-existent rule');
+
+  t.throws(
+      () => ohm.grammar('G { foo = ... }'),
+      /Expected "}"/,
+      "it's not allowed in a rule definition");
+
+  t.throws(
+      () => ohm.grammar('G { letter += ... }'),
+      /Expected "}"/,
+      "it's not allowed when extending");
+
+  t.throws(
+      () => ohm.grammar('G { letter := "@" "#" | ... }'),
+      /inconsistent arity/);
+
+  t.throws(
+      () => ohm.grammar('G { letter := ... | "@" | ... }'),
+      /at most once/,
+      "'...' can appear at most once in a rule body");
+
+  /*
+    TODO:
+    - [ ] improve error message (inconsistent arity seems backwards)
+    - [ ] improve error message when using `...` in a rule defintion/extension
+    - [ ] unify Extend and Combine?
+    - [ ] using '...' when overriding a non-existent rule
+  */
+
+  t.end();
+});
+
 test('bindings', t => {
   it('inconsistent arity in alts is an error', () => {
     try {

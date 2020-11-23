@@ -11,7 +11,7 @@ Ohm {
 
   Rule
     = ident Formals? ruleDescr? "="  RuleBody  -- define
-    | ident Formals?            ":=" RuleBody  -- override
+    | ident Formals?            ":=" OverrideRuleBody  -- override
     | ident Formals?            "+=" RuleBody  -- extend
 
   RuleBody
@@ -20,6 +20,13 @@ Ohm {
   TopLevelTerm
     = Seq caseName  -- inline
     | Seq
+
+  OverrideRuleBody
+    = "|"? NonemptyListOf<OverrideTopLevelTerm, "|">
+
+  OverrideTopLevelTerm
+    = "..."  -- superSplice
+    | TopLevelTerm
 
   Formals
     = "<" ListOf<ident, ","> ">"

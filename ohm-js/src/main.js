@@ -31,6 +31,8 @@ let documentInterface = {
   querySelectorAll(sel) { return document.querySelectorAll(sel); }
 };
 
+const superSplicePlaceholder = Object.create(pexprs.PExpr.prototype);
+
 // Check if `obj` is a DOM element.
 function isElement(obj) {
   return !!(obj && obj.nodeType === 1);
@@ -119,26 +121,46 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     Rule_override(n, fs, _, b) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
+
+      const source = this.source.trimmed();
+      decl.ensureSuperGrammarRuleForOverriding(currentRuleName, source);
+
       overriding = true;
       const body = b.visit();
-      const source = this.source.trimmed();
-      const ans = decl.override(currentRuleName, currentRuleFormals, body, null, source);
       overriding = false;
-      return ans;
+      return decl.override(currentRuleName, currentRuleFormals, body, null, source);
     },
     Rule_extend(n, fs, _, b) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
       const body = b.visit();
       const source = this.source.trimmed();
-      const ans = decl.extend(currentRuleName, currentRuleFormals, body, null, source);
-      return ans;
+      return decl.extend(currentRuleName, currentRuleFormals, body, null, source);
     },
     RuleBody(_, terms) {
       const args = terms.visit();
       return builder.alt.apply(builder, args).withSource(this.source);
     },
+    OverrideRuleBody(_, terms) {
+      const args = terms.visit();
 
+      // Check if the super-splice operator (`...`) appears in the terms.
+      const expansionPos = args.indexOf(superSplicePlaceholder);
+      if (expansionPos >= 0) {
+        const beforeTerms = args.slice(0, expansionPos);
+        const afterTerms = args.slice(expansionPos + 1);
+
+        // Ensure it appears no more than once.
+        afterTerms.forEach(t => {
+          if (t === superSplicePlaceholder) throw errors.multipleSuperSplices(t);
+        });
+
+        return new pexprs.Splice(
+            decl.superGrammar, currentRuleName, beforeTerms, afterTerms).withSource(this.source);
+      } else {
+        return builder.alt.apply(builder, args).withSource(this.source);
+      }
+    },
     Formals(opointy, fs, cpointy) {
       return fs.visit();
     },
@@ -165,6 +187,9 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       }
       const params = currentRuleFormals.map(formal => builder.app(formal));
       return builder.app(inlineRuleName, params).withSource(body.source);
+    },
+    OverrideTopLevelTerm_superSplice(_) {
+      return superSplicePlaceholder;
     },
 
     Seq(expr) {
