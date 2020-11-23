@@ -121,20 +121,21 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     Rule_override(n, fs, _, b) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
+
+      const source = this.source.trimmed();
+      decl.ensureSuperGrammarRuleForOverriding(currentRuleName, source);
+
       overriding = true;
       const body = b.visit();
-      const source = this.source.trimmed();
-      const ans = decl.override(currentRuleName, currentRuleFormals, body, null, source);
       overriding = false;
-      return ans;
+      return decl.override(currentRuleName, currentRuleFormals, body, null, source);
     },
     Rule_extend(n, fs, _, b) {
       currentRuleName = n.visit();
       currentRuleFormals = fs.visit()[0] || [];
       const body = b.visit();
       const source = this.source.trimmed();
-      const ans = decl.extend(currentRuleName, currentRuleFormals, body, null, source);
-      return ans;
+      return decl.extend(currentRuleName, currentRuleFormals, body, null, source);
     },
     RuleBody(_, terms) {
       const args = terms.visit();
@@ -146,7 +147,6 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       // Check if the super-splice operator (`...`) appears in the terms.
       const expansionPos = args.indexOf(superSplicePlaceholder);
       if (expansionPos >= 0) {
-        const superGrammar = decl.ensureSuperGrammar();
         const beforeTerms = args.slice(0, expansionPos);
         const afterTerms = args.slice(expansionPos + 1);
 
@@ -156,7 +156,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
         });
 
         return new pexprs.Splice(
-            superGrammar, currentRuleName, beforeTerms, afterTerms).withSource(this.source);
+            decl.superGrammar, currentRuleName, beforeTerms, afterTerms).withSource(this.source);
       } else {
         return builder.alt.apply(builder, args).withSource(this.source);
       }

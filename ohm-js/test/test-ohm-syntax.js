@@ -1001,6 +1001,11 @@ test('override with "..."', t => {
   t.equal(g.match('ab', 'letter').succeeded(), false);
 
   t.throws(
+      () => ohm.grammar('G { doesNotExist := ... }'),
+      /Cannot override rule doesNotExist/,
+      'it gives the correct error message when overriding non-existent rule');
+
+  t.throws(
       () => ohm.grammar('G { foo = ... }'),
       /Expected "}"/,
       "it's not allowed in a rule definition");

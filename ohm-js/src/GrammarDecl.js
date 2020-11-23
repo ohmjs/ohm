@@ -39,6 +39,14 @@ GrammarDecl.prototype.ensureSuperGrammar = function() {
   return this.superGrammar;
 };
 
+GrammarDecl.prototype.ensureSuperGrammarRuleForOverriding = function(name, source) {
+  const ruleInfo = this.ensureSuperGrammar().rules[name];
+  if (!ruleInfo) {
+    throw errors.cannotOverrideUndeclaredRule(name, this.superGrammar.name, source);
+  }
+  return ruleInfo;
+};
+
 GrammarDecl.prototype.installOverriddenOrExtendedRule = function(name, formals, body, source) {
   const duplicateParameterNames = common.getDuplicates(formals);
   if (duplicateParameterNames.length > 0) {
@@ -156,10 +164,7 @@ GrammarDecl.prototype.define = function(name, formals, body, description, source
 };
 
 GrammarDecl.prototype.override = function(name, formals, body, descIgnored, source) {
-  const ruleInfo = this.ensureSuperGrammar().rules[name];
-  if (!ruleInfo) {
-    throw errors.cannotOverrideUndeclaredRule(name, this.superGrammar.name, source);
-  }
+  this.ensureSuperGrammarRuleForOverriding(name, source);
   this.installOverriddenOrExtendedRule(name, formals, body, source);
   return this;
 };
