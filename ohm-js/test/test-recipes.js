@@ -53,13 +53,14 @@ test.skip('grammar recipes with supergrammars', t => {
   t.equals(g3.toRecipe(), ns.G3.toRecipe(), 'grammar and grammar from recipe (with more rules)');
 
   ns.G4 = ohm.grammar(`
-    G4 <: G3 {
+    G4 <: G {
       start += "a"
-      begin := ... | "c" "d"
+      digit := ... | "☝️"
     }`, ns);
   const g4 = ohm.makeRecipe(ns.G4.toRecipe());
   t.ok(g4.match('', 'start').succeeded(), 'original rule matching');
   t.ok(g4.match('a', 'start').succeeded(), 'extended rule mathing');
+  t.ok(g4.match('☝️', 'digit').succeeded());
   t.equals(g4.toRecipe(), ns.G4.toRecipe(), 'grammar and grammar from recipe (with extension)');
 
   t.end();

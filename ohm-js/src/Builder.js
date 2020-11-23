@@ -15,6 +15,7 @@ function Builder() {}
 
 Builder.prototype = {
   currentDecl: null,
+  currentRuleName: null,
 
   newGrammar(name) {
     return new GrammarDecl(name);
@@ -32,16 +33,16 @@ Builder.prototype = {
       gDecl.withSource(metaInfo.source);
     }
 
-    const self = this;
     this.currentDecl = gDecl;
     Object.keys(rules).forEach(ruleName => {
+      this.currentRuleName = ruleName;
       const ruleRecipe = rules[ruleName];
 
       const action = ruleRecipe[0]; // define/extend/override
       const metaInfo = ruleRecipe[1];
       const description = ruleRecipe[2];
       const formals = ruleRecipe[3];
-      const body = self.fromRecipe(ruleRecipe[4]);
+      const body = this.fromRecipe(ruleRecipe[4]);
 
       let source;
       if (gDecl.source && metaInfo && metaInfo.sourceInterval) {
@@ -50,8 +51,8 @@ Builder.prototype = {
             metaInfo.sourceInterval[1] - metaInfo.sourceInterval[0]);
       }
       gDecl[action](ruleName, formals, body, description, source);
-    });
-    this.currentDecl = null;
+    });    
+    this.currentRuleName = this.currentDecl = null;
     return gDecl.build();
   },
 
@@ -67,7 +68,7 @@ Builder.prototype = {
     return new pexprs.Param(index);
   },
 
-  alt(/* term1, term1, ... */) {
+  alt(/* term1, term2, ... */) {
     let terms = [];
     for (let idx = 0; idx < arguments.length; idx++) {
       let arg = arguments[idx];
@@ -156,8 +157,19 @@ Builder.prototype = {
     return new pexprs.Apply(ruleName, optParams);
   },
 
+  // Note that unlike other methods in this class, this method cannot be used as a
+  // convenience constructor. It only works with recipes, because it relies on
+  // `this.currentDecl` and `this.currentRuleName` being set.
+  splice(beforeTerms, afterTerms) {
+    return new pexprs.Splice(
+      this.currentDecl.superGrammar,
+      this.currentRuleName,
+      beforeTerms.map(term => this.fromRecipe(term)),
+      afterTerms.map(term => this.fromRecipe(term)));
+  },
+
   fromRecipe(recipe) {
-    // the meta-info of 'grammar' is proccessed in Builder.grammar
+    // the meta-info of 'grammar' is processed in Builder.grammar
     const result = this[recipe[0]].apply(this,
       recipe[0] === 'grammar' ? recipe.slice(1) : recipe.slice(2));
 

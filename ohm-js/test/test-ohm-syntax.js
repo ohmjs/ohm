@@ -1000,6 +1000,13 @@ test('override with "..."', t => {
   t.equal(g.match('a', 'letter').succeeded(), true);
   t.equal(g.match('ab', 'letter').succeeded(), false);
 
+  g = ohm.grammar(`
+    G {
+      Start = ListOf<letter, ",">
+      ListOf<elem, sep> := "✌️" | ...
+    }`);
+  t.equal(g.match('✌️').succeeded(), true, 'it works on parameterized rules');
+
   t.throws(
       () => ohm.grammar('G { doesNotExist := ... }'),
       /Cannot override rule doesNotExist/,

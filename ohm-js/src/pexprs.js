@@ -89,12 +89,12 @@ class Extend extends Alt {
 
 // Splice is an implementation detail of rule overriding with the `...` operator.
 class Splice extends Alt {
-  constructor(superGrammar, name, beforeTerms, afterTerms) {
-    const origBody = superGrammar.rules[name].body;
+  constructor(superGrammar, ruleName, beforeTerms, afterTerms) {
+    const origBody = superGrammar.rules[ruleName].body;
     super([...beforeTerms, origBody, ...afterTerms]);
 
     this.superGrammar = superGrammar;
-    this.name = name;
+    this.ruleName = ruleName;
     this.expansionPos = beforeTerms.length;
   }
 }
