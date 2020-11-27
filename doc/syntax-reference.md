@@ -165,7 +165,7 @@ Defines a rule named `ruleName`, overriding a rule of the same name in a supergr
 
 Extends a supergrammar rule named `ruleName`, throwing an error if no rule with that name exists in a supergrammar. The rule body will effectively be <code><i>expr</i> | <i>oldBody</i></code>, where `oldBody` is the rule body as defined in the supergrammar.
 
-Note: as of v15.3.0, the _super-splice_ operator (`...`) offers a more general form of rule extension. `keyword += "def"` is equivalent to `keyword := "def" | ...`.
+Note that the _super-splice_ operator (`...`) offers a more general form of rule extension. `keyword += "def"` is equivalent to `keyword := "def" | ...`.
 
 #### Parameterized Rules
 
