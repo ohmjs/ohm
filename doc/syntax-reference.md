@@ -159,9 +159,13 @@ Defines a new rule named `ruleName` in the grammar, with the parsing expression 
 
 Defines a rule named `ruleName`, overriding a rule of the same name in a supergrammar. Throws an error if no rule with that name exists in a supergrammar.
 
+**New in 15.3.0:** The _super-splice_ operator (`...`) can be used to append and/or prepend cases to the supergrammar rule body. E.g., if the supergrammar defines `comment = multiLineComment`, then `comment := ... | singleLineComment` is equivalent to `comment := multiLineComment | singleLineComment`.
+
 <pre><code><i>ruleName</i> += <i>expr</i></code></pre>
 
 Extends a supergrammar rule named `ruleName`, throwing an error if no rule with that name exists in a supergrammar. The rule body will effectively be <code><i>expr</i> | <i>oldBody</i></code>, where `oldBody` is the rule body as defined in the supergrammar.
+
+Note that as of v15.3.0, the super-splice operator (`...`) offers a more general form of rule extension. E.g., `keyword += "def"` can also be written `keyword := "def" | ...`.
 
 #### Parameterized Rules
 
