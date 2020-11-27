@@ -3,6 +3,7 @@ Ohm
 
 [![Build Status](https://img.shields.io/travis/harc/ohm/master?style=flat-square)](https://travis-ci.org/harc/ohm)
 [![NPM](https://img.shields.io/npm/v/ohm-js.svg?style=flat-square)](https://www.npmjs.com/package/ohm-js)
+[![Chat on Discord](https://img.shields.io/badge/chat-on%20discord-7289da.svg?sanitize=true&style=flat-square)](https://discord.gg/KwxY5gegRQ)
 
 [Ohm](https://github.com/harc/ohm) is a parser generator consisting of a library and a domain-specific language.
 You can use it to parse custom file formats or quickly build parsers, interpreters, and compilers for programming languages. The _Ohm language_ is based on [parsing expression grammars](http://en.wikipedia.org/wiki/Parsing_expression_grammar)
