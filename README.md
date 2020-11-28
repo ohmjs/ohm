@@ -33,7 +33,8 @@ The easiest way to get started with Ohm is to use the [ohm interactive editor](h
 
 ### Resources
 
-- There's no tutorial yet, but the [math example](examples/math/index.html) is extensively commented and is probably the best place to start.
+- [Tutorial](https://nextjournal.com/dubroy/ohm-parsing-made-easy)
+- The [math example](examples/math/index.html) is extensively commented and is a good way to dive deeper.
 - [Examples](examples/)
 - [Documentation](doc/index.md)
 
