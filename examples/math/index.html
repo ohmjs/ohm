@@ -60,7 +60,7 @@ Arithmetic {
   "text/ohm-js" to differentiate it from other (non-Ohm) script tags.
 */
 
-var g = ohm.grammarFromScriptElement();
+const g = ohm.grammarFromScriptElement();
 
 /*
   You can use a grammar's `match()` method to to recognize inputs. `match()` returns a
@@ -133,7 +133,7 @@ g.match(' (  \t123   ) ', 'PriExp').succeeded();  // evaluates to `true`
   Below, we create a new semantics `s` for our arithmetic grammar.
 */
 
-var s = g.createSemantics();
+const s = g.createSemantics();
 
 /*
   But a semantics without any operations or attributes is not very interesting: it doesn't do
@@ -141,7 +141,7 @@ var s = g.createSemantics();
   expressions:
 */
 
-var constants = {pi: Math.PI, e: Math.E};
+const constants = {pi: Math.PI, e: Math.E};
 
 s.addOperation(
     'interpret',
@@ -170,7 +170,7 @@ s.addOperation(
         Since the result of interpreting an `Exp` should be the same as the result of interpreting
         its enclosed "add expression", we write:
       */
-      Exp: function(e) {
+      Exp(e) {
         return e.interpret();  // Note that operations are accessed as methods on the CST nodes.
       },
 
@@ -255,28 +255,28 @@ s.addOperation(
         Now it's straightforward to write the semantic actions for `AddExp`, `AddExp_plus`, and
         `AddExp_minus`:
       */
-      AddExp: function(e) {
+      AddExp(e) {
         return e.interpret();
       },
-      AddExp_plus: function(x, _, y) {
+      AddExp_plus(x, _, y) {
         return x.interpret() + y.interpret();
       },
-      AddExp_minus: function(x, _, y) {
+      AddExp_minus(x, _, y) {
         return x.interpret() - y.interpret();
       },
 
       /*
         The following semantic actions are more of the same...
       */
-      MulExp:        function(e)         { return e.interpret(); },
-      MulExp_times:  function(x, _, y)   { return x.interpret() * y.interpret(); },
-      MulExp_divide: function(x, _, y)   { return x.interpret() / y.interpret(); },
-      ExpExp:        function(e)         { return e.interpret(); },
-      ExpExp_power:  function(x, _, y)   { return Math.pow(x.interpret(), y.interpret()); },
-      PriExp:        function(e)         { return e.interpret(); },
-      PriExp_paren:  function(_l, e, _r) { return e.interpret(); },
-      PriExp_pos:    function(_, e)      { return e.interpret(); },
-      PriExp_neg:    function(_, e)      { return -e.interpret(); },
+      MulExp(e)               { return e.interpret(); },
+      MulExp_times(x, _, y)   { return x.interpret() * y.interpret(); },
+      MulExp_divide(x, _, y)  { return x.interpret() / y.interpret(); },
+      ExpExp(e)               { return e.interpret(); },
+      ExpExp_power(x, _, y)   { return Math.pow(x.interpret(), y.interpret()); },
+      PriExp(e)               { return e.interpret(); },
+      PriExp_paren(_l, e, _r) { return e.interpret(); },
+      PriExp_pos(_, e)        { return e.interpret(); },
+      PriExp_neg(_, e)        { return -e.interpret(); },
 
       /*
         CST nodes have a couple of useful properties which contain information about where that
@@ -293,11 +293,11 @@ s.addOperation(
         In other words, `this` is the parent of each of the CST nodes that are passed as arguments
         to the semantic action.)
       */
-      ident: function(_l, _ns) {
+      ident(_l, _ns) {
         // Look up the value of a named constant, e.g., 'pi'.
         return constants[this.sourceString] || 0;
       },
-      number: function(_) {
+      number(_) {
         // Use `parseFloat` to convert (e.g.) the string '123' to the number 123.
         return parseFloat(this.sourceString);
       }
@@ -309,8 +309,8 @@ s.addOperation(
   operation, how do we use them?
 */
 
-var r = g.match('(2+4)*7'); // First, you need a successful `MatchResult`.
-var n = s(r);               // Then, you apply the semantics to that match result to get a CST node,
+const r = g.match('(2+4)*7'); // First, you need a successful `MatchResult`.
+const n = s(r);               // Then, you apply the semantics to that match result to get a CST node,
 console.log(n.interpret()); // ... on which you can access the functionality provided by the
                             // semantics. (This will print `42`.)
 
@@ -321,16 +321,16 @@ console.log(n.interpret()); // ... on which you can access the functionality pro
 */
 
 s.addAttribute('asLisp', {
-  AddExp_plus:   function(x, _, y)   { return ['+', x.asLisp, y.asLisp]; },
-  AddExp_minus:  function(x, _, y)   { return ['-', x.asLisp, y.asLisp]; },
-  MulExp_times:  function(x, _, y)   { return ['*', x.asLisp, y.asLisp]; },
-  MulExp_divide: function(x, _, y)   { return ['/', x.asLisp, y.asLisp]; },
-  ExpExp_power:  function(x, _, y)   { return ['pow', x.asLisp, y.asLisp]; },
-  PriExp_paren:  function(_l, e, _r) { return e.asLisp; },
-  PriExp_pos:    function(_, e)      { return e.asLisp; },
-  PriExp_neg:    function(_, e)      { return ['neg', e.asLisp]; },
-  ident:         function(_l, _ns)   { return this.sourceString; },
-  number:        function(_)         { return this.sourceString; },
+  AddExp_plus(x, _, y)    { return ['+', x.asLisp, y.asLisp]; },
+  AddExp_minus(x, _, y)   { return ['-', x.asLisp, y.asLisp]; },
+  MulExp_times(x, _, y)   { return ['*', x.asLisp, y.asLisp]; },
+  MulExp_divide(x, _, y)  { return ['/', x.asLisp, y.asLisp]; },
+  ExpExp_power(x, _, y)   { return ['pow', x.asLisp, y.asLisp]; },
+  PriExp_paren(_l, e, _r) { return e.asLisp; },
+  PriExp_pos(_, e)        { return e.asLisp; },
+  PriExp_neg(_, e)        { return ['neg', e.asLisp]; },
+  ident(_l, _ns)          { return this.sourceString; },
+  number(_)               { return this.sourceString; },
 
   /*
     When you create an operation or an attribute, you can optionally provide a `_nonterminal`
@@ -339,7 +339,7 @@ s.addAttribute('asLisp', {
     method will be that CST node, and `_nonterminal`'s only argument will be an array that contains
     the children of that node.
   */
-  _nonterminal:  function(children) {
+  _nonterminal(children) {
     if (children.length === 1) {
       // If this node has only one child, just return the Lisp-like tree of its child. This lets us
       // avoid writing semantic actions for the `Exp`, `AddExp`, `MulExp`, `ExpExp`, and `PriExp`
@@ -364,54 +364,70 @@ n.asLisp === n.asLisp;  // evaluates to `true`
 
 // -------------------------------------------------------------------------------------------------
 
-var elt = makeElement;
+const elt = makeElement;
 
 s.addOperation('toTree', {
-  Exp:           function(e)         { return elt('exp', e.toTree()); },
-  AddExp:        function(e)         { return elt('addExp', e.toTree()); },
-  AddExp_plus:   function(x, op, y)  { return elt('plus', x.toTree(), op.toTree(), y.toTree()); },
-  AddExp_minus:  function(x, op, y)  { return elt('minus', x.toTree(), op.toTree(), y.toTree()); },
-  MulExp:        function(e)         { return elt('mulExp', e.toTree()); },
-  MulExp_times:  function(x, op, y)  { return elt('times', x.toTree(), op.toTree(), y.toTree()); },
-  MulExp_divide: function(x, op, y)  { return elt('divide', x.toTree(), op.toTree(), y.toTree()); },
-  ExpExp:        function(e)         { return elt('expExp', e.toTree()); },
-  ExpExp_power:  function(x, op, y)  { return elt('power', x.toTree(), op.toTree(), y.toTree()); },
-  PriExp:        function(e)         { return elt('priExp', e.toTree()); },
-  PriExp_paren:  function(op, e, cp) { return elt('paren', op.toTree(), e.toTree(), cp.toTree()); },
-  PriExp_pos:    function(sign, e)   { return elt('pos', sign.toTree(), e.toTree()); },
-  PriExp_neg:    function(sign, e)   { return elt('neg', sign.toTree(), e.toTree()); },
-  ident:         function(_l, _ns)   { return elt('ident', this.sourceString); },
-  number:        function(_)         { return elt('number', this.sourceString); },
+  Exp(e)                  { return elt('exp', e.toTree()); },
+  AddExp(e)               { return elt('addExp', e.toTree()); },
+  AddExp_plus(x, op, y)   { return elt('plus', x.toTree(), op.toTree(), y.toTree()); },
+  AddExp_minus(x, op, y)  { return elt('minus', x.toTree(), op.toTree(), y.toTree()); },
+  MulExp(e)               { return elt('mulExp', e.toTree()); },
+  MulExp_times(x, op, y)  { return elt('times', x.toTree(), op.toTree(), y.toTree()); },
+  MulExp_divide(x, op, y) { return elt('divide', x.toTree(), op.toTree(), y.toTree()); },
+  ExpExp(e)               { return elt('expExp', e.toTree()); },
+  ExpExp_power(x, op, y)  { return elt('power', x.toTree(), op.toTree(), y.toTree()); },
+  PriExp(e)               { return elt('priExp', e.toTree()); },
+  PriExp_paren(op, e, cp) { return elt('paren', op.toTree(), e.toTree(), cp.toTree()); },
+  PriExp_pos(sign, e)     { return elt('pos', sign.toTree(), e.toTree()); },
+  PriExp_neg(sign, e)     { return elt('neg', sign.toTree(), e.toTree()); },
+  ident(_l, _ns)          { return elt('ident', this.sourceString); },
+  number(_)               { return elt('number', this.sourceString); },
 
   // The _terminal semantic action specifies what your operation or attribute should do with
   // (you guessed it) terminals. Here, we return the terminal's `primitiveValue` property,
   // which for a string terminal is the string itself. For a number terminal `t`,
   // `t.primitiveValue` evaluates to the corresponding (JavaScript) number, and so on.
-  _terminal:     function()          { return this.primitiveValue; }
+  _terminal() { return this.primitiveValue; }
 });
 
 // -------------------------------------------------------------------------------------------------
 
 s.addOperation('toTwoD', {
-  AddExp_plus:   function(x, op, y)   { var operator = elt('operator', op.toTwoD());
-                                        return elt('plus', x.toTwoD(), operator, y.toTwoD()); },
-  AddExp_minus:  function(x, op, y)   { var operator = elt('operator', '\u2212');
-                                        return elt('minus', x.toTwoD(), operator, y.toTwoD()); },
-  MulExp_times:  function(x, op, y)   { var operator = elt('operator', '\u00D7');
-                                        return elt('times', x.toTwoD(), operator, y.toTwoD()); },
-  MulExp_divide: function(x, op, y)   { var numerator = elt('numerator', x.toTwoD());
-                                        var denominator = elt('denominator', y.toTwoD());
-                                        return elt('fraction', numerator, denominator); },
-  ExpExp_power:  function(x, op, y)   { var base = elt('theBase', x.toTwoD());
-                                        var exponent = elt('exponent', y.toTwoD());
-                                        return elt('power', base, exponent); },
-  PriExp_paren:  function(_l, e, _r)  { return elt('paren', e.toTwoD()); },
-  PriExp_pos:    function(sign, e)    { return elt('pos', sign.toTwoD(), e.toTwoD()); },
-  PriExp_neg:    function(sign, e)    { return elt('neg', sign.toTwoD(), e.toTwoD()); },
-  ident:         function(_l, _ns)    { var text = this.sourceString;
-                                        return elt('ident', text === 'pi' ? '\u03C0' : text); },
-  number:        function(_)          { return elt('number', this.sourceString); },
-  _terminal:     function()           { return this.primitiveValue; }
+  AddExp_plus(x, op, y)   {
+    const operator = elt('operator', op.toTwoD());
+    return elt('plus', x.toTwoD(), operator, y.toTwoD());
+  },
+  AddExp_minus(x, op, y)  {
+    const operator = elt('operator', '\u2212');
+    return elt('minus', x.toTwoD(), operator, y.toTwoD());
+  },
+  MulExp_times(x, op, y)  {
+    const operator = elt('operator', '\u00D7');
+    return elt('times', x.toTwoD(), operator, y.toTwoD());
+  },
+  MulExp_divide(x, op, y) {
+    const numerator = elt('numerator', x.toTwoD());
+    const denominator = elt('denominator', y.toTwoD());
+    return elt('fraction', numerator, denominator);
+  },
+  ExpExp_power(x, op, y)  {
+    const base = elt('theBase', x.toTwoD());
+    const exponent = elt('exponent', y.toTwoD());
+    return elt('power', base, exponent);
+  },
+  PriExp_paren(_l, e, _r) { return elt('paren', e.toTwoD()); },
+  PriExp_pos(sign, e)     { return elt('pos', sign.toTwoD(), e.toTwoD()); },
+  PriExp_neg(sign, e)     { return elt('neg', sign.toTwoD(), e.toTwoD()); },
+  ident(_l, _ns) {
+    const text = this.sourceString;
+    return elt('ident', text === 'pi' ? '\u03C0' : text);
+  },
+  number(_) {
+    return elt('number', this.sourceString);
+  },
+  _terminal() {
+    return this.primitiveValue;
+  }
 
   // Remember the `_nonterminal` semantic action that we wrote for the `interpret` operation above?
   // Turns out that's so convenient that the Ohm people decided to give it to you "for free", i.e.,
@@ -439,11 +455,11 @@ s.addOperation('toTwoD', {
   This is the code that drives the UI in this demo.
 */
 
-var input = document.getElementById('input');
-var spaces = document.getElementById('spaces');
-var error = document.getElementById('error');
-var errorDiv = document.getElementById('errorDiv');
-var errorDetails = document.getElementById('errorDetails');
+const input = document.getElementById('input');
+const spaces = document.getElementById('spaces');
+const error = document.getElementById('error');
+const errorDiv = document.getElementById('errorDiv');
+const errorDetails = document.getElementById('errorDetails');
 
 input.value = '';
 hideError();
@@ -456,7 +472,7 @@ function stringifyLisp(x) {
 input.oninput = function() {
   hideError();
   this.className = undefined;
-  var r = g.match(this.value);
+  const r = g.match(this.value);
   if (r.succeeded()) {
     // Notice that you can do many different things with the same match result, i.e., you only have
     // to process the input once.
@@ -490,13 +506,13 @@ function showError(r) {
     removeChildren(errorDetails);
 
     // Add the non-fluffy failures first...
-    var nonFluffyFailures =
-        r.getRightmostFailures().filter(function(failure) { return !failure.isFluffy(); });
+    const nonFluffyFailures =
+        r.getRightmostFailures().filter((failure) => !failure.isFluffy());
     nonFluffyFailures.forEach(addErrorDetails);
 
     // ... then the fluffy ones
-    var fluffyFailures =
-        r.getRightmostFailures().filter(function(failure) { return failure.isFluffy(); });
+    const fluffyFailures =
+        r.getRightmostFailures().filter((failure) => failure.isFluffy());
     fluffyFailures.forEach(addErrorDetails);
 
     // Show the error balloon.
@@ -505,7 +521,7 @@ function showError(r) {
 }
 
 function addErrorDetails(failure) {
-  var element = createExpectedElement(failure);
+  const element = createExpectedElement(failure);
   errorDetails.appendChild(element);
 }
 
@@ -534,9 +550,9 @@ setInput('1 + 2 * 3 / 4^5');
 
 // This other stuff turns this example into a unit test.
 
-function $(sel) { return document.querySelector(sel); }
+const $ = (sel) => document.querySelector(sel);
 
-window.test = function(t) {
+window.test = (t) => {
   setInput('33 * 5 + 100');
   t.equal($('#value').textContent, '265', 'value is correct');
   t.equal($('#lisp').textContent, '(+ (* 33 5) 100)', 'LISP representation is correct');
