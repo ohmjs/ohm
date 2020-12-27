@@ -1,3 +1,0 @@
-# Ohm Tutorial
-
-Coming soon.
