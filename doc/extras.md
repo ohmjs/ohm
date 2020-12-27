@@ -4,7 +4,7 @@ Ohm comes with a few extras that are not part of Ohm's core but are related to g
 Here is how you can access those extras:
 
 ```js
-  var extras = require('ohm-js/extras');
+  const extras = require('ohm-js/extras');
   // use something like extras.toAST(...);
 ```
 
@@ -20,15 +20,35 @@ The resulting AST is inspired by the [ECMAScript Tree](https://github.com/estree
 <a name="example"></a>
 **Example:**
 
+<!-- @markscript
+  // Replace 'const ast' with 'var ast' to allow it to redeclared.
+  markscript.transformNextBlock(code => code.replace('const ast', 'var ast'));
+-->
+
 ```js
-  var ohm = require('ohm-js');
-  var g = ohm.grammar('G { Equation = AddExpr   AddExpr = number "+" number   number = digit+ }');
-  var match = g.match('24 +  6');
-  var toAST = require('ohm-js/extras').toAST;
-  var ast = toAST(match);
+  const ohm = require('ohm-js');
+  const g = ohm.grammar(`
+    G {
+      Equation = AddExpr
+      AddExpr = number "+" number
+      number = digit+
+    }
+  `);
+  const match = g.match('24 +  6');
+  const toAST = require('ohm-js/extras').toAST;
+  const ast = toAST(match);
 ```
 
 will produce an AST like this:
+
+<!-- @markscript
+  // Make sure the block below is equal to `ast` from the block above.
+  markscript.transformNextBlock((code) => {
+    const jsonAST = code.replace(/\/\/.*/g, ''); // Strip comments
+    assert.deepEqual(ast, JSON.parse(jsonAST));
+    return '';  // Don't actually execute anything.
+  });
+-->
 
 ```js
   {
@@ -57,15 +77,29 @@ The _mapping_ parameter is a JavaScript object that consists of key-value pairs 
 
 **Customized Example (see [Example](#example)):**
 
+<!-- @markscript
+  // Replace 'const ast' with 'var ast' to allow it to redeclared.
+  markscript.transformNextBlock(code => code.replace('const ast', 'var ast'));
+-->
+
 ```js
   // create ohm, g, match and toAST
-  var ast = toAST(match, {
+  const ast = toAST(match, {
     Equation: { content: 0 },
-    AddExpr: { type: 'Expression', expr1: 0, op: 1, expr2: 2) }
+    AddExpr: { type: 'Expression', expr1: 0, op: 1, expr2: 2 }
   });
 ```
 
 results in an AST like:
+
+<!-- @markscript
+  // Make sure the block below is equal to `ast` from the block above.
+  markscript.transformNextBlock((code) => {
+    const jsonAST = code.replace(/\/\/.*/g, ''); // Strip comments
+    assert.deepEqual(ast, JSON.parse(jsonAST));
+    return '';  // Don't actually execute anything.
+  });
+-->
 
 ```js
   {

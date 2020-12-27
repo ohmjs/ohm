@@ -40,9 +40,9 @@ fixes:
   name. E.g.:
 
     ```js
-    var ns = {};
+    const ns = {};
     ns.G1 = ohm.grammar('G1 {}');
-    var g2 = ohm.grammar('G2 <: G1 {}', ns);
+    const g2 = ohm.grammar('G2 <: G1 {}', ns);
     ```
 
 ### Duplicate Grammar Declaration

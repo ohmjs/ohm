@@ -15,7 +15,7 @@ Ohm is closely related to [OMeta](http://tinlizzie.org/ometa/), another PEG-base
 ## Terminology
 
 <!-- @markscript
-  var ohm = require('ohm-js');
+  const ohm = require('ohm-js');
   function checkGrammar(source) {
   	assert(ohm.grammar(source));
   }

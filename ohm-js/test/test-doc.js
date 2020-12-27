@@ -30,8 +30,11 @@ const markscriptConfig = {
   // Expose the fake document object to scripts inside Markdown.
   globals: {document: fakeDocument},
 
-  // Make `require('ohm-js')` work properly from inside Markdown.
-  moduleAliases: {'ohm-js': scriptRel('..')},
+  // Allow require calls to work properly from inside Markdown.
+  moduleAliases: {
+    'ohm-js': scriptRel('..'),
+    'ohm-js/extras': scriptRel('../extras')
+  },
   workingDir: scriptRel('data')
 };
 
@@ -56,8 +59,8 @@ test('README.md', t => {
   t.end();
 });
 
-test('doc/index.md', t => {
-  markscript.evaluateFile(scriptRel('../../doc/index.md'), markscriptConfig);
+test('doc/README.md', t => {
+  markscript.evaluateFile(scriptRel('../../doc/README.md'), markscriptConfig);
   t.end();
 });
 
@@ -68,5 +71,10 @@ test('doc/api-reference.md', t => {
 
 test('doc/syntax-reference.md', t => {
   markscript.evaluateFile(scriptRel('../../doc/syntax-reference.md'), markscriptConfig);
+  t.end();
+});
+
+test('doc/extras.md', t => {
+  markscript.evaluateFile(scriptRel('../../doc/extras.md'), markscriptConfig);
   t.end();
 });
