@@ -26,7 +26,7 @@ Learn more about the Ohm philosophy [here](doc/philosophy.md).
 Getting Started
 ---------------
 
-The easiest way to get started with Ohm is to use the [ohm interactive editor](https://ohmlang.github.io/editor/).  Alternatively, play with one of the following examples on JSFiddle:
+The easiest way to get started with Ohm is to use the [interactive editor](https://ohmlang.github.io/editor/).  Alternatively, you can play with one of the following examples on JSFiddle:
 
 - [Basic parsing example](https://jsfiddle.net/pdubroy/p3b1v2xb/)
 - [Arithmetic example with semantics](https://jsfiddle.net/pdubroy/15k63qae/)
@@ -56,8 +56,12 @@ If you are using Node.js, you can just install the `ohm-js` package using [npm](
 
 This will install Ohm in the local node_modules folder. Use `require` to access it from a Node script:
 
+<!-- @markscript
+  markscript.transformNextBlock(s => s.replace('const ', 'var '));
+-->
+
 ```js
-var ohm = require('ohm-js');
+const ohm = require('ohm-js');
 ```
 
 ### Basics
@@ -73,7 +77,7 @@ you can define an Ohm grammar:
 - Define the grammar directly in a JavaScript string and instantiate it using `ohm.grammar()`:
 
     ```js
-    var myGrammar = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
+    const myGrammar = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
     ```
 
     This is the simplest option, but it can be awkward to define larger grammars this way.
@@ -87,7 +91,7 @@ you can define an Ohm grammar:
       }
     </script>
     <script>
-      var myGrammar = ohm.grammarFromScriptElement();
+      const myGrammar = ohm.grammarFromScriptElement();
     </script>
     ```
 
@@ -102,10 +106,10 @@ you can define an Ohm grammar:
     In JavaScript:
 
     ```js
-    var fs = require('fs');
-    var ohm = require('ohm-js');
-    var contents = fs.readFileSync('myGrammar.ohm');
-    var myGrammar = ohm.grammar(contents);
+    const fs = require('fs');
+    const ohm = require('ohm-js');
+    const contents = fs.readFileSync('myGrammar.ohm');
+    const myGrammar = ohm.grammar(contents);
     ```
 
 For more information, see [Instantiating Grammars](doc/api-reference.md#instantiating-grammars) in the API reference.
@@ -117,15 +121,14 @@ For more information, see [Instantiating Grammars](doc/api-reference.md#instanti
 <!-- @markscript
   // The duplication here is required because Markscript only executes top-level code blocks.
   // TODO: Consider fixing this in Markscript.
-  var ohm = require('ohm-js');
-  var myGrammar = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
+  const myGrammar = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
 -->
 
 Once you've instantiated a grammar object, use the grammar's `match()` method to recognize input:
 
 ```js
-var userInput = 'Hello';
-var m = myGrammar.match(userInput);
+const userInput = 'Hello';
+const m = myGrammar.match(userInput);
 if (m.succeeded()) {
   console.log('Greetings, human.');
 } else {
@@ -139,8 +142,7 @@ For more information, see the [main documentation](doc/index.md).
 
 ### Debugging
 
-Ohm has two tools to help you debug grammars: a text trace, and a graphical visualizer. The
-visualizer is still under development (i.e., it might be buggy!) but it can still be useful.
+Ohm has two tools to help you debug grammars: a text trace, and a graphical visualizer.
 
 [![Ohm Visualizer](http://harc.github.io/ohm/doc/images/visualizer-small.png)](http://harc.github.io/ohm/visualizer/)
 
@@ -154,7 +156,7 @@ result of `g.trace('ab').toString()` for the grammar `G { start = letter+ }`:
 
 <!-- @markscript
   markscript.transformNextBlock(function(code) {
-    var trace = ohm.grammar('G { start = letter+ }').trace('ab');
+    const trace = ohm.grammar('G { start = letter+ }').trace('ab');
     assert.equal(trace.toString().trim(), code.trim());
   });
 -->
