@@ -165,9 +165,9 @@ Generally, you write a semantic action for each rule in your grammar, and store 
 
 <!-- @markscript
   // Take the grammar below and instantiate it as `g` in the markscript environment.
-  markscript.transformNextBlock(function(code) {
-    return "var g = require('ohm-js').grammar('" + code.replace(/\n/g, '\\n') + "');";
-  });
+  markscript.transformNextBlock((code) =>
+    `const g = require('ohm-js').grammar(${JSON.stringify(code)});`
+  );
 -->
 
 ```
@@ -182,10 +182,10 @@ A set of semantic actions for this grammar might look like this:
 <!-- @markscript
   // Replace '...' in the action dict below with some actual function definitions,
   // so that we can be sure that the code actually works.
-  markscript.transformNextBlock(function(code) {
-    return code.replace('...', "return lastName.x().toUpperCase() + ', ' + firstName.x()")
-               .replace('...', "return this.sourceString;")
-  });
+  markscript.transformNextBlock((code) =>
+    code.replace('...', "return lastName.x().toUpperCase() + ', ' + firstName.x()")
+        .replace('...', "return this.sourceString;")
+  );
 -->
 
 ```js
@@ -197,7 +197,7 @@ var actions = {
 
 <!-- @markscript
   // Verify that the action dict actually works.
-  var semantics = g.createSemantics().addOperation('x', actions);
+  const semantics = g.createSemantics().addOperation('x', actions);
   assert.equal(semantics(g.match('Guy Incognito')).x(), 'INCOGNITO, Guy');
 -->
 
@@ -209,39 +209,7 @@ The matching semantic action for a particular node is chosen as follows:
 - On a terminal node (e.g., a node produced by the parsing expression `"hello"`), use the semantic action named '_terminal'.
 - On an iteration node (e.g., a node produced by the parsing expression `letter+`), use the semantic action named '_iter'. If the action dictionary does not have a property with that name, the default action returns an array containing the results of applying the operation or attribute to each child node.
 
-For _ListOf_ expressions, the easiest way to deal with them, is with `asIteration()`. As an example, take the following grammar:
-
-G {
-  Start = ListOf<letter, ",">
-}
-
-...and an operation defined as follows:
-
-s.addOperation('myOp()', {
-  Start: function(list) {
-    return list.asIteration().myOp();
-  },
-  letter: function(l) {
-    return this.interval.contents;
-  }
-});
-
-Then s(g.match('a, b, c')).myOp(); will return ['a', 'b', 'c'].
-
-Alternatively, you can explicitly define the action for `NonemptyListOf` and `EmptyListOf`, if you need something custom.
-
-```
-grammar.semantics().addOperation('myOp', {
-  // ...
-  NonemptyListOf: function(x, _, xs) {
-    return [x.myOp()].concat(xs.myOp());  // .myOp can be called on the array-like xs
-  },
-  EmptyListOf: function() {
-    return [];
-  },
-  // ...
-});
-```
+Note that you can also write semantic actions for built-in rules like `letter` or `digit`. For `ListOf`, please see the documentation on [asIteration](#asIteration) below.
 
 ### Parse Nodes
 
@@ -288,3 +256,50 @@ For a terminal node, the raw value that was consumed from the input stream.
 #### Operations and Attributes
 
 In addition to the properties listed above, within a given semantics, every node also has a method/property corresponding to each operation/attribute in the semantics. For example, in a semantics that has an operation named 'prettyPrint' and an attribute named 'freeVars', every node has a `prettyPrint()` method and a `freeVars` property.
+
+Built-in Operations
+-------------------
+
+### asIteration
+
+The built-in `asIteration` operation offers a convenient way of handling _ListOf_ expressions, by adapting them to have the same interface as built-in iteration nodes. As an example, take the following grammar:
+
+<!-- @markscript
+  // Take the grammar below and instantiate it as `g_asIteration` in the markscript environment.
+  markscript.transformNextBlock((code) => {
+    return `const g_asIteration = require('ohm-js').grammar(${JSON.stringify(code)});`
+  });
+-->
+```
+G {
+  Start = ListOf<letter, ",">
+}
+```
+
+...and an operation defined as follows:
+
+<!-- @markscript
+  const s = g_asIteration.createSemantics();
+-->
+
+```
+s.addOperation('upper()', {
+  Start(list) {
+    return list.asIteration().upper();
+  },
+  letter(l) {
+    return this.sourceString.toUpperCase();
+  }
+});
+```
+
+<!-- @markscript
+  assert.deepEqual(
+    s(g_asIteration.match('a, b, c')).upper(),
+    ['A', 'B', 'C']
+  );
+-->
+
+Then `s(g.match('a, b, c')).upper()` will return `['A', 'B', 'C']`. Note that calling `upper()` on the result of `asIteration` implicitly maps the `upper` operation over each element of the list.
+
+You can also extend the `asIteration` operation to handle other list-like rules in your own language.
