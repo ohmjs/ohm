@@ -266,9 +266,9 @@ The built-in `asIteration` operation offers a convenient way of handling _ListOf
 
 <!-- @markscript
   // Take the grammar below and instantiate it as `g_asIteration` in the markscript environment.
-  markscript.transformNextBlock((code) => {
-    return `const g_asIteration = require('ohm-js').grammar(${JSON.stringify(code)});`
-  });
+  markscript.transformNextBlock((code) =>
+    `const g_asIteration = require('ohm-js').grammar(${JSON.stringify(code)});`
+  );
 -->
 ```
 G {
