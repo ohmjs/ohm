@@ -209,6 +209,40 @@ The matching semantic action for a particular node is chosen as follows:
 - On a terminal node (e.g., a node produced by the parsing expression `"hello"`), use the semantic action named '_terminal'.
 - On an iteration node (e.g., a node produced by the parsing expression `letter+`), use the semantic action named '_iter'. If the action dictionary does not have a property with that name, the default action returns an array containing the results of applying the operation or attribute to each child node.
 
+For _ListOf_ expressions, the easiest way to deal with them, is with `asIteration()`. As an example, take the following grammar:
+
+G {
+  Start = ListOf<letter, ",">
+}
+
+...and an operation defined as follows:
+
+s.addOperation('myOp()', {
+  Start: function(list) {
+    return list.asIteration().myOp();
+  },
+  letter: function(l) {
+    return this.interval.contents;
+  }
+});
+
+Then s(g.match('a, b, c')).myOp(); will return ['a', 'b', 'c'].
+
+Alternatively, you can explicitly define the action for `NonemptyListOf` and `EmptyListOf`, if you need something custom.
+
+```
+grammar.semantics().addOperation('myOp', {
+  // ...
+  NonemptyListOf: function(x, _, xs) {
+    return [x.myOp()].concat(xs.myOp());  // .myOp can be called on the array-like xs
+  },
+  EmptyListOf: function() {
+    return [];
+  },
+  // ...
+});
+```
+
 ### Parse Nodes
 
 Each parse node is associated with a particular _parsing expression_ (a fragment of an Ohm grammar), and the node captures any input that was successfully parsed by that expression. Unlike many parsing frameworks, Ohm does not have a syntax for binding/capturing -- every parsing expression captures all the input it consumes, and produces a fixed number of values.
