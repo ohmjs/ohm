@@ -192,8 +192,8 @@ A set of semantic actions for this grammar might look like this:
 
 ```js
 const actions = {
-  FullName: function(firstName, lastName) { ... },
-  name: function(parts) { ... }
+  FullName(firstName, lastName) { ... },
+  name(parts) { ... }
 };
 ```
 
