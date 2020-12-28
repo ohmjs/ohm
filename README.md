@@ -36,7 +36,7 @@ The easiest way to get started with Ohm is to use the [interactive editor](https
 - Tutorial: [Ohm: Parsing Made Easy](https://nextjournal.com/dubroy/ohm-parsing-made-easy)
 - The [math example](examples/math/index.html) is extensively commented and is a good way to dive deeper.
 - [Examples](examples/)
-- [Documentation](doc/index.md)
+- [Documentation](doc/README.md)
 
 ### Installation
 

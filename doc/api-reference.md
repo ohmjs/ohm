@@ -137,9 +137,11 @@ This returns a parse node, whose properties correspond to the operations and att
 
 A Semantics instance `s` has the following methods, which all return `this` so they can be chained:
 
-<b><pre class="api">mySemantics.addOperation(name: string, actionDict: object) &rarr; Semantics</pre></b>
+<b><pre class="api">mySemantics.addOperation(nameOrSignature: string, actionDict: object) &rarr; Semantics</pre></b>
 
-Add a new Operation named `name` to this Semantics, using the [semantic actions](#semantic-actions) contained in `actionDict`. It is an error if there is already an operation or attribute called `name` in this semantics.
+Add a new Operation to this Semantics, using the [semantic actions](#semantic-actions) contained in `actionDict`. The first argument is either a name (e.g. `'prettyPrint'`) or a _signature_ which specifies the operation name and zero or more named parameters (e.g., `'prettyPrint()'`, `'prettyPrint(depth, strict)'`). It is an error if there is already an operation or attribute called `name` in this semantics.
+
+If the operation has arguments, they are accessible via `this.args` within a semantic action. For example, `this.args.depth` would hold the value of the `depth` argument for the current action.
 
 <b><pre class="api">mySemantics.addAttribute(name: string, actionDict: object) &rarr; Semantics</pre></b>
 
@@ -189,9 +191,9 @@ A set of semantic actions for this grammar might look like this:
 -->
 
 ```js
-var actions = {
-  FullName: function(firstName, lastName) { ... },
-  name: function(parts) { ... }
+const actions = {
+  FullName(firstName, lastName) { ... },
+  name(parts) { ... }
 };
 ```
 
@@ -240,6 +242,10 @@ The name of grammar rule that created the node.
 <b><pre class="api">n.source: Interval</pre></b>
 
 Captures the portion of the input that was consumed by the node.
+
+<b><pre class="api">n.sourceString: string</pre></b>
+
+The substring of the input that was consumed by the node. Equivalent to `n.source.contents`.
 
 <b><pre class="api">n.numChildren: number</pre></b>
 
