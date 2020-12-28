@@ -127,10 +127,10 @@ const associativity = {'+': 'L', '-': 'L', '*': 'L', '/': 'L', '**': 'R'};
 function binaryExpression(first, ops, rest) {
   if (associativity[ops[0]] === 'L') {
     const applyLeft = (x, y) => new BinaryExpression(x, ops.shift(), y);
-    return [first].concat(rest).reduce(applyLeft);
+    return [first, ...rest].reduce(applyLeft);
   } else {
     const applyRight = (x, y) => new BinaryExpression(y, ops.pop(), x);
-    return [first].concat(rest).reduceRight(applyRight);
+    return [first, ...rest].reduceRight(applyRight);
   }
 }
 
