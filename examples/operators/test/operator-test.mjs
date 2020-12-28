@@ -1,6 +1,6 @@
 'use strict';
 
-import { fixture } from '../operator-example.js';
+import { fixture } from '../operator-example.mjs';
 import assert from 'assert';
 
 for (const {name, grammar, semantics} of fixture) {
