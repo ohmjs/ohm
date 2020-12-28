@@ -1,7 +1,7 @@
 'use strict';
 
-const fixture = require('../operator-example');
-const assert = require('assert');
+import { fixture }from '../operator-example.js';
+import assert from 'assert';
 
 for (const {name, grammar, semantics} of fixture) {
 

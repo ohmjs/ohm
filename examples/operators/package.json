@@ -1,6 +1,7 @@
 {
   "name": "operators",
   "version": "1.0.0",
+  "type": "module",
   "description": "An example showing four ways to implement a language with an operator precedence hiearchy",
   "scripts": {
     "test": "mocha"

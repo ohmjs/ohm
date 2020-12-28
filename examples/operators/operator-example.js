@@ -2,7 +2,7 @@
 
 'use strict';
 
-const ohm = require('ohm-js');
+import ohm from 'ohm-js';
 
 // The expression language is the classic arithmetic operators over integer literals
 // and identifiers, which, in EBNF, is:
@@ -233,7 +233,7 @@ function makeTree(left, ops, rights, minPrecedence = 0) {
 // naming scheme may be fine for a progression narrative, but let’s give them better
 // names for export.
 
-module.exports = [
+export const fixture = [
   {name: 'left-recursive', grammar: grammar1, semantics: semantics1},
   {name: 'traditional PEG', grammar: grammar2, semantics: semantics2},
   {name: 'parameterized', grammar: grammar3, semantics: semantics3},
