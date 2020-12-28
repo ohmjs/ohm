@@ -107,9 +107,15 @@ const grammar2 = ohm.grammar(`ExpressionLanguage {
 
 const semantics2 = grammar2.createSemantics().addOperation('tree', {
   Program(body) { return new Program(body.tree()); },
-  Exp(left, op, right) { return binaryExpression(left.tree(), op.tree(), right.tree()); },
-  Term(left, op, right) { return binaryExpression(left.tree(), op.tree(), right.tree()); },
-  Factor(left, op, right) { return binaryExpression(left.tree(), op.tree(), right.tree()); },
+  Exp(first, ops, rest) {
+    return binaryExpression(first.tree(), ops.tree(), rest.tree());
+  },
+  Term(first, ops, rest) {
+    return binaryExpression(first.tree(), ops.tree(), rest.tree());
+  },
+  Factor(first, ops, rest) {
+    return binaryExpression(first.tree(), ops.tree(), rest.tree());
+  },
   Primary_parens(open, expression, close) { return expression.tree(); },
   number(chars) { return new IntegerLiteral(+this.sourceString); },
   id(char, moreChars) { return new Identifier(this.sourceString); },
@@ -161,8 +167,8 @@ const semantics3 = grammar3.createSemantics().addOperation('tree', {
   },
   // The use of NonemptyListOf reduces a lot of repetition from the previous grammar,
   // where we repeated the same body for Exp_binary, Term_binary, and Factor_binary.
-  NonemptyListOf(left, op, right) {
-    return binaryExpression(left.tree(), op.tree(), right.tree());
+  NonemptyListOf(first, ops, rest) {
+    return binaryExpression(first.tree(), ops.tree(), rest.tree());
   },
   Primary_parens(open, expression, close) {
     return expression.tree();
@@ -204,7 +210,7 @@ const grammar4 = ohm.grammar(`ExpressionLanguage {
 
 const semantics4 = grammar4.createSemantics().addOperation('tree', {
   Program(body) { return new Program(body.tree()); },
-  Exp(left, op, right) { return makeTree(left.tree(), op.tree(), right.tree()); },
+  Exp(first, ops, rest) { return makeTree(first.tree(), ops.tree(), rest.tree()); },
   Primary_parens(open, expression, close) { return expression.tree(); },
   number(chars) { return new IntegerLiteral(+this.sourceString); },
   id(char, moreChars) { return new Identifier(this.sourceString); },
