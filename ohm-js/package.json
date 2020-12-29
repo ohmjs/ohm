@@ -23,7 +23,7 @@
   "scripts": {
     "prebootstrap": "bash bin/prebootstrap",
     "bootstrap": "bash bin/bootstrap --test || (echo 'Bootstrap failed.' && mv -v dist/ohm-grammar.js.old dist/ohm-grammar.js && mv -v dist/built-in-rules.js.old dist/built-in-rules.js && mv -v dist/operations-and-attributes.js.old dist/operations-and-attributes.js)",
-    "build": "yarn build-debug && webpack --mode=production",
+    "build": "npm run build-debug && webpack --mode=production",
     "prebuild-debug": "bash ../bin/update-env.sh",
     "build-debug": "webpack --mode=development",
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
@@ -32,7 +32,7 @@
     "test": "(tape 'test/**/*.js' | tap-spec) && ts-node test/test-typings.ts",
     "test-watch": "bash bin/test-watch",
     "postinstall": "node bin/dev-setup.js",
-    "pre-commit": "yarn run lint && yarn run build && yarn run test",
+    "pre-commit": "npm run lint && npm run build && npm run test",
     "unsafe-bootstrap": "bash bin/bootstrap",
     "version-package": "bash bin/version",
     "watch": "webpack --mode=development --watch"

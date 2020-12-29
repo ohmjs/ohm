@@ -15,10 +15,10 @@ fi
 json -I -f "${ROOT}/ohm-js/package.json" -e "this.contributors=[$(${ROOT}/bin/get-contributors)]"
 
 # Add the new version to package.json
-yarn workspace ohm-js version --no-git-tag-version
+(cd ohm-js; npm version --no-git-tag-version)
 
 # Then, build a bundle with the new version.
-yarn workspace ohm-js build
+npm run build
 
 # Commit everything and tag it with the new version.
 new_version=$(json -f "${ROOT}/ohm-js/package.json" version)
@@ -26,7 +26,7 @@ git commit -am "v${new_version}"
 git tag "v${new_version}"
 
 cp ${ROOT}/README.md ohm-js
-yarn workspace ohm-js publish
+(cd ohm-js; npm publish)
 rm ohm-js/README.md
 
 git push && git push --tags

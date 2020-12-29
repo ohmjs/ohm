@@ -29,7 +29,7 @@ fi
 
 # Run the tests if one of the files changed and the `--test` argument is set.
 if [ "$CHANGED" == "true" ] && [ "$1" == "--test" ]; then
-  yarn test --silent
+  npm test --silent
 fi
 
 echo 'Bootstrap complete.'
