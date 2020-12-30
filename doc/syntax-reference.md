@@ -108,6 +108,24 @@ Succeeds if the expression `expr` cannot be matched, and does not consume anythi
 
 Matches _expr_ as if in a lexical context. This can be used to prevent whitespace skipping before an expression that appears in the body of a syntactic rule. For further information, see [Syntactic vs. Lexical Rules](#syntactic-lexical).
 
+### Comment 
+
+Inside an Ohm grammar, you can use both single-line (`//`) comments like
+```
+booleanLiteral = ("true" | "false") // TODO: Should we support "True"/"False" as well? 
+```
+or 
+```
+// For semantics on how decimal literals are constructed, see section 7.8.3
+```
+as well as multiline (`/* */`) comments like:
+```
+/*
+  Note: Punctuator and DivPunctuator (see https://es5.github.io/x7.html#x7.7) are
+  not currently used by this grammar.
+*/
+```
+
 ## Built-in Rules
 
 (See [src/built-in-rules.ohm](../src/built-in-rules.ohm).)
