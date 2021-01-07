@@ -64,19 +64,59 @@ semantics.addOperation('toES5()', {
   Program(_, sourceElements) {
     // Top-level leading and trailing whitespace is not handled by nodeToES5(), so do it here.
     const sourceString = this.source.sourceString;
-    return sourceString.slice(0, this.source.startIdx) +
-           nodeToES5(this, [sourceElements]) +
-           sourceString.slice(this.source.endIdx);
+    return (
+      sourceString.slice(0, this.source.startIdx) +
+      nodeToES5(this, [sourceElements]) +
+      sourceString.slice(this.source.endIdx)
+    );
   },
   _nonterminal(children) {
     return nodeToES5(this, children);
   },
   _terminal() {
     return this.sourceString;
-  }
+  },
 });
+
+// Implements hoisting of variable and function declarations.
+// See https://developer.mozilla.org/en-US/docs/Glossary/Hoisting
+// Note that on its own, this operation doesn't create nested lexical environments,
+// but it should be possible to use it as a helper for another operation that would.
+semantics.addOperation('hoistDeclarations()', {
+  FunctionDeclaration(_, ident, _1, _2, _3, _4, _5, _6) {
+    // Don't hoist from the function body, only return this function's identifier.
+    return new Map([[ident.sourceString, [ident.source]]]);
+  },
+  FunctionExpression(_) {
+    return new Map();
+  },
+  VariableDeclaration(ident, _) {
+    return new Map([[ident.sourceString, [ident.source]]]);
+  },
+  _iter: mergeBindings,
+  _nonterminal: mergeBindings,
+  _terminal() {
+    return new Map();
+  },
+});
+
+// Merge the bindings from the given `nodes` into a single map, where the value
+// is an array of source locations that name is bound.
+function mergeBindings(nodes) {
+  const bindings = new Map();
+  for (const child of nodes.filter((c) => !c.isLexical())) {
+    child.hoistDeclarations().forEach((sources, ident) => {
+      if (bindings.has(ident)) {
+        bindings.get(ident).push(...sources); // Shadowed binding.
+      } else {
+        bindings.set(ident, sources); // Not shadowed at this level.
+      }
+    });
+  }
+  return bindings;
+}
 
 module.exports = {
   grammar: g,
-  semantics
+  semantics,
 };
