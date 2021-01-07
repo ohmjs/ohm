@@ -4,7 +4,7 @@ const test = require('tape-catch');
 
 const es5 = require('ohm-grammar-ecmascript');
 
-test('basic es5 tests', (t) => {
+test('basic es5 tests', t => {
   let results = es5.grammar.match('var x = 3; console.log(x)');
   t.ok(results.succeeded(), 'Example in readme is valid');
 
@@ -14,7 +14,7 @@ test('basic es5 tests', (t) => {
   t.end();
 });
 
-test('hoistDeclarations()', (t) => {
+test('hoistDeclarations()', t => {
   const result = es5.grammar.match(`
     function x() {}
     for (var x, y;;) {      // x shadows

@@ -75,7 +75,7 @@ semantics.addOperation('toES5()', {
   },
   _terminal() {
     return this.sourceString;
-  },
+  }
 });
 
 // Implements hoisting of variable and function declarations.
@@ -97,14 +97,14 @@ semantics.addOperation('hoistDeclarations()', {
   _nonterminal: mergeBindings,
   _terminal() {
     return new Map();
-  },
+  }
 });
 
 // Merge the bindings from the given `nodes` into a single map, where the value
 // is an array of source locations that name is bound.
 function mergeBindings(nodes) {
   const bindings = new Map();
-  for (const child of nodes.filter((c) => !c.isLexical())) {
+  for (const child of nodes.filter(c => !c.isLexical())) {
     child.hoistDeclarations().forEach((sources, ident) => {
       if (bindings.has(ident)) {
         bindings.get(ident).push(...sources); // Shadowed binding.
@@ -118,5 +118,5 @@ function mergeBindings(nodes) {
 
 module.exports = {
   grammar: g,
-  semantics,
+  semantics
 };
