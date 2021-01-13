@@ -131,3 +131,15 @@ test('coverageWith', t => {
 
   t.end();
 });
+
+test('getLineAndColumn', t => {
+  const interval = new Interval('blah\n3 + 4', 5, 6);
+  const lineInfo = interval.getLineAndColumn();
+
+  t.equal(lineInfo.lineNum, 2);
+  t.equal(lineInfo.colNum, 1);
+  t.equal(lineInfo.line, '3 + 4');
+  t.equal(lineInfo.prevLine, 'blah');
+  t.equal(lineInfo.nextLine, null);
+  t.end();
+});

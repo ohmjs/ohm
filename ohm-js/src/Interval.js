@@ -49,6 +49,10 @@ Interval.prototype = {
     return new Interval(this.sourceString, this.endIdx, this.endIdx);
   },
 
+  getLineAndColumn() {
+    return util.getLineAndColumn(this.sourceString, this.startIdx);
+  },
+
   getLineAndColumnMessage() {
     const range = [this.startIdx, this.endIdx];
     return util.getLineAndColumnMessage(this.sourceString, this.startIdx, range);
