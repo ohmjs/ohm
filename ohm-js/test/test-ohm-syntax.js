@@ -1321,6 +1321,20 @@ test('case-insensitive matching', t => {
   t.end();
 });
 
+// https://github.com/harc/ohm/issues/282
+test('single-line comment after case name (#282)', t => {
+  const {ohmGrammar} = ohm;
+  assertSucceeds(t, ohmGrammar.match(`G {
+    Start = -- foo // ok
+          | "x"
+  }`));
+  assertSucceeds(t, ohmGrammar.match('G {Start = -- foo // A comment\n}'));
+  assertSucceeds(t, ohmGrammar.match('G {} // This works too'));
+  assertSucceeds(t, ohmGrammar.match('// And this'));
+
+  t.end();
+});
+
 test('bootstrap', t => {
   const ns = makeGrammars(ohmGrammarSource);
 
