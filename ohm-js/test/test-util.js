@@ -12,6 +12,24 @@ const util = require('../src/util');
 // Tests
 // --------------------------------------------------------------------
 
+const getLineAndColumn = util.getLineAndColumn;
+
+test('getLineAndColumn().toString()', t => {
+  t.equal(getLineAndColumn('', 0).toString(), [
+    'Line 1, col 1:',
+    '> 1 | ',
+    '      ^',
+    ''].join('\n'), 'empty input');
+
+  t.equal(getLineAndColumn('3 + 4', 2).toString([0, 1], [4, 5]), [
+    'Line 1, col 3:',
+    '> 1 | 3 + 4',
+    '      ~ ^ ~',
+    ''].join('\n'), 'more than one range');
+
+  t.end();
+});
+
 const getLineAndColumnMessage = util.getLineAndColumnMessage;
 
 test('getLineAndColumnMessage', t => {

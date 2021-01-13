@@ -31,6 +31,63 @@ function strcpy(dest, src, offset) {
   return (start + src + end).substr(0, origDestLen);
 }
 
+// Casts the underlying lineAndCol object to a formatted message string,
+// highlighting `ranges`.
+function lineAndColumnToMessage(/* ...ranges */) {
+  const lineAndCol = this;
+  const offset = lineAndCol.offset;
+  const repeatStr = common.repeatStr;
+
+  const sb = new common.StringBuffer();
+  sb.append('Line ' + lineAndCol.lineNum + ', col ' + lineAndCol.colNum + ':\n');
+
+  // An array of the previous, current, and next line numbers as strings of equal length.
+  const lineNumbers = padNumbersToEqualLength([
+    lineAndCol.prevLine == null ? 0 : lineAndCol.lineNum - 1,
+    lineAndCol.lineNum,
+    lineAndCol.nextLine == null ? 0 : lineAndCol.lineNum + 1
+  ]);
+
+  // Helper for appending formatting input lines to the buffer.
+  const appendLine = (num, content, prefix) => {
+    sb.append(prefix + lineNumbers[num] + ' | ' + content + '\n');
+  };
+
+  // Include the previous line for context if possible.
+  if (lineAndCol.prevLine != null) {
+    appendLine(0, lineAndCol.prevLine, '  ');
+  }
+  // Line that the error occurred on.
+  appendLine(1, lineAndCol.line, '> ');
+
+  // Build up the line that points to the offset and possible indicates one or more ranges.
+  // Start with a blank line, and indicate each range by overlaying a string of `~` chars.
+  const lineLen = lineAndCol.line.length;
+  let indicationLine = repeatStr(' ', lineLen + 1);
+  const ranges = Array.prototype.slice.call(arguments);
+  for (let i = 0; i < ranges.length; ++i) {
+    let startIdx = ranges[i][0];
+    let endIdx = ranges[i][1];
+    common.assert(startIdx >= 0 && startIdx <= endIdx, 'range start must be >= 0 and <= end');
+
+    const lineStartOffset = offset - lineAndCol.colNum + 1;
+    startIdx = Math.max(0, startIdx - lineStartOffset);
+    endIdx = Math.min(endIdx - lineStartOffset, lineLen);
+
+    indicationLine = strcpy(indicationLine, repeatStr('~', endIdx - startIdx), startIdx);
+  }
+  const gutterWidth = 2 + lineNumbers[1].length + 3;
+  sb.append(repeatStr(' ', gutterWidth));
+  indicationLine = strcpy(indicationLine, '^', lineAndCol.colNum - 1);
+  sb.append(indicationLine.replace(/ +$/, '') + '\n');
+
+  // Include the next line for context if possible.
+  if (lineAndCol.nextLine != null) {
+    appendLine(2, lineAndCol.nextLine, '  ');
+  }
+  return sb.contents();
+};
+
 // --------------------------------------------------------------------
 // Exports
 // --------------------------------------------------------------------
@@ -99,68 +156,22 @@ exports.getLineAndColumn = (str, offset) => {
   const line = str.slice(lineStartOffset, lineEndOffset).replace(/\r$/, '');
 
   return {
+    offset,
     lineNum,
     colNum,
     line,
     prevLine,
-    nextLine
+    nextLine,
+    toString: lineAndColumnToMessage
   };
 };
 
 // Return a nicely-formatted string describing the line and column for the
-// given offset in `str`.
+// given offset in `str` highlighting `ranges`.
 exports.getLineAndColumnMessage = function(str, offset /* ...ranges */) {
-  const repeatStr = common.repeatStr;
-
-  const lineAndCol = exports.getLineAndColumn(str, offset);
-  const sb = new common.StringBuffer();
-  sb.append('Line ' + lineAndCol.lineNum + ', col ' + lineAndCol.colNum + ':\n');
-
-  // An array of the previous, current, and next line numbers as strings of equal length.
-  const lineNumbers = padNumbersToEqualLength([
-    lineAndCol.prevLine == null ? 0 : lineAndCol.lineNum - 1,
-    lineAndCol.lineNum,
-    lineAndCol.nextLine == null ? 0 : lineAndCol.lineNum + 1
-  ]);
-
-  // Helper for appending formatting input lines to the buffer.
-  const appendLine = (num, content, prefix) => {
-    sb.append(prefix + lineNumbers[num] + ' | ' + content + '\n');
-  };
-
-  // Include the previous line for context if possible.
-  if (lineAndCol.prevLine != null) {
-    appendLine(0, lineAndCol.prevLine, '  ');
-  }
-  // Line that the error occurred on.
-  appendLine(1, lineAndCol.line, '> ');
-
-  // Build up the line that points to the offset and possible indicates one or more ranges.
-  // Start with a blank line, and indicate each range by overlaying a string of `~` chars.
-  const lineLen = lineAndCol.line.length;
-  let indicationLine = repeatStr(' ', lineLen + 1);
   const ranges = Array.prototype.slice.call(arguments, 2);
-  for (let i = 0; i < ranges.length; ++i) {
-    let startIdx = ranges[i][0];
-    let endIdx = ranges[i][1];
-    common.assert(startIdx >= 0 && startIdx <= endIdx, 'range start must be >= 0 and <= end');
-
-    const lineStartOffset = offset - lineAndCol.colNum + 1;
-    startIdx = Math.max(0, startIdx - lineStartOffset);
-    endIdx = Math.min(endIdx - lineStartOffset, lineLen);
-
-    indicationLine = strcpy(indicationLine, repeatStr('~', endIdx - startIdx), startIdx);
-  }
-  const gutterWidth = 2 + lineNumbers[1].length + 3;
-  sb.append(repeatStr(' ', gutterWidth));
-  indicationLine = strcpy(indicationLine, '^', lineAndCol.colNum - 1);
-  sb.append(indicationLine.replace(/ +$/, '') + '\n');
-
-  // Include the next line for context if possible.
-  if (lineAndCol.nextLine != null) {
-    appendLine(2, lineAndCol.nextLine, '  ');
-  }
-  return sb.contents();
+  const lineAndCol = exports.getLineAndColumn(str, offset);
+  return lineAndCol.toString.apply(lineAndCol, ranges);
 };
 
 exports.uniqueId = (() => {
