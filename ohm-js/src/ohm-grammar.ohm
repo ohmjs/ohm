@@ -109,7 +109,7 @@ Ohm {
    += comment
 
   comment
-    = "//" (~"\n" any)* &"\n"  -- singleLine
+    = "//" (~"\n" any)* &("\n" | end)  -- singleLine
     | "/*" (~"*/" any)* "*/"  -- multiLine
 
   tokens = token*
