@@ -31,8 +31,10 @@
     "pretest": "bash ../bin/update-env.sh",
     "test": "(tape 'test/**/*.js' | tap-spec) && ts-node test/test-typings.ts",
     "test-watch": "bash bin/test-watch",
-    "postinstall": "node bin/dev-setup.js",
     "pre-commit": "yarn run lint && yarn run build && yarn run test",
+    "prepublishOnly": "cp ../README.md .",
+    "postpublish": "rm README.md",
+    "postinstall": "node bin/dev-setup.js",
     "unsafe-bootstrap": "bash bin/bootstrap",
     "version-package": "bash bin/version",
     "watch": "webpack --mode=development --watch"
