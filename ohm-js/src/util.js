@@ -33,7 +33,7 @@ function strcpy(dest, src, offset) {
 
 // Casts the underlying lineAndCol object to a formatted message string,
 // highlighting `ranges`.
-function lineAndColumnToMessage(/* ...ranges */) {
+function lineAndColumnToMessage(...ranges) {
   const lineAndCol = this;
   const offset = lineAndCol.offset;
   const repeatStr = common.repeatStr;
@@ -64,7 +64,6 @@ function lineAndColumnToMessage(/* ...ranges */) {
   // Start with a blank line, and indicate each range by overlaying a string of `~` chars.
   const lineLen = lineAndCol.line.length;
   let indicationLine = repeatStr(' ', lineLen + 1);
-  const ranges = Array.prototype.slice.call(arguments);
   for (let i = 0; i < ranges.length; ++i) {
     let startIdx = ranges[i][0];
     let endIdx = ranges[i][1];
@@ -168,10 +167,8 @@ exports.getLineAndColumn = (str, offset) => {
 
 // Return a nicely-formatted string describing the line and column for the
 // given offset in `str` highlighting `ranges`.
-exports.getLineAndColumnMessage = function(str, offset /* ...ranges */) {
-  const ranges = Array.prototype.slice.call(arguments, 2);
-  const lineAndCol = exports.getLineAndColumn(str, offset);
-  return lineAndCol.toString.apply(lineAndCol, ranges);
+exports.getLineAndColumnMessage = function(str, offset, ...ranges) {
+  return exports.getLineAndColumn(str, offset).toString(...ranges);
 };
 
 exports.uniqueId = (() => {
