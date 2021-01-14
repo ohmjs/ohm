@@ -141,5 +141,12 @@ test('getLineAndColumn', t => {
   t.equal(lineInfo.line, '3 + 4');
   t.equal(lineInfo.prevLine, 'blah');
   t.equal(lineInfo.nextLine, null);
+  t.equal(lineInfo.toString([7, 8], [9, 10]), [
+    'Line 2, col 1:',
+    '  1 | blah',
+    '> 2 | 3 + 4',
+    '      ^ ~ ~',
+    ''].join('\n'));
+
   t.end();
 });
