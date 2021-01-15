@@ -1,18 +1,26 @@
 # [Ohm](https://ohmlang.github.io/) &middot; [![NPM](https://img.shields.io/npm/v/ohm-js.svg)](https://www.npmjs.com/package/ohm-js) ![Node.js CI](https://github.com/harc/ohm/workflows/Node.js%20CI/badge.svg?style=flat-square) [![Chat on Discord](https://img.shields.io/badge/chat-on%20discord-7289da.svg?sanitize=true)](https://discord.gg/KwxY5gegRQ)
 
-Ohm is a parsing toolkit consisting of a library and a domain-specific language.
-You can use it to parse custom file formats or quickly build parsers, interpreters, and compilers for programming languages. The _Ohm language_ is based on [parsing expression grammars](http://en.wikipedia.org/wiki/Parsing_expression_grammar)
+Ohm is a parsing toolkit consisting of a library and a domain-specific language. You can use it to parse custom file formats or quickly build parsers, interpreters, and compilers for programming languages.
+
+The _Ohm language_ is based on [parsing expression grammars](http://en.wikipedia.org/wiki/Parsing_expression_grammar)
 (PEGs), which are a formal way of describing syntax, similar to regular expressions and context-free
 grammars. The _Ohm library_ provides a JavaScript interface for creating parsers, interpreters, and
 more from the grammars you write.
 
-Like its older sibling [OMeta](http://tinlizzie.org/ometa/), Ohm supports object-oriented grammar
-extension. One thing that distinguishes Ohm from other parsing tools is that it completely
-separates grammars from semantic actions. In Ohm, a grammar defines a language, and semantic
-actions (written in JavaScript) specify what to do with valid inputs in that language.
-This separation improves modularity, and makes both grammars and semantic actions easier to read and understand.
+Features:
+- **Full support for left-recursive rules** means that you can define left-associative operators in a natural way.
+- **Object-oriented grammar extension** makes it easy to extend an existing language with new syntax.
+- **Modular semantic actions.** Unlike many similar tools, Ohm completely
+separates grammars from semantic actions. This separation improves modularity and extensibility, and makes both grammars and semantic actions easier to read and understand.
+- **Online editor and visualizer.** The [Ohm Editor](https://ohmlang.github.io/editor/) provides instant feedback and an [interactive visualization](https://dubroy.com/blog/visualizing-packrat-parsing/) that makes the entire execution of the parser visible and tangible. It'll [make you feel like you have superpowers](https://twitter.com/kylestetz/status/1349770893120172036). 💪
 
-Learn more about the Ohm philosophy [here](doc/philosophy.md).
+Some awesome things people have built using Ohm:
+- [Seymour](https://harc.github.io/seymour-live2017/), a live programming environment for the classroom.
+- [Chorus](http://www.chorus-home.org/), a project exploring the middle ground between spreadsheets and programming.
+- [Shadama](https://tinlizzie.org/~ohshima/shadama2/live2017/), a particle simulation language designed for high-school science.
+- [turtle.audio](http://turtle.audio/), an audio environment where simple text commands generate lines that can play music.
+- A [browser-based tool](https://www.arthurcarabott.com/konnakkol/) that turns written _Konnakkol_ (a South Indian vocal percussion art) into audio.
+- [Wildcard](https://www.geoffreylitt.com/wildcard/), a browser extension that empowers anyone to modify websites to meet their own specific needs, uses Ohm for its spreadsheet formulas.
 
 Getting Started
 ---------------
