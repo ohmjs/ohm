@@ -7,7 +7,6 @@ The _Ohm language_ is based on [parsing expression grammars](http://en.wikipedia
 grammars. The _Ohm library_ provides a JavaScript interface for creating parsers, interpreters, and
 more from the grammars you write.
 
-Features:
 - **Full support for left-recursive rules** means that you can define left-associative operators in a natural way.
 - **Object-oriented grammar extension** makes it easy to extend an existing language with new syntax.
 - **Modular semantic actions.** Unlike many similar tools, Ohm completely
