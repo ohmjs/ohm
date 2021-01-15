@@ -61,3 +61,11 @@ sense to disable the error:
 
 If you need to temporarily commit something that doesn't pass the checks, you
 can use `git commit --no-verify` -- but use this sparingly!
+
+## Publishing
+
+To version and publish the ohm-js package, run the following in the ohm-js directory:
+
+    yarn version-package
+    yarn publish
+    git push && git push --tags

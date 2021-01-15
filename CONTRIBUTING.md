@@ -28,10 +28,6 @@ request is accepted, here are some guidelines:
 - Include only the changes that are relevant to your bug/feature. Before
   submitting, take a look over the diff to ensure that you haven't included
   any unrelated changes.
-- Ideally, use **one commit per pull request**.
-- **Do not include merge commits** or commits containing mistakes that are
-  fixed in a later commit. See [our Git workflow tips](https://github.com/cdglabs/ohm/wiki/Git-Workflow)
-  for more information.
 - Try to keep your pull requests small -- anything more than a few hundred lines
   is too big. If necessary, break your changes up into several small PRs.
 
