@@ -1,25 +1,16 @@
-Ohm
-===
+# [Ohm](https://github.com/harc/ohm) &middot; [![Build Status](https://img.shields.io/travis/harc/ohm/master?style=flat-square)](https://travis-ci.org/harc/ohm) [![NPM](https://img.shields.io/npm/v/ohm-js.svg?style=flat-square)](https://www.npmjs.com/package/ohm-js) [![Chat on Discord](https://img.shields.io/badge/chat-on%20discord-7289da.svg?sanitize=true&style=flat-square)](https://discord.gg/KwxY5gegRQ)
 
-[![Build Status](https://img.shields.io/travis/harc/ohm/master?style=flat-square)](https://travis-ci.org/harc/ohm)
-[![NPM](https://img.shields.io/npm/v/ohm-js.svg?style=flat-square)](https://www.npmjs.com/package/ohm-js)
-[![Chat on Discord](https://img.shields.io/badge/chat-on%20discord-7289da.svg?sanitize=true&style=flat-square)](https://discord.gg/KwxY5gegRQ)
-
-[Ohm](https://github.com/harc/ohm) is a parser generator consisting of a library and a domain-specific language.
+Ohm is a parsing toolkit consisting of a library and a domain-specific language.
 You can use it to parse custom file formats or quickly build parsers, interpreters, and compilers for programming languages. The _Ohm language_ is based on [parsing expression grammars](http://en.wikipedia.org/wiki/Parsing_expression_grammar)
 (PEGs), which are a formal way of describing syntax, similar to regular expressions and context-free
-grammars. The _Ohm library_ provides a JavaScript interface (known as Ohm/JS) for creating parsers,
-interpreters, and more from the grammars you write.
+grammars. The _Ohm library_ provides a JavaScript interface for creating parsers, interpreters, and
+more from the grammars you write.
 
 Like its older sibling [OMeta](http://tinlizzie.org/ometa/), Ohm supports object-oriented grammar
 extension. One thing that distinguishes Ohm from other parsing tools is that it completely
 separates grammars from semantic actions. In Ohm, a grammar defines a language, and semantic
-actions specify what to do with valid inputs in that language. Semantic actions are written in the
-_host language_ — e.g., for Ohm/JS, the host language is JavaScript. Ohm grammars, on the other
-hand, work without modification in any host language. This separation improves modularity, and
-makes both grammars and semantic actions easier to read and understand. Currently, JavaScript is
-the only host language, but as the API stabilizes, we hope to have implementations for other
-languages.
+actions (written in JavaScript) specify what to do with valid inputs in that language.
+This separation improves modularity, and makes both grammars and semantic actions easier to read and understand.
 
 Learn more about the Ohm philosophy [here](doc/philosophy.md).
 
@@ -144,7 +135,7 @@ For more information, see the [main documentation](doc/index.md).
 
 Ohm has two tools to help you debug grammars: a text trace, and a graphical visualizer.
 
-[![Ohm Visualizer](http://harc.github.io/ohm/doc/images/visualizer-small.png)](http://harc.github.io/ohm/visualizer/)
+[![Ohm Visualizer](http://harc.github.io/ohm/doc/images/visualizer-small.png)](https://ohmlang.github.io/editor)
 
 You can [try the visualizer online](https://ohmlang.github.io/editor), or if you have an Ohm checkout, open `visualizer/index.html` in your web browser.
 
@@ -195,9 +186,7 @@ All you need to get started:
     cd ohm
     npm install
 
-**NOTE:** We recommend using the latest Node.js stable release (>=0.12.1) for
-development. Some of the JSDOM-based tests are flaky on io.js, and other tests
-will reliably fail on older versions of Node.
+**NOTE:** We recommend using the latest Node.js stable release.
 
 ### Some useful scripts
 
