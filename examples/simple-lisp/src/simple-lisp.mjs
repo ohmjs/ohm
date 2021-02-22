@@ -2,9 +2,9 @@
 
 /* eslint-disable no-console */
 
-const ohm = require('ohm-js');
+import ohm from 'ohm-js';
 
-const grammar = ohm.grammar(`
+export const grammar = ohm.grammar(`
 Lisp {
   Program = Sexp*
 
@@ -308,7 +308,7 @@ semantics.addOperation('toAST', {
   }
 });
 
-const runLisp = (str, env) => {
+export const runLisp = (str, env) => {
   const match = grammar.match(str);
   let result;
 
@@ -326,7 +326,7 @@ const runLisp = (str, env) => {
   return result;
 };
 
-const createEnv = () => {
+export const createEnv = () => {
   const env = new Env();
 
   const multiArgOp = cb => (...args) => {
@@ -363,53 +363,3 @@ const createEnv = () => {
 
   return env;
 };
-
-// "tests"
-
-const LISP_BASIC_TEST = `
-(def y 5)
-
-(def add-two (fn (n) (+ n (+ 2 1))))
-
-(def x (add-two y))
-
-(log (str y "plus 3 is" x))
-`;
-
-const LISP_QUOTES = `
-(log (quote symbol-test))
-
-(def l (quote ((+ 1 1) 2 3)))
-(log (first l))
-(log (second l))
-`;
-
-const LISP_QUASIQUOTES = `
-(def lst (quote (b c)))
-
-(log (quasiquote (a lst b)))
-(log (quasiquote (a (unquote lst) d)))
-(log (quasiquote (a (splice-unquote lst) d)))
-`;
-
-const LISP_MACROS = `
-(def defn
-  (macro (name args body)
-    (quasiquote
-      (def (unquote name) (fn (unquote args) (unquote body))))))
-
-(defn add (a b) (+ a b))
-
-(log (str "(add 1 2) is" (add 1 2)))
-`;
-
-[LISP_BASIC_TEST, LISP_QUOTES, LISP_QUASIQUOTES, LISP_MACROS].forEach(
-    code => {
-      console.log(`>>> Running:\n${code}`);
-
-      const env = createEnv();
-      runLisp(code, env);
-
-      console.log();
-    }
-);
