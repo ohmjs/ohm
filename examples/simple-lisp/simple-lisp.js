@@ -1,4 +1,8 @@
-const ohm = require("ohm-js");
+'use strict';
+
+/* eslint-disable no-console */
+
+const ohm = require('ohm-js');
 
 const grammar = ohm.grammar(`
 Lisp {
@@ -36,7 +40,7 @@ Lisp {
 
 const isArray = Array.isArray;
 
-const eval = (x, env) => (x && x.eval ? x.eval(env) : x);
+const evalLisp = (x, env) => (x && x.eval ? x.eval(env) : x);
 
 const macroExpand = (x, env) => {
   if (x instanceof Lambda && x.isMacro) {
@@ -59,10 +63,10 @@ const unquote = (values, env) => {
       continue;
     }
 
-    if (value[0].name === "unquote") {
-      result.push(eval(value[1], env));
-    } else if (value[0].name === "splice-unquote") {
-      result.push(...eval(value[1], env));
+    if (value[0].name === 'unquote') {
+      result.push(evalLisp(value[1], env));
+    } else if (value[0].name === 'splice-unquote') {
+      result.push(...evalLisp(value[1], env));
     } else {
       result.push(new List(unquote(value, env)));
     }
@@ -119,8 +123,8 @@ class List {
     }
 
     args = args
-      .map((arg) => eval(arg, env))
-      .map((arg) => macroExpand(arg, env));
+        .map(arg => evalLisp(arg, env))
+        .map(arg => macroExpand(arg, env));
 
     if (isLambda) {
       return fun.eval(env, args);
@@ -130,7 +134,7 @@ class List {
   }
 
   toString() {
-    return "(" + this.args.map((arg) => arg.toString()).join(" ") + ")";
+    return '(' + this.args.map(arg => arg.toString()).join(' ') + ')';
   }
 }
 
@@ -145,7 +149,7 @@ class Fn {
   }
 
   toString() {
-    const argsList = this.bindNames.map((b) => b.toString()).join(" ");
+    const argsList = this.bindNames.map(b => b.toString()).join(' ');
     return `(fn (${argsList}) ${this.body.toString()}))`;
   }
 }
@@ -161,7 +165,7 @@ class Macro {
   }
 
   toString() {
-    const argsList = this.bindNames.map((b) => b.toString()).join(" ");
+    const argsList = this.bindNames.map(b => b.toString()).join(' ');
     return `(macro (${argsList}) ${this.body.toString()}))`;
   }
 }
@@ -178,7 +182,7 @@ class Lambda {
 
     args.forEach((arg, i) => {
       const bindName = this.bindNames[i].toString();
-      const value = this.isMacro ? arg : eval(arg, env);
+      const value = this.isMacro ? arg : evalLisp(arg, env);
 
       localEnv.bind(bindName, value);
     });
@@ -203,7 +207,7 @@ class Def {
   }
 
   eval(env) {
-    const evaled = eval(this.arg, env);
+    const evaled = evalLisp(this.arg, env);
     env.bind(this.name, evaled);
   }
 
@@ -258,7 +262,7 @@ class Quasiquote {
 
 const semantics = grammar.createSemantics();
 
-semantics.addOperation("toAST", {
+semantics.addOperation('toAST', {
   Sexp(_1, stmt, _2) {
     return stmt.toAST();
   },
@@ -301,10 +305,10 @@ semantics.addOperation("toAST", {
 
   string(_1, text, _3) {
     return text.sourceString;
-  },
+  }
 });
 
-const evalLisp = (str, env) => {
+const runLisp = (str, env) => {
   const match = grammar.match(str);
   let result;
 
@@ -315,7 +319,7 @@ const evalLisp = (str, env) => {
   const adapter = semantics(match);
   const ast = adapter.toAST();
 
-  ast.forEach((ast) => {
+  ast.forEach(ast => {
     result = ast.eval(env);
   });
 
@@ -325,7 +329,7 @@ const evalLisp = (str, env) => {
 const createEnv = () => {
   const env = new Env();
 
-  const multiArgOp = (cb) => (...args) => {
+  const multiArgOp = cb => (...args) => {
     if (args.length === 1) {
       return args[0];
     }
@@ -333,29 +337,29 @@ const createEnv = () => {
     return args.slice(1).reduce(cb, args[0]);
   };
 
-  env.bind("str", (...args) => args.map((arg) => arg.toString()).join(" "));
-  env.bind("log", (...text) => console.log("lisp>", ...text));
+  env.bind('str', (...args) => args.map(arg => arg.toString()).join(' '));
+  env.bind('log', (...text) => console.log('lisp>', ...text));
 
   env.bind(
-    "+",
-    multiArgOp((a, b) => a + b)
+      '+',
+      multiArgOp((a, b) => a + b)
   );
   env.bind(
-    "-",
-    multiArgOp((a, b) => a - b)
+      '-',
+      multiArgOp((a, b) => a - b)
   );
   env.bind(
-    "*",
-    multiArgOp((a, b) => a * b)
+      '*',
+      multiArgOp((a, b) => a * b)
   );
   env.bind(
-    "/",
-    multiArgOp((a, b) => a / b)
+      '/',
+      multiArgOp((a, b) => a / b)
   );
 
-  env.bind("first", (xs) => xs[0]);
-  env.bind("second", (xs) => xs[1]);
-  env.bind("nth", (idx, xs) => xs[idx]);
+  env.bind('first', xs => xs[0]);
+  env.bind('second', xs => xs[1]);
+  env.bind('nth', (idx, xs) => xs[idx]);
 
   return env;
 };
@@ -400,12 +404,12 @@ const LISP_MACROS = `
 `;
 
 [LISP_BASIC_TEST, LISP_QUOTES, LISP_QUASIQUOTES, LISP_MACROS].forEach(
-  (code) => {
-    console.log(`>>> Running:\n${code}`);
+    code => {
+      console.log(`>>> Running:\n${code}`);
 
-    const env = createEnv();
-    evalLisp(code, env);
+      const env = createEnv();
+      runLisp(code, env);
 
-    console.log();
-  }
+      console.log();
+    }
 );
