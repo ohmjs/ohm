@@ -11,7 +11,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-var test = require('tape-catch');
+var test = require('ava');
 
 var exec = require('child_process').exec;
 var fs = require('fs');
@@ -25,11 +25,17 @@ var walkSync = require('walk-sync');
 
 var EXAMPLE_ROOT = path.normalize(path.join(__dirname, '../../examples/'));
 
+function runExampleAsync(relativePath) {
+  return new Promise(function(resolve, reject) {
+    runExample(relativePath, resolve);
+  });
+}
+
 // Run the example at the given path (relative to `EXAMPLE_ROOT`), calling `cb` on completion.
 // The examples are loaded using JSDOM (https://github.com/tmpvar/jsdom), a JavaScript
 // implementation of the WHATWG DOM and HTML standards. Some things may behave slightly
 // differently than a real browser environment.
-function runExample(relativePath, testObj, cb) {
+function runExample(relativePath, cb) {
   var errors = [];
   jsdom.env({
     file: path.join(EXAMPLE_ROOT, relativePath),
@@ -48,8 +54,15 @@ function runExample(relativePath, testObj, cb) {
         window.addEventListener('error', function(evt) {
           /* eslint-disable no-console */
           console.error(
-              'In ' + evt.filename + '\n' +
-              'at line ' + evt.lineno + ' (relative to start of script), col ' + evt.colno + ':');
+              'In ' +
+              evt.filename +
+              '\n' +
+              'at line ' +
+              evt.lineno +
+              ' (relative to start of script), col ' +
+              evt.colno +
+              ':'
+          );
           /* eslint-enable no-console */
           errors.push(evt.error);
         });
@@ -57,11 +70,9 @@ function runExample(relativePath, testObj, cb) {
     },
     onload: function(window) {
       // If the example specifies an inline test, run it.
-      if (window.test) {
-        testObj.test('test in ' + relativePath, window.test);
-      }
-      cb(errors);
+      if (window.test) window.test();
       window.close();
+      cb(errors);
     }
   });
 }
@@ -70,15 +81,21 @@ function runExample(relativePath, testObj, cb) {
 function rebuildIfModified() {
   // Get a sorted list of last-modified times for every file in the 'src' dir.
   var srcEntries = walkSync.entries(path.join(__dirname, '../src'));
-  var mtimes = srcEntries.map(function(entry) { return entry.mtime; });
-  mtimes.sort(function(a, b) { return a - b; });
+  var mtimes = srcEntries.map(function(entry) {
+    return entry.mtime;
+  });
+  mtimes.sort(function(a, b) {
+    return a - b;
+  });
 
   var srcDate = new Date(mtimes.pop());
   var bundleDate = fs.statSync(path.join(__dirname, '../dist/ohm.js')).mtime;
 
   if (bundleDate < srcDate) {
     var p = exec('yarn build');
-    p.stdout.on('data', function() { /* ignore */ });
+    p.stdout.on('data', function() {
+      /* ignore */
+    });
     p.stderr.pipe(process.stderr);
   }
 }
@@ -89,36 +106,23 @@ function rebuildIfModified() {
 
 test('math example', function(t) {
   rebuildIfModified();
-  runExample('math/index.html', t, function(errors) {
+  return runExampleAsync('math/index.html').then(function(errors) {
     t.deepEqual(errors, [], 'runs without errors');
-    t.end();
   });
 });
 
 test('viz example', function(t) {
   rebuildIfModified();
-  runExample('viz/index.html', t, function(errors) {
+  return runExampleAsync('viz/index.html').then(function(errors) {
     t.deepEqual(errors, [], 'runs without errors');
-    t.end();
   });
 });
 
 test('csv example', function(t) {
-  require(path.join(EXAMPLE_ROOT, 'csv', 'index.js'));
-  t.end();
-});
-
-/*
-TODO: implement new version of inherited attributes,
-then update pl0 example and uncomment the following.
-
-test('pl0 example', function(t) {
-  runExample('pl0/index.html', t, function(errors) {
-    t.equal(errors, null, 'runs without errors');
-    t.end();
+  t.notThrows(function() {
+    require(path.join(EXAMPLE_ROOT, 'csv', 'index.js'));
   });
 });
-*/
 
 test('ecmascript examples', function(t) {
   var exampleDir = path.join(EXAMPLE_ROOT, 'ecmascript');
@@ -127,9 +131,7 @@ test('ecmascript examples', function(t) {
   // Test that the ES5 grammar works by compiling *this file*.
   // NOTE: If there is a test failure here, it's probably because you're using syntax
   // that is not valid ES5 somewhere in this file!
-  t.ok(compile([__filename]), 'ES5 grammar works');
+  t.truthy(compile([__filename]), 'ES5 grammar works');
 
-  t.ok(compile(['-g', 'es6', path.join(exampleDir, 'test.es6')]), 'ES6 grammar works');
-
-  t.end();
+  t.truthy(compile(['-g', 'es6', path.join(exampleDir, 'test.es6')]), 'ES6 grammar works');
 });

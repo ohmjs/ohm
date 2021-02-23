@@ -6,7 +6,7 @@
 
 const fs = require('fs');
 const ohm = require('..');
-const test = require('tape-catch');
+const test = require('ava');
 const testUtil = require('./testUtil');
 
 const makeGrammar = testUtil.makeGrammar;
@@ -35,7 +35,7 @@ function pluckMemoProp(result, propName) {
 const checkOffsetActions = {
   _nonterminal(children) {
     const desc = this._node.ctorName + ' @ ' + this.source.startIdx;
-    this.args.t.equal(this.source.startIdx, this.args.startIdx, desc);
+    this.args.t.is(this.source.startIdx, this.args.startIdx, desc);
     for (let i = 0; i < children.length; ++i) {
       const childStartIdx = this.args.startIdx + this._node.childOffsets[i];
       children[i].checkOffsets(this.args.t, childStartIdx);
@@ -43,7 +43,7 @@ const checkOffsetActions = {
   },
   _terminal() {
     const desc = '"' + this.sourceString + '" @ ' + this.source.startIdx;
-    this.args.t.equal(this.source.startIdx, this.args.startIdx, desc);
+    this.args.t.is(this.source.startIdx, this.args.startIdx, desc);
   }
 };
 
@@ -92,37 +92,36 @@ test('basic incremental parsing', t => {
   let result;
 
   im.replaceInputRange(0, 0, 'helloworld');
-  t.equal(im.getInput(), 'helloworld');
+  t.is(im.getInput(), 'helloworld');
   im.replaceInputRange(3, 5, 'X');
-  t.equal(im.getInput(), 'helXworld');
+  t.is(im.getInput(), 'helXworld');
 
   result = im.match();
-  t.equal(s(result).reconstructInput(im.getInput()), 'helXworld');
+  t.is(s(result).reconstructInput(im.getInput()), 'helXworld');
 
-  t.ok(im.match('start').succeeded());
-  t.ok(im.match().succeeded());
-  t.equal(s(result).reconstructInput(im.getInput()), 'helXworld');
+  t.truthy(im.match('start').succeeded());
+  t.truthy(im.match().succeeded());
+  t.is(s(result).reconstructInput(im.getInput()), 'helXworld');
 
   im.replaceInputRange(0, 4, '');
-  t.equals(im.getInput(), 'world');
+  t.is(im.getInput(), 'world');
 
   result = im.match();
-  t.equal(s(result).reconstructInput(im.getInput()), 'world');
+  t.is(s(result).reconstructInput(im.getInput()), 'world');
 
   im.replaceInputRange(3, 4, ' ');
-  t.equals(im.getInput(), 'wor d');
-  t.ok(im.match().failed());
+  t.is(im.getInput(), 'wor d');
+  t.truthy(im.match().failed());
 
   im.replaceInputRange(0, 4, 'aa');
-  t.equals(im.getInput(), 'aad');
+  t.is(im.getInput(), 'aad');
 
   result = im.match();
-  t.equal(s(result).reconstructInput(im.getInput()), 'aad');
+  t.is(s(result).reconstructInput(im.getInput()), 'aad');
 
   im.replaceInputRange(1, 2, '9');
-  t.ok(im.match().failed());
+  t.truthy(im.match().failed());
 
-  t.end();
 });
 
 test('trickier incremental parsing', t => {
@@ -140,7 +139,7 @@ test('trickier incremental parsing', t => {
 
   im.replaceInputRange(0, 0, 'ab');
   result = im.match();
-  t.ok(result.succeeded());
+  t.truthy(result.succeeded());
   t.deepEqual(s(result).ctorTree,
       ['start',
         ['start_rec',
@@ -150,13 +149,12 @@ test('trickier incremental parsing', t => {
   // When the input is 'ac', the lookahead rule should now succeed.
   im.replaceInputRange(1, 2, 'c');
   result = im.match();
-  t.ok(result.succeeded());
+  t.truthy(result.succeeded());
   t.deepEqual(s(result).ctorTree,
       ['start',
         ['start_rec', ['start', ['lookahead', ['_terminal'], ['_terminal']]],
           ['letter', ['lower', ['_terminal']]]]]);
 
-  t.end();
 });
 
 test('examinedLength - no LR', t => {
@@ -175,7 +173,6 @@ test('examinedLength - no LR', t => {
     {maxExaminedLength: 1, letter: 1, lower: 1, upper: 1, unicodeLtmo: 1}
   ]);
 
-  t.end();
 });
 
 test('examinedLength - no LR, but non-monotonic', t => {
@@ -192,7 +189,6 @@ test('examinedLength - no LR, but non-monotonic', t => {
     {maxExaminedLength: 1, letter: 1, lower: 1}
   ]);
 
-  t.end();
 });
 
 test('examinedLength - simple LR', t => {
@@ -202,7 +198,7 @@ test('examinedLength - simple LR', t => {
     '        | letter',
     '}']);
   const result = g.match('yo');
-  t.equal(result.succeeded(), true);
+  t.is(result.succeeded(), true);
 
   const values = pluckMemoProp(result, 'examinedLength');
   t.deepEqual(values, [
@@ -211,7 +207,6 @@ test('examinedLength - simple LR', t => {
     {maxExaminedLength: 1, letter: 1, lower: 1, upper: 1, unicodeLtmo: 1}
   ]);
 
-  t.end();
 });
 
 test('examinedLength - complicated LR', t => {
@@ -223,7 +218,7 @@ test('examinedLength - complicated LR', t => {
     '      | any',
     '}']);
   const result = g.match('yo');
-  t.equal(result.succeeded(), true);
+  t.is(result.succeeded(), true);
 
   const values = pluckMemoProp(result, 'examinedLength');
   t.deepEqual(values, [
@@ -232,7 +227,6 @@ test('examinedLength - complicated LR', t => {
     {maxExaminedLength: 1, letter: 1, lower: 1, upper: 1, unicodeLtmo: 1, any: 1, foo: 1}
   ]);
 
-  t.end();
 });
 
 test('rightmostFailureOffset - no LR', t => {
@@ -251,7 +245,6 @@ test('rightmostFailureOffset - no LR', t => {
     {maxRightmostFailureOffset: 0, letter: 0, lower: 0, upper: 0, unicodeLtmo: 0}
   ]);
 
-  t.end();
 });
 
 test('rightmostFailureOffset - simple LR', t => {
@@ -261,7 +254,7 @@ test('rightmostFailureOffset - simple LR', t => {
     '        | letter',
     '}']);
   const result = g.match('yo');
-  t.equal(result.succeeded(), true);
+  t.is(result.succeeded(), true);
 
   const values = pluckMemoProp(result, 'rightmostFailureOffset');
   t.deepEqual(values, [
@@ -270,7 +263,6 @@ test('rightmostFailureOffset - simple LR', t => {
     {maxRightmostFailureOffset: 0, letter: 0, lower: 0, upper: 0, unicodeLtmo: 0}
   ]);
 
-  t.end();
 });
 
 test('rightmostFailureOffset - complicated LR', t => {
@@ -282,7 +274,7 @@ test('rightmostFailureOffset - complicated LR', t => {
     '      | any',
     '}']);
   const result = g.match('yo');
-  t.equal(result.succeeded(), true);
+  t.is(result.succeeded(), true);
 
   const values = pluckMemoProp(result, 'rightmostFailureOffset');
   t.deepEqual(values, [
@@ -291,7 +283,6 @@ test('rightmostFailureOffset - complicated LR', t => {
     {maxRightmostFailureOffset: 0, letter: 0, lower: 0, upper: 0, unicodeLtmo: 0, any: 0, foo: 0}
   ]);
 
-  t.end();
 });
 
 test('matchLength', t => {
@@ -302,7 +293,7 @@ test('matchLength', t => {
     '}'
   ]);
   const result = g.match('woo');
-  t.equal(result.succeeded(), true);
+  t.is(result.succeeded(), true);
 
   const values = pluckMemoProp(result, 'matchLength');
   t.deepEqual(values, [
@@ -312,7 +303,6 @@ test('matchLength', t => {
     {any: 0}
   ]);
 
-  t.end();
 });
 
 test('matchLength - complicated LR', t => {
@@ -324,7 +314,7 @@ test('matchLength - complicated LR', t => {
     '      | any',
     '}']);
   const result = g.match('yo');
-  t.equal(result.succeeded(), true);
+  t.is(result.succeeded(), true);
 
   const values = pluckMemoProp(result, 'matchLength');
   t.deepEqual(values, [
@@ -333,7 +323,6 @@ test('matchLength - complicated LR', t => {
     {letter: 0, lower: 0, upper: 0, unicodeLtmo: 0, any: 0, foo: 0}
   ]);
 
-  t.end();
 });
 
 test('binding offsets - lexical rules', t => {
@@ -345,7 +334,7 @@ test('binding offsets - lexical rules', t => {
     '      | "oo"',
     '}']);
   let result = g.match('oolong');
-  t.equal(result.succeeded(), true);
+  t.is(result.succeeded(), true);
 
   const s = g.createSemantics().addOperation('checkOffsets(t, startIdx)', checkOffsetActions);
   s(result).checkOffsets(t, 0);
@@ -353,7 +342,6 @@ test('binding offsets - lexical rules', t => {
   result = g.match('oo');
   s(result).checkOffsets(t, 0);
 
-  t.end();
 });
 
 test('binding offsets - syntactic rules', t => {
@@ -364,16 +352,15 @@ test('binding offsets - syntactic rules', t => {
     '}'
   ]);
   let result = g.match('   a 4');
-  t.ok(result.succeeded());
+  t.truthy(result.succeeded());
 
   const s = g.createSemantics().addOperation('checkOffsets(t, startIdx)', checkOffsetActions);
   s(result).checkOffsets(t, result._cstOffset);
 
   result = g.match('a   4 ');
-  t.ok(result.succeeded());
+  t.truthy(result.succeeded());
   s(result).checkOffsets(t, result._cstOffset);
 
-  t.end();
 });
 
 test('incremental parsing + attributes = incremental computation', t => {
@@ -417,19 +404,19 @@ test('incremental parsing + attributes = incremental computation', t => {
 
   freshlyEvaluated = [];
   m.replaceInputRange(0, 0, '(1+2)*3-4');
-  t.equal(s(m.match()).value, 5);
+  t.is(s(m.match()).value, 5);
   t.deepEqual(freshlyEvaluated, ['1', '2', '1+2', '(1+2)', '3', '(1+2)*3', '4', '(1+2)*3-4']);
 
   freshlyEvaluated = [];
   m.replaceInputRange(8, 9, '9');
-  t.equal(m.getInput(), '(1+2)*3-9');
-  t.equal(s(m.match()).value, 0);
+  t.is(m.getInput(), '(1+2)*3-9');
+  t.is(s(m.match()).value, 0);
   t.deepEqual(freshlyEvaluated, ['9', '(1+2)*3-9']);
 
   freshlyEvaluated = [];
   m.replaceInputRange(2, 3, '-');
-  t.equal(m.getInput(), '(1-2)*3-9');
-  t.equal(s(m.match()).value, -12);
+  t.is(m.getInput(), '(1-2)*3-9');
+  t.is(s(m.match()).value, -12);
   t.deepEqual(freshlyEvaluated, [
     '1', // why? because its 'examinedLength' property is 2
     // (you have to read the next character to know that you're done parsing a number)
@@ -439,5 +426,4 @@ test('incremental parsing + attributes = incremental computation', t => {
     '(1-2)*3',
     '(1-2)*3-9']);
 
-  t.end();
 });

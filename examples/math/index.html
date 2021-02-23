@@ -548,15 +548,18 @@ setInput('1 + 2 * 3 / 4^5');
 
 // -------------------------------------------------------------------------------------------------
 
-// This other stuff turns this example into a unit test.
+function assertEqual(expected, actual, message) {
+  if (expected !== actual) {
+    throw new Error(`${message}: expected ${expected}, got ${actual}`);
+  }
+}
 
-const $ = (sel) => document.querySelector(sel);
+window.test = () => {
+  const $ = (sel) => document.querySelector(sel);
 
-window.test = (t) => {
   setInput('33 * 5 + 100');
-  t.equal($('#value').textContent, '265', 'value is correct');
-  t.equal($('#lisp').textContent, '(+ (* 33 5) 100)', 'LISP representation is correct');
-  t.end();
+  assertEqual($('#value').textContent, '265', 'value is correct');
+  assertEqual($('#lisp').textContent, '(+ (* 33 5) 100)', 'LISP representation is correct');
 };
     </script>
   </body>

@@ -8,7 +8,7 @@
 
 const markscript = require('markscript');
 const path = require('path');
-const test = require('tape-catch');
+const test = require('ava');
 
 const ohm = require('..');
 const testUtil = require('./testUtil');
@@ -54,27 +54,22 @@ ohm._setDocumentInterfaceForTesting(fakeDocument);
 // code blocks in a Markdown document. This allows us to ensure that examples
 // in the documentation run without errors.
 
-test('README.md', t => {
-  markscript.evaluateFile(scriptRel('../../README.md'), markscriptConfig);
-  t.end();
-});
-
 test('doc/README.md', t => {
   markscript.evaluateFile(scriptRel('../../doc/README.md'), markscriptConfig);
-  t.end();
+  t.pass();
 });
 
 test('doc/api-reference.md', t => {
   markscript.evaluateFile(scriptRel('../../doc/api-reference.md'), markscriptConfig);
-  t.end();
+  t.pass();
 });
 
 test('doc/syntax-reference.md', t => {
   markscript.evaluateFile(scriptRel('../../doc/syntax-reference.md'), markscriptConfig);
-  t.end();
+  t.pass();
 });
 
 test('doc/extras.md', t => {
   markscript.evaluateFile(scriptRel('../../doc/extras.md'), markscriptConfig);
-  t.end();
+  t.pass();
 });

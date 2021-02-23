@@ -29,7 +29,7 @@
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
     "lint": "eslint . --ignore-path ../.eslintignore",
     "pretest": "bash ../bin/update-env.sh",
-    "test": "(tape 'test/**/*.js' | tap-spec) && ts-node test/test-typings.ts",
+    "test": "ava test/test-*.js && ava --config ava-ts.config.js test/test-typings.ts",
     "test-watch": "bash bin/test-watch",
     "pre-commit": "yarn run lint && yarn run build && yarn run test",
     "prepublishOnly": "cp ../README.md .",
@@ -79,6 +79,8 @@
   },
   "devDependencies": {
     "@types/tape": "^4.13.0",
+    "ava": "^3.15.0",
+    "ava-spec": "^1.1.1",
     "eslint": "^7.9.0",
     "eslint-config-google": "^0.14.0",
     "eslint-plugin-camelcase-ohm": "^0.2.1",

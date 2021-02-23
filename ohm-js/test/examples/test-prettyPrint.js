@@ -1,25 +1,23 @@
 'use strict';
 
-const test = require('tape');
+const test = require('ava');
 
 const prettyPrint = require('../../../examples/prettyPrint');
 
 test('basic', t => {
-  t.equal(
+  t.is(
       prettyPrint('G { Start=#("a"|b + ) ? }'),
       'G {\n  Start = #("a" | b+)?\n}');
-  t.end();
 });
 
 test('grammar with supergrammar', t => {
-  t.equal(
+  t.is(
       prettyPrint('G<:Foo{Start=& (~ digit letter)"\\\\n" * }'),
       'G <: Foo {\n  Start = &(~digit letter) "\\\\n"*\n}');
-  t.end();
 });
 
 test('multiple rules', t => {
-  t.equal(
+  t.is(
       prettyPrint(' G { Start (the start )=a< "b" >--   start\na< arg >=arg "a" .. "z"}'),
       [
         'G {',
@@ -28,5 +26,4 @@ test('multiple rules', t => {
         '  a<arg> = arg "a".."z"',
         '}'
       ].join('\n'));
-  t.end();
 });

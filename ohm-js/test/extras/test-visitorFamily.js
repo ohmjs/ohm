@@ -4,7 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-const test = require('tape');
+const test = require('ava');
 const VisitorFamily = require('../../extras/VisitorFamily');
 
 // --------------------------------------------------------------------
@@ -40,9 +40,8 @@ test('basic', t => {
   });
 
   const tree = {l: 'one', r: {l: 'two', r: 'three'}};
-  t.equal(family.wrap(tree).visit(), 'one two three');
+  t.is(family.wrap(tree).visit(), 'one two three');
 
-  t.end();
 });
 
 test('array props', t => {
@@ -76,46 +75,41 @@ test('array props', t => {
   tree = {children: ['a', {children: ['b', 'c'], extra: 'd'}], extra: 'e'};
   t.deepEqual(family.wrap(tree).visit(), ['a', ['b', 'c', 'd'], 'e']);
 
-  t.end();
 });
 
 test('arity checks', t => {
   const family = new VisitorFamily({shapes: {x: arr1, y: arr2}});
   t.throws(() => { family.addOperation('foo()', {x: noop0}); },
-      /Action 'x' has the wrong arity: expected 1, got 0/);
+      {message: /Action 'x' has the wrong arity: expected 1, got 0/});
   t.throws(() => { family.addOperation('foo()', {x: noop1, y: noop0}); },
-      /Action 'y' has the wrong arity: expected 2, got 0/);
+      {message: /Action 'y' has the wrong arity: expected 2, got 0/});
 
-  t.end();
 });
 
 test('unknown action names', t => {
   const family = new VisitorFamily({shapes: {x: arr1, y: arr2}});
   t.throws(() => { family.addOperation('foo()', {z: null}); },
-      /Unrecognized action name 'z'/);
+      {message: /Unrecognized action name 'z'/});
   t.throws(() => { family.addOperation('foo()', {toString: null}); },
-      /Unrecognized action name 'toString'/);
+      {message: /Unrecognized action name 'toString'/});
 
-  t.end();
 });
 
 test('unrecognized tags', t => {
   let v = new VisitorFamily({shapes: {}, getTag(x) { return 'bad'; }});
   v.addOperation('foo()', {});
-  t.throws(() => { v.wrap(0).foo(); }, /getTag returned unrecognized tag 'bad'/);
+  t.throws(() => { v.wrap(0).foo(); }, {message: /getTag returned unrecognized tag 'bad'/});
 
   v = new VisitorFamily({shapes: {}, getTag(x) { return 'toString'; }});
   v.addOperation('foo()', {});
-  t.throws(() => { v.wrap(0).foo(); }, /getTag returned unrecognized tag 'toString'/);
+  t.throws(() => { v.wrap(0).foo(); }, {message: /getTag returned unrecognized tag 'toString'/});
 
-  t.end();
 });
 
 test('operations with arguments', t => {
   const v = new VisitorFamily({shapes: {hello: []}, getTag(x) { return 'hello'; }});
   const root = {};
   v.addOperation('greet(n)', {hello() { return 'hello ' + this.args.n; }});
-  t.equal(v.wrap(root).greet('donald'), 'hello donald');
+  t.is(v.wrap(root).greet('donald'), 'hello donald');
 
-  t.end();
 });

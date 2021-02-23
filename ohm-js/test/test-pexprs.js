@@ -1,7 +1,7 @@
 'use strict';
 
 const ohm = require('..');
-const test = require('tape');
+const test = require('ava');
 
 const makeGrammar = require('./testUtil').makeGrammar;
 
@@ -35,7 +35,6 @@ test('rule definition source', t => {
   t.deepEqual(definitionLoc(g2, 'bar'), [25, 48], 'overridden rule');
   t.deepEqual(definitionLoc(g2, 'bar_baz'), [38, 48], 'inline rule in overridden rule');
 
-  t.end();
 });
 
 test('rule application source', t => {
@@ -64,30 +63,27 @@ test('rule application source', t => {
   t.deepEqual(fromLoc(barBazBody), [59, 67], 'primitive (range)');
   t.deepEqual(fromLoc(beepBody), [25, 35], 'works for seq');
   t.deepEqual(fromLoc(barBody), [44, 74], 'works for alt');
-  t.end();
 });
 
 test('toDisplayString', t => {
   const g = ohm.grammar('G { start = "ab" | letter* | "a".."z" }');
   const seq = g.rules.start.body;
-  t.equal(seq.toDisplayString(), '"ab" | letter* | "a".."z"');
-  t.equal(seq.terms[0].toDisplayString(), '"ab"');
+  t.is(seq.toDisplayString(), '"ab" | letter* | "a".."z"');
+  t.is(seq.terms[0].toDisplayString(), '"ab"');
 
   const many = seq.terms[1];
-  t.equal(many.toDisplayString(), 'letter*');
-  t.equal(many.expr.toDisplayString(), 'letter');
+  t.is(many.toDisplayString(), 'letter*');
+  t.is(many.expr.toDisplayString(), 'letter');
 
-  t.equal(seq.terms[2].toDisplayString(), '"a".."z"');
+  t.is(seq.terms[2].toDisplayString(), '"a".."z"');
 
-  t.end();
 });
 
 test('toString', t => {
   const g = makeGrammar(
       'G { start = &"a" ~("b" | #c?) "a".."z"  c = "c" }');
   const e = g.rules.start.body;
-  t.equal(e.toString(), '(&"a" ~("b" | #(c)?) "a".."z")');
-  t.end();
+  t.is(e.toString(), '(&"a" ~("b" | #(c)?) "a".."z")');
 });
 
 test('toArgumentNameList', t => {
@@ -143,5 +139,4 @@ test('toArgumentNameList', t => {
 
   const pair = g.rules.Pair.body;
   t.deepEqual(pair.toArgumentNameList(1), ['$1', 'param0_1', '$3', 'param0_2', '$5']);
-  t.end();
 });

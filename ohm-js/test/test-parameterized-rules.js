@@ -6,7 +6,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-const test = require('tape-catch');
+const test = require('ava');
 
 const testUtil = require('./testUtil');
 
@@ -20,34 +20,32 @@ test('require same number of params when overriding and extending', t => {
   // Too few parameters
   t.throws(
       () => { testUtil.makeGrammar('G2 <: G { Foo<x> := "oops!" }', ns); },
-      /Wrong number of parameters for rule Foo \(expected 2, got 1\)/);
+      {message: /Wrong number of parameters for rule Foo \(expected 2, got 1\)/});
   t.throws(
       () => { testUtil.makeGrammar('G2 <: G { Foo<x> += "oops!" }', ns); },
-      /Wrong number of parameters for rule Foo \(expected 2, got 1\)/);
+      {message: /Wrong number of parameters for rule Foo \(expected 2, got 1\)/});
 
   // Too many parameters
   t.throws(
       () => { testUtil.makeGrammar('G2 <: G { Foo<x, y, z> := "oops!" }', ns); },
-      /Wrong number of parameters for rule Foo \(expected 2, got 3\)/);
+      {message: /Wrong number of parameters for rule Foo \(expected 2, got 3\)/});
   t.throws(
       () => { testUtil.makeGrammar('G2 <: G { Foo<x, y, z> += "oops!" }', ns); },
-      /Wrong number of parameters for rule Foo \(expected 2, got 3\)/);
+      {message: /Wrong number of parameters for rule Foo \(expected 2, got 3\)/});
 
   // Just right
-  t.ok(testUtil.makeGrammar('G2 <: G { Foo<x, y> := "yay!" }', ns));
-  t.ok(testUtil.makeGrammar('G2 <: G { Foo<x, y> += "it" "works" }', ns));
-  t.end();
+  t.truthy(testUtil.makeGrammar('G2 <: G { Foo<x, y> := "yay!" }', ns));
+  t.truthy(testUtil.makeGrammar('G2 <: G { Foo<x, y> += "it" "works" }', ns));
 });
 
 test('require same number of args when applying', t => {
   const ns = testUtil.makeGrammars('G { Foo<x, y> = x y }');
   t.throws(
       () => { testUtil.makeGrammar('G2 <: G { Bar = Foo<"a"> }', ns); },
-      /Wrong number of arguments for rule Foo \(expected 2, got 1\)/);
+      {message: /Wrong number of arguments for rule Foo \(expected 2, got 1\)/});
   t.throws(
       () => { testUtil.makeGrammar('G2 <: G { Bar = Foo<"a", "b", "c"> }', ns); },
-      /Wrong number of arguments for rule Foo \(expected 2, got 3\)/);
-  t.end();
+      {message: /Wrong number of arguments for rule Foo \(expected 2, got 3\)/});
 });
 
 test('require arguments to have arity 1', t => {
@@ -59,8 +57,7 @@ test('require arguments to have arity 1', t => {
           '  Start = Foo<digit digit>\n' +
           '}');
       },
-      /Invalid parameter to rule Foo/);
-  t.end();
+      {message: /Invalid parameter to rule Foo/});
 });
 
 test('require the rules referenced in arguments to be declared', t => {
@@ -71,8 +68,7 @@ test('require the rules referenced in arguments to be declared', t => {
           '  start = listOf<asdlfk, ",">\n' +
           '}');
       },
-      /Rule asdlfk is not declared in grammar G/);
-  t.end();
+      {message: /Rule asdlfk is not declared in grammar G/});
 });
 
 test('simple examples', t => {
@@ -87,7 +83,6 @@ test('simple examples', t => {
   });
   const cst = g.match('(1,2)', 'Start');
   t.deepEqual(s(cst).v(), ['1', '2']);
-  t.end();
 });
 
 test('start matching from parameterized rule', t => {
@@ -99,15 +94,14 @@ test('start matching from parameterized rule', t => {
       '}');
   t.throws(
       () => { g.match('x'); },
-      /Wrong number of parameters for rule App \(expected 1, got 0\)/,
+      {message: /Wrong number of parameters for rule App \(expected 1, got 0\)/},
       'parameterized default start rule does not work');
   t.throws(
       () => { g.match('y', 'App'); },
-      /Wrong number of parameters for rule App \(expected 1, got 0\)/,
+      {message: /Wrong number of parameters for rule App \(expected 1, got 0\)/},
       'parameterized rule does not work as simple rule');
-  t.ok(g.match('y', 'App<"y">').succeeded(), 'matching with primitive parameter');
-  t.ok(g.match('z', 'App<"z">').succeeded(), 'matching with rule parameter');
-  t.end();
+  t.truthy(g.match('y', 'App<"y">').succeeded(), 'matching with primitive parameter');
+  t.truthy(g.match('z', 'App<"z">').succeeded(), 'matching with rule parameter');
 });
 
 test('inline rule declarations', t => {
@@ -126,7 +120,6 @@ test('inline rule declarations', t => {
   });
   const cst = g.match('x, x,x', 'Start');
   t.deepEqual(s(cst).v(), ['x', 'x', 'x']);
-  t.end();
 });
 
 test('left recursion', t => {
@@ -145,7 +138,6 @@ test('left recursion', t => {
   });
   const cst = g.match('1 + 2 + 3', 'Start');
   t.deepEqual(s(cst).v(), ['+', ['+', '1', '2'], '3']);
-  t.end();
 });
 
 test('complex parameters', t => {
@@ -159,24 +151,22 @@ test('complex parameters', t => {
     _terminal() { return this.primitiveValue; }
   });
   t.deepEqual(s(g.match('42')).v(), ['4', '2']);
-  t.equal(g.match('45').failed(), true);
-  t.end();
+  t.is(g.match('45').failed(), true);
 });
 
 test('duplicate parameter names', t => {
   t.throws(
       () => { testUtil.makeGrammar('G { Foo<a, b, a, b> = a }'); },
-      /Duplicate parameter names in rule Foo: a, b/,
+      {message: /Duplicate parameter names in rule Foo: a, b/},
       'defining');
   t.throws(
       () => { testUtil.makeGrammar('G { ListOf<a, a> := a }'); },
-      /Duplicate parameter names in rule ListOf: a/,
+      {message: /Duplicate parameter names in rule ListOf: a/},
       'overriding');
   t.throws(
       () => { testUtil.makeGrammar('G { ListOf<a, a> += a }'); },
-      /Duplicate parameter names in rule ListOf: a/,
+      {message: /Duplicate parameter names in rule ListOf: a/},
       'extending');
 
-  t.end();
 });
 

@@ -2,3 +2,4 @@
 **/third_party/**
 **/dist/*
 visualizer/assets/**
+ava-ts.config.js
