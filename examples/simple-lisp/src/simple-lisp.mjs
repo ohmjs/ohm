@@ -1,7 +1,5 @@
 'use strict';
 
-/* eslint-disable no-console */
-
 import ohm from 'ohm-js';
 
 export const grammar = ohm.grammar(`
@@ -338,6 +336,8 @@ export const createEnv = () => {
   };
 
   env.bind('str', (...args) => args.map(arg => arg.toString()).join(' '));
+
+  // eslint-disable-next-line no-console
   env.bind('log', (...text) => console.log('lisp>', ...text));
 
   env.bind(

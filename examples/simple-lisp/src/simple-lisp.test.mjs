@@ -43,7 +43,7 @@ function createLoggingEnv() {
   const env = createEnv();
   const log = [];
   env.bind('log', (...args) => {
-    log.push(args.map(x => x.toString()).join(' '));
+    log.push(args.map((x) => JSON.stringify(x)).join(' '));
   });
   return [env, log];
 }
@@ -51,24 +51,29 @@ function createLoggingEnv() {
 test('basic', (t) => {
   const [env, log] = createLoggingEnv();
   runLisp(LISP_BASIC_TEST, env);
-  t.deepEqual(log, ['5 plus 3 is 8']);
+  t.deepEqual(log, ['"5 plus 3 is 8"']);
   t.end();
 });
 
-test.skip('quotes', (t) => {
+test('quotes', (t) => {
   const [env, log] = createLoggingEnv();
   runLisp(LISP_QUOTES, env);
-  t.fail();
+  t.deepEqual(log, ['{"name":"symbol-test"}', '[{"name":"+"},1,1]', '2']);
   t.end();
 });
 
-test.skip('quasiquotes', (t) => {
+test('quasiquotes', (t) => {
   const [env, log] = createLoggingEnv();
   runLisp(LISP_QUASIQUOTES, env);
-  t.fail();
+  t.deepEqual(log, [
+    '[{"name":"a"},{"name":"lst"},{"name":"b"}]',
+    '[{"name":"a"},[{"name":"b"},{"name":"c"}],{"name":"d"}]',
+    '[{"name":"a"},{"name":"b"},{"name":"c"},{"name":"d"}]'
+  ])
   t.end();
 });
 
+// TODO: Fix the exception here.
 test.skip('macros', (t) => {
   const [env, log] = createLoggingEnv();
   runLisp(LISP_MACROS, env);

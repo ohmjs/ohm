@@ -10,6 +10,6 @@
   },
   "scripts": {
     "test": "node src/simple-lisp.test.mjs",
-    "test:watch": "nodemon -e mjs --exec npm test"
+    "test:watch": "nodemon -e mjs --watch src --exec npm test"
   }
 }
