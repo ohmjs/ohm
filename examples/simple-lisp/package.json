@@ -1,4 +1,6 @@
 {
+  "name": "ohm-example-simple-lisp",
+  "version": "1.0.0",
   "private": true,
   "dependencies": {
     "ohm-js": "^15.4.1"
