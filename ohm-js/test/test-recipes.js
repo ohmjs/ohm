@@ -6,7 +6,7 @@
 
 const ohm = require('..');
 const test = require('ava');
-const testUtil = require('./testUtil');
+const testUtil = require('./helpers/testUtil');
 
 // --------------------------------------------------------------------
 // Helpers

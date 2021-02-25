@@ -11,7 +11,7 @@ const path = require('path');
 const test = require('ava');
 
 const ohm = require('..');
-const testUtil = require('./testUtil');
+const testUtil = require('./helpers/testUtil');
 
 // --------------------------------------------------------------------
 // Private stuff

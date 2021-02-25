@@ -8,7 +8,7 @@
 
 const test = require('ava');
 
-const testUtil = require('./testUtil');
+const testUtil = require('./helpers/testUtil');
 
 // --------------------------------------------------------------------
 // Tests

@@ -8,7 +8,7 @@ const test = require('ava');
 
 const ohm = require('..');
 const common = require('../src/common');
-const testUtil = require('./testUtil');
+const testUtil = require('./helpers/testUtil');
 
 // --------------------------------------------------------------------
 // Private stuff

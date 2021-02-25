@@ -3,7 +3,7 @@
 const ohm = require('..');
 const test = require('ava');
 
-const makeGrammar = require('./testUtil').makeGrammar;
+const makeGrammar = require('./helpers/testUtil').makeGrammar;
 
 // --------------------------------------------------------------------
 // Tests

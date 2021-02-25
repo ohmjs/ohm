@@ -4,7 +4,7 @@ const test = require('ava-spec');
 
 const fs = require('fs');
 const ohm = require('..');
-const testUtil = require('./testUtil');
+const testUtil = require('./helpers/testUtil');
 
 const arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
 const ohmGrammarSource = fs.readFileSync('src/ohm-grammar.ohm').toString();

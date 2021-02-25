@@ -5,7 +5,7 @@ const test = require('ava');
 
 const Grammar = require('../src/Grammar');
 const ohm = require('..');
-const testUtil = require('./testUtil');
+const testUtil = require('./helpers/testUtil');
 
 const makeGrammar = testUtil.makeGrammar;
 const makeGrammars = testUtil.makeGrammars;
