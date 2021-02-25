@@ -3,7 +3,7 @@
 // NOTE: This file must parse as ES5, because the 'ecmascript examples' test below tries to
 // parse the file itself using our ES5 grammar.
 
-/* eslint-disable no-var, prefer-arrow-callback, object-shorthand */
+/* eslint-disable no-var, prefer-arrow-callback, object-shorthand, ava/prefer-async-await */
 
 'use strict';
 

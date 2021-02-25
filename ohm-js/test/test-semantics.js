@@ -214,8 +214,8 @@ test('attributes', t => {
 
   // Check that attributes are memoized
   const oldCount = count;
-  t.deepEqual(s(simple).value, 3);
-  t.deepEqual(s(complicated).value, 73);
+  t.is(s(simple).value, 3);
+  t.is(s(complicated).value, 73);
   t.is(count, oldCount);
 
   // Remove memoized attributes
@@ -885,7 +885,7 @@ test('sourceString - issue #188', t => {
       return digits.sourceString;
     }
   });
-  t.deepEqual(s(g.match('1 22')).origSource(), '122');
+  t.is(s(g.match('1 22')).origSource(), '122');
 });
 
 // https://github.com/harc/ohm/issues/204

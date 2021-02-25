@@ -236,7 +236,7 @@ test('tracing with left recursion', t => {
   t.is(terminatingEntry.succeeded, false, 'but marked as a failure');
   t.is(terminatingEntry.isHeadOfLeftRecursion, false);
   t.is(terminatingEntry.pos, id.pos);
-  t.truthy(terminatingEntry.source.length <= id.source.length, 'its source interval is not longer');
+  t.true(terminatingEntry.source.length <= id.source.length, 'its source interval is not longer');
 
   t.is(id.children.length, 1, 'has a single child');
 

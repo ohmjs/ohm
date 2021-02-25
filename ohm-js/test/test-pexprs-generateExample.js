@@ -81,9 +81,8 @@ test('Range', t => {
   const example = g.rules.num.body.generateExample(g, {}, false, []);
   const charCode = example.value.charCodeAt(0);
 
-  t.truthy(charCode >= '1'.charCodeAt(0));
-  t.truthy(charCode <= '9'.charCodeAt(0));
-
+  t.true(charCode >= '1'.charCodeAt(0));
+  t.true(charCode <= '9'.charCodeAt(0));
 });
 
 test('Not', t => {
@@ -96,7 +95,6 @@ test('Not', t => {
   const example = g.rules.not.body.generateExample(g, {}, false, []);
 
   t.is(example.value, '');
-
 });
 
 test('Lookahead', t => {
@@ -109,7 +107,6 @@ test('Lookahead', t => {
   const example = g.rules.lookahead.body.generateExample(g, {}, false, []);
 
   t.is(example.value, '');
-
 });
 
 test('Star', t => {
@@ -136,7 +133,6 @@ test('Star', t => {
   } finally {
     Math.random = random;
   }
-
 });
 
 test('Plus', t => {
@@ -159,7 +155,6 @@ test('Plus', t => {
   } finally {
     Math.random = random;
   }
-
 });
 
 test('Opt', t => {
@@ -182,7 +177,6 @@ test('Opt', t => {
   } finally {
     Math.random = random;
   }
-
 });
 
 test('Param', t => {
@@ -196,7 +190,6 @@ test('Param', t => {
   const example = g.rules.one.body.generateExample(g, {}, false, [g.rules.m.body]);
 
   t.is(example.value, 'm');
-
 });
 
 test('Lex', t => {
@@ -209,5 +202,4 @@ test('Lex', t => {
   const example = g.rules.A.body.generateExample(g, {}, true, []);
 
   t.is(example.value, 'ab');
-
 });

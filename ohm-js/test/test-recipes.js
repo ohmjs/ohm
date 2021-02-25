@@ -86,8 +86,9 @@ test('grammar recipes involving parameterized rules', t => {
   // "bar":["define",...,["alt",{...},["app",{},"bar_one",[["param",{},0],["param",{},1]]]
   //   INSTEAD OF
   // "bar":["define",...,["alt",{...},["app",{},"bar_one",[["app",{},"x"],["app",{},"y"]]]
-  t.truthy(
-      recipe.match(/\["app",\{.*?\},"bar_one",\[\["param",\{.*?\},0\]/),
+  t.regex(
+      recipe,
+      /\["app",\{.*?\},"bar_one",\[\["param",\{.*?\},0\]/,
       'forwards parameters instead of applications'
   );
 });
@@ -178,7 +179,6 @@ test('semantics recipes (special cases)', t => {
       () => {
         makeRecipe(s.toRecipe());
       },
-      undefined,
       'special handling of line separator characters (U+2028)'
   );
 
@@ -187,7 +187,6 @@ test('semantics recipes (special cases)', t => {
       () => {
         makeRecipe(s.toRecipe());
       },
-      undefined,
       'special handling of paragraph separator characters (U+2029)'
   );
 });
