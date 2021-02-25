@@ -299,20 +299,18 @@ source.oninput = function() {
 
 source.oninput();
 
-window.test = function(t) {
+// ----- Test -----
+
+window.test = function() {
   // A very basic test -- check that all case names in the grammar appear as a
   // <casename> element in the DOM.
-  var nodes = document.querySelectorAll('casename');
-  var caseNames = Array.prototype.map.call(nodes, function(node) {
-    return node.textContent;
-  });
-  t.deepEqual(
-      caseNames,
-      ['plus', 'minus', 'times', 'divide', 'power', 'paren', 'pos', 'neg', 'fract', 'whole'],
-      'the expected case names appear in the DOM');
-  t.end();
-};
-
+  const nodes = document.querySelectorAll('casename');
+  const caseNames = Array.from(nodes).map((n) => n.textContent);
+  const expected = new Set(['plus', 'minus', 'times', 'divide', 'power', 'paren', 'pos', 'neg', 'fract', 'whole']);
+  if (caseNames.length !== expected.size || !caseNames.every(n => expected.has(n))) {
+    throw new Error(`caseNames: expected ${Array.from(expected)}, got ${caseNames}`);
+  }
+}
     </script>
   </body>
 </html>

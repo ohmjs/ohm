@@ -7,7 +7,7 @@
   // To minimize dependencies on Node- or browser-specific features, leave the
   // env empty, and instead define globals as needed.
   "env": {},
-  "extends": "google",
+  "extends": ["google", "plugin:ava/recommended"],
 
   // Project-wide globals. If other globals are necessary, prefer putting them
   // in a comment at the top of the file rather than adding them here.
@@ -20,7 +20,7 @@
   "plugins": [
     "camelcase-ohm",
     "no-extension-in-require",
-    "tape"
+    "ava"
   ],
   rules: {
     // Google style guide allows omitting parentheses for single-parameter arrow functions.
@@ -86,8 +86,6 @@
     require-jsdoc: 0,
 
     "strict": ["error", "global"],
-
-    tape/no-only-test: 2,  // Don't allow `test.only`
 
     // We would use `["error", "never", {exceptRange: true}]` here, but it doesn't seem to work.
     yoda: 0,

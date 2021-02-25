@@ -1,8 +1,8 @@
 'use strict';
 
-const test = require('tape');
+const test = require('ava');
 
-const makeGrammar = require('./testUtil').makeGrammar;
+const makeGrammar = require('./helpers/testUtil').makeGrammar;
 
 // --------------------------------------------------------------------
 // Tests
@@ -23,15 +23,14 @@ test('Alt', t => {
     //   floor(0.6 * 2) = 1, making 'generateExample()' select the second path.
     Math.random = function() { return 0.6; };
     let example = g.rules.alt.body.generateExample(g, {}, false, []);
-    t.equal(example.value, 'b');
+    t.is(example.value, 'b');
 
     Math.random = function() { return 0.2; };
     example = g.rules.alt.body.generateExample(g, {}, false, []);
-    t.equal(example.value, 'a');
+    t.is(example.value, 'a');
   } finally {
     Math.random = random;
   }
-  t.end();
 });
 
 test('Seq', t => {
@@ -43,9 +42,8 @@ test('Seq', t => {
 
   const example = g.rules.seq.body.generateExample(g, {}, false, []);
 
-  t.equal(example.value, 'ab');
+  t.is(example.value, 'ab');
 
-  t.end();
 });
 
 test('Apply', t => {
@@ -58,8 +56,7 @@ test('Apply', t => {
 
   const example = g.rules.apply.body.generateExample(g, {a: ['bbbb']}, false, []);
 
-  t.equal(example.value, 'bbbb');
-  t.end();
+  t.is(example.value, 'bbbb');
 });
 
 test('Terminal', t => {
@@ -71,8 +68,7 @@ test('Terminal', t => {
 
   const example = g.rules.a.body.generateExample(g, {}, false, []);
 
-  t.equal(example.value, 'a');
-  t.end();
+  t.is(example.value, 'a');
 });
 
 test('Range', t => {
@@ -85,10 +81,8 @@ test('Range', t => {
   const example = g.rules.num.body.generateExample(g, {}, false, []);
   const charCode = example.value.charCodeAt(0);
 
-  t.ok(charCode >= '1'.charCodeAt(0));
-  t.ok(charCode <= '9'.charCodeAt(0));
-
-  t.end();
+  t.true(charCode >= '1'.charCodeAt(0));
+  t.true(charCode <= '9'.charCodeAt(0));
 });
 
 test('Not', t => {
@@ -100,9 +94,7 @@ test('Not', t => {
 
   const example = g.rules.not.body.generateExample(g, {}, false, []);
 
-  t.equal(example.value, '');
-
-  t.end();
+  t.is(example.value, '');
 });
 
 test('Lookahead', t => {
@@ -114,9 +106,7 @@ test('Lookahead', t => {
 
   const example = g.rules.lookahead.body.generateExample(g, {}, false, []);
 
-  t.equal(example.value, '');
-
-  t.end();
+  t.is(example.value, '');
 });
 
 test('Star', t => {
@@ -135,16 +125,14 @@ test('Star', t => {
     // Note: the system only generates up to 3 repetitions in an iter node
     Math.random = function() { return 0.76; };
     let example = g.rules.star.body.generateExample(g, {}, false, []);
-    t.equal(example.value, 'aaa');
+    t.is(example.value, 'aaa');
 
     Math.random = function() { return 0.1; };
     example = g.rules.star.body.generateExample(g, {}, false, []);
-    t.equal(example.value, '');
+    t.is(example.value, '');
   } finally {
     Math.random = random;
   }
-
-  t.end();
 });
 
 test('Plus', t => {
@@ -159,16 +147,14 @@ test('Plus', t => {
 
     Math.random = function() { return 0.1; };
     let example = g.rules.plus.body.generateExample(g, {}, false, []);
-    t.equal(example.value, 'a');
+    t.is(example.value, 'a');
 
     Math.random = function() { return 0.76; };
     example = g.rules.plus.body.generateExample(g, {}, false, []);
-    t.equal(example.value, 'aaaa');
+    t.is(example.value, 'aaaa');
   } finally {
     Math.random = random;
   }
-
-  t.end();
 });
 
 test('Opt', t => {
@@ -183,16 +169,14 @@ test('Opt', t => {
 
     Math.random = function() { return 0.76; };
     let example = g.rules.opt.body.generateExample(g, {}, false, []);
-    t.equal(example.value, 'a');
+    t.is(example.value, 'a');
 
     Math.random = function() { return 0.1; };
     example = g.rules.opt.body.generateExample(g, {}, false, []);
-    t.equal(example.value, '');
+    t.is(example.value, '');
   } finally {
     Math.random = random;
   }
-
-  t.end();
 });
 
 test('Param', t => {
@@ -205,9 +189,7 @@ test('Param', t => {
 
   const example = g.rules.one.body.generateExample(g, {}, false, [g.rules.m.body]);
 
-  t.equal(example.value, 'm');
-
-  t.end();
+  t.is(example.value, 'm');
 });
 
 test('Lex', t => {
@@ -219,7 +201,5 @@ test('Lex', t => {
 
   const example = g.rules.A.body.generateExample(g, {}, true, []);
 
-  t.equal(example.value, 'ab');
-
-  t.end();
+  t.is(example.value, 'ab');
 });

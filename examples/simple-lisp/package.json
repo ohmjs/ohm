@@ -6,12 +6,9 @@
     "ohm-js": "^15.4.1"
   },
   "devDependencies": {
-    "nodemon": "^2.0.7",
-    "tap-spec": "^5.0.0",
-    "tape": "^5.2.0"
+    "ava": "^3.15.0"
   },
   "scripts": {
-    "test": "node src/simple-lisp.test.mjs",
-    "test:watch": "nodemon -e mjs --watch src --exec npm test"
+    "test": "ava"
   }
 }

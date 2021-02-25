@@ -1,5 +1,5 @@
 import * as ohm from '..';
-import * as test from 'tape';
+import test from 'ava';
 
 const g = ohm.grammar(`
   G {
@@ -14,18 +14,15 @@ const s = g.createSemantics().addOperation('getName', {
   }
 });
 
-test('basic matching', t => {
+test('basic matching', (t) => {
   const matchResult = g.match('Ahoy-hoy, Alexander!');
-  t.equal(s(matchResult)['getName'](), 'Alexander');
-  t.end();
+  t.is(s(matchResult)['getName'](), 'Alexander');
 });
 
-test('incremental matching', t => {
+test('incremental matching', (t) => {
   const matcher = g.matcher();
   matcher.setInput('foo');
-  matcher.replaceInputRange(0, 1, 'g')
-         .replaceInputRange(1, 3, 'ah');
-  t.equal(matcher.getInput(), 'gah');
-  t.equal(matcher.match('Greeting').succeeded(), false);
-  t.end();
+  matcher.replaceInputRange(0, 1, 'g').replaceInputRange(1, 3, 'ah');
+  t.is(matcher.getInput(), 'gah');
+  t.is(matcher.match('Greeting').succeeded(), false);
 });

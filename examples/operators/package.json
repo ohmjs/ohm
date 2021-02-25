@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "An example showing four ways to implement a language with an operator precedence hiearchy",
   "scripts": {
-    "test": "mocha"
+    "test": "ava"
   },
   "keywords": [
     "ohm",
@@ -15,7 +15,6 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "mocha": "^8.1.1"
   },
   "dependencies": {
     "ohm-js": "^15.0.1"

@@ -5,7 +5,7 @@
 // --------------------------------------------------------------------
 
 const fs = require('fs');
-const test = require('tape-catch');
+const test = require('ava');
 
 const ohm = require('../..');
 const toAST = require('../../extras').toAST;
@@ -21,10 +21,9 @@ test('semantic action', t => {
   const semantics = semanticsForToAST(g);
   const matchResult = g.match('10 + 20');
 
-  t.ok('toAST' in semantics._getSemantics().operations, 'toAST operation added to semantics');
-  t.ok(semantics(matchResult).toAST, 'toAST operation added to match result');
+  t.truthy('toAST' in semantics._getSemantics().operations, 'toAST operation added to semantics');
+  t.truthy(semantics(matchResult).toAST, 'toAST operation added to match result');
 
-  t.end();
 });
 
 test('default', t => {
@@ -49,7 +48,6 @@ test('default', t => {
   };
   t.deepEqual(ast, expected, 'proper optionals and lists in AST');
 
-  t.end();
 });
 
 test('mapping', t => {
@@ -198,7 +196,6 @@ test('mapping', t => {
   };
   t.deepEqual(ast, expected, 'proper AST with explicity reintroduced node');
 
-  t.end();
 });
 
 test('real examples (combinations)', t => {
@@ -254,5 +251,4 @@ test('real examples (combinations)', t => {
   };
   t.deepEqual(ast, expected, 'proper AST for arithmetic example #2');
 
-  t.end();
 });

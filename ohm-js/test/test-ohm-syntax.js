@@ -1,13 +1,15 @@
 'use strict';
 
-const test = require('tape-catch');
+const test = require('ava-spec');
 
 const fs = require('fs');
 const ohm = require('..');
-const testUtil = require('./testUtil');
+const testUtil = require('./helpers/testUtil');
 
 const arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
 const ohmGrammarSource = fs.readFileSync('src/ohm-grammar.ohm').toString();
+
+const {describe} = test;
 
 const makeGrammar = testUtil.makeGrammar;
 const makeGrammars = testUtil.makeGrammars;
@@ -22,7 +24,7 @@ function compareGrammars(t, expected, actual) {
   // them. So we ignore that property here, concentrating on `rules`
   // and other "real" properties of each grammar.
 
-  t.equal(typeof actual, typeof expected);
+  t.is(typeof actual, typeof expected);
   // ^ e.g. when one is undefined and the other isn't
 
   if (expected && actual) {
@@ -35,40 +37,34 @@ function compareGrammars(t, expected, actual) {
   }
 }
 
-// A stub for Jasmin/RSpec-style tests, for tests that were written before we
-// moved to `tape`. New tests shouldn't use this -- instead, they should
-// pass a message argument to the assertion functions (e.g. `t.equal`), or
-// just put checks in a separate call to `test`.
-function it(desc, fn) {
-  console.log(desc); // eslint-disable-line no-console
-  fn.call();
-}
-
 function buildTreeNodeWithUniqueId(g) {
   let nextId = 0;
   const s = g.createSemantics().addAttribute('tree', {
     _nonterminal(children) {
-      return ['id', nextId++, this.ctorName]
-          .concat(children.map(child => child.tree));
+      return ['id', nextId++, this.ctorName].concat(children.map(child => child.tree));
     },
     _terminal() {
       return this.primitiveValue;
     }
   });
 
-  function makeTree(node) { return s(node).tree; }
-  makeTree._getNextId = function() { return nextId; };
+  function makeTree(node) {
+    return s(node).tree;
+  }
+  makeTree._getNextId = function() {
+    return nextId;
+  };
   return makeTree;
 }
 
 function assertSucceeds(t, matchResult, optMessage) {
-  t.equal(matchResult.succeeded(), true, optMessage);
-  t.equal(matchResult.failed(), false, optMessage);
+  t.is(matchResult.succeeded(), true, optMessage);
+  t.is(matchResult.failed(), false, optMessage);
 }
 
 function assertFails(t, matchResult, optMessage) {
-  t.equal(matchResult.succeeded(), false, optMessage);
-  t.equal(matchResult.failed(), true, optMessage);
+  t.is(matchResult.succeeded(), false, optMessage);
+  t.is(matchResult.failed(), true, optMessage);
 }
 
 // --------------------------------------------------------------------
@@ -87,8 +83,7 @@ test('char', t => {
   assertFails(t, m.match('!a'));
   assertFails(t, m.match(''));
   const cst = m.match('!');
-  t.equal(s(cst).v, '!');
-  t.end();
+  t.is(s(cst).v, '!');
 });
 
 test('string', t => {
@@ -104,15 +99,18 @@ test('string', t => {
   assertFails(t, m.match('bar'));
 
   const cst = m.match('foo\b\n\r\t\\"\u01bcff\x8f');
-  t.equal(s(cst).v, 'foo\b\n\r\t\\"\u01bcff\x8f');
+  t.is(s(cst).v, 'foo\b\n\r\t\\"\u01bcff\x8f');
 
-  t.throws(() => { ohm.grammar('G { r = "\\w" }'); },
-      /Expected "\\""/,
-      'unrecognized escape characters are parse errors');
-  t.end();
+  t.throws(
+      () => {
+        ohm.grammar('G { r = "\\w" }');
+      },
+      {message: /Expected "\\""/},
+      'unrecognized escape characters are parse errors'
+  );
 });
 
-test('unicode', t => {
+describe('unicode', test => {
   const m = ohm.grammar('M {}');
 
   test('recognition', t => {
@@ -131,7 +129,6 @@ test('unicode', t => {
 
     assertSucceeds(t, m.match('\u01C0', 'letter'), 'dental click is a letter');
     assertSucceeds(t, m.match(['\u01C0'], 'letter'), 'dental click in a list');
-    t.end();
   });
 
   test('semantic actions', t => {
@@ -141,10 +138,8 @@ test('unicode', t => {
       }
     });
     const r = m.match('\u01C0', 'letter');
-    t.equal(s(r).v, '\u01C0\u01C0');
-    t.end();
+    t.is(s(r).v, '\u01C0\u01C0');
   });
-  t.end();
 });
 
 test('ranges', t => {
@@ -157,25 +152,32 @@ test('ranges', t => {
 
   assertSucceeds(t, m.match('6', 'charRange'));
   assertFails(t, m.match('x', 'charRange'));
-  t.equal(s(m.match('4', 'charRange')).v, '4');
+  t.is(s(m.match('4', 'charRange')).v, '4');
 
   t.throws(
-      () => { ohm.grammar('M { charRange = "ab".."c" }'); },
-      /Expected "}"/,
-      'from-terminal must have length 1');
+      () => {
+        ohm.grammar('M { charRange = "ab".."c" }');
+      },
+      {message: /Expected "}"/},
+      'from-terminal must have length 1'
+  );
   t.throws(
-      () => { ohm.grammar('M { charRange = "ab".."cd" }'); },
-      /Expected "}"/,
-      'from-terminal must have length 1');
+      () => {
+        ohm.grammar('M { charRange = "ab".."cd" }');
+      },
+      {message: /Expected "}"/},
+      'from-terminal must have length 1'
+  );
   t.throws(
-      () => { ohm.grammar('M { charRange = "a".."bc" }'); },
-      /Expected "\\""/,
-      'to-terminal must have length 1');
-
-  t.end();
+      () => {
+        ohm.grammar('M { charRange = "a".."bc" }');
+      },
+      {message: /Expected "\\""/},
+      'to-terminal must have length 1'
+  );
 });
 
-test('alt', t => {
+describe('alt', test => {
   const m = ohm.grammar('M { altTest = "a" | "b" }');
   const s = m.createSemantics().addAttribute('v', {
     _terminal() {
@@ -183,21 +185,20 @@ test('alt', t => {
     }
   });
 
-  it('recognition', () => {
+  test('recognition', t => {
     assertFails(t, m.match(''));
     assertSucceeds(t, m.match('a'));
     assertSucceeds(t, m.match('b'));
     assertFails(t, m.match('ab'));
   });
 
-  it('semantic actions', () => {
-    t.equal(s(m.match('a')).v, 'a');
-    t.equal(s(m.match('b')).v, 'b');
+  test('semantic actions', t => {
+    t.is(s(m.match('a')).v, 'a');
+    t.is(s(m.match('b')).v, 'b');
   });
-  t.end();
 });
 
-test('rule bodies in defs can start with a |, and it\'s a no-op', t => {
+describe("rule bodies in defs can start with a |, and it's a no-op", test => {
   const m = ohm.grammar('M { altTest = | "a" | "b" }');
   const s = m.createSemantics().addAttribute('v', {
     _terminal() {
@@ -205,21 +206,20 @@ test('rule bodies in defs can start with a |, and it\'s a no-op', t => {
     }
   });
 
-  it('recognition', () => {
+  test('recognition', t => {
     assertFails(t, m.match(''));
     assertSucceeds(t, m.match('a'));
     assertSucceeds(t, m.match('b'));
     assertFails(t, m.match('ab'));
   });
 
-  it('semantic actions', () => {
-    t.equal(s(m.match('a')).v, 'a');
-    t.equal(s(m.match('b')).v, 'b');
+  test('semantic actions', t => {
+    t.is(s(m.match('a')).v, 'a');
+    t.is(s(m.match('b')).v, 'b');
   });
-  t.end();
 });
 
-test('rule bodies in overrides can start with a |, and it\'s a no-op', t => {
+describe("rule bodies in overrides can start with a |, and it's a no-op", test => {
   const m = ohm.grammar('M { space := | "a" | "b" }');
   const s = m.createSemantics().addAttribute('v', {
     _terminal() {
@@ -227,7 +227,7 @@ test('rule bodies in overrides can start with a |, and it\'s a no-op', t => {
     }
   });
 
-  it('recognition', () => {
+  test('recognition', t => {
     assertFails(t, m.match('', 'space'));
     assertSucceeds(t, m.match('a', 'space'));
     assertSucceeds(t, m.match('b', 'space'));
@@ -235,14 +235,13 @@ test('rule bodies in overrides can start with a |, and it\'s a no-op', t => {
     assertFails(t, m.match('\t', 'space'));
   });
 
-  it('semantic actions', () => {
-    t.equal(s(m.match('a', 'space')).v, 'a');
-    t.equal(s(m.match('b', 'space')).v, 'b');
+  test('semantic actions', t => {
+    t.is(s(m.match('a', 'space')).v, 'a');
+    t.is(s(m.match('b', 'space')).v, 'b');
   });
-  t.end();
 });
 
-test('rule bodies in extends can start with a |, and it\'s a no-op', t => {
+describe("rule bodies in extends can start with a |, and it's a no-op", test => {
   const m = ohm.grammar('M { space += | "a" | "b" }');
   const s = m.createSemantics().addAttribute('v', {
     _terminal() {
@@ -250,7 +249,7 @@ test('rule bodies in extends can start with a |, and it\'s a no-op', t => {
     }
   });
 
-  it('recognition', () => {
+  test('recognition', t => {
     assertFails(t, m.match('', 'space'));
     assertSucceeds(t, m.match('a', 'space'));
     assertSucceeds(t, m.match('b', 'space'));
@@ -258,93 +257,43 @@ test('rule bodies in extends can start with a |, and it\'s a no-op', t => {
     assertSucceeds(t, m.match('\t', 'space'));
   });
 
-  it('semantic actions', () => {
-    t.equal(s(m.match('a', 'space')).v, 'a');
-    t.equal(s(m.match('b', 'space')).v, 'b');
+  test('semantic actions', t => {
+    t.is(s(m.match('a', 'space')).v, 'a');
+    t.is(s(m.match('b', 'space')).v, 'b');
   });
-  t.end();
 });
 
-test('seq', t => {
-  test('without bindings', t => {
-    const m = ohm.grammar('M { start = "a" "bc" "z" }');
-
-    it('recognition', () => {
-      assertFails(t, m.match('a'));
-      assertFails(t, m.match('bc'));
-      assertSucceeds(t, m.match('abcz'));
-      assertFails(t, m.match('abbz'));
-    });
-
-    it('semantic actions', () => {
-      const f = m.match('abcz');
-      const s = m.createSemantics().addAttribute('v', {
-        start(x, y, z) {
-          return [x.sourceString, y.sourceString, z.sourceString];
-        }
-      });
-      t.deepEqual(s(f).v, ['a', 'bc', 'z']);
-    });
-    t.end();
+describe('seq', test => {
+  const m = ohm.grammar('M { start = "a" "bc" "z" }');
+  test('recognition', t => {
+    assertFails(t, m.match('a'));
+    assertFails(t, m.match('bc'));
+    assertSucceeds(t, m.match('abcz'));
+    assertFails(t, m.match('abbz'));
   });
 
-  test('with exactly one binding', t => {
-    const m = ohm.grammar('M { start = "a" "bc" "z" }');
-
-    it('recognition', () => {
-      assertFails(t, m.match('a'));
-      assertFails(t, m.match('bc'));
-      assertSucceeds(t, m.match('abcz'));
-      assertFails(t, m.match('abbz'));
+  test('semantic actions', t => {
+    const f = m.match('abcz');
+    const s = m.createSemantics().addAttribute('v', {
+      start(x, y, z) {
+        return [x.sourceString, y.sourceString, z.sourceString];
+      }
     });
-
-    it('semantic actions', () => {
-      const f = m.match('abcz');
-      const s = m.createSemantics().addAttribute('v', {
-        start(a, _bc, _z) {
-          return a.primitiveValue;
-        }
-      });
-      t.deepEqual(s(f).v, 'a');
-    });
-    t.end();
+    t.deepEqual(s(f).v, ['a', 'bc', 'z']);
   });
-
-  test('with more than one binding', t => {
-    const m = ohm.grammar('M { start = "a" "bc" "z" }');
-
-    it('recognition', () => {
-      assertFails(t, m.match('a'));
-      assertFails(t, m.match('bc'));
-      assertSucceeds(t, m.match('abcz'));
-      assertFails(t, m.match('abbz'));
-    });
-
-    it('semantic actions', () => {
-      const f = m.match('abcz');
-      const s = m.createSemantics().addAttribute('v', {
-        start(x, _, y) {
-          return [x.primitiveValue, y.primitiveValue];
-        }
-      });
-      t.deepEqual(s(f).v, ['a', 'z']);
-    });
-    t.end();
-  });
-  t.end();
 });
 
-test('alts and seqs together', t => {
+describe('alts and seqs together', test => {
   const m = ohm.grammar('M { start = "a" "b" "c" | "1" "2" "3" }');
 
-  it('recognition', () => {
+  test('recognition', t => {
     assertFails(t, m.match('ab'));
     assertFails(t, m.match('12'));
     assertSucceeds(t, m.match('abc'));
     assertSucceeds(t, m.match('123'));
   });
 
-  it('semantic actions', () => {
+  test('semantic actions', t => {
     const s = m.createSemantics().addAttribute('v', {
       start(x, _, y) {
         return [x.primitiveValue, y.primitiveValue];
@@ -353,11 +302,9 @@ test('alts and seqs together', t => {
     t.deepEqual(s(m.match('abc')).v, ['a', 'c']);
     t.deepEqual(s(m.match('123')).v, ['1', '3']);
   });
-
-  t.end();
 });
 
-test('kleene-* and kleene-+', t => {
+describe('kleene-* and kleene-+', test => {
   const m = makeGrammar([
     'M {',
     '  number = digit+',
@@ -366,7 +313,7 @@ test('kleene-* and kleene-+', t => {
     '}'
   ]);
 
-  it('recognition', () => {
+  test('recognition', t => {
     assertFails(t, m.match('1234a', 'number'));
     assertSucceeds(t, m.match('1234', 'number'));
     assertSucceeds(t, m.match('5', 'number'));
@@ -378,7 +325,7 @@ test('kleene-* and kleene-+', t => {
     assertSucceeds(t, m.match('', 'digits'));
   });
 
-  it('semantic actions', () => {
+  test('semantic actions', t => {
     const s = m.createSemantics().addAttribute('v', {
       number(expr) {
         return ['digits', expr.v];
@@ -391,37 +338,43 @@ test('kleene-* and kleene-+', t => {
       }
     });
     t.deepEqual(s(m.match('1234', 'number')).v, [
-      'digits', [
+      'digits',
+      [
         ['digit', '1'],
         ['digit', '2'],
         ['digit', '3'],
         ['digit', '4']
-      ]]);
+      ]
+    ]);
   });
 
-  it('semantic actions are evaluated lazily', () => {
+  test('semantic actions are evaluated lazily', t => {
     const a = buildTreeNodeWithUniqueId(m);
-    const tree = ['id', 1, 'number', [
-      ['id', 2, 'digit', '1'],
-      ['id', 3, 'digit', '2'],
-      ['id', 4, 'digit', '3']
-    ]];
+    const tree = [
+      'id',
+      1,
+      'number',
+      [
+        ['id', 2, 'digit', '1'],
+        ['id', 3, 'digit', '2'],
+        ['id', 4, 'digit', '3']
+      ]
+    ];
     t.deepEqual(a(m.match('123', 'sss')), ['id', 0, 'sss', tree, tree]);
-    t.equal(a._getNextId(), 5);
+    t.is(a._getNextId(), 5);
   });
-  t.end();
 });
 
-test('opt', t => {
+describe('opt', test => {
   const m = ohm.grammar('M { name = "dr"? "warth" }');
 
-  it('recognition', () => {
+  test('recognition', t => {
     assertSucceeds(t, m.match('drwarth'));
     assertSucceeds(t, m.match('warth'));
     assertFails(t, m.match('mrwarth'));
   });
 
-  it('semantic actions', () => {
+  test('semantic actions', t => {
     const s = m.createSemantics().addAttribute('v', {
       name(title, last) {
         return [title.children.length === 1 ? title.v[0] : undefined, last.primitiveValue];
@@ -433,134 +386,94 @@ test('opt', t => {
     t.deepEqual(s(m.match('drwarth')).v, ['dr', 'warth']);
     t.deepEqual(s(m.match('warth')).v, [undefined, 'warth']);
   });
-  t.end();
 });
 
-test('not', t => {
+describe('not', test => {
   const m = ohm.grammar('M { start = ~"hello" any* }');
 
-  it('recognition', () => {
+  test('recognition', t => {
     assertSucceeds(t, m.match('yello world'));
     assertFails(t, m.match('hello world'));
   });
 
-  it('semantic actions', () => {
+  test('semantic actions', t => {
     const s = m.createSemantics().addAttribute('v', {
-      start(x) { return x.sourceString; }
+      start(x) {
+        return x.sourceString;
+      }
     });
-    t.equal(s(m.match('yello world')).v, 'yello world');
+    t.is(s(m.match('yello world')).v, 'yello world');
   });
-  t.end();
 });
 
-test('lookahead', t => {
+describe('lookahead', test => {
   const m = ohm.grammar('M { start = &"hello" any* }');
 
-  it('recognition', () => {
+  test('recognition', t => {
     assertSucceeds(t, m.match('hello world'));
     assertFails(t, m.match('hell! world'));
   });
 
-  it('semantic actions', () => {
+  test('semantic actions', t => {
     const s = m.createSemantics().addAttribute('v', {
       start(x, _) {
         return x.primitiveValue;
       }
     });
-    t.equal(s(m.match('hello world')).v, 'hello');
+    t.is(s(m.match('hello world')).v, 'hello');
   });
-  t.end();
 });
 
-test('apply', t => {
-  test('simple, no left recursion', t => {
-    const m = makeGrammar([
-      'M {',
-      '  easy = foo',
-      '  foo = "foo"',
-      '}'
-    ]);
+describe('simple left recursion', test => {
+  const m = makeGrammar(['M {', ' number = numberRec | digit', 'numberRec = number digit', '}']);
 
-    it('recognition', () => {
-      assertFails(t, m.match('fo'));
-      assertSucceeds(t, m.match('foo'));
-      assertFails(t, m.match('fooo'));
-    });
-
-    it('semantic actions', () => {
-      const s = m.createSemantics().addAttribute('v', {
-        easy(expr) {
-          return ['easy', expr.v];
-        },
-        foo(expr) {
-          return ['foo', expr.v];
-        },
-        _terminal() {
-          return this.primitiveValue;
-        }
-      });
-      t.deepEqual(s(m.match('foo')).v, ['easy', ['foo', 'foo']]);
-    });
-    t.end();
+  test('recognition', t => {
+    assertFails(t, m.match('', 'number'));
+    assertFails(t, m.match('a', 'number'));
+    assertSucceeds(t, m.match('1', 'number'));
+    assertSucceeds(t, m.match('12', 'number'));
+    assertSucceeds(t, m.match('123', 'number'));
+    assertSucceeds(t, m.match('7276218173', 'number'));
   });
 
-  test('simple left recursion', t => {
-    const m = makeGrammar([
-      'M {',
-      ' number = numberRec | digit',
-      'numberRec = number digit',
-      '}'
+  test('semantic actions', t => {
+    const f = m.match('1234', 'number');
+    const s = m
+        .createSemantics()
+        .addAttribute('v', {
+          numberRec(n, d) {
+            return n.v * 10 + d.v;
+          },
+          digit(expr) {
+            return expr.v.charCodeAt(0) - '0'.charCodeAt(0);
+          },
+          _terminal() {
+            return this.primitiveValue;
+          }
+        })
+        .addAttribute('t', {
+          number(expr) {
+            return ['number', expr.t];
+          },
+          numberRec(n, d) {
+            return ['numberRec', n.t, d.t];
+          },
+          _terminal() {
+            return this.primitiveValue;
+          }
+        });
+    t.is(s(f).v, 1234);
+    t.deepEqual(s(f).t, [
+      'number',
+      [
+        'numberRec',
+        ['number', ['numberRec', ['number', ['numberRec', ['number', '1'], '2']], '3']],
+        '4'
+      ]
     ]);
-
-    it('recognition', () => {
-      assertFails(t, m.match('', 'number'));
-      assertFails(t, m.match('a', 'number'));
-      assertSucceeds(t, m.match('1', 'number'));
-      assertSucceeds(t, m.match('12', 'number'));
-      assertSucceeds(t, m.match('123', 'number'));
-      assertSucceeds(t, m.match('7276218173', 'number'));
-    });
-
-    it('semantic actions', () => {
-      const f = m.match('1234', 'number');
-      const s = m.createSemantics().addAttribute('v', {
-        numberRec(n, d) {
-          return n.v * 10 + d.v;
-        },
-        digit(expr) {
-          return expr.v.charCodeAt(0) - '0'.charCodeAt(0);
-        },
-        _terminal() {
-          return this.primitiveValue;
-        }
-      }).addAttribute('t', {
-        number(expr) {
-          return ['number', expr.t];
-        },
-        numberRec(n, d) {
-          return ['numberRec', n.t, d.t];
-        },
-        _terminal() {
-          return this.primitiveValue;
-        }
-      });
-      t.equal(s(f).v, 1234);
-      t.deepEqual(s(f).t,
-          ['number',
-            ['numberRec',
-              ['number',
-                ['numberRec',
-                  ['number',
-                    ['numberRec',
-                      ['number', '1'],
-                      '2']],
-                  '3']],
-              '4']]);
-    });
-    t.end();
   });
 
-  test('simple left recursion, with non-involved rules', t => {
+  describe('simple left recursion, with non-involved rules', test => {
     const m = makeGrammar([
       'M {',
       '  add = addRec | pri',
@@ -571,11 +484,11 @@ test('apply', t => {
       '}'
     ]);
 
-    it('recognition', () => {
+    test('recognition', t => {
       assertSucceeds(t, m.match('x+y+x', 'add'));
     });
 
-    it('semantic actions', () => {
+    test('semantic actions', t => {
       const s = m.createSemantics().addAttribute('v', {
         addRec(x, _, y) {
           return [x.v, '+', y.v];
@@ -586,21 +499,22 @@ test('apply', t => {
       });
       t.deepEqual(s(m.match('x+y+x', 'add')).v, [['x', '+', 'y'], '+', 'x']);
     });
-    t.end();
   });
 
-  test('indirect left recursion', t => {
+  describe('indirect left recursion', test => {
     const m = makeGrammar([
       'M {',
       '  number = foo | digit',
-      '  foo = bar', '  bar = baz',
-      '  baz = qux', '  qux = quux',
+      '  foo = bar',
+      '  bar = baz',
+      '  baz = qux',
+      '  qux = quux',
       '  quux = numberRec',
       '  numberRec = number digit',
       '}'
     ]);
 
-    it('recognition', () => {
+    test('recognition', t => {
       assertFails(t, m.match('', 'number'));
       assertFails(t, m.match('a', 'number'));
       assertSucceeds(t, m.match('1', 'number'));
@@ -608,7 +522,7 @@ test('apply', t => {
       assertSucceeds(t, m.match('7276218173', 'number'));
     });
 
-    it('semantic actions', () => {
+    test('semantic actions', t => {
       const s = m.createSemantics().addAttribute('v', {
         numberRec(n, d) {
           return [n.v, d.v];
@@ -619,10 +533,9 @@ test('apply', t => {
       });
       t.deepEqual(s(m.match('1234', 'number')).v, [[['1', '2'], '3'], '4']);
     });
-    t.end();
   });
 
-  test('nested left recursion', t => {
+  describe('nested left recursion', test => {
     const m = makeGrammar([
       'M {',
       '  addExp = addExpRec | mulExp',
@@ -634,7 +547,7 @@ test('apply', t => {
       '}'
     ]);
 
-    it('recognition', () => {
+    test('recognition', t => {
       assertSucceeds(t, m.match('1'));
       assertSucceeds(t, m.match('2+3'));
       assertFails(t, m.match('4+'));
@@ -642,94 +555,140 @@ test('apply', t => {
       assertSucceeds(t, m.match('7*8+9+0'));
     });
 
-    it('semantic actions', () => {
+    test('semantic actions', t => {
       const f = m.match('1*2+3+4*5');
-      const s = m.createSemantics().addAttribute('t', {
-        addExp(expr) {
-          return ['addExp', expr.t];
-        },
-        addExpRec(x, _, y) {
-          return ['addExpRec', x.t, y.t];
-        },
-        mulExp(expr) {
-          return ['mulExp', expr.t];
-        },
-        mulExpRec(x, _, y) {
-          return ['mulExpRec', x.t, y.t];
-        },
-        _terminal() {
-          return this.primitiveValue;
-        }
-      }).addAttribute('v', {
-        addExp(expr) {
-          return expr.v;
-        },
-        addExpRec(x, _, y) {
-          return x.v + y.v;
-        },
-        mulExp(expr) {
-          return expr.v;
-        },
-        mulExpRec(x, _, y) {
-          return x.v * y.v;
-        },
-        priExp(expr) {
-          return parseInt(expr.v);
-        },
-        _terminal() {
-          return this.primitiveValue;
-        }
-      }).addAttribute('p', {
-        addExpRec(x, _, y) {
-          return '(' + x.p + '+' + y.p + ')';
-        },
-        mulExpRec(x, _, y) {
-          return '(' + x.p + '*' + y.p + ')';
-        },
-        _terminal() {
-          return this.primitiveValue;
-        }
-      });
-      t.deepEqual(s(f).t,
-          ['addExp',
-            ['addExpRec',
-              ['addExp',
-                ['addExpRec',
-                  ['addExp', ['mulExp', ['mulExpRec', ['mulExp', '1'], '2']]],
-                  ['mulExp', '3']]],
-              ['mulExp', ['mulExpRec', ['mulExp', '4'], '5']]]]);
-      t.equal(s(f).v, 25);
-      t.equal(s(f).p, '(((1*2)+3)+(4*5))');
+      const s = m
+          .createSemantics()
+          .addAttribute('t', {
+            addExp(expr) {
+              return ['addExp', expr.t];
+            },
+            addExpRec(x, _, y) {
+              return ['addExpRec', x.t, y.t];
+            },
+            mulExp(expr) {
+              return ['mulExp', expr.t];
+            },
+            mulExpRec(x, _, y) {
+              return ['mulExpRec', x.t, y.t];
+            },
+            _terminal() {
+              return this.primitiveValue;
+            }
+          })
+          .addAttribute('v', {
+            addExp(expr) {
+              return expr.v;
+            },
+            addExpRec(x, _, y) {
+              return x.v + y.v;
+            },
+            mulExp(expr) {
+              return expr.v;
+            },
+            mulExpRec(x, _, y) {
+              return x.v * y.v;
+            },
+            priExp(expr) {
+              return parseInt(expr.v);
+            },
+            _terminal() {
+              return this.primitiveValue;
+            }
+          })
+          .addAttribute('p', {
+            addExpRec(x, _, y) {
+              return '(' + x.p + '+' + y.p + ')';
+            },
+            mulExpRec(x, _, y) {
+              return '(' + x.p + '*' + y.p + ')';
+            },
+            _terminal() {
+              return this.primitiveValue;
+            }
+          });
+      t.deepEqual(s(f).t, [
+        'addExp',
+        [
+          'addExpRec',
+          [
+            'addExp',
+            [
+              'addExpRec',
+              ['addExp', ['mulExp', ['mulExpRec', ['mulExp', '1'], '2']]],
+              ['mulExp', '3']
+            ]
+          ],
+          ['mulExp', ['mulExpRec', ['mulExp', '4'], '5']]
+        ]
+      ]);
+      t.is(s(f).v, 25);
+      t.is(s(f).p, '(((1*2)+3)+(4*5))');
     });
 
-    it('semantic actions are evaluated lazily', () => {
+    test('semantic actions are evaluated lazily', t => {
       const f = m.match('1*2+3+4*5', 'sss');
       const a = buildTreeNodeWithUniqueId(m);
-      const tree =
-        ['id', 1, 'addExp',
-          ['id', 2, 'addExpRec',
-            ['id', 3, 'addExp',
-              ['id', 4, 'addExpRec',
-                ['id', 5, 'addExp',
-                  ['id', 6, 'mulExp',
-                    ['id', 7, 'mulExpRec',
-                      ['id', 8, 'mulExp',
-                        ['id', 9, 'priExp', '1']], '*',
-                      ['id', 10, 'priExp', '2']]]], '+',
-                ['id', 11, 'mulExp',
-                  ['id', 12, 'priExp', '3']]]], '+',
-            ['id', 13, 'mulExp',
-              ['id', 14, 'mulExpRec',
-                ['id', 15, 'mulExp',
-                  ['id', 16, 'priExp', '4']], '*',
-                ['id', 17, 'priExp', '5']]]]];
+      const tree = [
+        'id',
+        1,
+        'addExp',
+        [
+          'id',
+          2,
+          'addExpRec',
+          [
+            'id',
+            3,
+            'addExp',
+            [
+              'id',
+              4,
+              'addExpRec',
+              [
+                'id',
+                5,
+                'addExp',
+                [
+                  'id',
+                  6,
+                  'mulExp',
+                  [
+                    'id',
+                    7,
+                    'mulExpRec',
+                    ['id', 8, 'mulExp', ['id', 9, 'priExp', '1']],
+                    '*',
+                    ['id', 10, 'priExp', '2']
+                  ]
+                ]
+              ],
+              '+',
+              ['id', 11, 'mulExp', ['id', 12, 'priExp', '3']]
+            ]
+          ],
+          '+',
+          [
+            'id',
+            13,
+            'mulExp',
+            [
+              'id',
+              14,
+              'mulExpRec',
+              ['id', 15, 'mulExp', ['id', 16, 'priExp', '4']],
+              '*',
+              ['id', 17, 'priExp', '5']
+            ]
+          ]
+        ]
+      ];
       t.deepEqual(a(f), ['id', 0, 'sss', tree, tree]);
-      t.equal(a._getNextId(), 18);
+      t.is(a._getNextId(), 18);
     });
-    t.end();
   });
 
-  test('nested and indirect left recursion', t => {
+  describe('nested and indirect left recursion', test => {
     const m = makeGrammar([
       'G {',
       '  addExp = a | c',
@@ -748,7 +707,7 @@ test('apply', t => {
       '}'
     ]);
 
-    it('recognition', () => {
+    test('recognition', t => {
       assertSucceeds(t, m.match('1'));
       assertSucceeds(t, m.match('2+3'));
       assertFails(t, m.match('4+'));
@@ -756,7 +715,7 @@ test('apply', t => {
       assertSucceeds(t, m.match('7+8*9+0'));
     });
 
-    it('semantic actions', () => {
+    test('semantic actions', t => {
       const s = m.createSemantics().addAttribute('t', {
         addExpRec(x, _, y) {
           return [x.t, '+', y.t];
@@ -770,10 +729,9 @@ test('apply', t => {
       });
       t.deepEqual(s(m.match('7+8*9+0')).t, [['7', '+', ['8', '*', '9']], '+', '0']);
     });
-    t.end();
   });
 
-  test('tricky left recursion (different heads at same position)', t => {
+  describe('tricky left recursion (different heads at same position)', test => {
     const m = makeGrammar([
       'G {',
       '  tricky = &foo bar',
@@ -784,11 +742,11 @@ test('apply', t => {
       '}'
     ]);
 
-    it('recognition', () => {
+    test('recognition', t => {
       assertSucceeds(t, m.match('1234', 'tricky'));
     });
 
-    it('semantic actions', () => {
+    test('semantic actions', t => {
       const f = m.match('1234', 'tricky');
       // TODO: perhaps just use JSON.stringify(f) here, and compare the result?
       const s = m.createSemantics().addAttribute('t', {
@@ -811,56 +769,59 @@ test('apply', t => {
           return this.primitiveValue;
         }
       });
-      t.deepEqual(s(f).t,
-          ['tricky',
-            ['bar',
-              ['barRec', ['foo', ['fooRec', ['bar', ['barRec', ['foo', '1'], '2']], '3']], '4']]]);
+      t.deepEqual(s(f).t, [
+        'tricky',
+        ['bar', ['barRec', ['foo', ['fooRec', ['bar', ['barRec', ['foo', '1'], '2']], '3']], '4']]
+      ]);
     });
-    t.end();
   });
-  t.end();
 });
 
-test('inheritance', t => {
-  test('super-grammar does not exist', t => {
-    it('no namespace', () => {
-      t.throws(
-          () => { ohm.grammar('G2 <: G1 {}'); },
-          /Grammar G1 is not declared/);
-    });
-
-    it('empty namespace', () => {
-      t.throws(
-          () => { ohm.grammar('G2 <: G1 {}', {}); },
-          /Grammar G1 is not declared in namespace/);
-    });
-    t.end();
-  });
-
-  test('define', t => {
+describe('inheritance', t => {
+  test('no namespace', t => {
     t.throws(
         () => {
-          makeGrammars([
-            'G1 { foo = "foo" }',
-            'G2 <: G1 { foo = "bar" }'
-          ]);
+          ohm.grammar('G2 <: G1 {}');
         },
-        /Duplicate declaration for rule 'foo' in grammar 'G2' \(originally declared in 'G1'\)/,
-        'throws if rule is already declared in super-grammar');
-    t.end();
+        {message: /Grammar G1 is not declared/}
+    );
   });
 
-  test('override', t => {
-    const ns = makeGrammars(['G1 { number = digit+ }',
-      'G2 <: G1 { digit := "a".."z" }']);
+  test('empty namespace', t => {
+    t.throws(
+        () => {
+          ohm.grammar('G2 <: G1 {}', {});
+        },
+        {message: /Grammar G1 is not declared in namespace/}
+    );
+  });
 
-    it('should check that rule exists in super-grammar', () => {
+  test('duplicate definition', t => {
+    t.throws(
+        () => {
+          makeGrammars(['G1 { foo = "foo" }', 'G2 <: G1 { foo = "bar" }']);
+        },
+        {
+          // eslint-disable-next-line max-len
+          message: /Duplicate declaration for rule 'foo' in grammar 'G2' \(originally declared in 'G1'\)/
+        },
+        'throws if rule is already declared in super-grammar'
+    );
+  });
+
+  describe('override', test => {
+    const ns = makeGrammars(['G1 { number = digit+ }', 'G2 <: G1 { digit := "a".."z" }']);
+
+    test('it checks that rule exists in super-grammar', t => {
       t.throws(
-          () => { ohm.grammar('G3 <: G1 { foo := "foo" }', ns); },
-          /Cannot override rule foo because it is not declared in G1/);
+          () => {
+            ohm.grammar('G3 <: G1 { foo := "foo" }', ns);
+          },
+          {message: /Cannot override rule foo because it is not declared in G1/}
+      );
     });
 
-    it("shouldn't matter if arities aren't the same", () => {
+    test("shouldn't matter if arities aren't the same", t => {
       // It's OK for the semantic action "API" of a grammar to be different
       // from that of its super-grammar.
 
@@ -871,13 +832,14 @@ test('inheritance', t => {
       // arity(overriding rule) < arity(overridden rule)
       ns.M3 = ohm.grammar('M3 { foo = digit digit }', ns);
       ns.M4 = ohm.grammar('M4 <: M3 { foo := digit }', ns);
+      t.pass();
     });
 
-    it('should be ok to add new cases', () => {
-      t.ok(ohm.grammar('G { space := "foo" -- newCaseLabel }'));
+    test('should be ok to add new cases', t => {
+      t.truthy(ohm.grammar('G { space := "foo" -- newCaseLabel }'));
     });
 
-    it('recognition', () => {
+    test('recognition', t => {
       assertSucceeds(t, ns.G1.match('1234', 'number'));
       assertFails(t, ns.G1.match('hello', 'number'));
       assertFails(t, ns.G1.match('h3llo', 'number'));
@@ -887,7 +849,7 @@ test('inheritance', t => {
       assertFails(t, ns.G2.match('h3llo', 'number'));
     });
 
-    it('semantic actions', () => {
+    test('semantic actions', t => {
       const s = ns.G2.createSemantics().addAttribute('v', {
         number(expr) {
           return ['number', expr.v];
@@ -899,17 +861,23 @@ test('inheritance', t => {
           return this.primitiveValue;
         }
       });
-      const expected = ['number', [['digit', 'a'], ['digit', 'b'], ['digit', 'c'], ['digit', 'd']]];
+      const expected = [
+        'number',
+        [
+          ['digit', 'a'],
+          ['digit', 'b'],
+          ['digit', 'c'],
+          ['digit', 'd']
+        ]
+      ];
       t.deepEqual(s(ns.G2.match('abcd', 'number')).v, expected);
     });
-    t.end();
   });
 
-  test('extend', t => {
-    const ns = makeGrammars(['G1 { foo = "aaa" "bbb" }',
-      'G2 <: G1 { foo += "111" "222" }']);
+  describe('extend', test => {
+    const ns = makeGrammars(['G1 { foo = "aaa" "bbb" }', 'G2 <: G1 { foo += "111" "222" }']);
 
-    it('recognition', () => {
+    test('recognition', t => {
       assertSucceeds(t, ns.G1.match('aaabbb'));
       assertFails(t, ns.G1.match('111222'));
 
@@ -917,7 +885,7 @@ test('inheritance', t => {
       assertSucceeds(t, ns.G2.match('111222'));
     });
 
-    it('semantic actions', () => {
+    test('semantic actions', t => {
       const s = ns.G2.createSemantics().addAttribute('v', {
         foo(x, y) {
           return [x.primitiveValue, y.primitiveValue];
@@ -927,13 +895,16 @@ test('inheritance', t => {
       t.deepEqual(s(ns.G2.match('111222')).v, ['111', '222']);
     });
 
-    it('should check that rule exists in super-grammar', () => {
+    test('should check that rule exists in super-grammar', t => {
       t.throws(
-          () => { ohm.grammar('G3 <: G1 { bar += "bar" }', ns); },
-          /Cannot extend rule bar because it is not declared in G1/);
+          () => {
+            ohm.grammar('G3 <: G1 { bar += "bar" }', ns);
+          },
+          {message: /Cannot extend rule bar because it is not declared in G1/}
+      );
     });
 
-    it('should make sure rule arities are compatible', () => {
+    test('should make sure rule arities are compatible', t => {
       // An extending rule must produce the same number of values
       // as the underlying rule. This is to ensure the semantic
       // action "API" doesn't change.
@@ -944,12 +915,15 @@ test('inheritance', t => {
         ohm.grammar('M2 <: M1 { foo += bar baz }', ns);
         t.fail('Expected an exception to be thrown');
       } catch (e) {
-        t.equal(e.message, [
-          'Line 1, col 19:',
-          '> 1 | M2 <: M1 { foo += bar baz }',
-          '                        ^~~~~~~',
-          'Rule foo involves an alternation which has inconsistent arity (expected 1, got 2)'
-        ].join('\n'));
+        t.is(
+            e.message,
+            [
+              'Line 1, col 19:',
+              '> 1 | M2 <: M1 { foo += bar baz }',
+              '                        ^~~~~~~',
+              'Rule foo involves an alternation which has inconsistent arity (expected 1, got 2)'
+            ].join('\n')
+        );
       }
 
       // Too few:
@@ -958,78 +932,82 @@ test('inheritance', t => {
         ohm.grammar('M4 <: M3 { foo += digit }', ns);
         t.fail('Expected an exception to be thrown');
       } catch (e) {
-        t.equal(e.message, [
-          'Line 1, col 19:',
-          '> 1 | M4 <: M3 { foo += digit }',
-          '                        ^~~~~',
-          'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)'
-        ].join('\n'));
+        t.is(
+            e.message,
+            [
+              'Line 1, col 19:',
+              '> 1 | M4 <: M3 { foo += digit }',
+              '                        ^~~~~',
+              'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)'
+            ].join('\n')
+        );
       }
     });
 
-    it('should be ok to add new cases', () => {
-      t.ok(ohm.grammar('G { space += "foo" -- newCaseLabel }'));
+    test('should be ok to add new cases', t => {
+      t.truthy(ohm.grammar('G { space += "foo" -- newCaseLabel }'));
     });
-
-    t.end();
   });
-  t.end();
 });
 
 test('override with "..."', t => {
   let g = ohm.grammar('G { letter := "@" | ... }');
-  t.equal(g.match('@', 'letter').succeeded(), true);
-  t.equal(g.match('a', 'letter').succeeded(), true);
+  t.is(g.match('@', 'letter').succeeded(), true);
+  t.is(g.match('a', 'letter').succeeded(), true);
 
   g = ohm.grammar('G { letter := ... | "@" }');
-  t.equal(g.match('@', 'letter').succeeded(), true);
-  t.equal(g.match('a', 'letter').succeeded(), true);
+  t.is(g.match('@', 'letter').succeeded(), true);
+  t.is(g.match('a', 'letter').succeeded(), true);
 
   g = ohm.grammar('G { letter := "3" | ... | "@" }');
-  t.equal(g.match('@', 'letter').succeeded(), true);
-  t.equal(g.match('a', 'letter').succeeded(), true);
-  t.equal(g.match('3', 'letter').succeeded(), true);
+  t.is(g.match('@', 'letter').succeeded(), true);
+  t.is(g.match('a', 'letter').succeeded(), true);
+  t.is(g.match('3', 'letter').succeeded(), true);
 
-  t.ok(ohm.grammar('G { letter := ... }'), 'it allows `...` as the whole body');
+  t.truthy(ohm.grammar('G { letter := ... }'), 'it allows `...` as the whole body');
 
   // Check that the branches are evaluated in the correct order.
   g = ohm.grammar('G { letter := "" | ... }');
-  t.equal(g.match('', 'letter').succeeded(), true);
-  t.equal(g.match('a', 'letter').succeeded(), false);
+  t.is(g.match('', 'letter').succeeded(), true);
+  t.is(g.match('a', 'letter').succeeded(), false);
   g = ohm.grammar('G { letter := ... | "ab" }');
-  t.equal(g.match('a', 'letter').succeeded(), true);
-  t.equal(g.match('ab', 'letter').succeeded(), false);
+  t.is(g.match('a', 'letter').succeeded(), true);
+  t.is(g.match('ab', 'letter').succeeded(), false);
 
   g = ohm.grammar(`
     G {
       Start = ListOf<letter, ",">
       ListOf<elem, sep> := "✌️" | ...
     }`);
-  t.equal(g.match('✌️').succeeded(), true, 'it works on parameterized rules');
+  t.is(g.match('✌️').succeeded(), true, 'it works on parameterized rules');
 
   t.throws(
       () => ohm.grammar('G { doesNotExist := ... }'),
-      /Cannot override rule doesNotExist/,
-      'it gives the correct error message when overriding non-existent rule');
+      {message: /Cannot override rule doesNotExist/},
+      'it gives the correct error message when overriding non-existent rule'
+  );
 
   t.throws(
       () => ohm.grammar('G { foo = ... }'),
-      /Expected "}"/,
-      "it's not allowed in a rule definition");
+      {message: /Expected "}"/},
+      "it's not allowed in a rule definition"
+  );
 
   t.throws(
       () => ohm.grammar('G { letter += ... }'),
-      /Expected "}"/,
-      "it's not allowed when extending");
+      {message: /Expected "}"/},
+      "it's not allowed when extending"
+  );
 
-  t.throws(
-      () => ohm.grammar('G { letter := "@" "#" | ... }'),
-      /inconsistent arity/);
+  t.throws(() => ohm.grammar('G { letter := "@" "#" | ... }'), {
+    message: /inconsistent arity/
+  });
 
   t.throws(
       () => ohm.grammar('G { letter := ... | "@" | ... }'),
-      /at most once/,
-      "'...' can appear at most once in a rule body");
+      {message: /at most once/},
+      "'...' can appear at most once in a rule body"
+  );
 
   /*
     TODO:
@@ -1038,32 +1016,27 @@ test('override with "..."', t => {
     - [ ] unify Extend and Combine?
     - [ ] using '...' when overriding a non-existent rule
   */
-
-  t.end();
 });
 
-test('bindings', t => {
-  it('inconsistent arity in alts is an error', () => {
+describe('bindings', test => {
+  test('inconsistent arity in alts is an error', t => {
     try {
       ohm.grammar('G { foo = "a" "c" | "b" }');
     } catch (e) {
-      t.equal(e.message, [
-        'Line 1, col 21:',
-        '> 1 | G { foo = "a" "c" | "b" }',
-        '                          ^~~',
-        'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)'
-      ].join('\n'));
+      t.is(
+          e.message,
+          [
+            'Line 1, col 21:',
+            '> 1 | G { foo = "a" "c" | "b" }',
+            '                          ^~~',
+            'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)'
+          ].join('\n')
+      );
     }
   });
 
-  it('by default, bindings are evaluated lazily', () => {
-    const g = makeGrammar([
-      'G {',
-      '  foo = bar baz',
-      '  bar = "a"',
-      '  baz = "b"',
-      '}'
-    ]);
+  test('by default, bindings are evaluated lazily', t => {
+    const g = makeGrammar(['G {', '  foo = bar baz', '  bar = "a"', '  baz = "b"', '}']);
 
     let id = 0;
     let s = g.createSemantics().addAttribute('v', {
@@ -1115,7 +1088,6 @@ test('bindings', t => {
       y: ['baz', 'b', 0]
     });
   });
-  t.end();
 });
 
 test('inline rule declarations', t => {
@@ -1152,66 +1124,70 @@ test('inline rule declarations', t => {
   }
 
   const ns = {};
-  const Arithmetic = ns.Arithmetic = makeGrammar(arithmeticGrammarSource);
+  const Arithmetic = (ns.Arithmetic = makeGrammar(arithmeticGrammarSource));
 
   assertSucceeds(t, Arithmetic.match('1*(2+3)-4/5'), 'expr is recognized');
-  t.equal(
-      makeEval(Arithmetic)(Arithmetic.match('10*(2+123)-4/5')), 1249.2, 'semantic action works');
+  t.is(makeEval(Arithmetic)(Arithmetic.match('10*(2+123)-4/5')), 1249.2, 'semantic action works');
 
   const m2 = makeGrammar([
     'Good <: Arithmetic {',
     '  addExp := addExp "~" mulExp  -- minus',
     '           | mulExp',
-    '}'], ns);
-  t.equal(makeEval(m2)(m2.match('2*3~4')), 2);
+    '}'],
+  ns
+  );
+  t.is(makeEval(m2)(m2.match('2*3~4')), 2);
 
   t.throws(
       () => {
         ohm.grammar('Bad <: Arithmetic { addExp += addExp "~" mulExp  -- minus }', ns);
       },
-      /rule 'addExp_minus' in grammar 'Bad' \(originally declared in 'Arithmetic'\)/);
+      {
+        message: /rule 'addExp_minus' in grammar 'Bad' \(originally declared in 'Arithmetic'\)/
+      }
+  );
 
   t.throws(
-      () => { ohm.grammar('Bad { start = "a" ("b" -- bad\n) }'); },
-      /Error/,
-      'inline rules must be at the top level');
-
-  t.end();
+      () => {
+        ohm.grammar('Bad { start = "a" ("b" -- bad\n) }');
+      },
+      null,
+      'inline rules must be at the top level'
+  );
 });
 
-test('lexical vs. syntactic rules', t => {
-  it("can't call syntactic rule from lexical rule, not not the other way around", () => {
-    t.ok(ohm.grammar('G { foo = bar  bar = "bar" }'), 'lexical calling lexical');
+describe('lexical vs. syntactic rules', test => {
+  test("can't call syntactic rule from lexical rule, not not the other way around", t => {
+    t.truthy(ohm.grammar('G { foo = bar  bar = "bar" }'), 'lexical calling lexical');
     t.throws(
-        () => { ohm.grammar('G { foo = Bar  Bar = "bar" }'); },
-        /Cannot apply syntactic rule Bar from here \(inside a lexical context\)/,
-        'lexical calling syntactic');
-    t.ok(ohm.grammar('G { Foo = bar  bar = "bar" }'), 'syntactic calling lexical');
-    t.ok(ohm.grammar('G { Foo = Bar  Bar = "bar" }'), 'syntactic calling syntactic');
+        () => {
+          ohm.grammar('G { foo = Bar  Bar = "bar" }');
+        },
+        {
+          message: /Cannot apply syntactic rule Bar from here \(inside a lexical context\)/
+        },
+        'lexical calling syntactic'
+    );
+    t.truthy(ohm.grammar('G { Foo = bar  bar = "bar" }'), 'syntactic calling lexical');
+    t.truthy(ohm.grammar('G { Foo = Bar  Bar = "bar" }'), 'syntactic calling syntactic');
   });
 
-  it("lexical rules don't skip spaces implicitly", () => {
+  test("lexical rules don't skip spaces implicitly", t => {
     const g = ohm.grammar('G { start = "foo" "bar" }');
     assertSucceeds(t, g.match('foobar', 'start'));
     assertFails(t, g.match('foo bar'));
     assertFails(t, g.match(' foo bar   '));
   });
 
-  it('syntactic rules skip spaces implicitly', () => {
+  test('syntactic rules skip spaces implicitly', t => {
     const g = ohm.grammar('G { Start = "foo" "bar" }');
     assertSucceeds(t, g.match('foobar'));
     assertSucceeds(t, g.match('foo bar'));
     assertSucceeds(t, g.match(' foo bar   '));
   });
 
-  it('mixing lexical and syntactic rules works as expected', () => {
-    const g = makeGrammar([
-      'G {',
-      '  Start = foo bar',
-      '  foo = "foo"',
-      '  bar = "bar"',
-      '}'
-    ]);
+  test('mixing lexical and syntactic rules works as expected', t => {
+    const g = makeGrammar(['G {', '  Start = foo bar', '  foo = "foo"', '  bar = "bar"', '}']);
     assertSucceeds(t, g.match('foobar'));
     assertSucceeds(t, g.match('foo bar'));
     assertSucceeds(t, g.match(' foo bar   '));
@@ -1219,7 +1195,7 @@ test('lexical vs. syntactic rules', t => {
 
   // TODO: write more tests for this operator (e.g., to ensure that it's "transparent", arity-wise)
   // and maybe move it somewhere else.
-  it('lexification operator works as expected', () => {
+  test('lexification operator works as expected', t => {
     const g = makeGrammar([
       'G {',
       '  ArrowFun = name #(spacesNoNl "=>") "{}"',
@@ -1233,18 +1209,13 @@ test('lexical vs. syntactic rules', t => {
 
     t.throws(
         () => {
-          makeGrammar([
-            'G {',
-            '  R',
-            '    = #("a" R)',
-            '    | "b" "c"',
-            '}'
-          ]);
+          makeGrammar(['G {', '  R', '    = #("a" R)', '    | "b" "c"', '}']);
         },
-        /Cannot apply syntactic rule R from here \(inside a lexical context\)/);
+        {
+          message: /Cannot apply syntactic rule R from here \(inside a lexical context\)/
+        }
+    );
   });
-
-  t.end();
 });
 
 test('space skipping semantics', t => {
@@ -1258,7 +1229,6 @@ test('space skipping semantics', t => {
   assertSucceeds(t, g.match('> a b ', 'Iter'), "iter doesn't consume trailing space");
   assertSucceeds(t, g.match('> a', 'Lookahead'), "lookahead doesn't consume anything");
   assertSucceeds(t, g.match('> a', 'NegLookahead'), "negative lookahead doesn't consume anything");
-  t.end();
 });
 
 test('case-insensitive matching', t => {
@@ -1275,86 +1245,98 @@ test('case-insensitive matching', t => {
     '}'
   ]);
   let result = g.match('BLERG');
-  t.equals(result.succeeded(), true);
+  t.is(result.succeeded(), true);
 
   const s = g.createSemantics().addAttribute('matchedString', {
-    _terminal() { return this.sourceString; },
+    _terminal() {
+      return this.sourceString;
+    },
     _nonterminal(children) {
       return children.map(c => c.matchedString).join('');
     }
   });
-  t.equals(s(result).matchedString, 'BLERG');
+  t.is(s(result).matchedString, 'BLERG');
 
   result = g.match('bl ErG', 'WithSpaces');
-  t.equals(result.succeeded(), true);
-  t.equals(s(result).matchedString, 'blErG');
+  t.is(result.succeeded(), true);
+  t.is(s(result).matchedString, 'blErG');
 
-  t.equals(g.match('blËrg', 'withUmlaut').succeeded(), true);
+  t.is(g.match('blËrg', 'withUmlaut').succeeded(), true);
 
   result = g.match('blErg', 'withUmlaut');
-  t.equals(result.failed(), true);
-  t.equals(result.shortMessage, 'Line 1, col 1: expected "blërg" (case-insensitive)');
+  t.is(result.failed(), true);
+  t.is(result.shortMessage, 'Line 1, col 1: expected "blërg" (case-insensitive)');
 
-  t.equals(g.match('ı', 'dotlessI').succeeded(), true, 'matches same code point');
-  t.equals(g.match('I', 'dotlessI').succeeded(), true, 'matches uppercase dotless I');
-  t.equals(g.match('İ', 'dottedI').succeeded(), true, 'matches some code point');
+  t.is(g.match('ı', 'dotlessI').succeeded(), true, 'matches same code point');
+  t.is(g.match('I', 'dotlessI').succeeded(), true, 'matches uppercase dotless I');
+  t.is(g.match('İ', 'dottedI').succeeded(), true, 'matches some code point');
 
   // Getting this right is really tricky. Our implementation currently doesn't treat "i" and "İ"
   // as being case-insensitive-equal. TODO: Maybe fix this?
-  t.equals(g.match('i', 'dottedI').succeeded(), false, "regular i WON'T match uppercase dotted I");
+  t.is(g.match('i', 'dottedI').succeeded(), false, "regular i WON'T match uppercase dotted I");
 
-  t.equals(g.match('s', 'eszett').failed(), true);
-  t.equals(g.match('ss', 'eszett').failed(), true);
+  t.is(g.match('s', 'eszett').failed(), true);
+  t.is(g.match('ss', 'eszett').failed(), true);
 
-  t.equals(g.match('aaaA', 'insideRepetition1').succeeded(), true, 'works inside +');
-  t.equals(g.match('aaaA', 'insideRepetition2').succeeded(), true, 'works inside *');
+  t.is(g.match('aaaA', 'insideRepetition1').succeeded(), true, 'works inside +');
+  t.is(g.match('aaaA', 'insideRepetition2').succeeded(), true, 'works inside *');
 
-  t.throws(() => {
-    ohm.grammar('G { start = caseInsensitive<start> }');
-  }, /Incorrect argument type/, 'throws when argument is not a Terminal');
+  t.throws(
+      () => {
+        ohm.grammar('G { start = caseInsensitive<start> }');
+      },
+      {message: /Incorrect argument type/},
+      'throws when argument is not a Terminal'
+  );
 
   // TODO: Maybe allow Ranges here?
-  t.throws(() => {
-    ohm.grammar('G { start = caseInsensitive<"a".."z"> }');
-  }, /Incorrect argument type/, 'throws when argument is a Range');
-
-  t.end();
+  t.throws(
+      () => {
+        ohm.grammar('G { start = caseInsensitive<"a".."z"> }');
+      },
+      {message: /Incorrect argument type/},
+      'throws when argument is a Range'
+  );
 });
 
 // https://github.com/harc/ohm/issues/282
 test('single-line comment after case name (#282)', t => {
   const {ohmGrammar} = ohm;
-  assertSucceeds(t, ohmGrammar.match(`G {
+  assertSucceeds(
+      t,
+      ohmGrammar.match(`G {
     Start = -- foo // ok
           | "x"
-  }`));
+  }`)
+  );
   assertSucceeds(t, ohmGrammar.match('G {Start = -- foo // A comment\n}'));
   assertSucceeds(t, ohmGrammar.match('G {} // This works too'));
   assertSucceeds(t, ohmGrammar.match('// And this'));
-
-  t.end();
 });
 
-test('bootstrap', t => {
+describe('bootstrap', test => {
   const ns = makeGrammars(ohmGrammarSource);
 
-  it('can recognize arithmetic grammar', () => {
+  test('it can recognize arithmetic grammar', t => {
     assertSucceeds(t, ns.Ohm.match(arithmeticGrammarSource, 'Grammar'));
   });
 
-  it('can recognize itself', () => {
+  test('it can recognize itself', t => {
     assertSucceeds(t, ns.Ohm.match(ohmGrammarSource, 'Grammar'));
   });
 
-  const g = ohm._buildGrammar(ns.Ohm.match(ohmGrammarSource, 'Grammar'),
-      ohm.createNamespace(),
-      ns.Ohm);
-  assertSucceeds(t, g.match(ohmGrammarSource, 'Grammar'), 'Ohm grammar can recognize itself');
-
-  it('can produce a grammar that works', () => {
-    const Arithmetic = ohm._buildGrammar(g.match(arithmeticGrammarSource, 'Grammar'),
+  test('it can produce a grammar that works', t => {
+    const g = ohm._buildGrammar(
+        ns.Ohm.match(ohmGrammarSource, 'Grammar'),
         ohm.createNamespace(),
-        g);
+        ns.Ohm
+    );
+    assertSucceeds(t, g.match(ohmGrammarSource, 'Grammar'), 'Ohm grammar can recognize itself');
+    const Arithmetic = ohm._buildGrammar(
+        g.match(arithmeticGrammarSource, 'Grammar'),
+        ohm.createNamespace(),
+        g
+    );
     const s = Arithmetic.createSemantics().addAttribute('v', {
       exp(expr) {
         return expr.v;
@@ -1396,19 +1378,21 @@ test('bootstrap', t => {
         return this.primitiveValue;
       }
     });
-    t.equal(s(Arithmetic.match('10*(2+123)-4/5')).v, 1249.2);
+    t.is(s(Arithmetic.match('10*(2+123)-4/5')).v, 1249.2);
   });
 
-  it('full bootstrap!', () => {
-    const g = ohm._buildGrammar(ns.Ohm.match(ohmGrammarSource, 'Grammar'),
+  test('full bootstrap!', t => {
+    const g = ohm._buildGrammar(
+        ns.Ohm.match(ohmGrammarSource, 'Grammar'),
         ohm.createNamespace(),
-        ns.Ohm);
-    const gPrime = ohm._buildGrammar(g.match(ohmGrammarSource, 'Grammar'),
+        ns.Ohm
+    );
+    const gPrime = ohm._buildGrammar(
+        g.match(ohmGrammarSource, 'Grammar'),
         ohm.createNamespace(),
-        g);
+        g
+    );
     gPrime.namespaceName = g.namespaceName; // make their namespaceName properties the same
     compareGrammars(t, g, gPrime);
   });
-
-  t.end();
 });
