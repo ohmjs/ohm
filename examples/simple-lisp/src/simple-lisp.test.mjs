@@ -1,6 +1,6 @@
 import { grammar, runLisp, createEnv } from './simple-lisp.mjs';
 
-import test from 'tape';
+import test from 'ava';
 
 const LISP_BASIC_TEST = `
 (def y 5)
@@ -52,14 +52,12 @@ test('basic', (t) => {
   const [env, log] = createLoggingEnv();
   runLisp(LISP_BASIC_TEST, env);
   t.deepEqual(log, ['"5 plus 3 is 8"']);
-  t.end();
 });
 
 test('quotes', (t) => {
   const [env, log] = createLoggingEnv();
   runLisp(LISP_QUOTES, env);
   t.deepEqual(log, ['{"name":"symbol-test"}', '[{"name":"+"},1,1]', '2']);
-  t.end();
 });
 
 test('quasiquotes', (t) => {
@@ -70,13 +68,11 @@ test('quasiquotes', (t) => {
     '[{"name":"a"},[{"name":"b"},{"name":"c"}],{"name":"d"}]',
     '[{"name":"a"},{"name":"b"},{"name":"c"},{"name":"d"}]'
   ])
-  t.end();
 });
 
 // TODO: Fix the exception here.
-test.skip('macros', (t) => {
+test.failing('macros', (t) => {
   const [env, log] = createLoggingEnv();
   runLisp(LISP_MACROS, env);
   t.fail();
-  t.end();
 });

@@ -20,7 +20,7 @@
   "plugins": [
     "camelcase-ohm",
     "no-extension-in-require",
-    "tape"
+    "ava"
   ],
   rules: {
     // Google style guide allows omitting parentheses for single-parameter arrow functions.
@@ -87,7 +87,7 @@
 
     "strict": ["error", "global"],
 
-    tape/no-only-test: 2,  // Don't allow `test.only`
+    ava/no-only-test: 2,  // Don't allow `test.only`
 
     // We would use `["error", "never", {exceptRange: true}]` here, but it doesn't seem to work.
     yoda: 0,

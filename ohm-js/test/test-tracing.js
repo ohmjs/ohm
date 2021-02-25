@@ -372,7 +372,7 @@ test('displayString', t => {
 
 // TODO: Get these tests working again for the incremental parser!
 
-test.skip('memoization', t => {
+test.failing('memoization', t => {
   const g = testUtil.makeGrammar([
     'G {',
     '  start = &id id',
@@ -412,7 +412,7 @@ test.skip('memoization', t => {
 
 });
 
-test.skip('bindings', t => {
+test.failing('bindings', t => {
   const g = ohm.grammar('G { start = "a" "b" | "c" notX\n  notX = ~"x" any }');
   let trace = g.trace('ab');
   t.is(trace.succeeded, true);

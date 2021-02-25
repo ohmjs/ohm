@@ -1,76 +1,69 @@
 'use strict';
 
 import { fixture } from '../operator-example.mjs';
-import assert from 'assert';
+import test from 'ava-spec';
+
+const { describe } = test;
 
 for (const {name, grammar, semantics} of fixture) {
 
-  describe(`The ${name} grammar`, () => {
-
-    it('can parse a single integer literal expression', done => {
+  describe(`The ${name} grammar`, (it) => {
+    it('can parse a single integer literal expression', t => {
       const ast = semantics(grammar.match('20')).tree().toString();
-      assert.strictEqual(ast, '20');
-      done();
+      t.is(ast, '20');
     });
 
-    it('can parse a single identifier expression', done => {
+    it('can parse a single identifier expression', t => {
       const ast = semantics(grammar.match('dog2358')).tree().toString();
-      assert.strictEqual(ast, 'dog2358');
-      done();
+      t.is(ast, 'dog2358');
     });
 
-    it('can parse a single parenthesized expression', done => {
+    it('can parse a single parenthesized expression', t => {
       const ast = semantics(grammar.match('(((hello * 3)))')).tree().toString();
-      assert.strictEqual(ast, '(* hello 3)');
-      done();
+      t.is(ast, '(* hello 3)');
     });
 
-    it('can distinguish precedence levels', done => {
+    it('can distinguish precedence levels', t => {
       let ast = semantics(grammar.match('x + 2 * 3')).tree().toString();
-      assert.strictEqual(ast, '(+ x (* 2 3))');
+      t.is(ast, '(+ x (* 2 3))');
       ast = semantics(grammar.match('x * 2 + 3')).tree().toString();
-      assert.strictEqual(ast, '(+ (* x 2) 3)');
-      done();
+      t.is(ast, '(+ (* x 2) 3)');
     });
 
-    it('does the right thing with parentheses', done => {
+    it('does the right thing with parentheses', t => {
       let ast = semantics(grammar.match('(x + 2) * 3')).tree().toString();
-      assert.strictEqual(ast, '(* (+ x 2) 3)');
+      t.is(ast, '(* (+ x 2) 3)');
       ast = semantics(grammar.match('x * (2 + 3)')).tree().toString();
-      assert.strictEqual(ast, '(* x (+ 2 3))');
-      done();
+      t.is(ast, '(* x (+ 2 3))');     
     });
 
-    it('looks at all three levels of precedence', done => {
+    it('looks at all three levels of precedence', t => {
       let ast = semantics(grammar.match('1 - 2 / 3 ** 4')).tree().toString();
-      assert.strictEqual(ast, '(- 1 (/ 2 (** 3 4)))');
+      t.is(ast, '(- 1 (/ 2 (** 3 4)))');
       ast = semantics(grammar.match('1 - 2 ** 3 * 4')).tree().toString();
-      assert.strictEqual(ast, '(- 1 (* (** 2 3) 4))');
+      t.is(ast, '(- 1 (* (** 2 3) 4))');
       ast = semantics(grammar.match('1 ** 2 + 3 * 4')).tree().toString();
-      assert.strictEqual(ast, '(+ (** 1 2) (* 3 4))');
-      done();
+      t.is(ast, '(+ (** 1 2) (* 3 4))');
     });
 
-    it('knows that exponentiation is right associative', done => {
+    it('knows that exponentiation is right associative', t => {
       let ast = semantics(grammar.match('1 ** 2 ** 3 ** 4 ** 5')).tree().toString();
-      assert.strictEqual(ast, '(** 1 (** 2 (** 3 (** 4 5))))');
+      t.is(ast, '(** 1 (** 2 (** 3 (** 4 5))))');
       ast = semantics(grammar.match('1 ** (2 ** 3) ** 4 - 5')).tree().toString();
-      assert.strictEqual(ast, '(- (** 1 (** (** 2 3) 4)) 5)');
-      done();
+      t.is(ast, '(- (** 1 (** (** 2 3) 4)) 5)');
+      
     });
-
-    it('can parse a long string without parentheses', done => {
+    it('can parse a long string without parentheses', t => {
       const source = '10 + 3 * 8 ** 7 - 2 * 50 + 1 + x / 10';
       const ast = semantics(grammar.match(source)).tree().toString();
-      assert.strictEqual(ast, '(+ (+ (- (+ 10 (* 3 (** 8 7))) (* 2 50)) 1) (/ x 10))');
-      done();
+      t.is(ast, '(+ (+ (- (+ 10 (* 3 (** 8 7))) (* 2 50)) 1) (/ x 10))');
+      
     });
 
-    it('can parse a crazy string', done => {
+    it('can parse a crazy string', t => {
       const source = '5*(3/1-(7**(6-x-1))+8/9*0-2)';
       const ast = semantics(grammar.match(source)).tree().toString();
-      assert.strictEqual(ast, '(* 5 (- (+ (- (/ 3 1) (** 7 (- (- 6 x) 1))) (* (/ 8 9) 0)) 2))');
-      done();
+      t.is(ast, '(* 5 (- (+ (- (/ 3 1) (** 7 (- (- 6 x) 1))) (* (/ 8 9) 0)) 2))');
     });
   });
 }
