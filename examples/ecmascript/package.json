@@ -2,9 +2,8 @@
   "name": "ohm-grammar-ecmascript",
   "version": "0.5.0",
   "description": "Ohm grammars for various editions of ECMAScript (aka JavaScript).",
-  "main": "es5.js",
   "scripts": {
-    "test": "node compile.js"
+    "test": "ava"
   },
   "repository": {
     "type": "git",

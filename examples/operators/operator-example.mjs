@@ -1,7 +1,5 @@
 // An experiment in representing an expression language four different ways in Ohm.
 
-'use strict';
-
 import ohm from 'ohm-js';
 
 // The expression language is the classic arithmetic operators over integer literals

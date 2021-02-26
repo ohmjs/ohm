@@ -1,5 +1,3 @@
-'use strict';
-
 import { fixture } from '../operator-example.mjs';
 import test from 'ava-spec';
 

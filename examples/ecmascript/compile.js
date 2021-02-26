@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const es5 = require('./es5');
+const es5 = require('./src/es5');
 const ohm = require('ohm-js');
 
 // --------------------------------------------------------------------
@@ -25,7 +25,7 @@ function loadModule(name) {
   if (fs.existsSync(name)) {
     return require(name)(ohm, ns, es5.semantics);
   }
-  const relPath = path.join(__dirname, name);
+  const relPath = path.join(__dirname, 'src', name);
   const modulePath = require.resolve(relPath);
   if (modulePath) {
     return require(modulePath)(ohm, ns, es5.semantics);

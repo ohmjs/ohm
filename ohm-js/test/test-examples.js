@@ -123,15 +123,3 @@ test('csv example', function(t) {
     require(path.join(EXAMPLE_ROOT, 'csv', 'index.js'));
   });
 });
-
-test('ecmascript examples', function(t) {
-  var exampleDir = path.join(EXAMPLE_ROOT, 'ecmascript');
-  var compile = require(path.join(exampleDir, 'compile.js'));
-
-  // Test that the ES5 grammar works by compiling *this file*.
-  // NOTE: If there is a test failure here, it's probably because you're using syntax
-  // that is not valid ES5 somewhere in this file!
-  t.truthy(compile([__filename]), 'ES5 grammar works');
-
-  t.truthy(compile(['-g', 'es6', path.join(exampleDir, 'test.es6')]), 'ES6 grammar works');
-});
