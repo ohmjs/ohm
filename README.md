@@ -136,7 +136,7 @@ if (m.succeeded()) {
 
 The result is a MatchResult object. You can use the `succeeded()` and `failed()` methods to see whether the input was recognized or not.
 
-For more information, see the [main documentation](doc/index.md).
+For more information, see the [main documentation](doc/README.md).
 
 ### Debugging
 
