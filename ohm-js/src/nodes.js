@@ -28,7 +28,7 @@ class Node {
   }
 
   hasChildren() {
-    return this.numChildren() > 1;
+    return this.numChildren() > 0;
   }
 
   hasNoChildren() {
