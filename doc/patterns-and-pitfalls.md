@@ -12,11 +12,13 @@ You can use [negative lookahead](https://github.com/harc/ohm/blob/0af8165c2ff0e4
 allButLastA = (~("a" end) "a")*
 ```
 
+The expression `"a" end` means "match an 'a' at the end of the input", and `~("a" end) "a"` means "match an 'a' only if it is not the last 'a' at the end of the input".
+
 For a more realistic example, see the next section on delimited strings.
 
 ### Delimited Strings
 
-A common use for negative lookahead is implementing delimited strings and comments. For example, to support JavaScript-style multiline strings delimited by `````:
+A common use for negative lookahead is implementing delimited strings and comments. For example, to support JavaScript-style multiline strings delimited by `` ` ``:
 
 ```
 stringDelimiter = "`"
