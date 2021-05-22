@@ -3,6 +3,7 @@
 * [Ohm/JS API Reference](./api-reference.md)
 * [Ohm Syntax Reference](./syntax-reference.md)
 * Learn more about the [Ohm philosophy](./philosophy.md)
+* See [Patterns and Pitfalls](./patterns-and-pitfalls.md) for some common Ohm patterns and solutions to frequently-encountered difficulties.
 
 ## Examples
 
