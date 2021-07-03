@@ -2,6 +2,33 @@
 
 ## Grammars
 
+### Reserved Words / Keywords
+
+Many programming languages have the concept of [reserved words](reserved word) — identifiers that have a special meaning, and can't be used as the name of a variable, function, etc. In Ohm grammars, it's common to define a separate lexical rule for each reserved word. For example, here's the definition of [the `keyword` rule in our ES5 grammar](https://github.com/harc/ohm/blob/c7dcbb6b97366daf54349ba8e5be9133978f5c83/examples/ecmascript/src/es5.ohm#L87):
+
+```
+  keyword = break    | do        | instanceof | typeof
+          | case     | else      | new        | var
+          | catch    | finally   | return     | void
+          | continue | for       | switch     | while
+          | debugger | function  | this       | with
+          | default  | if        | throw
+          | delete   | in        | try
+```
+
+There are a couple of things to watch out for:
+
+- One reserved word might be a prefix of another, e.g., `in` and `instanceof` in JavaScript.
+- Identifiers that begin with a reserved word shouldn't be disallowed, e.g. `className`.
+
+To prevent both of these potential problems, you can use [negative lookahead](https://github.com/harc/ohm/blob/master/doc/syntax-reference.md#negative-lookahead-) in the rules for your reserved words. For example:
+
+```
+  in = "in" ~identifierPart
+```
+
+This ensures that (a) the `in` rule won't accidentally match the wrong keyword (like "instanceof"), and (b) it won't match a valid identifer like "inProgress".
+
 ###  Dealing with Greedy Matching
 
 In Ohm, like other PEG-based tools, the [repetition operators](https://github.com/harc/ohm/blob/0af8165c2ff0e4ddef28c71f56ef38c7310d2db9/doc/syntax-reference.md#repetition-operators---) `*` and `+` are _greedy_, meaning they always consume as much input as possible. This is different than the way that `*` works in regular expressions. For example, the regular expression `/^a*a/` will successfully match `'aaa'`, whereas in Ohm, the equivalent parsing expression `"a"* "a"` can never match any input.
