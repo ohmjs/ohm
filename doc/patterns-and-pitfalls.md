@@ -48,3 +48,9 @@ Unlike regular expressions, Ohm does not support [quantifier](https://developer.
 ```
 zipCode = digit digit digit digit
 ```
+
+## Semantics
+
+### Handling the built-in list rules
+
+When using the built-in list rules (`listOf`, etc.) in your grammar, you usually don't need to write semantic actions for them. Instead, you can use the [built-in `asIteration` operation](https://github.com/harc/ohm/blob/master/doc/api-reference.md#asIteration).
