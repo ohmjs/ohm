@@ -2,33 +2,6 @@
 
 ## Grammars
 
-### Reserved Words / Keywords
-
-Many programming languages have the concept of [reserved words](https://en.wikipedia.org/wiki/Reserved_word) — identifiers that have a special meaning, and can't be used as the name of a variable, function, etc. In Ohm grammars, it's common to define a separate lexical rule for each reserved word. For example, here's the definition of [the `keyword` rule in our ES5 grammar](https://github.com/harc/ohm/blob/c7dcbb6b97366daf54349ba8e5be9133978f5c83/examples/ecmascript/src/es5.ohm#L87):
-
-```
-  keyword = break    | do        | instanceof | typeof
-          | case     | else      | new        | var
-          | catch    | finally   | return     | void
-          | continue | for       | switch     | while
-          | debugger | function  | this       | with
-          | default  | if        | throw
-          | delete   | in        | try
-```
-
-There are a couple of things to watch out for:
-
-- One reserved word might be a prefix of another, e.g., `in` and `instanceof` in JavaScript.
-- Identifiers that begin with a reserved word shouldn't be disallowed, e.g. `className`.
-
-To prevent both of these potential problems, you can use [negative lookahead](https://github.com/harc/ohm/blob/master/doc/syntax-reference.md#negative-lookahead-) in the rules for your reserved words. For example:
-
-```
-  in = "in" ~identifierPart
-```
-
-This ensures that (a) the `in` rule won't accidentally match the wrong keyword (like "instanceof"), and (b) it won't match a valid identifier like "inProgress".
-
 ###  Dealing with Greedy Matching
 
 In Ohm, like other PEG-based tools, the [repetition operators](https://github.com/harc/ohm/blob/0af8165c2ff0e4ddef28c71f56ef38c7310d2db9/doc/syntax-reference.md#repetition-operators---) `*` and `+` are _greedy_, meaning they always consume as much input as possible. This is different than the way that `*` works in regular expressions. For example, the regular expression `/^a*a/` will successfully match `'aaa'`, whereas in Ohm, the equivalent parsing expression `"a"* "a"` can never match any input.
@@ -68,6 +41,33 @@ Then, you need to extend the _space_ rule in your grammar so that Ohm will treat
 space += comment
 ```
 
+### Reserved Words / Keywords
+
+Many programming languages have the concept of [reserved words](https://en.wikipedia.org/wiki/Reserved_word) — identifiers that have a special meaning, and can't be used as the name of a variable, function, etc. In Ohm grammars, it's common to define a separate lexical rule for each reserved word. For example, here's the definition of [the `keyword` rule in our ES5 grammar](https://github.com/harc/ohm/blob/c7dcbb6b97366daf54349ba8e5be9133978f5c83/examples/ecmascript/src/es5.ohm#L87):
+
+```
+  keyword = break    | do        | instanceof | typeof
+          | case     | else      | new        | var
+          | catch    | finally   | return     | void
+          | continue | for       | switch     | while
+          | debugger | function  | this       | with
+          | default  | if        | throw
+          | delete   | in        | try
+```
+
+🐍 There are a couple of things to watch out for:
+
+- One reserved word might be a prefix of another, e.g., `in` and `instanceof` in JavaScript.
+- Identifiers that begin with a reserved word shouldn't be disallowed, e.g. `className`.
+
+To prevent both of these potential problems, you can use [negative lookahead](https://github.com/harc/ohm/blob/master/doc/syntax-reference.md#negative-lookahead-) in the rules for your reserved words. For example:
+
+```
+  in = "in" ~identifierPart
+```
+
+This ensures that (a) the `in` rule won't accidentally match the wrong keyword (like "instanceof"), and (b) it won't match a valid identifier like "inProgress".
+
 ### Matching Exactly _n_ Times
 
 Unlike regular expressions, Ohm does not support [quantifier](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions/Quantifiers) syntax to indicate the number of times an expression should be matched. However, this can be implemented using a normal sequence:
@@ -75,6 +75,24 @@ Unlike regular expressions, Ohm does not support [quantifier](https://developer.
 ```
 zipCode = digit digit digit digit
 ```
+
+### Operator Precedence
+
+The common way to handle operator precedence in Ohm is to use left-recursive rules which encode the precedence in the grammar structure. For example:
+
+```
+  exp = addExp
+
+  addExp = addExp "+" mulExp  -- plus
+         | addExp "-" mulExp  -- minus
+         | mulExp
+
+  mulExp = mulExp "*" priExp  -- times
+         | mulExp "/" priExp  -- divide
+         | priExp
+```
+
+Note that the rule for the lower precedence operators (`+` and `-`) invokes the rule for the higher-precedence operators (`*`/`/`). This ensures that the higher-precedence operators "bind more tightly". See Ray Toal's [Operator Precedence and Associativity Examples](https://github.com/harc/ohm/tree/master/examples/operators) for more.
 
 ## Semantics
 
