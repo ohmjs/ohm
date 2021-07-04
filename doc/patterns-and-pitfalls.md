@@ -76,7 +76,7 @@ Unlike regular expressions, Ohm does not support [quantifier](https://developer.
 zipCode = digit digit digit digit
 ```
 
-### Operator Precedence
+### Operator precedence
 
 The common way to handle operator precedence in Ohm is to use left-recursive rules which encode the precedence in the grammar structure. For example:
 
@@ -94,8 +94,12 @@ The common way to handle operator precedence in Ohm is to use left-recursive rul
 
 Note that the rule for the lower precedence operators (`+` and `-`) invokes the rule for the higher-precedence operators (`*`/`/`). This ensures that the higher-precedence operators "bind more tightly". See Ray Toal's [Operator Precedence and Associativity Examples](https://github.com/harc/ohm/tree/master/examples/operators) for more.
 
+#### 🐍 Ambiguous Recursion
+
+Notice that in the arithmetic grammar above, `mulExp` appears on the right hand side of all of `addExp`'s cases. Be careful that you don't write rules that are "ambiguously recursive", e.g. `addExp = addExp "+" addExp`. If you write your grammar like this, a reader can't tell whether `+` is left-associative or right-associative. (In Ohm, you will actually get a right-assiciative parse — see [#56](https://github.com/harc/ohm/issues/56) for details.)
+
 ## Semantics
 
-### Handling the built-in list rules
+### Handling the Built-in List Rules
 
 When using the built-in list rules (`listOf`, etc.) in your grammar, you usually don't need to write semantic actions for them. Instead, you can use the [built-in `asIteration` operation](https://github.com/harc/ohm/blob/master/doc/api-reference.md#asIteration).
