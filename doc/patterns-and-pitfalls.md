@@ -27,7 +27,7 @@ To prevent both of these potential problems, you can use [negative lookahead](ht
   in = "in" ~identifierPart
 ```
 
-This ensures that (a) the `in` rule won't accidentally match the wrong keyword (like "instanceof"), and (b) it won't match a valid identifer like "inProgress".
+This ensures that (a) the `in` rule won't accidentally match the wrong keyword (like "instanceof"), and (b) it won't match a valid identifier like "inProgress".
 
 ###  Dealing with Greedy Matching
 
