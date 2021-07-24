@@ -7,6 +7,6 @@
     "ohm-js": "^15.5.0"
   },
   "scripts": {
-    "test": "node --experimental-modules markdown.mjs"
+    "test": "ava"
   }
 }

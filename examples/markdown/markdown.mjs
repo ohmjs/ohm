@@ -1,5 +1,4 @@
 import ohm from 'ohm-js';
-import fs from 'fs';
 
 const H1 = (content) => ({type: 'H1', content});
 const H2 = (content) => ({type: 'H2', content});
@@ -98,7 +97,3 @@ export function parseMarkdown(raw_markdown) {
     return block;
   });
 }
-
-const raw = fs.readFileSync('test.md');
-const md = parseMarkdown(raw);
-console.log(JSON.stringify(md, null, '   '));
