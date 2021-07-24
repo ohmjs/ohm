@@ -1,0 +1,12 @@
+{
+  "name": "markdown-example",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "ohm-js": "^15.5.0"
+  },
+  "scripts": {
+    "test": "ava"
+  }
+}
