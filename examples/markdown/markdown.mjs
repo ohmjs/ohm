@@ -1,5 +1,5 @@
 import ohm from 'ohm-js';
-import { promises as fs } from 'fs';
+import fs from 'fs';
 
 const H1 = (content) => ({type: 'H1', content});
 const H2 = (content) => ({type: 'H2', content});
@@ -90,7 +90,7 @@ function parseMarkdownContent(block) {
   return block;
 }
 
-export async function parseMarkdown(raw_markdown) {
+export function parseMarkdown(raw_markdown) {
   const blocks = parseMarkdownBlocks(raw_markdown);
   return blocks.map((block) => {
     if (block.type === 'P') return parseMarkdownContent(block);
@@ -99,6 +99,6 @@ export async function parseMarkdown(raw_markdown) {
   });
 }
 
-fs.readFile('test.md')
-  .then((raw) => parseMarkdown(raw))
-  .then((md) => console.log(JSON.stringify(md, null, '   ')));
+const raw = fs.readFileSync('test.md');
+const md = parseMarkdown(raw);
+console.log(JSON.stringify(md, null, '   '));
