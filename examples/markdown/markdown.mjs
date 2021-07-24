@@ -8,7 +8,7 @@ const P = (content) => ({type: 'P', content});
 const LI = (content) => ({type: 'LI', content});
 const code = (language, content) => ({type: 'CODE', language, content});
 
-function parse_markdown_blocks(str) {
+function parseMarkdownBlocks(str) {
   const parser = {};
   parser.grammar = ohm.grammar(`
     MarkdownOuter {
@@ -46,7 +46,7 @@ function parse_markdown_blocks(str) {
   const match = parser.grammar.match(str);
   return parser.semantics(match).blocks();
 }
-function parse_markdown_content(block) {
+function parseMarkdownContent(block) {
   const parser = {};
   parser.grammar = ohm.grammar(`
       MarkdownInner {
@@ -90,15 +90,15 @@ function parse_markdown_content(block) {
   return block;
 }
 
-export async function parse_markdown(raw_markdown) {
-  const blocks = parse_markdown_blocks(raw_markdown);
+export async function parseMarkdown(raw_markdown) {
+  const blocks = parseMarkdownBlocks(raw_markdown);
   return blocks.map((block) => {
-    if (block.type === 'P') return parse_markdown_content(block);
-    if (block.type === 'LI') return parse_markdown_content(block);
+    if (block.type === 'P') return parseMarkdownContent(block);
+    if (block.type === 'LI') return parseMarkdownContent(block);
     return block;
   });
 }
 
 fs.readFile('test.md')
-  .then((raw) => parse_markdown(raw))
+  .then((raw) => parseMarkdown(raw))
   .then((md) => console.log(JSON.stringify(md, null, '   ')));
