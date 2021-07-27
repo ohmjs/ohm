@@ -99,26 +99,38 @@ test('getLineAndColumnMessage', t => {
       100 | \n`;
   t.is(getLineAndColumnMessage(input, 98), expected, 'next line num has more digits');
 
-  expected = ['Line 1, col 1:', '> 1 | x', '      ^', ''].join('\n');
+  expected = dedent`
+    Line 1, col 1:
+    > 1 | x
+          ^\n`;
   t.is(getLineAndColumnMessage('x', 0), expected, 'no next or prev line');
 });
 
 test('getLineAndColumnMessage with ranges', t => {
   t.is(
       getLineAndColumnMessage('3 + 4', 2, [0, 1]),
-      ['Line 1, col 3:', '> 1 | 3 + 4', '      ~ ^', ''].join('\n'),
+      dedent`
+        Line 1, col 3:
+        > 1 | 3 + 4
+              ~ ^\n`,
       'a simple range'
   );
 
   t.is(
       getLineAndColumnMessage('3 + 4', 2, [0, 1], [4, 5]),
-      ['Line 1, col 3:', '> 1 | 3 + 4', '      ~ ^ ~', ''].join('\n'),
+      dedent`
+        Line 1, col 3:
+        > 1 | 3 + 4
+              ~ ^ ~\n`,
       'more than one range'
   );
 
   t.is(
       getLineAndColumnMessage('3 + 4', 2, [0, 100]),
-      ['Line 1, col 3:', '> 1 | 3 + 4', '      ~~^~~', ''].join('\n'),
+      dedent`
+        Line 1, col 3:
+        > 1 | 3 + 4
+              ~~^~~\n`,
       'end index out of bounds'
   );
 
@@ -130,25 +142,40 @@ test('getLineAndColumnMessage with ranges', t => {
 
   t.is(
       getLineAndColumnMessage('3 + 4', 0, [0, 3], [1, 5]),
-      ['Line 1, col 1:', '> 1 | 3 + 4', '      ^~~~~', ''].join('\n'),
+      dedent`
+        Line 1, col 1:
+        > 1 | 3 + 4
+              ^~~~~\n`,
       'overlapping ranges'
   );
 
   t.is(
       getLineAndColumnMessage('blah\n3 + 4', 7, [5, 6]),
-      ['Line 2, col 3:', '  1 | blah', '> 2 | 3 + 4', '      ~ ^', ''].join('\n'),
+      dedent`
+        Line 2, col 3:
+          1 | blah
+        > 2 | 3 + 4
+              ~ ^\n`,
       'range on second line'
   );
 
   t.is(
       getLineAndColumnMessage('blah\n3 + 4', 7, [0, 6]),
-      ['Line 2, col 3:', '  1 | blah', '> 2 | 3 + 4', '      ~ ^', ''].join('\n'),
+      dedent`
+        Line 2, col 3:
+          1 | blah
+        > 2 | 3 + 4
+              ~ ^\n`,
       'range crossing lines'
   );
 
   t.is(
       getLineAndColumnMessage('blah\n3 + 4', 7, [0, 50]),
-      ['Line 2, col 3:', '  1 | blah', '> 2 | 3 + 4', '      ~~^~~', ''].join('\n'),
+      dedent`
+        Line 2, col 3:
+          1 | blah
+        > 2 | 3 + 4
+              ~~^~~\n`,
       'range crossing lines at start and end'
   );
 });
