@@ -20,7 +20,11 @@ Instantiate a grammar from a string using `ohm.grammar()`, and check inputs usin
 
 ```js
 const ohm = require('ohm-js');
-const g = ohm.grammar('Laugh {' + '  laugh = lol | "lmao"' + '  lol = "l" "o"+ "l"' + '}');
+const g = ohm.grammar(`
+  Laugh {
+    laugh = lol | "lmao"
+    lol = "l" "o"+ "l"
+  }`);
 assert(g.match('lol').succeeded());
 assert(!g.match('lmao').failed());
 assert(g.match('loooooool').succeeded());
