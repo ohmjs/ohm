@@ -130,7 +130,9 @@ test('many expressions with nullable operands', t => {
   // expressions inside kleene +s and *s don't catch cases where the expression is or contains one
   // or more of the rule's parameters.
 
-  const g1 = ohm.grammar('G { plus<e> = e+  star<e> = e*  inf1 = star<"">  inf2 = plus<"a"*> }');
+  const g1 = ohm.grammar(
+      'G { plus<e> = e+  star<e> = e*  inf1 = star<"">  inf2 = plus<"a"*> }'
+  );
   try {
     g1.match('', 'inf1');
     t.fail('Expected an exception to be thrown');
@@ -304,7 +306,10 @@ test('method name displayed on abstract function failure', t => {
     param.toFailure();
     t.fail('Expected an exception to be thrown');
   } catch (e) {
-    t.is(e.message, 'this method toFailure is abstract! (it has no implementation in class Param)');
+    t.is(
+        e.message,
+        'this method toFailure is abstract! (it has no implementation in class Param)'
+    );
   }
 });
 
@@ -328,19 +333,28 @@ test('errors for Not-of-<PExpr>', t => {
   r = notLookaheadG.match('a');
   t.is(r.failed(), true);
   t.is(typeof r.message, 'string');
-  t.truthy(/Expected not "a"/.exec(r.message), 'reasonable failure report for Not-of-Lookahead');
+  t.truthy(
+      /Expected not "a"/.exec(r.message),
+      'reasonable failure report for Not-of-Lookahead'
+  );
 
   const notSeqG = ohm.grammar('G { start = ~("a" "b") "c" }');
   r = notSeqG.match('ab');
   t.is(r.failed(), true);
   t.is(typeof r.message, 'string');
-  t.truthy(/Expected not \("a" "b"\)/.exec(r.message), 'reasonable failure report for Not-of-Seq');
+  t.truthy(
+      /Expected not \("a" "b"\)/.exec(r.message),
+      'reasonable failure report for Not-of-Seq'
+  );
 
   const notIterG = ohm.grammar('G { start = ~("a"*) "b" }');
   r = notIterG.match('a');
   t.is(r.failed(), true);
   t.is(typeof r.message, 'string');
-  t.truthy(/Expected not \("a"\*\)/.exec(r.message), 'reasonable failure report for Not-of-Iter');
+  t.truthy(
+      /Expected not \("a"\*\)/.exec(r.message),
+      'reasonable failure report for Not-of-Iter'
+  );
 });
 
 test('complex match failure', t => {

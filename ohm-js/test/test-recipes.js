@@ -25,7 +25,10 @@ test('simple grammar recipes', t => {
   t.truthy(ohm.makeRecipe(g.toRecipe()).match('', 'end'), 'grammar with no rules');
 
   g = ohm.grammar('G { start = end }');
-  t.truthy(ohm.makeRecipe(g.toRecipe()).match('', 'start').succeeded(), 'grammar with one rule');
+  t.truthy(
+      ohm.makeRecipe(g.toRecipe()).match('', 'start').succeeded(),
+      'grammar with one rule'
+  );
 
   g = ohm.grammar('MyGrammar { start = x\n  x = "a" }');
   t.truthy(
@@ -142,8 +145,9 @@ test('semantics recipes', t => {
       .addOperation('evalWith(inc, factor)', {
         Add(a, _, b) {
           return (
-            // eslint-disable-next-line max-len
-            a.evalWith(this.args.inc, this.args.factor) + b.evalWith(this.args.inc, this.args.factor)
+          // eslint-disable-next-line max-len
+            a.evalWith(this.args.inc, this.args.factor) +
+          b.evalWith(this.args.inc, this.args.factor)
           );
         },
         number(digits) {
@@ -172,23 +176,20 @@ test('semantics recipes', t => {
 });
 
 test('semantics recipes (special cases)', t => {
-  const ns = testUtil.makeGrammars(['G { special = "\u2028" }', 'G2 <: G { special += "\u2029" }']);
+  const ns = testUtil.makeGrammars([
+    'G { special = "\u2028" }',
+    'G2 <: G { special += "\u2029" }'
+  ]);
 
   let s = ns.G.createSemantics();
-  t.notThrows(
-      () => {
-        makeRecipe(s.toRecipe());
-      },
-      'special handling of line separator characters (U+2028)'
-  );
+  t.notThrows(() => {
+    makeRecipe(s.toRecipe());
+  }, 'special handling of line separator characters (U+2028)');
 
   s = ns.G2.createSemantics();
-  t.notThrows(
-      () => {
-        makeRecipe(s.toRecipe());
-      },
-      'special handling of paragraph separator characters (U+2029)'
-  );
+  t.notThrows(() => {
+    makeRecipe(s.toRecipe());
+  }, 'special handling of paragraph separator characters (U+2029)');
 });
 
 test('semantics recipes with extensions', t => {

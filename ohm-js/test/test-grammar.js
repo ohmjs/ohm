@@ -155,7 +155,11 @@ test('default start rule', t => {
       {message: /Missing start rule/},
       'match throws with no start rule'
   );
-  t.is(Grammar.ProtoBuiltInRules.defaultStartRule, undefined, 'undefined for ProtoBuiltInRules');
+  t.is(
+      Grammar.ProtoBuiltInRules.defaultStartRule,
+      undefined,
+      'undefined for ProtoBuiltInRules'
+  );
   t.is(Grammar.BuiltInRules.defaultStartRule, undefined, 'undefined for BuiltInRules');
 
   const g2 = ohm.grammar('G2 <: G {}', {G: g});

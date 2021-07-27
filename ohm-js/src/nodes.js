@@ -38,8 +38,12 @@ class Node {
   onlyChild() {
     if (this.numChildren() !== 1) {
       throw new Error(
-          'cannot get only child of a node of type ' + this.ctorName +
-          ' (it has ' + this.numChildren() + ' children)');
+          'cannot get only child of a node of type ' +
+          this.ctorName +
+          ' (it has ' +
+          this.numChildren() +
+          ' children)'
+      );
     } else {
       return this.firstChild();
     }
@@ -48,7 +52,8 @@ class Node {
   firstChild() {
     if (this.hasNoChildren()) {
       throw new Error(
-          'cannot get first child of a ' + this.ctorName + ' node, which has no children');
+          'cannot get first child of a ' + this.ctorName + ' node, which has no children'
+      );
     } else {
       return this.childAt(0);
     }
@@ -57,7 +62,8 @@ class Node {
   lastChild() {
     if (this.hasNoChildren()) {
       throw new Error(
-          'cannot get last child of a ' + this.ctorName + ' node, which has no children');
+          'cannot get last child of a ' + this.ctorName + ' node, which has no children'
+      );
     } else {
       return this.childAt(this.numChildren() - 1);
     }

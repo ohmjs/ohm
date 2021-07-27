@@ -107,7 +107,9 @@ pexprs.Range.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) 
 pexprs.Alt.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
   // `termArgNameLists` is an array of arrays where each row is the
   // argument name list that corresponds to a term in this alternation.
-  const termArgNameLists = this.terms.map(term => term.toArgumentNameList(firstArgIndex, true));
+  const termArgNameLists = this.terms.map(term =>
+    term.toArgumentNameList(firstArgIndex, true)
+  );
 
   const argumentNameList = [];
   const numArgs = termArgNameLists[0].length;
@@ -143,10 +145,13 @@ pexprs.Seq.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
 };
 
 pexprs.Iter.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
-  const argumentNameList = this.expr.toArgumentNameList(firstArgIndex, noDupCheck)
-      .map(exprArgumentString => exprArgumentString[exprArgumentString.length - 1] === 's' ?
-          exprArgumentString + 'es' :
-          exprArgumentString + 's');
+  const argumentNameList = this.expr
+      .toArgumentNameList(firstArgIndex, noDupCheck)
+      .map(exprArgumentString =>
+      exprArgumentString[exprArgumentString.length - 1] === 's'
+        ? exprArgumentString + 'es'
+        : exprArgumentString + 's'
+      );
   if (!noDupCheck) {
     resolveDuplicatedNames(argumentNameList);
   }
@@ -163,10 +168,10 @@ pexprs.Not.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
   return [];
 };
 
-pexprs.Lookahead.prototype.toArgumentNameList =
-pexprs.Lex.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
-  return this.expr.toArgumentNameList(firstArgIndex, noDupCheck);
-};
+pexprs.Lookahead.prototype.toArgumentNameList = pexprs.Lex.prototype.toArgumentNameList =
+  function(firstArgIndex, noDupCheck) {
+    return this.expr.toArgumentNameList(firstArgIndex, noDupCheck);
+  };
 
 pexprs.Apply.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
   return [this.ruleName];

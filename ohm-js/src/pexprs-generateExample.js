@@ -24,7 +24,8 @@ pexprs.PExpr.prototype.generateExample = common.abstract('generateExample');
 function categorizeExamples(examples) {
   // A list of rules that the system needs examples of, in order to generate an example
   //   for the current rule
-  let examplesNeeded = examples.filter(example => example.hasOwnProperty('examplesNeeded'))
+  let examplesNeeded = examples
+      .filter(example => example.hasOwnProperty('examplesNeeded'))
       .map(example => example.examplesNeeded);
 
   examplesNeeded = flatten(examplesNeeded);
@@ -37,7 +38,8 @@ function categorizeExamples(examples) {
   examplesNeeded = Object.keys(uniqueExamplesNeeded);
 
   // A list of successfully generated examples
-  const successfulExamples = examples.filter(example => example.hasOwnProperty('value'))
+  const successfulExamples = examples
+      .filter(example => example.hasOwnProperty('value'))
       .map(item => item.value);
 
   // This flag returns true if the system cannot generate the rule it is currently
@@ -64,16 +66,26 @@ pexprs.Terminal.prototype.generateExample = function(grammar, examples, inSyntac
 
 pexprs.Range.prototype.generateExample = function(grammar, examples, inSyntacticContext) {
   const rangeSize = this.to.charCodeAt(0) - this.from.charCodeAt(0);
-  return {value: String.fromCharCode(
-      this.from.charCodeAt(0) + Math.floor(rangeSize * Math.random())
-  )};
+  return {
+    value: String.fromCharCode(this.from.charCodeAt(0) + Math.floor(rangeSize * Math.random()))
+  };
 };
 
-pexprs.Param.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
+pexprs.Param.prototype.generateExample = function(
+    grammar,
+    examples,
+    inSyntacticContext,
+    actuals
+) {
   return actuals[this.index].generateExample(grammar, examples, inSyntacticContext, actuals);
 };
 
-pexprs.Alt.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
+pexprs.Alt.prototype.generateExample = function(
+    grammar,
+    examples,
+    inSyntacticContext,
+    actuals
+) {
   // items -> termExamples
   const termExamples = this.terms.map(term => {
     return term.generateExample(grammar, examples, inSyntacticContext, actuals);
@@ -100,7 +112,12 @@ pexprs.Alt.prototype.generateExample = function(grammar, examples, inSyntacticCo
   return ans;
 };
 
-pexprs.Seq.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
+pexprs.Seq.prototype.generateExample = function(
+    grammar,
+    examples,
+    inSyntacticContext,
+    actuals
+) {
   const factorExamples = this.factors.map(factor => {
     return factor.generateExample(grammar, examples, inSyntacticContext, actuals);
   });
@@ -123,7 +140,12 @@ pexprs.Seq.prototype.generateExample = function(grammar, examples, inSyntacticCo
   return ans;
 };
 
-pexprs.Iter.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
+pexprs.Iter.prototype.generateExample = function(
+    grammar,
+    examples,
+    inSyntacticContext,
+    actuals
+) {
   const rangeTimes = Math.min(this.maxNumMatches - this.minNumMatches, 3);
   const numTimes = Math.floor(Math.random() * (rangeTimes + 1) + this.minNumMatches);
   const items = [];
@@ -159,11 +181,21 @@ pexprs.Lookahead.prototype.generateExample = function(grammar, examples, inSynta
   return {value: ''};
 };
 
-pexprs.Lex.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
+pexprs.Lex.prototype.generateExample = function(
+    grammar,
+    examples,
+    inSyntacticContext,
+    actuals
+) {
   return this.expr.generateExample(grammar, examples, false, actuals);
 };
 
-pexprs.Apply.prototype.generateExample = function(grammar, examples, inSyntacticContext, actuals) {
+pexprs.Apply.prototype.generateExample = function(
+    grammar,
+    examples,
+    inSyntacticContext,
+    actuals
+) {
   const ans = {};
 
   const ruleName = this.substituteParams(actuals).toString();
@@ -180,27 +212,57 @@ pexprs.Apply.prototype.generateExample = function(grammar, examples, inSyntactic
 };
 
 pexprs.UnicodeChar.prototype.generateExample = function(
-    grammar, examples, inSyntacticContext, actuals) {
+    grammar,
+    examples,
+    inSyntacticContext,
+    actuals
+) {
   let char;
   switch (this.category) {
-    case 'Lu': char = 'Á'; break;
-    case 'Ll': char = 'ŏ'; break;
-    case 'Lt': char = 'ǅ'; break;
-    case 'Lm': char = 'ˮ'; break;
-    case 'Lo': char = 'ƻ'; break;
+    case 'Lu':
+      char = 'Á';
+      break;
+    case 'Ll':
+      char = 'ŏ';
+      break;
+    case 'Lt':
+      char = 'ǅ';
+      break;
+    case 'Lm':
+      char = 'ˮ';
+      break;
+    case 'Lo':
+      char = 'ƻ';
+      break;
 
-    case 'Nl': char = 'ↂ'; break;
-    case 'Nd': char = '½'; break;
+    case 'Nl':
+      char = 'ↂ';
+      break;
+    case 'Nd':
+      char = '½';
+      break;
 
-    case 'Mn': char = '\u0487'; break;
-    case 'Mc': char = 'ि'; break;
+    case 'Mn':
+      char = '\u0487';
+      break;
+    case 'Mc':
+      char = 'ि';
+      break;
 
-    case 'Pc': char = '⁀'; break;
+    case 'Pc':
+      char = '⁀';
+      break;
 
-    case 'Zs': char = '\u2001'; break;
+    case 'Zs':
+      char = '\u2001';
+      break;
 
-    case 'L': char = 'Á'; break;
-    case 'Ltmo': char = 'ǅ'; break;
+    case 'L':
+      char = 'Á';
+      break;
+    case 'Ltmo':
+      char = 'ǅ';
+      break;
   }
   return {value: char}; // 💩
 };

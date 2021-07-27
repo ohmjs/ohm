@@ -33,8 +33,10 @@ PosInfo.prototype = {
 
     const applicationMemoKeyStack = this.applicationMemoKeyStack;
     const indexOfFirstInvolvedRule =
-        applicationMemoKeyStack.indexOf(headApplication.toMemoKey()) + 1;
-    const involvedApplicationMemoKeys = applicationMemoKeyStack.slice(indexOfFirstInvolvedRule);
+      applicationMemoKeyStack.indexOf(headApplication.toMemoKey()) + 1;
+    const involvedApplicationMemoKeys = applicationMemoKeyStack.slice(
+        indexOfFirstInvolvedRule
+    );
 
     memoRec.isInvolved = function(applicationMemoKey) {
       return involvedApplicationMemoKeys.indexOf(applicationMemoKey) >= 0;
@@ -73,8 +75,10 @@ PosInfo.prototype = {
   memoize(memoKey, memoRec) {
     this.memo[memoKey] = memoRec;
     this.maxExaminedLength = Math.max(this.maxExaminedLength, memoRec.examinedLength);
-    this.maxRightmostFailureOffset =
-        Math.max(this.maxRightmostFailureOffset, memoRec.rightmostFailureOffset);
+    this.maxRightmostFailureOffset = Math.max(
+        this.maxRightmostFailureOffset,
+        memoRec.rightmostFailureOffset
+    );
     return memoRec;
   },
 
@@ -95,8 +99,10 @@ PosInfo.prototype = {
         delete memo[k];
       } else {
         self.maxExaminedLength = Math.max(self.maxExaminedLength, memoRec.examinedLength);
-        self.maxRightmostFailureOffset =
-            Math.max(self.maxRightmostFailureOffset, memoRec.rightmostFailureOffset);
+        self.maxRightmostFailureOffset = Math.max(
+            self.maxRightmostFailureOffset,
+            memoRec.rightmostFailureOffset
+        );
       }
     });
   }

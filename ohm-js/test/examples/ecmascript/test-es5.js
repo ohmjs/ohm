@@ -10,7 +10,6 @@ test('basic es5 tests', t => {
 
   results = es5.grammar.match('var x =; console.log(x)');
   t.falsy(results.succeeded(), 'Basic invalid example fails');
-
 });
 
 test('hoistDeclarations()', t => {
@@ -34,5 +33,4 @@ test('hoistDeclarations()', t => {
   t.is(bindings.get('x').length, 3);
   t.is(bindings.get('y').length, 1);
   t.is(bindings.get('z').length, 2);
-
 });

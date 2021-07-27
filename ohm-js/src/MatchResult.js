@@ -19,8 +19,8 @@ function MatchResult(
     cst,
     cstOffset,
     rightmostFailurePosition,
-    optRecordedFailures) {
-
+    optRecordedFailures
+) {
   this.matcher = matcher;
   this.input = input;
   this.startExpr = startExpr;
@@ -32,7 +32,9 @@ function MatchResult(
   if (this.failed()) {
     common.defineLazyProperty(this, 'message', function() {
       const detail = 'Expected ' + this.getExpectedText();
-      return util.getLineAndColumnMessage(this.input, this.getRightmostFailurePosition()) + detail;
+      return (
+        util.getLineAndColumnMessage(this.input, this.getRightmostFailurePosition()) + detail
+      );
     });
     common.defineLazyProperty(this, 'shortMessage', function() {
       const detail = 'expected ' + this.getExpectedText();
@@ -57,17 +59,20 @@ MatchResult.prototype.getRightmostFailurePosition = function() {
 MatchResult.prototype.getRightmostFailures = function() {
   if (!this._rightmostFailures) {
     this.matcher.setInput(this.input);
-    const matchResultWithFailures =
-        this.matcher._match(this.startExpr, false, this.getRightmostFailurePosition());
+    const matchResultWithFailures = this.matcher._match(
+        this.startExpr,
+        false,
+        this.getRightmostFailurePosition()
+    );
     this._rightmostFailures = matchResultWithFailures.getRightmostFailures();
   }
   return this._rightmostFailures;
 };
 
 MatchResult.prototype.toString = function() {
-  return this.succeeded() ?
-      '[match succeeded]' :
-      '[match failed at position ' + this.getRightmostFailurePosition() + ']';
+  return this.succeeded()
+    ? '[match succeeded]'
+    : '[match failed at position ' + this.getRightmostFailurePosition() + ']';
 };
 
 // Return a string summarizing the expected contents of the input stream when

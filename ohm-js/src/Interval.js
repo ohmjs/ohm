@@ -65,8 +65,7 @@ Interval.prototype = {
       throw errors.intervalSourcesDontMatch();
     } else if (this.startIdx === that.startIdx && this.endIdx === that.endIdx) {
       // `this` and `that` are the same interval!
-      return [
-      ];
+      return [];
     } else if (this.startIdx < that.startIdx && that.endIdx < this.endIdx) {
       // `that` splits `this` into two intervals
       return [
@@ -75,19 +74,13 @@ Interval.prototype = {
       ];
     } else if (this.startIdx < that.endIdx && that.endIdx < this.endIdx) {
       // `that` contains a prefix of `this`
-      return [
-        new Interval(this.sourceString, that.endIdx, this.endIdx)
-      ];
+      return [new Interval(this.sourceString, that.endIdx, this.endIdx)];
     } else if (this.startIdx < that.startIdx && that.startIdx < this.endIdx) {
       // `that` contains a suffix of `this`
-      return [
-        new Interval(this.sourceString, this.startIdx, that.startIdx)
-      ];
+      return [new Interval(this.sourceString, this.startIdx, that.startIdx)];
     } else {
       // `that` and `this` do not overlap
-      return [
-        this
-      ];
+      return [this];
     }
   },
 
@@ -97,11 +90,15 @@ Interval.prototype = {
     if (this.sourceString !== that.sourceString) {
       throw errors.intervalSourcesDontMatch();
     }
-    assert(this.startIdx >= that.startIdx && this.endIdx <= that.endIdx,
-        'other interval does not cover this one');
-    return new Interval(this.sourceString,
+    assert(
+        this.startIdx >= that.startIdx && this.endIdx <= that.endIdx,
+        'other interval does not cover this one'
+    );
+    return new Interval(
+        this.sourceString,
         this.startIdx - that.startIdx,
-        this.endIdx - that.startIdx);
+        this.endIdx - that.startIdx
+    );
   },
 
   // Returns a new Interval which contains the same contents as this one,
@@ -131,7 +128,9 @@ Object.defineProperties(Interval.prototype, {
     enumerable: true
   },
   length: {
-    get() { return this.endIdx - this.startIdx; },
+    get() {
+      return this.endIdx - this.startIdx;
+    },
     enumerable: true
   }
 });
@@ -141,4 +140,3 @@ Object.defineProperties(Interval.prototype, {
 // --------------------------------------------------------------------
 
 module.exports = Interval;
-

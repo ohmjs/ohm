@@ -19,21 +19,27 @@ pexprs.any.check = function(grammar, vals) {
 };
 
 pexprs.end.check = function(grammar, vals) {
-  return vals[0] instanceof nodes.Node &&
-         vals[0].isTerminal() &&
-         vals[0].primitiveValue === undefined;
+  return (
+    vals[0] instanceof nodes.Node &&
+    vals[0].isTerminal() &&
+    vals[0].primitiveValue === undefined
+  );
 };
 
 pexprs.Terminal.prototype.check = function(grammar, vals) {
-  return vals[0] instanceof nodes.Node &&
-         vals[0].isTerminal() &&
-         vals[0].primitiveValue === this.obj;
+  return (
+    vals[0] instanceof nodes.Node &&
+    vals[0].isTerminal() &&
+    vals[0].primitiveValue === this.obj
+  );
 };
 
 pexprs.Range.prototype.check = function(grammar, vals) {
-  return vals[0] instanceof nodes.Node &&
-         vals[0].isTerminal() &&
-         typeof vals[0].primitiveValue === typeof this.from;
+  return (
+    vals[0] instanceof nodes.Node &&
+    vals[0].isTerminal() &&
+    typeof vals[0].primitiveValue === typeof this.from
+  );
 };
 
 pexprs.Param.prototype.check = function(grammar, vals) {
@@ -94,15 +100,18 @@ pexprs.Not.prototype.check = function(grammar, vals) {
   return true;
 };
 
-pexprs.Lookahead.prototype.check =
-pexprs.Lex.prototype.check = function(grammar, vals) {
+pexprs.Lookahead.prototype.check = pexprs.Lex.prototype.check = function(grammar, vals) {
   return this.expr.check(grammar, vals);
 };
 
 pexprs.Apply.prototype.check = function(grammar, vals) {
-  if (!(vals[0] instanceof nodes.Node &&
-        vals[0].grammar === grammar &&
-        vals[0].ctorName === this.ruleName)) {
+  if (
+    !(
+      vals[0] instanceof nodes.Node &&
+      vals[0].grammar === grammar &&
+      vals[0].ctorName === this.ruleName
+    )
+  ) {
     return false;
   }
 
@@ -114,7 +123,9 @@ pexprs.Apply.prototype.check = function(grammar, vals) {
 };
 
 pexprs.UnicodeChar.prototype.check = function(grammar, vals) {
-  return vals[0] instanceof nodes.Node &&
-         vals[0].isTerminal() &&
-         typeof vals[0].primitiveValue === 'string';
+  return (
+    vals[0] instanceof nodes.Node &&
+    vals[0].isTerminal() &&
+    typeof vals[0].primitiveValue === 'string'
+  );
 };

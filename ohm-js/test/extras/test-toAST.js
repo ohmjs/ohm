@@ -21,9 +21,11 @@ test('semantic action', t => {
   const semantics = semanticsForToAST(g);
   const matchResult = g.match('10 + 20');
 
-  t.truthy('toAST' in semantics._getSemantics().operations, 'toAST operation added to semantics');
+  t.truthy(
+      'toAST' in semantics._getSemantics().operations,
+      'toAST operation added to semantics'
+  );
   t.truthy(semantics(matchResult).toAST, 'toAST operation added to match result');
-
 });
 
 test('default', t => {
@@ -47,7 +49,6 @@ test('default', t => {
     type: 'Mix'
   };
   t.deepEqual(ast, expected, 'proper optionals and lists in AST');
-
 });
 
 test('mapping', t => {
@@ -137,9 +138,11 @@ test('mapping', t => {
       expr1: 0,
       expr2: 2,
       str(children) {
-        return children.map(function(child) {
-          return child.toAST(this.args.mapping);
-        }, this).join('');
+        return children
+            .map(function(child) {
+              return child.toAST(this.args.mapping);
+            }, this)
+            .join('');
       }
     }
   });
@@ -195,7 +198,6 @@ test('mapping', t => {
     type: 'Exp'
   };
   t.deepEqual(ast, expected, 'proper AST with explicity reintroduced node');
-
 });
 
 test('real examples (combinations)', t => {
@@ -250,5 +252,4 @@ test('real examples (combinations)', t => {
     type: 'SubExpression'
   };
   t.deepEqual(ast, expected, 'proper AST for arithmetic example #2');
-
 });

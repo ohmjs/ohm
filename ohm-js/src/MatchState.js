@@ -63,7 +63,8 @@ MatchState.prototype = {
 
     this.rightmostFailurePosition = Math.max(
         this.rightmostFailurePosition,
-        this._rightmostFailurePositionStack.pop());
+        this._rightmostFailurePositionStack.pop()
+    );
 
     if (optNode) {
       this.pushBinding(optNode, origPos);
@@ -108,9 +109,7 @@ MatchState.prototype = {
   },
 
   skipSpacesIfInSyntacticContext() {
-    return this.inSyntacticContext() ?
-        this.skipSpaces() :
-        this.inputStream.pos;
+    return this.inSyntacticContext() ? this.skipSpaces() : this.inputStream.pos;
   },
 
   maybeSkipSpacesBefore(expr) {
@@ -211,9 +210,9 @@ MatchState.prototype = {
   },
 
   _getRightmostFailureOffset() {
-    return this.rightmostFailurePosition >= 0 ?
-        this.posToOffset(this.rightmostFailurePosition) :
-        -1;
+    return this.rightmostFailurePosition >= 0
+      ? this.posToOffset(this.rightmostFailurePosition)
+      : -1;
   },
 
   // Returns the memoized trace entry for `expr` at `pos`, if one exists, `null` otherwise.
@@ -237,8 +236,10 @@ MatchState.prototype = {
       const actuals = app ? app.args : [];
       expr = expr.substituteParams(actuals);
     }
-    return this.getMemoizedTraceEntry(pos, expr) ||
-           new Trace(this.input, pos, this.inputStream.pos, expr, succeeded, bindings, this.trace);
+    return (
+      this.getMemoizedTraceEntry(pos, expr) ||
+      new Trace(this.input, pos, this.inputStream.pos, expr, succeeded, bindings, this.trace)
+    );
   },
 
   isTracing() {
@@ -250,31 +251,39 @@ MatchState.prototype = {
       return false;
     }
 
-    if (this.recordedFailures &&
-        this.inputStream.pos + memoRec.rightmostFailureOffset === this.positionToRecordFailures) {
+    if (
+      this.recordedFailures &&
+      this.inputStream.pos + memoRec.rightmostFailureOffset === this.positionToRecordFailures
+    ) {
       return !!memoRec.failuresAtRightmostPosition;
     }
 
     return true;
   },
 
-
   useMemoizedResult(origPos, memoRec) {
     if (this.trace) {
       this.trace.push(memoRec.traceEntry);
     }
 
-    const memoRecRightmostFailurePosition = this.inputStream.pos + memoRec.rightmostFailureOffset;
-    this.rightmostFailurePosition =
-        Math.max(this.rightmostFailurePosition, memoRecRightmostFailurePosition);
-    if (this.recordedFailures &&
-        this.positionToRecordFailures === memoRecRightmostFailurePosition &&
-        memoRec.failuresAtRightmostPosition) {
+    const memoRecRightmostFailurePosition =
+      this.inputStream.pos + memoRec.rightmostFailureOffset;
+    this.rightmostFailurePosition = Math.max(
+        this.rightmostFailurePosition,
+        memoRecRightmostFailurePosition
+    );
+    if (
+      this.recordedFailures &&
+      this.positionToRecordFailures === memoRecRightmostFailurePosition &&
+      memoRec.failuresAtRightmostPosition
+    ) {
       this.recordFailures(memoRec.failuresAtRightmostPosition, true);
     }
 
-    this.inputStream.examinedLength =
-        Math.max(this.inputStream.examinedLength, memoRec.examinedLength + origPos);
+    this.inputStream.examinedLength = Math.max(
+        this.inputStream.examinedLength,
+        memoRec.examinedLength + origPos
+    );
 
     if (memoRec.value) {
       this.inputStream.pos += memoRec.matchLength;
@@ -343,7 +352,9 @@ MatchState.prototype = {
     let rightmostFailures;
     if (this.recordedFailures) {
       const self = this;
-      rightmostFailures = Object.keys(this.recordedFailures).map(key => self.recordedFailures[key]);
+      rightmostFailures = Object.keys(this.recordedFailures).map(
+          key => self.recordedFailures[key]
+      );
     }
     return new MatchResult(
         this.matcher,
@@ -352,7 +363,8 @@ MatchState.prototype = {
         this._bindings[0],
         this._bindingOffsets[0],
         this.rightmostFailurePosition,
-        rightmostFailures);
+        rightmostFailures
+    );
   },
 
   getTrace() {

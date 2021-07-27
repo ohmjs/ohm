@@ -85,7 +85,7 @@ function lineAndColumnToMessage(...ranges) {
     appendLine(2, lineAndCol.nextLine, '  ');
   }
   return sb.contents();
-};
+}
 
 // --------------------------------------------------------------------
 // Exports
@@ -139,16 +139,18 @@ exports.getLineAndColumn = (str, offset) => {
   } else {
     // Get the next line.
     const nextLineEndOffset = str.indexOf('\n', lineEndOffset + 1);
-    nextLine = nextLineEndOffset === -1 ? str.slice(lineEndOffset)
-                                        : str.slice(lineEndOffset, nextLineEndOffset);
+    nextLine =
+      nextLineEndOffset === -1
+        ? str.slice(lineEndOffset)
+        : str.slice(lineEndOffset, nextLineEndOffset);
     // Strip leading and trailing EOL char(s).
     nextLine = nextLine.replace(/^\r?\n/, '').replace(/\r$/, '');
   }
 
   // Get the previous line.
   if (prevLineStartOffset >= 0) {
-    prevLine = str.slice(prevLineStartOffset, lineStartOffset)
-        .replace(/\r?\n$/, ''); // Strip trailing EOL char(s).
+    // Strip trailing EOL char(s).
+    prevLine = str.slice(prevLineStartOffset, lineStartOffset).replace(/\r?\n$/, '');
   }
 
   // Get the target line, stripping a trailing carriage return if necessary.

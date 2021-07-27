@@ -12,10 +12,7 @@ module.exports = function(env, argv) {
       rules: [
         {
           test: /\.js$/,
-          include: [
-            path.resolve(__dirname, 'src'),
-            path.resolve(__dirname, 'extras')
-          ],
+          include: [path.resolve(__dirname, 'src'), path.resolve(__dirname, 'extras')],
           use: {
             loader: 'ts-loader',
             options: {
@@ -31,7 +28,7 @@ module.exports = function(env, argv) {
     output: {
       library: 'ohm',
       libraryTarget: 'umd',
-      filename: argv.mode === 'development' ? 'ohm.js': 'ohm.min.js',
+      filename: argv.mode === 'development' ? 'ohm.js' : 'ohm.min.js',
       path: path.resolve(__dirname, 'dist')
     },
     devtool: argv.mode === 'development' ? 'inline-source-map' : false,

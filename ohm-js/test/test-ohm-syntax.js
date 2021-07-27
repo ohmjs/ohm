@@ -425,7 +425,12 @@ describe('lookahead', test => {
 });
 
 describe('simple left recursion', test => {
-  const m = makeGrammar(['M {', ' number = numberRec | digit', 'numberRec = number digit', '}']);
+  const m = makeGrammar([
+    'M {',
+    ' number = numberRec | digit',
+    'numberRec = number digit',
+    '}'
+  ]);
 
   test('recognition', t => {
     assertFails(t, m.match('', 'number'));
@@ -771,7 +776,10 @@ describe('simple left recursion', test => {
       });
       t.deepEqual(s(f).t, [
         'tricky',
-        ['bar', ['barRec', ['foo', ['fooRec', ['bar', ['barRec', ['foo', '1'], '2']], '3']], '4']]
+        [
+          'bar',
+          ['barRec', ['foo', ['fooRec', ['bar', ['barRec', ['foo', '1'], '2']], '3']], '4']
+        ]
       ]);
     });
   });
@@ -802,8 +810,9 @@ describe('inheritance', t => {
           makeGrammars(['G1 { foo = "foo" }', 'G2 <: G1 { foo = "bar" }']);
         },
         {
-          // eslint-disable-next-line max-len
-          message: /Duplicate declaration for rule 'foo' in grammar 'G2' \(originally declared in 'G1'\)/
+        // eslint-disable-next-line max-len
+          message:
+          /Duplicate declaration for rule 'foo' in grammar 'G2' \(originally declared in 'G1'\)/
         },
         'throws if rule is already declared in super-grammar'
     );
@@ -1127,14 +1136,20 @@ test('inline rule declarations', t => {
   const Arithmetic = (ns.Arithmetic = makeGrammar(arithmeticGrammarSource));
 
   assertSucceeds(t, Arithmetic.match('1*(2+3)-4/5'), 'expr is recognized');
-  t.is(makeEval(Arithmetic)(Arithmetic.match('10*(2+123)-4/5')), 1249.2, 'semantic action works');
+  t.is(
+      makeEval(Arithmetic)(Arithmetic.match('10*(2+123)-4/5')),
+      1249.2,
+      'semantic action works'
+  );
 
-  const m2 = makeGrammar([
-    'Good <: Arithmetic {',
-    '  addExp := addExp "~" mulExp  -- minus',
-    '           | mulExp',
-    '}'],
-  ns
+  const m2 = makeGrammar(
+      [
+        'Good <: Arithmetic {',
+        '  addExp := addExp "~" mulExp  -- minus',
+        '           | mulExp',
+        '}'
+      ],
+      ns
   );
   t.is(makeEval(m2)(m2.match('2*3~4')), 2);
 
@@ -1228,7 +1243,11 @@ test('space skipping semantics', t => {
   ]);
   assertSucceeds(t, g.match('> a b ', 'Iter'), "iter doesn't consume trailing space");
   assertSucceeds(t, g.match('> a', 'Lookahead'), "lookahead doesn't consume anything");
-  assertSucceeds(t, g.match('> a', 'NegLookahead'), "negative lookahead doesn't consume anything");
+  assertSucceeds(
+      t,
+      g.match('> a', 'NegLookahead'),
+      "negative lookahead doesn't consume anything"
+  );
 });
 
 test('case-insensitive matching', t => {
@@ -1331,7 +1350,11 @@ describe('bootstrap', test => {
         ohm.createNamespace(),
         ns.Ohm
     );
-    assertSucceeds(t, g.match(ohmGrammarSource, 'Grammar'), 'Ohm grammar can recognize itself');
+    assertSucceeds(
+        t,
+        g.match(ohmGrammarSource, 'Grammar'),
+        'Ohm grammar can recognize itself'
+    );
     const Arithmetic = ohm._buildGrammar(
         g.match(arithmeticGrammarSource, 'Grammar'),
         ohm.createNamespace(),

@@ -1,8 +1,8 @@
-import { MatchResult, Grammar, Semantics } from "ohm-js";
+import {MatchResult, Grammar, Semantics} from 'ohm-js';
 
 export = extras;
 
 declare namespace extras {
-    function toAST(matchResult: MatchResult, mapping?: {}): {};
-    function semanticsForToAST(g: Grammar): Semantics;
+  function toAST(matchResult: MatchResult, mapping?: {}): {};
+  function semanticsForToAST(g: Grammar): Semantics;
 }

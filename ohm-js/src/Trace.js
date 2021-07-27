@@ -77,7 +77,9 @@ function Trace(input, pos1, pos2, expr, succeeded, bindings, optChildren) {
 Trace.prototype.SKIP = {};
 
 Object.defineProperty(Trace.prototype, 'displayString', {
-  get() { return this.expr.toDisplayString(); }
+  get() {
+    return this.expr.toDisplayString();
+  }
 });
 
 // For convenience, create a getter and setter for the boolean flags in `Flags`.
@@ -103,7 +105,14 @@ Trace.prototype.clone = function() {
 
 Trace.prototype.cloneWithExpr = function(expr) {
   const ans = new Trace(
-      this.input, this.pos, this.pos2, expr, this.succeeded, this.bindings, this.children);
+      this.input,
+      this.pos,
+      this.pos2,
+      expr,
+      this.succeeded,
+      this.bindings,
+      this.children
+  );
 
   ans.isHeadOfLeftRecursion = this.isHeadOfLeftRecursion;
   ans.isImplicitSpaces = this.isImplicitSpaces;
@@ -116,8 +125,15 @@ Trace.prototype.cloneWithExpr = function(expr) {
 
 // Record the trace information for the terminating condition of the LR loop.
 Trace.prototype.recordLRTermination = function(ruleBodyTrace, value) {
-  this.terminatingLREntry =
-      new Trace(this.input, this.pos, this.pos2, this.expr, false, [value], [ruleBodyTrace]);
+  this.terminatingLREntry = new Trace(
+      this.input,
+      this.pos,
+      this.pos2,
+      this.expr,
+      false,
+      [value],
+      [ruleBodyTrace]
+  );
   this.terminatingLREntry.terminatesLR = true;
 };
 
@@ -154,7 +170,9 @@ Trace.prototype.walk = function(visitorObjOrFn, optThisArg) {
   }
   if (this.isRootNode) {
     // Don't visit the root node itself, only its children.
-    this.children.forEach(c => { _walk(c, null, 0); });
+    this.children.forEach(c => {
+      _walk(c, null, 0);
+    });
   } else {
     _walk(this, null, 0);
   }

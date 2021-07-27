@@ -32,9 +32,8 @@ pexprs.Range.prototype.toFailure = function(grammar) {
 };
 
 pexprs.Not.prototype.toFailure = function(grammar) {
-  const description = this.expr === pexprs.any ?
-      'nothing' :
-      'not ' + this.expr.toFailure(grammar);
+  const description =
+    this.expr === pexprs.any ? 'nothing' : 'not ' + this.expr.toFailure(grammar);
   return new Failure(this, description, 'description');
 };
 
@@ -45,7 +44,7 @@ pexprs.Lookahead.prototype.toFailure = function(grammar) {
 pexprs.Apply.prototype.toFailure = function(grammar) {
   let description = grammar.rules[this.ruleName].description;
   if (!description) {
-    const article = (/^[aeiouAEIOU]/.test(this.ruleName) ? 'an' : 'a');
+    const article = /^[aeiouAEIOU]/.test(this.ruleName) ? 'an' : 'a';
     description = article + ' ' + this.ruleName;
   }
   return new Failure(this, description, 'description');

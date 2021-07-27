@@ -29,12 +29,11 @@ GrammarDecl.prototype.sourceInterval = function(startIdx, endIdx) {
 GrammarDecl.prototype.ensureSuperGrammar = function() {
   if (!this.superGrammar) {
     this.withSuperGrammar(
-        // TODO: The conditional expression below is an ugly hack. It's kind of ok because
-        // I doubt anyone will ever try to declare a grammar called `BuiltInRules`. Still,
-        // we should try to find a better way to do this.
-        this.name === 'BuiltInRules' ?
-            Grammar.ProtoBuiltInRules :
-            Grammar.BuiltInRules);
+      // TODO: The conditional expression below is an ugly hack. It's kind of ok because
+      // I doubt anyone will ever try to declare a grammar called `BuiltInRules`. Still,
+      // we should try to find a better way to do this.
+      this.name === 'BuiltInRules' ? Grammar.ProtoBuiltInRules : Grammar.BuiltInRules
+    );
   }
   return this.superGrammar;
 };
@@ -47,7 +46,12 @@ GrammarDecl.prototype.ensureSuperGrammarRuleForOverriding = function(name, sourc
   return ruleInfo;
 };
 
-GrammarDecl.prototype.installOverriddenOrExtendedRule = function(name, formals, body, source) {
+GrammarDecl.prototype.installOverriddenOrExtendedRule = function(
+    name,
+    formals,
+    body,
+    source
+) {
   const duplicateParameterNames = common.getDuplicates(formals);
   if (duplicateParameterNames.length > 0) {
     throw errors.duplicateParameterNames(name, duplicateParameterNames, source);
@@ -103,7 +107,8 @@ GrammarDecl.prototype.build = function() {
       this.name,
       this.ensureSuperGrammar(),
       this.rules,
-      this.defaultStartRule);
+      this.defaultStartRule
+  );
 
   // TODO: change the pexpr.prototype.assert... methods to make them add
   // exceptions to an array that's provided as an arg. Then we'll be able to
