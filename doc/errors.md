@@ -39,11 +39,11 @@ fixes:
   namespace must reference the supergrammar with the appropriate property
   name. E.g.:
 
-    ```js
-    const ns = {};
-    ns.G1 = ohm.grammar('G1 {}');
-    const g2 = ohm.grammar('G2 <: G1 {}', ns);
-    ```
+  ```js
+  const ns = {};
+  ns.G1 = ohm.grammar('G1 {}');
+  const g2 = ohm.grammar('G2 <: G1 {}', ns);
+  ```
 
 ### Duplicate Grammar Declaration
 

@@ -19,13 +19,14 @@ const pexprs = require('./pexprs');
 pexprs.PExpr.prototype.introduceParams = common.abstract('introduceParams');
 
 pexprs.any.introduceParams =
-pexprs.end.introduceParams =
-pexprs.Terminal.prototype.introduceParams =
-pexprs.Range.prototype.introduceParams =
-pexprs.Param.prototype.introduceParams =
-pexprs.UnicodeChar.prototype.introduceParams = function(formals) {
-  return this;
-};
+  pexprs.end.introduceParams =
+  pexprs.Terminal.prototype.introduceParams =
+  pexprs.Range.prototype.introduceParams =
+  pexprs.Param.prototype.introduceParams =
+  pexprs.UnicodeChar.prototype.introduceParams =
+    function(formals) {
+      return this;
+    };
 
 pexprs.Alt.prototype.introduceParams = function(formals) {
   this.terms.forEach((term, idx, terms) => {
@@ -42,12 +43,13 @@ pexprs.Seq.prototype.introduceParams = function(formals) {
 };
 
 pexprs.Iter.prototype.introduceParams =
-pexprs.Not.prototype.introduceParams =
-pexprs.Lookahead.prototype.introduceParams =
-pexprs.Lex.prototype.introduceParams = function(formals) {
-  this.expr = this.expr.introduceParams(formals);
-  return this;
-};
+  pexprs.Not.prototype.introduceParams =
+  pexprs.Lookahead.prototype.introduceParams =
+  pexprs.Lex.prototype.introduceParams =
+    function(formals) {
+      this.expr = this.expr.introduceParams(formals);
+      return this;
+    };
 
 pexprs.Apply.prototype.introduceParams = function(formals) {
   const index = formals.indexOf(this.ruleName);

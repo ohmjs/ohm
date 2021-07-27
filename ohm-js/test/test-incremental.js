@@ -70,18 +70,22 @@ test('basic incremental parsing', t => {
   const s = g.createSemantics().addOperation('reconstructInput(input)', {
     start(letters, lastLetter) {
       const lastLetterOffset = this._node.childOffsets[1];
-      return letters.reconstructInput(this.args.input) +
-          lastLetter.reconstructInput(this.args.input.slice(lastLetterOffset));
+      return (
+        letters.reconstructInput(this.args.input) +
+        lastLetter.reconstructInput(this.args.input.slice(lastLetterOffset))
+      );
     },
     notLastLetter(letter, _) {
       return letter.reconstructInput(this.args.input);
     },
     _iter(children) {
       const self = this;
-      return this._node.childOffsets.map((offset, i) => {
-        const c = children[i].reconstructInput(self.args.input.slice(offset));
-        return c;
-      }).join('');
+      return this._node.childOffsets
+          .map((offset, i) => {
+            const c = children[i].reconstructInput(self.args.input.slice(offset));
+            return c;
+          })
+          .join('');
     },
     _terminal() {
       return this.sourceString;
@@ -121,7 +125,6 @@ test('basic incremental parsing', t => {
 
   im.replaceInputRange(1, 2, '9');
   t.truthy(im.match().failed());
-
 });
 
 test('trickier incremental parsing', t => {
@@ -140,21 +143,23 @@ test('trickier incremental parsing', t => {
   im.replaceInputRange(0, 0, 'ab');
   result = im.match();
   t.truthy(result.succeeded());
-  t.deepEqual(s(result).ctorTree,
-      ['start',
-        ['start_rec',
-          ['start', ['_terminal']],
-          ['letter', ['lower', ['_terminal']]]]]);
+  t.deepEqual(s(result).ctorTree, [
+    'start',
+    ['start_rec', ['start', ['_terminal']], ['letter', ['lower', ['_terminal']]]]
+  ]);
 
   // When the input is 'ac', the lookahead rule should now succeed.
   im.replaceInputRange(1, 2, 'c');
   result = im.match();
   t.truthy(result.succeeded());
-  t.deepEqual(s(result).ctorTree,
-      ['start',
-        ['start_rec', ['start', ['lookahead', ['_terminal'], ['_terminal']]],
-          ['letter', ['lower', ['_terminal']]]]]);
-
+  t.deepEqual(s(result).ctorTree, [
+    'start',
+    [
+      'start_rec',
+      ['start', ['lookahead', ['_terminal'], ['_terminal']]],
+      ['letter', ['lower', ['_terminal']]]
+    ]
+  ]);
 });
 
 test('examinedLength - no LR', t => {
@@ -172,15 +177,10 @@ test('examinedLength - no LR', t => {
     {maxExaminedLength: 2, letter: 1, lower: 1, notLastLetter: 2},
     {maxExaminedLength: 1, letter: 1, lower: 1, upper: 1, unicodeLtmo: 1}
   ]);
-
 });
 
 test('examinedLength - no LR, but non-monotonic', t => {
-  const g = makeGrammar([
-    'G {',
-    '  start = "a" "b" "c" | letter letter letter',
-    '}'
-  ]);
+  const g = makeGrammar(['G {', '  start = "a" "b" "c" | letter letter letter', '}']);
   const result = g.match('abd');
   const values = pluckMemoProp(result, 'examinedLength');
   t.deepEqual(values, [
@@ -188,15 +188,10 @@ test('examinedLength - no LR, but non-monotonic', t => {
     {maxExaminedLength: 1, letter: 1, lower: 1},
     {maxExaminedLength: 1, letter: 1, lower: 1}
   ]);
-
 });
 
 test('examinedLength - simple LR', t => {
-  const g = makeGrammar([
-    'G {',
-    '  start = start letter  -- rec',
-    '        | letter',
-    '}']);
+  const g = makeGrammar(['G {', '  start = start letter  -- rec', '        | letter', '}']);
   const result = g.match('yo');
   t.is(result.succeeded(), true);
 
@@ -206,7 +201,6 @@ test('examinedLength - simple LR', t => {
     {maxExaminedLength: 1, letter: 1, lower: 1},
     {maxExaminedLength: 1, letter: 1, lower: 1, upper: 1, unicodeLtmo: 1}
   ]);
-
 });
 
 test('examinedLength - complicated LR', t => {
@@ -216,7 +210,8 @@ test('examinedLength - complicated LR', t => {
     '        | foo',
     '  foo = foo letter  -- rec',
     '      | any',
-    '}']);
+    '}'
+  ]);
   const result = g.match('yo');
   t.is(result.succeeded(), true);
 
@@ -226,7 +221,6 @@ test('examinedLength - complicated LR', t => {
     {maxExaminedLength: 1, letter: 1, lower: 1},
     {maxExaminedLength: 1, letter: 1, lower: 1, upper: 1, unicodeLtmo: 1, any: 1, foo: 1}
   ]);
-
 });
 
 test('rightmostFailureOffset - no LR', t => {
@@ -244,15 +238,10 @@ test('rightmostFailureOffset - no LR', t => {
     {maxRightmostFailureOffset: 1, letter: -1, lower: -1, notLastLetter: 1},
     {maxRightmostFailureOffset: 0, letter: 0, lower: 0, upper: 0, unicodeLtmo: 0}
   ]);
-
 });
 
 test('rightmostFailureOffset - simple LR', t => {
-  const g = makeGrammar([
-    'G {',
-    '  start = start letter  -- rec',
-    '        | letter',
-    '}']);
+  const g = makeGrammar(['G {', '  start = start letter  -- rec', '        | letter', '}']);
   const result = g.match('yo');
   t.is(result.succeeded(), true);
 
@@ -262,7 +251,6 @@ test('rightmostFailureOffset - simple LR', t => {
     {maxRightmostFailureOffset: -1, letter: -1, lower: -1},
     {maxRightmostFailureOffset: 0, letter: 0, lower: 0, upper: 0, unicodeLtmo: 0}
   ]);
-
 });
 
 test('rightmostFailureOffset - complicated LR', t => {
@@ -272,7 +260,8 @@ test('rightmostFailureOffset - complicated LR', t => {
     '        | foo',
     '  foo = foo letter  -- rec',
     '      | any',
-    '}']);
+    '}'
+  ]);
   const result = g.match('yo');
   t.is(result.succeeded(), true);
 
@@ -280,18 +269,20 @@ test('rightmostFailureOffset - complicated LR', t => {
   t.deepEqual(values, [
     {maxRightmostFailureOffset: 2, any: -1, foo: 2, start: 2},
     {maxRightmostFailureOffset: -1, letter: -1, lower: -1},
-    {maxRightmostFailureOffset: 0, letter: 0, lower: 0, upper: 0, unicodeLtmo: 0, any: 0, foo: 0}
+    {
+      maxRightmostFailureOffset: 0,
+      letter: 0,
+      lower: 0,
+      upper: 0,
+      unicodeLtmo: 0,
+      any: 0,
+      foo: 0
+    }
   ]);
-
 });
 
 test('matchLength', t => {
-  const g = makeGrammar([
-    'G {',
-    '  start = notLast* any',
-    '  notLast = any &any',
-    '}'
-  ]);
+  const g = makeGrammar(['G {', '  start = notLast* any', '  notLast = any &any', '}']);
   const result = g.match('woo');
   t.is(result.succeeded(), true);
 
@@ -302,7 +293,6 @@ test('matchLength', t => {
     {any: 1, notLast: 0},
     {any: 0}
   ]);
-
 });
 
 test('matchLength - complicated LR', t => {
@@ -312,7 +302,8 @@ test('matchLength - complicated LR', t => {
     '        | foo',
     '  foo = foo letter  -- rec',
     '      | any',
-    '}']);
+    '}'
+  ]);
   const result = g.match('yo');
   t.is(result.succeeded(), true);
 
@@ -322,7 +313,6 @@ test('matchLength - complicated LR', t => {
     {letter: 1, lower: 1},
     {letter: 0, lower: 0, upper: 0, unicodeLtmo: 0, any: 0, foo: 0}
   ]);
-
 });
 
 test('binding offsets - lexical rules', t => {
@@ -332,7 +322,8 @@ test('binding offsets - lexical rules', t => {
     '        | foo',
     '  foo = foo letter  -- rec',
     '      | "oo"',
-    '}']);
+    '}'
+  ]);
   let result = g.match('oolong');
   t.is(result.succeeded(), true);
 
@@ -341,7 +332,6 @@ test('binding offsets - lexical rules', t => {
 
   result = g.match('oo');
   s(result).checkOffsets(t, 0);
-
 });
 
 test('binding offsets - syntactic rules', t => {
@@ -360,7 +350,6 @@ test('binding offsets - syntactic rules', t => {
   result = g.match('a   4 ');
   t.truthy(result.succeeded());
   s(result).checkOffsets(t, result._cstOffset);
-
 });
 
 test('incremental parsing + attributes = incremental computation', t => {
@@ -424,6 +413,6 @@ test('incremental parsing + attributes = incremental computation', t => {
     '1-2',
     '(1-2)',
     '(1-2)*3',
-    '(1-2)*3-9']);
-
+    '(1-2)*3-9'
+  ]);
 });

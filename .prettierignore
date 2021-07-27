@@ -1,0 +1,7 @@
+dist
+third_party
+**/test/data/*
+testdata
+visualizer
+*.css
+*.html

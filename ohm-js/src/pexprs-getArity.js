@@ -14,14 +14,15 @@ const pexprs = require('./pexprs');
 pexprs.PExpr.prototype.getArity = common.abstract('getArity');
 
 pexprs.any.getArity =
-pexprs.end.getArity =
-pexprs.Terminal.prototype.getArity =
-pexprs.Range.prototype.getArity =
-pexprs.Param.prototype.getArity =
-pexprs.Apply.prototype.getArity =
-pexprs.UnicodeChar.prototype.getArity = function() {
-  return 1;
-};
+  pexprs.end.getArity =
+  pexprs.Terminal.prototype.getArity =
+  pexprs.Range.prototype.getArity =
+  pexprs.Param.prototype.getArity =
+  pexprs.Apply.prototype.getArity =
+  pexprs.UnicodeChar.prototype.getArity =
+    function() {
+      return 1;
+    };
 
 pexprs.Alt.prototype.getArity = function() {
   // This is ok b/c all terms must have the same arity -- this property is
@@ -45,7 +46,6 @@ pexprs.Not.prototype.getArity = function() {
   return 0;
 };
 
-pexprs.Lookahead.prototype.getArity =
-pexprs.Lex.prototype.getArity = function() {
+pexprs.Lookahead.prototype.getArity = pexprs.Lex.prototype.getArity = function() {
   return this.expr.getArity();
 };

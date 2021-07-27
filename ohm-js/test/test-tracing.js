@@ -99,8 +99,11 @@ test('space skipping', t => {
   start = trace.children[1];
   t.deepEqual(start.children.map(displayString), ['spaces', 'foo']);
   const fooAppl = start.children[1];
-  t.deepEqual(fooAppl.children.map(displayString),
-      ['"a" "b"'], 'no spaces under lexical rule appl');
+  t.deepEqual(
+      fooAppl.children.map(displayString),
+      ['"a" "b"'],
+      'no spaces under lexical rule appl'
+  );
 });
 
 test('tracing with parameterized rules', t => {
@@ -149,7 +152,6 @@ test('tracing with parameterized rules', t => {
 
   const cstChildrenName = cstNode.children.map(c => c.ctorName === 'letter');
   t.deepEqual(cstChildrenName, [true, true, true, true, true]);
-
 });
 
 test('tracing with memoization', t => {
@@ -166,8 +168,14 @@ test('tracing with memoization', t => {
 
   const star = alt.children[1];
   t.is(star.bindings[0].isIteration(), true);
-  t.deepEqual(star.children.map(displayString),
-      ['spaces', 'letter', 'spaces', 'letter', 'spaces', 'letter']);
+  t.deepEqual(star.children.map(displayString), [
+    'spaces',
+    'letter',
+    'spaces',
+    'letter',
+    'spaces',
+    'letter'
+  ]);
 
   // The 'letter*' should succeed, and its 'letter' children should be
   // memoized from the other size of the Alt (letter ~letter). Ensure
@@ -178,16 +186,21 @@ test('tracing with memoization', t => {
   t.is(cstNode.ctorName, 'letter');
   t.is(cstNode.numChildren(), 1);
 
-  t.deepEqual(descendant(star, 1).children.map(displayString),
-      ['lower\n    | upper\n    | unicodeLtmo']);
+  t.deepEqual(descendant(star, 1).children.map(displayString), [
+    'lower\n    | upper\n    | unicodeLtmo'
+  ]);
   t.deepEqual(descendant(star, 1, 0).children.map(displayString), ['lower']);
-  t.deepEqual(descendant(star, 1, 0, 0).children.map(displayString), ['Unicode [Ll] character']);
+  t.deepEqual(descendant(star, 1, 0, 0).children.map(displayString), [
+    'Unicode [Ll] character'
+  ]);
 
-  t.deepEqual(descendant(star, 3).children.map(displayString),
-      ['lower\n    | upper\n    | unicodeLtmo']);
+  t.deepEqual(descendant(star, 3).children.map(displayString), [
+    'lower\n    | upper\n    | unicodeLtmo'
+  ]);
   t.deepEqual(descendant(star, 3, 0).children.map(displayString), ['lower', 'upper']);
-  t.deepEqual(descendant(star, 3, 0, 0).children.map(displayString), ['Unicode [Ll] character']);
-
+  t.deepEqual(descendant(star, 3, 0, 0).children.map(displayString), [
+    'Unicode [Ll] character'
+  ]);
 });
 
 test('tracing with parameterized rules and memoization', t => {
@@ -236,7 +249,10 @@ test('tracing with left recursion', t => {
   t.is(terminatingEntry.succeeded, false, 'but marked as a failure');
   t.is(terminatingEntry.isHeadOfLeftRecursion, false);
   t.is(terminatingEntry.pos, id.pos);
-  t.true(terminatingEntry.source.length <= id.source.length, 'its source interval is not longer');
+  t.true(
+      terminatingEntry.source.length <= id.source.length,
+      'its source interval is not longer'
+  );
 
   t.is(id.children.length, 1, 'has a single child');
 
@@ -274,7 +290,6 @@ test('tracing with left recursion', t => {
   t.is(id.succeeded, false);
   t.is(id.isHeadOfLeftRecursion, true, 'failed LR node is still an LR head');
   t.is(id.terminatingLREntry, null, 'it has no terminatingLREntry');
-
 });
 
 test('tracing with left recursion and leading space', t => {
@@ -299,11 +314,16 @@ test('tracing with left recursion and leading space', t => {
   const applyFoo = seq.children[1];
 
   alt = onlyChild(applyFoo);
-  t.deepEqual(alt.children.map(displayString),
-      ['spaces', 'Foo_x', 'spaces', 'Foo_y', 'spaces', '"z"']);
+  t.deepEqual(alt.children.map(displayString), [
+    'spaces',
+    'Foo_x',
+    'spaces',
+    'Foo_y',
+    'spaces',
+    '"z"'
+  ]);
   t.deepEqual(alt.children.map(succeeded), [true, false, true, false, true, true]);
   t.is(alt.children[5].children.length, 0);
-
 });
 
 test('toString', t => {
@@ -311,22 +331,36 @@ test('toString', t => {
   let lines = g.trace('hi').toString().split('\n').slice(0, -1);
 
   const exprs = lines.map(l => l.split(/\s+/)[2]);
-  t.deepEqual(exprs, [
-    'start',
-    '"a"', // Failed.
-    'letter*',
-    'letter', 'lower', 'Unicode',
-    'letter', 'lower', 'Unicode',
-    'letter', 'lower', 'Unicode', // Failed.
-    'upper', 'Unicode', // Failed.
-    'unicodeLtmo', 'Unicode', // Failed.
-    'end'], 'expressions');
+  t.deepEqual(
+      exprs,
+      [
+        'start',
+        '"a"', // Failed.
+        'letter*',
+        'letter',
+        'lower',
+        'Unicode',
+        'letter',
+        'lower',
+        'Unicode',
+        'letter',
+        'lower',
+        'Unicode', // Failed.
+        'upper',
+        'Unicode', // Failed.
+        'unicodeLtmo',
+        'Unicode', // Failed.
+        'end'
+      ],
+      'expressions'
+  );
 
   const excerpts = lines.map(l => l.split(/\s+/)[0]);
   t.deepEqual(
       excerpts,
       common.repeat('hi', 6).concat(common.repeat('i', 3)).concat(common.repeat('', 8)),
-      'excerpts');
+      'excerpts'
+  );
 
   // Test that newlines are escaped in the trace output.
   g = ohm.grammar('G { start = space* }');
@@ -336,7 +370,6 @@ test('toString', t => {
   lines = g.trace('\n\n', 'space').toString().split('\n');
   t.is(lines.length, 4, 'trace is still four lines long');
   t.is(lines[lines.length - 1], '', 'last line is empty');
-
 });
 
 test('toString with left recursion', t => {
@@ -354,8 +387,8 @@ test('toString with left recursion', t => {
     'a              ✓ letter ⇒  "a"',
     'a                  ✓ lower ⇒  "a"',
     'a                    ✓ Unicode [Ll] character ⇒  "a"',
-    '           ✓ end ⇒  ""']);
-
+    '           ✓ end ⇒  ""'
+  ]);
 });
 
 test('displayString', t => {
@@ -409,7 +442,6 @@ test.failing('memoization', t => {
   t.is(applyId2.pos, 0);
   t.truthy(applyId.succeeded);
   t.truthy(applyId2.succeeded);
-
 });
 
 test.failing('bindings', t => {
@@ -429,7 +461,10 @@ test.failing('bindings', t => {
   t.is(alt.bindings.length, 2, 'alt has two bindings');
   t.is(alt.bindings[0].source.contents, 'a');
   t.is(alt.bindings[1].source.contents, 'b');
-  t.deepEqual(alt.bindings.map(b => b.ctorName), ['_terminal', '_terminal']);
+  t.deepEqual(
+      alt.bindings.map(b => b.ctorName),
+      ['_terminal', '_terminal']
+  );
 
   trace = g.trace('cd');
   alt = trace.children[0].children[0];
@@ -437,9 +472,11 @@ test.failing('bindings', t => {
   t.is(alt.bindings.length, 2, 'alt has two bindings');
   t.is(alt.bindings[0].source.contents, 'c');
   t.is(alt.bindings[1].source.contents, 'd');
-  t.deepEqual(alt.bindings.map(b => b.ctorName), ['_terminal', 'notX']);
+  t.deepEqual(
+      alt.bindings.map(b => b.ctorName),
+      ['_terminal', 'notX']
+  );
 
   const notX = alt.children[1];
   t.deepEqual(notX.children.map(succeeded), [true, true], 'both children succeeded');
-
 });

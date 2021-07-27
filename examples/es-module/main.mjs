@@ -3,4 +3,4 @@
 import ohm from 'ohm-js';
 
 const g = ohm.grammar('G { start = }');
-g.match("");
+g.match('');

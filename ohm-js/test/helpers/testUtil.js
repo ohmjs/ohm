@@ -20,7 +20,9 @@ function fakeScriptTag(contents) {
   return {
     type: 'text/ohm-js',
     innerHTML: Array.isArray(contents) ? contents.join('\n') : contents,
-    getAttribute(name) { return undefined; },
+    getAttribute(name) {
+      return undefined;
+    },
     nodeType: 1
   };
 }

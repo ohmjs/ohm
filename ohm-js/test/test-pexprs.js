@@ -10,12 +10,7 @@ const makeGrammar = require('./helpers/testUtil').makeGrammar;
 // --------------------------------------------------------------------
 
 test('rule definition source', t => {
-  const g = makeGrammar([
-    'G {',
-    '  foo = bar',
-    '  bar = "a" | "b" -- baz',
-    '}'
-  ]);
+  const g = makeGrammar(['G {', '  foo = bar', '  bar = "a" | "b" -- baz', '}']);
 
   function definitionLoc(grammar, ruleName) {
     const interval = grammar.rules[ruleName].source;
@@ -25,16 +20,12 @@ test('rule definition source', t => {
   t.deepEqual(definitionLoc(g, 'bar'), [18, 40]);
   t.deepEqual(definitionLoc(g, 'bar_baz'), [30, 40], 'inline rule');
 
-  const g2 = makeGrammar([
-    'G2 <: G {',
-    '  foo += bar',
-    '  bar := "a" | "b" -- baz',
-    '}'
-  ], {G: g});
+  const g2 = makeGrammar(['G2 <: G {', '  foo += bar', '  bar := "a" | "b" -- baz', '}'], {
+    G: g
+  });
   t.deepEqual(definitionLoc(g2, 'foo'), [12, 22], 'extended rule');
   t.deepEqual(definitionLoc(g2, 'bar'), [25, 48], 'overridden rule');
   t.deepEqual(definitionLoc(g2, 'bar_baz'), [38, 48], 'inline rule in overridden rule');
-
 });
 
 test('rule application source', t => {
@@ -76,12 +67,10 @@ test('toDisplayString', t => {
   t.is(many.expr.toDisplayString(), 'letter');
 
   t.is(seq.terms[2].toDisplayString(), '"a".."z"');
-
 });
 
 test('toString', t => {
-  const g = makeGrammar(
-      'G { start = &"a" ~("b" | #c?) "a".."z"  c = "c" }');
+  const g = makeGrammar('G { start = &"a" ~("b" | #c?) "a".."z"  c = "c" }');
   const e = g.rules.start.body;
   t.is(e.toString(), '(&"a" ~("b" | #(c)?) "a".."z")');
 });
@@ -124,8 +113,14 @@ test('toArgumentNameList', t => {
   t.deepEqual(seq.factors[3].toArgumentNameList(1), ['$1']);
 
   const moreSeq = g.rules.MoreSeq.body;
-  t.deepEqual(moreSeq.toArgumentNameList(1),
-      ['foo_1', '_a_1', 'foo_2', 'foo_3', '_a_2', 'foo_4']);
+  t.deepEqual(moreSeq.toArgumentNameList(1), [
+    'foo_1',
+    '_a_1',
+    'foo_2',
+    'foo_3',
+    '_a_2',
+    'foo_4'
+  ]);
 
   const plus = g.rules.plus.body;
   t.deepEqual(plus.toArgumentNameList(1), ['foo', '$2', 'bars']);

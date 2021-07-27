@@ -31,9 +31,13 @@ Matcher.prototype.setInput = function(str) {
 
 Matcher.prototype.replaceInputRange = function(startIdx, endIdx, str) {
   const currentInput = this.input;
-  if (startIdx < 0 || startIdx > currentInput.length ||
-      endIdx < 0 || endIdx > currentInput.length ||
-      startIdx > endIdx) {
+  if (
+    startIdx < 0 ||
+    startIdx > currentInput.length ||
+    endIdx < 0 ||
+    endIdx > currentInput.length ||
+    startIdx > endIdx
+  ) {
     throw new Error('Invalid indices: ' + startIdx + ' and ' + endIdx);
   }
 
@@ -46,9 +50,9 @@ Matcher.prototype.replaceInputRange = function(startIdx, endIdx, str) {
   for (let idx = 0; idx < str.length; idx++) {
     this.memoTable.push(undefined);
   }
-  restOfMemoTable.forEach(
-      function(posInfo) { this.memoTable.push(posInfo); },
-      this);
+  restOfMemoTable.forEach(function(posInfo) {
+    this.memoTable.push(posInfo);
+  }, this);
 
   // Invalidate memoRecs
   for (let pos = 0; pos < startIdx; pos++) {

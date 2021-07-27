@@ -48,7 +48,8 @@ Builder.prototype = {
       if (gDecl.source && metaInfo && metaInfo.sourceInterval) {
         source = gDecl.source.subInterval(
             metaInfo.sourceInterval[0],
-            metaInfo.sourceInterval[1] - metaInfo.sourceInterval[0]);
+            metaInfo.sourceInterval[1] - metaInfo.sourceInterval[0]
+        );
       }
       gDecl[action](ruleName, formals, body, description, source);
     });
@@ -150,8 +151,7 @@ Builder.prototype = {
   app(ruleName, optParams) {
     if (optParams && optParams.length > 0) {
       optParams = optParams.map(function(param) {
-        return param instanceof pexprs.PExpr ? param :
-          this.fromRecipe(param);
+        return param instanceof pexprs.PExpr ? param : this.fromRecipe(param);
       }, this);
     }
     return new pexprs.Apply(ruleName, optParams);
@@ -165,13 +165,16 @@ Builder.prototype = {
         this.currentDecl.superGrammar,
         this.currentRuleName,
         beforeTerms.map(term => this.fromRecipe(term)),
-        afterTerms.map(term => this.fromRecipe(term)));
+        afterTerms.map(term => this.fromRecipe(term))
+    );
   },
 
   fromRecipe(recipe) {
     // the meta-info of 'grammar' is processed in Builder.grammar
-    const result = this[recipe[0]].apply(this,
-      recipe[0] === 'grammar' ? recipe.slice(1) : recipe.slice(2));
+    const result = this[recipe[0]].apply(
+        this,
+      recipe[0] === 'grammar' ? recipe.slice(1) : recipe.slice(2)
+    );
 
     const metaInfo = recipe[1];
     if (metaInfo) {

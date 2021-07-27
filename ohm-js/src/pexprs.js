@@ -161,7 +161,7 @@ class Lex extends PExpr {
 // Rule application
 
 class Apply extends PExpr {
-  constructor(ruleName, args=[]) {
+  constructor(ruleName, args = []) {
     super();
     this.ruleName = ruleName;
     this.args = args;

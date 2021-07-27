@@ -58,11 +58,14 @@ const defaultOperation = {
       if (typeof mappedProp === 'number') {
         // direct forward
         node[prop] = children[mappedProp].toAST(mapping);
-      } else if ((typeof mappedProp === 'string') || (typeof mappedProp === 'boolean') ||
-          (mappedProp === null)) {
+      } else if (
+        typeof mappedProp === 'string' ||
+        typeof mappedProp === 'boolean' ||
+        mappedProp === null
+      ) {
         // primitive value
         node[prop] = mappedProp;
-      } else if ((typeof mappedProp === 'object') && (mappedProp instanceof Number)) {
+      } else if (typeof mappedProp === 'object' && mappedProp instanceof Number) {
         // primitive number (must be unboxed)
         node[prop] = Number(mappedProp);
       } else if (typeof mappedProp === 'function') {

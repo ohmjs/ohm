@@ -65,7 +65,11 @@ class CaseInsensitiveTerminal extends PExpr {
   }
 
   toFailure(grammar) {
-    return new Failure(this, this.obj.toFailure(grammar) + ' (case-insensitive)', 'description');
+    return new Failure(
+        this,
+        this.obj.toFailure(grammar) + ' (case-insensitive)',
+        'description'
+    );
   }
 
   _isNullable(grammar, memo) {

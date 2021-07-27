@@ -55,9 +55,12 @@ function grammarSyntaxError(matchFailure) {
 // Undeclared grammar
 
 function undeclaredGrammar(grammarName, namespace, interval) {
-  const message = namespace ?
-      'Grammar ' + grammarName + ' is not declared in namespace ' + Namespace.toString(namespace) :
-      'Undeclared grammar ' + grammarName;
+  const message = namespace
+    ? 'Grammar ' +
+      grammarName +
+      ' is not declared in namespace ' +
+      Namespace.toString(namespace)
+    : 'Undeclared grammar ' + grammarName;
   return createError(message, interval);
 }
 
@@ -74,7 +77,8 @@ function duplicateGrammarDeclaration(grammar, namespace) {
 function undeclaredRule(ruleName, grammarName, optInterval) {
   return createError(
       'Rule ' + ruleName + ' is not declared in grammar ' + grammarName,
-      optInterval);
+      optInterval
+  );
 }
 
 // Cannot override undeclared rule
@@ -82,7 +86,8 @@ function undeclaredRule(ruleName, grammarName, optInterval) {
 function cannotOverrideUndeclaredRule(ruleName, grammarName, optSource) {
   return createError(
       'Cannot override rule ' + ruleName + ' because it is not declared in ' + grammarName,
-      optSource);
+      optSource
+  );
 }
 
 // Cannot extend undeclared rule
@@ -90,14 +95,15 @@ function cannotOverrideUndeclaredRule(ruleName, grammarName, optSource) {
 function cannotExtendUndeclaredRule(ruleName, grammarName, optSource) {
   return createError(
       'Cannot extend rule ' + ruleName + ' because it is not declared in ' + grammarName,
-      optSource);
+      optSource
+  );
 }
 
 // Duplicate rule declaration
 
 function duplicateRuleDeclaration(ruleName, grammarName, declGrammarName, optSource) {
-  let message = "Duplicate declaration for rule '" + ruleName +
-      "' in grammar '" + grammarName + "'";
+  let message =
+    "Duplicate declaration for rule '" + ruleName + "' in grammar '" + grammarName + "'";
   if (grammarName !== declGrammarName) {
     message += " (originally declared in '" + declGrammarName + "')";
   }
@@ -108,18 +114,30 @@ function duplicateRuleDeclaration(ruleName, grammarName, declGrammarName, optSou
 
 function wrongNumberOfParameters(ruleName, expected, actual, source) {
   return createError(
-      'Wrong number of parameters for rule ' + ruleName +
-          ' (expected ' + expected + ', got ' + actual + ')',
-      source);
+      'Wrong number of parameters for rule ' +
+      ruleName +
+      ' (expected ' +
+      expected +
+      ', got ' +
+      actual +
+      ')',
+      source
+  );
 }
 
 // Wrong number of arguments
 
 function wrongNumberOfArguments(ruleName, expected, actual, expr) {
   return createError(
-      'Wrong number of arguments for rule ' + ruleName +
-          ' (expected ' + expected + ', got ' + actual + ')',
-      expr.source);
+      'Wrong number of arguments for rule ' +
+      ruleName +
+      ' (expected ' +
+      expected +
+      ', got ' +
+      actual +
+      ')',
+      expr.source
+  );
 }
 
 // Duplicate parameter names
@@ -127,16 +145,23 @@ function wrongNumberOfArguments(ruleName, expected, actual, expr) {
 function duplicateParameterNames(ruleName, duplicates, source) {
   return createError(
       'Duplicate parameter names in rule ' + ruleName + ': ' + duplicates.join(', '),
-      source);
+      source
+  );
 }
 
 // Invalid parameter expression
 
 function invalidParameter(ruleName, expr) {
   return createError(
-      'Invalid parameter to rule ' + ruleName + ': ' + expr + ' has arity ' + expr.getArity() +
-         ', but parameter expressions must have arity 1',
-      expr.source);
+      'Invalid parameter to rule ' +
+      ruleName +
+      ': ' +
+      expr +
+      ' has arity ' +
+      expr.getArity() +
+      ', but parameter expressions must have arity 1',
+      expr.source
+  );
 }
 
 // Application of syntactic rule from lexical rule
@@ -144,7 +169,8 @@ function invalidParameter(ruleName, expr) {
 function applicationOfSyntacticRuleFromLexicalContext(ruleName, applyExpr) {
   return createError(
       'Cannot apply syntactic rule ' + ruleName + ' from here (inside a lexical context)',
-      applyExpr.source);
+      applyExpr.source
+  );
 }
 
 // Incorrect argument type
@@ -162,13 +188,15 @@ function multipleSuperSplices(expr) {
 // ----------------- Kleene operators -----------------
 
 function kleeneExprHasNullableOperand(kleeneExpr, applicationStack) {
-  const actuals = applicationStack.length > 0 ?
-    applicationStack[applicationStack.length - 1].args :
-    [];
+  const actuals =
+    applicationStack.length > 0 ? applicationStack[applicationStack.length - 1].args : [];
   const expr = kleeneExpr.expr.substituteParams(actuals);
   let message =
-    'Nullable expression ' + expr + " is not allowed inside '" +
-    kleeneExpr.operator + "' (possible infinite loop)";
+    'Nullable expression ' +
+    expr +
+    " is not allowed inside '" +
+    kleeneExpr.operator +
+    "' (possible infinite loop)";
   if (applicationStack.length > 0) {
     const stackTrace = applicationStack
         .map(app => new pexprs.Apply(app.ruleName, app.args))
@@ -182,9 +210,16 @@ function kleeneExprHasNullableOperand(kleeneExpr, applicationStack) {
 
 function inconsistentArity(ruleName, expected, actual, expr) {
   return createError(
-      'Rule ' + ruleName + ' involves an alternation which has inconsistent arity ' +
-          '(expected ' + expected + ', got ' + actual + ')',
-      expr.source);
+      'Rule ' +
+      ruleName +
+      ' involves an alternation which has inconsistent arity ' +
+      '(expected ' +
+      expected +
+      ', got ' +
+      actual +
+      ')',
+      expr.source
+  );
 }
 
 // ----------------- properties -----------------
@@ -197,32 +232,38 @@ function duplicatePropertyNames(duplicates) {
 
 function invalidConstructorCall(grammar, ctorName, children) {
   return createError(
-      'Attempt to invoke constructor ' + ctorName + ' with invalid or unexpected arguments');
+      'Attempt to invoke constructor ' + ctorName + ' with invalid or unexpected arguments'
+  );
 }
 
 // ----------------- convenience -----------------
 
 function multipleErrors(errors) {
   const messages = errors.map(e => e.message);
-  return createError(
-      ['Errors:'].concat(messages).join('\n- '),
-      errors[0].interval);
+  return createError(['Errors:'].concat(messages).join('\n- '), errors[0].interval);
 }
 
 // ----------------- semantic -----------------
 
 function missingSemanticAction(ctorName, name, type, stack) {
-  let stackTrace = stack.slice(0, -1).map(info => {
-    const ans = '  ' + info[0].name + ' > ' + info[1];
-    return info.length === 3
-        ? ans + " for '" + info[2] + "'"
-        : ans;
-  }).join('\n');
+  let stackTrace = stack
+      .slice(0, -1)
+      .map(info => {
+        const ans = '  ' + info[0].name + ' > ' + info[1];
+        return info.length === 3 ? ans + " for '" + info[2] + "'" : ans;
+      })
+      .join('\n');
   stackTrace += '\n  ' + name + ' > ' + ctorName;
 
   const where = type + " '" + name + "'";
-  const message = "Missing semantic action for '" + ctorName + "' in " + where + '\n' +
-                'Action stack (most recent call last):\n' + stackTrace;
+  const message =
+    "Missing semantic action for '" +
+    ctorName +
+    "' in " +
+    where +
+    '\n' +
+    'Action stack (most recent call last):\n' +
+    stackTrace;
 
   const e = createError(message);
   e.name = 'missingSemanticAction';

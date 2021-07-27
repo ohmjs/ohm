@@ -14,8 +14,7 @@ const pexprs = require('./pexprs');
 // Returns a string representing the PExpr, for use as a UI label, etc.
 pexprs.PExpr.prototype.toDisplayString = common.abstract('toDisplayString');
 
-pexprs.Alt.prototype.toDisplayString =
-pexprs.Seq.prototype.toDisplayString = function() {
+pexprs.Alt.prototype.toDisplayString = pexprs.Seq.prototype.toDisplayString = function() {
   if (this.source) {
     return this.source.trimmed().contents;
   }
@@ -23,16 +22,17 @@ pexprs.Seq.prototype.toDisplayString = function() {
 };
 
 pexprs.any.toDisplayString =
-pexprs.end.toDisplayString =
-pexprs.Iter.prototype.toDisplayString =
-pexprs.Not.prototype.toDisplayString =
-pexprs.Lookahead.prototype.toDisplayString =
-pexprs.Lex.prototype.toDisplayString =
-pexprs.Terminal.prototype.toDisplayString =
-pexprs.Range.prototype.toDisplayString =
-pexprs.Param.prototype.toDisplayString = function() {
-  return this.toString();
-};
+  pexprs.end.toDisplayString =
+  pexprs.Iter.prototype.toDisplayString =
+  pexprs.Not.prototype.toDisplayString =
+  pexprs.Lookahead.prototype.toDisplayString =
+  pexprs.Lex.prototype.toDisplayString =
+  pexprs.Terminal.prototype.toDisplayString =
+  pexprs.Range.prototype.toDisplayString =
+  pexprs.Param.prototype.toDisplayString =
+    function() {
+      return this.toString();
+    };
 
 pexprs.Apply.prototype.toDisplayString = function() {
   if (this.args.length > 0) {

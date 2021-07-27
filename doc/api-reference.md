@@ -1,10 +1,8 @@
-API Reference
-=============
+# API Reference
 
 This page documents the API of Ohm/JS, a JavaScript library for working with grammars written in the Ohm language. For documentation on the Ohm language, see the [syntax reference](./syntax-reference.md).
 
-Instantiating Grammars
-----------------------
+## Instantiating Grammars
 
 <b><pre class="api">ohm.grammar(source: string, optNamespace?: object) &rarr; Grammar</pre></b>
 
@@ -22,8 +20,7 @@ Create a new Namespace containing Grammar instances for all of the grammars defi
 
 Create a new Namespace containing Grammar instances for all of the grammars defined in the `<script>` tags in `optNodeList`. If `optNodeList` is not specified, the result of `document.querySelectorAll('script[type="text/ohm-js"]')` will be used. `optNamespace` has the same meaning as in `ohm.grammars`.
 
-Namespace objects
------------------
+## Namespace objects
 
 When instantiating a grammar that refers to another grammar -- e.g. `MyJava <: Java { keyword += "async" }` -- the supergrammar name ('Java') is resolved to a grammar by looking up the name in a Namespace. In Ohm/JS, Namespaces are a plain old JavaScript objects, and an object literal like `{Java: myJavaGrammar}` can be passed to any API that expects a Namespace. For convenience, Ohm also has the following methods for working with namespaces:
 
@@ -35,8 +32,7 @@ Create a new namespace. If `optProps` is specified, all of its properties will b
 
 Create a new namespace which inherits from `namespace`. If `optProps` is specified, all of its properties will be copied to the new namespace.
 
-Grammar objects
----------------
+## Grammar objects
 
 A Grammar instance `g` has the following methods:
 
@@ -60,8 +56,7 @@ Create a new [Semantics](#semantics) object for `g`.
 
 Create a new [Semantics](#semantics) object for `g` that inherits all of the operations and attributes in `superSemantics`. `g` must be a descendent of the grammar associated with `superSemantics`.
 
-Matcher objects
----------------
+## Matcher objects
 
 Matcher objects can be used to incrementally match a changing input against the Matcher's grammar, e.g. in an editor or IDE. When a Matcher's input is modified via `replaceInputRange`, further calls to `match` will reuse the partial results of previous calls wherever possible. Generally, this means that small changes to the input will result in very short match times.
 
@@ -87,8 +82,7 @@ Like [Grammar's `match` method](#Grammar.match), but operates incrementally.
 
 Like [Grammar's `trace` method](#Grammar.trace), but operates incrementally.
 
-MatchResult objects
--------------------
+## MatchResult objects
 
 Internally, a successful MatchResult contains a _parse tree_, which is made up of _parse nodes_. Parse trees are not directly exposed -- instead, they are inspected indirectly through _operations_ and _attributes_, which are described in the next section.
 
@@ -207,9 +201,9 @@ The value of an operation or attribute for a node is the result of invoking the 
 
 The matching semantic action for a particular node is chosen as follows:
 
-- On a _rule application_ node, first look for a semantic action with the same name as the rule (e.g., 'FullName'). If the action dictionary does not have a property with that name, use the action named '_nonterminal', if it exists. If not, the default action is used, which returns the result of applying the operation or attribute to the node's only child. There is no default action for non-terminal nodes that have no children, or more than one child.
-- On a terminal node (e.g., a node produced by the parsing expression `"hello"`), use the semantic action named '_terminal'.
-- On an iteration node (e.g., a node produced by the parsing expression `letter+`), use the semantic action named '_iter'. If the action dictionary does not have a property with that name, the default action returns an array containing the results of applying the operation or attribute to each child node.
+- On a _rule application_ node, first look for a semantic action with the same name as the rule (e.g., 'FullName'). If the action dictionary does not have a property with that name, use the action named '\_nonterminal', if it exists. If not, the default action is used, which returns the result of applying the operation or attribute to the node's only child. There is no default action for non-terminal nodes that have no children, or more than one child.
+- On a terminal node (e.g., a node produced by the parsing expression `"hello"`), use the semantic action named '\_terminal'.
+- On an iteration node (e.g., a node produced by the parsing expression `letter+`), use the semantic action named '\_iter'. If the action dictionary does not have a property with that name, the default action returns an array containing the results of applying the operation or attribute to each child node.
 
 Note that you can also write semantic actions for built-in rules like `letter` or `digit`. For `ListOf`, please see the documentation on [asIteration](#asIteration) below.
 
@@ -263,8 +257,7 @@ For a terminal node, the raw value that was consumed from the input stream.
 
 In addition to the properties listed above, within a given semantics, every node also has a method/property corresponding to each operation/attribute in the semantics. For example, in a semantics that has an operation named 'prettyPrint' and an attribute named 'freeVars', every node has a `prettyPrint()` method and a `freeVars` property.
 
-Built-in Operations
--------------------
+## Built-in Operations
 
 ### asIteration
 
@@ -276,6 +269,7 @@ The built-in `asIteration` operation offers a convenient way of handling _ListOf
     `const g_asIteration = require('ohm-js').grammar(${JSON.stringify(code)});`
   );
 -->
+
 ```
 G {
   Start = ListOf<letter, ",">

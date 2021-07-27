@@ -11,7 +11,9 @@ const util = require('./util');
 
 let BuiltInRules;
 
-util.awaitBuiltInRules(g => { BuiltInRules = g; });
+util.awaitBuiltInRules(g => {
+  BuiltInRules = g;
+});
 
 // --------------------------------------------------------------------
 // Operations
@@ -29,13 +31,14 @@ pexprs.PExpr.prototype._assertAllApplicationsAreValid = common.abstract(
 );
 
 pexprs.any._assertAllApplicationsAreValid =
-pexprs.end._assertAllApplicationsAreValid =
-pexprs.Terminal.prototype._assertAllApplicationsAreValid =
-pexprs.Range.prototype._assertAllApplicationsAreValid =
-pexprs.Param.prototype._assertAllApplicationsAreValid =
-pexprs.UnicodeChar.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
-  // no-op
-};
+  pexprs.end._assertAllApplicationsAreValid =
+  pexprs.Terminal.prototype._assertAllApplicationsAreValid =
+  pexprs.Range.prototype._assertAllApplicationsAreValid =
+  pexprs.Param.prototype._assertAllApplicationsAreValid =
+  pexprs.UnicodeChar.prototype._assertAllApplicationsAreValid =
+    function(ruleName, grammar) {
+      // no-op
+    };
 
 pexprs.Lex.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
   lexifyCount++;
@@ -56,10 +59,11 @@ pexprs.Seq.prototype._assertAllApplicationsAreValid = function(ruleName, grammar
 };
 
 pexprs.Iter.prototype._assertAllApplicationsAreValid =
-pexprs.Not.prototype._assertAllApplicationsAreValid =
-pexprs.Lookahead.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
-  this.expr._assertAllApplicationsAreValid(ruleName, grammar);
-};
+  pexprs.Not.prototype._assertAllApplicationsAreValid =
+  pexprs.Lookahead.prototype._assertAllApplicationsAreValid =
+    function(ruleName, grammar) {
+      this.expr._assertAllApplicationsAreValid(ruleName, grammar);
+    };
 
 pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
   const ruleInfo = grammar.rules[this.ruleName];
@@ -70,7 +74,10 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, gramm
   }
 
   // ...and that this application is allowed
-  if (common.isSyntactic(this.ruleName) && (!common.isSyntactic(ruleName) || lexifyCount > 0)) {
+  if (
+    common.isSyntactic(this.ruleName) &&
+    (!common.isSyntactic(ruleName) || lexifyCount > 0)
+  ) {
     throw errors.applicationOfSyntacticRuleFromLexicalContext(this.ruleName, this);
   }
 
@@ -95,7 +102,7 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, gramm
   // If it's an application of 'caseInsensitive', ensure that the argument is a Terminal.
   if (BuiltInRules && ruleInfo === BuiltInRules.rules.caseInsensitive) {
     if (!(this.args[0] instanceof pexprs.Terminal)) {
-      throw errors.incorrectArgumentType('a Terminal (e.g. \"abc\")', this.args[0]);
+      throw errors.incorrectArgumentType('a Terminal (e.g. "abc")', this.args[0]);
     }
   }
 };

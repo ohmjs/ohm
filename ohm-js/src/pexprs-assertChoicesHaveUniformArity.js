@@ -17,14 +17,15 @@ pexprs.PExpr.prototype.assertChoicesHaveUniformArity = common.abstract(
 );
 
 pexprs.any.assertChoicesHaveUniformArity =
-pexprs.end.assertChoicesHaveUniformArity =
-pexprs.Terminal.prototype.assertChoicesHaveUniformArity =
-pexprs.Range.prototype.assertChoicesHaveUniformArity =
-pexprs.Param.prototype.assertChoicesHaveUniformArity =
-pexprs.Lex.prototype.assertChoicesHaveUniformArity =
-pexprs.UnicodeChar.prototype.assertChoicesHaveUniformArity = function(ruleName) {
-  // no-op
-};
+  pexprs.end.assertChoicesHaveUniformArity =
+  pexprs.Terminal.prototype.assertChoicesHaveUniformArity =
+  pexprs.Range.prototype.assertChoicesHaveUniformArity =
+  pexprs.Param.prototype.assertChoicesHaveUniformArity =
+  pexprs.Lex.prototype.assertChoicesHaveUniformArity =
+  pexprs.UnicodeChar.prototype.assertChoicesHaveUniformArity =
+    function(ruleName) {
+      // no-op
+    };
 
 pexprs.Alt.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   if (this.terms.length === 0) {

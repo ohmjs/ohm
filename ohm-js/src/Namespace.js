@@ -10,8 +10,7 @@ const extend = require('util-extend');
 // Private stuff
 // --------------------------------------------------------------------
 
-function Namespace() {
-}
+function Namespace() {}
 Namespace.prototype = Object.create(null);
 
 Namespace.asNamespace = function(objOrNamespace) {

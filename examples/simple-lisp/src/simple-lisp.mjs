@@ -120,9 +120,7 @@ class List {
       return fun.eval(env, args);
     }
 
-    args = args
-        .map(arg => evalLisp(arg, env))
-        .map(arg => macroExpand(arg, env));
+    args = args.map(arg => evalLisp(arg, env)).map(arg => macroExpand(arg, env));
 
     if (isLambda) {
       return fun.eval(env, args);
@@ -327,13 +325,15 @@ export const runLisp = (str, env) => {
 export const createEnv = () => {
   const env = new Env();
 
-  const multiArgOp = cb => (...args) => {
-    if (args.length === 1) {
-      return args[0];
-    }
+  const multiArgOp =
+    cb =>
+    (...args) => {
+      if (args.length === 1) {
+        return args[0];
+      }
 
-    return args.slice(1).reduce(cb, args[0]);
-  };
+      return args.slice(1).reduce(cb, args[0]);
+    };
 
   env.bind('str', (...args) => args.map(arg => arg.toString()).join(' '));
 
@@ -341,20 +341,20 @@ export const createEnv = () => {
   env.bind('log', (...text) => console.log('lisp>', ...text));
 
   env.bind(
-      '+',
-      multiArgOp((a, b) => a + b)
+    '+',
+    multiArgOp((a, b) => a + b)
   );
   env.bind(
-      '-',
-      multiArgOp((a, b) => a - b)
+    '-',
+    multiArgOp((a, b) => a - b)
   );
   env.bind(
-      '*',
-      multiArgOp((a, b) => a * b)
+    '*',
+    multiArgOp((a, b) => a * b)
   );
   env.bind(
-      '/',
-      multiArgOp((a, b) => a / b)
+    '/',
+    multiArgOp((a, b) => a / b)
   );
 
   env.bind('first', xs => xs[0]);

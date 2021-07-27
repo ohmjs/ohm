@@ -21,33 +21,33 @@ const pexprs = require('./pexprs');
 pexprs.PExpr.prototype.substituteParams = common.abstract('substituteParams');
 
 pexprs.any.substituteParams =
-pexprs.end.substituteParams =
-pexprs.Terminal.prototype.substituteParams =
-pexprs.Range.prototype.substituteParams =
-pexprs.UnicodeChar.prototype.substituteParams = function(actuals) {
-  return this;
-};
+  pexprs.end.substituteParams =
+  pexprs.Terminal.prototype.substituteParams =
+  pexprs.Range.prototype.substituteParams =
+  pexprs.UnicodeChar.prototype.substituteParams =
+    function(actuals) {
+      return this;
+    };
 
 pexprs.Param.prototype.substituteParams = function(actuals) {
   return actuals[this.index];
 };
 
 pexprs.Alt.prototype.substituteParams = function(actuals) {
-  return new pexprs.Alt(
-      this.terms.map(term => term.substituteParams(actuals)));
+  return new pexprs.Alt(this.terms.map(term => term.substituteParams(actuals)));
 };
 
 pexprs.Seq.prototype.substituteParams = function(actuals) {
-  return new pexprs.Seq(
-      this.factors.map(factor => factor.substituteParams(actuals)));
+  return new pexprs.Seq(this.factors.map(factor => factor.substituteParams(actuals)));
 };
 
 pexprs.Iter.prototype.substituteParams =
-pexprs.Not.prototype.substituteParams =
-pexprs.Lookahead.prototype.substituteParams =
-pexprs.Lex.prototype.substituteParams = function(actuals) {
-  return new this.constructor(this.expr.substituteParams(actuals));
-};
+  pexprs.Not.prototype.substituteParams =
+  pexprs.Lookahead.prototype.substituteParams =
+  pexprs.Lex.prototype.substituteParams =
+    function(actuals) {
+      return new this.constructor(this.expr.substituteParams(actuals));
+    };
 
 pexprs.Apply.prototype.substituteParams = function(actuals) {
   if (this.args.length === 0) {

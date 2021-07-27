@@ -1,11 +1,10 @@
-import { fixture } from '../operator-example.mjs';
+import {fixture} from '../operator-example.mjs';
 import test from 'ava-spec';
 
-const { describe } = test;
+const {describe} = test;
 
 for (const {name, grammar, semantics} of fixture) {
-
-  describe(`The ${name} grammar`, (it) => {
+  describe(`The ${name} grammar`, it => {
     it('can parse a single integer literal expression', t => {
       const ast = semantics(grammar.match('20')).tree().toString();
       t.is(ast, '20');
@@ -32,7 +31,7 @@ for (const {name, grammar, semantics} of fixture) {
       let ast = semantics(grammar.match('(x + 2) * 3')).tree().toString();
       t.is(ast, '(* (+ x 2) 3)');
       ast = semantics(grammar.match('x * (2 + 3)')).tree().toString();
-      t.is(ast, '(* x (+ 2 3))');     
+      t.is(ast, '(* x (+ 2 3))');
     });
 
     it('looks at all three levels of precedence', t => {
@@ -49,13 +48,11 @@ for (const {name, grammar, semantics} of fixture) {
       t.is(ast, '(** 1 (** 2 (** 3 (** 4 5))))');
       ast = semantics(grammar.match('1 ** (2 ** 3) ** 4 - 5')).tree().toString();
       t.is(ast, '(- (** 1 (** (** 2 3) 4)) 5)');
-      
     });
     it('can parse a long string without parentheses', t => {
       const source = '10 + 3 * 8 ** 7 - 2 * 50 + 1 + x / 10';
       const ast = semantics(grammar.match(source)).tree().toString();
       t.is(ast, '(+ (+ (- (+ 10 (* 3 (** 8 7))) (* 2 50)) 1) (/ x 10))');
-      
     });
 
     it('can parse a crazy string', t => {

@@ -27,8 +27,12 @@ let ohmGrammar;
 
 // An object which makes it possible to stub out the document API for testing.
 let documentInterface = {
-  querySelector(sel) { return document.querySelector(sel); },
-  querySelectorAll(sel) { return document.querySelectorAll(sel); }
+  querySelector(sel) {
+    return document.querySelector(sel);
+  },
+  querySelectorAll(sel) {
+    return document.querySelectorAll(sel);
+  }
 };
 
 const superSplicePlaceholder = Object.create(pexprs.PExpr.prototype);
@@ -156,7 +160,11 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
         });
 
         return new pexprs.Splice(
-            decl.superGrammar, currentRuleName, beforeTerms, afterTerms).withSource(this.source);
+            decl.superGrammar,
+            currentRuleName,
+            beforeTerms,
+            afterTerms
+        ).withSource(this.source);
       } else {
         return builder.alt.apply(builder, args).withSource(this.source);
       }
@@ -178,8 +186,9 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       const inlineRuleName = currentRuleName + '_' + n.visit();
       const body = b.visit();
       const source = this.source.trimmed();
-      const isNewRuleDeclaration =
-          !(decl.superGrammar && decl.superGrammar.rules[inlineRuleName]);
+      const isNewRuleDeclaration = !(
+        decl.superGrammar && decl.superGrammar.rules[inlineRuleName]
+      );
       if (overriding && !isNewRuleDeclaration) {
         decl.override(inlineRuleName, currentRuleFormals, body, null, source);
       } else {
@@ -308,7 +317,8 @@ function grammar(source, optNamespace) {
     const interval = secondGrammar.source;
     throw new Error(
         util.getLineAndColumnMessage(interval.sourceString, interval.startIdx) +
-        'Found more than one grammar definition -- use ohm.grammars() instead.');
+        'Found more than one grammar definition -- use ohm.grammars() instead.'
+    );
   }
   return ns[grammarNames[0]]; // Return the one and only grammar.
 }
@@ -321,7 +331,8 @@ function grammars(source, optNamespace) {
       source = source.toString();
     } else {
       throw new TypeError(
-          'Expected string as first argument, got ' + common.unexpectedObjToString(source));
+          'Expected string as first argument, got ' + common.unexpectedObjToString(source)
+      );
     }
   }
   compileAndLoad(source, ns);
@@ -334,7 +345,8 @@ function grammarFromScriptElement(optNode) {
     const nodeList = documentInterface.querySelectorAll('script[type="text/ohm-js"]');
     if (nodeList.length !== 1) {
       throw new Error(
-          'Expected exactly one script tag with type="text/ohm-js", found ' + nodeList.length);
+          'Expected exactly one script tag with type="text/ohm-js", found ' + nodeList.length
+      );
     }
     node = nodeList[0];
   }
@@ -351,7 +363,10 @@ function grammarsFromScriptElements(optNodeOrNodeList) {
   if (isUndefined(nodeList)) {
     // Find all script elements with type="text/ohm-js".
     nodeList = documentInterface.querySelectorAll('script[type="text/ohm-js"]');
-  } else if (typeof nodeList === 'string' || (!isElement(nodeList) && !isArrayLike(nodeList))) {
+  } else if (
+    typeof nodeList === 'string' ||
+    (!isElement(nodeList) && !isArrayLike(nodeList))
+  ) {
     throw new TypeError('Expected a Node, NodeList, or Array, but got ' + nodeList);
   }
   const ns = Namespace.createNamespace();
@@ -370,7 +385,7 @@ function makeRecipe(recipe) {
       // stringified JSON recipe
       recipe = JSON.parse(recipe);
     }
-    return (new Builder()).fromRecipe(recipe);
+    return new Builder().fromRecipe(recipe);
   }
 }
 
@@ -395,7 +410,9 @@ module.exports = {
 
 // Stuff for testing, etc.
 module.exports._buildGrammar = buildGrammar;
-module.exports._setDocumentInterfaceForTesting = function(doc) { documentInterface = doc; };
+module.exports._setDocumentInterfaceForTesting = function(doc) {
+  documentInterface = doc;
+};
 
 // Late initialization for stuff that is bootstrapped.
 

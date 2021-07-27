@@ -1,7 +1,6 @@
 export = ohm;
 
 declare namespace ohm {
-
   /**
    * Instantiate the Grammar defined by source. If specified, namespace is
    * the Namespace to use when resolving external references in the grammar.
@@ -34,9 +33,7 @@ declare namespace ohm {
    * If namespace is specified, it will be the prototype of the new
    * Namespace.
    */
-  function grammarFromScriptElements(
-    nodeList?: NodeList,
-    namespace?: Namespace): Namespace;
+  function grammarFromScriptElements(nodeList?: NodeList, namespace?: Namespace): Namespace;
 
   /**
    * Create a new namespace. If props is specified, all of its properties
@@ -117,12 +114,10 @@ declare namespace ohm {
      */
     replaceInputRange(startIdx: number, endIdx: number, str: string): Matcher;
 
-
     /**
      * Like Grammar#match, but operates incrementally.
      */
     match(optStartRule?: string): MatchResult;
-
 
     /**
      * Like Grammar#trace, but operates incrementally.
@@ -266,7 +261,7 @@ declare namespace ohm {
 
     /**
      * Returns the contents of the input stream consumed by this node.
-    */
+     */
     sourceString: string;
 
     /**
@@ -302,7 +297,6 @@ declare namespace ohm {
    * Interval in input string
    */
   interface Interval {
-
     /**
      * Input stream of parse
      */

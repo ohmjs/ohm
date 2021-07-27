@@ -22,13 +22,7 @@ const semantics = g.createSemantics().addOperation('value', {
   }
 });
 
-const someInput =
-    'foo,bar,baz\n' +
-    'foo,bar\n' +
-    '\n' +
-    'foo,,baz\n' +
-    ',bar,baz\n' +
-    'foo';
+const someInput = 'foo,bar,baz\n' + 'foo,bar\n' + '\n' + 'foo,,baz\n' + ',bar,baz\n' + 'foo';
 
 function parse(input) {
   const match = g.match(input);
@@ -36,9 +30,19 @@ function parse(input) {
   return semantics(match).value();
 }
 
-assert.deepEqual(parse(someInput),
-    [['foo', 'bar', 'baz'], ['foo', 'bar'], [''],
-      ['foo', '', 'baz'], ['', 'bar', 'baz'], ['foo']]);
-assert.deepEqual(parse(someInput + '\n'),
-    [['foo', 'bar', 'baz'], ['foo', 'bar'], [''],
-      ['foo', '', 'baz'], ['', 'bar', 'baz'], ['foo']]);
+assert.deepEqual(parse(someInput), [
+  ['foo', 'bar', 'baz'],
+  ['foo', 'bar'],
+  [''],
+  ['foo', '', 'baz'],
+  ['', 'bar', 'baz'],
+  ['foo']
+]);
+assert.deepEqual(parse(someInput + '\n'), [
+  ['foo', 'bar', 'baz'],
+  ['foo', 'bar'],
+  [''],
+  ['foo', '', 'baz'],
+  ['', 'bar', 'baz'],
+  ['foo']
+]);

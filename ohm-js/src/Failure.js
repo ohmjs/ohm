@@ -69,15 +69,15 @@ Failure.prototype.clearFluffy = function() {
 };
 
 Failure.prototype.subsumes = function(that) {
-  return this.getText() === that.getText() &&
-      this.type === that.type &&
-      (!this.isFluffy() || this.isFluffy() && that.isFluffy());
+  return (
+    this.getText() === that.getText() &&
+    this.type === that.type &&
+    (!this.isFluffy() || (this.isFluffy() && that.isFluffy()))
+  );
 };
 
 Failure.prototype.toString = function() {
-  return this.type === 'string' ?
-    JSON.stringify(this.getText()) :
-    this.getText();
+  return this.type === 'string' ? JSON.stringify(this.getText()) : this.getText();
 };
 
 Failure.prototype.clone = function() {

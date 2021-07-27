@@ -14,12 +14,12 @@ const s = g.createSemantics().addOperation('getName', {
   }
 });
 
-test('basic matching', (t) => {
+test('basic matching', t => {
   const matchResult = g.match('Ahoy-hoy, Alexander!');
   t.is(s(matchResult)['getName'](), 'Alexander');
 });
 
-test('incremental matching', (t) => {
+test('incremental matching', t => {
   const matcher = g.matcher();
   matcher.setInput('foo');
   matcher.replaceInputRange(0, 1, 'g').replaceInputRange(1, 3, 'ah');

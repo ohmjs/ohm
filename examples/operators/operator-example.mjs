@@ -15,8 +15,12 @@ import ohm from 'ohm-js';
 // define the AST:
 
 class Program {
-  constructor(expression) { this.body = expression; }
-  toString() { return this.body.toString(); }
+  constructor(expression) {
+    this.body = expression;
+  }
+  toString() {
+    return this.body.toString();
+  }
 }
 
 class BinaryExpression {
@@ -25,17 +29,27 @@ class BinaryExpression {
     this.op = op;
     this.right = right;
   }
-  toString() { return `(${this.op} ${this.left} ${this.right})`; }
+  toString() {
+    return `(${this.op} ${this.left} ${this.right})`;
+  }
 }
 
 class IntegerLiteral {
-  constructor(value) { this.value = value; }
-  toString() { return `${this.value}`; }
+  constructor(value) {
+    this.value = value;
+  }
+  toString() {
+    return `${this.value}`;
+  }
 }
 
 class Identifier {
-  constructor(name) { this.name = name; }
-  toString() { return this.name; }
+  constructor(name) {
+    this.name = name;
+  }
+  toString() {
+    return this.name;
+  }
 }
 
 // Next, we give four grammars and their associated semantics. We’re not using any
@@ -67,7 +81,9 @@ const grammar1 = ohm.grammar(`ExpressionLanguage {
 }`);
 
 const semantics1 = grammar1.createSemantics().addOperation('tree', {
-  Program(body) { return new Program(body.tree()); },
+  Program(body) {
+    return new Program(body.tree());
+  },
   Exp_binary(left, op, right) {
     return new BinaryExpression(left.tree(), op.sourceString, right.tree());
   },
@@ -77,9 +93,15 @@ const semantics1 = grammar1.createSemantics().addOperation('tree', {
   Factor_binary(left, op, right) {
     return new BinaryExpression(left.tree(), op.sourceString, right.tree());
   },
-  Primary_parens(open, expression, close) { return expression.tree(); },
-  number(chars) { return new IntegerLiteral(+this.sourceString); },
-  id(char, moreChars) { return new Identifier(this.sourceString); }
+  Primary_parens(open, expression, close) {
+    return expression.tree();
+  },
+  number(chars) {
+    return new IntegerLiteral(+this.sourceString);
+  },
+  id(char, moreChars) {
+    return new Identifier(this.sourceString);
+  }
 });
 
 // The second grammar is in the style of a traditional PEG. It does not make use of any
@@ -104,7 +126,9 @@ const grammar2 = ohm.grammar(`ExpressionLanguage {
 }`);
 
 const semantics2 = grammar2.createSemantics().addOperation('tree', {
-  Program(body) { return new Program(body.tree()); },
+  Program(body) {
+    return new Program(body.tree());
+  },
   Exp(first, ops, rest) {
     return binaryExpression(first.tree(), ops.tree(), rest.tree());
   },
@@ -114,14 +138,22 @@ const semantics2 = grammar2.createSemantics().addOperation('tree', {
   Factor(first, ops, rest) {
     return binaryExpression(first.tree(), ops.tree(), rest.tree());
   },
-  Primary_parens(open, expression, close) { return expression.tree(); },
-  number(chars) { return new IntegerLiteral(+this.sourceString); },
-  id(char, moreChars) { return new Identifier(this.sourceString); },
+  Primary_parens(open, expression, close) {
+    return expression.tree();
+  },
+  number(chars) {
+    return new IntegerLiteral(+this.sourceString);
+  },
+  id(char, moreChars) {
+    return new Identifier(this.sourceString);
+  },
   // Note that _terminal is now required. In the previous grammar, we never invoked the
   // semantic operation on an operator because it was not necessary. Because this new
   // grammar uses repetition, Ohm will invoke the operation on each operator behind the
   // scenes.
-  _terminal() { return this.sourceString; }
+  _terminal() {
+    return this.sourceString;
+  }
 });
 
 // This grammar cannot help us with associativity, so we must define it here.
@@ -207,12 +239,24 @@ const grammar4 = ohm.grammar(`ExpressionLanguage {
 }`);
 
 const semantics4 = grammar4.createSemantics().addOperation('tree', {
-  Program(body) { return new Program(body.tree()); },
-  Exp(first, ops, rest) { return makeTree(first.tree(), ops.tree(), rest.tree()); },
-  Primary_parens(open, expression, close) { return expression.tree(); },
-  number(chars) { return new IntegerLiteral(+this.sourceString); },
-  id(char, moreChars) { return new Identifier(this.sourceString); },
-  _terminal() { return this.sourceString; }
+  Program(body) {
+    return new Program(body.tree());
+  },
+  Exp(first, ops, rest) {
+    return makeTree(first.tree(), ops.tree(), rest.tree());
+  },
+  Primary_parens(open, expression, close) {
+    return expression.tree();
+  },
+  number(chars) {
+    return new IntegerLiteral(+this.sourceString);
+  },
+  id(char, moreChars) {
+    return new Identifier(this.sourceString);
+  },
+  _terminal() {
+    return this.sourceString;
+  }
 });
 
 // We don’t get precedence *or* associativity in this grammar. We defined
@@ -224,8 +268,11 @@ function makeTree(left, ops, rights, minPrecedence = 0) {
   while (ops.length > 0 && precedence[ops[0]] >= minPrecedence) {
     const op = ops.shift();
     let right = rights.shift();
-    while (ops.length > 0 && (precedence[ops[0]] > precedence[op] ||
-        associativity[ops[0]] === 'R' && precedence[ops[0]] === precedence[op])) {
+    while (
+      ops.length > 0 &&
+      (precedence[ops[0]] > precedence[op] ||
+        (associativity[ops[0]] === 'R' && precedence[ops[0]] === precedence[op]))
+    ) {
       right = makeTree(right, ops, rights, precedence[ops[0]]);
     }
     left = new BinaryExpression(left, op, right);

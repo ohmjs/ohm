@@ -10,8 +10,9 @@ const fs = require('fs');
 
 const args = process.argv.slice(2);
 if (args.length !== 1) {
-  console.error('usage: ' + process.argv[0] + ' ' + process.argv[1] +
-                ' { --builtin | <ohm-grammar-file> }');
+  console.error(
+      'usage: ' + process.argv[0] + ' ' + process.argv[1] + ' { --builtin | <ohm-grammar-file> }'
+  );
   process.exit(1); // eslint-disable-line no-process-exit
 }
 

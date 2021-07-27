@@ -16,21 +16,24 @@ const pexprs = require('./pexprs');
 // --------------------------------------------------------------------
 
 function getSortedRuleValues(grammar) {
-  return Object.keys(grammar.rules).sort().map(name => grammar.rules[name]);
+  return Object.keys(grammar.rules)
+      .sort()
+      .map(name => grammar.rules[name]);
 }
 
-function Grammar(
-    name,
-    superGrammar,
-    rules,
-    optDefaultStartRule) {
+function Grammar(name, superGrammar, rules, optDefaultStartRule) {
   this.name = name;
   this.superGrammar = superGrammar;
   this.rules = rules;
   if (optDefaultStartRule) {
     if (!(optDefaultStartRule in rules)) {
-      throw new Error("Invalid start rule: '" + optDefaultStartRule +
-                      "' is not a rule in grammar '" + name + "'");
+      throw new Error(
+          "Invalid start rule: '" +
+          optDefaultStartRule +
+          "' is not a rule in grammar '" +
+          name +
+          "'"
+      );
     }
     this.defaultStartRule = optDefaultStartRule;
   }
@@ -61,19 +64,26 @@ Grammar.prototype = {
       return true;
     }
     // Do the cheapest comparisons first.
-    if (g == null ||
-        this.name !== g.name ||
-        this.defaultStartRule !== g.defaultStartRule ||
-        !(this.superGrammar === g.superGrammar || this.superGrammar.equals(g.superGrammar))) {
+    if (
+      g == null ||
+      this.name !== g.name ||
+      this.defaultStartRule !== g.defaultStartRule ||
+      !(this.superGrammar === g.superGrammar || this.superGrammar.equals(g.superGrammar))
+    ) {
       return false;
     }
     const myRules = getSortedRuleValues(this);
     const otherRules = getSortedRuleValues(g);
-    return myRules.length === otherRules.length && myRules.every((rule, i) => {
-      return rule.description === otherRules[i].description &&
-             rule.formals.join(',') === otherRules[i].formals.join(',') &&
-             rule.body.toString() === otherRules[i].body.toString();
-    });
+    return (
+      myRules.length === otherRules.length &&
+      myRules.every((rule, i) => {
+        return (
+          rule.description === otherRules[i].description &&
+          rule.formals.join(',') === otherRules[i].formals.join(',') &&
+          rule.body.toString() === otherRules[i].body.toString()
+        );
+      })
+    );
   },
 
   match(input, optStartApplication) {
@@ -115,22 +125,34 @@ Grammar.prototype = {
         problems.push("'" + k + "' is not a valid semantic action for '" + this.name + "'");
       } else if (typeof v !== 'function') {
         problems.push(
-            "'" + k + "' must be a function in an action dictionary for '" + this.name + "'");
+            "'" + k + "' must be a function in an action dictionary for '" + this.name + "'"
+        );
       } else {
         const actual = v.length;
         const expected = this._topDownActionArity(k);
         if (actual !== expected) {
           problems.push(
-              "Semantic action '" + k + "' has the wrong arity: " +
-              'expected ' + expected + ', got ' + actual);
+              "Semantic action '" +
+              k +
+              "' has the wrong arity: " +
+              'expected ' +
+              expected +
+              ', got ' +
+              actual
+          );
         }
       }
     }
     if (problems.length > 0) {
       const prettyProblems = problems.map(problem => '- ' + problem);
       const error = new Error(
-          "Found errors in the action dictionary of the '" + name + "' " + what + ':\n' +
-          prettyProblems.join('\n'));
+          "Found errors in the action dictionary of the '" +
+          name +
+          "' " +
+          what +
+          ':\n' +
+          prettyProblems.join('\n')
+      );
       error.problems = problems;
       throw error;
     }
@@ -207,14 +229,7 @@ Grammar.prototype = {
       ];
     });
 
-    return JSON.stringify([
-      'grammar',
-      metaInfo,
-      this.name,
-      superGrammar,
-      startRule,
-      rules
-    ]);
+    return JSON.stringify(['grammar', metaInfo, this.name, superGrammar, startRule, rules]);
   },
 
   // TODO: Come up with better names for these methods.
@@ -279,7 +294,12 @@ Grammar.prototype = {
     const formals = this.rules[app.ruleName].formals;
     if (formals.length !== app.args.length) {
       const source = this.rules[app.ruleName].source;
-      throw errors.wrongNumberOfParameters(app.ruleName, formals.length, app.args.length, source);
+      throw errors.wrongNumberOfParameters(
+          app.ruleName,
+          formals.length,
+          app.args.length,
+          source
+      );
     }
     return app;
   }

@@ -1,9 +1,9 @@
 # Ohm Documentation
 
-* [Ohm/JS API Reference](./api-reference.md)
-* [Ohm Syntax Reference](./syntax-reference.md)
-* Learn more about the [Ohm philosophy](./philosophy.md)
-* See [Patterns and Pitfalls](./patterns-and-pitfalls.md) for some common Ohm patterns and solutions to frequently-encountered difficulties.
+- [Ohm/JS API Reference](./api-reference.md)
+- [Ohm Syntax Reference](./syntax-reference.md)
+- Learn more about the [Ohm philosophy](./philosophy.md)
+- See [Patterns and Pitfalls](./patterns-and-pitfalls.md) for some common Ohm patterns and solutions to frequently-encountered difficulties.
 
 ## Examples
 
@@ -20,11 +20,11 @@ Instantiate a grammar from a string using `ohm.grammar()`, and check inputs usin
 
 ```js
 const ohm = require('ohm-js');
-const g = ohm.grammar(
-    'Laugh {' +
-    '  laugh = lol | "lmao"' +
-    '  lol = "l" "o"+ "l"' +
-    '}');
+const g = ohm.grammar(`
+  Laugh {
+    laugh = lol | "lmao"
+    lol = "l" "o"+ "l"
+  }`);
 assert(g.match('lol').succeeded());
 assert(!g.match('lmao').failed());
 assert(g.match('loooooool').succeeded());
@@ -97,7 +97,7 @@ const semantics = g.createSemantics().addOperation('eval', {
   },
   number(chars) {
     return parseInt(this.sourceString, 10);
-  },
+  }
 });
 const match = g.match('1 + (2 - 3) + 4');
 assert.equal(semantics(match).eval(), 4);

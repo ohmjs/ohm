@@ -107,7 +107,9 @@ function VisitorFamily(config) {
       self._arities[k] = Array.isArray(shape) ? shape.length : 1;
     }
   });
-  this._wrap = function(thing) { return new self.Adapter(thing, self); };
+  this._wrap = function(thing) {
+    return new self.Adapter(thing, self);
+  };
 }
 
 VisitorFamily.prototype.wrap = function(thing) {
@@ -123,8 +125,10 @@ VisitorFamily.prototype._checkActionDict = function(dict) {
     if (k in self._arities) {
       const expected = self._arities[k];
       const actual = dict[k].length;
-      assert(actual === expected,
-          "Action '" + k + "' has the wrong arity: expected " + expected + ', got ' + actual);
+      assert(
+          actual === expected,
+          "Action '" + k + "' has the wrong arity: expected " + expected + ', got ' + actual
+      );
     }
   });
 };
@@ -154,7 +158,10 @@ VisitorFamily.prototype.addOperation = function(signature, actions) {
 
     const oldArgs = this.args;
     this.args = args;
-    const ans = actions[tag].apply(this, family._getChildren[tag](this._adaptee, family._wrap));
+    const ans = actions[tag].apply(
+        this,
+        family._getChildren[tag](this._adaptee, family._wrap)
+    );
     this.args = oldArgs;
     return ans;
   };

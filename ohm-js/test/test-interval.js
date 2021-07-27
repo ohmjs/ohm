@@ -22,7 +22,6 @@ test('collapsedLeft', t => {
   t.is(collapsed.endIdx, 0);
   t.is(collapsed.sourceString, 'hello world');
   t.is(collapsed.contents, '');
-
 });
 
 test('collapsedRight', t => {
@@ -39,7 +38,6 @@ test('collapsedRight', t => {
   t.is(collapsed.endIdx, 5);
   t.is(collapsed.sourceString, 'hello world');
   t.is(collapsed.contents, '');
-
 });
 
 test('coverage - one interval', t => {
@@ -50,7 +48,6 @@ test('coverage - one interval', t => {
   t.is(ans.endIdx, 5);
   t.is(ans.sourceString, 'hello world');
   t.is(ans.contents, 'hello');
-
 });
 
 test('two adjacent intervals', t => {
@@ -62,7 +59,6 @@ test('two adjacent intervals', t => {
   t.is(ans.endIdx, 5);
   t.is(ans.sourceString, 'hello world');
   t.is(ans.contents, 'hello');
-
 });
 
 test('coverage - two non-adjacent intervals', t => {
@@ -74,7 +70,6 @@ test('coverage - two non-adjacent intervals', t => {
   t.is(ans.endIdx, 5);
   t.is(ans.sourceString, 'hello world');
   t.is(ans.contents, 'hello');
-
 });
 
 test('coverage - nested intervals', t => {
@@ -86,7 +81,6 @@ test('coverage - nested intervals', t => {
   t.is(ans.endIdx, 5);
   t.is(ans.sourceString, 'hello world');
   t.is(ans.contents, 'hello');
-
 });
 
 test('coverage - more intervals', t => {
@@ -99,15 +93,17 @@ test('coverage - more intervals', t => {
   t.is(ans.endIdx, 10);
   t.is(ans.sourceString, 'hello world');
   t.is(ans.contents, 'hello worl');
-
 });
 
 test('brotha from anotha motha', t => {
   const interval1 = new Interval('abc', 0, 3);
   const interval2 = new Interval('xyz', 1, 2);
   t.throws(
-      () => { Interval.coverage(interval1, interval2); },
-      {message: /Interval sources don't match/});
+      () => {
+        Interval.coverage(interval1, interval2);
+      },
+      {message: /Interval sources don't match/}
+  );
 });
 
 test('coverageWith', t => {
@@ -120,7 +116,6 @@ test('coverageWith', t => {
   t.is(ans.endIdx, 10);
   t.is(ans.sourceString, 'hello world');
   t.is(ans.contents, 'hello worl');
-
 });
 
 test('getLineAndColumn', t => {
@@ -132,11 +127,8 @@ test('getLineAndColumn', t => {
   t.is(lineInfo.line, '3 + 4');
   t.is(lineInfo.prevLine, 'blah');
   t.is(lineInfo.nextLine, null);
-  t.is(lineInfo.toString([7, 8], [9, 10]), [
-    'Line 2, col 1:',
-    '  1 | blah',
-    '> 2 | 3 + 4',
-    '      ^ ~ ~',
-    ''].join('\n'));
-
+  t.is(
+      lineInfo.toString([7, 8], [9, 10]),
+      ['Line 2, col 1:', '  1 | blah', '> 2 | 3 + 4', '      ^ ~ ~', ''].join('\n')
+  );
 });

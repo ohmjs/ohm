@@ -137,7 +137,10 @@ pexprs.Iter.prototype.eval = function(state) {
     prevPos = inputStream.pos;
     numMatches++;
     const row = state._bindings.splice(state._bindings.length - arity, arity);
-    const rowOffsets = state._bindingOffsets.splice(state._bindingOffsets.length - arity, arity);
+    const rowOffsets = state._bindingOffsets.splice(
+        state._bindingOffsets.length - arity,
+        arity
+    );
     for (idx = 0; idx < row.length; idx++) {
       cols[idx].push(row[idx]);
       colOffsets[idx].push(rowOffsets[idx]);
@@ -153,14 +156,15 @@ pexprs.Iter.prototype.eval = function(state) {
     const lastColOffsets = colOffsets[arity - 1];
 
     const endOffset =
-        lastColOffsets[lastColOffsets.length - 1] + lastCol[lastCol.length - 1].matchLength;
+      lastColOffsets[lastColOffsets.length - 1] + lastCol[lastCol.length - 1].matchLength;
     offset = colOffsets[0][0];
     matchLength = endOffset - offset;
   }
   const isOptional = this instanceof pexprs.Opt;
   for (idx = 0; idx < cols.length; idx++) {
     state._bindings.push(
-        new IterationNode(state.grammar, cols[idx], colOffsets[idx], matchLength, isOptional));
+        new IterationNode(state.grammar, cols[idx], colOffsets[idx], matchLength, isOptional)
+    );
     state._bindingOffsets.push(offset);
   }
   return true;
@@ -238,9 +242,12 @@ pexprs.Apply.prototype.handleCycle = function(state) {
     memoRec.updateInvolvedApplicationMemoKeys();
   } else if (!memoRec) {
     // New left recursion detected! Memoize a failure to try to get a seed parse.
-    memoRec = posInfo.memoize(
-        memoKey,
-        {matchLength: 0, examinedLength: 0, value: false, rightmostFailureOffset: -1});
+    memoRec = posInfo.memoize(memoKey, {
+      matchLength: 0,
+      examinedLength: 0,
+      value: false,
+      rightmostFailureOffset: -1
+    });
     posInfo.startLeftRecursion(this, memoRec);
   }
   return state.useMemoizedResult(state.inputStream.pos, memoRec);
@@ -313,7 +320,10 @@ pexprs.Apply.prototype.reallyEval = function(state) {
 
   // Fix the input stream's examinedLength -- it should be the maximum examined length
   // across all applications, not just this one.
-  inputStream.examinedLength = Math.max(inputStream.examinedLength, origInputStreamExaminedLength);
+  inputStream.examinedLength = Math.max(
+      inputStream.examinedLength,
+      origInputStreamExaminedLength
+  );
 
   state.exitApplication(origPosInfo, value);
 
@@ -329,7 +339,12 @@ pexprs.Apply.prototype.evalOnce = function(expr, state) {
     const bindings = state._bindings.splice(state._bindings.length - arity, arity);
     const offsets = state._bindingOffsets.splice(state._bindingOffsets.length - arity, arity);
     return new NonterminalNode(
-        state.grammar, this.ruleName, bindings, offsets, inputStream.pos - origPos);
+        state.grammar,
+        this.ruleName,
+        bindings,
+        offsets,
+        inputStream.pos - origPos
+    );
   } else {
     return false;
   }
@@ -353,7 +368,14 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
       // element in `state.trace`.
       const seedTrace = state.trace[state.trace.length - 1];
       lrMemoRec.traceEntry = new Trace(
-          state.input, origPos, inputStream.pos, this, true, [newValue], [seedTrace.clone()]);
+          state.input,
+          origPos,
+          inputStream.pos,
+          this,
+          true,
+          [newValue],
+          [seedTrace.clone()]
+      );
     }
     inputStream.pos = origPos;
     newValue = this.evalOnce(body, state);

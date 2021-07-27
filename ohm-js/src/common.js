@@ -34,8 +34,13 @@ exports.abstract = function(optMethodName) {
   const methodName = optMethodName || '';
   return function() {
     throw new Error(
-        'this method ' + methodName + ' is abstract! ' +
-      '(it has no implementation in class ' + this.constructor.name + ')');
+        'this method ' +
+        methodName +
+        ' is abstract! ' +
+        '(it has no implementation in class ' +
+        this.constructor.name +
+        ')'
+    );
   };
 };
 
@@ -155,15 +160,24 @@ exports.escapeChar = function(c, optDelim) {
 exports.unescapeChar = function(s) {
   if (s.charAt(0) === '\\') {
     switch (s.charAt(1)) {
-      case 'b': return '\b';
-      case 'f': return '\f';
-      case 'n': return '\n';
-      case 'r': return '\r';
-      case 't': return '\t';
-      case 'v': return '\v';
-      case 'x': return String.fromCharCode(parseInt(s.substring(2, 4), 16));
-      case 'u': return String.fromCharCode(parseInt(s.substring(2, 6), 16));
-      default: return s.charAt(1);
+      case 'b':
+        return '\b';
+      case 'f':
+        return '\f';
+      case 'n':
+        return '\n';
+      case 'r':
+        return '\r';
+      case 't':
+        return '\t';
+      case 'v':
+        return '\v';
+      case 'x':
+        return String.fromCharCode(parseInt(s.substring(2, 4), 16));
+      case 'u':
+        return String.fromCharCode(parseInt(s.substring(2, 6), 16));
+      default:
+        return s.charAt(1);
     }
   } else {
     return s;

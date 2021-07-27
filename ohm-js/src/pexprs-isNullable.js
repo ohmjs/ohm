@@ -19,12 +19,13 @@ pexprs.PExpr.prototype.isNullable = function(grammar) {
 pexprs.PExpr.prototype._isNullable = common.abstract('_isNullable');
 
 pexprs.any._isNullable =
-pexprs.Range.prototype._isNullable =
-pexprs.Param.prototype._isNullable =
-pexprs.Plus.prototype._isNullable =
-pexprs.UnicodeChar.prototype._isNullable = function(grammar, memo) {
-  return false;
-};
+  pexprs.Range.prototype._isNullable =
+  pexprs.Param.prototype._isNullable =
+  pexprs.Plus.prototype._isNullable =
+  pexprs.UnicodeChar.prototype._isNullable =
+    function(grammar, memo) {
+      return false;
+    };
 
 pexprs.end._isNullable = function(grammar, memo) {
   return true;
@@ -41,8 +42,7 @@ pexprs.Terminal.prototype._isNullable = function(grammar, memo) {
 };
 
 pexprs.Alt.prototype._isNullable = function(grammar, memo) {
-  return this.terms.length === 0 ||
-      this.terms.some(term => term._isNullable(grammar, memo));
+  return this.terms.length === 0 || this.terms.some(term => term._isNullable(grammar, memo));
 };
 
 pexprs.Seq.prototype._isNullable = function(grammar, memo) {
@@ -50,11 +50,12 @@ pexprs.Seq.prototype._isNullable = function(grammar, memo) {
 };
 
 pexprs.Star.prototype._isNullable =
-pexprs.Opt.prototype._isNullable =
-pexprs.Not.prototype._isNullable =
-pexprs.Lookahead.prototype._isNullable = function(grammar, memo) {
-  return true;
-};
+  pexprs.Opt.prototype._isNullable =
+  pexprs.Not.prototype._isNullable =
+  pexprs.Lookahead.prototype._isNullable =
+    function(grammar, memo) {
+      return true;
+    };
 
 pexprs.Lex.prototype._isNullable = function(grammar, memo) {
   return this.expr._isNullable(grammar, memo);

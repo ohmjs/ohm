@@ -35,35 +35,21 @@ pexprs.end.outputRecipe = function(formals, grammarInterval) {
 };
 
 pexprs.Terminal.prototype.outputRecipe = function(formals, grammarInterval) {
-  return [
-    'terminal',
-    getMetaInfo(this, grammarInterval),
-    this.obj
-  ];
+  return ['terminal', getMetaInfo(this, grammarInterval), this.obj];
 };
 
 pexprs.Range.prototype.outputRecipe = function(formals, grammarInterval) {
-  return [
-    'range',
-    getMetaInfo(this, grammarInterval),
-    this.from,
-    this.to
-  ];
+  return ['range', getMetaInfo(this, grammarInterval), this.from, this.to];
 };
 
 pexprs.Param.prototype.outputRecipe = function(formals, grammarInterval) {
-  return [
-    'param',
-    getMetaInfo(this, grammarInterval),
-    this.index
-  ];
+  return ['param', getMetaInfo(this, grammarInterval), this.index];
 };
 
 pexprs.Alt.prototype.outputRecipe = function(formals, grammarInterval) {
-  return [
-    'alt',
-    getMetaInfo(this, grammarInterval)
-  ].concat(this.terms.map(term => term.outputRecipe(formals, grammarInterval)));
+  return ['alt', getMetaInfo(this, grammarInterval)].concat(
+      this.terms.map(term => term.outputRecipe(formals, grammarInterval))
+  );
 };
 
 pexprs.Extend.prototype.outputRecipe = function(formals, grammarInterval) {
@@ -83,24 +69,24 @@ pexprs.Splice.prototype.outputRecipe = function(formals, grammarInterval) {
 };
 
 pexprs.Seq.prototype.outputRecipe = function(formals, grammarInterval) {
-  return [
-    'seq',
-    getMetaInfo(this, grammarInterval)
-  ].concat(this.factors.map(factor => factor.outputRecipe(formals, grammarInterval)));
+  return ['seq', getMetaInfo(this, grammarInterval)].concat(
+      this.factors.map(factor => factor.outputRecipe(formals, grammarInterval))
+  );
 };
 
 pexprs.Star.prototype.outputRecipe =
-pexprs.Plus.prototype.outputRecipe =
-pexprs.Opt.prototype.outputRecipe =
-pexprs.Not.prototype.outputRecipe =
-pexprs.Lookahead.prototype.outputRecipe =
-pexprs.Lex.prototype.outputRecipe = function(formals, grammarInterval) {
-  return [
-    this.constructor.name.toLowerCase(),
-    getMetaInfo(this, grammarInterval),
-    this.expr.outputRecipe(formals, grammarInterval)
-  ];
-};
+  pexprs.Plus.prototype.outputRecipe =
+  pexprs.Opt.prototype.outputRecipe =
+  pexprs.Not.prototype.outputRecipe =
+  pexprs.Lookahead.prototype.outputRecipe =
+  pexprs.Lex.prototype.outputRecipe =
+    function(formals, grammarInterval) {
+      return [
+        this.constructor.name.toLowerCase(),
+        getMetaInfo(this, grammarInterval),
+        this.expr.outputRecipe(formals, grammarInterval)
+      ];
+    };
 
 pexprs.Apply.prototype.outputRecipe = function(formals, grammarInterval) {
   return [
@@ -112,9 +98,5 @@ pexprs.Apply.prototype.outputRecipe = function(formals, grammarInterval) {
 };
 
 pexprs.UnicodeChar.prototype.outputRecipe = function(formals, grammarInterval) {
-  return [
-    'unicodeChar',
-    getMetaInfo(this, grammarInterval),
-    this.category
-  ];
+  return ['unicodeChar', getMetaInfo(this, grammarInterval), this.category];
 };
