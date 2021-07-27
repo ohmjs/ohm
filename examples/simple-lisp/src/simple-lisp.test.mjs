@@ -1,4 +1,4 @@
-import { grammar, runLisp, createEnv } from './simple-lisp.mjs';
+import {grammar, runLisp, createEnv} from './simple-lisp.mjs';
 
 import test from 'ava';
 
@@ -43,35 +43,35 @@ function createLoggingEnv() {
   const env = createEnv();
   const log = [];
   env.bind('log', (...args) => {
-    log.push(args.map((x) => JSON.stringify(x)).join(' '));
+    log.push(args.map(x => JSON.stringify(x)).join(' '));
   });
   return [env, log];
 }
 
-test('basic', (t) => {
+test('basic', t => {
   const [env, log] = createLoggingEnv();
   runLisp(LISP_BASIC_TEST, env);
   t.deepEqual(log, ['"5 plus 3 is 8"']);
 });
 
-test('quotes', (t) => {
+test('quotes', t => {
   const [env, log] = createLoggingEnv();
   runLisp(LISP_QUOTES, env);
   t.deepEqual(log, ['{"name":"symbol-test"}', '[{"name":"+"},1,1]', '2']);
 });
 
-test('quasiquotes', (t) => {
+test('quasiquotes', t => {
   const [env, log] = createLoggingEnv();
   runLisp(LISP_QUASIQUOTES, env);
   t.deepEqual(log, [
     '[{"name":"a"},{"name":"lst"},{"name":"b"}]',
     '[{"name":"a"},[{"name":"b"},{"name":"c"}],{"name":"d"}]',
     '[{"name":"a"},{"name":"b"},{"name":"c"},{"name":"d"}]'
-  ])
+  ]);
 });
 
 // TODO: Fix the exception here.
-test.failing('macros', (t) => {
+test.failing('macros', t => {
   const [env, log] = createLoggingEnv();
   runLisp(LISP_MACROS, env);
   t.fail();

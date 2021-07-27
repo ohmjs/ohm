@@ -117,13 +117,13 @@ semantics.addOperation('prettyPrint()', {
 // Exports
 // -------
 
-const prettyPrint = module.exports = function(source) {
+const prettyPrint = (module.exports = function(source) {
   const matchResult = ohm.ohmGrammar.match(source, 'Grammar');
   if (matchResult.failed()) {
     return matchResult;
   }
   return semantics(matchResult).prettyPrint();
-};
+});
 
 // Main
 // ----

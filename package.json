@@ -12,7 +12,7 @@
     "build": "yarn workspace ohm-js run build",
     "ci-test": "yarn lint && yarn test",
     "lint": "eslint .",
-    "format": "prettier --write ohm-js && eslint --fix ohm-js",
+    "format": "prettier --write . && eslint --fix .",
     "test": "yarn workspaces run test"
   },
   "devDependencies": {

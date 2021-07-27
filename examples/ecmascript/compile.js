@@ -71,7 +71,9 @@ function compile(args) {
   const results = [];
   const succeeded = files.every(arr => {
     const source = arr[1] || removeShebang(fs.readFileSync(arr[0]).toString());
-    if (opts.v) { console.error(arr[0]); }
+    if (opts.v) {
+      console.error(arr[0]);
+    }
     const result = lang.grammar.match(source, 'Program');
     if (result.succeeded()) {
       results.push(result);
@@ -83,7 +85,7 @@ function compile(args) {
 
   if (succeeded) {
     if (opts.b) {
-      console.error('Matching:', (Date.now() - matchStartTime) + 'ms');
+      console.error('Matching:', Date.now() - matchStartTime + 'ms');
     }
 
     // Codegen
@@ -93,7 +95,7 @@ function compile(args) {
       code += ';\n' + lang.semantics(r).toES5();
     });
     if (opts.b) {
-      console.error('Codegen:', (Date.now() - codegenStartTime) + 'ms');
+      console.error('Codegen:', Date.now() - codegenStartTime + 'ms');
     }
     return code;
   }

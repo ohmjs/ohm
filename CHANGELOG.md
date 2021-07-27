@@ -23,11 +23,13 @@ in a new major version of the `ohm-js` package.
 **API**
 
 Features:
+
 - [1c286f6] The `message` and `shortMessage` properties of errors are now enumerable.
 - [dec2846] Added a TypeScript type definition file (d.ts) for the extras submodule (#214)
 - [369a1de] Prevent infinite loops during parsing, by throwing an error if a [repetition expression](https://github.com/harc/ohm/blob/master/doc/syntax-reference.md#repetition-operators---) consumes no input. (#211)
 
 Fixes:
+
 - [7857b8f] Fixed `npm install` issue with the 15.0.0 release (#260)
 - [8202eff] Switched to Buffer.from, as `new Buffer` is deprecated in Node v10.
 - [59b28be] CaseInsensitiveTerminal.toFailure() now passes the grammar arg through.
@@ -39,6 +41,7 @@ Fixes:
 ### Notable changes:
 
 **API**
+
 - [753dc4d] Ohm's version number is now exposed as a top-level 'version' property
 - [c5d7046] missingSemanticAction errors include an action call stack
 - [f06ccbb] Range expressions now only work with single-character terminals. E.g.,
@@ -49,20 +52,24 @@ Fixes:
 ### Notable changes:
 
 **Big stuff**
+
 - Ohm now supports incremental parsing! See the new Matcher class, which
   can be instantiated for a grammar `g` via `g.matcher()`.
 
 **Language**
+
 - [75d1bc8] Update built-in `lower`, `upper`, and `unicodeLtmo` rules to be
   consistent with unicode-9.0.0
 - [4f864a0] Add built-in rule `caseInsensitive` rule for case-insensitive
   string matching (fixes #162)
 
 **API**
+
 - [b63aa84] Remove MatchResult.prototype.getDiscardedSpaces()
 - [7b455d2] Remove `children` and `childOffset` from TerminalNodes (fixes #176)
 
 **Misc**
+
 - [865c948] Add Typescript type declarations (#187)
 - [798ea77] Show action call stack when a semantic action is missing (fixes #53)
 - [482b693] Add VisitorFamily to extras (#156)
@@ -83,15 +90,17 @@ Fixes:
 ### Notable changes:
 
 **Language**
+
 - [5d972f6]: Inline rule declarations are now only allowed in top-level alternation nodes.
-  * Previously, the grammar allowed inline rule declarations in any alternation, but it
+  - Previously, the grammar allowed inline rule declarations in any alternation, but it
     only really makes sense at the top level.
 - [fdf4381]: Matching on structured data (Objects, Arrays, etc.) is no longer supported.
-  * This was a feature that Ohm inherited from OMeta, but we found that we almost never
+  - This was a feature that Ohm inherited from OMeta, but we found that we almost never
     used it in Ohm. Removing it allows significant simplification to the language, code,
     and documentation.
 
 **API**
+
 - [e497d47]: Like grammars, Semantics instances now have a `toRecipe` method
 
 ## v0.10.0 - May 2, 2016
@@ -99,22 +108,24 @@ Fixes:
 ### Notable changes:
 
 **Language**
+
 - [3ce66ea]: Allow leading pipe in rule bodies (suggested by Jason Merrill).
-  * In rule definitions, the body may optionally begin with a `|` character, which will be ignored.
+  - In rule definitions, the body may optionally begin with a `|` character, which will be ignored.
 - [761d6ef]: `ListOf_some` and `ListOf_none` renamed to `NonemptyListOf` and `EmptyListOf`.
 - [c548f01]: The built-in `spaces_` rule has been renamed to `spaces`.
 
 **API**
-- [22ff905]: No more default semantic action for _terminal.
-  * To duplicate the old behavior, you can write a "_terminal" semantic action that just
+
+- [22ff905]: No more default semantic action for \_terminal.
+  - To duplicate the old behavior, you can write a "\_terminal" semantic action that just
     returns `this.primitiveValue`, as [in the math example](https://github.com/cdglabs/ohm/commit/22ff905b5842d52a8c8a63ef8186f574e01bf2e4#diff-215507e52f6cd81b5c49dc9cd72aae2eR390).
 - [8efa687]: Expose pexprs as part of the public API (`ohm.pexprs`).
 - #63: Semantics instances now include a built-in attribute named 'asIteration'.
-  * This simplifies working with the built-in `ListOf` rule.
-  * Needs documentation (#93)
+  - This simplifies working with the built-in `ListOf` rule.
+  - Needs documentation (#93)
 - [7590d82]: Add "extras" module, with toAST() operation.
-  * See the [documentation](./doc/extras.md) for more information.
+  - See the [documentation](./doc/extras.md) for more information.
 - [e24a146]: New `isOptional` method on parse nodes.
-  * See the [documentation](./doc/api-reference.md#parse-nodes) for more information.
+  - See the [documentation](./doc/api-reference.md#parse-nodes) for more information.
 - [64ee822]: New `getDiscardedSpaces` method on MatchResult, which makes Alex happy.
-  * Needs documentation (#92)
+  - Needs documentation (#92)

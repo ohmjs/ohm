@@ -8,8 +8,5 @@
     "strictNullChecks": true,
     "moduleResolution": "node"
   },
-  "files": [
-    "index.d.ts",
-    "test/test-typings.ts"
-  ]
+  "files": ["index.d.ts", "test/test-typings.ts"]
 }

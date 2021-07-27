@@ -1,10 +1,10 @@
 import ohm from 'ohm-js';
 
-const H1 = (content) => ({type: 'H1', content});
-const H2 = (content) => ({type: 'H2', content});
-const H3 = (content) => ({type: 'H3', content});
-const P = (content) => ({type: 'P', content});
-const LI = (content) => ({type: 'LI', content});
+const H1 = content => ({type: 'H1', content});
+const H2 = content => ({type: 'H2', content});
+const H3 = content => ({type: 'H3', content});
+const P = content => ({type: 'P', content});
+const LI = content => ({type: 'LI', content});
 const code = (language, content) => ({type: 'CODE', language, content});
 
 function parseMarkdownBlocks(str) {
@@ -37,7 +37,7 @@ function parseMarkdownBlocks(str) {
     h2: (_, b) => H2(b.blocks()),
     h3: (_, b) => H3(b.blocks()),
     code: (_, name, cod, _2) => code(name.blocks(), cod.blocks().join('')),
-    para: (a) => P(a.sourceString),
+    para: a => P(a.sourceString),
     blank: (a, b) => ({type: 'BLANK'}),
     bullet: (a, b, c) => LI(b.sourceString + c.sourceString),
     rest: (a, _) => a.blocks().join('')
@@ -91,7 +91,7 @@ function parseMarkdownContent(block) {
 
 export function parseMarkdown(raw_markdown) {
   const blocks = parseMarkdownBlocks(raw_markdown);
-  return blocks.map((block) => {
+  return blocks.map(block => {
     if (block.type === 'P') return parseMarkdownContent(block);
     if (block.type === 'LI') return parseMarkdownContent(block);
     return block;

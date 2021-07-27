@@ -1,2 +1,7 @@
 dist
 third_party
+testdata
+visualizer
+*.css
+*.html
+*.md

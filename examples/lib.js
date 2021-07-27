@@ -5,9 +5,10 @@
 window.makeElement = function(tagName) {
   const element = document.createElement(tagName);
   for (let idx = 1; idx < arguments.length; idx++) {
-    const child = typeof arguments[idx] === 'string' ?
-        document.createTextNode(arguments[idx]) :
-        arguments[idx];
+    const child =
+      typeof arguments[idx] === 'string'
+        ? document.createTextNode(arguments[idx])
+        : arguments[idx];
     element.appendChild(child);
   }
   return element;
