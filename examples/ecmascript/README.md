@@ -14,7 +14,6 @@ npm install ohm-grammar-ecmascript
 
 After installing, you can use the ES5 grammar like this:
 
-
 ```js
 var es5 = require('ohm-grammar-ecmascript');
 var result = es5.grammar.match('var x = 3; console.log(x);');
