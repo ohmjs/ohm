@@ -28,6 +28,7 @@
     "build-debug": "webpack --mode=development",
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
     "lint": "eslint . --ignore-path ../.eslintignore",
+    "format": "prettier . --write --ignore-path ../.prettierignore --config ../.prettierrc && eslint . --ignore-path ../.eslintignore --fix",
     "pretest": "bash ../bin/update-env.sh",
     "test": "ava && ava --config ava-ts.config.js test/test-typings.ts",
     "test-watch": "ava --watch",
