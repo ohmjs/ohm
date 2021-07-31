@@ -222,7 +222,6 @@ require('./pexprs-allowsSkippingPrecedingSpace');
 require('./pexprs-assertAllApplicationsAreValid');
 require('./pexprs-assertChoicesHaveUniformArity');
 require('./pexprs-assertIteratedExprsAreNotNullable');
-require('./pexprs-check');
 require('./pexprs-eval');
 require('./pexprs-getArity');
 require('./pexprs-generateExample');
