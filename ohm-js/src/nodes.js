@@ -134,9 +134,11 @@ class TerminalNode extends Node {
 
   get primitiveValue() {
     if (!didWarnForPrimitiveValue) {
+      // eslint-disable-next-line no-console
       console.warn(
-        'Warning: primitiveValue is deprecated and will be removed in a future version of Ohm. ' +
-        'Use sourceString instead.')
+          'Warning: primitiveValue is deprecated and will be removed in a future version of Ohm. ' +
+          'Use sourceString instead.'
+      );
       didWarnForPrimitiveValue = true;
     }
 

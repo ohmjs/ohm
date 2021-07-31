@@ -425,7 +425,7 @@ s.addOperation('toTwoD', {
     return elt('number', this.sourceString);
   },
   _terminal() {
-    return this.primitiveValue;
+    return this.sourceString;
   }
 
   // Remember the `_nonterminal` semantic action that we wrote for the `interpret` operation above?

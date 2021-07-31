@@ -108,7 +108,6 @@ test('string', t => {
       {message: /Expected "\\""/},
       'unrecognized escape characters are parse errors'
   );
-  t.fail()
 });
 
 describe('unicode', test => {
