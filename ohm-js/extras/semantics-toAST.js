@@ -15,7 +15,7 @@ const extend = require('util-extend');
 
 const defaultOperation = {
   _terminal() {
-    return this.primitiveValue;
+    return this.sourceString;
   },
 
   _nonterminal(children) {

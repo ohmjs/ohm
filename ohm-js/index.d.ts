@@ -277,6 +277,7 @@ declare namespace ohm {
     /**
      * For a terminal node, the raw value that was consumed from the
      * input stream.
+     * @deprecated Use `sourceString` instead.
      */
     primitiveValue: string;
 

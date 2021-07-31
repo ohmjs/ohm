@@ -2,6 +2,9 @@
 
 const common = require('./common');
 
+// Ensures that the deprecation warning for `primitiveValue` only appears once.
+let didWarnForPrimitiveValue = false;
+
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
@@ -118,7 +121,7 @@ class TerminalNode extends Node {
   constructor(grammar, value) {
     const matchLength = value ? value.length : 0;
     super(grammar, '_terminal', matchLength);
-    this.primitiveValue = value;
+    this._value = value;
   }
 
   isTerminal() {
@@ -126,7 +129,18 @@ class TerminalNode extends Node {
   }
 
   toJSON() {
-    return {[this.ctorName]: this.primitiveValue};
+    return {[this.ctorName]: this._value};
+  }
+
+  get primitiveValue() {
+    if (!didWarnForPrimitiveValue) {
+      console.warn(
+        'Warning: primitiveValue is deprecated and will be removed in a future version of Ohm. ' +
+        'Use sourceString instead.')
+      didWarnForPrimitiveValue = true;
+    }
+
+    return this._value;
   }
 }
 

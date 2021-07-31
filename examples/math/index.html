@@ -384,10 +384,9 @@ s.addOperation('toTree', {
   number(_)               { return elt('number', this.sourceString); },
 
   // The _terminal semantic action specifies what your operation or attribute should do with
-  // (you guessed it) terminals. Here, we return the terminal's `primitiveValue` property,
-  // which for a string terminal is the string itself. For a number terminal `t`,
-  // `t.primitiveValue` evaluates to the corresponding (JavaScript) number, and so on.
-  _terminal() { return this.primitiveValue; }
+  // (you guessed it) terminals. Here, we return the terminal's `sourceString` attribute, which
+  // is just the substring of the input that was consumed by that node.
+  _terminal() { return this.sourceString; }
 });
 
 // -------------------------------------------------------------------------------------------------

@@ -44,7 +44,7 @@ function buildTreeNodeWithUniqueId(g) {
       return ['id', nextId++, this.ctorName].concat(children.map(child => child.tree));
     },
     _terminal() {
-      return this.primitiveValue;
+      return this.sourceString;
     }
   });
 
@@ -75,7 +75,7 @@ test('char', t => {
   const m = ohm.grammar('M { bang = "!" }');
   const s = m.createSemantics().addAttribute('v', {
     _terminal() {
-      return this.primitiveValue;
+      return this.sourceString;
     }
   });
 
@@ -108,6 +108,7 @@ test('string', t => {
       {message: /Expected "\\""/},
       'unrecognized escape characters are parse errors'
   );
+  t.fail()
 });
 
 describe('unicode', test => {
@@ -134,7 +135,7 @@ describe('unicode', test => {
   test('semantic actions', t => {
     const s = m.createSemantics().addAttribute('v', {
       _terminal() {
-        return this.primitiveValue + this.primitiveValue;
+        return this.sourceString + this.sourceString;
       }
     });
     const r = m.match('\u01C0', 'letter');
@@ -146,7 +147,7 @@ test('ranges', t => {
   const m = ohm.grammar('M { charRange = "0".."9" }');
   const s = m.createSemantics().addAttribute('v', {
     _terminal() {
-      return this.primitiveValue;
+      return this.sourceString;
     }
   });
 
@@ -181,7 +182,7 @@ describe('alt', test => {
   const m = ohm.grammar('M { altTest = "a" | "b" }');
   const s = m.createSemantics().addAttribute('v', {
     _terminal() {
-      return this.primitiveValue;
+      return this.sourceString;
     }
   });
 
@@ -202,7 +203,7 @@ describe("rule bodies in defs can start with a |, and it's a no-op", test => {
   const m = ohm.grammar('M { altTest = | "a" | "b" }');
   const s = m.createSemantics().addAttribute('v', {
     _terminal() {
-      return this.primitiveValue;
+      return this.sourceString;
     }
   });
 
@@ -223,7 +224,7 @@ describe("rule bodies in overrides can start with a |, and it's a no-op", test =
   const m = ohm.grammar('M { space := | "a" | "b" }');
   const s = m.createSemantics().addAttribute('v', {
     _terminal() {
-      return this.primitiveValue;
+      return this.sourceString;
     }
   });
 
@@ -245,7 +246,7 @@ describe("rule bodies in extends can start with a |, and it's a no-op", test => 
   const m = ohm.grammar('M { space += | "a" | "b" }');
   const s = m.createSemantics().addAttribute('v', {
     _terminal() {
-      return this.primitiveValue;
+      return this.sourceString;
     }
   });
 
@@ -296,7 +297,7 @@ describe('alts and seqs together', test => {
   test('semantic actions', t => {
     const s = m.createSemantics().addAttribute('v', {
       start(x, _, y) {
-        return [x.primitiveValue, y.primitiveValue];
+        return [x.sourceString, y.sourceString];
       }
     });
     t.deepEqual(s(m.match('abc')).v, ['a', 'c']);
@@ -334,7 +335,7 @@ describe('kleene-* and kleene-+', test => {
         return ['digit', expr.v];
       },
       _terminal() {
-        return this.primitiveValue;
+        return this.sourceString;
       }
     });
     t.deepEqual(s(m.match('1234', 'number')).v, [
@@ -377,10 +378,10 @@ describe('opt', test => {
   test('semantic actions', t => {
     const s = m.createSemantics().addAttribute('v', {
       name(title, last) {
-        return [title.children.length === 1 ? title.v[0] : undefined, last.primitiveValue];
+        return [title.children.length === 1 ? title.v[0] : undefined, last.sourceString];
       },
       _terminal() {
-        return this.primitiveValue;
+        return this.sourceString;
       }
     });
     t.deepEqual(s(m.match('drwarth')).v, ['dr', 'warth']);
@@ -417,7 +418,7 @@ describe('lookahead', test => {
   test('semantic actions', t => {
     const s = m.createSemantics().addAttribute('v', {
       start(x, _) {
-        return x.primitiveValue;
+        return x.sourceString;
       }
     });
     t.is(s(m.match('hello world')).v, 'hello');
@@ -453,7 +454,7 @@ describe('simple left recursion', test => {
             return expr.v.charCodeAt(0) - '0'.charCodeAt(0);
           },
           _terminal() {
-            return this.primitiveValue;
+            return this.sourceString;
           }
         })
         .addAttribute('t', {
@@ -464,7 +465,7 @@ describe('simple left recursion', test => {
             return ['numberRec', n.t, d.t];
           },
           _terminal() {
-            return this.primitiveValue;
+            return this.sourceString;
           }
         });
     t.is(s(f).v, 1234);
@@ -499,7 +500,7 @@ describe('simple left recursion', test => {
           return [x.v, '+', y.v];
         },
         _terminal() {
-          return this.primitiveValue;
+          return this.sourceString;
         }
       });
       t.deepEqual(s(m.match('x+y+x', 'add')).v, [['x', '+', 'y'], '+', 'x']);
@@ -533,7 +534,7 @@ describe('simple left recursion', test => {
           return [n.v, d.v];
         },
         _terminal() {
-          return this.primitiveValue;
+          return this.sourceString;
         }
       });
       t.deepEqual(s(m.match('1234', 'number')).v, [[['1', '2'], '3'], '4']);
@@ -578,7 +579,7 @@ describe('simple left recursion', test => {
               return ['mulExpRec', x.t, y.t];
             },
             _terminal() {
-              return this.primitiveValue;
+              return this.sourceString;
             }
           })
           .addAttribute('v', {
@@ -598,7 +599,7 @@ describe('simple left recursion', test => {
               return parseInt(expr.v);
             },
             _terminal() {
-              return this.primitiveValue;
+              return this.sourceString;
             }
           })
           .addAttribute('p', {
@@ -609,7 +610,7 @@ describe('simple left recursion', test => {
               return '(' + x.p + '*' + y.p + ')';
             },
             _terminal() {
-              return this.primitiveValue;
+              return this.sourceString;
             }
           });
       t.deepEqual(s(f).t, [
@@ -729,7 +730,7 @@ describe('simple left recursion', test => {
           return [x.t, '*', y.t];
         },
         _terminal() {
-          return this.primitiveValue;
+          return this.sourceString;
         }
       });
       t.deepEqual(s(m.match('7+8*9+0')).t, [['7', '+', ['8', '*', '9']], '+', '0']);
@@ -771,7 +772,7 @@ describe('simple left recursion', test => {
           return ['barRec', x.t, y.t];
         },
         _terminal() {
-          return this.primitiveValue;
+          return this.sourceString;
         }
       });
       t.deepEqual(s(f).t, [
@@ -867,7 +868,7 @@ describe('inheritance', t => {
           return ['digit', expr.v];
         },
         _terminal() {
-          return this.primitiveValue;
+          return this.sourceString;
         }
       });
       const expected = [
@@ -897,7 +898,7 @@ describe('inheritance', t => {
     test('semantic actions', t => {
       const s = ns.G2.createSemantics().addAttribute('v', {
         foo(x, y) {
-          return [x.primitiveValue, y.primitiveValue];
+          return [x.sourceString, y.sourceString];
         }
       });
       t.deepEqual(s(ns.G2.match('aaabbb')).v, ['aaa', 'bbb']);
@@ -1064,7 +1065,7 @@ describe('bindings', test => {
         return ['baz', expr.v, id++];
       },
       _terminal() {
-        return this.primitiveValue;
+        return this.sourceString;
       }
     });
     t.deepEqual(s(g.match('ab')).v, {
@@ -1089,7 +1090,7 @@ describe('bindings', test => {
         return ['baz', expr.v, id++];
       },
       _terminal() {
-        return this.primitiveValue;
+        return this.sourceString;
       }
     });
     t.deepEqual(s(g.match('ab')).v, {
@@ -1124,7 +1125,7 @@ test('inline rule declarations', t => {
         return expr.v.charCodeAt(0) - '0'.charCodeAt(0);
       },
       _terminal() {
-        return this.primitiveValue;
+        return this.sourceString;
       }
     });
     return function(node) {
@@ -1398,7 +1399,7 @@ describe('bootstrap', test => {
         return expr.v.charCodeAt(0) - '0'.charCodeAt(0);
       },
       _terminal() {
-        return this.primitiveValue;
+        return this.sourceString;
       }
     });
     t.is(s(Arithmetic.match('10*(2+123)-4/5')).v, 1249.2);

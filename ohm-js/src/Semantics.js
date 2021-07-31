@@ -173,6 +173,7 @@ class Wrapper {
 
   // Returns the primitive value of this CST node, if it's a terminal node. Otherwise,
   // throws an exception.
+  // DEPRECATED: Use `sourceString` instead.
   get primitiveValue() {
     if (this.isTerminal()) {
       return this._node.primitiveValue;

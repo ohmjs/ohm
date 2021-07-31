@@ -202,7 +202,7 @@ test('attributes', t => {
     },
     _terminal() {
       count++;
-      return this.primitiveValue;
+      return this.sourceString;
     }
   });
 
@@ -462,7 +462,7 @@ test('_terminal nodes', t => {
       t.is(arguments.length, 0, 'there are no arguments');
       t.is(this.ctorName, '_terminal');
       t.is(this.children.length, 0, 'node has no children');
-      return this.primitiveValue;
+      return this.sourceString;
     }
   });
   t.deepEqual(s(m).op(), ['a', 'b', 'c']);
@@ -774,7 +774,7 @@ test('mixing nodes from one grammar with semantics from another', t => {
       return x.value() + 'choo!';
     },
     _terminal() {
-      return this.primitiveValue;
+      return this.sourceString;
     }
   });
 

@@ -280,7 +280,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
 
     _terminal() {
-      return this.primitiveValue;
+      return this.sourceString;
     }
   });
   return helpers(match).visit();

@@ -142,7 +142,7 @@ test('inline rule declarations', t => {
       return [];
     },
     _terminal() {
-      return this.primitiveValue;
+      return this.sourceString;
     }
   });
   const cst = g.match('x, x,x', 'Start');
@@ -167,7 +167,7 @@ test('left recursion', t => {
       return x.v();
     },
     _terminal() {
-      return this.primitiveValue;
+      return this.sourceString;
     }
   });
   const cst = g.match('1 + 2 + 3', 'Start');
@@ -183,7 +183,7 @@ test('complex parameters', t => {
       return [x.v(), y.v()];
     },
     _terminal() {
-      return this.primitiveValue;
+      return this.sourceString;
     }
   });
   t.deepEqual(s(g.match('42')).v(), ['4', '2']);

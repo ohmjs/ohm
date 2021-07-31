@@ -249,10 +249,6 @@ The number of child nodes that the node has.
 
 `true` if the node is an iterator node having either one or no child (? operator), otherwise `false`.
 
-<b><pre class="api">n.primitiveValue: string</pre></b>
-
-For a terminal node, the raw value that was consumed from the input stream.
-
 #### Operations and Attributes
 
 In addition to the properties listed above, within a given semantics, every node also has a method/property corresponding to each operation/attribute in the semantics. For example, in a semantics that has an operation named 'prettyPrint' and an attribute named 'freeVars', every node has a `prettyPrint()` method and a `freeVars` property.
