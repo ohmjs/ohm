@@ -365,9 +365,8 @@ function parseSignature(signature, type) {
 
 function newDefaultAction(type, name, doIt) {
   return function(children) {
-    const self = this;
     const thisThing = this._semantics.operations[name] || this._semantics.attributes[name];
-    const args = thisThing.formals.map(formal => self.args[formal]);
+    const args = thisThing.formals.map(formal => this.args[formal]);
 
     if (this.isIteration()) {
       // This CST node corresponds to an iteration expression in the grammar (*, +, or ?). The

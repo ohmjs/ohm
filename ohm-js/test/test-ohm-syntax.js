@@ -90,7 +90,7 @@ test('string', t => {
   const m = ohm.grammar('M { foo = "foo\\b\\n\\r\\t\\\\\\"\\u01bcff\\x8f" }');
   const s = m.createSemantics().addAttribute('v', {
     _terminal() {
-      return this.primitiveValue;
+      return this.sourceString;
     }
   });
 

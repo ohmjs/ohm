@@ -193,11 +193,10 @@ Grammar.prototype = {
     }
 
     const rules = {};
-    const self = this;
     Object.keys(this.rules).forEach(ruleName => {
-      const ruleInfo = self.rules[ruleName];
+      const ruleInfo = this.rules[ruleName];
       const body = ruleInfo.body;
-      const isDefinition = !self.superGrammar || !self.superGrammar.rules[ruleName];
+      const isDefinition = !this.superGrammar || !this.superGrammar.rules[ruleName];
 
       let operation;
       if (isDefinition) {
@@ -207,13 +206,13 @@ Grammar.prototype = {
       }
 
       const metaInfo = {};
-      if (ruleInfo.source && self.source) {
-        const adjusted = ruleInfo.source.relativeTo(self.source);
+      if (ruleInfo.source && this.source) {
+        const adjusted = ruleInfo.source.relativeTo(this.source);
         metaInfo.sourceInterval = [adjusted.startIdx, adjusted.endIdx];
       }
 
       const description = isDefinition ? ruleInfo.description : null;
-      const bodyRecipe = body.outputRecipe(ruleInfo.formals, self.source);
+      const bodyRecipe = body.outputRecipe(ruleInfo.formals, this.source);
 
       rules[ruleName] = [
         operation, // "define"/"extend"/"override"

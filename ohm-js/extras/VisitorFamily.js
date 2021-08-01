@@ -97,19 +97,16 @@ function VisitorFamily(config) {
   this._arities = Object.create(null);
   this._getChildren = Object.create(null);
 
-  const self = this;
   Object.keys(this._shapes).forEach(k => {
-    const shape = self._shapes[k];
-    self._getChildren[k] = getWalkFn(shape);
+    const shape = this._shapes[k];
+    this._getChildren[k] = getWalkFn(shape);
 
     // A function means the arity isn't fixed, so don't put an entry in the arity map.
     if (typeof shape !== 'function') {
-      self._arities[k] = Array.isArray(shape) ? shape.length : 1;
+      this._arities[k] = Array.isArray(shape) ? shape.length : 1;
     }
   });
-  this._wrap = function(thing) {
-    return new self.Adapter(thing, self);
-  };
+  this._wrap = thing => new this.Adapter(thing, this);
 }
 
 VisitorFamily.prototype.wrap = function(thing) {
@@ -117,13 +114,12 @@ VisitorFamily.prototype.wrap = function(thing) {
 };
 
 VisitorFamily.prototype._checkActionDict = function(dict) {
-  const self = this;
   Object.keys(dict).forEach(k => {
-    assert(k in self._getChildren, "Unrecognized action name '" + k + "'");
+    assert(k in this._getChildren, "Unrecognized action name '" + k + "'");
     const action = dict[k];
     assert(typeof action === 'function', "Key '" + k + "': expected function, got " + action);
-    if (k in self._arities) {
-      const expected = self._arities[k];
+    if (k in this._arities) {
+      const expected = this._arities[k];
       const actual = dict[k].length;
       assert(
           actual === expected,

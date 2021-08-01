@@ -92,15 +92,14 @@ PosInfo.prototype = {
     const memo = this.memo;
     this.maxExaminedLength = 0;
     this.maxRightmostFailureOffset = -1;
-    const self = this;
     Object.keys(memo).forEach(k => {
       const memoRec = memo[k];
       if (pos + memoRec.examinedLength > invalidatedIdx) {
         delete memo[k];
       } else {
-        self.maxExaminedLength = Math.max(self.maxExaminedLength, memoRec.examinedLength);
-        self.maxRightmostFailureOffset = Math.max(
-            self.maxRightmostFailureOffset,
+        this.maxExaminedLength = Math.max(this.maxExaminedLength, memoRec.examinedLength);
+        this.maxRightmostFailureOffset = Math.max(
+            this.maxRightmostFailureOffset,
             memoRec.rightmostFailureOffset
         );
       }

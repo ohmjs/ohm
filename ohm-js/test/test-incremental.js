@@ -79,10 +79,9 @@ test('basic incremental parsing', t => {
       return letter.reconstructInput(this.args.input);
     },
     _iter(children) {
-      const self = this;
       return this._node.childOffsets
           .map((offset, i) => {
-            const c = children[i].reconstructInput(self.args.input.slice(offset));
+            const c = children[i].reconstructInput(this.args.input.slice(offset));
             return c;
           })
           .join('');

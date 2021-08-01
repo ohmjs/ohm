@@ -111,10 +111,9 @@ test('operations with arguments', t => {
       return this.sourceString + '@L' + this.args.level;
     },
     _default(children) {
-      const self = this;
       let ans = [];
       children.forEach(child => {
-        ans = ans.concat(child.op1(self.args.level + 1));
+        ans = ans.concat(child.op1(this.args.level + 1));
       });
       return ans;
     }

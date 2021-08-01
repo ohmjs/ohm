@@ -89,11 +89,10 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, gramm
   }
 
   // ...and that all of the argument expressions only have valid applications and have arity 1.
-  const self = this;
   this.args.forEach(arg => {
     arg._assertAllApplicationsAreValid(ruleName, grammar);
     if (arg.getArity() !== 1) {
-      throw errors.invalidParameter(self.ruleName, arg);
+      throw errors.invalidParameter(this.ruleName, arg);
     }
   });
 
