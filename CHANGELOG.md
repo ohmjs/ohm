@@ -1,5 +1,41 @@
 # Changelog
 
+## Upcoming release
+
+- [bf6e54e] Completely removed Grammar.semantics, as it's been deprecated for ages.
+- [7d69cde] Marked Node.primitiveValue as deprecated — Node.sourceString is equivalent, and should be used instead.
+
+## v15.5.0 - Apr 5, 2021
+
+## Notable changes:
+
+- [0af8165] Fixed an off-by-one error in Node.hasChildren(), where it returned false for nodes with a single child.
+
+## v15.4.1 - January 14, 2021
+
+(Same as 15.4.0)
+
+## Notable changes:
+
+- [15c63a9] Added a toString() method to the object returned from getLineAndColumn().
+- [b39b4f6] Added `getLineAndColumn` method to `Interval`.
+- [255693c] Fixed [#282](https://github.com/harc/ohm/issues/282): Single-line comments can't appear after case name
+
+## v15.3.0
+
+### Notable changes:
+
+- [b519a05] Added a new [_super-splice_ operator](https://github.com/harc/ohm/blob/master/doc/syntax-reference.md#super-splice) (`...`) to the Ohm language, which can be used to append and/or prepend cases to a supergrammar rule body.
+
+## v15.2.1 - September 30, 2020
+
+(Same as 15.2.0)
+
+### Notable changes:
+
+- [1986ee2] Eliminated dependency on 'inherits' package
+- [e5fa522] Moved TypeScript dependencies to devDependencies
+
 ## v15.1.0 - September 24, 2020
 
 ### Notable changes:
