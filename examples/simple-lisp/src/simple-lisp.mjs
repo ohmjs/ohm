@@ -259,6 +259,10 @@ class Quasiquote {
 const semantics = grammar.createSemantics();
 
 semantics.addOperation('toAST', {
+  Program(sexps) {
+    return sexps.toAST();
+  },
+
   Sexp(_1, stmt, _2) {
     return stmt.toAST();
   },
