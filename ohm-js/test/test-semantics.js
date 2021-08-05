@@ -16,6 +16,8 @@ const testUtil = require('./helpers/testUtil');
 
 const arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
 
+const passThrough = ls => ls.op();
+
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
@@ -390,6 +392,7 @@ test('_iter nodes', t => {
   t.deepEqual(s(m).op(), ['a', 'b', 'c'], 'operations are mapped over children');
 
   s = g.createSemantics().addOperation('op', {
+    letters: passThrough,
     letter(l) {
       return l.sourceString;
     }
@@ -437,12 +440,17 @@ test('_iter nodes', t => {
 
 test('_terminal nodes', t => {
   const g = ohm.grammar('G { letters = letter* }');
-  let s = g.createSemantics().addOperation('op', {});
+  let s = g.createSemantics().addOperation('op', {
+    letters: passThrough
+  });
   const m = g.match('abc', 'letters');
 
   t.throws(
       () => {
-        g.createSemantics().addOperation('op', {})(m).op();
+        const s = g.createSemantics().addOperation('op', {
+          letters: passThrough
+        });
+        s(m).op();
       },
       {message: /Missing semantic action for '_terminal'/}
   );
@@ -450,6 +458,7 @@ test('_terminal nodes', t => {
   t.throws(
       () => {
         g.createSemantics().addOperation('op', {
+          letters: passThrough,
           _terminal(x) {}
         });
       },
@@ -457,6 +466,7 @@ test('_terminal nodes', t => {
   );
 
   s = g.createSemantics().addOperation('op', {
+    letters: passThrough,
     _terminal() {
       t.is(arguments.length, 0, 'there are no arguments');
       t.is(this.ctorName, '_terminal');

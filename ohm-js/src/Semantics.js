@@ -377,7 +377,7 @@ function newDefaultAction(type, name, doIt) {
     // This CST node corresponds to a non-terminal in the grammar (e.g., AddExpr). The fact that
     // we got here means that this action dictionary doesn't have an action for this particular
     // non-terminal or a generic `_nonterminal` action.
-    if (children.length === 1) {
+    if (children.length === 1 && !children[0].isIteration()) {
       // As a convenience, if this node only has one child, we just return the result of
       // applying this operation / attribute to the child node.
       return doIt.apply(children[0], args);

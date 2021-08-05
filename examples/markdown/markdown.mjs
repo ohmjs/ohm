@@ -33,6 +33,7 @@ function parseMarkdownBlocks(str) {
     _terminal() {
       return this.sourceString;
     },
+    doc: bs => bs.blocks(),
     h1: (_, b) => H1(b.blocks()),
     h2: (_, b) => H2(b.blocks()),
     h3: (_, b) => H3(b.blocks()),
@@ -63,6 +64,7 @@ function parseMarkdownContent(block) {
     _terminal() {
       return this.sourceString;
     },
+    block: ps => ps.content(),
     plain(a) {
       return ['plain', a.content().join('')];
     },
