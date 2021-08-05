@@ -2,8 +2,11 @@
 
 ## Upcoming release
 
+### Breaking changes
+
 - [bf6e54e] Completely removed Grammar.semantics, as it's been deprecated for ages.
 - [7d69cde] Marked Node.primitiveValue as deprecated — Node.sourceString is equivalent, and should be used instead.
+- The default semantic action is no longer used for nodes whose only child is an iteration node.
 
 ## v15.5.0 - Apr 5, 2021
 
