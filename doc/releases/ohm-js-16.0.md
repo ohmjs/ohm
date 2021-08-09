@@ -9,9 +9,7 @@ In operations and attributes, if you haven't defined a semantic action for a par
 1. There is no longer a default action for iteration nodes.
 2. For non-terminal nodes, the default action does not apply if the node's only child is an iteration node. Previously, Ohm would use the default action for non-terminal nodes with exactly one child — no matter what the type of the child node was (iteration, terminal, non-terminal).
 
-In other words, the new behaviour is: a default semantic action is *only* defined for non-terminal nodes whose only child is either a terminal or non-terminal node.
-
-These changes were made to ensure that the default action is type-safe. In TypeScript terms, if an operation has a return type `T` for non-terminal nodes, then by default it returns `T[]` for iteration nodes. The old behaviour meant that the default action could return `T[]` for a non-terminal node, if its only child was an iteration node. This can no longer happen.
+In other words, the new behaviour is: a default semantic action is *only* defined for non-terminal nodes whose only child is either a terminal or non-terminal node. See [#308](https://github.com/harc/ohm/pull/308) and [#309](https://github.com/harc/ohm/issues/309) for context on these changes.
 
 When upgrading to Ohm v16.0, you may need to modify your code in cases where you were relying on the default action:
 
