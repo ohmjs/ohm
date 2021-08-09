@@ -33,7 +33,7 @@ function parseMarkdownBlocks(str) {
     _terminal() {
       return this.sourceString;
     },
-    doc: bs => bs.blocks(),
+    doc: bs => bs.children.map(c => c.blocks()),
     h1: (_, b) => H1(b.blocks()),
     h2: (_, b) => H2(b.blocks()),
     h3: (_, b) => H3(b.blocks()),
@@ -41,7 +41,7 @@ function parseMarkdownBlocks(str) {
     para: a => P(a.sourceString),
     blank: (a, b) => ({type: 'BLANK'}),
     bullet: (a, b, c) => LI(b.sourceString + c.sourceString),
-    rest: (a, _) => a.blocks().join('')
+    rest: (a, _) => a.children.map(c => c.blocks()).join('')
   });
   const match = parser.grammar.match(str);
   return parser.semantics(match).blocks();
@@ -64,22 +64,22 @@ function parseMarkdownContent(block) {
     _terminal() {
       return this.sourceString;
     },
-    block: ps => ps.content(),
+    block: ps => ps.children.map(c => c.content()),
     plain(a) {
-      return ['plain', a.content().join('')];
+      return ['plain', a.children.map(c => c.content()).join('')];
     },
     bold(_1, a, _2) {
-      return ['bold', a.content().join('')];
+      return ['bold', a.children.map(c => c.content()).join('')];
     },
     italic(_1, a, _2) {
-      return ['italic', a.content().join('')];
+      return ['italic', a.children.map(c => content()).join('')];
     },
-    code: (_1, a, _2) => ['code', a.content().join('')],
+    code: (_1, a, _2) => ['code', a.children.map(c => c.content()).join('')],
     link: (img, _1, text, _2, _3, url, _4) => [
       'link',
-      text.content().join(''),
-      url.content().join(''),
-      img.content().join('')
+      text.children.map(c => c.content()).join(''),
+      url.children.map(c => c.content()).join(''),
+      img.children.map(c => c.content()).join('')
     ]
   });
   const match = parser.grammar.match(block.content);

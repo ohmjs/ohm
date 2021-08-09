@@ -130,13 +130,25 @@ const semantics2 = grammar2.createSemantics().addOperation('tree', {
     return new Program(body.tree());
   },
   Exp(first, ops, rest) {
-    return binaryExpression(first.tree(), ops.tree(), rest.tree());
+    return binaryExpression(
+      first.tree(),
+      ops.children.map(c => c.tree()),
+      rest.children.map(c => c.tree())
+    );
   },
   Term(first, ops, rest) {
-    return binaryExpression(first.tree(), ops.tree(), rest.tree());
+    return binaryExpression(
+      first.tree(),
+      ops.children.map(c => c.tree()),
+      rest.children.map(c => c.tree())
+    );
   },
   Factor(first, ops, rest) {
-    return binaryExpression(first.tree(), ops.tree(), rest.tree());
+    return binaryExpression(
+      first.tree(),
+      ops.children.map(c => c.tree()),
+      rest.children.map(c => c.tree())
+    );
   },
   Primary_parens(open, expression, close) {
     return expression.tree();
@@ -198,7 +210,11 @@ const semantics3 = grammar3.createSemantics().addOperation('tree', {
   // The use of NonemptyListOf reduces a lot of repetition from the previous grammar,
   // where we repeated the same body for Exp_binary, Term_binary, and Factor_binary.
   NonemptyListOf(first, ops, rest) {
-    return binaryExpression(first.tree(), ops.tree(), rest.tree());
+    return binaryExpression(
+      first.tree(),
+      ops.children.map(c => c.tree()),
+      rest.children.map(c => c.tree())
+    );
   },
   Primary_parens(open, expression, close) {
     return expression.tree();
@@ -243,7 +259,11 @@ const semantics4 = grammar4.createSemantics().addOperation('tree', {
     return new Program(body.tree());
   },
   Exp(first, ops, rest) {
-    return makeTree(first.tree(), ops.tree(), rest.tree());
+    return makeTree(
+      first.tree(),
+      ops.children.map(c => c.tree()),
+      rest.children.map(c => c.tree())
+    );
   },
   Primary_parens(open, expression, close) {
     return expression.tree();

@@ -70,7 +70,10 @@ semantics.addOperation('prettyPrint()', {
     return printRule(name, formals, null, op, body);
   },
   RuleBody(_, termList) {
-    return termList.asIteration().children.map(c => c.prettyPrint()).join('\n| ');
+    return termList
+        .asIteration()
+        .children.map(c => c.prettyPrint())
+        .join('\n| ');
   },
   Formals: printParams,
   Params: printParams,
@@ -78,7 +81,10 @@ semantics.addOperation('prettyPrint()', {
     return seq.prettyPrint() + '  ' + caseName.prettyPrint();
   },
   Alt(list) {
-    return list.asIteration().children.map(c => c.prettyPrint()).join(' | ');
+    return list
+        .asIteration()
+        .children.map(c => c.prettyPrint())
+        .join(' | ');
   },
   Seq(iter) {
     return iter.children.map(c => c.prettyPrint()).join(' ');

@@ -260,7 +260,7 @@ const semantics = grammar.createSemantics();
 
 semantics.addOperation('toAST', {
   Program(sexps) {
-    return sexps.toAST();
+    return sexps.children.map(c => c.toAST());
   },
 
   Sexp(_1, stmt, _2) {
@@ -268,7 +268,7 @@ semantics.addOperation('toAST', {
   },
 
   Stmt_list(args) {
-    return new List(args.asIteration().toAST());
+    return new List(args.asIteration().children.map(c => c.toAST()));
   },
 
   Stmt_fn(_, args, body) {
@@ -292,7 +292,7 @@ semantics.addOperation('toAST', {
   },
 
   argList(_1, args, _2) {
-    return args.asIteration().toAST();
+    return args.asIteration().children.map(c => c.toAST());
   },
 
   symbol(_) {
