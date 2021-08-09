@@ -281,7 +281,7 @@ G {
 ```
 s.addOperation('upper()', {
   Start(list) {
-    return list.asIteration().upper();
+    return list.asIteration().children.map(c => c.upper());
   },
   letter(l) {
     return this.sourceString.toUpperCase();

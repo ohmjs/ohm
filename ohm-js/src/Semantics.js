@@ -368,18 +368,12 @@ function newDefaultAction(type, name, doIt) {
     const thisThing = this._semantics.operations[name] || this._semantics.attributes[name];
     const args = thisThing.formals.map(formal => this.args[formal]);
 
-    if (this.isIteration()) {
-      // This CST node corresponds to an iteration expression in the grammar (*, +, or ?). The
-      // default behavior is to map this operation or attribute over all of its child nodes.
-      return children.map(child => doIt.apply(child, args));
-    }
-
-    // This CST node corresponds to a non-terminal in the grammar (e.g., AddExpr). The fact that
-    // we got here means that this action dictionary doesn't have an action for this particular
-    // non-terminal or a generic `_nonterminal` action.
-    if (children.length === 1 && !children[0].isIteration()) {
-      // As a convenience, if this node only has one child, we just return the result of
-      // applying this operation / attribute to the child node.
+    if (!this.isIteration() && children.length === 1 && !children[0].isIteration()) {
+      // This CST node corresponds to a non-terminal in the grammar (e.g., AddExpr). The fact that
+      // we got here means that this action dictionary doesn't have an action for this particular
+      // non-terminal or a generic `_nonterminal` action.
+      // As a convenience, if this node only has one child and it's not an iteration node, we just
+      // return the result of applying this operation / attribute to the child node.
       return doIt.apply(children[0], args);
     } else {
       // Otherwise, we throw an exception to let the programmer know that we don't know what
@@ -775,11 +769,11 @@ function initPrototypeParser(grammar) {
     OperationSignature(name, optFormals) {
       return {
         name: name.parse(),
-        formals: optFormals.parse()[0] || []
+        formals: optFormals.children.map(c => c.parse())[0] || []
       };
     },
     Formals(oparen, fs, cparen) {
-      return fs.asIteration().parse();
+      return fs.asIteration().children.map(c => c.parse());
     },
     name(first, rest) {
       return this.sourceString;

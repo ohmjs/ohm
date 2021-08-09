@@ -120,9 +120,9 @@ s.addOperation('viz', {
   Grammar: function(n, s, _l, rs, _r) {
     enter('grammar');
       add('name', n.viz());
-      s.viz();
+      s.children.map(c => c.viz());
       enter('rules');
-        rs.viz();
+        rs.children.map(c => c.viz());
       leave();
     leave();
   },
@@ -140,7 +140,7 @@ s.addOperation('viz', {
   },
   Rule_define: function(n, fs, d, _, b) {
     add('name', n.viz());
-    d.viz();
+    d.children.map(c => c.viz());
     enter('ruleDefineBody');
       b.viz();
     leave();
@@ -183,7 +183,7 @@ s.addOperation('viz', {
   },
   Seq: function(expr) {
     enter('seq');
-      expr.viz();
+      expr.children.map(c => c.viz());
     leave();
   },
   Iter: function(expr) {
@@ -252,7 +252,7 @@ s.addOperation('vizChoice', {
     enter('choice');
       x.viz();
     leave();
-    xs.vizChoice();
+    xs.children.map(c => c.vizChoice());
   }
 });
 

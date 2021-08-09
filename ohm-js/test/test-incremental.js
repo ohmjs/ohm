@@ -44,6 +44,9 @@ const checkOffsetActions = {
   _terminal() {
     const desc = '"' + this.sourceString + '" @ ' + this.source.startIdx;
     this.args.t.is(this.source.startIdx, this.args.startIdx, desc);
+  },
+  _iter(children) {
+    return children.map(c => c.checkOffsets(this.args.t, this.args.childStartIdx));
   }
 };
 

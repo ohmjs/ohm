@@ -136,7 +136,7 @@ test('inline rule declarations', t => {
   );
   const s = g.createSemantics().addOperation('v', {
     List_some(x, sep, xs) {
-      return [x.v()].concat(xs.v());
+      return [x.v()].concat(xs.children.map(c => c.v()));
     },
     List_none() {
       return [];

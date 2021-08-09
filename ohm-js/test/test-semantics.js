@@ -16,7 +16,7 @@ const testUtil = require('./helpers/testUtil');
 
 const arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
 
-const passThrough = ls => ls.op();
+const passThroughOp = ls => ls.children.map(c => c.op());
 
 // --------------------------------------------------------------------
 // Tests
@@ -380,11 +380,9 @@ test('_iter nodes', t => {
     '}'
   ]);
   let s = g.createSemantics().addOperation('op', {
+    letters: passThroughOp,
     letter(l) {
       return l.sourceString;
-    },
-    letters(ls) {
-      return ls.op();
     }
   });
 
@@ -392,7 +390,7 @@ test('_iter nodes', t => {
   t.deepEqual(s(m).op(), ['a', 'b', 'c'], 'operations are mapped over children');
 
   s = g.createSemantics().addOperation('op', {
-    letters: passThrough,
+    letters: passThroughOp,
     letter(l) {
       return l.sourceString;
     }
@@ -441,14 +439,14 @@ test('_iter nodes', t => {
 test('_terminal nodes', t => {
   const g = ohm.grammar('G { letters = letter* }');
   let s = g.createSemantics().addOperation('op', {
-    letters: passThrough
+    letters: passThroughOp
   });
   const m = g.match('abc', 'letters');
 
   t.throws(
       () => {
         const s = g.createSemantics().addOperation('op', {
-          letters: passThrough
+          letters: passThroughOp
         });
         s(m).op();
       },
@@ -458,7 +456,7 @@ test('_terminal nodes', t => {
   t.throws(
       () => {
         g.createSemantics().addOperation('op', {
-          letters: passThrough,
+          letters: passThroughOp,
           _terminal(x) {}
         });
       },
@@ -466,7 +464,7 @@ test('_terminal nodes', t => {
   );
 
   s = g.createSemantics().addOperation('op', {
-    letters: passThrough,
+    letters: passThroughOp,
     _terminal() {
       t.is(arguments.length, 0, 'there are no arguments');
       t.is(this.ctorName, '_terminal');
@@ -817,8 +815,8 @@ test('asIteration', t => {
   ]);
   const s = g.createSemantics().addAttribute('value', {
     Start(list1, list2) {
-      const arr1 = list1.asIteration().value;
-      const arr2 = list2.asIteration().value;
+      const arr1 = list1.asIteration().children.map(c => c.value);
+      const arr2 = list2.asIteration().children.map(c => c.value);
       return arr1.join('') + arr2.join('');
     },
     letter(_) {
@@ -844,7 +842,7 @@ test('asIteration', t => {
   });
   s.addAttribute('reversedValue', {
     anyTwo(a, b) {
-      const arr = this.asIteration().value;
+      const arr = this.asIteration().children.map(c => c.value);
       return arr.join('');
     }
   });
@@ -902,7 +900,7 @@ test('sourceString - issue #204', t => {
   const g = ohm.grammar('Mu{ List = NonemptyListOf<Item, ","> Item = alnum+ }');
   const s = g.createSemantics().addOperation('eval()', {
     NonemptyListOf(x, _, xs) {
-      return [x.eval()].concat(xs.eval());
+      return [x.eval()].concat(xs.children.map(c => c.eval()));
     },
     Item(value) {
       return value.sourceString;
