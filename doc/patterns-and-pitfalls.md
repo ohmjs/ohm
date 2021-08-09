@@ -102,19 +102,10 @@ Notice that in the arithmetic grammar above, `mulExp` appears on the right hand 
 
 ### Iteration nodes
 
-*Iteration nodes* are associated with expressions inside a repetition operator (*, +, and ?). E.g., for the grammar `G { letters = letter+ }`, the single argument to the _letters_ action will be an iteration node. There are two main ways to handle iteration nodes inside semantic actions:
+*Iteration nodes* are associated with expressions inside a repetition operator (`*`, `+`, and `?`). E.g., for the grammar `G { letters = letter+ }`, the single argument to the _letters_ action will be an iteration node. There are two main ways to handle iteration nodes inside semantic actions:
 
 1. Use array operations (`map`, `filter`, etc.) on the node's `children` attribute. For example, `iterNode.children.map(c => c.prettyPrint())` would invoke the `prettyPrint` operation on each child of the iteration node.
 2. Define an *_iter* action for your operation, which allows you to write something like `iterNode.prettyPrint()`. If you have not defined an *_iter* action for the operation, this will result in a "missing semantic action" error.
-
-**NOTE:** Prior to Ohm v16, there was a default semantic action for iteration nodes, which for an operation `myOperation()` was equivalent to:
-    ```
-    _iter(children) {
-      return children.map(c => c.myOperation());
-    }
-    ```
-
-In Ohm v16 and above, there is no default semantic action for iteration nodes.
 
 #### Optional nodes
 
@@ -124,7 +115,7 @@ An optional node (associated with the `?` operator) is just an iteration node wi
 optNode.child(0)?.myOperation();
 ```
 
-This evaluates either to `undefined` (if the node has no child) or to the result of calling `myOperation()` on the child. In older versions of JavaScript, you can achieve the same thing via `optNode.child(0) && optNode.child(0).myOperation()`. Another way to do the same thing is: `optNode.children.map(c => c.myOperation())[0]`.
+This evaluates to either (a) `undefined`, if the node has no child, or (b) the result of calling `myOperation()` on the child. In older versions of JavaScript, you can achieve the same thing via `optNode.child(0) && optNode.child(0).myOperation()`. Another way to do the same thing is: `optNode.children.map(c => c.myOperation())[0]`.
 
 
 ### Handling the built-in list rules
