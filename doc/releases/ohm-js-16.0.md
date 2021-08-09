@@ -4,11 +4,33 @@
 
 ### Default semantic actions
 
-In operations and attributes, if there is no specific semantic action for a given rule application node, a default "pass-through" action will be used in some cases. For example, your grammar has an _AddExp_ rule but your action dictionary doesn't contain a semantic action named 'AddExp'. Previously, if the _AddExp_ node had exactly one child, then Ohm would automatically use a default action which returns the result of applying the operation or attribute to the node's only child. **In Ohm v16.0**, it's slightly more restrictive: the default action is _not_ used if the child is an iteration node.
+In operations and attributes, if you haven't defined a semantic action for a particular rule application node, a default action will be used in some cases. For example, your grammar has an _AddExp_ rule but your action dictionary doesn't contain a semantic action named 'AddExp'. **In Ohm v16.0**, there are two significant changes to the default actions:
 
-This change was made to ensure that the default action is type-safe. In TypeScript terms, if an operation has a return type `T` for non-terminal nodes, then by default it returns `T[]` for iteration nodes. The old behaviour meant that the default action could return `T[]` for a non-terminal node, if its only child was an iteration node. This can no longer happen.
+1. There is no longer a default action for iteration nodes.
+2. For non-terminal nodes, the default action does not apply if the node's only child is an iteration node. Previously, Ohm would use the default action for non-terminal nodes with exactly one child — no matter what the type of the child node was (iteration, terminal, non-terminal).
 
-When upgrading to Ohm v16.0, you will have to explicitly specify a semantic action for rules where you were previously relying on the default action. To preserve the old behaviour, you can write your own pass-through action, e.g.: `letters(letterIter) { return letterIter.myOp(); }`.
+In other words, the new behaviour is: a default semantic action is *only* defined for non-terminal nodes whose only child is either a terminal or non-terminal node.
+
+These changes were made to ensure that the default action is type-safe. In TypeScript terms, if an operation has a return type `T` for non-terminal nodes, then by default it returns `T[]` for iteration nodes. The old behaviour meant that the default action could return `T[]` for a non-terminal node, if its only child was an iteration node. This can no longer happen.
+
+When upgrading to Ohm v16.0, you may need to modify your code in cases where you were relying on the default action:
+
+1. For iteration nodes, we recommend that you use the `children` attribute to explicitly invoke the operation on each child, e.g. `iterNode.children.map(c => c.myOperation())`. This way it's clear that the result will be an array.
+
+    In some cases, it makes sense to write a generic *_iter* action that specifies the behaviour for all iteration nodes. This is also how you can replicate the old behaviour of the default action:
+
+    ```
+    _iter(children) {
+      return children.map(c => c.myOperation());
+    }
+    ```
+
+2. For non-terminal nodes whose only child is an iteration node, you'll need to define a semantic action, e.g.:
+    ```
+    letters(letterIter) {
+      return letterIter.children.map(c => c.myOperation()).join('');
+    }
+    ```
 
 ## Other changes
 
