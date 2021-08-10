@@ -201,9 +201,11 @@ The value of an operation or attribute for a node is the result of invoking the 
 
 The matching semantic action for a particular node is chosen as follows:
 
-- On a _rule application_ (non-terminal) node, first look for a semantic action with the same name as the rule (e.g., 'FullName'). If the action dictionary does not have a property with that name, use the action named '\_nonterminal', if it exists. If there is no `_nonterminal` action, and the node has a single child that is _not_ an iteration node, then return the result of invoking the operation/attribute on the child node.
+- On a _rule application_ (non-terminal) node, first look for a semantic action with the same name as the rule (e.g., 'FullName'). If the action dictionary does not have a property with that name, use the action named '\_nonterminal', if it exists. If there is no `_nonterminal` action, and the node has exactly one child, then return the result of invoking the operation/attribute on the child node.
 - On a terminal node (e.g., a node produced by the parsing expression `"hello"`), use the semantic action named '\_terminal'.
-- On an iteration node (e.g., a node produced by the parsing expression `letter+`), use the semantic action named '\_iter'. If the action dictionary does not have a property with that name, the default action returns an array containing the results of applying the operation or attribute to each child node.
+- On an iteration node (e.g., a node produced by the parsing expression `letter+`), use the semantic action named '\_iter'.
+
+**\*NOTE:** Versions of Ohm prior to v16.0 had slightly different behaviour with regards to default semantic actions. See [here](https://github.com/harc/ohm/blob/master/doc/releases/ohm-js-16.0.md#default-semantic-actions) for more details.\*
 
 Note that you can also write semantic actions for built-in rules like `letter` or `digit`. For `ListOf`, please see the documentation on [asIteration](#asIteration) below.
 
@@ -281,7 +283,7 @@ G {
 ```
 s.addOperation('upper()', {
   Start(list) {
-    return list.asIteration().upper();
+    return list.asIteration().children.map(c => c.upper());
   },
   letter(l) {
     return this.sourceString.toUpperCase();

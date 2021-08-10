@@ -84,13 +84,13 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
   // A visitor that produces a Grammar instance from the CST.
   const helpers = metaGrammar.createSemantics().addOperation('visit', {
     Grammars(grammarIter) {
-      return grammarIter.visit();
+      return grammarIter.children.map(c => c.visit());
     },
-    Grammar(n, s, open, rs, close) {
-      const grammarName = n.visit();
+    Grammar(id, s, _open, rules, _close) {
+      const grammarName = id.visit();
       decl = builder.newGrammar(grammarName, namespace);
-      s.visit();
-      rs.visit();
+      s.child(0) && s.child(0).visit();
+      rules.children.map(c => c.visit());
       const g = decl.build();
       g.source = this.source.trimmed();
       if (grammarName in namespace) {
@@ -114,20 +114,20 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
 
     Rule_define(n, fs, d, _, b) {
       currentRuleName = n.visit();
-      currentRuleFormals = fs.visit()[0] || [];
+      currentRuleFormals = fs.children.map(c => c.visit())[0] || [];
       // If there is no default start rule yet, set it now. This must be done before visiting
       // the body, because it might contain an inline rule definition.
       if (!decl.defaultStartRule && decl.ensureSuperGrammar() !== Grammar.ProtoBuiltInRules) {
         decl.withDefaultStartRule(currentRuleName);
       }
       const body = b.visit();
-      const description = d.visit()[0];
+      const description = d.children.map(c => c.visit())[0];
       const source = this.source.trimmed();
       return decl.define(currentRuleName, currentRuleFormals, body, description, source);
     },
     Rule_override(n, fs, _, b) {
       currentRuleName = n.visit();
-      currentRuleFormals = fs.visit()[0] || [];
+      currentRuleFormals = fs.children.map(c => c.visit())[0] || [];
 
       const source = this.source.trimmed();
       decl.ensureSuperGrammarRuleForOverriding(currentRuleName, source);
@@ -139,7 +139,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
     Rule_extend(n, fs, _, b) {
       currentRuleName = n.visit();
-      currentRuleFormals = fs.visit()[0] || [];
+      currentRuleFormals = fs.children.map(c => c.visit())[0] || [];
       const body = b.visit();
       const source = this.source.trimmed();
       return decl.extend(currentRuleName, currentRuleFormals, body, null, source);
@@ -205,7 +205,12 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
 
     Seq(expr) {
-      return builder.seq.apply(builder, expr.visit()).withSource(this.source);
+      return builder.seq
+          .apply(
+              builder,
+              expr.children.map(c => c.visit())
+          )
+          .withSource(this.source);
     },
 
     Iter_star(x, _) {
@@ -230,7 +235,8 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
 
     Base_application(rule, ps) {
-      return builder.app(rule.visit(), ps.visit()[0] || []).withSource(this.source);
+      const params = ps.children.map(c => c.visit())[0] || [];
+      return builder.app(rule.visit(), params).withSource(this.source);
     },
     Base_range(from, _, to) {
       return builder.range(from.visit(), to.visit()).withSource(this.source);
@@ -260,7 +266,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     nameRest(expr) {},
 
     terminal(open, cs, close) {
-      return cs.visit().join('');
+      return cs.children.map(c => c.visit()).join('');
     },
 
     oneCharTerminal(open, c, close) {
@@ -276,7 +282,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
 
     NonemptyListOf(x, _, xs) {
-      return [x.visit()].concat(xs.visit());
+      return [x.visit()].concat(xs.children.map(c => c.visit()));
     },
     EmptyListOf() {
       return [];

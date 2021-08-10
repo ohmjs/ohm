@@ -12,10 +12,10 @@ const g = ohm.grammar(contents);
 
 const semantics = g.createSemantics().addOperation('value', {
   csv(r, _, rs, eol) {
-    return [r.value()].concat(rs.value());
+    return [r.value()].concat(rs.children.map(c => c.value()));
   },
   row(c, _, cs) {
-    return [c.value()].concat(cs.value());
+    return [c.value()].concat(cs.children.map(c => c.value()));
   },
   col(_) {
     return this.sourceString;

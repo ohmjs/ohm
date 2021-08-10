@@ -255,15 +255,19 @@ function missingSemanticAction(ctorName, name, type, stack) {
       .join('\n');
   stackTrace += '\n  ' + name + ' > ' + ctorName;
 
-  const where = type + " '" + name + "'";
-  const message =
-    "Missing semantic action for '" +
-    ctorName +
-    "' in " +
-    where +
-    '\n' +
-    'Action stack (most recent call last):\n' +
-    stackTrace;
+  let moreInfo = '';
+  if (ctorName === '_iter') {
+    moreInfo = [
+      '\nNOTE: as of Ohm v16, there is no default action for iteration nodes — see ',
+      '  https://git.io/JRwtG for details.'
+    ].join('\n');
+  }
+
+  const message = [
+    `Missing semantic action for '${ctorName}' in ${type} '${name}'.${moreInfo}`,
+    'Action stack (most recent call last):',
+    stackTrace
+  ].join('\n');
 
   const e = createError(message);
   e.name = 'missingSemanticAction';

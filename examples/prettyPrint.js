@@ -20,11 +20,11 @@ function indentLines(arr, depth) {
 }
 
 function printRule(name, formals, desc, op, body) {
-  let ans = '  ' + name.sourceString + formals.prettyPrint() + ' ';
+  let ans = '  ' + name.sourceString + formals.children.map(c => c.prettyPrint()) + ' ';
 
   let indentation;
   if (desc.children.length > 0) {
-    ans += desc.prettyPrint() + '\n    ';
+    ans += desc.children.map(c => c.prettyPrint()) + '\n    ';
     indentation = 4;
   } else {
     indentation = ans.length;
@@ -56,8 +56,8 @@ function printParams(open, paramList, close) {
 const semantics = ohm.ohmGrammar.createSemantics();
 semantics.addOperation('prettyPrint()', {
   Grammar(name, superGrammar, open, rules, close) {
-    const decl = name.sourceString + superGrammar.prettyPrint();
-    return decl + ' {\n' + rules.prettyPrint().join('\n') + '\n}';
+    const decl = name.sourceString + superGrammar.children.map(c => c.prettyPrint());
+    return decl + ' {\n' + rules.children.map(c => c.prettyPrint()).join('\n') + '\n}';
   },
   SuperGrammar(_, ident) {
     return ' <: ' + ident.sourceString;
@@ -70,7 +70,10 @@ semantics.addOperation('prettyPrint()', {
     return printRule(name, formals, null, op, body);
   },
   RuleBody(_, termList) {
-    return termList.asIteration().prettyPrint().join('\n| ');
+    return termList
+        .asIteration()
+        .children.map(c => c.prettyPrint())
+        .join('\n| ');
   },
   Formals: printParams,
   Params: printParams,
@@ -78,10 +81,13 @@ semantics.addOperation('prettyPrint()', {
     return seq.prettyPrint() + '  ' + caseName.prettyPrint();
   },
   Alt(list) {
-    return list.asIteration().prettyPrint().join(' | ');
+    return list
+        .asIteration()
+        .children.map(c => c.prettyPrint())
+        .join(' | ');
   },
   Seq(iter) {
-    return iter.prettyPrint().join(' ');
+    return iter.children.map(c => c.prettyPrint()).join(' ');
   },
   Iter_star: printPostfixOp,
   Iter_plus: printPostfixOp,
@@ -92,7 +98,7 @@ semantics.addOperation('prettyPrint()', {
   Lex_lex: printPrefixOp,
 
   Base_application(id, params) {
-    return id.sourceString + params.prettyPrint();
+    return id.sourceString + params.children.map(c => c.prettyPrint());
   },
   Base_range(t1, _, t2) {
     return t1.prettyPrint() + '..' + t2.prettyPrint();

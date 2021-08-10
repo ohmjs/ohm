@@ -40,6 +40,9 @@ function compareGrammars(t, expected, actual) {
 function buildTreeNodeWithUniqueId(g) {
   let nextId = 0;
   const s = g.createSemantics().addAttribute('tree', {
+    _iter(children) {
+      return children.map(c => c.tree);
+    },
     _nonterminal(children) {
       return ['id', nextId++, this.ctorName].concat(children.map(child => child.tree));
     },
@@ -327,8 +330,8 @@ describe('kleene-* and kleene-+', test => {
 
   test('semantic actions', t => {
     const s = m.createSemantics().addAttribute('v', {
-      number(expr) {
-        return ['digits', expr.v];
+      number(digits) {
+        return ['digits', digits.children.map(c => c.v)];
       },
       digit(expr) {
         return ['digit', expr.v];
@@ -377,7 +380,7 @@ describe('opt', test => {
   test('semantic actions', t => {
     const s = m.createSemantics().addAttribute('v', {
       name(title, last) {
-        return [title.children.length === 1 ? title.v[0] : undefined, last.sourceString];
+        return [title.children.map(c => c.v)[0], last.sourceString];
       },
       _terminal() {
         return this.sourceString;
@@ -860,11 +863,11 @@ describe('inheritance', t => {
 
     test('semantic actions', t => {
       const s = ns.G2.createSemantics().addAttribute('v', {
-        number(expr) {
-          return ['number', expr.v];
+        number(digits) {
+          return ['number', digits.children.map(c => c.v)];
         },
-        digit(expr) {
-          return ['digit', expr.v];
+        digit(d) {
+          return ['digit', d.v];
         },
         _terminal() {
           return this.sourceString;

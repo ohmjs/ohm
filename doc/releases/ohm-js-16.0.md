@@ -4,11 +4,17 @@
 
 ### Default semantic actions
 
-In operations and attributes, if there is no specific semantic action for a given rule application node, a default "pass-through" action will be used in some cases. For example, your grammar has an _AddExp_ rule but your action dictionary doesn't contain a semantic action named 'AddExp'. Previously, if the _AddExp_ node had exactly one child, then Ohm would automatically use a default action which returns the result of applying the operation or attribute to the node's only child. **In Ohm v16.0**, it's slightly more restrictive: the default action is _not_ used if the child is an iteration node.
+In operations and attributes, if you haven't defined a semantic action for a particular rule application node, a default action will be used in some cases. For example, your grammar has an _AddExp_ rule but your action dictionary doesn't contain a semantic action named 'AddExp'. **In Ohm v16.0, there is no longer a default action for iteration nodes** — it is _only_ defined for non-terminal nodes with exactly one child. See [#309](https://github.com/harc/ohm/issues/309) for context on this change.
 
-This change was made to ensure that the default action is type-safe. In TypeScript terms, if an operation has a return type `T` for non-terminal nodes, then by default it returns `T[]` for iteration nodes. The old behaviour meant that the default action could return `T[]` for a non-terminal node, if its only child was an iteration node. This can no longer happen.
+Semantic actions that worked in previous versions of Ohm may need to be modified to work with v16.0. You can identify the code that needs modification because they will now raise a "missing semantic action" error. The [recommended way of dealing with iteration nodes](https://github.com/harc/ohm/blob/master/doc/patterns-and-pitfalls.md#iteration-nodes) is to use the `children` attribute to explicitly invoke the operation on each child, e.g. `iterNode.children.map(c => c.myOperation())`. This way, it's clear to readers of the code that the result is an array.
 
-When upgrading to Ohm v16.0, you will have to explicitly specify a semantic action for rules where you were previously relying on the default action. To preserve the old behaviour, you can write your own pass-through action, e.g.: `letters(letterIter) { return letterIter.myOp(); }`.
+In some cases, it makes sense to write a generic _\_iter_ action that specifies the behaviour for all iteration nodes. This also makes it possible to replicate the old behaviour of the default action:
+
+```
+_iter(children) {
+  return children.map(c => c.myOperation());
+}
+```
 
 ## Other changes
 
