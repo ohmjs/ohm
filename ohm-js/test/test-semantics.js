@@ -923,7 +923,7 @@ test('action call stacks', t => {
   t.is(
       err.message,
       [
-        "Missing semantic action for '_terminal' in operation 'oops'",
+        "Missing semantic action for '_terminal' in operation 'oops'.",
         'Action stack (most recent call last):',
         "  oops > default action for 'start'",
         "  oops > default action for 'digit'",
@@ -944,7 +944,7 @@ test('action call stacks', t => {
   t.is(
       err.message,
       [
-        "Missing semantic action for '_terminal' in operation 'oops'",
+        "Missing semantic action for '_terminal' in operation 'oops'.",
         'Action stack (most recent call last):',
         '  op2 > start',
         "  oops > default action for 'digit'",
