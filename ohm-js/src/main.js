@@ -89,7 +89,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     Grammar(id, s, _open, rules, _close) {
       const grammarName = id.visit();
       decl = builder.newGrammar(grammarName, namespace);
-      s.child(0)?.visit();
+      s.child(0) && s.child(0).visit();
       rules.children.map(c => c.visit());
       const g = decl.build();
       g.source = this.source.trimmed();

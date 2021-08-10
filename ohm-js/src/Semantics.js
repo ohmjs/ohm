@@ -769,7 +769,7 @@ function initPrototypeParser(grammar) {
     OperationSignature(name, optFormals) {
       return {
         name: name.parse(),
-        formals: optFormals.child(0)?.parse() || []
+        formals: optFormals.children.map(c => c.parse())[0] || []
       };
     },
     Formals(oparen, fs, cparen) {
