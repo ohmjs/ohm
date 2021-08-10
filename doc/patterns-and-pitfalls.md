@@ -102,10 +102,10 @@ Notice that in the arithmetic grammar above, `mulExp` appears on the right hand 
 
 ### Iteration nodes
 
-*Iteration nodes* are associated with expressions inside a repetition operator (`*`, `+`, and `?`). E.g., for the grammar `G { letters = letter+ }`, the single argument to the _letters_ action will be an iteration node. There are two main ways to handle iteration nodes inside semantic actions:
+_Iteration nodes_ are associated with expressions inside a repetition operator (`*`, `+`, and `?`). E.g., for the grammar `G { letters = letter+ }`, the single argument to the _letters_ action will be an iteration node. There are two main ways to handle iteration nodes inside semantic actions:
 
 1. Use array operations (`map`, `filter`, etc.) on the node's `children` attribute. For example, `iterNode.children.map(c => c.prettyPrint())` would invoke the `prettyPrint` operation on each child of the iteration node.
-2. Define an *_iter* action for your operation, which allows you to write something like `iterNode.prettyPrint()`. If you have not defined an *_iter* action for the operation, this will result in a "missing semantic action" error.
+2. Define an _\_iter_ action for your operation, which allows you to write something like `iterNode.prettyPrint()`. If you have not defined an _\_iter_ action for the operation, this will result in a "missing semantic action" error.
 
 #### Optional nodes
 
@@ -116,7 +116,6 @@ optNode.child(0)?.myOperation();
 ```
 
 This evaluates to either (a) `undefined`, if the node has no child, or (b) the result of calling `myOperation()` on the child. In older versions of JavaScript, you can achieve the same thing via `optNode.child(0) && optNode.child(0).myOperation()`. Another way to do the same thing is: `optNode.children.map(c => c.myOperation())[0]`.
-
 
 ### Handling the built-in list rules
 

@@ -205,7 +205,7 @@ The matching semantic action for a particular node is chosen as follows:
 - On a terminal node (e.g., a node produced by the parsing expression `"hello"`), use the semantic action named '\_terminal'.
 - On an iteration node (e.g., a node produced by the parsing expression `letter+`), use the semantic action named '\_iter'.
 
-***NOTE:** Versions of Ohm prior to v16.0 had slightly different behaviour with regards to default semantic actions. See [here](https://github.com/harc/ohm/blob/master/doc/releases/ohm-js-16.0.md#default-semantic-actions) for more details.*
+**\*NOTE:** Versions of Ohm prior to v16.0 had slightly different behaviour with regards to default semantic actions. See [here](https://github.com/harc/ohm/blob/master/doc/releases/ohm-js-16.0.md#default-semantic-actions) for more details.\*
 
 Note that you can also write semantic actions for built-in rules like `letter` or `digit`. For `ListOf`, please see the documentation on [asIteration](#asIteration) below.
 
