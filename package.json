@@ -2,6 +2,7 @@
   "private": true,
   "workspaces": [
     "ohm-js",
+    "ohm-typescript-codegen",
     "examples/ecmascript",
     "examples/es-module",
     "examples/markdown",
