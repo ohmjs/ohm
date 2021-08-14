@@ -24,7 +24,7 @@ declare interface ${grammarName}Grammar extends Grammar {
 declare const ${grammarName.toLowerCase()}: ${grammarName}Grammar;
 `.trim();
 
-export function generateTypings(source: string, filename?: string) {
+export default function generateTypings(source: string, filename?: string) {
   const grammar = ohm.grammar(source);
   const actionDecls = Object.entries(grammar.rules).map(([ruleName, ruleInfo]) => {
     const argTypes = getNodeTypes(ruleInfo.body).map(t => t.toString());

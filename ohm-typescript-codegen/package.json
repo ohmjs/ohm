@@ -2,10 +2,11 @@
   "name": "ohm-typescript-codegen",
   "version": "1.0.0",
   "description": "Creates .d.ts files from .ohm grammar files",
-  "main": "index.js",
+  "main": "dist/index.js",
   "repository": "https://github.com/harc/ohm",
   "author": "Patrick Dubroy <pdubroy@gmail.com>",
   "license": "MIT",
+  "types": "dist/index.d.ts",
   "devDependencies": {
     "@ts-morph/bootstrap": "^0.10.1",
     "ava": "^3.15.0",
@@ -16,6 +17,8 @@
     "ohm-js": "^15.5.0"
   },
   "scripts": {
+    "build": "tsc",
+    "prepublish": "yarn build",
     "test": "ava"
   },
   "ava": {

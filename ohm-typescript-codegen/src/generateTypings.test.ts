@@ -1,8 +1,7 @@
 import {createProjectSync, ts} from '@ts-morph/bootstrap';
 import test from 'ava';
-import * as fs from 'fs';
 
-import {generateTypings} from './index';
+import generateTypings from './generateTypings';
 
 function typeCheck(name: string, grammarSource: string, tsSource: string) {
   const project = createProjectSync();
