@@ -2,17 +2,11 @@
   "compilerOptions": {
     "module": "commonjs",
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
     "target": "es6",
     "strict": true,
     "moduleResolution": "node",
-    "sourceMap": true,
-    "outDir": "dist",
-    "baseUrl": ".",
-    "paths": {
-      "*": ["node_modules/*", "src/types/*"]
-    },
-    "declaration": true
+    "outDir": "dist"
   },
-  "include": ["src/**/*", "index.ts"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts"]
 }

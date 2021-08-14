@@ -24,6 +24,9 @@
     "prepublishOnly": "yarn build",
     "test": "ava"
   },
+  "bin": {
+    "generate-ohm-declarations": "bin/generate-ohm-declarations.js"
+  },
   "ava": {
     "extensions": [
       "ts"
