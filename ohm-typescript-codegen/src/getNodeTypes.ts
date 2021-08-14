@@ -79,6 +79,6 @@ function _getNodeTypes(pexpr: any): UnionType[] {
 // Exports
 // -------
 
-export default function getNodeTypes(pexpr: any, prefix?: string): string[] {
+export function getNodeTypes(pexpr: any, prefix?: string): string[] {
   return _getNodeTypes(pexpr).map(t => t.toString(prefix));
 }

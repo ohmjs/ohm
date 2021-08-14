@@ -1,5 +1,5 @@
 import * as ohm from 'ohm-js';
-import getNodeTypes from './getNodeTypes';
+import {getNodeTypes} from './getNodeTypes';
 
 const createDeclarations = (grammarName: string, actionDecls: string[]) =>
   `
@@ -24,7 +24,7 @@ declare interface ${grammarName}Grammar extends Grammar {
 declare const ${grammarName.toLowerCase()}: ${grammarName}Grammar;
 `.trim();
 
-export default function generateTypings(source: string, filename?: string) {
+export function generateTypings(source: string, filename?: string) {
   const grammar = ohm.grammar(source);
   const actionDecls = Object.entries(grammar.rules).map(([ruleName, ruleInfo]) => {
     const argTypes = getNodeTypes(ruleInfo.body).map(t => t.toString());
@@ -33,6 +33,6 @@ export default function generateTypings(source: string, filename?: string) {
   });
   return {
     filename: filename ? `${filename}.d.ts` : `${grammar.name.toLowerCase()}.d.ts`,
-    source: createDeclarations(grammar.name, actionDecls)
+    contents: createDeclarations(grammar.name, actionDecls)
   };
 }

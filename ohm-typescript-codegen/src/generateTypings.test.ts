@@ -1,13 +1,13 @@
 import {createProjectSync, ts} from '@ts-morph/bootstrap';
 import test from 'ava';
 
-import generateTypings from './generateTypings';
+import {generateTypings} from './generateTypings';
 
 function typeCheck(name: string, grammarSource: string, tsSource: string) {
   const project = createProjectSync();
-  const {filename, source} = generateTypings(grammarSource, `${name}.ohm`);
+  const {filename, contents} = generateTypings(grammarSource, `${name}.ohm`);
 
-  const grammarDTS = project.createSourceFile(filename, source);
+  const grammarDTS = project.createSourceFile(filename, contents);
   const mainFile = project.createSourceFile(`${name}.ts`, tsSource);
 
   return ts.getPreEmitDiagnostics(project.createProgram());

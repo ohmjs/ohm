@@ -1,7 +1,7 @@
 import test from 'ava';
 import * as ohm from 'ohm-js';
 
-import getNodeTypes from './getNodeTypes';
+import {getNodeTypes} from './getNodeTypes';
 
 const pexprs = (ohm as any).pexprs;
 
