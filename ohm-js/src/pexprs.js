@@ -225,7 +225,6 @@ require('./pexprs-assertIteratedExprsAreNotNullable');
 require('./pexprs-eval');
 require('./pexprs-generateExample');
 require('./pexprs-getArity');
-require('./pexprs-getNodeTypes');
 require('./pexprs-outputRecipe');
 require('./pexprs-introduceParams');
 require('./pexprs-isNullable');

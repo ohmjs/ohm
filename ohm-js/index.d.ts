@@ -96,13 +96,7 @@ declare namespace ohm {
     extendSemantics(superSemantics: Semantics): Semantics;
   }
 
-  interface PExpr {
-    getNodeTypes(): NodeType[];
-  }
-
-  interface NodeType {
-    toString(): string;
-  }
+  interface PExpr {}
 
   /**
    * Matcher objects are used to incrementally match a changing input
