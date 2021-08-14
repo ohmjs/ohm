@@ -59,6 +59,7 @@ declare namespace ohm {
    */
   interface Grammar {
     name: string;
+    superGrammar: Grammar;
     rules: {[ruleName: string]: RuleInfo};
 
     /**

@@ -1,6 +1,9 @@
 import {timeStamp} from 'console';
-import * as ohm from 'ohm-js';
+import ohm from 'ohm-js';
 import {tokenToString} from 'typescript';
+
+const CaseInsensitiveTerminal = require('ohm-js/src/CaseInsensitiveTerminal');
+
 
 const pexprs = (ohm as any).pexprs;
 
@@ -31,8 +34,9 @@ function _getNodeTypes(pexpr: any): UnionType[] {
   if (
     pexpr === pexprs.any ||
     pexpr === pexprs.end ||
-    pexpr instanceof pexprs.Terminal ||
+    pexpr instanceof CaseInsensitiveTerminal ||
     pexpr instanceof pexprs.Range ||
+    pexpr instanceof pexprs.Terminal ||
     pexpr instanceof pexprs.UnicodeChar
   ) {
     return [new UnionType('TerminalNode')];

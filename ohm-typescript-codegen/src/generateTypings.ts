@@ -19,13 +19,20 @@ declare interface ${grammarName}Grammar extends Grammar {
 }
 `;
 
-export function generateTypings(source: string, filename?: string) {
-  const grammar = ohm.grammar(source);
-  const actionDecls = Object.entries(grammar.rules).map(([ruleName, ruleInfo]) => {
+function getActionDecls(grammar: ohm.Grammar) {
+  return Object.entries(grammar.rules).map(([ruleName, ruleInfo]) => {
     const argTypes = getNodeTypes(ruleInfo.body).map(t => t.toString());
     const args = argTypes.map((type, i) => `arg${i}: ${type}`).join(', ');
     return `${ruleName}?(${args}): T;`;
   });
+}
+
+export function generateTypings(source: string, filename?: string) {
+  const grammar = ohm.grammar(source);
+  const actionDecls = [];
+  for (let g = grammar; g != null; g = g.superGrammar) {
+    actionDecls.push(...getActionDecls(g));
+  }
   return {
     filename: filename ? `${filename}.d.ts` : `${grammar.name.toLowerCase()}.d.ts`,
     contents: createDeclarations(grammar.name, actionDecls)
