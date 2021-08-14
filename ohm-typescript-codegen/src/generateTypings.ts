@@ -2,10 +2,7 @@ import * as ohm from 'ohm-js';
 import {getNodeTypes} from './getNodeTypes';
 
 const createDeclarations = (grammarName: string, actionDecls: string[]) =>
-  `
-import {ActionDict, Grammar, IterationNode, Node, NonterminalNode, Semantics, TerminalNode} from 'ohm-js';
-
-declare interface ${grammarName}Node extends Node {}
+  `import {ActionDict, Grammar, IterationNode, Node, NonterminalNode, Semantics, TerminalNode} from 'ohm-js';
 
 declare interface ${grammarName}ActionDict<T> extends ActionDict {
   ${actionDecls.join('\n  ')}
@@ -20,9 +17,7 @@ declare interface ${grammarName}Grammar extends Grammar {
   createSemantics(): ${grammarName}Semantics;
   // TODO: extendSemantics
 }
-
-declare const ${grammarName.toLowerCase()}: ${grammarName}Grammar;
-`.trim();
+`;
 
 export function generateTypings(source: string, filename?: string) {
   const grammar = ohm.grammar(source);
