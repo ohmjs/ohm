@@ -5,10 +5,6 @@ import getNodeTypes from './getNodeTypes';
 
 const pexprs = (ohm as any).pexprs;
 
-// --------------------------------------------------------------------
-// Tests
-// --------------------------------------------------------------------
-
 test('basic expressions', t => {
   t.deepEqual(getNodeTypes(pexprs.any), ['TerminalNode']);
   t.deepEqual(getNodeTypes(pexprs.end), ['TerminalNode']);

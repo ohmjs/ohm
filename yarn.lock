@@ -5014,11 +5014,6 @@ timers-browserify@^2.0.4:
   dependencies:
     setimmediate "^1.0.4"
 
-tiny-dedent@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/tiny-dedent/-/tiny-dedent-1.0.1.tgz#4e10203edec8e08f8d47b5f25215bbd4f0c8ce6b"
-  integrity sha512-JA9y98vjAFFg4LPgC/fg9s6rewORXqsm5A2qgXN7DmLbEehYG2ckFPSCUOAFZqKJdbRo8oLEoZGHytj3dmKULQ==
-
 to-arraybuffer@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/to-arraybuffer/-/to-arraybuffer-1.0.1.tgz#7d229b1fcc637e466ca081180836a7aabff83f43"
