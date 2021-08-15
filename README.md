@@ -35,6 +35,8 @@ The easiest way to get started with Ohm is to use the [interactive editor](https
 - The [math example](examples/math/index.html) is extensively commented and is a good way to dive deeper.
 - [Examples](examples/)
 - [Documentation](doc/README.md)
+- For community support and discussion, join us on [Discord](https://discord.gg/KwxY5gegRQ), [GitHub Discussions](https://github.com/harc/ohm/discussions), or the [ohm-discuss mailing list](https://groups.google.com/u/0/g/ohm-discuss).
+- For updates, follow [@_ohmjs on Twitter](https://twitter.com/_ohmjs).
 
 ### Installation
 
