@@ -58,6 +58,10 @@ declare namespace ohm {
    * An Ohm Grammar.
    */
   interface Grammar {
+    name: string;
+    superGrammar: Grammar;
+    rules: {[ruleName: string]: RuleInfo};
+
     /**
      * Try to match input with this grammar, returning a MatchResult. If
      * startRule is given, it specifies the rule on which to start
@@ -92,6 +96,8 @@ declare namespace ohm {
      */
     extendSemantics(superSemantics: Semantics): Semantics;
   }
+
+  interface PExpr {}
 
   /**
    * Matcher objects are used to incrementally match a changing input
@@ -294,6 +300,10 @@ declare namespace ohm {
     [index: string]: any;
   }
 
+  interface IterationNode extends Node {}
+  interface NonterminalNode extends Node {}
+  interface TerminalNode extends Node {}
+
   /**
    * Interval in input string
    */
@@ -343,5 +353,12 @@ declare namespace ohm {
      * Return a nicely-formatted string describing the start of the Interval
      */
     getLineAndColumnMessage(): string;
+  }
+
+  interface RuleInfo {
+    body: PExpr;
+    formals: string[];
+    description: string;
+    source: Interval;
   }
 }
