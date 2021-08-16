@@ -30,6 +30,10 @@ class UnionType {
   }
 }
 
+function flatMap<T, U>(arr: T[], cb: (value: T) => U | U[]): U[] {
+  return ([] as U[]).concat(...arr.map(cb));
+}
+
 function _getNodeTypes(pexpr: any): UnionType[] {
   if (
     pexpr === pexprs.any ||
@@ -62,12 +66,12 @@ function _getNodeTypes(pexpr: any): UnionType[] {
   }
 
   if (pexpr instanceof pexprs.Seq) {
-    return pexpr['factors'].map((f: any) => _getNodeTypes(f));
+    return flatMap(pexpr['factors'], (f: any) => _getNodeTypes(f));
   }
 
   if (pexpr instanceof pexprs.Iter) {
     // TODO(pdubroy): Should IterationNode have a type parameter?
-    return _getNodeTypes(pexpr['expr']).map(() => new UnionType('IterationNode'));
+    return flatMap(_getNodeTypes(pexpr['expr']), () => new UnionType('IterationNode'));
   }
 
   if (pexpr instanceof pexprs.Not) {

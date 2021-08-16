@@ -75,6 +75,14 @@ test('Iter expressions', t => {
   t.deepEqual(getNodeTypes(exp), ['IterationNode', 'IterationNode']);
 });
 
+test('Iter with arity > 1 inside a Seq', t => {
+  let exp = new pexprs.Seq([
+    new pexprs.Apply('letter'),
+    new pexprs.Star(new pexprs.Seq([new pexprs.Terminal(','), new pexprs.Apply('letter')]))
+  ]);
+  t.deepEqual(getNodeTypes(exp), ['NonterminalNode', 'IterationNode', 'IterationNode']);
+});
+
 test('Lookahead and Lex', t => {
   // Lookahead and Lex have the same types as the expression they wrap.
 
