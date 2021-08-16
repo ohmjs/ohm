@@ -1,9 +1,6 @@
-import {timeStamp} from 'console';
 import ohm from 'ohm-js';
-import {tokenToString} from 'typescript';
 
 const CaseInsensitiveTerminal = require('ohm-js/src/CaseInsensitiveTerminal');
-
 
 const pexprs = (ohm as any).pexprs;
 
