@@ -26,7 +26,7 @@ test('basic', t => {
 });
 
 test('arithmetic grammar', t => {
-  const { filesToWrite } = main(['arithmetic.ohm'], baseOpts);
+  const {filesToWrite} = main(['arithmetic.ohm'], baseOpts);
   t.deepEqual(Object.keys(filesToWrite), ['arithmetic.ohm.d.ts']);
   t.snapshot(filesToWrite['arithmetic.ohm.d.ts']);
 });

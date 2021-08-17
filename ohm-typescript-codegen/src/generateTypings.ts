@@ -4,7 +4,7 @@ import {getNodeTypes} from './getNodeTypes';
 const createDeclarations = (grammarName: string, actionDecls: string[]) =>
   `import {ActionDict, Grammar, IterationNode, Node, NonterminalNode, Semantics, TerminalNode} from 'ohm-js';
 
-declare interface ${grammarName}ActionDict<T> extends ActionDict {
+declare interface ${grammarName}ActionDict<T> extends ActionDict<T> {
   ${actionDecls.join('\n  ')}
 }
 
@@ -19,18 +19,20 @@ declare interface ${grammarName}Grammar extends Grammar {
 }
 `;
 
-function getActionDecls(grammar: ohm.Grammar) {
+const BuiltInRules = ohm.ohmGrammar.superGrammar;
+
+export function getActionDecls(grammar: ohm.Grammar) {
   return Object.entries(grammar.rules).map(([ruleName, ruleInfo]) => {
     const argTypes = getNodeTypes(ruleInfo.body).map(t => t.toString());
     const args = argTypes.map((type, i) => `arg${i}: ${type}`).join(', ');
-    return `${ruleName}?(${args}): T;`;
+    return `${ruleName}?: (this: NonterminalNode, ${args}) => T;`;
   });
 }
 
 export function generateTypings(source: string, filename?: string) {
   const grammar = ohm.grammar(source);
   const actionDecls = [];
-  for (let g = grammar; g != null; g = g.superGrammar) {
+  for (let g = grammar; g != BuiltInRules; g = g.superGrammar) {
     actionDecls.push(...getActionDecls(g));
   }
   return {

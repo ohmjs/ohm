@@ -16,6 +16,10 @@ _iter(children) {
 }
 ```
 
+### Type parameters for operations and actions (TypeScript-only)
+
+TODO
+
 ## Other changes
 
 - `Grammar.semantics` has been completely removed. Use `Grammar.createSemantics` instead.
