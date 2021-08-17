@@ -3,6 +3,8 @@
 export = ohm;
 
 declare namespace ohm {
+  const ohmGrammar: Grammar;
+
   /**
    * Instantiate the Grammar defined by source. If specified, namespace is
    * the Namespace to use when resolving external references in the grammar.

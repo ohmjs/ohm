@@ -65,10 +65,7 @@ test('incorrect arity', t => {
   );
   t.true(diagnostics.length > 0);
   t.deepEqual(diagnostics.slice(1), []);
-  t.is(
-    diagnostics[0].messageText,
-    "Type '(letters: any, x: any) => any' is not assignable to type '(arg0: NonterminalNode) => number'."
-  );
+  t.snapshot(diagnostics[0].messageText);
 });
 
 test('incorrect return type', t => {
@@ -97,9 +94,6 @@ test('incorrect return type', t => {
   if (typeof messageText === 'string') {
     t.fail();
   } else {
-    t.is(
-      messageText.messageText,
-      "Type '(letters: NonterminalNode) => string' is not assignable to type '(arg0: NonterminalNode) => number'."
-    );
+    t.snapshot(messageText.messageText);
   }
 });

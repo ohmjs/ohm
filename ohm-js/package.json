@@ -25,7 +25,7 @@
     "bootstrap": "bash scripts/bootstrap --test || (echo 'Bootstrap failed.' && mv -v dist/ohm-grammar.js.old dist/ohm-grammar.js && mv -v dist/built-in-rules.js.old dist/built-in-rules.js && mv -v dist/operations-and-attributes.js.old dist/operations-and-attributes.js)",
     "build": "yarn build-debug && webpack --mode=production",
     "prebuild-debug": "bash ../bin/update-env.sh",
-    "build-debug": "webpack --mode=development",
+    "build-debug": "webpack --mode=development && node scripts/generate-types.mjs",
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
     "lint": "eslint . --ignore-path ../.eslintignore",
     "format": "prettier . --write --ignore-path ../.prettierignore --config ../.prettierrc && eslint . --ignore-path ../.eslintignore --fix",
