@@ -1,0 +1,34 @@
+// An Ohm grammar for arithmetic expressions.
+// This taken directly from the [math example](https://github.com/harc/ohm/blob/master/examples/math/index.html).
+Arithmetic {
+  Exp
+    = AddExp
+
+  AddExp
+    = AddExp "+" MulExp  -- plus
+    | AddExp "-" MulExp  -- minus
+    | MulExp
+
+  MulExp
+    = MulExp "*" ExpExp  -- times
+    | MulExp "/" ExpExp  -- divide
+    | ExpExp
+
+  ExpExp
+    = PriExp "^" ExpExp  -- power
+    | PriExp
+
+  PriExp
+    = "(" Exp ")"  -- paren
+    | "+" PriExp   -- pos
+    | "-" PriExp   -- neg
+    | ident
+    | number
+
+  ident  (an identifier)
+    = letter alnum*
+
+  number  (a number)
+    = digit* "." digit+  -- fract
+    | digit+             -- whole
+}

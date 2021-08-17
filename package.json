@@ -7,7 +7,8 @@
     "examples/es-module",
     "examples/markdown",
     "examples/operators",
-    "examples/simple-lisp"
+    "examples/simple-lisp",
+    "examples/typescript"
   ],
   "scripts": {
     "build": "yarn workspace ohm-js run build",
