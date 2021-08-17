@@ -5,11 +5,12 @@
 ### Breaking changes:
 
 - There is no longer a default semantic action for iteration nodes. See [here](https://github.com/harc/ohm/blob/master/doc/releases/ohm-js-16.0.md#default-semantic-actions) for more details.
-- (_TypeScript-only_): On semantics objects, the methods `addOperation`, `extendOperation`, `addAttribute`, and `extendAttribute` now have a required type parameter, which is the return type of the operation (or the type of the attribute). The related types `Action` and `ActionDict` are similarly parameterized by the return type of the semantic actions.
+- (_TypeScript only_): On semantics objects, the methods `addOperation`, `extendOperation`, `addAttribute`, and `extendAttribute` now have a required type parameter, which is the return type of the operation (or the type of the attribute). The related types `Action` and `ActionDict` are similarly parameterized by the return type of the semantic actions. See the [release notes](https://github.com/harc/ohm/blob/master/doc/releases/ohm-js-16.0.md#type-parameters-for-operations-and-actions-typescript-only) for more details.
 
 ### Other notable changes:
 
 - [7d69cde] Node.primitiveValue is now deprecated — Node.sourceString is equivalent, and should be used instead.
+- Improvements and additions to the TypeScript declarations (index.d.ts) to make them more accurate and comprehensive.
 
 ## v15.5.0 - Apr 5, 2021
 
