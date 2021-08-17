@@ -22,7 +22,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "prepublishOnly": "yarn build",
+    "prepare": "yarn build",
     "test": "ava"
   },
   "bin": {

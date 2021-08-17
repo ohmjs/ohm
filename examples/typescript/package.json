@@ -12,5 +12,13 @@
   "scripts": {
     "build": "generate-ohm-declarations src/*.ohm",
     "test": "yarn build && ava"
+  },
+  "ava": {
+    "extensions": [
+      "ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ]
   }
 }

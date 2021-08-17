@@ -13,8 +13,9 @@
   "scripts": {
     "build": "yarn workspace ohm-js run build",
     "ci-test": "yarn lint && yarn test",
-    "lint": "eslint .",
     "format": "prettier --write . && eslint --fix .",
+    "lint": "eslint .",
+    "prepare": "yarn workspace ohm-typescript-codegen run prepare",
     "test": "yarn workspaces run test"
   },
   "devDependencies": {
