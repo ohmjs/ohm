@@ -12,12 +12,9 @@ declare namespace ohm {
   function grammar(source: string, namespace?: Namespace): Grammar;
 
   /**
-   * Create a Grammar instance from the contents of a <script> tag.
-   * node, if specified, is a script tag with the attribute
-   * type="text/ohm-js". If it is not specified, the result of
-   * document.querySelector(script[type="text/ohm-js"]) will be used instead.
-   * If specified, namespace is
-   * the Namespace to use when resolving external references in the grammar.
+   * grammarFromScriptElement was removed in Ohm v16.0. See
+   * https://git.io/J0gnK for more info.
+   * @deprecated
    */
   function grammarFromScriptElement(node?: Node, namespace?: Namespace): Grammar;
 
@@ -30,14 +27,11 @@ declare namespace ohm {
   function grammars(source: string, namespace?: Namespace): Namespace;
 
   /**
-   * Create a new Namespace containing Grammar instances for all of the
-   * grammars defined in the <script> tags in nodeList. If nodeList is
-   * not specified, the result of
-   * document.querySelectorAll('script[type="text/ohm-js"]') will be used.
-   * If namespace is specified, it will be the prototype of the new
-   * Namespace.
+   * grammarsFromScriptElements was removed in Ohm v16.0. See
+   * https://git.io/J0gnK for more info.
+   * @deprecated
    */
-  function grammarFromScriptElements(nodeList?: NodeList, namespace?: Namespace): Namespace;
+  function grammarsFromScriptElements(nodeList?: NodeList, namespace?: Namespace): Namespace;
 
   /**
    * Create a new namespace. If props is specified, all of its properties

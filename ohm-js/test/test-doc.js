@@ -10,26 +10,11 @@ const markscript = require('markscript');
 const path = require('path');
 const test = require('ava');
 
-const ohm = require('..');
-const testUtil = require('./helpers/testUtil');
-
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
-const fakeDocument = {
-  querySelector(sel) {
-    return testUtil.fakeScriptTag('G { foo = end }');
-  },
-  querySelectorAll(sel) {
-    return [testUtil.fakeScriptTag('G { foo = end }')];
-  }
-};
-
 const markscriptConfig = {
-  // Expose the fake document object to scripts inside Markdown.
-  globals: {document: fakeDocument},
-
   // Allow require calls to work properly from inside Markdown.
   moduleAliases: {
     'ohm-js': scriptRel('..'),
@@ -41,10 +26,6 @@ const markscriptConfig = {
 function scriptRel(relPath) {
   return path.join(__dirname, relPath);
 }
-
-// Stub out the use of `document` in the loaded module. When scripts inside
-// Markdown require 'ohm', they will get the same instance.
-ohm._setDocumentInterfaceForTesting(fakeDocument);
 
 // --------------------------------------------------------------------
 // Tests

@@ -1,5 +1,3 @@
-/* global document, XMLHttpRequest */
-
 'use strict';
 
 // --------------------------------------------------------------------
@@ -25,49 +23,7 @@ const isBuffer = require('is-buffer');
 // bottom of this file because loading the grammar requires Ohm itself.
 let ohmGrammar;
 
-// An object which makes it possible to stub out the document API for testing.
-let documentInterface = {
-  querySelector(sel) {
-    return document.querySelector(sel);
-  },
-  querySelectorAll(sel) {
-    return document.querySelectorAll(sel);
-  }
-};
-
 const superSplicePlaceholder = Object.create(pexprs.PExpr.prototype);
-
-// Check if `obj` is a DOM element.
-function isElement(obj) {
-  return !!(obj && obj.nodeType === 1);
-}
-
-function isUndefined(obj) {
-  return obj === void 0; // eslint-disable-line no-void
-}
-
-const MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
-
-function isArrayLike(obj) {
-  if (obj == null) {
-    return false;
-  }
-  const length = obj.length;
-  return typeof length === 'number' && length >= 0 && length <= MAX_ARRAY_INDEX;
-}
-
-// TODO: just use the jQuery thing
-function load(url) {
-  const req = new XMLHttpRequest();
-  req.open('GET', url, false);
-  try {
-    req.send();
-    if (req.status === 0 || req.status === 200) {
-      return req.responseText;
-    }
-  } catch (e) {}
-  throw new Error('unable to load url ' + url);
-}
 
 // Returns a Grammar instance (i.e., an object with a `match` method) for
 // `tree`, which is the concrete syntax tree of a user-written grammar.
@@ -303,17 +259,6 @@ function compileAndLoad(source, namespace) {
   return buildGrammar(m, namespace);
 }
 
-// Return the contents of a script element, fetching it via XHR if necessary.
-function getScriptElementContents(el) {
-  if (!isElement(el)) {
-    throw new TypeError('Expected a DOM Node, got ' + common.unexpectedObjToString(el));
-  }
-  if (el.type !== 'text/ohm-js') {
-    throw new Error('Expected a script tag with type="text/ohm-js", got ' + el);
-  }
-  return el.getAttribute('src') ? load(el.getAttribute('src')) : el.innerHTML;
-}
-
 function grammar(source, optNamespace) {
   const ns = grammars(source, optNamespace);
 
@@ -349,41 +294,15 @@ function grammars(source, optNamespace) {
 }
 
 function grammarFromScriptElement(optNode) {
-  let node = optNode;
-  if (isUndefined(node)) {
-    const nodeList = documentInterface.querySelectorAll('script[type="text/ohm-js"]');
-    if (nodeList.length !== 1) {
-      throw new Error(
-          'Expected exactly one script tag with type="text/ohm-js", found ' + nodeList.length
-      );
-    }
-    node = nodeList[0];
-  }
-  return grammar(getScriptElementContents(node));
+  throw new Error(
+      'grammarFromScriptElement was removed in Ohm v16.0. See https://git.io/J0gnK for more info.'
+  );
 }
 
 function grammarsFromScriptElements(optNodeOrNodeList) {
-  // Simple case: the argument is a DOM node.
-  if (isElement(optNodeOrNodeList)) {
-    return grammars(optNodeOrNodeList);
-  }
-  // Otherwise, it must be either undefined or a NodeList.
-  let nodeList = optNodeOrNodeList;
-  if (isUndefined(nodeList)) {
-    // Find all script elements with type="text/ohm-js".
-    nodeList = documentInterface.querySelectorAll('script[type="text/ohm-js"]');
-  } else if (
-    typeof nodeList === 'string' ||
-    (!isElement(nodeList) && !isArrayLike(nodeList))
-  ) {
-    throw new TypeError('Expected a Node, NodeList, or Array, but got ' + nodeList);
-  }
-  const ns = Namespace.createNamespace();
-  for (let i = 0; i < nodeList.length; ++i) {
-    // Copy the new grammars into `ns` to keep the namespace flat.
-    common.extend(ns, grammars(getScriptElementContents(nodeList[i]), ns));
-  }
-  return ns;
+  throw new Error(
+      'grammarsFromScriptElements was removed in Ohm v16.0. See https://git.io/J0gnK for more info.'
+  );
 }
 
 function makeRecipe(recipe) {
@@ -419,9 +338,6 @@ module.exports = {
 
 // Stuff for testing, etc.
 module.exports._buildGrammar = buildGrammar;
-module.exports._setDocumentInterfaceForTesting = function(doc) {
-  documentInterface = doc;
-};
 
 // Late initialization for stuff that is bootstrapped.
 
