@@ -223,7 +223,6 @@ require('./pexprs-assertAllApplicationsAreValid');
 require('./pexprs-assertChoicesHaveUniformArity');
 require('./pexprs-assertIteratedExprsAreNotNullable');
 require('./pexprs-eval');
-require('./pexprs-generateExample');
 require('./pexprs-getArity');
 require('./pexprs-outputRecipe');
 require('./pexprs-introduceParams');

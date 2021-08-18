@@ -40,18 +40,6 @@ class CaseInsensitiveTerminal extends PExpr {
     }
   }
 
-  generateExample(grammar, examples, inSyntacticContext, actuals) {
-    // Start with a example generated from the Terminal...
-    const str = this.obj.generateExample(grammar, examples, inSyntacticContext, actuals).value;
-
-    // ...and randomly switch characters to uppercase/lowercase.
-    let value = '';
-    for (let i = 0; i < str.length; ++i) {
-      value += Math.random() < 0.5 ? str[i].toLocaleLowerCase() : str[i].toLocaleUpperCase();
-    }
-    return {value};
-  }
-
   getArity() {
     return 1;
   }

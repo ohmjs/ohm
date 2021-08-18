@@ -13,6 +13,7 @@
 
 - [7d69cde] Node.primitiveValue is now deprecated — Node.sourceString is equivalent, and should be used instead.
 - Improvements and additions to the TypeScript declarations (index.d.ts) to make them more accurate and comprehensive.
+- The `generateExample` method has been removed from the PExpr class. (It was never part of Ohm's public API.)
 
 ## v15.5.0 - Apr 5, 2021
 
