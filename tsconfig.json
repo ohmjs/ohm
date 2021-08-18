@@ -1,11 +1,10 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2017",
     "outDir": "dist",
     "module": "commonjs",
     "declaration": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
+    "strict": true,
     "moduleResolution": "node"
   },
   "files": ["index.d.ts", "test/test-typings.ts"]
