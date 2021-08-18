@@ -6,61 +6,64 @@
     <link href="math.css" rel="stylesheet"></link>
     <script src="../lib.js"></script>
     <script src="../../ohm-js/dist/ohm.js"></script>
-    <script type="text/ohm-js">
-
-// An Ohm grammar for arithmetic expressions.
-
-Arithmetic {
-  Exp
-    = AddExp
-
-  AddExp
-    = AddExp "+" MulExp  -- plus
-    | AddExp "-" MulExp  -- minus
-    | MulExp
-
-  MulExp
-    = MulExp "*" ExpExp  -- times
-    | MulExp "/" ExpExp  -- divide
-    | ExpExp
-
-  ExpExp
-    = PriExp "^" ExpExp  -- power
-    | PriExp
-
-  PriExp
-    = "(" Exp ")"  -- paren
-    | "+" PriExp   -- pos
-    | "-" PriExp   -- neg
-    | ident
-    | number
-
-  /*
-    The following rules have *descriptions*, which are optional parenthesized "comments" following
-    the name of a rule in its declaration. Rule descriptions are used to produce better error
-    messages when the input is not recognized. E.g., if you try to match the input "123" with the
-    `ident` rule below, Ohm will say that "an identifier" was expected. Without `ident`'s rule
-    description, the error message would have said that "a letter" was expected -- which is true,
-    but probably too low-level to be helpful. Note that `letter`, `alnum`, and `digit` are built-in
-    rules with their own descriptions (you can see their declarations in src/built-in-rules.ohm).
-  */
-  ident  (an identifier)
-    = letter alnum*
-
-  number  (a number)
-    = digit* "." digit+  -- fract
-    | digit+             -- whole
-}
-
-    </script>
     <script>
 
 /*
-  Load the grammar from the <script> tag above. Note that the tag's `type` attribute is set to
-  "text/ohm-js" to differentiate it from other (non-Ohm) script tags.
-*/
+  In the browser, it's recommended to define your grammar using the template literal syntax
+  (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals)
+  and the `String.raw` tag.
 
-const g = ohm.grammarFromScriptElement();
+  The template literal syntax enables multi-line strings, and String.raw makes it simpler to
+  use escape codes like "\n" in your grammars -- see https://git.io/J0gPJ for more details.
+ */
+const source = String.raw`
+  // An Ohm grammar for arithmetic expressions.
+
+  Arithmetic {
+    Exp
+      = AddExp
+
+    AddExp
+      = AddExp "+" MulExp  -- plus
+      | AddExp "-" MulExp  -- minus
+      | MulExp
+
+    MulExp
+      = MulExp "*" ExpExp  -- times
+      | MulExp "/" ExpExp  -- divide
+      | ExpExp
+
+    ExpExp
+      = PriExp "^" ExpExp  -- power
+      | PriExp
+
+    PriExp
+      = "(" Exp ")"  -- paren
+      | "+" PriExp   -- pos
+      | "-" PriExp   -- neg
+      | ident
+      | number
+
+    /*
+      The following rules have *descriptions*, which are optional parenthesized "comments" following
+      the name of a rule in its declaration. Rule descriptions are used to produce better error
+      messages when the input is not recognized. E.g., if you try to match the input "123" with the
+      'ident' rule below, Ohm will say that "an identifier" was expected. Without ident's rule
+      description, the error message would have said that "a letter" was expected -- which is true,
+      but probably too low-level to be helpful. Note that 'letter', 'alnum', and 'digit' are built-in
+      rules with their own descriptions (you can see their declarations in src/built-in-rules.ohm).
+    */
+    ident  (an identifier)
+      = letter alnum*
+
+    number  (a number)
+      = digit* "." digit+  -- fract
+      | digit+             -- whole
+  }
+`;
+
+// We use `ohm.grammar` instantiate our Grammar from the source.
+const g = ohm.grammar(source);
 
 /*
   You can use a grammar's `match()` method to to recognize inputs. `match()` returns a
@@ -211,7 +214,7 @@ s.addOperation(
 
         to have the same *arity*, i.e., to produce the same number of CST nodes. In fact, the
         declaration of `AddExp`, as shown above, would result in a compile-time error -- namely,
-        the call to `ohm.grammarFromScriptElement()` would throw an exception.
+        the call to `ohm.grammar()` would throw an exception.
 
         We can fix this by refactoring the first two choices of `AddExp` into their own rules:
 

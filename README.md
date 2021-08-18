@@ -75,28 +75,18 @@ To use Ohm, you need a grammar that is written in the Ohm language. The grammar 
 definition of the language or data format that you want to parse. There are a few different ways
 you can define an Ohm grammar:
 
-- Define the grammar directly in a JavaScript string and instantiate it using `ohm.grammar()`:
+- The simplest opion is to define the grammar directly in a JavaScript string and instantiate it
+  using `ohm.grammar()`. In most cases, you should use a [template literal with String.raw](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/raw):
 
   ```js
-  const myGrammar = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
-  ```
-
-  This is the simplest option, but it can be awkward to define larger grammars this way.
-
-- **Recommended when running in the browser:** Embed the grammar source inside its own `<script>` tag with the attribute `type="text/ohm-js"`, and instantiate it using `ohm.grammarFromScriptElement()`:
-
-  ```html
-  <script type="text/ohm-js">
+  const myGrammar = ohm.grammar(String.raw`
     MyGrammar {
       greeting = "Hello" | "Hola"
     }
-  </script>
-  <script>
-    const myGrammar = ohm.grammarFromScriptElement();
-  </script>
+  `);
   ```
 
-- **Recommended with Node.js:** Define the grammar in a separate file, read the file's contents and instantiate it using `ohm.grammar(contents)`:
+- **In Node.js**, you can define the grammar in a separate file, and read the file's contents and instantiate it using `ohm.grammar(contents)`:
 
   In `myGrammar.ohm`:
 
@@ -109,7 +99,7 @@ you can define an Ohm grammar:
   ```js
   const fs = require('fs');
   const ohm = require('ohm-js');
-  const contents = fs.readFileSync('myGrammar.ohm');
+  const contents = fs.readFileSync('myGrammar.ohm', 'utf-8');
   const myGrammar = ohm.grammar(contents);
   ```
 

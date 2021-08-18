@@ -16,7 +16,11 @@ _iter(children) {
 }
 ```
 
-### Type parameters for operations and actions (TypeScript-only)
+### grammarFromScriptElement
+
+TODO
+
+### Type parameters for operations and actions (TypeScript only)
 
 TODO
 

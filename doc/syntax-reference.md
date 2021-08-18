@@ -40,7 +40,11 @@ Here is a full list of the different kinds of parsing expressions supported by O
 
 Matches exactly the characters contained inside the quotation marks.
 
+#### Special characters
+
 Special characters (`"`, `\`, and `'`) can be escaped with a backslash -- e.g., `"\""` will match a literal quote character in the input stream. Other valid escape sequences include: `\b` (backspace), `\f` (form feed), `\n` (line feed), `\r` (carriage return), and `\t` (tab), as well as `\x` followed by 2 hex digits and `\u` followed by 4 hex digits, for matching characters by code point.
+
+**NOTE:** For grammars defined in a JavaScript string literal (i.e., not in a separate .ohm file), it's recommended to use a [template literal with the String.raw tag](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/raw). Without `String.raw`, you'll need to use double-escaping -- e.g., `\\n` rather than `\n`.
 
 ### Terminal Range
 
