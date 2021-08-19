@@ -38,4 +38,4 @@ This example shows how to write the same grammar all four ways, with an associat
 
 The idea is to give grammar designers a look into the various alternatives to pick a style that’s right for them. Even though the first of the four will generally be preferred.
 
-There is no user interface for this demo; simply run `npm test` at the top-level to see the grammars and semantics in action.
+There is no user interface for this demo; simply run `npm test` or `yarn test` in this directory to see the grammars and semantics in action.

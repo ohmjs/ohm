@@ -1,0 +1,24 @@
+{
+  "name": "typescript-example",
+  "version": "1.0.0",
+  "description": "An example of using Ohm in a TypeScript project.",
+  "private": true,
+  "devDependencies": {
+    "ava": "^3.15.0",
+    "ohm-typescript-codegen": "^0.1.0",
+    "ts-node": "^10.2.0",
+    "typescript": "^4.3.5"
+  },
+  "scripts": {
+    "build": "generate-ohm-declarations src/*.ohm",
+    "test": "yarn build && ava"
+  },
+  "ava": {
+    "extensions": [
+      "ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ]
+  }
+}

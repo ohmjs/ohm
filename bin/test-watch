@@ -1,5 +1,0 @@
-#!/bin/bash
-
-# Start watchify in a subshell, and then execute `npm test` whenever the
-# browserified bundle changes, or any of the test sources change.
-nodemon -w src -w test -w examples -w doc -w README.md --exec 'npm test' -e js,md

@@ -1,29 +1,20 @@
-API Reference
-=============
+# API Reference
 
 This page documents the API of Ohm/JS, a JavaScript library for working with grammars written in the Ohm language. For documentation on the Ohm language, see the [syntax reference](./syntax-reference.md).
 
-Instantiating Grammars
-----------------------
+## Instantiating Grammars
+
+**NOTE:** For grammars defined in a JavaScript string literal (i.e., not in a separate .ohm file), it's recommended to use a [template literal with the String.raw tag](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/raw).
 
 <b><pre class="api">ohm.grammar(source: string, optNamespace?: object) &rarr; Grammar</pre></b>
 
 Instantiate the Grammar defined by `source`. If specified, `optNamespace` is the Namespace to use when resolving external references in the grammar. For more information, see the documentation on [Namespace objects](#namespace-objects) below.
 
-<b><pre class="api">ohm.grammarFromScriptElement(optNode?: Node, optNamespace?: object) &rarr; Grammar</pre></b>
-
-Convenience method for creating a Grammar instance from the contents of a `<script>` tag. `optNode`, if specified, is a script tag with the attribute `type="text/ohm-js"`. If it is not specified, the result of `document.querySelector(script[type="text/ohm-js"])` will be used instead. `optNamespace` has the same meaning as in `ohm.grammar`.
-
 <b><pre class="api">ohm.grammars(source: string, optNamespace?: object) &rarr; Namespace</pre></b>
 
 Create a new Namespace containing Grammar instances for all of the grammars defined in `source`. If `optNamespace` is specified, it will be the prototype of the new Namespace.
 
-<b><pre class="api">ohm.grammarsFromScriptElements(optNodeList?: NodeList, optNamespace?: object) &rarr; Namespace</pre></b>
-
-Create a new Namespace containing Grammar instances for all of the grammars defined in the `<script>` tags in `optNodeList`. If `optNodeList` is not specified, the result of `document.querySelectorAll('script[type="text/ohm-js"]')` will be used. `optNamespace` has the same meaning as in `ohm.grammars`.
-
-Namespace objects
------------------
+## Namespace objects
 
 When instantiating a grammar that refers to another grammar -- e.g. `MyJava <: Java { keyword += "async" }` -- the supergrammar name ('Java') is resolved to a grammar by looking up the name in a Namespace. In Ohm/JS, Namespaces are a plain old JavaScript objects, and an object literal like `{Java: myJavaGrammar}` can be passed to any API that expects a Namespace. For convenience, Ohm also has the following methods for working with namespaces:
 
@@ -35,14 +26,13 @@ Create a new namespace. If `optProps` is specified, all of its properties will b
 
 Create a new namespace which inherits from `namespace`. If `optProps` is specified, all of its properties will be copied to the new namespace.
 
-Grammar objects
----------------
+## Grammar objects
 
 A Grammar instance `g` has the following methods:
 
 <a name="Grammar.match"><b><pre class="api">g.match(str: string, optStartRule?: string) &rarr; MatchResult</pre></b></a>
 
-Try to match `str` against `g`, returning a MatchResult. If `optStartRule` is given, it specifies the rule on which to start matching. By default, the start rule is inherited from the supergrammar, or if there is no supergrammar specified, it is the first rule in `g`'s definition.
+Try to match `str` against `g`, returning a [MatchResult](#matchresult-objects). If `optStartRule` is given, it specifies the rule on which to start matching. By default, the start rule is inherited from the supergrammar, or if there is no supergrammar specified, it is the first rule in `g`'s definition.
 
 <b><pre class="api">g.matcher()</pre></b>
 
@@ -50,7 +40,7 @@ Create a new [Matcher](#matcher-objects) object which supports incrementally mat
 
 <a name="Grammar.trace"><b><pre class="api" id="trace">g.trace(str: string, optStartRule?: string) &rarr; Trace</pre></b></a>
 
-Try to match `str` against `g`, returning a Trace object. `optNamespace` has the same meaning as in `ohm.grammar`. Trace objects have a `toString()` method, which returns a string which summarizes each parsing step (useful for debugging).
+Try to match `str` against `g`, returning a Trace object. `optStartRule` has the same meaning as in `g.match`. Trace objects have a `toString()` method, which returns a string which summarizes each parsing step (useful for debugging).
 
 <b><pre class="api">g.createSemantics() &rarr; Semantics</pre></b>
 
@@ -60,8 +50,7 @@ Create a new [Semantics](#semantics) object for `g`.
 
 Create a new [Semantics](#semantics) object for `g` that inherits all of the operations and attributes in `superSemantics`. `g` must be a descendent of the grammar associated with `superSemantics`.
 
-Matcher objects
----------------
+## Matcher objects
 
 Matcher objects can be used to incrementally match a changing input against the Matcher's grammar, e.g. in an editor or IDE. When a Matcher's input is modified via `replaceInputRange`, further calls to `match` will reuse the partial results of previous calls wherever possible. Generally, this means that small changes to the input will result in very short match times.
 
@@ -87,8 +76,7 @@ Like [Grammar's `match` method](#Grammar.match), but operates incrementally.
 
 Like [Grammar's `trace` method](#Grammar.trace), but operates incrementally.
 
-MatchResult objects
--------------------
+## MatchResult objects
 
 Internally, a successful MatchResult contains a _parse tree_, which is made up of _parse nodes_. Parse trees are not directly exposed -- instead, they are inspected indirectly through _operations_ and _attributes_, which are described in the next section.
 
@@ -137,9 +125,11 @@ This returns a parse node, whose properties correspond to the operations and att
 
 A Semantics instance `s` has the following methods, which all return `this` so they can be chained:
 
-<b><pre class="api">mySemantics.addOperation(name: string, actionDict: object) &rarr; Semantics</pre></b>
+<b><pre class="api">mySemantics.addOperation(nameOrSignature: string, actionDict: object) &rarr; Semantics</pre></b>
 
-Add a new Operation named `name` to this Semantics, using the [semantic actions](#semantic-actions) contained in `actionDict`. It is an error if there is already an operation or attribute called `name` in this semantics.
+Add a new Operation to this Semantics, using the [semantic actions](#semantic-actions) contained in `actionDict`. The first argument is either a name (e.g. `'prettyPrint'`) or a _signature_ which specifies the operation name and zero or more named parameters (e.g., `'prettyPrint()'`, `'prettyPrint(depth, strict)'`). It is an error if there is already an operation or attribute called `name` in this semantics.
+
+If the operation has arguments, they are accessible via `this.args` within a semantic action. For example, `this.args.depth` would hold the value of the `depth` argument for the current action.
 
 <b><pre class="api">mySemantics.addAttribute(name: string, actionDict: object) &rarr; Semantics</pre></b>
 
@@ -165,9 +155,9 @@ Generally, you write a semantic action for each rule in your grammar, and store 
 
 <!-- @markscript
   // Take the grammar below and instantiate it as `g` in the markscript environment.
-  markscript.transformNextBlock(function(code) {
-    return "var g = require('ohm-js').grammar('" + code.replace(/\n/g, '\\n') + "');";
-  });
+  markscript.transformNextBlock((code) =>
+    `const g = require('ohm-js').grammar(${JSON.stringify(code)});`
+  );
 -->
 
 ```
@@ -182,22 +172,22 @@ A set of semantic actions for this grammar might look like this:
 <!-- @markscript
   // Replace '...' in the action dict below with some actual function definitions,
   // so that we can be sure that the code actually works.
-  markscript.transformNextBlock(function(code) {
-    return code.replace('...', "return lastName.x().toUpperCase() + ', ' + firstName.x()")
-               .replace('...', "return this.sourceString;")
-  });
+  markscript.transformNextBlock((code) =>
+    code.replace('...', "return lastName.x().toUpperCase() + ', ' + firstName.x()")
+        .replace('...', "return this.sourceString;")
+  );
 -->
 
 ```js
-var actions = {
-  FullName: function(firstName, lastName) { ... },
-  name: function(parts) { ... }
+const actions = {
+  FullName(firstName, lastName) { ... },
+  name(parts) { ... }
 };
 ```
 
 <!-- @markscript
   // Verify that the action dict actually works.
-  var semantics = g.createSemantics().addOperation('x', actions);
+  const semantics = g.createSemantics().addOperation('x', actions);
   assert.equal(semantics(g.match('Guy Incognito')).x(), 'INCOGNITO, Guy');
 -->
 
@@ -205,9 +195,13 @@ The value of an operation or attribute for a node is the result of invoking the 
 
 The matching semantic action for a particular node is chosen as follows:
 
-- On a _rule application_ node, first look for a semantic action with the same name as the rule (e.g., 'FullName'). If the action dictionary does not have a property with that name, use the action named '_nonterminal', if it exists. If not, the default action is used, which returns the result of applying the operation or attribute to the node's only child. There is no default action for non-terminal nodes that have no children, or more than one child.
-- On a terminal node (e.g., a node produced by the parsing expression `"hello"`), use the semantic action named '_terminal'.
-- On an iteration node (e.g., a node produced by the parsing expression `letter+`), use the semantic action named '_iter'. If the action dictionary does not have a property with that name, the default action returns an array containing the results of applying the operation or attribute to each child node.
+- On a _rule application_ (non-terminal) node, first look for a semantic action with the same name as the rule (e.g., 'FullName'). If the action dictionary does not have a property with that name, use the action named '\_nonterminal', if it exists. If there is no `_nonterminal` action, and the node has exactly one child, then return the result of invoking the operation/attribute on the child node.
+- On a terminal node (e.g., a node produced by the parsing expression `"hello"`), use the semantic action named '\_terminal'.
+- On an iteration node (e.g., a node produced by the parsing expression `letter+`), use the semantic action named '\_iter'.
+
+**\*NOTE:** Versions of Ohm prior to v16.0 had slightly different behaviour with regards to default semantic actions. See [here](https://github.com/harc/ohm/blob/master/doc/releases/ohm-js-16.0.md#default-semantic-actions) for more details.\*
+
+Note that you can also write semantic actions for built-in rules like `letter` or `digit`. For `ListOf`, please see the documentation on [asIteration](#asIteration) below.
 
 ### Parse Nodes
 
@@ -239,6 +233,10 @@ The name of grammar rule that created the node.
 
 Captures the portion of the input that was consumed by the node.
 
+<b><pre class="api">n.sourceString: string</pre></b>
+
+The substring of the input that was consumed by the node. Equivalent to `n.source.contents`.
+
 <b><pre class="api">n.numChildren: number</pre></b>
 
 The number of child nodes that the node has.
@@ -247,10 +245,53 @@ The number of child nodes that the node has.
 
 `true` if the node is an iterator node having either one or no child (? operator), otherwise `false`.
 
-<b><pre class="api">n.primitiveValue: string</pre></b>
-
-For a terminal node, the raw value that was consumed from the input stream.
-
 #### Operations and Attributes
 
 In addition to the properties listed above, within a given semantics, every node also has a method/property corresponding to each operation/attribute in the semantics. For example, in a semantics that has an operation named 'prettyPrint' and an attribute named 'freeVars', every node has a `prettyPrint()` method and a `freeVars` property.
+
+## Built-in Operations
+
+### asIteration
+
+The built-in `asIteration` operation offers a convenient way of handling _ListOf_ expressions, by adapting them to have the same interface as built-in iteration nodes. As an example, take the following grammar:
+
+<!-- @markscript
+  // Take the grammar below and instantiate it as `g_asIteration` in the markscript environment.
+  markscript.transformNextBlock((code) =>
+    `const g_asIteration = require('ohm-js').grammar(${JSON.stringify(code)});`
+  );
+-->
+
+```
+G {
+  Start = ListOf<letter, ",">
+}
+```
+
+...and an operation defined as follows:
+
+<!-- @markscript
+  const s = g_asIteration.createSemantics();
+-->
+
+```
+s.addOperation('upper()', {
+  Start(list) {
+    return list.asIteration().children.map(c => c.upper());
+  },
+  letter(l) {
+    return this.sourceString.toUpperCase();
+  }
+});
+```
+
+<!-- @markscript
+  assert.deepEqual(
+    s(g_asIteration.match('a, b, c')).upper(),
+    ['A', 'B', 'C']
+  );
+-->
+
+Then `s(g.match('a, b, c')).upper()` will return `['A', 'B', 'C']`. Note that calling `upper()` on the result of `asIteration` implicitly maps the `upper` operation over each element of the list.
+
+You can also extend the `asIteration` operation to handle other list-like rules in your own language.

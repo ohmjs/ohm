@@ -4,8 +4,8 @@ Ohm comes with a few extras that are not part of Ohm's core but are related to g
 Here is how you can access those extras:
 
 ```js
-  var extras = require('ohm-js/extras');
-  // use something like extras.toAST(...);
+const extras = require('ohm-js/extras');
+// use something like extras.toAST(...);
 ```
 
 In the future, the extras may contain helper methods, semantics and operations that are useful for many grammars but are not always wanted or necessary and would otherwise e.g. pollute the actions of a grammar.
@@ -20,15 +20,35 @@ The resulting AST is inspired by the [ECMAScript Tree](https://github.com/estree
 <a name="example"></a>
 **Example:**
 
+<!-- @markscript
+  // Replace 'const ast' with 'var ast' to allow it to redeclared.
+  markscript.transformNextBlock(code => code.replace('const ast', 'var ast'));
+-->
+
 ```js
-  var ohm = require('ohm-js');
-  var g = ohm.grammar('G { Equation = AddExpr   AddExpr = number "+" number   number = digit+ }');
-  var match = g.match('24 +  6');
-  var toAST = require('ohm-js/extras').toAST;
-  var ast = toAST(match);
+const ohm = require('ohm-js');
+const g = ohm.grammar(`
+    G {
+      Equation = AddExpr
+      AddExpr = number "+" number
+      number = digit+
+    }
+  `);
+const match = g.match('24 +  6');
+const toAST = require('ohm-js/extras').toAST;
+const ast = toAST(match);
 ```
 
 will produce an AST like this:
+
+<!-- @markscript
+  // Make sure the block below is equal to `ast` from the block above.
+  markscript.transformNextBlock((code) => {
+    const jsonAST = code.replace(/\/\/.*/g, ''); // Strip comments
+    assert.deepEqual(ast, JSON.parse(jsonAST));
+    return '';  // Don't actually execute anything.
+  });
+-->
 
 ```js
   {
@@ -57,15 +77,29 @@ The _mapping_ parameter is a JavaScript object that consists of key-value pairs 
 
 **Customized Example (see [Example](#example)):**
 
+<!-- @markscript
+  // Replace 'const ast' with 'var ast' to allow it to redeclared.
+  markscript.transformNextBlock(code => code.replace('const ast', 'var ast'));
+-->
+
 ```js
-  // create ohm, g, match and toAST
-  var ast = toAST(match, {
-    Equation: { content: 0 },
-    AddExpr: { type: 'Expression', expr1: 0, op: 1, expr2: 2) }
-  });
+// create ohm, g, match and toAST
+const ast = toAST(match, {
+  Equation: {content: 0},
+  AddExpr: {type: 'Expression', expr1: 0, op: 1, expr2: 2}
+});
 ```
 
 results in an AST like:
+
+<!-- @markscript
+  // Make sure the block below is equal to `ast` from the block above.
+  markscript.transformNextBlock((code) => {
+    const jsonAST = code.replace(/\/\/.*/g, ''); // Strip comments
+    assert.deepEqual(ast, JSON.parse(jsonAST));
+    return '';  // Don't actually execute anything.
+  });
+-->
 
 ```js
   {
@@ -81,14 +115,14 @@ results in an AST like:
 
 The following mapping options are possible **on the node-level** (values in the key-value map):
 
-* `an object`: A template for a node (see below: possible values _on the property-level_)
-* `a number`: Does not create a node for the corresponding rule but forwards to the _number_-th children of the rule (node omission).
-* `a function`: A [semantic action](api-reference.md#semantic-actions) for that rule that replaces the general `toAST()` action for this case. To call the default action on a child node, `[child].toAST(this.args.mapping)` can be called.
+- `an object`: A template for a node (see below: possible values _on the property-level_)
+- `a number`: Does not create a node for the corresponding rule but forwards to the _number_-th children of the rule (node omission).
+- `a function`: A [semantic action](api-reference.md#semantic-actions) for that rule that replaces the general `toAST()` action for this case. To call the default action on a child node, `[child].toAST(this.args.mapping)` can be called.
 
 Additionally, the following mapping options can be use **on the property-level** inside the node templates:
 
-* `a number`: Inserts the children's value return by `toAST()` as this property
-* `a string|a boolean|an object|null`: Values that is used as-is for this property
-* `a function`: A function similar to a [semantic action](api-reference.md#semantic-actions). Will only have one parameter that is a list of all the CST's child nodes. `[child].toAST(this.args.mapping)` can be called to convert a single child.
+- `a number`: Inserts the children's value return by `toAST()` as this property
+- `a string|a boolean|an object|null`: Values that is used as-is for this property
+- `a function`: A function similar to a [semantic action](api-reference.md#semantic-actions). Will only have one parameter that is a list of all the CST's child nodes. `[child].toAST(this.args.mapping)` can be called to convert a single child.
 
 **Note:** To use a primitive number as value for a property, the number has to be boxed, e.g. `new Number(12)` or `Object(12)`.

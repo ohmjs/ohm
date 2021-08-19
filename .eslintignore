@@ -1,4 +1,6 @@
 **/node_modules/**
 **/third_party/**
-dist/*
+**/testdata/**
+**/dist/*
 visualizer/assets/**
+ava-ts.config.js

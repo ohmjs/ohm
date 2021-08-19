@@ -15,7 +15,7 @@ Ohm is closely related to [OMeta](http://tinlizzie.org/ometa/), another PEG-base
 ## Terminology
 
 <!-- @markscript
-  var ohm = require('ohm-js');
+  const ohm = require('ohm-js');
   function checkGrammar(source) {
   	assert(ohm.grammar(source));
   }
@@ -40,7 +40,11 @@ Here is a full list of the different kinds of parsing expressions supported by O
 
 Matches exactly the characters contained inside the quotation marks.
 
+#### Special characters
+
 Special characters (`"`, `\`, and `'`) can be escaped with a backslash -- e.g., `"\""` will match a literal quote character in the input stream. Other valid escape sequences include: `\b` (backspace), `\f` (form feed), `\n` (line feed), `\r` (carriage return), and `\t` (tab), as well as `\x` followed by 2 hex digits and `\u` followed by 4 hex digits, for matching characters by code point.
+
+**NOTE:** For grammars defined in a JavaScript string literal (i.e., not in a separate .ohm file), it's recommended to use a [template literal with the String.raw tag](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/raw). Without `String.raw`, you'll need to use double-escaping -- e.g., `\\n` rather than `\n`.
 
 ### Terminal Range
 
@@ -58,7 +62,7 @@ Matches the body of the rule named _ruleName_. For example, the built-in rule `l
 
 Matches the body of the _parameterized rule_ named _ruleName_, substituting the parsing expression _expr_ as its first parameter. For parameterized rules with more than one parameter, the parameters are comma-separated, e.g. `ListOf<field, ";">`.
 
-### Repetition operators: *, +, ?
+### Repetition operators: \*, +, ?
 
 <pre><code><i>expr</i> *</code></pre>
 
@@ -107,6 +111,29 @@ Succeeds if the expression `expr` cannot be matched, and does not consume anythi
 <pre><code># <i>expr</i></code></pre>
 
 Matches _expr_ as if in a lexical context. This can be used to prevent whitespace skipping before an expression that appears in the body of a syntactic rule. For further information, see [Syntactic vs. Lexical Rules](#syntactic-lexical).
+
+### Comment
+
+Inside an Ohm grammar, you can use both single-line (`//`) comments like
+
+```
+booleanLiteral = ("true" | "false") // TODO: Should we support "True"/"False" as well?
+```
+
+or
+
+```
+// For semantics on how decimal literals are constructed, see section 7.8.3
+```
+
+as well as multiline (`/* */`) comments like:
+
+```
+/*
+  Note: Punctuator and DivPunctuator (see https://es5.github.io/x7.html#x7.7) are
+  not currently used by this grammar.
+*/
+```
 
 ## Built-in Rules
 
@@ -159,9 +186,13 @@ Defines a new rule named `ruleName` in the grammar, with the parsing expression 
 
 Defines a rule named `ruleName`, overriding a rule of the same name in a supergrammar. Throws an error if no rule with that name exists in a supergrammar.
 
+**New in 15.3.0:** The _super-splice_ operator (`...`) can be used to append and/or prepend cases to the supergrammar rule body. E.g., if the supergrammar defines `comment = multiLineComment`, then `comment := ... | singleLineComment` is equivalent to `comment := multiLineComment | singleLineComment`.
+
 <pre><code><i>ruleName</i> += <i>expr</i></code></pre>
 
 Extends a supergrammar rule named `ruleName`, throwing an error if no rule with that name exists in a supergrammar. The rule body will effectively be <code><i>expr</i> | <i>oldBody</i></code>, where `oldBody` is the rule body as defined in the supergrammar.
+
+Note that as of v15.3.0, the super-splice operator (`...`) offers a more general form of rule extension. E.g., `keyword += "def"` can also be written `keyword := "def" | ...`.
 
 #### Parameterized Rules
 

@@ -1,54 +1,55 @@
-Ohm
-===
+# [Ohm](https://ohmlang.github.io/) &middot; [![NPM](https://img.shields.io/npm/v/ohm-js.svg)](https://www.npmjs.com/package/ohm-js) ![Node.js CI](https://github.com/harc/ohm/workflows/Node.js%20CI/badge.svg?style=flat-square) [![Chat on Discord](https://img.shields.io/badge/chat-on%20discord-7289da.svg?sanitize=true)](https://discord.gg/KwxY5gegRQ)
 
-[![Build Status](https://img.shields.io/travis/harc/ohm.svg?style=flat-square)](https://travis-ci.org/harc/ohm)
-[![NPM](https://img.shields.io/npm/v/ohm-js.svg?style=flat-square)](https://www.npmjs.com/package/ohm-js)
-[![Live demo](https://img.shields.io/badge/Live%20demo-%E2%86%92-9D6EB3.svg?style=flat-square)](https://alexwarth.github.io/demos/ohm/index.html)
+Ohm is a parsing toolkit consisting of a library and a domain-specific language. You can use it to parse custom file formats or quickly build parsers, interpreters, and compilers for programming languages.
 
-[Ohm](https://github.com/harc/ohm) is a parser generator consisting of a library and a domain-specific language.
-You can use it to parse custom file formats or quickly build parsers, interpreters, and compilers for programming languages. The _Ohm language_ is based on [parsing expression grammars](http://en.wikipedia.org/wiki/Parsing_expression_grammar)
+The _Ohm language_ is based on [parsing expression grammars](http://en.wikipedia.org/wiki/Parsing_expression_grammar)
 (PEGs), which are a formal way of describing syntax, similar to regular expressions and context-free
-grammars. The _Ohm library_ provides a JavaScript interface (known as Ohm/JS) for creating parsers,
-interpreters, and more from the grammars you write.
+grammars. The _Ohm library_ provides a JavaScript interface for creating parsers, interpreters, and
+more from the grammars you write.
 
-Like its older sibling [OMeta](http://tinlizzie.org/ometa/), Ohm supports object-oriented grammar
-extension. One thing that distinguishes Ohm from other parsing tools is that it completely
-separates grammars from semantic actions. In Ohm, a grammar defines a language, and semantic
-actions specify what to do with valid inputs in that language. Semantic actions are written in the
-_host language_ — e.g., for Ohm/JS, the host language is JavaScript. Ohm grammars, on the other
-hand, work without modification in any host language. This separation improves modularity, and
-makes both grammars and semantic actions easier to read and understand. Currently, JavaScript is
-the only host language, but as the API stabilizes, we hope to have implementations for other
-languages.
+- **Full support for left-recursive rules** means that you can define left-associative operators in a natural way.
+- **Object-oriented grammar extension** makes it easy to extend an existing language with new syntax.
+- **Modular semantic actions.** Unlike many similar tools, Ohm completely
+  separates grammars from semantic actions. This separation improves modularity and extensibility, and makes both grammars and semantic actions easier to read and understand.
+- **Online editor and visualizer.** The [Ohm Editor](https://ohmlang.github.io/editor/) provides instant feedback and an [interactive visualization](https://dubroy.com/blog/visualizing-packrat-parsing/) that makes the entire execution of the parser visible and tangible. It'll [make you feel like you have superpowers](https://twitter.com/kylestetz/status/1349770893120172036). 💪
 
-Learn more about the Ohm philosophy [here](doc/philosophy.md).
+Some awesome things people have built using Ohm:
 
-Getting Started
----------------
+- [Seymour](https://harc.github.io/seymour-live2017/), a live programming environment for the classroom.
+- [Chorus](http://www.chorus-home.org/), a project exploring the middle ground between spreadsheets and programming.
+- [Shadama](https://tinlizzie.org/~ohshima/shadama2/live2017/), a particle simulation language designed for high-school science.
+- [turtle.audio](http://turtle.audio/), an audio environment where simple text commands generate lines that can play music.
+- A [browser-based tool](https://www.arthurcarabott.com/konnakkol/) that turns written _Konnakkol_ (a South Indian vocal percussion art) into audio.
+- [Wildcard](https://www.geoffreylitt.com/wildcard/), a browser extension that empowers anyone to modify websites to meet their own specific needs, uses Ohm for its spreadsheet formulas.
 
-The easiest way to get started with Ohm is to use the [ohm interactive editor](https://ohmlang.github.io/editor/).  Alternatively, play with one of the following examples on JSFiddle:
+## Getting Started
+
+The easiest way to get started with Ohm is to use the [interactive editor](https://ohmlang.github.io/editor/). Alternatively, you can play with one of the following examples on JSFiddle:
 
 - [Basic parsing example](https://jsfiddle.net/pdubroy/p3b1v2xb/)
 - [Arithmetic example with semantics](https://jsfiddle.net/pdubroy/15k63qae/)
 
 ### Resources
 
-- There's no tutorial yet, but the [math example](examples/math/index.html) is extensively commented and is probably the best place to start.
+- Tutorial: [Ohm: Parsing Made Easy](https://nextjournal.com/dubroy/ohm-parsing-made-easy)
+- The [math example](examples/math/index.html) is extensively commented and is a good way to dive deeper.
 - [Examples](examples/)
-- [Documentation](doc/index.md)
-- Ask questions and give us feedback in the [Ohm Google Group](https://groups.google.com/a/ycr.org/forum/#!forum/ohm).
+- [Documentation](doc/README.md)
+- For community support and discussion, join us on [Discord](https://discord.gg/KwxY5gegRQ), [GitHub Discussions](https://github.com/harc/ohm/discussions), or the [ohm-discuss mailing list](https://groups.google.com/u/0/g/ohm-discuss).
+- For updates, follow [@\_ohmjs on Twitter](https://twitter.com/_ohmjs).
 
 ### Installation
 
 For use in the browser:
 
--  Download [ohm.js](https://unpkg.com/ohm-js@latest/dist/ohm.js) (development version, with full source and comments) or [ohm.min.js](https://unpkg.com/ohm-js@latest/dist/ohm.min.js) (a minified version for faster page loads).
--  Add a new script tag to your page, and set the `src` attribute to the path of the file you just downloaded. E.g.:
-    ```html
-    <script src="ohm.js"></script>
-    ```
+- Download [ohm.js](https://unpkg.com/ohm-js@latest/dist/ohm.js) (development version, with full source and comments) or [ohm.min.js](https://unpkg.com/ohm-js@latest/dist/ohm.min.js) (a minified version for faster page loads).
+- Add a new script tag to your page, and set the `src` attribute to the path of the file you just downloaded. E.g.:
 
-    This creates a global variable named `ohm`.
+  ```html
+  <script src="ohm.js"></script>
+  ```
+
+  This creates a global variable named `ohm`.
 
 If you are using Node.js, you can just install the `ohm-js` package using [npm](http://npmjs.org):
 
@@ -56,8 +57,12 @@ If you are using Node.js, you can just install the `ohm-js` package using [npm](
 
 This will install Ohm in the local node_modules folder. Use `require` to access it from a Node script:
 
+<!-- @markscript
+  markscript.transformNextBlock(s => s.replace('const ', 'var '));
+-->
+
 ```js
-var ohm = require('ohm-js');
+const ohm = require('ohm-js');
 ```
 
 ### Basics
@@ -70,43 +75,33 @@ To use Ohm, you need a grammar that is written in the Ohm language. The grammar 
 definition of the language or data format that you want to parse. There are a few different ways
 you can define an Ohm grammar:
 
-- Define the grammar directly in a JavaScript string and instantiate it using `ohm.grammar()`:
+- The simplest opion is to define the grammar directly in a JavaScript string and instantiate it
+  using `ohm.grammar()`. In most cases, you should use a [template literal with String.raw](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/raw):
 
-    ```js
-    var myGrammar = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
-    ```
+  ```js
+  const myGrammar = ohm.grammar(String.raw`
+    MyGrammar {
+      greeting = "Hello" | "Hola"
+    }
+  `);
+  ```
 
-    This is the simplest option, but it can be awkward to define larger grammars this way.
+- **In Node.js**, you can define the grammar in a separate file, and read the file's contents and instantiate it using `ohm.grammar(contents)`:
 
-- **Recommended when running in the browser:** Embed the grammar source inside its own `<script>` tag with the attribute `type="text/ohm-js"`, and instantiate it using `ohm.grammarFromScriptElement()`:
-
-    ```html
-    <script type="text/ohm-js">
-      MyGrammar {
-        greeting = "Hello" | "Hola"
-      }
-    </script>
-    <script>
-      var myGrammar = ohm.grammarFromScriptElement();
-    </script>
-    ```
-
-- **Recommended with Node.js:** Define the grammar in a separate file, read the file's contents and instantiate it using `ohm.grammar(contents)`:
-
-    In `myGrammar.ohm`:
+  In `myGrammar.ohm`:
 
         MyGrammar {
           greeting = "Hello" | "Hola"
         }
 
-    In JavaScript:
+  In JavaScript:
 
-    ```js
-    var fs = require('fs');
-    var ohm = require('ohm-js');
-    var contents = fs.readFileSync('myGrammar.ohm');
-    var myGrammar = ohm.grammar(contents);
-    ```
+  ```js
+  const fs = require('fs');
+  const ohm = require('ohm-js');
+  const contents = fs.readFileSync('myGrammar.ohm', 'utf-8');
+  const myGrammar = ohm.grammar(contents);
+  ```
 
 For more information, see [Instantiating Grammars](doc/api-reference.md#instantiating-grammars) in the API reference.
 
@@ -117,15 +112,14 @@ For more information, see [Instantiating Grammars](doc/api-reference.md#instanti
 <!-- @markscript
   // The duplication here is required because Markscript only executes top-level code blocks.
   // TODO: Consider fixing this in Markscript.
-  var ohm = require('ohm-js');
-  var myGrammar = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
+  const myGrammar = ohm.grammar('MyGrammar { greeting = "Hello" | "Hola" }');
 -->
 
 Once you've instantiated a grammar object, use the grammar's `match()` method to recognize input:
 
 ```js
-var userInput = 'Hello';
-var m = myGrammar.match(userInput);
+const userInput = 'Hello';
+const m = myGrammar.match(userInput);
 if (m.succeeded()) {
   console.log('Greetings, human.');
 } else {
@@ -135,14 +129,13 @@ if (m.succeeded()) {
 
 The result is a MatchResult object. You can use the `succeeded()` and `failed()` methods to see whether the input was recognized or not.
 
-For more information, see the [main documentation](doc/index.md).
+For more information, see the [main documentation](doc/README.md).
 
 ### Debugging
 
-Ohm has two tools to help you debug grammars: a text trace, and a graphical visualizer. The
-visualizer is still under development (i.e., it might be buggy!) but it can still be useful.
+Ohm has two tools to help you debug grammars: a text trace, and a graphical visualizer.
 
-[![Ohm Visualizer](http://harc.github.io/ohm/doc/images/visualizer-small.png)](http://harc.github.io/ohm/visualizer/)
+[![Ohm Visualizer](http://harc.github.io/ohm/doc/images/visualizer-small.png)](https://ohmlang.github.io/editor)
 
 You can [try the visualizer online](https://ohmlang.github.io/editor), or if you have an Ohm checkout, open `visualizer/index.html` in your web browser.
 
@@ -154,7 +147,7 @@ result of `g.trace('ab').toString()` for the grammar `G { start = letter+ }`:
 
 <!-- @markscript
   markscript.transformNextBlock(function(code) {
-    var trace = ohm.grammar('G { start = letter+ }').trace('ab');
+    const trace = ohm.grammar('G { start = letter+ }').trace('ab');
     assert.equal(trace.toString().trim(), code.trim());
   });
 -->
@@ -178,14 +171,12 @@ b                    ✓ Unicode [Ll] character ⇒  "b"
            ✓ end ⇒  ""
 ```
 
-Publishing Grammars
--------------------
+## Publishing Grammars
 
 If you've written an Ohm grammar that you'd like to share with others, see
 our [suggestions for publishing grammars](./doc/publishing-grammars.md).
 
-Contributing to Ohm
--------------------
+## Contributing to Ohm
 
 All you need to get started:
 
@@ -193,17 +184,15 @@ All you need to get started:
     cd ohm
     npm install
 
-**NOTE:** We recommend using the latest Node.js stable release (>=0.12.1) for
-development. Some of the JSDOM-based tests are flaky on io.js, and other tests
-will reliably fail on older versions of Node.
+**NOTE:** We recommend using the latest Node.js stable release.
 
 ### Some useful scripts
 
-* `npm test` runs the unit tests.
-* `npm run test-watch` re-runs the unit tests every time a file changes.
-* `npm run build` builds [dist/ohm.js](./dist/ohm.js) and [dist/ohm.min.js](./dist/ohm.min.js),
+- `npm test` runs the unit tests.
+- `npm run test-watch` re-runs the unit tests every time a file changes.
+- `npm run build` builds [dist/ohm.js](./dist/ohm.js) and [dist/ohm.min.js](./dist/ohm.min.js),
   which are stand-alone bundles that can be included in a webpage.
-* When editing Ohm's own grammar (in `src/ohm-grammar.ohm`), run `npm run bootstrap` to re-build Ohm
+- When editing Ohm's own grammar (in `src/ohm-grammar.ohm`), run `npm run bootstrap` to re-build Ohm
   and test your changes.
 
 Before submitting a pull request, be sure to add tests, and ensure that `npm run prepublish` runs

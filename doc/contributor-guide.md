@@ -26,11 +26,11 @@ information._
 
 ### Useful Scripts
 
-* Use `npm test` to run the unit tests.
-* `npm run test-watch` re-runs the unit tests every time a file changes.
-* `npm run build` builds [dist/ohm.js](./dist/ohm.js) and [dist/ohm.min.js](./dist/ohm.min.js),
+- Use `npm test` to run the unit tests.
+- `npm run test-watch` re-runs the unit tests every time a file changes.
+- `npm run build` builds [dist/ohm.js](./dist/ohm.js) and [dist/ohm.min.js](./dist/ohm.min.js),
   which are stand-alone bundles that can be included in a webpage.
-* When editing Ohm's own grammar (in `src/ohm-grammar.ohm`), run
+- When editing Ohm's own grammar (in `src/ohm-grammar.ohm`), run
   `npm run bootstrap` to re-build Ohm and test your changes.
 
 ## Doing Development
@@ -51,7 +51,8 @@ no longer complains about it. However, there are a few cases where it makes
 sense to disable the error:
 
 - If you added new `console.log` statement, and **you are sure that it is
-  actual useful**, you can disable the warning like this:  
+  actual useful**, you can disable the warning like this:
+
   ```
   console.log('a useful message');  // eslint-disable-line no-console
   ```
@@ -61,3 +62,11 @@ sense to disable the error:
 
 If you need to temporarily commit something that doesn't pass the checks, you
 can use `git commit --no-verify` -- but use this sparingly!
+
+## Publishing
+
+To version and publish the ohm-js package, run the following in the ohm-js directory:
+
+    yarn version-package
+    yarn publish
+    git push && git push --tags

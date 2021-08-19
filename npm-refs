@@ -1,0 +1,15 @@
+CONTRIBUTING.md:17:Also, please ensure the tests pass (using `npm test`) and that there are no
+doc/contributor-guide.md:21:    npm install
+doc/contributor-guide.md:23:_Note: the `postinstall` script (which is automatically run by `npm install`)
+doc/contributor-guide.md:29:* Use `npm test` to run the unit tests.
+doc/contributor-guide.md:30:* `npm run test-watch` re-runs the unit tests every time a file changes.
+doc/contributor-guide.md:31:* `npm run build` builds [dist/ohm.js](./dist/ohm.js) and [dist/ohm.min.js](./dist/ohm.min.js),
+doc/contributor-guide.md:34:  `npm run bootstrap` to re-build Ohm and test your changes.
+doc/contributor-guide.md:42:When you run `npm install` in an Ohm checkout, it will automatically install
+
+README.md:193:    npm install
+README.md:201:* `npm test` runs the unit tests.
+README.md:202:* `npm run test-watch` re-runs the unit tests every time a file changes.
+README.md:203:* `npm run build` builds [dist/ohm.js](./dist/ohm.js) and [dist/ohm.min.js](./dist/ohm.min.js),
+README.md:205:* When editing Ohm's own grammar (in `src/ohm-grammar.ohm`), run `npm run bootstrap` to re-build Ohm
+README.md:208:Before submitting a pull request, be sure to add tests, and ensure that `npm run prepublish` runs

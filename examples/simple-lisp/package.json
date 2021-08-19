@@ -1,0 +1,14 @@
+{
+  "name": "ohm-example-simple-lisp",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "ohm-js": "^15.4.1"
+  },
+  "devDependencies": {
+    "ava": "^3.15.0"
+  },
+  "scripts": {
+    "test": "ava"
+  }
+}

@@ -1,7 +1,0 @@
-#!/bin/bash
-
-set -e
-
-npm test --silent
-cp -p dist/ohm-grammar.js dist/ohm-grammar.js.old
-cp -p dist/built-in-rules.js dist/built-in-rules.js.old

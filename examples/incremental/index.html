@@ -40,173 +40,7 @@ parseError {
     </style>
 
     <!-- Ohm stuff -->
-    <script src="../../dist/ohm.min.js"></script>
-    <script type="text/ohm-js">
-
-F {
-
-  Exp
-    = let PriPat "=" Exp in Exp                           -- let
-    | let rec ident "=" Exp in Exp                        -- letrec
-    | let rec "(" ident ":" Type ")" "=" Exp in Exp       -- typedLetrec
-    | fun PriPat+ "->" Exp                                -- fun
-    | if Exp then Exp else Exp                            -- if
-    | match Exp with "|"? NonemptyListOf<PatAndExp, "|">  -- match
-    | OrExp
-
-  PatAndExp
-    = Pat "->" Exp
-
-  Pat
-    = ctor PriPat  -- datum
-    | PriPat
-
-  PriPat
-    = ctor                      -- emptyDatum
-    | "(" Pat ")"               -- paren
-    | "(" Pat ":" Type ")"      -- typed
-    | "(" ListOf<Pat, ","> ")"  -- tuple
-    | "[" ListOf<Pat, ";"> "]"  -- list
-    | "_"                       -- wild
-    | ident                     -- ident
-    | number                    -- number
-    | trueK                     -- true
-    | falseK                    -- false
-
-  OrExp
-    = OrExp "||" AndExp  -- or
-    | AndExp
-
-  AndExp
-    = AndExp "&&" EqExp  -- and
-    | EqExp
-
-  EqExp
-    = RelExp "="  RelExp  -- eq
-    | RelExp "!=" RelExp  -- neq
-    | RelExp
-
-  RelExp
-    = AddExp "<" AddExp  -- lt
-    | AddExp ">" AddExp  -- gt
-    | AddExp
-
-  AddExp
-    = AddExp "+" MulExp  -- plus
-    | AddExp "-" MulExp  -- minus
-    | MulExp
-
-  MulExp
-    = MulExp "*" CallExp  -- times
-    | MulExp "/" CallExp  -- divide
-    | MulExp "%" CallExp  -- modulus
-    | CallExp
-
-  CallExp
-    =  CallExp PriExp  -- call
-    |  UnExp
-
-  UnExp
-    = "+" DatumExp    -- pos
-    | "-" DatumExp    -- neg
-    | delay DatumExp  -- delay
-    | force DatumExp  -- force
-    | DatumExp
-
-  DatumExp
-    = ctor PriExp  -- datum
-    | PriExp
-
-  PriExp
-    = ctor                                     -- emptyDatum
-    | "(" Exp ")"                              -- paren
-    | "(" Exp ":" Type ")"                     -- typed
-    | "(" ListOf<Exp, ","> ")"                 -- tuple
-    | "[" Exp "|" Pat "<-" Exp ("," Exp)? "]"  -- listComp
-    | "[" ListOf<Exp, ";"> "]"                 -- list
-    | ident                                    -- ident
-    | number                                   -- number
-    | trueK                                    -- true
-    | falseK                                   -- false
-
-  Type
-    = FunType
-
-  FunType
-    = TupleType "->" FunType  -- fun
-    | TupleType
-
-  TupleType
-    = ListOrDelayedType ("*" ListOrDelayedType)+  -- tuple
-    | ListOrDelayedType
-
-  ListOrDelayedType
-    = ListOrDelayedType list     -- list
-    | ListOrDelayedType delayed  -- delayed
-    | PriType
-
-  PriType
-    = "(" Type ")"  -- paren
-    | int           -- int
-    | bool          -- bool
-    | unit          -- unit
-    | typeVar
-
-  typeVar  (a type variable)
-    = "'" ident
-
-  // Lexical rules
-
-  ident  (an identifier)
-    = ~keyword lower alnum*
-
-  ctor  (a data constructor)
-    = ~keyword upper alnum*
-
-  number  (a number)
-    = digit* "." digit+  -- fract
-    | digit+             -- whole
-
-  fun = "fun" ~alnum
-
-  let    = "let" ~alnum
-  rec    = "rec" ~alnum
-  in     = "in" ~alnum
-
-  if   = "if" ~alnum
-  then = "then" ~alnum
-  else = "else" ~alnum
-
-  match = "match" ~alnum
-  with  = "with" ~alnum
-
-  trueK  = "true" ~alnum
-  falseK = "false" ~alnum
-
-  delay = "delay" ~alnum
-  force = "force" ~alnum
-
-  int = "int" ~alnum
-  bool = "bool" ~alnum
-  unit = "unit" ~alnum
-  list = "list" ~alnum
-  delayed = "delayed" ~alnum
-
-  keyword
-    = fun   | let  | rec   | in      | if    | then  | else
-    | match | with | trueK | falseK  | delay | force | int
-    | bool  | unit | list  | delayed
-
-  space
-   += comment
-
-  comment
-    = "/*" (~"*/" any)* "*/"  -- multiLine
-    | "//" (~"\n" any)*       -- singleLine
-
-}
-
-    </script>
+    <script src="../../ohm-js/dist/ohm.min.js"></script>
     <h2>Incremental Parsing Demo</h2>
     <div style="margin-bottom: 24pt;">
       The editor below accepts inputs in an ML-like language &mdash; you can see the Ohm grammar for
@@ -237,17 +71,180 @@ F {
 
 'use strict';
 
+const grammarSource = String.raw`
+  F {
+    Exp
+      = let PriPat "=" Exp in Exp                           -- let
+      | let rec ident "=" Exp in Exp                        -- letrec
+      | let rec "(" ident ":" Type ")" "=" Exp in Exp       -- typedLetrec
+      | fun PriPat+ "->" Exp                                -- fun
+      | if Exp then Exp else Exp                            -- if
+      | match Exp with "|"? NonemptyListOf<PatAndExp, "|">  -- match
+      | OrExp
+
+    PatAndExp
+      = Pat "->" Exp
+
+    Pat
+      = ctor PriPat  -- datum
+      | PriPat
+
+    PriPat
+      = ctor                      -- emptyDatum
+      | "(" Pat ")"               -- paren
+      | "(" Pat ":" Type ")"      -- typed
+      | "(" ListOf<Pat, ","> ")"  -- tuple
+      | "[" ListOf<Pat, ";"> "]"  -- list
+      | "_"                       -- wild
+      | ident                     -- ident
+      | number                    -- number
+      | trueK                     -- true
+      | falseK                    -- false
+
+    OrExp
+      = OrExp "||" AndExp  -- or
+      | AndExp
+
+    AndExp
+      = AndExp "&&" EqExp  -- and
+      | EqExp
+
+    EqExp
+      = RelExp "="  RelExp  -- eq
+      | RelExp "!=" RelExp  -- neq
+      | RelExp
+
+    RelExp
+      = AddExp "<" AddExp  -- lt
+      | AddExp ">" AddExp  -- gt
+      | AddExp
+
+    AddExp
+      = AddExp "+" MulExp  -- plus
+      | AddExp "-" MulExp  -- minus
+      | MulExp
+
+    MulExp
+      = MulExp "*" CallExp  -- times
+      | MulExp "/" CallExp  -- divide
+      | MulExp "%" CallExp  -- modulus
+      | CallExp
+
+    CallExp
+      =  CallExp PriExp  -- call
+      |  UnExp
+
+    UnExp
+      = "+" DatumExp    -- pos
+      | "-" DatumExp    -- neg
+      | delay DatumExp  -- delay
+      | force DatumExp  -- force
+      | DatumExp
+
+    DatumExp
+      = ctor PriExp  -- datum
+      | PriExp
+
+    PriExp
+      = ctor                                     -- emptyDatum
+      | "(" Exp ")"                              -- paren
+      | "(" Exp ":" Type ")"                     -- typed
+      | "(" ListOf<Exp, ","> ")"                 -- tuple
+      | "[" Exp "|" Pat "<-" Exp ("," Exp)? "]"  -- listComp
+      | "[" ListOf<Exp, ";"> "]"                 -- list
+      | ident                                    -- ident
+      | number                                   -- number
+      | trueK                                    -- true
+      | falseK                                   -- false
+
+    Type
+      = FunType
+
+    FunType
+      = TupleType "->" FunType  -- fun
+      | TupleType
+
+    TupleType
+      = ListOrDelayedType ("*" ListOrDelayedType)+  -- tuple
+      | ListOrDelayedType
+
+    ListOrDelayedType
+      = ListOrDelayedType list     -- list
+      | ListOrDelayedType delayed  -- delayed
+      | PriType
+
+    PriType
+      = "(" Type ")"  -- paren
+      | int           -- int
+      | bool          -- bool
+      | unit          -- unit
+      | typeVar
+
+    typeVar  (a type variable)
+      = "'" ident
+
+    // Lexical rules
+
+    ident  (an identifier)
+      = ~keyword lower alnum*
+
+    ctor  (a data constructor)
+      = ~keyword upper alnum*
+
+    number  (a number)
+      = digit* "." digit+  -- fract
+      | digit+             -- whole
+
+    fun = "fun" ~alnum
+
+    let    = "let" ~alnum
+    rec    = "rec" ~alnum
+    in     = "in" ~alnum
+
+    if   = "if" ~alnum
+    then = "then" ~alnum
+    else = "else" ~alnum
+
+    match = "match" ~alnum
+    with  = "with" ~alnum
+
+    trueK  = "true" ~alnum
+    falseK = "false" ~alnum
+
+    delay = "delay" ~alnum
+    force = "force" ~alnum
+
+    int = "int" ~alnum
+    bool = "bool" ~alnum
+    unit = "unit" ~alnum
+    list = "list" ~alnum
+    delayed = "delayed" ~alnum
+
+    keyword
+      = fun   | let  | rec   | in      | if    | then  | else
+      | match | with | trueK | falseK  | delay | force | int
+      | bool  | unit | list  | delayed
+
+    space
+    += comment
+
+    comment
+      = "/*" (~"*/" any)* "*/"  -- multiLine
+      | "//" (~"\n" any)*       -- singleLine
+  }
+`;
+
 // Declare some helpers
 
 function time(fn) {
-  var startTime = Date.now();
+  const startTime = Date.now();
   fn();
-  var endTime = Date.now();
+  const endTime = Date.now();
   return endTime - startTime;
 }
 
 function spaces(n) {
-  var  ss = '';
+  let  ss = '';
   while (n-- > 0) {
     ss += ' ';
   }
@@ -256,16 +253,16 @@ function spaces(n) {
 
 // Declare some variables to keep stats, etc.
 
-var parseTimes = [];
-var getExpectedTextTimes = [];
+const parseTimes = [];
+const getExpectedTextTimes = [];
 
 function updateStats() {
-  var totalParseTime = parseTimes.reduce((x, y) => x + y, 0);
+  const totalParseTime = parseTimes.reduce((x, y) => x + y, 0);
   msPerParseSpan.innerText = (totalParseTime / parseTimes.length).toFixed(2);
   msForLastParseSpan.innerText = parseTimes[parseTimes.length - 1];
   parseTimesSparkline.setAttribute('data-values', parseTimes);
 
-  var totalGetExpectedTextTime = getExpectedTextTimes.reduce((x, y) => x + y, 0);
+  const totalGetExpectedTextTime = getExpectedTextTimes.reduce((x, y) => x + y, 0);
   numGetExpectedTextCallsSpan.innerText = getExpectedTextTimes.length;
   totalGetExpectedTextTimeSpan.innerText = totalGetExpectedTextTime;
   msPerGetExpectedTextSpan.innerText =
@@ -277,15 +274,15 @@ function updateStats() {
 
 // Set up our CodeMirror instance, and react to changes in the input
 
-var editor = CodeMirror.fromTextArea(myTextArea, { lineNumbers: true });
-var g = ohm.grammarFromScriptElement();
-var m = g.matcher();
-var parseErrorWidget;
+const editor = CodeMirror.fromTextArea(myTextArea, { lineNumbers: true });
+const g = ohm.grammar(grammarSource);
+const m = g.matcher();
+let parseErrorWidget;
 
 editor.on('beforeChange', function(cmInstance, changeObj) {
-  var insertedText = changeObj.text.join('\n');
-  var fromIdx = editor.indexFromPos(changeObj.from);
-  var toIdx = editor.indexFromPos(changeObj.to);
+  const insertedText = changeObj.text.join('\n');
+  const fromIdx = editor.indexFromPos(changeObj.from);
+  const toIdx = editor.indexFromPos(changeObj.to);
   m.replaceInputRange(fromIdx, toIdx, insertedText);
 });
 
@@ -295,7 +292,7 @@ editor.on('change', function(cmInstance, changeObj) {
     parseErrorWidget = undefined;
   }
 
-  var r;
+  let r;
   parseTimes.push(time(() => { r = m.match(); }));
   const MAX_WINDOW_SIZE = 50;
   if (parseTimes.length === MAX_WINDOW_SIZE) {
@@ -303,11 +300,11 @@ editor.on('change', function(cmInstance, changeObj) {
   }
 
   if (r.failed()) {
-    var expected;
+    let expected;
     getExpectedTextTimes.push(time(() => { expected = r.getExpectedText(); }));
 
-    var pos = editor.doc.posFromIndex(r.getRightmostFailurePosition());
-    var error = document.createElement('parseError');
+    const pos = editor.doc.posFromIndex(r.getRightmostFailurePosition());
+    const error = document.createElement('parseError');
     error.innerText = spaces(pos.ch) + '^\nExpected: ' + expected;
     parseErrorWidget = editor.addLineWidget(pos.line, error);
     $(error).hide().delay(2000).slideDown().queue(() => editor.refresh());
