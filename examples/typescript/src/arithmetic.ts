@@ -1,7 +1,7 @@
 import fs from 'fs';
 import ohm from 'ohm-js';
 
-// Using 'generate-ohm-declaritions' from the ohm-typescript-codegen package,
+// Using 'generate-ohm-declarations' from the ohm-typescript-codegen package,
 // we can generate type definitions for an Ohm grammar in a .ohm file.
 // Note that this only imports the _types_ from that grammar -- we still need
 // to instantiate the grammar via `ohm.grammar(...)` below.
@@ -51,7 +51,7 @@ export function evaluate(expr: string): number {
 
 /*
 TODO:
-- put a comment on each action with the rule definition (for tooltips in VSCOde)
+- put a comment on each action with the rule definition (for tooltips in VSCode)
 - (maybe) _iter and _nonterminal should spread their properties, rather than getting a single children arg,
   so that they have the same type as other actions (?)
 */
