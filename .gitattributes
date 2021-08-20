@@ -1,5 +1,0 @@
-# Don't diff compiled files.
-dist/ohm.* -diff
-
-# When merging compiled files, always use the local version.
-dist/ohm.* merge=ours

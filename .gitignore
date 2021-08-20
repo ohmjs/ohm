@@ -1,5 +1,11 @@
 .install-timestamp
 packages/ohm-js/dist
+packages/ohm-js/dist/ohm.js
+packages/ohm-js/dist/ohm.min.js
+packages/ohm-js/dist/ohm-grammar.js.*
+packages/ohm-js/dist/*.old
+packages/ohm-js/dist/browserify-cache.json
+packages/ohm-js/dist/test-typings.js
 node_modules
 npm-debug.log
 yarn-error.log

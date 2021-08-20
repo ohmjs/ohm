@@ -1,5 +1,0 @@
-# No point including these when installing the package via NPM.
-# Also, the presence of these files helps our scripts figure out if the
-# package is being installed by a developer or a user.
-.gitignore
-.gitattributes
