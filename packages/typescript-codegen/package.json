@@ -7,6 +7,10 @@
   "author": "Patrick Dubroy <pdubroy@gmail.com>",
   "license": "MIT",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "bin"
+  ],
   "devDependencies": {
     "@ts-morph/bootstrap": "^0.10.1",
     "@types/minimist": "^1.2.2",

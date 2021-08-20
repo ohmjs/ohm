@@ -23,7 +23,7 @@ if ! git rev-parse --quiet --verify master > /dev/null; then
 fi
 
 git pull --ff-only --no-stat
-cp -r "$ROOT/doc" "$ROOT/ohm-js/dist" .
+cp -r "$ROOT/doc" "$ROOT/packages/ohm-js/dist" .
 git add doc dist editor
 git commit -m "Update from harc/ohm@${OHM_REV}"
 git push origin master

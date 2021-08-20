@@ -3,7 +3,7 @@ import path from 'path';
 import {fileURLToPath, URL} from 'url';
 
 import ohm from '../src/main.js';
-import {getActionDecls} from 'ohm-typescript-codegen/dist/generateTypings.js';
+import {getActionDecls} from '@ohm-js/typescript-codegen/dist/generateTypings.js';
 
 /*
   This script uses the internals of ohm-typescript-codegen to generate

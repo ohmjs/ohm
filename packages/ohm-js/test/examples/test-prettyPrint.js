@@ -2,7 +2,7 @@
 
 const test = require('ava');
 
-const prettyPrint = require('../../../examples/prettyPrint');
+const prettyPrint = require('../../../../examples/prettyPrint');
 
 test('basic', t => {
   t.is(prettyPrint('G { Start=#("a"|b + ) ? }'), 'G {\n  Start = #("a" | b+)?\n}');

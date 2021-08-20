@@ -3,7 +3,7 @@
 'use strict';
 
 const fs = require('fs');
-const ohm = require('../ohm-js');
+const ohm = require('../packages/ohm-js');
 
 /*
   Usage: prettyPrint.js <filename>

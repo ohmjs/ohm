@@ -1,4 +1,4 @@
 #!/bin/bash
 
 ROOT=$(npm prefix)
-node "$ROOT/examples/ecmascript/compile.js" -b "$ROOT/ohm-js/dist/ohm.js" > /dev/null
+node "$ROOT/examples/ecmascript/compile.js" -b "$ROOT/packages/ohm-js/dist/ohm.js" > /dev/null

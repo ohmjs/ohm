@@ -23,7 +23,7 @@ var walkSync = require('walk-sync');
 // Helpers
 // --------------------------------------------------------------------
 
-var EXAMPLE_ROOT = path.normalize(path.join(__dirname, '../../examples/'));
+var EXAMPLE_ROOT = path.normalize(path.join(__dirname, '../../../examples/'));
 
 function runExampleAsync(relativePath) {
   return new Promise(function(resolve, reject) {

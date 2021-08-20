@@ -36,21 +36,21 @@ function scriptRel(relPath) {
 // in the documentation run without errors.
 
 test('doc/README.md', t => {
-  markscript.evaluateFile(scriptRel('../../doc/README.md'), markscriptConfig);
+  markscript.evaluateFile(scriptRel('../../../doc/README.md'), markscriptConfig);
   t.pass();
 });
 
 test('doc/api-reference.md', t => {
-  markscript.evaluateFile(scriptRel('../../doc/api-reference.md'), markscriptConfig);
+  markscript.evaluateFile(scriptRel('../../../doc/api-reference.md'), markscriptConfig);
   t.pass();
 });
 
 test('doc/syntax-reference.md', t => {
-  markscript.evaluateFile(scriptRel('../../doc/syntax-reference.md'), markscriptConfig);
+  markscript.evaluateFile(scriptRel('../../../doc/syntax-reference.md'), markscriptConfig);
   t.pass();
 });
 
 test('doc/extras.md', t => {
-  markscript.evaluateFile(scriptRel('../../doc/extras.md'), markscriptConfig);
+  markscript.evaluateFile(scriptRel('../../../doc/extras.md'), markscriptConfig);
   t.pass();
 });
