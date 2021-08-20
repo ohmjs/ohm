@@ -1,5 +1,5 @@
 {
-  "name": "ohm-typescript-codegen",
+  "name": "@ohm-js/typescript-codegen",
   "version": "0.1.0",
   "description": "Creates .d.ts files from .ohm grammar files",
   "main": "dist/index.js",
