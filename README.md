@@ -137,7 +137,7 @@ Ohm has two tools to help you debug grammars: a text trace, and a graphical visu
 
 [![Ohm Visualizer](http://harc.github.io/ohm/doc/images/visualizer-small.png)](https://ohmlang.github.io/editor)
 
-You can [try the visualizer online](https://ohmlang.github.io/editor), or if you have an Ohm checkout, open `visualizer/index.html` in your web browser.
+You can [try the visualizer online](https://ohmlang.github.io/editor).
 
 To see the text trace for a grammar `g`, just use the [`g.trace()`](./doc/api-reference.md#trace)
 method instead of `g.match`. It takes the same arguments, but instead of returning a MatchResult
