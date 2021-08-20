@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "build": "yarn workspace ohm-js run build",
-    "ci-test": "yarn lint && yarn test",
+    "ci-test": "yarn build && yarn lint && yarn test",
     "format": "prettier --write . && eslint --fix .",
     "lint": "eslint .",
     "prepare": "yarn workspace @ohm-js/typescript-codegen run prepare",
