@@ -21,12 +21,8 @@ json -I -f "package.json" -e "this.contributors=[$(./scripts/get-contributors)]"
 echo "⚙  Running 'yarn version'..."
 yarn version --no-git-tag-version
 
-echo "📦  Creating a new bundle..."
-new_version=$(json -f package.json version)
-yarn build
-
 echo "📝  Committing and tagging the result..."
-git add package.json dist
+git add package.json
 git commit -am "v${new_version}"
 
 tag_name="v${new_version}"
