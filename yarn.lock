@@ -3666,6 +3666,14 @@ object.pick@^1.3.0:
   dependencies:
     isobject "^3.0.1"
 
+ohm-js@^15.0.1, ohm-js@^15.4.1, ohm-js@^15.5.0:
+  version "15.5.0"
+  resolved "https://registry.yarnpkg.com/ohm-js/-/ohm-js-15.5.0.tgz#45d23f4bbf52281853d35524ccf62a0a4663f8b4"
+  integrity sha512-pmTx/SXZLMekLXJi0V6TEfESpPCSd5B95pWKaY+1ZIgvV5IEUiP2K3EdkESbLZ4VpO94oNCEJ2OTmQyzxSklmA==
+  dependencies:
+    is-buffer "^2.0.4"
+    util-extend "^1.0.3"
+
 once@^1.3.0, once@^1.3.1, once@^1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/once/-/once-1.4.0.tgz#583b1aa775961d4b113ac17d9c50baef9dd76bd1"

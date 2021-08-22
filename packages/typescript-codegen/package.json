@@ -22,7 +22,7 @@
   "dependencies": {
     "fast-glob": "^3.2.7",
     "minimist": "^1.2.5",
-    "ohm-js": "^15.5.0"
+    "ohm-js": "^16.0.0-pre.1"
   },
   "scripts": {
     "build": "tsc",
