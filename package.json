@@ -1,6 +1,7 @@
 {
   "private": true,
   "workspaces": [
+    "packages/cli",
     "packages/ohm-js",
     "packages/typescript-codegen",
     "examples/ecmascript",

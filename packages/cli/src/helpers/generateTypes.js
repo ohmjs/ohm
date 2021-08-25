@@ -39,15 +39,12 @@ function getActionDecls(grammar) {
   });
 }
 
-function generateTypes(grammarFilename, grammar) {
+function generateTypes(grammar) {
   const actionDecls = [];
   for (let g = grammar; g !== BuiltInRules; g = g.superGrammar) {
     actionDecls.push(...getActionDecls(g));
   }
-  return {
-    filename: `${grammarFilename}.d.ts`,
-    contents: createDeclarations(grammar.name, actionDecls)
-  };
+  return createDeclarations(grammar.name, actionDecls);
 }
 
 module.exports = {

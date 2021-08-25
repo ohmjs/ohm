@@ -1,0 +1,16 @@
+Arithmetic {
+  Exp
+    = AddExp
+
+  AddExp
+    = AddExp "+" PriExp  -- plus
+    | AddExp "-" PriExp  -- minus
+    | PriExp
+
+  PriExp
+    = "(" Exp ")"  -- paren
+    | number
+
+  number
+    = digit+
+}

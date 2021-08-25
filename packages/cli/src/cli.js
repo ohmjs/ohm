@@ -14,9 +14,9 @@ function ohmCli(userArgs, optsForTesting = {}) {
   }
 
   commands.forEach(({command, description, options, action}) => {
-    program.command(command).description(description).action(action);
+    const cmd = program.command(command).description(description).action(action);
     if (options) {
-      options.forEach(arr => program.option(...arr));
+      options.forEach(arr => cmd.option(...arr));
     }
   });
 
