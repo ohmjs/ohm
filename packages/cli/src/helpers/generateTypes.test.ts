@@ -8,7 +8,6 @@ function typeCheck(name: string, grammarSource: string, tsSource: string) {
   const project = createProjectSync();
   const typesFilename = `${name}.ohm-recipe.d.ts`;
   const contents = generateTypes(ohm.grammar(grammarSource));
-  console.log(contents);
 
   const grammarDTS = project.createSourceFile(typesFilename, contents);
   const mainFile = project.createSourceFile(`${name}.ts`, tsSource);
