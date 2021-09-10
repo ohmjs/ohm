@@ -8,7 +8,7 @@
   "license": "MIT",
   "dependencies": {
     "commander": "^8.1.0",
-    "ohm-js": "^16.0.0-pre.1"
+    "ohm-js": "^16.0.0-pre.2"
   },
   "scripts": {
     "test": "ava"
