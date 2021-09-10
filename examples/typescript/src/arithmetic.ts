@@ -1,27 +1,37 @@
 import fs from 'fs';
 import ohm from 'ohm-js';
 
-// Using 'generate-ohm-declarations' from the ohm-typescript-codegen package,
-// we can generate type definitions for an Ohm grammar in a .ohm file.
-// Note that this only imports the _types_ from that grammar -- we still need
-// to instantiate the grammar via `ohm.grammar(...)` below.
-import {ArithmeticGrammar} from './arithmetic.ohm';
+/*
+  In ../package.json, there is a 'generate' script that uses the Ohm command
+  line tool (from the @ohm-js/cli package) to generate a "recipe" for our
+  grammar, along with the corresponding TypeScript type definitions.
 
-const source = fs.readFileSync(`${__dirname}/arithmetic.ohm`, 'utf-8');
-const grammar: ArithmeticGrammar = ohm.grammar(source);
+  A recipe is a standalone CommonJS module from which we can directly import
+  our grammar(s). The associated .d.ts file also defines some useful related
+  types, such as `ArithmeticSemantics`.
+ */
+import grammar, {ArithmeticSemantics} from './arithmetic.ohm-recipe';
 
 const constants: {[name: string]: number} = {
   pi: Math.PI,
   e: Math.E
 };
 
-// By declaring `grammar: ArithmeticGrammar` above, our semantics object is
-// inferred to be an `ArithmeticSemantics`. This lets the compiler check that
-// our semantic actions have the correct number of arguments, a consistent
-// return type, etc. In some editors (e.g. VS Code), this also enables some
-// handy features like autocomplete of action names, tooltips with argument
-// types (`IterationNode`, `NonterminalNode`, or `TerminalNode`), etc.
-const semantics = grammar.createSemantics().addOperation<number>('eval()', {
+/*
+  It's not necessary to specificy the type explicitly here, but we do it
+  to demonstrate that the `grammar.createSemantics()` doesn't return a
+  generic `Semantics`, but rather an `ArithmeticSemantics`...
+ */
+const semantics: ArithmeticSemantics = grammar.createSemantics();
+
+/*
+  ...and this lets the compiler check that our semantic actions have the
+  correct number of arguments, a consistent return type, etc. In some
+  editors (e.g. VS Code), this also enables some handy features like
+  autocomplete of action names, tooltips with argument types (`IterationNode`,
+  `NonterminalNode`, or `TerminalNode`), etc.
+ */
+semantics.addOperation<number>('eval()', {
   AddExp_plus: (x, _, y) => x.eval() + y.eval(),
   AddExp_minus: (x, _, y) => x.eval() - y.eval(),
   MulExp_times: (x, _, y) => x.eval() * y.eval(),
@@ -34,11 +44,13 @@ const semantics = grammar.createSemantics().addOperation<number>('eval()', {
     return constants[this.sourceString] || 0;
   },
 
-  // If we had instead written this action as `number(a, b) { ... }`, the TypeScript
-  // compiler would give us an error:
-  //
-  //     src/arithmetic.ts:42:3 - error TS2322: Type '(a: any, b: any) => number' is not
-  //     assignable to type '(arg0: NonterminalNode) => number'.
+  /*
+    If we had instead written this action as `number(a, b) { ... }`, the TypeScript
+    compiler would give us an error like this:
+  
+        src/arithmetic.ts:42:3 - error TS2322: Type '(a: any, b: any) => number' is not
+        assignable to type '(arg0: NonterminalNode) => number'.
+   */
   number(_) {
     return parseFloat(this.sourceString);
   }
@@ -48,10 +60,3 @@ export function evaluate(expr: string): number {
   const matchResult = grammar.match(expr);
   return semantics(matchResult).eval();
 }
-
-/*
-TODO:
-- put a comment on each action with the rule definition (for tooltips in VSCode)
-- (maybe) _iter and _nonterminal should spread their properties, rather than getting a single children arg,
-  so that they have the same type as other actions (?)
-*/

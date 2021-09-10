@@ -99,15 +99,6 @@
     "@nodelib/fs.scandir" "2.1.4"
     fastq "^1.6.0"
 
-"@ohm-js/typescript-codegen@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/@ohm-js/typescript-codegen/-/typescript-codegen-0.1.0.tgz#de42f1da17d4e83d834e051cea664d6364b9efb0"
-  integrity sha512-NIILp278qgB5M5ToPANzkf9kx2PykjigepAlWXyYxpa5WAdnHOpCXeLXRVIvvxrzAMZUNQ8l3mlAPvnP1C9kFA==
-  dependencies:
-    fast-glob "^3.2.7"
-    minimist "^1.2.5"
-    ohm-js "^15.5.0"
-
 "@sindresorhus/is@^0.14.0":
   version "0.14.0"
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.14.0.tgz#9fb3a3cf3132328151f353de4632e01e52102bea"
