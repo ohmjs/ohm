@@ -99,6 +99,15 @@
     "@nodelib/fs.scandir" "2.1.4"
     fastq "^1.6.0"
 
+"@ohm-js/typescript-codegen@^0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@ohm-js/typescript-codegen/-/typescript-codegen-0.1.0.tgz#de42f1da17d4e83d834e051cea664d6364b9efb0"
+  integrity sha512-NIILp278qgB5M5ToPANzkf9kx2PykjigepAlWXyYxpa5WAdnHOpCXeLXRVIvvxrzAMZUNQ8l3mlAPvnP1C9kFA==
+  dependencies:
+    fast-glob "^3.2.7"
+    minimist "^1.2.5"
+    ohm-js "^15.5.0"
+
 "@sindresorhus/is@^0.14.0":
   version "0.14.0"
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.14.0.tgz#9fb3a3cf3132328151f353de4632e01e52102bea"
@@ -111,19 +120,19 @@
   dependencies:
     defer-to-connect "^1.0.1"
 
-"@ts-morph/bootstrap@^0.10.1":
-  version "0.10.1"
-  resolved "https://registry.yarnpkg.com/@ts-morph/bootstrap/-/bootstrap-0.10.1.tgz#6638dadd65f6fa0a84df41fa70f1ed8499390065"
-  integrity sha512-/lqMUS7LRQh5oFK2FFJnUuuPbVPHCd03+6ovqvGnFm+Qf5Ah/nHNKVLeXU/9/GBZPBT0zvnRjcOKuzDYANT2Zw==
+"@ts-morph/bootstrap@^0.11.0":
+  version "0.11.0"
+  resolved "https://registry.yarnpkg.com/@ts-morph/bootstrap/-/bootstrap-0.11.0.tgz#4025725798b60acffe0a50187e58ae9233ddba18"
+  integrity sha512-wS75U9u5Xb8PD5KdE9lsQUB4SnQBH63Mhoi/ISJ/E+kEQiz9pjnFsydQGrJIIe+IdkzT++nk7iwHLQ4PBpoDFw==
   dependencies:
-    "@ts-morph/common" "~0.10.1"
+    "@ts-morph/common" "~0.11.0"
 
-"@ts-morph/common@~0.10.1":
-  version "0.10.1"
-  resolved "https://registry.yarnpkg.com/@ts-morph/common/-/common-0.10.1.tgz#be15b9ab13a32bbc1f6a6bd7dc056b2247b272eb"
-  integrity sha512-rKN/VtZUUlW4M+6vjLFSaFc1Z9sK+1hh0832ucPtPkXqOw/mSWE80Lau4z2zTPNTqtxAjfZbvKpQcEwJy0KIEg==
+"@ts-morph/common@~0.11.0":
+  version "0.11.0"
+  resolved "https://registry.yarnpkg.com/@ts-morph/common/-/common-0.11.0.tgz#df94af35f42d01d9d389bfdefc8bcc3f6a59a192"
+  integrity sha512-Ti2tpROSVHlBoNiJKVUYPNk/yCPb1Bcly4RsSwC2F9a8PMMYfEYovRcghTu6N5o66Jq0yvPXN3uNaO4a3zskTA==
   dependencies:
-    fast-glob "^3.2.5"
+    fast-glob "^3.2.7"
     minimatch "^3.0.4"
     mkdirp "^1.0.4"
     path-browserify "^1.0.1"
@@ -158,15 +167,10 @@
   resolved "https://registry.yarnpkg.com/@types/minimatch/-/minimatch-3.0.3.tgz#3dca0e3f33b200fc7d1139c0cd96c1268cadfd9d"
   integrity sha512-tHq6qdbT9U1IRSGf14CL0pUlULksvY9OZ+5eEgl1N7t+OA3tGvNpxJCzuKQlsNgCVwbAs670L1vcVQi8j9HjnA==
 
-"@types/minimist@^1.2.2":
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/@types/minimist/-/minimist-1.2.2.tgz#ee771e2ba4b3dc5b372935d549fd9617bf345b8c"
-  integrity sha512-jhuKLIRrhvCPLqwPcx6INqmKeiA5EWrsCOPhrlFSrbrmU4ZMPjj5Ul/oLCMDO98XRUIwVm78xICz4EPCektzeQ==
-
-"@types/node@^16.6.1":
-  version "16.7.0"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.7.0.tgz#f0374c4e89d1fc1ef705caad3021ba34c1a9294c"
-  integrity sha512-e66BrnjWQ3BRBZ2+iA5e85fcH9GLNe4S0n1H0T3OalK2sXg5XWEFTO4xvmGrYQ3edy+q6fdOh5t0/HOY8OAqBg==
+"@types/node@^16.9.1":
+  version "16.9.1"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.9.1.tgz#0611b37db4246c937feef529ddcc018cf8e35708"
+  integrity sha512-QpLcX9ZSsq3YYUUnD3nFDY8H7wctAhQj/TFKL8Ya8v5fMm3CFXxo8zStsLAl780ltoYoo1WvKUVGBQK+1ifr7g==
 
 "@types/normalize-package-data@^2.4.0":
   version "2.4.0"
@@ -2085,7 +2089,7 @@ fast-glob@^3.1.1:
     micromatch "^4.0.2"
     picomatch "^2.2.1"
 
-fast-glob@^3.2.5, fast-glob@^3.2.7:
+fast-glob@^3.2.7:
   version "3.2.7"
   resolved "https://registry.yarnpkg.com/fast-glob/-/fast-glob-3.2.7.tgz#fd6cb7a2d7e9aa7a7846111e85a196d6b2f766a1"
   integrity sha512-rYGMRwip6lUMvYD3BTScMwT1HtAs2d71SMv66Vrxs0IekGZEjhM0pcMfjQPnknBt2zeCwQMEupiN02ZP4DiT1Q==

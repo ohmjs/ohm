@@ -6,9 +6,9 @@ import {generateTypes} from './generateTypes';
 
 function typeCheck(name: string, grammarSource: string, tsSource: string) {
   const project = createProjectSync();
-  const grammarFilename = `${name}.ohm`;
-  const typesFilename = `${name}.ohm.d.ts`;
+  const typesFilename = `${name}.ohm-recipe.d.ts`;
   const contents = generateTypes(ohm.grammar(grammarSource));
+  console.log(contents);
 
   const grammarDTS = project.createSourceFile(typesFilename, contents);
   const mainFile = project.createSourceFile(`${name}.ts`, tsSource);
@@ -31,7 +31,7 @@ test('basic working example', t => {
     grammarSources.g,
     `
       import * as ohm from 'ohm-js';
-      import {GGrammar} from './g.ohm';
+      import {GGrammar} from './g.ohm-recipe';
       
       const g: GGrammar = ohm.grammar(\`${grammarSources.g}\`);
       const s = g.createSemantics().addOperation<number>('foo', {
@@ -53,7 +53,7 @@ test('incorrect arity', t => {
     grammarSources.g,
     `
       import * as ohm from 'ohm-js';
-      import {GGrammar} from './g.ohm';
+      import {GGrammar} from './g.ohm-recipe';
       
       const g: GGrammar = ohm.grammar(\`${grammarSources.g}\`);
       const s = g.createSemantics().addOperation<number>('foo', {
@@ -66,9 +66,12 @@ test('incorrect arity', t => {
       });
     `
   );
-  t.true(diagnostics.length > 0);
-  t.deepEqual(diagnostics.slice(1), []);
-  t.snapshot(diagnostics[0].messageText);
+  t.deepEqual(
+    diagnostics.map(d => d.messageText),
+    [
+      `Type \'(letters: any, x: any) => any\' is not assignable to type \'(this: NonterminalNode, arg0: NonterminalNode) => number\'.`
+    ]
+  );
 });
 
 test('incorrect return type', t => {
@@ -77,7 +80,7 @@ test('incorrect return type', t => {
     grammarSources.g,
     `
       import * as ohm from 'ohm-js';
-      import {GGrammar} from './g.ohm';
+      import {GGrammar} from './g.ohm-recipe';
       
       const g: GGrammar = ohm.grammar(\`${grammarSources.g}\`);
       const s = g.createSemantics().addOperation<number>('foo', {

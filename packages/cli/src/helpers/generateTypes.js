@@ -14,19 +14,22 @@ const createDeclarations = (grammarName, actionDecls) =>
   TerminalNode
 } from 'ohm-js';
 
-declare interface ${grammarName}ActionDict<T> extends ActionDict<T> {
+export interface ${grammarName}ActionDict<T> extends ActionDict<T> {
   ${actionDecls.join('\n  ')}
 }
 
-declare interface ${grammarName}Semantics extends Semantics {
+export interface ${grammarName}Semantics extends Semantics {
   addOperation<T=any>(name: string, actionDict: ${grammarName}ActionDict<T>): this;
   // TODO: extendOperation, addAttribute, extendAttribute
 }
 
-declare interface ${grammarName}Grammar extends Grammar {
+export interface ${grammarName}Grammar extends Grammar {
   createSemantics(): ${grammarName}Semantics;
   // TODO: extendSemantics
 }
+
+declare const grammar: ${grammarName}Grammar;
+export default grammar;
 `;
 
 const BuiltInRules = ohm.ohmGrammar.superGrammar;

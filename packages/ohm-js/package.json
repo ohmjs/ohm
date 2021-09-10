@@ -82,7 +82,7 @@
     "util-extend": "^1.0.3"
   },
   "devDependencies": {
-    "@ohm-js/typescript-codegen": "^0.1.0",
+    "@ohm-js/cli": "^0.1.0",
     "ava": "^3.15.0",
     "ava-spec": "^1.1.1",
     "dedent": "^0.7.0",

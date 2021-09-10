@@ -225,17 +225,27 @@ declare namespace ohm {
     _terminal?: (this: TerminalNode) => T;
 
     // Built-in rules
-    
+
     alnum?: (this: NonterminalNode, arg0: NonterminalNode) => T;
     letter?: (this: NonterminalNode, arg0: NonterminalNode) => T;
     digit?: (this: NonterminalNode, arg0: TerminalNode) => T;
     hexDigit?: (this: NonterminalNode, arg0: NonterminalNode | TerminalNode) => T;
     ListOf?: (this: NonterminalNode, arg0: NonterminalNode) => T;
-    NonemptyListOf?: (this: NonterminalNode, arg0: Node, arg1: IterationNode, arg2: IterationNode) => T;
-    EmptyListOf?: (this: NonterminalNode, ) => T;
+    NonemptyListOf?: (
+      this: NonterminalNode,
+      arg0: Node,
+      arg1: IterationNode,
+      arg2: IterationNode
+    ) => T;
+    EmptyListOf?: (this: NonterminalNode) => T;
     listOf?: (this: NonterminalNode, arg0: NonterminalNode) => T;
-    nonemptyListOf?: (this: NonterminalNode, arg0: Node, arg1: IterationNode, arg2: IterationNode) => T;
-    emptyListOf?: (this: NonterminalNode, ) => T;
+    nonemptyListOf?: (
+      this: NonterminalNode,
+      arg0: Node,
+      arg1: IterationNode,
+      arg2: IterationNode
+    ) => T;
+    emptyListOf?: (this: NonterminalNode) => T;
   }
 
   /**
