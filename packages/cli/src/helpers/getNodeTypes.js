@@ -1,25 +1,22 @@
-import ohm from 'ohm-js';
+'use strict';
 
+const {pexprs} = require('ohm-js');
 const CaseInsensitiveTerminal = require('ohm-js/src/CaseInsensitiveTerminal');
-
-const pexprs = (ohm as any).pexprs;
 
 // Helpers
 // -------
 
 class UnionType {
-  private types = new Set<string>();
-
-  constructor(type: string) {
-    this.types.add(type);
+  constructor(type) {
+    this.types = new Set([type]);
   }
 
-  merge(other: UnionType) {
-    other.types.forEach(t => this.types.add(t));
+  merge(aUnionType) {
+    aUnionType.types.forEach(t => this.types.add(t));
   }
 
-  toString(prefix?: string) {
-    const format = (t: string) => (prefix ? `${prefix}.${t}` : t);
+  toString(prefix = '') {
+    const format = t => (prefix ? `${prefix}.${t}` : t);
     if (this.types.has('Node') || this.types.size >= 3) {
       return format('Node');
     }
@@ -27,11 +24,11 @@ class UnionType {
   }
 }
 
-function flatMap<T, U>(arr: T[], cb: (value: T) => U | U[]): U[] {
-  return ([] as U[]).concat(...arr.map(cb));
+function flatMap(arr, cb) {
+  return [].concat(...arr.map(cb));
 }
 
-function _getNodeTypes(pexpr: any): UnionType[] {
+function _getNodeTypes(pexpr) {
   if (
     pexpr === pexprs.any ||
     pexpr === pexprs.end ||
@@ -63,7 +60,7 @@ function _getNodeTypes(pexpr: any): UnionType[] {
   }
 
   if (pexpr instanceof pexprs.Seq) {
-    return flatMap(pexpr['factors'], (f: any) => _getNodeTypes(f));
+    return flatMap(pexpr['factors'], f => _getNodeTypes(f));
   }
 
   if (pexpr instanceof pexprs.Iter) {
@@ -84,6 +81,6 @@ function _getNodeTypes(pexpr: any): UnionType[] {
 // Exports
 // -------
 
-export function getNodeTypes(pexpr: any, prefix?: string): string[] {
+exports.getNodeTypes = function(pexpr, prefix = '') {
   return _getNodeTypes(pexpr).map(t => t.toString(prefix));
-}
+};

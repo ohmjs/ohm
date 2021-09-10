@@ -1,6 +1,6 @@
 {
   "name": "ohm-js",
-  "version": "16.0.0-pre.1",
+  "version": "16.0.0-pre.2",
   "description": "An object-oriented language for parsing and pattern matching",
   "repository": "https://github.com/harc/ohm",
   "keywords": [
@@ -82,7 +82,7 @@
     "util-extend": "^1.0.3"
   },
   "devDependencies": {
-    "@ohm-js/typescript-codegen": "^0.1.0",
+    "@ohm-js/cli": "^0.1.0",
     "ava": "^3.15.0",
     "ava-spec": "^1.1.1",
     "dedent": "^0.7.0",
