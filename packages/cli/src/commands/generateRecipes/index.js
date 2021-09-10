@@ -71,7 +71,7 @@ function generateRecipe(grammarPath, grammar, writer) {
   const outputFilename = `${grammarPath}-recipe.js`;
   writer.write(
       outputFilename,
-      `module.exports = require('ohm-js').makeRecipe('${grammar.toRecipe()});`
+      `'use strict';module.exports=require('ohm-js').makeRecipe(${grammar.toRecipe()});`
   );
 }
 

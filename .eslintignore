@@ -2,5 +2,6 @@
 **/third_party/**
 **/testdata/**
 **/dist/*
-visualizer/assets/**
+*.ohm-recipe.*
 ava-ts.config.js
+visualizer/assets/**

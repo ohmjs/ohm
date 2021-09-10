@@ -1,7 +1,8 @@
-dist
-third_party
 **/test/data/*
-testdata
-visualizer
 *.css
 *.html
+*.ohm-recipe.*
+dist
+third_party
+testdata
+visualizer
