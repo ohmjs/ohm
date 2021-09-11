@@ -16,7 +16,6 @@ more from the grammars you write.
 Some awesome things people have built using Ohm:
 
 - [Seymour](https://harc.github.io/seymour-live2017/), a live programming environment for the classroom.
-- [Chorus](http://www.chorus-home.org/), a project exploring the middle ground between spreadsheets and programming.
 - [Shadama](https://tinlizzie.org/~ohshima/shadama2/live2017/), a particle simulation language designed for high-school science.
 - [turtle.audio](http://turtle.audio/), an audio environment where simple text commands generate lines that can play music.
 - A [browser-based tool](https://www.arthurcarabott.com/konnakkol/) that turns written _Konnakkol_ (a South Indian vocal percussion art) into audio.
