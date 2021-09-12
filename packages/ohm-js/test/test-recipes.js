@@ -133,6 +133,13 @@ test('grammar recipes with source', t => {
   t.truthy(ohm.makeRecipe(g.toRecipe()), 'recipe still works fine');
 });
 
+test('recipes with U+2028 LINE SEPARATOR and U+2029 PARAGRAPH SEPARATOR', t => {
+  t.falsy(ohm.grammar('G { x = "\u2028" }').toRecipe().includes('\u2028'));
+  t.falsy(ohm.grammar('G { x = "\u2029" }').toRecipe().includes('\u2029'));
+  t.falsy(ohm.grammar('G { x = "blah\u2028" }').toRecipe().includes('\u2028'));
+  t.falsy(ohm.grammar('G { x = "blah\u2029" }').toRecipe().includes('\u2029'));
+});
+
 test('semantics recipes', t => {
   const g1 = ohm.grammar('G { Add = number "+" number  number = digit+ }');
   const s1 = g1
