@@ -217,8 +217,8 @@ declare namespace ohm {
    * An ActionDict is a dictionary of Actions indexed by rule names.
    */
   interface ActionDict<T> {
-    // TODO(pdubroy): Find a way to avoid the `(children: Node[]) => T` here.
-    [index: string]: Action<T> | ((children: Node[]) => T) | undefined;
+    // TODO(pdubroy): Find a way to avoid the `(this: Node, children: Node[]) => T` here.
+    [index: string]: Action<T> | ((this: Node, children: Node[]) => T) | undefined;
 
     _iter?: (this: IterationNode, children: Node[]) => T;
     _nonterminal?: (this: NonterminalNode, children: Node[]) => T;
@@ -254,7 +254,7 @@ declare namespace ohm {
    * The current node is passed as a dynamic this, requiring an ES5
    * anonymous function with this typed as any.
    */
-  type Action<T> = (...args: Node[]) => T;
+  type Action<T> = (this: Node, ...args: Node[]) => T;
 
   /**
    * A node in the parse tree, passed to Action functions.

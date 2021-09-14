@@ -22,15 +22,15 @@ To enable grammar-specific type definitions:
 1. Install the `@ohm-js/cli` package (e.g., `npm install -D @ohm-js/cli` to add it as a dev dependency).
 2. Put your grammar in a separate .ohm file, if it isn't already.
 3. Use the Ohm CLI to generate a recipe (.ohm-recipe.js) for your grammar, along with the associated type definitions (.d.ts). For example, if your grammar is in `src/my-grammar.ohm`:
-   
+
    ```
    npx ohm generateRecipes --withTypes src
    ```
-   
+
    ...will create `src/my-grammar.ohm-recipe.js` and `src/my-grammar.ohm-recipe.d.ts`. You can directly import the recipe like this:
-   
+
    ```
    import grammar from './my-grammar.ohm-recipe'
    ```
-   
+
    For more information, see the [Ohm TypeScript example](https://github.com/harc/ohm/blob/master/examples/typescript/src/arithmetic.ts).
