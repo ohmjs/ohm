@@ -21,6 +21,13 @@ function getSortedRuleValues(grammar) {
       .map(name => grammar.rules[name]);
 }
 
+// Until ES2019, JSON was not a valid subset of JavaScript because U+2028 (line separator)
+// and U+2029 (paragraph separator) are allowed in JSON string literals, but not in JS.
+// This function properly encodes those two characters so that the resulting string is
+// represents both valid JSON, and valid JavaScript (for ES2018 and below).
+// See https://v8.dev/features/subsume-json for more details.
+const jsonToJS = str => str.replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+
 function Grammar(name, superGrammar, rules, optDefaultStartRule) {
   this.name = name;
   this.superGrammar = superGrammar;
@@ -223,7 +230,15 @@ Grammar.prototype = {
       ];
     });
 
-    return JSON.stringify(['grammar', metaInfo, this.name, superGrammar, startRule, rules]);
+    const recipe = JSON.stringify([
+      'grammar',
+      metaInfo,
+      this.name,
+      superGrammar,
+      startRule,
+      rules
+    ]);
+    return jsonToJS(recipe);
   },
 
   // TODO: Come up with better names for these methods.
