@@ -35,11 +35,7 @@ pexprs.end.outputRecipe = function(formals, grammarInterval) {
 };
 
 pexprs.Terminal.prototype.outputRecipe = function(formals, grammarInterval) {
-  // Up to ES2018, string literals couldn’t contain unescaped U+2028 LINE SEPARATOR and U+2029
-  // PARAGRAPH SEPARATOR characters (see https://v8.dev/features/subsume-json), so avoid
-  // emitting those as part of the recipe.
-  const str = this.obj.replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
-  return ['terminal', getMetaInfo(this, grammarInterval), str];
+  return ['terminal', getMetaInfo(this, grammarInterval), this.obj];
 };
 
 pexprs.Range.prototype.outputRecipe = function(formals, grammarInterval) {
