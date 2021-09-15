@@ -74,7 +74,7 @@ To use Ohm, you need a grammar that is written in the Ohm language. The grammar 
 definition of the language or data format that you want to parse. There are a few different ways
 you can define an Ohm grammar:
 
-- The simplest opion is to define the grammar directly in a JavaScript string and instantiate it
+- The simplest option is to define the grammar directly in a JavaScript string and instantiate it
   using `ohm.grammar()`. In most cases, you should use a [template literal with String.raw](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/raw):
 
   ```js
