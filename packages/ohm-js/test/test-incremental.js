@@ -33,7 +33,7 @@ function pluckMemoProp(result, propName) {
 }
 
 const checkOffsetActions = {
-  _nonterminal(children) {
+  _nonterminal(...children) {
     const desc = this._node.ctorName + ' @ ' + this.source.startIdx;
     this.args.t.is(this.source.startIdx, this.args.startIdx, desc);
     for (let i = 0; i < children.length; ++i) {
@@ -45,13 +45,13 @@ const checkOffsetActions = {
     const desc = '"' + this.sourceString + '" @ ' + this.source.startIdx;
     this.args.t.is(this.source.startIdx, this.args.startIdx, desc);
   },
-  _iter(children) {
+  _iter(...children) {
     return children.map(c => c.checkOffsets(this.args.t, this.args.childStartIdx));
   }
 };
 
 const ctorTreeActions = {
-  _default(children) {
+  _default(...children) {
     return [this.ctorName].concat(children.map(c => c.ctorTree));
   }
 };
@@ -81,7 +81,7 @@ test('basic incremental parsing', t => {
     notLastLetter(letter, _) {
       return letter.reconstructInput(this.args.input);
     },
-    _iter(children) {
+    _iter(...children) {
       return this._node.childOffsets
           .map((offset, i) => {
             const c = children[i].reconstructInput(this.args.input.slice(offset));

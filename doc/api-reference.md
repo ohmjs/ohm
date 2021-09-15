@@ -191,15 +191,24 @@ const actions = {
   assert.equal(semantics(g.match('Guy Incognito')).x(), 'INCOGNITO, Guy');
 -->
 
-The value of an operation or attribute for a node is the result of invoking the node's matching semantic action. In the grammar above, the body of the `FullName` rule produces two values -- one for each application of the `name` rule. The values are represented as parse nodes, which are passed as arguments when the semantic action is invoked. An error is thrown if the function arity does not match the number of values produced by the expression.
+The value of an operation or attribute for a node is the result of invoking the node's matching semantic action. In the grammar above, the body of the `FullName` rule produces two values — one for each application of the `name` rule. The values are represented as parse nodes, which are passed as arguments when the semantic action is invoked. An error is thrown if the function arity does not match the number of values produced by the expression.
 
 The matching semantic action for a particular node is chosen as follows:
 
-- On a _rule application_ (non-terminal) node, first look for a semantic action with the same name as the rule (e.g., 'FullName'). If the action dictionary does not have a property with that name, use the action named '\_nonterminal', if it exists. If there is no `_nonterminal` action, and the node has exactly one child, then return the result of invoking the operation/attribute on the child node.
-- On a terminal node (e.g., a node produced by the parsing expression `"hello"`), use the semantic action named '\_terminal'.
-- On an iteration node (e.g., a node produced by the parsing expression `letter+`), use the semantic action named '\_iter'.
+- On a _rule application_ (non-terminal) node, first look for a semantic action with the same name as the rule (e.g., 'FullName'). If the action dictionary does not have a property with that name, use the action named `_nonterminal`, if it exists. If there is no `_nonterminal` action, and the node has exactly one child, then return the result of invoking the operation/attribute on the child node.
+- On a terminal node (e.g., a node produced by the parsing expression `"hello"`), use the semantic action named `_terminal`.
+- On an iteration node (e.g., a node produced by the parsing expression `letter+`), use the semantic action named `_iter`.
 
-**\*NOTE:** Versions of Ohm prior to v16.0 had slightly different behaviour with regards to default semantic actions. See [here](https://github.com/harc/ohm/blob/master/doc/releases/ohm-js-16.0.md#default-semantic-actions) for more details.\*
+<span id="special-actions"></span>The `_iter`, `_nonterminal`, and `_terminal` actions are sometimes called _special actions_. `_iter` and `_nonterminal` take a variable number of arguments, which are typically captured into an array using [rest parameter syntax](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/rest_parameters), e.g. `_iter(...children) { ... }`. The `_terminal` action takes no arguments.
+
+<!-- @markscript
+  markscript.transformNextBlock((code) =>
+    code.replace('...', "return lastName.x().toUpperCase() + ', ' + firstName.x()")
+        .replace('...', "return this.sourceString;")
+  );
+-->
+
+_**NOTE:** Versions of Ohm prior to v16.0 had slightly different behaviour with regards to default semantic actions. See [here](https://github.com/harc/ohm/blob/master/doc/releases/ohm-js-16.0.md#default-semantic-actions) for more details._
 
 Note that you can also write semantic actions for built-in rules like `letter` or `digit`. For `ListOf`, please see the documentation on [asIteration](#asIteration) below.
 

@@ -339,10 +339,11 @@ s.addAttribute('asLisp', {
     When you create an operation or an attribute, you can optionally provide a `_nonterminal`
     semantic action that will be invoked when your action dictionary does not have a method that
     corresponds to the rule that created a CST node. The receiver (`this`) of the _nonterminal
-    method will be that CST node, and `_nonterminal`'s only argument will be an array that contains
-    the children of that node.
+    method will be that CST node, and its argument are the children of that node. Since the exact
+    number of children can vary, we use the rest parameter syntax (`...children`) to capture all
+    of the arguments as an array.
   */
-  _nonterminal(children) {
+  _nonterminal(...children) {
     if (children.length === 1) {
       // If this node has only one child, just return the Lisp-like tree of its child. This lets us
       // avoid writing semantic actions for the `Exp`, `AddExp`, `MulExp`, `ExpExp`, and `PriExp`

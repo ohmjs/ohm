@@ -40,10 +40,10 @@ function compareGrammars(t, expected, actual) {
 function buildTreeNodeWithUniqueId(g) {
   let nextId = 0;
   const s = g.createSemantics().addAttribute('tree', {
-    _iter(children) {
+    _iter(...children) {
       return children.map(c => c.tree);
     },
-    _nonterminal(children) {
+    _nonterminal(...children) {
       return ['id', nextId++, this.ctorName].concat(children.map(child => child.tree));
     },
     _terminal() {
@@ -1273,7 +1273,7 @@ test('case-insensitive matching', t => {
     _terminal() {
       return this.sourceString;
     },
-    _nonterminal(children) {
+    _nonterminal(...children) {
       return children.map(c => c.matchedString).join('');
     }
   });
