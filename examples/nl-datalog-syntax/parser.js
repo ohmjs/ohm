@@ -102,7 +102,7 @@ NLDatalog.semantics = NLDatalog.grammar
       }
     })
     .addOperation('isA(type)', {
-      _nonterminal(children) {
+      _nonterminal(...children) {
         return this.ctorName === this.args.type;
       }
     });

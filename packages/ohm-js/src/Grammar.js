@@ -15,6 +15,8 @@ const pexprs = require('./pexprs');
 // Private stuff
 // --------------------------------------------------------------------
 
+const SPECIAL_ACTION_NAMES = ['_iter', '_terminal', '_nonterminal', '_default'];
+
 function getSortedRuleValues(grammar) {
   return Object.keys(grammar.rules)
       .sort()
@@ -116,14 +118,10 @@ Grammar.prototype = {
   // Check that every key in `actionDict` corresponds to a semantic action, and that it maps to
   // a function of the correct arity. If not, throw an exception.
   _checkTopDownActionDict(what, name, actionDict) {
-    function isSpecialAction(a) {
-      return a === '_iter' || a === '_terminal' || a === '_nonterminal' || a === '_default';
-    }
-
     const problems = [];
     for (const k in actionDict) {
       const v = actionDict[k];
-      if (!isSpecialAction(k) && !(k in this.rules)) {
+      if (!SPECIAL_ACTION_NAMES.includes(k) && !(k in this.rules)) {
         problems.push("'" + k + "' is not a valid semantic action for '" + this.name + "'");
       } else if (typeof v !== 'function') {
         problems.push(
@@ -163,12 +161,12 @@ Grammar.prototype = {
   // Return the expected arity for a semantic action named `actionName`, which
   // is either a rule name or a special action name like '_nonterminal'.
   _topDownActionArity(actionName) {
-    if (actionName === '_iter' || actionName === '_nonterminal' || actionName === '_default') {
-      return 1;
-    } else if (actionName === '_terminal') {
-      return 0;
-    }
-    return this.rules[actionName].body.getArity();
+    // All special actions have an expected arity of 0, though all but _terminal
+    // are expected to use the rest parameter syntax (e.g. `_iter(...children)`).
+    // This is considered to have arity 0, i.e. `((...args) => {}).length` is 0.
+    return SPECIAL_ACTION_NAMES.includes(actionName)
+      ? 0
+      : this.rules[actionName].body.getArity();
   },
 
   _inheritsFrom(grammar) {

@@ -230,12 +230,12 @@ test('semantics recipes with extensions', t => {
         two(_) {
           return 2;
         },
-        _default(children) {
+        _default(...children) {
           return 'default';
         }
       })
       .addOperation('valueTimesTwo', {
-        _nonterminal(children) {
+        _nonterminal(...children) {
           return this.value * 2;
         }
       });

@@ -112,7 +112,7 @@ test('operations with arguments', t => {
     number(n) {
       return this.sourceString + '@L' + this.args.level;
     },
-    _default(children) {
+    _default(...children) {
       let ans = [];
       children.forEach(child => {
         ans = ans.concat(child.op1(this.args.level + 1));
@@ -168,7 +168,7 @@ test('operations with arguments', t => {
   );
 
   s.addOperation('op3(foo, bar, baz)', {
-    _default(children) {
+    _default(...children) {
       const oldArgs = this.args;
       this.op1(0);
       t.deepEqual(
@@ -481,6 +481,7 @@ test('semantic action arity checks', t => {
     return grammar.createSemantics().addOperation('op' + testUtil.uniqueId(), actions);
   }
   function ignore0() {}
+  function ignoreRest0(...a) {}
   function ignore1(a) {}
   function ignore2(a, b) {}
 
@@ -495,12 +496,15 @@ test('semantic action arity checks', t => {
 
   t.throws(
       () => {
-        makeOperation(g, {_nonterminal: ignore0});
+        makeOperation(g, {_nonterminal: ignore1});
       },
       {message: /arity/},
       '_nonterminal is checked'
   );
-  t.truthy(makeOperation(g, {_nonterminal: ignore1}), '_nonterminal works with one arg');
+  t.truthy(
+      makeOperation(g, {_nonterminal: ignoreRest0}),
+      '_nonterminal works with one spread arg'
+  );
 
   t.throws(
       () => {
@@ -585,7 +589,7 @@ test('extending semantics', t => {
         }
       })
       .addOperation('valueTimesTwo', {
-        _nonterminal(children) {
+        _nonterminal(...children) {
           return this.value() * 2;
         }
       });
@@ -679,7 +683,7 @@ test('extending semantics', t => {
         }
       })
       .addAttribute('valueTimesTwo', {
-        _nonterminal(children) {
+        _nonterminal(...children) {
           return this.value * 2;
         }
       });

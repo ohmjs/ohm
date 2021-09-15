@@ -11,7 +11,7 @@ Semantic actions that worked in previous versions of Ohm may need to be modified
 In some cases, it makes sense to write a generic _\_iter_ action that specifies the behaviour for all iteration nodes. This also makes it possible to replicate the old behaviour of the default action:
 
 ```
-_iter(children) {
+_iter(...children) {
   return children.map(c => c.myOperation());
 }
 ```

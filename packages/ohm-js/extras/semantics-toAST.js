@@ -18,7 +18,7 @@ const defaultOperation = {
     return this.sourceString;
   },
 
-  _nonterminal(children) {
+  _nonterminal(...children) {
     const ctorName = this._node.ctorName;
     const mapping = this.args.mapping;
 
@@ -83,7 +83,7 @@ const defaultOperation = {
     return node;
   },
 
-  _iter(children) {
+  _iter(...children) {
     if (this._node.isOptional()) {
       if (this.numChildren === 0) {
         return null;

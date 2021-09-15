@@ -70,7 +70,7 @@ semantics.addOperation('toES5()', {
       sourceString.slice(this.source.endIdx)
     );
   },
-  _nonterminal(children) {
+  _nonterminal(...children) {
     return nodeToES5(this, children);
   },
   _terminal() {
@@ -102,7 +102,7 @@ semantics.addOperation('hoistDeclarations()', {
 
 // Merge the bindings from the given `nodes` into a single map, where the value
 // is an array of source locations that name is bound.
-function mergeBindings(nodes) {
+function mergeBindings(...nodes) {
   const bindings = new Map();
   for (const child of nodes.filter(c => !c.isLexical())) {
     child.hoistDeclarations().forEach((sources, ident) => {

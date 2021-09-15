@@ -351,7 +351,7 @@ function parseSignature(signature, type) {
 }
 
 function newDefaultAction(type, name, doIt) {
-  return function(children) {
+  return function(...children) {
     const thisThing = this._semantics.operations[name] || this._semantics.attributes[name];
     const args = thisThing.formals.map(formal => this.args[formal]);
 
@@ -649,15 +649,12 @@ class Operation {
     try {
       // Look for a semantic action whose name matches the node's constructor name, which is either
       // the name of a rule in the grammar, or '_terminal' (for a terminal node), or '_iter' (for an
-      // iteration node). In the latter case, the action function receives a single argument, which
-      // is an array containing all of the children of the CST node.
+      // iteration node).
       const ctorName = nodeWrapper._node.ctorName;
       let actionFn = this.actionDict[ctorName];
-      let ans;
       if (actionFn) {
         globalActionStack.push([this, ctorName]);
-        ans = this.doAction(semantics, nodeWrapper, actionFn, nodeWrapper.isIteration());
-        return ans;
+        return actionFn.apply(nodeWrapper, nodeWrapper._children());
       }
 
       // The action dictionary does not contain a semantic action for this specific type of node.
@@ -667,28 +664,16 @@ class Operation {
         actionFn = this.actionDict._nonterminal;
         if (actionFn) {
           globalActionStack.push([this, '_nonterminal', ctorName]);
-          ans = this.doAction(semantics, nodeWrapper, actionFn, true);
-          return ans;
+          return actionFn.apply(nodeWrapper, nodeWrapper._children());
         }
       }
 
       // Otherwise, we invoke the '_default' semantic action.
       globalActionStack.push([this, 'default action', ctorName]);
-      ans = this.doAction(semantics, nodeWrapper, this.actionDict._default, true);
-      return ans;
+      return this.actionDict._default.apply(nodeWrapper, nodeWrapper._children());
     } finally {
       globalActionStack.pop();
     }
-  }
-
-  // Invoke `actionFn` on the CST node that corresponds to `nodeWrapper`, in the context of
-  // `semantics`. If `optPassChildrenAsArray` is truthy, `actionFn` will be called with a single
-  // argument, which is an array of wrappers. Otherwise, the number of arguments to `actionFn` will
-  // be equal to the number of children in the CST node.
-  doAction(semantics, nodeWrapper, actionFn, optPassChildrenAsArray) {
-    return optPassChildrenAsArray
-      ? actionFn.call(nodeWrapper, nodeWrapper._children())
-      : actionFn.apply(nodeWrapper, nodeWrapper._children());
   }
 }
 

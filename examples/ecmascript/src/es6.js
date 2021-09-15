@@ -5,6 +5,8 @@
 const fs = require('fs');
 const path = require('path');
 
+const anyNodesMentionThis = (...nodes) => nodes.some(n => n.mentionsThis);
+
 // Semantic actions for the `mentionsThis` attribute, which returns true for a node
 // if the `this` keyword appears anywhere in the node's subtree, and otherwise false.
 const mentionsThisActions = {
@@ -17,12 +19,6 @@ const mentionsThisActions = {
   _nonterminal: anyNodesMentionThis,
   _iter: anyNodesMentionThis
 };
-
-function anyNodesMentionThis(nodes) {
-  return nodes.some(n => {
-    return n.mentionsThis;
-  });
-}
 
 const toES5Actions = {
   ArrowFunction(params, _, arrow, body) {
