@@ -2,7 +2,7 @@
 
 ## Upgrading
 
-### Args to *_iter* and *_nonterminal* actions
+### Args to _\_iter_ and _\_nonterminal_ actions
 
 The [`_iter` and `_nonterminal` actions](../api-reference.md#special-actions) now take a variable number of arguments, rather than a single `Node[]` argument containing the child nodes. To make existing code work with Ohm v16, you should change the parameter to a [rest parameter](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/rest_parameters) — e.g., `_iter(children) { ... }` should be changed to `_iter(...children) { ... }`. You can easily find code that needs to change because `addOperation` and friends will now throw an exception if your actions have a single parameter which is _not_ a rest parameter. See [#324](https://github.com/harc/ohm/issues/324) for the reasons behind this change.
 
