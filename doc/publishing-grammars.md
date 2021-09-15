@@ -13,8 +13,8 @@ languages, each language should be exported as a separate object. E.g., a
 package supporting multiple versions of Python might be used like this:
 
 ```js
-var python2 = require('./your-python-package').python2;
-var result = python2.grammar.match('print 3');
+const {python2} = require('./your-python-package');
+const result = python2.grammar.match('print 3');
 python2.createSemantics(result).eval();
 ```
 
@@ -23,8 +23,8 @@ the primary language from the top-level module, and the other languages as
 separate modules within the same package:
 
 ```js
-var smalltalk = require('./your-smalltalk-package');
-var smalltalk72 = require('./your-smalltalk-package/smalltalk72');
+const smalltalk = require('./your-smalltalk-package');
+const smalltalk72 = require('./your-smalltalk-package/smalltalk72');
 ```
 
 ## Package Naming
