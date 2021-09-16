@@ -46,7 +46,7 @@ Try to match `str` against `g`, returning a Trace object. `optStartRule` has the
 
 Create a new [Semantics](#semantics) object for `g`.
 
-<b><pre class="api">g.extendSemantics(superSemantics: Semantics) &rarr; Semantics</pre></b>
+<b><pre class="api" id="extendSemantics">g.extendSemantics(superSemantics: Semantics) &rarr; Semantics</pre></b>
 
 Create a new [Semantics](#semantics) object for `g` that inherits all of the operations and attributes in `superSemantics`. `g` must be a descendent of the grammar associated with `superSemantics`.
 
@@ -116,12 +116,12 @@ An Operation represents a function that can be applied to a successful match res
 
 An Attribute is an Operation whose result is memoized, i.e., it is evaluated at most once for any given node.
 
-A Semantics is a family of operations and/or attributes for a given grammar. A grammar may have any number of Semantics instances associated with it -- this means that the clients of a grammar (even in the same program) never have to worry about operation/attribute name clashes.
+A Semantics is a family of operations and/or attributes for a given grammar. A grammar may have any number of Semantics instances associated with it — this means that the clients of a grammar (even in the same program) never have to worry about operation/attribute name clashes.
 
 ### Semantics objects
 
 Operations and attributes are accessed by applying a semantics instance to a [MatchResult](#matchresult-objects).
-This returns a parse node, whose properties correspond to the operations and attributes of the semantics. For example, to invoke an operation named 'prettyPrint': `mySemantics(matchResult).prettyPrint()`. Attributes are accessed using property syntax -- e.g., for an attribute named 'value': `mySemantics(matchResult).value`.
+This returns a parse node, whose properties correspond to the operations and attributes of the semantics. For example, to invoke an operation named 'prettyPrint': `mySemantics(matchResult).prettyPrint()`. Attributes are accessed using property syntax — e.g., for an attribute named 'value': `mySemantics(matchResult).value`.
 
 A Semantics instance `s` has the following methods, which all return `this` so they can be chained:
 
@@ -137,7 +137,7 @@ Exactly like `semantics.addOperation`, except it will add an Attribute to the se
 
 <b><pre class="api">mySemantics.extendOperation(name: string, actionDict: object) &rarr; Semantics</pre></b>
 
-Extend the Operation named `name` with the semantic actions contained in `actionDict`. `name` must be the name of an operation in the super semantics.
+Extend the Operation named `name` with the semantic actions contained in `actionDict`. `name` must be the name of an operation in the super semantics — i.e., you must first extend the Semantics via [`extendSemantics`](#extendSemantics) before you can extend any of its operations.
 
 <b><pre class="api">semantics.extendAttribute(name: string, actionDict: object) &rarr; Semantics</pre></b>
 

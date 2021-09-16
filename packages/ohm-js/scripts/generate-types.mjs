@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {fileURLToPath, URL} from 'url';
 
-import ohm from '../src/main.js';
+import ohm from 'ohm-js';
 import {getActionDecls} from '@ohm-js/cli/src/helpers/generateTypes.js';
 
 /*
