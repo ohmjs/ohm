@@ -4923,7 +4923,7 @@ ts-loader@^8.0.4:
     micromatch "^4.0.0"
     semver "^7.3.4"
 
-ts-morph@^0.11.0:
+ts-morph@^12.0.0:
   version "12.0.0"
   resolved "https://registry.yarnpkg.com/ts-morph/-/ts-morph-12.0.0.tgz#a601c3538703755cbfa2d42b62c52df73e9dbbd7"
   integrity sha512-VHC8XgU2fFW7yO1f/b3mxKDje1vmyzFXHWzOYmKEkCEwcLjDtbdLgBQviqj4ZwP4MJkQtRo6Ha2I29lq/B+VxA==

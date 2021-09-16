@@ -19,13 +19,15 @@ export interface ${grammarName}ActionDict<T> extends ActionDict<T> {
 }
 
 export interface ${grammarName}Semantics extends Semantics {
-  addOperation<T=any>(name: string, actionDict: ${grammarName}ActionDict<T>): this;
-  // TODO: extendOperation, addAttribute, extendAttribute
+  addOperation<T>(name: string, actionDict: ${grammarName}ActionDict<T>): this;
+  extendOperation<T>(name: string, actionDict: ${grammarName}ActionDict<T>): this;
+  addAttribute<T>(name: string, actionDict: ${grammarName}ActionDict<T>): this;
+  extendAttribute<T>(name: string, actionDict: ${grammarName}ActionDict<T>): this;
 }
 
 export interface ${grammarName}Grammar extends Grammar {
   createSemantics(): ${grammarName}Semantics;
-  // TODO: extendSemantics
+  extendSemantics(superSemantics: ${grammarName}Semantics): ${grammarName}Semantics;
 }
 
 declare const grammar: ${grammarName}Grammar;
