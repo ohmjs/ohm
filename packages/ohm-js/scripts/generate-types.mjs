@@ -1,8 +1,8 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'fs/promises';
+import ohm from 'ohm-js';
+import prettier from 'prettier';
 import {fileURLToPath, URL} from 'url';
 
-import ohm from 'ohm-js';
 import {getActionDecls} from '@ohm-js/cli/src/helpers/generateTypes.js';
 
 /*
@@ -21,16 +21,21 @@ const render = (template, vars) =>
     return vars[name]; // Variable substitution.
   });
 
-(function main() {
+(async function main() {
   // Get the BuiltInRules grammar and generate the types.
   const BuiltInRules = ohm.ohmGrammar.superGrammar;
   const builtInRuleActions = ['', ...getActionDecls(BuiltInRules)].join('\n    ');
 
   // Render index.d.ts from the template, overwriting the existing file contents.
-  const template = fs.readFileSync(templatePath, 'utf-8');
+  const template = await fs.readFile(templatePath, 'utf-8');
   const output = render(template, {
     builtInRuleActions,
     doNotEditBanner
   });
-  fs.writeFileSync(new URL('../index.d.ts', import.meta.url), output, 'utf-8');
+  const options = await prettier.resolveConfig(fileURLToPath(templatePath));
+  const formattedOutput = prettier.format(output, {
+    ...options,
+    parser: 'typescript'
+  });
+  await fs.writeFile(new URL('../index.d.ts', import.meta.url), formattedOutput, 'utf-8');
 })();
