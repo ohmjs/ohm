@@ -13,8 +13,6 @@ const pexprs = require('./pexprs');
 const util = require('./util');
 const version = require('./version');
 
-const isBuffer = require('is-buffer');
-
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
@@ -24,6 +22,11 @@ const isBuffer = require('is-buffer');
 let ohmGrammar;
 
 const superSplicePlaceholder = Object.create(pexprs.PExpr.prototype);
+
+const isBuffer = obj =>
+  !!obj.constructor &&
+  typeof obj.constructor.isBuffer === 'function' &&
+  obj.constructor.isBuffer(obj);
 
 // Returns a Grammar instance (i.e., an object with a `match` method) for
 // `tree`, which is the concrete syntax tree of a user-written grammar.

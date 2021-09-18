@@ -1,12 +1,6 @@
 'use strict';
 
 // --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const extend = require('util-extend');
-
-// --------------------------------------------------------------------
 // Private Stuff
 // --------------------------------------------------------------------
 
@@ -67,12 +61,10 @@ exports.defineLazyProperty = function(obj, propName, getterFn) {
 
 exports.clone = function(obj) {
   if (obj) {
-    return extend({}, obj);
+    return Object.assign({}, obj);
   }
   return obj;
 };
-
-exports.extend = extend;
 
 exports.repeatFn = function(fn, n) {
   const arr = [];

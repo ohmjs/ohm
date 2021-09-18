@@ -7,7 +7,6 @@
 const pexprs = require('../src/pexprs');
 const MatchResult = require('../src/MatchResult');
 const Grammar = require('../src/Grammar');
-const extend = require('util-extend');
 
 // --------------------------------------------------------------------
 // Operations
@@ -115,8 +114,8 @@ function toAST(res, mapping) {
     throw new Error('toAST() expects a succesfull MatchResult as first parameter');
   }
 
-  mapping = extend({}, mapping);
-  const operation = extend({}, defaultOperation);
+  mapping = Object.assign({}, mapping);
+  const operation = Object.assign({}, defaultOperation);
   for (const termName in mapping) {
     if (typeof mapping[termName] === 'function') {
       operation[termName] = mapping[termName];

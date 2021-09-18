@@ -180,7 +180,7 @@ Grammar.prototype = {
     return false;
   },
 
-  toRecipe(optVarName) {
+  toRecipe() {
     const metaInfo = {};
     // Include the grammar source if it is available.
     if (this.source) {

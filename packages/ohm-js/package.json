@@ -77,10 +77,7 @@
     "sfinnie <scott.finnie@gmail.com>",
     "Mike Niebling <(none)>"
   ],
-  "dependencies": {
-    "is-buffer": "^2.0.4",
-    "util-extend": "^1.0.3"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@ohm-js/cli": "^0.1.0",
     "ava": "^3.15.0",

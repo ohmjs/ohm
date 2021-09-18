@@ -1,12 +1,6 @@
 'use strict';
 
 // --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const extend = require('util-extend');
-
-// --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
@@ -40,7 +34,7 @@ Namespace.extend = function(namespace, optProps) {
       configurable: true
     }
   });
-  return extend(ns, optProps);
+  return Object.assign(ns, optProps);
 };
 
 // TODO: Should this be a regular method?
