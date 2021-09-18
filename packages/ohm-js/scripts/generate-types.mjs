@@ -1,4 +1,4 @@
-import fs from 'fs/promises';
+import fs from 'fs';
 import ohm from 'ohm-js';
 import prettier from 'prettier';
 import {fileURLToPath, URL} from 'url';
@@ -27,7 +27,7 @@ const render = (template, vars) =>
   const builtInRuleActions = ['', ...getActionDecls(BuiltInRules)].join('\n    ');
 
   // Render index.d.ts from the template, overwriting the existing file contents.
-  const template = await fs.readFile(templatePath, 'utf-8');
+  const template = await fs.promises.readFile(templatePath, 'utf-8');
   const output = render(template, {
     builtInRuleActions,
     doNotEditBanner
@@ -37,5 +37,9 @@ const render = (template, vars) =>
     ...options,
     parser: 'typescript'
   });
-  await fs.writeFile(new URL('../index.d.ts', import.meta.url), formattedOutput, 'utf-8');
+  await fs.promises.writeFile(
+    new URL('../index.d.ts', import.meta.url),
+    formattedOutput,
+    'utf-8'
+  );
 })();
