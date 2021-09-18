@@ -16,7 +16,7 @@ declare namespace ohm {
    * https://git.io/J0gnK for more info.
    * @deprecated
    */
-  function grammarFromScriptElement(node?: Node, namespace?: Namespace): Grammar;
+  function grammarFromScriptElement(node?: unknown, namespace?: Namespace): Grammar;
 
   /**
    * Create a new Namespace containing Grammar instances for all of the
@@ -31,7 +31,7 @@ declare namespace ohm {
    * https://git.io/J0gnK for more info.
    * @deprecated
    */
-  function grammarsFromScriptElements(nodeList?: NodeList, namespace?: Namespace): Namespace;
+  function grammarsFromScriptElements(nodeList?: unknown, namespace?: Namespace): Namespace;
 
   /**
    * Create a new namespace. If props is specified, all of its properties
