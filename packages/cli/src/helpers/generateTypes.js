@@ -1,40 +1,39 @@
 'use strict';
 
-const ohm = require('ohm-js');
 const {getNodeTypes} = require('./getNodeTypes');
 
-const createDeclarations = (grammarName, actionDecls) =>
+const getImports = (includeNamespace = false) =>
   `import {
   ActionDict,
   Grammar,
-  IterationNode,
+  IterationNode,${includeNamespace ? '\n  Namespace,' : ''}
   Node,
   NonterminalNode,
   Semantics,
   TerminalNode
-} from 'ohm-js';
+} from 'ohm-js';`;
 
-export interface ${grammarName}ActionDict<T> extends ActionDict<T> {
+const createDeclarations = (grammarName, superGrammarName, actionDecls) => {
+  const actionDictType = `${grammarName}ActionDict<T>`;
+  const actionDictSuperType = `${superGrammarName || ''}ActionDict<T>`;
+  const semanticsType = `${grammarName}Semantics`;
+  return `export interface ${actionDictType} extends ${actionDictSuperType} {
   ${actionDecls.join('\n  ')}
 }
 
-export interface ${grammarName}Semantics extends Semantics {
-  addOperation<T>(name: string, actionDict: ${grammarName}ActionDict<T>): this;
-  extendOperation<T>(name: string, actionDict: ${grammarName}ActionDict<T>): this;
-  addAttribute<T>(name: string, actionDict: ${grammarName}ActionDict<T>): this;
-  extendAttribute<T>(name: string, actionDict: ${grammarName}ActionDict<T>): this;
+export interface ${semanticsType} extends Semantics {
+  addOperation<T>(name: string, actionDict: ${actionDictType}): this;
+  extendOperation<T>(name: string, actionDict: ${actionDictType}): this;
+  addAttribute<T>(name: string, actionDict: ${actionDictType}): this;
+  extendAttribute<T>(name: string, actionDict: ${actionDictType}): this;
 }
 
 export interface ${grammarName}Grammar extends Grammar {
-  createSemantics(): ${grammarName}Semantics;
-  extendSemantics(superSemantics: ${grammarName}Semantics): ${grammarName}Semantics;
+  createSemantics(): ${semanticsType};
+  extendSemantics(superSemantics: ${semanticsType}): ${semanticsType};
 }
-
-declare const grammar: ${grammarName}Grammar;
-export default grammar;
 `;
-
-const BuiltInRules = ohm.ohmGrammar.superGrammar;
+};
 
 function getActionDecls(grammar) {
   return Object.entries(grammar.rules).map(([ruleName, ruleInfo]) => {
@@ -44,15 +43,44 @@ function getActionDecls(grammar) {
   });
 }
 
-function generateTypes(grammar) {
-  const actionDecls = [];
-  for (let g = grammar; g !== BuiltInRules; g = g.superGrammar) {
-    actionDecls.push(...getActionDecls(g));
+const getDefaultExport = typeName =>
+  `declare const grammar: ${typeName};
+export default grammar;
+`;
+
+function generateTypesForGrammar(grammar) {
+  let superGrammarName;
+  if (!grammar.superGrammar.isBuiltIn()) {
+    superGrammarName = grammar.superGrammar.name;
   }
-  return createDeclarations(grammar.name, actionDecls);
+  return createDeclarations(grammar.name, superGrammarName, getActionDecls(grammar));
+}
+
+const getNamespaceExport = ns =>
+  `declare const ns: {
+${Object.keys(ns)
+      .map(name => `  ${name}: ${name}Grammar;\n`)
+      .join('')}};
+export default ns;
+`;
+
+function generateTypes(grammars) {
+  const isExactlyOneGrammar = Object.keys(grammars).length === 1;
+  const sections = [getImports(!isExactlyOneGrammar), ''];
+
+  for (const grammar of Object.values(grammars)) {
+    sections.push(generateTypesForGrammar(grammar));
+  }
+  if (isExactlyOneGrammar) {
+    const grammarName = Object.values(grammars)[0].name;
+    sections.push(getDefaultExport(`${grammarName}Grammar`));
+  } else {
+    sections.push(getNamespaceExport(grammars));
+  }
+  return sections.join('\n');
 }
 
 module.exports = {
-  getActionDecls,
-  generateTypes
+  generateTypes,
+  getActionDecls
 };

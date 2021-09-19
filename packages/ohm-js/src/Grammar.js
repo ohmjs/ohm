@@ -180,16 +180,11 @@ Grammar.prototype = {
     return false;
   },
 
-  toRecipe() {
+  toRecipe(superGrammarExpr = undefined) {
     const metaInfo = {};
     // Include the grammar source if it is available.
     if (this.source) {
       metaInfo.source = this.source.contents;
-    }
-
-    let superGrammar = null;
-    if (this.superGrammar && !this.superGrammar.isBuiltIn()) {
-      superGrammar = JSON.parse(this.superGrammar.toRecipe());
     }
 
     let startRule = null;
@@ -228,15 +223,21 @@ Grammar.prototype = {
       ];
     });
 
-    const recipe = JSON.stringify([
-      'grammar',
-      metaInfo,
-      this.name,
-      superGrammar,
-      startRule,
-      rules
-    ]);
-    return jsonToJS(recipe);
+    // If the caller provided an expression to use for the supergrammar, use that.
+    // Otherwise, if the supergrammar is a user grammar, use its recipe inline.
+    let superGrammarOutput = 'null';
+    if (superGrammarExpr) {
+      superGrammarOutput = superGrammarExpr;
+    } else if (this.superGrammar && !this.superGrammar.isBuiltIn()) {
+      superGrammarOutput = this.superGrammar.toRecipe();
+    }
+
+    const recipeElements = [
+      ...['grammar', metaInfo, this.name].map(JSON.stringify),
+      superGrammarOutput,
+      ...[startRule, rules].map(JSON.stringify)
+    ];
+    return jsonToJS(`[${recipeElements.join(',')}]`);
   },
 
   // TODO: Come up with better names for these methods.

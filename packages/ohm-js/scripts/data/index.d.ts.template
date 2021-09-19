@@ -59,6 +59,9 @@ declare namespace ohm {
     superGrammar: Grammar;
     rules: {[ruleName: string]: RuleInfo};
 
+    /** Return true if the grammar is a built-in grammar, otherwise false. */
+    isBuiltIn(): boolean;
+
     /**
      * Try to match input with this grammar, returning a MatchResult. If
      * startRule is given, it specifies the rule on which to start
