@@ -75,15 +75,14 @@ function generateRecipe(grammarPath, grammars, writer) {
   // If it's a single-grammar source file, the default export is the grammar.
   // Otherwise, the export is a (possibly empty) Namespace containing the grammars.
   if (!isSingleGrammar) {
-    output += 'const ns=ohm.createNamespace();';
+    output += 'const ns=module.exports=ohm.createNamespace();';
   }
   for (const [name, grammar] of Object.entries(grammars)) {
     const {superGrammar} = grammar;
     const superGrammarExpr = superGrammar.isBuiltIn() ? undefined : `ns.${superGrammar.name}`;
-    output += isSingleGrammar ? 'const g=' : `ns.${name}=`;
+    output += isSingleGrammar ? 'module.exports=' : `ns.${name}=`;
     output += `ohm.makeRecipe(${grammar.toRecipe(superGrammarExpr)});`;
   }
-  output += `module.exports=${isSingleGrammar ? 'g' : 'ns'}`;
   writer.write(outputFilename, output);
 }
 

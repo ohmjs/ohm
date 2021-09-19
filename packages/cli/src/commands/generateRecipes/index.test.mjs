@@ -1,5 +1,6 @@
 import test from 'ava';
 import {dirname} from 'path';
+import requireFromString from 'require-from-string';
 import {fileURLToPath} from 'url';
 
 import generateRecipesCommand from './index.js';
@@ -47,6 +48,9 @@ test('arithmetic grammar with no types', t => {
   const {filesToWrite} = generateRecipes(['arithmetic.ohm'], baseOpts);
   t.deepEqual(Object.keys(filesToWrite), ['arithmetic.ohm-recipe.js']);
   t.snapshot(filesToWrite['arithmetic.ohm-recipe.js']);
+
+  const g = requireFromString(filesToWrite['arithmetic.ohm-recipe.js']);
+  t.true(g.match('1+2').succeeded());
 });
 
 test('arithmetic grammar with types', t => {
@@ -55,6 +59,15 @@ test('arithmetic grammar with types', t => {
     'arithmetic.ohm-recipe.js',
     'arithmetic.ohm-recipe.d.ts'
   ]);
-  t.snapshot(filesToWrite['arithmetic.ohm-recipe.js']);
   t.snapshot(filesToWrite['arithmetic.ohm-recipe.d.ts']);
+});
+
+test('multiple grammars', t => {
+  const {filesToWrite} = generateRecipes(['e/f/g.ohm'], baseOpts);
+  t.deepEqual(Object.keys(filesToWrite), ['e/f/g.ohm-recipe.js']);
+  console.log(filesToWrite['e/f/g.ohm-recipe.js']);
+
+  const ns = requireFromString(filesToWrite['e/f/g.ohm-recipe.js']);
+  t.true(ns.G.match('G').succeeded());
+  t.true(ns.G2.match('G2').succeeded());
 });

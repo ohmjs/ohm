@@ -161,6 +161,11 @@
   resolved "https://registry.yarnpkg.com/@types/parse-json/-/parse-json-4.0.0.tgz#2f8bb441434d163b35fb8ffdccd7138927ffb8c0"
   integrity sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==
 
+"@types/require-from-string@^1.2.1":
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/@types/require-from-string/-/require-from-string-1.2.1.tgz#50292d824e2244628c0b961c6a1a583fdc494554"
+  integrity sha512-mIDK7lTHc0uW67SxPIqkwCrxmdKBV5aAET560hyZnT8c6Ekp9Aah3GPqe8Pl1Yzn/i2NMYmYv+HiMLwjGDCIAQ==
+
 "@webassemblyjs/ast@1.9.0":
   version "1.9.0"
   resolved "https://registry.yarnpkg.com/@webassemblyjs/ast/-/ast-1.9.0.tgz#bd850604b4042459a5a41cd7d338cbed695ed964"

@@ -4,6 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
+const Grammar = require('./Grammar');
 const GrammarDecl = require('./GrammarDecl');
 const pexprs = require('./pexprs');
 
@@ -24,7 +25,10 @@ Builder.prototype = {
   grammar(metaInfo, name, superGrammar, defaultStartRule, rules) {
     const gDecl = new GrammarDecl(name);
     if (superGrammar) {
-      gDecl.withSuperGrammar(this.fromRecipe(superGrammar));
+      // `superGrammar` may be a recipe (i.e. an Array), or an actual grammar instance.
+      gDecl.withSuperGrammar(
+        superGrammar instanceof Grammar ? superGrammar : this.fromRecipe(superGrammar)
+      );
     }
     if (defaultStartRule) {
       gDecl.withDefaultStartRule(defaultStartRule);
