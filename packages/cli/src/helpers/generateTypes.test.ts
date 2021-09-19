@@ -18,7 +18,9 @@ function typeCheck(name: string, grammarSource: string, tsSource: string) {
   // I couldn't figure out the right way to properly import 'ohm-js' when using ts-morph's
   // in-memory file system, so create a fake file and stuff in the correct contents.
   project.createSourceFile('hackyInMemoryOhmDecls.d.ts', ohmDTSContents);
-  const recipeDtsContents = generateTypes(ohm.grammar(grammarSource)).replace(
+
+  const grammars = ohm.grammars(grammarSource);
+  const recipeDtsContents = generateTypes(grammars).replace(
     `from 'ohm-js'`,
     `from './hackyInMemoryOhmDecls'`
   );
@@ -36,6 +38,12 @@ const grammarSources = {
     G {
       start = letters
       letters = letter+
+    }
+  `,
+  g2: dedent`
+    G2 <: G {
+      start += digits
+      digits = digit+
     }
   `
 };
@@ -63,11 +71,28 @@ const createMainSource = (actionsSource: string) => dedent`
 // -----
 
 test('.d.ts. contents', t => {
-  t.snapshot(generateTypes(ohm.grammar(grammarSources.g)));
+  const {g, g2} = grammarSources;
+  t.snapshot(generateTypes(ohm.grammars(g)));
+  t.snapshot(generateTypes(ohm.grammars(g + g2)));
+  t.snapshot(generateTypes(ohm.grammars('')));
 });
 
-test('basic working example', t => {
+test('basic example, one grammar', t => {
   const diagnostics = typeCheck('g', grammarSources.g, createMainSource(defaultActionsSource));
+  t.deepEqual(diagnostics, []);
+});
+
+test('basic example, multiple grammars', t => {
+  const {g, g2} = grammarSources;
+  let mainSource = createMainSource(defaultActionsSource);
+  mainSource += dedent`
+    import {G2Grammar} from './g.ohm-recipe';
+    const g2: G2Grammar = ohm.grammar(\`${grammarSources.g2}\`);
+    const s2 = g2.createSemantics().addOperation<number>('op', {
+      ${defaultActionsSource}
+    });
+  `;
+  const diagnostics = typeCheck('g', g + g2, mainSource);
   t.deepEqual(diagnostics, []);
 });
 

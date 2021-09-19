@@ -54,33 +54,43 @@ function generateRecipes(patterns, opts) {
     if (path.extname(sourcePath) !== OHM_FILE_EXT) continue;
 
     const grammarSource = fs.readFileSync(sourcePath, 'utf-8');
-    const grammar = ohm.grammar(grammarSource);
-
-    generateRecipe(sourceFilename, grammar, writer);
+    const grammars = ohm.grammars(grammarSource);
+    generateRecipe(sourceFilename, grammars, writer);
     if (withTypes) {
-      generateTypesWithWriter(sourceFilename, grammar, writer);
+      generateTypesWithWriter(sourceFilename, grammars, writer);
     }
   }
 
   return plan.plan;
 }
 
-function generateRecipe(grammarPath, grammar, writer) {
+function generateRecipe(grammarPath, grammars, writer) {
   assertFileExtensionEquals(grammarPath, OHM_FILE_EXT);
 
   const outputFilename = `${grammarPath}-recipe.js`;
-  writer.write(
-      outputFilename,
-      `'use strict';module.exports=require('ohm-js').makeRecipe(${grammar.toRecipe()});`
-  );
+  const isSingleGrammar = Object.keys(grammars).length === 1;
+
+  let output = "'use strict';const ohm=require('ohm-js');";
+
+  // If it's a single-grammar source file, the default export is the grammar.
+  // Otherwise, the export is a (possibly empty) Namespace containing the grammars.
+  if (!isSingleGrammar) {
+    output += 'const ns=module.exports=ohm.createNamespace();';
+  }
+  for (const [name, grammar] of Object.entries(grammars)) {
+    const {superGrammar} = grammar;
+    const superGrammarExpr = superGrammar.isBuiltIn() ? undefined : `ns.${superGrammar.name}`;
+    output += isSingleGrammar ? 'module.exports=' : `ns.${name}=`;
+    output += `ohm.makeRecipe(${grammar.toRecipe(superGrammarExpr)});`;
+  }
+  writer.write(outputFilename, output);
 }
 
-function generateTypesWithWriter(grammarPath, grammar, writer) {
+function generateTypesWithWriter(grammarPath, grammars, writer) {
   assertFileExtensionEquals(grammarPath, OHM_FILE_EXT);
 
-  const typeDecls = generateTypes(grammar);
   const filename = path.basename(grammarPath);
-  const contents = [createBanner(filename), '', typeDecls].join('\n');
+  const contents = [createBanner(filename), '', generateTypes(grammars), ''].join('\n');
   writer.write(`${grammarPath}-recipe.d.ts`, contents);
 }
 
