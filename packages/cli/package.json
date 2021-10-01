@@ -1,6 +1,6 @@
 {
   "name": "@ohm-js/cli",
-  "version": "0.1.1",
+  "version": "1.0.0-pre.1",
   "description": "Command line interface for ohm-js, a parsing toolkit for JavaScript.",
   "main": "index.js",
   "repository": "https://github.com/harc/ohm",
