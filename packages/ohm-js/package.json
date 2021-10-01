@@ -18,6 +18,7 @@
   "homepage": "https://ohmlang.github.io/",
   "bugs": "https://github.com/harc/ohm/issues",
   "main": "src/main.js",
+  "files": ["src", "dist", "extras", "third_party", "index.d.ts"],
   "types": "index.d.ts",
   "scripts": {
     "prebootstrap": "bash scripts/prebootstrap",
@@ -30,7 +31,7 @@
     "test": "ava && ava --config ava-ts.config.js test/test-typings.ts",
     "test-watch": "ava --watch",
     "pre-commit": "yarn run lint && yarn run build && yarn run test",
-    "prepublishOnly": "cp ../README.md .",
+    "prepublishOnly": "cp ../../README.md .",
     "postpublish": "rm README.md",
     "unsafe-bootstrap": "bash scripts/bootstrap",
     "version-package": "bash scripts/version",
