@@ -4,7 +4,7 @@
   "description": "An example of using Ohm in a TypeScript project.",
   "private": true,
   "dependencies": {
-    "ohm-js": "^16.0.0-pre.2"
+    "ohm-js": "^16.0.0"
   },
   "devDependencies": {
     "@ohm-js/cli": "^0.1.0",

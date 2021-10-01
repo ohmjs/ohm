@@ -16,6 +16,6 @@
   "license": "MIT",
   "devDependencies": {},
   "dependencies": {
-    "ohm-js": "^15.0.1"
+    "ohm-js": "^16.0.0"
   }
 }
