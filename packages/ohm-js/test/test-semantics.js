@@ -956,3 +956,21 @@ test('action call stacks', t => {
       ].join('\n')
   );
 });
+
+test('error message for incorrect _iter or _nonterminal arity', t => {
+  const g = ohm.grammar('G {}');
+
+  /* eslint-disable max-len */
+  t.throws(() => g.createSemantics().addOperation('foo', {_iter(x) {}}), {
+    message:
+      /Semantic action '_iter' has the wrong arity: it should use a rest parameter, e.g. `_iter\(...children\) {}`/
+  });
+  t.throws(() => g.createSemantics().addOperation('foo', {_nonterminal(x) {}}), {
+    message:
+      /Semantic action '_nonterminal' has the wrong arity: it should use a rest parameter, e.g. `_nonterminal\(...children\) {}`/
+  });
+  /* eslint-enable max-len */
+  t.throws(() => g.createSemantics().addOperation('foo', {_terminal(x) {}}), {
+    message: /Semantic action '_terminal' has the wrong arity: expected 0, got 1/
+  });
+});

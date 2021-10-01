@@ -121,37 +121,37 @@ Grammar.prototype = {
     const problems = [];
     for (const k in actionDict) {
       const v = actionDict[k];
-      if (!SPECIAL_ACTION_NAMES.includes(k) && !(k in this.rules)) {
-        problems.push("'" + k + "' is not a valid semantic action for '" + this.name + "'");
-      } else if (typeof v !== 'function') {
-        problems.push(
-            "'" + k + "' must be a function in an action dictionary for '" + this.name + "'"
-        );
-      } else {
-        const actual = v.length;
-        const expected = this._topDownActionArity(k);
-        if (actual !== expected) {
-          problems.push(
-              "Semantic action '" +
-              k +
-              "' has the wrong arity: " +
-              'expected ' +
-              expected +
-              ', got ' +
-              actual
-          );
+      const isSpecialAction = SPECIAL_ACTION_NAMES.includes(k);
+
+      if (!isSpecialAction && !(k in this.rules)) {
+        problems.push(`'${k}' is not a valid semantic action for '${this.name}'`);
+        continue;
+      }
+      if (typeof v !== 'function') {
+        problems.push(`'${k}' must be a function in an action dictionary for '${this.name}'`);
+        continue;
+      }
+      const actual = v.length;
+      const expected = this._topDownActionArity(k);
+      if (actual !== expected) {
+        let details;
+        if (k === '_iter' || k === '_nonterminal') {
+          details =
+            `it should use a rest parameter, e.g. \`${k}(...children) {}\`. ` +
+            'NOTE: this is new in Ohm v16 — see https://git.io/Jz4CI for details.';
+        } else {
+          details = `expected ${expected}, got ${actual}`;
         }
+        problems.push(`Semantic action '${k}' has the wrong arity: ${details}`);
       }
     }
     if (problems.length > 0) {
       const prettyProblems = problems.map(problem => '- ' + problem);
       const error = new Error(
-          "Found errors in the action dictionary of the '" +
-          name +
-          "' " +
-          what +
-          ':\n' +
-          prettyProblems.join('\n')
+          [
+            `Found errors in the action dictionary of the '${name}' ${what}:`,
+            ...prettyProblems
+          ].join('\n')
       );
       error.problems = problems;
       throw error;
