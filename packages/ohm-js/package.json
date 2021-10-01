@@ -31,8 +31,8 @@
     "test": "ava && ava --config ava-ts.config.js test/test-typings.ts",
     "test-watch": "ava --watch",
     "pre-commit": "yarn run lint && yarn run build && yarn run test",
-    "prepublishOnly": "cp ../../README.md .",
-    "postpublish": "rm README.md",
+    "prepack": "cp ../../README.md . && yarn build",
+    "postpack": "rm README.md",
     "unsafe-bootstrap": "bash scripts/bootstrap",
     "version-package": "bash scripts/version",
     "watch": "webpack --mode=development --watch"
