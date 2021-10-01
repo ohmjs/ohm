@@ -1,7 +1,7 @@
 **/test/data/*
 *.css
 *.html
-*.ohm-recipe.*
+*.ohm-bundle.*
 dist
 third_party
 testdata

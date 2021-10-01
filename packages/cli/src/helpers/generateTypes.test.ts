@@ -20,12 +20,12 @@ function typeCheck(name: string, grammarSource: string, tsSource: string) {
   project.createSourceFile('hackyInMemoryOhmDecls.d.ts', ohmDTSContents);
 
   const grammars = ohm.grammars(grammarSource);
-  const recipeDtsContents = generateTypes(grammars).replace(
+  const bundleDtsContents = generateTypes(grammars).replace(
     `from 'ohm-js'`,
     `from './hackyInMemoryOhmDecls'`
   );
 
-  project.createSourceFile(`${name}.ohm-recipe.d.ts`, recipeDtsContents);
+  project.createSourceFile(`${name}.ohm-bundle.d.ts`, bundleDtsContents);
   project.createSourceFile(`${name}.ts`, tsSource);
 
   const diagnostics = project.getPreEmitDiagnostics();
@@ -59,7 +59,7 @@ const defaultActionsSource = dedent`
 
 const createMainSource = (actionsSource: string) => dedent`
   import * as ohm from './hackyInMemoryOhmDecls';
-  import {GGrammar} from './g.ohm-recipe';
+  import {GGrammar} from './g.ohm-bundle';
 
   const g: GGrammar = ohm.grammar(\`${grammarSources.g}\`);
   const s = g.createSemantics().addOperation<number>('op', {
@@ -86,7 +86,7 @@ test('basic example, multiple grammars', t => {
   const {g, g2} = grammarSources;
   let mainSource = createMainSource(defaultActionsSource);
   mainSource += dedent`
-    import {G2Grammar} from './g.ohm-recipe';
+    import {G2Grammar} from './g.ohm-bundle';
     const g2: G2Grammar = ohm.grammar(\`${grammarSources.g2}\`);
     const s2 = g2.createSemantics().addOperation<number>('op', {
       ${defaultActionsSource}

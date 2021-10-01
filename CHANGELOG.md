@@ -6,9 +6,9 @@
 
 - [2519de5] `grammarFromScriptElement` and `grammarsFromScriptElements` have been removed.
 - [74ff254] The ohm-js package now requires an ES2017 environment. This means that very old browsers (e.g., Internet Explorer and Edge 14 and below) are no longer supported. See [caniuse][caniuse-es2017] for an overview.
-- There is no longer a default semantic action for iteration nodes. *Release notes: [default semantic actions][default-semantic-actions].*
-- The [`_iter` and `_nonterminal` actions](./doc/api-reference.md#special-actions) now take a variable number of arguments, rather than a single `Node[]` argument. *Release notes: [args to _iter and _nonterminal actions][args-to-_iter-and-_nonterminal].*
-- (_TypeScript only_): On semantics objects, the methods `addOperation`, `extendOperation`, `addAttribute`, and `extendAttribute` now have a required type parameter, which is the return type of the operation (or the type of the attribute). The related types `Action` and `ActionDict` are similarly parameterized by the return type of the semantic actions. *Release notes: [type parameters for operations and actions][type-parameters].*
+- There is no longer a default semantic action for iteration nodes. _Release notes: [default semantic actions][default-semantic-actions]._
+- The [`_iter` and `_nonterminal` actions](./doc/api-reference.md#special-actions) now take a variable number of arguments, rather than a single `Node[]` argument. _Release notes: [args to \_iter and \_nonterminal actions][args-to-_iter-and-_nonterminal]._
+- (_TypeScript only_): On semantics objects, the methods `addOperation`, `extendOperation`, `addAttribute`, and `extendAttribute` now have a required type parameter, which is the return type of the operation (or the type of the attribute). The related types `Action` and `ActionDict` are similarly parameterized by the return type of the semantic actions. _Release notes: [type parameters for operations and actions][type-parameters]._
 
 [caniuse-es2017]: https://caniuse.com/async-functions,object-values,object-entries,mdn-javascript_builtins_object_getownpropertydescriptors,pad-start-end,mdn-javascript_grammar_trailing_commas_trailing_commas_in_functions
 [default-semantic-actions]: ./doc/releases/ohm-js-16.0.md#default-semantic-actions
@@ -17,11 +17,11 @@
 
 ### Other notable changes:
 
-- [7d69cde] Node.primitiveValue is now deprecated — [Node.sourceString][sourceString] is equivalent, and should be used instead.
+- [7d69cde] Node.primitiveValue is now deprecated — [Node.sourceString][sourcestring] is equivalent, and should be used instead.
 - Improvements and additions to the TypeScript declarations (index.d.ts) to make them more accurate and comprehensive.
 - [37a2091] The `generateExample` method has been removed from the PExpr class. (It was never part of Ohm's public API.)
 
-[sourceString]: ./doc/api-reference.md#Node-sourceString
+[sourcestring]: ./doc/api-reference.md#Node-sourceString
 
 ## v15.5.0 - Apr 5, 2021
 
