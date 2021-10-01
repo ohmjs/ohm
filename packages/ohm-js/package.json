@@ -57,9 +57,9 @@
     "Yoshiki Ohshima <Yoshiki.Ohshima@acm.org>",
     "stagas <gstagas@gmail.com>",
     "Jonathan Edwards <JonathanMEdwards@gmail.com>",
-    "Neil Jewers <njjewers@uwaterloo.ca>",
-    "Luca Guzzon <luca.guzzon@gmail.com>",
     "Milan Lajtoš <milan.lajtos@me.com>",
+    "Neil Jewers <njjewers@uwaterloo.ca>",
+    "Mike Niebling <(none)>",
     "AngryPowman <angrypowman@qq.com>",
     "Leslie Ying <acetophore@users.noreply.github.com>",
     "Pierre Donias <pierre.donias@gmail.com>",
@@ -67,6 +67,7 @@
     "Daniel Tomlinson <DanielTomlinson@me.com>",
     "Stan Rozenraukh <stan@stanistan.com>",
     "Stephan Seidt <stephan.seidt@gmail.com>",
+    "Steve Phillips <steve@tryingtobeawesome.com>",
     "Szymon Kaliski <kaliskiszymon@gmail.com>",
     "Thomas Nyberg <tomnyberg@gmail.com>",
     "Casey Olson <casey.m.olson@gmail.com>",
@@ -77,8 +78,8 @@
     "acslk <d_vd415@hotmail.com>",
     "codeZeilen <codeZeilen@users.noreply.github.com>",
     "owch <bowenrainyday@gmail.com>",
-    "sfinnie <scott.finnie@gmail.com>",
-    "Mike Niebling <(none)>"
+    "Luca Guzzon <luca.guzzon@gmail.com>",
+    "sfinnie <scott.finnie@gmail.com>"
   ],
   "dependencies": {},
   "devDependencies": {
