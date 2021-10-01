@@ -3,14 +3,14 @@ import ohm from 'ohm-js';
 
 /*
   In ../package.json, there is a 'generate' script that uses the Ohm command
-  line tool (from the @ohm-js/cli package) to generate a "recipe" for our
+  line tool (from the @ohm-js/cli package) to generate a "bundle" for our
   grammar, along with the corresponding TypeScript type definitions.
 
-  A recipe is a standalone CommonJS module from which we can directly import
+  A bundle is a standalone CommonJS module from which we can directly import
   our grammar(s). The associated .d.ts file also defines some useful related
   types, such as `ArithmeticSemantics`.
  */
-import grammar, {ArithmeticSemantics} from './arithmetic.ohm-recipe';
+import grammar, {ArithmeticSemantics} from './arithmetic.ohm-bundle';
 
 const constants: {[name: string]: number} = {
   pi: Math.PI,
