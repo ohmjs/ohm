@@ -1,8 +1,17 @@
 # Changelog
 
-## Upcoming release
+## v16.0.0 - Oct 1, 2021
+
+Ohm v16 is primarily about improving the experience of [using Ohm with TypeScript][using-ohm-with-typescript]. In order to do that, we needed to make some minor breaking changes. With the major version change, we also took the opportunity to clean up and simplify some parts of the API.
+
+All of the breaking changes are described below. For more information about how to modify your existing code to work with Ohm v16, see the [upgrade guide][upgrading].
+
+[using-ohm-with-typescript]: https://github.com/harc/ohm/blob/master/doc/typescript.md
+[upgrading]: https://github.com/harc/ohm/blob/master/doc/releases/ohm-js-16.0.md#upgrading
 
 ### Breaking changes:
+
+**API**
 
 - [2519de5] `grammarFromScriptElement` and `grammarsFromScriptElements` have been removed.
 - [74ff254] The ohm-js package now requires an ES2017 environment. This means that very old browsers (e.g., Internet Explorer and Edge 14 and below) are no longer supported. See [caniuse][caniuse-es2017] for an overview.
@@ -20,7 +29,7 @@
 - [7d69cde] Node.primitiveValue is now deprecated — [Node.sourceString][sourcestring] is equivalent, and should be used instead.
 - Improvements and additions to the TypeScript declarations (index.d.ts) to make them more accurate and comprehensive.
 - [37a2091] The `generateExample` method has been removed from the PExpr class. (It was never part of Ohm's public API.)
-- Removed the `ohm-js` executable, as it was only ever intended for internal use. The new @ohm-js/cli package can now be used to generate grammar bundles.
+- [bcbb864] Removed the `ohm-js` executable, as it was only ever intended for internal use. The new @ohm-js/cli package can now be used to generate grammar bundles.
 
 [sourcestring]: ./doc/api-reference.md#Node-sourceString
 
