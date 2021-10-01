@@ -18,7 +18,6 @@
   "homepage": "https://ohmlang.github.io/",
   "bugs": "https://github.com/harc/ohm/issues",
   "main": "src/main.js",
-  "bin": "src/ohm-cmd.js",
   "types": "index.d.ts",
   "scripts": {
     "prebootstrap": "bash scripts/prebootstrap",
