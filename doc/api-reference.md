@@ -242,7 +242,7 @@ The name of grammar rule that created the node.
 
 Captures the portion of the input that was consumed by the node.
 
-<b><pre class="api">n.sourceString: string</pre></b>
+<b><pre class="api" id="Node-sourceString">n.sourceString: string</pre></b>
 
 The substring of the input that was consumed by the node. Equivalent to `n.source.contents`.
 
