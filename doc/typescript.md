@@ -6,12 +6,6 @@ You can see some projects that are using Ohm with TypeScript [on Sourcegraph](ht
 
 ## Grammar-specific type definitions
 
----
-
-⚠️ _**Caution!** This section describes features that are only available in Ohm v16, which is not yet released. If you'd like to try these features out, you can install the [pre-release version of ohm-js v16](https://github.com/harc/ohm/blob/master/packages/ohm-js/package.json#L3), and follow the [migration guide](https://github.com/harc/ohm/blob/master/doc/releases/ohm-js-16.0.md#upgrading) to update your code._
-
----
-
 As of Ohm v16, it's also possible to generate type definitions that are specific to your grammar. The main advantages of this are:
 
 - the TypeScript compiler can check that your semantic actions have the correct number of arguments and a consistent return type.
