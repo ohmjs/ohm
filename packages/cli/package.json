@@ -6,6 +6,7 @@
   "repository": "https://github.com/harc/ohm",
   "author": "Patrick Dubroy <pdubroy@gmail.com>",
   "license": "MIT",
+  "files": ["**/*.js"],
   "dependencies": {
     "commander": "^8.1.0",
     "ohm-js": "^16.0.0",
