@@ -32,14 +32,30 @@ const semantics: ArithmeticSemantics = grammar.createSemantics();
   `NonterminalNode`, or `TerminalNode`), etc.
  */
 semantics.addOperation<number>('eval()', {
-  AddExp_plus: (x, _, y) => x.eval() + y.eval(),
-  AddExp_minus: (x, _, y) => x.eval() - y.eval(),
-  MulExp_times: (x, _, y) => x.eval() * y.eval(),
-  MulExp_divide: (x, _, y) => x.eval() / y.eval(),
-  ExpExp_power: (x, _, y) => Math.pow(x.eval(), y.eval()),
-  PriExp_paren: (_l, e, _r) => e.eval(),
-  PriExp_pos: (_, e) => e.eval(),
-  PriExp_neg: (_, e) => -e.eval(),
+  AddExp_plus(x, _, y) {
+    return x.eval() + y.eval();
+  },
+  AddExp_minus(x, _, y) {
+    return x.eval() - y.eval();
+  },
+  MulExp_times(x, _, y) {
+    return x.eval() * y.eval();
+  },
+  MulExp_divide(x, _, y) {
+    return x.eval() / y.eval();
+  },
+  ExpExp_power(x, _, y) {
+    return Math.pow(x.eval(), y.eval());
+  },
+  PriExp_paren(_l, e, _r) {
+    return e.eval();
+  },
+  PriExp_pos(_, e) {
+    return e.eval();
+  },
+  PriExp_neg(_, e) {
+    return -e.eval();
+  },
   ident(_l, _ns) {
     return constants[this.sourceString] || 0;
   },
