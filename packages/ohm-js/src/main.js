@@ -298,13 +298,13 @@ function grammars(source, optNamespace) {
 
 function grammarFromScriptElement(optNode) {
   throw new Error(
-      'grammarFromScriptElement was removed in Ohm v16.0. See https://git.io/J0gnK for more info.'
+      'grammarFromScriptElement was removed in Ohm v16.0. See https://git.io/Jwow5 for more info.'
   );
 }
 
 function grammarsFromScriptElements(optNodeOrNodeList) {
   throw new Error(
-      'grammarsFromScriptElements was removed in Ohm v16.0. See https://git.io/J0gnK for more info.'
+      'grammarsFromScriptElements was removed in Ohm v16.0. See https://git.io/Jwow5 for more info.'
   );
 }
 
