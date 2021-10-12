@@ -64,7 +64,7 @@ pexprs.Splice.prototype.outputRecipe = function(formals, grammarInterval) {
     'splice',
     getMetaInfo(this, grammarInterval),
     beforeTerms.map(term => term.outputRecipe(formals, grammarInterval)),
-    afterTerms.map(term => term.outputRecipe(formals, grammarInterval))
+    afterTerms.map(term => term.outputRecipe(formals, grammarInterval)),
   ];
 };
 
@@ -84,7 +84,7 @@ pexprs.Star.prototype.outputRecipe =
       return [
         this.constructor.name.toLowerCase(),
         getMetaInfo(this, grammarInterval),
-        this.expr.outputRecipe(formals, grammarInterval)
+        this.expr.outputRecipe(formals, grammarInterval),
       ];
     };
 
@@ -93,7 +93,7 @@ pexprs.Apply.prototype.outputRecipe = function(formals, grammarInterval) {
     'app',
     getMetaInfo(this, grammarInterval),
     this.ruleName,
-    this.args.map(arg => arg.outputRecipe(formals, grammarInterval))
+    this.args.map(arg => arg.outputRecipe(formals, grammarInterval)),
   ];
 };
 

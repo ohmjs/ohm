@@ -39,7 +39,7 @@ test('operations', t => {
     },
     digit(_) {
       return this.sourceString.charCodeAt(0) - '0'.charCodeAt(0);
-    }
+    },
   });
 
   t.is(s(Arithmetic.match('1+2')).value(), 3, 'single addExp');
@@ -58,7 +58,7 @@ test('operations', t => {
     },
     digit(d) {
       return this.sourceString;
-    }
+    },
   });
   t.deepEqual(s(Arithmetic.match('9')).numberValues(), [9]);
   t.deepEqual(s(Arithmetic.match('13+10*2*3')).numberValues(), [13, 10, 2, 3]);
@@ -73,7 +73,7 @@ test('operations', t => {
     },
     number(n) {
       return '#';
-    }
+    },
   });
   t.is(s(Arithmetic.match('1+2')).noArgs(), '##');
   t.throws(
@@ -81,7 +81,7 @@ test('operations', t => {
         s(Arithmetic.match('1*2')).noArgs();
       },
       {
-        message: 'Invalid number of arguments passed to noArgs operation (expected 0, got 1)'
+        message: 'Invalid number of arguments passed to noArgs operation (expected 0, got 1)',
       }
   );
 
@@ -89,7 +89,7 @@ test('operations', t => {
   t.throws(
       () => {
         s.addOperation('failSuccess', {
-          exp() {}
+          exp() {},
         });
       },
       {message: /wrong arity/}
@@ -98,7 +98,7 @@ test('operations', t => {
   s.addOperation('failSuccess', {
     exp(arg) {
       return arg.value();
-    }
+    },
   });
   t.truthy(s(Arithmetic.match('1+2')).failSuccess, 'operation added successfully');
   t.is(s(Arithmetic.match('1+2')).failSuccess(), 3, 'corrected operation');
@@ -118,7 +118,7 @@ test('operations with arguments', t => {
         ans = ans.concat(child.op1(this.args.level + 1));
       });
       return ans;
-    }
+    },
   });
   t.deepEqual(s(Arithmetic.match('1+2*3')).op1(0), ['1@L6', '2@L7', '3@L6']);
   t.throws(
@@ -126,7 +126,7 @@ test('operations with arguments', t => {
         s(Arithmetic.match('(5)-2')).op1();
       },
       {
-        message: 'Invalid number of arguments passed to op1 operation (expected 1, got 0)'
+        message: 'Invalid number of arguments passed to op1 operation (expected 1, got 0)',
       }
   );
   t.throws(
@@ -134,21 +134,21 @@ test('operations with arguments', t => {
         s(Arithmetic.match('(5)-2')).op1(1, 2);
       },
       {
-        message: 'Invalid number of arguments passed to op1 operation (expected 1, got 2)'
+        message: 'Invalid number of arguments passed to op1 operation (expected 1, got 2)',
       }
   );
 
   s.addOperation('op2(a, b)', {
     number(n) {
       return this.args.a * 100 + this.args.b * 10 + parseInt(this.sourceString);
-    }
+    },
   });
   t.throws(
       () => {
         s(Arithmetic.match('(5)-2')).op2();
       },
       {
-        message: 'Invalid number of arguments passed to op2 operation (expected 2, got 0)'
+        message: 'Invalid number of arguments passed to op2 operation (expected 2, got 0)',
       }
   );
   t.throws(
@@ -163,7 +163,7 @@ test('operations with arguments', t => {
         s(Arithmetic.match('(5)-2')).op1(1, 2, 3);
       },
       {
-        message: 'Invalid number of arguments passed to op1 operation (expected 1, got 3)'
+        message: 'Invalid number of arguments passed to op1 operation (expected 1, got 3)',
       }
   );
 
@@ -176,7 +176,7 @@ test('operations with arguments', t => {
           oldArgs,
           "make sure that calling other operations doesn't clobber the arguments of the caller"
       );
-    }
+    },
   });
   s(Arithmetic.match('(5)-2')).op3(1, 2, 3);
 });
@@ -204,7 +204,7 @@ test('attributes', t => {
     _terminal() {
       count++;
       return this.sourceString;
-    }
+    },
   });
 
   const simple = Arithmetic.match('1+2');
@@ -237,7 +237,7 @@ test('attributes', t => {
       },
       {
         message:
-        '"eval" is not a valid operation or attribute name in this semantics for "Arithmetic"'
+        '"eval" is not a valid operation or attribute name in this semantics for "Arithmetic"',
       }
   );
 
@@ -259,12 +259,12 @@ test("attributes - same-named attributes don't collide", t => {
   s1.addAttribute('attr', {
     start() {
       return val++;
-    }
+    },
   });
   s2.addAttribute('attr', {
     start() {
       return val++;
-    }
+    },
   });
 
   const m = g.match('');
@@ -377,13 +377,13 @@ test('_iter nodes', t => {
     '  letters = letter*',
     '  optLetter = letter?',
     '  ident = letter+',
-    '}'
+    '}',
   ]);
   let s = g.createSemantics().addOperation('op', {
     letters: passThroughOp,
     letter(l) {
       return l.sourceString;
-    }
+    },
   });
 
   const m = g.match('abc', 'letters');
@@ -393,7 +393,7 @@ test('_iter nodes', t => {
     letters: passThroughOp,
     letter(l) {
       return l.sourceString;
-    }
+    },
   });
   t.deepEqual(
       s(m).op(),
@@ -414,7 +414,7 @@ test('_iter nodes', t => {
     },
     letter(l) {
       return l.sourceString;
-    }
+    },
   });
   t.is(s(m).op(), 'a,b,c');
 
@@ -429,7 +429,7 @@ test('_iter nodes', t => {
     },
     ident(ls) {
       return ls.isOptional();
-    }
+    },
   });
   t.falsy(s(m).op(), '`ls` should NOT be optional for *');
   t.truthy(s(m2).op(), '`ls` should be optional for ?');
@@ -439,14 +439,14 @@ test('_iter nodes', t => {
 test('_terminal nodes', t => {
   const g = ohm.grammar('G { letters = letter* }');
   let s = g.createSemantics().addOperation('op', {
-    letters: passThroughOp
+    letters: passThroughOp,
   });
   const m = g.match('abc', 'letters');
 
   t.throws(
       () => {
         const s = g.createSemantics().addOperation('op', {
-          letters: passThroughOp
+          letters: passThroughOp,
         });
         s(m).op();
       },
@@ -457,7 +457,7 @@ test('_terminal nodes', t => {
       () => {
         g.createSemantics().addOperation('op', {
           letters: passThroughOp,
-          _terminal(x) {}
+          _terminal(x) {},
         });
       },
       {message: /wrong arity/}
@@ -470,7 +470,7 @@ test('_terminal nodes', t => {
       t.is(this.ctorName, '_terminal');
       t.is(this.children.length, 0, 'node has no children');
       return this.sourceString;
-    }
+    },
   });
   t.deepEqual(s(m).op(), ['a', 'b', 'c']);
 });
@@ -574,7 +574,7 @@ test('extending semantics', t => {
     '  three = "drei"',
     '}',
     'G3 <: G2 { }',
-    'G4 { }'
+    'G4 { }',
   ]);
 
   // Make sure operations behave as expected
@@ -586,12 +586,12 @@ test('extending semantics', t => {
         },
         two(_) {
           return 2;
-        }
+        },
       })
       .addOperation('valueTimesTwo', {
         _nonterminal(...children) {
           return this.value() * 2;
-        }
+        },
       });
   t.throws(
       () => {
@@ -641,7 +641,7 @@ test('extending semantics', t => {
     }, // overriding
     three(str) {
       return 3;
-    } // adding a new case
+    }, // adding a new case
   });
   let m = ns.G2.match('eins!', 'one');
   t.is(s2(m).value(), 21);
@@ -680,12 +680,12 @@ test('extending semantics', t => {
         },
         two(_) {
           return 2;
-        }
+        },
       })
       .addAttribute('valueTimesTwo', {
         _nonterminal(...children) {
           return this.value * 2;
-        }
+        },
       });
   t.throws(
       () => {
@@ -718,7 +718,7 @@ test('extending semantics', t => {
     }, // overriding
     three(str) {
       return 3;
-    } // adding a new case
+    }, // adding a new case
   });
   m = ns.G2.match('eins!', 'one');
   t.is(s2(m).value, 21);
@@ -745,7 +745,7 @@ test('extending semantics', t => {
   const s3 = ns.G2.extendSemantics(s2).extendAttribute('value', {
     one(str, _) {
       return 123;
-    }
+    },
   });
   m = ns.G2.match('eins!', 'one');
   t.is(s2(m).value, 21);
@@ -777,7 +777,7 @@ test('mixing nodes from one grammar with semantics from another', t => {
     '}',
     'Unrelated {',
     '  start = "asdf"',
-    '}'
+    '}',
   ]);
 
   const s = ns.G.createSemantics().addOperation('value', {
@@ -786,7 +786,7 @@ test('mixing nodes from one grammar with semantics from another', t => {
     },
     _terminal() {
       return this.sourceString;
-    }
+    },
   });
 
   let m = ns.G.match('aaa', 'start');
@@ -815,7 +815,7 @@ test('asIteration', t => {
     '  Start = ListOf<letter, ","> listOf<any, ".">',
     '  anyTwo = any any',
     '  anyThree = any any any',
-    '}'
+    '}',
   ]);
   const s = g.createSemantics().addAttribute('value', {
     Start(list1, list2) {
@@ -828,7 +828,7 @@ test('asIteration', t => {
     },
     any(_) {
       return this.sourceString;
-    }
+    },
   });
   t.is(s(g.match('a, b, c')).value, 'abc', 'one nonempty, one empty');
   t.is(s(g.match('a, b, c 1.2.3')).value, 'abc123', 'baby you and me');
@@ -842,13 +842,13 @@ test('asIteration', t => {
     },
     anyTwo(a, b) {
       return this.iteration([b, a]);
-    }
+    },
   });
   s.addAttribute('reversedValue', {
     anyTwo(a, b) {
       const arr = this.asIteration().children.map(c => c.value);
       return arr.join('');
-    }
+    },
   });
   t.is(s(g.match('a, b, c')).value, 'cba', 'overriding works');
   t.is(s(g.match('z9', 'anyTwo')).reversedValue, '9z');
@@ -880,7 +880,7 @@ test('sourceString', t => {
   const s = g.createSemantics().addOperation('foo', {
     Start(a, bs) {
       return this.sourceString + a.sourceString + bs.sourceString;
-    }
+    },
   });
   t.is(s(g.match('abb')).foo(), 'abbabb');
 });
@@ -894,7 +894,7 @@ test('sourceString - issue #188', t => {
     },
     num(digits) {
       return digits.sourceString;
-    }
+    },
   });
   t.is(s(g.match('1 22')).origSource(), '122');
 });
@@ -908,7 +908,7 @@ test('sourceString - issue #204', t => {
     },
     Item(value) {
       return value.sourceString;
-    }
+    },
   });
   const m = g.match('Aloha, Hi');
   t.deepEqual(s(m).eval(), ['Aloha', 'Hi']);
@@ -931,14 +931,14 @@ test('action call stacks', t => {
         'Action stack (most recent call last):',
         "  oops > default action for 'start'",
         "  oops > default action for 'digit'",
-        '  oops > _terminal'
+        '  oops > _terminal',
       ].join('\n')
   );
 
   s.addOperation('op2', {
     start(d) {
       return d.oops();
-    }
+    },
   });
   try {
     s(g.match('9')).op2();
@@ -952,7 +952,7 @@ test('action call stacks', t => {
         'Action stack (most recent call last):',
         '  op2 > start',
         "  oops > default action for 'digit'",
-        '  oops > _terminal'
+        '  oops > _terminal',
       ].join('\n')
   );
 });
@@ -963,14 +963,14 @@ test('error message for incorrect _iter or _nonterminal arity', t => {
   /* eslint-disable max-len */
   t.throws(() => g.createSemantics().addOperation('foo', {_iter(x) {}}), {
     message:
-      /Semantic action '_iter' has the wrong arity: it should use a rest parameter, e.g. `_iter\(...children\) {}`/
+      /Semantic action '_iter' has the wrong arity: it should use a rest parameter, e.g. `_iter\(...children\) {}`/,
   });
   t.throws(() => g.createSemantics().addOperation('foo', {_nonterminal(x) {}}), {
     message:
-      /Semantic action '_nonterminal' has the wrong arity: it should use a rest parameter, e.g. `_nonterminal\(...children\) {}`/
+      /Semantic action '_nonterminal' has the wrong arity: it should use a rest parameter, e.g. `_nonterminal\(...children\) {}`/,
   });
   /* eslint-enable max-len */
   t.throws(() => g.createSemantics().addOperation('foo', {_terminal(x) {}}), {
-    message: /Semantic action '_terminal' has the wrong arity: expected 0, got 1/
+    message: /Semantic action '_terminal' has the wrong arity: expected 0, got 1/,
   });
 });

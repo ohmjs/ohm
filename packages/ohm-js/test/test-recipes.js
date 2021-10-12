@@ -80,7 +80,7 @@ test('grammar recipes involving parameterized rules', t => {
     '  foo = bar<"0", "1">',
     '  bar<x, y> = "a" x -- one',
     '            | "b" y -- two',
-    '}'
+    '}',
   ]);
   const recipe = g.toRecipe();
   t.truthy(ohm.makeRecipe(recipe).match('a0').succeeded(), 'matches one paramater');
@@ -107,7 +107,7 @@ test('grammar recipes with source', t => {
     '  Start := (ident | number)*',
     '  identPart += "$"',
     '  number = digit+',
-    '}'
+    '}',
   ]);
   let g = ohm.makeRecipe(ns.G.toRecipe());
   t.is(g.rules.Start.body.source.contents, 'ident*');
@@ -156,7 +156,7 @@ test('semantics recipes', t => {
       .addOperation('eval', {
         Add(a, _, b) {
           return a.value + b.value;
-        }
+        },
       })
       .addOperation('evalWith(inc, factor)', {
         Add(a, _, b) {
@@ -168,12 +168,12 @@ test('semantics recipes', t => {
         },
         number(digits) {
           return (this.value + this.args.inc) * this.args.factor;
-        }
+        },
       })
       .addAttribute('value', {
         number(digits) {
           return parseFloat(this.sourceString);
-        }
+        },
       });
 
   const s2 = makeRecipe(s1.toRecipe());
@@ -194,7 +194,7 @@ test('semantics recipes', t => {
 test('semantics recipes (special cases)', t => {
   const ns = testUtil.makeGrammars([
     'G { special = "\u2028" }',
-    'G2 <: G { special += "\u2029" }'
+    'G2 <: G { special += "\u2029" }',
   ]);
 
   let s = ns.G.createSemantics();
@@ -220,7 +220,7 @@ test('semantics recipes with extensions', t => {
     '}',
     'G3 <: G2 {',
     '  one := "elf"',
-    '}'
+    '}',
   ]);
   const s = ns.G.createSemantics()
       .addAttribute('value', {
@@ -232,22 +232,22 @@ test('semantics recipes with extensions', t => {
         },
         _default(...children) {
           return 'default';
-        }
+        },
       })
       .addOperation('valueTimesTwo', {
         _nonterminal(...children) {
           return this.value * 2;
-        }
+        },
       });
   const s2 = ns.G2.extendSemantics(s).addOperation('eval', {
     Add(one, _, two) {
       return one.value + two.value;
-    }
+    },
   });
   const s3 = ns.G3.extendSemantics(s2).extendAttribute('value', {
     one(str) {
       return 11;
-    } // overriding
+    }, // overriding
   });
 
   let sRe = makeRecipe(s3.toRecipe());
@@ -267,7 +267,7 @@ test('semantics recipes with extensions', t => {
   const s4 = ns.G.extendSemantics(s).extendAttribute('value', {
     two(str) {
       return 22;
-    } // overriding
+    }, // overriding
   });
 
   sRe = makeRecipe(s4.toRecipe());
@@ -281,13 +281,13 @@ test('semantics recipes with extensions', t => {
 test('semantics recipes w/ method shorthand', t => {
   const g = ohm.grammar('G { start = }');
   const s = g.createSemantics().addOperation('op', {
-    start() {}
+    start() {},
   });
   t.truthy(makeRecipe(s.toRecipe()), 'recipe parses correctly');
 
   const g2 = ohm.grammar('G { \u01C2 = }');
   const s2 = g2.createSemantics().addOperation('op', {
-    ǂ() {}
+    ǂ() {},
   });
   t.truthy(makeRecipe(s2.toRecipe()), 'recipe with an unusual unicode char');
 });

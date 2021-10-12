@@ -35,8 +35,8 @@ function strcpy(dest, src, offset) {
 // highlighting `ranges`.
 function lineAndColumnToMessage(...ranges) {
   const lineAndCol = this;
-  const offset = lineAndCol.offset;
-  const repeatStr = common.repeatStr;
+  const {offset} = lineAndCol;
+  const {repeatStr} = common;
 
   const sb = new common.StringBuffer();
   sb.append('Line ' + lineAndCol.lineNum + ', col ' + lineAndCol.colNum + ':\n');
@@ -45,7 +45,7 @@ function lineAndColumnToMessage(...ranges) {
   const lineNumbers = padNumbersToEqualLength([
     lineAndCol.prevLine == null ? 0 : lineAndCol.lineNum - 1,
     lineAndCol.lineNum,
-    lineAndCol.nextLine == null ? 0 : lineAndCol.lineNum + 1
+    lineAndCol.nextLine == null ? 0 : lineAndCol.lineNum + 1,
   ]);
 
   // Helper for appending formatting input lines to the buffer.
@@ -140,9 +140,9 @@ exports.getLineAndColumn = (str, offset) => {
     // Get the next line.
     const nextLineEndOffset = str.indexOf('\n', lineEndOffset + 1);
     nextLine =
-      nextLineEndOffset === -1
-        ? str.slice(lineEndOffset)
-        : str.slice(lineEndOffset, nextLineEndOffset);
+      nextLineEndOffset === -1 ?
+        str.slice(lineEndOffset) :
+        str.slice(lineEndOffset, nextLineEndOffset);
     // Strip leading and trailing EOL char(s).
     nextLine = nextLine.replace(/^\r?\n/, '').replace(/\r$/, '');
   }
@@ -163,7 +163,7 @@ exports.getLineAndColumn = (str, offset) => {
     line,
     prevLine,
     nextLine,
-    toString: lineAndColumnToMessage
+    toString: lineAndColumnToMessage,
   };
 };
 

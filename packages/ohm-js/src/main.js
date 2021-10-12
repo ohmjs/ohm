@@ -249,7 +249,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
 
     _terminal() {
       return this.sourceString;
-    }
+    },
   });
   return helpers(match).visit();
 }
@@ -336,7 +336,7 @@ module.exports = {
   pexprs,
   util,
   extras: require('../extras'),
-  version
+  version,
 };
 
 // Stuff for testing, etc.

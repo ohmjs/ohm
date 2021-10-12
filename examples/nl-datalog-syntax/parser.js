@@ -1,9 +1,10 @@
+/* global Clause Not ohm Program Rule Value Variable Wildcard */
+
 'use strict';
 
 const NLDatalog = {};
 
 NLDatalog.grammar = ohm.grammar(`
-
   NLDatalog {
 
     Rules
@@ -35,7 +36,6 @@ NLDatalog.grammar = ohm.grammar(`
     wordChar = "'" | lower
 
   }
-
 `);
 
 NLDatalog.semantics = NLDatalog.grammar
@@ -99,12 +99,12 @@ NLDatalog.semantics = NLDatalog.grammar
 
       NonemptyListOf(x, sep, xs) {
         return [x.toAST()].concat(xs.toAST());
-      }
+      },
     })
     .addOperation('isA(type)', {
       _nonterminal(...children) {
         return this.ctorName === this.args.type;
-      }
+      },
     });
 
 NLDatalog.parse = function(input) {

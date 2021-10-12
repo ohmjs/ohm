@@ -174,7 +174,7 @@ test('tracing with memoization', t => {
     'spaces',
     'letter',
     'spaces',
-    'letter'
+    'letter',
   ]);
 
   // The 'letter*' should succeed, and its 'letter' children should be
@@ -187,19 +187,19 @@ test('tracing with memoization', t => {
   t.is(cstNode.numChildren(), 1);
 
   t.deepEqual(descendant(star, 1).children.map(displayString), [
-    'lower\n    | upper\n    | unicodeLtmo'
+    'lower\n    | upper\n    | unicodeLtmo',
   ]);
   t.deepEqual(descendant(star, 1, 0).children.map(displayString), ['lower']);
   t.deepEqual(descendant(star, 1, 0, 0).children.map(displayString), [
-    'Unicode [Ll] character'
+    'Unicode [Ll] character',
   ]);
 
   t.deepEqual(descendant(star, 3).children.map(displayString), [
-    'lower\n    | upper\n    | unicodeLtmo'
+    'lower\n    | upper\n    | unicodeLtmo',
   ]);
   t.deepEqual(descendant(star, 3, 0).children.map(displayString), ['lower', 'upper']);
   t.deepEqual(descendant(star, 3, 0, 0).children.map(displayString), [
-    'Unicode [Ll] character'
+    'Unicode [Ll] character',
   ]);
 });
 
@@ -298,7 +298,7 @@ test('tracing with left recursion and leading space', t => {
     '  Foo = Foo "x"  -- x',
     '      | Foo "y" -- y',
     '      | "z"',
-    '}'
+    '}',
   ]);
   const foo = g.trace(' zy').children[1]; // First child is 'spaces'.
   t.is(foo.isHeadOfLeftRecursion, true);
@@ -320,7 +320,7 @@ test('tracing with left recursion and leading space', t => {
     'spaces',
     'Foo_y',
     'spaces',
-    '"z"'
+    '"z"',
   ]);
   t.deepEqual(alt.children.map(succeeded), [true, false, true, false, true, true]);
   t.is(alt.children[5].children.length, 0);
@@ -350,7 +350,7 @@ test('toString', t => {
         'Unicode', // Failed.
         'unicodeLtmo',
         'Unicode', // Failed.
-        'end'
+        'end',
       ],
       'expressions'
   );
@@ -387,7 +387,7 @@ test('toString with left recursion', t => {
     'a              ✓ letter ⇒  "a"',
     'a                  ✓ lower ⇒  "a"',
     'a                    ✓ Unicode [Ll] character ⇒  "a"',
-    '           ✓ end ⇒  ""'
+    '           ✓ end ⇒  ""',
   ]);
 });
 
@@ -411,7 +411,7 @@ test.failing('memoization', t => {
     '  start = &id id',
     '  id = id alnum  -- rec',
     '     | letter',
-    '}'
+    '}',
   ]);
   const start = g.trace('a9').children[0];
   const seq = start.children[0];

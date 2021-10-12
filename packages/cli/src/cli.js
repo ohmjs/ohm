@@ -24,5 +24,5 @@ function ohmCli(userArgs, optsForTesting = {}) {
 }
 
 module.exports = {
-  ohmCli
+  ohmCli,
 };

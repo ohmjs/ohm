@@ -70,7 +70,7 @@ GrammarDecl.prototype.install = function(name, formals, body, description, sourc
     body: body.introduceParams(formals),
     formals,
     description,
-    source
+    source,
   };
   return this;
 };
@@ -118,7 +118,7 @@ GrammarDecl.prototype.build = function() {
   const grammarErrors = [];
   let grammarHasInvalidApplications = false;
   Object.keys(grammar.rules).forEach(ruleName => {
-    const body = grammar.rules[ruleName].body;
+    const {body} = grammar.rules[ruleName];
     try {
       body.assertChoicesHaveUniformArity(ruleName);
     } catch (e) {
@@ -134,7 +134,7 @@ GrammarDecl.prototype.build = function() {
   if (!grammarHasInvalidApplications) {
     // The following check can only be done if the grammar has no invalid applications.
     Object.keys(grammar.rules).forEach(ruleName => {
-      const body = grammar.rules[ruleName].body;
+      const {body} = grammar.rules[ruleName];
       try {
         body.assertIteratedExprsAreNotNullable(grammar, []);
       } catch (e) {

@@ -18,8 +18,8 @@ const defaultOperation = {
   },
 
   _nonterminal(...children) {
-    const ctorName = this._node.ctorName;
-    const mapping = this.args.mapping;
+    const {ctorName} = this._node;
+    const {mapping} = this.args;
 
     // without customization
     if (!mapping.hasOwnProperty(ctorName)) {
@@ -50,8 +50,9 @@ const defaultOperation = {
     // named/mapped children or unnamed children ('0', '1', '2', ...)
     const propMap = mapping[ctorName] || children;
     const node = {
-      type: ctorName
+      type: ctorName,
     };
+    // eslint-disable-next-line guard-for-in
     for (const prop in propMap) {
       const mappedProp = mapping[ctorName] && mapping[ctorName][prop];
       if (typeof mappedProp === 'number') {
@@ -102,7 +103,7 @@ const defaultOperation = {
 
   EmptyListOf() {
     return [];
-  }
+  },
 };
 
 // Returns a plain JavaScript object that includes an abstract syntax tree (AST)
@@ -138,5 +139,5 @@ function semanticsForToAST(g) {
 
 module.exports = {
   helper: toAST,
-  semantics: semanticsForToAST
+  semantics: semanticsForToAST,
 };

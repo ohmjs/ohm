@@ -40,13 +40,13 @@ function grammarSyntaxError(matchFailure) {
     enumerable: true,
     get() {
       return matchFailure.message;
-    }
+    },
   });
   Object.defineProperty(e, 'shortMessage', {
     enumerable: true,
     get() {
       return 'Expected ' + matchFailure.getExpectedText();
-    }
+    },
   });
   e.interval = matchFailure.getInterval();
   return e;
@@ -55,12 +55,12 @@ function grammarSyntaxError(matchFailure) {
 // Undeclared grammar
 
 function undeclaredGrammar(grammarName, namespace, interval) {
-  const message = namespace
-    ? 'Grammar ' +
+  const message = namespace ?
+    'Grammar ' +
       grammarName +
       ' is not declared in namespace ' +
-      Namespace.toString(namespace)
-    : 'Undeclared grammar ' + grammarName;
+      Namespace.toString(namespace) :
+    'Undeclared grammar ' + grammarName;
   return createError(message, interval);
 }
 
@@ -259,14 +259,14 @@ function missingSemanticAction(ctorName, name, type, stack) {
   if (ctorName === '_iter') {
     moreInfo = [
       '\nNOTE: as of Ohm v16, there is no default action for iteration nodes — see ',
-      '  https://git.io/JRwtG for details.'
+      '  https://git.io/JRwtG for details.',
     ].join('\n');
   }
 
   const message = [
     `Missing semantic action for '${ctorName}' in ${type} '${name}'.${moreInfo}`,
     'Action stack (most recent call last):',
-    stackTrace
+    stackTrace,
   ].join('\n');
 
   const e = createError(message);
@@ -307,5 +307,5 @@ module.exports = {
     if (errors.length > 1) {
       throw multipleErrors(errors);
     }
-  }
+  },
 };

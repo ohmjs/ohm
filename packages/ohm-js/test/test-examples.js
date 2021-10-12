@@ -13,7 +13,7 @@
 
 var test = require('ava');
 
-var exec = require('child_process').exec;
+var {exec} = require('child_process');
 var fs = require('fs');
 var jsdom = require('jsdom');
 var path = require('path');
@@ -44,7 +44,7 @@ function runExample(relativePath, cb) {
 
       // Block URLs that begin with HTTP. The examples should use only local resources,
       // referenced by relative path.
-      SkipExternalResources: /^http/
+      SkipExternalResources: /^http/,
     },
     created: function(error, window) {
       if (error) {
@@ -73,7 +73,7 @@ function runExample(relativePath, cb) {
       if (window.test) window.test();
       window.close();
       cb(errors);
-    }
+    },
   });
 }
 

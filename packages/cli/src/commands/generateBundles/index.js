@@ -98,5 +98,5 @@ module.exports = {
   command: 'generateBundles <patterns...>',
   description: 'generate standalone modules (aka "bundles") from .ohm files',
   options: [['-t, --withTypes', 'generate a corresponding .d.ts file for TypeScript']],
-  action: generateBundles
+  action: generateBundles,
 };

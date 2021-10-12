@@ -25,11 +25,11 @@ test('basic', t => {
   const family = new VisitorFamily({
     shapes: {
       leaf: [],
-      tree: ['l', 'r']
+      tree: ['l', 'r'],
     },
     getTag(x) {
       return typeof x === 'string' ? 'leaf' : 'tree';
-    }
+    },
   });
 
   family.addOperation('visit()', {
@@ -38,7 +38,7 @@ test('basic', t => {
     },
     tree(left, right) {
       return left.visit() + ' ' + right.visit();
-    }
+    },
   });
 
   const tree = {l: 'one', r: {l: 'two', r: 'three'}};
@@ -49,11 +49,11 @@ test('array props', t => {
   let family = new VisitorFamily({
     shapes: {
       leaf: [],
-      tree: 'children[]'
+      tree: 'children[]',
     },
     getTag(x) {
       return typeof x === 'string' ? 'leaf' : 'tree';
-    }
+    },
   });
   family.addOperation('visit()', {
     leaf() {
@@ -61,7 +61,7 @@ test('array props', t => {
     },
     tree(children) {
       return children.map(c => c.visit());
-    }
+    },
   });
   let tree = {children: ['a', {children: ['b', 'c']}, 'd']};
   t.deepEqual(family.wrap(tree).visit(), ['a', ['b', 'c'], 'd']);
@@ -69,11 +69,11 @@ test('array props', t => {
   family = new VisitorFamily({
     shapes: {
       leaf: [],
-      tree: ['children[]', 'extra']
+      tree: ['children[]', 'extra'],
     },
     getTag(x) {
       return typeof x === 'string' ? 'leaf' : 'tree';
-    }
+    },
   });
   family.addOperation('visit()', {
     leaf() {
@@ -81,7 +81,7 @@ test('array props', t => {
     },
     tree(children, extra) {
       return children.map(c => c.visit()).concat(extra.visit());
-    }
+    },
   });
   tree = {children: ['a', {children: ['b', 'c'], extra: 'd'}], extra: 'e'};
   t.deepEqual(family.wrap(tree).visit(), ['a', ['b', 'c', 'd'], 'e']);
@@ -124,7 +124,7 @@ test('unrecognized tags', t => {
     shapes: {},
     getTag(x) {
       return 'bad';
-    }
+    },
   });
   v.addOperation('foo()', {});
   t.throws(
@@ -138,7 +138,7 @@ test('unrecognized tags', t => {
     shapes: {},
     getTag(x) {
       return 'toString';
-    }
+    },
   });
   v.addOperation('foo()', {});
   t.throws(
@@ -154,13 +154,13 @@ test('operations with arguments', t => {
     shapes: {hello: []},
     getTag(x) {
       return 'hello';
-    }
+    },
   });
   const root = {};
   v.addOperation('greet(n)', {
     hello() {
       return 'hello ' + this.args.n;
-    }
+    },
   });
   t.is(v.wrap(root).greet('donald'), 'hello donald');
 });

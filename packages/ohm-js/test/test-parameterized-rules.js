@@ -96,7 +96,7 @@ test('simple examples', t => {
     },
     digit(_) {
       return this.sourceString;
-    }
+    },
   });
   const cst = g.match('(1,2)', 'Start');
   t.deepEqual(s(cst).v(), ['1', '2']);
@@ -143,7 +143,7 @@ test('inline rule declarations', t => {
     },
     _terminal() {
       return this.sourceString;
-    }
+    },
   });
   const cst = g.match('x, x,x', 'Start');
   t.deepEqual(s(cst).v(), ['x', 'x', 'x']);
@@ -168,7 +168,7 @@ test('left recursion', t => {
     },
     _terminal() {
       return this.sourceString;
-    }
+    },
   });
   const cst = g.match('1 + 2 + 3', 'Start');
   t.deepEqual(s(cst).v(), ['+', ['+', '1', '2'], '3']);
@@ -184,7 +184,7 @@ test('complex parameters', t => {
     },
     _terminal() {
       return this.sourceString;
-    }
+    },
   });
   t.deepEqual(s(g.match('42')).v(), ['4', '2']);
   t.is(g.match('45').failed(), true);

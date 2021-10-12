@@ -11,8 +11,8 @@ const ohmGrammarSource = fs.readFileSync('src/ohm-grammar.ohm').toString();
 
 const {describe} = test;
 
-const makeGrammar = testUtil.makeGrammar;
-const makeGrammars = testUtil.makeGrammars;
+const {makeGrammar} = testUtil;
+const {makeGrammars} = testUtil;
 
 // --------------------------------------------------------------------
 // Helpers
@@ -48,7 +48,7 @@ function buildTreeNodeWithUniqueId(g) {
     },
     _terminal() {
       return this.sourceString;
-    }
+    },
   });
 
   function makeTree(node) {
@@ -79,7 +79,7 @@ test('char', t => {
   const s = m.createSemantics().addAttribute('v', {
     _terminal() {
       return this.sourceString;
-    }
+    },
   });
 
   assertSucceeds(t, m.match('!'));
@@ -94,7 +94,7 @@ test('string', t => {
   const s = m.createSemantics().addAttribute('v', {
     _terminal() {
       return this.sourceString;
-    }
+    },
   });
 
   assertSucceeds(t, m.match('foo\b\n\r\t\\"\u01bcff\x8f'));
@@ -138,7 +138,7 @@ describe('unicode', test => {
     const s = m.createSemantics().addAttribute('v', {
       _terminal() {
         return this.sourceString + this.sourceString;
-      }
+      },
     });
     const r = m.match('\u01C0', 'letter');
     t.is(s(r).v, '\u01C0\u01C0');
@@ -150,7 +150,7 @@ test('ranges', t => {
   const s = m.createSemantics().addAttribute('v', {
     _terminal() {
       return this.sourceString;
-    }
+    },
   });
 
   assertSucceeds(t, m.match('6', 'charRange'));
@@ -185,7 +185,7 @@ describe('alt', test => {
   const s = m.createSemantics().addAttribute('v', {
     _terminal() {
       return this.sourceString;
-    }
+    },
   });
 
   test('recognition', t => {
@@ -206,7 +206,7 @@ describe("rule bodies in defs can start with a |, and it's a no-op", test => {
   const s = m.createSemantics().addAttribute('v', {
     _terminal() {
       return this.sourceString;
-    }
+    },
   });
 
   test('recognition', t => {
@@ -227,7 +227,7 @@ describe("rule bodies in overrides can start with a |, and it's a no-op", test =
   const s = m.createSemantics().addAttribute('v', {
     _terminal() {
       return this.sourceString;
-    }
+    },
   });
 
   test('recognition', t => {
@@ -249,7 +249,7 @@ describe("rule bodies in extends can start with a |, and it's a no-op", test => 
   const s = m.createSemantics().addAttribute('v', {
     _terminal() {
       return this.sourceString;
-    }
+    },
   });
 
   test('recognition', t => {
@@ -280,7 +280,7 @@ describe('seq', test => {
     const s = m.createSemantics().addAttribute('v', {
       start(x, y, z) {
         return [x.sourceString, y.sourceString, z.sourceString];
-      }
+      },
     });
     t.deepEqual(s(f).v, ['a', 'bc', 'z']);
   });
@@ -300,7 +300,7 @@ describe('alts and seqs together', test => {
     const s = m.createSemantics().addAttribute('v', {
       start(x, _, y) {
         return [x.sourceString, y.sourceString];
-      }
+      },
     });
     t.deepEqual(s(m.match('abc')).v, ['a', 'c']);
     t.deepEqual(s(m.match('123')).v, ['1', '3']);
@@ -313,7 +313,7 @@ describe('kleene-* and kleene-+', test => {
     '  number = digit+',
     '  digits = digit*',
     '  sss = &number number',
-    '}'
+    '}',
   ]);
 
   test('recognition', t => {
@@ -338,7 +338,7 @@ describe('kleene-* and kleene-+', test => {
       },
       _terminal() {
         return this.sourceString;
-      }
+      },
     });
     t.deepEqual(s(m.match('1234', 'number')).v, [
       'digits',
@@ -346,8 +346,8 @@ describe('kleene-* and kleene-+', test => {
         ['digit', '1'],
         ['digit', '2'],
         ['digit', '3'],
-        ['digit', '4']
-      ]
+        ['digit', '4'],
+      ],
     ]);
   });
 
@@ -360,8 +360,8 @@ describe('kleene-* and kleene-+', test => {
       [
         ['id', 2, 'digit', '1'],
         ['id', 3, 'digit', '2'],
-        ['id', 4, 'digit', '3']
-      ]
+        ['id', 4, 'digit', '3'],
+      ],
     ];
     t.deepEqual(a(m.match('123', 'sss')), ['id', 0, 'sss', tree, tree]);
     t.is(a._getNextId(), 5);
@@ -384,7 +384,7 @@ describe('opt', test => {
       },
       _terminal() {
         return this.sourceString;
-      }
+      },
     });
     t.deepEqual(s(m.match('drwarth')).v, ['dr', 'warth']);
     t.deepEqual(s(m.match('warth')).v, [undefined, 'warth']);
@@ -403,7 +403,7 @@ describe('not', test => {
     const s = m.createSemantics().addAttribute('v', {
       start(x) {
         return x.sourceString;
-      }
+      },
     });
     t.is(s(m.match('yello world')).v, 'yello world');
   });
@@ -421,7 +421,7 @@ describe('lookahead', test => {
     const s = m.createSemantics().addAttribute('v', {
       start(x, _) {
         return x.sourceString;
-      }
+      },
     });
     t.is(s(m.match('hello world')).v, 'hello');
   });
@@ -432,7 +432,7 @@ describe('simple left recursion', test => {
     'M {',
     ' number = numberRec | digit',
     'numberRec = number digit',
-    '}'
+    '}',
   ]);
 
   test('recognition', t => {
@@ -457,7 +457,7 @@ describe('simple left recursion', test => {
           },
           _terminal() {
             return this.sourceString;
-          }
+          },
         })
         .addAttribute('t', {
           number(expr) {
@@ -468,7 +468,7 @@ describe('simple left recursion', test => {
           },
           _terminal() {
             return this.sourceString;
-          }
+          },
         });
     t.is(s(f).v, 1234);
     t.deepEqual(s(f).t, [
@@ -476,8 +476,8 @@ describe('simple left recursion', test => {
       [
         'numberRec',
         ['number', ['numberRec', ['number', ['numberRec', ['number', '1'], '2']], '3']],
-        '4'
-      ]
+        '4',
+      ],
     ]);
   });
 
@@ -489,7 +489,7 @@ describe('simple left recursion', test => {
       '  pri = priX | priY',
       '  priX = "x"',
       '  priY = "y"',
-      '}'
+      '}',
     ]);
 
     test('recognition', t => {
@@ -503,7 +503,7 @@ describe('simple left recursion', test => {
         },
         _terminal() {
           return this.sourceString;
-        }
+        },
       });
       t.deepEqual(s(m.match('x+y+x', 'add')).v, [['x', '+', 'y'], '+', 'x']);
     });
@@ -519,7 +519,7 @@ describe('simple left recursion', test => {
       '  qux = quux',
       '  quux = numberRec',
       '  numberRec = number digit',
-      '}'
+      '}',
     ]);
 
     test('recognition', t => {
@@ -537,7 +537,7 @@ describe('simple left recursion', test => {
         },
         _terminal() {
           return this.sourceString;
-        }
+        },
       });
       t.deepEqual(s(m.match('1234', 'number')).v, [[['1', '2'], '3'], '4']);
     });
@@ -552,7 +552,7 @@ describe('simple left recursion', test => {
       '  mulExpRec = mulExp "*" priExp',
       '  priExp = "0".."9"',
       '  sss = &addExp addExp',
-      '}'
+      '}',
     ]);
 
     test('recognition', t => {
@@ -582,7 +582,7 @@ describe('simple left recursion', test => {
             },
             _terminal() {
               return this.sourceString;
-            }
+            },
           })
           .addAttribute('v', {
             addExp(expr) {
@@ -602,7 +602,7 @@ describe('simple left recursion', test => {
             },
             _terminal() {
               return this.sourceString;
-            }
+            },
           })
           .addAttribute('p', {
             addExpRec(x, _, y) {
@@ -613,7 +613,7 @@ describe('simple left recursion', test => {
             },
             _terminal() {
               return this.sourceString;
-            }
+            },
           });
       t.deepEqual(s(f).t, [
         'addExp',
@@ -624,11 +624,11 @@ describe('simple left recursion', test => {
             [
               'addExpRec',
               ['addExp', ['mulExp', ['mulExpRec', ['mulExp', '1'], '2']]],
-              ['mulExp', '3']
-            ]
+              ['mulExp', '3'],
+            ],
           ],
-          ['mulExp', ['mulExpRec', ['mulExp', '4'], '5']]
-        ]
+          ['mulExp', ['mulExpRec', ['mulExp', '4'], '5']],
+        ],
       ]);
       t.is(s(f).v, 25);
       t.is(s(f).p, '(((1*2)+3)+(4*5))');
@@ -667,13 +667,13 @@ describe('simple left recursion', test => {
                     'mulExpRec',
                     ['id', 8, 'mulExp', ['id', 9, 'priExp', '1']],
                     '*',
-                    ['id', 10, 'priExp', '2']
-                  ]
-                ]
+                    ['id', 10, 'priExp', '2'],
+                  ],
+                ],
               ],
               '+',
-              ['id', 11, 'mulExp', ['id', 12, 'priExp', '3']]
-            ]
+              ['id', 11, 'mulExp', ['id', 12, 'priExp', '3']],
+            ],
           ],
           '+',
           [
@@ -686,10 +686,10 @@ describe('simple left recursion', test => {
               'mulExpRec',
               ['id', 15, 'mulExp', ['id', 16, 'priExp', '4']],
               '*',
-              ['id', 17, 'priExp', '5']
-            ]
-          ]
-        ]
+              ['id', 17, 'priExp', '5'],
+            ],
+          ],
+        ],
       ];
       t.deepEqual(a(f), ['id', 0, 'sss', tree, tree]);
       t.is(a._getNextId(), 18);
@@ -712,7 +712,7 @@ describe('simple left recursion', test => {
       '  h = priExp',
       '  mulExpRec = mulExp "*" priExp',
       '  priExp = "0".."9"',
-      '}'
+      '}',
     ]);
 
     test('recognition', t => {
@@ -733,7 +733,7 @@ describe('simple left recursion', test => {
         },
         _terminal() {
           return this.sourceString;
-        }
+        },
       });
       t.deepEqual(s(m.match('7+8*9+0')).t, [['7', '+', ['8', '*', '9']], '+', '0']);
     });
@@ -747,7 +747,7 @@ describe('simple left recursion', test => {
       '  fooRec = bar digit',
       '  bar = barRec | digit',
       '  barRec = foo digit',
-      '}'
+      '}',
     ]);
 
     test('recognition', t => {
@@ -775,14 +775,14 @@ describe('simple left recursion', test => {
         },
         _terminal() {
           return this.sourceString;
-        }
+        },
       });
       t.deepEqual(s(f).t, [
         'tricky',
         [
           'bar',
-          ['barRec', ['foo', ['fooRec', ['bar', ['barRec', ['foo', '1'], '2']], '3']], '4']
-        ]
+          ['barRec', ['foo', ['fooRec', ['bar', ['barRec', ['foo', '1'], '2']], '3']], '4'],
+        ],
       ]);
     });
   });
@@ -815,7 +815,7 @@ describe('inheritance', t => {
         {
         // eslint-disable-next-line max-len
           message:
-          /Duplicate declaration for rule 'foo' in grammar 'G2' \(originally declared in 'G1'\)/
+          /Duplicate declaration for rule 'foo' in grammar 'G2' \(originally declared in 'G1'\)/,
         },
         'throws if rule is already declared in super-grammar'
     );
@@ -871,7 +871,7 @@ describe('inheritance', t => {
         },
         _terminal() {
           return this.sourceString;
-        }
+        },
       });
       const expected = [
         'number',
@@ -879,8 +879,8 @@ describe('inheritance', t => {
           ['digit', 'a'],
           ['digit', 'b'],
           ['digit', 'c'],
-          ['digit', 'd']
-        ]
+          ['digit', 'd'],
+        ],
       ];
       t.deepEqual(s(ns.G2.match('abcd', 'number')).v, expected);
     });
@@ -901,7 +901,7 @@ describe('inheritance', t => {
       const s = ns.G2.createSemantics().addAttribute('v', {
         foo(x, y) {
           return [x.sourceString, y.sourceString];
-        }
+        },
       });
       t.deepEqual(s(ns.G2.match('aaabbb')).v, ['aaa', 'bbb']);
       t.deepEqual(s(ns.G2.match('111222')).v, ['111', '222']);
@@ -933,7 +933,7 @@ describe('inheritance', t => {
               'Line 1, col 19:',
               '> 1 | M2 <: M1 { foo += bar baz }',
               '                        ^~~~~~~',
-              'Rule foo involves an alternation which has inconsistent arity (expected 1, got 2)'
+              'Rule foo involves an alternation which has inconsistent arity (expected 1, got 2)',
             ].join('\n')
         );
       }
@@ -950,7 +950,7 @@ describe('inheritance', t => {
               'Line 1, col 19:',
               '> 1 | M4 <: M3 { foo += digit }',
               '                        ^~~~~',
-              'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)'
+              'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)',
             ].join('\n')
         );
       }
@@ -1012,7 +1012,7 @@ test('override with "..."', t => {
   );
 
   t.throws(() => ohm.grammar('G { letter := "@" "#" | ... }'), {
-    message: /inconsistent arity/
+    message: /inconsistent arity/,
   });
 
   t.throws(
@@ -1041,7 +1041,7 @@ describe('bindings', test => {
             'Line 1, col 21:',
             '> 1 | G { foo = "a" "c" | "b" }',
             '                          ^~~',
-            'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)'
+            'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)',
           ].join('\n')
       );
     }
@@ -1057,7 +1057,7 @@ describe('bindings', test => {
         const yv = y.v;
         return {
           x: xv,
-          y: yv
+          y: yv,
         };
       },
       bar(expr) {
@@ -1068,11 +1068,11 @@ describe('bindings', test => {
       },
       _terminal() {
         return this.sourceString;
-      }
+      },
     });
     t.deepEqual(s(g.match('ab')).v, {
       x: ['bar', 'a', 0],
-      y: ['baz', 'b', 1]
+      y: ['baz', 'b', 1],
     });
 
     id = 0;
@@ -1082,7 +1082,7 @@ describe('bindings', test => {
         const xv = x.v;
         return {
           x: xv,
-          y: yv
+          y: yv,
         };
       },
       bar(expr) {
@@ -1093,11 +1093,11 @@ describe('bindings', test => {
       },
       _terminal() {
         return this.sourceString;
-      }
+      },
     });
     t.deepEqual(s(g.match('ab')).v, {
       x: ['bar', 'a', 1],
-      y: ['baz', 'b', 0]
+      y: ['baz', 'b', 0],
     });
   });
 });
@@ -1128,7 +1128,7 @@ test('inline rule declarations', t => {
       },
       _terminal() {
         return this.sourceString;
-      }
+      },
     });
     return function(node) {
       return s(node).v;
@@ -1150,7 +1150,7 @@ test('inline rule declarations', t => {
         'Good <: Arithmetic {',
         '  addExp := addExp "~" mulExp  -- minus',
         '           | mulExp',
-        '}'
+        '}',
       ],
       ns
   );
@@ -1161,7 +1161,7 @@ test('inline rule declarations', t => {
         ohm.grammar('Bad <: Arithmetic { addExp += addExp "~" mulExp  -- minus }', ns);
       },
       {
-        message: /rule 'addExp_minus' in grammar 'Bad' \(originally declared in 'Arithmetic'\)/
+        message: /rule 'addExp_minus' in grammar 'Bad' \(originally declared in 'Arithmetic'\)/,
       }
   );
 
@@ -1182,7 +1182,7 @@ describe('lexical vs. syntactic rules', test => {
           ohm.grammar('G { foo = Bar  Bar = "bar" }');
         },
         {
-          message: /Cannot apply syntactic rule Bar from here \(inside a lexical context\)/
+          message: /Cannot apply syntactic rule Bar from here \(inside a lexical context\)/,
         },
         'lexical calling syntactic'
     );
@@ -1219,7 +1219,7 @@ describe('lexical vs. syntactic rules', test => {
       '  ArrowFun = name #(spacesNoNl "=>") "{}"',
       '  name = "x" | "y"',
       '  spacesNoNl = " "*',
-      '}'
+      '}',
     ]);
     assertSucceeds(t, g.match('x => {}'));
     assertSucceeds(t, g.match(' y  =>    \n\n  \n{}'));
@@ -1230,7 +1230,7 @@ describe('lexical vs. syntactic rules', test => {
           makeGrammar(['G {', '  R', '    = #("a" R)', '    | "b" "c"', '}']);
         },
         {
-          message: /Cannot apply syntactic rule R from here \(inside a lexical context\)/
+          message: /Cannot apply syntactic rule R from here \(inside a lexical context\)/,
         }
     );
   });
@@ -1242,7 +1242,7 @@ test('space skipping semantics', t => {
     ' Iter = ">" letter+ #(space)',
     ' Lookahead = ">" &letter #(space letter)',
     ' NegLookahead = ">" ~digit #(space letter)',
-    '}'
+    '}',
   ]);
   assertSucceeds(t, g.match('> a b ', 'Iter'), "iter doesn't consume trailing space");
   assertSucceeds(t, g.match('> a', 'Lookahead'), "lookahead doesn't consume anything");
@@ -1264,7 +1264,7 @@ test('case-insensitive matching', t => {
     '  dottedI = caseInsensitive<"İ">',
     '  insideRepetition1 = (caseInsensitive<"a">)+',
     '  insideRepetition2 = (caseInsensitive<"a">)*',
-    '}'
+    '}',
   ]);
   let result = g.match('BLERG');
   t.is(result.succeeded(), true);
@@ -1275,7 +1275,7 @@ test('case-insensitive matching', t => {
     },
     _nonterminal(...children) {
       return children.map(c => c.matchedString).join('');
-    }
+    },
   });
   t.is(s(result).matchedString, 'BLERG');
 
@@ -1402,7 +1402,7 @@ describe('bootstrap', test => {
       },
       _terminal() {
         return this.sourceString;
-      }
+      },
     });
     t.is(s(Arithmetic.match('10*(2+123)-4/5')).v, 1249.2);
   });

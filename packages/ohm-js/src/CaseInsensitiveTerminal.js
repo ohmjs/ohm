@@ -5,8 +5,8 @@
 // --------------------------------------------------------------------
 
 const Failure = require('./Failure');
-const TerminalNode = require('./nodes').TerminalNode;
-const assert = require('./common').assert;
+const {TerminalNode} = require('./nodes');
+const {assert} = require('./common');
 const {PExpr, Terminal} = require('./pexprs');
 
 class CaseInsensitiveTerminal extends PExpr {
@@ -28,7 +28,7 @@ class CaseInsensitiveTerminal extends PExpr {
   }
 
   eval(state) {
-    const inputStream = state.inputStream;
+    const {inputStream} = state;
     const origPos = inputStream.pos;
     const matchStr = this._getString(state);
     if (!inputStream.matchString(matchStr, true)) {

@@ -23,7 +23,7 @@ function fakeScriptTag(contents) {
     getAttribute(name) {
       return undefined;
     },
-    nodeType: 1
+    nodeType: 1,
   };
 }
 
@@ -49,5 +49,5 @@ module.exports = {
   fakeScriptTag,
   makeGrammar,
   makeGrammars,
-  uniqueId
+  uniqueId,
 };

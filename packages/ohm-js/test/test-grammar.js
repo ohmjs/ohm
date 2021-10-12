@@ -7,8 +7,8 @@ const Grammar = require('../src/Grammar');
 const ohm = require('..');
 const testUtil = require('./helpers/testUtil');
 
-const makeGrammar = testUtil.makeGrammar;
-const makeGrammars = testUtil.makeGrammars;
+const {makeGrammar} = testUtil;
+const {makeGrammars} = testUtil;
 
 // --------------------------------------------------------------------
 // Tests
@@ -27,7 +27,7 @@ test('action dictionary templates', t => {
     '}',
     'G2 <: G1 {',
     '  qux := "100"',
-    '}'
+    '}',
   ]);
   t.is(
       ns.G1.toOperationActionDictionaryTemplate(),
@@ -243,7 +243,7 @@ test('grammar equality', t => {
   const c = ohm.grammar(source.replace('digit', '(digit)'));
   t.is(a.equals(c), true, 'still equal after meaningless source change');
 
-  const exp = a.rules.exp;
+  const {exp} = a.rules;
   delete a.rules.exp;
 
   t.is(a.equals(b), false, 'not equal after deleting a rule');

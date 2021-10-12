@@ -10,9 +10,9 @@ const errors = require('./errors');
 const nodes = require('./nodes');
 const pexprs = require('./pexprs');
 
-const TerminalNode = nodes.TerminalNode;
-const NonterminalNode = nodes.NonterminalNode;
-const IterationNode = nodes.IterationNode;
+const {TerminalNode} = nodes;
+const {NonterminalNode} = nodes;
+const {IterationNode} = nodes;
 
 // --------------------------------------------------------------------
 // Operations
@@ -37,7 +37,7 @@ const IterationNode = nodes.IterationNode;
 pexprs.PExpr.prototype.eval = common.abstract('eval'); // function(state) { ... }
 
 pexprs.any.eval = function(state) {
-  const inputStream = state.inputStream;
+  const {inputStream} = state;
   const origPos = inputStream.pos;
   const ch = inputStream.next();
   if (ch) {
@@ -50,7 +50,7 @@ pexprs.any.eval = function(state) {
 };
 
 pexprs.end.eval = function(state) {
-  const inputStream = state.inputStream;
+  const {inputStream} = state;
   const origPos = inputStream.pos;
   if (inputStream.atEnd()) {
     state.pushBinding(new TerminalNode(state.grammar, undefined), origPos);
@@ -62,7 +62,7 @@ pexprs.end.eval = function(state) {
 };
 
 pexprs.Terminal.prototype.eval = function(state) {
-  const inputStream = state.inputStream;
+  const {inputStream} = state;
   const origPos = inputStream.pos;
   if (!inputStream.matchString(this.obj)) {
     state.processFailure(origPos, this);
@@ -74,7 +74,7 @@ pexprs.Terminal.prototype.eval = function(state) {
 };
 
 pexprs.Range.prototype.eval = function(state) {
-  const inputStream = state.inputStream;
+  const {inputStream} = state;
   const origPos = inputStream.pos;
   const ch = inputStream.next();
   if (ch && this.from <= ch && ch <= this.to) {
@@ -117,7 +117,7 @@ pexprs.Seq.prototype.eval = function(state) {
 };
 
 pexprs.Iter.prototype.eval = function(state) {
-  const inputStream = state.inputStream;
+  const {inputStream} = state;
   const origPos = inputStream.pos;
   const arity = this.getArity();
   const cols = [];
@@ -180,7 +180,7 @@ pexprs.Not.prototype.eval = function(state) {
       a failure for 'foo' instead.
   */
 
-  const inputStream = state.inputStream;
+  const {inputStream} = state;
   const origPos = inputStream.pos;
   state.pushFailuresInfo();
 
@@ -197,7 +197,7 @@ pexprs.Not.prototype.eval = function(state) {
 };
 
 pexprs.Lookahead.prototype.eval = function(state) {
-  const inputStream = state.inputStream;
+  const {inputStream} = state;
   const origPos = inputStream.pos;
   if (state.eval(this.expr)) {
     inputStream.pos = origPos;
@@ -232,7 +232,7 @@ pexprs.Apply.prototype.eval = function(state) {
 
 pexprs.Apply.prototype.handleCycle = function(state) {
   const posInfo = state.getCurrentPosInfo();
-  const currentLeftRecursion = posInfo.currentLeftRecursion;
+  const {currentLeftRecursion} = posInfo;
   const memoKey = this.toMemoKey();
   let memoRec = posInfo.memo[memoKey];
 
@@ -246,7 +246,7 @@ pexprs.Apply.prototype.handleCycle = function(state) {
       matchLength: 0,
       examinedLength: 0,
       value: false,
-      rightmostFailureOffset: -1
+      rightmostFailureOffset: -1,
     });
     posInfo.startLeftRecursion(this, memoRec);
   }
@@ -254,12 +254,12 @@ pexprs.Apply.prototype.handleCycle = function(state) {
 };
 
 pexprs.Apply.prototype.reallyEval = function(state) {
-  const inputStream = state.inputStream;
+  const {inputStream} = state;
   const origPos = inputStream.pos;
   const origPosInfo = state.getCurrentPosInfo();
   const ruleInfo = state.grammar.rules[this.ruleName];
-  const body = ruleInfo.body;
-  const description = ruleInfo.description;
+  const {body} = ruleInfo;
+  const {description} = ruleInfo;
 
   state.enterApplication(origPosInfo, this);
 
@@ -292,7 +292,7 @@ pexprs.Apply.prototype.reallyEval = function(state) {
       examinedLength: inputStream.examinedLength - origPos,
       value,
       failuresAtRightmostPosition: state.cloneRecordedFailures(),
-      rightmostFailureOffset: state._getRightmostFailureOffset()
+      rightmostFailureOffset: state._getRightmostFailureOffset(),
     });
   }
   const succeeded = !!value;
@@ -331,7 +331,7 @@ pexprs.Apply.prototype.reallyEval = function(state) {
 };
 
 pexprs.Apply.prototype.evalOnce = function(expr, state) {
-  const inputStream = state.inputStream;
+  const {inputStream} = state;
   const origPos = inputStream.pos;
 
   if (state.eval(expr)) {
@@ -355,7 +355,7 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
     return false;
   }
 
-  const inputStream = state.inputStream;
+  const {inputStream} = state;
 
   while (true) {
     lrMemoRec.matchLength = inputStream.pos - origPos;
@@ -395,7 +395,7 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
 };
 
 pexprs.UnicodeChar.prototype.eval = function(state) {
-  const inputStream = state.inputStream;
+  const {inputStream} = state;
   const origPos = inputStream.pos;
   const ch = inputStream.next();
   if (ch && this.pattern.test(ch)) {

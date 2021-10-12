@@ -13,7 +13,7 @@ const util = require('../src/util');
 // Tests
 // --------------------------------------------------------------------
 
-const getLineAndColumn = util.getLineAndColumn;
+const {getLineAndColumn} = util;
 
 test('getLineAndColumn().toString()', t => {
   t.is(
@@ -35,7 +35,7 @@ test('getLineAndColumn().toString()', t => {
   );
 });
 
-const getLineAndColumnMessage = util.getLineAndColumnMessage;
+const {getLineAndColumnMessage} = util;
 
 test('getLineAndColumnMessage', t => {
   t.is(

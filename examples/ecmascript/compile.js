@@ -44,7 +44,7 @@ function compile(args) {
   const opts = {
     grammar: null,
     b: false, // Benchmark (print matching times).
-    v: false // Verbose
+    v: false, // Verbose
   };
 
   // Super basic command line option parsing.

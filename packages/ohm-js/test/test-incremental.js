@@ -9,7 +9,7 @@ const ohm = require('..');
 const test = require('ava');
 const testUtil = require('./helpers/testUtil');
 
-const makeGrammar = testUtil.makeGrammar;
+const {makeGrammar} = testUtil;
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -47,13 +47,13 @@ const checkOffsetActions = {
   },
   _iter(...children) {
     return children.map(c => c.checkOffsets(this.args.t, this.args.childStartIdx));
-  }
+  },
 };
 
 const ctorTreeActions = {
   _default(...children) {
     return [this.ctorName].concat(children.map(c => c.ctorTree));
-  }
+  },
 };
 
 // --------------------------------------------------------------------
@@ -65,7 +65,7 @@ test('basic incremental parsing', t => {
     'G {',
     '  start = notLastLetter* letter',
     '  notLastLetter = letter &letter',
-    '}'
+    '}',
   ]);
 
   // Create an operation which reconstructs the matched based on the offsets
@@ -91,7 +91,7 @@ test('basic incremental parsing', t => {
     },
     _terminal() {
       return this.sourceString;
-    }
+    },
   });
 
   const im = g.matcher();
@@ -136,7 +136,7 @@ test('trickier incremental parsing', t => {
     '        | lookahead',
     '        | "a"',
     '  lookahead = &"ac" "a"',
-    '}'
+    '}',
   ]);
   const s = g.createSemantics().addAttribute('ctorTree', ctorTreeActions);
   const im = g.matcher();
@@ -147,7 +147,7 @@ test('trickier incremental parsing', t => {
   t.truthy(result.succeeded());
   t.deepEqual(s(result).ctorTree, [
     'start',
-    ['start_rec', ['start', ['_terminal']], ['letter', ['lower', ['_terminal']]]]
+    ['start_rec', ['start', ['_terminal']], ['letter', ['lower', ['_terminal']]]],
   ]);
 
   // When the input is 'ac', the lookahead rule should now succeed.
@@ -159,8 +159,8 @@ test('trickier incremental parsing', t => {
     [
       'start_rec',
       ['start', ['lookahead', ['_terminal'], ['_terminal']]],
-      ['letter', ['lower', ['_terminal']]]
-    ]
+      ['letter', ['lower', ['_terminal']]],
+    ],
   ]);
 });
 
@@ -169,7 +169,7 @@ test('examinedLength - no LR', t => {
     'G {',
     '  start = notLastLetter* letter',
     '  notLastLetter = letter &letter',
-    '}'
+    '}',
   ]);
   const result = g.match('yip');
   const values = pluckMemoProp(result, 'examinedLength');
@@ -177,7 +177,7 @@ test('examinedLength - no LR', t => {
     {maxExaminedLength: 4, letter: 1, lower: 1, notLastLetter: 2, start: 4},
     {maxExaminedLength: 2, letter: 1, lower: 1, notLastLetter: 2},
     {maxExaminedLength: 2, letter: 1, lower: 1, notLastLetter: 2},
-    {maxExaminedLength: 1, letter: 1, lower: 1, upper: 1, unicodeLtmo: 1}
+    {maxExaminedLength: 1, letter: 1, lower: 1, upper: 1, unicodeLtmo: 1},
   ]);
 });
 
@@ -188,7 +188,7 @@ test('examinedLength - no LR, but non-monotonic', t => {
   t.deepEqual(values, [
     {maxExaminedLength: 3, letter: 1, lower: 1, start: 3},
     {maxExaminedLength: 1, letter: 1, lower: 1},
-    {maxExaminedLength: 1, letter: 1, lower: 1}
+    {maxExaminedLength: 1, letter: 1, lower: 1},
   ]);
 });
 
@@ -201,7 +201,7 @@ test('examinedLength - simple LR', t => {
   t.deepEqual(values, [
     {maxExaminedLength: 3, letter: 1, lower: 1, start: 3},
     {maxExaminedLength: 1, letter: 1, lower: 1},
-    {maxExaminedLength: 1, letter: 1, lower: 1, upper: 1, unicodeLtmo: 1}
+    {maxExaminedLength: 1, letter: 1, lower: 1, upper: 1, unicodeLtmo: 1},
   ]);
 });
 
@@ -212,7 +212,7 @@ test('examinedLength - complicated LR', t => {
     '        | foo',
     '  foo = foo letter  -- rec',
     '      | any',
-    '}'
+    '}',
   ]);
   const result = g.match('yo');
   t.is(result.succeeded(), true);
@@ -221,7 +221,7 @@ test('examinedLength - complicated LR', t => {
   t.deepEqual(values, [
     {maxExaminedLength: 3, any: 1, foo: 3, start: 3},
     {maxExaminedLength: 1, letter: 1, lower: 1},
-    {maxExaminedLength: 1, letter: 1, lower: 1, upper: 1, unicodeLtmo: 1, any: 1, foo: 1}
+    {maxExaminedLength: 1, letter: 1, lower: 1, upper: 1, unicodeLtmo: 1, any: 1, foo: 1},
   ]);
 });
 
@@ -230,7 +230,7 @@ test('rightmostFailureOffset - no LR', t => {
     'G {',
     '  start = notLastLetter* letter',
     '  notLastLetter = letter &letter',
-    '}'
+    '}',
   ]);
   const result = g.match('yip');
   const values = pluckMemoProp(result, 'rightmostFailureOffset');
@@ -238,7 +238,7 @@ test('rightmostFailureOffset - no LR', t => {
     {maxRightmostFailureOffset: 3, letter: -1, lower: -1, notLastLetter: -1, start: 3},
     {maxRightmostFailureOffset: -1, letter: -1, lower: -1, notLastLetter: -1},
     {maxRightmostFailureOffset: 1, letter: -1, lower: -1, notLastLetter: 1},
-    {maxRightmostFailureOffset: 0, letter: 0, lower: 0, upper: 0, unicodeLtmo: 0}
+    {maxRightmostFailureOffset: 0, letter: 0, lower: 0, upper: 0, unicodeLtmo: 0},
   ]);
 });
 
@@ -251,7 +251,7 @@ test('rightmostFailureOffset - simple LR', t => {
   t.deepEqual(values, [
     {maxRightmostFailureOffset: 2, letter: -1, lower: -1, start: 2},
     {maxRightmostFailureOffset: -1, letter: -1, lower: -1},
-    {maxRightmostFailureOffset: 0, letter: 0, lower: 0, upper: 0, unicodeLtmo: 0}
+    {maxRightmostFailureOffset: 0, letter: 0, lower: 0, upper: 0, unicodeLtmo: 0},
   ]);
 });
 
@@ -262,7 +262,7 @@ test('rightmostFailureOffset - complicated LR', t => {
     '        | foo',
     '  foo = foo letter  -- rec',
     '      | any',
-    '}'
+    '}',
   ]);
   const result = g.match('yo');
   t.is(result.succeeded(), true);
@@ -278,8 +278,8 @@ test('rightmostFailureOffset - complicated LR', t => {
       upper: 0,
       unicodeLtmo: 0,
       any: 0,
-      foo: 0
-    }
+      foo: 0,
+    },
   ]);
 });
 
@@ -293,7 +293,7 @@ test('matchLength', t => {
     {any: 1, notLast: 1, start: 3},
     {any: 1, notLast: 1},
     {any: 1, notLast: 0},
-    {any: 0}
+    {any: 0},
   ]);
 });
 
@@ -304,7 +304,7 @@ test('matchLength - complicated LR', t => {
     '        | foo',
     '  foo = foo letter  -- rec',
     '      | any',
-    '}'
+    '}',
   ]);
   const result = g.match('yo');
   t.is(result.succeeded(), true);
@@ -313,7 +313,7 @@ test('matchLength - complicated LR', t => {
   t.deepEqual(values, [
     {any: 1, foo: 2, start: 2},
     {letter: 1, lower: 1},
-    {letter: 0, lower: 0, upper: 0, unicodeLtmo: 0, any: 0, foo: 0}
+    {letter: 0, lower: 0, upper: 0, unicodeLtmo: 0, any: 0, foo: 0},
   ]);
 });
 
@@ -324,7 +324,7 @@ test('binding offsets - lexical rules', t => {
     '        | foo',
     '  foo = foo letter  -- rec',
     '      | "oo"',
-    '}'
+    '}',
   ]);
   let result = g.match('oolong');
   t.is(result.succeeded(), true);
@@ -341,7 +341,7 @@ test('binding offsets - syntactic rules', t => {
     '    G {',
     '  Start = letter NotLast* any',
     '  NotLast = any &any',
-    '}'
+    '}',
   ]);
   let result = g.match('   a 4');
   t.truthy(result.succeeded());
@@ -388,7 +388,7 @@ test('incremental parsing + attributes = incremental computation', t => {
       const ans = parseInt(this.sourceString);
       freshlyEvaluated.push(this.sourceString);
       return ans;
-    }
+    },
   });
 
   const m = g.matcher();
@@ -415,6 +415,6 @@ test('incremental parsing + attributes = incremental computation', t => {
     '1-2',
     '(1-2)',
     '(1-2)*3',
-    '(1-2)*3-9'
+    '(1-2)*3-9',
   ]);
 });

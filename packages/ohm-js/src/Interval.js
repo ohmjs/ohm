@@ -4,7 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-const assert = require('./common').assert;
+const {assert} = require('./common');
 const errors = require('./errors');
 const util = require('./util');
 
@@ -19,9 +19,9 @@ function Interval(sourceString, startIdx, endIdx) {
 }
 
 Interval.coverage = function(/* interval1, interval2, ... */) {
-  const sourceString = arguments[0].sourceString;
-  let startIdx = arguments[0].startIdx;
-  let endIdx = arguments[0].endIdx;
+  const {sourceString} = arguments[0];
+  let {startIdx} = arguments[0];
+  let {endIdx} = arguments[0];
   for (let idx = 1; idx < arguments.length; idx++) {
     const interval = arguments[idx];
     if (interval.sourceString !== sourceString) {
@@ -70,7 +70,7 @@ Interval.prototype = {
       // `that` splits `this` into two intervals
       return [
         new Interval(this.sourceString, this.startIdx, that.startIdx),
-        new Interval(this.sourceString, that.endIdx, this.endIdx)
+        new Interval(this.sourceString, that.endIdx, this.endIdx),
       ];
     } else if (this.startIdx < that.endIdx && that.endIdx < this.endIdx) {
       // `that` contains a prefix of `this`
@@ -105,7 +105,7 @@ Interval.prototype = {
   // but with whitespace trimmed from both ends. (This only makes sense when
   // the input stream is a string.)
   trimmed() {
-    const contents = this.contents;
+    const {contents} = this;
     const startIdx = this.startIdx + contents.match(/^\s*/)[0].length;
     const endIdx = this.endIdx - contents.match(/\s*$/)[0].length;
     return new Interval(this.sourceString, startIdx, endIdx);
@@ -114,7 +114,7 @@ Interval.prototype = {
   subInterval(offset, len) {
     const newStartIdx = this.startIdx + offset;
     return new Interval(this.sourceString, newStartIdx, newStartIdx + len);
-  }
+  },
 };
 
 Object.defineProperties(Interval.prototype, {
@@ -125,14 +125,14 @@ Object.defineProperties(Interval.prototype, {
       }
       return this._contents;
     },
-    enumerable: true
+    enumerable: true,
   },
   length: {
     get() {
       return this.endIdx - this.startIdx;
     },
-    enumerable: true
-  }
+    enumerable: true,
+  },
 });
 
 // --------------------------------------------------------------------

@@ -18,9 +18,9 @@ const markscriptConfig = {
   // Allow require calls to work properly from inside Markdown.
   moduleAliases: {
     'ohm-js': scriptRel('..'),
-    'ohm-js/extras': scriptRel('../extras')
+    'ohm-js/extras': scriptRel('../extras'),
   },
-  workingDir: scriptRel('data')
+  workingDir: scriptRel('data'),
 };
 
 function scriptRel(relPath) {

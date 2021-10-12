@@ -117,7 +117,7 @@ semantics.addOperation('prettyPrint()', {
   },
   oneCharTerminal(open, c, close) {
     return this.sourceString;
-  }
+  },
 });
 
 // Exports

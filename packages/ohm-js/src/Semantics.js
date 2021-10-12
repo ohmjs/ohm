@@ -5,7 +5,7 @@
 // --------------------------------------------------------------------
 
 const InputStream = require('./InputStream');
-const IterationNode = require('./nodes').IterationNode;
+const {IterationNode} = require('./nodes');
 const MatchResult = require('./MatchResult');
 const common = require('./common');
 const errors = require('./errors');
@@ -219,9 +219,10 @@ function Semantics(grammar, superSemantics) {
 
     // Assign unique symbols for each of the attributes inherited from the super-semantics so that
     // they are memoized independently.
+    // eslint-disable-next-line guard-for-in
     for (const attributeName in this.attributes) {
       Object.defineProperty(this.attributeKeys, attributeName, {
-        value: util.uniqueId(attributeName)
+        value: util.uniqueId(attributeName),
       });
     }
   } else {
@@ -247,9 +248,11 @@ Semantics.prototype.checkActionDictsIfHaventAlready = function() {
 // Throws an exception if one or more of them doesn't.
 Semantics.prototype.checkActionDicts = function() {
   let name;
+  // eslint-disable-next-line guard-for-in
   for (name in this.operations) {
     this.operations[name].checkActionDict(this.grammar);
   }
+  // eslint-disable-next-line guard-for-in
   for (name in this.attributes) {
     this.attributes[name].checkActionDict(this.grammar);
   }
@@ -335,7 +338,7 @@ function parseSignature(signature, type) {
     common.assert(signature.indexOf('(') === -1);
     return {
       name: signature,
-      formals: []
+      formals: [],
     };
   }
 
@@ -374,8 +377,8 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
   const typePlural = type + 's';
 
   const parsedNameAndFormalArgs = parseSignature(signature, type);
-  const name = parsedNameAndFormalArgs.name;
-  const formals = parsedNameAndFormalArgs.formals;
+  const {name} = parsedNameAndFormalArgs;
+  const {formals} = parsedNameAndFormalArgs;
 
   // TODO: check that there are no duplicate formal arguments
 
@@ -392,9 +395,9 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
   });
 
   const entry =
-    type === 'operation'
-      ? new Operation(name, formals, realActionDict, builtInDefault)
-      : new Attribute(name, realActionDict, builtInDefault);
+    type === 'operation' ?
+      new Operation(name, formals, realActionDict, builtInDefault) :
+      new Attribute(name, realActionDict, builtInDefault);
 
   // The following check is not strictly necessary (it will happen later anyway) but it's better to
   // catch errors early.
@@ -445,10 +448,10 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
   } else {
     Object.defineProperty(this.Wrapper.prototype, name, {
       get: doIt,
-      configurable: true // So the property can be deleted.
+      configurable: true, // So the property can be deleted.
     });
     Object.defineProperty(this.attributeKeys, name, {
-      value: util.uniqueId(name)
+      value: util.uniqueId(name),
     });
   }
 };
@@ -484,9 +487,9 @@ Semantics.prototype.extendOperationOrAttribute = function(type, name, actionDict
   });
 
   this[typePlural][name] =
-    type === 'operation'
-      ? new Operation(name, inheritedFormals, newActionDict)
-      : new Attribute(name, newActionDict);
+    type === 'operation' ?
+      new Operation(name, inheritedFormals, newActionDict) :
+      new Attribute(name, newActionDict);
 
   // The following check is not strictly necessary (it will happen later anyway) but it's better to
   // catch errors early.
@@ -524,9 +527,9 @@ Semantics.prototype.wrap = function(node, source, optBaseInterval) {
 Semantics.createSemantics = function(grammar, optSuperSemantics) {
   const s = new Semantics(
       grammar,
-    optSuperSemantics !== undefined
-      ? optSuperSemantics
-      : Semantics.BuiltInSemantics._getSemantics()
+    optSuperSemantics !== undefined ?
+      optSuperSemantics :
+      Semantics.BuiltInSemantics._getSemantics()
   );
 
   // To enable clients to invoke a semantics like a function, return a function that acts as a proxy
@@ -650,7 +653,7 @@ class Operation {
       // Look for a semantic action whose name matches the node's constructor name, which is either
       // the name of a rule in the grammar, or '_terminal' (for a terminal node), or '_iter' (for an
       // iteration node).
-      const ctorName = nodeWrapper._node.ctorName;
+      const {ctorName} = nodeWrapper._node;
       let actionFn = this.actionDict[ctorName];
       if (actionFn) {
         globalActionStack.push([this, ctorName]);
@@ -716,7 +719,7 @@ function initBuiltInSemantics(builtInRules) {
     },
     nonEmpty(first, _, rest) {
       return this.iteration([first].concat(rest.children));
-    }
+    },
   };
 
   Semantics.BuiltInSemantics = Semantics.createSemantics(builtInRules, null).addOperation(
@@ -725,7 +728,7 @@ function initBuiltInSemantics(builtInRules) {
         emptyListOf: actions.empty,
         nonemptyListOf: actions.nonEmpty,
         EmptyListOf: actions.empty,
-        NonemptyListOf: actions.nonEmpty
+        NonemptyListOf: actions.nonEmpty,
       }
   );
 }
@@ -735,13 +738,13 @@ function initPrototypeParser(grammar) {
     AttributeSignature(name) {
       return {
         name: name.parse(),
-        formals: []
+        formals: [],
       };
     },
     OperationSignature(name, optFormals) {
       return {
         name: name.parse(),
-        formals: optFormals.children.map(c => c.parse())[0] || []
+        formals: optFormals.children.map(c => c.parse())[0] || [],
       };
     },
     Formals(oparen, fs, cparen) {
@@ -749,7 +752,7 @@ function initPrototypeParser(grammar) {
     },
     name(first, rest) {
       return this.sourceString;
-    }
+    },
   });
   prototypeGrammar = grammar;
 }

@@ -49,7 +49,7 @@ function _getNodeTypes(pexpr) {
   }
 
   if (pexpr instanceof pexprs.Alt) {
-    const terms = pexpr['terms'];
+    const {terms} = pexpr;
     if (terms.length === 0) return [];
 
     const result = _getNodeTypes(terms[0]);
@@ -60,12 +60,12 @@ function _getNodeTypes(pexpr) {
   }
 
   if (pexpr instanceof pexprs.Seq) {
-    return flatMap(pexpr['factors'], f => _getNodeTypes(f));
+    return flatMap(pexpr.factors, f => _getNodeTypes(f));
   }
 
   if (pexpr instanceof pexprs.Iter) {
     // TODO(pdubroy): Should IterationNode have a type parameter?
-    return flatMap(_getNodeTypes(pexpr['expr']), () => new UnionType('IterationNode'));
+    return flatMap(_getNodeTypes(pexpr.expr), () => new UnionType('IterationNode'));
   }
 
   if (pexpr instanceof pexprs.Not) {
@@ -73,7 +73,7 @@ function _getNodeTypes(pexpr) {
   }
 
   if (pexpr instanceof pexprs.Lookahead || pexpr instanceof pexprs.Lex) {
-    return _getNodeTypes(pexpr['expr']);
+    return _getNodeTypes(pexpr.expr);
   }
   throw new Error(`Not implemented for ${pexpr.constructor.name}`);
 }

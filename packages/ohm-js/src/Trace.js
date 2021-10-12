@@ -26,7 +26,7 @@ const Flags = {
   isImplicitSpaces: 1 << 2,
   isMemoized: 1 << 3,
   isHeadOfLeftRecursion: 1 << 4,
-  terminatesLR: 1 << 5
+  terminatesLR: 1 << 5,
 };
 
 function spaces(n) {
@@ -79,7 +79,7 @@ Trace.prototype.SKIP = {};
 Object.defineProperty(Trace.prototype, 'displayString', {
   get() {
     return this.expr.toDisplayString();
-  }
+  },
 });
 
 // For convenience, create a getter and setter for the boolean flags in `Flags`.
@@ -95,7 +95,7 @@ Object.keys(Flags).forEach(name => {
       } else {
         this._flags &= ~mask;
       }
-    }
+    },
   });
 });
 

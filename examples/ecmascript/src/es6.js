@@ -17,7 +17,7 @@ const mentionsThisActions = {
     return false;
   },
   _nonterminal: anyNodesMentionThis,
-  _iter: anyNodesMentionThis
+  _iter: anyNodesMentionThis,
 };
 
 const toES5Actions = {
@@ -31,7 +31,7 @@ const toES5Actions = {
   },
   ConciseBody_noBraces(exp) {
     return '{ return ' + exp.toES5() + ' }';
-  }
+  },
 };
 
 module.exports = function(ohm, ns, s) {
@@ -42,6 +42,6 @@ module.exports = function(ohm, ns, s) {
 
   return {
     grammar: g,
-    semantics
+    semantics,
   };
 };

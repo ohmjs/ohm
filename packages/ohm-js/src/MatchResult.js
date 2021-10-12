@@ -30,6 +30,7 @@ function MatchResult(
   this._rightmostFailures = optRecordedFailures;
 
   if (this.failed()) {
+    /* eslint-disable no-invalid-this */
     common.defineLazyProperty(this, 'message', function() {
       const detail = 'Expected ' + this.getExpectedText();
       return (
@@ -41,6 +42,7 @@ function MatchResult(
       const errorInfo = util.getLineAndColumn(this.input, this.getRightmostFailurePosition());
       return 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ': ' + detail;
     });
+    /* eslint-enable no-invalid-this */
   }
 }
 
@@ -70,9 +72,9 @@ MatchResult.prototype.getRightmostFailures = function() {
 };
 
 MatchResult.prototype.toString = function() {
-  return this.succeeded()
-    ? '[match succeeded]'
-    : '[match failed at position ' + this.getRightmostFailurePosition() + ']';
+  return this.succeeded() ?
+    '[match succeeded]' :
+    '[match failed at position ' + this.getRightmostFailurePosition() + ']';
 };
 
 // Return a string summarizing the expected contents of the input stream when

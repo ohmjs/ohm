@@ -98,7 +98,7 @@ test('many expressions with nullable operands', t => {
           'Line 1, col 14:',
           '> 1 | G { start = ("a"?)*}',
           '                   ^~~~',
-          'Nullable expression "a"? is not allowed inside \'*\' (possible infinite loop)'
+          'Nullable expression "a"? is not allowed inside \'*\' (possible infinite loop)',
         ].join('\n')
     );
   }
@@ -113,7 +113,7 @@ test('many expressions with nullable operands', t => {
           'Line 1, col 14:',
           '> 1 | G { start = ("a"?)+}',
           '                   ^~~~',
-          'Nullable expression "a"? is not allowed inside \'+\' (possible infinite loop)'
+          'Nullable expression "a"? is not allowed inside \'+\' (possible infinite loop)',
         ].join('\n')
     );
   }
@@ -198,7 +198,7 @@ test('errors from makeGrammar()', t => {
           '  1 | G {}',
           '> 2 | G2 <: G {}',
           '      ^',
-          'Found more than one grammar definition -- use ohm.grammars() instead.'
+          'Found more than one grammar definition -- use ohm.grammars() instead.',
         ].join('\n')
     );
   }
@@ -235,7 +235,7 @@ test('unrecognized escape sequences', t => {
             'Line 1, col 19:',
             '> 1 | G { start = "hello' + bes + 'world" }',
             '                        ^',
-            'Expected "\\""'
+            'Expected "\\""',
           ].join('\n')
       );
     }
@@ -369,7 +369,7 @@ test('complex match failure', t => {
         ' rule4 = space+ ',
         ' int = digit+ ',
         ' float = int ("." digit+) ',
-        '}'
+        '}',
       ].join('\n')
   );
   const r = g.match('fail?"');

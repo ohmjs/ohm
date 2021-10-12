@@ -4,7 +4,7 @@
 
 const assert = require('assert');
 const fs = require('fs');
-const join = require('path').join;
+const {join} = require('path');
 const ohm = require('../../packages/ohm-js');
 
 const contents = fs.readFileSync(join(__dirname, 'csv.ohm'));
@@ -19,7 +19,7 @@ const semantics = g.createSemantics().addOperation('value', {
   },
   col(_) {
     return this.sourceString;
-  }
+  },
 });
 
 const someInput = 'foo,bar,baz\n' + 'foo,bar\n' + '\n' + 'foo,,baz\n' + ',bar,baz\n' + 'foo';
@@ -36,7 +36,7 @@ assert.deepEqual(parse(someInput), [
   [''],
   ['foo', '', 'baz'],
   ['', 'bar', 'baz'],
-  ['foo']
+  ['foo'],
 ]);
 assert.deepEqual(parse(someInput + '\n'), [
   ['foo', 'bar', 'baz'],
@@ -44,5 +44,5 @@ assert.deepEqual(parse(someInput + '\n'), [
   [''],
   ['foo', '', 'baz'],
   ['', 'bar', 'baz'],
-  ['foo']
+  ['foo'],
 ]);

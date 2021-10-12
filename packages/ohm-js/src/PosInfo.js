@@ -31,7 +31,7 @@ PosInfo.prototype = {
     memoRec.nextLeftRecursion = this.currentLeftRecursion;
     this.currentLeftRecursion = memoRec;
 
-    const applicationMemoKeyStack = this.applicationMemoKeyStack;
+    const {applicationMemoKeyStack} = this;
     const indexOfFirstInvolvedRule =
       applicationMemoKeyStack.indexOf(headApplication.toMemoKey()) + 1;
     const involvedApplicationMemoKeys = applicationMemoKeyStack.slice(
@@ -62,7 +62,7 @@ PosInfo.prototype = {
     if (!memoRec.isLeftRecursion) {
       return true;
     }
-    const applicationMemoKeyStack = this.applicationMemoKeyStack;
+    const {applicationMemoKeyStack} = this;
     for (let idx = 0; idx < applicationMemoKeyStack.length; idx++) {
       const applicationMemoKey = applicationMemoKeyStack[idx];
       if (memoRec.isInvolved(applicationMemoKey)) {
@@ -89,7 +89,7 @@ PosInfo.prototype = {
       return;
     }
 
-    const memo = this.memo;
+    const {memo} = this;
     this.maxExaminedLength = 0;
     this.maxRightmostFailureOffset = -1;
     Object.keys(memo).forEach(k => {
@@ -104,7 +104,7 @@ PosInfo.prototype = {
         );
       }
     });
-  }
+  },
 };
 
 // --------------------------------------------------------------------

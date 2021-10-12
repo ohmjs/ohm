@@ -4,7 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-const assert = require('../src/common').assert;
+const {assert} = require('../src/common');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -131,12 +131,12 @@ VisitorFamily.prototype._checkActionDict = function(dict) {
 
 VisitorFamily.prototype.addOperation = function(signature, actions) {
   const sig = parseSignature(signature);
-  const name = sig.name;
+  const {name} = sig;
   this._checkActionDict(actions);
   this.operations[name] = {
     name,
     formals: sig.formals,
-    actions
+    actions,
   };
 
   const family = this;

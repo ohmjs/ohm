@@ -23,7 +23,7 @@ test('multiple rules', t => {
         '  Start (the start)',
         '    = a<"b">  -- start',
         '  a<arg> = arg "a".."z"',
-        '}'
+        '}',
       ].join('\n')
   );
 });

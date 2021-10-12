@@ -63,7 +63,7 @@ const semantics = g.createSemantics();
 semantics.addOperation('toES5()', {
   Program(_, sourceElements) {
     // Top-level leading and trailing whitespace is not handled by nodeToES5(), so do it here.
-    const sourceString = this.source.sourceString;
+    const {sourceString} = this.source;
     return (
       sourceString.slice(0, this.source.startIdx) +
       nodeToES5(this, [sourceElements]) +
@@ -75,7 +75,7 @@ semantics.addOperation('toES5()', {
   },
   _terminal() {
     return this.sourceString;
-  }
+  },
 });
 
 // Implements hoisting of variable and function declarations.
@@ -97,7 +97,7 @@ semantics.addOperation('hoistDeclarations()', {
   _nonterminal: mergeBindings,
   _terminal() {
     return new Map();
-  }
+  },
 });
 
 // Merge the bindings from the given `nodes` into a single map, where the value
@@ -118,5 +118,5 @@ function mergeBindings(...nodes) {
 
 module.exports = {
   grammar: g,
-  semantics
+  semantics,
 };

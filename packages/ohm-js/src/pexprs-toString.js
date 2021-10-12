@@ -45,15 +45,15 @@ pexprs.Lex.prototype.toString = function() {
 };
 
 pexprs.Alt.prototype.toString = function() {
-  return this.terms.length === 1
-    ? this.terms[0].toString()
-    : '(' + this.terms.map(term => term.toString()).join(' | ') + ')';
+  return this.terms.length === 1 ?
+    this.terms[0].toString() :
+    '(' + this.terms.map(term => term.toString()).join(' | ') + ')';
 };
 
 pexprs.Seq.prototype.toString = function() {
-  return this.factors.length === 1
-    ? this.factors[0].toString()
-    : '(' + this.factors.map(factor => factor.toString()).join(' ') + ')';
+  return this.factors.length === 1 ?
+    this.factors[0].toString() :
+    '(' + this.factors.map(factor => factor.toString()).join(' ') + ')';
 };
 
 pexprs.Iter.prototype.toString = function() {

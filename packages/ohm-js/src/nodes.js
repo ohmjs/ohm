@@ -195,5 +195,5 @@ module.exports = {
   Node,
   TerminalNode,
   NonterminalNode,
-  IterationNode
+  IterationNode,
 };

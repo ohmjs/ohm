@@ -82,5 +82,5 @@ function generateTypes(grammars) {
 
 module.exports = {
   generateTypes,
-  getActionDecls
+  getActionDecls,
 };

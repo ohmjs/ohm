@@ -31,8 +31,8 @@ Namespace.extend = function(namespace, optProps) {
       value: Namespace,
       enumerable: false,
       writable: true,
-      configurable: true
-    }
+      configurable: true,
+    },
   });
   return Object.assign(ns, optProps);
 };

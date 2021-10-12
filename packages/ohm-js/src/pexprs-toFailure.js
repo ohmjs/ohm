@@ -42,7 +42,7 @@ pexprs.Lookahead.prototype.toFailure = function(grammar) {
 };
 
 pexprs.Apply.prototype.toFailure = function(grammar) {
-  let description = grammar.rules[this.ruleName].description;
+  let {description} = grammar.rules[this.ruleName];
   if (!description) {
     const article = /^[aeiouAEIOU]/.test(this.ruleName) ? 'an' : 'a';
     description = article + ' ' + this.ruleName;

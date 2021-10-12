@@ -119,6 +119,8 @@ Grammar.prototype = {
   // a function of the correct arity. If not, throw an exception.
   _checkTopDownActionDict(what, name, actionDict) {
     const problems = [];
+
+    // eslint-disable-next-line guard-for-in
     for (const k in actionDict) {
       const v = actionDict[k];
       const isSpecialAction = SPECIAL_ACTION_NAMES.includes(k);
@@ -150,7 +152,7 @@ Grammar.prototype = {
       const error = new Error(
           [
             `Found errors in the action dictionary of the '${name}' ${what}:`,
-            ...prettyProblems
+            ...prettyProblems,
           ].join('\n')
       );
       error.problems = problems;
@@ -164,9 +166,9 @@ Grammar.prototype = {
     // All special actions have an expected arity of 0, though all but _terminal
     // are expected to use the rest parameter syntax (e.g. `_iter(...children)`).
     // This is considered to have arity 0, i.e. `((...args) => {}).length` is 0.
-    return SPECIAL_ACTION_NAMES.includes(actionName)
-      ? 0
-      : this.rules[actionName].body.getArity();
+    return SPECIAL_ACTION_NAMES.includes(actionName) ?
+      0 :
+      this.rules[actionName].body.getArity();
   },
 
   _inheritsFrom(grammar) {
@@ -195,7 +197,7 @@ Grammar.prototype = {
     const rules = {};
     Object.keys(this.rules).forEach(ruleName => {
       const ruleInfo = this.rules[ruleName];
-      const body = ruleInfo.body;
+      const {body} = ruleInfo;
       const isDefinition = !this.superGrammar || !this.superGrammar.rules[ruleName];
 
       let operation;
@@ -219,7 +221,7 @@ Grammar.prototype = {
         metaInfo,
         description,
         ruleInfo.formals,
-        bodyRecipe
+        bodyRecipe,
       ];
     });
 
@@ -235,7 +237,7 @@ Grammar.prototype = {
     const recipeElements = [
       ...['grammar', metaInfo, this.name].map(JSON.stringify),
       superGrammarOutput,
-      ...[startRule, rules].map(JSON.stringify)
+      ...[startRule, rules].map(JSON.stringify),
     ];
     return jsonToJS(`[${recipeElements.join(',')}]`);
   },
@@ -257,8 +259,9 @@ Grammar.prototype = {
     sb.append('{');
 
     let first = true;
+    // eslint-disable-next-line guard-for-in
     for (const ruleName in this.rules) {
-      const body = this.rules[ruleName].body;
+      const {body} = this.rules[ruleName];
       if (first) {
         first = false;
       } else {
@@ -299,9 +302,9 @@ Grammar.prototype = {
     if (!(app.ruleName in this.rules)) {
       throw errors.undeclaredRule(app.ruleName, this.name);
     }
-    const formals = this.rules[app.ruleName].formals;
+    const {formals} = this.rules[app.ruleName];
     if (formals.length !== app.args.length) {
-      const source = this.rules[app.ruleName].source;
+      const {source} = this.rules[app.ruleName];
       throw errors.wrongNumberOfParameters(
           app.ruleName,
           formals.length,
@@ -310,7 +313,7 @@ Grammar.prototype = {
       );
     }
     return app;
-  }
+  },
 };
 
 // The following grammar contains a few rules that couldn't be written  in "userland".
@@ -326,51 +329,51 @@ Grammar.ProtoBuiltInRules = new Grammar(
         body: pexprs.any,
         formals: [],
         description: 'any character',
-        primitive: true
+        primitive: true,
       },
       end: {
         body: pexprs.end,
         formals: [],
         description: 'end of input',
-        primitive: true
+        primitive: true,
       },
 
       caseInsensitive: {
         body: new CaseInsensitiveTerminal(new pexprs.Param(0)),
         formals: ['str'],
-        primitive: true
+        primitive: true,
       },
       lower: {
         body: new pexprs.UnicodeChar('Ll'),
         formals: [],
         description: 'a lowercase letter',
-        primitive: true
+        primitive: true,
       },
       upper: {
         body: new pexprs.UnicodeChar('Lu'),
         formals: [],
         description: 'an uppercase letter',
-        primitive: true
+        primitive: true,
       },
       // Union of Lt (titlecase), Lm (modifier), and Lo (other), i.e. any letter not in Ll or Lu.
       unicodeLtmo: {
         body: new pexprs.UnicodeChar('Ltmo'),
         formals: [],
         description: 'a Unicode character in Lt, Lm, or Lo',
-        primitive: true
+        primitive: true,
       },
 
       // These rules are not truly primitive (they could be written in userland) but are defined
       // here for bootstrapping purposes.
       spaces: {
         body: new pexprs.Star(new pexprs.Apply('space')),
-        formals: []
+        formals: [],
       },
       space: {
         body: new pexprs.Range('\x00', ' '),
         formals: [],
-        description: 'a space'
-      }
+        description: 'a space',
+      },
     }
 );
 

@@ -3,7 +3,7 @@
 const ohm = require('..');
 const test = require('ava');
 
-const makeGrammar = require('./helpers/testUtil').makeGrammar;
+const {makeGrammar} = require('./helpers/testUtil');
 
 // --------------------------------------------------------------------
 // Tests
@@ -21,7 +21,7 @@ test('rule definition source', t => {
   t.deepEqual(definitionLoc(g, 'bar_baz'), [30, 40], 'inline rule');
 
   const g2 = makeGrammar(['G2 <: G {', '  foo += bar', '  bar := "a" | "b" -- baz', '}'], {
-    G: g
+    G: g,
   });
   t.deepEqual(definitionLoc(g2, 'foo'), [12, 22], 'extended rule');
   t.deepEqual(definitionLoc(g2, 'bar'), [25, 48], 'overridden rule');
@@ -34,7 +34,7 @@ test('rule application source', t => {
     '  foo = bar',
     '  beep = letter bar',
     '  bar = "a" | "blah" | "a".."z" -- baz',
-    '}'
+    '}',
   ]);
 
   function fromLoc(pexpr) {
@@ -87,7 +87,7 @@ test('toArgumentNameList', t => {
     ' MoreOpts = ("+" Start)?',
     ' ranges = "1".."9" | "!".."@"',
     ' Pair<elem> = "(" elem "," elem ")"',
-    ' }'
+    ' }',
   ]);
 
   const iter = g.rules.Start.body;
@@ -119,7 +119,7 @@ test('toArgumentNameList', t => {
     'foo_2',
     'foo_3',
     '_a_2',
-    'foo_4'
+    'foo_4',
   ]);
 
   const plus = g.rules.plus.body;

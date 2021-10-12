@@ -64,7 +64,7 @@ InputStream.prototype = {
 
   interval(startIdx, optEndIdx) {
     return new Interval(this.source, startIdx, optEndIdx ? optEndIdx : this.pos);
-  }
+  },
 };
 
 // --------------------------------------------------------------------

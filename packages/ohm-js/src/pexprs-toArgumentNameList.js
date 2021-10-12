@@ -148,9 +148,9 @@ pexprs.Iter.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
   const argumentNameList = this.expr
       .toArgumentNameList(firstArgIndex, noDupCheck)
       .map(exprArgumentString =>
-      exprArgumentString[exprArgumentString.length - 1] === 's'
-        ? exprArgumentString + 'es'
-        : exprArgumentString + 's'
+      exprArgumentString[exprArgumentString.length - 1] === 's' ?
+        exprArgumentString + 'es' :
+        exprArgumentString + 's'
       );
   if (!noDupCheck) {
     resolveDuplicatedNames(argumentNameList);

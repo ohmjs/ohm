@@ -55,7 +55,7 @@ exports.defineLazyProperty = function(obj, propName, getterFn) {
         memo = getterFn.call(this);
       }
       return memo;
-    }
+    },
   });
 };
 

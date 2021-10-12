@@ -208,9 +208,9 @@ MatchState.prototype = {
   },
 
   _getRightmostFailureOffset() {
-    return this.rightmostFailurePosition >= 0
-      ? this.posToOffset(this.rightmostFailurePosition)
-      : -1;
+    return this.rightmostFailurePosition >= 0 ?
+      this.posToOffset(this.rightmostFailurePosition) :
+      -1;
   },
 
   // Returns the memoized trace entry for `expr` at `pos`, if one exists, `null` otherwise.
@@ -295,7 +295,7 @@ MatchState.prototype = {
   // will have `expr.getArity()` more elements than before, and the input stream's position may
   // have increased. On failure, `bindings` and position will be unchanged.
   eval(expr) {
-    const inputStream = this.inputStream;
+    const {inputStream} = this;
     const origNumBindings = this._bindings.length;
 
     let origRecordedFailures;
@@ -384,7 +384,7 @@ MatchState.prototype = {
   popFailuresInfo() {
     this.rightmostFailurePosition = this._rightmostFailurePositionStack.pop();
     this.recordedFailures = this._recordedFailuresStack.pop();
-  }
+  },
 };
 
 // --------------------------------------------------------------------
