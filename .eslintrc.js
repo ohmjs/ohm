@@ -60,8 +60,5 @@ module.exports = {
     'prefer-arrow-callback': 'error',
     'prefer-const': 'error',
     'prefer-destructuring': ['error', {object: true, array: false}],
-
-    // ----- Temporary exceptions -----
-    'no-prototype-builtins': 'off',
   },
 };

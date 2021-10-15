@@ -19,6 +19,8 @@ const globalActionStack = [];
 let prototypeGrammar;
 let prototypeGrammarSemantics;
 
+const hasOwnProperty = (x, prop) => Object.prototype.hasOwnProperty.call(x, prop);
+
 // ----------------- Wrappers -----------------
 
 // Wrappers decorate CST nodes with all of the functionality (i.e., operations and attributes)
@@ -473,7 +475,7 @@ Semantics.prototype.extendOperationOrAttribute = function(type, name, actionDict
         ' with that name'
     );
   }
-  if (Object.prototype.hasOwnProperty.call(this[typePlural], name)) {
+  if (hasOwnProperty(this[typePlural], name)) {
     throw new Error('Cannot extend ' + type + " '" + name + "' again");
   }
 
@@ -497,7 +499,7 @@ Semantics.prototype.extendOperationOrAttribute = function(type, name, actionDict
 };
 
 Semantics.prototype.assertNewName = function(name, type) {
-  if (Wrapper.prototype.hasOwnProperty(name)) {
+  if (hasOwnProperty(Wrapper.prototype, name)) {
     throw new Error('Cannot add ' + type + " '" + name + "': that's a reserved name");
   }
   if (name in this.operations) {
@@ -694,7 +696,7 @@ class Attribute extends Operation {
   execute(semantics, nodeWrapper) {
     const node = nodeWrapper._node;
     const key = semantics.attributeKeys[this.name];
-    if (!node.hasOwnProperty(key)) {
+    if (!hasOwnProperty(node, key)) {
       // The following is a super-send -- isn't JS beautiful? :/
       node[key] = Operation.prototype.execute.call(this, semantics, nodeWrapper);
     }

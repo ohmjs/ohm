@@ -39,6 +39,8 @@ function loadModule(name) {
 
 /* eslint-disable no-console */
 
+const hasOwnProperty = (x, prop) => Object.prototype.hasOwnProperty.call(x, prop);
+
 function compile(args) {
   const filenames = [];
   const opts = {
@@ -51,7 +53,7 @@ function compile(args) {
   for (let i = 0; i < args.length; ++i) {
     if (args[i] === '-g') {
       opts.grammar = args[++i];
-    } else if (args[i][0] === '-' && opts.hasOwnProperty(args[i][1])) {
+    } else if (args[i][0] === '-' && hasOwnProperty(opts, args[i][1])) {
       opts[args[i][1]] = true;
     } else {
       filenames.push(args[i]);

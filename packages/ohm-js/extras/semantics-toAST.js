@@ -22,7 +22,7 @@ const defaultOperation = {
     const {mapping} = this.args;
 
     // without customization
-    if (!mapping.hasOwnProperty(ctorName)) {
+    if (!Object.prototype.hasOwnProperty.call(mapping, ctorName)) {
       // intermediate node
       if (this._node instanceof pexprs.Alt || this._node instanceof pexprs.Apply) {
         return children[0].toAST(mapping);
