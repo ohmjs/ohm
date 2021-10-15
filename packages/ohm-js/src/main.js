@@ -104,8 +104,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return decl.extend(currentRuleName, currentRuleFormals, body, null, source);
     },
     RuleBody(_, terms) {
-      const args = terms.visit();
-      return builder.alt.apply(builder, args).withSource(this.source);
+      return builder.alt(...terms.visit()).withSource(this.source);
     },
     OverrideRuleBody(_, terms) {
       const args = terms.visit();
@@ -128,7 +127,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
             afterTerms
         ).withSource(this.source);
       } else {
-        return builder.alt.apply(builder, args).withSource(this.source);
+        return builder.alt(...args).withSource(this.source);
       }
     },
     Formals(opointy, fs, cpointy) {
@@ -140,8 +139,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
 
     Alt(seqs) {
-      const args = seqs.visit();
-      return builder.alt.apply(builder, args).withSource(this.source);
+      return builder.alt(...seqs.visit()).withSource(this.source);
     },
 
     TopLevelTerm_inline(b, n) {
@@ -164,12 +162,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
 
     Seq(expr) {
-      return builder.seq
-          .apply(
-              builder,
-              expr.children.map(c => c.visit())
-          )
-          .withSource(this.source);
+      return builder.seq(...expr.children.map(c => c.visit())).withSource(this.source);
     },
 
     Iter_star(x, _) {

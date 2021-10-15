@@ -175,17 +175,13 @@ Builder.prototype = {
 
   fromRecipe(recipe) {
     // the meta-info of 'grammar' is processed in Builder.grammar
-    const result = this[recipe[0]].apply(
-        this,
-      recipe[0] === 'grammar' ? recipe.slice(1) : recipe.slice(2)
-    );
+    const args = recipe[0] === 'grammar' ? recipe.slice(1) : recipe.slice(2);
+    const result = this[recipe[0]](...args);
 
     const metaInfo = recipe[1];
     if (metaInfo) {
       if (metaInfo.sourceInterval && this.currentDecl) {
-        result.withSource(
-            this.currentDecl.sourceInterval.apply(this.currentDecl, metaInfo.sourceInterval)
-        );
+        result.withSource(this.currentDecl.sourceInterval(...metaInfo.sourceInterval));
       }
     }
     return result;

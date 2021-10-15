@@ -21,7 +21,7 @@ function flattenIterNodes(nodes) {
   const result = [];
   for (let i = 0; i < nodes.length; ++i) {
     if (nodes[i]._node.ctorName === '_iter') {
-      result.push.apply(result, flattenIterNodes(nodes[i].children));
+      result.push(...flattenIterNodes(nodes[i].children));
     } else {
       result.push(nodes[i]);
     }
