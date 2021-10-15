@@ -140,20 +140,20 @@ VisitorFamily.prototype.addOperation = function(signature, actions) {
   };
 
   const family = this;
-  this.Adapter.prototype[name] = function() {
+  this.Adapter.prototype[name] = function(...args) {
     const tag = family._getTag(this._adaptee);
     assert(tag in family._getChildren, "getTag returned unrecognized tag '" + tag + "'");
     assert(tag in actions, "No action for '" + tag + "' in operation '" + name + "'");
 
     // Create an "arguments object" from the arguments that were passed to this
     // operation / attribute.
-    const args = Object.create(null);
-    for (let i = 0; i < arguments.length; i++) {
-      args[sig.formals[i]] = arguments[i];
+    const argsObj = Object.create(null);
+    for (const [i, val] of Object.entries(args)) {
+      argsObj[sig.formals[i]] = val;
     }
 
     const oldArgs = this.args;
-    this.args = args;
+    this.args = argsObj;
     const ans = actions[tag].apply(
         this,
         family._getChildren[tag](this._adaptee, family._wrap)

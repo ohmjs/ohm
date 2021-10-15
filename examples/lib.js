@@ -2,14 +2,11 @@
 
 'use strict';
 
-window.makeElement = function(tagName) {
+window.makeElement = function(tagName, ...children) {
   const element = document.createElement(tagName);
-  for (let idx = 1; idx < arguments.length; idx++) {
-    const child =
-      typeof arguments[idx] === 'string' ?
-        document.createTextNode(arguments[idx]) :
-        arguments[idx];
-    element.appendChild(child);
+  for (const child of children) {
+    const childEl = typeof child === 'string' ? document.createTextNode(child) : child;
+    element.appendChild(childEl);
   }
   return element;
 };

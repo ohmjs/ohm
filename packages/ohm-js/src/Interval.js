@@ -18,27 +18,22 @@ function Interval(sourceString, startIdx, endIdx) {
   this.endIdx = endIdx;
 }
 
-Interval.coverage = function(/* interval1, interval2, ... */) {
-  const {sourceString} = arguments[0];
-  let {startIdx} = arguments[0];
-  let {endIdx} = arguments[0];
-  for (let idx = 1; idx < arguments.length; idx++) {
-    const interval = arguments[idx];
-    if (interval.sourceString !== sourceString) {
+Interval.coverage = function(firstInterval, ...intervals) {
+  let {startIdx, endIdx} = firstInterval;
+  for (const interval of intervals) {
+    if (interval.sourceString !== firstInterval.sourceString) {
       throw errors.intervalSourcesDontMatch();
     } else {
-      startIdx = Math.min(startIdx, arguments[idx].startIdx);
-      endIdx = Math.max(endIdx, arguments[idx].endIdx);
+      startIdx = Math.min(startIdx, interval.startIdx);
+      endIdx = Math.max(endIdx, interval.endIdx);
     }
   }
-  return new Interval(sourceString, startIdx, endIdx);
+  return new Interval(firstInterval.sourceString, startIdx, endIdx);
 };
 
 Interval.prototype = {
-  coverageWith(/* interval1, interval2, ... */) {
-    const intervals = Array.prototype.slice.call(arguments);
-    intervals.push(this);
-    return Interval.coverage.apply(undefined, intervals);
+  coverageWith(...intervals) {
+    return Interval.coverage(...intervals, this);
   },
 
   collapsedLeft() {

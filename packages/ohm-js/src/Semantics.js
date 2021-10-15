@@ -405,7 +405,7 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
 
   this[typePlural][name] = entry;
 
-  function doIt() {
+  function doIt(...args) {
     // Dispatch to most specific version of this operation / attribute -- it may have been
     // overridden by a sub-semantics.
     const thisThing = this._semantics[typePlural][name];
@@ -427,14 +427,14 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
 
     // Create an "arguments object" from the arguments that were passed to this
     // operation / attribute.
-    const args = Object.create(null);
-    for (let idx = 0; idx < arguments.length; idx++) {
+    const argsObj = Object.create(null);
+    for (const [idx, val] of Object.entries(args)) {
       const formal = thisThing.formals[idx];
-      args[formal] = arguments[idx];
+      argsObj[formal] = val;
     }
 
     const oldArgs = this.args;
-    this.args = args;
+    this.args = argsObj;
     const ans = thisThing.execute(this._semantics, this);
     this.args = oldArgs;
     return ans;

@@ -14,12 +14,12 @@ const testUtil = require('./helpers/testUtil');
 // Private stuff
 // --------------------------------------------------------------------
 
-function descendant(traceNode /* ...path */) {
-  const path = Array.prototype.slice.call(arguments, 1);
-  for (let i = 0; i < path.length; ++i) {
-    traceNode = traceNode.children[path[i]];
+function descendant(traceNode, ...pathNodes) {
+  let ans = traceNode;
+  for (const node of pathNodes) {
+    ans = ans.children[node];
   }
-  return traceNode;
+  return ans;
 }
 
 function displayString(traceNode) {

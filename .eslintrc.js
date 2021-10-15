@@ -63,6 +63,5 @@ module.exports = {
 
     // ----- Temporary exceptions -----
     'no-prototype-builtins': 'off',
-    'prefer-rest-params': 'off',
   },
 };

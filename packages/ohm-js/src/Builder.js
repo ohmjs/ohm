@@ -73,10 +73,9 @@ Builder.prototype = {
     return new pexprs.Param(index);
   },
 
-  alt(/* term1, term2, ... */) {
+  alt(...termArgs) {
     let terms = [];
-    for (let idx = 0; idx < arguments.length; idx++) {
-      let arg = arguments[idx];
+    for (let arg of termArgs) {
       if (!(arg instanceof pexprs.PExpr)) {
         arg = this.fromRecipe(arg);
       }
@@ -89,10 +88,9 @@ Builder.prototype = {
     return terms.length === 1 ? terms[0] : new pexprs.Alt(terms);
   },
 
-  seq(/* factor1, factor2, ... */) {
+  seq(...factorArgs) {
     let factors = [];
-    for (let idx = 0; idx < arguments.length; idx++) {
-      let arg = arguments[idx];
+    for (let arg of factorArgs) {
       if (!(arg instanceof pexprs.PExpr)) {
         arg = this.fromRecipe(arg);
       }
