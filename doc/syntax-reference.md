@@ -241,6 +241,8 @@ AddExp_plus = AddExp "+" MulExp
 
 <h3 id="syntactic-lexical">Syntactic vs. Lexical Rules</h3>
 
+<!-- https://git.io/JiYgP -->
+
 A _syntactic rule_ is a rule whose name begins with an uppercase letter, and _lexical rule_ is one whose name begins with a lowercase letter. The difference between lexical and syntactic rules is that syntactic rules implicitly skip whitespace characters.
 
 For the purposes of a syntactic rule, a "whitespace character" is anything that matches its enclosing grammar's "space" rule. The default implementation of "space" matches ' ', '\t', '\n', '\r', and any other character that is considered whitespace in the [ES5 spec](http://ecma-international.org/ecma-262/5.1/#sec-7.2).

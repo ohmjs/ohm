@@ -248,6 +248,7 @@ declare namespace ohm {
       arg2: IterationNode
     ) => T;
     emptyListOf?: (this: NonterminalNode) => T;
+    applySyntactic?: (this: NonterminalNode, arg0: Node) => T;
   }
 
   /**

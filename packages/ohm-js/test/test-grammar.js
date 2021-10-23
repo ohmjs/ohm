@@ -68,6 +68,8 @@ test('action dictionary templates', t => {
       '  },\n' +
       '  emptyListOf: function() {\n' +
       '  },\n' +
+      '  applySyntactic: function(_) {\n' +
+      '  },\n' +
       '  any: function(_) {\n' +
       '  },\n' +
       '  end: function(_) {\n' +
@@ -124,6 +126,8 @@ test('action dictionary templates', t => {
       '  nonemptyListOf: function(_, _, _) {\n' +
       '  },\n' +
       '  emptyListOf: function() {\n' +
+      '  },\n' +
+      '  applySyntactic: function(_) {\n' +
       '  },\n' +
       '  any: function(_) {\n' +
       '  },\n' +

@@ -37,4 +37,6 @@ BuiltInRules {
   emptyListOf<elem, sep>
     = /* nothing */
 
+  // Allows a syntactic rule application within a lexical context.
+  applySyntactic<app> = app
 }
