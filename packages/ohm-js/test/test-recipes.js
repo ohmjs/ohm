@@ -6,7 +6,6 @@
 
 const ohm = require('..');
 const test = require('ava');
-const testUtil = require('./helpers/testUtil');
 
 // --------------------------------------------------------------------
 // Helpers
@@ -75,13 +74,13 @@ test('grammar recipes with supergrammars', t => {
 });
 
 test('grammar recipes involving parameterized rules', t => {
-  const g = testUtil.makeGrammar([
-    'G {',
-    '  foo = bar<"0", "1">',
-    '  bar<x, y> = "a" x -- one',
-    '            | "b" y -- two',
-    '}',
-  ]);
+  const g = ohm.grammar(`
+    G {
+      foo = bar<"0", "1">
+      bar<x, y> = "a" x -- one
+                | "b" y -- two
+    }
+  `);
   const recipe = g.toRecipe();
   t.truthy(ohm.makeRecipe(recipe).match('a0').succeeded(), 'matches one paramater');
   t.truthy(ohm.makeRecipe(recipe).match('b1').succeeded(), 'matches multiple parameters');
@@ -97,18 +96,20 @@ test('grammar recipes involving parameterized rules', t => {
 });
 
 test('grammar recipes with source', t => {
-  const ns = testUtil.makeGrammars([
-    ' G {', // Deliberately start with leading space.
-    '  Start = ident*',
-    '  ident = letter /* foo */ identPart*',
-    '  identPart = alnum',
-    '}',
-    ' G2 <: G {',
-    '  Start := (ident | number)*',
-    '  identPart += "$"',
-    '  number = digit+',
-    '}',
-  ]);
+  const ns = ohm.grammars(
+      [
+        ' G {', // Deliberately start with leading space.
+        '  Start = ident*',
+        '  ident = letter /* foo */ identPart*',
+        '  identPart = alnum',
+        '}',
+        ' G2 <: G {',
+        '  Start := (ident | number)*',
+        '  identPart += "$"',
+        '  number = digit+',
+        '}',
+      ].join('\n')
+  );
   let g = ohm.makeRecipe(ns.G.toRecipe());
   t.is(g.rules.Start.body.source.contents, 'ident*');
   t.is(g.rules.ident.body.source.contents, 'letter /* foo */ identPart*');
@@ -192,10 +193,10 @@ test('semantics recipes', t => {
 });
 
 test('semantics recipes (special cases)', t => {
-  const ns = testUtil.makeGrammars([
-    'G { special = "\u2028" }',
-    'G2 <: G { special += "\u2029" }',
-  ]);
+  const ns = ohm.grammars(`
+    G { special = "\u2028" }
+    G2 <: G { special += "\u2029" }
+  `);
 
   let s = ns.G.createSemantics();
   t.notThrows(() => {
@@ -209,19 +210,19 @@ test('semantics recipes (special cases)', t => {
 });
 
 test('semantics recipes with extensions', t => {
-  const ns = testUtil.makeGrammars([
-    'G { ',
-    '  Add = one "and" two',
-    '  one = "one"',
-    '  two = "two"',
-    '  three = "three"',
-    '}',
-    'G2 <: G {',
-    '}',
-    'G3 <: G2 {',
-    '  one := "elf"',
-    '}',
-  ]);
+  const ns = ohm.grammars(`
+    G {
+      Add = one "and" two
+      one = "one"
+      two = "two"
+      three = "three"
+    }
+    G2 <: G {
+    }
+    G3 <: G2 {
+      one := "elf"
+    }
+  `);
   const s = ns.G.createSemantics()
       .addAttribute('value', {
         one(_) {

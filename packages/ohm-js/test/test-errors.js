@@ -185,7 +185,7 @@ test('many expressions with nullable operands', t => {
   }
 });
 
-test('errors from makeGrammar()', t => {
+test('errors from ohm.grammar()', t => {
   const source = 'G {}\nG2 <: G {}';
   try {
     ohm.grammar(source);

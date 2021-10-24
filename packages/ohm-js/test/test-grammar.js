@@ -5,30 +5,26 @@ const test = require('ava');
 
 const Grammar = require('../src/Grammar');
 const ohm = require('..');
-const testUtil = require('./helpers/testUtil');
-
-const {makeGrammar} = testUtil;
-const {makeGrammars} = testUtil;
 
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
 
 test('action dictionary templates', t => {
-  const ns = makeGrammars([
-    'G1 {',
-    '  foo = bar',
-    '  bar = baz baz baz',
-    '  baz = qux',
-    '  qux = quux "123"',
-    '  quux = "42"',
-    '  aaa = "duh"',
-    '  bbb = ~aaa qux  -- blah',
-    '}',
-    'G2 <: G1 {',
-    '  qux := "100"',
-    '}',
-  ]);
+  const ns = ohm.grammars(`
+    G1 {
+      foo = bar
+      bar = baz baz baz
+      baz = qux
+      qux = quux "123"
+      quux = "42"
+      aaa = "duh"
+      bbb = ~aaa qux  -- blah
+    }
+    G2 <: G1 {
+      qux := "100"
+    }
+  `);
   t.is(
       ns.G1.toOperationActionDictionaryTemplate(),
       '{\n' +
@@ -172,7 +168,7 @@ test('default start rule', t => {
       'match throws with no start rule'
   );
 
-  const ns = makeGrammars(['G { foo = "a" }', 'G2 <: G {}']);
+  const ns = ohm.grammars('G { foo = "a" } G2 <: G {}');
   t.is(ns.G.defaultStartRule, 'foo', 'only rule becomes default start rule');
   t.is(ns.G2.defaultStartRule, 'foo', 'start rule is inherited from supergrammar');
   t.is(ns.G.match('a').succeeded(), true, 'match works without a start rule argument');
@@ -195,7 +191,12 @@ test('default start rule', t => {
       {message: /Missing start rule/},
       'match throws with no start rule'
   );
-  g = makeGrammar(['G { digit += any', 'blah = "3" }']);
+  g = ohm.grammar(`
+    G {
+      digit += any
+      blah = "3"
+    }
+  `);
   t.is(g.defaultStartRule, 'blah', 'rule defined after extending becomes start rule');
   t.is(g.match('3').succeeded(), true);
 
@@ -208,7 +209,12 @@ test('default start rule', t => {
       {message: /Missing start rule/},
       'match throws with no start rule'
   );
-  g = makeGrammar(['G { digit := any', 'blah = "3" }']);
+  g = ohm.grammar(`
+    G {
+      digit := any
+      blah = "3"
+    }
+  `);
   t.is(g.defaultStartRule, 'blah', 'rule defined after overriding becomes start rule');
   t.is(g.match('3').succeeded(), true);
 
