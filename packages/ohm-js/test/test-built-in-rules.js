@@ -98,7 +98,7 @@ test('applySyntactic', t => {
   t.throws(
       () => ohm.grammar('G { foo = applySyntactic<x>\nx = }'),
       {
-        message: /not syntactic/,
+        message: /applySyntactic is for syntactic rules, but 'x' is a lexical rule/,
       },
       'error if arg is a lexical rule application'
   );
