@@ -91,7 +91,7 @@ test('applySyntactic', t => {
   `);
   t.is(g.match('a 9').succeeded(), true, 'space is skipped before the syntactic rule');
   t.is(g.match('a 9 8').succeeded(), true, 'space is skipped inside the syntactic rule');
-  t.is(g.match('a 9 ').failed(), true, 'trailing space is not skipped');
+  t.is(g.match('a 9 ').succeeded(), true, 'trailing space is skipped');
 
   t.is(g.match(' 0  12 3', 'leftRecursion').succeeded(), true);
 

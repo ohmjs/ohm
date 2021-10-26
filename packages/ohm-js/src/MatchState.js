@@ -9,10 +9,17 @@ const MatchResult = require('./MatchResult');
 const PosInfo = require('./PosInfo');
 const Trace = require('./Trace');
 const pexprs = require('./pexprs');
+const util = require('./util');
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
+
+let builtInApplySyntacticBody;
+
+util.awaitBuiltInRules(builtInRules => {
+  builtInApplySyntacticBody = builtInRules.rules.applySyntactic.body;
+});
 
 const applySpaces = new pexprs.Apply('spaces');
 
@@ -84,9 +91,6 @@ MatchState.prototype = {
   },
 
   inSyntacticContext() {
-    if (typeof this.inputStream.source !== 'string') {
-      return false;
-    }
     const currentApplication = this.currentApplication();
     if (currentApplication) {
       return currentApplication.isSyntactic() && !this.inLexifiedContext();
@@ -139,6 +143,7 @@ MatchState.prototype = {
   truncateBindings(newLength) {
     // Yes, this is this really faster than setting the `length` property (tested with
     // bin/es5bench on Node v6.1.0).
+    // Update 2021-10-25: still true on v14.15.5 — it's ~20% speedup on es5bench.
     while (this._bindings.length > newLength) {
       this.popBinding();
     }
@@ -339,6 +344,12 @@ MatchState.prototype = {
 
     if (this.recordedFailures) {
       this.recordFailures(origRecordedFailures, false);
+    }
+
+    // The built-in applySyntactic rule needs special handling: we want to skip trailing spaces,
+    // just with the top-level application of a syntactic rule.
+    if (expr === builtInApplySyntacticBody) {
+      this.skipSpaces();
     }
 
     return ans;
