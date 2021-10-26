@@ -177,12 +177,12 @@ function applicationOfSyntacticRuleFromLexicalContext(ruleName, applyExpr) {
   );
 }
 
-// Lexical rule application used with applySyntactic
+// Lexical rule application used with experimentalApplySyntactic
 
-function applySyntacticWithLexicalRuleApplication(applyExpr) {
+function experimentalApplySyntacticWithLexicalRuleApplication(applyExpr) {
   const {ruleName} = applyExpr;
   return createError(
-      `applySyntactic is for syntactic rules, but '${ruleName}' is a lexical rule. ` +
+      `experimentalApplySyntactic is for syntactic rules, but '${ruleName}' is a lexical rule. ` +
       syntacticVsLexicalNote,
       applyExpr.source
   );
@@ -295,7 +295,7 @@ function missingSemanticAction(ctorName, name, type, stack) {
 
 module.exports = {
   applicationOfSyntacticRuleFromLexicalContext,
-  applySyntacticWithLexicalRuleApplication,
+  experimentalApplySyntacticWithLexicalRuleApplication,
   cannotExtendUndeclaredRule,
   cannotOverrideUndeclaredRule,
   duplicateGrammarDeclaration,

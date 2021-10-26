@@ -72,21 +72,21 @@ test('case-insensitive matching', t => {
   );
 });
 
-test('applySyntactic', t => {
-  // Syntactic rule can be passed to applySyntactic in a lexical context
-  t.notThrows(() => ohm.grammar('G { foo = applySyntactic<X>\nX = }'));
-  t.notThrows(() => ohm.grammar('G { Foo = #(applySyntactic<X>)\nX = }'));
+test('experimentalApplySyntactic', t => {
+  // Syntactic rule can be passed to experimentalApplySyntactic in a lexical context
+  t.notThrows(() => ohm.grammar('G { foo = experimentalApplySyntactic<X>\nX = }'));
+  t.notThrows(() => ohm.grammar('G { Foo = #(experimentalApplySyntactic<X>)\nX = }'));
 
   const g = ohm.grammar(`
     G {
-      start = "a" applySyntactic<Number>
+      start = "a" experimentalApplySyntactic<Number>
       Number = digit+
 
-      leftRecursion = applySyntactic<NumberLR>
+      leftRecursion = experimentalApplySyntactic<NumberLR>
       NumberLR = NumberLR digit -- rec
                | digit
 
-      disallowLeadingSpace = ~space applySyntactic<Number>
+      disallowLeadingSpace = ~space experimentalApplySyntactic<Number>
     }
   `);
   t.is(g.match('a 9').succeeded(), true, 'space is skipped before the syntactic rule');
@@ -98,7 +98,7 @@ test('applySyntactic', t => {
   t.is(g.match(' 0', 'disallowLeadingSpace').failed(), true);
 
   t.throws(
-      () => ohm.grammar('G { foo = applySyntactic<"bad"> }'),
+      () => ohm.grammar('G { foo = experimentalApplySyntactic<"bad"> }'),
       {
         message: /expected a syntactic rule application/,
       },
@@ -106,18 +106,18 @@ test('applySyntactic', t => {
   );
 
   t.throws(
-      () => ohm.grammar('G { foo = applySyntactic<x>\nx = }'),
+      () => ohm.grammar('G { foo = experimentalApplySyntactic<x>\nx = }'),
       {
-        message: /applySyntactic is for syntactic rules, but 'x' is a lexical rule/,
+        message: /experimentalApplySyntactic is for syntactic rules, but 'x' is a lexical rule/,
       },
       'error if arg is a lexical rule application'
   );
 });
 
 // TODO: Get this working (or should it just warn?)
-test.failing('applySyntactic with a lexical arg', t => {
-  // applySyntactic can't appear in a syntatic context, and or lexical args.
-  t.throws(() => ohm.grammar('G { Foo = applySyntactic<X>\nX = }'), {
+test.failing('experimentalApplySyntactic with a lexical arg', t => {
+  // experimentalApplySyntactic can't appear in a syntatic context, and or lexical args.
+  t.throws(() => ohm.grammar('G { Foo = experimentalApplySyntactic<X>\nX = }'), {
     message: /fixme/,
   });
 });

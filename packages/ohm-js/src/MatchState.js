@@ -18,7 +18,7 @@ const util = require('./util');
 let builtInApplySyntacticBody;
 
 util.awaitBuiltInRules(builtInRules => {
-  builtInApplySyntacticBody = builtInRules.rules.applySyntactic.body;
+  builtInApplySyntacticBody = builtInRules.rules.experimentalApplySyntactic.body;
 });
 
 const applySpaces = new pexprs.Apply('spaces');
@@ -346,8 +346,8 @@ MatchState.prototype = {
       this.recordFailures(origRecordedFailures, false);
     }
 
-    // The built-in applySyntactic rule needs special handling: we want to skip trailing spaces,
-    // just with the top-level application of a syntactic rule.
+    // The built-in experimentalApplySyntactic rule needs special handling: we want to skip
+    // trailing spaces, just as with the top-level application of a syntactic rule.
     if (expr === builtInApplySyntacticBody) {
       this.skipSpaces();
     }

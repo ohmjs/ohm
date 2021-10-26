@@ -94,12 +94,12 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(
   }
 
   const isBuiltInApplySyntactic =
-    BuiltInRules && ruleInfo === BuiltInRules.rules.applySyntactic;
+    BuiltInRules && ruleInfo === BuiltInRules.rules.experimentalApplySyntactic;
   const isBuiltInCaseInsensitive =
     BuiltInRules && ruleInfo === BuiltInRules.rules.caseInsensitive;
 
   // ...and that all of the argument expressions only have valid applications and have arity 1.
-  // If `this` is an application of the built-in applySyntactic rule, then its arg is allowed
+  // If `this` is an application of the built-in experimentalApplySyntactic rule, then its arg is allowed
   // (and expected) to be a syntactic rule, even if we're in a lexical context.
   this.args.forEach(arg => {
     arg._assertAllApplicationsAreValid(ruleName, grammar, isBuiltInApplySyntactic);
@@ -123,7 +123,7 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(
       throw errors.incorrectArgumentType('a syntactic rule application', arg);
     }
     if (!isSyntactic(arg.ruleName)) {
-      throw errors.applySyntacticWithLexicalRuleApplication(arg);
+      throw errors.experimentalApplySyntacticWithLexicalRuleApplication(arg);
     }
   }
 };

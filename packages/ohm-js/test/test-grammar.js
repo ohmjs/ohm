@@ -68,7 +68,7 @@ test('action dictionary templates', t => {
       '  },\n' +
       '  emptyListOf: function() {\n' +
       '  },\n' +
-      '  applySyntactic: function(_) {\n' +
+      '  experimentalApplySyntactic: function(_) {\n' +
       '  },\n' +
       '  any: function(_) {\n' +
       '  },\n' +
@@ -127,7 +127,7 @@ test('action dictionary templates', t => {
       '  },\n' +
       '  emptyListOf: function() {\n' +
       '  },\n' +
-      '  applySyntactic: function(_) {\n' +
+      '  experimentalApplySyntactic: function(_) {\n' +
       '  },\n' +
       '  any: function(_) {\n' +
       '  },\n' +
