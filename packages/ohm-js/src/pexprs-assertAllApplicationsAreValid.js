@@ -99,8 +99,8 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(
     BuiltInRules && ruleInfo === BuiltInRules.rules.caseInsensitive;
 
   // ...and that all of the argument expressions only have valid applications and have arity 1.
-  // If `this` is an application of the built-in experimentalApplySyntactic rule, then its arg is allowed
-  // (and expected) to be a syntactic rule, even if we're in a lexical context.
+  // If `this` is an application of the built-in experimentalApplySyntactic rule, then its arg is
+  // allowed (and expected) to be a syntactic rule, even if we're in a lexical context.
   this.args.forEach(arg => {
     arg._assertAllApplicationsAreValid(ruleName, grammar, isBuiltInApplySyntactic);
     if (arg.getArity() !== 1) {
