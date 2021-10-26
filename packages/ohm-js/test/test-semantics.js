@@ -372,13 +372,13 @@ test('semantics', t => {
 });
 
 test('_iter nodes', t => {
-  const g = testUtil.makeGrammar([
-    'G {',
-    '  letters = letter*',
-    '  optLetter = letter?',
-    '  ident = letter+',
-    '}',
-  ]);
+  const g = ohm.grammar(`
+    G {
+      letters = letter*
+      optLetter = letter?
+      ident = letter+
+    }
+  `);
   let s = g.createSemantics().addOperation('op', {
     letters: passThroughOp,
     letter(l) {
@@ -564,18 +564,18 @@ test('semantic action arity checks', t => {
 });
 
 test('extending semantics', t => {
-  const ns = testUtil.makeGrammars([
-    'G { ',
-    '  one = "one"',
-    '  two = "two"',
-    '}',
-    'G2 <: G {',
-    '  one := "eins" "!"',
-    '  three = "drei"',
-    '}',
-    'G3 <: G2 { }',
-    'G4 { }',
-  ]);
+  const ns = ohm.grammars(`
+    G {
+      one = "one"
+      two = "two"
+    }
+    G2 <: G {
+      one := "eins" "!"
+      three = "drei"
+    }
+    G3 <: G2 { }
+    G4 { }
+  `);
 
   // Make sure operations behave as expected
 
@@ -768,17 +768,17 @@ test('extending semantics', t => {
 });
 
 test('mixing nodes from one grammar with semantics from another', t => {
-  const ns = testUtil.makeGrammars([
-    'G {',
-    '  start = "aaa"',
-    '}',
-    'GPrime <: G {',
-    '  start := "bbb"',
-    '}',
-    'Unrelated {',
-    '  start = "asdf"',
-    '}',
-  ]);
+  const ns = ohm.grammars(`
+    G {
+      start = "aaa"
+    }
+    GPrime <: G {
+      start := "bbb"
+    }
+    Unrelated {
+      start = "asdf"
+    }
+  `);
 
   const s = ns.G.createSemantics().addOperation('value', {
     start(x) {

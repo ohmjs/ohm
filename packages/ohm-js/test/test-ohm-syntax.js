@@ -4,15 +4,11 @@ const test = require('ava-spec');
 
 const fs = require('fs');
 const ohm = require('..');
-const testUtil = require('./helpers/testUtil');
 
 const arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
 const ohmGrammarSource = fs.readFileSync('src/ohm-grammar.ohm').toString();
 
 const {describe} = test;
-
-const {makeGrammar} = testUtil;
-const {makeGrammars} = testUtil;
 
 // --------------------------------------------------------------------
 // Helpers
@@ -308,13 +304,13 @@ describe('alts and seqs together', test => {
 });
 
 describe('kleene-* and kleene-+', test => {
-  const m = makeGrammar([
-    'M {',
-    '  number = digit+',
-    '  digits = digit*',
-    '  sss = &number number',
-    '}',
-  ]);
+  const m = ohm.grammar(`
+    M {
+      number = digit+
+      digits = digit*
+      sss = &number number
+    }
+  `);
 
   test('recognition', t => {
     assertFails(t, m.match('1234a', 'number'));
@@ -428,12 +424,12 @@ describe('lookahead', test => {
 });
 
 describe('simple left recursion', test => {
-  const m = makeGrammar([
-    'M {',
-    ' number = numberRec | digit',
-    'numberRec = number digit',
-    '}',
-  ]);
+  const m = ohm.grammar(`
+    M {
+      number = numberRec | digit
+      numberRec = number digit
+    }
+  `);
 
   test('recognition', t => {
     assertFails(t, m.match('', 'number'));
@@ -482,15 +478,15 @@ describe('simple left recursion', test => {
   });
 
   describe('simple left recursion, with non-involved rules', test => {
-    const m = makeGrammar([
-      'M {',
-      '  add = addRec | pri',
-      '  addRec = add "+" pri',
-      '  pri = priX | priY',
-      '  priX = "x"',
-      '  priY = "y"',
-      '}',
-    ]);
+    const m = ohm.grammar(`
+      M {
+        add = addRec | pri
+        addRec = add "+" pri
+        pri = priX | priY
+        priX = "x"
+        priY = "y"
+      }
+    `);
 
     test('recognition', t => {
       assertSucceeds(t, m.match('x+y+x', 'add'));
@@ -510,17 +506,17 @@ describe('simple left recursion', test => {
   });
 
   describe('indirect left recursion', test => {
-    const m = makeGrammar([
-      'M {',
-      '  number = foo | digit',
-      '  foo = bar',
-      '  bar = baz',
-      '  baz = qux',
-      '  qux = quux',
-      '  quux = numberRec',
-      '  numberRec = number digit',
-      '}',
-    ]);
+    const m = ohm.grammar(`
+      M {
+        number = foo | digit
+        foo = bar
+        bar = baz
+        baz = qux
+        qux = quux
+        quux = numberRec
+        numberRec = number digit
+      }
+    `);
 
     test('recognition', t => {
       assertFails(t, m.match('', 'number'));
@@ -544,16 +540,16 @@ describe('simple left recursion', test => {
   });
 
   describe('nested left recursion', test => {
-    const m = makeGrammar([
-      'M {',
-      '  addExp = addExpRec | mulExp',
-      '  addExpRec = addExp "+" mulExp',
-      '  mulExp = mulExpRec | priExp',
-      '  mulExpRec = mulExp "*" priExp',
-      '  priExp = "0".."9"',
-      '  sss = &addExp addExp',
-      '}',
-    ]);
+    const m = ohm.grammar(`
+      M {
+        addExp = addExpRec | mulExp
+        addExpRec = addExp "+" mulExp
+        mulExp = mulExpRec | priExp
+        mulExpRec = mulExp "*" priExp
+        priExp = "0".."9"
+        sss = &addExp addExp
+      }
+    `);
 
     test('recognition', t => {
       assertSucceeds(t, m.match('1'));
@@ -697,23 +693,23 @@ describe('simple left recursion', test => {
   });
 
   describe('nested and indirect left recursion', test => {
-    const m = makeGrammar([
-      'G {',
-      '  addExp = a | c',
-      '  a = b',
-      '  b = addExpRec',
-      '  addExpRec = addExp "+" mulExp',
-      '  c = d',
-      '  d = mulExp',
-      '  mulExp = e | g',
-      '  e = f',
-      '  f = mulExpRec',
-      '  g = h',
-      '  h = priExp',
-      '  mulExpRec = mulExp "*" priExp',
-      '  priExp = "0".."9"',
-      '}',
-    ]);
+    const m = ohm.grammar(`
+      G {
+        addExp = a | c
+        a = b
+        b = addExpRec
+        addExpRec = addExp "+" mulExp
+        c = d
+        d = mulExp
+        mulExp = e | g
+        e = f
+        f = mulExpRec
+        g = h
+        h = priExp
+        mulExpRec = mulExp "*" priExp
+        priExp = "0".."9"
+      }
+    `);
 
     test('recognition', t => {
       assertSucceeds(t, m.match('1'));
@@ -740,15 +736,15 @@ describe('simple left recursion', test => {
   });
 
   describe('tricky left recursion (different heads at same position)', test => {
-    const m = makeGrammar([
-      'G {',
-      '  tricky = &foo bar',
-      '  foo = fooRec | digit',
-      '  fooRec = bar digit',
-      '  bar = barRec | digit',
-      '  barRec = foo digit',
-      '}',
-    ]);
+    const m = ohm.grammar(`
+      G {
+        tricky = &foo bar
+        foo = fooRec | digit
+        fooRec = bar digit
+        bar = barRec | digit
+        barRec = foo digit
+      }
+    `);
 
     test('recognition', t => {
       assertSucceeds(t, m.match('1234', 'tricky'));
@@ -810,7 +806,7 @@ describe('inheritance', t => {
   test('duplicate definition', t => {
     t.throws(
         () => {
-          makeGrammars(['G1 { foo = "foo" }', 'G2 <: G1 { foo = "bar" }']);
+          ohm.grammars('G1 { foo = "foo" } G2 <: G1 { foo = "bar" }');
         },
         {
         // eslint-disable-next-line max-len
@@ -822,7 +818,7 @@ describe('inheritance', t => {
   });
 
   describe('override', test => {
-    const ns = makeGrammars(['G1 { number = digit+ }', 'G2 <: G1 { digit := "a".."z" }']);
+    const ns = ohm.grammars('G1 { number = digit+ } G2 <: G1 { digit := "a".."z" }');
 
     test('it checks that rule exists in super-grammar', t => {
       t.throws(
@@ -887,7 +883,7 @@ describe('inheritance', t => {
   });
 
   describe('extend', test => {
-    const ns = makeGrammars(['G1 { foo = "aaa" "bbb" }', 'G2 <: G1 { foo += "111" "222" }']);
+    const ns = ohm.grammars('G1 { foo = "aaa" "bbb" } G2 <: G1 { foo += "111" "222" }');
 
     test('recognition', t => {
       assertSucceeds(t, ns.G1.match('aaabbb'));
@@ -1048,7 +1044,13 @@ describe('bindings', test => {
   });
 
   test('by default, bindings are evaluated lazily', t => {
-    const g = makeGrammar(['G {', '  foo = bar baz', '  bar = "a"', '  baz = "b"', '}']);
+    const g = ohm.grammar(`
+      G {
+        foo = bar baz
+        bar = "a"
+        baz = "b"
+      }
+    `);
 
     let id = 0;
     let s = g.createSemantics().addAttribute('v', {
@@ -1136,7 +1138,7 @@ test('inline rule declarations', t => {
   }
 
   const ns = {};
-  const Arithmetic = (ns.Arithmetic = makeGrammar(arithmeticGrammarSource));
+  const Arithmetic = (ns.Arithmetic = ohm.grammar(arithmeticGrammarSource));
 
   assertSucceeds(t, Arithmetic.match('1*(2+3)-4/5'), 'expr is recognized');
   t.is(
@@ -1145,13 +1147,13 @@ test('inline rule declarations', t => {
       'semantic action works'
   );
 
-  const m2 = makeGrammar(
-      [
-        'Good <: Arithmetic {',
-        '  addExp := addExp "~" mulExp  -- minus',
-        '           | mulExp',
-        '}',
-      ],
+  const m2 = ohm.grammar(
+      `
+    Good <: Arithmetic {
+      addExp := addExp "~" mulExp  -- minus
+              | mulExp
+      }
+    `,
       ns
   );
   t.is(makeEval(m2)(m2.match('2*3~4')), 2);
@@ -1205,7 +1207,13 @@ describe('lexical vs. syntactic rules', test => {
   });
 
   test('mixing lexical and syntactic rules works as expected', t => {
-    const g = makeGrammar(['G {', '  Start = foo bar', '  foo = "foo"', '  bar = "bar"', '}']);
+    const g = ohm.grammar(`
+      G {
+        Start = foo bar
+        foo = "foo"
+        bar = "bar"
+      }
+    `);
     assertSucceeds(t, g.match('foobar'));
     assertSucceeds(t, g.match('foo bar'));
     assertSucceeds(t, g.match(' foo bar   '));
@@ -1214,20 +1222,20 @@ describe('lexical vs. syntactic rules', test => {
   // TODO: write more tests for this operator (e.g., to ensure that it's "transparent", arity-wise)
   // and maybe move it somewhere else.
   test('lexification operator works as expected', t => {
-    const g = makeGrammar([
-      'G {',
-      '  ArrowFun = name #(spacesNoNl "=>") "{}"',
-      '  name = "x" | "y"',
-      '  spacesNoNl = " "*',
-      '}',
-    ]);
+    const g = ohm.grammar(`
+      G {
+        ArrowFun = name #(spacesNoNl "=>") "{}"
+        name = "x" | "y"
+        spacesNoNl = " "*
+      }
+    `);
     assertSucceeds(t, g.match('x => {}'));
     assertSucceeds(t, g.match(' y  =>    \n\n  \n{}'));
     assertFails(t, g.match('x \n  => {}'));
 
     t.throws(
         () => {
-          makeGrammar(['G {', '  R', '    = #("a" R)', '    | "b" "c"', '}']);
+          ohm.grammar('G { R = #("a" R) | "b" "c" }');
         },
         {
           message: /Cannot apply syntactic rule R from here \(inside a lexical context\)/,
@@ -1237,13 +1245,13 @@ describe('lexical vs. syntactic rules', test => {
 });
 
 test('space skipping semantics', t => {
-  const g = makeGrammar([
-    'G {',
-    ' Iter = ">" letter+ #(space)',
-    ' Lookahead = ">" &letter #(space letter)',
-    ' NegLookahead = ">" ~digit #(space letter)',
-    '}',
-  ]);
+  const g = ohm.grammar(`
+    G {
+     Iter = ">" letter+ #(space)
+     Lookahead = ">" &letter #(space letter)
+     NegLookahead = ">" ~digit #(space letter)
+    }
+  `);
   assertSucceeds(t, g.match('> a b ', 'Iter'), "iter doesn't consume trailing space");
   assertSucceeds(t, g.match('> a', 'Lookahead'), "lookahead doesn't consume anything");
   assertSucceeds(
@@ -1269,7 +1277,7 @@ test('single-line comment after case name (#282)', t => {
 });
 
 describe('bootstrap', test => {
-  const ns = makeGrammars(ohmGrammarSource);
+  const ns = ohm.grammars(ohmGrammarSource);
 
   test('it can recognize arithmetic grammar', t => {
     assertSucceeds(t, ns.Ohm.match(arithmeticGrammarSource, 'Grammar'));

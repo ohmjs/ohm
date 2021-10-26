@@ -5,148 +5,28 @@ const test = require('ava');
 
 const Grammar = require('../src/Grammar');
 const ohm = require('..');
-const testUtil = require('./helpers/testUtil');
-
-const {makeGrammar} = testUtil;
-const {makeGrammars} = testUtil;
 
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
 
 test('action dictionary templates', t => {
-  const ns = makeGrammars([
-    'G1 {',
-    '  foo = bar',
-    '  bar = baz baz baz',
-    '  baz = qux',
-    '  qux = quux "123"',
-    '  quux = "42"',
-    '  aaa = "duh"',
-    '  bbb = ~aaa qux  -- blah',
-    '}',
-    'G2 <: G1 {',
-    '  qux := "100"',
-    '}',
-  ]);
-  t.is(
-      ns.G1.toOperationActionDictionaryTemplate(),
-      '{\n' +
-      '  foo: function(_) {\n' +
-      '  },\n' +
-      '  bar: function(_, _, _) {\n' +
-      '  },\n' +
-      '  baz: function(_) {\n' +
-      '  },\n' +
-      '  qux: function(_, _) {\n' +
-      '  },\n' +
-      '  quux: function(_) {\n' +
-      '  },\n' +
-      '  aaa: function(_) {\n' +
-      '  },\n' +
-      '  bbb_blah: function(_) {\n' +
-      '  },\n' +
-      '  bbb: function(_) {\n' +
-      '  },\n' +
-      '  alnum: function(_) {\n' +
-      '  },\n' +
-      '  letter: function(_) {\n' +
-      '  },\n' +
-      '  digit: function(_) {\n' +
-      '  },\n' +
-      '  hexDigit: function(_) {\n' +
-      '  },\n' +
-      '  ListOf: function(_) {\n' +
-      '  },\n' +
-      '  NonemptyListOf: function(_, _, _) {\n' +
-      '  },\n' +
-      '  EmptyListOf: function() {\n' +
-      '  },\n' +
-      '  listOf: function(_) {\n' +
-      '  },\n' +
-      '  nonemptyListOf: function(_, _, _) {\n' +
-      '  },\n' +
-      '  emptyListOf: function() {\n' +
-      '  },\n' +
-      '  experimentalApplySyntactic: function(_) {\n' +
-      '  },\n' +
-      '  any: function(_) {\n' +
-      '  },\n' +
-      '  end: function(_) {\n' +
-      '  },\n' +
-      '  caseInsensitive: function(_) {\n' +
-      '  },\n' +
-      '  lower: function(_) {\n' +
-      '  },\n' +
-      '  upper: function(_) {\n' +
-      '  },\n' +
-      '  unicodeLtmo: function(_) {\n' +
-      '  },\n' +
-      '  spaces: function(_) {\n' +
-      '  },\n' +
-      '  space: function(_) {\n' +
-      '  }\n' +
-      '}'
-  );
-  t.is(
-      ns.G2.toAttributeActionDictionaryTemplate(),
-      '{\n' +
-      '  qux: function(_) {\n' +
-      '  },\n' +
-      '  foo: function(_) {\n' +
-      '  },\n' +
-      '  bar: function(_, _, _) {\n' +
-      '  },\n' +
-      '  baz: function(_) {\n' +
-      '  },\n' +
-      '  quux: function(_) {\n' +
-      '  },\n' +
-      '  aaa: function(_) {\n' +
-      '  },\n' +
-      '  bbb_blah: function(_) {\n' +
-      '  },\n' +
-      '  bbb: function(_) {\n' +
-      '  },\n' +
-      '  alnum: function(_) {\n' +
-      '  },\n' +
-      '  letter: function(_) {\n' +
-      '  },\n' +
-      '  digit: function(_) {\n' +
-      '  },\n' +
-      '  hexDigit: function(_) {\n' +
-      '  },\n' +
-      '  ListOf: function(_) {\n' +
-      '  },\n' +
-      '  NonemptyListOf: function(_, _, _) {\n' +
-      '  },\n' +
-      '  EmptyListOf: function() {\n' +
-      '  },\n' +
-      '  listOf: function(_) {\n' +
-      '  },\n' +
-      '  nonemptyListOf: function(_, _, _) {\n' +
-      '  },\n' +
-      '  emptyListOf: function() {\n' +
-      '  },\n' +
-      '  experimentalApplySyntactic: function(_) {\n' +
-      '  },\n' +
-      '  any: function(_) {\n' +
-      '  },\n' +
-      '  end: function(_) {\n' +
-      '  },\n' +
-      '  caseInsensitive: function(_) {\n' +
-      '  },\n' +
-      '  lower: function(_) {\n' +
-      '  },\n' +
-      '  upper: function(_) {\n' +
-      '  },\n' +
-      '  unicodeLtmo: function(_) {\n' +
-      '  },\n' +
-      '  spaces: function(_) {\n' +
-      '  },\n' +
-      '  space: function(_) {\n' +
-      '  }\n' +
-      '}'
-  );
+  const ns = ohm.grammars(`
+    G1 {
+      foo = bar
+      bar = baz baz baz
+      baz = qux
+      qux = quux "123"
+      quux = "42"
+      aaa = "duh"
+      bbb = ~aaa qux  -- blah
+    }
+    G2 <: G1 {
+      qux := "100"
+    }
+  `);
+  t.snapshot(ns.G1.toOperationActionDictionaryTemplate());
+  t.snapshot(ns.G2.toAttributeActionDictionaryTemplate());
 });
 
 test('default start rule', t => {
@@ -176,7 +56,7 @@ test('default start rule', t => {
       'match throws with no start rule'
   );
 
-  const ns = makeGrammars(['G { foo = "a" }', 'G2 <: G {}']);
+  const ns = ohm.grammars('G { foo = "a" } G2 <: G {}');
   t.is(ns.G.defaultStartRule, 'foo', 'only rule becomes default start rule');
   t.is(ns.G2.defaultStartRule, 'foo', 'start rule is inherited from supergrammar');
   t.is(ns.G.match('a').succeeded(), true, 'match works without a start rule argument');
@@ -199,7 +79,12 @@ test('default start rule', t => {
       {message: /Missing start rule/},
       'match throws with no start rule'
   );
-  g = makeGrammar(['G { digit += any', 'blah = "3" }']);
+  g = ohm.grammar(`
+    G {
+      digit += any
+      blah = "3"
+    }
+  `);
   t.is(g.defaultStartRule, 'blah', 'rule defined after extending becomes start rule');
   t.is(g.match('3').succeeded(), true);
 
@@ -212,7 +97,12 @@ test('default start rule', t => {
       {message: /Missing start rule/},
       'match throws with no start rule'
   );
-  g = makeGrammar(['G { digit := any', 'blah = "3" }']);
+  g = ohm.grammar(`
+    G {
+      digit := any
+      blah = "3"
+    }
+  `);
   t.is(g.defaultStartRule, 'blah', 'rule defined after overriding becomes start rule');
   t.is(g.match('3').succeeded(), true);
 
