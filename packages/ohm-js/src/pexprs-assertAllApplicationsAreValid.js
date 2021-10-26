@@ -4,7 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-const common = require('./common');
+const {abstract, isSyntactic} = require('./common');
 const errors = require('./errors');
 const pexprs = require('./pexprs');
 const util = require('./util');
@@ -26,7 +26,7 @@ pexprs.PExpr.prototype.assertAllApplicationsAreValid = function(ruleName, gramma
   this._assertAllApplicationsAreValid(ruleName, grammar);
 };
 
-pexprs.PExpr.prototype._assertAllApplicationsAreValid = common.abstract(
+pexprs.PExpr.prototype._assertAllApplicationsAreValid = abstract(
     '_assertAllApplicationsAreValid'
 );
 
@@ -65,7 +65,11 @@ pexprs.Iter.prototype._assertAllApplicationsAreValid =
       this.expr._assertAllApplicationsAreValid(ruleName, grammar);
     };
 
-pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
+pexprs.Apply.prototype._assertAllApplicationsAreValid = function(
+    ruleName,
+    grammar,
+    skipSyntacticCheck = false
+) {
   const ruleInfo = grammar.rules[this.ruleName];
 
   // Make sure that the rule exists...
@@ -75,8 +79,9 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, gramm
 
   // ...and that this application is allowed
   if (
-    common.isSyntactic(this.ruleName) &&
-    (!common.isSyntactic(ruleName) || lexifyCount > 0)
+    !skipSyntacticCheck &&
+    isSyntactic(this.ruleName) &&
+    (!isSyntactic(ruleName) || lexifyCount > 0)
   ) {
     throw errors.applicationOfSyntacticRuleFromLexicalContext(this.ruleName, this);
   }
@@ -88,9 +93,16 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, gramm
     throw errors.wrongNumberOfArguments(this.ruleName, expected, actual, this.source);
   }
 
+  const isBuiltInApplySyntactic =
+    BuiltInRules && ruleInfo === BuiltInRules.rules.experimentalApplySyntactic;
+  const isBuiltInCaseInsensitive =
+    BuiltInRules && ruleInfo === BuiltInRules.rules.caseInsensitive;
+
   // ...and that all of the argument expressions only have valid applications and have arity 1.
+  // If `this` is an application of the built-in experimentalApplySyntactic rule, then its arg is
+  // allowed (and expected) to be a syntactic rule, even if we're in a lexical context.
   this.args.forEach(arg => {
-    arg._assertAllApplicationsAreValid(ruleName, grammar);
+    arg._assertAllApplicationsAreValid(ruleName, grammar, isBuiltInApplySyntactic);
     if (arg.getArity() !== 1) {
       throw errors.invalidParameter(this.ruleName, arg);
     }
@@ -99,9 +111,19 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(ruleName, gramm
   // Extra checks for "special" applications
 
   // If it's an application of 'caseInsensitive', ensure that the argument is a Terminal.
-  if (BuiltInRules && ruleInfo === BuiltInRules.rules.caseInsensitive) {
+  if (isBuiltInCaseInsensitive) {
     if (!(this.args[0] instanceof pexprs.Terminal)) {
       throw errors.incorrectArgumentType('a Terminal (e.g. "abc")', this.args[0]);
+    }
+  }
+
+  if (isBuiltInApplySyntactic) {
+    const arg = this.args[0];
+    if (!(arg instanceof pexprs.Apply)) {
+      throw errors.incorrectArgumentType('a syntactic rule application', arg);
+    }
+    if (!isSyntactic(arg.ruleName)) {
+      throw errors.experimentalApplySyntacticWithLexicalRuleApplication(arg);
     }
   }
 };

@@ -1,5 +1,9 @@
 # Changelog
 
+## Next
+
+- [] Add `experimentalApplySyntactic`, an experimental built-in rule to allow application of a syntactic rule from a lexical context (see #136 for details).
+
 ## v16.0.0 - Oct 1, 2021
 
 Ohm v16 is primarily about improving the experience of [using Ohm with TypeScript][using-ohm-with-typescript]. In order to do that, we needed to make some minor breaking changes. With the major version change, we also took the opportunity to clean up and simplify some parts of the API.

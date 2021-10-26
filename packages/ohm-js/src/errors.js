@@ -166,9 +166,24 @@ function invalidParameter(ruleName, expr) {
 
 // Application of syntactic rule from lexical rule
 
+const syntacticVsLexicalNote =
+  'NOTE: A _syntactic rule_ is a rule whose name begins with a capital letter. ' +
+  'See https://git.io/JiYgP for more details.';
+
 function applicationOfSyntacticRuleFromLexicalContext(ruleName, applyExpr) {
   return createError(
       'Cannot apply syntactic rule ' + ruleName + ' from here (inside a lexical context)',
+      applyExpr.source
+  );
+}
+
+// Lexical rule application used with experimentalApplySyntactic
+
+function experimentalApplySyntacticWithLexicalRuleApplication(applyExpr) {
+  const {ruleName} = applyExpr;
+  return createError(
+      `experimentalApplySyntactic is for syntactic rules, but '${ruleName}' is a lexical rule. ` +
+      syntacticVsLexicalNote,
       applyExpr.source
   );
 }
@@ -280,6 +295,7 @@ function missingSemanticAction(ctorName, name, type, stack) {
 
 module.exports = {
   applicationOfSyntacticRuleFromLexicalContext,
+  experimentalApplySyntacticWithLexicalRuleApplication,
   cannotExtendUndeclaredRule,
   cannotOverrideUndeclaredRule,
   duplicateGrammarDeclaration,
