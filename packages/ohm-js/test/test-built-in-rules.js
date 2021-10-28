@@ -4,6 +4,11 @@ const test = require('ava');
 
 const ohm = require('..');
 
+const displayString = traceNode => traceNode.displayString;
+
+// Tests
+// -----
+
 test('case-insensitive matching', t => {
   const g = ohm.grammar(`
     G {
@@ -72,30 +77,13 @@ test('case-insensitive matching', t => {
   );
 });
 
-test('experimentalApplySyntactic', t => {
+test('experimentalApplySyntactic - basics', t => {
+  const g = ohm.grammar('G { start = experimentalApplySyntactic<ListOf<digit, ",">> }');
+  t.is(g.match('1, 2 , 3 ').succeeded(), true);
+
   // Syntactic rule can be passed to experimentalApplySyntactic in a lexical context
   t.notThrows(() => ohm.grammar('G { foo = experimentalApplySyntactic<X>\nX = }'));
   t.notThrows(() => ohm.grammar('G { Foo = #(experimentalApplySyntactic<X>)\nX = }'));
-
-  const g = ohm.grammar(`
-    G {
-      start = "a" experimentalApplySyntactic<Number>
-      Number = digit+
-
-      leftRecursion = experimentalApplySyntactic<NumberLR>
-      NumberLR = NumberLR digit -- rec
-               | digit
-
-      disallowLeadingSpace = ~space experimentalApplySyntactic<Number>
-    }
-  `);
-  t.is(g.match('a 9').succeeded(), true, 'space is skipped before the syntactic rule');
-  t.is(g.match('a 9 8').succeeded(), true, 'space is skipped inside the syntactic rule');
-  t.is(g.match('a 9 ').succeeded(), true, 'trailing space is skipped');
-
-  t.is(g.match(' 0  12 3', 'leftRecursion').succeeded(), true);
-
-  t.is(g.match(' 0', 'disallowLeadingSpace').failed(), true);
 
   t.throws(
       () => ohm.grammar('G { foo = experimentalApplySyntactic<"bad"> }'),
@@ -114,10 +102,77 @@ test('experimentalApplySyntactic', t => {
   );
 });
 
+test('experimentalApplySyntactic - space skipping', t => {
+  const g = ohm.grammar(`
+    G {
+      start = "a" experimentalApplySyntactic<Letters> "."
+      Letters = letter+
+    }
+  `);
+  t.is(g.match('a x.').succeeded(), true, 'space is skipped before the syntactic rule');
+  t.is(g.match('a x y.').succeeded(), true, 'space is skipped inside the syntactic rule');
+  t.is(g.match('a z  .').succeeded(), true, 'trailing space is skipped');
+
+  // Space skipping should work like it does with a top-level semantic rule: trailing space
+  // is skipped at the top level, while leading spaces are skipped before leaf nodes.
+
+  const trace = g.trace('a b .');
+  t.deepEqual(trace.children.map(displayString), ['start', 'end'], 'no spaces at top level');
+
+  const start = trace.children[0];
+  const seq = start.children[0];
+  const applySyntactic = seq.children[1];
+  t.deepEqual(seq.children.map(displayString), [
+    '"a"',
+    'experimentalApplySyntactic<Letters>',
+    '"."',
+  ]);
+  t.deepEqual(
+      applySyntactic.children.map(displayString),
+      ['$0', 'spaces'],
+      'applySyntactic consumes only the trailing space'
+  );
+  t.deepEqual(
+      applySyntactic.children.map(displayString),
+      ['$0', 'spaces'],
+      'applySyntactic consumes only the trailing space'
+  );
+  const letters = applySyntactic.children[0].children[0];
+  t.deepEqual(letters.children.map(displayString), ['letter+']);
+
+  const g2 = ohm.grammar(`
+    G2 {
+      start = experimentalApplySyntactic<LettersLR>
+      LettersLR = LettersLR letter -- rec
+                | letter
+    }
+  `);
+  t.is(g2.match(' a  bc d').succeeded(), true, 'no issues w/ left recursion');
+
+  const g3 = ohm.grammar(`
+    G3 {
+      start = #experimentalApplySyntactic<ListOf<digit, "+">>
+    }`);
+  t.is(g3.match(' 3+ 2').succeeded(), true, "lex operator doesn't prevent space skipping");
+});
+
 // TODO: Get this working (or should it just warn?)
 test.failing('experimentalApplySyntactic with a lexical arg', t => {
   // experimentalApplySyntactic can't appear in a syntatic context, and or lexical args.
   t.throws(() => ohm.grammar('G { Foo = experimentalApplySyntactic<X>\nX = }'), {
     message: /fixme/,
   });
+});
+
+test.failing('experimentalApplySyntactic with lookahead', t => {
+  t.throws(
+      () =>
+        ohm.grammar(`
+          G {
+            withLookahead = experimentalApplySyntactic<~Number Number>
+            Number = digit+
+          }
+        `),
+      {message: /what should this be/}
+  );
 });
