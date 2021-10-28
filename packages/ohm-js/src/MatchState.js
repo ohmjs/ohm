@@ -117,9 +117,7 @@ MatchState.prototype = {
   },
 
   maybeSkipSpacesBefore(expr) {
-    if (expr instanceof pexprs.Apply && expr.isSyntactic()) {
-      return this.skipSpaces();
-    } else if (expr.allowsSkippingPrecedingSpace() && expr !== applySpaces) {
+    if (expr.allowsSkippingPrecedingSpace() && expr !== applySpaces) {
       return this.skipSpacesIfInSyntacticContext();
     } else {
       return this.inputStream.pos;
