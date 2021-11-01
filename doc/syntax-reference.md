@@ -245,4 +245,106 @@ AddExp_plus = AddExp "+" MulExp
 
 A _syntactic rule_ is a rule whose name begins with an uppercase letter, and _lexical rule_ is one whose name begins with a lowercase letter. The difference between lexical and syntactic rules is that syntactic rules implicitly skip whitespace characters.
 
-For the purposes of a syntactic rule, a "whitespace character" is anything that matches its enclosing grammar's "space" rule. The default implementation of "space" matches ' ', '\t', '\n', '\r', and any other character that is considered whitespace in the [ES5 spec](http://ecma-international.org/ecma-262/5.1/#sec-7.2).
+The definition of "whitespace character" is anything that matches the grammar's `space` rule. The default implementation of `space` matches ' ', '\t', '\n', '\r', and any other character that is considered whitespace in the [ES5 spec](http://ecma-international.org/ecma-262/5.1/#sec-7.2).
+
+#### How space skipping works
+
+In the body of a semantic rule, Ohm implicity inserts applications of the `spaces` rule before each expression. (The `spaces` rule is defined as `spaces = space*`.) As an example, take this fragment of JSON grammar:
+
+<!-- @markscript
+  let syntacticDefs;
+  markscript.transformNextBlock(code => {
+    syntacticDefs = code;
+  });
+-->
+
+```
+Array = "[" "]"  -- empty
+      | "[" Elements "]"  -- nonEmpty
+Elements = Element ("," Element)*
+```
+
+`Array` and `Elements` are both synactic rules, since their names begin with a capital letter. Here's what a lexical version of these rule would look like, with _explicit_ space skipping:
+
+<!-- @markscript
+  let lexicalDefs;
+
+  const delexifyRuleNames = str =>
+    str.replace(/array/g, 'Array').replace(/element/g, 'Element');
+
+  markscript.transformNextBlock(code => {
+    lexicalDefs = code;
+    assert.equal(syntacticDefs, delexifyRuleNames(lexicalDefs).replace(/spaces /g, ''));
+
+    const g = ohm.grammar(`
+      JSON {
+        ${syntacticDefs}
+        ${lexicalDefs}
+        lexStart = array spaces  // Ensure trailing space is skipped.
+        Element = number
+        element = number
+        number = digit+
+      }
+    `);
+    assert(g.match(' [2, 33 ] ').succeeded());
+    assert(g.match(' [2, 33 ] ', 'lexStart').succeeded());
+
+    assert(g.match(' [ ] ').succeeded());
+    assert(g.match(' [ ] ', 'lexStart').succeeded());
+
+    assert(g.match('[]  ').succeeded());
+    assert(g.match('[]  ', 'lexStart').succeeded());
+
+    assert(g.match(' [12 ,2,2]').succeeded());
+    assert(g.match(' [12 ,2,2]', 'lexStart').succeeded());
+
+    assert(g.match(' [1 2]').failed());
+    assert(g.match(' [1 2]', 'lexStart').failed());
+
+    assert(g.match(' [1,]').failed());
+    assert(g.match(' [1,]', 'lexStart').failed());
+  });
+-->
+
+```
+array = spaces "[" spaces "]"  -- empty
+      | spaces "[" spaces elements spaces "]"  -- nonEmpty
+elements = spaces element (spaces "," spaces element)*
+```
+
+In terms of the language it accepts, this version of the rules — with explicit space skipping — is equivalent to the syntactic version above.
+
+A few other details that are helpful to know:
+
+1. If the start rule is a syntactic rule, both leading and trailing spaces are skipped around the top-level application.
+2. When the body of a rule contains a [repetition operator](#repetition-operators---) (e.g. `+` or `*`), spaces are skipped before each match. In other words, `Names = name+` is equivalent to `names = (spaces name)+`.
+3. The [lexification operator (`#`)](lexification-) can be used in the body of a syntactic rule to prevent space skipping in specific places. For example, to
+
+<!-- @markscript
+  let syntacticKeyValueDef;
+  markscript.transformNextBlock(code => { syntacticKeyValueDef = code; });
+-->
+
+```
+KeyAndValue = #(letter alnum+) ":" #(digit+)
+```
+
+is equivalent to:
+
+<!-- @markscript
+  markscript.transformNextBlock(code => {
+    let lexicalKeyValueDef = code;
+
+    const g = ohm.grammar(`G { ${syntacticKeyValueDef} ${lexicalKeyValueDef} }`);
+    assert(g.match('count :33', 'keyAndValue').succeeded());
+    assert(g.match('count :33', 'KeyAndValue').succeeded());
+    assert(g.match('count: 33', 'keyAndValue').failed());
+    assert(g.match('count: 33', 'KeyAndValue').failed());
+  });
+-->
+
+```
+keyAndValue = letter alnum+ spaces ":" digit+
+```
+
+Note that no space skipping occurs _inside_ or _before_ the lexical context defined by the `#` character. That means that this rule will match `'count :33'`, but _not_ `'count: 33'`.
