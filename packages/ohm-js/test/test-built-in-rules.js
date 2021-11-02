@@ -100,6 +100,11 @@ test('experimentalApplySyntactic - basics', t => {
       },
       'error if arg is a lexical rule application'
   );
+
+  // experimentalApplySyntactic can't appear in a syntactic context.
+  t.throws(() => ohm.grammar('G { Foo = experimentalApplySyntactic<X>\nX = }'), {
+    message: /experimentalApplySyntactic is not required here \(in a syntactic context\)/,
+  });
 });
 
 test('experimentalApplySyntactic - space skipping', t => {
@@ -156,15 +161,7 @@ test('experimentalApplySyntactic - space skipping', t => {
   t.is(g3.match(' 3+ 2').succeeded(), true, "lex operator doesn't prevent space skipping");
 });
 
-// TODO: Get this working (or should it just warn?)
-test.failing('experimentalApplySyntactic with a lexical arg', t => {
-  // experimentalApplySyntactic can't appear in a syntatic context, and or lexical args.
-  t.throws(() => ohm.grammar('G { Foo = experimentalApplySyntactic<X>\nX = }'), {
-    message: /fixme/,
-  });
-});
-
-test.failing('experimentalApplySyntactic with lookahead', t => {
+test('experimentalApplySyntactic with lookahead', t => {
   t.throws(
       () =>
         ohm.grammar(`
@@ -173,6 +170,6 @@ test.failing('experimentalApplySyntactic with lookahead', t => {
             Number = digit+
           }
         `),
-      {message: /what should this be/}
+      {message: /expected a syntactic rule application/}
   );
 });

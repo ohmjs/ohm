@@ -71,6 +71,7 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(
     skipSyntacticCheck = false
 ) {
   const ruleInfo = grammar.rules[this.ruleName];
+  const isContextSyntactic = isSyntactic(ruleName) && lexifyCount === 0;
 
   // Make sure that the rule exists...
   if (!ruleInfo) {
@@ -78,15 +79,11 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(
   }
 
   // ...and that this application is allowed
-  if (
-    !skipSyntacticCheck &&
-    isSyntactic(this.ruleName) &&
-    (!isSyntactic(ruleName) || lexifyCount > 0)
-  ) {
+  if (!skipSyntacticCheck && isSyntactic(this.ruleName) && !isContextSyntactic) {
     throw errors.applicationOfSyntacticRuleFromLexicalContext(this.ruleName, this);
   }
 
-  // ...and that this application has the correct number of arguments
+  // ...and that this application has the correct number of arguments.
   const actual = this.args.length;
   const expected = ruleInfo.formals.length;
   if (actual !== expected) {
@@ -97,18 +94,6 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(
     BuiltInRules && ruleInfo === BuiltInRules.rules.experimentalApplySyntactic;
   const isBuiltInCaseInsensitive =
     BuiltInRules && ruleInfo === BuiltInRules.rules.caseInsensitive;
-
-  // ...and that all of the argument expressions only have valid applications and have arity 1.
-  // If `this` is an application of the built-in experimentalApplySyntactic rule, then its arg is
-  // allowed (and expected) to be a syntactic rule, even if we're in a lexical context.
-  this.args.forEach(arg => {
-    arg._assertAllApplicationsAreValid(ruleName, grammar, isBuiltInApplySyntactic);
-    if (arg.getArity() !== 1) {
-      throw errors.invalidParameter(this.ruleName, arg);
-    }
-  });
-
-  // Extra checks for "special" applications
 
   // If it's an application of 'caseInsensitive', ensure that the argument is a Terminal.
   if (isBuiltInCaseInsensitive) {
@@ -125,5 +110,18 @@ pexprs.Apply.prototype._assertAllApplicationsAreValid = function(
     if (!isSyntactic(arg.ruleName)) {
       throw errors.experimentalApplySyntacticWithLexicalRuleApplication(arg);
     }
+    if (isContextSyntactic) {
+      throw errors.unnecessaryExperimentalApplySyntactic(this);
+    }
   }
+
+  // ...and that all of the argument expressions only have valid applications and have arity 1.
+  // If `this` is an application of the built-in experimentalApplySyntactic rule, then its arg is
+  // allowed (and expected) to be a syntactic rule, even if we're in a lexical context.
+  this.args.forEach(arg => {
+    arg._assertAllApplicationsAreValid(ruleName, grammar, isBuiltInApplySyntactic);
+    if (arg.getArity() !== 1) {
+      throw errors.invalidParameter(this.ruleName, arg);
+    }
+  });
 };

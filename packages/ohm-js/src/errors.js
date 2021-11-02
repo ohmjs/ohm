@@ -188,6 +188,15 @@ function experimentalApplySyntacticWithLexicalRuleApplication(applyExpr) {
   );
 }
 
+// Application of experimentalApplySyntactic in a syntactic context
+
+function unnecessaryExperimentalApplySyntactic(applyExpr) {
+  return createError(
+      'experimentalApplySyntactic is not required here (in a syntactic context)',
+      applyExpr.source
+  );
+}
+
 // Incorrect argument type
 
 function incorrectArgumentType(expectedType, expr) {
@@ -313,6 +322,7 @@ module.exports = {
   multipleSuperSplices,
   undeclaredGrammar,
   undeclaredRule,
+  unnecessaryExperimentalApplySyntactic,
   wrongNumberOfArguments,
   wrongNumberOfParameters,
 
