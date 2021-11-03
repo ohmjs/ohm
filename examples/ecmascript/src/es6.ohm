@@ -15,4 +15,31 @@ ES6 <: ES5 {
     = "(" Expression<guardIn> ")"  -- expression
     | "(" ")"                      -- parens
     | "(" FormalParameterList ")"  -- params
+
+  PrimaryExpression += TemplateLiteral
+  MemberExpression += MemberExpression TemplateLiteral  -- taggedTemplate
+  CallExpression += CallExpression TemplateLiteral  -- taggedTemplate
+
+  // https://262.ecma-international.org/6.0/#sec-template-literals
+  TemplateLiteral =
+    | templateHead Expression<withIn> TemplateSpans  -- xxx
+    | noSubstitutionTemplate
+
+  TemplateSpans = TemplateMiddleList* templateTail
+
+  TemplateMiddleList = templateMiddle* Expression<withIn>
+
+  // https://262.ecma-international.org/6.0/#sec-template-literal-lexical-components
+  template = noSubstitutionTemplate | templateHead
+  noSubstitutionTemplate = "`" templateCharacter* "`"
+  templateHead = "`" templateCharacter* "${"
+  templateSubstitutionTail = templateMiddle | templateTail // Not used currently.
+  templateMiddle = "}" templateCharacter* "${"
+  templateTail = "}" templateCharacter* "`"
+  templateCharacter =
+    | "$" ~"{"
+    | "\\" escapeSequence  -- escaped
+    | lineContinuation
+    | lineTerminatorSequence
+    | ~("`" | "\\" | "$") sourceCharacter
 }
