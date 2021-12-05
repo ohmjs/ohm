@@ -35,26 +35,26 @@ G {
     | TemplateSubstitutionTail
 
   WhiteSpace = 
-    | /* <TAB> */
-    | /* <VT> */
-    | /* <FF> */
-    | /* <SP> */
-    | /* <NBSP> */
-    | /* <ZWNBSP> */
-    | /* <USP> */
+    | "\t"
+    | "\x0B"
+    | "\x0C"
+    | " "
+    | "\xA0"
+    | "\uFEFF"
+    | "" /* FIXME <USP> */
 
   LineTerminator = 
-    | /* <LF> */
-    | /* <CR> */
-    | /* <LS> */
-    | /* <PS> */
+    | "\n"
+    | "\r"
+    | "\u2028"
+    | "\u2029"
 
   LineTerminatorSequence = 
-    | /* <LF> */ -- a0
-    | /* <CR> */ /* FIXME Assertion: lookahead != <LF> */ -- a1
-    | /* <LS> */ -- a2
-    | /* <PS> */ -- a3
-    | /* <CR> */ /* <LF> */ -- a4
+    | "\n" -- a0
+    | "\r" ~"\n" -- a1
+    | "\u2028" -- a2
+    | "\u2029" -- a3
+    | "\r" "\n" -- a4
 
   Comment = 
     | MultiLineComment
@@ -108,8 +108,8 @@ G {
     | "$" -- a1
     | "_" -- a2
     | "\\" UnicodeEscapeSequence -- a3
-    | /* <ZWNJ> */ -- a4
-    | /* <ZWJ> */ -- a5
+    | "" /* FIXME <ZWNJ> */ -- a4
+    | "" /* FIXME <ZWJ> */ -- a5
 
   UnicodeIDStart = /* any Unicode code point with the Unicode property "ID_Start" or "Other_ID_Start" */
 

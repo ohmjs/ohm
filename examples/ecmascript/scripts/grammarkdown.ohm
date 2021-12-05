@@ -13,7 +13,6 @@ Grammarkdown {
     | application "?" -- opt
     | application
     | terminal
-    | literal
     | "[" experimentalApplySyntactic<AssertionContents> "]" -- assertion
 
   application =
@@ -49,6 +48,7 @@ Grammarkdown {
   word = (letter | "\"" | "_" | ",")+
   terminal = "```" -- backtick
            | quote (~quote any)+ quote -- other
+           | literal -- literal
 
   atDefine = "@define" (~newline any)*
   comment = "//" (~newline any)*

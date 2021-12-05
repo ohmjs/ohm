@@ -21,13 +21,16 @@ if (!result.succeeded()) {
 }
 
 const literalToOhm = {
+  LF: '\\n',
+  CR: '\\r',
   TAB: '\\t',
-  VT: '\\v',
-  FF: '\\f',
+  VT: '\\x0B',
+  FF: '\\x0C',
   SP: ' ',
-  NBSP: '\\uA0',
+  NBSP: '\\xA0',
   ZWNBSP: '\\uFEFF',
-  USP: ''
+  LS: '\\u2028',
+  PS: '\\u2029'
 };
 
 const semantics = g.createSemantics();
@@ -152,7 +155,11 @@ semantics.addOperation('toOhm()', {
     return `"${char.sourceString}"`;
   },
   literal(_open, charIter, _close) {
-    return `/* ${this.sourceString} */`;
+    const name = charIter.sourceString;
+    if (name in literalToOhm) {
+      return `"${literalToOhm[name]}"`;
+    }
+    return `"" /* FIXME ${this.sourceString} */`;
   }
 });
 
