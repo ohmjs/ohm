@@ -1,40 +1,40 @@
-G {
+ES2015 {
 
-  SourceCharacter = /* any Unicode code point */
+  sourceCharacter = any
 
-  InputElementDiv = 
-    | WhiteSpace
-    | LineTerminator
-    | Comment
-    | CommonToken
-    | DivPunctuator
-    | RightBracePunctuator
+  inputElementDiv = 
+    | whiteSpace
+    | lineTerminator
+    | comment
+    | commonToken
+    | divPunctuator
+    | rightBracePunctuator
 
-  InputElementRegExp = 
-    | WhiteSpace
-    | LineTerminator
-    | Comment
-    | CommonToken
-    | RightBracePunctuator
-    | RegularExpressionLiteral
+  inputElementRegExp = 
+    | whiteSpace
+    | lineTerminator
+    | comment
+    | commonToken
+    | rightBracePunctuator
+    | regularExpressionLiteral
 
-  InputElementRegExpOrTemplateTail = 
-    | WhiteSpace
-    | LineTerminator
-    | Comment
-    | CommonToken
-    | RegularExpressionLiteral
-    | TemplateSubstitutionTail
+  inputElementRegExpOrTemplateTail = 
+    | whiteSpace
+    | lineTerminator
+    | comment
+    | commonToken
+    | regularExpressionLiteral
+    | templateSubstitutionTail
 
-  InputElementTemplateTail = 
-    | WhiteSpace
-    | LineTerminator
-    | Comment
-    | CommonToken
-    | DivPunctuator
-    | TemplateSubstitutionTail
+  inputElementTemplateTail = 
+    | whiteSpace
+    | lineTerminator
+    | comment
+    | commonToken
+    | divPunctuator
+    | templateSubstitutionTail
 
-  WhiteSpace = 
+  whiteSpace = 
     | "\t"
     | "\x0B"
     | "\x0C"
@@ -43,288 +43,288 @@ G {
     | "\uFEFF"
     | "" /* FIXME <USP> */
 
-  LineTerminator = 
+  lineTerminator = 
     | "\n"
     | "\r"
     | "\u2028"
     | "\u2029"
 
-  LineTerminatorSequence = 
+  lineTerminatorSequence = 
     | "\n" -- a0
     | "\r" ~"\n" -- a1
     | "\u2028" -- a2
     | "\u2029" -- a3
     | "\r" "\n" -- a4
 
-  Comment = 
-    | MultiLineComment
-    | SingleLineComment
+  comment = 
+    | multiLineComment
+    | singleLineComment
 
-  MultiLineComment = 
-    | "/*" MultiLineCommentChars? "*/" -- a0
+  multiLineComment = 
+    | "/*" multiLineCommentChars? "*/" -- a0
 
-  MultiLineCommentChars = 
-    | MultiLineNotAsteriskChar MultiLineCommentChars? -- a0
-    | "*" PostAsteriskCommentChars? -- a1
+  multiLineCommentChars = 
+    | multiLineNotAsteriskChar multiLineCommentChars? -- a0
+    | "*" postAsteriskCommentChars? -- a1
 
-  PostAsteriskCommentChars = 
-    | MultiLineNotForwardSlashOrAsteriskChar MultiLineCommentChars? -- a0
-    | "*" PostAsteriskCommentChars? -- a1
+  postAsteriskCommentChars = 
+    | multiLineNotForwardSlashOrAsteriskChar multiLineCommentChars? -- a0
+    | "*" postAsteriskCommentChars? -- a1
 
-  MultiLineNotAsteriskChar = 
-    | ~"*" SourceCharacter
+  multiLineNotAsteriskChar = 
+    | ~"*" sourceCharacter
 
-  MultiLineNotForwardSlashOrAsteriskChar = 
-    | ~("/" | "*") SourceCharacter
+  multiLineNotForwardSlashOrAsteriskChar = 
+    | ~("/" | "*") sourceCharacter
 
-  SingleLineComment = 
-    | "//" SingleLineCommentChars? -- a0
+  singleLineComment = 
+    | "//" singleLineCommentChars? -- a0
 
-  SingleLineCommentChars = 
-    | SingleLineCommentChar SingleLineCommentChars? -- a0
+  singleLineCommentChars = 
+    | singleLineCommentChar singleLineCommentChars? -- a0
 
-  SingleLineCommentChar = 
-    | ~LineTerminator SourceCharacter
+  singleLineCommentChar = 
+    | ~lineTerminator sourceCharacter
 
-  CommonToken = 
-    | IdentifierName
-    | Punctuator
-    | NumericLiteral
-    | StringLiteral
-    | Template
+  commonToken = 
+    | identifierName
+    | punctuator
+    | numericLiteral
+    | stringLiteral
+    | template
 
-  IdentifierName = 
-    | IdentifierStart -- a0
-    | IdentifierName IdentifierPart -- a1
+  identifierName = 
+    | identifierStart -- a0
+    | identifierName identifierPart -- a1
 
-  IdentifierStart = 
-    | UnicodeIDStart -- a0
+  identifierStart = 
+    | unicodeIDStart -- a0
     | "$" -- a1
     | "_" -- a2
-    | "\\" UnicodeEscapeSequence -- a3
+    | "\\" unicodeEscapeSequence -- a3
 
-  IdentifierPart = 
-    | UnicodeIDContinue -- a0
+  identifierPart = 
+    | unicodeIDContinue -- a0
     | "$" -- a1
     | "_" -- a2
-    | "\\" UnicodeEscapeSequence -- a3
+    | "\\" unicodeEscapeSequence -- a3
     | "" /* FIXME <ZWNJ> */ -- a4
     | "" /* FIXME <ZWJ> */ -- a5
 
-  UnicodeIDStart = /* any Unicode code point with the Unicode property "ID_Start" or "Other_ID_Start" */
+  unicodeIDStart = letter /* fixme */
 
-  UnicodeIDContinue = /* any Unicode code point with the Unicode property "ID_Continue" or "Other_ID_Continue", or "Other_ID_Start" */
+  unicodeIDContinue = letter | digit /* fixme */
 
-  ReservedWord = 
-    | Keyword
-    | FutureReservedWord
-    | NullLiteral
-    | BooleanLiteral
+  reservedWord = 
+    | keyword
+    | futureReservedWord
+    | nullLiteral
+    | booleanLiteral
 
-  Keyword = "break" | "do" | "in" | "typeof" | "case" | "else" | "instanceof" | "var" | "catch" | "export" | "new" | "void" | "class" | "extends" | "return" | "while" | "const" | "finally" | "super" | "with" | "continue" | "for" | "switch" | "yield" | "debugger" | "function" | "this" | "default" | "if" | "throw" | "delete" | "import" | "try"
+  keyword = "break" | "do" | "in" | "typeof" | "case" | "else" | "instanceof" | "var" | "catch" | "export" | "new" | "void" | "class" | "extends" | "return" | "while" | "const" | "finally" | "super" | "with" | "continue" | "for" | "switch" | "yield" | "debugger" | "function" | "this" | "default" | "if" | "throw" | "delete" | "import" | "try"
 
-  FutureReservedWord = "enum" | "await" | "implements" | "package" | "protected" | "interface" | "private" | "public"
+  futureReservedWord = "enum" | "await" | "implements" | "package" | "protected" | "interface" | "private" | "public"
 
-  Punctuator = "{" | "}" | "(" | ")" | "[" | "]" | "." | ";" | "," | "<" | ">" | "<=" | ">=" | "==" | "!=" | "===" | "!==" | "+" | "-" | "*" | "%" | "++" | "--" | "<<" | ">>" | ">>>" | "&" | "|" | "^" | "!" | "~" | "&&" | "||" | "?" | " ::" | "=" | "+=" | "-=" | "*=" | "%=" | "<<=" | ">>=" | ">>>=" | "&=" | "|=" | "^=" | "=>"
+  punctuator = "{" | "}" | "(" | ")" | "[" | "]" | "." | ";" | "," | "<" | ">" | "<=" | ">=" | "==" | "!=" | "===" | "!==" | "+" | "-" | "*" | "%" | "++" | "--" | "<<" | ">>" | ">>>" | "&" | "|" | "^" | "!" | "~" | "&&" | "||" | "?" | " ::" | "=" | "+=" | "-=" | "*=" | "%=" | "<<=" | ">>=" | ">>>=" | "&=" | "|=" | "^=" | "=>"
 
-  DivPunctuator = "/" | "/="
+  divPunctuator = "/" | "/="
 
-  RightBracePunctuator = ")"
+  rightBracePunctuator = ")"
 
-  NullLiteral = 
+  nullLiteral = 
     | "null"
 
-  BooleanLiteral = 
+  booleanLiteral = 
     | "true"
     | "false"
 
-  NumericLiteral = 
-    | DecimalLiteral
-    | BinaryIntegerLiteral
-    | OctalIntegerLiteral
-    | HexIntegerLiteral
+  numericLiteral = 
+    | decimalLiteral
+    | binaryIntegerLiteral
+    | octalIntegerLiteral
+    | hexIntegerLiteral
 
-  DecimalLiteral = 
-    | DecimalIntegerLiteral "." DecimalDigits? ExponentPart? -- a0
-    | "." DecimalDigits ExponentPart? -- a1
-    | DecimalIntegerLiteral ExponentPart? -- a2
+  decimalLiteral = 
+    | decimalIntegerLiteral "." decimalDigits? exponentPart? -- a0
+    | "." decimalDigits exponentPart? -- a1
+    | decimalIntegerLiteral exponentPart? -- a2
 
-  DecimalIntegerLiteral = 
+  decimalIntegerLiteral = 
     | "0" -- a0
-    | NonZeroDigit DecimalDigits? -- a1
+    | nonZeroDigit decimalDigits? -- a1
 
-  DecimalDigits = 
-    | DecimalDigit -- a0
-    | DecimalDigits DecimalDigit -- a1
+  decimalDigits = 
+    | decimalDigit -- a0
+    | decimalDigits decimalDigit -- a1
 
-  DecimalDigit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+  decimalDigit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 
-  NonZeroDigit = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+  nonZeroDigit = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 
-  ExponentPart = 
-    | ExponentIndicator SignedInteger -- a0
+  exponentPart = 
+    | exponentIndicator signedInteger -- a0
 
-  ExponentIndicator = "e" | "E"
+  exponentIndicator = "e" | "E"
 
-  SignedInteger = 
-    | DecimalDigits -- a0
-    | "+" DecimalDigits -- a1
-    | "-" DecimalDigits -- a2
+  signedInteger = 
+    | decimalDigits -- a0
+    | "+" decimalDigits -- a1
+    | "-" decimalDigits -- a2
 
-  BinaryIntegerLiteral = 
-    | "0b" BinaryDigits -- a0
-    | "0B" BinaryDigits -- a1
+  binaryIntegerLiteral = 
+    | "0b" binaryDigits -- a0
+    | "0B" binaryDigits -- a1
 
-  BinaryDigits = 
-    | BinaryDigit -- a0
-    | BinaryDigits BinaryDigit -- a1
+  binaryDigits = 
+    | binaryDigit -- a0
+    | binaryDigits binaryDigit -- a1
 
-  BinaryDigit = "0" | "1"
+  binaryDigit = "0" | "1"
 
-  OctalIntegerLiteral = 
-    | "0o" OctalDigits -- a0
-    | "0O" OctalDigits -- a1
+  octalIntegerLiteral = 
+    | "0o" octalDigits -- a0
+    | "0O" octalDigits -- a1
 
-  OctalDigits = 
-    | OctalDigit -- a0
-    | OctalDigits OctalDigit -- a1
+  octalDigits = 
+    | octalDigit -- a0
+    | octalDigits octalDigit -- a1
 
-  OctalDigit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7"
+  octalDigit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7"
 
-  HexIntegerLiteral = 
-    | "0x" HexDigits -- a0
-    | "0X" HexDigits -- a1
+  hexIntegerLiteral = 
+    | "0x" hexDigits -- a0
+    | "0X" hexDigits -- a1
 
-  HexDigits = 
-    | HexDigit -- a0
-    | HexDigits HexDigit -- a1
+  hexDigits = 
+    | hexDigit -- a0
+    | hexDigits hexDigit -- a1
 
-  HexDigit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "a" | "b" | "c" | "d" | "e" | "f" | "A" | "B" | "C" | "D" | "E" | "F"
+  hexDigit := "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "a" | "b" | "c" | "d" | "e" | "f" | "A" | "B" | "C" | "D" | "E" | "F"
 
-  StringLiteral = 
-    | "\"" DoubleStringCharacters? "\"" -- a0
-    | "'" SingleStringCharacters? "'" -- a1
+  stringLiteral = 
+    | "\"" doubleStringCharacters? "\"" -- a0
+    | "'" singleStringCharacters? "'" -- a1
 
-  DoubleStringCharacters = 
-    | DoubleStringCharacter DoubleStringCharacters? -- a0
+  doubleStringCharacters = 
+    | doubleStringCharacter doubleStringCharacters? -- a0
 
-  SingleStringCharacters = 
-    | SingleStringCharacter SingleStringCharacters? -- a0
+  singleStringCharacters = 
+    | singleStringCharacter singleStringCharacters? -- a0
 
-  DoubleStringCharacter = 
-    | ~("\"" | "\\" | LineTerminator) SourceCharacter -- a0
-    | "\\" EscapeSequence -- a1
-    | LineContinuation -- a2
+  doubleStringCharacter = 
+    | ~("\"" | "\\" | lineTerminator) sourceCharacter -- a0
+    | "\\" escapeSequence -- a1
+    | lineContinuation -- a2
 
-  SingleStringCharacter = 
-    | ~("'" | "\\" | LineTerminator) SourceCharacter -- a0
-    | "\\" EscapeSequence -- a1
-    | LineContinuation -- a2
+  singleStringCharacter = 
+    | ~("'" | "\\" | lineTerminator) sourceCharacter -- a0
+    | "\\" escapeSequence -- a1
+    | lineContinuation -- a2
 
-  LineContinuation = 
-    | "\\" LineTerminatorSequence -- a0
+  lineContinuation = 
+    | "\\" lineTerminatorSequence -- a0
 
-  EscapeSequence = 
-    | CharacterEscapeSequence -- a0
+  escapeSequence = 
+    | characterEscapeSequence -- a0
     | "0" /* FIXME Assertion: lookahead <! DecimalDigit */ -- a1
-    | HexEscapeSequence -- a2
-    | UnicodeEscapeSequence -- a3
+    | hexEscapeSequence -- a2
+    | unicodeEscapeSequence -- a3
 
-  CharacterEscapeSequence = 
-    | SingleEscapeCharacter
-    | NonEscapeCharacter
+  characterEscapeSequence = 
+    | singleEscapeCharacter
+    | nonEscapeCharacter
 
-  SingleEscapeCharacter = "'" | "\"" | "\\" | "b" | "f" | "n" | "r" | "t" | "v"
+  singleEscapeCharacter = "'" | "\"" | "\\" | "b" | "f" | "n" | "r" | "t" | "v"
 
-  NonEscapeCharacter = 
-    | ~(EscapeCharacter | LineTerminator) SourceCharacter
+  nonEscapeCharacter = 
+    | ~(escapeCharacter | lineTerminator) sourceCharacter
 
-  EscapeCharacter = 
-    | SingleEscapeCharacter
-    | DecimalDigit
+  escapeCharacter = 
+    | singleEscapeCharacter
+    | decimalDigit
     | "x"
     | "u"
 
-  HexEscapeSequence = 
-    | "x" HexDigit HexDigit -- a0
+  hexEscapeSequence = 
+    | "x" hexDigit hexDigit -- a0
 
-  UnicodeEscapeSequence = 
-    | "u" Hex4Digits -- a0
-    | "u{" HexDigits "}" -- a1
+  unicodeEscapeSequence = 
+    | "u" hex4Digits -- a0
+    | "u{" hexDigits "}" -- a1
 
-  Hex4Digits = 
-    | HexDigit HexDigit HexDigit HexDigit -- a0
+  hex4Digits = 
+    | hexDigit hexDigit hexDigit hexDigit -- a0
 
-  RegularExpressionLiteral = 
-    | "/" RegularExpressionBody "/" RegularExpressionFlags -- a0
+  regularExpressionLiteral = 
+    | "/" regularExpressionBody "/" regularExpressionFlags -- a0
 
-  RegularExpressionBody = 
-    | RegularExpressionFirstChar RegularExpressionChars -- a0
+  regularExpressionBody = 
+    | regularExpressionFirstChar regularExpressionChars -- a0
 
-  RegularExpressionChars = 
+  regularExpressionChars = 
     | "" -- a0
-    | RegularExpressionChars RegularExpressionChar -- a1
+    | regularExpressionChars regularExpressionChar -- a1
 
-  RegularExpressionFirstChar = 
-    | ~("*" | "\\" | "/" | "[") RegularExpressionNonTerminator
-    | RegularExpressionBackslashSequence
-    | RegularExpressionClass
+  regularExpressionFirstChar = 
+    | ~("*" | "\\" | "/" | "[") regularExpressionNonTerminator
+    | regularExpressionBackslashSequence
+    | regularExpressionClass
 
-  RegularExpressionChar = 
-    | ~("\\" | "/" | "[") RegularExpressionNonTerminator
-    | RegularExpressionBackslashSequence
-    | RegularExpressionClass
+  regularExpressionChar = 
+    | ~("\\" | "/" | "[") regularExpressionNonTerminator
+    | regularExpressionBackslashSequence
+    | regularExpressionClass
 
-  RegularExpressionBackslashSequence = 
-    | "\\" RegularExpressionNonTerminator -- a0
+  regularExpressionBackslashSequence = 
+    | "\\" regularExpressionNonTerminator -- a0
 
-  RegularExpressionNonTerminator = 
-    | ~LineTerminator SourceCharacter
+  regularExpressionNonTerminator = 
+    | ~lineTerminator sourceCharacter
 
-  RegularExpressionClass = 
-    | "[" RegularExpressionClassChars "]" -- a0
+  regularExpressionClass = 
+    | "[" regularExpressionClassChars "]" -- a0
 
-  RegularExpressionClassChars = 
+  regularExpressionClassChars = 
     | "" -- a0
-    | RegularExpressionClassChars RegularExpressionClassChar -- a1
+    | regularExpressionClassChars regularExpressionClassChar -- a1
 
-  RegularExpressionClassChar = 
-    | ~("]" | "\\") RegularExpressionNonTerminator
-    | RegularExpressionBackslashSequence
+  regularExpressionClassChar = 
+    | ~("]" | "\\") regularExpressionNonTerminator
+    | regularExpressionBackslashSequence
 
-  RegularExpressionFlags = 
+  regularExpressionFlags = 
     | "" -- a0
-    | RegularExpressionFlags IdentifierPart -- a1
+    | regularExpressionFlags identifierPart -- a1
 
-  Template = 
-    | NoSubstitutionTemplate
-    | TemplateHead
+  template = 
+    | noSubstitutionTemplate
+    | templateHead
 
-  NoSubstitutionTemplate = 
-    | "`" TemplateCharacters? "`" -- a0
+  noSubstitutionTemplate = 
+    | "`" templateCharacters? "`" -- a0
 
-  TemplateHead = 
-    | "`" TemplateCharacters? "${" -- a0
+  templateHead = 
+    | "`" templateCharacters? "${" -- a0
 
-  TemplateSubstitutionTail = 
-    | TemplateMiddle
-    | TemplateTail
+  templateSubstitutionTail = 
+    | templateMiddle
+    | templateTail
 
-  TemplateMiddle = 
-    | "}" TemplateCharacters? "${" -- a0
+  templateMiddle = 
+    | "}" templateCharacters? "${" -- a0
 
-  TemplateTail = 
-    | "}" TemplateCharacters? "`" -- a0
+  templateTail = 
+    | "}" templateCharacters? "`" -- a0
 
-  TemplateCharacters = 
-    | TemplateCharacter TemplateCharacters? -- a0
+  templateCharacters = 
+    | templateCharacter templateCharacters? -- a0
 
-  TemplateCharacter = 
+  templateCharacter = 
     | "$" ~"{" -- a0
-    | "\\" EscapeSequence -- a1
-    | LineContinuation -- a2
-    | LineTerminatorSequence -- a3
-    | ~("`" | "\\" | "$" | LineTerminator) SourceCharacter -- a4
+    | "\\" escapeSequence -- a1
+    | lineContinuation -- a2
+    | lineTerminatorSequence -- a3
+    | ~("`" | "\\" | "$" | lineTerminator) sourceCharacter -- a4
 
   IdentifierReference<guardYield> = 
     | Identifier -- a0
@@ -339,7 +339,7 @@ G {
     | guardYield "yield" -- a1
 
   Identifier = 
-    | ~ReservedWord IdentifierName
+    | ~reservedWord identifierName
 
   PrimaryExpression<guardYield> = 
     | "this"
@@ -350,7 +350,7 @@ G {
     | FunctionExpression
     | ClassExpression<noYield>
     | GeneratorExpression
-    | RegularExpressionLiteral
+    | regularExpressionLiteral
     | TemplateLiteral<noYield>
     | CoverParenthesizedExpressionAndArrowParameterList<noYield>
 
@@ -361,10 +361,10 @@ G {
     | "(" Expression<noIn, noYield> "," "..." BindingIdentifier<noYield> ")" -- a3
 
   Literal = 
-    | NullLiteral
-    | BooleanLiteral
-    | NumericLiteral
-    | StringLiteral
+    | nullLiteral
+    | booleanLiteral
+    | numericLiteral
+    | stringLiteral
 
   ArrayLiteral<guardYield> = 
     | "[" Elision? "]" -- a0
@@ -404,9 +404,9 @@ G {
     | ComputedPropertyName<noYield>
 
   LiteralPropertyName = 
-    | IdentifierName
-    | StringLiteral
-    | NumericLiteral
+    | identifierName
+    | stringLiteral
+    | numericLiteral
 
   ComputedPropertyName<guardYield> = 
     | "[" AssignmentExpression<noIn, noYield> "]" -- a0
@@ -418,21 +418,21 @@ G {
     | "=" AssignmentExpression<noIn, noYield> -- a0
 
   TemplateLiteral<guardYield> = 
-    | NoSubstitutionTemplate -- a0
-    | TemplateHead Expression<noIn, noYield> TemplateSpans<noYield> -- a1
+    | noSubstitutionTemplate -- a0
+    | templateHead Expression<noIn, noYield> TemplateSpans<noYield> -- a1
 
   TemplateSpans<guardYield> = 
-    | TemplateTail -- a0
-    | TemplateMiddleList<noYield> TemplateTail -- a1
+    | templateTail -- a0
+    | TemplateMiddleList<noYield> templateTail -- a1
 
   TemplateMiddleList<guardYield> = 
-    | TemplateMiddle Expression<noIn, noYield> -- a0
-    | TemplateMiddleList<noYield> TemplateMiddle Expression<noIn, noYield> -- a1
+    | templateMiddle Expression<noIn, noYield> -- a0
+    | TemplateMiddleList<noYield> templateMiddle Expression<noIn, noYield> -- a1
 
   MemberExpression<guardYield> = 
     | PrimaryExpression<noYield> -- a0
     | MemberExpression<noYield> "[" Expression<noIn, noYield> "]" -- a1
-    | MemberExpression<noYield> "." IdentifierName -- a2
+    | MemberExpression<noYield> "." identifierName -- a2
     | MemberExpression<noYield> TemplateLiteral<noYield> -- a3
     | SuperProperty<noYield> -- a4
     | MetaProperty -- a5
@@ -440,7 +440,7 @@ G {
 
   SuperProperty<guardYield> = 
     | "super" "[" Expression<noIn, noYield> "]" -- a0
-    | "super" "." IdentifierName -- a1
+    | "super" "." identifierName -- a1
 
   MetaProperty = 
     | NewTarget
@@ -457,7 +457,7 @@ G {
     | SuperCall<noYield> -- a1
     | CallExpression<noYield> Arguments<noYield> -- a2
     | CallExpression<noYield> "[" Expression<noIn, noYield> "]" -- a3
-    | CallExpression<noYield> "." IdentifierName -- a4
+    | CallExpression<noYield> "." identifierName -- a4
     | CallExpression<noYield> TemplateLiteral<noYield> -- a5
 
   SuperCall<guardYield> = 
@@ -479,8 +479,8 @@ G {
 
   PostfixExpression<guardYield> = 
     | LeftHandSideExpression<noYield> -- a0
-    | LeftHandSideExpression<noYield> ~LineTerminator "++" -- a1
-    | LeftHandSideExpression<noYield> ~LineTerminator "--" -- a2
+    | LeftHandSideExpression<noYield> ~lineTerminator "++" -- a1
+    | LeftHandSideExpression<noYield> ~lineTerminator "--" -- a2
 
   UnaryExpression<guardYield> = 
     | PostfixExpression<noYield> -- a0
@@ -704,15 +704,15 @@ G {
 
   ContinueStatement<guardYield> = 
     | "continue" ";" -- a0
-    | "continue" ~LineTerminator LabelIdentifier<noYield> ";" -- a1
+    | "continue" ~lineTerminator LabelIdentifier<noYield> ";" -- a1
 
   BreakStatement<guardYield> = 
     | "break" ";" -- a0
-    | "break" ~LineTerminator LabelIdentifier<noYield> ";" -- a1
+    | "break" ~lineTerminator LabelIdentifier<noYield> ";" -- a1
 
   ReturnStatement<guardYield> = 
     | "return" ";" -- a0
-    | "return" ~LineTerminator Expression<noIn, noYield> ";" -- a1
+    | "return" ~lineTerminator Expression<noIn, noYield> ";" -- a1
 
   WithStatement<guardYield, guardReturn> = 
     | "with" "(" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- a0
@@ -742,7 +742,7 @@ G {
     | FunctionDeclaration<noYield, noDefault>
 
   ThrowStatement<guardYield> = 
-    | "throw" ~LineTerminator Expression<noIn, noYield> ";" -- a0
+    | "throw" ~lineTerminator Expression<noIn, noYield> ";" -- a0
 
   TryStatement<guardYield, guardReturn> = 
     | "try" Block<noYield, noReturn> Catch<noYield, noReturn> -- a0
@@ -798,7 +798,7 @@ G {
     | StatementList<noYield, noReturn>?
 
   ArrowFunction<guardIn, guardYield> = 
-    | ArrowParameters<noYield> ~LineTerminator "=>" ConciseBody<noIn> -- a0
+    | ArrowParameters<noYield> ~lineTerminator "=>" ConciseBody<noIn> -- a0
 
   ArrowParameters<guardYield> = 
     | BindingIdentifier<noYield>
@@ -832,8 +832,8 @@ G {
 
   YieldExpression<guardIn> = 
     | "yield" -- a0
-    | "yield" ~LineTerminator AssignmentExpression<noIn, noYield> -- a1
-    | "yield" ~LineTerminator "*" AssignmentExpression<noIn, noYield> -- a2
+    | "yield" ~lineTerminator AssignmentExpression<noIn, noYield> -- a1
+    | "yield" ~lineTerminator "*" AssignmentExpression<noIn, noYield> -- a2
 
   ClassDeclaration<guardYield, guardDefault> = 
     | "class" BindingIdentifier<noYield> ClassTail<noYield> -- a0
@@ -912,10 +912,10 @@ G {
 
   ImportSpecifier = 
     | ImportedBinding -- a0
-    | IdentifierName "as" ImportedBinding -- a1
+    | identifierName "as" ImportedBinding -- a1
 
   ModuleSpecifier = 
-    | StringLiteral
+    | stringLiteral
 
   ImportedBinding = 
     | BindingIdentifier<noYield>
@@ -940,8 +940,8 @@ G {
     | ExportsList "," ExportSpecifier -- a1
 
   ExportSpecifier = 
-    | IdentifierName -- a0
-    | IdentifierName "as" IdentifierName -- a1
+    | identifierName -- a0
+    | identifierName "as" identifierName -- a1
 
   withYield = /* fixme */
 
@@ -958,5 +958,4 @@ G {
   withDefault = /* fixme */
 
   noDefault = /* fixme */
-
-  }
+}
