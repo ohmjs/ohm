@@ -78,7 +78,28 @@ semantics.addOperation('toOhm()', {
     return `${application.toOhm()}?`;
   },
   term_assertion(_open, assertionContents, _close) {
-    return `/* FIXME ${assertionContents.sourceString} */ ""`;
+    return assertionContents.toOhm();
+  },
+  AssertionContents_empty(_) {
+    return '""';
+  },
+  AssertionContents_negativeLookahead(_, _op, terminal) {
+    return `~${terminal.toOhm()}`;
+  },
+  AssertionContents_otherLookahead(_, charIter) {
+    return `/* FIXME Assertion: ${this.sourceString} */`;
+  },
+  AssertionContents_noSymbolHere(_no, nonterminal, _here) {
+    return `~${nonterminal.sourceString}`;
+  },
+  AssertionContents_paramSet(_, param) {
+    return `guard${param.sourceString}`;
+  },
+  AssertionContents_paramCleared(_, param) {
+    return `guard${param.sourceString}`;
+  },
+  AssertionContents_prose(_, _charIter) {
+    return `/* FIXME Assertion: ${this.sourceString} */`;
   },
   application_withCondition(nonterminal, butNotCondition) {
     return `${butNotCondition.toOhm()} ${nonterminal.sourceString}`;

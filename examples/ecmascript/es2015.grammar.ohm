@@ -51,7 +51,7 @@ G {
 
   LineTerminatorSequence = 
     | /* <LF> */ -- a0
-    | /* <CR> */ /* FIXME lookahead != <LF> */ "" -- a1
+    | /* <CR> */ /* FIXME Assertion: lookahead != <LF> */ -- a1
     | /* <LS> */ -- a2
     | /* <PS> */ -- a3
     | /* <CR> */ /* <LF> */ -- a4
@@ -226,7 +226,7 @@ G {
 
   EscapeSequence = 
     | CharacterEscapeSequence -- a0
-    | "0" /* FIXME lookahead <! DecimalDigit */ "" -- a1
+    | "0" /* FIXME Assertion: lookahead <! DecimalDigit */ -- a1
     | HexEscapeSequence -- a2
     | UnicodeEscapeSequence -- a3
 
@@ -262,7 +262,7 @@ G {
     | RegularExpressionFirstChar RegularExpressionChars -- a0
 
   RegularExpressionChars = 
-    | /* FIXME empty */ "" -- a0
+    | "" -- a0
     | RegularExpressionChars RegularExpressionChar -- a1
 
   RegularExpressionFirstChar = 
@@ -285,7 +285,7 @@ G {
     | "[" RegularExpressionClassChars "]" -- a0
 
   RegularExpressionClassChars = 
-    | /* FIXME empty */ "" -- a0
+    | "" -- a0
     | RegularExpressionClassChars RegularExpressionClassChar -- a1
 
   RegularExpressionClassChar = 
@@ -293,7 +293,7 @@ G {
     | RegularExpressionBackslashSequence
 
   RegularExpressionFlags = 
-    | /* FIXME empty */ "" -- a0
+    | "" -- a0
     | RegularExpressionFlags IdentifierPart -- a1
 
   Template = 
@@ -320,7 +320,7 @@ G {
     | TemplateCharacter TemplateCharacters? -- a0
 
   TemplateCharacter = 
-    | "$" /* FIXME lookahead != `{`  */ "" -- a0
+    | "$" ~"{" -- a0
     | "\\" EscapeSequence -- a1
     | LineContinuation -- a2
     | LineTerminatorSequence -- a3
@@ -328,15 +328,15 @@ G {
 
   IdentifierReference<guardYield> = 
     | Identifier -- a0
-    | /* FIXME ~Yield */ "" "yield" -- a1
+    | guardYield "yield" -- a1
 
   BindingIdentifier<guardYield> = 
     | Identifier -- a0
-    | /* FIXME ~Yield */ "" "yield" -- a1
+    | guardYield "yield" -- a1
 
   LabelIdentifier<guardYield> = 
     | Identifier -- a0
-    | /* FIXME ~Yield */ "" "yield" -- a1
+    | guardYield "yield" -- a1
 
   Identifier = 
     | ~ReservedWord IdentifierName
@@ -479,8 +479,8 @@ G {
 
   PostfixExpression<guardYield> = 
     | LeftHandSideExpression<noYield> -- a0
-    | LeftHandSideExpression<noYield> /* FIXME no LineTerminator here */ "" "++" -- a1
-    | LeftHandSideExpression<noYield> /* FIXME no LineTerminator here */ "" "--" -- a2
+    | LeftHandSideExpression<noYield> ~LineTerminator "++" -- a1
+    | LeftHandSideExpression<noYield> ~LineTerminator "--" -- a2
 
   UnaryExpression<guardYield> = 
     | PostfixExpression<noYield> -- a0
@@ -518,7 +518,7 @@ G {
     | RelationalExpression<noIn, noYield> "<=" ShiftExpression<noYield> -- a3
     | RelationalExpression<noIn, noYield> ">=" ShiftExpression<noYield> -- a4
     | RelationalExpression<noIn, noYield> "instanceof" ShiftExpression<noYield> -- a5
-    | /* FIXME +In */ "" RelationalExpression<noIn, noYield> "in" ShiftExpression<noYield> -- a6
+    | guardIn RelationalExpression<noIn, noYield> "in" ShiftExpression<noYield> -- a6
 
   EqualityExpression<guardIn, guardYield> = 
     | RelationalExpression<noIn, noYield> -- a0
@@ -553,7 +553,7 @@ G {
 
   AssignmentExpression<guardIn, guardYield> = 
     | ConditionalExpression<noIn, noYield> -- a0
-    | /* FIXME +Yield */ "" YieldExpression<noIn> -- a1
+    | guardYield YieldExpression<noIn> -- a1
     | ArrowFunction<noIn, noYield> -- a2
     | LeftHandSideExpression<noYield> "=" AssignmentExpression<noIn, noYield> -- a3
     | LeftHandSideExpression<noYield> AssignmentOperator AssignmentExpression<noIn, noYield> -- a4
@@ -573,7 +573,7 @@ G {
     | BreakableStatement<noYield, noReturn> -- a5
     | ContinueStatement<noYield> -- a6
     | BreakStatement<noYield> -- a7
-    | /* FIXME +Return */ "" ReturnStatement<noYield> -- a8
+    | guardReturn ReturnStatement<noYield> -- a8
     | WithStatement<noYield, noReturn> -- a9
     | LabelledStatement<noYield, noReturn> -- a10
     | ThrowStatement<noYield> -- a11
@@ -676,7 +676,7 @@ G {
     | ";"
 
   ExpressionStatement<guardYield> = 
-    | /* FIXME lookahead <! { `{`, `function`, `class`, `let` `[` } */ "" Expression<noIn, noYield> ";" -- a0
+    | /* FIXME Assertion: lookahead <! { `{`, `function`, `class`, `let` `[` } */ Expression<noIn, noYield> ";" -- a0
 
   IfStatement<guardYield, guardReturn> = 
     | "if" "(" Expression<noIn, noYield> ")" Statement<noYield, noReturn> "else" Statement<noYield, noReturn> -- a0
@@ -685,13 +685,13 @@ G {
   IterationStatement<guardYield, guardReturn> = 
     | "do" Statement<noYield, noReturn> "while" "(" Expression<noIn, noYield> ")" ";" -- a0
     | "while" "(" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- a1
-    | "for" "(" /* FIXME lookahead <! { `let` `[` } */ "" Expression<noIn, noYield>? ";" Expression<noIn, noYield>? ";" Expression<noIn, noYield>? ")" Statement<noYield, noReturn> -- a2
+    | "for" "(" /* FIXME Assertion: lookahead <! { `let` `[` } */ Expression<noIn, noYield>? ";" Expression<noIn, noYield>? ";" Expression<noIn, noYield>? ")" Statement<noYield, noReturn> -- a2
     | "for" "(" "var" VariableDeclarationList<noIn, noYield> ";" Expression<noIn, noYield>? ";" Expression<noIn, noYield>? ")" Statement<noYield, noReturn> -- a3
     | "for" "(" LexicalDeclaration<noIn, noYield> Expression<noIn, noYield>? ";" Expression<noIn, noYield>? ")" Statement<noYield, noReturn> -- a4
-    | "for" "(" /* FIXME lookahead <! { `let` `[` } */ "" LeftHandSideExpression<noYield> "in" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- a5
+    | "for" "(" /* FIXME Assertion: lookahead <! { `let` `[` } */ LeftHandSideExpression<noYield> "in" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- a5
     | "for" "(" "var" ForBinding<noYield> "in" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- a6
     | "for" "(" ForDeclaration<noYield> "in" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- a7
-    | "for" "(" /* FIXME lookahead != `let` */ "" LeftHandSideExpression<noYield> "of" AssignmentExpression<noIn, noYield> ")" Statement<noYield, noReturn> -- a8
+    | "for" "(" ~"let" LeftHandSideExpression<noYield> "of" AssignmentExpression<noIn, noYield> ")" Statement<noYield, noReturn> -- a8
     | "for" "(" "var" ForBinding<noYield> "of" AssignmentExpression<noIn, noYield> ")" Statement<noYield, noReturn> -- a9
     | "for" "(" ForDeclaration<noYield> "of" AssignmentExpression<noIn, noYield> ")" Statement<noYield, noReturn> -- a10
 
@@ -704,15 +704,15 @@ G {
 
   ContinueStatement<guardYield> = 
     | "continue" ";" -- a0
-    | "continue" /* FIXME no LineTerminator here */ "" LabelIdentifier<noYield> ";" -- a1
+    | "continue" ~LineTerminator LabelIdentifier<noYield> ";" -- a1
 
   BreakStatement<guardYield> = 
     | "break" ";" -- a0
-    | "break" /* FIXME no LineTerminator here */ "" LabelIdentifier<noYield> ";" -- a1
+    | "break" ~LineTerminator LabelIdentifier<noYield> ";" -- a1
 
   ReturnStatement<guardYield> = 
     | "return" ";" -- a0
-    | "return" /* FIXME no LineTerminator here */ "" Expression<noIn, noYield> ";" -- a1
+    | "return" ~LineTerminator Expression<noIn, noYield> ";" -- a1
 
   WithStatement<guardYield, guardReturn> = 
     | "with" "(" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- a0
@@ -742,7 +742,7 @@ G {
     | FunctionDeclaration<noYield, noDefault>
 
   ThrowStatement<guardYield> = 
-    | "throw" /* FIXME no LineTerminator here */ "" Expression<noIn, noYield> ";" -- a0
+    | "throw" ~LineTerminator Expression<noIn, noYield> ";" -- a0
 
   TryStatement<guardYield, guardReturn> = 
     | "try" Block<noYield, noReturn> Catch<noYield, noReturn> -- a0
@@ -764,7 +764,7 @@ G {
 
   FunctionDeclaration<guardYield, guardDefault> = 
     | "function" BindingIdentifier<noYield> "(" FormalParameters<noYield> ")" "{" FunctionBody<noYield> "}" -- a0
-    | /* FIXME +Default */ "" "function" "(" FormalParameters<noYield> ")" "{" FunctionBody<noYield> "}" -- a1
+    | guardDefault "function" "(" FormalParameters<noYield> ")" "{" FunctionBody<noYield> "}" -- a1
 
   FunctionExpression = 
     | "function" BindingIdentifier<noYield>? "(" FormalParameters<noYield> ")" "{" FunctionBody<noYield> "}" -- a0
@@ -773,7 +773,7 @@ G {
     | FormalParameters<noYield>
 
   FormalParameters<guardYield> = 
-    | /* FIXME empty */ ""
+    | ""
     | FormalParameterList<noYield>
 
   FormalParameterList<guardYield> = 
@@ -798,14 +798,14 @@ G {
     | StatementList<noYield, noReturn>?
 
   ArrowFunction<guardIn, guardYield> = 
-    | ArrowParameters<noYield> /* FIXME no LineTerminator here */ "" "=>" ConciseBody<noIn> -- a0
+    | ArrowParameters<noYield> ~LineTerminator "=>" ConciseBody<noIn> -- a0
 
   ArrowParameters<guardYield> = 
     | BindingIdentifier<noYield>
     | CoverParenthesizedExpressionAndArrowParameterList<noYield>
 
   ConciseBody<guardIn> = 
-    | /* FIXME lookahead != `{` */ "" AssignmentExpression<noIn, noYield> -- a0
+    | ~"{" AssignmentExpression<noIn, noYield> -- a0
     | "{" FunctionBody<noYield> "}" -- a1
 
   MethodDefinition<guardYield> = 
@@ -822,7 +822,7 @@ G {
 
   GeneratorDeclaration<guardYield, guardDefault> = 
     | "function" "*" BindingIdentifier<noYield> "(" FormalParameters<noYield> ")" "{" GeneratorBody "}" -- a0
-    | /* FIXME +Default */ "" "function" "*" "(" FormalParameters<noYield> ")" "{" GeneratorBody "}" -- a1
+    | guardDefault "function" "*" "(" FormalParameters<noYield> ")" "{" GeneratorBody "}" -- a1
 
   GeneratorExpression = 
     | "function" "*" BindingIdentifier<noYield>? "(" FormalParameters<noYield> ")" "{" GeneratorBody "}" -- a0
@@ -832,12 +832,12 @@ G {
 
   YieldExpression<guardIn> = 
     | "yield" -- a0
-    | "yield" /* FIXME no LineTerminator here */ "" AssignmentExpression<noIn, noYield> -- a1
-    | "yield" /* FIXME no LineTerminator here */ "" "*" AssignmentExpression<noIn, noYield> -- a2
+    | "yield" ~LineTerminator AssignmentExpression<noIn, noYield> -- a1
+    | "yield" ~LineTerminator "*" AssignmentExpression<noIn, noYield> -- a2
 
   ClassDeclaration<guardYield, guardDefault> = 
     | "class" BindingIdentifier<noYield> ClassTail<noYield> -- a0
-    | /* FIXME +Default */ "" "class" ClassTail<noYield> -- a1
+    | guardDefault "class" ClassTail<noYield> -- a1
 
   ClassExpression<guardYield> = 
     | "class" BindingIdentifier<noYield>? ClassTail<noYield> -- a0
@@ -928,7 +928,7 @@ G {
     | "export" Declaration<noYield> -- a4
     | "export" "default" HoistableDeclaration<noYield, noDefault> -- a5
     | "export" "default" ClassDeclaration<noYield, noDefault> -- a6
-    | "export" "default" /* FIXME lookahead <! { `function`, `class` } */ "" AssignmentExpression<noIn, noYield> ";" -- a7
+    | "export" "default" /* FIXME Assertion: lookahead <! { `function`, `class` } */ AssignmentExpression<noIn, noYield> ";" -- a7
 
   ExportClause = 
     | "{" "}" -- a0

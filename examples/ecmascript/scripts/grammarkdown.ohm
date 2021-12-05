@@ -30,12 +30,15 @@ Grammarkdown {
 
   AssertionContents =
     | "empty" -- empty
-    | "lookahead" (~"]" any)+ -- lookahead
+    | "lookahead" "!=" terminal -- negativeLookahead
+    | "lookahead" (~"]" any)+ -- otherLookahead
     | "no" nonterminal "here" -- noSymbolHere
     /* lexical-goal - not used in es2015 */
     | "+" parameter -- paramSet
     | "~" parameter -- paramCleared
     | ">" (~"]" any)+ -- prose
+
+  lookaheadOperator = "!=" | "<!"
 
   ParameterList = "[" NonemptyListOf<parameter, ","> "]"
   parameter = upper letter*
