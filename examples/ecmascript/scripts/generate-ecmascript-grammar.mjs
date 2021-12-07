@@ -59,7 +59,7 @@ for (const prod of reservedWordProductions) {
   ruleOverrides[lexicalRuleName(prod)] = (rhs, defaultBody) => terminalsToRules(defaultBody);
 }
 
-const PRELUDE = `
+const PRELUDE = raw`
   Start = Script
 
   // Override Ohm's built-in definition of space.
