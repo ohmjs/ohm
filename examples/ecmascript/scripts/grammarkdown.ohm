@@ -11,8 +11,8 @@ Grammarkdown {
   rhsSentence = (spacesNoNL term)+
   term = 
     | application "?" -- opt
-    | application
-    | terminal
+    | application -- nonterminal
+    | terminal -- terminal
     | "[" experimentalApplySyntactic<AssertionContents> "]" -- assertion
 
   application =

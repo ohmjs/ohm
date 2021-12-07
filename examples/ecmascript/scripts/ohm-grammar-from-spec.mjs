@@ -1,4 +1,5 @@
 import assert from 'assert';
+import dedent from 'dedent';
 import {readFileSync, writeFileSync} from 'fs';
 import {parse} from 'node-html-parser';
 import ohm from 'ohm-js';
@@ -12,8 +13,8 @@ console.log(
 );
 
 NEXT --------------------------------
-- create some tests of some basic stuff
-- rewrite name of lexical rules (lowercase)
+- do custom handlers by rule name
+- allow partial rewrites by rule name. Fail if the text is not matched.
 */
 
 const INPUT_FILENAME = 'es2015.grammar';
@@ -25,17 +26,19 @@ if (!result.succeeded()) {
   console.error(result.message);
 }
 
+const {raw} = String;
 const literalToOhm = {
-  LF: '\\n',
-  CR: '\\r',
-  TAB: '\\t',
-  VT: '\\x0B',
-  FF: '\\x0C',
-  SP: ' ',
-  NBSP: '\\xA0',
-  ZWNBSP: '\\uFEFF',
-  LS: '\\u2028',
-  PS: '\\u2029'
+  LF: raw`"\n"`,
+  CR: raw`"\r"`,
+  TAB: raw`"\t"`,
+  VT: raw`"\x0B"`,
+  FF: raw`"\x0C"`,
+  SP: raw`" "`,
+  NBSP: raw`"\xA0"`,
+  ZWNBSP: raw`"\uFEFF"`,
+  LS: raw`"\u2028"`,
+  PS: raw`"\u2029"`,
+  USP: 'unicodeZs'
 };
 
 const ruleOverrides = {
@@ -50,146 +53,241 @@ const syntacticRuleName = str => {
   return str;
 };
 
+// All productions (using the source grammar naming scheme) that are define lists of
+// reserved words. We modify these to ensure that they don't match against valid identifiers
+// that happen to have a keyword as a prefix — e.g., `class` matching `classification`.
+const reservedWordProductions = [
+  'Keyword',
+  'FutureReservedWord',
+  'NullLiteral',
+  'BooleanLiteral'
+];
+
+// Converts all terminals in the rule body to rule applications.
+// E.g., `"blah" | "blarg"` => `blah | blarg`.
+const terminalsToRules = ohmString => ohmString.replace(/"/g, '');
+
+// Add a rule override for each of the reserved word productions.
+for (const prod of reservedWordProductions) {
+  ruleOverrides[lexicalRuleName(prod)] = (rhs, defaultBody) => terminalsToRules(defaultBody);
+}
+
+const PRELUDE = `
+  Start = Script
+
+  // Override Ohm's built-in definition of space.
+  space := whiteSpace | lineTerminator | comment
+
+  unicodeZs = "\xA0" | "\u1680" | "\u2000".."\u200A" | "\u202F" | "\u205F" | "\u3000"
+`;
+
+function overrideRuleBodyOrElse(ruleName, rhs, noOverrideValue) {
+  const override = ruleOverrides[ruleName];
+  if (typeof override === 'string') {
+    return override;
+  } else if (typeof override === 'function') {
+    return override(rhs, noOverrideValue);
+  } else {
+    return noOverrideValue;
+  }
+}
+
 const semantics = g.createSemantics();
-semantics.addOperation('toOhm()', {
-  Productions(productionIter) {
-    const rules = productionIter.children.map(c => c.toOhm());
-    for (const param of new Set(this.allParameters)) {
-      rules.push(...[`with${param} = /* fixme */`, `no${param} = /* fixme */`]);
+semantics.addOperation(
+  'toOhm()',
+  (() => {
+    function handleProduction(nonterminal, rhs, parameterListOpt = undefined) {
+      const isLexical = parameterListOpt === undefined;
+      const ruleName = isLexical
+        ? lexicalRuleName(nonterminal.sourceString)
+        : syntacticRuleName(nonterminal.sourceString);
+      const parameterList = parameterListOpt && parameterListOpt.child(0);
+      const params = parameterList ? parameterList.toOhm() : '';
+      const body = overrideRuleBodyOrElse(ruleName, rhs, rhs.toOhm());
+      const op = ruleName === 'hexDigit' ? ':=' : '=';
+      return `${ruleName}${params} ${op} ${body}`;
     }
-    const prettyRules = ['', ...rules].join('\n\n  ');
-    return `ES2015 {${prettyRules}\n}`;
+
+    return {
+      Productions(productionIter) {
+        const rules = productionIter.children.map(c => c.toOhm());
+        for (const param of new Set(this.allParameters)) {
+          rules.push(...[`with${param} = /* fixme */`, `no${param} = /* fixme */`]);
+        }
+        const prettyRules = [...rules].join('\n\n  ');
+        const indentedAdditionalRules = this.getAdditionalRules().map(str => `  ${str}`);
+        const additionalRules = ['', ...indentedAdditionalRules, ''].join('\n');
+        return `ES2015 {\n${PRELUDE}\n  ${prettyRules}\n${additionalRules}}`;
+      },
+      Production_lexical(nonterminal, _, rhs) {
+        return handleProduction(nonterminal, rhs);
+      },
+      Production_syntactic(nonterminal, parameterListOpt, _, rhs) {
+        return handleProduction(nonterminal, rhs, parameterListOpt);
+      },
+      ParameterList(_open, listOfParameter, _close) {
+        const params = listOfParameter.asIteration().children.map(c => c.toOhm());
+        return `<${params.join(', ')}>`;
+      },
+      parameter(_first, _rest) {
+        return `guard${this.sourceString}`;
+      },
+      RightHandSide_prose(_, proseSentence) {
+        return `/* ${proseSentence.sourceString} */`;
+      },
+      RightHandSide_oneOf(_, terminalIter) {
+        const terminals = terminalIter.children.map(c => c.toOhm());
+        // Sort by descending length to avoid bugs with Ohm's prioritized choice, if
+        // one terminal is a prefix of another one (e.g. "in" / "instanceof").
+        terminals.sort((a, b) => b.length - a.length);
+        return terminals.join(' | ');
+      },
+      RightHandSide_alternatives(sentenceIter) {
+        const sentences = sentenceIter.children;
+        let ohmSentences = sentences.map(c => c.toOhm());
+        if (sentences.some(s => s.simpleArity !== 1)) {
+          ohmSentences = ohmSentences.map((s, i) => `${s} -- alt${i + 1}`);
+        }
+        return ['', ...ohmSentences].join('\n    | ');
+      },
+      rhsSentence(_, termIter) {
+        return termIter.children.map(c => c.toOhm()).join(' ');
+      },
+      application_basic(nonterminal) {
+        return nonterminal.toOhm();
+      },
+      term_opt(application, _) {
+        return `${application.toOhm()}?`;
+      },
+      term_assertion(_open, assertionContents, _close) {
+        return assertionContents.toOhm();
+      },
+      AssertionContents_empty(_) {
+        return '""';
+      },
+      AssertionContents_negativeLookahead(_, _op, terminal) {
+        return `~${terminal.toOhm()}`;
+      },
+      AssertionContents_otherLookahead(_, charIter) {
+        return `/* FIXME Assertion: ${this.sourceString} */`;
+      },
+      AssertionContents_noSymbolHere(_no, nonterminal, _here) {
+        return `~${nonterminal.toOhm()}`;
+      },
+      AssertionContents_paramSet(_, param) {
+        return `guard${param.sourceString}`;
+      },
+      AssertionContents_paramCleared(_, param) {
+        return `guard${param.sourceString}`;
+      },
+      AssertionContents_prose(_, _charIter) {
+        return `/* FIXME Assertion: ${this.sourceString} */`;
+      },
+      application_withCondition(nonterminal, butNotCondition) {
+        return `${butNotCondition.toOhm()} ${nonterminal.toOhm()}`;
+      },
+      application_withArgs(nonterminal, _open, applyListOfArgument, _close) {
+        const listOfArgument = applyListOfArgument.child(0);
+        const ruleName = nonterminal.toOhm();
+        const ohmArgs = getOhmArgs(
+          this.context.productions,
+          ruleName,
+          listOfArgument.asIteration().children
+        );
+        return `${ruleName}<${ohmArgs.join(', ')}>`;
+      },
+      application_basic(nonterminal) {
+        const ruleName = nonterminal.toOhm();
+        const ohmArgs = getOhmArgs(this.context.productions, ruleName, []);
+        if (ohmArgs.length > 0) {
+          return `${ruleName}<${ohmArgs.join(', ')}>`;
+        }
+        return ruleName;
+      },
+      argument_set(_, param) {
+        return `with${param.sourceString}`;
+      },
+      argument_pass(_, param) {
+        return param.toOhm();
+      },
+      butNotCondition_basic(_, basicTerm) {
+        return `~${basicTerm.toOhm()}`;
+      },
+      butNotCondition_oneOf(_, listOfBasicTerm) {
+        const terms = listOfBasicTerm.asIteration().children.map(c => c.toOhm());
+        return `~(${terms.join(' | ')})`;
+      },
+      nonterminal(_, _2) {
+        const {sourceString} = this;
+        const root = this.context.productions;
+        if (root.productionsByName.has(sourceString)) {
+          return sourceString;
+        }
+        const lexicalName = lexicalRuleName(sourceString);
+        assert(root.productionsByName.has(lexicalName));
+        return lexicalName;
+      },
+      terminal_backtick(_) {
+        return '"`"';
+      },
+      terminal_other(_open, char, _close) {
+        const {sourceString} = char;
+        switch (sourceString) {
+          case '\\':
+            return '"\\\\"';
+          case '"':
+            return '"\\""';
+        }
+        return `"${char.sourceString}"`;
+      },
+      literal(_open, charIter, _close) {
+        const name = charIter.sourceString;
+        if (name in literalToOhm) {
+          return literalToOhm[name];
+        }
+        return `"" /* FIXME ${this.sourceString} */`;
+      }
+    };
+  })()
+);
+
+semantics.addOperation('getAdditionalRules', {
+  _nonterminal(...children) {
+    return children.flatMap(c => c.getAdditionalRules());
+  },
+  _iter(...children) {
+    return children.flatMap(c => c.getAdditionalRules());
+  },
+  _terminal() {
+    return [];
   },
   Production_lexical(nonterminal, _, rhs) {
-    const ruleName = lexicalRuleName(nonterminal.sourceString);
-    const op = ruleName === 'hexDigit' ? ':=' : '=';
-    const body = ruleOverrides[ruleName] || rhs.toOhm();
-    return `${ruleName} ${op} ${body}`;
-  },
-  Production_syntactic(nonterminal, parameterListOpt, _, rhs) {
-    const ruleName = syntacticRuleName(nonterminal.sourceString);
-    const parameterList = parameterListOpt.child(0);
-    const params = parameterList ? parameterList.toOhm() : '';
-    const body = ruleOverrides[ruleName] || rhs.toOhm();
-    return `${ruleName}${params} = ${body}`;
-  },
-  ParameterList(_open, listOfParameter, _close) {
-    const params = listOfParameter.asIteration().children.map(c => c.toOhm());
-    return `<${params.join(', ')}>`;
-  },
-  parameter(_first, _rest) {
-    return `guard${this.sourceString}`;
-  },
-  RightHandSide_prose(_, proseSentence) {
-    return `/* ${proseSentence.sourceString} */`;
-  },
+    if (reservedWordProductions.includes(nonterminal.sourceString)) {
+      const ruleNames = rhs.getReservedWordTerminals().map(t => {
+        const x = t.toOhm();
+        console.log(x);
+        return terminalsToRules(x);
+      });
+      return ruleNames.map(name => `${name} = "${name}" ~identifierPart`);
+    }
+    return [];
+  }
+});
+
+// Extracts all of the terminals from the body of one of the reservedWordProductions.
+// These are expected to be either a "one of", or a simple alternation of terminals.
+semantics.addOperation('getReservedWordTerminals()', {
   RightHandSide_oneOf(_, terminalIter) {
-    return terminalIter.children.map(c => c.toOhm()).join(' | ');
+    return terminalIter.children;
   },
   RightHandSide_alternatives(sentenceIter) {
-    const sentences = sentenceIter.children;
-    let ohmSentences = sentences.map(c => c.toOhm());
-    if (sentences.some(s => s.simpleArity !== 1)) {
-      ohmSentences = ohmSentences.map((s, i) => `${s} -- a${i}`);
-    }
-    return ['', ...ohmSentences].join('\n    | ');
+    return sentenceIter.children.flatMap(c => c.getReservedWordTerminals());
   },
   rhsSentence(_, termIter) {
-    return termIter.children.map(c => c.toOhm()).join(' ');
+    return termIter.children.flatMap(c => c.getReservedWordTerminals());
   },
-  application_basic(nonterminal) {
-    return nonterminal.toOhm();
-  },
-  term_opt(application, _) {
-    return `${application.toOhm()}?`;
-  },
-  term_assertion(_open, assertionContents, _close) {
-    return assertionContents.toOhm();
-  },
-  AssertionContents_empty(_) {
-    return '""';
-  },
-  AssertionContents_negativeLookahead(_, _op, terminal) {
-    return `~${terminal.toOhm()}`;
-  },
-  AssertionContents_otherLookahead(_, charIter) {
-    return `/* FIXME Assertion: ${this.sourceString} */`;
-  },
-  AssertionContents_noSymbolHere(_no, nonterminal, _here) {
-    return `~${nonterminal.toOhm()}`;
-  },
-  AssertionContents_paramSet(_, param) {
-    return `guard${param.sourceString}`;
-  },
-  AssertionContents_paramCleared(_, param) {
-    return `guard${param.sourceString}`;
-  },
-  AssertionContents_prose(_, _charIter) {
-    return `/* FIXME Assertion: ${this.sourceString} */`;
-  },
-  application_withCondition(nonterminal, butNotCondition) {
-    return `${butNotCondition.toOhm()} ${nonterminal.toOhm()}`;
-  },
-  application_withArgs(nonterminal, _open, applyListOfArgument, _close) {
-    const listOfArgument = applyListOfArgument.child(0);
-    const ruleName = nonterminal.toOhm();
-    const ohmArgs = getOhmArgs(
-      this.context.productions,
-      ruleName,
-      listOfArgument.asIteration().children
-    );
-    return `${ruleName}<${ohmArgs.join(', ')}>`;
-  },
-  application_basic(nonterminal) {
-    const ruleName = nonterminal.toOhm();
-    const ohmArgs = getOhmArgs(this.context.productions, ruleName, []);
-    if (ohmArgs.length > 0) {
-      return `${ruleName}<${ohmArgs.join(', ')}>`;
-    }
-    return ruleName;
-  },
-  argument_set(_, param) {
-    return `with${param.sourceString}`;
-  },
-  argument_pass(_, param) {
-    return param.toOhm();
-  },
-  butNotCondition_basic(_, basicTerm) {
-    return `~${basicTerm.toOhm()}`;
-  },
-  butNotCondition_oneOf(_, listOfBasicTerm) {
-    const terms = listOfBasicTerm.asIteration().children.map(c => c.toOhm());
-    return `~(${terms.join(' | ')})`;
-  },
-  nonterminal(_, _2) {
-    const {sourceString} = this;
-    const root = this.context.productions;
-    if (root.productionsByName.has(sourceString)) {
-      return sourceString;
-    }
-    const lexicalName = lexicalRuleName(sourceString);
-    assert(root.productionsByName.has(lexicalName));
-    return lexicalName;
-  },
-  terminal_backtick(_) {
-    return '"`"';
-  },
-  terminal_other(_open, char, _close) {
-    const {sourceString} = char;
-    switch (sourceString) {
-      case '\\':
-        return '"\\\\"';
-      case '"':
-        return '"\\""';
-    }
-    return `"${char.sourceString}"`;
-  },
-  literal(_open, charIter, _close) {
-    const name = charIter.sourceString;
-    if (name in literalToOhm) {
-      return `"${literalToOhm[name]}"`;
-    }
-    return `"" /* FIXME ${this.sourceString} */`;
+  term_terminal(terminal) {
+    return [terminal];
   }
 });
 
