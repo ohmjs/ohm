@@ -83,6 +83,8 @@ const grammarSource = readFileSync(new URL('./grammarkdown.ohm', import.meta.url
 const grammarkdown = ohm.grammar(grammarSource);
 const semantics = grammarkdown.createSemantics();
 
+let grammarName; // Initialized in main(), below.
+
 semantics.addOperation(
   'toOhm()',
   (() => {
@@ -107,7 +109,7 @@ semantics.addOperation(
         const prettyRules = [...rules].join('\n\n  ');
         const indentedAdditionalRules = this.getAdditionalRules().map(str => `  ${str}`);
         const additionalRules = ['', ...indentedAdditionalRules, ''].join('\n');
-        return `ES2015 {\n${PRELUDE}\n  ${prettyRules}\n${additionalRules}}`;
+        return `${grammarName} {\n${PRELUDE}\n  ${prettyRules}\n${additionalRules}}`;
       },
       Production_lexical(nonterminal, _, rhs) {
         return handleProduction(nonterminal, rhs);
@@ -413,7 +415,8 @@ function addContext(semantics, getActions) {
   for details of the grammar format.
  */
 (function main() {
-  const inputFilename = process.argv[2];
+  grammarName = process.argv[2];
+  const inputFilename = process.argv[3];
 
   const result = grammarkdown.match(readFileSync(inputFilename, 'utf-8'));
   if (!result.succeeded()) {
