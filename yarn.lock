@@ -3568,11 +3568,6 @@ object.pick@^1.3.0:
   dependencies:
     isobject "^3.0.1"
 
-ohm-js@^16.0.0:
-  version "16.0.0"
-  resolved "https://registry.yarnpkg.com/ohm-js/-/ohm-js-16.0.0.tgz#4f18b5f196e9aebfcdb57f782a25582b75a5bb8f"
-  integrity sha512-e0xfOO/OdF3IE+H3VibMlW/wJr5bNJIEa5bnVvoxEjPNTJ6Djjt3seAKHu6CWfByRnJFk5TsiSX3Vz7GWoM0og==
-
 once@^1.3.0, once@^1.3.1, once@^1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/once/-/once-1.4.0.tgz#583b1aa775961d4b113ac17d9c50baef9dd76bd1"
