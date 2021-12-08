@@ -13,11 +13,11 @@ function ohmCli(userArgs, optsForTesting = {}) {
     program.exitOverride();
   }
 
-  commands.forEach(({command, description, options, action}) => {
+  commands.forEach(({command, description, options, requiredOptions, args, action}) => {
     const cmd = program.command(command).description(description).action(action);
-    if (options) {
-      options.forEach(arr => cmd.option(...arr));
-    }
+    (options || []).forEach(arr => cmd.option(...arr));
+    (requiredOptions || []).forEach(arr => cmd.requiredOption(...arr));
+    (args || []).forEach(arr => cmd.argument(...arr));
   });
 
   program.parse(userArgs, {from: 'user'});

@@ -1,3 +1,3 @@
 'use strict';
 
-module.exports = [require('./generateBundles')];
+module.exports = [require('./generateBundles'), require('./match')];
