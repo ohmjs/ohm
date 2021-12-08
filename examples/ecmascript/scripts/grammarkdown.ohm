@@ -1,3 +1,9 @@
+/*
+  A grammar for parsing a grammar definition of the form used in the ECMA-262
+  spec (the JavaScript language standard).
+
+  See https://github.com/rbuckton/grammarkdown for more information.
+ */
 Grammarkdown {
   Productions = Production*
   Production = nonterminal "::" RightHandSide -- lexical
