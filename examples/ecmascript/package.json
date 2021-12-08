@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "Ohm grammars for various editions of ECMAScript (aka JavaScript).",
   "scripts": {
-    "test": "ava"
+    "test": "ava",
+    "gen-grammars": "node scripts/generate-ecmascript-grammar.mjs ES2015 spec/es2015.grammar > gen/es2015.grammar.ohm"
   },
   "repository": {
     "type": "git",

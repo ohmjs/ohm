@@ -1,0 +1,68 @@
+/*
+  A grammar for parsing a grammar definition of the form used in the ECMA-262
+  spec (the JavaScript language standard).
+
+  See https://github.com/rbuckton/grammarkdown for more information.
+ */
+Grammarkdown {
+  Productions = Production*
+  Production = nonterminal "::" RightHandSide -- lexical
+             | nonterminal ParameterList? ":" RightHandSide -- syntactic
+
+  nonterminal = upper alnum*
+  RightHandSide = oneof terminal+ -- oneOf
+                | ">" proseSentence -- prose
+                | (~Production rhsSentence)+ -- alternatives
+  proseSentence = (spacesNoNL word)+
+  rhsSentence = (spacesNoNL term)+
+  term = 
+    | application "?" -- opt
+    | application -- nonterminal
+    | terminal -- terminal
+    | "[" experimentalApplySyntactic<AssertionContents> "]" -- assertion
+
+  application =
+    | nonterminal butNotCondition -- withCondition
+    | nonterminal "[" experimentalApplySyntactic<ListOf<argument, ",">> "]" -- withArgs
+    | nonterminal -- basic
+
+  basicTerm = terminal | nonterminal
+  literal = "<" upper+ ">"
+
+  butNotCondition =
+    | " but not " basicTerm -- basic
+    | " but not one of " listOf<basicTerm, " or "> -- oneOf
+
+  AssertionContents =
+    | "empty" -- empty
+    | "lookahead" "!=" terminal -- negativeLookahead
+    | "lookahead" (~"]" any)+ -- otherLookahead
+    | "no" nonterminal "here" -- noSymbolHere
+    /* lexical-goal - not used in es2015 */
+    | "+" parameter -- paramSet
+    | "~" parameter -- paramCleared
+    | ">" (~"]" any)+ -- prose
+
+  lookaheadOperator = "!=" | "<!"
+
+  ParameterList = "[" NonemptyListOf<parameter, ","> "]"
+  parameter = upper letter*
+
+  argument = "+" parameter -- set
+           | "?" parameter -- pass
+
+  word = (letter | "\"" | "_" | ",")+
+  terminal = "```" -- backtick
+           | quote (~quote any)+ quote -- other
+           | literal -- literal
+
+  atDefine = "@define" (~newline any)*
+  comment = "//" (~newline any)*
+
+  spacesNoNL = ~newline spaces
+  space += atDefine | comment
+
+  newline = "\n" | "\r\n"
+  quote = "`"
+  oneof = "one of"
+}

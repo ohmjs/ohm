@@ -1,0 +1,1013 @@
+ES2015 {
+
+  Start = Script
+
+  // Override Ohm's built-in definition of space.
+  space := whiteSpace | lineTerminator | comment
+
+  unicodeZs = "\xA0" | "\u1680" | "\u2000".."\u200A" | "\u202F" | "\u205F" | "\u3000"
+
+  sourceCharacter = any
+
+  inputElementDiv = 
+    | whiteSpace
+    | lineTerminator
+    | comment
+    | commonToken
+    | divPunctuator
+    | rightBracePunctuator
+
+  inputElementRegExp = 
+    | whiteSpace
+    | lineTerminator
+    | comment
+    | commonToken
+    | rightBracePunctuator
+    | regularExpressionLiteral
+
+  inputElementRegExpOrTemplateTail = 
+    | whiteSpace
+    | lineTerminator
+    | comment
+    | commonToken
+    | regularExpressionLiteral
+    | templateSubstitutionTail
+
+  inputElementTemplateTail = 
+    | whiteSpace
+    | lineTerminator
+    | comment
+    | commonToken
+    | divPunctuator
+    | templateSubstitutionTail
+
+  whiteSpace = 
+    | "\t"
+    | "\x0B"
+    | "\x0C"
+    | " "
+    | "\xA0"
+    | "\uFEFF"
+    | unicodeZs
+
+  lineTerminator = 
+    | "\n"
+    | "\r"
+    | "\u2028"
+    | "\u2029"
+
+  lineTerminatorSequence = 
+    | "\n" -- alt1
+    | "\r" ~"\n" -- alt2
+    | "\u2028" -- alt3
+    | "\u2029" -- alt4
+    | "\r" "\n" -- alt5
+
+  comment = 
+    | multiLineComment
+    | singleLineComment
+
+  multiLineComment = 
+    | "/*" multiLineCommentChars? "*/" -- alt1
+
+  multiLineCommentChars = 
+    | multiLineNotAsteriskChar multiLineCommentChars? -- alt1
+    | "*" postAsteriskCommentChars? -- alt2
+
+  postAsteriskCommentChars = 
+    | multiLineNotForwardSlashOrAsteriskChar multiLineCommentChars? -- alt1
+    | "*" postAsteriskCommentChars? -- alt2
+
+  multiLineNotAsteriskChar = 
+    | ~"*" sourceCharacter
+
+  multiLineNotForwardSlashOrAsteriskChar = 
+    | ~("/" | "*") sourceCharacter
+
+  singleLineComment = 
+    | "//" singleLineCommentChars? -- alt1
+
+  singleLineCommentChars = 
+    | singleLineCommentChar singleLineCommentChars? -- alt1
+
+  singleLineCommentChar = 
+    | ~lineTerminator sourceCharacter
+
+  commonToken = 
+    | identifierName
+    | punctuator
+    | numericLiteral
+    | stringLiteral
+    | template
+
+  identifierName = 
+    | identifierStart -- alt1
+    | identifierName identifierPart -- alt2
+
+  identifierStart = 
+    | unicodeIDStart -- alt1
+    | "$" -- alt2
+    | "_" -- alt3
+    | "\\" unicodeEscapeSequence -- alt4
+
+  identifierPart = 
+    | unicodeIDContinue -- alt1
+    | "$" -- alt2
+    | "_" -- alt3
+    | "\\" unicodeEscapeSequence -- alt4
+    | "" /* FIXME <ZWNJ> */ -- alt5
+    | "" /* FIXME <ZWJ> */ -- alt6
+
+  unicodeIDStart = letter /* fixme */
+
+  unicodeIDContinue = letter | digit /* fixme */
+
+  reservedWord = 
+    | keyword
+    | futureReservedWord
+    | nullLiteral
+    | booleanLiteral
+
+  keyword = instanceof | continue | debugger | function | extends | finally | default | typeof | export | return | switch | delete | import | break | catch | class | while | const | super | yield | throw | case | else | void | with | this | var | new | for | try | do | in | if
+
+  futureReservedWord = implements | protected | interface | package | private | public | await | enum
+
+  punctuator = ">>>=" | "===" | "!==" | ">>>" | " ::" | "<<=" | ">>=" | "<=" | ">=" | "==" | "!=" | "++" | "--" | "<<" | ">>" | "&&" | "||" | "+=" | "-=" | "*=" | "%=" | "&=" | "|=" | "^=" | "=>" | "{" | "}" | "(" | ")" | "[" | "]" | "." | ";" | "," | "<" | ">" | "+" | "-" | "*" | "%" | "&" | "|" | "^" | "!" | "~" | "?" | "="
+
+  divPunctuator = "/=" | "/"
+
+  rightBracePunctuator = ")"
+
+  nullLiteral = 
+    | null
+
+  booleanLiteral = 
+    | true
+    | false
+
+  numericLiteral = 
+    | decimalLiteral
+    | binaryIntegerLiteral
+    | octalIntegerLiteral
+    | hexIntegerLiteral
+
+  decimalLiteral = 
+    | decimalIntegerLiteral "." decimalDigits? exponentPart? -- alt1
+    | "." decimalDigits exponentPart? -- alt2
+    | decimalIntegerLiteral exponentPart? -- alt3
+
+  decimalIntegerLiteral = 
+    | "0" -- alt1
+    | nonZeroDigit decimalDigits? -- alt2
+
+  decimalDigits = 
+    | decimalDigit -- alt1
+    | decimalDigits decimalDigit -- alt2
+
+  decimalDigit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+
+  nonZeroDigit = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+
+  exponentPart = 
+    | exponentIndicator signedInteger -- alt1
+
+  exponentIndicator = "e" | "E"
+
+  signedInteger = 
+    | decimalDigits -- alt1
+    | "+" decimalDigits -- alt2
+    | "-" decimalDigits -- alt3
+
+  binaryIntegerLiteral = 
+    | "0b" binaryDigits -- alt1
+    | "0B" binaryDigits -- alt2
+
+  binaryDigits = 
+    | binaryDigit -- alt1
+    | binaryDigits binaryDigit -- alt2
+
+  binaryDigit = "0" | "1"
+
+  octalIntegerLiteral = 
+    | "0o" octalDigits -- alt1
+    | "0O" octalDigits -- alt2
+
+  octalDigits = 
+    | octalDigit -- alt1
+    | octalDigits octalDigit -- alt2
+
+  octalDigit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7"
+
+  hexIntegerLiteral = 
+    | "0x" hexDigits -- alt1
+    | "0X" hexDigits -- alt2
+
+  hexDigits = 
+    | hexDigit -- alt1
+    | hexDigits hexDigit -- alt2
+
+  hexDigit := "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "a" | "b" | "c" | "d" | "e" | "f" | "A" | "B" | "C" | "D" | "E" | "F"
+
+  stringLiteral = 
+    | "\"" doubleStringCharacters? "\"" -- alt1
+    | "'" singleStringCharacters? "'" -- alt2
+
+  doubleStringCharacters = 
+    | doubleStringCharacter doubleStringCharacters? -- alt1
+
+  singleStringCharacters = 
+    | singleStringCharacter singleStringCharacters? -- alt1
+
+  doubleStringCharacter = 
+    | ~("\"" | "\\" | lineTerminator) sourceCharacter -- alt1
+    | "\\" escapeSequence -- alt2
+    | lineContinuation -- alt3
+
+  singleStringCharacter = 
+    | ~("'" | "\\" | lineTerminator) sourceCharacter -- alt1
+    | "\\" escapeSequence -- alt2
+    | lineContinuation -- alt3
+
+  lineContinuation = 
+    | "\\" lineTerminatorSequence -- alt1
+
+  escapeSequence = 
+    | characterEscapeSequence -- alt1
+    | "0" /* FIXME Assertion: lookahead <! DecimalDigit */ -- alt2
+    | hexEscapeSequence -- alt3
+    | unicodeEscapeSequence -- alt4
+
+  characterEscapeSequence = 
+    | singleEscapeCharacter
+    | nonEscapeCharacter
+
+  singleEscapeCharacter = "\"" | "\\" | "'" | "b" | "f" | "n" | "r" | "t" | "v"
+
+  nonEscapeCharacter = 
+    | ~(escapeCharacter | lineTerminator) sourceCharacter
+
+  escapeCharacter = 
+    | singleEscapeCharacter
+    | decimalDigit
+    | "x"
+    | "u"
+
+  hexEscapeSequence = 
+    | "x" hexDigit hexDigit -- alt1
+
+  unicodeEscapeSequence = 
+    | "u" hex4Digits -- alt1
+    | "u{" hexDigits "}" -- alt2
+
+  hex4Digits = 
+    | hexDigit hexDigit hexDigit hexDigit -- alt1
+
+  regularExpressionLiteral = 
+    | "/" regularExpressionBody "/" regularExpressionFlags -- alt1
+
+  regularExpressionBody = 
+    | regularExpressionFirstChar regularExpressionChars -- alt1
+
+  regularExpressionChars = 
+    | "" -- alt1
+    | regularExpressionChars regularExpressionChar -- alt2
+
+  regularExpressionFirstChar = 
+    | ~("*" | "\\" | "/" | "[") regularExpressionNonTerminator
+    | regularExpressionBackslashSequence
+    | regularExpressionClass
+
+  regularExpressionChar = 
+    | ~("\\" | "/" | "[") regularExpressionNonTerminator
+    | regularExpressionBackslashSequence
+    | regularExpressionClass
+
+  regularExpressionBackslashSequence = 
+    | "\\" regularExpressionNonTerminator -- alt1
+
+  regularExpressionNonTerminator = 
+    | ~lineTerminator sourceCharacter
+
+  regularExpressionClass = 
+    | "[" regularExpressionClassChars "]" -- alt1
+
+  regularExpressionClassChars = 
+    | "" -- alt1
+    | regularExpressionClassChars regularExpressionClassChar -- alt2
+
+  regularExpressionClassChar = 
+    | ~("]" | "\\") regularExpressionNonTerminator
+    | regularExpressionBackslashSequence
+
+  regularExpressionFlags = 
+    | "" -- alt1
+    | regularExpressionFlags identifierPart -- alt2
+
+  template = 
+    | noSubstitutionTemplate
+    | templateHead
+
+  noSubstitutionTemplate = 
+    | "`" templateCharacters? "`" -- alt1
+
+  templateHead = 
+    | "`" templateCharacters? "${" -- alt1
+
+  templateSubstitutionTail = 
+    | templateMiddle
+    | templateTail
+
+  templateMiddle = 
+    | "}" templateCharacters? "${" -- alt1
+
+  templateTail = 
+    | "}" templateCharacters? "`" -- alt1
+
+  templateCharacters = 
+    | templateCharacter templateCharacters? -- alt1
+
+  templateCharacter = 
+    | "$" ~"{" -- alt1
+    | "\\" escapeSequence -- alt2
+    | lineContinuation -- alt3
+    | lineTerminatorSequence -- alt4
+    | ~("`" | "\\" | "$" | lineTerminator) sourceCharacter -- alt5
+
+  IdentifierReference<guardYield> = 
+    | Identifier -- alt1
+    | guardYield "yield" -- alt2
+
+  BindingIdentifier<guardYield> = 
+    | Identifier -- alt1
+    | guardYield "yield" -- alt2
+
+  LabelIdentifier<guardYield> = 
+    | Identifier -- alt1
+    | guardYield "yield" -- alt2
+
+  Identifier = 
+    | ~reservedWord identifierName
+
+  PrimaryExpression<guardYield> = 
+    | "this"
+    | IdentifierReference<noYield>
+    | Literal
+    | ArrayLiteral<noYield>
+    | ObjectLiteral<noYield>
+    | FunctionExpression
+    | ClassExpression<noYield>
+    | GeneratorExpression
+    | regularExpressionLiteral
+    | TemplateLiteral<noYield>
+    | CoverParenthesizedExpressionAndArrowParameterList<noYield>
+
+  CoverParenthesizedExpressionAndArrowParameterList<guardYield> = 
+    | "(" Expression<noIn, noYield> ")" -- alt1
+    | "(" ")" -- alt2
+    | "(" "..." BindingIdentifier<noYield> ")" -- alt3
+    | "(" Expression<noIn, noYield> "," "..." BindingIdentifier<noYield> ")" -- alt4
+
+  Literal = 
+    | nullLiteral
+    | booleanLiteral
+    | numericLiteral
+    | stringLiteral
+
+  ArrayLiteral<guardYield> = 
+    | "[" Elision? "]" -- alt1
+    | "[" ElementList<noYield> "]" -- alt2
+    | "[" ElementList<noYield> "," Elision? "]" -- alt3
+
+  ElementList<guardYield> = 
+    | Elision? AssignmentExpression<noIn, noYield> -- alt1
+    | Elision? SpreadElement<noYield> -- alt2
+    | ElementList<noYield> "," Elision? AssignmentExpression<noIn, noYield> -- alt3
+    | ElementList<noYield> "," Elision? SpreadElement<noYield> -- alt4
+
+  Elision = 
+    | "," -- alt1
+    | Elision "," -- alt2
+
+  SpreadElement<guardYield> = 
+    | "..." AssignmentExpression<noIn, noYield> -- alt1
+
+  ObjectLiteral<guardYield> = 
+    | "{" "}" -- alt1
+    | "{" PropertyDefinitionList<noYield> "}" -- alt2
+    | "{" PropertyDefinitionList<noYield> "," "}" -- alt3
+
+  PropertyDefinitionList<guardYield> = 
+    | PropertyDefinition<noYield> -- alt1
+    | PropertyDefinitionList<noYield> "," PropertyDefinition<noYield> -- alt2
+
+  PropertyDefinition<guardYield> = 
+    | IdentifierReference<noYield> -- alt1
+    | CoverInitializedName<noYield> -- alt2
+    | PropertyName<noYield> ":" AssignmentExpression<noIn, noYield> -- alt3
+    | MethodDefinition<noYield> -- alt4
+
+  PropertyName<guardYield> = 
+    | LiteralPropertyName
+    | ComputedPropertyName<noYield>
+
+  LiteralPropertyName = 
+    | identifierName
+    | stringLiteral
+    | numericLiteral
+
+  ComputedPropertyName<guardYield> = 
+    | "[" AssignmentExpression<noIn, noYield> "]" -- alt1
+
+  CoverInitializedName<guardYield> = 
+    | IdentifierReference<noYield> Initializer<noIn, noYield> -- alt1
+
+  Initializer<guardIn, guardYield> = 
+    | "=" AssignmentExpression<noIn, noYield> -- alt1
+
+  TemplateLiteral<guardYield> = 
+    | noSubstitutionTemplate -- alt1
+    | templateHead Expression<noIn, noYield> TemplateSpans<noYield> -- alt2
+
+  TemplateSpans<guardYield> = 
+    | templateTail -- alt1
+    | TemplateMiddleList<noYield> templateTail -- alt2
+
+  TemplateMiddleList<guardYield> = 
+    | templateMiddle Expression<noIn, noYield> -- alt1
+    | TemplateMiddleList<noYield> templateMiddle Expression<noIn, noYield> -- alt2
+
+  MemberExpression<guardYield> = 
+    | PrimaryExpression<noYield> -- alt1
+    | MemberExpression<noYield> "[" Expression<noIn, noYield> "]" -- alt2
+    | MemberExpression<noYield> "." identifierName -- alt3
+    | MemberExpression<noYield> TemplateLiteral<noYield> -- alt4
+    | SuperProperty<noYield> -- alt5
+    | MetaProperty -- alt6
+    | "new" MemberExpression<noYield> Arguments<noYield> -- alt7
+
+  SuperProperty<guardYield> = 
+    | "super" "[" Expression<noIn, noYield> "]" -- alt1
+    | "super" "." identifierName -- alt2
+
+  MetaProperty = 
+    | NewTarget
+
+  NewTarget = 
+    | "new" "." "target" -- alt1
+
+  NewExpression<guardYield> = 
+    | MemberExpression<noYield> -- alt1
+    | "new" NewExpression<noYield> -- alt2
+
+  CallExpression<guardYield> = 
+    | MemberExpression<noYield> Arguments<noYield> -- alt1
+    | SuperCall<noYield> -- alt2
+    | CallExpression<noYield> Arguments<noYield> -- alt3
+    | CallExpression<noYield> "[" Expression<noIn, noYield> "]" -- alt4
+    | CallExpression<noYield> "." identifierName -- alt5
+    | CallExpression<noYield> TemplateLiteral<noYield> -- alt6
+
+  SuperCall<guardYield> = 
+    | "super" Arguments<noYield> -- alt1
+
+  Arguments<guardYield> = 
+    | "(" ")" -- alt1
+    | "(" ArgumentList<noYield> ")" -- alt2
+
+  ArgumentList<guardYield> = 
+    | AssignmentExpression<noIn, noYield> -- alt1
+    | "..." AssignmentExpression<noIn, noYield> -- alt2
+    | ArgumentList<noYield> "," AssignmentExpression<noIn, noYield> -- alt3
+    | ArgumentList<noYield> "," "..." AssignmentExpression<noIn, noYield> -- alt4
+
+  LeftHandSideExpression<guardYield> = 
+    | NewExpression<noYield>
+    | CallExpression<noYield>
+
+  PostfixExpression<guardYield> = 
+    | LeftHandSideExpression<noYield> -- alt1
+    | LeftHandSideExpression<noYield> ~lineTerminator "++" -- alt2
+    | LeftHandSideExpression<noYield> ~lineTerminator "--" -- alt3
+
+  UnaryExpression<guardYield> = 
+    | PostfixExpression<noYield> -- alt1
+    | "delete" UnaryExpression<noYield> -- alt2
+    | "void" UnaryExpression<noYield> -- alt3
+    | "typeof" UnaryExpression<noYield> -- alt4
+    | "++" UnaryExpression<noYield> -- alt5
+    | "--" UnaryExpression<noYield> -- alt6
+    | "+" UnaryExpression<noYield> -- alt7
+    | "-" UnaryExpression<noYield> -- alt8
+    | "~" UnaryExpression<noYield> -- alt9
+    | "!" UnaryExpression<noYield> -- alt10
+
+  MultiplicativeExpression<guardYield> = 
+    | UnaryExpression<noYield> -- alt1
+    | MultiplicativeExpression<noYield> MultiplicativeOperator UnaryExpression<noYield> -- alt2
+
+  MultiplicativeOperator = "*" | "/" | "%"
+
+  AdditiveExpression<guardYield> = 
+    | MultiplicativeExpression<noYield> -- alt1
+    | AdditiveExpression<noYield> "+" MultiplicativeExpression<noYield> -- alt2
+    | AdditiveExpression<noYield> "-" MultiplicativeExpression<noYield> -- alt3
+
+  ShiftExpression<guardYield> = 
+    | AdditiveExpression<noYield> -- alt1
+    | ShiftExpression<noYield> "<<" AdditiveExpression<noYield> -- alt2
+    | ShiftExpression<noYield> ">>" AdditiveExpression<noYield> -- alt3
+    | ShiftExpression<noYield> ">>>" AdditiveExpression<noYield> -- alt4
+
+  RelationalExpression<guardIn, guardYield> = 
+    | ShiftExpression<noYield> -- alt1
+    | RelationalExpression<noIn, noYield> "<" ShiftExpression<noYield> -- alt2
+    | RelationalExpression<noIn, noYield> ">" ShiftExpression<noYield> -- alt3
+    | RelationalExpression<noIn, noYield> "<=" ShiftExpression<noYield> -- alt4
+    | RelationalExpression<noIn, noYield> ">=" ShiftExpression<noYield> -- alt5
+    | RelationalExpression<noIn, noYield> "instanceof" ShiftExpression<noYield> -- alt6
+    | guardIn RelationalExpression<noIn, noYield> "in" ShiftExpression<noYield> -- alt7
+
+  EqualityExpression<guardIn, guardYield> = 
+    | RelationalExpression<noIn, noYield> -- alt1
+    | EqualityExpression<noIn, noYield> "==" RelationalExpression<noIn, noYield> -- alt2
+    | EqualityExpression<noIn, noYield> "!=" RelationalExpression<noIn, noYield> -- alt3
+    | EqualityExpression<noIn, noYield> "===" RelationalExpression<noIn, noYield> -- alt4
+    | EqualityExpression<noIn, noYield> "!==" RelationalExpression<noIn, noYield> -- alt5
+
+  BitwiseANDExpression<guardIn, guardYield> = 
+    | EqualityExpression<noIn, noYield> -- alt1
+    | BitwiseANDExpression<noIn, noYield> "&" EqualityExpression<noIn, noYield> -- alt2
+
+  BitwiseXORExpression<guardIn, guardYield> = 
+    | BitwiseANDExpression<noIn, noYield> -- alt1
+    | BitwiseXORExpression<noIn, noYield> "^" BitwiseANDExpression<noIn, noYield> -- alt2
+
+  BitwiseORExpression<guardIn, guardYield> = 
+    | BitwiseXORExpression<noIn, noYield> -- alt1
+    | BitwiseORExpression<noIn, noYield> "|" BitwiseXORExpression<noIn, noYield> -- alt2
+
+  LogicalANDExpression<guardIn, guardYield> = 
+    | BitwiseORExpression<noIn, noYield> -- alt1
+    | LogicalANDExpression<noIn, noYield> "&&" BitwiseORExpression<noIn, noYield> -- alt2
+
+  LogicalORExpression<guardIn, guardYield> = 
+    | LogicalANDExpression<noIn, noYield> -- alt1
+    | LogicalORExpression<noIn, noYield> "||" LogicalANDExpression<noIn, noYield> -- alt2
+
+  ConditionalExpression<guardIn, guardYield> = 
+    | LogicalORExpression<noIn, noYield> -- alt1
+    | LogicalORExpression<noIn, noYield> "?" AssignmentExpression<noIn, noYield> ":" AssignmentExpression<noIn, noYield> -- alt2
+
+  AssignmentExpression<guardIn, guardYield> = 
+    | ConditionalExpression<noIn, noYield> -- alt1
+    | guardYield YieldExpression<noIn> -- alt2
+    | ArrowFunction<noIn, noYield> -- alt3
+    | LeftHandSideExpression<noYield> "=" AssignmentExpression<noIn, noYield> -- alt4
+    | LeftHandSideExpression<noYield> AssignmentOperator AssignmentExpression<noIn, noYield> -- alt5
+
+  AssignmentOperator = ">>>=" | "<<=" | ">>=" | "*=" | "/=" | "%=" | "+=" | "-=" | "&=" | "^=" | "|="
+
+  Expression<guardIn, guardYield> = 
+    | AssignmentExpression<noIn, noYield> -- alt1
+    | Expression<noIn, noYield> "," AssignmentExpression<noIn, noYield> -- alt2
+
+  Statement<guardYield, guardReturn> = 
+    | BlockStatement<noYield, noReturn> -- alt1
+    | VariableStatement<noYield> -- alt2
+    | EmptyStatement -- alt3
+    | ExpressionStatement<noYield> -- alt4
+    | IfStatement<noYield, noReturn> -- alt5
+    | BreakableStatement<noYield, noReturn> -- alt6
+    | ContinueStatement<noYield> -- alt7
+    | BreakStatement<noYield> -- alt8
+    | guardReturn ReturnStatement<noYield> -- alt9
+    | WithStatement<noYield, noReturn> -- alt10
+    | LabelledStatement<noYield, noReturn> -- alt11
+    | ThrowStatement<noYield> -- alt12
+    | TryStatement<noYield, noReturn> -- alt13
+    | DebuggerStatement -- alt14
+
+  Declaration<guardYield> = 
+    | HoistableDeclaration<noYield, noDefault>
+    | ClassDeclaration<noYield, noDefault>
+    | LexicalDeclaration<noIn, noYield>
+
+  HoistableDeclaration<guardYield, guardDefault> = 
+    | FunctionDeclaration<noYield, noDefault>
+    | GeneratorDeclaration<noYield, noDefault>
+
+  BreakableStatement<guardYield, guardReturn> = 
+    | IterationStatement<noYield, noReturn>
+    | SwitchStatement<noYield, noReturn>
+
+  BlockStatement<guardYield, guardReturn> = 
+    | Block<noYield, noReturn>
+
+  Block<guardYield, guardReturn> = 
+    | "{" StatementList<noYield, noReturn>? "}" -- alt1
+
+  StatementList<guardYield, guardReturn> = 
+    | StatementListItem<noYield, noReturn> -- alt1
+    | StatementList<noYield, noReturn> StatementListItem<noYield, noReturn> -- alt2
+
+  StatementListItem<guardYield, guardReturn> = 
+    | Statement<noYield, noReturn>
+    | Declaration<noYield>
+
+  LexicalDeclaration<guardIn, guardYield> = 
+    | LetOrConst BindingList<noIn, noYield> ";" -- alt1
+
+  LetOrConst = 
+    | "let"
+    | "const"
+
+  BindingList<guardIn, guardYield> = 
+    | LexicalBinding<noIn, noYield> -- alt1
+    | BindingList<noIn, noYield> "," LexicalBinding<noIn, noYield> -- alt2
+
+  LexicalBinding<guardIn, guardYield> = 
+    | BindingIdentifier<noYield> Initializer<noIn, noYield>? -- alt1
+    | BindingPattern<noYield> Initializer<noIn, noYield> -- alt2
+
+  VariableStatement<guardYield> = 
+    | "var" VariableDeclarationList<noIn, noYield> ";" -- alt1
+
+  VariableDeclarationList<guardIn, guardYield> = 
+    | VariableDeclaration<noIn, noYield> -- alt1
+    | VariableDeclarationList<noIn, noYield> "," VariableDeclaration<noIn, noYield> -- alt2
+
+  VariableDeclaration<guardIn, guardYield> = 
+    | BindingIdentifier<noYield> Initializer<noIn, noYield>? -- alt1
+    | BindingPattern<noYield> Initializer<noIn, noYield> -- alt2
+
+  BindingPattern<guardYield> = 
+    | ObjectBindingPattern<noYield>
+    | ArrayBindingPattern<noYield>
+
+  ObjectBindingPattern<guardYield> = 
+    | "{" "}" -- alt1
+    | "{" BindingPropertyList<noYield> "}" -- alt2
+    | "{" BindingPropertyList<noYield> "," "}" -- alt3
+
+  ArrayBindingPattern<guardYield> = 
+    | "[" Elision? BindingRestElement<noYield>? "]" -- alt1
+    | "[" BindingElementList<noYield> "]" -- alt2
+    | "[" BindingElementList<noYield> "," Elision? BindingRestElement<noYield>? "]" -- alt3
+
+  BindingPropertyList<guardYield> = 
+    | BindingProperty<noYield> -- alt1
+    | BindingPropertyList<noYield> "," BindingProperty<noYield> -- alt2
+
+  BindingElementList<guardYield> = 
+    | BindingElisionElement<noYield> -- alt1
+    | BindingElementList<noYield> "," BindingElisionElement<noYield> -- alt2
+
+  BindingElisionElement<guardYield> = 
+    | Elision? BindingElement<noYield> -- alt1
+
+  BindingProperty<guardYield> = 
+    | SingleNameBinding<noYield> -- alt1
+    | PropertyName<noYield> ":" BindingElement<noYield> -- alt2
+
+  BindingElement<guardYield> = 
+    | SingleNameBinding<noYield> -- alt1
+    | BindingPattern<noYield> Initializer<noIn, noYield>? -- alt2
+
+  SingleNameBinding<guardYield> = 
+    | BindingIdentifier<noYield> Initializer<noIn, noYield>? -- alt1
+
+  BindingRestElement<guardYield> = 
+    | "..." BindingIdentifier<noYield> -- alt1
+
+  EmptyStatement = 
+    | ";"
+
+  ExpressionStatement<guardYield> = 
+    | /* FIXME Assertion: lookahead <! { `{`, `function`, `class`, `let` `[` } */ Expression<noIn, noYield> ";" -- alt1
+
+  IfStatement<guardYield, guardReturn> = 
+    | "if" "(" Expression<noIn, noYield> ")" Statement<noYield, noReturn> "else" Statement<noYield, noReturn> -- alt1
+    | "if" "(" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt2
+
+  IterationStatement<guardYield, guardReturn> = 
+    | "do" Statement<noYield, noReturn> "while" "(" Expression<noIn, noYield> ")" ";" -- alt1
+    | "while" "(" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt2
+    | "for" "(" /* FIXME Assertion: lookahead <! { `let` `[` } */ Expression<noIn, noYield>? ";" Expression<noIn, noYield>? ";" Expression<noIn, noYield>? ")" Statement<noYield, noReturn> -- alt3
+    | "for" "(" "var" VariableDeclarationList<noIn, noYield> ";" Expression<noIn, noYield>? ";" Expression<noIn, noYield>? ")" Statement<noYield, noReturn> -- alt4
+    | "for" "(" LexicalDeclaration<noIn, noYield> Expression<noIn, noYield>? ";" Expression<noIn, noYield>? ")" Statement<noYield, noReturn> -- alt5
+    | "for" "(" /* FIXME Assertion: lookahead <! { `let` `[` } */ LeftHandSideExpression<noYield> "in" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt6
+    | "for" "(" "var" ForBinding<noYield> "in" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt7
+    | "for" "(" ForDeclaration<noYield> "in" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt8
+    | "for" "(" ~"let" LeftHandSideExpression<noYield> "of" AssignmentExpression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt9
+    | "for" "(" "var" ForBinding<noYield> "of" AssignmentExpression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt10
+    | "for" "(" ForDeclaration<noYield> "of" AssignmentExpression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt11
+
+  ForDeclaration<guardYield> = 
+    | LetOrConst ForBinding<noYield> -- alt1
+
+  ForBinding<guardYield> = 
+    | BindingIdentifier<noYield>
+    | BindingPattern<noYield>
+
+  ContinueStatement<guardYield> = 
+    | "continue" ";" -- alt1
+    | "continue" ~lineTerminator LabelIdentifier<noYield> ";" -- alt2
+
+  BreakStatement<guardYield> = 
+    | "break" ";" -- alt1
+    | "break" ~lineTerminator LabelIdentifier<noYield> ";" -- alt2
+
+  ReturnStatement<guardYield> = 
+    | "return" ";" -- alt1
+    | "return" ~lineTerminator Expression<noIn, noYield> ";" -- alt2
+
+  WithStatement<guardYield, guardReturn> = 
+    | "with" "(" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt1
+
+  SwitchStatement<guardYield, guardReturn> = 
+    | "switch" "(" Expression<noIn, noYield> ")" CaseBlock<noYield, noReturn> -- alt1
+
+  CaseBlock<guardYield, guardReturn> = 
+    | "{" CaseClauses<noYield, noReturn>? "}" -- alt1
+    | "{" CaseClauses<noYield, noReturn>? DefaultClause<noYield, noReturn> CaseClauses<noYield, noReturn>? "}" -- alt2
+
+  CaseClauses<guardYield, guardReturn> = 
+    | CaseClause<noYield, noReturn> -- alt1
+    | CaseClauses<noYield, noReturn> CaseClause<noYield, noReturn> -- alt2
+
+  CaseClause<guardYield, guardReturn> = 
+    | "case" Expression<noIn, noYield> ":" StatementList<noYield, noReturn>? -- alt1
+
+  DefaultClause<guardYield, guardReturn> = 
+    | "default" ":" StatementList<noYield, noReturn>? -- alt1
+
+  LabelledStatement<guardYield, guardReturn> = 
+    | LabelIdentifier<noYield> ":" LabelledItem<noYield, noReturn> -- alt1
+
+  LabelledItem<guardYield, guardReturn> = 
+    | Statement<noYield, noReturn>
+    | FunctionDeclaration<noYield, noDefault>
+
+  ThrowStatement<guardYield> = 
+    | "throw" ~lineTerminator Expression<noIn, noYield> ";" -- alt1
+
+  TryStatement<guardYield, guardReturn> = 
+    | "try" Block<noYield, noReturn> Catch<noYield, noReturn> -- alt1
+    | "try" Block<noYield, noReturn> Finally<noYield, noReturn> -- alt2
+    | "try" Block<noYield, noReturn> Catch<noYield, noReturn> Finally<noYield, noReturn> -- alt3
+
+  Catch<guardYield, guardReturn> = 
+    | "catch" "(" CatchParameter<noYield> ")" Block<noYield, noReturn> -- alt1
+
+  Finally<guardYield, guardReturn> = 
+    | "finally" Block<noYield, noReturn> -- alt1
+
+  CatchParameter<guardYield> = 
+    | BindingIdentifier<noYield>
+    | BindingPattern<noYield>
+
+  DebuggerStatement = 
+    | "debugger" ";" -- alt1
+
+  FunctionDeclaration<guardYield, guardDefault> = 
+    | "function" BindingIdentifier<noYield> "(" FormalParameters<noYield> ")" "{" FunctionBody<noYield> "}" -- alt1
+    | guardDefault "function" "(" FormalParameters<noYield> ")" "{" FunctionBody<noYield> "}" -- alt2
+
+  FunctionExpression = 
+    | "function" BindingIdentifier<noYield>? "(" FormalParameters<noYield> ")" "{" FunctionBody<noYield> "}" -- alt1
+
+  StrictFormalParameters<guardYield> = 
+    | FormalParameters<noYield>
+
+  FormalParameters<guardYield> = 
+    | ""
+    | FormalParameterList<noYield>
+
+  FormalParameterList<guardYield> = 
+    | FunctionRestParameter<noYield> -- alt1
+    | FormalsList<noYield> -- alt2
+    | FormalsList<noYield> "," FunctionRestParameter<noYield> -- alt3
+
+  FormalsList<guardYield> = 
+    | FormalParameter<noYield> -- alt1
+    | FormalsList<noYield> "," FormalParameter<noYield> -- alt2
+
+  FunctionRestParameter<guardYield> = 
+    | BindingRestElement<noYield>
+
+  FormalParameter<guardYield> = 
+    | BindingElement<noYield>
+
+  FunctionBody<guardYield> = 
+    | FunctionStatementList<noYield>
+
+  FunctionStatementList<guardYield> = 
+    | StatementList<noYield, noReturn>?
+
+  ArrowFunction<guardIn, guardYield> = 
+    | ArrowParameters<noYield> ~lineTerminator "=>" ConciseBody<noIn> -- alt1
+
+  ArrowParameters<guardYield> = 
+    | BindingIdentifier<noYield>
+    | CoverParenthesizedExpressionAndArrowParameterList<noYield>
+
+  ConciseBody<guardIn> = 
+    | ~"{" AssignmentExpression<noIn, noYield> -- alt1
+    | "{" FunctionBody<noYield> "}" -- alt2
+
+  MethodDefinition<guardYield> = 
+    | PropertyName<noYield> "(" StrictFormalParameters<noYield> ")" "{" FunctionBody<noYield> "}" -- alt1
+    | GeneratorMethod<noYield> -- alt2
+    | "get" PropertyName<noYield> "(" ")" "{" FunctionBody<noYield> "}" -- alt3
+    | "set" PropertyName<noYield> "(" PropertySetParameterList ")" "{" FunctionBody<noYield> "}" -- alt4
+
+  PropertySetParameterList = 
+    | FormalParameter<noYield>
+
+  GeneratorMethod<guardYield> = 
+    | "*" PropertyName<noYield> "(" StrictFormalParameters<noYield> ")" "{" GeneratorBody "}" -- alt1
+
+  GeneratorDeclaration<guardYield, guardDefault> = 
+    | "function" "*" BindingIdentifier<noYield> "(" FormalParameters<noYield> ")" "{" GeneratorBody "}" -- alt1
+    | guardDefault "function" "*" "(" FormalParameters<noYield> ")" "{" GeneratorBody "}" -- alt2
+
+  GeneratorExpression = 
+    | "function" "*" BindingIdentifier<noYield>? "(" FormalParameters<noYield> ")" "{" GeneratorBody "}" -- alt1
+
+  GeneratorBody = 
+    | FunctionBody<noYield>
+
+  YieldExpression<guardIn> = 
+    | "yield" -- alt1
+    | "yield" ~lineTerminator AssignmentExpression<noIn, noYield> -- alt2
+    | "yield" ~lineTerminator "*" AssignmentExpression<noIn, noYield> -- alt3
+
+  ClassDeclaration<guardYield, guardDefault> = 
+    | "class" BindingIdentifier<noYield> ClassTail<noYield> -- alt1
+    | guardDefault "class" ClassTail<noYield> -- alt2
+
+  ClassExpression<guardYield> = 
+    | "class" BindingIdentifier<noYield>? ClassTail<noYield> -- alt1
+
+  ClassTail<guardYield> = 
+    | ClassHeritage<noYield>? "{" ClassBody<noYield>? "}" -- alt1
+
+  ClassHeritage<guardYield> = 
+    | "extends" LeftHandSideExpression<noYield> -- alt1
+
+  ClassBody<guardYield> = 
+    | ClassElementList<noYield>
+
+  ClassElementList<guardYield> = 
+    | ClassElement<noYield> -- alt1
+    | ClassElementList<noYield> ClassElement<noYield> -- alt2
+
+  ClassElement<guardYield> = 
+    | MethodDefinition<noYield> -- alt1
+    | "static" MethodDefinition<noYield> -- alt2
+    | ";" -- alt3
+
+  Script = 
+    | ScriptBody?
+
+  ScriptBody = 
+    | StatementList<noYield, noReturn>
+
+  Module = 
+    | ModuleBody?
+
+  ModuleBody = 
+    | ModuleItemList
+
+  ModuleItemList = 
+    | ModuleItem -- alt1
+    | ModuleItemList ModuleItem -- alt2
+
+  ModuleItem = 
+    | ImportDeclaration
+    | ExportDeclaration
+    | StatementListItem<noYield, noReturn>
+
+  ImportDeclaration = 
+    | "import" ImportClause FromClause ";" -- alt1
+    | "import" ModuleSpecifier ";" -- alt2
+
+  ImportClause = 
+    | ImportedDefaultBinding -- alt1
+    | NameSpaceImport -- alt2
+    | NamedImports -- alt3
+    | ImportedDefaultBinding "," NameSpaceImport -- alt4
+    | ImportedDefaultBinding "," NamedImports -- alt5
+
+  ImportedDefaultBinding = 
+    | ImportedBinding
+
+  NameSpaceImport = 
+    | "*" "as" ImportedBinding -- alt1
+
+  NamedImports = 
+    | "{" "}" -- alt1
+    | "{" ImportsList "}" -- alt2
+    | "{" ImportsList "," "}" -- alt3
+
+  FromClause = 
+    | "from" ModuleSpecifier -- alt1
+
+  ImportsList = 
+    | ImportSpecifier -- alt1
+    | ImportsList "," ImportSpecifier -- alt2
+
+  ImportSpecifier = 
+    | ImportedBinding -- alt1
+    | identifierName "as" ImportedBinding -- alt2
+
+  ModuleSpecifier = 
+    | stringLiteral
+
+  ImportedBinding = 
+    | BindingIdentifier<noYield>
+
+  ExportDeclaration = 
+    | "export" "*" FromClause ";" -- alt1
+    | "export" ExportClause FromClause ";" -- alt2
+    | "export" ExportClause ";" -- alt3
+    | "export" VariableStatement<noYield> -- alt4
+    | "export" Declaration<noYield> -- alt5
+    | "export" "default" HoistableDeclaration<noYield, noDefault> -- alt6
+    | "export" "default" ClassDeclaration<noYield, noDefault> -- alt7
+    | "export" "default" /* FIXME Assertion: lookahead <! { `function`, `class` } */ AssignmentExpression<noIn, noYield> ";" -- alt8
+
+  ExportClause = 
+    | "{" "}" -- alt1
+    | "{" ExportsList "}" -- alt2
+    | "{" ExportsList "," "}" -- alt3
+
+  ExportsList = 
+    | ExportSpecifier -- alt1
+    | ExportsList "," ExportSpecifier -- alt2
+
+  ExportSpecifier = 
+    | identifierName -- alt1
+    | identifierName "as" identifierName -- alt2
+
+  withYield = /* fixme */
+
+  noYield = /* fixme */
+
+  withIn = /* fixme */
+
+  noIn = /* fixme */
+
+  withReturn = /* fixme */
+
+  noReturn = /* fixme */
+
+  withDefault = /* fixme */
+
+  noDefault = /* fixme */
+
+  break = "break" ~identifierPart
+  do = "do" ~identifierPart
+  in = "in" ~identifierPart
+  typeof = "typeof" ~identifierPart
+  case = "case" ~identifierPart
+  else = "else" ~identifierPart
+  instanceof = "instanceof" ~identifierPart
+  var = "var" ~identifierPart
+  catch = "catch" ~identifierPart
+  export = "export" ~identifierPart
+  new = "new" ~identifierPart
+  void = "void" ~identifierPart
+  class = "class" ~identifierPart
+  extends = "extends" ~identifierPart
+  return = "return" ~identifierPart
+  while = "while" ~identifierPart
+  const = "const" ~identifierPart
+  finally = "finally" ~identifierPart
+  super = "super" ~identifierPart
+  with = "with" ~identifierPart
+  continue = "continue" ~identifierPart
+  for = "for" ~identifierPart
+  switch = "switch" ~identifierPart
+  yield = "yield" ~identifierPart
+  debugger = "debugger" ~identifierPart
+  function = "function" ~identifierPart
+  this = "this" ~identifierPart
+  default = "default" ~identifierPart
+  if = "if" ~identifierPart
+  throw = "throw" ~identifierPart
+  delete = "delete" ~identifierPart
+  import = "import" ~identifierPart
+  try = "try" ~identifierPart
+  enum = "enum" ~identifierPart
+  await = "await" ~identifierPart
+  implements = "implements" ~identifierPart
+  package = "package" ~identifierPart
+  protected = "protected" ~identifierPart
+  interface = "interface" ~identifierPart
+  private = "private" ~identifierPart
+  public = "public" ~identifierPart
+  null = "null" ~identifierPart
+  true = "true" ~identifierPart
+  false = "false" ~identifierPart
+}
