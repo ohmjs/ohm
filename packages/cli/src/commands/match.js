@@ -1,34 +1,29 @@
 /* eslint-disable no-console */
 'use strict';
 
+const assert = require('assert');
 const fs = require('fs');
 const ohm = require('ohm-js');
 const path = require('path');
-const {exit} = require('process');
 
 function match(inputPath, opts) {
   const {grammarFile, grammarName} = opts;
   const ext = path.extname(grammarFile);
   let ns;
-  if (ext === '.ohm') {
-    ns = ohm.grammars(fs.readFileSync(grammarFile, 'utf-8'));
-  } else if (ext === '.ohm-bundle.js') {
+  if (ext === '.ohm-bundle.js') {
     ns = require(grammarFile);
+  } else {
+    // If it's not a bundle, assume it's an Ohm source file.
+    ns = ohm.grammars(fs.readFileSync(grammarFile, 'utf-8'));
   }
   const grammars = Object.values(ns);
-  if (grammars.length === 0) {
-    console.log('No grammars found');
-    exit(2);
-  }
+  assert(grammars.length > 0, 'No grammars found');
   const grammar = grammarName ? ns[grammarName] : grammars[grammars.length - 1];
-  if (!grammar) {
-    console.error(`Grammar '${grammarName}' not found`);
-    exit(2);
-  }
+  assert(!!grammar, `Grammar '${grammarName}' not found`);
+
   const result = grammar.match(fs.readFileSync(inputPath, 'utf-8'));
   if (result.failed()) {
-    console.error(result.message);
-    exit(1);
+    throw new Error(result.message);
   }
 }
 
