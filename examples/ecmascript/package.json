@@ -24,8 +24,5 @@
   "homepage": "https://github.com/harc/ohm/tree/master/examples/ecmascript#readme",
   "peerDependencies": {
     "ohm-js": "^16.0.0"
-  },
-  "dependencies": {
-    "ohm-js": "^16.1.0-pre.1"
   }
 }

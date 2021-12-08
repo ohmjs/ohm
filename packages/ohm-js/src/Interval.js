@@ -18,7 +18,7 @@ function Interval(sourceString, startIdx, endIdx) {
   this.endIdx = endIdx;
 }
 
-Interval.coverage = function (firstInterval, ...intervals) {
+Interval.coverage = function(firstInterval, ...intervals) {
   let {startIdx, endIdx} = firstInterval;
   for (const interval of intervals) {
     if (interval.sourceString !== firstInterval.sourceString) {
@@ -65,7 +65,7 @@ Interval.prototype = {
       // `that` splits `this` into two intervals
       return [
         new Interval(this.sourceString, this.startIdx, that.startIdx),
-        new Interval(this.sourceString, that.endIdx, this.endIdx)
+        new Interval(this.sourceString, that.endIdx, this.endIdx),
       ];
     } else if (this.startIdx < that.endIdx && that.endIdx < this.endIdx) {
       // `that` contains a prefix of `this`
@@ -86,13 +86,13 @@ Interval.prototype = {
       throw errors.intervalSourcesDontMatch();
     }
     assert(
-      this.startIdx >= that.startIdx && this.endIdx <= that.endIdx,
-      'other interval does not cover this one'
+        this.startIdx >= that.startIdx && this.endIdx <= that.endIdx,
+        'other interval does not cover this one'
     );
     return new Interval(
-      this.sourceString,
-      this.startIdx - that.startIdx,
-      this.endIdx - that.startIdx
+        this.sourceString,
+        this.startIdx - that.startIdx,
+        this.endIdx - that.startIdx
     );
   },
 
@@ -109,7 +109,7 @@ Interval.prototype = {
   subInterval(offset, len) {
     const newStartIdx = this.startIdx + offset;
     return new Interval(this.sourceString, newStartIdx, newStartIdx + len);
-  }
+  },
 };
 
 Object.defineProperties(Interval.prototype, {
@@ -120,14 +120,14 @@ Object.defineProperties(Interval.prototype, {
       }
       return this._contents;
     },
-    enumerable: true
+    enumerable: true,
   },
   length: {
     get() {
       return this.endIdx - this.startIdx;
     },
-    enumerable: true
-  }
+    enumerable: true,
+  },
 });
 
 // --------------------------------------------------------------------
