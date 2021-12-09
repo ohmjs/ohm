@@ -21,6 +21,11 @@ const literalToOhm = {
   USP: 'unicodeZs'
 };
 
+function safelyReplace(str, pattern, replacement) {
+  assert(str.includes(pattern), `not found: ${JSON.stringify(pattern)}`);
+  return str.replace(pattern, replacement);
+}
+
 /*
   Allows particular rule bodies to be overridden, by specifying either:
 
@@ -31,7 +36,21 @@ const literalToOhm = {
 const ruleOverrides = {
   unicodeIDStart: 'letter /* fixme */',
   unicodeIDContinue: 'letter | digit /* fixme */',
-  sourceCharacter: 'any'
+  sourceCharacter: 'any',
+  multiLineCommentChars(rhs, defaultBody) {
+    return safelyReplace(
+      defaultBody,
+      '| "*" postAsteriskCommentChars?',
+      '| "*" ~"/" postAsteriskCommentChars?'
+    );
+  },
+  postAsteriskCommentChars(rhs, defaultBody) {
+    return safelyReplace(
+      defaultBody,
+      '| "*" postAsteriskCommentChars?',
+      '| "*" ~"/" postAsteriskCommentChars?'
+    );
+  }
 };
 
 const lexicalRuleName = str => str[0].toLowerCase() + str.slice(1);
@@ -100,6 +119,9 @@ semantics.addOperation(
       return `${ruleName}${params} ${op} ${body}`;
     }
 
+    const handlePositiveLookahead = (_, _op, expr) => `&${expr.toOhm()}`;
+    const handleNegativeLookahead = (_, _op, expr) => `~${expr.toOhm()}`;
+
     return {
       Productions(productionIter) {
         const rules = productionIter.children.map(c => c.toOhm());
@@ -135,11 +157,25 @@ semantics.addOperation(
         return terminals.join(' | ');
       },
       RightHandSide_alternatives(sentenceIter) {
-        const sentences = sentenceIter.children;
-        let ohmSentences = sentences.map(c => c.toOhm());
-        if (sentences.some(s => s.simpleArity !== 1)) {
-          ohmSentences = ohmSentences.map((s, i) => `${s} -- alt${i + 1}`);
+        let needsCaseNames = false;
+        let sentences = sentenceIter.children.map(sentence => {
+          // If any alternative has an arity other than one, add case names for *all*.
+          if (sentence.simpleArity !== 1) {
+            needsCaseNames = true;
+          }
+          return [sentence, sentence.toOhm()];
+        });
+        if (needsCaseNames) {
+          // Use a case name base on the _original_ ordering of the alternatives.
+          sentences = sentences.map(([s, ohmSentence], i) => {
+            return [s, `${ohmSentence} -- alt${i + 1}`];
+          });
         }
+        // Sort the alternatives by arity, as a heuristic to avoid issues with ordered choice.
+        // E.g., in the ECMAScript grammar, left recursive rules have the base case first,
+        // but in Ohm it needs to come last.
+        sentences.sort(([a], [b]) => b.simpleArity - a.simpleArity);
+        const ohmSentences = sentences.map(([s, ohmSentence]) => ohmSentence);
         return ['', ...ohmSentences].join('\n    | ');
       },
       rhsSentence(_, termIter) {
@@ -157,12 +193,6 @@ semantics.addOperation(
       AssertionContents_empty(_) {
         return '""';
       },
-      AssertionContents_negativeLookahead(_, _op, terminal) {
-        return `~${terminal.toOhm()}`;
-      },
-      AssertionContents_otherLookahead(_, charIter) {
-        return `/* FIXME Assertion: ${this.sourceString} */`;
-      },
       AssertionContents_noSymbolHere(_no, nonterminal, _here) {
         return `~${nonterminal.toOhm()}`;
       },
@@ -174,6 +204,15 @@ semantics.addOperation(
       },
       AssertionContents_prose(_, _charIter) {
         return `/* FIXME Assertion: ${this.sourceString} */`;
+      },
+      Lookahead_positive: handlePositiveLookahead,
+      Lookahead_positiveSet: handlePositiveLookahead,
+      Lookahead_negative: handleNegativeLookahead,
+      Lookahead_negativeSet: handleNegativeLookahead,
+      Lookahead_negativeNonterminal: handleNegativeLookahead,
+      LookaheadSet(_open, listOfTerminal, _close) {
+        const terminals = listOfTerminal.asIteration().children.map(c => c.toOhm());
+        return `(${terminals.join(' | ')})`;
       },
       application_withCondition(nonterminal, butNotCondition) {
         return `${butNotCondition.toOhm()} ${nonterminal.toOhm()}`;
