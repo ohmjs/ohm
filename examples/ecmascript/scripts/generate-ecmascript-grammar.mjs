@@ -21,6 +21,11 @@ const literalToOhm = {
   USP: 'unicodeZs'
 };
 
+function safelyReplace(str, pattern, replacement) {
+  assert(str.includes(pattern), `not found: ${JSON.stringify(pattern)}`);
+  return str.replace(pattern, replacement);
+}
+
 /*
   Allows particular rule bodies to be overridden, by specifying either:
 
@@ -31,7 +36,38 @@ const literalToOhm = {
 const ruleOverrides = {
   unicodeIDStart: 'letter /* fixme */',
   unicodeIDContinue: 'letter | digit /* fixme */',
-  sourceCharacter: 'any'
+  sourceCharacter: 'any',
+  multiLineCommentChars(rhs, defaultBody) {
+    return safelyReplace(
+      defaultBody,
+      '| "*" postAsteriskCommentChars?',
+      '| "*" ~"/" postAsteriskCommentChars?'
+    );
+  },
+  postAsteriskCommentChars(rhs, defaultBody) {
+    return safelyReplace(
+      defaultBody,
+      '| "*" postAsteriskCommentChars?',
+      '| "*" ~"/" postAsteriskCommentChars?'
+    );
+  },
+  LeftHandSideExpression(rhs, defaultBody) {
+    return safelyReplace(
+      defaultBody,
+      '| NewExpression<noYield>\n    | CallExpression<noYield>',
+      '| CallExpression<noYield>\n    | NewExpression<noYield>'
+    );
+  },
+  PropertyDefinition(rhs, defaultBody) {
+    return safelyReplace(
+      defaultBody,
+      '| IdentifierReference<noYield> -- alt1\n    | CoverInitializedName<noYield> -- alt2\n    | MethodDefinition<noYield> -- alt4',
+      '| MethodDefinition<noYield> -- alt4\n    | IdentifierReference<noYield> -- alt1\n    | CoverInitializedName<noYield> -- alt2'
+    );
+  },
+  EmptyStatement(rhs, defaultBody) {
+    return `";" // note: this semicolon eats newlines`;
+  }
 };
 
 const lexicalRuleName = str => str[0].toLowerCase() + str.slice(1);
@@ -66,6 +102,19 @@ const PRELUDE = raw`
   space := whiteSpace | lineTerminator | comment
 
   unicodeZs = "\xA0" | "\u1680" | "\u2000".."\u200A" | "\u202F" | "\u205F" | "\u3000"
+
+  multiLineCommentNoNL = "/*" (~("*/" | lineTerminator) sourceCharacter)* "*/"
+
+  // does not accept lineTerminators, not even implicit ones in a multiLineComment (cf. section 7.4)
+  spacesNoNL = (whiteSpace | singleLineComment | multiLineCommentNoNL)*
+
+  // A semicolon is "automatically inserted" if a newline or the end of the input stream is
+  // reached, or the offending token is "}".
+  // See https://es5.github.io/#x7.9 for more information.
+  // NOTE: Applications of this rule *must* appear in a lexical context -- either in the body of a
+  // lexical rule, or inside '#()'.
+  sc = space* (";" | end)
+     | spacesNoNL (lineTerminator | ~multiLineCommentNoNL multiLineComment | &"}")
 `;
 
 function overrideRuleBodyOrElse(ruleName, rhs, noOverrideValue) {
@@ -99,6 +148,9 @@ semantics.addOperation(
       const op = ruleName === 'hexDigit' ? ':=' : '=';
       return `${ruleName}${params} ${op} ${body}`;
     }
+
+    const handlePositiveLookahead = (_, _op, expr) => `&${expr.toOhm()}`;
+    const handleNegativeLookahead = (_, _op, expr) => `~${expr.toOhm()}`;
 
     return {
       Productions(productionIter) {
@@ -135,11 +187,25 @@ semantics.addOperation(
         return terminals.join(' | ');
       },
       RightHandSide_alternatives(sentenceIter) {
-        const sentences = sentenceIter.children;
-        let ohmSentences = sentences.map(c => c.toOhm());
-        if (sentences.some(s => s.simpleArity !== 1)) {
-          ohmSentences = ohmSentences.map((s, i) => `${s} -- alt${i + 1}`);
+        let needsCaseNames = false;
+        let sentences = sentenceIter.children.map(sentence => {
+          // If any alternative has an arity other than one, add case names for *all*.
+          if (sentence.simpleArity !== 1) {
+            needsCaseNames = true;
+          }
+          return [sentence, sentence.toOhm()];
+        });
+        if (needsCaseNames) {
+          // Use a case name base on the _original_ ordering of the alternatives.
+          sentences = sentences.map(([s, ohmSentence], i) => {
+            return [s, `${ohmSentence} -- alt${i + 1}`];
+          });
         }
+        // Sort the alternatives by arity, as a heuristic to avoid issues with ordered choice.
+        // E.g., in the ECMAScript grammar, left recursive rules have the base case first,
+        // but in Ohm it needs to come last.
+        sentences.sort(([a], [b]) => b.simpleArity - a.simpleArity);
+        const ohmSentences = sentences.map(([s, ohmSentence]) => ohmSentence);
         return ['', ...ohmSentences].join('\n    | ');
       },
       rhsSentence(_, termIter) {
@@ -155,13 +221,7 @@ semantics.addOperation(
         return assertionContents.toOhm();
       },
       AssertionContents_empty(_) {
-        return '""';
-      },
-      AssertionContents_negativeLookahead(_, _op, terminal) {
-        return `~${terminal.toOhm()}`;
-      },
-      AssertionContents_otherLookahead(_, charIter) {
-        return `/* FIXME Assertion: ${this.sourceString} */`;
+        return '/* empty */';
       },
       AssertionContents_noSymbolHere(_no, nonterminal, _here) {
         return `~${nonterminal.toOhm()}`;
@@ -174,6 +234,15 @@ semantics.addOperation(
       },
       AssertionContents_prose(_, _charIter) {
         return `/* FIXME Assertion: ${this.sourceString} */`;
+      },
+      Lookahead_positive: handlePositiveLookahead,
+      Lookahead_positiveSet: handlePositiveLookahead,
+      Lookahead_negative: handleNegativeLookahead,
+      Lookahead_negativeSet: handleNegativeLookahead,
+      Lookahead_negativeNonterminal: handleNegativeLookahead,
+      LookaheadSet(_open, listOfTerminal, _close) {
+        const terminals = listOfTerminal.asIteration().children.map(c => c.toOhm());
+        return `(${terminals.join(' | ')})`;
       },
       application_withCondition(nonterminal, butNotCondition) {
         return `${butNotCondition.toOhm()} ${nonterminal.toOhm()}`;
@@ -229,8 +298,10 @@ semantics.addOperation(
             return '"\\\\"';
           case '"':
             return '"\\""';
+          case ';':
+            return '#sc';
         }
-        return `"${char.sourceString}"`;
+        return `"${sourceString}"`;
       },
       literal(_open, charIter, _close) {
         const name = charIter.sourceString;
@@ -282,7 +353,11 @@ semantics.addOperation('getReservedWordTerminals()', {
 
 semantics.addAttribute('simpleArity', {
   rhsSentence(_, termIter) {
-    return termIter.numChildren;
+    let arity = 0;
+    for (const child of termIter.children) {
+      arity += child.sourceString === '[empty]' ? 0 : 1;
+    }
+    return arity;
   }
 });
 
