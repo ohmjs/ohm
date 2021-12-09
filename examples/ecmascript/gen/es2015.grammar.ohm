@@ -7,6 +7,19 @@ ES2015 {
 
   unicodeZs = "\xA0" | "\u1680" | "\u2000".."\u200A" | "\u202F" | "\u205F" | "\u3000"
 
+  multiLineCommentNoNL = "/*" (~("*/" | lineTerminator) sourceCharacter)* "*/"
+
+  // does not accept lineTerminators, not even implicit ones in a multiLineComment (cf. section 7.4)
+  spacesNoNL = (whiteSpace | singleLineComment | multiLineCommentNoNL)*
+
+  // A semicolon is "automatically inserted" if a newline or the end of the input stream is
+  // reached, or the offending token is "}".
+  // See https://es5.github.io/#x7.9 for more information.
+  // NOTE: Applications of this rule *must* appear in a lexical context -- either in the body of a
+  // lexical rule, or inside '#()'.
+  sc = space* (";" | end)
+     | spacesNoNL (lineTerminator | ~multiLineCommentNoNL multiLineComment | &"}")
+
   sourceCharacter = any
 
   inputElementDiv = 
@@ -132,7 +145,7 @@ ES2015 {
 
   futureReservedWord = implements | protected | interface | package | private | public | await | enum
 
-  punctuator = ">>>=" | "===" | "!==" | ">>>" | " ::" | "<<=" | ">>=" | "<=" | ">=" | "==" | "!=" | "++" | "--" | "<<" | ">>" | "&&" | "||" | "+=" | "-=" | "*=" | "%=" | "&=" | "|=" | "^=" | "=>" | "{" | "}" | "(" | ")" | "[" | "]" | "." | ";" | "," | "<" | ">" | "+" | "-" | "*" | "%" | "&" | "|" | "^" | "!" | "~" | "?" | "="
+  punctuator = ">>>=" | "===" | "!==" | ">>>" | " ::" | "<<=" | ">>=" | "<=" | ">=" | "==" | "!=" | "++" | "--" | "<<" | ">>" | "&&" | "||" | "+=" | "-=" | "*=" | "%=" | "&=" | "|=" | "^=" | "=>" | "{" | "}" | "(" | ")" | "[" | "]" | "." | #sc | "," | "<" | ">" | "+" | "-" | "*" | "%" | "&" | "|" | "^" | "!" | "~" | "?" | "="
 
   divPunctuator = "/=" | "/"
 
@@ -270,7 +283,7 @@ ES2015 {
 
   regularExpressionChars = 
     | regularExpressionChars regularExpressionChar -- alt2
-    | "" -- alt1
+    | /* empty */ -- alt1
 
   regularExpressionFirstChar = 
     | ~("*" | "\\" | "/" | "[") regularExpressionNonTerminator
@@ -293,7 +306,7 @@ ES2015 {
 
   regularExpressionClassChars = 
     | regularExpressionClassChars regularExpressionClassChar -- alt2
-    | "" -- alt1
+    | /* empty */ -- alt1
 
   regularExpressionClassChar = 
     | ~("]" | "\\") regularExpressionNonTerminator
@@ -301,7 +314,7 @@ ES2015 {
 
   regularExpressionFlags = 
     | regularExpressionFlags identifierPart -- alt2
-    | "" -- alt1
+    | /* empty */ -- alt1
 
   template = 
     | noSubstitutionTemplate
@@ -402,9 +415,9 @@ ES2015 {
 
   PropertyDefinition<guardYield> = 
     | PropertyName<noYield> ":" AssignmentExpression<noIn, noYield> -- alt3
+    | MethodDefinition<noYield> -- alt4
     | IdentifierReference<noYield> -- alt1
     | CoverInitializedName<noYield> -- alt2
-    | MethodDefinition<noYield> -- alt4
 
   PropertyName<guardYield> = 
     | LiteralPropertyName
@@ -481,8 +494,8 @@ ES2015 {
     | AssignmentExpression<noIn, noYield> -- alt1
 
   LeftHandSideExpression<guardYield> = 
-    | NewExpression<noYield>
     | CallExpression<noYield>
+    | NewExpression<noYield>
 
   PostfixExpression<guardYield> = 
     | LeftHandSideExpression<noYield> ~lineTerminator "++" -- alt2
@@ -615,7 +628,7 @@ ES2015 {
     | Declaration<noYield>
 
   LexicalDeclaration<guardIn, guardYield> = 
-    | LetOrConst BindingList<noIn, noYield> ";" -- alt1
+    | LetOrConst BindingList<noIn, noYield> #sc -- alt1
 
   LetOrConst = 
     | "let"
@@ -630,7 +643,7 @@ ES2015 {
     | BindingPattern<noYield> Initializer<noIn, noYield> -- alt2
 
   VariableStatement<guardYield> = 
-    | "var" VariableDeclarationList<noIn, noYield> ";" -- alt1
+    | "var" VariableDeclarationList<noIn, noYield> #sc -- alt1
 
   VariableDeclarationList<guardIn, guardYield> = 
     | VariableDeclarationList<noIn, noYield> "," VariableDeclaration<noIn, noYield> -- alt2
@@ -679,25 +692,24 @@ ES2015 {
   BindingRestElement<guardYield> = 
     | "..." BindingIdentifier<noYield> -- alt1
 
-  EmptyStatement = 
-    | ";"
+  EmptyStatement = ";" // note: this semicolon eats newlines
 
   ExpressionStatement<guardYield> = 
-    | ~("{" | "function" | "class" | "let" | "[") Expression<noIn, noYield> ";" -- alt1
+    | ~("{" | "function" | "class" | "let" | "[") Expression<noIn, noYield> #sc -- alt1
 
   IfStatement<guardYield, guardReturn> = 
     | "if" "(" Expression<noIn, noYield> ")" Statement<noYield, noReturn> "else" Statement<noYield, noReturn> -- alt1
     | "if" "(" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt2
 
   IterationStatement<guardYield, guardReturn> = 
-    | "for" "(" ~("let" | "[") Expression<noIn, noYield>? ";" Expression<noIn, noYield>? ";" Expression<noIn, noYield>? ")" Statement<noYield, noReturn> -- alt3
-    | "for" "(" "var" VariableDeclarationList<noIn, noYield> ";" Expression<noIn, noYield>? ";" Expression<noIn, noYield>? ")" Statement<noYield, noReturn> -- alt4
-    | "for" "(" LexicalDeclaration<noIn, noYield> Expression<noIn, noYield>? ";" Expression<noIn, noYield>? ")" Statement<noYield, noReturn> -- alt5
+    | "for" "(" ~("let" | "[") Expression<noIn, noYield>? #sc Expression<noIn, noYield>? #sc Expression<noIn, noYield>? ")" Statement<noYield, noReturn> -- alt3
+    | "for" "(" "var" VariableDeclarationList<noIn, noYield> #sc Expression<noIn, noYield>? #sc Expression<noIn, noYield>? ")" Statement<noYield, noReturn> -- alt4
+    | "for" "(" LexicalDeclaration<noIn, noYield> Expression<noIn, noYield>? #sc Expression<noIn, noYield>? ")" Statement<noYield, noReturn> -- alt5
     | "for" "(" ~("let" | "[") LeftHandSideExpression<noYield> "in" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt6
     | "for" "(" "var" ForBinding<noYield> "in" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt7
     | "for" "(" ~"let" LeftHandSideExpression<noYield> "of" AssignmentExpression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt9
     | "for" "(" "var" ForBinding<noYield> "of" AssignmentExpression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt10
-    | "do" Statement<noYield, noReturn> "while" "(" Expression<noIn, noYield> ")" ";" -- alt1
+    | "do" Statement<noYield, noReturn> "while" "(" Expression<noIn, noYield> ")" #sc -- alt1
     | "for" "(" ForDeclaration<noYield> "in" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt8
     | "for" "(" ForDeclaration<noYield> "of" AssignmentExpression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt11
     | "while" "(" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt2
@@ -710,16 +722,16 @@ ES2015 {
     | BindingPattern<noYield>
 
   ContinueStatement<guardYield> = 
-    | "continue" ~lineTerminator LabelIdentifier<noYield> ";" -- alt2
-    | "continue" ";" -- alt1
+    | "continue" ~lineTerminator LabelIdentifier<noYield> #sc -- alt2
+    | "continue" #sc -- alt1
 
   BreakStatement<guardYield> = 
-    | "break" ~lineTerminator LabelIdentifier<noYield> ";" -- alt2
-    | "break" ";" -- alt1
+    | "break" ~lineTerminator LabelIdentifier<noYield> #sc -- alt2
+    | "break" #sc -- alt1
 
   ReturnStatement<guardYield> = 
-    | "return" ~lineTerminator Expression<noIn, noYield> ";" -- alt2
-    | "return" ";" -- alt1
+    | "return" ~lineTerminator Expression<noIn, noYield> #sc -- alt2
+    | "return" #sc -- alt1
 
   WithStatement<guardYield, guardReturn> = 
     | "with" "(" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt1
@@ -749,7 +761,7 @@ ES2015 {
     | FunctionDeclaration<noYield, noDefault>
 
   ThrowStatement<guardYield> = 
-    | "throw" ~lineTerminator Expression<noIn, noYield> ";" -- alt1
+    | "throw" ~lineTerminator Expression<noIn, noYield> #sc -- alt1
 
   TryStatement<guardYield, guardReturn> = 
     | "try" Block<noYield, noReturn> Catch<noYield, noReturn> Finally<noYield, noReturn> -- alt3
@@ -767,7 +779,7 @@ ES2015 {
     | BindingPattern<noYield>
 
   DebuggerStatement = 
-    | "debugger" ";" -- alt1
+    | "debugger" #sc -- alt1
 
   FunctionDeclaration<guardYield, guardDefault> = 
     | "function" BindingIdentifier<noYield> "(" FormalParameters<noYield> ")" "{" FunctionBody<noYield> "}" -- alt1
@@ -780,8 +792,8 @@ ES2015 {
     | FormalParameters<noYield>
 
   FormalParameters<guardYield> = 
-    | ""
-    | FormalParameterList<noYield>
+    | FormalParameterList<noYield> -- alt2
+    | /* empty */ -- alt1
 
   FormalParameterList<guardYield> = 
     | FormalsList<noYield> "," FunctionRestParameter<noYield> -- alt3
@@ -865,7 +877,7 @@ ES2015 {
   ClassElement<guardYield> = 
     | "static" MethodDefinition<noYield> -- alt2
     | MethodDefinition<noYield> -- alt1
-    | ";" -- alt3
+    | #sc -- alt3
 
   Script = 
     | ScriptBody?
@@ -889,8 +901,8 @@ ES2015 {
     | StatementListItem<noYield, noReturn>
 
   ImportDeclaration = 
-    | "import" ImportClause FromClause ";" -- alt1
-    | "import" ModuleSpecifier ";" -- alt2
+    | "import" ImportClause FromClause #sc -- alt1
+    | "import" ModuleSpecifier #sc -- alt2
 
   ImportClause = 
     | ImportedDefaultBinding "," NameSpaceImport -- alt4
@@ -928,10 +940,10 @@ ES2015 {
     | BindingIdentifier<noYield>
 
   ExportDeclaration = 
-    | "export" "default" ~("function" | "class") AssignmentExpression<noIn, noYield> ";" -- alt8
-    | "export" "*" FromClause ";" -- alt1
-    | "export" ExportClause FromClause ";" -- alt2
-    | "export" ExportClause ";" -- alt3
+    | "export" "default" ~("function" | "class") AssignmentExpression<noIn, noYield> #sc -- alt8
+    | "export" "*" FromClause #sc -- alt1
+    | "export" ExportClause FromClause #sc -- alt2
+    | "export" ExportClause #sc -- alt3
     | "export" "default" HoistableDeclaration<noYield, noDefault> -- alt6
     | "export" "default" ClassDeclaration<noYield, noDefault> -- alt7
     | "export" VariableStatement<noYield> -- alt4

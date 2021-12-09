@@ -50,6 +50,23 @@ const ruleOverrides = {
       '| "*" postAsteriskCommentChars?',
       '| "*" ~"/" postAsteriskCommentChars?'
     );
+  },
+  LeftHandSideExpression(rhs, defaultBody) {
+    return safelyReplace(
+      defaultBody,
+      '| NewExpression<noYield>\n    | CallExpression<noYield>',
+      '| CallExpression<noYield>\n    | NewExpression<noYield>'
+    );
+  },
+  PropertyDefinition(rhs, defaultBody) {
+    return safelyReplace(
+      defaultBody,
+      '| IdentifierReference<noYield> -- alt1\n    | CoverInitializedName<noYield> -- alt2\n    | MethodDefinition<noYield> -- alt4',
+      '| MethodDefinition<noYield> -- alt4\n    | IdentifierReference<noYield> -- alt1\n    | CoverInitializedName<noYield> -- alt2'
+    );
+  },
+  EmptyStatement(rhs, defaultBody) {
+    return `";" // note: this semicolon eats newlines`;
   }
 };
 
@@ -85,6 +102,19 @@ const PRELUDE = raw`
   space := whiteSpace | lineTerminator | comment
 
   unicodeZs = "\xA0" | "\u1680" | "\u2000".."\u200A" | "\u202F" | "\u205F" | "\u3000"
+
+  multiLineCommentNoNL = "/*" (~("*/" | lineTerminator) sourceCharacter)* "*/"
+
+  // does not accept lineTerminators, not even implicit ones in a multiLineComment (cf. section 7.4)
+  spacesNoNL = (whiteSpace | singleLineComment | multiLineCommentNoNL)*
+
+  // A semicolon is "automatically inserted" if a newline or the end of the input stream is
+  // reached, or the offending token is "}".
+  // See https://es5.github.io/#x7.9 for more information.
+  // NOTE: Applications of this rule *must* appear in a lexical context -- either in the body of a
+  // lexical rule, or inside '#()'.
+  sc = space* (";" | end)
+     | spacesNoNL (lineTerminator | ~multiLineCommentNoNL multiLineComment | &"}")
 `;
 
 function overrideRuleBodyOrElse(ruleName, rhs, noOverrideValue) {
@@ -191,7 +221,7 @@ semantics.addOperation(
         return assertionContents.toOhm();
       },
       AssertionContents_empty(_) {
-        return '""';
+        return '/* empty */';
       },
       AssertionContents_noSymbolHere(_no, nonterminal, _here) {
         return `~${nonterminal.toOhm()}`;
@@ -268,8 +298,10 @@ semantics.addOperation(
             return '"\\\\"';
           case '"':
             return '"\\""';
+          case ';':
+            return '#sc';
         }
-        return `"${char.sourceString}"`;
+        return `"${sourceString}"`;
       },
       literal(_open, charIter, _close) {
         const name = charIter.sourceString;
@@ -321,7 +353,11 @@ semantics.addOperation('getReservedWordTerminals()', {
 
 semantics.addAttribute('simpleArity', {
   rhsSentence(_, termIter) {
-    return termIter.numChildren;
+    let arity = 0;
+    for (const child of termIter.children) {
+      arity += child.sourceString === '[empty]' ? 0 : 1;
+    }
+    return arity;
   }
 });
 
