@@ -503,8 +503,7 @@ ES2015 {
     | LeftHandSideExpression<noYield> ~lineTerminator "--" -- alt3
 
   UnaryExpression<guardYield> = 
-    | PostfixExpression<noYield> -- alt1
-    | "delete" UnaryExpression<noYield> -- alt2
+        | "delete" UnaryExpression<noYield> -- alt2
     | "void" UnaryExpression<noYield> -- alt3
     | "typeof" UnaryExpression<noYield> -- alt4
     | "++" UnaryExpression<noYield> -- alt5
@@ -513,6 +512,7 @@ ES2015 {
     | "-" UnaryExpression<noYield> -- alt8
     | "~" UnaryExpression<noYield> -- alt9
     | "!" UnaryExpression<noYield> -- alt10
+     | PostfixExpression<noYield> -- alt1
 
   MultiplicativeExpression<guardYield> = 
     | MultiplicativeExpression<noYield> MultiplicativeOperator UnaryExpression<noYield> -- alt2
@@ -568,15 +568,15 @@ ES2015 {
     | LogicalANDExpression<noIn, noYield> -- alt1
 
   ConditionalExpression<guardIn, guardYield> = 
-    | LogicalORExpression<noIn, noYield> -- alt1
     | LogicalORExpression<noIn, noYield> "?" AssignmentExpression<noIn, noYield> ":" AssignmentExpression<noIn, noYield> -- alt2
+    | LogicalORExpression<noIn, noYield> -- alt1
 
   AssignmentExpression<guardIn, guardYield> = 
     | ArrowFunction<noIn, noYield> -- alt3
-    | ConditionalExpression<noIn, noYield> -- alt1
-    | guardYield YieldExpression<noIn> -- alt2
     | LeftHandSideExpression<noYield> "=" AssignmentExpression<noIn, noYield> -- alt4
     | LeftHandSideExpression<noYield> AssignmentOperator AssignmentExpression<noIn, noYield> -- alt5
+    | ConditionalExpression<noIn, noYield> -- alt1
+    | guardYield YieldExpression<noIn> -- alt2
 
   AssignmentOperator = ">>>=" | "<<=" | ">>=" | "*=" | "/=" | "%=" | "+=" | "-=" | "&=" | "^=" | "|="
 

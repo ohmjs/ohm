@@ -15,7 +15,7 @@ test('bugs fixed after naive translation', t => {
   // Fix: rule overrides for multiLineCommentChars and postAsteriskCommentChars.
   t.is(es2015.match('/* test */', 'multiLineComment').succeeded(), true);
 
-  // Fix: rule override for PropertyDefinition — MethodDefinition must come before IdentifierReference.
+  // Fix: rule override for PropertyDefinition.
   t.is(es2015.match('const x = {zz(a, b) {}}').succeeded(), true);
 
   // Fix: rule override for AssignmentExpression.
@@ -29,6 +29,13 @@ test('bugs fixed after naive translation', t => {
 
   t.is(es2015.match('foo().map();').succeeded(), true);
 
+  // Fix: rule override for AssignmentExpression — moving ConditionalExpression after LeftHandSideExpressions.
+  t.is(es2015.match('x[y] = 3;').succeeded(), true);
+
+  // Fix: rule override for UnaryExpression.
+  t.is(es2015.match("if (typeof override === 'string') {}").succeeded(), true);
+
+  t.is(es2015.match('const x = aBoolean\n? a : b;').succeeded(), true);
   /*
     Other known bugs:
 

@@ -73,10 +73,11 @@ const ruleOverrides = {
   AssignmentExpression(rhs, defaultBody) {
     // ArrowFunction must come before ConditionalExpression, because the arrow function parameters
     // will parse as a parenthesized expression.
+    // Both LeftHandSideExpression alternatives must also come before ConditionalExpression.
     return safelyReplace(
       defaultBody,
-      '| ConditionalExpression<noIn, noYield> -- alt1\n    | guardYield YieldExpression<noIn> -- alt2\n    | ArrowFunction<noIn, noYield> -- alt3',
-      '| ArrowFunction<noIn, noYield> -- alt3\n    | ConditionalExpression<noIn, noYield> -- alt1\n    | guardYield YieldExpression<noIn> -- alt2'
+      '| ConditionalExpression<noIn, noYield> -- alt1\n    | guardYield YieldExpression<noIn> -- alt2\n    | ArrowFunction<noIn, noYield> -- alt3\n    | LeftHandSideExpression<noYield> "=" AssignmentExpression<noIn, noYield> -- alt4\n    | LeftHandSideExpression<noYield> AssignmentOperator AssignmentExpression<noIn, noYield> -- alt5',
+      '| ArrowFunction<noIn, noYield> -- alt3\n    | LeftHandSideExpression<noYield> "=" AssignmentExpression<noIn, noYield> -- alt4\n    | LeftHandSideExpression<noYield> AssignmentOperator AssignmentExpression<noIn, noYield> -- alt5\n    | ConditionalExpression<noIn, noYield> -- alt1\n    | guardYield YieldExpression<noIn> -- alt2'
     );
   },
   FormalParameters(rhs, defaultBody) {
@@ -92,6 +93,21 @@ const ruleOverrides = {
       defaultBody,
       '| PrimaryExpression<noYield> -- alt1\n    | SuperProperty<noYield> -- alt5\n    | MetaProperty -- alt6\n    | "new" MemberExpression<noYield> Arguments<noYield> -- alt7',
       '| "new" MemberExpression<noYield> Arguments<noYield> -- alt7\n    | PrimaryExpression<noYield> -- alt1\n    | SuperProperty<noYield> -- alt5\n    | MetaProperty -- alt6'
+    );
+  },
+  UnaryExpression(rhs, defaultBody) {
+    // Move PostfixExpression to the very end.
+    return (
+      safelyReplace(defaultBody, '| PostfixExpression<noYield> -- alt1\n', '') +
+      '\n     | PostfixExpression<noYield> -- alt1'
+    );
+  },
+  ConditionalExpression(rhs, defaultBody) {
+    // The first alternative is a subset of the second one, so flip the order.
+    return safelyReplace(
+      defaultBody,
+      '| LogicalORExpression<noIn, noYield> -- alt1\n    | LogicalORExpression<noIn, noYield> "?" AssignmentExpression<noIn, noYield> ":" AssignmentExpression<noIn, noYield> -- alt2',
+      '| LogicalORExpression<noIn, noYield> "?" AssignmentExpression<noIn, noYield> ":" AssignmentExpression<noIn, noYield> -- alt2\n    | LogicalORExpression<noIn, noYield> -- alt1'
     );
   }
 };
