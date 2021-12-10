@@ -70,11 +70,11 @@ ES2015 {
     | "\u2029"
 
   lineTerminatorSequence = 
-    | "\r" ~"\n" -- alt2
-    | "\r" "\n" -- alt5
     | "\n" -- alt1
+    | "\r" ~"\n" -- alt2
     | "\u2028" -- alt3
     | "\u2029" -- alt4
+    | "\r" "\n" -- alt5
 
   comment = 
     | multiLineComment
@@ -118,16 +118,16 @@ ES2015 {
     | identifierStart -- alt1
 
   identifierStart = 
-    | "\\" unicodeEscapeSequence -- alt4
     | unicodeIDStart -- alt1
     | "$" -- alt2
     | "_" -- alt3
+    | "\\" unicodeEscapeSequence -- alt4
 
   identifierPart = 
-    | "\\" unicodeEscapeSequence -- alt4
     | unicodeIDContinue -- alt1
     | "$" -- alt2
     | "_" -- alt3
+    | "\\" unicodeEscapeSequence -- alt4
     | "" /* FIXME <ZWNJ> */ -- alt5
     | "" /* FIXME <ZWJ> */ -- alt6
 
@@ -170,8 +170,8 @@ ES2015 {
     | decimalIntegerLiteral exponentPart? -- alt3
 
   decimalIntegerLiteral = 
-    | nonZeroDigit decimalDigits? -- alt2
     | "0" -- alt1
+    | nonZeroDigit decimalDigits? -- alt2
 
   decimalDigits = 
     | decimalDigits decimalDigit -- alt2
@@ -187,9 +187,9 @@ ES2015 {
   exponentIndicator = "e" | "E"
 
   signedInteger = 
+    | decimalDigits -- alt1
     | "+" decimalDigits -- alt2
     | "-" decimalDigits -- alt3
-    | decimalDigits -- alt1
 
   binaryIntegerLiteral = 
     | "0b" binaryDigits -- alt1
@@ -232,21 +232,21 @@ ES2015 {
     | singleStringCharacter singleStringCharacters? -- alt1
 
   doubleStringCharacter = 
-    | "\\" escapeSequence -- alt2
     | ~("\"" | "\\" | lineTerminator) sourceCharacter -- alt1
+    | "\\" escapeSequence -- alt2
     | lineContinuation -- alt3
 
   singleStringCharacter = 
-    | "\\" escapeSequence -- alt2
     | ~("'" | "\\" | lineTerminator) sourceCharacter -- alt1
+    | "\\" escapeSequence -- alt2
     | lineContinuation -- alt3
 
   lineContinuation = 
     | "\\" lineTerminatorSequence -- alt1
 
   escapeSequence = 
-    | "0" ~decimalDigit -- alt2
     | characterEscapeSequence -- alt1
+    | "0" ~decimalDigit -- alt2
     | hexEscapeSequence -- alt3
     | unicodeEscapeSequence -- alt4
 
@@ -269,8 +269,8 @@ ES2015 {
     | "x" hexDigit hexDigit -- alt1
 
   unicodeEscapeSequence = 
-    | "u{" hexDigits "}" -- alt2
     | "u" hex4Digits -- alt1
+    | "u{" hexDigits "}" -- alt2
 
   hex4Digits = 
     | hexDigit hexDigit hexDigit hexDigit -- alt1
@@ -347,16 +347,16 @@ ES2015 {
     | ~("`" | "\\" | "$" | lineTerminator) sourceCharacter -- alt5
 
   IdentifierReference<guardYield> = 
-    | guardYield "yield" -- alt2
     | Identifier -- alt1
+    | guardYield "yield" -- alt2
 
   BindingIdentifier<guardYield> = 
-    | guardYield "yield" -- alt2
     | Identifier -- alt1
+    | guardYield "yield" -- alt2
 
   LabelIdentifier<guardYield> = 
-    | guardYield "yield" -- alt2
     | Identifier -- alt1
+    | guardYield "yield" -- alt2
 
   Identifier = 
     | ~reservedWord identifierName
@@ -375,10 +375,10 @@ ES2015 {
     | CoverParenthesizedExpressionAndArrowParameterList<noYield>
 
   CoverParenthesizedExpressionAndArrowParameterList<guardYield> = 
-    | "(" Expression<noIn, noYield> "," "..." BindingIdentifier<noYield> ")" -- alt4
-    | "(" "..." BindingIdentifier<noYield> ")" -- alt3
     | "(" Expression<noIn, noYield> ")" -- alt1
     | "(" ")" -- alt2
+    | "(" "..." BindingIdentifier<noYield> ")" -- alt3
+    | "(" Expression<noIn, noYield> "," "..." BindingIdentifier<noYield> ")" -- alt4
 
   Literal = 
     | nullLiteral
@@ -387,9 +387,9 @@ ES2015 {
     | stringLiteral
 
   ArrayLiteral<guardYield> = 
-    | "[" ElementList<noYield> "," Elision? "]" -- alt3
     | "[" Elision? "]" -- alt1
     | "[" ElementList<noYield> "]" -- alt2
+    | "[" ElementList<noYield> "," Elision? "]" -- alt3
 
   ElementList<guardYield> = 
     | ElementList<noYield> "," Elision? AssignmentExpression<noIn, noYield> -- alt3
@@ -405,17 +405,17 @@ ES2015 {
     | "..." AssignmentExpression<noIn, noYield> -- alt1
 
   ObjectLiteral<guardYield> = 
-    | "{" PropertyDefinitionList<noYield> "," "}" -- alt3
-    | "{" PropertyDefinitionList<noYield> "}" -- alt2
     | "{" "}" -- alt1
+    | "{" PropertyDefinitionList<noYield> "}" -- alt2
+    | "{" PropertyDefinitionList<noYield> "," "}" -- alt3
 
   PropertyDefinitionList<guardYield> = 
     | PropertyDefinitionList<noYield> "," PropertyDefinition<noYield> -- alt2
     | PropertyDefinition<noYield> -- alt1
 
   PropertyDefinition<guardYield> = 
-    | PropertyName<noYield> ":" AssignmentExpression<noIn, noYield> -- alt3
     | MethodDefinition<noYield> -- alt4
+    | PropertyName<noYield> ":" AssignmentExpression<noIn, noYield> -- alt3
     | IdentifierReference<noYield> -- alt1
     | CoverInitializedName<noYield> -- alt2
 
@@ -438,12 +438,12 @@ ES2015 {
     | "=" AssignmentExpression<noIn, noYield> -- alt1
 
   TemplateLiteral<guardYield> = 
-    | templateHead Expression<noIn, noYield> TemplateSpans<noYield> -- alt2
     | noSubstitutionTemplate -- alt1
+    | templateHead Expression<noIn, noYield> TemplateSpans<noYield> -- alt2
 
   TemplateSpans<guardYield> = 
-    | TemplateMiddleList<noYield> templateTail -- alt2
     | templateTail -- alt1
+    | TemplateMiddleList<noYield> templateTail -- alt2
 
   TemplateMiddleList<guardYield> = 
     | TemplateMiddleList<noYield> templateMiddle Expression<noIn, noYield> -- alt2
@@ -452,8 +452,8 @@ ES2015 {
   MemberExpression<guardYield> = 
     | MemberExpression<noYield> "[" Expression<noIn, noYield> "]" -- alt2
     | MemberExpression<noYield> "." identifierName -- alt3
-    | "new" MemberExpression<noYield> Arguments<noYield> -- alt7
     | MemberExpression<noYield> TemplateLiteral<noYield> -- alt4
+    | "new" MemberExpression<noYield> Arguments<noYield> -- alt7
     | PrimaryExpression<noYield> -- alt1
     | SuperProperty<noYield> -- alt5
     | MetaProperty -- alt6
@@ -469,40 +469,41 @@ ES2015 {
     | "new" "." "target" -- alt1
 
   NewExpression<guardYield> = 
-    | "new" NewExpression<noYield> -- alt2
     | MemberExpression<noYield> -- alt1
+    | "new" NewExpression<noYield> -- alt2
 
   CallExpression<guardYield> = 
+    | CallExpression<noYield> Arguments<noYield> -- alt3
     | CallExpression<noYield> "[" Expression<noIn, noYield> "]" -- alt4
     | CallExpression<noYield> "." identifierName -- alt5
-    | MemberExpression<noYield> Arguments<noYield> -- alt1
-    | CallExpression<noYield> Arguments<noYield> -- alt3
     | CallExpression<noYield> TemplateLiteral<noYield> -- alt6
+    | MemberExpression<noYield> Arguments<noYield> -- alt1
     | SuperCall<noYield> -- alt2
 
   SuperCall<guardYield> = 
     | "super" Arguments<noYield> -- alt1
 
   Arguments<guardYield> = 
-    | "(" ArgumentList<noYield> ")" -- alt2
     | "(" ")" -- alt1
+    | "(" ArgumentList<noYield> ")" -- alt2
 
   ArgumentList<guardYield> = 
-    | ArgumentList<noYield> "," "..." AssignmentExpression<noIn, noYield> -- alt4
     | ArgumentList<noYield> "," AssignmentExpression<noIn, noYield> -- alt3
-    | "..." AssignmentExpression<noIn, noYield> -- alt2
+    | ArgumentList<noYield> "," "..." AssignmentExpression<noIn, noYield> -- alt4
     | AssignmentExpression<noIn, noYield> -- alt1
+    | "..." AssignmentExpression<noIn, noYield> -- alt2
 
   LeftHandSideExpression<guardYield> = 
     | CallExpression<noYield>
     | NewExpression<noYield>
 
   PostfixExpression<guardYield> = 
+    | LeftHandSideExpression<noYield> -- alt1
     | LeftHandSideExpression<noYield> ~lineTerminator "++" -- alt2
     | LeftHandSideExpression<noYield> ~lineTerminator "--" -- alt3
-    | LeftHandSideExpression<noYield> -- alt1
 
   UnaryExpression<guardYield> = 
+    | PostfixExpression<noYield> -- alt1
     | "delete" UnaryExpression<noYield> -- alt2
     | "void" UnaryExpression<noYield> -- alt3
     | "typeof" UnaryExpression<noYield> -- alt4
@@ -512,7 +513,6 @@ ES2015 {
     | "-" UnaryExpression<noYield> -- alt8
     | "~" UnaryExpression<noYield> -- alt9
     | "!" UnaryExpression<noYield> -- alt10
-    | PostfixExpression<noYield> -- alt1
 
   MultiplicativeExpression<guardYield> = 
     | MultiplicativeExpression<noYield> MultiplicativeOperator UnaryExpression<noYield> -- alt2
@@ -532,13 +532,13 @@ ES2015 {
     | AdditiveExpression<noYield> -- alt1
 
   RelationalExpression<guardIn, guardYield> = 
-    | guardIn RelationalExpression<noIn, noYield> "in" ShiftExpression<noYield> -- alt7
     | RelationalExpression<noIn, noYield> "<" ShiftExpression<noYield> -- alt2
     | RelationalExpression<noIn, noYield> ">" ShiftExpression<noYield> -- alt3
     | RelationalExpression<noIn, noYield> "<=" ShiftExpression<noYield> -- alt4
     | RelationalExpression<noIn, noYield> ">=" ShiftExpression<noYield> -- alt5
     | RelationalExpression<noIn, noYield> "instanceof" ShiftExpression<noYield> -- alt6
     | ShiftExpression<noYield> -- alt1
+    | guardIn RelationalExpression<noIn, noYield> "in" ShiftExpression<noYield> -- alt7
 
   EqualityExpression<guardIn, guardYield> = 
     | EqualityExpression<noIn, noYield> "==" RelationalExpression<noIn, noYield> -- alt2
@@ -568,15 +568,15 @@ ES2015 {
     | LogicalANDExpression<noIn, noYield> -- alt1
 
   ConditionalExpression<guardIn, guardYield> = 
-    | LogicalORExpression<noIn, noYield> "?" AssignmentExpression<noIn, noYield> ":" AssignmentExpression<noIn, noYield> -- alt2
     | LogicalORExpression<noIn, noYield> -- alt1
+    | LogicalORExpression<noIn, noYield> "?" AssignmentExpression<noIn, noYield> ":" AssignmentExpression<noIn, noYield> -- alt2
 
   AssignmentExpression<guardIn, guardYield> = 
+    | ArrowFunction<noIn, noYield> -- alt3
+    | ConditionalExpression<noIn, noYield> -- alt1
+    | guardYield YieldExpression<noIn> -- alt2
     | LeftHandSideExpression<noYield> "=" AssignmentExpression<noIn, noYield> -- alt4
     | LeftHandSideExpression<noYield> AssignmentOperator AssignmentExpression<noIn, noYield> -- alt5
-    | guardYield YieldExpression<noIn> -- alt2
-    | ConditionalExpression<noIn, noYield> -- alt1
-    | ArrowFunction<noIn, noYield> -- alt3
 
   AssignmentOperator = ">>>=" | "<<=" | ">>=" | "*=" | "/=" | "%=" | "+=" | "-=" | "&=" | "^=" | "|="
 
@@ -585,7 +585,6 @@ ES2015 {
     | AssignmentExpression<noIn, noYield> -- alt1
 
   Statement<guardYield, guardReturn> = 
-    | guardReturn ReturnStatement<noYield> -- alt9
     | BlockStatement<noYield, noReturn> -- alt1
     | VariableStatement<noYield> -- alt2
     | EmptyStatement -- alt3
@@ -594,6 +593,7 @@ ES2015 {
     | BreakableStatement<noYield, noReturn> -- alt6
     | ContinueStatement<noYield> -- alt7
     | BreakStatement<noYield> -- alt8
+    | guardReturn ReturnStatement<noYield> -- alt9
     | WithStatement<noYield, noReturn> -- alt10
     | LabelledStatement<noYield, noReturn> -- alt11
     | ThrowStatement<noYield> -- alt12
@@ -658,14 +658,14 @@ ES2015 {
     | ArrayBindingPattern<noYield>
 
   ObjectBindingPattern<guardYield> = 
-    | "{" BindingPropertyList<noYield> "," "}" -- alt3
-    | "{" BindingPropertyList<noYield> "}" -- alt2
     | "{" "}" -- alt1
+    | "{" BindingPropertyList<noYield> "}" -- alt2
+    | "{" BindingPropertyList<noYield> "," "}" -- alt3
 
   ArrayBindingPattern<guardYield> = 
-    | "[" BindingElementList<noYield> "," Elision? BindingRestElement<noYield>? "]" -- alt3
     | "[" Elision? BindingRestElement<noYield>? "]" -- alt1
     | "[" BindingElementList<noYield> "]" -- alt2
+    | "[" BindingElementList<noYield> "," Elision? BindingRestElement<noYield>? "]" -- alt3
 
   BindingPropertyList<guardYield> = 
     | BindingPropertyList<noYield> "," BindingProperty<noYield> -- alt2
@@ -679,12 +679,12 @@ ES2015 {
     | Elision? BindingElement<noYield> -- alt1
 
   BindingProperty<guardYield> = 
-    | PropertyName<noYield> ":" BindingElement<noYield> -- alt2
     | SingleNameBinding<noYield> -- alt1
+    | PropertyName<noYield> ":" BindingElement<noYield> -- alt2
 
   BindingElement<guardYield> = 
-    | BindingPattern<noYield> Initializer<noIn, noYield>? -- alt2
     | SingleNameBinding<noYield> -- alt1
+    | BindingPattern<noYield> Initializer<noIn, noYield>? -- alt2
 
   SingleNameBinding<guardYield> = 
     | BindingIdentifier<noYield> Initializer<noIn, noYield>? -- alt1
@@ -702,17 +702,17 @@ ES2015 {
     | "if" "(" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt2
 
   IterationStatement<guardYield, guardReturn> = 
+    | "do" Statement<noYield, noReturn> "while" "(" Expression<noIn, noYield> ")" #sc -- alt1
+    | "while" "(" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt2
     | "for" "(" ~("let" | "[") Expression<noIn, noYield>? #sc Expression<noIn, noYield>? #sc Expression<noIn, noYield>? ")" Statement<noYield, noReturn> -- alt3
     | "for" "(" "var" VariableDeclarationList<noIn, noYield> #sc Expression<noIn, noYield>? #sc Expression<noIn, noYield>? ")" Statement<noYield, noReturn> -- alt4
     | "for" "(" LexicalDeclaration<noIn, noYield> Expression<noIn, noYield>? #sc Expression<noIn, noYield>? ")" Statement<noYield, noReturn> -- alt5
     | "for" "(" ~("let" | "[") LeftHandSideExpression<noYield> "in" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt6
     | "for" "(" "var" ForBinding<noYield> "in" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt7
+    | "for" "(" ForDeclaration<noYield> "in" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt8
     | "for" "(" ~"let" LeftHandSideExpression<noYield> "of" AssignmentExpression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt9
     | "for" "(" "var" ForBinding<noYield> "of" AssignmentExpression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt10
-    | "do" Statement<noYield, noReturn> "while" "(" Expression<noIn, noYield> ")" #sc -- alt1
-    | "for" "(" ForDeclaration<noYield> "in" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt8
     | "for" "(" ForDeclaration<noYield> "of" AssignmentExpression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt11
-    | "while" "(" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt2
 
   ForDeclaration<guardYield> = 
     | LetOrConst ForBinding<noYield> -- alt1
@@ -722,16 +722,16 @@ ES2015 {
     | BindingPattern<noYield>
 
   ContinueStatement<guardYield> = 
-    | "continue" ~lineTerminator LabelIdentifier<noYield> #sc -- alt2
     | "continue" #sc -- alt1
+    | "continue" ~lineTerminator LabelIdentifier<noYield> #sc -- alt2
 
   BreakStatement<guardYield> = 
-    | "break" ~lineTerminator LabelIdentifier<noYield> #sc -- alt2
     | "break" #sc -- alt1
+    | "break" ~lineTerminator LabelIdentifier<noYield> #sc -- alt2
 
   ReturnStatement<guardYield> = 
-    | "return" ~lineTerminator Expression<noIn, noYield> #sc -- alt2
     | "return" #sc -- alt1
+    | "return" ~lineTerminator Expression<noIn, noYield> #sc -- alt2
 
   WithStatement<guardYield, guardReturn> = 
     | "with" "(" Expression<noIn, noYield> ")" Statement<noYield, noReturn> -- alt1
@@ -740,8 +740,8 @@ ES2015 {
     | "switch" "(" Expression<noIn, noYield> ")" CaseBlock<noYield, noReturn> -- alt1
 
   CaseBlock<guardYield, guardReturn> = 
-    | "{" CaseClauses<noYield, noReturn>? DefaultClause<noYield, noReturn> CaseClauses<noYield, noReturn>? "}" -- alt2
     | "{" CaseClauses<noYield, noReturn>? "}" -- alt1
+    | "{" CaseClauses<noYield, noReturn>? DefaultClause<noYield, noReturn> CaseClauses<noYield, noReturn>? "}" -- alt2
 
   CaseClauses<guardYield, guardReturn> = 
     | CaseClauses<noYield, noReturn> CaseClause<noYield, noReturn> -- alt2
@@ -764,9 +764,9 @@ ES2015 {
     | "throw" ~lineTerminator Expression<noIn, noYield> #sc -- alt1
 
   TryStatement<guardYield, guardReturn> = 
-    | "try" Block<noYield, noReturn> Catch<noYield, noReturn> Finally<noYield, noReturn> -- alt3
     | "try" Block<noYield, noReturn> Catch<noYield, noReturn> -- alt1
     | "try" Block<noYield, noReturn> Finally<noYield, noReturn> -- alt2
+    | "try" Block<noYield, noReturn> Catch<noYield, noReturn> Finally<noYield, noReturn> -- alt3
 
   Catch<guardYield, guardReturn> = 
     | "catch" "(" CatchParameter<noYield> ")" Block<noYield, noReturn> -- alt1
@@ -796,9 +796,9 @@ ES2015 {
     | /* empty */ -- alt1
 
   FormalParameterList<guardYield> = 
-    | FormalsList<noYield> "," FunctionRestParameter<noYield> -- alt3
     | FunctionRestParameter<noYield> -- alt1
     | FormalsList<noYield> -- alt2
+    | FormalsList<noYield> "," FunctionRestParameter<noYield> -- alt3
 
   FormalsList<guardYield> = 
     | FormalsList<noYield> "," FormalParameter<noYield> -- alt2
@@ -824,14 +824,14 @@ ES2015 {
     | CoverParenthesizedExpressionAndArrowParameterList<noYield>
 
   ConciseBody<guardIn> = 
-    | "{" FunctionBody<noYield> "}" -- alt2
     | ~"{" AssignmentExpression<noIn, noYield> -- alt1
+    | "{" FunctionBody<noYield> "}" -- alt2
 
   MethodDefinition<guardYield> = 
-    | "set" PropertyName<noYield> "(" PropertySetParameterList ")" "{" FunctionBody<noYield> "}" -- alt4
     | PropertyName<noYield> "(" StrictFormalParameters<noYield> ")" "{" FunctionBody<noYield> "}" -- alt1
-    | "get" PropertyName<noYield> "(" ")" "{" FunctionBody<noYield> "}" -- alt3
     | GeneratorMethod<noYield> -- alt2
+    | "get" PropertyName<noYield> "(" ")" "{" FunctionBody<noYield> "}" -- alt3
+    | "set" PropertyName<noYield> "(" PropertySetParameterList ")" "{" FunctionBody<noYield> "}" -- alt4
 
   PropertySetParameterList = 
     | FormalParameter<noYield>
@@ -850,9 +850,9 @@ ES2015 {
     | FunctionBody<noYield>
 
   YieldExpression<guardIn> = 
-    | "yield" ~lineTerminator "*" AssignmentExpression<noIn, noYield> -- alt3
-    | "yield" ~lineTerminator AssignmentExpression<noIn, noYield> -- alt2
     | "yield" -- alt1
+    | "yield" ~lineTerminator AssignmentExpression<noIn, noYield> -- alt2
+    | "yield" ~lineTerminator "*" AssignmentExpression<noIn, noYield> -- alt3
 
   ClassDeclaration<guardYield, guardDefault> = 
     | "class" BindingIdentifier<noYield> ClassTail<noYield> -- alt1
@@ -875,8 +875,8 @@ ES2015 {
     | ClassElement<noYield> -- alt1
 
   ClassElement<guardYield> = 
-    | "static" MethodDefinition<noYield> -- alt2
     | MethodDefinition<noYield> -- alt1
+    | "static" MethodDefinition<noYield> -- alt2
     | #sc -- alt3
 
   Script = 
@@ -905,11 +905,11 @@ ES2015 {
     | "import" ModuleSpecifier #sc -- alt2
 
   ImportClause = 
-    | ImportedDefaultBinding "," NameSpaceImport -- alt4
-    | ImportedDefaultBinding "," NamedImports -- alt5
     | ImportedDefaultBinding -- alt1
     | NameSpaceImport -- alt2
     | NamedImports -- alt3
+    | ImportedDefaultBinding "," NameSpaceImport -- alt4
+    | ImportedDefaultBinding "," NamedImports -- alt5
 
   ImportedDefaultBinding = 
     | ImportedBinding
@@ -918,9 +918,9 @@ ES2015 {
     | "*" "as" ImportedBinding -- alt1
 
   NamedImports = 
-    | "{" ImportsList "," "}" -- alt3
-    | "{" ImportsList "}" -- alt2
     | "{" "}" -- alt1
+    | "{" ImportsList "}" -- alt2
+    | "{" ImportsList "," "}" -- alt3
 
   FromClause = 
     | "from" ModuleSpecifier -- alt1
@@ -930,8 +930,8 @@ ES2015 {
     | ImportSpecifier -- alt1
 
   ImportSpecifier = 
-    | identifierName "as" ImportedBinding -- alt2
     | ImportedBinding -- alt1
+    | identifierName "as" ImportedBinding -- alt2
 
   ModuleSpecifier = 
     | stringLiteral
@@ -940,27 +940,27 @@ ES2015 {
     | BindingIdentifier<noYield>
 
   ExportDeclaration = 
-    | "export" "default" ~("function" | "class") AssignmentExpression<noIn, noYield> #sc -- alt8
     | "export" "*" FromClause #sc -- alt1
     | "export" ExportClause FromClause #sc -- alt2
     | "export" ExportClause #sc -- alt3
-    | "export" "default" HoistableDeclaration<noYield, noDefault> -- alt6
-    | "export" "default" ClassDeclaration<noYield, noDefault> -- alt7
     | "export" VariableStatement<noYield> -- alt4
     | "export" Declaration<noYield> -- alt5
+    | "export" "default" HoistableDeclaration<noYield, noDefault> -- alt6
+    | "export" "default" ClassDeclaration<noYield, noDefault> -- alt7
+    | "export" "default" ~("function" | "class") AssignmentExpression<noIn, noYield> #sc -- alt8
 
   ExportClause = 
-    | "{" ExportsList "," "}" -- alt3
-    | "{" ExportsList "}" -- alt2
     | "{" "}" -- alt1
+    | "{" ExportsList "}" -- alt2
+    | "{" ExportsList "," "}" -- alt3
 
   ExportsList = 
     | ExportsList "," ExportSpecifier -- alt2
     | ExportSpecifier -- alt1
 
   ExportSpecifier = 
-    | identifierName "as" identifierName -- alt2
     | identifierName -- alt1
+    | identifierName "as" identifierName -- alt2
 
   withYield = /* fixme */
 

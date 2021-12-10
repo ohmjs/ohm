@@ -16,8 +16,18 @@ test('bugs fixed after naive translation', t => {
   t.is(es2015.match('/* test */', 'multiLineComment').succeeded(), true);
 
   // Fix: rule override for PropertyDefinition — MethodDefinition must come before IdentifierReference.
-  console.log(es2015.match('const x = {zz(a, b) {}}').message);
   t.is(es2015.match('const x = {zz(a, b) {}}').succeeded(), true);
+
+  // Fix: rule override for AssignmentExpression.
+  t.is(es2015.match('() => 3;', 'Module').succeeded(), true);
+
+  // Fix: rule override for NewExpression.
+  t.is(es2015.match('new URL(import.meta.url)').succeeded(), true);
+
+  // Fix: rule override for FormalParameters.
+  t.is(es2015.match('function safelyReplace(str) {}').succeeded(), true);
+
+  t.is(es2015.match('foo().map();').succeeded(), true);
 
   /*
     Other known bugs:

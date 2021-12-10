@@ -59,14 +59,40 @@ const ruleOverrides = {
     );
   },
   PropertyDefinition(rhs, defaultBody) {
+    // MethodDefinition must come before IdentifierReference.
     return safelyReplace(
       defaultBody,
-      '| IdentifierReference<noYield> -- alt1\n    | CoverInitializedName<noYield> -- alt2\n    | MethodDefinition<noYield> -- alt4',
-      '| MethodDefinition<noYield> -- alt4\n    | IdentifierReference<noYield> -- alt1\n    | CoverInitializedName<noYield> -- alt2'
+      '| IdentifierReference<noYield> -- alt1\n    | CoverInitializedName<noYield> -- alt2\n    | PropertyName<noYield> ":" AssignmentExpression<noIn, noYield> -- alt3\n    | MethodDefinition<noYield> -- alt4',
+      '| MethodDefinition<noYield> -- alt4\n    | PropertyName<noYield> ":" AssignmentExpression<noIn, noYield> -- alt3\n    | IdentifierReference<noYield> -- alt1\n    | CoverInitializedName<noYield> -- alt2'
     );
   },
   EmptyStatement(rhs, defaultBody) {
+    // Need this rather than `#sc` so that EmptyStatement is not nullable.
     return `";" // note: this semicolon eats newlines`;
+  },
+  AssignmentExpression(rhs, defaultBody) {
+    // ArrowFunction must come before ConditionalExpression, because the arrow function parameters
+    // will parse as a parenthesized expression.
+    return safelyReplace(
+      defaultBody,
+      '| ConditionalExpression<noIn, noYield> -- alt1\n    | guardYield YieldExpression<noIn> -- alt2\n    | ArrowFunction<noIn, noYield> -- alt3',
+      '| ArrowFunction<noIn, noYield> -- alt3\n    | ConditionalExpression<noIn, noYield> -- alt1\n    | guardYield YieldExpression<noIn> -- alt2'
+    );
+  },
+  FormalParameters(rhs, defaultBody) {
+    return safelyReplace(
+      defaultBody,
+      '| /* empty */ -- alt1\n    | FormalParameterList<noYield> -- alt2',
+      '| FormalParameterList<noYield> -- alt2\n    | /* empty */ -- alt1'
+    );
+  },
+  MemberExpression(rhs, defaultBody) {
+    // The recursive MemberExpression application must come before PrimaryExpression.
+    return safelyReplace(
+      defaultBody,
+      '| PrimaryExpression<noYield> -- alt1\n    | SuperProperty<noYield> -- alt5\n    | MetaProperty -- alt6\n    | "new" MemberExpression<noYield> Arguments<noYield> -- alt7',
+      '| "new" MemberExpression<noYield> Arguments<noYield> -- alt7\n    | PrimaryExpression<noYield> -- alt1\n    | SuperProperty<noYield> -- alt5\n    | MetaProperty -- alt6'
+    );
   }
 };
 
@@ -201,10 +227,11 @@ semantics.addOperation(
             return [s, `${ohmSentence} -- alt${i + 1}`];
           });
         }
-        // Sort the alternatives by arity, as a heuristic to avoid issues with ordered choice.
-        // E.g., in the ECMAScript grammar, left recursive rules have the base case first,
-        // but in Ohm it needs to come last.
-        sentences.sort(([a], [b]) => b.simpleArity - a.simpleArity);
+        // Sort the alternatives so that "obviously" left-recursive rules come first.
+        const {productions, ruleName} = this.context;
+        sentences.sort(([a], [b]) => {
+          return (b.isLeftRecursive(ruleName) ? 1 : 0) - (a.isLeftRecursive(ruleName) ? 1 : 0);
+        });
         const ohmSentences = sentences.map(([s, ohmSentence]) => ohmSentence);
         return ['', ...ohmSentences].join('\n    | ');
       },
@@ -380,6 +407,46 @@ semantics.addAttribute('allParameters', {
   }
 });
 
+semantics.addOperation('isLeftRecursive(containingRuleName)', {
+  rhsSentence(_, termIter) {
+    const firstTerm = termIter.child(0);
+    if (firstTerm) {
+      return firstTerm.ruleNameForApplication === this.args.containingRuleName;
+    }
+    return false;
+  }
+});
+
+semantics.addAttribute('ruleNameForApplication', {
+  term(child) {
+    return child.ruleNameForApplication;
+  },
+  term_opt(appl, _) {
+    return appl.ruleNameForApplication;
+  },
+  term_nonterminal(appl) {
+    return appl.ruleNameForApplication;
+  },
+  term_terminal(_) {
+    return undefined;
+  },
+  term_assertion(_open, assertion, _close) {
+    return undefined;
+  },
+  application(child) {
+    return child.ruleNameForApplication;
+  },
+  application_withCondition(nonterminal, _) {
+    return nonterminal.toOhm();
+  },
+  application_withArgs(nonterminal, _open, listOfArgument, _close) {
+    return nonterminal.toOhm();
+  },
+  application_basic(nonterminal) {
+    return nonterminal.toOhm();
+  }
+});
+
 function getOhmArgs(root, ruleName, argumentArr) {
   const argMap = new Map(
     argumentArr.forEach(arg => {
@@ -434,7 +501,7 @@ addContext(semantics, (setContext, getContext) => ({
   },
   Production_lexical(nonterminal, _, rhs) {
     setContext(rhs, {
-      ruleName: nonterminal.sourceString,
+      ruleName: this.ruleNameForProduction,
       isLexicalProduction: true,
       isSyntacticProduction: false,
       production: this
@@ -442,7 +509,7 @@ addContext(semantics, (setContext, getContext) => ({
   },
   Production_syntactic(nonterminal, parameterListOpt, _, rhs) {
     setContext(rhs, {
-      ruleName: nonterminal.sourceString,
+      ruleName: this.ruleNameForProduction,
       isLexicalProduction: false,
       isSyntacticProduction: true,
       production: this
