@@ -22,6 +22,7 @@ const literalToOhm = {
 };
 
 function safelyReplace(str, pattern, replacement) {
+  if (!str.includes(pattern)) console.error(str);
   assert(str.includes(pattern), `not found: ${JSON.stringify(pattern)}`);
   return str.replace(pattern, replacement);
 }
@@ -54,16 +55,16 @@ const ruleOverrides = {
   LeftHandSideExpression(rhs, defaultBody) {
     return safelyReplace(
       defaultBody,
-      '| NewExpression<noYield>\n    | CallExpression<noYield>',
-      '| CallExpression<noYield>\n    | NewExpression<noYield>'
+      '| NewExpression<guardYield>\n    | CallExpression<guardYield>',
+      '| CallExpression<guardYield>\n    | NewExpression<guardYield>'
     );
   },
   PropertyDefinition(rhs, defaultBody) {
     // MethodDefinition must come before IdentifierReference.
     return safelyReplace(
       defaultBody,
-      '| IdentifierReference<noYield> -- alt1\n    | CoverInitializedName<noYield> -- alt2\n    | PropertyName<noYield> ":" AssignmentExpression<noIn, noYield> -- alt3\n    | MethodDefinition<noYield> -- alt4',
-      '| MethodDefinition<noYield> -- alt4\n    | PropertyName<noYield> ":" AssignmentExpression<noIn, noYield> -- alt3\n    | IdentifierReference<noYield> -- alt1\n    | CoverInitializedName<noYield> -- alt2'
+      '| IdentifierReference<guardYield> -- alt1\n    | CoverInitializedName<guardYield> -- alt2\n    | PropertyName<guardYield> ":" AssignmentExpression<withIn, guardYield> -- alt3\n    | MethodDefinition<guardYield> -- alt4',
+      '| MethodDefinition<guardYield> -- alt4\n    | PropertyName<guardYield> ":" AssignmentExpression<withIn, guardYield> -- alt3\n    | IdentifierReference<guardYield> -- alt1\n    | CoverInitializedName<guardYield> -- alt2'
     );
   },
   EmptyStatement(rhs, defaultBody) {
@@ -76,38 +77,56 @@ const ruleOverrides = {
     // Both LeftHandSideExpression alternatives must also come before ConditionalExpression.
     return safelyReplace(
       defaultBody,
-      '| ConditionalExpression<noIn, noYield> -- alt1\n    | guardYield YieldExpression<noIn> -- alt2\n    | ArrowFunction<noIn, noYield> -- alt3\n    | LeftHandSideExpression<noYield> "=" AssignmentExpression<noIn, noYield> -- alt4\n    | LeftHandSideExpression<noYield> AssignmentOperator AssignmentExpression<noIn, noYield> -- alt5',
-      '| ArrowFunction<noIn, noYield> -- alt3\n    | LeftHandSideExpression<noYield> "=" AssignmentExpression<noIn, noYield> -- alt4\n    | LeftHandSideExpression<noYield> AssignmentOperator AssignmentExpression<noIn, noYield> -- alt5\n    | ConditionalExpression<noIn, noYield> -- alt1\n    | guardYield YieldExpression<noIn> -- alt2'
+      '| ConditionalExpression<guardIn, guardYield> -- alt1\n    | guardYield YieldExpression<guardIn> -- alt2\n    | ArrowFunction<guardIn, guardYield> -- alt3\n    | LeftHandSideExpression<guardYield> "=" AssignmentExpression<guardIn, guardYield> -- alt4\n    | LeftHandSideExpression<guardYield> AssignmentOperator AssignmentExpression<guardIn, guardYield> -- alt5',
+      '| ArrowFunction<guardIn, guardYield> -- alt3\n    | LeftHandSideExpression<guardYield> "=" AssignmentExpression<guardIn, guardYield> -- alt4\n    | LeftHandSideExpression<guardYield> AssignmentOperator AssignmentExpression<guardIn, guardYield> -- alt5\n    | ConditionalExpression<guardIn, guardYield> -- alt1\n    | guardYield YieldExpression<guardIn> -- alt2'
     );
   },
   FormalParameters(rhs, defaultBody) {
     return safelyReplace(
       defaultBody,
-      '| /* empty */ -- alt1\n    | FormalParameterList<noYield> -- alt2',
-      '| FormalParameterList<noYield> -- alt2\n    | /* empty */ -- alt1'
+      '| /* empty */ -- alt1\n    | FormalParameterList<guardYield> -- alt2',
+      '| FormalParameterList<guardYield> -- alt2\n    | /* empty */ -- alt1'
     );
   },
   MemberExpression(rhs, defaultBody) {
     // The recursive MemberExpression application must come before PrimaryExpression.
     return safelyReplace(
       defaultBody,
-      '| PrimaryExpression<noYield> -- alt1\n    | SuperProperty<noYield> -- alt5\n    | MetaProperty -- alt6\n    | "new" MemberExpression<noYield> Arguments<noYield> -- alt7',
-      '| "new" MemberExpression<noYield> Arguments<noYield> -- alt7\n    | PrimaryExpression<noYield> -- alt1\n    | SuperProperty<noYield> -- alt5\n    | MetaProperty -- alt6'
+      '| PrimaryExpression<guardYield> -- alt1\n    | SuperProperty<guardYield> -- alt5\n    | MetaProperty -- alt6\n    | "new" MemberExpression<guardYield> Arguments<guardYield> -- alt7',
+      '| "new" MemberExpression<guardYield> Arguments<guardYield> -- alt7\n    | PrimaryExpression<guardYield> -- alt1\n    | SuperProperty<guardYield> -- alt5\n    | MetaProperty -- alt6'
     );
   },
   UnaryExpression(rhs, defaultBody) {
     // Move PostfixExpression to the very end.
     return (
-      safelyReplace(defaultBody, '| PostfixExpression<noYield> -- alt1\n', '') +
-      '\n     | PostfixExpression<noYield> -- alt1'
+      safelyReplace(defaultBody, '| PostfixExpression<guardYield> -- alt1\n', '') +
+      '\n     | PostfixExpression<guardYield> -- alt1'
     );
   },
   ConditionalExpression(rhs, defaultBody) {
     // The first alternative is a subset of the second one, so flip the order.
     return safelyReplace(
       defaultBody,
-      '| LogicalORExpression<noIn, noYield> -- alt1\n    | LogicalORExpression<noIn, noYield> "?" AssignmentExpression<noIn, noYield> ":" AssignmentExpression<noIn, noYield> -- alt2',
-      '| LogicalORExpression<noIn, noYield> "?" AssignmentExpression<noIn, noYield> ":" AssignmentExpression<noIn, noYield> -- alt2\n    | LogicalORExpression<noIn, noYield> -- alt1'
+      '| LogicalORExpression<guardIn, guardYield> -- alt1\n    | LogicalORExpression<guardIn, guardYield> "?" AssignmentExpression<withIn, guardYield> ":" AssignmentExpression<guardIn, guardYield> -- alt2',
+      '| LogicalORExpression<guardIn, guardYield> "?" AssignmentExpression<withIn, guardYield> ":" AssignmentExpression<guardIn, guardYield> -- alt2\n    | LogicalORExpression<guardIn, guardYield> -- alt1'
+    );
+  },
+  RelationalExpression(rhs, defaultBody) {
+    // First, put move the left recursive application above the ShiftExpression. (It's not
+    // properly recognized as left recursive due to the `guardIn`. Then, move the `guardIn`
+    // to be right before the `"in"` terminal.
+    return safelyReplace(
+      defaultBody,
+      '| ShiftExpression<guardYield> -- alt1\n    | guardIn RelationalExpression<withIn, guardYield> "in" ShiftExpression<guardYield> -- alt7',
+      '| RelationalExpression<withIn, guardYield> guardIn "in" ShiftExpression<guardYield> -- alt7\n    | ShiftExpression<guardYield> -- alt1'
+    );
+  },
+  identifierPart(rhs, defaultBody) {
+    // FIXME: Make sure these produce something useful.
+    return safelyReplace(
+      defaultBody,
+      '| "" /* FIXME <ZWNJ> */ -- alt5\n    | "" /* FIXME <ZWJ> */ -- alt6',
+      ''
     );
   }
 };
@@ -465,7 +484,7 @@ semantics.addAttribute('ruleNameForApplication', {
 
 function getOhmArgs(root, ruleName, argumentArr) {
   const argMap = new Map(
-    argumentArr.forEach(arg => {
+    argumentArr.map(arg => {
       const {name, type} = arg.argumentInfo;
       return [name, type];
     })

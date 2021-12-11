@@ -21,8 +21,8 @@ test('bugs fixed after naive translation', t => {
   // Fix: rule override for AssignmentExpression.
   t.is(es2015.match('() => 3;', 'Module').succeeded(), true);
 
-  // Fix: rule override for NewExpression.
-  t.is(es2015.match('new URL(import.meta.url)').succeeded(), true);
+  // `import.meta` is not valid in ES2015!
+  t.is(es2015.match('new URL(import.meta.url)').succeeded(), false);
 
   // Fix: rule override for FormalParameters.
   t.is(es2015.match('function safelyReplace(str) {}').succeeded(), true);
@@ -36,6 +36,9 @@ test('bugs fixed after naive translation', t => {
   t.is(es2015.match("if (typeof override === 'string') {}").succeeded(), true);
 
   t.is(es2015.match('const x = aBoolean\n? a : b;').succeeded(), true);
+
+  // Fix: rule override for RelationalExpression
+  t.is(es2015.match('if (name in x) {}').succeeded(), true);
   /*
     Other known bugs:
 
