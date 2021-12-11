@@ -1,0 +1,1 @@
+const yield = 42;

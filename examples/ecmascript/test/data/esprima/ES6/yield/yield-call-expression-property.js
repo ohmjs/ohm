@@ -1,0 +1,3 @@
+function* g() {
+  obj.yield();
+}

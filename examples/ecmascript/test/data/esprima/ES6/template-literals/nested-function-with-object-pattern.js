@@ -1,0 +1,3 @@
+`${function() {
+  const {x} = y;
+}}`;
