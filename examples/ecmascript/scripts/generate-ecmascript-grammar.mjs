@@ -99,8 +99,8 @@ const ruleOverrides = {
   UnaryExpression(rhs, defaultBody) {
     // Move PostfixExpression to the very end.
     return (
-      safelyReplace(defaultBody, '| PostfixExpression<guardYield> -- alt1\n', '') +
-      '\n     | PostfixExpression<guardYield> -- alt1'
+      safelyReplace(defaultBody, '    | PostfixExpression<guardYield> -- alt1\n', '') +
+      '\n    | PostfixExpression<guardYield> -- alt1'
     );
   },
   ConditionalExpression(rhs, defaultBody) {
@@ -302,9 +302,12 @@ semantics.addOperation(
       Lookahead_negative: handleNegativeLookahead,
       Lookahead_negativeSet: handleNegativeLookahead,
       Lookahead_negativeNonterminal: handleNegativeLookahead,
-      LookaheadSet(_open, listOfTerminal, _close) {
-        const terminals = listOfTerminal.asIteration().children.map(c => c.toOhm());
-        return `(${terminals.join(' | ')})`;
+      LookaheadSet(_open, listOfTerminalIter, _close) {
+        const items = listOfTerminalIter.asIteration().children.map(terminalIter => {
+          const ans = terminalIter.children.map(c => c.toOhm()).join(' ');
+          return terminalIter.numChildren > 1 ? `(${ans})` : ans;
+        });
+        return `(${items.join(' | ')})`;
       },
       application_withCondition(nonterminal, butNotCondition) {
         return `${butNotCondition.toOhm()} ${nonterminal.toOhm()}`;

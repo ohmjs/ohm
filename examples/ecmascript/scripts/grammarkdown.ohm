@@ -49,7 +49,7 @@ Grammarkdown {
     | "lookahead" "<!" LookaheadSet -- negativeSet
     | "lookahead" "<!" nonterminal -- negativeNonterminal
 
-  LookaheadSet = "{" NonemptyListOf<terminal, ","?> "}"
+  LookaheadSet = "{" NonemptyListOf<terminal+, ","> "}"
 
   ParameterList = "[" NonemptyListOf<parameter, ","> "]"
   parameter = upper letter*

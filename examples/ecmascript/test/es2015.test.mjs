@@ -38,39 +38,52 @@ for (const relPath of fastGlob.sync('**/*.js', {cwd: testdataPath})) {
 }
 
 test('zoo', t => {
+  const matchSucceeds = (input, startRule = undefined) => [
+    es2015.match(input, startRule).succeeded(),
+    input
+  ];
+  const matchFails = (input, startRule = undefined) => [
+    es2015.match(input, startRule).failed(),
+    input
+  ];
+
   // Fix: rule override for LeftHandSideExpression.
-  t.is(es2015.match('assert(str.includes(pattern));').succeeded(), true);
+  t.true(...matchSucceeds('assert(str.includes(pattern));'));
 
   // Fix: the base case of identifierName has to come after the left-recursive alternative.
-  t.is(es2015.match("import assert from 'assert';", 'Module').succeeded(), true);
+  t.true(...matchSucceeds("import assert from 'assert';", 'Module'));
 
   // Fix: rule overrides for multiLineCommentChars and postAsteriskCommentChars.
-  t.is(es2015.match('/* test */', 'multiLineComment').succeeded(), true);
+  t.true(...matchSucceeds('/* test */', 'multiLineComment'));
 
   // Fix: rule override for PropertyDefinition.
-  t.is(es2015.match('const x = {zz(a, b) {}}').succeeded(), true);
+  t.true(...matchSucceeds('const x = {zz(a, b) {}}'));
 
   // Fix: rule override for AssignmentExpression.
-  t.is(es2015.match('() => 3;', 'Module').succeeded(), true);
+  t.true(...matchSucceeds('() => 3;', 'Module'));
 
   // `import.meta` is not valid in ES2015!
-  t.is(es2015.match('new URL(import.meta.url)').succeeded(), false);
+  t.true(...matchFails('new URL(import.meta.url)'));
 
   // Fix: rule override for FormalParameters.
-  t.is(es2015.match('function safelyReplace(str) {}').succeeded(), true);
+  t.true(...matchSucceeds('function safelyReplace(str) {}'));
 
-  t.is(es2015.match('foo().map();').succeeded(), true);
+  t.true(...matchSucceeds('foo().map();'));
 
   // Fix: rule override for AssignmentExpression — moving ConditionalExpression after LeftHandSideExpressions.
-  t.is(es2015.match('x[y] = 3;').succeeded(), true);
+  t.true(...matchSucceeds('x[y] = 3;'));
 
   // Fix: rule override for UnaryExpression.
-  t.is(es2015.match("if (typeof override === 'string') {}").succeeded(), true);
+  t.true(...matchSucceeds("if (typeof override === 'string') {}"));
 
-  t.is(es2015.match('const x = aBoolean\n? a : b;').succeeded(), true);
+  t.true(...matchSucceeds('const x = aBoolean\n? a : b;'));
 
   // Fix: rule override for RelationalExpression
-  t.is(es2015.match('if (name in x) {}').succeeded(), true);
+  t.true(...matchSucceeds('if (name in x) {}'));
+
+  // Fix: Correctly handle sequences of terminals in lookahead sets.
+  t.true(...matchSucceeds('[a]=b;'));
+
   /*
     Other known bugs:
 

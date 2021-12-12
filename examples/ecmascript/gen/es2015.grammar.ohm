@@ -502,7 +502,7 @@ ES2015 {
     | LeftHandSideExpression<guardYield> ~lineTerminator "--" -- alt3
 
   UnaryExpression<guardYield> = 
-        | "delete" UnaryExpression<guardYield> -- alt2
+    | "delete" UnaryExpression<guardYield> -- alt2
     | "void" UnaryExpression<guardYield> -- alt3
     | "typeof" UnaryExpression<guardYield> -- alt4
     | "++" UnaryExpression<guardYield> -- alt5
@@ -511,7 +511,7 @@ ES2015 {
     | "-" UnaryExpression<guardYield> -- alt8
     | "~" UnaryExpression<guardYield> -- alt9
     | "!" UnaryExpression<guardYield> -- alt10
-     | PostfixExpression<guardYield> -- alt1
+    | PostfixExpression<guardYield> -- alt1
 
   MultiplicativeExpression<guardYield> = 
     | MultiplicativeExpression<guardYield> MultiplicativeOperator UnaryExpression<guardYield> -- alt2
@@ -694,7 +694,7 @@ ES2015 {
   EmptyStatement = ";" // note: this semicolon eats newlines
 
   ExpressionStatement<guardYield> = 
-    | ~("{" | "function" | "class" | "let" | "[") Expression<withIn, guardYield> #sc -- alt1
+    | ~("{" | "function" | "class" | ("let" "[")) Expression<withIn, guardYield> #sc -- alt1
 
   IfStatement<guardYield, guardReturn> = 
     | "if" "(" Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> "else" Statement<guardYield, guardReturn> -- alt1
@@ -703,10 +703,10 @@ ES2015 {
   IterationStatement<guardYield, guardReturn> = 
     | "do" Statement<guardYield, guardReturn> "while" "(" Expression<withIn, guardYield> ")" #sc -- alt1
     | "while" "(" Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt2
-    | "for" "(" ~("let" | "[") Expression<noIn, guardYield>? #sc Expression<withIn, guardYield>? #sc Expression<withIn, guardYield>? ")" Statement<guardYield, guardReturn> -- alt3
+    | "for" "(" ~(("let" "[")) Expression<noIn, guardYield>? #sc Expression<withIn, guardYield>? #sc Expression<withIn, guardYield>? ")" Statement<guardYield, guardReturn> -- alt3
     | "for" "(" "var" VariableDeclarationList<noIn, guardYield> #sc Expression<withIn, guardYield>? #sc Expression<withIn, guardYield>? ")" Statement<guardYield, guardReturn> -- alt4
     | "for" "(" LexicalDeclaration<noIn, guardYield> Expression<withIn, guardYield>? #sc Expression<withIn, guardYield>? ")" Statement<guardYield, guardReturn> -- alt5
-    | "for" "(" ~("let" | "[") LeftHandSideExpression<guardYield> "in" Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt6
+    | "for" "(" ~(("let" "[")) LeftHandSideExpression<guardYield> "in" Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt6
     | "for" "(" "var" ForBinding<guardYield> "in" Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt7
     | "for" "(" ForDeclaration<guardYield> "in" Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt8
     | "for" "(" ~"let" LeftHandSideExpression<guardYield> "of" AssignmentExpression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt9
