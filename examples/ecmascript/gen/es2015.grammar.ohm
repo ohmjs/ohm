@@ -101,7 +101,7 @@ ES2015 {
     | "//" singleLineCommentChars? -- alt1
 
   singleLineCommentChars = 
-    | singleLineCommentChar singleLineCommentChars? -- alt1
+    | singleLineCommentChar+
 
   singleLineCommentChar = 
     | ~lineTerminator sourceCharacter
@@ -619,8 +619,7 @@ ES2015 {
     | "{" StatementList<guardYield, guardReturn>? "}" -- alt1
 
   StatementList<guardYield, guardReturn> = 
-    | StatementList<guardYield, guardReturn> StatementListItem<guardYield, guardReturn> -- alt2
-    | StatementListItem<guardYield, guardReturn> -- alt1
+    | StatementListItem<guardYield, guardReturn>+
 
   StatementListItem<guardYield, guardReturn> = 
     | Statement<guardYield, guardReturn>
@@ -891,8 +890,7 @@ ES2015 {
     | ModuleItemList
 
   ModuleItemList = 
-    | ModuleItemList ModuleItem -- alt2
-    | ModuleItem -- alt1
+    | ModuleItem+
 
   ModuleItem = 
     | ImportDeclaration

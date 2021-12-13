@@ -148,6 +148,38 @@ const ruleOverrides = {
       '| LeftHandSideExpression<guardYield> -- alt1\n    | LeftHandSideExpression<guardYield> ~lineTerminator "++" -- alt2\n    | LeftHandSideExpression<guardYield> ~lineTerminator "--" -- alt3',
       '| LeftHandSideExpression<guardYield> ~lineTerminator "++" -- alt2\n    | LeftHandSideExpression<guardYield> ~lineTerminator "--" -- alt3\n    | LeftHandSideExpression<guardYield> -- alt1'
     );
+  },
+  StatementList(rhs, defaultBody) {
+    // Change from recursive to iterative.
+    return safelyReplace(
+      defaultBody,
+      '| StatementList<guardYield, guardReturn> StatementListItem<guardYield, guardReturn> -- alt2\n    | StatementListItem<guardYield, guardReturn> -- alt1',
+      '| StatementListItem<guardYield, guardReturn>+'
+    );
+  },
+  StatementList(rhs, defaultBody) {
+    // Change from recursive to iterative.
+    return safelyReplace(
+      defaultBody,
+      '| StatementList<guardYield, guardReturn> StatementListItem<guardYield, guardReturn> -- alt2\n    | StatementListItem<guardYield, guardReturn> -- alt1',
+      '| StatementListItem<guardYield, guardReturn>+'
+    );
+  },
+  ModuleItemList(rhs, defaultBody) {
+    // Change from recursive to iterative.
+    return safelyReplace(
+      defaultBody,
+      '| ModuleItemList ModuleItem -- alt2\n    | ModuleItem -- alt1',
+      '| ModuleItem+'
+    );
+  },
+  singleLineCommentChars(rhs, defaultBody) {
+    // Change from recursive to iterative.
+    return safelyReplace(
+      defaultBody,
+      '| singleLineCommentChar singleLineCommentChars? -- alt1',
+      '| singleLineCommentChar+'
+    );
   }
 };
 
