@@ -128,6 +128,26 @@ const ruleOverrides = {
       '| "" /* FIXME <ZWNJ> */ -- alt5\n    | "" /* FIXME <ZWJ> */ -- alt6',
       ''
     );
+  },
+  numericLiteral(rhs, defaultBody) {
+    // Move decimalLiteral to the very end.
+    return safelyReplace(defaultBody, '    | decimalLiteral\n', '') + '\n    | decimalLiteral';
+  },
+  FormalParameterList(rhs, defaultBody) {
+    // alt2 is strictly a subset of alt3, so swap the order.
+    return safelyReplace(
+      defaultBody,
+      '| FormalsList<guardYield> -- alt2\n    | FormalsList<guardYield> "," FunctionRestParameter<guardYield> -- alt3',
+      '| FormalsList<guardYield> "," FunctionRestParameter<guardYield> -- alt3\n    | FormalsList<guardYield> -- alt2'
+    );
+  },
+  PostfixExpression(rhs, defaultBody) {
+    // alt1 is strictly a subset of the following two alternatives, so put it at the end.
+    return safelyReplace(
+      defaultBody,
+      '| LeftHandSideExpression<guardYield> -- alt1\n    | LeftHandSideExpression<guardYield> ~lineTerminator "++" -- alt2\n    | LeftHandSideExpression<guardYield> ~lineTerminator "--" -- alt3',
+      '| LeftHandSideExpression<guardYield> ~lineTerminator "++" -- alt2\n    | LeftHandSideExpression<guardYield> ~lineTerminator "--" -- alt3\n    | LeftHandSideExpression<guardYield> -- alt1'
+    );
   }
 };
 

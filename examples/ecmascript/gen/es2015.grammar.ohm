@@ -158,10 +158,10 @@ ES2015 {
     | false
 
   numericLiteral = 
-    | decimalLiteral
     | binaryIntegerLiteral
     | octalIntegerLiteral
     | hexIntegerLiteral
+    | decimalLiteral
 
   decimalLiteral = 
     | decimalIntegerLiteral "." decimalDigits? exponentPart? -- alt1
@@ -497,9 +497,9 @@ ES2015 {
     | NewExpression<guardYield>
 
   PostfixExpression<guardYield> = 
-    | LeftHandSideExpression<guardYield> -- alt1
     | LeftHandSideExpression<guardYield> ~lineTerminator "++" -- alt2
     | LeftHandSideExpression<guardYield> ~lineTerminator "--" -- alt3
+    | LeftHandSideExpression<guardYield> -- alt1
 
   UnaryExpression<guardYield> = 
     | "delete" UnaryExpression<guardYield> -- alt2
@@ -796,8 +796,8 @@ ES2015 {
 
   FormalParameterList<guardYield> = 
     | FunctionRestParameter<guardYield> -- alt1
-    | FormalsList<guardYield> -- alt2
     | FormalsList<guardYield> "," FunctionRestParameter<guardYield> -- alt3
+    | FormalsList<guardYield> -- alt2
 
   FormalsList<guardYield> = 
     | FormalsList<guardYield> "," FormalParameter<guardYield> -- alt2
