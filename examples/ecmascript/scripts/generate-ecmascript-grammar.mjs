@@ -38,13 +38,6 @@ const ruleOverrides = {
   unicodeIDStart: 'letter /* fixme */',
   unicodeIDContinue: 'letter | digit /* fixme */',
   sourceCharacter: 'any',
-  multiLineCommentChars(rhs, defaultBody) {
-    return safelyReplace(
-      defaultBody,
-      '| "*" postAsteriskCommentChars?',
-      '| "*" ~"/" postAsteriskCommentChars?'
-    );
-  },
   postAsteriskCommentChars(rhs, defaultBody) {
     return safelyReplace(
       defaultBody,
@@ -179,6 +172,38 @@ const ruleOverrides = {
       defaultBody,
       '| singleLineCommentChar singleLineCommentChars? -- alt1',
       '| singleLineCommentChar+'
+    );
+  },
+  doubleStringCharacters(rhs, defaultBody) {
+    // Change from recursive to iterative.
+    return safelyReplace(
+      defaultBody,
+      '| doubleStringCharacter doubleStringCharacters? -- alt1',
+      '| doubleStringCharacter+'
+    );
+  },
+  singleStringCharacters(rhs, defaultBody) {
+    // Change from recursive to iterative.
+    return safelyReplace(
+      defaultBody,
+      '| singleStringCharacter singleStringCharacters? -- alt1',
+      '| singleStringCharacter+'
+    );
+  },
+  templateCharacters(rhs, defaultBody) {
+    // Change from recursive to iterative.
+    return safelyReplace(
+      defaultBody,
+      '| templateCharacter templateCharacters? -- alt1',
+      '| templateCharacter+'
+    );
+  },
+  multiLineCommentChars(rhs, defaultBody) {
+    // Change from recursive to iterative.
+    return safelyReplace(
+      defaultBody,
+      '| multiLineNotAsteriskChar multiLineCommentChars? -- alt1\n    | "*" postAsteriskCommentChars? -- alt2',
+      '(~"*/" sourceCharacter)*'
     );
   }
 };

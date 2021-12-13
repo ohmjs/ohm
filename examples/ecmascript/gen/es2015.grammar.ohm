@@ -84,8 +84,7 @@ ES2015 {
     | "/*" multiLineCommentChars? "*/" -- alt1
 
   multiLineCommentChars = 
-    | multiLineNotAsteriskChar multiLineCommentChars? -- alt1
-    | "*" ~"/" postAsteriskCommentChars? -- alt2
+    (~"*/" sourceCharacter)*
 
   postAsteriskCommentChars = 
     | multiLineNotForwardSlashOrAsteriskChar multiLineCommentChars? -- alt1
@@ -225,10 +224,10 @@ ES2015 {
     | "'" singleStringCharacters? "'" -- alt2
 
   doubleStringCharacters = 
-    | doubleStringCharacter doubleStringCharacters? -- alt1
+    | doubleStringCharacter+
 
   singleStringCharacters = 
-    | singleStringCharacter singleStringCharacters? -- alt1
+    | singleStringCharacter+
 
   doubleStringCharacter = 
     | ~("\"" | "\\" | lineTerminator) sourceCharacter -- alt1
@@ -336,7 +335,7 @@ ES2015 {
     | "}" templateCharacters? "`" -- alt1
 
   templateCharacters = 
-    | templateCharacter templateCharacters? -- alt1
+    | templateCharacter+
 
   templateCharacter = 
     | "$" ~"{" -- alt1
