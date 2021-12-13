@@ -116,7 +116,7 @@ test('zoo', t => {
   // Fix: Correctly handle sequences of terminals in lookahead sets.
   t.true(...matchSucceeds('0o12'));
 
-  //  t.true(...matchSucceeds('thisThing.map(x => x);'));
+  t.true(...matchSucceeds('thisThing.map(x => x);'));
 
   /*
     Other known bugs:

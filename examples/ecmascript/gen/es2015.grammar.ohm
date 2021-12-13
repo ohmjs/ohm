@@ -347,21 +347,21 @@ ES2015 {
 
   IdentifierReference<guardYield> = 
     | Identifier -- alt1
-    | guardYield "yield" -- alt2
+    | guardYield yield -- alt2
 
   BindingIdentifier<guardYield> = 
     | Identifier -- alt1
-    | guardYield "yield" -- alt2
+    | guardYield yield -- alt2
 
   LabelIdentifier<guardYield> = 
     | Identifier -- alt1
-    | guardYield "yield" -- alt2
+    | guardYield yield -- alt2
 
   Identifier = 
     | ~reservedWord identifierName
 
   PrimaryExpression<guardYield> = 
-    | "this"
+    | this
     | IdentifierReference<guardYield>
     | Literal
     | ArrayLiteral<guardYield>
@@ -452,24 +452,24 @@ ES2015 {
     | MemberExpression<guardYield> "[" Expression<withIn, guardYield> "]" -- alt2
     | MemberExpression<guardYield> "." identifierName -- alt3
     | MemberExpression<guardYield> TemplateLiteral<guardYield> -- alt4
-    | "new" MemberExpression<guardYield> Arguments<guardYield> -- alt7
+    | new MemberExpression<guardYield> Arguments<guardYield> -- alt7
     | PrimaryExpression<guardYield> -- alt1
     | SuperProperty<guardYield> -- alt5
     | MetaProperty -- alt6
 
   SuperProperty<guardYield> = 
-    | "super" "[" Expression<withIn, guardYield> "]" -- alt1
-    | "super" "." identifierName -- alt2
+    | super "[" Expression<withIn, guardYield> "]" -- alt1
+    | super "." identifierName -- alt2
 
   MetaProperty = 
     | NewTarget
 
   NewTarget = 
-    | "new" "." "target" -- alt1
+    | new "." "target" -- alt1
 
   NewExpression<guardYield> = 
     | MemberExpression<guardYield> -- alt1
-    | "new" NewExpression<guardYield> -- alt2
+    | new NewExpression<guardYield> -- alt2
 
   CallExpression<guardYield> = 
     | CallExpression<guardYield> Arguments<guardYield> -- alt3
@@ -480,7 +480,7 @@ ES2015 {
     | SuperCall<guardYield> -- alt2
 
   SuperCall<guardYield> = 
-    | "super" Arguments<guardYield> -- alt1
+    | super Arguments<guardYield> -- alt1
 
   Arguments<guardYield> = 
     | "(" ")" -- alt1
@@ -502,9 +502,9 @@ ES2015 {
     | LeftHandSideExpression<guardYield> -- alt1
 
   UnaryExpression<guardYield> = 
-    | "delete" UnaryExpression<guardYield> -- alt2
-    | "void" UnaryExpression<guardYield> -- alt3
-    | "typeof" UnaryExpression<guardYield> -- alt4
+    | delete UnaryExpression<guardYield> -- alt2
+    | void UnaryExpression<guardYield> -- alt3
+    | typeof UnaryExpression<guardYield> -- alt4
     | "++" UnaryExpression<guardYield> -- alt5
     | "--" UnaryExpression<guardYield> -- alt6
     | "+" UnaryExpression<guardYield> -- alt7
@@ -535,8 +535,8 @@ ES2015 {
     | RelationalExpression<guardIn, guardYield> ">" ShiftExpression<guardYield> -- alt3
     | RelationalExpression<guardIn, guardYield> "<=" ShiftExpression<guardYield> -- alt4
     | RelationalExpression<guardIn, guardYield> ">=" ShiftExpression<guardYield> -- alt5
-    | RelationalExpression<guardIn, guardYield> "instanceof" ShiftExpression<guardYield> -- alt6
-    | RelationalExpression<withIn, guardYield> guardIn "in" ShiftExpression<guardYield> -- alt7
+    | RelationalExpression<guardIn, guardYield> instanceof ShiftExpression<guardYield> -- alt6
+    | RelationalExpression<withIn, guardYield> guardIn in ShiftExpression<guardYield> -- alt7
     | ShiftExpression<guardYield> -- alt1
 
   EqualityExpression<guardIn, guardYield> = 
@@ -631,7 +631,7 @@ ES2015 {
 
   LetOrConst = 
     | "let"
-    | "const"
+    | const
 
   BindingList<guardIn, guardYield> = 
     | BindingList<guardIn, guardYield> "," LexicalBinding<guardIn, guardYield> -- alt2
@@ -642,7 +642,7 @@ ES2015 {
     | BindingPattern<guardYield> Initializer<guardIn, guardYield> -- alt2
 
   VariableStatement<guardYield> = 
-    | "var" VariableDeclarationList<withIn, guardYield> #sc -- alt1
+    | var VariableDeclarationList<withIn, guardYield> #sc -- alt1
 
   VariableDeclarationList<guardIn, guardYield> = 
     | VariableDeclarationList<guardIn, guardYield> "," VariableDeclaration<guardIn, guardYield> -- alt2
@@ -697,21 +697,21 @@ ES2015 {
     | ~("{" | "function" | "class" | ("let" "[")) Expression<withIn, guardYield> #sc -- alt1
 
   IfStatement<guardYield, guardReturn> = 
-    | "if" "(" Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> "else" Statement<guardYield, guardReturn> -- alt1
-    | "if" "(" Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt2
+    | if "(" Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> else Statement<guardYield, guardReturn> -- alt1
+    | if "(" Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt2
 
   IterationStatement<guardYield, guardReturn> = 
-    | "do" Statement<guardYield, guardReturn> "while" "(" Expression<withIn, guardYield> ")" #sc -- alt1
-    | "while" "(" Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt2
-    | "for" "(" ~(("let" "[")) Expression<noIn, guardYield>? #sc Expression<withIn, guardYield>? #sc Expression<withIn, guardYield>? ")" Statement<guardYield, guardReturn> -- alt3
-    | "for" "(" "var" VariableDeclarationList<noIn, guardYield> #sc Expression<withIn, guardYield>? #sc Expression<withIn, guardYield>? ")" Statement<guardYield, guardReturn> -- alt4
-    | "for" "(" LexicalDeclaration<noIn, guardYield> Expression<withIn, guardYield>? #sc Expression<withIn, guardYield>? ")" Statement<guardYield, guardReturn> -- alt5
-    | "for" "(" ~(("let" "[")) LeftHandSideExpression<guardYield> "in" Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt6
-    | "for" "(" "var" ForBinding<guardYield> "in" Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt7
-    | "for" "(" ForDeclaration<guardYield> "in" Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt8
-    | "for" "(" ~"let" LeftHandSideExpression<guardYield> "of" AssignmentExpression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt9
-    | "for" "(" "var" ForBinding<guardYield> "of" AssignmentExpression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt10
-    | "for" "(" ForDeclaration<guardYield> "of" AssignmentExpression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt11
+    | do Statement<guardYield, guardReturn> while "(" Expression<withIn, guardYield> ")" #sc -- alt1
+    | while "(" Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt2
+    | for "(" ~(("let" "[")) Expression<noIn, guardYield>? #sc Expression<withIn, guardYield>? #sc Expression<withIn, guardYield>? ")" Statement<guardYield, guardReturn> -- alt3
+    | for "(" var VariableDeclarationList<noIn, guardYield> #sc Expression<withIn, guardYield>? #sc Expression<withIn, guardYield>? ")" Statement<guardYield, guardReturn> -- alt4
+    | for "(" LexicalDeclaration<noIn, guardYield> Expression<withIn, guardYield>? #sc Expression<withIn, guardYield>? ")" Statement<guardYield, guardReturn> -- alt5
+    | for "(" ~(("let" "[")) LeftHandSideExpression<guardYield> in Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt6
+    | for "(" var ForBinding<guardYield> in Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt7
+    | for "(" ForDeclaration<guardYield> in Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt8
+    | for "(" ~"let" LeftHandSideExpression<guardYield> "of" AssignmentExpression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt9
+    | for "(" var ForBinding<guardYield> "of" AssignmentExpression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt10
+    | for "(" ForDeclaration<guardYield> "of" AssignmentExpression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt11
 
   ForDeclaration<guardYield> = 
     | LetOrConst ForBinding<guardYield> -- alt1
@@ -721,22 +721,22 @@ ES2015 {
     | BindingPattern<guardYield>
 
   ContinueStatement<guardYield> = 
-    | "continue" #sc -- alt1
-    | "continue" ~lineTerminator LabelIdentifier<guardYield> #sc -- alt2
+    | continue #sc -- alt1
+    | continue ~lineTerminator LabelIdentifier<guardYield> #sc -- alt2
 
   BreakStatement<guardYield> = 
-    | "break" #sc -- alt1
-    | "break" ~lineTerminator LabelIdentifier<guardYield> #sc -- alt2
+    | break #sc -- alt1
+    | break ~lineTerminator LabelIdentifier<guardYield> #sc -- alt2
 
   ReturnStatement<guardYield> = 
-    | "return" #sc -- alt1
-    | "return" ~lineTerminator Expression<withIn, guardYield> #sc -- alt2
+    | return #sc -- alt1
+    | return ~lineTerminator Expression<withIn, guardYield> #sc -- alt2
 
   WithStatement<guardYield, guardReturn> = 
-    | "with" "(" Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt1
+    | with "(" Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt1
 
   SwitchStatement<guardYield, guardReturn> = 
-    | "switch" "(" Expression<withIn, guardYield> ")" CaseBlock<guardYield, guardReturn> -- alt1
+    | switch "(" Expression<withIn, guardYield> ")" CaseBlock<guardYield, guardReturn> -- alt1
 
   CaseBlock<guardYield, guardReturn> = 
     | "{" CaseClauses<guardYield, guardReturn>? "}" -- alt1
@@ -747,10 +747,10 @@ ES2015 {
     | CaseClause<guardYield, guardReturn> -- alt1
 
   CaseClause<guardYield, guardReturn> = 
-    | "case" Expression<withIn, guardYield> ":" StatementList<guardYield, guardReturn>? -- alt1
+    | case Expression<withIn, guardYield> ":" StatementList<guardYield, guardReturn>? -- alt1
 
   DefaultClause<guardYield, guardReturn> = 
-    | "default" ":" StatementList<guardYield, guardReturn>? -- alt1
+    | default ":" StatementList<guardYield, guardReturn>? -- alt1
 
   LabelledStatement<guardYield, guardReturn> = 
     | LabelIdentifier<guardYield> ":" LabelledItem<guardYield, guardReturn> -- alt1
@@ -760,32 +760,32 @@ ES2015 {
     | FunctionDeclaration<guardYield, noDefault>
 
   ThrowStatement<guardYield> = 
-    | "throw" ~lineTerminator Expression<withIn, guardYield> #sc -- alt1
+    | throw ~lineTerminator Expression<withIn, guardYield> #sc -- alt1
 
   TryStatement<guardYield, guardReturn> = 
-    | "try" Block<guardYield, guardReturn> Catch<guardYield, guardReturn> -- alt1
-    | "try" Block<guardYield, guardReturn> Finally<guardYield, guardReturn> -- alt2
-    | "try" Block<guardYield, guardReturn> Catch<guardYield, guardReturn> Finally<guardYield, guardReturn> -- alt3
+    | try Block<guardYield, guardReturn> Catch<guardYield, guardReturn> -- alt1
+    | try Block<guardYield, guardReturn> Finally<guardYield, guardReturn> -- alt2
+    | try Block<guardYield, guardReturn> Catch<guardYield, guardReturn> Finally<guardYield, guardReturn> -- alt3
 
   Catch<guardYield, guardReturn> = 
-    | "catch" "(" CatchParameter<guardYield> ")" Block<guardYield, guardReturn> -- alt1
+    | catch "(" CatchParameter<guardYield> ")" Block<guardYield, guardReturn> -- alt1
 
   Finally<guardYield, guardReturn> = 
-    | "finally" Block<guardYield, guardReturn> -- alt1
+    | finally Block<guardYield, guardReturn> -- alt1
 
   CatchParameter<guardYield> = 
     | BindingIdentifier<guardYield>
     | BindingPattern<guardYield>
 
   DebuggerStatement = 
-    | "debugger" #sc -- alt1
+    | debugger #sc -- alt1
 
   FunctionDeclaration<guardYield, guardDefault> = 
-    | "function" BindingIdentifier<guardYield> "(" FormalParameters<noYield> ")" "{" FunctionBody<noYield> "}" -- alt1
-    | guardDefault "function" "(" FormalParameters<noYield> ")" "{" FunctionBody<noYield> "}" -- alt2
+    | function BindingIdentifier<guardYield> "(" FormalParameters<noYield> ")" "{" FunctionBody<noYield> "}" -- alt1
+    | guardDefault function "(" FormalParameters<noYield> ")" "{" FunctionBody<noYield> "}" -- alt2
 
   FunctionExpression = 
-    | "function" BindingIdentifier<noYield>? "(" FormalParameters<noYield> ")" "{" FunctionBody<noYield> "}" -- alt1
+    | function BindingIdentifier<noYield>? "(" FormalParameters<noYield> ")" "{" FunctionBody<noYield> "}" -- alt1
 
   StrictFormalParameters<guardYield> = 
     | FormalParameters<guardYield>
@@ -839,32 +839,32 @@ ES2015 {
     | "*" PropertyName<guardYield> "(" StrictFormalParameters<withYield> ")" "{" GeneratorBody "}" -- alt1
 
   GeneratorDeclaration<guardYield, guardDefault> = 
-    | "function" "*" BindingIdentifier<guardYield> "(" FormalParameters<withYield> ")" "{" GeneratorBody "}" -- alt1
-    | guardDefault "function" "*" "(" FormalParameters<withYield> ")" "{" GeneratorBody "}" -- alt2
+    | function "*" BindingIdentifier<guardYield> "(" FormalParameters<withYield> ")" "{" GeneratorBody "}" -- alt1
+    | guardDefault function "*" "(" FormalParameters<withYield> ")" "{" GeneratorBody "}" -- alt2
 
   GeneratorExpression = 
-    | "function" "*" BindingIdentifier<withYield>? "(" FormalParameters<withYield> ")" "{" GeneratorBody "}" -- alt1
+    | function "*" BindingIdentifier<withYield>? "(" FormalParameters<withYield> ")" "{" GeneratorBody "}" -- alt1
 
   GeneratorBody = 
     | FunctionBody<withYield>
 
   YieldExpression<guardIn> = 
-    | "yield" -- alt1
-    | "yield" ~lineTerminator AssignmentExpression<guardIn, withYield> -- alt2
-    | "yield" ~lineTerminator "*" AssignmentExpression<guardIn, withYield> -- alt3
+    | yield -- alt1
+    | yield ~lineTerminator AssignmentExpression<guardIn, withYield> -- alt2
+    | yield ~lineTerminator "*" AssignmentExpression<guardIn, withYield> -- alt3
 
   ClassDeclaration<guardYield, guardDefault> = 
-    | "class" BindingIdentifier<guardYield> ClassTail<guardYield> -- alt1
-    | guardDefault "class" ClassTail<guardYield> -- alt2
+    | class BindingIdentifier<guardYield> ClassTail<guardYield> -- alt1
+    | guardDefault class ClassTail<guardYield> -- alt2
 
   ClassExpression<guardYield> = 
-    | "class" BindingIdentifier<guardYield>? ClassTail<guardYield> -- alt1
+    | class BindingIdentifier<guardYield>? ClassTail<guardYield> -- alt1
 
   ClassTail<guardYield> = 
     | ClassHeritage<guardYield>? "{" ClassBody<guardYield>? "}" -- alt1
 
   ClassHeritage<guardYield> = 
-    | "extends" LeftHandSideExpression<guardYield> -- alt1
+    | extends LeftHandSideExpression<guardYield> -- alt1
 
   ClassBody<guardYield> = 
     | ClassElementList<guardYield>
@@ -900,8 +900,8 @@ ES2015 {
     | StatementListItem<noYield, noReturn>
 
   ImportDeclaration = 
-    | "import" ImportClause FromClause #sc -- alt1
-    | "import" ModuleSpecifier #sc -- alt2
+    | import ImportClause FromClause #sc -- alt1
+    | import ModuleSpecifier #sc -- alt2
 
   ImportClause = 
     | ImportedDefaultBinding -- alt1
@@ -939,14 +939,14 @@ ES2015 {
     | BindingIdentifier<noYield>
 
   ExportDeclaration = 
-    | "export" "*" FromClause #sc -- alt1
-    | "export" ExportClause FromClause #sc -- alt2
-    | "export" ExportClause #sc -- alt3
-    | "export" VariableStatement<noYield> -- alt4
-    | "export" Declaration<noYield> -- alt5
-    | "export" "default" HoistableDeclaration<noYield, withDefault> -- alt6
-    | "export" "default" ClassDeclaration<noYield, withDefault> -- alt7
-    | "export" "default" ~("function" | "class") AssignmentExpression<withIn, noYield> #sc -- alt8
+    | export "*" FromClause #sc -- alt1
+    | export ExportClause FromClause #sc -- alt2
+    | export ExportClause #sc -- alt3
+    | export VariableStatement<noYield> -- alt4
+    | export Declaration<noYield> -- alt5
+    | export default HoistableDeclaration<noYield, withDefault> -- alt6
+    | export default ClassDeclaration<noYield, withDefault> -- alt7
+    | export default ~("function" | "class") AssignmentExpression<withIn, noYield> #sc -- alt8
 
   ExportClause = 
     | "{" "}" -- alt1

@@ -92,8 +92,8 @@ const ruleOverrides = {
     // The recursive MemberExpression application must come before PrimaryExpression.
     return safelyReplace(
       defaultBody,
-      '| PrimaryExpression<guardYield> -- alt1\n    | SuperProperty<guardYield> -- alt5\n    | MetaProperty -- alt6\n    | "new" MemberExpression<guardYield> Arguments<guardYield> -- alt7',
-      '| "new" MemberExpression<guardYield> Arguments<guardYield> -- alt7\n    | PrimaryExpression<guardYield> -- alt1\n    | SuperProperty<guardYield> -- alt5\n    | MetaProperty -- alt6'
+      '| PrimaryExpression<guardYield> -- alt1\n    | SuperProperty<guardYield> -- alt5\n    | MetaProperty -- alt6\n    | new MemberExpression<guardYield> Arguments<guardYield> -- alt7',
+      '| new MemberExpression<guardYield> Arguments<guardYield> -- alt7\n    | PrimaryExpression<guardYield> -- alt1\n    | SuperProperty<guardYield> -- alt5\n    | MetaProperty -- alt6'
     );
   },
   UnaryExpression(rhs, defaultBody) {
@@ -117,8 +117,8 @@ const ruleOverrides = {
     // to be right before the `"in"` terminal.
     return safelyReplace(
       defaultBody,
-      '| ShiftExpression<guardYield> -- alt1\n    | guardIn RelationalExpression<withIn, guardYield> "in" ShiftExpression<guardYield> -- alt7',
-      '| RelationalExpression<withIn, guardYield> guardIn "in" ShiftExpression<guardYield> -- alt7\n    | ShiftExpression<guardYield> -- alt1'
+      '| ShiftExpression<guardYield> -- alt1\n    | guardIn RelationalExpression<withIn, guardYield> in ShiftExpression<guardYield> -- alt7',
+      '| RelationalExpression<withIn, guardYield> guardIn in ShiftExpression<guardYield> -- alt7\n    | ShiftExpression<guardYield> -- alt1'
     );
   },
   identifierPart(rhs, defaultBody) {
@@ -301,6 +301,15 @@ semantics.addOperation(
       },
       term_assertion(_open, assertionContents, _close) {
         return assertionContents.toOhm();
+      },
+      term_terminal(terminal) {
+        // Rewrite keyword terminals to instead use the helper rule that we define
+        // for each keyword. E.g, use `new` rather than `"new"`.
+        const root = this.context.productions;
+        const ohmTerminal = terminal.toOhm();
+        return root.reservedWords.has(ohmTerminal)
+          ? terminalsToRules(ohmTerminal)
+          : ohmTerminal;
       },
       AssertionContents_empty(_) {
         return '/* empty */';
@@ -532,6 +541,27 @@ semantics.addAttribute('productionsByName', {
         return [prod.ruleNameForProduction, prod];
       })
     );
+  }
+});
+
+// Returns a Set containing all the reserved words defined in the grammar.
+// Note that the words are all double-quoted like an Ohm terminal — e.g., `"class"`.
+semantics.addAttribute('reservedWords', {
+  Productions(productionIter) {
+    const ans = new Set();
+    for (const prod of productionIter.children) {
+      prod.reservedWords.forEach(word => ans.add(word));
+    }
+    return ans;
+  },
+  Production_syntactic(nonterminal, parameterListOpt, _, rhs) {
+    return new Set();
+  },
+  Production_lexical(nonterminal, _, rhs) {
+    if (reservedWordProductions.includes(nonterminal.sourceString)) {
+      return new Set(rhs.getReservedWordTerminals().map(t => t.toOhm()));
+    }
+    return new Set([]);
   }
 });
 
