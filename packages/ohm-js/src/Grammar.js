@@ -355,6 +355,18 @@ Grammar.ProtoBuiltInRules = new Grammar(
         description: 'an uppercase letter',
         primitive: true,
       },
+      unicodeIdStart: {
+        body: new pexprs.UnicodeChar('ID_Start'),
+        formals: [],
+        description: 'any Unicode code point with the property "ID_Start"',
+        primitive: true,
+      },
+      unicodeIdContinue: {
+        body: new pexprs.UnicodeChar('ID_Continue'),
+        formals: [],
+        description: 'any Unicode code point with the property "ID_Continue"',
+        primitive: true,
+      },
       // Union of Lt (titlecase), Lm (modifier), and Lo (other), i.e. any letter not in Ll or Lu.
       unicodeLtmo: {
         body: new pexprs.UnicodeChar('Ltmo'),

@@ -398,7 +398,9 @@ pexprs.UnicodeChar.prototype.eval = function(state) {
   const {inputStream} = state;
   const origPos = inputStream.pos;
   const ch = inputStream.next();
-  if (ch && this.pattern.test(ch)) {
+  const {patterns, negativePatterns} = this;
+
+  if (ch && patterns.some(p => p.test(ch)) && !negativePatterns.some(p => p.test(ch))) {
     state.pushBinding(new TerminalNode(state.grammar, ch), origPos);
     return true;
   } else {

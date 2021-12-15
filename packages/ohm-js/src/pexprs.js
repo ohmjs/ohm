@@ -186,7 +186,14 @@ class UnicodeChar extends PExpr {
   constructor(category) {
     super();
     this.category = category;
-    this.pattern = UnicodeCategories[category];
+    if (UnicodeCategories[category] instanceof RegExp) {
+      this.patterns = [UnicodeCategories[category]];
+      this.negativePatterns = [];
+    } else {
+      const {add, remove} = UnicodeCategories[category];
+      this.patterns = add.map(name => UnicodeCategories[name]);
+      this.negativePatterns = remove.map(name => UnicodeCategories[name]);
+    }
   }
 }
 

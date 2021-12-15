@@ -127,7 +127,16 @@ describe('unicode', test => {
     assertFails(t, m.match('\u01C0', 'upper'), 'Latin letter dental click');
 
     assertSucceeds(t, m.match('\u01C0', 'letter'), 'dental click is a letter');
-    assertSucceeds(t, m.match(['\u01C0'], 'letter'), 'dental click in a list');
+  });
+
+  test('categories / properties', t => {
+    assertSucceeds(t, m.match('\u01C0', 'unicodeLtmo'), 'dental click is in Ltmo');
+    assertSucceeds(t, m.match('\u01C0', 'unicodeIdStart'), 'dental click in ID_Start');
+    assertSucceeds(t, m.match('\u01C0', 'unicodeIdContinue'), 'dental click in ID_Continue');
+    assertFails(t, m.match('!', 'unicodeIdStart'), '`!` NOT in ID_Start');
+    assertFails(t, m.match('!', 'unicodeIdContinue'), '`!` NOT in ID_Continue');
+    assertFails(t, m.match(' ', 'unicodeIdStart'), 'space NOT in ID_Start');
+    assertFails(t, m.match(' ', 'unicodeIdContinue'), 'space NOT in ID_Continue');
   });
 
   test('semantic actions', t => {
