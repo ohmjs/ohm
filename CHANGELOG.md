@@ -4,7 +4,7 @@
 
 ### New features:
 
-- [] Add new built-in rules `unicodeIdStart` and `unicodeIdContinue`.
+- [] Add new built-in rules `unicodeIDStart` and `unicodeIDContinue`.
 - [] Add `experimentalApplySyntactic`, an experimental built-in rule to allow application of a syntactic rule from a lexical context (see #136 for details).
 
 ## v16.0.0 - Oct 1, 2021

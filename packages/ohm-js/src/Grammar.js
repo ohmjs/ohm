@@ -355,13 +355,13 @@ Grammar.ProtoBuiltInRules = new Grammar(
         description: 'an uppercase letter',
         primitive: true,
       },
-      unicodeIdStart: {
+      unicodeIDStart: {
         body: new pexprs.UnicodeChar('ID_Start'),
         formals: [],
         description: 'any Unicode code point with the property "ID_Start"',
         primitive: true,
       },
-      unicodeIdContinue: {
+      unicodeIDContinue: {
         body: new pexprs.UnicodeChar('ID_Continue'),
         formals: [],
         description: 'any Unicode code point with the property "ID_Continue"',
