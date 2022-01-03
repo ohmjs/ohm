@@ -8,7 +8,7 @@ const Trace = require('./Trace');
 const common = require('./common');
 const errors = require('./errors');
 const nodes = require('./nodes');
-const pexprs = require('./pexprs');
+const pexprs = require('./pexprs-main');
 
 const {TerminalNode} = nodes;
 const {NonterminalNode} = nodes;
