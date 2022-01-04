@@ -12,6 +12,7 @@ const errors = require('./errors');
 const pexprs = require('./pexprs');
 const util = require('./util');
 const version = require('./version');
+const {makeRecipe} = require('./makeRecipe');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -301,18 +302,6 @@ function grammarsFromScriptElements(optNodeOrNodeList) {
   );
 }
 
-function makeRecipe(recipe) {
-  if (typeof recipe === 'function') {
-    return recipe.call(new Builder());
-  } else {
-    if (typeof recipe === 'string') {
-      // stringified JSON recipe
-      recipe = JSON.parse(recipe);
-    }
-    return new Builder().fromRecipe(recipe);
-  }
-}
-
 // --------------------------------------------------------------------
 // Exports
 // --------------------------------------------------------------------
@@ -337,7 +326,7 @@ module.exports._buildGrammar = buildGrammar;
 
 // Late initialization for stuff that is bootstrapped.
 
-Grammar.BuiltInRules = require('../dist/built-in-rules');
+require('./deferredInit');
 util.announceBuiltInRules(Grammar.BuiltInRules);
 
 module.exports.ohmGrammar = ohmGrammar = require('../dist/ohm-grammar');

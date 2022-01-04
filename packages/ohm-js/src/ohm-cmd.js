@@ -33,5 +33,5 @@ if (filename === '--builtin') {
   grammar = ohm.grammar(source);
 }
 
-console.log("var ohm = require('..');");
-console.log('module.exports = ohm.makeRecipe(' + grammar.toRecipe() + ');');
+console.log("var {makeRecipe} = require('../src/makeRecipe');");
+console.log('module.exports = makeRecipe(' + grammar.toRecipe() + ');');
