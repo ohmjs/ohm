@@ -24,5 +24,6 @@
     "eslint-plugin-camelcase-ohm": "^0.2.1",
     "eslint-plugin-no-extension-in-require": "^0.2.0",
     "prettier": "^2.3.2"
-  }
+  },
+  "version": "0.0.0"
 }
