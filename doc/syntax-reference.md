@@ -165,6 +165,8 @@ as well as multiline (`/* */`) comments like:
 
 <code>listOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Similar to `ListOf<elem, sep>` but interpreted as [lexical rule](#syntactic-lexical).
 
+<code id="applySyntactic">applySyntactic&lt;<i>ruleName</i>&gt;</code>: Allows the syntactic rule _ruleName_ to be applied in a lexical context, which is otherwise not allowed. Spaces are skipped _before_ and _after_ the rule application. _New in Ohm v16.1.0._
+
 ## Grammar Syntax
 
 ### Grammar Inheritance
@@ -318,7 +320,7 @@ A few other details that are helpful to know:
 
 1. If the start rule is a syntactic rule, both leading and trailing spaces are skipped around the top-level application.
 2. When the body of a rule contains a [repetition operator](#repetition-operators---) (e.g. `+` or `*`), spaces are skipped before each match. In other words, `Names = name+` is equivalent to `names = (spaces name)+`.
-3. The [lexification operator (`#`)](lexification-) can be used in the body of a syntactic rule to prevent space skipping in specific places. For example, to
+3. The [lexification operator (`#`)](lexification-) can be used in the body of a syntactic rule to prevent space skipping in specific places. For example:
 
 <!-- @markscript
   let syntacticKeyValueDef;
