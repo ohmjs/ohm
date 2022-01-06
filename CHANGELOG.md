@@ -1,8 +1,8 @@
 # Changelog
 
-## Next
+## v16.1.0 - Jan 6, 2022
 
-- [] Add `experimentalApplySyntactic`, an experimental built-in rule to allow application of a syntactic rule from a lexical context (see #136 for details).
+- Add `applySyntactic`, a built-in rule to allow application of a syntactic rule from a lexical context (see #136 for details).
 
 ## v16.0.0 - Oct 1, 2021
 

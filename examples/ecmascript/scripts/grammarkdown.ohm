@@ -19,11 +19,11 @@ Grammarkdown {
     | application "?" -- opt
     | application -- nonterminal
     | terminal -- terminal
-    | "[" experimentalApplySyntactic<AssertionContents> "]" -- assertion
+    | "[" applySyntactic<AssertionContents> "]" -- assertion
 
   application =
     | nonterminal butNotCondition -- withCondition
-    | nonterminal "[" experimentalApplySyntactic<ListOf<argument, ",">> "]" -- withArgs
+    | nonterminal "[" applySyntactic<ListOf<argument, ",">> "]" -- withArgs
     | nonterminal -- basic
 
   basicTerm = terminal | nonterminal

@@ -77,16 +77,16 @@ test('case-insensitive matching', t => {
   );
 });
 
-test('experimentalApplySyntactic - basics', t => {
-  const g = ohm.grammar('G { start = experimentalApplySyntactic<ListOf<digit, ",">> }');
+test('applySyntactic - basics', t => {
+  const g = ohm.grammar('G { start = applySyntactic<ListOf<digit, ",">> }');
   t.is(g.match('1, 2 , 3 ').succeeded(), true);
 
-  // Syntactic rule can be passed to experimentalApplySyntactic in a lexical context
-  t.notThrows(() => ohm.grammar('G { foo = experimentalApplySyntactic<X>\nX = }'));
-  t.notThrows(() => ohm.grammar('G { Foo = #(experimentalApplySyntactic<X>)\nX = }'));
+  // Syntactic rule can be passed to applySyntactic in a lexical context
+  t.notThrows(() => ohm.grammar('G { foo = applySyntactic<X>\nX = }'));
+  t.notThrows(() => ohm.grammar('G { Foo = #(applySyntactic<X>)\nX = }'));
 
   t.throws(
-      () => ohm.grammar('G { foo = experimentalApplySyntactic<"bad"> }'),
+      () => ohm.grammar('G { foo = applySyntactic<"bad"> }'),
       {
         message: /expected a syntactic rule application/,
       },
@@ -94,23 +94,23 @@ test('experimentalApplySyntactic - basics', t => {
   );
 
   t.throws(
-      () => ohm.grammar('G { foo = experimentalApplySyntactic<x>\nx = }'),
+      () => ohm.grammar('G { foo = applySyntactic<x>\nx = }'),
       {
-        message: /experimentalApplySyntactic is for syntactic rules, but 'x' is a lexical rule/,
+        message: /applySyntactic is for syntactic rules, but 'x' is a lexical rule/,
       },
       'error if arg is a lexical rule application'
   );
 
-  // experimentalApplySyntactic can't appear in a syntactic context.
-  t.throws(() => ohm.grammar('G { Foo = experimentalApplySyntactic<X>\nX = }'), {
-    message: /experimentalApplySyntactic is not required here \(in a syntactic context\)/,
+  // applySyntactic can't appear in a syntactic context.
+  t.throws(() => ohm.grammar('G { Foo = applySyntactic<X>\nX = }'), {
+    message: /applySyntactic is not required here \(in a syntactic context\)/,
   });
 });
 
-test('experimentalApplySyntactic - space skipping', t => {
+test('applySyntactic - space skipping', t => {
   const g = ohm.grammar(`
     G {
-      start = "a" experimentalApplySyntactic<Letters> "."
+      start = "a" applySyntactic<Letters> "."
       Letters = letter+
     }
   `);
@@ -127,11 +127,7 @@ test('experimentalApplySyntactic - space skipping', t => {
   const start = trace.children[0];
   const seq = start.children[0];
   const applySyntactic = seq.children[1];
-  t.deepEqual(seq.children.map(displayString), [
-    '"a"',
-    'experimentalApplySyntactic<Letters>',
-    '"."',
-  ]);
+  t.deepEqual(seq.children.map(displayString), ['"a"', 'applySyntactic<Letters>', '"."']);
   t.deepEqual(
       applySyntactic.children.map(displayString),
       ['$0', 'spaces'],
@@ -147,7 +143,7 @@ test('experimentalApplySyntactic - space skipping', t => {
 
   const g2 = ohm.grammar(`
     G2 {
-      start = experimentalApplySyntactic<LettersLR>
+      start = applySyntactic<LettersLR>
       LettersLR = LettersLR letter -- rec
                 | letter
     }
@@ -156,17 +152,17 @@ test('experimentalApplySyntactic - space skipping', t => {
 
   const g3 = ohm.grammar(`
     G3 {
-      start = #experimentalApplySyntactic<ListOf<digit, "+">>
+      start = #applySyntactic<ListOf<digit, "+">>
     }`);
   t.is(g3.match(' 3+ 2').succeeded(), true, "lex operator doesn't prevent space skipping");
 });
 
-test('experimentalApplySyntactic with lookahead', t => {
+test('applySyntactic with lookahead', t => {
   t.throws(
       () =>
         ohm.grammar(`
           G {
-            withLookahead = experimentalApplySyntactic<~Number Number>
+            withLookahead = applySyntactic<~Number Number>
             Number = digit+
           }
         `),

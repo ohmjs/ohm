@@ -38,5 +38,5 @@ BuiltInRules {
     = /* nothing */
 
   // Allows a syntactic rule application within a lexical context.
-  experimentalApplySyntactic<app> = app
+  applySyntactic<app> = app
 }
