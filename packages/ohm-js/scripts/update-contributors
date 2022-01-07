@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "👫  Updating the list of contributors..."
+json -I -f "package.json" -e "this.contributors=[$(./scripts/get-contributors)]"
