@@ -15,6 +15,3 @@ if [ "$(git status --porcelain | grep -v '??')" != "" ]; then
   git add package.json
   git commit -am "Update contributors"
 fi
-
-echo "✅  ohm-js v${new_version}"
-echo "👉  Now go to https://github.com/harc/ohm/releases and create a release."

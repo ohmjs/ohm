@@ -40,6 +40,7 @@
     "prepublishOnly": "bash scripts/prepublishOnly",
     "prepack": "cp ../../README.md . && yarn build",
     "postpack": "rm README.md",
+    "postpublish": "echo '👉  Now go to https://github.com/harc/ohm/releases and create a release.'",
     "unsafe-bootstrap": "bash scripts/bootstrap",
     "update-contributors": "bash scripts/update-contributors",
     "watch": "webpack --mode=development --watch"
