@@ -16,8 +16,6 @@ const util = require('./util');
 // --------------------------------------------------------------------
 
 const globalActionStack = [];
-let prototypeGrammar;
-let prototypeGrammarSemantics;
 
 const hasOwnProperty = (x, prop) => Object.prototype.hasOwnProperty.call(x, prop);
 
@@ -333,7 +331,7 @@ Semantics.prototype.toRecipe = function(semanticsOnly) {
 };
 
 function parseSignature(signature, type) {
-  if (!prototypeGrammar) {
+  if (!Semantics.prototypeGrammar) {
     // The Operations and Attributes grammar won't be available while Ohm is loading,
     // but we can get away the following simplification b/c none of the operations
     // that are used while loading take arguments.
@@ -344,7 +342,7 @@ function parseSignature(signature, type) {
     };
   }
 
-  const r = prototypeGrammar.match(
+  const r = Semantics.prototypeGrammar.match(
       signature,
     type === 'operation' ? 'OperationSignature' : 'AttributeSignature'
   );
@@ -352,7 +350,7 @@ function parseSignature(signature, type) {
     throw new Error(r.message);
   }
 
-  return prototypeGrammarSemantics(r).parse();
+  return Semantics.prototypeGrammarSemantics(r).parse();
 }
 
 function newDefaultAction(type, name, doIt) {
@@ -705,59 +703,6 @@ class Attribute extends Operation {
 }
 
 Attribute.prototype.typeName = 'attribute';
-
-// ----------------- Deferred initialization -----------------
-
-util.awaitBuiltInRules(builtInRules => {
-  const operationsAndAttributesGrammar = require('../dist/operations-and-attributes');
-  initBuiltInSemantics(builtInRules);
-  initPrototypeParser(operationsAndAttributesGrammar); // requires BuiltInSemantics
-});
-
-function initBuiltInSemantics(builtInRules) {
-  const actions = {
-    empty() {
-      return this.iteration();
-    },
-    nonEmpty(first, _, rest) {
-      return this.iteration([first].concat(rest.children));
-    },
-  };
-
-  Semantics.BuiltInSemantics = Semantics.createSemantics(builtInRules, null).addOperation(
-      'asIteration',
-      {
-        emptyListOf: actions.empty,
-        nonemptyListOf: actions.nonEmpty,
-        EmptyListOf: actions.empty,
-        NonemptyListOf: actions.nonEmpty,
-      }
-  );
-}
-
-function initPrototypeParser(grammar) {
-  prototypeGrammarSemantics = grammar.createSemantics().addOperation('parse', {
-    AttributeSignature(name) {
-      return {
-        name: name.parse(),
-        formals: [],
-      };
-    },
-    OperationSignature(name, optFormals) {
-      return {
-        name: name.parse(),
-        formals: optFormals.children.map(c => c.parse())[0] || [],
-      };
-    },
-    Formals(oparen, fs, cparen) {
-      return fs.asIteration().children.map(c => c.parse());
-    },
-    name(first, rest) {
-      return this.sourceString;
-    },
-  });
-  prototypeGrammar = grammar;
-}
 
 // --------------------------------------------------------------------
 // Exports

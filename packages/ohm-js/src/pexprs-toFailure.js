@@ -6,7 +6,7 @@
 
 const Failure = require('./Failure');
 const common = require('./common');
-const pexprs = require('./pexprs');
+const pexprs = require('./pexprs-main');
 
 // --------------------------------------------------------------------
 // Operations

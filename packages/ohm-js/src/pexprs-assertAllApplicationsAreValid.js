@@ -6,7 +6,7 @@
 
 const {abstract, isSyntactic} = require('./common');
 const errors = require('./errors');
-const pexprs = require('./pexprs');
+const pexprs = require('./pexprs-main');
 const util = require('./util');
 
 let BuiltInRules;
