@@ -5,7 +5,7 @@ import resolve from '@rollup/plugin-node-resolve';
 export default {
   input: 'index.mjs',
   output: {
-    file: 'dist/ohm.esm.mjs',
+    file: 'dist/ohm.esm.js',
     format: 'es'
   },
   plugins: [resolve(), commonjs(), json()]
