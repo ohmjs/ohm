@@ -39,22 +39,33 @@ The easiest way to get started with Ohm is to use the [interactive editor](https
 
 ### Installation
 
-For use in the browser:
+#### On a web page
 
-- Download [ohm.js](https://unpkg.com/ohm-js@latest/dist/ohm.js) (development version, with full source and comments) or [ohm.min.js](https://unpkg.com/ohm-js@latest/dist/ohm.min.js) (a minified version for faster page loads).
-- Add a new script tag to your page, and set the `src` attribute to the path of the file you just downloaded. E.g.:
+To use Ohm in the browser, just add a single `<script>` tag to your page:
 
-  ```html
-  <script src="ohm.js"></script>
-  ```
+```html
+<!-- Development version of Ohm from unpkg.com -->
+<script src="https://unpkg.com/ohm-js@16/dist/ohm.js"></script>
+```
 
-  This creates a global variable named `ohm`.
+or
 
-If you are using Node.js, you can just install the `ohm-js` package using [npm](http://npmjs.org):
+```html
+<!-- Minified version, for faster page loads -->
+<script src="https://unpkg.com/ohm-js@16/dist/ohm.min.js"></script>
+```  
 
-    npm install ohm-js
+This creates a global variable named `ohm`.
 
-This will install Ohm in the local node_modules folder. Use `require` to access it from a Node script:
+#### Node.js
+
+First, install the `ohm-js` package with your package manager:
+
+- [npm](http://npmjs.org): `npm install ohm-js`
+- [Yarn](https://yarnpkg.com/): `yarn add ohm-js`
+- [pnpm](https://pnpm.io/): `pnpm add ohm-js`
+
+Then, you can use `require` to use Ohm in a script:
 
 <!-- @markscript
   markscript.transformNextBlock(s => s.replace('const ', 'var '));
@@ -62,6 +73,20 @@ This will install Ohm in the local node_modules folder. Use `require` to access 
 
 ```js
 const ohm = require('ohm-js');
+```
+
+As of v16.2.0, Ohm can also be imported as an ES module:
+
+```js
+import ohm from 'ohm-js';
+```
+
+#### Deno
+
+To use Ohm from [Deno](https://deno.land/):
+
+```js
+import ohm from 'https://unpkg.com/ohm-js@16/dist/ohm.esm.js';
 ```
 
 ### Basics
