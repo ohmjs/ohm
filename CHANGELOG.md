@@ -1,10 +1,20 @@
 # Changelog
 
+## v16.2.0 - Jan 8, 2022
+
+- [4634cda]: Added proper support for ES modules and [Deno][deno].
+
+[deno]: https://deno.land/
+
+## v16.1.1 - Jan 7, 2022
+
+- Eliminated circular dependencies in some internal modules to enable use with Rollup (see #344).
+
 ## v16.1.0 - Jan 6, 2022
 
 - Added [`applySyntactic`][], a built-in rule to allow application of a syntactic rule from a lexical context (see #136 for details).
 
-[applySyntactic]: ./doc/syntax-reference.md#applySyntactic
+[applysyntactic]: ./doc/syntax-reference.md#applySyntactic
 
 ## v16.0.0 - Oct 1, 2021
 

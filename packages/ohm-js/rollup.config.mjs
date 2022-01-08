@@ -11,5 +11,5 @@ export default {
     // See https://deno.land/manual/typescript/types#using-the-triple-slash-reference-directive
     banner: '/// <reference types="../index.d.ts" />'
   },
-  plugins: [resolve(), commonjs(), json()],
+  plugins: [resolve(), commonjs(), json()]
 };
