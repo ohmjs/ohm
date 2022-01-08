@@ -4,7 +4,7 @@
 // Imports
 // --------------------------------------------------------------------
 
-const pexprs = require('./pexprs');
+const pexprs = require('./pexprs-main');
 
 const Namespace = require('./Namespace');
 

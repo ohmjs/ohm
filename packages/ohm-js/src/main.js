@@ -317,7 +317,6 @@ module.exports = {
   ohmGrammar: null, // Initialized below, after Grammar.BuiltInRules.
   pexprs,
   util,
-  extras: require('../extras'),
   version,
 };
 
