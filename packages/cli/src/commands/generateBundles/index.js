@@ -43,7 +43,7 @@ const createBanner = (filename = undefined) =>
 // This file was generated${filename ? ` from ${filename}` : ''} by \`ohm generateBundles\`.`;
 
 function generateBundles(patterns, opts) {
-  const {dryRun, cwd, withTypes} = opts;
+  const {dryRun, cwd, withTypes, esm: isEsm} = opts;
   const plan = new Plan();
   const writer = dryRun ? plan : new Writer(cwd);
 
@@ -55,7 +55,7 @@ function generateBundles(patterns, opts) {
 
     const grammarSource = fs.readFileSync(sourcePath, 'utf-8');
     const grammars = ohm.grammars(grammarSource);
-    generateRecipe(sourceFilename, grammars, writer);
+    generateRecipe(sourceFilename, grammars, writer, isEsm);
     if (withTypes) {
       generateTypesWithWriter(sourceFilename, grammars, writer);
     }
@@ -64,25 +64,30 @@ function generateBundles(patterns, opts) {
   return plan.plan;
 }
 
-function generateRecipe(grammarPath, grammars, writer) {
+function generateRecipe(grammarPath, grammars, writer, isEsm) {
   assertFileExtensionEquals(grammarPath, OHM_FILE_EXT);
 
   const outputFilename = `${grammarPath}-bundle.js`;
   const isSingleGrammar = Object.keys(grammars).length === 1;
 
-  let output = "'use strict';const ohm=require('ohm-js');";
+  let output = isEsm ?
+    "import ohm from 'ohm-js';" :
+    "'use strict';const ohm=require('ohm-js');";
 
   // If it's a single-grammar source file, the default export is the grammar.
   // Otherwise, the export is a (possibly empty) Namespace containing the grammars.
   if (!isSingleGrammar) {
-    output += 'const ns=module.exports=ohm.createNamespace();';
+    output += 'const result=ohm.createNamespace();';
   }
   for (const [name, grammar] of Object.entries(grammars)) {
     const {superGrammar} = grammar;
-    const superGrammarExpr = superGrammar.isBuiltIn() ? undefined : `ns.${superGrammar.name}`;
-    output += isSingleGrammar ? 'module.exports=' : `ns.${name}=`;
+    const superGrammarExpr = superGrammar.isBuiltIn() ?
+      undefined :
+      `result.${superGrammar.name}`;
+    output += isSingleGrammar ? 'const result=' : `result.${name}=`;
     output += `ohm.makeRecipe(${grammar.toRecipe(superGrammarExpr)});`;
   }
+  output += isEsm ? 'export default result;' : 'module.exports=result;';
   writer.write(outputFilename, output);
 }
 
@@ -97,6 +102,9 @@ function generateTypesWithWriter(grammarPath, grammars, writer) {
 module.exports = {
   command: 'generateBundles <patterns...>',
   description: 'generate standalone modules (aka "bundles") from .ohm files',
-  options: [['-t, --withTypes', 'generate a corresponding .d.ts file for TypeScript']],
+  options: [
+    ['-t, --withTypes', 'generate a corresponding .d.ts file for TypeScript'],
+    ['-e, --esm', 'generate bundle in esm format'],
+  ],
   action: generateBundles,
 };
