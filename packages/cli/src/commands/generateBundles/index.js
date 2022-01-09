@@ -104,7 +104,7 @@ module.exports = {
   description: 'generate standalone modules (aka "bundles") from .ohm files',
   options: [
     ['-t, --withTypes', 'generate a corresponding .d.ts file for TypeScript'],
-    ['-e, --esm', 'generate bundle in esm format'],
+    ['-e, --esm', 'generate bundle in ES module format [default is CommonJS]'],
   ],
   action: generateBundles,
 };

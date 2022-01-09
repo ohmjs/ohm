@@ -53,7 +53,7 @@ or
 ```html
 <!-- Minified version, for faster page loads -->
 <script src="https://unpkg.com/ohm-js@16/dist/ohm.min.js"></script>
-```  
+```
 
 This creates a global variable named `ohm`.
 
