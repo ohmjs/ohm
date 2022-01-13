@@ -109,6 +109,16 @@ test('string', t => {
   );
 });
 
+test('unicode code point escapes', t => {
+  assertSucceeds(
+      t,
+      ohm.grammar(String.raw`G { start = "\u{78}\u{78}" }`).match('\u{78}\u{78}')
+  );
+  assertSucceeds(t, ohm.grammar(String.raw`G { start = "\u{1F920}" }`).match('🤠'));
+  assertSucceeds(t, ohm.grammar(String.raw`G { start = "🤠" }`).match('🤠'));
+  assertSucceeds(t, ohm.grammar(String.raw`G { a = "😬" b="🤠" }`).match('🤠', 'b'));
+});
+
 describe('unicode', test => {
   const m = ohm.grammar('M {}');
 
@@ -174,6 +184,29 @@ test('ranges', t => {
       {message: /Expected "\\""/},
       'to-terminal must have length 1'
   );
+});
+
+test('ranges w/ unicode surrogate pairs', t => {
+  const g = ohm.grammar(`
+    G {
+      face = "😇".."😈"
+      notFace = ~face any
+    }
+  `);
+  // Every emoji by code point: https://emojipedia.org/emoji/
+  assertFails(t, g.match('😊')); // just below
+  assertSucceeds(t, g.match('😇'));
+  assertSucceeds(t, g.match('😈'));
+  assertFails(t, g.match('💀')); // just above
+
+  assertSucceeds(t, g.match('x', 'notFace'));
+
+  const s = g.createSemantics().addAttribute('val', {
+    _terminal() {
+      return this.sourceString;
+    },
+  });
+  t.is(s(g.match('😈')).val, '😈');
 });
 
 describe('alt', test => {

@@ -92,7 +92,7 @@ Ohm {
 
   terminalChar
     = escapeChar
-    | ~"\\" ~"\"" ~"\n" any
+      | ~"\\" ~"\"" ~"\n" "\u{0}".."\u{10FFFF}"
 
   escapeChar  (an escape sequence)
     = "\\\\"                                     -- backslash
@@ -102,6 +102,7 @@ Ohm {
     | "\\n"                                      -- lineFeed
     | "\\r"                                      -- carriageReturn
     | "\\t"                                      -- tab
+    | "\\u{" hexDigit+ "}"                       -- unicodeCodePoint
     | "\\u" hexDigit hexDigit hexDigit hexDigit  -- unicodeEscape
     | "\\x" hexDigit hexDigit                    -- hexEscape
 

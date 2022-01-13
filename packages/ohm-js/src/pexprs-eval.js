@@ -76,9 +76,14 @@ pexprs.Terminal.prototype.eval = function(state) {
 pexprs.Range.prototype.eval = function(state) {
   const {inputStream} = state;
   const origPos = inputStream.pos;
-  const ch = inputStream.next();
-  if (ch && this.from <= ch && ch <= this.to) {
-    state.pushBinding(new TerminalNode(state.grammar, ch), origPos);
+
+  const cp =
+    this.from.length > 1 || this.to.length > 1 ?
+      inputStream.nextCodePoint() :
+      inputStream.nextCharCode();
+
+  if (cp !== undefined && this.from.codePointAt(0) <= cp && cp <= this.to.codePointAt(0)) {
+    state.pushBinding(new TerminalNode(state.grammar, String.fromCodePoint(cp)), origPos);
     return true;
   } else {
     state.processFailure(origPos, this);

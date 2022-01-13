@@ -230,10 +230,6 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return common.unescapeChar(this.sourceString);
     },
 
-    escapeChar(_) {
-      return this.sourceString;
-    },
-
     NonemptyListOf(x, _, xs) {
       return [x.visit()].concat(xs.children.map(c => c.visit()));
     },

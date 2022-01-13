@@ -149,6 +149,8 @@ exports.escapeChar = function(c, optDelim) {
   }
 };
 
+const escapeUnicode = str => String.fromCodePoint(parseInt(str, 16));
+
 exports.unescapeChar = function(s) {
   if (s.charAt(0) === '\\') {
     switch (s.charAt(1)) {
@@ -165,9 +167,11 @@ exports.unescapeChar = function(s) {
       case 'v':
         return '\v';
       case 'x':
-        return String.fromCharCode(parseInt(s.substring(2, 4), 16));
+        return escapeUnicode(s.slice(2, 4));
       case 'u':
-        return String.fromCharCode(parseInt(s.substring(2, 6), 16));
+        return s.charAt(2) === '{' ?
+          escapeUnicode(s.slice(3, -1)) :
+          escapeUnicode(s.slice(2, 6));
       default:
         return s.charAt(1);
     }
