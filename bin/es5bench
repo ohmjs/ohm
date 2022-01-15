@@ -1,4 +1,6 @@
 #!/bin/bash
 
 ROOT=$(npm prefix)
-node "$ROOT/examples/ecmascript/compile.js" -b "$ROOT/packages/ohm-js/dist/ohm.js" > /dev/null
+cd $(mktemp -d)
+curl --silent https://unpkg.com/ohm-js@15.3.0/dist/ohm.js -o ohm-es5.js
+node "$ROOT/examples/ecmascript/compile.js" -b "ohm-es5.js" > /dev/null
