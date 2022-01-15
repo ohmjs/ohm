@@ -230,6 +230,9 @@ test('ranges w/ code points > 0xFFFF', t => {
 
   const s3 = g3.createSemantics().addAttribute('val', valActions);
   t.is(s3(g3.match('😈')).val, '😈');
+
+  // "Peace hand sign" is two code points, so this should fail.
+  t.throws(() => ohm.grammar('G { start = "✌️".."✌️" }'));
 });
 
 describe('alt', test => {
