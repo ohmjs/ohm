@@ -109,6 +109,16 @@ test('string', t => {
   );
 });
 
+test('unicode code point escapes', t => {
+  assertSucceeds(
+      t,
+      ohm.grammar(String.raw`G { start = "\u{78}\u{78}" }`).match('\u{78}\u{78}')
+  );
+  assertSucceeds(t, ohm.grammar(String.raw`G { start = "\u{1F920}" }`).match('🤠'));
+  assertSucceeds(t, ohm.grammar(String.raw`G { start = "🤠" }`).match('🤠'));
+  assertSucceeds(t, ohm.grammar(String.raw`G { a = "😬" b="🤠" }`).match('🤠', 'b'));
+});
+
 describe('unicode', test => {
   const m = ohm.grammar('M {}');
 
@@ -174,6 +184,68 @@ test('ranges', t => {
       {message: /Expected "\\""/},
       'to-terminal must have length 1'
   );
+});
+
+test('ranges w/ code points > 0xFFFF', t => {
+  const g = ohm.grammar(`
+    G {
+      face = "😇".."😈"
+      notFace = ~face any
+    }
+  `);
+
+  // Every emoji by code point: https://emojipedia.org/emoji/
+  assertFails(t, g.match('😆')); // just below
+  assertSucceeds(t, g.match('😇'));
+  assertSucceeds(t, g.match('😈'));
+  assertFails(t, g.match('😉')); // just above
+
+  assertSucceeds(t, g.match('x', 'notFace'));
+
+  const valActions = {
+    _terminal() {
+      return this.sourceString;
+    },
+  };
+
+  const s = g.createSemantics().addAttribute('val', valActions);
+  t.is(s(g.match('😈')).val, '😈');
+
+  // Test the same thing, but using Unicode code point escapes.
+  const g2 = ohm.grammar(String.raw`G { face = "\u{1F607}".."\u{1F608}" }`);
+  assertFails(t, g2.match('😆')); // just below
+  assertSucceeds(t, g2.match('😇'));
+  assertSucceeds(t, g2.match('😈'));
+  assertFails(t, g2.match('😉')); // just above
+
+  const s2 = g2.createSemantics().addAttribute('val', valActions);
+  t.is(s2(g2.match('😈')).val, '😈');
+});
+
+test('ranges w/ code points > 0xFFFF, special cases', t => {
+  // "Peace hand sign" is two code points, so this should fail.
+  t.throws(() => ohm.grammar('G { start = "✌️".."✌️" }'));
+
+  const valActions = {
+    _terminal() {
+      return this.sourceString;
+    },
+  };
+
+  const g = ohm.grammar('G { face = "\u{0}".."\u{1F608}" }');
+  assertSucceeds(t, g.match('😇'));
+  const s = g.createSemantics().addAttribute('val', valActions);
+  t.is(s(g.match('😈')).val, '😈');
+
+  const g2 = ohm.grammar(String.raw`
+    G {
+      start = "\u{1F603}".."\u{1F603}"
+            | "\uD800".."\uFFFF" "x" -- fallback
+    }
+  `);
+  // Try matching against a string where the first unit is a high surrogate,
+  // but the second unit is *not* a low surrogate.
+  assertSucceeds(t, g2.match('\u{D83D}x'));
 });
 
 describe('alt', test => {

@@ -29,6 +29,21 @@ InputStream.prototype = {
     return ans;
   },
 
+  nextCharCode() {
+    const nextChar = this.next();
+    return nextChar && nextChar.charCodeAt(0);
+  },
+
+  nextCodePoint() {
+    const cp = this.source.slice(this.pos++).codePointAt(0);
+    // If the code point is beyond plane 0, it takes up two characters.
+    if (cp > 0xffff) {
+      this.pos += 1;
+    }
+    this.examinedLength = Math.max(this.examinedLength, this.pos);
+    return cp;
+  },
+
   matchString(s, optIgnoreCase) {
     let idx;
     if (optIgnoreCase) {
