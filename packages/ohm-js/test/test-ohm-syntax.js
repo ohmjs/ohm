@@ -212,7 +212,7 @@ test('ranges w/ code points > 0xFFFF', t => {
   t.is(s(g.match('😈')).val, '😈');
 
   // Test the same thing, but using Unicode code point escapes.
-  const g2 = ohm.grammar('G { face = "\u{1F607}".."\u{1F608}" }');
+  const g2 = ohm.grammar(String.raw`G { face = "\u{1F607}".."\u{1F608}" }`);
   assertFails(t, g2.match('😆')); // just below
   assertSucceeds(t, g2.match('😇'));
   assertSucceeds(t, g2.match('😈'));
@@ -220,24 +220,32 @@ test('ranges w/ code points > 0xFFFF', t => {
 
   const s2 = g2.createSemantics().addAttribute('val', valActions);
   t.is(s2(g2.match('😈')).val, '😈');
+});
 
-  // Same thing again, with escaped surrogate pairs.
-  const g3 = ohm.grammar('G { face = "\uD83D\uDE07".."\uD83D\uDE08" }');
-  assertFails(t, g2.match('😆')); // just below
-  assertSucceeds(t, g2.match('😇'));
-  assertSucceeds(t, g2.match('😈'));
-  assertFails(t, g2.match('😉')); // just above
-
-  const s3 = g3.createSemantics().addAttribute('val', valActions);
-  t.is(s3(g3.match('😈')).val, '😈');
-
+test('ranges w/ code points > 0xFFFF, special cases', t => {
   // "Peace hand sign" is two code points, so this should fail.
   t.throws(() => ohm.grammar('G { start = "✌️".."✌️" }'));
 
-  const g4 = ohm.grammar('G { face = "\u{0}".."\u{1F608}" }');
-  assertSucceeds(t, g4.match('😇'));
-  const s4 = g4.createSemantics().addAttribute('val', valActions);
-  t.is(s4(g4.match('😈')).val, '😈');
+  const valActions = {
+    _terminal() {
+      return this.sourceString;
+    },
+  };
+
+  const g = ohm.grammar('G { face = "\u{0}".."\u{1F608}" }');
+  assertSucceeds(t, g.match('😇'));
+  const s = g.createSemantics().addAttribute('val', valActions);
+  t.is(s(g.match('😈')).val, '😈');
+
+  const g2 = ohm.grammar(String.raw`
+    G {
+      start = "\u{1F603}".."\u{1F603}"
+            | "\uD800".."\uFFFF" "x" -- fallback
+    }
+  `);
+  // Try matching against a string where the first unit is a high surrogate,
+  // but the second unit is *not* a low surrogate.
+  assertSucceeds(t, g2.match('\u{D83D}x'));
 });
 
 describe('alt', test => {
