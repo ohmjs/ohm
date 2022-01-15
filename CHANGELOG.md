@@ -1,5 +1,18 @@
 # Changelog
 
+## v16.3.0 - Jan 15, 2022
+
+- Added support for ES6-style Unicode code point escapes (`\u{...}`) inside terminal expressions. This can be used to specify code points above `0xFFFF`.
+- Range expressions can now match a single code point, rather than being limited to a single, 16-bit code unit. E.g., `"😇".."😈"` is now a valid range expression.
+
+## v16.2.0 - Jan 8, 2022
+
+- [#350] Added full support for importing Ohm as an ES module.
+
+## v16.1.1 - Jan 7, 2022
+
+- [#344] Removed circular dependencies between core modules, allowing Ohm to be built with Rollup.
+
 ## v16.1.0 - Jan 6, 2022
 
 - Added [`applySyntactic`][], a built-in rule to allow application of a syntactic rule from a lexical context (see #136 for details).
