@@ -53,6 +53,9 @@ class Range extends PExpr {
     super();
     this.from = from;
     this.to = to;
+    // If either `from` or `to` is made up of multiple code units, then
+    // the range should consume a full code point, not a single code unit.
+    this.matchCodePoint = from.length > 1 || to.length > 1;
   }
 }
 

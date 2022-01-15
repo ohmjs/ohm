@@ -77,11 +77,12 @@ pexprs.Range.prototype.eval = function(state) {
   const {inputStream} = state;
   const origPos = inputStream.pos;
 
-  const cp =
-    this.from.length > 1 || this.to.length > 1 ?
-      inputStream.nextCodePoint() :
-      inputStream.nextCharCode();
+  // A range can operate in one of two modes: matching a single, 16-bit _code unit_,
+  // or matching a _code point_. (Code points over 0xFFFF take up two 16-bit code units.)
+  const cp = this.matchCodePoint ? inputStream.nextCodePoint() : inputStream.nextCharCode();
 
+  // Always compare by code point value to get the correct result in all scenarios.
+  // Note that for strings of length 1, codePointAt(0) and charPointAt(0) are equivalent.
   if (cp !== undefined && this.from.codePointAt(0) <= cp && cp <= this.to.codePointAt(0)) {
     state.pushBinding(new TerminalNode(state.grammar, String.fromCodePoint(cp)), origPos);
     return true;
