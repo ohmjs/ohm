@@ -195,10 +195,10 @@ test('ranges w/ code points > 0xFFFF', t => {
   `);
 
   // Every emoji by code point: https://emojipedia.org/emoji/
-  assertFails(t, g.match('😊')); // just below
+  assertFails(t, g.match('😆')); // just below
   assertSucceeds(t, g.match('😇'));
   assertSucceeds(t, g.match('😈'));
-  assertFails(t, g.match('💀')); // just above
+  assertFails(t, g.match('😉')); // just above
 
   assertSucceeds(t, g.match('x', 'notFace'));
 
@@ -213,20 +213,20 @@ test('ranges w/ code points > 0xFFFF', t => {
 
   // Test the same thing, but using Unicode code point escapes.
   const g2 = ohm.grammar('G { face = "\u{1F607}".."\u{1F608}" }');
-  assertFails(t, g2.match('😊')); // just below
+  assertFails(t, g2.match('😆')); // just below
   assertSucceeds(t, g2.match('😇'));
   assertSucceeds(t, g2.match('😈'));
-  assertFails(t, g2.match('💀')); // just above
+  assertFails(t, g2.match('😉')); // just above
 
   const s2 = g2.createSemantics().addAttribute('val', valActions);
   t.is(s2(g2.match('😈')).val, '😈');
 
   // Same thing again, with escaped surrogate pairs.
   const g3 = ohm.grammar('G { face = "\uD83D\uDE07".."\uD83D\uDE08" }');
-  assertFails(t, g2.match('😊')); // just below
+  assertFails(t, g2.match('😆')); // just below
   assertSucceeds(t, g2.match('😇'));
   assertSucceeds(t, g2.match('😈'));
-  assertFails(t, g2.match('💀')); // just above
+  assertFails(t, g2.match('😉')); // just above
 
   const s3 = g3.createSemantics().addAttribute('val', valActions);
   t.is(s3(g3.match('😈')).val, '😈');
