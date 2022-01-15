@@ -233,6 +233,11 @@ test('ranges w/ code points > 0xFFFF', t => {
 
   // "Peace hand sign" is two code points, so this should fail.
   t.throws(() => ohm.grammar('G { start = "✌️".."✌️" }'));
+
+  const g4 = ohm.grammar('G { face = "\u{0}".."\u{1F608}" }');
+  assertSucceeds(t, g4.match('😇'));
+  const s4 = g4.createSemantics().addAttribute('val', valActions);
+  t.is(s4(g4.match('😈')).val, '😈');
 });
 
 describe('alt', test => {
