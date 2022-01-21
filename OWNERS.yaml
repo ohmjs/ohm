@@ -1,0 +1,10 @@
+{
+   rules: [{
+     owners: [
+       {
+         name: 'pdubroy',
+         notify: true,
+       },
+     ],
+   }],
+}
