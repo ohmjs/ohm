@@ -136,7 +136,7 @@ function wrongNumberOfArguments(ruleName, expected, actual, expr) {
       ', got ' +
       actual +
       ')',
-      expr.source
+      expr
   );
 }
 
