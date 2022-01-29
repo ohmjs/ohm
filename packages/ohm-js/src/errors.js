@@ -4,9 +4,9 @@
 // Imports
 // --------------------------------------------------------------------
 
-const pexprs = require('./pexprs-main');
-
+const {assert} = require('./common');
 const Namespace = require('./Namespace');
+const pexprs = require('./pexprs-main');
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -209,6 +209,18 @@ function multipleSuperSplices(expr) {
   return createError("'...' can appear at most once in a rule body", expr.source);
 }
 
+// Unicode code point escapes
+
+function invalidCodePoint(applyWrapper) {
+  const node = applyWrapper._node;
+  assert(node && node.isNonterminal() && node.ctorName === 'escapeChar_unicodeCodePoint');
+
+  // Get an interval that covers all of the hex digits.
+  const digitIntervals = applyWrapper.children.slice(1, -1).map(d => d.source);
+  const fullInterval = digitIntervals[0].coverageWith(...digitIntervals.slice(1));
+  return createError(`U+${fullInterval.contents} is not a valid Unicode code point`, fullInterval);
+}
+
 // ----------------- Kleene operators -----------------
 
 function kleeneExprHasNullableOperand(kleeneExpr, applicationStack) {
@@ -314,6 +326,7 @@ module.exports = {
   inconsistentArity,
   incorrectArgumentType,
   intervalSourcesDontMatch,
+  invalidCodePoint,
   invalidConstructorCall,
   invalidParameter,
   grammarSyntaxError,

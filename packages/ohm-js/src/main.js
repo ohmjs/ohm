@@ -226,8 +226,15 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return c.visit();
     },
 
-    terminalChar(_) {
-      return common.unescapeChar(this.sourceString);
+    escapeChar(c) {
+      try {
+        return common.unescapeCodePoint(this.sourceString);
+      } catch (err) {
+        if (err instanceof RangeError && err.message.startsWith('Invalid code point ')) {
+          throw errors.invalidCodePoint(c);
+        }
+        throw err; // Rethrow
+      }
     },
 
     NonemptyListOf(x, _, xs) {

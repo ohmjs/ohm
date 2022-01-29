@@ -102,7 +102,8 @@ Ohm {
     | "\\n"                                      -- lineFeed
     | "\\r"                                      -- carriageReturn
     | "\\t"                                      -- tab
-    | "\\u{" hexDigit+ "}"                       -- unicodeCodePoint
+    | "\\u{" hexDigit hexDigit? hexDigit?
+             hexDigit? hexDigit? hexDigit? "}"   -- unicodeCodePoint
     | "\\u" hexDigit hexDigit hexDigit hexDigit  -- unicodeEscape
     | "\\x" hexDigit hexDigit                    -- hexEscape
 
