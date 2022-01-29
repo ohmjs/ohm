@@ -1,9 +1,20 @@
 # Changelog
 
-## v16.3.0 - Jan 15, 2022
+## v16.3.0 - Jan 29, 2022
+
+### New features:
 
 - Added support for ES6-style Unicode code point escapes (`\u{...}`) inside terminal expressions. This can be used to specify code points above `0xFFFF`.
 - Range expressions can now match a single code point, rather than being limited to a single, 16-bit code unit. E.g., `"😇".."😈"` is now a valid range expression.
+
+### Fixes:
+
+- [#357] The "wrong number of arguments for rule" error message now includes the line and column where the error occurred.
+
+## What's Changed
+
+## New Contributors
+* @kassadin made their first contribution in https://github.com/harc/ohm/pull/357
 
 ## v16.2.0 - Jan 8, 2022
 
