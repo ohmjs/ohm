@@ -40,7 +40,7 @@ exports.abstract = function(optMethodName) {
 
 exports.assert = function(cond, message) {
   if (!cond) {
-    throw new Error(message);
+    throw new Error(message || 'Assertion failed');
   }
 };
 
@@ -134,24 +134,9 @@ exports.StringBuffer.prototype.contents = function() {
   return this.strings.join('');
 };
 
-// Character escaping and unescaping
-
-exports.escapeChar = function(c, optDelim) {
-  const charCode = c.charCodeAt(0);
-  if ((c === '"' || c === "'") && optDelim && c !== optDelim) {
-    return c;
-  } else if (charCode < 128) {
-    return escapeStringFor[charCode];
-  } else if (128 <= charCode && charCode < 256) {
-    return '\\x' + exports.padLeft(charCode.toString(16), 2, '0');
-  } else {
-    return '\\u' + exports.padLeft(charCode.toString(16), 4, '0');
-  }
-};
-
 const escapeUnicode = str => String.fromCodePoint(parseInt(str, 16));
 
-exports.unescapeChar = function(s) {
+exports.unescapeCodePoint = function(s) {
   if (s.charAt(0) === '\\') {
     switch (s.charAt(1)) {
       case 'b':

@@ -117,6 +117,15 @@ test('unicode code point escapes', t => {
   assertSucceeds(t, ohm.grammar(String.raw`G { start = "\u{1F920}" }`).match('🤠'));
   assertSucceeds(t, ohm.grammar(String.raw`G { start = "🤠" }`).match('🤠'));
   assertSucceeds(t, ohm.grammar(String.raw`G { a = "😬" b="🤠" }`).match('🤠', 'b'));
+
+  // More than 6 hex digits is just a parse error. (We'd like to make this nicer.)
+  t.throws(() => ohm.grammar(String.raw`G { start = "\u{0000000} }`), {
+    message: /Expected "\\"" or not "\\\\"/,
+  });
+
+  t.throws(() => ohm.grammar('G { start = "\\u{FFFFFF}" }'), {
+    message: /U\+FFFFFF is not a valid Unicode code point/,
+  });
 });
 
 describe('unicode', test => {
