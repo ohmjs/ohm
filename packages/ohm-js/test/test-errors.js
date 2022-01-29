@@ -370,17 +370,40 @@ test('errors for Not-of-<PExpr>', t => {
 test('complex match failure', t => {
   const g = ohm.grammar(`
     G {
-    start = term*
-    term = rule1 | rule2 | rule3 | rule4
-    rule1 = int | float
-    rule2 = "#" alnum*
-    rule3 = (~("$" | "_" | "#" | space+ | "\\"") any)+
-    rule4 = space+
-    int = digit+
-    float = int ("." digit+)
+      start = term*
+      term = rule1 | rule2 | rule3 | rule4
+      rule1 = int | float
+      rule2 = "#" alnum*
+      rule3 = (~("$" | "_" | "#" | space+ | "\\"") any)+
+      rule4 = space+
+      int = digit+
+      float = int ("." digit+)
     }
   `);
   const r = g.match('fail?"');
   t.is(r.failed(), true);
   t.truthy(/Expected /.exec(r.message), 'Should have a message failure');
+});
+
+// https://github.com/harc/ohm/pull/357
+test('wrongNumberOfArguments includes the interval', t => {
+  const message = dedent`
+      Line 4, col 13:
+      3 |         a = alnum
+    > 4 |         b = a<x>
+                      ^~~~
+      5 |       }
+    Wrong number of arguments for rule a (expected 0, got 1)
+  `;
+  t.throws(
+      () => {
+        ohm.grammar(`
+      Test {
+        a = alnum
+        b = a<x>
+      }
+    `);
+      },
+      {message}
+  );
 });
