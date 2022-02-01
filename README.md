@@ -1,4 +1,4 @@
-# [Ohm](https://ohmlang.github.io/) &middot; [![NPM](https://img.shields.io/npm/v/ohm-js.svg)](https://www.npmjs.com/package/ohm-js) ![Node.js CI](https://github.com/harc/ohm/workflows/Node.js%20CI/badge.svg?style=flat-square) [![Chat on Discord](https://img.shields.io/badge/chat-on%20discord-7289da.svg?sanitize=true)](https://discord.gg/KwxY5gegRQ)
+# [Ohm](https://ohmjs.org/) &middot; [![NPM](https://img.shields.io/npm/v/ohm-js.svg)](https://www.npmjs.com/package/ohm-js) ![Node.js CI](https://github.com/harc/ohm/workflows/Node.js%20CI/badge.svg?style=flat-square) [![Chat on Discord](https://img.shields.io/badge/chat-on%20discord-7289da.svg?sanitize=true)](https://discord.gg/KwxY5gegRQ)
 
 Ohm is a parsing toolkit consisting of a library and a domain-specific language. You can use it to parse custom file formats or quickly build parsers, interpreters, and compilers for programming languages.
 
