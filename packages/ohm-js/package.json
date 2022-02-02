@@ -15,7 +15,7 @@
     "rapid",
     "prototyping"
   ],
-  "homepage": "https://ohmlang.github.io/",
+  "homepage": "https://ohmjs.org",
   "bugs": "https://github.com/harc/ohm/issues",
   "main": "index.js",
   "module": "dist/ohm.esm.js",

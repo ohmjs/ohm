@@ -11,7 +11,7 @@ more from the grammars you write.
 - **Object-oriented grammar extension** makes it easy to extend an existing language with new syntax.
 - **Modular semantic actions.** Unlike many similar tools, Ohm completely
   separates grammars from semantic actions. This separation improves modularity and extensibility, and makes both grammars and semantic actions easier to read and understand.
-- **Online editor and visualizer.** The [Ohm Editor](https://ohmlang.github.io/editor/) provides instant feedback and an [interactive visualization](https://dubroy.com/blog/visualizing-packrat-parsing/) that makes the entire execution of the parser visible and tangible. It'll [make you feel like you have superpowers](https://twitter.com/kylestetz/status/1349770893120172036). 💪
+- **Online editor and visualizer.** The [Ohm Editor](https://ohmjs.org/editor/) provides instant feedback and an [interactive visualization](https://dubroy.com/blog/visualizing-packrat-parsing/) that makes the entire execution of the parser visible and tangible. It'll [make you feel like you have superpowers](https://twitter.com/kylestetz/status/1349770893120172036). 💪
 
 Some awesome things people have built using Ohm:
 
@@ -23,7 +23,7 @@ Some awesome things people have built using Ohm:
 
 ## Getting Started
 
-The easiest way to get started with Ohm is to use the [interactive editor](https://ohmlang.github.io/editor/). Alternatively, you can play with one of the following examples on JSFiddle:
+The easiest way to get started with Ohm is to use the [interactive editor](https://ohmjs.org/editor/). Alternatively, you can play with one of the following examples on JSFiddle:
 
 - [Basic parsing example](https://jsfiddle.net/pdubroy/p3b1v2xb/)
 - [Arithmetic example with semantics](https://jsfiddle.net/pdubroy/15k63qae/)
@@ -159,9 +159,9 @@ For more information, see the [main documentation](doc/README.md).
 
 Ohm has two tools to help you debug grammars: a text trace, and a graphical visualizer.
 
-[![Ohm Visualizer](http://harc.github.io/ohm/doc/images/visualizer-small.png)](https://ohmlang.github.io/editor)
+[![Ohm Visualizer](http://harc.github.io/ohm/doc/images/visualizer-small.png)](https://ohmjs.org/editor)
 
-You can [try the visualizer online](https://ohmlang.github.io/editor).
+You can [try the visualizer online](https://ohmjs.org/editor).
 
 To see the text trace for a grammar `g`, just use the [`g.trace()`](./doc/api-reference.md#trace)
 method instead of `g.match`. It takes the same arguments, but instead of returning a MatchResult
