@@ -295,6 +295,5 @@ test('semantics recipes w/ method shorthand', t => {
 
 test('recipes with astral plane code units', t => {
   const g = ohm.grammar(String.raw`G { start = "\u{1F920}" }`);
-  t.truthy(
-      ohm.makeRecipe(g.toRecipe()).match('🤠').succeeded());
+  t.truthy(ohm.makeRecipe(g.toRecipe()).match('🤠').succeeded());
 });

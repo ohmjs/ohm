@@ -8,8 +8,7 @@ const fs = require('fs');
 const test = require('ava');
 
 const ohm = require('../..');
-const {toAST} = require('../../extras');
-const {semanticsForToAST} = require('../../extras');
+const {semanticsForToAST, toAST} = require('../../extras');
 
 const g = ohm.grammar(fs.readFileSync('test/data/arithmetic.ohm'));
 
@@ -252,4 +251,16 @@ test('real examples (combinations)', t => {
     type: 'SubExpression',
   };
   t.deepEqual(ast, expected, 'proper AST for arithmetic example #2');
+});
+
+test('usage errors', t => {
+  t.throws(() => toAST(g.match('doesnotmatch')), {
+    message: /toAST\(\) expects a succesful MatchResult as first parameter/,
+  });
+  t.throws(() => toAST({}), {
+    message: /toAST\(\) expects a succesful MatchResult as first parameter/,
+  });
+  t.throws(() => semanticsForToAST({}), {
+    message: /semanticsToAST\(\) expects a Grammar as parameter/,
+  });
 });
