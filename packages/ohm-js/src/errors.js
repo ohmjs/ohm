@@ -218,7 +218,10 @@ function invalidCodePoint(applyWrapper) {
   // Get an interval that covers all of the hex digits.
   const digitIntervals = applyWrapper.children.slice(1, -1).map(d => d.source);
   const fullInterval = digitIntervals[0].coverageWith(...digitIntervals.slice(1));
-  return createError(`U+${fullInterval.contents} is not a valid Unicode code point`, fullInterval);
+  return createError(
+      `U+${fullInterval.contents} is not a valid Unicode code point`,
+      fullInterval
+  );
 }
 
 // ----------------- Kleene operators -----------------

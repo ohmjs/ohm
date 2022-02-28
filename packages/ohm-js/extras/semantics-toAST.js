@@ -1,14 +1,6 @@
 'use strict';
 
 // --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const pexprs = require('../src/pexprs');
-const MatchResult = require('../src/MatchResult');
-const Grammar = require('../src/Grammar');
-
-// --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
 
@@ -23,11 +15,6 @@ const defaultOperation = {
 
     // without customization
     if (!Object.prototype.hasOwnProperty.call(mapping, ctorName)) {
-      // intermediate node
-      if (this._node instanceof pexprs.Alt || this._node instanceof pexprs.Apply) {
-        return children[0].toAST(mapping);
-      }
-
       // lexical rule
       if (this.isLexical()) {
         return this.sourceString;
@@ -111,8 +98,8 @@ const defaultOperation = {
 // The optional `mapping` parameter can be used to customize how the nodes of the CST
 // are mapped to the AST (see /doc/extras.md#toastmatchresult-mapping).
 function toAST(res, mapping) {
-  if (!(res instanceof MatchResult) || res.failed()) {
-    throw new Error('toAST() expects a succesfull MatchResult as first parameter');
+  if (typeof res.failed !== 'function' || res.failed()) {
+    throw new Error('toAST() expects a succesful MatchResult as first parameter');
   }
 
   mapping = Object.assign({}, mapping);
@@ -130,7 +117,7 @@ function toAST(res, mapping) {
 
 // Returns a semantics containg the toAST(mapping) operation for the given grammar g.
 function semanticsForToAST(g) {
-  if (!(g instanceof Grammar)) {
+  if (typeof g.createSemantics !== 'function') {
     throw new Error('semanticsToAST() expects a Grammar as parameter');
   }
 
