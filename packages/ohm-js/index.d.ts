@@ -310,13 +310,6 @@ declare namespace ohm {
     isOptional: boolean;
 
     /**
-     * For a terminal node, the raw value that was consumed from the
-     * input stream.
-     * @deprecated Use `sourceString` instead.
-     */
-    primitiveValue: string;
-
-    /**
      * In addition to the properties defined above, within a given
      * semantics, every node also has a method/property corresponding to
      * each operation/attribute in the semantics.

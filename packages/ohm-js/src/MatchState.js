@@ -361,11 +361,15 @@ MatchState.prototype = {
           key => this.recordedFailures[key]
       );
     }
+    const cst = this._bindings[0];
+    if (cst) {
+      cst.grammar = this.grammar;
+    }
     return new MatchResult(
         this.matcher,
         this.input,
         this.startExpr,
-        this._bindings[0],
+        cst,
         this._bindingOffsets[0],
         this.rightmostFailurePosition,
         rightmostFailures

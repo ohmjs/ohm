@@ -1,5 +1,21 @@
 # Changelog
 
+## Next (Ohm v17)
+
+### Breaking changes:
+
+- [#368]: The (undocumented) `toJSON()` method of nodes has been removed. It was originally intended to support an experimental feature of the Ohm Editor.
+
+### Other notable changes:
+
+- [#368]: The `primitiveValue` property of nodes, which was deprecated in Ohm v16, has now been removed.
+
+## v16.3.1 - Feb 28, 2022
+
+### Fixes:
+
+- [#366]: Fix #363 by removing imports of ohm-js from extras (it’s not required)
+
 ## v16.3.0 - Jan 29, 2022
 
 ### New features:
@@ -10,11 +26,6 @@
 ### Fixes:
 
 - [#357] The "wrong number of arguments for rule" error message now includes the line and column where the error occurred.
-
-## What's Changed
-
-## New Contributors
-* @kassadin made their first contribution in https://github.com/harc/ohm/pull/357
 
 ## v16.2.0 - Jan 8, 2022
 
