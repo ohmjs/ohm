@@ -2,18 +2,17 @@
 
 const common = require('./common');
 
-// Ensures that the deprecation warning for `primitiveValue` only appears once.
-let didWarnForPrimitiveValue = false;
-
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
 class Node {
-  constructor(grammar, ctorName, matchLength) {
-    this.grammar = grammar;
-    this.ctorName = ctorName;
+  constructor(matchLength) {
     this.matchLength = matchLength;
+  }
+
+  get ctorName() {
+    throw new Error('subclass responsibility');
   }
 
   numChildren() {
@@ -109,50 +108,36 @@ class Node {
   isOptional() {
     return false;
   }
-
-  toJSON() {
-    return {[this.ctorName]: this.children};
-  }
 }
 
 // Terminals
 
 class TerminalNode extends Node {
-  constructor(grammar, value) {
-    const matchLength = value ? value.length : 0;
-    super(grammar, '_terminal', matchLength);
-    this._value = value;
+  get ctorName() {
+    return '_terminal';
   }
 
   isTerminal() {
     return true;
   }
 
-  toJSON() {
-    return {[this.ctorName]: this._value};
-  }
-
   get primitiveValue() {
-    if (!didWarnForPrimitiveValue) {
-      // eslint-disable-next-line no-console
-      console.warn(
-          'Warning: primitiveValue is deprecated and will be removed in a future version of Ohm. ' +
-          'Use sourceString instead.'
-      );
-      didWarnForPrimitiveValue = true;
-    }
-
-    return this._value;
+    throw new Error('The `primitiveValue` property was removed in Ohm v17.');
   }
 }
 
 // Nonterminals
 
 class NonterminalNode extends Node {
-  constructor(grammar, ruleName, children, childOffsets, matchLength) {
-    super(grammar, ruleName, matchLength);
+  constructor(ruleName, children, childOffsets, matchLength) {
+    super(matchLength);
+    this.ruleName = ruleName;
     this.children = children;
     this.childOffsets = childOffsets;
+  }
+
+  get ctorName() {
+    return this.ruleName;
   }
 
   isNonterminal() {
@@ -171,11 +156,15 @@ class NonterminalNode extends Node {
 // Iterations
 
 class IterationNode extends Node {
-  constructor(grammar, children, childOffsets, matchLength, isOptional) {
-    super(grammar, '_iter', matchLength);
+  constructor(children, childOffsets, matchLength, isOptional) {
+    super(matchLength);
     this.children = children;
     this.childOffsets = childOffsets;
     this.optional = isOptional;
+  }
+
+  get ctorName() {
+    return '_iter';
   }
 
   isIteration() {

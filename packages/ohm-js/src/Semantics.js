@@ -47,11 +47,6 @@ class Wrapper {
     return '[semantics wrapper for ' + this._node.grammar.name + ']';
   }
 
-  // This is used by ohm editor to display a node wrapper appropriately.
-  toJSON() {
-    return this.toString();
-  }
-
   _forgetMemoizedResultFor(attributeName) {
     // Remove the memoized attribute from the cstNode and all its children.
     delete this._node[this._semantics.attributeKeys[attributeName]];
@@ -131,7 +126,7 @@ class Wrapper {
     const childWrappers = optChildWrappers || [];
 
     const childNodes = childWrappers.map(c => c._node);
-    const iter = new IterationNode(this._node.grammar, childNodes, [], -1, false);
+    const iter = new IterationNode(childNodes, [], -1, false);
 
     const wrapper = this._semantics.wrap(iter, null, null);
     wrapper._childWrappers = childWrappers;
@@ -156,18 +151,6 @@ class Wrapper {
   // Returns the number of children of this CST node.
   get numChildren() {
     return this._node.numChildren();
-  }
-
-  // Returns the primitive value of this CST node, if it's a terminal node. Otherwise,
-  // throws an exception.
-  // DEPRECATED: Use `sourceString` instead.
-  get primitiveValue() {
-    if (this.isTerminal()) {
-      return this._node.primitiveValue;
-    }
-    throw new TypeError(
-        "tried to access the 'primitiveValue' attribute of a non-terminal CST node"
-    );
   }
 
   // Returns the contents of the input stream consumed by this CST node.

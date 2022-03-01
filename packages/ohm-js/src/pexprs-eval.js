@@ -41,7 +41,7 @@ pexprs.any.eval = function(state) {
   const origPos = inputStream.pos;
   const ch = inputStream.next();
   if (ch) {
-    state.pushBinding(new TerminalNode(state.grammar, ch), origPos);
+    state.pushBinding(new TerminalNode(ch.length), origPos);
     return true;
   } else {
     state.processFailure(origPos, this);
@@ -53,7 +53,7 @@ pexprs.end.eval = function(state) {
   const {inputStream} = state;
   const origPos = inputStream.pos;
   if (inputStream.atEnd()) {
-    state.pushBinding(new TerminalNode(state.grammar, undefined), origPos);
+    state.pushBinding(new TerminalNode(0), origPos);
     return true;
   } else {
     state.processFailure(origPos, this);
@@ -68,7 +68,7 @@ pexprs.Terminal.prototype.eval = function(state) {
     state.processFailure(origPos, this);
     return false;
   } else {
-    state.pushBinding(new TerminalNode(state.grammar, this.obj), origPos);
+    state.pushBinding(new TerminalNode(this.obj.length), origPos);
     return true;
   }
 };
@@ -84,7 +84,7 @@ pexprs.Range.prototype.eval = function(state) {
   // Always compare by code point value to get the correct result in all scenarios.
   // Note that for strings of length 1, codePointAt(0) and charPointAt(0) are equivalent.
   if (cp !== undefined && this.from.codePointAt(0) <= cp && cp <= this.to.codePointAt(0)) {
-    state.pushBinding(new TerminalNode(state.grammar, String.fromCodePoint(cp)), origPos);
+    state.pushBinding(new TerminalNode(String.fromCodePoint(cp).length), origPos);
     return true;
   } else {
     state.processFailure(origPos, this);
@@ -169,7 +169,7 @@ pexprs.Iter.prototype.eval = function(state) {
   const isOptional = this instanceof pexprs.Opt;
   for (idx = 0; idx < cols.length; idx++) {
     state._bindings.push(
-        new IterationNode(state.grammar, cols[idx], colOffsets[idx], matchLength, isOptional)
+        new IterationNode(cols[idx], colOffsets[idx], matchLength, isOptional)
     );
     state._bindingOffsets.push(offset);
   }
@@ -344,13 +344,8 @@ pexprs.Apply.prototype.evalOnce = function(expr, state) {
     const arity = expr.getArity();
     const bindings = state._bindings.splice(state._bindings.length - arity, arity);
     const offsets = state._bindingOffsets.splice(state._bindingOffsets.length - arity, arity);
-    return new NonterminalNode(
-        state.grammar,
-        this.ruleName,
-        bindings,
-        offsets,
-        inputStream.pos - origPos
-    );
+    const matchLength = inputStream.pos - origPos;
+    return new NonterminalNode(this.ruleName, bindings, offsets, matchLength);
   } else {
     return false;
   }
@@ -405,7 +400,7 @@ pexprs.UnicodeChar.prototype.eval = function(state) {
   const origPos = inputStream.pos;
   const ch = inputStream.next();
   if (ch && this.pattern.test(ch)) {
-    state.pushBinding(new TerminalNode(state.grammar, ch), origPos);
+    state.pushBinding(new TerminalNode(ch.length), origPos);
     return true;
   } else {
     state.processFailure(origPos, this);

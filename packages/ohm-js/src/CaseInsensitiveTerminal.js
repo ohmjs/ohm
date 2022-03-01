@@ -35,7 +35,7 @@ class CaseInsensitiveTerminal extends PExpr {
       state.processFailure(origPos, this);
       return false;
     } else {
-      state.pushBinding(new TerminalNode(state.grammar, matchStr), origPos);
+      state.pushBinding(new TerminalNode(matchStr.length), origPos);
       return true;
     }
   }
