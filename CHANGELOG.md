@@ -1,5 +1,15 @@
 # Changelog
 
+## Next (Ohm v17)
+
+### Breaking changes:
+
+- [#368]: The (undocumented) `toJSON()` method of nodes has been removed. It was originally intended to support an experimental feature of the Ohm Editor.
+
+### Other notable changes:
+
+- [#368]: The `primitiveValue` property of nodes, which was deprecated in Ohm v16, has now been removed.
+
 ## v16.3.1 - Feb 28, 2022
 
 ### Fixes:
