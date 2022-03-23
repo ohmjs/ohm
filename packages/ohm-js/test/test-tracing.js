@@ -480,3 +480,14 @@ test.failing('bindings', t => {
   const notX = alt.children[1];
   t.deepEqual(notX.children.map(succeeded), [true, true], 'both children succeeded');
 });
+
+// https://github.com/harc/ohm-editor/issues/72
+test('tracing with "..."', t => {
+  const g = ohm.grammar('G { letter := "@" | ... }');
+  const trace = g.trace('x', 'letter');
+  const splice = trace.children[0].children[0];
+  t.is(splice.expr.constructor, ohm.pexprs.Splice);
+  t.is(splice.displayString, '"@" | ...');
+  const alt = splice.children[1];
+  t.is(alt.expr.constructor, ohm.pexprs.Alt);
+});
