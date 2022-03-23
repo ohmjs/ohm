@@ -219,7 +219,7 @@ MatchState.prototype = {
   // Returns the memoized trace entry for `expr` at `pos`, if one exists, `null` otherwise.
   getMemoizedTraceEntry(pos, expr) {
     const posInfo = this.memoTable[pos];
-    if (posInfo && expr.ruleName) {
+    if (posInfo && expr instanceof pexprs.Apply) {
       const memoRec = posInfo.memo[expr.toMemoKey()];
       if (memoRec && memoRec.traceEntry) {
         const entry = memoRec.traceEntry.cloneWithExpr(expr);
