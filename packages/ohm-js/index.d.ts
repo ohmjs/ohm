@@ -307,7 +307,7 @@ declare namespace ohm {
     /**
      * True if Node is ? option
      */
-    isOptional: boolean;
+    isOptional(): boolean;
 
     /**
      * In addition to the properties defined above, within a given
