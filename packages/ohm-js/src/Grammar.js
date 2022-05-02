@@ -140,7 +140,7 @@ Grammar.prototype = {
         if (k === '_iter' || k === '_nonterminal') {
           details =
             `it should use a rest parameter, e.g. \`${k}(...children) {}\`. ` +
-            'NOTE: this is new in Ohm v16 — see https://git.io/Jz4CI for details.';
+            'NOTE: this is new in Ohm v16 — see https://ohmjs.org/d/ati for details.';
         } else {
           details = `expected ${expected}, got ${actual}`;
         }

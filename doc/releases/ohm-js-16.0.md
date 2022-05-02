@@ -4,13 +4,13 @@
 
 ### Args to _\_iter_ and _\_nonterminal_ actions
 
-<!-- https://git.io/Jz4CI -->
+<!-- https://ohmjs.org/d/ati -->
 
 The [`_iter` and `_nonterminal` actions](../api-reference.md#special-actions) now take a variable number of arguments, rather than a single `Node[]` argument containing the child nodes. To make existing code work with Ohm v16, you should change the parameter to a [rest parameter](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/rest_parameters) — e.g., `_iter(children) { ... }` should be changed to `_iter(...children) { ... }`. You can easily find code that needs to change because `addOperation` and friends will now throw an exception if your actions have a single parameter which is _not_ a rest parameter. See [#324](https://github.com/harc/ohm/issues/324) for the reasons behind this change.
 
 ### Default semantic actions
 
-<!-- https://git.io/JRwtG -->
+<!-- https://ohmjs.org/d/dsa -->
 
 In operations and attributes, if you haven't defined a semantic action for a particular rule application node, a default action will be used in some cases. For example, your grammar has an _AddExp_ rule but your action dictionary doesn't contain a semantic action named 'AddExp'. **In Ohm v16.0, there is no longer a default action for iteration nodes** — it is _only_ defined for non-terminal nodes with exactly one child. See [#309](https://github.com/harc/ohm/issues/309) for context on this change.
 
@@ -26,7 +26,7 @@ _iter(...children) {
 
 ### grammarFromScriptElement / grammarsFromScriptElements
 
-<!-- https://git.io/Jwow5 -->
+<!-- https://ohmjs.org/d/gfs -->
 
 The functions `grammarFromScriptElement` and `grammarsFromScriptElements` have been removed. When using Ohm in the browser, it's now recommended to put your grammar in a [template literal with String.raw](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/raw):
 

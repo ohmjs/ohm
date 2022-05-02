@@ -13,7 +13,7 @@ declare namespace ohm {
 
   /**
    * grammarFromScriptElement was removed in Ohm v16.0. See
-   * https://git.io/Jwow5 for more info.
+   * https://ohmjs.org/d/gfs for more info.
    * @deprecated
    */
   function grammarFromScriptElement(node?: unknown, namespace?: Namespace): Grammar;
@@ -28,7 +28,7 @@ declare namespace ohm {
 
   /**
    * grammarsFromScriptElements was removed in Ohm v16.0. See
-   * https://git.io/Jwow5 for more info.
+   * https://ohmjs.org/d/gfs for more info.
    * @deprecated
    */
   function grammarsFromScriptElements(nodeList?: unknown, namespace?: Namespace): Namespace;

@@ -168,7 +168,7 @@ function invalidParameter(ruleName, expr) {
 
 const syntacticVsLexicalNote =
   'NOTE: A _syntactic rule_ is a rule whose name begins with a capital letter. ' +
-  'See https://git.io/JiYgP for more details.';
+  'See https://ohmjs.org/d/svl for more details.';
 
 function applicationOfSyntacticRuleFromLexicalContext(ruleName, applyExpr) {
   return createError(
@@ -298,7 +298,7 @@ function missingSemanticAction(ctorName, name, type, stack) {
   if (ctorName === '_iter') {
     moreInfo = [
       '\nNOTE: as of Ohm v16, there is no default action for iteration nodes — see ',
-      '  https://git.io/JRwtG for details.',
+      '  https://ohmjs.org/d/dsa for details.',
     ].join('\n');
   }
 

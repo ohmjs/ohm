@@ -250,7 +250,7 @@ AddExp_plus = AddExp "+" MulExp
 
 <h3 id="syntactic-lexical">Syntactic vs. Lexical Rules</h3>
 
-<!-- https://git.io/JiYgP -->
+<!-- https://ohmjs.org/d/svl -->
 
 A _syntactic rule_ is a rule whose name begins with an uppercase letter, and _lexical rule_ is one whose name begins with a lowercase letter. The difference between lexical and syntactic rules is that syntactic rules implicitly skip whitespace characters.
 
