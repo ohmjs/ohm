@@ -26,3 +26,24 @@ test('incremental matching', t => {
   t.is(matcher.getInput(), 'gah');
   t.is(matcher.match('Greeting').succeeded(), false);
 });
+
+test('pexprs - #390', t => {
+  const {interjection, name, any, end} = g.rules;
+
+  if (interjection.body instanceof ohm.pexprs.Alt) {
+    t.true(interjection.body.terms[0] instanceof ohm.pexprs.Terminal);
+  } else {
+    t.fail('expected an Alt');
+  }
+
+  if (name.body instanceof ohm.pexprs.Seq) {
+    const plus = name.body.factors[1];
+    t.true(plus instanceof ohm.pexprs.Iter);
+    t.true(plus instanceof ohm.pexprs.Plus);
+  } else {
+    t.fail('expected a Seq');
+  }
+
+  t.true(any.body === ohm.pexprs.any, 'any should be a singleton');
+  t.true(end.body === ohm.pexprs.end, 'end should be a singleton');
+});

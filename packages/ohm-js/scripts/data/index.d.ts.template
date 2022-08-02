@@ -5,6 +5,33 @@ declare namespace ohm {
   const ohmGrammar: Grammar;
 
   /**
+   * Constructors for parsing expressions (aka pexprs). (Except for `any`
+   * and `end`, which are not constructors but singleton instances.)
+   */
+  const pexprs: {
+    PExpr: typeof PExpr;
+    Terminal: typeof Terminal;
+    Range: typeof Range;
+    Param: typeof Param;
+    Alt: typeof Alt;
+    Extend: typeof Extend;
+    Splice: typeof Splice;
+    Seq: typeof Seq;
+    Iter: typeof Iter;
+    Star: typeof Star;
+    Plus: typeof Plus;
+    Opt: typeof Opt;
+    Not: typeof Not;
+    Lookahead: typeof Lookahead;
+    Lex: typeof Lex;
+    Apply: typeof Apply;
+    UnicodeChar: typeof UnicodeChar;
+    CaseInsensitiveTerminal: typeof CaseInsensitiveTerminal;
+    any: PExpr;
+    end: PExpr;
+  };
+
+  /**
    * Instantiate the Grammar defined by source. If specified, namespace is
    * the Namespace to use when resolving external references in the grammar.
    */
@@ -97,7 +124,33 @@ declare namespace ohm {
     extendSemantics(superSemantics: Semantics): Semantics;
   }
 
-  interface PExpr {}
+  class PExpr {
+    getArity(): number;
+    isNullable(): boolean;
+    toString(): string;
+    toDisplayString(): string;
+  }
+  class Terminal extends PExpr {}
+  class Range extends PExpr {}
+  class Param extends PExpr {}
+  class Alt extends PExpr {
+    terms: PExpr[];
+  }
+  class Extend extends Alt {}
+  class Splice extends Alt {}
+  class Seq extends PExpr {
+    factors: PExpr[];
+  }
+  class Iter extends PExpr {}
+  class Star extends Iter {}
+  class Plus extends Iter {}
+  class Opt extends Iter {}
+  class Not extends PExpr {}
+  class Lookahead extends PExpr {}
+  class Lex extends PExpr {}
+  class Apply extends PExpr {}
+  class UnicodeChar extends PExpr {}
+  class CaseInsensitiveTerminal extends PExpr {}
 
   /**
    * Matcher objects are used to incrementally match a changing input
