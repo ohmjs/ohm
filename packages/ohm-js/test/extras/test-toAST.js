@@ -264,3 +264,33 @@ test('usage errors', t => {
     message: /semanticsToAST\(\) expects a Grammar as parameter/,
   });
 });
+
+test('listOf and friends - #394', t => {
+  // By default, toAST assumes that lexical rules represent indivisible tokens,
+  // but that doesn't make sense for listOf, nonemptyListOf, and emptyListOf.
+  const g2 = ohm.grammar(`
+    G2 {
+      Exp = listOf<operand, "+">
+      operand = nonemptyListOf<digit, "">
+    }
+  `);
+  let ast = toAST(g2.match('34+5'));
+  t.deepEqual(ast, ['34', '5']);
+
+  // Ensure that it's still be possible to override the default mappings.
+
+  ast = toAST(g2.match('0+1'), {
+    nonemptyListOf: (first, sep, rest) => 'XX',
+  });
+  t.is(ast, 'XX');
+
+  ast = toAST(g2.match('66+99'), {
+    nonemptyListOf: 0,
+  });
+  t.is(ast, '66');
+
+  ast = toAST(g2.match(''), {
+    emptyListOf: () => 'nix',
+  });
+  t.is(ast, 'nix');
+});
