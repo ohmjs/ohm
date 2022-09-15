@@ -425,9 +425,36 @@ declare namespace ohm {
     coverageWith(...intervals: Interval[]): Interval;
 
     /**
+     * Returns line, column and aditional data describing the Interval
+     */
+    getLineAndColumn(): {
+      offset: number;
+      lineNum: number;
+      colNum: number;
+      line: string;
+      prevLine: string;
+      nextLine: string;
+      toString: () => string;
+    };
+
+    /**
      * Return a nicely-formatted string describing the start of the Interval
      */
     getLineAndColumnMessage(): string;
+
+    /**
+     * Returns an array of 0, 1, or 2 intervals that represents the result of the
+     * interval difference operation.
+     */
+    minus(that: Interval): Interval[];
+
+    /**
+     * Returns a new Interval that has the same extent as this one, but which is relative
+     * to `that`, an Interval that fully covers this one.
+     */
+    relativeTo(that: Interval): Interval;
+
+    subInterval(offset: number, len: number): Interval;
   }
 
   interface RuleInfo {
