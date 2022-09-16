@@ -268,29 +268,45 @@ test('usage errors', t => {
 test('listOf and friends - #394', t => {
   // By default, toAST assumes that lexical rules represent indivisible tokens,
   // but that doesn't make sense for listOf, nonemptyListOf, and emptyListOf.
-  const g2 = ohm.grammar(`
-    G2 {
-      Exp = listOf<operand, "+">
-      operand = nonemptyListOf<digit, "">
+  const g = ohm.grammar(`
+    G {
+      Exp = listOf<digit, "+">
+      Exp2 = ListOf<digit, "+">
     }
   `);
-  let ast = toAST(g2.match('34+5'));
-  t.deepEqual(ast, ['34', '5']);
+
+  const ast = (input, mapping) => toAST(g.match(input), mapping);
+  const astSyntactic = input => toAST(g.match(input, 'Exp2'));
+
+  // By default, the `listOf` action should pass through, and both `nonemptyListOf`
+  // and `emptyListOf` should return an array.
+  t.deepEqual(ast('3+5'), ['3', '5']);
+  t.deepEqual(ast(''), []);
+
+  // The AST should be the same whether we use `listOf` or `ListOf`.
+  t.deepEqual(ast('3+5'), astSyntactic('3 + 5'));
+  t.deepEqual(ast(''), astSyntactic(''));
 
   // Ensure that it's still be possible to override the default mappings.
 
-  ast = toAST(g2.match('0+1'), {
-    nonemptyListOf: (first, sep, rest) => 'XX',
-  });
-  t.is(ast, 'XX');
+  t.is(
+      ast('0+1', {
+        nonemptyListOf: (first, sep, rest) => 'XX',
+      }),
+      'XX'
+  );
 
-  ast = toAST(g2.match('66+99'), {
-    nonemptyListOf: 0,
-  });
-  t.is(ast, '66');
+  t.is(
+      ast('1+2', {
+        nonemptyListOf: 0,
+      }),
+      '1'
+  );
 
-  ast = toAST(g2.match(''), {
-    emptyListOf: () => 'nix',
-  });
-  t.is(ast, 'nix');
+  t.is(
+      ast('', {
+        emptyListOf: () => 'nix',
+      }),
+      'nix'
+  );
 });

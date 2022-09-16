@@ -1,15 +1,26 @@
 'use strict';
 
+function handleListOf(child) {
+  return child.toAST(this.args.mapping);
+}
+
+function handleEmptyListOf() {
+  return [];
+}
+
+function handleNonemptyListOf(first, sep, rest) {
+  return [first.toAST(this.args.mapping)].concat(rest.toAST(this.args.mapping));
+}
+
 const defaultMapping = {
-  listOf(child) {
-    return child.toAST(this.args.mapping);
-  },
-  emptyListOf() {
-    return [];
-  },
-  nonemptyListOf(first, sep, rest) {
-    return [first.toAST(this.args.mapping)].concat(rest.toAST(this.args.mapping));
-  },
+  listOf: handleListOf,
+  ListOf: handleListOf,
+
+  emptyListOf: handleEmptyListOf,
+  EmptyListOf: handleEmptyListOf,
+
+  nonemptyListOf: handleNonemptyListOf,
+  NonemptyListOf: handleNonemptyListOf,
 };
 
 const defaultOperation = {
