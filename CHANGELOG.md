@@ -5,7 +5,7 @@
 ### Breaking changes:
 
 - [#368]: The (undocumented) `toJSON()` method of nodes has been removed. It was originally intended to support an experimental feature of the Ohm Editor.
-- [#394]: Changed the default behavior `toAST` for the built-in list rules (`ListOf` and friends). Both the syntactic (`ListOf`, ...) and lexical versions (`listOf`, ...) are now represented as arrays, with the separators _discarded_. Previously, the syntactic versions were represented by arrays, but with separators _included_, and the lexical versions were represented as strings (just like other lexical rules).
+- [#398]: Changed the default behavior `toAST` for the built-in list rules (`ListOf` and friends). Both the syntactic (`ListOf`, ...) and lexical versions (`listOf`, ...) are now represented as arrays, with the separators _discarded_. Previously, the syntactic versions were represented by arrays, but with separators _included_, and the lexical versions were represented as strings (just like other lexical rules).
 
 ### Other notable changes:
 
