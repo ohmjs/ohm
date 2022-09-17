@@ -62,12 +62,13 @@ There are certain general assumptions for the CST-to-AST conversion. They are ex
 
 ### General Assumptions
 
-Per default:
+By default:
 
 1. Every node in an AST has a **'type' property** that is derived from the name of the matching rule (those rule names may consist of the original rule name and the case name (see [Inline Rule Declarations](syntax-reference.md#inline-rule-declarations))).
 2. If a node's value is a **concrete value**, like the `"+"` in the example above, it will be omitted in the AST (not if there different possibilities though).
 3. If a rule only has one child node, it is considered an **intermediate node** that does not add any value and is therefore omitted.
 4. Possibly **repetitive** applications (`*` and `+` operator, `ListOf`) are represented as arrays of values, **optional** applications (`?` operator) are represented by their matched value or `null`.
+5. The built-in list rules (`ListOf`/`listOf` and friends) are represented as arrays of values, with the separators discarded.
 
 All those defaults can be changed by the optional second parameter - _mapping_ - handed to `toAST()`.
 

@@ -1,8 +1,27 @@
 'use strict';
 
-// --------------------------------------------------------------------
-// Operations
-// --------------------------------------------------------------------
+function handleListOf(child) {
+  return child.toAST(this.args.mapping);
+}
+
+function handleEmptyListOf() {
+  return [];
+}
+
+function handleNonemptyListOf(first, sep, rest) {
+  return [first.toAST(this.args.mapping)].concat(rest.toAST(this.args.mapping));
+}
+
+const defaultMapping = {
+  listOf: handleListOf,
+  ListOf: handleListOf,
+
+  emptyListOf: handleEmptyListOf,
+  EmptyListOf: handleEmptyListOf,
+
+  nonemptyListOf: handleNonemptyListOf,
+  NonemptyListOf: handleNonemptyListOf,
+};
 
 const defaultOperation = {
   _terminal() {
@@ -28,7 +47,6 @@ const defaultOperation = {
 
       // rest: terms with multiple children
     }
-
     // direct forward
     if (typeof mapping[ctorName] === 'number') {
       return children[mapping[ctorName]].toAST(mapping);
@@ -79,17 +97,7 @@ const defaultOperation = {
       }
     }
 
-    return children.map(function(child) {
-      return child.toAST(this.args.mapping);
-    }, this);
-  },
-
-  NonemptyListOf(first, sep, rest) {
-    return [first.toAST(this.args.mapping)].concat(rest.toAST(this.args.mapping));
-  },
-
-  EmptyListOf() {
-    return [];
+    return children.map(c => c.toAST(this.args.mapping));
   },
 };
 
@@ -102,7 +110,7 @@ function toAST(res, mapping) {
     throw new Error('toAST() expects a succesful MatchResult as first parameter');
   }
 
-  mapping = Object.assign({}, mapping);
+  mapping = Object.assign({}, defaultMapping, mapping);
   const operation = Object.assign({}, defaultOperation);
   for (const termName in mapping) {
     if (typeof mapping[termName] === 'function') {
