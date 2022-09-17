@@ -258,7 +258,7 @@ The definition of "whitespace character" is anything that matches the grammar's 
 
 #### How space skipping works
 
-In the body of a syntactic rule, Ohm implicity inserts applications of the `spaces` rule before each expression. (The `spaces` rule is defined as `spaces = space*`.) As an example, take this fragment of JSON grammar:
+In the body of a syntactic rule, Ohm implicitly inserts applications of the `spaces` rule before each expression. (The `spaces` rule is defined as `spaces = space*`.) As an example, take this fragment of JSON grammar:
 
 <!-- @markscript
   let syntacticDefs;
