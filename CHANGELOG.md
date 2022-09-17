@@ -4,12 +4,35 @@
 
 ### Breaking changes:
 
-- [#368]: The (undocumented) `toJSON()` method of nodes has been removed. It was originally intended to support an experimental feature of the Ohm Editor.
 - [#398]: Changed the default behavior `toAST` for the built-in list rules (`ListOf` and friends). Both the syntactic (`ListOf`, ...) and lexical versions (`listOf`, ...) are now represented as arrays, with the separators _discarded_. Previously, the syntactic versions were represented by arrays, but with separators _included_, and the lexical versions were represented as strings (just like other lexical rules).
 
 ### Other notable changes:
 
 - [#368]: The `primitiveValue` property of nodes, which was deprecated in Ohm v16, has now been removed.
+
+## v16.4.0 - Aug 2, 2022
+
+### New features:
+
+- [#390] Added type information for ohm.pexprs
+
+## v16.3.4 - May 2, 2022
+
+(Same as 16.3.3)
+
+## v16.3.3 - May 2, 2022
+
+- [#374] Fixed incorrect type annotation for Node.isOptional()
+
+## v16.3.2 - Mar 23, 2022
+
+### Fixes:
+
+- [#370] Fix harc/ohm-editor#72 - grammars with super-splice (...) not working in the Ohm Editor
+
+### Other notable changes:
+
+- [#368]: The (undocumented) `toJSON()` method of nodes has been removed. It was originally intended to support an experimental feature of the Ohm Editor.
 
 ## v16.3.1 - Feb 28, 2022
 
