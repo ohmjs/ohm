@@ -1,4 +1,4 @@
-# Snapshot report for `src/commands/generateBundles/index.test.mjs`
+# Snapshot report for `packages/cli/src/commands/generateBundles/index.test.mjs`
 
 The actual snapshot is saved in `index.test.mjs.snap`.
 
