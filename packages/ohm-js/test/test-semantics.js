@@ -1,5 +1,3 @@
-'use strict';
-
 // --------------------------------------------------------------------
 // Imports
 // --------------------------------------------------------------------
@@ -82,7 +80,7 @@ test('operations', t => {
       },
       {
         message: 'Invalid number of arguments passed to noArgs operation (expected 0, got 1)',
-      }
+      },
   );
 
   // An operation that failed checks when first added but then succeeds
@@ -92,7 +90,7 @@ test('operations', t => {
           exp() {},
         });
       },
-      {message: /wrong arity/}
+      {message: /wrong arity/},
   );
   t.falsy(s(Arithmetic.match('1+2')).failSuccess, 'failed operation not added');
   s.addOperation('failSuccess', {
@@ -127,7 +125,7 @@ test('operations with arguments', t => {
       },
       {
         message: 'Invalid number of arguments passed to op1 operation (expected 1, got 0)',
-      }
+      },
   );
   t.throws(
       () => {
@@ -135,7 +133,7 @@ test('operations with arguments', t => {
       },
       {
         message: 'Invalid number of arguments passed to op1 operation (expected 1, got 2)',
-      }
+      },
   );
 
   s.addOperation('op2(a, b)', {
@@ -149,13 +147,13 @@ test('operations with arguments', t => {
       },
       {
         message: 'Invalid number of arguments passed to op2 operation (expected 2, got 0)',
-      }
+      },
   );
   t.throws(
       () => {
         s(Arithmetic.match('(5)-2')).op2(1);
       },
-      {message: 'Invalid number of arguments passed to op2 operation (expected 2, got 1)'}
+      {message: 'Invalid number of arguments passed to op2 operation (expected 2, got 1)'},
   );
   t.is(s(Arithmetic.match('3')).op2(1, 2), 123);
   t.throws(
@@ -164,7 +162,7 @@ test('operations with arguments', t => {
       },
       {
         message: 'Invalid number of arguments passed to op1 operation (expected 1, got 3)',
-      }
+      },
   );
 
   s.addOperation('op3(foo, bar, baz)', {
@@ -174,7 +172,7 @@ test('operations with arguments', t => {
       t.deepEqual(
           this.args,
           oldArgs,
-          "make sure that calling other operations doesn't clobber the arguments of the caller"
+          "make sure that calling other operations doesn't clobber the arguments of the caller",
       );
     },
   });
@@ -238,7 +236,7 @@ test('attributes', t => {
       {
         message:
         '"eval" is not a valid operation or attribute name in this semantics for "Arithmetic"',
-      }
+      },
   );
 
   t.throws(
@@ -246,7 +244,7 @@ test('attributes', t => {
         Arithmetic.createSemantics().addAttribute('badAttribute(x, y)', {});
       },
       {message: /Expected end of input/},
-      'attributes are not allowed to have arguments'
+      'attributes are not allowed to have arguments',
   );
 });
 
@@ -290,14 +288,14 @@ test('semantics', t => {
         s.addOperation('op', {});
       },
       {message: /already exists/},
-      'addOperation throws when name is already used'
+      'addOperation throws when name is already used',
   );
   t.throws(
       () => {
         s.addOperation('attr', {});
       },
       {message: /already exists/},
-      'addOperation throws when name is already used, even if it is an attribute'
+      'addOperation throws when name is already used, even if it is an attribute',
   );
 
   t.throws(
@@ -305,52 +303,52 @@ test('semantics', t => {
         s.addAttribute('attr', {});
       },
       {message: /already exists/},
-      'addAttribute throws when name is already used'
+      'addAttribute throws when name is already used',
   );
   t.throws(
       () => {
         s.addAttribute('attr', {});
       },
       {message: /already exists/},
-      'addAttribute throws when name is already used, even if it is an operation'
+      'addAttribute throws when name is already used, even if it is an operation',
   );
 
   t.throws(
       () => {
         s(null);
       },
-      {message: /expected a MatchResult/}
+      {message: /expected a MatchResult/},
   );
   t.throws(
       () => {
         s(false);
       },
-      {message: /expected a MatchResult/}
+      {message: /expected a MatchResult/},
   );
   t.throws(
       () => {
         s();
       },
-      {message: /expected a MatchResult/}
+      {message: /expected a MatchResult/},
   );
   t.throws(
       () => {
         s(3);
       },
-      {message: /expected a MatchResult/}
+      {message: /expected a MatchResult/},
   );
   t.throws(
       () => {
         s('asdf');
       },
-      {message: /expected a MatchResult/}
+      {message: /expected a MatchResult/},
   );
   t.throws(
       () => {
         s(Arithmetic.match('barf'));
       },
       {message: /cannot apply Semantics to \[match failed at position 0\]/},
-      'throws when arg is a MatchFailure'
+      'throws when arg is a MatchFailure',
   );
 
   // Cannot use the semantics on nodes from another grammar...
@@ -359,7 +357,7 @@ test('semantics', t => {
       () => {
         s(g.match('a', 'letter'));
       },
-      {message: /Cannot use a MatchResult from grammar/}
+      {message: /Cannot use a MatchResult from grammar/},
   );
   // ... even if it's a sub-grammar
   g = ohm.grammar('Arithmetic2 <: Arithmetic {}', {Arithmetic});
@@ -367,7 +365,7 @@ test('semantics', t => {
       () => {
         s(g.match('1+2', 'exp'));
       },
-      {message: /Cannot use a MatchResult from grammar/}
+      {message: /Cannot use a MatchResult from grammar/},
   );
 });
 
@@ -398,7 +396,7 @@ test('_iter nodes', t => {
   t.deepEqual(
       s(m).op(),
       ['a', 'b', 'c'],
-      'works with pass-through default behavior of _nonterminal'
+      'works with pass-through default behavior of _nonterminal',
   );
 
   s = g.createSemantics().addOperation('op', {
@@ -408,7 +406,7 @@ test('_iter nodes', t => {
       t.is(typeof ls.op, 'function', '`ls` has an op() method');
       t.truthy(
           ls.children.every(l => typeof l.op === 'function'),
-          'children is an array of wrappers'
+          'children is an array of wrappers',
       );
       return ls.children.map(l => l.op()).join(',');
     },
@@ -450,7 +448,7 @@ test('_terminal nodes', t => {
         });
         s(m).op();
       },
-      {message: /Missing semantic action for '_terminal'/}
+      {message: /Missing semantic action for '_terminal'/},
   );
 
   t.throws(
@@ -460,7 +458,7 @@ test('_terminal nodes', t => {
           _terminal(x) {},
         });
       },
-      {message: /wrong arity/}
+      {message: /wrong arity/},
   );
 
   s = g.createSemantics().addOperation('op', {
@@ -491,7 +489,7 @@ test('semantic action arity checks', t => {
         makeOperation(g, {foo: null});
       },
       {message: /not a valid semantic action/},
-      'superfluous action dictionary keys are not allowed'
+      'superfluous action dictionary keys are not allowed',
   );
 
   t.throws(
@@ -499,11 +497,11 @@ test('semantic action arity checks', t => {
         makeOperation(g, {_nonterminal: ignore1});
       },
       {message: /arity/},
-      '_nonterminal is checked'
+      '_nonterminal is checked',
   );
   t.truthy(
       makeOperation(g, {_nonterminal: ignoreRest0}),
-      '_nonterminal works with one spread arg'
+      '_nonterminal works with one spread arg',
   );
 
   t.throws(
@@ -511,7 +509,7 @@ test('semantic action arity checks', t => {
         makeOperation(g, {_terminal: ignore1});
       },
       {message: /arity/},
-      '_terminal is checked'
+      '_terminal is checked',
   );
   t.truthy(makeOperation(g, {_terminal: ignore0}), '_terminal works with no args');
 
@@ -520,7 +518,7 @@ test('semantic action arity checks', t => {
         makeOperation(g, {letter: ignore0});
       },
       {message: /arity/},
-      'built-in rules are checked'
+      'built-in rules are checked',
   );
   t.truthy(makeOperation(g, {letter: ignore1}), 'letter works with one arg');
 
@@ -532,14 +530,14 @@ test('semantic action arity checks', t => {
         makeOperation(g, {one: ignore0, two: ignore2});
       },
       {message: /wrong arity/},
-      "'one', is checked"
+      "'one', is checked",
   );
   t.throws(
       () => {
         makeOperation(g, {one: ignore1, two: ignore0});
       },
       {message: /wrong arity/},
-      "'two' is checked"
+      "'two' is checked",
   );
 
   const g2 = ohm.grammar('G2 <: G {}', {G: g});
@@ -548,7 +546,7 @@ test('semantic action arity checks', t => {
         makeOperation(g2, {one: ignore2});
       },
       {message: /wrong arity/},
-      'supergrammar rules are checked'
+      'supergrammar rules are checked',
   );
   t.truthy(makeOperation(g2, {one: ignore1}), 'works with one arg');
 
@@ -558,7 +556,7 @@ test('semantic action arity checks', t => {
         makeOperation(g3, {one: ignore1});
       },
       {message: /wrong arity/},
-      'changing arity in an overridden rule'
+      'changing arity in an overridden rule',
   );
   t.truthy(makeOperation(g3, {one: ignore2}));
 });
@@ -597,33 +595,33 @@ test('extending semantics', t => {
       () => {
         ns.G2.extendSemantics(s).addOperation('value', {});
       },
-      {message: /already exists/}
+      {message: /already exists/},
   );
   t.throws(
       () => {
         ns.G2.extendSemantics(s).extendOperation('foo', {});
       },
-      {message: /did not inherit/}
+      {message: /did not inherit/},
   );
   t.throws(
       () => {
         ns.G.createSemantics().extendOperation('value', {});
       },
-      {message: /did not inherit/}
+      {message: /did not inherit/},
   );
   t.truthy(ns.G3.extendSemantics(s));
   t.throws(
       () => {
         ns.G4.extendSemantics(s);
       },
-      {message: /not a sub-grammar/}
+      {message: /not a sub-grammar/},
   );
 
   t.throws(
       () => {
         ns.G2.extendSemantics(s).extendOperation('value', {});
       },
-      {message: /wrong arity/}
+      {message: /wrong arity/},
   );
   // If there is an arity mismatch due to overriding and we don't explicitly extend the operation /
   // attribute, we should catch this error when the derived semantics is applied to its first
@@ -632,7 +630,7 @@ test('extending semantics', t => {
       () => {
         ns.G2.extendSemantics(s)(ns.G2.match('eins!', 'one'));
       },
-      {message: /wrong arity/}
+      {message: /wrong arity/},
   );
 
   let s2 = ns.G2.extendSemantics(s).extendOperation('value', {
@@ -660,7 +658,7 @@ test('extending semantics', t => {
       () => {
         s2.extendOperation('value', {});
       },
-      {message: /again/}
+      {message: /again/},
   );
 
   // Make sure you can't specify arguments when you extend an operation
@@ -668,7 +666,7 @@ test('extending semantics', t => {
       () => {
         s2.extendOperation('value(x)', {});
       },
-      {message: /Expected end of input/}
+      {message: /Expected end of input/},
   );
 
   // Make sure attributes behave as expected
@@ -691,25 +689,25 @@ test('extending semantics', t => {
       () => {
         ns.G2.extendSemantics(s).addAttribute('value', {});
       },
-      {message: /already exists/}
+      {message: /already exists/},
   );
   t.throws(
       () => {
         ns.G2.extendSemantics(s).extendAttribute('value', {});
       },
-      {message: /wrong arity/}
+      {message: /wrong arity/},
   );
   t.throws(
       () => {
         ns.G2.extendSemantics(s).extendAttribute('foo', {});
       },
-      {message: /did not inherit/}
+      {message: /did not inherit/},
   );
   t.throws(
       () => {
         ns.G.createSemantics().extendAttribute('value', {});
       },
-      {message: /did not inherit/}
+      {message: /did not inherit/},
   );
 
   s2 = ns.G2.extendSemantics(s).extendAttribute('value', {
@@ -737,7 +735,7 @@ test('extending semantics', t => {
       () => {
         s2.extendAttribute('value', {});
       },
-      {message: /again/}
+      {message: /again/},
   );
 
   // Make sure an attribute that was inherited from a parent semantics
@@ -758,7 +756,7 @@ test('extending semantics', t => {
       () => {
         s2.extendAttribute('value(x)', {});
       },
-      {message: /Expected end of input/}
+      {message: /Expected end of input/},
   );
 
   // Make sure that semantics from the same grammar source are considered compatible.
@@ -797,7 +795,7 @@ test('mixing nodes from one grammar with semantics from another', t => {
       () => {
         s(m).value();
       },
-      {message: /Cannot use a MatchResult from grammar/}
+      {message: /Cannot use a MatchResult from grammar/},
   );
 
   m = ns.Unrelated.match('asdf', 'start');
@@ -805,7 +803,7 @@ test('mixing nodes from one grammar with semantics from another', t => {
       () => {
         s(m).value();
       },
-      {message: /Cannot use a MatchResult from grammar/}
+      {message: /Cannot use a MatchResult from grammar/},
   );
 });
 
@@ -857,19 +855,19 @@ test('asIteration', t => {
       () => {
         s.addAttribute('asIteration', {});
       },
-      {message: /already exists/}
+      {message: /already exists/},
   );
   t.throws(
       () => {
         s.addOperation('asIteration', {});
       },
-      {message: /already exists/}
+      {message: /already exists/},
   );
   t.throws(
       () => {
         s(g.match('xxx', 'anyThree')).asIteration(); // eslint-disable-line no-unused-expressions
       },
-      {message: /Missing semantic action/}
+      {message: /Missing semantic action/},
   );
 });
 
@@ -932,7 +930,7 @@ test('action call stacks', t => {
         "  oops > default action for 'start'",
         "  oops > default action for 'digit'",
         '  oops > _terminal',
-      ].join('\n')
+      ].join('\n'),
   );
 
   s.addOperation('op2', {
@@ -953,7 +951,7 @@ test('action call stacks', t => {
         '  op2 > start',
         "  oops > default action for 'digit'",
         '  oops > _terminal',
-      ].join('\n')
+      ].join('\n'),
   );
 });
 

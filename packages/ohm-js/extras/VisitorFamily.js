@@ -1,5 +1,3 @@
-'use strict';
-
 // --------------------------------------------------------------------
 // Imports
 // --------------------------------------------------------------------
@@ -123,7 +121,7 @@ VisitorFamily.prototype._checkActionDict = function(dict) {
       const actual = dict[k].length;
       assert(
           actual === expected,
-          "Action '" + k + "' has the wrong arity: expected " + expected + ', got ' + actual
+          "Action '" + k + "' has the wrong arity: expected " + expected + ', got ' + actual,
       );
     }
   });
@@ -156,7 +154,7 @@ VisitorFamily.prototype.addOperation = function(signature, actions) {
     this.args = argsObj;
     const ans = actions[tag].apply(
         this,
-        family._getChildren[tag](this._adaptee, family._wrap)
+        family._getChildren[tag](this._adaptee, family._wrap),
     );
     this.args = oldArgs;
     return ans;

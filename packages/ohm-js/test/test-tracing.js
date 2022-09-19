@@ -1,5 +1,3 @@
-'use strict';
-
 // --------------------------------------------------------------------
 // Imports
 // --------------------------------------------------------------------
@@ -102,7 +100,7 @@ test('space skipping', t => {
   t.deepEqual(
       fooAppl.children.map(displayString),
       ['"a" "b"'],
-      'no spaces under lexical rule appl'
+      'no spaces under lexical rule appl',
   );
 });
 
@@ -251,7 +249,7 @@ test('tracing with left recursion', t => {
   t.is(terminatingEntry.pos, id.pos);
   t.true(
       terminatingEntry.source.length <= id.source.length,
-      'its source interval is not longer'
+      'its source interval is not longer',
   );
 
   t.is(id.children.length, 1, 'has a single child');
@@ -352,14 +350,14 @@ test('toString', t => {
         'Unicode', // Failed.
         'end',
       ],
-      'expressions'
+      'expressions',
   );
 
   const excerpts = lines.map(l => l.split(/\s+/)[0]);
   t.deepEqual(
       excerpts,
       common.repeat('hi', 6).concat(common.repeat('i', 3)).concat(common.repeat('', 8)),
-      'excerpts'
+      'excerpts',
   );
 
   // Test that newlines are escaped in the trace output.
@@ -463,7 +461,7 @@ test.failing('bindings', t => {
   t.is(alt.bindings[1].source.contents, 'b');
   t.deepEqual(
       alt.bindings.map(b => b.ctorName),
-      ['_terminal', '_terminal']
+      ['_terminal', '_terminal'],
   );
 
   trace = g.trace('cd');
@@ -474,7 +472,7 @@ test.failing('bindings', t => {
   t.is(alt.bindings[1].source.contents, 'd');
   t.deepEqual(
       alt.bindings.map(b => b.ctorName),
-      ['_terminal', 'notX']
+      ['_terminal', 'notX'],
   );
 
   const notX = alt.children[1];

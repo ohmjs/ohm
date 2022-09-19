@@ -39,7 +39,7 @@ function lineAndColumnToMessage(...ranges) {
   const lineNumbers = padNumbersToEqualLength([
     lineAndCol.prevLine == null ? 0 : lineAndCol.lineNum - 1,
     lineAndCol.lineNum,
-    lineAndCol.nextLine == null ? 0 : lineAndCol.lineNum + 1
+    lineAndCol.nextLine == null ? 0 : lineAndCol.lineNum + 1,
   ]);
 
   // Helper for appending formatting input lines to the buffer.
@@ -134,9 +134,9 @@ export const getLineAndColumn = (str, offset) => {
     // Get the next line.
     const nextLineEndOffset = str.indexOf('\n', lineEndOffset + 1);
     nextLine =
-      nextLineEndOffset === -1
-        ? str.slice(lineEndOffset)
-        : str.slice(lineEndOffset, nextLineEndOffset);
+      nextLineEndOffset === -1 ?
+        str.slice(lineEndOffset) :
+        str.slice(lineEndOffset, nextLineEndOffset);
     // Strip leading and trailing EOL char(s).
     nextLine = nextLine.replace(/^\r?\n/, '').replace(/\r$/, '');
   }
@@ -157,13 +157,13 @@ export const getLineAndColumn = (str, offset) => {
     line,
     prevLine,
     nextLine,
-    toString: lineAndColumnToMessage
+    toString: lineAndColumnToMessage,
   };
 };
 
 // Return a nicely-formatted string describing the line and column for the
 // given offset in `str` highlighting `ranges`.
-export const getLineAndColumnMessage = function (str, offset, ...ranges) {
+export const getLineAndColumnMessage = function(str, offset, ...ranges) {
   return getLineAndColumn(str, offset).toString(...ranges);
 };
 

@@ -11,18 +11,18 @@ export function Matcher(grammar) {
   this.input = '';
 }
 
-Matcher.prototype.getInput = function () {
+Matcher.prototype.getInput = function() {
   return this.input;
 };
 
-Matcher.prototype.setInput = function (str) {
+Matcher.prototype.setInput = function(str) {
   if (this.input !== str) {
     this.replaceInputRange(0, this.input.length, str);
   }
   return this;
 };
 
-Matcher.prototype.replaceInputRange = function (startIdx, endIdx, str) {
+Matcher.prototype.replaceInputRange = function(startIdx, endIdx, str) {
   const currentInput = this.input;
   if (
     startIdx < 0 ||
@@ -43,7 +43,7 @@ Matcher.prototype.replaceInputRange = function (startIdx, endIdx, str) {
   for (let idx = 0; idx < str.length; idx++) {
     this.memoTable.push(undefined);
   }
-  restOfMemoTable.forEach(function (posInfo) {
+  restOfMemoTable.forEach(function(posInfo) {
     this.memoTable.push(posInfo);
   }, this);
 
@@ -58,15 +58,15 @@ Matcher.prototype.replaceInputRange = function (startIdx, endIdx, str) {
   return this;
 };
 
-Matcher.prototype.match = function (optStartApplicationStr) {
+Matcher.prototype.match = function(optStartApplicationStr) {
   return this._match(this._getStartExpr(optStartApplicationStr), false);
 };
 
-Matcher.prototype.trace = function (optStartApplicationStr) {
+Matcher.prototype.trace = function(optStartApplicationStr) {
   return this._match(this._getStartExpr(optStartApplicationStr), true);
 };
 
-Matcher.prototype._match = function (startExpr, tracing, optPositionToRecordFailures) {
+Matcher.prototype._match = function(startExpr, tracing, optPositionToRecordFailures) {
   const state = new MatchState(this, startExpr, optPositionToRecordFailures);
   return tracing ? state.getTrace() : state.getMatchResult();
 };
@@ -76,7 +76,7 @@ Matcher.prototype._match = function (startExpr, tracing, optPositionToRecordFail
   is specified, it is a string expressing a rule application in the grammar. If not specified, the
   grammar's default start rule will be used.
 */
-Matcher.prototype._getStartExpr = function (optStartApplicationStr) {
+Matcher.prototype._getStartExpr = function(optStartApplicationStr) {
   const applicationStr = optStartApplicationStr || this.grammar.defaultStartRule;
   if (!applicationStr) {
     throw new Error('Missing start rule argument -- the grammar has no default start rule.');

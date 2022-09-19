@@ -30,43 +30,43 @@ export function Failure(pexpr, text, type) {
   this.fluffy = false;
 }
 
-Failure.prototype.getPExpr = function () {
+Failure.prototype.getPExpr = function() {
   return this.pexpr;
 };
 
-Failure.prototype.getText = function () {
+Failure.prototype.getText = function() {
   return this.text;
 };
 
-Failure.prototype.getType = function () {
+Failure.prototype.getType = function() {
   return this.type;
 };
 
-Failure.prototype.isDescription = function () {
+Failure.prototype.isDescription = function() {
   return this.type === 'description';
 };
 
-Failure.prototype.isStringTerminal = function () {
+Failure.prototype.isStringTerminal = function() {
   return this.type === 'string';
 };
 
-Failure.prototype.isCode = function () {
+Failure.prototype.isCode = function() {
   return this.type === 'code';
 };
 
-Failure.prototype.isFluffy = function () {
+Failure.prototype.isFluffy = function() {
   return this.fluffy;
 };
 
-Failure.prototype.makeFluffy = function () {
+Failure.prototype.makeFluffy = function() {
   this.fluffy = true;
 };
 
-Failure.prototype.clearFluffy = function () {
+Failure.prototype.clearFluffy = function() {
   this.fluffy = false;
 };
 
-Failure.prototype.subsumes = function (that) {
+Failure.prototype.subsumes = function(that) {
   return (
     this.getText() === that.getText() &&
     this.type === that.type &&
@@ -74,11 +74,11 @@ Failure.prototype.subsumes = function (that) {
   );
 };
 
-Failure.prototype.toString = function () {
+Failure.prototype.toString = function() {
   return this.type === 'string' ? JSON.stringify(this.getText()) : this.getText();
 };
 
-Failure.prototype.clone = function () {
+Failure.prototype.clone = function() {
   const failure = new Failure(this.pexpr, this.text, this.type);
   if (this.isFluffy()) {
     failure.makeFluffy();
@@ -86,6 +86,6 @@ Failure.prototype.clone = function () {
   return failure;
 };
 
-Failure.prototype.toKey = function () {
+Failure.prototype.toKey = function() {
   return this.toString() + '#' + this.type;
 };

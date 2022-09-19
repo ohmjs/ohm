@@ -1,5 +1,3 @@
-'use strict';
-
 // --------------------------------------------------------------------
 // Imports
 // --------------------------------------------------------------------
@@ -36,8 +34,8 @@ test('match failure', t => {
   t.is(e.failed(), true);
   t.is(e.succeeded(), false);
   t.is(
-    e.message,
-    ['Line 1, col 5:', '> 1 | abcde', '          ^', 'Expected end of input'].join('\n')
+      e.message,
+      ['Line 1, col 5:', '> 1 | abcde', '          ^', 'Expected end of input'].join('\n'),
   );
   t.is(e.shortMessage, 'Line 1, col 5: expected end of input');
   t.is(e.getRightmostFailurePosition(), 4);
@@ -49,26 +47,26 @@ test('match failure', t => {
 
 test('undeclared rules', t => {
   t.throws(() => makeRuleWithBody('undeclaredRule'), {
-    message: /Rule undeclaredRule is not declared in grammar G/
+    message: /Rule undeclaredRule is not declared in grammar G/,
   });
   const g = makeRuleWithBody('digit');
   t.throws(() => g.match('hello world', 'x'), {
-    message: /Rule x is not declared in grammar G/
+    message: /Rule x is not declared in grammar G/,
   });
 });
 
 test('many expressions with nullable operands', t => {
   t.throws(() => makeRuleWithBody('("a"*)*'), {
-    message: /Nullable expression "a"\* is not allowed inside '\*'/
+    message: /Nullable expression "a"\* is not allowed inside '\*'/,
   });
   t.throws(() => makeRuleWithBody('("a"?)*'), {
-    message: /Nullable expression "a"\? is not allowed inside '\*'/
+    message: /Nullable expression "a"\? is not allowed inside '\*'/,
   });
   t.throws(() => makeRuleWithBody('("a"*)+'), {
-    message: /Nullable expression "a"\* is not allowed inside '\+'/
+    message: /Nullable expression "a"\* is not allowed inside '\+'/,
   });
   t.throws(() => makeRuleWithBody('("a"?)+'), {
-    message: /Nullable expression "a"\? is not allowed inside '\+'/
+    message: /Nullable expression "a"\? is not allowed inside '\+'/,
   });
 
   try {
@@ -76,13 +74,13 @@ test('many expressions with nullable operands', t => {
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.is(
-      e.message,
-      dedent`
+        e.message,
+        dedent`
           Line 1, col 14:
           > 1 | G { start = ("a"?)*}
                              ^~~~
           Nullable expression "a"? is not allowed inside '*' (possible infinite loop)
-        `
+        `,
     );
   }
 
@@ -91,20 +89,20 @@ test('many expressions with nullable operands', t => {
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.is(
-      e.message,
-      dedent`
+        e.message,
+        dedent`
           Line 1, col 14:
           > 1 | G { start = ("a"?)+}
                              ^~~~
           Nullable expression "a"? is not allowed inside '+' (possible infinite loop)
-        `
+        `,
     );
   }
 
   t.throws(
-    () => ohm.grammar('G { x = y+  y = undeclaredRule }'),
-    {message: /Rule undeclaredRule is not declared in grammar G/},
-    'undeclared rule prevents ManyExprHasNullableOperand check'
+      () => ohm.grammar('G { x = y+  y = undeclaredRule }'),
+      {message: /Rule undeclaredRule is not declared in grammar G/},
+      'undeclared rule prevents ManyExprHasNullableOperand check',
   );
 
   // Dynamic checks for infinite loops. These are needed because our static checks for nullable
@@ -112,15 +110,15 @@ test('many expressions with nullable operands', t => {
   // or more of the rule's parameters.
 
   const g1 = ohm.grammar(
-    'G { plus<e> = e+  star<e> = e*  inf1 = star<"">  inf2 = plus<"a"*> }'
+      'G { plus<e> = e+  star<e> = e*  inf1 = star<"">  inf2 = plus<"a"*> }',
   );
   try {
     g1.match('', 'inf1');
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.is(
-      e.message,
-      dedent`
+        e.message,
+        dedent`
           Line 1, col 29:
           > 1 | G { plus<e> = e+  star<e> = e*  inf1 = star<"">  inf2 = plus<"a"*> }
                                             ^
@@ -128,7 +126,7 @@ test('many expressions with nullable operands', t => {
           Application stack (most recent application last):
           inf1
           star<"">
-        `
+        `,
     );
   }
   try {
@@ -136,8 +134,8 @@ test('many expressions with nullable operands', t => {
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.is(
-      e.message,
-      dedent`
+        e.message,
+        dedent`
           Line 1, col 15:
           > 1 | G { plus<e> = e+  star<e> = e*  inf1 = star<"">  inf2 = plus<"a"*> }
                               ^
@@ -145,7 +143,7 @@ test('many expressions with nullable operands', t => {
           Application stack (most recent application last):
           inf2
           plus<"a"*>
-        `
+        `,
     );
   }
 
@@ -155,8 +153,8 @@ test('many expressions with nullable operands', t => {
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.is(
-      e.message,
-      dedent`
+        e.message,
+        dedent`
           Line 25, col 13:
             24 |   NonemptyListOf<elem, sep>
           > 25 |     = elem (sep elem)*
@@ -167,7 +165,7 @@ test('many expressions with nullable operands', t => {
           Start
           ListOf<"a"?,"">
           NonemptyListOf<"a"?,"">
-        `
+        `,
     );
   }
 });
@@ -179,14 +177,14 @@ test('errors from ohm.grammar()', t => {
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.is(
-      e.message,
-      dedent`
+        e.message,
+        dedent`
           Line 2, col 1:
             1 | G {}
           > 2 | G2 <: G {}
                 ^
           Found more than one grammar definition -- use ohm.grammars() instead.
-        `
+        `,
     );
   }
   t.throws(() => ohm.grammar(''), {message: /Missing grammar/});
@@ -197,13 +195,13 @@ test('errors from ohm.grammar()', t => {
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.is(
-      e.message,
-      dedent`
+        e.message,
+        dedent`
           Line 1, col 4:
           > 1 | G {
                    ^
           Expected "}"
-        `
+        `,
     );
   }
 });
@@ -215,13 +213,13 @@ test('unrecognized escape sequences', t => {
       t.fail('Expected an exception to be thrown');
     } catch (e) {
       t.is(
-        e.message,
-        dedent`
+          e.message,
+          dedent`
             Line 1, col 19:
             > 1 | G { start = "hello${bes}world" }
                                     ^
             Expected "\""
-          `
+          `,
       );
     }
   }
@@ -241,13 +239,13 @@ test('failures are memoized', t => {
   const e = g.match('');
   t.is(e.failed(), true);
   t.is(
-    e.message,
-    dedent`
+      e.message,
+      dedent`
         Line 1, col 1:
         > 1 | 
               ^
         Expected "a" or "b"
-      `
+      `,
   );
 });
 
@@ -257,22 +255,22 @@ test('multiple MatchResults from the same Matcher', t => {
   const r1 = m.replaceInputRange(0, 0, '(1').match();
   const r2 = m.replaceInputRange(0, 2, '1+').match();
   t.is(
-    r1.message,
-    dedent`
+      r1.message,
+      dedent`
         Line 1, col 3:
         > 1 | (1
                 ^
         Expected ")"
-      `
+      `,
   );
   t.is(
-    r2.message,
-    dedent`
+      r2.message,
+      dedent`
         Line 1, col 3:
         > 1 | 1+
                 ^
         Expected a number or "("
-      `
+      `,
   );
 });
 
@@ -317,8 +315,8 @@ test('method name displayed on abstract function failure', t => {
     t.fail('Expected an exception to be thrown');
   } catch (e) {
     t.is(
-      e.message,
-      'this method toFailure is abstract! (it has no implementation in class Param)'
+        e.message,
+        'this method toFailure is abstract! (it has no implementation in class Param)',
     );
   }
 });
@@ -329,8 +327,8 @@ test('errors for Not-of-<PExpr>', t => {
   t.is(r.failed(), true);
   t.is(typeof r.message, 'string'); // implicitly requires that r.message not throw
   t.truthy(
-    /Expected not \("b" or "c"\)/.exec(r.message),
-    'reasonable failure report for Not-of-Alt'
+      /Expected not \("b" or "c"\)/.exec(r.message),
+      'reasonable failure report for Not-of-Alt',
   );
 
   const notParamG = ohm.grammar('G {\n' + '  S = Not<"a">\n' + '  Not<elem> = ~elem\n' + '}');
@@ -344,8 +342,8 @@ test('errors for Not-of-<PExpr>', t => {
   t.is(r.failed(), true);
   t.is(typeof r.message, 'string');
   t.truthy(
-    /Expected not "a"/.exec(r.message),
-    'reasonable failure report for Not-of-Lookahead'
+      /Expected not "a"/.exec(r.message),
+      'reasonable failure report for Not-of-Lookahead',
   );
 
   const notSeqG = ohm.grammar('G { start = ~("a" "b") "c" }');
@@ -353,8 +351,8 @@ test('errors for Not-of-<PExpr>', t => {
   t.is(r.failed(), true);
   t.is(typeof r.message, 'string');
   t.truthy(
-    /Expected not \("a" "b"\)/.exec(r.message),
-    'reasonable failure report for Not-of-Seq'
+      /Expected not \("a" "b"\)/.exec(r.message),
+      'reasonable failure report for Not-of-Seq',
   );
 
   const notIterG = ohm.grammar('G { start = ~("a"*) "b" }');
@@ -362,8 +360,8 @@ test('errors for Not-of-<PExpr>', t => {
   t.is(r.failed(), true);
   t.is(typeof r.message, 'string');
   t.truthy(
-    /Expected not \("a"\*\)/.exec(r.message),
-    'reasonable failure report for Not-of-Iter'
+      /Expected not \("a"\*\)/.exec(r.message),
+      'reasonable failure report for Not-of-Iter',
   );
 });
 
@@ -396,14 +394,14 @@ test('wrongNumberOfArguments includes the interval', t => {
     Wrong number of arguments for rule a (expected 0, got 1)
   `;
   t.throws(
-    () => {
-      ohm.grammar(`
+      () => {
+        ohm.grammar(`
       Test {
         a = alnum
         b = a<x>
       }
     `);
-    },
-    {message}
+      },
+      {message},
   );
 });

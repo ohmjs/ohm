@@ -5,6 +5,7 @@ import * as errors from './errors.js';
 import {Grammar} from './Grammar.js';
 import {Namespace} from './Namespace.js';
 import * as pexprs from './pexprs.js';
+import {getLineAndColumnMessage} from './util.js';
 
 // Late initialization for stuff that is bootstrapped.
 
@@ -111,10 +112,10 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
         });
 
         return new pexprs.Splice(
-          decl.superGrammar,
-          currentRuleName,
-          beforeTerms,
-          afterTerms
+            decl.superGrammar,
+            currentRuleName,
+            beforeTerms,
+            afterTerms,
         ).withSource(this.source);
       } else {
         return builder.alt(...args).withSource(this.source);
@@ -235,7 +236,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
 
     _terminal() {
       return this.sourceString;
-    }
+    },
   });
   return helpers(match).visit();
 }
@@ -259,8 +260,8 @@ export function grammar(source, optNamespace) {
     const secondGrammar = ns[grammarNames[1]];
     const interval = secondGrammar.source;
     throw new Error(
-      util.getLineAndColumnMessage(interval.sourceString, interval.startIdx) +
-        'Found more than one grammar definition -- use ohm.grammars() instead.'
+        getLineAndColumnMessage(interval.sourceString, interval.startIdx) +
+        'Found more than one grammar definition -- use ohm.grammars() instead.',
     );
   }
   return ns[grammarNames[0]]; // Return the one and only grammar.
@@ -274,7 +275,7 @@ export function grammars(source, optNamespace) {
       source = source.toString();
     } else {
       throw new TypeError(
-        'Expected string as first argument, got ' + common.unexpectedObjToString(source)
+          'Expected string as first argument, got ' + common.unexpectedObjToString(source),
       );
     }
   }
@@ -284,19 +285,19 @@ export function grammars(source, optNamespace) {
 
 export function grammarFromScriptElement(optNode) {
   throw new Error(
-    'grammarFromScriptElement was removed in Ohm v16.0. See https://ohmjs.org/d/gfs for more info.'
+      'grammarFromScriptElement was removed in Ohm v16.0. See https://ohmjs.org/d/gfs for more info.',
   );
 }
 
 export function grammarsFromScriptElements(optNodeOrNodeList) {
   throw new Error(
-    'grammarsFromScriptElements was removed in Ohm v16.0. See https://ohmjs.org/d/gfs for more info.'
+      'grammarsFromScriptElements was removed in Ohm v16.0. See https://ohmjs.org/d/gfs for more info.',
   );
 }
 
 export * from './main-kernel.js';
-export const createNamespace = Namespace.createNamespace;
-export {default as ohmGrammar} from '../dist/ohm-grammar.js';
+export const {createNamespace} = Namespace;
+export {ohmGrammar};
 
 // Stuff for testing, etc.
 

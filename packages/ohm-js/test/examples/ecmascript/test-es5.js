@@ -1,7 +1,5 @@
 /* eslint-env node */
 
-'use strict';
-
 const test = require('ava');
 
 const es5 = require('ohm-grammar-ecmascript');

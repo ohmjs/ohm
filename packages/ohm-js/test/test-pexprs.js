@@ -1,5 +1,3 @@
-'use strict';
-
 const ohm = require('..');
 const test = require('ava');
 

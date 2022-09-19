@@ -5,8 +5,6 @@
 
 /* eslint-disable no-var, prefer-arrow-callback, object-shorthand, ava/prefer-async-await */
 
-'use strict';
-
 // --------------------------------------------------------------------
 // Imports
 // --------------------------------------------------------------------
@@ -61,7 +59,7 @@ function runExample(relativePath, cb) {
               evt.lineno +
               ' (relative to start of script), col ' +
               evt.colno +
-              ':'
+              ':',
           );
           /* eslint-enable no-console */
           errors.push(evt.error);

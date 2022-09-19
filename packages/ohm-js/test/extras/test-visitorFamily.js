@@ -1,5 +1,3 @@
-'use strict';
-
 // --------------------------------------------------------------------
 // Imports
 // --------------------------------------------------------------------
@@ -93,13 +91,13 @@ test('arity checks', t => {
       () => {
         family.addOperation('foo()', {x: noop0});
       },
-      {message: /Action 'x' has the wrong arity: expected 1, got 0/}
+      {message: /Action 'x' has the wrong arity: expected 1, got 0/},
   );
   t.throws(
       () => {
         family.addOperation('foo()', {x: noop1, y: noop0});
       },
-      {message: /Action 'y' has the wrong arity: expected 2, got 0/}
+      {message: /Action 'y' has the wrong arity: expected 2, got 0/},
   );
 });
 
@@ -109,13 +107,13 @@ test('unknown action names', t => {
       () => {
         family.addOperation('foo()', {z: null});
       },
-      {message: /Unrecognized action name 'z'/}
+      {message: /Unrecognized action name 'z'/},
   );
   t.throws(
       () => {
         family.addOperation('foo()', {toString: null});
       },
-      {message: /Unrecognized action name 'toString'/}
+      {message: /Unrecognized action name 'toString'/},
   );
 });
 
@@ -131,7 +129,7 @@ test('unrecognized tags', t => {
       () => {
         v.wrap(0).foo();
       },
-      {message: /getTag returned unrecognized tag 'bad'/}
+      {message: /getTag returned unrecognized tag 'bad'/},
   );
 
   v = new VisitorFamily({
@@ -145,7 +143,7 @@ test('unrecognized tags', t => {
       () => {
         v.wrap(0).foo();
       },
-      {message: /getTag returned unrecognized tag 'toString'/}
+      {message: /getTag returned unrecognized tag 'toString'/},
   );
 });
 

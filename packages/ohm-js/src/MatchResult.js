@@ -7,13 +7,13 @@ import {Interval} from './Interval.js';
 // --------------------------------------------------------------------
 
 export function MatchResult(
-  matcher,
-  input,
-  startExpr,
-  cst,
-  cstOffset,
-  rightmostFailurePosition,
-  optRecordedFailures
+    matcher,
+    input,
+    startExpr,
+    cst,
+    cstOffset,
+    rightmostFailurePosition,
+    optRecordedFailures,
 ) {
   this.matcher = matcher;
   this.input = input;
@@ -25,13 +25,13 @@ export function MatchResult(
 
   if (this.failed()) {
     /* eslint-disable no-invalid-this */
-    common.defineLazyProperty(this, 'message', function () {
+    common.defineLazyProperty(this, 'message', function() {
       const detail = 'Expected ' + this.getExpectedText();
       return (
         util.getLineAndColumnMessage(this.input, this.getRightmostFailurePosition()) + detail
       );
     });
-    common.defineLazyProperty(this, 'shortMessage', function () {
+    common.defineLazyProperty(this, 'shortMessage', function() {
       const detail = 'expected ' + this.getExpectedText();
       const errorInfo = util.getLineAndColumn(this.input, this.getRightmostFailurePosition());
       return 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ': ' + detail;
@@ -40,40 +40,40 @@ export function MatchResult(
   }
 }
 
-MatchResult.prototype.succeeded = function () {
+MatchResult.prototype.succeeded = function() {
   return !!this._cst;
 };
 
-MatchResult.prototype.failed = function () {
+MatchResult.prototype.failed = function() {
   return !this.succeeded();
 };
 
-MatchResult.prototype.getRightmostFailurePosition = function () {
+MatchResult.prototype.getRightmostFailurePosition = function() {
   return this._rightmostFailurePosition;
 };
 
-MatchResult.prototype.getRightmostFailures = function () {
+MatchResult.prototype.getRightmostFailures = function() {
   if (!this._rightmostFailures) {
     this.matcher.setInput(this.input);
     const matchResultWithFailures = this.matcher._match(
-      this.startExpr,
-      false,
-      this.getRightmostFailurePosition()
+        this.startExpr,
+        false,
+        this.getRightmostFailurePosition(),
     );
     this._rightmostFailures = matchResultWithFailures.getRightmostFailures();
   }
   return this._rightmostFailures;
 };
 
-MatchResult.prototype.toString = function () {
-  return this.succeeded()
-    ? '[match succeeded]'
-    : '[match failed at position ' + this.getRightmostFailurePosition() + ']';
+MatchResult.prototype.toString = function() {
+  return this.succeeded() ?
+    '[match succeeded]' :
+    '[match failed at position ' + this.getRightmostFailurePosition() + ']';
 };
 
 // Return a string summarizing the expected contents of the input stream when
 // the match failure occurred.
-MatchResult.prototype.getExpectedText = function () {
+MatchResult.prototype.getExpectedText = function() {
   if (this.succeeded()) {
     throw new Error('cannot get expected text of a successful MatchResult');
   }
@@ -97,7 +97,7 @@ MatchResult.prototype.getExpectedText = function () {
   return sb.contents();
 };
 
-MatchResult.prototype.getInterval = function () {
+MatchResult.prototype.getInterval = function() {
   const pos = this.getRightmostFailurePosition();
   return new Interval(this.input, pos, pos);
 };

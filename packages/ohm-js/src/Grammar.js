@@ -13,8 +13,8 @@ const SPECIAL_ACTION_NAMES = ['_iter', '_terminal', '_nonterminal', '_default'];
 
 function getSortedRuleValues(grammar) {
   return Object.keys(grammar.rules)
-    .sort()
-    .map(name => grammar.rules[name]);
+      .sort()
+      .map(name => grammar.rules[name]);
 }
 
 // Until ES2019, JSON was not a valid subset of JavaScript because U+2028 (line separator)
@@ -31,11 +31,11 @@ export function Grammar(name, superGrammar, rules, optDefaultStartRule) {
   if (optDefaultStartRule) {
     if (!(optDefaultStartRule in rules)) {
       throw new Error(
-        "Invalid start rule: '" +
+          "Invalid start rule: '" +
           optDefaultStartRule +
           "' is not a rule in grammar '" +
           name +
-          "'"
+          "'",
       );
     }
     this.defaultStartRule = optDefaultStartRule;
@@ -46,7 +46,7 @@ let ohmGrammar;
 let buildGrammar;
 
 // This method is called from main.js once Ohm has loaded.
-Grammar.initApplicationParser = function (grammar, builderFn) {
+Grammar.initApplicationParser = function(grammar, builderFn) {
   ohmGrammar = grammar;
   buildGrammar = builderFn;
 };
@@ -144,10 +144,10 @@ Grammar.prototype = {
     if (problems.length > 0) {
       const prettyProblems = problems.map(problem => '- ' + problem);
       const error = new Error(
-        [
-          `Found errors in the action dictionary of the '${name}' ${what}:`,
-          ...prettyProblems
-        ].join('\n')
+          [
+            `Found errors in the action dictionary of the '${name}' ${what}:`,
+            ...prettyProblems,
+          ].join('\n'),
       );
       error.problems = problems;
       throw error;
@@ -160,9 +160,9 @@ Grammar.prototype = {
     // All special actions have an expected arity of 0, though all but _terminal
     // are expected to use the rest parameter syntax (e.g. `_iter(...children)`).
     // This is considered to have arity 0, i.e. `((...args) => {}).length` is 0.
-    return SPECIAL_ACTION_NAMES.includes(actionName)
-      ? 0
-      : this.rules[actionName].body.getArity();
+    return SPECIAL_ACTION_NAMES.includes(actionName) ?
+      0 :
+      this.rules[actionName].body.getArity();
   },
 
   _inheritsFrom(grammar) {
@@ -215,7 +215,7 @@ Grammar.prototype = {
         metaInfo,
         description,
         ruleInfo.formals,
-        bodyRecipe
+        bodyRecipe,
       ];
     });
 
@@ -231,7 +231,7 @@ Grammar.prototype = {
     const recipeElements = [
       ...['grammar', metaInfo, this.name].map(JSON.stringify),
       superGrammarOutput,
-      ...[startRule, rules].map(JSON.stringify)
+      ...[startRule, rules].map(JSON.stringify),
     ];
     return jsonToJS(`[${recipeElements.join(',')}]`);
   },
@@ -300,14 +300,14 @@ Grammar.prototype = {
     if (formals.length !== app.args.length) {
       const {source} = this.rules[app.ruleName];
       throw errors.wrongNumberOfParameters(
-        app.ruleName,
-        formals.length,
-        app.args.length,
-        source
+          app.ruleName,
+          formals.length,
+          app.args.length,
+          source,
       );
     }
     return app;
-  }
+  },
 };
 
 // The following grammar contains a few rules that couldn't be written  in "userland".
@@ -316,57 +316,57 @@ Grammar.prototype = {
 // `digit`, and is implicitly the super-grammar of any grammar whose super-grammar
 // isn't specified.
 Grammar.ProtoBuiltInRules = new Grammar(
-  'ProtoBuiltInRules', // name
-  undefined, // supergrammar
-  {
-    any: {
-      body: pexprs.any,
-      formals: [],
-      description: 'any character',
-      primitive: true
-    },
-    end: {
-      body: pexprs.end,
-      formals: [],
-      description: 'end of input',
-      primitive: true
-    },
+    'ProtoBuiltInRules', // name
+    undefined, // supergrammar
+    {
+      any: {
+        body: pexprs.any,
+        formals: [],
+        description: 'any character',
+        primitive: true,
+      },
+      end: {
+        body: pexprs.end,
+        formals: [],
+        description: 'end of input',
+        primitive: true,
+      },
 
-    caseInsensitive: {
-      body: new CaseInsensitiveTerminal(new pexprs.Param(0)),
-      formals: ['str'],
-      primitive: true
-    },
-    lower: {
-      body: new pexprs.UnicodeChar('Ll'),
-      formals: [],
-      description: 'a lowercase letter',
-      primitive: true
-    },
-    upper: {
-      body: new pexprs.UnicodeChar('Lu'),
-      formals: [],
-      description: 'an uppercase letter',
-      primitive: true
-    },
-    // Union of Lt (titlecase), Lm (modifier), and Lo (other), i.e. any letter not in Ll or Lu.
-    unicodeLtmo: {
-      body: new pexprs.UnicodeChar('Ltmo'),
-      formals: [],
-      description: 'a Unicode character in Lt, Lm, or Lo',
-      primitive: true
-    },
+      caseInsensitive: {
+        body: new CaseInsensitiveTerminal(new pexprs.Param(0)),
+        formals: ['str'],
+        primitive: true,
+      },
+      lower: {
+        body: new pexprs.UnicodeChar('Ll'),
+        formals: [],
+        description: 'a lowercase letter',
+        primitive: true,
+      },
+      upper: {
+        body: new pexprs.UnicodeChar('Lu'),
+        formals: [],
+        description: 'an uppercase letter',
+        primitive: true,
+      },
+      // Union of Lt (titlecase), Lm (modifier), and Lo (other), i.e. any letter not in Ll or Lu.
+      unicodeLtmo: {
+        body: new pexprs.UnicodeChar('Ltmo'),
+        formals: [],
+        description: 'a Unicode character in Lt, Lm, or Lo',
+        primitive: true,
+      },
 
-    // These rules are not truly primitive (they could be written in userland) but are defined
-    // here for bootstrapping purposes.
-    spaces: {
-      body: new pexprs.Star(new pexprs.Apply('space')),
-      formals: []
+      // These rules are not truly primitive (they could be written in userland) but are defined
+      // here for bootstrapping purposes.
+      spaces: {
+        body: new pexprs.Star(new pexprs.Apply('space')),
+        formals: [],
+      },
+      space: {
+        body: new pexprs.Range('\x00', ' '),
+        formals: [],
+        description: 'a space',
+      },
     },
-    space: {
-      body: new pexprs.Range('\x00', ' '),
-      formals: [],
-      description: 'a space'
-    }
-  }
 );

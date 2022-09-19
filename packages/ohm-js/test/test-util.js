@@ -1,5 +1,3 @@
-'use strict';
-
 // --------------------------------------------------------------------
 // Imports
 // --------------------------------------------------------------------
@@ -22,7 +20,7 @@ test('getLineAndColumn().toString()', t => {
         Line 1, col 1:
         > 1 | 
               ^\n`,
-      'empty input'
+      'empty input',
   );
 
   t.is(
@@ -31,7 +29,7 @@ test('getLineAndColumn().toString()', t => {
         Line 1, col 3:
         > 1 | 3 + 4
               ~ ^ ~\n`,
-      'more than one range'
+      'more than one range',
   );
 });
 
@@ -44,7 +42,7 @@ test('getLineAndColumnMessage', t => {
         Line 1, col 1:
         > 1 | 
               ^\n`,
-      'empty input'
+      'empty input',
   );
 
   let expected = dedent`
@@ -113,7 +111,7 @@ test('getLineAndColumnMessage with ranges', t => {
         Line 1, col 3:
         > 1 | 3 + 4
               ~ ^\n`,
-      'a simple range'
+      'a simple range',
   );
 
   t.is(
@@ -122,7 +120,7 @@ test('getLineAndColumnMessage with ranges', t => {
         Line 1, col 3:
         > 1 | 3 + 4
               ~ ^ ~\n`,
-      'more than one range'
+      'more than one range',
   );
 
   t.is(
@@ -131,13 +129,13 @@ test('getLineAndColumnMessage with ranges', t => {
         Line 1, col 3:
         > 1 | 3 + 4
               ~~^~~\n`,
-      'end index out of bounds'
+      'end index out of bounds',
   );
 
   t.is(
       getLineAndColumnMessage('3 + 4', 2, [0, 0]),
       getLineAndColumnMessage('3 + 4', 2),
-      'empty range'
+      'empty range',
   );
 
   t.is(
@@ -146,7 +144,7 @@ test('getLineAndColumnMessage with ranges', t => {
         Line 1, col 1:
         > 1 | 3 + 4
               ^~~~~\n`,
-      'overlapping ranges'
+      'overlapping ranges',
   );
 
   t.is(
@@ -156,7 +154,7 @@ test('getLineAndColumnMessage with ranges', t => {
           1 | blah
         > 2 | 3 + 4
               ~ ^\n`,
-      'range on second line'
+      'range on second line',
   );
 
   t.is(
@@ -166,7 +164,7 @@ test('getLineAndColumnMessage with ranges', t => {
           1 | blah
         > 2 | 3 + 4
               ~ ^\n`,
-      'range crossing lines'
+      'range crossing lines',
   );
 
   t.is(
@@ -176,6 +174,6 @@ test('getLineAndColumnMessage with ranges', t => {
           1 | blah
         > 2 | 3 + 4
               ~~^~~\n`,
-      'range crossing lines at start and end'
+      'range crossing lines at start and end',
   );
 });

@@ -1,5 +1,3 @@
-'use strict';
-
 function handleListOf(child) {
   return child.toAST(this.args.mapping);
 }

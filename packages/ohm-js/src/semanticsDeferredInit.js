@@ -12,17 +12,17 @@ function initBuiltInSemantics(builtInRules) {
     },
     nonEmpty(first, _, rest) {
       return this.iteration([first].concat(rest.children));
-    }
+    },
   };
 
   Semantics.BuiltInSemantics = Semantics.createSemantics(builtInRules, null).addOperation(
-    'asIteration',
-    {
-      emptyListOf: actions.empty,
-      nonemptyListOf: actions.nonEmpty,
-      EmptyListOf: actions.empty,
-      NonemptyListOf: actions.nonEmpty
-    }
+      'asIteration',
+      {
+        emptyListOf: actions.empty,
+        nonemptyListOf: actions.nonEmpty,
+        EmptyListOf: actions.empty,
+        NonemptyListOf: actions.nonEmpty,
+      },
   );
 }
 
@@ -31,13 +31,13 @@ function initPrototypeParser(grammar) {
     AttributeSignature(name) {
       return {
         name: name.parse(),
-        formals: []
+        formals: [],
       };
     },
     OperationSignature(name, optFormals) {
       return {
         name: name.parse(),
-        formals: optFormals.children.map(c => c.parse())[0] || []
+        formals: optFormals.children.map(c => c.parse())[0] || [],
       };
     },
     Formals(oparen, fs, cparen) {
@@ -45,7 +45,7 @@ function initPrototypeParser(grammar) {
     },
     name(first, rest) {
       return this.sourceString;
-    }
+    },
   });
   Semantics.prototypeGrammar = grammar;
 }
