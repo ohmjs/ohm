@@ -1,11 +1,5 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const UnicodeCategories = require('../third_party/UnicodeCategories');
-const common = require('./common');
+import {UnicodeCategories} from '../third_party/UnicodeCategories.js';
+import * as common from './common.js';
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -13,7 +7,7 @@ const common = require('./common');
 
 // General stuff
 
-class PExpr {
+export class PExpr {
   constructor() {
     if (this.constructor === PExpr) {
       throw new Error("PExpr cannot be instantiated -- it's abstract");
@@ -31,15 +25,15 @@ class PExpr {
 
 // Any
 
-const any = Object.create(PExpr.prototype);
+export const any = Object.create(PExpr.prototype);
 
 // End
 
-const end = Object.create(PExpr.prototype);
+export const end = Object.create(PExpr.prototype);
 
 // Terminals
 
-class Terminal extends PExpr {
+export class Terminal extends PExpr {
   constructor(obj) {
     super();
     this.obj = obj;
@@ -48,7 +42,7 @@ class Terminal extends PExpr {
 
 // Ranges
 
-class Range extends PExpr {
+export class Range extends PExpr {
   constructor(from, to) {
     super();
     this.from = from;
@@ -61,7 +55,7 @@ class Range extends PExpr {
 
 // Parameters
 
-class Param extends PExpr {
+export class Param extends PExpr {
   constructor(index) {
     super();
     this.index = index;
@@ -70,7 +64,7 @@ class Param extends PExpr {
 
 // Alternation
 
-class Alt extends PExpr {
+export class Alt extends PExpr {
   constructor(terms) {
     super();
     this.terms = terms;
@@ -79,7 +73,7 @@ class Alt extends PExpr {
 
 // Extend is an implementation detail of rule extension
 
-class Extend extends Alt {
+export class Extend extends Alt {
   constructor(superGrammar, name, body) {
     const origBody = superGrammar.rules[name].body;
     super([body, origBody]);
@@ -91,7 +85,7 @@ class Extend extends Alt {
 }
 
 // Splice is an implementation detail of rule overriding with the `...` operator.
-class Splice extends Alt {
+export class Splice extends Alt {
   constructor(superGrammar, ruleName, beforeTerms, afterTerms) {
     const origBody = superGrammar.rules[ruleName].body;
     super([...beforeTerms, origBody, ...afterTerms]);
@@ -104,7 +98,7 @@ class Splice extends Alt {
 
 // Sequences
 
-class Seq extends PExpr {
+export class Seq extends PExpr {
   constructor(factors) {
     super();
     this.factors = factors;
@@ -113,16 +107,16 @@ class Seq extends PExpr {
 
 // Iterators and optionals
 
-class Iter extends PExpr {
+export class Iter extends PExpr {
   constructor(expr) {
     super();
     this.expr = expr;
   }
 }
 
-class Star extends Iter {}
-class Plus extends Iter {}
-class Opt extends Iter {}
+export class Star extends Iter {}
+export class Plus extends Iter {}
+export class Opt extends Iter {}
 
 Star.prototype.operator = '*';
 Plus.prototype.operator = '+';
@@ -138,14 +132,14 @@ Opt.prototype.maxNumMatches = 1;
 
 // Predicates
 
-class Not extends PExpr {
+export class Not extends PExpr {
   constructor(expr) {
     super();
     this.expr = expr;
   }
 }
 
-class Lookahead extends PExpr {
+export class Lookahead extends PExpr {
   constructor(expr) {
     super();
     this.expr = expr;
@@ -154,7 +148,7 @@ class Lookahead extends PExpr {
 
 // "Lexification"
 
-class Lex extends PExpr {
+export class Lex extends PExpr {
   constructor(expr) {
     super();
     this.expr = expr;
@@ -163,7 +157,7 @@ class Lex extends PExpr {
 
 // Rule application
 
-class Apply extends PExpr {
+export class Apply extends PExpr {
   constructor(ruleName, args = []) {
     super();
     this.ruleName = ruleName;
@@ -185,34 +179,10 @@ class Apply extends PExpr {
 
 // Unicode character
 
-class UnicodeChar extends PExpr {
+export class UnicodeChar extends PExpr {
   constructor(category) {
     super();
     this.category = category;
     this.pattern = UnicodeCategories[category];
   }
 }
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-exports.PExpr = PExpr;
-exports.any = any;
-exports.end = end;
-exports.Terminal = Terminal;
-exports.Range = Range;
-exports.Param = Param;
-exports.Alt = Alt;
-exports.Extend = Extend;
-exports.Splice = Splice;
-exports.Seq = Seq;
-exports.Iter = Iter;
-exports.Star = Star;
-exports.Plus = Plus;
-exports.Opt = Opt;
-exports.Not = Not;
-exports.Lookahead = Lookahead;
-exports.Lex = Lex;
-exports.Apply = Apply;
-exports.UnicodeChar = UnicodeChar;

@@ -1,11 +1,5 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const Interval = require('./Interval');
-const common = require('./common');
+import {Interval} from './Interval.js';
+import * as common from './common.js';
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -26,7 +20,7 @@ const Flags = {
   isImplicitSpaces: 1 << 2,
   isMemoized: 1 << 3,
   isHeadOfLeftRecursion: 1 << 4,
-  terminatesLR: 1 << 5,
+  terminatesLR: 1 << 5
 };
 
 function spaces(n) {
@@ -49,17 +43,17 @@ function asEscapedString(obj) {
   if (typeof obj === 'string') {
     // Replace non-printable characters with visible symbols.
     return obj
-        .replace(/ /g, DOT_OPERATOR)
-        .replace(/\t/g, SYMBOL_FOR_HORIZONTAL_TABULATION)
-        .replace(/\n/g, SYMBOL_FOR_LINE_FEED)
-        .replace(/\r/g, SYMBOL_FOR_CARRIAGE_RETURN);
+      .replace(/ /g, DOT_OPERATOR)
+      .replace(/\t/g, SYMBOL_FOR_HORIZONTAL_TABULATION)
+      .replace(/\n/g, SYMBOL_FOR_LINE_FEED)
+      .replace(/\r/g, SYMBOL_FOR_CARRIAGE_RETURN);
   }
   return String(obj);
 }
 
 // ----------------- Trace -----------------
 
-function Trace(input, pos1, pos2, expr, succeeded, bindings, optChildren) {
+export function Trace(input, pos1, pos2, expr, succeeded, bindings, optChildren) {
   this.input = input;
   this.pos = this.pos1 = pos1;
   this.pos2 = pos2;
@@ -79,7 +73,7 @@ Trace.prototype.SKIP = {};
 Object.defineProperty(Trace.prototype, 'displayString', {
   get() {
     return this.expr.toDisplayString();
-  },
+  }
 });
 
 // For convenience, create a getter and setter for the boolean flags in `Flags`.
@@ -95,23 +89,23 @@ Object.keys(Flags).forEach(name => {
       } else {
         this._flags &= ~mask;
       }
-    },
+    }
   });
 });
 
-Trace.prototype.clone = function() {
+Trace.prototype.clone = function () {
   return this.cloneWithExpr(this.expr);
 };
 
-Trace.prototype.cloneWithExpr = function(expr) {
+Trace.prototype.cloneWithExpr = function (expr) {
   const ans = new Trace(
-      this.input,
-      this.pos,
-      this.pos2,
-      expr,
-      this.succeeded,
-      this.bindings,
-      this.children
+    this.input,
+    this.pos,
+    this.pos2,
+    expr,
+    this.succeeded,
+    this.bindings,
+    this.children
   );
 
   ans.isHeadOfLeftRecursion = this.isHeadOfLeftRecursion;
@@ -124,15 +118,15 @@ Trace.prototype.cloneWithExpr = function(expr) {
 };
 
 // Record the trace information for the terminating condition of the LR loop.
-Trace.prototype.recordLRTermination = function(ruleBodyTrace, value) {
+Trace.prototype.recordLRTermination = function (ruleBodyTrace, value) {
   this.terminatingLREntry = new Trace(
-      this.input,
-      this.pos,
-      this.pos2,
-      this.expr,
-      false,
-      [value],
-      [ruleBodyTrace]
+    this.input,
+    this.pos,
+    this.pos2,
+    this.expr,
+    false,
+    [value],
+    [ruleBodyTrace]
   );
   this.terminatingLREntry.terminatesLR = true;
 };
@@ -146,7 +140,7 @@ Trace.prototype.recordLRTermination = function(ruleBodyTrace, value) {
 // The functions are called with three arguments: the Trace node, its parent Trace, and a number
 // representing the depth of the node in the tree. (The root node has depth 0.) `optThisArg`, if
 // specified, is the value to use for `this` when executing the visitor functions.
-Trace.prototype.walk = function(visitorObjOrFn, optThisArg) {
+Trace.prototype.walk = function (visitorObjOrFn, optThisArg) {
   let visitor = visitorObjOrFn;
   if (typeof visitor === 'function') {
     visitor = {enter: visitor};
@@ -183,7 +177,7 @@ Trace.prototype.walk = function(visitorObjOrFn, optThisArg) {
 //     12⋅+⋅2⋅*⋅3 ✓ exp ⇒  "12"
 //     12⋅+⋅2⋅*⋅3   ✓ addExp (LR) ⇒  "12"
 //     12⋅+⋅2⋅*⋅3       ✗ addExp_plus
-Trace.prototype.toString = function() {
+Trace.prototype.toString = function () {
   const sb = new common.StringBuffer();
   this.walk((node, parent, depth) => {
     if (!node) {
@@ -208,9 +202,3 @@ Trace.prototype.toString = function() {
   });
   return sb.contents();
 };
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = Trace;

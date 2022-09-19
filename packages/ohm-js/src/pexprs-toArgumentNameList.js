@@ -1,13 +1,5 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const common = require('./common');
-const pexprs = require('./pexprs-main');
-
-const {copyWithoutDuplicates} = common;
+import {abstract, copyWithoutDuplicates} from './common.js';
+import * as pexprs from './pexprs-main.js';
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -71,17 +63,17 @@ function resolveDuplicatedNames(argumentNameList) {
   * e.getArity() === e.toArgumentNameList(1).length
 */
 // function(firstArgIndex, noDupCheck) { ... }
-pexprs.PExpr.prototype.toArgumentNameList = common.abstract('toArgumentNameList');
+pexprs.PExpr.prototype.toArgumentNameList = abstract('toArgumentNameList');
 
-pexprs.any.toArgumentNameList = function(firstArgIndex, noDupCheck) {
+pexprs.any.toArgumentNameList = function (firstArgIndex, noDupCheck) {
   return ['any'];
 };
 
-pexprs.end.toArgumentNameList = function(firstArgIndex, noDupCheck) {
+pexprs.end.toArgumentNameList = function (firstArgIndex, noDupCheck) {
   return ['end'];
 };
 
-pexprs.Terminal.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
+pexprs.Terminal.prototype.toArgumentNameList = function (firstArgIndex, noDupCheck) {
   if (typeof this.obj === 'string' && /^[_a-zA-Z0-9]+$/.test(this.obj)) {
     // If this terminal is a valid suffix for a JS identifier, just prepend it with '_'
     return ['_' + this.obj];
@@ -91,7 +83,7 @@ pexprs.Terminal.prototype.toArgumentNameList = function(firstArgIndex, noDupChec
   }
 };
 
-pexprs.Range.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
+pexprs.Range.prototype.toArgumentNameList = function (firstArgIndex, noDupCheck) {
   let argName = this.from + '_to_' + this.to;
   // If the `argName` is not valid then try to prepend a `_`.
   if (!isRestrictedJSIdentifier(argName)) {
@@ -104,7 +96,7 @@ pexprs.Range.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) 
   return [argName];
 };
 
-pexprs.Alt.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
+pexprs.Alt.prototype.toArgumentNameList = function (firstArgIndex, noDupCheck) {
   // `termArgNameLists` is an array of arrays where each row is the
   // argument name list that corresponds to a term in this alternation.
   const termArgNameLists = this.terms.map(term =>
@@ -128,7 +120,7 @@ pexprs.Alt.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
   return argumentNameList;
 };
 
-pexprs.Seq.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
+pexprs.Seq.prototype.toArgumentNameList = function (firstArgIndex, noDupCheck) {
   // Generate the argument name list, without worrying about duplicates.
   let argumentNameList = [];
   this.factors.forEach(factor => {
@@ -144,44 +136,44 @@ pexprs.Seq.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
   return argumentNameList;
 };
 
-pexprs.Iter.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
+pexprs.Iter.prototype.toArgumentNameList = function (firstArgIndex, noDupCheck) {
   const argumentNameList = this.expr
-      .toArgumentNameList(firstArgIndex, noDupCheck)
-      .map(exprArgumentString =>
-      exprArgumentString[exprArgumentString.length - 1] === 's' ?
-        exprArgumentString + 'es' :
-        exprArgumentString + 's'
-      );
+    .toArgumentNameList(firstArgIndex, noDupCheck)
+    .map(exprArgumentString =>
+      exprArgumentString[exprArgumentString.length - 1] === 's'
+        ? exprArgumentString + 'es'
+        : exprArgumentString + 's'
+    );
   if (!noDupCheck) {
     resolveDuplicatedNames(argumentNameList);
   }
   return argumentNameList;
 };
 
-pexprs.Opt.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
+pexprs.Opt.prototype.toArgumentNameList = function (firstArgIndex, noDupCheck) {
   return this.expr.toArgumentNameList(firstArgIndex, noDupCheck).map(argName => {
     return 'opt' + argName[0].toUpperCase() + argName.slice(1);
   });
 };
 
-pexprs.Not.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
+pexprs.Not.prototype.toArgumentNameList = function (firstArgIndex, noDupCheck) {
   return [];
 };
 
 pexprs.Lookahead.prototype.toArgumentNameList = pexprs.Lex.prototype.toArgumentNameList =
-  function(firstArgIndex, noDupCheck) {
+  function (firstArgIndex, noDupCheck) {
     return this.expr.toArgumentNameList(firstArgIndex, noDupCheck);
   };
 
-pexprs.Apply.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
+pexprs.Apply.prototype.toArgumentNameList = function (firstArgIndex, noDupCheck) {
   return [this.ruleName];
 };
 
-pexprs.UnicodeChar.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
+pexprs.UnicodeChar.prototype.toArgumentNameList = function (firstArgIndex, noDupCheck) {
   return ['$' + firstArgIndex];
 };
 
-pexprs.Param.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
+pexprs.Param.prototype.toArgumentNameList = function (firstArgIndex, noDupCheck) {
   return ['param' + this.index];
 };
 

@@ -1,26 +1,15 @@
-'use strict';
+import ohmGrammar from '../dist/ohm-grammar.js';
+import {Builder} from './Builder.js';
+import * as common from './common.js';
+import * as errors from './errors.js';
+import {Grammar} from './Grammar.js';
+import {Namespace} from './Namespace.js';
+import * as pexprs from './pexprs.js';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
+// Late initialization for stuff that is bootstrapped.
 
-const Builder = require('./Builder');
-const Grammar = require('./Grammar');
-const Namespace = require('./Namespace');
-const common = require('./common');
-const errors = require('./errors');
-const pexprs = require('./pexprs');
-const util = require('./util');
-const version = require('./version');
-const {makeRecipe} = require('./makeRecipe');
-
-// --------------------------------------------------------------------
-// Private stuff
-// --------------------------------------------------------------------
-
-// The metagrammar, i.e. the grammar for Ohm grammars. Initialized at the
-// bottom of this file because loading the grammar requires Ohm itself.
-let ohmGrammar;
+import './semanticsDeferredInit.js'; // TODO: Clean this up.
+Grammar.initApplicationParser(ohmGrammar, buildGrammar);
 
 const superSplicePlaceholder = Object.create(pexprs.PExpr.prototype);
 
@@ -122,10 +111,10 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
         });
 
         return new pexprs.Splice(
-            decl.superGrammar,
-            currentRuleName,
-            beforeTerms,
-            afterTerms
+          decl.superGrammar,
+          currentRuleName,
+          beforeTerms,
+          afterTerms
         ).withSource(this.source);
       } else {
         return builder.alt(...args).withSource(this.source);
@@ -246,7 +235,7 @@ function buildGrammar(match, namespace, optOhmGrammarForTesting) {
 
     _terminal() {
       return this.sourceString;
-    },
+    }
   });
   return helpers(match).visit();
 }
@@ -259,7 +248,7 @@ function compileAndLoad(source, namespace) {
   return buildGrammar(m, namespace);
 }
 
-function grammar(source, optNamespace) {
+export function grammar(source, optNamespace) {
   const ns = grammars(source, optNamespace);
 
   // Ensure that the source contained no more than one grammar definition.
@@ -270,14 +259,14 @@ function grammar(source, optNamespace) {
     const secondGrammar = ns[grammarNames[1]];
     const interval = secondGrammar.source;
     throw new Error(
-        util.getLineAndColumnMessage(interval.sourceString, interval.startIdx) +
+      util.getLineAndColumnMessage(interval.sourceString, interval.startIdx) +
         'Found more than one grammar definition -- use ohm.grammars() instead.'
     );
   }
   return ns[grammarNames[0]]; // Return the one and only grammar.
 }
 
-function grammars(source, optNamespace) {
+export function grammars(source, optNamespace) {
   const ns = Namespace.extend(Namespace.asNamespace(optNamespace));
   if (typeof source !== 'string') {
     // For convenience, detect Node.js Buffer objects and automatically call toString().
@@ -285,7 +274,7 @@ function grammars(source, optNamespace) {
       source = source.toString();
     } else {
       throw new TypeError(
-          'Expected string as first argument, got ' + common.unexpectedObjToString(source)
+        'Expected string as first argument, got ' + common.unexpectedObjToString(source)
       );
     }
   }
@@ -293,43 +282,22 @@ function grammars(source, optNamespace) {
   return ns;
 }
 
-function grammarFromScriptElement(optNode) {
+export function grammarFromScriptElement(optNode) {
   throw new Error(
-      'grammarFromScriptElement was removed in Ohm v16.0. See https://ohmjs.org/d/gfs for more info.'
+    'grammarFromScriptElement was removed in Ohm v16.0. See https://ohmjs.org/d/gfs for more info.'
   );
 }
 
-function grammarsFromScriptElements(optNodeOrNodeList) {
+export function grammarsFromScriptElements(optNodeOrNodeList) {
   throw new Error(
-      'grammarsFromScriptElements was removed in Ohm v16.0. See https://ohmjs.org/d/gfs for more info.'
+    'grammarsFromScriptElements was removed in Ohm v16.0. See https://ohmjs.org/d/gfs for more info.'
   );
 }
 
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-// Stuff that users should know about
-module.exports = {
-  createNamespace: Namespace.createNamespace,
-  grammar,
-  grammars,
-  grammarFromScriptElement,
-  grammarsFromScriptElements,
-  makeRecipe,
-  ohmGrammar: null, // Initialized below, after Grammar.BuiltInRules.
-  pexprs,
-  util,
-  version,
-};
+export * from './main-kernel.js';
+export const createNamespace = Namespace.createNamespace;
+export {default as ohmGrammar} from '../dist/ohm-grammar.js';
 
 // Stuff for testing, etc.
-module.exports._buildGrammar = buildGrammar;
 
-// Late initialization for stuff that is bootstrapped.
-
-require('./deferredInit');
-util.announceBuiltInRules(Grammar.BuiltInRules);
-
-module.exports.ohmGrammar = ohmGrammar = require('../dist/ohm-grammar');
-Grammar.initApplicationParser(ohmGrammar, buildGrammar);
+export const _buildGrammar = buildGrammar;

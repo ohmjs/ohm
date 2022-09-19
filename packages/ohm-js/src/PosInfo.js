@@ -1,10 +1,4 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Private stuff
-// --------------------------------------------------------------------
-
-function PosInfo() {
+export function PosInfo() {
   this.applicationMemoKeyStack = []; // active applications at this position
   this.memo = {};
   this.maxExaminedLength = 0;
@@ -35,14 +29,14 @@ PosInfo.prototype = {
     const indexOfFirstInvolvedRule =
       applicationMemoKeyStack.indexOf(headApplication.toMemoKey()) + 1;
     const involvedApplicationMemoKeys = applicationMemoKeyStack.slice(
-        indexOfFirstInvolvedRule
+      indexOfFirstInvolvedRule
     );
 
-    memoRec.isInvolved = function(applicationMemoKey) {
+    memoRec.isInvolved = function (applicationMemoKey) {
       return involvedApplicationMemoKeys.indexOf(applicationMemoKey) >= 0;
     };
 
-    memoRec.updateInvolvedApplicationMemoKeys = function() {
+    memoRec.updateInvolvedApplicationMemoKeys = function () {
       for (let idx = indexOfFirstInvolvedRule; idx < applicationMemoKeyStack.length; idx++) {
         const applicationMemoKey = applicationMemoKeyStack[idx];
         if (!this.isInvolved(applicationMemoKey)) {
@@ -76,8 +70,8 @@ PosInfo.prototype = {
     this.memo[memoKey] = memoRec;
     this.maxExaminedLength = Math.max(this.maxExaminedLength, memoRec.examinedLength);
     this.maxRightmostFailureOffset = Math.max(
-        this.maxRightmostFailureOffset,
-        memoRec.rightmostFailureOffset
+      this.maxRightmostFailureOffset,
+      memoRec.rightmostFailureOffset
     );
     return memoRec;
   },
@@ -99,16 +93,10 @@ PosInfo.prototype = {
       } else {
         this.maxExaminedLength = Math.max(this.maxExaminedLength, memoRec.examinedLength);
         this.maxRightmostFailureOffset = Math.max(
-            this.maxRightmostFailureOffset,
-            memoRec.rightmostFailureOffset
+          this.maxRightmostFailureOffset,
+          memoRec.rightmostFailureOffset
         );
       }
     });
-  },
+  }
 };
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = PosInfo;

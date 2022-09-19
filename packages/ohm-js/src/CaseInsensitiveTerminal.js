@@ -1,15 +1,9 @@
-'use strict';
+import {Failure} from './Failure.js';
+import {TerminalNode} from './nodes.js';
+import {assert} from './common.js';
+import {PExpr, Terminal} from './pexprs.js';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const Failure = require('./Failure');
-const {TerminalNode} = require('./nodes');
-const {assert} = require('./common');
-const {PExpr, Terminal} = require('./pexprs');
-
-class CaseInsensitiveTerminal extends PExpr {
+export class CaseInsensitiveTerminal extends PExpr {
   constructor(param) {
     super();
     this.obj = param;
@@ -54,9 +48,9 @@ class CaseInsensitiveTerminal extends PExpr {
 
   toFailure(grammar) {
     return new Failure(
-        this,
-        this.obj.toFailure(grammar) + ' (case-insensitive)',
-        'description'
+      this,
+      this.obj.toFailure(grammar) + ' (case-insensitive)',
+      'description'
     );
   }
 
@@ -64,5 +58,3 @@ class CaseInsensitiveTerminal extends PExpr {
     return this.obj._isNullable(grammar, memo);
   }
 }
-
-module.exports = CaseInsensitiveTerminal;

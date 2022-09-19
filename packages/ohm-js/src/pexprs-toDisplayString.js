@@ -1,20 +1,14 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const common = require('./common');
-const pexprs = require('./pexprs-main');
+import {abstract} from './common.js';
+import * as pexprs from './pexprs-main.js';
 
 // --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
 
 // Returns a string representing the PExpr, for use as a UI label, etc.
-pexprs.PExpr.prototype.toDisplayString = common.abstract('toDisplayString');
+pexprs.PExpr.prototype.toDisplayString = abstract('toDisplayString');
 
-pexprs.Alt.prototype.toDisplayString = pexprs.Seq.prototype.toDisplayString = function() {
+pexprs.Alt.prototype.toDisplayString = pexprs.Seq.prototype.toDisplayString = function () {
   if (this.source) {
     return this.source.trimmed().contents;
   }
@@ -30,11 +24,11 @@ pexprs.any.toDisplayString =
   pexprs.Terminal.prototype.toDisplayString =
   pexprs.Range.prototype.toDisplayString =
   pexprs.Param.prototype.toDisplayString =
-    function() {
+    function () {
       return this.toString();
     };
 
-pexprs.Apply.prototype.toDisplayString = function() {
+pexprs.Apply.prototype.toDisplayString = function () {
   if (this.args.length > 0) {
     const ps = this.args.map(arg => arg.toDisplayString());
     return this.ruleName + '<' + ps.join(',') + '>';
@@ -43,6 +37,6 @@ pexprs.Apply.prototype.toDisplayString = function() {
   }
 };
 
-pexprs.UnicodeChar.prototype.toDisplayString = function() {
+pexprs.UnicodeChar.prototype.toDisplayString = function () {
   return 'Unicode [' + this.category + '] character';
 };

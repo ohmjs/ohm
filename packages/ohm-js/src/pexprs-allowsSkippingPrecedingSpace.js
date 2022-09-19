@@ -1,11 +1,5 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const common = require('./common');
-const pexprs = require('./pexprs-main');
+import {abstract} from './common.js';
+import * as pexprs from './pexprs-main.js';
 
 // --------------------------------------------------------------------
 // Operations
@@ -14,9 +8,7 @@ const pexprs = require('./pexprs-main');
 /*
   Return true if we should skip spaces preceding this expression in a syntactic context.
 */
-pexprs.PExpr.prototype.allowsSkippingPrecedingSpace = common.abstract(
-    'allowsSkippingPrecedingSpace'
-);
+pexprs.PExpr.prototype.allowsSkippingPrecedingSpace = abstract('allowsSkippingPrecedingSpace');
 
 /*
   Generally, these are all first-order expressions and (with the exception of Apply)
@@ -28,7 +20,7 @@ pexprs.any.allowsSkippingPrecedingSpace =
   pexprs.Terminal.prototype.allowsSkippingPrecedingSpace =
   pexprs.Range.prototype.allowsSkippingPrecedingSpace =
   pexprs.UnicodeChar.prototype.allowsSkippingPrecedingSpace =
-    function() {
+    function () {
       return true;
     };
 
@@ -42,6 +34,6 @@ pexprs.Alt.prototype.allowsSkippingPrecedingSpace =
   pexprs.Not.prototype.allowsSkippingPrecedingSpace =
   pexprs.Param.prototype.allowsSkippingPrecedingSpace =
   pexprs.Seq.prototype.allowsSkippingPrecedingSpace =
-    function() {
+    function () {
       return false;
     };

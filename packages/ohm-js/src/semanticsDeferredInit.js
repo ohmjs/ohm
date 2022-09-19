@@ -1,19 +1,9 @@
-'use strict';
+import operationsAndAttributesGrammar from '../dist/operations-and-attributes.js';
+import {Grammar} from './Grammar.js';
+import {Semantics} from './Semantics.js';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const Semantics = require('./Semantics');
-const util = require('./util');
-
-// ----------------- Deferred initialization -----------------
-
-util.awaitBuiltInRules(builtInRules => {
-  const operationsAndAttributesGrammar = require('../dist/operations-and-attributes');
-  initBuiltInSemantics(builtInRules);
-  initPrototypeParser(operationsAndAttributesGrammar); // requires BuiltInSemantics
-});
+initBuiltInSemantics(Grammar.BuiltInRules);
+initPrototypeParser(operationsAndAttributesGrammar); // requires BuiltInSemantics
 
 function initBuiltInSemantics(builtInRules) {
   const actions = {
@@ -22,17 +12,17 @@ function initBuiltInSemantics(builtInRules) {
     },
     nonEmpty(first, _, rest) {
       return this.iteration([first].concat(rest.children));
-    },
+    }
   };
 
   Semantics.BuiltInSemantics = Semantics.createSemantics(builtInRules, null).addOperation(
-      'asIteration',
-      {
-        emptyListOf: actions.empty,
-        nonemptyListOf: actions.nonEmpty,
-        EmptyListOf: actions.empty,
-        NonemptyListOf: actions.nonEmpty,
-      }
+    'asIteration',
+    {
+      emptyListOf: actions.empty,
+      nonemptyListOf: actions.nonEmpty,
+      EmptyListOf: actions.empty,
+      NonemptyListOf: actions.nonEmpty
+    }
   );
 }
 
@@ -41,13 +31,13 @@ function initPrototypeParser(grammar) {
     AttributeSignature(name) {
       return {
         name: name.parse(),
-        formals: [],
+        formals: []
       };
     },
     OperationSignature(name, optFormals) {
       return {
         name: name.parse(),
-        formals: optFormals.children.map(c => c.parse())[0] || [],
+        formals: optFormals.children.map(c => c.parse())[0] || []
       };
     },
     Formals(oparen, fs, cparen) {
@@ -55,7 +45,7 @@ function initPrototypeParser(grammar) {
     },
     name(first, rest) {
       return this.sourceString;
-    },
+    }
   });
   Semantics.prototypeGrammar = grammar;
 }

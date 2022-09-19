@@ -1,14 +1,8 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const Grammar = require('./Grammar');
-const InputStream = require('./InputStream');
-const common = require('./common');
-const errors = require('./errors');
-const pexprs = require('./pexprs');
+import {Grammar} from './Grammar.js';
+import {InputStream} from './InputStream.js';
+import {getDuplicates} from './common.js';
+import * as errors from './errors.js';
+import * as pexprs from './pexprs.js';
 
 // --------------------------------------------------------------------
 // Private Stuff
@@ -16,17 +10,17 @@ const pexprs = require('./pexprs');
 
 // Constructors
 
-function GrammarDecl(name) {
+export function GrammarDecl(name) {
   this.name = name;
 }
 
 // Helpers
 
-GrammarDecl.prototype.sourceInterval = function(startIdx, endIdx) {
+GrammarDecl.prototype.sourceInterval = function (startIdx, endIdx) {
   return this.source.subInterval(startIdx, endIdx - startIdx);
 };
 
-GrammarDecl.prototype.ensureSuperGrammar = function() {
+GrammarDecl.prototype.ensureSuperGrammar = function () {
   if (!this.superGrammar) {
     this.withSuperGrammar(
       // TODO: The conditional expression below is an ugly hack. It's kind of ok because
@@ -38,7 +32,7 @@ GrammarDecl.prototype.ensureSuperGrammar = function() {
   return this.superGrammar;
 };
 
-GrammarDecl.prototype.ensureSuperGrammarRuleForOverriding = function(name, source) {
+GrammarDecl.prototype.ensureSuperGrammarRuleForOverriding = function (name, source) {
   const ruleInfo = this.ensureSuperGrammar().rules[name];
   if (!ruleInfo) {
     throw errors.cannotOverrideUndeclaredRule(name, this.superGrammar.name, source);
@@ -46,13 +40,13 @@ GrammarDecl.prototype.ensureSuperGrammarRuleForOverriding = function(name, sourc
   return ruleInfo;
 };
 
-GrammarDecl.prototype.installOverriddenOrExtendedRule = function(
-    name,
-    formals,
-    body,
-    source
+GrammarDecl.prototype.installOverriddenOrExtendedRule = function (
+  name,
+  formals,
+  body,
+  source
 ) {
-  const duplicateParameterNames = common.getDuplicates(formals);
+  const duplicateParameterNames = getDuplicates(formals);
   if (duplicateParameterNames.length > 0) {
     throw errors.duplicateParameterNames(name, duplicateParameterNames, source);
   }
@@ -65,19 +59,19 @@ GrammarDecl.prototype.installOverriddenOrExtendedRule = function(
   return this.install(name, formals, body, ruleInfo.description, source);
 };
 
-GrammarDecl.prototype.install = function(name, formals, body, description, source) {
+GrammarDecl.prototype.install = function (name, formals, body, description, source) {
   this.rules[name] = {
     body: body.introduceParams(formals),
     formals,
     description,
-    source,
+    source
   };
   return this;
 };
 
 // Stuff that you should only do once
 
-GrammarDecl.prototype.withSuperGrammar = function(superGrammar) {
+GrammarDecl.prototype.withSuperGrammar = function (superGrammar) {
   if (this.superGrammar) {
     throw new Error('the super grammar of a GrammarDecl cannot be set more than once');
   }
@@ -91,23 +85,23 @@ GrammarDecl.prototype.withSuperGrammar = function(superGrammar) {
   return this;
 };
 
-GrammarDecl.prototype.withDefaultStartRule = function(ruleName) {
+GrammarDecl.prototype.withDefaultStartRule = function (ruleName) {
   this.defaultStartRule = ruleName;
   return this;
 };
 
-GrammarDecl.prototype.withSource = function(source) {
+GrammarDecl.prototype.withSource = function (source) {
   this.source = new InputStream(source).interval(0, source.length);
   return this;
 };
 
 // Creates a Grammar instance, and if it passes the sanity checks, returns it.
-GrammarDecl.prototype.build = function() {
+GrammarDecl.prototype.build = function () {
   const grammar = new Grammar(
-      this.name,
-      this.ensureSuperGrammar(),
-      this.rules,
-      this.defaultStartRule
+    this.name,
+    this.ensureSuperGrammar(),
+    this.rules,
+    this.defaultStartRule
   );
 
   // TODO: change the pexpr.prototype.assert... methods to make them add
@@ -154,27 +148,27 @@ GrammarDecl.prototype.build = function() {
 
 // Rule declarations
 
-GrammarDecl.prototype.define = function(name, formals, body, description, source) {
+GrammarDecl.prototype.define = function (name, formals, body, description, source) {
   this.ensureSuperGrammar();
   if (this.superGrammar.rules[name]) {
     throw errors.duplicateRuleDeclaration(name, this.name, this.superGrammar.name, source);
   } else if (this.rules[name]) {
     throw errors.duplicateRuleDeclaration(name, this.name, this.name, source);
   }
-  const duplicateParameterNames = common.getDuplicates(formals);
+  const duplicateParameterNames = getDuplicates(formals);
   if (duplicateParameterNames.length > 0) {
     throw errors.duplicateParameterNames(name, duplicateParameterNames, source);
   }
   return this.install(name, formals, body, description, source);
 };
 
-GrammarDecl.prototype.override = function(name, formals, body, descIgnored, source) {
+GrammarDecl.prototype.override = function (name, formals, body, descIgnored, source) {
   this.ensureSuperGrammarRuleForOverriding(name, source);
   this.installOverriddenOrExtendedRule(name, formals, body, source);
   return this;
 };
 
-GrammarDecl.prototype.extend = function(name, formals, fragment, descIgnored, source) {
+GrammarDecl.prototype.extend = function (name, formals, fragment, descIgnored, source) {
   const ruleInfo = this.ensureSuperGrammar().rules[name];
   if (!ruleInfo) {
     throw errors.cannotExtendUndeclaredRule(name, this.superGrammar.name, source);
@@ -184,9 +178,3 @@ GrammarDecl.prototype.extend = function(name, formals, fragment, descIgnored, so
   this.installOverriddenOrExtendedRule(name, formals, body, source);
   return this;
 };
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = GrammarDecl;

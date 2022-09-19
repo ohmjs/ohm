@@ -1,13 +1,4 @@
-'use strict';
+import {Grammar} from './Grammar.js';
+import BuiltInRules from '../dist/built-in-rules.js';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const Grammar = require('./Grammar');
-
-// --------------------------------------------------------------------
-// Private stuff
-// --------------------------------------------------------------------
-
-Grammar.BuiltInRules = require('../dist/built-in-rules');
+Grammar.BuiltInRules = BuiltInRules;

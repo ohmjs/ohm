@@ -1,5 +1,3 @@
-'use strict';
-
 // --------------------------------------------------------------------
 // Private Stuff
 // --------------------------------------------------------------------
@@ -24,11 +22,11 @@ escapeStringFor['\u000b'.charCodeAt(0)] = '\\v';
 // Exports
 // --------------------------------------------------------------------
 
-exports.abstract = function(optMethodName) {
+export function abstract(optMethodName) {
   const methodName = optMethodName || '';
-  return function() {
+  return function () {
     throw new Error(
-        'this method ' +
+      'this method ' +
         methodName +
         ' is abstract! ' +
         '(it has no implementation in class ' +
@@ -36,18 +34,18 @@ exports.abstract = function(optMethodName) {
         ')'
     );
   };
-};
+}
 
-exports.assert = function(cond, message) {
+export function assert(cond, message) {
   if (!cond) {
     throw new Error(message || 'Assertion failed');
   }
-};
+}
 
 // Define a lazily-computed, non-enumerable property named `propName`
 // on the object `obj`. `getterFn` will be called to compute the value the
 // first time the property is accessed.
-exports.defineLazyProperty = function(obj, propName, getterFn) {
+export function defineLazyProperty(obj, propName, getterFn) {
   let memo;
   Object.defineProperty(obj, propName, {
     get() {
@@ -55,34 +53,34 @@ exports.defineLazyProperty = function(obj, propName, getterFn) {
         memo = getterFn.call(this);
       }
       return memo;
-    },
+    }
   });
-};
+}
 
-exports.clone = function(obj) {
+export function clone(obj) {
   if (obj) {
     return Object.assign({}, obj);
   }
   return obj;
-};
+}
 
-exports.repeatFn = function(fn, n) {
+export function repeatFn(fn, n) {
   const arr = [];
   while (n-- > 0) {
     arr.push(fn());
   }
   return arr;
-};
+}
 
-exports.repeatStr = function(str, n) {
+export function repeatStr(str, n) {
   return new Array(n + 1).join(str);
-};
+}
 
-exports.repeat = function(x, n) {
-  return exports.repeatFn(() => x, n);
-};
+export function repeat(x, n) {
+  return repeatFn(() => x, n);
+}
 
-exports.getDuplicates = function(array) {
+export function getDuplicates(array) {
   const duplicates = [];
   for (let idx = 0; idx < array.length; idx++) {
     const x = array[idx];
@@ -91,9 +89,9 @@ exports.getDuplicates = function(array) {
     }
   }
   return duplicates;
-};
+}
 
-exports.copyWithoutDuplicates = function(array) {
+export function copyWithoutDuplicates(array) {
   const noDuplicates = [];
   array.forEach(entry => {
     if (noDuplicates.indexOf(entry) < 0) {
@@ -101,42 +99,42 @@ exports.copyWithoutDuplicates = function(array) {
     }
   });
   return noDuplicates;
-};
+}
 
-exports.isSyntactic = function(ruleName) {
+export function isSyntactic(ruleName) {
   const firstChar = ruleName[0];
   return firstChar === firstChar.toUpperCase();
-};
+}
 
-exports.isLexical = function(ruleName) {
-  return !exports.isSyntactic(ruleName);
-};
+export function isLexical(ruleName) {
+  return !isSyntactic(ruleName);
+}
 
-exports.padLeft = function(str, len, optChar) {
+export function padLeft(str, len, optChar) {
   const ch = optChar || ' ';
   if (str.length < len) {
-    return exports.repeatStr(ch, len - str.length) + str;
+    return repeatStr(ch, len - str.length) + str;
   }
   return str;
-};
+}
 
 // StringBuffer
 
-exports.StringBuffer = function() {
+export function StringBuffer() {
   this.strings = [];
-};
+}
 
-exports.StringBuffer.prototype.append = function(str) {
+StringBuffer.prototype.append = function (str) {
   this.strings.push(str);
 };
 
-exports.StringBuffer.prototype.contents = function() {
+StringBuffer.prototype.contents = function () {
   return this.strings.join('');
 };
 
 const escapeUnicode = str => String.fromCodePoint(parseInt(str, 16));
 
-exports.unescapeCodePoint = function(s) {
+export function unescapeCodePoint(s) {
   if (s.charAt(0) === '\\') {
     switch (s.charAt(1)) {
       case 'b':
@@ -154,20 +152,20 @@ exports.unescapeCodePoint = function(s) {
       case 'x':
         return escapeUnicode(s.slice(2, 4));
       case 'u':
-        return s.charAt(2) === '{' ?
-          escapeUnicode(s.slice(3, -1)) :
-          escapeUnicode(s.slice(2, 6));
+        return s.charAt(2) === '{'
+          ? escapeUnicode(s.slice(3, -1))
+          : escapeUnicode(s.slice(2, 6));
       default:
         return s.charAt(1);
     }
   } else {
     return s;
   }
-};
+}
 
 // Helper for producing a description of an unknown object in a safe way.
 // Especially useful for error messages where an unexpected type of object was encountered.
-exports.unexpectedObjToString = function(obj) {
+export function unexpectedObjToString(obj) {
   if (obj == null) {
     return String(obj);
   }
@@ -185,4 +183,4 @@ exports.unexpectedObjToString = function(obj) {
   } catch (e) {
     return baseToString;
   }
-};
+}

@@ -1,16 +1,10 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const Interval = require('./Interval');
+import {Interval} from './Interval.js';
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
-function InputStream(source) {
+export function InputStream(source) {
   this.source = source;
   this.pos = 0;
   this.examinedLength = 0;
@@ -79,11 +73,5 @@ InputStream.prototype = {
 
   interval(startIdx, optEndIdx) {
     return new Interval(this.source, startIdx, optEndIdx ? optEndIdx : this.pos);
-  },
+  }
 };
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = InputStream;
