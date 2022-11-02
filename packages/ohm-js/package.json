@@ -45,7 +45,7 @@
     "prebootstrap": "bash scripts/prebootstrap",
     "bootstrap": "bash scripts/bootstrap --test || (echo 'Bootstrap failed.' && mv -v dist/ohm-grammar.js.old dist/ohm-grammar.js && mv -v dist/built-in-rules.js.old dist/built-in-rules.js && mv -v dist/operations-and-attributes.js.old dist/operations-and-attributes.js)",
     "build": "yarn build:debug && webpack --mode=production",
-    "build:debug": "webpack --mode=development && yarn build:cjs && node scripts/generate-types.mjs",
+    "build:debug": "webpack --mode=development && yarn build:cjs && node scripts/generate-types.js",
     "build:cjs": "rollup -c rollup.config.js",
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
     "lint": "eslint . --ignore-path ../.eslintignore",

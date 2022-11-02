@@ -14,7 +14,7 @@ test('basic', t => {
   let plan = generateBundles(['**/*.ohm'], baseOpts);
   t.deepEqual(Object.keys(plan.filesToWrite), [
     'arithmetic.ohm-bundle.js',
-    'e/f/g.ohm-bundle.js'
+    'e/f/g.ohm-bundle.js',
   ]);
 
   plan = generateBundles(['**/*.ohm'], {...baseOpts, withTypes: true});
@@ -22,7 +22,7 @@ test('basic', t => {
     'arithmetic.ohm-bundle.js',
     'arithmetic.ohm-bundle.d.ts',
     'e/f/g.ohm-bundle.js',
-    'e/f/g.ohm-bundle.d.ts'
+    'e/f/g.ohm-bundle.d.ts',
   ]);
 
   const gDecl = plan.filesToWrite['e/f/g.ohm-bundle.d.ts'];
@@ -34,7 +34,7 @@ test('basic', t => {
   plan = generateBundles(['*.ohm'], {...baseOpts, withTypes: true});
   t.deepEqual(Object.keys(plan.filesToWrite), [
     'arithmetic.ohm-bundle.js',
-    'arithmetic.ohm-bundle.d.ts'
+    'arithmetic.ohm-bundle.d.ts',
   ]);
 
   const arithmeticDecl = plan.filesToWrite['arithmetic.ohm-bundle.d.ts'];
@@ -57,7 +57,7 @@ test('arithmetic grammar with types', t => {
   const {filesToWrite} = generateBundles(['arithmetic.ohm'], {...baseOpts, withTypes: true});
   t.deepEqual(Object.keys(filesToWrite), [
     'arithmetic.ohm-bundle.js',
-    'arithmetic.ohm-bundle.d.ts'
+    'arithmetic.ohm-bundle.d.ts',
   ]);
   t.snapshot(filesToWrite['arithmetic.ohm-bundle.d.ts']);
 });

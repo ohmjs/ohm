@@ -7,7 +7,10 @@ import {Project} from 'ts-morph';
 import {generateTypes} from './generateTypes.js';
 
 // Snarf the contents of Ohm's type declarations, so we can stuff it into the in-memory fs.
-const ohmDTSContents = fs.readFileSync(new URL(`../../../ohm-js/index.d.ts`, import.meta.url), 'utf-8');
+const ohmDTSContents = fs.readFileSync(
+  new URL(`../../../ohm-js/index.d.ts`, import.meta.url),
+  'utf-8'
+);
 
 // Helpers
 // -------

@@ -15,11 +15,11 @@ test('generateBundles', t => {
   t.is(ohmCli(['generateBundles', '*.ohm', '-n', '-t'], testOpts), undefined);
 
   t.throws(() => ohmCli(['generateBundles', '*.ohm', '-n', '-z'], testOpts), {
-    message: "error: unknown option '-z'"
+    message: "error: unknown option '-z'",
   });
 
   t.throws(() => ohmCli(['generateBundles'], testOpts), {
-    message: "error: missing required argument 'patterns'"
+    message: "error: missing required argument 'patterns'",
   });
 });
 
@@ -28,7 +28,7 @@ test('match', t => {
     'match',
     '-f',
     testdataPath('words.ohm'),
-    testdataPath('words-succeeds.txt')
+    testdataPath('words-succeeds.txt'),
   ];
   // TODO: Usage errors should throw a particular exception that we can catch
   // and deal with cleanly.
@@ -38,19 +38,19 @@ test('match', t => {
   // TODO: This shouldn't throw an exception.
   const matchFailedArgs = [...goodArgs.slice(0, 3), testdataPath('words-fails.txt')];
   t.throws(() => ohmCli(matchFailedArgs, testOpts), {
-    message: /Line 1, col 6:/
+    message: /Line 1, col 6:/,
   });
 
   t.throws(() => ohmCli(goodArgs.slice(0, 1), testOpts), {
-    message: `error: required option '-f, --grammarFile <path>' not specified`
+    message: 'error: required option \'-f, --grammarFile <path>\' not specified',
   });
   t.throws(() => ohmCli(goodArgs.slice(0, 3), testOpts), {
-    message: `error: missing required argument 'inputPath'`
+    message: 'error: missing required argument \'inputPath\'',
   });
 
   const argsWithBadInputPath = [...goodArgs.slice(0, 3), 'doesnotexist'];
   t.throws(() => ohmCli(argsWithBadInputPath, testOpts), {
-    message: `ENOENT: no such file or directory, open 'doesnotexist'`
+    message: 'ENOENT: no such file or directory, open \'doesnotexist\'',
   });
 });
 
