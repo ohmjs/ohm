@@ -1,6 +1,6 @@
-const test = require('ava');
+import test from 'ava';
 
-const Interval = require('../src/Interval');
+import {Interval} from '../src/Interval';
 
 // --------------------------------------------------------------------
 // Tests

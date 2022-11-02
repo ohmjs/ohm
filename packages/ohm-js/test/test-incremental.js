@@ -1,13 +1,8 @@
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
+import fs from 'fs';
+import test from 'ava';
+import {makeGrammar} from './helpers/testUtil.js';
 
-const fs = require('fs');
-const ohm = require('..');
-const test = require('ava');
-const testUtil = require('./helpers/testUtil');
-
-const {makeGrammar} = testUtil;
+import ohm from '../index.js';
 
 // --------------------------------------------------------------------
 // Private stuff

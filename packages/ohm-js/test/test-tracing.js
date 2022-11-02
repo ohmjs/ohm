@@ -1,12 +1,8 @@
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
+import test from 'ava';
+import ohm from '../index.js';
 
-const test = require('ava');
-
-const ohm = require('..');
-const common = require('../src/common');
-const testUtil = require('./helpers/testUtil');
+import * as common from '../src/common.js';
+import * as testUtil from './helpers/testUtil.js';
 
 // --------------------------------------------------------------------
 // Private stuff

@@ -1,12 +1,8 @@
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
+import test from 'ava';
+import dedent from 'dedent';
+import fs from 'fs';
 
-const test = require('ava');
-const dedent = require('dedent');
-const fs = require('fs');
-
-const ohm = require('..');
+import ohm from '../index.js';
 
 // --------------------------------------------------------------------
 // Helpers

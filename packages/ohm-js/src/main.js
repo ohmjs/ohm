@@ -5,7 +5,7 @@ import * as errors from './errors.js';
 import {Grammar} from './Grammar.js';
 import {Namespace} from './Namespace.js';
 import * as pexprs from './pexprs.js';
-import {getLineAndColumnMessage} from './util.js';
+import * as util from './util.js';
 
 // Late initialization for stuff that is bootstrapped.
 
@@ -260,7 +260,7 @@ export function grammar(source, optNamespace) {
     const secondGrammar = ns[grammarNames[1]];
     const interval = secondGrammar.source;
     throw new Error(
-        getLineAndColumnMessage(interval.sourceString, interval.startIdx) +
+        util.getLineAndColumnMessage(interval.sourceString, interval.startIdx) +
         'Found more than one grammar definition -- use ohm.grammars() instead.',
     );
   }
@@ -298,6 +298,8 @@ export function grammarsFromScriptElements(optNodeOrNodeList) {
 export * from './main-kernel.js';
 export const {createNamespace} = Namespace;
 export {ohmGrammar};
+export {pexprs, util};
+export {version} from './version.js';
 
 // Stuff for testing, etc.
 

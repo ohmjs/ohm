@@ -18,8 +18,21 @@
   ],
   "homepage": "https://ohmjs.org",
   "bugs": "https://github.com/harc/ohm/issues",
-  "main": "index.js",
-  "module": "dist/ohm.esm.js",
+  "main": "index.cjs",
+  "module": "index.js",
+  "exports": {
+    ".": [
+      {
+        "import": "./index.js",
+        "require": "./index.cjs"
+      },
+      "./index.cjs"
+    ],
+    "./extras": {
+      "import": "./extras/index.js",
+      "require": "./extras/index.cjs"
+    }
+  },
   "files": [
     "src",
     "dist",
@@ -31,9 +44,9 @@
   "scripts": {
     "prebootstrap": "bash scripts/prebootstrap",
     "bootstrap": "bash scripts/bootstrap --test || (echo 'Bootstrap failed.' && mv -v dist/ohm-grammar.js.old dist/ohm-grammar.js && mv -v dist/built-in-rules.js.old dist/built-in-rules.js && mv -v dist/operations-and-attributes.js.old dist/operations-and-attributes.js)",
-    "build": "yarn build-debug && webpack --mode=production",
-    "build-debug": "webpack --mode=development && yarn build-esm && node scripts/generate-types.mjs",
-    "build-esm": "rollup -c rollup.config.mjs",
+    "build": "yarn build:debug && webpack --mode=production",
+    "build:debug": "webpack --mode=development && yarn build:cjs && node scripts/generate-types.mjs",
+    "build:cjs": "rollup -c rollup.config.js",
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
     "lint": "eslint . --ignore-path ../.eslintignore",
     "format": "prettier . --write --ignore-path ../.prettierignore --config ../.prettierrc && eslint . --ignore-path ../.eslintignore --fix",

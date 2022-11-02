@@ -1,7 +1,7 @@
-const ohm = require('..');
-const test = require('ava');
+import test from 'ava';
+import ohm from '../index.js';
 
-const {makeGrammar} = require('./helpers/testUtil');
+import {makeGrammar} from './helpers/testUtil.js';
 
 // --------------------------------------------------------------------
 // Tests

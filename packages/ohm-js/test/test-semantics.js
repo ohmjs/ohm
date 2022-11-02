@@ -1,12 +1,8 @@
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
+import fs from 'fs';
+import test from 'ava';
+import ohm from '../index.js';
 
-const fs = require('fs');
-const test = require('ava');
-
-const ohm = require('..');
-const testUtil = require('./helpers/testUtil');
+import * as testUtil from './helpers/testUtil.js';
 
 // --------------------------------------------------------------------
 // Helpers

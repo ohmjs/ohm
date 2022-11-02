@@ -1,12 +1,4 @@
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const {assert} = require('../src/common');
-
-// --------------------------------------------------------------------
-// Private stuff
-// --------------------------------------------------------------------
+import {assert} from '../src/common';
 
 // Helpers
 
@@ -79,7 +71,7 @@ function parseSignature(sig) {
     * a function taking two arguments (node, fn), and returning an Array which is the result
       of apply `fn` to each of the node's children.
  */
-function VisitorFamily(config) {
+export function VisitorFamily(config) {
   this._shapes = config.shapes;
   this._getTag = config.getTag;
 
@@ -161,9 +153,3 @@ VisitorFamily.prototype.addOperation = function(signature, actions) {
   };
   return this;
 };
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = VisitorFamily;

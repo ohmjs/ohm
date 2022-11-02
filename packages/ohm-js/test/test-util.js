@@ -1,17 +1,11 @@
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
+import test from 'ava';
+import dedent from 'dedent';
 
-const test = require('ava');
-const dedent = require('dedent');
-
-const util = require('../src/util');
+import {getLineAndColumn, getLineAndColumnMessage} from '../src/util.js';
 
 // --------------------------------------------------------------------
 // Tests
 // --------------------------------------------------------------------
-
-const {getLineAndColumn} = util;
 
 test('getLineAndColumn().toString()', t => {
   t.is(
@@ -32,8 +26,6 @@ test('getLineAndColumn().toString()', t => {
       'more than one range',
   );
 });
-
-const {getLineAndColumnMessage} = util;
 
 test('getLineAndColumnMessage', t => {
   t.is(

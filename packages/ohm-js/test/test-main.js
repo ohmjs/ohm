@@ -1,9 +1,9 @@
 /* global Buffer */
 
-const fs = require('fs');
-const test = require('ava');
+import fs from 'fs';
+import test from 'ava';
 
-const ohm = require('..');
+import ohm from '../index.js';
 
 // --------------------------------------------------------------------
 // Tests

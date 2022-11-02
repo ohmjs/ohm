@@ -1,5 +1,2 @@
-module.exports = {
-  VisitorFamily: require('./VisitorFamily'),
-  semanticsForToAST: require('./semantics-toAST').semantics,
-  toAST: require('./semantics-toAST').helper,
-};
+export {VisitorFamily} from './VisitorFamily.js';
+export {semanticsForToAST, toAST} from './semantics-toAST.js';

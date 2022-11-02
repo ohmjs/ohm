@@ -1,8 +1,8 @@
-const fs = require('fs');
-const test = require('ava');
+import fs from 'fs';
+import test from 'ava';
 
-const Grammar = require('../src/Grammar');
-const ohm = require('..');
+import {Grammar} from '../src/Grammar.js';
+import ohm from '../index.js';
 
 // --------------------------------------------------------------------
 // Tests
