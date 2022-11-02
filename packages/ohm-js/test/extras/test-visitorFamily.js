@@ -1,9 +1,5 @@
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const test = require('ava');
-const VisitorFamily = require('../../extras/VisitorFamily');
+import test from 'ava';
+import {VisitorFamily} from '../../extras/VisitorFamily.js';
 
 // --------------------------------------------------------------------
 // Helpers

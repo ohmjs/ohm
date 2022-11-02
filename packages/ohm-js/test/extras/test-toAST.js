@@ -1,12 +1,8 @@
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
+import fs from 'fs';
+import test from 'ava';
 
-const fs = require('fs');
-const test = require('ava');
-
-const ohm = require('../..');
-const {semanticsForToAST, toAST} = require('../../extras');
+import ohm from '../../index.js';
+import {semanticsForToAST, toAST} from '../../extras/semantics-toAST.js';
 
 const g = ohm.grammar(fs.readFileSync('test/data/arithmetic.ohm'));
 

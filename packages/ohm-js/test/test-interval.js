@@ -1,6 +1,6 @@
 import test from 'ava';
 
-import {Interval} from '../src/Interval';
+import {Interval} from '../src/Interval.js';
 
 // --------------------------------------------------------------------
 // Tests
