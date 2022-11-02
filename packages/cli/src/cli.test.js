@@ -1,3 +1,5 @@
+/* eslint-env node */
+
 import test from 'ava';
 
 import {ohmCli} from './cli.js';
@@ -42,15 +44,15 @@ test('match', t => {
   });
 
   t.throws(() => ohmCli(goodArgs.slice(0, 1), testOpts), {
-    message: 'error: required option \'-f, --grammarFile <path>\' not specified',
+    message: "error: required option '-f, --grammarFile <path>' not specified",
   });
   t.throws(() => ohmCli(goodArgs.slice(0, 3), testOpts), {
-    message: 'error: missing required argument \'inputPath\'',
+    message: "error: missing required argument 'inputPath'",
   });
 
   const argsWithBadInputPath = [...goodArgs.slice(0, 3), 'doesnotexist'];
   t.throws(() => ohmCli(argsWithBadInputPath, testOpts), {
-    message: 'ENOENT: no such file or directory, open \'doesnotexist\'',
+    message: "ENOENT: no such file or directory, open 'doesnotexist'",
   });
 });
 

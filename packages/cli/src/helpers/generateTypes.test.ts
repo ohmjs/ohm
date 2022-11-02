@@ -1,3 +1,5 @@
+/* eslint-env node */
+
 import test from 'ava';
 import fs from 'fs';
 import ohm from 'ohm-js';
