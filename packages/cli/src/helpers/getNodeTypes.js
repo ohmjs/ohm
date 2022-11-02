@@ -79,4 +79,4 @@ function _getNodeTypes(pexpr) {
 
 export function getNodeTypes(pexpr, prefix = '') {
   return _getNodeTypes(pexpr).map(t => t.toString(prefix));
-};
+}

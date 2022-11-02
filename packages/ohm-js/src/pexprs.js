@@ -19,4 +19,3 @@ import './pexprs-toString.js';
 
 export * from './pexprs-main.js';
 export {CaseInsensitiveTerminal} from './CaseInsensitiveTerminal.js';
-

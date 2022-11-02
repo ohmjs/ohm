@@ -24,7 +24,7 @@ var walkSync = require('walk-sync');
 var EXAMPLE_ROOT = path.normalize(path.join(__dirname, '../../../examples/'));
 
 function runExampleAsync(relativePath) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     runExample(relativePath, resolve);
   });
 }
@@ -42,36 +42,36 @@ function runExample(relativePath, cb) {
 
       // Block URLs that begin with HTTP. The examples should use only local resources,
       // referenced by relative path.
-      SkipExternalResources: /^http/,
+      SkipExternalResources: /^http/
     },
-    created: function(error, window) {
+    created: function (error, window) {
       if (error) {
         cb([error]);
       } else {
         jsdom.getVirtualConsole(window).sendTo(console);
-        window.addEventListener('error', function(evt) {
+        window.addEventListener('error', function (evt) {
           /* eslint-disable no-console */
           console.error(
-              'In ' +
+            'In ' +
               evt.filename +
               '\n' +
               'at line ' +
               evt.lineno +
               ' (relative to start of script), col ' +
               evt.colno +
-              ':',
+              ':'
           );
           /* eslint-enable no-console */
           errors.push(evt.error);
         });
       }
     },
-    onload: function(window) {
+    onload: function (window) {
       // If the example specifies an inline test, run it.
       if (window.test) window.test();
       window.close();
       cb(errors);
-    },
+    }
   });
 }
 
@@ -79,10 +79,10 @@ function runExample(relativePath, cb) {
 function rebuildIfModified() {
   // Get a sorted list of last-modified times for every file in the 'src' dir.
   var srcEntries = walkSync.entries(path.join(__dirname, '../src'));
-  var mtimes = srcEntries.map(function(entry) {
+  var mtimes = srcEntries.map(function (entry) {
     return entry.mtime;
   });
-  mtimes.sort(function(a, b) {
+  mtimes.sort(function (a, b) {
     return a - b;
   });
 
@@ -91,7 +91,7 @@ function rebuildIfModified() {
 
   if (bundleDate < srcDate) {
     var p = exec('yarn build');
-    p.stdout.on('data', function() {
+    p.stdout.on('data', function () {
       /* ignore */
     });
     p.stderr.pipe(process.stderr);
@@ -102,22 +102,22 @@ function rebuildIfModified() {
 // Tests
 // --------------------------------------------------------------------
 
-test('math example', function(t) {
+test('math example', function (t) {
   rebuildIfModified();
-  return runExampleAsync('math/index.html').then(function(errors) {
+  return runExampleAsync('math/index.html').then(function (errors) {
     t.deepEqual(errors, [], 'runs without errors');
   });
 });
 
-test('viz example', function(t) {
+test('viz example', function (t) {
   rebuildIfModified();
-  return runExampleAsync('viz/index.html').then(function(errors) {
+  return runExampleAsync('viz/index.html').then(function (errors) {
     t.deepEqual(errors, [], 'runs without errors');
   });
 });
 
-test('csv example', function(t) {
-  t.notThrows(function() {
+test('csv example', function (t) {
+  t.notThrows(function () {
     require(path.join(EXAMPLE_ROOT, 'csv', 'index.js'));
   });
 });

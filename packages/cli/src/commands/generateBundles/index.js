@@ -3,7 +3,7 @@ import fs from 'fs';
 import ohm from 'ohm-js';
 import path from 'path';
 
-const {generateTypes} = require('../../helpers/generateTypes');
+import {generateTypes} from '../../helpers/generateTypes.js';
 
 const OHM_FILE_EXT = '.ohm';
 

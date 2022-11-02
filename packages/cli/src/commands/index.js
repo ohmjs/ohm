@@ -1,3 +1,4 @@
-'use strict';
+import generateBundlesCommand from './generateBundles/index.js';
+import matchCommand from './match.js';
 
-module.exports = [require('./generateBundles'), require('./match')];
+export default [generateBundlesCommand, matchCommand];

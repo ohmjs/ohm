@@ -29,12 +29,15 @@
     "@types/require-from-string": "^1.2.1"
   },
   "ava": {
-    "extensions": [
-      "mjs",
-      "ts"
-    ],
+    "extensions": {
+      "mjs": true,
+      "ts": "module"
+    },
     "require": [
       "ts-node/register"
+    ],
+    "nodeArguments": [
+      "--loader=ts-node/esm"
     ]
   }
 }
