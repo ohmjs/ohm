@@ -1,6 +1,4 @@
-'use strict';
-
-const {getNodeTypes} = require('./getNodeTypes');
+import {getNodeTypes} from './getNodeTypes.js';
 
 const getImports = (includeNamespace = false) =>
   `import {
@@ -35,7 +33,7 @@ export interface ${grammarName}Grammar extends Grammar {
 `;
 };
 
-function getActionDecls(grammar) {
+export function getActionDecls(grammar) {
   return Object.entries(grammar.rules).map(([ruleName, ruleInfo]) => {
     const argTypes = getNodeTypes(ruleInfo.body).map(t => t.toString());
     const args = argTypes.map((type, i) => `arg${i}: ${type}`).join(', ');
@@ -64,7 +62,7 @@ ${Object.keys(ns)
 export default ns;
 `;
 
-function generateTypes(grammars) {
+export function generateTypes(grammars) {
   const isExactlyOneGrammar = Object.keys(grammars).length === 1;
   const sections = [getImports(!isExactlyOneGrammar), ''];
 
@@ -79,8 +77,3 @@ function generateTypes(grammars) {
   }
   return sections.join('\n');
 }
-
-module.exports = {
-  generateTypes,
-  getActionDecls,
-};

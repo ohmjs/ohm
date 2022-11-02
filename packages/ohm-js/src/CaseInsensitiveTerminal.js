@@ -1,7 +1,7 @@
 import {Failure} from './Failure.js';
 import {TerminalNode} from './nodes.js';
 import {assert} from './common.js';
-import {PExpr, Terminal} from './pexprs.js';
+import {PExpr, Terminal} from './pexprs-main.js';
 
 export class CaseInsensitiveTerminal extends PExpr {
   constructor(param) {

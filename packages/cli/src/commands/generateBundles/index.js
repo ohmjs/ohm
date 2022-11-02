@@ -1,9 +1,7 @@
-'use strict';
-
-const fastGlob = require('fast-glob');
-const fs = require('fs');
-const ohm = require('ohm-js');
-const path = require('path');
+import fastGlob from 'fast-glob';
+import fs from 'fs';
+import ohm from 'ohm-js';
+import path from 'path';
 
 const {generateTypes} = require('../../helpers/generateTypes');
 
@@ -99,7 +97,7 @@ function generateTypesWithWriter(grammarPath, grammars, writer) {
   writer.write(`${grammarPath}-bundle.d.ts`, contents);
 }
 
-module.exports = {
+export default {
   command: 'generateBundles <patterns...>',
   description: 'generate standalone modules (aka "bundles") from .ohm files',
   options: [

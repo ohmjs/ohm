@@ -1,4 +1,3 @@
-import {CaseInsensitiveTerminal} from './CaseInsensitiveTerminal.js';
 import {Matcher} from './Matcher.js';
 import {Semantics} from './Semantics.js';
 import * as common from './common.js';
@@ -333,7 +332,7 @@ Grammar.ProtoBuiltInRules = new Grammar(
       },
 
       caseInsensitive: {
-        body: new CaseInsensitiveTerminal(new pexprs.Param(0)),
+        body: new pexprs.CaseInsensitiveTerminal(new pexprs.Param(0)),
         formals: ['str'],
         primitive: true,
       },
