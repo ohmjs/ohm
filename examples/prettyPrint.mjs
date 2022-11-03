@@ -1,9 +1,9 @@
 /* eslint-env node */
 
-'use strict';
+import fs from 'fs';
+import * as url from 'url';
 
-const fs = require('fs');
-const ohm = require('../packages/ohm-js');
+import ohm from 'ohm-js';
 
 /*
   Usage: prettyPrint.js <filename>
@@ -71,9 +71,9 @@ semantics.addOperation('prettyPrint()', {
   },
   RuleBody(_, termList) {
     return termList
-        .asIteration()
-        .children.map(c => c.prettyPrint())
-        .join('\n| ');
+      .asIteration()
+      .children.map(c => c.prettyPrint())
+      .join('\n| ');
   },
   Formals: printParams,
   Params: printParams,
@@ -82,9 +82,9 @@ semantics.addOperation('prettyPrint()', {
   },
   Alt(list) {
     return list
-        .asIteration()
-        .children.map(c => c.prettyPrint())
-        .join(' | ');
+      .asIteration()
+      .children.map(c => c.prettyPrint())
+      .join(' | ');
   },
   Seq(iter) {
     return iter.children.map(c => c.prettyPrint()).join(' ');
@@ -117,24 +117,26 @@ semantics.addOperation('prettyPrint()', {
   },
   oneCharTerminal(open, c, close) {
     return this.sourceString;
-  },
+  }
 });
 
 // Exports
 // -------
 
-const prettyPrint = (module.exports = function(source) {
+export function prettyPrint(source) {
   const matchResult = ohm.ohmGrammar.match(source, 'Grammar');
   if (matchResult.failed()) {
     return matchResult;
   }
   return semantics(matchResult).prettyPrint();
-});
+}
 
 // Main
 // ----
 
-if (require.main === module) {
+const modulePath = url.fileURLToPath(import.meta.url);
+if (process.argv[1] === modulePath) {
+  // (B)
   const filename = process.argv[2];
   const source = fs.readFileSync(filename).toString();
   const result = prettyPrint(source, filename);
