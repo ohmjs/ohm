@@ -12,10 +12,17 @@ function requireFromString(src, filename) {
   return m.exports;
 }
 
-test('CommonJS exports', async () => {
+test('Core CommonJS exports', async () => {
   const {checkExports} = await import('./checkExports.mjs');
   const ohm = require('ohm-js');
   checkExports(ohm);
+});
+
+test('Extras CommonJS exports', async () => {
+  const extras = require('ohm-js/extras');
+  assert.equal(typeof extras.VisitorFamily, 'function');
+  assert.equal(typeof extras.toAST, 'function');
+  assert.ok(Object.keys(extras).length === 3);
 });
 
 test('UMD bundles', async () => {
