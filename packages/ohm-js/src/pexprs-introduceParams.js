@@ -1,11 +1,5 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const common = require('./common');
-const pexprs = require('./pexprs-main');
+import {abstract} from './common.js';
+import * as pexprs from './pexprs-main.js';
 
 // --------------------------------------------------------------------
 // Operations
@@ -16,7 +10,7 @@ const pexprs = require('./pexprs-main');
   parameter with a `Param` node. Returns a PExpr -- either a new one, or the original one if
   it was modified in place.
 */
-pexprs.PExpr.prototype.introduceParams = common.abstract('introduceParams');
+pexprs.PExpr.prototype.introduceParams = abstract('introduceParams');
 
 pexprs.any.introduceParams =
   pexprs.end.introduceParams =

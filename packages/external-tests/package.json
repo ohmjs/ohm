@@ -1,0 +1,15 @@
+{
+  "name": "packaging-tests",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "ohm-js": "^16.0.0"
+  },
+  "scripts": {
+    "test": "uvu .",
+    "test:watch": "watchlist . -- yarn test"
+  },
+  "devDependencies": {
+    "watchlist": "^0.3.1"
+  }
+}

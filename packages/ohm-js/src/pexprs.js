@@ -1,26 +1,21 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Re-export classes
-// --------------------------------------------------------------------
-
-module.exports = require('./pexprs-main');
-
 // --------------------------------------------------------------------
 // Extensions
 // --------------------------------------------------------------------
 
-require('./pexprs-allowsSkippingPrecedingSpace');
-require('./pexprs-assertAllApplicationsAreValid');
-require('./pexprs-assertChoicesHaveUniformArity');
-require('./pexprs-assertIteratedExprsAreNotNullable');
-require('./pexprs-eval');
-require('./pexprs-getArity');
-require('./pexprs-outputRecipe');
-require('./pexprs-introduceParams');
-require('./pexprs-isNullable');
-require('./pexprs-substituteParams');
-require('./pexprs-toArgumentNameList');
-require('./pexprs-toDisplayString');
-require('./pexprs-toFailure');
-require('./pexprs-toString');
+import './pexprs-allowsSkippingPrecedingSpace.js';
+import './pexprs-assertAllApplicationsAreValid.js';
+import './pexprs-assertChoicesHaveUniformArity.js';
+import './pexprs-assertIteratedExprsAreNotNullable.js';
+import './pexprs-eval.js';
+import './pexprs-getArity.js';
+import './pexprs-outputRecipe.js';
+import './pexprs-introduceParams.js';
+import './pexprs-isNullable.js';
+import './pexprs-substituteParams.js';
+import './pexprs-toArgumentNameList.js';
+import './pexprs-toDisplayString.js';
+import './pexprs-toFailure.js';
+import './pexprs-toString.js';
+
+export * from './pexprs-main.js';
+export {CaseInsensitiveTerminal} from './CaseInsensitiveTerminal.js';

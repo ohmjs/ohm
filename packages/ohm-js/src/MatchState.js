@@ -1,15 +1,9 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const InputStream = require('./InputStream');
-const MatchResult = require('./MatchResult');
-const PosInfo = require('./PosInfo');
-const Trace = require('./Trace');
-const pexprs = require('./pexprs');
-const util = require('./util');
+import {InputStream} from './InputStream.js';
+import {MatchResult} from './MatchResult.js';
+import {PosInfo} from './PosInfo.js';
+import {Trace} from './Trace.js';
+import * as pexprs from './pexprs.js';
+import * as util from './util.js';
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -23,7 +17,7 @@ util.awaitBuiltInRules(builtInRules => {
 
 const applySpaces = new pexprs.Apply('spaces');
 
-function MatchState(matcher, startExpr, optPositionToRecordFailures) {
+export function MatchState(matcher, startExpr, optPositionToRecordFailures) {
   this.matcher = matcher;
   this.startExpr = startExpr;
 
@@ -70,7 +64,7 @@ MatchState.prototype = {
 
     this.rightmostFailurePosition = Math.max(
         this.rightmostFailurePosition,
-        this._rightmostFailurePositionStack.pop()
+        this._rightmostFailurePositionStack.pop(),
     );
 
     if (optNode) {
@@ -271,7 +265,7 @@ MatchState.prototype = {
       this.inputStream.pos + memoRec.rightmostFailureOffset;
     this.rightmostFailurePosition = Math.max(
         this.rightmostFailurePosition,
-        memoRecRightmostFailurePosition
+        memoRecRightmostFailurePosition,
     );
     if (
       this.recordedFailures &&
@@ -283,7 +277,7 @@ MatchState.prototype = {
 
     this.inputStream.examinedLength = Math.max(
         this.inputStream.examinedLength,
-        memoRec.examinedLength + origPos
+        memoRec.examinedLength + origPos,
     );
 
     if (memoRec.value) {
@@ -358,7 +352,7 @@ MatchState.prototype = {
     let rightmostFailures;
     if (this.recordedFailures) {
       rightmostFailures = Object.keys(this.recordedFailures).map(
-          key => this.recordedFailures[key]
+          key => this.recordedFailures[key],
       );
     }
     const cst = this._bindings[0];
@@ -372,7 +366,7 @@ MatchState.prototype = {
         cst,
         this._bindingOffsets[0],
         this.rightmostFailurePosition,
-        rightmostFailures
+        rightmostFailures,
     );
   },
 
@@ -399,9 +393,3 @@ MatchState.prototype = {
     this.recordedFailures = this._recordedFailuresStack.pop();
   },
 };
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = MatchState;

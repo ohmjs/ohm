@@ -1,4 +1,5 @@
 .install-timestamp
+packages/cli/src/helpers/generateTypes.test.js
 packages/ohm-js/dist
 packages/ohm-js/dist/ohm.js
 packages/ohm-js/dist/ohm.min.js

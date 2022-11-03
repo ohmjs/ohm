@@ -1,11 +1,5 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const common = require('./common');
-const pexprs = require('./pexprs-main');
+import {abstract} from './common.js';
+import * as pexprs from './pexprs-main.js';
 
 // --------------------------------------------------------------------
 // Operations
@@ -18,7 +12,7 @@ const pexprs = require('./pexprs-main');
   The receiver must not be modified; a new PExpr must be returned if any replacement is necessary.
 */
 // function(actuals) { ... }
-pexprs.PExpr.prototype.substituteParams = common.abstract('substituteParams');
+pexprs.PExpr.prototype.substituteParams = abstract('substituteParams');
 
 pexprs.any.substituteParams =
   pexprs.end.substituteParams =

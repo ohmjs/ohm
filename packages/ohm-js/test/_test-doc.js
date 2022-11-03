@@ -1,14 +1,8 @@
 /* eslint-env node*/
 
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const markscript = require('markscript');
-const path = require('path');
-const test = require('ava');
+import markscript from 'markscript';
+import * as url from 'url';
+import {test} from 'uvu';
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -18,13 +12,13 @@ const markscriptConfig = {
   // Allow require calls to work properly from inside Markdown.
   moduleAliases: {
     'ohm-js': scriptRel('..'),
-    'ohm-js/extras': scriptRel('../extras'),
+    'ohm-js/extras': scriptRel('../dist/ohm-extras.cjs'),
   },
   workingDir: scriptRel('data'),
 };
 
 function scriptRel(relPath) {
-  return path.join(__dirname, relPath);
+  return url.fileURLToPath(new URL(relPath, import.meta.url));
 }
 
 // --------------------------------------------------------------------
@@ -35,22 +29,20 @@ function scriptRel(relPath) {
 // code blocks in a Markdown document. This allows us to ensure that examples
 // in the documentation run without errors.
 
-test('doc/README.md', t => {
+test('doc/README.md', () => {
   markscript.evaluateFile(scriptRel('../../../doc/README.md'), markscriptConfig);
-  t.pass();
 });
 
-test('doc/api-reference.md', t => {
+test('doc/api-reference.md', () => {
   markscript.evaluateFile(scriptRel('../../../doc/api-reference.md'), markscriptConfig);
-  t.pass();
 });
 
-test('doc/syntax-reference.md', t => {
+test('doc/syntax-reference.md', () => {
   markscript.evaluateFile(scriptRel('../../../doc/syntax-reference.md'), markscriptConfig);
-  t.pass();
 });
 
-test('doc/extras.md', t => {
+test('doc/extras.md', () => {
   markscript.evaluateFile(scriptRel('../../../doc/extras.md'), markscriptConfig);
-  t.pass();
 });
+
+test.run();

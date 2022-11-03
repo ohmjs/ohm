@@ -1,19 +1,9 @@
-'use strict';
+import operationsAndAttributesGrammar from '../dist/operations-and-attributes.js';
+import {Grammar} from './Grammar.js';
+import {Semantics} from './Semantics.js';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const Semantics = require('./Semantics');
-const util = require('./util');
-
-// ----------------- Deferred initialization -----------------
-
-util.awaitBuiltInRules(builtInRules => {
-  const operationsAndAttributesGrammar = require('../dist/operations-and-attributes');
-  initBuiltInSemantics(builtInRules);
-  initPrototypeParser(operationsAndAttributesGrammar); // requires BuiltInSemantics
-});
+initBuiltInSemantics(Grammar.BuiltInRules);
+initPrototypeParser(operationsAndAttributesGrammar); // requires BuiltInSemantics
 
 function initBuiltInSemantics(builtInRules) {
   const actions = {
@@ -32,7 +22,7 @@ function initBuiltInSemantics(builtInRules) {
         nonemptyListOf: actions.nonEmpty,
         EmptyListOf: actions.empty,
         NonemptyListOf: actions.nonEmpty,
-      }
+      },
   );
 }
 

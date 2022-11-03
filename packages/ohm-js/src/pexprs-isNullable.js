@@ -1,11 +1,5 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const common = require('./common');
-const pexprs = require('./pexprs-main');
+import {abstract} from './common.js';
+import * as pexprs from './pexprs-main.js';
 
 // --------------------------------------------------------------------
 // Operations
@@ -16,7 +10,7 @@ pexprs.PExpr.prototype.isNullable = function(grammar) {
   return this._isNullable(grammar, Object.create(null));
 };
 
-pexprs.PExpr.prototype._isNullable = common.abstract('_isNullable');
+pexprs.PExpr.prototype._isNullable = abstract('_isNullable');
 
 pexprs.any._isNullable =
   pexprs.Range.prototype._isNullable =

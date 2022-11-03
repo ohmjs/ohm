@@ -1,5 +1,3 @@
-'use strict';
-
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
@@ -22,7 +20,7 @@ function isValidType(type) {
   return type === 'description' || type === 'string' || type === 'code';
 }
 
-function Failure(pexpr, text, type) {
+export function Failure(pexpr, text, type) {
   if (!isValidType(type)) {
     throw new Error('invalid Failure type: ' + type);
   }
@@ -91,9 +89,3 @@ Failure.prototype.clone = function() {
 Failure.prototype.toKey = function() {
   return this.toString() + '#' + this.type;
 };
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = Failure;

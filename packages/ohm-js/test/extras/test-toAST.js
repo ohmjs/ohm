@@ -1,14 +1,8 @@
-'use strict';
+import fs from 'fs';
+import test from 'ava';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const fs = require('fs');
-const test = require('ava');
-
-const ohm = require('../..');
-const {semanticsForToAST, toAST} = require('../../extras');
+import ohm from '../../index.mjs';
+import {semanticsForToAST, toAST} from '../../extras/semantics-toAST.js';
 
 const g = ohm.grammar(fs.readFileSync('test/data/arithmetic.ohm'));
 
@@ -22,7 +16,7 @@ test('semantic action', t => {
 
   t.truthy(
       'toAST' in semantics._getSemantics().operations,
-      'toAST operation added to semantics'
+      'toAST operation added to semantics',
   );
   t.truthy(semantics(matchResult).toAST, 'toAST operation added to match result');
 });
@@ -293,20 +287,20 @@ test('listOf and friends - #394', t => {
       ast('0+1', {
         nonemptyListOf: (first, sep, rest) => 'XX',
       }),
-      'XX'
+      'XX',
   );
 
   t.is(
       ast('1+2', {
         nonemptyListOf: 0,
       }),
-      '1'
+      '1',
   );
 
   t.is(
       ast('', {
         emptyListOf: () => 'nix',
       }),
-      'nix'
+      'nix',
   );
 });

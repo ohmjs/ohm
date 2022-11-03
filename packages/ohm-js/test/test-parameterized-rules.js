@@ -1,14 +1,7 @@
 /* eslint-env node */
 
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const test = require('ava');
-
-const ohm = require('..');
+import test from 'ava';
+import ohm from '../index.mjs';
 
 // --------------------------------------------------------------------
 // Tests
@@ -57,7 +50,7 @@ test('require arguments to have arity 1', t => {
           Start = Foo<digit digit>\n
         }
       `),
-      {message: /Invalid parameter to rule Foo/}
+      {message: /Invalid parameter to rule Foo/},
   );
 });
 
@@ -99,14 +92,14 @@ test('start matching from parameterized rule', t => {
         g.match('x');
       },
       {message: /Wrong number of parameters for rule App \(expected 1, got 0\)/},
-      'parameterized default start rule does not work'
+      'parameterized default start rule does not work',
   );
   t.throws(
       () => {
         g.match('y', 'App');
       },
       {message: /Wrong number of parameters for rule App \(expected 1, got 0\)/},
-      'parameterized rule does not work as simple rule'
+      'parameterized rule does not work as simple rule',
   );
   t.truthy(g.match('y', 'App<"y">').succeeded(), 'matching with primitive parameter');
   t.truthy(g.match('z', 'App<"z">').succeeded(), 'matching with rule parameter');
@@ -184,16 +177,16 @@ test('duplicate parameter names', t => {
   t.throws(
       () => ohm.grammar('G { Foo<a, b, a, b> = a }'),
       {message: /Duplicate parameter names in rule Foo: a, b/},
-      'defining'
+      'defining',
   );
   t.throws(
       () => ohm.grammar('G { ListOf<a, a> := a }'),
       {message: /Duplicate parameter names in rule ListOf: a/},
-      'overriding'
+      'overriding',
   );
   t.throws(
       () => ohm.grammar('G { ListOf<a, a> += a }'),
       {message: /Duplicate parameter names in rule ListOf: a/},
-      'extending'
+      'extending',
   );
 });

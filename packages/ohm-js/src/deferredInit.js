@@ -1,8 +1,2 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-require('./grammarDeferredInit');
-require('./semanticsDeferredInit');
+import './grammarDeferredInit.js';
+import './semanticsDeferredInit.js';

@@ -1,11 +1,5 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const Interval = require('./Interval');
-const common = require('./common');
+import {Interval} from './Interval.js';
+import * as common from './common.js';
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -59,7 +53,7 @@ function asEscapedString(obj) {
 
 // ----------------- Trace -----------------
 
-function Trace(input, pos1, pos2, expr, succeeded, bindings, optChildren) {
+export function Trace(input, pos1, pos2, expr, succeeded, bindings, optChildren) {
   this.input = input;
   this.pos = this.pos1 = pos1;
   this.pos2 = pos2;
@@ -111,7 +105,7 @@ Trace.prototype.cloneWithExpr = function(expr) {
       expr,
       this.succeeded,
       this.bindings,
-      this.children
+      this.children,
   );
 
   ans.isHeadOfLeftRecursion = this.isHeadOfLeftRecursion;
@@ -132,7 +126,7 @@ Trace.prototype.recordLRTermination = function(ruleBodyTrace, value) {
       this.expr,
       false,
       [value],
-      [ruleBodyTrace]
+      [ruleBodyTrace],
   );
   this.terminatingLREntry.terminatesLR = true;
 };
@@ -208,9 +202,3 @@ Trace.prototype.toString = function() {
   });
   return sb.contents();
 };
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = Trace;

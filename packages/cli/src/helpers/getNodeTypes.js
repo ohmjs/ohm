@@ -1,7 +1,6 @@
-'use strict';
+import ohm from 'ohm-js';
 
-const {pexprs} = require('ohm-js');
-const CaseInsensitiveTerminal = require('ohm-js/src/CaseInsensitiveTerminal');
+const {pexprs} = ohm;
 
 // Helpers
 // -------
@@ -32,7 +31,7 @@ function _getNodeTypes(pexpr) {
   if (
     pexpr === pexprs.any ||
     pexpr === pexprs.end ||
-    pexpr instanceof CaseInsensitiveTerminal ||
+    pexpr instanceof pexprs.CaseInsensitiveTerminal ||
     pexpr instanceof pexprs.Range ||
     pexpr instanceof pexprs.Terminal ||
     pexpr instanceof pexprs.UnicodeChar
@@ -78,9 +77,6 @@ function _getNodeTypes(pexpr) {
   throw new Error(`Not implemented for ${pexpr.constructor.name}`);
 }
 
-// Exports
-// -------
-
-exports.getNodeTypes = function(pexpr, prefix = '') {
+export function getNodeTypes(pexpr, prefix = '') {
   return _getNodeTypes(pexpr).map(t => t.toString(prefix));
-};
+}

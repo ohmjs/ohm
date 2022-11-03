@@ -1,11 +1,5 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const common = require('./common');
-const pexprs = require('./pexprs-main');
+import {abstract} from './common.js';
+import * as pexprs from './pexprs-main.js';
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -24,7 +18,7 @@ function getMetaInfo(expr, grammarInterval) {
 // Operations
 // --------------------------------------------------------------------
 
-pexprs.PExpr.prototype.outputRecipe = common.abstract('outputRecipe');
+pexprs.PExpr.prototype.outputRecipe = abstract('outputRecipe');
 
 pexprs.any.outputRecipe = function(formals, grammarInterval) {
   return ['any', getMetaInfo(this, grammarInterval)];
@@ -48,7 +42,7 @@ pexprs.Param.prototype.outputRecipe = function(formals, grammarInterval) {
 
 pexprs.Alt.prototype.outputRecipe = function(formals, grammarInterval) {
   return ['alt', getMetaInfo(this, grammarInterval)].concat(
-      this.terms.map(term => term.outputRecipe(formals, grammarInterval))
+      this.terms.map(term => term.outputRecipe(formals, grammarInterval)),
   );
 };
 
@@ -70,7 +64,7 @@ pexprs.Splice.prototype.outputRecipe = function(formals, grammarInterval) {
 
 pexprs.Seq.prototype.outputRecipe = function(formals, grammarInterval) {
   return ['seq', getMetaInfo(this, grammarInterval)].concat(
-      this.factors.map(factor => factor.outputRecipe(formals, grammarInterval))
+      this.factors.map(factor => factor.outputRecipe(formals, grammarInterval)),
   );
 };
 

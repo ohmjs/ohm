@@ -1,18 +1,12 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const {assert} = require('./common');
-const Namespace = require('./Namespace');
-const pexprs = require('./pexprs-main');
+import {assert} from './common.js';
+import {Namespace} from './Namespace.js';
+import * as pexprs from './pexprs-main.js';
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
-function createError(message, optInterval) {
+export function createError(message, optInterval) {
   let e;
   if (optInterval) {
     e = new Error(optInterval.getLineAndColumnMessage() + message);
@@ -26,7 +20,7 @@ function createError(message, optInterval) {
 
 // ----------------- errors about intervals -----------------
 
-function intervalSourcesDontMatch() {
+export function intervalSourcesDontMatch() {
   return createError("Interval sources don't match");
 }
 
@@ -34,7 +28,7 @@ function intervalSourcesDontMatch() {
 
 // Grammar syntax error
 
-function grammarSyntaxError(matchFailure) {
+export function grammarSyntaxError(matchFailure) {
   const e = new Error();
   Object.defineProperty(e, 'message', {
     enumerable: true,
@@ -54,7 +48,7 @@ function grammarSyntaxError(matchFailure) {
 
 // Undeclared grammar
 
-function undeclaredGrammar(grammarName, namespace, interval) {
+export function undeclaredGrammar(grammarName, namespace, interval) {
   const message = namespace ?
     'Grammar ' +
       grammarName +
@@ -66,7 +60,7 @@ function undeclaredGrammar(grammarName, namespace, interval) {
 
 // Duplicate grammar declaration
 
-function duplicateGrammarDeclaration(grammar, namespace) {
+export function duplicateGrammarDeclaration(grammar, namespace) {
   return createError('Grammar ' + grammar.name + ' is already declared in this namespace');
 }
 
@@ -74,34 +68,34 @@ function duplicateGrammarDeclaration(grammar, namespace) {
 
 // Undeclared rule
 
-function undeclaredRule(ruleName, grammarName, optInterval) {
+export function undeclaredRule(ruleName, grammarName, optInterval) {
   return createError(
       'Rule ' + ruleName + ' is not declared in grammar ' + grammarName,
-      optInterval
+      optInterval,
   );
 }
 
 // Cannot override undeclared rule
 
-function cannotOverrideUndeclaredRule(ruleName, grammarName, optSource) {
+export function cannotOverrideUndeclaredRule(ruleName, grammarName, optSource) {
   return createError(
       'Cannot override rule ' + ruleName + ' because it is not declared in ' + grammarName,
-      optSource
+      optSource,
   );
 }
 
 // Cannot extend undeclared rule
 
-function cannotExtendUndeclaredRule(ruleName, grammarName, optSource) {
+export function cannotExtendUndeclaredRule(ruleName, grammarName, optSource) {
   return createError(
       'Cannot extend rule ' + ruleName + ' because it is not declared in ' + grammarName,
-      optSource
+      optSource,
   );
 }
 
 // Duplicate rule declaration
 
-function duplicateRuleDeclaration(ruleName, grammarName, declGrammarName, optSource) {
+export function duplicateRuleDeclaration(ruleName, grammarName, declGrammarName, optSource) {
   let message =
     "Duplicate declaration for rule '" + ruleName + "' in grammar '" + grammarName + "'";
   if (grammarName !== declGrammarName) {
@@ -112,7 +106,7 @@ function duplicateRuleDeclaration(ruleName, grammarName, declGrammarName, optSou
 
 // Wrong number of parameters
 
-function wrongNumberOfParameters(ruleName, expected, actual, source) {
+export function wrongNumberOfParameters(ruleName, expected, actual, source) {
   return createError(
       'Wrong number of parameters for rule ' +
       ruleName +
@@ -121,13 +115,13 @@ function wrongNumberOfParameters(ruleName, expected, actual, source) {
       ', got ' +
       actual +
       ')',
-      source
+      source,
   );
 }
 
 // Wrong number of arguments
 
-function wrongNumberOfArguments(ruleName, expected, actual, expr) {
+export function wrongNumberOfArguments(ruleName, expected, actual, expr) {
   return createError(
       'Wrong number of arguments for rule ' +
       ruleName +
@@ -136,22 +130,22 @@ function wrongNumberOfArguments(ruleName, expected, actual, expr) {
       ', got ' +
       actual +
       ')',
-      expr
+      expr,
   );
 }
 
 // Duplicate parameter names
 
-function duplicateParameterNames(ruleName, duplicates, source) {
+export function duplicateParameterNames(ruleName, duplicates, source) {
   return createError(
       'Duplicate parameter names in rule ' + ruleName + ': ' + duplicates.join(', '),
-      source
+      source,
   );
 }
 
 // Invalid parameter expression
 
-function invalidParameter(ruleName, expr) {
+export function invalidParameter(ruleName, expr) {
   return createError(
       'Invalid parameter to rule ' +
       ruleName +
@@ -160,7 +154,7 @@ function invalidParameter(ruleName, expr) {
       ' has arity ' +
       expr.getArity() +
       ', but parameter expressions must have arity 1',
-      expr.source
+      expr.source,
   );
 }
 
@@ -170,48 +164,48 @@ const syntacticVsLexicalNote =
   'NOTE: A _syntactic rule_ is a rule whose name begins with a capital letter. ' +
   'See https://ohmjs.org/d/svl for more details.';
 
-function applicationOfSyntacticRuleFromLexicalContext(ruleName, applyExpr) {
+export function applicationOfSyntacticRuleFromLexicalContext(ruleName, applyExpr) {
   return createError(
       'Cannot apply syntactic rule ' + ruleName + ' from here (inside a lexical context)',
-      applyExpr.source
+      applyExpr.source,
   );
 }
 
 // Lexical rule application used with applySyntactic
 
-function applySyntacticWithLexicalRuleApplication(applyExpr) {
+export function applySyntacticWithLexicalRuleApplication(applyExpr) {
   const {ruleName} = applyExpr;
   return createError(
       `applySyntactic is for syntactic rules, but '${ruleName}' is a lexical rule. ` +
       syntacticVsLexicalNote,
-      applyExpr.source
+      applyExpr.source,
   );
 }
 
 // Application of applySyntactic in a syntactic context
 
-function unnecessaryExperimentalApplySyntactic(applyExpr) {
+export function unnecessaryExperimentalApplySyntactic(applyExpr) {
   return createError(
       'applySyntactic is not required here (in a syntactic context)',
-      applyExpr.source
+      applyExpr.source,
   );
 }
 
 // Incorrect argument type
 
-function incorrectArgumentType(expectedType, expr) {
+export function incorrectArgumentType(expectedType, expr) {
   return createError('Incorrect argument type: expected ' + expectedType, expr.source);
 }
 
 // Multiple instances of the super-splice operator (`...`) in the rule body.
 
-function multipleSuperSplices(expr) {
+export function multipleSuperSplices(expr) {
   return createError("'...' can appear at most once in a rule body", expr.source);
 }
 
 // Unicode code point escapes
 
-function invalidCodePoint(applyWrapper) {
+export function invalidCodePoint(applyWrapper) {
   const node = applyWrapper._node;
   assert(node && node.isNonterminal() && node.ctorName === 'escapeChar_unicodeCodePoint');
 
@@ -220,13 +214,13 @@ function invalidCodePoint(applyWrapper) {
   const fullInterval = digitIntervals[0].coverageWith(...digitIntervals.slice(1));
   return createError(
       `U+${fullInterval.contents} is not a valid Unicode code point`,
-      fullInterval
+      fullInterval,
   );
 }
 
 // ----------------- Kleene operators -----------------
 
-function kleeneExprHasNullableOperand(kleeneExpr, applicationStack) {
+export function kleeneExprHasNullableOperand(kleeneExpr, applicationStack) {
   const actuals =
     applicationStack.length > 0 ? applicationStack[applicationStack.length - 1].args : [];
   const expr = kleeneExpr.expr.substituteParams(actuals);
@@ -247,7 +241,7 @@ function kleeneExprHasNullableOperand(kleeneExpr, applicationStack) {
 
 // ----------------- arity -----------------
 
-function inconsistentArity(ruleName, expected, actual, expr) {
+export function inconsistentArity(ruleName, expected, actual, expr) {
   return createError(
       'Rule ' +
       ruleName +
@@ -257,34 +251,34 @@ function inconsistentArity(ruleName, expected, actual, expr) {
       ', got ' +
       actual +
       ')',
-      expr.source
+      expr.source,
   );
 }
 
 // ----------------- properties -----------------
 
-function duplicatePropertyNames(duplicates) {
+export function duplicatePropertyNames(duplicates) {
   return createError('Object pattern has duplicate property names: ' + duplicates.join(', '));
 }
 
 // ----------------- constructors -----------------
 
-function invalidConstructorCall(grammar, ctorName, children) {
+export function invalidConstructorCall(grammar, ctorName, children) {
   return createError(
-      'Attempt to invoke constructor ' + ctorName + ' with invalid or unexpected arguments'
+      'Attempt to invoke constructor ' + ctorName + ' with invalid or unexpected arguments',
   );
 }
 
 // ----------------- convenience -----------------
 
-function multipleErrors(errors) {
+export function multipleErrors(errors) {
   const messages = errors.map(e => e.message);
   return createError(['Errors:'].concat(messages).join('\n- '), errors[0].interval);
 }
 
 // ----------------- semantic -----------------
 
-function missingSemanticAction(ctorName, name, type, stack) {
+export function missingSemanticAction(ctorName, name, type, stack) {
   let stackTrace = stack
       .slice(0, -1)
       .map(info => {
@@ -313,41 +307,11 @@ function missingSemanticAction(ctorName, name, type, stack) {
   return e;
 }
 
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = {
-  applicationOfSyntacticRuleFromLexicalContext,
-  applySyntacticWithLexicalRuleApplication,
-  cannotExtendUndeclaredRule,
-  cannotOverrideUndeclaredRule,
-  duplicateGrammarDeclaration,
-  duplicateParameterNames,
-  duplicatePropertyNames,
-  duplicateRuleDeclaration,
-  inconsistentArity,
-  incorrectArgumentType,
-  intervalSourcesDontMatch,
-  invalidCodePoint,
-  invalidConstructorCall,
-  invalidParameter,
-  grammarSyntaxError,
-  kleeneExprHasNullableOperand,
-  missingSemanticAction,
-  multipleSuperSplices,
-  undeclaredGrammar,
-  undeclaredRule,
-  unnecessaryExperimentalApplySyntactic,
-  wrongNumberOfArguments,
-  wrongNumberOfParameters,
-
-  throwErrors(errors) {
-    if (errors.length === 1) {
-      throw errors[0];
-    }
-    if (errors.length > 1) {
-      throw multipleErrors(errors);
-    }
-  },
-};
+export function throwErrors(errors) {
+  if (errors.length === 1) {
+    throw errors[0];
+  }
+  if (errors.length > 1) {
+    throw multipleErrors(errors);
+  }
+}

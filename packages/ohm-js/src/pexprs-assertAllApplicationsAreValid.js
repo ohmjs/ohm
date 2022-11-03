@@ -1,13 +1,7 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const {abstract, isSyntactic} = require('./common');
-const errors = require('./errors');
-const pexprs = require('./pexprs-main');
-const util = require('./util');
+import {abstract, isSyntactic} from './common.js';
+import * as errors from './errors.js';
+import * as pexprs from './pexprs-main.js';
+import * as util from './util.js';
 
 let BuiltInRules;
 
@@ -27,7 +21,7 @@ pexprs.PExpr.prototype.assertAllApplicationsAreValid = function(ruleName, gramma
 };
 
 pexprs.PExpr.prototype._assertAllApplicationsAreValid = abstract(
-    '_assertAllApplicationsAreValid'
+    '_assertAllApplicationsAreValid',
 );
 
 pexprs.any._assertAllApplicationsAreValid =
@@ -68,7 +62,7 @@ pexprs.Iter.prototype._assertAllApplicationsAreValid =
 pexprs.Apply.prototype._assertAllApplicationsAreValid = function(
     ruleName,
     grammar,
-    skipSyntacticCheck = false
+    skipSyntacticCheck = false,
 ) {
   const ruleInfo = grammar.rules[this.ruleName];
   const isContextSyntactic = isSyntactic(ruleName) && lexifyCount === 0;

@@ -1,18 +1,12 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const common = require('./common');
-const pexprs = require('./pexprs-main');
+import {abstract} from './common.js';
+import * as pexprs from './pexprs-main.js';
 
 // --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
 
 // Returns a string representing the PExpr, for use as a UI label, etc.
-pexprs.PExpr.prototype.toDisplayString = common.abstract('toDisplayString');
+pexprs.PExpr.prototype.toDisplayString = abstract('toDisplayString');
 
 pexprs.Alt.prototype.toDisplayString = pexprs.Seq.prototype.toDisplayString = function() {
   if (this.source) {

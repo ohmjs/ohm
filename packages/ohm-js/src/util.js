@@ -1,10 +1,4 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const common = require('./common');
+import * as common from './common.js';
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -96,11 +90,11 @@ let builtInRulesCallbacks = [];
 // Since Grammar.BuiltInRules is bootstrapped, most of Ohm can't directly depend it.
 // This function allows modules that do depend on the built-in rules to register a callback
 // that will be called later in the initialization process.
-exports.awaitBuiltInRules = cb => {
+export const awaitBuiltInRules = cb => {
   builtInRulesCallbacks.push(cb);
 };
 
-exports.announceBuiltInRules = grammar => {
+export const announceBuiltInRules = grammar => {
   builtInRulesCallbacks.forEach(cb => {
     cb(grammar);
   });
@@ -109,7 +103,7 @@ exports.announceBuiltInRules = grammar => {
 
 // Return an object with the line and column information for the given
 // offset in `str`.
-exports.getLineAndColumn = (str, offset) => {
+export const getLineAndColumn = (str, offset) => {
   let lineNum = 1;
   let colNum = 1;
 
@@ -169,11 +163,11 @@ exports.getLineAndColumn = (str, offset) => {
 
 // Return a nicely-formatted string describing the line and column for the
 // given offset in `str` highlighting `ranges`.
-exports.getLineAndColumnMessage = function(str, offset, ...ranges) {
-  return exports.getLineAndColumn(str, offset).toString(...ranges);
+export const getLineAndColumnMessage = function(str, offset, ...ranges) {
+  return getLineAndColumn(str, offset).toString(...ranges);
 };
 
-exports.uniqueId = (() => {
+export const uniqueId = (() => {
   let idCounter = 0;
   return prefix => '' + prefix + idCounter++;
 })();

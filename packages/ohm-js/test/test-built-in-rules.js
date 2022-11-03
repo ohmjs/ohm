@@ -1,8 +1,5 @@
-'use strict';
-
-const test = require('ava');
-
-const ohm = require('..');
+import test from 'ava';
+import ohm from '../index.mjs';
 
 const displayString = traceNode => traceNode.displayString;
 
@@ -64,7 +61,7 @@ test('case-insensitive matching', t => {
         ohm.grammar('G { start = caseInsensitive<start> }');
       },
       {message: /Incorrect argument type/},
-      'throws when argument is not a Terminal'
+      'throws when argument is not a Terminal',
   );
 
   // TODO: Maybe allow Ranges here?
@@ -73,7 +70,7 @@ test('case-insensitive matching', t => {
         ohm.grammar('G { start = caseInsensitive<"a".."z"> }');
       },
       {message: /Incorrect argument type/},
-      'throws when argument is a Range'
+      'throws when argument is a Range',
   );
 });
 
@@ -90,7 +87,7 @@ test('applySyntactic - basics', t => {
       {
         message: /expected a syntactic rule application/,
       },
-      'other arg types (e.g. Terminal) are not allowed'
+      'other arg types (e.g. Terminal) are not allowed',
   );
 
   t.throws(
@@ -98,7 +95,7 @@ test('applySyntactic - basics', t => {
       {
         message: /applySyntactic is for syntactic rules, but 'x' is a lexical rule/,
       },
-      'error if arg is a lexical rule application'
+      'error if arg is a lexical rule application',
   );
 
   // applySyntactic can't appear in a syntactic context.
@@ -131,12 +128,12 @@ test('applySyntactic - space skipping', t => {
   t.deepEqual(
       applySyntactic.children.map(displayString),
       ['$0', 'spaces'],
-      'applySyntactic consumes only the trailing space'
+      'applySyntactic consumes only the trailing space',
   );
   t.deepEqual(
       applySyntactic.children.map(displayString),
       ['$0', 'spaces'],
-      'applySyntactic consumes only the trailing space'
+      'applySyntactic consumes only the trailing space',
   );
   const letters = applySyntactic.children[0].children[0];
   t.deepEqual(letters.children.map(displayString), ['letter+']);
@@ -166,6 +163,6 @@ test('applySyntactic with lookahead', t => {
             Number = digit+
           }
         `),
-      {message: /expected a syntactic rule application/}
+      {message: /expected a syntactic rule application/},
   );
 });

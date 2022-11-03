@@ -1,11 +1,5 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const common = require('./common');
-const pexprs = require('./pexprs-main');
+import {abstract} from './common.js';
+import * as pexprs from './pexprs-main.js';
 
 // --------------------------------------------------------------------
 // Operations
@@ -18,7 +12,7 @@ const pexprs = require('./pexprs-main');
   ~"b" "a" and "a" are interchangeable in any grammar,
   both in terms of the languages they accept and their arities.
 */
-pexprs.PExpr.prototype.toString = common.abstract('toString');
+pexprs.PExpr.prototype.toString = abstract('toString');
 
 pexprs.any.toString = function() {
   return 'any';

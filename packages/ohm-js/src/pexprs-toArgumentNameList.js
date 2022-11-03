@@ -1,13 +1,5 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const common = require('./common');
-const pexprs = require('./pexprs-main');
-
-const {copyWithoutDuplicates} = common;
+import {abstract, copyWithoutDuplicates} from './common.js';
+import * as pexprs from './pexprs-main.js';
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -71,7 +63,7 @@ function resolveDuplicatedNames(argumentNameList) {
   * e.getArity() === e.toArgumentNameList(1).length
 */
 // function(firstArgIndex, noDupCheck) { ... }
-pexprs.PExpr.prototype.toArgumentNameList = common.abstract('toArgumentNameList');
+pexprs.PExpr.prototype.toArgumentNameList = abstract('toArgumentNameList');
 
 pexprs.any.toArgumentNameList = function(firstArgIndex, noDupCheck) {
   return ['any'];
@@ -108,7 +100,7 @@ pexprs.Alt.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
   // `termArgNameLists` is an array of arrays where each row is the
   // argument name list that corresponds to a term in this alternation.
   const termArgNameLists = this.terms.map(term =>
-    term.toArgumentNameList(firstArgIndex, true)
+    term.toArgumentNameList(firstArgIndex, true),
   );
 
   const argumentNameList = [];
@@ -150,7 +142,7 @@ pexprs.Iter.prototype.toArgumentNameList = function(firstArgIndex, noDupCheck) {
       .map(exprArgumentString =>
       exprArgumentString[exprArgumentString.length - 1] === 's' ?
         exprArgumentString + 'es' :
-        exprArgumentString + 's'
+        exprArgumentString + 's',
       );
   if (!noDupCheck) {
     resolveDuplicatedNames(argumentNameList);

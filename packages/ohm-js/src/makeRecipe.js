@@ -1,16 +1,6 @@
-'use strict';
+import {Builder} from './Builder.js';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const Builder = require('./Builder');
-
-// --------------------------------------------------------------------
-// Private stuff
-// --------------------------------------------------------------------
-
-function makeRecipe(recipe) {
+export function makeRecipe(recipe) {
   if (typeof recipe === 'function') {
     return recipe.call(new Builder());
   } else {
@@ -21,9 +11,3 @@ function makeRecipe(recipe) {
     return new Builder().fromRecipe(recipe);
   }
 }
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-exports.makeRecipe = makeRecipe;

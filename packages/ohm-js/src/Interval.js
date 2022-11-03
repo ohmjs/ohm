@@ -1,18 +1,12 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const {assert} = require('./common');
-const errors = require('./errors');
-const util = require('./util');
+import {assert} from './common.js';
+import * as errors from './errors.js';
+import * as util from './util.js';
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
-function Interval(sourceString, startIdx, endIdx) {
+export function Interval(sourceString, startIdx, endIdx) {
   this.sourceString = sourceString;
   this.startIdx = startIdx;
   this.endIdx = endIdx;
@@ -87,12 +81,12 @@ Interval.prototype = {
     }
     assert(
         this.startIdx >= that.startIdx && this.endIdx <= that.endIdx,
-        'other interval does not cover this one'
+        'other interval does not cover this one',
     );
     return new Interval(
         this.sourceString,
         this.startIdx - that.startIdx,
-        this.endIdx - that.startIdx
+        this.endIdx - that.startIdx,
     );
   },
 
@@ -129,9 +123,3 @@ Object.defineProperties(Interval.prototype, {
     enumerable: true,
   },
 });
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = Interval;

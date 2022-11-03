@@ -1,9 +1,7 @@
-'use strict';
+import test from 'ava';
+import ohm from '../index.mjs';
 
-const ohm = require('..');
-const test = require('ava');
-
-const {makeGrammar} = require('./helpers/testUtil');
+import {makeGrammar} from './helpers/testUtil.js';
 
 // --------------------------------------------------------------------
 // Tests

@@ -1,11 +1,11 @@
-'use strict';
+import {Command} from 'commander';
 
-const {Command} = require('commander');
+import fs from 'fs';
+import commands from './commands/index.js';
 
-const {version} = require('../package.json');
-const commands = require('./commands');
+const {version} = JSON.parse(fs.readFileSync('./package.json'));
 
-function ohmCli(userArgs, optsForTesting = {}) {
+export function ohmCli(userArgs, optsForTesting = {}) {
   const program = new Command();
   program.name('ohm').version(version, '-v, --version').option('-n, --dryRun', '');
 
@@ -22,7 +22,3 @@ function ohmCli(userArgs, optsForTesting = {}) {
 
   program.parse(userArgs, {from: 'user'});
 }
-
-module.exports = {
-  ohmCli,
-};

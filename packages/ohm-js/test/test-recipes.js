@@ -1,11 +1,5 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const ohm = require('..');
-const test = require('ava');
+import test from 'ava';
+import ohm from '../index.mjs';
 
 // --------------------------------------------------------------------
 // Helpers
@@ -26,13 +20,13 @@ test('simple grammar recipes', t => {
   g = ohm.grammar('G { start = end }');
   t.truthy(
       ohm.makeRecipe(g.toRecipe()).match('', 'start').succeeded(),
-      'grammar with one rule'
+      'grammar with one rule',
   );
 
   g = ohm.grammar('MyGrammar { start = x\n  x = "a" }');
   t.truthy(
       ohm.makeRecipe(g.toRecipe()).match('a', 'start').succeeded(),
-      'grammar with multiple rules'
+      'grammar with multiple rules',
   );
 });
 
@@ -52,7 +46,7 @@ test('grammar recipes with supergrammars', t => {
       a = "a"
       b = "b"
     }`,
-      ns
+      ns,
   );
   const g3 = ohm.makeRecipe(ns.G3.toRecipe());
   t.truthy(g3.match('ab', 'begin').succeeded(), 'two levels of inheritance');
@@ -64,7 +58,7 @@ test('grammar recipes with supergrammars', t => {
       start += "a"
       digit := ... | "☝️"
     }`,
-      ns
+      ns,
   );
   const g4 = ohm.makeRecipe(ns.G4.toRecipe());
   t.truthy(g4.match('', 'start').succeeded(), 'original rule matching');
@@ -91,7 +85,7 @@ test('grammar recipes involving parameterized rules', t => {
   t.regex(
       recipe,
       /\["app",\{.*?\},"bar_one",\[\["param",\{.*?\},0\]/,
-      'forwards parameters instead of applications'
+      'forwards parameters instead of applications',
   );
 });
 
@@ -108,7 +102,7 @@ test('grammar recipes with source', t => {
         '  identPart += "$"',
         '  number = digit+',
         '}',
-      ].join('\n')
+      ].join('\n'),
   );
   let g = ohm.makeRecipe(ns.G.toRecipe());
   t.is(g.rules.Start.body.source.contents, 'ident*');
@@ -127,7 +121,7 @@ test('grammar recipes with source', t => {
 
   // Check that recipes without source still work fine.
   g = ohm.makeRecipe(
-      '["grammar",{},"G",null,"start",{"start":["define",{},null,[],["app",{},"any",[]]]}]'
+      '["grammar",{},"G",null,"start",{"start":["define",{},null,[],["app",{},"any",[]]]}]',
   );
   t.is(g.source, undefined);
   t.is(g.rules.start.body.source, undefined);
@@ -146,7 +140,7 @@ test('recipes with U+2028 LINE SEPARATOR and U+2029 PARAGRAPH SEPARATOR', t => {
       ohm
           .grammar(String.raw`G { x = "blah\u2028" }`)
           .toRecipe()
-          .includes('\u2028')
+          .includes('\u2028'),
   );
 });
 

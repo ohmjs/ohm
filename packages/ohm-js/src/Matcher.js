@@ -1,18 +1,11 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const MatchState = require('./MatchState');
-
-const pexprs = require('./pexprs');
+import {MatchState} from './MatchState.js';
+import * as pexprs from './pexprs.js';
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
-function Matcher(grammar) {
+export function Matcher(grammar) {
   this.grammar = grammar;
   this.memoTable = [];
   this.input = '';
@@ -92,9 +85,3 @@ Matcher.prototype._getStartExpr = function(optStartApplicationStr) {
   const startApp = this.grammar.parseApplication(applicationStr);
   return new pexprs.Seq([startApp, pexprs.end]);
 };
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = Matcher;

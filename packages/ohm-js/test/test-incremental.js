@@ -1,15 +1,8 @@
-'use strict';
+import fs from 'fs';
+import test from 'ava';
+import {makeGrammar} from './helpers/testUtil.js';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const fs = require('fs');
-const ohm = require('..');
-const test = require('ava');
-const testUtil = require('./helpers/testUtil');
-
-const {makeGrammar} = testUtil;
+import ohm from '../index.mjs';
 
 // --------------------------------------------------------------------
 // Private stuff

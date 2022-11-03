@@ -1,9 +1,8 @@
-'use strict';
+import test from 'ava-spec';
 
-const test = require('ava-spec');
-
-const fs = require('fs');
-const ohm = require('..');
+import fs from 'fs';
+import ohm from '../index.mjs';
+import {buildGrammar} from '../src/buildGrammar.js';
 
 const arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
 const ohmGrammarSource = fs.readFileSync('src/ohm-grammar.ohm').toString();
@@ -105,14 +104,14 @@ test('string', t => {
         ohm.grammar('G { r = "\\w" }');
       },
       {message: /Expected "\\""/},
-      'unrecognized escape characters are parse errors'
+      'unrecognized escape characters are parse errors',
   );
 });
 
 test('unicode code point escapes', t => {
   assertSucceeds(
       t,
-      ohm.grammar(String.raw`G { start = "\u{78}\u{78}" }`).match('\u{78}\u{78}')
+      ohm.grammar(String.raw`G { start = "\u{78}\u{78}" }`).match('\u{78}\u{78}'),
   );
   assertSucceeds(t, ohm.grammar(String.raw`G { start = "\u{1F920}" }`).match('🤠'));
   assertSucceeds(t, ohm.grammar(String.raw`G { start = "🤠" }`).match('🤠'));
@@ -177,21 +176,21 @@ test('ranges', t => {
         ohm.grammar('M { charRange = "ab".."c" }');
       },
       {message: /Expected "}"/},
-      'from-terminal must have length 1'
+      'from-terminal must have length 1',
   );
   t.throws(
       () => {
         ohm.grammar('M { charRange = "ab".."cd" }');
       },
       {message: /Expected "}"/},
-      'from-terminal must have length 1'
+      'from-terminal must have length 1',
   );
   t.throws(
       () => {
         ohm.grammar('M { charRange = "a".."bc" }');
       },
       {message: /Expected "\\""/},
-      'to-terminal must have length 1'
+      'to-terminal must have length 1',
   );
 });
 
@@ -871,7 +870,7 @@ describe('inheritance', t => {
         () => {
           ohm.grammar('G2 <: G1 {}');
         },
-        {message: /Grammar G1 is not declared/}
+        {message: /Grammar G1 is not declared/},
     );
   });
 
@@ -880,7 +879,7 @@ describe('inheritance', t => {
         () => {
           ohm.grammar('G2 <: G1 {}', {});
         },
-        {message: /Grammar G1 is not declared in namespace/}
+        {message: /Grammar G1 is not declared in namespace/},
     );
   });
 
@@ -894,7 +893,7 @@ describe('inheritance', t => {
           message:
           /Duplicate declaration for rule 'foo' in grammar 'G2' \(originally declared in 'G1'\)/,
         },
-        'throws if rule is already declared in super-grammar'
+        'throws if rule is already declared in super-grammar',
     );
   });
 
@@ -906,7 +905,7 @@ describe('inheritance', t => {
           () => {
             ohm.grammar('G3 <: G1 { foo := "foo" }', ns);
           },
-          {message: /Cannot override rule foo because it is not declared in G1/}
+          {message: /Cannot override rule foo because it is not declared in G1/},
       );
     });
 
@@ -989,7 +988,7 @@ describe('inheritance', t => {
           () => {
             ohm.grammar('G3 <: G1 { bar += "bar" }', ns);
           },
-          {message: /Cannot extend rule bar because it is not declared in G1/}
+          {message: /Cannot extend rule bar because it is not declared in G1/},
       );
     });
 
@@ -1011,7 +1010,7 @@ describe('inheritance', t => {
               '> 1 | M2 <: M1 { foo += bar baz }',
               '                        ^~~~~~~',
               'Rule foo involves an alternation which has inconsistent arity (expected 1, got 2)',
-            ].join('\n')
+            ].join('\n'),
         );
       }
 
@@ -1028,7 +1027,7 @@ describe('inheritance', t => {
               '> 1 | M4 <: M3 { foo += digit }',
               '                        ^~~~~',
               'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)',
-            ].join('\n')
+            ].join('\n'),
         );
       }
     });
@@ -1073,19 +1072,19 @@ test('override with "..."', t => {
   t.throws(
       () => ohm.grammar('G { doesNotExist := ... }'),
       {message: /Cannot override rule doesNotExist/},
-      'it gives the correct error message when overriding non-existent rule'
+      'it gives the correct error message when overriding non-existent rule',
   );
 
   t.throws(
       () => ohm.grammar('G { foo = ... }'),
       {message: /Expected "}"/},
-      "it's not allowed in a rule definition"
+      "it's not allowed in a rule definition",
   );
 
   t.throws(
       () => ohm.grammar('G { letter += ... }'),
       {message: /Expected "}"/},
-      "it's not allowed when extending"
+      "it's not allowed when extending",
   );
 
   t.throws(() => ohm.grammar('G { letter := "@" "#" | ... }'), {
@@ -1095,7 +1094,7 @@ test('override with "..."', t => {
   t.throws(
       () => ohm.grammar('G { letter := ... | "@" | ... }'),
       {message: /at most once/},
-      "'...' can appear at most once in a rule body"
+      "'...' can appear at most once in a rule body",
   );
 
   /*
@@ -1119,7 +1118,7 @@ describe('bindings', test => {
             '> 1 | G { foo = "a" "c" | "b" }',
             '                          ^~~',
             'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)',
-          ].join('\n')
+          ].join('\n'),
       );
     }
   });
@@ -1225,7 +1224,7 @@ test('inline rule declarations', t => {
   t.is(
       makeEval(Arithmetic)(Arithmetic.match('10*(2+123)-4/5')),
       1249.2,
-      'semantic action works'
+      'semantic action works',
   );
 
   const m2 = ohm.grammar(
@@ -1235,7 +1234,7 @@ test('inline rule declarations', t => {
               | mulExp
       }
     `,
-      ns
+      ns,
   );
   t.is(makeEval(m2)(m2.match('2*3~4')), 2);
 
@@ -1245,15 +1244,15 @@ test('inline rule declarations', t => {
       },
       {
         message: /rule 'addExp_minus' in grammar 'Bad' \(originally declared in 'Arithmetic'\)/,
-      }
+      },
   );
 
   t.throws(
       () => {
         ohm.grammar('Bad { start = "a" ("b" -- bad\n) }');
       },
-      null,
-      'inline rules must be at the top level'
+      undefined,
+      'inline rules must be at the top level',
   );
 });
 
@@ -1267,7 +1266,7 @@ describe('lexical vs. syntactic rules', test => {
         {
           message: /Cannot apply syntactic rule Bar from here \(inside a lexical context\)/,
         },
-        'lexical calling syntactic'
+        'lexical calling syntactic',
     );
     t.truthy(ohm.grammar('G { Foo = bar  bar = "bar" }'), 'syntactic calling lexical');
     t.truthy(ohm.grammar('G { Foo = Bar  Bar = "bar" }'), 'syntactic calling syntactic');
@@ -1320,7 +1319,7 @@ describe('lexical vs. syntactic rules', test => {
         },
         {
           message: /Cannot apply syntactic rule R from here \(inside a lexical context\)/,
-        }
+        },
     );
   });
 });
@@ -1338,7 +1337,7 @@ test('space skipping semantics', t => {
   assertSucceeds(
       t,
       g.match('> a', 'NegLookahead'),
-      "negative lookahead doesn't consume anything"
+      "negative lookahead doesn't consume anything",
   );
 });
 
@@ -1350,7 +1349,7 @@ test('single-line comment after case name (#282)', t => {
       ohmGrammar.match(`G {
     Start = -- foo // ok
           | "x"
-  }`)
+  }`),
   );
   assertSucceeds(t, ohmGrammar.match('G {Start = -- foo // A comment\n}'));
   assertSucceeds(t, ohmGrammar.match('G {} // This works too'));
@@ -1369,20 +1368,20 @@ describe('bootstrap', test => {
   });
 
   test('it can produce a grammar that works', t => {
-    const g = ohm._buildGrammar(
+    const g = buildGrammar(
         ns.Ohm.match(ohmGrammarSource, 'Grammar'),
         ohm.createNamespace(),
-        ns.Ohm
+        ns.Ohm,
     );
     assertSucceeds(
         t,
         g.match(ohmGrammarSource, 'Grammar'),
-        'Ohm grammar can recognize itself'
+        'Ohm grammar can recognize itself',
     );
-    const Arithmetic = ohm._buildGrammar(
+    const Arithmetic = buildGrammar(
         g.match(arithmeticGrammarSource, 'Grammar'),
         ohm.createNamespace(),
-        g
+        g,
     );
     const s = Arithmetic.createSemantics().addAttribute('v', {
       exp(expr) {
@@ -1429,15 +1428,15 @@ describe('bootstrap', test => {
   });
 
   test('full bootstrap!', t => {
-    const g = ohm._buildGrammar(
+    const g = buildGrammar(
         ns.Ohm.match(ohmGrammarSource, 'Grammar'),
         ohm.createNamespace(),
-        ns.Ohm
+        ns.Ohm,
     );
-    const gPrime = ohm._buildGrammar(
+    const gPrime = buildGrammar(
         g.match(ohmGrammarSource, 'Grammar'),
         ohm.createNamespace(),
-        g
+        g,
     );
     gPrime.namespaceName = g.namespaceName; // make their namespaceName properties the same
     compareGrammars(t, g, gPrime);

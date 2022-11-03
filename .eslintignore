@@ -6,3 +6,4 @@
 *.ohm-bundle.*
 ava-ts.config.js
 visualizer/assets/**
+packages/cli/src/helpers/generateTypes.test.js

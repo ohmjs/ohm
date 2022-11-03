@@ -1,11 +1,9 @@
 /* global Buffer */
 
-'use strict';
+import fs from 'fs';
+import test from 'ava';
 
-const fs = require('fs');
-const test = require('ava');
-
-const ohm = require('..');
+import ohm from '../index.mjs';
 
 // --------------------------------------------------------------------
 // Tests
@@ -21,7 +19,7 @@ test('namespaces', t => {
       () => {
         ohm.grammar('ccc { bar = "bar" }', ns2);
       },
-      {message: 'Grammar ccc is already declared in this namespace'}
+      {message: 'Grammar ccc is already declared in this namespace'},
   );
   t.truthy(ns2.G, 'ns2 delegates to ns1');
 
@@ -45,14 +43,14 @@ test('instantiating grammars from different types of objects', t => {
         ohm.grammar({toString: 3});
       },
       {message: 'Expected string as first argument, got [object Object]'},
-      'object with invalid toString'
+      'object with invalid toString',
   );
   t.throws(
       () => {
         ohm.grammar(Object.create(null));
       },
       {message: 'Expected string as first argument, got [object Object]'},
-      'object with no toString'
+      'object with no toString',
   );
 
   t.throws(
@@ -60,7 +58,7 @@ test('instantiating grammars from different types of objects', t => {
         ohm.grammar([1, 2]);
       },
       {message: 'Expected string as first argument, got Array: "1,2"'},
-      'Array with valid toString'
+      'Array with valid toString',
   );
 
   function Foo() {
@@ -73,6 +71,6 @@ test('instantiating grammars from different types of objects', t => {
         ohm.grammar(new Foo());
       },
       {message: 'Expected string as first argument, got Foo: "Foo!"'},
-      'Custom objects with toString'
+      'Custom objects with toString',
   );
 });

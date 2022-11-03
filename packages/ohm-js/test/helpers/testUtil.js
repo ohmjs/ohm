@@ -1,10 +1,4 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const ohm = require('../..');
+import ohm from '../../index.mjs';
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -12,22 +6,13 @@ const ohm = require('../..');
 
 let nextId = 0;
 
-function uniqueId() {
+export function uniqueId() {
   return nextId++;
 }
 
-function makeGrammar(source, optNamespace) {
+export function makeGrammar(source, optNamespace) {
   if (Array.isArray(source)) {
     source = source.join('\n');
   }
   return ohm.grammar(source, optNamespace);
 }
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = {
-  makeGrammar,
-  uniqueId,
-};

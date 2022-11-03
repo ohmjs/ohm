@@ -1,12 +1,10 @@
-'use strict';
-
-const common = require('./common');
+import * as common from './common.js';
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
-class Node {
+export class Node {
   constructor(matchLength) {
     this.matchLength = matchLength;
   }
@@ -44,7 +42,7 @@ class Node {
           this.ctorName +
           ' (it has ' +
           this.numChildren() +
-          ' children)'
+          ' children)',
       );
     } else {
       return this.firstChild();
@@ -54,7 +52,7 @@ class Node {
   firstChild() {
     if (this.hasNoChildren()) {
       throw new Error(
-          'cannot get first child of a ' + this.ctorName + ' node, which has no children'
+          'cannot get first child of a ' + this.ctorName + ' node, which has no children',
       );
     } else {
       return this.childAt(0);
@@ -64,7 +62,7 @@ class Node {
   lastChild() {
     if (this.hasNoChildren()) {
       throw new Error(
-          'cannot get last child of a ' + this.ctorName + ' node, which has no children'
+          'cannot get last child of a ' + this.ctorName + ' node, which has no children',
       );
     } else {
       return this.childAt(this.numChildren() - 1);
@@ -112,7 +110,7 @@ class Node {
 
 // Terminals
 
-class TerminalNode extends Node {
+export class TerminalNode extends Node {
   get ctorName() {
     return '_terminal';
   }
@@ -128,7 +126,7 @@ class TerminalNode extends Node {
 
 // Nonterminals
 
-class NonterminalNode extends Node {
+export class NonterminalNode extends Node {
   constructor(ruleName, children, childOffsets, matchLength) {
     super(matchLength);
     this.ruleName = ruleName;
@@ -155,7 +153,7 @@ class NonterminalNode extends Node {
 
 // Iterations
 
-class IterationNode extends Node {
+export class IterationNode extends Node {
   constructor(children, childOffsets, matchLength, isOptional) {
     super(matchLength);
     this.children = children;
@@ -175,14 +173,3 @@ class IterationNode extends Node {
     return this.optional;
   }
 }
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = {
-  Node,
-  TerminalNode,
-  NonterminalNode,
-  IterationNode,
-};

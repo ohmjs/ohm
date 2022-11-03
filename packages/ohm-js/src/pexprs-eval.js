@@ -1,18 +1,8 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const Trace = require('./Trace');
-const common = require('./common');
-const errors = require('./errors');
-const nodes = require('./nodes');
-const pexprs = require('./pexprs-main');
-
-const {TerminalNode} = nodes;
-const {NonterminalNode} = nodes;
-const {IterationNode} = nodes;
+import {Trace} from './Trace.js';
+import * as common from './common.js';
+import * as errors from './errors.js';
+import {IterationNode, NonterminalNode, TerminalNode} from './nodes.js';
+import * as pexprs from './pexprs-main.js';
 
 // --------------------------------------------------------------------
 // Operations
@@ -145,7 +135,7 @@ pexprs.Iter.prototype.eval = function(state) {
     const row = state._bindings.splice(state._bindings.length - arity, arity);
     const rowOffsets = state._bindingOffsets.splice(
         state._bindingOffsets.length - arity,
-        arity
+        arity,
     );
     for (idx = 0; idx < row.length; idx++) {
       cols[idx].push(row[idx]);
@@ -169,7 +159,7 @@ pexprs.Iter.prototype.eval = function(state) {
   const isOptional = this instanceof pexprs.Opt;
   for (idx = 0; idx < cols.length; idx++) {
     state._bindings.push(
-        new IterationNode(cols[idx], colOffsets[idx], matchLength, isOptional)
+        new IterationNode(cols[idx], colOffsets[idx], matchLength, isOptional),
     );
     state._bindingOffsets.push(offset);
   }
@@ -328,7 +318,7 @@ pexprs.Apply.prototype.reallyEval = function(state) {
   // across all applications, not just this one.
   inputStream.examinedLength = Math.max(
       inputStream.examinedLength,
-      origInputStreamExaminedLength
+      origInputStreamExaminedLength,
   );
 
   state.exitApplication(origPosInfo, value);
@@ -375,7 +365,7 @@ pexprs.Apply.prototype.growSeedResult = function(body, state, origPos, lrMemoRec
           this,
           true,
           [newValue],
-          [seedTrace.clone()]
+          [seedTrace.clone()],
       );
     }
     inputStream.pos = origPos;

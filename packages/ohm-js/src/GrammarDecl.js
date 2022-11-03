@@ -1,14 +1,8 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const Grammar = require('./Grammar');
-const InputStream = require('./InputStream');
-const common = require('./common');
-const errors = require('./errors');
-const pexprs = require('./pexprs');
+import {Grammar} from './Grammar.js';
+import {InputStream} from './InputStream.js';
+import {getDuplicates} from './common.js';
+import * as errors from './errors.js';
+import * as pexprs from './pexprs.js';
 
 // --------------------------------------------------------------------
 // Private Stuff
@@ -16,7 +10,7 @@ const pexprs = require('./pexprs');
 
 // Constructors
 
-function GrammarDecl(name) {
+export function GrammarDecl(name) {
   this.name = name;
 }
 
@@ -32,7 +26,7 @@ GrammarDecl.prototype.ensureSuperGrammar = function() {
       // TODO: The conditional expression below is an ugly hack. It's kind of ok because
       // I doubt anyone will ever try to declare a grammar called `BuiltInRules`. Still,
       // we should try to find a better way to do this.
-      this.name === 'BuiltInRules' ? Grammar.ProtoBuiltInRules : Grammar.BuiltInRules
+      this.name === 'BuiltInRules' ? Grammar.ProtoBuiltInRules : Grammar.BuiltInRules,
     );
   }
   return this.superGrammar;
@@ -50,9 +44,9 @@ GrammarDecl.prototype.installOverriddenOrExtendedRule = function(
     name,
     formals,
     body,
-    source
+    source,
 ) {
-  const duplicateParameterNames = common.getDuplicates(formals);
+  const duplicateParameterNames = getDuplicates(formals);
   if (duplicateParameterNames.length > 0) {
     throw errors.duplicateParameterNames(name, duplicateParameterNames, source);
   }
@@ -107,7 +101,7 @@ GrammarDecl.prototype.build = function() {
       this.name,
       this.ensureSuperGrammar(),
       this.rules,
-      this.defaultStartRule
+      this.defaultStartRule,
   );
 
   // TODO: change the pexpr.prototype.assert... methods to make them add
@@ -161,7 +155,7 @@ GrammarDecl.prototype.define = function(name, formals, body, description, source
   } else if (this.rules[name]) {
     throw errors.duplicateRuleDeclaration(name, this.name, this.name, source);
   }
-  const duplicateParameterNames = common.getDuplicates(formals);
+  const duplicateParameterNames = getDuplicates(formals);
   if (duplicateParameterNames.length > 0) {
     throw errors.duplicateParameterNames(name, duplicateParameterNames, source);
   }
@@ -184,9 +178,3 @@ GrammarDecl.prototype.extend = function(name, formals, fragment, descIgnored, so
   this.installOverriddenOrExtendedRule(name, formals, body, source);
   return this;
 };
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = GrammarDecl;

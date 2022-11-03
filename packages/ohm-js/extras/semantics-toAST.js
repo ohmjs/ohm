@@ -1,5 +1,3 @@
-'use strict';
-
 function handleListOf(child) {
   return child.toAST(this.args.mapping);
 }
@@ -105,7 +103,7 @@ const defaultOperation = {
 // for the given match result `res` containg a concrete syntax tree (CST) and grammar.
 // The optional `mapping` parameter can be used to customize how the nodes of the CST
 // are mapped to the AST (see /doc/extras.md#toastmatchresult-mapping).
-function toAST(res, mapping) {
+export function toAST(res, mapping) {
   if (typeof res.failed !== 'function' || res.failed()) {
     throw new Error('toAST() expects a succesful MatchResult as first parameter');
   }
@@ -124,15 +122,10 @@ function toAST(res, mapping) {
 }
 
 // Returns a semantics containg the toAST(mapping) operation for the given grammar g.
-function semanticsForToAST(g) {
+export function semanticsForToAST(g) {
   if (typeof g.createSemantics !== 'function') {
     throw new Error('semanticsToAST() expects a Grammar as parameter');
   }
 
   return g.createSemantics().addOperation('toAST(mapping)', defaultOperation);
 }
-
-module.exports = {
-  helper: toAST,
-  semantics: semanticsForToAST,
-};

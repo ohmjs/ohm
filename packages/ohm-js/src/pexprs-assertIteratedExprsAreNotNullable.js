@@ -1,19 +1,13 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const common = require('./common');
-const errors = require('./errors');
-const pexprs = require('./pexprs-main');
+import {abstract} from './common.js';
+import * as errors from './errors.js';
+import * as pexprs from './pexprs-main.js';
 
 // --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
 
-pexprs.PExpr.prototype.assertIteratedExprsAreNotNullable = common.abstract(
-    'assertIteratedExprsAreNotNullable'
+pexprs.PExpr.prototype.assertIteratedExprsAreNotNullable = abstract(
+    'assertIteratedExprsAreNotNullable',
 );
 
 pexprs.any.assertIteratedExprsAreNotNullable =

@@ -1,14 +1,4 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const {assert} = require('../src/common');
-
-// --------------------------------------------------------------------
-// Private stuff
-// --------------------------------------------------------------------
+import {assert} from '../src/common.js';
 
 // Helpers
 
@@ -81,7 +71,7 @@ function parseSignature(sig) {
     * a function taking two arguments (node, fn), and returning an Array which is the result
       of apply `fn` to each of the node's children.
  */
-function VisitorFamily(config) {
+export function VisitorFamily(config) {
   this._shapes = config.shapes;
   this._getTag = config.getTag;
 
@@ -123,7 +113,7 @@ VisitorFamily.prototype._checkActionDict = function(dict) {
       const actual = dict[k].length;
       assert(
           actual === expected,
-          "Action '" + k + "' has the wrong arity: expected " + expected + ', got ' + actual
+          "Action '" + k + "' has the wrong arity: expected " + expected + ', got ' + actual,
       );
     }
   });
@@ -156,16 +146,10 @@ VisitorFamily.prototype.addOperation = function(signature, actions) {
     this.args = argsObj;
     const ans = actions[tag].apply(
         this,
-        family._getChildren[tag](this._adaptee, family._wrap)
+        family._getChildren[tag](this._adaptee, family._wrap),
     );
     this.args = oldArgs;
     return ans;
   };
   return this;
 };
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = VisitorFamily;

@@ -1,18 +1,12 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const Failure = require('./Failure');
-const common = require('./common');
-const pexprs = require('./pexprs-main');
+import {abstract} from './common.js';
+import * as pexprs from './pexprs-main.js';
+import {Failure} from './Failure.js';
 
 // --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
 
-pexprs.PExpr.prototype.toFailure = common.abstract('toFailure');
+pexprs.PExpr.prototype.toFailure = abstract('toFailure');
 
 pexprs.any.toFailure = function(grammar) {
   return new Failure(this, 'any object', 'description');

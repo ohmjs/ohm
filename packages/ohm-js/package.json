@@ -17,8 +17,27 @@
   ],
   "homepage": "https://ohmjs.org",
   "bugs": "https://github.com/harc/ohm/issues",
-  "main": "index.js",
-  "module": "dist/ohm.esm.js",
+  "type": "module",
+  "main": "./dist/ohm.cjs",
+  "module": "./index.mjs",
+  "exports": {
+    ".": [
+      {
+        "import": "./index.mjs",
+        "require": "./dist/ohm.cjs",
+        "types": "./index.d.ts"
+      },
+      "./dist/ohm.cjs"
+    ],
+    "./extras": [
+      {
+        "import": "./extras/index.mjs",
+        "require": "./dist/ohm-extras.cjs",
+        "types": "./extras/index.d.ts"
+      },
+      "./dist/ohm-extras.cjs"
+    ]
+  },
   "files": [
     "src",
     "dist",
@@ -30,22 +49,24 @@
   "scripts": {
     "prebootstrap": "bash scripts/prebootstrap",
     "bootstrap": "bash scripts/bootstrap --test || (echo 'Bootstrap failed.' && mv -v dist/ohm-grammar.js.old dist/ohm-grammar.js && mv -v dist/built-in-rules.js.old dist/built-in-rules.js && mv -v dist/operations-and-attributes.js.old dist/operations-and-attributes.js)",
-    "build": "yarn build-debug && webpack --mode=production",
-    "build-debug": "webpack --mode=development && yarn build-esm && node scripts/generate-types.mjs",
-    "build-esm": "rollup -c rollup.config.mjs",
+    "build": "yarn build:debug && yarn build:min",
+    "build:min": "terser dist/ohm.js --mangle --compress -o dist/ohm.min.js",
+    "build:debug": "yarn build:cjs && node scripts/generate-types.js",
+    "build:cjs": "rollup -c rollup.config.js",
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
     "lint": "eslint . --ignore-path ../.eslintignore",
     "format": "prettier . --write --ignore-path ../.prettierignore --config ../.prettierrc && eslint . --ignore-path ../.eslintignore --fix",
-    "test": "ava && ava --config ava-ts.config.js test/test-typings.ts",
+    "test": "ava && ava --config ava-ts.config.js test/test-typings.ts && node test/_test-doc.js",
     "test-watch": "ava --watch",
     "pre-commit": "yarn run lint && yarn run build && yarn run test",
+    "prebuild": "node scripts/prebuild.js",
     "prepublishOnly": "bash scripts/prepublishOnly",
     "prepack": "cp ../../README.md . && yarn build",
     "postpack": "rm README.md",
     "postpublish": "echo '👉  Now go to https://github.com/harc/ohm/releases and create a release.'",
     "unsafe-bootstrap": "bash scripts/bootstrap",
     "update-contributors": "bash scripts/update-contributors",
-    "watch": "webpack --mode=development --watch"
+    "watch": "yarn build:cjs --watch"
   },
   "license": "MIT",
   "author": "Alex Warth <alexwarth@gmail.com> (http://tinlizzie.org/~awarth)",
@@ -96,12 +117,12 @@
     "@rollup/plugin-commonjs": "^21.0.1",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^13.1.3",
-    "ava": "^3.15.0",
+    "ava": "^4.3.3",
     "ava-spec": "^1.1.1",
     "dedent": "^0.7.0",
-    "eslint": "^7.9.0",
+    "eslint": "^7.31.0",
     "eslint-config-google": "^0.14.0",
-    "eslint-plugin-ava": "^11.0.0",
+    "eslint-plugin-ava": "^12.0.0",
     "eslint-plugin-camelcase-ohm": "^0.2.1",
     "eslint-plugin-no-extension-in-require": "^0.2.0",
     "husky": "^4.2.5",
@@ -111,12 +132,11 @@
     "node-static": "^0.7.11",
     "ohm-grammar-ecmascript": "^1.0.0",
     "rollup": "^2.63.0",
-    "ts-loader": "^8.0.4",
+    "terser": "^5.15.1",
     "ts-node": "^9.0.0",
     "typescript": "^4.0.3",
-    "walk-sync": "^2.2.0",
-    "webpack": "^4.44.2",
-    "webpack-cli": "^3.3.12"
+    "uvu": "^0.5.6",
+    "walk-sync": "^2.2.0"
   },
   "engines": {
     "node": ">=0.12.1"

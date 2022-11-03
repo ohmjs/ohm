@@ -1,15 +1,9 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const InputStream = require('./InputStream');
-const {IterationNode} = require('./nodes');
-const MatchResult = require('./MatchResult');
-const common = require('./common');
-const errors = require('./errors');
-const util = require('./util');
+import {InputStream} from './InputStream.js';
+import {IterationNode} from './nodes.js';
+import {MatchResult} from './MatchResult.js';
+import * as common from './common.js';
+import * as errors from './errors.js';
+import * as util from './util.js';
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -167,7 +161,7 @@ class Wrapper {
 // recursive. This constructor should not be called directly except from
 // `Semantics.createSemantics`. The normal ways to create a Semantics, given a grammar 'g', are
 // `g.createSemantics()` and `g.extendSemantics(parentSemantics)`.
-function Semantics(grammar, superSemantics) {
+export function Semantics(grammar, superSemantics) {
   const self = this;
   this.grammar = grammar;
   this.checkedActionDicts = false;
@@ -193,7 +187,7 @@ function Semantics(grammar, superSemantics) {
           this.super.grammar.name +
           "' for use with grammar '" +
           grammar.name +
-          "' (not a sub-grammar)"
+          "' (not a sub-grammar)",
       );
     }
     this.operations = Object.create(this.super.operations);
@@ -327,7 +321,7 @@ function parseSignature(signature, type) {
 
   const r = Semantics.prototypeGrammar.match(
       signature,
-    type === 'operation' ? 'OperationSignature' : 'AttributeSignature'
+    type === 'operation' ? 'OperationSignature' : 'AttributeSignature',
   );
   if (r.failed()) {
     throw new Error(r.message);
@@ -404,7 +398,7 @@ Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDi
           thisThing.formals.length +
           ', got ' +
           arguments.length +
-          ')'
+          ')',
       );
     }
 
@@ -453,7 +447,7 @@ Semantics.prototype.extendOperationOrAttribute = function(type, name, actionDict
         name +
         "': did not inherit an " +
         type +
-        ' with that name'
+        ' with that name',
     );
   }
   if (hasOwnProperty(this[typePlural], name)) {
@@ -485,12 +479,12 @@ Semantics.prototype.assertNewName = function(name, type) {
   }
   if (name in this.operations) {
     throw new Error(
-        'Cannot add ' + type + " '" + name + "': an operation with that name already exists"
+        'Cannot add ' + type + " '" + name + "': an operation with that name already exists",
     );
   }
   if (name in this.attributes) {
     throw new Error(
-        'Cannot add ' + type + " '" + name + "': an attribute with that name already exists"
+        'Cannot add ' + type + " '" + name + "': an attribute with that name already exists",
     );
   }
 };
@@ -512,7 +506,7 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
       grammar,
     optSuperSemantics !== undefined ?
       optSuperSemantics :
-      Semantics.BuiltInSemantics._getSemantics()
+      Semantics.BuiltInSemantics._getSemantics(),
   );
 
   // To enable clients to invoke a semantics like a function, return a function that acts as a proxy
@@ -521,7 +515,7 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
     if (!(matchResult instanceof MatchResult)) {
       throw new TypeError(
           'Semantics expected a MatchResult, but got ' +
-          common.unexpectedObjToString(matchResult)
+          common.unexpectedObjToString(matchResult),
       );
     }
     if (matchResult.failed()) {
@@ -535,7 +529,7 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
           cst.grammar.name +
           "' with a semantics for '" +
           grammar.name +
-          "'"
+          "'",
       );
     }
     const inputStream = new InputStream(matchResult.input);
@@ -569,7 +563,7 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
           '" is not a valid operation or attribute ' +
           'name in this semantics for "' +
           grammar.name +
-          '"'
+          '"',
       );
     }
     return action.actionDict;
@@ -686,9 +680,3 @@ class Attribute extends Operation {
 }
 
 Attribute.prototype.typeName = 'attribute';
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = Semantics;

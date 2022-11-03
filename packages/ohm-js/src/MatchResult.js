@@ -1,25 +1,19 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const common = require('./common');
-const util = require('./util');
-const Interval = require('./Interval');
+import * as common from './common.js';
+import * as util from './util.js';
+import {Interval} from './Interval.js';
 
 // --------------------------------------------------------------------
 // Private stuff
 // --------------------------------------------------------------------
 
-function MatchResult(
+export function MatchResult(
     matcher,
     input,
     startExpr,
     cst,
     cstOffset,
     rightmostFailurePosition,
-    optRecordedFailures
+    optRecordedFailures,
 ) {
   this.matcher = matcher;
   this.input = input;
@@ -64,7 +58,7 @@ MatchResult.prototype.getRightmostFailures = function() {
     const matchResultWithFailures = this.matcher._match(
         this.startExpr,
         false,
-        this.getRightmostFailurePosition()
+        this.getRightmostFailurePosition(),
     );
     this._rightmostFailures = matchResultWithFailures.getRightmostFailures();
   }
@@ -107,9 +101,3 @@ MatchResult.prototype.getInterval = function() {
   const pos = this.getRightmostFailurePosition();
   return new Interval(this.input, pos, pos);
 };
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = MatchResult;

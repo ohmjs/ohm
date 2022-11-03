@@ -1,10 +1,4 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Private stuff
-// --------------------------------------------------------------------
-
-function PosInfo() {
+export function PosInfo() {
   this.applicationMemoKeyStack = []; // active applications at this position
   this.memo = {};
   this.maxExaminedLength = 0;
@@ -35,7 +29,7 @@ PosInfo.prototype = {
     const indexOfFirstInvolvedRule =
       applicationMemoKeyStack.indexOf(headApplication.toMemoKey()) + 1;
     const involvedApplicationMemoKeys = applicationMemoKeyStack.slice(
-        indexOfFirstInvolvedRule
+        indexOfFirstInvolvedRule,
     );
 
     memoRec.isInvolved = function(applicationMemoKey) {
@@ -77,7 +71,7 @@ PosInfo.prototype = {
     this.maxExaminedLength = Math.max(this.maxExaminedLength, memoRec.examinedLength);
     this.maxRightmostFailureOffset = Math.max(
         this.maxRightmostFailureOffset,
-        memoRec.rightmostFailureOffset
+        memoRec.rightmostFailureOffset,
     );
     return memoRec;
   },
@@ -100,15 +94,9 @@ PosInfo.prototype = {
         this.maxExaminedLength = Math.max(this.maxExaminedLength, memoRec.examinedLength);
         this.maxRightmostFailureOffset = Math.max(
             this.maxRightmostFailureOffset,
-            memoRec.rightmostFailureOffset
+            memoRec.rightmostFailureOffset,
         );
       }
     });
   },
 };
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = PosInfo;

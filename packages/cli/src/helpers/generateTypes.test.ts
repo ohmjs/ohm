@@ -1,13 +1,18 @@
+/* eslint-env node */
+
 import test from 'ava';
-import * as fs from 'fs';
-import * as ohm from 'ohm-js';
-import dedent from 'ts-dedent';
+import fs from 'fs';
+import ohm from 'ohm-js';
+import {dedent} from 'ts-dedent';
 import {Project} from 'ts-morph';
 
-import {generateTypes} from './generateTypes';
+import {generateTypes} from './generateTypes.js';
 
 // Snarf the contents of Ohm's type declarations, so we can stuff it into the in-memory fs.
-const ohmDTSContents = fs.readFileSync(`${__dirname}/../../../ohm-js/index.d.ts`, 'utf-8');
+const ohmDTSContents = fs.readFileSync(
+  new URL(`../../../ohm-js/index.d.ts`, import.meta.url),
+  'utf-8'
+);
 
 // Helpers
 // -------

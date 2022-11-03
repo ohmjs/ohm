@@ -1,8 +1,9 @@
 {
   "name": "@ohm-js/cli",
+  "type": "module",
   "version": "1.1.0",
   "description": "The official command line tool for ohm-js, a parsing toolkit for JavaScript.",
-  "main": "index.js",
+  "module": "index.js",
   "repository": "https://github.com/harc/ohm",
   "author": "Patrick Dubroy <pdubroy@gmail.com>",
   "license": "MIT",
@@ -11,29 +12,27 @@
   ],
   "dependencies": {
     "commander": "^8.1.0",
-    "ohm-js": "^16.0.0",
-    "fast-glob": "^3.2.7"
+    "fast-glob": "^3.2.7",
+    "ohm-js": "^16.0.0"
   },
   "scripts": {
-    "test": "ava"
+    "build:tests": "tsc --target es2020 --module es2020 --moduleResolution node --allowSyntheticDefaultImports src/helpers/generateTypes.test.ts",
+    "test": "yarn build:tests && ava"
   },
   "bin": {
     "ohm": "index.js"
   },
   "devDependencies": {
-    "ts-morph": "^12.0.0",
-    "ava": "^3.15.0",
-    "ts-dedent": "^2.2.0",
+    "@types/require-from-string": "^1.2.1",
+    "ava": "^4.3.3",
     "require-from-string": "^2.0.2",
-    "@types/require-from-string": "^1.2.1"
+    "ts-dedent": "^2.2.0",
+    "ts-morph": "^12.0.0"
   },
   "ava": {
     "extensions": [
       "mjs",
-      "ts"
-    ],
-    "require": [
-      "ts-node/register"
+      "js"
     ]
   }
 }

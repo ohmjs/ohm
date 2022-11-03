@@ -1,10 +1,4 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Private stuff
-// --------------------------------------------------------------------
-
-function Namespace() {}
+export function Namespace() {}
 Namespace.prototype = Object.create(null);
 
 Namespace.asNamespace = function(objOrNamespace) {
@@ -41,9 +35,3 @@ Namespace.extend = function(namespace, optProps) {
 Namespace.toString = function(ns) {
   return Object.prototype.toString.call(ns);
 };
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = Namespace;

@@ -1,17 +1,11 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const common = require('./common');
-const pexprs = require('./pexprs-main');
+import {abstract} from './common.js';
+import * as pexprs from './pexprs-main.js';
 
 // --------------------------------------------------------------------
 // Operations
 // --------------------------------------------------------------------
 
-pexprs.PExpr.prototype.getArity = common.abstract('getArity');
+pexprs.PExpr.prototype.getArity = abstract('getArity');
 
 pexprs.any.getArity =
   pexprs.end.getArity =

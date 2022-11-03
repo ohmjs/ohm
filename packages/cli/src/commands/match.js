@@ -1,10 +1,9 @@
 /* eslint-disable no-console */
-'use strict';
 
-const assert = require('assert');
-const fs = require('fs');
-const ohm = require('ohm-js');
-const path = require('path');
+import assert from 'assert';
+import fs from 'fs';
+import ohm from 'ohm-js';
+import path from 'path';
 
 function match(inputPath, opts) {
   const {grammarFile, grammarName} = opts;
@@ -27,7 +26,7 @@ function match(inputPath, opts) {
   }
 }
 
-module.exports = {
+export default {
   command: 'match',
   args: [['<inputPath>', 'the input file to be matched']],
   description: 'match an input against a given grammar',

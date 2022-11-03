@@ -1,9 +1,7 @@
-'use strict';
-
 module.exports = {
   parserOptions: {
     ecmaVersion: 6,
-    sourceType: 'script',
+    sourceType: 'script'
   },
 
   // To minimize dependencies on Node- or browser-specific features, leave the
@@ -17,7 +15,7 @@ module.exports = {
     console: true,
     exports: true,
     module: true,
-    require: true,
+    require: true
   },
   plugins: ['camelcase-ohm', 'no-extension-in-require', 'ava'],
   rules: {
@@ -33,23 +31,23 @@ module.exports = {
     'no-constant-condition': ['error', {checkLoops: false}], // eslint:recommended: 'error'
     'no-invalid-this': 'off', // google
     'no-redeclare': 'off', // eslint:recommended
-    'quotes': ['error', 'single', {avoidEscape: true}], // google
+    quotes: ['error', 'single', {avoidEscape: true}], // google
     'require-jsdoc': 'off', // google
 
     // ----- Extra things we enforce in Ohm -----
 
     // Turn off the regular camelcase rule, and use a custom rule which
     // allows semantic actions to be named like `RuleName_caseName`.
-    'camelcase': 0,
+    camelcase: 0,
     'camelcase-ohm/camelcase-ohm': 'error',
 
-    'eqeqeq': ['error', 'allow-null'],
+    eqeqeq: ['error', 'allow-null'],
     'max-len': ['error', {code: 100, ignoreUrls: true}],
     'max-statements-per-line': ['error', {max: 2}],
     'no-console': 2,
     'no-extension-in-require/main': 2,
     'no-warning-comments': ['error', {terms: ['xxx', 'fixme']}],
-    'strict': ['error', 'global'],
+    strict: ['error', 'global'],
 
     // ------ Prefer newer language features -----
 
@@ -59,6 +57,6 @@ module.exports = {
 
     'prefer-arrow-callback': 'error',
     'prefer-const': 'error',
-    'prefer-destructuring': ['error', {object: true, array: false}],
-  },
+    'prefer-destructuring': ['error', {object: true, array: false}]
+  }
 };

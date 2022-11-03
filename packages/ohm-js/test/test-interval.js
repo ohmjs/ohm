@@ -1,8 +1,6 @@
-'use strict';
+import test from 'ava';
 
-const test = require('ava');
-
-const Interval = require('../src/Interval');
+import {Interval} from '../src/Interval.js';
 
 // --------------------------------------------------------------------
 // Tests
@@ -102,7 +100,7 @@ test('brotha from anotha motha', t => {
       () => {
         Interval.coverage(interval1, interval2);
       },
-      {message: /Interval sources don't match/}
+      {message: /Interval sources don't match/},
   );
 });
 
@@ -129,6 +127,6 @@ test('getLineAndColumn', t => {
   t.is(lineInfo.nextLine, null);
   t.is(
       lineInfo.toString([7, 8], [9, 10]),
-      ['Line 2, col 1:', '  1 | blah', '> 2 | 3 + 4', '      ^ ~ ~', ''].join('\n')
+      ['Line 2, col 1:', '  1 | blah', '> 2 | 3 + 4', '      ^ ~ ~', ''].join('\n'),
   );
 });

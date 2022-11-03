@@ -1,10 +1,8 @@
-'use strict';
+import fs from 'fs';
+import test from 'ava';
 
-const fs = require('fs');
-const test = require('ava');
-
-const Grammar = require('../src/Grammar');
-const ohm = require('..');
+import {Grammar} from '../src/Grammar.js';
+import ohm from '../index.mjs';
 
 // --------------------------------------------------------------------
 // Tests
@@ -37,12 +35,12 @@ test('default start rule', t => {
         g.match('a');
       },
       {message: /Missing start rule/},
-      'match throws with no start rule'
+      'match throws with no start rule',
   );
   t.is(
       Grammar.ProtoBuiltInRules.defaultStartRule,
       undefined,
-      'undefined for ProtoBuiltInRules'
+      'undefined for ProtoBuiltInRules',
   );
   t.is(Grammar.BuiltInRules.defaultStartRule, undefined, 'undefined for BuiltInRules');
 
@@ -53,7 +51,7 @@ test('default start rule', t => {
         g2.match('a');
       },
       {message: /Missing start rule/},
-      'match throws with no start rule'
+      'match throws with no start rule',
   );
 
   const ns = ohm.grammars('G { foo = "a" } G2 <: G {}');
@@ -77,7 +75,7 @@ test('default start rule', t => {
         g.match('a');
       },
       {message: /Missing start rule/},
-      'match throws with no start rule'
+      'match throws with no start rule',
   );
   g = ohm.grammar(`
     G {
@@ -95,7 +93,7 @@ test('default start rule', t => {
         g.match('a');
       },
       {message: /Missing start rule/},
-      'match throws with no start rule'
+      'match throws with no start rule',
   );
   g = ohm.grammar(`
     G {
@@ -116,11 +114,11 @@ test('default start rule', t => {
         new Grammar('G', root, {}, 'nonexistentRule'); // eslint-disable-line no-new
       },
       {message: /Invalid start rule/},
-      'throws when start rule is not in the grammar'
+      'throws when start rule is not in the grammar',
   );
   t.truthy(
       new Grammar('G', root, {aRule: null}, 'aRule'),
-      'works when it is in the `rules` dict'
+      'works when it is in the `rules` dict',
   );
   const rules = Object.create(root.rules);
   t.truthy(new Grammar('G', root, rules, 'digit'), 'works when rule is in the supergrammar');

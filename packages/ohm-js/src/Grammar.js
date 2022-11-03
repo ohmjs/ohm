@@ -1,15 +1,8 @@
-'use strict';
-
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const CaseInsensitiveTerminal = require('./CaseInsensitiveTerminal');
-const Matcher = require('./Matcher');
-const Semantics = require('./Semantics');
-const common = require('./common');
-const errors = require('./errors');
-const pexprs = require('./pexprs');
+import {Matcher} from './Matcher.js';
+import {Semantics} from './Semantics.js';
+import * as common from './common.js';
+import * as errors from './errors.js';
+import * as pexprs from './pexprs.js';
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -30,7 +23,7 @@ function getSortedRuleValues(grammar) {
 // See https://v8.dev/features/subsume-json for more details.
 const jsonToJS = str => str.replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 
-function Grammar(name, superGrammar, rules, optDefaultStartRule) {
+export function Grammar(name, superGrammar, rules, optDefaultStartRule) {
   this.name = name;
   this.superGrammar = superGrammar;
   this.rules = rules;
@@ -41,7 +34,7 @@ function Grammar(name, superGrammar, rules, optDefaultStartRule) {
           optDefaultStartRule +
           "' is not a rule in grammar '" +
           name +
-          "'"
+          "'",
       );
     }
     this.defaultStartRule = optDefaultStartRule;
@@ -153,7 +146,7 @@ Grammar.prototype = {
           [
             `Found errors in the action dictionary of the '${name}' ${what}:`,
             ...prettyProblems,
-          ].join('\n')
+          ].join('\n'),
       );
       error.problems = problems;
       throw error;
@@ -309,7 +302,7 @@ Grammar.prototype = {
           app.ruleName,
           formals.length,
           app.args.length,
-          source
+          source,
       );
     }
     return app;
@@ -339,7 +332,7 @@ Grammar.ProtoBuiltInRules = new Grammar(
       },
 
       caseInsensitive: {
-        body: new CaseInsensitiveTerminal(new pexprs.Param(0)),
+        body: new pexprs.CaseInsensitiveTerminal(new pexprs.Param(0)),
         formals: ['str'],
         primitive: true,
       },
@@ -374,11 +367,5 @@ Grammar.ProtoBuiltInRules = new Grammar(
         formals: [],
         description: 'a space',
       },
-    }
+    },
 );
-
-// --------------------------------------------------------------------
-// Exports
-// --------------------------------------------------------------------
-
-module.exports = Grammar;
