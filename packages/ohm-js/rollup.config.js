@@ -4,8 +4,8 @@ export default [
   {
     input: 'index.mjs',
     output: [
-      {file: 'dist/ohm.cjs', format: 'cjs', exports: 'default'},
-      {file: 'dist/ohm.js', format: 'umd', name: 'ohm'},
+      {file: 'dist/ohm.cjs', format: 'cjs', exports: 'default', sourcemap: true},
+      {file: 'dist/ohm.js', format: 'umd', name: 'ohm', sourcemap: 'inline'},
     ],
     plugins: [resolve()],
   },

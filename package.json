@@ -3,6 +3,7 @@
   "workspaces": [
     "packages/cli",
     "packages/ohm-js",
+    "packages/packaging-tests",
     "examples/ecmascript",
     "examples/es-module",
     "examples/markdown",
