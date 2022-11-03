@@ -1,9 +1,12 @@
+const acorn = require('acorn');
 const fs = require('fs');
 const {test} = require('uvu');
 const assert = require('uvu/assert');
 
 const DEV_BUNDLE_CONTENTS = fs.readFileSync('../ohm-js/dist/ohm.js', 'utf-8');
 const MIN_BUNDLE_CONTENTS = fs.readFileSync('../ohm-js/dist/ohm.min.js', 'utf-8');
+
+const ecmaVersion = 2017;
 
 function requireFromString(src, filename) {
   const Module = module.constructor;
@@ -44,6 +47,11 @@ test('sizes', () => {
   // one, but ultimately this is an arbitrary ratio. Note that this assumes
   // the dev bundle has inline source maps.
   assert.ok(ratio > 5);
+});
+
+test('ECMAScript version', () => {
+  acorn.parse(DEV_BUNDLE_CONTENTS, {ecmaVersion, sourceType: 'script'});
+  acorn.parse(MIN_BUNDLE_CONTENTS, {ecmaVersion, sourceType: 'script'});
 });
 
 test.run();
