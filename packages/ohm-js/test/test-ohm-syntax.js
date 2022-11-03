@@ -2,6 +2,7 @@ import test from 'ava-spec';
 
 import fs from 'fs';
 import ohm from '../index.mjs';
+import {buildGrammar} from '../src/buildGrammar.js';
 
 const arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();
 const ohmGrammarSource = fs.readFileSync('src/ohm-grammar.ohm').toString();
@@ -1367,7 +1368,7 @@ describe('bootstrap', test => {
   });
 
   test('it can produce a grammar that works', t => {
-    const g = ohm._buildGrammar(
+    const g = buildGrammar(
         ns.Ohm.match(ohmGrammarSource, 'Grammar'),
         ohm.createNamespace(),
         ns.Ohm,
@@ -1377,7 +1378,7 @@ describe('bootstrap', test => {
         g.match(ohmGrammarSource, 'Grammar'),
         'Ohm grammar can recognize itself',
     );
-    const Arithmetic = ohm._buildGrammar(
+    const Arithmetic = buildGrammar(
         g.match(arithmeticGrammarSource, 'Grammar'),
         ohm.createNamespace(),
         g,
@@ -1427,12 +1428,12 @@ describe('bootstrap', test => {
   });
 
   test('full bootstrap!', t => {
-    const g = ohm._buildGrammar(
+    const g = buildGrammar(
         ns.Ohm.match(ohmGrammarSource, 'Grammar'),
         ohm.createNamespace(),
         ns.Ohm,
     );
-    const gPrime = ohm._buildGrammar(
+    const gPrime = buildGrammar(
         g.match(ohmGrammarSource, 'Grammar'),
         ohm.createNamespace(),
         g,
