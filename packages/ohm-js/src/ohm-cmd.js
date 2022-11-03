@@ -8,9 +8,7 @@ import ohm from '../index.mjs';
 
 const args = process.argv.slice(2);
 if (args.length !== 1) {
-  console.error(
-      'usage: ' + process.argv[0] + ' ' + process.argv[1] + ' <ohm-grammar-file>',
-  );
+  console.error('usage: ' + process.argv[0] + ' ' + process.argv[1] + ' <ohm-grammar-file>');
   process.exit(1); // eslint-disable-line no-process-exit
 }
 
@@ -28,5 +26,5 @@ const grammar = ohm.grammar(source);
 // that module depends on the built-in rules.
 const srcModule = filename === 'src/built-in-rules.ohm' ? 'makeRecipe.js' : 'main-kernel.js';
 
-console.log(`import {makeRecipe} from '../src/${srcModule}';`)
+console.log(`import {makeRecipe} from '../src/${srcModule}';`);
 console.log(`export default makeRecipe(${grammar.toRecipe()});`);
