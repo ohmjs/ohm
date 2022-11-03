@@ -56,7 +56,7 @@
     "clean": "rm -f dist/ohm.js dist/ohm.min.js",
     "lint": "eslint . --ignore-path ../.eslintignore",
     "format": "prettier . --write --ignore-path ../.prettierignore --config ../.prettierrc && eslint . --ignore-path ../.eslintignore --fix",
-    "test": "ava && ava --config ava-ts.config.js test/test-typings.ts",
+    "test": "ava && ava --config ava-ts.config.js test/test-typings.ts && node test/_test-doc.js",
     "test-watch": "ava --watch",
     "pre-commit": "yarn run lint && yarn run build && yarn run test",
     "prebuild": "node scripts/prebuild.js",
@@ -136,6 +136,7 @@
     "ts-loader": "^8.0.4",
     "ts-node": "^9.0.0",
     "typescript": "^4.0.3",
+    "uvu": "^0.5.6",
     "walk-sync": "^2.2.0"
   },
   "engines": {
