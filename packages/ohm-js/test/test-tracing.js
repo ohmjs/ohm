@@ -1,5 +1,5 @@
 import test from 'ava';
-import ohm from '../index.js';
+import ohm from '../index.mjs';
 
 import * as common from '../src/common.js';
 import * as testUtil from './helpers/testUtil.js';

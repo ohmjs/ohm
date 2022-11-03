@@ -1,7 +1,7 @@
 import fs from 'fs';
 import test from 'ava';
 
-import ohm from '../../index.js';
+import ohm from '../../index.mjs';
 import {semanticsForToAST, toAST} from '../../extras/semantics-toAST.js';
 
 const g = ohm.grammar(fs.readFileSync('test/data/arithmetic.ohm'));

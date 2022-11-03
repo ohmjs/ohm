@@ -1,6 +1,6 @@
 import fs from 'fs';
 import test from 'ava';
-import ohm from '../index.js';
+import ohm from '../index.mjs';
 
 import * as testUtil from './helpers/testUtil.js';
 

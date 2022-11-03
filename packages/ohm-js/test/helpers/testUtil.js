@@ -1,4 +1,4 @@
-import ohm from '../../index.js';
+import ohm from '../../index.mjs';
 
 // --------------------------------------------------------------------
 // Private stuff

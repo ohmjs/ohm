@@ -2,7 +2,7 @@ import fs from 'fs';
 import test from 'ava';
 import {makeGrammar} from './helpers/testUtil.js';
 
-import ohm from '../index.js';
+import ohm from '../index.mjs';
 
 // --------------------------------------------------------------------
 // Private stuff
