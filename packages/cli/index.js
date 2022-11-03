@@ -1,5 +1,5 @@
 #!/usr/bin/env node
 /* eslint-env node */
 
-const {ohmCli} = require('./src/cli');
+import {ohmCli} from './src/cli.js';
 ohmCli(process.argv.slice(2));
