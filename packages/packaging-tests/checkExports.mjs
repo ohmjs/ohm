@@ -17,4 +17,5 @@ export function checkExports(exports) {
   assert.type(exports.grammar, 'function');
 
   assert.equal(Object.keys(exports).sort(), expectedExports);
+  assert.equal(exports.default, undefined, 'there should be no default export');
 }

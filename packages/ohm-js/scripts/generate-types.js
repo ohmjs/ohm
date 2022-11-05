@@ -1,5 +1,5 @@
 import fs from 'fs';
-import ohm from 'ohm-js';
+import * as ohm from 'ohm-js';
 import prettier from 'prettier';
 import {fileURLToPath, URL} from 'url';
 

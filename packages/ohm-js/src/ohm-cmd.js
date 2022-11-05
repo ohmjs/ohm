@@ -2,7 +2,7 @@
 /* eslint-env node */
 
 import fs from 'fs';
-import ohm from '../index.mjs';
+import * as ohm from '../index.mjs';
 
 /* eslint-disable no-console */
 

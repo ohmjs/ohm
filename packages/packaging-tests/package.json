@@ -6,11 +6,13 @@
     "ohm-js": "^16.0.0"
   },
   "scripts": {
-    "test": "uvu .",
+    "build:ts": "tsc --strict --target esnext --module commonjs --moduleResolution node test-ts.ts",
+    "test": "uvu . -i '\\.ts'",
     "test:watch": "watchlist . -- yarn test"
   },
   "devDependencies": {
     "acorn": "^8.8.1",
+    "typescript": "^4.8.4",
     "uvu": "^0.5.6",
     "watchlist": "^0.3.1"
   }

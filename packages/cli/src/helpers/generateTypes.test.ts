@@ -2,7 +2,7 @@
 
 import test from 'ava';
 import fs from 'fs';
-import ohm from 'ohm-js';
+import * as ohm from 'ohm-js';
 import {dedent} from 'ts-dedent';
 import {Project} from 'ts-morph';
 

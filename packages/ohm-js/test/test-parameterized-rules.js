@@ -1,7 +1,7 @@
 /* eslint-env node */
 
 import test from 'ava';
-import ohm from '../index.mjs';
+import * as ohm from '../index.mjs';
 
 // --------------------------------------------------------------------
 // Tests

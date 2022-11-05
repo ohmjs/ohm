@@ -1,18 +1,16 @@
-import ohm from 'ohm-js';
+import * as ohm from 'ohm-js';
 import * as extras from 'ohm-js/extras';
 import {test} from 'uvu';
 import * as assert from 'uvu/assert';
 
 import {checkExports} from './checkExports.mjs';
 
-test('ES module contents', async () => {
+test('Main exports (ESM)', async () => {
   checkExports(ohm);
-
-  const exports = await import('ohm-js');
-  checkExports(exports.default);
+  checkExports(await import('ohm-js'));
 });
 
-test('Extras CommonJS exports', async () => {
+test('Extras exports (ESM)', async () => {
   assert.equal(typeof extras.VisitorFamily, 'function');
   assert.equal(typeof extras.toAST, 'function');
   assert.ok(Object.keys(extras).length === 3);

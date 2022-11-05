@@ -1,7 +1,7 @@
 import test from 'ava-spec';
 
 import fs from 'fs';
-import ohm from '../index.mjs';
+import * as ohm from '../index.mjs';
 import {buildGrammar} from '../src/buildGrammar.js';
 
 const arithmeticGrammarSource = fs.readFileSync('test/arithmetic.ohm').toString();

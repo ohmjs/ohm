@@ -2,7 +2,7 @@
 
 import assert from 'assert';
 import fs from 'fs';
-import ohm from 'ohm-js';
+import * as ohm from 'ohm-js';
 import path from 'path';
 
 function match(inputPath, opts) {

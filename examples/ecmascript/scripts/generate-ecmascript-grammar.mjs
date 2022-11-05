@@ -1,6 +1,6 @@
 import assert from 'assert';
 import {readFileSync} from 'fs';
-import ohm from 'ohm-js';
+import * as ohm from 'ohm-js';
 import {exit} from 'process';
 
 const {raw} = String;

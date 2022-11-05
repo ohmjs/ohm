@@ -2,7 +2,7 @@ import assert from 'assert';
 import test from 'ava';
 import fastGlob from 'fast-glob';
 import fs from 'fs';
-import ohm from 'ohm-js';
+import * as ohm from 'ohm-js';
 import path from 'path';
 import {fileURLToPath} from 'url';
 

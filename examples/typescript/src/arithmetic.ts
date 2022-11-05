@@ -1,5 +1,5 @@
 import fs from 'fs';
-import ohm from 'ohm-js';
+import * as ohm from 'ohm-js';
 
 /*
   In ../package.json, there is a 'generate' script that uses the Ohm command

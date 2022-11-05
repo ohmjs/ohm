@@ -2,7 +2,7 @@ import test from 'ava';
 import dedent from 'dedent';
 import fs from 'fs';
 
-import ohm from '../index.mjs';
+import * as ohm from '../index.mjs';
 
 // --------------------------------------------------------------------
 // Helpers

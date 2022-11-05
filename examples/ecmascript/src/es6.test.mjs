@@ -1,5 +1,5 @@
 import fs from 'fs';
-import ohm from 'ohm-js';
+import * as ohm from 'ohm-js';
 import test from 'ava';
 
 import es5 from './es5.js';

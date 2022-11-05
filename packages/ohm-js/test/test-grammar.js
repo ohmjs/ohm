@@ -2,7 +2,7 @@ import fs from 'fs';
 import test from 'ava';
 
 import {Grammar} from '../src/Grammar.js';
-import ohm from '../index.mjs';
+import * as ohm from '../index.mjs';
 
 // --------------------------------------------------------------------
 // Tests

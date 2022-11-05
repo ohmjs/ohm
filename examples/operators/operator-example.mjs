@@ -1,6 +1,6 @@
 // An experiment in representing an expression language four different ways in Ohm.
 
-import ohm from 'ohm-js';
+import * as ohm from 'ohm-js';
 
 // The expression language is the classic arithmetic operators over integer literals
 // and identifiers, which, in EBNF, is:

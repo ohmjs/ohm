@@ -1,6 +1,6 @@
 'use strict';
 
-import ohm from 'ohm-js';
+import * as ohm from 'ohm-js';
 
 export const grammar = ohm.grammar(`
 Lisp {

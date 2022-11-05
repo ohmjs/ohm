@@ -1,6 +1,6 @@
 import fastGlob from 'fast-glob';
 import fs from 'fs';
-import ohm from 'ohm-js';
+import * as ohm from 'ohm-js';
 import path from 'path';
 
 import {generateTypes} from '../../helpers/generateTypes.js';
@@ -69,7 +69,7 @@ function generateRecipe(grammarPath, grammars, writer, isEsm) {
   const isSingleGrammar = Object.keys(grammars).length === 1;
 
   let output = isEsm ?
-    "import ohm from 'ohm-js';" :
+    "import * as ohm from 'ohm-js';" :
     "'use strict';const ohm=require('ohm-js');";
 
   // If it's a single-grammar source file, the default export is the grammar.
