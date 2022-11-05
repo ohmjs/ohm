@@ -58,18 +58,6 @@ export function grammars(source, optNamespace) {
   return ns;
 }
 
-export function grammarFromScriptElement(optNode) {
-  throw new Error(
-      'grammarFromScriptElement was removed in Ohm v16.0. See https://ohmjs.org/d/gfs for more info.',
-  );
-}
-
-export function grammarsFromScriptElements(optNodeOrNodeList) {
-  throw new Error(
-      'grammarsFromScriptElements was removed in Ohm v16.0. See https://ohmjs.org/d/gfs for more info.',
-  );
-}
-
 export * from './main-kernel.js';
 export {ohmGrammar};
 export {pexprs, util};

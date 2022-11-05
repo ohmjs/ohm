@@ -2,9 +2,7 @@ import * as assert from 'uvu/assert';
 
 const expectedExports = [
   'grammar',
-  'grammarFromScriptElement',
   'grammars',
-  'grammarsFromScriptElements',
   'makeRecipe',
   'ohmGrammar',
   'pexprs',
