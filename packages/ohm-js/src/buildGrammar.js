@@ -7,6 +7,14 @@ import * as pexprs from './pexprs.js';
 
 const superSplicePlaceholder = Object.create(pexprs.PExpr.prototype);
 
+function namespaceHas(ns, name) {
+  // Look for an enumerable property, anywhere in the prototype chain.
+  for (const prop in ns) {
+    if (prop === name) return true;
+  }
+  return false;
+}
+
 // Returns a Grammar instance (i.e., an object with a `match` method) for
 // `tree`, which is the concrete syntax tree of a user-written grammar.
 // The grammar will be assigned into `namespace` under the name of the grammar
@@ -26,12 +34,12 @@ export function buildGrammar(match, namespace, optOhmGrammarForTesting) {
     },
     Grammar(id, s, _open, rules, _close) {
       const grammarName = id.visit();
-      decl = builder.newGrammar(grammarName, namespace);
+      decl = builder.newGrammar(grammarName);
       s.child(0) && s.child(0).visit();
       rules.children.map(c => c.visit());
       const g = decl.build();
       g.source = this.source.trimmed();
-      if (grammarName in namespace) {
+      if (namespaceHas(namespace, grammarName)) {
         throw errors.duplicateGrammarDeclaration(g, namespace);
       }
       namespace[grammarName] = g;
@@ -43,7 +51,7 @@ export function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       if (superGrammarName === 'null') {
         decl.withSuperGrammar(null);
       } else {
-        if (!namespace || !(superGrammarName in namespace)) {
+        if (!namespace || !namespaceHas(namespace, superGrammarName)) {
           throw errors.undeclaredGrammar(superGrammarName, namespace, n.source);
         }
         decl.withSuperGrammar(namespace[superGrammarName]);

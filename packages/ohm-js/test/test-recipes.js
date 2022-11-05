@@ -31,7 +31,7 @@ test('simple grammar recipes', t => {
 });
 
 test('grammar recipes with supergrammars', t => {
-  const ns = ohm.createNamespace();
+  const ns = {};
   ns.G = ohm.grammar('G { start = end }');
   ns.G2 = ohm.grammar('G2 <: G { start := "a" }', ns);
 

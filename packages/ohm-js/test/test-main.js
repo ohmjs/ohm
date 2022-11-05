@@ -11,7 +11,7 @@ import ohm from '../index.mjs';
 
 test('namespaces', t => {
   const ns = ohm.grammars('G { start = "foo" }');
-  t.truthy(ns.G.match('foo'), 'G exists in the namespace and works');
+  t.is(ns.G.match('foo').succeeded(), true, 'G exists in the namespace and works');
 
   const ns2 = ohm.grammars('ccc { foo = "foo" }', ns);
   t.truthy(ns2);
@@ -28,6 +28,31 @@ test('namespaces', t => {
   t.truthy(ns3.ccc, "grammars with same name can be created in diff't namespaces");
   t.not(ns3.ccc, ns2.ccc, "grammars with same name are diff't objects");
   t.deepEqual(ns3.G, ns2.G, 'super grammar is the same');
+});
+
+test('plain JS objects as namespaces', t => {
+  const ns = ohm.grammars('toString { start = "!!!" }');
+  t.is(ns.toString.match('!!!').succeeded(), true);
+
+  t.truthy(ohm.grammar('G <: toString {}', ns));
+  t.throws(() => ohm.grammar('G <: toString {}', {}), {
+    message: /Grammar toString is not declared/,
+  });
+
+  const toString = ohm.grammar('toString {}');
+  t.truthy(ohm.grammar('G <: toString {}', {toString}));
+  t.truthy(ohm.grammar('G <: toString {}', Object.create({toString})));
+
+  const ns2 = {};
+  Object.defineProperty(ns2, 'G', {
+    value: ohm.grammar('G {}'),
+    enumerable: false,
+  });
+  t.throws(
+      () => ohm.grammar('G2 <: G {}', ns2),
+      {message: /Grammar G is not declared/},
+      'an own, non-enumerable property is ignored',
+  );
 });
 
 test('instantiating grammars from different types of objects', t => {

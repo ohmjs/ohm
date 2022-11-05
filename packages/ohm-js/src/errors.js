@@ -1,5 +1,4 @@
 import {assert} from './common.js';
-import {Namespace} from './Namespace.js';
 import * as pexprs from './pexprs-main.js';
 
 // --------------------------------------------------------------------
@@ -50,10 +49,7 @@ export function grammarSyntaxError(matchFailure) {
 
 export function undeclaredGrammar(grammarName, namespace, interval) {
   const message = namespace ?
-    'Grammar ' +
-      grammarName +
-      ' is not declared in namespace ' +
-      Namespace.toString(namespace) :
+    `Grammar ${grammarName} is not declared in namespace '${namespace}'` :
     'Undeclared grammar ' + grammarName;
   return createError(message, interval);
 }

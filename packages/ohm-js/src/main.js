@@ -3,7 +3,6 @@ import {buildGrammar} from './buildGrammar.js';
 import * as common from './common.js';
 import * as errors from './errors.js';
 import {Grammar} from './Grammar.js';
-import {Namespace} from './Namespace.js';
 import * as pexprs from './pexprs.js';
 import * as util from './util.js';
 
@@ -44,7 +43,7 @@ export function grammar(source, optNamespace) {
 }
 
 export function grammars(source, optNamespace) {
-  const ns = Namespace.extend(Namespace.asNamespace(optNamespace));
+  const ns = Object.create(optNamespace || {});
   if (typeof source !== 'string') {
     // For convenience, detect Node.js Buffer objects and automatically call toString().
     if (isBuffer(source)) {
@@ -72,7 +71,6 @@ export function grammarsFromScriptElements(optNodeOrNodeList) {
 }
 
 export * from './main-kernel.js';
-export const {createNamespace} = Namespace;
 export {ohmGrammar};
 export {pexprs, util};
 export {version} from './version.js';

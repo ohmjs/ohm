@@ -73,9 +73,9 @@ function generateRecipe(grammarPath, grammars, writer, isEsm) {
     "'use strict';const ohm=require('ohm-js');";
 
   // If it's a single-grammar source file, the default export is the grammar.
-  // Otherwise, the export is a (possibly empty) Namespace containing the grammars.
+  // Otherwise, the export is a (possibly empty) object containing the grammars.
   if (!isSingleGrammar) {
-    output += 'const result=ohm.createNamespace();';
+    output += 'const result={};';
   }
   for (const [name, grammar] of Object.entries(grammars)) {
     const {superGrammar} = grammar;

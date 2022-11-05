@@ -1,7 +1,6 @@
 import * as assert from 'uvu/assert';
 
 const expectedExports = [
-  'createNamespace',
   'grammar',
   'grammarFromScriptElement',
   'grammars',

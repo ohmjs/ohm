@@ -14,18 +14,6 @@ Instantiate the Grammar defined by `source`. If specified, `optNamespace` is the
 
 Create a new Namespace containing Grammar instances for all of the grammars defined in `source`. If `optNamespace` is specified, it will be the prototype of the new Namespace.
 
-## Namespace objects
-
-When instantiating a grammar that refers to another grammar -- e.g. `MyJava <: Java { keyword += "async" }` -- the supergrammar name ('Java') is resolved to a grammar by looking up the name in a Namespace. In Ohm/JS, Namespaces are a plain old JavaScript objects, and an object literal like `{Java: myJavaGrammar}` can be passed to any API that expects a Namespace. For convenience, Ohm also has the following methods for working with namespaces:
-
-<b><pre class="api">ohm.namespace(optProps?: object)</pre></b>
-
-Create a new namespace. If `optProps` is specified, all of its properties will be copied to the new namespace.
-
-<b><pre class="api">ohm.extendNamespace(namespace: object, optProps?: object)</pre></b>
-
-Create a new namespace which inherits from `namespace`. If `optProps` is specified, all of its properties will be copied to the new namespace.
-
 ## Grammar objects
 
 A Grammar instance `g` has the following methods:

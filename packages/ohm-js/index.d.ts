@@ -54,25 +54,6 @@ declare namespace ohm {
   function grammars(source: string, namespace?: Namespace): Namespace;
 
   /**
-   * grammarsFromScriptElements was removed in Ohm v16.0. See
-   * https://ohmjs.org/d/gfs for more info.
-   * @deprecated
-   */
-  function grammarsFromScriptElements(nodeList?: unknown, namespace?: Namespace): Namespace;
-
-  /**
-   * Create a new namespace. If props is specified, all of its properties
-   * will be copied to the new namespace.
-   */
-  function namespace(props?: Object): Namespace;
-
-  /**
-   * Create a new namespace which inherits from namespace. If props is
-   * specified, all of its properties will be copied to the new namespace.
-   */
-  function extendNamespace(namespace: Namespace, props?: Object): Namespace;
-
-  /**
    * A Namespace is a dictionary of Grammars
    */
   interface Namespace {
