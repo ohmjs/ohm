@@ -2,10 +2,10 @@
   "name": "packaging-tests",
   "version": "1.0.0",
   "private": true,
-  "dependencies": {
-    "ohm-js": "^16.0.0"
-  },
+  "dependencies": {},
   "scripts": {
+    "generate": "ohm generateBundles --withTypes ./greeting.ohm",
+    "pretest": "yarn generate",
     "test:ts-cjs": "ts-node test-ts.ts",
     "test:ts-esm": "ts-node --project tsconfig.esm.json test-ts.ts",
     "test:ts": "yarn test:ts-cjs && yarn test:ts-esm && ts-node test-typings.ts",
@@ -14,6 +14,8 @@
   },
   "devDependencies": {
     "acorn": "^8.8.1",
+    "ohm-js": "^16.0.0",
+    "@ohm-js/cli": "^1.1.0",
     "ts-node": "^10.9.1",
     "uvu": "^0.5.6",
     "watchlist": "^0.3.1"

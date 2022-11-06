@@ -2,6 +2,8 @@ import * as ohm from 'ohm-js';
 import {test} from 'uvu';
 import * as assert from 'uvu/assert';
 
+import greeting, {GreetingActionDict} from './greeting.ohm-bundle';
+
 const g: ohm.Grammar = ohm.grammar(`
   G {
     Greeting = interjection "," name "!"
@@ -47,4 +49,9 @@ test('pexprs - #390', () => {
 
   assert.is(any.body, ohm.pexprs.any, 'any should be a singleton');
   assert.is(end.body, ohm.pexprs.end, 'end should be a singleton');
+});
+
+test('ActionDict keys - #395', () => {
+  type MapKey = Exclude<keyof GreetingActionDict<any>, keyof ohm.BaseActionDict<any>>;
+  const x: MapKey = 'hello';
 });

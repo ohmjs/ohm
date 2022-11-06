@@ -244,10 +244,9 @@ interface Dict {
 
 /**
  * An ActionDict is a dictionary of Actions indexed by rule names.
+ * This is a "pure" type that only contains keys for built-in rules.
  */
-export interface ActionDict<T> {
-  [index: string]: Action<T> | undefined;
-
+export interface BaseActionDict<T> {
   _iter?: (this: IterationNode, ...children: Node[]) => T;
   _nonterminal?: (this: NonterminalNode, ...children: Node[]) => T;
   _terminal?: (this: TerminalNode) => T;
@@ -275,6 +274,13 @@ export interface ActionDict<T> {
   ) => T;
   emptyListOf?: (this: NonterminalNode) => T;
   applySyntactic?: (this: NonterminalNode, arg0: Node) => T;
+}
+
+/**
+ * An ActionDict is a dictionary of Actions indexed by rule names.
+ */
+export interface ActionDict<T> extends BaseActionDict<T> {
+  [index: string]: Action<T> | undefined;
 }
 
 /**

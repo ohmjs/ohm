@@ -13,7 +13,7 @@ const getImports = (includeNamespace = false) =>
 
 const createDeclarations = (grammarName, superGrammarName, actionDecls) => {
   const actionDictType = `${grammarName}ActionDict<T>`;
-  const actionDictSuperType = `${superGrammarName || ''}ActionDict<T>`;
+  const actionDictSuperType = `${superGrammarName || ''}BaseActionDict<T>`;
   const semanticsType = `${grammarName}Semantics`;
   return `export interface ${actionDictType} extends ${actionDictSuperType} {
   ${actionDecls.join('\n  ')}

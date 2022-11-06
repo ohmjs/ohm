@@ -17,7 +17,7 @@ function checkExports(exports: any) {
 test('basic functionality from TS', () => {
   const g: ohm.Grammar = ohm.grammar('G { start = "!!?" }');
   const terminalExpr: ohm.Terminal = g.rules.start.body;
-  
+
   const semantics: ohm.Semantics = g.createSemantics().addOperation('getQ', {
     start(t) {
       return t.sourceString[2];
@@ -35,7 +35,7 @@ test('Main exports (TS)', async () => {
 });
 
 test('Extras exports (TS)', async () => {
-//  assert.equal(typeof extras.VisitorFamily, 'function');
+  //  assert.equal(typeof extras.VisitorFamily, 'function');
   assert.equal(typeof extras.toAST, 'function');
   assert.ok(Object.keys(extras).length === 3);
 
