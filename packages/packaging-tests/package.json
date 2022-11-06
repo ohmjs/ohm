@@ -4,20 +4,23 @@
   "private": true,
   "dependencies": {},
   "scripts": {
-    "generate": "ohm generateBundles --withTypes ./greeting.ohm",
-    "pretest": "yarn generate",
+    "build": "webpack --mode production ./src/index.webpack.js",
+    "generate": "ohm generateBundles --withTypes src/greeting.ohm",
+    "pretest": "yarn generate && yarn build",
     "test:ts-cjs": "ts-node test-ts.ts",
     "test:ts-esm": "ts-node --project tsconfig.esm.json test-ts.ts",
-    "test:ts": "yarn test:ts-cjs && yarn test:ts-esm && ts-node test-typings.ts",
-    "test": "uvu . -i '\\.ts' && yarn test:ts",
+    "test:ts": "yarn test:ts-cjs && yarn test:ts-esm && ts-node test-typings.ts && node dist/main.js",
+    "test": "uvu . 'test-\\.js' && yarn test:ts",
     "test:watch": "watchlist . -- yarn test"
   },
   "devDependencies": {
+    "@ohm-js/cli": "^1.1.0",
     "acorn": "^8.8.1",
     "ohm-js": "^16.0.0",
-    "@ohm-js/cli": "^1.1.0",
     "ts-node": "^10.9.1",
     "uvu": "^0.5.6",
-    "watchlist": "^0.3.1"
+    "watchlist": "^0.3.1",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0"
   }
 }

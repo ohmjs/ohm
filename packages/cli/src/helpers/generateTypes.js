@@ -2,7 +2,7 @@ import {getNodeTypes} from './getNodeTypes.js';
 
 const getImports = (includeNamespace = false) =>
   `import {
-  ActionDict,
+  BaseActionDict,
   Grammar,
   IterationNode,${includeNamespace ? '\n  Namespace,' : ''}
   Node,
@@ -13,7 +13,7 @@ const getImports = (includeNamespace = false) =>
 
 const createDeclarations = (grammarName, superGrammarName, actionDecls) => {
   const actionDictType = `${grammarName}ActionDict<T>`;
-  const actionDictSuperType = `${superGrammarName || ''}BaseActionDict<T>`;
+  const actionDictSuperType = `${superGrammarName || 'Base'}ActionDict<T>`;
   const semanticsType = `${grammarName}Semantics`;
   return `export interface ${actionDictType} extends ${actionDictSuperType} {
   ${actionDecls.join('\n  ')}

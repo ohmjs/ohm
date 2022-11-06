@@ -2,7 +2,7 @@ import * as ohm from 'ohm-js';
 import {test} from 'uvu';
 import * as assert from 'uvu/assert';
 
-import greeting, {GreetingActionDict} from './greeting.ohm-bundle';
+import greeting, {GreetingActionDict} from './src/greeting.ohm-bundle';
 
 const g: ohm.Grammar = ohm.grammar(`
   G {
