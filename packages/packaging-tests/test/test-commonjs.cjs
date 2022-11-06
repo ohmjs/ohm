@@ -23,7 +23,6 @@ function checkExports(exports) {
   assert.type(exports.makeRecipe, 'function');
   assert.type(exports.ohmGrammar, 'object');
   assert.type(exports.pexprs, 'object');
-  assert.type(exports.util, 'object');
   assert.type(exports.version, 'string');
   assert.not('default' in exports, 'there should be no default export');
 }
@@ -37,7 +36,7 @@ test('Extras CommonJS exports', async () => {
   assert.equal(typeof extras.VisitorFamily, 'function');
   assert.equal(typeof extras.toAST, 'function');
   assert.not('default' in exports, 'there should be no default export');
-  assert.ok(Object.keys(extras).length === 3);
+  assert.ok(Object.keys(extras).length === 5);
 });
 
 test('UMD bundles', async () => {

@@ -60,5 +60,5 @@ export function grammars(source, optNamespace) {
 
 export * from './main-kernel.js';
 export {ohmGrammar};
-export {pexprs, util};
+export {pexprs};
 export {version} from './version.js';

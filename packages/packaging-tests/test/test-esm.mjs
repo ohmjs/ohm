@@ -9,7 +9,6 @@ function checkExports(exports) {
   assert.type(exports.makeRecipe, 'function');
   assert.type(exports.ohmGrammar, 'object');
   assert.type(exports.pexprs, 'object');
-  assert.type(exports.util, 'object');
   assert.type(exports.version, 'string');
   assert.not('default' in exports, 'there should be no default export');
 }
@@ -22,7 +21,7 @@ test('Main exports (ESM)', async () => {
 test('Extras exports (ESM)', async () => {
   assert.equal(typeof extras.VisitorFamily, 'function');
   assert.equal(typeof extras.toAST, 'function');
-  assert.ok(Object.keys(extras).length === 3);
+  assert.ok(Object.keys(extras).length === 5);
 
   const exports = await import('ohm-js/extras');
   assert.not('default' in exports, 'there should be no default export');

@@ -6,5 +6,5 @@ export default {
     file: 'dist/main-rollup.js',
     format: 'iife'
   },
-  plugins: [resolve({ modulesOnly: true })],
+  plugins: [resolve({modulesOnly: true})]
 };

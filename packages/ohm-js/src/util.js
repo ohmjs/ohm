@@ -90,20 +90,20 @@ let builtInRulesCallbacks = [];
 // Since Grammar.BuiltInRules is bootstrapped, most of Ohm can't directly depend it.
 // This function allows modules that do depend on the built-in rules to register a callback
 // that will be called later in the initialization process.
-export const awaitBuiltInRules = cb => {
+export function awaitBuiltInRules(cb) {
   builtInRulesCallbacks.push(cb);
-};
+}
 
-export const announceBuiltInRules = grammar => {
+export function announceBuiltInRules(grammar) {
   builtInRulesCallbacks.forEach(cb => {
     cb(grammar);
   });
   builtInRulesCallbacks = null;
-};
+}
 
 // Return an object with the line and column information for the given
 // offset in `str`.
-export const getLineAndColumn = (str, offset) => {
+export function getLineAndColumn(str, offset) {
   let lineNum = 1;
   let colNum = 1;
 
@@ -159,13 +159,13 @@ export const getLineAndColumn = (str, offset) => {
     nextLine,
     toString: lineAndColumnToMessage,
   };
-};
+}
 
 // Return a nicely-formatted string describing the line and column for the
 // given offset in `str` highlighting `ranges`.
-export const getLineAndColumnMessage = function(str, offset, ...ranges) {
+export function getLineAndColumnMessage(str, offset, ...ranges) {
   return getLineAndColumn(str, offset).toString(...ranges);
-};
+}
 
 export const uniqueId = (() => {
   let idCounter = 0;

@@ -1,4 +1,5 @@
 import * as ohm from 'ohm-js';
+import * as extras from 'ohm-js/extras';
 import {test} from 'uvu';
 import * as assert from 'uvu/assert';
 
@@ -54,4 +55,17 @@ test('pexprs - #390', () => {
 test('ActionDict keys - #395', () => {
   type MapKey = Exclude<keyof GreetingActionDict<any>, keyof ohm.BaseActionDict<any>>;
   const x: MapKey = 'hello';
+});
+
+test('extras - getLineAndColumn & getLineAndColumnMessage', () => {
+  const str = 'one\ntwo';
+  const offset = 4;
+  const ranges = [
+    [0, 2],
+    [3, 6]
+  ];
+  assert.is(
+    extras.getLineAndColumn(str, offset).toString(...ranges),
+    extras.getLineAndColumnMessage(str, offset, ...ranges)
+  );
 });
