@@ -15,22 +15,32 @@ function requireFromString(src, filename) {
   return m.exports;
 }
 
+// Simple sniff test that the given object/module has the exports that we're
+// expecting.
+function checkExports(exports) {
+  assert.type(exports.grammar, 'function');
+  assert.type(exports.grammars, 'function');
+  assert.type(exports.makeRecipe, 'function');
+  assert.type(exports.ohmGrammar, 'object');
+  assert.type(exports.pexprs, 'object');
+  assert.type(exports.util, 'object');
+  assert.type(exports.version, 'string');
+  assert.not('default' in exports, 'there should be no default export');
+}
+
 test('Core CommonJS exports', async () => {
-  const {checkExports} = await import('./checkExports.mjs');
-  const ohm = require('ohm-js');
-  checkExports(ohm);
+  checkExports(require('ohm-js'));
 });
 
 test('Extras CommonJS exports', async () => {
   const extras = require('ohm-js/extras');
   assert.equal(typeof extras.VisitorFamily, 'function');
   assert.equal(typeof extras.toAST, 'function');
+  assert.not('default' in exports, 'there should be no default export');
   assert.ok(Object.keys(extras).length === 3);
 });
 
 test('UMD bundles', async () => {
-  const {checkExports} = await import('./checkExports.mjs');
-
   // Because the ohm-js package has `"type": "module"` in its package.json,
   // we can't actually require the UMD bundles normally.
   const ohmDev = requireFromString(DEV_BUNDLE_CONTENTS, 'ohm.js');

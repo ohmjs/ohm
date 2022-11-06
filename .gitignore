@@ -7,7 +7,6 @@ packages/ohm-js/dist/ohm-grammar.js.*
 packages/ohm-js/dist/*.old
 packages/ohm-js/dist/browserify-cache.json
 packages/ohm-js/dist/test-typings.js
-packages/packaging-tests/test-ts.js
 node_modules
 npm-debug.log
 yarn-error.log

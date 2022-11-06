@@ -3,7 +3,16 @@ import * as extras from 'ohm-js/extras';
 import {test} from 'uvu';
 import * as assert from 'uvu/assert';
 
-import {checkExports} from './checkExports.mjs';
+function checkExports(exports) {
+  assert.type(exports.grammar, 'function');
+  assert.type(exports.grammars, 'function');
+  assert.type(exports.makeRecipe, 'function');
+  assert.type(exports.ohmGrammar, 'object');
+  assert.type(exports.pexprs, 'object');
+  assert.type(exports.util, 'object');
+  assert.type(exports.version, 'string');
+  assert.not('default' in exports, 'there should be no default export');
+}
 
 test('Main exports (ESM)', async () => {
   checkExports(ohm);
@@ -16,5 +25,7 @@ test('Extras exports (ESM)', async () => {
   assert.ok(Object.keys(extras).length === 3);
 
   const exports = await import('ohm-js/extras');
-  assert.equal(exports.default, undefined, 'there should be no default export');
+  assert.not('default' in exports, 'there should be no default export');
 });
+
+test.run();
