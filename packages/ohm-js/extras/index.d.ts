@@ -13,12 +13,11 @@ interface LineAndColumnInfo {
 export function toAST(matchResult: MatchResult, mapping?: {}): {};
 export function semanticsForToAST(g: Grammar): Semantics;
 
-
 /**
  * Returns contextual information (line and column number, etc.) about a
  * specific character in a string.
  */
- export function getLineAndColumn(str: string, offset: number): LineAndColumnInfo;
+export function getLineAndColumn(str: string, offset: number): LineAndColumnInfo;
 
 /**
  * Returns a nicely-formatted message (appropriate for syntax errors, etc.)
