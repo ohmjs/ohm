@@ -161,151 +161,299 @@ class Wrapper {
 // recursive. This constructor should not be called directly except from
 // `Semantics.createSemantics`. The normal ways to create a Semantics, given a grammar 'g', are
 // `g.createSemantics()` and `g.extendSemantics(parentSemantics)`.
-export function Semantics(grammar, superSemantics) {
-  const self = this;
-  this.grammar = grammar;
-  this.checkedActionDicts = false;
+export class Semantics {
+  constructor(grammar, superSemantics) {
+    const self = this;
+    this.grammar = grammar;
+    this.checkedActionDicts = false;
 
-  // Constructor for wrapper instances, which are passed as the arguments to the semantic actions
-  // of an operation or attribute. Operations and attributes require double dispatch: the semantic
-  // action is chosen based on both the node's type and the semantics. Wrappers ensure that
-  // the `execute` method is called with the correct (most specific) semantics object as an
-  // argument.
-  this.Wrapper = class extends (superSemantics ? superSemantics.Wrapper : Wrapper) {
-    constructor(node, sourceInterval, baseInterval) {
-      super(node, sourceInterval, baseInterval);
-      self.checkActionDictsIfHaventAlready();
-      this._semantics = self;
+    // Constructor for wrapper instances, which are passed as the arguments to the semantic actions
+    // of an operation or attribute. Operations and attributes require double dispatch: the semantic
+    // action is chosen based on both the node's type and the semantics. Wrappers ensure that
+    // the `execute` method is called with the correct (most specific) semantics object as an
+    // argument.
+    this.Wrapper = class extends (superSemantics ? superSemantics.Wrapper : Wrapper) {
+      constructor(node, sourceInterval, baseInterval) {
+        super(node, sourceInterval, baseInterval);
+        self.checkActionDictsIfHaventAlready();
+        this._semantics = self;
+      }
+    };
+
+    this.super = superSemantics;
+    if (superSemantics) {
+      if (!(grammar.equals(this.super.grammar) || grammar._inheritsFrom(this.super.grammar))) {
+        throw new Error(
+            "Cannot extend a semantics for grammar '" +
+            this.super.grammar.name +
+            "' for use with grammar '" +
+            grammar.name +
+            "' (not a sub-grammar)",
+        );
+      }
+      this.operations = Object.create(this.super.operations);
+      this.attributes = Object.create(this.super.attributes);
+      this.attributeKeys = Object.create(null);
+
+      // Assign unique symbols for each of the attributes inherited from the super-semantics so that
+      // they are memoized independently.
+      // eslint-disable-next-line guard-for-in
+      for (const attributeName in this.attributes) {
+        Object.defineProperty(this.attributeKeys, attributeName, {
+          value: util.uniqueId(attributeName),
+        });
+      }
+    } else {
+      this.operations = Object.create(null);
+      this.attributes = Object.create(null);
+      this.attributeKeys = Object.create(null);
     }
-  };
+  }
 
-  this.super = superSemantics;
-  if (superSemantics) {
-    if (!(grammar.equals(this.super.grammar) || grammar._inheritsFrom(this.super.grammar))) {
+  toString() {
+    return '[semantics for ' + this.grammar.name + ']';
+  }
+
+  checkActionDictsIfHaventAlready() {
+    if (!this.checkedActionDicts) {
+      this.checkActionDicts();
+      this.checkedActionDicts = true;
+    }
+  }
+
+  // Checks that the action dictionaries for all operations and attributes in this semantics,
+  // including the ones that were inherited from the super-semantics, agree with the grammar.
+  // Throws an exception if one or more of them doesn't.
+  checkActionDicts() {
+    let name;
+    // eslint-disable-next-line guard-for-in
+    for (name in this.operations) {
+      this.operations[name].checkActionDict(this.grammar);
+    }
+    // eslint-disable-next-line guard-for-in
+    for (name in this.attributes) {
+      this.attributes[name].checkActionDict(this.grammar);
+    }
+  }
+
+  toRecipe(semanticsOnly) {
+    function hasSuperSemantics(s) {
+      return s.super !== Semantics.BuiltInSemantics._getSemantics();
+    }
+
+    let str = '(function(g) {\n';
+    if (hasSuperSemantics(this)) {
+      str += '  var semantics = ' + this.super.toRecipe(true) + '(g';
+
+      const superSemanticsGrammar = this.super.grammar;
+      let relatedGrammar = this.grammar;
+      while (relatedGrammar !== superSemanticsGrammar) {
+        str += '.superGrammar';
+        relatedGrammar = relatedGrammar.superGrammar;
+      }
+
+      str += ');\n';
+      str += '  return g.extendSemantics(semantics)';
+    } else {
+      str += '  return g.createSemantics()';
+    }
+    ['Operation', 'Attribute'].forEach(type => {
+      const semanticOperations = this[type.toLowerCase() + 's'];
+      Object.keys(semanticOperations).forEach(name => {
+        const {actionDict, formals, builtInDefault} = semanticOperations[name];
+
+        let signature = name;
+        if (formals.length > 0) {
+          signature += '(' + formals.join(', ') + ')';
+        }
+
+        let method;
+        if (hasSuperSemantics(this) && this.super[type.toLowerCase() + 's'][name]) {
+          method = 'extend' + type;
+        } else {
+          method = 'add' + type;
+        }
+        str += '\n    .' + method + '(' + JSON.stringify(signature) + ', {';
+
+        const srcArray = [];
+        Object.keys(actionDict).forEach(actionName => {
+          if (actionDict[actionName] !== builtInDefault) {
+            let source = actionDict[actionName].toString().trim();
+
+            // Convert method shorthand to plain old function syntax.
+            // https://github.com/harc/ohm/issues/263
+            source = source.replace(/^.*\(/, 'function(');
+
+            srcArray.push('\n      ' + JSON.stringify(actionName) + ': ' + source);
+          }
+        });
+        str += srcArray.join(',') + '\n    })';
+      });
+    });
+    str += ';\n  })';
+
+    if (!semanticsOnly) {
+      str =
+        '(function() {\n' +
+        '  var grammar = this.fromRecipe(' +
+        this.grammar.toRecipe() +
+        ');\n' +
+        '  var semantics = ' +
+        str +
+        '(grammar);\n' +
+        '  return semantics;\n' +
+        '});\n';
+    }
+
+    return str;
+  }
+
+  addOperationOrAttribute(type, signature, actionDict) {
+    const typePlural = type + 's';
+
+    const parsedNameAndFormalArgs = parseSignature(signature, type);
+    const {name} = parsedNameAndFormalArgs;
+    const {formals} = parsedNameAndFormalArgs;
+
+    // TODO: check that there are no duplicate formal arguments
+
+    this.assertNewName(name, type);
+
+    // Create the action dictionary for this operation / attribute that contains a `_default` action
+    // which defines the default behavior of iteration, terminal, and non-terminal nodes...
+    const builtInDefault = newDefaultAction(type, name, doIt);
+    const realActionDict = {_default: builtInDefault};
+    // ... and add in the actions supplied by the programmer, which may override some or all of the
+    // default ones.
+    Object.keys(actionDict).forEach(name => {
+      realActionDict[name] = actionDict[name];
+    });
+
+    const entry =
+      type === 'operation' ?
+        new Operation(name, formals, realActionDict, builtInDefault) :
+        new Attribute(name, realActionDict, builtInDefault);
+
+    // The following check is not strictly necessary (it will happen later anyway) but it's better
+    // to catch errors early.
+    entry.checkActionDict(this.grammar);
+
+    this[typePlural][name] = entry;
+
+    function doIt(...args) {
+      // Dispatch to most specific version of this operation / attribute -- it may have been
+      // overridden by a sub-semantics.
+      const thisThing = this._semantics[typePlural][name];
+
+      // Check that the caller passed the correct number of arguments.
+      if (arguments.length !== thisThing.formals.length) {
+        throw new Error(
+            'Invalid number of arguments passed to ' +
+            name +
+            ' ' +
+            type +
+            ' (expected ' +
+            thisThing.formals.length +
+            ', got ' +
+            arguments.length +
+            ')',
+        );
+      }
+
+      // Create an "arguments object" from the arguments that were passed to this
+      // operation / attribute.
+      const argsObj = Object.create(null);
+      for (const [idx, val] of Object.entries(args)) {
+        const formal = thisThing.formals[idx];
+        argsObj[formal] = val;
+      }
+
+      const oldArgs = this.args;
+      this.args = argsObj;
+      const ans = thisThing.execute(this._semantics, this);
+      this.args = oldArgs;
+      return ans;
+    }
+
+    if (type === 'operation') {
+      this.Wrapper.prototype[name] = doIt;
+      this.Wrapper.prototype[name].toString = function() {
+        return '[' + name + ' operation]';
+      };
+    } else {
+      Object.defineProperty(this.Wrapper.prototype, name, {
+        get: doIt,
+        configurable: true, // So the property can be deleted.
+      });
+      Object.defineProperty(this.attributeKeys, name, {
+        value: util.uniqueId(name),
+      });
+    }
+  }
+
+  extendOperationOrAttribute(type, name, actionDict) {
+    const typePlural = type + 's';
+
+    // Make sure that `name` really is just a name, i.e., that it doesn't also contain formals.
+    parseSignature(name, 'attribute');
+
+    if (!(this.super && name in this.super[typePlural])) {
       throw new Error(
-          "Cannot extend a semantics for grammar '" +
-          this.super.grammar.name +
-          "' for use with grammar '" +
-          grammar.name +
-          "' (not a sub-grammar)",
+          'Cannot extend ' +
+          type +
+          " '" +
+          name +
+          "': did not inherit an " +
+          type +
+          ' with that name',
       );
     }
-    this.operations = Object.create(this.super.operations);
-    this.attributes = Object.create(this.super.attributes);
-    this.attributeKeys = Object.create(null);
-
-    // Assign unique symbols for each of the attributes inherited from the super-semantics so that
-    // they are memoized independently.
-    // eslint-disable-next-line guard-for-in
-    for (const attributeName in this.attributes) {
-      Object.defineProperty(this.attributeKeys, attributeName, {
-        value: util.uniqueId(attributeName),
-      });
+    if (hasOwnProperty(this[typePlural], name)) {
+      throw new Error('Cannot extend ' + type + " '" + name + "' again");
     }
-  } else {
-    this.operations = Object.create(null);
-    this.attributes = Object.create(null);
-    this.attributeKeys = Object.create(null);
+
+    // Create a new operation / attribute whose actionDict delegates to the super operation /
+    // attribute's actionDict, and which has all the keys from `inheritedActionDict`.
+    const inheritedFormals = this[typePlural][name].formals;
+    const inheritedActionDict = this[typePlural][name].actionDict;
+    const newActionDict = Object.create(inheritedActionDict);
+    Object.keys(actionDict).forEach(name => {
+      newActionDict[name] = actionDict[name];
+    });
+
+    this[typePlural][name] =
+      type === 'operation' ?
+        new Operation(name, inheritedFormals, newActionDict) :
+        new Attribute(name, newActionDict);
+
+    // The following check is not strictly necessary (it will happen later anyway) but it's better
+    // to catch errors early.
+    this[typePlural][name].checkActionDict(this.grammar);
+  }
+
+  assertNewName(name, type) {
+    if (hasOwnProperty(Wrapper.prototype, name)) {
+      throw new Error('Cannot add ' + type + " '" + name + "': that's a reserved name");
+    }
+    if (name in this.operations) {
+      throw new Error(
+          'Cannot add ' + type + " '" + name + "': an operation with that name already exists",
+      );
+    }
+    if (name in this.attributes) {
+      throw new Error(
+          'Cannot add ' + type + " '" + name + "': an attribute with that name already exists",
+      );
+    }
+  }
+
+  // Returns a wrapper for the given CST `node` in this semantics.
+  // If `node` is already a wrapper, returns `node` itself.  // TODO: why is this needed?
+  wrap(node, source, optBaseInterval) {
+    const baseInterval = optBaseInterval || source;
+    return node instanceof this.Wrapper ? node : new this.Wrapper(node, source, baseInterval);
   }
 }
-
-Semantics.prototype.toString = function() {
-  return '[semantics for ' + this.grammar.name + ']';
-};
-
-Semantics.prototype.checkActionDictsIfHaventAlready = function() {
-  if (!this.checkedActionDicts) {
-    this.checkActionDicts();
-    this.checkedActionDicts = true;
-  }
-};
-
-// Checks that the action dictionaries for all operations and attributes in this semantics,
-// including the ones that were inherited from the super-semantics, agree with the grammar.
-// Throws an exception if one or more of them doesn't.
-Semantics.prototype.checkActionDicts = function() {
-  let name;
-  // eslint-disable-next-line guard-for-in
-  for (name in this.operations) {
-    this.operations[name].checkActionDict(this.grammar);
-  }
-  // eslint-disable-next-line guard-for-in
-  for (name in this.attributes) {
-    this.attributes[name].checkActionDict(this.grammar);
-  }
-};
-
-Semantics.prototype.toRecipe = function(semanticsOnly) {
-  function hasSuperSemantics(s) {
-    return s.super !== Semantics.BuiltInSemantics._getSemantics();
-  }
-
-  let str = '(function(g) {\n';
-  if (hasSuperSemantics(this)) {
-    str += '  var semantics = ' + this.super.toRecipe(true) + '(g';
-
-    const superSemanticsGrammar = this.super.grammar;
-    let relatedGrammar = this.grammar;
-    while (relatedGrammar !== superSemanticsGrammar) {
-      str += '.superGrammar';
-      relatedGrammar = relatedGrammar.superGrammar;
-    }
-
-    str += ');\n';
-    str += '  return g.extendSemantics(semantics)';
-  } else {
-    str += '  return g.createSemantics()';
-  }
-  ['Operation', 'Attribute'].forEach(type => {
-    const semanticOperations = this[type.toLowerCase() + 's'];
-    Object.keys(semanticOperations).forEach(name => {
-      const {actionDict, formals, builtInDefault} = semanticOperations[name];
-
-      let signature = name;
-      if (formals.length > 0) {
-        signature += '(' + formals.join(', ') + ')';
-      }
-
-      let method;
-      if (hasSuperSemantics(this) && this.super[type.toLowerCase() + 's'][name]) {
-        method = 'extend' + type;
-      } else {
-        method = 'add' + type;
-      }
-      str += '\n    .' + method + '(' + JSON.stringify(signature) + ', {';
-
-      const srcArray = [];
-      Object.keys(actionDict).forEach(actionName => {
-        if (actionDict[actionName] !== builtInDefault) {
-          let source = actionDict[actionName].toString().trim();
-
-          // Convert method shorthand to plain old function syntax.
-          // https://github.com/harc/ohm/issues/263
-          source = source.replace(/^.*\(/, 'function(');
-
-          srcArray.push('\n      ' + JSON.stringify(actionName) + ': ' + source);
-        }
-      });
-      str += srcArray.join(',') + '\n    })';
-    });
-  });
-  str += ';\n  })';
-
-  if (!semanticsOnly) {
-    str =
-      '(function() {\n' +
-      '  var grammar = this.fromRecipe(' +
-      this.grammar.toRecipe() +
-      ');\n' +
-      '  var semantics = ' +
-      str +
-      '(grammar);\n' +
-      '  return semantics;\n' +
-      '});\n';
-  }
-
-  return str;
-};
 
 function parseSignature(signature, type) {
   if (!Semantics.prototypeGrammar) {
@@ -349,152 +497,6 @@ function newDefaultAction(type, name, doIt) {
     }
   };
 }
-
-Semantics.prototype.addOperationOrAttribute = function(type, signature, actionDict) {
-  const typePlural = type + 's';
-
-  const parsedNameAndFormalArgs = parseSignature(signature, type);
-  const {name} = parsedNameAndFormalArgs;
-  const {formals} = parsedNameAndFormalArgs;
-
-  // TODO: check that there are no duplicate formal arguments
-
-  this.assertNewName(name, type);
-
-  // Create the action dictionary for this operation / attribute that contains a `_default` action
-  // which defines the default behavior of iteration, terminal, and non-terminal nodes...
-  const builtInDefault = newDefaultAction(type, name, doIt);
-  const realActionDict = {_default: builtInDefault};
-  // ... and add in the actions supplied by the programmer, which may override some or all of the
-  // default ones.
-  Object.keys(actionDict).forEach(name => {
-    realActionDict[name] = actionDict[name];
-  });
-
-  const entry =
-    type === 'operation' ?
-      new Operation(name, formals, realActionDict, builtInDefault) :
-      new Attribute(name, realActionDict, builtInDefault);
-
-  // The following check is not strictly necessary (it will happen later anyway) but it's better to
-  // catch errors early.
-  entry.checkActionDict(this.grammar);
-
-  this[typePlural][name] = entry;
-
-  function doIt(...args) {
-    // Dispatch to most specific version of this operation / attribute -- it may have been
-    // overridden by a sub-semantics.
-    const thisThing = this._semantics[typePlural][name];
-
-    // Check that the caller passed the correct number of arguments.
-    if (arguments.length !== thisThing.formals.length) {
-      throw new Error(
-          'Invalid number of arguments passed to ' +
-          name +
-          ' ' +
-          type +
-          ' (expected ' +
-          thisThing.formals.length +
-          ', got ' +
-          arguments.length +
-          ')',
-      );
-    }
-
-    // Create an "arguments object" from the arguments that were passed to this
-    // operation / attribute.
-    const argsObj = Object.create(null);
-    for (const [idx, val] of Object.entries(args)) {
-      const formal = thisThing.formals[idx];
-      argsObj[formal] = val;
-    }
-
-    const oldArgs = this.args;
-    this.args = argsObj;
-    const ans = thisThing.execute(this._semantics, this);
-    this.args = oldArgs;
-    return ans;
-  }
-
-  if (type === 'operation') {
-    this.Wrapper.prototype[name] = doIt;
-    this.Wrapper.prototype[name].toString = function() {
-      return '[' + name + ' operation]';
-    };
-  } else {
-    Object.defineProperty(this.Wrapper.prototype, name, {
-      get: doIt,
-      configurable: true, // So the property can be deleted.
-    });
-    Object.defineProperty(this.attributeKeys, name, {
-      value: util.uniqueId(name),
-    });
-  }
-};
-
-Semantics.prototype.extendOperationOrAttribute = function(type, name, actionDict) {
-  const typePlural = type + 's';
-
-  // Make sure that `name` really is just a name, i.e., that it doesn't also contain formals.
-  parseSignature(name, 'attribute');
-
-  if (!(this.super && name in this.super[typePlural])) {
-    throw new Error(
-        'Cannot extend ' +
-        type +
-        " '" +
-        name +
-        "': did not inherit an " +
-        type +
-        ' with that name',
-    );
-  }
-  if (hasOwnProperty(this[typePlural], name)) {
-    throw new Error('Cannot extend ' + type + " '" + name + "' again");
-  }
-
-  // Create a new operation / attribute whose actionDict delegates to the super operation /
-  // attribute's actionDict, and which has all the keys from `inheritedActionDict`.
-  const inheritedFormals = this[typePlural][name].formals;
-  const inheritedActionDict = this[typePlural][name].actionDict;
-  const newActionDict = Object.create(inheritedActionDict);
-  Object.keys(actionDict).forEach(name => {
-    newActionDict[name] = actionDict[name];
-  });
-
-  this[typePlural][name] =
-    type === 'operation' ?
-      new Operation(name, inheritedFormals, newActionDict) :
-      new Attribute(name, newActionDict);
-
-  // The following check is not strictly necessary (it will happen later anyway) but it's better to
-  // catch errors early.
-  this[typePlural][name].checkActionDict(this.grammar);
-};
-
-Semantics.prototype.assertNewName = function(name, type) {
-  if (hasOwnProperty(Wrapper.prototype, name)) {
-    throw new Error('Cannot add ' + type + " '" + name + "': that's a reserved name");
-  }
-  if (name in this.operations) {
-    throw new Error(
-        'Cannot add ' + type + " '" + name + "': an operation with that name already exists",
-    );
-  }
-  if (name in this.attributes) {
-    throw new Error(
-        'Cannot add ' + type + " '" + name + "': an attribute with that name already exists",
-    );
-  }
-};
-
-// Returns a wrapper for the given CST `node` in this semantics.
-// If `node` is already a wrapper, returns `node` itself.  // TODO: why is this needed?
-Semantics.prototype.wrap = function(node, source, optBaseInterval) {
-  const baseInterval = optBaseInterval || source;
-  return node instanceof this.Wrapper ? node : new this.Wrapper(node, source, baseInterval);
-};
 
 // Creates a new Semantics instance for `grammar`, inheriting operations and attributes from
 // `optSuperSemantics`, if it is specified. Returns a function that acts as a proxy for the new

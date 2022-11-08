@@ -4,29 +4,29 @@ import {Interval} from './Interval.js';
 // Private stuff
 // --------------------------------------------------------------------
 
-export function InputStream(source) {
-  this.source = source;
-  this.pos = 0;
-  this.examinedLength = 0;
-}
+export class InputStream {
+  constructor(source) {
+    this.source = source;
+    this.pos = 0;
+    this.examinedLength = 0;
+  }
 
-InputStream.prototype = {
   atEnd() {
     const ans = this.pos === this.source.length;
     this.examinedLength = Math.max(this.examinedLength, this.pos + 1);
     return ans;
-  },
+  }
 
   next() {
     const ans = this.source[this.pos++];
     this.examinedLength = Math.max(this.examinedLength, this.pos);
     return ans;
-  },
+  }
 
   nextCharCode() {
     const nextChar = this.next();
     return nextChar && nextChar.charCodeAt(0);
-  },
+  }
 
   nextCodePoint() {
     const cp = this.source.slice(this.pos++).codePointAt(0);
@@ -36,7 +36,7 @@ InputStream.prototype = {
     }
     this.examinedLength = Math.max(this.examinedLength, this.pos);
     return cp;
-  },
+  }
 
   matchString(s, optIgnoreCase) {
     let idx;
@@ -65,13 +65,13 @@ InputStream.prototype = {
       }
     }
     return true;
-  },
+  }
 
   sourceSlice(startIdx, endIdx) {
     return this.source.slice(startIdx, endIdx);
-  },
+  }
 
   interval(startIdx, optEndIdx) {
     return new Interval(this.source, startIdx, optEndIdx ? optEndIdx : this.pos);
-  },
-};
+  }
+}

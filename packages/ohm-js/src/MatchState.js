@@ -17,35 +17,35 @@ util.awaitBuiltInRules(builtInRules => {
 
 const applySpaces = new pexprs.Apply('spaces');
 
-export function MatchState(matcher, startExpr, optPositionToRecordFailures) {
-  this.matcher = matcher;
-  this.startExpr = startExpr;
+export class MatchState {
+  constructor(matcher, startExpr, optPositionToRecordFailures) {
+    this.matcher = matcher;
+    this.startExpr = startExpr;
 
-  this.grammar = matcher.grammar;
-  this.input = matcher.input;
-  this.inputStream = new InputStream(matcher.input);
-  this.memoTable = matcher.memoTable;
+    this.grammar = matcher.grammar;
+    this.input = matcher.input;
+    this.inputStream = new InputStream(matcher.input);
+    this.memoTable = matcher.memoTable;
 
-  this._bindings = [];
-  this._bindingOffsets = [];
-  this._applicationStack = [];
-  this._posStack = [0];
-  this.inLexifiedContextStack = [false];
+    this._bindings = [];
+    this._bindingOffsets = [];
+    this._applicationStack = [];
+    this._posStack = [0];
+    this.inLexifiedContextStack = [false];
 
-  this.rightmostFailurePosition = -1;
-  this._rightmostFailurePositionStack = [];
-  this._recordedFailuresStack = [];
+    this.rightmostFailurePosition = -1;
+    this._rightmostFailurePositionStack = [];
+    this._recordedFailuresStack = [];
 
-  if (optPositionToRecordFailures !== undefined) {
-    this.positionToRecordFailures = optPositionToRecordFailures;
-    this.recordedFailures = Object.create(null);
+    if (optPositionToRecordFailures !== undefined) {
+      this.positionToRecordFailures = optPositionToRecordFailures;
+      this.recordedFailures = Object.create(null);
+    }
   }
-}
 
-MatchState.prototype = {
   posToOffset(pos) {
     return pos - this._posStack[this._posStack.length - 1];
-  },
+  }
 
   enterApplication(posInfo, app) {
     this._posStack.push(this.inputStream.pos);
@@ -54,7 +54,7 @@ MatchState.prototype = {
     posInfo.enter(app);
     this._rightmostFailurePositionStack.push(this.rightmostFailurePosition);
     this.rightmostFailurePosition = -1;
-  },
+  }
 
   exitApplication(posInfo, optNode) {
     const origPos = this._posStack.pop();
@@ -70,19 +70,19 @@ MatchState.prototype = {
     if (optNode) {
       this.pushBinding(optNode, origPos);
     }
-  },
+  }
 
   enterLexifiedContext() {
     this.inLexifiedContextStack.push(true);
-  },
+  }
 
   exitLexifiedContext() {
     this.inLexifiedContextStack.pop();
-  },
+  }
 
   currentApplication() {
     return this._applicationStack[this._applicationStack.length - 1];
-  },
+  }
 
   inSyntacticContext() {
     const currentApplication = this.currentApplication();
@@ -92,11 +92,11 @@ MatchState.prototype = {
       // The top-level context is syntactic if the start application is.
       return this.startExpr.factors[0].isSyntactic();
     }
-  },
+  }
 
   inLexifiedContext() {
     return this.inLexifiedContextStack[this.inLexifiedContextStack.length - 1];
-  },
+  }
 
   skipSpaces() {
     this.pushFailuresInfo();
@@ -104,11 +104,11 @@ MatchState.prototype = {
     this.popBinding();
     this.popFailuresInfo();
     return this.inputStream.pos;
-  },
+  }
 
   skipSpacesIfInSyntacticContext() {
     return this.inSyntacticContext() ? this.skipSpaces() : this.inputStream.pos;
-  },
+  }
 
   maybeSkipSpacesBefore(expr) {
     if (expr.allowsSkippingPrecedingSpace() && expr !== applySpaces) {
@@ -116,21 +116,21 @@ MatchState.prototype = {
     } else {
       return this.inputStream.pos;
     }
-  },
+  }
 
   pushBinding(node, origPos) {
     this._bindings.push(node);
     this._bindingOffsets.push(this.posToOffset(origPos));
-  },
+  }
 
   popBinding() {
     this._bindings.pop();
     this._bindingOffsets.pop();
-  },
+  }
 
   numBindings() {
     return this._bindings.length;
-  },
+  }
 
   truncateBindings(newLength) {
     // Yes, this is this really faster than setting the `length` property (tested with
@@ -139,11 +139,11 @@ MatchState.prototype = {
     while (this._bindings.length > newLength) {
       this.popBinding();
     }
-  },
+  }
 
   getCurrentPosInfo() {
     return this.getPosInfo(this.inputStream.pos);
-  },
+  }
 
   getPosInfo(pos) {
     let posInfo = this.memoTable[pos];
@@ -151,7 +151,7 @@ MatchState.prototype = {
       posInfo = this.memoTable[pos] = new PosInfo();
     }
     return posInfo;
-  },
+  }
 
   processFailure(pos, expr) {
     this.rightmostFailurePosition = Math.max(this.rightmostFailurePosition, pos);
@@ -171,7 +171,7 @@ MatchState.prototype = {
 
       this.recordFailure(expr.toFailure(this.grammar), false);
     }
-  },
+  }
 
   recordFailure(failure, shouldCloneIfNew) {
     const key = failure.toKey();
@@ -180,13 +180,13 @@ MatchState.prototype = {
     } else if (this.recordedFailures[key].isFluffy() && !failure.isFluffy()) {
       this.recordedFailures[key].clearFluffy();
     }
-  },
+  }
 
   recordFailures(failures, shouldCloneIfNew) {
     Object.keys(failures).forEach(key => {
       this.recordFailure(failures[key], shouldCloneIfNew);
     });
-  },
+  }
 
   cloneRecordedFailures() {
     if (!this.recordedFailures) {
@@ -198,17 +198,17 @@ MatchState.prototype = {
       ans[key] = this.recordedFailures[key].clone();
     });
     return ans;
-  },
+  }
 
   getRightmostFailurePosition() {
     return this.rightmostFailurePosition;
-  },
+  }
 
   _getRightmostFailureOffset() {
     return this.rightmostFailurePosition >= 0 ?
       this.posToOffset(this.rightmostFailurePosition) :
       -1;
-  },
+  }
 
   // Returns the memoized trace entry for `expr` at `pos`, if one exists, `null` otherwise.
   getMemoizedTraceEntry(pos, expr) {
@@ -222,7 +222,7 @@ MatchState.prototype = {
       }
     }
     return null;
-  },
+  }
 
   // Returns a new trace entry, with the currently active trace array as its children.
   getTraceEntry(pos, expr, succeeded, bindings) {
@@ -235,11 +235,11 @@ MatchState.prototype = {
       this.getMemoizedTraceEntry(pos, expr) ||
       new Trace(this.input, pos, this.inputStream.pos, expr, succeeded, bindings, this.trace)
     );
-  },
+  }
 
   isTracing() {
     return !!this.trace;
-  },
+  }
 
   hasNecessaryInfo(memoRec) {
     if (this.trace && !memoRec.traceEntry) {
@@ -254,7 +254,7 @@ MatchState.prototype = {
     }
 
     return true;
-  },
+  }
 
   useMemoizedResult(origPos, memoRec) {
     if (this.trace) {
@@ -286,7 +286,7 @@ MatchState.prototype = {
       return true;
     }
     return false;
-  },
+  }
 
   // Evaluate `expr` and return `true` if it succeeded, `false` otherwise. On success, `bindings`
   // will have `expr.getArity()` more elements than before, and the input stream's position may
@@ -345,7 +345,7 @@ MatchState.prototype = {
     }
 
     return ans;
-  },
+  }
 
   getMatchResult() {
     this.eval(this.startExpr);
@@ -368,7 +368,7 @@ MatchState.prototype = {
         this.rightmostFailurePosition,
         rightmostFailures,
     );
-  },
+  }
 
   getTrace() {
     this.trace = [];
@@ -381,15 +381,15 @@ MatchState.prototype = {
     const rootTrace = this.trace[this.trace.length - 1];
     rootTrace.result = matchResult;
     return rootTrace;
-  },
+  }
 
   pushFailuresInfo() {
     this._rightmostFailurePositionStack.push(this.rightmostFailurePosition);
     this._recordedFailuresStack.push(this.recordedFailures);
-  },
+  }
 
   popFailuresInfo() {
     this.rightmostFailurePosition = this._rightmostFailurePositionStack.pop();
     this.recordedFailures = this._recordedFailuresStack.pop();
-  },
-};
+  }
+}

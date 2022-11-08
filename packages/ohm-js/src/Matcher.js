@@ -5,83 +5,85 @@ import * as pexprs from './pexprs.js';
 // Private stuff
 // --------------------------------------------------------------------
 
-export function Matcher(grammar) {
-  this.grammar = grammar;
-  this.memoTable = [];
-  this.input = '';
-}
-
-Matcher.prototype.getInput = function() {
-  return this.input;
-};
-
-Matcher.prototype.setInput = function(str) {
-  if (this.input !== str) {
-    this.replaceInputRange(0, this.input.length, str);
-  }
-  return this;
-};
-
-Matcher.prototype.replaceInputRange = function(startIdx, endIdx, str) {
-  const currentInput = this.input;
-  if (
-    startIdx < 0 ||
-    startIdx > currentInput.length ||
-    endIdx < 0 ||
-    endIdx > currentInput.length ||
-    startIdx > endIdx
-  ) {
-    throw new Error('Invalid indices: ' + startIdx + ' and ' + endIdx);
+export class Matcher {
+  constructor(grammar) {
+    this.grammar = grammar;
+    this.memoTable = [];
+    this.input = '';
   }
 
-  // update input
-  this.input = currentInput.slice(0, startIdx) + str + currentInput.slice(endIdx);
-
-  // update memo table (similar to the above)
-  const restOfMemoTable = this.memoTable.slice(endIdx);
-  this.memoTable.length = startIdx;
-  for (let idx = 0; idx < str.length; idx++) {
-    this.memoTable.push(undefined);
+  getInput() {
+    return this.input;
   }
-  restOfMemoTable.forEach(function(posInfo) {
-    this.memoTable.push(posInfo);
-  }, this);
 
-  // Invalidate memoRecs
-  for (let pos = 0; pos < startIdx; pos++) {
-    const posInfo = this.memoTable[pos];
-    if (posInfo) {
-      posInfo.clearObsoleteEntries(pos, startIdx);
+  setInput(str) {
+    if (this.input !== str) {
+      this.replaceInputRange(0, this.input.length, str);
     }
+    return this;
   }
 
-  return this;
-};
+  replaceInputRange(startIdx, endIdx, str) {
+    const currentInput = this.input;
+    if (
+      startIdx < 0 ||
+      startIdx > currentInput.length ||
+      endIdx < 0 ||
+      endIdx > currentInput.length ||
+      startIdx > endIdx
+    ) {
+      throw new Error('Invalid indices: ' + startIdx + ' and ' + endIdx);
+    }
 
-Matcher.prototype.match = function(optStartApplicationStr) {
-  return this._match(this._getStartExpr(optStartApplicationStr), false);
-};
+    // update input
+    this.input = currentInput.slice(0, startIdx) + str + currentInput.slice(endIdx);
 
-Matcher.prototype.trace = function(optStartApplicationStr) {
-  return this._match(this._getStartExpr(optStartApplicationStr), true);
-};
+    // update memo table (similar to the above)
+    const restOfMemoTable = this.memoTable.slice(endIdx);
+    this.memoTable.length = startIdx;
+    for (let idx = 0; idx < str.length; idx++) {
+      this.memoTable.push(undefined);
+    }
+    restOfMemoTable.forEach(function(posInfo) {
+      this.memoTable.push(posInfo);
+    }, this);
 
-Matcher.prototype._match = function(startExpr, tracing, optPositionToRecordFailures) {
-  const state = new MatchState(this, startExpr, optPositionToRecordFailures);
-  return tracing ? state.getTrace() : state.getMatchResult();
-};
+    // Invalidate memoRecs
+    for (let pos = 0; pos < startIdx; pos++) {
+      const posInfo = this.memoTable[pos];
+      if (posInfo) {
+        posInfo.clearObsoleteEntries(pos, startIdx);
+      }
+    }
 
-/*
-  Returns the starting expression for this Matcher's associated grammar. If `optStartApplicationStr`
-  is specified, it is a string expressing a rule application in the grammar. If not specified, the
-  grammar's default start rule will be used.
-*/
-Matcher.prototype._getStartExpr = function(optStartApplicationStr) {
-  const applicationStr = optStartApplicationStr || this.grammar.defaultStartRule;
-  if (!applicationStr) {
-    throw new Error('Missing start rule argument -- the grammar has no default start rule.');
+    return this;
   }
 
-  const startApp = this.grammar.parseApplication(applicationStr);
-  return new pexprs.Seq([startApp, pexprs.end]);
-};
+  match(optStartApplicationStr) {
+    return this._match(this._getStartExpr(optStartApplicationStr), false);
+  }
+
+  trace(optStartApplicationStr) {
+    return this._match(this._getStartExpr(optStartApplicationStr), true);
+  }
+
+  _match(startExpr, tracing, optPositionToRecordFailures) {
+    const state = new MatchState(this, startExpr, optPositionToRecordFailures);
+    return tracing ? state.getTrace() : state.getMatchResult();
+  }
+
+  /*
+    Returns the starting expression for this Matcher's associated grammar. If
+    `optStartApplicationStr` is specified, it is a string expressing a rule application in the
+    grammar. If not specified, the grammar's default start rule will be used.
+  */
+  _getStartExpr(optStartApplicationStr) {
+    const applicationStr = optStartApplicationStr || this.grammar.defaultStartRule;
+    if (!applicationStr) {
+      throw new Error('Missing start rule argument -- the grammar has no default start rule.');
+    }
+
+    const startApp = this.grammar.parseApplication(applicationStr);
+    return new pexprs.Seq([startApp, pexprs.end]);
+  }
+}

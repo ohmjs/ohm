@@ -1,23 +1,23 @@
-export function PosInfo() {
-  this.applicationMemoKeyStack = []; // active applications at this position
-  this.memo = {};
-  this.maxExaminedLength = 0;
-  this.maxRightmostFailureOffset = -1;
-  this.currentLeftRecursion = undefined;
-}
+export class PosInfo {
+  constructor() {
+    this.applicationMemoKeyStack = []; // active applications at this position
+    this.memo = {};
+    this.maxExaminedLength = 0;
+    this.maxRightmostFailureOffset = -1;
+    this.currentLeftRecursion = undefined;
+  }
 
-PosInfo.prototype = {
   isActive(application) {
     return this.applicationMemoKeyStack.indexOf(application.toMemoKey()) >= 0;
-  },
+  }
 
   enter(application) {
     this.applicationMemoKeyStack.push(application.toMemoKey());
-  },
+  }
 
   exit() {
     this.applicationMemoKeyStack.pop();
-  },
+  }
 
   startLeftRecursion(headApplication, memoRec) {
     memoRec.isLeftRecursion = true;
@@ -44,11 +44,11 @@ PosInfo.prototype = {
         }
       }
     };
-  },
+  }
 
   endLeftRecursion() {
     this.currentLeftRecursion = this.currentLeftRecursion.nextLeftRecursion;
-  },
+  }
 
   // Note: this method doesn't get called for the "head" of a left recursion -- for LR heads,
   // the memoized result (which starts out being a failure) is always used.
@@ -64,7 +64,7 @@ PosInfo.prototype = {
       }
     }
     return true;
-  },
+  }
 
   memoize(memoKey, memoRec) {
     this.memo[memoKey] = memoRec;
@@ -74,7 +74,7 @@ PosInfo.prototype = {
         memoRec.rightmostFailureOffset,
     );
     return memoRec;
-  },
+  }
 
   clearObsoleteEntries(pos, invalidatedIdx) {
     if (pos + this.maxExaminedLength <= invalidatedIdx) {
@@ -98,5 +98,5 @@ PosInfo.prototype = {
         );
       }
     });
-  },
-};
+  }
+}

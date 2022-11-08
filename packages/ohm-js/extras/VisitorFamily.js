@@ -71,85 +71,90 @@ function parseSignature(sig) {
     * a function taking two arguments (node, fn), and returning an Array which is the result
       of apply `fn` to each of the node's children.
  */
-export function VisitorFamily(config) {
-  this._shapes = config.shapes;
-  this._getTag = config.getTag;
+export class VisitorFamily {
+  constructor(config) {
+    this._shapes = config.shapes;
+    this._getTag = config.getTag;
 
-  this.Adapter = function(thing, family) {
-    this._adaptee = thing;
-    this._family = family;
-  };
-  this.Adapter.prototype.valueOf = function() {
-    throw new Error('heeey!');
-  };
-  this.operations = {};
+    this.Adapter = function(thing, family) {
+      this._adaptee = thing;
+      this._family = family;
+    };
+    this.Adapter.prototype.valueOf = function() {
+      throw new Error('heeey!');
+    };
+    this.operations = {};
 
-  this._arities = Object.create(null);
-  this._getChildren = Object.create(null);
+    this._arities = Object.create(null);
+    this._getChildren = Object.create(null);
 
-  Object.keys(this._shapes).forEach(k => {
-    const shape = this._shapes[k];
-    this._getChildren[k] = getWalkFn(shape);
+    Object.keys(this._shapes).forEach(k => {
+      const shape = this._shapes[k];
+      this._getChildren[k] = getWalkFn(shape);
 
-    // A function means the arity isn't fixed, so don't put an entry in the arity map.
-    if (typeof shape !== 'function') {
-      this._arities[k] = Array.isArray(shape) ? shape.length : 1;
-    }
-  });
-  this._wrap = thing => new this.Adapter(thing, this);
-}
+      // A function means the arity isn't fixed, so don't put an entry in the arity map.
+      if (typeof shape !== 'function') {
+        this._arities[k] = Array.isArray(shape) ? shape.length : 1;
+      }
+    });
+    this._wrap = thing => new this.Adapter(thing, this);
+  }
 
-VisitorFamily.prototype.wrap = function(thing) {
-  return this._wrap(thing);
-};
+  wrap(thing) {
+    return this._wrap(thing);
+  }
 
-VisitorFamily.prototype._checkActionDict = function(dict) {
-  Object.keys(dict).forEach(k => {
-    assert(k in this._getChildren, "Unrecognized action name '" + k + "'");
-    const action = dict[k];
-    assert(typeof action === 'function', "Key '" + k + "': expected function, got " + action);
-    if (k in this._arities) {
-      const expected = this._arities[k];
-      const actual = dict[k].length;
+  _checkActionDict(dict) {
+    Object.keys(dict).forEach(k => {
+      assert(k in this._getChildren, "Unrecognized action name '" + k + "'");
+      const action = dict[k];
       assert(
-          actual === expected,
-          "Action '" + k + "' has the wrong arity: expected " + expected + ', got ' + actual,
+          typeof action === 'function',
+          "Key '" + k + "': expected function, got " + action,
       );
-    }
-  });
-};
+      if (k in this._arities) {
+        const expected = this._arities[k];
+        const actual = dict[k].length;
+        assert(
+            actual === expected,
+            "Action '" + k + "' has the wrong arity: expected " + expected + ', got ' + actual,
+        );
+      }
+    });
+  }
 
-VisitorFamily.prototype.addOperation = function(signature, actions) {
-  const sig = parseSignature(signature);
-  const {name} = sig;
-  this._checkActionDict(actions);
-  this.operations[name] = {
-    name,
-    formals: sig.formals,
-    actions,
-  };
+  addOperation(signature, actions) {
+    const sig = parseSignature(signature);
+    const {name} = sig;
+    this._checkActionDict(actions);
+    this.operations[name] = {
+      name,
+      formals: sig.formals,
+      actions,
+    };
 
-  const family = this;
-  this.Adapter.prototype[name] = function(...args) {
-    const tag = family._getTag(this._adaptee);
-    assert(tag in family._getChildren, "getTag returned unrecognized tag '" + tag + "'");
-    assert(tag in actions, "No action for '" + tag + "' in operation '" + name + "'");
+    const family = this;
+    this.Adapter.prototype[name] = function(...args) {
+      const tag = family._getTag(this._adaptee);
+      assert(tag in family._getChildren, "getTag returned unrecognized tag '" + tag + "'");
+      assert(tag in actions, "No action for '" + tag + "' in operation '" + name + "'");
 
-    // Create an "arguments object" from the arguments that were passed to this
-    // operation / attribute.
-    const argsObj = Object.create(null);
-    for (const [i, val] of Object.entries(args)) {
-      argsObj[sig.formals[i]] = val;
-    }
+      // Create an "arguments object" from the arguments that were passed to this
+      // operation / attribute.
+      const argsObj = Object.create(null);
+      for (const [i, val] of Object.entries(args)) {
+        argsObj[sig.formals[i]] = val;
+      }
 
-    const oldArgs = this.args;
-    this.args = argsObj;
-    const ans = actions[tag].apply(
-        this,
-        family._getChildren[tag](this._adaptee, family._wrap),
-    );
-    this.args = oldArgs;
-    return ans;
-  };
-  return this;
-};
+      const oldArgs = this.args;
+      this.args = argsObj;
+      const ans = actions[tag].apply(
+          this,
+          family._getChildren[tag](this._adaptee, family._wrap),
+      );
+      this.args = oldArgs;
+      return ans;
+    };
+    return this;
+  }
+}

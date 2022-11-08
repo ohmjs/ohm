@@ -23,43 +23,37 @@ function getSortedRuleValues(grammar) {
 // See https://v8.dev/features/subsume-json for more details.
 const jsonToJS = str => str.replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 
-export function Grammar(name, superGrammar, rules, optDefaultStartRule) {
-  this.name = name;
-  this.superGrammar = superGrammar;
-  this.rules = rules;
-  if (optDefaultStartRule) {
-    if (!(optDefaultStartRule in rules)) {
-      throw new Error(
-          "Invalid start rule: '" +
-          optDefaultStartRule +
-          "' is not a rule in grammar '" +
-          name +
-          "'",
-      );
-    }
-    this.defaultStartRule = optDefaultStartRule;
-  }
-}
-
 let ohmGrammar;
 let buildGrammar;
 
-// This method is called from main.js once Ohm has loaded.
-Grammar.initApplicationParser = function(grammar, builderFn) {
-  ohmGrammar = grammar;
-  buildGrammar = builderFn;
-};
+export class Grammar {
+  constructor(name, superGrammar, rules, optDefaultStartRule) {
+    this.name = name;
+    this.superGrammar = superGrammar;
+    this.rules = rules;
+    if (optDefaultStartRule) {
+      if (!(optDefaultStartRule in rules)) {
+        throw new Error(
+            "Invalid start rule: '" +
+            optDefaultStartRule +
+            "' is not a rule in grammar '" +
+            name +
+            "'",
+        );
+      }
+      this.defaultStartRule = optDefaultStartRule;
+    }
+  }
 
-Grammar.prototype = {
   matcher() {
     return new Matcher(this);
-  },
+  }
 
   // Return true if the grammar is a built-in grammar, otherwise false.
   // NOTE: This might give an unexpected result if called before BuiltInRules is defined!
   isBuiltIn() {
     return this === Grammar.ProtoBuiltInRules || this === Grammar.BuiltInRules;
-  },
+  }
 
   equals(g) {
     if (this === g) {
@@ -86,27 +80,27 @@ Grammar.prototype = {
         );
       })
     );
-  },
+  }
 
   match(input, optStartApplication) {
     const m = this.matcher();
     m.replaceInputRange(0, 0, input);
     return m.match(optStartApplication);
-  },
+  }
 
   trace(input, optStartApplication) {
     const m = this.matcher();
     m.replaceInputRange(0, 0, input);
     return m.trace(optStartApplication);
-  },
+  }
 
   createSemantics() {
     return Semantics.createSemantics(this);
-  },
+  }
 
   extendSemantics(superSemantics) {
     return Semantics.createSemantics(this, superSemantics._getSemantics());
-  },
+  }
 
   // Check that every key in `actionDict` corresponds to a semantic action, and that it maps to
   // a function of the correct arity. If not, throw an exception.
@@ -151,7 +145,7 @@ Grammar.prototype = {
       error.problems = problems;
       throw error;
     }
-  },
+  }
 
   // Return the expected arity for a semantic action named `actionName`, which
   // is either a rule name or a special action name like '_nonterminal'.
@@ -162,7 +156,7 @@ Grammar.prototype = {
     return SPECIAL_ACTION_NAMES.includes(actionName) ?
       0 :
       this.rules[actionName].body.getArity();
-  },
+  }
 
   _inheritsFrom(grammar) {
     let g = this.superGrammar;
@@ -173,7 +167,7 @@ Grammar.prototype = {
       g = g.superGrammar;
     }
     return false;
-  },
+  }
 
   toRecipe(superGrammarExpr = undefined) {
     const metaInfo = {};
@@ -233,16 +227,16 @@ Grammar.prototype = {
       ...[startRule, rules].map(JSON.stringify),
     ];
     return jsonToJS(`[${recipeElements.join(',')}]`);
-  },
+  }
 
   // TODO: Come up with better names for these methods.
   // TODO: Write the analog of these methods for inherited attributes.
   toOperationActionDictionaryTemplate() {
     return this._toOperationOrAttributeActionDictionaryTemplate();
-  },
+  }
   toAttributeActionDictionaryTemplate() {
     return this._toOperationOrAttributeActionDictionaryTemplate();
-  },
+  }
 
   _toOperationOrAttributeActionDictionaryTemplate() {
     // TODO: add the super-grammar's templates at the right place, e.g., a case for AddExpr_plus
@@ -267,7 +261,7 @@ Grammar.prototype = {
 
     sb.append('\n}');
     return sb.contents();
-  },
+  }
 
   addSemanticActionTemplate(ruleName, body, sb) {
     sb.append(ruleName);
@@ -276,7 +270,7 @@ Grammar.prototype = {
     sb.append(common.repeat('_', arity).join(', '));
     sb.append(') {\n');
     sb.append('  }');
-  },
+  }
 
   // Parse a string which expresses a rule application in this grammar, and return the
   // resulting Apply node.
@@ -306,8 +300,8 @@ Grammar.prototype = {
       );
     }
     return app;
-  },
-};
+  }
+}
 
 // The following grammar contains a few rules that couldn't be written  in "userland".
 // At the bottom of src/main.js, we create a sub-grammar of this grammar that's called
@@ -369,3 +363,9 @@ Grammar.ProtoBuiltInRules = new Grammar(
       },
     },
 );
+
+// This method is called from main.js once Ohm has loaded.
+Grammar.initApplicationParser = function(grammar, builderFn) {
+  ohmGrammar = grammar;
+  buildGrammar = builderFn;
+};

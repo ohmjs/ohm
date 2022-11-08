@@ -6,15 +6,15 @@ import * as pexprs from './pexprs.js';
 // Private stuff
 // --------------------------------------------------------------------
 
-export function Builder() {}
-
-Builder.prototype = {
-  currentDecl: null,
-  currentRuleName: null,
+export class Builder {
+  constructor() {
+    this.currentDecl = null;
+    this.currentRuleName = null;
+  }
 
   newGrammar(name) {
     return new GrammarDecl(name);
-  },
+  }
 
   grammar(metaInfo, name, superGrammar, defaultStartRule, rules) {
     const gDecl = new GrammarDecl(name);
@@ -53,19 +53,19 @@ Builder.prototype = {
     });
     this.currentRuleName = this.currentDecl = null;
     return gDecl.build();
-  },
+  }
 
   terminal(x) {
     return new pexprs.Terminal(x);
-  },
+  }
 
   range(from, to) {
     return new pexprs.Range(from, to);
-  },
+  }
 
   param(index) {
     return new pexprs.Param(index);
-  },
+  }
 
   alt(...termArgs) {
     let terms = [];
@@ -80,7 +80,7 @@ Builder.prototype = {
       }
     }
     return terms.length === 1 ? terms[0] : new pexprs.Alt(terms);
-  },
+  }
 
   seq(...factorArgs) {
     let factors = [];
@@ -95,54 +95,54 @@ Builder.prototype = {
       }
     }
     return factors.length === 1 ? factors[0] : new pexprs.Seq(factors);
-  },
+  }
 
   star(expr) {
     if (!(expr instanceof pexprs.PExpr)) {
       expr = this.fromRecipe(expr);
     }
     return new pexprs.Star(expr);
-  },
+  }
 
   plus(expr) {
     if (!(expr instanceof pexprs.PExpr)) {
       expr = this.fromRecipe(expr);
     }
     return new pexprs.Plus(expr);
-  },
+  }
 
   opt(expr) {
     if (!(expr instanceof pexprs.PExpr)) {
       expr = this.fromRecipe(expr);
     }
     return new pexprs.Opt(expr);
-  },
+  }
 
   not(expr) {
     if (!(expr instanceof pexprs.PExpr)) {
       expr = this.fromRecipe(expr);
     }
     return new pexprs.Not(expr);
-  },
+  }
 
   la(expr) {
     // TODO: temporary to still be able to read old recipes
     return this.lookahead(expr);
-  },
+  }
 
   lookahead(expr) {
     if (!(expr instanceof pexprs.PExpr)) {
       expr = this.fromRecipe(expr);
     }
     return new pexprs.Lookahead(expr);
-  },
+  }
 
   lex(expr) {
     if (!(expr instanceof pexprs.PExpr)) {
       expr = this.fromRecipe(expr);
     }
     return new pexprs.Lex(expr);
-  },
+  }
 
   app(ruleName, optParams) {
     if (optParams && optParams.length > 0) {
@@ -151,7 +151,7 @@ Builder.prototype = {
       }, this);
     }
     return new pexprs.Apply(ruleName, optParams);
-  },
+  }
 
   // Note that unlike other methods in this class, this method cannot be used as a
   // convenience constructor. It only works with recipes, because it relies on
@@ -163,7 +163,7 @@ Builder.prototype = {
         beforeTerms.map(term => this.fromRecipe(term)),
         afterTerms.map(term => this.fromRecipe(term)),
     );
-  },
+  }
 
   fromRecipe(recipe) {
     // the meta-info of 'grammar' is processed in Builder.grammar
@@ -177,5 +177,5 @@ Builder.prototype = {
       }
     }
     return result;
-  },
-};
+  }
+}
