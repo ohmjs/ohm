@@ -55,12 +55,13 @@ export class GrammarDecl {
     return this.install(name, formals, body, ruleInfo.description, source);
   }
 
-  install(name, formals, body, description, source) {
+  install(name, formals, body, description, source, primitive = false) {
     this.rules[name] = {
       body: body.introduceParams(formals),
       formals,
       description,
       source,
+      primitive,
     };
     return this;
   }
@@ -99,6 +100,8 @@ export class GrammarDecl {
         this.rules,
         this.defaultStartRule,
     );
+    // Inherit the match state initialization from the super grammar.
+    grammar._matchStateInitializer = grammar.superGrammar._matchStateInitializer;
 
     // TODO: change the pexpr.prototype.assert... methods to make them add
     // exceptions to an array that's provided as an arg. Then we'll be able to
@@ -144,7 +147,7 @@ export class GrammarDecl {
 
   // Rule declarations
 
-  define(name, formals, body, description, source) {
+  define(name, formals, body, description, source, primitive) {
     this.ensureSuperGrammar();
     if (this.superGrammar.rules[name]) {
       throw errors.duplicateRuleDeclaration(name, this.name, this.superGrammar.name, source);
@@ -155,7 +158,7 @@ export class GrammarDecl {
     if (duplicateParameterNames.length > 0) {
       throw errors.duplicateParameterNames(name, duplicateParameterNames, source);
     }
-    return this.install(name, formals, body, description, source);
+    return this.install(name, formals, body, description, source, primitive);
   }
 
   override(name, formals, body, descIgnored, source) {

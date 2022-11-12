@@ -1,0 +1,14 @@
+{
+  "name": "offside-rule",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "uvu": "^0.5.6",
+    "watchlist": "^0.3.1"
+  },
+  "dependencies": {
+    "ohm-js": "^16.0.0"
+  }
+}

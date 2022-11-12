@@ -43,6 +43,7 @@ export class Grammar {
       }
       this.defaultStartRule = optDefaultStartRule;
     }
+    this._matchStateInitializer = undefined;
   }
 
   matcher() {
@@ -300,6 +301,12 @@ export class Grammar {
       );
     }
     return app;
+  }
+
+  _setUpMatchState(state) {
+    if (this._matchStateInitializer) {
+      this._matchStateInitializer(state);
+    }
   }
 }
 

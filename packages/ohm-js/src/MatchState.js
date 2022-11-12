@@ -27,6 +27,8 @@ export class MatchState {
     this.inputStream = new InputStream(matcher.input);
     this.memoTable = matcher.memoTable;
 
+    this.userData = undefined;
+
     this._bindings = [];
     this._bindingOffsets = [];
     this._applicationStack = [];
@@ -294,6 +296,7 @@ export class MatchState {
   eval(expr) {
     const {inputStream} = this;
     const origNumBindings = this._bindings.length;
+    const origUserData = this.userData;
 
     let origRecordedFailures;
     if (this.recordedFailures) {
@@ -329,9 +332,10 @@ export class MatchState {
         });
       }
     } else {
-      // Reset the position and the bindings.
+      // Reset the position, bindings, and userData.
       inputStream.pos = origPos;
       this.truncateBindings(origNumBindings);
+      this.userData = origUserData;
     }
 
     if (this.recordedFailures) {
@@ -348,6 +352,7 @@ export class MatchState {
   }
 
   getMatchResult() {
+    this.grammar._setUpMatchState(this);
     this.eval(this.startExpr);
     let rightmostFailures;
     if (this.recordedFailures) {

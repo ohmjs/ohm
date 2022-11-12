@@ -215,7 +215,9 @@ pexprs.Apply.prototype.eval = function(state) {
   }
 
   const memoKey = app.toMemoKey();
-  const memoRec = posInfo.memo[memoKey];
+  let memoRec = posInfo.memo[memoKey];
+
+  if (memoKey === 'indent' || memoKey === 'dedent') memoRec = null;
 
   if (memoRec && posInfo.shouldUseMemoizedResult(memoRec)) {
     if (state.hasNecessaryInfo(memoRec)) {
