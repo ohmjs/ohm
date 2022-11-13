@@ -215,9 +215,7 @@ pexprs.Apply.prototype.eval = function(state) {
   }
 
   const memoKey = app.toMemoKey();
-  let memoRec = posInfo.memo[memoKey];
-
-  if (memoKey === 'indent' || memoKey === 'dedent') memoRec = null;
+  const memoRec = posInfo.memo[memoKey];
 
   if (memoRec && posInfo.shouldUseMemoizedResult(memoRec)) {
     if (state.hasNecessaryInfo(memoRec)) {
@@ -276,7 +274,9 @@ pexprs.Apply.prototype.reallyEval = function(state) {
   const isHeadOfLeftRecursion = currentLR && currentLR.headApplication.toMemoKey() === memoKey;
   let memoRec;
 
-  if (isHeadOfLeftRecursion) {
+  if (state.doNotMemoize) {
+    state.doNotMemoize = false;
+  } else if (isHeadOfLeftRecursion) {
     value = this.growSeedResult(body, state, origPos, currentLR, value);
     origPosInfo.endLeftRecursion();
     memoRec = currentLR;

@@ -15,33 +15,23 @@ class Indentation extends pexprs.PExpr {
   eval(state) {
     const {inputStream} = state;
     const pseudoTokens = state.userData;
+    state.doNotMemoize = true;
 
     const origPos = inputStream.pos;
 
-    let ans = false;
-    if (this.isIndent) {
-      const count = pseudoTokens[origPos] || 0;
-      if (count > 0) {
-        ans = true;
-        // Consume the indent token.
-        state.userData = Object.create(pseudoTokens);
-        state.userData[origPos] -= 1;
-      }
-    } else {
-      const count = -pseudoTokens[origPos];
-      if (count > 0) {
-        ans = true;
-        // Consume the dedent token.
-        state.userData = Object.create(pseudoTokens);
-        state.userData[origPos] += 1;
-      }
-    }
-    if (ans) {
+    const sign = this.isIndent ? 1 : -1;
+    const count = (pseudoTokens[origPos] || 0) * sign;
+    if (count > 0) {
+      // Update the count to consume the pseudotoken.
+      state.userData = Object.create(pseudoTokens);
+      state.userData[origPos] -= sign;
+
       state.pushBinding(new TerminalNode(0), origPos);
+      return true;
     } else {
       state.processFailure(origPos, this);
+      return false;
     }
-    return ans;
   }
 
   getArity() {

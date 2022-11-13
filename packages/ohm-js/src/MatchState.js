@@ -28,6 +28,7 @@ export class MatchState {
     this.memoTable = matcher.memoTable;
 
     this.userData = undefined;
+    this.doNotMemoize = false;
 
     this._bindings = [];
     this._bindingOffsets = [];
