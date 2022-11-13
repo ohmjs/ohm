@@ -7,7 +7,7 @@ import {
   findIndentationPointsForTesting as findIndentationPoints,
 } from './grammar.js';
 
-const g = ohm.grammar(
+const outline = ohm.grammar(
     String.raw`
   Outline <: IndentationSensitive {
     Items = Item+
@@ -15,8 +15,6 @@ const g = ohm.grammar(
          | "-" label  -- leaf
 
     label = (~newline any)* eol
-//    indent = "{"
-//    dedent = "}"
 
     eol = newline | end
     newline = "\r\n" | "\r" | "\n"
@@ -25,7 +23,7 @@ const g = ohm.grammar(
 `,
     {IndentationSensitive}
 );
-const semantics = g.createSemantics().addOperation('toJS', {
+const semantics = outline.createSemantics().addOperation('toJS', {
   Items(items) {
     return items.children.map(c => c.toJS());
   },
@@ -40,11 +38,8 @@ const semantics = g.createSemantics().addOperation('toJS', {
   },
 });
 
-// assert.is(g.match('- foo').succeeded(), true);
-// assert.is(g.match('- foo\n{- blah\n}').succeeded(), true);
-
 const toJS = input => {
-  const matchResult = g.match(input);
+  const matchResult = outline.match(input);
   if (matchResult.succeeded()) {
     return semantics(matchResult).toJS();
   } else {
@@ -61,6 +56,32 @@ test('grammar', () => {
   ]);
 });
 
+test('errors', () => {
+  const g = ohm.grammar(
+      String.raw`
+    G <: IndentationSensitive {
+      IfExpr = "if" Expr ":" Block
+      Block = indent Expr dedent
+      Expr = IfExpr
+           | "True"
+           | "False"
+           | number
+
+      number = digit+
+    }
+  `,
+      {IndentationSensitive}
+  );
+
+  assert.is(g.match('if True:\n  3').succeeded(), true);
+  assert.is(g.match('if True:\n  if False:\n    3').succeeded(), true);
+  assert.is(g.match('if True:\n3').shortMessage, 'Line 2, col 1: expected an indented block');
+  assert.is(
+      g.match('if True:\n if False:\n 3').shortMessage,
+      'Line 3, col 2: expected an indented block'
+  );
+});
+
 test('findIndentationPoints', () => {
   assert.equal(findIndentationPoints(''), {});
   assert.equal(findIndentationPoints('  x'), {2: 1, 3: -1});
@@ -69,27 +90,5 @@ test('findIndentationPoints', () => {
   assert.equal(findIndentationPoints('  x\n   y\nz'), {2: 1, 7: 1, 9: -2});
   assert.equal(findIndentationPoints('\n   y\n'), {4: 1, 6: -1});
 });
-
-/*
-  Now - can we use the Matcher API to rewrite the input stream?
-
-  There are a couple of ways we could do it:
-  - insert regular characters into the input stream - then we have to do sourcemap type stuff
-  - give InputStream a general way to match "pseudo" characters. `end` is an example.
-    - could just prefill the memo table.
-
-  Prefilling the memo table
-  - slight problem with incremental parsing: changes to a range can affect memo table
-    entries further ahead in the table - this wasn't the case before. Possible sol'ns:
-    * scan the whole table (in certain scenarios), and allow the memo entry to specify
-     a backwards range that it is affected by
-    * have paired memo table entries, where invalidation of one automatically invalidates
-      the other (indent / dedent). Would this work?
-    * how does having a lexer even interact with incremental parsing anyways?
-      * could some kind of "token" rule let Ohm be kinda smart about it?
-      * or could we have something like a callback that you implement?
-
-
-*/
 
 test.run();

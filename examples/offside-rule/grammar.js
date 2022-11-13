@@ -1,6 +1,10 @@
 import {pexprs} from 'ohm-js';
-import {TerminalNode} from '../../packages/ohm-js/src/nodes.js';
 import {Builder} from '../../packages/ohm-js/src/Builder.js';
+import {Failure} from '../../packages/ohm-js/src/Failure.js';
+import {TerminalNode} from '../../packages/ohm-js/src/nodes.js';
+
+const INDENT_DESCRIPTION = 'an indented block';
+const DEDENT_DESCRIPTION = 'a dedent';
 
 class Indentation extends pexprs.PExpr {
   constructor(isIndent = true) {
@@ -61,9 +65,8 @@ class Indentation extends pexprs.PExpr {
   }
 
   toFailure(grammar) {
-    /* TODO
-    return new Failure(this, this.obj.toFailure(grammar) + ' (case-insensitive)', 'description');
-    */
+    const description = this.isIndent ? INDENT_DESCRIPTION : DEDENT_DESCRIPTION;
+    return new Failure(this, description, 'description');
   }
 }
 
@@ -113,8 +116,8 @@ export const findIndentationPointsForTesting = findIndentationPoints;
 
 export const IndentationSensitive = new Builder()
     .newGrammar('IndentationSensitive')
-    .define('indent', [], new Indentation(true), 'an indented block', undefined, true)
-    .define('dedent', [], new Indentation(false), 'a dedent', undefined, true)
+    .define('indent', [], new Indentation(true), INDENT_DESCRIPTION, undefined, true)
+    .define('dedent', [], new Indentation(false), DEDENT_DESCRIPTION, undefined, true)
     .build();
 
 IndentationSensitive._matchStateInitializer = function(state) {
