@@ -1,13 +1,8 @@
-import * as ohm from 'ohm-js';
+import {grammar, IndentationSensitive} from 'ohm-js';
 import {test} from 'uvu';
 import * as assert from 'uvu/assert';
 
-import {
-  IndentationSensitive,
-  findIndentationPointsForTesting as findIndentationPoints,
-} from './grammar.js';
-
-const outline = ohm.grammar(
+const outline = grammar(
     String.raw`
   Outline <: IndentationSensitive {
     Items = Item+
@@ -57,7 +52,7 @@ test('grammar', () => {
 });
 
 test('errors', () => {
-  const g = ohm.grammar(
+  const g = grammar(
       String.raw`
     G <: IndentationSensitive {
       IfExpr = "if" Expr ":" Block
@@ -80,15 +75,6 @@ test('errors', () => {
       g.match('if True:\n if False:\n 3').shortMessage,
       'Line 3, col 2: expected an indented block'
   );
-});
-
-test('findIndentationPoints', () => {
-  assert.equal(findIndentationPoints(''), {});
-  assert.equal(findIndentationPoints('  x'), {2: 1, 3: -1});
-  assert.equal(findIndentationPoints('  x\n  y'), {2: 1, 7: -1});
-  assert.equal(findIndentationPoints('  x\n   y'), {2: 1, 7: 1, 8: -2});
-  assert.equal(findIndentationPoints('  x\n   y\nz'), {2: 1, 7: 1, 9: -2});
-  assert.equal(findIndentationPoints('\n   y\n'), {4: 1, 6: -1});
 });
 
 test.run();
