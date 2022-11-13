@@ -62,8 +62,12 @@ class Indentation extends PExpr {
     return this;
   }
 
+  toString() {
+    return this.isIndent ? 'indent' : 'dedent';
+  }
+
   toDisplayString() {
-    return 'TODO';
+    return this.toString();
   }
 
   toFailure(grammar) {
