@@ -1,3 +1,4 @@
+import BuiltInRules from '../dist/built-in-rules.js';
 import {Builder} from '../src/Builder.js';
 import {Failure} from '../src/Failure.js';
 import {TerminalNode} from '../src/nodes.js';
@@ -73,10 +74,14 @@ class Indentation extends PExpr {
 
 export const IndentationSensitive = new Builder()
     .newGrammar('IndentationSensitive')
+    .withSuperGrammar(BuiltInRules)
     .define('indent', [], new Indentation(true), INDENT_DESCRIPTION, undefined, true)
     .define('dedent', [], new Indentation(false), DEDENT_DESCRIPTION, undefined, true)
     .build();
 
-IndentationSensitive._matchStateInitializer = function(state) {
-  state.userData = findIndentation(state.input);
-};
+Object.assign(IndentationSensitive, {
+  _matchStateInitializer(state) {
+    state.userData = findIndentation(state.input);
+  },
+  supportsIncrementalParsing: false,
+});

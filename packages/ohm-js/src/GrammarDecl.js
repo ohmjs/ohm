@@ -100,8 +100,9 @@ export class GrammarDecl {
         this.rules,
         this.defaultStartRule,
     );
-    // Inherit the match state initialization from the super grammar.
+    // Initialize internal props that are inherited from the super grammar.
     grammar._matchStateInitializer = grammar.superGrammar._matchStateInitializer;
+    grammar.supportsIncrementalParsing = grammar.superGrammar.supportsIncrementalParsing;
 
     // TODO: change the pexpr.prototype.assert... methods to make them add
     // exceptions to an array that's provided as an arg. Then we'll be able to

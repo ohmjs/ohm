@@ -44,6 +44,7 @@ export class Grammar {
       this.defaultStartRule = optDefaultStartRule;
     }
     this._matchStateInitializer = undefined;
+    this.supportsIncrementalParsing = true;
   }
 
   matcher() {

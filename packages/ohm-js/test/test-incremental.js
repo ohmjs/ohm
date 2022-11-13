@@ -9,7 +9,7 @@ import * as ohm from '../index.mjs';
 // --------------------------------------------------------------------
 
 function pluckMemoProp(result, propName) {
-  return result.matcher.memoTable.map(info => {
+  return result.matcher._memoTable.map(info => {
     const result = {};
     if (info == null) return {};
     if (propName === 'examinedLength') {

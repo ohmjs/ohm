@@ -23,9 +23,9 @@ export class MatchState {
     this.startExpr = startExpr;
 
     this.grammar = matcher.grammar;
-    this.input = matcher.input;
-    this.inputStream = new InputStream(matcher.input);
-    this.memoTable = matcher.memoTable;
+    this.input = matcher.getInput();
+    this.inputStream = new InputStream(this.input);
+    this.memoTable = matcher._memoTable;
 
     this.userData = undefined;
     this.doNotMemoize = false;

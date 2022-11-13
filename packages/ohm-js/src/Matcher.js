@@ -1,56 +1,63 @@
+import {grammarDoesNotSupportIncrementalParsing} from './errors.js';
 import {MatchState} from './MatchState.js';
 import * as pexprs from './pexprs.js';
-
-// --------------------------------------------------------------------
-// Private stuff
-// --------------------------------------------------------------------
 
 export class Matcher {
   constructor(grammar) {
     this.grammar = grammar;
-    this.memoTable = [];
-    this.input = '';
+    this._memoTable = [];
+    this._input = '';
+    this._isMemoTableStale = false;
+  }
+
+  _resetMemoTable() {
+    this._memoTable = [];
+    this._isMemoTableStale = false;
   }
 
   getInput() {
-    return this.input;
+    return this._input;
   }
 
   setInput(str) {
-    if (this.input !== str) {
-      this.replaceInputRange(0, this.input.length, str);
+    if (this._input !== str) {
+      this.replaceInputRange(0, this._input.length, str);
     }
     return this;
   }
 
   replaceInputRange(startIdx, endIdx, str) {
-    const currentInput = this.input;
+    const prevInput = this._input;
+    const memoTable = this._memoTable;
     if (
       startIdx < 0 ||
-      startIdx > currentInput.length ||
+      startIdx > prevInput.length ||
       endIdx < 0 ||
-      endIdx > currentInput.length ||
+      endIdx > prevInput.length ||
       startIdx > endIdx
     ) {
       throw new Error('Invalid indices: ' + startIdx + ' and ' + endIdx);
     }
 
     // update input
-    this.input = currentInput.slice(0, startIdx) + str + currentInput.slice(endIdx);
+    this._input = prevInput.slice(0, startIdx) + str + prevInput.slice(endIdx);
+    if (this._input !== prevInput && memoTable.length > 0) {
+      this._isMemoTableStale = true;
+    }
 
     // update memo table (similar to the above)
-    const restOfMemoTable = this.memoTable.slice(endIdx);
-    this.memoTable.length = startIdx;
+    const restOfMemoTable = memoTable.slice(endIdx);
+    memoTable.length = startIdx;
     for (let idx = 0; idx < str.length; idx++) {
-      this.memoTable.push(undefined);
+      memoTable.push(undefined);
     }
-    restOfMemoTable.forEach(function(posInfo) {
-      this.memoTable.push(posInfo);
-    }, this);
+    for (const posInfo of restOfMemoTable) {
+      memoTable.push(posInfo);
+    }
 
     // Invalidate memoRecs
     for (let pos = 0; pos < startIdx; pos++) {
-      const posInfo = this.memoTable[pos];
+      const posInfo = memoTable[pos];
       if (posInfo) {
         posInfo.clearObsoleteEntries(pos, startIdx);
       }
@@ -59,17 +66,35 @@ export class Matcher {
     return this;
   }
 
-  match(optStartApplicationStr) {
-    return this._match(this._getStartExpr(optStartApplicationStr), false);
+  match(optStartApplicationStr, options = {incremental: true}) {
+    return this._match(this._getStartExpr(optStartApplicationStr), {
+      incremental: options.incremental,
+      tracing: false,
+    });
   }
 
-  trace(optStartApplicationStr) {
-    return this._match(this._getStartExpr(optStartApplicationStr), true);
+  trace(optStartApplicationStr, options = {incremental: true}) {
+    return this._match(this._getStartExpr(optStartApplicationStr), {
+      incremental: options.incremental,
+      tracing: true,
+    });
   }
 
-  _match(startExpr, tracing, optPositionToRecordFailures) {
-    const state = new MatchState(this, startExpr, optPositionToRecordFailures);
-    return tracing ? state.getTrace() : state.getMatchResult();
+  _match(startExpr, options = {}) {
+    const opts = {
+      tracing: false,
+      incremental: true,
+      positionToRecordFailures: undefined,
+      ...options,
+    };
+    if (!opts.incremental) {
+      this._resetMemoTable();
+    } else if (this._isMemoTableStale && !this.grammar.supportsIncrementalParsing) {
+      throw grammarDoesNotSupportIncrementalParsing(this.grammar);
+    }
+
+    const state = new MatchState(this, startExpr, opts.positionToRecordFailures);
+    return opts.tracing ? state.getTrace() : state.getMatchResult();
   }
 
   /*
