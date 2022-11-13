@@ -18,13 +18,20 @@ test('incremental parsing fails', t => {
   t.throws(() => matcher.match(), {message: /does not support incremental parsing/});
 });
 
+test('memoization', t => {
+  // A double indent shouldn't succeed. If it does, we may be incorrectly using
+  // a memoized result.
+  const g = grammar('G <: IndentationSensitive { Start = indent indent "x" dedent }', {
+    IndentationSensitive,
+  });
+  t.is(g.match('  x').failed(), true);
+});
+
 test('basic tracing', t => {
   const g = grammar(
-      `
-    G <: IndentationSensitive {
-      Start = indent "x" dedent
-    }
-  `,
+      `G <: IndentationSensitive {
+        Start = indent "x" dedent
+      }`,
       {IndentationSensitive},
   );
   const trace = g.trace('  x');
