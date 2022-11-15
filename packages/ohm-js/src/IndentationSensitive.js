@@ -27,10 +27,9 @@ class InputStreamWithIndentation extends InputStream {
   }
 
   next() {
-    // TODO: Is this right? It prevents `any` from consuming indentation.
     if (this._indentationAt(this.pos) !== 0) {
       this.examinedLength = Math.max(this.examinedLength, this.pos);
-      return '';
+      return undefined;
     }
     return super.next();
   }
