@@ -7,7 +7,7 @@
     "examples/ecmascript",
     "examples/es-module",
     "examples/markdown",
-    "examples/offside-rule",
+    "examples/indentation-sensitive",
     "examples/operators",
     "examples/simple-lisp",
     "examples/typescript"
