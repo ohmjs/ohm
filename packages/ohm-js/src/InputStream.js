@@ -12,7 +12,7 @@ export class InputStream {
   }
 
   atEnd() {
-    const ans = this.pos === this.source.length;
+    const ans = this.pos >= this.source.length;
     this.examinedLength = Math.max(this.examinedLength, this.pos + 1);
     return ans;
   }
