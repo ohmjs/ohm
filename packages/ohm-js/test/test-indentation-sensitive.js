@@ -28,10 +28,17 @@ test("can't skip over an indent", t => {
 
   g = grammarWithRule('X = lower');
   t.is(g.match('  x').shortMessage, 'Line 1, col 3: expected a lowercase letter');
+});
 
-  // TODO: This one is unclear, `any` should probably be able to consume an indent?
-  g = grammarWithRule('X = any');
-  t.is(g.match('  x').shortMessage, 'Line 1, col 3: expected any character');
+test('any consumes indent and dedent', t => {
+  let g = grammarWithRule('X = any "x"');
+  t.is(g.match('  x').shortMessage, 'Line 1, col 4: expected end of input');
+
+  g = grammarWithRule('X = any "x" dedent');
+  t.is(g.match('  x').succeeded(), true);
+
+  g = grammarWithRule('X = indent "x" any');
+  t.is(g.match('  x').succeeded(), true);
 });
 
 test('incremental parsing fails', t => {

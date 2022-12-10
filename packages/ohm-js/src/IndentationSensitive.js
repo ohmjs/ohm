@@ -5,6 +5,7 @@ import {TerminalNode} from '../src/nodes.js';
 import {PExpr} from '../src/pexprs.js';
 import {findIndentation} from './findIndentation.js';
 import {InputStream} from './InputStream.js';
+import {pexprs} from './main.js';
 
 const INDENT_DESCRIPTION = 'an indented block';
 const DEDENT_DESCRIPTION = 'a dedent';
@@ -119,11 +120,17 @@ class Indentation extends PExpr {
   }
 }
 
+// Create a new definition for `any` that can consume indent & dedent.
+const applyIndent = new pexprs.Apply('indent');
+const applyDedent = new pexprs.Apply('dedent');
+const newAnyBody = new pexprs.Splice(BuiltInRules, 'any', [applyIndent, applyDedent], []);
+
 export const IndentationSensitive = new Builder()
     .newGrammar('IndentationSensitive')
     .withSuperGrammar(BuiltInRules)
     .define('indent', [], new Indentation(true), INDENT_DESCRIPTION, undefined, true)
     .define('dedent', [], new Indentation(false), DEDENT_DESCRIPTION, undefined, true)
+    .extend('any', [], newAnyBody, 'any character', undefined)
     .build();
 
 Object.assign(IndentationSensitive, {

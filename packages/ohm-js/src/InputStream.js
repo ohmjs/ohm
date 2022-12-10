@@ -1,8 +1,6 @@
 import {Interval} from './Interval.js';
 
-// --------------------------------------------------------------------
-// Private stuff
-// --------------------------------------------------------------------
+const MAX_CHAR_CODE = 0xffff;
 
 export class InputStream {
   constructor(source) {
@@ -31,7 +29,7 @@ export class InputStream {
   nextCodePoint() {
     const cp = this.source.slice(this.pos++).codePointAt(0);
     // If the code point is beyond plane 0, it takes up two characters.
-    if (cp > 0xffff) {
+    if (cp > MAX_CHAR_CODE) {
       this.pos += 1;
     }
     this.examinedLength = Math.max(this.examinedLength, this.pos);
