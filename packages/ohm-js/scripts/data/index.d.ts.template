@@ -347,6 +347,14 @@ declare namespace ohm {
     isOptional(): boolean;
 
     /**
+      * A built-in operation which can convert certain NonterminalNodes into
+      * IterationNodes. This operation is defined for the built-in list rules
+      * (ListOf, EmptyListOf, NonemptyListOf, listOf, ...), and can also be
+      * defined for user-defined rules.
+      */
+    asIteration(): IterationNode;
+
+    /**
      * In addition to the properties defined above, within a given
      * semantics, every node also has a method/property corresponding to
      * each operation/attribute in the semantics.

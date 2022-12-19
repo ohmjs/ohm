@@ -59,3 +59,18 @@ test('getLineAndColumn - #410', t => {
   t.is(lineAndCol.prevLine, null);
   t.is(lineAndCol.nextLine, null);
 });
+
+test('asIteration - #407', t => {
+  const g = ohm.grammar(`
+    G {
+      start = letters
+      letters = listOf<letter, "">
+    }
+  `);
+  const s = g.createSemantics().addOperation('x', {
+    start(letters) {
+      return letters.asIteration().isIteration()
+    }
+  });
+  t.is(s(g.match('abc')).x(), true);
+});
