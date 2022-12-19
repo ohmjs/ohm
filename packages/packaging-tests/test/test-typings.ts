@@ -95,3 +95,27 @@ test('asIteration - #407', t => {
   });
   t.is(s(g.match('abc')).x(), true);
 });
+
+
+test('Interval typings', t => {
+  const inputStr = ' Sup friend!   ';
+  const matchFailure = g.match(inputStr);
+  t.true(matchFailure.failed());
+
+  const interval = matchFailure.getInterval();
+  interval.startIdx = 1;
+  interval.endIdx = inputStr.length;
+  t.is(interval.sourceString, ' Sup friend!   ');
+  t.is(interval.contents, 'Sup friend!   ');
+  t.is(interval.trimmed().contents, 'Sup friend!');
+
+  const left = interval.collapsedLeft();
+  const right = interval.collapsedRight();
+  t.is(left.startIdx, interval.startIdx);
+  t.is(right.startIdx, interval.endIdx);
+
+  const fat = interval.minus(interval.trimmed());
+  t.is(fat.length, 1);
+  t.is(fat[0].contents, '   ');
+  t.is(fat[0].relativeTo(interval).startIdx, 11);
+});
