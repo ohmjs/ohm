@@ -69,3 +69,15 @@ test('extras - getLineAndColumn & getLineAndColumnMessage', () => {
     extras.getLineAndColumnMessage(str, offset, ...ranges)
   );
 });
+
+test('getLineAndColumn - #410', t => {
+  const matchResult = g.match('Sup friend!');
+  t.true(matchResult.failed());
+  const lineAndCol = matchResult.getInterval().getLineAndColumn();
+  t.is(lineAndCol.offset, 0);
+  t.is(lineAndCol.lineNum, 1);
+  t.is(lineAndCol.colNum, 1);
+  t.is(lineAndCol.line, 'Sup friend!');
+  t.is(lineAndCol.prevLine, null);
+  t.is(lineAndCol.nextLine, null);
+});

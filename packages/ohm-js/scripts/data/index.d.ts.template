@@ -183,6 +183,12 @@ export interface MatchResult {
     * does not include an excerpt from the invalid input.
     */
   shortMessage?: string;
+
+  /**
+    * If this MatchResult is a failure, returns an Interval indicating
+    * the position of the rightmost failure.
+    */
+  getInterval(): Interval;
 }
 
 /**
@@ -385,6 +391,12 @@ export interface Interval {
     * Return a nicely-formatted string describing the start of the Interval
     */
   getLineAndColumnMessage(): string;
+
+  /**
+    * Returns a structure containing information about the location of the
+    * interval in the source string, including the line and column number.
+    */
+  getLineAndColumn(): LineAndColumnInfo;
 }
 
 export interface RuleInfo {
@@ -392,4 +404,14 @@ export interface RuleInfo {
   formals: string[];
   description: string;
   source: Interval;
+}
+
+export interface LineAndColumnInfo {
+  offset: number;
+  lineNum: number;
+  colNum: number;
+  line: string;
+  prevLine: string;
+  nextLine: string;
+  toString(...ranges: number[][]): string;
 }
