@@ -97,8 +97,7 @@ Interval.prototype = {
   },
 
   // Returns a new Interval which contains the same contents as this one,
-  // but with whitespace trimmed from both ends. (This only makes sense when
-  // the input stream is a string.)
+  // but with whitespace trimmed from both ends.
   trimmed() {
     const {contents} = this;
     const startIdx = this.startIdx + contents.match(/^\s*/)[0].length;

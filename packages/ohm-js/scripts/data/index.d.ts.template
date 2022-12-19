@@ -372,22 +372,24 @@ declare namespace ohm {
   interface TerminalNode extends Node {}
 
   /**
-   * Interval in input string
+   * An Interval represents a subset of a string.
    */
   interface Interval {
     /**
-     * Input stream of parse
+     * The string containing the interval.
      */
-    inputStream: any;
+    sourceString: string;
 
     /**
-     * Starting index in input
+     * The start index of the interval in `sourceString`.
      */
     startIdx: number;
+
     /**
-     * Ending index in input
+     * The end index of the interval in `sourceString`.
      */
     endIdx: number;
+
     /**
      * Contents of interval
      */
@@ -402,12 +404,6 @@ declare namespace ohm {
      * Returns a new Interval at the end of this one
      */
     collapsedRight(): Interval;
-
-    /**
-     * Returns a new Interval which contains the same contents as this one,
-     * but with whitespace trimmed from both ends.
-     */
-    trimmed(): Interval;
 
     /**
      * Returns a new Interval that covers this Interval and all the
@@ -426,6 +422,30 @@ declare namespace ohm {
      * interval in the source string, including the line and column number.
      */
     getLineAndColumn(): LineAndColumnInfo;
+
+    /**
+     * Returns an array of 0, 1, or 2 intervals that represents the result of the
+     * interval difference operation.
+     */
+    minus(that: Interval): Interval[];
+
+    /**
+     * Returns a new Interval that has the same extent as this one, but which is relative
+     * to `that`, an Interval that fully covers this one.
+     */
+    relativeTo(that: Interval): Interval;
+
+    /**
+     * Returns a new Interval which contains the same contents as this one,
+     * but with whitespace trimmed from both ends.
+     */
+    trimmed(): Interval;
+
+    /**
+     * Returns a new Interval on the same source string, with the given length
+     * and beginning at `startIdx + offset`.
+     */
+    subInterval(offset: number, len: number): Interval;
   }
 
   interface RuleInfo {
