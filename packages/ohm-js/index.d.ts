@@ -211,6 +211,12 @@ declare namespace ohm {
      * does not include an excerpt from the invalid input.
      */
     shortMessage?: string;
+
+    /**
+     * If this MatchResult is a failure, returns an Interval indicating
+     * the position of the rightmost failure.
+     */
+    getInterval(): Interval;
   }
 
   /**
@@ -425,9 +431,15 @@ declare namespace ohm {
     coverageWith(...intervals: Interval[]): Interval;
 
     /**
-     * Return a nicely-formatted string describing the start of the Interval
+     * Returns a nicely-formatted string describing the start of the Interval.
      */
     getLineAndColumnMessage(): string;
+
+    /**
+     * Returns a structure containing information about the location of the
+     * interval in the source string, including the line and column number.
+     */
+    getLineAndColumn(): LineAndColumnInfo;
   }
 
   interface RuleInfo {
@@ -435,5 +447,15 @@ declare namespace ohm {
     formals: string[];
     description: string;
     source: Interval;
+  }
+
+  interface LineAndColumnInfo {
+    offset: number;
+    lineNum: number;
+    colNum: number;
+    line: string;
+    prevLine: string;
+    nextLine: string;
+    toString(...ranges: number[][]): string;
   }
 }
