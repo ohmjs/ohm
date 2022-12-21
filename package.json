@@ -2,6 +2,7 @@
   "private": true,
   "workspaces": [
     "packages/cli",
+    "packages/lang-python",
     "packages/ohm-js",
     "packages/packaging-tests",
     "examples/ecmascript",

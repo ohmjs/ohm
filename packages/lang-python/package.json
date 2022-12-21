@@ -1,0 +1,12 @@
+{
+  "name": "@ohm-js/lang-python",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "convertToOhm.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Patrick Dubroy <pdubroy@gmail.com>",
+  "license": "MIT"
+}
