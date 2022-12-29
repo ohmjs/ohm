@@ -93,7 +93,7 @@ import ohm from 'https://unpkg.com/ohm-js@16/dist/ohm.esm.js';
 
 #### Defining Grammars
 
-![Instantiating a grammar](http://harc.github.io//ohm/doc/images/instantiating-grammars.png)
+![Instantiating a grammar](doc/images/instantiating-grammars.png)
 
 To use Ohm, you need a grammar that is written in the Ohm language. The grammar provides a formal
 definition of the language or data format that you want to parse. There are a few different ways
@@ -131,7 +131,7 @@ For more information, see [Instantiating Grammars](doc/api-reference.md#instanti
 
 #### Using Grammars
 
-![Matching input](http://harc.github.io/ohm/doc/images/matching.png)
+![Matching input](doc/images/matching.png)
 
 <!-- @markscript
   // The duplication here is required because Markscript only executes top-level code blocks.
@@ -159,7 +159,7 @@ For more information, see the [main documentation](doc/README.md).
 
 Ohm has two tools to help you debug grammars: a text trace, and a graphical visualizer.
 
-[![Ohm Visualizer](http://harc.github.io/ohm/doc/images/visualizer-small.png)](https://ohmjs.org/editor)
+[![Ohm Visualizer](doc/images/visualizer-small.png)](https://ohmjs.org/editor)
 
 You can [try the visualizer online](https://ohmjs.org/editor).
 
