@@ -72,7 +72,7 @@ function parseMarkdownContent(block) {
       return ['bold', a.children.map(c => c.content()).join('')];
     },
     italic(_1, a, _2) {
-      return ['italic', a.children.map(c => content()).join('')];
+      return ['italic', a.children.map(c => c.content()).join('')];
     },
     code: (_1, a, _2) => ['code', a.children.map(c => c.content()).join('')],
     link: (img, _1, text, _2, _3, url, _4) => [
