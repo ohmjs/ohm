@@ -125,11 +125,6 @@ export class Builder {
     return new pexprs.Not(expr);
   }
 
-  la(expr) {
-    // TODO: temporary to still be able to read old recipes
-    return this.lookahead(expr);
-  }
-
   lookahead(expr) {
     if (!(expr instanceof pexprs.PExpr)) {
       expr = this.fromRecipe(expr);

@@ -137,11 +137,6 @@ class Wrapper {
     return this._node.ctorName;
   }
 
-  // TODO: Remove this eventually (deprecated in v0.12).
-  get interval() {
-    throw new Error('The `interval` property is deprecated -- use `source` instead');
-  }
-
   // Returns the number of children of this CST node.
   get numChildren() {
     return this._node.numChildren();
