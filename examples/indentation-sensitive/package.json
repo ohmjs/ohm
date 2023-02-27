@@ -1,5 +1,5 @@
 {
-  "name": "offside-rule",
+  "name": "example-indentation-sensitive",
   "version": "1.0.0",
   "main": "index.js",
   "type": "module",
