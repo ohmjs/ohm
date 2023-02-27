@@ -37,10 +37,6 @@ class Wrapper {
     this._childWrappers = [];
   }
 
-  toString() {
-    return '[semantics wrapper for ' + this._node.grammar.name + ']';
-  }
-
   _forgetMemoizedResultFor(attributeName) {
     // Remove the memoized attribute from the cstNode and all its children.
     delete this._node[this._semantics.attributeKeys[attributeName]];
@@ -172,6 +168,10 @@ export class Semantics {
         super(node, sourceInterval, baseInterval);
         self.checkActionDictsIfHaventAlready();
         this._semantics = self;
+      }
+
+      toString() {
+        return '[semantics wrapper for ' + self.grammar.name + ']';
       }
     };
 

@@ -968,3 +968,17 @@ test('error message for incorrect _iter or _nonterminal arity', t => {
     message: /Semantic action '_terminal' has the wrong arity: expected 0, got 1/,
   });
 });
+
+// https://github.com/harc/ohm/issues/416
+test('toString on an inner NodeWrapper - issue #416', t => {
+  const g = ohm.grammar('G { Start = letter }');
+
+  // Only the root CST node has a 'grammar' property.
+  // Previously, calling toString on an inner node would cause a crash.
+  const s = g.createSemantics().addOperation('letterToString', {
+    letter(_) {
+      return this.toString();
+    },
+  });
+  t.is(s(g.match('x')).letterToString(), '[semantics wrapper for G]');
+});

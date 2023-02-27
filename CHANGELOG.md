@@ -12,6 +12,7 @@
 
 ### Other notable changes:
 
+- [#416]: Fix crash when calling `toString` on a non-root node
 - [13c8991]: The deprecated `grammarFromScriptElement` and `grammarsFromScriptElements` functions have been entirely removed.
 - Improvements to the TypeScript types:
   - [#407]: Added types for the built-in `asIteration` operation
