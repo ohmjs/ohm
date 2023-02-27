@@ -274,7 +274,9 @@ pexprs.Apply.prototype.reallyEval = function(state) {
   const isHeadOfLeftRecursion = currentLR && currentLR.headApplication.toMemoKey() === memoKey;
   let memoRec;
 
-  if (isHeadOfLeftRecursion) {
+  if (state.doNotMemoize) {
+    state.doNotMemoize = false;
+  } else if (isHeadOfLeftRecursion) {
     value = this.growSeedResult(body, state, origPos, currentLR, value);
     origPosInfo.endLeftRecursion();
     memoRec = currentLR;

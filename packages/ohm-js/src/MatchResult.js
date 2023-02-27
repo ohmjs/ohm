@@ -59,11 +59,10 @@ export class MatchResult {
   getRightmostFailures() {
     if (!this._rightmostFailures) {
       this.matcher.setInput(this.input);
-      const matchResultWithFailures = this.matcher._match(
-          this.startExpr,
-          false,
-          this.getRightmostFailurePosition(),
-      );
+      const matchResultWithFailures = this.matcher._match(this.startExpr, {
+        tracing: false,
+        positionToRecordFailures: this.getRightmostFailurePosition(),
+      });
       this._rightmostFailures = matchResultWithFailures.getRightmostFailures();
     }
     return this._rightmostFailures;

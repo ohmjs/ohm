@@ -15,6 +15,7 @@ export function grammar(source: string, namespace?: Namespace): Grammar;
 export function grammars(source: string, namespace?: Namespace): Namespace;
 
 export const ohmGrammar: Grammar;
+export const ExperimentalIndentationSensitive: Grammar;
 
 /**
  * Constructors for parsing expressions (aka pexprs). (Except for `any`

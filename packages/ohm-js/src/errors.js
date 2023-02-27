@@ -60,6 +60,10 @@ export function duplicateGrammarDeclaration(grammar, namespace) {
   return createError('Grammar ' + grammar.name + ' is already declared in this namespace');
 }
 
+export function grammarDoesNotSupportIncrementalParsing(grammar) {
+  return createError(`Grammar '${grammar.name}' does not support incremental parsing`);
+}
+
 // ----------------- rules -----------------
 
 // Undeclared rule

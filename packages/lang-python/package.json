@@ -1,0 +1,12 @@
+{
+  "name": "@ohm-js/lang-python",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "convertToOhm.js",
+  "scripts": {
+    "test": "echo \"Whoops: no tests yet for lang-python!\""
+  },
+  "author": "Patrick Dubroy <pdubroy@gmail.com>",
+  "license": "MIT"
+}

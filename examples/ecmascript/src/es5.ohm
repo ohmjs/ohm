@@ -68,7 +68,7 @@ ES5 {
   identifierPart = identifierStart | unicodeCombiningMark
                  | unicodeDigit | unicodeConnectorPunctuation
                  | "\u200C" | "\u200D"
- letter += unicodeCategoryNl
+  letter += unicodeCategoryNl
   unicodeCategoryNl
     = "\u2160".."\u2182" | "\u3007" | "\u3021".."\u3029"
   unicodeDigit (a digit)
