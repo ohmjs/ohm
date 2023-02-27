@@ -1,4 +1,4 @@
-import {grammar, IndentationSensitive} from 'ohm-js';
+import {grammar, ExperimentalIndentationSensitive as IndentationSensitive} from 'ohm-js';
 import {test} from 'uvu';
 import * as assert from 'uvu/assert';
 

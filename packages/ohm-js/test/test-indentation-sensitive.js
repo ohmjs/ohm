@@ -1,4 +1,4 @@
-import {grammar, IndentationSensitive} from '../index.mjs';
+import {grammar, ExperimentalIndentationSensitive as IndentationSensitive} from '../index.mjs';
 
 import test from 'ava';
 

@@ -2,10 +2,9 @@ import BuiltInRules from '../dist/built-in-rules.js';
 import {Builder} from '../src/Builder.js';
 import {Failure} from '../src/Failure.js';
 import {TerminalNode} from '../src/nodes.js';
-import {PExpr} from '../src/pexprs.js';
+import * as pexprs from '../src/pexprs.js';
 import {findIndentation} from './findIndentation.js';
 import {InputStream} from './InputStream.js';
-import {pexprs} from './main.js';
 
 const INDENT_DESCRIPTION = 'an indented block';
 const DEDENT_DESCRIPTION = 'a dedent';
@@ -52,7 +51,7 @@ class InputStreamWithIndentation extends InputStream {
   }
 }
 
-class Indentation extends PExpr {
+class Indentation extends pexprs.PExpr {
   constructor(isIndent = true) {
     super();
     this.isIndent = isIndent;

@@ -346,10 +346,11 @@ if (matchResult.failed()) {
 }
 
 test('basics', () => {
-  const {IndentationSensitive} = ohm;
   const output = semantics(matchResult).rewrite();
   fs.writeFileSync('output.txt', output);
-  ohm.grammar(output, {IndentationSensitive});
+  ohm.grammar(output, {
+    IndentationSensitive: ohm.ExperimentalIndentationSensitive
+  });
 });
 
 test.run();

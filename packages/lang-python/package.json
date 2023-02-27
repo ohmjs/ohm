@@ -5,7 +5,7 @@
   "type": "module",
   "main": "convertToOhm.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Whoops: no tests yet for lang-python!\""
   },
   "author": "Patrick Dubroy <pdubroy@gmail.com>",
   "license": "MIT"

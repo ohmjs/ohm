@@ -13,9 +13,8 @@ export function grammar(source: string, namespace?: Namespace): Grammar;
   */
 export function grammars(source: string, namespace?: Namespace): Namespace;
 
-// TODO: Maybe put these in a single `grammar` field.
 export const ohmGrammar: Grammar;
-export const IndentationSensitive: Grammar;
+export const ExperimentalIndentationSensitive: Grammar;
 
 /**
   * Constructors for parsing expressions (aka pexprs). (Except for `any`

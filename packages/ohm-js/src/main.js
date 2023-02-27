@@ -59,7 +59,7 @@ export function grammars(source, optNamespace) {
 }
 
 export * from './main-kernel.js';
-export {IndentationSensitive} from './IndentationSensitive.js';
+export {IndentationSensitive as ExperimentalIndentationSensitive} from './IndentationSensitive.js';
 export {ohmGrammar};
 export {pexprs};
 export {version} from './version.js';
