@@ -28,7 +28,7 @@ information._
 
 - Use `npm test` to run the unit tests.
 - `npm run test-watch` re-runs the unit tests every time a file changes.
-- `npm run build` builds [dist/ohm.js](./dist/ohm.js) and [dist/ohm.min.js](./dist/ohm.min.js),
+- `npm run build` builds `dist/ohm.js` and `dist/ohm.min.js`,
   which are stand-alone bundles that can be included in a webpage.
 - When editing Ohm's own grammar (in `src/ohm-grammar.ohm`), run
   `npm run bootstrap` to re-build Ohm and test your changes.

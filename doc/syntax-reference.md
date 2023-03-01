@@ -327,7 +327,7 @@ A few other details that are helpful to know:
 
 1. If the start rule is a syntactic rule, both leading and trailing spaces are skipped around the top-level application.
 2. When the body of a rule contains a [repetition operator](#repetition-operators---) (e.g. `+` or `*`), spaces are skipped before each match. In other words, `Names = name+` is equivalent to `names = (spaces name)+`.
-3. The [lexification operator (`#`)](lexification-) can be used in the body of a syntactic rule to prevent space skipping in specific places. For example:
+3. The [lexification operator (`#`)](#lexification-) can be used in the body of a syntactic rule to prevent space skipping in specific places. For example:
 
 <!-- @markscript
   let syntacticKeyValueDef;
