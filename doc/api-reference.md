@@ -8,11 +8,11 @@ This page documents the API of Ohm/JS, a JavaScript library for working with gra
 
 <b><pre class="api">ohm.grammar(source: string, optNamespace?: object) &rarr; Grammar</pre></b>
 
-Instantiate the Grammar defined by `source`. If specified, `optNamespace` is the Namespace to use when resolving external references in the grammar. For more information, see the documentation on [Namespace objects](#namespace-objects) below.
+Instantiate the Grammar defined by `source`. If specified, `optNamespace` is an object in which references to other grammars should be resolved. For example, if the grammar source begins with an inheritance declaration like `MyGrammar <: OtherGrammar { ... }`, then `optNamespace` should have a property named `OtherGrammar`. 
 
-<b><pre class="api">ohm.grammars(source: string, optNamespace?: object) &rarr; Namespace</pre></b>
+<b><pre class="api">ohm.grammars(source: string, optNamespace?: object) &rarr; object</pre></b>
 
-Create a new Namespace containing Grammar instances for all of the grammars defined in `source`. If `optNamespace` is specified, it will be the prototype of the new Namespace.
+Create a new object containing Grammar instances for all of the grammars defined in `source`. As with `ohm.grammar`, if `optNamespace` is specified, it is an object in which references to other grammars should be resolved. Additionally, it will be the prototype of the returned object.
 
 ## Grammar objects
 
