@@ -7,7 +7,7 @@ for other people to use and build upon, here's what we suggest:
 ## Module Exports
 
 By convention, modules should export an object with a `grammar` property, and
-optionally a `semantics` property. For example, see the [ES5](https://github.com/harc/ohm/blob/master/examples/ecmascript/src/es5.js)
+optionally a `semantics` property. For example, see the [ES5](https://github.com/harc/ohm/blob/main/examples/ecmascript/src/es5.js)
 module in the `examples/` directory. If a single package contains multiple
 languages, each language should be exported as a separate object. E.g., a
 package supporting multiple versions of Python might be used like this:

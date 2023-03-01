@@ -1,5 +1,5 @@
 // An Ohm grammar for arithmetic expressions.
-// This taken directly from the [math example](https://github.com/harc/ohm/blob/master/examples/math/index.html).
+// This taken directly from the [math example](https://github.com/harc/ohm/blob/main/examples/math/index.html).
 Arithmetic {
   Exp
     = AddExp

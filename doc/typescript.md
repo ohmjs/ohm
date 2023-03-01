@@ -27,4 +27,4 @@ To enable grammar-specific type definitions:
    import grammar from './my-grammar.ohm-bundle'
    ```
 
-   For more information, see the [Ohm TypeScript example](https://github.com/harc/ohm/blob/master/examples/typescript/src/arithmetic.ts).
+   For more information, see the [Ohm TypeScript example](https://github.com/harc/ohm/blob/main/examples/typescript/src/arithmetic.ts).

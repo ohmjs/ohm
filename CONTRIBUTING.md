@@ -49,5 +49,5 @@ Here are the steps involved in a typical review:
   suggestion, or explaining why you disagree.
 - When the reviewer thinks your PR is ready to be merged, they will respond
   with a comment saying "LGTM", meaning "looks good to me". At this point, if
-  you have permission, you should now merge your PR into master. If not, the
+  you have permission, you should now merge your PR into main. If not, the
   reviewer will merge it for you.

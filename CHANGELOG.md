@@ -80,8 +80,8 @@ Ohm v16 is primarily about improving the experience of [using Ohm with TypeScrip
 
 All of the breaking changes are described below. For more information about how to modify your existing code to work with Ohm v16, see the [upgrade guide][upgrading].
 
-[using-ohm-with-typescript]: https://github.com/harc/ohm/blob/master/doc/typescript.md
-[upgrading]: https://github.com/harc/ohm/blob/master/doc/releases/ohm-js-16.0.md#upgrading
+[using-ohm-with-typescript]: https://github.com/harc/ohm/blob/main/doc/typescript.md
+[upgrading]: https://github.com/harc/ohm/blob/main/doc/releases/ohm-js-16.0.md#upgrading
 
 ### Breaking changes:
 
@@ -127,7 +127,7 @@ All of the breaking changes are described below. For more information about how 
 
 ### Notable changes:
 
-- [b519a05] Added a new [_super-splice_ operator](https://github.com/harc/ohm/blob/master/doc/syntax-reference.md#super-splice) (`...`) to the Ohm language, which can be used to append and/or prepend cases to a supergrammar rule body.
+- [b519a05] Added a new [_super-splice_ operator](https://github.com/harc/ohm/blob/main/doc/syntax-reference.md#super-splice) (`...`) to the Ohm language, which can be used to append and/or prepend cases to a supergrammar rule body.
 
 ## v15.2.1 - September 30, 2020
 
@@ -164,7 +164,7 @@ Features:
 
 - [1c286f6] The `message` and `shortMessage` properties of errors are now enumerable.
 - [dec2846] Added a TypeScript type definition file (d.ts) for the extras submodule (#214)
-- [369a1de] Prevent infinite loops during parsing, by throwing an error if a [repetition expression](https://github.com/harc/ohm/blob/master/doc/syntax-reference.md#repetition-operators---) consumes no input. (#211)
+- [369a1de] Prevent infinite loops during parsing, by throwing an error if a [repetition expression](https://github.com/harc/ohm/blob/main/doc/syntax-reference.md#repetition-operators---) consumes no input. (#211)
 
 Fixes:
 

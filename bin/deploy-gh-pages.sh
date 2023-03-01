@@ -11,14 +11,14 @@ set -e
 
 ROOT=$(npm prefix)
 PAGES_DIR=${1:-"$ROOT/../ohmlang.github.io"}
-OHM_REV=$(git rev-parse --short master)
+OHM_REV=$(git rev-parse --short main)
 
 if [ ! -d $PAGES_DIR ]; then
   echo "No such directory: $PAGES_DIR" && exit 1
 fi
 
 cd $PAGES_DIR
-if ! git rev-parse --quiet --verify master > /dev/null; then
+if ! git rev-parse --quiet --verify main > /dev/null; then
   echo "Not a git repository: $PAGES_DIR" && exit 1
 fi
 
@@ -26,4 +26,4 @@ git pull --ff-only --no-stat
 cp -r "$ROOT/doc" "$ROOT/packages/ohm-js/dist" .
 git add doc dist editor
 git commit -m "Update from harc/ohm@${OHM_REV}"
-git push origin master
+git push origin main

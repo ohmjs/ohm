@@ -22,7 +22,7 @@
   "bugs": {
     "url": "https://github.com/harc/ohm/issues"
   },
-  "homepage": "https://github.com/harc/ohm/tree/master/examples/ecmascript#readme",
+  "homepage": "https://github.com/harc/ohm/tree/main/examples/ecmascript#readme",
   "peerDependencies": {
     "ohm-js": "^16.0.0"
   },

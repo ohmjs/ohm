@@ -144,7 +144,7 @@ as well as multiline (`/* */`) comments like:
 
 ## Built-in Rules
 
-(See [src/built-in-rules.ohm](../src/built-in-rules.ohm).)
+(See [src/built-in-rules.ohm](https://github.com/harc/ohm/blob/main/packages/ohm-js/src/built-in-rules.ohm).)
 
 `any`: Matches the next character in the input stream, if one exists.
 

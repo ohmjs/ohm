@@ -2,7 +2,7 @@
 
 ## Instantiating Grammars
 
-These errors can occur when [instatiating a grammar](https://github.com/cdglabs/ohm/blob/master/doc/api-reference.md#instantiating-grammars)
+These errors can occur when [instatiating a grammar](https://github.com/cdglabs/ohm/blob/main/doc/api-reference.md#instantiating-grammars)
 from a grammar definition.
 
 ### Grammar Syntax Error

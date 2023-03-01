@@ -60,7 +60,7 @@ Many programming languages have the concept of [reserved words](https://en.wikip
 - One reserved word might be a prefix of another, e.g., `in` and `instanceof` in JavaScript.
 - Identifiers that begin with a reserved word shouldn't be disallowed, e.g. `className`.
 
-To prevent both of these potential problems, you can use [negative lookahead](https://github.com/harc/ohm/blob/master/doc/syntax-reference.md#negative-lookahead-) in the rules for your reserved words. For example:
+To prevent both of these potential problems, you can use [negative lookahead](https://github.com/harc/ohm/blob/main/doc/syntax-reference.md#negative-lookahead-) in the rules for your reserved words. For example:
 
 ```
   in = "in" ~identifierPart
@@ -92,7 +92,7 @@ The common way to handle operator precedence in Ohm is to use left-recursive rul
          | priExp
 ```
 
-Note that the rule for the lower precedence operators (`+` and `-`) invokes the rule for the higher-precedence operators (`*`/`/`). This ensures that the higher-precedence operators "bind more tightly". See Ray Toal's [Operator Precedence and Associativity Examples](https://github.com/harc/ohm/tree/master/examples/operators) for more.
+Note that the rule for the lower precedence operators (`+` and `-`) invokes the rule for the higher-precedence operators (`*`/`/`). This ensures that the higher-precedence operators "bind more tightly". See Ray Toal's [Operator Precedence and Associativity Examples](https://github.com/harc/ohm/tree/main/examples/operators) for more.
 
 #### 🐍 Ambiguous recursion
 
@@ -119,4 +119,4 @@ This evaluates to either (a) `undefined`, if the node has no child, or (b) the r
 
 ### Handling the built-in list rules
 
-When using the built-in list rules (`listOf`, etc.) in your grammar, you usually don't need to write semantic actions for them. Instead, you can use the [built-in `asIteration` operation](https://github.com/harc/ohm/blob/master/doc/api-reference.md#asIteration).
+When using the built-in list rules (`listOf`, etc.) in your grammar, you usually don't need to write semantic actions for them. Instead, you can use the [built-in `asIteration` operation](https://github.com/harc/ohm/blob/main/doc/api-reference.md#asIteration).
