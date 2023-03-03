@@ -14,7 +14,7 @@ ns.G = ohm.grammar('G {}');
 ns.G2 = ohm.grammar('G2 <: G {}', ns);
 ```
 
-In Ohm v17 *and* in previous versions, the code could instead be written like this:
+In Ohm v17 _and_ in previous versions, the code could instead be written like this:
 
 ```js
 const ns = {}; // <- Use a normal object literal
@@ -24,7 +24,7 @@ ns.G2 = ohm.grammar('G2 <: G {}', ns);
 
 ### Named exports only
 
-When used as ES module, the `ohm-js` and `ohm-js/extras` modules now have *only* named exports, and no default export. This fixes some issues with the use of Ohm bundles (`.ohm-bundle` files) when used with JS module bundlers like Webpack and Rollup (e.g., [#377][issue-377]).
+When used as ES module, the `ohm-js` and `ohm-js/extras` modules now have _only_ named exports, and no default export. This fixes some issues with the use of Ohm bundles (`.ohm-bundle` files) when used with JS module bundlers like Webpack and Rollup (e.g., [#377][issue-377]).
 
 As a result, the following code will no longer work (unless your bundler supports [synthetic default imports](https://www.typescriptlang.org/tsconfig#allowSyntheticDefaultImports)):
 

@@ -91,7 +91,7 @@ test('asIteration - #407', () => {
   `);
   const s = g.createSemantics().addOperation('x', {
     start(letters) {
-      return letters.asIteration().isIteration()
+      return letters.asIteration().isIteration();
     }
   });
   assert.is(s(g.match('abc')).x(), true);

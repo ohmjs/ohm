@@ -242,7 +242,7 @@ semantics.addOperation('rewrite', {
     const arities = new Set(children.map(c => c.simpleArity));
     const choices = children.map(c => c.rewrite());
     if (choices[0] === 'assignmentExpression') {
-      console.log(arities, choices[1]);
+      console.log(arities, choices[1]); // eslint-disable-line no-console
     }
     if (arities.size > 1) {
       return choices.map((str, i) => str + `  -- alt${i + 1}`).join('\n    | ');
@@ -349,7 +349,7 @@ test('basics', () => {
   const output = semantics(matchResult).rewrite();
   fs.writeFileSync('output.txt', output);
   ohm.grammar(output, {
-    IndentationSensitive: ohm.ExperimentalIndentationSensitive
+    IndentationSensitive: ohm.ExperimentalIndentationSensitive,
   });
 });
 
