@@ -1,5 +1,9 @@
 # Ohm v17.0
 
+v17.0.0 is primarily a cleanup release in preparation for some new features that will be coming soon in minor releases. It contains a few breaking changes (as described below), but they are unlikely to affect the majority of Ohm users.
+
+This version also has experimental support for indentation-sensitive grammars.
+
 ## Upgrading
 
 ### Namespace helpers removed
@@ -75,6 +79,10 @@ aNode.source.getLineAndColumnMessage();
 Ohm v17 changed the default behavior of `toAST` for the built-in list rules (`ListOf` and friends). Both the syntactic (`ListOf`, ...) and lexical versions (`listOf`, ...) are now represented as arrays, with the separators _discarded_. Previously, the syntactic versions were represented by arrays, but with separators _included_, and the lexical versions were represented as strings (just like other lexical rules).
 
 See [#394](https://github.com/harc/ohm/issues/394) for the reasoning behind this change.
+
+## New features
+
+- **(EXPERIMENTAL)**: This release includes experimental support for indentation-sensitive grammars (e.g., Python, Elm, YAML). See the guide to [Parsing indentation sensitive languages](./doc/indentation-sensitive.md).
 
 ## Other changes
 
