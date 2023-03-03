@@ -44,7 +44,7 @@ will produce an AST like this:
 <!-- @markscript
   // Make sure the block below is equal to `ast` from the block above.
   markscript.transformNextBlock((code) => {
-    const jsonAST = code.replace(/\/\/.*$/g, ''); // Strip comments
+    const jsonAST = code.replace(/\/\/.+/g, ''); // Strip comments
     assert.deepEqual(ast, JSON.parse(jsonAST));
     return '';  // Don't actually execute anything.
   });
@@ -96,7 +96,7 @@ results in an AST like:
 <!-- @markscript
   // Make sure the block below is equal to `ast` from the block above.
   markscript.transformNextBlock((code) => {
-    const jsonAST = code.replace(/\/\/.*$/g, ''); // Strip comments
+    const jsonAST = code.replace(/\/\/.+/g, ''); // Strip comments
     assert.deepEqual(ast, JSON.parse(jsonAST));
     return '';  // Don't actually execute anything.
   });
