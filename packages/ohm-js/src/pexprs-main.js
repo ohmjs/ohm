@@ -1,4 +1,4 @@
-import {UnicodeCategories} from '../third_party/UnicodeCategories.js';
+import {UnicodeCategories} from './UnicodeCategories.js';
 import * as common from './common.js';
 
 // --------------------------------------------------------------------

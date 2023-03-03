@@ -1,4 +1,3 @@
-// Based on https://github.com/mathiasbynens/unicode-9.0.0.
 // These are just categories that are used in ES5/ES2015.
 // The full list of Unicode categories is here: http://www.fileformat.info/info/unicode/category/index.htm.
 export const UnicodeCategories = {

@@ -42,7 +42,6 @@
     "src",
     "dist",
     "extras",
-    "third_party",
     "index.d.ts",
     "!**/*.old"
   ],
