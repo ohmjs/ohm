@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/harc/ohm/tree/main/examples/ecmascript#readme",
   "peerDependencies": {
-    "ohm-js": "^16.0.0"
+    "ohm-js": "^17.0.0"
   },
   "devDependencies": {
     "fast-glob": "^3.2.7"

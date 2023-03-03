@@ -13,7 +13,7 @@
   "dependencies": {
     "commander": "^8.1.0",
     "fast-glob": "^3.2.7",
-    "ohm-js": "^16.0.0"
+    "ohm-js": "^17.0.0"
   },
   "scripts": {
     "build:tests": "tsc --target es2020 --module es2020 --moduleResolution node --allowSyntheticDefaultImports src/helpers/generateTypes.test.ts",
