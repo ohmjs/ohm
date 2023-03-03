@@ -3,11 +3,13 @@ import * as ohm from 'ohm-js';
 import prettier from 'prettier';
 import {fileURLToPath, URL} from 'url';
 
-import {getActionDecls} from '@ohm-js/cli/src/helpers/generateTypes.js';
+// Direct import from the @ohm-js/cli package!
+// We do this to avoid a circular dependency between @ohm-js/cli and ohm-js.
+import {getActionDecls} from '../../cli/src/helpers/generateTypes.js';
 
 /*
-  This script uses the internals of ohm-typescript-codegen to generate
-  portions of Ohm's main TypeScript declarations (index.d.ts).
+  This script uses the internals of @ohm-js/cli to generate portions of Ohm's
+  main TypeScript declarations (index.d.ts).
  */
 
 const templatePath = new URL('./data/index.d.ts.template', import.meta.url);
