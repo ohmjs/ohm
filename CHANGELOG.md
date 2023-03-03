@@ -6,7 +6,7 @@
 
 - [#424]: `any` now consumes an entire code point (i.e., a full Unicode character), not just a single, 16-bit code unit.
 - [55c787b]: The namespace helpers (`namespace`, `extendNamespace`) have been removed. (These were always optional.)
-- [bea0be9]: When used as an ES module, the main 'ohm-js' module now has *only* named exports (i.e., no default export). The same is true for `ohm-js/extras`.
+- [bea0be9]: When used as an ES module, the main 'ohm-js' module now has _only_ named exports (i.e., no default export). The same is true for `ohm-js/extras`.
 - [#395]: In generated type definitions, action dictionary types now inherit from `BaseActionDict<T>`, a new supertype of `ActionDict<T>`.
 - [9e32f8d]: `ohm.util` is removed from the public API. `getLineAndColumn` and `getLineAndColumn` have been moved into the `extras` module.
 - [#398]: Changed the default behavior `toAST` for the built-in list rules (`ListOf` and friends). Both the syntactic (`ListOf`, ...) and lexical versions (`listOf`, ...) are now represented as arrays, with the separators _discarded_. Previously, the syntactic versions were represented by arrays, but with separators _included_, and the lexical versions were represented as strings (just like other lexical rules).

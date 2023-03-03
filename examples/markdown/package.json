@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "ohm-js": "^16.0.0"
+    "ohm-js": "^17.0.0"
   },
   "scripts": {
     "test": "ava"
