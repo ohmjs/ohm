@@ -2,6 +2,24 @@
 
 ## Upgrading
 
+### `any` now consumes a full code point
+
+In JavaScript, a string is a sequence of 16-bit code units. Some Unicode characters, such as emoji, are encoded as pairs of 16-bit values. For example, the string '😆' has length 2, but contains a single Unicode code point. Previously, `any` matched a single 16-bit code unit — even if that unit was part of a surrogate pair. In v17, `any` now matches a full Unicode character.
+
+Old behaviour:
+
+```js
+const g = ohm.grammar('OneChar { start = any }');
+g.match('😆').succeeded(); // false
+```
+
+New behaviour (Ohm v17+):
+
+```js
+const g = ohm.grammar('OneChar { start = any }');
+g.match('😆').succeeded(); // true
+```
+
 ### Namespace helpers removed
 
 The top-level `namespace` and `extendNamespace` functions have been removed. They were never required — it was always possible to use a plain old object in any API that asked for a namespace.
