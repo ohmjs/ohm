@@ -3,7 +3,7 @@
 import fs from 'fs';
 import * as url from 'url';
 
-import * as ohm from 'ohm-js';
+import * as ohm from '../packages/ohm-js/index.mjs';
 
 /*
   Usage: prettyPrint.js <filename>

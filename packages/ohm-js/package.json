@@ -130,7 +130,6 @@
     "json": "^9.0.6",
     "markscript": "^0.5.0",
     "node-static": "^0.7.11",
-    "ohm-grammar-ecmascript": "^2.0.0",
     "rollup": "^2.63.0",
     "terser": "^5.15.1",
     "uvu": "^0.5.6",

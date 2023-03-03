@@ -1,6 +1,3 @@
-import fs from 'fs';
-import * as ohm from 'ohm-js';
-
 /*
   In ../package.json, there is a 'generate' script that uses the Ohm command
   line tool (from the @ohm-js/cli package) to generate a "bundle" for our

@@ -14,7 +14,7 @@
     "test:watch": "watchlist . -- pnpm test"
   },
   "devDependencies": {
-    "@ohm-js/cli": "^1.1.0",
+    "@ohm-js/cli": "^2.0.0",
     "@rollup/plugin-node-resolve": "^15.0.1",
     "@types/node": "^16.9.1",
     "acorn": "^8.8.1",

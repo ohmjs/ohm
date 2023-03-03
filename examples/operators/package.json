@@ -1,5 +1,6 @@
 {
   "name": "operators",
+  "private": true,
   "version": "1.0.0",
   "description": "An example showing four ways to implement a language with an operator precedence hiearchy",
   "scripts": {
@@ -14,7 +15,10 @@
   ],
   "author": "",
   "license": "MIT",
-  "devDependencies": {},
+  "devDependencies": {
+    "ava": "^4.3.3",
+    "ava-spec": "^1.1.1"
+  },
   "dependencies": {
     "ohm-js": "^17.0.0"
   }
