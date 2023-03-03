@@ -1,18 +1,5 @@
 {
   "private": true,
-  "workspaces": [
-    "packages/cli",
-    "packages/lang-python",
-    "packages/ohm-js",
-    "packages/packaging-tests",
-    "examples/ecmascript",
-    "examples/es-module",
-    "examples/markdown",
-    "examples/indentation-sensitive",
-    "examples/operators",
-    "examples/simple-lisp",
-    "examples/typescript"
-  ],
   "scripts": {
     "build": "pnpm -r build",
     "ci-test": "pnpm build && pnpm lint && pnpm test",
