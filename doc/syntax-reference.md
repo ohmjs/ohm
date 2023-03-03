@@ -146,7 +146,9 @@ as well as multiline (`/* */`) comments like:
 
 (See [src/built-in-rules.ohm](https://github.com/harc/ohm/blob/main/packages/ohm-js/src/built-in-rules.ohm).)
 
-`any`: Matches the next character in the input stream, if one exists.
+`any`: Matches the next Unicode character — i.e., a single code point — in the input stream, if one exists. 
+
+**NOTE:** A JavaScript string is a sequence of 16-bit _code units_. Some Unicode characters, such as emoji, are encoded as pairs of 16-bit values. For example, the string `'😆'` has length 2, but contains a single Unicode code point. Prior to Ohm v17, `any` always consumed a single 16-bit code unit, rather than a full Unicode character.
 
 `letter`: Matches a single character which is a letter (either uppercase or lowercase).
 

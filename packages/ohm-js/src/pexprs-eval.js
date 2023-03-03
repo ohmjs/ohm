@@ -29,9 +29,9 @@ pexprs.PExpr.prototype.eval = common.abstract('eval'); // function(state) { ... 
 pexprs.any.eval = function(state) {
   const {inputStream} = state;
   const origPos = inputStream.pos;
-  const ch = inputStream.next();
-  if (ch) {
-    state.pushBinding(new TerminalNode(ch.length), origPos);
+  const cp = inputStream.nextCodePoint();
+  if (cp !== undefined) {
+    state.pushBinding(new TerminalNode(String.fromCodePoint(cp).length), origPos);
     return true;
   } else {
     state.processFailure(origPos, this);
