@@ -1,6 +1,7 @@
 import * as ohm from 'ohm-js';
 
 const {pexprs} = ohm;
+console.log(pexprs);
 
 // Helpers
 // -------
