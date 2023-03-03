@@ -4,6 +4,7 @@
 
 ### Breaking changes:
 
+- [#424]: `any` now consumes an entire code point (i.e., a full Unicode character), not just a single, 16-bit code unit.
 - [55c787b]: The namespace helpers (`namespace`, `extendNamespace`) have been removed. (These were always optional.)
 - [bea0be9]: When used as an ES module, the main 'ohm-js' module now has *only* named exports (i.e., no default export). The same is true for `ohm-js/extras`.
 - [#395]: In generated type definitions, action dictionary types now inherit from `BaseActionDict<T>`, a new supertype of `ActionDict<T>`.
