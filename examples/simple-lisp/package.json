@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "ohm-js": "^16.0.0"
+    "ohm-js": "^17.0.0"
   },
   "devDependencies": {
     "ava": "^4.3.3"

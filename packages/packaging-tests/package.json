@@ -18,7 +18,7 @@
     "@ohm-js/cli": "^1.1.0",
     "@rollup/plugin-node-resolve": "^15.0.1",
     "acorn": "^8.8.1",
-    "ohm-js": "^16.0.0",
+    "ohm-js": "^17.0.0",
     "rollup": "^3.2.5",
     "ts-node": "^10.9.1",
     "uvu": "^0.5.6",
