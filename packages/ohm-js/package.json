@@ -50,7 +50,7 @@
   "scripts": {
     "prebootstrap": "bash scripts/prebootstrap",
     "bootstrap": "bash scripts/bootstrap --test || (echo 'Bootstrap failed.' && mv -v dist/ohm-grammar.js.old dist/ohm-grammar.js && mv -v dist/built-in-rules.js.old dist/built-in-rules.js && mv -v dist/operations-and-attributes.js.old dist/operations-and-attributes.js)",
-    "build": "pnpm build:debug && pnpm build:min",
+    "build": "node scripts/prebuild.js && pnpm build:debug && pnpm build:min",
     "build:min": "terser dist/ohm.js --mangle --compress -o dist/ohm.min.js",
     "build:debug": "pnpm build:cjs && node scripts/generate-types.js",
     "build:cjs": "rollup -c rollup.config.js",
@@ -60,7 +60,6 @@
     "test": "ava && node test/_test-doc.js",
     "test-watch": "ava --watch",
     "pre-commit": "pnpm lint && pnpm build && pnpm test",
-    "prebuild": "node scripts/prebuild.js",
     "prepublishOnly": "bash scripts/prepublishOnly",
     "prepack": "cp ../../README.md . && pnpm build",
     "postpack": "rm README.md",

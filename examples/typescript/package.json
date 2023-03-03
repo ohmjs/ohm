@@ -16,7 +16,6 @@
   },
   "scripts": {
     "generate": "ohm generateBundles --withTypes 'src/*.ohm'",
-    "pretest": "pnpm generate",
-    "test": "node -r ts-node/register src/arithmetic.test.ts"
+    "test": "pnpm generate && node -r ts-node/register src/arithmetic.test.ts"
   }
 }

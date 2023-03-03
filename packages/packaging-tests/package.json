@@ -3,14 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "webpack && rollup -c",
+    "build": "pnpm generate && webpack && rollup -c",
     "generate": "ohm generateBundles --withTypes src/greeting.ohm && ohm generateBundles --esm src/greeting-esm.ohm",
-    "pretest": "pnpm generate && pnpm build",
     "test:bundles": "node dist/main.js && node dist/main-rollup.js",
     "test:ts-cjs": "ts-node test/test-ts.ts",
     "test:ts-esm": "ts-node --project tsconfig.esm.json test/test-ts.ts",
     "test:ts": "pnpm test:ts-cjs && pnpm test:ts-esm && ts-node test/test-typings.ts",
-    "test": "uvu test --ignore '\\.ts' && pnpm test:ts && pnpm test:bundles",
+    "test": "pnpm build && uvu test --ignore '\\.ts' && pnpm test:ts && pnpm test:bundles",
     "test:watch": "watchlist . -- pnpm test"
   },
   "devDependencies": {
