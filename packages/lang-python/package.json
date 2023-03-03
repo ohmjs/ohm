@@ -1,7 +1,8 @@
 {
   "name": "@ohm-js/lang-python",
   "version": "1.0.0",
-  "description": "",
+  "private": true,
+  "description": "WIP: a Python3 grammar for Ohm",
   "type": "module",
   "main": "convertToOhm.js",
   "scripts": {
