@@ -33,5 +33,10 @@
     "files": [
       "!**/test/data/**/*"
     ]
-  }
+  },
+  "files": [
+    "src",
+    "!**/*.test.*",
+    "!**/testdata/**"
+  ]
 }

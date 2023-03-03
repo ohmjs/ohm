@@ -43,7 +43,8 @@
     "dist",
     "extras",
     "third_party",
-    "index.d.ts"
+    "index.d.ts",
+    "!**/*.old"
   ],
   "types": "index.d.ts",
   "scripts": {
