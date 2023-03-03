@@ -2,17 +2,16 @@
   "name": "packaging-tests",
   "version": "1.0.0",
   "private": true,
-  "dependencies": {},
   "scripts": {
     "build": "webpack && rollup -c",
     "generate": "ohm generateBundles --withTypes src/greeting.ohm && ohm generateBundles --esm src/greeting-esm.ohm",
-    "pretest": "yarn generate && yarn build",
+    "pretest": "pnpm generate && pnpm build",
     "test:bundles": "node dist/main.js && node dist/main-rollup.js",
     "test:ts-cjs": "ts-node test/test-ts.ts",
     "test:ts-esm": "ts-node --project tsconfig.esm.json test/test-ts.ts",
-    "test:ts": "yarn test:ts-cjs && yarn test:ts-esm && ts-node test/test-typings.ts",
-    "test": "uvu test --ignore '\\.ts' && yarn test:ts && yarn test:bundles",
-    "test:watch": "watchlist . -- yarn test"
+    "test:ts": "pnpm test:ts-cjs && pnpm test:ts-esm && ts-node test/test-typings.ts",
+    "test": "uvu test --ignore '\\.ts' && pnpm test:ts && pnpm test:bundles",
+    "test:watch": "watchlist . -- pnpm test"
   },
   "devDependencies": {
     "@ohm-js/cli": "^1.1.0",

@@ -1,0 +1,9 @@
+packages:
+  - 'packages/*'
+  - 'examples/ecmascript'
+  - 'examples/es-module'
+  - 'examples/markdown'
+  - 'examples/indentation-sensitive'
+  - 'examples/operators'
+  - 'examples/simple-lisp'
+  - 'examples/typescript'

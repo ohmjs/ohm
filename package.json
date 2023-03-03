@@ -14,11 +14,11 @@
     "examples/typescript"
   ],
   "scripts": {
-    "build": "yarn workspace ohm-js run build",
-    "ci-test": "yarn build && yarn lint && yarn test",
+    "build": "pnpm -r build",
+    "ci-test": "pnpm build && pnpm lint && pnpm test",
     "format": "prettier --write . && eslint --fix .",
     "lint": "eslint .",
-    "test": "yarn workspaces run test"
+    "test": "pnpm -r test"
   },
   "devDependencies": {
     "eslint": "^7.31.0",

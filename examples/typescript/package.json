@@ -15,7 +15,7 @@
   },
   "scripts": {
     "generate": "ohm generateBundles --withTypes 'src/*.ohm'",
-    "pretest": "yarn generate",
+    "pretest": "pnpm generate",
     "test": "ava"
   },
   "ava": {
