@@ -1,5 +1,6 @@
 {
   "private": true,
+  "packageManager": "pnpm@latest",
   "scripts": {
     "build": "pnpm -r build",
     "ci-test": "pnpm build && pnpm lint && pnpm test",
