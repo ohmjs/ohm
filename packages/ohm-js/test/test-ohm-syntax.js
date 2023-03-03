@@ -256,6 +256,28 @@ test('ranges w/ code points > 0xFFFF, special cases', t => {
   assertSucceeds(t, g2.match('\u{D83D}x'));
 });
 
+test('any consumes an entire code point', t => {
+  const g = ohm.grammar('G { start = any any }');
+  const re = /../u; // The regex equivalent of `any any`.
+
+  t.is('😇'.length, 2);
+  t.is('😇!'.length, 3);
+  t.is('😇😇'.length, 4);
+
+  t.is(g.match('😇😇').succeeded(), true);
+  t.truthy(re.exec('😇😇'));
+
+  t.is(g.match('😇!').succeeded(), true);
+  t.truthy(re.exec('😇!'));
+
+  t.is(g.match('!😇').succeeded(), true);
+  t.truthy(re.exec('!😇'));
+
+  t.is('👋🏿'.length, 4); // Skin color modifier is a separate code point.
+  t.is(g.match('👋🏿').succeeded(), true);
+  t.truthy(re.exec('👋🏿'));
+});
+
 describe('alt', test => {
   const m = ohm.grammar('M { altTest = "a" | "b" }');
   const s = m.createSemantics().addAttribute('v', {
