@@ -93,7 +93,7 @@ import ohm from 'https://unpkg.com/ohm-js@16/dist/ohm.esm.js';
 
 #### Defining Grammars
 
-![Instantiating a grammar](http://harc.github.io//ohm/doc/images/instantiating-grammars.png)
+![Instantiating a grammar](https://ohmjs.org/docs/images/instantiating-grammars.png)
 
 To use Ohm, you need a grammar that is written in the Ohm language. The grammar provides a formal
 definition of the language or data format that you want to parse. There are a few different ways
@@ -202,22 +202,5 @@ our [suggestions for publishing grammars](./doc/publishing-grammars.md).
 
 ## Contributing to Ohm
 
-All you need to get started:
-
-    git clone https://github.com/harc/ohm.git
-    cd ohm
-    npm install
-
-**NOTE:** We recommend using the latest Node.js stable release.
-
-### Some useful scripts
-
-- `npm test` runs the unit tests.
-- `npm run test-watch` re-runs the unit tests every time a file changes.
-- `npm run build` builds [dist/ohm.js](./dist/ohm.js) and [dist/ohm.min.js](./dist/ohm.min.js),
-  which are stand-alone bundles that can be included in a webpage.
-- When editing Ohm's own grammar (in `src/ohm-grammar.ohm`), run `npm run bootstrap` to re-build Ohm
-  and test your changes.
-
-Before submitting a pull request, be sure to add tests, and ensure that `npm run prepublish` runs
-without errors.
+Interested in contributing to Ohm? Please read [CONTRIBUTING.md](./CONTRIBUTING.md)
+and the [Ohm Contributor Guide](./docs/contributing.md).

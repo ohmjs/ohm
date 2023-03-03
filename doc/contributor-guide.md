@@ -8,6 +8,11 @@ started.
 ### Prerequisites
 
 To develop Ohm, you'll need a recent version of [Node.js](https://nodejs.org).
+We support all [_Active LTS_ and _Maintenance LTS_ releases][nodejs-releases].
+
+[nodejs-releases]: https://nodejs.dev/en/about/releases/
+
+You also need to install [Yarn 1](https://classic.yarnpkg.com/lang/en/).
 
 ### Basic Setup
 
@@ -18,28 +23,30 @@ First, clone the repository:
 Then, install the dev dependencies:
 
     cd ohm
-    npm install
+    yarn install
 
-_Note: the `postinstall` script (which is automatically run by `npm install`)
+_Note: the `postinstall` script (which is automatically run by `yarn install`)
 will install a git pre-commit hook. See [here](#pre-commit-checks) for more
 information._
 
 ### Useful Scripts
 
-- Use `npm test` to run the unit tests.
-- `npm run test-watch` re-runs the unit tests every time a file changes.
-- `npm run build` builds `dist/ohm.js` and `dist/ohm.min.js`,
+The following scripts are useful when developing the main `ohm-js` package:
+
+- Use `yarn test` to run the unit tests.
+- `yarn run test-watch` re-runs the unit tests every time a file changes.
+- `yarn build` builds `dist/ohm.js` and `dist/ohm.min.js`,
   which are stand-alone bundles that can be included in a webpage.
 - When editing Ohm's own grammar (in `src/ohm-grammar.ohm`), run
-  `npm run bootstrap` to re-build Ohm and test your changes.
+  `yarn run bootstrap` to re-build Ohm and test your changes.
 
 ## Doing Development
 
-See our recommended [Git workflow](https://github.com/cdglabs/ohm/wiki/Git-Workflow).
+See our recommended [Git workflow](https://github.com/harc/ohm/wiki/Git-Workflow).
 
 ### Pre-commit Checks
 
-When you run `npm install` in an Ohm checkout, it will automatically install
+When you run `yarn install` in an Ohm checkout, it will automatically install
 a pre-commit hook into `.git/hooks/pre-commit`. Every time you commit to the
 repository, the pre-commit script checks that all tests pass, and that the
 code passes a lint check. We use [ESLint](http://eslint.org/), which helps

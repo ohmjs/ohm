@@ -1,13 +1,13 @@
 # Contributing to Ohm
 
 Interested in contributing to Ohm? This document explains our guidelines for
-submitting pull requests to the [Ohm GitHub repository](https://github.com/cdglabs/ohm).
+submitting pull requests to the [Ohm GitHub repository](https://github.com/harc/ohm).
 For information on how to get started with Ohm development, please see the
 [contributor guide](doc/contributor-guide.md).
 
 ## Before submitting
 
-If you think you've found a bug in Ohm, please [file an issue describing the problem](https://github.com/cdglabs/ohm/issues)
+If you think you've found a bug in Ohm, please [file an issue describing the problem](https://github.com/harc/ohm/issues)
 before submitting a PR. If the fix is non-trivial, it's usually best to wait
 for a response before putting a lot of work into a fix.
 
