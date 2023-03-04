@@ -11,5 +11,4 @@ jobs:
         with:
           release-type: node
           package-name: release-please-action
-          path: packages/ohm-js
-          bootstrap-sha: 929aa5c6d7677f0ebbfe16d21782697371056bb2
+
