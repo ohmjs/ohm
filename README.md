@@ -163,7 +163,7 @@ Ohm has two tools to help you debug grammars: a text trace, and a graphical visu
 
 You can [try the visualizer online](https://ohmjs.org/editor).
 
-To see the text trace for a grammar `g`, just use the [`g.trace()`](./doc/api-reference.md#trace)
+To see the text trace for a grammar `g`, just use the [`g.trace()`](doc/api-reference.md#trace)
 method instead of `g.match`. It takes the same arguments, but instead of returning a MatchResult
 object, it returns a Trace object — calling its `toString` method returns a string describing
 all of the decisions the parser made when trying to match the input. For example, here is the
