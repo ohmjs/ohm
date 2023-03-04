@@ -58,6 +58,10 @@ export function grammars(source, optNamespace) {
   return ns;
 }
 
+// This is used by ohm-editor to instantiate grammars after incremental
+// parsing, which is not otherwise supported in the public API.
+export {buildGrammar as _buildGrammar};
+
 export * from './main-kernel.js';
 export {IndentationSensitive as ExperimentalIndentationSensitive} from './IndentationSensitive.js';
 export {ohmGrammar};
