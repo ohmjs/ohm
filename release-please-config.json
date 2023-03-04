@@ -1,0 +1,15 @@
+{
+  "bootstrap-sha": "929aa5c6d7677f0ebbfe16d21782697371056bb2",
+  "packages": {
+    "packages/ohm-js": {
+      "changelog-path": "CHANGELOG.md",
+      "release-type": "node",
+      "bump-minor-pre-major": false,
+      "bump-patch-for-minor-pre-major": false,
+      "draft": false,
+      "draft-pull-request": true,
+      "prerelease": false
+    }
+  },
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
+}
