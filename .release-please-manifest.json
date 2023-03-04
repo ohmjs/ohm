@@ -1,4 +1,5 @@
 {
   "packages/ohm-js": "17.4.0",
-  "last-release-sha": "929aa5c6d7677f0ebbfe16d21782697371056bb2"
+  "last-release-sha": "929aa5c6d7677f0ebbfe16d21782697371056bb2",
+  ".": "17.0.5"
 }
