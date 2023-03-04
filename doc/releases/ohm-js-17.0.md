@@ -2,7 +2,7 @@
 
 v17.0.0 is primarily a cleanup release in preparation for some new features that will be coming soon in minor releases. It contains a few breaking changes (as described below), but they are unlikely to affect the majority of Ohm users.
 
-This version also has experimental support for indentation-sensitive grammars.
+This version also has experimental support for [indentation-sensitive grammars](#new-features).
 
 ## Upgrading
 
@@ -100,7 +100,7 @@ See [#394](https://github.com/harc/ohm/issues/394) for the reasoning behind this
 
 ## New features
 
-- **(EXPERIMENTAL)**: This release includes experimental support for indentation-sensitive grammars (e.g., Python, Elm, YAML). See the guide to [Parsing indentation sensitive languages](./doc/indentation-sensitive.md).
+- **(EXPERIMENTAL)**: This release includes experimental support for indentation-sensitive grammars (e.g., Python, Elm, YAML). See the guide to [Parsing indentation sensitive languages](../indentation-sensitive.md).
 
 ## Other changes
 

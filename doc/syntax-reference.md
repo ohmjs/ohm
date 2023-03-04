@@ -3,14 +3,14 @@
 This document describes the syntax of the _Ohm language_, which is a variant of parsing expression grammars (PEGs). If you have experience with PEGs, the Ohm syntax will mostly look familiar, but there are a few important differences to note:
 
 - When naming rules, **case matters**: whitespace is implicitly skipped inside a rule application if the rule name begins with an uppercase letter. For further information, see [Syntactic vs. Lexical Rules](#syntactic-lexical).
-- Grammars are purely about recognition: they do not contain semantic actions (those are defined separately) or bindings. The separation of semantic actions is one of the defining features of Ohm -- we believe that it improves modularity and makes both grammars and semantics easier to understand.
-- Alternation expressions support _case names_, which are used in [inline rule declarations](#inline-rules). This makes semantic actions for alternation expressions simpler and less error-prone.
+- Grammars are purely about recognition: they do not contain semantic actions (those are defined separately) or bindings. The separation of semantic actions is one of the defining features of Ohm — we believe that it improves modularity and makes both grammars and semantics easier to understand.
+- Alternation expressions support _case names_, which are used in [inline rule declarations](#inline-rule-declarations). This makes semantic actions for alternation expressions simpler and less error-prone.
 - Ohm does not (yet) support semantic predicates.
 
 Ohm is closely related to [OMeta](http://tinlizzie.org/ometa/), another PEG-based language for parsing and pattern matching. Like OMeta, Ohm supports a few features not supported by many PEG parsing frameworks:
 
 - [Rule applications](#rule-application) can accept parameters. This makes it possible to write higher-order rules, such as the built-in `ListOf` rule.
-- Grammars can be extended in an object-oriented way -- see [Defining, Extending, and Overriding Rules](#defining-extending-and-overriding-rules).
+- Grammars can be extended in an object-oriented way — see [Defining, Extending, and Overriding Rules](#defining-extending-and-overriding-rules).
 
 ## Terminology
 
@@ -75,7 +75,7 @@ Matches the body of the _parameterized rule_ named _ruleName_, substituting the 
 
 Matches the expression _expr_ repeated 0 or more times. E.g., `"a"*` will match `''`, `'a'`, `'aa'`, ...
 
-Inside a _syntactic rule_ -- any rule whose name begins with an upper-case letter -- spaces before a match are automatically skipped. E.g., `"a"*` will match `" a a"` as well as `"aa"`. See the documentation on [syntactic and lexical rules](#syntactic-lexical) for more information.
+Inside a _syntactic rule_ — any rule whose name begins with an upper-case letter — spaces before a match are automatically skipped. E.g., `"a"*` will match `" a a"` as well as `"aa"`. See the documentation on [syntactic and lexical rules](#syntactic-lexical) for more information.
 
 <pre><code><i>expr</i> +</code></pre>
 
@@ -229,7 +229,7 @@ ident (an identifier)
 
 #### Inline Rule Declarations
 
-<pre><code><i>expr</i> -- <i>caseName</i></code></pre>
+<pre><code><i>expr</i> — <i>caseName</i></code></pre>
 
 When a parsing expression is followed by the characters `--` and a name, it signals an _inline rule declaration_. This is most commonly used in alternation expressions to ensure that each branch has the same arity. For example, the following declaration:
 
