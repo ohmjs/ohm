@@ -73,17 +73,19 @@ can use `git commit --no-verify` -- but use this sparingly!
 ## Writing documentation
 
 - The documentation under doc/ is intended to work on both GitHub and
-  [ohmjs.org](https://ohmjs.org).
+  [ohmjs.org](https://ohmjs.org). Since the prefix for GitHub docs is
+  `doc/`, and the prefix on ohmjs.org is `docs/`, a link that includes
+  one of those prefixes won't work in both places!
 - When linking to other documentation pages, use relative links. Examples:
   - `[Syntactic vs. Lexical Rules](#syntactic-lexical)`
   - `[negative lookahead](./syntax-reference.md#negative-lookahead-)`
 - When linking to source code, use an absolute link to GitHub. Example:
   - `The [operators example](https://github.com/harc/ohm/tree/main/examples/operators)`
-- **Note:** Since the prefix for GitHub docs is `doc/`, and the prefix on
-  ohmjs.org is `docs/`, anything that includes one of those prefixes won't
-  work in both places!
 - In the [changelog][], use absolute links to GitHub when linking to docs,
   as that file is intended to be read in a text editor or on GitHub.
+- Images go under `doc/images/` and should be linked with an absolute URL to
+  ohmjs.org. Example:
+  - `https://ohm.js.org/img/docs/matching.png` for `docs/images/matching.png`.
 
 [changelog]: https://github.com/harc/ohm/tree/main/CHANGELOG.md
 
