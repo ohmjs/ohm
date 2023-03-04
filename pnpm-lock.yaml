@@ -137,6 +137,7 @@ importers:
       terser: ^5.15.1
       uvu: ^0.5.6
       walk-sync: ^2.2.0
+      watchlist: ^0.3.1
     devDependencies:
       '@rollup/plugin-commonjs': 21.1.0_rollup@2.79.1
       '@rollup/plugin-json': 4.1.0_rollup@2.79.1
@@ -158,6 +159,7 @@ importers:
       terser: 5.16.5
       uvu: 0.5.6
       walk-sync: 2.2.0
+      watchlist: 0.3.1
 
   packages/packaging-tests:
     specifiers:
