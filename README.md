@@ -203,4 +203,4 @@ our [suggestions for publishing grammars](./doc/publishing-grammars.md).
 ## Contributing to Ohm
 
 Interested in contributing to Ohm? Please read [CONTRIBUTING.md](./CONTRIBUTING.md)
-and the [Ohm Contributor Guide](docs/contributing.md).
+and the [Ohm Contributor Guide](doc/contributing.md).
