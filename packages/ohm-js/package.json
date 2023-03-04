@@ -1,6 +1,6 @@
 {
   "name": "ohm-js",
-  "version": "17.0.3",
+  "version": "17.0.4",
   "description": "An object-oriented language for parsing and pattern matching",
   "repository": "https://github.com/harc/ohm",
   "keywords": [
