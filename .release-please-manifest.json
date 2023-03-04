@@ -1,3 +1,4 @@
 {
-  "packages/ohm-js": "17.4.0"
+  "packages/ohm-js": "17.4.0",
+  ".": "17.0.5"
 }
