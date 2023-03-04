@@ -31,8 +31,8 @@ The easiest way to get started with Ohm is to use the [interactive editor](https
 ### Resources
 
 - Tutorial: [Ohm: Parsing Made Easy](https://nextjournal.com/dubroy/ohm-parsing-made-easy)
-- The [math example](examples/math/index.html) is extensively commented and is a good way to dive deeper.
-- [Examples](examples/)
+- The [math example](https://github.com/harc/ohm/tree/main/examples/math/index.html) is extensively commented and is a good way to dive deeper.
+- [Examples](https://github.com/harc/ohm/tree/main/examples/)
 - [Documentation](doc/README.md)
 - For community support and discussion, join us on [Discord](https://discord.gg/KwxY5gegRQ), [GitHub Discussions](https://github.com/harc/ohm/discussions), or the [ohm-discuss mailing list](https://groups.google.com/u/0/g/ohm-discuss).
 - For updates, follow [@\_ohmjs on Twitter](https://twitter.com/_ohmjs).
@@ -45,14 +45,14 @@ To use Ohm in the browser, just add a single `<script>` tag to your page:
 
 ```html
 <!-- Development version of Ohm from unpkg.com -->
-<script src="https://unpkg.com/ohm-js@16/dist/ohm.js"></script>
+<script src="https://unpkg.com/ohm-js@17/dist/ohm.js"></script>
 ```
 
 or
 
 ```html
 <!-- Minified version, for faster page loads -->
-<script src="https://unpkg.com/ohm-js@16/dist/ohm.min.js"></script>
+<script src="https://unpkg.com/ohm-js@17/dist/ohm.min.js"></script>
 ```
 
 This creates a global variable named `ohm`.
@@ -75,10 +75,10 @@ Then, you can use `require` to use Ohm in a script:
 const ohm = require('ohm-js');
 ```
 
-As of v16.2.0, Ohm can also be imported as an ES module:
+Ohm can also be imported as an ES module:
 
 ```js
-import ohm from 'ohm-js';
+import * as ohm from 'ohm-js';
 ```
 
 #### Deno
@@ -86,7 +86,7 @@ import ohm from 'ohm-js';
 To use Ohm from [Deno](https://deno.land/):
 
 ```js
-import ohm from 'https://unpkg.com/ohm-js@16/dist/ohm.esm.js';
+import * as ohm from 'https://unpkg.com/ohm-js@17';
 ```
 
 ### Basics
