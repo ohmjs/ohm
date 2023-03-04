@@ -1,4 +1,4 @@
-import { test } from 'uvu';
+import {test} from 'uvu';
 import * as assert from 'uvu/assert';
 
 import {evaluate} from './arithmetic';

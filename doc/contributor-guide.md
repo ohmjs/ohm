@@ -75,10 +75,10 @@ can use `git commit --no-verify` -- but use this sparingly!
 - The documentation under doc/ is intended to work on both GitHub and
   [ohmjs.org](https://ohmjs.org).
 - When linking to other documentation pages, use relative links. Examples:
-  * `[Syntactic vs. Lexical Rules](#syntactic-lexical)`
-  * `[negative lookahead](./syntax-reference.md#negative-lookahead-)`
+  - `[Syntactic vs. Lexical Rules](#syntactic-lexical)`
+  - `[negative lookahead](./syntax-reference.md#negative-lookahead-)`
 - When linking to source code, use an absolute link to GitHub. Example:
-  * `The [operators example](https://github.com/harc/ohm/tree/main/examples/operators)`
+  - `The [operators example](https://github.com/harc/ohm/tree/main/examples/operators)`
 - **Note:** Since the prefix for GitHub docs is `doc/`, and the prefix on
   ohmjs.org is `docs/`, anything that includes one of those prefixes won't
   work in both places!

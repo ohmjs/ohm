@@ -3,6 +3,7 @@
 *.html
 *.ohm-bundle.*
 dist
-third_party
+pnpm-lock.yaml
 testdata
+third_party
 visualizer
