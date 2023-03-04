@@ -1,6 +1,13 @@
 # Changelog
 
-## Next (Ohm v17)
+## v17.0.4 - Mar 4, 2023
+
+### Fixes
+
+- [c2e552d]: Add `_buildGrammar` back to exports. (It's a private API used by the Ohm Editor.)
+- [4d9ee89]: Ensure `ohm.version` reports the correct value. Due to a change in the build scripts, it was stuck at '17.0.0'.
+
+## v17.0.3 - Mar 3, 2023
 
 ### Breaking changes:
 
