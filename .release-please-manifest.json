@@ -1,4 +1,5 @@
 {
   "packages/ohm-js": "17.4.0",
-  "bootstrap-sha": "56d7afc58e741d778b89a8df0caf2cf76fe0a93f"
+  "bootstrap-sha": "56d7afc58e741d778b89a8df0caf2cf76fe0a93f",
+  ".": "17.0.5"
 }

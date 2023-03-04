@@ -16,5 +16,5 @@
     "eslint-plugin-no-extension-in-require": "^0.2.0",
     "prettier": "^2.3.2"
   },
-  "version": "0.0.0"
+  "version": "17.0.5"
 }
