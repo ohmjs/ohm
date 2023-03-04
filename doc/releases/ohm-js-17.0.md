@@ -100,7 +100,7 @@ See [#394](https://github.com/harc/ohm/issues/394) for the reasoning behind this
 
 ## New features
 
-- **(EXPERIMENTAL)**: This release includes experimental support for indentation-sensitive grammars (e.g., Python, Elm, YAML). See the guide to [Parsing indentation sensitive languages](./doc/indentation-sensitive.md).
+- **(EXPERIMENTAL)**: This release includes experimental support for indentation-sensitive grammars (e.g., Python, Elm, YAML). See the guide to [Parsing indentation sensitive languages](../indentation-sensitive.md).
 
 ## Other changes
 

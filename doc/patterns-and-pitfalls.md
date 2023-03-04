@@ -4,9 +4,9 @@
 
 ### Dealing with greedy matching
 
-In Ohm, like other PEG-based tools, the [repetition operators](https://github.com/harc/ohm/blob/0af8165c2ff0e4ddef28c71f56ef38c7310d2db9/doc/syntax-reference.md#repetition-operators---) `*` and `+` are _greedy_, meaning they always consume as much input as possible. This is different than the way that `*` works in regular expressions. For example, the regular expression `/^a*a/` will successfully match `'aaa'`, whereas in Ohm, the equivalent parsing expression `"a"* "a"` can never match any input.
+In Ohm, like other PEG-based tools, the [repetition operators](./syntax-reference.md#repetition-operators---) `*` and `+` are _greedy_, meaning they always consume as much input as possible. This is different than the way that `*` works in regular expressions. For example, the regular expression `/^a*a/` will successfully match `'aaa'`, whereas in Ohm, the equivalent parsing expression `"a"* "a"` can never match any input.
 
-You can use [negative lookahead](https://github.com/harc/ohm/blob/0af8165c2ff0e4ddef28c71f56ef38c7310d2db9/doc/syntax-reference.md#negative-lookahead-) (`~`) to prevent a repetition from matching too many characters. E.g., the following rule will match all but the last 'a' in a string:
+You can use [negative lookahead](./syntax-reference.md#negative-lookahead-) (`~`) to prevent a repetition from matching too many characters. E.g., the following rule will match all but the last 'a' in a string:
 
 ```
 allButLastA = (~("a" end) "a")*
@@ -29,7 +29,7 @@ The expression `~stringDelimiter any` means "match any character not matched by 
 
 ### Supporting comments
 
-In most languages, comments are treated as a form of whitespace. Ohm has implicit space skipping ([see Syntactic vs. Lexical rules](https://github.com/harc/ohm/blob/0af8165c2ff0e4ddef28c71f56ef38c7310d2db9/doc/syntax-reference.md#syntactic-vs-lexical-rules)), which is controlled by the _space_ rule. To add comments to your language, you first need to define a _comment_ rule. Here's an example of C-style (`/*`/`*/`-delimited) comments:
+In most languages, comments are treated as a form of whitespace. Ohm has implicit space skipping ([see Syntactic vs. Lexical rules](./syntax-reference.md#syntactic-vs-lexical-rules)), which is controlled by the _space_ rule. To add comments to your language, you first need to define a _comment_ rule. Here's an example of C-style (`/*`/`*/`-delimited) comments:
 
 ```
 comment = "/*" (~"*/" any)* "*/"
@@ -60,7 +60,7 @@ Many programming languages have the concept of [reserved words](https://en.wikip
 - One reserved word might be a prefix of another, e.g., `in` and `instanceof` in JavaScript.
 - Identifiers that begin with a reserved word shouldn't be disallowed, e.g. `className`.
 
-To prevent both of these potential problems, you can use [negative lookahead](https://github.com/harc/ohm/blob/main/doc/syntax-reference.md#negative-lookahead-) in the rules for your reserved words. For example:
+To prevent both of these potential problems, you can use [negative lookahead](./syntax-reference.md#negative-lookahead-) in the rules for your reserved words. For example:
 
 ```
   in = "in" ~identifierPart
@@ -119,4 +119,4 @@ This evaluates to either (a) `undefined`, if the node has no child, or (b) the r
 
 ### Handling the built-in list rules
 
-When using the built-in list rules (`listOf`, etc.) in your grammar, you usually don't need to write semantic actions for them. Instead, you can use the [built-in `asIteration` operation](https://github.com/harc/ohm/blob/main/doc/api-reference.md#asIteration).
+When using the built-in list rules (`listOf`, etc.) in your grammar, you usually don't need to write semantic actions for them. Instead, you can use the [built-in `asIteration` operation](./api-reference.md#asIteration).
