@@ -1,0 +1,10 @@
+{
+  "bootstrap-sha": "929aa5c6d7677f0ebbfe16d21782697371056bb2",
+  "packages": {
+    "packages/ohm-js": {
+      "release-type": "node",
+      "draft-pull-request": true
+    }
+  },
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
+}
