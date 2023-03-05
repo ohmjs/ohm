@@ -45,7 +45,7 @@
 
 ### Fixes:
 
-- [#370] Fix harc/ohm-editor#72 - grammars with super-splice (...) not working in the Ohm Editor
+- [#370] Fix ohmjs/ohm-editor#72 - grammars with super-splice (...) not working in the Ohm Editor
 
 ### Other notable changes:
 

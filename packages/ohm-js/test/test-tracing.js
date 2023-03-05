@@ -475,7 +475,7 @@ test.failing('bindings', t => {
   t.deepEqual(notX.children.map(succeeded), [true, true], 'both children succeeded');
 });
 
-// https://github.com/harc/ohm-editor/issues/72
+// https://github.com/ohmjs/ohm-editor/issues/72
 test('tracing with "..."', t => {
   const g = ohm.grammar('G { letter := "@" | ... }');
   const trace = g.trace('x', 'letter');
