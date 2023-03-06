@@ -879,7 +879,7 @@ test('sourceString', t => {
   t.is(s(g.match('abb')).foo(), 'abbabb');
 });
 
-// https://github.com/harc/ohm/issues/188
+// https://github.com/ohmjs/ohm/issues/188
 test('sourceString - issue #188', t => {
   const g = testUtil.makeGrammar(['G {', '  Start = num num', '  num = digit+', '}']);
   const s = g.createSemantics().addOperation('origSource', {
@@ -893,7 +893,7 @@ test('sourceString - issue #188', t => {
   t.is(s(g.match('1 22')).origSource(), '122');
 });
 
-// https://github.com/harc/ohm/issues/204
+// https://github.com/ohmjs/ohm/issues/204
 test('sourceString - issue #204', t => {
   const g = ohm.grammar('Mu{ List = NonemptyListOf<Item, ","> Item = alnum+ }');
   const s = g.createSemantics().addOperation('eval()', {
@@ -969,7 +969,7 @@ test('error message for incorrect _iter or _nonterminal arity', t => {
   });
 });
 
-// https://github.com/harc/ohm/issues/416
+// https://github.com/ohmjs/ohm/issues/416
 test('toString on an inner NodeWrapper - issue #416', t => {
   const g = ohm.grammar('G { Start = letter }');
 

@@ -276,7 +276,7 @@ export class Semantics {
             let source = actionDict[actionName].toString().trim();
 
             // Convert method shorthand to plain old function syntax.
-            // https://github.com/harc/ohm/issues/263
+            // https://github.com/ohmjs/ohm/issues/263
             source = source.replace(/^.*\(/, 'function(');
 
             srcArray.push('\n      ' + JSON.stringify(actionName) + ': ' + source);

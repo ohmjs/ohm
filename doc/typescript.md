@@ -1,8 +1,8 @@
 # Using Ohm with TypeScript
 
-Out of the box, Ohm mostly "just works" with TypeScript. The the built-in type definitions cover the core API, though some less frequently used parts are not (yet) there. If you notice something that's missing, please feel free to [open an issue](https://github.com/harc/ohm/issues/new) or submit a PR.
+Out of the box, Ohm mostly "just works" with TypeScript. The the built-in type definitions cover the core API, though some less frequently used parts are not (yet) there. If you notice something that's missing, please feel free to [open an issue](https://github.com/ohmjs/ohm/issues/new) or submit a PR.
 
-You can see some projects that are using Ohm with TypeScript [on Sourcegraph](https://sourcegraph.com/search?q=context:global+ohm-js+lang:TypeScript+-repo:%5Egithub%5C.com/harc/ohm%24+select:repo+&patternType=literal).
+You can see some projects that are using Ohm with TypeScript [on Sourcegraph](https://sourcegraph.com/search?q=context:global+ohm-js+lang:TypeScript+-repo:%5Egithub%5C.com/ohmjs/ohm%24+select:repo+&patternType=literal).
 
 ## Grammar-specific type definitions
 
@@ -27,4 +27,4 @@ To enable grammar-specific type definitions:
    import grammar from './my-grammar.ohm-bundle'
    ```
 
-   For more information, see the [Ohm TypeScript example](https://github.com/harc/ohm/blob/main/examples/typescript/src/arithmetic.ts).
+   For more information, see the [Ohm TypeScript example](https://github.com/ohmjs/ohm/blob/main/examples/typescript/src/arithmetic.ts).

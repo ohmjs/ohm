@@ -4,7 +4,7 @@
   "version": "2.0.0",
   "description": "The official command line tool for ohm-js, a parsing toolkit for JavaScript.",
   "module": "index.js",
-  "repository": "https://github.com/harc/ohm",
+  "repository": "https://github.com/ohmjs/ohm",
   "author": "Patrick Dubroy <pdubroy@gmail.com>",
   "license": "MIT",
   "files": [

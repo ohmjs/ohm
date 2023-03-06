@@ -272,7 +272,7 @@ test('semantics recipes with extensions', t => {
   t.is(sRe(m2).value, 22, 'twice extended semantics for one grammar');
 });
 
-// https://github.com/harc/ohm/issues/263
+// https://github.com/ohmjs/ohm/issues/263
 test('semantics recipes w/ method shorthand', t => {
   const g = ohm.grammar('G { start = }');
   const s = g.createSemantics().addOperation('op', {

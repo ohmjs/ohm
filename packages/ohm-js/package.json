@@ -2,7 +2,7 @@
   "name": "ohm-js",
   "version": "17.0.4",
   "description": "An object-oriented language for parsing and pattern matching",
-  "repository": "https://github.com/harc/ohm",
+  "repository": "https://github.com/ohmjs/ohm",
   "keywords": [
     "parser",
     "compiler",
@@ -16,7 +16,7 @@
     "prototyping"
   ],
   "homepage": "https://ohmjs.org",
-  "bugs": "https://github.com/harc/ohm/issues",
+  "bugs": "https://github.com/ohmjs/ohm/issues",
   "type": "module",
   "main": "./dist/ohm.cjs",
   "module": "./index.mjs",
@@ -63,7 +63,7 @@
     "prepublishOnly": "bash scripts/prepublishOnly",
     "prepack": "cp ../../README.md . && pnpm build",
     "postpack": "rm README.md",
-    "postpublish": "echo '👉  Now go to https://github.com/harc/ohm/releases and create a release.'",
+    "postpublish": "echo '👉  Now go to https://github.com/ohmjs/ohm/releases and create a release.'",
     "unsafe-bootstrap": "bash scripts/bootstrap",
     "update-contributors": "bash scripts/update-contributors",
     "watch": "pnpm build:cjs --watch"

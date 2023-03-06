@@ -1,4 +1,4 @@
-# [Ohm](https://ohmjs.org/) &middot; [![NPM](https://img.shields.io/npm/v/ohm-js.svg)](https://www.npmjs.com/package/ohm-js) ![Node.js CI](https://github.com/harc/ohm/workflows/Node.js%20CI/badge.svg?style=flat-square) [![Chat on Discord](https://img.shields.io/badge/chat-on%20discord-7289da.svg?sanitize=true)](https://discord.gg/KwxY5gegRQ)
+# [Ohm](https://ohmjs.org/) &middot; [![NPM](https://img.shields.io/npm/v/ohm-js.svg)](https://www.npmjs.com/package/ohm-js) ![Node.js CI](https://github.com/ohmjs/ohm/workflows/Node.js%20CI/badge.svg?style=flat-square) [![Chat on Discord](https://img.shields.io/badge/chat-on%20discord-7289da.svg?sanitize=true)](https://discord.gg/KwxY5gegRQ)
 
 Ohm is a parsing toolkit consisting of a library and a domain-specific language. You can use it to parse custom file formats or quickly build parsers, interpreters, and compilers for programming languages.
 
@@ -31,10 +31,10 @@ The easiest way to get started with Ohm is to use the [interactive editor](https
 ### Resources
 
 - Tutorial: [Ohm: Parsing Made Easy](https://nextjournal.com/dubroy/ohm-parsing-made-easy)
-- The [math example](https://github.com/harc/ohm/tree/main/examples/math/index.html) is extensively commented and is a good way to dive deeper.
-- [Examples](https://github.com/harc/ohm/tree/main/examples/)
+- The [math example](https://github.com/ohmjs/ohm/tree/main/examples/math/index.html) is extensively commented and is a good way to dive deeper.
+- [Examples](https://github.com/ohmjs/ohm/tree/main/examples/)
 - [Documentation](doc/README.md)
-- For community support and discussion, join us on [Discord](https://discord.gg/KwxY5gegRQ), [GitHub Discussions](https://github.com/harc/ohm/discussions), or the [ohm-discuss mailing list](https://groups.google.com/u/0/g/ohm-discuss).
+- For community support and discussion, join us on [Discord](https://discord.gg/KwxY5gegRQ), [GitHub Discussions](https://github.com/ohmjs/ohm/discussions), or the [ohm-discuss mailing list](https://groups.google.com/u/0/g/ohm-discuss).
 - For updates, follow [@\_ohmjs on Twitter](https://twitter.com/_ohmjs).
 
 ### Installation

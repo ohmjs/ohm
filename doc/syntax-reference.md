@@ -144,7 +144,7 @@ as well as multiline (`/* */`) comments like:
 
 ## Built-in Rules
 
-(See [src/built-in-rules.ohm](https://github.com/harc/ohm/blob/main/packages/ohm-js/src/built-in-rules.ohm).)
+(See [src/built-in-rules.ohm](https://github.com/ohmjs/ohm/blob/main/packages/ohm-js/src/built-in-rules.ohm).)
 
 `any`: Matches the next Unicode character — i.e., a single code point — in the input stream, if one exists.
 

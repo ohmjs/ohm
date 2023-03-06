@@ -379,7 +379,7 @@ test('complex match failure', t => {
   t.truthy(/Expected /.exec(r.message), 'Should have a message failure');
 });
 
-// https://github.com/harc/ohm/pull/357
+// https://github.com/ohmjs/ohm/pull/357
 test('wrongNumberOfArguments includes the interval', t => {
   const message = dedent`
       Line 4, col 13:

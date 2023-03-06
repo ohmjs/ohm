@@ -1363,7 +1363,7 @@ test('space skipping semantics', t => {
   );
 });
 
-// https://github.com/harc/ohm/issues/282
+// https://github.com/ohmjs/ohm/issues/282
 test('single-line comment after case name (#282)', t => {
   const {ohmGrammar} = ohm;
   assertSucceeds(

@@ -25,5 +25,5 @@ fi
 git pull --ff-only --no-stat
 cp -r "$ROOT/doc" "$ROOT/packages/ohm-js/dist" .
 git add doc dist editor
-git commit -m "Update from harc/ohm@${OHM_REV}"
+git commit -m "Update from ohmjs/ohm@${OHM_REV}"
 git push origin main

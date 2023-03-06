@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/harc/ohm.git"
+    "url": "git+https://github.com/ohmjs/ohm.git"
   },
   "keywords": [
     "ohm",
@@ -20,9 +20,9 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/harc/ohm/issues"
+    "url": "https://github.com/ohmjs/ohm/issues"
   },
-  "homepage": "https://github.com/harc/ohm/tree/main/examples/ecmascript#readme",
+  "homepage": "https://github.com/ohmjs/ohm/tree/main/examples/ecmascript#readme",
   "peerDependencies": {
     "ohm-js": "^17.0.0"
   },

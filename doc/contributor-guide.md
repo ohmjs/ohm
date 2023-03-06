@@ -42,7 +42,7 @@ The following scripts are useful when developing the main `ohm-js` package:
 
 ## Doing Development
 
-See our recommended [Git workflow](https://github.com/harc/ohm/wiki/Git-Workflow).
+See our recommended [Git workflow](https://github.com/ohmjs/ohm/wiki/Git-Workflow).
 
 ### Pre-commit Checks
 
@@ -80,14 +80,14 @@ can use `git commit --no-verify` -- but use this sparingly!
   - `[Syntactic vs. Lexical Rules](#syntactic-lexical)`
   - `[negative lookahead](./syntax-reference.md#negative-lookahead-)`
 - When linking to source code, use an absolute link to GitHub. Example:
-  - `The [operators example](https://github.com/harc/ohm/tree/main/examples/operators)`
+  - `The [operators example](https://github.com/ohmjs/ohm/tree/main/examples/operators)`
 - In the [changelog][], use absolute links to GitHub when linking to docs,
   as that file is intended to be read in a text editor or on GitHub.
 - Images go under `doc/images/` and should be linked with an absolute URL to
   ohmjs.org. Example:
   - `https://ohm.js.org/img/docs/matching.png` for `docs/images/matching.png`.
 
-[changelog]: https://github.com/harc/ohm/tree/main/CHANGELOG.md
+[changelog]: https://github.com/ohmjs/ohm/tree/main/CHANGELOG.md
 
 ## Publishing
 

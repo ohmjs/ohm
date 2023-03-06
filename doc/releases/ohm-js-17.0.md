@@ -60,7 +60,7 @@ In Ohm v17, it should be written like this:
 import * as ohm from 'ohm-js';
 ```
 
-See [#386](https://github.com/harc/ohm/issues/386) for more context on this change.
+See [#386](https://github.com/ohmjs/ohm/issues/386) for more context on this change.
 
 ### `util` removed
 
@@ -96,7 +96,7 @@ aNode.source.getLineAndColumnMessage();
 
 Ohm v17 changed the default behavior of `toAST` for the built-in list rules (`ListOf` and friends). Both the syntactic (`ListOf`, ...) and lexical versions (`listOf`, ...) are now represented as arrays, with the separators _discarded_. Previously, the syntactic versions were represented by arrays, but with separators _included_, and the lexical versions were represented as strings (just like other lexical rules).
 
-See [#394](https://github.com/harc/ohm/issues/394) for the reasoning behind this change.
+See [#394](https://github.com/ohmjs/ohm/issues/394) for the reasoning behind this change.
 
 ## New features
 
