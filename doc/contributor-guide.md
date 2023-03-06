@@ -87,7 +87,7 @@ can use `git commit --no-verify` -- but use this sparingly!
   ohmjs.org. Example:
   - `https://ohm.js.org/img/docs/matching.png` for `docs/images/matching.png`.
 
-[changelog]: https://github.com/ohmjs/ohm/tree/main/CHANGELOG.md
+[changelog]: https://github.com/ohmjs/ohm/blob/main/packages/ohm-js/CHANGELOG.md
 
 ## Publishing
 
