@@ -1,0 +1,19 @@
+{
+  "name": "grammar-ohm-with-examples",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "uvu",
+    "test:watch": "watchlist . --eager -- pnpm test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "ohm-js": "workspace:^17.0.0",
+    "uvu": "^0.5.6",
+    "watchlist": "^0.3.1"
+  }
+}
