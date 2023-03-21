@@ -39,7 +39,7 @@ export const s = ohmWithExamples.createSemantics().addOperation('getRulesWithExa
       const defaultExamples = exampleCommentsIter.child(i).examples();
       result[child.grammarName()] = {
         ...child.getRulesWithExamples(),
-        ...includeDefaults ? { '(default)': defaultExamples } : {},
+        ...(includeDefaults ? {'(default)': defaultExamples} : {}),
       };
     }
     return result;

@@ -1,7 +1,7 @@
 import {test} from 'uvu';
 import * as assert from 'uvu/assert';
 
-import {extractExamples, ohmWithExamples, s} from './index.js';
+import {extractExamples} from './index.js';
 
 test('empty', () => {
   assert.equal(extractExamples(''), {});
@@ -11,45 +11,39 @@ test('grammar with no examples', () => {
   assert.equal(extractExamples('G { }'), {G: {}});
 });
 
-test('simple examples', () => {
-  assert.equal(
-    extractExamples(`
-      G {
-        // Examples:
-        // - "x"
-        start = "x"
-      }
-    `),
-    {
-      G: {
-        start: [{example: 'x', shouldMatch: true}]
-      }
+test('simple positive examples', () => {
+  let examples = extractExamples(`
+    G {
+      // Examples:
+      // - "x"
+      start = "x"
     }
-  );
+  `);
+  assert.equal(Object.keys(examples), ['G']);
+  assert.equal(examples.G, {
+    start: [{example: 'x', shouldMatch: true}],
+  });
 
-  assert.equal(
-    extractExamples(`
-      G {
-        // Examples:
-        // - ""
-        start = ""
+  examples = extractExamples(`
+    G {
+      // Examples:
+      // - ""
+      start = ""
 
-        // Examples:
-        // - "x"
-        other = ""
-      }
-    `),
-    {
-      G: {
-        start: [{example: '', shouldMatch: true}],
-        other: [{example: 'x', shouldMatch: true}]
-      }
+      // Examples:
+      // - "x"
+      other = ""
     }
-  );
+  `);
+  assert.equal(Object.keys(examples), ['G']);
+  assert.equal(examples.G, {
+    start: [{example: '', shouldMatch: true}],
+    other: [{example: 'x', shouldMatch: true}],
+  });
 });
 
 test('examples for default start rule', () => {
-  const def1 = `
+  let examples = extractExamples(`
     // Examples:
     // - "hey"
     G {
@@ -57,13 +51,26 @@ test('examples for default start rule', () => {
       // - ""
       start = ""
     }
-  `;
+  `);
+  assert.equal(Object.keys(examples), ['G']);
+  assert.equal(examples.G, {
+    '(default)': [{example: 'hey', shouldMatch: true}],
+    'start': [{example: '', shouldMatch: true}],
+  });
 
-  assert.equal(extractExamples(def1), {
-    G: {
-      '(default)': [{example: 'hey', shouldMatch: true}],
-      start: [{example: '', shouldMatch: true}]
+  examples = extractExamples(`
+    // Examples:
+    // - "hey"
+    G {
+      // Examples:
+      // - ""
+      start = ""
     }
+  `);
+  assert.equal(Object.keys(examples), ['G']);
+  assert.equal(examples.G, {
+    '(default)': [{example: 'hey', shouldMatch: true}],
+    'start': [{example: '', shouldMatch: true}],
   });
 });
 
@@ -72,19 +79,19 @@ function getExamples(input) {
   return G.start;
 }
 
-test('example comments', () => {
+test('details of example comments', () => {
   assert.equal(getExamples('// Examples:\n    // - "blah"\n'), [
-    {example: 'blah', shouldMatch: true}
+    {example: 'blah', shouldMatch: true},
   ]);
   assert.equal(
-    getExamples(`
+      getExamples(`
       // Examples:
       // - "blah"
       // - "wooo"`),
-    [
-      {example: 'blah', shouldMatch: true},
-      {example: 'wooo', shouldMatch: true}
-    ]
+      [
+        {example: 'blah', shouldMatch: true},
+        {example: 'wooo', shouldMatch: true},
+      ],
   );
   assert.equal(getExamples('// Examples:'), []);
   assert.equal(getExamples('// Examples:\n// - ""'), [{example: '', shouldMatch: true}]);
