@@ -74,12 +74,37 @@ test('examples for default start rule', () => {
   });
 });
 
+test('top-level whitespace', () => {
+  extractExamples('  // Examples:\n  G{}', { G: { '(default)': [] }});
+  extractExamples('  // Examples:  \nG{}', { G: { '(default)': [] }});
+  extractExamples('  // Examples:\nG{}', { G: { '(default)': [] }});
+  extractExamples('\n\n// Examples:\n\nG{}', { G: { '(default)': [] }});
+});
+
 function getExamples(input) {
   const {G} = extractExamples(`G { ${input}\nstart = }`);
   return G.start;
 }
 
-test('details of example comments', () => {
+test('example comments - negative examples', () => {
+  assert.equal(getExamples('// Examples:\n    // - not "blah"\n'), [
+    {example: 'blah', shouldMatch: false},
+  ]);
+  assert.equal(
+      getExamples(`
+      // Examples:
+      // - "blah"
+      // - not "wooo"`),
+      [
+        {example: 'blah', shouldMatch: true},
+        {example: 'wooo', shouldMatch: false},
+      ],
+  );
+  assert.equal(getExamples('// Examples:\n// - not"x"'), [], 'space required after "not"');
+  assert.equal(getExamples('// Examples:\n// -not"x"'), [], 'space required before "not"');
+});
+
+test('example comments - corner cases', () => {
   assert.equal(getExamples('// Examples:\n    // - "blah"\n'), [
     {example: 'blah', shouldMatch: true},
   ]);
@@ -95,8 +120,11 @@ test('details of example comments', () => {
   );
   assert.equal(getExamples('// Examples:'), []);
   assert.equal(getExamples('// Examples:\n// - ""'), [{example: '', shouldMatch: true}]);
-  assert.equal(getExamples('// Examples:\n// - "" '), [{example: '', shouldMatch: true}]);
-
+  assert.equal(
+      getExamples('// Examples:\n// - "" '),
+      [{example: '', shouldMatch: true}],
+      'trailing space is ok',
+  );
   assert.equal(getExamples('// Examples:\n\n// - ""'), [{example: '', shouldMatch: true}]);
 });
 

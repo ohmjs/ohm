@@ -23,7 +23,7 @@ export const ohmWithExamples = ohm.grammar(
     exampleItem
       = spacesNoComment "// - " not? terminal spacesNoNl &"\n"
     
-    not = "not"
+    not = "not" (~"\n" space)+
     spacesNoNl = (~"\n" space)*
     spacesNoComment = (~comment space)*
   }
