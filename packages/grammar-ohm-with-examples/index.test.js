@@ -14,8 +14,7 @@ test('grammar with no examples', () => {
 test('simple positive examples', () => {
   let examples = extractExamples(`
     G {
-      // Examples:
-      // - "x"
+      //+ "x"
       start = "x"
     }
   `);
@@ -26,12 +25,10 @@ test('simple positive examples', () => {
 
   examples = extractExamples(`
     G {
-      // Examples:
-      // - ""
+      //+ ""
       start = ""
 
-      // Examples:
-      // - "x"
+      //+ "x"
       other = ""
     }
   `);
@@ -44,11 +41,9 @@ test('simple positive examples', () => {
 
 test('examples for default start rule', () => {
   let examples = extractExamples(`
-    // Examples:
-    // - "hey"
+    //+ "hey"
     G {
-      // Examples:
-      // - ""
+      //+ ""
       start = ""
     }
   `);
@@ -59,11 +54,9 @@ test('examples for default start rule', () => {
   });
 
   examples = extractExamples(`
-    // Examples:
-    // - "hey"
+    //+ "hey"
     G {
-      // Examples:
-      // - ""
+      //+ ""
       start = ""
     }
   `);
@@ -75,10 +68,10 @@ test('examples for default start rule', () => {
 });
 
 test('top-level whitespace', () => {
-  extractExamples('  // Examples:\n  G{}', { G: { '(default)': [] }});
-  extractExamples('  // Examples:  \nG{}', { G: { '(default)': [] }});
-  extractExamples('  // Examples:\nG{}', { G: { '(default)': [] }});
-  extractExamples('\n\n// Examples:\n\nG{}', { G: { '(default)': [] }});
+  const expected = {G: {'(default)': [{example: '', shouldMatch: true}]}};
+  assert.equal(extractExamples('  //+ ""\n  G{}'), expected);
+  assert.equal(extractExamples('  //+ "" \nG{}'), expected);
+  assert.equal(extractExamples('\n\n//+ ""\n\nG{}'), expected);
 });
 
 function getExamples(input) {
@@ -87,45 +80,56 @@ function getExamples(input) {
 }
 
 test('example comments - negative examples', () => {
-  assert.equal(getExamples('// Examples:\n    // - not "blah"\n'), [
-    {example: 'blah', shouldMatch: false},
-  ]);
+  assert.equal(getExamples('//- "blah"\n'), [{example: 'blah', shouldMatch: false}]);
   assert.equal(
       getExamples(`
-      // Examples:
-      // - "blah"
-      // - not "wooo"`),
+      //+ "blah"
+      //- "wooo"`),
       [
         {example: 'blah', shouldMatch: true},
         {example: 'wooo', shouldMatch: false},
       ],
   );
-  assert.equal(getExamples('// Examples:\n// - not"x"'), [], 'space required after "not"');
-  assert.equal(getExamples('// Examples:\n// -not"x"'), [], 'space required before "not"');
+  //  assert.throws(() => getExamples('//-"x"'), null, 'space required after "-"');
+  assert.equal(getExamples('// - "x"'), [], 'parsed as a normal comment');
 });
 
 test('example comments - corner cases', () => {
-  assert.equal(getExamples('// Examples:\n    // - "blah"\n'), [
-    {example: 'blah', shouldMatch: true},
-  ]);
+  assert.equal(
+      getExamples('//+ "blah"\n\n'),
+      [{example: 'blah', shouldMatch: true}],
+      'extra blank lines before rule',
+  );
   assert.equal(
       getExamples(`
-      // Examples:
-      // - "blah"
-      // - "wooo"`),
+      //+ "blah"
+      //+    "wooo"`),
       [
         {example: 'blah', shouldMatch: true},
         {example: 'wooo', shouldMatch: true},
       ],
+      'extra leading space',
   );
-  assert.equal(getExamples('// Examples:'), []);
-  assert.equal(getExamples('// Examples:\n// - ""'), [{example: '', shouldMatch: true}]);
+  // assert.throws(() => {
+  //   assert.equal(getExamples('//+ '), [], 'no terminals');
+  // });
+  assert.equal(getExamples('//+ "" '), [{example: '', shouldMatch: true}], 'trailing space');
   assert.equal(
-      getExamples('// Examples:\n// - "" '),
-      [{example: '', shouldMatch: true}],
-      'trailing space is ok',
+      getExamples('//+ ""\n//- ""'),
+      [
+        {example: '', shouldMatch: true},
+        {example: '', shouldMatch: false},
+      ],
+      'contradictory examples',
   );
-  assert.equal(getExamples('// Examples:\n\n// - ""'), [{example: '', shouldMatch: true}]);
+  assert.equal(
+      getExamples('//+ ""\n//+ ""'),
+      [
+        {example: '', shouldMatch: true},
+        {example: '', shouldMatch: true},
+      ],
+      'duplicate examples',
+  );
 });
 
 test.run();

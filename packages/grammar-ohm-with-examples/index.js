@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import * as ohm from 'ohm-js';
 
 /*
@@ -7,29 +8,11 @@ import * as ohm from 'ohm-js';
   - add API for testing examples?
  */
 
-export const ohmWithExamples = ohm.grammar(
-    String.raw`
-  OhmWithExamples <: Ohm {
-    grammarsWithExamples = (exampleComments applySyntactic<Grammar>)*
+const grammars = ohm.grammars(fs.readFileSync('./ohm-with-examples.ohm', 'utf-8'), {
+  Ohm: ohm.ohmGrammar,
+});
 
-    Grammar := ident SuperGrammar? "{" (#exampleComments Rule)* "}"
-    exampleComments = (spacesNoComment comment)*
-
-    comment += exampleComment
-
-    exampleComment
-      = "// Examples:" spacesNoNl "\n" nonemptyListOf<exampleItem, "\n">
-    
-    exampleItem
-      = spacesNoComment "// - " not? terminal spacesNoNl &"\n"
-    
-    not = "not" (~"\n" space)+
-    spacesNoNl = (~"\n" space)*
-    spacesNoComment = (~comment space)*
-  }
-`,
-    {Ohm: ohm.ohmGrammar},
-);
+export const ohmWithExamples = grammars.OhmWithExamples;
 
 export const s = ohmWithExamples.createSemantics().addOperation('getRulesWithExamples', {
   grammarsWithExamples(exampleCommentsIter, grammarIter) {
@@ -66,18 +49,22 @@ s.addOperation('examples', {
   exampleComments(_, commentIter) {
     return commentIter.children.flatMap(c => c.examples());
   },
-  exampleComment(_head, _spaces, _nl, exampleItemList) {
-    return exampleItemList.asIteration().children.flatMap(c => c.examples());
+  exampleComment_positive(_, examples) {
+    return examples.examples().map(ex => ({...ex, shouldMatch: true}));
+  },
+  exampleComment_negative(_, examples) {
+    return examples.examples().map(ex => ({...ex, shouldMatch: false}));
+  },
+  examples(_ws, terminalList, _) {
+    return terminalList.asIteration().children.map(t => {
+      return {example: t.terminalChars()};
+    });
   },
   comment_singleLine(_, commentCharIter, _nl) {
     return [];
   },
   comment_multiLine(_, commentCharIter, _nl) {
     return [];
-  },
-  exampleItem(_spaces, _bullet, notOpt, terminal, _spaces2, _nl) {
-    const shouldMatch = notOpt.numChildren > 0 ? false : true;
-    return [{example: terminal.terminalChars(), shouldMatch}];
   },
 });
 
