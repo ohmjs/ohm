@@ -92,3 +92,15 @@ export function extractExamples(grammarDef) {
   }
   return semantics(matchResult).getRulesWithExamples();
 }
+
+export function extractExamplesFlat(grammarDef) {
+  const result = [];
+  for (const [grammarName, examplesByRule] of Object.entries(extractExamples(grammarDef))) {
+    for (const [ruleName, examples] of Object.entries(examplesByRule)) {
+      for (const {example, shouldMatch} of examples) {
+        result.push({grammar: grammarName, rule: ruleName, example, shouldMatch});
+      }
+    }
+  }
+  return result;
+}
