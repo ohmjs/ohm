@@ -1,6 +1,8 @@
+import fs from 'node:fs';
 import {test} from 'uvu';
 import * as assert from 'uvu/assert';
 
+import * as grammars from './grammars.js';
 import {extractExamples} from './index.js';
 
 test('empty', () => {
@@ -130,6 +132,19 @@ test('example comments - corner cases', () => {
       ],
       'duplicate examples',
   );
+});
+
+test('extracted examples', () => {
+  const grammarDef = fs.readFileSync('./ohm-with-examples.ohm', 'utf-8');
+  for (const [grammarName, examplesByRule] of Object.entries(extractExamples(grammarDef))) {
+    for (const [ruleName, examples] of Object.entries(examplesByRule)) {
+      for (const {example, shouldMatch} of examples) {
+        const g = grammars[grammarName];
+        const startRule = ruleName === '(default)' ? undefined : ruleName;
+        assert.is(g.match(example, startRule).succeeded(), shouldMatch, example);
+      }
+    }
+  }
 });
 
 test.run();

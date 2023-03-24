@@ -1,7 +1,7 @@
 {
-  "name": "grammar-ohm-with-examples",
+  "name": "@ohm-js/example-comments",
   "type": "module",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -9,10 +9,12 @@
     "test:watch": "watchlist . --eager -- pnpm test"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Patrick Dubroy <pdubroy@gmail.com>",
+  "license": "MIT",
+  "peerDependencies": {
+    "ohm-js": "^17.0.0"
+  },
   "devDependencies": {
-    "ohm-js": "workspace:^17.0.0",
     "uvu": "^0.5.6",
     "watchlist": "^0.3.1"
   }

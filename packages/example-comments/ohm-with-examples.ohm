@@ -4,7 +4,7 @@
  */
 
 // Example:
-//+ "//+ \"x\"\nG {\n//- ""\nstart = \"x\"}"
+//+ "//+ \"x\"\nG {\n//- \"\"\nstart = \"x\"}"
 OhmWithExamples <: Ohm {
   // The default start rule for Ohm is 'Grammars', which is syntactic rule.
   // When the start rule is a syntactic rule, there's no way to get access to
@@ -24,7 +24,8 @@ OhmWithExamples <: Ohm {
     = "//+" examples  -- positive
     | "//-" examples  -- negative
 
-  examples = spaceNoNl+ nonemptyListOf<terminal, ","> spaceNoNl*
+  examples = spaceNoNl+ nonemptyListOf<terminal, exampleSep> spaceNoNl*
+  exampleSep = "," spaces
 
   exampleCommentPrefix = "//+" | "//-"  
 

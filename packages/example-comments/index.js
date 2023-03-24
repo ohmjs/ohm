@@ -1,5 +1,4 @@
-import fs from 'node:fs';
-import * as ohm from 'ohm-js';
+import {OhmWithExamples} from './grammars.js';
 
 /*
   TODO:
@@ -8,13 +7,7 @@ import * as ohm from 'ohm-js';
   - add API for testing examples?
  */
 
-const grammars = ohm.grammars(fs.readFileSync('./ohm-with-examples.ohm', 'utf-8'), {
-  Ohm: ohm.ohmGrammar,
-});
-
-export const ohmWithExamples = grammars.OhmWithExamples;
-
-export const s = ohmWithExamples.createSemantics().addOperation('getRulesWithExamples', {
+const semantics = OhmWithExamples.createSemantics().addOperation('getRulesWithExamples', {
   grammarsWithExamples(exampleCommentsIter, grammarIter) {
     const result = {};
     for (const [i, child] of Object.entries(grammarIter.children)) {
@@ -36,7 +29,7 @@ export const s = ohmWithExamples.createSemantics().addOperation('getRulesWithExa
   },
 });
 
-s.addOperation('hasExamples', {
+semantics.addOperation('hasExamples', {
   _iter(...children) {
     return children.some(c => c.hasExamples());
   },
@@ -45,7 +38,7 @@ s.addOperation('hasExamples', {
   },
 });
 
-s.addOperation('examples', {
+semantics.addOperation('examples', {
   exampleComments(_, commentIter) {
     return commentIter.children.flatMap(c => c.examples());
   },
@@ -57,7 +50,7 @@ s.addOperation('examples', {
   },
   examples(_ws, terminalList, _) {
     return terminalList.asIteration().children.map(t => {
-      return {example: t.terminalChars()};
+      return {example: JSON.parse(t.sourceString)};
     });
   },
   comment_singleLine(_, commentCharIter, _nl) {
@@ -68,19 +61,19 @@ s.addOperation('examples', {
   },
 });
 
-s.addOperation('terminalChars', {
+semantics.addOperation('terminalChars', {
   terminal(_open, terminalCharIter, _close) {
     return terminalCharIter.sourceString;
   },
 });
 
-s.addOperation('grammarName', {
+semantics.addOperation('grammarName', {
   Grammar(name, _, _open, exampleCommentsIter, ruleIter, _close) {
     return name.sourceString;
   },
 });
 
-s.addOperation('ruleName', {
+semantics.addOperation('ruleName', {
   Rule_define(ident, _formals, _desc, _, _body) {
     return ident.sourceString;
   },
@@ -93,9 +86,9 @@ s.addOperation('ruleName', {
 });
 
 export function extractExamples(grammarDef) {
-  const matchResult = ohmWithExamples.match(grammarDef, 'grammarsWithExamples');
+  const matchResult = OhmWithExamples.match(grammarDef, 'grammarsWithExamples');
   if (matchResult.failed()) {
     throw new Error(matchResult.message);
   }
-  return s(matchResult).getRulesWithExamples();
+  return semantics(matchResult).getRulesWithExamples();
 }
