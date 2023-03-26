@@ -27,13 +27,31 @@ export const grammarsSource = String.raw`
       = "//+" examples  -- positive
       | "//-" examples  -- negative
 
-    examples = spaceNoNl+ nonemptyListOf<terminal, exampleSep> spaceNoNl*
+    examples = spaceNoNl+ nonemptyListOf<jsonString, exampleSep> spaceNoNl*
     exampleSep = "," spaces
 
     exampleCommentPrefix = "//+" | "//-"  
 
     spaceNoNl = ~"\n" space
     spacesNoExampleComment = (~exampleCommentPrefix space)*
+
+    jsonString = "\"" jsonChar* "\""
+
+    jsonChar
+      = jsonEscape
+      | ~"\\" ~"\"" "\u{0020}".."\u{10FFFF}"
+
+    //+ "\\n", "\\u1234"
+    jsonEscape  (a JSON escape sequence)
+      = "\\\""
+      | "\\\\"
+      | "\\/"
+      | "\\b"
+      | "\\f"
+      | "\\n"
+      | "\\r"
+      | "\\t"
+      | "\\u" hexDigit hexDigit hexDigit hexDigit  -- unicodeEscape
   }
 
   /*
@@ -96,8 +114,8 @@ semantics.addOperation('examples', {
   exampleComment_negative(_, examples) {
     return examples.examples().map(ex => ({...ex, shouldMatch: false}));
   },
-  examples(_ws, terminalList, _) {
-    return terminalList.asIteration().children.map(t => {
+  examples(_ws, jsonStringList, _) {
+    return jsonStringList.asIteration().children.map(t => {
       return {example: JSON.parse(t.sourceString)};
     });
   },
@@ -127,8 +145,14 @@ semantics.addOperation('ruleName', {
   },
 });
 
-export function extractExamples(grammarDef) {
-  const matchResult = grammars.OhmWithExamples.match(grammarDef, 'grammarsWithExamples');
+/** @typedef {{grammar: string, rule: string, example: string, shouldMatch: boolean}} Example */
+
+/**
+ * @param {string} grammarsDef - A string containing one or more grammar definitions.
+ * @return {[Example]}
+ */
+export function extractExamples(grammarsDef) {
+  const matchResult = grammars.OhmWithExamples.match(grammarsDef, 'grammarsWithExamples');
   if (matchResult.failed()) {
     throw new Error(matchResult.message);
   }
