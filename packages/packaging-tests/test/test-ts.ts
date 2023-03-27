@@ -20,8 +20,11 @@ test('Main exports (TS)', async () => {
 test('Extras exports (TS)', async () => {
   //  assert.equal(typeof extras.VisitorFamily, 'function');
   assert.equal(typeof extras.toAST, 'function');
-  assert.equal(typeof extras.extractExamples, 'function');
   assert.ok(Object.keys(extras).length === 6);
+
+  const ex: {grammar: string; rule: string; example: string; shouldMatch: boolean} =
+    extras.extractExamples('//+ ""\nG{}')[0];
+  assert.equal(ex.grammar, 'G');
 
   const exports = await import('ohm-js/extras');
   assert.equal((exports as any).default, undefined, 'there should be no default export');
