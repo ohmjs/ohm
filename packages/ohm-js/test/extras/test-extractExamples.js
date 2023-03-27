@@ -1,24 +1,22 @@
-import {test} from 'uvu';
-import * as assert from 'uvu/assert';
-
+import test from 'ava';
 import {extractExamples, grammars, grammarsSource} from '../../extras/extractExamples.js';
 
-test('empty', () => {
-  assert.equal(extractExamples(''), []);
+test('empty', t => {
+  t.deepEqual(extractExamples(''), []);
 });
 
-test('grammar with no examples', () => {
-  assert.equal(extractExamples('G { }'), []);
+test('grammar with no examples', t => {
+  t.deepEqual(extractExamples('G { }'), []);
 });
 
-test('simple positive examples', () => {
+test('simple positive examples', t => {
   let examples = extractExamples(`
     G {
       //+ "x"
       start = "x"
     }
   `);
-  assert.equal(examples, [{grammar: 'G', rule: 'start', example: 'x', shouldMatch: true}]);
+  t.deepEqual(examples, [{grammar: 'G', rule: 'start', example: 'x', shouldMatch: true}]);
 
   examples = extractExamples(`
     G {
@@ -29,13 +27,13 @@ test('simple positive examples', () => {
       other = ""
     }
   `);
-  assert.equal(examples, [
+  t.deepEqual(examples, [
     {grammar: 'G', rule: 'start', example: '', shouldMatch: true},
     {grammar: 'G', rule: 'other', example: 'x', shouldMatch: true},
   ]);
 });
 
-test('examples for default start rule', () => {
+test('examples for default start rule', t => {
   let examples = extractExamples(`
     //+ "hey"
     G {
@@ -43,7 +41,7 @@ test('examples for default start rule', () => {
       start = ""
     }
   `);
-  assert.equal(examples, [
+  t.deepEqual(examples, [
     {grammar: 'G', rule: '', example: 'hey', shouldMatch: true},
     {grammar: 'G', rule: 'start', example: '', shouldMatch: true},
   ]);
@@ -55,17 +53,17 @@ test('examples for default start rule', () => {
       start = ""
     }
   `);
-  assert.equal(examples, [
+  t.deepEqual(examples, [
     {grammar: 'G', rule: '', example: 'hey', shouldMatch: true},
     {grammar: 'G', rule: 'start', example: '', shouldMatch: true},
   ]);
 });
 
-test('top-level whitespace', () => {
+test('top-level whitespace', t => {
   const expected = [{grammar: 'G', rule: '', example: '', shouldMatch: true}];
-  assert.equal(extractExamples('  //+ ""\n  G{}'), expected);
-  assert.equal(extractExamples('  //+ "" \nG{}'), expected);
-  assert.equal(extractExamples('\n\n//+ ""\n\nG{}'), expected);
+  t.deepEqual(extractExamples('  //+ ""\n  G{}'), expected);
+  t.deepEqual(extractExamples('  //+ "" \nG{}'), expected);
+  t.deepEqual(extractExamples('\n\n//+ ""\n\nG{}'), expected);
 });
 
 function getExamples(input) {
@@ -74,9 +72,9 @@ function getExamples(input) {
   });
 }
 
-test('example comments - negative examples', () => {
-  assert.equal(getExamples('//- "blah"\n'), [{example: 'blah', shouldMatch: false}]);
-  assert.equal(
+test('example comments - negative examples', t => {
+  t.deepEqual(getExamples('//- "blah"\n'), [{example: 'blah', shouldMatch: false}]);
+  t.deepEqual(
       getExamples(`
       //+ "blah"
       //- "wooo"`),
@@ -85,17 +83,17 @@ test('example comments - negative examples', () => {
         {example: 'wooo', shouldMatch: false},
       ],
   );
-  //  assert.throws(() => getExamples('//-"x"'), null, 'space required after "-"');
-  assert.equal(getExamples('// - "x"'), [], 'parsed as a normal comment');
+  //  t.throws(() => getExamples('//-"x"'), null, 'space required after "-"');
+  t.deepEqual(getExamples('// - "x"'), [], 'parsed as a normal comment');
 });
 
-test('example comments - corner cases', () => {
-  assert.equal(
+test('example comments - corner cases', t => {
+  t.deepEqual(
       getExamples('//+ "blah"\n\n'),
       [{example: 'blah', shouldMatch: true}],
       'extra blank lines before rule',
   );
-  assert.equal(
+  t.deepEqual(
       getExamples(`
       //+ "blah"
       //+    "wooo"`),
@@ -105,11 +103,11 @@ test('example comments - corner cases', () => {
       ],
       'extra leading space',
   );
-  // assert.throws(() => {
-  //   assert.equal(getExamples('//+ '), [], 'no terminals');
+  // t.throws(() => {
+  //   t.deepEqual(getExamples('//+ '), [], 'no terminals');
   // });
-  assert.equal(getExamples('//+ "" '), [{example: '', shouldMatch: true}], 'trailing space');
-  assert.equal(
+  t.deepEqual(getExamples('//+ "" '), [{example: '', shouldMatch: true}], 'trailing space');
+  t.deepEqual(
       getExamples('//+ ""\n//- ""'),
       [
         {example: '', shouldMatch: true},
@@ -117,7 +115,7 @@ test('example comments - corner cases', () => {
       ],
       'contradictory examples',
   );
-  assert.equal(
+  t.deepEqual(
       getExamples('//+ ""\n//+ ""'),
       [
         {example: '', shouldMatch: true},
@@ -127,12 +125,10 @@ test('example comments - corner cases', () => {
   );
 });
 
-test('extracted examples', () => {
+test('extracted examples', t => {
   for (const {grammar, rule, example, shouldMatch} of extractExamples(grammarsSource)) {
     const g = grammars[grammar];
     const startRule = rule === '' ? undefined : rule;
-    assert.is(g.match(example, startRule).succeeded(), shouldMatch, example);
+    t.is(g.match(example, startRule).succeeded(), shouldMatch, `${example}`);
   }
 });
-
-test.run();

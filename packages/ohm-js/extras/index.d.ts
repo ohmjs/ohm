@@ -30,7 +30,6 @@ export function getLineAndColumnMessage(
   ...ranges: number[][]
 ): string;
 
-
 interface Example {
   grammar: string;
   rule: string;
