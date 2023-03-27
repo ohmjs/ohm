@@ -29,3 +29,18 @@ export function getLineAndColumnMessage(
   offset: number,
   ...ranges: number[][]
 ): string;
+
+interface Example {
+  grammar: string;
+  rule: string;
+  example: string;
+  shouldMatch: boolean;
+}
+
+/**
+ * Given a string containing one or more grammar definitions, returns an array
+ * of examples extracted from the comments.
+ * Positive examples look like `//+ "one", "two"` and negative examples like
+ * `//- "shouldn't match"`. The examples text is a JSON string.
+ */
+export function extractExamples(grammarsDef: string): [Example];

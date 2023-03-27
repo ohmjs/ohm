@@ -1,0 +1,46 @@
+/*
+  Superset of the Ohm grammar that allows examples to be embedded in comments.
+  Any valid Ohm grammar will also be matched by this grammar.
+ */
+
+// Example:
+//+ "//+ \"x\"\nG {\n//- \"\"\nstart = \"x\"}"
+OhmWithExamples <: Ohm {
+  // The default start rule for Ohm is 'Grammars', which is syntactic rule.
+  // When the start rule is a syntactic rule, there's no way to get access to
+  // leading space (including comments). So, for this grammar to be useful,
+  // you have to explicit use this rule as the start rule.
+  grammarsWithExamples = (exampleComments applySyntactic<Grammar>)*
+
+  Grammar := ident SuperGrammar? "{" (#exampleComments Rule)* "}"
+
+  exampleComments = (spacesNoExampleComment exampleComment)*
+
+  // Examples:
+  //+ "//+ \"blah\""
+  //+ "//- \"one\", \"two\""
+  //- "// - \"x\", "//-\"x\"
+  exampleComment
+    = "//+" examples  -- positive
+    | "//-" examples  -- negative
+
+  examples = spaceNoNl+ nonemptyListOf<terminal, exampleSep> spaceNoNl*
+  exampleSep = "," spaces
+
+  exampleCommentPrefix = "//+" | "//-"  
+
+  spaceNoNl = ~"\n" space
+  spacesNoExampleComment = (~exampleCommentPrefix space)*
+}
+
+/*
+  A stricter version of the grammar that prevents many malformed example
+  comments from being parsed as regular comments.
+ */
+OhmWithExamplesStrict <: OhmWithExamples {
+  // Redefine 'comment' to avoid malformed example comments from silently
+  // being parsed as regular comments.
+  comment :=
+    | ~exampleCommentPrefix comment_singleLine
+    | comment_multiLine
+}

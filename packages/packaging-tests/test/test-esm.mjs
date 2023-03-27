@@ -21,7 +21,8 @@ test('Main exports (ESM)', async () => {
 test('Extras exports (ESM)', async () => {
   assert.equal(typeof extras.VisitorFamily, 'function');
   assert.equal(typeof extras.toAST, 'function');
-  assert.ok(Object.keys(extras).length === 5);
+  assert.equal(typeof extras.extractExamples, 'function');
+  assert.ok(Object.keys(extras).length === 6);
 
   const exports = await import('ohm-js/extras');
   assert.not('default' in exports, 'there should be no default export');
