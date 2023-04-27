@@ -9,13 +9,7 @@ export const grammarsSource = String.raw`
   // Example:
   //+ "//+ \"x\"\nG {\n//- \"\"\nstart = \"x\"}"
   OhmWithExamples <: Ohm {
-    // The default start rule for Ohm is 'Grammars', which is syntactic rule.
-    // When the start rule is a syntactic rule, there's no way to get access to
-    // leading space (including comments). So, for this grammar to be useful,
-    // you have to explicit use this rule as the start rule.
-    grammarsWithExamples = (exampleComments applySyntactic<Grammar>)*
-
-    Grammar := ident SuperGrammar? "{" (#exampleComments Rule)* "}"
+    Grammar := ident SuperGrammar? "{" (#exampleComments Rule)* #exampleComments "}"
 
     exampleComments = (spacesNoExampleComment exampleComment)*
 
@@ -79,19 +73,10 @@ const semantics = grammars.OhmWithExamples.createSemantics().addOperation('hasEx
 });
 
 semantics.addOperation('examples', {
-  grammarsWithExamples(exampleCommentsIter, grammarIter) {
-    const result = [];
-    for (const [i, child] of Object.entries(grammarIter.children)) {
-      if (exampleCommentsIter.hasExamples()) {
-        const defaultExamples = exampleCommentsIter.child(i).examples();
-        const grammar = child.grammarName();
-        result.push(...defaultExamples.map(ex => ({...ex, grammar, rule: ''})));
-      }
-      result.push(...child.examples());
-    }
-    return result;
+  Grammars(grammarIter) {
+    return grammarIter.children.flatMap(c => c.examples());
   },
-  Grammar(name, _, _open, exampleCommentsIter, ruleIter, _close) {
+  Grammar(name, _, _open, exampleCommentsIter, ruleIter, trailingCommentsIter, _close) {
     const result = [];
     const grammar = this.grammarName();
     for (let i = 0; i < ruleIter.numChildren; i++) {
@@ -102,6 +87,10 @@ semantics.addOperation('examples', {
       const augmentedExamples = examples.map(ex => ({...ex, grammar, rule}));
 
       result.push(...augmentedExamples);
+    }
+    if (trailingCommentsIter.hasExamples()) {
+      const defaultExamples = trailingCommentsIter.examples();
+      result.push(...defaultExamples.map(ex => ({...ex, grammar, rule: ''})));
     }
     return result;
   },
@@ -128,7 +117,7 @@ semantics.addOperation('examples', {
 });
 
 semantics.addOperation('grammarName', {
-  Grammar(name, _, _open, exampleCommentsIter, ruleIter, _close) {
+  Grammar(name, _, _open, exampleCommentsIter, ruleIter, trailingCommentsIter, _close) {
     return name.sourceString;
   },
 });
@@ -152,7 +141,7 @@ semantics.addOperation('ruleName', {
  * @return {[Example]}
  */
 export function extractExamples(grammarsDef) {
-  const matchResult = grammars.OhmWithExamples.match(grammarsDef, 'grammarsWithExamples');
+  const matchResult = grammars.OhmWithExamples.match(grammarsDef);
   if (matchResult.failed()) {
     throw new Error(matchResult.message);
   }

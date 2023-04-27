@@ -35,35 +35,32 @@ test('simple positive examples', t => {
 
 test('examples for default start rule', t => {
   let examples = extractExamples(`
-    //+ "hey"
     G {
       //+ ""
       start = ""
+      //+ "hey"
     }
   `);
   t.deepEqual(examples, [
-    {grammar: 'G', rule: '', example: 'hey', shouldMatch: true},
     {grammar: 'G', rule: 'start', example: '', shouldMatch: true},
+    {grammar: 'G', rule: '', example: 'hey', shouldMatch: true},
   ]);
 
   examples = extractExamples(`
-    //+ "hey"
+    //+ ""
     G {
-      //+ ""
       start = ""
+      //+ "hey"
     }
   `);
-  t.deepEqual(examples, [
-    {grammar: 'G', rule: '', example: 'hey', shouldMatch: true},
-    {grammar: 'G', rule: 'start', example: '', shouldMatch: true},
-  ]);
+  t.deepEqual(examples, [{grammar: 'G', rule: '', example: 'hey', shouldMatch: true}]);
 });
 
-test('top-level whitespace', t => {
+test('whitespace in trailing example comments', t => {
   const expected = [{grammar: 'G', rule: '', example: '', shouldMatch: true}];
-  t.deepEqual(extractExamples('  //+ ""\n  G{}'), expected);
-  t.deepEqual(extractExamples('  //+ "" \nG{}'), expected);
-  t.deepEqual(extractExamples('\n\n//+ ""\n\nG{}'), expected);
+  t.deepEqual(extractExamples('G{  //+ ""\n  }'), expected);
+  t.deepEqual(extractExamples('G{  //+ "" \n}'), expected);
+  t.deepEqual(extractExamples('G{\n\n//+ ""\n\n}'), expected);
 });
 
 function getExamples(input) {
