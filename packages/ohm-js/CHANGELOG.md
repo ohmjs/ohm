@@ -1,5 +1,11 @@
 # Changelog
 
+## v17.1.0 - Apr 27, 2023
+
+### New features:
+
+- Added `extractExamples` to the `extras` module, which can extract example inputs — written with a special comment syntax — from grammar definitions.
+
 ## v17.0.4 - Mar 4, 2023
 
 ### Fixes
