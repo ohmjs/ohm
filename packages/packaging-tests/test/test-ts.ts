@@ -23,7 +23,7 @@ test('Extras exports (TS)', async () => {
   assert.ok(Object.keys(extras).length === 6);
 
   const ex: {grammar: string; rule: string; example: string; shouldMatch: boolean} =
-    extras.extractExamples('//+ ""\nG{}')[0];
+    extras.extractExamples('G{//+ ""\n}')[0];
   assert.equal(ex.grammar, 'G');
 
   const exports = await import('ohm-js/extras');
