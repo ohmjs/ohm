@@ -40,5 +40,10 @@
     "src",
     "!**/*.test.*",
     "!**/testdata/**"
-  ]
+  ],
+  "dependencies": {
+    "@pkgjs/parseargs": "^0.11.0",
+    "ecmarkup": "^17.0.0",
+    "jsdom": "^21.1.1"
+  }
 }

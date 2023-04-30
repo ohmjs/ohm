@@ -2,9 +2,9 @@ License information
 ===================
 
 The .grammar files in this directory are taken from
-https://github.com/rbuckton/grammarkdown whose original license is below.
-These are almost certainly derivative work from the ECMA-262 spec, whose
-license is also included below.
+https://github.com/rbuckton/grammarkdown and https://tc39.es/ecma262/
+whose original license is below.  These are almost certainly derivative work
+from the ECMA-262 spec, whose license is also included below.
 
 grammarkdown
 ------------
