@@ -1,5 +1,8 @@
 {
-  "replacements": [
+  "reservedWords": [
+    "ReservedWords"
+  ],
+  "substitutions": [
     {
       "name": "unicodeIDStart",
       "override": "letter /* fixme */"

@@ -27,6 +27,13 @@ function safelyReplace(str, pattern, replacement) {
   return str.replace(pattern, replacement);
 }
 
+const lexicalRuleName = str => str[0].toLowerCase() + str.slice(1);
+const syntacticRuleName = str => {
+  assert(str[0] === str[0].toUpperCase());
+  return str;
+};
+
+let ruleOverrides = {};
 /*
   Allows particular rule bodies to be overridden, by specifying either:
 
@@ -34,216 +41,32 @@ function safelyReplace(str, pattern, replacement) {
   2. a function (rhs: Node, defaultBody: string) => string, where the function
      result will be used as the rule body.
  */
-function mkRuleOverrides(config) {
+function mkRuleOverrides(substitutions) {
   const overrides = {};
-  for (const replacement of config.replacements) {
-    const keys = Object.keys(replacement)
+  for (const substitution of substitutions) {
+    const keys = Object.keys(substitution)
     if (keys.includes('override')) {
-      overrides[replacement.name] = replacement.override;
+      overrides[substitution.name] = substitution.override;
       continue;
     }
     if (keys.includes('pattern') && keys.includes('replacement')) {
       let postlude = '';
       if (keys.includes('postlude')) {
-        postlude = replacement.postlude
+        postlude = substitution.postlude
       }
-      overrides[replacement.name] = (rhs, defaultBody) => (safelyReplace(defaultBody, replacement.pattern, replacement.replacement) + postlude)
+      overrides[substitution.name] = (rhs, defaultBody) => (safelyReplace(defaultBody, substitution.pattern, substitution.replacement) + postlude)
     }
   }
   return overrides
 }
 
-let ruleOverrides = {};
-// const ruleOverrides = {
-//   unicodeIDStart: 'letter /* fixme */',
-//   unicodeIDContinue: 'letter | digit /* fixme */',
-//   sourceCharacter: 'any',
-//   postAsteriskCommentChars(rhs, defaultBody) {
-//     return safelyReplace(
-//       defaultBody,
-//       '| "*" postAsteriskCommentChars?',
-//       '| "*" ~"/" postAsteriskCommentChars?'
-//     );
-//   },
-//   LeftHandSideExpression(rhs, defaultBody) {
-//     return safelyReplace(
-//       defaultBody,
-//       '| NewExpression<guardYield, guardAwait>\n    | CallExpression<guardYield, guardAwait>',
-//       '| CallExpression<guardYield, guardAwait>\n    | NewExpression<guardYield, guardAwait>'
-//     );
-//   },
-//   PropertyDefinition(rhs, defaultBody) {
-//     // MethodDefinition must come before IdentifierReference.
-//     return safelyReplace(
-//       defaultBody,
-//       '| IdentifierReference<guardYield, guardAwait> -- alt1\n    | CoverInitializedName<guardYield, guardAwait> -- alt2\n    | PropertyName<guardYield, guardAwait> ":" AssignmentExpression<withIn, guardYield, guardAwait> -- alt3\n    | MethodDefinition<guardYield, guardAwait> -- alt4\n    | "..." AssignmentExpression<withIn, guardYield, guardAwait> -- alt5',
-//       '| "..." AssignmentExpression<withIn, guardYield, guardAwait> -- alt5\n    | MethodDefinition<guardYield, guardAwait> -- alt4\n    | PropertyName<guardYield, guardAwait> ":" AssignmentExpression<withIn, guardYield, guardAwait> -- alt3\n    | IdentifierReference<guardYield, guardAwait> -- alt1\n    | CoverInitializedName<guardYield, guardAwait> -- alt2'
-//     );
-//   },
-//   EmptyStatement(rhs, defaultBody) {
-//     // Need this rather than `#sc` so that EmptyStatement is not nullable.
-//     return `";" // note: this semicolon eats newlines`;
-//   },
-//   AssignmentExpression(rhs, defaultBody) {
-//     // ArrowFunction must come before ConditionalExpression, because the arrow function parameters
-//     // will parse as a parenthesized expression.
-//     // Both LeftHandSideExpression alternatives must also come before ConditionalExpression.
-//     return safelyReplace(
-//       defaultBody,
-//       '| ConditionalExpression<guardIn, guardYield, guardAwait> -- alt1\n    | guardYield YieldExpression<guardIn, guardAwait> -- alt2\n    | ArrowFunction<guardIn, guardYield, guardAwait> -- alt3\n    | AsyncArrowFunction<guardIn, guardYield, guardAwait> -- alt4\n    | LeftHandSideExpression<guardYield, guardAwait> "=" AssignmentExpression<guardIn, guardYield, guardAwait>  -- alt5\n    | LeftHandSideExpression<guardYield, guardAwait> AssignmentOperator AssignmentExpression<guardIn, guardYield, guardAwait> -- alt6',
-//       '| AsyncArrowFunction<guardIn, guardYield, guardAwait> -- alt4\n    | ArrowFunction<guardIn, guardYield, guardAwait> -- alt3\n    | LeftHandSideExpression<guardYield, guardAwait> "=" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt5\n    | LeftHandSideExpression<guardYield, guardAwait> AssignmentOperator AssignmentExpression<guardIn, guardYield, guardAwait> -- alt6\n    | ConditionalExpression<guardIn, guardYield, guardAwait> -- alt1\n    | guardYield YieldExpression<guardIn, guardAwait> -- alt2'
-//     );
-//   },
-//   FormalParameters(rhs, defaultBody) {
-//     return safelyReplace(
-//       defaultBody,
-//       '| /* empty */ -- alt1\n    | FunctionRestParameter<guardYield, guardAwait> -- alt2\n    | FormalParameterList<guardYield, guardAwait> -- alt3\n    | FormalParameterList<guardYield, guardAwait> "," -- alt4\n    | FormalParameterList<guardYield, guardAwait> "," FunctionRestParameter<guardYield, guardAwait> -- alt5',
-//       '| FunctionRestParameter<guardYield, guardAwait> -- alt2\n    | FormalParameterList<guardYield, guardAwait> -- alt3\n    | FormalParameterList<guardYield, guardAwait> "," -- alt4\n    | FormalParameterList<guardYield, guardAwait> "," FunctionRestParameter<guardYield, guardAwait> -- alt5\n    | /* empty */ -- alt1'
-//     );
-//   },
-//   MemberExpression(rhs, defaultBody) {
-//     // The recursive MemberExpression application must come before PrimaryExpression.
-//     return safelyReplace(
-//       defaultBody,
-//       '| PrimaryExpression<guardYield, guardAwait> -- alt1\n    | SuperProperty<guardYield, guardAwait> -- alt5\n    | MetaProperty -- alt6\n    | "new" MemberExpression<guardYield, guardAwait> Arguments<guardYield, guardAwait> -- alt7',
-//       '| "new" MemberExpression<guardYield, guardAwait> Arguments<guardYield, guardAwait> -- alt7\n    | PrimaryExpression<guardYield, guardAwait> -- alt1\n    | SuperProperty<guardYield, guardAwait> -- alt5\n    | MetaProperty -- alt6'
-//     );
-//   },
-//   UnaryExpression(rhs, defaultBody) {
-//     // Move PostfixExpression to the very end.
-//     return (
-//       safelyReplace(defaultBody, '    | UpdateExpression<guardYield, guardAwait> -- alt1\n', '') +
-//       '\n    | UpdateExpression<guardYield, guardAwait> -- alt1'
-//     );
-//   },
-//   ConditionalExpression(rhs, defaultBody) {
-//     // The first alternative is a subset of the second one, so flip the order.
-//     return safelyReplace(
-//       defaultBody,
-//       '| ShortCircuitExpression<guardIn, guardYield, guardAwait> -- alt1\n    | ShortCircuitExpression<guardIn, guardYield, guardAwait> "?" AssignmentExpression<withIn, guardYield, guardAwait> ":" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt2',
-//       '| ShortCircuitExpression<guardIn, guardYield, guardAwait> "?" AssignmentExpression<withIn, guardYield, guardAwait> ":" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt2\n    | ShortCircuitExpression<guardIn, guardYield, guardAwait> -- alt1'
-//     );
-//   },
-//   RelationalExpression(rhs, defaultBody) {
-//     // First, put move the left recursive application above the ShiftExpression. (It's not
-//     // properly recognized as left recursive due to the `guardIn`. Then, move the `guardIn`
-//     // to be right before the `"in"` terminal.
-//     return safelyReplace(
-//       defaultBody,
-//       '| ShiftExpression<guardYield, guardAwait> -- alt1\n    | guardIn RelationalExpression<withIn, guardYield, guardAwait> "in" ShiftExpression<guardYield, guardAwait> -- alt7',
-//       '| RelationalExpression<withIn, guardYield, guardAwait> guardIn "in" ShiftExpression<guardYield, guardAwait> -- alt7\n    | ShiftExpression<guardYield, guardAwait> -- alt1'
-//     );
-//   },
-//   identifierPart(rhs, defaultBody) {
-//     // FIXME: Make sure these produce something useful.
-//     return safelyReplace(
-//       defaultBody,
-//       // '| "" /* FIXME <ZWNJ> */ -- alt5\n    | "" /* FIXME <ZWJ> */ -- alt6',
-//       '| "" /* FIXME <ZWNJ> */ -- alt4\n    | "" /* FIXME <ZWJ> */ -- alt5',
-//       ''
-//     );
-//   },
-//   numericLiteral(rhs, defaultBody) {
-//     // Move decimalLiteral to the very end.
-//     return safelyReplace(defaultBody, '    | decimalLiteral -- alt1', '') + '\n    | decimalLiteral -- alt1';
-//   },
-//   // FormalParameterList(rhs, defaultBody) {
-//   //   // alt2 is strictly a subset of alt3, so swap the order.
-//   //   return safelyReplace(
-//   //     defaultBody,
-//   //     '| FormalsList<guardYield> -- alt2\n    | FormalsList<guardYield> "," FunctionRestParameter<guardYield> -- alt3',
-//   //     '| FormalsList<guardYield> "," FunctionRestParameter<guardYield> -- alt3\n    | FormalsList<guardYield> -- alt2'
-//   //   );
-//   // },
-//   PostfixExpression(rhs, defaultBody) {
-//     // alt1 is strictly a subset of the following two alternatives, so put it at the end.
-//     return safelyReplace(
-//       defaultBody,
-//       '| LeftHandSideExpression<guardYield> -- alt1\n    | LeftHandSideExpression<guardYield> ~lineTerminator "++" -- alt2\n    | LeftHandSideExpression<guardYield> ~lineTerminator "--" -- alt3',
-//       '| LeftHandSideExpression<guardYield> ~lineTerminator "++" -- alt2\n    | LeftHandSideExpression<guardYield> ~lineTerminator "--" -- alt3\n    | LeftHandSideExpression<guardYield> -- alt1'
-//     );
-//   },
-//   StatementList(rhs, defaultBody) {
-//     // Change from recursive to iterative.
-//     return safelyReplace(
-//       defaultBody,
-//       '| StatementList<guardYield, guardReturn> StatementListItem<guardYield, guardReturn> -- alt2\n    | StatementListItem<guardYield, guardReturn> -- alt1',
-//       '| StatementListItem<guardYield, guardReturn>+'
-//     );
-//   },
-//   StatementList(rhs, defaultBody) {
-//     // Change from recursive to iterative.
-//     return safelyReplace(
-//       defaultBody,
-//       '| StatementList<guardYield, guardAwait, guardReturn> StatementListItem<guardYield, guardAwait, guardReturn> -- alt2\n    | StatementListItem<guardYield, guardAwait, guardReturn> -- alt1',
-//       '| StatementListItem<guardYield, guardAwait, guardReturn>+'
-//     );
-//   },
-//   ModuleItemList(rhs, defaultBody) {
-//     // Change from recursive to iterative.
-//     return safelyReplace(
-//       defaultBody,
-//       '| ModuleItemList ModuleItem -- alt2\n    | ModuleItem -- alt1',
-//       '| ModuleItem+'
-//     );
-//   },
-//   singleLineCommentChars(rhs, defaultBody) {
-//     // Change from recursive to iterative.
-//     return safelyReplace(
-//       defaultBody,
-//       '| singleLineCommentChar singleLineCommentChars? -- alt1',
-//       '| singleLineCommentChar+'
-//     );
-//   },
-//   doubleStringCharacters(rhs, defaultBody) {
-//     // Change from recursive to iterative.
-//     return safelyReplace(
-//       defaultBody,
-//       '| doubleStringCharacter doubleStringCharacters? -- alt1',
-//       '| doubleStringCharacter+'
-//     );
-//   },
-//   singleStringCharacters(rhs, defaultBody) {
-//     // Change from recursive to iterative.
-//     return safelyReplace(
-//       defaultBody,
-//       '| singleStringCharacter singleStringCharacters? -- alt1',
-//       '| singleStringCharacter+'
-//     );
-//   },
-//   templateCharacters(rhs, defaultBody) {
-//     // Change from recursive to iterative.
-//     return safelyReplace(
-//       defaultBody,
-//       '| templateCharacter templateCharacters? -- alt1',
-//       '| templateCharacter+'
-//     );
-//   },
-//   multiLineCommentChars(rhs, defaultBody) {
-//     // Change from recursive to iterative.
-//     return safelyReplace(
-//       defaultBody,
-//       '| multiLineNotAsteriskChar multiLineCommentChars? -- alt1\n    | "*" postAsteriskCommentChars? -- alt2',
-//       '(~"*/" sourceCharacter)*'
-//     );
-//   }
-// };
-
-const lexicalRuleName = str => str[0].toLowerCase() + str.slice(1);
-const syntacticRuleName = str => {
-  assert(str[0] === str[0].toUpperCase());
-  return str;
-};
-
+let reservedWordProductions = [];
 // All productions (using the source grammar naming scheme) that are define lists of
 // reserved words. We modify these to ensure that they don't match against valid identifiers
 // that happen to have a keyword as a prefix — e.g., `class` matching `classification`.
-const reservedWordProductions = [
-  'Keyword',
-  'FutureReservedWord',
-  'NullLiteral',
-  'BooleanLiteral'
-];
+function mkReservedWordProductions(productions) {
+  return productions;
+}
 
 // Converts all terminals in the rule body to rule applications.
 // E.g., `"blah" | "blarg"` => `blah | blarg`.
@@ -322,7 +145,7 @@ semantics.addOperation(
       Productions(productionIter) {
         const rules = productionIter.children.map(c => c.toOhm());
         for (const param of new Set(this.allParameters)) {
-          rules.push(...[`with${param} = /* fixme */`, `no${param} = /* fixme */`, `without${param} = /* fixme */`]);
+          rules.push(...[`with${param} = /* fixme */`, `no${param} = ~any /* is this right? */`]);
         }
         const prettyRules = [...rules].join('\n\n  ');
         const indentedAdditionalRules = this.getAdditionalRules().map(str => `  ${str}`);
@@ -460,7 +283,7 @@ semantics.addOperation(
         return param.toOhm();
       },
       argument_unset(_, param) {
-        return `without${param.sourceString}`;
+        return `no${param.sourceString}`;
       },
       butNotCondition_basic(_, basicTerm) {
         return `~${basicTerm.toOhm()}`;
@@ -637,9 +460,9 @@ function getOhmArgs(root, ruleName, argumentArr) {
       case 'pass':
         return `guard${paramName}`;
       case 'unset':
-        return `without${paramName}`;
+      default:
+        return `no${paramName}`;
     }
-    return `no${paramName}`;
   });
 }
 
@@ -761,7 +584,13 @@ function addContext(semantics, getActions) {
   const inputFilename = process.argv[3];
   if (process.argv.length > 4) {
     const overrideConfig = JSON.parse(readFileSync(process.argv[4], { encoding: 'utf-8'}));
-    ruleOverrides = mkRuleOverrides(overrideConfig);
+    if (overrideConfig.substitutions) {
+      ruleOverrides = mkRuleOverrides(overrideConfig.substitutions);
+    }
+    if (overrideConfig.reservedWords) {
+      reservedWordProductions = mkReservedWordProductions(overrideConfig.reservedWords)
+    }
+
   }
 
   const result = grammarkdown.match(readFileSync(inputFilename, 'utf-8'));
