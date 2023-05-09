@@ -72,10 +72,6 @@ function mkReservedWordProductions(productions) {
 // E.g., `"blah" | "blarg"` => `blah | blarg`.
 const terminalsToRules = ohmString => ohmString.replace(/"/g, '');
 
-// Add a rule override for each of the reserved word productions.
-for (const prod of reservedWordProductions) {
-  ruleOverrides[lexicalRuleName(prod)] = (rhs, defaultBody) => terminalsToRules(defaultBody);
-}
 
 const PRELUDE = raw`
   Start = Script
@@ -294,11 +290,12 @@ semantics.addOperation(
       },
       nonterminal(_optPipe, _, _2, _optPipe2) {
         const {sourceString} = this;
+        const trimmedSourceString = sourceString.replaceAll('|', '')
         const root = this.context.productions;
-        if (root.productionsByName.has(sourceString.replaceAll('|', ''))) {
+        if (root.productionsByName.has(trimmedSourceString)) {
           return sourceString;
         }
-        const lexicalName = lexicalRuleName(sourceString.replaceAll('|', ''));
+        const lexicalName = lexicalRuleName(trimmedSourceString);
         assert(root.productionsByName.has(lexicalName));
         return lexicalName;
       },
@@ -589,8 +586,11 @@ function addContext(semantics, getActions) {
     }
     if (overrideConfig.reservedWords) {
       reservedWordProductions = mkReservedWordProductions(overrideConfig.reservedWords)
+      // Add a rule override for each of the reserved word productions.
+      for (const prod of reservedWordProductions) {
+        ruleOverrides[lexicalRuleName(prod)] = (rhs, defaultBody) => terminalsToRules(defaultBody);
+      }
     }
-
   }
 
   const result = grammarkdown.match(readFileSync(inputFilename, 'utf-8'));

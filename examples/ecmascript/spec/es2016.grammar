@@ -1000,16 +1000,6 @@ ConciseBody[In] :
 ArrowFormalParameters[Yield] :
   `(` StrictFormalParameters[?Yield] `)`
 
-@line 18066
-
-CoverParenthesizedExpressionAndArrowParameterList[Yield] :
-  `(` Expression `)`
-  `(` `)`
-  `(` `...` BindingIdentifier `)`
-  `(` `...` BindingPattern `)`
-  `(` Expression `,` `...` BindingIdentifier `)`
-  `(` Expression `,` `...` BindingPattern `)`
-
 @line 18179
 
 MethodDefinition[Yield] :

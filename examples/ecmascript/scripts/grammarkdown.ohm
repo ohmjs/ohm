@@ -10,6 +10,7 @@ Grammarkdown {
              | nonterminal ParameterList? ":" RightHandSide -- syntactic
 
   nonterminal = "|"? upper alnum* "|"?
+              | "|"? ~keyword lower alnum* "|"?
   RightHandSide = oneof terminal+ -- oneOf
                 | ">" proseSentence -- prose
                 | (~Production rhsSentence)+ -- alternatives
@@ -32,28 +33,31 @@ Grammarkdown {
   literal = "<" upper+ ">"
 
   butNotCondition =
-    | " but not " basicTerm -- basic
-    | " but not one of " listOf<basicTerm, " or "> -- oneOf
+    | butnotpadded basicTerm -- basic
+    | butnotoneofpadded listOf<basicTerm, " or "> -- oneOf
+
+  butnotpadded = spaces butnot spaces
+  butnotoneofpadded = butnotpadded oneof spaces
 
   assertion = "[" applySyntactic<AssertionContents> "]"
 
   AssertionContents =
-    | "empty" -- empty
+    | empty -- empty
     | Lookahead -- lookahead
-    | "no" nonterminal "here" -- noSymbolHere
-    | "lexical" "goal" nonterminal -- lexicalGoal
+    | no nonterminal here -- noSymbolHere
+    | lexical goal nonterminal -- lexicalGoal
     | "+" parameter -- paramSet
     | "~" parameter -- paramCleared
     | ">" (~("]"|newline) any)+ -- prose
 
-  LexicalGoal = "lexical" "goal" nonterminal
+  LexicalGoal = lexical goal nonterminal
 
   Lookahead =
-    | "lookahead" "==" terminal+ -- positive
-    | "lookahead" "!=" terminal+ -- negative
-    | "lookahead" "<-" LookaheadSet -- positiveSet
-    | "lookahead" "<!" LookaheadSet -- negativeSet
-    | "lookahead" "<!" nonterminal -- negativeNonterminal
+    | lookahead "==" terminal+ -- positive
+    | lookahead "!=" terminal+ -- negative
+    | lookahead "<-" LookaheadSet -- positiveSet
+    | lookahead "<!" LookaheadSet -- negativeSet
+    | lookahead "<!" nonterminal -- negativeNonterminal
 
   LookaheadSet = "{" NonemptyListOf<(terminal|assertion)+, ","> "}"
 
@@ -81,6 +85,15 @@ Grammarkdown {
   newline = "\n" | "\r\n"
   quote = "`"
   oneof = "one of"
+  butnot = "but not"
+  lookahead = "lookahead"
+  lexical = "lexical"
+  goal = "goal"
+  no = "no"
+  empty = "empty"
+  here = "here"
+
+  keyword = oneof | butnot | lookahead | lexical | goal | no | empty | here
 
   sep = ":::" | "::"
 }

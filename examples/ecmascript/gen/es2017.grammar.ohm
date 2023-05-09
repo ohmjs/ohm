@@ -1,4 +1,4 @@
-ES2020 {
+ES2017 {
 
   Start = Script
 
@@ -125,23 +125,53 @@ ES2020 {
   identifierPart = 
     | unicodeIDContinue -- alt1
     | "$" -- alt2
-    | "\\" unicodeEscapeSequence -- alt3
-    | "_" -- alt4 /* FIXME <ZWNJ> <ZWJ> */
+    | "_" -- alt3
+    | "\\" unicodeEscapeSequence -- alt4
+    | "_" -- alt5 /* FIXME <ZWNJ> <ZWJ> */
 
   unicodeIDStart = letter /* fixme */
 
   unicodeIDContinue = letter | digit /* fixme */
 
-  reservedWord = instanceof | continue | debugger | function | default | extends | finally | delete | export | import | return | switch | typeof | await | break | catch | class | const | false | super | throw | while | yield | case | else | enum | null | this | true | void | with | for | new | try | var | do | if | in
+  reservedWord = 
+    | keyword
+    | futureReservedWord
+    | nullLiteral
+    | booleanLiteral
+
+  keyword = 
+    | await -- alt1
+    | break -- alt2
+    | case catch class const continue -- alt3
+    | debugger default delete do -- alt4
+    | else export extends -- alt5
+    | finally for function -- alt6
+    | if import in instanceof -- alt7
+    | new -- alt8
+    | return -- alt9
+    | super switch -- alt10
+    | this throw try typeof -- alt11
+    | var void -- alt12
+    | while with -- alt13
+    | yield -- alt14
+
+  futureReservedWord = 
+    | enum
 
   punctuator = 
-    | optionalChainingPunctuator
-    | otherPunctuator
-
-  optionalChainingPunctuator = 
-    | "?." ~decimalDigit -- alt1
-
-  otherPunctuator = ">>>=" | "..." | "===" | "!==" | ">>>" | "**=" | "<<=" | ">>=" | "<=" | ">=" | "==" | "!=" | "**" | "++" | "--" | "<<" | ">>" | "&&" | "||" | "??" | "+=" | "-=" | "*=" | "%=" | "&=" | "|=" | "^=" | "=>" | "{" | "(" | ")" | "[" | "]" | "." | #sc | "," | "<" | ">" | "+" | "-" | "*" | "%" | "&" | "|" | "^" | "!" | "~" | "?" | ":" | "="
+    | "{" "(" ")" "[" "]" -- alt1
+    | "." "..." #sc "," -- alt2
+    | "<" ">" "<=" ">=" -- alt3
+    | "==" "!=" "===" "!==" -- alt4
+    | "+" "-" "*" "%" "**" -- alt5
+    | "++" "--" -- alt6
+    | "<<" ">>" ">>>" -- alt7
+    | "&" "|" "^" -- alt8
+    | "!" "~" -- alt9
+    | "&&" "||" -- alt10
+    | "?" ":" -- alt11
+    | "=" "+=" "-=" "*=" "%=" "**=" "<<=" ">>=" ">>>=" "&=" "|=" "^=" -- alt12
+    | "=>" -- alt13
 
   divPunctuator = 
     | "/"
@@ -158,23 +188,10 @@ ES2020 {
     | false
 
   numericLiteral = 
-
-    | decimalBigIntegerLiteral -- alt2
-    | nonDecimalIntegerLiteral -- alt3
-    | nonDecimalIntegerLiteral bigIntLiteralSuffix -- alt4
-    | decimalLiteral -- alt1
-
-  decimalBigIntegerLiteral = 
-    | "0" bigIntLiteralSuffix -- alt1
-    | nonZeroDigit decimalDigits? bigIntLiteralSuffix -- alt2
-
-  nonDecimalIntegerLiteral = 
     | binaryIntegerLiteral
     | octalIntegerLiteral
     | hexIntegerLiteral
-
-  bigIntLiteralSuffix = 
-    | "n"
+    | decimalLiteral
 
   decimalLiteral = 
     | decimalIntegerLiteral "." decimalDigits? exponentPart? -- alt1
@@ -245,17 +262,13 @@ ES2020 {
 
   doubleStringCharacter = 
     | ~("\"" | "\\" | lineTerminator) sourceCharacter -- alt1
-    | "\u2028" -- alt2
-    | "\u2029" -- alt3
-    | "\\" escapeSequence -- alt4
-    | lineContinuation -- alt5
+    | "\\" escapeSequence -- alt2
+    | lineContinuation -- alt3
 
   singleStringCharacter = 
     | ~("'" | "\\" | lineTerminator) sourceCharacter -- alt1
-    | "\u2028" -- alt2
-    | "\u2029" -- alt3
-    | "\\" escapeSequence -- alt4
-    | lineContinuation -- alt5
+    | "\\" escapeSequence -- alt2
+    | lineContinuation -- alt3
 
   lineContinuation = 
     | "\\" lineTerminatorSequence -- alt1
@@ -286,7 +299,7 @@ ES2020 {
 
   unicodeEscapeSequence = 
     | "u" hex4Digits -- alt1
-    | "u{" codePoint "}" -- alt2
+    | "u{" hexDigits "}" -- alt2
 
   hex4Digits = 
     | hexDigit hexDigit hexDigit hexDigit -- alt1
@@ -358,29 +371,9 @@ ES2020 {
   templateCharacter = 
     | "$" ~("{") -- alt1
     | "\\" escapeSequence -- alt2
-    | "\\" notEscapeSequence -- alt3
-    | lineContinuation -- alt4
-    | lineTerminatorSequence -- alt5
-    | ~("`" | "\\" | "$" | lineTerminator) sourceCharacter -- alt6
-
-  notEscapeSequence = 
-    | "0" decimalDigit -- alt1
-    | ~"0" decimalDigit -- alt2
-    | "x" ~hexDigit -- alt3
-    | "x" hexDigit ~hexDigit -- alt4
-    | "u" ~hexDigit ~("{") -- alt5
-    | "u" hexDigit ~hexDigit -- alt6
-    | "u" hexDigit hexDigit ~hexDigit -- alt7
-    | "u" hexDigit hexDigit hexDigit ~hexDigit -- alt8
-    | "u" "{" ~hexDigit -- alt9
-    | "u" "{" notCodePoint ~hexDigit -- alt10
-    | "u" "{" codePoint ~hexDigit ~("}") -- alt11
-
-  notCodePoint = 
-    | hexDigits /* FIXME Assertion: > but only if MV of |HexDigits| > 0x10FFFF */ -- alt1
-
-  codePoint = 
-    | hexDigits /* FIXME Assertion: > but only if MV of |HexDigits| < 0x10FFFF */ -- alt1
+    | lineContinuation -- alt3
+    | lineTerminatorSequence -- alt4
+    | ~("`" | "\\" | "$" | lineTerminator) sourceCharacter -- alt5
 
   IdentifierReference<guardYield, guardAwait> = 
     | Identifier -- alt1
@@ -388,9 +381,9 @@ ES2020 {
     | guardAwait await -- alt3
 
   BindingIdentifier<guardYield, guardAwait> = 
-    | Identifier
-    | yield
-    | await
+    | Identifier -- alt1
+    | guardYield yield -- alt2
+    | guardAwait await -- alt3
 
   LabelIdentifier<guardYield, guardAwait> = 
     | Identifier -- alt1
@@ -411,10 +404,9 @@ ES2020 {
     | ClassExpression<guardYield, guardAwait> -- alt7
     | GeneratorExpression -- alt8
     | AsyncFunctionExpression -- alt9
-    | AsyncGeneratorExpression -- alt10
-    | regularExpressionLiteral -- alt11
-    | TemplateLiteral<guardYield, guardAwait, noTagged> -- alt12
-    | CoverParenthesizedExpressionAndArrowParameterList<guardYield, guardAwait>  -- alt13
+    | regularExpressionLiteral -- alt10
+    | TemplateLiteral<guardYield, guardAwait> -- alt11
+    | CoverParenthesizedExpressionAndArrowParameterList<guardYield, guardAwait>  -- alt12
 
   CoverParenthesizedExpressionAndArrowParameterList<guardYield, guardAwait> = 
     | "(" Expression<withIn, guardYield, guardAwait> ")" -- alt1
@@ -462,7 +454,6 @@ ES2020 {
     | PropertyDefinition<guardYield, guardAwait> -- alt1
 
   PropertyDefinition<guardYield, guardAwait> = 
-    | "..." AssignmentExpression<withIn, guardYield, guardAwait> -- alt5
     | MethodDefinition<guardYield, guardAwait> -- alt4
     | PropertyName<guardYield, guardAwait> ":" AssignmentExpression<withIn, guardYield, guardAwait> -- alt3
     | IdentifierReference<guardYield, guardAwait> -- alt1
@@ -486,25 +477,22 @@ ES2020 {
   Initializer<guardIn, guardYield, guardAwait> = 
     | "=" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt1
 
-  TemplateLiteral<guardYield, guardAwait, guardTagged> = 
-    | noSubstitutionTemplate
-    | SubstitutionTemplate<guardYield, guardAwait, guardTagged>
+  TemplateLiteral<guardYield, guardAwait> = 
+    | noSubstitutionTemplate -- alt1
+    | templateHead Expression<withIn, guardYield, guardAwait> TemplateSpans<guardYield, guardAwait> -- alt2
 
-  SubstitutionTemplate<guardYield, guardAwait, guardTagged> = 
-    | templateHead Expression<withIn, guardYield, guardAwait> TemplateSpans<guardYield, guardAwait, guardTagged> -- alt1
-
-  TemplateSpans<guardYield, guardAwait, guardTagged> = 
+  TemplateSpans<guardYield, guardAwait> = 
     | templateTail -- alt1
-    | TemplateMiddleList<guardYield, guardAwait, guardTagged> templateTail -- alt2
+    | TemplateMiddleList<guardYield, guardAwait> templateTail -- alt2
 
-  TemplateMiddleList<guardYield, guardAwait, guardTagged> = 
-    | TemplateMiddleList<guardYield, guardAwait, guardTagged> templateMiddle Expression<withIn, guardYield, guardAwait> -- alt2
+  TemplateMiddleList<guardYield, guardAwait> = 
+    | TemplateMiddleList<guardYield, guardAwait> templateMiddle Expression<withIn, guardYield, guardAwait> -- alt2
     | templateMiddle Expression<withIn, guardYield, guardAwait> -- alt1
 
   MemberExpression<guardYield, guardAwait> = 
     | MemberExpression<guardYield, guardAwait> "[" Expression<withIn, guardYield, guardAwait> "]" -- alt2
     | MemberExpression<guardYield, guardAwait> "." identifierName -- alt3
-    | MemberExpression<guardYield, guardAwait> TemplateLiteral<guardYield, guardAwait, withTagged> -- alt4
+    | MemberExpression<guardYield, guardAwait> TemplateLiteral<guardYield, guardAwait> -- alt4
     | new MemberExpression<guardYield, guardAwait> Arguments<guardYield, guardAwait> -- alt7
     | PrimaryExpression<guardYield, guardAwait> -- alt1
     | SuperProperty<guardYield, guardAwait> -- alt5
@@ -516,32 +504,24 @@ ES2020 {
 
   MetaProperty = 
     | NewTarget
-    | ImportMeta
 
   NewTarget = 
     | new "." "target" -- alt1
-
-  ImportMeta = 
-    | import "." "meta" -- alt1
 
   NewExpression<guardYield, guardAwait> = 
     | MemberExpression<guardYield, guardAwait> -- alt1
     | new NewExpression<guardYield, guardAwait> -- alt2
 
   CallExpression<guardYield, guardAwait> = 
-    | CallExpression<guardYield, guardAwait> Arguments<guardYield, guardAwait> -- alt4
-    | CallExpression<guardYield, guardAwait> "[" Expression<withIn, guardYield, guardAwait> "]" -- alt5
-    | CallExpression<guardYield, guardAwait> "." identifierName -- alt6
-    | CallExpression<guardYield, guardAwait> TemplateLiteral<guardYield, guardAwait, withTagged> -- alt7
+    | CallExpression<guardYield, guardAwait> Arguments<guardYield, guardAwait> -- alt3
+    | CallExpression<guardYield, guardAwait> "[" Expression<withIn, guardYield, guardAwait> "]" -- alt4
+    | CallExpression<guardYield, guardAwait> "." identifierName -- alt5
+    | CallExpression<guardYield, guardAwait> TemplateLiteral<guardYield, guardAwait> -- alt6
     | CoverCallExpressionAndAsyncArrowHead<guardYield, guardAwait>  -- alt1
     | SuperCall<guardYield, guardAwait> -- alt2
-    | ImportCall<guardYield, guardAwait> -- alt3
 
   SuperCall<guardYield, guardAwait> = 
     | super Arguments<guardYield, guardAwait> -- alt1
-
-  ImportCall<guardYield, guardAwait> = 
-    | import "(" AssignmentExpression<withIn, guardYield, guardAwait> ")" -- alt1
 
   Arguments<guardYield, guardAwait> = 
     | "(" ")" -- alt1
@@ -554,25 +534,9 @@ ES2020 {
     | AssignmentExpression<withIn, guardYield, guardAwait> -- alt1
     | "..." AssignmentExpression<withIn, guardYield, guardAwait> -- alt2
 
-  OptionalExpression<guardYield, guardAwait> = 
-    | OptionalExpression<guardYield, guardAwait> OptionalChain<guardYield, guardAwait> -- alt3
-    | MemberExpression<guardYield, guardAwait> OptionalChain<guardYield, guardAwait> -- alt1
-    | CallExpression<guardYield, guardAwait> OptionalChain<guardYield, guardAwait> -- alt2
-
-  OptionalChain<guardYield, guardAwait> = 
-    | OptionalChain<guardYield, guardAwait> Arguments<guardYield, guardAwait> -- alt5
-    | OptionalChain<guardYield, guardAwait> "[" Expression<withIn, guardYield, guardAwait> "]" -- alt6
-    | OptionalChain<guardYield, guardAwait> "." identifierName -- alt7
-    | OptionalChain<guardYield, guardAwait> TemplateLiteral<guardYield, guardAwait, withTagged> -- alt8
-    | "?." Arguments<guardYield, guardAwait> -- alt1
-    | "?." "[" Expression<withIn, guardYield, guardAwait> "]" -- alt2
-    | "?." identifierName -- alt3
-    | "?." TemplateLiteral<guardYield, guardAwait, withTagged> -- alt4
-
   LeftHandSideExpression<guardYield, guardAwait> = 
     | CallExpression<guardYield, guardAwait>
     | NewExpression<guardYield, guardAwait>
-    | OptionalExpression<guardYield, guardAwait>
 
   CallMemberExpression<guardYield, guardAwait> = 
     | MemberExpression<guardYield, guardAwait> Arguments<guardYield, guardAwait> -- alt1
@@ -611,9 +575,9 @@ ES2020 {
     | MultiplicativeExpression<guardYield, guardAwait> -- alt1
 
   ShiftExpression<guardYield, guardAwait> = 
-    | ShiftExpression<guardYield, guardAwait> "<" AdditiveExpression<guardYield, guardAwait> -- alt2
-    | ShiftExpression<guardYield, guardAwait> ">" AdditiveExpression<guardYield, guardAwait> -- alt3
-    | ShiftExpression<guardYield, guardAwait> ">" AdditiveExpression<guardYield, guardAwait> -- alt4
+    | ShiftExpression<guardYield, guardAwait> "<<" AdditiveExpression<guardYield, guardAwait> -- alt2
+    | ShiftExpression<guardYield, guardAwait> ">>" AdditiveExpression<guardYield, guardAwait> -- alt3
+    | ShiftExpression<guardYield, guardAwait> ">>>" AdditiveExpression<guardYield, guardAwait> -- alt4
     | AdditiveExpression<guardYield, guardAwait> -- alt1
 
   RelationalExpression<guardIn, guardYield, guardAwait> = 
@@ -645,27 +609,16 @@ ES2020 {
     | BitwiseXORExpression<guardIn, guardYield, guardAwait> -- alt1
 
   LogicalANDExpression<guardIn, guardYield, guardAwait> = 
-    | LogicalANDExpression<guardIn, guardYield, guardAwait> "&" BitwiseORExpression<guardIn, guardYield, guardAwait> -- alt2
+    | LogicalANDExpression<guardIn, guardYield, guardAwait> "&&" BitwiseORExpression<guardIn, guardYield, guardAwait> -- alt2
     | BitwiseORExpression<guardIn, guardYield, guardAwait> -- alt1
 
   LogicalORExpression<guardIn, guardYield, guardAwait> = 
     | LogicalORExpression<guardIn, guardYield, guardAwait> "||" LogicalANDExpression<guardIn, guardYield, guardAwait> -- alt2
     | LogicalANDExpression<guardIn, guardYield, guardAwait> -- alt1
 
-  CoalesceExpression<guardIn, guardYield, guardAwait> = 
-    | CoalesceExpressionHead<guardIn, guardYield, guardAwait> "??" BitwiseORExpression<guardIn, guardYield, guardAwait> -- alt1
-
-  CoalesceExpressionHead<guardIn, guardYield, guardAwait> = 
-    | CoalesceExpression<guardIn, guardYield, guardAwait>
-    | BitwiseORExpression<guardIn, guardYield, guardAwait>
-
-  ShortCircuitExpression<guardIn, guardYield, guardAwait> = 
-    | LogicalORExpression<guardIn, guardYield, guardAwait>
-    | CoalesceExpression<guardIn, guardYield, guardAwait>
-
   ConditionalExpression<guardIn, guardYield, guardAwait> = 
-    | ShortCircuitExpression<guardIn, guardYield, guardAwait> "?" AssignmentExpression<withIn, guardYield, guardAwait> ":" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt2
-    | ShortCircuitExpression<guardIn, guardYield, guardAwait> -- alt1
+    | LogicalORExpression<guardIn, guardYield, guardAwait> "?" AssignmentExpression<withIn, guardYield, guardAwait> ":" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt2
+    | LogicalORExpression<guardIn, guardYield, guardAwait> -- alt1
 
   AssignmentExpression<guardIn, guardYield, guardAwait> = 
     | AsyncArrowFunction<guardIn, guardYield, guardAwait> -- alt4
@@ -683,17 +636,13 @@ ES2020 {
 
   ObjectAssignmentPattern<guardYield, guardAwait> = 
     | "{" "}" -- alt1
-    | "{" AssignmentRestProperty<guardYield, guardAwait> "}" -- alt2
-    | "{" AssignmentPropertyList<guardYield, guardAwait> "}" -- alt3
-    | "{" AssignmentPropertyList<guardYield, guardAwait> "," AssignmentRestProperty<guardYield, guardAwait>? "}" -- alt4
+    | "{" AssignmentPropertyList<guardYield, guardAwait> "}" -- alt2
+    | "{" AssignmentPropertyList<guardYield, guardAwait> "," "}" -- alt3
 
   ArrayAssignmentPattern<guardYield, guardAwait> = 
     | "[" Elision? AssignmentRestElement<guardYield, guardAwait>? "]" -- alt1
     | "[" AssignmentElementList<guardYield, guardAwait> "]" -- alt2
     | "[" AssignmentElementList<guardYield, guardAwait> "," Elision? AssignmentRestElement<guardYield, guardAwait>? "]" -- alt3
-
-  AssignmentRestProperty<guardYield, guardAwait> = 
-    | "..." DestructuringAssignmentTarget<guardYield, guardAwait> -- alt1
 
   AssignmentPropertyList<guardYield, guardAwait> = 
     | AssignmentPropertyList<guardYield, guardAwait> "," AssignmentProperty<guardYield, guardAwait> -- alt2
@@ -748,7 +697,6 @@ ES2020 {
     | FunctionDeclaration<guardYield, guardAwait, guardDefault>
     | GeneratorDeclaration<guardYield, guardAwait, guardDefault>
     | AsyncFunctionDeclaration<guardYield, guardAwait, guardDefault>
-    | AsyncGeneratorDeclaration<guardYield, guardAwait, guardDefault>
 
   BreakableStatement<guardYield, guardAwait, guardReturn> = 
     | IterationStatement<guardYield, guardAwait, guardReturn>
@@ -799,17 +747,13 @@ ES2020 {
 
   ObjectBindingPattern<guardYield, guardAwait> = 
     | "{" "}" -- alt1
-    | "{" BindingRestProperty<guardYield, guardAwait> "}" -- alt2
-    | "{" BindingPropertyList<guardYield, guardAwait> "}" -- alt3
-    | "{" BindingPropertyList<guardYield, guardAwait> "," BindingRestProperty<guardYield, guardAwait>? "}" -- alt4
+    | "{" BindingPropertyList<guardYield, guardAwait> "}" -- alt2
+    | "{" BindingPropertyList<guardYield, guardAwait> "," "}" -- alt3
 
   ArrayBindingPattern<guardYield, guardAwait> = 
     | "[" Elision? BindingRestElement<guardYield, guardAwait>? "]" -- alt1
     | "[" BindingElementList<guardYield, guardAwait> "]" -- alt2
     | "[" BindingElementList<guardYield, guardAwait> "," Elision? BindingRestElement<guardYield, guardAwait>? "]" -- alt3
-
-  BindingRestProperty<guardYield, guardAwait> = 
-    | "..." BindingIdentifier<guardYield, guardAwait> -- alt1
 
   BindingPropertyList<guardYield, guardAwait> = 
     | BindingPropertyList<guardYield, guardAwait> "," BindingProperty<guardYield, guardAwait> -- alt2
@@ -849,18 +793,15 @@ ES2020 {
   IterationStatement<guardYield, guardAwait, guardReturn> = 
     | do Statement<guardYield, guardAwait, guardReturn> while "(" Expression<withIn, guardYield, guardAwait> ")" #sc -- alt1
     | while "(" Expression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt2
-    | for "(" ~("let"|"[") Expression<noIn, guardYield, guardAwait>? #sc Expression<withIn, guardYield, guardAwait>? #sc Expression<withIn, guardYield, guardAwait>? ")" Statement<guardYield, guardAwait, guardReturn> -- alt3
+    | for "(" ~(("let" "[")) Expression<noIn, guardYield, guardAwait>? #sc Expression<withIn, guardYield, guardAwait>? #sc Expression<withIn, guardYield, guardAwait>? ")" Statement<guardYield, guardAwait, guardReturn> -- alt3
     | for "(" var VariableDeclarationList<noIn, guardYield, guardAwait> #sc Expression<withIn, guardYield, guardAwait>? #sc Expression<withIn, guardYield, guardAwait>? ")" Statement<guardYield, guardAwait, guardReturn> -- alt4
     | for "(" LexicalDeclaration<noIn, guardYield, guardAwait> Expression<withIn, guardYield, guardAwait>? #sc Expression<withIn, guardYield, guardAwait>? ")" Statement<guardYield, guardAwait, guardReturn> -- alt5
-    | for "(" ~("let"|"[") LeftHandSideExpression<guardYield, guardAwait> in Expression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt6
+    | for "(" ~(("let" "[")) LeftHandSideExpression<guardYield, guardAwait> in Expression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt6
     | for "(" var ForBinding<guardYield, guardAwait> in Expression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt7
     | for "(" ForDeclaration<guardYield, guardAwait> in Expression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt8
     | for "(" ~("let") LeftHandSideExpression<guardYield, guardAwait> "of" AssignmentExpression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt9
     | for "(" var ForBinding<guardYield, guardAwait> "of" AssignmentExpression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt10
     | for "(" ForDeclaration<guardYield, guardAwait> "of" AssignmentExpression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt11
-    | guardAwait for await "(" ~("let") LeftHandSideExpression<guardYield, guardAwait> "of" AssignmentExpression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt12
-    | guardAwait for await "(" var ForBinding<guardYield, guardAwait> "of" AssignmentExpression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt13
-    | guardAwait for await "(" ForDeclaration<guardYield, guardAwait> "of" AssignmentExpression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt14
 
   ForDeclaration<guardYield, guardAwait> = 
     | LetOrConst ForBinding<guardYield, guardAwait> -- alt1
@@ -918,7 +859,6 @@ ES2020 {
 
   Catch<guardYield, guardAwait, guardReturn> = 
     | catch "(" CatchParameter<guardYield, guardAwait> ")" Block<guardYield, guardAwait, guardReturn> -- alt1
-    | catch Block<guardYield, guardAwait, guardReturn> -- alt2
 
   Finally<guardYield, guardAwait, guardReturn> = 
     | finally Block<guardYield, guardAwait, guardReturn> -- alt1
@@ -971,11 +911,8 @@ ES2020 {
     | CoverParenthesizedExpressionAndArrowParameterList<guardYield, guardAwait>  -- alt2
 
   ConciseBody<guardIn> = 
-    | ~("{") ExpressionBody<guardIn, noAwait> -- alt1
+    | ~("{") AssignmentExpression<guardIn, noYield, noAwait> -- alt1
     | "{" FunctionBody<noYield, noAwait> "}" -- alt2
-
-  ExpressionBody<guardIn, guardAwait> = 
-    | AssignmentExpression<guardIn, noYield, guardAwait>
 
   ArrowFormalParameters<guardYield, guardAwait> = 
     | "(" UniqueFormalParameters<guardYield, guardAwait> ")" -- alt1
@@ -984,9 +921,8 @@ ES2020 {
     | PropertyName<guardYield, guardAwait> "(" UniqueFormalParameters<noYield, noAwait> ")" "{" FunctionBody<noYield, noAwait> "}" -- alt1
     | GeneratorMethod<guardYield, guardAwait> -- alt2
     | AsyncMethod<guardYield, guardAwait> -- alt3
-    | AsyncGeneratorMethod<guardYield, guardAwait> -- alt4
-    | "get" PropertyName<guardYield, guardAwait> "(" ")" "{" FunctionBody<noYield, noAwait> "}" -- alt5
-    | "set" PropertyName<guardYield, guardAwait> "(" PropertySetParameterList ")" "{" FunctionBody<noYield, noAwait> "}" -- alt6
+    | "get" PropertyName<guardYield, guardAwait> "(" ")" "{" FunctionBody<noYield, noAwait> "}" -- alt4
+    | "set" PropertyName<guardYield, guardAwait> "(" PropertySetParameterList ")" "{" FunctionBody<noYield, noAwait> "}" -- alt5
 
   PropertySetParameterList = 
     | FormalParameter<noYield, noAwait>
@@ -1008,19 +944,6 @@ ES2020 {
     | yield -- alt1
     | yield ~lineTerminator AssignmentExpression<guardIn, withYield, guardAwait> -- alt2
     | yield ~lineTerminator "*" AssignmentExpression<guardIn, withYield, guardAwait> -- alt3
-
-  AsyncGeneratorMethod<guardYield, guardAwait> = 
-    | "async" ~lineTerminator "*" PropertyName<guardYield, guardAwait> "(" UniqueFormalParameters<withYield, withAwait> ")" "{" AsyncGeneratorBody "}" -- alt1
-
-  AsyncGeneratorDeclaration<guardYield, guardAwait, guardDefault> = 
-    | "async" ~lineTerminator function "*" BindingIdentifier<guardYield, guardAwait> "(" FormalParameters<withYield, withAwait> ")" "{" AsyncGeneratorBody "}" -- alt1
-    | guardDefault "async" ~lineTerminator function "*" "(" FormalParameters<withYield, withAwait> ")" "{" AsyncGeneratorBody "}" -- alt2
-
-  AsyncGeneratorExpression = 
-    | "async" ~lineTerminator function "*" BindingIdentifier<withYield, withAwait>? "(" FormalParameters<withYield, withAwait> ")" "{" AsyncGeneratorBody "}" -- alt1
-
-  AsyncGeneratorBody = 
-    | FunctionBody<withYield, withAwait>
 
   ClassDeclaration<guardYield, guardAwait, guardDefault> = 
     | class BindingIdentifier<guardYield, guardAwait> ClassTail<guardYield, guardAwait> -- alt1
@@ -1048,8 +971,8 @@ ES2020 {
     | #sc -- alt3
 
   AsyncFunctionDeclaration<guardYield, guardAwait, guardDefault> = 
-    | "async" ~lineTerminator function BindingIdentifier<guardYield, guardAwait> "(" FormalParameters<noYield, withAwait> ")" "{" AsyncFunctionBody "}" -- alt1
-    | guardDefault "async" ~lineTerminator function "(" FormalParameters<noYield, withAwait> ")" "{" AsyncFunctionBody "}" -- alt2
+    | "async" ~lineTerminator function BindingIdentifier<guardYield, guardAwait> "(" FormalParameters<noYield, guardAwait> ")" "{" AsyncFunctionBody "}" -- alt1
+    | guardDefault "async" ~lineTerminator function "(" FormalParameters<noYield, guardAwait> ")" "{" AsyncFunctionBody "}" -- alt2
 
   AsyncFunctionExpression = 
     | "async" ~lineTerminator function "(" FormalParameters<noYield, withAwait> ")" "{" AsyncFunctionBody "}" -- alt1
@@ -1069,7 +992,7 @@ ES2020 {
     | CoverCallExpressionAndAsyncArrowHead<guardYield, guardAwait> ~lineTerminator "=>" AsyncConciseBody<guardIn>  -- alt2
 
   AsyncConciseBody<guardIn> = 
-    | ~("{") ExpressionBody<guardIn, withAwait> -- alt1
+    | ~("{") AssignmentExpression<guardIn, noYield, withAwait> -- alt1
     | "{" AsyncFunctionBody "}" -- alt2
 
   AsyncArrowBindingIdentifier<guardYield> = 
@@ -1141,20 +1064,16 @@ ES2020 {
     | BindingIdentifier<noYield, noAwait>
 
   ExportDeclaration = 
-    | export ExportFromClause FromClause #sc -- alt1
-    | export NamedExports #sc -- alt2
-    | export VariableStatement<noYield, noAwait> -- alt3
-    | export Declaration<noYield, noAwait> -- alt4
-    | export default HoistableDeclaration<noYield, noAwait, withDefault> -- alt5
-    | export default ClassDeclaration<noYield, noAwait, withDefault> -- alt6
-    | export default ~("function" | ("async" ~lineTerminator "function") | "class") AssignmentExpression<withIn, noYield, noAwait> #sc -- alt7
+    | export "*" FromClause #sc -- alt1
+    | export ExportClause FromClause #sc -- alt2
+    | export ExportClause #sc -- alt3
+    | export VariableStatement<noYield, noAwait> -- alt4
+    | export Declaration<noYield, noAwait> -- alt5
+    | export default HoistableDeclaration<noYield, noAwait, withDefault> -- alt6
+    | export default ClassDeclaration<noYield, noAwait, withDefault> -- alt7
+    | export default ~("function" | ("async" ~lineTerminator "function") | "class") AssignmentExpression<withIn, noYield, noAwait> #sc -- alt8
 
-  ExportFromClause = 
-    | "*" -- alt1
-    | "*" "as" identifierName -- alt2
-    | NamedExports -- alt3
-
-  NamedExports = 
+  ExportClause = 
     | "{" "}" -- alt1
     | "{" ExportsList "}" -- alt2
     | "{" ExportsList "," "}" -- alt3
@@ -1166,6 +1085,34 @@ ES2020 {
   ExportSpecifier = 
     | identifierName -- alt1
     | identifierName "as" identifierName -- alt2
+
+  stringNumericLiteral = 
+    | strWhiteSpace? -- alt1
+    | strWhiteSpace? strNumericLiteral strWhiteSpace? -- alt2
+
+  strWhiteSpace = 
+    | strWhiteSpaceChar strWhiteSpace? -- alt1
+
+  strWhiteSpaceChar = 
+    | whiteSpace
+    | lineTerminator
+
+  strNumericLiteral = 
+    | strDecimalLiteral
+    | binaryIntegerLiteral
+    | octalIntegerLiteral
+    | hexIntegerLiteral
+
+  strDecimalLiteral = 
+    | strUnsignedDecimalLiteral -- alt1
+    | "+" strUnsignedDecimalLiteral -- alt2
+    | "-" strUnsignedDecimalLiteral -- alt3
+
+  strUnsignedDecimalLiteral = 
+    | "Infinity" -- alt1
+    | decimalDigits "." decimalDigits? exponentPart? -- alt2
+    | "." decimalDigits exponentPart? -- alt3
+    | decimalDigits exponentPart? -- alt4
 
   uri = 
     | uriCharacters?
@@ -1192,34 +1139,29 @@ ES2020 {
 
   uriMark = "-" | "_" | "." | "!" | "~" | "*" | "'" | "(" | ")"
 
-  NativeFunction = 
-    | function PropertyName<noYield, noAwait>? "(" FormalParameters<noYield, noAwait> ")" "{" "[" "native" "code" "]" "}" -- alt1
+  pattern<guardU> = 
+    | disjunction<guardU>
 
-  pattern<guardU, guardN> = 
-    | disjunction<guardU, guardN>
+  disjunction<guardU> = 
+    | alternative<guardU> -- alt1
+    | alternative<guardU> "|" disjunction<guardU> -- alt2
 
-  disjunction<guardU, guardN> = 
-    | alternative<guardU, guardN> -- alt1
-    | alternative<guardU, guardN> "|" disjunction<guardU, guardN> -- alt2
-
-  alternative<guardU, guardN> = 
-    | alternative<guardU, guardN> term<guardU, guardN> -- alt2
+  alternative<guardU> = 
+    | alternative<guardU> term<guardU> -- alt2
     | /* empty */ -- alt1
 
-  term<guardU, guardN> = 
-    | assertion<guardU, guardN> -- alt1
-    | atom<guardU, guardN> -- alt2
-    | atom<guardU, guardN> quantifier -- alt3
+  term<guardU> = 
+    | assertion<guardU> -- alt1
+    | atom<guardU> -- alt2
+    | atom<guardU> quantifier -- alt3
 
-  assertion<guardU, guardN> = 
+  assertion<guardU> = 
     | "^" -- alt1
     | "$" -- alt2
     | "\\" "b" -- alt3
     | "\\" "B" -- alt4
-    | "(" "?" "=" disjunction<guardU, guardN> ")" -- alt5
-    | "(" "?" "!" disjunction<guardU, guardN> ")" -- alt6
-    | "(" "?" "<=" disjunction<guardU, guardN> ")" -- alt7
-    | "(" "?" "<!" disjunction<guardU, guardN> ")" -- alt8
+    | "(" "?" "=" disjunction<guardU> ")" -- alt5
+    | "(" "?" "!" disjunction<guardU> ")" -- alt6
 
   quantifier = 
     | quantifierPrefix -- alt1
@@ -1233,24 +1175,23 @@ ES2020 {
     | "{" decimalDigits "," "}" -- alt5
     | "{" decimalDigits "," decimalDigits "}" -- alt6
 
-  atom<guardU, guardN> = 
+  atom<guardU> = 
     | patternCharacter -- alt1
     | "." -- alt2
-    | "\\" atomEscape<guardU, guardN> -- alt3
+    | "\\" atomEscape<guardU> -- alt3
     | characterClass<guardU> -- alt4
-    | "(" groupSpecifier<guardU> disjunction<guardU, guardN> ")" -- alt5
-    | "(" "?" ":" disjunction<guardU, guardN> ")" -- alt6
+    | "(" disjunction<guardU> ")" -- alt5
+    | "(" "?" ":" disjunction<guardU> ")" -- alt6
 
   syntaxCharacter = "\\" | "^" | "$" | "." | "*" | "+" | "?" | "(" | ")" | "[" | "]" | "{" | "}" | "|"
 
   patternCharacter = 
     | ~syntaxCharacter sourceCharacter
 
-  atomEscape<guardU, guardN> = 
-    | decimalEscape -- alt1
-    | characterClassEscape<guardU> -- alt2
-    | characterEscape<guardU> -- alt3
-    | guardN "k" groupName<guardU> -- alt4
+  atomEscape<guardU> = 
+    | decimalEscape
+    | characterClassEscape
+    | characterEscape<guardU>
 
   characterEscape<guardU> = 
     | controlEscape -- alt1
@@ -1264,43 +1205,13 @@ ES2020 {
 
   controlLetter = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" | "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
 
-  groupSpecifier<guardU> = 
-    | /* empty */ -- alt1
-    | "?" groupName<guardU> -- alt2
-
-  groupName<guardU> = 
-    | "<" regExpIdentifierName<guardU> ">" -- alt1
-
-  regExpIdentifierName<guardU> = 
-    | regExpIdentifierName<guardU> regExpIdentifierPart<guardU> -- alt2
-    | regExpIdentifierStart<guardU> -- alt1
-
-  regExpIdentifierStart<guardU> = 
-    | unicodeIDStart -- alt1
-    | "$" -- alt2
-    | "_" -- alt3
-    | "\\" regExpUnicodeEscapeSequence<withU> -- alt4
-    | guardU unicodeLeadSurrogate unicodeTrailSurrogate -- alt5
-
-  regExpIdentifierPart<guardU> = 
-    | unicodeIDContinue -- alt1
-    | "$" -- alt2
-    | "\\" regExpUnicodeEscapeSequence<withU> -- alt3
-    | guardU unicodeLeadSurrogate unicodeTrailSurrogate -- alt4
-    | "" /* FIXME <ZWNJ> */ -- alt5
-    | "" /* FIXME <ZWJ> */ -- alt6
-
   regExpUnicodeEscapeSequence<guardU> = 
     | guardU "u" leadSurrogate "\\u" trailSurrogate -- alt1
     | guardU "u" leadSurrogate -- alt2
     | guardU "u" trailSurrogate -- alt3
     | guardU "u" nonSurrogate -- alt4
     | guardU "u" hex4Digits -- alt5
-    | guardU "u{" codePoint "}" -- alt6
-
-  unicodeLeadSurrogate = /* any Unicode code point in the inclusive range 0xD800 to 0xDBFF */
-
-  unicodeTrailSurrogate = /* any Unicode code point in the inclusive range 0xDC00 to 0xDFFF */
+    | guardU "u{" hexDigits "}" -- alt6
 
   leadSurrogate = 
     | hex4Digits /* FIXME Assertion: > but only if the SV of |Hex4Digits| is in the inclusive range 0xD800 to 0xDBFF */ -- alt1
@@ -1319,42 +1230,7 @@ ES2020 {
   decimalEscape = 
     | nonZeroDigit decimalDigits? ~decimalDigit -- alt1
 
-  characterClassEscape<guardU> = 
-    | "d" -- alt1
-    | "D" -- alt2
-    | "s" -- alt3
-    | "S" -- alt4
-    | "w" -- alt5
-    | "W" -- alt6
-    | guardU "p{" unicodePropertyValueExpression "}" -- alt7
-    | guardU "P{" unicodePropertyValueExpression "}" -- alt8
-
-  unicodePropertyValueExpression = 
-    | unicodePropertyName "=" unicodePropertyValue -- alt1
-    | loneUnicodePropertyNameOrValue -- alt2
-
-  unicodePropertyName = 
-    | unicodePropertyNameCharacters
-
-  unicodePropertyNameCharacters = 
-    | unicodePropertyNameCharacter unicodePropertyNameCharacters? -- alt1
-
-  unicodePropertyValue = 
-    | unicodePropertyValueCharacters
-
-  loneUnicodePropertyNameOrValue = 
-    | unicodePropertyValueCharacters
-
-  unicodePropertyValueCharacters = 
-    | unicodePropertyValueCharacter unicodePropertyValueCharacters? -- alt1
-
-  unicodePropertyValueCharacter = 
-    | unicodePropertyNameCharacter
-    | decimalDigit
-
-  unicodePropertyNameCharacter = 
-    | controlLetter
-    | "_"
+  characterClassEscape = "d" | "D" | "s" | "S" | "w" | "W"
 
   characterClass<guardU> = 
     | "[" ~("^") classRanges<guardU> "]" -- alt1
@@ -1385,7 +1261,7 @@ ES2020 {
   classEscape<guardU> = 
     | "b" -- alt1
     | guardU "-" -- alt2
-    | characterClassEscape<guardU> -- alt3
+    | characterClassEscape -- alt3
     | characterEscape<guardU> -- alt4
 
   withYield = /* fixme */
@@ -1400,10 +1276,6 @@ ES2020 {
 
   noIn = ~any /* is this right? */
 
-  withTagged = /* fixme */
-
-  noTagged = ~any /* is this right? */
-
   withReturn = /* fixme */
 
   noReturn = ~any /* is this right? */
@@ -1415,10 +1287,6 @@ ES2020 {
   withU = /* fixme */
 
   noU = ~any /* is this right? */
-
-  withN = /* fixme */
-
-  noN = ~any /* is this right? */
 
   await = "await" ~identifierPart
   break = "break" ~identifierPart
@@ -1432,10 +1300,8 @@ ES2020 {
   delete = "delete" ~identifierPart
   do = "do" ~identifierPart
   else = "else" ~identifierPart
-  enum = "enum" ~identifierPart
   export = "export" ~identifierPart
   extends = "extends" ~identifierPart
-  false = "false" ~identifierPart
   finally = "finally" ~identifierPart
   for = "for" ~identifierPart
   function = "function" ~identifierPart
@@ -1444,13 +1310,11 @@ ES2020 {
   in = "in" ~identifierPart
   instanceof = "instanceof" ~identifierPart
   new = "new" ~identifierPart
-  null = "null" ~identifierPart
   return = "return" ~identifierPart
   super = "super" ~identifierPart
   switch = "switch" ~identifierPart
   this = "this" ~identifierPart
   throw = "throw" ~identifierPart
-  true = "true" ~identifierPart
   try = "try" ~identifierPart
   typeof = "typeof" ~identifierPart
   var = "var" ~identifierPart
@@ -1458,4 +1322,8 @@ ES2020 {
   while = "while" ~identifierPart
   with = "with" ~identifierPart
   yield = "yield" ~identifierPart
+  enum = "enum" ~identifierPart
+  null = "null" ~identifierPart
+  true = "true" ~identifierPart
+  false = "false" ~identifierPart
 }

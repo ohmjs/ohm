@@ -47,7 +47,7 @@
     {
       "_comment_": " ArrowFunction must come before ConditionalExpression, because the arrow function parameters will parse as a parenthesized expression. Both LeftHandSideExpression alternatives must also come before ConditionalExpression.",
       "name": "AssignmentExpression",
-      "pattern": "| ConditionalExpression<guardIn, guardYield> -- alt1\n    | guardYield YieldExpression<guardIn> -- alt2\n    | ArrowFunction<guardIn, guardYield> -- alt3\n    | LeftHandSideExpression<guardYield> \"=\" AssignmentExpression<guardIn, guardYield> -- alt4\n    | LeftHandSideExpression<guardYield> AssignmentOperator AssignmentExpression<guardIn, guardYield> -- alt5",
+      "pattern": "| ConditionalExpression<guardIn, guardYield> -- alt1\n    | guardYield YieldExpression<guardIn> -- alt2\n    | ArrowFunction<guardIn, guardYield> -- alt3\n    | LeftHandSideExpression<guardYield> \"=\" AssignmentExpression<guardIn, guardYield>  -- alt4\n    | LeftHandSideExpression<guardYield> AssignmentOperator AssignmentExpression<guardIn, guardYield> -- alt5",
       "replacement": "| ArrowFunction<guardIn, guardYield> -- alt3\n    | LeftHandSideExpression<guardYield> \"=\" AssignmentExpression<guardIn, guardYield> -- alt4\n    | LeftHandSideExpression<guardYield> AssignmentOperator AssignmentExpression<guardIn, guardYield> -- alt5\n    | ConditionalExpression<guardIn, guardYield> -- alt1\n    | guardYield YieldExpression<guardIn> -- alt2"
     },
     {
@@ -64,8 +64,8 @@
     {
       "_comment_": " Move PostfixExpression to the very end.",
       "name": "UnaryExpression",
-      "pattern": "    | PostfixExpression<guardYield> -- alt1\n",
-      "postlude": "\n    | PostfixExpression<guardYield> -- alt1",
+      "pattern": "    | UpdateExpression<guardYield> -- alt1\n",
+      "postlude": "\n    | UpdateExpression<guardYield> -- alt1",
       "replacement": ""
     },
     {
@@ -84,7 +84,7 @@
       "_comment_": " FIXME: Make sure these produce something useful.",
       "name": "identifierPart",
       "pattern": "| \"\" /* FIXME <ZWNJ> */ -- alt5\n    | \"\" /* FIXME <ZWJ> */ -- alt6",
-      "replacement": ""
+      "replacement": "| \"_\" -- alt5 /* FIXME <ZWNJ> <ZWJ> */"
     },
     {
       "_comment_": " Move decimalLiteral to the very end.",
