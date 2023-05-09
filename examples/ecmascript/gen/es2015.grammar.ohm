@@ -690,7 +690,7 @@ ES2015 {
   BindingRestElement<guardYield> = 
     | "..." BindingIdentifier<guardYield> -- alt1
 
-  EmptyStatement = ";" // note: this semicolon eats newlines`;
+  EmptyStatement = ";" // note: this semicolon eats newlines
 
   ExpressionStatement<guardYield> = 
     | ~("{" | "function" | "class" | ("let" "[")) Expression<withIn, guardYield> #sc -- alt1
