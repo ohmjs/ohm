@@ -620,9 +620,9 @@ function addContext(semantics, getActions) {
   // If the resulting grammar is valid, write it to stdout.
   try {
     ohm.grammar(outGrammar);
-    console.log(outGrammar);
   } catch (e) {
     console.error(e.message);
     exit(1);
   }
+  console.log(outGrammar);
 })();
