@@ -21,11 +21,6 @@
       "replacement": "| \"*\" ~\"/\" postAsteriskCommentChars?"
     },
     {
-      "name": "Identifier",
-      "pattern": "| ~reservedWord identifierName",
-      "replacement": "| ~reservedWord identifierName -- noReservedWord\n    | #(reservedWord identifierName) -- leadingReservedWord"
-    },
-    {
       "name": "LeftHandSideExpression",
       "pattern": "| NewExpression<guardYield, guardAwait>\n    | CallExpression<guardYield, guardAwait>",
       "replacement": "| CallExpression<guardYield, guardAwait>\n    | NewExpression<guardYield, guardAwait>"

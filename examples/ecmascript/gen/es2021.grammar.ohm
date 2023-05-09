@@ -407,8 +407,7 @@ ES2021 {
     | guardAwait await -- alt3
 
   Identifier = 
-    | ~reservedWord identifierName -- noReservedWord
-    | #(reservedWord identifierName) -- leadingReservedWord
+    | ~reservedWord identifierName
 
   PrimaryExpression<guardYield, guardAwait> = 
     | this -- alt1
