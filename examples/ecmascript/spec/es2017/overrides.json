@@ -42,7 +42,7 @@
     {
       "_comment_": "Need this rather than `#sc` so that EmptyStatement is not nullable.",
       "name": "EmptyStatement",
-      "override": "\";\" // note: this semicolon eats newlines`"
+      "override": "\";\" // note: this semicolon eats newlines"
     },
     {
       "_comment_": "ArrowFunction must come before ConditionalExpression, because the arrow function parameters will parse as a parenthesized expression. Both LeftHandSideExpression alternatives must also come before ConditionalExpression.",

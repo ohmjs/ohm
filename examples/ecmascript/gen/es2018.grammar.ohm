@@ -787,7 +787,7 @@ ES2018 {
     | "..." BindingIdentifier<guardYield, guardAwait> -- alt1
     | "..." BindingPattern<guardYield, guardAwait> -- alt2
 
-  EmptyStatement = ";" // note: this semicolon eats newlines`
+  EmptyStatement = ";" // note: this semicolon eats newlines
 
   ExpressionStatement<guardYield, guardAwait> = 
     | ~("{" | "function" | ("async" ~lineTerminator "function") | "class" | ("let" "[")) Expression<withIn, guardYield, guardAwait> #sc -- alt1

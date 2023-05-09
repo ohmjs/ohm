@@ -743,7 +743,7 @@ ES2016 {
     | "..." BindingIdentifier<guardYield> -- alt1
     | "..." BindingPattern<guardYield> -- alt2
 
-  EmptyStatement = ";" // note: this semicolon eats newlines`;
+  EmptyStatement = ";" // note: this semicolon eats newlines
 
   ExpressionStatement<guardYield> = 
     | ~("{" | "function" | "class" | ("let" "[")) Expression<withIn, guardYield> #sc -- alt1
