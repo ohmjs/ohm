@@ -1,6 +1,9 @@
 {
   "reservedWords": [
-    "ReservedWord"
+    "Keyword",
+    "FutureReservedWord",
+    "NullLiteral",
+    "BooleanLiteral"
   ],
   "substitutions": [
     {
@@ -33,8 +36,8 @@
     {
       "_comment_": "MethodDefinition must come before IdentifierReference.",
       "name": "PropertyDefinition",
-      "pattern": "| IdentifierReference<guardYield, guardAwait> -- alt1\n    | CoverInitializedName<guardYield, guardAwait> -- alt2\n    | PropertyName<guardYield, guardAwait> \":\" AssignmentExpression<withIn, guardYield, guardAwait> -- alt3\n    | MethodDefinition<guardYield, guardAwait> -- alt4\n    | \"...\" AssignmentExpression<withIn, guardYield, guardAwait> -- alt5",
-      "replacement": "| \"...\" AssignmentExpression<withIn, guardYield, guardAwait> -- alt5\n    | MethodDefinition<guardYield, guardAwait> -- alt4\n    | PropertyName<guardYield, guardAwait> \":\" AssignmentExpression<withIn, guardYield, guardAwait> -- alt3\n    | IdentifierReference<guardYield, guardAwait> -- alt1\n    | CoverInitializedName<guardYield, guardAwait> -- alt2"
+      "pattern": "| IdentifierReference<guardYield, guardAwait> -- alt1\n    | CoverInitializedName<guardYield, guardAwait> -- alt2\n    | PropertyName<guardYield, guardAwait> \":\" AssignmentExpression<withIn, guardYield, guardAwait> -- alt3\n    | MethodDefinition<guardYield, guardAwait> -- alt4",
+      "replacement": "| MethodDefinition<guardYield, guardAwait> -- alt4\n    | PropertyName<guardYield, guardAwait> \":\" AssignmentExpression<withIn, guardYield, guardAwait> -- alt3\n    | IdentifierReference<guardYield, guardAwait> -- alt1\n    | CoverInitializedName<guardYield, guardAwait> -- alt2"
     },
     {
       "_comment_": "Need this rather than `#sc` so that EmptyStatement is not nullable.",
@@ -68,8 +71,8 @@
     {
       "_comment_": "The first alternative is a subset of the second one, so flip the order.",
       "name": "ConditionalExpression",
-      "pattern": "| ShortCircuitExpression<guardIn, guardYield, guardAwait> -- alt1\n    | ShortCircuitExpression<guardIn, guardYield, guardAwait> \"?\" AssignmentExpression<withIn, guardYield, guardAwait> \":\" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt2",
-      "replacement": "| ShortCircuitExpression<guardIn, guardYield, guardAwait> \"?\" AssignmentExpression<withIn, guardYield, guardAwait> \":\" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt2\n    | ShortCircuitExpression<guardIn, guardYield, guardAwait> -- alt1"
+      "pattern": "| LogicalORExpression<guardIn, guardYield, guardAwait> -- alt1\n    | LogicalORExpression<guardIn, guardYield, guardAwait> \"?\" AssignmentExpression<withIn, guardYield, guardAwait> \":\" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt2",
+      "replacement": "| LogicalORExpression<guardIn, guardYield, guardAwait> \"?\" AssignmentExpression<withIn, guardYield, guardAwait> \":\" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt2\n    | LogicalORExpression<guardIn, guardYield, guardAwait> -- alt1"
     },
     {
       "_comment_": "First, put move the left recursive application above the ShiftExpression. (It's not properly recognized as left recursive due to the `guardIn`. Then, move the `guardIn` to be right before the `\"in\"` terminal.",
@@ -80,14 +83,14 @@
     {
       "_comment_": "FIXME: Make sure these produce something useful.",
       "name": "identifierPart",
-      "pattern": "| \"\" /* FIXME <ZWNJ> */ -- alt4\n    | \"\" /* FIXME <ZWJ> */ -- alt5",
-      "replacement": "| \"_\" -- alt4 /* FIXME <ZWNJ> <ZWJ> */"
+      "pattern": "| \"\" /* FIXME <ZWNJ> */ -- alt5\n    | \"\" /* FIXME <ZWJ> */ -- alt6",
+      "replacement": "| \"_\" -- alt5 /* FIXME <ZWNJ> <ZWJ> */"
     },
     {
       "_comment_": "Move decimalLiteral to the very end.",
       "name": "numericLiteral",
-      "pattern": "    | decimalLiteral -- alt1",
-      "postlude": "\n    | decimalLiteral -- alt1",
+      "pattern": "    | decimalLiteral\n",
+      "postlude": "\n    | decimalLiteral",
       "replacement": ""
     },
     {

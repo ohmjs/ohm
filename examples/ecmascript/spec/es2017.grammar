@@ -1034,16 +1034,6 @@ ConciseBody[In] :
 ArrowFormalParameters[Yield, Await] :
   `(` UniqueFormalParameters[?Yield, ?Await] `)`
 
-@line 18434
-
-CoverParenthesizedExpressionAndArrowParameterList[Yield, Await] :
-  `(` Expression[+In, ?Yield, ?Await] `)`
-  `(` `)`
-  `(` `...` BindingIdentifier[?Yield] `)`
-  `(` `...` BindingPattern `)`
-  `(` Expression `,` `...` BindingIdentifier `)`
-  `(` Expression `,` `...` BindingPattern `)`
-
 @line 18547
 
 MethodDefinition[Yield, Await] :

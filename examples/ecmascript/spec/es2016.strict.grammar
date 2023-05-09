@@ -996,16 +996,6 @@ ConciseBody[In] :
 ArrowFormalParameters[Yield] :
   `(` StrictFormalParameters[?Yield] `)`
 
-@line 18066
-
-CoverParenthesizedExpressionAndArrowParameterList[Yield] :
-  `(` Expression[+In, ?Yield] `)`
-  `(` `)`
-  `(` `...` BindingIdentifier[?Yield] `)`
-  `(` `...` BindingPattern[?Yield] `)`
-  `(` Expression[+In, ?Yield] `,` `...` BindingIdentifier[?Yield] `)`
-  `(` Expression[+In, ?Yield] `,` `...` BindingPattern[?Yield] `)`
-
 @line 18179
 
 MethodDefinition[Yield] :
