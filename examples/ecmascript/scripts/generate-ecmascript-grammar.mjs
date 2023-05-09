@@ -129,12 +129,24 @@ semantics.addOperation(
       return `${ruleName}${params} ${op} ${body}`;
     }
 
-    const handlePositiveLookahead = (_, _op, exprList) => `&(${exprList.children.map(c => c.toOhm()).join('|')})`;
-    const handleNegativeLookahead = (_, _op, exprList) => {
-      if (exprList.isIteration()) {
-        return `~(${exprList.children.map(c => c.toOhm()).join('|')})`;
+    const handlePositiveLookahead = (_, _op, exprList) => {
+      const parsedExprList = exprList.isIteration()
+        ? exprList.children.map(c => c.toOhm())
+        : [ exprList.toOhm() ]
+
+      if (parsedExprList.length > 1) {
+        return `&(${parsedExprList.join('|')})`;
       }
-      return `~${exprList.toOhm()}`;
+      return `&${parsedExprList}`;
+    }
+    const handleNegativeLookahead = (_, _op, exprList) => {
+      const parsedExprList = exprList.isIteration()
+        ? exprList.children.map(c => c.toOhm())
+        : [ exprList.toOhm() ]
+      if (parsedExprList.length > 1) {
+        return `~(${parsedExprList.join('|')})`;
+      }
+      return `~${parsedExprList}`;
     }
 
     return {
@@ -241,9 +253,12 @@ semantics.addOperation(
       },
       Lookahead_positive: handlePositiveLookahead,
       Lookahead_positiveSet: handlePositiveLookahead,
+      Lookahead_positiveSetEpsilon: handlePositiveLookahead,
       Lookahead_negative: handleNegativeLookahead,
       Lookahead_negativeSet: handleNegativeLookahead,
+      Lookahead_negativeSetEpsilon: handleNegativeLookahead,
       Lookahead_negativeNonterminal: handleNegativeLookahead,
+      Lookahead_negativeNonterminalEpsilon: handleNegativeLookahead,
       LookaheadSet(_open, listOfTerminalIter, _close) {
         const items = listOfTerminalIter.asIteration().children.map(terminalIter => {
           const ans = terminalIter.children.map(c => c.toOhm()).join(' ');

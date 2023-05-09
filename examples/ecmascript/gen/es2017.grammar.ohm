@@ -71,7 +71,7 @@ ES2017 {
 
   lineTerminatorSequence = 
     | "\n" -- alt1
-    | "\r" ~("\n") -- alt2
+    | "\r" ~"\n" -- alt2
     | "\u2028" -- alt3
     | "\u2029" -- alt4
     | "\r" "\n" -- alt5
@@ -369,7 +369,7 @@ ES2017 {
     | templateCharacter+
 
   templateCharacter = 
-    | "$" ~("{") -- alt1
+    | "$" ~"{" -- alt1
     | "\\" escapeSequence -- alt2
     | lineContinuation -- alt3
     | lineTerminatorSequence -- alt4
@@ -799,7 +799,7 @@ ES2017 {
     | for "(" ~(("let" "[")) LeftHandSideExpression<guardYield, guardAwait> in Expression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt6
     | for "(" var ForBinding<guardYield, guardAwait> in Expression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt7
     | for "(" ForDeclaration<guardYield, guardAwait> in Expression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt8
-    | for "(" ~("let") LeftHandSideExpression<guardYield, guardAwait> "of" AssignmentExpression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt9
+    | for "(" ~"let" LeftHandSideExpression<guardYield, guardAwait> "of" AssignmentExpression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt9
     | for "(" var ForBinding<guardYield, guardAwait> "of" AssignmentExpression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt10
     | for "(" ForDeclaration<guardYield, guardAwait> "of" AssignmentExpression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt11
 
@@ -911,7 +911,7 @@ ES2017 {
     | CoverParenthesizedExpressionAndArrowParameterList<guardYield, guardAwait>  -- alt2
 
   ConciseBody<guardIn> = 
-    | ~("{") AssignmentExpression<guardIn, noYield, noAwait> -- alt1
+    | ~"{" AssignmentExpression<guardIn, noYield, noAwait> -- alt1
     | "{" FunctionBody<noYield, noAwait> "}" -- alt2
 
   ArrowFormalParameters<guardYield, guardAwait> = 
@@ -992,7 +992,7 @@ ES2017 {
     | CoverCallExpressionAndAsyncArrowHead<guardYield, guardAwait> ~lineTerminator "=>" AsyncConciseBody<guardIn>  -- alt2
 
   AsyncConciseBody<guardIn> = 
-    | ~("{") AssignmentExpression<guardIn, noYield, withAwait> -- alt1
+    | ~"{" AssignmentExpression<guardIn, noYield, withAwait> -- alt1
     | "{" AsyncFunctionBody "}" -- alt2
 
   AsyncArrowBindingIdentifier<guardYield> = 
