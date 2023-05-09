@@ -362,8 +362,7 @@ ES2016 {
     | guardYield yield -- alt2
 
   Identifier = 
-    | ~reservedWord identifierName -- noReservedWord
-    | #(reservedWord identifierName) -- leadingReservedWord
+    | ~reservedWord identifierName
 
   PrimaryExpression<guardYield> = 
     | this -- alt1
