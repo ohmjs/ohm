@@ -308,7 +308,7 @@ semantics.addOperation(
         const trimmedSourceString = sourceString.replaceAll('|', '')
         const root = this.context.productions;
         if (root.productionsByName.has(trimmedSourceString)) {
-          return sourceString;
+          return trimmedSourceString;
         }
         const lexicalName = lexicalRuleName(trimmedSourceString);
         assert(root.productionsByName.has(lexicalName));
