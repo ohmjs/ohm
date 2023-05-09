@@ -56,8 +56,11 @@ Grammarkdown {
     | lookahead "==" terminal+ -- positive
     | lookahead "!=" terminal+ -- negative
     | lookahead "<-" LookaheadSet -- positiveSet
+    | lookahead "\u2208" LookaheadSet -- positiveSetEpsilon
     | lookahead "<!" LookaheadSet -- negativeSet
+    | lookahead "\u2209" LookaheadSet -- negativeSetEpsilon
     | lookahead "<!" nonterminal -- negativeNonterminal
+    | lookahead "\u2209" nonterminal -- negativeNonterminalEpsilon
 
   LookaheadSet = "{" NonemptyListOf<(terminal|assertion)+, ","> "}"
 

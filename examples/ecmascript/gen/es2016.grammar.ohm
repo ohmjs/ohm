@@ -71,7 +71,7 @@ ES2016 {
 
   lineTerminatorSequence = 
     | "\n" -- alt1
-    | "\r" ~("\n") -- alt2
+    | "\r" ~"\n" -- alt2
     | "\u2028" -- alt3
     | "\u2029" -- alt4
     | "\r" "\n" -- alt5
@@ -343,7 +343,7 @@ ES2016 {
     | templateCharacter+
 
   templateCharacter = 
-    | "$" ~("{") -- alt1
+    | "$" ~"{" -- alt1
     | "\\" escapeSequence -- alt2
     | lineContinuation -- alt3
     | lineTerminatorSequence -- alt4
@@ -761,7 +761,7 @@ ES2016 {
     | for "(" ~(("let" "[")) LeftHandSideExpression<guardYield> in Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt6
     | for "(" var ForBinding<guardYield> in Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt7
     | for "(" ForDeclaration<guardYield> in Expression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt8
-    | for "(" ~("let") LeftHandSideExpression<guardYield> "of" AssignmentExpression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt9
+    | for "(" ~"let" LeftHandSideExpression<guardYield> "of" AssignmentExpression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt9
     | for "(" var ForBinding<guardYield> "of" AssignmentExpression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt10
     | for "(" ForDeclaration<guardYield> "of" AssignmentExpression<withIn, guardYield> ")" Statement<guardYield, guardReturn> -- alt11
 
@@ -875,7 +875,7 @@ ES2016 {
     | CoverParenthesizedExpressionAndArrowParameterList<guardYield>  -- alt2
 
   ConciseBody<guardIn> = 
-    | ~("{") AssignmentExpression<guardIn, noYield> -- alt1
+    | ~"{" AssignmentExpression<guardIn, noYield> -- alt1
     | "{" FunctionBody<noYield> "}" -- alt2
 
   ArrowFormalParameters<guardYield> = 
