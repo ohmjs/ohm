@@ -1,0 +1,1590 @@
+ES2022 {
+
+  Start = Script
+
+  // Override Ohm's built-in definition of space.
+  space := whiteSpace | lineTerminator | comment
+
+  unicodeZs = "\xA0" | "\u1680" | "\u2000".."\u200A" | "\u202F" | "\u205F" | "\u3000"
+
+  multiLineCommentNoNL = "/*" (~("*/" | lineTerminator) sourceCharacter)* "*/"
+
+  // does not accept lineTerminators, not even implicit ones in a multiLineComment (cf. section 7.4)
+  spacesNoNL = (whiteSpace | singleLineComment | multiLineCommentNoNL)*
+
+  // A semicolon is "automatically inserted" if a newline or the end of the input stream is
+  // reached, or the offending token is "}".
+  // See https://es5.github.io/#x7.9 for more information.
+  // NOTE: Applications of this rule *must* appear in a lexical context -- either in the body of a
+  // lexical rule, or inside '#()'.
+  sc = space* (";" | end)
+     | spacesNoNL (lineTerminator | ~multiLineCommentNoNL multiLineComment | &"}")
+
+  sourceCharacter = any
+
+  inputElementDiv = 
+    | whiteSpace
+    | lineTerminator
+    | comment
+    | commonToken
+    | divPunctuator
+    | rightBracePunctuator
+
+  inputElementRegExp = 
+    | whiteSpace
+    | lineTerminator
+    | comment
+    | commonToken
+    | rightBracePunctuator
+    | regularExpressionLiteral
+
+  inputElementRegExpOrTemplateTail = 
+    | whiteSpace
+    | lineTerminator
+    | comment
+    | commonToken
+    | regularExpressionLiteral
+    | templateSubstitutionTail
+
+  inputElementTemplateTail = 
+    | whiteSpace
+    | lineTerminator
+    | comment
+    | commonToken
+    | divPunctuator
+    | templateSubstitutionTail
+
+  whiteSpace = 
+    | "\t"
+    | "\x0B"
+    | "\x0C"
+    | "\uFEFF"
+    | unicodeZs
+
+  lineTerminator = 
+    | "\n"
+    | "\r"
+    | "\u2028"
+    | "\u2029"
+
+  lineTerminatorSequence = 
+    | "\n" -- alt1
+    | "\r" ~"\n" -- alt2
+    | "\u2028" -- alt3
+    | "\u2029" -- alt4
+    | "\r" "\n" -- alt5
+
+  comment = 
+    | multiLineComment
+    | singleLineComment
+
+  multiLineComment = 
+    | "/*" multiLineCommentChars? "*/" -- alt1
+
+  multiLineCommentChars = 
+    (~"*/" sourceCharacter)*
+
+  postAsteriskCommentChars = 
+    | multiLineNotForwardSlashOrAsteriskChar multiLineCommentChars? -- alt1
+    | "*" ~"/" postAsteriskCommentChars? -- alt2
+
+  multiLineNotAsteriskChar = 
+    | ~"*" sourceCharacter
+
+  multiLineNotForwardSlashOrAsteriskChar = 
+    | ~("/" | "*") sourceCharacter
+
+  singleLineComment = 
+    | "//" singleLineCommentChars? -- alt1
+
+  singleLineCommentChars = 
+    | singleLineCommentChar+
+
+  singleLineCommentChar = 
+    | ~lineTerminator sourceCharacter
+
+  commonToken = 
+    | identifierName
+    | privateIdentifier
+    | punctuator
+    | numericLiteral
+    | stringLiteral
+    | template
+
+  privateIdentifier = 
+    | "#" identifierName -- alt1
+
+  identifierName = 
+    | identifierName identifierPart -- alt2
+    | identifierStart -- alt1
+
+  identifierStart = 
+    | identifierStartChar -- alt1
+    | "\\" unicodeEscapeSequence -- alt2
+
+  identifierPart = 
+    | "\\" unicodeEscapeSequence -- alt2
+    | identifierPartChar -- alt1
+
+  identifierStartChar = 
+    | unicodeIDStart
+    | "$"
+    | "_"
+
+  identifierPartChar = 
+    | unicodeIDContinue
+    | "$"
+    | "" /* FIXME <ZWNJ> */
+    | "" /* FIXME <ZWJ> */
+
+  unicodeIDStart = letter /* fixme */
+
+  unicodeIDContinue = letter | digit /* fixme */
+
+  reservedWord = instanceof | continue | debugger | function | default | extends | finally | delete | export | import | return | switch | typeof | await | break | catch | class | const | false | super | throw | while | yield | case | else | enum | null | this | true | void | with | for | new | try | var | do | if | in
+
+  punctuator = 
+    | optionalChainingPunctuator
+    | otherPunctuator
+
+  optionalChainingPunctuator = 
+    | "?." ~decimalDigit -- alt1
+
+  otherPunctuator = ">>>=" | "..." | "===" | "!==" | ">>>" | "**=" | "<<=" | ">>=" | "&&=" | "||=" | "??=" | "<=" | ">=" | "==" | "!=" | "**" | "++" | "--" | "<<" | ">>" | "&&" | "||" | "??" | "+=" | "-=" | "*=" | "%=" | "&=" | "|=" | "^=" | "=>" | "{" | "(" | ")" | "[" | "]" | "." | #sc | "," | "<" | ">" | "+" | "-" | "*" | "%" | "&" | "|" | "^" | "!" | "~" | "?" | ":" | "="
+
+  divPunctuator = 
+    | "/"
+    | "/="
+
+  rightBracePunctuator = 
+    | "}"
+
+  nullLiteral = 
+    | null
+
+  booleanLiteral = 
+    | true
+    | false
+
+  numericLiteralSeparator = 
+    | "_"
+
+  numericLiteral = 
+
+    | decimalBigIntegerLiteral -- alt2
+    | nonDecimalIntegerLiteral<withSep> -- alt3
+    | nonDecimalIntegerLiteral<withSep> bigIntLiteralSuffix -- alt4
+    | legacyOctalIntegerLiteral -- alt5
+    | decimalLiteral -- alt1
+
+  decimalBigIntegerLiteral = 
+    | "0" bigIntLiteralSuffix -- alt1
+    | nonZeroDigit decimalDigits<withSep>? bigIntLiteralSuffix -- alt2
+    | nonZeroDigit numericLiteralSeparator decimalDigits<withSep> bigIntLiteralSuffix -- alt3
+
+  nonDecimalIntegerLiteral<guardSep> = 
+    | binaryIntegerLiteral<guardSep>
+    | octalIntegerLiteral<guardSep>
+    | hexIntegerLiteral<guardSep>
+
+  bigIntLiteralSuffix = 
+    | "n"
+
+  decimalLiteral = 
+    | decimalIntegerLiteral "." decimalDigits<withSep>? exponentPart<withSep>? -- alt1
+    | "." decimalDigits<withSep> exponentPart<withSep>? -- alt2
+    | decimalIntegerLiteral exponentPart<withSep>? -- alt3
+
+  decimalIntegerLiteral = 
+    | "0" -- alt1
+    | nonZeroDigit -- alt2
+    | nonZeroDigit numericLiteralSeparator? decimalDigits<withSep> -- alt3
+    | nonOctalDecimalIntegerLiteral -- alt4
+
+  decimalDigits<guardSep> = 
+    | decimalDigits<guardSep> decimalDigit -- alt2
+    | decimalDigit -- alt1
+    | guardSep decimalDigits<withSep> numericLiteralSeparator decimalDigit -- alt3
+
+  decimalDigit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+
+  nonZeroDigit = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+
+  exponentPart<guardSep> = 
+    | exponentIndicator signedInteger<guardSep> -- alt1
+
+  exponentIndicator = "e" | "E"
+
+  signedInteger<guardSep> = 
+    | decimalDigits<guardSep> -- alt1
+    | "+" decimalDigits<guardSep> -- alt2
+    | "-" decimalDigits<guardSep> -- alt3
+
+  binaryIntegerLiteral<guardSep> = 
+    | "0b" binaryDigits<guardSep> -- alt1
+    | "0B" binaryDigits<guardSep> -- alt2
+
+  binaryDigits<guardSep> = 
+    | binaryDigits<guardSep> binaryDigit -- alt2
+    | binaryDigit -- alt1
+    | guardSep binaryDigits<withSep> numericLiteralSeparator binaryDigit -- alt3
+
+  binaryDigit = "0" | "1"
+
+  octalIntegerLiteral<guardSep> = 
+    | "0o" octalDigits<guardSep> -- alt1
+    | "0O" octalDigits<guardSep> -- alt2
+
+  octalDigits<guardSep> = 
+    | octalDigits<guardSep> octalDigit -- alt2
+    | octalDigit -- alt1
+    | guardSep octalDigits<withSep> numericLiteralSeparator octalDigit -- alt3
+
+  legacyOctalIntegerLiteral = 
+    | legacyOctalIntegerLiteral octalDigit -- alt2
+    | "0" octalDigit -- alt1
+
+  nonOctalDecimalIntegerLiteral = 
+    | nonOctalDecimalIntegerLiteral decimalDigit -- alt3
+    | "0" nonOctalDigit -- alt1
+    | legacyOctalLikeDecimalIntegerLiteral nonOctalDigit -- alt2
+
+  legacyOctalLikeDecimalIntegerLiteral = 
+    | legacyOctalLikeDecimalIntegerLiteral octalDigit -- alt2
+    | "0" octalDigit -- alt1
+
+  octalDigit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7"
+
+  nonOctalDigit = "8" | "9"
+
+  hexIntegerLiteral<guardSep> = 
+    | "0x" hexDigits<guardSep> -- alt1
+    | "0X" hexDigits<guardSep> -- alt2
+
+  hexDigits<guardSep> = 
+    | hexDigits<guardSep> hexDigit -- alt2
+    | hexDigit -- alt1
+    | guardSep hexDigits<withSep> numericLiteralSeparator hexDigit -- alt3
+
+  hexDigit := "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "a" | "b" | "c" | "d" | "e" | "f" | "A" | "B" | "C" | "D" | "E" | "F"
+
+  stringLiteral = 
+    | "\"" doubleStringCharacters? "\"" -- alt1
+    | "'" singleStringCharacters? "'" -- alt2
+
+  doubleStringCharacters = 
+    | doubleStringCharacter+
+
+  singleStringCharacters = 
+    | singleStringCharacter+
+
+  doubleStringCharacter = 
+    | ~("\"" | "\\" | lineTerminator) sourceCharacter -- alt1
+    | "\u2028" -- alt2
+    | "\u2029" -- alt3
+    | "\\" escapeSequence -- alt4
+    | lineContinuation -- alt5
+
+  singleStringCharacter = 
+    | ~("'" | "\\" | lineTerminator) sourceCharacter -- alt1
+    | "\u2028" -- alt2
+    | "\u2029" -- alt3
+    | "\\" escapeSequence -- alt4
+    | lineContinuation -- alt5
+
+  lineContinuation = 
+    | "\\" lineTerminatorSequence -- alt1
+
+  escapeSequence = 
+    | characterEscapeSequence -- alt1
+    | "0" ~decimalDigit -- alt2
+    | legacyOctalEscapeSequence -- alt3
+    | nonOctalDecimalEscapeSequence -- alt4
+    | hexEscapeSequence -- alt5
+    | unicodeEscapeSequence -- alt6
+
+  characterEscapeSequence = 
+    | singleEscapeCharacter
+    | nonEscapeCharacter
+
+  singleEscapeCharacter = "\"" | "\\" | "'" | "b" | "f" | "n" | "r" | "t" | "v"
+
+  nonEscapeCharacter = 
+    | ~(escapeCharacter | lineTerminator) sourceCharacter
+
+  escapeCharacter = 
+    | singleEscapeCharacter
+    | decimalDigit
+    | "x"
+    | "u"
+
+  legacyOctalEscapeSequence = 
+    | "0" &("8" | "9") -- alt1
+    | nonZeroOctalDigit ~octalDigit -- alt2
+    | zeroToThree octalDigit ~octalDigit -- alt3
+    | fourToSeven octalDigit -- alt4
+    | zeroToThree octalDigit octalDigit -- alt5
+
+  nonZeroOctalDigit = 
+    | ~"0" octalDigit
+
+  zeroToThree = "0" | "1" | "2" | "3"
+
+  fourToSeven = "4" | "5" | "6" | "7"
+
+  nonOctalDecimalEscapeSequence = "8" | "9"
+
+  hexEscapeSequence = 
+    | "x" hexDigit hexDigit -- alt1
+
+  unicodeEscapeSequence = 
+    | "u" hex4Digits -- alt1
+    | "u{" codePoint "}" -- alt2
+
+  hex4Digits = 
+    | hexDigit hexDigit hexDigit hexDigit -- alt1
+
+  regularExpressionLiteral = 
+    | "/" regularExpressionBody "/" regularExpressionFlags -- alt1
+
+  regularExpressionBody = 
+    | regularExpressionFirstChar regularExpressionChars -- alt1
+
+  regularExpressionChars = 
+    | regularExpressionChars regularExpressionChar -- alt2
+    | /* empty */ -- alt1
+
+  regularExpressionFirstChar = 
+    | ~("*" | "\\" | "/" | "[") regularExpressionNonTerminator
+    | regularExpressionBackslashSequence
+    | regularExpressionClass
+
+  regularExpressionChar = 
+    | ~("\\" | "/" | "[") regularExpressionNonTerminator
+    | regularExpressionBackslashSequence
+    | regularExpressionClass
+
+  regularExpressionBackslashSequence = 
+    | "\\" regularExpressionNonTerminator -- alt1
+
+  regularExpressionNonTerminator = 
+    | ~lineTerminator sourceCharacter
+
+  regularExpressionClass = 
+    | "[" regularExpressionClassChars "]" -- alt1
+
+  regularExpressionClassChars = 
+    | regularExpressionClassChars regularExpressionClassChar -- alt2
+    | /* empty */ -- alt1
+
+  regularExpressionClassChar = 
+    | ~("]" | "\\") regularExpressionNonTerminator
+    | regularExpressionBackslashSequence
+
+  regularExpressionFlags = 
+    | regularExpressionFlags identifierPartChar -- alt2
+    | /* empty */ -- alt1
+
+  template = 
+    | noSubstitutionTemplate
+    | templateHead
+
+  noSubstitutionTemplate = 
+    | "`" templateCharacters? "`" -- alt1
+
+  templateHead = 
+    | "`" templateCharacters? "${" -- alt1
+
+  templateSubstitutionTail = 
+    | templateMiddle
+    | templateTail
+
+  templateMiddle = 
+    | "}" templateCharacters? "${" -- alt1
+
+  templateTail = 
+    | "}" templateCharacters? "`" -- alt1
+
+  templateCharacters = 
+    | templateCharacter+
+
+  templateCharacter = 
+    | "$" ~"{" -- alt1
+    | "\\" templateEscapeSequence -- alt2
+    | "\\" notEscapeSequence -- alt3
+    | lineContinuation -- alt4
+    | lineTerminatorSequence -- alt5
+    | ~("`" | "\\" | "$" | lineTerminator) sourceCharacter -- alt6
+
+  templateEscapeSequence = 
+    | characterEscapeSequence -- alt1
+    | "0" ~decimalDigit -- alt2
+    | hexEscapeSequence -- alt3
+    | unicodeEscapeSequence -- alt4
+
+  notEscapeSequence = 
+    | "0" decimalDigit -- alt1
+    | ~"0" decimalDigit -- alt2
+    | "x" ~hexDigit -- alt3
+    | "x" hexDigit ~hexDigit -- alt4
+    | "u" ~hexDigit ~"{" -- alt5
+    | "u" hexDigit ~hexDigit -- alt6
+    | "u" hexDigit hexDigit ~hexDigit -- alt7
+    | "u" hexDigit hexDigit hexDigit ~hexDigit -- alt8
+    | "u" "{" ~hexDigit -- alt9
+    | "u" "{" notCodePoint ~hexDigit -- alt10
+    | "u" "{" codePoint ~hexDigit ~"}" -- alt11
+
+  notCodePoint = 
+    | hexDigits<noSep> /* FIXME Assertion: > but only if MV of |HexDigits| > 0x10FFFF */ -- alt1
+
+  codePoint = 
+    | hexDigits<noSep> /* FIXME Assertion: > but only if MV of |HexDigits| ≤ 0x10FFFF */ -- alt1
+
+  IdentifierReference<guardYield, guardAwait> = 
+    | Identifier -- alt1
+    | guardYield yield -- alt2
+    | guardAwait await -- alt3
+
+  BindingIdentifier<guardYield, guardAwait> = 
+    | Identifier
+    | yield
+    | await
+
+  LabelIdentifier<guardYield, guardAwait> = 
+    | Identifier -- alt1
+    | guardYield yield -- alt2
+    | guardAwait await -- alt3
+
+  Identifier = 
+    | ~reservedWord identifierName
+
+  PrimaryExpression<guardYield, guardAwait> = 
+    | this -- alt1
+    | IdentifierReference<guardYield, guardAwait> -- alt2
+    | Literal -- alt3
+    | ArrayLiteral<guardYield, guardAwait> -- alt4
+    | ObjectLiteral<guardYield, guardAwait> -- alt5
+    | FunctionExpression -- alt6
+    | ClassExpression<guardYield, guardAwait> -- alt7
+    | GeneratorExpression -- alt8
+    | AsyncFunctionExpression -- alt9
+    | AsyncGeneratorExpression -- alt10
+    | regularExpressionLiteral -- alt11
+    | TemplateLiteral<guardYield, guardAwait, noTagged> -- alt12
+    | CoverParenthesizedExpressionAndArrowParameterList<guardYield, guardAwait>  -- alt13
+
+  CoverParenthesizedExpressionAndArrowParameterList<guardYield, guardAwait> = 
+    | "(" Expression<withIn, guardYield, guardAwait> ")" -- alt1
+    | "(" Expression<withIn, guardYield, guardAwait> "," ")" -- alt2
+    | "(" ")" -- alt3
+    | "(" "..." BindingIdentifier<guardYield, guardAwait> ")" -- alt4
+    | "(" "..." BindingPattern<guardYield, guardAwait> ")" -- alt5
+    | "(" Expression<withIn, guardYield, guardAwait> "," "..." BindingIdentifier<guardYield, guardAwait> ")" -- alt6
+    | "(" Expression<withIn, guardYield, guardAwait> "," "..." BindingPattern<guardYield, guardAwait> ")" -- alt7
+
+  ParenthesizedExpression<guardYield, guardAwait> = 
+    | "(" Expression<withIn, guardYield, guardAwait> ")" -- alt1
+
+  Literal = 
+    | nullLiteral
+    | booleanLiteral
+    | numericLiteral
+    | stringLiteral
+
+  ArrayLiteral<guardYield, guardAwait> = 
+    | "[" Elision? "]" -- alt1
+    | "[" ElementList<guardYield, guardAwait> "]" -- alt2
+    | "[" ElementList<guardYield, guardAwait> "," Elision? "]" -- alt3
+
+  ElementList<guardYield, guardAwait> = 
+    | ElementList<guardYield, guardAwait> "," Elision? AssignmentExpression<withIn, guardYield, guardAwait> -- alt3
+    | ElementList<guardYield, guardAwait> "," Elision? SpreadElement<guardYield, guardAwait> -- alt4
+    | Elision? AssignmentExpression<withIn, guardYield, guardAwait> -- alt1
+    | Elision? SpreadElement<guardYield, guardAwait> -- alt2
+
+  Elision = 
+    | Elision "," -- alt2
+    | "," -- alt1
+
+  SpreadElement<guardYield, guardAwait> = 
+    | "..." AssignmentExpression<withIn, guardYield, guardAwait> -- alt1
+
+  ObjectLiteral<guardYield, guardAwait> = 
+    | "{" "}" -- alt1
+    | "{" PropertyDefinitionList<guardYield, guardAwait> "}" -- alt2
+    | "{" PropertyDefinitionList<guardYield, guardAwait> "," "}" -- alt3
+
+  PropertyDefinitionList<guardYield, guardAwait> = 
+    | PropertyDefinitionList<guardYield, guardAwait> "," PropertyDefinition<guardYield, guardAwait> -- alt2
+    | PropertyDefinition<guardYield, guardAwait> -- alt1
+
+  PropertyDefinition<guardYield, guardAwait> = 
+    | "..." AssignmentExpression<withIn, guardYield, guardAwait> -- alt5
+    | MethodDefinition<guardYield, guardAwait> -- alt4
+    | PropertyName<guardYield, guardAwait> ":" AssignmentExpression<withIn, guardYield, guardAwait> -- alt3
+    | IdentifierReference<guardYield, guardAwait> -- alt1
+    | CoverInitializedName<guardYield, guardAwait> -- alt2
+
+  PropertyName<guardYield, guardAwait> = 
+    | LiteralPropertyName
+    | ComputedPropertyName<guardYield, guardAwait>
+
+  LiteralPropertyName = 
+    | identifierName
+    | stringLiteral
+    | numericLiteral
+
+  ComputedPropertyName<guardYield, guardAwait> = 
+    | "[" AssignmentExpression<withIn, guardYield, guardAwait> "]" -- alt1
+
+  CoverInitializedName<guardYield, guardAwait> = 
+    | IdentifierReference<guardYield, guardAwait> Initializer<withIn, guardYield, guardAwait> -- alt1
+
+  Initializer<guardIn, guardYield, guardAwait> = 
+    | "=" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt1
+
+  TemplateLiteral<guardYield, guardAwait, guardTagged> = 
+    | noSubstitutionTemplate
+    | SubstitutionTemplate<guardYield, guardAwait, guardTagged>
+
+  SubstitutionTemplate<guardYield, guardAwait, guardTagged> = 
+    | templateHead Expression<withIn, guardYield, guardAwait> TemplateSpans<guardYield, guardAwait, guardTagged> -- alt1
+
+  TemplateSpans<guardYield, guardAwait, guardTagged> = 
+    | templateTail -- alt1
+    | TemplateMiddleList<guardYield, guardAwait, guardTagged> templateTail -- alt2
+
+  TemplateMiddleList<guardYield, guardAwait, guardTagged> = 
+    | TemplateMiddleList<guardYield, guardAwait, guardTagged> templateMiddle Expression<withIn, guardYield, guardAwait> -- alt2
+    | templateMiddle Expression<withIn, guardYield, guardAwait> -- alt1
+
+  MemberExpression<guardYield, guardAwait> = 
+    | MemberExpression<guardYield, guardAwait> "[" Expression<withIn, guardYield, guardAwait> "]" -- alt2
+    | MemberExpression<guardYield, guardAwait> "." identifierName -- alt3
+    | MemberExpression<guardYield, guardAwait> TemplateLiteral<guardYield, guardAwait, withTagged> -- alt4
+    | MemberExpression<guardYield, guardAwait> "." privateIdentifier -- alt8
+    | new MemberExpression<guardYield, guardAwait> Arguments<guardYield, guardAwait> -- alt7
+    | PrimaryExpression<guardYield, guardAwait> -- alt1
+    | SuperProperty<guardYield, guardAwait> -- alt5
+    | MetaProperty -- alt6
+
+  SuperProperty<guardYield, guardAwait> = 
+    | super "[" Expression<withIn, guardYield, guardAwait> "]" -- alt1
+    | super "." identifierName -- alt2
+
+  MetaProperty = 
+    | NewTarget
+    | ImportMeta
+
+  NewTarget = 
+    | new "." "target" -- alt1
+
+  ImportMeta = 
+    | import "." "meta" -- alt1
+
+  NewExpression<guardYield, guardAwait> = 
+    | MemberExpression<guardYield, guardAwait> -- alt1
+    | new NewExpression<guardYield, guardAwait> -- alt2
+
+  CallExpression<guardYield, guardAwait> = 
+    | CallExpression<guardYield, guardAwait> Arguments<guardYield, guardAwait> -- alt4
+    | CallExpression<guardYield, guardAwait> "[" Expression<withIn, guardYield, guardAwait> "]" -- alt5
+    | CallExpression<guardYield, guardAwait> "." identifierName -- alt6
+    | CallExpression<guardYield, guardAwait> TemplateLiteral<guardYield, guardAwait, withTagged> -- alt7
+    | CallExpression<guardYield, guardAwait> "." privateIdentifier -- alt8
+    | CoverCallExpressionAndAsyncArrowHead<guardYield, guardAwait>  -- alt1
+    | SuperCall<guardYield, guardAwait> -- alt2
+    | ImportCall<guardYield, guardAwait> -- alt3
+
+  SuperCall<guardYield, guardAwait> = 
+    | super Arguments<guardYield, guardAwait> -- alt1
+
+  ImportCall<guardYield, guardAwait> = 
+    | import "(" AssignmentExpression<withIn, guardYield, guardAwait> ")" -- alt1
+
+  Arguments<guardYield, guardAwait> = 
+    | "(" ")" -- alt1
+    | "(" ArgumentList<guardYield, guardAwait> ")" -- alt2
+    | "(" ArgumentList<guardYield, guardAwait> "," ")" -- alt3
+
+  ArgumentList<guardYield, guardAwait> = 
+    | ArgumentList<guardYield, guardAwait> "," AssignmentExpression<withIn, guardYield, guardAwait> -- alt3
+    | ArgumentList<guardYield, guardAwait> "," "..." AssignmentExpression<withIn, guardYield, guardAwait> -- alt4
+    | AssignmentExpression<withIn, guardYield, guardAwait> -- alt1
+    | "..." AssignmentExpression<withIn, guardYield, guardAwait> -- alt2
+
+  OptionalExpression<guardYield, guardAwait> = 
+    | OptionalExpression<guardYield, guardAwait> OptionalChain<guardYield, guardAwait> -- alt3
+    | MemberExpression<guardYield, guardAwait> OptionalChain<guardYield, guardAwait> -- alt1
+    | CallExpression<guardYield, guardAwait> OptionalChain<guardYield, guardAwait> -- alt2
+
+  OptionalChain<guardYield, guardAwait> = 
+    | OptionalChain<guardYield, guardAwait> Arguments<guardYield, guardAwait> -- alt6
+    | OptionalChain<guardYield, guardAwait> "[" Expression<withIn, guardYield, guardAwait> "]" -- alt7
+    | OptionalChain<guardYield, guardAwait> "." identifierName -- alt8
+    | OptionalChain<guardYield, guardAwait> TemplateLiteral<guardYield, guardAwait, withTagged> -- alt9
+    | OptionalChain<guardYield, guardAwait> "." privateIdentifier -- alt10
+    | "?." Arguments<guardYield, guardAwait> -- alt1
+    | "?." "[" Expression<withIn, guardYield, guardAwait> "]" -- alt2
+    | "?." identifierName -- alt3
+    | "?." TemplateLiteral<guardYield, guardAwait, withTagged> -- alt4
+    | "?." privateIdentifier -- alt5
+
+  LeftHandSideExpression<guardYield, guardAwait> = 
+    | CallExpression<guardYield, guardAwait>
+    | NewExpression<guardYield, guardAwait>
+    | OptionalExpression<guardYield, guardAwait>
+
+  CallMemberExpression<guardYield, guardAwait> = 
+    | MemberExpression<guardYield, guardAwait> Arguments<guardYield, guardAwait> -- alt1
+
+  UpdateExpression<guardYield, guardAwait> = 
+    | LeftHandSideExpression<guardYield, guardAwait> -- alt1
+    | LeftHandSideExpression<guardYield, guardAwait> ~lineTerminator "++" -- alt2
+    | LeftHandSideExpression<guardYield, guardAwait> ~lineTerminator "--" -- alt3
+    | "++" UnaryExpression<guardYield, guardAwait> -- alt4
+    | "--" UnaryExpression<guardYield, guardAwait> -- alt5
+
+  UnaryExpression<guardYield, guardAwait> = 
+    | delete UnaryExpression<guardYield, guardAwait> -- alt2
+    | void UnaryExpression<guardYield, guardAwait> -- alt3
+    | typeof UnaryExpression<guardYield, guardAwait> -- alt4
+    | "+" UnaryExpression<guardYield, guardAwait> -- alt5
+    | "-" UnaryExpression<guardYield, guardAwait> -- alt6
+    | "~" UnaryExpression<guardYield, guardAwait> -- alt7
+    | "!" UnaryExpression<guardYield, guardAwait> -- alt8
+    | guardAwait AwaitExpression<guardYield> -- alt9
+    | UpdateExpression<guardYield, guardAwait> -- alt1
+
+  ExponentiationExpression<guardYield, guardAwait> = 
+    | UnaryExpression<guardYield, guardAwait> -- alt1
+    | UpdateExpression<guardYield, guardAwait> "**" ExponentiationExpression<guardYield, guardAwait> -- alt2
+
+  MultiplicativeExpression<guardYield, guardAwait> = 
+    | MultiplicativeExpression<guardYield, guardAwait> MultiplicativeOperator ExponentiationExpression<guardYield, guardAwait> -- alt2
+    | ExponentiationExpression<guardYield, guardAwait> -- alt1
+
+  MultiplicativeOperator = "*" | "/" | "%"
+
+  AdditiveExpression<guardYield, guardAwait> = 
+    | AdditiveExpression<guardYield, guardAwait> "+" MultiplicativeExpression<guardYield, guardAwait> -- alt2
+    | AdditiveExpression<guardYield, guardAwait> "-" MultiplicativeExpression<guardYield, guardAwait> -- alt3
+    | MultiplicativeExpression<guardYield, guardAwait> -- alt1
+
+  ShiftExpression<guardYield, guardAwait> = 
+    | ShiftExpression<guardYield, guardAwait> "<<" AdditiveExpression<guardYield, guardAwait> -- alt2
+    | ShiftExpression<guardYield, guardAwait> ">>" AdditiveExpression<guardYield, guardAwait> -- alt3
+    | ShiftExpression<guardYield, guardAwait> ">>>" AdditiveExpression<guardYield, guardAwait> -- alt4
+    | AdditiveExpression<guardYield, guardAwait> -- alt1
+
+  RelationalExpression<guardIn, guardYield, guardAwait> = 
+    | RelationalExpression<guardIn, guardYield, guardAwait> "<" ShiftExpression<guardYield, guardAwait> -- alt2
+    | RelationalExpression<guardIn, guardYield, guardAwait> ">" ShiftExpression<guardYield, guardAwait> -- alt3
+    | RelationalExpression<guardIn, guardYield, guardAwait> "<=" ShiftExpression<guardYield, guardAwait> -- alt4
+    | RelationalExpression<guardIn, guardYield, guardAwait> ">=" ShiftExpression<guardYield, guardAwait> -- alt5
+    | RelationalExpression<guardIn, guardYield, guardAwait> instanceof ShiftExpression<guardYield, guardAwait> -- alt6
+    | RelationalExpression<withIn, guardYield, guardAwait> guardIn in ShiftExpression<guardYield, guardAwait> -- alt7
+    | ShiftExpression<guardYield, guardAwait> -- alt1
+    | guardIn privateIdentifier in ShiftExpression<guardYield, guardAwait> -- alt8
+
+  EqualityExpression<guardIn, guardYield, guardAwait> = 
+    | EqualityExpression<guardIn, guardYield, guardAwait> "==" RelationalExpression<guardIn, guardYield, guardAwait> -- alt2
+    | EqualityExpression<guardIn, guardYield, guardAwait> "!=" RelationalExpression<guardIn, guardYield, guardAwait> -- alt3
+    | EqualityExpression<guardIn, guardYield, guardAwait> "===" RelationalExpression<guardIn, guardYield, guardAwait> -- alt4
+    | EqualityExpression<guardIn, guardYield, guardAwait> "!==" RelationalExpression<guardIn, guardYield, guardAwait> -- alt5
+    | RelationalExpression<guardIn, guardYield, guardAwait> -- alt1
+
+  BitwiseANDExpression<guardIn, guardYield, guardAwait> = 
+    | BitwiseANDExpression<guardIn, guardYield, guardAwait> "&" EqualityExpression<guardIn, guardYield, guardAwait> -- alt2
+    | EqualityExpression<guardIn, guardYield, guardAwait> -- alt1
+
+  BitwiseXORExpression<guardIn, guardYield, guardAwait> = 
+    | BitwiseXORExpression<guardIn, guardYield, guardAwait> "^" BitwiseANDExpression<guardIn, guardYield, guardAwait> -- alt2
+    | BitwiseANDExpression<guardIn, guardYield, guardAwait> -- alt1
+
+  BitwiseORExpression<guardIn, guardYield, guardAwait> = 
+    | BitwiseORExpression<guardIn, guardYield, guardAwait> "|" BitwiseXORExpression<guardIn, guardYield, guardAwait> -- alt2
+    | BitwiseXORExpression<guardIn, guardYield, guardAwait> -- alt1
+
+  LogicalANDExpression<guardIn, guardYield, guardAwait> = 
+    | LogicalANDExpression<guardIn, guardYield, guardAwait> "&&" BitwiseORExpression<guardIn, guardYield, guardAwait> -- alt2
+    | BitwiseORExpression<guardIn, guardYield, guardAwait> -- alt1
+
+  LogicalORExpression<guardIn, guardYield, guardAwait> = 
+    | LogicalORExpression<guardIn, guardYield, guardAwait> "||" LogicalANDExpression<guardIn, guardYield, guardAwait> -- alt2
+    | LogicalANDExpression<guardIn, guardYield, guardAwait> -- alt1
+
+  CoalesceExpression<guardIn, guardYield, guardAwait> = 
+    | CoalesceExpressionHead<guardIn, guardYield, guardAwait> "??" BitwiseORExpression<guardIn, guardYield, guardAwait> -- alt1
+
+  CoalesceExpressionHead<guardIn, guardYield, guardAwait> = 
+    | CoalesceExpression<guardIn, guardYield, guardAwait>
+    | BitwiseORExpression<guardIn, guardYield, guardAwait>
+
+  ShortCircuitExpression<guardIn, guardYield, guardAwait> = 
+    | LogicalORExpression<guardIn, guardYield, guardAwait>
+    | CoalesceExpression<guardIn, guardYield, guardAwait>
+
+  ConditionalExpression<guardIn, guardYield, guardAwait> = 
+    | ShortCircuitExpression<guardIn, guardYield, guardAwait> "?" AssignmentExpression<withIn, guardYield, guardAwait> ":" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt2
+    | ShortCircuitExpression<guardIn, guardYield, guardAwait> -- alt1
+
+  AssignmentExpression<guardIn, guardYield, guardAwait> = 
+    | AsyncArrowFunction<guardIn, guardYield, guardAwait> -- alt4
+    | ArrowFunction<guardIn, guardYield, guardAwait> -- alt3
+    | LeftHandSideExpression<guardYield, guardAwait> "=" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt5
+    | LeftHandSideExpression<guardYield, guardAwait> AssignmentOperator AssignmentExpression<guardIn, guardYield, guardAwait> -- alt6
+    | ConditionalExpression<guardIn, guardYield, guardAwait> -- alt1
+    | guardYield YieldExpression<guardIn, guardAwait> -- alt2
+    | LeftHandSideExpression<guardYield, guardAwait> "&&=" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt7
+    | LeftHandSideExpression<guardYield, guardAwait> "||=" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt8
+    | LeftHandSideExpression<guardYield, guardAwait> "??=" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt9
+
+  AssignmentOperator = ">>>=" | "<<=" | ">>=" | "**=" | "*=" | "/=" | "%=" | "+=" | "-=" | "&=" | "^=" | "|="
+
+  AssignmentPattern<guardYield, guardAwait> = 
+    | ObjectAssignmentPattern<guardYield, guardAwait>
+    | ArrayAssignmentPattern<guardYield, guardAwait>
+
+  ObjectAssignmentPattern<guardYield, guardAwait> = 
+    | "{" "}" -- alt1
+    | "{" AssignmentRestProperty<guardYield, guardAwait> "}" -- alt2
+    | "{" AssignmentPropertyList<guardYield, guardAwait> "}" -- alt3
+    | "{" AssignmentPropertyList<guardYield, guardAwait> "," AssignmentRestProperty<guardYield, guardAwait>? "}" -- alt4
+
+  ArrayAssignmentPattern<guardYield, guardAwait> = 
+    | "[" Elision? AssignmentRestElement<guardYield, guardAwait>? "]" -- alt1
+    | "[" AssignmentElementList<guardYield, guardAwait> "]" -- alt2
+    | "[" AssignmentElementList<guardYield, guardAwait> "," Elision? AssignmentRestElement<guardYield, guardAwait>? "]" -- alt3
+
+  AssignmentRestProperty<guardYield, guardAwait> = 
+    | "..." DestructuringAssignmentTarget<guardYield, guardAwait> -- alt1
+
+  AssignmentPropertyList<guardYield, guardAwait> = 
+    | AssignmentPropertyList<guardYield, guardAwait> "," AssignmentProperty<guardYield, guardAwait> -- alt2
+    | AssignmentProperty<guardYield, guardAwait> -- alt1
+
+  AssignmentElementList<guardYield, guardAwait> = 
+    | AssignmentElementList<guardYield, guardAwait> "," AssignmentElisionElement<guardYield, guardAwait> -- alt2
+    | AssignmentElisionElement<guardYield, guardAwait> -- alt1
+
+  AssignmentElisionElement<guardYield, guardAwait> = 
+    | Elision? AssignmentElement<guardYield, guardAwait> -- alt1
+
+  AssignmentProperty<guardYield, guardAwait> = 
+    | IdentifierReference<guardYield, guardAwait> Initializer<withIn, guardYield, guardAwait>? -- alt1
+    | PropertyName<guardYield, guardAwait> ":" AssignmentElement<guardYield, guardAwait> -- alt2
+
+  AssignmentElement<guardYield, guardAwait> = 
+    | DestructuringAssignmentTarget<guardYield, guardAwait> Initializer<withIn, guardYield, guardAwait>? -- alt1
+
+  AssignmentRestElement<guardYield, guardAwait> = 
+    | "..." DestructuringAssignmentTarget<guardYield, guardAwait> -- alt1
+
+  DestructuringAssignmentTarget<guardYield, guardAwait> = 
+    | LeftHandSideExpression<guardYield, guardAwait>
+
+  Expression<guardIn, guardYield, guardAwait> = 
+    | Expression<guardIn, guardYield, guardAwait> "," AssignmentExpression<guardIn, guardYield, guardAwait> -- alt2
+    | AssignmentExpression<guardIn, guardYield, guardAwait> -- alt1
+
+  Statement<guardYield, guardAwait, guardReturn> = 
+    | BlockStatement<guardYield, guardAwait, guardReturn> -- alt1
+    | VariableStatement<guardYield, guardAwait> -- alt2
+    | EmptyStatement -- alt3
+    | ExpressionStatement<guardYield, guardAwait> -- alt4
+    | IfStatement<guardYield, guardAwait, guardReturn> -- alt5
+    | BreakableStatement<guardYield, guardAwait, guardReturn> -- alt6
+    | ContinueStatement<guardYield, guardAwait> -- alt7
+    | BreakStatement<guardYield, guardAwait> -- alt8
+    | guardReturn ReturnStatement<guardYield, guardAwait> -- alt9
+    | WithStatement<guardYield, guardAwait, guardReturn> -- alt10
+    | LabelledStatement<guardYield, guardAwait, guardReturn> -- alt11
+    | ThrowStatement<guardYield, guardAwait> -- alt12
+    | TryStatement<guardYield, guardAwait, guardReturn> -- alt13
+    | DebuggerStatement -- alt14
+
+  Declaration<guardYield, guardAwait> = 
+    | HoistableDeclaration<guardYield, guardAwait, noDefault>
+    | ClassDeclaration<guardYield, guardAwait, noDefault>
+    | LexicalDeclaration<withIn, guardYield, guardAwait>
+
+  HoistableDeclaration<guardYield, guardAwait, guardDefault> = 
+    | FunctionDeclaration<guardYield, guardAwait, guardDefault>
+    | GeneratorDeclaration<guardYield, guardAwait, guardDefault>
+    | AsyncFunctionDeclaration<guardYield, guardAwait, guardDefault>
+    | AsyncGeneratorDeclaration<guardYield, guardAwait, guardDefault>
+
+  BreakableStatement<guardYield, guardAwait, guardReturn> = 
+    | IterationStatement<guardYield, guardAwait, guardReturn>
+    | SwitchStatement<guardYield, guardAwait, guardReturn>
+
+  BlockStatement<guardYield, guardAwait, guardReturn> = 
+    | Block<guardYield, guardAwait, guardReturn>
+
+  Block<guardYield, guardAwait, guardReturn> = 
+    | "{" StatementList<guardYield, guardAwait, guardReturn>? "}" -- alt1
+
+  StatementList<guardYield, guardAwait, guardReturn> = 
+    | StatementListItem<guardYield, guardAwait, guardReturn>+
+
+  StatementListItem<guardYield, guardAwait, guardReturn> = 
+    | Statement<guardYield, guardAwait, guardReturn>
+    | Declaration<guardYield, guardAwait>
+
+  LexicalDeclaration<guardIn, guardYield, guardAwait> = 
+    | LetOrConst BindingList<guardIn, guardYield, guardAwait> #sc -- alt1
+
+  LetOrConst = 
+    | "let"
+    | const
+
+  BindingList<guardIn, guardYield, guardAwait> = 
+    | BindingList<guardIn, guardYield, guardAwait> "," LexicalBinding<guardIn, guardYield, guardAwait> -- alt2
+    | LexicalBinding<guardIn, guardYield, guardAwait> -- alt1
+
+  LexicalBinding<guardIn, guardYield, guardAwait> = 
+    | BindingIdentifier<guardYield, guardAwait> Initializer<guardIn, guardYield, guardAwait>? -- alt1
+    | BindingPattern<guardYield, guardAwait> Initializer<guardIn, guardYield, guardAwait> -- alt2
+
+  VariableStatement<guardYield, guardAwait> = 
+    | var VariableDeclarationList<withIn, guardYield, guardAwait> #sc -- alt1
+
+  VariableDeclarationList<guardIn, guardYield, guardAwait> = 
+    | VariableDeclarationList<guardIn, guardYield, guardAwait> "," VariableDeclaration<guardIn, guardYield, guardAwait> -- alt2
+    | VariableDeclaration<guardIn, guardYield, guardAwait> -- alt1
+
+  VariableDeclaration<guardIn, guardYield, guardAwait> = 
+    | BindingIdentifier<guardYield, guardAwait> Initializer<guardIn, guardYield, guardAwait>? -- alt1
+    | BindingPattern<guardYield, guardAwait> Initializer<guardIn, guardYield, guardAwait> -- alt2
+
+  BindingPattern<guardYield, guardAwait> = 
+    | ObjectBindingPattern<guardYield, guardAwait>
+    | ArrayBindingPattern<guardYield, guardAwait>
+
+  ObjectBindingPattern<guardYield, guardAwait> = 
+    | "{" "}" -- alt1
+    | "{" BindingRestProperty<guardYield, guardAwait> "}" -- alt2
+    | "{" BindingPropertyList<guardYield, guardAwait> "}" -- alt3
+    | "{" BindingPropertyList<guardYield, guardAwait> "," BindingRestProperty<guardYield, guardAwait>? "}" -- alt4
+
+  ArrayBindingPattern<guardYield, guardAwait> = 
+    | "[" Elision? BindingRestElement<guardYield, guardAwait>? "]" -- alt1
+    | "[" BindingElementList<guardYield, guardAwait> "]" -- alt2
+    | "[" BindingElementList<guardYield, guardAwait> "," Elision? BindingRestElement<guardYield, guardAwait>? "]" -- alt3
+
+  BindingRestProperty<guardYield, guardAwait> = 
+    | "..." BindingIdentifier<guardYield, guardAwait> -- alt1
+
+  BindingPropertyList<guardYield, guardAwait> = 
+    | BindingPropertyList<guardYield, guardAwait> "," BindingProperty<guardYield, guardAwait> -- alt2
+    | BindingProperty<guardYield, guardAwait> -- alt1
+
+  BindingElementList<guardYield, guardAwait> = 
+    | BindingElementList<guardYield, guardAwait> "," BindingElisionElement<guardYield, guardAwait> -- alt2
+    | BindingElisionElement<guardYield, guardAwait> -- alt1
+
+  BindingElisionElement<guardYield, guardAwait> = 
+    | Elision? BindingElement<guardYield, guardAwait> -- alt1
+
+  BindingProperty<guardYield, guardAwait> = 
+    | SingleNameBinding<guardYield, guardAwait> -- alt1
+    | PropertyName<guardYield, guardAwait> ":" BindingElement<guardYield, guardAwait> -- alt2
+
+  BindingElement<guardYield, guardAwait> = 
+    | SingleNameBinding<guardYield, guardAwait> -- alt1
+    | BindingPattern<guardYield, guardAwait> Initializer<withIn, guardYield, guardAwait>? -- alt2
+
+  SingleNameBinding<guardYield, guardAwait> = 
+    | BindingIdentifier<guardYield, guardAwait> Initializer<withIn, guardYield, guardAwait>? -- alt1
+
+  BindingRestElement<guardYield, guardAwait> = 
+    | "..." BindingIdentifier<guardYield, guardAwait> -- alt1
+    | "..." BindingPattern<guardYield, guardAwait> -- alt2
+
+  EmptyStatement = ";" // note: this semicolon eats newlines
+
+  ExpressionStatement<guardYield, guardAwait> = 
+    | ~("{" | "function" | ("async" ~lineTerminator "function") | "class" | ("let" "[")) Expression<withIn, guardYield, guardAwait> #sc -- alt1
+
+  IfStatement<guardYield, guardAwait, guardReturn> = 
+    | if "(" Expression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> else Statement<guardYield, guardAwait, guardReturn> -- alt1
+    | if "(" Expression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> ~"else" -- alt2
+
+  IterationStatement<guardYield, guardAwait, guardReturn> = 
+    | DoWhileStatement<guardYield, guardAwait, guardReturn>
+    | WhileStatement<guardYield, guardAwait, guardReturn>
+    | ForStatement<guardYield, guardAwait, guardReturn>
+    | ForInOfStatement<guardYield, guardAwait, guardReturn>
+
+  DoWhileStatement<guardYield, guardAwait, guardReturn> = 
+    | do Statement<guardYield, guardAwait, guardReturn> while "(" Expression<withIn, guardYield, guardAwait> ")" #sc -- alt1
+
+  WhileStatement<guardYield, guardAwait, guardReturn> = 
+    | while "(" Expression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt1
+
+  ForStatement<guardYield, guardAwait, guardReturn> = 
+    | for "(" ~("let"|"[") Expression<noIn, guardYield, guardAwait>? #sc Expression<withIn, guardYield, guardAwait>? #sc Expression<withIn, guardYield, guardAwait>? ")" Statement<guardYield, guardAwait, guardReturn> -- alt1
+    | for "(" var VariableDeclarationList<noIn, guardYield, guardAwait> #sc Expression<withIn, guardYield, guardAwait>? #sc Expression<withIn, guardYield, guardAwait>? ")" Statement<guardYield, guardAwait, guardReturn> -- alt2
+    | for "(" LexicalDeclaration<noIn, guardYield, guardAwait> Expression<withIn, guardYield, guardAwait>? #sc Expression<withIn, guardYield, guardAwait>? ")" Statement<guardYield, guardAwait, guardReturn> -- alt3
+
+  ForInOfStatement<guardYield, guardAwait, guardReturn> = 
+    | for "(" ~("let"|"[") LeftHandSideExpression<guardYield, guardAwait> in Expression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt1
+    | for "(" var ForBinding<guardYield, guardAwait> in Expression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt2
+    | for "(" ForDeclaration<guardYield, guardAwait> in Expression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt3
+    | for "(" ~("let" | ("async" "of")) LeftHandSideExpression<guardYield, guardAwait> "of" AssignmentExpression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt4
+    | for "(" var ForBinding<guardYield, guardAwait> "of" AssignmentExpression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt5
+    | for "(" ForDeclaration<guardYield, guardAwait> "of" AssignmentExpression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt6
+    | guardAwait for await "(" ~"let" LeftHandSideExpression<guardYield, guardAwait> "of" AssignmentExpression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt7
+    | guardAwait for await "(" var ForBinding<guardYield, guardAwait> "of" AssignmentExpression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt8
+    | guardAwait for await "(" ForDeclaration<guardYield, guardAwait> "of" AssignmentExpression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt9
+
+  ForDeclaration<guardYield, guardAwait> = 
+    | LetOrConst ForBinding<guardYield, guardAwait> -- alt1
+
+  ForBinding<guardYield, guardAwait> = 
+    | BindingIdentifier<guardYield, guardAwait>
+    | BindingPattern<guardYield, guardAwait>
+
+  ContinueStatement<guardYield, guardAwait> = 
+    | continue #sc -- alt1
+    | continue ~lineTerminator LabelIdentifier<guardYield, guardAwait> #sc -- alt2
+
+  BreakStatement<guardYield, guardAwait> = 
+    | break #sc -- alt1
+    | break ~lineTerminator LabelIdentifier<guardYield, guardAwait> #sc -- alt2
+
+  ReturnStatement<guardYield, guardAwait> = 
+    | return #sc -- alt1
+    | return ~lineTerminator Expression<withIn, guardYield, guardAwait> #sc -- alt2
+
+  WithStatement<guardYield, guardAwait, guardReturn> = 
+    | with "(" Expression<withIn, guardYield, guardAwait> ")" Statement<guardYield, guardAwait, guardReturn> -- alt1
+
+  SwitchStatement<guardYield, guardAwait, guardReturn> = 
+    | switch "(" Expression<withIn, guardYield, guardAwait> ")" CaseBlock<guardYield, guardAwait, guardReturn> -- alt1
+
+  CaseBlock<guardYield, guardAwait, guardReturn> = 
+    | "{" CaseClauses<guardYield, guardAwait, guardReturn>? "}" -- alt1
+    | "{" CaseClauses<guardYield, guardAwait, guardReturn>? DefaultClause<guardYield, guardAwait, guardReturn> CaseClauses<guardYield, guardAwait, guardReturn>? "}" -- alt2
+
+  CaseClauses<guardYield, guardAwait, guardReturn> = 
+    | CaseClauses<guardYield, guardAwait, guardReturn> CaseClause<guardYield, guardAwait, guardReturn> -- alt2
+    | CaseClause<guardYield, guardAwait, guardReturn> -- alt1
+
+  CaseClause<guardYield, guardAwait, guardReturn> = 
+    | case Expression<withIn, guardYield, guardAwait> ":" StatementList<guardYield, guardAwait, guardReturn>? -- alt1
+
+  DefaultClause<guardYield, guardAwait, guardReturn> = 
+    | default ":" StatementList<guardYield, guardAwait, guardReturn>? -- alt1
+
+  LabelledStatement<guardYield, guardAwait, guardReturn> = 
+    | LabelIdentifier<guardYield, guardAwait> ":" LabelledItem<guardYield, guardAwait, guardReturn> -- alt1
+
+  LabelledItem<guardYield, guardAwait, guardReturn> = 
+    | Statement<guardYield, guardAwait, guardReturn>
+    | FunctionDeclaration<guardYield, guardAwait, noDefault>
+
+  ThrowStatement<guardYield, guardAwait> = 
+    | throw ~lineTerminator Expression<withIn, guardYield, guardAwait> #sc -- alt1
+
+  TryStatement<guardYield, guardAwait, guardReturn> = 
+    | try Block<guardYield, guardAwait, guardReturn> Catch<guardYield, guardAwait, guardReturn> -- alt1
+    | try Block<guardYield, guardAwait, guardReturn> Finally<guardYield, guardAwait, guardReturn> -- alt2
+    | try Block<guardYield, guardAwait, guardReturn> Catch<guardYield, guardAwait, guardReturn> Finally<guardYield, guardAwait, guardReturn> -- alt3
+
+  Catch<guardYield, guardAwait, guardReturn> = 
+    | catch "(" CatchParameter<guardYield, guardAwait> ")" Block<guardYield, guardAwait, guardReturn> -- alt1
+    | catch Block<guardYield, guardAwait, guardReturn> -- alt2
+
+  Finally<guardYield, guardAwait, guardReturn> = 
+    | finally Block<guardYield, guardAwait, guardReturn> -- alt1
+
+  CatchParameter<guardYield, guardAwait> = 
+    | BindingIdentifier<guardYield, guardAwait>
+    | BindingPattern<guardYield, guardAwait>
+
+  DebuggerStatement = 
+    | debugger #sc -- alt1
+
+  UniqueFormalParameters<guardYield, guardAwait> = 
+    | FormalParameters<guardYield, guardAwait>
+
+  FormalParameters<guardYield, guardAwait> = 
+    | FunctionRestParameter<guardYield, guardAwait> -- alt2
+    | FormalParameterList<guardYield, guardAwait> -- alt3
+    | FormalParameterList<guardYield, guardAwait> "," -- alt4
+    | FormalParameterList<guardYield, guardAwait> "," FunctionRestParameter<guardYield, guardAwait> -- alt5
+    | /* empty */ -- alt1
+
+  FormalParameterList<guardYield, guardAwait> = 
+    | FormalParameterList<guardYield, guardAwait> "," FormalParameter<guardYield, guardAwait> -- alt2
+    | FormalParameter<guardYield, guardAwait> -- alt1
+
+  FunctionRestParameter<guardYield, guardAwait> = 
+    | BindingRestElement<guardYield, guardAwait>
+
+  FormalParameter<guardYield, guardAwait> = 
+    | BindingElement<guardYield, guardAwait>
+
+  FunctionDeclaration<guardYield, guardAwait, guardDefault> = 
+    | function BindingIdentifier<guardYield, guardAwait> "(" FormalParameters<noYield, noAwait> ")" "{" FunctionBody<noYield, noAwait> "}" -- alt1
+    | guardDefault function "(" FormalParameters<noYield, noAwait> ")" "{" FunctionBody<noYield, noAwait> "}" -- alt2
+
+  FunctionExpression = 
+    | function BindingIdentifier<noYield, noAwait>? "(" FormalParameters<noYield, noAwait> ")" "{" FunctionBody<noYield, noAwait> "}" -- alt1
+
+  FunctionBody<guardYield, guardAwait> = 
+    | FunctionStatementList<guardYield, guardAwait>
+
+  FunctionStatementList<guardYield, guardAwait> = 
+    | StatementList<guardYield, guardAwait, withReturn>?
+
+  ArrowFunction<guardIn, guardYield, guardAwait> = 
+    | ArrowParameters<guardYield, guardAwait> ~lineTerminator "=>" ConciseBody<guardIn> -- alt1
+
+  ArrowParameters<guardYield, guardAwait> = 
+    | BindingIdentifier<guardYield, guardAwait> -- alt1
+    | CoverParenthesizedExpressionAndArrowParameterList<guardYield, guardAwait>  -- alt2
+
+  ConciseBody<guardIn> = 
+    | ~"{" ExpressionBody<guardIn, noAwait> -- alt1
+    | "{" FunctionBody<noYield, noAwait> "}" -- alt2
+
+  ExpressionBody<guardIn, guardAwait> = 
+    | AssignmentExpression<guardIn, noYield, guardAwait>
+
+  ArrowFormalParameters<guardYield, guardAwait> = 
+    | "(" UniqueFormalParameters<guardYield, guardAwait> ")" -- alt1
+
+  MethodDefinition<guardYield, guardAwait> = 
+    | ClassElementName<guardYield, guardAwait> "(" UniqueFormalParameters<noYield, noAwait> ")" "{" FunctionBody<noYield, noAwait> "}" -- alt1
+    | GeneratorMethod<guardYield, guardAwait> -- alt2
+    | AsyncMethod<guardYield, guardAwait> -- alt3
+    | AsyncGeneratorMethod<guardYield, guardAwait> -- alt4
+    | "get" ClassElementName<guardYield, guardAwait> "(" ")" "{" FunctionBody<noYield, noAwait> "}" -- alt5
+    | "set" ClassElementName<guardYield, guardAwait> "(" PropertySetParameterList ")" "{" FunctionBody<noYield, noAwait> "}" -- alt6
+
+  PropertySetParameterList = 
+    | FormalParameter<noYield, noAwait>
+
+  GeneratorDeclaration<guardYield, guardAwait, guardDefault> = 
+    | function "*" BindingIdentifier<guardYield, guardAwait> "(" FormalParameters<withYield, noAwait> ")" "{" GeneratorBody "}" -- alt1
+    | guardDefault function "*" "(" FormalParameters<withYield, noAwait> ")" "{" GeneratorBody "}" -- alt2
+
+  GeneratorExpression = 
+    | function "*" BindingIdentifier<withYield, noAwait>? "(" FormalParameters<withYield, noAwait> ")" "{" GeneratorBody "}" -- alt1
+
+  GeneratorMethod<guardYield, guardAwait> = 
+    | "*" ClassElementName<guardYield, guardAwait> "(" UniqueFormalParameters<withYield, noAwait> ")" "{" GeneratorBody "}" -- alt1
+
+  GeneratorBody = 
+    | FunctionBody<withYield, noAwait>
+
+  YieldExpression<guardIn, guardAwait> = 
+    | yield -- alt1
+    | yield ~lineTerminator AssignmentExpression<guardIn, withYield, guardAwait> -- alt2
+    | yield ~lineTerminator "*" AssignmentExpression<guardIn, withYield, guardAwait> -- alt3
+
+  AsyncGeneratorDeclaration<guardYield, guardAwait, guardDefault> = 
+    | "async" ~lineTerminator function "*" BindingIdentifier<guardYield, guardAwait> "(" FormalParameters<withYield, withAwait> ")" "{" AsyncGeneratorBody "}" -- alt1
+    | guardDefault "async" ~lineTerminator function "*" "(" FormalParameters<withYield, withAwait> ")" "{" AsyncGeneratorBody "}" -- alt2
+
+  AsyncGeneratorExpression = 
+    | "async" ~lineTerminator function "*" BindingIdentifier<withYield, withAwait>? "(" FormalParameters<withYield, withAwait> ")" "{" AsyncGeneratorBody "}" -- alt1
+
+  AsyncGeneratorMethod<guardYield, guardAwait> = 
+    | "async" ~lineTerminator "*" ClassElementName<guardYield, guardAwait> "(" UniqueFormalParameters<withYield, withAwait> ")" "{" AsyncGeneratorBody "}" -- alt1
+
+  AsyncGeneratorBody = 
+    | FunctionBody<withYield, withAwait>
+
+  ClassDeclaration<guardYield, guardAwait, guardDefault> = 
+    | class BindingIdentifier<guardYield, guardAwait> ClassTail<guardYield, guardAwait> -- alt1
+    | guardDefault class ClassTail<guardYield, guardAwait> -- alt2
+
+  ClassExpression<guardYield, guardAwait> = 
+    | class BindingIdentifier<guardYield, guardAwait>? ClassTail<guardYield, guardAwait> -- alt1
+
+  ClassTail<guardYield, guardAwait> = 
+    | ClassHeritage<guardYield, guardAwait>? "{" ClassBody<guardYield, guardAwait>? "}" -- alt1
+
+  ClassHeritage<guardYield, guardAwait> = 
+    | extends LeftHandSideExpression<guardYield, guardAwait> -- alt1
+
+  ClassBody<guardYield, guardAwait> = 
+    | ClassElementList<guardYield, guardAwait>
+
+  ClassElementList<guardYield, guardAwait> = 
+    | ClassElementList<guardYield, guardAwait> ClassElement<guardYield, guardAwait> -- alt2
+    | ClassElement<guardYield, guardAwait> -- alt1
+
+  ClassElement<guardYield, guardAwait> = 
+    | MethodDefinition<guardYield, guardAwait> -- alt1
+    | "static" MethodDefinition<guardYield, guardAwait> -- alt2
+    | FieldDefinition<guardYield, guardAwait> #sc -- alt3
+    | "static" FieldDefinition<guardYield, guardAwait> #sc -- alt4
+    | ClassStaticBlock -- alt5
+    | #sc -- alt6
+
+  FieldDefinition<guardYield, guardAwait> = 
+    | ClassElementName<guardYield, guardAwait> Initializer<withIn, guardYield, guardAwait>? -- alt1
+
+  ClassElementName<guardYield, guardAwait> = 
+    | PropertyName<guardYield, guardAwait>
+    | privateIdentifier
+
+  ClassStaticBlock = 
+    | "static" "{" ClassStaticBlockBody "}" -- alt1
+
+  ClassStaticBlockBody = 
+    | ClassStaticBlockStatementList
+
+  ClassStaticBlockStatementList = 
+    | StatementList<noYield, withAwait, noReturn>?
+
+  AsyncFunctionDeclaration<guardYield, guardAwait, guardDefault> = 
+    | "async" ~lineTerminator function BindingIdentifier<guardYield, guardAwait> "(" FormalParameters<noYield, withAwait> ")" "{" AsyncFunctionBody "}" -- alt1
+    | guardDefault "async" ~lineTerminator function "(" FormalParameters<noYield, withAwait> ")" "{" AsyncFunctionBody "}" -- alt2
+
+  AsyncFunctionExpression = 
+    | "async" ~lineTerminator function BindingIdentifier<noYield, withAwait>? "(" FormalParameters<noYield, withAwait> ")" "{" AsyncFunctionBody "}" -- alt1
+
+  AsyncMethod<guardYield, guardAwait> = 
+    | "async" ~lineTerminator ClassElementName<guardYield, guardAwait> "(" UniqueFormalParameters<noYield, withAwait> ")" "{" AsyncFunctionBody "}" -- alt1
+
+  AsyncFunctionBody = 
+    | FunctionBody<noYield, withAwait>
+
+  AwaitExpression<guardYield> = 
+    | await UnaryExpression<guardYield, withAwait> -- alt1
+
+  AsyncArrowFunction<guardIn, guardYield, guardAwait> = 
+    | "async" ~lineTerminator AsyncArrowBindingIdentifier<guardYield> ~lineTerminator "=>" AsyncConciseBody<guardIn> -- alt1
+    | CoverCallExpressionAndAsyncArrowHead<guardYield, guardAwait> ~lineTerminator "=>" AsyncConciseBody<guardIn>  -- alt2
+
+  AsyncConciseBody<guardIn> = 
+    | ~"{" ExpressionBody<guardIn, withAwait> -- alt1
+    | "{" AsyncFunctionBody "}" -- alt2
+
+  AsyncArrowBindingIdentifier<guardYield> = 
+    | BindingIdentifier<guardYield, withAwait>
+
+  CoverCallExpressionAndAsyncArrowHead<guardYield, guardAwait> = 
+    | MemberExpression<guardYield, guardAwait> Arguments<guardYield, guardAwait> -- alt1
+
+  AsyncArrowHead = 
+    | "async" ~lineTerminator ArrowFormalParameters<noYield, withAwait> -- alt1
+
+  Script = 
+    | ScriptBody?
+
+  ScriptBody = 
+    | StatementList<noYield, noAwait, noReturn>
+
+  Module = 
+    | ModuleBody?
+
+  ModuleBody = 
+    | ModuleItemList
+
+  ModuleItemList = 
+    | ModuleItem+
+
+  ModuleItem = 
+    | ImportDeclaration
+    | ExportDeclaration
+    | StatementListItem<noYield, withAwait, noReturn>
+
+  ModuleExportName = 
+    | identifierName
+    | stringLiteral
+
+  ImportDeclaration = 
+    | import ImportClause FromClause #sc -- alt1
+    | import ModuleSpecifier #sc -- alt2
+
+  ImportClause = 
+    | ImportedDefaultBinding -- alt1
+    | NameSpaceImport -- alt2
+    | NamedImports -- alt3
+    | ImportedDefaultBinding "," NameSpaceImport -- alt4
+    | ImportedDefaultBinding "," NamedImports -- alt5
+
+  ImportedDefaultBinding = 
+    | ImportedBinding
+
+  NameSpaceImport = 
+    | "*" "as" ImportedBinding -- alt1
+
+  NamedImports = 
+    | "{" "}" -- alt1
+    | "{" ImportsList "}" -- alt2
+    | "{" ImportsList "," "}" -- alt3
+
+  FromClause = 
+    | "from" ModuleSpecifier -- alt1
+
+  ImportsList = 
+    | ImportsList "," ImportSpecifier -- alt2
+    | ImportSpecifier -- alt1
+
+  ImportSpecifier = 
+    | ImportedBinding -- alt1
+    | ModuleExportName "as" ImportedBinding -- alt2
+
+  ModuleSpecifier = 
+    | stringLiteral
+
+  ImportedBinding = 
+    | BindingIdentifier<noYield, withAwait>
+
+  ExportDeclaration = 
+    | export ExportFromClause FromClause #sc -- alt1
+    | export NamedExports #sc -- alt2
+    | export VariableStatement<noYield, withAwait> -- alt3
+    | export Declaration<noYield, withAwait> -- alt4
+    | export default HoistableDeclaration<noYield, withAwait, withDefault> -- alt5
+    | export default ClassDeclaration<noYield, withAwait, withDefault> -- alt6
+    | export default ~("function" | ("async" ~lineTerminator "function") | "class") AssignmentExpression<withIn, noYield, withAwait> #sc -- alt7
+
+  ExportFromClause = 
+    | "*" -- alt1
+    | "*" "as" ModuleExportName -- alt2
+    | NamedExports -- alt3
+
+  NamedExports = 
+    | "{" "}" -- alt1
+    | "{" ExportsList "}" -- alt2
+    | "{" ExportsList "," "}" -- alt3
+
+  ExportsList = 
+    | ExportsList "," ExportSpecifier -- alt2
+    | ExportSpecifier -- alt1
+
+  ExportSpecifier = 
+    | ModuleExportName -- alt1
+    | ModuleExportName "as" ModuleExportName -- alt2
+
+  stringNumericLiteral = 
+    | strWhiteSpace? -- alt1
+    | strWhiteSpace? strNumericLiteral strWhiteSpace? -- alt2
+
+  strWhiteSpace = 
+    | strWhiteSpaceChar strWhiteSpace? -- alt1
+
+  strWhiteSpaceChar = 
+    | whiteSpace
+    | lineTerminator
+
+  strNumericLiteral = 
+    | strDecimalLiteral
+    | nonDecimalIntegerLiteral<noSep>
+
+  strDecimalLiteral = 
+    | strUnsignedDecimalLiteral -- alt1
+    | "+" strUnsignedDecimalLiteral -- alt2
+    | "-" strUnsignedDecimalLiteral -- alt3
+
+  strUnsignedDecimalLiteral = 
+    | "Infinity" -- alt1
+    | decimalDigits<noSep> "." decimalDigits<noSep>? exponentPart<noSep>? -- alt2
+    | "." decimalDigits<noSep> exponentPart<noSep>? -- alt3
+    | decimalDigits<noSep> exponentPart<noSep>? -- alt4
+
+  uri = 
+    | uriCharacters?
+
+  uriCharacters = 
+    | uriCharacter uriCharacters? -- alt1
+
+  uriCharacter = 
+    | uriReserved
+    | uriUnescaped
+    | uriEscaped
+
+  uriReserved = #sc | "/" | "?" | ":" | "@" | "&" | "=" | "+" | "$" | ","
+
+  uriUnescaped = 
+    | uriAlpha
+    | decimalDigit
+    | uriMark
+
+  uriEscaped = 
+    | "%" hexDigit hexDigit -- alt1
+
+  uriAlpha = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" | "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
+
+  uriMark = "-" | "_" | "." | "!" | "~" | "*" | "'" | "(" | ")"
+
+  NativeFunction = 
+    | function NativeFunctionAccessor? PropertyName<noYield, noAwait>? "(" FormalParameters<noYield, noAwait> ")" "{" "[" "native" "code" "]" "}" -- alt1
+
+  NativeFunctionAccessor = 
+    | "get"
+    | "set"
+
+  pattern<guardUnicodeMode, guardN> = 
+    | disjunction<guardUnicodeMode, guardN>
+
+  disjunction<guardUnicodeMode, guardN> = 
+    | alternative<guardUnicodeMode, guardN> -- alt1
+    | alternative<guardUnicodeMode, guardN> "|" disjunction<guardUnicodeMode, guardN> -- alt2
+
+  alternative<guardUnicodeMode, guardN> = 
+    | alternative<guardUnicodeMode, guardN> term<guardUnicodeMode, guardN> -- alt2
+    | /* empty */ -- alt1
+
+  term<guardUnicodeMode, guardN> = 
+    | assertion<guardUnicodeMode, guardN> -- alt1
+    | atom<guardUnicodeMode, guardN> -- alt2
+    | atom<guardUnicodeMode, guardN> quantifier -- alt3
+
+  assertion<guardUnicodeMode, guardN> = 
+    | "^" -- alt1
+    | "$" -- alt2
+    | "\\" "b" -- alt3
+    | "\\" "B" -- alt4
+    | "(" "?" "=" disjunction<guardUnicodeMode, guardN> ")" -- alt5
+    | "(" "?" "!" disjunction<guardUnicodeMode, guardN> ")" -- alt6
+    | "(" "?" "<=" disjunction<guardUnicodeMode, guardN> ")" -- alt7
+    | "(" "?" "<!" disjunction<guardUnicodeMode, guardN> ")" -- alt8
+
+  quantifier = 
+    | quantifierPrefix -- alt1
+    | quantifierPrefix "?" -- alt2
+
+  quantifierPrefix = 
+    | "*" -- alt1
+    | "+" -- alt2
+    | "?" -- alt3
+    | "{" decimalDigits<noSep> "}" -- alt4
+    | "{" decimalDigits<noSep> "," "}" -- alt5
+    | "{" decimalDigits<noSep> "," decimalDigits<noSep> "}" -- alt6
+
+  atom<guardUnicodeMode, guardN> = 
+    | patternCharacter -- alt1
+    | "." -- alt2
+    | "\\" atomEscape<guardUnicodeMode, guardN> -- alt3
+    | characterClass<guardUnicodeMode> -- alt4
+    | "(" groupSpecifier<guardUnicodeMode> disjunction<guardUnicodeMode, guardN> ")" -- alt5
+    | "(" "?" ":" disjunction<guardUnicodeMode, guardN> ")" -- alt6
+
+  syntaxCharacter = "\\" | "^" | "$" | "." | "*" | "+" | "?" | "(" | ")" | "[" | "]" | "{" | "}" | "|"
+
+  patternCharacter = 
+    | ~syntaxCharacter sourceCharacter
+
+  atomEscape<guardUnicodeMode, guardN> = 
+    | decimalEscape -- alt1
+    | characterClassEscape<guardUnicodeMode> -- alt2
+    | characterEscape<guardUnicodeMode> -- alt3
+    | guardN "k" groupName<guardUnicodeMode> -- alt4
+
+  characterEscape<guardUnicodeMode> = 
+    | controlEscape -- alt1
+    | "c" controlLetter -- alt2
+    | "0" ~decimalDigit -- alt3
+    | hexEscapeSequence -- alt4
+    | regExpUnicodeEscapeSequence<guardUnicodeMode> -- alt5
+    | identityEscape<guardUnicodeMode> -- alt6
+
+  controlEscape = "f" | "n" | "r" | "t" | "v"
+
+  controlLetter = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" | "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
+
+  groupSpecifier<guardUnicodeMode> = 
+    | /* empty */ -- alt1
+    | "?" groupName<guardUnicodeMode> -- alt2
+
+  groupName<guardUnicodeMode> = 
+    | "<" regExpIdentifierName<guardUnicodeMode> ">" -- alt1
+
+  regExpIdentifierName<guardUnicodeMode> = 
+    | regExpIdentifierName<guardUnicodeMode> regExpIdentifierPart<guardUnicodeMode> -- alt2
+    | regExpIdentifierStart<guardUnicodeMode> -- alt1
+
+  regExpIdentifierStart<guardUnicodeMode> = 
+    | identifierStartChar -- alt1
+    | "\\" regExpUnicodeEscapeSequence<withUnicodeMode> -- alt2
+    | guardUnicodeMode unicodeLeadSurrogate unicodeTrailSurrogate -- alt3
+
+  regExpIdentifierPart<guardUnicodeMode> = 
+    | identifierPartChar -- alt1
+    | "\\" regExpUnicodeEscapeSequence<withUnicodeMode> -- alt2
+    | guardUnicodeMode unicodeLeadSurrogate unicodeTrailSurrogate -- alt3
+
+  regExpUnicodeEscapeSequence<guardUnicodeMode> = 
+    | guardUnicodeMode "u" hexLeadSurrogate "\\u" hexTrailSurrogate -- alt1
+    | guardUnicodeMode "u" hexLeadSurrogate -- alt2
+    | guardUnicodeMode "u" hexTrailSurrogate -- alt3
+    | guardUnicodeMode "u" hexNonSurrogate -- alt4
+    | guardUnicodeMode "u" hex4Digits -- alt5
+    | guardUnicodeMode "u{" codePoint "}" -- alt6
+
+  unicodeLeadSurrogate = /* any Unicode code point in the inclusive range 0xD800 to 0xDBFF */
+
+  unicodeTrailSurrogate = /* any Unicode code point in the inclusive range 0xDC00 to 0xDFFF */
+
+  hexLeadSurrogate = 
+    | hex4Digits /* FIXME Assertion: > but only if the MV of |Hex4Digits| is in the inclusive range 0xD800 to 0xDBFF */ -- alt1
+
+  hexTrailSurrogate = 
+    | hex4Digits /* FIXME Assertion: > but only if the MV of |Hex4Digits| is in the inclusive range 0xDC00 to 0xDFFF */ -- alt1
+
+  hexNonSurrogate = 
+    | hex4Digits /* FIXME Assertion: > but only if the MV of |Hex4Digits| is not in the inclusive range 0xD800 to 0xDFFF */ -- alt1
+
+  identityEscape<guardUnicodeMode> = 
+    | guardUnicodeMode syntaxCharacter -- alt1
+    | guardUnicodeMode "/" -- alt2
+    | guardUnicodeMode ~unicodeIDContinue sourceCharacter -- alt3
+
+  decimalEscape = 
+    | nonZeroDigit decimalDigits<noSep>? ~decimalDigit -- alt1
+
+  characterClassEscape<guardUnicodeMode> = 
+    | "d" -- alt1
+    | "D" -- alt2
+    | "s" -- alt3
+    | "S" -- alt4
+    | "w" -- alt5
+    | "W" -- alt6
+    | guardUnicodeMode "p{" unicodePropertyValueExpression "}" -- alt7
+    | guardUnicodeMode "P{" unicodePropertyValueExpression "}" -- alt8
+
+  unicodePropertyValueExpression = 
+    | unicodePropertyName "=" unicodePropertyValue -- alt1
+    | loneUnicodePropertyNameOrValue -- alt2
+
+  unicodePropertyName = 
+    | unicodePropertyNameCharacters
+
+  unicodePropertyNameCharacters = 
+    | unicodePropertyNameCharacter unicodePropertyNameCharacters? -- alt1
+
+  unicodePropertyValue = 
+    | unicodePropertyValueCharacters
+
+  loneUnicodePropertyNameOrValue = 
+    | unicodePropertyValueCharacters
+
+  unicodePropertyValueCharacters = 
+    | unicodePropertyValueCharacter unicodePropertyValueCharacters? -- alt1
+
+  unicodePropertyValueCharacter = 
+    | unicodePropertyNameCharacter
+    | decimalDigit
+
+  unicodePropertyNameCharacter = 
+    | controlLetter
+    | "_"
+
+  characterClass<guardUnicodeMode> = 
+    | "[" ~"^" classRanges<guardUnicodeMode> "]" -- alt1
+    | "[" "^" classRanges<guardUnicodeMode> "]" -- alt2
+
+  classRanges<guardUnicodeMode> = 
+    | /* empty */ -- alt1
+    | nonemptyClassRanges<guardUnicodeMode> -- alt2
+
+  nonemptyClassRanges<guardUnicodeMode> = 
+    | classAtom<guardUnicodeMode> -- alt1
+    | classAtom<guardUnicodeMode> nonemptyClassRangesNoDash<guardUnicodeMode> -- alt2
+    | classAtom<guardUnicodeMode> "-" classAtom<guardUnicodeMode> classRanges<guardUnicodeMode> -- alt3
+
+  nonemptyClassRangesNoDash<guardUnicodeMode> = 
+    | classAtom<guardUnicodeMode> -- alt1
+    | classAtomNoDash<guardUnicodeMode> nonemptyClassRangesNoDash<guardUnicodeMode> -- alt2
+    | classAtomNoDash<guardUnicodeMode> "-" classAtom<guardUnicodeMode> classRanges<guardUnicodeMode> -- alt3
+
+  classAtom<guardUnicodeMode> = 
+    | "-"
+    | classAtomNoDash<guardUnicodeMode>
+
+  classAtomNoDash<guardUnicodeMode> = 
+    | ~("\\" | "]" | "-") sourceCharacter -- alt1
+    | "\\" classEscape<guardUnicodeMode> -- alt2
+
+  classEscape<guardUnicodeMode> = 
+    | "b" -- alt1
+    | guardUnicodeMode "-" -- alt2
+    | characterClassEscape<guardUnicodeMode> -- alt3
+    | characterEscape<guardUnicodeMode> -- alt4
+
+  withSep = /* fixme */
+
+  noSep = ~any /* is this right? */
+
+  withYield = /* fixme */
+
+  noYield = ~any /* is this right? */
+
+  withAwait = /* fixme */
+
+  noAwait = ~any /* is this right? */
+
+  withIn = /* fixme */
+
+  noIn = ~any /* is this right? */
+
+  withTagged = /* fixme */
+
+  noTagged = ~any /* is this right? */
+
+  withReturn = /* fixme */
+
+  noReturn = ~any /* is this right? */
+
+  withDefault = /* fixme */
+
+  noDefault = ~any /* is this right? */
+
+  withUnicodeMode = /* fixme */
+
+  noUnicodeMode = ~any /* is this right? */
+
+  withN = /* fixme */
+
+  noN = ~any /* is this right? */
+
+  await = "await" ~identifierPart
+  break = "break" ~identifierPart
+  case = "case" ~identifierPart
+  catch = "catch" ~identifierPart
+  class = "class" ~identifierPart
+  const = "const" ~identifierPart
+  continue = "continue" ~identifierPart
+  debugger = "debugger" ~identifierPart
+  default = "default" ~identifierPart
+  delete = "delete" ~identifierPart
+  do = "do" ~identifierPart
+  else = "else" ~identifierPart
+  enum = "enum" ~identifierPart
+  export = "export" ~identifierPart
+  extends = "extends" ~identifierPart
+  false = "false" ~identifierPart
+  finally = "finally" ~identifierPart
+  for = "for" ~identifierPart
+  function = "function" ~identifierPart
+  if = "if" ~identifierPart
+  import = "import" ~identifierPart
+  in = "in" ~identifierPart
+  instanceof = "instanceof" ~identifierPart
+  new = "new" ~identifierPart
+  null = "null" ~identifierPart
+  return = "return" ~identifierPart
+  super = "super" ~identifierPart
+  switch = "switch" ~identifierPart
+  this = "this" ~identifierPart
+  throw = "throw" ~identifierPart
+  true = "true" ~identifierPart
+  try = "try" ~identifierPart
+  typeof = "typeof" ~identifierPart
+  var = "var" ~identifierPart
+  void = "void" ~identifierPart
+  while = "while" ~identifierPart
+  with = "with" ~identifierPart
+  yield = "yield" ~identifierPart
+}

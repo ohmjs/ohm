@@ -6,20 +6,23 @@
  */
 Grammarkdown {
   Productions = Production*
-  Production = nonterminal "::" RightHandSide -- lexical
+  Production = nonterminal ParameterList? sep RightHandSide -- lexical
              | nonterminal ParameterList? ":" RightHandSide -- syntactic
 
-  nonterminal = upper alnum*
+  nonterminal = "|"? upper alnum* "|"?
+              | "|"? ~keyword lower alnum* "|"?
   RightHandSide = oneof terminal+ -- oneOf
                 | ">" proseSentence -- prose
                 | (~Production rhsSentence)+ -- alternatives
   proseSentence = (spacesNoNL word)+
   rhsSentence = (spacesNoNL term)+
-  term = 
+  term =
     | application "?" -- opt
     | application -- nonterminal
+    | terminal "?" -- terminalOpt
     | terminal -- terminal
-    | "[" applySyntactic<AssertionContents> "]" -- assertion
+    | assertion -- assertion
+    | link -- link
 
   application =
     | nonterminal butNotCondition -- withCondition
@@ -30,45 +33,70 @@ Grammarkdown {
   literal = "<" upper+ ">"
 
   butNotCondition =
-    | " but not " basicTerm -- basic
-    | " but not one of " listOf<basicTerm, " or "> -- oneOf
+    | butnotpadded basicTerm -- basic
+    | butnotoneofpadded listOf<basicTerm, " or "> -- oneOf
+
+  butnotpadded = spaces butnot spaces
+  butnotoneofpadded = butnotpadded oneof spaces
+
+  assertion = "[" applySyntactic<AssertionContents> "]"
 
   AssertionContents =
-    | "empty" -- empty
+    | empty -- empty
     | Lookahead -- lookahead
-    | "no" nonterminal "here" -- noSymbolHere
-    /* lexical-goal - not used in es2015 */
+    | no nonterminal here -- noSymbolHere
+    | lexical goal nonterminal -- lexicalGoal
     | "+" parameter -- paramSet
     | "~" parameter -- paramCleared
-    | ">" (~"]" any)+ -- prose
+    | ">" (~("]"|newline) any)+ -- prose
+
+  LexicalGoal = lexical goal nonterminal
 
   Lookahead =
-    | "lookahead" "==" terminal -- positive
-    | "lookahead" "!=" terminal -- negative
-    | "lookahead" "<-" LookaheadSet -- positiveSet
-    | "lookahead" "<!" LookaheadSet -- negativeSet
-    | "lookahead" "<!" nonterminal -- negativeNonterminal
+    | lookahead "==" terminal+ -- positive
+    | lookahead "!=" terminal+ -- negative
+    | lookahead "<-" LookaheadSet -- positiveSet
+    | lookahead "\u2208" LookaheadSet -- positiveSetEpsilon
+    | lookahead "<!" LookaheadSet -- negativeSet
+    | lookahead "\u2209" LookaheadSet -- negativeSetEpsilon
+    | lookahead "<!" nonterminal -- negativeNonterminal
+    | lookahead "\u2209" nonterminal -- negativeNonterminalEpsilon
 
-  LookaheadSet = "{" NonemptyListOf<terminal+, ","> "}"
+  LookaheadSet = "{" NonemptyListOf<(terminal|assertion)+, ","> "}"
 
   ParameterList = "[" NonemptyListOf<parameter, ","> "]"
   parameter = upper letter*
 
   argument = "+" parameter -- set
            | "?" parameter -- pass
+           | "~" parameter -- unset
 
-  word = (letter | "\"" | "_" | ",")+
+  link = "#" letter+
+  word = (letter | digit | "\"" | "_" | "," | "\u201c" | "\u201d")+
   terminal = "```" -- backtick
            | quote (~quote any)+ quote -- other
            | literal -- literal
 
   atDefine = "@define" (~newline any)*
+  atLine = "@line" (~newline any)*
+  atImport = "@import" (~newline any)*
   comment = "//" (~newline any)*
 
   spacesNoNL = ~newline spaces
-  space += atDefine | comment
+  space += atDefine | atLine | atImport | comment
 
   newline = "\n" | "\r\n"
   quote = "`"
   oneof = "one of"
+  butnot = "but not"
+  lookahead = "lookahead"
+  lexical = "lexical"
+  goal = "goal"
+  no = "no"
+  empty = "empty"
+  here = "here"
+
+  keyword = oneof | butnot | lookahead | lexical | goal | no | empty | here
+
+  sep = ":::" | "::"
 }

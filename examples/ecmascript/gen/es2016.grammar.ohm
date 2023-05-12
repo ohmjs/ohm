@@ -1,4 +1,4 @@
-ES2015 {
+ES2016 {
 
   Start = Script
 
@@ -127,7 +127,7 @@ ES2015 {
     | "$" -- alt2
     | "_" -- alt3
     | "\\" unicodeEscapeSequence -- alt4
-    
+    | "_" -- alt5 /* FIXME <ZWNJ> <ZWJ> */
 
   unicodeIDStart = letter /* fixme */
 
@@ -141,13 +141,18 @@ ES2015 {
 
   keyword = instanceof | continue | debugger | function | extends | finally | default | typeof | export | return | switch | delete | import | break | catch | class | while | const | super | yield | throw | case | else | void | with | this | var | new | for | try | do | in | if
 
-  futureReservedWord = implements | protected | interface | package | private | public | await | enum
+  futureReservedWord = 
+    | enum
+    | await
 
-  punctuator = ">>>=" | "===" | "!==" | ">>>" | " ::" | "<<=" | ">>=" | "<=" | ">=" | "==" | "!=" | "++" | "--" | "<<" | ">>" | "&&" | "||" | "+=" | "-=" | "*=" | "%=" | "&=" | "|=" | "^=" | "=>" | "{" | "}" | "(" | ")" | "[" | "]" | "." | #sc | "," | "<" | ">" | "+" | "-" | "*" | "%" | "&" | "|" | "^" | "!" | "~" | "?" | "="
+  punctuator = ">>>=" | "..." | "===" | "!==" | ">>>" | "<<=" | ">>=" | "**=" | "<=" | ">=" | "==" | "!=" | "++" | "--" | "<<" | ">>" | "&&" | "||" | "+=" | "-=" | "*=" | "%=" | "&=" | "|=" | "^=" | "=>" | "**" | "{" | "(" | ")" | "[" | "]" | "." | #sc | "," | "<" | ">" | "+" | "-" | "*" | "%" | "&" | "|" | "^" | "!" | "~" | "?" | ":" | "="
 
-  divPunctuator = "/=" | "/"
+  divPunctuator = 
+    | "/"
+    | "/="
 
-  rightBracePunctuator = ")"
+  rightBracePunctuator = 
+    | "}"
 
   nullLiteral = 
     | null
@@ -360,23 +365,28 @@ ES2015 {
     | ~reservedWord identifierName
 
   PrimaryExpression<guardYield> = 
-    | this
-    | IdentifierReference<guardYield>
-    | Literal
-    | ArrayLiteral<guardYield>
-    | ObjectLiteral<guardYield>
-    | FunctionExpression
-    | ClassExpression<guardYield>
-    | GeneratorExpression
-    | regularExpressionLiteral
-    | TemplateLiteral<guardYield>
-    | CoverParenthesizedExpressionAndArrowParameterList<guardYield>
+    | this -- alt1
+    | IdentifierReference<guardYield> -- alt2
+    | Literal -- alt3
+    | ArrayLiteral<guardYield> -- alt4
+    | ObjectLiteral<guardYield> -- alt5
+    | FunctionExpression -- alt6
+    | ClassExpression<guardYield> -- alt7
+    | GeneratorExpression -- alt8
+    | regularExpressionLiteral -- alt9
+    | TemplateLiteral<guardYield> -- alt10
+    | CoverParenthesizedExpressionAndArrowParameterList<guardYield>  -- alt11
 
   CoverParenthesizedExpressionAndArrowParameterList<guardYield> = 
     | "(" Expression<withIn, guardYield> ")" -- alt1
     | "(" ")" -- alt2
     | "(" "..." BindingIdentifier<guardYield> ")" -- alt3
-    | "(" Expression<withIn, guardYield> "," "..." BindingIdentifier<guardYield> ")" -- alt4
+    | "(" "..." BindingPattern<guardYield> ")" -- alt4
+    | "(" Expression<withIn, guardYield> "," "..." BindingIdentifier<guardYield> ")" -- alt5
+    | "(" Expression<withIn, guardYield> "," "..." BindingPattern<guardYield> ")" -- alt6
+
+  ParenthesizedExpression<guardYield> = 
+    | "(" Expression<withIn, guardYield> ")" -- alt1
 
   Literal = 
     | nullLiteral
@@ -495,26 +505,30 @@ ES2015 {
     | CallExpression<guardYield>
     | NewExpression<guardYield>
 
-  PostfixExpression<guardYield> = 
+  UpdateExpression<guardYield> = 
+    | LeftHandSideExpression<guardYield> -- alt1
     | LeftHandSideExpression<guardYield> ~lineTerminator "++" -- alt2
     | LeftHandSideExpression<guardYield> ~lineTerminator "--" -- alt3
-    | LeftHandSideExpression<guardYield> -- alt1
+    | "++" UnaryExpression<guardYield> -- alt4
+    | "--" UnaryExpression<guardYield> -- alt5
 
   UnaryExpression<guardYield> = 
     | delete UnaryExpression<guardYield> -- alt2
     | void UnaryExpression<guardYield> -- alt3
     | typeof UnaryExpression<guardYield> -- alt4
-    | "++" UnaryExpression<guardYield> -- alt5
-    | "--" UnaryExpression<guardYield> -- alt6
-    | "+" UnaryExpression<guardYield> -- alt7
-    | "-" UnaryExpression<guardYield> -- alt8
-    | "~" UnaryExpression<guardYield> -- alt9
-    | "!" UnaryExpression<guardYield> -- alt10
-    | PostfixExpression<guardYield> -- alt1
+    | "+" UnaryExpression<guardYield> -- alt5
+    | "-" UnaryExpression<guardYield> -- alt6
+    | "~" UnaryExpression<guardYield> -- alt7
+    | "!" UnaryExpression<guardYield> -- alt8
+    | UpdateExpression<guardYield> -- alt1
+
+  ExponentiationExpression<guardYield> = 
+    | UnaryExpression<guardYield> -- alt1
+    | UpdateExpression<guardYield> "**" ExponentiationExpression<guardYield> -- alt2
 
   MultiplicativeExpression<guardYield> = 
-    | MultiplicativeExpression<guardYield> MultiplicativeOperator UnaryExpression<guardYield> -- alt2
-    | UnaryExpression<guardYield> -- alt1
+    | MultiplicativeExpression<guardYield> MultiplicativeOperator ExponentiationExpression<guardYield> -- alt2
+    | ExponentiationExpression<guardYield> -- alt1
 
   MultiplicativeOperator = "*" | "/" | "%"
 
@@ -576,7 +590,45 @@ ES2015 {
     | ConditionalExpression<guardIn, guardYield> -- alt1
     | guardYield YieldExpression<guardIn> -- alt2
 
-  AssignmentOperator = ">>>=" | "<<=" | ">>=" | "*=" | "/=" | "%=" | "+=" | "-=" | "&=" | "^=" | "|="
+  AssignmentOperator = ">>>=" | "<<=" | ">>=" | "**=" | "*=" | "/=" | "%=" | "+=" | "-=" | "&=" | "^=" | "|="
+
+  AssignmentPattern<guardYield> = 
+    | ObjectAssignmentPattern<guardYield>
+    | ArrayAssignmentPattern<guardYield>
+
+  ObjectAssignmentPattern<guardYield> = 
+    | "{" "}" -- alt1
+    | "{" AssignmentPropertyList<guardYield> "}" -- alt2
+    | "{" AssignmentPropertyList<guardYield> "," "}" -- alt3
+
+  ArrayAssignmentPattern<guardYield> = 
+    | "[" Elision? AssignmentRestElement<guardYield>? "]" -- alt1
+    | "[" AssignmentElementList<guardYield> "]" -- alt2
+    | "[" AssignmentElementList<guardYield> "," Elision? AssignmentRestElement<guardYield>? "]" -- alt3
+
+  AssignmentPropertyList<guardYield> = 
+    | AssignmentPropertyList<guardYield> "," AssignmentProperty<guardYield> -- alt2
+    | AssignmentProperty<guardYield> -- alt1
+
+  AssignmentElementList<guardYield> = 
+    | AssignmentElementList<guardYield> "," AssignmentElisionElement<guardYield> -- alt2
+    | AssignmentElisionElement<guardYield> -- alt1
+
+  AssignmentElisionElement<guardYield> = 
+    | Elision? AssignmentElement<guardYield> -- alt1
+
+  AssignmentProperty<guardYield> = 
+    | IdentifierReference<guardYield> Initializer<withIn, guardYield>? -- alt1
+    | PropertyName<guardYield> ":" AssignmentElement<guardYield> -- alt2
+
+  AssignmentElement<guardYield> = 
+    | DestructuringAssignmentTarget<guardYield> Initializer<withIn, guardYield>? -- alt1
+
+  AssignmentRestElement<guardYield> = 
+    | "..." DestructuringAssignmentTarget<guardYield> -- alt1
+
+  DestructuringAssignmentTarget<guardYield> = 
+    | LeftHandSideExpression<guardYield>
 
   Expression<guardIn, guardYield> = 
     | Expression<guardIn, guardYield> "," AssignmentExpression<guardIn, guardYield> -- alt2
@@ -688,6 +740,7 @@ ES2015 {
 
   BindingRestElement<guardYield> = 
     | "..." BindingIdentifier<guardYield> -- alt1
+    | "..." BindingPattern<guardYield> -- alt2
 
   EmptyStatement = ";" // note: this semicolon eats newlines
 
@@ -817,12 +870,15 @@ ES2015 {
     | ArrowParameters<guardYield> ~lineTerminator "=>" ConciseBody<guardIn> -- alt1
 
   ArrowParameters<guardYield> = 
-    | BindingIdentifier<guardYield>
-    | CoverParenthesizedExpressionAndArrowParameterList<guardYield>
+    | BindingIdentifier<guardYield> -- alt1
+    | CoverParenthesizedExpressionAndArrowParameterList<guardYield>  -- alt2
 
   ConciseBody<guardIn> = 
     | ~"{" AssignmentExpression<guardIn, noYield> -- alt1
     | "{" FunctionBody<noYield> "}" -- alt2
+
+  ArrowFormalParameters<guardYield> = 
+    | "(" StrictFormalParameters<guardYield> ")" -- alt1
 
   MethodDefinition<guardYield> = 
     | PropertyName<guardYield> "(" StrictFormalParameters<noYield> ")" "{" FunctionBody<noYield> "}" -- alt1
@@ -958,6 +1014,184 @@ ES2015 {
     | identifierName -- alt1
     | identifierName "as" identifierName -- alt2
 
+  stringNumericLiteral = 
+    | strWhiteSpace? -- alt1
+    | strWhiteSpace? strNumericLiteral strWhiteSpace? -- alt2
+
+  strWhiteSpace = 
+    | strWhiteSpaceChar strWhiteSpace? -- alt1
+
+  strWhiteSpaceChar = 
+    | whiteSpace
+    | lineTerminator
+
+  strNumericLiteral = 
+    | strDecimalLiteral
+    | binaryIntegerLiteral
+    | octalIntegerLiteral
+    | hexIntegerLiteral
+
+  strDecimalLiteral = 
+    | strUnsignedDecimalLiteral -- alt1
+    | "+" strUnsignedDecimalLiteral -- alt2
+    | "-" strUnsignedDecimalLiteral -- alt3
+
+  strUnsignedDecimalLiteral = 
+    | "Infinity" -- alt1
+    | decimalDigits "." decimalDigits? exponentPart? -- alt2
+    | "." decimalDigits exponentPart? -- alt3
+    | decimalDigits exponentPart? -- alt4
+
+  uri = 
+    | uriCharacters?
+
+  uriCharacters = 
+    | uriCharacter uriCharacters? -- alt1
+
+  uriCharacter = 
+    | uriReserved
+    | uriUnescaped
+    | uriEscaped
+
+  uriReserved = #sc | "/" | "?" | ":" | "@" | "&" | "=" | "+" | "$" | ","
+
+  uriUnescaped = 
+    | uriAlpha
+    | decimalDigit
+    | uriMark
+
+  uriEscaped = 
+    | "%" hexDigit hexDigit -- alt1
+
+  uriAlpha = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" | "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
+
+  uriMark = "-" | "_" | "." | "!" | "~" | "*" | "'" | "(" | ")"
+
+  pattern<guardU> = 
+    | disjunction<guardU>
+
+  disjunction<guardU> = 
+    | alternative<guardU> -- alt1
+    | alternative<guardU> "|" disjunction<guardU> -- alt2
+
+  alternative<guardU> = 
+    | alternative<guardU> term<guardU> -- alt2
+    | /* empty */ -- alt1
+
+  term<guardU> = 
+    | assertion<guardU> -- alt1
+    | atom<guardU> -- alt2
+    | atom<guardU> quantifier -- alt3
+
+  assertion<guardU> = 
+    | "^" -- alt1
+    | "$" -- alt2
+    | "\\" "b" -- alt3
+    | "\\" "B" -- alt4
+    | "(" "?" "=" disjunction<guardU> ")" -- alt5
+    | "(" "?" "!" disjunction<guardU> ")" -- alt6
+
+  quantifier = 
+    | quantifierPrefix -- alt1
+    | quantifierPrefix "?" -- alt2
+
+  quantifierPrefix = 
+    | "*" -- alt1
+    | "+" -- alt2
+    | "?" -- alt3
+    | "{" decimalDigits "}" -- alt4
+    | "{" decimalDigits "," "}" -- alt5
+    | "{" decimalDigits "," decimalDigits "}" -- alt6
+
+  atom<guardU> = 
+    | patternCharacter -- alt1
+    | "." -- alt2
+    | "\\" atomEscape<guardU> -- alt3
+    | characterClass<guardU> -- alt4
+    | "(" disjunction<guardU> ")" -- alt5
+    | "(" "?" ":" disjunction<guardU> ")" -- alt6
+
+  syntaxCharacter = "\\" | "^" | "$" | "." | "*" | "+" | "?" | "(" | ")" | "[" | "]" | "{" | "}" | "|"
+
+  patternCharacter = 
+    | ~syntaxCharacter sourceCharacter
+
+  atomEscape<guardU> = 
+    | decimalEscape
+    | characterEscape<guardU>
+    | characterClassEscape
+
+  characterEscape<guardU> = 
+    | controlEscape -- alt1
+    | "c" controlLetter -- alt2
+    | hexEscapeSequence -- alt3
+    | regExpUnicodeEscapeSequence<guardU> -- alt4
+    | identityEscape<guardU> -- alt5
+
+  controlEscape = "f" | "n" | "r" | "t" | "v"
+
+  controlLetter = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" | "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
+
+  regExpUnicodeEscapeSequence<guardU> = 
+    | guardU "u" leadSurrogate "\\u" trailSurrogate -- alt1
+    | guardU "u" leadSurrogate -- alt2
+    | guardU "u" trailSurrogate -- alt3
+    | guardU "u" nonSurrogate -- alt4
+    | guardU "u" hex4Digits -- alt5
+    | guardU "u{" hexDigits "}" -- alt6
+
+  leadSurrogate = 
+    | hex4Digits /* FIXME Assertion: > but only if the SV of |Hex4Digits| is in the inclusive range 0xD800 to 0xDBFF */ -- alt1
+
+  trailSurrogate = 
+    | hex4Digits /* FIXME Assertion: > but only if the SV of |Hex4Digits| is in the inclusive range 0xDC00 to 0xDFFF */ -- alt1
+
+  nonSurrogate = 
+    | hex4Digits /* FIXME Assertion: > but only if the SV of |Hex4Digits| is not in the inclusive range 0xD800 to 0xDFFF */ -- alt1
+
+  identityEscape<guardU> = 
+    | guardU syntaxCharacter -- alt1
+    | guardU "/" -- alt2
+    | guardU ~unicodeIDContinue sourceCharacter -- alt3
+
+  decimalEscape = 
+    | decimalIntegerLiteral ~decimalDigit -- alt1
+
+  characterClassEscape = "d" | "D" | "s" | "S" | "w" | "W"
+
+  characterClass<guardU> = 
+    | "[" ~("^") classRanges<guardU> "]" -- alt1
+    | "[" "^" classRanges<guardU> "]" -- alt2
+
+  classRanges<guardU> = 
+    | /* empty */ -- alt1
+    | nonemptyClassRanges<guardU> -- alt2
+
+  nonemptyClassRanges<guardU> = 
+    | classAtom<guardU> -- alt1
+    | classAtom<guardU> nonemptyClassRangesNoDash<guardU> -- alt2
+    | classAtom<guardU> "-" classAtom<guardU> classRanges<guardU> -- alt3
+
+  nonemptyClassRangesNoDash<guardU> = 
+    | classAtom<guardU> -- alt1
+    | classAtomNoDash<guardU> nonemptyClassRangesNoDash<guardU> -- alt2
+    | classAtomNoDash<guardU> "-" classAtom<guardU> classRanges<guardU> -- alt3
+
+  classAtom<guardU> = 
+    | "-"
+    | classAtomNoDash<guardU>
+
+  classAtomNoDash<guardU> = 
+    | ~("\\" | "]" | "-") sourceCharacter -- alt1
+    | "\\" classEscape<guardU> -- alt2
+
+  classEscape<guardU> = 
+    | decimalEscape -- alt1
+    | "b" -- alt2
+    | guardU "-" -- alt3
+    | characterEscape<guardU> -- alt4
+    | characterClassEscape -- alt5
+
   withYield = /* fixme */
 
   noYield = ~any /* is this right? */
@@ -973,6 +1207,10 @@ ES2015 {
   withDefault = /* fixme */
 
   noDefault = ~any /* is this right? */
+
+  withU = /* fixme */
+
+  noU = ~any /* is this right? */
 
   break = "break" ~identifierPart
   do = "do" ~identifierPart
@@ -1009,12 +1247,6 @@ ES2015 {
   try = "try" ~identifierPart
   enum = "enum" ~identifierPart
   await = "await" ~identifierPart
-  implements = "implements" ~identifierPart
-  package = "package" ~identifierPart
-  protected = "protected" ~identifierPart
-  interface = "interface" ~identifierPart
-  private = "private" ~identifierPart
-  public = "public" ~identifierPart
   null = "null" ~identifierPart
   true = "true" ~identifierPart
   false = "false" ~identifierPart
