@@ -1,4 +1,4 @@
-import {MatchResult, Grammar, Semantics} from 'ohm-js';
+import {BaseActionDict, Grammar, MatchResult, Node, Semantics} from 'ohm-js';
 
 interface LineAndColumnInfo {
   offset: number;
@@ -44,3 +44,17 @@ interface Example {
  * `//- "shouldn't match"`. The examples text is a JSON string.
  */
 export function extractExamples(grammarsDef: string): [Example];
+
+export type StoredAttributeSetter<T> = (node: Node, val: T) => T;
+
+/**
+ * Add a stored attribute named `attrName` to `semantics`. A stored attribute
+ * is similar to a normal attribute, but instead of being lazily computed, the
+ * value for each node is initialized by an initialization operation.
+ */
+export function addStoredAttribute<T>(
+  semantics: Semantics,
+  attrName: string,
+  initSignature: string,
+  actionProducer: (setter: StoredAttributeSetter<T>) => BaseActionDict<void>
+): Semantics;
