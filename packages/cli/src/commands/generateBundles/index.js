@@ -6,6 +6,7 @@ import path from 'path';
 import {generateTypes} from '../../helpers/generateTypes.js';
 
 const OHM_FILE_EXT = '.ohm';
+const OMH_IMPORT_REGEX = new RegExp(/^(include)\s+'([\w/\\.]+\.ohm)'$/gmi);
 
 function assertFileExtensionEquals(filename, ext) {
   const actual = path.extname(filename);
@@ -51,15 +52,49 @@ function generateBundles(patterns, opts) {
     // Don't process any files that don't have the right file extension.
     if (path.extname(sourcePath) !== OHM_FILE_EXT) continue;
 
-    const grammarSource = fs.readFileSync(sourcePath, 'utf-8');
+    let grammarSource = fs.readFileSync(sourcePath, 'utf-8');
+
+    // Pre-processing
+    grammarSource = preprocessGrammarImports(sourcePath, grammarSource);
+
     const grammars = ohm.grammars(grammarSource);
+
     generateRecipe(sourceFilename, grammars, writer, isEsm);
+
     if (withTypes) {
       generateTypesWithWriter(sourceFilename, grammars, writer);
     }
   }
 
   return plan.plan;
+}
+
+function preprocessGrammarImports(grammarPath, grammarSource) {
+  // Check if imports are present
+  const importMatches = [...grammarSource.matchAll(OMH_IMPORT_REGEX)];
+
+  // False: return original input
+  if (!importMatches || importMatches.length === 0) {
+    return grammarSource;
+  }
+
+  // True: process imports
+  for (let i = 0; i < importMatches.length; i++) {
+    const [originalString, , importPath] = importMatches[i];
+
+    const absoluteImportPath = path.resolve(path.dirname(grammarPath), importPath);
+
+    // Read the contents of the import file
+    let importedGrammarSource = fs.readFileSync(absoluteImportPath, 'utf-8');
+
+    // Recursively preprocess the imported grammar source
+    importedGrammarSource = preprocessGrammarImports(absoluteImportPath, importedGrammarSource);
+
+    // Replace the import statement in the original source with the imported content
+    grammarSource = grammarSource.replace(originalString, importedGrammarSource);
+  }
+
+  return grammarSource;
 }
 
 function generateRecipe(grammarPath, grammars, writer, isEsm) {

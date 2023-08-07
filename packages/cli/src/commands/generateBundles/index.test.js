@@ -70,3 +70,22 @@ test('multiple grammars', t => {
   t.true(ns.G.match('G').succeeded());
   t.true(ns.G2.match('G2').succeeded());
 });
+
+test('include grammar', t => {
+  const {filesToWrite} = generateBundles(['include/grammar.ohm'], {...baseOpts, withTypes: true});
+
+  t.deepEqual(Object.keys(filesToWrite), [
+    'include/grammar.ohm-bundle.js',
+    'include/grammar.ohm-bundle.d.ts',
+  ]);
+});
+
+test('include grammar recursive', t => {
+  const {filesToWrite} = generateBundles(['include/recursive.ohm'], {...baseOpts, withTypes: true});
+
+  t.deepEqual(Object.keys(filesToWrite), [
+    'include/recursive.ohm-bundle.js',
+    'include/recursive.ohm-bundle.d.ts',
+  ]);
+});
+
