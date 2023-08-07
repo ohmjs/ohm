@@ -6,7 +6,7 @@ import path from 'path';
 import {generateTypes} from '../../helpers/generateTypes.js';
 
 const OHM_FILE_EXT = '.ohm';
-const OMH_IMPORT_REGEX = new RegExp(/^(include)\s+'([\w/\\.]+\.ohm)'$/gmi);
+const OHM_IMPORT_REGEX = new RegExp(/^(include)\s+'([\w/\\.]+\.ohm)'$/gmi);
 
 function assertFileExtensionEquals(filename, ext) {
   const actual = path.extname(filename);
@@ -71,7 +71,7 @@ function generateBundles(patterns, opts) {
 
 function preprocessGrammarImports(grammarPath, grammarSource) {
   // Check if imports are present
-  const importMatches = [...grammarSource.matchAll(OMH_IMPORT_REGEX)];
+  const importMatches = [...grammarSource.matchAll(OHM_IMPORT_REGEX)];
 
   // False: return original input
   if (!importMatches || importMatches.length === 0) {
