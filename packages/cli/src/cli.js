@@ -2,8 +2,9 @@ import {Command} from 'commander';
 
 import fs from 'fs';
 import commands from './commands/index.js';
+import url from 'url';
 
-const {version} = JSON.parse(fs.readFileSync('./package.json'));
+const {version} = JSON.parse(fs.readFileSync(new url.URL('../package.json', import.meta.url)));
 
 export function ohmCli(userArgs, optsForTesting = {}) {
   const program = new Command();
