@@ -7,7 +7,7 @@ Ohm {
     = include "'" relativeFilePath "'"
 
   Grammar
-    = ident SuperGrammar? "{" Rule* "}" 
+    = ident SuperGrammar? "{" Rule* "}"
 
   SuperGrammar
     = "<:" ident
