@@ -1,10 +1,13 @@
 Ohm {
 
   Grammars
-    = Grammar*
-
+    =  (IncludeStatement+)? Grammar*
+    
   Grammar
-    = ident SuperGrammar? "{" Rule* "}"
+    = ident SuperGrammar? "{" Rule* "}" 
+
+  IncludeStatement
+    = include "'" relativePath "'"
 
   SuperGrammar
     = "<:" ident
@@ -60,6 +63,12 @@ Ohm {
     | oneCharTerminal ".." oneCharTerminal           -- range
     | terminal                                       -- terminal
     | "(" Alt ")"                                    -- paren
+
+  include
+  	= caseInsensitive<"include">
+    
+  relativePath 
+  	= ~"'" (letter | digit | "-" | "\\" | "/" | ".")+ 
 
   ruleDescr  (a rule description)
     = "(" ruleDescrText ")"
