@@ -4,9 +4,9 @@ Ohm {
     = Includes? Grammars
 
   Includes
-    = IncludeStatement+
+    = Include+
   
-  IncludeStatement
+  Include
       = include "'" relativeFilePath "'"
 
   Grammars
