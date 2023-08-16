@@ -2,7 +2,7 @@ Ohm {
 
   Grammars
     =  (IncludeStatement+)? Grammar*
-    
+
   Grammar
     = ident SuperGrammar? "{" Rule* "}" 
 
