@@ -4,7 +4,7 @@ Ohm {
     =  (IncludeStatement+)? Grammar*
 
   IncludeStatement
-    = include "'" relativePath "'"
+    = include "'" relativeFilePath "'"
 
   Grammar
     = ident SuperGrammar? "{" Rule* "}" 
@@ -67,7 +67,7 @@ Ohm {
   include
   	= caseInsensitive<"include">
     
-  relativePath 
+  relativeFilePath 
   	= ~"'" (letter | digit | "-" | "\\" | "/" | ".")+ 
 
   ruleDescr  (a rule description)
