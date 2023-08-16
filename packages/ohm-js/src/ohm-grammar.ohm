@@ -65,7 +65,7 @@ Ohm {
     | "(" Alt ")"                                    -- paren
 
   include
-  	= caseInsensitive<"include">
+  	= "include"
     
   relativeFilePath 
   	= ~"'" (letter | digit | "-" | "\\" | "/" | ".")+ 
