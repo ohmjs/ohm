@@ -1,10 +1,16 @@
 Ohm {
 
-  Grammars
-    =  (IncludeStatement+)? Grammar*
+  Document
+    = Includes? Grammars
 
+  Includes
+    = IncludeStatement+
+  
   IncludeStatement
-    = include "'" relativeFilePath "'"
+      = include "'" relativeFilePath "'"
+
+  Grammars
+    = Grammar*
 
   Grammar
     = ident SuperGrammar? "{" Rule* "}"
