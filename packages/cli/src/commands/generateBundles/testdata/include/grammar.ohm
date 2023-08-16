@@ -1,5 +1,0 @@
-include 'superGrammar.ohm'
-
-Grammar <: SuperGrammar { 
-    x := "G" 
-}

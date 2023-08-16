@@ -1,5 +1,0 @@
-include 'grammar.ohm'
-
-GrammarRecursive <: Grammar { 
-    x := "G" 
-}
