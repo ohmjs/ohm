@@ -1,10 +1,10 @@
 Ohm {
 
   Document
-    = Includes? Grammars
+    = Includes Grammars
 
   Includes
-    = Include+
+    = Include*
   
   Include
       = include "'" relativeFilePath "'"
@@ -71,7 +71,7 @@ Ohm {
     | "(" Alt ")"                                    -- paren
 
   include
-  	= caseInsensitive<"include">
+  	= "include"
     
   relativeFilePath 
   	= ~"'" (letter | digit | "-" | "\\" | "/" | ".")+ 
