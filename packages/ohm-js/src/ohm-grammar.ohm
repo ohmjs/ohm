@@ -3,11 +3,11 @@ Ohm {
   Grammars
     =  (IncludeStatement+)? Grammar*
 
-  Grammar
-    = ident SuperGrammar? "{" Rule* "}" 
-
   IncludeStatement
     = include "'" relativePath "'"
+
+  Grammar
+    = ident SuperGrammar? "{" Rule* "}" 
 
   SuperGrammar
     = "<:" ident
