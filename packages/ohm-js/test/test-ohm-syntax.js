@@ -1442,9 +1442,41 @@ describe('bootstrap', test => {
   });
 
   test('full bootstrap!', t => {
-    const g = buildGrammar(ns.Ohm.match(ohmGrammarSource, 'Grammar'), {}, ns.Ohm);
-    const gPrime = buildGrammar(g.match(ohmGrammarSource, 'Grammar'), {}, g);
+    const g = buildGrammar(ns.Ohm.match(ohmGrammarSource, 'Document'), {}, ns.Ohm);
+    const gPrime = buildGrammar(g.match(ohmGrammarSource, 'Document'), {}, g);
     gPrime.namespaceName = g.namespaceName; // make their namespaceName properties the same
     compareGrammars(t, g, gPrime);
   });
+});
+
+test('include', t => {
+  const g = ohm.grammar(`
+    include 'test.ohm'
+  `, {}, {
+    fetchGrammar: (path) => `G { X = "G" }`
+  });
+  t.is(g.succeeded(), true);
+});
+
+test('multiple include', t => {
+  const g = ohm.grammars(`
+    include 'file-a.ohm'
+    include 'file-b.ohm'
+  `, {}, {
+    fetchGrammar: (path) => {
+      switch (path) {
+        case "file-a.ohm":
+          return `FileA { A = "A" }`;
+
+        case "file-b.ohm":
+          return `FileB { B = "B" }`;
+
+        default:
+          return "";
+      }
+    }
+  });
+
+  // IMPLEMENT UNIT TEST For FileA, and FileB
+  // t.is(g.FileA.sourceString., true);
 });

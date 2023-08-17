@@ -81,6 +81,9 @@ semantics.addOperation('examples', {
   Includes(includesIter) {
     return includesIter.children.flatMap(c => c.examples());
   },
+  Include(_, _la, relativePathNode, _ra) {
+    return null;
+  },
   Grammars(grammarIter) {
     return grammarIter.children.flatMap(c => c.examples());
   },
