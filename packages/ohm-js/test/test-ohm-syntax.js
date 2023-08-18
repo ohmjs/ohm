@@ -1382,21 +1382,21 @@ describe('bootstrap', test => {
   const ns = ohm.grammars(ohmGrammarSource);
 
   test('it can recognize arithmetic grammar', t => {
-    assertSucceeds(t, ns.Ohm.match(arithmeticGrammarSource, 'Grammar'));
+    assertSucceeds(t, ns.Ohm.match(arithmeticGrammarSource));
   });
 
   test('it can recognize itself', t => {
-    assertSucceeds(t, ns.Ohm.match(ohmGrammarSource, 'Grammar'));
+    assertSucceeds(t, ns.Ohm.match(ohmGrammarSource));
   });
 
   test('it can produce a grammar that works', t => {
-    const g = buildGrammar(ns.Ohm.match(ohmGrammarSource, 'Grammar'), {}, ns.Ohm);
+    const g = buildGrammar(ns.Ohm.match(ohmGrammarSource), ns.Ohm, {});
     assertSucceeds(
         t,
-        g.match(ohmGrammarSource, 'Grammar'),
+        g.match(ohmGrammarSource),
         'Ohm grammar can recognize itself',
     );
-    const Arithmetic = buildGrammar(g.match(arithmeticGrammarSource, 'Grammar'), {}, g);
+    const Arithmetic = buildGrammar(g.match(arithmeticGrammarSource), {}, {}, g);
     const s = Arithmetic.createSemantics().addAttribute('v', {
       exp(expr) {
         return expr.v;
@@ -1449,34 +1449,52 @@ describe('bootstrap', test => {
   });
 });
 
-test('include', t => {
-  const g = ohm.grammar(`
+describe('include', test => {
+  test('include', t => {
+    const g = ohm.grammar(`
     include 'test.ohm'
   `, {}, {
-    fetchGrammar: (path) => `G { X = "G" }`
-  });
-  t.is(g.succeeded(), true);
-});
+      fetchGrammar: (path) => `G { X = "G" }`
+    });
 
-test('multiple include', t => {
-  const g = ohm.grammars(`
+    assertSucceeds(t, g.match('G'));
+  });
+
+  test('multiple', t => {
+    const grammars = ohm.grammars(`
     include 'file-a.ohm'
     include 'file-b.ohm'
   `, {}, {
-    fetchGrammar: (path) => {
-      switch (path) {
-        case "file-a.ohm":
-          return `FileA { A = "A" }`;
+      fetchGrammar: (path) => {
+        switch (path) {
+          case "file-a.ohm":
+            return 'FileA { A = "A" }';
 
-        case "file-b.ohm":
-          return `FileB { B = "B" }`;
-
-        default:
-          return "";
+          case "file-b.ohm":
+            return 'FileB { B = "B" }';
+        
+          default:
+            return "";
+        }
       }
-    }
+    });
+
+    assertSucceeds(t, grammars.FileA.match('A'));
+    assertSucceeds(t, grammars.FileB.match('B'));
   });
 
-  // IMPLEMENT UNIT TEST For FileA, and FileB
-  // t.is(g.FileA.sourceString., true);
+  test('supergrammar', t => {
+    const grammar = ohm.grammars(`
+    include 'supergrammar.ohm'
+
+    ChildGrammar <: SuperGrammar {
+      S += "C"
+    }
+  `, {}, {
+      fetchGrammar: (path) => 'SuperGrammar { S = "S" }'
+    });
+
+    assertSucceeds(t, grammar.ChildGrammar.match('C'));
+    assertSucceeds(t, grammar.ChildGrammar.match('S'));
+  });
 });
