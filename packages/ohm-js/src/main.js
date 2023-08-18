@@ -11,21 +11,27 @@ import * as util from './util.js';
 import './semanticsDeferredInit.js'; // TODO: Clean this up.
 Grammar.initApplicationParser(ohmGrammar, buildGrammar);
 
+const DEFAULT_OPTIONS = {
+  fetchGrammar: undefined
+};
+
 const isBuffer = obj =>
   !!obj.constructor &&
   typeof obj.constructor.isBuffer === 'function' &&
   obj.constructor.isBuffer(obj);
 
-function compileAndLoad(source, namespace) {
-  const m = ohmGrammar.match(source, 'Grammars');
+function compileAndLoad(source, namespace, options) {
+  const m = ohmGrammar.match(source);
+
   if (m.failed()) {
     throw errors.grammarSyntaxError(m);
   }
-  return buildGrammar(m, namespace);
+
+  return buildGrammar(m, namespace, options);
 }
 
-export function grammar(source, optNamespace) {
-  const ns = grammars(source, optNamespace);
+export function grammar(source, optNamespace, options = {}) {
+  const ns = grammars(source, optNamespace, options);
 
   // Ensure that the source contained no more than one grammar definition.
   const grammarNames = Object.keys(ns);
@@ -42,8 +48,10 @@ export function grammar(source, optNamespace) {
   return ns[grammarNames[0]]; // Return the one and only grammar.
 }
 
-export function grammars(source, optNamespace) {
+export function grammars(source, optNamespace, options = {}) {
+  
   const ns = Object.create(optNamespace || {});
+
   if (typeof source !== 'string') {
     // For convenience, detect Node.js Buffer objects and automatically call toString().
     if (isBuffer(source)) {
@@ -54,7 +62,11 @@ export function grammars(source, optNamespace) {
       );
     }
   }
-  compileAndLoad(source, ns);
+
+  const mergedOptions = Object.assign({}, DEFAULT_OPTIONS, options);
+
+  compileAndLoad(source, ns, mergedOptions);
+
   return ns;
 }
 

@@ -171,3 +171,17 @@ export const uniqueId = (() => {
   let idCounter = 0;
   return prefix => '' + prefix + idCounter++;
 })();
+
+export function validateOption(options, optionName, expectedType) {
+  if (!options.hasOwnProperty(optionName)) {
+    return false;
+  }
+
+  const optionValue = options[optionName];
+  
+  if (typeof optionValue !== expectedType) {
+    return false;
+  }
+
+  return true;
+}

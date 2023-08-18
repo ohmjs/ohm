@@ -4,6 +4,7 @@ import * as common from './common.js';
 import * as errors from './errors.js';
 import {Grammar} from './Grammar.js';
 import * as pexprs from './pexprs.js';
+import { validateOption } from './util.js';
 
 const superSplicePlaceholder = Object.create(pexprs.PExpr.prototype);
 
@@ -19,16 +20,79 @@ function namespaceHas(ns, name) {
 // `tree`, which is the concrete syntax tree of a user-written grammar.
 // The grammar will be assigned into `namespace` under the name of the grammar
 // as specified in the source.
-export function buildGrammar(match, namespace, optOhmGrammarForTesting) {
+export function buildGrammar(match, namespace, options, optOhmGrammarForTesting) {
   const builder = new Builder();
   let decl;
   let currentRuleName;
   let currentRuleFormals;
   let overriding = false;
   const metaGrammar = optOhmGrammarForTesting || ohmGrammar;
+  
+  const fetchGrammarInternal = (path) => {
+    if (!validateOption(options, 'fetchGrammar', 'function'))
+    {
+      throw new Error("Missing option 'fetchGrammar' of type `function` when trying to include.");
+    }
+
+    const grammarContent = options.fetchGrammar(path);
+
+    if (typeof grammarContent !== "string")
+    {
+      throw new Error(`Expected string from 'fetchGrammar' function, but got ${typeof(grammarContent)}`);
+    }
+
+    return grammarContent.trim();
+  }
+
+  const rematchInput = (includes) => {
+    let modifiedGrammarSource = match.input;
+
+    for (let i = 0; i < includes.length; i++) {
+      const [sourceString, fileContent] = includes[i];
+      
+      // Always substitute the include even with a nothing to prevent infinite loop.
+      modifiedGrammarSource = modifiedGrammarSource.replace(sourceString, fileContent);
+    }
+
+    const newMatch = ohmGrammar.match(modifiedGrammarSource);
+
+    if (newMatch.failed()) {
+      throw errors.grammarSyntaxError(newMatch);
+    }
+
+    helpers(newMatch).visit()
+  }
 
   // A visitor that produces a Grammar instance from the CST.
   const helpers = metaGrammar.createSemantics().addOperation('visit', {
+    Document(includesNode, grammarsNode)
+    {
+      const resolvedIncludes = includesNode.visit();
+
+      // We need to rebuild the grammar match with the resolved includes substituted.
+      // Note: It's important we prevent any deeper visits in this tree as it's now pointless.
+      if (resolvedIncludes.length > 0) {
+        rematchInput(resolvedIncludes);
+        return;
+      }
+      
+      return grammarsNode.visit();
+    },
+    Includes(includesIter) {
+      const resolvedIncludes = [];
+
+      includesIter.children.flatMap(c => {
+        resolvedIncludes.push(c.visit());
+      })
+
+      return resolvedIncludes;
+    },
+    Include(_, _la, relativePathNode, _ra) {
+      return [
+        this.sourceString, 
+        fetchGrammarInternal(relativePathNode.sourceString)
+      ];
+    },
     Grammars(grammarIter) {
       return grammarIter.children.map(c => c.visit());
     },
@@ -45,7 +109,6 @@ export function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       namespace[grammarName] = g;
       return g;
     },
-
     SuperGrammar(_, n) {
       const superGrammarName = n.visit();
       if (superGrammarName === 'null') {
@@ -234,5 +297,6 @@ export function buildGrammar(match, namespace, optOhmGrammarForTesting) {
       return this.sourceString;
     },
   });
+
   return helpers(match).visit();
 }
