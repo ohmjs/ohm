@@ -1390,14 +1390,14 @@ describe('bootstrap', test => {
   });
 
   test('it can produce a grammar that works', t => {
-    const g = buildGrammar(ns.Ohm.match(ohmGrammarSource), ns.Ohm, {});
+    const g = buildGrammar(ns.Ohm.match(ohmGrammarSource), {}, {}, ns.Ohm);
     assertSucceeds(
         t,
-        g.match(ohmGrammarSource),
+        g[0].match(ohmGrammarSource),
         'Ohm grammar can recognize itself',
     );
-    const Arithmetic = buildGrammar(g.match(arithmeticGrammarSource), {}, {}, g);
-    const s = Arithmetic.createSemantics().addAttribute('v', {
+    const Arithmetic = buildGrammar(g[0].match(arithmeticGrammarSource), {}, {}, g[0]);
+    const s = Arithmetic[0].createSemantics().addAttribute('v', {
       exp(expr) {
         return expr.v;
       },
@@ -1438,12 +1438,12 @@ describe('bootstrap', test => {
         return this.sourceString;
       },
     });
-    t.is(s(Arithmetic.match('10*(2+123)-4/5')).v, 1249.2);
+    t.is(s(Arithmetic[0].match('10*(2+123)-4/5')).v, 1249.2);
   });
 
   test('full bootstrap!', t => {
-    const g = buildGrammar(ns.Ohm.match(ohmGrammarSource, 'Document'), {}, ns.Ohm);
-    const gPrime = buildGrammar(g.match(ohmGrammarSource, 'Document'), {}, g);
+    const g = buildGrammar(ns.Ohm.match(ohmGrammarSource, 'Grammar'), {}, {}, ns.Ohm);
+    const gPrime = buildGrammar(g.match(ohmGrammarSource, 'Grammar'), {}, {}, g);
     gPrime.namespaceName = g.namespaceName; // make their namespaceName properties the same
     compareGrammars(t, g, gPrime);
   });
