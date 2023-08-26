@@ -1,7 +1,6 @@
 import ohmGrammar from '../dist/ohm-grammar.js';
-import {buildGrammar} from './buildGrammar.js';
+import {buildGrammar,compileAndLoad} from './buildGrammar.js';
 import * as common from './common.js';
-import * as errors from './errors.js';
 import {Grammar} from './Grammar.js';
 import * as pexprs from './pexprs.js';
 import * as util from './util.js';
@@ -20,15 +19,6 @@ const isBuffer = obj =>
   typeof obj.constructor.isBuffer === 'function' &&
   obj.constructor.isBuffer(obj);
 
-function compileAndLoad(source, namespace, options) {
-  const m = ohmGrammar.match(source);
-
-  if (m.failed()) {
-    throw errors.grammarSyntaxError(m);
-  }
-
-  return buildGrammar(m, namespace, options);
-}
 
 export function grammar(source, optNamespace, options = {}) {
   const ns = grammars(source, optNamespace, options);
