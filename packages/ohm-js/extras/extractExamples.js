@@ -73,9 +73,9 @@ const semantics = grammars.OhmWithExamples.createSemantics().addOperation('hasEx
 });
 
 semantics.addOperation('examples', {
-  Document(_, grammarIter)
+  Document(_, grammarsNode)
   {   
-    return grammarIter.examples();
+    return grammarsNode.examples();
   },
   Grammars(grammarIter) {
     return grammarIter.children.flatMap(c => c.examples());
