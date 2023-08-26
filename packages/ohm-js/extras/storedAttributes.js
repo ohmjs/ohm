@@ -7,7 +7,7 @@ export function addStoredAttribute(semantics, attrName, initSignature, fn) {
   semantics.addAttribute(attrName, {
     _default() {
       throw new Error(`Attribute '${attrName}' not initialized`);
-    }
+    },
   });
 
   // Create the attribute setter, which the semantic actions of the init

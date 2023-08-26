@@ -1,10 +1,5 @@
 {
-  "reservedWords": [
-    "Keyword",
-    "FutureReservedWord",
-    "NullLiteral",
-    "BooleanLiteral"
-  ],
+  "reservedWords": ["Keyword", "FutureReservedWord", "NullLiteral", "BooleanLiteral"],
   "substitutions": [
     {
       "name": "unicodeIDStart",

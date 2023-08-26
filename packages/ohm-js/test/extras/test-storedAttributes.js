@@ -33,7 +33,7 @@ test('stored attributes', t => {
       // By default, inherit polarity from the parent node.
       setPolarity(this, this.args.pol);
       children.forEach(c => c.initPolarity(this.args.pol));
-    }
+    },
   }));
   exp.initPolarity('=');
   t.is(exp.polarity, '='); // Exp
@@ -43,6 +43,6 @@ test('stored attributes', t => {
   t.is(exp.child(0).child(0).child(0).child(0).polarity, '+'); // AddExp_plus
 
   t.throws(() => exp.child(0).child(0).child(1).polarity, {
-    message: 'Attribute \'polarity\' not initialized'
+    message: "Attribute 'polarity' not initialized",
   });
 });

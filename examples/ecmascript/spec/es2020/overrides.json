@@ -1,7 +1,5 @@
 {
-  "reservedWords": [
-    "ReservedWord"
-  ],
+  "reservedWords": ["ReservedWord"],
   "substitutions": [
     {
       "name": "unicodeIDStart",

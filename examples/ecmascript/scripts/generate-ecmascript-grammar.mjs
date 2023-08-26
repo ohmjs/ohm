@@ -44,7 +44,7 @@ let ruleOverrides = {};
 function mkRuleOverrides(substitutions) {
   const overrides = {};
   for (const substitution of substitutions) {
-    const keys = Object.keys(substitution)
+    const keys = Object.keys(substitution);
     if (keys.includes('override')) {
       overrides[substitution.name] = substitution.override;
       continue;
@@ -52,12 +52,13 @@ function mkRuleOverrides(substitutions) {
     if (keys.includes('pattern') && keys.includes('replacement')) {
       let postlude = '';
       if (keys.includes('postlude')) {
-        postlude = substitution.postlude
+        postlude = substitution.postlude;
       }
-      overrides[substitution.name] = (rhs, defaultBody) => (safelyReplace(defaultBody, substitution.pattern, substitution.replacement) + postlude)
+      overrides[substitution.name] = (rhs, defaultBody) =>
+        safelyReplace(defaultBody, substitution.pattern, substitution.replacement) + postlude;
     }
   }
-  return overrides
+  return overrides;
 }
 
 let reservedWordProductions = [];
@@ -71,7 +72,6 @@ function mkReservedWordProductions(productions) {
 // Converts all terminals in the rule body to rule applications.
 // E.g., `"blah" | "blarg"` => `blah | blarg`.
 const terminalsToRules = ohmString => ohmString.replace(/"/g, '');
-
 
 const PRELUDE = raw`
   Start = Script
@@ -115,10 +115,15 @@ let grammarName; // Initialized in main(), below.
 semantics.addOperation(
   'toOhm()',
   (() => {
-    function handleProduction(nonterminal, rhs, parameterListOpt = undefined, kind = 'LEXICAL') {
+    function handleProduction(
+      nonterminal,
+      rhs,
+      parameterListOpt = undefined,
+      kind = 'LEXICAL'
+    ) {
       // const isLexical = parameterListOpt === undefined;
-      const isLexical = kind === 'LEXICAL'
-      const strippedNonTerminal = nonterminal.sourceString.replaceAll('|', '')
+      const isLexical = kind === 'LEXICAL';
+      const strippedNonTerminal = nonterminal.sourceString.replaceAll('|', '');
       const ruleName = isLexical
         ? lexicalRuleName(strippedNonTerminal)
         : syntacticRuleName(strippedNonTerminal);
@@ -132,28 +137,30 @@ semantics.addOperation(
     const handlePositiveLookahead = (_, _op, exprList) => {
       const parsedExprList = exprList.isIteration()
         ? exprList.children.map(c => c.toOhm())
-        : [ exprList.toOhm() ]
+        : [exprList.toOhm()];
 
       if (parsedExprList.length > 1) {
         return `&(${parsedExprList.join('|')})`;
       }
       return `&${parsedExprList}`;
-    }
+    };
     const handleNegativeLookahead = (_, _op, exprList) => {
       const parsedExprList = exprList.isIteration()
         ? exprList.children.map(c => c.toOhm())
-        : [ exprList.toOhm() ]
+        : [exprList.toOhm()];
       if (parsedExprList.length > 1) {
         return `~(${parsedExprList.join('|')})`;
       }
       return `~${parsedExprList}`;
-    }
+    };
 
     return {
       Productions(productionIter) {
         const rules = productionIter.children.map(c => c.toOhm());
         for (const param of new Set(this.allParameters)) {
-          rules.push(...[`with${param} = /* fixme */`, `no${param} = ~any /* is this right? */`]);
+          rules.push(
+            ...[`with${param} = /* fixme */`, `no${param} = ~any /* is this right? */`]
+          );
         }
         const prettyRules = [...rules].join('\n\n  ');
         const indentedAdditionalRules = this.getAdditionalRules().map(str => `  ${str}`);
@@ -228,7 +235,7 @@ semantics.addOperation(
           : ohmTerminal;
       },
       term_link(_) {
-        return ''
+        return '';
       },
       assertion(_open, assertionContents, _close) {
         return assertionContents.toOhm();
@@ -305,7 +312,7 @@ semantics.addOperation(
       },
       nonterminal(_optPipe, _, _2, _optPipe2) {
         const {sourceString} = this;
-        const trimmedSourceString = sourceString.replaceAll('|', '')
+        const trimmedSourceString = sourceString.replaceAll('|', '');
         const root = this.context.productions;
         if (root.productionsByName.has(trimmedSourceString)) {
           return trimmedSourceString;
@@ -327,7 +334,7 @@ semantics.addOperation(
           case ';':
             return '#sc';
         }
-        return `"${sourceString.replace('\\','\\\\')}"`;
+        return `"${sourceString.replace('\\', '\\\\')}"`;
       },
       literal(_open, charIter, _close) {
         const name = charIter.sourceString;
@@ -595,15 +602,16 @@ function addContext(semantics, getActions) {
   grammarName = process.argv[2];
   const inputFilename = process.argv[3];
   if (process.argv.length > 4) {
-    const overrideConfig = JSON.parse(readFileSync(process.argv[4], { encoding: 'utf-8'}));
+    const overrideConfig = JSON.parse(readFileSync(process.argv[4], {encoding: 'utf-8'}));
     if (overrideConfig.substitutions) {
       ruleOverrides = mkRuleOverrides(overrideConfig.substitutions);
     }
     if (overrideConfig.reservedWords) {
-      reservedWordProductions = mkReservedWordProductions(overrideConfig.reservedWords)
+      reservedWordProductions = mkReservedWordProductions(overrideConfig.reservedWords);
       // Add a rule override for each of the reserved word productions.
       for (const prod of reservedWordProductions) {
-        ruleOverrides[lexicalRuleName(prod)] = (rhs, defaultBody) => terminalsToRules(defaultBody);
+        ruleOverrides[lexicalRuleName(prod)] = (rhs, defaultBody) =>
+          terminalsToRules(defaultBody);
       }
     }
   }
