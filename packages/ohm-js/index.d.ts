@@ -132,6 +132,8 @@ export class CaseInsensitiveTerminal extends PExpr {}
  * against a Grammar, e.g. in an editor or IDE.
  */
 export interface Matcher {
+  grammar: Grammar;
+
   /**
    * Return the current input string.
    */
