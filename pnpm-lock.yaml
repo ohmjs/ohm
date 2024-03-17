@@ -147,6 +147,12 @@ importers:
         specifier: ^4.3.5
         version: 4.9.5
 
+  packages/es-grammars:
+    dependencies:
+      ohm-js:
+        specifier: ^17.1.0
+        version: link:../ohm-js
+
   packages/lang-python: {}
 
   packages/ohm-js:

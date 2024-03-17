@@ -28,7 +28,6 @@
   },
   "devDependencies": {
     "ava": "^4.3.3",
-    "fast-glob": "^3.2.7",
     "ohm-js": "^17.0.0"
   },
   "ava": {

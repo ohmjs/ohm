@@ -1,5 +1,6 @@
-import assert from 'assert';
-import test from 'ava';
+import assert from 'node:assert';
+import test from 'node:test';
+
 import fastGlob from 'fast-glob';
 import fs from 'fs';
 import * as ohm from 'ohm-js';
@@ -18,7 +19,7 @@ function esprimaTestMacro(t, sourcePath, shouldSucceed, startRule = 'Script') {
   if (shouldSucceed) {
     t.is(result.message, undefined);
   }
-  //  t.true(shouldSucceed ? result.succeeded() : result.failed());
+  //  assert.ok(shouldSucceed ? result.succeeded() : result.failed());
 }
 
 const skippedTests = new Set([
@@ -77,46 +78,46 @@ test('zoo', t => {
   ];
 
   // Fix: rule override for LeftHandSideExpression.
-  t.true(...matchSucceeds('assert(str.includes(pattern));'));
+  assert.ok(...matchSucceeds('assert(str.includes(pattern));'));
 
   // Fix: the base case of identifierName has to come after the left-recursive alternative.
-  t.true(...matchSucceeds("import assert from 'assert';", 'Module'));
+  assert.ok(...matchSucceeds("import assert from 'assert';", 'Module'));
 
   // Fix: rule overrides for multiLineCommentChars and postAsteriskCommentChars.
-  t.true(...matchSucceeds('/* test */', 'multiLineComment'));
+  assert.ok(...matchSucceeds('/* test */', 'multiLineComment'));
 
   // Fix: rule override for PropertyDefinition.
-  t.true(...matchSucceeds('const x = {zz(a, b) {}}'));
+  assert.ok(...matchSucceeds('const x = {zz(a, b) {}}'));
 
   // Fix: rule override for AssignmentExpression.
-  t.true(...matchSucceeds('() => 3;', 'Module'));
+  assert.ok(...matchSucceeds('() => 3;', 'Module'));
 
   // `import.meta` is not valid in ES2015!
-  t.true(...matchFails('new URL(import.meta.url)'));
+  assert.ok(...matchFails('new URL(import.meta.url)'));
 
   // Fix: rule override for FormalParameters.
-  t.true(...matchSucceeds('function safelyReplace(str) {}'));
+  assert.ok(...matchSucceeds('function safelyReplace(str) {}'));
 
-  t.true(...matchSucceeds('foo().map();'));
+  assert.ok(...matchSucceeds('foo().map();'));
 
   // Fix: rule override for AssignmentExpression — moving ConditionalExpression after LeftHandSideExpressions.
-  t.true(...matchSucceeds('x[y] = 3;'));
+  assert.ok(...matchSucceeds('x[y] = 3;'));
 
   // Fix: rule override for UnaryExpression.
-  t.true(...matchSucceeds("if (typeof override === 'string') {}"));
+  assert.ok(...matchSucceeds("if (typeof override === 'string') {}"));
 
-  t.true(...matchSucceeds('const x = aBoolean\n? a : b;'));
+  assert.ok(...matchSucceeds('const x = aBoolean\n? a : b;'));
 
   // Fix: rule override for RelationalExpression
-  t.true(...matchSucceeds('if (name in x) {}'));
+  assert.ok(...matchSucceeds('if (name in x) {}'));
 
   // Fix: Correctly handle sequences of terminals in lookahead sets.
-  t.true(...matchSucceeds('[a]=b;'));
+  assert.ok(...matchSucceeds('[a]=b;'));
 
   // Fix: Correctly handle sequences of terminals in lookahead sets.
-  t.true(...matchSucceeds('0o12'));
+  assert.ok(...matchSucceeds('0o12'));
 
-  t.true(...matchSucceeds('thisThing.map(x => x);'));
+  assert.ok(...matchSucceeds('thisThing.map(x => x);'));
 
   /*
     Other known bugs:
