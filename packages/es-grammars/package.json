@@ -1,6 +1,6 @@
 {
   "name": "@ohm-js/es-grammars",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Ohm grammars for modern versions of ECMAScript/JavaScript (ES2015+).",
   "exports": "./index.mjs",
   "files": [
