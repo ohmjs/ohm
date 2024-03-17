@@ -8,7 +8,9 @@
     "gen/*.ohm"
   ],
   "scripts": {
-    "test": "node test/es2015.test.mjs"
+    "test": "node test/es2015.test.mjs",
+    "gen-grammars": "node scripts/generate-ecmascript-grammar.mjs ES2015 spec/es2015.grammar > gen/es2015.grammar.ohm",
+    "publish": "npm publish --access public"
   },
   "keywords": [
     "ohm",
