@@ -101,3 +101,33 @@ test('basic tracing', t => {
   t.is(indent.toString(), 'x          ✓ indent ⇒  ""\nx            ✓ indent ⇒  ""\n');
   t.is(dedent.toString(), '           ✓ dedent ⇒  ""\n             ✓ dedent ⇒  ""\n');
 });
+
+// eslint-disable-next-line ava/no-skip-test
+test.skip('#467 - dedent not working', t => {
+  const g = grammar(
+      `
+      G <: IndentationSensitive {
+        IfExpr = "if" Expr ":" Block
+        Block = indent Expr+ dedent
+        Expr = IfExpr
+            | "True2"
+            | "True3"
+             | "True"
+             | "False"
+             | number
+
+        number = digit+
+      }
+`,
+      {IndentationSensitive},
+  );
+  const input = `
+if True:
+  if True2:
+    2
+  if True3:
+    3
+`.trim();
+  const result = g.trace(input);
+  t.true(result.succeeded());
+});
