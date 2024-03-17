@@ -1,4 +1,8 @@
-lockfileVersion: '6.0'
+lockfileVersion: '6.1'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
 
 importers:
 
@@ -35,9 +39,6 @@ importers:
       ava:
         specifier: ^4.3.3
         version: 4.3.3
-      fast-glob:
-        specifier: ^3.2.7
-        version: 3.2.12
       ohm-js:
         specifier: ^17.0.0
         version: link:../../packages/ohm-js
@@ -152,6 +153,10 @@ importers:
       ohm-js:
         specifier: ^17.1.0
         version: link:../ohm-js
+    devDependencies:
+      fast-glob:
+        specifier: ^3.2.7
+        version: 3.2.12
 
   packages/lang-python: {}
 
