@@ -24,5 +24,8 @@
   "license": "MIT",
   "peerDependencies": {
     "ohm-js": "^17.1.0"
+  },
+  "devDependencies": {
+    "fast-glob": "^3.2.7"
   }
 }
