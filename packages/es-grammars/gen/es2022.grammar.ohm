@@ -640,11 +640,11 @@ ES2022 {
     | MemberExpression<guardYield, guardAwait> Arguments<guardYield, guardAwait> -- alt1
 
   UpdateExpression<guardYield, guardAwait> = 
+    | LeftHandSideExpression<guardYield, guardAwait> -- alt1
     | LeftHandSideExpression<guardYield, guardAwait> ~lineTerminator "++" -- alt2
     | LeftHandSideExpression<guardYield, guardAwait> ~lineTerminator "--" -- alt3
     | "++" UnaryExpression<guardYield, guardAwait> -- alt4
     | "--" UnaryExpression<guardYield, guardAwait> -- alt5
-	| LeftHandSideExpression<guardYield, guardAwait> -- alt1
 
   UnaryExpression<guardYield, guardAwait> = 
     | delete UnaryExpression<guardYield, guardAwait> -- alt2
