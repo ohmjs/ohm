@@ -59,6 +59,13 @@
       "replacement": ""
     },
     {
+      "_comment_": " Move LeftHandSideExpression to the very end.",
+      "name": "UpdateExpression",
+      "pattern": "    | LeftHandSideExpression<guardYield> -- alt1\n",
+      "postlude": "\n    | LeftHandSideExpression<guardYield> -- alt1",
+      "replacement": ""
+    },
+    {
       "_comment_": "The first alternative is a subset of the second one, so flip the order.",
       "name": "ConditionalExpression",
       "pattern": "| ShortCircuitExpression<guardIn, guardYield, guardAwait> -- alt1\n    | ShortCircuitExpression<guardIn, guardYield, guardAwait> \"?\" AssignmentExpression<withIn, guardYield, guardAwait> \":\" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt2",

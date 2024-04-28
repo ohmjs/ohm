@@ -506,11 +506,11 @@ ES2016 {
     | NewExpression<guardYield>
 
   UpdateExpression<guardYield> = 
-    | LeftHandSideExpression<guardYield> -- alt1
     | LeftHandSideExpression<guardYield> ~lineTerminator "++" -- alt2
     | LeftHandSideExpression<guardYield> ~lineTerminator "--" -- alt3
     | "++" UnaryExpression<guardYield> -- alt4
     | "--" UnaryExpression<guardYield> -- alt5
+	| LeftHandSideExpression<guardYield> -- alt1
 
   UnaryExpression<guardYield> = 
     | delete UnaryExpression<guardYield> -- alt2
