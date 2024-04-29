@@ -66,8 +66,8 @@
     {
       "_comment_": " Move LeftHandSideExpression to the very end.",
       "name": "UpdateExpression",
-      "pattern": "    | LeftHandSideExpression<guardYield> -- alt1\n",
-      "postlude": "\n    | LeftHandSideExpression<guardYield> -- alt1",
+      "pattern": "    | LeftHandSideExpression<guardYield, guardAwait> -- alt1\n",
+      "postlude": "\n    | LeftHandSideExpression<guardYield, guardAwait> -- alt1",
       "replacement": ""
     },
     {
