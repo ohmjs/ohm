@@ -187,7 +187,7 @@ The matching semantic action for a particular node is chosen as follows:
 - On a terminal node (e.g., a node produced by the parsing expression `"hello"`), use the semantic action named `_terminal`.
 - On an iteration node (e.g., a node produced by the parsing expression `letter+`), use the semantic action named `_iter`.
 
-<span id="special-actions"></span>The `_iter`, `_nonterminal`, and `_terminal` actions are sometimes called _special actions_. `_iter` and `_nonterminal` take a variable number of arguments, which are typically captured into an array using [rest parameter syntax](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/rest_parameters), e.g. `_iter(...children) { ... }`. The `_terminal` action takes no arguments.
+<span id="special-actions"></span>The `_iter`, `_nonterminal`, and `_terminal` actions are sometimes called _special actions_. `_iter` and `_nonterminal` take a variable number of arguments, which are typically captured into an array using [rest parameter syntax](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/rest_parameters) , e.g. `_iter(...children) { ... }`. The `_terminal` action takes no arguments.
 
 <!-- @markscript
   markscript.transformNextBlock((code) =>
