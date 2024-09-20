@@ -96,7 +96,7 @@ Note that the rule for the lower precedence operators (`+` and `-`) invokes the 
 
 #### 🐍 Ambiguous recursion
 
-Notice that in the arithmetic grammar above, `mulExp` appears on the right hand side of all of `addExp`'s cases. Be careful that you don't write rules that are "ambiguously recursive", e.g. `addExp = addExp "+" addExp`. If you write your grammar like this, a reader can't tell whether `+` is left-associative or right-associative. (In Ohm, you will actually get a right-assiciative parse — see [#56](https://github.com/ohmjs/ohm/issues/56) for details.)
+Notice that in the arithmetic grammar above, `mulExp` appears on the right hand side of all of `addExp`'s cases. Be careful that you don't write rules that are "ambiguously recursive", e.g. `addExp = addExp "+" addExp`. If you write your grammar like this, a reader can't tell whether `+` is left-associative or right-associative. (In Ohm, you will actually get a right-associative parse — see [#56](https://github.com/ohmjs/ohm/issues/56) for details.)
 
 ## Semantics
 
