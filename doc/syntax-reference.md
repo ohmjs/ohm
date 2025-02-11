@@ -275,7 +275,7 @@ Array = "[" "]"  -- empty
 Elements = Element ("," Element)*
 ```
 
-`Array` and `Elements` are both synactic rules, since their names begin with a capital letter. Here's what a lexical version of these rule would look like, with _explicit_ space skipping:
+`Array` and `Elements` are both syntactic rules, since their names begin with a capital letter. Here's what a lexical version of these rule would look like, with _explicit_ space skipping:
 
 <!-- @markscript
   let lexicalDefs;
