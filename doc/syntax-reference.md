@@ -229,7 +229,7 @@ ident (an identifier)
 
 #### Inline Rule Declarations
 
-<pre><code><i>expr</i> — <i>caseName</i></code></pre>
+<pre><code><i>expr</i> -- <i>caseName</i></code></pre>
 
 When a parsing expression is followed by the characters `--` and a name, it signals an _inline rule declaration_. This is most commonly used in alternation expressions to ensure that each branch has the same arity. For example, the following declaration:
 
