@@ -3,6 +3,7 @@ import {Semantics} from './Semantics.js';
 import * as common from './common.js';
 import * as errors from './errors.js';
 import * as pexprs from './pexprs.js';
+import * as wasm from './wasm.js';
 
 // --------------------------------------------------------------------
 // Private stuff
@@ -308,6 +309,16 @@ export class Grammar {
     if (this._matchStateInitializer) {
       this._matchStateInitializer(state);
     }
+  }
+
+  toWasm() {
+    // body: pexprs.any,
+    // formals: [],
+    // description: 'any character',
+    // primitive: true,
+
+    const compiler = new wasm.Compiler(this);
+    return compiler.compile();
   }
 }
 

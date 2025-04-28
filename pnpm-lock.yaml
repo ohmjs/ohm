@@ -171,6 +171,9 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: ^13.1.3
         version: 13.3.0(rollup@2.79.2)
+      '@wasmgroundup/emit':
+        specifier: ^1.0.2
+        version: 1.0.2
       ava:
         specifier: ^6.0.0
         version: 6.2.0(rollup@2.79.2)
@@ -219,6 +222,9 @@ importers:
       uvu:
         specifier: ^0.5.6
         version: 0.5.6
+      wabt:
+        specifier: 1.0.37-nightly.20250428
+        version: 1.0.37-nightly.20250428
       walk-sync:
         specifier: ^2.2.0
         version: 2.2.0
@@ -453,6 +459,9 @@ packages:
     resolution: {integrity: sha512-zbaF9Wp/NsZtKLE4uVmL3FyfFwlpDyuymQM1kPbeT0mVOHKDQQNjnnfslB3REg3oZprmNFJuh3pkHBk2qAaizg==}
     engines: {node: '>=16'}
     hasBin: true
+
+  '@wasmgroundup/emit@1.0.2':
+    resolution: {integrity: sha512-9FupNg9RUOQIBe2zNp0DY78Rb03xeElaL9NQB4haz+JDOF+0Bq4tNSuB/vwG4DFTKSffBKFCa85YdVZaf5vQPw==}
 
   '@webassemblyjs/ast@1.14.1':
     resolution: {integrity: sha512-nuBEDgQfm1ccRp/8bCQrx1frohyufl4JlbMMZ4P1wpeOfDhF6FQkxZJ1b/e+PLwr6X1Nhw6OLme5usuBWYBvuQ==}
@@ -2243,6 +2252,10 @@ packages:
     resolution: {integrity: sha512-d+BFHzbiCx6zGfz0HyQ6Rg69w9k19nviJspaj4yNscGjrHu94sVP+aRm75yEbCh+r2/yR+7q6hux9LVtbuTGBw==}
     engines: {node: '>=14'}
 
+  wabt@1.0.37-nightly.20250428:
+    resolution: {integrity: sha512-vmMcBckRhwrucnOCLsxlJQjzIDEGYxuX+3Csxy/wDsgvdlkf3aYHOUyUAHugNMsQ5aNFhL2soBlgey/XFXLMOw==}
+    hasBin: true
+
   walk-sync@2.2.0:
     resolution: {integrity: sha512-IC8sL7aB4/ZgFcGI2T1LczZeFWZ06b3zoHH7jBPyHxOtIIz1jppWHjjEXkOFvFojBVAK9pV7g47xOZ4LW3QLfg==}
     engines: {node: 8.* || >= 10.*}
@@ -2664,6 +2677,8 @@ snapshots:
       - encoding
       - rollup
       - supports-color
+
+  '@wasmgroundup/emit@1.0.2': {}
 
   '@webassemblyjs/ast@1.14.1':
     dependencies:
@@ -4456,6 +4471,8 @@ snapshots:
   w3c-xmlserializer@4.0.0:
     dependencies:
       xml-name-validator: 4.0.0
+
+  wabt@1.0.37-nightly.20250428: {}
 
   walk-sync@2.2.0:
     dependencies:

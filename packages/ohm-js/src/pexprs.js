@@ -16,6 +16,7 @@ import './pexprs-toArgumentNameList.js';
 import './pexprs-toDisplayString.js';
 import './pexprs-toFailure.js';
 import './pexprs-toString.js';
+import './pexprs-toWasm.js';
 
 export * from './pexprs-main.js';
 export {CaseInsensitiveTerminal} from './CaseInsensitiveTerminal.js';
