@@ -7,7 +7,7 @@
     "ohm-js": "^17.0.0"
   },
   "devDependencies": {
-    "ava": "^4.3.3"
+    "ava": "^6.0.0"
   },
   "scripts": {
     "test": "ava"

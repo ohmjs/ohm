@@ -16,7 +16,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "ava": "^4.3.3",
+    "ava": "^6.0.0",
     "ava-spec": "^1.1.1"
   },
   "dependencies": {
