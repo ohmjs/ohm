@@ -41,13 +41,13 @@ importers:
         version: 4.3.3
       ohm-js:
         specifier: ^17.0.0
-        version: 17.1.0
+        version: link:../../packages/ohm-js
 
   examples/indentation-sensitive:
     dependencies:
       ohm-js:
         specifier: ^17.0.0
-        version: 17.1.0
+        version: link:../../packages/ohm-js
     devDependencies:
       uvu:
         specifier: ^0.5.6
@@ -60,7 +60,7 @@ importers:
     dependencies:
       ohm-js:
         specifier: ^17.0.0
-        version: 17.1.0
+        version: link:../../packages/ohm-js
     devDependencies:
       ava:
         specifier: ^4.3.3
@@ -70,7 +70,7 @@ importers:
     dependencies:
       ohm-js:
         specifier: ^17.0.0
-        version: 17.1.0
+        version: link:../../packages/ohm-js
     devDependencies:
       ava:
         specifier: ^4.3.3
@@ -83,7 +83,7 @@ importers:
     dependencies:
       ohm-js:
         specifier: ^17.0.0
-        version: 17.1.0
+        version: link:../../packages/ohm-js
     devDependencies:
       ava:
         specifier: ^4.3.3
@@ -93,11 +93,11 @@ importers:
     dependencies:
       ohm-js:
         specifier: ^17.0.0
-        version: 17.1.0
+        version: link:../../packages/ohm-js
     devDependencies:
       '@ohm-js/cli':
         specifier: ^2.0.0
-        version: 2.0.0(ohm-js@17.1.0)
+        version: link:../../packages/cli
       '@types/node':
         specifier: ^16.9.1
         version: 16.18.126
@@ -134,7 +134,7 @@ importers:
         version: 4.3.3
       ohm-js:
         specifier: ^17.0.0
-        version: 17.1.0
+        version: link:../ohm-js
       require-from-string:
         specifier: ^2.0.2
         version: 2.0.2
@@ -152,7 +152,7 @@ importers:
     dependencies:
       ohm-js:
         specifier: ^17.1.0
-        version: 17.1.0
+        version: link:../ohm-js
     devDependencies:
       fast-glob:
         specifier: ^3.2.7
@@ -171,6 +171,9 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: ^13.1.3
         version: 13.3.0(rollup@2.79.2)
+      '@wasmgroundup/emit':
+        specifier: ^1.0.2
+        version: 1.0.2
       ava:
         specifier: ^4.3.3
         version: 4.3.3
@@ -230,7 +233,7 @@ importers:
     devDependencies:
       '@ohm-js/cli':
         specifier: ^2.0.0
-        version: 2.0.0(ohm-js@17.1.0)
+        version: link:../cli
       '@rollup/plugin-node-resolve':
         specifier: ^15.0.1
         version: 15.3.1(rollup@3.29.5)
@@ -242,7 +245,7 @@ importers:
         version: 8.14.1
       ohm-js:
         specifier: ^17.0.0
-        version: 17.1.0
+        version: link:../ohm-js
       rollup:
         specifier: ^3.2.5
         version: 3.29.5
@@ -338,12 +341,6 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
-
-  '@ohm-js/cli@2.0.0':
-    resolution: {integrity: sha512-yiO6QEqW4wQQe1l9c+jOIfmhGm2LlHEhjmaB5Qu9hhz6rEQvL/vhz44azgHegLb0m23D0S7a78orURbPClRtyA==}
-    hasBin: true
-    peerDependencies:
-      ohm-js: ^17.0.0
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -441,6 +438,9 @@ packages:
 
   '@types/resolve@1.20.2':
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
+
+  '@wasmgroundup/emit@1.0.2':
+    resolution: {integrity: sha512-9FupNg9RUOQIBe2zNp0DY78Rb03xeElaL9NQB4haz+JDOF+0Bq4tNSuB/vwG4DFTKSffBKFCa85YdVZaf5vQPw==}
 
   '@webassemblyjs/ast@1.14.1':
     resolution: {integrity: sha512-nuBEDgQfm1ccRp/8bCQrx1frohyufl4JlbMMZ4P1wpeOfDhF6FQkxZJ1b/e+PLwr6X1Nhw6OLme5usuBWYBvuQ==}
@@ -1714,10 +1714,6 @@ packages:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
     engines: {node: '>=0.10.0'}
 
-  ohm-js@17.1.0:
-    resolution: {integrity: sha512-xc3B5dgAjTBQGHaH7B58M2Pmv6WvzrJ/3/7LeUzXNg0/sY3jQPdSd/S2SstppaleO77rifR1tyhdfFGNIwxf2Q==}
-    engines: {node: '>=0.12.1'}
-
   once@1.4.0:
     resolution: {integrity: sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==}
 
@@ -2514,12 +2510,6 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
 
-  '@ohm-js/cli@2.0.0(ohm-js@17.1.0)':
-    dependencies:
-      commander: 8.3.0
-      fast-glob: 3.3.3
-      ohm-js: 17.1.0
-
   '@pkgjs/parseargs@0.11.0': {}
 
   '@rollup/plugin-commonjs@21.1.0(rollup@2.79.2)':
@@ -2619,6 +2609,8 @@ snapshots:
       '@types/node': 16.18.126
 
   '@types/resolve@1.20.2': {}
+
+  '@wasmgroundup/emit@1.0.2': {}
 
   '@webassemblyjs/ast@1.14.1':
     dependencies:
@@ -3905,8 +3897,6 @@ snapshots:
   oauth-sign@0.9.0: {}
 
   object-assign@4.1.1: {}
-
-  ohm-js@17.1.0: {}
 
   once@1.4.0:
     dependencies:
