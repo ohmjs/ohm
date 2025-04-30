@@ -74,18 +74,31 @@ export class Compiler {
   }
 
   functionDecls() {
+    const setInputLen = () => [instr.local.set, w.localidx(0)];
+    const getInputLen = () => [instr.local.get, w.localidx(0)];
+    const getCurrPos = () => [instr.global.get, w.globalidx(0)];
     return [
       {
         name: 'match',
         paramTypes: [],
         resultType: w.valtype.i32,
-        locals: [],
+        locals: [w.locals(1, w.valtype.i32)],
         body: [
           [instr.i32.const, w.i32(0)], // offset
           [instr.i32.const, w.i32(64 * 1024)], // maxLen
-          [instr.call, /* nextInputChunk */ w.funcidx(0)],
-          instr.drop, // TODO: Handle return code here.
-          [instr.call, w.funcidx(2)],
+          [instr.call, /* fillInputBuffer */ w.funcidx(0)],
+          setInputLen(),
+          [instr.call, w.funcidx(2)], // Call first rule
+
+          [instr.if, w.blocktype.i32],
+          // if match succeeded, return currPos == inputLen
+          getInputLen(),
+          getCurrPos(),
+          instr.i32.eq,
+          instr.else,
+          [instr.i32.const, w.i32(0)], // match failed
+          instr.end, // if
+
           instr.end
         ]
       },

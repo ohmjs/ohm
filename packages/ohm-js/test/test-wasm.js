@@ -36,3 +36,14 @@ test('wasm: multi-char terminals', async t => {
   matcher.setInput('123');
   t.is(matcher.match(), 1);
 });
+
+test('wasm: handle end', async t => {
+  const g = ohm.grammar(`
+    G {
+      start = "1"
+    }
+  `);
+  const matcher = await WasmMatcher.forGrammar(g);
+  matcher.setInput('123');
+  t.is(matcher.match(), 0);
+});
