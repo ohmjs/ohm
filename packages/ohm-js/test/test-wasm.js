@@ -56,5 +56,22 @@ test('wasm: choice', async t => {
   `);
   const matcher = await WasmMatcher.forGrammar(g);
   matcher.setInput('2');
-  t.is(matcher.match(), 0);
+  t.is(matcher.match(), 1);
+
+  matcher.setInput('1');
+  t.is(matcher.match(), 1);
+
+  matcher.setInput('3');
+  t.is(matcher.match(), 1);
+});
+
+test.skip('wasm: chained choice', async t => {
+  const g2 = ohm.grammar(`
+    G {
+      start = "12" | ("13" | "14")
+    }
+  `);
+  const matcher2 = await WasmMatcher.forGrammar(g);
+  matcher2.setInput('14');
+  t.is(matcher2.match(), 1);
 });

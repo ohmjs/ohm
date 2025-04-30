@@ -69,7 +69,7 @@ export class Compiler {
       paramTypes: [],
       resultType: w.valtype.i32,
       locals: [w.locals(3, w.valtype.i32)],
-      body: [info.body.toWasm(this), instr.end]
+      body: [info.body.toWasm(this), [instr.local.get, /* RET */ w.localidx(0)], instr.end]
     };
   }
 
@@ -77,6 +77,7 @@ export class Compiler {
     const setInputLen = () => [instr.local.set, w.localidx(0)];
     const getInputLen = () => [instr.local.get, w.localidx(0)];
     const getCurrPos = () => [instr.global.get, w.globalidx(0)];
+    const resetCurrPos = () => [[instr.i32.const, w.i32(0)], instr.global.set, w.globalidx(0)];
     return [
       {
         name: 'match',
@@ -84,10 +85,13 @@ export class Compiler {
         resultType: w.valtype.i32,
         locals: [w.locals(1, w.valtype.i32)],
         body: [
+          resetCurrPos(),
+
           [instr.i32.const, w.i32(0)], // offset
           [instr.i32.const, w.i32(64 * 1024)], // maxLen
           [instr.call, /* fillInputBuffer */ w.funcidx(0)],
           setInputLen(),
+
           [instr.call, w.funcidx(2)], // Call first rule
 
           [instr.if, w.blocktype.i32],
@@ -147,6 +151,7 @@ export class WasmMatcher {
   }
 
   match() {
+    this._pos = 0; // TODO: Fix this, it should be using the wasm global
     return this._instance.exports.match();
   }
 

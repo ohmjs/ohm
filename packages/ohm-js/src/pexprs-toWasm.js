@@ -21,6 +21,10 @@ const localidx = {
   // IDX: w.localidx(2), // generic loop index var
 };
 
+// A helper to ensure that generated code for PExpr evaluation has the
+// correct stack effects. The block also allows early "returns" via `br`.
+const pexprBody = frag => [instr.block, w.blocktype.empty, ...frag, instr.end];
+
 // Load the current input position onto the stack.
 // [] -> [i32]
 const getPos = () => [instr.global.get, globalidx.POS];
@@ -41,8 +45,8 @@ const savePos = () => [getPos(), [instr.local.set, localidx.ORIG_POS]];
 // [] -> []
 const restorePos = () => [[instr.local.get, localidx.ORIG_POS], setPos()];
 
-// Restore the input position and return false.
-const bail = () => [restorePos(), [instr.i32.const, 0, instr.return]];
+// Restore the input position and "return" false.
+const bail = () => [restorePos(), [instr.i32.const, 0], setRet(), [instr.br, w.labelidx(0)]];
 
 const ifTrue = (cond, ...body) => [cond, [instr.if, w.blocktype.empty], body, instr.end];
 
@@ -50,6 +54,8 @@ const ifTrue = (cond, ...body) => [cond, [instr.if, w.blocktype.empty], body, in
 const saveRet = () => [instr.local.tee, localidx.RET];
 
 const getRet = () => [instr.local.get, localidx.RET];
+
+const setRet = () => [instr.local.set, localidx.RET];
 
 const currCharCode = () => [getPos(), [instr.i32.load8_u, w.memarg(ALIGN_1_BYTE, 0)]];
 
@@ -60,21 +66,14 @@ const currCharCode = () => [getPos(), [instr.i32.load8_u, w.memarg(ALIGN_1_BYTE,
 pexprs.PExpr.prototype.toWasm = abstract('toWasm');
 
 pexprs.Alt.prototype.toWasm = function (c) {
-  return [
-    [instr.block, w.blocktype.empty],
-    ...this.terms.flatMap(term => [
-      term.toWasm(c),
-      saveRet(),
-      instr.br_if, w.labelidx(0),
-    ]),
-    instr.end, // block
-    getRet(),
-  ];
+  return pexprBody([
+    ...this.terms.flatMap(term => [term.toWasm(c), getRet(), instr.br_if, w.labelidx(0)])
+  ]);
 };
 
 pexprs.Apply.prototype.toWasm = function (c) {
   const idx = c.ruleIdxByName.get(this.ruleName);
-  return [instr.call, w.funcidx(idx)];
+  return pexprBody([[instr.call, w.funcidx(idx)], setRet()]);
 };
 
 pexprs.Terminal.prototype.toWasm = function (c) {
@@ -82,19 +81,17 @@ pexprs.Terminal.prototype.toWasm = function (c) {
   // - proper UTF-8!
   // - deal with hitting the end of input. Maybe use 0xFF?
   // - handle longer terminals with a loop
-  return [
+  return pexprBody([
     savePos(),
     // Unrolled loop over all characters.
-    ...Array.prototype.flatMap.call(this.obj, c => {
-      const charCode = c.charCodeAt(0);
-      return [
-        // Compare next char
-        [instr.i32.const, w.i32(charCode)],
-        currCharCode(),
-        ifTrue(instr.i32.ne, bail()),
-        incPos(),
-      ];
-    }),
+    ...Array.prototype.flatMap.call(this.obj, c => [
+      // Compare next char
+      [instr.i32.const, w.i32(c.charCodeAt(0))],
+      currCharCode(),
+      ifTrue(instr.i32.ne, bail()),
+      incPos()
+    ]),
     [instr.i32.const, 1],
-  ];
+    setRet(),
+  ]);
 };
