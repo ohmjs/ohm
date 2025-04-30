@@ -47,3 +47,14 @@ test('wasm: handle end', async t => {
   matcher.setInput('123');
   t.is(matcher.match(), 0);
 });
+
+test('wasm: choice', async t => {
+  const g = ohm.grammar(`
+    G {
+      start = "1" | "2"
+    }
+  `);
+  const matcher = await WasmMatcher.forGrammar(g);
+  matcher.setInput('2');
+  t.is(matcher.match(), 0);
+});

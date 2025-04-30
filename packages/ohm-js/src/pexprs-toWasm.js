@@ -15,9 +15,9 @@ const globalidx = {
 // Define a fixed set of locals that are used in the generated code, almost
 // like registers.
 const localidx = {
-  // TMP: w.localidx(0),
-  ORIG_POS: w.localidx(0),
-  MAX_POS: w.localidx(1) // end of loop value
+  RET: w.localidx(0),
+  ORIG_POS: w.localidx(1),
+  MAX_POS: w.localidx(2) // end of loop value
   // IDX: w.localidx(2), // generic loop index var
 };
 
@@ -46,13 +46,10 @@ const bail = () => [restorePos(), [instr.i32.const, 0, instr.return]];
 
 const ifTrue = (cond, ...body) => [cond, [instr.if, w.blocktype.empty], body, instr.end];
 
-// // [i32] -> [i32, i32]
-// const dupI32 = () => {
-//   return [
-//     [instr.local.tee, localidx.TMP],
-//     [instr.local.get, localidx.TMP],
-//   ];
-// }
+// Save the TOS value into the return value register.
+const saveRet = () => [instr.local.tee, localidx.RET];
+
+const getRet = () => [instr.local.get, localidx.RET];
 
 const currCharCode = () => [getPos(), [instr.i32.load8_u, w.memarg(ALIGN_1_BYTE, 0)]];
 
@@ -62,8 +59,17 @@ const currCharCode = () => [getPos(), [instr.i32.load8_u, w.memarg(ALIGN_1_BYTE,
 
 pexprs.PExpr.prototype.toWasm = abstract('toWasm');
 
-pexprs.Seq.prototype.toWasm = function (c) {
-  return this.factors.map(e => e.toWasm(c));
+pexprs.Alt.prototype.toWasm = function (c) {
+  return [
+    [instr.block, w.blocktype.empty],
+    ...this.terms.flatMap(term => [
+      term.toWasm(c),
+      saveRet(),
+      instr.br_if, w.labelidx(0),
+    ]),
+    instr.end, // block
+    getRet(),
+  ];
 };
 
 pexprs.Apply.prototype.toWasm = function (c) {
@@ -89,6 +95,6 @@ pexprs.Terminal.prototype.toWasm = function (c) {
         incPos(),
       ];
     }),
-    [instr.i32.const, 1]
+    [instr.i32.const, 1],
   ];
 };

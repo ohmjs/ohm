@@ -68,7 +68,7 @@ export class Compiler {
       name: `$${name}`,
       paramTypes: [],
       resultType: w.valtype.i32,
-      locals: [w.locals(2, w.valtype.i32)],
+      locals: [w.locals(3, w.valtype.i32)],
       body: [info.body.toWasm(this), instr.end]
     };
   }
