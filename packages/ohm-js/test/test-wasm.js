@@ -3,6 +3,11 @@ import test from 'ava';
 import * as ohm from '../index.mjs';
 import {WasmMatcher} from '../src/wasm.js';
 
+const matchWithInput = (m, str) => {
+  m.setInput(str);
+  return m.match();
+}
+
 test('input in memory', async t => {
   const g = ohm.grammar('G { start = "x" }');
   const matcher = await WasmMatcher.forGrammar(g);
@@ -22,10 +27,8 @@ test('wasm: one-char terminals', async t => {
     }
   `);
   const matcher = await WasmMatcher.forGrammar(g);
-  matcher.setInput('1');
-  t.is(matcher.match(), 1);
+  t.is(matchWithInput(matcher, '1'), 1);
 });
-
 test('wasm: multi-char terminals', async t => {
   const g = ohm.grammar(`
     G {
@@ -33,8 +36,7 @@ test('wasm: multi-char terminals', async t => {
     }
   `);
   const matcher = await WasmMatcher.forGrammar(g);
-  matcher.setInput('123');
-  t.is(matcher.match(), 1);
+  t.is(matchWithInput(matcher, '123'), 1);
 });
 
 test('wasm: handle end', async t => {
@@ -44,8 +46,7 @@ test('wasm: handle end', async t => {
     }
   `);
   const matcher = await WasmMatcher.forGrammar(g);
-  matcher.setInput('123');
-  t.is(matcher.match(), 0);
+  t.is(matchWithInput(matcher, '123'), 0);
 });
 
 test('wasm: choice', async t => {
@@ -55,23 +56,19 @@ test('wasm: choice', async t => {
     }
   `);
   const matcher = await WasmMatcher.forGrammar(g);
-  matcher.setInput('2');
-  t.is(matcher.match(), 1);
-
-  matcher.setInput('1');
-  t.is(matcher.match(), 1);
-
-  matcher.setInput('3');
-  t.is(matcher.match(), 0);
+  t.is(matchWithInput(matcher, '2'), 1);
+  t.is(matchWithInput(matcher, '1'), 1);
+  t.is(matchWithInput(matcher, '3'), 0);
 });
 
-test.skip('wasm: chained choice', async t => {
-  const g2 = ohm.grammar(`
+test('wasm: more choice', async t => {
+  const g = ohm.grammar(`
     G {
-      start = "12" | ("13" | "14")
+      start = "12" | "13" | "14"
     }
   `);
-  const matcher2 = await WasmMatcher.forGrammar(g);
-  matcher2.setInput('14');
-  t.is(matcher2.match(), 1);
+  const matcher = await WasmMatcher.forGrammar(g);
+  t.is(matchWithInput(matcher, '14'), 1);
+  t.is(matchWithInput(matcher, '13'), 1);
+  t.is(matchWithInput(matcher, '15'), 0);
 });
