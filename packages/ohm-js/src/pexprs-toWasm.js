@@ -21,10 +21,6 @@ const localidx = {
   // IDX: w.localidx(2), // generic loop index var
 };
 
-// A helper to ensure that generated code for PExpr evaluation has the
-// correct stack effects. The block also allows early "returns" via `br`.
-const pexprBody = frag => [instr.block, w.blocktype.empty, ...frag, instr.end];
-
 // Load the current input position onto the stack.
 // [] -> [i32]
 const getPos = () => [instr.global.get, globalidx.POS];
@@ -38,24 +34,31 @@ const setPos = () => [instr.global.set, globalidx.POS];
 const incPos = () => [getPos(), [instr.i32.const, w.i32(1), instr.i32.add], setPos()];
 
 // Save the current input position into a local.
-// [] -> []
-const savePos = () => [getPos(), [instr.local.set, localidx.ORIG_POS]];
+const setOrigPos = () => [instr.local.set, localidx.ORIG_POS];
+
+// Load the saved input position onto the stack.
+const getOrigPos = () => [instr.local.get, localidx.ORIG_POS];
 
 // Restore the input position from a local.
 // [] -> []
 const restorePos = () => [[instr.local.get, localidx.ORIG_POS], setPos()];
 
 // Restore the input position and "return" false.
-const bail = () => [restorePos(), [instr.i32.const, 0], setRet(), [instr.br, w.labelidx(0)]];
+const bail = idx => [
+  restorePos(),
+  [instr.i32.const, 0],
+  setRet(),
+  [instr.br, w.labelidx(idx)]
+];
 
-const ifTrue = (cond, ...body) => [cond, [instr.if, w.blocktype.empty], body, instr.end];
+const ifTrue = body => [[instr.if, w.blocktype.empty], body, instr.end];
 
 // Save the TOS value into the return value register.
 const saveRet = () => [instr.local.tee, localidx.RET];
 
 const getRet = () => [instr.local.get, localidx.RET];
 
-const setRet = () => [instr.local.set, localidx.RET];
+const setRet = (valFrag = []) => [valFrag, instr.local.set, localidx.RET];
 
 const currCharCode = () => [getPos(), [instr.i32.load8_u, w.memarg(ALIGN_1_BYTE, 0)]];
 
@@ -63,35 +66,49 @@ const currCharCode = () => [getPos(), [instr.i32.load8_u, w.memarg(ALIGN_1_BYTE,
 // Operations
 // --------------------------------------------------------------------
 
-pexprs.PExpr.prototype.toWasm = abstract('toWasm');
-
-pexprs.Alt.prototype.toWasm = function (c) {
-  return pexprBody([
-    ...this.terms.flatMap(term => [term.toWasm(c), getRet(), instr.br_if, w.labelidx(0)])
-  ]);
+pexprs.PExpr.prototype.toWasm = function (compiler) {
+  compiler._enter(this);
+  // Wrap the body in a block, which is useful for two reasons:
+  // - it allows early returns.
+  // - it makes sure that the generated code doesn't have stack effects.
+  const ans = [[instr.block, w.blocktype.empty], this._toWasm(compiler), instr.end];
+  compiler._exit(this);
+  return ans;
 };
 
-pexprs.Apply.prototype.toWasm = function (c) {
+pexprs.PExpr.prototype._toWasm = abstract('_toWasm');
+
+pexprs.Alt.prototype._toWasm = function (c) {
+  return [
+    [getPos(), setOrigPos()], // origPos = pos
+    ...this.terms.flatMap(term => [
+      term.toWasm(c),
+      getRet(),
+      [instr.br_if, w.labelidx(0)],
+      [getOrigPos(), setPos()] // pos = origPos
+    ])
+  ];
+};
+
+pexprs.Apply.prototype._toWasm = function (c) {
   const idx = c.ruleIdxByName.get(this.ruleName);
-  return pexprBody([[instr.call, w.funcidx(idx)], setRet()]);
+  return [[instr.call, w.funcidx(idx)], setRet()];
 };
 
-pexprs.Terminal.prototype.toWasm = function (c) {
+pexprs.Terminal.prototype._toWasm = function (c) {
   // TODO:
   // - proper UTF-8!
   // - deal with hitting the end of input. Maybe use 0xFF?
   // - handle longer terminals with a loop
-  return pexprBody([
-    savePos(),
+  return [
     // Unrolled loop over all characters.
     ...Array.prototype.flatMap.call(this.obj, c => [
       // Compare next char
       [instr.i32.const, w.i32(c.charCodeAt(0))],
       currCharCode(),
-      ifTrue(instr.i32.ne, bail()),
+      [instr.i32.ne, ifTrue(bail(1))],
       incPos()
     ]),
-    [instr.i32.const, 1],
-    setRet(),
-  ]);
+    setRet([instr.i32.const, 1])
+  ];
 };

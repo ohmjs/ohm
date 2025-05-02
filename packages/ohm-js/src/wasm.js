@@ -45,6 +45,16 @@ export class Compiler {
   constructor(grammar) {
     this.grammar = grammar;
     this.ruleIdxByName = new Map(Object.keys(grammar.rules).map((name, i) => [name, i + 2]));
+    this._codegenCtx = [];
+  }
+
+  _enter(pexpr) {
+    const {startIdx} = pexpr.source;
+    this._codegenCtx.push(`${pexpr.constructor.name}@${startIdx}`);
+  }
+
+  _exit() {
+    this._codegenCtx.pop();
   }
 
   compile() {

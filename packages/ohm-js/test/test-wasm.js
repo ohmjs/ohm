@@ -62,7 +62,7 @@ test('wasm: choice', async t => {
   t.is(matcher.match(), 1);
 
   matcher.setInput('3');
-  t.is(matcher.match(), 1);
+  t.is(matcher.match(), 0);
 });
 
 test.skip('wasm: chained choice', async t => {
