@@ -6,7 +6,7 @@ const {instr} = w;
 
 async function buildModule(importDecls, functionDecls) {
   const types = [...importDecls, ...functionDecls].map(f =>
-    w.functype(f.paramTypes, [f.resultType])
+    w.functype(f.paramTypes, f.resultTypes)
   );
   const imports = importDecls.map((f, i) => w.import_(f.module, f.name, w.importdesc.func(i)));
   const funcs = functionDecls.map((f, i) => w.typeidx(i + importDecls.length));
@@ -58,41 +58,65 @@ export class Compiler {
   }
 
   compile() {
-    return buildModule(
-      [
-        {
-          module: 'env',
-          name: 'fillInputBuffer',
-          // (offset: i32, maxLen: i32) -> i32
-          // Returns the actual number of bytes read.
-          paramTypes: [w.valtype.i32, w.valtype.i32],
-          resultType: w.valtype.i32
-        }
-      ],
-      this.functionDecls()
-    );
+    const importDecls = [
+      {
+        module: 'env',
+        name: 'fillInputBuffer',
+        // (offset: i32, maxLen: i32) -> i32
+        // Returns the actual number of bytes read.
+        paramTypes: [w.valtype.i32, w.valtype.i32],
+        resultTypes: [w.valtype.i32]
+      }
+    ];
+    return buildModule(importDecls, this.functionDecls(importDecls.length));
   }
 
   compileRule(name, info) {
+    const rawBody = info.body.toWasm(this);
+
     return {
       name: `$${name}`,
       paramTypes: [],
-      resultType: w.valtype.i32,
+      resultTypes: [w.valtype.i32],
       locals: [w.locals(3, w.valtype.i32)],
-      body: [info.body.toWasm(this), [instr.local.get, /* RET */ w.localidx(0)], instr.end]
+      body: [rawBody, [instr.local.get, /* RET */ w.localidx(0)], instr.end].flat(Infinity)
     };
   }
 
-  functionDecls() {
+  functionDecls(startIdx) {
     const setInputLen = () => [instr.local.set, w.localidx(0)];
     const getInputLen = () => [instr.local.get, w.localidx(0)];
     const getCurrPos = () => [instr.global.get, w.globalidx(0)];
     const resetCurrPos = () => [[instr.i32.const, w.i32(0)], instr.global.set, w.globalidx(0)];
+
+    const ruleDecls = Object.entries(this.grammar.rules).map(([name, info]) =>
+      this.compileRule(name, info)
+    );
+
+    let nextFuncIdx = startIdx + ruleDecls.length + 1;
+    const debugDecls = [];
+    for (let i = 0; i < ruleDecls.length; i++) {
+      const entry = ruleDecls[i];
+      entry.body = entry.body.flatMap(x => {
+        if (typeof x !== 'string') return x;
+        // Create a noop function whose name is the given string…
+        debugDecls.push({
+          name: `${x}`,
+          paramTypes: [],
+          resultTypes: [],
+          locals: [],
+          body: [instr.end]
+        });
+        // …and replace the string with a call to that function.
+        return [instr.call, w.funcidx(nextFuncIdx++)].flat(Infinity);
+      });
+    }
+
     return [
       {
         name: 'match',
         paramTypes: [],
-        resultType: w.valtype.i32,
+        resultTypes: [w.valtype.i32],
         locals: [w.locals(1, w.valtype.i32)],
         body: [
           resetCurrPos(),
@@ -116,9 +140,8 @@ export class Compiler {
           instr.end
         ]
       },
-      ...Object.entries(this.grammar.rules).map(([name, info]) => {
-        return this.compileRule(name, info);
-      })
+      ...ruleDecls,
+      ...debugDecls
     ];
   }
 }

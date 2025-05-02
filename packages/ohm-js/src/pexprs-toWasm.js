@@ -71,7 +71,13 @@ pexprs.PExpr.prototype.toWasm = function (compiler) {
   // Wrap the body in a block, which is useful for two reasons:
   // - it allows early returns.
   // - it makes sure that the generated code doesn't have stack effects.
-  const ans = [[instr.block, w.blocktype.empty], this._toWasm(compiler), instr.end];
+  const ans = [
+    `BEGIN ${compiler._codegenCtx.at(-1)}`,
+    [instr.block, w.blocktype.empty],
+    this._toWasm(compiler),
+    instr.end,
+    `END ${compiler._codegenCtx.at(-1)}`
+  ];
   compiler._exit(this);
   return ans;
 };
