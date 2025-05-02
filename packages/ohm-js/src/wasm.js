@@ -4,6 +4,19 @@ import * as w from '@wasmgroundup/emit';
 
 const {instr} = w;
 
+function uniqueName(names, str) {
+  let name = str;
+  outer: if (names.has(str)) {
+    for (let i = 0; i < 10; i++) {
+      name = `${str}_${i}`;
+      if (!names.has(name)) break outer;
+    }
+    throw new Error(`Unique name generation failed for ${str}`);
+  }
+  names.add(name);
+  return name;
+}
+
 async function buildModule(importDecls, functionDecls) {
   const types = [...importDecls, ...functionDecls].map(f =>
     w.functype(f.paramTypes, f.resultTypes)
@@ -15,6 +28,8 @@ async function buildModule(importDecls, functionDecls) {
     w.export_(f.name, w.exportdesc.func(i + importDecls.length))
   );
   exports.push(w.export_('memory', w.exportdesc.mem(0)));
+  exports.push(w.export_('pos', [0x03, w.globalidx(0)])); // TODO: Replace this with the symbolic construction.
+  exports.push(w.export_('origPos', [0x03, w.globalidx(1)])); // TODO: Replace this with the symbolic construction.
 
   const mod = w.module([
     w.typesec(types),
@@ -140,6 +155,7 @@ export class Compiler {
     this.grammar = grammar;
     this.ruleIdxByName = new Map(Object.keys(grammar.rules).map((name, i) => [name, i + 2]));
     this._codegenCtx = [];
+    this._labels = new Set();
   }
 
   _enter(pexpr) {
@@ -177,25 +193,26 @@ export class Compiler {
     };
   }
 
-  functionDecls(startIdx) {
-    const setInputLen = () => [instr.local.set, w.localidx(0)];
-    const getInputLen = () => [instr.local.get, w.localidx(0)];
-    const getCurrPos = () => [instr.global.get, w.globalidx(0)];
-    const resetCurrPos = () => [[instr.i32.const, w.i32(0)], instr.global.set, w.globalidx(0)];
-
-    const ruleDecls = Object.entries(this.grammar.rules).map(([name, info]) =>
-      this.compileRule(name, info)
-    );
-
-    let nextFuncIdx = startIdx + ruleDecls.length + 1;
+  // A *brilliant* way to add arbitrary labels to the generated code.
+  // Goes through the body of all functions in `decls`, and replaces any
+  // strings with a call to a dummy function with the same name.
+  // Ensures that there are no duplicate dummy function names, but does not
+  // guarantee that there are no collisions with other functions.
+  // Returns the list of dummy functions that need to be added to the module.
+  rewriteDebugLabels(decls, baseFuncIdx) {
+    let nextFuncIdx = baseFuncIdx;
     const debugDecls = [];
-    for (let i = 0; i < ruleDecls.length; i++) {
-      const entry = ruleDecls[i];
+    const names = new Set();
+    for (let i = 0; i < decls.length; i++) {
+      const entry = decls[i];
       entry.body = entry.body.flatMap(x => {
         if (typeof x !== 'string') return x;
+
+        const name = uniqueName(names, x);
+
         // Create a noop function whose name is the given string…
         debugDecls.push({
-          name: `${x}`,
+          name,
           paramTypes: [],
           resultTypes: [],
           locals: [],
@@ -205,6 +222,20 @@ export class Compiler {
         return [instr.call, w.funcidx(nextFuncIdx++)].flat(Infinity);
       });
     }
+    return debugDecls;
+  }
+
+  functionDecls(startIdx) {
+    const setInputLen = () => [instr.local.set, w.localidx(0)];
+    const getInputLen = () => [instr.local.get, w.localidx(0)];
+    const getCurrPos = () => [instr.global.get, w.globalidx(0)];
+    const resetCurrPos = () => [[instr.i32.const, w.i32(0)], instr.global.set, w.globalidx(0)];
+
+    const ruleDecls = Object.entries(this.grammar.rules).map(([name, info]) =>
+      this.compileRule(name, info)
+    );
+    const debugDecls = this.rewriteDebugLabels(ruleDecls, startIdx + ruleDecls.length + 1);
+    const startRuleIdx = this.ruleIdxByName.get(this.grammar.defaultStartRule);
 
     return [
       {
@@ -222,7 +253,7 @@ export class Compiler {
           [instr.call, /* fillInputBuffer */ w.funcidx(0)],
           setInputLen(),
 
-          [instr.call, w.funcidx(2)], // Call first rule
+          [instr.call, w.funcidx(startRuleIdx)],
 
           [instr.if, w.blocktype.i32],
           // if match succeeded, return currPos == inputLen

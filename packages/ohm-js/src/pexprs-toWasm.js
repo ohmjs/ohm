@@ -50,13 +50,13 @@ pexprs.Alt.prototype._toWasm = function (c) {
 };
 
 pexprs.Seq.prototype._toWasm = function (c) {
-  return dbg([
+  return [
     ...this.factors.flatMap(fac => [
       fac.toWasm(c),
       cg.doGetRet(),
       [instr.i32.eqz, instr.br_if, w.labelidx(0)]
     ])
-  ]);
+  ];
 };
 
 pexprs.Apply.prototype._toWasm = function (c) {

@@ -99,3 +99,20 @@ test('wasm: choice + sequence', async t => {
   t.is(matchWithInput(matcher, '14'), 1);
   t.is(matchWithInput(matcher, '15'), 0);
 });
+
+test('wasm: rule application', async t => {
+  const g = ohm.grammar(`
+    G {
+      start = one two -- x
+            | three
+      one = "1"
+      two = "II" | "2"
+      three = "3"
+    }
+  `);
+  const matcher = await WasmMatcher.forGrammar(g);
+  t.is(matchWithInput(matcher, '12'), 1);
+  t.is(matchWithInput(matcher, '1II'), 1);
+  t.is(matchWithInput(matcher, '3'), 1);
+  t.is(matchWithInput(matcher, '13'), 0);
+});
