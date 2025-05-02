@@ -1,66 +1,18 @@
 import {abstract} from './common.js';
 import * as pexprs from './pexprs-main.js';
 
+import {Codegen} from './wasm.js';
+
 import * as w from '@wasmgroundup/emit';
 
+const cg = new Codegen();
+
+function dbg(x) {
+  console.log(x);
+  return x;
+}
+
 const {instr} = w;
-
-const ALIGN_1_BYTE = 0;
-const ALIGN_4_BYTES = 2;
-
-const globalidx = {
-  POS: w.globalidx(0)
-};
-
-// Define a fixed set of locals that are used in the generated code, almost
-// like registers.
-const localidx = {
-  RET: w.localidx(0),
-  ORIG_POS: w.localidx(1),
-  MAX_POS: w.localidx(2) // end of loop value
-  // IDX: w.localidx(2), // generic loop index var
-};
-
-// Load the current input position onto the stack.
-// [] -> [i32]
-const getPos = () => [instr.global.get, globalidx.POS];
-
-// Set the current input position to the TOS value.
-// [i32] -> []
-const setPos = () => [instr.global.set, globalidx.POS];
-
-// Increment the current input position by 1.
-// [i32, i32] -> [i32]
-const incPos = () => [getPos(), [instr.i32.const, w.i32(1), instr.i32.add], setPos()];
-
-// Save the current input position into a local.
-const setOrigPos = () => [instr.local.set, localidx.ORIG_POS];
-
-// Load the saved input position onto the stack.
-const getOrigPos = () => [instr.local.get, localidx.ORIG_POS];
-
-// Restore the input position from a local.
-// [] -> []
-const restorePos = () => [[instr.local.get, localidx.ORIG_POS], setPos()];
-
-// Restore the input position and "return" false.
-const bail = idx => [
-  restorePos(),
-  [instr.i32.const, 0],
-  setRet(),
-  [instr.br, w.labelidx(idx)]
-];
-
-const ifTrue = body => [[instr.if, w.blocktype.empty], body, instr.end];
-
-// Save the TOS value into the return value register.
-const saveRet = () => [instr.local.tee, localidx.RET];
-
-const getRet = () => [instr.local.get, localidx.RET];
-
-const setRet = (valFrag = []) => [valFrag, instr.local.set, localidx.RET];
-
-const currCharCode = () => [getPos(), [instr.i32.load8_u, w.memarg(ALIGN_1_BYTE, 0)]];
 
 // --------------------------------------------------------------------
 // Operations
@@ -86,19 +38,30 @@ pexprs.PExpr.prototype._toWasm = abstract('_toWasm');
 
 pexprs.Alt.prototype._toWasm = function (c) {
   return [
-    [getPos(), setOrigPos()], // origPos = pos
+    cg.doPushOrigPos(cg.doGetPos()), // origPos = pos
     ...this.terms.flatMap(term => [
       term.toWasm(c),
-      getRet(),
+      cg.doGetRet(),
       [instr.br_if, w.labelidx(0)],
-      [getOrigPos(), setPos()] // pos = origPos
-    ])
+      [cg.doGetOrigPos(), cg.doSetPos()] // pos = origPos
+    ]),
+    cg.doPopOrigPos()
   ];
+};
+
+pexprs.Seq.prototype._toWasm = function (c) {
+  return dbg([
+    ...this.factors.flatMap(fac => [
+      fac.toWasm(c),
+      cg.doGetRet(),
+      [instr.i32.eqz, instr.br_if, w.labelidx(0)]
+    ])
+  ]);
 };
 
 pexprs.Apply.prototype._toWasm = function (c) {
   const idx = c.ruleIdxByName.get(this.ruleName);
-  return [[instr.call, w.funcidx(idx)], setRet()];
+  return [[instr.call, w.funcidx(idx)], cg.doSetRet()];
 };
 
 pexprs.Terminal.prototype._toWasm = function (c) {
@@ -106,15 +69,23 @@ pexprs.Terminal.prototype._toWasm = function (c) {
   // - proper UTF-8!
   // - deal with hitting the end of input. Maybe use 0xFF?
   // - handle longer terminals with a loop
+
+  const ifTrue = body => [[instr.if, w.blocktype.empty], body, instr.end];
+  const doBail = depth => [cg.doSetRet([instr.i32.const, 0]), [instr.br, w.labelidx(depth)]];
+  const currCharCodeFrag = [
+    cg.doGetPos(),
+    [instr.i32.load8_u, w.memarg(Codegen.ALIGN_1_BYTE, 0)]
+  ];
+
   return [
     // Unrolled loop over all characters.
     ...Array.prototype.flatMap.call(this.obj, c => [
       // Compare next char
       [instr.i32.const, w.i32(c.charCodeAt(0))],
-      currCharCode(),
-      [instr.i32.ne, ifTrue(bail(1))],
-      incPos()
+      currCharCodeFrag,
+      [instr.i32.ne, ifTrue(doBail(1))],
+      cg.doIncPos()
     ]),
-    setRet([instr.i32.const, 1])
+    cg.doSetRet([instr.i32.const, 1])
   ];
 };

@@ -25,6 +25,10 @@ async function buildModule(importDecls, functionDecls) {
       // pos
       w.global(w.globaltype(w.valtype.i32, w.mut.var), [
         [instr.i32.const, w.i32(0), instr.end]
+      ]),
+      // origPosSp
+      w.global(w.globaltype(w.valtype.i32, w.mut.var), [
+        [instr.i32.const, w.i32(0), instr.end]
       ])
     ]),
     w.exportsec(exports),
@@ -40,6 +44,96 @@ async function buildModule(importDecls, functionDecls) {
 
   return bytes;
 }
+
+export class Codegen {
+  constructor() {
+    const globalNames = ['pos', 'origPosSp'];
+    this._globals = new Map(globalNames.map((key, index) => [key, index]));
+
+    const localNames = ['ret'];
+    this._locals = new Map(localNames.map((key, index) => [key, index]));
+  }
+
+  globalidx(name) {
+    if (!this._globals.has(name)) {
+      throw new Error(`Unknown global: ${name}`);
+    }
+    return this._globals.get(name);
+  }
+
+  localidx(name) {
+    if (!this._locals.has(name)) {
+      throw new Error(`Unknown local: ${name}`);
+    }
+    return this._locals.get(name);
+  }
+
+  doStoreI32(offset) {
+    return [instr.i32.store, w.memarg(Codegen.ALIGN_4_BYTES, offset)];
+  }
+
+  doLoadI32(offset) {
+    return [instr.i32.load, w.memarg(Codegen.ALIGN_4_BYTES, offset)];
+  }
+
+  // Save the current input position.
+  doPushOrigPos(valueFrag) {
+    return [
+      // origPosSp -= 4
+      [instr.global.get, this.globalidx('origPosSp')],
+      [instr.i32.const, w.i32(4)],
+      instr.i32.sub,
+      [instr.global.set, this.globalidx('origPosSp')],
+
+      [instr.global.get, this.globalidx('origPosSp')],
+      valueFrag,
+      this.doStoreI32(0)
+    ];
+  }
+
+  doPopOrigPos() {
+    return [
+      // origPosSp += 4
+      [instr.global.get, this.globalidx('origPosSp')],
+      [instr.i32.const, w.i32(4)],
+      instr.i32.add,
+      [instr.global.set, this.globalidx('origPosSp')]
+    ];
+  }
+
+  // Load the saved input position onto the stack.
+  doGetOrigPos() {
+    return [[instr.global.get, this.globalidx('origPosSp')], this.doLoadI32(0)];
+  }
+
+  // Load the current input position onto the stack.
+  // [] -> [i32]
+  doGetPos() {
+    return [instr.global.get, this.globalidx('pos')];
+  }
+
+  // Set the current input position to the TOS value.
+  // [i32] -> []
+  doSetPos() {
+    return [instr.global.set, this.globalidx('pos')];
+  }
+
+  // Increment the current input position by 1.
+  // [i32, i32] -> [i32]
+  doIncPos() {
+    return [this.doGetPos(), [instr.i32.const, w.i32(1), instr.i32.add], this.doSetPos()];
+  }
+
+  doGetRet() {
+    return [instr.local.get, this.localidx('ret')];
+  }
+
+  doSetRet(valueFrag = []) {
+    return [valueFrag, instr.local.set, this.localidx('ret')];
+  }
+}
+Codegen.ALIGN_1_BYTE = 0;
+Codegen.ALIGN_4_BYTES = 2;
 
 export class Compiler {
   constructor(grammar) {
@@ -120,6 +214,8 @@ export class Compiler {
         locals: [w.locals(1, w.valtype.i32)],
         body: [
           resetCurrPos(),
+          [instr.i32.const, w.i32(64 * 1024)],
+          [instr.global.set, w.globalidx(1)], // Reset ORIG_POS_SP
 
           [instr.i32.const, w.i32(0)], // offset
           [instr.i32.const, w.i32(64 * 1024)], // maxLen

@@ -6,7 +6,7 @@ import {WasmMatcher} from '../src/wasm.js';
 const matchWithInput = (m, str) => {
   m.setInput(str);
   return m.match();
-}
+};
 
 test('input in memory', async t => {
   const g = ohm.grammar('G { start = "x" }');
@@ -70,5 +70,32 @@ test('wasm: more choice', async t => {
   const matcher = await WasmMatcher.forGrammar(g);
   t.is(matchWithInput(matcher, '14'), 1);
   t.is(matchWithInput(matcher, '13'), 1);
+  t.is(matchWithInput(matcher, '15'), 0);
+});
+
+test('wasm: sequence', async t => {
+  const g = ohm.grammar(`
+    G {
+      start = "1" "2"
+            | "130" ""
+    }
+  `);
+  const matcher = await WasmMatcher.forGrammar(g);
+  t.is(matchWithInput(matcher, '12'), 1);
+  t.is(matchWithInput(matcher, '130'), 1);
+  t.is(matchWithInput(matcher, '13'), 0);
+});
+
+test('wasm: choice + sequence', async t => {
+  const g = ohm.grammar(`
+    G {
+      start = "1" ("2" | "3")
+            | "14" ""
+    }
+  `);
+  const matcher = await WasmMatcher.forGrammar(g);
+  t.is(matchWithInput(matcher, '12'), 1);
+  t.is(matchWithInput(matcher, '13'), 1);
+  t.is(matchWithInput(matcher, '14'), 1);
   t.is(matchWithInput(matcher, '15'), 0);
 });
