@@ -17,7 +17,7 @@ function uniqueName(names, str) {
   return name;
 }
 
-async function buildModule(importDecls, functionDecls) {
+async function buildModule(importDecls, functionDecls, extraExports = []) {
   const types = [...importDecls, ...functionDecls].map(f =>
     w.functype(f.paramTypes, f.resultTypes)
   );
@@ -28,8 +28,7 @@ async function buildModule(importDecls, functionDecls) {
     w.export_(f.name, w.exportdesc.func(i + importDecls.length))
   );
   exports.push(w.export_('memory', w.exportdesc.mem(0)));
-  exports.push(w.export_('pos', [0x03, w.globalidx(0)])); // TODO: Replace this with the symbolic construction.
-  exports.push(w.export_('origPos', [0x03, w.globalidx(1)])); // TODO: Replace this with the symbolic construction.
+  exports.push(...extraExports);
 
   const mod = w.module([
     w.typesec(types),
@@ -178,7 +177,11 @@ export class Compiler {
         resultTypes: [w.valtype.i32]
       }
     ];
-    return buildModule(importDecls, this.functionDecls(importDecls.length));
+    const cg = new Codegen();
+    const extraExports = cg._globals
+      .keys()
+      .map(name => w.export_(name, [0x03, cg.globalidx(name)]));
+    return buildModule(importDecls, this.functionDecls(importDecls.length), extraExports);
   }
 
   compileRule(name, info) {
