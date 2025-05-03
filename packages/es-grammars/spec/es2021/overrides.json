@@ -19,6 +19,11 @@
       "replacement": "| \"*\" ~\"/\" postAsteriskCommentChars?"
     },
     {
+      "name": "decimalIntegerLiteral",
+      "pattern": "| nonZeroDigit -- alt2",
+      "replacement": "| nonZeroDigit decimalDigits<withSep>? -- alt2"
+    },
+    {
       "name": "LeftHandSideExpression",
       "pattern": "| NewExpression<guardYield, guardAwait>\n    | CallExpression<guardYield, guardAwait>",
       "replacement": "| CallExpression<guardYield, guardAwait>\n    | NewExpression<guardYield, guardAwait>"
@@ -56,6 +61,13 @@
       "name": "UnaryExpression",
       "pattern": "    | UpdateExpression<guardYield, guardAwait> -- alt1\n",
       "postlude": "\n    | UpdateExpression<guardYield, guardAwait> -- alt1",
+      "replacement": ""
+    },
+    {
+      "_comment_": " Move LeftHandSideExpression to the very end.",
+      "name": "UpdateExpression",
+      "pattern": "    | LeftHandSideExpression<guardYield, guardAwait> -- alt1\n",
+      "postlude": "\n    | LeftHandSideExpression<guardYield, guardAwait> -- alt1",
       "replacement": ""
     },
     {
