@@ -89,11 +89,11 @@ pexprs.Terminal.prototype._toWasm = function (c) {
   ];
 };
 
-pexprs.Star.prototype._toWasm = function (c) {
+function doStar(exprFrag) {
   return [
     cg.doBlockLoop(w.blocktype.empty, [
       cg.doPushOrigPos(cg.doGetPos()),
-      this.expr.toWasm(c),
+      exprFrag,
       cg.doGetRet(),
       [instr.i32.eqz, instr.br_if, w.labelidx(1)], // break
       cg.doPopOrigPos(),
@@ -103,5 +103,18 @@ pexprs.Star.prototype._toWasm = function (c) {
     [cg.doGetOrigPos(), cg.doSetPos()], // pos = origPos
     cg.doPopOrigPos(),
     cg.doSetRet([instr.i32.const, 1])
+  ];
+}
+
+pexprs.Star.prototype._toWasm = function (c) {
+  return doStar(this.expr.toWasm(c));
+};
+
+pexprs.Plus.prototype._toWasm = function (c) {
+  return [
+    this.expr.toWasm(c),
+    cg.doGetRet(),
+    [instr.i32.eqz, instr.br_if, w.labelidx(0)], // break
+    doStar(this.expr.toWasm(c))
   ];
 };
