@@ -118,3 +118,12 @@ pexprs.Plus.prototype._toWasm = function (c) {
     doStar(this.expr.toWasm(c))
   ];
 };
+
+pexprs.Lookahead.prototype._toWasm = function (c) {
+  return [
+    cg.doPushOrigPos(cg.doGetPos()),
+    this.expr.toWasm(c),
+    [cg.doGetOrigPos(), cg.doSetPos()], // pos = origPos
+    cg.doPopOrigPos(),
+  ];
+};
