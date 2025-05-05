@@ -82,6 +82,14 @@ export class Codegen {
     return this._locals.get(name);
   }
 
+  doLoop(bt, body) {
+    return [instr.loop, bt, body, instr.end];
+  }
+
+  doBlockLoop(bt, body) {
+    return [instr.block, bt, this.doLoop(bt, body), instr.end];
+  }
+
   doStoreI32(offset) {
     return [instr.i32.store, w.memarg(Codegen.ALIGN_4_BYTES, offset)];
   }
@@ -324,6 +332,7 @@ export class WasmMatcher {
     const buf = new Uint8Array(memory.buffer, offset);
     const {read, written} = encoder.encodeInto(this._input.substring(this._pos), buf);
     this._pos += read;
+    buf[written] = 0xff; // Mark end of input with an invalid UTF-8 character.
     return written;
   }
 }

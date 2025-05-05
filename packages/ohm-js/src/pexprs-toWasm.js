@@ -67,7 +67,6 @@ pexprs.Apply.prototype._toWasm = function (c) {
 pexprs.Terminal.prototype._toWasm = function (c) {
   // TODO:
   // - proper UTF-8!
-  // - deal with hitting the end of input. Maybe use 0xFF?
   // - handle longer terminals with a loop
 
   const ifTrue = body => [[instr.if, w.blocktype.empty], body, instr.end];
@@ -86,6 +85,23 @@ pexprs.Terminal.prototype._toWasm = function (c) {
       [instr.i32.ne, ifTrue(doBail(1))],
       cg.doIncPos()
     ]),
+    cg.doSetRet([instr.i32.const, 1])
+  ];
+};
+
+pexprs.Star.prototype._toWasm = function (c) {
+  return [
+    cg.doBlockLoop(w.blocktype.empty, [
+      cg.doPushOrigPos(cg.doGetPos()),
+      this.expr.toWasm(c),
+      cg.doGetRet(),
+      [instr.i32.eqz, instr.br_if, w.labelidx(1)], // break
+      cg.doPopOrigPos(),
+      instr.br,
+      w.labelidx(0) // continue
+    ]),
+    [cg.doGetOrigPos(), cg.doSetPos()], // pos = origPos
+    cg.doPopOrigPos(),
     cg.doSetRet([instr.i32.const, 1])
   ];
 };

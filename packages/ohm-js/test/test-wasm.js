@@ -116,3 +116,27 @@ test('wasm: rule application', async t => {
   t.is(matchWithInput(matcher, '3'), 1);
   t.is(matchWithInput(matcher, '13'), 0);
 });
+
+test('wasm: repetition', async t => {
+  const g = ohm.grammar(`
+    G {
+      start = "1"*
+    }
+  `);
+  const matcher = await WasmMatcher.forGrammar(g);
+  t.is(matchWithInput(matcher, '111'), 1);
+  t.is(matchWithInput(matcher, '1'), 1);
+  t.is(matchWithInput(matcher, ''), 1);
+  t.is(matchWithInput(matcher, '2'), 0);
+
+  const g2 = ohm.grammar(`
+    G {
+      start = "123"* "1"
+    }
+  `);
+  const matcher2 = await WasmMatcher.forGrammar(g2);
+  t.is(matchWithInput(matcher2, '1'), 1);
+  t.is(matchWithInput(matcher2, '1231'), 1);
+  t.is(matchWithInput(matcher2, ''), 0);
+  t.is(matchWithInput(matcher2, '2'), 0);
+});
