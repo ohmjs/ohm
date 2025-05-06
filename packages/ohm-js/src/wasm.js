@@ -1,13 +1,31 @@
 /* global TextEncoder, WebAssembly */
 
 import * as w from '@wasmgroundup/emit';
+import fs from 'node:fs';
 
 const {instr} = w;
+import * as pexprs from './pexprs-main.js';
+
+function assert(cond, msg) {
+  if (!cond) {
+    throw new Error(msg ?? 'assertion failed');
+  }
+}
+
+function checkNotNull(x, msg = 'unexpected null value') {
+  assert(x != null, msg);
+  return x;
+}
+
+function checkNoUndefined(arr) {
+  assert(arr.indexOf(undefined) === -1, `found undefined @ ${arr.indexOf(undefined)}`);
+  return arr;
+}
 
 function uniqueName(names, str) {
   let name = str;
   outer: if (names.has(str)) {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 100; i++) {
       name = `${str}_${i}`;
       if (!names.has(name)) break outer;
     }
@@ -17,85 +35,133 @@ function uniqueName(names, str) {
   return name;
 }
 
-async function buildModule(importDecls, functionDecls, extraExports = []) {
-  const types = [...importDecls, ...functionDecls].map(f =>
-    w.functype(f.paramTypes, f.resultTypes)
-  );
-  const imports = importDecls.map((f, i) => w.import_(f.module, f.name, w.importdesc.func(i)));
-  const funcs = functionDecls.map((f, i) => w.typeidx(i + importDecls.length));
-  const codes = functionDecls.map(f => w.code(w.func(f.locals, f.body)));
-  const exports = functionDecls.map((f, i) =>
-    w.export_(f.name, w.exportdesc.func(i + importDecls.length))
-  );
-  exports.push(w.export_('memory', w.exportdesc.mem(0)));
-  exports.push(...extraExports);
-
-  const mod = w.module([
-    w.typesec(types),
-    w.importsec(imports),
-    w.funcsec(funcs),
-    w.memsec([w.mem(w.memtype(w.limits.min(1)))]),
-    w.globalsec([
-      // pos
-      w.global(w.globaltype(w.valtype.i32, w.mut.var), [
-        [instr.i32.const, w.i32(0), instr.end]
-      ]),
-      // origPosSp
-      w.global(w.globaltype(w.valtype.i32, w.mut.var), [
-        [instr.i32.const, w.i32(0), instr.end]
-      ])
-    ]),
-    w.exportsec(exports),
-    w.codesec(codes)
-  ]);
-  const bytes = Uint8Array.from(mod.flat(Infinity));
-
-  // DEBUG
-  const filename = `out-${new Date().getTime()}.wasm`;
-  (await import('fs')).writeFileSync(`/Users/pdubroy/${filename}`, bytes);
-  console.log(` wrote  ${filename}`);
-  // END DEBUG
-
-  return bytes;
-}
-
-export class Codegen {
+/*
+  Offers a higher-level interface for generating WebAssembly code and
+  constructing a module. Generally shouldn't be responsible for things
+  that are specific to Ohm.
+ */
+export class Assembler {
   constructor() {
-    const globalNames = ['pos', 'origPosSp'];
-    this._globals = new Map(globalNames.map((key, index) => [key, index]));
+    this._globals = new Map();
 
-    const localNames = ['ret'];
-    this._locals = new Map(localNames.map((key, index) => [key, index]));
+    this._functionDecls = [];
+    this._importDecls = [];
+
+    // State for the current function being generated.
+    this._code = [];
+    this._locals = undefined;
   }
 
+  addGlobal(name, type) {
+    assert(!this._globals.has(name), `Global '${name}' already exists`);
+    const idx = this._globals.size;
+    this._globals.set(name, idx);
+    return idx;
+  }
+
+  addLocal(name, type) {
+    assert(!this._locals.has(name), `Local '${name}' already exists`);
+    assert(type === w.valtype.i32, `invalid local type: ${type}`);
+    const idx = this._locals.size;
+    this._locals.set(name, idx);
+    return idx;
+  }
+
+  addFunction(name, paramTypes, resultTypes, bodyFn) {
+    // this._funcContext = {name, paramTypes, resultTypes};
+    this._locals = new Map();
+    bodyFn(this); // TODO: Change to side effecting.
+    this._functionDecls.push({
+      name,
+      paramTypes,
+      resultTypes,
+      locals: [w.locals(this._locals.size, w.valtype.i32)], // TODO: Support other types?
+      body: [...this._code, instr.end]
+    });
+    this._code = [];
+    this._locals = undefined;
+  }
+
+  buildModule(importDecls, functionDecls, extraExports = []) {
+    const types = [...importDecls, ...functionDecls].map(f =>
+      w.functype(f.paramTypes, f.resultTypes)
+    );
+    const imports = importDecls.map((f, i) =>
+      w.import_(f.module, f.name, w.importdesc.func(i))
+    );
+    const funcs = functionDecls.map((f, i) => w.typeidx(i + importDecls.length));
+    const codes = functionDecls.map(f => w.code(w.func(f.locals, f.body)));
+    const exports = functionDecls.map((f, i) =>
+      w.export_(f.name, w.exportdesc.func(i + importDecls.length))
+    );
+    exports.push(w.export_('memory', w.exportdesc.mem(0)));
+    exports.push(...extraExports);
+
+    const mod = w.module([
+      w.typesec(types),
+      w.importsec(imports),
+      w.funcsec(funcs),
+      w.memsec([w.mem(w.memtype(w.limits.min(1)))]),
+      w.globalsec([
+        // pos
+        w.global(w.globaltype(w.valtype.i32, w.mut.var), [
+          [instr.i32.const, w.i32(0), instr.end]
+        ]),
+        // origPosSp
+        w.global(w.globaltype(w.valtype.i32, w.mut.var), [
+          [instr.i32.const, w.i32(0), instr.end]
+        ])
+      ]),
+      w.exportsec(exports),
+      w.codesec(codes)
+    ]);
+    const bytes = Uint8Array.from(mod.flat(Infinity));
+
+    // DEBUG
+    const filename = `out-${new Date().getTime()}.wasm`;
+    fs.writeFileSync(`/Users/pdubroy/${filename}`, bytes);
+    console.log(` wrote  ${filename}`);
+    // END DEBUG
+
+    return bytes;
+  }
+
+  // Pure codegen helpers (used to generate the function bodies).
+
   globalidx(name) {
-    if (!this._globals.has(name)) {
-      throw new Error(`Unknown global: ${name}`);
-    }
-    return this._globals.get(name);
+    return checkNotNull(this._globals.get(name), `Unknown global: ${name}`);
   }
 
   localidx(name) {
-    if (!this._locals.has(name)) {
-      throw new Error(`Unknown local: ${name}`);
-    }
-    return this._locals.get(name);
+    return checkNotNull(this._locals.get(name), `Unknown local: ${name}`);
+  }
+
+  emit(...bytes) {
+    this._code.push(...checkNoUndefined(bytes.flat(Infinity)));
+  }
+
+  emitBlock(bt, bodyThunk) {
+    this.emit(w.instr.block, bt);
+    bodyThunk();
+    this.emit(w.instr.end);
+  }
+
+  emitLoop(bt, bodyThunk) {
+    this.emit(w.instr.loop, bt);
+    bodyThunk();
+    this.emit(w.instr.end);
   }
 
   doLoop(bt, body) {
     return [instr.loop, bt, body, instr.end];
   }
 
-  doBlockLoop(bt, body) {
-    return [instr.block, bt, this.doLoop(bt, body), instr.end];
-  }
-
   doStoreI32(offset) {
-    return [instr.i32.store, w.memarg(Codegen.ALIGN_4_BYTES, offset)];
+    return [instr.i32.store, w.memarg(Assembler.ALIGN_4_BYTES, offset)];
   }
 
   doLoadI32(offset) {
-    return [instr.i32.load, w.memarg(Codegen.ALIGN_4_BYTES, offset)];
+    return [instr.i32.load, w.memarg(Assembler.ALIGN_4_BYTES, offset)];
   }
 
   // Save the current input position.
@@ -154,8 +220,8 @@ export class Codegen {
     return [valueFrag, instr.local.set, this.localidx('ret')];
   }
 }
-Codegen.ALIGN_1_BYTE = 0;
-Codegen.ALIGN_4_BYTES = 2;
+Assembler.ALIGN_1_BYTE = 0;
+Assembler.ALIGN_4_BYTES = 2;
 
 export class Compiler {
   constructor(grammar) {
@@ -175,6 +241,11 @@ export class Compiler {
   }
 
   compile() {
+    const asm = (this.asm = new Assembler());
+    asm.addGlobal('pos', w.valtype.i32);
+    asm.addGlobal('origPosSp', w.valtype.i32);
+    console.log(asm._globals);
+
     const importDecls = [
       {
         module: 'env',
@@ -185,23 +256,20 @@ export class Compiler {
         resultTypes: [w.valtype.i32]
       }
     ];
-    const cg = new Codegen();
-    const extraExports = cg._globals
+    // TODO: Clean this up, move it into Assembler.
+    const extraExports = asm._globals
       .keys()
-      .map(name => w.export_(name, [0x03, cg.globalidx(name)]));
-    return buildModule(importDecls, this.functionDecls(importDecls.length), extraExports);
+      .map(name => w.export_(name, [0x03, asm.globalidx(name)]));
+    return asm.buildModule(importDecls, this.functionDecls(importDecls.length), extraExports);
   }
 
   compileRule(name, info) {
-    const rawBody = info.body.toWasm(this);
-
-    return {
-      name: `$${name}`,
-      paramTypes: [],
-      resultTypes: [w.valtype.i32],
-      locals: [w.locals(3, w.valtype.i32)],
-      body: [rawBody, [instr.local.get, /* RET */ w.localidx(0)], instr.end].flat(Infinity)
-    };
+    this.asm.addFunction(`$${name}`, [], [w.valtype.i32], () => {
+      this.asm.addLocal('ret', w.valtype.i32);
+      this.emitPExpr(info.body);
+      this.asm.emit('xxx', instr.local.get, this.asm.localidx('ret'));
+    });
+    return this.asm._functionDecls.at(-1);
   }
 
   // A *brilliant* way to add arbitrary labels to the generated code.
@@ -281,6 +349,128 @@ export class Compiler {
       ...ruleDecls,
       ...debugDecls
     ];
+  }
+
+  emitPExpr(exp) {
+    const {asm} = this;
+    this._enter(exp);
+    // Wrap the body in a block, which is useful for two reasons:
+    // - it allows early returns.
+    // - it makes sure that the generated code doesn't have stack effects.
+    asm.emit(`BEGIN ${this._codegenCtx.at(-1)}`);
+    asm.emitBlock(w.blocktype.empty, () => {
+      // prettier-ignore
+      switch (exp.constructor) {
+        case pexprs.Terminal: this.emitTerminal(exp); break;
+        case pexprs.Apply: this.emitApply(exp); break;
+        case pexprs.Alt: this.emitAlt(exp); break;
+        case pexprs.Seq: this.emitSeq(exp); break;
+        case pexprs.Star: this.emitStar(exp); break;
+        case pexprs.Plus: this.emitPlus(exp); break;
+        // case pexprs.Opt: this.compileOpt(); break;
+        case pexprs.Lookahead: this.emitLookahead(exp); break;
+        default:
+          throw new Error(`not handled: ${exp.constructor.name}`);
+      }
+    });
+    asm.emit(`END ${this._codegenCtx.at(-1)}`);
+    this._exit(this);
+  }
+
+  emitAlt(exp) {
+    const {asm} = this;
+    asm.emit(asm.doPushOrigPos(asm.doGetPos())); // origPos = pos
+    for (const term of exp.terms) {
+      this.emitPExpr(term);
+      asm.emit(
+        asm.doGetRet(),
+        [instr.br_if, w.labelidx(0)],
+        [asm.doGetOrigPos(), asm.doSetPos()] // pos = origPos
+      );
+    }
+    asm.emit(asm.doPopOrigPos());
+  }
+
+  emitSeq(exp) {
+    const {asm} = this;
+    for (const factor of exp.factors) {
+      this.emitPExpr(factor);
+      asm.emit(asm.doGetRet(), [instr.i32.eqz, instr.br_if, w.labelidx(0)]);
+    }
+  }
+
+  emitApply(exp) {
+    const {asm} = this;
+    const idx = checkNotNull(
+      this.ruleIdxByName.get(exp.ruleName),
+      `Unknown rule: ${exp.ruleName}`
+    );
+    asm.emit([instr.call, w.funcidx(idx)], asm.doSetRet());
+  }
+
+  emitTerminal(exp) {
+    // TODO:
+    // - proper UTF-8!
+    // - handle longer terminals with a loop
+
+    const {asm} = this;
+    const ifTrue = body => [[instr.if, w.blocktype.empty], body, instr.end];
+    const doBail = depth => [
+      asm.doSetRet([instr.i32.const, 0]),
+      [instr.br, w.labelidx(depth)]
+    ];
+    const currCharCodeFrag = [
+      asm.doGetPos(),
+      [instr.i32.load8_u, w.memarg(Assembler.ALIGN_1_BYTE, 0)]
+    ];
+
+    asm.emit(
+      // Unrolled loop over all characters.
+      ...Array.prototype.flatMap.call(exp.obj, c => [
+        // Compare next char
+        [instr.i32.const, w.i32(c.charCodeAt(0))],
+        currCharCodeFrag,
+        [instr.i32.ne, ifTrue(doBail(1))],
+        asm.doIncPos()
+      ]),
+      asm.doSetRet([instr.i32.const, 1])
+    );
+  }
+
+  emitStar({expr}) {
+    const {asm} = this;
+    asm.emitBlock(w.blocktype.empty, () => {
+      asm.emitLoop(w.blocktype.empty, () => {
+        asm.emit(asm.doPushOrigPos(asm.doGetPos()));
+        this.emitPExpr(expr);
+        asm.emit(
+          asm.doGetRet(),
+          [instr.i32.eqz, instr.br_if, w.labelidx(1)], // break
+          asm.doPopOrigPos(),
+          instr.br,
+          w.labelidx(0) // continue
+        );
+      });
+    });
+    asm.emit(
+      [asm.doGetOrigPos(), asm.doSetPos()], // pos = origPos
+      asm.doPopOrigPos(),
+      asm.doSetRet([instr.i32.const, 1])
+    );
+  }
+
+  emitPlus(plusExp) {
+    const {asm} = this;
+    this.emitPExpr(plusExp.expr);
+    asm.emit(asm.doGetRet(), [instr.i32.eqz, instr.br_if, w.labelidx(0)]);
+    this.emitStar(plusExp);
+  }
+
+  emitLookahead({expr}) {
+    const {asm} = this;
+    asm.emit(asm.doPushOrigPos(asm.doGetPos()));
+    this.emitPExpr(expr);
+    asm.emit([asm.doGetOrigPos(), asm.doSetPos()], asm.doPopOrigPos());
   }
 }
 
