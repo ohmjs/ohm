@@ -37,8 +37,7 @@ function uniqueName(names, str) {
 
 /*
   Offers a higher-level interface for generating WebAssembly code and
-  constructing a module. Generally shouldn't be responsible for things
-  that are specific to Ohm.
+  constructing a module.
  */
 export class Assembler {
   constructor() {
@@ -46,6 +45,10 @@ export class Assembler {
 
     this._functionDecls = [];
     this._importDecls = [];
+
+    // Keep track of loops/blocks to make it easier (and safer) to generate
+    // breaks to the correct index.
+    this._blockStack = [];
 
     // State for the current function being generated.
     this._code = [];
@@ -68,9 +71,8 @@ export class Assembler {
   }
 
   addFunction(name, paramTypes, resultTypes, bodyFn) {
-    // this._funcContext = {name, paramTypes, resultTypes};
     this._locals = new Map();
-    bodyFn(this); // TODO: Change to side effecting.
+    bodyFn(this);
     this._functionDecls.push({
       name,
       paramTypes,
@@ -82,7 +84,203 @@ export class Assembler {
     this._locals = undefined;
   }
 
-  buildModule(importDecls, functionDecls, extraExports = []) {
+  // Pure codegen helpers (used to generate the function bodies).
+
+  globalidx(name) {
+    return checkNotNull(this._globals.get(name), `Unknown global: ${name}`);
+  }
+
+  localidx(name) {
+    return checkNotNull(this._locals.get(name), `Unknown local: ${name}`);
+  }
+
+  emit(...bytes) {
+    this._code.push(...checkNoUndefined(bytes.flat(Infinity)));
+  }
+
+  block(bt, bodyThunk) {
+    this.emit(w.instr.block, bt);
+    this._blockStack.push('block');
+    bodyThunk();
+    this._blockStack.pop();
+    this.emit(w.instr.end);
+  }
+
+  loop(bt, bodyThunk) {
+    this.emit(w.instr.loop, bt);
+    this._blockStack.push('loop');
+    bodyThunk();
+    this._blockStack.pop();
+    this.emit(w.instr.end);
+  }
+
+  if(bt, bodyThunk) {
+    this.emit(w.instr.if, bt);
+    this._blockStack.push('if');
+    bodyThunk();
+    this._blockStack.pop();
+    this.emit(w.instr.end);
+  }
+
+  br(depth) {
+    this.emit(instr.br, w.labelidx(depth));
+  }
+
+  brIf(depth) {
+    this.emit(instr.br_if, w.labelidx(depth));
+  }
+
+  i32Add = () => this.emit(instr.i32.add);
+
+  i32Const(value) {
+    this.emit(instr.i32.const, w.i32(value));
+  }
+
+  i32Load(offset = 0) {
+    this.emit(instr.i32.load, w.memarg(Assembler.ALIGN_4_BYTES, offset));
+  }
+
+  i32Load8u(offset = 0) {
+    this.emit(instr.i32.load8_u, w.memarg(Assembler.ALIGN_1_BYTE, offset));
+  }
+
+  i32Ne = () => this.emit(instr.i32.ne);
+
+  i32Store(offset = 0) {
+    this.emit(instr.i32.store, w.memarg(Assembler.ALIGN_4_BYTES, offset));
+  }
+
+  i32Sub() {
+    this.emit(instr.i32.sub);
+  }
+
+  globalGet(name) {
+    this.emit(instr.global.get, this.globalidx(name));
+  }
+
+  globalSet(name) {
+    this.emit(instr.global.set, this.globalidx(name));
+  }
+
+  localGet(name) {
+    this.emit(instr.local.get, this.localidx(name));
+  }
+
+  localSet(name) {
+    this.emit(instr.local.set, this.localidx(name));
+  }
+
+  // "Macros" -- codegen helpers specific to Ohm.
+
+  break(depth) {
+    const what = this._blockStack.at(-(depth + 1));
+    assert(what === 'block' || what === 'if', 'Invalid break');
+    this.emit(instr.br, w.labelidx(depth));
+  }
+
+  // Conditional break -- emits a `br_if` for the given depth.
+  condBreak(depth) {
+    const what = this._blockStack.at(-(depth + 1));
+    assert(what === 'block' || what === 'if', 'Invalid condBreak');
+    this.emit(instr.br_if, w.labelidx(depth));
+  }
+
+  continue(depth) {
+    const what = this._blockStack.at(-(depth + 1));
+    assert(what === 'loop', 'Invalid continue');
+    this.emit(instr.br, w.labelidx(depth));
+  }
+
+  // Save the current input position.
+  pushOrigPos(valueFrag) {
+    // origPosSp -= 4
+    this.globalGet('origPosSp');
+    this.i32Const(4);
+    this.i32Sub();
+    this.globalSet('origPosSp');
+
+    // stack[origPosSp] = pos
+    this.globalGet('origPosSp');
+    this.globalGet('pos');
+    this.i32Store();
+  }
+
+  popOrigPos() {
+    this.globalGet('origPosSp');
+    this.i32Const(4);
+    this.i32Add();
+    this.globalSet('origPosSp');
+  }
+
+  // Load the saved input position onto the stack.
+  getOrigPos() {
+    this.globalGet('origPosSp');
+    this.i32Load();
+  }
+
+  restoreOrigPos() {
+    this.getOrigPos();
+    this.globalSet('pos');
+    this.popOrigPos();
+  }
+
+  // Increment the current input position by 1.
+  // [i32, i32] -> [i32]
+  incPos() {
+    this.globalGet('pos');
+    this.i32Const(1);
+    this.i32Add();
+    this.globalSet('pos');
+  }
+}
+Assembler.ALIGN_1_BYTE = 0;
+Assembler.ALIGN_4_BYTES = 2;
+
+export class Compiler {
+  constructor(grammar) {
+    this.grammar = grammar;
+    this.ruleIdxByName = new Map(Object.keys(grammar.rules).map((name, i) => [name, i + 2]));
+    this._codegenCtx = [];
+    this._labels = new Set();
+  }
+
+  _enter(pexpr) {
+    const {startIdx} = pexpr.source;
+    this._codegenCtx.push(`${pexpr.constructor.name}@${startIdx}`);
+  }
+
+  _exit() {
+    this._codegenCtx.pop();
+  }
+
+  compile() {
+    const asm = (this.asm = new Assembler());
+    asm.addGlobal('pos', w.valtype.i32);
+    asm.addGlobal('origPosSp', w.valtype.i32);
+
+    const importDecls = [
+      {
+        module: 'env',
+        name: 'fillInputBuffer',
+        // (offset: i32, maxLen: i32) -> i32
+        // Returns the actual number of bytes read.
+        paramTypes: [w.valtype.i32, w.valtype.i32],
+        resultTypes: [w.valtype.i32]
+      }
+    ];
+    return this.buildModule(importDecls, this.functionDecls(importDecls.length));
+  }
+
+  compileRule(name, info) {
+    this.asm.addFunction(`$${name}`, [], [w.valtype.i32], () => {
+      this.asm.addLocal('ret', w.valtype.i32);
+      this.emitPExpr(info.body);
+      this.asm.emit(instr.local.get, this.asm.localidx('ret'));
+    });
+    return this.asm._functionDecls.at(-1);
+  }
+
+  buildModule(importDecls, functionDecls) {
     const types = [...importDecls, ...functionDecls].map(f =>
       w.functype(f.paramTypes, f.resultTypes)
     );
@@ -95,7 +293,12 @@ export class Assembler {
       w.export_(f.name, w.exportdesc.func(i + importDecls.length))
     );
     exports.push(w.export_('memory', w.exportdesc.mem(0)));
-    exports.push(...extraExports);
+
+    // Export all of the globals so they get a name for debugging.
+    // TODO: Handle this instead via the name section.
+    for (const name of this.asm._globals.keys()) {
+      exports.push(w.export_(name, [0x03, this.asm.globalidx(name)]));
+    }
 
     const mod = w.module([
       w.typesec(types),
@@ -124,152 +327,6 @@ export class Assembler {
     // END DEBUG
 
     return bytes;
-  }
-
-  // Pure codegen helpers (used to generate the function bodies).
-
-  globalidx(name) {
-    return checkNotNull(this._globals.get(name), `Unknown global: ${name}`);
-  }
-
-  localidx(name) {
-    return checkNotNull(this._locals.get(name), `Unknown local: ${name}`);
-  }
-
-  emit(...bytes) {
-    this._code.push(...checkNoUndefined(bytes.flat(Infinity)));
-  }
-
-  emitBlock(bt, bodyThunk) {
-    this.emit(w.instr.block, bt);
-    bodyThunk();
-    this.emit(w.instr.end);
-  }
-
-  emitLoop(bt, bodyThunk) {
-    this.emit(w.instr.loop, bt);
-    bodyThunk();
-    this.emit(w.instr.end);
-  }
-
-  doLoop(bt, body) {
-    return [instr.loop, bt, body, instr.end];
-  }
-
-  doStoreI32(offset) {
-    return [instr.i32.store, w.memarg(Assembler.ALIGN_4_BYTES, offset)];
-  }
-
-  doLoadI32(offset) {
-    return [instr.i32.load, w.memarg(Assembler.ALIGN_4_BYTES, offset)];
-  }
-
-  // Save the current input position.
-  doPushOrigPos(valueFrag) {
-    return [
-      // origPosSp -= 4
-      [instr.global.get, this.globalidx('origPosSp')],
-      [instr.i32.const, w.i32(4)],
-      instr.i32.sub,
-      [instr.global.set, this.globalidx('origPosSp')],
-
-      [instr.global.get, this.globalidx('origPosSp')],
-      valueFrag,
-      this.doStoreI32(0)
-    ];
-  }
-
-  doPopOrigPos() {
-    return [
-      // origPosSp += 4
-      [instr.global.get, this.globalidx('origPosSp')],
-      [instr.i32.const, w.i32(4)],
-      instr.i32.add,
-      [instr.global.set, this.globalidx('origPosSp')]
-    ];
-  }
-
-  // Load the saved input position onto the stack.
-  doGetOrigPos() {
-    return [[instr.global.get, this.globalidx('origPosSp')], this.doLoadI32(0)];
-  }
-
-  // Load the current input position onto the stack.
-  // [] -> [i32]
-  doGetPos() {
-    return [instr.global.get, this.globalidx('pos')];
-  }
-
-  // Set the current input position to the TOS value.
-  // [i32] -> []
-  doSetPos() {
-    return [instr.global.set, this.globalidx('pos')];
-  }
-
-  // Increment the current input position by 1.
-  // [i32, i32] -> [i32]
-  doIncPos() {
-    return [this.doGetPos(), [instr.i32.const, w.i32(1), instr.i32.add], this.doSetPos()];
-  }
-
-  doGetRet() {
-    return [instr.local.get, this.localidx('ret')];
-  }
-
-  doSetRet(valueFrag = []) {
-    return [valueFrag, instr.local.set, this.localidx('ret')];
-  }
-}
-Assembler.ALIGN_1_BYTE = 0;
-Assembler.ALIGN_4_BYTES = 2;
-
-export class Compiler {
-  constructor(grammar) {
-    this.grammar = grammar;
-    this.ruleIdxByName = new Map(Object.keys(grammar.rules).map((name, i) => [name, i + 2]));
-    this._codegenCtx = [];
-    this._labels = new Set();
-  }
-
-  _enter(pexpr) {
-    const {startIdx} = pexpr.source;
-    this._codegenCtx.push(`${pexpr.constructor.name}@${startIdx}`);
-  }
-
-  _exit() {
-    this._codegenCtx.pop();
-  }
-
-  compile() {
-    const asm = (this.asm = new Assembler());
-    asm.addGlobal('pos', w.valtype.i32);
-    asm.addGlobal('origPosSp', w.valtype.i32);
-    console.log(asm._globals);
-
-    const importDecls = [
-      {
-        module: 'env',
-        name: 'fillInputBuffer',
-        // (offset: i32, maxLen: i32) -> i32
-        // Returns the actual number of bytes read.
-        paramTypes: [w.valtype.i32, w.valtype.i32],
-        resultTypes: [w.valtype.i32]
-      }
-    ];
-    // TODO: Clean this up, move it into Assembler.
-    const extraExports = asm._globals
-      .keys()
-      .map(name => w.export_(name, [0x03, asm.globalidx(name)]));
-    return asm.buildModule(importDecls, this.functionDecls(importDecls.length), extraExports);
-  }
-
-  compileRule(name, info) {
-    this.asm.addFunction(`$${name}`, [], [w.valtype.i32], () => {
-      this.asm.addLocal('ret', w.valtype.i32);
-      this.emitPExpr(info.body);
-      this.asm.emit('xxx', instr.local.get, this.asm.localidx('ret'));
-    });
-    return this.asm._functionDecls.at(-1);
   }
 
   // A *brilliant* way to add arbitrary labels to the generated code.
@@ -358,7 +415,7 @@ export class Compiler {
     // - it allows early returns.
     // - it makes sure that the generated code doesn't have stack effects.
     asm.emit(`BEGIN ${this._codegenCtx.at(-1)}`);
-    asm.emitBlock(w.blocktype.empty, () => {
+    asm.block(w.blocktype.empty, () => {
       // prettier-ignore
       switch (exp.constructor) {
         case pexprs.Terminal: this.emitTerminal(exp); break;
@@ -379,23 +436,24 @@ export class Compiler {
 
   emitAlt(exp) {
     const {asm} = this;
-    asm.emit(asm.doPushOrigPos(asm.doGetPos())); // origPos = pos
+    asm.pushOrigPos();
     for (const term of exp.terms) {
       this.emitPExpr(term);
-      asm.emit(
-        asm.doGetRet(),
-        [instr.br_if, w.labelidx(0)],
-        [asm.doGetOrigPos(), asm.doSetPos()] // pos = origPos
-      );
+      asm.localGet('ret');
+      asm.condBreak(0);
+      asm.getOrigPos();
+      asm.globalSet('pos');
     }
-    asm.emit(asm.doPopOrigPos());
+    asm.popOrigPos();
   }
 
   emitSeq(exp) {
     const {asm} = this;
     for (const factor of exp.factors) {
       this.emitPExpr(factor);
-      asm.emit(asm.doGetRet(), [instr.i32.eqz, instr.br_if, w.labelidx(0)]);
+      asm.localGet('ret');
+      asm.emit(instr.i32.eqz);
+      asm.condBreak(0);
     }
   }
 
@@ -405,7 +463,8 @@ export class Compiler {
       this.ruleIdxByName.get(exp.ruleName),
       `Unknown rule: ${exp.ruleName}`
     );
-    asm.emit([instr.call, w.funcidx(idx)], asm.doSetRet());
+    asm.emit(instr.call, w.funcidx(idx));
+    asm.localSet('ret');
   }
 
   emitTerminal(exp) {
@@ -414,63 +473,63 @@ export class Compiler {
     // - handle longer terminals with a loop
 
     const {asm} = this;
-    const ifTrue = body => [[instr.if, w.blocktype.empty], body, instr.end];
-    const doBail = depth => [
-      asm.doSetRet([instr.i32.const, 0]),
-      [instr.br, w.labelidx(depth)]
-    ];
-    const currCharCodeFrag = [
-      asm.doGetPos(),
-      [instr.i32.load8_u, w.memarg(Assembler.ALIGN_1_BYTE, 0)]
-    ];
+    const currCharCode = () => {
+      asm.globalGet('pos');
+      asm.i32Load8u();
+    };
 
-    asm.emit(
-      // Unrolled loop over all characters.
-      ...Array.prototype.flatMap.call(exp.obj, c => [
-        // Compare next char
-        [instr.i32.const, w.i32(c.charCodeAt(0))],
-        currCharCodeFrag,
-        [instr.i32.ne, ifTrue(doBail(1))],
-        asm.doIncPos()
-      ]),
-      asm.doSetRet([instr.i32.const, 1])
-    );
+    for (const c of [...exp.obj]) {
+      // Compare next char
+      asm.i32Const(c.charCodeAt(0));
+      currCharCode();
+      asm.i32Ne();
+      asm.if(w.blocktype.empty, () => {
+        asm.i32Const(0);
+        asm.localSet('ret');
+        asm.break(1);
+      });
+      asm.incPos();
+    }
+    asm.i32Const(1);
+    asm.localSet('ret');
   }
 
   emitStar({expr}) {
     const {asm} = this;
-    asm.emitBlock(w.blocktype.empty, () => {
-      asm.emitLoop(w.blocktype.empty, () => {
-        asm.emit(asm.doPushOrigPos(asm.doGetPos()));
+    asm.block(w.blocktype.empty, () => {
+      asm.loop(w.blocktype.empty, () => {
+        asm.pushOrigPos();
         this.emitPExpr(expr);
-        asm.emit(
-          asm.doGetRet(),
-          [instr.i32.eqz, instr.br_if, w.labelidx(1)], // break
-          asm.doPopOrigPos(),
-          instr.br,
-          w.labelidx(0) // continue
-        );
+        asm.localGet('ret');
+        asm.emit(instr.i32.eqz);
+        asm.condBreak(1);
+        asm.popOrigPos();
+        asm.continue(0);
       });
     });
-    asm.emit(
-      [asm.doGetOrigPos(), asm.doSetPos()], // pos = origPos
-      asm.doPopOrigPos(),
-      asm.doSetRet([instr.i32.const, 1])
-    );
+    // pos = origPos
+    asm.getOrigPos();
+    asm.globalSet('pos');
+
+    asm.restoreOrigPos(); // XXX is this right?
+    asm.i32Const(1);
+    asm.localSet('ret');
   }
 
   emitPlus(plusExp) {
     const {asm} = this;
     this.emitPExpr(plusExp.expr);
-    asm.emit(asm.doGetRet(), [instr.i32.eqz, instr.br_if, w.labelidx(0)]);
+    asm.localGet('ret');
+    asm.emit(instr.i32.eqz);
+    asm.condBreak(0);
     this.emitStar(plusExp);
   }
 
   emitLookahead({expr}) {
     const {asm} = this;
-    asm.emit(asm.doPushOrigPos(asm.doGetPos()));
+    asm.pushOrigPos();
     this.emitPExpr(expr);
-    asm.emit([asm.doGetOrigPos(), asm.doSetPos()], asm.doPopOrigPos());
+    asm.restoreOrigPos();
   }
 }
 
