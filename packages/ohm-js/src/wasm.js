@@ -1,6 +1,7 @@
 /* global TextEncoder, WebAssembly */
 
 import * as w from '@wasmgroundup/emit';
+import wabt from 'wabt';
 import fs from 'node:fs';
 
 const {instr} = w;
@@ -115,9 +116,18 @@ export class Assembler {
   }
 
   if(bt, bodyThunk) {
+    this.ifElse(bt, bodyThunk);
+  }
+
+  ifElse(bt, thenThunk, elseThunk=undefined) {
     this.emit(w.instr.if, bt);
     this._blockStack.push('if');
-    bodyThunk();
+    thenThunk();
+    if (elseThunk) {
+      console.log('emitting else');
+      this.emit(w.instr.else);
+      elseThunk();
+    }
     this._blockStack.pop();
     this.emit(w.instr.end);
   }
@@ -170,8 +180,6 @@ export class Assembler {
     this.emit(instr.local.set, this.localidx(name));
   }
 
-  // "Macros" -- codegen helpers specific to Ohm.
-
   break(depth) {
     const what = this._blockStack.at(-(depth + 1));
     assert(what === 'block' || what === 'if', 'Invalid break');
@@ -189,6 +197,13 @@ export class Assembler {
     const what = this._blockStack.at(-(depth + 1));
     assert(what === 'loop', 'Invalid continue');
     this.emit(instr.br, w.labelidx(depth));
+  }
+
+  // "Macros" -- codegen helpers specific to Ohm.
+
+  setRet(val) {
+    this.i32Const(val);
+    this.localSet('ret');
   }
 
   // Save the current input position.
@@ -320,6 +335,13 @@ export class Compiler {
     ]);
     const bytes = Uint8Array.from(mod.flat(Infinity));
 
+    // (async () => {
+    //   const {readWasm} = await wabt();
+    //   const m = readWasm(bytes, {check: true});
+    //   // console.log(m.toText());
+    //   m.validate();
+    // })();
+
     // DEBUG
     const filename = `out-${new Date().getTime()}.wasm`;
     fs.writeFileSync(`/Users/pdubroy/${filename}`, bytes);
@@ -418,14 +440,14 @@ export class Compiler {
     asm.block(w.blocktype.empty, () => {
       // prettier-ignore
       switch (exp.constructor) {
-        case pexprs.Terminal: this.emitTerminal(exp); break;
-        case pexprs.Apply: this.emitApply(exp); break;
         case pexprs.Alt: this.emitAlt(exp); break;
+        case pexprs.Apply: this.emitApply(exp); break;
+        case pexprs.Lookahead: this.emitLookahead(exp); break;
         case pexprs.Seq: this.emitSeq(exp); break;
         case pexprs.Star: this.emitStar(exp); break;
         case pexprs.Plus: this.emitPlus(exp); break;
-        // case pexprs.Opt: this.compileOpt(); break;
-        case pexprs.Lookahead: this.emitLookahead(exp); break;
+        case pexprs.Terminal: this.emitTerminal(exp); break;
+        case pexprs.Opt: this.emitOpt(exp); break;
         default:
           throw new Error(`not handled: ${exp.constructor.name}`);
       }
@@ -447,6 +469,44 @@ export class Compiler {
     asm.popOrigPos();
   }
 
+  emitApply(exp) {
+    const {asm} = this;
+    const idx = checkNotNull(
+      this.ruleIdxByName.get(exp.ruleName),
+      `Unknown rule: ${exp.ruleName}`
+    );
+    asm.emit(instr.call, w.funcidx(idx));
+    asm.localSet('ret');
+  }
+
+  emitLookahead({expr}) {
+    const {asm} = this;
+    asm.pushOrigPos();
+    this.emitPExpr(expr);
+    asm.restoreOrigPos();
+  }
+
+  emitOpt({expr}) {
+    const {asm} = this;
+    asm.pushOrigPos();
+    this.emitPExpr(expr);
+    asm.getOrigPos();
+    asm.popOrigPos();
+    asm.localGet('ret');
+    asm.setRet(1); // Always succeed.
+    asm.brIf(0); // Don't restore pos if expr matched
+    asm.globalSet('pos');
+  }
+
+  emitPlus(plusExp) {
+    const {asm} = this;
+    this.emitPExpr(plusExp.expr);
+    asm.localGet('ret');
+    asm.emit(instr.i32.eqz);
+    asm.condBreak(0);
+    this.emitStar(plusExp);
+  }
+
   emitSeq(exp) {
     const {asm} = this;
     for (const factor of exp.factors) {
@@ -457,14 +517,22 @@ export class Compiler {
     }
   }
 
-  emitApply(exp) {
+  emitStar({expr}) {
     const {asm} = this;
-    const idx = checkNotNull(
-      this.ruleIdxByName.get(exp.ruleName),
-      `Unknown rule: ${exp.ruleName}`
-    );
-    asm.emit(instr.call, w.funcidx(idx));
-    asm.localSet('ret');
+    asm.block(w.blocktype.empty, () => {
+      asm.loop(w.blocktype.empty, () => {
+        asm.pushOrigPos();
+        this.emitPExpr(expr);
+        asm.localGet('ret');
+        asm.emit(instr.i32.eqz);
+        asm.condBreak(1);
+        asm.popOrigPos();
+        asm.continue(0);
+      });
+    });
+    // pos = origPos
+    asm.restoreOrigPos();
+    asm.setRet(1);
   }
 
   emitTerminal(exp) {
@@ -492,44 +560,6 @@ export class Compiler {
     }
     asm.i32Const(1);
     asm.localSet('ret');
-  }
-
-  emitStar({expr}) {
-    const {asm} = this;
-    asm.block(w.blocktype.empty, () => {
-      asm.loop(w.blocktype.empty, () => {
-        asm.pushOrigPos();
-        this.emitPExpr(expr);
-        asm.localGet('ret');
-        asm.emit(instr.i32.eqz);
-        asm.condBreak(1);
-        asm.popOrigPos();
-        asm.continue(0);
-      });
-    });
-    // pos = origPos
-    asm.getOrigPos();
-    asm.globalSet('pos');
-
-    asm.restoreOrigPos(); // XXX is this right?
-    asm.i32Const(1);
-    asm.localSet('ret');
-  }
-
-  emitPlus(plusExp) {
-    const {asm} = this;
-    this.emitPExpr(plusExp.expr);
-    asm.localGet('ret');
-    asm.emit(instr.i32.eqz);
-    asm.condBreak(0);
-    this.emitStar(plusExp);
-  }
-
-  emitLookahead({expr}) {
-    const {asm} = this;
-    asm.pushOrigPos();
-    this.emitPExpr(expr);
-    asm.restoreOrigPos();
   }
 }
 

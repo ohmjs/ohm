@@ -165,3 +165,15 @@ test('wasm: lookahead', async t => {
   t.is(matchWithInput(matcher, '2'), 0);
   t.is(matchWithInput(matcher, ''), 0);
 });
+
+test('wasm: opt', async t => {
+  const g = ohm.grammar(`
+    G {
+      start = "1"? "2"
+    }
+  `);
+  const matcher = await WasmMatcher.forGrammar(g);
+  t.is(matchWithInput(matcher, '12'), 1);
+  t.is(matchWithInput(matcher, '2'), 1);
+  t.is(matchWithInput(matcher, ''), 0);
+});
