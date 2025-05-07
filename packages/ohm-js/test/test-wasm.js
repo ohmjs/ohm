@@ -166,6 +166,18 @@ test('wasm: lookahead', async t => {
   t.is(matchWithInput(matcher, ''), 0);
 });
 
+test('wasm: negative lookahead', async t => {
+  const g = ohm.grammar(`
+    G {
+      start = ~"1" "2"
+    }
+  `);
+  const matcher = await WasmMatcher.forGrammar(g);
+  t.is(matchWithInput(matcher, '2'), 1);
+  t.is(matchWithInput(matcher, '12'), 0);
+  t.is(matchWithInput(matcher, ''), 0);
+});
+
 test('wasm: opt', async t => {
   const g = ohm.grammar(`
     G {
@@ -178,26 +190,65 @@ test('wasm: opt', async t => {
   t.is(matchWithInput(matcher, ''), 0);
 });
 
+test('wasm: range', async t => {
+  const g = ohm.grammar(`
+    G {
+      start = "a".."z"
+    }
+  `);
+  const matcher = await WasmMatcher.forGrammar(g);
+  t.is(matchWithInput(matcher, 'a'), 1);
+  t.is(matchWithInput(matcher, 'm'), 1);
+  t.is(matchWithInput(matcher, 'z'), 1);
+  t.is(matchWithInput(matcher, 'A'), 0);
+  t.is(matchWithInput(matcher, '1'), 0);
+});
+
+test('wasm: any', async t => {
+  const g = ohm.grammar('G { start = any }');
+  const matcher = await WasmMatcher.forGrammar(g);
+  t.is(matchWithInput(matcher, 'a'), 1);
+  t.is(matchWithInput(matcher, '1'), 1);
+  t.is(matchWithInput(matcher, ' '), 1);
+  t.is(matchWithInput(matcher, ''), 0);
+
+  const g2 = ohm.grammar('G { start = any* }');
+  const matcher2 = await WasmMatcher.forGrammar(g2);
+  t.is(matchWithInput(matcher2, 'a'), 1);
+  t.is(matchWithInput(matcher2, ''), 1);
+});
+
+test('wasm: end', async t => {
+  const g = ohm.grammar(`
+    G {
+      start = "a" end
+    }
+  `);
+  const matcher = await WasmMatcher.forGrammar(g);
+  t.is(matchWithInput(matcher, 'a'), 1);
+  t.is(matchWithInput(matcher, 'ab'), 0);
+  t.is(matchWithInput(matcher, ''), 0);
+});
+
 test('real-world grammar', async t => {
   const g = ohm.grammar(String.raw`
     Test {
-      Msg = description? (Head Params spaces)
       Msgs = Msg*
+      Msg = description? spaces (Head spaces Params spaces)
 
-      spaces := space*
+      lower := "a".."z"
+      upper := "A".."Z"
 
       description = "#" (~nl any)* nl?
-      Head = msgTarget msgName
+      Head = msgTarget spaces msgName
       msgTarget
-        = interpolation   -- interpolation
-        | templateString  -- templateString
-        | (~space any)*   -- literal
+        = (~space any)*
       msgName
         = letter (alnum | "_" | "-" | ":" | "." | "+" | "/")*  -- literal
         | templateString                                       -- templateString
         | interpolation                                        -- interpolation
       Params = Param*
-      Param = key ":" Json
+      Param = key spaces ":" spaces Json
       Json
         = "{" Param ("," Param)* ","? "}"   -- object1
         | "{" "}"                           -- object0
@@ -238,5 +289,7 @@ test('real-world grammar', async t => {
       nl = "\n"
     }
   `);
-  t.notThrows(() => WasmMatcher.forGrammar(g));
+  // t.notThrows(() => WasmMatcher.forGrammar(g));
+  const matcher = await WasmMatcher.forGrammar(g);
+  t.is(matchWithInput(matcher, '/quickjs eval source: "1 + 1"'), 1);
 });

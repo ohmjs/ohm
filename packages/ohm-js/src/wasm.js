@@ -535,16 +535,24 @@ export class Compiler {
   emitAny() {
     const {asm} = this;
     asm.i32Const(0xff);
-    asm.globalGet('pos');
-    asm.i32Load8u();
+    asm.nextCharCode();
     asm.i32Ne();
-    asm.globalSet('pos');
-    asm.incPos();
+    asm.localSet('ret');
   }
 
   emitApply(exp) {
     const {asm} = this;
     asm.emit(instr.call, this.ruleEvalFuncIdx(exp.ruleName));
+    asm.localSet('ret');
+  }
+
+  emitEnd() {
+    const {asm} = this;
+    asm.i32Const(0xff);
+    // Careful! We shouldn't move the pos here. Or does it matter?
+    asm.globalGet('pos');
+    asm.i32Load8u();
+    asm.emit(instr.i32.eq);
     asm.localSet('ret');
   }
 
@@ -612,9 +620,9 @@ export class Compiler {
       asm.break(1);
     });
 
-    // return c < lo;
+    // return c >= lo;
     asm.i32Const(lo);
-    asm.emit(instr.i32.lt_u);
+    asm.emit(instr.i32.ge_u);
     asm.localSet('ret');
   }
 
