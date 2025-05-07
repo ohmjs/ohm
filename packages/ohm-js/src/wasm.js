@@ -119,7 +119,7 @@ export class Assembler {
     this.ifElse(bt, bodyThunk);
   }
 
-  ifElse(bt, thenThunk, elseThunk=undefined) {
+  ifElse(bt, thenThunk, elseThunk = undefined) {
     this.emit(w.instr.if, bt);
     this._blockStack.push('if');
     thenThunk();
@@ -180,6 +180,10 @@ export class Assembler {
     this.emit(instr.local.set, this.localidx(name));
   }
 
+  localTee(name) {
+    this.emit(instr.local.tee, this.localidx(name));
+  }
+
   break(depth) {
     const what = this._blockStack.at(-(depth + 1));
     assert(what === 'block' || what === 'if', 'Invalid break');
@@ -200,6 +204,17 @@ export class Assembler {
   }
 
   // "Macros" -- codegen helpers specific to Ohm.
+
+  dup() {
+    this.localTee('tmp');
+    this.localGet('tmp');
+  }
+
+  nextCharCode() {
+    this.globalGet('pos');
+    this.i32Load8u();
+    this.incPos();
+  }
 
   setRet(val) {
     this.i32Const(val);
@@ -252,15 +267,53 @@ Assembler.ALIGN_1_BYTE = 0;
 Assembler.ALIGN_4_BYTES = 2;
 
 export class Compiler {
+  importDecls = [
+    {
+      module: 'env',
+      name: 'fillInputBuffer',
+      // (offset: i32, maxLen: i32) -> i32
+      // Returns the actual number of bytes read.
+      paramTypes: [w.valtype.i32, w.valtype.i32],
+      resultTypes: [w.valtype.i32]
+    }
+  ];
+
   constructor(grammar) {
+    const ruleEvalBaseIdx = this.importDecls.length + 1;
+
     this.grammar = grammar;
-    this.ruleIdxByName = new Map(Object.keys(grammar.rules).map((name, i) => [name, i + 2]));
+    this.ruleIdxByName = new Map(Object.keys(grammar.rules).map((name, i) => [name, i]));
     this._codegenCtx = [];
     this._labels = new Set();
   }
 
+  ruleBody(ruleName, grammar = this.grammar) {
+    if (ruleName in grammar.rules) {
+      return grammar.rules[ruleName].body;
+    }
+    if (grammar.superGrammar) {
+      return this.ruleBody(ruleName, grammar.superGrammar);
+    }
+    throw new Error(
+      `Rule '${ruleName}' not found in this grammar or any of its supergrammars`
+    );
+  }
+
+  ruleEvalFuncIdx(name) {
+    // If the rule is not defined in this grammar, but it's defined in a
+    // supergrammar, lazily add it to the map.
+    if (!this.ruleIdxByName.has(name)) {
+      if (name in this.grammar.superGrammar.rules) {
+        this.ruleIdxByName.set(name, this.ruleIdxByName.size);
+      } else {
+        throw new Error(`Unknown rule: ${name}`);
+      }
+    }
+    return w.funcidx(this.ruleIdxByName.get(name) + this.importDecls.length + 1);
+  }
+
   _enter(pexpr) {
-    const {startIdx} = pexpr.source;
+    const startIdx = pexpr.source ? pexpr.source.startIdx : -1;
     this._codegenCtx.push(`${pexpr.constructor.name}@${startIdx}`);
   }
 
@@ -272,30 +325,21 @@ export class Compiler {
     const asm = (this.asm = new Assembler());
     asm.addGlobal('pos', w.valtype.i32);
     asm.addGlobal('origPosSp', w.valtype.i32);
-
-    const importDecls = [
-      {
-        module: 'env',
-        name: 'fillInputBuffer',
-        // (offset: i32, maxLen: i32) -> i32
-        // Returns the actual number of bytes read.
-        paramTypes: [w.valtype.i32, w.valtype.i32],
-        resultTypes: [w.valtype.i32]
-      }
-    ];
-    return this.buildModule(importDecls, this.functionDecls(importDecls.length));
+    return this.buildModule(this.functionDecls());
   }
 
-  compileRule(name, info) {
+  compileRule(name, ruleBody) {
     this.asm.addFunction(`$${name}`, [], [w.valtype.i32], () => {
       this.asm.addLocal('ret', w.valtype.i32);
-      this.emitPExpr(info.body);
+      this.asm.addLocal('tmp', w.valtype.i32);
+      this.emitPExpr(ruleBody);
       this.asm.emit(instr.local.get, this.asm.localidx('ret'));
     });
     return this.asm._functionDecls.at(-1);
   }
 
-  buildModule(importDecls, functionDecls) {
+  buildModule(functionDecls) {
+    const {importDecls} = this;
     const types = [...importDecls, ...functionDecls].map(f =>
       w.functype(f.paramTypes, f.resultTypes)
     );
@@ -383,17 +427,24 @@ export class Compiler {
     return debugDecls;
   }
 
-  functionDecls(startIdx) {
+  functionDecls() {
+    const startIdx = this.importDecls.length;
     const setInputLen = () => [instr.local.set, w.localidx(0)];
     const getInputLen = () => [instr.local.get, w.localidx(0)];
     const getCurrPos = () => [instr.global.get, w.globalidx(0)];
     const resetCurrPos = () => [[instr.i32.const, w.i32(0)], instr.global.set, w.globalidx(0)];
 
-    const ruleDecls = Object.entries(this.grammar.rules).map(([name, info]) =>
-      this.compileRule(name, info)
-    );
+    // This is a bit messy. By default, we include all the rules in the
+    // grammar itself, but only inherited rules if they are referenced.
+    // So, `ruleIdxByName` can grow while we're iterating (as we reference
+    // inherited rules for the first time).
+    const ruleDecls = [];
+    for (let i = 0; i < this.ruleIdxByName.size; i++) {
+      const name = [...this.ruleIdxByName.keys()][i];
+      ruleDecls.push(this.compileRule(name, this.ruleBody(name)));
+    }
+
     const debugDecls = this.rewriteDebugLabels(ruleDecls, startIdx + ruleDecls.length + 1);
-    const startRuleIdx = this.ruleIdxByName.get(this.grammar.defaultStartRule);
 
     return [
       {
@@ -411,7 +462,7 @@ export class Compiler {
           [instr.call, /* fillInputBuffer */ w.funcidx(0)],
           setInputLen(),
 
-          [instr.call, w.funcidx(startRuleIdx)],
+          [instr.call, this.ruleEvalFuncIdx(this.grammar.defaultStartRule)],
 
           [instr.if, w.blocktype.i32],
           // if match succeeded, return currPos == inputLen
@@ -438,16 +489,28 @@ export class Compiler {
     // - it makes sure that the generated code doesn't have stack effects.
     asm.emit(`BEGIN ${this._codegenCtx.at(-1)}`);
     asm.block(w.blocktype.empty, () => {
+      if (exp === pexprs.any) {
+        this.emitAny();
+        return;
+      } else if (exp === pexprs.end) {
+        this.emitEnd();
+        return;
+      }
+
       // prettier-ignore
       switch (exp.constructor) {
         case pexprs.Alt: this.emitAlt(exp); break;
         case pexprs.Apply: this.emitApply(exp); break;
-        case pexprs.Lookahead: this.emitLookahead(exp); break;
+        case pexprs.Extend: this.emitExtend(exp); break;
+        case pexprs.Lookahead: this.emitLookahead(exp, true); break;
+        case pexprs.Not: this.emitLookahead(exp, false); break;
         case pexprs.Seq: this.emitSeq(exp); break;
         case pexprs.Star: this.emitStar(exp); break;
+        case pexprs.Opt: this.emitOpt(exp); break;
+        case pexprs.Range: this.emitRange(exp); break;
         case pexprs.Plus: this.emitPlus(exp); break;
         case pexprs.Terminal: this.emitTerminal(exp); break;
-        case pexprs.Opt: this.emitOpt(exp); break;
+        case pexprs.UnicodeChar: this.emitFail(); break; // TODO: Handle this properly
         default:
           throw new Error(`not handled: ${exp.constructor.name}`);
       }
@@ -469,20 +532,43 @@ export class Compiler {
     asm.popOrigPos();
   }
 
+  emitAny() {
+    const {asm} = this;
+    asm.i32Const(0xff);
+    asm.globalGet('pos');
+    asm.i32Load8u();
+    asm.i32Ne();
+    asm.globalSet('pos');
+    asm.incPos();
+  }
+
   emitApply(exp) {
     const {asm} = this;
-    const idx = checkNotNull(
-      this.ruleIdxByName.get(exp.ruleName),
-      `Unknown rule: ${exp.ruleName}`
-    );
-    asm.emit(instr.call, w.funcidx(idx));
+    asm.emit(instr.call, this.ruleEvalFuncIdx(exp.ruleName));
     asm.localSet('ret');
   }
 
-  emitLookahead({expr}) {
+  emitExtend(exp) {
+    this.emitAlt({
+      terms: [exp.body, exp.superGrammar.rules[exp.name].body]
+    });
+  }
+
+  emitFail() {
+    const {asm} = this;
+    asm.i32Const(0);
+    asm.localSet('ret');
+  }
+
+  emitLookahead({expr}, shouldMatch = true) {
     const {asm} = this;
     asm.pushOrigPos();
     this.emitPExpr(expr);
+    if (!shouldMatch) {
+      asm.localGet('ret');
+      asm.emit(instr.i32.eqz);
+      asm.localSet('ret');
+    }
     asm.restoreOrigPos();
   }
 
@@ -505,6 +591,31 @@ export class Compiler {
     asm.emit(instr.i32.eqz);
     asm.condBreak(0);
     this.emitStar(plusExp);
+  }
+
+  emitRange({from, to}) {
+    assert(from.length === 1 && to.length === 1);
+
+    const lo = from.charCodeAt(0);
+    const hi = to.charCodeAt(0);
+
+    // TODO: Do we disallow 0xff in the range?
+    const {asm} = this;
+    asm.nextCharCode();
+
+    // if (c > hi) return 0;
+    asm.dup();
+    asm.i32Const(hi);
+    asm.emit(instr.i32.gt_u);
+    asm.if(w.blocktype.empty, () => {
+      asm.setRet(0);
+      asm.break(1);
+    });
+
+    // return c < lo;
+    asm.i32Const(lo);
+    asm.emit(instr.i32.lt_u);
+    asm.localSet('ret');
   }
 
   emitSeq(exp) {

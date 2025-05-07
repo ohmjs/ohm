@@ -177,3 +177,66 @@ test('wasm: opt', async t => {
   t.is(matchWithInput(matcher, '2'), 1);
   t.is(matchWithInput(matcher, ''), 0);
 });
+
+test('real-world grammar', async t => {
+  const g = ohm.grammar(String.raw`
+    Test {
+      Msg = description? (Head Params spaces)
+      Msgs = Msg*
+
+      spaces := space*
+
+      description = "#" (~nl any)* nl?
+      Head = msgTarget msgName
+      msgTarget
+        = interpolation   -- interpolation
+        | templateString  -- templateString
+        | (~space any)*   -- literal
+      msgName
+        = letter (alnum | "_" | "-" | ":" | "." | "+" | "/")*  -- literal
+        | templateString                                       -- templateString
+        | interpolation                                        -- interpolation
+      Params = Param*
+      Param = key ":" Json
+      Json
+        = "{" Param ("," Param)* ","? "}"   -- object1
+        | "{" "}"                           -- object0
+        | "[" Json ("," Json)* ","? "]"     -- array1
+        | "["  "]"                          -- array0
+        | string                            -- string
+        | templateString                    -- templateString
+        | number                            -- number
+        | boolean                           -- boolean
+        | interpolation                     -- interpolation
+      ident = letter (alnum | "_")*
+      key = ident | string
+      boolean = "true" | "false"
+      number
+        = digit* "." digit+  -- fract
+        | digit+             -- whole
+      string = "\"" doubleStringCharacter* "\""
+      doubleStringCharacter
+        = "\\" any           -- escaped
+        | ~"\"" any          -- nonEscaped
+      fieldSelector
+        = "." ident        -- dot
+        | "[" ident "]"    -- bracketIdent
+        | "[" number "]"   -- bracketNumber
+        | "[" string "]"   -- bracketString
+      fieldReference = ident fieldSelector*
+      interpolation = "$" "{" fieldReference "}"
+      templateString = "\u{0060}" templateStringCharacter* "\u{0060}"
+      templateStringCharacter
+        = "\\" any           -- escaped
+        | interpolation      -- interpolation
+        | ~"\u{0060}" any    -- nonEscaped
+      comment
+        = "//" (~nl any)* nl  -- cppComment
+        | "/*" (~"*/" any)* "*/" -- cComment
+      empty =
+      space += comment
+      nl = "\n"
+    }
+  `);
+  t.notThrows(() => WasmMatcher.forGrammar(g));
+});
