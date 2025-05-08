@@ -56,10 +56,20 @@ export class Assembler {
     this._locals = undefined;
   }
 
-  addGlobal(name, type) {
+  doEmit(thunk) {
+    const oldCode = this._code;
+    this._code = [];
+    thunk();
+    const body = [...this._code, instr.end];
+    this._code = oldCode;
+    return body;
+  }
+
+  addGlobal(name, type, mut, initThunk) {
     assert(!this._globals.has(name), `Global '${name}' already exists`);
     const idx = this._globals.size;
-    this._globals.set(name, idx);
+    const initExpr = this.doEmit(initThunk);
+    this._globals.set(name, {idx, type, mut, initExpr});
     return idx;
   }
 
@@ -88,7 +98,8 @@ export class Assembler {
   // Pure codegen helpers (used to generate the function bodies).
 
   globalidx(name) {
-    return checkNotNull(this._globals.get(name), `Unknown global: ${name}`);
+    const {idx} = checkNotNull(this._globals.get(name), `Unknown global: ${name}`);
+    return idx;
   }
 
   localidx(name) {
@@ -323,8 +334,9 @@ export class Compiler {
 
   compile() {
     const asm = (this.asm = new Assembler());
-    asm.addGlobal('pos', w.valtype.i32);
-    asm.addGlobal('origPosSp', w.valtype.i32);
+    asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('origPosSp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('cst', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     return this.buildModule(this.functionDecls());
   }
 
@@ -343,6 +355,7 @@ export class Compiler {
     const types = [...importDecls, ...functionDecls].map(f =>
       w.functype(f.paramTypes, f.resultTypes)
     );
+    const globals = [];
     const imports = importDecls.map((f, i) =>
       w.import_(f.module, f.name, w.importdesc.func(i))
     );
@@ -353,9 +366,12 @@ export class Compiler {
     );
     exports.push(w.export_('memory', w.exportdesc.mem(0)));
 
-    // Export all of the globals so they get a name for debugging.
-    // TODO: Handle this instead via the name section.
-    for (const name of this.asm._globals.keys()) {
+    // Process globals.
+    for (const [name, {type, mut, initExpr}] of this.asm._globals.entries()) {
+      globals.push(w.global(w.globaltype(type, mut), initExpr));
+
+      // Export all of the globals so they get a name for debugging.
+      // TODO: Handle this instead via the name section.
       exports.push(w.export_(name, [0x03, this.asm.globalidx(name)]));
     }
 
@@ -364,16 +380,7 @@ export class Compiler {
       w.importsec(imports),
       w.funcsec(funcs),
       w.memsec([w.mem(w.memtype(w.limits.min(1)))]),
-      w.globalsec([
-        // pos
-        w.global(w.globaltype(w.valtype.i32, w.mut.var), [
-          [instr.i32.const, w.i32(0), instr.end]
-        ]),
-        // origPosSp
-        w.global(w.globaltype(w.valtype.i32, w.mut.var), [
-          [instr.i32.const, w.i32(0), instr.end]
-        ])
-      ]),
+      w.globalsec(globals),
       w.exportsec(exports),
       w.codesec(codes)
     ]);
@@ -427,12 +434,37 @@ export class Compiler {
     return debugDecls;
   }
 
-  functionDecls() {
-    const startIdx = this.importDecls.length;
-    const setInputLen = () => [instr.local.set, w.localidx(0)];
+  emitMatchBody() {
+    const {asm} = this;
     const getInputLen = () => [instr.local.get, w.localidx(0)];
     const getCurrPos = () => [instr.global.get, w.globalidx(0)];
-    const resetCurrPos = () => [[instr.i32.const, w.i32(0)], instr.global.set, w.globalidx(0)];
+
+    asm.i32Const(0);
+    asm.globalSet('pos');
+
+    asm.i32Const(64 * 1024);
+    asm.globalSet('origPosSp');
+
+    asm.i32Const(0); // offset
+    asm.i32Const(64 * 1024); // maxLen
+    asm.emit(instr.call, w.funcidx(0));
+
+    asm.emit(instr.local.set, w.localidx(0)); // set inputLen
+    asm.emit(instr.call, this.ruleEvalFuncIdx(this.grammar.defaultStartRule));
+    asm.ifElse(
+      w.blocktype.i32,
+      () => {
+        // match succeeded -- return currPos == inputLen
+        asm.emit(getInputLen(), getCurrPos(), instr.i32.eq);
+      },
+      () => {
+        asm.i32Const(0);
+      }
+    );
+  }
+
+  functionDecls() {
+    const startIdx = this.importDecls.length;
 
     // This is a bit messy. By default, we include all the rules in the
     // grammar itself, but only inherited rules if they are referenced.
@@ -452,29 +484,7 @@ export class Compiler {
         paramTypes: [],
         resultTypes: [w.valtype.i32],
         locals: [w.locals(1, w.valtype.i32)],
-        body: [
-          resetCurrPos(),
-          [instr.i32.const, w.i32(64 * 1024)],
-          [instr.global.set, w.globalidx(1)], // Reset ORIG_POS_SP
-
-          [instr.i32.const, w.i32(0)], // offset
-          [instr.i32.const, w.i32(64 * 1024)], // maxLen
-          [instr.call, /* fillInputBuffer */ w.funcidx(0)],
-          setInputLen(),
-
-          [instr.call, this.ruleEvalFuncIdx(this.grammar.defaultStartRule)],
-
-          [instr.if, w.blocktype.i32],
-          // if match succeeded, return currPos == inputLen
-          getInputLen(),
-          getCurrPos(),
-          instr.i32.eq,
-          instr.else,
-          [instr.i32.const, w.i32(0)], // match failed
-          instr.end, // if
-
-          instr.end
-        ]
+        body: this.asm.doEmit(() => this.emitMatchBody())
       },
       ...ruleDecls,
       ...debugDecls
