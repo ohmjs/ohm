@@ -171,9 +171,6 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: ^13.1.3
         version: 13.3.0(rollup@2.79.2)
-      '@wasmgroundup/emit':
-        specifier: ^1.0.2
-        version: 1.0.2
       ava:
         specifier: ^6.0.0
         version: 6.2.0(rollup@2.79.2)
@@ -222,9 +219,6 @@ importers:
       uvu:
         specifier: ^0.5.6
         version: 0.5.6
-      wabt:
-        specifier: 1.0.37-nightly.20250428
-        version: 1.0.37-nightly.20250428
       walk-sync:
         specifier: ^2.2.0
         version: 2.2.0
