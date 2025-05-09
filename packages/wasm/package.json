@@ -1,0 +1,24 @@
+{
+  "name": "wasm",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "ava test"
+  },
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.10.0",
+  "devDependencies": {
+    "ava": "^6.2.0",
+    "wabt": "1.0.37-nightly.20250428"
+  },
+  "peerDependencies": {
+    "ohm-js": "^17.1.0"
+  },
+  "dependencies": {
+    "@wasmgroundup/emit": "^1.0.2"
+  }
+}
