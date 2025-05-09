@@ -69,7 +69,7 @@ export class Assembler {
     assert(!this._globals.has(name), `Global '${name}' already exists`);
     const idx = this._globals.size;
     const initExpr = this.doEmit(initThunk);
-    this._globals.set(name, {idx, type, mut, initExpr});
+    this._globals.set(name, { idx, type, mut, initExpr });
     return idx;
   }
 
@@ -98,7 +98,7 @@ export class Assembler {
   // Pure codegen helpers (used to generate the function bodies).
 
   globalidx(name) {
-    const {idx} = checkNotNull(this._globals.get(name), `Unknown global: ${name}`);
+    const { idx } = checkNotNull(this._globals.get(name), `Unknown global: ${name}`);
     return idx;
   }
 
@@ -135,7 +135,6 @@ export class Assembler {
     this._blockStack.push('if');
     thenThunk();
     if (elseThunk) {
-      console.log('emitting else');
       this.emit(w.instr.else);
       elseThunk();
     }
@@ -167,6 +166,7 @@ export class Assembler {
 
   i32Ne = () => this.emit(instr.i32.ne);
 
+  // Store [addr:i32, val:i32] -> []
   i32Store(offset = 0) {
     this.emit(instr.i32.store, w.memarg(Assembler.ALIGN_4_BYTES, offset));
   }
@@ -202,7 +202,7 @@ export class Assembler {
   }
 
   // Conditional break -- emits a `br_if` for the given depth.
-  condBreak(depth) {
+  brIf(depth) {
     const what = this._blockStack.at(-(depth + 1));
     assert(what === 'block' || what === 'if', 'Invalid condBreak');
     this.emit(instr.br_if, w.labelidx(depth));
@@ -215,6 +215,16 @@ export class Assembler {
   }
 
   // "Macros" -- codegen helpers specific to Ohm.
+
+  i32Inc() {
+    this.i32Const(1);
+    this.i32Add();
+  }
+
+  i32Dec() {
+    this.i32Const(1);
+    this.i32Sub();
+  }
 
   dup() {
     this.localTee('tmp');
@@ -232,50 +242,90 @@ export class Assembler {
     this.localSet('ret');
   }
 
-  // Save the current input position.
-  pushOrigPos(valueFrag) {
-    // origPosSp -= 4
-    this.globalGet('origPosSp');
-    this.i32Const(4);
+  pushStackFrame() {
+    // sp -= 4
+    this.globalGet('sp');
+    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
     this.i32Sub();
-    this.globalSet('origPosSp');
+    this.globalSet('sp');
+  }
 
-    // stack[origPosSp] = pos
-    this.globalGet('origPosSp');
+  popStackFrame() {
+    this.globalGet('sp');
+    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
+    this.i32Add();
+    this.globalSet('sp');
+  }
+
+  // Save the current input position.
+  saveOrigPos() {
+    // stack[sp] = pos
+    this.globalGet('sp');
     this.globalGet('pos');
     this.i32Store();
   }
 
-  popOrigPos() {
-    this.globalGet('origPosSp');
-    this.i32Const(4);
-    this.i32Add();
-    this.globalSet('origPosSp');
-  }
-
   // Load the saved input position onto the stack.
   getOrigPos() {
-    this.globalGet('origPosSp');
+    this.globalGet('sp');
     this.i32Load();
   }
 
-  restoreOrigPos() {
+  restorePos() {
     this.getOrigPos();
     this.globalSet('pos');
-    this.popOrigPos();
   }
 
   // Increment the current input position by 1.
   // [i32, i32] -> [i32]
   incPos() {
     this.globalGet('pos');
-    this.i32Const(1);
-    this.i32Add();
+    this.i32Inc();
     this.globalSet('pos');
+  }
+
+  // Allocate a new CST node.
+  // [] -> [i32]
+  cstNodeAlloc() {
+    this.globalGet('cst');
+    this.dup();
+    this.i32Const(8);
+    this.i32Add();
+    this.globalSet('cst');
+  }
+
+  // [] -> []
+  cstNodeFree() {
+    // This is tricky -- in the typical case, if we are failing then our children failed too.
+    // But not always. Lookahead, are there others?
+    // We could pass something in to tell it to invert the result (or does the parent do it?)
+    this.globalGet('cst');
+    this.i32Const(8);
+    this.i32Sub();
+    this.globalSet('cst');
+  }
+
+  // Set the 'depth' field of a given CST node.
+  // [val:i32, addr:i32] -> []
+  cstNodeSetDepth() {
+    this.i32Store(0);
+  }
+
+  // Get the 'depth' field of a given CST node.
+  // [addr:i32] -> [i32]
+  cstNodeGetDepth() {
+    this.i32Load(0);
+  }
+
+  // Set the 'matchLength' field of a given CST node.
+  // [val:i32, addr:i32] -> []
+  cstNodeSetMatchLength() {
+    this.i32Store(4);
   }
 }
 Assembler.ALIGN_1_BYTE = 0;
 Assembler.ALIGN_4_BYTES = 2;
+Assembler.STACK_FRAME_SIZE_BYTES = 8;
 
 export class Compiler {
   importDecls = [
@@ -294,7 +344,6 @@ export class Compiler {
 
     this.grammar = grammar;
     this.ruleIdxByName = new Map(Object.keys(grammar.rules).map((name, i) => [name, i]));
-    this._codegenCtx = [];
     this._labels = new Set();
   }
 
@@ -323,19 +372,10 @@ export class Compiler {
     return w.funcidx(this.ruleIdxByName.get(name) + this.importDecls.length + 1);
   }
 
-  _enter(pexpr) {
-    const startIdx = pexpr.source ? pexpr.source.startIdx : -1;
-    this._codegenCtx.push(`${pexpr.constructor.name}@${startIdx}`);
-  }
-
-  _exit() {
-    this._codegenCtx.pop();
-  }
-
   compile() {
     const asm = (this.asm = new Assembler());
     asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('origPosSp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('cst', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     return this.buildModule(this.functionDecls());
   }
@@ -344,6 +384,7 @@ export class Compiler {
     this.asm.addFunction(`$${name}`, [], [w.valtype.i32], () => {
       this.asm.addLocal('ret', w.valtype.i32);
       this.asm.addLocal('tmp', w.valtype.i32);
+      this.asm.addLocal('depth', w.valtype.i32);
       this.emitPExpr(ruleBody);
       this.asm.emit(instr.local.get, this.asm.localidx('ret'));
     });
@@ -375,11 +416,16 @@ export class Compiler {
       exports.push(w.export_(name, [0x03, this.asm.globalidx(name)]));
     }
 
+    // Memory layout:
+    // - First page is for input buffer (growing upwards) and origPos stack
+    //   (growing downwards).
+    // - Second page is for CST.
+
     const mod = w.module([
       w.typesec(types),
       w.importsec(imports),
       w.funcsec(funcs),
-      w.memsec([w.mem(w.memtype(w.limits.min(1)))]),
+      w.memsec([w.mem(w.memtype(w.limits.min(2)))]),
       w.globalsec(globals),
       w.exportsec(exports),
       w.codesec(codes)
@@ -443,7 +489,10 @@ export class Compiler {
     asm.globalSet('pos');
 
     asm.i32Const(64 * 1024);
-    asm.globalSet('origPosSp');
+    asm.globalSet('sp');
+
+    asm.i32Const(64 * 1024);
+    asm.globalSet('cst');
 
     asm.i32Const(0); // offset
     asm.i32Const(64 * 1024); // maxLen
@@ -491,22 +540,24 @@ export class Compiler {
     ];
   }
 
-  emitPExpr(exp) {
+  // Contract: emitPExpr always means we're going deeper in the PExpr tree.
+  emitPExpr(exp, { skipBacktracking } = {}) {
     const {asm} = this;
-    this._enter(exp);
+    const isLookahead = exp.constructor === pexprs.Lookahead || exp.constructor === pexprs.Not;
+    const emitBacktracking = !skipBacktracking && !isLookahead;
+
+    const debugLabel = `${exp.constructor.name}@${exp.source ? exp.source.startIdx : -1}`;
+
+    asm.emit(`BEGIN ${debugLabel}`);
+
+    // *Always* save the original position, even if we're not backtracking.
+    asm.pushStackFrame();
+    asm.saveOrigPos();
+
     // Wrap the body in a block, which is useful for two reasons:
     // - it allows early returns.
     // - it makes sure that the generated code doesn't have stack effects.
-    asm.emit(`BEGIN ${this._codegenCtx.at(-1)}`);
     asm.block(w.blocktype.empty, () => {
-      if (exp === pexprs.any) {
-        this.emitAny();
-        return;
-      } else if (exp === pexprs.end) {
-        this.emitEnd();
-        return;
-      }
-
       // prettier-ignore
       switch (exp.constructor) {
         case pexprs.Alt: this.emitAlt(exp); break;
@@ -522,24 +573,36 @@ export class Compiler {
         case pexprs.Terminal: this.emitTerminal(exp); break;
         case pexprs.UnicodeChar: this.emitFail(); break; // TODO: Handle this properly
         default:
-          throw new Error(`not handled: ${exp.constructor.name}`);
+          if (exp === pexprs.any) {
+            this.emitAny();
+          } else if (exp === pexprs.end) {
+            this.emitEnd();
+          } else {
+            throw new Error(`not handled: ${exp.constructor.name}`);
+          }
       }
     });
-    asm.emit(`END ${this._codegenCtx.at(-1)}`);
-    this._exit(this);
+
+    // If we succeeded, write the CST entry.
+    asm.localGet('ret');
+
+    asm.ifElse(w.blocktype.empty, () => {
+      // TODO: Write matchLength
+    }, () => {
+      if (emitBacktracking) asm.restorePos();
+    });
+    if (isLookahead) asm.restorePos();
+    asm.popStackFrame();
+    asm.emit(`END ${debugLabel}`);
   }
 
   emitAlt(exp) {
     const {asm} = this;
-    asm.pushOrigPos();
     for (const term of exp.terms) {
       this.emitPExpr(term);
       asm.localGet('ret');
-      asm.condBreak(0);
-      asm.getOrigPos();
-      asm.globalSet('pos');
+      asm.brIf(0);
     }
-    asm.popOrigPos();
   }
 
   emitAny() {
@@ -580,26 +643,18 @@ export class Compiler {
 
   emitLookahead({expr}, shouldMatch = true) {
     const {asm} = this;
-    asm.pushOrigPos();
-    this.emitPExpr(expr);
+    this.emitPExpr(expr, { skipBacktracking: true });
     if (!shouldMatch) {
       asm.localGet('ret');
       asm.emit(instr.i32.eqz);
       asm.localSet('ret');
     }
-    asm.restoreOrigPos();
   }
 
   emitOpt({expr}) {
     const {asm} = this;
-    asm.pushOrigPos();
     this.emitPExpr(expr);
-    asm.getOrigPos();
-    asm.popOrigPos();
-    asm.localGet('ret');
     asm.setRet(1); // Always succeed.
-    asm.brIf(0); // Don't restore pos if expr matched
-    asm.globalSet('pos');
   }
 
   emitPlus(plusExp) {
@@ -607,7 +662,7 @@ export class Compiler {
     this.emitPExpr(plusExp.expr);
     asm.localGet('ret');
     asm.emit(instr.i32.eqz);
-    asm.condBreak(0);
+    asm.brIf(0);
     this.emitStar(plusExp);
   }
 
@@ -642,7 +697,7 @@ export class Compiler {
       this.emitPExpr(factor);
       asm.localGet('ret');
       asm.emit(instr.i32.eqz);
-      asm.condBreak(0);
+      asm.brIf(0);
     }
   }
 
@@ -650,17 +705,13 @@ export class Compiler {
     const {asm} = this;
     asm.block(w.blocktype.empty, () => {
       asm.loop(w.blocktype.empty, () => {
-        asm.pushOrigPos();
         this.emitPExpr(expr);
         asm.localGet('ret');
         asm.emit(instr.i32.eqz);
-        asm.condBreak(1);
-        asm.popOrigPos();
+        asm.brIf(1);
         asm.continue(0);
       });
     });
-    // pos = origPos
-    asm.restoreOrigPos();
     asm.setRet(1);
   }
 
