@@ -1,7 +1,8 @@
 import test from 'ava';
+import * as ohm from 'ohm-js';
+import {performance} from 'perf_hooks';
 
-import * as ohm from '../index.mjs';
-import {WasmMatcher} from '../src/wasm.js';
+import {WasmMatcher} from '../src/index.js';
 
 const matchWithInput = (m, str) => (m.setInput(str), m.match());
 
@@ -22,6 +23,7 @@ function rawCst(matcher) {
   return ans;
 }
 
+// eslint-disable-next-line no-unused-vars
 function cstToString(matcher, input) {
   const top = matcher._instance.exports.cst.value;
 
@@ -66,7 +68,7 @@ test('basic cst', async t => {
     [0, 2],
     [1, 1],
     [1, 1],
-    [2, 1]
+    [2, 1],
   ]);
 
   matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" | b\nb = "b" }'));
@@ -74,7 +76,7 @@ test('basic cst', async t => {
   t.is(matchWithInput(matcher, input), 1);
   t.deepEqual(rawCst(matcher), [
     [0, 1],
-    [1, 1]
+    [1, 1],
   ]);
 
   input = 'b';
@@ -82,7 +84,7 @@ test('basic cst', async t => {
   t.deepEqual(rawCst(matcher), [
     [0, 1],
     [1, 1],
-    [2, 1]
+    [2, 1],
   ]);
 });
 
@@ -93,7 +95,7 @@ test('cst with lookahead', async t => {
   t.deepEqual(rawCst(matcher), [
     [0, 1],
     [1, 1],
-    [2, 1]
+    [2, 1],
   ]);
 
   matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = (~space any)*}'));
@@ -109,7 +111,7 @@ test('cst with lookahead', async t => {
     [3, 1], //       - (child)
     [1, 1], //   - seq
     [2, 1], //     - any
-    [3, 1] //       - (child)
+    [3, 1], //       - (child)
   ]);
 
   matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = (~space any)+ spaces any+}'));
@@ -135,7 +137,7 @@ test('cst with lookahead', async t => {
     [2, 1], //     - any
     [3, 1], //       - (child)
     [2, 1], //     - any
-    [3, 1] //       - (child)
+    [3, 1], //       - (child)
   ]);
 });
 

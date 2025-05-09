@@ -1,11 +1,11 @@
 /* global TextEncoder, WebAssembly */
 
 import * as w from '@wasmgroundup/emit';
-import wabt from 'wabt';
-import fs from 'node:fs';
+// import wabt from 'wabt';
+// import fs from 'node:fs';
 
 const {instr} = w;
-import * as pexprs from './pexprs-main.js';
+import {pexprs} from 'ohm-js';
 
 function assert(cond, msg) {
   if (!cond) {
@@ -69,7 +69,7 @@ export class Assembler {
     assert(!this._globals.has(name), `Global '${name}' already exists`);
     const idx = this._globals.size;
     const initExpr = this.doEmit(initThunk);
-    this._globals.set(name, { idx, type, mut, initExpr });
+    this._globals.set(name, {idx, type, mut, initExpr});
     return idx;
   }
 
@@ -89,7 +89,7 @@ export class Assembler {
       paramTypes,
       resultTypes,
       locals: [w.locals(this._locals.size, w.valtype.i32)], // TODO: Support other types?
-      body: [...this._code, instr.end]
+      body: [...this._code, instr.end],
     });
     this._code = [];
     this._locals = undefined;
@@ -98,7 +98,7 @@ export class Assembler {
   // Pure codegen helpers (used to generate the function bodies).
 
   globalidx(name) {
-    const { idx } = checkNotNull(this._globals.get(name), `Unknown global: ${name}`);
+    const {idx} = checkNotNull(this._globals.get(name), `Unknown global: ${name}`);
     return idx;
   }
 
@@ -146,11 +146,9 @@ export class Assembler {
     this.emit(instr.br, w.labelidx(depth));
   }
 
-  brIf(depth) {
-    this.emit(instr.br_if, w.labelidx(depth));
+  i32Add() {
+    this.emit(instr.i32.add);
   }
-
-  i32Add = () => this.emit(instr.i32.add);
 
   i32Const(value) {
     this.emit(instr.i32.const, w.i32(value));
@@ -164,7 +162,9 @@ export class Assembler {
     this.emit(instr.i32.load8_u, w.memarg(Assembler.ALIGN_1_BYTE, offset));
   }
 
-  i32Ne = () => this.emit(instr.i32.ne);
+  i32Ne() {
+    this.emit(instr.i32.ne);
+  }
 
   // Store [addr:i32, val:i32] -> []
   i32Store(offset = 0) {
@@ -202,7 +202,7 @@ export class Assembler {
   }
 
   // Conditional break -- emits a `br_if` for the given depth.
-  brIf(depth) {
+  condBreak(depth) {
     const what = this._blockStack.at(-(depth + 1));
     assert(what === 'block' || what === 'if', 'Invalid condBreak');
     this.emit(instr.br_if, w.labelidx(depth));
@@ -277,7 +277,7 @@ export class Assembler {
   }
 
   saveCst() {
-    this.globalGet('sp')
+    this.globalGet('sp');
     this.globalGet('cst');
     this.i32Store(4);
   }
@@ -346,20 +346,17 @@ Assembler.ALIGN_4_BYTES = 2;
 Assembler.STACK_FRAME_SIZE_BYTES = 8;
 
 export class Compiler {
-  importDecls = [
-    {
-      module: 'env',
-      name: 'fillInputBuffer',
-      // (offset: i32, maxLen: i32) -> i32
-      // Returns the actual number of bytes read.
-      paramTypes: [w.valtype.i32, w.valtype.i32],
-      resultTypes: [w.valtype.i32]
-    }
-  ];
-
   constructor(grammar) {
-    const ruleEvalBaseIdx = this.importDecls.length + 1;
-
+    this.importDecls = [
+      {
+        module: 'env',
+        name: 'fillInputBuffer',
+        // (offset: i32, maxLen: i32) -> i32
+        // Returns the actual number of bytes read.
+        paramTypes: [w.valtype.i32, w.valtype.i32],
+        resultTypes: [w.valtype.i32],
+      },
+    ];
     this.grammar = grammar;
     this.ruleIdxByName = new Map(Object.keys(grammar.rules).map((name, i) => [name, i]));
     this._labels = new Set();
@@ -373,7 +370,7 @@ export class Compiler {
       return this.ruleBody(ruleName, grammar.superGrammar);
     }
     throw new Error(
-      `Rule '${ruleName}' not found in this grammar or any of its supergrammars`
+        `Rule '${ruleName}' not found in this grammar or any of its supergrammars`,
     );
   }
 
@@ -412,16 +409,16 @@ export class Compiler {
   buildModule(functionDecls) {
     const {importDecls} = this;
     const types = [...importDecls, ...functionDecls].map(f =>
-      w.functype(f.paramTypes, f.resultTypes)
+      w.functype(f.paramTypes, f.resultTypes),
     );
     const globals = [];
     const imports = importDecls.map((f, i) =>
-      w.import_(f.module, f.name, w.importdesc.func(i))
+      w.import_(f.module, f.name, w.importdesc.func(i)),
     );
     const funcs = functionDecls.map((f, i) => w.typeidx(i + importDecls.length));
     const codes = functionDecls.map(f => w.code(w.func(f.locals, f.body)));
     const exports = functionDecls.map((f, i) =>
-      w.export_(f.name, w.exportdesc.func(i + importDecls.length))
+      w.export_(f.name, w.exportdesc.func(i + importDecls.length)),
     );
     exports.push(w.export_('memory', w.exportdesc.mem(0)));
 
@@ -446,7 +443,7 @@ export class Compiler {
       w.memsec([w.mem(w.memtype(w.limits.min(8)))]),
       w.globalsec(globals),
       w.exportsec(exports),
-      w.codesec(codes)
+      w.codesec(codes),
     ]);
     const bytes = Uint8Array.from(mod.flat(Infinity));
 
@@ -458,9 +455,9 @@ export class Compiler {
     // })();
 
     // DEBUG
-    const filename = `out-${new Date().getTime()}.wasm`;
-    fs.writeFileSync(`/Users/pdubroy/${filename}`, bytes);
-    console.log(` wrote  ${filename}`);
+    // const filename = `out-${new Date().getTime()}.wasm`;
+    // fs.writeFileSync(`/Users/pdubroy/${filename}`, bytes);
+    // console.log(` wrote  ${filename}`);
     // END DEBUG
 
     return bytes;
@@ -489,7 +486,7 @@ export class Compiler {
           paramTypes: [],
           resultTypes: [],
           locals: [],
-          body: [instr.end]
+          body: [instr.end],
         });
         // …and replace the string with a call to that function.
         return [instr.call, w.funcidx(nextFuncIdx++)].flat(Infinity);
@@ -519,14 +516,14 @@ export class Compiler {
     asm.emit(instr.local.set, w.localidx(0)); // set inputLen
     asm.emit(instr.call, this.ruleEvalFuncIdx(this.grammar.defaultStartRule));
     asm.ifElse(
-      w.blocktype.i32,
-      () => {
+        w.blocktype.i32,
+        () => {
         // match succeeded -- return currPos == inputLen
-        asm.emit(getInputLen(), getCurrPos(), instr.i32.eq);
-      },
-      () => {
-        asm.i32Const(0);
-      }
+          asm.emit(getInputLen(), getCurrPos(), instr.i32.eq);
+        },
+        () => {
+          asm.i32Const(0);
+        },
     );
   }
 
@@ -551,15 +548,15 @@ export class Compiler {
         paramTypes: [],
         resultTypes: [w.valtype.i32],
         locals: [w.locals(1, w.valtype.i32)],
-        body: this.asm.doEmit(() => this.emitMatchBody())
+        body: this.asm.doEmit(() => this.emitMatchBody()),
       },
       ...ruleDecls,
-      ...debugDecls
+      ...debugDecls,
     ];
   }
 
   // Contract: emitPExpr always means we're going deeper in the PExpr tree.
-  emitPExpr(exp, { skipBacktracking } = {}) {
+  emitPExpr(exp, {skipBacktracking} = {}) {
     const {asm} = this;
     const isLookahead = exp.constructor === pexprs.Lookahead || exp.constructor === pexprs.Not;
     const emitBacktracking = !skipBacktracking && !isLookahead;
@@ -610,17 +607,21 @@ export class Compiler {
 
     // If we succeeded, write the CST entry.
     asm.localGet('ret');
-    asm.ifElse(w.blocktype.empty, () => {
-      // Set the match length.
-      asm.getSavedCst();
-      asm.globalGet('pos');
-      asm.getSavedPos();
-      asm.i32Sub();
-      asm.cstNodeSetMatchLength();
-    }, () => {
-      if (emitBacktracking) asm.restorePos();
-      asm.restoreCst();
-    });
+    asm.ifElse(
+        w.blocktype.empty,
+        () => {
+        // Set the match length.
+          asm.getSavedCst();
+          asm.globalGet('pos');
+          asm.getSavedPos();
+          asm.i32Sub();
+          asm.cstNodeSetMatchLength();
+        },
+        () => {
+          if (emitBacktracking) asm.restorePos();
+          asm.restoreCst();
+        },
+    );
     if (isLookahead) {
       asm.restorePos();
 
@@ -637,7 +638,7 @@ export class Compiler {
     for (const term of exp.terms) {
       this.emitPExpr(term);
       asm.localGet('ret');
-      asm.brIf(0);
+      asm.condBreak(0);
     }
   }
 
@@ -667,7 +668,7 @@ export class Compiler {
 
   emitExtend(exp) {
     this.emitAlt({
-      terms: [exp.body, exp.superGrammar.rules[exp.name].body]
+      terms: [exp.body, exp.superGrammar.rules[exp.name].body],
     });
   }
 
@@ -680,7 +681,7 @@ export class Compiler {
   emitLookahead({expr}, shouldMatch = true) {
     const {asm} = this;
     // TODO: Should positive lookahead record a CST?
-    this.emitPExpr(expr, { skipBacktracking: true, skipCst: true });
+    this.emitPExpr(expr, {skipBacktracking: true, skipCst: true});
     if (!shouldMatch) {
       asm.localGet('ret');
       asm.emit(instr.i32.eqz);
@@ -699,7 +700,7 @@ export class Compiler {
     this.emitPExpr(plusExp.expr);
     asm.localGet('ret');
     asm.emit(instr.i32.eqz);
-    asm.brIf(0);
+    asm.condBreak(0);
     this.emitStar(plusExp);
   }
 
@@ -734,7 +735,7 @@ export class Compiler {
       this.emitPExpr(factor);
       asm.localGet('ret');
       asm.emit(instr.i32.eqz);
-      asm.brIf(0);
+      asm.condBreak(0);
     }
   }
 
@@ -745,7 +746,7 @@ export class Compiler {
         this.emitPExpr(expr);
         asm.localGet('ret');
         asm.emit(instr.i32.eqz);
-        asm.brIf(1);
+        asm.condBreak(1);
         asm.continue(0);
       });
     });
@@ -787,15 +788,16 @@ export class WasmMatcher {
     this._input = '';
     this._pos = 0;
     this._env = {
-      fillInputBuffer: this._fillInputBuffer.bind(this)
+      fillInputBuffer: this._fillInputBuffer.bind(this),
     };
   }
 
   static async forGrammar(grammar) {
-    const bytes = await grammar.toWasm();
+    const compiler = new Compiler(grammar);
+    const bytes = compiler.compile();
     const matcher = new WasmMatcher(grammar);
     const {instance} = await WebAssembly.instantiate(bytes, {
-      env: matcher._env
+      env: matcher._env,
     });
     matcher._instance = instance;
     return matcher;

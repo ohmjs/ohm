@@ -271,6 +271,22 @@ importers:
         specifier: ^4.10.0
         version: 4.10.0(webpack@5.99.7)
 
+  packages/wasm:
+    dependencies:
+      '@wasmgroundup/emit':
+        specifier: ^1.0.2
+        version: 1.0.2
+      ohm-js:
+        specifier: ^17.1.0
+        version: link:../ohm-js
+    devDependencies:
+      ava:
+        specifier: ^6.2.0
+        version: 6.2.0(rollup@3.29.5)
+      wabt:
+        specifier: 1.0.37-nightly.20250428
+        version: 1.0.37-nightly.20250428
+
 packages:
 
   '@babel/code-frame@7.12.11':
