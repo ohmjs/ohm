@@ -258,7 +258,7 @@ export class Assembler {
   }
 
   // Save the current input position.
-  saveOrigPos() {
+  savePos() {
     // stack[sp] = pos
     this.globalGet('sp');
     this.globalGet('pos');
@@ -266,14 +266,25 @@ export class Assembler {
   }
 
   // Load the saved input position onto the stack.
-  getOrigPos() {
+  getSavedPos() {
     this.globalGet('sp');
     this.i32Load();
   }
 
   restorePos() {
-    this.getOrigPos();
+    this.getSavedPos();
     this.globalSet('pos');
+  }
+
+  saveCst() {
+    this.globalGet('sp')
+    this.globalGet('cst');
+    this.i32Store(4);
+  }
+
+  getSavedCst() {
+    this.globalGet('sp');
+    this.i32Load(4);
   }
 
   // Increment the current input position by 1.
@@ -295,14 +306,21 @@ export class Assembler {
   }
 
   // [] -> []
-  cstNodeFree() {
-    // This is tricky -- in the typical case, if we are failing then our children failed too.
-    // But not always. Lookahead, are there others?
-    // We could pass something in to tell it to invert the result (or does the parent do it?)
-    this.globalGet('cst');
-    this.i32Const(8);
-    this.i32Sub();
+  restoreCst() {
+    this.getSavedCst();
     this.globalSet('cst');
+  }
+
+  incDepth() {
+    this.globalGet('depth');
+    this.i32Inc();
+    this.globalSet('depth');
+  }
+
+  decDepth() {
+    this.globalGet('depth');
+    this.i32Dec();
+    this.globalSet('depth');
   }
 
   // Set the 'depth' field of a given CST node.
@@ -377,6 +395,7 @@ export class Compiler {
     asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('cst', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('depth', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     return this.buildModule(this.functionDecls());
   }
 
@@ -384,7 +403,6 @@ export class Compiler {
     this.asm.addFunction(`$${name}`, [], [w.valtype.i32], () => {
       this.asm.addLocal('ret', w.valtype.i32);
       this.asm.addLocal('tmp', w.valtype.i32);
-      this.asm.addLocal('depth', w.valtype.i32);
       this.emitPExpr(ruleBody);
       this.asm.emit(instr.local.get, this.asm.localidx('ret'));
     });
@@ -425,7 +443,7 @@ export class Compiler {
       w.typesec(types),
       w.importsec(imports),
       w.funcsec(funcs),
-      w.memsec([w.mem(w.memtype(w.limits.min(2)))]),
+      w.memsec([w.mem(w.memtype(w.limits.min(8)))]),
       w.globalsec(globals),
       w.exportsec(exports),
       w.codesec(codes)
@@ -552,7 +570,13 @@ export class Compiler {
 
     // *Always* save the original position, even if we're not backtracking.
     asm.pushStackFrame();
-    asm.saveOrigPos();
+    asm.savePos();
+
+    asm.saveCst();
+    asm.cstNodeAlloc();
+    asm.globalGet('depth');
+    asm.cstNodeSetDepth();
+    asm.incDepth();
 
     // Wrap the body in a block, which is useful for two reasons:
     // - it allows early returns.
@@ -582,16 +606,28 @@ export class Compiler {
           }
       }
     });
+    asm.decDepth();
 
     // If we succeeded, write the CST entry.
     asm.localGet('ret');
-
     asm.ifElse(w.blocktype.empty, () => {
-      // TODO: Write matchLength
+      // Set the match length.
+      asm.getSavedCst();
+      asm.globalGet('pos');
+      asm.getSavedPos();
+      asm.i32Sub();
+      asm.cstNodeSetMatchLength();
     }, () => {
       if (emitBacktracking) asm.restorePos();
+      asm.restoreCst();
     });
-    if (isLookahead) asm.restorePos();
+    if (isLookahead) {
+      asm.restorePos();
+
+      // TODO: Skip CST work altogether when we're inside a lookahead.
+      // (Maybe only for negative lookahead?)
+      asm.restoreCst();
+    }
     asm.popStackFrame();
     asm.emit(`END ${debugLabel}`);
   }
@@ -643,7 +679,8 @@ export class Compiler {
 
   emitLookahead({expr}, shouldMatch = true) {
     const {asm} = this;
-    this.emitPExpr(expr, { skipBacktracking: true });
+    // TODO: Should positive lookahead record a CST?
+    this.emitPExpr(expr, { skipBacktracking: true, skipCst: true });
     if (!shouldMatch) {
       asm.localGet('ret');
       asm.emit(instr.i32.eqz);

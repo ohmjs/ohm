@@ -3,10 +3,48 @@ import test from 'ava';
 import * as ohm from '../index.mjs';
 import {WasmMatcher} from '../src/wasm.js';
 
-const matchWithInput = (m, str) => {
-  m.setInput(str);
-  return m.match();
-};
+const matchWithInput = (m, str) => (m.setInput(str), m.match());
+
+const indented = (d, str) => new Array(d * 2).join(' ') + str;
+
+const BYTES_PER_CST_REC = 8;
+const CST_BASE = 64 * 1024;
+
+function rawCst(matcher) {
+  const view = new DataView(matcher._instance.exports.memory.buffer);
+  const cstTop = matcher._instance.exports.cst.value;
+  const ans = [];
+  for (let offset = CST_BASE; offset < cstTop; offset += BYTES_PER_CST_REC) {
+    const depth = view.getUint32(offset, true);
+    const matchLen = view.getUint32(offset + 4, true);
+    ans.push([depth, matchLen]);
+  }
+  return ans;
+}
+
+function cstToString(matcher, input) {
+  const top = matcher._instance.exports.cst.value;
+
+  const view = new DataView(matcher._instance.exports.memory.buffer);
+  let pos = 0;
+  const tree = [[0, -1, 0]];
+  const lines = [];
+  for (let p = CST_BASE; p < top; p += BYTES_PER_CST_REC) {
+    // const [lastDepth, lastMatchLen] = depthStack.at(-1);
+
+    const depth = view.getUint32(p, true);
+    const matchLen = view.getUint32(p + 4, true);
+
+    let popped = undefined;
+    while (depth <= tree.at(-1)[1]) {
+      popped = tree.pop();
+      pos = Math.max(pos, popped[0] + popped[2]);
+    }
+    tree.push([pos, depth, matchLen]);
+    lines.push(indented(depth, input.substring(pos, pos + matchLen)));
+  }
+  return lines.join('\n');
+}
 
 test('input in memory', async t => {
   const g = ohm.grammar('G { start = "x" }');
@@ -18,6 +56,87 @@ test('input in memory', async t => {
   t.is(view.getUint8(0), 'ohm'.charCodeAt(0));
   t.is(view.getUint8(1), 'ohm'.charCodeAt(1));
   t.is(view.getUint8(2), 'ohm'.charCodeAt(2));
+});
+
+test('basic cst', async t => {
+  let matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" b\nb = "b" }'));
+  let input = 'ab';
+  t.is(matchWithInput(matcher, input), 1);
+  t.deepEqual(rawCst(matcher), [
+    [0, 2],
+    [1, 1],
+    [1, 1],
+    [2, 1]
+  ]);
+
+  matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" | b\nb = "b" }'));
+  input = 'a';
+  t.is(matchWithInput(matcher, input), 1);
+  t.deepEqual(rawCst(matcher), [
+    [0, 1],
+    [1, 1]
+  ]);
+
+  input = 'b';
+  t.is(matchWithInput(matcher, input), 1);
+  t.deepEqual(rawCst(matcher), [
+    [0, 1],
+    [1, 1],
+    [2, 1]
+  ]);
+});
+
+test('cst with lookahead', async t => {
+  let matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = ~space any}'));
+  let input = 'a';
+  t.is(matchWithInput(matcher, input), 1);
+  t.deepEqual(rawCst(matcher), [
+    [0, 1],
+    [1, 1],
+    [2, 1]
+  ]);
+
+  matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = (~space any)*}'));
+  input = 'abc';
+  t.is(matchWithInput(matcher, input), 1);
+  t.deepEqual(rawCst(matcher), [
+    [0, 3], // - rep
+    [1, 1], //   - seq
+    [2, 1], //     - any
+    [3, 1], //       - (child)
+    [1, 1], //   - seq
+    [2, 1], //     - any
+    [3, 1], //       - (child)
+    [1, 1], //   - seq
+    [2, 1], //     - any
+    [3, 1] //       - (child)
+  ]);
+
+  matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = (~space any)+ spaces any+}'));
+  input = '/ab xy';
+  t.is(matchWithInput(matcher, input), 1);
+  t.deepEqual(rawCst(matcher), [
+    [0, 6], // - seq
+    [1, 3], //   - rep
+    [2, 1], //     - seq
+    [3, 1], //       - any
+    [4, 1], //         - (child)
+    [2, 1], //     - seq
+    [3, 1], //       - any
+    [4, 1], //         - (child)
+    [2, 1], //     - seq
+    [3, 1], //       - any
+    [4, 1], //         - (child)
+    [1, 1], //   - spaces
+    [2, 1], //     - rep
+    [3, 1], //       - space
+    [4, 1], //         - (child)
+    [1, 2], //   - rep
+    [2, 1], //     - any
+    [3, 1], //       - (child)
+    [2, 1], //     - any
+    [3, 1] //       - (child)
+  ]);
 });
 
 test('wasm: one-char terminals', async t => {
@@ -285,11 +404,21 @@ test('real-world grammar', async t => {
         = "//" (~nl any)* nl  -- cppComment
         | "/*" (~"*/" any)* "*/" -- cComment
       empty =
-      space += comment
+      // space += comment
       nl = "\n"
     }
   `);
-  // t.notThrows(() => WasmMatcher.forGrammar(g));
+  let longInput = '';
+  for (let i = 0; i < 200; i++) {
+    longInput += '/quickjs eval source: "1 + 1"\n';
+  }
+  let start = performance.now();
+  g.match(longInput);
+  t.log('Ohm match time:', performance.now() - start);
+
   const matcher = await WasmMatcher.forGrammar(g);
   t.is(matchWithInput(matcher, '/quickjs eval source: "1 + 1"'), 1);
+  start = performance.now();
+  t.is(matchWithInput(matcher, longInput), 1);
+  t.log('Wasm match time:', performance.now() - start, 'ms');
 });
