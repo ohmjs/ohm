@@ -26,7 +26,7 @@ function checkNoUndefined(arr) {
 function uniqueName(names, str) {
   let name = str;
   outer: if (names.has(str)) {
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 1000; i++) {
       name = `${str}_${i}`;
       if (!names.has(name)) break outer;
     }
