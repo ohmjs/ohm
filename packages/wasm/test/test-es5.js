@@ -35,6 +35,8 @@ async function es5Matcher() {
     Repetition: ohm.pexprs.Star,
     Not: ohm.pexprs.Not,
     Range: ohm.pexprs.Range,
+    any: ohm.pexprs.any,
+    end: ohm.pexprs.end,
     Matcher: ES5Matcher,
   });
 }

@@ -36,6 +36,11 @@ function uniqueName(names, str) {
   return name;
 }
 
+function getDebugLabel(exp) {
+  const loc = exp.source ? exp.source.startIdx : -1;
+  return `${exp.toDisplayString()}@${loc}`;
+}
+
 /*
   Offers a higher-level interface for generating WebAssembly code and
   constructing a module.
@@ -388,13 +393,13 @@ export class Compiler {
   }
 
   // Return an object implementing all of the debug imports.
-  getDebugImports() {
+  getDebugImports(log) {
     const ans = {};
     for (const decl of this.importDecls.filter(d => d.module === 'debug')) {
       const {name} = decl;
-      ans[name] = () => {
+      ans[name] = arg => {
         // eslint-disable-next-line no-console
-        console.log(name);
+        log(name, arg);
       };
     }
     return ans;
@@ -511,8 +516,14 @@ export class Compiler {
         assert(decl.module === 'debug');
         decl.name = uniqueName(names, x);
 
+        let pushArg = [];
+        if (x.startsWith('END')) {
+          decl.paramTypes = [w.valtype.i32];
+          pushArg = [instr.local.get, w.localidx(0)];
+        }
+
         // …and replace the string with a call to that function.
-        return [instr.call, w.funcidx(nextFuncIdx++)].flat(Infinity);
+        return [...pushArg, instr.call, w.funcidx(nextFuncIdx++)].flat(Infinity);
       });
     }
     return debugDecls;
@@ -579,8 +590,7 @@ export class Compiler {
     const isLookahead = exp.constructor === pexprs.Lookahead || exp.constructor === pexprs.Not;
     const emitBacktracking = !skipBacktracking && !isLookahead;
 
-    const debugLabel = `${exp.constructor.name}@${exp.source ? exp.source.startIdx : -1}`;
-
+    const debugLabel = getDebugLabel(exp);
     asm.emit(`BEGIN ${debugLabel}`);
 
     // *Always* save the original position, even if we're not backtracking.
@@ -749,6 +759,13 @@ export class Compiler {
 
   emitSeq(exp) {
     const {asm} = this;
+
+    // An empty sequence always succeeds.
+    if (exp.factors.length === 0) {
+      asm.setRet(1);
+      return;
+    }
+
     for (const factor of exp.factors) {
       this.emitPExpr(factor);
       asm.localGet('ret');
@@ -816,7 +833,11 @@ export class WasmMatcher {
     const matcher = new WasmMatcher(grammar);
     const {instance} = await WebAssembly.instantiate(bytes, {
       env: matcher._env,
-      debug: compiler.getDebugImports(),
+      debug: compiler.getDebugImports((label, ret) => {
+        // const result = ret === 1 ? 'SUCCESS' : ret === 0 ? 'FAIL' : '';
+        // eslint-disable-next-line no-console
+        // console.log(`pos: ${instance.exports.pos.value}`, label, result);
+      }),
     });
     matcher._instance = instance;
     return matcher;

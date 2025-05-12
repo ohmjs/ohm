@@ -16,9 +16,11 @@ const fac = async ns => {
   const lexIgnored = exp => exp;
 
   return new ns.Matcher({
-    start: app('program'),
-    any: range('\u0000', '\uFFFF'),
-    end: not(app('any')),
+    start: app('sourceElement'),
+    // any: range('\u0000', '\uFFFF'),
+    any: ns.any,
+    // end: not(app('any')),
+    end: ns.end,
     program: seq(lookahead(rep(app('directive'))), rep(app('sourceElement')), app('spaces')),
     sourceCharacter: app('any'),
     space: choice(app('whitespace'), app('lineTerminator'), app('comment')),
