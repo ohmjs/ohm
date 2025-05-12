@@ -387,13 +387,40 @@ export class Compiler {
     return w.funcidx(this.ruleIdxByName.get(name) + this.importDecls.length + 1);
   }
 
+  // Return an object implementing all of the debug imports.
+  getDebugImports() {
+    const ans = {};
+    for (const decl of this.importDecls.filter(d => d.module === 'debug')) {
+      const {name} = decl;
+      ans[name] = () => {
+        // eslint-disable-next-line no-console
+        console.log(name);
+      };
+    }
+    return ans;
+  }
+
   compile() {
     const asm = (this.asm = new Assembler());
     asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('cst', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('depth', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    return this.buildModule(this.functionDecls());
+
+    // Reserve a fixed number of imports for debug labels.
+    const debugBaseFuncIdx = this.importDecls.length;
+    for (let i = 0; i < 5000; i++) {
+      this.importDecls.push({
+        module: 'debug',
+        name: `debug${i}`,
+        paramTypes: [],
+        resultTypes: [],
+      });
+    }
+
+    const functionDecls = this.functionDecls();
+    const debugDecls = this.rewriteDebugLabels(functionDecls, debugBaseFuncIdx);
+    return this.buildModule([...functionDecls, ...debugDecls]);
   }
 
   compileRule(name, ruleBody) {
@@ -478,16 +505,12 @@ export class Compiler {
       entry.body = entry.body.flatMap(x => {
         if (typeof x !== 'string') return x;
 
-        const name = uniqueName(names, x);
+        // Claim one of the reserved debug functions…
+        const decl = this.importDecls[nextFuncIdx];
+        assert(decl, 'Too few debug functions!');
+        assert(decl.module === 'debug');
+        decl.name = uniqueName(names, x);
 
-        // Create a noop function whose name is the given string…
-        debugDecls.push({
-          name,
-          paramTypes: [],
-          resultTypes: [],
-          locals: [],
-          body: [instr.end],
-        });
         // …and replace the string with a call to that function.
         return [instr.call, w.funcidx(nextFuncIdx++)].flat(Infinity);
       });
@@ -528,8 +551,6 @@ export class Compiler {
   }
 
   functionDecls() {
-    const startIdx = this.importDecls.length;
-
     // This is a bit messy. By default, we include all the rules in the
     // grammar itself, but only inherited rules if they are referenced.
     // So, `ruleIdxByName` can grow while we're iterating (as we reference
@@ -540,8 +561,6 @@ export class Compiler {
       ruleDecls.push(this.compileRule(name, this.ruleBody(name)));
     }
 
-    const debugDecls = this.rewriteDebugLabels(ruleDecls, startIdx + ruleDecls.length + 1);
-
     return [
       {
         name: 'match',
@@ -551,7 +570,6 @@ export class Compiler {
         body: this.asm.doEmit(() => this.emitMatchBody()),
       },
       ...ruleDecls,
-      ...debugDecls,
     ];
   }
 
@@ -798,6 +816,7 @@ export class WasmMatcher {
     const matcher = new WasmMatcher(grammar);
     const {instance} = await WebAssembly.instantiate(bytes, {
       env: matcher._env,
+      debug: compiler.getDebugImports(),
     });
     matcher._instance = instance;
     return matcher;
