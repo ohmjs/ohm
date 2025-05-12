@@ -9,13 +9,13 @@ const matchWithInput = (m, str) => (m.setInput(str), m.match());
 const indented = (d, str) => new Array(d * 2).join(' ') + str;
 
 const BYTES_PER_CST_REC = 8;
-const CST_BASE = 64 * 1024;
 
 function rawCst(matcher) {
   const view = new DataView(matcher._instance.exports.memory.buffer);
+  const cstBase = matcher._instance.exports.cstBase.value;
   const cstTop = matcher._instance.exports.cst.value;
   const ans = [];
-  for (let offset = CST_BASE; offset < cstTop; offset += BYTES_PER_CST_REC) {
+  for (let offset = cstBase; offset < cstTop; offset += BYTES_PER_CST_REC) {
     const depth = view.getUint32(offset, true);
     const matchLen = view.getUint32(offset + 4, true);
     ans.push([depth, matchLen]);
@@ -25,13 +25,14 @@ function rawCst(matcher) {
 
 // eslint-disable-next-line no-unused-vars
 function cstToString(matcher, input) {
-  const top = matcher._instance.exports.cst.value;
+  const cstBase = matcher._instance.exports.cstBase.value;
+  const cstTop = matcher._instance.exports.cst.value;
 
   const view = new DataView(matcher._instance.exports.memory.buffer);
   let pos = 0;
   const tree = [[0, -1, 0]];
   const lines = [];
-  for (let p = CST_BASE; p < top; p += BYTES_PER_CST_REC) {
+  for (let p = cstBase; p < cstTop; p += BYTES_PER_CST_REC) {
     // const [lastDepth, lastMatchLen] = depthStack.at(-1);
 
     const depth = view.getUint32(p, true);
@@ -54,7 +55,7 @@ test('input in memory', async t => {
   matcher.setInput('ohm');
   matcher.match(); // Trigger fillInputBuffer
 
-  const view = new DataView(matcher._instance.exports.memory.buffer);
+  const view = new DataView(matcher._instance.exports.memory.buffer, 64 * 1024);
   t.is(view.getUint8(0), 'ohm'.charCodeAt(0));
   t.is(view.getUint8(1), 'ohm'.charCodeAt(1));
   t.is(view.getUint8(2), 'ohm'.charCodeAt(2));

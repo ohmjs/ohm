@@ -236,9 +236,13 @@ export class Assembler {
     this.localGet('tmp');
   }
 
-  nextCharCode() {
+  currCharCode() {
     this.globalGet('pos');
-    this.i32Load8u();
+    this.i32Load8u(Compiler.INPUT_BUFFER_OFFSET);
+  }
+
+  nextCharCode() {
+    this.currCharCode();
     this.incPos();
   }
 
@@ -410,6 +414,9 @@ export class Compiler {
     asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('cst', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('cstBase', w.valtype.i32, w.mut.var, () =>
+      asm.i32Const(Compiler.CST_START_OFFSET),
+    );
     asm.addGlobal('depth', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
 
     // Reserve a fixed number of imports for debug labels.
@@ -463,16 +470,11 @@ export class Compiler {
       exports.push(w.export_(name, [0x03, this.asm.globalidx(name)]));
     }
 
-    // Memory layout:
-    // - First page is for input buffer (growing upwards) and origPos stack
-    //   (growing downwards).
-    // - Second page is for CST.
-
     const mod = w.module([
       w.typesec(types),
       w.importsec(imports),
       w.funcsec(funcs),
-      w.memsec([w.mem(w.memtype(w.limits.min(8)))]),
+      w.memsec([w.mem(w.memtype(w.limits.min(24)))]),
       w.globalsec(globals),
       w.exportsec(exports),
       w.codesec(codes),
@@ -537,17 +539,17 @@ export class Compiler {
     asm.i32Const(0);
     asm.globalSet('pos');
 
-    asm.i32Const(64 * 1024);
+    asm.i32Const(Compiler.STACK_START_OFFSET);
     asm.globalSet('sp');
 
-    asm.i32Const(64 * 1024);
+    asm.i32Const(Compiler.CST_START_OFFSET);
     asm.globalSet('cst');
 
     asm.i32Const(0); // offset
     asm.i32Const(64 * 1024); // maxLen
-    asm.emit(instr.call, w.funcidx(0));
-
+    asm.emit(instr.call, w.funcidx(0)); // fillInputBuffer
     asm.emit(instr.local.set, w.localidx(0)); // set inputLen
+
     asm.emit(instr.call, this.ruleEvalFuncIdx(this.grammar.defaultStartRule));
     asm.ifElse(
         w.blocktype.i32,
@@ -688,8 +690,7 @@ export class Compiler {
     const {asm} = this;
     asm.i32Const(0xff);
     // Careful! We shouldn't move the pos here. Or does it matter?
-    asm.globalGet('pos');
-    asm.i32Load8u();
+    asm.currCharCode();
     asm.emit(instr.i32.eq);
     asm.localSet('ret');
   }
@@ -794,15 +795,11 @@ export class Compiler {
     // - handle longer terminals with a loop
 
     const {asm} = this;
-    const currCharCode = () => {
-      asm.globalGet('pos');
-      asm.i32Load8u();
-    };
 
     for (const c of [...exp.obj]) {
       // Compare next char
       asm.i32Const(c.charCodeAt(0));
-      currCharCode();
+      asm.currCharCode();
       asm.i32Ne();
       asm.if(w.blocktype.empty, () => {
         asm.i32Const(0);
@@ -815,6 +812,15 @@ export class Compiler {
     asm.localSet('ret');
   }
 }
+// Memory layout:
+// - First page is for the PExpr stack (origPos, etc.), growing downards.
+// - 2nd page is for input buffer (max 64k for now).
+// - Pages 3-18 (incl.) for memo table (4 entries per char, 4 bytes each).
+// - Remainder (>18) is for CST (growing upwards).
+Compiler.INPUT_BUFFER_OFFSET = 64 * 1024; // Offset of the input buffer in memory.
+Compiler.STACK_START_OFFSET = 64 * 1024; // Starting offset of the stack.
+Compiler.MEMO_START_OFFSET = 2 * (64 * 1024); // Starting offset of memo records.
+Compiler.CST_START_OFFSET = 18 * (64 * 1024); // Starting offset of CST records.
 
 export class WasmMatcher {
   constructor(grammar) {
@@ -867,8 +873,9 @@ export class WasmMatcher {
   _fillInputBuffer(offset, maxLen) {
     const encoder = new TextEncoder();
     const {memory} = this._instance.exports;
-    const buf = new Uint8Array(memory.buffer, offset);
+    const buf = new Uint8Array(memory.buffer, Compiler.INPUT_BUFFER_OFFSET + offset);
     const {read, written} = encoder.encodeInto(this._input.substring(this._pos), buf);
+    assert(written < 64 * 1024, 'Input too long');
     this._pos += read;
     buf[written] = 0xff; // Mark end of input with an invalid UTF-8 character.
     return written;
