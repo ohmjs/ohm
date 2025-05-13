@@ -2,7 +2,7 @@ import test from 'ava';
 import * as ohm from 'ohm-js';
 import {performance} from 'perf_hooks';
 
-import {WasmMatcher} from '../src/index.js';
+import {ConstantsForTesting as Constants, WasmMatcher} from '../src/index.js';
 
 const matchWithInput = (m, str) => (m.setInput(str), m.match());
 
@@ -67,9 +67,10 @@ test('basic cst', async t => {
   t.is(matchWithInput(matcher, input), 1);
   t.deepEqual(rawCst(matcher), [
     [0, 2],
-    [1, 1],
-    [1, 1],
+    [1, 2],
     [2, 1],
+    [2, 1],
+    [3, 1],
   ]);
 
   matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" | b\nb = "b" }'));
@@ -78,6 +79,7 @@ test('basic cst', async t => {
   t.deepEqual(rawCst(matcher), [
     [0, 1],
     [1, 1],
+    [2, 1],
   ]);
 
   input = 'b';
@@ -86,6 +88,7 @@ test('basic cst', async t => {
     [0, 1],
     [1, 1],
     [2, 1],
+    [3, 1],
   ]);
 });
 
@@ -97,29 +100,14 @@ test('cst with lookahead', async t => {
     [0, 1],
     [1, 1],
     [2, 1],
+    [3, 1],
   ]);
 
   matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = (~space any)*}'));
   input = 'abc';
   t.is(matchWithInput(matcher, input), 1);
   t.deepEqual(rawCst(matcher), [
-    [0, 3], // - rep
-    [1, 1], //   - seq
-    [2, 1], //     - any
-    [3, 1], //       - (child)
-    [1, 1], //   - seq
-    [2, 1], //     - any
-    [3, 1], //       - (child)
-    [1, 1], //   - seq
-    [2, 1], //     - any
-    [3, 1], //       - (child)
-  ]);
-
-  matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = (~space any)+ spaces any+}'));
-  input = '/ab xy';
-  t.is(matchWithInput(matcher, input), 1);
-  t.deepEqual(rawCst(matcher), [
-    [0, 6], // - seq
+    [0, 3], // - apply
     [1, 3], //   - rep
     [2, 1], //     - seq
     [3, 1], //       - any
@@ -130,15 +118,33 @@ test('cst with lookahead', async t => {
     [2, 1], //     - seq
     [3, 1], //       - any
     [4, 1], //         - (child)
-    [1, 1], //   - spaces
-    [2, 1], //     - rep
-    [3, 1], //       - space
+  ]);
+
+  matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = (~space any)+ spaces any+}'));
+  input = '/ab xy';
+  t.is(matchWithInput(matcher, input), 1);
+  t.deepEqual(rawCst(matcher), [
+    [0, 6], // - apply
+    [1, 6], //   - seq
+    [2, 3], //     - rep
+    [3, 1], //       - seq
+    [4, 1], //         - any
+    [5, 1], //           - (child)
+    [3, 1], //       - seq
+    [4, 1], //         - any
+    [5, 1], //           - (child)
+    [3, 1], //       - seq
+    [4, 1], //         - any
+    [5, 1], //           - (child)
+    [2, 1], //     - spaces
+    [3, 1], //       - rep
+    [4, 1], //         - space
+    [5, 1], //           - (child)
+    [2, 2], //     - rep
+    [3, 1], //       - any
     [4, 1], //         - (child)
-    [1, 2], //   - rep
-    [2, 1], //     - any
-    [3, 1], //       - (child)
-    [2, 1], //     - any
-    [3, 1], //       - (child)
+    [3, 1], //       - any
+    [4, 1], //         - (child)
   ]);
 });
 

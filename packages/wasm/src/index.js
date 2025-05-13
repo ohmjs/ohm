@@ -7,6 +7,8 @@ import * as w from '@wasmgroundup/emit';
 const {instr} = w;
 import {pexprs} from 'ohm-js';
 
+const WASM_PAGE_SIZE = 64 * 1024;
+
 function assert(cond, msg) {
   if (!cond) {
     throw new Error(msg ?? 'assertion failed');
@@ -45,7 +47,7 @@ function getDebugLabel(exp) {
   Offers a higher-level interface for generating WebAssembly code and
   constructing a module.
  */
-export class Assembler {
+class Assembler {
   constructor() {
     this._globals = new Map();
 
@@ -147,6 +149,11 @@ export class Assembler {
     this.emit(w.instr.end);
   }
 
+  ifFalse(bt, bodyThunk) {
+    this.i32Ne();
+    this.if(bt, bodyThunk);
+  }
+
   br(depth) {
     this.emit(instr.br, w.labelidx(depth));
   }
@@ -165,6 +172,10 @@ export class Assembler {
 
   i32Load8u(offset = 0) {
     this.emit(instr.i32.load8_u, w.memarg(Assembler.ALIGN_1_BYTE, offset));
+  }
+
+  i32Mul() {
+    this.emit(instr.i32.mul);
   }
 
   i32Ne() {
@@ -309,7 +320,7 @@ export class Assembler {
   cstNodeAlloc() {
     this.globalGet('cst');
     this.dup();
-    this.i32Const(8);
+    this.i32Const(Assembler.CST_NODE_SIZE_BYTES);
     this.i32Add();
     this.globalSet('cst');
   }
@@ -352,9 +363,11 @@ export class Assembler {
 }
 Assembler.ALIGN_1_BYTE = 0;
 Assembler.ALIGN_4_BYTES = 2;
+Assembler.CST_NODE_SIZE_BYTES = 8;
+Assembler.MEMO_REC_SIZE_BYTES = 16;
 Assembler.STACK_FRAME_SIZE_BYTES = 8;
 
-export class Compiler {
+class Compiler {
   constructor(grammar) {
     this.importDecls = [
       {
@@ -447,6 +460,7 @@ export class Compiler {
 
   buildModule(functionDecls) {
     const {importDecls} = this;
+    // TODO: Compress types!
     const types = [...importDecls, ...functionDecls].map(f =>
       w.functype(f.paramTypes, f.resultTypes),
     );
@@ -533,8 +547,9 @@ export class Compiler {
 
   emitMatchBody() {
     const {asm} = this;
-    const getInputLen = () => [instr.local.get, w.localidx(0)];
-    const getCurrPos = () => [instr.global.get, w.globalidx(0)];
+    asm.addLocal('inputLen', w.valtype.i32);
+    asm.addLocal('ret', w.valtype.i32);
+    asm.addLocal('tmp', w.valtype.i32);
 
     asm.i32Const(0);
     asm.globalSet('pos');
@@ -546,16 +561,21 @@ export class Compiler {
     asm.globalSet('cst');
 
     asm.i32Const(0); // offset
-    asm.i32Const(64 * 1024); // maxLen
+    asm.i32Const(WASM_PAGE_SIZE); // maxLen
     asm.emit(instr.call, w.funcidx(0)); // fillInputBuffer
     asm.emit(instr.local.set, w.localidx(0)); // set inputLen
 
-    asm.emit(instr.call, this.ruleEvalFuncIdx(this.grammar.defaultStartRule));
+    // TODO: This should probably a seq of [Apply, end] just like in the JS version.
+    // Note that in the CST tests, the depth of all nodes will increase by 1.
+    this.emitPExpr(new pexprs.Apply(this.grammar.defaultStartRule));
+    asm.localGet('ret');
     asm.ifElse(
         w.blocktype.i32,
         () => {
         // match succeeded -- return currPos == inputLen
-          asm.emit(getInputLen(), getCurrPos(), instr.i32.eq);
+          asm.localGet('inputLen');
+          asm.globalGet('pos');
+          asm.emit(instr.i32.eq);
         },
         () => {
           asm.i32Const(0);
@@ -573,21 +593,13 @@ export class Compiler {
       const name = [...this.ruleIdxByName.keys()][i];
       ruleDecls.push(this.compileRule(name, this.ruleBody(name)));
     }
+    this.asm.addFunction('match', [], [w.valtype.i32], () => this.emitMatchBody());
 
-    return [
-      {
-        name: 'match',
-        paramTypes: [],
-        resultTypes: [w.valtype.i32],
-        locals: [w.locals(1, w.valtype.i32)],
-        body: this.asm.doEmit(() => this.emitMatchBody()),
-      },
-      ...ruleDecls,
-    ];
+    return [this.asm._functionDecls.at(-1), ...ruleDecls];
   }
 
   // Contract: emitPExpr always means we're going deeper in the PExpr tree.
-  emitPExpr(exp, {skipBacktracking} = {}) {
+  emitPExpr(exp, {skipBacktracking, saveCst} = {}) {
     const {asm} = this;
     const isLookahead = exp.constructor === pexprs.Lookahead || exp.constructor === pexprs.Not;
     const emitBacktracking = !skipBacktracking && !isLookahead;
@@ -800,8 +812,7 @@ export class Compiler {
       // Compare next char
       asm.i32Const(c.charCodeAt(0));
       asm.currCharCode();
-      asm.i32Ne();
-      asm.if(w.blocktype.empty, () => {
+      asm.ifFalse(w.blocktype.empty, () => {
         asm.i32Const(0);
         asm.localSet('ret');
         asm.break(1);
@@ -817,10 +828,10 @@ export class Compiler {
 // - 2nd page is for input buffer (max 64k for now).
 // - Pages 3-18 (incl.) for memo table (4 entries per char, 4 bytes each).
 // - Remainder (>18) is for CST (growing upwards).
-Compiler.INPUT_BUFFER_OFFSET = 64 * 1024; // Offset of the input buffer in memory.
-Compiler.STACK_START_OFFSET = 64 * 1024; // Starting offset of the stack.
-Compiler.MEMO_START_OFFSET = 2 * (64 * 1024); // Starting offset of memo records.
-Compiler.CST_START_OFFSET = 18 * (64 * 1024); // Starting offset of CST records.
+Compiler.STACK_START_OFFSET = WASM_PAGE_SIZE; // Starting offset of the stack.
+Compiler.INPUT_BUFFER_OFFSET = WASM_PAGE_SIZE; // Offset of the input buffer in memory.
+Compiler.MEMO_START_OFFSET = 2 * WASM_PAGE_SIZE; // Starting offset of memo records.
+Compiler.CST_START_OFFSET = 18 * WASM_PAGE_SIZE; // Starting offset of CST records.
 
 export class WasmMatcher {
   constructor(grammar) {
@@ -881,3 +892,9 @@ export class WasmMatcher {
     return written;
   }
 }
+
+export const ConstantsForTesting = {
+  CST_NODE_SIZE_BYTES: Assembler.CST_NODE_SIZE_BYTES,
+  CST_START_OFFSET: Compiler.CST_START_OFFSET,
+  MEMO_REC_SIZE_BYTES: Compiler.MEMO_REC_SIZE_BYTES,
+};
