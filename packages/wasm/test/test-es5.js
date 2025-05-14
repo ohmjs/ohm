@@ -42,7 +42,7 @@ async function es5Matcher() {
 }
 
 // eslint-disable-next-line ava/no-skip-test
-test.skip('basic es5 examples', async t => {
+test('basic es5 examples', async t => {
   const es5 = await es5Matcher();
   t.is(es5.match('function foo() { return 1; }'), 1);
   t.is(es5.match('/* does this work */'), 1);

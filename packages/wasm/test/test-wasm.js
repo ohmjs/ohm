@@ -431,3 +431,26 @@ test('real-world grammar', async t => {
   t.is(matchWithInput(matcher, longInput), 1);
   t.log('Wasm match time:', performance.now() - start, 'ms');
 });
+
+test('basic memoization', async t => {
+  const g = ohm.grammar('G { start = "a" b\nb = "b" }');
+  const matcher = await WasmMatcher.forGrammar(g);
+  t.is(matchWithInput(matcher, 'ab'), 1);
+
+  const view = matcher.memoTableViewForTesting();
+  // Get the byte offset of the nth memo rec and CST node, respectively.
+  const memoRecOffset = n => n * Constants.MEMO_REC_SIZE_BYTES;
+  const cstNodeOffset = n => Constants.CST_START_OFFSET + n * Constants.CST_NODE_SIZE_BYTES;
+
+  t.deepEqual(rawCst(matcher), [
+    [0, 2], // - apply(start)  [0]
+    [1, 2], //   - seq         [1]
+    [2, 1], //     - "a"       [2]
+    [2, 1], //     - apply(b)  [3]
+    [3, 1], //       - "b"     [4]
+  ]);
+
+  // Expect memo for `b` at position 1, and `start` at position 0.
+  t.is(view.getUint32(memoRecOffset(1), true), cstNodeOffset(3));
+  t.is(view.getUint32(memoRecOffset(0), true), cstNodeOffset(0));
+});

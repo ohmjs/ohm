@@ -2,7 +2,6 @@
 
 import * as w from '@wasmgroundup/emit';
 // import wabt from 'wabt';
-// import fs from 'node:fs';
 
 const {instr} = w;
 import {pexprs} from 'ohm-js';
@@ -61,6 +60,18 @@ class Assembler {
     // State for the current function being generated.
     this._code = [];
     this._locals = undefined;
+
+    this._blocktypes = [];
+  }
+
+  addBlocktype(name, type) {
+    this._blocktypes.push([name, type]);
+  }
+
+  blocktype(str) {
+    const idx = this._blocktypes.findIndex(bt => bt[0] === str);
+    assert(idx !== -1, `Unknown blocktype: '${str}'`);
+    return w.i32(idx);
   }
 
   doEmit(thunk) {
@@ -150,7 +161,7 @@ class Assembler {
   }
 
   ifFalse(bt, bodyThunk) {
-    this.i32Ne();
+    this.emit(instr.i32.eqz);
     this.if(bt, bodyThunk);
   }
 
@@ -360,6 +371,56 @@ class Assembler {
   cstNodeSetMatchLength() {
     this.i32Store(4);
   }
+
+  // [memoOffset:i32] -> [addr:i32]
+  getMemo(ruleIdx) {
+    this.localTee('tmp'); // Save memoOffset
+
+    // First, check if the rule index matches.
+    this.i32Load8u(); // Load ruleIdx
+    this.i32Const(ruleIdx);
+    this.emit(instr.i32.eq);
+    this.ifElse(
+        w.blocktype.i32,
+        () => {
+          this.localGet('tmp');
+
+          // Uncomment this to ignore the memoized result.
+          this.emit(instr.drop);
+          this.i32Const(0);
+        },
+        () => {
+          this.i32Const(0);
+        },
+    );
+  }
+
+  // [memoOffset:i32] -> []
+  setMemo(ruleIdx) {
+    this.getSavedCst();
+
+    // this.i32Const(ruleIdx);
+    // this.i32Const(24);
+    // this.emit(instr.i32.shl);
+    // this.emit(instr.i32.and);
+
+    this.localGet('ret');
+    this.ifFalse(this.blocktype('[i32][i32]'), () => {
+      this.emit(instr.drop);
+      this.i32Const(0); // Fail.
+    });
+    this.i32Store(Compiler.MEMO_START_OFFSET);
+    this.emit('done setMemo');
+  }
+
+  // Load the offset of the memo record for the original position onto the stack.
+  // [] -> [addr:i32]
+  getMemoColOffset() {
+    this.emit('getMemoColOffset');
+    this.globalGet('pos');
+    this.i32Const(Assembler.MEMO_REC_SIZE_BYTES);
+    this.i32Mul();
+  }
 }
 Assembler.ALIGN_1_BYTE = 0;
 Assembler.ALIGN_4_BYTES = 2;
@@ -424,6 +485,8 @@ class Compiler {
 
   compile() {
     const asm = (this.asm = new Assembler());
+    asm.addBlocktype('[i32][]', w.functype([w.valtype.i32], []));
+    asm.addBlocktype('[i32][i32]', w.functype([w.valtype.i32], [w.valtype.i32]));
     asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('cst', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
@@ -449,11 +512,47 @@ class Compiler {
   }
 
   compileRule(name, ruleBody) {
-    this.asm.addFunction(`$${name}`, [], [w.valtype.i32], () => {
-      this.asm.addLocal('ret', w.valtype.i32);
-      this.asm.addLocal('tmp', w.valtype.i32);
-      this.emitPExpr(ruleBody);
-      this.asm.emit(instr.local.get, this.asm.localidx('ret'));
+    const {asm} = this;
+    asm.addFunction(`$${name}`, [], [w.valtype.i32], () => {
+      const ruleIdx = checkNotNull(this.ruleIdxByName.get(name));
+      asm.addLocal('ret', w.valtype.i32);
+      asm.addLocal('tmp', w.valtype.i32);
+
+      // This will be used by getMemo and possibly setMemo.
+      // It needs to be loaded this before the position changes.
+      asm.getMemoColOffset();
+      asm.dup(); // Leave a copy on the stack for setMemo.
+
+      asm.getMemo(ruleIdx);
+      asm.localTee('tmp');
+      asm.ifElse(
+          asm.blocktype('[i32][]'),
+          () => {
+            asm.emit('useMemo');
+            // Use the memoized result.
+            asm.localGet('tmp');
+
+            // Mask out the lower 24 bits (the new pos).
+            asm.i32Const(0x00ffffff);
+            asm.emit(instr.i32.and);
+
+            asm.globalSet('pos');
+            asm.setRet(1);
+            asm.emit(instr.drop); // Drop memoOffset
+            asm.emit('done useMemo');
+          },
+          () => {
+          // No memoized result — eval.
+            this.emitPExpr(ruleBody, {saveCst: false});
+
+            // At this point, the stack has been restored, so the current frame
+            // is for the rule application. That's exactly what we want for
+            // memoization!
+            asm.setMemo(ruleIdx);
+          },
+      );
+
+      asm.localGet('ret');
     });
     return this.asm._functionDecls.at(-1);
   }
@@ -461,14 +560,16 @@ class Compiler {
   buildModule(functionDecls) {
     const {importDecls} = this;
     // TODO: Compress types!
-    const types = [...importDecls, ...functionDecls].map(f =>
-      w.functype(f.paramTypes, f.resultTypes),
-    );
+    const types = [
+      ...this.asm._blocktypes.map(([_, t]) => t),
+      ...[...importDecls, ...functionDecls].map(f => w.functype(f.paramTypes, f.resultTypes)),
+    ];
     const globals = [];
+    const btCount = this.asm._blocktypes.length;
     const imports = importDecls.map((f, i) =>
-      w.import_(f.module, f.name, w.importdesc.func(i)),
+      w.import_(f.module, f.name, w.importdesc.func(i + btCount)),
     );
-    const funcs = functionDecls.map((f, i) => w.typeidx(i + importDecls.length));
+    const funcs = functionDecls.map((f, i) => w.typeidx(i + btCount + importDecls.length));
     const codes = functionDecls.map(f => w.code(w.func(f.locals, f.body)));
     const exports = functionDecls.map((f, i) =>
       w.export_(f.name, w.exportdesc.func(i + importDecls.length)),
@@ -498,14 +599,15 @@ class Compiler {
     // (async () => {
     //   const {readWasm} = await wabt();
     //   const m = readWasm(bytes, {check: true});
-    //   // console.log(m.toText());
     //   m.validate();
     // })();
 
     // DEBUG
-    // const filename = `out-${new Date().getTime()}.wasm`;
-    // fs.writeFileSync(`/Users/pdubroy/${filename}`, bytes);
-    // console.log(` wrote  ${filename}`);
+    // import('fs').then(fs => {
+    //   const filename = `out-${new Date().getTime()}.wasm`;
+    //   fs.writeFileSync(`/Users/pdubroy/${filename}`, bytes);
+    //   console.log(` wrote  ${filename}`);
+    // });
     // END DEBUG
 
     return bytes;
@@ -671,6 +773,9 @@ class Compiler {
       // (Maybe only for negative lookahead?)
       asm.restoreCst();
     }
+    // If caller needs the CST addr, save it before popping the stack frame.
+    if (saveCst) asm.getSavedCst();
+
     asm.popStackFrame();
     asm.emit(`END ${debugLabel}`);
   }
@@ -812,7 +917,8 @@ class Compiler {
       // Compare next char
       asm.i32Const(c.charCodeAt(0));
       asm.currCharCode();
-      asm.ifFalse(w.blocktype.empty, () => {
+      asm.emit(instr.i32.ne);
+      asm.if(w.blocktype.empty, () => {
         asm.i32Const(0);
         asm.localSet('ret');
         asm.break(1);
@@ -891,10 +997,15 @@ export class WasmMatcher {
     buf[written] = 0xff; // Mark end of input with an invalid UTF-8 character.
     return written;
   }
+
+  memoTableViewForTesting() {
+    const {buffer} = this._instance.exports.memory;
+    return new DataView(buffer, Compiler.MEMO_START_OFFSET);
+  }
 }
 
 export const ConstantsForTesting = {
-  CST_NODE_SIZE_BYTES: Assembler.CST_NODE_SIZE_BYTES,
-  CST_START_OFFSET: Compiler.CST_START_OFFSET,
-  MEMO_REC_SIZE_BYTES: Compiler.MEMO_REC_SIZE_BYTES,
+  CST_NODE_SIZE_BYTES: checkNotNull(Assembler.CST_NODE_SIZE_BYTES),
+  CST_START_OFFSET: checkNotNull(Compiler.CST_START_OFFSET),
+  MEMO_REC_SIZE_BYTES: checkNotNull(Assembler.MEMO_REC_SIZE_BYTES),
 };
