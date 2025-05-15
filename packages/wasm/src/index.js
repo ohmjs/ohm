@@ -42,6 +42,39 @@ function getDebugLabel(exp) {
   return `${exp.toDisplayString()}@${loc}`;
 }
 
+function numChildren(exp) {
+  switch (exp.constructor) {
+    case pexprs.Alt:
+      return exp.terms.reduce((acc, t) => Math.max(numChildren(t), 0));
+    case pexprs.Extend:
+      return Math.max(
+          numChildren(exp.body),
+          numChildren(exp.superGrammar.rules[exp.name].body),
+      );
+    case pexprs.Seq:
+      return exp.factors.length;
+    case pexprs.Star:
+    case pexprs.Plus:
+      return 8; // TODO: Fix this :-)
+    // return -1;
+    case pexprs.Apply:
+    case pexprs.Opt:
+      return 1;
+    case pexprs.Lookahead:
+    case pexprs.Not:
+    case pexprs.Range:
+    case pexprs.Terminal:
+    case pexprs.UnicodeChar:
+      return 0;
+    default:
+      if (exp === pexprs.any || exp === pexprs.end) {
+        return 0;
+      } else {
+        throw new Error(`not handled: ${exp.constructor.name}`);
+      }
+  }
+}
+
 /*
   Offers a higher-level interface for generating WebAssembly code and
   constructing a module.
@@ -318,6 +351,13 @@ class Assembler {
     this.i32Load(4);
   }
 
+  getParentCst() {
+    this.globalGet('sp');
+    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
+    this.i32Add();
+    this.i32Load(4);
+  }
+
   // Increment the current input position by 1.
   // [i32, i32] -> [i32]
   incPos() {
@@ -327,13 +367,24 @@ class Assembler {
   }
 
   // Allocate a new CST node.
-  // [] -> [i32]
-  cstNodeAlloc() {
+  // [] -> []
+  cstNodeAlloc(exp) {
+    const count = numChildren(exp);
+
+    // TODO: Handle count -1 (for star/plus).
+
     this.globalGet('cst');
     this.dup();
-    this.i32Const(Assembler.CST_NODE_SIZE_BYTES);
+    this.i32Const(count * 4);
+    this.i32Const(Assembler.CST_NODE_HEADER_SIZE_BYTES);
+    this.i32Add();
     this.i32Add();
     this.globalSet('cst');
+
+    // Initialize the count to zero. This will be incremented as the pointers
+    // to the children get filled it.
+    this.i32Const(0);
+    this.cstNodeSetCount();
   }
 
   // [] -> []
@@ -342,28 +393,25 @@ class Assembler {
     this.globalSet('cst');
   }
 
-  incDepth() {
-    this.globalGet('depth');
-    this.i32Inc();
-    this.globalSet('depth');
-  }
-
-  decDepth() {
-    this.globalGet('depth');
-    this.i32Dec();
-    this.globalSet('depth');
-  }
-
-  // Set the 'depth' field of a given CST node.
+  // Set the 'count' field of a given CST node.
   // [val:i32, addr:i32] -> []
-  cstNodeSetDepth() {
+  cstNodeSetCount() {
     this.i32Store(0);
   }
 
-  // Get the 'depth' field of a given CST node.
+  // Get the 'count' field of a given CST node.
   // [addr:i32] -> [i32]
-  cstNodeGetDepth() {
+  cstNodeGetCount() {
     this.i32Load(0);
+  }
+
+  // Increment the 'count' field of a given CST node.
+  // [addr:i32] -> []
+  cstNodeIncCount() {
+    this.dup();
+    this.i32Load(0);
+    this.i32Inc();
+    this.i32Store(0);
   }
 
   // Set the 'matchLength' field of a given CST node.
@@ -372,44 +420,63 @@ class Assembler {
     this.i32Store(4);
   }
 
-  // [memoOffset:i32] -> [addr:i32]
+  // Called while a child's stack frame is active, to record the child's CST
+  // in the parent.
+  // [] -> []
+  cstNodeRecordChild() {
+    this.emit('recordChild');
+    // We need the parent's CST thrice: (1) to get the count,
+    // (2) to push the child's CST node, and (3) to update the count.
+    this.getParentCst();
+    this.dup();
+    this.dup();
+
+    // Compute dest addr of the child pointer.
+    // We have skip over (1) `count` i32s, and (2) the header.
+
+    // Calculate size of `count` i32 fields.
+    this.cstNodeGetCount();
+    this.i32Const(4);
+    this.emit(instr.i32.mul);
+
+    // Add the size.
+    this.i32Const(Assembler.CST_NODE_HEADER_SIZE_BYTES);
+    this.i32Add();
+
+    // Add both of the above to get the dest address.
+    this.i32Add();
+
+    this.getSavedCst(); // val to be stored
+    this.i32Store();
+
+    this.cstNodeIncCount(); // increment the parent's count.
+    this.emit('done recordChild');
+  }
+
+  // Get the memoized result for `ruleIdx` at the current input position,
+  // if it exists. The result is a signed integer:
+  // - 0 if there's no entry
+  // - -1 for a failure
+  // - >= 0 for success, representing the address of the CST node.
+  // [memoOffset:i32] -> [i32]
   getMemo(ruleIdx) {
-    this.localTee('tmp'); // Save memoOffset
+    this.i32Load(Compiler.MEMO_START_OFFSET + ruleIdx * 4);
 
-    // First, check if the rule index matches.
-    this.i32Load8u(); // Load ruleIdx
-    this.i32Const(ruleIdx);
-    this.emit(instr.i32.eq);
-    this.ifElse(
-        w.blocktype.i32,
-        () => {
-          this.localGet('tmp');
-
-          // Uncomment this to ignore the memoized result.
-          this.emit(instr.drop);
-          this.i32Const(0);
-        },
-        () => {
-          this.i32Const(0);
-        },
-    );
+    this.emit(instr.drop);
+    this.i32Const(-1);
   }
 
   // [memoOffset:i32] -> []
   setMemo(ruleIdx) {
     this.getSavedCst();
 
-    // this.i32Const(ruleIdx);
-    // this.i32Const(24);
-    // this.emit(instr.i32.shl);
-    // this.emit(instr.i32.and);
-
     this.localGet('ret');
     this.ifFalse(this.blocktype('[i32][i32]'), () => {
+      // Replace the CST addr (it's been recycled) on the stack with -1.
       this.emit(instr.drop);
-      this.i32Const(0); // Fail.
+      this.i32Const(-1);
     });
-    this.i32Store(Compiler.MEMO_START_OFFSET);
+    this.i32Store(Compiler.MEMO_START_OFFSET + ruleIdx * 4);
     this.emit('done setMemo');
   }
 
@@ -418,14 +485,17 @@ class Assembler {
   getMemoColOffset() {
     this.emit('getMemoColOffset');
     this.globalGet('pos');
-    this.i32Const(Assembler.MEMO_REC_SIZE_BYTES);
+    this.i32Const(Assembler.MEMO_COL_SIZE_BYTES);
     this.i32Mul();
   }
 }
 Assembler.ALIGN_1_BYTE = 0;
 Assembler.ALIGN_4_BYTES = 2;
-Assembler.CST_NODE_SIZE_BYTES = 8;
-Assembler.MEMO_REC_SIZE_BYTES = 16;
+Assembler.CST_NODE_HEADER_SIZE_BYTES = 8;
+
+// A "memo column" holds the info for one input position, i.e. one char.
+Assembler.MEMO_COL_SIZE_BYTES = 4 * 64;
+
 Assembler.STACK_FRAME_SIZE_BYTES = 8;
 
 class Compiler {
@@ -525,6 +595,8 @@ class Compiler {
 
       asm.getMemo(ruleIdx);
       asm.localTee('tmp');
+      asm.i32Const(-1);
+      asm.i32Ne();
       asm.ifElse(
           asm.blocktype('[i32][]'),
           () => {
@@ -532,18 +604,13 @@ class Compiler {
             // Use the memoized result.
             asm.localGet('tmp');
 
-            // Mask out the lower 24 bits (the new pos).
-            asm.i32Const(0x00ffffff);
-            asm.emit(instr.i32.and);
-
-            asm.globalSet('pos');
-            asm.setRet(1);
-            asm.emit(instr.drop); // Drop memoOffset
-            asm.emit('done useMemo');
+            // TODO: implement this.
+            asm.emit(instr.drop); // tmp
+            asm.emit(instr.drop); // memoOffset
           },
           () => {
           // No memoized result — eval.
-            this.emitPExpr(ruleBody, {saveCst: false});
+            this.emitPExpr(ruleBody);
 
             // At this point, the stack has been restored, so the current frame
             // is for the rule application. That's exactly what we want for
@@ -589,7 +656,7 @@ class Compiler {
       w.typesec(types),
       w.importsec(imports),
       w.funcsec(funcs),
-      w.memsec([w.mem(w.memtype(w.limits.min(24)))]),
+      w.memsec([w.mem(w.memtype(w.limits.min(16 * 1024 + 24)))]),
       w.globalsec(globals),
       w.exportsec(exports),
       w.codesec(codes),
@@ -669,7 +736,7 @@ class Compiler {
 
     // TODO: This should probably a seq of [Apply, end] just like in the JS version.
     // Note that in the CST tests, the depth of all nodes will increase by 1.
-    this.emitPExpr(new pexprs.Apply(this.grammar.defaultStartRule));
+    this.emitPExpr(new pexprs.Apply(this.grammar.defaultStartRule), {isRoot: true});
     asm.localGet('ret');
     asm.ifElse(
         w.blocktype.i32,
@@ -701,7 +768,7 @@ class Compiler {
   }
 
   // Contract: emitPExpr always means we're going deeper in the PExpr tree.
-  emitPExpr(exp, {skipBacktracking, saveCst} = {}) {
+  emitPExpr(exp, {skipBacktracking, isRoot} = {}) {
     const {asm} = this;
     const isLookahead = exp.constructor === pexprs.Lookahead || exp.constructor === pexprs.Not;
     const emitBacktracking = !skipBacktracking && !isLookahead;
@@ -714,10 +781,7 @@ class Compiler {
     asm.savePos();
 
     asm.saveCst();
-    asm.cstNodeAlloc();
-    asm.globalGet('depth');
-    asm.cstNodeSetDepth();
-    asm.incDepth();
+    asm.cstNodeAlloc(exp);
 
     // Wrap the body in a block, which is useful for two reasons:
     // - it allows early returns.
@@ -747,19 +811,18 @@ class Compiler {
           }
       }
     });
-    asm.decDepth();
 
     // If we succeeded, write the CST entry.
     asm.localGet('ret');
     asm.ifElse(
         w.blocktype.empty,
         () => {
-        // Set the match length.
           asm.getSavedCst();
           asm.globalGet('pos');
           asm.getSavedPos();
           asm.i32Sub();
           asm.cstNodeSetMatchLength();
+          if (!isRoot) asm.cstNodeRecordChild();
         },
         () => {
           if (emitBacktracking) asm.restorePos();
@@ -771,11 +834,8 @@ class Compiler {
 
       // TODO: Skip CST work altogether when we're inside a lookahead.
       // (Maybe only for negative lookahead?)
-      asm.restoreCst();
+      // asm.restoreCst();
     }
-    // If caller needs the CST addr, save it before popping the stack frame.
-    if (saveCst) asm.getSavedCst();
-
     asm.popStackFrame();
     asm.emit(`END ${debugLabel}`);
   }
@@ -936,8 +996,15 @@ class Compiler {
 // - Remainder (>18) is for CST (growing upwards).
 Compiler.STACK_START_OFFSET = WASM_PAGE_SIZE; // Starting offset of the stack.
 Compiler.INPUT_BUFFER_OFFSET = WASM_PAGE_SIZE; // Offset of the input buffer in memory.
+
+// For now, 16k *pages* for the memo table.
+// That's 1/4 page per char:
+// - 4 bytes per entry
+// - 64 entries per column
+// - 1 column per char
+// - 64k input length.
 Compiler.MEMO_START_OFFSET = 2 * WASM_PAGE_SIZE; // Starting offset of memo records.
-Compiler.CST_START_OFFSET = 18 * WASM_PAGE_SIZE; // Starting offset of CST records.
+Compiler.CST_START_OFFSET = (16 * 1024 + 2) * WASM_PAGE_SIZE; // Starting offset of CST records.
 
 export class WasmMatcher {
   constructor(grammar) {
@@ -1005,7 +1072,7 @@ export class WasmMatcher {
 }
 
 export const ConstantsForTesting = {
-  CST_NODE_SIZE_BYTES: checkNotNull(Assembler.CST_NODE_SIZE_BYTES),
+  CST_NODE_SIZE_BYTES: checkNotNull(Assembler.CST_NODE_HEADER_SIZE_BYTES),
   CST_START_OFFSET: checkNotNull(Compiler.CST_START_OFFSET),
-  MEMO_REC_SIZE_BYTES: checkNotNull(Assembler.MEMO_REC_SIZE_BYTES),
+  MEMO_REC_SIZE_BYTES: checkNotNull(Assembler.MEMO_COL_SIZE_BYTES),
 };
