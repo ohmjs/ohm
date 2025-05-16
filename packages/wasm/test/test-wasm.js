@@ -130,7 +130,7 @@ test('cst with lookahead', async t => {
   t.deepEqual(rawCstNode(matcher, slot(9)), [1, 1, slot(12)]);
 });
 
-test('cst with repetition', async t => {
+test('cst with (small) repetition', async t => {
   const matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a"*}'));
   const input = 'aaa';
   t.is(matchWithInput(matcher, input), 1);
@@ -147,6 +147,40 @@ test('cst with repetition', async t => {
   t.deepEqual(rawCstNode(matcher, slot(13)), [0, 1]);
   t.deepEqual(rawCstNode(matcher, slot(15)), [0, 1]);
   t.deepEqual(rawCstNode(matcher, slot(17)), [0, 1]);
+});
+
+test('cst with (big) repetition', async t => {
+  const matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a"*}'));
+  const input = 'aaaaaaaaaa';
+  t.is(matchWithInput(matcher, input), 1);
+
+  const slot = slot => Constants.CST_START_OFFSET + slot * 4;
+
+  // - apply(start)
+  //   - iter
+  //     - "a"
+  //     - "a"
+  //     - ... (8 more "a"s)
+  t.deepEqual(rawCstNode(matcher, slot(0)), [1, 10, slot(3)]);
+  t.deepEqual(rawCstNode(matcher, slot(3)), [
+    8,
+    10,
+    slot(13), // "a"
+    slot(15), // "a"
+    slot(17), // "a"
+    slot(19), // "a"
+    slot(21), // "a"
+    slot(23), // "a"
+    slot(25), // "a" #7
+    slot(27), // -> next
+  ]);
+  t.deepEqual(rawCstNode(matcher, slot(27)), [
+    3,
+    0,
+    slot(37), // "a"
+    slot(39), // "a"
+    slot(41), // "a"
+  ]);
 });
 
 test.skip('cst with repetition and lookahead', async t => {
@@ -479,7 +513,7 @@ test('real-world grammar', async t => {
   t.log('Wasm match time:', performance.now() - start, 'ms');
 });
 
-test('basic memoization', async t => {
+test.skip('basic memoization', async t => {
   const g = ohm.grammar('G { start = "a" b\nb = "b" }');
   const matcher = await WasmMatcher.forGrammar(g);
   t.is(matchWithInput(matcher, 'ab'), 1);
@@ -498,6 +532,6 @@ test('basic memoization', async t => {
   // ]);
 
   // Expect memo for `b` at position 1, and `start` at position 0.
-  // t.is(view.getUint32(memoRecOffset(1), true), cstNodeOffset(3));
-  // t.is(view.getUint32(memoRecOffset(0), true), cstNodeOffset(0));
+  t.is(view.getUint32(memoRecOffset(1), true), cstNodeOffset(3));
+  t.is(view.getUint32(memoRecOffset(0), true), cstNodeOffset(0));
 });

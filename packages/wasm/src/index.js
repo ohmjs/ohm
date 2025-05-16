@@ -7,6 +7,7 @@ const {instr} = w;
 import {pexprs} from 'ohm-js';
 
 const WASM_PAGE_SIZE = 64 * 1024;
+const ITER_NODE_SIZE_INITIAL = 1 << 3; // Must be a power of 2.
 
 function assert(cond, msg) {
   if (!cond) {
@@ -55,7 +56,7 @@ function numChildren(exp) {
       return exp.factors.length;
     case pexprs.Star:
     case pexprs.Plus:
-      return 8; // TODO: Fix this :-)
+      return ITER_NODE_SIZE_INITIAL;
     // return -1;
     case pexprs.Apply:
     case pexprs.Opt:
@@ -315,8 +316,18 @@ class Assembler {
   }
 
   popStackFrame() {
-    this.globalGet('sp');
     this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
+    this.globalGet('sp');
+    this.i32Add();
+    this.globalSet('sp');
+  }
+
+  // Just like popStackFrame, but take a count on the stack.
+  // [count:i32] -> []
+  popStackFrames(countThunk) {
+    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
+    this.i32Mul();
+    this.globalGet('sp');
     this.i32Add();
     this.globalSet('sp');
   }
@@ -367,15 +378,14 @@ class Assembler {
   }
 
   // Allocate a new CST node.
-  // [] -> []
-  cstNodeAlloc(exp) {
-    const count = numChildren(exp);
-
-    // TODO: Handle count -1 (for star/plus).
-
+  // [childCount:i32] -> []
+  cstNodeAlloc() {
+    this.localSet('tmp'); // save childCount
     this.globalGet('cst');
-    this.dup();
-    this.i32Const(count * 4);
+    this.globalGet('cst'); // Note: can't use dup here!
+    this.localGet('tmp'); // load childCount
+    this.i32Const(4);
+    this.emit(instr.i32.mul);
     this.i32Const(Assembler.CST_NODE_HEADER_SIZE_BYTES);
     this.i32Add();
     this.i32Add();
@@ -424,7 +434,6 @@ class Assembler {
   // in the parent.
   // [] -> []
   cstNodeRecordChild() {
-    this.emit('recordChild');
     // We need the parent's CST thrice: (1) to get the count,
     // (2) to push the child's CST node, and (3) to update the count.
     this.getParentCst();
@@ -450,7 +459,6 @@ class Assembler {
     this.i32Store();
 
     this.cstNodeIncCount(); // increment the parent's count.
-    this.emit('done recordChild');
   }
 
   // Get the memoized result for `ruleIdx` at the current input position,
@@ -487,6 +495,22 @@ class Assembler {
     this.globalGet('pos');
     this.i32Const(Assembler.MEMO_COL_SIZE_BYTES);
     this.i32Mul();
+  }
+
+  // Potentially allocates a new CST node, recording it in the parent.
+  // Note that if that happens, the loop counter will be incremented, because
+  // each level of growth takes up one child slot.
+  // [loopCounter:i32] -> [newLoopCounter:i32]
+  maybeGrowIterNode(growFuncIdx) {
+    this.dup();
+    this.emit(instr.i32.popcnt);
+    this.i32Const(1);
+    this.emit(instr.i32.eq);
+    this.if(this.blocktype('[i32][i32]'), () => {
+      this.dup(); // Pass current size as an arg.
+      this.emit(instr.call, w.funcidx(growFuncIdx));
+      this.i32Inc();
+    });
   }
 }
 Assembler.ALIGN_1_BYTE = 0;
@@ -537,7 +561,8 @@ class Compiler {
         throw new Error(`Unknown rule: ${name}`);
       }
     }
-    return w.funcidx(this.ruleIdxByName.get(name) + this.importDecls.length + 1);
+    // +2 for the 'match' and 'foo'
+    return w.funcidx(this.ruleIdxByName.get(name) + this.importDecls.length + 2);
   }
 
   // Return an object implementing all of the debug imports.
@@ -557,6 +582,7 @@ class Compiler {
     const asm = (this.asm = new Assembler());
     asm.addBlocktype('[i32][]', w.functype([w.valtype.i32], []));
     asm.addBlocktype('[i32][i32]', w.functype([w.valtype.i32], [w.valtype.i32]));
+    asm.addBlocktype('[][i32]', w.functype([], [w.valtype.i32]));
     asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('cst', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
@@ -566,7 +592,7 @@ class Compiler {
     asm.addGlobal('depth', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
 
     // Reserve a fixed number of imports for debug labels.
-    const debugBaseFuncIdx = this.importDecls.length;
+    const debugBaseFuncIdx = this.importDecls.length + 1;
     for (let i = 0; i < 5000; i++) {
       this.importDecls.push({
         module: 'debug',
@@ -763,8 +789,24 @@ class Compiler {
       ruleDecls.push(this.compileRule(name, this.ruleBody(name)));
     }
     this.asm.addFunction('match', [], [w.valtype.i32], () => this.emitMatchBody());
+    this.asm.addFunction('growIterNode', [w.valtype.i32], [], () => {
+      const {asm} = this;
+      asm.addLocal('tmp', w.valtype.i32);
+      asm.pushStackFrame();
 
-    return [this.asm._functionDecls.at(-1), ...ruleDecls];
+      // Allocate a new node that will be as large as the current size, or half
+      // the size of the counter.
+      asm.emit(instr.local.get, w.localidx(0));
+      asm.i32Const(1);
+      asm.emit(instr.i32.shr_u);
+
+      asm.saveCst();
+      asm.cstNodeAlloc();
+      asm.cstNodeRecordChild();
+    });
+
+    // TODO: Fix the awkwardness of manually adding the two functions here.
+    return [this.asm._functionDecls.at(-2), this.asm._functionDecls.at(-1), ...ruleDecls];
   }
 
   // Contract: emitPExpr always means we're going deeper in the PExpr tree.
@@ -781,7 +823,8 @@ class Compiler {
     asm.savePos();
 
     asm.saveCst();
-    asm.cstNodeAlloc(exp);
+    asm.i32Const(numChildren(exp));
+    asm.cstNodeAlloc();
 
     // Wrap the body in a block, which is useful for two reasons:
     // - it allows early returns.
@@ -954,8 +997,18 @@ class Compiler {
 
   emitStar({expr}) {
     const {asm} = this;
-    asm.block(w.blocktype.empty, () => {
-      asm.loop(w.blocktype.empty, () => {
+    asm.emit('emitStar');
+
+    // First operand of the `sub` below (second operand is the loop counter).
+    asm.i32Const(Math.clz32(ITER_NODE_SIZE_INITIAL));
+
+    asm.block(asm.blocktype('[][i32]'), () => {
+      // Loop counter used by maybeGrowIterNode — will be returned from this block.
+      asm.i32Const(ITER_NODE_SIZE_INITIAL);
+      asm.loop(asm.blocktype('[i32][i32]'), () => {
+        asm.i32Inc(); // increment counter
+        asm.maybeGrowIterNode(this.importDecls.length + 1);
+
         this.emitPExpr(expr);
         asm.localGet('ret');
         asm.emit(instr.i32.eqz);
@@ -963,6 +1016,14 @@ class Compiler {
         asm.continue(0);
       });
     });
+    // The difference in the number of leading zeros between the initial size
+    // and the current size tells us how many times we grew, and thus how many
+    // stack frames we need to pop.
+    asm.emit(instr.i32.clz);
+    asm.emit(instr.i32.sub);
+    asm.popStackFrames();
+
+    asm.emit('done emitStar');
     asm.setRet(1);
   }
 
