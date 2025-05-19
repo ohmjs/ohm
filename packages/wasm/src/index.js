@@ -424,6 +424,12 @@ class Assembler {
     this.i32Store(0);
   }
 
+  // Get the 'matchLength' field of a given CST node.
+  // [addr:i32] -> []
+  cstNodeGetMatchLength() {
+    this.i32Load(4);
+  }
+
   // Set the 'matchLength' field of a given CST node.
   // [val:i32, addr:i32] -> []
   cstNodeSetMatchLength() {
@@ -469,13 +475,11 @@ class Assembler {
   // [memoOffset:i32] -> [i32]
   getMemo(ruleIdx) {
     this.i32Load(Compiler.MEMO_START_OFFSET + ruleIdx * 4);
-
-    this.emit(instr.drop);
-    this.i32Const(-1);
   }
 
   // [memoOffset:i32] -> []
   setMemo(ruleIdx) {
+    this.emit('setMemo');
     this.getSavedCst();
 
     this.localGet('ret');
@@ -491,7 +495,6 @@ class Assembler {
   // Load the offset of the memo record for the original position onto the stack.
   // [] -> [addr:i32]
   getMemoColOffset() {
-    this.emit('getMemoColOffset');
     this.globalGet('pos');
     this.i32Const(Assembler.MEMO_COL_SIZE_BYTES);
     this.i32Mul();
@@ -518,7 +521,7 @@ Assembler.ALIGN_4_BYTES = 2;
 Assembler.CST_NODE_HEADER_SIZE_BYTES = 8;
 
 // A "memo column" holds the info for one input position, i.e. one char.
-Assembler.MEMO_COL_SIZE_BYTES = 4 * 64;
+Assembler.MEMO_COL_SIZE_BYTES = 4 * 256;
 
 Assembler.STACK_FRAME_SIZE_BYTES = 8;
 
@@ -618,21 +621,74 @@ class Compiler {
       // It needs to be loaded this before the position changes.
       asm.getMemoColOffset();
       asm.dup(); // Leave a copy on the stack for setMemo.
+      asm.emit(`xyz ${name}`);
 
       asm.getMemo(ruleIdx);
-      asm.localTee('tmp');
-      asm.i32Const(-1);
+      asm.localTee('ret');
+      asm.i32Const(0);
       asm.i32Ne();
       asm.ifElse(
           asm.blocktype('[i32][]'),
           () => {
-            asm.emit('useMemo');
+            asm.emit('xxx useMemo');
             // Use the memoized result.
-            asm.localGet('tmp');
+            asm.localGet('ret');
+
+            asm.i32Const(-1);
+            asm.emit(instr.i32.eq);
+            asm.ifElse(
+                w.blocktype.empty,
+                () => {
+                  asm.emit('xxx useMemo fail');
+                  asm.setRet(0);
+                },
+                () => {
+                  // TODO: Don't do this if it's the start node.
+                  asm.emit('xxx useMemo success');
+
+                  // Near duplicate of cstNodeRecordChild.
+
+                  // We need the parent's CST thrice: (1) to get the count,
+                  // (2) to push the child's CST node, and (3) to update the count.
+                  asm.getSavedCst(); // CHANGED from getParentCst
+                  asm.dup();
+                  asm.dup();
+
+                  // Compute dest addr of the child pointer.
+                  // We have skip over (1) `count` i32s, and (2) the header.
+
+                  // Calculate size of `count` i32 fields.
+                  asm.cstNodeGetCount();
+                  asm.i32Const(4);
+                  asm.emit(instr.i32.mul);
+
+                  // Add the size.
+                  asm.i32Const(Assembler.CST_NODE_HEADER_SIZE_BYTES);
+                  asm.i32Add();
+
+                  // Add both of the above to get the dest address.
+                  asm.i32Add();
+
+                  asm.localGet('ret'); // val to be stored
+                  asm.i32Store();
+
+                  asm.cstNodeIncCount(); // increment the parent's count.
+
+                  // Advance the pos
+                  asm.emit('xxx advancePos');
+                  asm.globalGet('pos');
+                  asm.localGet('ret');
+                  asm.cstNodeGetMatchLength();
+                  asm.i32Add();
+                  asm.globalSet('pos');
+
+                  asm.setRet(1);
+                },
+            );
 
             // TODO: implement this.
-            asm.emit(instr.drop); // tmp
             asm.emit(instr.drop); // memoOffset
+            asm.emit('xxx end useMemo');
           },
           () => {
           // No memoized result — eval.
@@ -682,7 +738,7 @@ class Compiler {
       w.typesec(types),
       w.importsec(imports),
       w.funcsec(funcs),
-      w.memsec([w.mem(w.memtype(w.limits.min(16 * 1024 + 24)))]),
+      w.memsec([w.mem(w.memtype(w.limits.min(1024 + 24)))]),
       w.globalsec(globals),
       w.exportsec(exports),
       w.codesec(codes),
@@ -754,6 +810,11 @@ class Compiler {
 
     asm.i32Const(Compiler.CST_START_OFFSET);
     asm.globalSet('cst');
+
+    asm.i32Const(Compiler.MEMO_START_OFFSET);
+    asm.i32Const(0);
+    asm.i32Const(Compiler.CST_START_OFFSET - Compiler.MEMO_START_OFFSET);
+    asm.emit(0xfc, 11, 0x00); // memory.fill 0
 
     asm.i32Const(0); // offset
     asm.i32Const(WASM_PAGE_SIZE); // maxLen
@@ -1058,14 +1119,14 @@ class Compiler {
 Compiler.STACK_START_OFFSET = WASM_PAGE_SIZE; // Starting offset of the stack.
 Compiler.INPUT_BUFFER_OFFSET = WASM_PAGE_SIZE; // Offset of the input buffer in memory.
 
-// For now, 16k *pages* for the memo table.
-// That's 1/4 page per char:
+// For now, 1k *pages* for the memo table.
+// That's 1/64 page per char:
 // - 4 bytes per entry
-// - 64 entries per column
+// - 256 entries per column
 // - 1 column per char
 // - 64k input length.
 Compiler.MEMO_START_OFFSET = 2 * WASM_PAGE_SIZE; // Starting offset of memo records.
-Compiler.CST_START_OFFSET = (16 * 1024 + 2) * WASM_PAGE_SIZE; // Starting offset of CST records.
+Compiler.CST_START_OFFSET = (1024 + 2) * WASM_PAGE_SIZE; // Starting offset of CST records.
 
 export class WasmMatcher {
   constructor(grammar) {
@@ -1135,5 +1196,5 @@ export class WasmMatcher {
 export const ConstantsForTesting = {
   CST_NODE_SIZE_BYTES: checkNotNull(Assembler.CST_NODE_HEADER_SIZE_BYTES),
   CST_START_OFFSET: checkNotNull(Compiler.CST_START_OFFSET),
-  MEMO_REC_SIZE_BYTES: checkNotNull(Assembler.MEMO_COL_SIZE_BYTES),
+  MEMO_COL_SIZE_BYTES: checkNotNull(Assembler.MEMO_COL_SIZE_BYTES),
 };

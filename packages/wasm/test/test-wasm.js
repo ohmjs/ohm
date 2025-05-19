@@ -520,7 +520,7 @@ test.skip('basic memoization', async t => {
 
   const view = matcher.memoTableViewForTesting();
   // Get the byte offset of the nth memo rec and CST node, respectively.
-  const memoRecOffset = n => n * Constants.MEMO_REC_SIZE_BYTES;
+  const memoRecOffset = n => n * Constants.MEMO_COL_SIZE_BYTES;
   const cstNodeOffset = n => Constants.CST_START_OFFSET + n * Constants.CST_NODE_SIZE_BYTES;
 
   // t.deepEqual(rawCst(matcher), [
