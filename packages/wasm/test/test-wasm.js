@@ -9,6 +9,7 @@ const matchWithInput = (m, str) => (m.setInput(str), m.match());
 const indented = (d, str) => new Array(d * 2).join(' ') + str;
 
 const BYTES_PER_CST_REC = 8;
+const SIZEOF_UINT32 = 4;
 
 function getUint32Array(view, offset, count) {
   const arr = new Uint32Array(count);
@@ -513,25 +514,33 @@ test('real-world grammar', async t => {
   t.log('Wasm match time:', performance.now() - start, 'ms');
 });
 
-test.skip('basic memoization', async t => {
+test('basic memoization', async t => {
   const g = ohm.grammar('G { start = "a" b\nb = "b" }');
   const matcher = await WasmMatcher.forGrammar(g);
   t.is(matchWithInput(matcher, 'ab'), 1);
 
   const view = matcher.memoTableViewForTesting();
-  // Get the byte offset of the nth memo rec and CST node, respectively.
-  const memoRecOffset = n => n * Constants.MEMO_COL_SIZE_BYTES;
-  const cstNodeOffset = n => Constants.CST_START_OFFSET + n * Constants.CST_NODE_SIZE_BYTES;
+  const ruleIdxByName = new Map(Object.keys(g.rules).map((name, idx) => [name, idx]));
 
-  // t.deepEqual(rawCst(matcher), [
-  //   [0, 2], // - apply(start)  [0]
-  //   [1, 2], //   - seq         [1]
-  //   [2, 1], //     - "a"       [2]
-  //   [2, 1], //     - apply(b)  [3]
-  //   [3, 1], //       - "b"     [4]
-  // ]);
+  const getMemo = (pos, ruleName) => {
+    const colOffset = pos * Constants.MEMO_COL_SIZE_BYTES;
+    return view.getUint32(colOffset + SIZEOF_UINT32 * ruleIdxByName.get(ruleName), true);
+  };
+
+  const slot = slot => Constants.CST_START_OFFSET + slot * 4;
+
+  // - apply(start)  [0]
+  //   - seq         [1]
+  //     - "a"       [2]
+  //     - apply(b)  [3]
+  //       - "b"     [4]
+  t.deepEqual(rawCstNode(matcher), [1, 2, slot(3)]);
+  t.deepEqual(rawCstNode(matcher, slot(3)), [2, 2, slot(7), slot(9)]);
+  t.deepEqual(rawCstNode(matcher, slot(7)), [0, 1]);
+  t.deepEqual(rawCstNode(matcher, slot(9)), [1, 1, slot(12)]);
+  t.deepEqual(rawCstNode(matcher, slot(12)), [0, 1]);
 
   // Expect memo for `b` at position 1, and `start` at position 0.
-  t.is(view.getUint32(memoRecOffset(1), true), cstNodeOffset(3));
-  t.is(view.getUint32(memoRecOffset(0), true), cstNodeOffset(0));
+  t.is(getMemo(1, 'b'), slot(9));
+  t.is(getMemo(0, 'start'), slot(0));
 });
