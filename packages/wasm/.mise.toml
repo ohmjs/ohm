@@ -1,0 +1,10 @@
+[env]
+_.path = [
+    "~/dev/third_party/titzer/virgil/bin",
+]
+
+[tasks.build_lib]
+run = "pnpm build:lib"
+
+[tools]
+node = "24"

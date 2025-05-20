@@ -274,6 +274,9 @@ importers:
         specifier: ^17.1.0
         version: link:../ohm-js
     devDependencies:
+      '@thi.ng/leb128':
+        specifier: ^3.1.48
+        version: 3.1.48
       ava:
         specifier: ^6.2.0
         version: 6.2.0(rollup@3.29.5)
@@ -411,6 +414,74 @@ packages:
 
   '@sindresorhus/merge-streams@2.3.0':
     resolution: {integrity: sha512-LtoMMhxAlorcGhmFYI+LhPgbPZCkgP6ra1YL604EeF6U98pLlQ3iWIGMdWSC+vWmPBWBNgmDBAhnAobLROJmwg==}
+    engines: {node: '>=18'}
+
+  '@thi.ng/api@8.11.27':
+    resolution: {integrity: sha512-KAERK4pdeVCtM1uh8crl8eGmcd7pTdd6QmLWbbGU7gb+xTXbkPP8K4vOcsfpUYyg6jNCAEo/x0GdKol1qOtA8A==}
+    engines: {node: '>=18'}
+
+  '@thi.ng/arrays@2.11.0':
+    resolution: {integrity: sha512-ZoAXtf6TMgoNap9ldBqi4p4g1rareSZORapzryJykTs4ANh9vu55hERXV2fgZE24nMJS8EdWCRD/nkafM3q5lA==}
+    engines: {node: '>=18'}
+
+  '@thi.ng/binary@3.4.50':
+    resolution: {integrity: sha512-yXHTaOS4ty3zmlmDv4Lj20/uyNUMnI9rPpDLWuqQKjRZ2mclykWYgrQc8ftNrOtmNurewX37G8Ipzesb5L19mA==}
+    engines: {node: '>=18'}
+
+  '@thi.ng/checks@3.7.7':
+    resolution: {integrity: sha512-SP48dmnblxQrWRAKWuFMKsTjXBB8BnJ4MqnXEwBgfyQO3lzY4D3WYZz7QuoyJPj49bGmWBB/tLahqk3mJysPaQ==}
+    engines: {node: '>=18'}
+
+  '@thi.ng/compare@2.4.19':
+    resolution: {integrity: sha512-0yWc7yjEj0Allwlb4JD6RMd6sYcDvSZSf2DOGgz2AR9MMdWAigu6+ZrrMoSnuOlYIKtmqtVIl8+82U1V/vToRA==}
+    engines: {node: '>=18'}
+
+  '@thi.ng/compose@3.0.30':
+    resolution: {integrity: sha512-QqyMHLdbHtiNaob5EgqUPbdoy/loZAazEJbdhOun2aZl7CsTVsnWXs69+PDZuqmVgw4T1QcxxibpgZLXY9Eqmw==}
+    engines: {node: '>=18'}
+
+  '@thi.ng/equiv@2.1.83':
+    resolution: {integrity: sha512-6vviN0+PkONxksYsn3VTtSOyls2fpCUltU2TThTiFCUmbdqw72R615viUh4o0ddpNTXQvhvKOi2Jl2bwG+06Ug==}
+    engines: {node: '>=18'}
+
+  '@thi.ng/errors@2.5.33':
+    resolution: {integrity: sha512-6aKtUITb4nj+2KixXOoawNVJGY6P56Wnmv2YZnQ8SsnKNZAcL7GPbP6/KGg+D2JhnbJPjUDFcH0Fq8bxY+FWoQ==}
+    engines: {node: '>=18'}
+
+  '@thi.ng/hex@2.3.71':
+    resolution: {integrity: sha512-g0Sg7EneaI84OxUQdsAZXHdR/tgLCr9ZYc/58JoSThh6Se2XPbJjgfV8UCB37xBbqMPLc5O6EEMzz9giNOnAvQ==}
+    engines: {node: '>=18'}
+
+  '@thi.ng/leb128@3.1.48':
+    resolution: {integrity: sha512-9AvEUAvntKromc5+fCRsbMxXNOF0YxAGFdGnwPbhXZZSLJFpKk2j7hC+/G2dKyAR9f8YTXqvVWQlJBB/5n3m5w==}
+    engines: {node: '>=18'}
+
+  '@thi.ng/math@5.11.27':
+    resolution: {integrity: sha512-AcFiX7+iOQhheB1m/pFz5LGAp4+C6Mgh/RraDqBcSPGLyaLNGr4JpZFrxsECovbLK1Jvos46I8Mq240M6j7w8A==}
+    engines: {node: '>=18'}
+
+  '@thi.ng/memoize@4.0.17':
+    resolution: {integrity: sha512-zyHDryw6r59yR9ppMvTsbhNvJ2TyXaFEBPC5JMqM7jvMByG6OSauRJPbOhzfO1GnZULNIcFqmBBSVql2RVerxQ==}
+    engines: {node: '>=18'}
+
+  '@thi.ng/random@4.1.18':
+    resolution: {integrity: sha512-GhoE8/tYPViFxR3d40xDUUFHdeovgV5l4YSt4t7KZjns6ri4nQDcWbspWgi5s6OmrsF/OYwf001PZYGZuNpMhA==}
+    engines: {node: '>=18'}
+
+  '@thi.ng/strings@3.9.12':
+    resolution: {integrity: sha512-CfQPC6c9zj0kBHLJPlraM3W3V+fr1smhS824/N5THj1WSMGv8rsyhMp8bzHLuIGWupGUV3pMue94ZHzFoYY2EQ==}
+    engines: {node: '>=18'}
+
+  '@thi.ng/timestamp@1.1.12':
+    resolution: {integrity: sha512-YMhdZrClu8Kpy3oBd+gMI3/hbpis4iwaw7E1YrfpVYdTpPskjTwCklSoqXOmbjl38k97ikuKiik61GCe5M+vxg==}
+    engines: {node: '>=18'}
+
+  '@thi.ng/transducers-binary@2.1.162':
+    resolution: {integrity: sha512-P+ydT/cwHSem3m3ligjaLzvFKicW9rDEYBijLoaUm2cB1NCBtORPzdZEozqZRciwG0BkW/jcoxjhUboHje8N+w==}
+    engines: {node: '>=18'}
+
+  '@thi.ng/transducers@9.3.0':
+    resolution: {integrity: sha512-jUzLS+htYXHFV/8gRb0GQWFrCEDN1Nxa8arSwebz683diIFxA+Qwuka2gFIj5u5VInktrZ3Bcsh/fqKVlEIyog==}
     engines: {node: '>=18'}
 
   '@tootallnate/once@2.0.0':
@@ -2191,6 +2262,9 @@ packages:
       '@swc/wasm':
         optional: true
 
+  tslib@2.8.1:
+    resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
+
   tunnel-agent@0.6.0:
     resolution: {integrity: sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w==}
 
@@ -2602,6 +2676,90 @@ snapshots:
       rollup: 3.29.5
 
   '@sindresorhus/merge-streams@2.3.0': {}
+
+  '@thi.ng/api@8.11.27': {}
+
+  '@thi.ng/arrays@2.11.0':
+    dependencies:
+      '@thi.ng/api': 8.11.27
+      '@thi.ng/checks': 3.7.7
+      '@thi.ng/compare': 2.4.19
+      '@thi.ng/equiv': 2.1.83
+      '@thi.ng/errors': 2.5.33
+      '@thi.ng/random': 4.1.18
+
+  '@thi.ng/binary@3.4.50':
+    dependencies:
+      '@thi.ng/api': 8.11.27
+
+  '@thi.ng/checks@3.7.7':
+    dependencies:
+      tslib: 2.8.1
+
+  '@thi.ng/compare@2.4.19':
+    dependencies:
+      '@thi.ng/api': 8.11.27
+
+  '@thi.ng/compose@3.0.30':
+    dependencies:
+      '@thi.ng/api': 8.11.27
+      '@thi.ng/errors': 2.5.33
+
+  '@thi.ng/equiv@2.1.83': {}
+
+  '@thi.ng/errors@2.5.33': {}
+
+  '@thi.ng/hex@2.3.71': {}
+
+  '@thi.ng/leb128@3.1.48':
+    dependencies:
+      '@thi.ng/checks': 3.7.7
+      '@thi.ng/errors': 2.5.33
+      '@thi.ng/transducers-binary': 2.1.162
+
+  '@thi.ng/math@5.11.27':
+    dependencies:
+      '@thi.ng/api': 8.11.27
+
+  '@thi.ng/memoize@4.0.17':
+    dependencies:
+      '@thi.ng/api': 8.11.27
+
+  '@thi.ng/random@4.1.18':
+    dependencies:
+      '@thi.ng/api': 8.11.27
+      '@thi.ng/errors': 2.5.33
+
+  '@thi.ng/strings@3.9.12':
+    dependencies:
+      '@thi.ng/api': 8.11.27
+      '@thi.ng/errors': 2.5.33
+      '@thi.ng/hex': 2.3.71
+      '@thi.ng/memoize': 4.0.17
+
+  '@thi.ng/timestamp@1.1.12': {}
+
+  '@thi.ng/transducers-binary@2.1.162':
+    dependencies:
+      '@thi.ng/binary': 3.4.50
+      '@thi.ng/compose': 3.0.30
+      '@thi.ng/errors': 2.5.33
+      '@thi.ng/hex': 2.3.71
+      '@thi.ng/random': 4.1.18
+      '@thi.ng/strings': 3.9.12
+      '@thi.ng/transducers': 9.3.0
+
+  '@thi.ng/transducers@9.3.0':
+    dependencies:
+      '@thi.ng/api': 8.11.27
+      '@thi.ng/arrays': 2.11.0
+      '@thi.ng/checks': 3.7.7
+      '@thi.ng/compare': 2.4.19
+      '@thi.ng/compose': 3.0.30
+      '@thi.ng/errors': 2.5.33
+      '@thi.ng/math': 5.11.27
+      '@thi.ng/random': 4.1.18
+      '@thi.ng/timestamp': 1.1.12
 
   '@tootallnate/once@2.0.0': {}
 
@@ -4419,6 +4577,8 @@ snapshots:
       typescript: 4.9.5
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
+
+  tslib@2.8.1: {}
 
   tunnel-agent@0.6.0:
     dependencies:
