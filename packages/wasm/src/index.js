@@ -613,94 +613,11 @@ class Compiler {
   compileRule(name, ruleBody) {
     const {asm} = this;
     asm.addFunction(`$${name}`, [], [w.valtype.i32], () => {
-      const ruleIdx = checkNotNull(this.ruleIdxByName.get(name));
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
 
-      // This will be used by getMemo and possibly setMemo.
-      // It needs to be loaded this before the position changes.
-      asm.getMemoColOffset();
-      asm.dup(); // Leave a copy on the stack for setMemo.
-      asm.emit(`xyz ${name}`);
-
-      asm.getMemo(ruleIdx);
-      asm.localTee('ret');
-      asm.i32Const(0);
-      asm.i32Ne();
-      asm.ifElse(
-          asm.blocktype('[i32][]'),
-          () => {
-            asm.emit('xxx useMemo');
-            // Use the memoized result.
-            asm.localGet('ret');
-
-            asm.i32Const(-1);
-            asm.emit(instr.i32.eq);
-            asm.ifElse(
-                w.blocktype.empty,
-                () => {
-                  asm.emit('xxx useMemo fail');
-                  asm.setRet(0);
-                },
-                () => {
-                  // TODO: Don't do this if it's the start node.
-                  asm.emit('xxx useMemo success');
-
-                  // Near duplicate of cstNodeRecordChild.
-
-                  // We need the parent's CST thrice: (1) to get the count,
-                  // (2) to push the child's CST node, and (3) to update the count.
-                  asm.getSavedCst(); // CHANGED from getParentCst
-                  asm.dup();
-                  asm.dup();
-
-                  // Compute dest addr of the child pointer.
-                  // We have skip over (1) `count` i32s, and (2) the header.
-
-                  // Calculate size of `count` i32 fields.
-                  asm.cstNodeGetCount();
-                  asm.i32Const(4);
-                  asm.emit(instr.i32.mul);
-
-                  // Add the size.
-                  asm.i32Const(Assembler.CST_NODE_HEADER_SIZE_BYTES);
-                  asm.i32Add();
-
-                  // Add both of the above to get the dest address.
-                  asm.i32Add();
-
-                  asm.localGet('ret'); // val to be stored
-                  asm.i32Store();
-
-                  asm.cstNodeIncCount(); // increment the parent's count.
-
-                  // Advance the pos
-                  asm.emit('xxx advancePos');
-                  asm.globalGet('pos');
-                  asm.localGet('ret');
-                  asm.cstNodeGetMatchLength();
-                  asm.i32Add();
-                  asm.globalSet('pos');
-
-                  asm.setRet(1);
-                },
-            );
-
-            // TODO: implement this.
-            asm.emit(instr.drop); // memoOffset
-            asm.emit('xxx end useMemo');
-          },
-          () => {
-          // No memoized result — eval.
-            this.emitPExpr(ruleBody);
-
-            // At this point, the stack has been restored, so the current frame
-            // is for the rule application. That's exactly what we want for
-            // memoization!
-            asm.setMemo(ruleIdx);
-          },
-      );
-
+      // No memoized result — eval.
+      this.emitPExpr(ruleBody);
       asm.localGet('ret');
     });
     return this.asm._functionDecls.at(-1);
@@ -921,12 +838,14 @@ class Compiler {
     asm.ifElse(
         w.blocktype.empty,
         () => {
+          asm.emit('writeCst');
           asm.getSavedCst();
           asm.globalGet('pos');
           asm.getSavedPos();
           asm.i32Sub();
           asm.cstNodeSetMatchLength();
           if (!isRoot) asm.cstNodeRecordChild();
+          asm.emit('done writeCst');
         },
         () => {
           if (emitBacktracking) asm.restorePos();
@@ -1143,12 +1062,20 @@ export class WasmMatcher {
     const compiler = new Compiler(grammar);
     const bytes = compiler.compile();
     const matcher = new WasmMatcher(grammar);
+    let depth = 0;
+
     const {instance} = await WebAssembly.instantiate(bytes, {
       env: matcher._env,
       debug: compiler.getDebugImports((label, ret) => {
         // const result = ret === 1 ? 'SUCCESS' : ret === 0 ? 'FAIL' : '';
-        // eslint-disable-next-line no-console
-        // console.log(`pos: ${instance.exports.pos.value}`, label, result);
+        // eslint-disable no-console
+        // const indented = s => new Array(depth).join('  ') + s;
+        // const pos = instance.exports.pos.value;
+
+        // if (label.startsWith('BEGIN')) depth += 1;
+        // console.log(`pos: ${pos} ${indented(label)}`);
+        // if (label.startsWith('END')) depth -= 1;
+        // eslint-enable no-console
       }),
     });
     matcher._instance = instance;
