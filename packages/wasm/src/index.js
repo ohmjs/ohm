@@ -95,8 +95,9 @@ function functypeToString(paramTypes, resultTypes) {
 }
 
 class TypeMap {
-  constructor() {
+  constructor(startIdx = 0) {
     this._map = new Map();
+    this._startIdx = startIdx;
   }
 
   add(paramTypes, resultTypes) {
@@ -104,14 +105,24 @@ class TypeMap {
     if (this._map.has(key)) {
       return this._map.get(key)[0];
     }
-    const idx = this._map.size;
+    const idx = this._startIdx + this._map.size;
     this._map.set(key, [idx, w.functype(paramTypes, resultTypes)]);
     return idx;
+  }
+
+  addDecls(decls) {
+    for (const {paramTypes, resultTypes} of decls) {
+      this.add(paramTypes, resultTypes);
+    }
   }
 
   getIdx(paramTypes, resultTypes) {
     const key = functypeToString(paramTypes, resultTypes);
     return checkNotNull(this._map.get(key))[0];
+  }
+
+  getIdxForDecl(decl) {
+    return this.getIdx(decl.paramTypes, decl.resultTypes);
   }
 
   getTypes() {
@@ -124,7 +135,7 @@ class TypeMap {
   constructing a module.
  */
 class Assembler {
-  constructor() {
+  constructor(typeMap) {
     this._globals = new Map();
 
     this._functionDecls = [];
@@ -138,19 +149,17 @@ class Assembler {
     this._code = [];
     this._locals = undefined;
 
-    // TODO: Replace blocktypes with TypeMap.
-    this._blocktypes = [];
-    this._typeMap = new TypeMap();
+    this._typeMap = typeMap;
   }
 
-  addBlocktype(name, type) {
-    this._blocktypes.push([name, type]);
+  addBlocktype(paramTypes, resultTypes) {
+    this._typeMap.add(paramTypes, resultTypes);
   }
 
-  blocktype(str) {
-    const idx = this._blocktypes.findIndex(bt => bt[0] === str);
-    assert(idx !== -1, `Unknown blocktype: '${str}'`);
-    return w.i32(idx + prebuilt.typesec.entryCount); // TODO: Fix this.
+  blocktype(paramTypes, resultTypes) {
+    const idx = this._typeMap.getIdx(paramTypes, resultTypes);
+    assert(idx !== -1, `Unknown blocktype: '${functypeToString(paramTypes, resultTypes)}'`);
+    return w.i32(idx); // TODO: Fix this.
   }
 
   doEmit(thunk) {
@@ -528,7 +537,7 @@ class Assembler {
     this.getSavedCst();
 
     this.localGet('ret');
-    this.ifFalse(this.blocktype('[i32][i32]'), () => {
+    this.ifFalse(this.blocktype([w.valtype.i32], [w.valtype.i32]), () => {
       // Replace the CST addr (it's been recycled) on the stack with -1.
       this.emit(instr.drop);
       this.i32Const(-1);
@@ -554,7 +563,7 @@ class Assembler {
     this.emit(instr.i32.popcnt);
     this.i32Const(1);
     this.emit(instr.i32.eq);
-    this.if(this.blocktype('[i32][i32]'), () => {
+    this.if(this.blocktype([w.valtype.i32], [w.valtype.i32]), () => {
       this.dup(); // Pass current size as an arg.
       this.emit(instr.call, w.funcidx(growFuncIdx));
       this.i32Inc();
@@ -628,10 +637,11 @@ class Compiler {
   }
 
   compile() {
-    const asm = (this.asm = new Assembler());
-    asm.addBlocktype('[i32][]', w.functype([w.valtype.i32], []));
-    asm.addBlocktype('[i32][i32]', w.functype([w.valtype.i32], [w.valtype.i32]));
-    asm.addBlocktype('[][i32]', w.functype([], [w.valtype.i32]));
+    const typeMap = new TypeMap(prebuilt.typesec.entryCount);
+    const asm = (this.asm = new Assembler(typeMap));
+    asm.addBlocktype([w.valtype.i32], []);
+    asm.addBlocktype([w.valtype.i32], [w.valtype.i32]);
+    asm.addBlocktype([], [w.valtype.i32]);
     asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('cst', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
@@ -655,7 +665,7 @@ class Compiler {
 
     const functionDecls = this.functionDecls();
     this.rewriteDebugLabels(functionDecls, debugBaseFuncIdx);
-    return this.buildModule([...functionDecls]);
+    return this.buildModule(typeMap, [...functionDecls]);
   }
 
   compileRule(name, ruleBody) {
@@ -671,25 +681,17 @@ class Compiler {
     return this.asm._functionDecls.at(-1);
   }
 
-  buildModule(functionDecls) {
+  buildModule(typeMap, functionDecls) {
     const {importDecls} = this;
 
-    const btCount = this.asm._blocktypes.length;
+    typeMap.addDecls(importDecls);
+    typeMap.addDecls(functionDecls);
 
-    // TODO: Clean this up.
-    const importIdx = i => prebuilt.typesec.entryCount + btCount + i;
-    const localFuncIdx = i => prebuilt.typesec.entryCount + btCount + importDecls.length + i;
-
-    // TODO: Compress types!
-    const types = [
-      ...this.asm._blocktypes.map(([_, t]) => t),
-      ...[...importDecls, ...functionDecls].map(f => w.functype(f.paramTypes, f.resultTypes)),
-    ];
     const globals = [];
     const imports = importDecls.map((f, i) =>
-      w.import_(f.module, f.name, w.importdesc.func(importIdx(i))),
+      w.import_(f.module, f.name, w.importdesc.func(typeMap.getIdxForDecl(f))),
     );
-    const funcs = functionDecls.map((f, i) => w.typeidx(localFuncIdx(i)));
+    const funcs = functionDecls.map((f, i) => w.typeidx(typeMap.getIdxForDecl(f)));
     const codes = functionDecls.map(f => w.code(w.func(f.locals, f.body)));
 
     const exportOffset = importDecls.length + prebuilt.funcsec.entryCount;
@@ -709,7 +711,7 @@ class Compiler {
     const numRules = this.ruleIdxByName.size;
 
     const mod = w.module([
-      mergeSections(w.SECTION_ID_TYPE, prebuilt.typesec, types),
+      mergeSections(w.SECTION_ID_TYPE, prebuilt.typesec, typeMap.getTypes()),
       w.importsec(imports),
       mergeSections(w.SECTION_ID_FUNCTION, prebuilt.funcsec, funcs),
       w.tablesec([
@@ -1044,10 +1046,10 @@ class Compiler {
     // First operand of the `sub` below (second operand is the loop counter).
     asm.i32Const(Math.clz32(ITER_NODE_SIZE_INITIAL));
 
-    asm.block(asm.blocktype('[][i32]'), () => {
+    asm.block(asm.blocktype([], [w.valtype.i32]), () => {
       // Loop counter used by maybeGrowIterNode — will be returned from this block.
       asm.i32Const(ITER_NODE_SIZE_INITIAL);
-      asm.loop(asm.blocktype('[i32][i32]'), () => {
+      asm.loop(asm.blocktype([w.valtype.i32], [w.valtype.i32]), () => {
         asm.i32Inc(); // increment counter
         asm.maybeGrowIterNode(this.importDecls.length + 1 + prebuilt.funcsec.entryCount);
 
