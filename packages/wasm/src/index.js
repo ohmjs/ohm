@@ -1,13 +1,17 @@
 /* global TextEncoder, WebAssembly */
 
 import * as w from '@wasmgroundup/emit';
+import {pexprs} from 'ohm-js';
 // import wabt from 'wabt';
 
-const {instr} = w;
-import {pexprs} from 'ohm-js';
+import * as prebuilt from '../out/lib.wasm_sections.ts';
 
 const WASM_PAGE_SIZE = 64 * 1024;
 const ITER_NODE_SIZE_INITIAL = 1 << 3; // Must be a power of 2.
+
+const DEBUG = false;
+
+const {instr} = w;
 
 function assert(cond, msg) {
   if (!cond) {
@@ -76,6 +80,45 @@ function numChildren(exp) {
   }
 }
 
+// Produce a section combining `els` with the corresponding prebuilt section.
+// This only does a naive merge; no type or function indices are rewritten.
+function mergeSections(sectionId, prebuilt, els) {
+  const count = prebuilt.entryCount + els.length;
+  return w.section(sectionId, [w.u32(count), prebuilt.contents, els]);
+}
+
+function functypeToString(paramTypes, resultTypes) {
+  const toStr = t => checkNotNull(['f64', 'f32', 'i64', 'i32'][t - w.valtype.f64]);
+  const params = paramTypes.map(toStr).join(',');
+  const results = resultTypes.map(toStr).join(',');
+  return '[' + params + '][' + results + ']';
+}
+
+class TypeMap {
+  constructor() {
+    this._map = new Map();
+  }
+
+  add(paramTypes, resultTypes) {
+    const key = functypeToString(paramTypes, resultTypes);
+    if (this._map.has(key)) {
+      return this._map.get(key)[0];
+    }
+    const idx = this._map.size;
+    this._map.set(key, [idx, w.functype(paramTypes, resultTypes)]);
+    return idx;
+  }
+
+  getIdx(paramTypes, resultTypes) {
+    const key = functypeToString(paramTypes, resultTypes);
+    return checkNotNull(this._map.get(key))[0];
+  }
+
+  getTypes() {
+    return [...this._map.values()].map(([_, t]) => t);
+  }
+}
+
 /*
   Offers a higher-level interface for generating WebAssembly code and
   constructing a module.
@@ -95,7 +138,9 @@ class Assembler {
     this._code = [];
     this._locals = undefined;
 
+    // TODO: Replace blocktypes with TypeMap.
     this._blocktypes = [];
+    this._typeMap = new TypeMap();
   }
 
   addBlocktype(name, type) {
@@ -105,7 +150,7 @@ class Assembler {
   blocktype(str) {
     const idx = this._blocktypes.findIndex(bt => bt[0] === str);
     assert(idx !== -1, `Unknown blocktype: '${str}'`);
-    return w.i32(idx);
+    return w.i32(idx + prebuilt.typesec.entryCount); // TODO: Fix this.
   }
 
   doEmit(thunk) {
@@ -565,7 +610,8 @@ class Compiler {
       }
     }
     // +2 for the 'match' and 'foo'
-    return w.funcidx(this.ruleIdxByName.get(name) + this.importDecls.length + 2);
+    const offset = this.importDecls.length + 2 + prebuilt.funcsec.entryCount;
+    return w.funcidx(this.ruleIdxByName.get(name) + offset);
   }
 
   // Return an object implementing all of the debug imports.
@@ -596,18 +642,20 @@ class Compiler {
 
     // Reserve a fixed number of imports for debug labels.
     const debugBaseFuncIdx = this.importDecls.length + 1;
-    for (let i = 0; i < 5000; i++) {
-      this.importDecls.push({
-        module: 'debug',
-        name: `debug${i}`,
-        paramTypes: [],
-        resultTypes: [],
-      });
+    if (DEBUG) {
+      for (let i = 0; i < 5000; i++) {
+        this.importDecls.push({
+          module: 'debug',
+          name: `debug${i}`,
+          paramTypes: [],
+          resultTypes: [],
+        });
+      }
     }
 
     const functionDecls = this.functionDecls();
-    const debugDecls = this.rewriteDebugLabels(functionDecls, debugBaseFuncIdx);
-    return this.buildModule([...functionDecls, ...debugDecls]);
+    this.rewriteDebugLabels(functionDecls, debugBaseFuncIdx);
+    return this.buildModule([...functionDecls]);
   }
 
   compileRule(name, ruleBody) {
@@ -625,20 +673,28 @@ class Compiler {
 
   buildModule(functionDecls) {
     const {importDecls} = this;
+
+    const btCount = this.asm._blocktypes.length;
+
+    // TODO: Clean this up.
+    const importIdx = i => prebuilt.typesec.entryCount + btCount + i;
+    const localFuncIdx = i => prebuilt.typesec.entryCount + btCount + importDecls.length + i;
+
     // TODO: Compress types!
     const types = [
       ...this.asm._blocktypes.map(([_, t]) => t),
       ...[...importDecls, ...functionDecls].map(f => w.functype(f.paramTypes, f.resultTypes)),
     ];
     const globals = [];
-    const btCount = this.asm._blocktypes.length;
     const imports = importDecls.map((f, i) =>
-      w.import_(f.module, f.name, w.importdesc.func(i + btCount)),
+      w.import_(f.module, f.name, w.importdesc.func(importIdx(i))),
     );
-    const funcs = functionDecls.map((f, i) => w.typeidx(i + btCount + importDecls.length));
+    const funcs = functionDecls.map((f, i) => w.typeidx(localFuncIdx(i)));
     const codes = functionDecls.map(f => w.code(w.func(f.locals, f.body)));
+
+    const exportOffset = importDecls.length + prebuilt.funcsec.entryCount;
     const exports = functionDecls.map((f, i) =>
-      w.export_(f.name, w.exportdesc.func(i + importDecls.length)),
+      w.export_(f.name, w.exportdesc.func(i + exportOffset)),
     );
     exports.push(w.export_('memory', w.exportdesc.mem(0)));
 
@@ -650,15 +706,19 @@ class Compiler {
       // TODO: Handle this instead via the name section.
       exports.push(w.export_(name, [0x03, this.asm.globalidx(name)]));
     }
+    const numRules = this.ruleIdxByName.size;
 
     const mod = w.module([
-      w.typesec(types),
+      mergeSections(w.SECTION_ID_TYPE, prebuilt.typesec, types),
       w.importsec(imports),
-      w.funcsec(funcs),
+      mergeSections(w.SECTION_ID_FUNCTION, prebuilt.funcsec, funcs),
+      w.tablesec([
+        w.table(w.tabletype(w.elemtype.funcref, w.limits.minmax(numRules, numRules))),
+      ]),
       w.memsec([w.mem(w.memtype(w.limits.min(1024 + 24)))]),
       w.globalsec(globals),
       w.exportsec(exports),
-      w.codesec(codes),
+      mergeSections(w.SECTION_ID_CODE, prebuilt.codesec, codes),
     ]);
     const bytes = Uint8Array.from(mod.flat(Infinity));
 
@@ -687,12 +747,14 @@ class Compiler {
   // Returns the list of dummy functions that need to be added to the module.
   rewriteDebugLabels(decls, baseFuncIdx) {
     let nextFuncIdx = baseFuncIdx;
-    const debugDecls = [];
     const names = new Set();
     for (let i = 0; i < decls.length; i++) {
       const entry = decls[i];
       entry.body = entry.body.flatMap(x => {
         if (typeof x !== 'string') return x;
+
+        // If debugging is disabled, just drop the string altogether.
+        if (!DEBUG) return [];
 
         // Claim one of the reserved debug functions…
         const decl = this.importDecls[nextFuncIdx];
@@ -710,9 +772,9 @@ class Compiler {
         return [...pushArg, instr.call, w.funcidx(nextFuncIdx++)].flat(Infinity);
       });
     }
-    return debugDecls;
   }
 
+  // TODO: Rewrite this in Virgil.
   emitMatchBody() {
     const {asm} = this;
     asm.addLocal('inputLen', w.valtype.i32);
@@ -987,7 +1049,7 @@ class Compiler {
       asm.i32Const(ITER_NODE_SIZE_INITIAL);
       asm.loop(asm.blocktype('[i32][i32]'), () => {
         asm.i32Inc(); // increment counter
-        asm.maybeGrowIterNode(this.importDecls.length + 1);
+        asm.maybeGrowIterNode(this.importDecls.length + 1 + prebuilt.funcsec.entryCount);
 
         this.emitPExpr(expr);
         asm.localGet('ret');
@@ -1062,7 +1124,7 @@ export class WasmMatcher {
     const compiler = new Compiler(grammar);
     const bytes = compiler.compile();
     const matcher = new WasmMatcher(grammar);
-    let depth = 0;
+    // let depth = 0;
 
     const {instance} = await WebAssembly.instantiate(bytes, {
       env: matcher._env,
@@ -1071,7 +1133,6 @@ export class WasmMatcher {
         // eslint-disable no-console
         // const indented = s => new Array(depth).join('  ') + s;
         // const pos = instance.exports.pos.value;
-
         // if (label.startsWith('BEGIN')) depth += 1;
         // console.log(`pos: ${pos} ${indented(label)}`);
         // if (label.startsWith('END')) depth -= 1;

@@ -1,3 +1,30 @@
-def add(a: int, b: int) -> int {
-    return a + b;
+def ARRAY_HEADER_SIZE = 8;
+
+// This is the same as `CiRuntime.DATA_START - Pointer.NULL`, but it seems
+// that we can't use that as a compile-time expression.
+def DATA_START = 8;
+
+def WASM_PAGE_SIZE = 64 * 1024;
+
+// Lay out the memory
+def pexprStack = Array<byte>.new(WASM_PAGE_SIZE - DATA_START - ARRAY_HEADER_SIZE);
+def input = Array<byte>.new(WASM_PAGE_SIZE - ARRAY_HEADER_SIZE);
+def memo = Array<Array<int>>.new(WASM_PAGE_SIZE * 16);
+def cst = Array<byte>.new(WASM_PAGE_SIZE * 24);
+
+export def ignored(a: int, b: int) -> int {
+    // Refer to all of the arrays, so they are not optimized away.
+    return pexprStack[0] + input[0] + byte.!(memo[0][0]) + cst[0];
+}
+
+export def memoize(pos: int, ruleIdx: int) {
+}
+
+def useMemoizedResult(pos: int, ruleIdx: int) {
+}
+
+// Return true if there was a memoized result that could be used,
+// otherwise false.
+export def maybeUseMemoizedResult(pos: int, ruleIdx: int) -> bool {
+    return false;
 }

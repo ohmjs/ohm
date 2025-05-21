@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "ava test",
-    "build:lib": "v3c -target=wasm -output=out -program-name=lib lib/lib.v3"
+    "build:lib": "v3c -target=wasm -output=out -symbols -program-name=lib lib/lib.v3"
   },
   "type": "module",
   "keywords": [],

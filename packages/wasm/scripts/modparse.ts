@@ -116,7 +116,8 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
     } else if (id === 3) {
       funcsec = parseVecSectionOpaque(id);
     } else if (id === 6) {
-      globalsec = parseVecSectionOpaque(id);
+      // globalsec = parseVecSectionOpaque(id);
+      throw new Error('Unexpected global section');
     } else if (id === 10) {
       codesec = parseVecSectionOpaque(id);
       // Rewrite the code section to account for the number of imports that
@@ -134,9 +135,7 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
   }
   return {
     typesec: checkNotNull(typesec),
-    importsec,
     funcsec: checkNotNull(funcsec),
-    globalsec: checkNotNull(globalsec),
     codesec: checkNotNull(codesec)
   };
 }
