@@ -592,8 +592,10 @@ class Compiler {
       },
     ];
     this.grammar = grammar;
-    this.ruleIdxByName = new Map(Object.keys(grammar.rules).map((name, i) => [name, i]));
-    this._labels = new Set();
+
+    // The rule ID is a 0-based index that's mapped to the name.
+    // It is *not* the same as the function index the rule's eval function.
+    this.ruleIdByName = new Map(Object.keys(grammar.rules).map((name, i) => [name, i]));
   }
 
   ruleBody(ruleName, grammar = this.grammar) {
@@ -608,23 +610,27 @@ class Compiler {
     );
   }
 
-  ruleEvalFuncIdx(name) {
+  recordRule(name) {
     // If the rule is not defined in this grammar, but it's defined in a
     // supergrammar, lazily add it to the map.
-    if (!this.ruleIdxByName.has(name)) {
+    if (!this.ruleIdByName.has(name)) {
       if (name in this.grammar.superGrammar.rules) {
-        this.ruleIdxByName.set(name, this.ruleIdxByName.size);
+        this.ruleIdByName.set(name, this.ruleIdByName.size);
       } else {
         throw new Error(`Unknown rule: ${name}`);
       }
     }
-    // +2 for the 'match' and 'foo'
+  }
+
+  // Return a funcidx corresponding to the eval function for the given rule.
+  ruleEvalFuncIdx(name) {
+    // +2 for 'match' and 'growIterNode'
     const offset = this.importDecls.length + 2 + prebuilt.funcsec.entryCount;
-    return w.funcidx(this.ruleIdxByName.get(name) + offset);
+    return checkNotNull(this.ruleIdByName.get(name)) + offset;
   }
 
   ruleNames() {
-    return [...this.ruleIdxByName.keys()];
+    return [...this.ruleIdByName.keys()];
   }
 
   // Return an object implementing all of the debug imports.
@@ -641,7 +647,7 @@ class Compiler {
   }
 
   compile() {
-    const typeMap = new TypeMap(prebuilt.typesec.entryCount);
+    const typeMap = (this.typeMap = new TypeMap(prebuilt.typesec.entryCount));
     const asm = (this.asm = new Assembler(typeMap));
     asm.addBlocktype([w.valtype.i32], []);
     asm.addBlocktype([w.valtype.i32], [w.valtype.i32]);
@@ -714,7 +720,8 @@ class Compiler {
     }
     // The module will have a table containing references to all of the rule eval functions.
     // The table declaration goes in the table section; the data in the element section.
-    const numRules = this.ruleIdxByName.size;
+    // Note that the rule ID can be used directly as the table index.
+    const numRules = this.ruleIdByName.size;
     const table = w.table(
         w.tabletype(w.elemtype.funcref, w.limits.minmax(numRules, numRules)),
     );
@@ -836,8 +843,8 @@ class Compiler {
     // So, `ruleIdxByName` can grow while we're iterating (as we reference
     // inherited rules for the first time).
     const ruleDecls = [];
-    for (let i = 0; i < this.ruleIdxByName.size; i++) {
-      const name = [...this.ruleIdxByName.keys()][i];
+    for (let i = 0; i < this.ruleIdByName.size; i++) {
+      const name = [...this.ruleIdByName.keys()][i];
       ruleDecls.push(this.compileRule(name, this.ruleBody(name)));
     }
     this.asm.addFunction('match', [], [w.valtype.i32], () => this.emitMatchBody());
@@ -956,7 +963,12 @@ class Compiler {
 
   emitApply(exp) {
     const {asm} = this;
-    asm.emit(instr.call, this.ruleEvalFuncIdx(exp.ruleName));
+    this.recordRule(exp.ruleName);
+
+    asm.i32Const(checkNotNull(this.ruleIdByName.get(exp.ruleName)));
+
+    const t = this.typeMap.getIdx([], [w.valtype.i32]);
+    asm.emit(instr.call_indirect, w.typeidx(t), w.tableidx(0));
     asm.localSet('ret');
   }
 
