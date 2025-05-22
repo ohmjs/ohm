@@ -623,6 +623,10 @@ class Compiler {
     return w.funcidx(this.ruleIdxByName.get(name) + offset);
   }
 
+  ruleNames() {
+    return [...this.ruleIdxByName.keys()];
+  }
+
   // Return an object implementing all of the debug imports.
   getDebugImports(log) {
     const ans = {};
@@ -708,18 +712,24 @@ class Compiler {
       // TODO: Handle this instead via the name section.
       exports.push(w.export_(name, [0x03, this.asm.globalidx(name)]));
     }
+    // The module will have a table containing references to all of the rule eval functions.
+    // The table declaration goes in the table section; the data in the element section.
     const numRules = this.ruleIdxByName.size;
+    const table = w.table(
+        w.tabletype(w.elemtype.funcref, w.limits.minmax(numRules, numRules)),
+    );
+    const tableData = this.ruleNames().map(name => this.ruleEvalFuncIdx(name));
+    assert(numRules === tableData.length, 'Invalid rule count');
 
     const mod = w.module([
       mergeSections(w.SECTION_ID_TYPE, prebuilt.typesec, typeMap.getTypes()),
       w.importsec(imports),
       mergeSections(w.SECTION_ID_FUNCTION, prebuilt.funcsec, funcs),
-      w.tablesec([
-        w.table(w.tabletype(w.elemtype.funcref, w.limits.minmax(numRules, numRules))),
-      ]),
+      w.tablesec([table]),
       w.memsec([w.mem(w.memtype(w.limits.min(1024 + 24)))]),
       w.globalsec(globals),
       w.exportsec(exports),
+      w.elemsec([w.elem(w.tableidx(0), [instr.i32.const, w.i32(0), instr.end], tableData)]),
       mergeSections(w.SECTION_ID_CODE, prebuilt.codesec, codes),
     ]);
     const bytes = Uint8Array.from(mod.flat(Infinity));
