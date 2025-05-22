@@ -277,6 +277,9 @@ importers:
       '@thi.ng/leb128':
         specifier: ^3.1.48
         version: 3.1.48
+      assemblyscript:
+        specifier: ^0.27.36
+        version: 0.27.36
       ava:
         specifier: ^6.2.0
         version: 6.2.0(rollup@3.29.5)
@@ -737,6 +740,11 @@ packages:
   asn1@0.2.6:
     resolution: {integrity: sha512-ix/FxPn0MDjeyJ7i/yoHGFt/EX6LyNbxSEhPPXODPL+KB0VPk86UYfL0lMdy+KCnv+fmvIzySwaK5COwqVbWTQ==}
 
+  assemblyscript@0.27.36:
+    resolution: {integrity: sha512-1qX2zf6p7l/mNYv8r21jC/Yft7kX7XKR3xUHw41zvV4xad5lyC8w7jZiwZBGoy64VKZLc+bTDJDWi8Kb70YrHA==}
+    engines: {node: '>=18', npm: '>=10'}
+    hasBin: true
+
   assert-plus@1.0.0:
     resolution: {integrity: sha512-NfJ4UzBCcQGLDlQq7nHxH+tv3kyZ0hHQqF5BO6J7tNJeP5do1llPr8dZ8zHonfhAu0PHAdMkSo+8o0wxg9lZWw==}
     engines: {node: '>=0.8'}
@@ -778,6 +786,10 @@ packages:
 
   bcrypt-pbkdf@1.0.2:
     resolution: {integrity: sha512-qeFIXtP4MSoi6NLqO12WfqARWWuCKi2Rn/9hJLEmtB5yTNr9DqFWkJRCf2qShWzPeAMRnOgCrq0sg/KLv5ES9w==}
+
+  binaryen@116.0.0-nightly.20240114:
+    resolution: {integrity: sha512-0GZrojJnuhoe+hiwji7QFaL3tBlJoA+KFUN7ouYSDGZLSo9CKM8swQX8n/UcbR0d1VuZKU+nhogNzv423JEu5A==}
+    hasBin: true
 
   bindings@1.5.0:
     resolution: {integrity: sha512-p2q/t/mhvuOj/UeLlV6566GD/guowlr0hHxClI0W9m7MWYkL1F0hLo+0Aexs9HSPCtR1SXQ0TD3MMKrXZajbiQ==}
@@ -1665,6 +1677,9 @@ packages:
 
   lodash@4.17.21:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
+
+  long@5.3.2:
+    resolution: {integrity: sha512-mNAgZ1GmyNhD7AuqnTG3/VQ26o760+ZYBPKjPvugO8+nLbYfX6TVpJPseBvopbdY+qpZ/lKUnmEc1LeZYS3QAA==}
 
   magic-string@0.25.9:
     resolution: {integrity: sha512-RmF0AsMzgt25qzqqLc1+MbHmhdx0ojF2Fvs4XnOqz2ZOBXzzkEwc/dJQZCYHAn7v1jbVOjAZfK8msRn4BxO4VQ==}
@@ -3040,6 +3055,11 @@ snapshots:
     dependencies:
       safer-buffer: 2.1.2
 
+  assemblyscript@0.27.36:
+    dependencies:
+      binaryen: 116.0.0-nightly.20240114
+      long: 5.3.2
+
   assert-plus@1.0.0: {}
 
   astral-regex@2.0.0: {}
@@ -3163,6 +3183,8 @@ snapshots:
   bcrypt-pbkdf@1.0.2:
     dependencies:
       tweetnacl: 0.14.5
+
+  binaryen@116.0.0-nightly.20240114: {}
 
   bindings@1.5.0:
     dependencies:
@@ -4038,6 +4060,8 @@ snapshots:
   lodash.truncate@4.4.2: {}
 
   lodash@4.17.21: {}
+
+  long@5.3.2: {}
 
   magic-string@0.25.9:
     dependencies:

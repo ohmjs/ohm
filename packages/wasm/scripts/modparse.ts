@@ -53,7 +53,7 @@ interface ExtractOptions {
   destImportCount?: number;
 }
 
-// Extracts the type, import, function, and code sections from a Wasm module.
+// Extracts the type, import, function, global, and code sections from a Wasm module.
 export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
   skipPreamble(bytes);
 
@@ -94,7 +94,7 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
   let typesec: VecContents | undefined;
   let importsec: VecContents = {entryCount: 0, contents: new Uint8Array()};
   let funcsec: VecContents | undefined;
-  let globalsec: VecContents | undefined;
+  let globalsec: VecContents = {entryCount: 0, contents: new Uint8Array()};
   let codesec: VecContents | undefined;
 
   let pos = 8;
@@ -116,8 +116,7 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
     } else if (id === 3) {
       funcsec = parseVecSectionOpaque(id);
     } else if (id === 6) {
-      // globalsec = parseVecSectionOpaque(id);
-      throw new Error('Unexpected global section');
+      globalsec = parseVecSectionOpaque(id);
     } else if (id === 10) {
       codesec = parseVecSectionOpaque(id);
       // Rewrite the code section to account for the number of imports that
@@ -136,6 +135,7 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
   return {
     typesec: checkNotNull(typesec),
     funcsec: checkNotNull(funcsec),
+    globalsec,
     codesec: checkNotNull(codesec)
   };
 }

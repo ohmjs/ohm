@@ -205,7 +205,7 @@ class Assembler {
 
   globalidx(name) {
     const {idx} = checkNotNull(this._globals.get(name), `Unknown global: ${name}`);
-    return idx;
+    return idx + prebuilt.globalsec.entryCount;
   }
 
   localidx(name) {
@@ -734,7 +734,7 @@ class Compiler {
       mergeSections(w.SECTION_ID_FUNCTION, prebuilt.funcsec, funcs),
       w.tablesec([table]),
       w.memsec([w.mem(w.memtype(w.limits.min(1024 + 24)))]),
-      w.globalsec(globals),
+      mergeSections(w.SECTION_ID_GLOBAL, prebuilt.globalsec, globals),
       w.exportsec(exports),
       w.elemsec([w.elem(w.tableidx(0), [instr.i32.const, w.i32(0), instr.end], tableData)]),
       mergeSections(w.SECTION_ID_CODE, prebuilt.codesec, codes),
