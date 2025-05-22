@@ -1,4 +1,3 @@
-import assert from 'node:assert';
 import * as fs from 'node:fs';
 import {URL} from 'node:url';
 import * as w from '@wasmgroundup/emit';
@@ -10,11 +9,10 @@ import {extractSections} from './modparse.ts';
   and writes it to a .ts module in the same directory.
 */
 
-const inputPath = '../out/lib.wasm';
-const inputUrl = new URL(inputPath, import.meta.url);
-const outputUrl = new URL(inputPath + '_sections.ts', import.meta.url);
+const inputPath = process.argv[2];
+const outputPath = inputPath + '_sections.ts';
 
-const buf = fs.readFileSync(inputUrl);
+const buf = fs.readFileSync(inputPath);
 const sections = extractSections(buf, {
   destImportCount: 1
 });
@@ -38,4 +36,4 @@ for (const [secName, {entryCount, contents}] of Object.entries(sections)) {
 }
 `;
 }
-fs.writeFileSync(outputUrl, output, 'utf8');
+fs.writeFileSync(outputPath, output, 'utf8');

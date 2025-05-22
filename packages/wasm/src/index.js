@@ -4,7 +4,7 @@ import * as w from '@wasmgroundup/emit';
 import {pexprs} from 'ohm-js';
 // import wabt from 'wabt';
 
-import * as prebuilt from '../out/lib.wasm_sections.ts';
+import * as prebuilt from '../build/runtime.wasm_sections.ts';
 
 const WASM_PAGE_SIZE = 64 * 1024;
 const ITER_NODE_SIZE_INITIAL = 1 << 3; // Must be a power of 2.
