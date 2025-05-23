@@ -1,8 +1,8 @@
 @phony: all
-all: out/runtime.wasm_sections.ts
+all: out/ohmRuntime.wasm_sections.ts
 
-out/runtime.wasm_sections.ts: build/runtime.wasm
-	node scripts/bundlewasm.ts build/runtime.wasm
+out/ohmRuntime.wasm_sections.ts: build/ohmRuntime.wasm
+	node scripts/bundlewasm.ts build/ohmRuntime.wasm
 
-build/runtime.wasm: runtime/runtime.ts
-	npx asc --runtime stub -o build/runtime.wasm runtime/runtime.ts
+build/ohmRuntime.wasm: runtime/ohmRuntime.ts
+	npx asc --runtime stub -o build/ohmRuntime.wasm runtime/ohmRuntime.ts
