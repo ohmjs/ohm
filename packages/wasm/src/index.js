@@ -205,7 +205,7 @@ class Assembler {
 
   globalidx(name) {
     const {idx} = checkNotNull(this._globals.get(name), `Unknown global: ${name}`);
-    return idx + prebuilt.globalsec.entryCount;
+    return idx;
   }
 
   localidx(name) {
@@ -728,13 +728,14 @@ class Compiler {
     const tableData = this.ruleNames().map(name => this.ruleEvalFuncIdx(name));
     assert(numRules === tableData.length, 'Invalid rule count');
 
+    // Note: globals are *not* merged; they are assumed to be shared.
     const mod = w.module([
       mergeSections(w.SECTION_ID_TYPE, prebuilt.typesec, typeMap.getTypes()),
       w.importsec(imports),
       mergeSections(w.SECTION_ID_FUNCTION, prebuilt.funcsec, funcs),
       w.tablesec([table]),
       w.memsec([w.mem(w.memtype(w.limits.min(1024 + 24)))]),
-      mergeSections(w.SECTION_ID_GLOBAL, prebuilt.globalsec, globals),
+      w.globalsec(globals),
       w.exportsec(exports),
       w.elemsec([w.elem(w.tableidx(0), [instr.i32.const, w.i32(0), instr.end], tableData)]),
       mergeSections(w.SECTION_ID_CODE, prebuilt.codesec, codes),
@@ -820,7 +821,6 @@ class Compiler {
     asm.emit(instr.local.set, w.localidx(0)); // set inputLen
 
     // TODO: This should probably a seq of [Apply, end] just like in the JS version.
-    // Note that in the CST tests, the depth of all nodes will increase by 1.
     this.emitPExpr(new pexprs.Apply(this.grammar.defaultStartRule), {isRoot: true});
     asm.localGet('ret');
     asm.ifElse(
@@ -967,8 +967,9 @@ class Compiler {
 
     asm.i32Const(checkNotNull(this.ruleIdByName.get(exp.ruleName)));
 
-    const t = this.typeMap.getIdx([], [w.valtype.i32]);
-    asm.emit(instr.call_indirect, w.typeidx(t), w.tableidx(0));
+    // Call `evalApply` — this assumes it's the last prebuilt function.
+    const funcIdx = w.funcidx(this.importDecls.length + prebuilt.funcsec.entryCount - 1);
+    asm.emit(instr.call, funcIdx);
     asm.localSet('ret');
   }
 
