@@ -49,6 +49,10 @@ export type VecContents = {
   contents: Uint8Array;
 };
 
+export type ExportSection = {
+  [name: string]: number;
+};
+
 interface ExtractOptions {
   destImportCount?: number;
 }
@@ -74,6 +78,43 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
     pos += size;
   }
 
+  // Parse the export section, and return a map of {funcName: newIdx}.
+  // `adjustment` is the difference between the number of dest imports
+  // and source imports.
+  function parseExportSection(expectedId: number, adjustment): ExportSection {
+    const id = bytes[pos++];
+    assert(id === expectedId, `expected section with id ${expectedId}, got ${id}`);
+    const size = parseU32();
+    const startPos = pos;
+    const count = parseU32();
+    const exports: ExportSection = {};
+
+    for (let i = 0; i < count; i++) {
+      // Parse name (length-prefixed UTF-8 string)
+      const nameLen = parseU32();
+      const nameBytes = bytes.slice(pos, pos + nameLen);
+      pos += nameLen;
+      const name = new TextDecoder().decode(nameBytes);
+
+      // Parse kind (single byte)
+      const kind = bytes[pos++];
+
+      // Parse index
+      const index = parseU32();
+
+      // Only collect functions (kind 0x00)
+      if (kind === 0x00) {
+        exports[name] = index + adjustment;
+      }
+    }
+
+    assert(
+      pos - startPos === size,
+      `Export section parsing mismatch: expected ${size} bytes, parsed ${pos - startPos}`
+    );
+    return exports;
+  }
+
   function parseVecSectionOpaque(expectedId: number) {
     const id = bytes[pos++];
     assert(id === expectedId, `expected section with id ${expectedId}, got ${id}`);
@@ -95,6 +136,7 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
   let importsec: VecContents = {entryCount: 0, contents: new Uint8Array()};
   let funcsec: VecContents | undefined;
   let globalsec: VecContents = {entryCount: 0, contents: new Uint8Array()};
+  let exports: ExportSection | undefined;
   let codesec: VecContents | undefined;
 
   let pos = 8;
@@ -117,12 +159,17 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
       funcsec = parseVecSectionOpaque(id);
     } else if (id === 6) {
       globalsec = parseVecSectionOpaque(id);
+    } else if (id === 7) {
+      const srcImportCount = importsec?.entryCount ?? 0;
+      const destImportCount = opts.destImportCount ?? 0;
+      exports = parseExportSection(id, destImportCount - srcImportCount);
     } else if (id === 10) {
       codesec = parseVecSectionOpaque(id);
       // Rewrite the code section to account for the number of imports that
       // will exist in the final module.
       const srcImportCount = importsec?.entryCount ?? 0;
       const destImportCount = opts.destImportCount ?? 0;
+
       codesec.contents = rewriteCodesecContents(
         codesec.contents,
         srcImportCount,
@@ -136,6 +183,7 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
     typesec: checkNotNull(typesec),
     funcsec: checkNotNull(funcsec),
     globalsec,
+    funcidxByName: exports,
     codesec: checkNotNull(codesec)
   };
 }
@@ -226,7 +274,7 @@ function rewriteCodeEntry(
         // Since the dest module has additional imports, we need to rewrite
         // the funcidx if and only if it referred to a user function.
         if (idx >= srcImportCount) {
-          idx += destImportCount;
+          idx += destImportCount - srcImportCount;
         }
         result.push(...w.u32(idx));
         sliceStart = pos;

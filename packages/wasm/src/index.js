@@ -47,38 +47,7 @@ function getDebugLabel(exp) {
   return `${exp.toDisplayString()}@${loc}`;
 }
 
-function numChildren(exp) {
-  switch (exp.constructor) {
-    case pexprs.Alt:
-      return exp.terms.reduce((acc, t) => Math.max(numChildren(t), 0));
-    case pexprs.Extend:
-      return Math.max(
-          numChildren(exp.body),
-          numChildren(exp.superGrammar.rules[exp.name].body),
-      );
-    case pexprs.Seq:
-      return exp.factors.length;
-    case pexprs.Star:
-    case pexprs.Plus:
-      return ITER_NODE_SIZE_INITIAL;
-    // return -1;
-    case pexprs.Apply:
-    case pexprs.Opt:
-      return 1;
-    case pexprs.Lookahead:
-    case pexprs.Not:
-    case pexprs.Range:
-    case pexprs.Terminal:
-    case pexprs.UnicodeChar:
-      return 0;
-    default:
-      if (exp === pexprs.any || exp === pexprs.end) {
-        return 0;
-      } else {
-        throw new Error(`not handled: ${exp.constructor.name}`);
-      }
-  }
-}
+const prebuiltFuncidx = nm => checkNotNull(prebuilt.funcidxByName[nm]);
 
 // Produce a section combining `els` with the corresponding prebuilt section.
 // This only does a naive merge; no type or function indices are rewritten.
@@ -530,22 +499,6 @@ class Assembler {
     this.i32Const(Assembler.MEMO_COL_SIZE_BYTES);
     this.i32Mul();
   }
-
-  // Potentially allocates a new CST node, recording it in the parent.
-  // Note that if that happens, the loop counter will be incremented, because
-  // each level of growth takes up one child slot.
-  // [loopCounter:i32] -> [newLoopCounter:i32]
-  maybeGrowIterNode(growFuncIdx) {
-    this.dup();
-    this.emit(instr.i32.popcnt);
-    this.i32Const(1);
-    this.emit(instr.i32.eq);
-    this.if(this.blocktype([w.valtype.i32], [w.valtype.i32]), () => {
-      this.dup(); // Pass current size as an arg.
-      this.emit(instr.call, w.funcidx(growFuncIdx));
-      this.i32Inc();
-    });
-  }
 }
 Assembler.ALIGN_1_BYTE = 0;
 Assembler.ALIGN_4_BYTES = 2;
@@ -601,8 +554,7 @@ class Compiler {
 
   // Return a funcidx corresponding to the eval function for the given rule.
   ruleEvalFuncIdx(name) {
-    // +2 for 'match' and 'growIterNode'
-    const offset = this.importDecls.length + 2 + prebuilt.funcsec.entryCount;
+    const offset = this.importDecls.length + prebuilt.funcsec.entryCount;
     return w.funcidx(checkNotNull(this.ruleIdByName.get(name)) + offset);
   }
 
@@ -635,7 +587,6 @@ class Compiler {
     asm.addGlobal('cstBase', w.valtype.i32, w.mut.var, () =>
       asm.i32Const(Compiler.CST_START_OFFSET),
     );
-    asm.addGlobal('depth', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
 
     // Reserve a fixed number of imports for debug labels.
     const debugBaseFuncIdx = this.importDecls.length + 1;
@@ -686,6 +637,7 @@ class Compiler {
       w.export_(f.name, w.exportdesc.func(i + exportOffset)),
     );
     exports.push(w.export_('memory', w.exportdesc.mem(0)));
+    exports.push(w.export_('match', w.exportdesc.func(prebuiltFuncidx('match'))));
 
     // Process globals.
     for (const [name, {type, mut, initExpr}] of this.asm._globals.entries()) {
@@ -798,7 +750,7 @@ class Compiler {
     asm.emit(instr.local.set, w.localidx(0)); // set inputLen
 
     // TODO: This should probably a seq of [Apply, end] just like in the JS version.
-    this.emitPExpr(new pexprs.Apply(this.grammar.defaultStartRule), {isRoot: true});
+    this.emitPExpr(new pexprs.Apply(this.grammar.defaultStartRule));
     asm.localGet('ret');
     asm.ifElse(
         w.blocktype.i32,
@@ -824,32 +776,12 @@ class Compiler {
       const name = [...this.ruleIdByName.keys()][i];
       ruleDecls.push(this.compileRule(name, this.ruleBody(name)));
     }
-    this.asm.addFunction('match', [], [w.valtype.i32], () => this.emitMatchBody());
-    this.asm.addFunction('growIterNode', [w.valtype.i32], [], () => {
-      const {asm} = this;
-      asm.addLocal('tmp', w.valtype.i32);
-      asm.pushStackFrame();
-
-      // Allocate a new node that will be as large as the current size, or half
-      // the size of the counter.
-      asm.emit(instr.local.get, w.localidx(0));
-      asm.i32Const(1);
-      asm.emit(instr.i32.shr_u);
-
-      asm.saveCst();
-      asm.cstNodeAlloc();
-      asm.cstNodeRecordChild();
-    });
-
-    // TODO: Fix the awkwardness of manually adding the two functions here.
-    return [this.asm._functionDecls.at(-2), this.asm._functionDecls.at(-1), ...ruleDecls];
+    return ruleDecls;
   }
 
   // Contract: emitPExpr always means we're going deeper in the PExpr tree.
-  emitPExpr(exp, {skipBacktracking, isRoot} = {}) {
+  emitPExpr(exp) {
     const {asm} = this;
-    const isLookahead = exp.constructor === pexprs.Lookahead || exp.constructor === pexprs.Not;
-    const emitBacktracking = !skipBacktracking && !isLookahead;
 
     const debugLabel = getDebugLabel(exp);
     asm.emit(`BEGIN ${debugLabel}`);
@@ -949,9 +881,7 @@ class Compiler {
 
     asm.i32Const(checkNotNull(this.ruleIdByName.get(exp.ruleName)));
 
-    // Call `evalApply` — this assumes it's the last prebuilt function.
-    const funcIdx = w.funcidx(this.importDecls.length + prebuilt.funcsec.entryCount - 1);
-    asm.emit(instr.call, funcIdx);
+    asm.emit(instr.call, w.funcidx(prebuiltFuncidx('evalApply')));
     asm.localSet('ret');
   }
 
@@ -981,7 +911,7 @@ class Compiler {
     asm.pushStackFrame({savePos: true});
 
     // TODO: Should positive lookahead record a CST?
-    this.emitPExpr(expr, {skipBacktracking: true, skipCst: true});
+    this.emitPExpr(expr);
     if (!shouldMatch) {
       asm.localGet('ret');
       asm.emit(instr.i32.eqz);
@@ -1147,8 +1077,9 @@ Compiler.MEMO_START_OFFSET = 2 * WASM_PAGE_SIZE; // Starting offset of memo reco
 Compiler.CST_START_OFFSET = (1024 + 2) * WASM_PAGE_SIZE; // Starting offset of CST records.
 
 export class WasmMatcher {
-  constructor(grammar) {
+  constructor(grammar, ruleIds) {
     this.grammar = grammar;
+    this._ruleIds = ruleIds;
     this._instance = undefined;
     this._input = '';
     this._pos = 0;
@@ -1160,7 +1091,7 @@ export class WasmMatcher {
   static async forGrammar(grammar) {
     const compiler = new Compiler(grammar);
     const bytes = compiler.compile();
-    const matcher = new WasmMatcher(grammar);
+    const matcher = new WasmMatcher(grammar, compiler.ruleIdByName);
     // let depth = 0;
 
     const {instance} = await WebAssembly.instantiate(bytes, {
@@ -1198,7 +1129,8 @@ export class WasmMatcher {
 
   match() {
     this._pos = 0; // TODO: Fix this, it should be using the wasm global
-    return this._instance.exports.match();
+    const startRuleId = checkNotNull(this._ruleIds.get(this.grammar.defaultStartRule));
+    return this._instance.exports.match(startRuleId);
   }
 
   _fillInputBuffer(offset, maxLen) {

@@ -31,7 +31,13 @@ let output = `function decodeBase64(str: string) {
 export const destImportCount = ${destImportCount};
 `;
 
-for (const [secName, {entryCount, contents}] of Object.entries(sections)) {
+output += `export const funcidxByName = ${JSON.stringify(sections.funcidxByName)};\n`;
+
+for (const [secName, payload] of Object.entries(sections)) {
+  if (secName === 'funcidxByName') {
+    continue; // Skip this section as it's already handled above
+  }
+  const {entryCount, contents} = payload;
   const base64Contents = Buffer.from(contents).toString('base64');
   output += `export const ${secName} = {
   entryCount: ${JSON.stringify(entryCount)},
