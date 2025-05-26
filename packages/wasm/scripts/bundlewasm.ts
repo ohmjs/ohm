@@ -12,9 +12,11 @@ import {extractSections} from './modparse.ts';
 const inputPath = process.argv[2];
 const outputPath = inputPath + '_sections.ts';
 
+const destImportCount = 5001;
+
 const buf = fs.readFileSync(inputPath);
 const sections = extractSections(buf, {
-  destImportCount: 1
+  destImportCount
 });
 
 let output = `function decodeBase64(str: string) {
@@ -26,6 +28,7 @@ let output = `function decodeBase64(str: string) {
   return result
 }
 
+export const destImportCount = ${destImportCount};
 `;
 
 for (const [secName, {entryCount, contents}] of Object.entries(sections)) {

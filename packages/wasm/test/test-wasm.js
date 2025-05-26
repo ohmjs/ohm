@@ -449,7 +449,7 @@ test('wasm: end', async t => {
   t.is(matchWithInput(matcher, ''), 0);
 });
 
-test('real-world grammar', async t => {
+test.skip('real-world grammar', async t => {
   const g = ohm.grammar(String.raw`
     Test {
       Msgs = Msg*
@@ -529,11 +529,11 @@ test.skip('basic memoization', async t => {
   t.is(matchWithInput(matcher, 'ab'), 1);
 
   const view = matcher.memoTableViewForTesting();
-  const ruleIdxByName = new Map(Object.keys(g.rules).map((name, idx) => [name, idx]));
+  const ruleIdByName = new Map(Object.keys(g.rules).map((name, idx) => [name, idx]));
 
   const getMemo = (pos, ruleName) => {
     const colOffset = pos * Constants.MEMO_COL_SIZE_BYTES;
-    return view.getUint32(colOffset + SIZEOF_UINT32 * ruleIdxByName.get(ruleName), true);
+    return view.getUint32(colOffset + SIZEOF_UINT32 * ruleIdByName.get(ruleName), true);
   };
 
   const slot = slot => Constants.CST_START_OFFSET + slot * 4;

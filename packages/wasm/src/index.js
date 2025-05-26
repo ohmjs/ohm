@@ -9,7 +9,7 @@ import * as prebuilt from '../build/ohmRuntime.wasm_sections.ts';
 const WASM_PAGE_SIZE = 64 * 1024;
 const ITER_NODE_SIZE_INITIAL = 1 << 3; // Must be a power of 2.
 
-const DEBUG = false;
+const DEBUG = true;
 
 const {instr} = w;
 
@@ -521,31 +521,6 @@ class Assembler {
     this.cstNodeIncCount(); // increment the parent's count.
   }
 
-  // Get the memoized result for `ruleIdx` at the current input position,
-  // if it exists. The result is a signed integer:
-  // - 0 if there's no entry
-  // - -1 for a failure
-  // - >= 0 for success, representing the address of the CST node.
-  // [memoOffset:i32] -> [i32]
-  getMemo(ruleIdx) {
-    this.i32Load(Compiler.MEMO_START_OFFSET + ruleIdx * 4);
-  }
-
-  // [memoOffset:i32] -> []
-  setMemo(ruleIdx) {
-    this.emit('setMemo');
-    this.getSavedCst();
-
-    this.localGet('ret');
-    this.ifFalse(this.blocktype([w.valtype.i32], [w.valtype.i32]), () => {
-      // Replace the CST addr (it's been recycled) on the stack with -1.
-      this.emit(instr.drop);
-      this.i32Const(-1);
-    });
-    this.i32Store(Compiler.MEMO_START_OFFSET + ruleIdx * 4);
-    this.emit('done setMemo');
-  }
-
   // Load the offset of the memo record for the original position onto the stack.
   // [] -> [addr:i32]
   getMemoColOffset() {
@@ -626,7 +601,7 @@ class Compiler {
   ruleEvalFuncIdx(name) {
     // +2 for 'match' and 'growIterNode'
     const offset = this.importDecls.length + 2 + prebuilt.funcsec.entryCount;
-    return checkNotNull(this.ruleIdByName.get(name)) + offset;
+    return w.funcidx(checkNotNull(this.ruleIdByName.get(name)) + offset);
   }
 
   ruleNames() {
@@ -684,7 +659,6 @@ class Compiler {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
 
-      // No memoized result — eval.
       this.emitPExpr(ruleBody);
       asm.localGet('ret');
     });
@@ -693,6 +667,7 @@ class Compiler {
 
   buildModule(typeMap, functionDecls) {
     const {importDecls} = this;
+    assert(this.importDecls.length === prebuilt.destImportCount, 'import count mismatch');
 
     typeMap.addDecls(importDecls);
     typeMap.addDecls(functionDecls);

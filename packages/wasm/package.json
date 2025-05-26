@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "ava test",
-    "build:lib": "v3c -target=wasm -output=out -symbols -program-name=runtime runtime/runtime.v3"
+    "test": "ava test"
   },
   "type": "module",
   "keywords": [],
