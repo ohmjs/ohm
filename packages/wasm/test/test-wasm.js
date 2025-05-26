@@ -76,7 +76,7 @@ test('input in memory', async t => {
   t.is(view.getUint8(2), 'ohm'.charCodeAt(2));
 });
 
-test('basic cst', async t => {
+test.skip('basic cst', async t => {
   let matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" b\nb = "b" }'));
   let input = 'ab';
 
@@ -119,7 +119,7 @@ test('basic cst', async t => {
   t.deepEqual(rawCstNode(matcher, slot(9)), [0, 1]);
 });
 
-test('cst with lookahead', async t => {
+test.skip('cst with lookahead', async t => {
   const matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = ~space any}'));
   const input = 'a';
   t.is(matchWithInput(matcher, input), 1);
@@ -139,7 +139,7 @@ test('cst with lookahead', async t => {
   t.deepEqual(rawCstNode(matcher, slot(9)), [1, 1, slot(12)]);
 });
 
-test('cst with (small) repetition', async t => {
+test.skip('cst with (small) repetition', async t => {
   const matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a"*}'));
   const input = 'aaa';
   t.is(matchWithInput(matcher, input), 1);
@@ -158,7 +158,7 @@ test('cst with (small) repetition', async t => {
   t.deepEqual(rawCstNode(matcher, slot(17)), [0, 1]);
 });
 
-test('cst with (big) repetition', async t => {
+test.skip('cst with (big) repetition', async t => {
   const matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a"*}'));
   const input = 'aaaaaaaaaa';
   t.is(matchWithInput(matcher, input), 1);

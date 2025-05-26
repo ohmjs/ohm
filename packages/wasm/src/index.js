@@ -361,15 +361,17 @@ class Assembler {
     this.localSet('ret');
   }
 
-  pushStackFrame() {
+  pushStackFrame({savePos} = {}) {
     // sp -= 4
     this.globalGet('sp');
     this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
     this.i32Sub();
     this.globalSet('sp');
+    if (savePos) this.savePos();
   }
 
-  popStackFrame() {
+  popStackFrame({restorePos} = {}) {
+    if (restorePos) this.restorePos();
     this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
     this.globalGet('sp');
     this.i32Add();
@@ -853,12 +855,12 @@ class Compiler {
     asm.emit(`BEGIN ${debugLabel}`);
 
     // *Always* save the original position, even if we're not backtracking.
-    asm.pushStackFrame();
-    asm.savePos();
+    // asm.pushStackFrame();
+    // asm.savePos();
 
-    asm.saveCst();
-    asm.i32Const(numChildren(exp));
-    asm.cstNodeAlloc();
+    // asm.saveCst();
+    // asm.i32Const(numChildren(exp));
+    // asm.cstNodeAlloc();
 
     // Wrap the body in a block, which is useful for two reasons:
     // - it allows early returns.
@@ -890,42 +892,47 @@ class Compiler {
     });
 
     // If we succeeded, write the CST entry.
-    asm.localGet('ret');
-    asm.ifElse(
-        w.blocktype.empty,
-        () => {
-          asm.emit('writeCst');
-          asm.getSavedCst();
-          asm.globalGet('pos');
-          asm.getSavedPos();
-          asm.i32Sub();
-          asm.cstNodeSetMatchLength();
-          if (!isRoot) asm.cstNodeRecordChild();
-          asm.emit('done writeCst');
-        },
-        () => {
-          if (emitBacktracking) asm.restorePos();
-          asm.restoreCst();
-        },
-    );
-    if (isLookahead) {
-      asm.restorePos();
+    // asm.localGet('ret');
+    // asm.ifElse(
+    //     w.blocktype.empty,
+    //     () => {
+    //       asm.emit('writeCst');
+    //       asm.getSavedCst();
+    //       asm.globalGet('pos');
+    //       asm.getSavedPos();
+    //       asm.i32Sub();
+    //       asm.cstNodeSetMatchLength();
+    //       if (!isRoot) asm.cstNodeRecordChild();
+    //       asm.emit('done writeCst');
+    //     },
+    //     () => {
+    //       if (emitBacktracking) asm.restorePos();
+    //       asm.restoreCst();
+    //     },
+    // );
+    // if (isLookahead) {
+    //   asm.restorePos();
 
-      // TODO: Skip CST work altogether when we're inside a lookahead.
-      // (Maybe only for negative lookahead?)
-      // asm.restoreCst();
-    }
-    asm.popStackFrame();
+    //   // TODO: Skip CST work altogether when we're inside a lookahead.
+    //   // (Maybe only for negative lookahead?)
+    //   // asm.restoreCst();
+    // }
+    // asm.popStackFrame();
     asm.emit(`END ${debugLabel}`);
   }
 
   emitAlt(exp) {
     const {asm} = this;
+    asm.pushStackFrame({savePos: true});
+
     for (const term of exp.terms) {
       this.emitPExpr(term);
       asm.localGet('ret');
-      asm.condBreak(0);
+      asm.condBreak(0); // return if succeeded
+      asm.restorePos();
     }
+
+    asm.popStackFrame();
   }
 
   emitAny() {
@@ -971,6 +978,8 @@ class Compiler {
 
   emitLookahead({expr}, shouldMatch = true) {
     const {asm} = this;
+    asm.pushStackFrame({savePos: true});
+
     // TODO: Should positive lookahead record a CST?
     this.emitPExpr(expr, {skipBacktracking: true, skipCst: true});
     if (!shouldMatch) {
@@ -978,21 +987,28 @@ class Compiler {
       asm.emit(instr.i32.eqz);
       asm.localSet('ret');
     }
+    asm.popStackFrame({restorePos: true});
   }
 
   emitOpt({expr}) {
     const {asm} = this;
+    asm.pushStackFrame({savePos: true});
     this.emitPExpr(expr);
-    asm.setRet(1); // Always succeed.
+    asm.localGet('ret');
+    asm.ifFalse(w.blocktype.empty, () => {
+      asm.restorePos();
+    });
+    asm.setRet(1);
+    asm.popStackFrame();
   }
 
   emitPlus(plusExp) {
     const {asm} = this;
     this.emitPExpr(plusExp.expr);
     asm.localGet('ret');
-    asm.emit(instr.i32.eqz);
-    asm.condBreak(0);
-    this.emitStar(plusExp);
+    asm.if(w.blocktype.empty, () => {
+      this.emitStar(plusExp);
+    });
   }
 
   emitRange({from, to}) {
@@ -1038,6 +1054,27 @@ class Compiler {
   }
 
   emitStar({expr}) {
+    const {asm} = this;
+    asm.emit('emitStar');
+    asm.pushStackFrame();
+
+    asm.block(w.blocktype.empty, () => {
+      asm.loop(w.blocktype.empty, () => {
+        asm.savePos();
+        this.emitPExpr(expr);
+        asm.localGet('ret');
+        asm.emit(instr.i32.eqz);
+        asm.condBreak(1);
+        asm.continue(0);
+      });
+    });
+    asm.restorePos();
+    asm.popStackFrame();
+    asm.emit('done emitStar');
+    asm.setRet(1);
+  }
+
+  emitStarX({expr}) {
     const {asm} = this;
     asm.emit('emitStar');
 
