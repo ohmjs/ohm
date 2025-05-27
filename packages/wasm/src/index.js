@@ -376,56 +376,12 @@ class Assembler {
     this.globalSet('pos');
   }
 
-  saveCst() {
-    this.globalGet('sp');
-    this.globalGet('cst');
-    this.i32Store(4);
-  }
-
-  getSavedCst() {
-    this.globalGet('sp');
-    this.i32Load(4);
-  }
-
-  getParentCst() {
-    this.globalGet('sp');
-    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
-    this.i32Add();
-    this.i32Load(4);
-  }
-
   // Increment the current input position by 1.
   // [i32, i32] -> [i32]
   incPos() {
     this.globalGet('pos');
     this.i32Inc();
     this.globalSet('pos');
-  }
-
-  // Allocate a new CST node.
-  // [childCount:i32] -> []
-  cstNodeAlloc() {
-    this.localSet('tmp'); // save childCount
-    this.globalGet('cst');
-    this.globalGet('cst'); // Note: can't use dup here!
-    this.localGet('tmp'); // load childCount
-    this.i32Const(4);
-    this.emit(instr.i32.mul);
-    this.i32Const(Assembler.CST_NODE_HEADER_SIZE_BYTES);
-    this.i32Add();
-    this.i32Add();
-    this.globalSet('cst');
-
-    // Initialize the count to zero. This will be incremented as the pointers
-    // to the children get filled it.
-    this.i32Const(0);
-    this.cstNodeSetCount();
-  }
-
-  // [] -> []
-  restoreCst() {
-    this.getSavedCst();
-    this.globalSet('cst');
   }
 
   // Set the 'count' field of a given CST node.
@@ -499,6 +455,10 @@ class Assembler {
     this.i32Const(Assembler.MEMO_COL_SIZE_BYTES);
     this.i32Mul();
   }
+
+  callPrebuiltFunc(name) {
+    this.emit(instr.call, w.funcidx(prebuiltFuncidx(name)));
+  }
 }
 Assembler.ALIGN_1_BYTE = 0;
 Assembler.ALIGN_4_BYTES = 2;
@@ -512,6 +472,14 @@ Assembler.STACK_FRAME_SIZE_BYTES = 8;
 class Compiler {
   constructor(grammar) {
     this.importDecls = [
+      {
+        module: 'env',
+        name: 'abort',
+        // (offset: i32, maxLen: i32) -> i32
+        // Returns the actual number of bytes read.
+        paramTypes: [w.valtype.i32, w.valtype.i32, w.valtype.i32, w.valtype.i32],
+        resultTypes: [],
+      },
       {
         module: 'env',
         name: 'fillInputBuffer',
@@ -581,12 +549,26 @@ class Compiler {
     asm.addBlocktype([w.valtype.i32], []);
     asm.addBlocktype([w.valtype.i32], [w.valtype.i32]);
     asm.addBlocktype([], [w.valtype.i32]);
+    // (global $runtime/ohmRuntime/pos (mut i32) (i32.const 0))
+    // (global $runtime/ohmRuntime/sp (mut i32) (i32.const 0))
+    // (global $~lib/shared/runtime/Runtime.Stub i32 (i32.const 0))
+    // (global $~lib/shared/runtime/Runtime.Minimal i32 (i32.const 1))
+    // (global $~lib/shared/runtime/Runtime.Incremental i32 (i32.const 2))
+    // (global $~lib/rt/stub/startOffset (mut i32) (i32.const 0))
+    // (global $~lib/rt/stub/offset (mut i32) (i32.const 0))
+    // (global $~lib/native/ASC_RUNTIME i32 (i32.const 0))
+    // (global $runtime/ohmRuntime/bindings (mut i32) (i32.const 0))
+    // (global $~lib/memory/__heap_base i32 (i32.const 1179884))
     asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('cst', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('cstBase', w.valtype.i32, w.mut.var, () =>
-      asm.i32Const(Compiler.CST_START_OFFSET),
-    );
+    asm.addGlobal('__Runtime.Stub', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
+    asm.addGlobal('__Runtime.Minimal', w.valtype.i32, w.mut.const, () => asm.i32Const(1));
+    asm.addGlobal('__Runtime.Incremental', w.valtype.i32, w.mut.const, () => asm.i32Const(2));
+    asm.addGlobal('__startOffset', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('__offset', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('__ASC_RUNTIME', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
+    asm.addGlobal('bindings', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('__heap_base', w.valtype.i32, w.mut.var, () => asm.i32Const(67240172));
 
     // Reserve a fixed number of imports for debug labels.
     const debugBaseFuncIdx = this.importDecls.length + 1;
@@ -666,6 +648,7 @@ class Compiler {
       w.memsec([w.mem(w.memtype(w.limits.min(1024 + 24)))]),
       w.globalsec(globals),
       w.exportsec(exports),
+      w.startsec(w.start(prebuilt.startFuncidx)),
       w.elemsec([w.elem(w.tableidx(0), [instr.i32.const, w.i32(0), instr.end], tableData)]),
       mergeSections(w.SECTION_ID_CODE, prebuilt.codesec, codes),
     ]);
@@ -723,49 +706,6 @@ class Compiler {
     }
   }
 
-  // TODO: Rewrite this in Virgil.
-  emitMatchBody() {
-    const {asm} = this;
-    asm.addLocal('inputLen', w.valtype.i32);
-    asm.addLocal('ret', w.valtype.i32);
-    asm.addLocal('tmp', w.valtype.i32);
-
-    asm.i32Const(0);
-    asm.globalSet('pos');
-
-    asm.i32Const(Compiler.STACK_START_OFFSET);
-    asm.globalSet('sp');
-
-    asm.i32Const(Compiler.CST_START_OFFSET);
-    asm.globalSet('cst');
-
-    asm.i32Const(Compiler.MEMO_START_OFFSET);
-    asm.i32Const(0);
-    asm.i32Const(Compiler.CST_START_OFFSET - Compiler.MEMO_START_OFFSET);
-    asm.emit(0xfc, 11, 0x00); // memory.fill 0
-
-    asm.i32Const(0); // offset
-    asm.i32Const(WASM_PAGE_SIZE); // maxLen
-    asm.emit(instr.call, w.funcidx(0)); // fillInputBuffer
-    asm.emit(instr.local.set, w.localidx(0)); // set inputLen
-
-    // TODO: This should probably a seq of [Apply, end] just like in the JS version.
-    this.emitPExpr(new pexprs.Apply(this.grammar.defaultStartRule));
-    asm.localGet('ret');
-    asm.ifElse(
-        w.blocktype.i32,
-        () => {
-        // match succeeded -- return currPos == inputLen
-          asm.localGet('inputLen');
-          asm.globalGet('pos');
-          asm.emit(instr.i32.eq);
-        },
-        () => {
-          asm.i32Const(0);
-        },
-    );
-  }
-
   functionDecls() {
     // This is a bit messy. By default, we include all the rules in the
     // grammar itself, but only inherited rules if they are referenced.
@@ -785,14 +725,6 @@ class Compiler {
 
     const debugLabel = getDebugLabel(exp);
     asm.emit(`BEGIN ${debugLabel}`);
-
-    // *Always* save the original position, even if we're not backtracking.
-    // asm.pushStackFrame();
-    // asm.savePos();
-
-    // asm.saveCst();
-    // asm.i32Const(numChildren(exp));
-    // asm.cstNodeAlloc();
 
     // Wrap the body in a block, which is useful for two reasons:
     // - it allows early returns.
@@ -822,34 +754,6 @@ class Compiler {
           }
       }
     });
-
-    // If we succeeded, write the CST entry.
-    // asm.localGet('ret');
-    // asm.ifElse(
-    //     w.blocktype.empty,
-    //     () => {
-    //       asm.emit('writeCst');
-    //       asm.getSavedCst();
-    //       asm.globalGet('pos');
-    //       asm.getSavedPos();
-    //       asm.i32Sub();
-    //       asm.cstNodeSetMatchLength();
-    //       if (!isRoot) asm.cstNodeRecordChild();
-    //       asm.emit('done writeCst');
-    //     },
-    //     () => {
-    //       if (emitBacktracking) asm.restorePos();
-    //       asm.restoreCst();
-    //     },
-    // );
-    // if (isLookahead) {
-    //   asm.restorePos();
-
-    //   // TODO: Skip CST work altogether when we're inside a lookahead.
-    //   // (Maybe only for negative lookahead?)
-    //   // asm.restoreCst();
-    // }
-    // asm.popStackFrame();
     asm.emit(`END ${debugLabel}`);
   }
 
@@ -881,7 +785,7 @@ class Compiler {
 
     asm.i32Const(checkNotNull(this.ruleIdByName.get(exp.ruleName)));
 
-    asm.emit(instr.call, w.funcidx(prebuiltFuncidx('evalApply')));
+    asm.callPrebuiltFunc('evalApply');
     asm.localSet('ret');
   }
 
@@ -1042,21 +946,26 @@ class Compiler {
     // - handle longer terminals with a loop
 
     const {asm} = this;
-
-    for (const c of [...exp.obj]) {
-      // Compare next char
-      asm.i32Const(c.charCodeAt(0));
-      asm.currCharCode();
-      asm.emit(instr.i32.ne);
-      asm.if(w.blocktype.empty, () => {
-        asm.i32Const(0);
-        asm.localSet('ret');
-        asm.break(1);
-      });
-      asm.incPos();
-    }
-    asm.i32Const(1);
-    asm.localSet('ret');
+    asm.emit('Terminal');
+    asm.pushStackFrame({savePos: true});
+    asm.block(w.blocktype.empty, () => {
+      for (const c of [...exp.obj]) {
+        // Compare next char
+        asm.i32Const(c.charCodeAt(0));
+        asm.currCharCode();
+        asm.emit(instr.i32.ne);
+        asm.if(w.blocktype.empty, () => {
+          asm.setRet(0);
+          asm.break(1);
+        });
+        asm.incPos();
+      }
+      asm.getSavedPos();
+      asm.globalGet('pos');
+      asm.callPrebuiltFunc('newTerminalNode');
+      asm.localSet('ret');
+    });
+    asm.popStackFrame();
   }
 }
 // Memory layout:
@@ -1084,6 +993,9 @@ export class WasmMatcher {
     this._input = '';
     this._pos = 0;
     this._env = {
+      abort() {
+        throw new Error('abort');
+      },
       fillInputBuffer: this._fillInputBuffer.bind(this),
     };
   }

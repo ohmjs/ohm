@@ -53,6 +53,10 @@ export type ExportSection = {
   [name: string]: number;
 };
 
+export type RawContents = {
+  contents: Uint8Array;
+};
+
 interface ExtractOptions {
   destImportCount?: number;
 }
@@ -115,6 +119,14 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
     return exports;
   }
 
+  // Parse the start section, which contains a single function index.
+  function parseStartSection(expectedId: number): number {
+    const id = bytes[pos++];
+    assert(id === expectedId, `expected section with id ${expectedId}, got ${id}`);
+    const _size = parseU32();
+    return parseU32();
+  }
+
   function parseVecSectionOpaque(expectedId: number) {
     const id = bytes[pos++];
     assert(id === expectedId, `expected section with id ${expectedId}, got ${id}`);
@@ -138,6 +150,7 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
   let globalsec: VecContents = {entryCount: 0, contents: new Uint8Array()};
   let exports: ExportSection | undefined;
   let codesec: VecContents | undefined;
+  let startFuncidx: number | undefined;
 
   let pos = 8;
   let lastId = -1;
@@ -163,6 +176,10 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
       const srcImportCount = importsec?.entryCount ?? 0;
       const destImportCount = opts.destImportCount ?? 0;
       exports = parseExportSection(id, destImportCount - srcImportCount);
+    } else if (id === 8) {
+      const srcImportCount = importsec?.entryCount ?? 0;
+      const destImportCount = opts.destImportCount ?? 0;
+      startFuncidx = parseStartSection(id) + destImportCount - srcImportCount;
     } else if (id === 10) {
       codesec = parseVecSectionOpaque(id);
       // Rewrite the code section to account for the number of imports that
@@ -181,10 +198,12 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
   }
   return {
     typesec: checkNotNull(typesec),
+    importsec,
     funcsec: checkNotNull(funcsec),
     globalsec,
     funcidxByName: exports,
-    codesec: checkNotNull(codesec)
+    codesec: checkNotNull(codesec),
+    startFuncidx
   };
 }
 

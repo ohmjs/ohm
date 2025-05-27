@@ -12,7 +12,7 @@ import {extractSections} from './modparse.ts';
 const inputPath = process.argv[2];
 const outputPath = inputPath + '_sections.ts';
 
-const destImportCount = 5001;
+const destImportCount = 5002;
 
 const buf = fs.readFileSync(inputPath);
 const sections = extractSections(buf, {
@@ -29,12 +29,13 @@ let output = `function decodeBase64(str: string) {
 }
 
 export const destImportCount = ${destImportCount};
+export const startFuncidx = ${sections.startFuncidx};
 `;
 
 output += `export const funcidxByName = ${JSON.stringify(sections.funcidxByName)};\n`;
 
 for (const [secName, payload] of Object.entries(sections)) {
-  if (secName === 'funcidxByName') {
+  if (secName === 'funcidxByName' || secName === 'startFuncidx') {
     continue; // Skip this section as it's already handled above
   }
   const {entryCount, contents} = payload;

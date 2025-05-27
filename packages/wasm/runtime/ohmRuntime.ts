@@ -1,6 +1,3 @@
-let pos: i32 = 0;
-let sp: usize = 0;
-
 type Result = i32;
 
 declare function fillInputBuffer(offset: i32, maxLen: i32): i32;
@@ -12,8 +9,15 @@ declare function fillInputBuffer(offset: i32, maxLen: i32): i32;
 @inline const STACK_START_OFFSET: usize = WASM_PAGE_SIZE;
 @inline const MAX_INPUT_LEN_BYTES: usize = 64 * 1024;
 
+@inline const BINDINGS_INITIAL_CAPACITY: i32 = 32;
+
 @inline const EMPTY: Result = 0;
 @inline const FAIL: Result = -1;
+
+// Shared globals
+let pos: i32 = 0;
+let sp: usize = 0;
+let bindings: Array<i32> = new Array<i32>(BINDINGS_INITIAL_CAPACITY);
 
 @inline function memoTableGet(memoPos: usize, ruleId: i32): Result {
   return load<Result>(memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<Result>(), MEMO_START_OFFSET);
@@ -23,8 +27,20 @@ declare function fillInputBuffer(offset: i32, maxLen: i32): i32;
   store<Result>(memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<Result>(), value, MEMO_START_OFFSET);
 }
 
-@inline function cstGetMatchLength(addr: usize): i32 {
-  return load<i32>(addr);
+@inline function cstGetCount(ptr: usize): i32 {
+  return load<i32>(ptr, 0);
+}
+
+@inline function cstSetCount(ptr: usize, count: i32): void {
+  store<i32>(ptr, count, 0);
+}
+
+@inline function cstGetMatchLength(ptr: usize): i32 {
+  return load<i32>(ptr, 4);
+}
+
+@inline function cstSetMatchLength(ptr: usize, len: i32): void {
+  store<i32>(ptr, len, 4);
 }
 
 function memoizeResult(memoPos: usize, ruleId: i32, result: Result): void {
@@ -44,19 +60,14 @@ function hasMemoizedResult(ruleId: i32): boolean {
 }
 
 export function match(startRuleId: i32): Result {
-  let ret: i32 = 0;
-  let tmp: i32 = 0;
-
+  // (Re-)initialize globals, clear memo table.
   pos = 0;
   sp = STACK_START_OFFSET;
-
-  // Clear memo table
+  bindings = new Array<i32>(BINDINGS_INITIAL_CAPACITY);
   memory.fill(MEMO_START_OFFSET, 0, MEMO_COL_SIZE_BYTES * MAX_INPUT_LEN_BYTES);
 
-  // Fill input buffer and get length
+  // Get the input and do the match.
   let inputLen = fillInputBuffer(0, i32(WASM_PAGE_SIZE));
-
-  // Apply the grammar's default start rule.
   if (evalApply(startRuleId)) {
     return inputLen == pos;
   }
@@ -73,4 +84,11 @@ export function evalApply(ruleId: i32): Result {
   const cst = call_indirect<Result>(ruleId);
   memoizeResult(origPos, ruleId, cst);
   return cst;
+}
+
+export function newTerminalNode(startIdx: i32, endIdx: i32): usize {
+  const ptr = heap.alloc(8);
+  cstSetCount(ptr, 0);
+  cstSetMatchLength(ptr, endIdx - startIdx);
+  return ptr;
 }
