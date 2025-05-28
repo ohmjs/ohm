@@ -330,7 +330,6 @@ class Assembler {
   }
 
   pushStackFrame({savePos, saveNumBindings} = {}) {
-    // sp -= 4
     this.globalGet('sp');
     this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
     this.i32Sub();
@@ -806,13 +805,15 @@ class Compiler {
   emitAlt(exp) {
     const {asm} = this;
     asm.pushStackFrame({savePos: true, saveNumBindings: true});
-    for (const term of exp.terms) {
-      this.emitPExpr(term);
-      asm.localGet('ret');
-      asm.condBreak(0); // return if succeeded
-      asm.restorePos();
-      asm.restoreBindingsLength();
-    }
+    asm.block(w.blocktype.empty, () => {
+      for (const term of exp.terms) {
+        this.emitPExpr(term);
+        asm.localGet('ret');
+        asm.condBreak(0); // return if succeeded
+        asm.restorePos();
+        asm.restoreBindingsLength();
+      }
+    });
     asm.popStackFrame();
   }
 
@@ -861,7 +862,7 @@ class Compiler {
 
   emitLookahead({expr}, shouldMatch = true) {
     const {asm} = this;
-    asm.pushStackFrame({savePos: true});
+    asm.pushStackFrame({savePos: true, saveNumBindings: true});
 
     // TODO: Should positive lookahead record a CST?
     this.emitPExpr(expr);
@@ -910,21 +911,23 @@ class Compiler {
     // TODO: Do we disallow 0xff in the range?
     const {asm} = this;
     asm.pushStackFrame({savePos: true});
-    asm.nextCharCode();
+    asm.block(w.blocktype.empty, () => {
+      asm.nextCharCode();
 
-    // if (c > hi) return 0;
-    asm.dup();
-    asm.i32Const(hi);
-    asm.emit(instr.i32.gt_u);
-    asm.if(w.blocktype.empty, () => {
-      asm.setRet(0);
-      asm.break(1);
+      // if (c > hi) return 0;
+      asm.dup();
+      asm.i32Const(hi);
+      asm.emit(instr.i32.gt_u);
+      asm.if(w.blocktype.empty, () => {
+        asm.setRet(0);
+        asm.break(1);
+      });
+
+      // if (c >= lo)
+      asm.i32Const(lo);
+      asm.emit(instr.i32.ge_u);
+      asm.maybeReturnTerminalNodeWithSavedPos();
     });
-
-    // if (c >= lo)
-    asm.i32Const(lo);
-    asm.emit(instr.i32.ge_u);
-    asm.maybeReturnTerminalNodeWithSavedPos();
     asm.popStackFrame();
   }
 
@@ -1030,6 +1033,7 @@ export class WasmMatcher {
         throw new Error('abort');
       },
       printI32(val) {
+        // eslint-disable-next-line no-console
         console.log(val);
       },
       fillInputBuffer: this._fillInputBuffer.bind(this),
@@ -1045,14 +1049,13 @@ export class WasmMatcher {
     const {instance} = await WebAssembly.instantiate(bytes, {
       env: matcher._env,
       debug: compiler.getDebugImports((label, ret) => {
-        // const result = ret === 1 ? 'SUCCESS' : ret === 0 ? 'FAIL' : '';
-        // eslint-disable no-console
+        // const result = ret === 0 ? 'FAIL' : 'SUCCESS';
         // const indented = s => new Array(depth).join('  ') + s;
         // const pos = instance.exports.pos.value;
         // if (label.startsWith('BEGIN')) depth += 1;
-        // console.log(`pos: ${pos} ${indented(label)}`);
+        // const tail = label.startsWith('END') ? ` -> ${result}` : '';
+        // console.log(`pos: ${pos} ${indented(label)}${tail}`);
         // if (label.startsWith('END')) depth -= 1;
-        // eslint-enable no-console
       }),
     });
     matcher._instance = instance;

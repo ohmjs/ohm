@@ -35,7 +35,6 @@ function rawCstNode(matcher, addr = undefined) {
   const count = view.getUint32(addr, true);
   const matchLen = view.getUint32(addr + 4, true);
   const type = view.getInt32(addr + 8, true);
-
   return [count, matchLen, type, ...getUint32Array(view, addr + 12, count)];
 }
 
@@ -260,46 +259,40 @@ test('cst with repetition and lookahead', async t => {
   let matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = (~space any)*}'));
   let input = 'abc';
   t.is(matchWithInput(matcher, input), 1);
-  // t.deepEqual(rawCst(matcher), [
-  //   [0, 3], // - apply
-  //   [1, 3], //   - rep
-  //   [2, 1], //     - seq
-  //   [3, 1], //       - any
-  //   [4, 1], //         - (child)
-  //   [2, 1], //     - seq
-  //   [3, 1], //       - any
-  //   [4, 1], //         - (child)
-  //   [2, 1], //     - seq
-  //   [3, 1], //       - any
-  //   [4, 1], //         - (child)
-  // ]);
+
+  // x
+  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(matchLen, 3);
+  t.is(children.length, 1);
+  t.is(type, 0);
+
+  // iter
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(matchLen, 3);
+  t.is(children.length, 3);
+  t.is(type, -2);
+
+  const [childA, childB, childC] = children;
+  [_, matchLen, type, ...children] = rawCstNode(matcher, childA);
+  t.is(matchLen, 1);
+  t.is(children.length, 1);
+  t.is(type, 0);
+  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+
+  [_, matchLen, type, ...children] = rawCstNode(matcher, childB);
+  t.is(matchLen, 1);
+  t.is(children.length, 1);
+  t.is(type, 0);
+  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+
+  [_, matchLen, type, ...children] = rawCstNode(matcher, childC);
+  t.is(matchLen, 1);
+  t.is(children.length, 1);
+  t.is(type, 0);
+  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
 
   matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = (~space any)+ spaces any+}'));
   input = '/ab xy';
-  // t.is(matchWithInput(matcher, input), 1);
-  // t.deepEqual(rawCst(matcher), [
-  //   [0, 6], // - apply
-  //   [1, 6], //   - seq
-  //   [2, 3], //     - rep
-  //   [3, 1], //       - seq
-  //   [4, 1], //         - any
-  //   [5, 1], //           - (child)
-  //   [3, 1], //       - seq
-  //   [4, 1], //         - any
-  //   [5, 1], //           - (child)
-  //   [3, 1], //       - seq
-  //   [4, 1], //         - any
-  //   [5, 1], //           - (child)
-  //   [2, 1], //     - spaces
-  //   [3, 1], //       - rep
-  //   [4, 1], //         - space
-  //   [5, 1], //           - (child)
-  //   [2, 2], //     - rep
-  //   [3, 1], //       - any
-  //   [4, 1], //         - (child)
-  //   [3, 1], //       - any
-  //   [4, 1], //         - (child)
-  // ]);
 });
 
 test('wasm: one-char terminals', async t => {
@@ -512,7 +505,7 @@ test('wasm: end', async t => {
   t.is(matchWithInput(matcher, ''), 0);
 });
 
-test.skip('real-world grammar', async t => {
+test('real-world grammar', async t => {
   const g = ohm.grammar(String.raw`
     Test {
       Msgs = Msg*
