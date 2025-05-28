@@ -488,6 +488,13 @@ class Compiler {
         paramTypes: [w.valtype.i32, w.valtype.i32],
         resultTypes: [w.valtype.i32],
       },
+      {
+        module: 'env',
+        name: 'printI32',
+        // (val: i32) -> void
+        paramTypes: [w.valtype.i32],
+        resultTypes: [],
+      },
     ];
     this.grammar = grammar;
 
@@ -620,6 +627,7 @@ class Compiler {
     );
     exports.push(w.export_('memory', w.exportdesc.mem(0)));
     exports.push(w.export_('match', w.exportdesc.func(prebuiltFuncidx('match'))));
+    exports.push(w.export_('getCstRoot', w.exportdesc.func(prebuiltFuncidx('getCstRoot'))));
 
     // Process globals.
     for (const [name, {type, mut, initExpr}] of this.asm._globals.entries()) {
@@ -760,14 +768,12 @@ class Compiler {
   emitAlt(exp) {
     const {asm} = this;
     asm.pushStackFrame({savePos: true});
-
     for (const term of exp.terms) {
       this.emitPExpr(term);
       asm.localGet('ret');
       asm.condBreak(0); // return if succeeded
       asm.restorePos();
     }
-
     asm.popStackFrame();
   }
 
@@ -996,6 +1002,9 @@ export class WasmMatcher {
       abort() {
         throw new Error('abort');
       },
+      printI32(val) {
+        console.log(val);
+      },
       fillInputBuffer: this._fillInputBuffer.bind(this),
     };
   }
@@ -1043,6 +1052,10 @@ export class WasmMatcher {
     this._pos = 0; // TODO: Fix this, it should be using the wasm global
     const startRuleId = checkNotNull(this._ruleIds.get(this.grammar.defaultStartRule));
     return this._instance.exports.match(startRuleId);
+  }
+
+  getCstRoot() {
+    return this._instance.exports.getCstRoot();
   }
 
   _fillInputBuffer(offset, maxLen) {

@@ -1,6 +1,7 @@
 type Result = i32;
 
 declare function fillInputBuffer(offset: i32, maxLen: i32): i32;
+declare function printI32(val: i32): void;
 
 // TODO: Find a way to share these.
 @inline const WASM_PAGE_SIZE: usize = 64 * 1024;
@@ -17,7 +18,7 @@ declare function fillInputBuffer(offset: i32, maxLen: i32): i32;
 // Shared globals
 let pos: i32 = 0;
 let sp: usize = 0;
-let bindings: Array<i32> = new Array<i32>(BINDINGS_INITIAL_CAPACITY);
+let bindings: Array<i32> = new Array<i32>();
 
 @inline function memoTableGet(memoPos: usize, ruleId: i32): Result {
   return load<Result>(memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<Result>(), MEMO_START_OFFSET);
@@ -63,13 +64,14 @@ export function match(startRuleId: i32): Result {
   // (Re-)initialize globals, clear memo table.
   pos = 0;
   sp = STACK_START_OFFSET;
-  bindings = new Array<i32>(BINDINGS_INITIAL_CAPACITY);
+  bindings = new Array<i32>();
   memory.fill(MEMO_START_OFFSET, 0, MEMO_COL_SIZE_BYTES * MAX_INPUT_LEN_BYTES);
 
   // Get the input and do the match.
   let inputLen = fillInputBuffer(0, i32(WASM_PAGE_SIZE));
-  if (evalApply(startRuleId)) {
-    return inputLen == pos;
+  const succeeded = evalApply(startRuleId) !== 0;
+  if (inputLen === pos) {
+    return succeeded;
   }
   return 0;
 }
@@ -81,14 +83,37 @@ export function evalApply(ruleId: i32): Result {
     return useMemoizedResult(ruleId);
   }
   const origPos = pos;
-  const cst = call_indirect<Result>(ruleId);
-  memoizeResult(origPos, ruleId, cst);
-  return cst;
+  const origNumBindings = bindings.length;
+  let result: Result = FAIL;
+  const succeeded = call_indirect<Result>(ruleId);
+  if (succeeded) {
+    const numChildren = bindings.length - origNumBindings;
+    result = newNonterminalNode(origPos, pos, numChildren);
+  }
+  memoizeResult(origPos, ruleId, result);
+  return succeeded;
 }
 
 export function newTerminalNode(startIdx: i32, endIdx: i32): usize {
   const ptr = heap.alloc(8);
   cstSetCount(ptr, 0);
   cstSetMatchLength(ptr, endIdx - startIdx);
+  bindings.push(ptr);
   return ptr;
+}
+
+export function newNonterminalNode(startIdx: i32, endIdx: i32, numChildren: i32): usize {
+  const ptr = heap.alloc(8 + numChildren * 4);
+  cstSetCount(ptr, numChildren);
+  cstSetMatchLength(ptr, endIdx - startIdx);
+  for (let i = 0; i < numChildren; i++) {
+    store<i32>(ptr + 8 + i * 4, bindings[bindings.length - numChildren + i]);
+  }
+  bindings.length -= numChildren;
+  bindings.push(ptr);
+  return ptr;
+}
+
+export function getCstRoot(): usize {
+  return bindings[0];
 }

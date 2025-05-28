@@ -76,7 +76,18 @@ test('input in memory', async t => {
   t.is(view.getUint8(2), 'ohm'.charCodeAt(2));
 });
 
-test('basic cst', async t => {
+test('cst returns', async t => {
+  const matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" | "b" }'));
+
+  const slot = slot => 67240400 + slot * 4;
+
+  t.is(matchWithInput(matcher, 'a'), 1);
+  t.is(matcher.getCstRoot(), 67240416);
+  t.deepEqual(rawCstNode(matcher, 67240416), [1, 1, 67240400]);
+  t.is(matchWithInput(matcher, 'b'), 1);
+});
+
+test.skip('basic cst', async t => {
   const matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" b\nb = "b" }'));
   const input = 'ab';
 

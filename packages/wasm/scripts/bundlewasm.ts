@@ -12,7 +12,7 @@ import {extractSections} from './modparse.ts';
 const inputPath = process.argv[2];
 const outputPath = inputPath + '_sections.ts';
 
-const destImportCount = 5002;
+const destImportCount = 5003;
 
 const buf = fs.readFileSync(inputPath);
 const sections = extractSections(buf, {
