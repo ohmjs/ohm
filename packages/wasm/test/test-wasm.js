@@ -11,6 +11,11 @@ const indented = (d, str) => new Array(d * 2).join(' ') + str;
 const BYTES_PER_CST_REC = 8;
 const SIZEOF_UINT32 = 4;
 
+function checkNotNull(x, msg = 'unexpected null value') {
+  if (x == null) throw new Error(msg);
+  return x;
+}
+
 function getUint32Array(view, offset, count) {
   const arr = new Uint32Array(count);
   for (let i = 0; i < count; i++) {
@@ -579,33 +584,80 @@ test('real-world grammar', async t => {
   t.log('Wasm match time:', performance.now() - start, 'ms');
 });
 
-test.skip('basic memoization', async t => {
+test('basic memoization', async t => {
   const g = ohm.grammar('G { start = "a" b\nb = "b" }');
   const matcher = await WasmMatcher.forGrammar(g);
   t.is(matchWithInput(matcher, 'ab'), 1);
 
   const view = matcher.memoTableViewForTesting();
-  const ruleIdByName = new Map(Object.keys(g.rules).map((name, idx) => [name, idx]));
 
   const getMemo = (pos, ruleName) => {
     const colOffset = pos * Constants.MEMO_COL_SIZE_BYTES;
-    return view.getUint32(colOffset + SIZEOF_UINT32 * ruleIdByName.get(ruleName), true);
+    const ruleId = checkNotNull(matcher._ruleIds.get(ruleName));
+    return view.getUint32(colOffset + SIZEOF_UINT32 * ruleId, true);
   };
 
-  const slot = slot => Constants.CST_START_OFFSET + slot * 4;
+  // start
+  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(matchLen, 2);
+  t.is(children.length, 2);
+  t.is(type, 0);
 
-  // - apply(start)  [0]
-  //   - seq         [1]
-  //     - "a"       [2]
-  //     - apply(b)  [3]
-  //       - "b"     [4]
-  t.deepEqual(rawCstNode(matcher), [1, 2, slot(3)]);
-  t.deepEqual(rawCstNode(matcher, slot(3)), [2, 2, slot(7), slot(9)]);
-  t.deepEqual(rawCstNode(matcher, slot(7)), [0, 1]);
-  t.deepEqual(rawCstNode(matcher, slot(9)), [1, 1, slot(12)]);
-  t.deepEqual(rawCstNode(matcher, slot(12)), [0, 1]);
+  const [childA, childB] = children;
+
+  // "a"
+  t.deepEqual(rawCstNode(matcher, childA), [0, 1, -1]);
+
+  // b
+  [_, matchLen, type, ...children] = rawCstNode(matcher, childB);
+  t.is(matchLen, 1);
+  t.is(children.length, 1);
+  t.is(type, 0);
+
+  // "b"
+  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
 
   // Expect memo for `b` at position 1, and `start` at position 0.
-  t.is(getMemo(1, 'b'), slot(9));
-  t.is(getMemo(0, 'start'), slot(0));
+  t.is(getMemo(1, 'b'), childB);
+  t.is(getMemo(0, 'start'), matcher.getCstRoot());
+});
+
+test('more memoization', async t => {
+  const g = ohm.grammar('G { start = b "a" | b b\nb = "b" }');
+  const matcher = await WasmMatcher.forGrammar(g);
+  t.is(matchWithInput(matcher, 'bb'), 1);
+
+  const view = matcher.memoTableViewForTesting();
+
+  const getMemo = (pos, ruleName) => {
+    const colOffset = pos * Constants.MEMO_COL_SIZE_BYTES;
+    const ruleId = checkNotNull(matcher._ruleIds.get(ruleName));
+    return view.getUint32(colOffset + SIZEOF_UINT32 * ruleId, true);
+  };
+
+  // start
+  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(matchLen, 2);
+  t.is(children.length, 2);
+  t.is(type, 0);
+
+  const [child1, child2] = children;
+
+  // b #1
+  [_, matchLen, type, ...children] = rawCstNode(matcher, child1);
+  t.is(matchLen, 1);
+  t.is(children.length, 1);
+  t.is(type, 0);
+  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+
+  // b #2
+  [_, matchLen, type, ...children] = rawCstNode(matcher, child2);
+  t.is(matchLen, 1);
+  t.is(children.length, 1);
+  t.is(type, 0);
+  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+
+  // Expect memo for `b` at position 0 and 1.
+  t.is(getMemo(0, 'b'), child1);
+  t.is(getMemo(1, 'b'), child2);
 });

@@ -53,20 +53,19 @@ let bindings: Array<i32> = new Array<i32>();
 }
 
 function memoizeResult(memoPos: usize, ruleId: i32, result: Result): void {
-  // memoTableSet(memoPos, ruleId, result);
+  memoTableSet(memoPos, ruleId, result);
 }
 
 function useMemoizedResult(ruleId: i32): Result {
   const result = memoTableGet(pos, ruleId);
-  if (result !== FAIL) {
-    pos += cstGetMatchLength(result);
-  }
+  if (result === FAIL) return 0;
+  pos += cstGetMatchLength(result);
+  bindings.push(result);
   return result;
 }
 
 function hasMemoizedResult(ruleId: i32): boolean {
-  return false;
-  // return memoTableGet(pos, ruleId) !== 0;
+  return memoTableGet(pos, ruleId) !== 0;
 }
 
 export function match(startRuleId: i32): Result {
