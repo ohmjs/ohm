@@ -786,7 +786,6 @@ class Compiler {
     asm.ifElse(
         w.blocktype.i32,
         () => {
-          // TODO: Push this into AssemblyScript?
           asm.getSavedPos();
           asm.globalGet('pos');
           asm.callPrebuiltFunc('newTerminalNode');
@@ -813,6 +812,15 @@ class Compiler {
     // Careful! We shouldn't move the pos here. Or does it matter?
     asm.currCharCode();
     asm.emit(instr.i32.eq);
+    asm.ifElse(
+        w.blocktype.i32,
+        () => {
+          asm.globalGet('pos');
+          asm.globalGet('pos');
+          asm.callPrebuiltFunc('newTerminalNode');
+        },
+        () => asm.i32Const(0),
+    );
     asm.localSet('ret');
   }
 
@@ -871,6 +879,7 @@ class Compiler {
 
     // TODO: Do we disallow 0xff in the range?
     const {asm} = this;
+    asm.pushStackFrame({savePos: true});
     asm.nextCharCode();
 
     // if (c > hi) return 0;
@@ -882,10 +891,22 @@ class Compiler {
       asm.break(1);
     });
 
-    // return c >= lo;
+    // if (c >= lo)
     asm.i32Const(lo);
     asm.emit(instr.i32.ge_u);
+    asm.ifElse(
+        w.blocktype.i32,
+        () => {
+          asm.getSavedPos();
+          asm.globalGet('pos');
+          asm.callPrebuiltFunc('newTerminalNode');
+        },
+        () => {
+          asm.i32Const(0);
+        },
+    );
     asm.localSet('ret');
+    asm.popStackFrame();
   }
 
   emitSeq(exp) {

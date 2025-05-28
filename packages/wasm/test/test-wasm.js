@@ -127,7 +127,7 @@ test('cst with lookahead', async t => {
   const input = 'a';
   t.is(matchWithInput(matcher, input), 1);
 
-  // Currently positive lookahead doesn't bind anything
+  // Currently positive lookahead doesn't bind anything!
 
   // - apply(x)
   //   - any
@@ -141,6 +141,23 @@ test('cst with lookahead', async t => {
 
   // any
   [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(matchLen, 1);
+  t.is(children.length, 1);
+  t.is(type, 0);
+
+  // Terminal
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(matchLen, 1);
+  t.is(children.length, 0);
+  t.is(type, -1);
+});
+
+test('cst for range', async t => {
+  const matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a".."z"}'));
+  t.is(matchWithInput(matcher, 'b'), 1);
+
+  // x
+  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
   t.is(matchLen, 1);
   t.is(children.length, 1);
   t.is(type, 0);
