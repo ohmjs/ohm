@@ -10,8 +10,6 @@ declare function printI32(val: i32): void;
 @inline const STACK_START_OFFSET: usize = WASM_PAGE_SIZE;
 @inline const MAX_INPUT_LEN_BYTES: usize = 64 * 1024;
 
-@inline const BINDINGS_INITIAL_CAPACITY: i32 = 32;
-
 @inline const EMPTY: Result = 0;
 @inline const FAIL: Result = -1;
 

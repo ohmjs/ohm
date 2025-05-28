@@ -77,60 +77,38 @@ test('input in memory', async t => {
 });
 
 test('cst returns', async t => {
-  const matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" | "b" }'));
-
-  const slot = slot => 67240400 + slot * 4;
+  let matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" | "b" }'));
 
   t.is(matchWithInput(matcher, 'a'), 1);
-  t.is(matcher.getCstRoot(), 67240416);
-  t.deepEqual(rawCstNode(matcher, 67240416), [1, 1, 67240400]);
-  t.is(matchWithInput(matcher, 'b'), 1);
-});
+  let [_, matchLen, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(children.length, 1);
+  t.is(matchLen, 1);
 
-test.skip('basic cst', async t => {
-  const matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" b\nb = "b" }'));
-  const input = 'ab';
+  [_, matchLen, ...children] = rawCstNode(matcher, children[0]);
+  t.is(children.length, 0);
+  t.is(matchLen, 1);
 
-  // Treat the entire CST region as an array of i32 slots.
-  // 67240588 - 67240172
-  // 67240608 is where b ends up
-  const slot = slot => 67240588 + slot * 4;
+  matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" b\nb = "b" }'));
 
-  t.is(matchWithInput(matcher, input), 1);
+  t.is(matchWithInput(matcher, 'ab'), 1);
+  [_, matchLen, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(children.length, 2);
+  t.is(matchLen, 2);
 
-  // - apply(start)
-  // - seq
-  //   - "a"
-  //   - apply(b)
-  //     - "b"
-  t.deepEqual(rawCstNode(matcher, slot(1)), [0, 1]); // "a"
-  t.deepEqual(rawCstNode(matcher, slot(5)), [0, 1]); // "b"
-  // t.deepEqual(rawCstNode(matcher, slot(0)), [1, 2, slot(3)]);
-  // t.deepEqual(rawCstNode(matcher, slot(3)), [2, 2, slot(7), slot(9)]);
-  // t.deepEqual(rawCstNode(matcher, slot(7)), [0, 1]);
+  const [childA, childB] = children;
+  [_, matchLen, ...children] = rawCstNode(matcher, childA);
+  t.is(children.length, 0);
+  t.is(matchLen, 1);
 
-  // matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" | b\nb = "b" }'));
-  // input = 'a';
-  // t.is(matchWithInput(matcher, input), 1);
+  // NonterminalNode for b
+  [_, matchLen, ...children] = rawCstNode(matcher, childB);
+  t.is(children.length, 1);
+  t.is(matchLen, 1);
 
-  // // - apply(start)
-  // //   - alt
-  // //     - "a"
-  // t.deepEqual(rawCstNode(matcher, slot(0)), [1, 1, slot(3)]);
-  // t.deepEqual(rawCstNode(matcher, slot(3)), [1, 1, slot(6)]);
-  // t.deepEqual(rawCstNode(matcher, slot(6)), [0, 1]);
-
-  // input = 'b';
-  // t.is(matchWithInput(matcher, input), 1);
-
-  // // - apply(start)
-  // //   - alt
-  // //     - apply(b)
-  // //       - "b"
-  // t.deepEqual(rawCstNode(matcher, slot(0)), [1, 1, slot(3)]);
-  // t.deepEqual(rawCstNode(matcher, slot(3)), [1, 1, slot(6)]);
-  // t.deepEqual(rawCstNode(matcher, slot(6)), [1, 1, slot(9)]);
-  // t.deepEqual(rawCstNode(matcher, slot(9)), [0, 1]);
+  // TerminalNode for "b"
+  [_, matchLen, ...children] = rawCstNode(matcher, children[0]);
+  t.is(children.length, 0);
+  t.is(matchLen, 1);
 });
 
 test.skip('cst with lookahead', async t => {
