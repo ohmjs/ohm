@@ -169,57 +169,51 @@ test('cst for range', async t => {
   t.is(type, -1);
 });
 
-test.skip('cst with (small) repetition', async t => {
-  const matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a"*}'));
-  const input = 'aaa';
-  t.is(matchWithInput(matcher, input), 1);
+test('cst for opt', async t => {
+  const matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a"?}'));
+  t.is(matchWithInput(matcher, 'a'), 1);
 
-  const slot = slot => Constants.CST_START_OFFSET + slot * 4;
+  // x
+  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(matchLen, 1);
+  t.is(type, 0);
+  t.is(children.length, 1);
 
-  // - apply(start)
-  //   - iter
-  //     - "a"
-  //     - "a"
-  //     - "a"
-  t.deepEqual(rawCstNode(matcher, slot(0)), [1, 3, slot(3)]);
-  t.deepEqual(rawCstNode(matcher, slot(3)), [3, 3, slot(13), slot(15), slot(17)]);
-  t.deepEqual(rawCstNode(matcher, slot(13)), [0, 1]);
-  t.deepEqual(rawCstNode(matcher, slot(15)), [0, 1]);
-  t.deepEqual(rawCstNode(matcher, slot(17)), [0, 1]);
+  // iter
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(matchLen, 1);
+  t.is(type, -2);
+  t.is(children.length, 1);
+
+  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
 });
 
-test.skip('cst with (big) repetition', async t => {
+test('cst with (small) repetition', async t => {
   const matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a"*}'));
-  const input = 'aaaaaaaaaa';
-  t.is(matchWithInput(matcher, input), 1);
-
-  const slot = slot => Constants.CST_START_OFFSET + slot * 4;
+  t.is(matchWithInput(matcher, 'aaa'), 1);
 
   // - apply(start)
   //   - iter
   //     - "a"
   //     - "a"
-  //     - ... (8 more "a"s)
-  t.deepEqual(rawCstNode(matcher, slot(0)), [1, 10, slot(3)]);
-  t.deepEqual(rawCstNode(matcher, slot(3)), [
-    8,
-    10,
-    slot(13), // "a"
-    slot(15), // "a"
-    slot(17), // "a"
-    slot(19), // "a"
-    slot(21), // "a"
-    slot(23), // "a"
-    slot(25), // "a" #7
-    slot(27), // -> next
-  ]);
-  t.deepEqual(rawCstNode(matcher, slot(27)), [
-    3,
-    0,
-    slot(37), // "a"
-    slot(39), // "a"
-    slot(41), // "a"
-  ]);
+  //     - "a"
+
+  // start
+  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(matchLen, 3);
+  t.is(children.length, 1);
+  t.is(type, 0);
+
+  // iter
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(matchLen, 3);
+  t.is(children.length, 3);
+  t.is(type, -2);
+
+  // Terminal children
+  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+  t.deepEqual(rawCstNode(matcher, children[1]), [0, 1, -1]);
+  t.deepEqual(rawCstNode(matcher, children[2]), [0, 1, -1]);
 });
 
 // eslint-disable-next-line ava/no-skip-test

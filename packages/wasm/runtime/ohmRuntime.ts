@@ -124,6 +124,24 @@ export function newNonterminalNode(startIdx: i32, endIdx: i32, numChildren: i32)
   return ptr;
 }
 
+export function newIterationNode(startIdx: i32, endIdx: i32, oldNumBindings: i32): usize {
+  const numChildren = bindings.length - oldNumBindings;
+  const ptr = heap.alloc(CST_NODE_OVERHEAD + numChildren * 4);
+  cstSetCount(ptr, numChildren);
+  cstSetMatchLength(ptr, endIdx - startIdx);
+  cstSetType(ptr, -2);
+  for (let i = 0; i < numChildren; i++) {
+    store<i32>(ptr + CST_NODE_OVERHEAD + i * 4, bindings[bindings.length - numChildren + i]);
+  }
+  bindings.length -= numChildren;
+  bindings.push(ptr);
+  return ptr;
+}
+
+export function getBindingsLength(): i32 {
+  return bindings.length;
+}
+
 export function getCstRoot(): usize {
   return bindings[0];
 }

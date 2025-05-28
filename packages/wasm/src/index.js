@@ -7,7 +7,6 @@ import {pexprs} from 'ohm-js';
 import * as prebuilt from '../build/ohmRuntime.wasm_sections.ts';
 
 const WASM_PAGE_SIZE = 64 * 1024;
-const ITER_NODE_SIZE_INITIAL = 1 << 3; // Must be a power of 2.
 
 const DEBUG = true;
 
@@ -330,13 +329,14 @@ class Assembler {
     this.localSet('ret');
   }
 
-  pushStackFrame({savePos} = {}) {
+  pushStackFrame({savePos, saveNumBindings} = {}) {
     // sp -= 4
     this.globalGet('sp');
     this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
     this.i32Sub();
     this.globalSet('sp');
     if (savePos) this.savePos();
+    if (saveNumBindings) this.saveNumBindings();
   }
 
   popStackFrame({restorePos} = {}) {
@@ -374,6 +374,17 @@ class Assembler {
   restorePos() {
     this.getSavedPos();
     this.globalSet('pos');
+  }
+
+  saveNumBindings() {
+    this.globalGet('sp');
+    this.callPrebuiltFunc('getBindingsLength');
+    this.i32Store(4);
+  }
+
+  getSavedNumBindings() {
+    this.globalGet('sp');
+    this.i32Load(4);
   }
 
   // Increment the current input position by 1.
@@ -458,6 +469,13 @@ class Assembler {
 
   callPrebuiltFunc(name) {
     this.emit(instr.call, w.funcidx(prebuiltFuncidx(name)));
+  }
+
+  newIterNodeWithSavedPosAndBindings() {
+    this.getSavedPos();
+    this.globalGet('pos');
+    this.getSavedNumBindings();
+    this.callPrebuiltFunc('newIterationNode');
   }
 }
 Assembler.ALIGN_1_BYTE = 0;
@@ -852,13 +870,14 @@ class Compiler {
 
   emitOpt({expr}) {
     const {asm} = this;
-    asm.pushStackFrame({savePos: true});
+    asm.pushStackFrame({savePos: true, saveNumBindings: true});
     this.emitPExpr(expr);
     asm.localGet('ret');
     asm.ifFalse(w.blocktype.empty, () => {
       asm.restorePos();
     });
-    asm.setRet(1);
+    asm.newIterNodeWithSavedPosAndBindings();
+    asm.localSet('ret');
     asm.popStackFrame();
   }
 
@@ -929,8 +948,11 @@ class Compiler {
   emitStar({expr}) {
     const {asm} = this;
     asm.emit('emitStar');
-    asm.pushStackFrame();
+    asm.pushStackFrame({savePos: true, saveNumBindings: true});
 
+    // We push another stack frame because we need to save and restore
+    // the position just before the last (failed) expression.
+    asm.pushStackFrame();
     asm.block(w.blocktype.empty, () => {
       asm.loop(w.blocktype.empty, () => {
         asm.savePos();
@@ -943,40 +965,12 @@ class Compiler {
     });
     asm.restorePos();
     asm.popStackFrame();
+
+    asm.newIterNodeWithSavedPosAndBindings();
+    asm.localSet('ret');
+
+    asm.popStackFrame();
     asm.emit('done emitStar');
-    asm.setRet(1);
-  }
-
-  emitStarX({expr}) {
-    const {asm} = this;
-    asm.emit('emitStar');
-
-    // First operand of the `sub` below (second operand is the loop counter).
-    asm.i32Const(Math.clz32(ITER_NODE_SIZE_INITIAL));
-
-    asm.block(asm.blocktype([], [w.valtype.i32]), () => {
-      // Loop counter used by maybeGrowIterNode — will be returned from this block.
-      asm.i32Const(ITER_NODE_SIZE_INITIAL);
-      asm.loop(asm.blocktype([w.valtype.i32], [w.valtype.i32]), () => {
-        asm.i32Inc(); // increment counter
-        asm.maybeGrowIterNode(this.importDecls.length + 1 + prebuilt.funcsec.entryCount);
-
-        this.emitPExpr(expr);
-        asm.localGet('ret');
-        asm.emit(instr.i32.eqz);
-        asm.condBreak(1);
-        asm.continue(0);
-      });
-    });
-    // The difference in the number of leading zeros between the initial size
-    // and the current size tells us how many times we grew, and thus how many
-    // stack frames we need to pop.
-    asm.emit(instr.i32.clz);
-    asm.emit(instr.i32.sub);
-    asm.popStackFrames();
-
-    asm.emit('done emitStar');
-    asm.setRet(1);
   }
 
   emitTerminal(exp) {
