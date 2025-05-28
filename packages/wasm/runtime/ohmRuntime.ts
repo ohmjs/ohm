@@ -53,7 +53,7 @@ let bindings: Array<i32> = new Array<i32>();
 }
 
 function memoizeResult(memoPos: usize, ruleId: i32, result: Result): void {
-  memoTableSet(memoPos, ruleId, result);
+  // memoTableSet(memoPos, ruleId, result);
 }
 
 function useMemoizedResult(ruleId: i32): Result {
@@ -65,7 +65,8 @@ function useMemoizedResult(ruleId: i32): Result {
 }
 
 function hasMemoizedResult(ruleId: i32): boolean {
-  return memoTableGet(pos, ruleId) !== 0;
+  return false;
+  // return memoTableGet(pos, ruleId) !== 0;
 }
 
 export function match(startRuleId: i32): Result {
