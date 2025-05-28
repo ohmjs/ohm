@@ -13,6 +13,8 @@ declare function printI32(val: i32): void;
 @inline const EMPTY: Result = 0;
 @inline const FAIL: Result = -1;
 
+@inline const CST_NODE_OVERHEAD: usize = 12;
+
 // Shared globals
 let pos: i32 = 0;
 let sp: usize = 0;
@@ -40,6 +42,14 @@ let bindings: Array<i32> = new Array<i32>();
 
 @inline function cstSetMatchLength(ptr: usize, len: i32): void {
   store<i32>(ptr, len, 4);
+}
+
+@inline function cstGetType(ptr: usize): i32 {
+  return load<i32>(ptr, 8);
+}
+
+@inline function cstSetType(ptr: usize, t: i32): void {
+  store<i32>(ptr, t, 8);
 }
 
 function memoizeResult(memoPos: usize, ruleId: i32, result: Result): void {
@@ -93,19 +103,21 @@ export function evalApply(ruleId: i32): Result {
 }
 
 export function newTerminalNode(startIdx: i32, endIdx: i32): usize {
-  const ptr = heap.alloc(8);
+  const ptr = heap.alloc(CST_NODE_OVERHEAD);
   cstSetCount(ptr, 0);
   cstSetMatchLength(ptr, endIdx - startIdx);
+  cstSetType(ptr, -1);
   bindings.push(ptr);
   return ptr;
 }
 
 export function newNonterminalNode(startIdx: i32, endIdx: i32, numChildren: i32): usize {
-  const ptr = heap.alloc(8 + numChildren * 4);
+  const ptr = heap.alloc(CST_NODE_OVERHEAD + numChildren * 4);
   cstSetCount(ptr, numChildren);
   cstSetMatchLength(ptr, endIdx - startIdx);
+  cstSetType(ptr, 0);
   for (let i = 0; i < numChildren; i++) {
-    store<i32>(ptr + 8 + i * 4, bindings[bindings.length - numChildren + i]);
+    store<i32>(ptr + CST_NODE_OVERHEAD + i * 4, bindings[bindings.length - numChildren + i]);
   }
   bindings.length -= numChildren;
   bindings.push(ptr);

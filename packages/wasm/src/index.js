@@ -779,10 +779,22 @@ class Compiler {
 
   emitAny() {
     const {asm} = this;
+    asm.pushStackFrame({savePos: true});
     asm.i32Const(0xff);
     asm.nextCharCode();
     asm.i32Ne();
+    asm.ifElse(
+        w.blocktype.i32,
+        () => {
+          // TODO: Push this into AssemblyScript?
+          asm.getSavedPos();
+          asm.globalGet('pos');
+          asm.callPrebuiltFunc('newTerminalNode');
+        },
+        () => asm.i32Const(0),
+    );
     asm.localSet('ret');
+    asm.popStackFrame();
   }
 
   emitApply(exp) {

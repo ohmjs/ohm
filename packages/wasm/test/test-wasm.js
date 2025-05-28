@@ -34,8 +34,9 @@ function rawCstNode(matcher, addr = undefined) {
   }
   const count = view.getUint32(addr, true);
   const matchLen = view.getUint32(addr + 4, true);
+  const type = view.getInt32(addr + 8, true);
 
-  return [count, matchLen, ...getUint32Array(view, addr + 8, count)];
+  return [count, matchLen, type, ...getUint32Array(view, addr + 12, count)];
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -79,56 +80,76 @@ test('input in memory', async t => {
 test('cst returns', async t => {
   let matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" | "b" }'));
 
+  // start
   t.is(matchWithInput(matcher, 'a'), 1);
-  let [_, matchLen, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
   t.is(children.length, 1);
   t.is(matchLen, 1);
+  t.is(type, 0);
 
-  [_, matchLen, ...children] = rawCstNode(matcher, children[0]);
+  // "a"
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
   t.is(children.length, 0);
   t.is(matchLen, 1);
+  t.is(type, -1);
 
   matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" b\nb = "b" }'));
 
+  // start
   t.is(matchWithInput(matcher, 'ab'), 1);
-  [_, matchLen, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
   t.is(children.length, 2);
   t.is(matchLen, 2);
+  t.is(type, 0);
 
+  // "a"
   const [childA, childB] = children;
-  [_, matchLen, ...children] = rawCstNode(matcher, childA);
+  [_, matchLen, type, ...children] = rawCstNode(matcher, childA);
   t.is(children.length, 0);
   t.is(matchLen, 1);
+  t.is(type, -1);
 
   // NonterminalNode for b
-  [_, matchLen, ...children] = rawCstNode(matcher, childB);
+  [_, matchLen, type, ...children] = rawCstNode(matcher, childB);
   t.is(children.length, 1);
   t.is(matchLen, 1);
+  t.is(type, 0);
 
   // TerminalNode for "b"
-  [_, matchLen, ...children] = rawCstNode(matcher, children[0]);
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
   t.is(children.length, 0);
   t.is(matchLen, 1);
+  t.is(type, -1);
 });
 
-test.skip('cst with lookahead', async t => {
+test('cst with lookahead', async t => {
   const matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = ~space any}'));
   const input = 'a';
   t.is(matchWithInput(matcher, input), 1);
 
-  const slot = slot => Constants.CST_START_OFFSET + slot * 4;
+  // Currently positive lookahead doesn't bind anything
 
   // - apply(x)
-  //   - seq
-  //     - Lookahead
-  //     - any
-  //       - "a"
-  t.deepEqual(rawCstNode(matcher, slot(0)), [1, 1, slot(3)]);
-  t.deepEqual(rawCstNode(matcher, slot(3)), [2, 1, slot(7), slot(9)]);
+  //   - any
+  //     - "a"
 
-  // Right now a Lookahead node has a 0 matchLength and 0 children. Should it be different?
-  t.deepEqual(rawCstNode(matcher, slot(7)), [0, 0]);
-  t.deepEqual(rawCstNode(matcher, slot(9)), [1, 1, slot(12)]);
+  // x
+  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(matchLen, 1);
+  t.is(children.length, 1);
+  t.is(type, 0);
+
+  // any
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(matchLen, 1);
+  t.is(children.length, 1);
+  t.is(type, 0);
+
+  // Terminal
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(matchLen, 1);
+  t.is(children.length, 0);
+  t.is(type, -1);
 });
 
 test.skip('cst with (small) repetition', async t => {
