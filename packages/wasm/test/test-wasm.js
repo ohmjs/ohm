@@ -170,7 +170,41 @@ test('cst for range', async t => {
 });
 
 test('cst for opt', async t => {
-  const matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a"?}'));
+  let matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a"?}'));
+  t.is(matchWithInput(matcher, 'a'), 1);
+
+  // x
+  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(matchLen, 1);
+  t.is(type, 0);
+  t.is(children.length, 1);
+
+  // iter
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(matchLen, 1);
+  t.is(type, -2);
+  t.is(children.length, 1);
+
+  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+
+  matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a"?}'));
+  t.is(matchWithInput(matcher, ''), 1);
+
+  // x
+  [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(matchLen, 0);
+  t.is(type, 0);
+  t.is(children.length, 1);
+
+  // iter
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(matchLen, 0);
+  t.is(type, -2);
+  t.is(children.length, 0);
+});
+
+test('cst for plus', async t => {
+  const matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a"+}'));
   t.is(matchWithInput(matcher, 'a'), 1);
 
   // x

@@ -883,11 +883,15 @@ class Compiler {
 
   emitPlus(plusExp) {
     const {asm} = this;
+    asm.pushStackFrame({savePos: true, saveNumBindings: true});
     this.emitPExpr(plusExp.expr);
     asm.localGet('ret');
     asm.if(w.blocktype.empty, () => {
-      this.emitStar(plusExp);
+      // This is a little like a tail call — we let `emitStar` build the
+      // CST node, using the pos and binding count from our stack frame.
+      this.emitStar(plusExp, {reuseStackFrame: true});
     });
+    asm.popStackFrame();
   }
 
   emitRange({from, to}) {
@@ -945,10 +949,10 @@ class Compiler {
     }
   }
 
-  emitStar({expr}) {
+  emitStar({expr}, {reuseStackFrame} = {}) {
     const {asm} = this;
     asm.emit('emitStar');
-    asm.pushStackFrame({savePos: true, saveNumBindings: true});
+    if (!reuseStackFrame) asm.pushStackFrame({savePos: true, saveNumBindings: true});
 
     // We push another stack frame because we need to save and restore
     // the position just before the last (failed) expression.
@@ -969,7 +973,7 @@ class Compiler {
     asm.newIterNodeWithSavedPosAndBindings();
     asm.localSet('ret');
 
-    asm.popStackFrame();
+    if (!reuseStackFrame) asm.popStackFrame();
     asm.emit('done emitStar');
   }
 
