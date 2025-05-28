@@ -250,8 +250,13 @@ test('cst with (small) repetition', async t => {
   t.deepEqual(rawCstNode(matcher, children[2]), [0, 1, -1]);
 });
 
+test('repetition and lookahead', async t => {
+  const matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = (~space any)*}'));
+  t.is(matchWithInput(matcher, 'abc'), 1);
+});
+
 // eslint-disable-next-line ava/no-skip-test
-test.skip('cst with repetition and lookahead', async t => {
+test('cst with repetition and lookahead', async t => {
   let matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = (~space any)*}'));
   let input = 'abc';
   t.is(matchWithInput(matcher, input), 1);

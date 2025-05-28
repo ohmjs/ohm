@@ -387,6 +387,11 @@ class Assembler {
     this.i32Load(4);
   }
 
+  restoreBindingsLength() {
+    this.getSavedNumBindings();
+    this.callPrebuiltFunc('setBindingsLength');
+  }
+
   // Increment the current input position by 1.
   // [i32, i32] -> [i32]
   incPos() {
@@ -800,12 +805,13 @@ class Compiler {
 
   emitAlt(exp) {
     const {asm} = this;
-    asm.pushStackFrame({savePos: true});
+    asm.pushStackFrame({savePos: true, saveNumBindings: true});
     for (const term of exp.terms) {
       this.emitPExpr(term);
       asm.localGet('ret');
       asm.condBreak(0); // return if succeeded
       asm.restorePos();
+      asm.restoreBindingsLength();
     }
     asm.popStackFrame();
   }
@@ -864,6 +870,7 @@ class Compiler {
       asm.emit(instr.i32.eqz);
       asm.localSet('ret');
     }
+    asm.restoreBindingsLength();
     asm.popStackFrame({restorePos: true});
   }
 
@@ -874,6 +881,7 @@ class Compiler {
     asm.localGet('ret');
     asm.ifFalse(w.blocktype.empty, () => {
       asm.restorePos();
+      asm.restoreBindingsLength();
     });
     asm.newIterNodeWithSavedPosAndBindings();
     asm.localSet('ret');
@@ -948,6 +956,7 @@ class Compiler {
     asm.block(w.blocktype.empty, () => {
       asm.loop(w.blocktype.empty, () => {
         asm.savePos();
+        asm.saveNumBindings();
         this.emitPExpr(expr);
         asm.localGet('ret');
         asm.emit(instr.i32.eqz);
@@ -956,6 +965,7 @@ class Compiler {
       });
     });
     asm.restorePos();
+    asm.restoreBindingsLength();
     asm.popStackFrame();
 
     asm.newIterNodeWithSavedPosAndBindings();

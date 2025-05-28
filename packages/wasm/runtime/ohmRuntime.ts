@@ -143,6 +143,10 @@ export function getBindingsLength(): i32 {
   return bindings.length;
 }
 
+export function setBindingsLength(len: i32): void {
+  return bindings.length = len;
+}
+
 export function getCstRoot(): usize {
   return bindings[0];
 }
