@@ -477,6 +477,21 @@ class Assembler {
     this.getSavedNumBindings();
     this.callPrebuiltFunc('newIterationNode');
   }
+
+  newTerminalNodeWithSavedPos() {
+    this.getSavedPos();
+    this.globalGet('pos');
+    this.callPrebuiltFunc('newTerminalNode');
+  }
+
+  maybeReturnTerminalNodeWithSavedPos() {
+    this.ifElse(
+        w.blocktype.i32,
+        () => this.newTerminalNodeWithSavedPos(),
+        () => this.i32Const(0),
+    );
+    this.localSet('ret');
+  }
 }
 Assembler.ALIGN_1_BYTE = 0;
 Assembler.ALIGN_4_BYTES = 2;
@@ -801,16 +816,7 @@ class Compiler {
     asm.i32Const(0xff);
     asm.nextCharCode();
     asm.i32Ne();
-    asm.ifElse(
-        w.blocktype.i32,
-        () => {
-          asm.getSavedPos();
-          asm.globalGet('pos');
-          asm.callPrebuiltFunc('newTerminalNode');
-        },
-        () => asm.i32Const(0),
-    );
-    asm.localSet('ret');
+    asm.maybeReturnTerminalNodeWithSavedPos();
     asm.popStackFrame();
   }
 
@@ -826,20 +832,13 @@ class Compiler {
 
   emitEnd() {
     const {asm} = this;
+    asm.pushStackFrame({savePos: true});
     asm.i32Const(0xff);
     // Careful! We shouldn't move the pos here. Or does it matter?
     asm.currCharCode();
     asm.emit(instr.i32.eq);
-    asm.ifElse(
-        w.blocktype.i32,
-        () => {
-          asm.globalGet('pos');
-          asm.globalGet('pos');
-          asm.callPrebuiltFunc('newTerminalNode');
-        },
-        () => asm.i32Const(0),
-    );
-    asm.localSet('ret');
+    asm.maybeReturnTerminalNodeWithSavedPos();
+    asm.popStackFrame();
   }
 
   emitExtend(exp) {
@@ -917,18 +916,7 @@ class Compiler {
     // if (c >= lo)
     asm.i32Const(lo);
     asm.emit(instr.i32.ge_u);
-    asm.ifElse(
-        w.blocktype.i32,
-        () => {
-          asm.getSavedPos();
-          asm.globalGet('pos');
-          asm.callPrebuiltFunc('newTerminalNode');
-        },
-        () => {
-          asm.i32Const(0);
-        },
-    );
-    asm.localSet('ret');
+    asm.maybeReturnTerminalNodeWithSavedPos();
     asm.popStackFrame();
   }
 
@@ -997,9 +985,7 @@ class Compiler {
         });
         asm.incPos();
       }
-      asm.getSavedPos();
-      asm.globalGet('pos');
-      asm.callPrebuiltFunc('newTerminalNode');
+      asm.newTerminalNodeWithSavedPos();
       asm.localSet('ret');
     });
     asm.popStackFrame();
