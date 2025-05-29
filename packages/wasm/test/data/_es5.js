@@ -16,7 +16,7 @@ const fac = async ns => {
   const lexIgnored = exp => exp;
 
   return new ns.Matcher({
-    start: app('sourceElement'),
+    start: app('program'),
     // any: range('\u0000', '\uFFFF'),
     any: ns.any,
     // end: not(app('any')),

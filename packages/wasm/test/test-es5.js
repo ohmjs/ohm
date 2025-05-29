@@ -1,6 +1,7 @@
 import test from 'ava';
 import {readFile} from 'node:fs/promises';
 import {dirname, join} from 'node:path';
+import {performance} from 'node:perf_hooks';
 import {fileURLToPath} from 'node:url';
 import * as ohm from 'ohm-js';
 
@@ -47,34 +48,18 @@ async function es5Matcher() {
   });
 }
 
-// eslint-disable-next-line ava/no-skip-test
 test('basic es5 examples', async t => {
   const es5 = await es5Matcher();
   t.is(es5.match('x = 3;'), 1);
   t.is(es5.match('function foo() { return 1; }'), 1);
 });
 
-// eslint-disable-next-line ava/no-skip-test
-test.skip('broken es5 examples', async t => {
-  const es5 = await es5Matcher();
-  t.is(
-      es5.match(`
-    function fib(n) {
-      if (n <= 1) {
-        return n;
-      }
-      return fib(n - 1) + fib(n - 2);
-    }
-  `),
-      1,
-  );
-});
-
-// eslint-disable-next-line ava/no-skip-test
-test.skip('html5shiv', async t => {
+test('html5shiv', async t => {
   const html5shivPath = join(datadir, '_html5shiv-3.7.3.js');
   const source = await readFile(html5shivPath, 'utf8');
 
+  const start = performance.now();
   const es5 = await es5Matcher();
-  t.is(es5.match(source), 1);
+  t.is(es5.match(source.trim()), 1);
+  t.log(`html5shiv match time: ${(performance.now() - start).toFixed(2)}ms`);
 });

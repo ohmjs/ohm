@@ -585,13 +585,13 @@ test('real-world grammar', async t => {
   }
   let start = performance.now();
   g.match(longInput);
-  t.log('Ohm match time:', performance.now() - start);
+  t.log(`Ohm match time: ${(performance.now() - start).toFixed(2)}ms`);
 
   const matcher = await WasmMatcher.forGrammar(g);
   t.is(matchWithInput(matcher, '/quickjs eval source: "1 + 1"'), 1);
   start = performance.now();
   t.is(matchWithInput(matcher, longInput), 1);
-  t.log('Wasm match time:', performance.now() - start, 'ms');
+  t.log(`Wasm match time: ${(performance.now() - start).toFixed(2)}ms`);
 });
 
 test('basic memoization', async t => {
