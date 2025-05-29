@@ -1,8 +1,14 @@
 import test from 'ava';
+import {readFile} from 'node:fs/promises';
+import {dirname, join} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import * as ohm from 'ohm-js';
 
 import {WasmMatcher} from '../src/index.js';
-import es5fac from './_es5.js';
+import es5fac from './data/_es5.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const datadir = join(__dirname, 'data');
 
 function ES5Matcher(rules) {
   // `rules` is an object with the raw rule bodies.
@@ -42,8 +48,33 @@ async function es5Matcher() {
 }
 
 // eslint-disable-next-line ava/no-skip-test
-test.skip('basic es5 examples', async t => {
+test('basic es5 examples', async t => {
   const es5 = await es5Matcher();
+  t.is(es5.match('x = 3;'), 1);
   t.is(es5.match('function foo() { return 1; }'), 1);
-  t.is(es5.match('/* does this work */'), 1);
+});
+
+// eslint-disable-next-line ava/no-skip-test
+test.skip('broken es5 examples', async t => {
+  const es5 = await es5Matcher();
+  t.is(
+      es5.match(`
+    function fib(n) {
+      if (n <= 1) {
+        return n;
+      }
+      return fib(n - 1) + fib(n - 2);
+    }
+  `),
+      1,
+  );
+});
+
+// eslint-disable-next-line ava/no-skip-test
+test.skip('html5shiv', async t => {
+  const html5shivPath = join(datadir, '_html5shiv-3.7.3.js');
+  const source = await readFile(html5shivPath, 'utf8');
+
+  const es5 = await es5Matcher();
+  t.is(es5.match(source), 1);
 });

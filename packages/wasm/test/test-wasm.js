@@ -120,6 +120,7 @@ test('cst returns', async t => {
   t.is(type, 0);
 
   // TerminalNode for "b"
+  // eslint-disable-next-line no-unused-vars
   [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
   t.is(children.length, 0);
   t.is(matchLen, 1);
@@ -150,6 +151,7 @@ test('cst with lookahead', async t => {
   t.is(type, 0);
 
   // Terminal
+  // eslint-disable-next-line no-unused-vars
   [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
   t.is(matchLen, 1);
   t.is(children.length, 0);
@@ -167,6 +169,7 @@ test('cst for range', async t => {
   t.is(type, 0);
 
   // Terminal
+  // eslint-disable-next-line no-unused-vars
   [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
   t.is(matchLen, 1);
   t.is(children.length, 0);
@@ -195,12 +198,14 @@ test('cst for opt', async t => {
   t.is(matchWithInput(matcher, ''), 1);
 
   // x
+  // eslint-disable-next-line no-unused-vars
   [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
   t.is(matchLen, 0);
   t.is(type, 0);
   t.is(children.length, 1);
 
   // iter
+  // eslint-disable-next-line no-unused-vars
   [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
   t.is(matchLen, 0);
   t.is(type, -2);
@@ -212,12 +217,14 @@ test('cst for plus', async t => {
   t.is(matchWithInput(matcher, 'a'), 1);
 
   // x
+  // eslint-disable-next-line no-unused-vars
   let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
   t.is(matchLen, 1);
   t.is(type, 0);
   t.is(children.length, 1);
 
   // iter
+  // eslint-disable-next-line no-unused-vars
   [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
   t.is(matchLen, 1);
   t.is(type, -2);
@@ -237,12 +244,14 @@ test('cst with (small) repetition', async t => {
   //     - "a"
 
   // start
+  // eslint-disable-next-line no-unused-vars
   let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
   t.is(matchLen, 3);
   t.is(children.length, 1);
   t.is(type, 0);
 
   // iter
+  // eslint-disable-next-line no-unused-vars
   [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
   t.is(matchLen, 3);
   t.is(children.length, 3);
@@ -290,6 +299,7 @@ test('cst with repetition and lookahead', async t => {
   t.is(type, 0);
   t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
 
+  // eslint-disable-next-line no-unused-vars
   [_, matchLen, type, ...children] = rawCstNode(matcher, childC);
   t.is(matchLen, 1);
   t.is(children.length, 1);
@@ -609,6 +619,7 @@ test('basic memoization', async t => {
   t.deepEqual(rawCstNode(matcher, childA), [0, 1, -1]);
 
   // b
+  // eslint-disable-next-line no-unused-vars
   [_, matchLen, type, ...children] = rawCstNode(matcher, childB);
   t.is(matchLen, 1);
   t.is(children.length, 1);
@@ -651,6 +662,7 @@ test('more memoization', async t => {
   t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
 
   // b #2
+  // eslint-disable-next-line no-unused-vars
   [_, matchLen, type, ...children] = rawCstNode(matcher, child2);
   t.is(matchLen, 1);
   t.is(children.length, 1);
