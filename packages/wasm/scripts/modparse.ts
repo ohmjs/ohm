@@ -35,7 +35,7 @@ function isValtype(t: number): boolean {
 }
 
 function checkValtype(t: number): number {
-  assert(isValtype(t), `unrecognized valtype: 0x${t.toString(2)}`);
+  assert(isValtype(t), `unrecognized valtype: 0x${t.toString(16).padStart(2, '0')}`);
   return t;
 }
 
