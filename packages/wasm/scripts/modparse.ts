@@ -66,7 +66,7 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
   skipPreamble(bytes);
 
   const parseU32 = () => {
-    const [val, count] = decodeULEB128(bytes.slice(pos));
+    const [val, count] = decodeULEB128(bytes, pos);
     pos += count;
     return checkU32(val);
   };
@@ -375,7 +375,7 @@ function rewriteCodesecContents(
   let pos = 0;
 
   const parseU32 = () => {
-    const [val, count] = decodeULEB128(bytes.slice(pos));
+    const [val, count] = decodeULEB128(bytes, pos);
     pos += count;
     return checkU32(val);
   };
