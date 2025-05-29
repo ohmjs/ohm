@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "ava test"
+    "test": "make && ava test"
   },
   "type": "module",
   "keywords": [],
