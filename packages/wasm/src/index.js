@@ -346,16 +346,6 @@ class Assembler {
     this.globalSet('sp');
   }
 
-  // Just like popStackFrame, but take a count on the stack.
-  // [count:i32] -> []
-  popStackFrames(countThunk) {
-    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
-    this.i32Mul();
-    this.globalGet('sp');
-    this.i32Add();
-    this.globalSet('sp');
-  }
-
   // Save the current input position.
   savePos() {
     // stack[sp] = pos
@@ -397,78 +387,6 @@ class Assembler {
     this.globalGet('pos');
     this.i32Inc();
     this.globalSet('pos');
-  }
-
-  // Set the 'count' field of a given CST node.
-  // [val:i32, addr:i32] -> []
-  cstNodeSetCount() {
-    this.i32Store(0);
-  }
-
-  // Get the 'count' field of a given CST node.
-  // [addr:i32] -> [i32]
-  cstNodeGetCount() {
-    this.i32Load(0);
-  }
-
-  // Increment the 'count' field of a given CST node.
-  // [addr:i32] -> []
-  cstNodeIncCount() {
-    this.dup();
-    this.i32Load(0);
-    this.i32Inc();
-    this.i32Store(0);
-  }
-
-  // Get the 'matchLength' field of a given CST node.
-  // [addr:i32] -> []
-  cstNodeGetMatchLength() {
-    this.i32Load(4);
-  }
-
-  // Set the 'matchLength' field of a given CST node.
-  // [val:i32, addr:i32] -> []
-  cstNodeSetMatchLength() {
-    this.i32Store(4);
-  }
-
-  // Called while a child's stack frame is active, to record the child's CST
-  // in the parent.
-  // [] -> []
-  cstNodeRecordChild() {
-    // We need the parent's CST thrice: (1) to get the count,
-    // (2) to push the child's CST node, and (3) to update the count.
-    this.getParentCst();
-    this.dup();
-    this.dup();
-
-    // Compute dest addr of the child pointer.
-    // We have skip over (1) `count` i32s, and (2) the header.
-
-    // Calculate size of `count` i32 fields.
-    this.cstNodeGetCount();
-    this.i32Const(4);
-    this.emit(instr.i32.mul);
-
-    // Add the size.
-    this.i32Const(Assembler.CST_NODE_HEADER_SIZE_BYTES);
-    this.i32Add();
-
-    // Add both of the above to get the dest address.
-    this.i32Add();
-
-    this.getSavedCst(); // val to be stored
-    this.i32Store();
-
-    this.cstNodeIncCount(); // increment the parent's count.
-  }
-
-  // Load the offset of the memo record for the original position onto the stack.
-  // [] -> [addr:i32]
-  getMemoColOffset() {
-    this.globalGet('pos');
-    this.i32Const(Assembler.MEMO_COL_SIZE_BYTES);
-    this.i32Mul();
   }
 
   callPrebuiltFunc(name) {
