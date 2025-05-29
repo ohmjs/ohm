@@ -1,4 +1,4 @@
-@phony: all
+.PHONY: all
 all: out/ohmRuntime.wasm_sections.ts
 
 out/ohmRuntime.wasm_sections.ts: build/ohmRuntime.wasm
