@@ -9,6 +9,8 @@ import * as prebuilt from '../build/ohmRuntime.wasm_sections.ts';
 const WASM_PAGE_SIZE = 64 * 1024;
 
 const DEBUG = true;
+const FAST_SAVE_BINDINGS = true;
+const FAST_RESTORE_BINDINGS = true;
 
 const {instr} = w;
 
@@ -329,17 +331,16 @@ class Assembler {
     this.localSet('ret');
   }
 
-  pushStackFrame({savePos, saveNumBindings} = {}) {
+  pushStackFrame() {
     this.globalGet('sp');
     this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
     this.i32Sub();
     this.globalSet('sp');
-    if (savePos) this.savePos();
-    if (saveNumBindings) this.saveNumBindings();
+    this.savePos();
+    this.saveNumBindings();
   }
 
-  popStackFrame({restorePos} = {}) {
-    if (restorePos) this.restorePos();
+  popStackFrame() {
     this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
     this.globalGet('sp');
     this.i32Add();
@@ -366,8 +367,14 @@ class Assembler {
   }
 
   saveNumBindings() {
+    this.emit('xyz');
     this.globalGet('sp');
-    this.callPrebuiltFunc('getBindingsLength');
+    if (FAST_SAVE_BINDINGS) {
+      this.globalGet('bindings');
+      this.i32Load(12); // Array<i32>.length_
+    } else {
+      this.callPrebuiltFunc('getBindingsLength');
+    }
     this.i32Store(4);
   }
 
@@ -377,8 +384,15 @@ class Assembler {
   }
 
   restoreBindingsLength() {
-    this.getSavedNumBindings();
-    this.callPrebuiltFunc('setBindingsLength');
+    if (FAST_RESTORE_BINDINGS) {
+      // It's safe to directly set the length as long as it's shrinking.
+      this.globalGet('bindings');
+      this.getSavedNumBindings();
+      this.i32Store(12); // Array<i32>.length_
+    } else {
+      this.getSavedNumBindings();
+      this.callPrebuiltFunc('setBindingsLength');
+    }
   }
 
   // Increment the current input position by 1.
@@ -686,8 +700,14 @@ class Compiler {
   emitPExpr(exp) {
     const {asm} = this;
 
+    if (exp.constructor === pexprs.Apply) {
+      this.emitApply(exp);
+      return;
+    }
+
     const debugLabel = getDebugLabel(exp);
     asm.emit(`BEGIN ${debugLabel}`);
+    asm.pushStackFrame();
 
     // Wrap the body in a block, which is useful for two reasons:
     // - it allows early returns.
@@ -696,7 +716,6 @@ class Compiler {
       // prettier-ignore
       switch (exp.constructor) {
         case pexprs.Alt: this.emitAlt(exp); break;
-        case pexprs.Apply: this.emitApply(exp); break;
         case pexprs.Extend: this.emitExtend(exp); break;
         case pexprs.Lookahead: this.emitLookahead(exp, true); break;
         case pexprs.Not: this.emitLookahead(exp, false); break;
@@ -717,12 +736,12 @@ class Compiler {
           }
       }
     });
+    asm.popStackFrame();
     asm.emit(`END ${debugLabel}`);
   }
 
   emitAlt(exp) {
     const {asm} = this;
-    asm.pushStackFrame({savePos: true, saveNumBindings: true});
     asm.block(w.blocktype.empty, () => {
       for (const term of exp.terms) {
         this.emitPExpr(term);
@@ -732,17 +751,14 @@ class Compiler {
         asm.restoreBindingsLength();
       }
     });
-    asm.popStackFrame();
   }
 
   emitAny() {
     const {asm} = this;
-    asm.pushStackFrame({savePos: true});
     asm.i32Const(0xff);
     asm.nextCharCode();
     asm.i32Ne();
     asm.maybeReturnTerminalNodeWithSavedPos();
-    asm.popStackFrame();
   }
 
   emitApply(exp) {
@@ -750,20 +766,17 @@ class Compiler {
     this.recordRule(exp.ruleName);
 
     asm.i32Const(checkNotNull(this.ruleIdByName.get(exp.ruleName)));
-
     asm.callPrebuiltFunc('evalApply');
     asm.localSet('ret');
   }
 
   emitEnd() {
     const {asm} = this;
-    asm.pushStackFrame({savePos: true});
     asm.i32Const(0xff);
     // Careful! We shouldn't move the pos here. Or does it matter?
     asm.currCharCode();
     asm.emit(instr.i32.eq);
     asm.maybeReturnTerminalNodeWithSavedPos();
-    asm.popStackFrame();
   }
 
   emitExtend(exp) {
@@ -780,7 +793,6 @@ class Compiler {
 
   emitLookahead({expr}, shouldMatch = true) {
     const {asm} = this;
-    asm.pushStackFrame({savePos: true, saveNumBindings: true});
 
     // TODO: Should positive lookahead record a CST?
     this.emitPExpr(expr);
@@ -790,12 +802,11 @@ class Compiler {
       asm.localSet('ret');
     }
     asm.restoreBindingsLength();
-    asm.popStackFrame({restorePos: true});
+    asm.restorePos();
   }
 
   emitOpt({expr}) {
     const {asm} = this;
-    asm.pushStackFrame({savePos: true, saveNumBindings: true});
     this.emitPExpr(expr);
     asm.localGet('ret');
     asm.ifFalse(w.blocktype.empty, () => {
@@ -804,20 +815,15 @@ class Compiler {
     });
     asm.newIterNodeWithSavedPosAndBindings();
     asm.localSet('ret');
-    asm.popStackFrame();
   }
 
   emitPlus(plusExp) {
     const {asm} = this;
-    asm.pushStackFrame({savePos: true, saveNumBindings: true});
     this.emitPExpr(plusExp.expr);
     asm.localGet('ret');
     asm.if(w.blocktype.empty, () => {
-      // This is a little like a tail call — we let `emitStar` build the
-      // CST node, using the pos and binding count from our stack frame.
-      this.emitStar(plusExp, {reuseStackFrame: true});
+      this.emitStar(plusExp);
     });
-    asm.popStackFrame();
   }
 
   emitRange({from, to}) {
@@ -828,25 +834,21 @@ class Compiler {
 
     // TODO: Do we disallow 0xff in the range?
     const {asm} = this;
-    asm.pushStackFrame({savePos: true});
-    asm.block(w.blocktype.empty, () => {
-      asm.nextCharCode();
+    asm.nextCharCode();
 
-      // if (c > hi) return 0;
-      asm.dup();
-      asm.i32Const(hi);
-      asm.emit(instr.i32.gt_u);
-      asm.if(w.blocktype.empty, () => {
-        asm.setRet(0);
-        asm.break(1);
-      });
-
-      // if (c >= lo)
-      asm.i32Const(lo);
-      asm.emit(instr.i32.ge_u);
-      asm.maybeReturnTerminalNodeWithSavedPos();
+    // if (c > hi) return 0;
+    asm.dup();
+    asm.i32Const(hi);
+    asm.emit(instr.i32.gt_u);
+    asm.if(w.blocktype.empty, () => {
+      asm.setRet(0);
+      asm.break(1);
     });
-    asm.popStackFrame();
+
+    // if (c >= lo)
+    asm.i32Const(lo);
+    asm.emit(instr.i32.ge_u);
+    asm.maybeReturnTerminalNodeWithSavedPos();
   }
 
   emitSeq(exp) {
@@ -868,8 +870,6 @@ class Compiler {
 
   emitStar({expr}, {reuseStackFrame} = {}) {
     const {asm} = this;
-    asm.emit('emitStar');
-    if (!reuseStackFrame) asm.pushStackFrame({savePos: true, saveNumBindings: true});
 
     // We push another stack frame because we need to save and restore
     // the position just before the last (failed) expression.
@@ -891,9 +891,6 @@ class Compiler {
 
     asm.newIterNodeWithSavedPosAndBindings();
     asm.localSet('ret');
-
-    if (!reuseStackFrame) asm.popStackFrame();
-    asm.emit('done emitStar');
   }
 
   emitTerminal(exp) {
@@ -903,23 +900,19 @@ class Compiler {
 
     const {asm} = this;
     asm.emit('Terminal');
-    asm.pushStackFrame({savePos: true});
-    asm.block(w.blocktype.empty, () => {
-      for (const c of [...exp.obj]) {
-        // Compare next char
-        asm.i32Const(c.charCodeAt(0));
-        asm.currCharCode();
-        asm.emit(instr.i32.ne);
-        asm.if(w.blocktype.empty, () => {
-          asm.setRet(0);
-          asm.break(1);
-        });
-        asm.incPos();
-      }
-      asm.newTerminalNodeWithSavedPos();
-      asm.localSet('ret');
-    });
-    asm.popStackFrame();
+    for (const c of [...exp.obj]) {
+      // Compare next char
+      asm.i32Const(c.charCodeAt(0));
+      asm.currCharCode();
+      asm.emit(instr.i32.ne);
+      asm.if(w.blocktype.empty, () => {
+        asm.setRet(0);
+        asm.break(1);
+      });
+      asm.incPos();
+    }
+    asm.newTerminalNodeWithSavedPos();
+    asm.localSet('ret');
   }
 }
 // Memory layout:
