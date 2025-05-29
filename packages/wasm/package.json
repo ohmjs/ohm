@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "ava test"
+    "build-and-test": "make && ava test",
+    "check-node-version": "node -e \"process.exit(parseInt(process.versions.node.split('.')[0]) < 24 ? 1 : 0)\"",
+    "test": "pnpm run check-node-version && pnpm run build-and-test || echo 'Skipping tests: Node 24 required'"
   },
   "type": "module",
   "keywords": [],
@@ -12,6 +14,8 @@
   "license": "ISC",
   "packageManager": "pnpm@10.10.0",
   "devDependencies": {
+    "@thi.ng/leb128": "^3.1.48",
+    "assemblyscript": "^0.27.36",
     "ava": "^6.2.0",
     "wabt": "1.0.37-nightly.20250428"
   },

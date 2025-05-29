@@ -9,18 +9,38 @@ const matchWithInput = (m, str) => (m.setInput(str), m.match());
 const indented = (d, str) => new Array(d * 2).join(' ') + str;
 
 const BYTES_PER_CST_REC = 8;
+const SIZEOF_UINT32 = 4;
 
-function rawCst(matcher) {
-  const view = new DataView(matcher._instance.exports.memory.buffer);
-  const cstBase = matcher._instance.exports.cstBase.value;
-  const cstTop = matcher._instance.exports.cst.value;
-  const ans = [];
-  for (let offset = cstBase; offset < cstTop; offset += BYTES_PER_CST_REC) {
-    const depth = view.getUint32(offset, true);
-    const matchLen = view.getUint32(offset + 4, true);
-    ans.push([depth, matchLen]);
+function checkNotNull(x, msg = 'unexpected null value') {
+  if (x == null) throw new Error(msg);
+  return x;
+}
+
+function getUint32Array(view, offset, count) {
+  const arr = new Uint32Array(count);
+  for (let i = 0; i < count; i++) {
+    arr[i] = view.getUint32(offset + i * 4, true);
   }
-  return ans;
+  return arr;
+}
+
+// const dumpMemoTable = pos => {
+//   const arr = [];
+//   for (let i = 0; i < 6; i++) {
+//     arr.push(view.getUint32(pos * Constants.MEMO_COL_SIZE_BYTES + i * 4, true));
+//   }
+//   console.log(arr.map(v => v.toString(16).padStart(8, '0')).join(' '));
+// };
+
+function rawCstNode(matcher, addr = undefined) {
+  const view = new DataView(matcher._instance.exports.memory.buffer);
+  if (addr === undefined) {
+    addr = matcher._instance.exports.cstBase.value;
+  }
+  const count = view.getUint32(addr, true);
+  const matchLen = view.getUint32(addr + 4, true);
+  const type = view.getInt32(addr + 8, true);
+  return [count, matchLen, type, ...getUint32Array(view, addr + 12, count)];
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -61,91 +81,233 @@ test('input in memory', async t => {
   t.is(view.getUint8(2), 'ohm'.charCodeAt(2));
 });
 
-test('basic cst', async t => {
-  let matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" b\nb = "b" }'));
-  let input = 'ab';
-  t.is(matchWithInput(matcher, input), 1);
-  t.deepEqual(rawCst(matcher), [
-    [0, 2],
-    [1, 2],
-    [2, 1],
-    [2, 1],
-    [3, 1],
-  ]);
+test('cst returns', async t => {
+  let matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" | "b" }'));
 
-  matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" | b\nb = "b" }'));
-  input = 'a';
-  t.is(matchWithInput(matcher, input), 1);
-  t.deepEqual(rawCst(matcher), [
-    [0, 1],
-    [1, 1],
-    [2, 1],
-  ]);
+  // start
+  t.is(matchWithInput(matcher, 'a'), 1);
+  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(children.length, 1);
+  t.is(matchLen, 1);
+  t.is(type, 0);
 
-  input = 'b';
-  t.is(matchWithInput(matcher, input), 1);
-  t.deepEqual(rawCst(matcher), [
-    [0, 1],
-    [1, 1],
-    [2, 1],
-    [3, 1],
-  ]);
+  // "a"
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(children.length, 0);
+  t.is(matchLen, 1);
+  t.is(type, -1);
+
+  matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" b\nb = "b" }'));
+
+  // start
+  t.is(matchWithInput(matcher, 'ab'), 1);
+  [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(children.length, 2);
+  t.is(matchLen, 2);
+  t.is(type, 0);
+
+  // "a"
+  const [childA, childB] = children;
+  [_, matchLen, type, ...children] = rawCstNode(matcher, childA);
+  t.is(children.length, 0);
+  t.is(matchLen, 1);
+  t.is(type, -1);
+
+  // NonterminalNode for b
+  [_, matchLen, type, ...children] = rawCstNode(matcher, childB);
+  t.is(children.length, 1);
+  t.is(matchLen, 1);
+  t.is(type, 0);
+
+  // TerminalNode for "b"
+  // eslint-disable-next-line no-unused-vars
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(children.length, 0);
+  t.is(matchLen, 1);
+  t.is(type, -1);
 });
 
 test('cst with lookahead', async t => {
-  let matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = ~space any}'));
-  let input = 'a';
+  const matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = ~space any}'));
+  const input = 'a';
   t.is(matchWithInput(matcher, input), 1);
-  t.deepEqual(rawCst(matcher), [
-    [0, 1],
-    [1, 1],
-    [2, 1],
-    [3, 1],
-  ]);
 
-  matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = (~space any)*}'));
-  input = 'abc';
+  // Currently positive lookahead doesn't bind anything!
+
+  // - apply(x)
+  //   - any
+  //     - "a"
+
+  // x
+  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(matchLen, 1);
+  t.is(children.length, 1);
+  t.is(type, 0);
+
+  // any
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(matchLen, 1);
+  t.is(children.length, 1);
+  t.is(type, 0);
+
+  // Terminal
+  // eslint-disable-next-line no-unused-vars
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(matchLen, 1);
+  t.is(children.length, 0);
+  t.is(type, -1);
+});
+
+test('cst for range', async t => {
+  const matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a".."z"}'));
+  t.is(matchWithInput(matcher, 'b'), 1);
+
+  // x
+  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(matchLen, 1);
+  t.is(children.length, 1);
+  t.is(type, 0);
+
+  // Terminal
+  // eslint-disable-next-line no-unused-vars
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(matchLen, 1);
+  t.is(children.length, 0);
+  t.is(type, -1);
+});
+
+test('cst for opt', async t => {
+  let matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a"?}'));
+  t.is(matchWithInput(matcher, 'a'), 1);
+
+  // x
+  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(matchLen, 1);
+  t.is(type, 0);
+  t.is(children.length, 1);
+
+  // iter
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(matchLen, 1);
+  t.is(type, -2);
+  t.is(children.length, 1);
+
+  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+
+  matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a"?}'));
+  t.is(matchWithInput(matcher, ''), 1);
+
+  // x
+  // eslint-disable-next-line no-unused-vars
+  [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(matchLen, 0);
+  t.is(type, 0);
+  t.is(children.length, 1);
+
+  // iter
+  // eslint-disable-next-line no-unused-vars
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(matchLen, 0);
+  t.is(type, -2);
+  t.is(children.length, 0);
+});
+
+test('cst for plus', async t => {
+  const matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a"+}'));
+  t.is(matchWithInput(matcher, 'a'), 1);
+
+  // x
+  // eslint-disable-next-line no-unused-vars
+  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(matchLen, 1);
+  t.is(type, 0);
+  t.is(children.length, 1);
+
+  // iter
+  // eslint-disable-next-line no-unused-vars
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(matchLen, 1);
+  t.is(type, -2);
+  t.is(children.length, 1);
+
+  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+});
+
+test('cst with (small) repetition', async t => {
+  const matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a"*}'));
+  t.is(matchWithInput(matcher, 'aaa'), 1);
+
+  // - apply(start)
+  //   - iter
+  //     - "a"
+  //     - "a"
+  //     - "a"
+
+  // start
+  // eslint-disable-next-line no-unused-vars
+  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(matchLen, 3);
+  t.is(children.length, 1);
+  t.is(type, 0);
+
+  // iter
+  // eslint-disable-next-line no-unused-vars
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(matchLen, 3);
+  t.is(children.length, 3);
+  t.is(type, -2);
+
+  // Terminal children
+  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+  t.deepEqual(rawCstNode(matcher, children[1]), [0, 1, -1]);
+  t.deepEqual(rawCstNode(matcher, children[2]), [0, 1, -1]);
+});
+
+test('repetition and lookahead', async t => {
+  const matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = (~space any)*}'));
+  t.is(matchWithInput(matcher, 'abc'), 1);
+});
+
+// eslint-disable-next-line ava/no-skip-test
+test('cst with repetition and lookahead', async t => {
+  let matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = (~space any)*}'));
+  let input = 'abc';
   t.is(matchWithInput(matcher, input), 1);
-  t.deepEqual(rawCst(matcher), [
-    [0, 3], // - apply
-    [1, 3], //   - rep
-    [2, 1], //     - seq
-    [3, 1], //       - any
-    [4, 1], //         - (child)
-    [2, 1], //     - seq
-    [3, 1], //       - any
-    [4, 1], //         - (child)
-    [2, 1], //     - seq
-    [3, 1], //       - any
-    [4, 1], //         - (child)
-  ]);
+
+  // x
+  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(matchLen, 3);
+  t.is(children.length, 1);
+  t.is(type, 0);
+
+  // iter
+  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  t.is(matchLen, 3);
+  t.is(children.length, 3);
+  t.is(type, -2);
+
+  const [childA, childB, childC] = children;
+  [_, matchLen, type, ...children] = rawCstNode(matcher, childA);
+  t.is(matchLen, 1);
+  t.is(children.length, 1);
+  t.is(type, 0);
+  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+
+  [_, matchLen, type, ...children] = rawCstNode(matcher, childB);
+  t.is(matchLen, 1);
+  t.is(children.length, 1);
+  t.is(type, 0);
+  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+
+  // eslint-disable-next-line no-unused-vars
+  [_, matchLen, type, ...children] = rawCstNode(matcher, childC);
+  t.is(matchLen, 1);
+  t.is(children.length, 1);
+  t.is(type, 0);
+  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
 
   matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = (~space any)+ spaces any+}'));
   input = '/ab xy';
-  t.is(matchWithInput(matcher, input), 1);
-  t.deepEqual(rawCst(matcher), [
-    [0, 6], // - apply
-    [1, 6], //   - seq
-    [2, 3], //     - rep
-    [3, 1], //       - seq
-    [4, 1], //         - any
-    [5, 1], //           - (child)
-    [3, 1], //       - seq
-    [4, 1], //         - any
-    [5, 1], //           - (child)
-    [3, 1], //       - seq
-    [4, 1], //         - any
-    [5, 1], //           - (child)
-    [2, 1], //     - spaces
-    [3, 1], //       - rep
-    [4, 1], //         - space
-    [5, 1], //           - (child)
-    [2, 2], //     - rep
-    [3, 1], //       - any
-    [4, 1], //         - (child)
-    [3, 1], //       - any
-    [4, 1], //         - (child)
-  ]);
 });
 
 test('wasm: one-char terminals', async t => {
@@ -430,4 +592,84 @@ test('real-world grammar', async t => {
   start = performance.now();
   t.is(matchWithInput(matcher, longInput), 1);
   t.log('Wasm match time:', performance.now() - start, 'ms');
+});
+
+test('basic memoization', async t => {
+  const g = ohm.grammar('G { start = "a" b\nb = "b" }');
+  const matcher = await WasmMatcher.forGrammar(g);
+  t.is(matchWithInput(matcher, 'ab'), 1);
+
+  const view = matcher.memoTableViewForTesting();
+
+  const getMemo = (pos, ruleName) => {
+    const colOffset = pos * Constants.MEMO_COL_SIZE_BYTES;
+    const ruleId = checkNotNull(matcher._ruleIds.get(ruleName));
+    return view.getUint32(colOffset + SIZEOF_UINT32 * ruleId, true);
+  };
+
+  // start
+  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(matchLen, 2);
+  t.is(children.length, 2);
+  t.is(type, 0);
+
+  const [childA, childB] = children;
+
+  // "a"
+  t.deepEqual(rawCstNode(matcher, childA), [0, 1, -1]);
+
+  // b
+  // eslint-disable-next-line no-unused-vars
+  [_, matchLen, type, ...children] = rawCstNode(matcher, childB);
+  t.is(matchLen, 1);
+  t.is(children.length, 1);
+  t.is(type, 0);
+
+  // "b"
+  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+
+  // Expect memo for `b` at position 1, and `start` at position 0.
+  t.is(getMemo(1, 'b'), childB);
+  t.is(getMemo(0, 'start'), matcher.getCstRoot());
+});
+
+test('more memoization', async t => {
+  const g = ohm.grammar('G { start = b "a" | b b\nb = "b" }');
+  const matcher = await WasmMatcher.forGrammar(g);
+  t.is(matchWithInput(matcher, 'bb'), 1);
+
+  const view = matcher.memoTableViewForTesting();
+
+  const getMemo = (pos, ruleName) => {
+    const colOffset = pos * Constants.MEMO_COL_SIZE_BYTES;
+    const ruleId = checkNotNull(matcher._ruleIds.get(ruleName));
+    return view.getUint32(colOffset + SIZEOF_UINT32 * ruleId, true);
+  };
+
+  // start
+  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  t.is(matchLen, 2);
+  t.is(children.length, 2);
+  t.is(type, 0);
+
+  const [child1, child2] = children;
+
+  // b #1
+  [_, matchLen, type, ...children] = rawCstNode(matcher, child1);
+  t.is(matchLen, 1);
+  t.is(children.length, 1);
+  t.is(type, 0);
+  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+
+  // b #2
+  // eslint-disable-next-line no-unused-vars
+  [_, matchLen, type, ...children] = rawCstNode(matcher, child2);
+  t.is(matchLen, 1);
+  t.is(children.length, 1);
+  t.is(type, 0);
+  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+
+  // Expect memo for `b` at position 0 and 1.
+  t.is(getMemo(0, 'b'), child1);
+  t.is(getMemo(1, 'b'), child2);
 });
