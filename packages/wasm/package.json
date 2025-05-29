@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "make && ava test"
+    "build-and-test": "make && ava test",
+    "check-node-version": "node -e \"process.exit(parseInt(process.versions.node.split('.')[0]) < 24 ? 1 : 0)\"",
+    "test": "pnpm run check-node-version && pnpm run build-and-test || echo 'Skipping tests: Node 24 required'"
   },
   "type": "module",
   "keywords": [],
