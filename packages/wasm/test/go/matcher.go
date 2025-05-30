@@ -86,6 +86,17 @@ func (m *WasmMatcher) SetInput(input string) {
 	}
 }
 
+// SetInputFromFile reads input from a file and sets it as the current input
+func (m *WasmMatcher) SetInputFromFile(filePath string) error {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("error reading input file: %v", err)
+	}
+
+	m.SetInput(string(data))
+	return nil
+}
+
 func (m *WasmMatcher) GetInput() string {
 	return m.input
 }

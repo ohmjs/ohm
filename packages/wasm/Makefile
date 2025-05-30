@@ -9,10 +9,7 @@ build/ohmRuntime.wasm: runtime/ohmRuntime.ts
 
 .PHONY: go-test-es5
 go-test-es5: test/go/testmain
-	cd test/go && ./testmain -wasm ../data/_es5.wasm -input "var x = 3;"
-
-test/data/_add.wasm:
-	echo '(module (func (export "add") (param i32 i32) (result i32) local.get 0 local.get 1 i32.add))' | wasm-tools parse -o test/data/_add.wasm
+	cd test/go && ./testmain -wasm ../data/_es5.wasm -file ../data/_html5shiv-3.7.3.js
 
 test/go/testmain: test/go/testmain.go test/go/matcher.go
 	cd test/go && go mod tidy && go build -o testmain

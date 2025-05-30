@@ -12,6 +12,7 @@ func main() {
 	// Parse command line arguments
 	wasmFile := flag.String("wasm", "test/data/_add.wasm", "Path to WebAssembly file")
 	inputText := flag.String("input", "", "Input text to match against the grammar")
+	inputFile := flag.String("file", "", "Path to file containing input text to match")
 	startRule := flag.String("rule", "", "Start rule for the grammar (defaults to grammar's start rule)")
 	flag.Parse()
 
@@ -32,14 +33,21 @@ func main() {
 
 	fmt.Printf("Loaded WebAssembly module: %s\n", filepath.Base(wasmPath))
 
-	// If it's a grammar module, set the input and match
-	if *inputText == "" {
-		fmt.Println("No input provided. Use -input flag to provide text to match.")
+	// Set the input text - either from direct text or from file
+	if *inputFile != "" {
+		// Read input from file
+		err = matcher.SetInputFromFile(*inputFile)
+		if err != nil {
+			fmt.Printf("Error reading input file: %v\n", err)
+			os.Exit(1)
+		}
+	} else if *inputText != "" {
+		// Set the input text directly
+		matcher.SetInput(*inputText)
+	} else {
+		fmt.Println("No input provided. Use -input flag to provide text or -file to specify an input file.")
 		os.Exit(0)
 	}
-
-	// Set the input text
-	matcher.SetInput(*inputText)
 
 	// If a start rule was specified, set it
 	if *startRule != "" {
@@ -48,7 +56,11 @@ func main() {
 	}
 
 	// Attempt to match the input
-	fmt.Printf("Matching input: %q\n", *inputText)
+	if *inputFile != "" {
+		fmt.Printf("Matching input file: %s\n", *inputFile)
+	} else {
+		fmt.Printf("Matching input: %q\n", matcher.GetInput())
+	}
 	success, err := matcher.Match()
 	if err != nil {
 		fmt.Printf("Error during matching: %v\n", err)
