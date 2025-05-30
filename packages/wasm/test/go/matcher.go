@@ -19,21 +19,26 @@ const (
 
 // WasmMatcher is a Go implementation of the JavaScript WasmMatcher class for Ohm
 type WasmMatcher struct {
-	runtime wazero.Runtime
-	module api.Module
-	input string
-	pos int
-	ctx context.Context
-	ruleIds map[string]int
+	runtime          wazero.Runtime
+	module           api.Module
+	input            string
+	pos              int
+	ctx              context.Context
+	ruleIds          map[string]int
 	defaultStartRule string
+}
+
+// GetModule returns the WebAssembly module
+func (m *WasmMatcher) GetModule() api.Module {
+	return m.module
 }
 
 func NewWasmMatcher(ctx context.Context) *WasmMatcher {
 	return &WasmMatcher{
-		runtime:     wazero.NewRuntime(ctx),
-		ctx:         ctx,
-		ruleIds:     make(map[string]int),
-		pos:         0,
+		runtime: wazero.NewRuntime(ctx),
+		ctx:     ctx,
+		ruleIds: make(map[string]int),
+		pos:     0,
 	}
 }
 
