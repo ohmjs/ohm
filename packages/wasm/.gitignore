@@ -1,3 +1,2 @@
 build/*
-test/data/_add.wasm
 test/go/testmain
