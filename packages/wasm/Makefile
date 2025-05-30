@@ -14,5 +14,5 @@ go-test-es5: test/go/testmain
 test/data/_add.wasm:
 	echo '(module (func (export "add") (param i32 i32) (result i32) local.get 0 local.get 1 i32.add))' | wasm-tools parse -o test/data/_add.wasm
 
-test/go/testmain: test/go/testmain.go
+test/go/testmain: test/go/testmain.go test/go/matcher.go
 	cd test/go && go mod tidy && go build -o testmain
