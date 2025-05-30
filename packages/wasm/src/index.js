@@ -8,7 +8,7 @@ import * as prebuilt from '../build/ohmRuntime.wasm_sections.ts';
 
 const WASM_PAGE_SIZE = 64 * 1024;
 
-const DEBUG = true;
+const DEBUG = false;
 const FAST_SAVE_BINDINGS = true;
 const FAST_RESTORE_BINDINGS = true;
 
