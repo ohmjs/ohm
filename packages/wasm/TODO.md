@@ -3,6 +3,8 @@
 - [ ] Include a map of rule name to ruleId in the module.
 - [ ] Implicit space skipping
 - [ ] Error handling
+- [ ] NonterminalNodes should keep track of the rule
+- [ ] When iteration contains a sequence, the children are flattened into the iter node.
 
 ## Limitations
 

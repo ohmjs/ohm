@@ -616,6 +616,11 @@ class Compiler {
     const tableData = this.ruleNames().map(name => this.ruleEvalFuncIdx(name));
     assert(numRules === tableData.length, 'Invalid rule count');
 
+    // Determine the index of the start function.
+    const indexOfStart = functionDecls.findIndex(f => f.name === 'start');
+    assert(indexOfStart !== -1, 'No start function found');
+    const startFuncidx = imports.length + prebuilt.funcsec.entryCount + indexOfStart;
+
     // Note: globals are *not* merged; they are assumed to be shared.
     const mod = w.module([
       mergeSections(w.SECTION_ID_TYPE, prebuilt.typesec, typeMap.getTypes()),
@@ -625,7 +630,7 @@ class Compiler {
       w.memsec([w.mem(w.memtype(w.limits.min(1024 + 24)))]),
       w.globalsec(globals),
       w.exportsec(exports),
-      w.startsec(w.start(prebuilt.startFuncidx)),
+      w.startsec(w.start(startFuncidx)),
       w.elemsec([w.elem(w.tableidx(0), [instr.i32.const, w.i32(0), instr.end], tableData)]),
       mergeSections(w.SECTION_ID_CODE, prebuilt.codesec, codes),
     ]);
@@ -693,6 +698,11 @@ class Compiler {
       const name = [...this.ruleIdByName.keys()][i];
       ruleDecls.push(this.compileRule(name, this.ruleBody(name)));
     }
+    const {asm} = this;
+    asm.addFunction('start', [], [], () => {
+      asm.emit(instr.call, prebuilt.startFuncidx);
+    });
+    ruleDecls.push(asm._functionDecls.at(-1));
     return ruleDecls;
   }
 
