@@ -31,8 +31,8 @@
     "ohm-js": "^17.0.0",
     "require-from-string": "^2.0.2",
     "ts-dedent": "^2.2.0",
-    "ts-morph": "^12.0.0",
-    "typescript": "^4.3.5"
+    "ts-morph": "^26.0.0",
+    "typescript": "^5.8.3"
   },
   "ava": {
     "extensions": [
