@@ -35,7 +35,7 @@ importers:
     devDependencies:
       ava:
         specifier: ^6.0.0
-        version: 6.2.0(rollup@3.29.5)
+        version: 6.2.0
       ohm-js:
         specifier: ^17.0.0
         version: link:../../packages/ohm-js
@@ -61,7 +61,7 @@ importers:
     devDependencies:
       ava:
         specifier: ^6.0.0
-        version: 6.2.0(rollup@3.29.5)
+        version: 6.2.0
 
   examples/operators:
     dependencies:
@@ -71,10 +71,10 @@ importers:
     devDependencies:
       ava:
         specifier: ^6.0.0
-        version: 6.2.0(rollup@3.29.5)
+        version: 6.2.0
       ava-spec:
         specifier: ^1.1.1
-        version: 1.1.1(ava@6.2.0(rollup@3.29.5))
+        version: 1.1.1(ava@6.2.0)
 
   examples/simple-lisp:
     dependencies:
@@ -84,7 +84,7 @@ importers:
     devDependencies:
       ava:
         specifier: ^6.0.0
-        version: 6.2.0(rollup@3.29.5)
+        version: 6.2.0
 
   examples/typescript:
     dependencies:
@@ -100,7 +100,7 @@ importers:
         version: 16.18.126
       ava:
         specifier: ^6.0.0
-        version: 6.2.0(rollup@3.29.5)
+        version: 6.2.0
       ts-node:
         specifier: ^10.9.1
         version: 10.9.2(@types/node@16.18.126)(typescript@5.8.3)
@@ -128,7 +128,7 @@ importers:
         version: 1.2.3
       ava:
         specifier: ^6.0.0
-        version: 6.2.0(rollup@3.29.5)
+        version: 6.2.0
       ohm-js:
         specifier: ^17.0.0
         version: link:../ohm-js
@@ -155,7 +155,14 @@ importers:
         specifier: ^3.2.7
         version: 3.3.3
 
-  packages/labrat: {}
+  packages/labrat:
+    devDependencies:
+      '@types/node':
+        specifier: ^16.18.126
+        version: 16.18.126
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
 
   packages/lang-python: {}
 
@@ -266,7 +273,7 @@ importers:
         version: 0.27.36
       ava:
         specifier: ^6.2.0
-        version: 6.2.0(rollup@3.29.5)
+        version: 6.2.0
       wabt:
         specifier: 1.0.37-nightly.20250428
         version: 1.0.37-nightly.20250428
@@ -2610,6 +2617,12 @@ snapshots:
       picomatch: 2.3.1
       rollup: 2.79.2
 
+  '@rollup/pluginutils@5.1.4':
+    dependencies:
+      '@types/estree': 1.0.7
+      estree-walker: 2.0.2
+      picomatch: 4.0.2
+
   '@rollup/pluginutils@5.1.4(rollup@2.79.2)':
     dependencies:
       '@types/estree': 1.0.7
@@ -2760,10 +2773,10 @@ snapshots:
 
   '@ungap/structured-clone@1.3.0': {}
 
-  '@vercel/nft@0.27.10(rollup@2.79.2)':
+  '@vercel/nft@0.27.10':
     dependencies:
       '@mapbox/node-pre-gyp': 2.0.0
-      '@rollup/pluginutils': 5.1.4(rollup@2.79.2)
+      '@rollup/pluginutils': 5.1.4
       acorn: 8.14.1
       acorn-import-attributes: 1.9.5(acorn@8.14.1)
       async-sema: 3.1.1
@@ -2779,10 +2792,10 @@ snapshots:
       - rollup
       - supports-color
 
-  '@vercel/nft@0.27.10(rollup@3.29.5)':
+  '@vercel/nft@0.27.10(rollup@2.79.2)':
     dependencies:
       '@mapbox/node-pre-gyp': 2.0.0
-      '@rollup/pluginutils': 5.1.4(rollup@3.29.5)
+      '@rollup/pluginutils': 5.1.4(rollup@2.79.2)
       acorn: 8.14.1
       acorn-import-attributes: 1.9.5(acorn@8.14.1)
       async-sema: 3.1.1
@@ -3003,15 +3016,15 @@ snapshots:
       fn-name: 2.0.1
       option-chain: 0.1.1
 
-  ava-spec@1.1.1(ava@6.2.0(rollup@3.29.5)):
+  ava-spec@1.1.1(ava@6.2.0):
     dependencies:
-      ava: 6.2.0(rollup@3.29.5)
+      ava: 6.2.0
       fn-name: 2.0.1
       option-chain: 0.1.1
 
-  ava@6.2.0(rollup@2.79.2):
+  ava@6.2.0:
     dependencies:
-      '@vercel/nft': 0.27.10(rollup@2.79.2)
+      '@vercel/nft': 0.27.10
       acorn: 8.14.1
       acorn-walk: 8.3.4
       ansi-styles: 6.2.1
@@ -3056,9 +3069,9 @@ snapshots:
       - rollup
       - supports-color
 
-  ava@6.2.0(rollup@3.29.5):
+  ava@6.2.0(rollup@2.79.2):
     dependencies:
-      '@vercel/nft': 0.27.10(rollup@3.29.5)
+      '@vercel/nft': 0.27.10(rollup@2.79.2)
       acorn: 8.14.1
       acorn-walk: 8.3.4
       ansi-styles: 6.2.1

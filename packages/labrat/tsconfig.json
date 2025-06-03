@@ -1,0 +1,20 @@
+{
+  "files": ["index.ts", "index.test.ts"],
+
+  // Based on the following:
+  // https://www.npmjs.com/package/@tsconfig/recommended
+  // https://www.npmjs.com/package/@tsconfig/node-ts
+  // https://www.npmjs.com/package/@tsconfig/node24
+  "compilerOptions": {
+    "erasableSyntaxOnly": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "rewriteRelativeImportExtensions": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "verbatimModuleSyntax": true
+  },
+  "$schema": "https://json.schemastore.org/tsconfig"
+}

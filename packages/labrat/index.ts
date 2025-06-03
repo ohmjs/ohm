@@ -1,9 +1,32 @@
+interface PExpr {
+  eval(matcher: Matcher): CstNode;
+}
+
+type RuleDict = {
+  [name: string]: PExpr;
+};
+
+type CstNode = string | true | null | CstNode[];
+
+interface MemoRec {
+  cst: CstNode;
+  nextPos: number;
+  used?: boolean;
+}
+
+type MemoCol = {[key: string]: MemoRec};
+
 class Matcher {
-  constructor(rules) {
+  rules: RuleDict;
+  input: string = '';
+  pos: number = 0;
+  memoTable: MemoCol[] = [];
+
+  constructor(rules: RuleDict) {
     this.rules = rules;
   }
 
-  match(input) {
+  match(input: string): CstNode {
     this.input = input;
     this.pos = 0;
     this.memoTable = [];
@@ -14,7 +37,7 @@ class Matcher {
     return null;
   }
 
-  memoTableAt(pos) {
+  memoTableAt(pos: number): MemoCol {
     let memo = this.memoTable[pos];
     if (!memo) {
       // Lazily initialize the memo column.
@@ -23,17 +46,17 @@ class Matcher {
     return memo;
   }
 
-  hasMemoizedResult(ruleName) {
+  hasMemoizedResult(ruleName: string) {
     return !!this.memoTableAt(this.pos)[ruleName];
   }
 
-  memoizeResult(ruleName, pos, cst) {
+  memoizeResult(ruleName: string, pos: number, cst: CstNode): MemoRec {
     const result = {cst, nextPos: this.pos};
     this.memoTableAt(pos)[ruleName] = result;
     return result;
   }
 
-  useMemoizedResult(ruleName) {
+  useMemoizedResult(ruleName: string) {
     const result = this.memoTableAt(this.pos)[ruleName];
     // Unconditionally set the position. If it was a failure, `result.cst`
     // is `null` and the assignment to `this.pos` is a noop.
@@ -44,13 +67,13 @@ class Matcher {
     return result.cst;
   }
 
-  memoizeLRFailureAtCurrPos(ruleName) {
+  memoizeLRFailureAtCurrPos(ruleName: string) {
     const lrFailure = {cst: null, nextPos: -1, used: false};
     this.memoTableAt(this.pos)[ruleName] = lrFailure;
     return lrFailure;
   }
 
-  consume(c) {
+  consume(c: string) {
     if (this.input[this.pos] === c) {
       this.pos++;
       return true;
@@ -59,12 +82,14 @@ class Matcher {
   }
 }
 
-class RuleApplication {
-  constructor(ruleName) {
+class RuleApplication implements PExpr {
+  ruleName: string;
+
+  constructor(ruleName: string) {
     this.ruleName = ruleName;
   }
 
-  eval(matcher) {
+  eval(matcher: Matcher) {
     if (matcher.hasMemoizedResult(this.ruleName)) {
       return matcher.useMemoizedResult(this.ruleName);
     }
@@ -85,12 +110,14 @@ class RuleApplication {
   }
 }
 
-class Terminal {
-  constructor(str) {
+class Terminal implements PExpr {
+  str: string;
+
+  constructor(str: string) {
     this.str = str;
   }
 
-  eval(matcher) {
+  eval(matcher: Matcher) {
     for (let i = 0; i < this.str.length; i++) {
       if (!matcher.consume(this.str[i])) {
         return null;
@@ -100,12 +127,14 @@ class Terminal {
   }
 }
 
-class Choice {
-  constructor(exps) {
+class Choice implements PExpr {
+  exps: PExpr[];
+
+  constructor(exps: PExpr[]) {
     this.exps = exps;
   }
 
-  eval(matcher) {
+  eval(matcher: Matcher) {
     const origPos = matcher.pos;
     for (let i = 0; i < this.exps.length; i++) {
       matcher.pos = origPos;
@@ -118,13 +147,15 @@ class Choice {
   }
 }
 
-class Sequence {
-  constructor(exps) {
+class Sequence implements PExpr {
+  exps: PExpr[];
+
+  constructor(exps: PExpr[]) {
     this.exps = exps;
   }
 
-  eval(matcher) {
-    const ans = [];
+  eval(matcher: Matcher) {
+    const ans: CstNode = [];
     for (let i = 0; i < this.exps.length; i++) {
       const exp = this.exps[i];
       const cst = exp.eval(matcher);
@@ -139,12 +170,14 @@ class Sequence {
   }
 }
 
-class Not {
-  constructor(exp) {
+class Not implements PExpr {
+  exp: PExpr;
+
+  constructor(exp: PExpr) {
     this.exp = exp;
   }
 
-  eval(matcher) {
+  eval(matcher: Matcher) {
     const origPos = matcher.pos;
     if (this.exp.eval(matcher) === null) {
       matcher.pos = origPos;
@@ -154,13 +187,15 @@ class Not {
   }
 }
 
-class Repetition {
-  constructor(exp) {
+class Repetition implements PExpr {
+  exp: PExpr;
+
+  constructor(exp: PExpr) {
     this.exp = exp;
   }
 
-  eval(matcher) {
-    const ans = [];
+  eval(matcher: Matcher) {
+    const ans: CstNode = [];
     while (true) {
       const origPos = matcher.pos;
       const cst = this.exp.eval(matcher);

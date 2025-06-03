@@ -2,6 +2,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "build": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^16.18.126",
+    "typescript": "^5.8.3"
   }
 }
