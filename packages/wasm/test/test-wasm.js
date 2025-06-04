@@ -6,9 +6,6 @@ import {ConstantsForTesting as Constants, WasmMatcher} from '../src/index.js';
 
 const matchWithInput = (m, str) => (m.setInput(str), m.match());
 
-const indented = (d, str) => new Array(d * 2).join(' ') + str;
-
-const BYTES_PER_CST_REC = 8;
 const SIZEOF_UINT32 = 4;
 
 function checkNotNull(x, msg = 'unexpected null value') {
@@ -23,32 +20,6 @@ function checkNotNull(x, msg = 'unexpected null value') {
 //   }
 //   console.log(arr.map(v => v.toString(16).padStart(8, '0')).join(' '));
 // };
-
-// eslint-disable-next-line no-unused-vars
-function cstToString(matcher, input) {
-  const cstBase = matcher._instance.exports.cstBase.value;
-  const cstTop = matcher._instance.exports.cst.value;
-
-  const view = new DataView(matcher._instance.exports.memory.buffer);
-  let pos = 0;
-  const tree = [[0, -1, 0]];
-  const lines = [];
-  for (let p = cstBase; p < cstTop; p += BYTES_PER_CST_REC) {
-    // const [lastDepth, lastMatchLen] = depthStack.at(-1);
-
-    const depth = view.getUint32(p, true);
-    const matchLen = view.getUint32(p + 4, true);
-
-    let popped = undefined;
-    while (depth <= tree.at(-1)[1]) {
-      popped = tree.pop();
-      pos = Math.max(pos, popped[0] + popped[2]);
-    }
-    tree.push([pos, depth, matchLen]);
-    lines.push(indented(depth, input.substring(pos, pos + matchLen)));
-  }
-  return lines.join('\n');
-}
 
 test('input in memory', async t => {
   const g = ohm.grammar('G { start = "x" }');

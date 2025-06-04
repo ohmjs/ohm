@@ -44,12 +44,12 @@ async function es5Matcher() {
   });
 }
 
-const match = (m, str) => (m.setInput(str), m.match());
+const matchWithInput = (m, str) => (m.setInput(str), m.match());
 
 test('basic es5 examples', async t => {
   const m = await es5Matcher();
-  t.is(match(m, 'x = 3;'), 1);
-  t.is(match(m, 'function foo() { return 1; }'), 1);
+  t.is(matchWithInput(m, 'x = 3;'), 1);
+  t.is(matchWithInput(m, 'function foo() { return 1; }'), 1);
 });
 
 test('html5shiv', async t => {
@@ -61,7 +61,7 @@ test('html5shiv', async t => {
   es5js.grammar.match(source);
   t.log(`html5shiv (Ohm) match time: ${(performance.now() - start).toFixed(2)}ms`);
   start = performance.now();
-  t.is(match(m, source), 1);
+  t.is(matchWithInput(m, source), 1);
   t.log(`html5shiv (Wasm) match time: ${(performance.now() - start).toFixed(2)}ms`);
 });
 
@@ -85,7 +85,7 @@ test('unparsing', async t => {
   `;
 
   const m = await es5Matcher();
-  t.is(match(m, source), 1);
+  t.is(matchWithInput(m, source), 1);
 
   let unparsed = '';
 
