@@ -1006,7 +1006,9 @@ export class WasmMatcher {
   }
 
   getCstRoot() {
-    return this._instance.exports.getCstRoot();
+    const {buffer} = this._instance.exports.memory;
+    const addr = this._instance.exports.getCstRoot();
+    return new CstNode(new DataView(buffer), addr);
   }
 
   _fillInputBuffer(offset, maxLen) {
@@ -1023,6 +1025,46 @@ export class WasmMatcher {
   memoTableViewForTesting() {
     const {buffer} = this._instance.exports.memory;
     return new DataView(buffer, Compiler.MEMO_START_OFFSET);
+  }
+}
+
+class CstNode {
+  constructor(dataView, offset) {
+    this._view = dataView;
+    this._base = offset;
+  }
+
+  isNonterminal() {
+    return this.type >= 0;
+  }
+
+  isTerminal() {
+    return this._type === -1;
+  }
+
+  isIter() {
+    return this._type === -2;
+  }
+
+  get count() {
+    return this._view.getUint32(this._base, true);
+  }
+
+  get matchLength() {
+    return this._view.getUint32(this._base + 4, true);
+  }
+
+  get _type() {
+    return this._view.getInt32(this._base + 8, true);
+  }
+
+  get children() {
+    const children = [];
+    for (let i = 0; i < this.count; i++) {
+      const slotOffset = this._base + 12 + i * 4;
+      children.push(new CstNode(this._view, this._view.getUint32(slotOffset, true)));
+    }
+    return children;
   }
 }
 

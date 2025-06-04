@@ -16,14 +16,6 @@ function checkNotNull(x, msg = 'unexpected null value') {
   return x;
 }
 
-function getUint32Array(view, offset, count) {
-  const arr = new Uint32Array(count);
-  for (let i = 0; i < count; i++) {
-    arr[i] = view.getUint32(offset + i * 4, true);
-  }
-  return arr;
-}
-
 // const dumpMemoTable = pos => {
 //   const arr = [];
 //   for (let i = 0; i < 6; i++) {
@@ -31,17 +23,6 @@ function getUint32Array(view, offset, count) {
 //   }
 //   console.log(arr.map(v => v.toString(16).padStart(8, '0')).join(' '));
 // };
-
-function rawCstNode(matcher, addr = undefined) {
-  const view = new DataView(matcher._instance.exports.memory.buffer);
-  if (addr === undefined) {
-    addr = matcher._instance.exports.cstBase.value;
-  }
-  const count = view.getUint32(addr, true);
-  const matchLen = view.getUint32(addr + 4, true);
-  const type = view.getInt32(addr + 8, true);
-  return [count, matchLen, type, ...getUint32Array(view, addr + 12, count)];
-}
 
 // eslint-disable-next-line no-unused-vars
 function cstToString(matcher, input) {
@@ -86,45 +67,45 @@ test('cst returns', async t => {
 
   // start
   t.is(matchWithInput(matcher, 'a'), 1);
-  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  let {matchLength, _type, children} = matcher.getCstRoot();
   t.is(children.length, 1);
-  t.is(matchLen, 1);
-  t.is(type, 0);
+  t.is(matchLength, 1);
+  t.is(_type, 0);
 
   // "a"
-  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  ({matchLength, _type, children} = children[0]);
   t.is(children.length, 0);
-  t.is(matchLen, 1);
-  t.is(type, -1);
+  t.is(matchLength, 1);
+  t.is(_type, -1);
 
   matcher = await WasmMatcher.forGrammar(ohm.grammar('G { start = "a" b\nb = "b" }'));
 
   // start
   t.is(matchWithInput(matcher, 'ab'), 1);
-  [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
+  ({matchLength, _type, children} = matcher.getCstRoot());
   t.is(children.length, 2);
-  t.is(matchLen, 2);
-  t.is(type, 0);
+  t.is(matchLength, 2);
+  t.is(_type, 0);
 
   // "a"
   const [childA, childB] = children;
-  [_, matchLen, type, ...children] = rawCstNode(matcher, childA);
+  ({matchLength, _type, children} = childA);
   t.is(children.length, 0);
-  t.is(matchLen, 1);
-  t.is(type, -1);
+  t.is(matchLength, 1);
+  t.is(_type, -1);
 
   // NonterminalNode for b
-  [_, matchLen, type, ...children] = rawCstNode(matcher, childB);
+  ({matchLength, _type, children} = childB);
   t.is(children.length, 1);
-  t.is(matchLen, 1);
-  t.is(type, 0);
+  t.is(matchLength, 1);
+  t.is(_type, 0);
 
   // TerminalNode for "b"
   // eslint-disable-next-line no-unused-vars
-  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
+  ({matchLength, _type, children} = children[0]);
   t.is(children.length, 0);
-  t.is(matchLen, 1);
-  t.is(type, -1);
+  t.is(matchLength, 1);
+  t.is(_type, -1);
 });
 
 test('cst with lookahead', async t => {
@@ -139,23 +120,23 @@ test('cst with lookahead', async t => {
   //     - "a"
 
   // x
-  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
-  t.is(matchLen, 1);
+  let {matchLength, _type, children} = matcher.getCstRoot();
+  t.is(matchLength, 1);
   t.is(children.length, 1);
-  t.is(type, 0);
+  t.is(_type, 0);
 
   // any
-  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
-  t.is(matchLen, 1);
+  ({matchLength, _type, children} = children[0]);
+  t.is(matchLength, 1);
   t.is(children.length, 1);
-  t.is(type, 0);
+  t.is(_type, 0);
 
   // Terminal
   // eslint-disable-next-line no-unused-vars
-  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
-  t.is(matchLen, 1);
+  ({matchLength, _type, children} = children[0]);
+  t.is(matchLength, 1);
   t.is(children.length, 0);
-  t.is(type, -1);
+  t.is(_type, -1);
 });
 
 test('cst for range', async t => {
@@ -163,17 +144,17 @@ test('cst for range', async t => {
   t.is(matchWithInput(matcher, 'b'), 1);
 
   // x
-  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
-  t.is(matchLen, 1);
+  let {matchLength, _type, children} = matcher.getCstRoot();
+  t.is(matchLength, 1);
   t.is(children.length, 1);
-  t.is(type, 0);
+  t.is(_type, 0);
 
   // Terminal
   // eslint-disable-next-line no-unused-vars
-  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
-  t.is(matchLen, 1);
+  ({matchLength, _type, children} = children[0]);
+  t.is(matchLength, 1);
   t.is(children.length, 0);
-  t.is(type, -1);
+  t.is(_type, -1);
 });
 
 test('cst for opt', async t => {
@@ -181,34 +162,34 @@ test('cst for opt', async t => {
   t.is(matchWithInput(matcher, 'a'), 1);
 
   // x
-  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
-  t.is(matchLen, 1);
-  t.is(type, 0);
+  let {matchLength, _type, children} = matcher.getCstRoot();
+  t.is(matchLength, 1);
+  t.is(_type, 0);
   t.is(children.length, 1);
 
   // iter
-  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
-  t.is(matchLen, 1);
-  t.is(type, -2);
+  ({matchLength, _type, children} = children[0]);
+  t.is(matchLength, 1);
+  t.is(_type, -2);
   t.is(children.length, 1);
-
-  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+  t.is(children[0].isTerminal(), true);
+  t.is(children[0].matchLength, 1);
 
   matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a"?}'));
   t.is(matchWithInput(matcher, ''), 1);
 
   // x
   // eslint-disable-next-line no-unused-vars
-  [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
-  t.is(matchLen, 0);
-  t.is(type, 0);
+  ({matchLength, _type, children} = matcher.getCstRoot());
+  t.is(matchLength, 0);
+  t.is(_type, 0);
   t.is(children.length, 1);
 
   // iter
   // eslint-disable-next-line no-unused-vars
-  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
-  t.is(matchLen, 0);
-  t.is(type, -2);
+  ({matchLength, _type, children} = children[0]);
+  t.is(matchLength, 0);
+  t.is(_type, -2);
   t.is(children.length, 0);
 });
 
@@ -218,19 +199,20 @@ test('cst for plus', async t => {
 
   // x
   // eslint-disable-next-line no-unused-vars
-  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
-  t.is(matchLen, 1);
-  t.is(type, 0);
+  let {matchLength, _type, children} = matcher.getCstRoot();
+  t.is(matchLength, 1);
+  t.is(_type, 0);
   t.is(children.length, 1);
 
   // iter
   // eslint-disable-next-line no-unused-vars
-  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
-  t.is(matchLen, 1);
-  t.is(type, -2);
+  ({matchLength, _type, children} = children[0]);
+  t.is(matchLength, 1);
+  t.is(_type, -2);
   t.is(children.length, 1);
 
-  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+  t.is(children[0].isTerminal(), true);
+  t.is(children[0].matchLength, 1);
 });
 
 test('cst with (small) repetition', async t => {
@@ -245,22 +227,25 @@ test('cst with (small) repetition', async t => {
 
   // start
   // eslint-disable-next-line no-unused-vars
-  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
-  t.is(matchLen, 3);
+  let {matchLength, _type, children} = matcher.getCstRoot();
+  t.is(matchLength, 3);
   t.is(children.length, 1);
-  t.is(type, 0);
+  t.is(_type, 0);
 
   // iter
   // eslint-disable-next-line no-unused-vars
-  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
-  t.is(matchLen, 3);
+  ({matchLength, _type, children} = children[0]);
+  t.is(matchLength, 3);
   t.is(children.length, 3);
-  t.is(type, -2);
+  t.is(_type, -2);
 
   // Terminal children
-  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
-  t.deepEqual(rawCstNode(matcher, children[1]), [0, 1, -1]);
-  t.deepEqual(rawCstNode(matcher, children[2]), [0, 1, -1]);
+  t.is(children[0].isTerminal(), true);
+  t.is(children[0].matchLength, 1);
+  t.is(children[1].isTerminal(), true);
+  t.is(children[1].matchLength, 1);
+  t.is(children[2].isTerminal(), true);
+  t.is(children[2].matchLength, 1);
 });
 
 test('repetition and lookahead', async t => {
@@ -275,36 +260,39 @@ test('cst with repetition and lookahead', async t => {
   t.is(matchWithInput(matcher, input), 1);
 
   // x
-  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
-  t.is(matchLen, 3);
+  let {matchLength, _type, children} = matcher.getCstRoot();
+  t.is(matchLength, 3);
   t.is(children.length, 1);
-  t.is(type, 0);
+  t.is(_type, 0);
 
   // iter
-  [_, matchLen, type, ...children] = rawCstNode(matcher, children[0]);
-  t.is(matchLen, 3);
+  ({matchLength, _type, children} = children[0]);
+  t.is(matchLength, 3);
   t.is(children.length, 3);
-  t.is(type, -2);
+  t.is(_type, -2);
 
   const [childA, childB, childC] = children;
-  [_, matchLen, type, ...children] = rawCstNode(matcher, childA);
-  t.is(matchLen, 1);
+  ({matchLength, _type, children} = childA);
+  t.is(matchLength, 1);
   t.is(children.length, 1);
-  t.is(type, 0);
-  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+  t.is(_type, 0);
+  t.is(children[0].isTerminal(), true);
+  t.is(children[0].matchLength, 1);
 
-  [_, matchLen, type, ...children] = rawCstNode(matcher, childB);
-  t.is(matchLen, 1);
+  ({matchLength, _type, children} = childB);
+  t.is(matchLength, 1);
   t.is(children.length, 1);
-  t.is(type, 0);
-  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+  t.is(_type, 0);
+  t.is(children[0].isTerminal(), true);
+  t.is(children[0].matchLength, 1);
 
   // eslint-disable-next-line no-unused-vars
-  [_, matchLen, type, ...children] = rawCstNode(matcher, childC);
-  t.is(matchLen, 1);
+  ({matchLength, _type, children} = childC);
+  t.is(matchLength, 1);
   t.is(children.length, 1);
-  t.is(type, 0);
-  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+  t.is(_type, 0);
+  t.is(children[0].isTerminal(), true);
+  t.is(children[0].matchLength, 1);
 
   matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = (~space any)+ spaces any+}'));
   input = '/ab xy';
@@ -607,30 +595,34 @@ test('basic memoization', async t => {
     return view.getUint32(colOffset + SIZEOF_UINT32 * ruleId, true);
   };
 
+  const cstRoot = matcher.getCstRoot();
+
   // start
-  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
-  t.is(matchLen, 2);
+  let {matchLength, _type, children} = cstRoot;
+  t.is(matchLength, 2);
   t.is(children.length, 2);
-  t.is(type, 0);
+  t.is(_type, 0);
 
   const [childA, childB] = children;
 
   // "a"
-  t.deepEqual(rawCstNode(matcher, childA), [0, 1, -1]);
+  t.is(childA.isTerminal(), true);
+  t.is(childA.matchLength, 1);
 
   // b
   // eslint-disable-next-line no-unused-vars
-  [_, matchLen, type, ...children] = rawCstNode(matcher, childB);
-  t.is(matchLen, 1);
+  ({matchLength, _type, children} = childB);
+  t.is(matchLength, 1);
   t.is(children.length, 1);
-  t.is(type, 0);
+  t.is(_type, 0);
 
   // "b"
-  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+  t.is(children[0].isTerminal(), true);
+  t.is(children[0].matchLength, 1);
 
   // Expect memo for `b` at position 1, and `start` at position 0.
-  t.is(getMemo(1, 'b'), childB);
-  t.is(getMemo(0, 'start'), matcher.getCstRoot());
+  t.is(getMemo(1, 'b'), childB._base);
+  t.is(getMemo(0, 'start'), cstRoot._base);
 });
 
 test('more memoization', async t => {
@@ -647,29 +639,31 @@ test('more memoization', async t => {
   };
 
   // start
-  let [_, matchLen, type, ...children] = rawCstNode(matcher, matcher.getCstRoot());
-  t.is(matchLen, 2);
+  let {matchLength, _type, children} = matcher.getCstRoot();
+  t.is(matchLength, 2);
   t.is(children.length, 2);
-  t.is(type, 0);
+  t.is(_type, 0);
 
   const [child1, child2] = children;
 
   // b #1
-  [_, matchLen, type, ...children] = rawCstNode(matcher, child1);
-  t.is(matchLen, 1);
+  ({matchLength, _type, children} = child1);
+  t.is(matchLength, 1);
   t.is(children.length, 1);
-  t.is(type, 0);
-  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+  t.is(_type, 0);
+  t.is(children[0].isTerminal(), true);
+  t.is(children[0].matchLength, 1);
 
   // b #2
   // eslint-disable-next-line no-unused-vars
-  [_, matchLen, type, ...children] = rawCstNode(matcher, child2);
-  t.is(matchLen, 1);
+  ({matchLength, _type, children} = child2);
+  t.is(matchLength, 1);
   t.is(children.length, 1);
-  t.is(type, 0);
-  t.deepEqual(rawCstNode(matcher, children[0]), [0, 1, -1]);
+  t.is(_type, 0);
+  t.is(children[0].isTerminal(), true);
+  t.is(children[0].matchLength, 1);
 
   // Expect memo for `b` at position 0 and 1.
-  t.is(getMemo(0, 'b'), child1);
-  t.is(getMemo(1, 'b'), child2);
+  t.is(getMemo(0, 'b'), child1._base);
+  t.is(getMemo(1, 'b'), child2._base);
 });

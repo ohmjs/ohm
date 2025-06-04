@@ -4,6 +4,7 @@ import {dirname, join} from 'node:path';
 import {performance} from 'node:perf_hooks';
 import {fileURLToPath} from 'node:url';
 import * as ohm from 'ohm-js';
+import es5js from '../../../examples/ecmascript/index.js';
 
 import {WasmMatcher} from '../src/index.js';
 import es5fac from './data/_es5.js';
@@ -25,12 +26,7 @@ function ES5Matcher(rules) {
     };
   }
   // Since this is called with `new`, we can't use `await` here.
-  return WasmMatcher.forGrammar(g).then(m => ({
-    match(input) {
-      m.setInput(input);
-      return m.match();
-    },
-  }));
+  return WasmMatcher.forGrammar(g);
 }
 
 async function es5Matcher() {
@@ -48,18 +44,61 @@ async function es5Matcher() {
   });
 }
 
+const match = (m, str) => (m.setInput(str), m.match());
+
 test('basic es5 examples', async t => {
-  const es5 = await es5Matcher();
-  t.is(es5.match('x = 3;'), 1);
-  t.is(es5.match('function foo() { return 1; }'), 1);
+  const m = await es5Matcher();
+  t.is(match(m, 'x = 3;'), 1);
+  t.is(match(m, 'function foo() { return 1; }'), 1);
 });
 
 test('html5shiv', async t => {
   const html5shivPath = join(datadir, '_html5shiv-3.7.3.js');
   const source = await readFile(html5shivPath, 'utf8');
 
-  const start = performance.now();
-  const es5 = await es5Matcher();
-  t.is(es5.match(source.trim()), 1);
-  t.log(`html5shiv match time: ${(performance.now() - start).toFixed(2)}ms`);
+  const m = await es5Matcher();
+  let start = performance.now();
+  es5js.grammar.match(source);
+  t.log(`html5shiv (Ohm) match time: ${(performance.now() - start).toFixed(2)}ms`);
+  start = performance.now();
+  t.is(match(m, source), 1);
+  t.log(`html5shiv (Wasm) match time: ${(performance.now() - start).toFixed(2)}ms`);
+});
+
+test('unparsing', async t => {
+  const source = String.raw`
+    var obj = {_nm: "Thomas", "full-name": "Thomas Müller", name: function() { return this._nm; }};
+    var arr = [1, "hello", true, null, {x: 2}];
+    function Car(brand) { this.brand = brand; }
+    Car.prototype.start = function() { return this.brand + " started"; };
+    var car = new Car("BMW");
+    (function(x) { console.log("IIFE: " + x); })(42);
+    for (var i in obj) if (obj.hasOwnProperty(i)) console.log(i);
+    var result = obj.name === "John" ? "match" : "no match";
+    try {
+        var test = typeof arr instanceof Array && !false || 5 + 3 * 2;
+    } catch (e) {
+    } finally {
+    }
+    var counter = (function() { var n = 0; return function() { return ++n; }; })();
+    /\d+/.test("123") && console.log(counter());
+  `;
+
+  const m = await es5Matcher();
+  t.is(match(m, source), 1);
+
+  let unparsed = '';
+
+  let pos = 0;
+  function walk(node) {
+    if (node.isTerminal()) {
+      unparsed += source.slice(pos, pos + node.matchLength);
+      pos += node.matchLength;
+    }
+    for (const child of node.children) {
+      walk(child);
+    }
+  }
+  walk(m.getCstRoot());
+  t.is(unparsed, source);
 });
