@@ -96,7 +96,7 @@ export function evalApply(ruleId: i32): Result {
   const succeeded = call_indirect<Result>(ruleId);
   if (succeeded) {
     const numChildren = bindings.length - origNumBindings;
-    result = newNonterminalNode(origPos, pos, numChildren);
+    result = newNonterminalNode(origPos, pos, ruleId, numChildren);
   }
   memoizeResult(origPos, ruleId, result);
   return succeeded;
@@ -111,11 +111,11 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): usize {
   return ptr;
 }
 
-export function newNonterminalNode(startIdx: i32, endIdx: i32, numChildren: i32): usize {
+export function newNonterminalNode(startIdx: i32, endIdx: i32, ruleId: i32, numChildren: i32): usize {
   const ptr = heap.alloc(CST_NODE_OVERHEAD + numChildren * 4);
   cstSetCount(ptr, numChildren);
   cstSetMatchLength(ptr, endIdx - startIdx);
-  cstSetType(ptr, 0);
+  cstSetType(ptr, ruleId);
   for (let i = 0; i < numChildren; i++) {
     store<i32>(ptr + CST_NODE_OVERHEAD + i * 4, bindings[bindings.length - numChildren + i]);
   }

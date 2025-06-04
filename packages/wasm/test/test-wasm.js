@@ -38,13 +38,14 @@ test('cst returns', async t => {
 
   // start
   t.is(matchWithInput(matcher, 'a'), 1);
-  let {matchLength, _type, children} = matcher.getCstRoot();
-  t.is(children.length, 1);
-  t.is(matchLength, 1);
-  t.is(_type, 0);
+  let root = matcher.getCstRoot();
+
+  t.is(root.children.length, 1);
+  t.is(root.matchLength, 1);
+  t.is(root.ruleName, 'start');
 
   // "a"
-  ({matchLength, _type, children} = children[0]);
+  let {matchLength, _type, children} = root.children[0];
   t.is(children.length, 0);
   t.is(matchLength, 1);
   t.is(_type, -1);
@@ -53,27 +54,26 @@ test('cst returns', async t => {
 
   // start
   t.is(matchWithInput(matcher, 'ab'), 1);
-  ({matchLength, _type, children} = matcher.getCstRoot());
-  t.is(children.length, 2);
-  t.is(matchLength, 2);
-  t.is(_type, 0);
+  root = matcher.getCstRoot();
+  t.is(root.children.length, 2);
+  t.is(root.matchLength, 2);
+  t.is(root.ruleName, 'start');
 
   // "a"
-  const [childA, childB] = children;
+  const [childA, childB] = root.children;
   ({matchLength, _type, children} = childA);
   t.is(children.length, 0);
   t.is(matchLength, 1);
   t.is(_type, -1);
 
   // NonterminalNode for b
-  ({matchLength, _type, children} = childB);
-  t.is(children.length, 1);
-  t.is(matchLength, 1);
-  t.is(_type, 0);
+  t.is(childB.children.length, 1);
+  t.is(childB.matchLength, 1);
+  t.is(childB.ruleName, 'b');
 
   // TerminalNode for "b"
   // eslint-disable-next-line no-unused-vars
-  ({matchLength, _type, children} = children[0]);
+  ({matchLength, _type, children} = childB.children[0]);
   t.is(children.length, 0);
   t.is(matchLength, 1);
   t.is(_type, -1);
@@ -91,23 +91,22 @@ test('cst with lookahead', async t => {
   //     - "a"
 
   // x
-  let {matchLength, _type, children} = matcher.getCstRoot();
-  t.is(matchLength, 1);
-  t.is(children.length, 1);
-  t.is(_type, 0);
+  const root = matcher.getCstRoot();
+  t.is(root.matchLength, 1);
+  t.is(root.children.length, 1);
+  t.is(root.ruleName, 'x');
 
   // any
-  ({matchLength, _type, children} = children[0]);
+  const {matchLength, ruleName, children} = root.children[0];
   t.is(matchLength, 1);
   t.is(children.length, 1);
-  t.is(_type, 0);
+  t.is(ruleName, 'any');
 
   // Terminal
-  // eslint-disable-next-line no-unused-vars
-  ({matchLength, _type, children} = children[0]);
-  t.is(matchLength, 1);
-  t.is(children.length, 0);
-  t.is(_type, -1);
+  const term = children[0];
+  t.is(term.matchLength, 1);
+  t.is(term.children.length, 0);
+  t.is(term.isTerminal(), true);
 });
 
 test('cst for range', async t => {
@@ -115,17 +114,17 @@ test('cst for range', async t => {
   t.is(matchWithInput(matcher, 'b'), 1);
 
   // x
-  let {matchLength, _type, children} = matcher.getCstRoot();
-  t.is(matchLength, 1);
-  t.is(children.length, 1);
-  t.is(_type, 0);
+  const root = matcher.getCstRoot();
+  t.is(root.matchLength, 1);
+  t.is(root.children.length, 1);
+  t.is(root.ruleName, 'x');
 
   // Terminal
   // eslint-disable-next-line no-unused-vars
-  ({matchLength, _type, children} = children[0]);
-  t.is(matchLength, 1);
-  t.is(children.length, 0);
-  t.is(_type, -1);
+  const term = root.children[0];
+  t.is(term.matchLength, 1);
+  t.is(term.children.length, 0);
+  t.is(term.isTerminal(), true);
 });
 
 test('cst for opt', async t => {
@@ -133,35 +132,35 @@ test('cst for opt', async t => {
   t.is(matchWithInput(matcher, 'a'), 1);
 
   // x
-  let {matchLength, _type, children} = matcher.getCstRoot();
-  t.is(matchLength, 1);
-  t.is(_type, 0);
-  t.is(children.length, 1);
+  let root = matcher.getCstRoot();
+  t.is(root.matchLength, 1);
+  t.is(root.ruleName, 'x');
+  t.is(root.children.length, 1);
 
   // iter
-  ({matchLength, _type, children} = children[0]);
-  t.is(matchLength, 1);
-  t.is(_type, -2);
-  t.is(children.length, 1);
-  t.is(children[0].isTerminal(), true);
-  t.is(children[0].matchLength, 1);
+  let iter = root.children[0];
+  t.is(iter.matchLength, 1);
+  t.is(iter._type, -2);
+  t.is(iter.children.length, 1);
+  t.is(iter.children[0].isTerminal(), true);
+  t.is(iter.children[0].matchLength, 1);
 
   matcher = await WasmMatcher.forGrammar(ohm.grammar('G {x = "a"?}'));
   t.is(matchWithInput(matcher, ''), 1);
 
   // x
   // eslint-disable-next-line no-unused-vars
-  ({matchLength, _type, children} = matcher.getCstRoot());
-  t.is(matchLength, 0);
-  t.is(_type, 0);
-  t.is(children.length, 1);
+  root = matcher.getCstRoot();
+  t.is(root.matchLength, 0);
+  t.is(root.ruleName, 'x');
+  t.is(root.children.length, 1);
 
   // iter
   // eslint-disable-next-line no-unused-vars
-  ({matchLength, _type, children} = children[0]);
-  t.is(matchLength, 0);
-  t.is(_type, -2);
-  t.is(children.length, 0);
+  iter = root.children[0];
+  t.is(iter.matchLength, 0);
+  t.is(iter._type, -2);
+  t.is(iter.children.length, 0);
 });
 
 test('cst for plus', async t => {
@@ -170,20 +169,20 @@ test('cst for plus', async t => {
 
   // x
   // eslint-disable-next-line no-unused-vars
-  let {matchLength, _type, children} = matcher.getCstRoot();
-  t.is(matchLength, 1);
-  t.is(_type, 0);
-  t.is(children.length, 1);
+  const root = matcher.getCstRoot();
+  t.is(root.matchLength, 1);
+  t.is(root.ruleName, 'x');
+  t.is(root.children.length, 1);
 
   // iter
   // eslint-disable-next-line no-unused-vars
-  ({matchLength, _type, children} = children[0]);
-  t.is(matchLength, 1);
-  t.is(_type, -2);
-  t.is(children.length, 1);
+  const iter = root.children[0];
+  t.is(iter.matchLength, 1);
+  t.is(iter._type, -2);
+  t.is(iter.children.length, 1);
 
-  t.is(children[0].isTerminal(), true);
-  t.is(children[0].matchLength, 1);
+  t.is(iter.children[0].isTerminal(), true);
+  t.is(iter.children[0].matchLength, 1);
 });
 
 test('cst with (small) repetition', async t => {
@@ -198,25 +197,26 @@ test('cst with (small) repetition', async t => {
 
   // start
   // eslint-disable-next-line no-unused-vars
-  let {matchLength, _type, children} = matcher.getCstRoot();
-  t.is(matchLength, 3);
-  t.is(children.length, 1);
-  t.is(_type, 0);
+  const root = matcher.getCstRoot();
+  t.is(root.matchLength, 3);
+  t.is(root.children.length, 1);
+  t.is(root.ruleName, 'x');
 
   // iter
   // eslint-disable-next-line no-unused-vars
-  ({matchLength, _type, children} = children[0]);
-  t.is(matchLength, 3);
-  t.is(children.length, 3);
-  t.is(_type, -2);
+  const iter = root.children[0];
+  t.is(iter.matchLength, 3);
+  t.is(iter.children.length, 3);
+  t.is(iter._type, -2);
 
   // Terminal children
-  t.is(children[0].isTerminal(), true);
-  t.is(children[0].matchLength, 1);
-  t.is(children[1].isTerminal(), true);
-  t.is(children[1].matchLength, 1);
-  t.is(children[2].isTerminal(), true);
-  t.is(children[2].matchLength, 1);
+  const [childA, childB, childC] = iter.children;
+  t.is(childA.isTerminal(), true);
+  t.is(childA.matchLength, 1);
+  t.is(childB.isTerminal(), true);
+  t.is(childB.matchLength, 1);
+  t.is(childC.isTerminal(), true);
+  t.is(childC.matchLength, 1);
 });
 
 test('repetition and lookahead', async t => {
@@ -610,29 +610,26 @@ test('more memoization', async t => {
   };
 
   // start
-  let {matchLength, _type, children} = matcher.getCstRoot();
-  t.is(matchLength, 2);
-  t.is(children.length, 2);
-  t.is(_type, 0);
+  const root = matcher.getCstRoot();
+  t.is(root.matchLength, 2);
+  t.is(root.children.length, 2);
+  t.is(root.ruleName, 'start');
 
-  const [child1, child2] = children;
+  const [child1, child2] = root.children;
 
   // b #1
-  ({matchLength, _type, children} = child1);
-  t.is(matchLength, 1);
-  t.is(children.length, 1);
-  t.is(_type, 0);
-  t.is(children[0].isTerminal(), true);
-  t.is(children[0].matchLength, 1);
+  t.is(child1.matchLength, 1);
+  t.is(child1.children.length, 1);
+  t.is(child1.ruleName, 'b');
+  t.is(child1.children[0].isTerminal(), true);
+  t.is(child1.children[0].matchLength, 1);
 
   // b #2
-  // eslint-disable-next-line no-unused-vars
-  ({matchLength, _type, children} = child2);
-  t.is(matchLength, 1);
-  t.is(children.length, 1);
-  t.is(_type, 0);
-  t.is(children[0].isTerminal(), true);
-  t.is(children[0].matchLength, 1);
+  t.is(child2.matchLength, 1);
+  t.is(child2.children.length, 1);
+  t.is(child2.ruleName, 'b');
+  t.is(child2.children[0].isTerminal(), true);
+  t.is(child2.children[0].matchLength, 1);
 
   // Expect memo for `b` at position 0 and 1.
   t.is(getMemo(0, 'b'), child1._base);

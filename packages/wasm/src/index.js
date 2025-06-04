@@ -1008,7 +1008,8 @@ export class WasmMatcher {
   getCstRoot() {
     const {buffer} = this._instance.exports.memory;
     const addr = this._instance.exports.getCstRoot();
-    return new CstNode(new DataView(buffer), addr);
+    const ruleNames = [...this._ruleIds.keys()];
+    return new CstNode(ruleNames, new DataView(buffer), addr);
   }
 
   _fillInputBuffer(offset, maxLen) {
@@ -1029,7 +1030,8 @@ export class WasmMatcher {
 }
 
 class CstNode {
-  constructor(dataView, offset) {
+  constructor(ruleNames, dataView, offset) {
+    this._ruleNames = ruleNames;
     this._view = dataView;
     this._base = offset;
   }
@@ -1046,6 +1048,11 @@ class CstNode {
     return this._type === -2;
   }
 
+  get ruleName() {
+    const id = this._view.getInt32(this._base + 8, true);
+    return this._ruleNames[id];
+  }
+
   get count() {
     return this._view.getUint32(this._base, true);
   }
@@ -1055,14 +1062,17 @@ class CstNode {
   }
 
   get _type() {
-    return this._view.getInt32(this._base + 8, true);
+    const t = this._view.getInt32(this._base + 8, true);
+    return t < 0 ? t : 0;
   }
 
   get children() {
     const children = [];
     for (let i = 0; i < this.count; i++) {
       const slotOffset = this._base + 12 + i * 4;
-      children.push(new CstNode(this._view, this._view.getUint32(slotOffset, true)));
+      children.push(
+          new CstNode(this._ruleNames, this._view, this._view.getUint32(slotOffset, true)),
+      );
     }
     return children;
   }
