@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/tetratelabs/wazero"
@@ -11,7 +13,7 @@ import (
 
 // Constants for memory layout
 const (
-	wasmPageSize    = 64 * 1024
+	wasmPageSize      = 64 * 1024
 	InputBufferOffset = wasmPageSize
 	InputBufferSize   = wasmPageSize
 	MemoTableOffset   = InputBufferOffset + InputBufferSize
@@ -35,13 +37,70 @@ func (m *WasmMatcher) GetModule() api.Module {
 }
 
 func NewWasmMatcher(ctx context.Context) *WasmMatcher {
+	// Create a new runtime with custom sections enabled
+	config := wazero.NewRuntimeConfig().WithCustomSections(true)
+
 	return &WasmMatcher{
-		runtime:         wazero.NewRuntime(ctx),
+		runtime:         wazero.NewRuntimeWithConfig(ctx, config),
 		ctx:             ctx,
 		ruleIds:         make(map[string]int),
 		pos:             0,
 		lastMatchResult: false,
 	}
+}
+
+// parseRuleNames parses the rule names from the custom section data
+// The data is formatted as a WebAssembly vector of strings (each string is a length-prefixed UTF-8 bytes)
+// with LEB128-encoded lengths
+func parseRuleNames(data []byte) ([]string, error) {
+	if len(data) == 0 {
+		return nil, fmt.Errorf("empty custom section data")
+	}
+
+	// Read the number of names (vec length) as LEB128-encoded uint32
+	numNamesUint64, bytesRead := binary.Uvarint(data)
+	if bytesRead <= 0 {
+		return nil, fmt.Errorf("failed to read number of names: %v", io.ErrUnexpectedEOF)
+	}
+
+	// Ensure the value fits in uint32
+	if numNamesUint64 > uint64(^uint32(0)) {
+		return nil, fmt.Errorf("number of names exceeds maximum uint32 value")
+	}
+
+	numNames := uint32(numNamesUint64)
+	data = data[bytesRead:]
+
+	names := make([]string, numNames)
+	for i := uint32(0); i < numNames; i++ {
+		// Read the length of the name as LEB128-encoded uint32
+		nameLenUint64, bytesRead := binary.Uvarint(data)
+		if bytesRead <= 0 {
+			return nil, fmt.Errorf("failed to read name length: %v", io.ErrUnexpectedEOF)
+		}
+
+		// Ensure the value fits in uint32
+		if nameLenUint64 > uint64(^uint32(0)) {
+			return nil, fmt.Errorf("name length exceeds maximum uint32 value")
+		}
+
+		nameLen := uint32(nameLenUint64)
+		data = data[bytesRead:]
+
+		// Ensure we have enough bytes to read
+		if uint64(len(data)) < uint64(nameLen) {
+			return nil, fmt.Errorf("buffer too small to read name bytes")
+		}
+
+		// Read the name bytes
+		nameBytes := data[:nameLen]
+		data = data[nameLen:]
+
+		// Convert to string
+		names[i] = string(nameBytes)
+	}
+
+	return names, nil
 }
 
 func (m *WasmMatcher) LoadModule(wasmPath string) error {
@@ -74,27 +133,51 @@ func (m *WasmMatcher) LoadModule(wasmPath string) error {
 		return fmt.Errorf("failed to create host module: %v", err)
 	}
 
-	// Instantiate the module
-	m.module, err = m.runtime.Instantiate(m.ctx, wasmBytes)
+	// First compile the module to access the custom sections
+	compiledModule, err := m.runtime.CompileModule(m.ctx, wasmBytes)
+	if err != nil {
+		return fmt.Errorf("error compiling module: %v", err)
+	}
+
+	// Get all custom sections from the module
+	customSections := compiledModule.CustomSections()
+	if customSections == nil {
+		return fmt.Errorf("no custom sections found in module")
+	}
+
+	var ruleNamesSection api.CustomSection
+	for _, section := range customSections {
+		if section.Name() == "ruleNames" {
+			ruleNamesSection = section
+			break
+		}
+	}
+
+	if ruleNamesSection == nil {
+		return fmt.Errorf("required custom section 'ruleNames' not found")
+	}
+
+	// Parse rule names from the custom section data
+	ruleNames, err := parseRuleNames(ruleNamesSection.Data())
+	if err != nil {
+		return fmt.Errorf("failed to parse rule names from custom section: %v", err)
+	}
+
+	// Now instantiate the module
+	m.module, err = m.runtime.InstantiateModule(m.ctx, compiledModule, wazero.NewModuleConfig())
 	if err != nil {
 		return fmt.Errorf("error instantiating module: %v", err)
 	}
 
-	// Extract rule IDs if this is a grammar module
-	rulesFunc := m.module.ExportedFunction("getRuleIds")
-	if rulesFunc != nil {
-		// In a real implementation, you would actually extract the rule IDs
-		// by calling the exported function and reading the results
+	// Build the ruleIds map (mapping from name to index)
+	m.ruleIds = make(map[string]int, len(ruleNames))
+	for i, name := range ruleNames {
+		m.ruleIds[name] = i
+	}
 
-		// For now, just populate with some example rule IDs
-		m.ruleIds = map[string]int{
-			"Start":  0,
-			"Expr":   1,
-			"Term":   2,
-			"Factor": 3,
-		}
-
-		m.defaultStartRule = "Start"
+	// Set the default start rule to the first rule
+	if len(ruleNames) > 0 {
+		m.defaultStartRule = ruleNames[0]
 	}
 
 	return nil

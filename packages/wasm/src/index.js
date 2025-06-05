@@ -1,4 +1,4 @@
-/* global TextEncoder, WebAssembly */
+/* global process, TextEncoder, WebAssembly */
 
 import * as w from '@wasmgroundup/emit';
 import {pexprs} from 'ohm-js';
@@ -469,7 +469,13 @@ class Compiler {
 
     // The rule ID is a 0-based index that's mapped to the name.
     // It is *not* the same as the function index the rule's eval function.
-    this.ruleIdByName = new Map(Object.keys(grammar.rules).map((name, i) => [name, i]));
+    // Ensure that the default start rule always has id 0.
+    this.ruleIdByName = new Map([[grammar.defaultStartRule, 0]]);
+    for (const name of Object.keys(grammar.rules)) {
+      if (name !== grammar.defaultStartRule) {
+        this.ruleIdByName.set(name, this.ruleIdByName.size);
+      }
+    }
   }
 
   ruleBody(ruleName, grammar = this.grammar) {
@@ -500,10 +506,6 @@ class Compiler {
   ruleEvalFuncIdx(name) {
     const offset = this.importDecls.length + prebuilt.funcsec.entryCount;
     return w.funcidx(checkNotNull(this.ruleIdByName.get(name)) + offset);
-  }
-
-  ruleNames() {
-    return [...this.ruleIdByName.keys()];
   }
 
   // Return an object implementing all of the debug imports.
@@ -576,9 +578,25 @@ class Compiler {
     return this.asm._functionDecls.at(-1);
   }
 
+  buildRuleNamesSection(ruleNames) {
+
+    // A custom section that allows the clients to look up rule IDs by name.
+    // They're simply encoded as a vec(name), and the client can turn this
+    // into a list/array and use the ruleId as the index.
+    return w.custom(
+        w.name('ruleNames'),
+        w.vec(ruleNames.map((n, i) => w.name(n))),
+    );
+  }
+
   buildModule(typeMap, functionDecls) {
     const {importDecls} = this;
     assert(this.importDecls.length === prebuilt.destImportCount, 'import count mismatch');
+
+    const ruleNames = [...this.ruleIdByName.keys()];
+
+    // Ensure that `ruleNames` is in the correct order.
+    ruleNames.forEach((n, i) => assert(i === this.ruleIdByName.get(n)));
 
     typeMap.addDecls(importDecls);
     typeMap.addDecls(functionDecls);
@@ -613,7 +631,7 @@ class Compiler {
     const table = w.table(
         w.tabletype(w.elemtype.funcref, w.limits.minmax(numRules, numRules)),
     );
-    const tableData = this.ruleNames().map(name => this.ruleEvalFuncIdx(name));
+    const tableData = ruleNames.map(name => this.ruleEvalFuncIdx(name));
     assert(numRules === tableData.length, 'Invalid rule count');
 
     // Determine the index of the start function.
@@ -633,6 +651,7 @@ class Compiler {
       w.startsec(w.start(startFuncidx)),
       w.elemsec([w.elem(w.tableidx(0), [instr.i32.const, w.i32(0), instr.end], tableData)]),
       mergeSections(w.SECTION_ID_CODE, prebuilt.codesec, codes),
+      w.customsec(this.buildRuleNamesSection(ruleNames)),
     ]);
     const bytes = Uint8Array.from(mod.flat(Infinity));
 
