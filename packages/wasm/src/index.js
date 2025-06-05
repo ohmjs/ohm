@@ -1,4 +1,4 @@
-/* global process, TextEncoder, WebAssembly */
+/* global TextEncoder, WebAssembly */
 
 import * as w from '@wasmgroundup/emit';
 import {pexprs} from 'ohm-js';
