@@ -1,4 +1,4 @@
-/* global process, TextEncoder, WebAssembly */
+/* global TextEncoder, WebAssembly */
 
 import * as w from '@wasmgroundup/emit';
 import {pexprs} from 'ohm-js';
@@ -579,14 +579,10 @@ class Compiler {
   }
 
   buildRuleNamesSection(ruleNames) {
-
     // A custom section that allows the clients to look up rule IDs by name.
     // They're simply encoded as a vec(name), and the client can turn this
     // into a list/array and use the ruleId as the index.
-    return w.custom(
-        w.name('ruleNames'),
-        w.vec(ruleNames.map((n, i) => w.name(n))),
-    );
+    return w.custom(w.name('ruleNames'), w.vec(ruleNames.map((n, i) => w.name(n))));
   }
 
   buildModule(typeMap, functionDecls) {
