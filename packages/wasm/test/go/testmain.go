@@ -71,75 +71,71 @@ func main() {
 	}
 
 	if success {
-		fmt.Println("Match succeeded!")
+		fmt.Println("Match succeeded")
 
 		// Try to get the CST root
 		cstRoot, err := matcher.GetCstRoot()
 		if err != nil {
 			fmt.Printf("Error getting CST root: %v\n", err)
 		} else {
-			fmt.Printf("CST root node ID: %d\n", cstRoot)
-
-			// Create a CST walker with the matcher
-			cstWalker := NewCstWalker(matcher)
-
-			// Read the CST node
-			node, err := cstWalker.GetRawCstNode(cstRoot)
-			if err != nil {
-				fmt.Printf("Error reading CST node: %v\n", err)
-			} else {
-				fmt.Printf("CST Node - Count: %d, MatchLen: %d, Type: %d\n",
-					node.Count, node.MatchLen, node.Type)
-
-				if len(node.ChildRefs) > 0 {
-					fmt.Printf("Child references: %v\n", node.ChildRefs)
-				}
-
-				// Unparse the CST to get the original text
-				fmt.Println("\nUnparsing the CST to reconstruct the input:")
-				unparsedText := unparse(cstWalker, cstRoot, matcher.GetInput())
-				fmt.Printf("Unparsed text: %q\n", unparsedText)
-				fmt.Printf("Original input: %q\n", matcher.GetInput())
-				fmt.Printf("Match: %v\n", unparsedText == matcher.GetInput())
+			if *verbose {
+				fmt.Printf("CST root node ID: %d\n", cstRoot)
 			}
 
-			// Display more verbose information if requested
+			// Create a CST node from the root address
+			ruleNames := matcher.GetRuleNames()
+			node := NewCstNode(ruleNames, matcher.GetModule().Memory(), cstRoot)
+
+			nodeType := node.Type()
 			if *verbose {
-				fmt.Println("\nCST node details have been displayed above.")
-				fmt.Println("Node Types:")
-				fmt.Printf(" - Terminal nodes (type %d): Leaf nodes that consume input\n", NODE_TYPE_TERMINAL)
-				fmt.Printf(" - Iteration nodes (type %d): Used for repetition operations\n", NODE_TYPE_ITER)
-				fmt.Printf(" - Non-terminal nodes (type %d): Internal nodes with children\n", NODE_TYPE_NONTERMINAL)
-				fmt.Println("\nThe unparse function reconstructs the original input by collecting text from all terminal nodes in order.")
+				fmt.Printf("CST Node - Type: %d\n", nodeType)
+			}
+
+			// Unparse the CST to get the original text
+			unparsedText := unparse(node, matcher.GetInput())
+			if unparsedText == matcher.GetInput() {
+				fmt.Println("Unparsed text matches input")
+			} else {
+				fmt.Println("ERROR: Unparsed text does not match input")
+				fmt.Printf("Unparsed text: %q\n", unparsedText)
+				fmt.Printf("Original input: %q\n", matcher.GetInput())
+			}
+
+			// Display verbose information about node types if requested
+			if *verbose {
+				fmt.Println("\nNode Types:")
+				fmt.Printf(" - Terminal nodes (type %d): Leaf nodes that consume input\n", NodeTypeTerminal)
+				fmt.Printf(" - Iteration nodes (type %d): Used for repetition operations\n", NodeTypeIter)
+				fmt.Printf(" - Non-terminal nodes (type %d): Internal nodes with children\n", NodeTypeNonterminal)
 			}
 		}
 	} else {
 		fmt.Println("Match failed")
+		os.Exit(1)
 	}
 }
 
 // unparse walks the CST starting from the given node and reconstructs the original text
 // It returns the reconstructed text from the terminal nodes
-func unparse(walker *CstWalker, nodeAddr uint32, input string) string {
+func unparse(node *CstNode, input string) string {
 	var result strings.Builder
 	pos := uint32(0)
-	unparseNode(walker, nodeAddr, &pos, input, &result)
+	unparseNode(node, &pos, input, &result)
 	return result.String()
 }
 
 // unparseNode is a helper function that recursively processes nodes and builds the result
-func unparseNode(walker *CstWalker, nodeAddr uint32, pos *uint32, input string, result *strings.Builder) {
-	// Read the current node
-	node, err := walker.GetRawCstNode(nodeAddr)
-	if err != nil {
-		fmt.Printf("Error reading CST node: %v\n", err)
-		return
-	}
-
+func unparseNode(node *CstNode, pos *uint32, input string, result *strings.Builder) {
 	// Handle terminal nodes - append the consumed text to the result
-	if node.Type == NODE_TYPE_TERMINAL {
-		if *pos < uint32(len(input)) && node.MatchLen > 0 {
-			end := *pos + node.MatchLen
+	if node.IsTerminal() {
+		matchLen, err := node.MatchLength()
+		if err != nil {
+			fmt.Printf("Error getting match length: %v\n", err)
+			return
+		}
+
+		if *pos < uint32(len(input)) && matchLen > 0 {
+			end := *pos + matchLen
 			if end > uint32(len(input)) {
 				end = uint32(len(input))
 			}
@@ -147,13 +143,19 @@ func unparseNode(walker *CstWalker, nodeAddr uint32, pos *uint32, input string, 
 			result.WriteString(matchedText)
 
 			// Update position only after processing terminal nodes
-			*pos += node.MatchLen
+			*pos += matchLen
 		}
 		return
 	}
 
 	// For all other node types (nonterminal, iteration, etc.), process children recursively
-	for _, childAddr := range node.ChildRefs {
-		unparseNode(walker, childAddr, pos, input, result)
+	children, err := node.Children()
+	if err != nil {
+		fmt.Printf("Error getting children: %v\n", err)
+		return
+	}
+
+	for _, child := range children {
+		unparseNode(child, pos, input, result)
 	}
 }
