@@ -1,10 +1,13 @@
 ## TODOs
 
-- [ ] Include a map of rule name to ruleId in the module.
+- [x] Include a map of rule name to ruleId in the module.
 - [ ] Implicit space skipping
 - [ ] Error handling
-- [ ] NonterminalNodes should keep track of the rule
+- [x] NonterminalNodes should keep track of the rule
 - [ ] When iteration contains a sequence, the children are flattened into the iter node.
+- [ ] Support direct left recursion.
+- [ ] Separate API for _creating_ the Wasm module from the WasmMatcher interface.
+- [ ] Implement a proper CLI.
 
 ## Limitations
 
