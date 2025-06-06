@@ -1,4 +1,4 @@
-/* global TextEncoder, WebAssembly */
+/* global TextDecoder, TextEncoder, WebAssembly */
 
 import * as w from '@wasmgroundup/emit';
 import {pexprs} from 'ohm-js';
@@ -958,12 +958,8 @@ Compiler.MEMO_START_OFFSET = 2 * WASM_PAGE_SIZE; // Starting offset of memo reco
 Compiler.CST_START_OFFSET = (1024 + 2) * WASM_PAGE_SIZE; // Starting offset of CST records.
 
 export class WasmMatcher {
-  constructor(grammar, ruleIds) {
-    this.grammar = grammar;
-    this._ruleIds = ruleIds;
+  constructor() {
     this._instance = undefined;
-    this._input = '';
-    this._pos = 0;
     this._env = {
       abort() {
         throw new Error('abort');
@@ -974,28 +970,69 @@ export class WasmMatcher {
       },
       fillInputBuffer: this._fillInputBuffer.bind(this),
     };
+    this._ruleIds = new Map();
   }
 
-  static async forGrammar(grammar) {
-    const compiler = new Compiler(grammar);
-    const bytes = compiler.compile();
-    const matcher = new WasmMatcher(grammar, compiler.ruleIdByName);
-    // let depth = 0;
+  _extractRuleIds(module) {
+    const sections = WebAssembly.Module.customSections(module, 'ruleNames');
+    if (sections.length === 0) {
+      throw new Error('No ruleNames section found in module');
+    }
 
-    const {instance} = await WebAssembly.instantiate(bytes, {
-      env: matcher._env,
-      debug: compiler.getDebugImports((label, ret) => {
-        // const result = ret === 0 ? 'FAIL' : 'SUCCESS';
-        // const indented = s => new Array(depth).join('  ') + s;
-        // const pos = instance.exports.pos.value;
-        // if (label.startsWith('BEGIN')) depth += 1;
-        // const tail = label.startsWith('END') ? ` -> ${result}` : '';
-        // console.log(`pos: ${pos} ${indented(label)}${tail}`);
-        // if (label.startsWith('END')) depth -= 1;
-      }),
+    const data = new Uint8Array(sections[0]);
+    const dataView = new DataView(data.buffer);
+    let offset = 0;
+
+    const parseU32 = () => {
+      // Quick 'n dirty ULeb128 parsing, assuming no more than 2 bytes.
+      const b1 = dataView.getUint8(offset++);
+      let value = b1 & 0x7f;
+      if (b1 & 0x80) {
+        const b2 = dataView.getUint8(offset++);
+        assert((b2 & 0x80) === 0, 'Expected max two bytes');
+        value |= (b2 & 0x7f) << 7;
+      }
+      return value;
+    };
+
+    const decoder = new TextDecoder('utf-8');
+    const numEntries = parseU32();
+    for (let i = 0; i < numEntries; i++) {
+      const stringLen = parseU32();
+      const bytes = data.slice(offset, offset + stringLen);
+      offset += stringLen;
+      this._ruleIds.set(decoder.decode(bytes), i);
+    }
+  }
+
+  async _instantiate(source, debugImports = {}) {
+    const {module, instance} = await WebAssembly.instantiate(source, {
+      env: this._env,
+      debug: debugImports,
     });
-    matcher._instance = instance;
-    return matcher;
+    this._instance = instance;
+    this._extractRuleIds(module);
+    return this;
+  }
+
+  static async fromBytes(source) {
+    return new WasmMatcher()._instantiate(source);
+  }
+
+  static async fromGrammar(grammar) {
+    const compiler = new Compiler(grammar);
+    // let depth = 0;
+    const debugImports = compiler.getDebugImports((label, ret) => {
+      // const result = ret === 0 ? 'FAIL' : 'SUCCESS';
+      // const indented = s => new Array(depth).join('  ') + s;
+      // const pos = instance.exports.pos.value;
+      // if (label.startsWith('BEGIN')) depth += 1;
+      // const tail = label.startsWith('END') ? ` -> ${result}` : '';
+      // console.log(`pos: ${pos} ${indented(label)}${tail}`);
+      // if (label.startsWith('END')) depth -= 1;
+    });
+    const bytes = compiler.compile();
+    return new WasmMatcher()._instantiate(bytes, debugImports);
   }
 
   getInput() {
@@ -1015,9 +1052,7 @@ export class WasmMatcher {
   }
 
   match() {
-    this._pos = 0; // TODO: Fix this, it should be using the wasm global
-    const startRuleId = checkNotNull(this._ruleIds.get(this.grammar.defaultStartRule));
-    return this._instance.exports.match(startRuleId);
+    return this._instance.exports.match(0);
   }
 
   getCstRoot() {
