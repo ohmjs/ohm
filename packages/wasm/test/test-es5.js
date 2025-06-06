@@ -26,7 +26,7 @@ function ES5Matcher(rules) {
     };
   }
   // Since this is called with `new`, we can't use `await` here.
-  return WasmMatcher.forGrammar(g);
+  return WasmMatcher.fromGrammar(g);
 }
 
 async function es5Matcher() {
