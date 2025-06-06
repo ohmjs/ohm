@@ -2,7 +2,10 @@
   "name": "wasm",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.js",
+  "bin": {
+    "ohm2wasm": "src/cli.js"
+  },
   "scripts": {
     "build-and-test": "make && ava test",
     "check-node-version": "node -e \"process.exit(parseInt(process.versions.node.split('.')[0]) < 24 ? 1 : 0)\"",

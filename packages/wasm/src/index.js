@@ -438,7 +438,7 @@ Assembler.MEMO_COL_SIZE_BYTES = 4 * 256;
 
 Assembler.STACK_FRAME_SIZE_BYTES = 8;
 
-class Compiler {
+export class Compiler {
   constructor(grammar) {
     this.importDecls = [
       {
