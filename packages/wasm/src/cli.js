@@ -6,7 +6,7 @@ import * as ohm from 'ohm-js';
 import fs from 'node:fs';
 import {basename} from 'node:path';
 
-import { Compiler } from './index.js';
+import {Compiler} from './index.js';
 
 // Compile an Ohm grammar file (.ohm) to WebAssembly (.wasm).
 function main() {
@@ -23,11 +23,13 @@ function main() {
   const bytes = new Compiler(g).compile();
   const outFilename = filename.replace('.ohm', '.wasm');
   fs.writeFileSync(outFilename, bytes);
+  // eslint-disable-next-line no-console
   console.log(`Wrote Wasm to ${outFilename}`);
 }
 
 // Print usage information
 function printUsage() {
+  // eslint-disable-next-line no-console
   console.log(`usage: ${basename(process.argv[1])} <ohm-grammar-file>`);
 }
 
