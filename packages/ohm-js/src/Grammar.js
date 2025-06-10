@@ -358,6 +358,83 @@ Grammar.ProtoBuiltInRules = new Grammar(
         primitive: true,
       },
 
+      unicodeLu: {
+        body: new pexprs.UnicodeChar('Lu'),
+        formals: [],
+        description: 'a Unicode character in Lu',
+        primitive: true,
+      },
+
+      unicodeLl: {
+        body: new pexprs.UnicodeChar('Ll'),
+        formals: [],
+        description: 'a Unicode character in Ll',
+        primitive: true,
+      },
+
+      unicodeLt: {
+        body: new pexprs.UnicodeChar('Lt'),
+        formals: [],
+        description: 'a Unicode character in Lt',
+        primitive: true,
+      },
+
+      unicodeLm: {
+        body: new pexprs.UnicodeChar('Lm'),
+        formals: [],
+        description: 'a Unicode character in Lm',
+        primitive: true,
+      },
+
+      unicodeLo: {
+        body: new pexprs.UnicodeChar('Lo'),
+        formals: [],
+        description: 'a Unicode character in Lo',
+        primitive: true,
+      },
+
+      unicodeNl: {
+        body: new pexprs.UnicodeChar('Nl'),
+        formals: [],
+        description: 'a Unicode character in Nl',
+        primitive: true,
+      },
+
+      unicodeNd: {
+        body: new pexprs.UnicodeChar('Nd'),
+        formals: [],
+        description: 'a Unicode character in Nd',
+        primitive: true,
+      },
+
+      unicodeMn: {
+        body: new pexprs.UnicodeChar('Mn'),
+        formals: [],
+        description: 'a Unicode character in Mn',
+        primitive: true,
+      },
+
+      unicodeMc: {
+        body: new pexprs.UnicodeChar('Mc'),
+        formals: [],
+        description: 'a Unicode character in Mc',
+        primitive: true,
+      },
+
+      unicodePc: {
+        body: new pexprs.UnicodeChar('Pc'),
+        formals: [],
+        description: 'a Unicode character in Pc',
+        primitive: true,
+      },
+
+      unicodeZs: {
+        body: new pexprs.UnicodeChar('Zs'),
+        formals: [],
+        description: 'a Unicode character in Zs',
+        primitive: true,
+      },
+
       // These rules are not truly primitive (they could be written in userland) but are defined
       // here for bootstrapping purposes.
       spaces: {
