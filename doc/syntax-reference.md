@@ -166,6 +166,28 @@ as well as multiline (`/* */`) comments like:
 
 `end`: Matches the end of the input stream. Equivalent to `~any`.
 
+`unicodeLu`: Matches any unicode character in the Lu category.
+
+`unicodeLl`: Matches any unicode character in the Ll category.
+
+`unicodeLt`: Matches any unicode character in the Lt category.
+
+`unicodeLm`: Matches any unicode character in the Lm category.
+
+`unicodeLo`: Matches any unicode character in the Lo category.
+
+`unicodeNl`: Matches any unicode character in the Nl category.
+
+`unicodeNd`: Matches any unicode character in the Nd category.
+
+`unicodeMn`: Matches any unicode character in the Mn category.
+
+`unicodeMc`: Matches any unicode character in the Mc category.
+
+`unicodePc`: Matches any unicode character in the Pc category.
+
+`unicodeZs`: Matches any unicode character in the Zs category.
+
 <code>caseInsensitive&lt;<i>terminal</i>&gt;</code>: Matches _terminal_, but ignoring any differences in casing (based on the simple, single-character Unicode case mappings). E.g., `caseInsensitive<"ohm">` will match `'Ohm'`, `'OHM'`, etc.
 
 <code>ListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Matches the expression _elem_ zero or more times, separated by something that matches the expression _sep_. E.g., `ListOf&lt;letter, ","$gt;` will match `''`, `'a'`, and `'a, b, c'`.
