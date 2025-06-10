@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "ohm-grammar-ecmascript": "workspace:^",
+    "ohm-js": "workspace:^",
+    "rollup": "^4.42.0"
+  }
+}
