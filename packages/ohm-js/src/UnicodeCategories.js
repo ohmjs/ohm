@@ -21,6 +21,8 @@ export const UnicodeCategories = {
 
   // Separator, Space
   Zs: /\p{Zs}/u,
+  Zl: /\p{Zl}/u,
+  Zp: /\p{Zp}/u,
 
   // These two are not real Unicode categories, but our useful for Ohm.
   // L is a combination of all the letter categories.

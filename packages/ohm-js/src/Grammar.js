@@ -435,6 +435,20 @@ Grammar.ProtoBuiltInRules = new Grammar(
         primitive: true,
       },
 
+      unicodeZl: {
+        body: new pexprs.UnicodeChar('Zl'),
+        formals: [],
+        description: 'a Unicode character in Zl',
+        primitive: true,
+      },
+
+      unicodeZp: {
+        body: new pexprs.UnicodeChar('Zp'),
+        formals: [],
+        description: 'a Unicode character in Zp',
+        primitive: true,
+      },
+
       // These rules are not truly primitive (they could be written in userland) but are defined
       // here for bootstrapping purposes.
       spaces: {
