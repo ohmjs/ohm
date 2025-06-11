@@ -188,6 +188,10 @@ as well as multiline (`/* */`) comments like:
 
 `unicodeZs`: Matches any unicode character in the Zs category.
 
+`unicodeZl`: Matches any unicode character in the Zl category.
+
+`unicodeZp`: Matches any unicode character in the Zp category.
+
 <code>caseInsensitive&lt;<i>terminal</i>&gt;</code>: Matches _terminal_, but ignoring any differences in casing (based on the simple, single-character Unicode case mappings). E.g., `caseInsensitive<"ohm">` will match `'Ohm'`, `'OHM'`, etc.
 
 <code>ListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Matches the expression _elem_ zero or more times, separated by something that matches the expression _sep_. E.g., `ListOf&lt;letter, ","$gt;` will match `''`, `'a'`, and `'a, b, c'`.
