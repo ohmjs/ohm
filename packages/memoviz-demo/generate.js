@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+
 import assert from 'node:assert/strict';
 import * as es from 'ohm-grammar-ecmascript';
 
@@ -5,7 +7,7 @@ const es5 = es.grammar;
 
 const m = es5.matcher();
 m.setInput(
-  `
+    `
 function foo(x) {
   var o = {
     name: "Thomas",
@@ -14,18 +16,18 @@ function foo(x) {
   var finalAnswer = o.number + x;
   return finalAnswer;
 }
-`.trim()
+`.trim(),
 );
 assert.equal(m.match().succeeded(), true);
 
 const rulesById = new Map();
 
-const ruleId = (k) => {
+const ruleId = k => {
   if (!rulesById.has(k)) {
     rulesById.set(k, rulesById.size);
   }
   return rulesById.get(k);
-}
+};
 
 const counts = new Map();
 
