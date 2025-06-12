@@ -1,0 +1,600 @@
+Helpers {
+  Node = TextNode*
+  TextNode = AnyExceptPlus<openControl>
+  openControl = end
+
+  empty = /* nothing */
+  anyExcept<lit> = (~ lit any)
+  anyExceptStar<lit> = (~ lit any)*
+  anyExceptPlus<lit> = (~ lit any)+
+  AnyExcept<lit> = (~ lit any)
+  AnyExceptPlus<lit> = (~ lit any)+
+  AnyExceptStar<lit> = (~ lit any)*
+  identifierCharacter = alnum | "_" | "-"
+
+  orderedListOf<a, b, sep> =
+    | nonemptyOrderedListOf<a, b, sep>
+    | emptyListOf<a, sep>
+  nonemptyOrderedListOf<a, b, sep> =
+    | nonemptyListOf<b, sep>
+    | nonemptyOrderedListOfBoth<a, b, sep>
+    | nonemptyListOf<a, sep>
+  nonemptyOrderedListOfBoth<a, b, sep> =
+    nonemptyListOf<a, sep> (sep nonemptyListOf<b, sep>)
+
+  singleQuote = "'" | "‘" | "’"
+  doubleQuote = "\"" | "“" | "”"
+  controls = "\u{007F}".."\u{009F}"
+  noncharacters = "\u{FDD0}".."\u{FDEF}"
+  newline = "\r"? "\n"
+}
+
+Liquid <: Helpers {
+  Node := (liquidNode | TextNode)*
+  openControl := "{{" | "{%"
+  endOfTagName = &("-%}" | "-}}" | "%}" | "}}")
+  endOfVarName = ~identifierCharacter
+  endOfIdentifier = endOfTagName | endOfVarName
+
+  liquidNode =
+  	| liquidDoc
+    | liquidBlockComment
+    | liquidRawTag
+    | liquidDrop
+    | liquidTagClose
+    | liquidTagOpen
+    | liquidTag
+    | liquidInlineComment
+
+  liquidTagStrict =
+    | liquidTagAssign
+    | liquidTagBreak
+    | liquidTagContinue
+    | liquidTagCycle
+    | liquidTagContentFor
+    | liquidTagDecrement
+    | liquidTagEcho
+    | liquidTagElse
+    | liquidTagElsif
+    | liquidTagInclude
+    | liquidTagIncrement
+    | liquidTagLayout
+    | liquidTagLiquid
+    | liquidTagRender
+    | liquidTagSection
+    | liquidTagSections
+    | liquidTagWhen
+
+  liquidTag =
+    | liquidTagStrict
+    | liquidTagBaseCase
+
+  liquidTagOpenStrict =
+    | liquidTagOpenCase
+    | liquidTagOpenCapture
+    | liquidTagOpenForm
+    | liquidTagOpenFor
+    | liquidTagOpenTablerow
+    | liquidTagOpenIf
+    | liquidTagOpenPaginate
+    | liquidTagOpenUnless
+
+  liquidTagOpen =
+    | liquidTagOpenStrict
+    | liquidTagOpenBaseCase
+
+  liquidTagClose = "{%" "-"? space* "end" blockName space* tagMarkup "-"? "%}"
+
+  // These two are the same but transformed differently
+  liquidTagRule<name, markup> =
+    "{%" "-"? space* (name endOfIdentifier) space* markup "-"? "%}"
+  liquidTagOpenRule<name, markup> =
+    "{%" "-"? space* (name endOfIdentifier) space* markup "-"? "%}"
+
+  liquidTagBaseCase = liquidTagRule<liquidTagName, tagMarkup>
+
+  liquidTagEcho = liquidTagRule<"echo", liquidTagEchoMarkup>
+  liquidTagEchoMarkup = liquidVariable<delimTag>
+
+  liquidTagAssign = liquidTagRule<"assign", liquidTagAssignMarkup>
+  liquidTagAssignMarkup = variableSegment space* "=" space* liquidVariable<delimTag>
+
+  liquidTagCycle = liquidTagRule<"cycle", liquidTagCycleMarkup>
+  liquidTagCycleMarkup = (liquidExpression<delimTag> ":")? space* nonemptyListOf<liquidExpression<delimTag>, argumentSeparator> space*
+
+  liquidTagIncrement = liquidTagRule<"increment", variableSegmentAsLookupMarkup>
+  liquidTagDecrement = liquidTagRule<"decrement", variableSegmentAsLookupMarkup>
+  liquidTagOpenCapture = liquidTagOpenRule<"capture", variableSegmentAsLookupMarkup>
+  variableSegmentAsLookupMarkup = variableSegmentAsLookup space*
+
+  liquidTagSection = liquidTagRule<"section", liquidTagSectionMarkup>
+  liquidTagSectionMarkup = liquidString<delimTag> space*
+
+  liquidTagSections = liquidTagRule<"sections", liquidTagSectionsMarkup>
+  liquidTagSectionsMarkup = liquidString<delimTag> space*
+
+  liquidTagLayout = liquidTagRule<"layout", liquidTagLayoutMarkup>
+  liquidTagLayoutMarkup = liquidExpression<delimTag> space*
+
+  // We'll black hole the statement and switch parser in the cst builder
+  // We do this because it's technically the same grammar (with minor redefinitions)
+  // and it would be a huge chore and maintenance hell to rewrite all the rules with
+  // hspace = " " | "\t"
+  //
+  // The alternative is that this grammar parses the {% liquid tagMarkup %} as its own string,
+  // and then we switch to the LiquidStatement grammar that
+  // redefines liquidTagOpenRule, liquidTagRule, and space.
+  liquidTagLiquid = liquidTagRule<"liquid", liquidTagLiquidMarkup>
+  liquidTagLiquidMarkup = tagMarkup
+
+  liquidTagContentFor = liquidTagRule<"content_for", liquidTagContentForMarkup>
+
+  liquidTagContentForMarkup =
+    contentForType (argumentSeparatorOptionalComma contentForTagArgument) (space* ",")? space*
+
+  contentForTagArgument = listOf<contentForNamedArgument<delimTag>, argumentSeparatorOptionalComma>
+  completionModeContentForTagArgument = listOf<contentForNamedArgument<delimTag>, argumentSeparatorOptionalComma> (argumentSeparator? (liquidVariableLookup<delimTag>))?
+  contentForNamedArgument<delim> = (variableSegment ("." variableSegment)*) space* ":" space* (liquidExpression<delim>)
+
+  contentForType = liquidString<delimTag>
+
+  liquidTagInclude = liquidTagRule<"include", liquidTagRenderMarkup>
+  liquidTagRender = liquidTagRule<"render", liquidTagRenderMarkup>
+  liquidTagRenderMarkup =
+    snippetExpression renderVariableExpression? renderAliasExpression? renderArguments
+
+  renderArguments = (argumentSeparatorOptionalComma tagArguments) (space* ",")? space*
+  completionModeRenderArguments = (argumentSeparatorOptionalComma tagArguments) (space* ",")? space* (argumentSeparator? liquidVariableLookup<delimTag> space*)?
+  snippetExpression = liquidString<delimTag> | variableSegmentAsLookup
+  renderVariableExpression = space+ ("for" | "with") space+ liquidExpression<delimTag>
+  renderAliasExpression = space+ "as" space+ variableSegment
+
+  liquidTagOpenBaseCase = liquidTagOpenRule<blockName, tagMarkup>
+
+  liquidTagOpenForm = liquidTagOpenRule<"form", liquidTagOpenFormMarkup>
+  liquidTagOpenFormMarkup = arguments<delimTag> (space* ",")? space*
+
+  liquidTagOpenFor = liquidTagOpenRule<"for", liquidTagOpenForMarkup>
+  liquidTagOpenForMarkup =
+    variableSegment space* "in" space* liquidExpression<delimTag>
+    (space* "reversed")? argumentSeparatorOptionalComma
+    tagArguments (space* ",")? space*
+
+  // It's the same, the difference is support for different named arguments<delim>
+  liquidTagOpenTablerow = liquidTagOpenRule<"tablerow", liquidTagOpenForMarkup>
+
+  liquidTagOpenCase = liquidTagOpenRule<"case", liquidTagOpenCaseMarkup>
+  liquidTagOpenCaseMarkup = liquidExpression<delimTag> space*
+
+  liquidTagWhen = liquidTagRule<"when", liquidTagWhenMarkup>
+  liquidTagWhenMarkup = nonemptyListOf<liquidExpression<delimTag>, whenMarkupSep> space*
+  whenMarkupSep = space* ("," | "or" ~identifier) space*
+
+  liquidTagOpenIf = liquidTagOpenRule<"if", liquidTagOpenConditionalMarkup>
+  liquidTagOpenUnless = liquidTagOpenRule<"unless", liquidTagOpenConditionalMarkup>
+  liquidTagElsif = liquidTagRule<"elsif", liquidTagOpenConditionalMarkup>
+
+  liquidTagBreak = liquidTagRule<"break", empty>
+  liquidTagContinue = liquidTagRule<"continue", empty>
+  liquidTagElse = liquidTagRule<"else", empty>
+
+  liquidTagOpenConditionalMarkup = nonemptyListOf<condition<delimTag>, conditionSeparator> space*
+  conditionSeparator = &logicalOperator
+  condition<delim> = logicalOperator? space* (comparison<delim> | liquidExpression<delim>) space*
+  logicalOperator = ("and" | "or") ~identifier
+  comparison<delim> = liquidExpression<delim> space* comparator space* liquidExpression<delim>
+  comparator =
+    ( "=="
+    | "!="
+    | ">="
+    | "<="
+    | ">"
+    | "<")
+    | ("contains" ~identifier)
+
+  liquidTagOpenPaginate = liquidTagOpenRule<"paginate", liquidTagOpenPaginateMarkup>
+  liquidTagOpenPaginateMarkup =
+    liquidExpression<delimTag> space+ "by" space+ liquidExpression<delimTag> argumentSeparatorOptionalComma tagArguments (space* ",")? space*
+
+  liquidDrop = "{{" "-"? space* liquidDropCases "-"? "}}"
+  liquidDropCases = liquidVariable<delimVO> | liquidDropBaseCase
+  liquidDropBaseCase = anyExceptStar<delimVO>
+  liquidInlineComment = "{%" "-"? space* "#" space? tagMarkup "-"? "%}"
+
+  liquidRawTag =
+    | liquidRawTagImpl<"raw">
+    | liquidRawTagImpl<"javascript">
+    | liquidRawTagImpl<"schema">
+    | liquidRawTagImpl<"stylesheet">
+    | liquidRawTagImpl<"style">
+  liquidRawTagImpl<name> =
+    "{%" "-"? space* (name endOfIdentifier) space* tagMarkup "-"? "%}"
+    anyExceptStar<liquidRawTagClose<name>>
+    "{%" "-"? space* "end" (name endOfIdentifier) space* "-"? "%}"
+  liquidRawTagClose<name> =
+    "{%" "-"? space* "end" (name endOfIdentifier) space* "-"? "%}"
+
+  liquidBlockComment =
+    commentBlockStart
+      (liquidBlockComment | anyExceptPlus<(commentBlockStart | commentBlockEnd)>)*
+    commentBlockEnd
+  commentBlockStart = "{%" "-"? space* ("comment"    endOfIdentifier) space* tagMarkup "-"? "%}"
+  commentBlockEnd   = "{%" "-"? space* ("endcomment" endOfIdentifier) space* tagMarkup "-"? "%}"
+
+  liquidDoc =
+    liquidDocStart
+      liquidDocBody
+    liquidDocEnd
+
+  liquidDocStart = "{%" "-"? space* ("doc" endOfIdentifier) space* tagMarkup "-"? "%}"
+  liquidDocEnd = "{%" "-"? space* ("enddoc" endOfIdentifier) space* tagMarkup "-"? "%}"
+  liquidDocBody = anyExceptStar<(liquidDocStart | liquidDocEnd)>
+
+  // In order for the grammar to "fallback" to the base case, this
+  // rule must pass if and only if we support what we parse. This
+  // implies that—since we don't support filters yet—we have a
+  // positive lookahead on "-}}" or "}}" in the rule. We do this
+  // because we'd otherwise positively match the following string
+  // instead of falling back to the other rule:
+  // {{ 'string' | some_filter }}
+  liquidVariable<delim> = liquidExpression<delim> liquidFilter<delim>* space* &delim
+
+  liquidExpression<delim> =
+    | liquidString<delim>
+    | liquidNumber
+    | liquidLiteral
+    | liquidRange<delim>
+    | liquidVariableLookup<delim>
+
+  liquidString<delim> = liquidSingleQuotedString<delim> | liquidDoubleQuotedString<delim>
+  liquidSingleQuotedString<delim> = "'" anyExceptStar<("'"| delim)> "'"
+  liquidDoubleQuotedString<delim> = "\"" anyExceptStar<("\""| delim)> "\""
+
+  liquidNumber = liquidFloat | liquidInteger
+  liquidInteger = "-"? digit+
+  liquidFloat = "-"? digit+ "." digit+
+
+  liquidLiteral =
+    ( "true"
+    | "false"
+    | "blank"
+    | "empty"
+    | "nil"
+    | "null"
+    ) endOfIdentifier
+
+  liquidRange<delim> =
+    "(" space* liquidExpression<delim> space* ".." space* liquidExpression<delim> space* ")"
+
+  liquidVariableLookup<delim> =
+    | variableSegment lookup<delim>*
+    | empty lookup<delim>+
+  lookup<delim> =
+    | indexLookup<delim>
+    | dotLookup
+  indexLookup<delim> = space* "[" space* liquidExpression<delim> space* "]"
+  dotLookup = space* "." space* identifier
+
+  liquidFilter<delim> = space* "|" space* identifier (space* ":" space* arguments<delim> (space* ",")?)?
+
+  arguments<delim> = nonemptyOrderedListOf<positionalArgument<delim>, namedArgument<delim>, argumentSeparator>
+  argumentSeparator = space* "," space*
+  argumentSeparatorOptionalComma = space* ","? space*
+  positionalArgument<delim> = liquidExpression<delim> ~(space* ":")
+  namedArgument<delim> = variableSegment space* ":" space* liquidExpression<delim>
+  tagArguments = listOf<namedArgument<delimTag>, argumentSeparatorOptionalComma>
+  filterArguments<delim> =
+    | complexArguments<delim>
+    | simpleArgument<delim>
+  complexArguments<delim> = arguments<delim> (space* "," space* simpleArgument<delim>)?
+  simpleArgument<delim> = liquidVariableLookup<delim>
+
+  variableSegment = (letter | "_") (~endOfTagName identifierCharacter)*
+  variableSegmentAsLookup = variableSegment
+  identifier = variableSegment "?"?
+
+  tagMarkup = anyExceptStar<delimTag>
+
+  liquidTagName =
+    letter (alnum | "_")*
+
+  blockName =
+    // Shopify blocks
+    ( "form"
+    | "paginate"
+    // Base blocks
+    | "capture"
+    | "case"
+    | "for"
+    | "ifchanged"
+    | "if"
+    | "unless"
+    | "tablerow"
+    ) endOfIdentifier
+
+  delimTag = "-%}" | "%}"
+  delimVO = "-}}" | "}}"
+}
+
+LiquidStatement <: Liquid {
+  Node := listOf<LiquidStatement, statementSep> (space | newline)*
+
+  // This is the big brains moment: we redefine space to exclude newlines.
+  //
+  // Which means that all our other Liquid rules can be reused
+  // without modification(!)
+  //
+  // We don't need to maintain rules like this:
+  // - liquidVariable<space>
+  // - liquidExpression<space>
+  // - variableLookup<space>
+  // - ... long list of stuff that takes space as param
+  // - liquidString<space>
+  //
+  // All we need is this little, VERY IMPORTANT, part right here that
+  // make it so we can parse the same way in Liquid tags.
+  //
+  // I'm putting in this huge comment so that it's more obvious.
+  space := " " | "\t"
+
+  LiquidStatement =
+    | liquidBlockComment
+    | liquidRawTag
+    | liquidTagClose
+    | liquidTagOpen
+    | liquidTag
+    | liquidInlineComment
+
+  liquidTagOpenRule<name, markup>
+    := (name ~identifierCharacter) space* markup &liquidStatementEnd
+
+  liquidTagRule<name, markup>
+    := (name ~identifierCharacter) space* markup &liquidStatementEnd
+
+  liquidTagClose
+    := "end" (blockName ~identifierCharacter) space* tagMarkup &liquidStatementEnd
+
+  liquidRawTagImpl<name>
+    := (name ~identifierCharacter) space* tagMarkup newline
+      anyExceptStar<liquidRawTagClose<name>>
+      "end" name space* &liquidStatementEnd
+
+  liquidRawTagClose<name>
+    := "end" name space* &liquidStatementEnd
+
+  liquidBlockComment :=
+    commentBlockStart statementSep
+      (listOf<liquidCommentBlockStatement, statementSep> statementSep)?
+    commentBlockEnd
+
+  liquidCommentBlockStatement =
+    | liquidBlockComment
+    | nonTerminalCommentLine
+
+  commentBlockStart
+    := ("comment" ~identifierCharacter) space* tagMarkup
+
+  commentBlockEnd
+    := ("endcomment" ~identifierCharacter) space* tagMarkup
+
+  nonTerminalCommentLine
+    = ~commentBlockEnd anyExceptPlus<newline>
+
+  liquidInlineComment
+    := "#" space? tagMarkup &liquidStatementEnd
+
+  tagMarkup := anyExceptStar<liquidStatementEnd>
+
+  // trailing whitespace, newline, + anything else before the next tag
+  statementSep = space* newline (space | newline)*
+
+  liquidStatementEnd = newline | end
+  delimTag := liquidStatementEnd
+}
+
+LiquidDoc <: Helpers {
+  Node := ImplicitDescription (LiquidDocNode | TextNode)*
+  LiquidDocNode =
+    | paramNode
+    | exampleNode
+    | descriptionNode
+    | fallbackNode
+  
+  endOfDescription = strictSpace* openControl
+  descriptionContent = anyExceptStar<endOfDescription>
+  ImplicitDescription = descriptionContent
+    
+  // By default, space matches new lines as well. We override it here to make writing rules easier.
+  strictSpace = " " | "\t"
+  // We use this as an escape hatch to stop matching TextNode and try again when one of these characters is encountered
+  openControl:= "@" | end
+
+  descriptionNode = "@description" space* descriptionContent
+
+  paramNode = "@param" strictSpace* paramType? strictSpace* (optionalParamName | paramName) (strictSpace* "-")? strictSpace* paramDescription
+  paramType = "{" strictSpace* paramTypeContent strictSpace* "}"
+  paramTypeContent = anyExceptStar<("}"| strictSpace)>
+
+  paramName = textValue
+  optionalParamName = "[" strictSpace* textValue strictSpace* "]"
+  textValue = identifierCharacter+
+
+  paramDescription = (~"]" anyExceptStar<endOfParam>)
+  endOfParam = strictSpace* (newline | end)
+
+  exampleNode = "@example" space* exampleContent
+  exampleContent = anyExceptStar<endOfExample>
+  endOfExample =  strictSpace* ("@" | end)
+
+  fallbackNode = "@" anyExceptStar<endOfParam>
+}
+
+LiquidHTML <: Liquid {
+  Node := yamlFrontmatter? (HtmlNode | liquidNode | TextNode)*
+  openControl += "<"
+
+  yamlFrontmatter =
+    "---" newline anyExceptStar<"---"> "---" newline
+
+  HtmlNode =
+    | HtmlDoctype
+    | HtmlComment
+    | HtmlRawTag
+    | HtmlVoidElement
+    | HtmlSelfClosingElement
+    | HtmlTagClose
+    | HtmlTagOpen
+
+  // https://html.spec.whatwg.org/multipage/syntax.html#the-doctype
+  HtmlDoctype =
+    #("<!" caseInsensitive<"doctype"> space+ caseInsensitive<"html">) legacyDoctypeString? ">"
+  legacyDoctypeString
+    = anyExceptPlus<">">
+
+  HtmlComment = "<!--" #(anyExceptStar<"-->"> "-->")
+
+  // These are black holes, we'll ignore what's in them
+  HtmlRawTag =
+    | HtmlRawTagImpl<"script">
+    | HtmlRawTagImpl<"style">
+    | HtmlRawTagImpl<"svg">
+
+  HtmlRawTagImpl<name> =
+    TagStart<name>
+      (HtmlRawTagImpl<name> | AnyExceptPlus<(TagStart<name> | TagEnd<name>)>)*
+    TagEnd<name>
+  TagStart<name> = "<" name AttrList ">"
+  TagEnd<name> = "</" name ">"
+
+  HtmlVoidElement =
+    #("<" voidElementName &(space | "/" | ">")) AttrList "/"? ">"
+
+  HtmlSelfClosingElement =
+    #("<" tagName) AttrList "/>"
+
+  HtmlTagOpen =
+    #("<" tagName) AttrList ">"
+
+  HtmlTagClose =
+    #("</" tagName) ">"
+
+  tagName = leadingTagNamePart trailingTagNamePart*
+
+  // The difference here is that the first text part must start
+  // with a letter, but trailing text parts don't have that
+  // requirement
+  leadingTagNamePart =
+    | liquidDrop
+    | leadingTagNameTextNode
+
+  trailingTagNamePart =
+    | liquidDrop
+    | trailingTagNameTextNode
+
+  leadingTagNameTextNode = letter (alnum | "-" | ":")*
+  trailingTagNameTextNode = (alnum | "-" | ":")+
+
+  AttrList = Attr*
+
+  Attr =
+    AttrSingleQuoted | AttrDoubleQuoted | AttrUnquoted | liquidNode | attrEmpty
+
+  attrEmpty = attrName
+
+  AttrUnquoted = attrName "=" attrUnquotedValue
+  AttrSingleQuoted = attrName "=" singleQuote #(attrSingleQuotedValue singleQuote)
+  AttrDoubleQuoted = attrName "=" doubleQuote #(attrDoubleQuotedValue doubleQuote)
+
+  attrName = (liquidDrop | attrNameTextNode)+
+
+  // https://html.spec.whatwg.org/#attributes-2
+  attrNameTextNode = anyExceptPlus<(space | quotes | "=" | ">" | "/>" | "{{" | "{%" | controls | noncharacters)>
+  attrUnquotedValue = (liquidDrop | attrUnquotedTextNode)*
+  attrSingleQuotedValue = (liquidNode | attrSingleQuotedTextNode)*
+  attrDoubleQuotedValue = (liquidNode | attrDoubleQuotedTextNode)*
+
+  attrUnquotedTextNode = anyExceptPlus<(space | quotes | "=" | "<" | ">" | "`" | "{{" | "{%")>
+  attrSingleQuotedTextNode = anyExceptPlus<(singleQuote | "{{" | "{%")>
+  attrDoubleQuotedTextNode = anyExceptPlus<(doubleQuote | "{{" | "{%")>
+
+  quotes = singleQuote | doubleQuote
+
+  // https://www.w3.org/TR/2011/WD-html-markup-20110113/syntax.html#void-element
+  voidElementName =
+    ( caseInsensitive<"area">
+    | caseInsensitive<"base">
+    | caseInsensitive<"br">
+    | caseInsensitive<"col">
+    | caseInsensitive<"command">
+    | caseInsensitive<"embed">
+    | caseInsensitive<"hr">
+    | caseInsensitive<"img">
+    | caseInsensitive<"input">
+    | caseInsensitive<"keygen">
+    | caseInsensitive<"link">
+    | caseInsensitive<"meta">
+    | caseInsensitive<"param">
+    | caseInsensitive<"source">
+    | caseInsensitive<"track">
+    | caseInsensitive<"wbr">
+    ) ~identifierCharacter
+}
+
+StrictLiquid <: Liquid {
+  liquidTag := liquidTagStrict
+  liquidTagOpen := liquidTagOpenStrict
+}
+
+StrictLiquidStatement <: LiquidStatement {
+  liquidTag := liquidTagStrict
+  liquidTagOpen := liquidTagOpenStrict
+}
+
+StrictLiquidHTML <: LiquidHTML {
+  liquidTag := liquidTagStrict
+  liquidTagOpen := liquidTagOpenStrict
+}
+
+WithPlaceholderLiquid <: Liquid {
+  liquidFilter<delim> := space* "|" space* identifier (space* ":" space* filterArguments<delim> (space* ",")?)?
+  liquidTagContentForMarkup :=
+    contentForType (argumentSeparatorOptionalComma completionModeContentForTagArgument) (space* ",")? space*
+  liquidTagRenderMarkup :=
+    snippetExpression renderVariableExpression? renderAliasExpression? completionModeRenderArguments
+  liquidTagName := (letter | "█") (alnum | "_")*
+  variableSegment := (letter | "_" | "█") (identifierCharacter | "█")*
+  liquidDoc :=
+    liquidDocStart
+      liquidDocBody
+    liquidDocEnd?
+}
+
+WithPlaceholderLiquidStatement <: LiquidStatement {
+  liquidFilter<delim> := space* "|" space* identifier (space* ":" space* filterArguments<delim> (space* ",")?)?
+  liquidTagContentForMarkup :=
+    contentForType (argumentSeparatorOptionalComma completionModeContentForTagArgument) (space* ",")? space*
+  liquidTagRenderMarkup :=
+    snippetExpression renderVariableExpression? renderAliasExpression? completionModeRenderArguments
+  liquidTagName := (letter | "█") (alnum | "_")*
+  variableSegment := (letter | "_" | "█") (identifierCharacter | "█")*
+  liquidDoc :=
+    liquidDocStart
+      liquidDocBody
+    liquidDocEnd?
+}
+
+WithPlaceholderLiquidHTML <: LiquidHTML {
+  liquidFilter<delim> := space* "|" space* identifier (space* ":" space* filterArguments<delim> (space* ",")?)?
+  liquidTagContentForMarkup :=
+    contentForType (argumentSeparatorOptionalComma completionModeContentForTagArgument) (space* ",")? space*
+  liquidTagRenderMarkup :=
+    snippetExpression renderVariableExpression? renderAliasExpression? completionModeRenderArguments
+  liquidTagName := (letter | "█") (alnum | "_")*
+  variableSegment := (letter | "_" | "█") (identifierCharacter | "█")*
+  leadingTagNameTextNode := (letter | "█") (alnum | "-" | ":" | "█")*
+  trailingTagNameTextNode := (alnum | "-" | ":" | "█")+
+  liquidDoc :=
+    liquidDocStart
+      liquidDocBody
+    liquidDocEnd?
+}
