@@ -637,12 +637,23 @@ test('more memoization', async t => {
 });
 
 test('parameterized rules (easy)', async t => {
-  const g = ohm.grammar(`
+  let g = ohm.grammar(`
     G {
-      top = twice<x>
+      start = twice<x>
       x = "x"
       twice<exp> = exp exp
     }`);
-  const matcher = await WasmMatcher.fromGrammar(g);
+  let matcher = await WasmMatcher.fromGrammar(g);
   t.is(matchWithInput(matcher, 'xx'), 1);
+
+  g = ohm.grammar(`
+    G {
+      start = ~narf<x> narf<y>
+      narf<thing> = thing
+      x = "x"
+      y = "y"
+
+    }`);
+  matcher = await WasmMatcher.fromGrammar(g);
+  t.is(matchWithInput(matcher, 'y'), 1);
 });
