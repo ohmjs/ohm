@@ -635,3 +635,14 @@ test('more memoization', async t => {
   t.is(getMemo(0, 'b'), child1._base);
   t.is(getMemo(1, 'b'), child2._base);
 });
+
+test('parameterized rules (easy)', async t => {
+  const g = ohm.grammar(`
+    G {
+      top = twice<x>
+      x = "x"
+      twice<exp> = exp exp
+    }`);
+  const matcher = await WasmMatcher.fromGrammar(g);
+  t.is(matchWithInput(matcher, 'xx'), 1);
+});

@@ -129,7 +129,11 @@ class Assembler {
   blocktype(paramTypes, resultTypes) {
     const idx = this._typeMap.getIdx(paramTypes, resultTypes);
     assert(idx !== -1, `Unknown blocktype: '${functypeToString(paramTypes, resultTypes)}'`);
-    return w.i32(idx); // TODO: Fix this.
+
+    // From the spec: "The type index in a block type is encoded as a
+    // positive signed integer, so that its signed LEB128 bit pattern cannot
+    // collide with the encoding of value types or the special code 0x40."
+    return w.i32(idx);
   }
 
   doEmit(thunk) {
@@ -159,6 +163,9 @@ class Assembler {
 
   addFunction(name, paramTypes, resultTypes, bodyFn) {
     this._locals = new Map();
+    paramTypes.forEach((t, i) => {
+      this.addLocal(`__arg${i}`, t);
+    });
     bodyFn(this);
     this._functionDecls.push({
       name,
@@ -367,7 +374,6 @@ class Assembler {
   }
 
   saveNumBindings() {
-    this.emit('xyz');
     this.globalGet('sp');
     if (FAST_SAVE_BINDINGS) {
       this.globalGet('bindings');
@@ -478,12 +484,12 @@ export class Compiler {
     }
   }
 
-  ruleBody(ruleName, grammar = this.grammar) {
+  lookUpRule(ruleName, grammar = this.grammar) {
     if (ruleName in grammar.rules) {
-      return grammar.rules[ruleName].body;
+      return grammar.rules[ruleName];
     }
     if (grammar.superGrammar) {
-      return this.ruleBody(ruleName, grammar.superGrammar);
+      return this.lookUpRule(ruleName, grammar.superGrammar);
     }
     throw new Error(
         `Rule '${ruleName}' not found in this grammar or any of its supergrammars`,
@@ -526,7 +532,7 @@ export class Compiler {
     const asm = (this.asm = new Assembler(typeMap));
     asm.addBlocktype([w.valtype.i32], []);
     asm.addBlocktype([w.valtype.i32], [w.valtype.i32]);
-    asm.addBlocktype([], [w.valtype.i32]);
+    asm.addBlocktype([], [w.valtype.i32]); // Rule eval
     // (global $runtime/ohmRuntime/pos (mut i32) (i32.const 0))
     // (global $runtime/ohmRuntime/sp (mut i32) (i32.const 0))
     // (global $~lib/shared/runtime/Runtime.Stub i32 (i32.const 0))
@@ -563,16 +569,17 @@ export class Compiler {
 
     const functionDecls = this.functionDecls();
     this.rewriteDebugLabels(functionDecls, debugBaseFuncIdx);
-    return this.buildModule(typeMap, [...functionDecls]);
+    return this.buildModule(typeMap, functionDecls);
   }
 
-  compileRule(name, ruleBody) {
+  compileRule(name, ruleInfo) {
     const {asm} = this;
-    asm.addFunction(`$${name}`, [], [w.valtype.i32], () => {
+    const paramTypes = ruleInfo.formals.map(_ => w.valtype.i32);
+    asm.addFunction(`$${name}`, paramTypes, [w.valtype.i32], () => {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
 
-      this.emitPExpr(ruleBody);
+      this.emitPExpr(ruleInfo.body);
       asm.localGet('ret');
     });
     return this.asm._functionDecls.at(-1);
@@ -711,11 +718,11 @@ export class Compiler {
     const ruleDecls = [];
     for (let i = 0; i < this.ruleIdByName.size; i++) {
       const name = [...this.ruleIdByName.keys()][i];
-      ruleDecls.push(this.compileRule(name, this.ruleBody(name)));
+      ruleDecls.push(this.compileRule(name, this.lookUpRule(name)));
     }
     const {asm} = this;
     asm.addFunction('start', [], [], () => {
-      asm.emit(instr.call, prebuilt.startFuncidx);
+      asm.emit(instr.call, w.funcidx(prebuilt.startFuncidx));
     });
     ruleDecls.push(asm._functionDecls.at(-1));
     return ruleDecls;
@@ -748,6 +755,7 @@ export class Compiler {
         case pexprs.Star: this.emitStar(exp); break;
         case pexprs.Opt: this.emitOpt(exp); break;
         case pexprs.Range: this.emitRange(exp); break;
+        case pexprs.Param: this.emitParam(exp); break;
         case pexprs.Plus: this.emitPlus(exp); break;
         case pexprs.Terminal: this.emitTerminal(exp); break;
         case pexprs.UnicodeChar: this.emitFail(); break; // TODO: Handle this properly
@@ -790,8 +798,19 @@ export class Compiler {
     const {asm} = this;
     this.recordRule(exp.ruleName);
 
-    asm.i32Const(checkNotNull(this.ruleIdByName.get(exp.ruleName)));
-    asm.callPrebuiltFunc('evalApply');
+    const argCount = exp.args.length;
+    assert(argCount <= 3, 'Too many arguments to rule application');
+
+    const pushRuleId = name => {
+      asm.i32Const(checkNotNull(this.ruleIdByName.get(name)));
+    };
+
+    pushRuleId(exp.ruleName);
+    exp.args.forEach((arg, i) => {
+      assert(arg.constructor === pexprs.Apply, `not supported: ${arg.constructor.name}`);
+      pushRuleId(arg.ruleName);
+    });
+    asm.callPrebuiltFunc(`evalApply${argCount}`);
     asm.localSet('ret');
   }
 
@@ -839,6 +858,13 @@ export class Compiler {
       asm.restoreBindingsLength();
     });
     asm.newIterNodeWithSavedPosAndBindings();
+    asm.localSet('ret');
+  }
+
+  emitParam({index}) {
+    const {asm} = this;
+    asm.localGet(`__arg${index}`);
+    asm.callPrebuiltFunc('evalApply0');
     asm.localSet('ret');
   }
 
@@ -1021,18 +1047,21 @@ export class WasmMatcher {
 
   static async fromGrammar(grammar) {
     const compiler = new Compiler(grammar);
+    const bytes = compiler.compile();
+
+    const m = new WasmMatcher();
+
     // let depth = 0;
     const debugImports = compiler.getDebugImports((label, ret) => {
       // const result = ret === 0 ? 'FAIL' : 'SUCCESS';
       // const indented = s => new Array(depth).join('  ') + s;
-      // const pos = instance.exports.pos.value;
+      // const pos = m._instance.exports.pos.value;
       // if (label.startsWith('BEGIN')) depth += 1;
       // const tail = label.startsWith('END') ? ` -> ${result}` : '';
       // console.log(`pos: ${pos} ${indented(label)}${tail}`);
       // if (label.startsWith('END')) depth -= 1;
     });
-    const bytes = compiler.compile();
-    return new WasmMatcher()._instantiate(bytes, debugImports);
+    return m._instantiate(bytes, debugImports);
   }
 
   getInput() {

@@ -77,16 +77,14 @@ export function match(startRuleId: i32): Result {
 
   // Get the input and do the match.
   let inputLen = fillInputBuffer(0, i32(WASM_PAGE_SIZE));
-  const succeeded = evalApply(startRuleId) !== 0;
+  const succeeded = evalApply0(startRuleId) !== 0;
   if (inputLen === pos) {
     return succeeded;
   }
   return 0;
 }
 
-
-// Note: this must always be the last function.
-export function evalApply(ruleId: i32): Result {
+export function evalApply0(ruleId: i32): Result {
   if (hasMemoizedResult(ruleId)) {
     return useMemoizedResult(ruleId);
   }
@@ -99,6 +97,54 @@ export function evalApply(ruleId: i32): Result {
     result = newNonterminalNode(origPos, pos, ruleId, numChildren);
   }
   memoizeResult(origPos, ruleId, result);
+  return succeeded;
+}
+
+export function evalApply1(ruleId: i32, arg0: i32): Result {
+  // if (hasMemoizedResult(ruleId)) {
+  //   return useMemoizedResult(ruleId);
+  // }
+  const origPos = pos;
+  const origNumBindings = bindings.length;
+  let result: Result = FAIL;
+  const succeeded = call_indirect<Result>(ruleId, arg0);
+  if (succeeded) {
+    const numChildren = bindings.length - origNumBindings;
+    result = newNonterminalNode(origPos, pos, ruleId, numChildren);
+  }
+  // memoizeResult(origPos, ruleId, result);
+  return succeeded;
+}
+
+export function evalApply2(ruleId: i32, arg0: i32, arg1: i32): Result {
+  // if (hasMemoizedResult(ruleId)) {
+  //   return useMemoizedResult(ruleId);
+  // }
+  const origPos = pos;
+  const origNumBindings = bindings.length;
+  let result: Result = FAIL;
+  const succeeded = call_indirect<Result>(ruleId, arg0, arg1);
+  if (succeeded) {
+    const numChildren = bindings.length - origNumBindings;
+    result = newNonterminalNode(origPos, pos, ruleId, numChildren);
+  }
+  // memoizeResult(origPos, ruleId, result);
+  return succeeded;
+}
+
+export function evalApply3(ruleId: i32, arg0: i32, arg1: i32, arg2: i32): Result {
+  // if (hasMemoizedResult(ruleId)) {
+  //   return useMemoizedResult(ruleId);
+  // }
+  const origPos = pos;
+  const origNumBindings = bindings.length;
+  let result: Result = FAIL;
+  const succeeded = call_indirect<Result>(ruleId, arg0, arg1, arg2);
+  if (succeeded) {
+    const numChildren = bindings.length - origNumBindings;
+    result = newNonterminalNode(origPos, pos, ruleId, numChildren);
+  }
+  // memoizeResult(origPos, ruleId, result);
   return succeeded;
 }
 
