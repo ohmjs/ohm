@@ -18,7 +18,7 @@
 - The input is assumed to be no bigger than 64k.
 - For the memo table, we assume that there are no more than 256 rules in the grammar.
 - Parameterized rules only support up to 3 parameters, and no memoization.
-  * Parameters must be terminals.
+  - Parameters must be terminals.
 
 ## Unanswered questions
 
