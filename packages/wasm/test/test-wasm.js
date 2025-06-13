@@ -657,3 +657,24 @@ test('parameterized rules (easy)', async t => {
   matcher = await WasmMatcher.fromGrammar(g);
   t.is(matchWithInput(matcher, 'y'), 1);
 });
+
+test('parameterized rules (hard)', async t => {
+  let g = ohm.grammar(`
+    G {
+      start = indirect<x>
+      indirect<e> = twice<e>
+      twice<exp> = exp exp
+      x = "x"
+    }`);
+  let matcher = await WasmMatcher.fromGrammar(g);
+  t.is(matchWithInput(matcher, 'xx'), 1);
+
+  g = ohm.grammar(`
+    G {
+      start = indirect<"x">
+      indirect<e> = twice<e>
+      twice<exp> = exp exp
+    }`);
+  matcher = await WasmMatcher.fromGrammar(g);
+  t.is(matchWithInput(matcher, 'xx'), 1);
+});

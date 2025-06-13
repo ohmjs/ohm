@@ -1,15 +1,15 @@
 Helpers {
-  Node = TextNode*
-  TextNode = AnyExceptPlus<openControl>
+  Node = (spaces TextNode)* spaces
+  TextNode = spaces AnyExceptPlus<openControl>
   openControl = end
 
   empty = /* nothing */
   anyExcept<lit> = (~ lit any)
   anyExceptStar<lit> = (~ lit any)*
   anyExceptPlus<lit> = (~ lit any)+
-  AnyExcept<lit> = (~ lit any)
-  AnyExceptPlus<lit> = (~ lit any)+
-  AnyExceptStar<lit> = (~ lit any)*
+  AnyExcept<lit> =  (spaces ~ lit any)
+  AnyExceptPlus<lit> = (spaces ~ lit any)+
+  AnyExceptStar<lit> = (spaces ~ lit any)*
   identifierCharacter = alnum | "_" | "-"
 
   orderedListOf<a, b, sep> =
@@ -30,7 +30,7 @@ Helpers {
 }
 
 Liquid <: Helpers {
-  Node := (liquidNode | TextNode)*
+  Node := (spaces (liquidNode | TextNode))*
   openControl := "{{" | "{%"
   endOfTagName = &("-%}" | "-}}" | "%}" | "}}")
   endOfVarName = ~identifierCharacter
@@ -216,7 +216,7 @@ Liquid <: Helpers {
 
   liquidBlockComment =
     commentBlockStart
-      (liquidBlockComment | anyExceptPlus<(commentBlockStart | commentBlockEnd)>)*
+      (liquidBlockComment | anyExceptPlus<commentBlockStart> | anyExceptPlus<commentBlockEnd>)*
     commentBlockEnd
   commentBlockStart = "{%" "-"? space* ("comment"    endOfIdentifier) space* tagMarkup "-"? "%}"
   commentBlockEnd   = "{%" "-"? space* ("endcomment" endOfIdentifier) space* tagMarkup "-"? "%}"
@@ -228,7 +228,7 @@ Liquid <: Helpers {
 
   liquidDocStart = "{%" "-"? space* ("doc" endOfIdentifier) space* tagMarkup "-"? "%}"
   liquidDocEnd = "{%" "-"? space* ("enddoc" endOfIdentifier) space* tagMarkup "-"? "%}"
-  liquidDocBody = anyExceptStar<(liquidDocStart | liquidDocEnd)>
+  liquidDocBody = anyExceptStar<liquidDocStart> | anyExceptStar<liquidDocEnd>
 
   // In order for the grammar to "fallback" to the base case, this
   // rule must pass if and only if we support what we parse. This
@@ -247,8 +247,8 @@ Liquid <: Helpers {
     | liquidVariableLookup<delim>
 
   liquidString<delim> = liquidSingleQuotedString<delim> | liquidDoubleQuotedString<delim>
-  liquidSingleQuotedString<delim> = "'" anyExceptStar<("'"| delim)> "'"
-  liquidDoubleQuotedString<delim> = "\"" anyExceptStar<("\""| delim)> "\""
+  liquidSingleQuotedString<delim> = "'" (anyExceptStar<"'"> | anyExceptStar<delim>) "'"
+  liquidDoubleQuotedString<delim> = "\"" (anyExceptStar<"\""> | anyExceptStar<delim>) "\""
 
   liquidNumber = liquidFloat | liquidInteger
   liquidInteger = "-"? digit+
@@ -317,7 +317,7 @@ Liquid <: Helpers {
 }
 
 LiquidStatement <: Liquid {
-  Node := listOf<LiquidStatement, statementSep> (space | newline)*
+  Node := spaces listOf<LiquidStatement, statementSep> (space | newline)* spaces
 
   // This is the big brains moment: we redefine space to exclude newlines.
   //
@@ -338,12 +338,12 @@ LiquidStatement <: Liquid {
   space := " " | "\t"
 
   LiquidStatement =
-    | liquidBlockComment
-    | liquidRawTag
-    | liquidTagClose
-    | liquidTagOpen
-    | liquidTag
-    | liquidInlineComment
+    | spaces liquidBlockComment
+    | spaces liquidRawTag
+    | spaces liquidTagClose
+    | spaces liquidTagOpen
+    | spaces liquidTag
+    | spaces liquidInlineComment
 
   liquidTagOpenRule<name, markup>
     := (name ~identifierCharacter) space* markup &liquidStatementEnd
@@ -393,7 +393,7 @@ LiquidStatement <: Liquid {
 }
 
 LiquidDoc <: Helpers {
-  Node := ImplicitDescription (LiquidDocNode | TextNode)*
+  Node := spaces ImplicitDescription (spaces (LiquidDocNode | TextNode))* spaces
   LiquidDocNode =
     | paramNode
     | exampleNode
@@ -430,7 +430,7 @@ LiquidDoc <: Helpers {
 }
 
 LiquidHTML <: Liquid {
-  Node := yamlFrontmatter? (HtmlNode | liquidNode | TextNode)*
+  Node := yamlFrontmatter? (spaces (HtmlNode | liquidNode | TextNode))*
   openControl += "<"
 
   yamlFrontmatter =
@@ -447,11 +447,11 @@ LiquidHTML <: Liquid {
 
   // https://html.spec.whatwg.org/multipage/syntax.html#the-doctype
   HtmlDoctype =
-    #("<!" caseInsensitive<"doctype"> space+ caseInsensitive<"html">) legacyDoctypeString? ">"
+    "<!" ("doctype"|"DOCTYPE") space+ ("html"|"HTML") spaces legacyDoctypeString? spaces ">"
   legacyDoctypeString
     = anyExceptPlus<">">
 
-  HtmlComment = "<!--" #(anyExceptStar<"-->"> "-->")
+  HtmlComment = "<!--" anyExceptStar<"-->"> "-->"
 
   // These are black holes, we'll ignore what's in them
   HtmlRawTag =
@@ -460,23 +460,24 @@ LiquidHTML <: Liquid {
     | HtmlRawTagImpl<"svg">
 
   HtmlRawTagImpl<name> =
-    TagStart<name>
-      (HtmlRawTagImpl<name> | AnyExceptPlus<(TagStart<name> | TagEnd<name>)>)*
-    TagEnd<name>
-  TagStart<name> = "<" name AttrList ">"
-  TagEnd<name> = "</" name ">"
+    spaces TagStart<name>
+      (spaces (HtmlRawTagImpl<name> | AnyExceptPlus<TagStartorEnd<name>>))*
+    spaces TagEnd<name>
+  TagStart<name> = spaces "<" spaces name spaces AttrList spaces ">"
+  TagEnd<name> = spaces "</" spaces name spaces ">"
+  TagStartorEnd<name> = TagStart<name> | TagEnd<name>
 
   HtmlVoidElement =
-    #("<" voidElementName &(space | "/" | ">")) AttrList "/"? ">"
+    spaces "<" voidElementName &(space | "/" | ">") spaces AttrList spaces "/"? spaces ">"
 
   HtmlSelfClosingElement =
-    #("<" tagName) AttrList "/>"
+    spaces "<" tagName spaces AttrList spaces "/>"
 
   HtmlTagOpen =
-    #("<" tagName) AttrList ">"
+    spaces "<" tagName spaces AttrList spaces ">"
 
   HtmlTagClose =
-    #("</" tagName) ">"
+    spaces "</" tagName spaces ">"
 
   tagName = leadingTagNamePart trailingTagNamePart*
 
@@ -494,49 +495,53 @@ LiquidHTML <: Liquid {
   leadingTagNameTextNode = letter (alnum | "-" | ":")*
   trailingTagNameTextNode = (alnum | "-" | ":")+
 
-  AttrList = Attr*
+  AttrList = (spaces Attr)*
 
   Attr =
-    AttrSingleQuoted | AttrDoubleQuoted | AttrUnquoted | liquidNode | attrEmpty
+    spaces (AttrSingleQuoted | AttrDoubleQuoted | AttrUnquoted | liquidNode | attrEmpty)
 
   attrEmpty = attrName
 
-  AttrUnquoted = attrName "=" attrUnquotedValue
-  AttrSingleQuoted = attrName "=" singleQuote #(attrSingleQuotedValue singleQuote)
-  AttrDoubleQuoted = attrName "=" doubleQuote #(attrDoubleQuotedValue doubleQuote)
+  AttrUnquoted = spaces attrName spaces "=" spaces attrUnquotedValue
+  AttrSingleQuoted = spaces attrName spaces "=" spaces singleQuote attrSingleQuotedValue singleQuote
+  AttrDoubleQuoted = spaces attrName spaces "=" spaces doubleQuote attrDoubleQuotedValue doubleQuote
 
   attrName = (liquidDrop | attrNameTextNode)+
 
   // https://html.spec.whatwg.org/#attributes-2
-  attrNameTextNode = anyExceptPlus<(space | quotes | "=" | ">" | "/>" | "{{" | "{%" | controls | noncharacters)>
+  fake1 = space | quotes | "=" | ">" | "/>" | "{{" | "{%" | controls | noncharacters
+  attrNameTextNode = anyExceptPlus<fake1>
   attrUnquotedValue = (liquidDrop | attrUnquotedTextNode)*
   attrSingleQuotedValue = (liquidNode | attrSingleQuotedTextNode)*
   attrDoubleQuotedValue = (liquidNode | attrDoubleQuotedTextNode)*
 
-  attrUnquotedTextNode = anyExceptPlus<(space | quotes | "=" | "<" | ">" | "`" | "{{" | "{%")>
-  attrSingleQuotedTextNode = anyExceptPlus<(singleQuote | "{{" | "{%")>
-  attrDoubleQuotedTextNode = anyExceptPlus<(doubleQuote | "{{" | "{%")>
+  fake2 = space | quotes | "=" | "<" | ">" | "`" | "{{" | "{%"
+  attrUnquotedTextNode = anyExceptPlus<fake2>
+  fake3 = singleQuote | "{{" | "{%"
+  fake4 = doubleQuote | "{{" | "{%"
+  attrSingleQuotedTextNode = anyExceptPlus<fake3>
+  attrDoubleQuotedTextNode = anyExceptPlus<fake4>
 
   quotes = singleQuote | doubleQuote
 
   // https://www.w3.org/TR/2011/WD-html-markup-20110113/syntax.html#void-element
   voidElementName =
-    ( caseInsensitive<"area">
-    | caseInsensitive<"base">
-    | caseInsensitive<"br">
-    | caseInsensitive<"col">
-    | caseInsensitive<"command">
-    | caseInsensitive<"embed">
-    | caseInsensitive<"hr">
-    | caseInsensitive<"img">
-    | caseInsensitive<"input">
-    | caseInsensitive<"keygen">
-    | caseInsensitive<"link">
-    | caseInsensitive<"meta">
-    | caseInsensitive<"param">
-    | caseInsensitive<"source">
-    | caseInsensitive<"track">
-    | caseInsensitive<"wbr">
+    ( "area"
+    | "base"
+    | "br"
+    | "col"
+    | "command"
+    | "embed"
+    | "hr"
+    | "img"
+    | "input"
+    | "keygen"
+    | "link"
+    | "meta"
+    | "param"
+    | "source"
+    | "track"
+    | "wbr"
     ) ~identifierCharacter
 }
 

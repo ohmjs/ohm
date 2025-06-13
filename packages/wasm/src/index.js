@@ -485,6 +485,15 @@ export class Compiler {
   }
 
   lookUpRule(ruleName, grammar = this.grammar) {
+    // TODO: Find a cleaner way to handle terminals as parameters.
+    // We should support any kind of single-arity parsing expression as
+    // a parameter, not just terminals.
+    if (ruleName.startsWith('$term$')) {
+      return {
+        body: new pexprs.Terminal(ruleName.substring(6)),
+        formals: [],
+      };
+    }
     if (ruleName in grammar.rules) {
       return grammar.rules[ruleName];
     }
@@ -501,6 +510,8 @@ export class Compiler {
     // supergrammar, lazily add it to the map.
     if (!this.ruleIdByName.has(name)) {
       if (name in this.grammar.superGrammar.rules) {
+        this.ruleIdByName.set(name, this.ruleIdByName.size);
+      } else if (name.startsWith('$term$')) {
         this.ruleIdByName.set(name, this.ruleIdByName.size);
       } else {
         throw new Error(`Unknown rule: ${name}`);
@@ -802,13 +813,28 @@ export class Compiler {
     assert(argCount <= 3, 'Too many arguments to rule application');
 
     const pushRuleId = name => {
-      asm.i32Const(checkNotNull(this.ruleIdByName.get(name)));
+      this.recordRule(name);
+      asm.i32Const(checkNotNull(this.ruleIdByName.get(name), `Unknown rule: ${name}`));
     };
 
     pushRuleId(exp.ruleName);
     exp.args.forEach((arg, i) => {
-      assert(arg.constructor === pexprs.Apply, `not supported: ${arg.constructor.name}`);
-      pushRuleId(arg.ruleName);
+      switch (arg.constructor) {
+        case pexprs.Apply:
+          pushRuleId(arg.ruleName);
+          break;
+        case pexprs.Param:
+          asm.localGet(`__arg${arg.index}`);
+          break;
+        case pexprs.Terminal: {
+          const ruleName = `$term$${arg.obj}`;
+          this.recordRule(ruleName);
+          pushRuleId(ruleName);
+          break;
+        }
+        default:
+          throw new Error(`not supported: ${arg.constructor.name}`);
+      }
     });
     asm.callPrebuiltFunc(`evalApply${argCount}`);
     asm.localSet('ret');
