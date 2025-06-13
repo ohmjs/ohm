@@ -20,12 +20,14 @@
     "@thi.ng/leb128": "^3.1.48",
     "assemblyscript": "^0.27.36",
     "ava": "^6.2.0",
+    "liquid-html-parser": "link:@shopify/liquid-html-parser",
     "wabt": "1.0.37-nightly.20250428"
   },
   "peerDependencies": {
     "ohm-js": "^17.1.0"
   },
   "dependencies": {
+    "@shopify/liquid-html-parser": "^2.8.2",
     "@wasmgroundup/emit": "^1.0.2"
   }
 }

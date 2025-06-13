@@ -635,3 +635,46 @@ test('more memoization', async t => {
   t.is(getMemo(0, 'b'), child1._base);
   t.is(getMemo(1, 'b'), child2._base);
 });
+
+test('parameterized rules (easy)', async t => {
+  let g = ohm.grammar(`
+    G {
+      start = twice<x>
+      x = "x"
+      twice<exp> = exp exp
+    }`);
+  let matcher = await WasmMatcher.fromGrammar(g);
+  t.is(matchWithInput(matcher, 'xx'), 1);
+
+  g = ohm.grammar(`
+    G {
+      start = ~narf<x> narf<y>
+      narf<thing> = thing
+      x = "x"
+      y = "y"
+
+    }`);
+  matcher = await WasmMatcher.fromGrammar(g);
+  t.is(matchWithInput(matcher, 'y'), 1);
+});
+
+test('parameterized rules (hard)', async t => {
+  let g = ohm.grammar(`
+    G {
+      start = indirect<x>
+      indirect<e> = twice<e>
+      twice<exp> = exp exp
+      x = "x"
+    }`);
+  let matcher = await WasmMatcher.fromGrammar(g);
+  t.is(matchWithInput(matcher, 'xx'), 1);
+
+  g = ohm.grammar(`
+    G {
+      start = indirect<"x">
+      indirect<e> = twice<e>
+      twice<exp> = exp exp
+    }`);
+  matcher = await WasmMatcher.fromGrammar(g);
+  t.is(matchWithInput(matcher, 'xx'), 1);
+});
