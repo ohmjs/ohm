@@ -35,3 +35,10 @@ test('left recursion', () => {
   });
   assert.ok(g.match('pi+pi+x'));
 });
+
+test('left recursion (bad)', () => {
+  const g = new Matcher({
+    start: new RuleApplication('start')
+  });
+  assert.equal(g.match('x'), null);
+});

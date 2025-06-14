@@ -2,7 +2,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test",
+    "test": "node --test \"**/*.test.ts\"",
     "build": "tsc --noEmit"
   },
   "devDependencies": {
