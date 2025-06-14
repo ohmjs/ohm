@@ -1,7 +1,7 @@
 .PHONY: all
 all: out/ohmRuntime.wasm_sections.ts
 
-out/ohmRuntime.wasm_sections.ts: build/ohmRuntime.wasm
+out/ohmRuntime.wasm_sections.ts: scripts/bundlewasm.ts build/ohmRuntime.wasm
 	node scripts/bundlewasm.ts build/ohmRuntime.wasm
 
 build/ohmRuntime.wasm: runtime/ohmRuntime.ts

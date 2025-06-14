@@ -836,7 +836,12 @@ export class Compiler {
           throw new Error(`not supported: ${arg.constructor.name}`);
       }
     });
-    asm.callPrebuiltFunc(`evalApply${argCount}`);
+    // TODO: Handle this at grammar parse time, not here.
+    if (exp.ruleName.includes('_')) {
+      asm.callPrebuiltFunc(`evalApplyNoMemo${argCount}`);
+    } else {
+      asm.callPrebuiltFunc(`evalApply${argCount}`);
+    }
     asm.localSet('ret');
   }
 

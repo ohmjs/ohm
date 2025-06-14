@@ -10,10 +10,15 @@ declare function printI32(val: i32): void;
 @inline const STACK_START_OFFSET: usize = WASM_PAGE_SIZE;
 @inline const MAX_INPUT_LEN_BYTES: usize = 64 * 1024;
 
+// Note: the rule evaluation functions use a different representation.
+// They return non-zero for success and zero for failure.
 @inline const EMPTY: Result = 0;
-@inline const FAIL: Result = -1;
+@inline const FAIL: Result = 0xfffffff0;
+@inline const UNUSED_LR_BOMB: Result = FAIL | 0x1;
+@inline const USED_LR_BOMB: Result = FAIL | 0x3;
 
 @inline const CST_NODE_OVERHEAD: usize = 12;
+@inline const NODE_TYPE_ITERATION: i32 = -2;
 
 // Shared globals
 let pos: i32 = 0;
@@ -52,13 +57,21 @@ let bindings: Array<i32> = new Array<i32>();
   store<i32>(ptr, t, 8);
 }
 
-function memoizeResult(memoPos: usize, ruleId: i32, result: Result): void {
+@inline function memoizeResult(memoPos: usize, ruleId: i32, result: Result): void {
   memoTableSet(memoPos, ruleId, result);
 }
 
-function useMemoizedResult(ruleId: i32): Result {
-  const result = memoTableGet(pos, ruleId);
-  if (result === FAIL) return 0;
+@inline function isFailure(result: Result): bool {
+  return result < 0;
+}
+
+function useMemoizedResult(ruleId: i32, result: Result): Result {
+  if (result === UNUSED_LR_BOMB) {
+    memoTableSet(pos, ruleId, USED_LR_BOMB);
+    return 0;
+  } else if (isFailure(result)) {
+    return 0;
+  }
   pos += cstGetMatchLength(result);
   bindings.push(result);
   return result;
@@ -84,19 +97,64 @@ export function match(startRuleId: i32): Result {
   return 0;
 }
 
-export function evalApply0(ruleId: i32): Result {
-  if (hasMemoizedResult(ruleId)) {
-    return useMemoizedResult(ruleId);
-  }
+@inline function evalRuleBody(ruleId: i32): Result {
+  return call_indirect<Result>(ruleId);
+}
+
+export function evalApplyNoMemo0(ruleId: i32): Result {
   const origPos = pos;
   const origNumBindings = bindings.length;
-  let result: Result = FAIL;
-  const succeeded = call_indirect<Result>(ruleId);
-  if (succeeded) {
-    const numChildren = bindings.length - origNumBindings;
-    result = newNonterminalNode(origPos, pos, ruleId, numChildren);
+  if (evalRuleBody(ruleId)) {
+    return newNonterminalNode(origPos, pos, ruleId, origNumBindings);
   }
+  return 0;
+}
+
+export function evalApply0(ruleId: i32): Result {
+  let result = memoTableGet(pos, ruleId);
+  if (result !== 0) {
+    return useMemoizedResult(ruleId, result);
+  }
+  const origPos = pos;
+  let origNumBindings = bindings.length;
+  memoizeResult(origPos, ruleId, UNUSED_LR_BOMB);
+  let succeeded: i32 = evalRuleBody(ruleId);
+
+  // Straight failure — record a clean failure in the memo table.
+  if (!succeeded) {
+    memoizeResult(origPos, ruleId, FAIL);
+    return 0;
+  }
+
+  if (memoTableGet(origPos, ruleId) === USED_LR_BOMB) {
+    return handleLeftRecursion(origPos, ruleId, origNumBindings);
+  }
+
+  // No left recursion — memoize and return.
+  result = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
   memoizeResult(origPos, ruleId, result);
+  return result;
+}
+
+export function handleLeftRecursion(origPos: usize, ruleId: i32, origNumBindings: i32): Result {
+  let maxPos: i32;
+  let result: Result;
+  let succeeded: i32;
+  do {
+    // The current result is the best one -- record it.
+    maxPos = pos;
+    result = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
+    memoizeResult(origPos, ruleId, result);
+
+    // Reset and try to improve on the current best.
+    pos = origPos;
+    bindings.length = origNumBindings;
+    succeeded = evalRuleBody(ruleId);
+  } while (succeeded && pos > maxPos);
+
+  pos = maxPos;
+  bindings.length = origNumBindings + 1;
+  bindings[origNumBindings] = result;
   return succeeded;
 }
 
@@ -110,7 +168,7 @@ export function evalApply1(ruleId: i32, arg0: i32): Result {
   const succeeded = call_indirect<Result>(ruleId, arg0);
   if (succeeded) {
     const numChildren = bindings.length - origNumBindings;
-    result = newNonterminalNode(origPos, pos, ruleId, numChildren);
+    result = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
   }
   // memoizeResult(origPos, ruleId, result);
   return succeeded;
@@ -126,7 +184,7 @@ export function evalApply2(ruleId: i32, arg0: i32, arg1: i32): Result {
   const succeeded = call_indirect<Result>(ruleId, arg0, arg1);
   if (succeeded) {
     const numChildren = bindings.length - origNumBindings;
-    result = newNonterminalNode(origPos, pos, ruleId, numChildren);
+    result = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
   }
   // memoizeResult(origPos, ruleId, result);
   return succeeded;
@@ -142,7 +200,7 @@ export function evalApply3(ruleId: i32, arg0: i32, arg1: i32, arg2: i32): Result
   const succeeded = call_indirect<Result>(ruleId, arg0, arg1, arg2);
   if (succeeded) {
     const numChildren = bindings.length - origNumBindings;
-    result = newNonterminalNode(origPos, pos, ruleId, numChildren);
+    result = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
   }
   // memoizeResult(origPos, ruleId, result);
   return succeeded;
@@ -157,31 +215,28 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): usize {
   return ptr;
 }
 
-export function newNonterminalNode(startIdx: i32, endIdx: i32, ruleId: i32, numChildren: i32): usize {
+// Create an internal (non-leaf) node (IterationNode or NonterminalNode).
+@inline function newNonLeafNodeWithType(startIdx: i32, endIdx: i32, type: i32, origNumBindings: i32): usize {
+  const bindingsLen = bindings.length;
+  const numChildren = bindingsLen - origNumBindings;
   const ptr = heap.alloc(CST_NODE_OVERHEAD + numChildren * 4);
   cstSetCount(ptr, numChildren);
   cstSetMatchLength(ptr, endIdx - startIdx);
-  cstSetType(ptr, ruleId);
+  cstSetType(ptr, type);
   for (let i = 0; i < numChildren; i++) {
-    store<i32>(ptr + CST_NODE_OVERHEAD + i * 4, bindings[bindings.length - numChildren + i]);
+    store<i32>(ptr + CST_NODE_OVERHEAD + i * 4, bindings[bindingsLen - numChildren + i]);
   }
-  bindings.length -= numChildren;
+  bindings.length = origNumBindings;
   bindings.push(ptr);
   return ptr;
 }
 
-export function newIterationNode(startIdx: i32, endIdx: i32, oldNumBindings: i32): usize {
-  const numChildren = bindings.length - oldNumBindings;
-  const ptr = heap.alloc(CST_NODE_OVERHEAD + numChildren * 4);
-  cstSetCount(ptr, numChildren);
-  cstSetMatchLength(ptr, endIdx - startIdx);
-  cstSetType(ptr, -2);
-  for (let i = 0; i < numChildren; i++) {
-    store<i32>(ptr + CST_NODE_OVERHEAD + i * 4, bindings[bindings.length - numChildren + i]);
-  }
-  bindings.length -= numChildren;
-  bindings.push(ptr);
-  return ptr;
+export function newNonterminalNode(startIdx: i32, endIdx: i32, ruleId: i32, origNumBindings: i32): usize {
+  return newNonLeafNodeWithType(startIdx, endIdx, ruleId, origNumBindings);
+}
+
+export function newIterationNode(startIdx: i32, endIdx: i32, origNumBindings: i32): usize {
+  return newNonLeafNodeWithType(startIdx, endIdx, NODE_TYPE_ITERATION, origNumBindings);
 }
 
 export function getBindingsLength(): i32 {

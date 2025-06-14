@@ -678,3 +678,63 @@ test('parameterized rules (hard)', async t => {
   matcher = await WasmMatcher.fromGrammar(g);
   t.is(matchWithInput(matcher, 'xx'), 1);
 });
+
+test('basic left recursion', async t => {
+  let g = ohm.grammar(`
+    G {
+      number = number "1" -- rec
+             | "1"
+    }`);
+  let matcher = await WasmMatcher.fromGrammar(g);
+  t.is(matchWithInput(matcher, '1'), 1);
+});
+
+test('tricky left recursion', async t => {
+  let g = ohm.grammar(`
+    G {
+      number = number "1" -- rec
+             | number "2" -- rec2
+             | "1"
+    }`);
+  const matcher = await WasmMatcher.fromGrammar(g);
+  t.is(matchWithInput(matcher, '1'), 1);
+  t.is(matchWithInput(matcher, '12'), 1);
+  t.is(matchWithInput(matcher, '11212'), 1);
+});
+
+test('tricky left recursion #2', async t => {
+  let g = ohm.grammar(`
+    G {
+      number = number digit -- rec
+             | number "2" -- rec2
+             | digit
+      digit := digit "1" -- rec
+             | "1"
+    }`);
+  const matcher = await WasmMatcher.fromGrammar(g);
+  t.is(matchWithInput(matcher, '1'), 1);
+  t.is(matchWithInput(matcher, '11'), 1);
+  t.is(matchWithInput(matcher, '1112111'), 1);
+});
+
+test('arithmetic', async t => {
+  let g = ohm.grammar(`
+    Arithmetic {
+      addExp = addExp "+" mulExp  -- plus
+             | addExp "-" mulExp  -- minus
+             | mulExp
+
+      mulExp = mulExp "*" priExp  -- times
+             | mulExp "/" priExp  -- divide
+             | priExp
+
+      priExp = "(" addExp ")"  -- paren
+             | number
+
+      number = number digit  -- rec
+             | digit
+    }`);
+  const matcher = await WasmMatcher.fromGrammar(g);
+  t.is(matchWithInput(matcher, '1+276*(3+4)'), 1);
+  t.is(matchWithInput(matcher, '1'), 1);
+});

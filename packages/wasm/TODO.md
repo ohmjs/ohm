@@ -9,7 +9,8 @@
 - [ ] Parameterized rules with >3 params
 - [ ] Parameters that aren't terminals
 - [ ] Memoization for parameterized rules
-- [ ] Support direct left recursion.
+- [x] Support direct left recursion.
+- [ ] Handle left recursion detection at grammar parse time.
 - [ ] Separate API for _creating_ the Wasm module from the WasmMatcher interface.
 - [ ] Implement a proper CLI.
 
