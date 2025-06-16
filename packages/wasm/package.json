@@ -1,6 +1,6 @@
 {
   "name": "wasm",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "",
   "main": "src/index.js",
   "bin": {
@@ -13,8 +13,8 @@
   },
   "type": "module",
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Patrick Dubroy <pdubroy@gmail.com>",
+  "license": "MIT",
   "packageManager": "pnpm@10.10.0",
   "devDependencies": {
     "@thi.ng/leb128": "^3.1.48",
