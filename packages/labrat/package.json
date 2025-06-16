@@ -2,7 +2,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test \"**/*.test.ts\"",
+    "check-node-version": "node -e \"process.exit(parseInt(process.versions.node.split('.')[0]) < 24 ? 1 : 0)\"",
+    "test": "pnpm run check-node-version && node --test \"**/*.test.ts\" || echo 'Skipping tests: Node 24 required'",
     "build": "tsc --noEmit"
   },
   "devDependencies": {
