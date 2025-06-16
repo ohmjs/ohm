@@ -1,7 +1,10 @@
 .PHONY: all
-all: out/ohmRuntime.wasm_sections.ts
+all: dist/index.js
 
-out/ohmRuntime.wasm_sections.ts: scripts/bundlewasm.ts build/ohmRuntime.wasm
+dist/index.js: build/ohmRuntime.wasm_sections.ts
+	npx esbuild src/index.js --bundle --platform=node --outfile=dist/index.js --format=esm
+
+build/ohmRuntime.wasm_sections.ts: scripts/bundlewasm.ts build/ohmRuntime.wasm
 	node scripts/bundlewasm.ts build/ohmRuntime.wasm
 
 build/ohmRuntime.wasm: runtime/ohmRuntime.ts

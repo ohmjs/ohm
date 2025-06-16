@@ -6,6 +6,7 @@
   "bin": {
     "ohm2wasm": "src/cli.js"
   },
+  "files": ["dist"],
   "scripts": {
     "build-and-test": "make && ava test",
     "check-node-version": "node -e \"process.exit(parseInt(process.versions.node.split('.')[0]) < 24 ? 1 : 0)\"",
@@ -21,6 +22,7 @@
     "@thi.ng/leb128": "^3.1.48",
     "assemblyscript": "^0.27.36",
     "ava": "^6.2.0",
+    "esbuild": "^0.25.5",
     "liquid-html-parser": "link:@shopify/liquid-html-parser",
     "wabt": "1.0.37-nightly.20250428"
   },
