@@ -1,5 +1,5 @@
 {
-  "name": "wasm",
+  "name": "@ohm-js/wasm",
   "version": "0.1.0",
   "description": "",
   "main": "src/index.js",
