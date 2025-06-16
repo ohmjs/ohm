@@ -6,7 +6,7 @@ import {fileURLToPath} from 'node:url';
 import * as ohm from 'ohm-js';
 import es5js from '../../../examples/ecmascript/index.js';
 
-import {WasmMatcher} from '../src/index.js';
+import {wasmMatcherForGrammar} from './_helpers.js';
 import es5fac from './data/_es5.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -26,7 +26,7 @@ function ES5Matcher(rules) {
     };
   }
   // Since this is called with `new`, we can't use `await` here.
-  return WasmMatcher.fromGrammar(g);
+  return wasmMatcherForGrammar(g);
 }
 
 async function es5Matcher() {

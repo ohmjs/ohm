@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import * as ohm from 'ohm-js';
 import {performance} from 'perf_hooks';
 
-import {WasmMatcher} from '../src/index.js';
+import {wasmMatcherForGrammar} from './_helpers.js';
 
 const matchWithInput = (m, str) => (m.setInput(str), m.match());
 
@@ -20,7 +20,7 @@ test.skip('basic matching', async t => {
   t.is(ns.LiquidHTML.match(input).succeeded(), true); // Trigger fillInputBuffer
   t.log(`Ohm.js: ${(performance.now() - start).toFixed(2)}ms`);
 
-  const m = await WasmMatcher.fromGrammar(ns.LiquidHTML);
+  const m = await wasmMatcherForGrammar(ns.LiquidHTML);
   start = performance.now();
   t.is(matchWithInput(m, input), 1);
   t.log(`Wasm: ${(performance.now() - start).toFixed(2)}ms`);

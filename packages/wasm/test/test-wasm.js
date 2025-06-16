@@ -2,7 +2,8 @@ import test from 'ava';
 import * as ohm from 'ohm-js';
 import {performance} from 'perf_hooks';
 
-import {ConstantsForTesting as Constants, WasmMatcher} from '../src/index.js';
+import {ConstantsForTesting as Constants} from '../src/index.js';
+import {wasmMatcherForGrammar} from './_helpers.js';
 
 const matchWithInput = (m, str) => (m.setInput(str), m.match());
 
@@ -11,6 +12,11 @@ const SIZEOF_UINT32 = 4;
 function checkNotNull(x, msg = 'unexpected null value') {
   if (x == null) throw new Error(msg);
   return x;
+}
+
+function memoTableViewForTesting(m) {
+  const {buffer} = m._instance.exports.memory;
+  return new DataView(buffer, Constants.MEMO_START_OFFSET);
 }
 
 function unparse(m, root) {
@@ -38,7 +44,7 @@ function unparse(m, root) {
 
 test('input in memory', async t => {
   const g = ohm.grammar('G { start = "x" }');
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   matcher.setInput('ohm');
   matcher.match(); // Trigger fillInputBuffer
 
@@ -49,7 +55,7 @@ test('input in memory', async t => {
 });
 
 test('cst returns', async t => {
-  let matcher = await WasmMatcher.fromGrammar(ohm.grammar('G { start = "a" | "b" }'));
+  let matcher = await wasmMatcherForGrammar(ohm.grammar('G { start = "a" | "b" }'));
 
   // start
   t.is(matchWithInput(matcher, 'a'), 1);
@@ -65,7 +71,7 @@ test('cst returns', async t => {
   t.is(matchLength, 1);
   t.is(_type, -1);
 
-  matcher = await WasmMatcher.fromGrammar(ohm.grammar('G { start = "a" b\nb = "b" }'));
+  matcher = await wasmMatcherForGrammar(ohm.grammar('G { start = "a" b\nb = "b" }'));
 
   // start
   t.is(matchWithInput(matcher, 'ab'), 1);
@@ -95,7 +101,7 @@ test('cst returns', async t => {
 });
 
 test('cst with lookahead', async t => {
-  const matcher = await WasmMatcher.fromGrammar(ohm.grammar('G {x = ~space any}'));
+  const matcher = await wasmMatcherForGrammar(ohm.grammar('G {x = ~space any}'));
   const input = 'a';
   t.is(matchWithInput(matcher, input), 1);
 
@@ -125,7 +131,7 @@ test('cst with lookahead', async t => {
 });
 
 test('cst for range', async t => {
-  const matcher = await WasmMatcher.fromGrammar(ohm.grammar('G {x = "a".."z"}'));
+  const matcher = await wasmMatcherForGrammar(ohm.grammar('G {x = "a".."z"}'));
   t.is(matchWithInput(matcher, 'b'), 1);
 
   // x
@@ -143,7 +149,7 @@ test('cst for range', async t => {
 });
 
 test('cst for opt', async t => {
-  let matcher = await WasmMatcher.fromGrammar(ohm.grammar('G {x = "a"?}'));
+  let matcher = await wasmMatcherForGrammar(ohm.grammar('G {x = "a"?}'));
   t.is(matchWithInput(matcher, 'a'), 1);
 
   // x
@@ -160,7 +166,7 @@ test('cst for opt', async t => {
   t.is(iter.children[0].isTerminal(), true);
   t.is(iter.children[0].matchLength, 1);
 
-  matcher = await WasmMatcher.fromGrammar(ohm.grammar('G {x = "a"?}'));
+  matcher = await wasmMatcherForGrammar(ohm.grammar('G {x = "a"?}'));
   t.is(matchWithInput(matcher, ''), 1);
 
   // x
@@ -179,7 +185,7 @@ test('cst for opt', async t => {
 });
 
 test('cst for plus', async t => {
-  const matcher = await WasmMatcher.fromGrammar(ohm.grammar('G {x = "a"+}'));
+  const matcher = await wasmMatcherForGrammar(ohm.grammar('G {x = "a"+}'));
   t.is(matchWithInput(matcher, 'a'), 1);
 
   // x
@@ -201,7 +207,7 @@ test('cst for plus', async t => {
 });
 
 test('cst with (small) repetition', async t => {
-  const matcher = await WasmMatcher.fromGrammar(ohm.grammar('G {x = "a"*}'));
+  const matcher = await wasmMatcherForGrammar(ohm.grammar('G {x = "a"*}'));
   t.is(matchWithInput(matcher, 'aaa'), 1);
 
   // - apply(start)
@@ -235,13 +241,13 @@ test('cst with (small) repetition', async t => {
 });
 
 test('repetition and lookahead', async t => {
-  const matcher = await WasmMatcher.fromGrammar(ohm.grammar('G {x = (~space any)*}'));
+  const matcher = await wasmMatcherForGrammar(ohm.grammar('G {x = (~space any)*}'));
   t.is(matchWithInput(matcher, 'abc'), 1);
 });
 
 // eslint-disable-next-line ava/no-skip-test
 test('cst with repetition and lookahead', async t => {
-  let matcher = await WasmMatcher.fromGrammar(ohm.grammar('G {x = (~space any)*}'));
+  let matcher = await wasmMatcherForGrammar(ohm.grammar('G {x = (~space any)*}'));
   let input = 'abc';
   t.is(matchWithInput(matcher, input), 1);
 
@@ -280,7 +286,7 @@ test('cst with repetition and lookahead', async t => {
   t.is(children[0].isTerminal(), true);
   t.is(children[0].matchLength, 1);
 
-  matcher = await WasmMatcher.fromGrammar(ohm.grammar('G {x = (~space any)+ spaces any+}'));
+  matcher = await wasmMatcherForGrammar(ohm.grammar('G {x = (~space any)+ spaces any+}'));
   input = '/ab xy';
 });
 
@@ -290,7 +296,7 @@ test('wasm: one-char terminals', async t => {
       start = "1"
     }
   `);
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, '1'), 1);
 });
 test('wasm: multi-char terminals', async t => {
@@ -299,7 +305,7 @@ test('wasm: multi-char terminals', async t => {
       start = "123"
     }
   `);
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, '123'), 1);
 });
 
@@ -309,7 +315,7 @@ test('wasm: handle end', async t => {
       start = "1"
     }
   `);
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, '123'), 0);
 });
 
@@ -319,7 +325,7 @@ test('wasm: choice', async t => {
       start = "1" | "2"
     }
   `);
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, '2'), 1);
   t.is(matchWithInput(matcher, '1'), 1);
   t.is(matchWithInput(matcher, '3'), 0);
@@ -331,7 +337,7 @@ test('wasm: more choice', async t => {
       start = "12" | "13" | "14"
     }
   `);
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, '14'), 1);
   t.is(matchWithInput(matcher, '13'), 1);
   t.is(matchWithInput(matcher, '15'), 0);
@@ -344,7 +350,7 @@ test('wasm: sequence', async t => {
             | "130" ""
     }
   `);
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, '12'), 1);
   t.is(matchWithInput(matcher, '130'), 1);
   t.is(matchWithInput(matcher, '13'), 0);
@@ -357,7 +363,7 @@ test('wasm: choice + sequence', async t => {
             | "14" ""
     }
   `);
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, '12'), 1);
   t.is(matchWithInput(matcher, '13'), 1);
   t.is(matchWithInput(matcher, '14'), 1);
@@ -374,7 +380,7 @@ test('wasm: rule application', async t => {
       three = "3"
     }
   `);
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, '12'), 1);
   t.is(matchWithInput(matcher, '1II'), 1);
   t.is(matchWithInput(matcher, '3'), 1);
@@ -387,7 +393,7 @@ test('wasm: star', async t => {
       start = "1"*
     }
   `);
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, '111'), 1);
   t.is(matchWithInput(matcher, '1'), 1);
   t.is(matchWithInput(matcher, ''), 1);
@@ -398,7 +404,7 @@ test('wasm: star', async t => {
       start = "123"* "1"
     }
   `);
-  const matcher2 = await WasmMatcher.fromGrammar(g2);
+  const matcher2 = await wasmMatcherForGrammar(g2);
   t.is(matchWithInput(matcher2, '1'), 1);
   t.is(matchWithInput(matcher2, '1231'), 1);
   t.is(matchWithInput(matcher2, ''), 0);
@@ -411,7 +417,7 @@ test('wasm: plus', async t => {
       start = "1"+
     }
   `);
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, '111'), 1);
   t.is(matchWithInput(matcher, '1'), 1);
   t.is(matchWithInput(matcher, ''), 0);
@@ -424,7 +430,7 @@ test('wasm: lookahead', async t => {
       start = &"1" "1"
     }
   `);
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, '1'), 1);
   t.is(matchWithInput(matcher, '2'), 0);
   t.is(matchWithInput(matcher, ''), 0);
@@ -436,7 +442,7 @@ test('wasm: negative lookahead', async t => {
       start = ~"1" "2"
     }
   `);
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, '2'), 1);
   t.is(matchWithInput(matcher, '12'), 0);
   t.is(matchWithInput(matcher, ''), 0);
@@ -448,7 +454,7 @@ test('wasm: opt', async t => {
       start = "1"? "2"
     }
   `);
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, '12'), 1);
   t.is(matchWithInput(matcher, '2'), 1);
   t.is(matchWithInput(matcher, ''), 0);
@@ -460,7 +466,7 @@ test('wasm: range', async t => {
       start = "a".."z"
     }
   `);
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, 'a'), 1);
   t.is(matchWithInput(matcher, 'm'), 1);
   t.is(matchWithInput(matcher, 'z'), 1);
@@ -470,14 +476,14 @@ test('wasm: range', async t => {
 
 test('wasm: any', async t => {
   const g = ohm.grammar('G { start = any }');
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, 'a'), 1);
   t.is(matchWithInput(matcher, '1'), 1);
   t.is(matchWithInput(matcher, ' '), 1);
   t.is(matchWithInput(matcher, ''), 0);
 
   const g2 = ohm.grammar('G { start = any* }');
-  const matcher2 = await WasmMatcher.fromGrammar(g2);
+  const matcher2 = await wasmMatcherForGrammar(g2);
   t.is(matchWithInput(matcher2, 'a'), 1);
   t.is(matchWithInput(matcher2, ''), 1);
 });
@@ -488,7 +494,7 @@ test('wasm: end', async t => {
       start = "a" end
     }
   `);
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, 'a'), 1);
   t.is(matchWithInput(matcher, 'ab'), 0);
   t.is(matchWithInput(matcher, ''), 0);
@@ -561,7 +567,7 @@ test('real-world grammar', async t => {
   g.match(longInput);
   t.log(`Ohm match time: ${(performance.now() - start).toFixed(2)}ms`);
 
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, '/quickjs eval source: "1 + 1"'), 1);
   start = performance.now();
   t.is(matchWithInput(matcher, longInput), 1);
@@ -570,10 +576,10 @@ test('real-world grammar', async t => {
 
 test('basic memoization', async t => {
   const g = ohm.grammar('G { start = "a" b\nb = "b" }');
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, 'ab'), 1);
 
-  const view = matcher.memoTableViewForTesting();
+  const view = memoTableViewForTesting(matcher);
 
   const getMemo = (pos, ruleName) => {
     const colOffset = pos * Constants.MEMO_COL_SIZE_BYTES;
@@ -613,10 +619,10 @@ test('basic memoization', async t => {
 
 test('more memoization', async t => {
   const g = ohm.grammar('G { start = b "a" | b b\nb = "b" }');
-  const matcher = await WasmMatcher.fromGrammar(g);
+  const matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, 'bb'), 1);
 
-  const view = matcher.memoTableViewForTesting();
+  const view = memoTableViewForTesting(matcher);
 
   const getMemo = (pos, ruleName) => {
     const colOffset = pos * Constants.MEMO_COL_SIZE_BYTES;
@@ -658,7 +664,7 @@ test('parameterized rules (easy)', async t => {
       x = "x"
       twice<exp> = exp exp
     }`);
-  let matcher = await WasmMatcher.fromGrammar(g);
+  let matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, 'xx'), 1);
 
   g = ohm.grammar(`
@@ -669,7 +675,7 @@ test('parameterized rules (easy)', async t => {
       y = "y"
 
     }`);
-  matcher = await WasmMatcher.fromGrammar(g);
+  matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, 'y'), 1);
 });
 
@@ -681,7 +687,7 @@ test('parameterized rules (hard)', async t => {
       twice<exp> = exp exp
       x = "x"
     }`);
-  let matcher = await WasmMatcher.fromGrammar(g);
+  let matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, 'xx'), 1);
 
   g = ohm.grammar(`
@@ -690,28 +696,28 @@ test('parameterized rules (hard)', async t => {
       indirect<e> = twice<e>
       twice<exp> = exp exp
     }`);
-  matcher = await WasmMatcher.fromGrammar(g);
+  matcher = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(matcher, 'xx'), 1);
 });
 
 test('basic left recursion', async t => {
-  let g = ohm.grammar(`
+  const g = ohm.grammar(`
     G {
       number = number "1" -- rec
              | "1"
     }`);
-  const m = await WasmMatcher.fromGrammar(g);
+  const m = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(m, '1'), 1);
 });
 
 test('tricky left recursion', async t => {
-  let g = ohm.grammar(`
+  const g = ohm.grammar(`
     G {
       number = number "1" -- rec
              | number "2" -- rec2
              | "1"
     }`);
-  const m = await WasmMatcher.fromGrammar(g);
+  const m = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(m, '1'), 1);
   t.is(unparse(m), '1');
   t.is(matchWithInput(m, '12'), 1);
@@ -721,7 +727,7 @@ test('tricky left recursion', async t => {
 });
 
 test('tricky left recursion #2', async t => {
-  let g = ohm.grammar(`
+  const g = ohm.grammar(`
     G {
       number = number digit -- rec
              | number "2" -- rec2
@@ -729,7 +735,7 @@ test('tricky left recursion #2', async t => {
       digit := digit "1" -- rec
              | "1"
     }`);
-  const m = await WasmMatcher.fromGrammar(g);
+  const m = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(m, '1'), 1);
   t.is(unparse(m), '1');
 
@@ -741,7 +747,7 @@ test('tricky left recursion #2', async t => {
 });
 
 test('arithmetic', async t => {
-  let g = ohm.grammar(`
+  const g = ohm.grammar(`
     Arithmetic {
       addExp = addExp "+" mulExp  -- plus
              | addExp "-" mulExp  -- minus
@@ -757,7 +763,7 @@ test('arithmetic', async t => {
       number = number digit  -- rec
              | digit
     }`);
-  const m = await WasmMatcher.fromGrammar(g);
+  const m = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(m, '1+276*(3+4)'), 1);
   t.is(unparse(m), '1+276*(3+4)');
   t.is(matchWithInput(m, '1'), 1);
