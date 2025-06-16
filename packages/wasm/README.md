@@ -1,6 +1,6 @@
 # @ohm-js/wasm
 
-Compile Ohm.js grammars to WebAsssembly (aka Wasm), so they can be used from other languages.
+Compile Ohm.js grammars to WebAsssembly, so they can be used from other languages.
 
 To use the grammar, use the appropriate _miniohm_ package for your language.
 
