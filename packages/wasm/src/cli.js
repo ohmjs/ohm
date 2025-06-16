@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /* global process */
 
 import * as ohm from 'ohm-js';

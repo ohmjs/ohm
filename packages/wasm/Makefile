@@ -1,8 +1,15 @@
 .PHONY: all
-all: dist/index.js
+all: dist/index.js dist/cli.js
 
-dist/index.js: build/ohmRuntime.wasm_sections.ts
-	npx esbuild src/index.js --bundle --platform=node --outfile=dist/index.js --format=esm
+.PHONY: clean
+clean:
+	rm dist/* build/*
+
+dist/index.js: build/ohmRuntime.wasm_sections.ts src/index.js
+	npx esbuild src/index.js --bundle --loader:.ts=ts --outfile=dist/index.js --format=esm --platform=node --external:ohm-js
+
+dist/cli.js: dist/index.js src/cli.js
+	npx esbuild src/cli.js --bundle --loader:.ts=ts --outfile=dist/cli.js --format=esm --platform=node  --external:ohm-js --external:./index.js --banner:js="#!/usr/bin/env node"
 
 build/ohmRuntime.wasm_sections.ts: scripts/bundlewasm.ts build/ohmRuntime.wasm
 	node scripts/bundlewasm.ts build/ohmRuntime.wasm
