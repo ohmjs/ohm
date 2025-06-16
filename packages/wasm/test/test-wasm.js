@@ -13,6 +13,21 @@ function checkNotNull(x, msg = 'unexpected null value') {
   return x;
 }
 
+function unparse(m, root) {
+  const input = m.getInput();
+  let ans = '';
+  let pos = 0;
+  function walk(node) {
+    if (node.isTerminal()) {
+      ans += input.slice(pos, pos + node.matchLength);
+      pos += node.matchLength;
+    }
+    node.children.forEach(c => walk(c));
+  }
+  walk(m.getCstRoot());
+  return ans;
+}
+
 // const dumpMemoTable = pos => {
 //   const arr = [];
 //   for (let i = 0; i < 6; i++) {
@@ -685,8 +700,8 @@ test('basic left recursion', async t => {
       number = number "1" -- rec
              | "1"
     }`);
-  let matcher = await WasmMatcher.fromGrammar(g);
-  t.is(matchWithInput(matcher, '1'), 1);
+  const m = await WasmMatcher.fromGrammar(g);
+  t.is(matchWithInput(m, '1'), 1);
 });
 
 test('tricky left recursion', async t => {
@@ -696,10 +711,13 @@ test('tricky left recursion', async t => {
              | number "2" -- rec2
              | "1"
     }`);
-  const matcher = await WasmMatcher.fromGrammar(g);
-  t.is(matchWithInput(matcher, '1'), 1);
-  t.is(matchWithInput(matcher, '12'), 1);
-  t.is(matchWithInput(matcher, '11212'), 1);
+  const m = await WasmMatcher.fromGrammar(g);
+  t.is(matchWithInput(m, '1'), 1);
+  t.is(unparse(m), '1');
+  t.is(matchWithInput(m, '12'), 1);
+  t.is(unparse(m), '12');
+  t.is(matchWithInput(m, '11212'), 1);
+  t.is(unparse(m), '11212');
 });
 
 test('tricky left recursion #2', async t => {
@@ -711,10 +729,15 @@ test('tricky left recursion #2', async t => {
       digit := digit "1" -- rec
              | "1"
     }`);
-  const matcher = await WasmMatcher.fromGrammar(g);
-  t.is(matchWithInput(matcher, '1'), 1);
-  t.is(matchWithInput(matcher, '11'), 1);
-  t.is(matchWithInput(matcher, '1112111'), 1);
+  const m = await WasmMatcher.fromGrammar(g);
+  t.is(matchWithInput(m, '1'), 1);
+  t.is(unparse(m), '1');
+
+  t.is(matchWithInput(m, '11'), 1);
+  t.is(unparse(m), '11');
+
+  t.is(matchWithInput(m, '1112111'), 1);
+  t.is(unparse(m), '1112111');
 });
 
 test('arithmetic', async t => {
@@ -734,7 +757,8 @@ test('arithmetic', async t => {
       number = number digit  -- rec
              | digit
     }`);
-  const matcher = await WasmMatcher.fromGrammar(g);
-  t.is(matchWithInput(matcher, '1+276*(3+4)'), 1);
-  t.is(matchWithInput(matcher, '1'), 1);
+  const m = await WasmMatcher.fromGrammar(g);
+  t.is(matchWithInput(m, '1+276*(3+4)'), 1);
+  t.is(unparse(m), '1+276*(3+4)');
+  t.is(matchWithInput(m, '1'), 1);
 });
