@@ -503,32 +503,32 @@ test('wasm: end', async t => {
 test('real-world grammar', async t => {
   const g = ohm.grammar(String.raw`
     Test {
-      Msgs = (spaces Msg)*
-      Msg = description? (spaces Head spaces Params)
+      Msgs = Msg*
+      Msg = description? spaces (Head spaces Params spaces)
 
       lower := "a".."z"
       upper := "A".."Z"
 
       description = "#" (~nl any)* nl?
-      Head = spaces msgTarget spaces msgName
+      Head = msgTarget spaces msgName
       msgTarget
         = (~space any)*
       msgName
         = letter (alnum | "_" | "-" | ":" | "." | "+" | "/")*  -- literal
         | templateString                                       -- templateString
         | interpolation                                        -- interpolation
-      Params = (spaces Param)*
-      Param = spaces key spaces ":" spaces Json
+      Params = Param*
+      Param = key spaces ":" spaces Json
       Json
         = "{" Param ("," Param)* ","? "}"   -- object1
-        | "{" spaces "}"                    -- object0
+        | "{" "}"                           -- object0
         | "[" Json ("," Json)* ","? "]"     -- array1
-        | "["  spaces "]"                   -- array0
-        | spaces string                     -- string
-        | spaces templateString             -- templateString
-        | spaces number                     -- number
-        | spaces boolean                    -- boolean
-        | spaces interpolation              -- interpolation
+        | "["  "]"                          -- array0
+        | string                            -- string
+        | templateString                    -- templateString
+        | number                            -- number
+        | boolean                           -- boolean
+        | interpolation                     -- interpolation
       ident = letter (alnum | "_")*
       key = ident | string
       boolean = "true" | "false"
