@@ -650,9 +650,6 @@ export class Compiler {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
 
-      if (name.startsWith('$lifted')) {
-        asm.emit('lifted', ruleInfo.body.toDisplayString());
-      }
       this.emitPExpr(ruleInfo.body);
       asm.localGet('ret');
     });
