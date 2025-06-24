@@ -184,3 +184,10 @@ export function unexpectedObjToString(obj) {
     return baseToString;
   }
 }
+
+export function checkNotNull(obj, message='unexpected null value') {
+  if (obj == null) {
+    throw new Error(message);
+  }
+  return obj;
+}
