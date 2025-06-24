@@ -53,22 +53,26 @@ const gensym = (() => {
   return prefix => `${prefix}${nextId++}`;
 })();
 
-function extractParams(exp) {
+function extractParams(exp, seen = new Set()) {
   switch (exp.constructor) {
     case pexprs.Param:
-      return [exp];
+      if (!seen.has(exp.index)) {
+        seen.add(exp.index);
+        return [exp];
+      }
+      return [];
     case pexprs.Alt:
-      return exp.terms.flatMap(extractParams);
+      return exp.terms.flatMap(e => extractParams(e, seen));
     case pexprs.Apply:
-      return exp.args.flatMap(extractParams);
+      return exp.args.flatMap(e => extractParams(e, seen));
     case pexprs.Lookahead:
     case pexprs.Not:
     case pexprs.Opt:
     case pexprs.Plus:
     case pexprs.Seq:
-      return exp.factors.flatMap(extractParams);
+      return exp.factors.flatMap(e => extractParams(e, seen));
     case pexprs.Star:
-      return extractParams(exp.expr);
+      return extractParams(exp.expr, seen);
     case pexprs.Range:
     case pexprs.Terminal:
     case pexprs.UnicodeChar:

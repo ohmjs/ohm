@@ -710,6 +710,28 @@ test('parameterized rules (hard)', async t => {
     const matcher = await wasmMatcherForGrammar(g);
     t.is(matchWithInput(matcher, 'yz'), 1);
   }
+  {
+    // Parameterized applications as args!
+    const g = ohm.grammar(`
+      G {
+        start = twice<once<"x">>
+        once<a> = a
+        twice<exp> = exp exp
+      }`);
+    const matcher = await wasmMatcherForGrammar(g);
+    t.is(matchWithInput(matcher, 'xx'), 1);
+  }
+  {
+    // Same param appearing twice in a lifted expression.
+    const g = ohm.grammar(`
+      G {
+        start = narf<"a">
+        narf<exp> = once<(exp | exp)>
+        once<a> = a
+      }`);
+    const matcher = await wasmMatcherForGrammar(g);
+    t.is(matchWithInput(matcher, 'a'), 1);
+  }
 });
 
 test('basic left recursion', async t => {
