@@ -111,6 +111,25 @@ export function evalApplyNoMemo0(ruleId: i32): Result {
 }
 
 export function evalApply0(ruleId: i32): Result {
+  // Handle closures, which are an pointer w/ a flag in the high bit.
+  // TODO: Find a cleaner way of doing this.
+  if (ruleId & 0x80000000) {
+    const ptr = ruleId & 0x7fffffff;
+    ruleId = load<i32>(ptr, 0);
+    const argCount = load<i32>(ptr, 4);
+    const args: i32[] = [];
+    for (let i = 0; i < argCount; i++) {
+      args.push(load<i32>(ptr + i * 4, 8));
+    }
+    switch (argCount) {
+      case 0: return evalApply0(ruleId);
+      case 1: return evalApply1(ruleId, args[0]);
+      case 2: return evalApply2(ruleId, args[0], args[1]);
+      case 3: return evalApply3(ruleId, args[0], args[1], args[2]);
+    }
+    assert(false);
+  }
+
   let result = memoTableGet(pos, ruleId);
   if (result !== 0) {
     return useMemoizedResult(ruleId, result);

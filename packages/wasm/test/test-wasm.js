@@ -658,46 +658,58 @@ test('more memoization', async t => {
 });
 
 test('parameterized rules (easy)', async t => {
-  let g = ohm.grammar(`
-    G {
-      start = twice<x>
-      x = "x"
-      twice<exp> = exp exp
-    }`);
-  let matcher = await wasmMatcherForGrammar(g);
-  t.is(matchWithInput(matcher, 'xx'), 1);
+  {
+    // Easy: parameter is an Apply.
+    const g = ohm.grammar(`
+      G {
+        start = twice<x>
+        x = "x"
+        twice<exp> = exp exp
+      }`);
+    const matcher = await wasmMatcherForGrammar(g);
+    t.is(matchWithInput(matcher, 'xx'), 1);
+  }
+  {
+    // Make sure that parameterized applications are not incorrectly memoized.
+    const g = ohm.grammar(`
+      G {
+        start = ~narf<x> narf<y>
+        narf<thing> = thing
+        x = "x"
+        y = "y"
 
-  g = ohm.grammar(`
-    G {
-      start = ~narf<x> narf<y>
-      narf<thing> = thing
-      x = "x"
-      y = "y"
-
-    }`);
-  matcher = await wasmMatcherForGrammar(g);
-  t.is(matchWithInput(matcher, 'y'), 1);
+      }`);
+    const matcher = await wasmMatcherForGrammar(g);
+    t.is(matchWithInput(matcher, 'y'), 1);
+  }
 });
 
 test('parameterized rules (hard)', async t => {
-  let g = ohm.grammar(`
-    G {
-      start = indirect<x>
-      indirect<e> = twice<e>
-      twice<exp> = exp exp
-      x = "x"
-    }`);
-  let matcher = await wasmMatcherForGrammar(g);
-  t.is(matchWithInput(matcher, 'xx'), 1);
-
-  g = ohm.grammar(`
-    G {
-      start = indirect<"x">
-      indirect<e> = twice<e>
-      twice<exp> = exp exp
-    }`);
-  matcher = await wasmMatcherForGrammar(g);
-  t.is(matchWithInput(matcher, 'xx'), 1);
+  {
+    // Terminal as param, must be lifted.
+    const g = ohm.grammar(`
+      G {
+        start = indirect<"x">
+        indirect<e> = twice<e>
+        twice<exp> = exp exp
+      }`);
+    const matcher = await wasmMatcherForGrammar(g);
+    t.is(matchWithInput(matcher, 'xx'), 1);
+  }
+  {
+    // What's interesting here? In the body of `narf`:
+    // - `(c|b)` will need to be lifted
+    // - the params b, c appear out of order
+    // - `a` is unused
+    const g = ohm.grammar(`
+      G {
+        start = narf<"x", "y", "z">
+        narf<a, b, c> = twice<(c|b)>
+        twice<exp> = exp exp
+      }`);
+    const matcher = await wasmMatcherForGrammar(g);
+    t.is(matchWithInput(matcher, 'yz'), 1);
+  }
 });
 
 test('basic left recursion', async t => {

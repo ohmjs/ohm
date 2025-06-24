@@ -6,7 +6,9 @@
   "bin": {
     "ohm2wasm": "dist/cli.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "make",
     "build-and-test": "make && ava test",

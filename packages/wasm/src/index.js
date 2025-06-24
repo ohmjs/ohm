@@ -12,6 +12,8 @@ const FAST_RESTORE_BINDINGS = true;
 
 const {instr} = w;
 
+const isNonNull = x => x != null;
+
 function assert(cond, msg) {
   if (!cond) {
     throw new Error(msg ?? 'assertion failed');
@@ -44,6 +46,36 @@ function uniqueName(names, str) {
 function getDebugLabel(exp) {
   const loc = exp.source ? exp.source.startIdx : -1;
   return `${exp.toDisplayString()}@${loc}`;
+}
+
+const gensym = (() => {
+  let nextId = 0;
+  return prefix => `${prefix}${nextId++}`;
+})();
+
+function extractParams(exp) {
+  switch (exp.constructor) {
+    case pexprs.Param:
+      return [exp];
+    case pexprs.Alt:
+      return exp.terms.flatMap(extractParams);
+    case pexprs.Apply:
+      return exp.args.flatMap(extractParams);
+    case pexprs.Lookahead:
+    case pexprs.Not:
+    case pexprs.Opt:
+    case pexprs.Plus:
+    case pexprs.Seq:
+      return exp.factors.flatMap(extractParams);
+    case pexprs.Star:
+      return extractParams(exp.expr);
+    case pexprs.Range:
+    case pexprs.Terminal:
+    case pexprs.UnicodeChar:
+      return [];
+    default:
+      throw new Error(`extractParams - not handled: ${exp.constructor.name}`);
+  }
 }
 
 const prebuiltFuncidx = nm => checkNotNull(prebuilt.funcidxByName[nm]);
@@ -336,17 +368,17 @@ class Assembler {
     this.localSet('ret');
   }
 
-  pushStackFrame() {
+  pushStackFrame(n = 1) {
     this.globalGet('sp');
-    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
+    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES * n);
     this.i32Sub();
     this.globalSet('sp');
     this.savePos();
     this.saveNumBindings();
   }
 
-  popStackFrame() {
-    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
+  popStackFrame(n = 1) {
+    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES * n);
     this.globalGet('sp');
     this.i32Add();
     this.globalSet('sp');
@@ -480,27 +512,59 @@ export class Compiler {
         this.ruleIdByName.set(name, this.ruleIdByName.size);
       }
     }
+    assert(this.ruleIdByName.size <= 256, 'too many rules');
+    this.liftedRules = new Map();
   }
 
   lookUpRule(ruleName, grammar = this.grammar) {
-    // TODO: Find a cleaner way to handle terminals as parameters.
-    // We should support any kind of single-arity parsing expression as
-    // a parameter, not just terminals.
-    if (ruleName.startsWith('$term$')) {
-      return {
-        body: new pexprs.Terminal(ruleName.substring(6)),
-        formals: [],
-      };
-    }
     if (ruleName in grammar.rules) {
       return grammar.rules[ruleName];
     }
     if (grammar.superGrammar) {
       return this.lookUpRule(ruleName, grammar.superGrammar);
     }
+    if (this.liftedRules.has(ruleName)) {
+      const r = this.liftedRules.get(ruleName);
+      return r;
+    }
     throw new Error(
         `Rule '${ruleName}' not found in this grammar or any of its supergrammars`,
     );
+  }
+
+  liftPExpr(exp) {
+    const name = gensym('$lifted');
+
+    // Replace "free variables" (Params from the outer scope) with Params
+    // for the lifted, to-be-defined rule.
+
+    const freeVars = extractParams(exp);
+
+    let body = exp;
+    let formals = [];
+    const maxIndex = freeVars.reduce((acc, param) => Math.max(acc, param.index), -1);
+
+    if (freeVars.length > 0) {
+      // `substituteParams` usually takes an array of _actual params_,
+      // [arg0, arg1, ...]. We use it instead to replace Params from the
+      // original scope with ones for the new scope. Since the lifted pexpr
+      // might only reference a subset of the params, the array can be holey.
+      // E.g., in `doc<a, b, c> = a tail<(b|c)>`, when we lift `b|c`.
+      const newParams = new Array(maxIndex + 1);
+      freeVars.forEach((p, i) => {
+        newParams[p.index] = new pexprs.Param(i);
+      });
+      body = exp.substituteParams(newParams);
+
+      // We make up some names for the parameters; they don't currently matter.
+      formals = newParams.filter(isNonNull).map(p => `__${p.index}`);
+    }
+    const actuals = freeVars.filter(isNonNull);
+
+    const ruleId = this.ruleIdByName.size;
+    this.ruleIdByName.set(name, ruleId);
+    this.liftedRules.set(name, {body, formals, source: exp.source});
+    return [name, actuals];
   }
 
   recordRule(name) {
@@ -508,8 +572,6 @@ export class Compiler {
     // supergrammar, lazily add it to the map.
     if (!this.ruleIdByName.has(name)) {
       if (name in this.grammar.superGrammar.rules) {
-        this.ruleIdByName.set(name, this.ruleIdByName.size);
-      } else if (name.startsWith('$term$')) {
         this.ruleIdByName.set(name, this.ruleIdByName.size);
       } else {
         throw new Error(`Unknown rule: ${name}`);
@@ -588,6 +650,9 @@ export class Compiler {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
 
+      if (name.startsWith('$lifted')) {
+        asm.emit('lifted', ruleInfo.body.toDisplayString());
+      }
       this.emitPExpr(ruleInfo.body);
       asm.localGet('ret');
     });
@@ -608,8 +673,10 @@ export class Compiler {
     const ruleNames = [...this.ruleIdByName.keys()];
 
     // Ensure that `ruleNames` is in the correct order.
-    ruleNames.forEach((n, i) => assert(i === this.ruleIdByName.get(n)));
+    ruleNames.forEach((n, i) => assert(i === this.ruleIdByName.get(n), `out of order: ${n}`));
 
+    // console.log(importDecls.length, 'imports');
+    // console.log(prebuilt.funcsec.entryCount, 'prebuilt functions');
     typeMap.addDecls(importDecls);
     typeMap.addDecls(functionDecls);
 
@@ -727,7 +794,8 @@ export class Compiler {
     const ruleDecls = [];
     for (let i = 0; i < this.ruleIdByName.size; i++) {
       const name = [...this.ruleIdByName.keys()][i];
-      ruleDecls.push(this.compileRule(name, this.lookUpRule(name)));
+      const ruleInfo = this.lookUpRule(name);
+      ruleDecls.push(this.compileRule(name, ruleInfo));
     }
     const {asm} = this;
     asm.addFunction('start', [], [], () => {
@@ -803,6 +871,71 @@ export class Compiler {
     asm.maybeReturnTerminalNodeWithSavedPos();
   }
 
+  emitClosure(app) {
+    const setSlot = (n, valThunk) => {
+      asm.globalGet('sp');
+      valThunk();
+      asm.i32Store(n * 4);
+    };
+
+    // TODO: Support an arbitrary number of bindings.
+    // In theory these could be packed into two bytes, if closures are
+    // always stack-allocated at the stack is restricted to the first
+    // page of memory (<= 64k).
+    const {asm} = this;
+    asm.pushStackFrame(3);
+    assert(app.args.length <= 3);
+    setSlot(0, () => this.emitPushRuleId(app.ruleName));
+    setSlot(1, () => asm.i32Const(app.args.length));
+    app.args.forEach((arg, i) => {
+      setSlot(i + 2, () => this.emitArg(arg));
+    });
+    // Leave a tagged pointer to the closure on the stack.
+    asm.globalGet('sp');
+    asm.i32Const(0x80000000);
+    asm.emit(instr.i32.or);
+  }
+
+  emitPushRuleId(name) {
+    this.recordRule(name);
+    this.asm.i32Const(checkNotNull(this.ruleIdByName.get(name), `Unknown rule: ${name}`));
+  }
+
+  emitArg(arg) {
+    const {asm} = this;
+
+    // There are a few cases we have to handle.
+    // Ultimately, argument must be reduced to a single i32 value.
+    // 1. Param is trivial, just pass it on.
+    // 2. Apply of a non-parameterized rule: pass the rule ID.
+    // 3. Apply of a parameterized rule: convert to a closure, and pass
+    //    the address of the closure, with the low bit set.
+    // 4. Another pexpr: lift it to a rule, and emit an Apply of that rule,
+    //    which turns into one of the above two cases.
+
+    // Case 1: Param.
+    if (arg.constructor === pexprs.Param) {
+      asm.localGet(`__arg${arg.index}`);
+      return false;
+    }
+    let app = arg;
+
+    // Case 4: lift the pexpr to a rule, and fall through to the handle
+    // the resulting Apply.
+    if (arg.constructor !== pexprs.Apply) {
+      const [ruleId, args] = this.liftPExpr(arg);
+      app = new pexprs.Apply(ruleId, args);
+    }
+    // Case 3.
+    if (app.args.length === 0) {
+      this.emitPushRuleId(app.ruleName);
+      return false;
+    }
+    // Case 2.
+    this.emitClosure(app);
+    return true;
+  }
+
   emitApply(exp) {
     const {asm} = this;
     this.recordRule(exp.ruleName);
@@ -810,35 +943,20 @@ export class Compiler {
     const argCount = exp.args.length;
     assert(argCount <= 3, 'Too many arguments to rule application');
 
-    const pushRuleId = name => {
-      this.recordRule(name);
-      asm.i32Const(checkNotNull(this.ruleIdByName.get(name), `Unknown rule: ${name}`));
-    };
-
-    pushRuleId(exp.ruleName);
-    exp.args.forEach((arg, i) => {
-      switch (arg.constructor) {
-        case pexprs.Apply:
-          pushRuleId(arg.ruleName);
-          break;
-        case pexprs.Param:
-          asm.localGet(`__arg${arg.index}`);
-          break;
-        case pexprs.Terminal: {
-          const ruleName = `$term$${arg.obj}`;
-          this.recordRule(ruleName);
-          pushRuleId(ruleName);
-          break;
-        }
-        default:
-          throw new Error(`not supported: ${arg.constructor.name}`);
-      }
-    });
+    this.emitPushRuleId(exp.ruleName);
+    let numClosures = 0;
+    for (const arg of exp.args) {
+      const isClosure = this.emitArg(arg);
+      numClosures += isClosure ? 1 : 0;
+    }
     // TODO: Handle this at grammar parse time, not here.
     if (exp.ruleName.includes('_')) {
       asm.callPrebuiltFunc(`evalApplyNoMemo${argCount}`);
     } else {
       asm.callPrebuiltFunc(`evalApply${argCount}`);
+    }
+    if (numClosures > 0) {
+      asm.popStackFrame(numClosures * 2);
     }
     asm.localSet('ret');
   }

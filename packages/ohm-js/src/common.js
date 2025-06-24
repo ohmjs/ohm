@@ -185,7 +185,7 @@ export function unexpectedObjToString(obj) {
   }
 }
 
-export function checkNotNull(obj, message='unexpected null value') {
+export function checkNotNull(obj, message = 'unexpected null value') {
   if (obj == null) {
     throw new Error(message);
   }

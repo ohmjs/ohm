@@ -15,7 +15,6 @@
   "author": "Patrick Dubroy <pdubroy@gmail.com>",
   "type": "module",
   "main": "index.js",
-  "scripts": {
-  },
+  "scripts": {},
   "packageManager": "pnpm@10.10.0"
 }
