@@ -10,7 +10,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "make",
+    "build": "pnpm run check-node-version && make",
     "build-and-test": "make && ava test",
     "check-node-version": "node -e \"process.exit(parseInt(process.versions.node.split('.')[0]) < 24 ? 1 : 0)\"",
     "prepack": "make",
