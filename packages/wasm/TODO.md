@@ -7,12 +7,13 @@
 - [ ] When iteration contains a sequence, the children are flattened into the iter node.
 - [x] Basic parameterized rules
 - [ ] Parameterized rules with >3 params
-- [ ] Parameters that aren't terminals
+- [x] Parameters that aren't terminals
 - [ ] Memoization for parameterized rules
 - [x] Support direct left recursion.
 - [ ] Handle left recursion detection at grammar parse time.
-- [ ] Separate API for _creating_ the Wasm module from the WasmMatcher interface.
-- [ ] Implement a proper CLI.
+- [x] Separate API for _creating_ the Wasm module from the WasmMatcher interface.
+- [x] Implement a proper CLI.
+- [ ] Handle non-memoization of inline rules at grammar parse time
 
 ## Limitations
 
