@@ -44,6 +44,11 @@ function checkU32(b: bigint): number {
   return Number(b);
 }
 
+function checkI32(b: bigint): number {
+  assert(b >= -(2n ** 31n) && b < 2n ** 31n, `not a valid I32 value: ${b}`);
+  return Number(b);
+}
+
 export type VecContents = {
   entryCount: number;
   contents: Uint8Array;
@@ -221,6 +226,12 @@ function rewriteCodeEntry(
     return checkU32(val);
   };
 
+  const parseI32 = () => {
+    const [val, count] = decodeSLEB128(bytes, pos);
+    pos += count;
+    return checkI32(val);
+  };
+
   function skipLocals() {
     const len = parseU32();
     for (let i = 0; i < len; i++) {
@@ -313,7 +324,7 @@ function rewriteCodeEntry(
         parseU32();
         break;
       case instr.i32.const:
-        parseU32();
+        parseI32();
         break;
       case instr.i64.const:
         const origPos = pos;
