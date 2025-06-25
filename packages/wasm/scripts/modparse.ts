@@ -241,6 +241,13 @@ function rewriteCodeEntry(
     }
   }
 
+  function skipU32Vec() {
+    const len = parseU32();
+    for (let i = 0; i < len; i++) {
+      parseU32();
+    }
+  }
+
   // See https://webassembly.github.io/spec/core/bikeshed/#binary-blocktype
   function skipBlocktype() {
     const b = bytes[pos];
@@ -290,7 +297,9 @@ function rewriteCodeEntry(
         parseU32();
         break;
       case instr.br_table:
-        throw new Error(`unhandled bytecode 0x${bc.toString(16)} @${pos - 1}`);
+        skipU32Vec(); // labels
+        parseU32(); // default label
+        break;
       case instr.return:
         break;
       case instr.call:
