@@ -28,6 +28,7 @@
     "ava": "^6.2.0",
     "esbuild": "^0.25.5",
     "liquid-html-parser": "link:@shopify/liquid-html-parser",
+    "mitata": "^1.0.34",
     "wabt": "1.0.37-nightly.20250428"
   },
   "peerDependencies": {

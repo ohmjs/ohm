@@ -303,6 +303,9 @@ importers:
       liquid-html-parser:
         specifier: link:@shopify/liquid-html-parser
         version: link:@shopify/liquid-html-parser
+      mitata:
+        specifier: ^1.0.34
+        version: 1.0.34
       wabt:
         specifier: 1.0.37-nightly.20250428
         version: 1.0.37-nightly.20250428
@@ -2035,6 +2038,9 @@ packages:
   minizlib@3.0.2:
     resolution: {integrity: sha512-oG62iEk+CYt5Xj2YqI5Xi9xWUeZhDI8jjQmC5oThVH5JGCTgIjr7ciJDzC7MBzYd//WvR1OTmP5Q38Q8ShQtVA==}
     engines: {node: '>= 18'}
+
+  mitata@1.0.34:
+    resolution: {integrity: sha512-Mc3zrtNBKIMeHSCQ0XqRLo1vbdIx1wvFV9c8NJAiyho6AjNfMY8bVhbS12bwciUdd1t4rj8099CH3N3NFahaUA==}
 
   mkdirp@3.0.1:
     resolution: {integrity: sha512-+NsyUUAZDmo6YVHzL/stxSu3t9YS1iljliy3BSDrXJ/dkn1KYdmtZODGGjLcc9XLgVVpH4KshHB8XmZgMhaBXg==}
@@ -4556,6 +4562,8 @@ snapshots:
   minizlib@3.0.2:
     dependencies:
       minipass: 7.1.2
+
+  mitata@1.0.34: {}
 
   mkdirp@3.0.1: {}
 

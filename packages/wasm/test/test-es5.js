@@ -3,60 +3,27 @@ import {readFile} from 'node:fs/promises';
 import {dirname, join} from 'node:path';
 import {performance} from 'node:perf_hooks';
 import {fileURLToPath} from 'node:url';
-import * as ohm from 'ohm-js';
 import es5js from '../../../examples/ecmascript/index.js';
 
-import {wasmMatcherForGrammar} from './_helpers.js';
-import es5fac from './data/_es5.js';
+import {makeEs5Matcher} from './_helpers.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, 'data');
 
-function ES5Matcher(rules) {
-  // `rules` is an object with the raw rule bodies.
-  // The WasmMatcher constructor requires a grammar object, so we create
-  // one and manually add the rules in.
-  const g = ohm.grammar('ES5 { start = }');
-  for (const key of Object.keys(rules)) {
-    g.rules[key] = {
-      body: rules[key],
-      formals: [],
-      description: key,
-      primitive: false,
-    };
-  }
-  // Since this is called with `new`, we can't use `await` here.
-  return wasmMatcherForGrammar(g);
-}
-
-async function es5Matcher() {
-  return es5fac({
-    Terminal: ohm.pexprs.Terminal,
-    RuleApplication: ohm.pexprs.Apply,
-    Sequence: ohm.pexprs.Seq,
-    Choice: ohm.pexprs.Alt,
-    Repetition: ohm.pexprs.Star,
-    Not: ohm.pexprs.Not,
-    Range: ohm.pexprs.Range,
-    any: ohm.pexprs.any,
-    end: ohm.pexprs.end,
-    Matcher: ES5Matcher,
-  });
-}
+const html5shivPath = join(datadir, '_html5shiv-3.7.3.js');
 
 const matchWithInput = (m, str) => (m.setInput(str), m.match());
 
 test('basic es5 examples', async t => {
-  const m = await es5Matcher();
+  const m = await makeEs5Matcher();
   t.is(matchWithInput(m, 'x = 3;'), 1);
   t.is(matchWithInput(m, 'function foo() { return 1; }'), 1);
 });
 
 test('html5shiv', async t => {
-  const html5shivPath = join(datadir, '_html5shiv-3.7.3.js');
   const source = await readFile(html5shivPath, 'utf8');
 
-  const m = await es5Matcher();
+  const m = await makeEs5Matcher();
   let start = performance.now();
   es5js.grammar.match(source);
   t.log(`html5shiv (Ohm) match time: ${(performance.now() - start).toFixed(2)}ms`);
@@ -84,7 +51,7 @@ test('unparsing', async t => {
     /\d+/.test("123") && console.log(counter());
   `;
 
-  const m = await es5Matcher();
+  const m = await makeEs5Matcher();
   t.is(matchWithInput(m, source), 1);
 
   let unparsed = '';
