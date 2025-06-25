@@ -13,8 +13,7 @@ const scriptRel = relPath => new URL(relPath, import.meta.url);
 const grammarSource = fs.readFileSync(scriptRel('data/_liquid-html.ohm'), 'utf8');
 const input = fs.readFileSync(scriptRel('data/_book-review.liquid'), 'utf8');
 
-// eslint-disable-next-line ava/no-skip-test
-test.skip('basic matching', async t => {
+test('basic matching', async t => {
   const ns = ohm.grammars(grammarSource);
   let start = performance.now();
   t.is(ns.LiquidHTML.match(input).succeeded(), true); // Trigger fillInputBuffer

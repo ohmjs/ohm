@@ -714,12 +714,13 @@ test('parameterized rules (hard)', async t => {
     // Parameterized applications as args!
     const g = ohm.grammar(`
       G {
-        start = twice<once<"x">>
+        start = once<reversed<"a", "b", "c">>
+              | "cool"
         once<a> = a
-        twice<exp> = exp exp
+        reversed<a, b, c> = c b a
       }`);
     const matcher = await wasmMatcherForGrammar(g);
-    t.is(matchWithInput(matcher, 'xx'), 1);
+    t.is(matchWithInput(matcher, 'cool'), 1);
   }
   {
     // Same param appearing twice in a lifted expression.

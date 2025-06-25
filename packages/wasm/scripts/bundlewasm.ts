@@ -1,8 +1,12 @@
+/* global process */
+
 import * as fs from 'node:fs';
 import {URL} from 'node:url';
 import * as w from '@wasmgroundup/emit';
 
 import {extractSections} from './modparse.ts';
+
+const debugFnCount = process.env.OHM_DEBUG === '1' ? 5000 : 0;
 
 /*
   Extracts the code section from the AssemblyScript release build
@@ -12,7 +16,7 @@ import {extractSections} from './modparse.ts';
 const inputPath = process.argv[2];
 const outputPath = inputPath + '_sections.ts';
 
-const destImportCount = 3;
+const destImportCount = debugFnCount + 3;
 
 const buf = fs.readFileSync(inputPath);
 const sections = extractSections(buf, {

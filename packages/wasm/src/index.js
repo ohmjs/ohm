@@ -1,3 +1,5 @@
+/* global process */
+
 import * as w from '@wasmgroundup/emit';
 import {pexprs} from 'ohm-js';
 // import wabt from 'wabt';
@@ -6,7 +8,7 @@ import * as prebuilt from '../build/ohmRuntime.wasm_sections.ts';
 
 const WASM_PAGE_SIZE = 64 * 1024;
 
-const DEBUG = false;
+const DEBUG = process.env.OHM_DEBUG === '1';
 const FAST_SAVE_BINDINGS = true;
 const FAST_RESTORE_BINDINGS = true;
 
@@ -373,6 +375,8 @@ class Assembler {
   }
 
   pushStackFrame(n = 1) {
+    if (n === 0) return;
+
     this.globalGet('sp');
     this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES * n);
     this.i32Sub();
@@ -382,6 +386,8 @@ class Assembler {
   }
 
   popStackFrame(n = 1) {
+    if (n === 0) return;
+
     this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES * n);
     this.globalGet('sp');
     this.i32Add();
@@ -595,7 +601,6 @@ export class Compiler {
     for (const decl of this.importDecls.filter(d => d.module === 'debug')) {
       const {name} = decl;
       ans[name] = arg => {
-        // eslint-disable-next-line no-console
         log(name, arg);
       };
     }
@@ -873,28 +878,54 @@ export class Compiler {
   }
 
   emitClosure(app) {
-    const setSlot = (n, valThunk) => {
-      asm.globalGet('sp');
-      valThunk();
-      asm.i32Store(n * 4);
-    };
+    // With non-parameterized rules, we pass the ruleId to the eval function.
+    // For a closure, we store the ruleId and the actual params on the stack:
+    //           ◂- sp
+    // [ ruleId ]
+    // [argCount]
+    // [  arg0  ]
+    // [  ...   ]
+    // [  argN  ]
+    //
+    // …and call the eval function with a tagged pointer to the closure.
+
+    assert(app.args.length <= 3);
 
     // TODO: Support an arbitrary number of bindings.
     // In theory these could be packed into two bytes, if closures are
     // always stack-allocated at the stack is restricted to the first
     // page of memory (<= 64k).
     const {asm} = this;
+
+    // The args may themselves be closures —— we emit them first, in reverse
+    // order, before pushing a new stack frame for this one.
+    let count = 1;
+    for (const arg of app.args.reverse()) {
+      count += this.emitArg(arg);
+    }
+    asm.i32Const(app.args.length);
+    this.emitPushRuleId(app.ruleName);
+
     asm.pushStackFrame(3);
-    assert(app.args.length <= 3);
-    setSlot(0, () => this.emitPushRuleId(app.ruleName));
-    setSlot(1, () => asm.i32Const(app.args.length));
-    app.args.forEach((arg, i) => {
-      setSlot(i + 2, () => this.emitArg(arg));
-    });
-    // Leave a tagged pointer to the closure on the stack.
+
+    // Above we pushed all the values to the operand stack.
+    // Now we write all of them into memory.
+    for (let i = 0; i < app.args.length + 2; i++) {
+      // Need [addr, val] on the stack.
+      asm.localSet('tmp');
+      asm.globalGet('sp');
+      asm.localGet('tmp');
+      asm.i32Store(i * 4);
+    }
+
+    // Leave a tagged pointer to the closure on the operand stack.
     asm.globalGet('sp');
     asm.i32Const(0x80000000);
     asm.emit(instr.i32.or);
+
+    // Return the number of total number of closures that were created,
+    // so that the stack can be properly cleaned up.
+    return count;
   }
 
   emitPushRuleId(name) {
@@ -902,6 +933,10 @@ export class Compiler {
     this.asm.i32Const(checkNotNull(this.ruleIdByName.get(name), `Unknown rule: ${name}`));
   }
 
+  // Emit the code which will leave an argument for a parameterized rule
+  // on the operand stack. This may involve creating a number of closures,
+  // which are allocated on the parse stack. Return the total number of
+  // closures created.
   emitArg(arg) {
     const {asm} = this;
 
@@ -917,7 +952,7 @@ export class Compiler {
     // Case 1: Param.
     if (arg.constructor === pexprs.Param) {
       asm.localGet(`__arg${arg.index}`);
-      return false;
+      return 0;
     }
     let app = arg;
 
@@ -930,11 +965,10 @@ export class Compiler {
     // Case 3.
     if (app.args.length === 0) {
       this.emitPushRuleId(app.ruleName);
-      return false;
+      return 0;
     }
     // Case 2.
-    this.emitClosure(app);
-    return true;
+    return this.emitClosure(app);
   }
 
   emitApply(exp) {
@@ -947,8 +981,7 @@ export class Compiler {
     this.emitPushRuleId(exp.ruleName);
     let numClosures = 0;
     for (const arg of exp.args) {
-      const isClosure = this.emitArg(arg);
-      numClosures += isClosure ? 1 : 0;
+      numClosures += this.emitArg(arg);
     }
     // TODO: Handle this at grammar parse time, not here.
     if (exp.ruleName.includes('_')) {
@@ -956,9 +989,7 @@ export class Compiler {
     } else {
       asm.callPrebuiltFunc(`evalApply${argCount}`);
     }
-    if (numClosures > 0) {
-      asm.popStackFrame(numClosures * 2);
-    }
+    asm.popStackFrame(numClosures * 3);
     asm.localSet('ret');
   }
 
