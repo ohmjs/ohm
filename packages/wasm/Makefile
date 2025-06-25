@@ -1,3 +1,5 @@
+NODE_COMMON_FLAGS = --disable-warning=ExperimentalWarning
+
 .PHONY: all
 all: dist/index.js dist/cli.js
 
@@ -9,6 +11,10 @@ clean:
 debug: clean
 	OHM_DEBUG=1 make
 
+.PHONY: bench
+bench: all
+	node --expose-gc $(NODE_COMMON_FLAGS) scripts/bench.js
+
 dist/index.js: build/ohmRuntime.wasm_sections.ts src/index.js
 	npx esbuild src/index.js --bundle --loader:.ts=ts --outfile=dist/index.js --format=esm --platform=node --external:ohm-js
 
@@ -16,7 +22,7 @@ dist/cli.js: dist/index.js src/cli.js
 	npx esbuild src/cli.js --bundle --loader:.ts=ts --outfile=dist/cli.js --format=esm --platform=node  --external:ohm-js --external:./index.js --banner:js="#!/usr/bin/env node"
 
 build/ohmRuntime.wasm_sections.ts: scripts/bundlewasm.ts build/ohmRuntime.wasm
-	node scripts/bundlewasm.ts build/ohmRuntime.wasm
+	node $(NODE_COMMON_FLAGS) scripts/bundlewasm.ts build/ohmRuntime.wasm
 
 .PHONY: force-bundlewasm
 force-bundlewasm:

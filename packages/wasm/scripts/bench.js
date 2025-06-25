@@ -18,21 +18,33 @@ const inputs = {
   underscore: readFileSync(join(datadir, '_underscore-1.8.3.js'), 'utf-8')
 };
 
-const es5Matcher = await makeEs5Matcher();
+function checkOk(val) {
+  if (!val) {
+    throw new Error('Expected non-zero value');
+  }
+  return val;
+}
 
 function matchWithInput(m, input) {
   m.setInput(input);
-  return m.match();
+  return checkOk(m.match());
 }
 
 const liquid = ohm.grammars(readFileSync(join(datadir, '_liquid-html.ohm'), 'utf8'));
-const liquidMatcher = await wasmMatcherForGrammar(liquid.LiquidHTML);
+const makeLiquidMatcher = async () => await wasmMatcherForGrammar(liquid.LiquidHTML);
+
+function benchWithSetup(name, setupFn, benchFn) {
+  bench(name, function* () {
+    yield {
+      [0]: setupFn,
+      bench: benchFn
+    };
+  });
+}
 
 group('ES5: html5shiv', () => {
   summary(() => {
-    bench('Wasm', () => {
-      matchWithInput(es5Matcher, inputs.html5shiv);
-    });
+    benchWithSetup('Wasm', makeEs5Matcher, m => matchWithInput(m, inputs.html5shiv));
     bench('JS', () => {
       es5js.grammar.match(inputs.html5shiv);
     });
@@ -41,9 +53,7 @@ group('ES5: html5shiv', () => {
 
 group('ES5: underscore', () => {
   summary(() => {
-    bench('Wasm', () => {
-      matchWithInput(es5Matcher, inputs.underscore);
-    });
+    benchWithSetup('Wasm', makeEs5Matcher, m => matchWithInput(m, inputs.underscore));
     bench('JS', () => {
       es5js.grammar.match(inputs.underscore);
     });
@@ -52,9 +62,7 @@ group('ES5: underscore', () => {
 
 group('LiquidHTML: book-review.liquid', () => {
   summary(() => {
-    bench('Wasm', () => {
-      matchWithInput(liquidMatcher, inputs.bookReview);
-    });
+    benchWithSetup('Wasm', makeLiquidMatcher, m => matchWithInput(m, inputs.bookReview));
     bench('JS', () => {
       liquid.LiquidHTML.match(inputs.bookReview);
     });
@@ -63,9 +71,7 @@ group('LiquidHTML: book-review.liquid', () => {
 
 group('LiquidHTML: featured-product.liquid', () => {
   summary(() => {
-    bench('Wasm', () => {
-      matchWithInput(liquidMatcher, inputs.featuredProduct);
-    });
+    benchWithSetup('Wasm', makeLiquidMatcher, m => matchWithInput(m, inputs.featuredProduct));
     bench('JS', () => {
       liquid.LiquidHTML.match(inputs.featuredProduct);
     });
@@ -74,9 +80,7 @@ group('LiquidHTML: featured-product.liquid', () => {
 
 group('LiquidHTML: footer.liquid', () => {
   summary(() => {
-    bench('Wasm', () => {
-      matchWithInput(liquidMatcher, inputs.footer);
-    });
+    benchWithSetup('Wasm', makeLiquidMatcher, m => matchWithInput(m, inputs.footer));
     bench('JS', () => {
       liquid.LiquidHTML.match(inputs.footer);
     });

@@ -91,6 +91,10 @@ export class WasmMatcher {
     return this._instance.exports.match(0);
   }
 
+  getMemorySizeBytes() {
+    return this._instance.exports.memory.buffer.byteLength;
+  }
+
   getCstRoot() {
     const {buffer} = this._instance.exports.memory;
     const addr = this._instance.exports.getCstRoot();
