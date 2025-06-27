@@ -55,7 +55,7 @@ const gensym = (() => {
   return prefix => `${prefix}${nextId++}`;
 })();
 
-function extractParams(exp, seen = new Set()) {
+function collectParams(exp, seen = new Set()) {
   switch (exp.constructor) {
     case pexprs.Param:
       if (!seen.has(exp.index)) {
@@ -64,23 +64,49 @@ function extractParams(exp, seen = new Set()) {
       }
       return [];
     case pexprs.Alt:
-      return exp.terms.flatMap(e => extractParams(e, seen));
+      return exp.terms.flatMap(e => collectParams(e, seen));
     case pexprs.Apply:
-      return exp.args.flatMap(e => extractParams(e, seen));
+      return exp.args.flatMap(e => collectParams(e, seen));
     case pexprs.Lookahead:
     case pexprs.Not:
     case pexprs.Opt:
     case pexprs.Plus:
     case pexprs.Seq:
-      return exp.factors.flatMap(e => extractParams(e, seen));
+      return exp.factors.flatMap(e => collectParams(e, seen));
     case pexprs.Star:
-      return extractParams(exp.expr, seen);
+      return collectParams(exp.expr, seen);
     case pexprs.Range:
     case pexprs.Terminal:
     case pexprs.UnicodeChar:
       return [];
     default:
-      throw new Error(`extractParams - not handled: ${exp.constructor.name}`);
+      throw new Error(`not handled: ${exp.constructor.name}`);
+  }
+}
+
+function collectAppsAndParams(exp) {
+  switch (exp.constructor) {
+    case pexprs.Alt:
+      return exp.terms.flatMap(e => collectAppsAndParams(e));
+    case pexprs.Apply:
+    case pexprs.Param:
+      // For our purposes, Params are treated like applications.
+      return [exp];
+    case pexprs.Lookahead:
+    case pexprs.Not:
+    case pexprs.Opt:
+      return [];
+    case pexprs.Plus:
+    case pexprs.Seq:
+      return exp.factors.flatMap(e => collectAppsAndParams(e));
+    case pexprs.Star:
+      return collectAppsAndParams(exp.expr);
+    case pexprs.Range:
+    case pexprs.Terminal:
+    case pexprs.UnicodeChar:
+      return [];
+    default:
+      throw new Error(`not handled: ${exp.constructor.name}`);
   }
 }
 
@@ -515,15 +541,21 @@ export class Compiler {
 
     // The rule ID is a 0-based index that's mapped to the name.
     // It is *not* the same as the function index the rule's eval function.
-    // Ensure that the default start rule always has id 0.
-    this.ruleIdByName = new Map([[grammar.defaultStartRule, 0]]);
-    for (const name of Object.keys(grammar.rules)) {
-      if (name !== grammar.defaultStartRule) {
-        this.ruleIdByName.set(name, this.ruleIdByName.size);
-      }
+    this.ruleIdByName = new Map();
+    this._ensureRuleId(grammar.defaultStartRule); // Ensure default start rule has id 0.
+  }
+
+  ruleId(name) {
+    return checkNotNull(this.ruleIdByName.get(name), `Unknown rule: ${name}`);
+  }
+
+  // This should be on the only place where we assign rule IDs!
+  _ensureRuleId(name) {
+    if (!this.ruleIdByName.has(name)) {
+      this.ruleIdByName.set(name, this.ruleIdByName.size);
+      assert(this.ruleIdByName.size <= 256, 'too many rules');
     }
-    assert(this.ruleIdByName.size <= 256, 'too many rules');
-    this.liftedRules = new Map();
+    return this.ruleIdByName.get(name);
   }
 
   lookUpRule(ruleName, grammar = this.grammar) {
@@ -533,22 +565,23 @@ export class Compiler {
     if (grammar.superGrammar) {
       return this.lookUpRule(ruleName, grammar.superGrammar);
     }
-    if (this.liftedRules.has(ruleName)) {
-      const r = this.liftedRules.get(ruleName);
-      return r;
-    }
     throw new Error(
         `Rule '${ruleName}' not found in this grammar or any of its supergrammars`,
     );
   }
 
   liftPExpr(exp) {
+    // Note: the same expression might appear in more than one place, and
+    // when lifting, we could in theory avoid creating a duplicate function.
+    // But, we have to be careful where Params are involved: `"a" | blah`
+    // could mean something different depending on context.
+
     const name = gensym('$lifted');
 
     // Replace "free variables" (Params from the outer scope) with Params
     // for the lifted, to-be-defined rule.
 
-    const freeVars = extractParams(exp);
+    const freeVars = collectParams(exp);
 
     let body = exp;
     let formals = [];
@@ -570,29 +603,15 @@ export class Compiler {
       formals = newParams.filter(isNonNull).map(p => `__${p.index}`);
     }
     const actuals = freeVars.filter(isNonNull);
-
-    const ruleId = this.ruleIdByName.size;
-    this.ruleIdByName.set(name, ruleId);
-    this.liftedRules.set(name, {body, formals, source: exp.source});
-    return [name, actuals];
-  }
-
-  recordRule(name) {
-    // If the rule is not defined in this grammar, but it's defined in a
-    // supergrammar, lazily add it to the map.
-    if (!this.ruleIdByName.has(name)) {
-      if (name in this.grammar.superGrammar.rules) {
-        this.ruleIdByName.set(name, this.ruleIdByName.size);
-      } else {
-        throw new Error(`Unknown rule: ${name}`);
-      }
-    }
+    const ruleInfo = {body, formals, source: exp.source};
+    this._ensureRuleId(name);
+    return [name, ruleInfo, actuals];
   }
 
   // Return a funcidx corresponding to the eval function for the given rule.
   ruleEvalFuncIdx(name) {
     const offset = this.importDecls.length + prebuilt.funcsec.entryCount;
-    return w.funcidx(checkNotNull(this.ruleIdByName.get(name)) + offset);
+    return w.funcidx(this.ruleId(name) + offset);
   }
 
   // Return an object implementing all of the debug imports.
@@ -646,10 +665,92 @@ export class Compiler {
         });
       }
     }
+    this.rules = this.simplifyApplications();
+    for (const name of this.rules.keys()) {
+      this._ensureRuleId(name);
+    }
+
+    // For memoization, we want every possible combination of concrete
+    // parameters to be assigned a unique ruleId.
+    // this.computeConcreteApplications();
 
     const functionDecls = this.functionDecls();
     this.rewriteDebugLabels(functionDecls, debugBaseFuncIdx);
     return this.buildModule(typeMap, functionDecls);
+  }
+
+  simplifyApplications() {
+    // Begin with all the rules in the grammar.
+    const rules = Object.entries(this.grammar.rules);
+    const ruleNames = new Set();
+
+    const ensureResolved = name => {
+      if (!ruleNames.has(name)) {
+        rules.push([name, this.lookUpRule(name)]);
+        ruleNames.add(name);
+      }
+    };
+
+    // If `exp` is not an Apply or Param, lift it into its own rule and return
+    // a new application of that rule.
+    const simplifyArg = exp => {
+      if (exp instanceof pexprs.Param || exp instanceof pexprs.Apply) {
+        return simplify(exp);
+      }
+      const [name, info, env] = this.liftPExpr(exp);
+      const args = env.map(p => {
+        assert(p instanceof pexprs.Param, 'Expected Param');
+        return new pexprs.Param(p.index);
+      });
+      rules.push([name, info]);
+      return new pexprs.Apply(name, args);
+    };
+    const simplify = exp => {
+      switch (exp.constructor) {
+        case pexprs.Apply:
+          ensureResolved(exp.ruleName);
+          return new pexprs.Apply(
+              exp.ruleName,
+              exp.args.map(arg => simplifyArg(arg)),
+          );
+        case pexprs.Lex:
+        case pexprs.Lookahead:
+        case pexprs.Not:
+        case pexprs.Opt:
+        case pexprs.Plus:
+        case pexprs.Star:
+          return new exp.constructor(simplify(exp.expr));
+        case pexprs.Seq:
+          return new pexprs.Seq(exp.factors.map(e => simplify(e)));
+        case pexprs.Param:
+        case pexprs.Range:
+        case pexprs.Terminal:
+        case pexprs.UnicodeChar:
+          // As these are all leaf nodes, we can share them.
+          return exp;
+        default:
+          if (exp instanceof pexprs.Alt) {
+            return new pexprs.Alt(exp.terms.map(e => simplify(e)));
+          }
+          if ([pexprs.any, pexprs.end].includes(exp)) {
+            return exp;
+          }
+          throw new Error(`not handled: ${exp.constructor.name}`);
+      }
+    };
+    const newRules = new Map();
+
+    // Go over all the rules and simplify them.
+    // Note that `rules` can grow during this process.
+    for (let i = 0; i < rules.length; i++) {
+      const [name, info] = rules[i];
+      newRules.set(name, {
+        ...info,
+        body: simplify(info.body),
+      });
+    }
+
+    return newRules;
   }
 
   compileRule(name, ruleInfo) {
@@ -663,6 +764,39 @@ export class Compiler {
       asm.localGet('ret');
     });
     return this.asm._functionDecls.at(-1);
+  }
+
+  computeConcreteApplications() {
+    const seen = new Set();
+    const result = new Map();
+
+    const visit = (app, actuals) => {
+      const memoKey = new pexprs.Apply(app.ruleName, actuals).toMemoKey();
+      if (seen.has(memoKey)) return;
+      seen.add(memoKey);
+
+      if (!result.has(app)) result.set(app, []);
+      result.get(app).push(memoKey);
+
+      const {body} = this.lookUpRule(app.ruleName);
+      for (const exp of collectAppsAndParams(body)) {
+        let app = exp;
+        if (exp instanceof pexprs.Param) {
+          app = actuals[exp.index]; // substitute the param
+        }
+        // If we still don't have an Apply, lift it.
+        if (!(app instanceof pexprs.Apply)) {
+          app = new pexprs.Apply(...this.liftPExpr(app));
+        }
+        visit(
+            app,
+            app.args.map(arg => arg.substituteParams(actuals)),
+        );
+      }
+    };
+    const start = new pexprs.Apply(this.grammar.defaultStartRule);
+    visit(start, []);
+    return result;
   }
 
   buildRuleNamesSection(ruleNames) {
@@ -800,7 +934,7 @@ export class Compiler {
     const ruleDecls = [];
     for (let i = 0; i < this.ruleIdByName.size; i++) {
       const name = [...this.ruleIdByName.keys()][i];
-      const ruleInfo = this.lookUpRule(name);
+      const ruleInfo = this.rules.get(name);
       ruleDecls.push(this.compileRule(name, ruleInfo));
     }
     const {asm} = this;
@@ -929,8 +1063,8 @@ export class Compiler {
   }
 
   emitPushRuleId(name) {
-    this.recordRule(name);
-    this.asm.i32Const(checkNotNull(this.ruleIdByName.get(name), `Unknown rule: ${name}`));
+    this._ensureRuleId(name);
+    this.asm.i32Const(this.ruleId(name));
   }
 
   // Emit the code which will leave an argument for a parameterized rule
@@ -946,22 +1080,16 @@ export class Compiler {
     // 2. Apply of a non-parameterized rule: pass the rule ID.
     // 3. Apply of a parameterized rule: convert to a closure, and pass
     //    the address of the closure, with the low bit set.
-    // 4. Another pexpr: lift it to a rule, and emit an Apply of that rule,
-    //    which turns into one of the above two cases.
+    // After simplifyApplications, there are no other possibilities.
 
     // Case 1: Param.
     if (arg.constructor === pexprs.Param) {
       asm.localGet(`__arg${arg.index}`);
       return 0;
     }
-    let app = arg;
+    assert(arg.constructor === pexprs.Apply);
+    const app = arg;
 
-    // Case 4: lift the pexpr to a rule, and fall through to the handle
-    // the resulting Apply.
-    if (arg.constructor !== pexprs.Apply) {
-      const [ruleId, args] = this.liftPExpr(arg);
-      app = new pexprs.Apply(ruleId, args);
-    }
     // Case 3.
     if (app.args.length === 0) {
       this.emitPushRuleId(app.ruleName);
@@ -973,7 +1101,7 @@ export class Compiler {
 
   emitApply(exp) {
     const {asm} = this;
-    this.recordRule(exp.ruleName);
+    this._ensureRuleId(exp.ruleName);
 
     const argCount = exp.args.length;
     assert(argCount <= 3, 'Too many arguments to rule application');
