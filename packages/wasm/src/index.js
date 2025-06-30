@@ -784,10 +784,9 @@ export class Compiler {
         if (exp instanceof pexprs.Param) {
           app = actuals[exp.index]; // substitute the param
         }
-        // If we still don't have an Apply, lift it.
-        if (!(app instanceof pexprs.Apply)) {
-          app = new pexprs.Apply(...this.liftPExpr(app));
-        }
+        // We don't expect to encounter any non-applications; those should
+        // have been lifted in simplifyApplications().
+        assert(app instanceof pexprs.Apply);
         visit(
             app,
             app.args.map(arg => arg.substituteParams(actuals)),

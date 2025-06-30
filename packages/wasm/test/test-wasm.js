@@ -2,7 +2,7 @@ import test from 'ava';
 import * as ohm from 'ohm-js';
 import {performance} from 'perf_hooks';
 
-import {ConstantsForTesting as Constants} from '../src/index.js';
+import {Compiler, ConstantsForTesting as Constants} from '../src/index.js';
 import {wasmMatcherForGrammar} from './_helpers.js';
 
 const matchWithInput = (m, str) => (m.setInput(str), m.match());
@@ -802,4 +802,52 @@ test('arithmetic', async t => {
   t.is(matchWithInput(m, '1+276*(3+4)'), 1);
   t.is(unparse(m), '1+276*(3+4)');
   t.is(matchWithInput(m, '1'), 1);
+});
+
+test('computeConcreteApplications', async t => {
+  // Test that computeConcreteApplications tracks all concrete parameter values
+  const g = ohm.grammar(`
+    G {
+      start = one | two | three
+
+      one = exclaimed<hello> // Simple application
+      two = flip<exclaimed<hello2>, hello> // Appl as argument
+      three = commaSep<exclaimed<hello3>>
+
+      exclaimed<exp> = exp "!"
+      flip<a, b> = b a
+      commaSep<exp> = listOf<exp, comma>
+
+      hello = "hello"
+      hello2 = "hello"
+      hello3 = "hello"
+      comma = ","
+    }`);
+
+  const compiler = new Compiler(g);
+  const result = compiler.computeConcreteApplications();
+
+  const allMemoKeys = new Set([...result.values()].flat(Infinity));
+
+  t.deepEqual(
+    allMemoKeys,
+    new Set([
+      'start',
+      'one',
+      'exclaimed<hello>',
+      'hello',
+      'two',
+      'flip<exclaimed<hello2>,hello>',
+      'exclaimed<hello2>',
+      'hello2',
+      'three',
+      'commaSep<exclaimed<hello3>>',
+      'listOf<exclaimed<hello3>,comma>',
+      'nonemptyListOf<exclaimed<hello3>,comma>',
+      'exclaimed<hello3>',
+      'hello3',
+      'comma',
+      'emptyListOf<exclaimed<hello3>,comma>'
+    ])
+  );
 });
