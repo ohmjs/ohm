@@ -543,6 +543,8 @@ export class Compiler {
     // It is *not* the same as the function index the rule's eval function.
     this.ruleIdByName = new Map();
     this._ensureRuleId(grammar.defaultStartRule); // Ensure default start rule has id 0.
+
+    this.rules = undefined;
   }
 
   ruleId(name) {
@@ -556,18 +558,6 @@ export class Compiler {
       assert(this.ruleIdByName.size <= 256, 'too many rules');
     }
     return this.ruleIdByName.get(name);
-  }
-
-  lookUpRule(ruleName, grammar = this.grammar) {
-    if (ruleName in grammar.rules) {
-      return grammar.rules[ruleName];
-    }
-    if (grammar.superGrammar) {
-      return this.lookUpRule(ruleName, grammar.superGrammar);
-    }
-    throw new Error(
-        `Rule '${ruleName}' not found in this grammar or any of its supergrammars`,
-    );
   }
 
   liftPExpr(exp) {
@@ -626,7 +616,17 @@ export class Compiler {
     return ans;
   }
 
+  normalize() {
+    assert(!this.rules, 'already normalized');
+    this.rules = this.simplifyApplications();
+    for (const name of this.rules.keys()) {
+      this._ensureRuleId(name);
+    }
+  }
+
   compile() {
+    this.normalize();
+
     const typeMap = (this.typeMap = new TypeMap(prebuilt.typesec.entryCount));
     const asm = (this.asm = new Assembler(typeMap));
     asm.addBlocktype([w.valtype.i32], []);
@@ -665,11 +665,6 @@ export class Compiler {
         });
       }
     }
-    this.rules = this.simplifyApplications();
-    for (const name of this.rules.keys()) {
-      this._ensureRuleId(name);
-    }
-
     // For memoization, we want every possible combination of concrete
     // parameters to be assigned a unique ruleId.
     // this.computeConcreteApplications();
@@ -680,13 +675,20 @@ export class Compiler {
   }
 
   simplifyApplications() {
+    const {grammar} = this;
+
     // Begin with all the rules in the grammar.
     const rules = Object.entries(this.grammar.rules);
     const ruleNames = new Set();
 
+    const lookUpRule = name => {
+      if (name in grammar.rules) return grammar.rules[name];
+      if (grammar.superGrammar) return lookUpRule(name, grammar.superGrammar);
+    };
+
     const ensureResolved = name => {
       if (!ruleNames.has(name)) {
-        rules.push([name, this.lookUpRule(name)]);
+        rules.push([name, checkNotNull(lookUpRule(name))]);
         ruleNames.add(name);
       }
     };
@@ -778,7 +780,7 @@ export class Compiler {
       if (!result.has(app)) result.set(app, []);
       result.get(app).push(memoKey);
 
-      const {body} = this.lookUpRule(app.ruleName);
+      const {body} = this.rules.get(app.ruleName);
       for (const exp of collectAppsAndParams(body)) {
         let app = exp;
         if (exp instanceof pexprs.Param) {

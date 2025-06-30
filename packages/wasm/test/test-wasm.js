@@ -804,7 +804,7 @@ test('arithmetic', async t => {
   t.is(matchWithInput(m, '1'), 1);
 });
 
-test('computeConcreteApplications', async t => {
+test('computeConcreteApplications', t => {
   // Test that computeConcreteApplications tracks all concrete parameter values
   const g = ohm.grammar(`
     G {
@@ -812,42 +812,41 @@ test('computeConcreteApplications', async t => {
 
       one = exclaimed<hello> // Simple application
       two = flip<exclaimed<hello2>, hello> // Appl as argument
-      three = commaSep<exclaimed<hello3>>
+      three = commaSep<exclaimed<"hello">>
 
       exclaimed<exp> = exp "!"
       flip<a, b> = b a
-      commaSep<exp> = listOf<exp, comma>
+      commaSep<exp> = listOf<exp, ",">
 
       hello = "hello"
       hello2 = "hello"
-      hello3 = "hello"
-      comma = ","
     }`);
 
   const compiler = new Compiler(g);
+  compiler.normalize();
   const result = compiler.computeConcreteApplications();
 
   const allMemoKeys = new Set([...result.values()].flat(Infinity));
 
   t.deepEqual(
-    allMemoKeys,
-    new Set([
-      'start',
-      'one',
-      'exclaimed<hello>',
-      'hello',
-      'two',
-      'flip<exclaimed<hello2>,hello>',
-      'exclaimed<hello2>',
-      'hello2',
-      'three',
-      'commaSep<exclaimed<hello3>>',
-      'listOf<exclaimed<hello3>,comma>',
-      'nonemptyListOf<exclaimed<hello3>,comma>',
-      'exclaimed<hello3>',
-      'hello3',
-      'comma',
-      'emptyListOf<exclaimed<hello3>,comma>'
-    ])
+      allMemoKeys,
+      new Set([
+        'start',
+        'one',
+        'exclaimed<hello>',
+        'hello',
+        'two',
+        'flip<exclaimed<hello2>,hello>',
+        'exclaimed<hello2>',
+        'hello2',
+        'three',
+        'commaSep<exclaimed<$lifted3>>',
+        'listOf<exclaimed<$lifted3>,$lifted4>',
+        'nonemptyListOf<exclaimed<$lifted3>,$lifted4>',
+        'exclaimed<$lifted3>',
+        '$lifted3',
+        '$lifted4',
+        'emptyListOf<exclaimed<$lifted3>,$lifted4>',
+      ]),
   );
 });
