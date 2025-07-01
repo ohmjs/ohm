@@ -45,6 +45,41 @@ function uniqueName(names, str) {
   return name;
 }
 
+class IndexedSet {
+  constructor() {
+    this._map = new Map();
+  }
+
+  add(item) {
+    if (this._map.has(item)) {
+      return this._map.get(item);
+    }
+    const idx = this._map.size;
+    this._map.set(checkNotNull(item), idx);
+    return idx;
+  }
+
+  getIndex(item) {
+    return this._map.get(item);
+  }
+
+  has(item) {
+    return this._map.has(item);
+  }
+
+  get size() {
+    return this._map.size;
+  }
+
+  values() {
+    return [...this._map.keys()];
+  }
+
+  [Symbol.iterator]() {
+    return this._map[Symbol.iterator]();
+  }
+}
+
 function getDebugLabel(exp) {
   const loc = exp.source ? exp.source.startIdx : -1;
   return `${exp.toDisplayString()}@${loc}`;
@@ -256,10 +291,22 @@ class Assembler {
   }
 
   block(bt, bodyThunk) {
+    this._blockOnly(bt);
+    bodyThunk();
+    this._endBlock();
+  }
+
+  // Prefer to use `block`, but for some cases it's more convenient to emit
+  // the block and the end separately.
+  _blockOnly(bt) {
     this.emit(w.instr.block, bt);
     this._blockStack.push('block');
-    bodyThunk();
-    this._blockStack.pop();
+  }
+
+  // This should always be paired with `blockOnly`.
+  _endBlock() {
+    const what = this._blockStack.pop();
+    assert(what === 'block', 'Invalid endBlock');
     this.emit(w.instr.end);
   }
 
@@ -366,6 +413,29 @@ class Assembler {
     const what = this._blockStack.at(-(depth + 1));
     assert(what === 'loop', 'Invalid continue');
     this.emit(instr.br, w.labelidx(depth));
+  }
+
+  brTable(labels, defaultIdx) {
+    this.emit(w.instr.br_table, w.vec(labels.map(i => w.labelidx(i))), w.labelidx(defaultIdx));
+  }
+
+  // Emit a dense jump table (switch-like) using br_table.
+  switch(bt, condThunk, caseThunks, defaultThunk) {
+    // Emit one block per case…
+    caseThunks.forEach(_ => this._blockOnly(bt));
+
+    const labels = caseThunks.map((_, i) => w.labelidx(i));
+
+    // …and one inner block containing the condition and the br_table.
+    this.block(w.blocktype.empty, () => {
+      condThunk();
+      this.brTable(labels, w.labelidx(labels.length));
+    });
+    caseThunks.forEach((fn, i) => {
+      fn();
+      this.break(labels.length - (i + 1)); // Jump to end.
+      this._endBlock();
+    });
   }
 
   // "Macros" -- codegen helpers specific to Ohm.
@@ -541,26 +611,29 @@ export class Compiler {
 
     // The rule ID is a 0-based index that's mapped to the name.
     // It is *not* the same as the function index the rule's eval function.
-    this.ruleIdByName = new Map();
-    this._ensureRuleId(grammar.defaultStartRule); // Ensure default start rule has id 0.
+    this.ruleIdByName = new IndexedSet();
+    this._ensureRuleId(grammar.defaultStartRule); // Ensure default start rule has id 0…
+    this._ensureRuleId('$term'); // …and `$term` is 1.
 
     this.rules = undefined;
   }
 
   ruleId(name) {
-    return checkNotNull(this.ruleIdByName.get(name), `Unknown rule: ${name}`);
+    return checkNotNull(this.ruleIdByName.getIndex(name), `Unknown rule: ${name}`);
   }
 
   // This should be on the only place where we assign rule IDs!
   _ensureRuleId(name) {
-    if (!this.ruleIdByName.has(name)) {
-      this.ruleIdByName.set(name, this.ruleIdByName.size);
-      assert(this.ruleIdByName.size <= 256, 'too many rules');
-    }
-    return this.ruleIdByName.get(name);
+    const idx = this.ruleIdByName.add(name);
+    assert(idx < 256, `too many rules: ${idx}`);
+    return idx;
   }
 
   liftPExpr(exp) {
+    if (exp instanceof pexprs.Terminal) {
+      return;
+    }
+
     // Note: the same expression might appear in more than one place, and
     // when lifting, we could in theory avoid creating a duplicate function.
     // But, we have to be careful where Params are involved: `"a" | blah`
@@ -618,7 +691,7 @@ export class Compiler {
 
   normalize() {
     assert(!this.rules, 'already normalized');
-    this.rules = this.simplifyApplications();
+    this.simplifyApplications();
     for (const name of this.rules.keys()) {
       this._ensureRuleId(name);
     }
@@ -685,6 +758,8 @@ export class Compiler {
       if (name in grammar.rules) return grammar.rules[name];
       if (grammar.superGrammar) return lookUpRule(name, grammar.superGrammar);
     };
+    const liftedTerminals = new IndexedSet();
+    const terminalIds = new Map(); // Map from Apply -> terminal ID
 
     const ensureResolved = name => {
       if (!ruleNames.has(name)) {
@@ -693,11 +768,22 @@ export class Compiler {
       }
     };
 
+    const liftTerminal = exp => {
+      const id = liftedTerminals.add(exp.obj);
+      assert(id >= 0 && id < 0xffff, 'too many terminals!');
+      const app = new pexprs.Apply('$term');
+      terminalIds.set(app, id);
+      return app;
+    };
+
     // If `exp` is not an Apply or Param, lift it into its own rule and return
     // a new application of that rule.
     const simplifyArg = exp => {
       if (exp instanceof pexprs.Param || exp instanceof pexprs.Apply) {
         return simplify(exp);
+      }
+      if (exp instanceof pexprs.Terminal) {
+        return liftTerminal(exp);
       }
       const [name, info, env] = this.liftPExpr(exp);
       const args = env.map(p => {
@@ -751,8 +837,28 @@ export class Compiler {
         body: simplify(info.body),
       });
     }
+    this.rules = newRules;
+    this.liftedTerminals = liftedTerminals;
+    this.terminalIds = terminalIds;
+  }
 
-    return newRules;
+  compileTerminalRule(name) {
+    const {asm} = this;
+    asm.addFunction(`$${name}`, [w.valtype.i32], [w.valtype.i32], () => {
+      asm.addLocal('ret', w.valtype.i32);
+      asm.addLocal('tmp', w.valtype.i32);
+
+      asm.switch(
+          w.blocktype.empty,
+          () => asm.localGet('__arg0'),
+          this.liftedTerminals
+              .values()
+              .map(str => () => this.emitTerminal(new pexprs.Terminal(str))),
+          () => asm.emit(w.instr.unreachable),
+      );
+      asm.localGet('ret');
+    });
+    return this.asm._functionDecls.at(-1);
   }
 
   compileRule(name, ruleInfo) {
@@ -777,6 +883,8 @@ export class Compiler {
       if (seen.has(memoKey)) return;
       seen.add(memoKey);
 
+      if (app.ruleName === '$term') return; // Don't try to visit the body, there isn't one.
+
       if (!result.has(app)) result.set(app, []);
       result.get(app).push(memoKey);
 
@@ -786,6 +894,8 @@ export class Compiler {
         if (exp instanceof pexprs.Param) {
           app = actuals[exp.index]; // substitute the param
         }
+        // if (app.ruleName === '$term') continue;
+
         // We don't expect to encounter any non-applications; those should
         // have been lifted in simplifyApplications().
         assert(app instanceof pexprs.Apply);
@@ -811,10 +921,12 @@ export class Compiler {
     const {importDecls} = this;
     assert(this.importDecls.length === prebuilt.destImportCount, 'import count mismatch');
 
-    const ruleNames = [...this.ruleIdByName.keys()];
+    const ruleNames = this.ruleIdByName.values();
 
     // Ensure that `ruleNames` is in the correct order.
-    ruleNames.forEach((n, i) => assert(i === this.ruleIdByName.get(n), `out of order: ${n}`));
+    ruleNames.forEach((n, i) =>
+      assert(i === this.ruleIdByName.getIndex(n), `out of order: ${n}`),
+    );
 
     // console.log(importDecls.length, 'imports');
     // console.log(prebuilt.funcsec.entryCount, 'prebuilt functions');
@@ -934,9 +1046,13 @@ export class Compiler {
     // inherited rules for the first time).
     const ruleDecls = [];
     for (let i = 0; i < this.ruleIdByName.size; i++) {
-      const name = [...this.ruleIdByName.keys()][i];
-      const ruleInfo = this.rules.get(name);
-      ruleDecls.push(this.compileRule(name, ruleInfo));
+      const name = this.ruleIdByName.values()[i];
+      if (name === '$term') {
+        ruleDecls.push(this.compileTerminalRule(name));
+      } else {
+        const ruleInfo = this.rules.get(name);
+        ruleDecls.push(this.compileRule(name, ruleInfo));
+      }
     }
     const {asm} = this;
     asm.addFunction('start', [], [], () => {
@@ -950,7 +1066,7 @@ export class Compiler {
   emitPExpr(exp) {
     const {asm} = this;
 
-    if (exp.constructor === pexprs.Apply) {
+    if (exp instanceof pexprs.Apply) {
       this.emitApply(exp);
       return;
     }
@@ -1081,21 +1197,32 @@ export class Compiler {
     // 2. Apply of a non-parameterized rule: pass the rule ID.
     // 3. Apply of a parameterized rule: convert to a closure, and pass
     //    the address of the closure, with the low bit set.
+    // 4. A lifted terminal, which appears as an apply of '$term'
+    //    with no args.
     // After simplifyApplications, there are no other possibilities.
 
     // Case 1: Param.
-    if (arg.constructor === pexprs.Param) {
+    if (arg instanceof pexprs.Param) {
       asm.localGet(`__arg${arg.index}`);
       return 0;
     }
-    assert(arg.constructor === pexprs.Apply);
+    assert(arg instanceof pexprs.Apply, `not an Apply: ${arg.constructor.name}`);
     const app = arg;
+
+    // Case 4.
+    if (app.ruleName === '$term') {
+      // Extract out the terminal ID. Yes, this is a hack!
+      const termId = this.terminalIds.get(app);
+      this.asm.i32Const((this.ruleId('$term') << 16) | termId);
+      return 0;
+    }
 
     // Case 3.
     if (app.args.length === 0) {
       this.emitPushRuleId(app.ruleName);
       return 0;
     }
+
     // Case 2.
     return this.emitClosure(app);
   }
@@ -1108,6 +1235,7 @@ export class Compiler {
     assert(argCount <= 3, 'Too many arguments to rule application');
 
     this.emitPushRuleId(exp.ruleName);
+
     let numClosures = 0;
     for (const arg of exp.args) {
       numClosures += this.emitArg(arg);

@@ -111,6 +111,15 @@ export function evalApplyNoMemo0(ruleId: i32): Result {
 }
 
 export function evalApply0(ruleId: i32): Result {
+  // Handle lifted terminals.
+  if (ruleId & 0x00010000) {
+    const origPos = pos;
+    if (call_indirect<Result>(1, ruleId & 0x0000ffff)) {
+      return newTerminalNode(origPos, pos);
+    }
+    return 0;
+  }
+
   // Handle closures, which are an pointer w/ a flag in the high bit.
   // TODO: Find a cleaner way of doing this.
   if (ruleId & 0x80000000) {

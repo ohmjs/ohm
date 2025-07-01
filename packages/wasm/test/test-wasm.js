@@ -840,13 +840,11 @@ test('computeConcreteApplications', t => {
         'exclaimed<hello2>',
         'hello2',
         'three',
-        'commaSep<exclaimed<$lifted3>>',
-        'listOf<exclaimed<$lifted3>,$lifted4>',
-        'nonemptyListOf<exclaimed<$lifted3>,$lifted4>',
-        'exclaimed<$lifted3>',
-        '$lifted3',
-        '$lifted4',
-        'emptyListOf<exclaimed<$lifted3>,$lifted4>',
+        'commaSep<exclaimed<$term>>',
+        'listOf<exclaimed<$term>,$term>',
+        'nonemptyListOf<exclaimed<$term>,$term>',
+        'exclaimed<$term>',
+        'emptyListOf<exclaimed<$term>,$term>',
       ]),
   );
 });
