@@ -1167,57 +1167,6 @@ export class Compiler {
     asm.maybeReturnTerminalNodeWithSavedPos();
   }
 
-  emitClosure(app) {
-    // With non-parameterized rules, we pass the ruleId to the eval function.
-    // For a closure, we store the ruleId and the actual params on the stack:
-    //           ◂- sp
-    // [ ruleId ]
-    // [argCount]
-    // [  arg0  ]
-    // [  ...   ]
-    // [  argN  ]
-    //
-    // …and call the eval function with a tagged pointer to the closure.
-
-    assert(app.args.length <= 3);
-
-    // TODO: Support an arbitrary number of bindings.
-    // In theory these could be packed into two bytes, if closures are
-    // always stack-allocated at the stack is restricted to the first
-    // page of memory (<= 64k).
-    const {asm} = this;
-
-    // The args may themselves be closures —— we emit them first, in reverse
-    // order, before pushing a new stack frame for this one.
-    let count = 1;
-    for (const arg of app.args.reverse()) {
-      count += this.emitArg(arg);
-    }
-    asm.i32Const(app.args.length);
-    this.emitPushRuleId(app.ruleName);
-
-    asm.pushStackFrame(3);
-
-    // Above we pushed all the values to the operand stack.
-    // Now we write all of them into memory.
-    for (let i = 0; i < app.args.length + 2; i++) {
-      // Need [addr, val] on the stack.
-      asm.localSet('tmp');
-      asm.globalGet('sp');
-      asm.localGet('tmp');
-      asm.i32Store(i * 4);
-    }
-
-    // Leave a tagged pointer to the closure on the operand stack.
-    asm.globalGet('sp');
-    asm.i32Const(0x80000000);
-    asm.emit(instr.i32.or);
-
-    // Return the number of total number of closures that were created,
-    // so that the stack can be properly cleaned up.
-    return count;
-  }
-
   emitPushRuleId(name) {
     this._ensureRuleId(name);
     this.asm.i32Const(this.ruleId(name));
@@ -1233,36 +1182,28 @@ export class Compiler {
     // There are a few cases we have to handle.
     // Ultimately, argument must be reduced to a single i32 value.
     // 1. Param is trivial, just pass it on.
-    // 2. Apply of a non-parameterized rule: pass the rule ID.
-    // 3. A lifted terminal, which appears as an apply of a rule like
+    // 2. A lifted terminal, which appears as an apply of a rule like
     //    '$term$29' with no args.
-    // 4. Apply of a parameterized rule: not allowed right now.
+    // 3. Apply of a regular, non-parameterized rule: pass the rule ID.
     // After simplifyApplications, there are no other possibilities.
 
     // Case 1: Param.
     if (arg instanceof pexprs.Param) {
       asm.localGet(`__arg${arg.index}`);
-      return 0;
     }
     assert(arg instanceof pexprs.Apply, `not an Apply: ${arg.constructor.name}`);
     const app = arg;
 
     // Case 2.
-    if (app.args.length === 0) {
-      this.emitPushRuleId(app.ruleName);
-      return 0;
-    }
-
-    // Case 3.
     if (app.ruleName.startsWith('$term$')) {
       // Extract out the terminal ID. Yes, this is a hack!
       const termId = parseInt(app.ruleName.split('$term$')[1], 10);
       this.asm.i32Const((this.ruleId('$term') << 16) | termId);
-      return 0;
     }
 
-    // Case 4.
-    throw new Error('closures not supported');
+    // Case 3.
+    assert(app.args.length === 0);
+    this.emitPushRuleId(app.ruleName);
   }
 
   emitApply(exp) {
@@ -1281,17 +1222,14 @@ export class Compiler {
       asm.i32Const(ruleId);
     }
 
-    let numClosures = 0;
-    for (const arg of exp.args) {
-      numClosures += this.emitArg(arg);
-    }
+    exp.args.forEach(arg => this.emitArg(arg));
+
     // TODO: Handle this at grammar parse time, not here.
     if (exp.ruleName.includes('_')) {
       asm.callPrebuiltFunc(`evalApplyNoMemo${argCount}`);
     } else {
       asm.callPrebuiltFunc(`evalApply${argCount}`);
     }
-    asm.popStackFrame(numClosures * 3);
     asm.localSet('ret');
   }
 
