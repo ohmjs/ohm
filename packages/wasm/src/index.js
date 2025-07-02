@@ -32,6 +32,11 @@ function checkNoUndefined(arr) {
   return arr;
 }
 
+function setdefault(map, key, defaultVal) {
+  if (!map.has(key)) map.set(key, defaultVal);
+  return map.get(key);
+}
+
 function uniqueName(names, str) {
   let name = str;
   outer: if (names.has(str)) {
@@ -671,7 +676,6 @@ export class Compiler {
     }
     const actuals = freeVars.filter(isNonNull);
     const ruleInfo = {body, formals, source: exp.source};
-    this._ensureRuleId(name);
     return [name, ruleInfo, actuals];
   }
 
@@ -696,6 +700,8 @@ export class Compiler {
   normalize() {
     assert(!this.rules, 'already normalized');
     this.simplifyApplications();
+    this.specializeApplications();
+
     for (const name of this.rules.keys()) {
       this._ensureRuleId(name);
     }
@@ -752,20 +758,12 @@ export class Compiler {
 
     // Begin with all the rules in the grammar.
     const rules = Object.entries(this.grammar.rules);
-    const ruleNames = new Set();
 
     const lookUpRule = name => {
       if (name in grammar.rules) return grammar.rules[name];
       if (grammar.superGrammar) return lookUpRule(name, grammar.superGrammar);
     };
     const liftedTerminals = new IndexedSet();
-
-    const ensureResolved = name => {
-      if (!ruleNames.has(name)) {
-        rules.push([name, checkNotNull(lookUpRule(name))]);
-        ruleNames.add(name);
-      }
-    };
 
     const liftTerminal = exp => {
       const id = liftedTerminals.add(exp.obj);
@@ -793,7 +791,7 @@ export class Compiler {
     const simplify = exp => {
       switch (exp.constructor) {
         case pexprs.Apply:
-          ensureResolved(exp.ruleName);
+          rules.push([exp.ruleName, checkNotNull(lookUpRule(exp.ruleName))]);
           return new pexprs.Apply(
               exp.ruleName,
               exp.args.map(arg => simplifyArg(arg)),
@@ -826,13 +824,16 @@ export class Compiler {
     const newRules = new Map();
 
     // Go over all the rules and simplify them.
-    // Note that `rules` can grow during this process.
+    // Note that `rules` can grow during this process; when we hit the end
+    // of the array, there's no more work to be done.
     for (let i = 0; i < rules.length; i++) {
       const [name, info] = rules[i];
-      newRules.set(name, {
-        ...info,
-        body: simplify(info.body),
-      });
+      if (!newRules.has(name)) {
+        newRules.set(name, {
+          ...info,
+          body: simplify(info.body),
+        });
+      }
     }
     this.rules = newRules;
     this.liftedTerminals = liftedTerminals;
@@ -874,20 +875,10 @@ export class Compiler {
     const seen = new Set();
     const result = new Map();
 
-    const setdefault = (map, key, defaultVal) => {
-      if (!map.has(key)) {
-        map.set(key, defaultVal);
-      }
-      return map.get(key);
-    };
-
-    // TODO: We did this delayed substitution (passing app and actuals) so we could
-    // save based on the identity of the original Apply node. Is it necessary now?
-    const visit = (app, actuals) => {
-      const memoKey = new pexprs.Apply(app.ruleName, actuals).toMemoKey();
+    const visit = app => {
+      const memoKey = app.toMemoKey();
       if (seen.has(memoKey)) return;
       seen.add(memoKey);
-
       setdefault(result, app.ruleName, []).push(memoKey);
 
       // Don't try to visit the body, there isn't one.
@@ -895,23 +886,66 @@ export class Compiler {
 
       const {body} = this.rules.get(app.ruleName);
       for (const exp of collectAppsAndParams(body)) {
-        let app = exp;
-        if (exp instanceof pexprs.Param) {
-          app = actuals[exp.index]; // substitute the param
-        }
-
-        // We don't expect to encounter any non-applications; those should
-        // have been lifted in simplifyApplications().
-        assert(app instanceof pexprs.Apply);
-        visit(
-            app,
-            app.args.map(arg => arg.substituteParams(actuals)),
-        );
+        visit(exp.substituteParams(app.args));
       }
     };
-    const start = new pexprs.Apply(this.grammar.defaultStartRule);
-    visit(start, []);
+    visit(new pexprs.Apply(this.grammar.defaultStartRule));
     return result;
+  }
+
+  specializeApplications() {
+    const newRules = new Map();
+    const {rules} = this;
+    const visit = exp => {
+      if (exp instanceof pexprs.Alt) {
+        return new pexprs.Alt(exp.terms.map(e => visit(e)));
+      } else if ([pexprs.any, pexprs.end].includes(exp)) {
+        return exp;
+      }
+      switch (exp.constructor) {
+        case pexprs.Apply: {
+          // Inline these.
+          if (
+            ['caseInsensitive', 'liquidRawTagImpl', 'liquidTagRule'].includes(exp.ruleName)
+          ) {
+            const ruleInfo = checkNotNull(rules.get(exp.ruleName));
+            return visit(ruleInfo.body.substituteParams(exp.args));
+          }
+
+          const specializedName = exp.toMemoKey();
+          // Create the specialized rule if it doesn't exist yet.
+          if (!newRules.has(specializedName) && !specializedName.startsWith('$term$')) {
+            newRules.set(specializedName, null); // Prevent infinite recursion.
+            const ruleInfo = checkNotNull(rules.get(exp.ruleName));
+            newRules.set(specializedName, {
+              ...ruleInfo,
+              body: visit(ruleInfo.body.substituteParams(exp.args)),
+              formals: [],
+            });
+          }
+          // Replace with an application of the specialized rule.
+          return new pexprs.Apply(specializedName);
+        }
+        case pexprs.Lex:
+        case pexprs.Lookahead:
+        case pexprs.Not:
+        case pexprs.Opt:
+        case pexprs.Plus:
+        case pexprs.Star:
+          return new exp.constructor(visit(exp.expr));
+        case pexprs.Seq:
+          return new pexprs.Seq(exp.factors.map(e => visit(e)));
+        case pexprs.Param:
+        case pexprs.Range:
+        case pexprs.Terminal:
+        case pexprs.UnicodeChar:
+          return exp; // Leaf nodes can be shared.
+        default:
+          throw new Error(`not handled: ${exp.constructor.name}`);
+      }
+    };
+    visit(new pexprs.Apply(this.grammar.defaultStartRule));
+    this.rules = newRules;
   }
 
   buildRuleNamesSection(ruleNames) {
@@ -1200,10 +1234,9 @@ export class Compiler {
     // Ultimately, argument must be reduced to a single i32 value.
     // 1. Param is trivial, just pass it on.
     // 2. Apply of a non-parameterized rule: pass the rule ID.
-    // 3. Apply of a parameterized rule: convert to a closure, and pass
-    //    the address of the closure, with the low bit set.
-    // 4. A lifted terminal, which appears as an apply of a rule like
+    // 3. A lifted terminal, which appears as an apply of a rule like
     //    '$term$29' with no args.
+    // 4. Apply of a parameterized rule: not allowed right now.
     // After simplifyApplications, there are no other possibilities.
 
     // Case 1: Param.
@@ -1214,7 +1247,13 @@ export class Compiler {
     assert(arg instanceof pexprs.Apply, `not an Apply: ${arg.constructor.name}`);
     const app = arg;
 
-    // Case 4.
+    // Case 2.
+    if (app.args.length === 0) {
+      this.emitPushRuleId(app.ruleName);
+      return 0;
+    }
+
+    // Case 3.
     if (app.ruleName.startsWith('$term$')) {
       // Extract out the terminal ID. Yes, this is a hack!
       const termId = parseInt(app.ruleName.split('$term$')[1], 10);
@@ -1222,24 +1261,25 @@ export class Compiler {
       return 0;
     }
 
-    // Case 3.
-    if (app.args.length === 0) {
-      this.emitPushRuleId(app.ruleName);
-      return 0;
-    }
-
-    // Case 2.
-    return this.emitClosure(app);
+    // Case 4.
+    throw new Error('closures not supported');
   }
 
   emitApply(exp) {
     const {asm} = this;
-    this._ensureRuleId(exp.ruleName);
+    const ruleId = this._ensureRuleId(exp.ruleName);
 
     const argCount = exp.args.length;
     assert(argCount <= 3, 'Too many arguments to rule application');
 
-    this.emitPushRuleId(exp.ruleName);
+    // Case 4.
+    if (exp.ruleName.startsWith('$term$')) {
+      // Extract out the terminal ID. Yes, this is a hack!
+      const termId = parseInt(exp.ruleName.split('$term$')[1], 10);
+      this.asm.i32Const((this.ruleId('$term') << 16) | termId);
+    } else {
+      asm.i32Const(ruleId);
+    }
 
     let numClosures = 0;
     for (const arg of exp.args) {

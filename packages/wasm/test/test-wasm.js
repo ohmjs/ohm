@@ -828,25 +828,22 @@ test('computeConcreteApplications', t => {
 
   const allMemoKeys = new Set([...result.values()].flat(Infinity));
 
-  t.deepEqual(
-      allMemoKeys,
-      new Set([
-        'start',
-        'one',
-        'exclaimed<hello>',
-        'exclaimed<hello2>',
-        'exclaimed<$term$0>',
-        'hello',
-        'two',
-        'flip<exclaimed<hello2>,hello>',
-        'hello2',
-        'three',
-        'commaSep<exclaimed<$term$0>>',
-        'listOf<exclaimed<$term$0>,$term$1>',
-        'nonemptyListOf<exclaimed<$term$0>,$term$1>',
-        '$term$0',
-        '$term$1',
-        'emptyListOf<exclaimed<$term$0>,$term$1>',
-      ]),
-  );
+  t.deepEqual([...allMemoKeys].sort(), [
+    '$term$0',
+    '$term$1',
+    'commaSep<exclaimed<$term$0>>',
+    'emptyListOf<exclaimed<$term$0>,$term$1>',
+    'exclaimed<$term$0>',
+    'exclaimed<hello2>',
+    'exclaimed<hello>',
+    'flip<exclaimed<hello2>,hello>',
+    'hello',
+    'hello2',
+    'listOf<exclaimed<$term$0>,$term$1>',
+    'nonemptyListOf<exclaimed<$term$0>,$term$1>',
+    'one',
+    'start',
+    'three',
+    'two',
+  ]);
 });
