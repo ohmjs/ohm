@@ -120,6 +120,9 @@ function collectParams(exp, seen = new Set()) {
 }
 
 function collectAppsAndParams(exp) {
+  if (exp === pexprs.any || exp === pexprs.end) {
+    return [];
+  }
   switch (exp.constructor) {
     case pexprs.Alt:
       return exp.terms.flatMap(e => collectAppsAndParams(e));
@@ -131,9 +134,9 @@ function collectAppsAndParams(exp) {
     case pexprs.Not:
     case pexprs.Opt:
       return [];
-    case pexprs.Plus:
     case pexprs.Seq:
       return exp.factors.flatMap(e => collectAppsAndParams(e));
+    case pexprs.Plus:
     case pexprs.Star:
       return collectAppsAndParams(exp.expr);
     case pexprs.Range:
@@ -624,7 +627,8 @@ export class Compiler {
 
   // This should be on the only place where we assign rule IDs!
   _ensureRuleId(name) {
-    const idx = this.ruleIdByName.add(name);
+    const realName = name.startsWith('$term$') ? '$term' : name;
+    const idx = this.ruleIdByName.add(realName);
     assert(idx < 256, `too many rules: ${idx}`);
     return idx;
   }
@@ -738,10 +742,6 @@ export class Compiler {
         });
       }
     }
-    // For memoization, we want every possible combination of concrete
-    // parameters to be assigned a unique ruleId.
-    // this.computeConcreteApplications();
-
     const functionDecls = this.functionDecls();
     this.rewriteDebugLabels(functionDecls, debugBaseFuncIdx);
     return this.buildModule(typeMap, functionDecls);
@@ -759,7 +759,6 @@ export class Compiler {
       if (grammar.superGrammar) return lookUpRule(name, grammar.superGrammar);
     };
     const liftedTerminals = new IndexedSet();
-    const terminalIds = new Map(); // Map from Apply -> terminal ID
 
     const ensureResolved = name => {
       if (!ruleNames.has(name)) {
@@ -771,9 +770,7 @@ export class Compiler {
     const liftTerminal = exp => {
       const id = liftedTerminals.add(exp.obj);
       assert(id >= 0 && id < 0xffff, 'too many terminals!');
-      const app = new pexprs.Apply('$term');
-      terminalIds.set(app, id);
-      return app;
+      return new pexprs.Apply(`$term$${id}`);
     };
 
     // If `exp` is not an Apply or Param, lift it into its own rule and return
@@ -839,7 +836,6 @@ export class Compiler {
     }
     this.rules = newRules;
     this.liftedTerminals = liftedTerminals;
-    this.terminalIds = terminalIds;
   }
 
   compileTerminalRule(name) {
@@ -878,15 +874,24 @@ export class Compiler {
     const seen = new Set();
     const result = new Map();
 
+    const setdefault = (map, key, defaultVal) => {
+      if (!map.has(key)) {
+        map.set(key, defaultVal);
+      }
+      return map.get(key);
+    };
+
+    // TODO: We did this delayed substitution (passing app and actuals) so we could
+    // save based on the identity of the original Apply node. Is it necessary now?
     const visit = (app, actuals) => {
       const memoKey = new pexprs.Apply(app.ruleName, actuals).toMemoKey();
       if (seen.has(memoKey)) return;
       seen.add(memoKey);
 
-      if (app.ruleName === '$term') return; // Don't try to visit the body, there isn't one.
+      setdefault(result, app.ruleName, []).push(memoKey);
 
-      if (!result.has(app)) result.set(app, []);
-      result.get(app).push(memoKey);
+      // Don't try to visit the body, there isn't one.
+      if (app.ruleName.startsWith('$term$')) return;
 
       const {body} = this.rules.get(app.ruleName);
       for (const exp of collectAppsAndParams(body)) {
@@ -894,7 +899,6 @@ export class Compiler {
         if (exp instanceof pexprs.Param) {
           app = actuals[exp.index]; // substitute the param
         }
-        // if (app.ruleName === '$term') continue;
 
         // We don't expect to encounter any non-applications; those should
         // have been lifted in simplifyApplications().
@@ -1050,6 +1054,7 @@ export class Compiler {
       if (name === '$term') {
         ruleDecls.push(this.compileTerminalRule(name));
       } else {
+        assert(!name.startsWith('$term'));
         const ruleInfo = this.rules.get(name);
         ruleDecls.push(this.compileRule(name, ruleInfo));
       }
@@ -1197,8 +1202,8 @@ export class Compiler {
     // 2. Apply of a non-parameterized rule: pass the rule ID.
     // 3. Apply of a parameterized rule: convert to a closure, and pass
     //    the address of the closure, with the low bit set.
-    // 4. A lifted terminal, which appears as an apply of '$term'
-    //    with no args.
+    // 4. A lifted terminal, which appears as an apply of a rule like
+    //    '$term$29' with no args.
     // After simplifyApplications, there are no other possibilities.
 
     // Case 1: Param.
@@ -1210,9 +1215,9 @@ export class Compiler {
     const app = arg;
 
     // Case 4.
-    if (app.ruleName === '$term') {
+    if (app.ruleName.startsWith('$term$')) {
       // Extract out the terminal ID. Yes, this is a hack!
-      const termId = this.terminalIds.get(app);
+      const termId = parseInt(app.ruleName.split('$term$')[1], 10);
       this.asm.i32Const((this.ruleId('$term') << 16) | termId);
       return 0;
     }
