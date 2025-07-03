@@ -1,4 +1,4 @@
-/* global TextDecoder, TextEncoder, WebAssembly */
+/* global process, TextDecoder, TextEncoder, WebAssembly */
 
 const WASM_PAGE_SIZE = 64 * 1024;
 const INPUT_BUFFER_OFFSET = WASM_PAGE_SIZE;
@@ -88,6 +88,7 @@ export class WasmMatcher {
   }
 
   match() {
+    if (process.env.OHM_DEBUG === '1') debugger; // eslint-disable-line no-debugger
     return this._instance.exports.match(0);
   }
 

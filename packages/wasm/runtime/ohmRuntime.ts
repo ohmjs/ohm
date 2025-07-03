@@ -101,6 +101,15 @@ export function match(startRuleId: i32): Result {
   return call_indirect<Result>(ruleId);
 }
 
+export function evalApplyGeneralized(ruleId: i32, caseIdx: i32): Result {
+  const origPos = pos;
+  const origNumBindings = bindings.length;
+  if (call_indirect<Result>(ruleId, caseIdx)) {
+    return newNonterminalNode(origPos, pos, ruleId, origNumBindings);
+  }
+  return 0;
+}
+
 export function evalApplyNoMemo0(ruleId: i32): Result {
   const origPos = pos;
   const origNumBindings = bindings.length;
@@ -111,25 +120,6 @@ export function evalApplyNoMemo0(ruleId: i32): Result {
 }
 
 export function evalApply0(ruleId: i32): Result {
-  // Handle closures, which are an pointer w/ a flag in the high bit.
-  // TODO: Find a cleaner way of doing this.
-  if (ruleId & 0x80000000) {
-    const ptr = ruleId & 0x7fffffff;
-    ruleId = load<i32>(ptr, 0);
-    const argCount = load<i32>(ptr, 4);
-    const args: i32[] = [];
-    for (let i = 0; i < argCount; i++) {
-      args.push(load<i32>(ptr + i * 4, 8));
-    }
-    switch (argCount) {
-      case 0: return evalApply0(ruleId);
-      case 1: return evalApply1(ruleId, args[0]);
-      case 2: return evalApply2(ruleId, args[0], args[1]);
-      case 3: return evalApply3(ruleId, args[0], args[1], args[2]);
-    }
-    assert(false);
-  }
-
   let result = memoTableGet(pos, ruleId);
   if (result !== 0) {
     return useMemoizedResult(ruleId, result);
@@ -174,54 +164,6 @@ export function handleLeftRecursion(origPos: usize, ruleId: i32, origNumBindings
   pos = maxPos;
   bindings.length = origNumBindings + 1;
   bindings[origNumBindings] = result;
-  return succeeded;
-}
-
-export function evalApply1(ruleId: i32, arg0: i32): Result {
-  // if (hasMemoizedResult(ruleId)) {
-  //   return useMemoizedResult(ruleId);
-  // }
-  const origPos = pos;
-  const origNumBindings = bindings.length;
-  let result: Result = FAIL;
-  const succeeded = call_indirect<Result>(ruleId, arg0);
-  if (succeeded) {
-    const numChildren = bindings.length - origNumBindings;
-    result = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
-  }
-  // memoizeResult(origPos, ruleId, result);
-  return succeeded;
-}
-
-export function evalApply2(ruleId: i32, arg0: i32, arg1: i32): Result {
-  // if (hasMemoizedResult(ruleId)) {
-  //   return useMemoizedResult(ruleId);
-  // }
-  const origPos = pos;
-  const origNumBindings = bindings.length;
-  let result: Result = FAIL;
-  const succeeded = call_indirect<Result>(ruleId, arg0, arg1);
-  if (succeeded) {
-    const numChildren = bindings.length - origNumBindings;
-    result = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
-  }
-  // memoizeResult(origPos, ruleId, result);
-  return succeeded;
-}
-
-export function evalApply3(ruleId: i32, arg0: i32, arg1: i32, arg2: i32): Result {
-  // if (hasMemoizedResult(ruleId)) {
-  //   return useMemoizedResult(ruleId);
-  // }
-  const origPos = pos;
-  const origNumBindings = bindings.length;
-  let result: Result = FAIL;
-  const succeeded = call_indirect<Result>(ruleId, arg0, arg1, arg2);
-  if (succeeded) {
-    const numChildren = bindings.length - origNumBindings;
-    result = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
-  }
-  // memoizeResult(origPos, ruleId, result);
   return succeeded;
 }
 

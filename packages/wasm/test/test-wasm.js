@@ -2,7 +2,7 @@ import test from 'ava';
 import * as ohm from 'ohm-js';
 import {performance} from 'perf_hooks';
 
-import {ConstantsForTesting as Constants} from '../src/index.js';
+import {Compiler, ConstantsForTesting as Constants} from '../src/index.js';
 import {wasmMatcherForGrammar} from './_helpers.js';
 
 const matchWithInput = (m, str) => (m.setInput(str), m.match());
@@ -735,6 +735,17 @@ test('parameterized rules (hard)', async t => {
   }
 });
 
+test('parameterized rules w/ many params', async t => {
+  // Terminal as param, must be lifted.
+  const g = ohm.grammar(`
+    G {
+      start = reversed<"v", "w", "x", "y", "z">
+      reversed<a, b, c, d, e> = e d c b a
+    }`);
+  const matcher = await wasmMatcherForGrammar(g);
+  t.is(matchWithInput(matcher, 'zyxwv'), 1);
+});
+
 test('basic left recursion', async t => {
   const g = ohm.grammar(`
     G {
@@ -802,4 +813,48 @@ test('arithmetic', async t => {
   t.is(matchWithInput(m, '1+276*(3+4)'), 1);
   t.is(unparse(m), '1+276*(3+4)');
   t.is(matchWithInput(m, '1'), 1);
+});
+
+test('specialized rule names', t => {
+  const g = ohm.grammar(`
+    G {
+      start = one | two | three
+
+      one = exclaimed<hello> // Simple application
+      two = flip<exclaimed<hello2>, hello> // Appl as argument
+      three = commaSep<exclaimed<"hello">>
+
+      exclaimed<exp> = exp "!"
+      flip<a, b> = b a
+      commaSep<exp> = listOf<exp, ",">
+
+      hello = "hello"
+      hello2 = "hello"
+    }`);
+
+  const compiler = new Compiler(g);
+  compiler.normalize();
+
+  t.deepEqual([...compiler.rules.keys()].sort(), [
+    'commaSep',
+    'commaSep<exclaimed<$term$0>>',
+    'emptyListOf',
+    'emptyListOf<exclaimed<$term$0>,$term$1>',
+    'exclaimed',
+    'exclaimed<$term$0>',
+    'exclaimed<hello2>',
+    'exclaimed<hello>',
+    'flip',
+    'flip<exclaimed<hello2>,hello>',
+    'hello',
+    'hello2',
+    'listOf',
+    'listOf<exclaimed<$term$0>,$term$1>',
+    'nonemptyListOf',
+    'nonemptyListOf<exclaimed<$term$0>,$term$1>',
+    'one',
+    'start',
+    'three',
+    'two',
+  ]);
 });
