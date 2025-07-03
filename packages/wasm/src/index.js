@@ -32,10 +32,16 @@ function checkNoUndefined(arr) {
   return arr;
 }
 
-function setdefault(map, key, defaultVal) {
-  if (!map.has(key)) map.set(key, defaultVal);
+function setdefault(map, key, makeDefaultVal) {
+  if (!map.has(key)) map.set(key, makeDefaultVal());
   return map.get(key);
 }
+
+const getNotNull = (map, k) => checkNotNull(map.get(k), `not found: '${k}'`);
+
+// Return true if the given expression is an Apply or a Param.
+// (When compiling to Wasm, we implement both with a call.)
+const isApplyLike = exp => exp instanceof pexprs.Apply || exp instanceof pexprs.Param;
 
 function uniqueName(names, str) {
   let name = str;
@@ -115,35 +121,6 @@ function collectParams(exp, seen = new Set()) {
       return exp.factors.flatMap(e => collectParams(e, seen));
     case pexprs.Star:
       return collectParams(exp.expr, seen);
-    case pexprs.Range:
-    case pexprs.Terminal:
-    case pexprs.UnicodeChar:
-      return [];
-    default:
-      throw new Error(`not handled: ${exp.constructor.name}`);
-  }
-}
-
-function collectAppsAndParams(exp) {
-  if (exp === pexprs.any || exp === pexprs.end) {
-    return [];
-  }
-  switch (exp.constructor) {
-    case pexprs.Alt:
-      return exp.terms.flatMap(e => collectAppsAndParams(e));
-    case pexprs.Apply:
-    case pexprs.Param:
-      // For our purposes, Params are treated like applications.
-      return [exp];
-    case pexprs.Lookahead:
-    case pexprs.Not:
-    case pexprs.Opt:
-      return [];
-    case pexprs.Seq:
-      return exp.factors.flatMap(e => collectAppsAndParams(e));
-    case pexprs.Plus:
-    case pexprs.Star:
-      return collectAppsAndParams(exp.expr);
     case pexprs.Range:
     case pexprs.Terminal:
     case pexprs.UnicodeChar:
@@ -631,10 +608,10 @@ export class Compiler {
   }
 
   // This should be on the only place where we assign rule IDs!
-  _ensureRuleId(name) {
+  _ensureRuleId(name, {notMemoized} = {}) {
     const realName = name.startsWith('$term$') ? '$term' : name;
     const idx = this.ruleIdByName.add(realName);
-    assert(idx < 256, `too many rules: ${idx}`);
+    assert(notMemoized || idx < 256, `too many rules: ${idx}`);
     return idx;
   }
 
@@ -701,10 +678,6 @@ export class Compiler {
     assert(!this.rules, 'already normalized');
     this.simplifyApplications();
     this.specializeApplications();
-
-    for (const name of this.rules.keys()) {
-      this._ensureRuleId(name);
-    }
   }
 
   compile() {
@@ -753,6 +726,10 @@ export class Compiler {
     return this.buildModule(typeMap, functionDecls);
   }
 
+  isLiftedTerminal(exp) {
+    return exp instanceof pexprs.Apply && exp.ruleName.startsWith('$term$');
+  }
+
   simplifyApplications() {
     const {grammar} = this;
 
@@ -774,12 +751,13 @@ export class Compiler {
     // If `exp` is not an Apply or Param, lift it into its own rule and return
     // a new application of that rule.
     const simplifyArg = exp => {
-      if (exp instanceof pexprs.Param || exp instanceof pexprs.Apply) {
+      if (isApplyLike(exp)) {
         return simplify(exp);
       }
       if (exp instanceof pexprs.Terminal) {
         return liftTerminal(exp);
       }
+
       const [name, info, env] = this.liftPExpr(exp);
       const args = env.map(p => {
         assert(p instanceof pexprs.Param, 'Expected Param');
@@ -860,7 +838,10 @@ export class Compiler {
 
   compileRule(name, ruleInfo) {
     const {asm} = this;
-    const paramTypes = ruleInfo.formals.map(_ => w.valtype.i32);
+    let paramTypes = [];
+    if (ruleInfo.patterns) {
+      paramTypes = [w.valtype.i32];
+    }
     asm.addFunction(`$${name}`, paramTypes, [w.valtype.i32], () => {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
@@ -871,31 +852,15 @@ export class Compiler {
     return this.asm._functionDecls.at(-1);
   }
 
-  computeConcreteApplications() {
-    const seen = new Set();
-    const result = new Map();
-
-    const visit = app => {
-      const memoKey = app.toMemoKey();
-      if (seen.has(memoKey)) return;
-      seen.add(memoKey);
-      setdefault(result, app.ruleName, []).push(memoKey);
-
-      // Don't try to visit the body, there isn't one.
-      if (app.ruleName.startsWith('$term$')) return;
-
-      const {body} = this.rules.get(app.ruleName);
-      for (const exp of collectAppsAndParams(body)) {
-        visit(exp.substituteParams(app.args));
-      }
-    };
-    visit(new pexprs.Apply(this.grammar.defaultStartRule));
-    return result;
-  }
-
+  // Beginning with the default start rule, recursively visit all reachable
+  // parsing expressions. For all parameterized rules, create a specialized
+  // version of that rule for every possible set of actual parameters.
+  // At the end, there are no more applications with arguments.
   specializeApplications() {
     const newRules = new Map();
     const {rules} = this;
+    const patternsByRule = new Map();
+
     const visit = exp => {
       if (exp instanceof pexprs.Alt) {
         return new pexprs.Alt(exp.terms.map(e => visit(e)));
@@ -904,24 +869,43 @@ export class Compiler {
       }
       switch (exp.constructor) {
         case pexprs.Apply: {
-          // Inline these.
+          // Inline these. TODO: Handle this elsewhere.
           if (
             ['caseInsensitive', 'liquidRawTagImpl', 'liquidTagRule'].includes(exp.ruleName)
           ) {
-            const ruleInfo = checkNotNull(rules.get(exp.ruleName));
+            const ruleInfo = getNotNull(rules, exp.ruleName);
             return visit(ruleInfo.body.substituteParams(exp.args));
+          }
+          if (this.isLiftedTerminal(exp)) {
+            return exp; // Nothing to do.
+          }
+
+          if (exp.args.length > 0) {
+            // Record this pattern.
+            const rulePatterns = setdefault(patternsByRule, exp.ruleName, () => new Map());
+            rulePatterns.set(exp.toMemoKey(), exp.args);
           }
 
           const specializedName = exp.toMemoKey();
-          // Create the specialized rule if it doesn't exist yet.
-          if (!newRules.has(specializedName) && !specializedName.startsWith('$term$')) {
-            newRules.set(specializedName, null); // Prevent infinite recursion.
-            const ruleInfo = checkNotNull(rules.get(exp.ruleName));
-            newRules.set(specializedName, {
-              ...ruleInfo,
-              body: visit(ruleInfo.body.substituteParams(exp.args)),
-              formals: [],
-            });
+          this._ensureRuleId(specializedName);
+
+          // If not yet seen, recursively visit the body of the specialized
+          // rule. Note that this also applies to non-parameterized rules!
+          if (!newRules.has(specializedName)) {
+            const ruleInfo = getNotNull(rules, exp.ruleName);
+            newRules.set(specializedName, {}); // Prevent infinite recursion.
+
+            // Visit the body with the parameter substituted, to ensure we
+            // discover all possible applications that can occur at runtime.
+            let body = visit(ruleInfo.body.substituteParams(exp.args));
+
+            if (exp.args.length !== 0) {
+              // The specialized rule just applies the generalized rule.
+              // Note that we *don't* visit this application, and it won't be
+              // assigned a rule id yet!
+              body = new pexprs.Apply(exp.ruleName);
+            }
+            newRules.set(specializedName, {...ruleInfo, body, formals: []});
           }
           // Replace with an application of the specialized rule.
           return new pexprs.Apply(specializedName);
@@ -946,6 +930,18 @@ export class Compiler {
     };
     visit(new pexprs.Apply(this.grammar.defaultStartRule));
     this.rules = newRules;
+
+    // Save the observed patterns of the parameterized rules.
+    // All non-parameterized & specialized rules have been discovered and
+    // assigned IDs; any rule IDs assigned here won't be memoized.
+    for (const [name, patterns] of patternsByRule.entries()) {
+      this._ensureRuleId(name, {notMemoized: true});
+      const ruleInfo = getNotNull(rules, name);
+      newRules.set(name, {
+        ...ruleInfo,
+        patterns: [...patterns.values()],
+      });
+    }
   }
 
   buildRuleNamesSection(ruleNames) {
@@ -1083,14 +1079,18 @@ export class Compiler {
     // So, `ruleIdxByName` can grow while we're iterating (as we reference
     // inherited rules for the first time).
     const ruleDecls = [];
+    const startSize = this.ruleIdByName.size;
     for (let i = 0; i < this.ruleIdByName.size; i++) {
+      assert(this.ruleIdByName.size === startSize, '' + this.ruleIdByName.values().at(-1));
       const name = this.ruleIdByName.values()[i];
       if (name === '$term') {
         ruleDecls.push(this.compileTerminalRule(name));
       } else {
         assert(!name.startsWith('$term'));
-        const ruleInfo = this.rules.get(name);
+        const ruleInfo = (this._currRuleInfo = getNotNull(this.rules, name));
+        this._currRuleName = name;
         ruleDecls.push(this.compileRule(name, ruleInfo));
+        this._currRuleName = this._currRuleInfo = undefined;
       }
     }
     const {asm} = this;
@@ -1101,12 +1101,42 @@ export class Compiler {
     return ruleDecls;
   }
 
+  // Handle an application-like expression (i.e. an actual Apply, or a Param)
+  // in the *body* of the generalized version of a parameterized rule.
+  // Generalized rules can behave like a specific specialized version of the
+  // rule; they take an i32 `caseIdx` argument that selects the behaviour.
+  // Then, for any Param -- or Apply that involves a Param -- we dynamically
+  // dispatch to the correct specialized version of the rule.
+  emitDispatch(exp, patterns) {
+    const {asm} = this;
+
+    // TODO: Avoid generating a switch if it's not required.
+    asm.switch(
+        w.blocktype.empty,
+        () => asm.localGet('__arg0'),
+        patterns.map(actuals => () => {
+        // Substituting params always gives a concrete application which has
+        // already been assigned a rule id -- so just call it.
+          const ruleName = exp.substituteParams(actuals).toMemoKey();
+          this.emitPExpr(new pexprs.Apply(ruleName));
+        }),
+        () => {
+          asm.emit(w.instr.unreachable);
+        },
+    );
+  }
+
   // Contract: emitPExpr always means we're going deeper in the PExpr tree.
   emitPExpr(exp) {
     const {asm} = this;
-
-    if (exp instanceof pexprs.Apply) {
+    if (exp instanceof pexprs.Apply && exp.args.length === 0) {
+      asm.emit('APPLY ' + exp.ruleName);
       this.emitApply(exp);
+      return;
+    }
+
+    if (this._currRuleInfo.patterns && isApplyLike(exp)) {
+      this.emitDispatch(exp, this._currRuleInfo.patterns);
       return;
     }
 
@@ -1128,17 +1158,18 @@ export class Compiler {
         case pexprs.Star: this.emitStar(exp); break;
         case pexprs.Opt: this.emitOpt(exp); break;
         case pexprs.Range: this.emitRange(exp); break;
-        case pexprs.Param: this.emitParam(exp); break;
         case pexprs.Plus: this.emitPlus(exp); break;
         case pexprs.Terminal: this.emitTerminal(exp); break;
         case pexprs.UnicodeChar: this.emitFail(); break; // TODO: Handle this properly
+        case pexprs.Param:
+          // Fall through (Params should not exist at codegen time.
         default:
           if (exp === pexprs.any) {
             this.emitAny();
           } else if (exp === pexprs.end) {
             this.emitEnd();
           } else {
-            throw new Error(`not handled: ${exp.constructor.name}`);
+            throw new Error(`not handled: ${exp.ruleName}`);
           }
       }
     });
@@ -1167,68 +1198,52 @@ export class Compiler {
     asm.maybeReturnTerminalNodeWithSavedPos();
   }
 
-  emitPushRuleId(name) {
-    this._ensureRuleId(name);
-    this.asm.i32Const(this.ruleId(name));
-  }
-
-  // Emit the code which will leave an argument for a parameterized rule
-  // on the operand stack. This may involve creating a number of closures,
-  // which are allocated on the parse stack. Return the total number of
-  // closures created.
-  emitArg(arg) {
+  emitApplyTerm(exp) {
     const {asm} = this;
 
-    // There are a few cases we have to handle.
-    // Ultimately, argument must be reduced to a single i32 value.
-    // 1. Param is trivial, just pass it on.
-    // 2. A lifted terminal, which appears as an apply of a rule like
-    //    '$term$29' with no args.
-    // 3. Apply of a regular, non-parameterized rule: pass the rule ID.
-    // After simplifyApplications, there are no other possibilities.
+    // Extract out the terminal ID. Yes, this is a hack!
+    const termId = parseInt(exp.ruleName.split('$term$')[1], 10);
+    asm.i32Const(termId);
+    asm.emit(w.instr.call, this.ruleEvalFuncIdx('$term'));
+    asm.localSet('ret');
+  }
 
-    // Case 1: Param.
-    if (arg instanceof pexprs.Param) {
-      asm.localGet(`__arg${arg.index}`);
-    }
-    assert(arg instanceof pexprs.Apply, `not an Apply: ${arg.constructor.name}`);
-    const app = arg;
-
-    // Case 2.
-    if (app.ruleName.startsWith('$term$')) {
-      // Extract out the terminal ID. Yes, this is a hack!
-      const termId = parseInt(app.ruleName.split('$term$')[1], 10);
-      this.asm.i32Const((this.ruleId('$term') << 16) | termId);
-    }
-
-    // Case 3.
-    assert(app.args.length === 0);
-    this.emitPushRuleId(app.ruleName);
+  // Emit an application of the generalized version of a parameterized rule.
+  // Need to know which case we're applying!
+  emitApplyGeneralized(exp) {
+    const {asm} = this;
+    const {patterns} = getNotNull(this.rules, exp.ruleName);
+    // TODO: Should we cache these? We'll reconstruct them many times for the same set of patterns.
+    const keys = patterns.map(actuals => new pexprs.Apply(exp.ruleName, actuals).toMemoKey());
+    const caseIdx = keys.indexOf(this._currRuleName);
+    assert(caseIdx >= 0);
+    asm.i32Const(this.ruleId(exp.ruleName));
+    asm.i32Const(caseIdx);
+    asm.callPrebuiltFunc('evalApplyGeneralized');
+    asm.localSet('ret');
   }
 
   emitApply(exp) {
     const {asm} = this;
-    const ruleId = this._ensureRuleId(exp.ruleName);
 
-    const argCount = exp.args.length;
-    assert(argCount <= 3, 'Too many arguments to rule application');
-
-    // Case 4.
-    if (exp.ruleName.startsWith('$term$')) {
-      // Extract out the terminal ID. Yes, this is a hack!
-      const termId = parseInt(exp.ruleName.split('$term$')[1], 10);
-      this.asm.i32Const((this.ruleId('$term') << 16) | termId);
-    } else {
-      asm.i32Const(ruleId);
+    if (this.isLiftedTerminal(exp)) {
+      this.emitApplyTerm(exp);
+      return;
     }
+    // Quick and dirty!
+    if (getNotNull(this.rules, exp.ruleName).formals.length > 0) {
+      this.emitApplyGeneralized(exp);
+      return;
+    }
+    assert(exp.args.length === 0);
 
-    exp.args.forEach(arg => this.emitArg(arg));
+    asm.i32Const(this.ruleId(exp.ruleName));
 
     // TODO: Handle this at grammar parse time, not here.
     if (exp.ruleName.includes('_')) {
-      asm.callPrebuiltFunc(`evalApplyNoMemo${argCount}`);
+      asm.callPrebuiltFunc('evalApplyNoMemo0');
     } else {
-      asm.callPrebuiltFunc(`evalApply${argCount}`);
+      asm.callPrebuiltFunc('evalApply0');
     }
     asm.localSet('ret');
   }
@@ -1277,13 +1292,6 @@ export class Compiler {
       asm.restoreBindingsLength();
     });
     asm.newIterNodeWithSavedPosAndBindings();
-    asm.localSet('ret');
-  }
-
-  emitParam({index}) {
-    const {asm} = this;
-    asm.localGet(`__arg${index}`);
-    asm.callPrebuiltFunc('evalApply0');
     asm.localSet('ret');
   }
 

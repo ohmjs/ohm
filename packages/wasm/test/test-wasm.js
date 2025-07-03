@@ -804,8 +804,7 @@ test('arithmetic', async t => {
   t.is(matchWithInput(m, '1'), 1);
 });
 
-test('computeConcreteApplications', t => {
-  // Test that computeConcreteApplications tracks all concrete parameter values
+test('specialized rule names', t => {
   const g = ohm.grammar(`
     G {
       start = one | two | three
@@ -824,22 +823,23 @@ test('computeConcreteApplications', t => {
 
   const compiler = new Compiler(g);
   compiler.normalize();
-  const result = compiler.computeConcreteApplications();
 
-  const allMemoKeys = new Set([...result.values()].flat(Infinity));
-
-  t.deepEqual([...allMemoKeys].sort(), [
-    '$term$0',
-    '$term$1',
+  t.deepEqual([...compiler.rules.keys()].sort(), [
+    'commaSep',
     'commaSep<exclaimed<$term$0>>',
+    'emptyListOf',
     'emptyListOf<exclaimed<$term$0>,$term$1>',
+    'exclaimed',
     'exclaimed<$term$0>',
     'exclaimed<hello2>',
     'exclaimed<hello>',
+    'flip',
     'flip<exclaimed<hello2>,hello>',
     'hello',
     'hello2',
+    'listOf',
     'listOf<exclaimed<$term$0>,$term$1>',
+    'nonemptyListOf',
     'nonemptyListOf<exclaimed<$term$0>,$term$1>',
     'one',
     'start',
