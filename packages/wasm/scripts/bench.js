@@ -15,7 +15,7 @@ const inputs = {
   featuredProduct: readFileSync(join(datadir, '_featured-product.liquid'), 'utf-8'),
   footer: readFileSync(join(datadir, '_footer.liquid'), 'utf-8'),
   html5shiv: readFileSync(join(datadir, '_html5shiv-3.7.3.js'), 'utf-8'),
-  underscore: readFileSync(join(datadir, '_underscore-1.8.3.js'), 'utf-8')
+  underscore: readFileSync(join(datadir, '_underscore-1.8.3.js'), 'utf-8'),
 };
 
 function checkOk(val) {
@@ -37,7 +37,7 @@ function benchWithSetup(name, setupFn, benchFn) {
   bench(name, function* () {
     yield {
       [0]: setupFn,
-      bench: benchFn
+      bench: benchFn,
     };
   });
 }
@@ -87,4 +87,4 @@ group('LiquidHTML: footer.liquid', () => {
   });
 });
 
-await run();
+(async () => await run())();
