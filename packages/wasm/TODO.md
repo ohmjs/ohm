@@ -10,6 +10,7 @@
 - [x] Parameters that aren't terminals
 - [x] Memoization for parameterized rules
 - [ ] Avoid unnecessary dispatch in generalized rules
+- [ ] Avoid duplicate lifted rules.
 - [x] Support direct left recursion.
 - [ ] Handle left recursion detection at grammar parse time.
 - [x] Separate API for _creating_ the Wasm module from the WasmMatcher interface.

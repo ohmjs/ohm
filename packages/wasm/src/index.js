@@ -82,6 +82,10 @@ class IndexedSet {
     return this._map.size;
   }
 
+  keys() {
+    return [...this._map.keys()];
+  }
+
   values() {
     return [...this._map.keys()];
   }
@@ -607,7 +611,7 @@ export class Compiler {
     return checkNotNull(this.ruleIdByName.getIndex(name), `Unknown rule: ${name}`);
   }
 
-  // This should be on the only place where we assign rule IDs!
+  // This should be the only place where we assign rule IDs!
   _ensureRuleId(name, {notMemoized} = {}) {
     const realName = name.startsWith('$term$') ? '$term' : name;
     const idx = this.ruleIdByName.add(realName);
@@ -616,9 +620,7 @@ export class Compiler {
   }
 
   liftPExpr(exp) {
-    if (exp instanceof pexprs.Terminal) {
-      return;
-    }
+    assert(!(exp instanceof pexprs.Terminal));
 
     // Note: the same expression might appear in more than one place, and
     // when lifting, we could in theory avoid creating a duplicate function.
@@ -1074,15 +1076,8 @@ export class Compiler {
   }
 
   functionDecls() {
-    // This is a bit messy. By default, we include all the rules in the
-    // grammar itself, but only inherited rules if they are referenced.
-    // So, `ruleIdxByName` can grow while we're iterating (as we reference
-    // inherited rules for the first time).
     const ruleDecls = [];
-    const startSize = this.ruleIdByName.size;
-    for (let i = 0; i < this.ruleIdByName.size; i++) {
-      assert(this.ruleIdByName.size === startSize, '' + this.ruleIdByName.values().at(-1));
-      const name = this.ruleIdByName.values()[i];
+    for (const name of this.ruleIdByName.keys()) {
       if (name === '$term') {
         ruleDecls.push(this.compileTerminalRule(name));
       } else {
@@ -1130,7 +1125,6 @@ export class Compiler {
   emitPExpr(exp) {
     const {asm} = this;
     if (exp instanceof pexprs.Apply && exp.args.length === 0) {
-      asm.emit('APPLY ' + exp.ruleName);
       this.emitApply(exp);
       return;
     }
@@ -1162,7 +1156,7 @@ export class Compiler {
         case pexprs.Terminal: this.emitTerminal(exp); break;
         case pexprs.UnicodeChar: this.emitFail(); break; // TODO: Handle this properly
         case pexprs.Param:
-          // Fall through (Params should not exist at codegen time.
+          // Fall through (Params should not exist at codegen time).
         default:
           if (exp === pexprs.any) {
             this.emitAny();
@@ -1230,7 +1224,7 @@ export class Compiler {
       this.emitApplyTerm(exp);
       return;
     }
-    // Quick and dirty!
+    // Are we applying a generalized rule from a specialized one?
     if (getNotNull(this.rules, exp.ruleName).formals.length > 0) {
       this.emitApplyGeneralized(exp);
       return;
