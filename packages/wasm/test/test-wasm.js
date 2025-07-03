@@ -735,6 +735,17 @@ test('parameterized rules (hard)', async t => {
   }
 });
 
+test('parameterized rules w/ many params', async t => {
+  // Terminal as param, must be lifted.
+  const g = ohm.grammar(`
+    G {
+      start = reversed<"v", "w", "x", "y", "z">
+      reversed<a, b, c, d, e> = e d c b a
+    }`);
+  const matcher = await wasmMatcherForGrammar(g);
+  t.is(matchWithInput(matcher, 'zyxwv'), 1);
+});
+
 test('basic left recursion', async t => {
   const g = ohm.grammar(`
     G {
