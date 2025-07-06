@@ -769,6 +769,12 @@ export class Compiler {
       return new pexprs.Apply(name, args);
     };
     const simplify = exp => {
+      if (exp instanceof pexprs.Alt) {
+        return new pexprs.Alt(exp.terms.map(e => simplify(e)));
+      }
+      if ([pexprs.any, pexprs.end].includes(exp)) {
+        return exp;
+      }
       switch (exp.constructor) {
         case pexprs.Apply:
           rules.push([exp.ruleName, checkNotNull(lookUpRule(exp.ruleName))]);
@@ -792,12 +798,6 @@ export class Compiler {
           // As these are all leaf nodes, we can share them.
           return exp;
         default:
-          if (exp instanceof pexprs.Alt) {
-            return new pexprs.Alt(exp.terms.map(e => simplify(e)));
-          }
-          if ([pexprs.any, pexprs.end].includes(exp)) {
-            return exp;
-          }
           throw new Error(`not handled: ${exp.constructor.name}`);
       }
     };
@@ -847,8 +847,9 @@ export class Compiler {
     asm.addFunction(`$${name}`, paramTypes, [w.valtype.i32], () => {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
-
+      asm.emit(`BEGIN eval:${name}`);
       this.emitPExpr(ruleInfo.body);
+      asm.emit(`END eval:${name}`);
       asm.localGet('ret');
     });
     return this.asm._functionDecls.at(-1);
@@ -1110,10 +1111,15 @@ export class Compiler {
         w.blocktype.empty,
         () => asm.localGet('__arg0'),
         patterns.map(actuals => () => {
-        // Substituting params always gives a concrete application which has
-        // already been assigned a rule id -- so just call it.
-          const ruleName = exp.substituteParams(actuals).toMemoKey();
-          this.emitPExpr(new pexprs.Apply(ruleName));
+        // Substitute the params to get the concrete expression that
+        // needs to be inserted here.
+          let newExp = exp.substituteParams(actuals);
+          if (newExp instanceof pexprs.Apply) {
+            // If the application has arguments, we need to dispatch to the
+            // correct specialized version of the rule.
+            newExp = new pexprs.Apply(newExp.toMemoKey());
+          }
+          this.emitPExpr(newExp);
         }),
         () => {
           asm.emit(w.instr.unreachable);

@@ -735,6 +735,21 @@ test('parameterized rules (hard)', async t => {
   }
 });
 
+// eslint-disable-next-line ava/no-skip-test
+test.skip('parameterized rules - problematic', async t => {
+  {
+    // Apply w/ arg that's not a Param from the enclosing scope.
+    const g = ohm.grammar(`
+        G {
+          start = narf<"{", "}">
+          narf<open, close> = open twice<letter> close
+          twice<exp> = exp exp
+        }`);
+    const matcher = await wasmMatcherForGrammar(g);
+    t.is(matchWithInput(matcher, '{ab}'), 1);
+  }
+});
+
 test('parameterized rules w/ many params', async t => {
   // Terminal as param, must be lifted.
   const g = ohm.grammar(`
