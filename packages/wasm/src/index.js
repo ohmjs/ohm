@@ -1106,21 +1106,27 @@ export class Compiler {
   emitDispatch(exp, patterns) {
     const {asm} = this;
 
-    // TODO: Avoid generating a switch if it's not required.
+    const cases = patterns.map((actuals, i) => () => {
+      // Substitute the params to get the concrete expression that
+      // needs to be inserted here.
+      let newExp = exp.substituteParams(actuals);
+      if (newExp instanceof pexprs.Apply) {
+        // If the application has arguments, we need to dispatch to the
+        // correct specialized version of the rule.
+        newExp = new pexprs.Apply(newExp.toMemoKey());
+      }
+      this.emitPExpr(newExp);
+    });
+    if (cases.length === 1) {
+      cases[0](); // No need for a switch.
+      return;
+    }
+    assert(cases.length > 1);
+
     asm.switch(
         w.blocktype.empty,
         () => asm.localGet('__arg0'),
-        patterns.map(actuals => () => {
-        // Substitute the params to get the concrete expression that
-        // needs to be inserted here.
-          let newExp = exp.substituteParams(actuals);
-          if (newExp instanceof pexprs.Apply) {
-            // If the application has arguments, we need to dispatch to the
-            // correct specialized version of the rule.
-            newExp = new pexprs.Apply(newExp.toMemoKey());
-          }
-          this.emitPExpr(newExp);
-        }),
+        cases,
         () => {
           asm.emit(w.instr.unreachable);
         },
@@ -1130,11 +1136,16 @@ export class Compiler {
   // Contract: emitPExpr always means we're going deeper in the PExpr tree.
   emitPExpr(exp) {
     const {asm} = this;
+
+    // Note that after specializeApplications, there are two classes of rule:
+    // - specialized rules, which contain no Params, and only have
+    //   applications without args
+    // - generalized rules, which may contain Params and apps w/ args.
+
     if (exp instanceof pexprs.Apply && exp.args.length === 0) {
       this.emitApply(exp);
       return;
     }
-
     if (this._currRuleInfo.patterns && isApplyLike(exp)) {
       this.emitDispatch(exp, this._currRuleInfo.patterns);
       return;
