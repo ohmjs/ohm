@@ -882,13 +882,12 @@ export class Compiler {
             return visit(ir.substituteParams(ruleInfo.body, children));
           }
 
-          if (children.length > 0) {
+          const specializedName = ir.specializedName(irExp);
+          if (specializedName !== ruleName) {
             // Record this pattern.
             const rulePatterns = setdefault(patternsByRule, ruleName, () => new Map());
-            rulePatterns.set(ir.specializedName(irExp), children);
+            rulePatterns.set(specializedName, children);
           }
-
-          const specializedName = ir.specializedName(irExp);
           this._ensureRuleId(specializedName);
 
           // If not yet seen, recursively visit the body of the specialized
@@ -1176,7 +1175,7 @@ export class Compiler {
         case 'Param':
           // Fall through (Params should not exist at codegen time).
         default:
-          throw new Error(`not handled: ${exp.ruleName}`);
+          throw new Error(`not handled: ${exp.type}`);
       }
     });
     asm.popStackFrame();
