@@ -4,6 +4,7 @@ import * as w from '@wasmgroundup/emit';
 import {pexprs} from 'ohm-js';
 // import wabt from 'wabt';
 
+import * as ir from './ir.ts';
 import * as prebuilt from '../build/ohmRuntime.wasm_sections.ts';
 
 const WASM_PAGE_SIZE = 64 * 1024;
@@ -97,7 +98,7 @@ class IndexedSet {
 
 function getDebugLabel(exp) {
   const loc = exp.source ? exp.source.startIdx : -1;
-  return `${exp.toDisplayString()}@${loc}`;
+  return `${JSON.stringify(exp)}@${loc}`;
 }
 
 const gensym = (() => {
@@ -613,8 +614,7 @@ export class Compiler {
 
   // This should be the only place where we assign rule IDs!
   _ensureRuleId(name, {notMemoized} = {}) {
-    const realName = name.startsWith('$term$') ? '$term' : name;
-    const idx = this.ruleIdByName.add(realName);
+    const idx = this.ruleIdByName.add(name);
     assert(notMemoized || idx < 256, `too many rules: ${idx}`);
     return idx;
   }
@@ -728,10 +728,6 @@ export class Compiler {
     return this.buildModule(typeMap, functionDecls);
   }
 
-  isLiftedTerminal(exp) {
-    return exp instanceof pexprs.Apply && exp.ruleName.startsWith('$term$');
-  }
-
   simplifyApplications() {
     const {grammar} = this;
 
@@ -744,10 +740,10 @@ export class Compiler {
     };
     const liftedTerminals = new IndexedSet();
 
-    const liftTerminal = exp => {
-      const id = liftedTerminals.add(exp.obj);
+    const liftTerminal = ({obj}) => {
+      const id = liftedTerminals.add(obj);
       assert(id >= 0 && id < 0xffff, 'too many terminals!');
-      return new pexprs.Apply(`$term$${id}`);
+      return ir.liftedTerminal(id);
     };
 
     // If `exp` is not an Apply or Param, lift it into its own rule and return
@@ -763,40 +759,48 @@ export class Compiler {
       const [name, info, env] = this.liftPExpr(exp);
       const args = env.map(p => {
         assert(p instanceof pexprs.Param, 'Expected Param');
-        return new pexprs.Param(p.index);
+        return ir.param(p.index);
       });
       rules.push([name, info]);
-      return new pexprs.Apply(name, args);
+      return ir.apply(name, args);
     };
     const simplify = exp => {
       if (exp instanceof pexprs.Alt) {
-        return new pexprs.Alt(exp.terms.map(e => simplify(e)));
+        return ir.alt(exp.terms.map(e => simplify(e)));
       }
-      if ([pexprs.any, pexprs.end].includes(exp)) {
-        return exp;
-      }
+      if (exp === pexprs.any) return ir.any();
+      if (exp === pexprs.end) return ir.end();
       switch (exp.constructor) {
         case pexprs.Apply:
           rules.push([exp.ruleName, checkNotNull(lookUpRule(exp.ruleName))]);
-          return new pexprs.Apply(
+          return ir.apply(
               exp.ruleName,
               exp.args.map(arg => simplifyArg(arg)),
           );
+        case pexprs.CaseInsensitive:
+          return ir.caseInsensitive(exp.obj);
         case pexprs.Lex:
+          return ir.lex(simplify(exp.expr));
         case pexprs.Lookahead:
+          return ir.lookahead(simplify(exp.expr));
         case pexprs.Not:
+          return ir.not(simplify(exp.expr));
         case pexprs.Opt:
+          return ir.opt(simplify(exp.expr));
         case pexprs.Plus:
-        case pexprs.Star:
-          return new exp.constructor(simplify(exp.expr));
+          return ir.plus(simplify(exp.expr));
         case pexprs.Seq:
-          return new pexprs.Seq(exp.factors.map(e => simplify(e)));
+          return ir.seq(exp.factors.map(e => simplify(e)));
+        case pexprs.Star:
+          return ir.star(simplify(exp.expr));
         case pexprs.Param:
+          return ir.param(exp.index);
         case pexprs.Range:
+          return ir.range(exp.from, exp.to);
         case pexprs.Terminal:
+          return ir.terminal(exp.obj);
         case pexprs.UnicodeChar:
-          // As these are all leaf nodes, we can share them.
-          return exp;
+          return ir.unicodeChar(exp.codePoint);
         default:
           throw new Error(`not handled: ${exp.constructor.name}`);
       }
@@ -828,9 +832,7 @@ export class Compiler {
       asm.switch(
           w.blocktype.empty,
           () => asm.localGet('__arg0'),
-          this.liftedTerminals
-              .values()
-              .map(str => () => this.emitTerminal(new pexprs.Terminal(str))),
+          this.liftedTerminals.values().map(str => () => this.emitTerminal(ir.terminal(str))),
           () => asm.emit(w.instr.unreachable),
       );
       asm.localGet('ret');
@@ -864,74 +866,71 @@ export class Compiler {
     const {rules} = this;
     const patternsByRule = new Map();
 
-    const visit = exp => {
-      if (exp instanceof pexprs.Alt) {
-        return new pexprs.Alt(exp.terms.map(e => visit(e)));
-      } else if ([pexprs.any, pexprs.end].includes(exp)) {
-        return exp;
-      }
-      switch (exp.constructor) {
-        case pexprs.Apply: {
+    const visit = irExp => {
+      switch (irExp.type) {
+        case 'Alt':
+          return ir.alt(irExp.children.map(e => visit(e)));
+        case 'Any':
+        case 'End':
+        case 'LiftedTerminal':
+          return irExp;
+        case 'Apply': {
+          const {ruleName, children} = irExp;
           // Inline these. TODO: Handle this elsewhere.
-          if (
-            ['caseInsensitive', 'liquidRawTagImpl', 'liquidTagRule'].includes(exp.ruleName)
-          ) {
-            const ruleInfo = getNotNull(rules, exp.ruleName);
-            return visit(ruleInfo.body.substituteParams(exp.args));
-          }
-          if (this.isLiftedTerminal(exp)) {
-            return exp; // Nothing to do.
+          if (['caseInsensitive', 'liquidRawTagImpl', 'liquidTagRule'].includes(ruleName)) {
+            const ruleInfo = getNotNull(rules, ruleName);
+            return visit(ir.substituteParams(ruleInfo.body, children));
           }
 
-          if (exp.args.length > 0) {
+          if (children.length > 0) {
             // Record this pattern.
-            const rulePatterns = setdefault(patternsByRule, exp.ruleName, () => new Map());
-            rulePatterns.set(exp.toMemoKey(), exp.args);
+            const rulePatterns = setdefault(patternsByRule, ruleName, () => new Map());
+            rulePatterns.set(ir.specializedName(irExp), children);
           }
 
-          const specializedName = exp.toMemoKey();
+          const specializedName = ir.specializedName(irExp);
           this._ensureRuleId(specializedName);
 
           // If not yet seen, recursively visit the body of the specialized
           // rule. Note that this also applies to non-parameterized rules!
           if (!newRules.has(specializedName)) {
-            const ruleInfo = getNotNull(rules, exp.ruleName);
+            const ruleInfo = getNotNull(rules, ruleName);
             newRules.set(specializedName, {}); // Prevent infinite recursion.
 
             // Visit the body with the parameter substituted, to ensure we
             // discover all possible applications that can occur at runtime.
-            let body = visit(ruleInfo.body.substituteParams(exp.args));
+            let body = visit(ir.substituteParams(ruleInfo.body, children));
 
-            if (exp.args.length !== 0) {
+            if (children.length !== 0) {
               // The specialized rule just applies the generalized rule.
               // Note that we *don't* visit this application, and it won't be
               // assigned a rule id yet!
-              body = new pexprs.Apply(exp.ruleName);
+              body = ir.apply(irExp.ruleName);
             }
             newRules.set(specializedName, {...ruleInfo, body, formals: []});
           }
           // Replace with an application of the specialized rule.
-          return new pexprs.Apply(specializedName);
+          return ir.apply(specializedName);
         }
-        case pexprs.Lex:
-        case pexprs.Lookahead:
-        case pexprs.Not:
-        case pexprs.Opt:
-        case pexprs.Plus:
-        case pexprs.Star:
-          return new exp.constructor(visit(exp.expr));
-        case pexprs.Seq:
-          return new pexprs.Seq(exp.factors.map(e => visit(e)));
-        case pexprs.Param:
-        case pexprs.Range:
-        case pexprs.Terminal:
-        case pexprs.UnicodeChar:
-          return exp; // Leaf nodes can be shared.
+        case 'Lex':
+        case 'Lookahead':
+        case 'Not':
+        case 'Opt':
+        case 'Plus':
+        case 'Star':
+          return {type: irExp.type, child: visit(irExp.child)};
+        case 'Seq':
+          return {type: irExp.type, children: irExp.children.map(visit)};
+        case 'Param':
+        case 'Range':
+        case 'Terminal':
+        case 'UnicodeChar':
+          return irExp; // Leaf nodes can be shared.
         default:
-          throw new Error(`not handled: ${exp.constructor.name}`);
+          throw new Error(`not handled: ${irExp.type}`);
       }
     };
-    visit(new pexprs.Apply(this.grammar.defaultStartRule));
+    visit(ir.apply(this.grammar.defaultStartRule));
     this.rules = newRules;
 
     // Save the observed patterns of the parameterized rules.
@@ -1109,11 +1108,11 @@ export class Compiler {
     const cases = patterns.map((actuals, i) => () => {
       // Substitute the params to get the concrete expression that
       // needs to be inserted here.
-      let newExp = exp.substituteParams(actuals);
-      if (newExp instanceof pexprs.Apply) {
+      let newExp = ir.substituteParams(exp, actuals);
+      if (newExp.type === 'Apply') {
         // If the application has arguments, we need to dispatch to the
         // correct specialized version of the rule.
-        newExp = new pexprs.Apply(newExp.toMemoKey());
+        newExp = ir.apply(ir.specializedName(newExp));
       }
       this.emitPExpr(newExp);
     });
@@ -1142,11 +1141,11 @@ export class Compiler {
     //   applications without args
     // - generalized rules, which may contain Params and apps w/ args.
 
-    if (exp instanceof pexprs.Apply && exp.args.length === 0) {
+    if (exp.type === 'Apply' && exp.children.length === 0) {
       this.emitApply(exp);
       return;
     }
-    if (this._currRuleInfo.patterns && isApplyLike(exp)) {
+    if (this._currRuleInfo.patterns && ['Apply', 'Param'].includes(exp.type)) {
       this.emitDispatch(exp, this._currRuleInfo.patterns);
       return;
     }
@@ -1160,28 +1159,24 @@ export class Compiler {
     // - it makes sure that the generated code doesn't have stack effects.
     asm.block(w.blocktype.empty, () => {
       // prettier-ignore
-      switch (exp.constructor) {
-        case pexprs.Alt: this.emitAlt(exp); break;
-        case pexprs.Extend: this.emitExtend(exp); break;
-        case pexprs.Lookahead: this.emitLookahead(exp, true); break;
-        case pexprs.Not: this.emitLookahead(exp, false); break;
-        case pexprs.Seq: this.emitSeq(exp); break;
-        case pexprs.Star: this.emitStar(exp); break;
-        case pexprs.Opt: this.emitOpt(exp); break;
-        case pexprs.Range: this.emitRange(exp); break;
-        case pexprs.Plus: this.emitPlus(exp); break;
-        case pexprs.Terminal: this.emitTerminal(exp); break;
-        case pexprs.UnicodeChar: this.emitFail(); break; // TODO: Handle this properly
-        case pexprs.Param:
+      switch (exp.type) {
+        case 'Alt': this.emitAlt(exp); break;
+        case 'Any': this.emitAny(); break;
+        case 'End': this.emitEnd(); break;
+        case 'LiftedTerminal': this.emitApplyTerm(exp); break;
+        case 'Lookahead': this.emitLookahead(exp, true); break;
+        case 'Not': this.emitLookahead(exp, false); break;
+        case 'Seq': this.emitSeq(exp); break;
+        case 'Star': this.emitStar(exp); break;
+        case 'Opt': this.emitOpt(exp); break;
+        case 'Range': this.emitRange(exp); break;
+        case 'Plus': this.emitPlus(exp); break;
+        case 'Terminal': this.emitTerminal(exp); break;
+        case 'UnicodeChar': this.emitFail(); break; // TODO: Handle this properly
+        case 'Param':
           // Fall through (Params should not exist at codegen time).
         default:
-          if (exp === pexprs.any) {
-            this.emitAny();
-          } else if (exp === pexprs.end) {
-            this.emitEnd();
-          } else {
-            throw new Error(`not handled: ${exp.ruleName}`);
-          }
+          throw new Error(`not handled: ${exp.ruleName}`);
       }
     });
     asm.popStackFrame();
@@ -1191,7 +1186,7 @@ export class Compiler {
   emitAlt(exp) {
     const {asm} = this;
     asm.block(w.blocktype.empty, () => {
-      for (const term of exp.terms) {
+      for (const term of exp.children) {
         this.emitPExpr(term);
         asm.localGet('ret');
         asm.condBreak(0); // return if succeeded
@@ -1209,12 +1204,9 @@ export class Compiler {
     asm.maybeReturnTerminalNodeWithSavedPos();
   }
 
-  emitApplyTerm(exp) {
+  emitApplyTerm({terminalId}) {
     const {asm} = this;
-
-    // Extract out the terminal ID. Yes, this is a hack!
-    const termId = parseInt(exp.ruleName.split('$term$')[1], 10);
-    asm.i32Const(termId);
+    asm.i32Const(terminalId);
     asm.emit(w.instr.call, this.ruleEvalFuncIdx('$term'));
     asm.localSet('ret');
   }
@@ -1225,7 +1217,7 @@ export class Compiler {
     const {asm} = this;
     const {patterns} = getNotNull(this.rules, exp.ruleName);
     // TODO: Should we cache these? We'll reconstruct them many times for the same set of patterns.
-    const keys = patterns.map(actuals => new pexprs.Apply(exp.ruleName, actuals).toMemoKey());
+    const keys = patterns.map(actuals => ir.specializedName(ir.apply(exp.ruleName, actuals)));
     const caseIdx = keys.indexOf(this._currRuleName);
     assert(caseIdx >= 0);
     asm.i32Const(this.ruleId(exp.ruleName));
@@ -1237,16 +1229,12 @@ export class Compiler {
   emitApply(exp) {
     const {asm} = this;
 
-    if (this.isLiftedTerminal(exp)) {
-      this.emitApplyTerm(exp);
-      return;
-    }
     // Are we applying a generalized rule from a specialized one?
     if (getNotNull(this.rules, exp.ruleName).formals.length > 0) {
       this.emitApplyGeneralized(exp);
       return;
     }
-    assert(exp.args.length === 0);
+    assert(exp.children.length === 0);
 
     asm.i32Const(this.ruleId(exp.ruleName));
 
@@ -1268,23 +1256,17 @@ export class Compiler {
     asm.maybeReturnTerminalNodeWithSavedPos();
   }
 
-  emitExtend(exp) {
-    this.emitAlt({
-      terms: [exp.body, exp.superGrammar.rules[exp.name].body],
-    });
-  }
-
   emitFail() {
     const {asm} = this;
     asm.i32Const(0);
     asm.localSet('ret');
   }
 
-  emitLookahead({expr}, shouldMatch = true) {
+  emitLookahead({child}, shouldMatch = true) {
     const {asm} = this;
 
     // TODO: Should positive lookahead record a CST?
-    this.emitPExpr(expr);
+    this.emitPExpr(child);
     if (!shouldMatch) {
       asm.localGet('ret');
       asm.emit(instr.i32.eqz);
@@ -1294,9 +1276,9 @@ export class Compiler {
     asm.restorePos();
   }
 
-  emitOpt({expr}) {
+  emitOpt({child}) {
     const {asm} = this;
-    this.emitPExpr(expr);
+    this.emitPExpr(child);
     asm.localGet('ret');
     asm.ifFalse(w.blocktype.empty, () => {
       asm.restorePos();
@@ -1308,18 +1290,18 @@ export class Compiler {
 
   emitPlus(plusExp) {
     const {asm} = this;
-    this.emitPExpr(plusExp.expr);
+    this.emitPExpr(plusExp.child);
     asm.localGet('ret');
     asm.if(w.blocktype.empty, () => {
       this.emitStar(plusExp);
     });
   }
 
-  emitRange({from, to}) {
-    assert(from.length === 1 && to.length === 1);
+  emitRange(exp) {
+    assert(exp.lo.length === 1 && exp.hi.length === 1);
 
-    const lo = from.charCodeAt(0);
-    const hi = to.charCodeAt(0);
+    const lo = exp.lo.charCodeAt(0);
+    const hi = exp.hi.charCodeAt(0);
 
     // TODO: Do we disallow 0xff in the range?
     const {asm} = this;
@@ -1340,24 +1322,24 @@ export class Compiler {
     asm.maybeReturnTerminalNodeWithSavedPos();
   }
 
-  emitSeq(exp) {
+  emitSeq({children}) {
     const {asm} = this;
 
     // An empty sequence always succeeds.
-    if (exp.factors.length === 0) {
+    if (children.length === 0) {
       asm.setRet(1);
       return;
     }
 
-    for (const factor of exp.factors) {
-      this.emitPExpr(factor);
+    for (const c of children) {
+      this.emitPExpr(c);
       asm.localGet('ret');
       asm.emit(instr.i32.eqz);
       asm.condBreak(0);
     }
   }
 
-  emitStar({expr}, {reuseStackFrame} = {}) {
+  emitStar({child}, {reuseStackFrame} = {}) {
     const {asm} = this;
 
     // We push another stack frame because we need to save and restore
@@ -1367,7 +1349,7 @@ export class Compiler {
       asm.loop(w.blocktype.empty, () => {
         asm.savePos();
         asm.saveNumBindings();
-        this.emitPExpr(expr);
+        this.emitPExpr(child);
         asm.localGet('ret');
         asm.emit(instr.i32.eqz);
         asm.condBreak(1);
@@ -1382,7 +1364,7 @@ export class Compiler {
     asm.localSet('ret');
   }
 
-  emitTerminal(exp) {
+  emitTerminal({value}) {
     // TODO:
     // - proper UTF-8!
     // - handle longer terminals with a loop
@@ -1390,7 +1372,7 @@ export class Compiler {
 
     const {asm} = this;
     asm.emit('Terminal');
-    for (const c of [...exp.obj]) {
+    for (const c of [...value]) {
       // Compare next char
       asm.i32Const(c.charCodeAt(0));
       asm.currCharCode();
