@@ -840,8 +840,9 @@ export class Compiler {
     return this.asm._functionDecls.at(-1);
   }
 
-  compileRule(name, ruleInfo) {
+  compileRule(name) {
     const {asm} = this;
+    const ruleInfo = getNotNull(this.rules, name);
     let paramTypes = [];
     if (ruleInfo.patterns) {
       paramTypes = [w.valtype.i32];
@@ -1072,10 +1073,7 @@ export class Compiler {
         ruleDecls.push(this.compileTerminalRule(name));
       } else {
         assert(!name.startsWith('$term'));
-        const ruleInfo = (this._currRuleInfo = getNotNull(this.rules, name));
-        this._currRuleName = name;
-        ruleDecls.push(this.compileRule(name, ruleInfo));
-        this._currRuleName = this._currRuleInfo = undefined;
+        ruleDecls.push(this.compileRule(name));
       }
     }
     const {asm} = this;
