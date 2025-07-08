@@ -5,7 +5,9 @@ export type Expr =
   | Alt
   | Any
   | Apply
+  | ApplyGeneralized
   | CaseInsensitive
+  | Dispatch
   | End
   | Lex
   | LiftedTerminal
@@ -45,6 +47,18 @@ export const apply = (ruleName: string, children: (Apply | Param)[] = []): Apply
   children
 });
 
+export interface ApplyGeneralized {
+  type: 'ApplyGeneralized';
+  ruleName: string;
+  caseIdx: number;
+}
+
+export const applyGeneralized = (ruleName: string, caseIdx: number): ApplyGeneralized => ({
+  type: 'ApplyGeneralized',
+  ruleName,
+  caseIdx
+});
+
 export interface CaseInsensitive {
   type: 'CaseInsensitive';
   value: string;
@@ -54,6 +68,11 @@ export const caseInsensitive = (value: string): CaseInsensitive => ({
   type: 'CaseInsensitive',
   value
 });
+
+export interface Dispatch {
+  child: Apply | Param;
+  patterns: Expr[][];
+}
 
 // TODO: Eliminate this, and replace with Not(Any())?
 export interface End {
@@ -237,4 +256,41 @@ export function specializedName(app: Apply | LiftedTerminal): string {
     })
     .join(',');
   return app.ruleName + (argsNames.length > 0 ? `<${argsNames}>` : '');
+}
+
+export type ExprType = Expr extends {type: infer U} ? U : never;
+
+export type RewriteActions = {
+  [K in ExprType]?: (exp: Extract<Expr, {type: K}>) => Expr;
+};
+
+export function rewrite(exp: Expr, actions: RewriteActions) {
+  const action = actions[exp.type];
+  if (action) {
+    return action(exp as any);
+  }
+
+  switch (exp.type) {
+    case 'Alt':
+    case 'Seq':
+      return {type: exp.type, children: exp.children.map((e: Expr) => rewrite(e, actions))};
+    case 'Any':
+    case 'Apply':
+    case 'End':
+    case 'LiftedTerminal':
+    case 'Param':
+    case 'Range':
+    case 'Terminal':
+    case 'UnicodeChar':
+      return exp;
+    case 'Lex':
+    case 'Lookahead':
+    case 'Not':
+    case 'Opt':
+    case 'Plus':
+    case 'Star':
+      return {type: exp.type, child: rewrite(exp.child, actions)};
+    default:
+      throw new Error(`not handled: ${exp.type}`);
+  }
 }

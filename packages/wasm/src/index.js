@@ -866,28 +866,17 @@ export class Compiler {
     const {rules} = this;
     const patternsByRule = new Map();
 
-    const visit = irExp => {
-      switch (irExp.type) {
-        case 'Alt':
-          return ir.alt(irExp.children.map(e => visit(e)));
-        case 'Any':
-        case 'End':
-        case 'LiftedTerminal':
-          return irExp;
-        case 'Apply': {
-          const {ruleName, children} = irExp;
+    const specialize = exp =>
+      ir.rewrite(exp, {
+        Apply: app => {
+          const {ruleName, children} = app;
           // Inline these. TODO: Handle this elsewhere.
           if (['caseInsensitive', 'liquidRawTagImpl', 'liquidTagRule'].includes(ruleName)) {
             const ruleInfo = getNotNull(rules, ruleName);
-            return visit(ir.substituteParams(ruleInfo.body, children));
+            return specialize(ir.substituteParams(ruleInfo.body, children));
           }
 
-          const specializedName = ir.specializedName(irExp);
-          if (specializedName !== ruleName) {
-            // Record this pattern.
-            const rulePatterns = setdefault(patternsByRule, ruleName, () => new Map());
-            rulePatterns.set(specializedName, children);
-          }
+          const specializedName = ir.specializedName(app);
           this._ensureRuleId(specializedName);
 
           // If not yet seen, recursively visit the body of the specialized
@@ -898,39 +887,39 @@ export class Compiler {
 
             // Visit the body with the parameter substituted, to ensure we
             // discover all possible applications that can occur at runtime.
-            let body = visit(ir.substituteParams(ruleInfo.body, children));
+            let body = specialize(ir.substituteParams(ruleInfo.body, children));
 
-            if (children.length !== 0) {
-              // The specialized rule just applies the generalized rule.
-              // Note that we *don't* visit this application, and it won't be
-              // assigned a rule id yet!
-              body = ir.apply(irExp.ruleName);
+            // If there are any args, replace the body with an application of
+            // the generalized rule.
+            if (children.length > 0) {
+              // This is the first time we've seen this pattern; record it.
+              const rulePatterns = setdefault(patternsByRule, ruleName, () => new Map());
+              rulePatterns.set(specializedName, children);
+
+              // Note that we deliberately *don't* visit this application yet,
+              // so it won't be assigned a rule ID.
+              const caseIdx = rulePatterns.size - 1;
+              body = ir.applyGeneralized(ruleName, caseIdx);
             }
             newRules.set(specializedName, {...ruleInfo, body, formals: []});
           }
           // Replace with an application of the specialized rule.
           return ir.apply(specializedName);
-        }
-        case 'Lex':
-        case 'Lookahead':
-        case 'Not':
-        case 'Opt':
-        case 'Plus':
-        case 'Star':
-          return {type: irExp.type, child: visit(irExp.child)};
-        case 'Seq':
-          return {type: irExp.type, children: irExp.children.map(visit)};
-        case 'Param':
-        case 'Range':
-        case 'Terminal':
-        case 'UnicodeChar':
-          return irExp; // Leaf nodes can be shared.
-        default:
-          throw new Error(`not handled: ${irExp.type}`);
-      }
-    };
-    visit(ir.apply(this.grammar.defaultStartRule));
+        },
+      });
+    specialize(ir.apply(this.grammar.defaultStartRule));
     this.rules = newRules;
+
+    const insertDispatches = (exp, patterns) =>
+      ir.rewrite(exp, {
+        Apply: app => {
+          if (app.children.length === 0) return app;
+          return {type: 'Dispatch', child: app, patterns};
+        },
+        Param: p => {
+          return {type: 'Dispatch', child: p, patterns};
+        },
+      });
 
     // Save the observed patterns of the parameterized rules.
     // All non-parameterized & specialized rules have been discovered and
@@ -938,9 +927,11 @@ export class Compiler {
     for (const [name, patterns] of patternsByRule.entries()) {
       this._ensureRuleId(name, {notMemoized: true});
       const ruleInfo = getNotNull(rules, name);
+      const patternsArr = [...patterns.values()];
       newRules.set(name, {
         ...ruleInfo,
-        patterns: [...patterns.values()],
+        body: insertDispatches(ruleInfo.body, patternsArr),
+        patterns: patternsArr,
       });
     }
   }
@@ -1101,7 +1092,7 @@ export class Compiler {
   // rule; they take an i32 `caseIdx` argument that selects the behaviour.
   // Then, for any Param -- or Apply that involves a Param -- we dynamically
   // dispatch to the correct specialized version of the rule.
-  emitDispatch(exp, patterns) {
+  emitDispatch({child: exp, patterns}) {
     const {asm} = this;
 
     const cases = patterns.map((actuals, i) => () => {
@@ -1144,8 +1135,8 @@ export class Compiler {
       this.emitApply(exp);
       return;
     }
-    if (this._currRuleInfo.patterns && ['Apply', 'Param'].includes(exp.type)) {
-      this.emitDispatch(exp, this._currRuleInfo.patterns);
+    if (exp.type === 'ApplyGeneralized') {
+      this.emitApplyGeneralized(exp);
       return;
     }
 
@@ -1161,6 +1152,7 @@ export class Compiler {
       switch (exp.type) {
         case 'Alt': this.emitAlt(exp); break;
         case 'Any': this.emitAny(); break;
+        case 'Dispatch': this.emitDispatch(exp); break;
         case 'End': this.emitEnd(); break;
         case 'LiftedTerminal': this.emitApplyTerm(exp); break;
         case 'Lookahead': this.emitLookahead(exp, true); break;
@@ -1214,27 +1206,16 @@ export class Compiler {
   // Need to know which case we're applying!
   emitApplyGeneralized(exp) {
     const {asm} = this;
-    const {patterns} = getNotNull(this.rules, exp.ruleName);
-    // TODO: Should we cache these? We'll reconstruct them many times for the same set of patterns.
-    const keys = patterns.map(actuals => ir.specializedName(ir.apply(exp.ruleName, actuals)));
-    const caseIdx = keys.indexOf(this._currRuleName);
-    assert(caseIdx >= 0);
     asm.i32Const(this.ruleId(exp.ruleName));
-    asm.i32Const(caseIdx);
+    asm.i32Const(exp.caseIdx);
     asm.callPrebuiltFunc('evalApplyGeneralized');
     asm.localSet('ret');
   }
 
   emitApply(exp) {
-    const {asm} = this;
-
-    // Are we applying a generalized rule from a specialized one?
-    if (getNotNull(this.rules, exp.ruleName).formals.length > 0) {
-      this.emitApplyGeneralized(exp);
-      return;
-    }
     assert(exp.children.length === 0);
 
+    const {asm} = this;
     asm.i32Const(this.ruleId(exp.ruleName));
 
     // TODO: Handle this at grammar parse time, not here.
