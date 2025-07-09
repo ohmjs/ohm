@@ -743,7 +743,7 @@ export class Compiler {
     const liftTerminal = ({obj}) => {
       const id = liftedTerminals.add(obj);
       assert(id >= 0 && id < 0xffff, 'too many terminals!');
-      return ir.liftedTerminal(id);
+      return ir.liftedTerminal(id, obj);
     };
 
     // If `exp` is not an Apply or Param, lift it into its own rule and return
@@ -889,6 +889,7 @@ export class Compiler {
             // Visit the body with the parameter substituted, to ensure we
             // discover all possible applications that can occur at runtime.
             let body = specialize(ir.substituteParams(ruleInfo.body, children));
+            const origBody = body;
 
             // If there are any args, replace the body with an application of
             // the generalized rule.
@@ -903,7 +904,16 @@ export class Compiler {
               body = ir.applyGeneralized(ruleName, caseIdx);
             }
             newRules.set(specializedName, {...ruleInfo, body, formals: []});
+
+            if (specializedName.startsWith('anyExceptStar<$term$')) {
+              const [la, app] = origBody.child.children;
+              const term = la.child;
+              assert(typeof term.value === 'string');
+              assert(app.ruleName === 'any');
+              return ir.munchUntil(term.value);
+            }
           }
+
           // Replace with an application of the specialized rule.
           return ir.apply(specializedName);
         },
@@ -1149,6 +1159,7 @@ export class Compiler {
         case 'End': this.emitEnd(); break;
         case 'LiftedTerminal': this.emitApplyTerm(exp); break;
         case 'Lookahead': this.emitLookahead(exp, true); break;
+        case 'MunchUntil': this.emitMunchUntil(exp); break;
         case 'Not': this.emitLookahead(exp, false); break;
         case 'Seq': this.emitSeq(exp); break;
         case 'Star': this.emitStar(exp); break;
@@ -1247,6 +1258,47 @@ export class Compiler {
     }
     asm.restoreBindingsLength();
     asm.restorePos();
+  }
+
+  emitMunchUntil(exp) {
+    const {asm} = this;
+    // We push another stack frame because we need to save and restore
+    // the position just before the last (failed) expression.
+    asm.pushStackFrame();
+    asm.block(w.blocktype.empty, () => {
+      asm.loop(w.blocktype.empty, () => {
+        asm.savePos();
+        asm.saveNumBindings();
+
+        // Lookahead
+        asm.block(w.blocktype.empty, () => {
+          for (const c of [...exp.value]) {
+            // Compare next char
+            asm.i32Const(c.charCodeAt(0));
+            asm.nextCharCode();
+            asm.i32Ne();
+            asm.condBreak(0); // Not equal? No match.
+          }
+          // Terminal succeeded, we're done. Break out of the loop.
+          asm.break(2);
+        });
+
+        // Any, but without advancing pos.
+        asm.i32Const(0xff);
+        asm.currCharCode();
+        asm.emit(w.instr.i32.eq);
+        asm.condBreak(1); // We're at the end, break out.
+        asm.newTerminalNodeWithSavedPos(); // TODO: This isn't quite right, but close enough.
+
+        asm.continue(0); // Go around again.
+      });
+    });
+    asm.restorePos();
+    asm.restoreBindingsLength();
+    asm.popStackFrame();
+
+    asm.newIterNodeWithSavedPosAndBindings();
+    asm.localSet('ret');
   }
 
   emitOpt({child}) {

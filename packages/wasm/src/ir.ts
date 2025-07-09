@@ -13,6 +13,7 @@ export type Expr =
   | LiftedTerminal
   | Lookahead
   | Opt
+  | MunchUntil
   | Not
   | Param
   | Plus
@@ -117,6 +118,13 @@ export interface Not {
 
 export const not = (child: Expr): Not => ({type: 'Not', child});
 
+export interface MunchUntil {
+  type: 'MunchUntil';
+  value: string;
+}
+
+export const munchUntil = (value: string): MunchUntil => ({type: 'MunchUntil', value});
+
 export interface Param {
   type: 'Param';
   index: number;
@@ -172,11 +180,13 @@ export const unicodeChar = (value: string): UnicodeChar => ({type: 'UnicodeChar'
 export interface LiftedTerminal {
   type: 'LiftedTerminal';
   terminalId: number;
+  value: string;
 }
 
-export const liftedTerminal = (terminalId: number): LiftedTerminal => ({
+export const liftedTerminal = (terminalId: number, value: string): LiftedTerminal => ({
   type: 'LiftedTerminal',
-  terminalId
+  terminalId,
+  value
 });
 
 // Helpers
@@ -299,20 +309,67 @@ export function rewrite(exp: Expr, actions: RewriteActions): Expr {
     case 'CaseInsensitive':
     case 'End':
     case 'LiftedTerminal':
+    case 'MunchUntil':
     case 'Param':
     case 'Range':
     case 'Terminal':
     case 'UnicodeChar':
       return exp;
     case 'Dispatch':
-      return {type: exp.type, child: rewrite(exp.child, actions), patterns: exp.patterns};
     case 'Lex':
     case 'Lookahead':
     case 'Not':
     case 'Opt':
     case 'Plus':
     case 'Star':
-      return {type: exp.type, child: rewrite(exp.child, actions)};
+      return {...exp, child: rewrite(exp.child, actions)};
+    default:
+      unreachable(exp, `not handled: ${exp}`);
+  }
+}
+
+export function toString(exp: Expr) {
+  switch (exp.type) {
+    case 'Alt':
+      return `(${exp.children.map(toString).join('|')})`;
+    case 'Seq':
+      return `(${exp.children.map(toString).join(' ')})`;
+    case 'Any':
+      return 'Any()';
+    case 'Apply': {
+      const args = exp.children.map(toString);
+      return exp.ruleName + (args.length > 0 ? `<${args.join(',')}>` : '');
+    }
+    case 'ApplyGeneralized':
+      return `ApplyGeneralized(${JSON.stringify(exp.ruleName)}, ${exp.caseIdx})`;
+    case 'CaseInsensitive':
+      return `caseInsensitive<${exp.value}>`;
+    case 'End':
+      return 'End()';
+    case 'LiftedTerminal':
+      return `$term$${exp.terminalId}`;
+    case 'Param':
+      return `$${exp.index}`;
+    case 'Range':
+      return `${JSON.stringify(exp.lo)}..${JSON.stringify(exp.hi)}`;
+    case 'Terminal':
+      return JSON.stringify(exp.value);
+    case 'UnicodeChar':
+      return exp;
+    case 'Dispatch':
+      return `Dispatch<${toString(exp.child)}>`;
+    case 'Lex':
+      return `#${toString(exp.child)}`;
+    case 'Lookahead':
+      return `&${toString(exp.child)}`;
+    case 'Not':
+      return `~${toString(exp.child)}`;
+    case 'Opt':
+      return `${toString(exp.child)}?`;
+    case 'Plus':
+      return `${toString(exp.child)}+`;
+    case 'Star':
+      return `${toString(exp.child)}*`;
     default:
       unreachable(exp, `not handled: ${exp}`);
   }
