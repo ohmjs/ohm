@@ -70,9 +70,16 @@ export const caseInsensitive = (value: string): CaseInsensitive => ({
 });
 
 export interface Dispatch {
-  child: Apply | Param;
+  type: 'Dispatch';
+  child: Expr;
   patterns: Expr[][];
 }
+
+export const dispatch = (child: Apply | Param, patterns: Expr[][]): Dispatch => ({
+  type: 'Dispatch',
+  child,
+  patterns
+});
 
 // TODO: Eliminate this, and replace with Not(Any())?
 export interface End {
@@ -175,6 +182,10 @@ export const liftedTerminal = (terminalId: number): LiftedTerminal => ({
 // Helpers
 // -------
 
+function unreachable(x: never, msg: string): never {
+  throw new Error(msg);
+}
+
 function checkNotNull<T>(x: T, msg = 'unexpected null value'): NonNullable<T> {
   if (x == null) throw new Error(msg);
   return x;
@@ -192,6 +203,7 @@ export function collectParams(exp: Expr, seen = new Set<number>()) {
     case 'Apply':
     case 'Seq':
       return exp.children.flatMap(c => collectParams(c, seen));
+    case 'Dispatch':
     case 'Lex':
     case 'Lookahead':
     case 'Not':
@@ -200,13 +212,16 @@ export function collectParams(exp: Expr, seen = new Set<number>()) {
     case 'Star':
       return collectParams(exp.child, seen);
     case 'Any':
+    case 'ApplyGeneralized':
+    case 'CaseInsensitive':
     case 'End':
+    case 'LiftedTerminal':
     case 'Range':
     case 'Terminal':
     case 'UnicodeChar':
       return [];
     default:
-      throw new Error(`not handled: ${exp.type}`);
+      unreachable(exp, `not handled: ${exp}`);
   }
 }
 
@@ -220,6 +235,8 @@ export function substituteParams(exp: Expr, actuals: Expr[]) {
         exp.ruleName,
         exp.children.map(c => substituteParams(c, actuals))
       );
+    case 'Dispatch':
+      return dispatch(substituteParams(exp.child, actuals), exp.patterns);
     case 'Alt':
     case 'Seq':
       return {
@@ -234,6 +251,8 @@ export function substituteParams(exp: Expr, actuals: Expr[]) {
     case 'Star':
       return {type: exp.type, child: substituteParams(exp.child, actuals)};
     case 'Any':
+    case 'ApplyGeneralized':
+    case 'CaseInsensitive':
     case 'End':
     case 'LiftedTerminal':
     case 'Range':
@@ -241,7 +260,7 @@ export function substituteParams(exp: Expr, actuals: Expr[]) {
     case 'UnicodeChar':
       return exp;
     default:
-      throw new Error(`not handled: ${exp.type}`);
+      unreachable(exp, `not handled: ${exp}`);
   }
 }
 
@@ -264,7 +283,7 @@ export type RewriteActions = {
   [K in ExprType]?: (exp: Extract<Expr, {type: K}>) => Expr;
 };
 
-export function rewrite(exp: Expr, actions: RewriteActions) {
+export function rewrite(exp: Expr, actions: RewriteActions): Expr {
   const action = actions[exp.type];
   if (action) {
     return action(exp as any);
@@ -276,6 +295,8 @@ export function rewrite(exp: Expr, actions: RewriteActions) {
       return {type: exp.type, children: exp.children.map((e: Expr) => rewrite(e, actions))};
     case 'Any':
     case 'Apply':
+    case 'ApplyGeneralized':
+    case 'CaseInsensitive':
     case 'End':
     case 'LiftedTerminal':
     case 'Param':
@@ -283,6 +304,8 @@ export function rewrite(exp: Expr, actions: RewriteActions) {
     case 'Terminal':
     case 'UnicodeChar':
       return exp;
+    case 'Dispatch':
+      return {type: exp.type, child: rewrite(exp.child, actions), patterns: exp.patterns};
     case 'Lex':
     case 'Lookahead':
     case 'Not':
@@ -291,6 +314,6 @@ export function rewrite(exp: Expr, actions: RewriteActions) {
     case 'Star':
       return {type: exp.type, child: rewrite(exp.child, actions)};
     default:
-      throw new Error(`not handled: ${exp.type}`);
+      unreachable(exp, `not handled: ${exp}`);
   }
 }

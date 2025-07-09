@@ -913,13 +913,8 @@ export class Compiler {
 
     const insertDispatches = (exp, patterns) =>
       ir.rewrite(exp, {
-        Apply: app => {
-          if (app.children.length === 0) return app;
-          return {type: 'Dispatch', child: app, patterns};
-        },
-        Param: p => {
-          return {type: 'Dispatch', child: p, patterns};
-        },
+        Apply: app => (app.children.length === 0 ? app : ir.dispatch(app, patterns)),
+        Param: p => ir.dispatch(p, patterns),
       });
 
     // Save the observed patterns of the parameterized rules.
