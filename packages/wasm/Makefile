@@ -15,7 +15,7 @@ debug: clean
 	OHM_DEBUG=1 make
 
 .PHONY: bench
-bench: all
+bench: all build/es5.wasm build/liquid-html.wasm
 	node --expose-gc $(NODE_COMMON_FLAGS) scripts/bench.js
 
 dist/index.js: build/ohmRuntime.wasm_sections.ts $(SRC_JS_FILES) $(SRC_TS_FILES)
@@ -36,6 +36,9 @@ build/ohmRuntime.wasm: runtime/ohmRuntime.ts
 
 build/es5.wasm: dist/index.js
 	node $(NODE_COMMON_FLAGS) scripts/es5ToWasm.js build/es5.wasm
+
+build/liquid-html.wasm: dist/index.js
+	node $(NODE_COMMON_FLAGS) src/cli.js -g LiquidHTML -o build/liquid-html.wasm test/data/_liquid-html.ohm
 
 .PHONY: go-test-es5
 go-test-es5: test/go/testmain build/es5.wasm

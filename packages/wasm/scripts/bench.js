@@ -33,8 +33,15 @@ function matchWithInput(m, input) {
   return checkOk(m.match());
 }
 
-const makeLiquidMatcher = async () => await wasmMatcherForGrammar(liquid.LiquidHTML);
-const makeEs5Matcher = async () => await wasmMatcherForGrammar(es5);
+const makeLiquidMatcher = async () => {
+  return await wasmMatcherForGrammar(
+      liquid.LiquidHTML,
+      readFileSync(join(__dirname, '../build/liquid-html.wasm')),
+  );
+};
+const makeEs5Matcher = async () => {
+  return await wasmMatcherForGrammar(es5, readFileSync(join(__dirname, '../build/es5.wasm')));
+};
 
 function benchWithSetup(name, setupFn, benchFn) {
   bench(name, function* () {
