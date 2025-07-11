@@ -870,3 +870,8 @@ test('specialized rule names', t => {
     'two',
   ]);
 });
+
+test('determinism', t => {
+  const g = ohm.grammar('G { start = "a" }');
+  t.deepEqual(new Compiler(g).compile(), new Compiler(g).compile());
+});

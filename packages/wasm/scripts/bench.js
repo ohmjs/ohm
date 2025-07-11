@@ -33,6 +33,8 @@ function matchWithInput(m, input) {
   return checkOk(m.match());
 }
 
+// Note: we create a new Module and Instance for each run; however, when the
+// bytes are identical, Node/V8 will reuse the compiled code.
 const makeLiquidMatcher = async () => {
   return await wasmMatcherForGrammar(
       liquid.LiquidHTML,

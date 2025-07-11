@@ -101,11 +101,6 @@ function getDebugLabel(exp) {
   return `${JSON.stringify(exp)}@${loc}`;
 }
 
-const gensym = (() => {
-  let nextId = 0;
-  return prefix => `${prefix}${nextId++}`;
-})();
-
 function collectParams(exp, seen = new Set()) {
   switch (exp.constructor) {
     case pexprs.Param:
@@ -606,6 +601,7 @@ export class Compiler {
     this._ensureRuleId('$term'); // …and `$term` is 1.
 
     this.rules = undefined;
+    this._nextLiftedId = 0;
   }
 
   ruleId(name) {
@@ -627,7 +623,7 @@ export class Compiler {
     // But, we have to be careful where Params are involved: `"a" | blah`
     // could mean something different depending on context.
 
-    const name = gensym('$lifted');
+    const name = `$lifted${this._nextLiftedId++}`;
 
     // Replace "free variables" (Params from the outer scope) with Params
     // for the lifted, to-be-defined rule.
