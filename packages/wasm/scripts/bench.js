@@ -5,7 +5,8 @@ import {run, bench, group, summary} from 'mitata';
 import * as ohm from 'ohm-js';
 
 import es5js from '../../../examples/ecmascript/index.js';
-import {makeEs5Matcher, wasmMatcherForGrammar} from '../test/_helpers.js';
+import {wasmMatcherForGrammar} from '../test/_helpers.js';
+import es5 from '../test/data/_es5.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
@@ -17,6 +18,8 @@ const inputs = {
   html5shiv: readFileSync(join(datadir, '_html5shiv-3.7.3.js'), 'utf-8'),
   underscore: readFileSync(join(datadir, '_underscore-1.8.3.js'), 'utf-8'),
 };
+
+const liquid = ohm.grammars(readFileSync(join(datadir, '_liquid-html.ohm'), 'utf8'));
 
 function checkOk(val) {
   if (!val) {
@@ -30,8 +33,8 @@ function matchWithInput(m, input) {
   return checkOk(m.match());
 }
 
-const liquid = ohm.grammars(readFileSync(join(datadir, '_liquid-html.ohm'), 'utf8'));
 const makeLiquidMatcher = async () => await wasmMatcherForGrammar(liquid.LiquidHTML);
+const makeEs5Matcher = async () => await wasmMatcherForGrammar(es5);
 
 function benchWithSetup(name, setupFn, benchFn) {
   bench(name, function* () {

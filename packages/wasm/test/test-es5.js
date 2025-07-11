@@ -3,9 +3,10 @@ import {readFile} from 'node:fs/promises';
 import {dirname, join} from 'node:path';
 import {performance} from 'node:perf_hooks';
 import {fileURLToPath} from 'node:url';
-import es5js from '../../../examples/ecmascript/index.js';
 
-import {makeEs5Matcher} from './_helpers.js';
+import es5js from '../../../examples/ecmascript/index.js';
+import {wasmMatcherForGrammar} from './_helpers.js';
+import es5 from './data/_es5.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, 'data');
@@ -15,7 +16,7 @@ const html5shivPath = join(datadir, '_html5shiv-3.7.3.js');
 const matchWithInput = (m, str) => (m.setInput(str), m.match());
 
 test('basic es5 examples', async t => {
-  const m = await makeEs5Matcher();
+  const m = await wasmMatcherForGrammar(es5);
   t.is(matchWithInput(m, 'x = 3;'), 1);
   t.is(matchWithInput(m, 'function foo() { return 1; }'), 1);
 });
@@ -23,7 +24,7 @@ test('basic es5 examples', async t => {
 test('html5shiv', async t => {
   const source = await readFile(html5shivPath, 'utf8');
 
-  const m = await makeEs5Matcher();
+  const m = await wasmMatcherForGrammar(es5);
   let start = performance.now();
   es5js.grammar.match(source);
   t.log(`html5shiv (Ohm) match time: ${(performance.now() - start).toFixed(2)}ms`);
@@ -51,7 +52,7 @@ test('unparsing', async t => {
     /\d+/.test("123") && console.log(counter());
   `;
 
-  const m = await makeEs5Matcher();
+  const m = await wasmMatcherForGrammar(es5);
   t.is(matchWithInput(m, source), 1);
 
   let unparsed = '';
