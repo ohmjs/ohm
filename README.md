@@ -21,6 +21,18 @@ Some awesome things people have built using Ohm:
 - A [browser-based tool](https://www.arthurcarabott.com/konnakkol/) that turns written _Konnakkol_ (a South Indian vocal percussion art) into audio.
 - [Wildcard](https://www.geoffreylitt.com/wildcard/), a browser extension that empowers anyone to modify websites to meet their own specific needs, uses Ohm for its spreadsheet formulas.
 
+## Sponsors
+
+Since 2017, Ohm has been maintained by [@pdubroy](https://github.com/pdubroy) on an unpaid basis. Please consider [becoming a sponsor](http://github.com/sponsors/pdubroy/)!
+
+### Diamond 💎
+
+[![Project Substrate](./docs/images/substrate-logo.png)](https://projectsubstrate.org)
+
+### Gold 🥇
+
+[![Shopify](./docs/images/shopify-logo.png)](https://shopify.com)
+
 ## Getting Started
 
 The easiest way to get started with Ohm is to use the [interactive editor](https://ohmjs.org/editor/). Alternatively, you can play with one of the following examples on JSFiddle:
