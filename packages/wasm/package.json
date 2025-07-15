@@ -27,6 +27,7 @@
     "assemblyscript": "^0.27.36",
     "ava": "^6.2.0",
     "esbuild": "^0.25.5",
+    "fast-glob": "^3.3.3",
     "liquid-html-parser": "link:@shopify/liquid-html-parser",
     "mitata": "^1.0.34",
     "wabt": "1.0.37-nightly.20250428"

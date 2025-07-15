@@ -300,6 +300,9 @@ importers:
       esbuild:
         specifier: ^0.25.5
         version: 0.25.5
+      fast-glob:
+        specifier: ^3.3.3
+        version: 3.3.3
       liquid-html-parser:
         specifier: link:@shopify/liquid-html-parser
         version: link:@shopify/liquid-html-parser
