@@ -455,21 +455,17 @@ class Assembler {
     this.localSet('ret');
   }
 
-  pushStackFrame(n = 1) {
-    if (n === 0) return;
-
+  pushStackFrame() {
     this.globalGet('sp');
-    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES * n);
+    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
     this.i32Sub();
     this.globalSet('sp');
     this.savePos();
     this.saveNumBindings();
   }
 
-  popStackFrame(n = 1) {
-    if (n === 0) return;
-
-    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES * n);
+  popStackFrame() {
+    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
     this.globalGet('sp');
     this.i32Add();
     this.globalSet('sp');
