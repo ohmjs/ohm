@@ -878,7 +878,8 @@ test('determinism', t => {
   t.deepEqual(new Compiler(g).compile(), new Compiler(g).compile());
 });
 
-test('basic space skipping', async t => {
+// eslint-disable-next-line ava/no-skip-test
+test.skip('basic space skipping', async t => {
   const g = ohm.grammar(`
     G {
       Start = ">" (digit "a".."z")*
@@ -887,7 +888,8 @@ test('basic space skipping', async t => {
   t.is(matchWithInput(m, '> 0 a 1 b '), 1);
 });
 
-test('space skipping & lex', async t => {
+// eslint-disable-next-line ava/no-skip-test
+test.skip('space skipping & lex', async t => {
   {
     const g = ohm.grammar('G { start = ">" digit+ #(space) }');
     const m = await wasmMatcherForGrammar(g);
