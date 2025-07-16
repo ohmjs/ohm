@@ -10,11 +10,10 @@
     "dist"
   ],
   "scripts": {
-    "build": "pnpm run check-node-version && make || echo 'Skipping build: Node >=24 required'",
+    "build": "make",
     "build-and-test": "make && ava test",
-    "check-node-version": "node -e \"process.exit(parseInt(process.versions.node.split('.')[0]) < 24 ? 1 : 0)\"",
     "prepack": "make",
-    "test": "pnpm run check-node-version && pnpm run build-and-test || echo 'Skipping tests: Node >=24 required'"
+    "test": "ava test"
   },
   "type": "module",
   "keywords": [],
