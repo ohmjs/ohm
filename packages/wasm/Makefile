@@ -41,7 +41,7 @@ build/es5.wasm: dist/index.js
 	$(NODE) scripts/es5ToWasm.js build/es5.wasm
 
 build/liquid-html.wasm: dist/index.js
-	$(NODE) src/cli.js -g LiquidHTML -o build/liquid-html.wasm test/data/_liquid-html.ohm
+	$(NODE) src/cli.js -g LiquidHTML -o build/liquid-html.wasm test/data/_liquid-html-mod.ohm
 
 .PHONY: go-test-es5
 go-test-es5: test/go/testmain build/es5.wasm

@@ -16,10 +16,10 @@ const inputs = {
   featuredProduct: readFileSync(join(datadir, '_featured-product.liquid'), 'utf-8'),
   footer: readFileSync(join(datadir, '_footer.liquid'), 'utf-8'),
   html5shiv: readFileSync(join(datadir, '_html5shiv-3.7.3.js'), 'utf-8'),
-  underscore: readFileSync(join(datadir, '_underscore-1.8.3.js'), 'utf-8')
+  underscore: readFileSync(join(datadir, '_underscore-1.8.3.js'), 'utf-8'),
 };
 
-const liquid = ohm.grammars(readFileSync(join(datadir, '_liquid-html.ohm'), 'utf8'));
+const liquid = ohm.grammars(readFileSync(join(datadir, '_liquid-html-mod.ohm'), 'utf8'));
 
 let liquidHtmlMatcher;
 let es5Matcher;
@@ -96,12 +96,12 @@ group('LiquidHTML: footer.liquid', () => {
   // reused. This takes advantage of JIT tier-up, and approximates usage
   // in a long-running process, e.g. LSP server.
   liquidHtmlMatcher = await wasmMatcherForGrammar(
-    liquid.LiquidHTML,
-    readFileSync(join(__dirname, '../build/liquid-html.wasm'))
+      liquid.LiquidHTML,
+      readFileSync(join(__dirname, '../build/liquid-html.wasm')),
   );
   es5Matcher = await wasmMatcherForGrammar(
-    es5,
-    readFileSync(join(__dirname, '../build/es5.wasm'))
+      es5,
+      readFileSync(join(__dirname, '../build/es5.wasm')),
   );
 
   await run();

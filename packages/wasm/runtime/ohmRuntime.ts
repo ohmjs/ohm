@@ -4,6 +4,8 @@ declare function fillInputBuffer(offset: i32, maxLen: i32): i32;
 declare function printI32(val: i32): void;
 declare function isRuleSyntactic(ruleId: i32): bool;
 
+@inline const IMPLICIT_SPACE_SKIPPING = false;
+
 // TODO: Find a way to share these.
 @inline const WASM_PAGE_SIZE: usize = 64 * 1024;
 @inline const MEMO_START_OFFSET: usize = 2 * WASM_PAGE_SIZE;
@@ -94,7 +96,7 @@ export function match(startRuleId: i32): Result {
   const succeeded = evalApply0(startRuleId) !== 0;
 
   // Potentially skip trailing spaces before checking for the end.
-  if (succeeded && isRuleSyntactic(startRuleId)) {
+  if (IMPLICIT_SPACE_SKIPPING && succeeded && isRuleSyntactic(startRuleId)) {
     evalApply0(2);
   }
 

@@ -10,7 +10,7 @@ import {wasmMatcherForGrammar} from './_helpers.js';
 const matchWithInput = (m, str) => (m.setInput(str), m.match());
 
 const scriptRel = relPath => new URL(relPath, import.meta.url);
-const grammarSource = fs.readFileSync(scriptRel('data/_liquid-html.ohm'), 'utf8');
+const grammarSource = fs.readFileSync(scriptRel('data/_liquid-html-mod.ohm'), 'utf8');
 const input = fs.readFileSync(scriptRel('data/_book-review.liquid'), 'utf8');
 
 const liquid = ohm.grammars(grammarSource);

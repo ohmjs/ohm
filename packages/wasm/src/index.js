@@ -12,6 +12,7 @@ const WASM_PAGE_SIZE = 64 * 1024;
 const DEBUG = process.env.OHM_DEBUG === '1';
 const FAST_SAVE_BINDINGS = true;
 const FAST_RESTORE_BINDINGS = true;
+const IMPLICIT_SPACE_SKIPPING = false;
 
 const {instr} = w;
 
@@ -1322,7 +1323,7 @@ export class Compiler {
   }
 
   maybeEmitSpaceSkipping() {
-    if (!this.inLexifiedContext()) {
+    if (IMPLICIT_SPACE_SKIPPING && !this.inLexifiedContext()) {
       this.asm.emit('BEGIN space skipping');
       this.emitApply(this._applySpaces);
       this.asm.emit('END space skipping');
