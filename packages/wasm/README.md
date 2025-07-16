@@ -32,3 +32,29 @@ const g = ohm.grammar('MyGrammar { start = "blah" }');
 // compile() returns the Wasm grammar blob as a Uint8Array.
 const bytes = new Compiler(g).compile();
 ```
+
+### Development
+
+#### Prerequisites
+
+- pnpm
+- Node >= 24
+- Make
+
+#### Setup
+
+From the repo root:
+
+```
+pnpm install
+```
+
+#### Testing etc.
+
+From packages/wasm dir:
+
+```
+pnpm test # Run all tests
+pnpm ava test/test-liquid-html.js # Run a specific test file
+make bench # Run perf benchmarks
+```
