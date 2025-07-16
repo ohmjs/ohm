@@ -21,6 +21,9 @@ const sections = extractSections(buf, {
   destImportCountAdjustment: debugFnCount
 });
 
+// We've rewritten every funcidx in the function bodies to account for a
+// specific number of imports in the dest module. We record that number
+// to enable a run-time check that the final module is compatible.
 const destImportCount = debugFnCount + sections.importsec.entryCount;
 
 let output = `function decodeBase64(str: string) {

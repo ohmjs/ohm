@@ -12,21 +12,27 @@ function assert(cond, msg) {
 export class WasmMatcher {
   constructor() {
     this._instance = undefined;
-    this._env = {
-      abort() {
-        throw new Error('abort');
+    this._imports = {
+      // System-level AssemblyScript imports.
+      env: {
+        abort() {
+          throw new Error('abort');
+        },
       },
-      printI32(val) {
-        // eslint-disable-next-line no-console
-        console.log(val);
+      // For imports from ohmRuntime.ts.
+      ohmRuntime: {
+        printI32(val) {
+          // eslint-disable-next-line no-console
+          console.log(val);
+        },
+        isRuleSyntactic: ruleId => {
+          // TODO: Precompute this for all rules, and encode it in the module?
+          const name = this._ruleNames[ruleId];
+          assert(!!name);
+          return name[0] === name[0].toUpperCase();
+        },
+        fillInputBuffer: this._fillInputBuffer.bind(this),
       },
-      isRuleSyntactic: ruleId => {
-        // TODO: Precompute this for all rules, and encode it in the module?
-        const name = this._ruleNames[ruleId];
-        assert(!!name);
-        return name[0] === name[0].toUpperCase();
-      },
-      fillInputBuffer: this._fillInputBuffer.bind(this),
     };
     this._ruleIds = new Map();
     this._ruleNames = [];
@@ -68,7 +74,7 @@ export class WasmMatcher {
 
   async _instantiate(source, debugImports = {}) {
     const {module, instance} = await WebAssembly.instantiate(source, {
-      env: this._env,
+      ...this._imports,
       debug: debugImports,
     });
     this._instance = instance;

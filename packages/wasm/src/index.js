@@ -136,9 +136,9 @@ const prebuiltFuncidx = nm => checkNotNull(prebuilt.funcidxByName[nm]);
 
 // Produce a section combining `els` with the corresponding prebuilt section.
 // This only does a naive merge; no type or function indices are rewritten.
-function mergeSections(sectionId, prebuilt, els) {
-  const count = prebuilt.entryCount + els.length;
-  return w.section(sectionId, [w.u32(count), prebuilt.contents, els]);
+function mergeSections(sectionId, prebuiltSec, els) {
+  const count = prebuiltSec.entryCount + els.length;
+  return w.section(sectionId, [w.u32(count), prebuiltSec.contents, els]);
 }
 
 function functypeToString(paramTypes, resultTypes) {
@@ -193,7 +193,6 @@ class Assembler {
     this._globals = new Map();
 
     this._functionDecls = [];
-    this._importDecls = [];
 
     // Keep track of loops/blocks to make it easier (and safer) to generate
     // breaks to the correct index.
@@ -565,39 +564,10 @@ Assembler.STACK_FRAME_SIZE_BYTES = 8;
 
 export class Compiler {
   constructor(grammar) {
-    this.importDecls = [
-      {
-        module: 'env',
-        name: 'abort',
-        // (offset: i32, maxLen: i32) -> i32
-        // Returns the actual number of bytes read.
-        paramTypes: [w.valtype.i32, w.valtype.i32, w.valtype.i32, w.valtype.i32],
-        resultTypes: [],
-      },
-      {
-        module: 'env',
-        name: 'fillInputBuffer',
-        // (offset: i32, maxLen: i32) -> i32
-        // Returns the actual number of bytes read.
-        paramTypes: [w.valtype.i32, w.valtype.i32],
-        resultTypes: [w.valtype.i32],
-      },
-      {
-        module: 'env',
-        name: 'printI32',
-        // (val: i32) -> void
-        paramTypes: [w.valtype.i32],
-        resultTypes: [],
-      },
-      {
-        module: 'env',
-        name: 'isRuleSyntactic',
-        // (ruleId: i32) -> i32
-        paramTypes: [w.valtype.i32],
-        resultTypes: [w.valtype.i32],
-      },
-    ];
     this.grammar = grammar;
+
+    // For any additional imports outside the prebuilt ones.
+    this.importDecls = [];
 
     // The rule ID is a 0-based index that's mapped to the name.
     // It is *not* the same as the function index the rule's eval function.
@@ -613,6 +583,10 @@ export class Compiler {
     // Keeps track of whether we're in a lexical or syntactic context.
     this._lexContextStack = [];
     this._applySpaces = ir.apply('spaces');
+  }
+
+  importCount() {
+    return prebuilt.importsec.entryCount + this.importDecls.length;
   }
 
   ruleId(name) {
@@ -671,7 +645,7 @@ export class Compiler {
 
   // Return a funcidx corresponding to the eval function for the given rule.
   ruleEvalFuncIdx(name) {
-    const offset = this.importDecls.length + prebuilt.funcsec.entryCount;
+    const offset = this.importCount() + prebuilt.funcsec.entryCount;
     return w.funcidx(this.ruleId(name) + offset);
   }
 
@@ -723,7 +697,6 @@ export class Compiler {
     asm.addGlobal('__heap_base', w.valtype.i32, w.mut.var, () => asm.i32Const(67240172));
 
     // Reserve a fixed number of imports for debug labels.
-    const debugBaseFuncIdx = this.importDecls.length + 1;
     if (DEBUG) {
       for (let i = 0; i < 5000; i++) {
         this.importDecls.push({
@@ -735,7 +708,7 @@ export class Compiler {
       }
     }
     const functionDecls = this.functionDecls();
-    this.rewriteDebugLabels(functionDecls, debugBaseFuncIdx);
+    this.rewriteDebugLabels(functionDecls);
     return this.buildModule(typeMap, functionDecls);
   }
 
@@ -958,29 +931,25 @@ export class Compiler {
   }
 
   buildModule(typeMap, functionDecls) {
-    const {importDecls} = this;
-    assert(this.importDecls.length === prebuilt.destImportCount, 'import count mismatch');
-
     const ruleNames = this.ruleIdByName.values();
+    assert(prebuilt.destImportCount === this.importCount(), 'import count mismatch');
 
     // Ensure that `ruleNames` is in the correct order.
     ruleNames.forEach((n, i) =>
       assert(i === this.ruleIdByName.getIndex(n), `out of order: ${n}`),
     );
 
-    // console.log(importDecls.length, 'imports');
-    // console.log(prebuilt.funcsec.entryCount, 'prebuilt functions');
-    typeMap.addDecls(importDecls);
+    typeMap.addDecls(this.importDecls);
     typeMap.addDecls(functionDecls);
 
     const globals = [];
-    const imports = importDecls.map((f, i) =>
+    const imports = this.importDecls.map((f, i) =>
       w.import_(f.module, f.name, w.importdesc.func(typeMap.getIdxForDecl(f))),
     );
     const funcs = functionDecls.map((f, i) => w.typeidx(typeMap.getIdxForDecl(f)));
     const codes = functionDecls.map(f => w.code(w.func(f.locals, f.body)));
 
-    const exportOffset = importDecls.length + prebuilt.funcsec.entryCount;
+    const exportOffset = this.importCount() + prebuilt.funcsec.entryCount;
     const exports = functionDecls.map((f, i) =>
       w.export_(f.name, w.exportdesc.func(i + exportOffset)),
     );
@@ -1009,12 +978,12 @@ export class Compiler {
     // Determine the index of the start function.
     const indexOfStart = functionDecls.findIndex(f => f.name === 'start');
     assert(indexOfStart !== -1, 'No start function found');
-    const startFuncidx = imports.length + prebuilt.funcsec.entryCount + indexOfStart;
+    const startFuncidx = this.importCount() + prebuilt.funcsec.entryCount + indexOfStart;
 
     // Note: globals are *not* merged; they are assumed to be shared.
     const mod = w.module([
       mergeSections(w.SECTION_ID_TYPE, prebuilt.typesec, typeMap.getTypes()),
-      w.importsec(imports),
+      mergeSections(w.SECTION_ID_IMPORT, prebuilt.importsec, imports),
       mergeSections(w.SECTION_ID_FUNCTION, prebuilt.funcsec, funcs),
       w.tablesec([table]),
       w.memsec([w.mem(w.memtype(w.limits.min(1024 + 24)))]),
@@ -1050,8 +1019,9 @@ export class Compiler {
   // Ensures that there are no duplicate dummy function names, but does not
   // guarantee that there are no collisions with other functions.
   // Returns the list of dummy functions that need to be added to the module.
-  rewriteDebugLabels(decls, baseFuncIdx) {
-    let nextFuncIdx = baseFuncIdx;
+  rewriteDebugLabels(decls) {
+    let nextIdx = 0;
+    const intoFuncidx = i => w.funcidx(prebuilt.importsec.entryCount + i);
     const names = new Set();
     for (let i = 0; i < decls.length; i++) {
       const entry = decls[i];
@@ -1062,8 +1032,8 @@ export class Compiler {
         if (!DEBUG) return [];
 
         // Claim one of the reserved debug functions…
-        const decl = this.importDecls[nextFuncIdx];
-        assert(decl, 'Too few debug functions!');
+        const idx = nextIdx++;
+        const decl = checkNotNull(this.importDecls[idx], 'Too few debug functions!');
         assert(decl.module === 'debug');
         decl.name = uniqueName(names, x);
 
@@ -1074,7 +1044,7 @@ export class Compiler {
         }
 
         // …and replace the string with a call to that function.
-        return [...pushArg, instr.call, w.funcidx(nextFuncIdx++)].flat(Infinity);
+        return [...pushArg, instr.call, intoFuncidx(idx)].flat(Infinity);
       });
     }
   }
