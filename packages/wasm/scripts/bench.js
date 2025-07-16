@@ -16,10 +16,13 @@ const inputs = {
   featuredProduct: readFileSync(join(datadir, '_featured-product.liquid'), 'utf-8'),
   footer: readFileSync(join(datadir, '_footer.liquid'), 'utf-8'),
   html5shiv: readFileSync(join(datadir, '_html5shiv-3.7.3.js'), 'utf-8'),
-  underscore: readFileSync(join(datadir, '_underscore-1.8.3.js'), 'utf-8'),
+  underscore: readFileSync(join(datadir, '_underscore-1.8.3.js'), 'utf-8')
 };
 
 const liquid = ohm.grammars(readFileSync(join(datadir, '_liquid-html.ohm'), 'utf8'));
+
+let liquidHtmlMatcher;
+let es5Matcher;
 
 function checkOk(val) {
   if (!val) {
@@ -33,30 +36,11 @@ function matchWithInput(m, input) {
   return checkOk(m.match());
 }
 
-// Note: we create a new Module and Instance for each run; however, when the
-// bytes are identical, Node/V8 will reuse the compiled code.
-const makeLiquidMatcher = async () => {
-  return await wasmMatcherForGrammar(
-      liquid.LiquidHTML,
-      readFileSync(join(__dirname, '../build/liquid-html.wasm')),
-  );
-};
-const makeEs5Matcher = async () => {
-  return await wasmMatcherForGrammar(es5, readFileSync(join(__dirname, '../build/es5.wasm')));
-};
-
-function benchWithSetup(name, setupFn, benchFn) {
-  bench(name, function* () {
-    yield {
-      [0]: setupFn,
-      bench: benchFn,
-    };
-  });
-}
-
 group('ES5: html5shiv', () => {
   summary(() => {
-    benchWithSetup('Wasm', makeEs5Matcher, m => matchWithInput(m, inputs.html5shiv));
+    bench('Wasm', () => {
+      matchWithInput(es5Matcher, inputs.html5shiv);
+    });
     bench('JS', () => {
       es5js.grammar.match(inputs.html5shiv);
     });
@@ -65,7 +49,9 @@ group('ES5: html5shiv', () => {
 
 group('ES5: underscore', () => {
   summary(() => {
-    benchWithSetup('Wasm', makeEs5Matcher, m => matchWithInput(m, inputs.underscore));
+    bench('Wasm', () => {
+      matchWithInput(es5Matcher, inputs.underscore);
+    });
     bench('JS', () => {
       es5js.grammar.match(inputs.underscore);
     });
@@ -74,7 +60,9 @@ group('ES5: underscore', () => {
 
 group('LiquidHTML: book-review.liquid', () => {
   summary(() => {
-    benchWithSetup('Wasm', makeLiquidMatcher, m => matchWithInput(m, inputs.bookReview));
+    bench('Wasm', () => {
+      matchWithInput(liquidHtmlMatcher, inputs.bookReview);
+    });
     bench('JS', () => {
       liquid.LiquidHTML.match(inputs.bookReview);
     });
@@ -83,7 +71,9 @@ group('LiquidHTML: book-review.liquid', () => {
 
 group('LiquidHTML: featured-product.liquid', () => {
   summary(() => {
-    benchWithSetup('Wasm', makeLiquidMatcher, m => matchWithInput(m, inputs.featuredProduct));
+    bench('Wasm', () => {
+      matchWithInput(liquidHtmlMatcher, inputs.featuredProduct);
+    });
     bench('JS', () => {
       liquid.LiquidHTML.match(inputs.featuredProduct);
     });
@@ -92,11 +82,27 @@ group('LiquidHTML: featured-product.liquid', () => {
 
 group('LiquidHTML: footer.liquid', () => {
   summary(() => {
-    benchWithSetup('Wasm', makeLiquidMatcher, m => matchWithInput(m, inputs.footer));
+    bench('Wasm', () => {
+      matchWithInput(liquidHtmlMatcher, inputs.footer);
+    });
     bench('JS', () => {
       liquid.LiquidHTML.match(inputs.footer);
     });
   });
 });
 
-(async () => await run())();
+(async () => {
+  // Note: we are deliberately creating one instance of the matcher that's
+  // reused. This takes advantage of JIT tier-up, and approximates usage
+  // in a long-running process, e.g. LSP server.
+  liquidHtmlMatcher = await wasmMatcherForGrammar(
+    liquid.LiquidHTML,
+    readFileSync(join(__dirname, '../build/liquid-html.wasm'))
+  );
+  es5Matcher = await wasmMatcherForGrammar(
+    es5,
+    readFileSync(join(__dirname, '../build/es5.wasm'))
+  );
+
+  await run();
+})();
