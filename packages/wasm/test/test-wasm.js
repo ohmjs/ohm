@@ -865,6 +865,8 @@ test('specialized rule names', t => {
     'nonemptyListOf',
     'nonemptyListOf<exclaimed<$term$0>,$term$1>',
     'one',
+    'space',
+    'spaces',
     'start',
     'three',
     'two',
@@ -874,4 +876,36 @@ test('specialized rule names', t => {
 test('determinism', t => {
   const g = ohm.grammar('G { start = "a" }');
   t.deepEqual(new Compiler(g).compile(), new Compiler(g).compile());
+});
+
+test('basic space skipping', async t => {
+  const g = ohm.grammar(`
+    G {
+      Start = ">" (digit "a".."z")*
+    }`);
+  const m = await wasmMatcherForGrammar(g);
+  t.is(matchWithInput(m, '> 0 a 1 b '), 1);
+});
+
+test('space skipping & lex', async t => {
+  {
+    const g = ohm.grammar('G { start = ">" digit+ #(space) }');
+    const m = await wasmMatcherForGrammar(g);
+    t.is(matchWithInput(m, '> 0 9 '), 0);
+  }
+  {
+    const g = ohm.grammar('G { Start = ">" digit+ #(space) }');
+    const m = await wasmMatcherForGrammar(g);
+    t.is(matchWithInput(m, '> 0 9 '), 1, "iter doesn't consume trailing space");
+  }
+  {
+    const g = ohm.grammar('G { Start = ">" &digit #(space digit) }');
+    const m = await wasmMatcherForGrammar(g);
+    t.is(matchWithInput(m, '> 9'), 1, "lookahead doesn't consume anything");
+  }
+  {
+    const g = ohm.grammar('G { Start = ">" ~"x" #(space digit) }');
+    const m = await wasmMatcherForGrammar(g);
+    t.is(matchWithInput(m, '> 9'), 1, "neg lookahead doesn't consume anything");
+  }
 });

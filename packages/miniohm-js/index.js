@@ -20,9 +20,16 @@ export class WasmMatcher {
         // eslint-disable-next-line no-console
         console.log(val);
       },
+      isRuleSyntactic: ruleId => {
+        // TODO: Precompute this for all rules, and encode it in the module?
+        const name = this._ruleNames[ruleId];
+        assert(!!name);
+        return name[0] === name[0].toUpperCase();
+      },
       fillInputBuffer: this._fillInputBuffer.bind(this),
     };
     this._ruleIds = new Map();
+    this._ruleNames = [];
   }
 
   _extractRuleIds(module) {
@@ -53,7 +60,9 @@ export class WasmMatcher {
       const stringLen = parseU32();
       const bytes = data.slice(offset, offset + stringLen);
       offset += stringLen;
-      this._ruleIds.set(decoder.decode(bytes), i);
+      const name = decoder.decode(bytes);
+      this._ruleIds.set(name, i);
+      this._ruleNames.push(name);
     }
   }
 
@@ -99,8 +108,7 @@ export class WasmMatcher {
   getCstRoot() {
     const {buffer} = this._instance.exports.memory;
     const addr = this._instance.exports.getCstRoot();
-    const ruleNames = [...this._ruleIds.keys()];
-    return new CstNode(ruleNames, new DataView(buffer), addr);
+    return new CstNode(this._ruleNames, new DataView(buffer), addr);
   }
 
   _fillInputBuffer(offset, maxLen) {

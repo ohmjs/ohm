@@ -2,6 +2,7 @@ type Result = i32;
 
 declare function fillInputBuffer(offset: i32, maxLen: i32): i32;
 declare function printI32(val: i32): void;
+declare function isRuleSyntactic(ruleId: i32): bool;
 
 // TODO: Find a way to share these.
 @inline const WASM_PAGE_SIZE: usize = 64 * 1024;
@@ -91,6 +92,12 @@ export function match(startRuleId: i32): Result {
   // Get the input and do the match.
   let inputLen = fillInputBuffer(0, i32(WASM_PAGE_SIZE));
   const succeeded = evalApply0(startRuleId) !== 0;
+
+  // Potentially skip trailing spaces before checking for the end.
+  if (succeeded && isRuleSyntactic(startRuleId)) {
+    evalApply0(2);
+  }
+
   if (inputLen === pos) {
     return succeeded;
   }

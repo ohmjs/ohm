@@ -57,6 +57,8 @@ function uniqueName(names, str) {
   return name;
 }
 
+const isSyntactic = ruleName => ruleName[0] === ruleName[0].toUpperCase();
+
 class IndexedSet {
   constructor() {
     this._map = new Map();
@@ -587,17 +589,30 @@ export class Compiler {
         paramTypes: [w.valtype.i32],
         resultTypes: [],
       },
+      {
+        module: 'env',
+        name: 'isRuleSyntactic',
+        // (ruleId: i32) -> i32
+        paramTypes: [w.valtype.i32],
+        resultTypes: [w.valtype.i32],
+      },
     ];
     this.grammar = grammar;
 
     // The rule ID is a 0-based index that's mapped to the name.
     // It is *not* the same as the function index the rule's eval function.
     this.ruleIdByName = new IndexedSet();
-    this._ensureRuleId(grammar.defaultStartRule); // Ensure default start rule has id 0…
-    this._ensureRuleId('$term'); // …and `$term` is 1.
+    // Ensure default start rule has id 0; $term, 1; and spaces, 2.
+    this._ensureRuleId(grammar.defaultStartRule);
+    this._ensureRuleId('$term');
+    this._ensureRuleId('spaces');
 
     this.rules = undefined;
     this._nextLiftedId = 0;
+
+    // Keeps track of whether we're in a lexical or syntactic context.
+    this._lexContextStack = [];
+    this._applySpaces = ir.apply('spaces');
   }
 
   ruleId(name) {
@@ -609,6 +624,10 @@ export class Compiler {
     const idx = this.ruleIdByName.add(name);
     assert(notMemoized || idx < 256, `too many rules: ${idx}`);
     return idx;
+  }
+
+  inLexifiedContext() {
+    return this._lexContextStack.at(-1);
   }
 
   liftPExpr(exp) {
@@ -723,13 +742,15 @@ export class Compiler {
   simplifyApplications() {
     const {grammar} = this;
 
-    // Begin with all the rules in the grammar.
-    const rules = Object.entries(this.grammar.rules);
-
     const lookUpRule = name => {
       if (name in grammar.rules) return grammar.rules[name];
       if (grammar.superGrammar) return lookUpRule(name, grammar.superGrammar);
     };
+
+    // Begin with all the rules in the grammar + spaces.
+    const rules = Object.entries(this.grammar.rules);
+    rules.push(['spaces', lookUpRule('spaces')]);
+
     const liftedTerminals = new IndexedSet();
 
     const liftTerminal = ({obj}) => {
@@ -839,6 +860,8 @@ export class Compiler {
     if (ruleInfo.patterns) {
       paramTypes = [w.valtype.i32];
     }
+    assert(this._lexContextStack.length === 0);
+    this._lexContextStack.push(!isSyntactic(name));
     asm.addFunction(`$${name}`, paramTypes, [w.valtype.i32], () => {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
@@ -847,6 +870,8 @@ export class Compiler {
       asm.emit(`END eval:${name}`);
       asm.localGet('ret');
     });
+    this._lexContextStack.pop();
+    assert(this._lexContextStack.length === 0);
     return this.asm._functionDecls.at(-1);
   }
 
@@ -901,6 +926,7 @@ export class Compiler {
         },
       });
     specialize(ir.apply(this.grammar.defaultStartRule));
+    specialize(ir.apply('spaces'));
     this.rules = newRules;
 
     const insertDispatches = (exp, patterns) =>
@@ -1139,6 +1165,7 @@ export class Compiler {
         case 'Any': this.emitAny(); break;
         case 'Dispatch': this.emitDispatch(exp); break;
         case 'End': this.emitEnd(); break;
+        case 'Lex': this.emitLex(exp); break;
         case 'LiftedTerminal': this.emitApplyTerm(exp); break;
         case 'Lookahead': this.emitLookahead(exp, true); break;
         case 'Not': this.emitLookahead(exp, false); break;
@@ -1174,6 +1201,7 @@ export class Compiler {
 
   emitAny() {
     const {asm} = this;
+    this.maybeEmitSpaceSkipping();
     asm.i32Const(0xff);
     asm.nextCharCode();
     asm.i32Ne();
@@ -1200,6 +1228,10 @@ export class Compiler {
   emitApply(exp) {
     assert(exp.children.length === 0);
 
+    if (exp !== this._applySpaces) {
+      this.maybeEmitSpaceSkipping();
+    }
+
     const {asm} = this;
     asm.i32Const(this.ruleId(exp.ruleName));
 
@@ -1214,6 +1246,8 @@ export class Compiler {
 
   emitEnd() {
     const {asm} = this;
+
+    this.maybeEmitSpaceSkipping();
     asm.i32Const(0xff);
     // Careful! We shouldn't move the pos here. Or does it matter?
     asm.currCharCode();
@@ -1225,6 +1259,12 @@ export class Compiler {
     const {asm} = this;
     asm.i32Const(0);
     asm.localSet('ret');
+  }
+
+  emitLex({child}) {
+    this._lexContextStack.push(true);
+    this.emitPExpr(child);
+    this._lexContextStack.pop();
   }
 
   emitLookahead({child}, shouldMatch = true) {
@@ -1270,6 +1310,7 @@ export class Compiler {
 
     // TODO: Do we disallow 0xff in the range?
     const {asm} = this;
+    this.maybeEmitSpaceSkipping();
     asm.nextCharCode();
 
     // if (c > hi) return 0;
@@ -1301,6 +1342,14 @@ export class Compiler {
       asm.localGet('ret');
       asm.emit(instr.i32.eqz);
       asm.condBreak(0);
+    }
+  }
+
+  maybeEmitSpaceSkipping() {
+    if (!this.inLexifiedContext()) {
+      this.asm.emit('BEGIN space skipping');
+      this.emitApply(this._applySpaces);
+      this.asm.emit('END space skipping');
     }
   }
 
@@ -1337,6 +1386,7 @@ export class Compiler {
 
     const {asm} = this;
     asm.emit('Terminal');
+    this.maybeEmitSpaceSkipping();
     for (const c of [...value]) {
       // Compare next char
       asm.i32Const(c.charCodeAt(0));

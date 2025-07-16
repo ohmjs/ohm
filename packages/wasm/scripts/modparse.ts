@@ -63,7 +63,8 @@ export type RawContents = {
 };
 
 interface ExtractOptions {
-  destImportCount?: number;
+  // The number of extra imports int the dest module.
+  destImportCountAdjustment?: number;
 }
 
 // Extracts the type, import, function, global, and code sections from a Wasm module.
@@ -157,6 +158,11 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
   let codesec: VecContents | undefined;
   let startFuncidx: number | undefined;
 
+  let srcImportCount = 0;
+  let destImportCount = 0;
+
+  const importAdjust = opts.destImportCountAdjustment ?? 0;
+
   let pos = 8;
   let lastId = -1;
   while (pos < bytes.length) {
@@ -173,25 +179,21 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
       typesec = parseVecSectionOpaque(id);
     } else if (id === 2) {
       importsec = parseVecSectionOpaque(id);
+      srcImportCount = importsec.entryCount;
+      destImportCount = srcImportCount + importAdjust;
     } else if (id === 3) {
       funcsec = parseVecSectionOpaque(id);
     } else if (id === 6) {
       globalsec = parseVecSectionOpaque(id);
     } else if (id === 7) {
-      const srcImportCount = importsec?.entryCount ?? 0;
-      const destImportCount = opts.destImportCount ?? 0;
       exports = parseExportSection(id, destImportCount - srcImportCount);
     } else if (id === 8) {
-      const srcImportCount = importsec?.entryCount ?? 0;
-      const destImportCount = opts.destImportCount ?? 0;
       startFuncidx = parseStartSection(id) + destImportCount - srcImportCount;
     } else if (id === 10) {
       codesec = parseVecSectionOpaque(id);
       // Rewrite the code section to account for the number of imports that
-      // will exist in the final module.
-      const srcImportCount = importsec?.entryCount ?? 0;
-      const destImportCount = opts.destImportCount ?? 0;
-
+      // will exist in the final module. If `destImportCount` is not provided,
+      // assume that it's the same as srcImportCount.
       codesec.contents = rewriteCodesecContents(
         codesec.contents,
         srcImportCount,
