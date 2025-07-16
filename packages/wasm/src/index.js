@@ -1,7 +1,7 @@
 /* global process */
 
 import * as w from '@wasmgroundup/emit';
-import {pexprs} from 'ohm-js';
+import {pexprs, ohmGrammar} from 'ohm-js';
 // import wabt from 'wabt';
 
 import * as ir from './ir.ts';
@@ -564,6 +564,12 @@ Assembler.STACK_FRAME_SIZE_BYTES = 8;
 
 export class Compiler {
   constructor(grammar) {
+    assert(grammar && 'superGrammar' in grammar, 'Not a valid grammar: ' + grammar);
+    assert(
+        grammar instanceof ohmGrammar.constructor,
+        'Grammar smells fishy. Do you have multiple instances of ohm-js?',
+    );
+
     this.grammar = grammar;
 
     // For any additional imports outside the prebuilt ones.
