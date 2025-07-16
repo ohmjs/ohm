@@ -5,7 +5,7 @@
   https://github.com/Shopify/theme-tools/tree/main/packages/prettier-plugin-liquid
  */
 // Sample usage:
-//   node scripts/themeParse.js '/Users/pdubroy/dev/third_party/Shopify/dawn/**/*.liquid'
+//   node scripts/parseLiquid.js '/Users/pdubroy/dev/third_party/Shopify/dawn/**/*.liquid'
 
 /* eslint-disable no-console */
 import fg from 'fast-glob';

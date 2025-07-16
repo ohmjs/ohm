@@ -57,4 +57,5 @@ From packages/wasm dir:
 pnpm test # Run all tests
 pnpm ava test/test-liquid-html.js # Run a specific test file
 make bench # Run perf benchmarks
+node scripts/parseLiquid.js '/Users/pdubroy/dev/third_party/Shopify/dawn/**/*.liquid'
 ```
