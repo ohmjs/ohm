@@ -4,6 +4,8 @@
 
   https://github.com/Shopify/theme-tools/tree/main/packages/prettier-plugin-liquid
  */
+// Sample usage:
+//   node scripts/themeParse.js '/Users/pdubroy/dev/third_party/Shopify/dawn/**/*.liquid'
 
 /* eslint-disable no-console */
 import fg from 'fast-glob';
@@ -20,12 +22,12 @@ import {wasmMatcherForGrammar} from '../test/_helpers.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
 
-const liquid = ohm.grammars(readFileSync(join(datadir, '_liquid-html.ohm'), 'utf8'));
+const liquid = ohm.grammars(readFileSync(join(datadir, '_liquid-html-mod.ohm'), 'utf8'));
 
 // Get pattern from command line arguments
 const pattern = process.argv[2];
 
-function unparse(source, root) {
+function unparseW(source, root) {
   let pos = 0;
   let unparsed = '';
   function walk(node) {
@@ -44,8 +46,11 @@ function unparse(source, root) {
 const matchWithInput = (m, str) => (m.setInput(str), m.match());
 
 (async function main() {
-  const times = new Map();
+  const parsedPaths = new Set();
+  const jsTimes = [];
+  const wasmTimes = [];
 
+  const m = await wasmMatcherForGrammar(liquid.LiquidHTML);
   for (const path of fg.sync(pattern)) {
     const input = readFileSync(path, 'utf8');
     if (
@@ -58,38 +63,28 @@ const matchWithInput = (m, str) => (m.setInput(str), m.match());
       console.log(`skipping ${path}`);
       continue;
     }
-    const m = await wasmMatcherForGrammar(liquid.LiquidHTML);
+    parsedPaths.add(path);
     const start = performance.now();
     matchWithInput(m, input);
-    const elapsed = performance.now() - start;
-    times.set(path, [elapsed]);
-    if (input.length !== unparse(input, m.getCstRoot()).length) {
-      console.log('not equal:', path);
-    }
+    wasmTimes.push(performance.now() - start);
+    assert.equal(input.length, unparseW(input, m.getCstRoot()).length);
   }
 
   for (const path of fg.sync(pattern)) {
     const input = readFileSync(path, 'utf8');
-    if (!times.has(path)) {
-      console.log(`skipping ${path}`);
+    if (!parsedPaths.has(path)) {
       continue;
     }
     const start = performance.now();
-    const result = liquid.LiquidHTML.match(input);
-    const elapsed = performance.now() - start;
-    times.get(path).push(elapsed);
-    assert.equal(result.succeeded(), true);
+    const r = liquid.LiquidHTML.match(input);
+    jsTimes.push(performance.now() - start);
+    assert.equal(r.succeeded(), true);
   }
 
-  let min;
-  let max;
-  let total = 0;
-  for (const [path, [wasmTime, ohmTime]] of times) {
-    const speedup = ohmTime / wasmTime;
-    min = Math.min(min, speedup);
-    max = Math.max(max, speedup);
-    total += speedup;
-    console.log(`${path}: ${speedup.toFixed(2)}x`);
-  }
-  console.log({min, max, avg: total / times.size});
+  const sum = arr => arr.reduce((a, b) => a + b, 0);
+  const jsTotal = sum(jsTimes);
+  const wasmTotal = sum(wasmTimes);
+  console.log(`JS total: ${jsTotal.toFixed(0)}ms`);
+  console.log(`Wasm avg: ${wasmTotal.toFixed(0)}ms`);
+  console.log(`Speedup:  ${(jsTotal / wasmTotal).toFixed(2)}x`);
 })();
