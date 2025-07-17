@@ -14,6 +14,11 @@ const FAST_SAVE_BINDINGS = true;
 const FAST_RESTORE_BINDINGS = true;
 const IMPLICIT_SPACE_SKIPPING = false;
 
+// When specializing rules, should we emit a generalized version that
+// handles the specific cases? If false, code size will be larger.
+// This doesn't seem to make a big performance difference either way.
+const EMIT_GENERALIZED_RULES = true;
+
 const {instr} = w;
 
 const isNonNull = x => x != null;
@@ -97,11 +102,6 @@ class IndexedSet {
   [Symbol.iterator]() {
     return this._map[Symbol.iterator]();
   }
-}
-
-function getDebugLabel(exp) {
-  const loc = exp.source ? exp.source.startIdx : -1;
-  return `${JSON.stringify(exp)}@${loc}`;
 }
 
 function collectParams(exp, seen = new Set()) {
@@ -406,8 +406,16 @@ class Assembler {
     this.emit(w.instr.br_table, w.vec(labels.map(i => w.labelidx(i))), w.labelidx(defaultIdx));
   }
 
+  return() {
+    const what = this._blockStack[0];
+    assert(what === 'block', 'Invalid return');
+    this.emit(w.instr.return);
+  }
+
   // Emit a dense jump table (switch-like) using br_table.
   switch(bt, condThunk, caseThunks, defaultThunk) {
+    const startStackHeight = this._blockStack.length;
+
     // Emit one block per case…
     caseThunks.forEach(_ => this._blockOnly(bt));
 
@@ -419,10 +427,12 @@ class Assembler {
       this.brTable(labels, w.labelidx(labels.length));
     });
     caseThunks.forEach((fn, i) => {
-      fn();
-      this.break(labels.length - (i + 1)); // Jump to end.
+      const depth = labels.length - (i + 1);
+      fn(depth);
+      this.break(depth); // Jump to end.
       this._endBlock();
     });
+    assert(this._blockStack.length === startStackHeight);
   }
 
   // "Macros" -- codegen helpers specific to Ohm.
@@ -825,7 +835,9 @@ export class Compiler {
       asm.switch(
           w.blocktype.empty,
           () => asm.localGet('__arg0'),
-          this.liftedTerminals.values().map(str => () => this.emitTerminal(ir.terminal(str))),
+          this.liftedTerminals
+              .values()
+              .map(str => depth => this.emitTerminal(ir.terminal(str), depth)),
           () => asm.emit(w.instr.unreachable),
       );
       asm.localGet('ret');
@@ -894,10 +906,12 @@ export class Compiler {
               const rulePatterns = setdefault(patternsByRule, ruleName, () => new Map());
               rulePatterns.set(specializedName, children);
 
-              // Note that we deliberately *don't* visit this application yet,
-              // so it won't be assigned a rule ID.
-              const caseIdx = rulePatterns.size - 1;
-              body = ir.applyGeneralized(ruleName, caseIdx);
+              if (EMIT_GENERALIZED_RULES) {
+                // Note that we deliberately *don't* visit this application yet,
+                // so it won't be assigned a rule ID.
+                const caseIdx = rulePatterns.size - 1;
+                body = ir.applyGeneralized(ruleName, caseIdx);
+              }
             }
             newRules.set(specializedName, {...ruleInfo, body, formals: []});
           }
@@ -909,24 +923,26 @@ export class Compiler {
     specialize(ir.apply('spaces'));
     this.rules = newRules;
 
-    const insertDispatches = (exp, patterns) =>
-      ir.rewrite(exp, {
-        Apply: app => (app.children.length === 0 ? app : ir.dispatch(app, patterns)),
-        Param: p => ir.dispatch(p, patterns),
-      });
+    if (EMIT_GENERALIZED_RULES) {
+      const insertDispatches = (exp, patterns) =>
+        ir.rewrite(exp, {
+          Apply: app => (app.children.length === 0 ? app : ir.dispatch(app, patterns)),
+          Param: p => ir.dispatch(p, patterns),
+        });
 
-    // Save the observed patterns of the parameterized rules.
-    // All non-parameterized & specialized rules have been discovered and
-    // assigned IDs; any rule IDs assigned here won't be memoized.
-    for (const [name, patterns] of patternsByRule.entries()) {
-      this._ensureRuleId(name, {notMemoized: true});
-      const ruleInfo = getNotNull(rules, name);
-      const patternsArr = [...patterns.values()];
-      newRules.set(name, {
-        ...ruleInfo,
-        body: insertDispatches(ruleInfo.body, patternsArr),
-        patterns: patternsArr,
-      });
+      // Save the observed patterns of the parameterized rules.
+      // All non-parameterized & specialized rules have been discovered and
+      // assigned IDs; any rule IDs assigned here won't be memoized.
+      for (const [name, patterns] of patternsByRule.entries()) {
+        this._ensureRuleId(name, {notMemoized: true});
+        const ruleInfo = getNotNull(rules, name);
+        const patternsArr = [...patterns.values()];
+        newRules.set(name, {
+          ...ruleInfo,
+          body: insertDispatches(ruleInfo.body, patternsArr),
+          patterns: patternsArr,
+        });
+      }
     }
   }
 
@@ -1124,11 +1140,12 @@ export class Compiler {
       return;
     }
     if (exp.type === 'ApplyGeneralized') {
+      assert(EMIT_GENERALIZED_RULES);
       this.emitApplyGeneralized(exp);
       return;
     }
 
-    const debugLabel = getDebugLabel(exp);
+    const debugLabel = ir.toString(exp);
     asm.emit(`BEGIN ${debugLabel}`);
     asm.pushStackFrame();
 
@@ -1355,14 +1372,14 @@ export class Compiler {
     asm.localSet('ret');
   }
 
-  emitTerminal({value}) {
+  emitTerminal({value}, depth = 0) {
     // TODO:
     // - proper UTF-8!
     // - handle longer terminals with a loop
     // - SIMD
 
     const {asm} = this;
-    asm.emit('Terminal');
+    asm.emit(JSON.stringify(value));
     this.maybeEmitSpaceSkipping();
     for (const c of [...value]) {
       // Compare next char
@@ -1371,7 +1388,7 @@ export class Compiler {
       asm.emit(instr.i32.ne);
       asm.if(w.blocktype.empty, () => {
         asm.setRet(0);
-        asm.break(1);
+        asm.break(depth + 1);
       });
       asm.incPos();
     }

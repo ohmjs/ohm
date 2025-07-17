@@ -878,6 +878,19 @@ test('determinism', t => {
   t.deepEqual(new Compiler(g).compile(), new Compiler(g).compile());
 });
 
+test('lifted terminals', async t => {
+  const g = ohm.grammar(`
+    G {
+      start = two<"x"> | one<"y">
+      one<t> = t
+      two<t> = t t
+    }`);
+  const m = await wasmMatcherForGrammar(g);
+  t.is(matchWithInput(m, 'xx'), 1);
+  t.is(matchWithInput(m, 'y'), 1);
+  t.is(matchWithInput(m, 'yy'), 0);
+});
+
 // eslint-disable-next-line ava/no-skip-test
 test.skip('basic space skipping', async t => {
   const g = ohm.grammar(`

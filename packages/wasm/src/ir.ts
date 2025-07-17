@@ -317,3 +317,50 @@ export function rewrite(exp: Expr, actions: RewriteActions): Expr {
       unreachable(exp, `not handled: ${exp}`);
   }
 }
+
+export function toString(exp: Expr): string {
+  switch (exp.type) {
+    case 'Alt':
+      return `(${exp.children.map(toString).join(' | ')})`;
+    case 'Seq':
+      return `(${exp.children.map(toString).join(' ')})`;
+    case 'Any':
+      return '$any';
+    case 'Apply':
+      return exp.children.length > 0
+        ? `${exp.ruleName}<${exp.children.map(toString).join(',')}>`
+        : exp.ruleName;
+    case 'ApplyGeneralized':
+      return `${exp.ruleName}<#${exp.caseIdx}>`;
+    case 'CaseInsensitive':
+      return `$caseInsensitive<${JSON.stringify(exp.value)}>`;
+    case 'End':
+      return '$end';
+    case 'LiftedTerminal':
+      return `$term$${exp.terminalId}`;
+    case 'Param':
+      return `$${exp.index}`;
+    case 'Range':
+      return `${JSON.stringify(exp.lo)}..${JSON.stringify(exp.hi)}`;
+    case 'Terminal':
+      return JSON.stringify(exp.value);
+    case 'UnicodeChar':
+      return `$unicodeChar<${JSON.stringify(exp.value)}>`;
+    case 'Dispatch':
+      return `$dispatch`; // TODO: Improve this.
+    case 'Lex':
+      return `#${toString(exp.child)}`;
+    case 'Lookahead':
+      return `&${toString(exp.child)}`;
+    case 'Not':
+      return `~${toString(exp.child)}`;
+    case 'Opt':
+      return `${toString(exp.child)}?`;
+    case 'Plus':
+      return `${toString(exp.child)}+`;
+    case 'Star':
+      return `${toString(exp.child)}*`;
+    default:
+      unreachable(exp, `not handled: ${exp}`);
+  }
+}

@@ -50,35 +50,33 @@ const matchWithInput = (m, str) => (m.setInput(str), m.match());
   const jsTimes = [];
   const wasmTimes = [];
 
-  const m = await wasmMatcherForGrammar(liquid.LiquidHTML);
   for (const path of fg.sync(pattern)) {
     const input = readFileSync(path, 'utf8');
-    if (
-      input.length > 64 * 1024 ||
-      path.includes('swatch') ||
-      path.includes('password') ||
-      path.includes('theme.liquid') ||
-      path.includes('gift_card.liquid')
-    ) {
-      console.log(`skipping ${path}`);
-      continue;
-    }
-    parsedPaths.add(path);
-    const start = performance.now();
-    matchWithInput(m, input);
-    wasmTimes.push(performance.now() - start);
-    assert.equal(input.length, unparseW(input, m.getCstRoot()).length);
-  }
-
-  for (const path of fg.sync(pattern)) {
-    const input = readFileSync(path, 'utf8');
-    if (!parsedPaths.has(path)) {
+    // Wasm matcher currently has a limit of 64kB input size.
+    if (input.length > 64 * 1024) {
+      console.log(`skipping ${path} (too big)`);
       continue;
     }
     const start = performance.now();
     const r = liquid.LiquidHTML.match(input);
-    jsTimes.push(performance.now() - start);
-    assert.equal(r.succeeded(), true);
+    const elapsed = performance.now() - start;
+    if (!r.succeeded()) {
+      console.error(`Failed to parse ${path}: ${r.message}`);
+      continue;
+    }
+    parsedPaths.add(path);
+    jsTimes.push(elapsed);
+    assert.equal(r.succeeded(), true, `failed: ${path}`);
+  }
+
+  const m = await wasmMatcherForGrammar(liquid.LiquidHTML);
+  for (const path of fg.sync(pattern)) {
+    if (!parsedPaths.has(path)) continue;
+    const input = readFileSync(path, 'utf8');
+    const start = performance.now();
+    assert.equal(matchWithInput(m, input), 1, `failed: ${path}`);
+    wasmTimes.push(performance.now() - start);
+    assert.equal(input.length, unparseW(input, m.getCstRoot()).length);
   }
 
   const sum = arr => arr.reduce((a, b) => a + b, 0);
