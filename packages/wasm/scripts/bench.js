@@ -12,14 +12,14 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
 
 const inputs = {
-  bookReview: readFileSync(join(datadir, '_book-review.liquid'), 'utf-8'),
-  featuredProduct: readFileSync(join(datadir, '_featured-product.liquid'), 'utf-8'),
-  footer: readFileSync(join(datadir, '_footer.liquid'), 'utf-8'),
+  bookReview: readFileSync(join(datadir, 'book-review.liquid'), 'utf-8'),
+  featuredProduct: readFileSync(join(datadir, 'featured-product.liquid'), 'utf-8'),
+  footer: readFileSync(join(datadir, 'footer.liquid'), 'utf-8'),
   html5shiv: readFileSync(join(datadir, '_html5shiv-3.7.3.js'), 'utf-8'),
   underscore: readFileSync(join(datadir, '_underscore-1.8.3.js'), 'utf-8'),
 };
 
-const liquid = ohm.grammars(readFileSync(join(datadir, '_liquid-html-mod.ohm'), 'utf8'));
+const liquid = ohm.grammars(readFileSync(join(datadir, 'liquid-html-mod.ohm'), 'utf8'));
 
 let liquidHtmlMatcher;
 let es5Matcher;

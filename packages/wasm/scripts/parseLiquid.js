@@ -22,7 +22,7 @@ import {wasmMatcherForGrammar} from '../test/_helpers.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
 
-const liquid = ohm.grammars(readFileSync(join(datadir, '_liquid-html-mod.ohm'), 'utf8'));
+const liquid = ohm.grammars(readFileSync(join(datadir, 'liquid-html-mod.ohm'), 'utf8'));
 
 // Get pattern from command line arguments
 const pattern = process.argv[2];

@@ -463,11 +463,11 @@ LiquidHTML <: Liquid {
 
   // https://html.spec.whatwg.org/multipage/syntax.html#the-doctype
   HtmlDoctype =
-    /*#*/("<!" caseInsensitive<"doctype"> space+ caseInsensitive<"html">) spaces legacyDoctypeString? spaces ">"
+    #("<!" caseInsensitive<"doctype"> space+ caseInsensitive<"html">) spaces legacyDoctypeString? spaces ">"
   legacyDoctypeString
     = anyExceptPlus<">">
 
-  HtmlComment = spaces "<!--" /*#*/(anyExceptStar<"-->"> "-->")
+  HtmlComment = spaces "<!--" #(anyExceptStar<"-->"> "-->")
 
   // These are black holes, we'll ignore what's in them
   HtmlRawTag = spaces
@@ -483,16 +483,16 @@ LiquidHTML <: Liquid {
   TagEnd<name> = spaces "</" spaces name spaces ">"
 
   HtmlVoidElement =
-    /*#*/("<" voidElementName &(space | "/" | ">")) spaces AttrList spaces "/"? spaces ">"
+    #("<" voidElementName &(space | "/" | ">")) spaces AttrList spaces "/"? spaces ">"
 
   HtmlSelfClosingElement =
-    /*#*/("<" tagName) spaces AttrList spaces "/>"
+    #("<" tagName) spaces AttrList spaces "/>"
 
   HtmlTagOpen =
-    /*#*/("<" tagName) spaces AttrList spaces ">"
+    #("<" tagName) spaces AttrList spaces ">"
 
   HtmlTagClose =
-    /*#*/("</" tagName) spaces ">"
+    #("</" tagName) spaces ">"
 
   tagName = leadingTagNamePart trailingTagNamePart*
 
@@ -518,8 +518,8 @@ LiquidHTML <: Liquid {
   attrEmpty = attrName
 
   AttrUnquoted = spaces attrName spaces "=" spaces attrUnquotedValue
-  AttrSingleQuoted = spaces attrName spaces "=" spaces singleQuote /*#*/(attrSingleQuotedValue singleQuote)
-  AttrDoubleQuoted = spaces attrName spaces "=" spaces doubleQuote /*#*/(attrDoubleQuotedValue doubleQuote)
+  AttrSingleQuoted = spaces attrName spaces "=" spaces singleQuote #(attrSingleQuotedValue singleQuote)
+  AttrDoubleQuoted = spaces attrName spaces "=" spaces doubleQuote #(attrDoubleQuotedValue doubleQuote)
 
   attrName = (liquidDrop | attrNameTextNode)+
 
