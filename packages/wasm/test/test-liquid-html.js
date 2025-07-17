@@ -10,7 +10,7 @@ import {wasmMatcherForGrammar} from './_helpers.js';
 const matchWithInput = (m, str) => (m.setInput(str), m.match());
 
 const scriptRel = relPath => new URL(relPath, import.meta.url);
-const grammarSource = fs.readFileSync(scriptRel('data/liquid-html-mod.ohm'), 'utf8');
+const grammarSource = fs.readFileSync(scriptRel('data/liquid-html.ohm'), 'utf8');
 
 const liquid = ohm.grammars(grammarSource);
 
@@ -32,6 +32,14 @@ test('swatch.liquid', async t => {
     class="{% if x == 'x' %}x{% endif %}"
   {% endif %}
 >`;
+  const m = await wasmMatcherForGrammar(liquid.LiquidHTML);
+  t.is(matchWithInput(m, input), 1);
+});
+
+test('html comment', async t => {
+  const input = `{% if x %}
+    <!-- x -->
+  {% endif %}`;
   const m = await wasmMatcherForGrammar(liquid.LiquidHTML);
   t.is(matchWithInput(m, input), 1);
 });

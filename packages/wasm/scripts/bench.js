@@ -19,7 +19,7 @@ const inputs = {
   underscore: readFileSync(join(datadir, '_underscore-1.8.3.js'), 'utf-8'),
 };
 
-const liquid = ohm.grammars(readFileSync(join(datadir, 'liquid-html-mod.ohm'), 'utf8'));
+const liquid = ohm.grammars(readFileSync(join(datadir, 'liquid-html.ohm'), 'utf8'));
 
 let liquidHtmlMatcher;
 let es5Matcher;

@@ -891,18 +891,45 @@ test('lifted terminals', async t => {
   t.is(matchWithInput(m, 'yy'), 0);
 });
 
-// eslint-disable-next-line ava/no-skip-test
-test.skip('basic space skipping', async t => {
+test('basic space skipping', async t => {
   const g = ohm.grammar(`
     G {
       Start = ">" (digit "a".."z")*
     }`);
   const m = await wasmMatcherForGrammar(g);
-  t.is(matchWithInput(m, '> 0 a 1 b '), 1);
+  t.is(matchWithInput(m, '> 0 a 1 b'), 1);
+  t.is(matchWithInput(m, ' > 0 a 1 b '), 1);
 });
 
-// eslint-disable-next-line ava/no-skip-test
-test.skip('space skipping & lex', async t => {
+test('space skipping w/ lifted terminals', async t => {
+  // It shouldn't matter that the terminal (as arg) appears in a syntactic
+  // context; only the point of use.
+  const g = ohm.grammar(`
+    G {
+      Start = two<"x">
+      two<t> = t t
+    }`);
+  const m = await wasmMatcherForGrammar(g);
+  t.is(matchWithInput(m, 'xx'), 1);
+  t.is(matchWithInput(m, ' xx'), 1);
+  t.is(matchWithInput(m, 'x x'), 0);
+});
+
+test('space skipping w/ params', async t => {
+  // Make sure space is skipped before params in the body of syntactic rule.
+  const g = ohm.grammar(`
+    G {
+      Start = Reversed<(x | "x"), y, "z".."z"> Reversed<z, y, x>
+      Reversed<a, b, c> = c b a
+      x = "x"
+      y = "y"
+      z = "z"
+    }`);
+  const m = await wasmMatcherForGrammar(g);
+  t.is(matchWithInput(m, ' z y x xyz'), 1);
+});
+
+test('space skipping & lex', async t => {
   {
     const g = ohm.grammar('G { start = ">" digit+ #(space) }');
     const m = await wasmMatcherForGrammar(g);

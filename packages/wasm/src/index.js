@@ -12,7 +12,8 @@ const WASM_PAGE_SIZE = 64 * 1024;
 const DEBUG = process.env.OHM_DEBUG === '1';
 const FAST_SAVE_BINDINGS = true;
 const FAST_RESTORE_BINDINGS = true;
-const IMPLICIT_SPACE_SKIPPING = false;
+
+const IMPLICIT_SPACE_SKIPPING = true;
 
 // When specializing rules, should we emit a generalized version that
 // handles the specific cases? If false, code size will be larger.
@@ -63,7 +64,10 @@ function uniqueName(names, str) {
   return name;
 }
 
-const isSyntactic = ruleName => ruleName[0] === ruleName[0].toUpperCase();
+function isSyntacticRule(ruleName) {
+  assert(ruleName[0] !== '$', ruleName);
+  return ruleName[0] === ruleName[0].toUpperCase();
+}
 
 class IndexedSet {
   constructor() {
@@ -617,11 +621,11 @@ export class Compiler {
     return idx;
   }
 
-  inLexifiedContext() {
-    return this._lexContextStack.at(-1);
+  inLexicalContext() {
+    return checkNotNull(this._lexContextStack.at(-1));
   }
 
-  liftPExpr(exp) {
+  liftPExpr(exp, isSyntactic) {
     assert(!(exp instanceof pexprs.Terminal));
 
     // Note: the same expression might appear in more than one place, and
@@ -656,7 +660,7 @@ export class Compiler {
       formals = newParams.filter(isNonNull).map(p => `__${p.index}`);
     }
     const actuals = freeVars.filter(isNonNull);
-    const ruleInfo = {body, formals, source: exp.source};
+    const ruleInfo = {body, formals, isSyntactic, source: exp.source};
     return [name, ruleInfo, actuals];
   }
 
@@ -733,13 +737,26 @@ export class Compiler {
     const {grammar} = this;
 
     const lookUpRule = name => {
-      if (name in grammar.rules) return grammar.rules[name];
-      if (grammar.superGrammar) return lookUpRule(name, grammar.superGrammar);
+      const isSyntactic = isSyntacticRule(name);
+      if (name in grammar.rules) {
+        return {...grammar.rules[name], isSyntactic};
+      }
+      if (grammar.superGrammar) {
+        return lookUpRule(name, grammar.superGrammar);
+      }
     };
 
     // Begin with all the rules in the grammar + spaces.
-    const rules = Object.entries(this.grammar.rules);
-    rules.push(['spaces', lookUpRule('spaces')]);
+    const rules = Object.entries(this.grammar.rules).map(([name, info]) => {
+      const isSyntactic = isSyntacticRule(name);
+      return [name, {...info, isSyntactic}];
+    });
+    rules.push([
+      'spaces',
+      {
+        ...lookUpRule('spaces'),
+      },
+    ]);
 
     const liftedTerminals = new IndexedSet();
 
@@ -751,15 +768,15 @@ export class Compiler {
 
     // If `exp` is not an Apply or Param, lift it into its own rule and return
     // a new application of that rule.
-    const simplifyArg = exp => {
+    const simplifyArg = (exp, isSyntactic) => {
       if (isApplyLike(exp)) {
-        return simplify(exp);
+        return simplify(exp, isSyntactic);
       }
       if (exp instanceof pexprs.Terminal) {
         return liftTerminal(exp);
       }
 
-      const [name, info, env] = this.liftPExpr(exp);
+      const [name, info, env] = this.liftPExpr(exp, isSyntactic);
       const args = env.map(p => {
         assert(p instanceof pexprs.Param, 'Expected Param');
         return ir.param(p.index);
@@ -767,9 +784,9 @@ export class Compiler {
       rules.push([name, info]);
       return ir.apply(name, args);
     };
-    const simplify = exp => {
+    const simplify = (exp, isSyntactic) => {
       if (exp instanceof pexprs.Alt) {
-        return ir.alt(exp.terms.map(e => simplify(e)));
+        return ir.alt(exp.terms.map(e => simplify(e, isSyntactic)));
       }
       if (exp === pexprs.any) return ir.any();
       if (exp === pexprs.end) return ir.end();
@@ -778,24 +795,24 @@ export class Compiler {
           rules.push([exp.ruleName, checkNotNull(lookUpRule(exp.ruleName))]);
           return ir.apply(
               exp.ruleName,
-              exp.args.map(arg => simplifyArg(arg)),
+              exp.args.map(arg => simplifyArg(arg, isSyntactic)),
           );
         case pexprs.CaseInsensitive:
           return ir.caseInsensitive(exp.obj);
         case pexprs.Lex:
-          return ir.lex(simplify(exp.expr));
+          return ir.lex(simplify(exp.expr, true));
         case pexprs.Lookahead:
-          return ir.lookahead(simplify(exp.expr));
+          return ir.lookahead(simplify(exp.expr, isSyntactic));
         case pexprs.Not:
-          return ir.not(simplify(exp.expr));
+          return ir.not(simplify(exp.expr, isSyntactic));
         case pexprs.Opt:
-          return ir.opt(simplify(exp.expr));
+          return ir.opt(simplify(exp.expr, isSyntactic));
         case pexprs.Plus:
-          return ir.plus(simplify(exp.expr));
+          return ir.plus(simplify(exp.expr, isSyntactic));
         case pexprs.Seq:
-          return ir.seq(exp.factors.map(e => simplify(e)));
+          return ir.seq(exp.factors.map(e => simplify(e, isSyntactic)));
         case pexprs.Star:
-          return ir.star(simplify(exp.expr));
+          return ir.star(simplify(exp.expr, isSyntactic));
         case pexprs.Param:
           return ir.param(exp.index);
         case pexprs.Range:
@@ -818,7 +835,7 @@ export class Compiler {
       if (!newRules.has(name)) {
         newRules.set(name, {
           ...info,
-          body: simplify(info.body),
+          body: simplify(info.body, info.isSyntactic),
         });
       }
     }
@@ -828,10 +845,10 @@ export class Compiler {
 
   compileTerminalRule(name) {
     const {asm} = this;
+    this.beginLexContext(true);
     asm.addFunction(`$${name}`, [w.valtype.i32], [w.valtype.i32], () => {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
-
       asm.switch(
           w.blocktype.empty,
           () => asm.localGet('__arg0'),
@@ -842,7 +859,18 @@ export class Compiler {
       );
       asm.localGet('ret');
     });
+    this.endLexContext();
     return this.asm._functionDecls.at(-1);
+  }
+
+  beginLexContext(initialVal) {
+    assert(this._lexContextStack.length === 0);
+    this._lexContextStack.push(initialVal);
+  }
+
+  endLexContext() {
+    this._lexContextStack.pop();
+    assert(this._lexContextStack.length === 0);
   }
 
   compileRule(name) {
@@ -852,8 +880,7 @@ export class Compiler {
     if (ruleInfo.patterns) {
       paramTypes = [w.valtype.i32];
     }
-    assert(this._lexContextStack.length === 0);
-    this._lexContextStack.push(!isSyntactic(name));
+    this.beginLexContext(!ruleInfo.isSyntactic);
     asm.addFunction(`$${name}`, paramTypes, [w.valtype.i32], () => {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
@@ -862,8 +889,7 @@ export class Compiler {
       asm.emit(`END eval:${name}`);
       asm.localGet('ret');
     });
-    this._lexContextStack.pop();
-    assert(this._lexContextStack.length === 0);
+    this.endLexContext();
     return this.asm._functionDecls.at(-1);
   }
 
@@ -1204,6 +1230,7 @@ export class Compiler {
 
   emitApplyTerm({terminalId}) {
     const {asm} = this;
+    this.maybeEmitSpaceSkipping();
     asm.i32Const(terminalId);
     asm.emit(w.instr.call, this.ruleEvalFuncIdx('$term'));
     asm.localSet('ret');
@@ -1223,7 +1250,7 @@ export class Compiler {
     assert(exp.children.length === 0);
 
     if (exp !== this._applySpaces) {
-      this.maybeEmitSpaceSkipping();
+      this.maybeEmitSpaceSkipping(); // Avoid infinite recursion.
     }
 
     const {asm} = this;
@@ -1340,7 +1367,7 @@ export class Compiler {
   }
 
   maybeEmitSpaceSkipping() {
-    if (IMPLICIT_SPACE_SKIPPING && !this.inLexifiedContext()) {
+    if (IMPLICIT_SPACE_SKIPPING && !this.inLexicalContext()) {
       this.asm.emit('BEGIN space skipping');
       this.emitApply(this._applySpaces);
       this.asm.emit('END space skipping');

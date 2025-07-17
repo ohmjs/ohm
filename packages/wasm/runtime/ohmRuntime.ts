@@ -4,7 +4,7 @@ declare function fillInputBuffer(offset: i32, maxLen: i32): i32;
 declare function printI32(val: i32): void;
 declare function isRuleSyntactic(ruleId: i32): bool;
 
-@inline const IMPLICIT_SPACE_SKIPPING = false;
+@inline const IMPLICIT_SPACE_SKIPPING = true;
 
 // TODO: Find a way to share these.
 @inline const WASM_PAGE_SIZE: usize = 64 * 1024;
@@ -84,6 +84,15 @@ function hasMemoizedResult(ruleId: i32): boolean {
   return memoTableGet(pos, ruleId) !== 0;
 }
 
+@inline function maybeSkipSpaces(ruleId: i32): void {
+  // TODO: Find a better way to deal with the bindings here.
+  if (IMPLICIT_SPACE_SKIPPING && isRuleSyntactic(ruleId)) {
+    const origNumBindings = bindings.length;
+    evalApply0(2);
+    bindings.length = origNumBindings;
+  }
+}
+
 export function match(startRuleId: i32): Result {
   // (Re-)initialize globals, clear memo table.
   pos = 0;
@@ -93,15 +102,12 @@ export function match(startRuleId: i32): Result {
 
   // Get the input and do the match.
   let inputLen = fillInputBuffer(0, i32(WASM_PAGE_SIZE));
+
+  maybeSkipSpaces(startRuleId);
   const succeeded = evalApply0(startRuleId) !== 0;
-
-  // Potentially skip trailing spaces before checking for the end.
-  if (IMPLICIT_SPACE_SKIPPING && succeeded && isRuleSyntactic(startRuleId)) {
-    evalApply0(2);
-  }
-
-  if (inputLen === pos) {
-    return succeeded;
+  if (succeeded) {
+    maybeSkipSpaces(startRuleId);
+    return inputLen === pos;
   }
   return 0;
 }
@@ -218,5 +224,6 @@ export function setBindingsLength(len: i32): void {
 }
 
 export function getCstRoot(): usize {
+  // TODO: Figure out how to handle this w.r.t. leading and trailing space.
   return bindings[0];
 }
