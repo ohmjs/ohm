@@ -4,7 +4,6 @@ Helpers {
   openControl = end
 
   // Temp overrides for things not yet support in Wasm grammars
-  letter := "a".."z" | "A".."Z"
   caseInsensitive<t> := t
 
   empty = /* nothing */

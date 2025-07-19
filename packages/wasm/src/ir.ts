@@ -162,10 +162,13 @@ export const terminal = (value: string): Terminal => ({type: 'Terminal', value})
 
 export interface UnicodeChar {
   type: 'UnicodeChar';
-  value: string;
+  category: string;
 }
 
-export const unicodeChar = (value: string): UnicodeChar => ({type: 'UnicodeChar', value});
+export const unicodeChar = (category: string): UnicodeChar => ({
+  type: 'UnicodeChar',
+  category
+});
 
 // Types that are specific to the IR
 

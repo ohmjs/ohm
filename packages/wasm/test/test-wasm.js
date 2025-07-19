@@ -951,3 +951,16 @@ test('space skipping & lex', async t => {
     t.is(matchWithInput(m, '> 9'), 1, "neg lookahead doesn't consume anything");
   }
 });
+
+test('unicode built-ins', async t => {
+  const g = ohm.grammar(`
+    G {
+      Start = lower upper
+    }`);
+  const m = await wasmMatcherForGrammar(g);
+  t.is(matchWithInput(m, 'aA'), 1);
+  t.is(matchWithInput(m, ' aZ'), 1);
+  t.is(matchWithInput(m, ' zA'), 1);
+  t.is(matchWithInput(m, 'a@'), 0);
+  t.is(matchWithInput(m, 'a['), 0);
+});

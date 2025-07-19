@@ -406,8 +406,8 @@ class Assembler {
     this.emit(instr.br, w.labelidx(depth));
   }
 
-  brTable(labels, defaultIdx) {
-    this.emit(w.instr.br_table, w.vec(labels.map(i => w.labelidx(i))), w.labelidx(defaultIdx));
+  brTable(labels, defaultLabelidx) {
+    this.emit(w.instr.br_table, w.vec(labels), defaultLabelidx);
   }
 
   return() {
@@ -417,25 +417,29 @@ class Assembler {
   }
 
   // Emit a dense jump table (switch-like) using br_table.
-  switch(bt, condThunk, caseThunks, defaultThunk) {
+  switch(bt, discrimThunk, numCases, caseCb, defaultThunk) {
     const startStackHeight = this._blockStack.length;
 
-    // Emit one block per case…
-    caseThunks.forEach(_ => this._blockOnly(bt));
+    const labels = [];
 
-    const labels = caseThunks.map((_, i) => w.labelidx(i));
+    // Emit one block per case…
+    for (let i = 0; i < numCases; i++) {
+      this._blockOnly(bt);
+      labels.push(w.labelidx(i));
+    }
 
     // …and one inner block containing the condition and the br_table.
     this.block(w.blocktype.empty, () => {
-      condThunk();
+      discrimThunk();
       this.brTable(labels, w.labelidx(labels.length));
     });
-    caseThunks.forEach((fn, i) => {
+
+    for (let i = 0; i < numCases; i++) {
       const depth = labels.length - (i + 1);
-      fn(depth);
+      caseCb(i, depth);
       this.break(depth); // Jump to end.
       this._endBlock();
-    });
+    }
     assert(this._blockStack.length === startStackHeight);
   }
 
@@ -820,7 +824,7 @@ export class Compiler {
         case pexprs.Terminal:
           return ir.terminal(exp.obj);
         case pexprs.UnicodeChar:
-          return ir.unicodeChar(exp.codePoint);
+          return ir.unicodeChar(exp.category);
         default:
           throw new Error(`not handled: ${exp.constructor.name}`);
       }
@@ -849,12 +853,12 @@ export class Compiler {
     asm.addFunction(`$${name}`, [w.valtype.i32], [w.valtype.i32], () => {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
+      const values = this.liftedTerminals.values();
       asm.switch(
           w.blocktype.empty,
           () => asm.localGet('__arg0'),
-          this.liftedTerminals
-              .values()
-              .map(str => depth => this.emitTerminal(ir.terminal(str), depth)),
+          values.length,
+          (i, depth) => this.emitTerminal(ir.terminal(values[i]), depth),
           () => asm.emit(w.instr.unreachable),
       );
       asm.localGet('ret');
@@ -1125,28 +1129,30 @@ export class Compiler {
   emitDispatch({child: exp, patterns}) {
     const {asm} = this;
 
-    const cases = patterns.map((actuals, i) => () => {
+    const handleCase = i => {
       // Substitute the params to get the concrete expression that
       // needs to be inserted here.
-      let newExp = ir.substituteParams(exp, actuals);
+      let newExp = ir.substituteParams(exp, patterns[i]);
       if (newExp.type === 'Apply') {
         // If the application has arguments, we need to dispatch to the
         // correct specialized version of the rule.
         newExp = ir.apply(ir.specializedName(newExp));
       }
       this.emitPExpr(newExp);
-    });
-    if (cases.length === 1) {
-      cases[0](); // No need for a switch.
+    };
+    if (patterns.length === 1) {
+      handleCase(0); // No need for a switch.
       return;
     }
-    assert(cases.length > 1);
+    assert(patterns.length > 1);
 
     asm.switch(
         w.blocktype.empty,
         () => asm.localGet('__arg0'),
-        cases,
+        patterns.length,
+        handleCase,
         () => {
+          asm.emit('herre');
           asm.emit(w.instr.unreachable);
         },
     );
@@ -1195,7 +1201,7 @@ export class Compiler {
         case 'Range': this.emitRange(exp); break;
         case 'Plus': this.emitPlus(exp); break;
         case 'Terminal': this.emitTerminal(exp); break;
-        case 'UnicodeChar': this.emitFail(); break; // TODO: Handle this properly
+        case 'UnicodeChar': this.emitUnicodeChar(exp); break;
         case 'Param':
           // Fall through (Params should not exist at codegen time).
         default:
@@ -1422,7 +1428,37 @@ export class Compiler {
     asm.newTerminalNodeWithSavedPos();
     asm.localSet('ret');
   }
+
+  emitUnicodeChar(exp) {
+    const {asm} = this;
+    this.maybeEmitSpaceSkipping();
+
+    const handleDefault = () => {
+      // TODO: Implement the slow case by calling out to the host.
+      asm.emit(w.instr.unreachable);
+    };
+
+    // TODO: Add support for more categories, by calling out to the host.
+    assert(['Ll', 'Lu', 'Ltmo'].includes(exp.category));
+
+    const caseCb = (i, depth) => {
+      const c = String.fromCharCode(i);
+      if (
+        (exp.category === 'Lu' && 'A' <= c && c <= 'Z') ||
+        (exp.category === 'Ll' && 'a' <= c && c <= 'z')
+      ) {
+        asm.incPos();
+        asm.newTerminalNodeWithSavedPos();
+        asm.localSet('ret');
+      } else {
+        asm.setRet(0);
+      }
+      asm.break(depth);
+    };
+    asm.switch(w.blocktype.empty, () => asm.currCharCode(), 128, caseCb, handleDefault);
+  }
 }
+
 // Memory layout:
 // - First page is for the PExpr stack (origPos, etc.), growing downards.
 // - 2nd page is for input buffer (max 64k for now).
