@@ -597,10 +597,15 @@ export class Compiler {
     // The rule ID is a 0-based index that's mapped to the name.
     // It is *not* the same as the function index the rule's eval function.
     this.ruleIdByName = new IndexedSet();
+
+    this._specialRules = ['spaces', 'alnum', 'any'];
+
     // Ensure default start rule has id 0; $term, 1; and spaces, 2.
     this._ensureRuleId(grammar.defaultStartRule);
     this._ensureRuleId('$term');
-    this._ensureRuleId('spaces');
+    this._specialRules.forEach(name => {
+      this._ensureRuleId(name);
+    });
 
     this.rules = undefined;
     this._nextLiftedId = 0;
@@ -709,6 +714,11 @@ export class Compiler {
     // (global $~lib/rt/stub/offset (mut i32) (i32.const 0))
     // (global $~lib/native/ASC_RUNTIME i32 (i32.const 0))
     // (global $runtime/ohmRuntime/bindings (mut i32) (i32.const 0))
+    // (global $runtime/ohmRuntime/preallocAlnum1 (mut i32) (i32.const 0))
+    // (global $runtime/ohmRuntime/preallocAny1 (mut i32) (i32.const 0))
+    // (global $runtime/ohmRuntime/preallocLetter1 (mut i32) (i32.const 0))
+    // (global $runtime/ohmRuntime/preallocLower1 (mut i32) (i32.const 0))
+    // (global $runtime/ohmRuntime/preallocUpper1 (mut i32) (i32.const 0))
     // (global $~lib/memory/__heap_base i32 (i32.const 1179884))
     asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
@@ -719,6 +729,11 @@ export class Compiler {
     asm.addGlobal('__offset', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('__ASC_RUNTIME', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
     asm.addGlobal('bindings', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('preallocAlnum1', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('preallocAny1', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('preallocLetter1', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('preallocLower1', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('preallocUpper1', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('__heap_base', w.valtype.i32, w.mut.var, () => asm.i32Const(67240172));
 
     // Reserve a fixed number of imports for debug labels.
@@ -750,17 +765,14 @@ export class Compiler {
       }
     };
 
-    // Begin with all the rules in the grammar + spaces.
+    // Begin with all the rules in the grammar + all "special" rules.
     const rules = Object.entries(this.grammar.rules).map(([name, info]) => {
       const isSyntactic = isSyntacticRule(name);
       return [name, {...info, isSyntactic}];
     });
-    rules.push([
-      'spaces',
-      {
-        ...lookUpRule('spaces'),
-      },
-    ]);
+    this._specialRules.forEach(name => {
+      rules.push([name, {...lookUpRule(name)}]);
+    });
 
     const liftedTerminals = new IndexedSet();
 
@@ -884,12 +896,18 @@ export class Compiler {
     if (ruleInfo.patterns) {
       paramTypes = [w.valtype.i32];
     }
+    const fastPath = () => {
+      if (['alnum'].includes(name)) {
+        this.emitSingleCharFastPath('alnum');
+      }
+    };
+
     this.beginLexContext(!ruleInfo.isSyntactic);
     asm.addFunction(`$${name}`, paramTypes, [w.valtype.i32], () => {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
       asm.emit(`BEGIN eval:${name}`);
-      this.emitPExpr(ruleInfo.body);
+      this.emitPExpr(ruleInfo.body, fastPath);
       asm.emit(`END eval:${name}`);
       asm.localGet('ret');
     });
@@ -950,7 +968,9 @@ export class Compiler {
         },
       });
     specialize(ir.apply(this.grammar.defaultStartRule));
-    specialize(ir.apply('spaces'));
+    this._specialRules.forEach(name => {
+      specialize(ir.apply(name));
+    });
     this.rules = newRules;
 
     if (EMIT_GENERALIZED_RULES) {
@@ -1159,7 +1179,7 @@ export class Compiler {
   }
 
   // Contract: emitPExpr always means we're going deeper in the PExpr tree.
-  emitPExpr(exp) {
+  emitPExpr(exp, fastPathCb = undefined) {
     const {asm} = this;
 
     // Note that after specializeApplications, there are two classes of rule:
@@ -1185,6 +1205,8 @@ export class Compiler {
     // - it allows early returns.
     // - it makes sure that the generated code doesn't have stack effects.
     asm.block(w.blocktype.empty, () => {
+      if (fastPathCb) fastPathCb();
+
       // prettier-ignore
       switch (exp.type) {
         case 'Alt': this.emitAlt(exp); break;
@@ -1456,6 +1478,35 @@ export class Compiler {
       asm.break(depth);
     };
     asm.switch(w.blocktype.empty, () => asm.currCharCode(), 128, caseCb, handleDefault);
+  }
+
+  emitSingleCharFastPath(ruleName) {
+    const {asm} = this;
+    this.maybeEmitSpaceSkipping();
+
+    const caseCb = (i, depth) => {
+      const c = String.fromCharCode(i);
+      if (
+        ruleName === 'alnum' &&
+        (('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') || ('0' <= c && c <= '9'))
+      ) {
+        asm.callPrebuiltFunc('pushPreallocAlnum');
+        // asm.newTerminalNodeWithSavedPos();
+        asm.localSet('ret');
+        asm.break(depth + 1);
+      } else {
+        asm.setRet(0);
+        asm.break(depth + 1);
+      }
+    };
+    asm.emit('fastpath');
+    asm.switch(
+        w.blocktype.empty,
+        () => asm.nextCharCode(),
+        128,
+        caseCb,
+        () => {},
+    );
   }
 }
 

@@ -848,8 +848,11 @@ test('specialized rule names', t => {
   compiler.normalize();
 
   t.deepEqual([...compiler.rules.keys()].sort(), [
+    'alnum',
+    'any',
     'commaSep',
     'commaSep<exclaimed<$term$0>>',
+    'digit',
     'emptyListOf',
     'emptyListOf<exclaimed<$term$0>,$term$1>',
     'exclaimed',
@@ -860,8 +863,10 @@ test('specialized rule names', t => {
     'flip<exclaimed<hello2>,hello>',
     'hello',
     'hello2',
+    'letter',
     'listOf',
     'listOf<exclaimed<$term$0>,$term$1>',
+    'lower',
     'nonemptyListOf',
     'nonemptyListOf<exclaimed<$term$0>,$term$1>',
     'one',
@@ -870,6 +875,8 @@ test('specialized rule names', t => {
     'start',
     'three',
     'two',
+    'unicodeLtmo',
+    'upper',
   ]);
 });
 
