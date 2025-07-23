@@ -506,8 +506,8 @@ test('real-world grammar', async t => {
       Msgs = Msg*
       Msg = description? spaces (Head spaces Params spaces)
 
-      lower := "a".."z"
-      upper := "A".."Z"
+      // Required until unicodeLtmo is implemented.
+      letter := lower | upper
 
       description = "#" (~nl any)* nl?
       Head = msgTarget spaces msgName

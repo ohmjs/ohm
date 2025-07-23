@@ -127,6 +127,10 @@ export class WasmMatcher {
     buf[written] = 0xff; // Mark end of input with an invalid UTF-8 character.
     return written;
   }
+
+  getRightmostFailurePosition() {
+    return this._instance.exports.failurePos.value;
+  }
 }
 
 class CstNode {

@@ -69,6 +69,8 @@ function isSyntacticRule(ruleName) {
   return ruleName[0] === ruleName[0].toUpperCase();
 }
 
+const asciiChars = Array.from({length: 128}).map((_, i) => String.fromCharCode(i));
+
 class IndexedSet {
   constructor() {
     this._map = new Map();
@@ -411,8 +413,6 @@ class Assembler {
   }
 
   return() {
-    const what = this._blockStack[0];
-    assert(what === 'block', 'Invalid return');
     this.emit(w.instr.return);
   }
 
@@ -538,6 +538,15 @@ class Assembler {
     }
   }
 
+  updateFailurePos() {
+    // failurePos = max(failurePos, origPos)
+    this.i32Max(
+        () => this.globalGet('failurePos'),
+        () => this.getSavedPos(),
+    );
+    this.globalSet('failurePos');
+  }
+
   // Increment the current input position by 1.
   // [i32, i32] -> [i32]
   incPos() {
@@ -570,6 +579,14 @@ class Assembler {
         () => this.i32Const(0),
     );
     this.localSet('ret');
+  }
+
+  i32Max(aThunk, bThunk) {
+    aThunk();
+    bThunk();
+    aThunk();
+    bThunk();
+    this.emit(w.instr.i32.gt_s, w.instr.select);
   }
 }
 Assembler.ALIGN_1_BYTE = 0;
@@ -721,6 +738,7 @@ export class Compiler {
     // (global $runtime/ohmRuntime/preallocUpper1 (mut i32) (i32.const 0))
     // (global $~lib/memory/__heap_base i32 (i32.const 1179884))
     asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('failurePos', w.valtype.i32, w.mut.var, () => asm.i32Const(-1));
     asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('__Runtime.Stub', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
     asm.addGlobal('__Runtime.Minimal', w.valtype.i32, w.mut.const, () => asm.i32Const(1));
@@ -760,9 +778,10 @@ export class Compiler {
       if (name in grammar.rules) {
         return {...grammar.rules[name], isSyntactic};
       }
-      if (grammar.superGrammar) {
-        return lookUpRule(name, grammar.superGrammar);
-      }
+      // if (grammar.superGrammar) {
+      //   console.log('going to supergrammar');
+      //   return lookUpRule(name, grammar.superGrammar);
+      // }
     };
 
     // Begin with all the rules in the grammar + all "special" rules.
@@ -870,7 +889,7 @@ export class Compiler {
           w.blocktype.empty,
           () => asm.localGet('__arg0'),
           values.length,
-          (i, depth) => this.emitTerminal(ir.terminal(values[i]), depth),
+          i => this.emitTerminal(ir.terminal(values[i])),
           () => asm.emit(w.instr.unreachable),
       );
       asm.localGet('ret');
@@ -1427,57 +1446,74 @@ export class Compiler {
     asm.localSet('ret');
   }
 
-  emitTerminal({value}, depth = 0) {
-    // TODO:
-    // - proper UTF-8!
-    // - handle longer terminals with a loop
-    // - SIMD
+  wrapTerminalLike(thunk) {
+    const {asm} = this;
+    this.maybeEmitSpaceSkipping();
+    asm.block(w.blocktype.empty, () => {
+      asm.block(w.blocktype.empty, () => {
+        thunk();
+        asm.newTerminalNodeWithSavedPos();
+        asm.localSet('ret');
+        asm.break(1);
+      });
+      asm.updateFailurePos();
+      asm.setRet(0);
+    });
+  }
 
+  emitTerminal({value}) {
     const {asm} = this;
     asm.emit(JSON.stringify(value));
-    this.maybeEmitSpaceSkipping();
-    for (const c of [...value]) {
-      // Compare next char
-      asm.i32Const(c.charCodeAt(0));
-      asm.currCharCode();
-      asm.emit(instr.i32.ne);
-      asm.if(w.blocktype.empty, () => {
-        asm.setRet(0);
-        asm.break(depth + 1);
-      });
-      asm.incPos();
-    }
-    asm.newTerminalNodeWithSavedPos();
-    asm.localSet('ret');
+    this.wrapTerminalLike(() => {
+      // TODO:
+      // - proper UTF-8!
+      // - handle longer terminals with a loop
+      // - SIMD
+      for (const c of [...value]) {
+        asm.i32Const(c.charCodeAt(0));
+        asm.currCharCode();
+        asm.emit(instr.i32.ne);
+        asm.condBreak(0);
+        asm.incPos();
+      }
+    });
   }
 
   emitUnicodeChar(exp) {
     const {asm} = this;
-    this.maybeEmitSpaceSkipping();
-
-    const handleDefault = () => {
-      // TODO: Implement the slow case by calling out to the host.
-      asm.emit(w.instr.unreachable);
-    };
 
     // TODO: Add support for more categories, by calling out to the host.
     assert(['Ll', 'Lu', 'Ltmo'].includes(exp.category));
 
-    const caseCb = (i, depth) => {
-      const c = String.fromCharCode(i);
+    // This function generates the body for each case.
+    const labels = asciiChars.map(c => {
       if (
         (exp.category === 'Lu' && 'A' <= c && c <= 'Z') ||
         (exp.category === 'Ll' && 'a' <= c && c <= 'z')
       ) {
-        asm.incPos();
-        asm.newTerminalNodeWithSavedPos();
-        asm.localSet('ret');
-      } else {
-        asm.setRet(0);
+        return w.labelidx(1); // success
       }
-      asm.break(depth);
-    };
-    asm.switch(w.blocktype.empty, () => asm.currCharCode(), 128, caseCb, handleDefault);
+      return w.labelidx(2); // failure
+    });
+    this.wrapTerminalLike(() => {
+      asm.block(w.blocktype.empty, () => {
+        asm.block(w.blocktype.empty, () => {
+          asm.currCharCode();
+          asm.brTable(labels, w.labelidx(0));
+        }); // label 0 (default).
+
+        // Check for 0xff (end)
+        asm.currCharCode();
+        asm.i32Const(0xff);
+        asm.emit(instr.i32.eq);
+        asm.condBreak(1); // fail
+
+        // Otherwise, trap.
+        // TODO: Replace this with a proper, out-of-line implementation.
+        asm.emit(w.instr.unreachable);
+      }); // label 1 (success).
+      asm.incPos();
+    });
   }
 
   emitSingleCharFastPath(ruleName) {

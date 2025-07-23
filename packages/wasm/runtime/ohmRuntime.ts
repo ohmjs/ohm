@@ -25,6 +25,10 @@ declare function isRuleSyntactic(ruleId: i32): bool;
 
 // Shared globals
 let pos: i32 = 0;
+
+// The rightmost position at which a leaf (Terminal, etc.) failed to match.
+let failurePos: i32 = 0;
+
 let sp: usize = 0;
 let bindings: Array<i32> = new Array<i32>();
 
@@ -34,6 +38,10 @@ let preallocAny1: i32 = 0;
 let preallocLetter1: i32 = 0;
 let preallocLower1: i32 = 0;
 let preallocUpper1: i32 = 0;
+
+@inline function max<T>(a: T, b: T): T {
+  return a > b ? a : b;
+}
 
 @inline function memoTableGet(memoPos: usize, ruleId: i32): Result {
   return load<Result>(memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<Result>(), MEMO_START_OFFSET);
@@ -102,6 +110,7 @@ function hasMemoizedResult(ruleId: i32): boolean {
 
 function resetParsingState(): void {
   pos = 0;
+  failurePos = -1;
   sp = STACK_START_OFFSET;
   heap.reset();
 
@@ -147,35 +156,45 @@ export function evalApplyGeneralized(ruleId: i32, caseIdx: i32): Result {
 export function evalApplyNoMemo0(ruleId: i32): Result {
   const origPos = pos;
   const origNumBindings = bindings.length;
+  const origFailurePos = failurePos;
+  let result: i32 = 0;
   if (evalRuleBody(ruleId)) {
-    return newNonterminalNode(origPos, pos, ruleId, origNumBindings);
+    result = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
   }
-  return 0;
+  failurePos = max(failurePos, origFailurePos);
+  // printI32(rightmostFailurePos);
+  return result;
 }
 
 export function evalApply0(ruleId: i32): Result {
   let result = memoTableGet(pos, ruleId);
+
   if (result !== 0) {
     return useMemoizedResult(ruleId, result);
   }
   const origPos = pos;
-  let origNumBindings = bindings.length;
+  const origNumBindings = bindings.length;
+  const origFailurePos = failurePos;
   memoizeResult(origPos, ruleId, UNUSED_LR_BOMB);
-  let succeeded: i32 = evalRuleBody(ruleId);
+  const succeeded: i32 = evalRuleBody(ruleId);
 
   // Straight failure — record a clean failure in the memo table.
   if (!succeeded) {
     memoizeResult(origPos, ruleId, FAIL);
+    failurePos = max(failurePos, origFailurePos);
+    // printI32(rightmostFailurePos);
     return 0;
   }
 
   if (memoTableGet(origPos, ruleId) === USED_LR_BOMB) {
+    // TODO: Update rightmostFailurePos here.
     return handleLeftRecursion(origPos, ruleId, origNumBindings);
   }
-
   // No left recursion — memoize and return.
   result = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
   memoizeResult(origPos, ruleId, result);
+  failurePos = max(failurePos, origFailurePos);
+  // printI32(rightmostFailurePos);
   return result;
 }
 
