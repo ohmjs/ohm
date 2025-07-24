@@ -27,7 +27,7 @@ declare function isRuleSyntactic(ruleId: i32): bool;
 let pos: i32 = 0;
 
 // The rightmost position at which a leaf (Terminal, etc.) failed to match.
-let failurePos: i32 = 0;
+let rightmostFailurePos: i32 = 0;
 
 let sp: usize = 0;
 let bindings: Array<i32> = new Array<i32>();
@@ -110,7 +110,7 @@ function hasMemoizedResult(ruleId: i32): boolean {
 
 function resetParsingState(): void {
   pos = 0;
-  failurePos = -1;
+  rightmostFailurePos = -1;
   sp = STACK_START_OFFSET;
   heap.reset();
 
@@ -134,6 +134,7 @@ export function match(startRuleId: i32): Result {
   if (succeeded) {
     maybeSkipSpaces(startRuleId);
     // printI32(heap.alloc(8) - __heap_base); // Print heap usage.
+    // TODO: Do we need to update rightmostFailurePos here?
     return inputLen === pos;
   }
 
@@ -156,12 +157,12 @@ export function evalApplyGeneralized(ruleId: i32, caseIdx: i32): Result {
 export function evalApplyNoMemo0(ruleId: i32): Result {
   const origPos = pos;
   const origNumBindings = bindings.length;
-  const origFailurePos = failurePos;
+  const origFailurePos = rightmostFailurePos;
   let result: i32 = 0;
   if (evalRuleBody(ruleId)) {
     result = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
   }
-  failurePos = max(failurePos, origFailurePos);
+  // rightmostFailurePos = max(rightmostFailurePos, origFailurePos);
   // printI32(rightmostFailurePos);
   return result;
 }
@@ -174,14 +175,14 @@ export function evalApply0(ruleId: i32): Result {
   }
   const origPos = pos;
   const origNumBindings = bindings.length;
-  const origFailurePos = failurePos;
+  const origFailurePos = rightmostFailurePos;
   memoizeResult(origPos, ruleId, UNUSED_LR_BOMB);
   const succeeded: i32 = evalRuleBody(ruleId);
 
   // Straight failure — record a clean failure in the memo table.
   if (!succeeded) {
     memoizeResult(origPos, ruleId, FAIL);
-    failurePos = max(failurePos, origFailurePos);
+    // rightmostFailurePos = max(rightmostFailurePos, origFailurePos);
     // printI32(rightmostFailurePos);
     return 0;
   }
@@ -193,7 +194,7 @@ export function evalApply0(ruleId: i32): Result {
   // No left recursion — memoize and return.
   result = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
   memoizeResult(origPos, ruleId, result);
-  failurePos = max(failurePos, origFailurePos);
+  // rightmostFailurePos = max(rightmostFailurePos, origFailurePos);
   // printI32(rightmostFailurePos);
   return result;
 }

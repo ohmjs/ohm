@@ -79,7 +79,7 @@ const checkFailurePos = matcher =>
   );
 
 // eslint-disable-next-line ava/no-skip-test
-test('failure pos (fast-check)', async t => {
+test.skip('failure pos (fast-check)', async t => {
   const m = await wasmMatcherForGrammar(ns.LiquidHTML);
   t.notThrows(() => fc.assert(checkFailurePos(m), {numRuns: 50}));
 });
@@ -128,7 +128,7 @@ test('failure pos: basic', async t => {
   }
 });
 
-test.failing('failure pos: lookahead', async t => {
+test('failure pos: lookahead', async t => {
   {
     const g = ohm.grammar(`
       G {

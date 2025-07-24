@@ -129,7 +129,7 @@ export class WasmMatcher {
   }
 
   getRightmostFailurePosition() {
-    return this._instance.exports.failurePos.value;
+    return this._instance.exports.rightmostFailurePos.value;
   }
 }
 

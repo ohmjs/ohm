@@ -848,6 +848,7 @@ test('specialized rule names', t => {
   compiler.normalize();
 
   t.deepEqual([...compiler.rules.keys()].sort(), [
+    '$spaces',
     'alnum',
     'any',
     'commaSep',

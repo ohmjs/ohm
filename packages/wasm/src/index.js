@@ -480,17 +480,22 @@ class Assembler {
     this.localSet('ret');
   }
 
-  pushStackFrame() {
+  pushStackFrame({withFailurePos} = {}) {
+    const extraBytes = withFailurePos ? 4 : 0;
     this.globalGet('sp');
-    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
+    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES + extraBytes);
     this.i32Sub();
     this.globalSet('sp');
     this.savePos();
     this.saveNumBindings();
+    if (withFailurePos) {
+      this.saveLocalFailurePos();
+    }
   }
 
-  popStackFrame() {
-    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
+  popStackFrame({withFailurePos} = {}) {
+    const extraBytes = withFailurePos ? 4 : 0;
+    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES + extraBytes);
     this.globalGet('sp');
     this.i32Add();
     this.globalSet('sp');
@@ -543,13 +548,38 @@ class Assembler {
     }
   }
 
-  updateFailurePos() {
+  saveLocalFailurePos() {
+    this.globalGet('sp');
+    this.localGet('failurePos');
+    this.i32Store(8);
+  }
+
+  getSavedLocalFailurePos() {
+    this.globalGet('sp');
+    this.i32Load(8);
+  }
+
+  restoreFailurePos() {
+    this.getSavedLocalFailurePos();
+    this.localSet('failurePos');
+  }
+
+  updateGlobalFailurePos() {
+    // rightmostFailurePos = max(rightmostFailurePos, failurePos)
+    this.i32Max(
+        () => this.globalGet('rightmostFailurePos'),
+        () => this.localGet('failurePos'),
+    );
+    this.globalSet('rightmostFailurePos');
+  }
+
+  updateLocalFailurePos() {
     // failurePos = max(failurePos, origPos)
     this.i32Max(
-        () => this.globalGet('failurePos'),
+        () => this.localGet('failurePos'),
         () => this.getSavedPos(),
     );
-    this.globalSet('failurePos');
+    this.localSet('failurePos');
   }
 
   // Increment the current input position by 1.
@@ -641,7 +671,7 @@ export class Compiler {
 
     // Keeps track of whether we're in a lexical or syntactic context.
     this._lexContextStack = [];
-    this._applySpaces = ir.apply('spaces');
+    this._applySpacesImplicit = ir.apply('$spaces');
   }
 
   importCount() {
@@ -750,7 +780,7 @@ export class Compiler {
     // (global $runtime/ohmRuntime/preallocUpper1 (mut i32) (i32.const 0))
     // (global $~lib/memory/__heap_base i32 (i32.const 1179884))
     asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('failurePos', w.valtype.i32, w.mut.var, () => asm.i32Const(-1));
+    asm.addGlobal('rightmostFailurePos', w.valtype.i32, w.mut.var, () => asm.i32Const(-1));
     asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('__Runtime.Stub', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
     asm.addGlobal('__Runtime.Minimal', w.valtype.i32, w.mut.const, () => asm.i32Const(1));
@@ -896,6 +926,7 @@ export class Compiler {
     asm.addFunction(`$${name}`, [w.valtype.i32], [w.valtype.i32], () => {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
+      asm.addLocal('failurePos', w.valtype.i32);
       const values = this.liftedTerminals.values();
       asm.switch(
           w.blocktype.empty,
@@ -904,6 +935,7 @@ export class Compiler {
           i => this.emitTerminal(ir.terminal(values[i])),
           () => asm.emit(instr.unreachable),
       );
+      asm.updateGlobalFailurePos();
       asm.localGet('ret');
     });
     this.endLexContext();
@@ -927,19 +959,25 @@ export class Compiler {
     if (ruleInfo.patterns) {
       paramTypes = [w.valtype.i32];
     }
-    const fastPath = () => {
-      if (['alnum'].includes(name)) {
-        this.emitSingleCharFastPath('alnum');
-      }
-    };
+    // const preHook = () => {
+    // if (['alnum'].includes(name)) {
+    //   this.emitSingleCharFastPath('alnum');
+    // }
+    // };
 
     this.beginLexContext(!ruleInfo.isSyntactic);
     asm.addFunction(`$${name}`, paramTypes, [w.valtype.i32], () => {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
+      asm.addLocal('failurePos', w.valtype.i32);
       asm.emit(`BEGIN eval:${name}`);
-      this.emitPExpr(ruleInfo.body, fastPath);
+      this.emitPExpr(ruleInfo.body);
       asm.emit(`END eval:${name}`);
+      if (name !== this._applySpacesImplicit.ruleName) {
+        asm.updateGlobalFailurePos();
+      } else {
+        asm.emit('skipped global failure pos update');
+      }
       asm.localGet('ret');
     });
     this.endLexContext();
@@ -1003,6 +1041,11 @@ export class Compiler {
       specialize(ir.apply(name));
     });
     this.rules = newRules;
+
+    // Make a special rule for implicit space skipping, with the same body
+    // as the real `spaces` rule.
+    this._ensureRuleId('$spaces', {notMemoized: true});
+    newRules.set('$spaces', getNotNull(newRules, 'spaces'));
 
     if (EMIT_GENERALIZED_RULES) {
       const insertDispatches = (exp, patterns) =>
@@ -1203,34 +1246,38 @@ export class Compiler {
         patterns.length,
         handleCase,
         () => {
-          asm.emit('herre');
           asm.emit(instr.unreachable);
         },
     );
   }
 
   // Contract: emitPExpr always means we're going deeper in the PExpr tree.
-  emitPExpr(exp, fastPathCb = undefined) {
+  emitPExpr(exp, {preHook, postHook, saveFailurePos} = {}) {
     const {asm} = this;
+
+    const allowFastApply = !preHook && !postHook && !saveFailurePos;
 
     // Note that after specializeApplications, there are two classes of rule:
     // - specialized rules, which contain no Params, and only have
     //   applications without args
     // - generalized rules, which may contain Params and apps w/ args.
+    assert(!(exp.type === 'Apply' && exp.children.length > 0));
 
-    if (exp.type === 'Apply' && exp.children.length === 0) {
+    if (exp.type === 'Apply' && allowFastApply) {
       this.emitApply(exp);
       return;
     }
     if (exp.type === 'ApplyGeneralized') {
-      assert(EMIT_GENERALIZED_RULES);
+      assert(EMIT_GENERALIZED_RULES && allowFastApply);
       this.emitApplyGeneralized(exp);
       return;
     }
 
+    const withFailurePos = saveFailurePos || exp.type === 'Not';
+
     const debugLabel = ir.toString(exp);
     asm.emit(`BEGIN ${debugLabel}`);
-    asm.pushStackFrame();
+    asm.pushStackFrame({withFailurePos});
 
     // Wrap the body in a block, which is useful for two reasons:
     // - it allows early returns.
@@ -1238,7 +1285,7 @@ export class Compiler {
     asm.block(
         w.blocktype.empty,
         () => {
-          if (fastPathCb) fastPathCb();
+          if (preHook) preHook();
 
           // prettier-ignore
           switch (exp.type) {
@@ -1265,7 +1312,9 @@ export class Compiler {
         },
         'pexprEnd',
     );
-    asm.popStackFrame();
+    if (postHook) postHook();
+    if (exp.type === 'Not') asm.restoreFailurePos();
+    asm.popStackFrame({withFailurePos});
     asm.emit(`END ${debugLabel}`);
   }
 
@@ -1294,7 +1343,6 @@ export class Compiler {
 
   emitApplyTerm({terminalId}) {
     const {asm} = this;
-    this.maybeEmitSpaceSkipping();
     asm.i32Const(terminalId);
     asm.emit(instr.call, this.ruleEvalFuncIdx('$term'));
     asm.localSet('ret');
@@ -1313,8 +1361,9 @@ export class Compiler {
   emitApply(exp) {
     assert(exp.children.length === 0);
 
-    if (exp !== this._applySpaces) {
-      this.maybeEmitSpaceSkipping(); // Avoid infinite recursion.
+    // Avoid infinite recursion.
+    if (exp !== this._applySpacesImplicit) {
+      this.maybeEmitSpaceSkipping();
     }
 
     const {asm} = this;
@@ -1430,7 +1479,7 @@ export class Compiler {
   maybeEmitSpaceSkipping() {
     if (IMPLICIT_SPACE_SKIPPING && !this.inLexicalContext()) {
       this.asm.emit('BEGIN space skipping');
-      this.emitApply(this._applySpaces);
+      this.emitApply(this._applySpacesImplicit);
       this.asm.emit('END space skipping');
     }
   }
@@ -1481,7 +1530,7 @@ export class Compiler {
               },
               'failure',
           );
-          asm.updateFailurePos();
+          asm.updateLocalFailurePos();
           asm.setRet(0);
         },
         '_success',
