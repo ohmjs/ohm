@@ -283,32 +283,33 @@ class Assembler {
     this._code.push(...checkNoUndefined(bytes.flat(Infinity)));
   }
 
-  block(bt, bodyThunk) {
-    this._blockOnly(bt);
+  block(bt, bodyThunk, label = '') {
+    this._blockOnly(bt, label);
     bodyThunk();
     this._endBlock();
   }
 
   // Prefer to use `block`, but for some cases it's more convenient to emit
   // the block and the end separately.
-  _blockOnly(bt) {
-    this.emit(w.instr.block, bt);
-    this._blockStack.push('block');
+  // Note: `label` (if specified) is not unique (e.g., 'pexprEnd').
+  _blockOnly(bt, label) {
+    this.emit(instr.block, bt);
+    this._blockStack.push(label ? `block:${label}` : 'block');
   }
 
   // This should always be paired with `blockOnly`.
   _endBlock() {
-    const what = this._blockStack.pop();
+    const what = this._blockStack.pop().split(':')[0];
     assert(what === 'block', 'Invalid endBlock');
-    this.emit(w.instr.end);
+    this.emit(instr.end);
   }
 
   loop(bt, bodyThunk) {
-    this.emit(w.instr.loop, bt);
+    this.emit(instr.loop, bt);
     this._blockStack.push('loop');
     bodyThunk();
     this._blockStack.pop();
-    this.emit(w.instr.end);
+    this.emit(instr.end);
   }
 
   if(bt, bodyThunk) {
@@ -316,15 +317,15 @@ class Assembler {
   }
 
   ifElse(bt, thenThunk, elseThunk = undefined) {
-    this.emit(w.instr.if, bt);
+    this.emit(instr.if, bt);
     this._blockStack.push('if');
     thenThunk();
     if (elseThunk) {
-      this.emit(w.instr.else);
+      this.emit(instr.else);
       elseThunk();
     }
     this._blockStack.pop();
-    this.emit(w.instr.end);
+    this.emit(instr.end);
   }
 
   ifFalse(bt, bodyThunk) {
@@ -354,6 +355,10 @@ class Assembler {
 
   i32Mul() {
     this.emit(instr.i32.mul);
+  }
+
+  i32Eq() {
+    this.emit(instr.i32.eq);
   }
 
   i32Ne() {
@@ -390,30 +395,30 @@ class Assembler {
   }
 
   break(depth) {
-    const what = this._blockStack.at(-(depth + 1));
+    const what = this._blockStack.at(-(depth + 1)).split(':')[0];
     assert(what === 'block' || what === 'if', 'Invalid break');
     this.emit(instr.br, w.labelidx(depth));
   }
 
   // Conditional break -- emits a `br_if` for the given depth.
   condBreak(depth) {
-    const what = this._blockStack.at(-(depth + 1));
+    const what = this._blockStack.at(-(depth + 1)).split(':')[0];
     assert(what === 'block' || what === 'if', 'Invalid condBreak');
     this.emit(instr.br_if, w.labelidx(depth));
   }
 
   continue(depth) {
-    const what = this._blockStack.at(-(depth + 1));
+    const what = this._blockStack.at(-(depth + 1)).split(':')[0];
     assert(what === 'loop', 'Invalid continue');
     this.emit(instr.br, w.labelidx(depth));
   }
 
   brTable(labels, defaultLabelidx) {
-    this.emit(w.instr.br_table, w.vec(labels), defaultLabelidx);
+    this.emit(instr.br_table, w.vec(labels), defaultLabelidx);
   }
 
   return() {
-    this.emit(w.instr.return);
+    this.emit(instr.return);
   }
 
   // Emit a dense jump table (switch-like) using br_table.
@@ -586,7 +591,14 @@ class Assembler {
     bThunk();
     aThunk();
     bThunk();
-    this.emit(w.instr.i32.gt_s, w.instr.select);
+    this.emit(instr.i32.gt_s, instr.select);
+  }
+
+  // Return the depth of the block with the given label.
+  depthOf(label) {
+    const i = this._blockStack.findLastIndex(what => what === `block:${label}`);
+    assert(i !== -1, `Unknown label: ${label}`);
+    return this._blockStack.length - i - 1;
   }
 }
 Assembler.ALIGN_1_BYTE = 0;
@@ -890,7 +902,7 @@ export class Compiler {
           () => asm.localGet('__arg0'),
           values.length,
           i => this.emitTerminal(ir.terminal(values[i])),
-          () => asm.emit(w.instr.unreachable),
+          () => asm.emit(instr.unreachable),
       );
       asm.localGet('ret');
     });
@@ -1192,7 +1204,7 @@ export class Compiler {
         handleCase,
         () => {
           asm.emit('herre');
-          asm.emit(w.instr.unreachable);
+          asm.emit(instr.unreachable);
         },
     );
   }
@@ -1223,32 +1235,36 @@ export class Compiler {
     // Wrap the body in a block, which is useful for two reasons:
     // - it allows early returns.
     // - it makes sure that the generated code doesn't have stack effects.
-    asm.block(w.blocktype.empty, () => {
-      if (fastPathCb) fastPathCb();
+    asm.block(
+        w.blocktype.empty,
+        () => {
+          if (fastPathCb) fastPathCb();
 
-      // prettier-ignore
-      switch (exp.type) {
-        case 'Alt': this.emitAlt(exp); break;
-        case 'Any': this.emitAny(); break;
-        case 'Dispatch': this.emitDispatch(exp); break;
-        case 'End': this.emitEnd(); break;
-        case 'Lex': this.emitLex(exp); break;
-        case 'LiftedTerminal': this.emitApplyTerm(exp); break;
-        case 'Lookahead': this.emitLookahead(exp, true); break;
-        case 'Not': this.emitLookahead(exp, false); break;
-        case 'Seq': this.emitSeq(exp); break;
-        case 'Star': this.emitStar(exp); break;
-        case 'Opt': this.emitOpt(exp); break;
-        case 'Range': this.emitRange(exp); break;
-        case 'Plus': this.emitPlus(exp); break;
-        case 'Terminal': this.emitTerminal(exp); break;
-        case 'UnicodeChar': this.emitUnicodeChar(exp); break;
-        case 'Param':
-          // Fall through (Params should not exist at codegen time).
-        default:
-          throw new Error(`not handled: ${exp.type}`);
-      }
-    });
+          // prettier-ignore
+          switch (exp.type) {
+            case 'Alt': this.emitAlt(exp); break;
+            case 'Any': this.emitAny(); break;
+            case 'Dispatch': this.emitDispatch(exp); break;
+            case 'End': this.emitEnd(); break;
+            case 'Lex': this.emitLex(exp); break;
+            case 'LiftedTerminal': this.emitApplyTerm(exp); break;
+            case 'Lookahead': this.emitLookahead(exp, true); break;
+            case 'Not': this.emitLookahead(exp, false); break;
+            case 'Seq': this.emitSeq(exp); break;
+            case 'Star': this.emitStar(exp); break;
+            case 'Opt': this.emitOpt(exp); break;
+            case 'Range': this.emitRange(exp); break;
+            case 'Plus': this.emitPlus(exp); break;
+            case 'Terminal': this.emitTerminal(exp); break;
+            case 'UnicodeChar': this.emitUnicodeChar(exp); break;
+            case 'Param':
+              // Fall through (Params should not exist at codegen time).
+            default:
+              throw new Error(`not handled: ${exp.type}`);
+          }
+        },
+        'pexprEnd',
+    );
     asm.popStackFrame();
     asm.emit(`END ${debugLabel}`);
   }
@@ -1259,7 +1275,7 @@ export class Compiler {
       for (const term of exp.children) {
         this.emitPExpr(term);
         asm.localGet('ret');
-        asm.condBreak(0); // return if succeeded
+        asm.condBreak(asm.depthOf('pexprEnd'));
         asm.restorePos();
         asm.restoreBindingsLength();
       }
@@ -1268,18 +1284,19 @@ export class Compiler {
 
   emitAny() {
     const {asm} = this;
-    this.maybeEmitSpaceSkipping();
-    asm.i32Const(0xff);
-    asm.nextCharCode();
-    asm.i32Ne();
-    asm.maybeReturnTerminalNodeWithSavedPos();
+    this.wrapTerminalLike(() => {
+      asm.i32Const(0xff);
+      asm.nextCharCode();
+      asm.i32Eq();
+      asm.condBreak(asm.depthOf('failure'));
+    });
   }
 
   emitApplyTerm({terminalId}) {
     const {asm} = this;
     this.maybeEmitSpaceSkipping();
     asm.i32Const(terminalId);
-    asm.emit(w.instr.call, this.ruleEvalFuncIdx('$term'));
+    asm.emit(instr.call, this.ruleEvalFuncIdx('$term'));
     asm.localSet('ret');
   }
 
@@ -1314,13 +1331,13 @@ export class Compiler {
 
   emitEnd() {
     const {asm} = this;
-
-    this.maybeEmitSpaceSkipping();
-    asm.i32Const(0xff);
-    // Careful! We shouldn't move the pos here. Or does it matter?
-    asm.currCharCode();
-    asm.emit(instr.i32.eq);
-    asm.maybeReturnTerminalNodeWithSavedPos();
+    this.wrapTerminalLike(() => {
+      asm.i32Const(0xff);
+      // Careful! We shouldn't move the pos here. Or does it matter?
+      asm.currCharCode();
+      asm.i32Ne();
+      asm.condBreak(asm.depthOf('failure'));
+    });
   }
 
   emitFail() {
@@ -1372,28 +1389,25 @@ export class Compiler {
 
   emitRange(exp) {
     assert(exp.lo.length === 1 && exp.hi.length === 1);
-
     const lo = exp.lo.charCodeAt(0);
     const hi = exp.hi.charCodeAt(0);
 
     // TODO: Do we disallow 0xff in the range?
     const {asm} = this;
-    this.maybeEmitSpaceSkipping();
-    asm.nextCharCode();
+    this.wrapTerminalLike(() => {
+      asm.nextCharCode();
 
-    // if (c > hi) return 0;
-    asm.dup();
-    asm.i32Const(hi);
-    asm.emit(instr.i32.gt_u);
-    asm.if(w.blocktype.empty, () => {
-      asm.setRet(0);
-      asm.break(1);
+      // if (c > hi) return 0;
+      asm.dup();
+      asm.i32Const(hi);
+      asm.emit(instr.i32.gt_u);
+      asm.condBreak(asm.depthOf('failure'));
+
+      // if (c >= lo) return 0;
+      asm.i32Const(lo);
+      asm.emit(instr.i32.lt_u);
+      asm.condBreak(asm.depthOf('failure'));
     });
-
-    // if (c >= lo)
-    asm.i32Const(lo);
-    asm.emit(instr.i32.ge_u);
-    asm.maybeReturnTerminalNodeWithSavedPos();
   }
 
   emitSeq({children}) {
@@ -1409,7 +1423,7 @@ export class Compiler {
       this.emitPExpr(c);
       asm.localGet('ret');
       asm.emit(instr.i32.eqz);
-      asm.condBreak(0);
+      asm.condBreak(asm.depthOf('pexprEnd'));
     }
   }
 
@@ -1427,17 +1441,21 @@ export class Compiler {
     // We push another stack frame because we need to save and restore
     // the position just before the last (failed) expression.
     asm.pushStackFrame();
-    asm.block(w.blocktype.empty, () => {
-      asm.loop(w.blocktype.empty, () => {
-        asm.savePos();
-        asm.saveNumBindings();
-        this.emitPExpr(child);
-        asm.localGet('ret');
-        asm.emit(instr.i32.eqz);
-        asm.condBreak(1);
-        asm.continue(0);
-      });
-    });
+    asm.block(
+        w.blocktype.empty,
+        () => {
+          asm.loop(w.blocktype.empty, () => {
+            asm.savePos();
+            asm.saveNumBindings();
+            this.emitPExpr(child);
+            asm.localGet('ret');
+            asm.emit(instr.i32.eqz);
+            asm.condBreak(asm.depthOf('done'));
+            asm.continue(0);
+          });
+        },
+        'done',
+    );
     asm.restorePos();
     asm.restoreBindingsLength();
     asm.popStackFrame();
@@ -1449,16 +1467,25 @@ export class Compiler {
   wrapTerminalLike(thunk) {
     const {asm} = this;
     this.maybeEmitSpaceSkipping();
-    asm.block(w.blocktype.empty, () => {
-      asm.block(w.blocktype.empty, () => {
-        thunk();
-        asm.newTerminalNodeWithSavedPos();
-        asm.localSet('ret');
-        asm.break(1);
-      });
-      asm.updateFailurePos();
-      asm.setRet(0);
-    });
+
+    asm.block(
+        w.blocktype.empty,
+        () => {
+          asm.block(
+              w.blocktype.empty,
+              () => {
+                thunk();
+                asm.newTerminalNodeWithSavedPos();
+                asm.localSet('ret');
+                asm.break(asm.depthOf('_success'));
+              },
+              'failure',
+          );
+          asm.updateFailurePos();
+          asm.setRet(0);
+        },
+        '_success',
+    );
   }
 
   emitTerminal({value}) {
@@ -1473,7 +1500,7 @@ export class Compiler {
         asm.i32Const(c.charCodeAt(0));
         asm.currCharCode();
         asm.emit(instr.i32.ne);
-        asm.condBreak(0);
+        asm.condBreak(asm.depthOf('failure'));
         asm.incPos();
       }
     });
@@ -1485,33 +1512,40 @@ export class Compiler {
     // TODO: Add support for more categories, by calling out to the host.
     assert(['Ll', 'Lu', 'Ltmo'].includes(exp.category));
 
-    // This function generates the body for each case.
-    const labels = asciiChars.map(c => {
-      if (
-        (exp.category === 'Lu' && 'A' <= c && c <= 'Z') ||
-        (exp.category === 'Ll' && 'a' <= c && c <= 'z')
-      ) {
-        return w.labelidx(1); // success
-      }
-      return w.labelidx(2); // failure
-    });
+    const makeLabels = () =>
+      asciiChars.map(c => {
+        const isLowercase = 'a' <= c && c <= 'z';
+        const isUppercase = 'A' <= c && c <= 'Z';
+        if ((exp.category === 'Lu' && isUppercase) || (exp.category === 'Ll' && isLowercase)) {
+          return w.labelidx(asm.depthOf('innerSuccess'));
+        }
+        return w.labelidx(asm.depthOf('failure'));
+      });
     this.wrapTerminalLike(() => {
-      asm.block(w.blocktype.empty, () => {
-        asm.block(w.blocktype.empty, () => {
-          asm.currCharCode();
-          asm.brTable(labels, w.labelidx(0));
-        }); // label 0 (default).
+      asm.block(
+          w.blocktype.empty,
+          () => {
+            asm.block(
+                w.blocktype.empty,
+                () => {
+                  asm.currCharCode();
+                  asm.brTable(makeLabels(), w.labelidx(asm.depthOf('default')));
+                },
+                'default',
+            );
+            // Check for 0xff (end)
+            asm.currCharCode();
+            asm.i32Const(0xff);
+            asm.i32Eq();
+            asm.condBreak(asm.depthOf('failure'));
 
-        // Check for 0xff (end)
-        asm.currCharCode();
-        asm.i32Const(0xff);
-        asm.emit(instr.i32.eq);
-        asm.condBreak(1); // fail
-
-        // Otherwise, trap.
-        // TODO: Replace this with a proper, out-of-line implementation.
-        asm.emit(w.instr.unreachable);
-      }); // label 1 (success).
+            // Otherwise, trap.
+            // TODO: Replace this with a proper, out-of-line implementation,
+            // sondier
+            asm.emit(instr.unreachable);
+          },
+          'innerSuccess',
+      );
       asm.incPos();
     });
   }
