@@ -145,7 +145,7 @@ test('failure pos: lookahead', async t => {
   }
 });
 
-test.failing('failure pos: space skipping', async t => {
+test('failure pos: space skipping', async t => {
   {
     const g = ohm.grammar(`
       G {

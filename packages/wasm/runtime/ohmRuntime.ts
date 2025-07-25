@@ -155,8 +155,8 @@ export function evalApplyGeneralized(ruleId: i32, caseIdx: i32): Result {
   const origPos = pos;
   const origNumBindings = bindings.length;
   const result = call_indirect<Result>(ruleId, caseIdx)
-  const succeeded = result & 0x80000000; // bit 31 is success
-  const failurePos = result & 0x7FFFFFFF; // other bits are failurePos
+  const succeeded = result & 1; // bit 0 is success
+  const failurePos = result >> 1; // remaining bits are failurePos
   maybeUpdateRightmostFailurePos(failurePos);
   if (succeeded) {
     return newNonterminalNode(origPos, pos, ruleId, origNumBindings);
@@ -169,8 +169,8 @@ export function evalApplyNoMemo0(ruleId: i32): Result {
   const origNumBindings = bindings.length;
   const origFailurePos = rightmostFailurePos;
   let result = evalRuleBody(ruleId);
-  const succeeded = result & 0x80000000; // bit 31 is success
-  const failurePos = result & 0x7FFFFFFF; // other bits are failurePos
+  const succeeded = result & 1; // bit 0 is success
+  const failurePos = result >> 1; // other bits are failurePos
   maybeUpdateRightmostFailurePos(failurePos);
   if (succeeded) {
     return newNonterminalNode(origPos, pos, ruleId, origNumBindings);
@@ -190,8 +190,8 @@ export function evalApply0(ruleId: i32): Result {
   memoizeResult(origPos, ruleId, UNUSED_LR_BOMB);
 
   const result = evalRuleBody(ruleId);
-  const succeeded = result & 0x80000000; // bit 31 is success
-  const failurePos = result & 0x7FFFFFFF; // other bits are failurePos
+  const succeeded = result & 1; // bit 0 is success
+  const failurePos = result >> 1; // other bits are failurePos
   maybeUpdateRightmostFailurePos(failurePos, 1);
 
   // Straight failure — record a clean failure in the memo table.
@@ -225,7 +225,7 @@ export function handleLeftRecursion(origPos: usize, ruleId: i32, origNumBindings
     pos = origPos;
     bindings.length = origNumBindings;
     const result = evalRuleBody(ruleId);
-    succeeded = result & 0x80000000; // bit 31 is success
+    succeeded = result & 1; // bit 0 is success
   } while (succeeded && pos > maxPos);
 
   pos = maxPos;

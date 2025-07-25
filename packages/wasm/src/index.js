@@ -628,17 +628,16 @@ class Assembler {
     return this._blockStack.length - i - 1;
   }
 
-  ruleEvalReturn({omitFailurePos} = {}) {
-    // Convert the value in `ret` to a single bit in position 31.
+  ruleEvalReturn() {
+    // Convert the value in `ret` to a single bit in position 0.
     this.localGet('ret');
     this.emit(instr.i32.eqz, instr.i32.eqz);
-    this.i32Const(31);
-    this.emit(instr.i32.shl);
 
-    if (!omitFailurePos) {
-      this.localGet('failurePos');
-      this.emit(instr.i32.or);
-    }
+    // Remaining 32 bits hold the (signed) failurePos.
+    this.localGet('failurePos');
+    this.i32Const(1);
+    this.emit(instr.i32.shl);
+    this.emit(instr.i32.or);
   }
 }
 Assembler.ALIGN_1_BYTE = 0;
@@ -977,14 +976,31 @@ export class Compiler {
     // }
     // };
 
+    const restoreFailurePos = name === this._applySpacesImplicit.ruleName;
+
     this.beginLexContext(!ruleInfo.isSyntactic);
     asm.addFunction(`$${name}`, paramTypes, [w.valtype.i32], () => {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
       asm.addLocal('failurePos', w.valtype.i32);
+
+      // TODO: Find a simpler way to do this.
+      if (restoreFailurePos) {
+        asm.addLocal('origFailurePos', w.valtype.i32);
+        asm.globalGet('rightmostFailurePos');
+        asm.localSet('origFailurePos');
+      }
+
       asm.emit(`BEGIN eval:${name}`);
       this.emitPExpr(ruleInfo.body);
-      asm.ruleEvalReturn({omitFailurePos: name === this._applySpacesImplicit.ruleName});
+
+      if (restoreFailurePos) {
+        asm.localGet('origFailurePos');
+        asm.dup();
+        asm.globalSet('rightmostFailurePos');
+        asm.localSet('failurePos');
+      }
+      asm.ruleEvalReturn();
       asm.emit(`END eval:${name}`);
     });
     this.endLexContext();
