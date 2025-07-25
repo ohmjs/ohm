@@ -145,10 +145,20 @@ export function match(startRuleId: i32): Result {
   return call_indirect<Result>(ruleId);
 }
 
+@inline function maybeUpdateRightmostFailurePos(failurePos: i32, loc: i32=0): void {
+  rightmostFailurePos = max(rightmostFailurePos, failurePos);
+  // printI32(100 + loc);
+  // printI32(rightmostFailurePos);
+}
+
 export function evalApplyGeneralized(ruleId: i32, caseIdx: i32): Result {
   const origPos = pos;
   const origNumBindings = bindings.length;
-  if (call_indirect<Result>(ruleId, caseIdx)) {
+  const result = call_indirect<Result>(ruleId, caseIdx)
+  const succeeded = result & 0x80000000; // bit 31 is success
+  const failurePos = result & 0x7FFFFFFF; // other bits are failurePos
+  maybeUpdateRightmostFailurePos(failurePos);
+  if (succeeded) {
     return newNonterminalNode(origPos, pos, ruleId, origNumBindings);
   }
   return 0;
@@ -158,66 +168,70 @@ export function evalApplyNoMemo0(ruleId: i32): Result {
   const origPos = pos;
   const origNumBindings = bindings.length;
   const origFailurePos = rightmostFailurePos;
-  let result: i32 = 0;
-  if (evalRuleBody(ruleId)) {
-    result = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
+  let result = evalRuleBody(ruleId);
+  const succeeded = result & 0x80000000; // bit 31 is success
+  const failurePos = result & 0x7FFFFFFF; // other bits are failurePos
+  maybeUpdateRightmostFailurePos(failurePos);
+  if (succeeded) {
+    return newNonterminalNode(origPos, pos, ruleId, origNumBindings);
   }
   // rightmostFailurePos = max(rightmostFailurePos, origFailurePos);
   // printI32(rightmostFailurePos);
-  return result;
+  return 0;
 }
 
 export function evalApply0(ruleId: i32): Result {
-  let result = memoTableGet(pos, ruleId);
-
-  if (result !== 0) {
-    return useMemoizedResult(ruleId, result);
+  const memo = memoTableGet(pos, ruleId);
+  if (memo !== 0) {
+    return useMemoizedResult(ruleId, memo);
   }
   const origPos = pos;
   const origNumBindings = bindings.length;
-  const origFailurePos = rightmostFailurePos;
   memoizeResult(origPos, ruleId, UNUSED_LR_BOMB);
-  const succeeded: i32 = evalRuleBody(ruleId);
+
+  const result = evalRuleBody(ruleId);
+  const succeeded = result & 0x80000000; // bit 31 is success
+  const failurePos = result & 0x7FFFFFFF; // other bits are failurePos
+  maybeUpdateRightmostFailurePos(failurePos, 1);
 
   // Straight failure — record a clean failure in the memo table.
   if (!succeeded) {
     memoizeResult(origPos, ruleId, FAIL);
-    // rightmostFailurePos = max(rightmostFailurePos, origFailurePos);
-    // printI32(rightmostFailurePos);
     return 0;
   }
 
   if (memoTableGet(origPos, ruleId) === USED_LR_BOMB) {
-    // TODO: Update rightmostFailurePos here.
-    return handleLeftRecursion(origPos, ruleId, origNumBindings);
+    return handleLeftRecursion(origPos, ruleId, origNumBindings, failurePos);
   }
   // No left recursion — memoize and return.
-  result = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
-  memoizeResult(origPos, ruleId, result);
-  // rightmostFailurePos = max(rightmostFailurePos, origFailurePos);
-  // printI32(rightmostFailurePos);
-  return result;
+  const node = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
+  memoizeResult(origPos, ruleId, node);
+  return node;
 }
 
-export function handleLeftRecursion(origPos: usize, ruleId: i32, origNumBindings: i32): Result {
+export function handleLeftRecursion(origPos: usize, ruleId: i32, origNumBindings: i32, failurePos: i32): Result {
   let maxPos: i32;
-  let result: Result;
+  let node: Result;
   let succeeded: i32;
+  // TODO: Handle failurePos here.
   do {
     // The current result is the best one -- record it.
     maxPos = pos;
-    result = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
-    memoizeResult(origPos, ruleId, result);
+    rightmostFailurePos = max(rightmostFailurePos, failurePos);
+    node = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
+    memoizeResult(origPos, ruleId, node);
 
     // Reset and try to improve on the current best.
     pos = origPos;
     bindings.length = origNumBindings;
-    succeeded = evalRuleBody(ruleId);
+    const result = evalRuleBody(ruleId);
+    succeeded = result & 0x80000000; // bit 31 is success
   } while (succeeded && pos > maxPos);
 
   pos = maxPos;
+
   bindings.length = origNumBindings + 1;
-  bindings[origNumBindings] = result;
+  bindings[origNumBindings] = node;
   return succeeded;
 }
 

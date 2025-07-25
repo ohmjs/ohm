@@ -573,12 +573,9 @@ class Assembler {
     this.globalSet('rightmostFailurePos');
   }
 
-  updateLocalFailurePos() {
+  updateLocalFailurePos(origPosThunk) {
     // failurePos = max(failurePos, origPos)
-    this.i32Max(
-        () => this.localGet('failurePos'),
-        () => this.getSavedPos(),
-    );
+    this.i32Max(() => this.localGet('failurePos'), origPosThunk);
     this.localSet('failurePos');
   }
 
@@ -629,6 +626,19 @@ class Assembler {
     const i = this._blockStack.findLastIndex(what => what === `block:${label}`);
     assert(i !== -1, `Unknown label: ${label}`);
     return this._blockStack.length - i - 1;
+  }
+
+  ruleEvalReturn({omitFailurePos} = {}) {
+    // Convert the value in `ret` to a single bit in position 31.
+    this.localGet('ret');
+    this.emit(instr.i32.eqz, instr.i32.eqz);
+    this.i32Const(31);
+    this.emit(instr.i32.shl);
+
+    if (!omitFailurePos) {
+      this.localGet('failurePos');
+      this.emit(instr.i32.or);
+    }
   }
 }
 Assembler.ALIGN_1_BYTE = 0;
@@ -694,6 +704,7 @@ export class Compiler {
   }
 
   liftPExpr(exp, isSyntactic) {
+    assert(EMIT_GENERALIZED_RULES, 'Lifting only happens w/ generalized rules');
     assert(!(exp instanceof pexprs.Terminal));
 
     // Note: the same expression might appear in more than one place, and
@@ -935,7 +946,8 @@ export class Compiler {
           i => this.emitTerminal(ir.terminal(values[i])),
           () => asm.emit(instr.unreachable),
       );
-      asm.updateGlobalFailurePos();
+      // Note: unlike a regular rule evaluation, this function just returns
+      // the raw result of PExpr evaluation.
       asm.localGet('ret');
     });
     this.endLexContext();
@@ -972,13 +984,8 @@ export class Compiler {
       asm.addLocal('failurePos', w.valtype.i32);
       asm.emit(`BEGIN eval:${name}`);
       this.emitPExpr(ruleInfo.body);
+      asm.ruleEvalReturn({omitFailurePos: name === this._applySpacesImplicit.ruleName});
       asm.emit(`END eval:${name}`);
-      if (name !== this._applySpacesImplicit.ruleName) {
-        asm.updateGlobalFailurePos();
-      } else {
-        asm.emit('skipped global failure pos update');
-      }
-      asm.localGet('ret');
     });
     this.endLexContext();
     return this.asm._functionDecls.at(-1);
@@ -1187,7 +1194,10 @@ export class Compiler {
         let pushArg = [];
         if (x.startsWith('END')) {
           decl.paramTypes = [w.valtype.i32];
-          pushArg = [instr.local.get, w.localidx(0)];
+          // We want to pass 'ret', but to figure out its index, we need to
+          // account for the number of parameters.
+          const retIdx = entry.paramTypes.length;
+          pushArg = [instr.local.get, w.localidx(retIdx)];
         }
 
         // …and replace the string with a call to that function.
@@ -1343,9 +1353,20 @@ export class Compiler {
 
   emitApplyTerm({terminalId}) {
     const {asm} = this;
+
+    // Save the original position.
+    asm.globalGet('pos');
+    asm.localSet('tmp');
+
+    // Call the terminal rule, and use its result as ours.
     asm.i32Const(terminalId);
     asm.emit(instr.call, this.ruleEvalFuncIdx('$term'));
-    asm.localSet('ret');
+    asm.localTee('ret');
+
+    // Update the failure position if necessary.
+    asm.ifFalse(w.blocktype.empty, () => {
+      asm.updateLocalFailurePos(() => asm.localGet('tmp'));
+    });
   }
 
   // Emit an application of the generalized version of a parameterized rule.
@@ -1369,6 +1390,7 @@ export class Compiler {
     const {asm} = this;
     asm.i32Const(this.ruleId(exp.ruleName));
 
+    // TODO: Should lifted expressions be memoized?
     // TODO: Handle this at grammar parse time, not here.
     if (exp.ruleName.includes('_')) {
       asm.callPrebuiltFunc('evalApplyNoMemo0');
@@ -1530,7 +1552,7 @@ export class Compiler {
               },
               'failure',
           );
-          asm.updateLocalFailurePos();
+          asm.updateLocalFailurePos(() => asm.getSavedPos());
           asm.setRet(0);
         },
         '_success',
@@ -1589,8 +1611,7 @@ export class Compiler {
             asm.condBreak(asm.depthOf('failure'));
 
             // Otherwise, trap.
-            // TODO: Replace this with a proper, out-of-line implementation,
-            // sondier
+            // TODO: Replace this with a proper, out-of-line implementation.
             asm.emit(instr.unreachable);
           },
           'innerSuccess',
