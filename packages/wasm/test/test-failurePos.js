@@ -145,7 +145,7 @@ test('failure pos: lookahead', async t => {
   }
 });
 
-test.skip('failure pos: memoization', async t => {
+test('failure pos: memoization', async t => {
   {
     const g = ohm.grammar(`
       G {

@@ -173,7 +173,7 @@ class CstNode {
   get children() {
     const children = [];
     for (let i = 0; i < this.count; i++) {
-      const slotOffset = this._base + 12 + i * 4;
+      const slotOffset = this._base + 16 + i * 4;
       children.push(
           new CstNode(this._ruleNames, this._view, this._view.getUint32(slotOffset, true)),
       );
