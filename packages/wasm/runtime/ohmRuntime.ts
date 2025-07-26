@@ -1,4 +1,6 @@
-type Result = i32;
+type MemoEntry = i32;
+type RuleEvalResult = i32;
+type ApplyResult = bool;
 
 declare function fillInputBuffer(offset: i32, maxLen: i32): i32;
 declare function printI32(val: i32): void;
@@ -15,13 +17,15 @@ declare function isRuleSyntactic(ruleId: i32): bool;
 
 // Note: the rule evaluation functions use a different representation.
 // They return non-zero for success and zero for failure.
-@inline const EMPTY: Result = 0;
-@inline const FAIL: Result = 0xfffffff0;
-@inline const UNUSED_LR_BOMB: Result = FAIL | 0x1;
-@inline const USED_LR_BOMB: Result = FAIL | 0x3;
+@inline const EMPTY: MemoEntry = 0;
+@inline const MEMO_FAIL: MemoEntry = 0x1;
+@inline const UNUSED_LR_BOMB: MemoEntry = 0x2 | MEMO_FAIL;
+@inline const USED_LR_BOMB: MemoEntry = 0x3 | MEMO_FAIL
 
 @inline const CST_NODE_OVERHEAD: usize = 12;
 @inline const NODE_TYPE_ITERATION: i32 = -2;
+
+@inline const RULE_EVAL_SUCCESS_FLAG = 1;
 
 // Shared globals
 let pos: i32 = 0;
@@ -43,12 +47,16 @@ let preallocUpper1: i32 = 0;
   return a > b ? a : b;
 }
 
-@inline function memoTableGet(memoPos: usize, ruleId: i32): Result {
-  return load<Result>(memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<Result>(), MEMO_START_OFFSET);
+@inline function memoEntryForFailure(failurePos: i32): MemoEntry {
+  return (failurePos << 1) | MEMO_FAIL;
 }
 
-@inline function memoTableSet(memoPos: usize, ruleId: i32, value: Result): void {
-  store<Result>(memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<Result>(), value, MEMO_START_OFFSET);
+@inline function memoTableGet(memoPos: usize, ruleId: i32): MemoEntry {
+  return load<MemoEntry>(memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<MemoEntry>(), MEMO_START_OFFSET);
+}
+
+@inline function memoTableSet(memoPos: usize, ruleId: i32, value: MemoEntry): void {
+  store<MemoEntry>(memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<MemoEntry>(), value, MEMO_START_OFFSET);
 }
 
 @inline function cstGetCount(ptr: usize): i32 {
@@ -75,24 +83,16 @@ let preallocUpper1: i32 = 0;
   store<i32>(ptr, t, 8);
 }
 
-@inline function memoizeResult(memoPos: usize, ruleId: i32, result: Result): void {
-  memoTableSet(memoPos, ruleId, result);
-}
-
-@inline function isFailure(result: Result): bool {
-  return result < 0;
-}
-
-function useMemoizedResult(ruleId: i32, result: Result): Result {
-  if (result === UNUSED_LR_BOMB) {
-    memoTableSet(pos, ruleId, USED_LR_BOMB);
-    return 0;
-  } else if (isFailure(result)) {
-    return 0;
+function useMemoizedResult(ruleId: i32, result: MemoEntry): ApplyResult {
+  if (result & MEMO_FAIL) {
+    if (result === UNUSED_LR_BOMB) {
+      memoTableSet(pos, ruleId, USED_LR_BOMB);
+    }
+    return false;
   }
   pos += cstGetMatchLength(result);
   bindings.push(result);
-  return result;
+  return true;
 }
 
 function hasMemoizedResult(ruleId: i32): boolean {
@@ -123,7 +123,7 @@ function resetParsingState(): void {
   bindings.length = 0;
 }
 
-export function match(startRuleId: i32): Result {
+export function match(startRuleId: i32): ApplyResult {
   resetParsingState();
 
   // Get the input and do the match.
@@ -138,66 +138,64 @@ export function match(startRuleId: i32): Result {
     return inputLen === pos;
   }
 
-  return 0;
+  return false;
 }
 
-@inline function evalRuleBody(ruleId: i32): Result {
-  return call_indirect<Result>(ruleId);
+@inline function evalRuleBody(ruleId: i32): RuleEvalResult {
+  return call_indirect<RuleEvalResult>(ruleId);
 }
 
-@inline function maybeUpdateRightmostFailurePos(failurePos: i32, loc: i32=0): void {
+// Extracts the local failure position from a RuleEvalResult.
+// If it's greater than the global rightmostFailurePos, it updates it.
+// Returns the local failure position.
+@inline function maybeUpdateRightmostFailurePos(result: RuleEvalResult): i32 {
+  const failurePos = result >> 1;
   rightmostFailurePos = max(rightmostFailurePos, failurePos);
-  // printI32(100 + loc);
-  // printI32(rightmostFailurePos);
+  return failurePos;
 }
 
-export function evalApplyGeneralized(ruleId: i32, caseIdx: i32): Result {
+// Evaluates a generalized rule. Identical to evalApplyNoMemo0, but includes
+// the caseIdx.
+export function evalApplyGeneralized(ruleId: i32, caseIdx: i32): ApplyResult {
   const origPos = pos;
   const origNumBindings = bindings.length;
-  const result = call_indirect<Result>(ruleId, caseIdx)
-  const succeeded = result & 1; // bit 0 is success
-  const failurePos = result >> 1; // remaining bits are failurePos
-  maybeUpdateRightmostFailurePos(failurePos);
-  if (succeeded) {
-    return newNonterminalNode(origPos, pos, ruleId, origNumBindings);
+  const result = call_indirect<RuleEvalResult>(ruleId, caseIdx)
+  const failurePos = maybeUpdateRightmostFailurePos(result);
+  if (result & RULE_EVAL_SUCCESS_FLAG) {
+    newNonterminalNode(origPos, pos, ruleId, origNumBindings);
+    return true;
   }
-  return 0;
+  return false;
 }
 
-export function evalApplyNoMemo0(ruleId: i32): Result {
+export function evalApplyNoMemo0(ruleId: i32): ApplyResult {
   const origPos = pos;
   const origNumBindings = bindings.length;
-  const origFailurePos = rightmostFailurePos;
   let result = evalRuleBody(ruleId);
-  const succeeded = result & 1; // bit 0 is success
-  const failurePos = result >> 1; // other bits are failurePos
-  maybeUpdateRightmostFailurePos(failurePos);
-  if (succeeded) {
-    return newNonterminalNode(origPos, pos, ruleId, origNumBindings);
+  const failurePos = maybeUpdateRightmostFailurePos(result);
+  if (result & RULE_EVAL_SUCCESS_FLAG) {
+    newNonterminalNode(origPos, pos, ruleId, origNumBindings);
+    return true;
   }
-  // rightmostFailurePos = max(rightmostFailurePos, origFailurePos);
-  // printI32(rightmostFailurePos);
-  return 0;
+  return false;
 }
 
-export function evalApply0(ruleId: i32): Result {
+export function evalApply0(ruleId: i32): ApplyResult {
   const memo = memoTableGet(pos, ruleId);
   if (memo !== 0) {
     return useMemoizedResult(ruleId, memo);
   }
   const origPos = pos;
   const origNumBindings = bindings.length;
-  memoizeResult(origPos, ruleId, UNUSED_LR_BOMB);
+  memoTableSet(origPos, ruleId, UNUSED_LR_BOMB);
 
   const result = evalRuleBody(ruleId);
-  const succeeded = result & 1; // bit 0 is success
-  const failurePos = result >> 1; // other bits are failurePos
-  maybeUpdateRightmostFailurePos(failurePos, 1);
+  const failurePos = maybeUpdateRightmostFailurePos(result);
 
   // Straight failure — record a clean failure in the memo table.
-  if (!succeeded) {
-    memoizeResult(origPos, ruleId, FAIL);
-    return 0;
+  if ((result & RULE_EVAL_SUCCESS_FLAG) == 0) {
+    memoTableSet(origPos, ruleId, memoEntryForFailure(failurePos));
+    return false;
   }
 
   if (memoTableGet(origPos, ruleId) === USED_LR_BOMB) {
@@ -205,27 +203,27 @@ export function evalApply0(ruleId: i32): Result {
   }
   // No left recursion — memoize and return.
   const node = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
-  memoizeResult(origPos, ruleId, node);
-  return node;
+  memoTableSet(origPos, ruleId, node);
+  return true;
 }
 
-export function handleLeftRecursion(origPos: usize, ruleId: i32, origNumBindings: i32, failurePos: i32): Result {
+export function handleLeftRecursion(origPos: usize, ruleId: i32, origNumBindings: i32, failurePos: i32): ApplyResult {
   let maxPos: i32;
-  let node: Result;
-  let succeeded: i32;
+  let node: usize;
+  let succeeded: bool;
   // TODO: Handle failurePos here.
   do {
     // The current result is the best one -- record it.
     maxPos = pos;
     rightmostFailurePos = max(rightmostFailurePos, failurePos);
     node = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
-    memoizeResult(origPos, ruleId, node);
+    memoTableSet(origPos, ruleId, node);
 
     // Reset and try to improve on the current best.
     pos = origPos;
     bindings.length = origNumBindings;
     const result = evalRuleBody(ruleId);
-    succeeded = result & 1; // bit 0 is success
+    succeeded = (result & RULE_EVAL_SUCCESS_FLAG) != 0;
   } while (succeeded && pos > maxPos);
 
   pos = maxPos;

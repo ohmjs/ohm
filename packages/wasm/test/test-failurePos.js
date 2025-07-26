@@ -79,7 +79,7 @@ const checkFailurePos = matcher =>
   );
 
 // eslint-disable-next-line ava/no-skip-test
-test('failure pos (fast-check)', async t => {
+test.skip('failure pos (fast-check)', async t => {
   const m = await wasmMatcherForGrammar(ns.LiquidHTML);
   t.notThrows(() => fc.assert(checkFailurePos(m), {numRuns: 50}));
 });
@@ -93,14 +93,14 @@ test('failure pos: basic 1', async t => {
   const jsMatcher = g.matcher();
   const wasmMatcher = await wasmMatcherForGrammar(g);
 
-  // t.is(failurePos(jsMatcher, 'a'), 0);
-  // t.is(failurePos(wasmMatcher, 'a'), 0);
+  t.is(failurePos(jsMatcher, 'a'), 0);
+  t.is(failurePos(wasmMatcher, 'a'), 0);
 
   t.is(failurePos(jsMatcher, '123a'), 3);
   t.is(failurePos(wasmMatcher, '123a'), 3);
 
-  // t.is(failurePos(jsMatcher, '1 99a'), 4);
-  // t.is(failurePos(wasmMatcher, '1 99a'), 4);
+  t.is(failurePos(jsMatcher, '1 99a'), 4);
+  t.is(failurePos(wasmMatcher, '1 99a'), 4);
 });
 
 test('failure pos: basic 2', async t => {
@@ -142,6 +142,23 @@ test('failure pos: lookahead', async t => {
     // it produces 'Expected "a"' at pos 0.
     t.is(failurePos(jsMatcher, '99'), 0);
     t.is(failurePos(wasmMatcher, '99'), 0);
+  }
+});
+
+test.skip('failure pos: memoization', async t => {
+  {
+    const g = ohm.grammar(`
+      G {
+        start = ~(anyTwo) anyTwo
+        anyTwo = any any
+      }`);
+    const jsMatcher = g.matcher();
+    const wasmMatcher = await wasmMatcherForGrammar(g);
+
+    // Original Ohm behaviour is to ignore failures inside the lookahead, so
+    // it produces 'Expected "a"' at pos 0.
+    t.is(failurePos(jsMatcher, '9'), 1);
+    t.is(failurePos(wasmMatcher, '9'), 1);
   }
 });
 

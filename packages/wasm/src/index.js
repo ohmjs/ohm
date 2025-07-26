@@ -480,22 +480,21 @@ class Assembler {
     this.localSet('ret');
   }
 
-  pushStackFrame({withFailurePos} = {}) {
-    const extraBytes = withFailurePos ? 4 : 0;
+  pushStackFrame(saveThunk) {
     this.globalGet('sp');
-    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES + extraBytes);
+    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
     this.i32Sub();
     this.globalSet('sp');
-    this.savePos();
-    this.saveNumBindings();
-    if (withFailurePos) {
-      this.saveLocalFailurePos();
+    if (saveThunk) {
+      saveThunk();
+    } else {
+      this.savePos();
+      this.saveNumBindings();
     }
   }
 
-  popStackFrame({withFailurePos} = {}) {
-    const extraBytes = withFailurePos ? 4 : 0;
-    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES + extraBytes);
+  popStackFrame() {
+    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
     this.globalGet('sp');
     this.i32Add();
     this.globalSet('sp');
@@ -548,20 +547,28 @@ class Assembler {
     }
   }
 
-  saveLocalFailurePos() {
+  saveFailurePos() {
     this.globalGet('sp');
     this.localGet('failurePos');
-    this.i32Store(8);
-  }
-
-  getSavedLocalFailurePos() {
-    this.globalGet('sp');
-    this.i32Load(8);
+    this.i32Store();
   }
 
   restoreFailurePos() {
-    this.getSavedLocalFailurePos();
+    this.globalGet('sp');
+    this.i32Load();
     this.localSet('failurePos');
+  }
+
+  saveGlobalFailurePos() {
+    this.globalGet('sp');
+    this.globalGet('rightmostFailurePos');
+    this.i32Store(4);
+  }
+
+  restoreGlobalFailurePos() {
+    this.globalGet('sp');
+    this.i32Load(4);
+    this.globalSet('rightmostFailurePos');
   }
 
   updateGlobalFailurePos() {
@@ -937,6 +944,8 @@ export class Compiler {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
       asm.addLocal('failurePos', w.valtype.i32);
+      asm.i32Const(-1);
+      asm.localSet('failurePos');
       const values = this.liftedTerminals.values();
       asm.switch(
           w.blocktype.empty,
@@ -983,6 +992,8 @@ export class Compiler {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
       asm.addLocal('failurePos', w.valtype.i32);
+      asm.i32Const(-1);
+      asm.localSet('failurePos');
 
       // TODO: Find a simpler way to do this.
       if (restoreFailurePos) {
@@ -1278,10 +1289,10 @@ export class Compiler {
   }
 
   // Contract: emitPExpr always means we're going deeper in the PExpr tree.
-  emitPExpr(exp, {preHook, postHook, saveFailurePos} = {}) {
+  emitPExpr(exp, {preHook, postHook} = {}) {
     const {asm} = this;
 
-    const allowFastApply = !preHook && !postHook && !saveFailurePos;
+    const allowFastApply = !preHook && !postHook;
 
     // Note that after specializeApplications, there are two classes of rule:
     // - specialized rules, which contain no Params, and only have
@@ -1299,11 +1310,9 @@ export class Compiler {
       return;
     }
 
-    const withFailurePos = saveFailurePos || exp.type === 'Not';
-
     const debugLabel = ir.toString(exp);
     asm.emit(`BEGIN ${debugLabel}`);
-    asm.pushStackFrame({withFailurePos});
+    asm.pushStackFrame();
 
     // Wrap the body in a block, which is useful for two reasons:
     // - it allows early returns.
@@ -1321,8 +1330,8 @@ export class Compiler {
             case 'End': this.emitEnd(); break;
             case 'Lex': this.emitLex(exp); break;
             case 'LiftedTerminal': this.emitApplyTerm(exp); break;
-            case 'Lookahead': this.emitLookahead(exp, true); break;
-            case 'Not': this.emitLookahead(exp, false); break;
+            case 'Lookahead': this.emitLookahead(exp); break;
+            case 'Not': this.emitNot(exp); break;
             case 'Seq': this.emitSeq(exp); break;
             case 'Star': this.emitStar(exp); break;
             case 'Opt': this.emitOpt(exp); break;
@@ -1339,8 +1348,7 @@ export class Compiler {
         'pexprEnd',
     );
     if (postHook) postHook();
-    if (exp.type === 'Not') asm.restoreFailurePos();
-    asm.popStackFrame({withFailurePos});
+    asm.popStackFrame();
     asm.emit(`END ${debugLabel}`);
   }
 
@@ -1439,16 +1447,34 @@ export class Compiler {
     this._lexContextStack.pop();
   }
 
-  emitLookahead({child}, shouldMatch = true) {
+  emitLookahead({child}) {
     const {asm} = this;
 
     // TODO: Should positive lookahead record a CST?
     this.emitPExpr(child);
-    if (!shouldMatch) {
-      asm.localGet('ret');
-      asm.emit(instr.i32.eqz);
-      asm.localSet('ret');
-    }
+    asm.restoreBindingsLength();
+    asm.restorePos();
+  }
+
+  emitNot({child}) {
+    const {asm} = this;
+
+    // Push an inner stack frame with the failure positions.
+    asm.pushStackFrame(() => {
+      asm.saveFailurePos();
+      asm.saveGlobalFailurePos();
+    });
+    this.emitPExpr(child);
+
+    // Invert the result.
+    asm.localGet('ret');
+    asm.emit(instr.i32.eqz);
+    asm.localSet('ret');
+
+    asm.restoreGlobalFailurePos();
+    asm.restoreFailurePos();
+    asm.popStackFrame(); // Pop inner frame.
+
     asm.restoreBindingsLength();
     asm.restorePos();
   }
