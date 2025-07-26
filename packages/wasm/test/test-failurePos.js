@@ -79,7 +79,7 @@ const checkFailurePos = matcher =>
   );
 
 // eslint-disable-next-line ava/no-skip-test
-test.skip('failure pos (fast-check)', async t => {
+test('failure pos (fast-check)', async t => {
   const m = await wasmMatcherForGrammar(ns.LiquidHTML);
   t.notThrows(() => fc.assert(checkFailurePos(m), {numRuns: 50}));
 });
