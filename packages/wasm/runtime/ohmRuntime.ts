@@ -28,8 +28,11 @@ type MemoEntry = i32;
 @inline const MEMO_FAILURE_FLAG: MemoEntry = 0x1;
 
 // Not: left recursion bombs never include failurePos.
-@inline const UNUSED_LR_BOMB: MemoEntry = 0x2 | MEMO_FAILURE_FLAG;
-@inline const USED_LR_BOMB: MemoEntry = 0x3 | MEMO_FAILURE_FLAG
+// We need to be careful that a true failure w/ failurePos can't produce
+// the same value. Because failurePos >= -1, we can use -2 and -3.
+// TODO: Use failureOffset (unsigned) instead? That's what we do in JS.
+@inline const UNUSED_LR_BOMB: MemoEntry = (-2 << 1) | MEMO_FAILURE_FLAG;
+@inline const USED_LR_BOMB: MemoEntry = (-3 << 1) | MEMO_FAILURE_FLAG
 
 // The result of a raw rule evaluation function.
 // Low bit: RULE_EVAL_SUCCESS_FLAG
@@ -106,16 +109,15 @@ function useMemoizedResult(ruleId: i32, result: MemoEntry): ApplyResult {
   if (result & MEMO_FAILURE_FLAG) {
     if (result === UNUSED_LR_BOMB) {
       memoTableSet(pos, ruleId, USED_LR_BOMB);
+    } else {
+      rightmostFailurePos = max(rightmostFailurePos, result >> 1);
     }
     return false;
   }
   pos += cstGetMatchLength(result);
+  rightmostFailurePos = max(rightmostFailurePos, cstGetFailurePos(result));
   bindings.push(result);
   return true;
-}
-
-function hasMemoizedResult(ruleId: i32): boolean {
-  return memoTableGet(pos, ruleId) !== 0;
 }
 
 @inline function maybeSkipSpaces(ruleId: i32): void {

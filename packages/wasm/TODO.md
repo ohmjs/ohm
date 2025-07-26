@@ -17,6 +17,8 @@ Cleanups:
 
 - [ ] Handle left recursion detection at grammar parse time.
 - [ ] Handle non-memoization of inline rules at grammar parse time
+- [ ] Move to a failureOffset in memo entries
+- [ ] Add assertions for any known input size limitations.
 
 Optimizations:
 

@@ -992,7 +992,7 @@ export class Compiler {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
       asm.addLocal('failurePos', w.valtype.i32);
-      asm.i32Const(-1);
+      asm.globalGet('rightmostFailurePos');
       asm.localSet('failurePos');
 
       // TODO: Find a simpler way to do this.
@@ -1301,7 +1301,9 @@ export class Compiler {
     assert(!(exp.type === 'Apply' && exp.children.length > 0));
 
     if (exp.type === 'Apply' && allowFastApply) {
+      asm.emit(`BEGIN apply:${exp.ruleName}`);
       this.emitApply(exp);
+      asm.emit(`END apply:${exp.ruleName}`);
       return;
     }
     if (exp.type === 'ApplyGeneralized') {
@@ -1421,6 +1423,9 @@ export class Compiler {
     } else {
       asm.callPrebuiltFunc('evalApply0');
     }
+    // The application may have updated rightmostFailurePos; if so, we may
+    // need to update the local failure position.
+    asm.updateLocalFailurePos(() => asm.globalGet('rightmostFailurePos'));
     asm.localSet('ret');
   }
 
@@ -1471,10 +1476,10 @@ export class Compiler {
     asm.emit(instr.i32.eqz);
     asm.localSet('ret');
 
+    // Restore all global and local state.
     asm.restoreGlobalFailurePos();
     asm.restoreFailurePos();
     asm.popStackFrame(); // Pop inner frame.
-
     asm.restoreBindingsLength();
     asm.restorePos();
   }

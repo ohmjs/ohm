@@ -149,7 +149,7 @@ test('failure pos: memoization', async t => {
   {
     const g = ohm.grammar(`
       G {
-        start = ~(anyTwo) anyTwo
+        start = ~anyTwo anyTwo
         anyTwo = any any
       }`);
     const jsMatcher = g.matcher();
