@@ -50,13 +50,6 @@ let rightmostFailurePos: i32 = 0;
 let sp: usize = 0;
 let bindings: Array<i32> = new Array<i32>();
 
-// Preallocated CST nodes for some common cases.
-let preallocAlnum1: i32 = 0;
-let preallocAny1: i32 = 0;
-let preallocLetter1: i32 = 0;
-let preallocLower1: i32 = 0;
-let preallocUpper1: i32 = 0;
-
 @inline function max<T>(a: T, b: T): T {
   return a > b ? a : b;
 }
@@ -137,11 +130,6 @@ function resetParsingState(): void {
 
   bindings = new Array<i32>();
   memory.fill(MEMO_START_OFFSET, 0, MEMO_COL_SIZE_BYTES * MAX_INPUT_LEN_BYTES);
-
-  // spaces = 2, alnum = 3, any = 4, letter = 5, lower = 6, upper = 7
-  newTerminalNode(0, 1);
-  preallocAlnum1 = newNonterminalNode(0, 1, 3, 0, -1);
-  bindings.length = 0;
 }
 
 export function match(startRuleId: i32): ApplyResult {
@@ -300,8 +288,4 @@ export function setBindingsLength(len: i32): void {
 export function getCstRoot(): usize {
   // TODO: Figure out how to handle this w.r.t. leading and trailing space.
   return bindings[0];
-}
-
-export function pushPreallocAlnum(): i32 {
-  return bindings.push(preallocAlnum1);
 }

@@ -790,11 +790,6 @@ export class Compiler {
     // (global $~lib/rt/stub/offset (mut i32) (i32.const 0))
     // (global $~lib/native/ASC_RUNTIME i32 (i32.const 0))
     // (global $runtime/ohmRuntime/bindings (mut i32) (i32.const 0))
-    // (global $runtime/ohmRuntime/preallocAlnum1 (mut i32) (i32.const 0))
-    // (global $runtime/ohmRuntime/preallocAny1 (mut i32) (i32.const 0))
-    // (global $runtime/ohmRuntime/preallocLetter1 (mut i32) (i32.const 0))
-    // (global $runtime/ohmRuntime/preallocLower1 (mut i32) (i32.const 0))
-    // (global $runtime/ohmRuntime/preallocUpper1 (mut i32) (i32.const 0))
     // (global $~lib/memory/__heap_base i32 (i32.const 1179884))
     asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('rightmostFailurePos', w.valtype.i32, w.mut.var, () => asm.i32Const(-1));
@@ -806,11 +801,6 @@ export class Compiler {
     asm.addGlobal('__offset', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('__ASC_RUNTIME', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
     asm.addGlobal('bindings', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('preallocAlnum1', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('preallocAny1', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('preallocLetter1', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('preallocLower1', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('preallocUpper1', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('__heap_base', w.valtype.i32, w.mut.var, () => asm.i32Const(67240172));
 
     // Reserve a fixed number of imports for debug labels.
@@ -833,14 +823,8 @@ export class Compiler {
     const {grammar} = this;
 
     const lookUpRule = name => {
-      const isSyntactic = isSyntacticRule(name);
-      if (name in grammar.rules) {
-        return {...grammar.rules[name], isSyntactic};
-      }
-      // if (grammar.superGrammar) {
-      //   console.log('going to supergrammar');
-      //   return lookUpRule(name, grammar.superGrammar);
-      // }
+      assert(name in grammar.rules);
+      return {...grammar.rules[name], isSyntactic: isSyntacticRule(name)};
     };
 
     // Begin with all the rules in the grammar + all "special" rules.
@@ -1665,35 +1649,6 @@ export class Compiler {
       );
       asm.incPos();
     });
-  }
-
-  emitSingleCharFastPath(ruleName) {
-    const {asm} = this;
-    this.maybeEmitSpaceSkipping();
-
-    const caseCb = (i, depth) => {
-      const c = String.fromCharCode(i);
-      if (
-        ruleName === 'alnum' &&
-        (('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') || ('0' <= c && c <= '9'))
-      ) {
-        asm.callPrebuiltFunc('pushPreallocAlnum');
-        // asm.newTerminalNodeWithSavedPos();
-        asm.localSet('ret');
-        asm.break(depth + 1);
-      } else {
-        asm.setRet(0);
-        asm.break(depth + 1);
-      }
-    };
-    asm.emit('fastpath');
-    asm.switch(
-        w.blocktype.empty,
-        () => asm.nextCharCode(),
-        128,
-        caseCb,
-        () => {},
-    );
   }
 }
 
