@@ -69,6 +69,8 @@ function isSyntacticRule(ruleName) {
   return ruleName[0] === ruleName[0].toUpperCase();
 }
 
+const asciiChars = Array.from({length: 128}).map((_, i) => String.fromCharCode(i));
+
 class IndexedSet {
   constructor() {
     this._map = new Map();
@@ -281,32 +283,33 @@ class Assembler {
     this._code.push(...checkNoUndefined(bytes.flat(Infinity)));
   }
 
-  block(bt, bodyThunk) {
-    this._blockOnly(bt);
+  block(bt, bodyThunk, label = '') {
+    this._blockOnly(bt, label);
     bodyThunk();
     this._endBlock();
   }
 
   // Prefer to use `block`, but for some cases it's more convenient to emit
   // the block and the end separately.
-  _blockOnly(bt) {
-    this.emit(w.instr.block, bt);
-    this._blockStack.push('block');
+  // Note: `label` (if specified) is not unique (e.g., 'pexprEnd').
+  _blockOnly(bt, label) {
+    this.emit(instr.block, bt);
+    this._blockStack.push(label ? `block:${label}` : 'block');
   }
 
   // This should always be paired with `blockOnly`.
   _endBlock() {
-    const what = this._blockStack.pop();
+    const what = this._blockStack.pop().split(':')[0];
     assert(what === 'block', 'Invalid endBlock');
-    this.emit(w.instr.end);
+    this.emit(instr.end);
   }
 
   loop(bt, bodyThunk) {
-    this.emit(w.instr.loop, bt);
+    this.emit(instr.loop, bt);
     this._blockStack.push('loop');
     bodyThunk();
     this._blockStack.pop();
-    this.emit(w.instr.end);
+    this.emit(instr.end);
   }
 
   if(bt, bodyThunk) {
@@ -314,15 +317,15 @@ class Assembler {
   }
 
   ifElse(bt, thenThunk, elseThunk = undefined) {
-    this.emit(w.instr.if, bt);
+    this.emit(instr.if, bt);
     this._blockStack.push('if');
     thenThunk();
     if (elseThunk) {
-      this.emit(w.instr.else);
+      this.emit(instr.else);
       elseThunk();
     }
     this._blockStack.pop();
-    this.emit(w.instr.end);
+    this.emit(instr.end);
   }
 
   ifFalse(bt, bodyThunk) {
@@ -352,6 +355,10 @@ class Assembler {
 
   i32Mul() {
     this.emit(instr.i32.mul);
+  }
+
+  i32Eq() {
+    this.emit(instr.i32.eq);
   }
 
   i32Ne() {
@@ -388,32 +395,30 @@ class Assembler {
   }
 
   break(depth) {
-    const what = this._blockStack.at(-(depth + 1));
+    const what = this._blockStack.at(-(depth + 1)).split(':')[0];
     assert(what === 'block' || what === 'if', 'Invalid break');
     this.emit(instr.br, w.labelidx(depth));
   }
 
   // Conditional break -- emits a `br_if` for the given depth.
   condBreak(depth) {
-    const what = this._blockStack.at(-(depth + 1));
+    const what = this._blockStack.at(-(depth + 1)).split(':')[0];
     assert(what === 'block' || what === 'if', 'Invalid condBreak');
     this.emit(instr.br_if, w.labelidx(depth));
   }
 
   continue(depth) {
-    const what = this._blockStack.at(-(depth + 1));
+    const what = this._blockStack.at(-(depth + 1)).split(':')[0];
     assert(what === 'loop', 'Invalid continue');
     this.emit(instr.br, w.labelidx(depth));
   }
 
   brTable(labels, defaultLabelidx) {
-    this.emit(w.instr.br_table, w.vec(labels), defaultLabelidx);
+    this.emit(instr.br_table, w.vec(labels), defaultLabelidx);
   }
 
   return() {
-    const what = this._blockStack[0];
-    assert(what === 'block', 'Invalid return');
-    this.emit(w.instr.return);
+    this.emit(instr.return);
   }
 
   // Emit a dense jump table (switch-like) using br_table.
@@ -475,13 +480,17 @@ class Assembler {
     this.localSet('ret');
   }
 
-  pushStackFrame() {
+  pushStackFrame(saveThunk) {
     this.globalGet('sp');
     this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
     this.i32Sub();
     this.globalSet('sp');
-    this.savePos();
-    this.saveNumBindings();
+    if (saveThunk) {
+      saveThunk();
+    } else {
+      this.savePos();
+      this.saveNumBindings();
+    }
   }
 
   popStackFrame() {
@@ -538,6 +547,45 @@ class Assembler {
     }
   }
 
+  saveFailurePos() {
+    this.globalGet('sp');
+    this.localGet('failurePos');
+    this.i32Store();
+  }
+
+  restoreFailurePos() {
+    this.globalGet('sp');
+    this.i32Load();
+    this.localSet('failurePos');
+  }
+
+  saveGlobalFailurePos() {
+    this.globalGet('sp');
+    this.globalGet('rightmostFailurePos');
+    this.i32Store(4);
+  }
+
+  restoreGlobalFailurePos() {
+    this.globalGet('sp');
+    this.i32Load(4);
+    this.globalSet('rightmostFailurePos');
+  }
+
+  updateGlobalFailurePos() {
+    // rightmostFailurePos = max(rightmostFailurePos, failurePos)
+    this.i32Max(
+        () => this.globalGet('rightmostFailurePos'),
+        () => this.localGet('failurePos'),
+    );
+    this.globalSet('rightmostFailurePos');
+  }
+
+  updateLocalFailurePos(origPosThunk) {
+    // failurePos = max(failurePos, origPos)
+    this.i32Max(() => this.localGet('failurePos'), origPosThunk);
+    this.localSet('failurePos');
+  }
+
   // Increment the current input position by 1.
   // [i32, i32] -> [i32]
   incPos() {
@@ -571,6 +619,33 @@ class Assembler {
     );
     this.localSet('ret');
   }
+
+  i32Max(aThunk, bThunk) {
+    aThunk();
+    bThunk();
+    aThunk();
+    bThunk();
+    this.emit(instr.i32.gt_s, instr.select);
+  }
+
+  // Return the depth of the block with the given label.
+  depthOf(label) {
+    const i = this._blockStack.findLastIndex(what => what === `block:${label}`);
+    assert(i !== -1, `Unknown label: ${label}`);
+    return this._blockStack.length - i - 1;
+  }
+
+  ruleEvalReturn() {
+    // Convert the value in `ret` to a single bit in position 0.
+    this.localGet('ret');
+    this.emit(instr.i32.eqz, instr.i32.eqz);
+
+    // Remaining 32 bits hold the (signed) failurePos.
+    this.localGet('failurePos');
+    this.i32Const(1);
+    this.emit(instr.i32.shl);
+    this.emit(instr.i32.or);
+  }
 }
 Assembler.ALIGN_1_BYTE = 0;
 Assembler.ALIGN_4_BYTES = 2;
@@ -597,17 +672,22 @@ export class Compiler {
     // The rule ID is a 0-based index that's mapped to the name.
     // It is *not* the same as the function index the rule's eval function.
     this.ruleIdByName = new IndexedSet();
+
+    this._specialRules = ['spaces', 'alnum', 'any'];
+
     // Ensure default start rule has id 0; $term, 1; and spaces, 2.
     this._ensureRuleId(grammar.defaultStartRule);
     this._ensureRuleId('$term');
-    this._ensureRuleId('spaces');
+    this._specialRules.forEach(name => {
+      this._ensureRuleId(name);
+    });
 
     this.rules = undefined;
     this._nextLiftedId = 0;
 
     // Keeps track of whether we're in a lexical or syntactic context.
     this._lexContextStack = [];
-    this._applySpaces = ir.apply('spaces');
+    this._applySpacesImplicit = ir.apply('$spaces');
   }
 
   importCount() {
@@ -630,6 +710,7 @@ export class Compiler {
   }
 
   liftPExpr(exp, isSyntactic) {
+    assert(EMIT_GENERALIZED_RULES, 'Lifting only happens w/ generalized rules');
     assert(!(exp instanceof pexprs.Terminal));
 
     // Note: the same expression might appear in more than one place, and
@@ -711,6 +792,7 @@ export class Compiler {
     // (global $runtime/ohmRuntime/bindings (mut i32) (i32.const 0))
     // (global $~lib/memory/__heap_base i32 (i32.const 1179884))
     asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('rightmostFailurePos', w.valtype.i32, w.mut.var, () => asm.i32Const(-1));
     asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('__Runtime.Stub', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
     asm.addGlobal('__Runtime.Minimal', w.valtype.i32, w.mut.const, () => asm.i32Const(1));
@@ -741,26 +823,18 @@ export class Compiler {
     const {grammar} = this;
 
     const lookUpRule = name => {
-      const isSyntactic = isSyntacticRule(name);
-      if (name in grammar.rules) {
-        return {...grammar.rules[name], isSyntactic};
-      }
-      if (grammar.superGrammar) {
-        return lookUpRule(name, grammar.superGrammar);
-      }
+      assert(name in grammar.rules);
+      return {...grammar.rules[name], isSyntactic: isSyntacticRule(name)};
     };
 
-    // Begin with all the rules in the grammar + spaces.
+    // Begin with all the rules in the grammar + all "special" rules.
     const rules = Object.entries(this.grammar.rules).map(([name, info]) => {
       const isSyntactic = isSyntacticRule(name);
       return [name, {...info, isSyntactic}];
     });
-    rules.push([
-      'spaces',
-      {
-        ...lookUpRule('spaces'),
-      },
-    ]);
+    this._specialRules.forEach(name => {
+      rules.push([name, {...lookUpRule(name)}]);
+    });
 
     const liftedTerminals = new IndexedSet();
 
@@ -853,14 +927,19 @@ export class Compiler {
     asm.addFunction(`$${name}`, [w.valtype.i32], [w.valtype.i32], () => {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
+      asm.addLocal('failurePos', w.valtype.i32);
+      asm.i32Const(-1);
+      asm.localSet('failurePos');
       const values = this.liftedTerminals.values();
       asm.switch(
           w.blocktype.empty,
           () => asm.localGet('__arg0'),
           values.length,
-          (i, depth) => this.emitTerminal(ir.terminal(values[i]), depth),
-          () => asm.emit(w.instr.unreachable),
+          i => this.emitTerminal(ir.terminal(values[i])),
+          () => asm.emit(instr.unreachable),
       );
+      // Note: unlike a regular rule evaluation, this function just returns
+      // the raw result of PExpr evaluation.
       asm.localGet('ret');
     });
     this.endLexContext();
@@ -884,14 +963,40 @@ export class Compiler {
     if (ruleInfo.patterns) {
       paramTypes = [w.valtype.i32];
     }
+    // const preHook = () => {
+    // if (['alnum'].includes(name)) {
+    //   this.emitSingleCharFastPath('alnum');
+    // }
+    // };
+
+    const restoreFailurePos = name === this._applySpacesImplicit.ruleName;
+
     this.beginLexContext(!ruleInfo.isSyntactic);
     asm.addFunction(`$${name}`, paramTypes, [w.valtype.i32], () => {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
+      asm.addLocal('failurePos', w.valtype.i32);
+      asm.globalGet('rightmostFailurePos');
+      asm.localSet('failurePos');
+
+      // TODO: Find a simpler way to do this.
+      if (restoreFailurePos) {
+        asm.addLocal('origFailurePos', w.valtype.i32);
+        asm.globalGet('rightmostFailurePos');
+        asm.localSet('origFailurePos');
+      }
+
       asm.emit(`BEGIN eval:${name}`);
       this.emitPExpr(ruleInfo.body);
+
+      if (restoreFailurePos) {
+        asm.localGet('origFailurePos');
+        asm.dup();
+        asm.globalSet('rightmostFailurePos');
+        asm.localSet('failurePos');
+      }
+      asm.ruleEvalReturn();
       asm.emit(`END eval:${name}`);
-      asm.localGet('ret');
     });
     this.endLexContext();
     return this.asm._functionDecls.at(-1);
@@ -950,8 +1055,15 @@ export class Compiler {
         },
       });
     specialize(ir.apply(this.grammar.defaultStartRule));
-    specialize(ir.apply('spaces'));
+    this._specialRules.forEach(name => {
+      specialize(ir.apply(name));
+    });
     this.rules = newRules;
+
+    // Make a special rule for implicit space skipping, with the same body
+    // as the real `spaces` rule.
+    this._ensureRuleId('$spaces', {notMemoized: true});
+    newRules.set('$spaces', getNotNull(newRules, 'spaces'));
 
     if (EMIT_GENERALIZED_RULES) {
       const insertDispatches = (exp, patterns) =>
@@ -1093,7 +1205,10 @@ export class Compiler {
         let pushArg = [];
         if (x.startsWith('END')) {
           decl.paramTypes = [w.valtype.i32];
-          pushArg = [instr.local.get, w.localidx(0)];
+          // We want to pass 'ret', but to figure out its index, we need to
+          // account for the number of parameters.
+          const retIdx = entry.paramTypes.length;
+          pushArg = [instr.local.get, w.localidx(retIdx)];
         }
 
         // …and replace the string with a call to that function.
@@ -1152,27 +1267,31 @@ export class Compiler {
         patterns.length,
         handleCase,
         () => {
-          asm.emit('herre');
-          asm.emit(w.instr.unreachable);
+          asm.emit(instr.unreachable);
         },
     );
   }
 
   // Contract: emitPExpr always means we're going deeper in the PExpr tree.
-  emitPExpr(exp) {
+  emitPExpr(exp, {preHook, postHook} = {}) {
     const {asm} = this;
+
+    const allowFastApply = !preHook && !postHook;
 
     // Note that after specializeApplications, there are two classes of rule:
     // - specialized rules, which contain no Params, and only have
     //   applications without args
     // - generalized rules, which may contain Params and apps w/ args.
+    assert(!(exp.type === 'Apply' && exp.children.length > 0));
 
-    if (exp.type === 'Apply' && exp.children.length === 0) {
+    if (exp.type === 'Apply' && allowFastApply) {
+      asm.emit(`BEGIN apply:${exp.ruleName}`);
       this.emitApply(exp);
+      asm.emit(`END apply:${exp.ruleName}`);
       return;
     }
     if (exp.type === 'ApplyGeneralized') {
-      assert(EMIT_GENERALIZED_RULES);
+      assert(EMIT_GENERALIZED_RULES && allowFastApply);
       this.emitApplyGeneralized(exp);
       return;
     }
@@ -1184,30 +1303,37 @@ export class Compiler {
     // Wrap the body in a block, which is useful for two reasons:
     // - it allows early returns.
     // - it makes sure that the generated code doesn't have stack effects.
-    asm.block(w.blocktype.empty, () => {
-      // prettier-ignore
-      switch (exp.type) {
-        case 'Alt': this.emitAlt(exp); break;
-        case 'Any': this.emitAny(); break;
-        case 'Dispatch': this.emitDispatch(exp); break;
-        case 'End': this.emitEnd(); break;
-        case 'Lex': this.emitLex(exp); break;
-        case 'LiftedTerminal': this.emitApplyTerm(exp); break;
-        case 'Lookahead': this.emitLookahead(exp, true); break;
-        case 'Not': this.emitLookahead(exp, false); break;
-        case 'Seq': this.emitSeq(exp); break;
-        case 'Star': this.emitStar(exp); break;
-        case 'Opt': this.emitOpt(exp); break;
-        case 'Range': this.emitRange(exp); break;
-        case 'Plus': this.emitPlus(exp); break;
-        case 'Terminal': this.emitTerminal(exp); break;
-        case 'UnicodeChar': this.emitUnicodeChar(exp); break;
-        case 'Param':
-          // Fall through (Params should not exist at codegen time).
-        default:
-          throw new Error(`not handled: ${exp.type}`);
-      }
-    });
+    asm.block(
+        w.blocktype.empty,
+        () => {
+          if (preHook) preHook();
+
+          // prettier-ignore
+          switch (exp.type) {
+            case 'Alt': this.emitAlt(exp); break;
+            case 'Any': this.emitAny(); break;
+            case 'Dispatch': this.emitDispatch(exp); break;
+            case 'End': this.emitEnd(); break;
+            case 'Lex': this.emitLex(exp); break;
+            case 'LiftedTerminal': this.emitApplyTerm(exp); break;
+            case 'Lookahead': this.emitLookahead(exp); break;
+            case 'Not': this.emitNot(exp); break;
+            case 'Seq': this.emitSeq(exp); break;
+            case 'Star': this.emitStar(exp); break;
+            case 'Opt': this.emitOpt(exp); break;
+            case 'Range': this.emitRange(exp); break;
+            case 'Plus': this.emitPlus(exp); break;
+            case 'Terminal': this.emitTerminal(exp); break;
+            case 'UnicodeChar': this.emitUnicodeChar(exp); break;
+            case 'Param':
+              // Fall through (Params should not exist at codegen time).
+            default:
+              throw new Error(`not handled: ${exp.type}`);
+          }
+        },
+        'pexprEnd',
+    );
+    if (postHook) postHook();
     asm.popStackFrame();
     asm.emit(`END ${debugLabel}`);
   }
@@ -1218,7 +1344,7 @@ export class Compiler {
       for (const term of exp.children) {
         this.emitPExpr(term);
         asm.localGet('ret');
-        asm.condBreak(0); // return if succeeded
+        asm.condBreak(asm.depthOf('pexprEnd'));
         asm.restorePos();
         asm.restoreBindingsLength();
       }
@@ -1227,19 +1353,30 @@ export class Compiler {
 
   emitAny() {
     const {asm} = this;
-    this.maybeEmitSpaceSkipping();
-    asm.i32Const(0xff);
-    asm.nextCharCode();
-    asm.i32Ne();
-    asm.maybeReturnTerminalNodeWithSavedPos();
+    this.wrapTerminalLike(() => {
+      asm.i32Const(0xff);
+      asm.nextCharCode();
+      asm.i32Eq();
+      asm.condBreak(asm.depthOf('failure'));
+    });
   }
 
   emitApplyTerm({terminalId}) {
     const {asm} = this;
-    this.maybeEmitSpaceSkipping();
+
+    // Save the original position.
+    asm.globalGet('pos');
+    asm.localSet('tmp');
+
+    // Call the terminal rule, and use its result as ours.
     asm.i32Const(terminalId);
-    asm.emit(w.instr.call, this.ruleEvalFuncIdx('$term'));
-    asm.localSet('ret');
+    asm.emit(instr.call, this.ruleEvalFuncIdx('$term'));
+    asm.localTee('ret');
+
+    // Update the failure position if necessary.
+    asm.ifFalse(w.blocktype.empty, () => {
+      asm.updateLocalFailurePos(() => asm.localGet('tmp'));
+    });
   }
 
   // Emit an application of the generalized version of a parameterized rule.
@@ -1255,31 +1392,36 @@ export class Compiler {
   emitApply(exp) {
     assert(exp.children.length === 0);
 
-    if (exp !== this._applySpaces) {
-      this.maybeEmitSpaceSkipping(); // Avoid infinite recursion.
+    // Avoid infinite recursion.
+    if (exp !== this._applySpacesImplicit) {
+      this.maybeEmitSpaceSkipping();
     }
 
     const {asm} = this;
     asm.i32Const(this.ruleId(exp.ruleName));
 
+    // TODO: Should lifted expressions be memoized?
     // TODO: Handle this at grammar parse time, not here.
     if (exp.ruleName.includes('_')) {
       asm.callPrebuiltFunc('evalApplyNoMemo0');
     } else {
       asm.callPrebuiltFunc('evalApply0');
     }
+    // The application may have updated rightmostFailurePos; if so, we may
+    // need to update the local failure position.
+    asm.updateLocalFailurePos(() => asm.globalGet('rightmostFailurePos'));
     asm.localSet('ret');
   }
 
   emitEnd() {
     const {asm} = this;
-
-    this.maybeEmitSpaceSkipping();
-    asm.i32Const(0xff);
-    // Careful! We shouldn't move the pos here. Or does it matter?
-    asm.currCharCode();
-    asm.emit(instr.i32.eq);
-    asm.maybeReturnTerminalNodeWithSavedPos();
+    this.wrapTerminalLike(() => {
+      asm.i32Const(0xff);
+      // Careful! We shouldn't move the pos here. Or does it matter?
+      asm.currCharCode();
+      asm.i32Ne();
+      asm.condBreak(asm.depthOf('failure'));
+    });
   }
 
   emitFail() {
@@ -1294,16 +1436,34 @@ export class Compiler {
     this._lexContextStack.pop();
   }
 
-  emitLookahead({child}, shouldMatch = true) {
+  emitLookahead({child}) {
     const {asm} = this;
 
     // TODO: Should positive lookahead record a CST?
     this.emitPExpr(child);
-    if (!shouldMatch) {
-      asm.localGet('ret');
-      asm.emit(instr.i32.eqz);
-      asm.localSet('ret');
-    }
+    asm.restoreBindingsLength();
+    asm.restorePos();
+  }
+
+  emitNot({child}) {
+    const {asm} = this;
+
+    // Push an inner stack frame with the failure positions.
+    asm.pushStackFrame(() => {
+      asm.saveFailurePos();
+      asm.saveGlobalFailurePos();
+    });
+    this.emitPExpr(child);
+
+    // Invert the result.
+    asm.localGet('ret');
+    asm.emit(instr.i32.eqz);
+    asm.localSet('ret');
+
+    // Restore all global and local state.
+    asm.restoreGlobalFailurePos();
+    asm.restoreFailurePos();
+    asm.popStackFrame(); // Pop inner frame.
     asm.restoreBindingsLength();
     asm.restorePos();
   }
@@ -1331,28 +1491,25 @@ export class Compiler {
 
   emitRange(exp) {
     assert(exp.lo.length === 1 && exp.hi.length === 1);
-
     const lo = exp.lo.charCodeAt(0);
     const hi = exp.hi.charCodeAt(0);
 
     // TODO: Do we disallow 0xff in the range?
     const {asm} = this;
-    this.maybeEmitSpaceSkipping();
-    asm.nextCharCode();
+    this.wrapTerminalLike(() => {
+      asm.nextCharCode();
 
-    // if (c > hi) return 0;
-    asm.dup();
-    asm.i32Const(hi);
-    asm.emit(instr.i32.gt_u);
-    asm.if(w.blocktype.empty, () => {
-      asm.setRet(0);
-      asm.break(1);
+      // if (c > hi) return 0;
+      asm.dup();
+      asm.i32Const(hi);
+      asm.emit(instr.i32.gt_u);
+      asm.condBreak(asm.depthOf('failure'));
+
+      // if (c >= lo) return 0;
+      asm.i32Const(lo);
+      asm.emit(instr.i32.lt_u);
+      asm.condBreak(asm.depthOf('failure'));
     });
-
-    // if (c >= lo)
-    asm.i32Const(lo);
-    asm.emit(instr.i32.ge_u);
-    asm.maybeReturnTerminalNodeWithSavedPos();
   }
 
   emitSeq({children}) {
@@ -1368,14 +1525,14 @@ export class Compiler {
       this.emitPExpr(c);
       asm.localGet('ret');
       asm.emit(instr.i32.eqz);
-      asm.condBreak(0);
+      asm.condBreak(asm.depthOf('pexprEnd'));
     }
   }
 
   maybeEmitSpaceSkipping() {
     if (IMPLICIT_SPACE_SKIPPING && !this.inLexicalContext()) {
       this.asm.emit('BEGIN space skipping');
-      this.emitApply(this._applySpaces);
+      this.emitApply(this._applySpacesImplicit);
       this.asm.emit('END space skipping');
     }
   }
@@ -1386,17 +1543,21 @@ export class Compiler {
     // We push another stack frame because we need to save and restore
     // the position just before the last (failed) expression.
     asm.pushStackFrame();
-    asm.block(w.blocktype.empty, () => {
-      asm.loop(w.blocktype.empty, () => {
-        asm.savePos();
-        asm.saveNumBindings();
-        this.emitPExpr(child);
-        asm.localGet('ret');
-        asm.emit(instr.i32.eqz);
-        asm.condBreak(1);
-        asm.continue(0);
-      });
-    });
+    asm.block(
+        w.blocktype.empty,
+        () => {
+          asm.loop(w.blocktype.empty, () => {
+            asm.savePos();
+            asm.saveNumBindings();
+            this.emitPExpr(child);
+            asm.localGet('ret');
+            asm.emit(instr.i32.eqz);
+            asm.condBreak(asm.depthOf('done'));
+            asm.continue(0);
+          });
+        },
+        'done',
+    );
     asm.restorePos();
     asm.restoreBindingsLength();
     asm.popStackFrame();
@@ -1405,57 +1566,89 @@ export class Compiler {
     asm.localSet('ret');
   }
 
-  emitTerminal({value}, depth = 0) {
-    // TODO:
-    // - proper UTF-8!
-    // - handle longer terminals with a loop
-    // - SIMD
+  wrapTerminalLike(thunk) {
+    const {asm} = this;
+    this.maybeEmitSpaceSkipping();
 
+    asm.block(
+        w.blocktype.empty,
+        () => {
+          asm.block(
+              w.blocktype.empty,
+              () => {
+                thunk();
+                asm.newTerminalNodeWithSavedPos();
+                asm.localSet('ret');
+                asm.break(asm.depthOf('_success'));
+              },
+              'failure',
+          );
+          asm.updateLocalFailurePos(() => asm.getSavedPos());
+          asm.setRet(0);
+        },
+        '_success',
+    );
+  }
+
+  emitTerminal({value}) {
     const {asm} = this;
     asm.emit(JSON.stringify(value));
-    this.maybeEmitSpaceSkipping();
-    for (const c of [...value]) {
-      // Compare next char
-      asm.i32Const(c.charCodeAt(0));
-      asm.currCharCode();
-      asm.emit(instr.i32.ne);
-      asm.if(w.blocktype.empty, () => {
-        asm.setRet(0);
-        asm.break(depth + 1);
-      });
-      asm.incPos();
-    }
-    asm.newTerminalNodeWithSavedPos();
-    asm.localSet('ret');
+    this.wrapTerminalLike(() => {
+      // TODO:
+      // - proper UTF-8!
+      // - handle longer terminals with a loop
+      // - SIMD
+      for (const c of [...value]) {
+        asm.i32Const(c.charCodeAt(0));
+        asm.currCharCode();
+        asm.emit(instr.i32.ne);
+        asm.condBreak(asm.depthOf('failure'));
+        asm.incPos();
+      }
+    });
   }
 
   emitUnicodeChar(exp) {
     const {asm} = this;
-    this.maybeEmitSpaceSkipping();
-
-    const handleDefault = () => {
-      // TODO: Implement the slow case by calling out to the host.
-      asm.emit(w.instr.unreachable);
-    };
 
     // TODO: Add support for more categories, by calling out to the host.
     assert(['Ll', 'Lu', 'Ltmo'].includes(exp.category));
 
-    const caseCb = (i, depth) => {
-      const c = String.fromCharCode(i);
-      if (
-        (exp.category === 'Lu' && 'A' <= c && c <= 'Z') ||
-        (exp.category === 'Ll' && 'a' <= c && c <= 'z')
-      ) {
-        asm.incPos();
-        asm.newTerminalNodeWithSavedPos();
-        asm.localSet('ret');
-      } else {
-        asm.setRet(0);
-      }
-      asm.break(depth);
-    };
-    asm.switch(w.blocktype.empty, () => asm.currCharCode(), 128, caseCb, handleDefault);
+    const makeLabels = () =>
+      asciiChars.map(c => {
+        const isLowercase = 'a' <= c && c <= 'z';
+        const isUppercase = 'A' <= c && c <= 'Z';
+        if ((exp.category === 'Lu' && isUppercase) || (exp.category === 'Ll' && isLowercase)) {
+          return w.labelidx(asm.depthOf('innerSuccess'));
+        }
+        return w.labelidx(asm.depthOf('failure'));
+      });
+    this.wrapTerminalLike(() => {
+      asm.block(
+          w.blocktype.empty,
+          () => {
+            asm.block(
+                w.blocktype.empty,
+                () => {
+                  asm.currCharCode();
+                  asm.brTable(makeLabels(), w.labelidx(asm.depthOf('default')));
+                },
+                'default',
+            );
+            // Check for 0xff (end)
+            asm.currCharCode();
+            asm.i32Const(0xff);
+            asm.i32Eq();
+            asm.condBreak(asm.depthOf('failure'));
+
+            // Otherwise, trap.
+            // TODO: Replace this with a proper, out-of-line implementation.
+            asm.emit(instr.unreachable);
+          },
+          'innerSuccess',
+      );
+      asm.incPos();
+    });
   }
 }
 

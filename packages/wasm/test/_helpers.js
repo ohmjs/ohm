@@ -1,4 +1,4 @@
-/* global process */
+/* global process, URL */
 
 import {WasmMatcher} from '@ohm-js/miniohm-js';
 
@@ -29,3 +29,5 @@ export async function wasmMatcherForGrammar(grammar, modBytes = undefined) {
   }
   return m._instantiate(bytes, debugImports);
 }
+
+export const scriptRel = relPath => new URL(relPath, import.meta.url);

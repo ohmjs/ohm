@@ -1,7 +1,7 @@
 ## TODOs
 
 - [x] Include a map of rule name to ruleId in the module.
-- [ ] Implicit space skipping
+- [x] Implicit space skipping
 - [ ] Error handling
 - [x] NonterminalNodes should keep track of the rule
 - [ ] When iteration contains a sequence, the children are flattened into the iter node.
@@ -9,20 +9,29 @@
 - [x] Parameterized rules with >3 params
 - [x] Parameters that aren't terminals
 - [x] Memoization for parameterized rules
-- [ ] Avoid unnecessary dispatch in generalized rules
-- [ ] Avoid duplicate lifted rules.
 - [x] Support direct left recursion.
-- [ ] Handle left recursion detection at grammar parse time.
 - [x] Separate API for _creating_ the Wasm module from the WasmMatcher interface.
 - [x] Implement a proper CLI.
+
+Cleanups:
+
+- [ ] Handle left recursion detection at grammar parse time.
 - [ ] Handle non-memoization of inline rules at grammar parse time
+- [ ] Move to a failureOffset in memo entries
+- [ ] Add assertions for any known input size limitations.
+
+Optimizations:
+
+- [ ] Avoid unnecessary dispatch in generalized rules
+- [ ] Avoid duplicate lifted rules.
+- [ ] Compressed (32-bit) header for Nonterminal nodes in common case
+- [ ] Compressed (inline 32-bit) repr for Terminal nodes
+- [ ] Proper preallocated nodes (incl. failurePos) for common cases
 
 ## Limitations
 
 - The input is assumed to be no bigger than 64k.
 - For the memo table, we assume that there are no more than 256 rules in the grammar.
-- Parameterized rules only support up to 3 parameters, and no memoization.
-  - Parameters must be terminals.
 
 ## Unanswered questions
 

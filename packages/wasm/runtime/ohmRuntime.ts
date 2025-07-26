@@ -1,4 +1,4 @@
-type Result = i32;
+type ApplyResult = bool;
 
 declare function fillInputBuffer(offset: i32, maxLen: i32): i32;
 declare function printI32(val: i32): void;
@@ -13,27 +13,57 @@ declare function isRuleSyntactic(ruleId: i32): bool;
 @inline const STACK_START_OFFSET: usize = WASM_PAGE_SIZE;
 @inline const MAX_INPUT_LEN_BYTES: usize = 64 * 1024;
 
-// Note: the rule evaluation functions use a different representation.
-// They return non-zero for success and zero for failure.
-@inline const EMPTY: Result = 0;
-@inline const FAIL: Result = 0xfffffff0;
-@inline const UNUSED_LR_BOMB: Result = FAIL | 0x1;
-@inline const USED_LR_BOMB: Result = FAIL | 0x3;
-
-@inline const CST_NODE_OVERHEAD: usize = 12;
+// CST nodes
+@inline const CST_NODE_OVERHEAD: usize = 16;
+@inline const NODE_TYPE_TERMINAL: i32 = -1;
 @inline const NODE_TYPE_ITERATION: i32 = -2;
+
+// Memo table entries
+type MemoEntry = i32;
+
+@inline const EMPTY: MemoEntry = 0;
+
+// Low bit: failure flag.
+// Rest: failurePos (signed int, 31 bits).
+@inline const MEMO_FAILURE_FLAG: MemoEntry = 0x1;
+
+// Not: left recursion bombs never include failurePos.
+// We need to be careful that a true failure w/ failurePos can't produce
+// the same value. Because failurePos >= -1, we can use -2 and -3.
+// TODO: Use failureOffset (unsigned) instead? That's what we do in JS.
+@inline const UNUSED_LR_BOMB: MemoEntry = (-2 << 1) | MEMO_FAILURE_FLAG;
+@inline const USED_LR_BOMB: MemoEntry = (-3 << 1) | MEMO_FAILURE_FLAG
+
+// The result of a raw rule evaluation function.
+// Low bit: RULE_EVAL_SUCCESS_FLAG
+// Rest: failurePos (signed int, 31 bits).
+type RuleEvalResult = i32;
+
+@inline const RULE_EVAL_SUCCESS_FLAG = 1;
 
 // Shared globals
 let pos: i32 = 0;
+
+// The rightmost position at which a leaf (Terminal, etc.) failed to match.
+let rightmostFailurePos: i32 = 0;
+
 let sp: usize = 0;
 let bindings: Array<i32> = new Array<i32>();
 
-@inline function memoTableGet(memoPos: usize, ruleId: i32): Result {
-  return load<Result>(memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<Result>(), MEMO_START_OFFSET);
+@inline function max<T>(a: T, b: T): T {
+  return a > b ? a : b;
 }
 
-@inline function memoTableSet(memoPos: usize, ruleId: i32, value: Result): void {
-  store<Result>(memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<Result>(), value, MEMO_START_OFFSET);
+@inline function memoEntryForFailure(failurePos: i32): MemoEntry {
+  return (failurePos << 1) | MEMO_FAILURE_FLAG;
+}
+
+@inline function memoTableGet(memoPos: usize, ruleId: i32): MemoEntry {
+  return load<MemoEntry>(memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<MemoEntry>(), MEMO_START_OFFSET);
+}
+
+@inline function memoTableSet(memoPos: usize, ruleId: i32, value: MemoEntry): void {
+  store<MemoEntry>(memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<MemoEntry>(), value, MEMO_START_OFFSET);
 }
 
 @inline function cstGetCount(ptr: usize): i32 {
@@ -60,28 +90,27 @@ let bindings: Array<i32> = new Array<i32>();
   store<i32>(ptr, t, 8);
 }
 
-@inline function memoizeResult(memoPos: usize, ruleId: i32, result: Result): void {
-  memoTableSet(memoPos, ruleId, result);
+@inline function cstGetFailurePos(ptr: usize): i32 {
+  return load<i32>(ptr, 12);
 }
 
-@inline function isFailure(result: Result): bool {
-  return result < 0;
+@inline function cstSetFailurePos(ptr: usize, pos: i32): void {
+  store<i32>(ptr, pos, 12);
 }
 
-function useMemoizedResult(ruleId: i32, result: Result): Result {
-  if (result === UNUSED_LR_BOMB) {
-    memoTableSet(pos, ruleId, USED_LR_BOMB);
-    return 0;
-  } else if (isFailure(result)) {
-    return 0;
+function useMemoizedResult(ruleId: i32, result: MemoEntry): ApplyResult {
+  if (result & MEMO_FAILURE_FLAG) {
+    if (result === UNUSED_LR_BOMB) {
+      memoTableSet(pos, ruleId, USED_LR_BOMB);
+    } else {
+      rightmostFailurePos = max(rightmostFailurePos, result >> 1);
+    }
+    return false;
   }
   pos += cstGetMatchLength(result);
+  rightmostFailurePos = max(rightmostFailurePos, cstGetFailurePos(result));
   bindings.push(result);
-  return result;
-}
-
-function hasMemoizedResult(ruleId: i32): boolean {
-  return memoTableGet(pos, ruleId) !== 0;
+  return true;
 }
 
 @inline function maybeSkipSpaces(ruleId: i32): void {
@@ -93,12 +122,18 @@ function hasMemoizedResult(ruleId: i32): boolean {
   }
 }
 
-export function match(startRuleId: i32): Result {
-  // (Re-)initialize globals, clear memo table.
+function resetParsingState(): void {
   pos = 0;
+  rightmostFailurePos = -1;
   sp = STACK_START_OFFSET;
+  heap.reset();
+
   bindings = new Array<i32>();
   memory.fill(MEMO_START_OFFSET, 0, MEMO_COL_SIZE_BYTES * MAX_INPUT_LEN_BYTES);
+}
+
+export function match(startRuleId: i32): ApplyResult {
+  resetParsingState();
 
   // Get the input and do the match.
   let inputLen = fillInputBuffer(0, i32(WASM_PAGE_SIZE));
@@ -107,78 +142,103 @@ export function match(startRuleId: i32): Result {
   const succeeded = evalApply0(startRuleId) !== 0;
   if (succeeded) {
     maybeSkipSpaces(startRuleId);
+    // printI32(heap.alloc(8) - __heap_base); // Print heap usage.
+    // TODO: Do we need to update rightmostFailurePos here?
     return inputLen === pos;
   }
-  return 0;
+
+  return false;
 }
 
-@inline function evalRuleBody(ruleId: i32): Result {
-  return call_indirect<Result>(ruleId);
+@inline function evalRuleBody(ruleId: i32): RuleEvalResult {
+  return call_indirect<RuleEvalResult>(ruleId);
 }
 
-export function evalApplyGeneralized(ruleId: i32, caseIdx: i32): Result {
+// Extracts the local failure position from a RuleEvalResult.
+// If it's greater than the global rightmostFailurePos, it updates it.
+// Returns the local failure position.
+@inline function maybeUpdateRightmostFailurePos(result: RuleEvalResult): i32 {
+  const failurePos = result >> 1;
+  rightmostFailurePos = max(rightmostFailurePos, failurePos);
+  return failurePos;
+}
+
+// Evaluates a generalized rule. Identical to evalApplyNoMemo0, but includes
+// the caseIdx.
+export function evalApplyGeneralized(ruleId: i32, caseIdx: i32): ApplyResult {
   const origPos = pos;
   const origNumBindings = bindings.length;
-  if (call_indirect<Result>(ruleId, caseIdx)) {
-    return newNonterminalNode(origPos, pos, ruleId, origNumBindings);
+  const result = call_indirect<RuleEvalResult>(ruleId, caseIdx)
+  const failurePos = maybeUpdateRightmostFailurePos(result);
+  if (result & RULE_EVAL_SUCCESS_FLAG) {
+    newNonterminalNode(origPos, pos, ruleId, origNumBindings, failurePos);
+    return true;
   }
-  return 0;
+  return false;
 }
 
-export function evalApplyNoMemo0(ruleId: i32): Result {
+export function evalApplyNoMemo0(ruleId: i32): ApplyResult {
   const origPos = pos;
   const origNumBindings = bindings.length;
-  if (evalRuleBody(ruleId)) {
-    return newNonterminalNode(origPos, pos, ruleId, origNumBindings);
+  let result = evalRuleBody(ruleId);
+  const failurePos = maybeUpdateRightmostFailurePos(result);
+  if (result & RULE_EVAL_SUCCESS_FLAG) {
+    newNonterminalNode(origPos, pos, ruleId, origNumBindings, failurePos);
+    return true;
   }
-  return 0;
+  return false;
 }
 
-export function evalApply0(ruleId: i32): Result {
-  let result = memoTableGet(pos, ruleId);
-  if (result !== 0) {
-    return useMemoizedResult(ruleId, result);
+export function evalApply0(ruleId: i32): ApplyResult {
+  const memo = memoTableGet(pos, ruleId);
+  if (memo !== 0) {
+    return useMemoizedResult(ruleId, memo);
   }
   const origPos = pos;
-  let origNumBindings = bindings.length;
-  memoizeResult(origPos, ruleId, UNUSED_LR_BOMB);
-  let succeeded: i32 = evalRuleBody(ruleId);
+  const origNumBindings = bindings.length;
+  memoTableSet(origPos, ruleId, UNUSED_LR_BOMB);
+
+  const result = evalRuleBody(ruleId);
+  const failurePos = maybeUpdateRightmostFailurePos(result);
 
   // Straight failure — record a clean failure in the memo table.
-  if (!succeeded) {
-    memoizeResult(origPos, ruleId, FAIL);
-    return 0;
+  if ((result & RULE_EVAL_SUCCESS_FLAG) == 0) {
+    memoTableSet(origPos, ruleId, memoEntryForFailure(failurePos));
+    return false;
   }
 
   if (memoTableGet(origPos, ruleId) === USED_LR_BOMB) {
-    return handleLeftRecursion(origPos, ruleId, origNumBindings);
+    return handleLeftRecursion(origPos, ruleId, origNumBindings, failurePos);
   }
-
   // No left recursion — memoize and return.
-  result = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
-  memoizeResult(origPos, ruleId, result);
-  return result;
+  const node = newNonterminalNode(origPos, pos, ruleId, origNumBindings, failurePos);
+  memoTableSet(origPos, ruleId, <MemoEntry>node);
+  return true;
 }
 
-export function handleLeftRecursion(origPos: usize, ruleId: i32, origNumBindings: i32): Result {
+export function handleLeftRecursion(origPos: usize, ruleId: i32, origNumBindings: i32, failurePos: i32): ApplyResult {
   let maxPos: i32;
-  let result: Result;
-  let succeeded: i32;
+  let node: usize;
+  let succeeded: bool;
   do {
     // The current result is the best one -- record it.
     maxPos = pos;
-    result = newNonterminalNode(origPos, pos, ruleId, origNumBindings);
-    memoizeResult(origPos, ruleId, result);
+    rightmostFailurePos = max(rightmostFailurePos, failurePos);
+    node = newNonterminalNode(origPos, pos, ruleId, origNumBindings, failurePos);
+    memoTableSet(origPos, ruleId, <MemoEntry>node);
 
     // Reset and try to improve on the current best.
     pos = origPos;
     bindings.length = origNumBindings;
-    succeeded = evalRuleBody(ruleId);
+    const result = evalRuleBody(ruleId);
+    succeeded = (result & RULE_EVAL_SUCCESS_FLAG) != 0;
+    failurePos = result >> 1;
   } while (succeeded && pos > maxPos);
 
   pos = maxPos;
+
   bindings.length = origNumBindings + 1;
-  bindings[origNumBindings] = result;
+  bindings[origNumBindings] = node;
   return succeeded;
 }
 
@@ -186,19 +246,21 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): usize {
   const ptr = heap.alloc(CST_NODE_OVERHEAD);
   cstSetCount(ptr, 0);
   cstSetMatchLength(ptr, endIdx - startIdx);
-  cstSetType(ptr, -1);
+  cstSetType(ptr, NODE_TYPE_TERMINAL);
+  cstSetFailurePos(ptr, 0);
   bindings.push(ptr);
   return ptr;
 }
 
 // Create an internal (non-leaf) node (IterationNode or NonterminalNode).
-@inline function newNonLeafNodeWithType(startIdx: i32, endIdx: i32, type: i32, origNumBindings: i32): usize {
+@inline function newNonLeafNode(startIdx: i32, endIdx: i32, type: i32, origNumBindings: i32, failurePos: i32): usize {
   const bindingsLen = bindings.length;
   const numChildren = bindingsLen - origNumBindings;
   const ptr = heap.alloc(CST_NODE_OVERHEAD + numChildren * 4);
   cstSetCount(ptr, numChildren);
   cstSetMatchLength(ptr, endIdx - startIdx);
   cstSetType(ptr, type);
+  cstSetFailurePos(ptr, failurePos);
   for (let i = 0; i < numChildren; i++) {
     store<i32>(ptr + CST_NODE_OVERHEAD + i * 4, bindings[bindingsLen - numChildren + i]);
   }
@@ -207,12 +269,12 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): usize {
   return ptr;
 }
 
-export function newNonterminalNode(startIdx: i32, endIdx: i32, ruleId: i32, origNumBindings: i32): usize {
-  return newNonLeafNodeWithType(startIdx, endIdx, ruleId, origNumBindings);
+export function newNonterminalNode(startIdx: i32, endIdx: i32, ruleId: i32, origNumBindings: i32, failurePos: i32): usize {
+  return newNonLeafNode(startIdx, endIdx, ruleId, origNumBindings, failurePos);
 }
 
 export function newIterationNode(startIdx: i32, endIdx: i32, origNumBindings: i32): usize {
-  return newNonLeafNodeWithType(startIdx, endIdx, NODE_TYPE_ITERATION, origNumBindings);
+  return newNonLeafNode(startIdx, endIdx, NODE_TYPE_ITERATION, origNumBindings, -1);
 }
 
 export function getBindingsLength(): i32 {

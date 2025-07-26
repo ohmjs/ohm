@@ -506,8 +506,8 @@ test('real-world grammar', async t => {
       Msgs = Msg*
       Msg = description? spaces (Head spaces Params spaces)
 
-      lower := "a".."z"
-      upper := "A".."Z"
+      // Required until unicodeLtmo is implemented.
+      letter := lower | upper
 
       description = "#" (~nl any)* nl?
       Head = msgTarget spaces msgName
@@ -848,8 +848,12 @@ test('specialized rule names', t => {
   compiler.normalize();
 
   t.deepEqual([...compiler.rules.keys()].sort(), [
+    '$spaces',
+    'alnum',
+    'any',
     'commaSep',
     'commaSep<exclaimed<$term$0>>',
+    'digit',
     'emptyListOf',
     'emptyListOf<exclaimed<$term$0>,$term$1>',
     'exclaimed',
@@ -860,8 +864,10 @@ test('specialized rule names', t => {
     'flip<exclaimed<hello2>,hello>',
     'hello',
     'hello2',
+    'letter',
     'listOf',
     'listOf<exclaimed<$term$0>,$term$1>',
+    'lower',
     'nonemptyListOf',
     'nonemptyListOf<exclaimed<$term$0>,$term$1>',
     'one',
@@ -870,6 +876,8 @@ test('specialized rule names', t => {
     'start',
     'three',
     'two',
+    'unicodeLtmo',
+    'upper',
   ]);
 });
 

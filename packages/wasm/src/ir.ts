@@ -348,7 +348,7 @@ export function toString(exp: Expr): string {
     case 'Terminal':
       return JSON.stringify(exp.value);
     case 'UnicodeChar':
-      return `$unicodeChar<${JSON.stringify(exp.value)}>`;
+      return `$unicodeChar<${JSON.stringify(exp.category)}>`;
     case 'Dispatch':
       return `$dispatch`; // TODO: Improve this.
     case 'Lex':
