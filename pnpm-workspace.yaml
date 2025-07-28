@@ -7,3 +7,4 @@ packages:
   - 'examples/operators'
   - 'examples/simple-lisp'
   - 'examples/typescript'
+linkWorkspacePackages: true

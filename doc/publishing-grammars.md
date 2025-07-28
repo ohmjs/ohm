@@ -15,7 +15,7 @@ package supporting multiple versions of Python might be used like this:
 ```js
 const {python2} = require('./your-python-package');
 const result = python2.grammar.match('print 3');
-python2.createSemantics(result).eval();
+python2.semantics(result).eval();
 ```
 
 To package a single primary language along with other variants, you can expose

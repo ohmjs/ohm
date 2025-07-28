@@ -168,11 +168,11 @@ as well as multiline (`/* */`) comments like:
 
 <code>caseInsensitive&lt;<i>terminal</i>&gt;</code>: Matches _terminal_, but ignoring any differences in casing (based on the simple, single-character Unicode case mappings). E.g., `caseInsensitive<"ohm">` will match `'Ohm'`, `'OHM'`, etc.
 
-<code>ListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Matches the expression _elem_ zero or more times, separated by something that matches the expression _sep_. E.g., `ListOf<letter, ",">` will match `''`, `'a'`, and `'a, b, c'`.
+<code>ListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Matches the expression _elem_ zero or more times, separated by something that matches the expression _sep_. E.g., `ListOf&lt;letter, ","$gt;` will match `''`, `'a'`, and `'a, b, c'`.
 
 <code>NonemptyListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Like `ListOf`, but matches _elem_ at least one time.
 
-<code>listOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Similar to `ListOf<elem, sep>` but interpreted as [lexical rule](#syntactic-lexical).
+<code>listOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Similar to `ListOf&lt;elem, sep&gt;` but interpreted as [lexical rule](#syntactic-lexical).
 
 <code id="applySyntactic">applySyntactic&lt;<i>ruleName</i>&gt;</code>: Allows the syntactic rule _ruleName_ to be applied in a lexical context, which is otherwise not allowed. Spaces are skipped _before_ and _after_ the rule application. _New in Ohm v16.1.0._
 
@@ -229,7 +229,7 @@ ident (an identifier)
 
 #### Inline Rule Declarations
 
-<pre><code><i>expr</i> — <i>caseName</i></code></pre>
+<pre><code><i>expr</i> -- <i>caseName</i></code></pre>
 
 When a parsing expression is followed by the characters `--` and a name, it signals an _inline rule declaration_. This is most commonly used in alternation expressions to ensure that each branch has the same arity. For example, the following declaration:
 
@@ -275,7 +275,7 @@ Array = "[" "]"  -- empty
 Elements = Element ("," Element)*
 ```
 
-`Array` and `Elements` are both synactic rules, since their names begin with a capital letter. Here's what a lexical version of these rule would look like, with _explicit_ space skipping:
+`Array` and `Elements` are both syntactic rules, since their names begin with a capital letter. Here's what a lexical version of these rule would look like, with _explicit_ space skipping:
 
 <!-- @markscript
   let lexicalDefs;

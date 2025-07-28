@@ -1,0 +1,148 @@
+{
+  "reservedWords": ["Keyword", "FutureReservedWord", "NullLiteral", "BooleanLiteral"],
+  "substitutions": [
+    {
+      "name": "unicodeIDStart",
+      "override": "letter /* fixme */"
+    },
+    {
+      "name": "unicodeIDContinue",
+      "override": "letter | digit /* fixme */"
+    },
+    {
+      "name": "sourceCharacter",
+      "override": "any"
+    },
+    {
+      "name": "postAsteriskCommentChars",
+      "pattern": "| \"*\" postAsteriskCommentChars?",
+      "replacement": "| \"*\" ~\"/\" postAsteriskCommentChars?"
+    },
+    {
+      "name": "LeftHandSideExpression",
+      "pattern": "| NewExpression<guardYield, guardAwait>\n    | CallExpression<guardYield, guardAwait>",
+      "replacement": "| CallExpression<guardYield, guardAwait>\n    | NewExpression<guardYield, guardAwait>"
+    },
+    {
+      "_comment_": "MethodDefinition must come before IdentifierReference.",
+      "name": "PropertyDefinition",
+      "pattern": "| IdentifierReference<guardYield, guardAwait> -- alt1\n    | CoverInitializedName<guardYield, guardAwait> -- alt2\n    | PropertyName<guardYield, guardAwait> \":\" AssignmentExpression<withIn, guardYield, guardAwait> -- alt3\n    | MethodDefinition<guardYield, guardAwait> -- alt4",
+      "replacement": "| MethodDefinition<guardYield, guardAwait> -- alt4\n    | PropertyName<guardYield, guardAwait> \":\" AssignmentExpression<withIn, guardYield, guardAwait> -- alt3\n    | IdentifierReference<guardYield, guardAwait> -- alt1\n    | CoverInitializedName<guardYield, guardAwait> -- alt2"
+    },
+    {
+      "_comment_": "Need this rather than `#sc` so that EmptyStatement is not nullable.",
+      "name": "EmptyStatement",
+      "override": "\";\" // note: this semicolon eats newlines"
+    },
+    {
+      "_comment_": "ArrowFunction must come before ConditionalExpression, because the arrow function parameters will parse as a parenthesized expression. Both LeftHandSideExpression alternatives must also come before ConditionalExpression.",
+      "name": "AssignmentExpression",
+      "pattern": "| ConditionalExpression<guardIn, guardYield, guardAwait> -- alt1\n    | guardYield YieldExpression<guardIn, guardAwait> -- alt2\n    | ArrowFunction<guardIn, guardYield, guardAwait> -- alt3\n    | AsyncArrowFunction<guardIn, guardYield, guardAwait> -- alt4\n    | LeftHandSideExpression<guardYield, guardAwait> \"=\" AssignmentExpression<guardIn, guardYield, guardAwait>  -- alt5\n    | LeftHandSideExpression<guardYield, guardAwait> AssignmentOperator AssignmentExpression<guardIn, guardYield, guardAwait> -- alt6",
+      "replacement": "| AsyncArrowFunction<guardIn, guardYield, guardAwait> -- alt4\n    | ArrowFunction<guardIn, guardYield, guardAwait> -- alt3\n    | LeftHandSideExpression<guardYield, guardAwait> \"=\" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt5\n    | LeftHandSideExpression<guardYield, guardAwait> AssignmentOperator AssignmentExpression<guardIn, guardYield, guardAwait> -- alt6\n    | ConditionalExpression<guardIn, guardYield, guardAwait> -- alt1\n    | guardYield YieldExpression<guardIn, guardAwait> -- alt2"
+    },
+    {
+      "name": "FormalParameters",
+      "pattern": "| /* empty */ -- alt1\n    | FunctionRestParameter<guardYield, guardAwait> -- alt2\n    | FormalParameterList<guardYield, guardAwait> -- alt3\n    | FormalParameterList<guardYield, guardAwait> \",\" -- alt4\n    | FormalParameterList<guardYield, guardAwait> \",\" FunctionRestParameter<guardYield, guardAwait> -- alt5",
+      "replacement": "| FunctionRestParameter<guardYield, guardAwait> -- alt2\n    | FormalParameterList<guardYield, guardAwait> -- alt3\n    | FormalParameterList<guardYield, guardAwait> \",\" -- alt4\n    | FormalParameterList<guardYield, guardAwait> \",\" FunctionRestParameter<guardYield, guardAwait> -- alt5\n    | /* empty */ -- alt1"
+    },
+    {
+      "_comment_": "The recursive MemberExpression application must come before PrimaryExpression.",
+      "name": "MemberExpression",
+      "pattern": "| PrimaryExpression<guardYield, guardAwait> -- alt1\n    | SuperProperty<guardYield, guardAwait> -- alt5\n    | MetaProperty -- alt6\n    | new MemberExpression<guardYield, guardAwait> Arguments<guardYield, guardAwait> -- alt7",
+      "replacement": "| new MemberExpression<guardYield, guardAwait> Arguments<guardYield, guardAwait> -- alt7\n    | PrimaryExpression<guardYield, guardAwait> -- alt1\n    | SuperProperty<guardYield, guardAwait> -- alt5\n    | MetaProperty -- alt6"
+    },
+    {
+      "_comment_": "Move PostfixExpression to the very end.",
+      "name": "UnaryExpression",
+      "pattern": "    | UpdateExpression<guardYield, guardAwait> -- alt1\n",
+      "postlude": "\n    | UpdateExpression<guardYield, guardAwait> -- alt1",
+      "replacement": ""
+    },
+    {
+      "_comment_": " Move LeftHandSideExpression to the very end.",
+      "name": "UpdateExpression",
+      "pattern": "    | LeftHandSideExpression<guardYield, guardAwait> -- alt1\n",
+      "postlude": "\n    | LeftHandSideExpression<guardYield, guardAwait> -- alt1",
+      "replacement": ""
+    },
+    {
+      "_comment_": "The first alternative is a subset of the second one, so flip the order.",
+      "name": "ConditionalExpression",
+      "pattern": "| LogicalORExpression<guardIn, guardYield, guardAwait> -- alt1\n    | LogicalORExpression<guardIn, guardYield, guardAwait> \"?\" AssignmentExpression<withIn, guardYield, guardAwait> \":\" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt2",
+      "replacement": "| LogicalORExpression<guardIn, guardYield, guardAwait> \"?\" AssignmentExpression<withIn, guardYield, guardAwait> \":\" AssignmentExpression<guardIn, guardYield, guardAwait> -- alt2\n    | LogicalORExpression<guardIn, guardYield, guardAwait> -- alt1"
+    },
+    {
+      "_comment_": "First, put move the left recursive application above the ShiftExpression. (It's not properly recognized as left recursive due to the `guardIn`. Then, move the `guardIn` to be right before the `\"in\"` terminal.",
+      "name": "RelationalExpression",
+      "pattern": "| ShiftExpression<guardYield, guardAwait> -- alt1\n    | guardIn RelationalExpression<withIn, guardYield, guardAwait> in ShiftExpression<guardYield, guardAwait> -- alt7",
+      "replacement": "| RelationalExpression<withIn, guardYield, guardAwait> guardIn in ShiftExpression<guardYield, guardAwait> -- alt7\n    | ShiftExpression<guardYield, guardAwait> -- alt1"
+    },
+    {
+      "_comment_": "FIXME: Make sure these produce something useful.",
+      "name": "identifierPart",
+      "pattern": "| \"\" /* FIXME <ZWNJ> */ -- alt5\n    | \"\" /* FIXME <ZWJ> */ -- alt6",
+      "replacement": "| \"_\" -- alt5 /* FIXME <ZWNJ> <ZWJ> */"
+    },
+    {
+      "_comment_": "Move decimalLiteral to the very end.",
+      "name": "numericLiteral",
+      "pattern": "    | decimalLiteral\n",
+      "postlude": "\n    | decimalLiteral",
+      "replacement": ""
+    },
+    {
+      "_comment_": "alt1 is strictly a subset of the following two alternatives, so put it at the end.",
+      "name": "PostfixExpression",
+      "pattern": "| LeftHandSideExpression<guardYield> -- alt1\n    | LeftHandSideExpression<guardYield> ~lineTerminator \"++\" -- alt2\n    | LeftHandSideExpression<guardYield> ~lineTerminator \"--\" -- alt3",
+      "replacement": "| LeftHandSideExpression<guardYield> ~lineTerminator \"++\" -- alt2\n    | LeftHandSideExpression<guardYield> ~lineTerminator \"--\" -- alt3\n    | LeftHandSideExpression<guardYield> -- alt1"
+    },
+    {
+      "_comment_": "Change from recursive to iterative.",
+      "name": "StatementList",
+      "pattern": "| StatementList<guardYield, guardReturn> StatementListItem<guardYield, guardReturn> -- alt2\n    | StatementListItem<guardYield, guardReturn> -- alt1",
+      "replacement": "| StatementListItem<guardYield, guardReturn>+"
+    },
+    {
+      "_comment_": "Change from recursive to iterative.",
+      "name": "StatementList",
+      "pattern": "| StatementList<guardYield, guardAwait, guardReturn> StatementListItem<guardYield, guardAwait, guardReturn> -- alt2\n    | StatementListItem<guardYield, guardAwait, guardReturn> -- alt1",
+      "replacement": "| StatementListItem<guardYield, guardAwait, guardReturn>+"
+    },
+    {
+      "_comment_": "Change from recursive to iterative.",
+      "name": "ModuleItemList",
+      "pattern": "| ModuleItemList ModuleItem -- alt2\n    | ModuleItem -- alt1",
+      "replacement": "| ModuleItem+"
+    },
+    {
+      "_comment_": "Change from recursive to iterative.",
+      "name": "singleLineCommentChars",
+      "pattern": "| singleLineCommentChar singleLineCommentChars? -- alt1",
+      "replacement": "| singleLineCommentChar+"
+    },
+    {
+      "_comment_": "Change from recursive to iterative.",
+      "name": "doubleStringCharacters",
+      "pattern": "| doubleStringCharacter doubleStringCharacters? -- alt1",
+      "replacement": "| doubleStringCharacter+"
+    },
+    {
+      "_comment_": "Change from recursive to iterative.",
+      "name": "singleStringCharacters",
+      "pattern": "| singleStringCharacter singleStringCharacters? -- alt1",
+      "replacement": "| singleStringCharacter+"
+    },
+    {
+      "_comment_": "Change from recursive to iterative.",
+      "name": "templateCharacters",
+      "pattern": "| templateCharacter templateCharacters? -- alt1",
+      "replacement": "| templateCharacter+"
+    },
+    {
+      "_comment_": "Change from recursive to iterative.",
+      "name": "multiLineCommentChars",
+      "pattern": "| multiLineNotAsteriskChar multiLineCommentChars? -- alt1\n    | \"*\" postAsteriskCommentChars? -- alt2",
+      "replacement": "(~\"*/\" sourceCharacter)*"
+    }
+  ]
+}

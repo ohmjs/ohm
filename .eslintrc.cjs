@@ -17,7 +17,7 @@ module.exports = {
     module: true,
     require: true
   },
-  plugins: ['camelcase-ohm', 'no-extension-in-require', 'ava'],
+  plugins: ['camelcase-ohm', 'ava'],
   rules: {
     // ----- Exceptions to the configs we extend -----
 
@@ -45,7 +45,6 @@ module.exports = {
     'max-len': ['error', {code: 100, ignoreUrls: true}],
     'max-statements-per-line': ['error', {max: 2}],
     'no-console': 2,
-    'no-extension-in-require/main': 2,
     'no-warning-comments': ['error', {terms: ['xxx', 'fixme']}],
     strict: ['error', 'global'],
 

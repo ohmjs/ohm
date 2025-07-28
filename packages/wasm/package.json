@@ -1,0 +1,42 @@
+{
+  "name": "@ohm-js/wasm",
+  "version": "0.1.1",
+  "description": "Compile Ohm.js grammars to WebAsssembly",
+  "main": "dist/index.js",
+  "bin": {
+    "ohm2wasm": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "make",
+    "build-and-test": "make && ava test",
+    "prepack": "make",
+    "test": "ava test"
+  },
+  "type": "module",
+  "keywords": [],
+  "author": "Patrick Dubroy <pdubroy@gmail.com>",
+  "license": "MIT",
+  "packageManager": "pnpm@10.10.0",
+  "devDependencies": {
+    "@ohm-js/miniohm-js": "workspace:^",
+    "@thi.ng/leb128": "^3.1.48",
+    "assemblyscript": "^0.27.36",
+    "ava": "^6.2.0",
+    "esbuild": "^0.25.5",
+    "fast-check": "^4.2.0",
+    "fast-glob": "^3.3.3",
+    "liquid-html-parser": "link:@shopify/liquid-html-parser",
+    "mitata": "^1.0.34",
+    "wabt": "1.0.37-nightly.20250428"
+  },
+  "peerDependencies": {
+    "ohm-js": "^17.1.0"
+  },
+  "dependencies": {
+    "@shopify/liquid-html-parser": "^2.8.2",
+    "@wasmgroundup/emit": "^1.0.2"
+  }
+}

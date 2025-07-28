@@ -13,6 +13,9 @@ function initBuiltInSemantics(builtInRules) {
     nonEmpty(first, _, rest) {
       return this.iteration([first].concat(rest.children));
     },
+    self(..._children) {
+      return this;
+    },
   };
 
   Semantics.BuiltInSemantics = Semantics.createSemantics(builtInRules, null).addOperation(
@@ -22,6 +25,7 @@ function initBuiltInSemantics(builtInRules) {
         nonemptyListOf: actions.nonEmpty,
         EmptyListOf: actions.empty,
         NonemptyListOf: actions.nonEmpty,
+        _iter: actions.self,
       },
   );
 }

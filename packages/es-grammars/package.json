@@ -1,0 +1,31 @@
+{
+  "name": "@ohm-js/es-grammars",
+  "version": "1.0.1",
+  "description": "Ohm grammars for modern versions of ECMAScript/JavaScript (ES2015+).",
+  "exports": "./index.mjs",
+  "files": [
+    "index.mjs",
+    "gen/*.ohm"
+  ],
+  "scripts": {
+    "test": "node test/es2015.test.mjs",
+    "gen-grammars": "node scripts/generate-ecmascript-grammar.mjs ES2015 spec/es2015.grammar > gen/es2015.grammar.ohm"
+  },
+  "keywords": [
+    "ohm",
+    "grammar",
+    "ecmascript",
+    "javascript"
+  ],
+  "author": "Patrick Dubroy <pdubroy@gmail.com>",
+  "contributors": [
+    "Andrew Elgert <andrew.elgert@gmail.com>"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "ohm-js": "^17.1.0"
+  },
+  "devDependencies": {
+    "fast-glob": "^3.2.7"
+  }
+}

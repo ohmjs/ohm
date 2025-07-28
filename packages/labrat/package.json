@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "name": "labrat",
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"**/*.test.ts\"",
+    "build": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^16.18.126",
+    "typescript": "^5.8.3"
+  }
+}

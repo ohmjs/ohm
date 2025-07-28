@@ -34,8 +34,10 @@ function typeCheck(name: string, grammarSource: string, tsSource: string) {
   project.createSourceFile(`${name}.ts`, tsSource);
 
   const diagnostics = project.getPreEmitDiagnostics();
-  //  console.log(project.formatDiagnosticsWithColorAndContext(diagnostics));
-  return diagnostics.map(d => d.getMessageText());
+  return diagnostics.map(d => {
+    const textOrChain = d.getMessageText();
+    return typeof textOrChain === 'string' ? textOrChain : textOrChain.getMessageText();
+  });
 }
 
 const grammarSources = {
@@ -114,9 +116,12 @@ test('incorrect arity', t => {
       }
     `)
   );
-  t.deepEqual(diagnostics, [
-    `Type \'(letters: any, x: any) => any\' is not assignable to type \'(this: NonterminalNode, arg0: NonterminalNode) => number\'.`
-  ]);
+  t.deepEqual(
+    diagnostics.map(d => d.toString()),
+    [
+      `Type \'(letters: any, x: any) => any\' is not assignable to type \'(this: NonterminalNode, arg0: NonterminalNode) => number\'.`
+    ]
+  );
 });
 
 test('incorrect return type', t => {
@@ -165,8 +170,10 @@ test('extendOperation', t => {
   // Check that an action with incorrect arity is flagged by the compiler.
   const badSource = goodSource.replace('start(letters)', 'start(letters, x)');
   diagnostics = typeCheck('g', grammarSources.g, badSource);
-  t.pass();
-  t.deepEqual(diagnostics, [
-    `Type \'(letters: any, x: any) => any\' is not assignable to type \'(this: NonterminalNode, arg0: NonterminalNode) => number\'.`
-  ]);
+  t.deepEqual(
+    diagnostics.map(d => d.toString()),
+    [
+      `Type \'(letters: any, x: any) => any\' is not assignable to type \'(this: NonterminalNode, arg0: NonterminalNode) => number\'.`
+    ]
+  );
 });

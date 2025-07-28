@@ -1,4 +1,4 @@
-import {abstract} from './common.js';
+import {abstract, checkNotNull} from './common.js';
 import * as pexprs from './pexprs-main.js';
 
 // --------------------------------------------------------------------
@@ -24,7 +24,7 @@ pexprs.any.substituteParams =
     };
 
 pexprs.Param.prototype.substituteParams = function(actuals) {
-  return actuals[this.index];
+  return checkNotNull(actuals[this.index]);
 };
 
 pexprs.Alt.prototype.substituteParams = function(actuals) {

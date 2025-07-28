@@ -809,6 +809,7 @@ test('asIteration', t => {
     '  Start = ListOf<letter, ","> listOf<any, ".">',
     '  anyTwo = any any',
     '  anyThree = any any any',
+    '  manyLetters = letter+',
     '}',
   ]);
   const s = g.createSemantics().addAttribute('value', {
@@ -823,10 +824,14 @@ test('asIteration', t => {
     any(_) {
       return this.sourceString;
     },
+    manyLetters(letters) {
+      return letters.asIteration().children.map(c => c.value).join('');
+    },
   });
   t.is(s(g.match('a, b, c')).value, 'abc', 'one nonempty, one empty');
   t.is(s(g.match('a, b, c 1.2.3')).value, 'abc123', 'baby you and me');
   t.is(s(g.match('')).value, '', 'both empty');
+  t.is(s(g.match('abc', 'manyLetters')).value, 'abc', 'one or more letters');
 
   // Check that we can override asIteration for ListOf, and extend it with an action
   // for a rule of our own.
