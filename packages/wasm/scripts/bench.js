@@ -15,14 +15,17 @@ const inputs = {
   bookReview: readFileSync(join(datadir, 'book-review.liquid'), 'utf-8'),
   featuredProduct: readFileSync(join(datadir, 'featured-product.liquid'), 'utf-8'),
   footer: readFileSync(join(datadir, 'footer.liquid'), 'utf-8'),
+  mockJSON: readFileSync(join(datadir, 'json-org-examples.json'), 'utf-8'),
   html5shiv: readFileSync(join(datadir, '_html5shiv-3.7.3.js'), 'utf-8'),
   underscore: readFileSync(join(datadir, '_underscore-1.8.3.js'), 'utf-8'),
 };
 
 const liquid = ohm.grammars(readFileSync(join(datadir, 'liquid-html.ohm'), 'utf8'));
+const json = ohm.grammar(readFileSync(join(__dirname, '../../lang-json/json.ohm'), 'utf8'));
 
 let liquidHtmlMatcher;
 let es5Matcher;
+let jsonMatcher;
 
 function checkOk(val) {
   if (!val) {
@@ -91,6 +94,17 @@ group('LiquidHTML: footer.liquid', () => {
   });
 });
 
+group('JSON', () => {
+  summary(() => {
+    bench('Wasm', () => {
+      matchWithInput(jsonMatcher, inputs.mockJSON);
+    });
+    bench('JS', () => {
+      json.match(inputs.mockJSON);
+    });
+  });
+});
+
 (async () => {
   // Note: we are deliberately creating one instance of the matcher that's
   // reused. This takes advantage of JIT tier-up, and approximates usage
@@ -102,6 +116,10 @@ group('LiquidHTML: footer.liquid', () => {
   es5Matcher = await wasmMatcherForGrammar(
       es5,
       readFileSync(join(__dirname, '../build/es5.wasm')),
+  );
+  jsonMatcher = await wasmMatcherForGrammar(
+      json,
+      readFileSync(join(__dirname, '../build/json.wasm')),
   );
 
   await run();

@@ -1,7 +1,7 @@
 /* global process */
 
 import * as w from '@wasmgroundup/emit';
-import {pexprs, ohmGrammar} from 'ohm-js';
+import * as ohm from 'ohm-js';
 // import wabt from 'wabt';
 
 import * as ir from './ir.ts';
@@ -21,6 +21,7 @@ const IMPLICIT_SPACE_SKIPPING = true;
 const EMIT_GENERALIZED_RULES = true;
 
 const {instr} = w;
+const {pexprs} = ohm;
 
 const isNonNull = x => x != null;
 
@@ -659,10 +660,19 @@ Assembler.STACK_FRAME_SIZE_BYTES = 8;
 export class Compiler {
   constructor(grammar) {
     assert(grammar && 'superGrammar' in grammar, 'Not a valid grammar: ' + grammar);
-    assert(
-        grammar instanceof ohmGrammar.constructor,
-        'Grammar smells fishy. Do you have multiple instances of ohm-js?',
-    );
+
+    // Detect the so-called "dual package hazard". Since we use the identity
+    // of the pexpr constructors when compiling the grammar, it gets confusing
+    // if there are multiple copies of Ohm.
+    if (!(grammar instanceof ohm.ohmGrammar.constructor)) {
+      // If we have the source, recover by instantiating the grammar anew.
+      // Fail otherwise.
+      assert(
+          !!grammar.source,
+          'Grammar smells fishy. Do you have multiple instances of ohm-js?',
+      );
+      grammar = ohm.grammar(grammar.source.contents);
+    }
 
     this.grammar = grammar;
 
