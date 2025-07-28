@@ -187,7 +187,7 @@ ES2021 {
 
   decimalIntegerLiteral = 
     | "0" -- alt1
-    | nonZeroDigit -- alt2
+    | nonZeroDigit decimalDigits<withSep>? -- alt2
     | nonZeroDigit numericLiteralSeparator? decimalDigits<withSep> -- alt3
 
   decimalDigits<guardSep> = 
@@ -586,11 +586,11 @@ ES2021 {
     | MemberExpression<guardYield, guardAwait> Arguments<guardYield, guardAwait> -- alt1
 
   UpdateExpression<guardYield, guardAwait> = 
-    | LeftHandSideExpression<guardYield, guardAwait> -- alt1
     | LeftHandSideExpression<guardYield, guardAwait> ~lineTerminator "++" -- alt2
     | LeftHandSideExpression<guardYield, guardAwait> ~lineTerminator "--" -- alt3
     | "++" UnaryExpression<guardYield, guardAwait> -- alt4
     | "--" UnaryExpression<guardYield, guardAwait> -- alt5
+	| LeftHandSideExpression<guardYield, guardAwait> -- alt1
 
   UnaryExpression<guardYield, guardAwait> = 
     | delete UnaryExpression<guardYield, guardAwait> -- alt2
