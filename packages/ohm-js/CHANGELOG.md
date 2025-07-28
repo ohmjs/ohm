@@ -1,6 +1,6 @@
 # Changelog
 
-## v17.2.0 - July 28, 2025
+## v17.2.1 - July 28, 2025
 
 ### New features:
 
