@@ -27,11 +27,12 @@ Since 2017, Ohm has been maintained by [@pdubroy](https://github.com/pdubroy) on
 
 ### Diamond 💎
 
-[<img alt="Project Substrate" src="./doc/images/substrate-logo.png" height="128">](https://projectsubstrate.org)
-
-### Gold 🥇
-
-[<img alt="Shopify" src="./doc/images/shopify-logo.png" height="48">](https://shopify.com)
+<table>
+  <tr>
+    <td><a href="https://shopify.com"><img alt="Shopify" src="./doc/images/shopify-logo.png" height="48"></a></td>
+    <td><a href="https://projectsubstrate.org"><img alt="Project Substrate" src="./doc/images/substrate-logo.png" height="128"></a></td>
+  </tr>
+</table>
 
 ## Getting Started
 
