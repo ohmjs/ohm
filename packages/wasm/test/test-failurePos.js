@@ -3,8 +3,11 @@ import assert from 'node:assert/strict';
 import fc from 'fast-check';
 import {readFileSync} from 'node:fs';
 import * as ohm from 'ohm-js';
+import process from 'node:process';
 
 import {scriptRel, wasmMatcherForGrammar} from './_helpers.js';
+
+const verbose = process.argv.slice(2).includes('--verbose');
 
 const grammarSource = readFileSync(scriptRel('data/liquid-html.ohm'), 'utf8');
 const ns = ohm.grammars(grammarSource);
@@ -58,30 +61,34 @@ const validInput = `{% comment %}
 
 // Take some valid input, randomly corrupt it, and then check that the
 // rightmostFailurePosition is the same as the JS parser reports.
-const checkFailurePos = matcher =>
-  fc.property(
-      fc.nat(), // Position to corrupt
-      fc.integer({min: 1, max: 20}), // Number of characters to corrupt
-      (posSeed, numChars) => {
-        const pos = posSeed % Math.max(1, validInput.length - numChars);
+function arbitraryEdit(input) {
+  return fc
+    .tuple(
+      fc.nat({max: input.length - 1}), // Position to edit
+      fc.integer({min: 1, max: 20}) // Number of characters to delete
+    )
+    .map(([pos, numDeleted]) => {
+      return input.slice(0, pos) + input.slice(pos + numDeleted);
+    });
+}
 
-        // Remove a slice of random amount of characters
-        const newInput = validInput.slice(0, pos) + validInput.slice(pos + numChars);
+// A fast-check property that checks that:
+// - for some randomly-corrupted input, which fails to parse
+// - the rightmostFailurePosition reported by a JS matcher and a Wasm matcher
+//   is the same.
+const sameFailurePos = (t, wasmMatcher) =>
+  fc.property(arbitraryEdit(validInput), input => {
+    wasmMatcher.setInput(input);
+    fc.pre(wasmMatcher.match() === 0);
+    assert.equal(
+      ns.LiquidHTML.match(input).getRightmostFailurePosition(),
+      wasmMatcher.getRightmostFailurePosition()
+    );
+  });
 
-        matcher.setInput(newInput);
-        fc.pre(matcher.match() === 0);
-
-        return (
-          matcher.getRightmostFailurePosition() ===
-        ns.LiquidHTML.match(newInput).getRightmostFailurePosition()
-        );
-      },
-  );
-
-// eslint-disable-next-line ava/no-skip-test
 test('failure pos (fast-check)', async t => {
   const m = await wasmMatcherForGrammar(ns.LiquidHTML);
-  t.notThrows(() => fc.assert(checkFailurePos(m), {numRuns: 50}));
+  t.notThrows(() => fc.assert(sameFailurePos(t, m), {verbose, includeErrorInReport: true}));
 });
 
 test('failure pos: basic 1', async t => {
@@ -176,4 +183,12 @@ test('failure pos: space skipping', async t => {
     t.is(failurePos(jsMatcher, '9 /* bad'), 2);
     t.is(failurePos(wasmMatcher, '9 /* bad'), 2);
   }
+});
+
+test('fast-check zoo', async t => {
+  const jsMatcher = ns.LiquidHTML.matcher();
+  const wasmMatcher = await wasmMatcherForGrammar(ns.LiquidHTML);
+
+  const input = '< {% if swatch_value %}';
+  t.is(failurePos(wasmMatcher, input), failurePos(jsMatcher, input));
 });
