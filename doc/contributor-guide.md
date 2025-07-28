@@ -12,7 +12,7 @@ We support all [_Active LTS_ and _Maintenance LTS_ releases][nodejs-releases].
 
 [nodejs-releases]: https://nodejs.dev/en/about/releases/
 
-You also need to install [Yarn 1](https://classic.yarnpkg.com/lang/en/).
+You also need to install [pnpm](https://pnpm.io/).
 
 ### Basic Setup
 
@@ -23,9 +23,9 @@ First, clone the repository:
 Then, install the dev dependencies:
 
     cd ohm
-    yarn install
+    pnpm install
 
-_Note: the `postinstall` script (which is automatically run by `yarn install`)
+_Note: the `postinstall` script (which is automatically run by `pnpm install`)
 will install a git pre-commit hook. See [here](#pre-commit-checks) for more
 information._
 
@@ -33,12 +33,12 @@ information._
 
 The following scripts are useful when developing the main `ohm-js` package:
 
-- Use `yarn test` to run the unit tests.
-- `yarn run test-watch` re-runs the unit tests every time a file changes.
-- `yarn build` builds `dist/ohm.js` and `dist/ohm.min.js`,
+- Use `pnpm test` to run the unit tests.
+- `pnpm run test-watch` re-runs the unit tests every time a file changes.
+- `pnpm build` builds `dist/ohm.js` and `dist/ohm.min.js`,
   which are stand-alone bundles that can be included in a webpage.
 - When editing Ohm's own grammar (in `src/ohm-grammar.ohm`), run
-  `yarn run bootstrap` to re-build Ohm and test your changes.
+  `pnpm run bootstrap` to re-build Ohm and test your changes.
 
 ## Doing Development
 
@@ -46,7 +46,7 @@ See our recommended [Git workflow](https://github.com/ohmjs/ohm/wiki/Git-Workflo
 
 ### Pre-commit Checks
 
-When you run `yarn install` in an Ohm checkout, it will automatically install
+When you run `pnpm install` in an Ohm checkout, it will automatically install
 a pre-commit hook into `.git/hooks/pre-commit`. Every time you commit to the
 repository, the pre-commit script checks that all tests pass, and that the
 code passes a lint check. We use [ESLint](http://eslint.org/), which helps
@@ -91,8 +91,10 @@ can use `git commit --no-verify` -- but use this sparingly!
 
 ## Publishing
 
-To version and publish the ohm-js package, run the following in the ohm-js directory:
+To version and publish the ohm-js package:
 
-    yarn version-package
-    yarn publish
-    git push && git push --tags
+1. Update package.json manually to bump the version number.
+2. Make sure the CHANGELOG.md is up to date.
+3. Run `pnpm publish`
+4. Run `git push && git push --tags`
+5. Create a release on GitHub, pasting in the changelog contents.
