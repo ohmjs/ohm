@@ -1255,12 +1255,13 @@ export class Compiler {
       }
       this.emitPExpr(newExp);
     };
+
+    this.maybeEmitSpaceSkipping();
     if (patterns.length === 1) {
       handleCase(0); // No need for a switch.
       return;
     }
     assert(patterns.length > 1);
-
     asm.switch(
         w.blocktype.empty,
         () => asm.localGet('__arg0'),
