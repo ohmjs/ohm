@@ -1,5 +1,15 @@
 # Changelog
 
+## v17.2.0 - July 28, 2025
+
+### New features:
+
+- [456b540]: asIteration() is now support for iter nodes (returns the node itself)
+
+### Fixes
+
+- [59b17ec]: Expose Matcher’s grammar prop in TS types
+
 ## v17.1.0 - Apr 27, 2023
 
 ### New features:
