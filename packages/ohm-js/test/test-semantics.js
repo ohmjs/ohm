@@ -825,7 +825,10 @@ test('asIteration', t => {
       return this.sourceString;
     },
     manyLetters(letters) {
-      return letters.asIteration().children.map(c => c.value).join('');
+      return letters
+          .asIteration()
+          .children.map(c => c.value)
+          .join('');
     },
   });
   t.is(s(g.match('a, b, c')).value, 'abc', 'one nonempty, one empty');
