@@ -8,9 +8,21 @@ import * as util from './util.js';
 
 export class Interval {
   constructor(sourceString, startIdx, endIdx) {
-    this.sourceString = sourceString;
+    // Store the full source in a non-enumerable property, so that when
+    // grammars and other objects are printed in the REPL, it's not
+    // cluttered with multiple copies of the same long string.
+    Object.defineProperty(this, '_sourceString', {
+      value: sourceString,
+      configurable: false,
+      enumerable: false,
+      writable: false,
+    });
     this.startIdx = startIdx;
     this.endIdx = endIdx;
+  }
+
+  get sourceString() {
+    return this._sourceString;
   }
 
   get contents() {
