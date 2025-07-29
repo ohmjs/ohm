@@ -542,7 +542,7 @@ ES2018 {
     | LeftHandSideExpression<guardYield, guardAwait> ~lineTerminator "--" -- alt3
     | "++" UnaryExpression<guardYield, guardAwait> -- alt4
     | "--" UnaryExpression<guardYield, guardAwait> -- alt5
-	| LeftHandSideExpression<guardYield, guardAwait> -- alt1
+    | LeftHandSideExpression<guardYield, guardAwait> -- alt1
 
   UnaryExpression<guardYield, guardAwait> = 
     | delete UnaryExpression<guardYield, guardAwait> -- alt2

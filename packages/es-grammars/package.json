@@ -8,8 +8,10 @@
     "gen/*.ohm"
   ],
   "scripts": {
+    "build": "for year in {2015..2022}; do YEAR=$year pnpm run gen-grammar; done",
     "test": "node test/es2015.test.mjs",
-    "gen-grammars": "node scripts/generate-ecmascript-grammar.mjs ES2015 spec/es2015.grammar > gen/es2015.grammar.ohm"
+    "gen-grammar": "node scripts/generate-ecmascript-grammar.mjs --verbose --name ES$YEAR --overrides spec/es$YEAR/overrides.json spec/es$YEAR/spec.grammar > gen/es$YEAR.grammar.ohm",
+    "gen-grammar:es2015": "YEAR=2015 pnpm run gen-grammar"
   },
   "keywords": [
     "ohm",

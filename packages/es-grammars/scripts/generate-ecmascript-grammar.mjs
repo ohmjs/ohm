@@ -1,9 +1,29 @@
-import assert from 'assert';
 import {readFileSync} from 'fs';
+import assert from 'node:assert/strict';
+import process from 'node:process';
+import {parseArgs} from 'node:util';
 import * as ohm from 'ohm-js';
-import {exit} from 'process';
 
 const {raw} = String;
+
+// A simple logging facade.
+/* eslint-disable no-console */
+let loglevel = 1;
+const log = {
+  error(msg, ...args) {
+    if (loglevel >= 0) console.error(msg, ...args);
+  },
+  warn(msg, ...args) {
+    if (loglevel >= 1) console.error(msg, ...args);
+  },
+  info(msg, ...args) {
+    if (loglevel >= 2) console.error(msg, ...args);
+  },
+  debug(msg, ...args) {
+    if (loglevel >= 3) console.error(msg, ...args);
+  }
+};
+/* eslint-enable no-console */
 
 // Maps from a Unicode character literal as used in the ECMAScript spec to
 // an equivalent Ohm parsing expression.
@@ -22,14 +42,14 @@ const literalToOhm = {
 };
 
 function safelyReplace(str, pattern, replacement) {
-  if (!str.includes(pattern)) console.error(str);
+  if (!str.includes(pattern)) log.error(str);
   assert(str.includes(pattern), `not found: ${JSON.stringify(pattern)}`);
   return str.replace(pattern, replacement);
 }
 
 const lexicalRuleName = str => str[0].toLowerCase() + str.slice(1);
 const syntacticRuleName = str => {
-  assert(str[0] === str[0].toUpperCase());
+  assert.equal(str[0], str[0].toUpperCase());
   return str;
 };
 
@@ -47,6 +67,7 @@ function mkRuleOverrides(substitutions) {
     const keys = Object.keys(substitution);
     if (keys.includes('override')) {
       overrides[substitution.name] = substitution.override;
+      log.debug(`Added substitution: ${substitution.name} => '${substitution.override}'`);
       continue;
     }
     if (keys.includes('pattern') && keys.includes('replacement')) {
@@ -98,8 +119,10 @@ const PRELUDE = raw`
 function overrideRuleBodyOrElse(ruleName, rhs, noOverrideValue) {
   const override = ruleOverrides[ruleName];
   if (typeof override === 'string') {
+    log.debug(`  Using string override for '${ruleName}'`);
     return override;
   } else if (typeof override === 'function') {
+    log.debug(`  Using function override for '${ruleName}'`);
     return override(rhs, noOverrideValue);
   } else {
     return noOverrideValue;
@@ -115,12 +138,18 @@ let grammarName; // Initialized in main(), below.
 semantics.addOperation(
   'toOhm()',
   (() => {
+    // This is the main handler for converting a production from
+    // the source spec to a rule in the destination Ohm grammar.
     function handleProduction(
       nonterminal,
       rhs,
       parameterListOpt = undefined,
       kind = 'LEXICAL'
     ) {
+      log.debug(`handleProduction: ${nonterminal.sourceString}`, {
+        rhs: rhs.sourceString,
+        kind
+      });
       // const isLexical = parameterListOpt === undefined;
       const isLexical = kind === 'LEXICAL';
       const strippedNonTerminal = nonterminal.sourceString.replaceAll('|', '');
@@ -599,10 +628,21 @@ function addContext(semantics, getActions) {
   for details of the grammar format.
  */
 (function main() {
-  grammarName = process.argv[2];
-  const inputFilename = process.argv[3];
-  if (process.argv.length > 4) {
-    const overrideConfig = JSON.parse(readFileSync(process.argv[4], {encoding: 'utf-8'}));
+  const {values, positionals} = parseArgs({
+    options: {
+      debug: {type: 'boolean'},
+      name: {type: 'string'},
+      overrides: {type: 'string'},
+      verbose: {type: 'boolean'}
+    },
+    allowPositionals: true
+  });
+  if (values.verbose) loglevel = Math.max(loglevel, 2);
+  if (values.debug) loglevel = Math.max(loglevel, 3);
+  grammarName = values.name;
+  const inputFilename = positionals[0];
+  if (values.overrides) {
+    const overrideConfig = JSON.parse(readFileSync(values.overrides, {encoding: 'utf-8'}));
     if (overrideConfig.substitutions) {
       ruleOverrides = mkRuleOverrides(overrideConfig.substitutions);
     }
@@ -616,9 +656,10 @@ function addContext(semantics, getActions) {
     }
   }
 
+  log.info(`Reading grammarkdown from ${inputFilename}`);
   const result = grammarkdown.match(readFileSync(inputFilename, 'utf-8'));
   if (!result.succeeded()) {
-    console.error(result.message);
+    log.error(result.message);
   }
 
   const root = semantics(result);
@@ -629,8 +670,9 @@ function addContext(semantics, getActions) {
   try {
     ohm.grammar(outGrammar);
   } catch (e) {
-    console.error(e.message);
-    exit(1);
+    log.error(e.message);
+    process.exit(1);
   }
+  // eslint-disable-next-line no-console
   console.log(outGrammar);
 })();
