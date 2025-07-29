@@ -18,7 +18,7 @@ To enable grammar-specific type definitions:
 3. Use the Ohm CLI to generate a bundle (.ohm-bundle.js) for your grammar, along with the associated type definitions (.d.ts). For example, if your grammar is in `src/my-grammar.ohm`:
 
    ```
-   npx ohm generateBundles --withTypes src
+   npx ohm generateBundles --withTypes 'src/*.ohm'
    ```
 
    ...will create `src/my-grammar.ohm-bundle.js` and `src/my-grammar.ohm-bundle.d.ts`. You can directly import the bundle like this:
