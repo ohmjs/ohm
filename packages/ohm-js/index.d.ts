@@ -168,25 +168,29 @@ export interface MatchResult {
   /**
    * True iff match succeeded
    */
-  succeeded(): boolean;
+  succeeded(): this is SucceededMatchResult;
 
   /**
    * True iff match did not succeed
    */
-  failed(): boolean;
+  failed(): this is FailedMatchResult;
+}
 
+export interface SucceededMatchResult extends MatchResult {}
+
+export interface FailedMatchResult extends MatchResult {
   /**
    * If match failed contains an error message indicating where and
    * why the match failed. This message is suitable for end users of a
    * language (i.e., people who do not have access to the grammar source).
    */
-  message?: string;
+  message: string;
 
   /**
    * If match failed contains an abbreviated version of this.message that
    * does not include an excerpt from the invalid input.
    */
-  shortMessage?: string;
+  shortMessage: string;
 
   /**
    * If this MatchResult is a failure, returns an Interval indicating

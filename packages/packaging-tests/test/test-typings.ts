@@ -72,14 +72,17 @@ test('extras - getLineAndColumn & getLineAndColumnMessage', () => {
 
 test('getLineAndColumn - #410', () => {
   const matchResult = g.match('Sup friend!');
-  assert.is(matchResult.failed(), true);
-  const lineAndCol = matchResult.getInterval().getLineAndColumn();
-  assert.is(lineAndCol.offset, 0);
-  assert.is(lineAndCol.lineNum, 1);
-  assert.is(lineAndCol.colNum, 1);
-  assert.is(lineAndCol.line, 'Sup friend!');
-  assert.is(lineAndCol.prevLine, null);
-  assert.is(lineAndCol.nextLine, null);
+  if (matchResult.failed()) {
+    const lineAndCol = matchResult.getInterval().getLineAndColumn();
+    assert.is(lineAndCol.offset, 0);
+    assert.is(lineAndCol.lineNum, 1);
+    assert.is(lineAndCol.colNum, 1);
+    assert.is(lineAndCol.line, 'Sup friend!');
+    assert.is(lineAndCol.prevLine, null);
+    assert.is(lineAndCol.nextLine, null);
+  } else {
+    assert.unreachable('Expected match failure');
+  }
 });
 
 test('asIteration - #407', () => {
@@ -100,24 +103,26 @@ test('asIteration - #407', () => {
 test('Interval typings', () => {
   const inputStr = ' Sup friend!   ';
   const matchFailure = g.match(inputStr);
-  assert.is(matchFailure.failed(), true);
+  if (matchFailure.failed()) {
+    const interval = matchFailure.getInterval();
+    interval.startIdx = 1;
+    interval.endIdx = inputStr.length;
+    assert.is(interval.sourceString, ' Sup friend!   ');
+    assert.is(interval.contents, 'Sup friend!   ');
+    assert.is(interval.trimmed().contents, 'Sup friend!');
 
-  const interval = matchFailure.getInterval();
-  interval.startIdx = 1;
-  interval.endIdx = inputStr.length;
-  assert.is(interval.sourceString, ' Sup friend!   ');
-  assert.is(interval.contents, 'Sup friend!   ');
-  assert.is(interval.trimmed().contents, 'Sup friend!');
+    const left = interval.collapsedLeft();
+    const right = interval.collapsedRight();
+    assert.is(left.startIdx, interval.startIdx);
+    assert.is(right.startIdx, interval.endIdx);
 
-  const left = interval.collapsedLeft();
-  const right = interval.collapsedRight();
-  assert.is(left.startIdx, interval.startIdx);
-  assert.is(right.startIdx, interval.endIdx);
-
-  const fat = interval.minus(interval.trimmed());
-  assert.is(fat.length, 1);
-  assert.is(fat[0].contents, '   ');
-  assert.is(fat[0].relativeTo(interval).startIdx, 11);
+    const fat = interval.minus(interval.trimmed());
+    assert.is(fat.length, 1);
+    assert.is(fat[0].contents, '   ');
+    assert.is(fat[0].relativeTo(interval).startIdx, 11);
+  } else {
+    assert.unreachable('Expected match failure');
+  }
 });
 
 test.run();
