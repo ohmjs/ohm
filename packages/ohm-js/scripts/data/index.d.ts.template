@@ -164,6 +164,10 @@ export interface Matcher {
   * Result of Grammar#match
   */
 export interface MatchResult {
+  matcher: Matcher;
+  input: string;
+
+
   /**
     * True iff match succeeded
     */
@@ -180,22 +184,36 @@ export interface SucceededMatchResult extends MatchResult {
 
 export interface FailedMatchResult extends MatchResult {
   /**
-    * If match failed contains an error message indicating where and
-    * why the match failed. This message is suitable for end users of a
-    * language (i.e., people who do not have access to the grammar source).
-    */
+   * If match failed contains an error message indicating where and
+   * why the match failed. This message is suitable for end users of a
+   * language (i.e., people who do not have access to the grammar source).
+   */
   message: string;
 
   /**
-    * If match failed contains an abbreviated version of this.message that
-    * does not include an excerpt from the invalid input.
-    */
+   * If match failed contains an abbreviated version of this.message that
+   * does not include an excerpt from the invalid input.
+   */
   shortMessage: string;
 
   /**
-    * If this MatchResult is a failure, returns an Interval indicating
-    * the position of the rightmost failure.
-    */
+   * Returns the position at which the error should be reported. This is used
+   * to construct `message` and `shortMessage`.
+   */
+  getRightmostFailurePosition(): number;
+
+  /**
+   * Return a string summarizing the expected contents of the input stream
+   * at the rightmost failure position. This is used to construct `message`
+   * and `shortMessage`.
+   */
+  getExpectedText(): string;
+
+
+  /**
+   * If this MatchResult is a failure, returns an Interval indicating
+   * the position of the rightmost failure.
+   */
   getInterval(): Interval;
 }
 

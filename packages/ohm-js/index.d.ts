@@ -165,6 +165,9 @@ export interface Matcher {
  * Result of Grammar#match
  */
 export interface MatchResult {
+  matcher: Matcher;
+  input: string;
+
   /**
    * True iff match succeeded
    */
@@ -191,6 +194,19 @@ export interface FailedMatchResult extends MatchResult {
    * does not include an excerpt from the invalid input.
    */
   shortMessage: string;
+
+  /**
+   * Returns the position at which the error should be reported. This is used
+   * to construct `message` and `shortMessage`.
+   */
+  getRightmostFailurePosition(): number;
+
+  /**
+   * Return a string summarizing the expected contents of the input stream
+   * at the rightmost failure position. This is used to construct `message`
+   * and `shortMessage`.
+   */
+  getExpectedText(): string;
 
   /**
    * If this MatchResult is a failure, returns an Interval indicating
