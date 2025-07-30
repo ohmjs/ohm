@@ -3,6 +3,32 @@
 const WASM_PAGE_SIZE = 64 * 1024;
 const INPUT_BUFFER_OFFSET = WASM_PAGE_SIZE;
 
+// Bit flags for Unicode categories, based on the order that they appear in
+// https://www.unicode.org/Public/16.0.0/ucd/extracted/DerivedGeneralCategory.txt
+
+const UnicodeCategoryNames = [
+  'Cn', // Unassigned
+  'Lu', // Uppercase_Letter
+  'Ll', // Lowercase_Letter
+  'Lt', // Titlecase_Letter
+  'Lm', // Modifier_Letter
+  'Lo', // Other_Letter
+];
+
+const utf8 = new TextDecoder('utf-8');
+
+function regexFromCategoryBitmap(bitmap) {
+  const cats = [];
+  for (let i = 0; i < 32; i++) {
+    const mask = 1 << i;
+    if (bitmap & mask) cats.push(UnicodeCategoryNames[i]);
+  }
+  return new RegExp(
+      cats.map(cat => `\\p{${cat}}`).join('|'),
+      'uy', // u: unicode, y: sticky
+  );
+}
+
 function assert(cond, msg) {
   if (!cond) {
     throw new Error(msg ?? 'assertion failed');
@@ -32,10 +58,36 @@ export class WasmMatcher {
           return name[0] === name[0].toUpperCase();
         },
         fillInputBuffer: this._fillInputBuffer.bind(this),
+        matchUnicodeChar: (catBitmap, pos) => {
+          const re = regexFromCategoryBitmap(catBitmap);
+          return re.test(this._nextCodePoint());
+        },
       },
     };
     this._ruleIds = new Map();
     this._ruleNames = [];
+  }
+
+  // Return a JavaScript string containing the next code point from the input
+  // buffer, and advance pos past it.
+  _nextCodePoint() {
+    const {pos, memory} = this._instance.exports;
+    const offset = pos.value;
+    const byteArr = new Uint8Array(memory.buffer, INPUT_BUFFER_OFFSET + offset);
+    const firstByte = byteArr[0];
+    let len;
+    if ((firstByte & 0b10000000) === 0) {
+      len = 1;
+    } else if ((firstByte & 0b11100000) === 0b11000000) {
+      len = 2;
+    } else if ((firstByte & 0b11110000) === 0b11100000) {
+      len = 3;
+    } else {
+      len = 4;
+    }
+    const str = utf8.decode(byteArr.subarray(0, len));
+    pos.value += len;
+    return str;
   }
 
   _extractRuleIds(module) {

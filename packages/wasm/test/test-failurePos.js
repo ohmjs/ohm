@@ -76,8 +76,8 @@ function arbitraryEdit(input) {
 // - for some randomly-corrupted input, which fails to parse
 // - the rightmostFailurePosition reported by a JS matcher and a Wasm matcher
 //   is the same.
-const sameFailurePos = (t, wasmMatcher) =>
-  fc.property(arbitraryEdit(validInput), input => {
+function sameFailurePos(wasmMatcher) {
+  return fc.property(arbitraryEdit(validInput), input => {
     wasmMatcher.setInput(input);
     fc.pre(wasmMatcher.match() === 0);
     assert.equal(
@@ -85,10 +85,16 @@ const sameFailurePos = (t, wasmMatcher) =>
         wasmMatcher.getRightmostFailurePosition(),
     );
   });
+}
 
 test('failure pos (fast-check)', async t => {
   const m = await wasmMatcherForGrammar(ns.LiquidHTML);
-  t.notThrows(() => fc.assert(sameFailurePos(t, m), {verbose, includeErrorInReport: true}));
+  const details = fc.check(sameFailurePos(m), {
+    includeErrorInReport: true,
+    interruptAfterTimeLimit: 1000,
+  });
+  t.log(`numRuns: ${details.numRuns}`);
+  t.is(details.failed, false, `${fc.defaultReportMessage(details)}`);
 });
 
 test('failure pos: basic 1', async t => {

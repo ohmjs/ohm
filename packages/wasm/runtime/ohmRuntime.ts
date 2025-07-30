@@ -3,6 +3,7 @@ type ApplyResult = bool;
 declare function fillInputBuffer(offset: i32, maxLen: i32): i32;
 declare function printI32(val: i32): void;
 declare function isRuleSyntactic(ruleId: i32): bool;
+declare function matchUnicodeChar(categoryBitmap: i32): bool;
 
 @inline const IMPLICIT_SPACE_SKIPPING = true;
 
@@ -49,6 +50,10 @@ let rightmostFailurePos: i32 = 0;
 
 let sp: usize = 0;
 let bindings: Array<i32> = new Array<i32>();
+
+export function dummy(i: i32): void {
+  printI32(i);
+}
 
 @inline function max<T>(a: T, b: T): T {
   return a > b ? a : b;
@@ -288,4 +293,9 @@ export function setBindingsLength(len: i32): void {
 export function getCstRoot(): usize {
   // TODO: Figure out how to handle this w.r.t. leading and trailing space.
   return bindings[0];
+}
+
+// TODO: Find a way to call this directly from generated code.
+export function doMatchUnicodeChar(categoryBitmap: i32): bool {
+  return matchUnicodeChar(categoryBitmap)
 }

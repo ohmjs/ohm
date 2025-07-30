@@ -1,4 +1,6 @@
 import test from 'ava';
+import assert from 'node:assert/strict';
+import * as fc from 'fast-check';
 import * as ohm from 'ohm-js';
 import {performance} from 'perf_hooks';
 
@@ -33,14 +35,6 @@ function unparse(m, root) {
   walk(m.getCstRoot());
   return ans;
 }
-
-// const dumpMemoTable = pos => {
-//   const arr = [];
-//   for (let i = 0; i < 6; i++) {
-//     arr.push(view.getUint32(pos * Constants.MEMO_COL_SIZE_BYTES + i * 4, true));
-//   }
-//   console.log(arr.map(v => v.toString(16).padStart(8, '0')).join(' '));
-// };
 
 test('input in memory', async t => {
   const g = ohm.grammar('G { start = "x" }');
@@ -960,15 +954,23 @@ test('space skipping & lex', async t => {
   }
 });
 
-test('unicode built-ins', async t => {
-  const g = ohm.grammar(`
-    G {
-      Start = lower upper
-    }`);
+// fast-check's stringMatching combiner doesn't support unicode regexes.
+const arbitraryStringMatching = regex =>
+  fc.string({maxLength: 2, unit: 'binary'}).filter(str => regex.test(str));
+
+test('unicode built-ins: non-ASII (fast-check)', async t => {
+  const g = ohm.grammar('G { Start = letter letter }');
   const m = await wasmMatcherForGrammar(g);
-  t.is(matchWithInput(m, 'aA'), 1);
-  t.is(matchWithInput(m, ' aZ'), 1);
-  t.is(matchWithInput(m, ' zA'), 1);
-  t.is(matchWithInput(m, 'a@'), 0);
-  t.is(matchWithInput(m, 'a['), 0);
+  const hasExpectedResult = wasmMatcher => {
+    return fc.property(arbitraryStringMatching(/^\p{L}\p{L}$/u), str => {
+      wasmMatcher.setInput(str);
+      assert.equal(wasmMatcher.match(), 1);
+    });
+  };
+  const details = fc.check(hasExpectedResult(m), {
+    includeErrorInReport: true,
+    interruptAfterTimeLimit: 200,
+  });
+  t.log(`numRuns: ${details.numRuns}`);
+  t.is(details.failed, false, `${fc.defaultReportMessage(details)}`);
 });

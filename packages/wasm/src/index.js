@@ -792,6 +792,7 @@ export class Compiler {
     asm.addBlocktype([w.valtype.i32], [w.valtype.i32]);
     asm.addBlocktype([], [w.valtype.i32]); // Rule eval
     // (global $runtime/ohmRuntime/pos (mut i32) (i32.const 0))
+    // (global $runtime/ohmRuntime/rightmostFailurePos (mut i32) (i32.const 0))
     // (global $runtime/ohmRuntime/sp (mut i32) (i32.const 0))
     // (global $~lib/shared/runtime/Runtime.Stub i32 (i32.const 0))
     // (global $~lib/shared/runtime/Runtime.Minimal i32 (i32.const 1))
@@ -1630,10 +1631,11 @@ export class Compiler {
         const isLowercase = 'a' <= c && c <= 'z';
         const isUppercase = 'A' <= c && c <= 'Z';
         if ((exp.category === 'Lu' && isUppercase) || (exp.category === 'Ll' && isLowercase)) {
-          return w.labelidx(asm.depthOf('innerSuccess'));
+          return w.labelidx(asm.depthOf('fastSuccess'));
         }
         return w.labelidx(asm.depthOf('failure'));
       });
+
     this.wrapTerminalLike(() => {
       asm.block(
           w.blocktype.empty,
@@ -1641,24 +1643,38 @@ export class Compiler {
             asm.block(
                 w.blocktype.empty,
                 () => {
-                  asm.currCharCode();
-                  asm.brTable(makeLabels(), w.labelidx(asm.depthOf('default')));
-                },
-                'default',
-            );
-            // Check for 0xff (end)
-            asm.currCharCode();
-            asm.i32Const(0xff);
-            asm.i32Eq();
-            asm.condBreak(asm.depthOf('failure'));
+                  // Fast path: a jump table for ASCII characters.
+                  asm.block(
+                      w.blocktype.empty,
+                      () => {
+                        asm.currCharCode();
+                        asm.brTable(makeLabels(), w.labelidx(asm.depthOf('default')));
+                      },
+                      'default',
+                  );
+                  // Fall through: not an ASCII character.
 
-            // Otherwise, trap.
-            // TODO: Replace this with a proper, out-of-line implementation.
-            asm.emit(instr.unreachable);
+                  // Push the arg: a bitmap indicating the categories.
+                  // prettier-ignore
+                  switch (exp.category) {
+                    case 'Lu': asm.i32Const(1 << 1); break;
+                    case 'Ll': asm.i32Const(1 << 2); break;
+                    case 'Ltmo': asm.i32Const((1 << 3) | (1 << 4) | (1 << 5)); break;
+                    default: assert(false, 'not handled');
+                  }
+                  asm.callPrebuiltFunc('doMatchUnicodeChar');
+                  asm.ifElse(
+                      w.blocktype.empty,
+                      () => asm.break(asm.depthOf('slowSuccess')),
+                      () => asm.break(asm.depthOf('failure')),
+                  );
+                },
+                'fastSuccess',
+            );
+            asm.incPos();
           },
-          'innerSuccess',
+          'slowSuccess',
       );
-      asm.incPos();
     });
   }
 }
