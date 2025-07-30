@@ -954,7 +954,7 @@ test('space skipping & lex', async t => {
   }
 });
 
-// fast-check's stringMatching combiner doesn't support unicode regexes.
+// Because fast-check's `stringMatching` doesn't support unicode regexes.
 const arbitraryStringMatching = regex =>
   fc.string({maxLength: 2, unit: 'binary'}).filter(str => regex.test(str));
 

@@ -3,11 +3,8 @@ import assert from 'node:assert/strict';
 import fc from 'fast-check';
 import {readFileSync} from 'node:fs';
 import * as ohm from 'ohm-js';
-import process from 'node:process';
 
 import {scriptRel, wasmMatcherForGrammar} from './_helpers.js';
-
-const verbose = process.argv.slice(2).includes('--verbose');
 
 const grammarSource = readFileSync(scriptRel('data/liquid-html.ohm'), 'utf8');
 const ns = ohm.grammars(grammarSource);
