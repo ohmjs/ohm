@@ -19,7 +19,9 @@ export function findIndentation(input) {
 
     const indentPos = pos + indentSize;
 
-    if (indentSize > prevSize) {
+    if (!line.trim()) {
+      // Empty line, cannot be an indent or dedent.
+    } else if (indentSize > prevSize) {
       // Indent -- always only 1.
       stack.push(indentSize);
       result[indentPos] = 1;
