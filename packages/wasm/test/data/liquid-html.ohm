@@ -3,9 +3,6 @@ Helpers {
   TextNode = AnyExceptPlus<openControl>
   openControl = end
 
-  // Temp overrides for things not yet support in Wasm grammars
-  caseInsensitive<t> := t
-
   empty = /* nothing */
   anyExcept<lit> = (~ lit any)
   anyExceptStar<lit> = (~ lit any)*

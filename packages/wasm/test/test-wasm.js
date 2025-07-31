@@ -843,11 +843,8 @@ test('specialized rule names', t => {
 
   t.deepEqual([...compiler.rules.keys()].sort(), [
     '$spaces',
-    'alnum',
-    'any',
     'commaSep',
     'commaSep<exclaimed<$term$0>>',
-    'digit',
     'emptyListOf',
     'emptyListOf<exclaimed<$term$0>,$term$1>',
     'exclaimed',
@@ -858,20 +855,15 @@ test('specialized rule names', t => {
     'flip<exclaimed<hello2>,hello>',
     'hello',
     'hello2',
-    'letter',
     'listOf',
     'listOf<exclaimed<$term$0>,$term$1>',
-    'lower',
     'nonemptyListOf',
     'nonemptyListOf<exclaimed<$term$0>,$term$1>',
     'one',
     'space',
-    'spaces',
     'start',
     'three',
-    'two',
-    'unicodeLtmo',
-    'upper',
+    'two'
   ]);
 });
 
@@ -969,7 +961,7 @@ test('unicode built-ins: non-ASII (fast-check)', async t => {
   };
   const details = fc.check(hasExpectedResult(m), {
     includeErrorInReport: true,
-    interruptAfterTimeLimit: 200,
+    interruptAfterTimeLimit: 200
   });
   t.log(`numRuns: ${details.numRuns}`);
   t.is(details.failed, false, `${fc.defaultReportMessage(details)}`);

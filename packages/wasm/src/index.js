@@ -683,14 +683,10 @@ export class Compiler {
     // It is *not* the same as the function index the rule's eval function.
     this.ruleIdByName = new IndexedSet();
 
-    this._specialRules = ['spaces', 'alnum', 'any'];
-
     // Ensure default start rule has id 0; $term, 1; and spaces, 2.
     this._ensureRuleId(grammar.defaultStartRule);
     this._ensureRuleId('$term');
-    this._specialRules.forEach(name => {
-      this._ensureRuleId(name);
-    });
+    this._ensureRuleId('$spaces');
 
     this.rules = undefined;
     this._nextLiftedId = 0;
@@ -833,19 +829,17 @@ export class Compiler {
   simplifyApplications() {
     const {grammar} = this;
 
-    const lookUpRule = name => {
-      assert(name in grammar.rules);
-      return {...grammar.rules[name], isSyntactic: isSyntacticRule(name)};
-    };
+    const lookUpRule = name => ({
+      ...checkNotNull(grammar.rules[name]),
+      isSyntactic: isSyntacticRule(name),
+    });
 
-    // Begin with all the rules in the grammar + all "special" rules.
-    const rules = Object.entries(this.grammar.rules).map(([name, info]) => {
-      const isSyntactic = isSyntacticRule(name);
-      return [name, {...info, isSyntactic}];
-    });
-    this._specialRules.forEach(name => {
-      rules.push([name, {...lookUpRule(name)}]);
-    });
+    // Begin with all the rules directly defined in the grammar.
+    const ownRuleNames = Object.keys(grammar.rules).filter(name =>
+      Object.hasOwn(grammar.rules, name),
+    );
+    const rules = ownRuleNames.map(name => [name, lookUpRule(name)]);
+    rules.push(['spaces', lookUpRule('spaces')]); // Ensure 'spaces' is always present.
 
     const liftedTerminals = new IndexedSet();
 
@@ -880,14 +874,21 @@ export class Compiler {
       if (exp === pexprs.any) return ir.any();
       if (exp === pexprs.end) return ir.end();
       switch (exp.constructor) {
-        case pexprs.Apply:
-          rules.push([exp.ruleName, checkNotNull(lookUpRule(exp.ruleName))]);
+        case pexprs.Apply: {
+          const ruleInfo = lookUpRule(exp.ruleName);
+
+          // Replace an application of the built-in caseInsensitive rule with
+          // an inlined case-insensitive terminal.
+          if (ruleInfo.body instanceof pexprs.CaseInsensitiveTerminal) {
+            assert(exp.args.length === 1 && exp.args[0] instanceof pexprs.Terminal);
+            return ir.terminal(exp.args[0].obj, true);
+          }
+          rules.push([exp.ruleName, ruleInfo]);
           return ir.apply(
               exp.ruleName,
               exp.args.map(arg => simplifyArg(arg, isSyntactic)),
           );
-        case pexprs.CaseInsensitive:
-          return ir.caseInsensitive(exp.obj);
+        }
         case pexprs.Lex:
           return ir.lex(simplify(exp.expr, true));
         case pexprs.Lookahead:
@@ -1026,9 +1027,17 @@ export class Compiler {
       ir.rewrite(exp, {
         Apply: app => {
           const {ruleName, children} = app;
+          const ruleInfo = getNotNull(rules, ruleName);
+
+          // Inline any applications of the built-in caseInsensitive rule.
+          if (ruleInfo.body instanceof pexprs.CaseInsensitiveTerminal) {
+            assert(children.length === 1 && children[0] instanceof pexprs.Terminal);
+            return ir.terminal(children[0], true);
+          }
+
           // Inline these. TODO: Handle this elsewhere.
-          if (['caseInsensitive', 'liquidRawTagImpl', 'liquidTagRule'].includes(ruleName)) {
-            const ruleInfo = getNotNull(rules, ruleName);
+          // We need this to avoid having >256 rules in the Liquid grammar.
+          if (['liquidRawTagImpl', 'liquidTagRule'].includes(ruleName)) {
             return specialize(ir.substituteParams(ruleInfo.body, children));
           }
 
@@ -1038,7 +1047,6 @@ export class Compiler {
           // If not yet seen, recursively visit the body of the specialized
           // rule. Note that this also applies to non-parameterized rules!
           if (!newRules.has(specializedName)) {
-            const ruleInfo = getNotNull(rules, ruleName);
             newRules.set(specializedName, {}); // Prevent infinite recursion.
 
             // Visit the body with the parameter substituted, to ensure we
@@ -1066,15 +1074,16 @@ export class Compiler {
         },
       });
     specialize(ir.apply(this.grammar.defaultStartRule));
-    this._specialRules.forEach(name => {
-      specialize(ir.apply(name));
-    });
-    this.rules = newRules;
 
     // Make a special rule for implicit space skipping, with the same body
     // as the real `spaces` rule.
-    this._ensureRuleId('$spaces', {notMemoized: true});
-    newRules.set('$spaces', getNotNull(newRules, 'spaces'));
+    const spacesInfo = getNotNull(rules, 'spaces');
+    newRules.set('$spaces', {
+      ...spacesInfo,
+      body: specialize(spacesInfo.body),
+    });
+
+    this.rules = newRules;
 
     if (EMIT_GENERALIZED_RULES) {
       const insertDispatches = (exp, patterns) =>
@@ -1602,9 +1611,10 @@ export class Compiler {
     );
   }
 
-  emitTerminal({value}) {
+  emitTerminal({value, caseInsensitive}) {
     const {asm} = this;
     asm.emit(JSON.stringify(value));
+    assert(!caseInsensitive || [...value].every(c => c <= '\x7f'), 'no unicode');
     this.wrapTerminalLike(() => {
       // TODO:
       // - proper UTF-8!

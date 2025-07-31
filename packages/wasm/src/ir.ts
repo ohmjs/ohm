@@ -156,9 +156,14 @@ export const star = (child: Expr): Star => ({type: 'Star', child});
 export interface Terminal {
   type: 'Terminal';
   value: string;
+  caseInsensitive: boolean;
 }
 
-export const terminal = (value: string): Terminal => ({type: 'Terminal', value});
+export const terminal = (value: string, caseInsensitive = false): Terminal => ({
+  type: 'Terminal',
+  value,
+  caseInsensitive
+});
 
 export interface UnicodeChar {
   type: 'UnicodeChar';

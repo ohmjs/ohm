@@ -46,6 +46,8 @@ export class InputStream {
 
         This is intended to be a locale-invariant comparison, which means it may not obey
         locale-specific expectations (e.g. "i" => "İ").
+
+        See also https://unicode.org/faq/casemap_charprop.html#casemap
        */
       for (idx = 0; idx < s.length; idx++) {
         const actual = this.next();
