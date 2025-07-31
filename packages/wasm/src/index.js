@@ -1633,16 +1633,15 @@ export class Compiler {
     );
   }
 
-  emitTerminal({value, caseInsensitive}) {
+  emitCaseInsensitiveTerminal({value}) {
     const {asm} = this;
-
     assert(
-        !caseInsensitive || [...value].every(c => c <= '\x7f'),
+        [...value].every(c => c <= '\x7f'),
         'not supported: case-insensitive Unicode',
     );
 
-    const str = caseInsensitive ? value.toLowerCase() : value;
-    asm.emit(JSON.stringify(str));
+    const str = value.toLowerCase();
+    asm.emit(JSON.stringify(`caseInsensitive:${value}`));
     this.wrapTerminalLike(() => {
       // TODO:
       // - proper UTF-8!
@@ -1651,7 +1650,7 @@ export class Compiler {
       for (const c of [...str]) {
         asm.i32Const(c.charCodeAt(0));
         asm.currCharCode();
-        if (caseInsensitive && /[a-zA-Z]/.test(c)) {
+        if (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')) {
           // Cute trick: the diff between upper and lower case is bit 5.
           asm.i32Const(0x20);
           asm.emit(instr.i32.or);
@@ -1664,13 +1663,34 @@ export class Compiler {
 
     // Case-insensitive terminals are inlined, but should appear in the CST
     // as if they are actual applications.
-    if (caseInsensitive) {
-      asm.localGet('ret');
-      asm.if(w.blocktype.empty, () => {
-        asm.newCaseInsensitiveNode(this.ruleId('caseInsensitive'));
-        asm.localSet('ret');
-      });
+    asm.localGet('ret');
+    asm.if(w.blocktype.empty, () => {
+      asm.newCaseInsensitiveNode(this.ruleId('caseInsensitive'));
+      asm.localSet('ret');
+    });
+  }
+
+  emitTerminal(exp) {
+    if (exp.caseInsensitive) {
+      this.emitCaseInsensitiveTerminal(exp);
+      return;
     }
+
+    const {asm} = this;
+    asm.emit(JSON.stringify(exp.value));
+    this.wrapTerminalLike(() => {
+      // TODO:
+      // - proper UTF-8!
+      // - handle longer terminals with a loop
+      // - SIMD
+      for (const c of [...exp.value]) {
+        asm.i32Const(c.charCodeAt(0));
+        asm.currCharCode();
+        asm.emit(instr.i32.ne);
+        asm.condBreak(asm.depthOf('failure'));
+        asm.incPos();
+      }
+    });
   }
 
   emitUnicodeChar(exp) {
