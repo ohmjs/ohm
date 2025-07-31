@@ -30,4 +30,19 @@ export async function wasmMatcherForGrammar(grammar, modBytes = undefined) {
   return m._instantiate(bytes, debugImports);
 }
 
+export function unparse(m) {
+  const input = m.getInput();
+  let ans = '';
+  let pos = 0;
+  function walk(node) {
+    if (node.isTerminal()) {
+      ans += input.slice(pos, pos + node.matchLength);
+      pos += node.matchLength;
+    }
+    node.children.forEach(c => walk(c));
+  }
+  walk(m.getCstRoot());
+  return ans;
+}
+
 export const scriptRel = relPath => new URL(relPath, import.meta.url);

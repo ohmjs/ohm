@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import * as ohm from 'ohm-js';
 import {performance} from 'perf_hooks';
 
-import {wasmMatcherForGrammar} from './_helpers.js';
+import {unparse, wasmMatcherForGrammar} from './_helpers.js';
 
 const matchWithInput = (m, str) => (m.setInput(str), m.match());
 
@@ -23,6 +23,7 @@ test('basic matching (small)', async t => {
 
   const m = await wasmMatcherForGrammar(liquid.LiquidHTML);
   t.is(matchWithInput(m, input), 1);
+  t.is(unparse(m), input);
 });
 
 test('swatch.liquid', async t => {

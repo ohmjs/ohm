@@ -5,7 +5,7 @@ import * as ohm from 'ohm-js';
 import {performance} from 'perf_hooks';
 
 import {Compiler, ConstantsForTesting as Constants} from '../src/index.js';
-import {wasmMatcherForGrammar} from './_helpers.js';
+import {unparse, wasmMatcherForGrammar} from './_helpers.js';
 
 const matchWithInput = (m, str) => (m.setInput(str), m.match());
 
@@ -19,21 +19,6 @@ function checkNotNull(x, msg = 'unexpected null value') {
 function memoTableViewForTesting(m) {
   const {buffer} = m._instance.exports.memory;
   return new DataView(buffer, Constants.MEMO_START_OFFSET);
-}
-
-function unparse(m, root) {
-  const input = m.getInput();
-  let ans = '';
-  let pos = 0;
-  function walk(node) {
-    if (node.isTerminal()) {
-      ans += input.slice(pos, pos + node.matchLength);
-      pos += node.matchLength;
-    }
-    node.children.forEach(c => walk(c));
-  }
-  walk(m.getCstRoot());
-  return ans;
 }
 
 test('input in memory', async t => {
@@ -863,7 +848,7 @@ test('specialized rule names', t => {
     'space',
     'start',
     'three',
-    'two'
+    'two',
   ]);
 });
 
@@ -961,8 +946,23 @@ test('unicode built-ins: non-ASII (fast-check)', async t => {
   };
   const details = fc.check(hasExpectedResult(m), {
     includeErrorInReport: true,
-    interruptAfterTimeLimit: 200
+    interruptAfterTimeLimit: 200,
   });
   t.log(`numRuns: ${details.numRuns}`);
   t.is(details.failed, false, `${fc.defaultReportMessage(details)}`);
+});
+
+test('caseInsensitive', async t => {
+  // Make sure space is skipped before params in the body of syntactic rule.
+  const g = ohm.grammar(`
+    G {
+      Start = "." caseInsensitive<"blah!">
+    }`);
+  const m = await wasmMatcherForGrammar(g);
+  t.is(matchWithInput(m, '.BlaH!'), 1);
+
+  t.is(matchWithInput(m, '. BlaH! '), 1);
+  t.is(unparse(m), '. BlaH! ');
+
+  t.is(matchWithInput(m, '.BLAH!'), 1);
 });

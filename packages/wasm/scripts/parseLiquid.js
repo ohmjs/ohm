@@ -17,7 +17,7 @@ import process from 'node:process';
 import {fileURLToPath} from 'node:url';
 import * as ohm from 'ohm-js';
 
-import {wasmMatcherForGrammar} from '../test/_helpers.js';
+import {unparse, wasmMatcherForGrammar} from '../test/_helpers.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
@@ -26,22 +26,6 @@ const liquid = ohm.grammars(readFileSync(join(datadir, 'liquid-html.ohm'), 'utf8
 
 // Get pattern from command line arguments
 const pattern = process.argv[2];
-
-function unparseW(source, root) {
-  let pos = 0;
-  let unparsed = '';
-  function walk(node) {
-    if (node.isTerminal()) {
-      unparsed += source.slice(pos, pos + node.matchLength);
-      pos += node.matchLength;
-    }
-    for (const child of node.children) {
-      walk(child);
-    }
-  }
-  walk(root);
-  return unparsed;
-}
 
 const matchWithInput = (m, str) => (m.setInput(str), m.match());
 
@@ -79,7 +63,7 @@ const matchWithInput = (m, str) => (m.setInput(str), m.match());
 
     // Trailing/leading spaces are currently dropped, so trim both
     // to after unparsing.
-    assert.equal(input.trim().length, unparseW(input, m.getCstRoot()).trim().length);
+    assert.equal(input.trim().length, unparse(m).trim().length);
   }
 
   const sum = arr => arr.reduce((a, b) => a + b, 0);

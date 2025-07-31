@@ -606,19 +606,25 @@ class Assembler {
     this.callPrebuiltFunc('newIterationNode');
   }
 
+  newCaseInsensitiveNode(ruleId) {
+    this.getSavedPos();
+    this.globalGet('pos');
+    this.i32Const(ruleId);
+
+    // Ensure we get exactly one binding.
+    this.globalGet('bindings');
+    this.i32Load(12); // Array<i32>.length_
+    this.i32Const(1);
+    this.i32Sub();
+
+    this.i32Const(-1); // By def'n, it cannot have contributed to failurePos.
+    this.callPrebuiltFunc('newNonterminalNode');
+  }
+
   newTerminalNodeWithSavedPos() {
     this.getSavedPos();
     this.globalGet('pos');
     this.callPrebuiltFunc('newTerminalNode');
-  }
-
-  maybeReturnTerminalNodeWithSavedPos() {
-    this.ifElse(
-        w.blocktype.i32,
-        () => this.newTerminalNodeWithSavedPos(),
-        () => this.i32Const(0),
-    );
-    this.localSet('ret');
   }
 
   i32Max(aThunk, bThunk) {
@@ -716,7 +722,6 @@ export class Compiler {
   }
 
   liftPExpr(exp, isSyntactic) {
-    assert(EMIT_GENERALIZED_RULES, 'Lifting only happens w/ generalized rules');
     assert(!(exp instanceof pexprs.Terminal));
 
     // Note: the same expression might appear in more than one place, and
@@ -1022,18 +1027,13 @@ export class Compiler {
     const newRules = new Map();
     const {rules} = this;
     const patternsByRule = new Map();
+    let hasCaseInsensitiveTerminals = false;
 
     const specialize = exp =>
       ir.rewrite(exp, {
         Apply: app => {
           const {ruleName, children} = app;
           const ruleInfo = getNotNull(rules, ruleName);
-
-          // Inline any applications of the built-in caseInsensitive rule.
-          if (ruleInfo.body instanceof pexprs.CaseInsensitiveTerminal) {
-            assert(children.length === 1 && children[0] instanceof pexprs.Terminal);
-            return ir.terminal(children[0], true);
-          }
 
           // Inline these. TODO: Handle this elsewhere.
           // We need this to avoid having >256 rules in the Liquid grammar.
@@ -1072,6 +1072,12 @@ export class Compiler {
           // Replace with an application of the specialized rule.
           return ir.apply(specializedName);
         },
+        Terminal: term => {
+          if (term.caseInsensitive) {
+            hasCaseInsensitiveTerminals = true;
+          }
+          return term;
+        },
       });
     specialize(ir.apply(this.grammar.defaultStartRule));
 
@@ -1082,6 +1088,20 @@ export class Compiler {
       ...spacesInfo,
       body: specialize(spacesInfo.body),
     });
+
+    // We inline applications of caseInsensitive, but they still produce a
+    // nonterminal node as if they weren't inlined. Because of that, we need
+    // to assign a rule ID and ensure that the rule eval function exists.
+    if (hasCaseInsensitiveTerminals) {
+      assert(!newRules.has('caseInsensitive'));
+      this._ensureRuleId('caseInsensitive', {notMemoized: true});
+      newRules.set('caseInsensitive', {
+        name: 'caseInsensitive',
+        body: ir.seq([ir.not(ir.end()), ir.end()]), // ~end end
+        formals: [],
+        description: '',
+      });
+    }
 
     this.rules = newRules;
 
@@ -1313,7 +1333,9 @@ export class Compiler {
     }
     if (exp.type === 'ApplyGeneralized') {
       assert(EMIT_GENERALIZED_RULES && allowFastApply);
+      asm.emit(`BEGIN applyGeneralized:${exp.ruleName}`);
       this.emitApplyGeneralized(exp);
+      asm.emit(`END applyGeneralized:${exp.ruleName}`);
       return;
     }
 
@@ -1600,34 +1622,55 @@ export class Compiler {
                 thunk();
                 asm.newTerminalNodeWithSavedPos();
                 asm.localSet('ret');
-                asm.break(asm.depthOf('_success'));
+                asm.break(asm.depthOf('_done'));
               },
               'failure',
           );
           asm.updateLocalFailurePos(() => asm.getSavedPos());
           asm.setRet(0);
         },
-        '_success',
+        '_done',
     );
   }
 
   emitTerminal({value, caseInsensitive}) {
     const {asm} = this;
-    asm.emit(JSON.stringify(value));
-    assert(!caseInsensitive || [...value].every(c => c <= '\x7f'), 'no unicode');
+
+    assert(
+        !caseInsensitive || [...value].every(c => c <= '\x7f'),
+        'not supported: case-insensitive Unicode',
+    );
+
+    const str = caseInsensitive ? value.toLowerCase() : value;
+    asm.emit(JSON.stringify(str));
     this.wrapTerminalLike(() => {
       // TODO:
       // - proper UTF-8!
       // - handle longer terminals with a loop
       // - SIMD
-      for (const c of [...value]) {
+      for (const c of [...str]) {
         asm.i32Const(c.charCodeAt(0));
         asm.currCharCode();
+        if (caseInsensitive && /[a-zA-Z]/.test(c)) {
+          // Cute trick: the diff between upper and lower case is bit 5.
+          asm.i32Const(0x20);
+          asm.emit(instr.i32.or);
+        }
         asm.emit(instr.i32.ne);
         asm.condBreak(asm.depthOf('failure'));
         asm.incPos();
       }
     });
+
+    // Case-insensitive terminals are inlined, but should appear in the CST
+    // as if they are actual applications.
+    if (caseInsensitive) {
+      asm.localGet('ret');
+      asm.if(w.blocktype.empty, () => {
+        asm.newCaseInsensitiveNode(this.ruleId('caseInsensitive'));
+        asm.localSet('ret');
+      });
+    }
   }
 
   emitUnicodeChar(exp) {

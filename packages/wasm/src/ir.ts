@@ -6,7 +6,6 @@ export type Expr =
   | Any
   | Apply
   | ApplyGeneralized
-  | CaseInsensitive
   | Dispatch
   | End
   | Lex
@@ -57,16 +56,6 @@ export const applyGeneralized = (ruleName: string, caseIdx: number): ApplyGenera
   type: 'ApplyGeneralized',
   ruleName,
   caseIdx
-});
-
-export interface CaseInsensitive {
-  type: 'CaseInsensitive';
-  value: string;
-}
-
-export const caseInsensitive = (value: string): CaseInsensitive => ({
-  type: 'CaseInsensitive',
-  value
 });
 
 export interface Dispatch {
