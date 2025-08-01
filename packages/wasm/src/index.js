@@ -886,7 +886,7 @@ export class Compiler {
           // an inlined case-insensitive terminal.
           if (ruleInfo.body instanceof pexprs.CaseInsensitiveTerminal) {
             assert(exp.args.length === 1 && exp.args[0] instanceof pexprs.Terminal);
-            return ir.terminal(exp.args[0].obj, true);
+            return ir.caseInsensitive(exp.args[0].obj);
           }
           rules.push([exp.ruleName, ruleInfo]);
           return ir.apply(
@@ -1072,11 +1072,9 @@ export class Compiler {
           // Replace with an application of the specialized rule.
           return ir.apply(specializedName);
         },
-        Terminal: term => {
-          if (term.caseInsensitive) {
-            hasCaseInsensitiveTerminals = true;
-          }
-          return term;
+        CaseInsensitive: exp => {
+          hasCaseInsensitiveTerminals = true;
+          return exp;
         },
       });
     specialize(ir.apply(this.grammar.defaultStartRule));
@@ -1355,6 +1353,7 @@ export class Compiler {
           switch (exp.type) {
             case 'Alt': this.emitAlt(exp); break;
             case 'Any': this.emitAny(); break;
+            case 'CaseInsensitive': this.emitCaseInsensitive(exp); break;
             case 'Dispatch': this.emitDispatch(exp); break;
             case 'End': this.emitEnd(); break;
             case 'Lex': this.emitLex(exp); break;
@@ -1633,7 +1632,7 @@ export class Compiler {
     );
   }
 
-  emitCaseInsensitiveTerminal({value}) {
+  emitCaseInsensitive({value}) {
     const {asm} = this;
     assert(
         [...value].every(c => c <= '\x7f'),
@@ -1671,11 +1670,6 @@ export class Compiler {
   }
 
   emitTerminal(exp) {
-    if (exp.caseInsensitive) {
-      this.emitCaseInsensitiveTerminal(exp);
-      return;
-    }
-
     const {asm} = this;
     asm.emit(JSON.stringify(exp.value));
     this.wrapTerminalLike(() => {

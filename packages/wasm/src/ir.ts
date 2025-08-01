@@ -6,6 +6,7 @@ export type Expr =
   | Any
   | Apply
   | ApplyGeneralized
+  | CaseInsensitive
   | Dispatch
   | End
   | Lex
@@ -56,6 +57,16 @@ export const applyGeneralized = (ruleName: string, caseIdx: number): ApplyGenera
   type: 'ApplyGeneralized',
   ruleName,
   caseIdx
+});
+
+export interface CaseInsensitive {
+  type: 'CaseInsensitive';
+  value: string;
+}
+
+export const caseInsensitive = (value: string): CaseInsensitive => ({
+  type: 'CaseInsensitive',
+  value
 });
 
 export interface Dispatch {
@@ -145,13 +156,11 @@ export const star = (child: Expr): Star => ({type: 'Star', child});
 export interface Terminal {
   type: 'Terminal';
   value: string;
-  caseInsensitive: boolean;
 }
 
 export const terminal = (value: string, caseInsensitive = false): Terminal => ({
   type: 'Terminal',
-  value,
-  caseInsensitive
+  value
 });
 
 export interface UnicodeChar {
