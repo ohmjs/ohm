@@ -1697,7 +1697,10 @@ export class Compiler {
       asciiChars.map(c => {
         const isLowercase = 'a' <= c && c <= 'z';
         const isUppercase = 'A' <= c && c <= 'Z';
-        if ((exp.categoryOrProp === 'Lu' && isUppercase) || (exp.categoryOrProp === 'Ll' && isLowercase)) {
+        if (
+          (exp.categoryOrProp === 'Lu' && isUppercase) ||
+          (exp.categoryOrProp === 'Ll' && isLowercase)
+        ) {
           return w.labelidx(asm.depthOf('fastSuccess'));
         }
         return w.labelidx(asm.depthOf('failure'));
