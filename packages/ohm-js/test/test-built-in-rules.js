@@ -72,6 +72,13 @@ test('case-insensitive matching', t => {
       {message: /Incorrect argument type/},
       'throws when argument is a Range',
   );
+
+  const g2 = ohm.grammar(`
+    G2 {
+      start = caseInsensitive<"!">
+      caseInsensitive<x> := x
+    }`);
+  t.is(g2.match('!').succeeded(), true, 'caseInsensitive can be overridden');
 });
 
 test('applySyntactic - basics', t => {
