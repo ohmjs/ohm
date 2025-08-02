@@ -168,11 +168,11 @@ as well as multiline (`/* */`) comments like:
 
 <code>caseInsensitive&lt;<i>terminal</i>&gt;</code>: Matches _terminal_, but ignoring any differences in casing (based on the simple, single-character Unicode case mappings). E.g., `caseInsensitive<"ohm">` will match `'Ohm'`, `'OHM'`, etc.
 
-<code>ListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Matches the expression _elem_ zero or more times, separated by something that matches the expression _sep_. E.g., `ListOf&lt;letter, ","$gt;` will match `''`, `'a'`, and `'a, b, c'`.
+<code>ListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Matches the expression _elem_ zero or more times, separated by something that matches the expression _sep_. E.g., `ListOf<letter, ",">` will match `''`, `'a'`, and `'a, b, c'`.
 
 <code>NonemptyListOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Like `ListOf`, but matches _elem_ at least one time.
 
-<code>listOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Similar to `ListOf&lt;elem, sep&gt;` but interpreted as [lexical rule](#syntactic-lexical).
+<code>listOf&lt;<i>elem</i>, <i>sep</i>&gt;</code>: Similar to `ListOf<elem, sep>` but interpreted as [lexical rule](#syntactic-lexical).
 
 <code id="applySyntactic">applySyntactic&lt;<i>ruleName</i>&gt;</code>: Allows the syntactic rule _ruleName_ to be applied in a lexical context, which is otherwise not allowed. Spaces are skipped _before_ and _after_ the rule application. _New in Ohm v16.1.0._
 
