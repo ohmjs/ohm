@@ -1,4 +1,4 @@
-import {UnicodeCategories} from './UnicodeCategories.js';
+import {UnicodeBinaryProperties, UnicodeCategories} from './unicode.js';
 import * as common from './common.js';
 
 // --------------------------------------------------------------------
@@ -180,9 +180,17 @@ export class Apply extends PExpr {
 // Unicode character
 
 export class UnicodeChar extends PExpr {
-  constructor(category) {
+  constructor(categoryOrProp) {
     super();
-    this.category = category;
-    this.pattern = UnicodeCategories[category];
+    this.categoryOrProp = categoryOrProp;
+    if (categoryOrProp in UnicodeCategories) {
+      this.pattern = UnicodeCategories[categoryOrProp];
+    } else if (categoryOrProp in UnicodeBinaryProperties) {
+      this.pattern = UnicodeBinaryProperties[categoryOrProp];
+    } else {
+      throw new Error(
+        `Invalid Unicode category or property name: ${JSON.stringify(categoryOrProp)}`
+      );
+    }
   }
 }

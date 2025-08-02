@@ -176,6 +176,8 @@ as well as multiline (`/* */`) comments like:
 
 <code id="applySyntactic">applySyntactic&lt;<i>ruleName</i>&gt;</code>: Allows the syntactic rule _ruleName_ to be applied in a lexical context, which is otherwise not allowed. Spaces are skipped _before_ and _after_ the rule application. _New in Ohm v16.1.0._
 
+<code>unicodeChar&lt;<i>categoryOrProp</i>&gt;</code>: matches a single Unicode code point from a given category, or with a given binary property. _categoryOrProp_ is a terminal that is either (a) a valid Unicode General_Category value (e.g. `"Zl"`), or (b) one of the following binary property names: `"XID_Start"`, `"XID_Continue"`, `"White_Space"`.
+
 ## Grammar Syntax
 
 ### Grammar Inheritance

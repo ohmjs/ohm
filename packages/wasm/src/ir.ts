@@ -165,12 +165,12 @@ export const terminal = (value: string, caseInsensitive = false): Terminal => ({
 
 export interface UnicodeChar {
   type: 'UnicodeChar';
-  category: string;
+  categoryOrProp: string;
 }
 
-export const unicodeChar = (category: string): UnicodeChar => ({
+export const unicodeChar = (categoryOrProp: string): UnicodeChar => ({
   type: 'UnicodeChar',
-  category
+  categoryOrProp
 });
 
 // Types that are specific to the IR
@@ -351,7 +351,7 @@ export function toString(exp: Expr): string {
     case 'Terminal':
       return JSON.stringify(exp.value);
     case 'UnicodeChar':
-      return `$unicodeChar<${JSON.stringify(exp.category)}>`;
+      return `$unicodeChar<${JSON.stringify(exp.categoryOrProp)}>`;
     case 'Dispatch':
       return `$dispatch`; // TODO: Improve this.
     case 'Lex':

@@ -45,7 +45,7 @@ pexprs.Apply.prototype.toFailure = function(grammar) {
 };
 
 pexprs.UnicodeChar.prototype.toFailure = function(grammar) {
-  return new Failure(this, 'a Unicode [' + this.category + '] character', 'description');
+  return new Failure(this, 'a Unicode [' + this.categoryOrProp + '] character', 'description');
 };
 
 pexprs.Alt.prototype.toFailure = function(grammar) {

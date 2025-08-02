@@ -72,5 +72,5 @@ pexprs.Apply.prototype.toString = function() {
 };
 
 pexprs.UnicodeChar.prototype.toString = function() {
-  return '\\p{' + this.category + '}';
+  return '\\p{' + this.categoryOrProp + '}';
 };

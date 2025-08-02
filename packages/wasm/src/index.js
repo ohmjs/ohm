@@ -915,7 +915,7 @@ export class Compiler {
         case pexprs.Terminal:
           return ir.terminal(exp.obj);
         case pexprs.UnicodeChar:
-          return ir.unicodeChar(exp.category);
+          return ir.unicodeChar(exp.categoryOrProp);
         default:
           throw new Error(`not handled: ${exp.constructor.name}`);
       }
@@ -1691,13 +1691,13 @@ export class Compiler {
     const {asm} = this;
 
     // TODO: Add support for more categories, by calling out to the host.
-    assert(['Ll', 'Lu', 'Ltmo'].includes(exp.category));
+    assert(['Ll', 'Lu', 'Ltmo'].includes(exp.categoryOrProp));
 
     const makeLabels = () =>
       asciiChars.map(c => {
         const isLowercase = 'a' <= c && c <= 'z';
         const isUppercase = 'A' <= c && c <= 'Z';
-        if ((exp.category === 'Lu' && isUppercase) || (exp.category === 'Ll' && isLowercase)) {
+        if ((exp.categoryOrProp === 'Lu' && isUppercase) || (exp.categoryOrProp === 'Ll' && isLowercase)) {
           return w.labelidx(asm.depthOf('fastSuccess'));
         }
         return w.labelidx(asm.depthOf('failure'));
@@ -1723,7 +1723,7 @@ export class Compiler {
 
                   // Push the arg: a bitmap indicating the categories.
                   // prettier-ignore
-                  switch (exp.category) {
+                  switch (exp.categoryOrProp) {
                     case 'Lu': asm.i32Const(1 << 1); break;
                     case 'Ll': asm.i32Const(1 << 2); break;
                     case 'Ltmo': asm.i32Const((1 << 3) | (1 << 4) | (1 << 5)); break;

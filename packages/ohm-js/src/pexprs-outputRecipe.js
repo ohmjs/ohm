@@ -92,5 +92,5 @@ pexprs.Apply.prototype.outputRecipe = function(formals, grammarInterval) {
 };
 
 pexprs.UnicodeChar.prototype.outputRecipe = function(formals, grammarInterval) {
-  return ['unicodeChar', getMetaInfo(this, grammarInterval), this.category];
+  return ['unicodeChar', getMetaInfo(this, grammarInterval), this.categoryOrProp];
 };

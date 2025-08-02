@@ -38,5 +38,5 @@ pexprs.Apply.prototype.toDisplayString = function() {
 };
 
 pexprs.UnicodeChar.prototype.toDisplayString = function() {
-  return 'Unicode [' + this.category + '] character';
+  return 'Unicode [' + this.categoryOrProp + '] character';
 };
