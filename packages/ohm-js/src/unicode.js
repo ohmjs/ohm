@@ -12,43 +12,43 @@ const toRegExp = val => new RegExp(String.raw`\p{${val}}`, 'u');
  */
 
 export const UnicodeCategories = Object.fromEntries(
-  [
-    'Cc',
-    'Cf',
-    'Cn',
-    'Co',
-    'Cs',
-    'Ll',
-    'Lm',
-    'Lo',
-    'Lt',
-    'Lu',
-    'Mc',
-    'Me',
-    'Mn',
-    'Nd',
-    'Nl',
-    'No',
-    'Pc',
-    'Pd',
-    'Pe',
-    'Pf',
-    'Pi',
-    'Po',
-    'Ps',
-    'Sc',
-    'Sk',
-    'Sm',
-    'So',
-    'Zl',
-    'Zp',
-    'Zs'
-  ].map(cat => [cat, toRegExp(cat)])
+    [
+      'Cc',
+      'Cf',
+      'Cn',
+      'Co',
+      'Cs',
+      'Ll',
+      'Lm',
+      'Lo',
+      'Lt',
+      'Lu',
+      'Mc',
+      'Me',
+      'Mn',
+      'Nd',
+      'Nl',
+      'No',
+      'Pc',
+      'Pd',
+      'Pe',
+      'Pf',
+      'Pi',
+      'Po',
+      'Ps',
+      'Sc',
+      'Sk',
+      'Sm',
+      'So',
+      'Zl',
+      'Zp',
+      'Zs',
+    ].map(cat => [cat, toRegExp(cat)]),
 );
 UnicodeCategories['Ltmo'] = /\p{Lt}|\p{Lm}|\p{Lo}/u;
 
 // We only support a few of these for now, but could add more later.
 // See https://www.unicode.org/Public/UCD/latest/ucd/PropertyAliases.txt
 export const UnicodeBinaryProperties = Object.fromEntries(
-  ['XID_Start', 'XID_Continue', 'White_Space'].map(prop => [prop, toRegExp(prop)])
+    ['XID_Start', 'XID_Continue', 'White_Space'].map(prop => [prop, toRegExp(prop)]),
 );
