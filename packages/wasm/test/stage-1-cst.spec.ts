@@ -5,9 +5,16 @@ import {
   toLiquidCST,
   LiquidCST,
   ConcreteLiquidTagLiquid,
-} from './stage-1-cst';
-import { VOID_ELEMENTS } from './grammar';
-import { deepGet } from './utils';
+} from '@shopify/liquid-html-parser/dist/stage-1-cst.js';
+import { VOID_ELEMENTS, LiquidHTML } from '@shopify/liquid-html-parser';
+
+// import { deepGet } from './utils';
+export function deepGet<T = any>(path: (string | number)[], obj: any): T {
+  return path.reduce((curr: any, k: string | number) => {
+    if (curr && curr[k] !== undefined) return curr[k];
+    return undefined;
+  }, obj);
+}
 
 describe('Unit: Stage 1 (CST)', () => {
   describe('Unit: toLiquidHtmlCST(text) and toLiquidCST(text)', () => {
