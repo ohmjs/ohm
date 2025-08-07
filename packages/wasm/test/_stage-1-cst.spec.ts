@@ -1,3 +1,10 @@
+/*
+  Copied from liquid-html-parser package in github.com/Shopify/theme-tools,
+  and modified to work here standalone.
+
+  To run it here: `pnpx vitest test/_stage-1-cst.spec.ts`
+ */
+
 import {expect, it, describe} from 'vitest';
 import {
   LiquidHtmlCST,
@@ -6,7 +13,7 @@ import {
   LiquidCST,
   ConcreteLiquidTagLiquid
 } from '@shopify/liquid-html-parser/dist/stage-1-cst.js';
-import {VOID_ELEMENTS, LiquidHTML} from '@shopify/liquid-html-parser';
+import {VOID_ELEMENTS} from '@shopify/liquid-html-parser';
 
 // import { deepGet } from './utils';
 export function deepGet<T = any>(path: (string | number)[], obj: any): T {

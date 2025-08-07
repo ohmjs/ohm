@@ -30,7 +30,6 @@
     "fast-check": "^4.2.0",
     "fast-glob": "^3.3.3",
     "mitata": "^1.0.34",
-    "vitest": "^3.2.4",
     "wabt": "1.0.37-nightly.20250428"
   },
   "peerDependencies": {
