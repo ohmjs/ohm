@@ -193,7 +193,7 @@ class CstNode {
   }
 
   isNonterminal() {
-    return this.type >= 0;
+    return this._type >= 0;
   }
 
   isTerminal() {
@@ -202,6 +202,10 @@ class CstNode {
 
   isIter() {
     return this._type === -2;
+  }
+
+  isOptional() {
+    return false; // TODO
   }
 
   get ruleName() {
@@ -222,7 +226,23 @@ class CstNode {
     return t < 0 ? t : 0;
   }
 
+  get childrenNoSpaces() {
+    // TODO: Lazily compute this once only.
+    const children = [];
+    for (let i = 0; i < this.count; i++) {
+      const slotOffset = this._base + 16 + i * 4;
+      const child = new CstNode(
+          this._ruleNames,
+          this._view,
+          this._view.getUint32(slotOffset, true),
+      );
+      if (child.ruleName !== '$spaces') children.push(child);
+    }
+    return children;
+  }
+
   get children() {
+    // TODO: Lazily compute this once only.
     const children = [];
     for (let i = 0; i < this.count; i++) {
       const slotOffset = this._base + 16 + i * 4;
@@ -231,5 +251,24 @@ class CstNode {
       );
     }
     return children;
+  }
+
+  sourceString(offset) {
+    const bytes = new Uint8Array(
+        this._view.buffer,
+        INPUT_BUFFER_OFFSET + offset,
+        this.matchLength,
+    );
+    const ans = utf8.decode(bytes);
+    return ans;
+  }
+
+  isSyntactic(ruleName) {
+    const firstChar = this.ruleName[0];
+    return firstChar === firstChar.toUpperCase();
+  }
+
+  isLexical(ruleName) {
+    return !this.isSyntactic(ruleName);
   }
 }

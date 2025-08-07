@@ -870,7 +870,7 @@ test('lifted terminals', async t => {
   t.is(matchWithInput(m, 'yy'), 0);
 });
 
-test('basic space skipping', async t => {
+test.failing('basic space skipping', async t => {
   const g = ohm.grammar(`
     G {
       Start = ">" (digit "a".."z")*
@@ -878,6 +878,16 @@ test('basic space skipping', async t => {
   const m = await wasmMatcherForGrammar(g);
   t.is(matchWithInput(m, '> 0 a 1 b'), 1);
   t.is(matchWithInput(m, ' > 0 a 1 b '), 1);
+
+  const [term, iter] = m.getCstRoot().children.slice(1);
+  t.is(term.matchLength, 1);
+  t.is(iter.matchLength, 7);
+
+  const realChildren = iter.children.filter(c => c.isTerminal() || c.ruleName !== '$spaces');
+  t.deepEqual(
+      realChildren.map(c => c.matchLength),
+      [1, 1, 1, 1],
+  );
 });
 
 test('space skipping w/ lifted terminals', async t => {

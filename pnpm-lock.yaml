@@ -164,6 +164,8 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
 
+  packages/lang-json: {}
+
   packages/lang-python: {}
 
   packages/memoviz-demo:
@@ -275,9 +277,6 @@ importers:
 
   packages/wasm:
     dependencies:
-      '@shopify/liquid-html-parser':
-        specifier: ^2.8.2
-        version: 2.8.2
       '@wasmgroundup/emit':
         specifier: ^1.0.2
         version: 1.0.2
@@ -288,6 +287,9 @@ importers:
       '@ohm-js/miniohm-js':
         specifier: workspace:^
         version: link:../miniohm-js
+      '@shopify/liquid-html-parser':
+        specifier: ^2.8.2
+        version: 2.8.2
       '@thi.ng/leb128':
         specifier: ^3.1.48
         version: 3.1.48
@@ -306,9 +308,6 @@ importers:
       fast-glob:
         specifier: ^3.3.3
         version: 3.3.3
-      liquid-html-parser:
-        specifier: link:@shopify/liquid-html-parser
-        version: link:@shopify/liquid-html-parser
       mitata:
         specifier: ^1.0.34
         version: 1.0.34
