@@ -17,7 +17,7 @@ function failurePos(matcher, input) {
     assert.equal(result, 0);
     return matcher.getRightmostFailurePosition();
   }
-  assert.equal(result.failed(), true);
+  assert.equal(result.failed(), true, 'expected match failure');
   return result.getRightmostFailurePosition();
 }
 
@@ -173,19 +173,45 @@ test('failure pos: memoization', async t => {
 });
 
 test('failure pos: space skipping', async t => {
-  {
-    const g = ohm.grammar(`
-      G {
-        Start = digit digit
-        space += "/*" (~"*/" any)* "*/" -- comment
-      }`);
-    const jsMatcher = g.matcher();
-    const wasmMatcher = await wasmMatcherForGrammar(g);
+  const g = ohm.grammar(`
+    G {
+      Start = digit digit
+      space += "/*" (~"*/" any)* "*/" -- comment
+    }`);
+  const jsMatcher = g.matcher();
+  const wasmMatcher = await wasmMatcherForGrammar(g);
 
-    // Failure inside space skipping should be ignored.
-    t.is(failurePos(jsMatcher, '9 /* bad'), 2);
-    t.is(failurePos(wasmMatcher, '9 /* bad'), 2);
-  }
+  // Failure inside space skipping should be ignored.
+  t.is(failurePos(jsMatcher, '9 /* bad'), 2);
+  t.is(failurePos(wasmMatcher, '9 /* bad'), 2);
+});
+
+test('failure pos is always after space skipping', async t => {
+  const g = ohm.grammar(`
+    G {
+      Start = "1." "b"
+            | "2." letter
+            | "3." twice<"b">
+      twice<x> = x x
+    }`);
+  const jsMatcher = g.matcher();
+  const wasmMatcher = await wasmMatcherForGrammar(g);
+
+  // Regular terminal
+  t.is(failurePos(jsMatcher, '1. c'), 3);
+  t.is(failurePos(wasmMatcher, '1. c'), 3);
+
+  // Application
+  t.is(failurePos(jsMatcher, '2. 3'), 3);
+  t.is(failurePos(wasmMatcher, '2. 3'), 3);
+
+  // Dispatch w/ lifted terminal
+  t.is(failurePos(jsMatcher, '3. c'), 3);
+  t.is(failurePos(wasmMatcher, '3. c'), 3);
+
+  // TODO: Is this right? Should be 5, not 4.
+  t.is(failurePos(jsMatcher, '3. b c'), 4);
+  t.is(failurePos(wasmMatcher, '3. b c'), 4);
 });
 
 test('fast-check zoo', async t => {

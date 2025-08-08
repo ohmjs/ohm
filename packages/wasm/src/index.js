@@ -1636,7 +1636,6 @@ export class Compiler {
               },
               'failure',
           );
-          // TODO: Is this right? Or should it be asm.getSavedPos()?
           asm.updateLocalFailurePos(() => asm.localGet('postSpacesPos'));
           asm.setRet(0);
         },
