@@ -43,7 +43,7 @@ class Visitor {
   }
 
   visitTerminal(node, offset) {
-    return node.sourceString(offset);
+    return node.sourceString;
   }
 
   visitNonterminal(node, offset) {

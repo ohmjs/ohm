@@ -46,3 +46,9 @@ export function unparse(m) {
 }
 
 export const scriptRel = relPath => new URL(relPath, import.meta.url);
+
+// TODO: Consider refactoring this to return true/false.
+export function matchWithInput(m, str) {
+  m.setInput(str);
+  return m.match().succeeded() ? 1 : 0;
+}

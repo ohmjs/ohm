@@ -5,9 +5,7 @@ import fs from 'node:fs';
 import * as ohm from 'ohm-js';
 import {performance} from 'perf_hooks';
 
-import {unparse, wasmMatcherForGrammar} from './_helpers.js';
-
-const matchWithInput = (m, str) => (m.setInput(str), m.match());
+import {matchWithInput, unparse, wasmMatcherForGrammar} from './_helpers.js';
 
 const scriptRel = relPath => new URL(relPath, import.meta.url);
 const grammarSource = fs.readFileSync(scriptRel('data/liquid-html.ohm'), 'utf8');

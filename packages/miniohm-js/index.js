@@ -156,7 +156,14 @@ export class WasmMatcher {
 
   match() {
     if (process.env.OHM_DEBUG === '1') debugger; // eslint-disable-line no-debugger
-    return this._instance.exports.match(0);
+    const succeeded = this._instance.exports.match(0);
+    return new MatchResult(
+        this,
+        this._input,
+        this._ruleNames[0],
+      succeeded ? this.getCstRoot() : null,
+      this.getRightmostFailurePosition(),
+    );
   }
 
   getMemorySizeBytes() {
@@ -286,5 +293,56 @@ class CstNode {
     const ctorName = this.isTerminal() ? '_terminal' : this.isIter() ? '_iter' : this.ruleName;
     const {sourceString, startIdx} = this;
     return `CstNode {ctorName: ${ctorName}, sourceString: ${sourceString}, startIdx: ${startIdx} }`;
+  }
+}
+
+export class MatchResult {
+  constructor(matcher, input, startExpr, cst, rightmostFailurePosition, optRecordedFailures) {
+    this.matcher = matcher;
+    this.input = input;
+    this.startExpr = startExpr;
+    this._cst = cst;
+    this._rightmostFailurePosition = rightmostFailurePosition;
+    this._rightmostFailures = optRecordedFailures;
+
+    // TODO: Define these as lazy properties, like in the JS implementation.
+    if (this.failed()) {
+      this.shortMessage = this.message = `Match failed at pos ${rightmostFailurePosition}`;
+    }
+  }
+
+  succeeded() {
+    return !!this._cst;
+  }
+
+  failed() {
+    return !this.succeeded();
+  }
+
+  getRightmostFailurePosition() {
+    return this._rightmostFailurePosition;
+  }
+
+  getRightmostFailures() {
+    throw new Error('Not implemented yet: getRightmostFailures');
+  }
+
+  toString() {
+    return this.succeeded() ?
+      '[match succeeded]' :
+      '[match failed at position ' + this.getRightmostFailurePosition() + ']';
+  }
+
+  // Return a string summarizing the expected contents of the input stream when
+  // the match failure occurred.
+  getExpectedText() {
+    if (this.succeeded()) {
+      throw new Error('cannot get expected text of a successful MatchResult');
+    }
+    throw new Error('Not implemented yet: getExpectedText');
+  }
+
+  getInterval() {
+    throw new Error('Not implemented yet: getInterval');
   }
 }

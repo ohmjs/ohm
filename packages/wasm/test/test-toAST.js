@@ -2,9 +2,7 @@ import {toAST} from '@ohm-js/miniohm-js/toAST.js';
 import test from 'ava';
 import * as ohm from 'ohm-js';
 
-import {wasmMatcherForGrammar} from './_helpers.js';
-
-const matchWithInput = (m, str) => (m.setInput(str), m.match());
+import {matchWithInput, wasmMatcherForGrammar} from './_helpers.js';
 
 const arithmetic = ohm.grammar(`
   Arithmetic {

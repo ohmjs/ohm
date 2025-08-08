@@ -5,9 +5,7 @@ import * as ohm from 'ohm-js';
 import {performance} from 'perf_hooks';
 
 import {Compiler, ConstantsForTesting as Constants} from '../src/index.js';
-import {unparse, wasmMatcherForGrammar} from './_helpers.js';
-
-const matchWithInput = (m, str) => (m.setInput(str), m.match());
+import {matchWithInput, unparse, wasmMatcherForGrammar} from './_helpers.js';
 
 const SIZEOF_UINT32 = 4;
 
@@ -949,8 +947,7 @@ test('unicode built-ins: non-ASII (fast-check)', async t => {
   const m = await wasmMatcherForGrammar(g);
   const hasExpectedResult = wasmMatcher => {
     return fc.property(arbitraryStringMatching(/^\p{L}\p{L}$/u), str => {
-      wasmMatcher.setInput(str);
-      assert.equal(wasmMatcher.match(), 1);
+      assert.equal(matchWithInput(wasmMatcher, str), 1);
     });
   };
   const details = fc.check(hasExpectedResult(m), {
@@ -974,4 +971,11 @@ test('caseInsensitive', async t => {
   t.is(unparse(m), '. BlaH!'); // Trailing space is lost, who cares.
 
   t.is(matchWithInput(m, '.BLAH!'), 1);
+});
+
+test.failing('unicode', async t => {
+  const source = 'Nöö';
+  const m = await wasmMatcherForGrammar(ohm.grammar('G { Start = any* }'));
+  t.is(matchWithInput(m, source), 1);
+  t.is(unparse(m), source);
 });

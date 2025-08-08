@@ -17,7 +17,7 @@ import process from 'node:process';
 import {fileURLToPath} from 'node:url';
 import * as ohm from 'ohm-js';
 
-import {unparse, wasmMatcherForGrammar} from '../test/_helpers.js';
+import {matchWithInput, unparse, wasmMatcherForGrammar} from '../test/_helpers.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
@@ -26,8 +26,6 @@ const liquid = ohm.grammars(readFileSync(join(datadir, 'liquid-html.ohm'), 'utf8
 
 // Get pattern from command line arguments
 const pattern = process.argv[2];
-
-const matchWithInput = (m, str) => (m.setInput(str), m.match());
 
 (async function main() {
   const parsedPaths = new Set();

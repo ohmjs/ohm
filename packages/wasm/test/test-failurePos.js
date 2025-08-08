@@ -12,11 +12,6 @@ const ns = ohm.grammars(grammarSource);
 function failurePos(matcher, input) {
   matcher.setInput(input);
   const result = matcher.match();
-  // TODO: Unify the APIs.
-  if (typeof result === 'number') {
-    assert.equal(result, 0);
-    return matcher.getRightmostFailurePosition();
-  }
   assert.equal(result.failed(), true, 'expected match failure');
   return result.getRightmostFailurePosition();
 }
@@ -76,7 +71,7 @@ function arbitraryEdit(input) {
 function sameFailurePos(wasmMatcher) {
   return fc.property(arbitraryEdit(validInput), input => {
     wasmMatcher.setInput(input);
-    fc.pre(wasmMatcher.match() === 0);
+    fc.pre(wasmMatcher.match().succeeded());
     assert.equal(
         ns.LiquidHTML.match(input).getRightmostFailurePosition(),
         wasmMatcher.getRightmostFailurePosition(),
