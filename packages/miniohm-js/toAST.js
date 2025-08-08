@@ -133,7 +133,7 @@ class Visitor {
 // for the given match result `res` containg a concrete syntax tree (CST) and grammar.
 // The optional `mapping` parameter can be used to customize how the nodes of the CST
 // are mapped to the AST (see /doc/extras.md#toastmatchresult-mapping).
-export function toAST(matcher, mapping) {
+export function toAST(result, mapping) {
   mapping = Object.assign({}, defaultMapping, mapping);
   // pd: Unclear if/how this is actually being used?
   // const operation = Object.assign({}, defaultOperation);
@@ -143,5 +143,5 @@ export function toAST(matcher, mapping) {
   //     delete mapping[termName];
   //   }
   // }
-  return new Visitor(mapping).visit(matcher.getCstRoot(), 0);
+  return new Visitor(mapping).visit(result._cst, 0);
 }
