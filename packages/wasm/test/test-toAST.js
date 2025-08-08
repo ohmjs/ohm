@@ -26,7 +26,7 @@ const arithmetic = ohm.grammar(`
 `);
 
 // eslint-disable-next-line ava/no-skip-test
-test.skip('toAST basic', async t => {
+test('toAST basic', async t => {
   const m = await wasmMatcherForGrammar(arithmetic);
   t.is(matchWithInput(m, '10 + 20'), 1);
   const ast = toAST(m, {

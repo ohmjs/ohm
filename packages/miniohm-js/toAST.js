@@ -47,8 +47,7 @@ class Visitor {
   }
 
   visitNonterminal(node, offset) {
-    const {ruleName} = node;
-    const children = node.childrenNoSpaces;
+    const {children, ruleName} = node;
     const {mapping} = this;
 
     let currOffset = offset;
@@ -62,7 +61,7 @@ class Visitor {
     if (!Object.hasOwn(mapping, ruleName)) {
       // lexical rule
       if (node.isLexical()) {
-        return node.sourceString(offset);
+        return node.sourceString;
       }
 
       // singular node (e.g. only surrounded by literals or lookaheads)

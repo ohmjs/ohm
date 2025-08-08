@@ -210,6 +210,7 @@ test('failure pos is always after space skipping', async t => {
   t.is(failurePos(wasmMatcher, '3. c'), 3);
 
   // TODO: Is this right? Should be 5, not 4.
+  // https://github.com/ohmjs/ohm/issues/527
   t.is(failurePos(jsMatcher, '3. b c'), 4);
   t.is(failurePos(wasmMatcher, '3. b c'), 4);
 });
