@@ -1,7 +1,3 @@
-const assert = (cond, msg = 'Assertion failed') => {
-  throw new Error(msg);
-};
-
 function handleListOf(child) {
   return child.toAST(this.args.mapping);
 }
@@ -30,13 +26,13 @@ class Visitor {
     this.mapping = mapping;
   }
 
-  visit(node, offset) {
+  visit(node) {
     if (node.isTerminal()) {
-      return this.visitTerminal(node, offset);
+      return this.visitTerminal(node);
     } else if (node.isNonterminal()) {
-      return this.visitNonterminal(node, offset);
+      return this.visitNonterminal(node);
     } else if (node.isIter()) {
-      return this.visitIter(node, offset);
+      return this.visitIter(node);
     } else {
       throw new Error(`Unknown node type: ${node._type}`);
     }
@@ -46,16 +42,9 @@ class Visitor {
     return node.sourceString;
   }
 
-  visitNonterminal(node, offset) {
+  visitNonterminal(node) {
     const {children, ruleName} = node;
     const {mapping} = this;
-
-    let currOffset = offset;
-    const childOffsets = node.children.flatMap((c, i) => {
-      const origOffset = currOffset;
-      currOffset += c.matchLength;
-      return c.isNonterminal() && c.ruleName === '$spaces' ? [] : origOffset;
-    });
 
     // without customization
     if (!Object.hasOwn(mapping, ruleName)) {
@@ -67,15 +56,13 @@ class Visitor {
       // singular node (e.g. only surrounded by literals or lookaheads)
       const realChildren = children.filter(c => !c.isTerminal());
       if (realChildren.length === 1) {
-        const idx = children.indexOf(realChildren[0]);
-        return this.visit(realChildren[0], childOffsets[idx]);
+        return this.visit(realChildren[0]);
       }
 
       // rest: terms with multiple children
     }
     // direct forward
     if (typeof mapping[ruleName] === 'number') {
-      assert(false, 'not handled: direct forward');
       return this.visit(children[mapping[ruleName]]);
     }
 
@@ -89,7 +76,7 @@ class Visitor {
       const mappedProp = mapping[ruleName] && mapping[ruleName][prop];
       if (typeof mappedProp === 'number') {
         // direct forward
-        ans[prop] = this.visit(children[mappedProp], childOffsets[mappedProp]);
+        ans[prop] = this.visit(children[mappedProp]);
       } else if (
         typeof mappedProp === 'string' ||
         typeof mappedProp === 'boolean' ||
