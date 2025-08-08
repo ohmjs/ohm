@@ -19,6 +19,7 @@ Cleanups:
 - [ ] Handle non-memoization of inline rules at grammar parse time
 - [ ] Move to a failureOffset in memo entries
 - [ ] Add assertions for any known input size limitations.
+- [ ] Unify space skipping around the various kinds of apply (generalized, term, etc.)
 
 Optimizations:
 
@@ -27,6 +28,9 @@ Optimizations:
 - [ ] Compressed (32-bit) header for Nonterminal nodes in common case
 - [ ] Compressed (inline 32-bit) repr for Terminal nodes
 - [ ] Proper preallocated nodes (incl. failurePos) for common cases
+- Space skipping:
+  - [ ] Evaluate skipping memoization
+  - [ ] Avoid building CST nodes? Or preallocate for small numbers?
 
 ## Limitations
 

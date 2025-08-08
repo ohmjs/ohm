@@ -621,8 +621,9 @@ class Assembler {
     this.callPrebuiltFunc('newNonterminalNode');
   }
 
-  newTerminalNodeWithSavedPos() {
-    this.getSavedPos();
+  // [startIdx: i32] -> [ptr: i32]
+  newTerminalNode() {
+    this.localGet('postSpacesPos');
     this.globalGet('pos');
     this.callPrebuiltFunc('newTerminalNode');
   }
@@ -944,6 +945,7 @@ export class Compiler {
     asm.addFunction(`$${name}`, [w.valtype.i32], [w.valtype.i32], () => {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
+      asm.addLocal('postSpacesPos', w.valtype.i32);
       asm.addLocal('failurePos', w.valtype.i32);
       asm.i32Const(-1);
       asm.localSet('failurePos');
@@ -992,6 +994,8 @@ export class Compiler {
     asm.addFunction(`$${name}`, paramTypes, [w.valtype.i32], () => {
       asm.addLocal('ret', w.valtype.i32);
       asm.addLocal('tmp', w.valtype.i32);
+      asm.addLocal('postSpacesPos', w.valtype.i32);
+
       asm.addLocal('failurePos', w.valtype.i32);
       asm.globalGet('rightmostFailurePos');
       asm.localSet('failurePos');
@@ -1294,7 +1298,6 @@ export class Compiler {
       this.emitPExpr(newExp);
     };
 
-    this.maybeEmitSpaceSkipping();
     if (patterns.length === 1) {
       handleCase(0); // No need for a switch.
       return;
@@ -1405,6 +1408,8 @@ export class Compiler {
 
   emitApplyTerm({terminalId}) {
     const {asm} = this;
+
+    this.maybeEmitSpaceSkipping();
 
     // Save the original position.
     asm.globalGet('pos');
@@ -1612,6 +1617,12 @@ export class Compiler {
     const {asm} = this;
     this.maybeEmitSpaceSkipping();
 
+    // With space skipping, the startIdx of the terminal node is not
+    // necessarily the same as the saved pos. So we save the new pos before
+    // actually matching.
+    asm.globalGet('pos');
+    asm.localSet('postSpacesPos');
+
     asm.block(
         w.blocktype.empty,
         () => {
@@ -1619,13 +1630,14 @@ export class Compiler {
               w.blocktype.empty,
               () => {
                 thunk();
-                asm.newTerminalNodeWithSavedPos();
+                asm.newTerminalNode();
                 asm.localSet('ret');
                 asm.break(asm.depthOf('_done'));
               },
               'failure',
           );
-          asm.updateLocalFailurePos(() => asm.getSavedPos());
+          // TODO: Is this right? Or should it be asm.getSavedPos()?
+          asm.updateLocalFailurePos(() => asm.localGet('postSpacesPos'));
           asm.setRet(0);
         },
         '_done',

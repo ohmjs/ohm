@@ -31,13 +31,13 @@ export async function wasmMatcherForGrammar(grammar, modBytes = undefined) {
 }
 
 export function unparse(m) {
-  const input = m.getInput();
   let ans = '';
-  let pos = 0;
   function walk(node) {
+    if (node.leadingSpaces) {
+      ans += node.leadingSpaces.sourceString;
+    }
     if (node.isTerminal()) {
-      ans += input.slice(pos, pos + node.matchLength);
-      pos += node.matchLength;
+      ans += node.sourceString;
     }
     node.children.forEach(c => walk(c));
   }

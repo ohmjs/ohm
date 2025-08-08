@@ -870,7 +870,7 @@ test('lifted terminals', async t => {
   t.is(matchWithInput(m, 'yy'), 0);
 });
 
-test.failing('basic space skipping', async t => {
+test('basic space skipping', async t => {
   const g = ohm.grammar(`
     G {
       Start = ">" (digit "a".."z")*
@@ -879,13 +879,12 @@ test.failing('basic space skipping', async t => {
   t.is(matchWithInput(m, '> 0 a 1 b'), 1);
   t.is(matchWithInput(m, ' > 0 a 1 b '), 1);
 
-  const [term, iter] = m.getCstRoot().children.slice(1);
+  const [term, iter] = m.getCstRoot().children;
   t.is(term.matchLength, 1);
-  t.is(iter.matchLength, 7);
+  t.is(iter.matchLength, 8);
 
-  const realChildren = iter.children.filter(c => c.isTerminal() || c.ruleName !== '$spaces');
   t.deepEqual(
-      realChildren.map(c => c.matchLength),
+      iter.children.map(c => c.matchLength),
       [1, 1, 1, 1],
   );
 });
@@ -972,7 +971,7 @@ test('caseInsensitive', async t => {
   t.is(matchWithInput(m, '.BlaH!'), 1);
 
   t.is(matchWithInput(m, '. BlaH! '), 1);
-  t.is(unparse(m), '. BlaH! ');
+  t.is(unparse(m), '. BlaH!'); // Trailing space is lost, who cares.
 
   t.is(matchWithInput(m, '.BLAH!'), 1);
 });

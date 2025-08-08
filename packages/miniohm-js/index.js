@@ -166,7 +166,7 @@ export class WasmMatcher {
   getCstRoot() {
     const {buffer} = this._instance.exports.memory;
     const addr = this._instance.exports.getCstRoot();
-    return new CstNode(this._ruleNames, new DataView(buffer), addr);
+    return new CstNode(this._ruleNames, new DataView(buffer), addr, 0);
   }
 
   _fillInputBuffer(offset, maxLen) {
@@ -186,10 +186,16 @@ export class WasmMatcher {
 }
 
 class CstNode {
-  constructor(ruleNames, dataView, offset) {
-    this._ruleNames = ruleNames;
-    this._view = dataView;
-    this._base = offset;
+  constructor(ruleNames, dataView, ptr, startIdx) {
+    // Non-enumerable properties
+    Object.defineProperties(this, {
+      _ruleNames: {value: ruleNames},
+      _view: {value: dataView},
+      _children: {writable: true},
+    });
+    this._base = ptr;
+    this.startIdx = startIdx;
+    this.leadingSpaces = undefined;
   }
 
   isNonterminal() {
@@ -226,41 +232,45 @@ class CstNode {
     return t < 0 ? t : 0;
   }
 
-  get childrenNoSpaces() {
-    // TODO: Lazily compute this once only.
-    const children = [];
-    for (let i = 0; i < this.count; i++) {
-      const slotOffset = this._base + 16 + i * 4;
-      const child = new CstNode(
-          this._ruleNames,
-          this._view,
-          this._view.getUint32(slotOffset, true),
-      );
-      if (child.ruleName !== '$spaces') children.push(child);
-    }
-    return children;
-  }
-
   get children() {
-    // TODO: Lazily compute this once only.
+    if (!this._children) {
+      this._children = this._computeChildren();
+    }
+    return this._children;
+  }
+
+  _computeChildren() {
     const children = [];
+    let spaces;
+    let {startIdx} = this;
     for (let i = 0; i < this.count; i++) {
       const slotOffset = this._base + 16 + i * 4;
-      children.push(
-          new CstNode(this._ruleNames, this._view, this._view.getUint32(slotOffset, true)),
-      );
+      const ptr = this._view.getUint32(slotOffset, true);
+      // TODO: Avoid allocating $spaces nodes altogether?
+      const node = new CstNode(this._ruleNames, this._view, ptr, startIdx);
+      if (node.ruleName === '$spaces') {
+        assert(!spaces, 'Multiple $spaces nodes found');
+        spaces = node;
+      } else {
+        if (spaces) {
+          node.leadingSpaces = spaces;
+          spaces = undefined;
+        }
+        children.push(node);
+      }
+      startIdx += node.matchLength;
     }
+    assert(spaces === undefined, 'Unclaimed $spaces!');
     return children;
   }
 
-  sourceString(offset) {
+  get sourceString() {
     const bytes = new Uint8Array(
         this._view.buffer,
-        INPUT_BUFFER_OFFSET + offset,
+        INPUT_BUFFER_OFFSET + this.startIdx,
         this.matchLength,
     );
-    const ans = utf8.decode(bytes);
-    return ans;
+    return utf8.decode(bytes);
   }
 
   isSyntactic(ruleName) {
@@ -270,5 +280,11 @@ class CstNode {
 
   isLexical(ruleName) {
     return !this.isSyntactic(ruleName);
+  }
+
+  toString() {
+    const ctorName = this.isTerminal() ? '_terminal' : this.isIter() ? '_iter' : this.ruleName;
+    const {sourceString, startIdx} = this;
+    return `CstNode {ctorName: ${ctorName}, sourceString: ${sourceString}, startIdx: ${startIdx} }`;
   }
 }
