@@ -27,6 +27,11 @@ class Visitor {
   }
 
   visit(node) {
+    const ctorName = node.isTerminal() ? '_terminal' : node.isIter() ? '_iter' : node.ruleName;
+    if (ctorName in this.mapping && typeof this.mapping[ctorName] === 'function') {
+      return this.mapping[ctorName].apply(this, node.children);
+    }
+
     if (node.isTerminal()) {
       return this.visitTerminal(node);
     } else if (node.isNonterminal()) {

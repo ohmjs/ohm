@@ -141,21 +141,19 @@ test('toAST basic', async t => {
   };
   t.deepEqual(ast, expected, 'proper AST with forwarded child node');
 
-  // const myToAST = node =>
-  //   toAST(node, {
-  //     AddExp_plus(expr1, _, expr2) {
-  //       expr1 = expr1.toAST(this.args.mapping);
-  //       expr2 = expr2.toAST(this.args.mapping);
-  //       return 'plus(' + expr1 + ', ' + expr2 + ')';
-  //     },
-  //   });
-  // ast = myToAST(matchResult);
-  // expected = {
-  //   0: 'plus(10, 20)', // child 2 of AddExp_plus
-  //   2: '30',
-  //   type: 'AddExp_minus',
-  // };
-  // t.deepEqual(ast, expected, 'proper AST with computed node/operation extension');
+  ast = toAST(matchResult, {
+    AddExp_plus(expr1, _, expr2) {
+      expr1 = this.visit(expr1);
+      expr2 = this.visit(expr2);
+      return 'plus(' + expr1 + ', ' + expr2 + ')';
+    },
+  });
+  expected = {
+    0: 'plus(10, 20)', // child 2 of AddExp_plus
+    2: '30',
+    type: 'AddExp_minus',
+  };
+  t.deepEqual(ast, expected, 'proper AST with computed node/operation extension');
 
   ast = toAST(matchResult, {
     Exp: {
