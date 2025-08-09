@@ -1,3 +1,7 @@
+function assert(cond, message = 'Assertion failed') {
+  if (!cond) throw new Error(message);
+}
+
 function handleListOf(child) {
   return child.toAST(this.args.mapping);
 }
@@ -70,6 +74,7 @@ class Visitor {
     if (typeof mapping[ruleName] === 'number') {
       return this.visit(children[mapping[ruleName]]);
     }
+    assert(typeof mapping[ruleName] !== 'function', "shouldn't be possible");
 
     // named/mapped children or unnamed children ('0', '1', '2', ...)
     const propMap = mapping[ruleName] || children;
@@ -94,7 +99,7 @@ class Visitor {
         ans[prop] = Number(mappedProp);
       } else if (typeof mappedProp === 'function') {
         // computed value
-        ans[prop] = mappedProp.call(node, children);
+        ans[prop] = mappedProp.call(this, children);
       } else if (mappedProp === undefined) {
         if (children[prop] && !children[prop].isTerminal()) {
           ans[prop] = this.visit(children[prop]);
@@ -108,7 +113,7 @@ class Visitor {
   }
 
   visitIter(node) {
-    const children = node.childrenNoSpaces;
+    const {children} = node;
     if (node.isOptional()) {
       if (children.length === 0) {
         return null;
@@ -126,14 +131,9 @@ class Visitor {
 // The optional `mapping` parameter can be used to customize how the nodes of the CST
 // are mapped to the AST (see /doc/extras.md#toastmatchresult-mapping).
 export function toAST(result, mapping) {
-  mapping = Object.assign({}, defaultMapping, mapping);
-  // pd: Unclear if/how this is actually being used?
-  // const operation = Object.assign({}, defaultOperation);
-  // for (const termName in mapping) {
-  //   if (typeof mapping[termName] === 'function') {
-  //     operation[termName] = mapping[termName];
-  //     delete mapping[termName];
-  //   }
-  // }
-  return new Visitor(mapping).visit(result._cst, 0);
+  const visitor = new Visitor({...defaultMapping, ...mapping});
+  // Note: in the original implementation of toAST, any functions in `mapping`
+  // are removed after copying over to the final mapping. Looking at the code,
+  // it doesn't seem strictly necessary, but it's not 100% clear.
+  return visitor.visit(result._cst, 0);
 }

@@ -23,7 +23,7 @@ const arithmetic = ohm.grammar(`
   }
 `);
 
-// eslint-disable-next-line ava/no-skip-test
+// Copied from test/extras/test-toAST.js and modified for the new toAST API.
 test('toAST basic', async t => {
   const m = await wasmMatcherForGrammar(arithmetic);
   m.setInput('10 + 20');
@@ -108,26 +108,22 @@ test('toAST basic', async t => {
   };
   t.deepEqual(ast, expected, 'proper AST with boxed number property');
 
-  // ast = toAST(matchResult, {
-  //   AddExp_plus: {
-  //     expr1: 0,
-  //     expr2: 2,
-  //     str(children) {
-  //       return children
-  //           .map(function(child) {
-  //             return child.toAST(this.args.mapping);
-  //           }, this)
-  //           .join('');
-  //     },
-  //   },
-  // });
-  // expected = {
-  //   expr1: '10',
-  //   expr2: '20',
-  //   str: '10+20',
-  //   type: 'AddExp_plus',
-  // };
-  // t.deepEqual(ast, expected, 'proper AST with computed property');
+  ast = toAST(matchResult, {
+    AddExp_plus: {
+      expr1: 0,
+      expr2: 2,
+      str(children) {
+        return children.map(c => this.visit(c)).join('');
+      },
+    },
+  });
+  expected = {
+    expr1: '10',
+    expr2: '20',
+    str: '10+20',
+    type: 'AddExp_plus',
+  };
+  t.deepEqual(ast, expected, 'proper AST with computed property');
 
   m.setInput('10 + 20 - 30');
   matchResult = m.match();
