@@ -154,13 +154,13 @@ export class WasmMatcher {
     throw new Error('Not implemented');
   }
 
-  match() {
+  match(ruleName = this._ruleNames[0]) {
     if (process.env.OHM_DEBUG === '1') debugger; // eslint-disable-line no-debugger
     const succeeded = this._instance.exports.match(0);
     return new MatchResult(
         this,
         this._input,
-        this._ruleNames[0],
+        ruleName,
       succeeded ? this.getCstRoot() : null,
       this.getRightmostFailurePosition(),
     );
@@ -192,7 +192,7 @@ export class WasmMatcher {
   }
 }
 
-class CstNode {
+export class CstNode {
   constructor(ruleNames, dataView, ptr, startIdx) {
     // Non-enumerable properties
     Object.defineProperties(this, {
@@ -219,6 +219,10 @@ class CstNode {
 
   isOptional() {
     return false; // TODO
+  }
+
+  get ctorName() {
+    return this.isTerminal() ? '_terminal' : this.isIter() ? '_iter' : this.ruleName;
   }
 
   get ruleName() {
@@ -255,7 +259,7 @@ class CstNode {
       const ptr = this._view.getUint32(slotOffset, true);
       // TODO: Avoid allocating $spaces nodes altogether?
       const node = new CstNode(this._ruleNames, this._view, ptr, startIdx);
-      if (node.ruleName === '$spaces') {
+      if (node.ctorName === '$spaces') {
         assert(!spaces, 'Multiple $spaces nodes found');
         spaces = node;
       } else {
