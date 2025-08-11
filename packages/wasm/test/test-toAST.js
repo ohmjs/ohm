@@ -180,3 +180,55 @@ test('toAST basic', async t => {
   };
   t.deepEqual(ast, expected, 'proper AST with explicity reintroduced node');
 });
+
+// eslint-disable-next-line ava/no-skip-test
+test.skip('listOf and friends - #394', async t => {
+  // By default, toAST assumes that lexical rules represent indivisible tokens,
+  // but that doesn't make sense for listOf, nonemptyListOf, and emptyListOf.
+  const g = ohm.grammar(`
+    G {
+      Exp = listOf<digit, "+">
+      Exp2 = ListOf<digit, "+">
+    }
+  `);
+  const m = await wasmMatcherForGrammar(g);
+
+  const ast = (input, mapping, ruleName = 'Exp') => {
+    const toAst = toAstWithMapping(mapping);
+    m.setInput(input);
+    return toAst(m.match(ruleName));
+  };
+  // const astSyntactic = (input, mapping) => ast(input, mapping, 'Exp2');
+
+  // By default, the `listOf` action should pass through, and both `nonemptyListOf`
+  // and `emptyListOf` should return an array.
+  t.deepEqual(ast('3+5'), ['3', '5']);
+  t.deepEqual(ast(''), []);
+
+  // // The AST should be the same whether we use `listOf` or `ListOf`.
+  // t.deepEqual(ast('3+5'), astSyntactic('3 + 5'));
+  // t.deepEqual(ast(''), astSyntactic(''));
+
+  // // Ensure that it's still be possible to override the default mappings.
+
+  // t.is(
+  //     ast('0+1', {
+  //       nonemptyListOf: (first, sep, rest) => 'XX',
+  //     }),
+  //     'XX',
+  // );
+
+  // t.is(
+  //     ast('1+2', {
+  //       nonemptyListOf: 0,
+  //     }),
+  //     '1',
+  // );
+
+  // t.is(
+  //     ast('', {
+  //       emptyListOf: () => 'nix',
+  //     }),
+  //     'nix',
+  // );
+});

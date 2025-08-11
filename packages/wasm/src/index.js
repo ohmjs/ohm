@@ -603,6 +603,7 @@ class Assembler {
     this.getSavedPos();
     this.globalGet('pos');
     this.getSavedNumBindings();
+    this.i32Const(0); // TODO: arity
     this.callPrebuiltFunc('newIterationNode');
   }
 

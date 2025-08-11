@@ -16,8 +16,11 @@ declare function matchUnicodeChar(categoryBitmap: i32): bool;
 
 // CST nodes
 @inline const CST_NODE_OVERHEAD: usize = 16;
-@inline const NODE_TYPE_TERMINAL: i32 = -1;
-@inline const NODE_TYPE_ITERATION: i32 = -2;
+
+// Node type is given by the two least sigificant bits.
+@inline const NODE_TYPE_NONTERMINAL: i32 = 0;
+@inline const NODE_TYPE_TERMINAL: i32 = 1;
+@inline const NODE_TYPE_ITERATION: i32 = 2;
 
 // Memo table entries
 type MemoEntry = i32;
@@ -87,12 +90,8 @@ export function dummy(i: i32): void {
   store<i32>(ptr, len, 4);
 }
 
-@inline function cstGetType(ptr: usize): i32 {
-  return load<i32>(ptr, 8);
-}
-
-@inline function cstSetType(ptr: usize, t: i32): void {
-  store<i32>(ptr, t, 8);
+@inline function cstSetTypeAndDetails(ptr: usize, val: i32): void {
+  store<i32>(ptr, val, 8);
 }
 
 @inline function cstGetFailurePos(ptr: usize): i32 {
@@ -251,20 +250,20 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): usize {
   const ptr = heap.alloc(CST_NODE_OVERHEAD);
   cstSetCount(ptr, 0);
   cstSetMatchLength(ptr, endIdx - startIdx);
-  cstSetType(ptr, NODE_TYPE_TERMINAL);
+  cstSetTypeAndDetails(ptr, NODE_TYPE_TERMINAL);
   cstSetFailurePos(ptr, 0);
   bindings.push(ptr);
   return ptr;
 }
 
 // Create an internal (non-leaf) node (IterationNode or NonterminalNode).
-@inline function newNonLeafNode(startIdx: i32, endIdx: i32, type: i32, origNumBindings: i32, failurePos: i32): usize {
+@inline function newNonLeafNode(startIdx: i32, endIdx: i32, typeAndDetails: i32, origNumBindings: i32, failurePos: i32): usize {
   const bindingsLen = bindings.length;
   const numChildren = bindingsLen - origNumBindings;
   const ptr = heap.alloc(CST_NODE_OVERHEAD + numChildren * 4);
   cstSetCount(ptr, numChildren);
   cstSetMatchLength(ptr, endIdx - startIdx);
-  cstSetType(ptr, type);
+  cstSetTypeAndDetails(ptr, typeAndDetails);
   cstSetFailurePos(ptr, failurePos);
   for (let i = 0; i < numChildren; i++) {
     store<i32>(ptr + CST_NODE_OVERHEAD + i * 4, bindings[bindingsLen - numChildren + i]);
@@ -275,11 +274,13 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): usize {
 }
 
 export function newNonterminalNode(startIdx: i32, endIdx: i32, ruleId: i32, origNumBindings: i32, failurePos: i32): usize {
-  return newNonLeafNode(startIdx, endIdx, ruleId, origNumBindings, failurePos);
+  const typeAndDetails = (ruleId << 2) | NODE_TYPE_NONTERMINAL;
+  return newNonLeafNode(startIdx, endIdx, typeAndDetails, origNumBindings, failurePos);
 }
 
-export function newIterationNode(startIdx: i32, endIdx: i32, origNumBindings: i32): usize {
-  return newNonLeafNode(startIdx, endIdx, NODE_TYPE_ITERATION, origNumBindings, -1);
+export function newIterationNode(startIdx: i32, endIdx: i32, origNumBindings: i32, arity: i32): usize {
+  const typeAndDetails = (arity << 2) | NODE_TYPE_ITERATION;
+  return newNonLeafNode(startIdx, endIdx, typeAndDetails, origNumBindings, -1);
 }
 
 export function getBindingsLength(): i32 {

@@ -2,6 +2,13 @@
 
 const WASM_PAGE_SIZE = 64 * 1024;
 const INPUT_BUFFER_OFFSET = WASM_PAGE_SIZE;
+const CST_NODE_TYPE_MASK = 0b11;
+
+const CstNodeType = {
+  NONTERMINAL: 0,
+  TERMINAL: 1,
+  ITER: 2,
+};
 
 // Bit flags for Unicode categories, based on the order that they appear in
 // https://www.unicode.org/Public/16.0.0/ucd/extracted/DerivedGeneralCategory.txt
@@ -206,15 +213,15 @@ export class CstNode {
   }
 
   isNonterminal() {
-    return this._type >= 0;
+    return (this._type & CST_NODE_TYPE_MASK) === CstNodeType.NONTERMINAL;
   }
 
   isTerminal() {
-    return this._type === -1;
+    return (this._type & CST_NODE_TYPE_MASK) === CstNodeType.TERMINAL;
   }
 
   isIter() {
-    return this._type === -2;
+    return (this._type & CST_NODE_TYPE_MASK) === CstNodeType.ITER;
   }
 
   isOptional() {
@@ -226,8 +233,8 @@ export class CstNode {
   }
 
   get ruleName() {
-    const id = this._view.getInt32(this._base + 8, true);
-    return this._ruleNames[id];
+    const ruleId = this._view.getInt32(this._base + 8, true) >>> 2;
+    return this._ruleNames[ruleId].split('<')[0];
   }
 
   get count() {
@@ -239,8 +246,7 @@ export class CstNode {
   }
 
   get _type() {
-    const t = this._view.getInt32(this._base + 8, true);
-    return t < 0 ? t : 0;
+    return this._view.getInt32(this._base + 8, true);
   }
 
   get children() {

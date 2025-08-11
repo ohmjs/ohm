@@ -43,10 +43,11 @@ test('cst returns', async t => {
   t.is(root.ruleName, 'start');
 
   // "a"
-  let {matchLength, _type, children} = root.children[0];
-  t.is(children.length, 0);
-  t.is(matchLength, 1);
-  t.is(_type, -1);
+  let term = root.children[0];
+  t.is(term.children.length, 0);
+  t.is(term.matchLength, 1);
+  t.is(term._type, 1);
+  t.true(term.isTerminal());
 
   matcher = await wasmMatcherForGrammar(ohm.grammar('G { start = "a" b\nb = "b" }'));
 
@@ -59,10 +60,9 @@ test('cst returns', async t => {
 
   // "a"
   const [childA, childB] = root.children;
-  ({matchLength, _type, children} = childA);
-  t.is(children.length, 0);
-  t.is(matchLength, 1);
-  t.is(_type, -1);
+  t.is(childA.children.length, 0);
+  t.is(childA.matchLength, 1);
+  t.true(childA.isTerminal());
 
   // NonterminalNode for b
   t.is(childB.children.length, 1);
@@ -70,11 +70,11 @@ test('cst returns', async t => {
   t.is(childB.ruleName, 'b');
 
   // TerminalNode for "b"
-  // eslint-disable-next-line no-unused-vars
-  ({matchLength, _type, children} = childB.children[0]);
-  t.is(children.length, 0);
-  t.is(matchLength, 1);
-  t.is(_type, -1);
+  term = childB.children[0];
+  t.is(term.children.length, 0);
+  t.is(term.matchLength, 1);
+  t.true(term.isTerminal());
+  t.is(term.ctorName, '_terminal');
 });
 
 test('cst with lookahead', async t => {
@@ -138,7 +138,7 @@ test('cst for opt', async t => {
   // iter
   let iter = root.children[0];
   t.is(iter.matchLength, 1);
-  t.is(iter._type, -2);
+  t.true(iter.isIter());
   t.is(iter.children.length, 1);
   t.is(iter.children[0].isTerminal(), true);
   t.is(iter.children[0].matchLength, 1);
@@ -157,7 +157,7 @@ test('cst for opt', async t => {
   // eslint-disable-next-line no-unused-vars
   iter = root.children[0];
   t.is(iter.matchLength, 0);
-  t.is(iter._type, -2);
+  t.true(iter.isIter());
   t.is(iter.children.length, 0);
 });
 
@@ -176,7 +176,7 @@ test('cst for plus', async t => {
   // eslint-disable-next-line no-unused-vars
   const iter = root.children[0];
   t.is(iter.matchLength, 1);
-  t.is(iter._type, -2);
+  t.true(iter.isIter());
   t.is(iter.children.length, 1);
 
   t.is(iter.children[0].isTerminal(), true);
@@ -205,7 +205,7 @@ test('cst with (small) repetition', async t => {
   const iter = root.children[0];
   t.is(iter.matchLength, 3);
   t.is(iter.children.length, 3);
-  t.is(iter._type, -2);
+  t.true(iter.isIter());
 
   // Terminal children
   const [childA, childB, childC] = iter.children;
@@ -229,39 +229,36 @@ test('cst with repetition and lookahead', async t => {
   t.is(matchWithInput(matcher, input), 1);
 
   // x
-  let {matchLength, _type, children} = matcher.getCstRoot();
-  t.is(matchLength, 3);
-  t.is(children.length, 1);
-  t.is(_type, 0);
+  const root = matcher.getCstRoot();
+  t.is(root.matchLength, 3);
+  t.is(root.children.length, 1);
+  t.true(root.isNonterminal());
 
   // iter
-  ({matchLength, _type, children} = children[0]);
-  t.is(matchLength, 3);
-  t.is(children.length, 3);
-  t.is(_type, -2);
+  const iter = root.children[0];
+  t.is(iter.matchLength, 3);
+  t.is(iter.children.length, 3);
+  t.true(iter.isIter());
 
-  const [childA, childB, childC] = children;
-  ({matchLength, _type, children} = childA);
-  t.is(matchLength, 1);
-  t.is(children.length, 1);
-  t.is(_type, 0);
-  t.is(children[0].isTerminal(), true);
-  t.is(children[0].matchLength, 1);
+  const [childA, childB, childC] = iter.children;
+  t.is(childA.matchLength, 1);
+  t.is(childA.children.length, 1);
+  t.true(childA.isNonterminal());
+  t.true(childA.children[0].isTerminal());
+  t.is(childA.children[0].matchLength, 1);
 
-  ({matchLength, _type, children} = childB);
-  t.is(matchLength, 1);
-  t.is(children.length, 1);
-  t.is(_type, 0);
-  t.is(children[0].isTerminal(), true);
-  t.is(children[0].matchLength, 1);
+  t.is(childB.matchLength, 1);
+  t.is(childB.children.length, 1);
+  t.true(childB.isNonterminal());
+  t.true(childB.children[0].isTerminal());
+  t.is(childB.children[0].matchLength, 1);
 
   // eslint-disable-next-line no-unused-vars
-  ({matchLength, _type, children} = childC);
-  t.is(matchLength, 1);
-  t.is(children.length, 1);
-  t.is(_type, 0);
-  t.is(children[0].isTerminal(), true);
-  t.is(children[0].matchLength, 1);
+  t.is(childC.matchLength, 1);
+  t.is(childC.children.length, 1);
+  t.true(childC.isNonterminal());
+  t.true(childC.children[0].isTerminal());
+  t.is(childC.children[0].matchLength, 1);
 
   matcher = await wasmMatcherForGrammar(ohm.grammar('G {x = (~space any)+ spaces any+}'));
   input = '/ab xy';
@@ -564,34 +561,31 @@ test('basic memoization', async t => {
     return view.getUint32(colOffset + SIZEOF_UINT32 * ruleId, true);
   };
 
-  const cstRoot = matcher.getCstRoot();
+  const root = matcher.getCstRoot();
 
   // start
-  let {matchLength, _type, children} = cstRoot;
-  t.is(matchLength, 2);
-  t.is(children.length, 2);
-  t.is(_type, 0);
+  t.is(root.matchLength, 2);
+  t.is(root.children.length, 2);
+  t.is(root.ctorName, 'start');
 
-  const [childA, childB] = children;
+  const [childA, childB] = root.children;
 
   // "a"
-  t.is(childA.isTerminal(), true);
+  t.true(childA.isTerminal());
   t.is(childA.matchLength, 1);
 
   // b
-  // eslint-disable-next-line no-unused-vars
-  ({matchLength, _type, children} = childB);
-  t.is(matchLength, 1);
-  t.is(children.length, 1);
-  t.is(_type, 0);
+  t.is(childB.matchLength, 1);
+  t.is(childB.children.length, 1);
+  t.is(childB.ctorName, 'b');
 
   // "b"
-  t.is(children[0].isTerminal(), true);
-  t.is(children[0].matchLength, 1);
+  t.true(childB.children[0].isTerminal());
+  t.is(childB.children[0].matchLength, 1);
 
   // Expect memo for `b` at position 1, and `start` at position 0.
   t.is(getMemo(1, 'b'), childB._base);
-  t.is(getMemo(0, 'start'), cstRoot._base);
+  t.is(getMemo(0, 'start'), root._base);
 });
 
 test('more memoization', async t => {
@@ -978,4 +972,15 @@ test.failing('unicode', async t => {
   const m = await wasmMatcherForGrammar(ohm.grammar('G { Start = any* }'));
   t.is(matchWithInput(m, source), 1);
   t.is(unparse(m), source);
+});
+
+// eslint-disable-next-line ava/no-skip-test
+test.skip('iter node map', async t => {
+  const m = await wasmMatcherForGrammar(ohm.grammar('G { Start = (letter digit)* }'));
+  t.is(matchWithInput(m, 'a1 b2 c 3'), 1);
+  const iter = m.getCstRoot().children[0];
+  t.deepEqual(
+      iter.map((letter, digit) => `${digit}${letter}`),
+      ['1a', '2b', '3c'],
+  );
 });
