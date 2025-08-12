@@ -25,9 +25,14 @@ export type Expr =
 export interface Alt {
   type: 'Alt';
   children: Expr[];
+  outArity: number;
 }
 
-export const alt = (children: Expr[]): Alt => ({type: 'Alt', children});
+export const alt = (children: Expr[]): Alt => ({
+  type: 'Alt',
+  children,
+  outArity: outArity(children[0])
+});
 
 export interface Any {
   type: 'Any';
@@ -91,17 +96,27 @@ export const end = (): End => ({type: 'End'});
 export interface Lex {
   type: 'Lex';
   child: Expr;
+  outArity: number;
 }
 
-export const lex = (child: Expr): Lex => ({type: 'Lex', child});
+export const lex = (child: Expr): Lex => ({
+  type: 'Lex',
+  child,
+  outArity: outArity(child)
+});
 
 // TODO: Eliminate this, and replace with Not(Not(...))?
 export interface Lookahead {
   type: 'Lookahead';
   child: Expr;
+  outArity: number;
 }
 
-export const lookahead = (child: Expr): Lookahead => ({type: 'Lookahead', child});
+export const lookahead = (child: Expr): Lookahead => ({
+  type: 'Lookahead',
+  child,
+  outArity: outArity(child)
+});
 
 export interface Opt {
   type: 'Opt';
@@ -142,9 +157,14 @@ export const range = (lo: number, hi: number): Range => ({type: 'Range', lo, hi}
 export interface Seq {
   type: 'Seq';
   children: Expr[];
+  outArity: number;
 }
 
-export const seq = (children: Expr[]): Seq => ({type: 'Seq', children});
+export const seq = (children: Expr[]): Seq => ({
+  type: 'Seq',
+  children,
+  outArity: children.reduce((acc, child) => acc + outArity(child), 0)
+});
 
 export interface Star {
   type: 'Star';
@@ -247,15 +267,24 @@ export function substituteParams(exp: Expr, actuals: Expr[]) {
     case 'Seq':
       return {
         type: exp.type,
-        children: exp.children.map(c => substituteParams(c, actuals))
+        children: exp.children.map(c => substituteParams(c, actuals)),
+        outArity: exp.outArity
       };
     case 'Lex':
     case 'Lookahead':
+      return {
+        type: exp.type,
+        child: substituteParams(exp.child, actuals),
+        outArity: exp.outArity
+      };
     case 'Not':
     case 'Opt':
     case 'Plus':
     case 'Star':
-      return {type: exp.type, child: substituteParams(exp.child, actuals)};
+      return {
+        type: exp.type,
+        child: substituteParams(exp.child, actuals)
+      };
     case 'Any':
     case 'ApplyGeneralized':
     case 'CaseInsensitive':
@@ -297,8 +326,9 @@ export function rewrite(exp: Expr, actions: RewriteActions): Expr {
 
   switch (exp.type) {
     case 'Alt':
+      return alt(exp.children.map((e: Expr) => rewrite(e, actions)));
     case 'Seq':
-      return {type: exp.type, children: exp.children.map((e: Expr) => rewrite(e, actions))};
+      return seq(exp.children.map((e: Expr) => rewrite(e, actions)));
     case 'Any':
     case 'Apply':
     case 'ApplyGeneralized':
@@ -311,14 +341,20 @@ export function rewrite(exp: Expr, actions: RewriteActions): Expr {
     case 'UnicodeChar':
       return exp;
     case 'Dispatch':
+      // We don't use the constructor here, to avoid type checking issues.
       return {type: exp.type, child: rewrite(exp.child, actions), patterns: exp.patterns};
     case 'Lex':
+      return lex(rewrite(exp.child, actions));
     case 'Lookahead':
+      return lookahead(rewrite(exp.child, actions));
     case 'Not':
+      return not(rewrite(exp.child, actions));
     case 'Opt':
+      return opt(rewrite(exp.child, actions));
     case 'Plus':
+      return plus(rewrite(exp.child, actions));
     case 'Star':
-      return {type: exp.type, child: rewrite(exp.child, actions)};
+      return star(rewrite(exp.child, actions));
     default:
       unreachable(exp, `not handled: ${exp}`);
   }
@@ -366,6 +402,41 @@ export function toString(exp: Expr): string {
       return `${toString(exp.child)}+`;
     case 'Star':
       return `${toString(exp.child)}*`;
+    default:
+      unreachable(exp, `not handled: ${exp}`);
+  }
+}
+
+// Returns the number of bindings that `expr` produces in its parent — the
+// "out arity" or "upwards arity". Note that there is potential confusion
+// with iter nodes: they produce a single binding, but an expression like
+// `(letter digit)*` can be said to have "arity 2".
+export function outArity(exp: Expr): number {
+  console.log(JSON.stringify(exp));
+  switch (exp.type) {
+    case 'Alt':
+    case 'Seq':
+    case 'Lex':
+    case 'Lookahead':
+      return exp.outArity;
+    case 'Any':
+    case 'Apply':
+    case 'ApplyGeneralized':
+    case 'CaseInsensitive':
+    case 'End':
+    case 'LiftedTerminal':
+    case 'Param':
+    case 'Range':
+    case 'Terminal':
+    case 'UnicodeChar':
+    case 'Dispatch':
+      return 1;
+    case 'Not':
+      return 0;
+    case 'Opt':
+    case 'Plus':
+    case 'Star':
+      return 1;
     default:
       unreachable(exp, `not handled: ${exp}`);
   }

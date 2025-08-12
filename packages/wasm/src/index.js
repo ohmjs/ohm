@@ -599,11 +599,11 @@ class Assembler {
     this.emit(instr.call, w.funcidx(prebuiltFuncidx(name)));
   }
 
-  newIterNodeWithSavedPosAndBindings() {
+  newIterNodeWithSavedPosAndBindings(arity) {
     this.getSavedPos();
     this.globalGet('pos');
     this.getSavedNumBindings();
-    this.i32Const(0); // TODO: arity
+    this.i32Const(arity);
     this.callPrebuiltFunc('newIterationNode');
   }
 
@@ -1524,7 +1524,7 @@ export class Compiler {
       asm.restorePos();
       asm.restoreBindingsLength();
     });
-    asm.newIterNodeWithSavedPosAndBindings();
+    asm.newIterNodeWithSavedPosAndBindings(ir.outArity(child));
     asm.localSet('ret');
   }
 
@@ -1609,8 +1609,7 @@ export class Compiler {
     asm.restorePos();
     asm.restoreBindingsLength();
     asm.popStackFrame();
-
-    asm.newIterNodeWithSavedPosAndBindings();
+    asm.newIterNodeWithSavedPosAndBindings(ir.outArity(child));
     asm.localSet('ret');
   }
 

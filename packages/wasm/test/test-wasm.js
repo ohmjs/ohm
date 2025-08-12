@@ -46,7 +46,7 @@ test('cst returns', async t => {
   let term = root.children[0];
   t.is(term.children.length, 0);
   t.is(term.matchLength, 1);
-  t.is(term._type, 1);
+  t.is(term._typeAndDetails, 1);
   t.true(term.isTerminal());
 
   matcher = await wasmMatcherForGrammar(ohm.grammar('G { start = "a" b\nb = "b" }'));
@@ -974,13 +974,41 @@ test.failing('unicode', async t => {
   t.is(unparse(m), source);
 });
 
-// eslint-disable-next-line ava/no-skip-test
-test.skip('iter node map', async t => {
+test('iter nodes: basic map (star)', async t => {
   const m = await wasmMatcherForGrammar(ohm.grammar('G { Start = (letter digit)* }'));
+  t.is(matchWithInput(m, ''), 1, 'empty input matches');
   t.is(matchWithInput(m, 'a1 b2 c 3'), 1);
+  t.is(m.getCstRoot().children.length, 1);
   const iter = m.getCstRoot().children[0];
   t.deepEqual(
-      iter.map((letter, digit) => `${digit}${letter}`),
+      iter.map((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
       ['1a', '2b', '3c'],
   );
+  t.throws(() => iter.map(() => {}), {message: /bad arity/});
+});
+
+test('iter nodes: basic map (plus)', async t => {
+  const m = await wasmMatcherForGrammar(ohm.grammar('G { Start = (letter digit)+ }'));
+  t.is(matchWithInput(m, ''), 0, 'empty input FAILS');
+  t.is(matchWithInput(m, 'a1 b2 c 3'), 1);
+  t.is(m.getCstRoot().children.length, 1);
+  const iter = m.getCstRoot().children[0];
+  t.deepEqual(
+      iter.map((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
+      ['1a', '2b', '3c'],
+  );
+  t.throws(() => iter.map(() => {}), {message: /bad arity/});
+});
+
+test('iter nodes: basic map (opt)', async t => {
+  const m = await wasmMatcherForGrammar(ohm.grammar('G { Start = (letter digit)? }'));
+  t.is(matchWithInput(m, ''), 1, 'empty input matches');
+  t.is(matchWithInput(m, 'a1'), 1);
+  t.is(m.getCstRoot().children.length, 1);
+  const iter = m.getCstRoot().children[0];
+  t.deepEqual(
+      iter.map((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
+      ['1a'],
+  );
+  t.throws(() => iter.map(() => {}), {message: /bad arity/});
 });

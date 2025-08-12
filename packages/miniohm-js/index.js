@@ -213,15 +213,15 @@ export class CstNode {
   }
 
   isNonterminal() {
-    return (this._type & CST_NODE_TYPE_MASK) === CstNodeType.NONTERMINAL;
+    return (this._typeAndDetails & CST_NODE_TYPE_MASK) === CstNodeType.NONTERMINAL;
   }
 
   isTerminal() {
-    return (this._type & CST_NODE_TYPE_MASK) === CstNodeType.TERMINAL;
+    return (this._typeAndDetails & CST_NODE_TYPE_MASK) === CstNodeType.TERMINAL;
   }
 
   isIter() {
-    return (this._type & CST_NODE_TYPE_MASK) === CstNodeType.ITER;
+    return (this._typeAndDetails & CST_NODE_TYPE_MASK) === CstNodeType.ITER;
   }
 
   isOptional() {
@@ -245,8 +245,12 @@ export class CstNode {
     return this._view.getUint32(this._base + 4, true);
   }
 
-  get _type() {
+  get _typeAndDetails() {
     return this._view.getInt32(this._base + 8, true);
+  }
+
+  get arity() {
+    return this._typeAndDetails >>> 2;
   }
 
   get children() {
@@ -303,6 +307,16 @@ export class CstNode {
     const ctorName = this.isTerminal() ? '_terminal' : this.isIter() ? '_iter' : this.ruleName;
     const {sourceString, startIdx} = this;
     return `CstNode {ctorName: ${ctorName}, sourceString: ${sourceString}, startIdx: ${startIdx} }`;
+  }
+
+  map(callbackFn) {
+    const {arity, children} = this;
+    assert(callbackFn.length === arity, 'bad arity');
+    const ans = [];
+    for (let i = 0; i < children.length; i += arity) {
+      ans.push(callbackFn(...children.slice(i, i + arity)));
+    }
+    return ans;
   }
 }
 
