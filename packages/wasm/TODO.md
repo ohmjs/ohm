@@ -12,6 +12,7 @@
 - [x] Support direct left recursion.
 - [x] Separate API for _creating_ the Wasm module from the WasmMatcher interface.
 - [x] Implement a proper CLI.
+- [ ] Fix duplicate CST nodes with EMIT_GENERALIZED_RULES = true
 
 Cleanups:
 
@@ -36,6 +37,7 @@ Optimizations:
 
 - The input is assumed to be no bigger than 64k.
 - For the memo table, we assume that there are no more than 256 rules in the grammar.
+- Dead rule elimination: rules that aren't accessible from the default start rule are currently removed.
 
 ## Unanswered questions
 

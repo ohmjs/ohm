@@ -818,30 +818,37 @@ test('specialized rule names', t => {
   const compiler = new Compiler(g);
   compiler.normalize();
 
-  t.deepEqual([...compiler.rules.keys()].sort(), [
+  const noGeneralizedRulesList = [
     '$spaces',
-    'commaSep',
     'commaSep<exclaimed<$term$0>>',
-    'emptyListOf',
     'emptyListOf<exclaimed<$term$0>,$term$1>',
-    'exclaimed',
     'exclaimed<$term$0>',
     'exclaimed<hello2>',
     'exclaimed<hello>',
-    'flip',
     'flip<exclaimed<hello2>,hello>',
     'hello',
     'hello2',
-    'listOf',
     'listOf<exclaimed<$term$0>,$term$1>',
-    'nonemptyListOf',
     'nonemptyListOf<exclaimed<$term$0>,$term$1>',
     'one',
     'space',
     'start',
     'three',
     'two',
+  ].sort();
+  // When `EMIT_GENERALIZED_RULES = true`, there is a generalized version
+  // of each parameterized rule. To make sure this test passes either way,
+  // we filter those out.
+  const ignored = new Set([
+    'commaSep',
+    'emptyListOf',
+    'exclaimed',
+    'flip',
+    'listOf',
+    'nonemptyListOf',
   ]);
+  const keys = [...compiler.rules.keys()].filter(x => !ignored.has(x)).sort();
+  t.deepEqual(keys, noGeneralizedRulesList);
 });
 
 test('determinism', t => {
@@ -972,6 +979,14 @@ test.failing('unicode', async t => {
   const m = await wasmMatcherForGrammar(ohm.grammar('G { Start = any* }'));
   t.is(matchWithInput(m, source), 1);
   t.is(unparse(m), source);
+});
+
+test('iter nodes: star w/ 0 matches', async t => {
+  const m = await wasmMatcherForGrammar(ohm.grammar('G { Start = (letter digit)* }'));
+  t.is(matchWithInput(m, ''), 1, 'empty input matches');
+  t.is(m.getCstRoot().children.length, 1);
+  const iter = m.getCstRoot().children[0];
+  t.is(iter.children.length, 0);
 });
 
 test('iter nodes: basic map (star)', async t => {

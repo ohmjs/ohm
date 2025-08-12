@@ -412,7 +412,6 @@ export function toString(exp: Expr): string {
 // with iter nodes: they produce a single binding, but an expression like
 // `(letter digit)*` can be said to have "arity 2".
 export function outArity(exp: Expr): number {
-  console.log(JSON.stringify(exp));
   switch (exp.type) {
     case 'Alt':
     case 'Seq':

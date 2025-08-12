@@ -5,9 +5,10 @@ function assert(cond, message = 'Assertion failed') {
 export function toAstWithMapping(mapping) {
   const handleListOf = child => visit(child);
   const handleEmptyListOf = () => [];
-  const handleNonemptyListOf = (first, sep, rest) => {
-    return [visit(first), ...visit(rest)];
-  };
+  const handleNonemptyListOf = (first, iterSepAndElem) => [
+    visit(first),
+    ...iterSepAndElem.map((_, elem) => visit(elem)),
+  ];
 
   mapping = {
     listOf: handleListOf,
@@ -88,9 +89,8 @@ export function toAstWithMapping(mapping) {
     if (node.isOptional()) {
       if (children.length === 0) {
         return null;
-      } else {
-        return visit(children[0]);
       }
+      return visit(children[0]);
     }
 
     return children.map(c => visit(c));
@@ -101,10 +101,6 @@ export function toAstWithMapping(mapping) {
     if (typeof nodeOrResult.succeeded === 'function') {
       assert(nodeOrResult.succeeded(), 'Cannot convert failed match result to AST');
       node = nodeOrResult._cst;
-    }
-    const {ctorName} = node;
-    if (ctorName in mapping && typeof mapping[ctorName] === 'function') {
-      return mapping[ctorName].apply(this, node.children);
     }
     if (node.isTerminal()) {
       return visitTerminal(node);

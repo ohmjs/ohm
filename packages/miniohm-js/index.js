@@ -37,9 +37,12 @@ function regexFromCategoryBitmap(bitmap) {
 }
 
 function assert(cond, msg) {
-  if (!cond) {
-    throw new Error(msg ?? 'assertion failed');
-  }
+  if (!cond) throw new Error(msg ?? 'assertion failed');
+}
+
+function checkNotNull(x, msg = 'unexpected null value') {
+  assert(x != null, msg);
+  return x;
 }
 
 export class WasmMatcher {
@@ -163,7 +166,8 @@ export class WasmMatcher {
 
   match(ruleName = this._ruleNames[0]) {
     if (process.env.OHM_DEBUG === '1') debugger; // eslint-disable-line no-debugger
-    const succeeded = this._instance.exports.match(0);
+    const ruleId = checkNotNull(this._ruleIds.get(ruleName), `unknown rule: '${ruleName}'`);
+    const succeeded = this._instance.exports.match(ruleId);
     return new MatchResult(
         this,
         this._input,
@@ -318,6 +322,17 @@ export class CstNode {
     }
     return ans;
   }
+}
+
+export function dumpCstNode(node, depth = 0) {
+  const {_base, children, ctorName, matchLength, startIdx} = node;
+  const indent = Array.from({length: depth}).join('  ');
+  const addr = _base.toString(16);
+  // eslint-disable-next-line no-console
+  console.log(
+      `${indent}${addr} ${ctorName}@${startIdx}, matchLength ${matchLength}, children ${children.length}`, // eslint-disable-line max-len
+  );
+  node.children.forEach(c => dumpCstNode(c, depth + 1));
 }
 
 export class MatchResult {

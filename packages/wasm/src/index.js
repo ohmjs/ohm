@@ -18,7 +18,7 @@ const IMPLICIT_SPACE_SKIPPING = true;
 // When specializing rules, should we emit a generalized version that
 // handles the specific cases? If false, code size will be larger.
 // This doesn't seem to make a big performance difference either way.
-const EMIT_GENERALIZED_RULES = true;
+const EMIT_GENERALIZED_RULES = false;
 
 const {instr} = w;
 const {pexprs} = ohm;

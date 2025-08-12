@@ -182,12 +182,13 @@ test('toAST basic', async t => {
 });
 
 // eslint-disable-next-line ava/no-skip-test
-test.skip('listOf and friends - #394', async t => {
+test('listOf and friends - #394', async t => {
   // By default, toAST assumes that lexical rules represent indivisible tokens,
   // but that doesn't make sense for listOf, nonemptyListOf, and emptyListOf.
   const g = ohm.grammar(`
     G {
       Exp = listOf<digit, "+">
+          | ~end end Exp2 -- dummy // Defeat dead rule elimination
       Exp2 = ListOf<digit, "+">
     }
   `);
@@ -198,7 +199,7 @@ test.skip('listOf and friends - #394', async t => {
     m.setInput(input);
     return toAst(m.match(ruleName));
   };
-  // const astSyntactic = (input, mapping) => ast(input, mapping, 'Exp2');
+  const astSyntactic = (input, mapping) => ast(input, mapping, 'Exp2');
 
   // By default, the `listOf` action should pass through, and both `nonemptyListOf`
   // and `emptyListOf` should return an array.
@@ -206,29 +207,29 @@ test.skip('listOf and friends - #394', async t => {
   t.deepEqual(ast(''), []);
 
   // // The AST should be the same whether we use `listOf` or `ListOf`.
-  // t.deepEqual(ast('3+5'), astSyntactic('3 + 5'));
-  // t.deepEqual(ast(''), astSyntactic(''));
+  t.deepEqual(ast('3+5'), astSyntactic('3 + 5'));
+  t.deepEqual(ast(''), astSyntactic(''));
 
   // // Ensure that it's still be possible to override the default mappings.
 
-  // t.is(
-  //     ast('0+1', {
-  //       nonemptyListOf: (first, sep, rest) => 'XX',
-  //     }),
-  //     'XX',
-  // );
+  t.is(
+      ast('0+1', {
+        nonemptyListOf: (first, sep, rest) => 'XX',
+      }),
+      'XX',
+  );
 
-  // t.is(
-  //     ast('1+2', {
-  //       nonemptyListOf: 0,
-  //     }),
-  //     '1',
-  // );
+  t.is(
+      ast('1+2', {
+        nonemptyListOf: 0,
+      }),
+      '1',
+  );
 
-  // t.is(
-  //     ast('', {
-  //       emptyListOf: () => 'nix',
-  //     }),
-  //     'nix',
-  // );
+  t.is(
+      ast('', {
+        emptyListOf: () => 'nix',
+      }),
+      'nix',
+  );
 });
