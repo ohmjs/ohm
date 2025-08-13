@@ -244,6 +244,7 @@ function arbitraryMapping() {
     // …then for each rule, generate a "node template" where:
     // - the keys are a single letter
     // - the values are either a number or a string.
+    // - a function that return an array of each child's `ctorName`.
     // If a number, it's constrained to be less than the rule arity, because
     // the meaning is "put child[i] in this prop".
     const arities = new Map(
@@ -256,7 +257,11 @@ function arbitraryMapping() {
             ruleName,
             fc.dictionary(
                 fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz'),
-                fc.oneof(fc.nat({max: arity - 1}), fc.string()),
+                fc.oneof(
+                    fc.nat({max: arity - 1}),
+                    fc.string(),
+                    fc.constant(children => children.map(c => c.ctorName)),
+                ),
             ),
           ];
         }),
