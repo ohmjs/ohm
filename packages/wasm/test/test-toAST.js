@@ -1,6 +1,9 @@
 import {toAstWithMapping} from '@ohm-js/miniohm-js/toAST.js';
 import test from 'ava';
+import * as fc from 'fast-check';
+import assert from 'node:assert/strict';
 import * as ohm from 'ohm-js';
+import {toAST} from 'ohm-js/extras';
 
 import {wasmMatcherForGrammar} from './_helpers.js';
 
@@ -232,4 +235,53 @@ test('listOf and friends - #394', async t => {
       }),
       'nix',
   );
+});
+
+// An arbitrary producing a valid mapping for the arithmetic grammar.
+function arbitraryMapping() {
+  // Pick a subset of rule names…
+  return fc.subarray(Object.keys(arithmetic.rules), {minLength: 1}).chain(ruleNames => {
+    // …then for each rule, generate a "node template" where:
+    // - the keys are a single letter
+    // - the values are either a number or a string.
+    // If a number, it's constrained to be less than the rule arity, because
+    // the meaning is "put child[i] in this prop".
+    const arities = new Map(
+        ruleNames.map(ruleName => [ruleName, arithmetic.rules[ruleName].body.getArity()]),
+    );
+    const model = Object.fromEntries(
+        ruleNames.map(ruleName => {
+          const arity = arities.get(ruleName);
+          return [
+            ruleName,
+            fc.dictionary(
+                fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz'),
+                fc.oneof(fc.nat({max: arity - 1}), fc.string()),
+            ),
+          ];
+        }),
+    );
+    return fc.record(model);
+  });
+}
+
+test('arbitrary mappings (fast-check)', async t => {
+  const m = await wasmMatcherForGrammar(arithmetic);
+  const input = '(10+ 999)- 1 +222';
+  m.setInput(input);
+  const wasmResult = m.match();
+  const jsResult = arithmetic.match(input);
+  const hasExpectedResult = () => {
+    return fc.property(arbitraryMapping(), mapping => {
+      const wasmToAst = toAstWithMapping(mapping);
+      const jsToAst = r => toAST(r, mapping);
+      assert.deepEqual(wasmToAst(wasmResult), jsToAst(jsResult));
+    });
+  };
+  const details = fc.check(hasExpectedResult(), {
+    includeErrorInReport: true,
+    interruptAfterTimeLimit: 300,
+  });
+  t.log(`numRuns: ${details.numRuns}`);
+  t.is(details.failed, false, `${fc.defaultReportMessage(details)}`);
 });

@@ -131,11 +131,7 @@ test('mapping', t => {
       expr1: 0,
       expr2: 2,
       str(children) {
-        return children
-            .map(function(child) {
-              return child.toAST(this.args.mapping);
-            }, this)
-            .join('');
+        return children.map(child => child.toAST(this.args.mapping)).join('');
       },
     },
   });

@@ -108,7 +108,7 @@ export function toAstWithMapping(mapping) {
       return visitIter(node);
     } else {
       assert(node.isNonterminal(), `Unknown node type: ${node._type}`);
-      return node.ctorName in mapping && typeof mapping[node.ctorName] === 'function' ?
+      return typeof mapping[node.ctorName] === 'function' ?
         mapping[node.ctorName].apply(this, node.children) :
         visitNonterminal(node);
     }
