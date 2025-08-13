@@ -15,5 +15,5 @@
     "eslint-plugin-camelcase-ohm": "^0.2.1",
     "prettier": "^3.0.0"
   },
-  "version": "0.0.0"
+  "version": "17.3.0"
 }
