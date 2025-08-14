@@ -7,7 +7,8 @@ const CST_NODE_TYPE_MASK = 0b11;
 const CstNodeType = {
   NONTERMINAL: 0,
   TERMINAL: 1,
-  ITER: 2,
+  ITER_FLAG: 2,
+  OPTIONAL: 3,
 };
 
 // Bit flags for Unicode categories, based on the order that they appear in
@@ -225,11 +226,11 @@ export class CstNode {
   }
 
   isIter() {
-    return (this._typeAndDetails & CST_NODE_TYPE_MASK) === CstNodeType.ITER;
+    return (this._typeAndDetails & CstNodeType.ITER_FLAG) !== 0;
   }
 
   isOptional() {
-    return false; // TODO
+    return (this._typeAndDetails & CST_NODE_TYPE_MASK) === CstNodeType.OPTIONAL;
   }
 
   get ctorName() {

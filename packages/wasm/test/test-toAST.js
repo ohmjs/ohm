@@ -2,27 +2,29 @@ import {toAstWithMapping} from '@ohm-js/miniohm-js/toAST.js';
 import test from 'ava';
 import * as fc from 'fast-check';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import * as ohm from 'ohm-js';
 import {toAST} from 'ohm-js/extras';
 
-import {wasmMatcherForGrammar} from './_helpers.js';
+import {scriptRel, wasmMatcherForGrammar} from './_helpers.js';
 
-const arithmetic = ohm.grammar(`
+const arithmetic = ohm.grammar(
+    readFileSync(scriptRel('../../ohm-js/test/data/arithmetic.ohm')),
+);
+
+// A version of the arithmetic grammar that contains a few more elements:
+// - an optional
+// - a use of ListOf
+const arithmetic2 = ohm.grammar(`
   Arithmetic {
-    Exp
-      = AddExp
-
-    AddExp
-      = AddExp "+" PriExp  -- plus
-      | AddExp "-" PriExp  -- minus
-      | PriExp
-
-    PriExp
-      = "(" Exp ")"  -- paren
-      | number
-
-    number
-      = digit+
+    Exp = ListOf<AddExp, ";">
+    AddExp = AddExp "+" PriExp  -- plus
+           | AddExp "-" PriExp  -- minus
+           | PriExp
+    PriExp = "(" Exp ")"  -- paren
+           | number
+    number = sign? digit+
+    sign = "-" | "+"
   }
 `);
 
@@ -271,11 +273,11 @@ function arbitraryMapping() {
 }
 
 test('arbitrary mappings (fast-check)', async t => {
-  const m = await wasmMatcherForGrammar(arithmetic);
-  const input = '(10+ 999)- 1 +222';
+  const m = await wasmMatcherForGrammar(arithmetic2);
+  const input = '(10+ 999)- 1 +222; 2';
   m.setInput(input);
   const wasmResult = m.match();
-  const jsResult = arithmetic.match(input);
+  const jsResult = arithmetic2.match(input);
   const hasExpectedResult = () => {
     return fc.property(arbitraryMapping(), mapping => {
       const wasmToAst = toAstWithMapping(mapping);
@@ -289,4 +291,23 @@ test('arbitrary mappings (fast-check)', async t => {
   });
   t.log(`numRuns: ${details.numRuns}`);
   t.is(details.failed, false, `${fc.defaultReportMessage(details)}`);
+});
+
+// Failures that fast-check has found, which we don't want to regress on.
+test('fast-check zoo', async t => {
+  const wasmMatcher = await wasmMatcherForGrammar(arithmetic2);
+  const createAsts = (input, mapping) => {
+    wasmMatcher.setInput(input);
+    const wasmResult = wasmMatcher.match();
+    const wasmAst = toAstWithMapping(mapping)(wasmResult);
+    const jsResult = arithmetic2.match(input);
+    const jsAst = toAST(jsResult, mapping);
+    return [wasmAst, jsAst];
+  };
+  const [wasmAst, jsAst] = createAsts('(10+ -999)- 1 +222; 2', {
+    PriExp: {a: 0},
+    number: {a: 0},
+    sign: {},
+  });
+  t.deepEqual(jsAst, wasmAst);
 });

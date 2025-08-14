@@ -18,9 +18,12 @@ declare function matchUnicodeChar(categoryBitmap: i32): bool;
 @inline const CST_NODE_OVERHEAD: usize = 16;
 
 // Node type is given by the two least sigificant bits.
+// Note that an optional is also an iteration node, so
+// bit 1 should be treated as a flag.
 @inline const NODE_TYPE_NONTERMINAL: i32 = 0;
 @inline const NODE_TYPE_TERMINAL: i32 = 1;
-@inline const NODE_TYPE_ITERATION: i32 = 2;
+@inline const NODE_TYPE_ITER_FLAG: i32 = 2;
+@inline const NODE_TYPE_OPTIONAL: i32 = 3;
 
 // Memo table entries
 type MemoEntry = i32;
@@ -278,8 +281,12 @@ export function newNonterminalNode(startIdx: i32, endIdx: i32, ruleId: i32, orig
   return newNonLeafNode(startIdx, endIdx, typeAndDetails, origNumBindings, failurePos);
 }
 
-export function newIterationNode(startIdx: i32, endIdx: i32, origNumBindings: i32, arity: i32): usize {
-  const typeAndDetails = (arity << 2) | NODE_TYPE_ITERATION;
+export function newIterationNode(startIdx: i32, endIdx: i32, origNumBindings: i32, arity: i32, isOpt: bool): usize {
+  if (isOpt) {
+    const typeAndDetails = (arity << 2) | NODE_TYPE_OPTIONAL;
+    return newNonLeafNode(startIdx, endIdx, typeAndDetails, origNumBindings, -1);
+  }
+  const typeAndDetails = (arity << 2) | NODE_TYPE_ITER_FLAG;
   return newNonLeafNode(startIdx, endIdx, typeAndDetails, origNumBindings, -1);
 }
 
