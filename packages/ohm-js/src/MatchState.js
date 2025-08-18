@@ -1,3 +1,4 @@
+import { StringBuffer } from './common.js';
 import {InputStream} from './InputStream.js';
 import {MatchResult} from './MatchResult.js';
 import {PosInfo} from './PosInfo.js';
@@ -234,10 +235,25 @@ export class MatchState {
       const actuals = app ? app.args : [];
       expr = expr.substituteParams(actuals);
     }
-    return (
-      this.getMemoizedTraceEntry(pos, expr) ||
-      new Trace(this.input, pos, this.inputStream.pos, expr, succeeded, bindings, this.trace)
-    );
+    const memoTrace = this.getMemoizedTraceEntry(pos, expr)
+    let indentsLessThanPos = 0
+    let indentsLessThanInputPos = 0
+    if (!memoTrace) {
+      const input = new StringBuffer()
+      for (let i = 0; i < this.input.length; i++) {
+        if (this.inputStream._indentationAt(i) !== 0) {
+          for (let numPlaces = this.inputStream._indentationAt(i); numPlaces !== 0; numPlaces += (numPlaces < 0 ? 1 : -1)) {
+            input.append(numPlaces < 0 ? "\u21e6" : "\u21e8")
+            if (i < pos) indentsLessThanPos += 1;
+            if (i < this.inputStream.pos) indentsLessThanInputPos += 1;
+          }
+        }
+        input.append(this.inputStream.source[i])
+      }
+      return new Trace(input.contents(), pos + indentsLessThanPos, this.inputStream.pos + indentsLessThanInputPos, expr, succeeded, bindings, this.trace)
+    } else {
+      return memoTrace;
+    }
   }
 
   isTracing() {
