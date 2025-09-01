@@ -1,5 +1,3 @@
-/* global process, TextDecoder, TextEncoder, WebAssembly */
-
 const WASM_PAGE_SIZE = 64 * 1024;
 const INPUT_BUFFER_OFFSET = WASM_PAGE_SIZE;
 const CST_NODE_TYPE_MASK = 0b11;
@@ -8,7 +6,7 @@ const CstNodeType = {
   NONTERMINAL: 0,
   TERMINAL: 1,
   ITER_FLAG: 2,
-  OPTIONAL: 3,
+  OPTIONAL: 3
 };
 
 // Bit flags for Unicode categories, based on the order that they appear in
@@ -20,33 +18,40 @@ const UnicodeCategoryNames = [
   'Ll', // Lowercase_Letter
   'Lt', // Titlecase_Letter
   'Lm', // Modifier_Letter
-  'Lo', // Other_Letter
+  'Lo' // Other_Letter
 ];
 
 const utf8 = new TextDecoder('utf-8');
 
-function regexFromCategoryBitmap(bitmap) {
-  const cats = [];
+function regexFromCategoryBitmap(bitmap: number): RegExp {
+  const cats: string[] = [];
   for (let i = 0; i < 32; i++) {
     const mask = 1 << i;
     if (bitmap & mask) cats.push(UnicodeCategoryNames[i]);
   }
   return new RegExp(
-      cats.map(cat => `\\p{${cat}}`).join('|'),
-      'uy', // u: unicode, y: sticky
+    cats.map(cat => `\\p{${cat}}`).join('|'),
+    'uy' // u: unicode, y: sticky
   );
 }
 
-function assert(cond, msg) {
+function assert(cond: boolean, msg?: string): asserts cond {
   if (!cond) throw new Error(msg ?? 'assertion failed');
 }
 
-function checkNotNull(x, msg = 'unexpected null value') {
+function checkNotNull<T>(x: T, msg = 'unexpected null value'): NonNullable<T> {
   assert(x != null, msg);
-  return x;
+  return x as NonNullable<T>;
 }
 
 export class WasmMatcher {
+  _instance?: WebAssembly.Instance = undefined;
+  _imports: any;
+  _ruleIds: Map<string, number>;
+  _ruleNames: string[];
+  _input = '';
+  _pos: number | undefined;
+
   constructor() {
     this._instance = undefined;
     this._imports = {
@@ -54,26 +59,26 @@ export class WasmMatcher {
       env: {
         abort() {
           throw new Error('abort');
-        },
+        }
       },
       // For imports from ohmRuntime.ts.
       ohmRuntime: {
-        printI32(val) {
+        printI32(val: number) {
           // eslint-disable-next-line no-console
           console.log(val);
         },
-        isRuleSyntactic: ruleId => {
+        isRuleSyntactic: (ruleId: number) => {
           // TODO: Precompute this for all rules, and encode it in the module?
           const name = this._ruleNames[ruleId];
           assert(!!name);
           return name[0] === name[0].toUpperCase();
         },
         fillInputBuffer: this._fillInputBuffer.bind(this),
-        matchUnicodeChar: (catBitmap, pos) => {
+        matchUnicodeChar: (catBitmap: number, pos: number) => {
           const re = regexFromCategoryBitmap(catBitmap);
           return re.test(this._nextCodePoint());
-        },
-      },
+        }
+      }
     };
     this._ruleIds = new Map();
     this._ruleNames = [];
@@ -81,12 +86,12 @@ export class WasmMatcher {
 
   // Return a JavaScript string containing the next code point from the input
   // buffer, and advance pos past it.
-  _nextCodePoint() {
-    const {pos, memory} = this._instance.exports;
+  _nextCodePoint(): string {
+    const {pos, memory} = (this._instance as any).exports;
     const offset = pos.value;
     const byteArr = new Uint8Array(memory.buffer, INPUT_BUFFER_OFFSET + offset);
     const firstByte = byteArr[0];
-    let len;
+    let len: number;
     if ((firstByte & 0b10000000) === 0) {
       len = 1;
     } else if ((firstByte & 0b11100000) === 0b11000000) {
@@ -101,7 +106,7 @@ export class WasmMatcher {
     return str;
   }
 
-  _extractRuleIds(module) {
+  _extractRuleIds(module: WebAssembly.Module): void {
     const sections = WebAssembly.Module.customSections(module, 'ruleNames');
     if (sections.length === 0) {
       throw new Error('No ruleNames section found in module');
@@ -111,7 +116,7 @@ export class WasmMatcher {
     const dataView = new DataView(data.buffer);
     let offset = 0;
 
-    const parseU32 = () => {
+    const parseU32 = (): number => {
       // Quick 'n dirty ULeb128 parsing, assuming no more than 2 bytes.
       const b1 = dataView.getUint8(offset++);
       let value = b1 & 0x7f;
@@ -135,25 +140,28 @@ export class WasmMatcher {
     }
   }
 
-  async _instantiate(source, debugImports = {}) {
+  async _instantiate(
+    source: WebAssembly.Module | BufferSource,
+    debugImports: any = {}
+  ): Promise<WasmMatcher> {
     const {module, instance} = await WebAssembly.instantiate(source, {
       ...this._imports,
-      debug: debugImports,
+      debug: debugImports
     });
     this._instance = instance;
     this._extractRuleIds(module);
     return this;
   }
 
-  static async fromBytes(source) {
+  static async fromBytes(source: WebAssembly.Module | BufferSource): Promise<WasmMatcher> {
     return new WasmMatcher()._instantiate(source);
   }
 
-  getInput() {
+  getInput(): string | undefined {
     return this._input;
   }
 
-  setInput(str) {
+  setInput(str: string): WasmMatcher {
     if (this._input !== str) {
       // this.replaceInputRange(0, this._input.length, str);
       this._input = str;
@@ -161,113 +169,123 @@ export class WasmMatcher {
     return this;
   }
 
-  replaceInputRange(startIdx, endIdx, str) {
+  replaceInputRange(startIdx: number, endIdx: number, str: string): void {
     throw new Error('Not implemented');
   }
 
-  match(ruleName = this._ruleNames[0]) {
+  match(ruleName?: string): MatchResult {
     if (process.env.OHM_DEBUG === '1') debugger; // eslint-disable-line no-debugger
-    const ruleId = checkNotNull(this._ruleIds.get(ruleName), `unknown rule: '${ruleName}'`);
-    const succeeded = this._instance.exports.match(ruleId);
+    const ruleId = checkNotNull(
+      this._ruleIds.get(ruleName || this._ruleNames[0]),
+      `unknown rule: '${ruleName}'`
+    );
+    const succeeded = (this._instance as any).exports.match(ruleId);
     return new MatchResult(
-        this,
-        this._input,
-        ruleName,
+      this,
+      this._input,
+      ruleName || this._ruleNames[0],
       succeeded ? this.getCstRoot() : null,
-      this.getRightmostFailurePosition(),
+      this.getRightmostFailurePosition()
     );
   }
 
-  getMemorySizeBytes() {
-    return this._instance.exports.memory.buffer.byteLength;
+  getMemorySizeBytes(): number {
+    return (this._instance as any).exports.memory.buffer.byteLength;
   }
 
-  getCstRoot() {
-    const {buffer} = this._instance.exports.memory;
-    const addr = this._instance.exports.getCstRoot();
+  getCstRoot(): CstNode {
+    const {buffer} = (this._instance as any).exports.memory;
+    const addr = (this._instance as any).exports.getCstRoot();
     return new CstNode(this._ruleNames, new DataView(buffer), addr, 0);
   }
 
-  _fillInputBuffer(offset, maxLen) {
+  _fillInputBuffer(offset: number, maxLen: number): number {
     const encoder = new TextEncoder();
-    const {memory} = this._instance.exports;
+    const {memory} = (this._instance as any).exports;
     const buf = new Uint8Array(memory.buffer, INPUT_BUFFER_OFFSET + offset);
-    const {read, written} = encoder.encodeInto(this._input.substring(this._pos), buf);
+    const {read, written} = encoder.encodeInto(this._input.substring(this._pos!), buf);
     assert(written < 64 * 1024, 'Input too long');
-    this._pos += read;
-    buf[written] = 0xff; // Mark end of input with an invalid UTF-8 character.
-    return written;
+    this._pos! += read!;
+    buf[written!] = 0xff; // Mark end of input with an invalid UTF-8 character.
+    return written!;
   }
 
-  getRightmostFailurePosition() {
-    return this._instance.exports.rightmostFailurePos.value;
+  getRightmostFailurePosition(): number {
+    return (this._instance as any).exports.rightmostFailurePos.value;
   }
 }
 
 export class CstNode {
-  constructor(ruleNames, dataView, ptr, startIdx) {
+  _ruleNames!: string[];
+  _view!: DataView;
+  _children?: CstNode[];
+  _base: number;
+  startIdx: number;
+  leadingSpaces: CstNode | undefined;
+
+  constructor(ruleNames: string[], dataView: DataView, ptr: number, startIdx: number) {
     // Non-enumerable properties
     Object.defineProperties(this, {
       _ruleNames: {value: ruleNames},
       _view: {value: dataView},
-      _children: {writable: true},
+      _children: {writable: true}
     });
     this._base = ptr;
     this.startIdx = startIdx;
     this.leadingSpaces = undefined;
   }
 
-  isNonterminal() {
+  isNonterminal(): boolean {
     return (this._typeAndDetails & CST_NODE_TYPE_MASK) === CstNodeType.NONTERMINAL;
   }
 
-  isTerminal() {
+  isTerminal(): boolean {
     return (this._typeAndDetails & CST_NODE_TYPE_MASK) === CstNodeType.TERMINAL;
   }
 
-  isIter() {
+  isIter(): boolean {
     return (this._typeAndDetails & CstNodeType.ITER_FLAG) !== 0;
   }
 
-  isOptional() {
+  isOptional(): boolean {
     return (this._typeAndDetails & CST_NODE_TYPE_MASK) === CstNodeType.OPTIONAL;
   }
 
-  get ctorName() {
+  get ctorName(): string {
     return this.isTerminal() ? '_terminal' : this.isIter() ? '_iter' : this.ruleName;
   }
 
-  get ruleName() {
+  get ruleName(): string {
     const ruleId = this._view.getInt32(this._base + 8, true) >>> 2;
     return this._ruleNames[ruleId].split('<')[0];
   }
 
-  get count() {
+  get count(): number {
     return this._view.getUint32(this._base, true);
   }
 
-  get matchLength() {
+  get matchLength(): number {
     return this._view.getUint32(this._base + 4, true);
   }
 
-  get _typeAndDetails() {
+  get _typeAndDetails(): number {
     return this._view.getInt32(this._base + 8, true);
   }
 
-  get arity() {
+  get arity(): number {
     return this._typeAndDetails >>> 2;
   }
 
-  get children() {
+  get children(): CstNode[] {
     if (!this._children) {
       this._children = this._computeChildren();
     }
     return this._children;
   }
 
-  _computeChildren() {
-    const children = [];
-    let spaces;
+  _computeChildren(): CstNode[] {
+    const children: CstNode[] = [];
+    let spaces: CstNode | undefined;
     let {startIdx} = this;
     for (let i = 0; i < this.count; i++) {
       const slotOffset = this._base + 16 + i * 4;
@@ -290,34 +308,34 @@ export class CstNode {
     return children;
   }
 
-  get sourceString() {
+  get sourceString(): string {
     const bytes = new Uint8Array(
-        this._view.buffer,
-        INPUT_BUFFER_OFFSET + this.startIdx,
-        this.matchLength,
+      this._view.buffer,
+      INPUT_BUFFER_OFFSET + this.startIdx,
+      this.matchLength
     );
     return utf8.decode(bytes);
   }
 
-  isSyntactic(ruleName) {
+  isSyntactic(ruleName?: string): boolean {
     const firstChar = this.ruleName[0];
     return firstChar === firstChar.toUpperCase();
   }
 
-  isLexical(ruleName) {
+  isLexical(ruleName?: string): boolean {
     return !this.isSyntactic(ruleName);
   }
 
-  toString() {
+  toString(): string {
     const ctorName = this.isTerminal() ? '_terminal' : this.isIter() ? '_iter' : this.ruleName;
     const {sourceString, startIdx} = this;
     return `CstNode {ctorName: ${ctorName}, sourceString: ${sourceString}, startIdx: ${startIdx} }`;
   }
 
-  map(callbackFn) {
+  map<T>(callbackFn: (...args: any[]) => T): T[] {
     const {arity, children} = this;
     assert(callbackFn.length === arity, 'bad arity');
-    const ans = [];
+    const ans: T[] = [];
     for (let i = 0; i < children.length; i += arity) {
       ans.push(callbackFn(...children.slice(i, i + arity)));
     }
@@ -325,19 +343,35 @@ export class CstNode {
   }
 }
 
-export function dumpCstNode(node, depth = 0) {
+export function dumpCstNode(node: CstNode, depth = 0): void {
   const {_base, children, ctorName, matchLength, startIdx} = node;
   const indent = Array.from({length: depth}).join('  ');
   const addr = _base.toString(16);
   // eslint-disable-next-line no-console
   console.log(
-      `${indent}${addr} ${ctorName}@${startIdx}, matchLength ${matchLength}, children ${children.length}`, // eslint-disable-line max-len
+    `${indent}${addr} ${ctorName}@${startIdx}, matchLength ${matchLength}, children ${children.length}` // eslint-disable-line max-len
   );
   node.children.forEach(c => dumpCstNode(c, depth + 1));
 }
 
 export class MatchResult {
-  constructor(matcher, input, startExpr, cst, rightmostFailurePosition, optRecordedFailures) {
+  matcher: WasmMatcher;
+  input: string;
+  startExpr: string;
+  _cst: CstNode | null;
+  _rightmostFailurePosition: number;
+  _rightmostFailures: any;
+  shortMessage?: string;
+  message?: string;
+
+  constructor(
+    matcher: WasmMatcher,
+    input: string,
+    startExpr: string,
+    cst: CstNode | null,
+    rightmostFailurePosition: number,
+    optRecordedFailures?: any
+  ) {
     this.matcher = matcher;
     this.input = input;
     this.startExpr = startExpr;
@@ -351,31 +385,31 @@ export class MatchResult {
     }
   }
 
-  succeeded() {
+  succeeded(): boolean {
     return !!this._cst;
   }
 
-  failed() {
+  failed(): boolean {
     return !this.succeeded();
   }
 
-  getRightmostFailurePosition() {
+  getRightmostFailurePosition(): number {
     return this._rightmostFailurePosition;
   }
 
-  getRightmostFailures() {
+  getRightmostFailures(): any {
     throw new Error('Not implemented yet: getRightmostFailures');
   }
 
-  toString() {
-    return this.succeeded() ?
-      '[match succeeded]' :
-      '[match failed at position ' + this.getRightmostFailurePosition() + ']';
+  toString(): string {
+    return this.succeeded()
+      ? '[match succeeded]'
+      : '[match failed at position ' + this.getRightmostFailurePosition() + ']';
   }
 
   // Return a string summarizing the expected contents of the input stream when
   // the match failure occurred.
-  getExpectedText() {
+  getExpectedText(): string {
     if (this.succeeded()) {
       throw new Error('cannot get expected text of a successful MatchResult');
     }

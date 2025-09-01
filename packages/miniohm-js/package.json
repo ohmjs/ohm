@@ -14,7 +14,7 @@
   "license": "MIT",
   "author": "Patrick Dubroy <pdubroy@gmail.com>",
   "type": "module",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {},
   "packageManager": "pnpm@10.10.0"
 }
