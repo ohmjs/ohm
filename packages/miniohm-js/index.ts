@@ -1,3 +1,5 @@
+import {assert, checkNotNull} from './assert.ts';
+
 const WASM_PAGE_SIZE = 64 * 1024;
 const INPUT_BUFFER_OFFSET = WASM_PAGE_SIZE;
 const CST_NODE_TYPE_MASK = 0b11;
@@ -33,15 +35,6 @@ function regexFromCategoryBitmap(bitmap: number): RegExp {
     cats.map(cat => `\\p{${cat}}`).join('|'),
     'uy' // u: unicode, y: sticky
   );
-}
-
-function assert(cond: boolean, msg?: string): asserts cond {
-  if (!cond) throw new Error(msg ?? 'assertion failed');
-}
-
-function checkNotNull<T>(x: T, msg = 'unexpected null value'): NonNullable<T> {
-  assert(x != null, msg);
-  return x as NonNullable<T>;
 }
 
 export class WasmMatcher {
@@ -228,12 +221,16 @@ export class CstNode {
     this.leadingSpaces = undefined;
   }
 
+  get type(): number {
+    return this._typeAndDetails & CST_NODE_TYPE_MASK;
+  }
+
   isNonterminal(): boolean {
-    return (this._typeAndDetails & CST_NODE_TYPE_MASK) === CstNodeType.NONTERMINAL;
+    return this.type === CstNodeType.NONTERMINAL;
   }
 
   isTerminal(): boolean {
-    return (this._typeAndDetails & CST_NODE_TYPE_MASK) === CstNodeType.TERMINAL;
+    return this.type === CstNodeType.TERMINAL;
   }
 
   isIter(): boolean {
@@ -241,7 +238,7 @@ export class CstNode {
   }
 
   isOptional(): boolean {
-    return (this._typeAndDetails & CST_NODE_TYPE_MASK) === CstNodeType.OPTIONAL;
+    return this.type === CstNodeType.OPTIONAL;
   }
 
   get ctorName(): string {
@@ -325,7 +322,7 @@ export class CstNode {
     return `CstNode {ctorName: ${ctorName}, sourceString: ${sourceString}, startIdx: ${startIdx} }`;
   }
 
-  map<T>(callbackFn: (...args: any[]) => T): T[] {
+  map<T>(callbackFn: (...args: CstNode[]) => T): T[] {
     const {arity, children} = this;
     assert(callbackFn.length === arity, 'bad arity');
     const ans: T[] = [];

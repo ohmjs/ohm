@@ -1,13 +1,14 @@
-function assert(cond, message = 'Assertion failed') {
-  if (!cond) throw new Error(message);
-}
+import {assert, checkNotNull} from './assert.ts';
+import type {CstNode, MatchResult} from './index.ts';
 
-export function toAstWithMapping(mapping) {
-  const handleListOf = child => visit(child);
+export function toAstWithMapping(
+  mapping: Record<string, unknown>
+): (nodeOrResult: MatchResult | CstNode) => unknown {
+  const handleListOf = (child: CstNode) => visit(child);
   const handleEmptyListOf = () => [];
-  const handleNonemptyListOf = (first, iterSepAndElem) => [
+  const handleNonemptyListOf = (first: CstNode, iterSepAndElem: CstNode) => [
     visit(first),
-    ...iterSepAndElem.map((_, elem) => visit(elem)),
+    ...iterSepAndElem.map((_, elem) => visit(elem))
   ];
 
   mapping = {
@@ -17,14 +18,14 @@ export function toAstWithMapping(mapping) {
     EmptyListOf: handleEmptyListOf,
     nonemptyListOf: handleNonemptyListOf,
     NonemptyListOf: handleNonemptyListOf,
-    ...mapping,
+    ...mapping
   };
 
-  function visitTerminal(node, offset) {
+  function visitTerminal(node: CstNode): string {
     return node.sourceString;
   }
 
-  function visitNonterminal(node) {
+  function visitNonterminal(node: CstNode): unknown {
     const {children, ruleName} = node;
 
     // without customization
@@ -50,12 +51,13 @@ export function toAstWithMapping(mapping) {
 
     // named/mapped children or unnamed children ('0', '1', '2', ...)
     const propMap = mapping[ruleName] || children;
-    const ans = {
-      type: ruleName,
+    const ans: Record<string, unknown> = {
+      type: ruleName
     };
     // eslint-disable-next-line guard-for-in
     for (const prop in propMap) {
-      const mappedProp = mapping[ruleName] && mapping[ruleName][prop];
+      const mappedProp =
+        mapping[ruleName] && (mapping[ruleName] as Record<string, unknown>)[prop];
       if (typeof mappedProp === 'number') {
         // direct forward
         ans[prop] = visit(children[mappedProp]);
@@ -71,12 +73,14 @@ export function toAstWithMapping(mapping) {
         ans[prop] = Number(mappedProp);
       } else if (typeof mappedProp === 'function') {
         // computed value
-        ans[prop] = mappedProp.call(this, children);
+        // Note that `thisArg` is `null`, which is different than the regular toAST.
+        ans[prop] = mappedProp.call(null, children);
       } else if (mappedProp === undefined) {
-        if (children[prop] && !children[prop].isTerminal()) {
-          ans[prop] = visit(children[prop]);
+        const child: CstNode = children[Number(prop)];
+        if (child && !child.isTerminal()) {
+          ans[prop] = visit(child);
         } else {
-          // delete predefined 'type' properties, like 'type', if explicitely removed
+          // delete predefined 'type' properties, like 'type', if explicitly removed
           delete ans[prop];
         }
       }
@@ -84,7 +88,7 @@ export function toAstWithMapping(mapping) {
     return ans;
   }
 
-  function visitIter(node) {
+  function visitIter(node: CstNode): unknown {
     const {children} = node;
     if (node.isOptional()) {
       if (children.length === 0) {
@@ -96,21 +100,22 @@ export function toAstWithMapping(mapping) {
     return children.map(c => visit(c));
   }
 
-  function visit(nodeOrResult) {
-    let node = nodeOrResult;
-    if (typeof nodeOrResult.succeeded === 'function') {
-      assert(nodeOrResult.succeeded(), 'Cannot convert failed match result to AST');
-      node = nodeOrResult._cst;
+  function visit(nodeOrResult: MatchResult | CstNode): unknown {
+    let node: CstNode = nodeOrResult as CstNode;
+    if (typeof (nodeOrResult as MatchResult).succeeded === 'function') {
+      const matchResult = nodeOrResult as MatchResult;
+      assert(matchResult.succeeded(), 'Cannot convert failed match result to AST');
+      node = checkNotNull((matchResult as MatchResult)._cst);
     }
     if (node.isTerminal()) {
       return visitTerminal(node);
     } else if (node.isIter()) {
       return visitIter(node);
     } else {
-      assert(node.isNonterminal(), `Unknown node type: ${node._type}`);
-      return typeof mapping[node.ctorName] === 'function' ?
-        mapping[node.ctorName].apply(this, node.children) :
-        visitNonterminal(node);
+      assert(node.isNonterminal(), `Unknown node type: ${(node as any)._type}`);
+      return typeof mapping[node.ctorName] === 'function'
+        ? (mapping[node.ctorName] as Function).apply(null, node.children)
+        : visitNonterminal(node);
     }
   }
 
