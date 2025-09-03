@@ -134,7 +134,7 @@ export class WasmMatcher {
   }
 
   async _instantiate(
-    source: WebAssembly.Module | BufferSource,
+    source: Uint8Array<ArrayBuffer>,
     debugImports: any = {}
   ): Promise<WasmMatcher> {
     const {module, instance} = await WebAssembly.instantiate(source, {
@@ -146,7 +146,7 @@ export class WasmMatcher {
     return this;
   }
 
-  static async fromBytes(source: WebAssembly.Module | BufferSource): Promise<WasmMatcher> {
+  static async fromBytes(source: Uint8Array<ArrayBuffer>): Promise<WasmMatcher> {
     return new WasmMatcher()._instantiate(source);
   }
 

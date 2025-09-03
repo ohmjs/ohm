@@ -1,0 +1,21 @@
+{
+  // Based on the following:
+  // https://www.npmjs.com/package/@tsconfig/recommended
+  // https://www.npmjs.com/package/@tsconfig/node-ts
+  // https://www.npmjs.com/package/@tsconfig/node24
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "rewriteRelativeImportExtensions": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "types": ["node"],
+    "verbatimModuleSyntax": true
+  },
+  "$schema": "https://json.schemastore.org/tsconfig"
+}

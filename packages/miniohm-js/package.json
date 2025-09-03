@@ -15,6 +15,12 @@
   "author": "Patrick Dubroy <pdubroy@gmail.com>",
   "type": "module",
   "main": "index.ts",
-  "scripts": {},
-  "packageManager": "pnpm@10.10.0"
+  "scripts": {
+    "build": "tsc --noEmit"
+  },
+  "packageManager": "pnpm@10.10.0",
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.8.3"
+  }
 }
