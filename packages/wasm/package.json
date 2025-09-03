@@ -22,7 +22,7 @@
   "packageManager": "pnpm@10.10.0",
   "devDependencies": {
     "@ohm-js/miniohm-js": "workspace:^",
-    "@shopify/liquid-html-parser": "^2.8.2",
+    "@shopify/liquid-html-parser": "github:pdubroy/theme-tools#path:/packages/liquid-html-parser",
     "@thi.ng/leb128": "^3.1.48",
     "assemblyscript": "^0.27.36",
     "ava": "^6.2.0",

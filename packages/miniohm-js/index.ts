@@ -46,43 +46,36 @@ function checkNotNull<T>(x: T, msg = 'unexpected null value'): NonNullable<T> {
 
 export class WasmMatcher {
   _instance?: WebAssembly.Instance = undefined;
-  _imports: any;
-  _ruleIds: Map<string, number>;
-  _ruleNames: string[];
-  _input = '';
-  _pos: number | undefined;
-
-  constructor() {
-    this._instance = undefined;
-    this._imports = {
-      // System-level AssemblyScript imports.
-      env: {
-        abort() {
-          throw new Error('abort');
-        }
-      },
-      // For imports from ohmRuntime.ts.
-      ohmRuntime: {
-        printI32(val: number) {
-          // eslint-disable-next-line no-console
-          console.log(val);
-        },
-        isRuleSyntactic: (ruleId: number) => {
-          // TODO: Precompute this for all rules, and encode it in the module?
-          const name = this._ruleNames[ruleId];
-          assert(!!name);
-          return name[0] === name[0].toUpperCase();
-        },
-        fillInputBuffer: this._fillInputBuffer.bind(this),
-        matchUnicodeChar: (catBitmap: number, pos: number) => {
-          const re = regexFromCategoryBitmap(catBitmap);
-          return re.test(this._nextCodePoint());
-        }
+  _imports = {
+    // System-level AssemblyScript imports.
+    env: {
+      abort() {
+        throw new Error('abort');
       }
-    };
-    this._ruleIds = new Map();
-    this._ruleNames = [];
-  }
+    },
+    // For imports from ohmRuntime.ts.
+    ohmRuntime: {
+      printI32(val: number) {
+        // eslint-disable-next-line no-console
+        console.log(val);
+      },
+      isRuleSyntactic: (ruleId: number) => {
+        // TODO: Precompute this for all rules, and encode it in the module?
+        const name = this._ruleNames[ruleId];
+        assert(!!name);
+        return name[0] === name[0].toUpperCase();
+      },
+      fillInputBuffer: this._fillInputBuffer.bind(this),
+      matchUnicodeChar: (catBitmap: number, pos: number) => {
+        const re = regexFromCategoryBitmap(catBitmap);
+        return re.test(this._nextCodePoint());
+      }
+    }
+  };
+  _ruleIds = new Map<string, number>();
+  _ruleNames: string[] = [];
+  _input = '';
+  _pos?: number = undefined;
 
   // Return a JavaScript string containing the next code point from the input
   // buffer, and advance pos past it.
@@ -157,7 +150,7 @@ export class WasmMatcher {
     return new WasmMatcher()._instantiate(source);
   }
 
-  getInput(): string | undefined {
+  getInput(): string {
     return this._input;
   }
 
