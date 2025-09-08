@@ -13,3 +13,5 @@ yarn-error.log
 # IntelliJ files
 .idea
 *.iml
+
+*.tsbuildinfo

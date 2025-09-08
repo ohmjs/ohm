@@ -1,21 +1,51 @@
 {
-  // Based on the following:
-  // https://www.npmjs.com/package/@tsconfig/recommended
-  // https://www.npmjs.com/package/@tsconfig/node-ts
-  // https://www.npmjs.com/package/@tsconfig/node24
   "compilerOptions": {
+    // Based on https://www.totaltypescript.com/tsconfig-cheat-sheet
+    // Base options
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "target": "es2022",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+
+    // Strictness
+    "strict": true,
+    // "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+
+    // Transpiling with TypeScript
+    "module": "nodenext",
+    "outDir": "dist",
+
+    // Below here are options that should be set on a per-project basis.
+
+    // Building for a Library in a Monorepo?
+    // "declaration": true,
+    // "composite": true,
+    // "sourceMap": true,
+    // "declarationMap": true,
+
+    // Running in the DOM?
+    // "lib": ["es2022", "dom", "dom.iterable"]
+
+    // Not running in the DOM?
+    "lib": ["es2022"],
+
+    // [End of totaltypescript rules]
+
+    // Ohm -specific stuff
+    "forceConsistentCasingInFileNames": true,
+
+    // From https://nodejs.org/api/typescript.html
+    // These options allow us to use Node.js type stripping, e.g. to run
+    // the tests without transpiling.
     "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true,
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "rewriteRelativeImportExtensions": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "types": ["node"],
-    "verbatimModuleSyntax": true
+    "rewriteRelativeImportExtensions": true
   },
+  "exclude": ["node_modules", "dist"],
   "$schema": "https://json.schemastore.org/tsconfig"
 }
