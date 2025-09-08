@@ -1,4 +1,4 @@
-import {toAstWithMapping} from '@ohm-js/miniohm-js/toAST.js';
+import {toAstWithMapping} from '@ohm-js/miniohm-js/src/toAST.ts';
 import test from 'ava';
 import * as fc from 'fast-check';
 import assert from 'node:assert/strict';
