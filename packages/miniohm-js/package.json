@@ -1,6 +1,6 @@
 {
   "name": "@ohm-js/miniohm-js",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Implementation of the miniohm interface, to use Wasm grammar blobs from JavaScript.",
   "keywords": [],
   "homepage": "https://github.com/ohmjs/ohm#readme",
@@ -15,7 +15,7 @@
   "author": "Patrick Dubroy <pdubroy@gmail.com>",
   "type": "module",
   "main": "src/index.ts",
-  "packageConfig": {
+  "publishConfig": {
     "main": "dist/index.js"
   },
   "files": ["dist"],
