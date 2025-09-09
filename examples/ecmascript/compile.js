@@ -1,5 +1,10 @@
 /* eslint-env node */
 
+/*
+  Note: this file is for internal use within the Ohm monorepo, and is not
+  intended to be shipped as part of the ohm-grammar-ecmascript package.
+ */
+
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
