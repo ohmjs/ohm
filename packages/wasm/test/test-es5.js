@@ -4,7 +4,7 @@ import {dirname, join} from 'node:path';
 import {performance} from 'node:perf_hooks';
 import {fileURLToPath} from 'node:url';
 
-import es5js from '../../../examples/ecmascript/index.js';
+import * as es5js from '../../../examples/ecmascript/index.js';
 import {matchWithInput, unparse, wasmMatcherForGrammar} from './_helpers.js';
 import es5 from './data/_es5.js';
 
