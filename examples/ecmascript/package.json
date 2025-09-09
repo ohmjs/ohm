@@ -2,6 +2,7 @@
   "name": "ohm-grammar-ecmascript",
   "version": "2.0.0",
   "description": "Ohm grammars for various editions of ECMAScript (aka JavaScript).",
+  "type": "module",
   "scripts": {
     "test": "ava"
   },

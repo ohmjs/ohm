@@ -1,7 +1,5 @@
 /* eslint-env browser */
 
-'use strict';
-
 window.makeElement = function(tagName, ...children) {
   const element = document.createElement(tagName);
   for (const child of children) {

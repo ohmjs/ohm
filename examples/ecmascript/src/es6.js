@@ -1,9 +1,6 @@
 /* eslint-env node */
 
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
+import {readFileSync} from 'node:fs';
 
 const anyNodesMentionThis = (...nodes) => nodes.some(n => n.mentionsThis);
 
@@ -34,8 +31,8 @@ const toES5Actions = {
   },
 };
 
-module.exports = function(ohm, ns, s) {
-  const g = ohm.grammar(fs.readFileSync(path.join(__dirname, 'es6.ohm')).toString(), ns);
+export default function(ohm, ns, s) {
+  const g = ohm.grammar(readFileSync(new URL('es6.ohm', import.meta.url)).toString(), ns);
   const semantics = g.extendSemantics(s);
   semantics.addAttribute('mentionsThis', mentionsThisActions);
   semantics.extendOperation('toES5', toES5Actions);
@@ -44,4 +41,4 @@ module.exports = function(ohm, ns, s) {
     grammar: g,
     semantics,
   };
-};
+}

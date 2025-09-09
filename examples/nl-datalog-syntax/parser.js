@@ -1,7 +1,5 @@
 /* global Clause Not ohm Program Rule Value Variable Wildcard */
 
-'use strict';
-
 const NLDatalog = {};
 
 NLDatalog.grammar = ohm.grammar(`

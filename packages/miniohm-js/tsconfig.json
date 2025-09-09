@@ -12,7 +12,7 @@
     "declarationMap": true,
 
     // "dom" for WebAssembly, see https://github.com/evanw/esbuild/issues/2388#issuecomment-1183836728
-    "lib": ["es2022", "dom"],
+    "lib": ["es2022", "dom"]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts"]
 }

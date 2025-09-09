@@ -18,9 +18,12 @@
   "publishConfig": {
     "main": "dist/index.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "check": "tsc --noEmit"
   },
   "packageManager": "pnpm@10.10.0",
   "devDependencies": {

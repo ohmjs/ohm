@@ -1,7 +1,5 @@
 /* eslint-env node */
 
-'use strict';
-
 const assert = require('assert');
 const fs = require('fs');
 const {join} = require('path');

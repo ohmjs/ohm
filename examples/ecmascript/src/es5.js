@@ -1,15 +1,8 @@
 /* eslint-env node */
 
-'use strict';
+import {readFileSync} from 'node:fs';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const fs = require('fs');
-const path = require('path');
-
-const ohm = require('ohm-js');
+import * as ohm from 'ohm-js';
 
 // --------------------------------------------------------------------
 // Helpers
@@ -56,9 +49,9 @@ function nodeToES5(node, children) {
 }
 
 // Instantiate the ES5 grammar.
-const contents = fs.readFileSync(path.join(__dirname, 'es5.ohm'));
-const g = ohm.grammars(contents).ES5;
-const semantics = g.createSemantics();
+const contents = readFileSync(new URL('es5.ohm', import.meta.url));
+const grammar = ohm.grammars(contents).ES5;
+const semantics = grammar.createSemantics();
 
 semantics.addOperation('toES5()', {
   Program(_, sourceElements) {
@@ -116,7 +109,4 @@ function mergeBindings(...nodes) {
   return bindings;
 }
 
-module.exports = {
-  grammar: g,
-  semantics,
-};
+export {grammar, semantics};

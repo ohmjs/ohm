@@ -1,16 +1,11 @@
 /* eslint-env node */
 
-'use strict';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
-// --------------------------------------------------------------------
-// Imports
-// --------------------------------------------------------------------
-
-const fs = require('fs');
-const path = require('path');
-
-const es5 = require('./src/es5');
-const ohm = require('ohm-js');
+import * as es5 from './src/es5.js';
+import initES6 from './src/es6.js';
+import * as ohm from 'ohm-js';
 
 // --------------------------------------------------------------------
 // Helpers
@@ -18,19 +13,6 @@ const ohm = require('ohm-js');
 
 function removeShebang(source) {
   return source.slice(0, 2) === '#!' ? source.replace('#!', '//') : source;
-}
-
-function loadModule(name) {
-  const ns = {ES5: es5.grammar};
-  if (fs.existsSync(name)) {
-    return require(name)(ohm, ns, es5.semantics);
-  }
-  const relPath = path.join(__dirname, 'src', name);
-  const modulePath = require.resolve(relPath);
-  if (modulePath) {
-    return require(modulePath)(ohm, ns, es5.semantics);
-  }
-  throw new Error("Error: Cannot find grammar module '" + name + "'");
 }
 
 // --------------------------------------------------------------------
@@ -60,7 +42,8 @@ function compile(args) {
     }
   }
 
-  const lang = opts.grammar ? loadModule(opts.grammar) : es5;
+  assert(!opts.grammar || ['es5', 'es6'].includes(opts.grammar));
+  const lang = opts.grammar === 'es6' ? initES6(ohm, {ES5: es5.grammar}, es5.semantics) : es5;
 
   const files = filenames.map(name => {
     // If benchmarking, read in all the files at once, so that we can just time the matching.
@@ -104,8 +87,9 @@ function compile(args) {
   return null;
 }
 
-module.exports = compile;
+export {compile};
 
-if (require.main === module) {
+// `importa.meta.main` was added in Node v24.2.0.
+if (import.meta.main) {
   console.log(compile(process.argv.slice(2)));
 }

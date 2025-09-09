@@ -1,11 +1,12 @@
-import compile from '../compile.js';
-import es5 from './es5.js';
+/* global URL */
+
+import {compile} from '../compile.js';
+import * as es5 from './es5.js';
 
 import test from 'ava';
-import path from 'path';
+import {join} from 'node:path';
 
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
-const testdataPath = filename => path.join(__dirname, 'testdata', filename);
+const testdataPath = filename => new URL(join('testdata', filename), import.meta.url);
 
 test('es5 - basic tests', t => {
   let results = es5.grammar.match('var x = 3; console.log(x)');

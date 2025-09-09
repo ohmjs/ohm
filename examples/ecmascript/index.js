@@ -1,3 +1,1 @@
-'use strict';
-
-module.exports = require('./src/es5');
+export * from './src/es5.js';

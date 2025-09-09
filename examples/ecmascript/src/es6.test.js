@@ -1,8 +1,7 @@
-import fs from 'fs';
 import * as ohm from 'ohm-js';
 import test from 'ava';
 
-import es5 from './es5.js';
+import * as es5 from './es5.js';
 import initES6 from './es6.js';
 
 const es6 = initES6(ohm, {ES5: es5.grammar}, es5.semantics);
@@ -12,7 +11,7 @@ test('template literals', t => {
   const succeeds = str => {
     const result = es6.grammar.match(str);
     if (!result.succeeded()) {
-      console.error(result.message);
+      console.error(result.message); // eslint-disable-line no-console
     }
     return result.succeeded();
   };

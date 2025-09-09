@@ -16,7 +16,7 @@ const outline = grammar(
     spaces := (~newline space)*
   }
 `,
-    {IndentationSensitive}
+    {IndentationSensitive},
 );
 const semantics = outline.createSemantics().addOperation('toJS', {
   Items(items) {
@@ -65,7 +65,7 @@ test('errors', () => {
       number = digit+
     }
   `,
-      {IndentationSensitive}
+      {IndentationSensitive},
   );
 
   assert.is(g.match('if True:\n  3').succeeded(), true);
@@ -73,7 +73,7 @@ test('errors', () => {
   assert.is(g.match('if True:\n3').shortMessage, 'Line 2, col 1: expected an indented block');
   assert.is(
       g.match('if True:\n if False:\n 3').shortMessage,
-      'Line 3, col 2: expected an indented block'
+      'Line 3, col 2: expected an indented block',
   );
 });
 

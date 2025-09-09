@@ -1,7 +1,7 @@
 module.exports = {
   parserOptions: {
-    ecmaVersion: 6,
-    sourceType: 'script'
+    ecmaVersion: 11, // es2020
+    sourceType: 'module'
   },
 
   // To minimize dependencies on Node- or browser-specific features, leave the
