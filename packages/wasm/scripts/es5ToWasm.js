@@ -1,7 +1,7 @@
 import {writeFileSync} from 'node:fs';
 import process from 'node:process';
 
-import {Compiler} from '../src/index.js';
+import {Compiler} from '../src/Compiler.js';
 import es5 from '../test/data/_es5.js';
 
 const outFilename = process.argv[2];

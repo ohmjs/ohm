@@ -40,13 +40,15 @@ export interface Any {
 
 export const any = (): Any => ({type: 'Any'});
 
+type ApplyLike = Extract<Expr, {type: 'Apply' | 'LiftedTerminal' | 'Param'}>;
+
 export interface Apply {
   type: 'Apply';
   ruleName: string;
-  children: (Apply | Param)[];
+  children: ApplyLike[];
 }
 
-export const apply = (ruleName: string, children: (Apply | Param)[] = []): Apply => ({
+export const apply = (ruleName: string, children: ApplyLike[] = []): Apply => ({
   type: 'Apply',
   ruleName,
   children
@@ -217,12 +219,16 @@ function checkNotNull<T>(x: T, msg = 'unexpected null value'): NonNullable<T> {
   return x;
 }
 
-function checkExprType<T extends ExprType>(
+function checkApplyLike(exp: Expr): ApplyLike {
+  return checkExprType(exp, 'Apply', 'LiftedTerminal', 'Param');
+}
+
+function checkExprType<T extends Expr['type']>(
   exp: Expr,
-  expectedType: T
+  ...types: T[]
 ): Extract<Expr, {type: T}> {
-  if (exp.type !== expectedType) {
-    throw new Error(`Expected expression of type '${expectedType}', but got '${exp.type}'`);
+  if (!types.includes(exp.type as T)) {
+    throw new Error(`Expected one of [${types.join(', ')}], but got '${exp.type}'`);
   }
   return exp as Extract<Expr, {type: T}>;
 }
@@ -261,7 +267,7 @@ export function collectParams(exp: Expr, seen = new Set<number>()): Param[] {
   }
 }
 
-// TODO: Maybe make the types tighter here, to avoid the use checkExprType.
+// TODO: Maybe make the types tighter here, to avoid the use checkApplyLike.
 export function substituteParams<T extends Expr>(
   exp: T,
   actuals: Exclude<Expr, Param>[]
@@ -273,9 +279,9 @@ export function substituteParams<T extends Expr>(
       if (exp.children.length === 0) return exp;
       return apply(
         exp.ruleName,
-        exp.children.map((c): Apply => {
+        exp.children.map((c): ApplyLike => {
           const ans = substituteParams(c, actuals);
-          return checkExprType(ans, 'Apply');
+          return checkApplyLike(ans);
         })
       );
     case 'Dispatch': {

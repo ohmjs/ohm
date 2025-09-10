@@ -2,7 +2,7 @@
 
 import {WasmMatcher} from '@ohm-js/miniohm-js';
 
-import {Compiler} from '../src/index.js';
+import {Compiler} from '../src/Compiler.js';
 
 const DEBUG = process.env.OHM_DEBUG === '1';
 
