@@ -3,23 +3,21 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "pnpm generate && webpack && rollup -c",
+    "build": "pnpm generate && vite build && webpack",
     "generate": "ohm generateBundles --withTypes src/greeting.ohm && ohm generateBundles --esm src/greeting-esm.ohm",
-    "test:bundles": "node dist/main.js && node dist/main-rollup.js",
+    "test:bundles": "node dist/main.js && node dist/main-vite.js",
     "test:ts-cjs": "tsc -p test/tsconfig.cjs.json && node dist/test-ts.js",
     "test:ts-esm": "tsc -p test/tsconfig.esm.json && mv dist/test-ts.js dist/test-ts.mjs && node dist/test-ts.mjs",
-    "test:ts": "pnpm test:ts-cjs && pnpm test:ts-esm && tsc -p test/tsconfig.typings.json && node test/test-typings.js",
+    "test:ts": "pnpm test:ts-cjs && pnpm test:ts-esm && tsc -p test/tsconfig.typings.json && node dist/test-typings.js",
     "test": "pnpm build && uvu test --ignore '\\.ts' && pnpm test:ts && pnpm test:bundles",
     "test:watch": "watchlist . -- pnpm test"
   },
   "devDependencies": {
     "@ohm-js/cli": "^2.0.0",
-    "@rollup/plugin-node-resolve": "^15.0.1",
-    "@types/node": "^16.9.1",
     "acorn": "^8.8.1",
     "ohm-js": "^17.0.0",
-    "rollup": "^3.2.5",
     "uvu": "^0.5.6",
+    "vite": "^7.1.5",
     "watchlist": "^0.3.1",
     "webpack": "^5.74.0",
     "webpack-cli": "^4.10.0"

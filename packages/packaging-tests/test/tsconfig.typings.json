@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.base.json",
-  "files": ["test-ts.ts"],
+  "files": ["test-typings.ts"],
   "compilerOptions": {
     "module": "commonjs"
   }
