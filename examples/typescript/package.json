@@ -15,7 +15,7 @@
     "uvu": "^0.5.6"
   },
   "scripts": {
-    "build": "tsc --noEmit",
+    "build": "pnpm run generate && tsc --noEmit",
     "generate": "ohm generateBundles --withTypes --esm 'src/*.ohm'",
     "test": "pnpm generate && node src/arithmetic.test.ts"
   }
