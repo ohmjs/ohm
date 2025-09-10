@@ -9,11 +9,13 @@
     "test": "pnpm -r test"
   },
   "devDependencies": {
+    "@types/node": "^16.18.126",
     "eslint": "^8.0.0",
     "eslint-config-google": "^0.14.0",
     "eslint-plugin-ava": "^14.0.0",
     "eslint-plugin-camelcase-ohm": "^0.2.1",
-    "prettier": "^3.0.0"
+    "prettier": "^3.0.0",
+    "typescript": "^5.8.3"
   },
   "version": "0.0.0"
 }

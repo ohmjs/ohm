@@ -1,7 +1,7 @@
 import {test} from 'uvu';
 import * as assert from 'uvu/assert';
 
-import {evaluate} from './arithmetic';
+import {evaluate} from './arithmetic.ts';
 
 test('basic', () => {
   assert.is(evaluate('(3 + 4) * 5'), 35);

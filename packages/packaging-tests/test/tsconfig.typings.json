@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.base.json",
+  "files": ["test-ts.ts"],
+  "compilerOptions": {
+    "module": "commonjs"
+  }
+}

@@ -25,14 +25,12 @@
     "ohm": "index.js"
   },
   "devDependencies": {
-    "@types/node": "^16.9.1",
     "@types/require-from-string": "^1.2.1",
     "ava": "^6.0.0",
     "ohm-js": "^17.0.0",
     "require-from-string": "^2.0.2",
     "ts-dedent": "^2.2.0",
-    "ts-morph": "^26.0.0",
-    "typescript": "^5.8.3"
+    "ts-morph": "^26.0.0"
   },
   "ava": {
     "extensions": [

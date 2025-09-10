@@ -2,11 +2,14 @@
   "include": ["src/**/*.ts"],
   "compilerOptions": {
     "outDir": "dist",
-    "target": "ES2015",
-    "module": "commonjs",
-    "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "target": "esnext",
+    "module": "nodenext",
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "rewriteRelativeImportExtensions": true,
     "forceConsistentCasingInFileNames": true
   }
 }

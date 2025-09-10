@@ -1,4 +1,4 @@
-import {MatchResult, Grammar, Semantics} from 'ohm-js';
+import type {MatchResult, Grammar, Semantics} from '../index.d.ts';
 
 interface LineAndColumnInfo {
   offset: number;
