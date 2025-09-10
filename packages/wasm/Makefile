@@ -4,11 +4,15 @@ SRC_JS_FILES := $(wildcard src/*.js)
 SRC_TS_FILES := $(wildcard src/*.ts)
 
 .PHONY: all
-all: dist/index.js dist/cli.js
+all: dist/index.js dist/cli.js check
 
 .PHONY: clean
 clean:
 	rm -f dist/* build/*
+
+.PHONY: check
+check:
+	pnpm tsc --noEmit
 
 .PHONY: debug
 debug: clean
@@ -22,10 +26,10 @@ build/%.O3.wasm: build/%.wasm
 	wasm-opt -O3 --enable-bulk-memory-opt -o $@ $<
 
 dist/index.js: build/ohmRuntime.wasm_sections.ts $(SRC_JS_FILES) $(SRC_TS_FILES)
-	npx esbuild src/index.js --bundle --loader:.ts=ts --outfile=dist/index.js --format=esm --platform=node --external:ohm-js
+	pnpm esbuild src/index.js --bundle --loader:.ts=ts --outfile=dist/index.js --format=esm --platform=node --external:ohm-js
 
 dist/cli.js: dist/index.js src/cli.js
-	npx esbuild src/cli.js --bundle --loader:.ts=ts --outfile=dist/cli.js --format=esm --platform=node  --external:ohm-js --external:./index.js --banner:js="#!/usr/bin/env node"
+	pnpm esbuild src/cli.js --bundle --loader:.ts=ts --outfile=dist/cli.js --format=esm --platform=node  --external:ohm-js --external:./index.js --banner:js="#!/usr/bin/env node"
 
 build/ohmRuntime.wasm_sections.ts: scripts/bundlewasm.ts build/ohmRuntime.wasm
 	$(NODE) scripts/bundlewasm.ts build/ohmRuntime.wasm
@@ -35,7 +39,7 @@ force-bundlewasm:
 	touch build/ohmRuntime.wasm
 
 build/ohmRuntime.wasm: runtime/ohmRuntime.ts
-	npx asc --runtime stub -o build/ohmRuntime.wasm -t build/ohmRuntime.wat --memoryBase 67239936 runtime/ohmRuntime.ts
+	pnpm asc --runtime stub -o build/ohmRuntime.wasm -t build/ohmRuntime.wat --memoryBase 67239936 runtime/ohmRuntime.ts
 
 build/es5.wasm: dist/index.js
 	$(NODE) scripts/es5ToWasm.js build/es5.wasm

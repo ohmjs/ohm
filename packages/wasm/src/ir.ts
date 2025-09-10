@@ -217,7 +217,17 @@ function checkNotNull<T>(x: T, msg = 'unexpected null value'): NonNullable<T> {
   return x;
 }
 
-export function collectParams(exp: Expr, seen = new Set<number>()) {
+function checkExprType<T extends ExprType>(
+  exp: Expr,
+  expectedType: T
+): Extract<Expr, {type: T}> {
+  if (exp.type !== expectedType) {
+    throw new Error(`Expected expression of type '${expectedType}', but got '${exp.type}'`);
+  }
+  return exp as Extract<Expr, {type: T}>;
+}
+
+export function collectParams(exp: Expr, seen = new Set<number>()): Param[] {
   switch (exp.type) {
     case 'Param':
       if (!seen.has(exp.index)) {
@@ -251,7 +261,11 @@ export function collectParams(exp: Expr, seen = new Set<number>()) {
   }
 }
 
-export function substituteParams(exp: Expr, actuals: Expr[]) {
+// TODO: Maybe make the types tighter here, to avoid the use checkExprType.
+export function substituteParams<T extends Expr>(
+  exp: T,
+  actuals: Exclude<Expr, Param>[]
+): Exclude<Expr, Param> {
   switch (exp.type) {
     case 'Param':
       return checkNotNull(actuals[exp.index]);
@@ -259,10 +273,15 @@ export function substituteParams(exp: Expr, actuals: Expr[]) {
       if (exp.children.length === 0) return exp;
       return apply(
         exp.ruleName,
-        exp.children.map(c => substituteParams(c, actuals))
+        exp.children.map((c): Apply => {
+          const ans = substituteParams(c, actuals);
+          return checkExprType(ans, 'Apply');
+        })
       );
-    case 'Dispatch':
-      return dispatch(substituteParams(exp.child, actuals), exp.patterns);
+    case 'Dispatch': {
+      const newChild = substituteParams(exp.child, actuals);
+      return dispatch(checkExprType(newChild, 'Apply'), exp.patterns);
+    }
     case 'Alt':
     case 'Seq':
       return {

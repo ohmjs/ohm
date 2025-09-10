@@ -2,7 +2,6 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src",
 
     // From the totaltypescript "Building for a Library in a Monorepo"
     // recommendation. See tsconfig.base.json for details.
@@ -18,5 +17,5 @@
     "lib": ["ES2022", "DOM"]
     // [end overrides]
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*", "build/ohmRuntime.wasm_sections.ts", "index.ts"]
 }
