@@ -11,12 +11,13 @@
     "@ohm-js/cli": "^2.0.0",
     "@types/node": "^16.18.126",
     "ava": "^6.0.0",
+    "tsx": "^4.20.5",
     "typescript": "^5.8.3",
     "uvu": "^0.5.6"
   },
   "scripts": {
     "build": "pnpm run generate && tsc --noEmit",
     "generate": "ohm generateBundles --withTypes --esm 'src/*.ohm'",
-    "test": "pnpm generate && node src/arithmetic.test.ts"
+    "test": "pnpm generate && tsx src/arithmetic.test.ts"
   }
 }
