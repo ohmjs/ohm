@@ -4,7 +4,7 @@ SRC_JS_FILES := $(wildcard src/*.js)
 SRC_TS_FILES := $(wildcard src/*.ts)
 
 .PHONY: all
-all: dist/index.js dist/cli.js check
+all: dist/index.js dist/index.d.ts dist/cli.js check
 
 .PHONY: clean
 clean:
@@ -26,7 +26,10 @@ build/%.O3.wasm: build/%.wasm
 	wasm-opt -O3 --enable-bulk-memory-opt -o $@ $<
 
 dist/index.js: build/ohmRuntime.wasm_sections.ts $(SRC_JS_FILES) $(SRC_TS_FILES)
-	pnpm esbuild index.ts --bundle --loader:.ts=ts --outfile=dist/index.js --format=esm --platform=node --external:ohm-js
+	pnpm esbuild index.js --bundle --loader:.ts=ts --outfile=dist/index.js --format=esm --platform=node --external:ohm-js
+
+dist/index.d.ts:
+	cp index.d.ts dist/index.d.ts
 
 dist/cli.js: dist/index.js src/cli.js
 	pnpm esbuild src/cli.js --bundle --loader:.ts=ts --outfile=dist/cli.js --format=esm --platform=node  --external:ohm-js --external:./index.js --banner:js="#!/usr/bin/env node"
