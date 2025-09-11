@@ -5,8 +5,7 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "uvu": "^0.5.6",
-    "watchlist": "^0.3.1"
+    "uvu": "^0.5.6"
   },
   "dependencies": {
     "ohm-js": "^17.0.0"

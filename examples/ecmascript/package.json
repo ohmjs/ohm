@@ -27,8 +27,5 @@
     "files": ["!**/test/data/**/*"]
   },
   "files": ["src", "index.js", "!**/*.test.*", "!**/testdata/**"],
-  "dependencies": {
-    "@pkgjs/parseargs": "^0.11.0",
-    "jsdom": "^21.1.1"
-  }
+  "dependencies": {}
 }
