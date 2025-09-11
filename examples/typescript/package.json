@@ -9,7 +9,7 @@
   },
   "devDependencies": {
     "@ohm-js/cli": "^2.0.0",
-    "@types/node": "^16.18.126",
+    "@types/node": "^20.19.13",
     "ava": "^6.0.0",
     "tsx": "^4.20.5",
     "typescript": "^5.8.3",

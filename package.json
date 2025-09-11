@@ -9,7 +9,7 @@
     "test": "pnpm -r test"
   },
   "devDependencies": {
-    "@types/node": "^16.18.126",
+    "@types/node": "20.19.13",
     "eslint": "^8.0.0",
     "eslint-config-google": "^0.14.0",
     "eslint-plugin-ava": "^14.0.0",
