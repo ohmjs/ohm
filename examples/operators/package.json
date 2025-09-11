@@ -6,13 +6,7 @@
   "scripts": {
     "test": "ava"
   },
-  "keywords": [
-    "ohm",
-    "precedence",
-    "associativity",
-    "javascript",
-    "parsing"
-  ],
+  "keywords": ["ohm", "precedence", "associativity", "javascript", "parsing"],
   "author": "",
   "license": "MIT",
   "devDependencies": {

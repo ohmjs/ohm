@@ -7,9 +7,7 @@
   "repository": "https://github.com/ohmjs/ohm",
   "author": "Patrick Dubroy <pdubroy@gmail.com>",
   "license": "MIT",
-  "files": [
-    "**/*.js"
-  ],
+  "files": ["**/*.js"],
   "dependencies": {
     "commander": "^8.1.0",
     "fast-glob": "^3.2.7"
@@ -33,9 +31,6 @@
     "ts-morph": "^26.0.0"
   },
   "ava": {
-    "extensions": [
-      "mjs",
-      "js"
-    ]
+    "extensions": ["mjs", "js"]
   }
 }

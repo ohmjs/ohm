@@ -10,14 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/ohmjs/ohm.git"
   },
-  "keywords": [
-    "ohm",
-    "ohm-grammar",
-    "es5",
-    "ecmascript",
-    "javascript",
-    "peg"
-  ],
+  "keywords": ["ohm", "ohm-grammar", "es5", "ecmascript", "javascript", "peg"],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/ohmjs/ohm/issues"
@@ -31,16 +24,9 @@
     "ohm-js": "^17.0.0"
   },
   "ava": {
-    "files": [
-      "!**/test/data/**/*"
-    ]
+    "files": ["!**/test/data/**/*"]
   },
-  "files": [
-    "src",
-    "index.js",
-    "!**/*.test.*",
-    "!**/testdata/**"
-  ],
+  "files": ["src", "index.js", "!**/*.test.*", "!**/testdata/**"],
   "dependencies": {
     "@pkgjs/parseargs": "^0.11.0",
     "jsdom": "^21.1.1"

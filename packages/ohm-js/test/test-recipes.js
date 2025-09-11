@@ -136,12 +136,7 @@ test('recipes with U+2028 LINE SEPARATOR and U+2029 PARAGRAPH SEPARATOR', t => {
   t.falsy(ohm.grammar('G { x = "blah\u2029" }').toRecipe().includes('\u2029'));
 
   // ...and with an escaped separator.
-  t.falsy(
-    ohm
-      .grammar(String.raw`G { x = "blah\u2028" }`)
-      .toRecipe()
-      .includes('\u2028')
-  );
+  t.falsy(ohm.grammar(String.raw`G { x = "blah\u2028" }`).toRecipe().includes('\u2028'));
 });
 
 test('semantics recipes', t => {

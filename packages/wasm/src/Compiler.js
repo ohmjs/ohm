@@ -1354,29 +1354,60 @@ export class Compiler {
       () => {
         if (preHook) preHook();
 
-        // prettier-ignore
         switch (exp.type) {
-            case 'Alt': this.emitAlt(exp); break;
-            case 'Any': this.emitAny(); break;
-            case 'CaseInsensitive': this.emitCaseInsensitive(exp); break;
-            case 'Dispatch': this.emitDispatch(exp); break;
-            case 'End': this.emitEnd(); break;
-            case 'Lex': this.emitLex(exp); break;
-            case 'LiftedTerminal': this.emitApplyTerm(exp); break;
-            case 'Lookahead': this.emitLookahead(exp); break;
-            case 'Not': this.emitNot(exp); break;
-            case 'Seq': this.emitSeq(exp); break;
-            case 'Star': this.emitStar(exp); break;
-            case 'Opt': this.emitOpt(exp); break;
-            case 'Range': this.emitRange(exp); break;
-            case 'Plus': this.emitPlus(exp); break;
-            case 'Terminal': this.emitTerminal(exp); break;
-            case 'UnicodeChar': this.emitUnicodeChar(exp); break;
-            case 'Param':
-              // Fall through (Params should not exist at codegen time).
-            default:
-              throw new Error(`not handled: ${exp.type}`);
-          }
+          case 'Alt':
+            this.emitAlt(exp);
+            break;
+          case 'Any':
+            this.emitAny();
+            break;
+          case 'CaseInsensitive':
+            this.emitCaseInsensitive(exp);
+            break;
+          case 'Dispatch':
+            this.emitDispatch(exp);
+            break;
+          case 'End':
+            this.emitEnd();
+            break;
+          case 'Lex':
+            this.emitLex(exp);
+            break;
+          case 'LiftedTerminal':
+            this.emitApplyTerm(exp);
+            break;
+          case 'Lookahead':
+            this.emitLookahead(exp);
+            break;
+          case 'Not':
+            this.emitNot(exp);
+            break;
+          case 'Seq':
+            this.emitSeq(exp);
+            break;
+          case 'Star':
+            this.emitStar(exp);
+            break;
+          case 'Opt':
+            this.emitOpt(exp);
+            break;
+          case 'Range':
+            this.emitRange(exp);
+            break;
+          case 'Plus':
+            this.emitPlus(exp);
+            break;
+          case 'Terminal':
+            this.emitTerminal(exp);
+            break;
+          case 'UnicodeChar':
+            this.emitUnicodeChar(exp);
+            break;
+          case 'Param':
+          // Fall through (Params should not exist at codegen time).
+          default:
+            throw new Error(`not handled: ${exp.type}`);
+        }
       },
       'pexprEnd'
     );
@@ -1737,7 +1768,6 @@ export class Compiler {
               // Fall through: not an ASCII character.
 
               // Push the arg: a bitmap indicating the categories.
-              // prettier-ignore
               switch (exp.categoryOrProp) {
                 case 'Lu':
                   asm.i32Const(1 << 1);

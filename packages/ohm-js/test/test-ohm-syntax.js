@@ -253,7 +253,7 @@ test('ranges w/ code points > 0xFFFF, special cases', t => {
   `);
   // Try matching against a string where the first unit is a high surrogate,
   // but the second unit is *not* a low surrogate.
-  assertSucceeds(t, g2.match('\u{D83D}x'));
+  assertSucceeds(t, g2.match('\uD83Dx'));
 });
 
 test('any consumes an entire code point', t => {

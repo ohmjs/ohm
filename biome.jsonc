@@ -1,0 +1,55 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
+  "vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": false },
+  "files": { "ignoreUnknown": false },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 95,
+    "attributePosition": "auto",
+    "bracketSameLine": false,
+    "bracketSpacing": true,
+    "expand": "auto",
+    "useEditorconfig": true,
+    // Keep this in sync with .prettierignore.
+    "includes": [
+      "**",
+      "!**/test/data/*",
+      "!**/*.css",
+      "!**/*.html",
+      "!**/*.ohm-bundle.*",
+      "!**/dist",
+      "!**/pnpm-lock.yaml",
+      "!**/testdata",
+      "!**/third_party",
+      "!**/visualizer",
+      "!packages/wasm/runtime/**"
+    ]
+  },
+  "linter": { "enabled": false },
+  "javascript": {
+    // These options should be kept in sync with .pretterrc.
+    // We do that because various editors read the prettier config.
+    "formatter": {
+      "bracketSpacing": false,
+      "quoteStyle": "single",
+      "trailingCommas": "es5",
+      "arrowParentheses": "asNeeded", // "avoid" not supported in biome
+      // printWidth: see `lineWidth` above
+
+      "jsxQuoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "semicolons": "always",
+      "bracketSameLine": false,
+      "attributePosition": "auto"
+    }
+  },
+  "html": { "formatter": { "selfCloseVoidElements": "always" } },
+  "assist": {
+    "enabled": true,
+    "actions": { "source": { "organizeImports": "on" } }
+  }
+}

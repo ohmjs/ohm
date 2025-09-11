@@ -3,26 +3,16 @@
   "version": "1.0.1",
   "description": "Ohm grammars for modern versions of ECMAScript/JavaScript (ES2015+).",
   "exports": "./index.mjs",
-  "files": [
-    "index.mjs",
-    "gen/*.ohm"
-  ],
+  "files": ["index.mjs", "gen/*.ohm"],
   "scripts": {
     "build": "for year in $(seq 2015 2022); do YEAR=$year npm run gen-grammar; done",
     "test": "node test/es2015.test.mjs",
     "gen-grammar": "node scripts/generate-ecmascript-grammar.mjs --verbose --name ES$YEAR --overrides spec/es$YEAR/overrides.json spec/es$YEAR/spec.grammar > gen/es$YEAR.grammar.ohm",
     "gen-grammar:es2015": "YEAR=2015 pnpm run gen-grammar"
   },
-  "keywords": [
-    "ohm",
-    "grammar",
-    "ecmascript",
-    "javascript"
-  ],
+  "keywords": ["ohm", "grammar", "ecmascript", "javascript"],
   "author": "Patrick Dubroy <pdubroy@gmail.com>",
-  "contributors": [
-    "Andrew Elgert <andrew.elgert@gmail.com>"
-  ],
+  "contributors": ["Andrew Elgert <andrew.elgert@gmail.com>"],
   "license": "MIT",
   "peerDependencies": {
     "ohm-js": "^17.1.0"

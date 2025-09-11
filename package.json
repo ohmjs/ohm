@@ -4,7 +4,7 @@
   "scripts": {
     "build": "pnpm -r build",
     "ci-test": "bin/ci-test.sh",
-    "format": "prettier --write . && eslint --fix .",
+    "format": "biome format --write . && eslint --fix .",
     "lint": "eslint .",
     "test": "pnpm -r test"
   },
@@ -14,9 +14,7 @@
     "@eslint/js": "^9.35.0",
     "@types/node": "^20.19.13",
     "eslint": "^9.35.0",
-    "eslint-config-google": "^0.14.0",
     "eslint-plugin-ava": "^15.1.0",
-    "prettier": "^3.0.0",
     "typescript": "^5.8.3"
   },
   "version": "0.0.0"

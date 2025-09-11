@@ -17,11 +17,14 @@ function checkNotNull<T>(x): NonNullable<T> {
 }
 
 function skipPreamble(bytes: Uint8Array): void {
-  // prettier-ignore
   const expected = new Uint8Array([
-    0, ...Array.from("asm").map((c) => checkNotNull(c.codePointAt(0))),
-    1, 0, 0, 0,
-  ])
+    0,
+    ...Array.from('asm').map(c => checkNotNull(c.codePointAt(0))),
+    1,
+    0,
+    0,
+    0,
+  ]);
   for (let i = 0; i < expected.length; i++) {
     assert(
       bytes[i] === expected[i],
