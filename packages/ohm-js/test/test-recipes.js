@@ -6,7 +6,7 @@ import * as ohm from '../index.mjs';
 // --------------------------------------------------------------------
 
 function makeRecipe(recipeString) {
-  return ohm.makeRecipe(eval(recipeString)); // eslint-disable-line no-eval
+  return ohm.makeRecipe(eval(recipeString));
 }
 
 // --------------------------------------------------------------------
@@ -19,14 +19,14 @@ test('simple grammar recipes', t => {
 
   g = ohm.grammar('G { start = end }');
   t.truthy(
-      ohm.makeRecipe(g.toRecipe()).match('', 'start').succeeded(),
-      'grammar with one rule',
+    ohm.makeRecipe(g.toRecipe()).match('', 'start').succeeded(),
+    'grammar with one rule'
   );
 
   g = ohm.grammar('MyGrammar { start = x\n  x = "a" }');
   t.truthy(
-      ohm.makeRecipe(g.toRecipe()).match('a', 'start').succeeded(),
-      'grammar with multiple rules',
+    ohm.makeRecipe(g.toRecipe()).match('a', 'start').succeeded(),
+    'grammar with multiple rules'
   );
 });
 
@@ -40,25 +40,25 @@ test('grammar recipes with supergrammars', t => {
   t.is(g2.toRecipe(), ns.G2.toRecipe(), 'grammar and grammar from recipe (with override)');
 
   ns.G3 = ohm.grammar(
-      `
+    `
     G3 <: G2 {
       begin = a b
       a = "a"
       b = "b"
     }`,
-      ns,
+    ns
   );
   const g3 = ohm.makeRecipe(ns.G3.toRecipe());
   t.truthy(g3.match('ab', 'begin').succeeded(), 'two levels of inheritance');
   t.is(g3.toRecipe(), ns.G3.toRecipe(), 'grammar and grammar from recipe (with more rules)');
 
   ns.G4 = ohm.grammar(
-      `
+    `
     G4 <: G {
       start += "a"
       digit := ... | "☝️"
     }`,
-      ns,
+    ns
   );
   const g4 = ohm.makeRecipe(ns.G4.toRecipe());
   t.truthy(g4.match('', 'start').succeeded(), 'original rule matching');
@@ -83,26 +83,26 @@ test('grammar recipes involving parameterized rules', t => {
   //   INSTEAD OF
   // "bar":["define",...,["alt",{...},["app",{},"bar_one",[["app",{},"x"],["app",{},"y"]]]
   t.regex(
-      recipe,
-      /\["app",\{.*?\},"bar_one",\[\["param",\{.*?\},0\]/,
-      'forwards parameters instead of applications',
+    recipe,
+    /\["app",\{.*?\},"bar_one",\[\["param",\{.*?\},0\]/,
+    'forwards parameters instead of applications'
   );
 });
 
 test('grammar recipes with source', t => {
   const ns = ohm.grammars(
-      [
-        ' G {', // Deliberately start with leading space.
-        '  Start = ident*',
-        '  ident = letter /* foo */ identPart*',
-        '  identPart = alnum',
-        '}',
-        ' G2 <: G {',
-        '  Start := (ident | number)*',
-        '  identPart += "$"',
-        '  number = digit+',
-        '}',
-      ].join('\n'),
+    [
+      ' G {', // Deliberately start with leading space.
+      '  Start = ident*',
+      '  ident = letter /* foo */ identPart*',
+      '  identPart = alnum',
+      '}',
+      ' G2 <: G {',
+      '  Start := (ident | number)*',
+      '  identPart += "$"',
+      '  number = digit+',
+      '}',
+    ].join('\n')
   );
   let g = ohm.makeRecipe(ns.G.toRecipe());
   t.is(g.rules.Start.body.source.contents, 'ident*');
@@ -121,7 +121,7 @@ test('grammar recipes with source', t => {
 
   // Check that recipes without source still work fine.
   g = ohm.makeRecipe(
-      '["grammar",{},"G",null,"start",{"start":["define",{},null,[],["app",{},"any",[]]]}]',
+    '["grammar",{},"G",null,"start",{"start":["define",{},null,[],["app",{},"any",[]]]}]'
   );
   t.is(g.source, undefined);
   t.is(g.rules.start.body.source, undefined);
@@ -137,39 +137,38 @@ test('recipes with U+2028 LINE SEPARATOR and U+2029 PARAGRAPH SEPARATOR', t => {
 
   // ...and with an escaped separator.
   t.falsy(
-      ohm
-          .grammar(String.raw`G { x = "blah\u2028" }`)
-          .toRecipe()
-          .includes('\u2028'),
+    ohm
+      .grammar(String.raw`G { x = "blah\u2028" }`)
+      .toRecipe()
+      .includes('\u2028')
   );
 });
 
 test('semantics recipes', t => {
   const g1 = ohm.grammar('G { Add = number "+" number  number = digit+ }');
   const s1 = g1
-      .createSemantics()
-      .addOperation('eval', {
-        Add(a, _, b) {
-          return a.value + b.value;
-        },
-      })
-      .addOperation('evalWith(inc, factor)', {
-        Add(a, _, b) {
-          return (
-          // eslint-disable-next-line max-len
-            a.evalWith(this.args.inc, this.args.factor) +
+    .createSemantics()
+    .addOperation('eval', {
+      Add(a, _, b) {
+        return a.value + b.value;
+      },
+    })
+    .addOperation('evalWith(inc, factor)', {
+      Add(a, _, b) {
+        return (
+          a.evalWith(this.args.inc, this.args.factor) +
           b.evalWith(this.args.inc, this.args.factor)
-          );
-        },
-        number(digits) {
-          return (this.value + this.args.inc) * this.args.factor;
-        },
-      })
-      .addAttribute('value', {
-        number(digits) {
-          return parseFloat(this.sourceString);
-        },
-      });
+        );
+      },
+      number(digits) {
+        return (this.value + this.args.inc) * this.args.factor;
+      },
+    })
+    .addAttribute('value', {
+      number(digits) {
+        return parseFloat(this.sourceString);
+      },
+    });
 
   const s2 = makeRecipe(s1.toRecipe());
   t.is(s2.name, 'ASemantics', 'semantics created');
@@ -218,22 +217,22 @@ test('semantics recipes with extensions', t => {
     }
   `);
   const s = ns.G.createSemantics()
-      .addAttribute('value', {
-        one(_) {
-          return 1;
-        },
-        two(_) {
-          return 2;
-        },
-        _default(...children) {
-          return 'default';
-        },
-      })
-      .addOperation('valueTimesTwo', {
-        _nonterminal(...children) {
-          return this.value * 2;
-        },
-      });
+    .addAttribute('value', {
+      one(_) {
+        return 1;
+      },
+      two(_) {
+        return 2;
+      },
+      _default(...children) {
+        return 'default';
+      },
+    })
+    .addOperation('valueTimesTwo', {
+      _nonterminal(...children) {
+        return this.value * 2;
+      },
+    });
   const s2 = ns.G2.extendSemantics(s).addOperation('eval', {
     Add(one, _, two) {
       return one.value + two.value;

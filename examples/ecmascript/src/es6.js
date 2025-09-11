@@ -1,4 +1,4 @@
-/* eslint-env node */
+/* global URL */
 
 import {readFileSync} from 'node:fs';
 
@@ -31,7 +31,7 @@ const toES5Actions = {
   },
 };
 
-export default function(ohm, ns, s) {
+export default function (ohm, ns, s) {
   const g = ohm.grammar(readFileSync(new URL('es6.ohm', import.meta.url)).toString(), ns);
   const semantics = g.extendSemantics(s);
   semantics.addAttribute('mentionsThis', mentionsThisActions);

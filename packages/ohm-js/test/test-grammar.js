@@ -31,27 +31,27 @@ test('default start rule', t => {
   let g = ohm.grammar('G {}');
   t.is(g.defaultStartRule, undefined, 'undefined for an empty grammar');
   t.throws(
-      () => {
-        g.match('a');
-      },
-      {message: /Missing start rule/},
-      'match throws with no start rule',
+    () => {
+      g.match('a');
+    },
+    {message: /Missing start rule/},
+    'match throws with no start rule'
   );
   t.is(
-      Grammar.ProtoBuiltInRules.defaultStartRule,
-      undefined,
-      'undefined for ProtoBuiltInRules',
+    Grammar.ProtoBuiltInRules.defaultStartRule,
+    undefined,
+    'undefined for ProtoBuiltInRules'
   );
   t.is(Grammar.BuiltInRules.defaultStartRule, undefined, 'undefined for BuiltInRules');
 
   const g2 = ohm.grammar('G2 <: G {}', {G: g});
   t.is(g2.defaultStartRule, undefined, 'undefined for a subgrammar too');
   t.throws(
-      () => {
-        g2.match('a');
-      },
-      {message: /Missing start rule/},
-      'match throws with no start rule',
+    () => {
+      g2.match('a');
+    },
+    {message: /Missing start rule/},
+    'match throws with no start rule'
   );
 
   const ns = ohm.grammars('G { foo = "a" } G2 <: G {}');
@@ -71,11 +71,11 @@ test('default start rule', t => {
   g = ohm.grammar('G { digit += any }');
   t.is(g.defaultStartRule, undefined, "extending alone doesn't set the start rule");
   t.throws(
-      () => {
-        g.match('a');
-      },
-      {message: /Missing start rule/},
-      'match throws with no start rule',
+    () => {
+      g.match('a');
+    },
+    {message: /Missing start rule/},
+    'match throws with no start rule'
   );
   g = ohm.grammar(`
     G {
@@ -89,11 +89,11 @@ test('default start rule', t => {
   g = ohm.grammar('G { digit := any }');
   t.is(g.defaultStartRule, undefined, "overriding alone doesn't set the start rule");
   t.throws(
-      () => {
-        g.match('a');
-      },
-      {message: /Missing start rule/},
-      'match throws with no start rule',
+    () => {
+      g.match('a');
+    },
+    {message: /Missing start rule/},
+    'match throws with no start rule'
   );
   g = ohm.grammar(`
     G {
@@ -110,15 +110,15 @@ test('default start rule', t => {
   // Test passing the default start rule as an argument to the Grammar constructor.
   const root = Grammar.BuiltInRules;
   t.throws(
-      () => {
-        new Grammar('G', root, {}, 'nonexistentRule'); // eslint-disable-line no-new
-      },
-      {message: /Invalid start rule/},
-      'throws when start rule is not in the grammar',
+    () => {
+      new Grammar('G', root, {}, 'nonexistentRule');
+    },
+    {message: /Invalid start rule/},
+    'throws when start rule is not in the grammar'
   );
   t.truthy(
-      new Grammar('G', root, {aRule: null}, 'aRule'),
-      'works when it is in the `rules` dict',
+    new Grammar('G', root, {aRule: null}, 'aRule'),
+    'works when it is in the `rules` dict'
   );
   const rules = Object.create(root.rules);
   t.truthy(new Grammar('G', root, rules, 'digit'), 'works when rule is in the supergrammar');

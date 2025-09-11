@@ -25,9 +25,9 @@ class Rule extends AST {
   }
 
   toString() {
-    return this.body.length === 0 ?
-      this.head.toString() :
-      this.head.toString() +
+    return this.body.length === 0
+      ? this.head.toString()
+      : this.head.toString() +
           ' :- ' +
           this.body.map(clause => clause.toString()).join(' and ');
   }

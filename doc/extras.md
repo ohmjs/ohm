@@ -87,7 +87,7 @@ The _mapping_ parameter is a JavaScript object that consists of key-value pairs 
 // create ohm, g, match and toAST
 const ast = toAST(match, {
   Equation: {content: 0},
-  AddExpr: {type: 'Expression', expr1: 0, op: 1, expr2: 2}
+  AddExpr: {type: 'Expression', expr1: 0, op: 1, expr2: 2},
 });
 ```
 

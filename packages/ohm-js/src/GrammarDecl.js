@@ -27,7 +27,7 @@ export class GrammarDecl {
         // TODO: The conditional expression below is an ugly hack. It's kind of ok because
         // I doubt anyone will ever try to declare a grammar called `BuiltInRules`. Still,
         // we should try to find a better way to do this.
-        this.name === 'BuiltInRules' ? Grammar.ProtoBuiltInRules : Grammar.BuiltInRules,
+        this.name === 'BuiltInRules' ? Grammar.ProtoBuiltInRules : Grammar.BuiltInRules
       );
     }
     return this.superGrammar;
@@ -95,10 +95,10 @@ export class GrammarDecl {
   // Creates a Grammar instance, and if it passes the sanity checks, returns it.
   build() {
     const grammar = new Grammar(
-        this.name,
-        this.ensureSuperGrammar(),
-        this.rules,
-        this.defaultStartRule,
+      this.name,
+      this.ensureSuperGrammar(),
+      this.rules,
+      this.defaultStartRule
     );
     // Initialize internal props that are inherited from the super grammar.
     grammar._matchStateInitializer = grammar.superGrammar._matchStateInitializer;

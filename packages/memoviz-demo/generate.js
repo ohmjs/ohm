@@ -7,7 +7,7 @@ const es5 = es.grammar;
 
 const m = es5.matcher();
 m.setInput(
-    `
+  `
 function foo(x) {
   var o = {
     name: "Thomas",
@@ -16,7 +16,7 @@ function foo(x) {
   var finalAnswer = o.number + x;
   return finalAnswer;
 }
-`.trim(),
+`.trim()
 );
 assert.equal(m.match().succeeded(), true);
 

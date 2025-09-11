@@ -1,4 +1,4 @@
-import {grammar, runLisp, createEnv} from './simple-lisp.mjs';
+import {runLisp, createEnv} from './simple-lisp.mjs';
 
 import test from 'ava';
 
@@ -66,13 +66,13 @@ test('quasiquotes', t => {
   t.deepEqual(log, [
     '[{"name":"a"},{"name":"lst"},{"name":"b"}]',
     '[{"name":"a"},[{"name":"b"},{"name":"c"}],{"name":"d"}]',
-    '[{"name":"a"},{"name":"b"},{"name":"c"},{"name":"d"}]'
+    '[{"name":"a"},{"name":"b"},{"name":"c"},{"name":"d"}]',
   ]);
 });
 
 // TODO: Fix the exception here.
 test.failing('macros', t => {
-  const [env, log] = createLoggingEnv();
+  const [env] = createLoggingEnv();
   runLisp(LISP_MACROS, env);
   t.fail();
 });

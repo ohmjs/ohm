@@ -125,12 +125,12 @@ const applyDedent = new pexprs.Apply('dedent');
 const newAnyBody = new pexprs.Splice(BuiltInRules, 'any', [applyIndent, applyDedent], []);
 
 export const IndentationSensitive = new Builder()
-    .newGrammar('IndentationSensitive')
-    .withSuperGrammar(BuiltInRules)
-    .define('indent', [], new Indentation(true), INDENT_DESCRIPTION, undefined, true)
-    .define('dedent', [], new Indentation(false), DEDENT_DESCRIPTION, undefined, true)
-    .extend('any', [], newAnyBody, 'any character', undefined)
-    .build();
+  .newGrammar('IndentationSensitive')
+  .withSuperGrammar(BuiltInRules)
+  .define('indent', [], new Indentation(true), INDENT_DESCRIPTION, undefined, true)
+  .define('dedent', [], new Indentation(false), DEDENT_DESCRIPTION, undefined, true)
+  .extend('any', [], newAnyBody, 'any character', undefined)
+  .build();
 
 Object.assign(IndentationSensitive, {
   _matchStateInitializer(state) {

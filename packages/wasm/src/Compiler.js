@@ -575,8 +575,8 @@ class Assembler {
   updateGlobalFailurePos() {
     // rightmostFailurePos = max(rightmostFailurePos, failurePos)
     this.i32Max(
-        () => this.globalGet('rightmostFailurePos'),
-        () => this.localGet('failurePos'),
+      () => this.globalGet('rightmostFailurePos'),
+      () => this.localGet('failurePos')
     );
     this.globalSet('rightmostFailurePos');
   }
@@ -677,8 +677,8 @@ export class Compiler {
       // If we have the source, recover by instantiating the grammar anew.
       // Fail otherwise.
       assert(
-          !!grammar.source,
-          'Grammar smells fishy. Do you have multiple instances of ohm-js?',
+        !!grammar.source,
+        'Grammar smells fishy. Do you have multiple instances of ohm-js?'
       );
       grammar = ohm.grammar(grammar.source.contents);
     }
@@ -844,7 +844,7 @@ export class Compiler {
 
     // Begin with all the rules directly defined in the grammar.
     const ownRuleNames = Object.keys(grammar.rules).filter(name =>
-      Object.hasOwn(grammar.rules, name),
+      Object.hasOwn(grammar.rules, name)
     );
     const rules = ownRuleNames.map(name => [name, lookUpRule(name)]);
     rules.push(['spaces', lookUpRule('spaces')]); // Ensure 'spaces' is always present.
@@ -893,8 +893,8 @@ export class Compiler {
           }
           rules.push([exp.ruleName, ruleInfo]);
           return ir.apply(
-              exp.ruleName,
-              exp.args.map(arg => simplifyArg(arg, isSyntactic)),
+            exp.ruleName,
+            exp.args.map(arg => simplifyArg(arg, isSyntactic))
           );
         }
         case pexprs.Lex:
@@ -953,11 +953,11 @@ export class Compiler {
       asm.localSet('failurePos');
       const values = this.liftedTerminals.values();
       asm.switch(
-          w.blocktype.empty,
-          () => asm.localGet('__arg0'),
-          values.length,
-          i => this.emitTerminal(ir.terminal(values[i])),
-          () => asm.emit(instr.unreachable),
+        w.blocktype.empty,
+        () => asm.localGet('__arg0'),
+        values.length,
+        i => this.emitTerminal(ir.terminal(values[i])),
+        () => asm.emit(instr.unreachable)
       );
       // Note: unlike a regular rule evaluation, this function just returns
       // the raw result of PExpr evaluation.
@@ -1145,7 +1145,7 @@ export class Compiler {
 
     // Ensure that `ruleNames` is in the correct order.
     ruleNames.forEach((n, i) =>
-      assert(i === this.ruleIdByName.getIndex(n), `out of order: ${n}`),
+      assert(i === this.ruleIdByName.getIndex(n), `out of order: ${n}`)
     );
 
     typeMap.addDecls(this.importDecls);
@@ -1153,14 +1153,14 @@ export class Compiler {
 
     const globals = [];
     const imports = this.importDecls.map((f, i) =>
-      w.import_(f.module, f.name, w.importdesc.func(typeMap.getIdxForDecl(f))),
+      w.import_(f.module, f.name, w.importdesc.func(typeMap.getIdxForDecl(f)))
     );
     const funcs = functionDecls.map((f, i) => w.typeidx(typeMap.getIdxForDecl(f)));
     const codes = functionDecls.map(f => w.code(w.func(f.locals, f.body)));
 
     const exportOffset = this.importCount() + prebuilt.funcsec.entryCount;
     const exports = functionDecls.map((f, i) =>
-      w.export_(f.name, w.exportdesc.func(i + exportOffset)),
+      w.export_(f.name, w.exportdesc.func(i + exportOffset))
     );
     exports.push(w.export_('memory', w.exportdesc.mem(0)));
     exports.push(w.export_('match', w.exportdesc.func(prebuiltFuncidx('match'))));
@@ -1179,7 +1179,7 @@ export class Compiler {
     // Note that the rule ID can be used directly as the table index.
     const numRules = this.ruleIdByName.size;
     const table = w.table(
-        w.tabletype(w.elemtype.funcref, w.limits.minmax(numRules, numRules)),
+      w.tabletype(w.elemtype.funcref, w.limits.minmax(numRules, numRules))
     );
     const tableData = ruleNames.map(name => this.ruleEvalFuncIdx(name));
     assert(numRules === tableData.length, 'Invalid rule count');
@@ -1306,13 +1306,13 @@ export class Compiler {
     }
     assert(patterns.length > 1);
     asm.switch(
-        w.blocktype.empty,
-        () => asm.localGet('__arg0'),
-        patterns.length,
-        handleCase,
-        () => {
-          asm.emit(instr.unreachable);
-        },
+      w.blocktype.empty,
+      () => asm.localGet('__arg0'),
+      patterns.length,
+      handleCase,
+      () => {
+        asm.emit(instr.unreachable);
+      }
     );
   }
 
@@ -1350,12 +1350,12 @@ export class Compiler {
     // - it allows early returns.
     // - it makes sure that the generated code doesn't have stack effects.
     asm.block(
-        w.blocktype.empty,
-        () => {
-          if (preHook) preHook();
+      w.blocktype.empty,
+      () => {
+        if (preHook) preHook();
 
-          // prettier-ignore
-          switch (exp.type) {
+        // prettier-ignore
+        switch (exp.type) {
             case 'Alt': this.emitAlt(exp); break;
             case 'Any': this.emitAny(); break;
             case 'CaseInsensitive': this.emitCaseInsensitive(exp); break;
@@ -1377,8 +1377,8 @@ export class Compiler {
             default:
               throw new Error(`not handled: ${exp.type}`);
           }
-        },
-        'pexprEnd',
+      },
+      'pexprEnd'
     );
     if (postHook) postHook();
     asm.popStackFrame();
@@ -1593,19 +1593,19 @@ export class Compiler {
     // the position just before the last (failed) expression.
     asm.pushStackFrame();
     asm.block(
-        w.blocktype.empty,
-        () => {
-          asm.loop(w.blocktype.empty, () => {
-            asm.savePos();
-            asm.saveNumBindings();
-            this.emitPExpr(child);
-            asm.localGet('ret');
-            asm.emit(instr.i32.eqz);
-            asm.condBreak(asm.depthOf('done'));
-            asm.continue(0);
-          });
-        },
-        'done',
+      w.blocktype.empty,
+      () => {
+        asm.loop(w.blocktype.empty, () => {
+          asm.savePos();
+          asm.saveNumBindings();
+          this.emitPExpr(child);
+          asm.localGet('ret');
+          asm.emit(instr.i32.eqz);
+          asm.condBreak(asm.depthOf('done'));
+          asm.continue(0);
+        });
+      },
+      'done'
     );
     asm.restorePos();
     asm.restoreBindingsLength();
@@ -1625,30 +1625,30 @@ export class Compiler {
     asm.localSet('postSpacesPos');
 
     asm.block(
-        w.blocktype.empty,
-        () => {
-          asm.block(
-              w.blocktype.empty,
-              () => {
-                thunk();
-                asm.newTerminalNode();
-                asm.localSet('ret');
-                asm.break(asm.depthOf('_done'));
-              },
-              'failure',
-          );
-          asm.updateLocalFailurePos(() => asm.localGet('postSpacesPos'));
-          asm.setRet(0);
-        },
-        '_done',
+      w.blocktype.empty,
+      () => {
+        asm.block(
+          w.blocktype.empty,
+          () => {
+            thunk();
+            asm.newTerminalNode();
+            asm.localSet('ret');
+            asm.break(asm.depthOf('_done'));
+          },
+          'failure'
+        );
+        asm.updateLocalFailurePos(() => asm.localGet('postSpacesPos'));
+        asm.setRet(0);
+      },
+      '_done'
     );
   }
 
   emitCaseInsensitive({value}) {
     const {asm} = this;
     assert(
-        [...value].every(c => c <= '\x7f'),
-        'not supported: case-insensitive Unicode',
+      [...value].every(c => c <= '\x7f'),
+      'not supported: case-insensitive Unicode'
     );
 
     const str = value.toLowerCase();
@@ -1720,42 +1720,49 @@ export class Compiler {
 
     this.wrapTerminalLike(() => {
       asm.block(
-          w.blocktype.empty,
-          () => {
-            asm.block(
+        w.blocktype.empty,
+        () => {
+          asm.block(
+            w.blocktype.empty,
+            () => {
+              // Fast path: a jump table for ASCII characters.
+              asm.block(
                 w.blocktype.empty,
                 () => {
-                  // Fast path: a jump table for ASCII characters.
-                  asm.block(
-                      w.blocktype.empty,
-                      () => {
-                        asm.currCharCode();
-                        asm.brTable(makeLabels(), w.labelidx(asm.depthOf('default')));
-                      },
-                      'default',
-                  );
-                  // Fall through: not an ASCII character.
-
-                  // Push the arg: a bitmap indicating the categories.
-                  // prettier-ignore
-                  switch (exp.categoryOrProp) {
-                    case 'Lu': asm.i32Const(1 << 1); break;
-                    case 'Ll': asm.i32Const(1 << 2); break;
-                    case 'Ltmo': asm.i32Const((1 << 3) | (1 << 4) | (1 << 5)); break;
-                    default: assert(false, 'not handled');
-                  }
-                  asm.callPrebuiltFunc('doMatchUnicodeChar');
-                  asm.ifElse(
-                      w.blocktype.empty,
-                      () => asm.break(asm.depthOf('slowSuccess')),
-                      () => asm.break(asm.depthOf('failure')),
-                  );
+                  asm.currCharCode();
+                  asm.brTable(makeLabels(), w.labelidx(asm.depthOf('default')));
                 },
-                'fastSuccess',
-            );
-            asm.incPos();
-          },
-          'slowSuccess',
+                'default'
+              );
+              // Fall through: not an ASCII character.
+
+              // Push the arg: a bitmap indicating the categories.
+              // prettier-ignore
+              switch (exp.categoryOrProp) {
+                case 'Lu':
+                  asm.i32Const(1 << 1);
+                  break;
+                case 'Ll':
+                  asm.i32Const(1 << 2);
+                  break;
+                case 'Ltmo':
+                  asm.i32Const((1 << 3) | (1 << 4) | (1 << 5));
+                  break;
+                default:
+                  assert(false, 'not handled');
+              }
+              asm.callPrebuiltFunc('doMatchUnicodeChar');
+              asm.ifElse(
+                w.blocktype.empty,
+                () => asm.break(asm.depthOf('slowSuccess')),
+                () => asm.break(asm.depthOf('failure'))
+              );
+            },
+            'fastSuccess'
+          );
+          asm.incPos();
+        },
+        'slowSuccess'
       );
     });
   }

@@ -108,10 +108,10 @@ export function buildGrammar(match, namespace, optOhmGrammarForTesting) {
         });
 
         return new pexprs.Splice(
-            decl.superGrammar,
-            currentRuleName,
-            beforeTerms,
-            afterTerms,
+          decl.superGrammar,
+          currentRuleName,
+          beforeTerms,
+          afterTerms
         ).withSource(this.source);
       } else {
         return builder.alt(...args).withSource(this.source);

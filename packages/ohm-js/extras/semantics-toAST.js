@@ -55,7 +55,7 @@ const defaultOperation = {
     const node = {
       type: ctorName,
     };
-    // eslint-disable-next-line guard-for-in
+
     for (const prop in propMap) {
       const mappedProp = mapping[ctorName] && mapping[ctorName][prop];
       if (typeof mappedProp === 'number') {

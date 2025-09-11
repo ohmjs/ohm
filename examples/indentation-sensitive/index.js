@@ -3,7 +3,7 @@ import {test} from 'uvu';
 import * as assert from 'uvu/assert';
 
 const outline = grammar(
-    String.raw`
+  String.raw`
   Outline <: IndentationSensitive {
     Items = Item+
     Item = "-" label indent Items dedent  -- withChildren
@@ -16,7 +16,7 @@ const outline = grammar(
     spaces := (~newline space)*
   }
 `,
-    {IndentationSensitive},
+  {IndentationSensitive}
 );
 const semantics = outline.createSemantics().addOperation('toJS', {
   Items(items) {
@@ -53,7 +53,7 @@ test('grammar', () => {
 
 test('errors', () => {
   const g = grammar(
-      String.raw`
+    String.raw`
     G <: IndentationSensitive {
       IfExpr = "if" Expr ":" Block
       Block = indent Expr dedent
@@ -65,15 +65,15 @@ test('errors', () => {
       number = digit+
     }
   `,
-      {IndentationSensitive},
+    {IndentationSensitive}
   );
 
   assert.is(g.match('if True:\n  3').succeeded(), true);
   assert.is(g.match('if True:\n  if False:\n    3').succeeded(), true);
   assert.is(g.match('if True:\n3').shortMessage, 'Line 2, col 1: expected an indented block');
   assert.is(
-      g.match('if True:\n if False:\n 3').shortMessage,
-      'Line 3, col 2: expected an indented block',
+    g.match('if True:\n if False:\n 3').shortMessage,
+    'Line 3, col 2: expected an indented block'
   );
 });
 

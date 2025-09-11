@@ -15,13 +15,13 @@ util.awaitBuiltInRules(g => {
 
 let lexifyCount;
 
-pexprs.PExpr.prototype.assertAllApplicationsAreValid = function(ruleName, grammar) {
+pexprs.PExpr.prototype.assertAllApplicationsAreValid = function (ruleName, grammar) {
   lexifyCount = 0;
   this._assertAllApplicationsAreValid(ruleName, grammar);
 };
 
 pexprs.PExpr.prototype._assertAllApplicationsAreValid = abstract(
-    '_assertAllApplicationsAreValid',
+  '_assertAllApplicationsAreValid'
 );
 
 pexprs.any._assertAllApplicationsAreValid =
@@ -30,23 +30,23 @@ pexprs.any._assertAllApplicationsAreValid =
   pexprs.Range.prototype._assertAllApplicationsAreValid =
   pexprs.Param.prototype._assertAllApplicationsAreValid =
   pexprs.UnicodeChar.prototype._assertAllApplicationsAreValid =
-    function(ruleName, grammar) {
+    function (ruleName, grammar) {
       // no-op
     };
 
-pexprs.Lex.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
+pexprs.Lex.prototype._assertAllApplicationsAreValid = function (ruleName, grammar) {
   lexifyCount++;
   this.expr._assertAllApplicationsAreValid(ruleName, grammar);
   lexifyCount--;
 };
 
-pexprs.Alt.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
+pexprs.Alt.prototype._assertAllApplicationsAreValid = function (ruleName, grammar) {
   for (let idx = 0; idx < this.terms.length; idx++) {
     this.terms[idx]._assertAllApplicationsAreValid(ruleName, grammar);
   }
 };
 
-pexprs.Seq.prototype._assertAllApplicationsAreValid = function(ruleName, grammar) {
+pexprs.Seq.prototype._assertAllApplicationsAreValid = function (ruleName, grammar) {
   for (let idx = 0; idx < this.factors.length; idx++) {
     this.factors[idx]._assertAllApplicationsAreValid(ruleName, grammar);
   }
@@ -55,14 +55,14 @@ pexprs.Seq.prototype._assertAllApplicationsAreValid = function(ruleName, grammar
 pexprs.Iter.prototype._assertAllApplicationsAreValid =
   pexprs.Not.prototype._assertAllApplicationsAreValid =
   pexprs.Lookahead.prototype._assertAllApplicationsAreValid =
-    function(ruleName, grammar) {
+    function (ruleName, grammar) {
       this.expr._assertAllApplicationsAreValid(ruleName, grammar);
     };
 
-pexprs.Apply.prototype._assertAllApplicationsAreValid = function(
-    ruleName,
-    grammar,
-    skipSyntacticCheck = false,
+pexprs.Apply.prototype._assertAllApplicationsAreValid = function (
+  ruleName,
+  grammar,
+  skipSyntacticCheck = false
 ) {
   const ruleInfo = grammar.rules[this.ruleName];
   const isContextSyntactic = isSyntactic(ruleName) && lexifyCount === 0;

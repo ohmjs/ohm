@@ -118,7 +118,7 @@ test('cst for range', async t => {
   t.is(root.ruleName, 'x');
 
   // Terminal
-  // eslint-disable-next-line no-unused-vars
+
   const term = root.children[0];
   t.is(term.matchLength, 1);
   t.is(term.children.length, 0);
@@ -147,14 +147,14 @@ test('cst for opt', async t => {
   t.is(matchWithInput(matcher, ''), 1);
 
   // x
-  // eslint-disable-next-line no-unused-vars
+
   root = matcher.getCstRoot();
   t.is(root.matchLength, 0);
   t.is(root.ruleName, 'x');
   t.is(root.children.length, 1);
 
   // iter
-  // eslint-disable-next-line no-unused-vars
+
   iter = root.children[0];
   t.is(iter.matchLength, 0);
   t.true(iter.isIter());
@@ -166,14 +166,14 @@ test('cst for plus', async t => {
   t.is(matchWithInput(matcher, 'a'), 1);
 
   // x
-  // eslint-disable-next-line no-unused-vars
+
   const root = matcher.getCstRoot();
   t.is(root.matchLength, 1);
   t.is(root.ruleName, 'x');
   t.is(root.children.length, 1);
 
   // iter
-  // eslint-disable-next-line no-unused-vars
+
   const iter = root.children[0];
   t.is(iter.matchLength, 1);
   t.true(iter.isIter());
@@ -194,14 +194,14 @@ test('cst with (small) repetition', async t => {
   //     - "a"
 
   // start
-  // eslint-disable-next-line no-unused-vars
+
   const root = matcher.getCstRoot();
   t.is(root.matchLength, 3);
   t.is(root.children.length, 1);
   t.is(root.ruleName, 'x');
 
   // iter
-  // eslint-disable-next-line no-unused-vars
+
   const iter = root.children[0];
   t.is(iter.matchLength, 3);
   t.is(iter.children.length, 3);
@@ -222,7 +222,6 @@ test('repetition and lookahead', async t => {
   t.is(matchWithInput(matcher, 'abc'), 1);
 });
 
-// eslint-disable-next-line ava/no-skip-test
 test('cst with repetition and lookahead', async t => {
   let matcher = await wasmMatcherForGrammar(ohm.grammar('G {x = (~space any)*}'));
   let input = 'abc';
@@ -253,7 +252,6 @@ test('cst with repetition and lookahead', async t => {
   t.true(childB.children[0].isTerminal());
   t.is(childB.children[0].matchLength, 1);
 
-  // eslint-disable-next-line no-unused-vars
   t.is(childC.matchLength, 1);
   t.is(childC.children.length, 1);
   t.true(childC.isNonterminal());
@@ -883,8 +881,8 @@ test('basic space skipping', async t => {
   t.is(iter.matchLength, 8);
 
   t.deepEqual(
-      iter.children.map(c => c.matchLength),
-      [1, 1, 1, 1],
+    iter.children.map(c => c.matchLength),
+    [1, 1, 1, 1]
   );
 });
 
@@ -996,8 +994,8 @@ test('iter nodes: basic map (star)', async t => {
   t.is(m.getCstRoot().children.length, 1);
   const iter = m.getCstRoot().children[0];
   t.deepEqual(
-      iter.map((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
-      ['1a', '2b', '3c'],
+    iter.map((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
+    ['1a', '2b', '3c']
   );
   t.throws(() => iter.map(() => {}), {message: /bad arity/});
 });
@@ -1009,8 +1007,8 @@ test('iter nodes: basic map (plus)', async t => {
   t.is(m.getCstRoot().children.length, 1);
   const iter = m.getCstRoot().children[0];
   t.deepEqual(
-      iter.map((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
-      ['1a', '2b', '3c'],
+    iter.map((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
+    ['1a', '2b', '3c']
   );
   t.throws(() => iter.map(() => {}), {message: /bad arity/});
 });
@@ -1022,8 +1020,8 @@ test('iter nodes: basic map (opt)', async t => {
   t.is(m.getCstRoot().children.length, 1);
   const iter = m.getCstRoot().children[0];
   t.deepEqual(
-      iter.map((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
-      ['1a'],
+    iter.map((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
+    ['1a']
   );
   t.throws(() => iter.map(() => {}), {message: /bad arity/});
 });

@@ -31,7 +31,7 @@ export interface Alt {
 export const alt = (children: Expr[]): Alt => ({
   type: 'Alt',
   children,
-  outArity: outArity(children[0])
+  outArity: outArity(children[0]),
 });
 
 export interface Any {
@@ -51,7 +51,7 @@ export interface Apply {
 export const apply = (ruleName: string, children: ApplyLike[] = []): Apply => ({
   type: 'Apply',
   ruleName,
-  children
+  children,
 });
 
 export interface ApplyGeneralized {
@@ -63,7 +63,7 @@ export interface ApplyGeneralized {
 export const applyGeneralized = (ruleName: string, caseIdx: number): ApplyGeneralized => ({
   type: 'ApplyGeneralized',
   ruleName,
-  caseIdx
+  caseIdx,
 });
 
 export interface CaseInsensitive {
@@ -73,7 +73,7 @@ export interface CaseInsensitive {
 
 export const caseInsensitive = (value: string): CaseInsensitive => ({
   type: 'CaseInsensitive',
-  value
+  value,
 });
 
 export interface Dispatch {
@@ -85,7 +85,7 @@ export interface Dispatch {
 export const dispatch = (child: Apply | Param, patterns: Expr[][]): Dispatch => ({
   type: 'Dispatch',
   child,
-  patterns
+  patterns,
 });
 
 // TODO: Eliminate this, and replace with Not(Any())?
@@ -104,7 +104,7 @@ export interface Lex {
 export const lex = (child: Expr): Lex => ({
   type: 'Lex',
   child,
-  outArity: outArity(child)
+  outArity: outArity(child),
 });
 
 // TODO: Eliminate this, and replace with Not(Not(...))?
@@ -117,7 +117,7 @@ export interface Lookahead {
 export const lookahead = (child: Expr): Lookahead => ({
   type: 'Lookahead',
   child,
-  outArity: outArity(child)
+  outArity: outArity(child),
 });
 
 export interface Opt {
@@ -165,7 +165,7 @@ export interface Seq {
 export const seq = (children: Expr[]): Seq => ({
   type: 'Seq',
   children,
-  outArity: children.reduce((acc, child) => acc + outArity(child), 0)
+  outArity: children.reduce((acc, child) => acc + outArity(child), 0),
 });
 
 export interface Star {
@@ -182,7 +182,7 @@ export interface Terminal {
 
 export const terminal = (value: string, caseInsensitive = false): Terminal => ({
   type: 'Terminal',
-  value
+  value,
 });
 
 export interface UnicodeChar {
@@ -192,7 +192,7 @@ export interface UnicodeChar {
 
 export const unicodeChar = (categoryOrProp: string): UnicodeChar => ({
   type: 'UnicodeChar',
-  categoryOrProp
+  categoryOrProp,
 });
 
 // Types that are specific to the IR
@@ -204,7 +204,7 @@ export interface LiftedTerminal {
 
 export const liftedTerminal = (terminalId: number): LiftedTerminal => ({
   type: 'LiftedTerminal',
-  terminalId
+  terminalId,
 });
 
 // Helpers
@@ -293,14 +293,14 @@ export function substituteParams<T extends Expr>(
       return {
         type: exp.type,
         children: exp.children.map(c => substituteParams(c, actuals)),
-        outArity: exp.outArity
+        outArity: exp.outArity,
       };
     case 'Lex':
     case 'Lookahead':
       return {
         type: exp.type,
         child: substituteParams(exp.child, actuals),
-        outArity: exp.outArity
+        outArity: exp.outArity,
       };
     case 'Not':
     case 'Opt':
@@ -308,7 +308,7 @@ export function substituteParams<T extends Expr>(
     case 'Star':
       return {
         type: exp.type,
-        child: substituteParams(exp.child, actuals)
+        child: substituteParams(exp.child, actuals),
       };
     case 'Any':
     case 'ApplyGeneralized':

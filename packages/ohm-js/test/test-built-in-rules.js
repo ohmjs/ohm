@@ -57,20 +57,20 @@ test('case-insensitive matching', t => {
   t.is(g.match('aaaA', 'insideRepetition2').succeeded(), true, 'works inside *');
 
   t.throws(
-      () => {
-        ohm.grammar('G { start = caseInsensitive<start> }');
-      },
-      {message: /Incorrect argument type/},
-      'throws when argument is not a Terminal',
+    () => {
+      ohm.grammar('G { start = caseInsensitive<start> }');
+    },
+    {message: /Incorrect argument type/},
+    'throws when argument is not a Terminal'
   );
 
   // TODO: Maybe allow Ranges here?
   t.throws(
-      () => {
-        ohm.grammar('G { start = caseInsensitive<"a".."z"> }');
-      },
-      {message: /Incorrect argument type/},
-      'throws when argument is a Range',
+    () => {
+      ohm.grammar('G { start = caseInsensitive<"a".."z"> }');
+    },
+    {message: /Incorrect argument type/},
+    'throws when argument is a Range'
   );
 
   const g2 = ohm.grammar(`
@@ -90,19 +90,19 @@ test('applySyntactic - basics', t => {
   t.notThrows(() => ohm.grammar('G { Foo = #(applySyntactic<X>)\nX = }'));
 
   t.throws(
-      () => ohm.grammar('G { foo = applySyntactic<"bad"> }'),
-      {
-        message: /expected a syntactic rule application/,
-      },
-      'other arg types (e.g. Terminal) are not allowed',
+    () => ohm.grammar('G { foo = applySyntactic<"bad"> }'),
+    {
+      message: /expected a syntactic rule application/,
+    },
+    'other arg types (e.g. Terminal) are not allowed'
   );
 
   t.throws(
-      () => ohm.grammar('G { foo = applySyntactic<x>\nx = }'),
-      {
-        message: /applySyntactic is for syntactic rules, but 'x' is a lexical rule/,
-      },
-      'error if arg is a lexical rule application',
+    () => ohm.grammar('G { foo = applySyntactic<x>\nx = }'),
+    {
+      message: /applySyntactic is for syntactic rules, but 'x' is a lexical rule/,
+    },
+    'error if arg is a lexical rule application'
   );
 
   // applySyntactic can't appear in a syntactic context.
@@ -133,14 +133,14 @@ test('applySyntactic - space skipping', t => {
   const applySyntactic = seq.children[1];
   t.deepEqual(seq.children.map(displayString), ['"a"', 'applySyntactic<Letters>', '"."']);
   t.deepEqual(
-      applySyntactic.children.map(displayString),
-      ['$0', 'spaces'],
-      'applySyntactic consumes only the trailing space',
+    applySyntactic.children.map(displayString),
+    ['$0', 'spaces'],
+    'applySyntactic consumes only the trailing space'
   );
   t.deepEqual(
-      applySyntactic.children.map(displayString),
-      ['$0', 'spaces'],
-      'applySyntactic consumes only the trailing space',
+    applySyntactic.children.map(displayString),
+    ['$0', 'spaces'],
+    'applySyntactic consumes only the trailing space'
   );
   const letters = applySyntactic.children[0].children[0];
   t.deepEqual(letters.children.map(displayString), ['letter+']);
@@ -163,13 +163,13 @@ test('applySyntactic - space skipping', t => {
 
 test('applySyntactic with lookahead', t => {
   t.throws(
-      () =>
-        ohm.grammar(`
+    () =>
+      ohm.grammar(`
           G {
             withLookahead = applySyntactic<~Number Number>
             Number = digit+
           }
         `),
-      {message: /expected a syntactic rule application/},
+    {message: /expected a syntactic rule application/}
   );
 });

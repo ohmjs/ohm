@@ -19,14 +19,14 @@ function initBuiltInSemantics(builtInRules) {
   };
 
   Semantics.BuiltInSemantics = Semantics.createSemantics(builtInRules, null).addOperation(
-      'asIteration',
-      {
-        emptyListOf: actions.empty,
-        nonemptyListOf: actions.nonEmpty,
-        EmptyListOf: actions.empty,
-        NonemptyListOf: actions.nonEmpty,
-        _iter: actions.self,
-      },
+    'asIteration',
+    {
+      emptyListOf: actions.empty,
+      nonemptyListOf: actions.nonEmpty,
+      EmptyListOf: actions.empty,
+      NonemptyListOf: actions.nonEmpty,
+      _iter: actions.self,
+    }
   );
 }
 

@@ -6,9 +6,9 @@ export default defineConfig({
       input: 'src/index.vite.js',
       output: {
         entryFileNames: 'main-vite.js',
-        format: 'iife'
-      }
+        format: 'iife',
+      },
     },
-    outDir: 'dist'
-  }
+    outDir: 'dist',
+  },
 });

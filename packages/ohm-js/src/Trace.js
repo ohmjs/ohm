@@ -43,10 +43,10 @@ function asEscapedString(obj) {
   if (typeof obj === 'string') {
     // Replace non-printable characters with visible symbols.
     return obj
-        .replace(/ /g, DOT_OPERATOR)
-        .replace(/\t/g, SYMBOL_FOR_HORIZONTAL_TABULATION)
-        .replace(/\n/g, SYMBOL_FOR_LINE_FEED)
-        .replace(/\r/g, SYMBOL_FOR_CARRIAGE_RETURN);
+      .replace(/ /g, DOT_OPERATOR)
+      .replace(/\t/g, SYMBOL_FOR_HORIZONTAL_TABULATION)
+      .replace(/\n/g, SYMBOL_FOR_LINE_FEED)
+      .replace(/\r/g, SYMBOL_FOR_CARRIAGE_RETURN);
   }
   return String(obj);
 }
@@ -77,13 +77,13 @@ export class Trace {
 
   cloneWithExpr(expr) {
     const ans = new Trace(
-        this.input,
-        this.pos,
-        this.pos2,
-        expr,
-        this.succeeded,
-        this.bindings,
-        this.children,
+      this.input,
+      this.pos,
+      this.pos2,
+      expr,
+      this.succeeded,
+      this.bindings,
+      this.children
     );
 
     ans.isHeadOfLeftRecursion = this.isHeadOfLeftRecursion;
@@ -98,13 +98,13 @@ export class Trace {
   // Record the trace information for the terminating condition of the LR loop.
   recordLRTermination(ruleBodyTrace, value) {
     this.terminatingLREntry = new Trace(
-        this.input,
-        this.pos,
-        this.pos2,
-        this.expr,
-        false,
-        [value],
-        [ruleBodyTrace],
+      this.input,
+      this.pos,
+      this.pos2,
+      this.expr,
+      false,
+      [value],
+      [ruleBodyTrace]
     );
     this.terminatingLREntry.terminatesLR = true;
   }
@@ -164,7 +164,7 @@ export class Trace {
       const ctorName = node.expr.constructor.name;
       // Don't print anything for Alt nodes.
       if (ctorName === 'Alt') {
-        return; // eslint-disable-line consistent-return
+        return;
       }
       sb.append(getInputExcerpt(node.input, node.pos, 10) + spaces(depth * 2 + 1));
       sb.append((node.succeeded ? CHECK_MARK : BALLOT_X) + ' ' + node.displayString);

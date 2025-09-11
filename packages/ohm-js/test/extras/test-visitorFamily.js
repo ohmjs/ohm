@@ -84,32 +84,32 @@ test('array props', t => {
 test('arity checks', t => {
   const family = new VisitorFamily({shapes: {x: arr1, y: arr2}});
   t.throws(
-      () => {
-        family.addOperation('foo()', {x: noop0});
-      },
-      {message: /Action 'x' has the wrong arity: expected 1, got 0/},
+    () => {
+      family.addOperation('foo()', {x: noop0});
+    },
+    {message: /Action 'x' has the wrong arity: expected 1, got 0/}
   );
   t.throws(
-      () => {
-        family.addOperation('foo()', {x: noop1, y: noop0});
-      },
-      {message: /Action 'y' has the wrong arity: expected 2, got 0/},
+    () => {
+      family.addOperation('foo()', {x: noop1, y: noop0});
+    },
+    {message: /Action 'y' has the wrong arity: expected 2, got 0/}
   );
 });
 
 test('unknown action names', t => {
   const family = new VisitorFamily({shapes: {x: arr1, y: arr2}});
   t.throws(
-      () => {
-        family.addOperation('foo()', {z: null});
-      },
-      {message: /Unrecognized action name 'z'/},
+    () => {
+      family.addOperation('foo()', {z: null});
+    },
+    {message: /Unrecognized action name 'z'/}
   );
   t.throws(
-      () => {
-        family.addOperation('foo()', {toString: null});
-      },
-      {message: /Unrecognized action name 'toString'/},
+    () => {
+      family.addOperation('foo()', {toString: null});
+    },
+    {message: /Unrecognized action name 'toString'/}
   );
 });
 
@@ -122,10 +122,10 @@ test('unrecognized tags', t => {
   });
   v.addOperation('foo()', {});
   t.throws(
-      () => {
-        v.wrap(0).foo();
-      },
-      {message: /getTag returned unrecognized tag 'bad'/},
+    () => {
+      v.wrap(0).foo();
+    },
+    {message: /getTag returned unrecognized tag 'bad'/}
   );
 
   v = new VisitorFamily({
@@ -136,10 +136,10 @@ test('unrecognized tags', t => {
   });
   v.addOperation('foo()', {});
   t.throws(
-      () => {
-        v.wrap(0).foo();
-      },
-      {message: /getTag returned unrecognized tag 'toString'/},
+    () => {
+      v.wrap(0).foo();
+    },
+    {message: /getTag returned unrecognized tag 'toString'/}
   );
 });
 

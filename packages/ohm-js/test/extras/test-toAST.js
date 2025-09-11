@@ -15,8 +15,8 @@ test('semantic action', t => {
   const matchResult = g.match('10 + 20');
 
   t.truthy(
-      'toAST' in semantics._getSemantics().operations,
-      'toAST operation added to semantics',
+    'toAST' in semantics._getSemantics().operations,
+    'toAST operation added to semantics'
   );
   t.truthy(semantics(matchResult).toAST, 'toAST operation added to match result');
 });
@@ -280,23 +280,23 @@ test('listOf and friends - #394', t => {
   // Ensure that it's still be possible to override the default mappings.
 
   t.is(
-      ast('0+1', {
-        nonemptyListOf: (first, sep, rest) => 'XX',
-      }),
-      'XX',
+    ast('0+1', {
+      nonemptyListOf: (first, sep, rest) => 'XX',
+    }),
+    'XX'
   );
 
   t.is(
-      ast('1+2', {
-        nonemptyListOf: 0,
-      }),
-      '1',
+    ast('1+2', {
+      nonemptyListOf: 0,
+    }),
+    '1'
   );
 
   t.is(
-      ast('', {
-        emptyListOf: () => 'nix',
-      }),
-      'nix',
+    ast('', {
+      emptyListOf: () => 'nix',
+    }),
+    'nix'
   );
 });

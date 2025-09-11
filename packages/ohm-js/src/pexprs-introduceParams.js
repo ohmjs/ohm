@@ -18,18 +18,18 @@ pexprs.any.introduceParams =
   pexprs.Range.prototype.introduceParams =
   pexprs.Param.prototype.introduceParams =
   pexprs.UnicodeChar.prototype.introduceParams =
-    function(formals) {
+    function (formals) {
       return this;
     };
 
-pexprs.Alt.prototype.introduceParams = function(formals) {
+pexprs.Alt.prototype.introduceParams = function (formals) {
   this.terms.forEach((term, idx, terms) => {
     terms[idx] = term.introduceParams(formals);
   });
   return this;
 };
 
-pexprs.Seq.prototype.introduceParams = function(formals) {
+pexprs.Seq.prototype.introduceParams = function (formals) {
   this.factors.forEach((factor, idx, factors) => {
     factors[idx] = factor.introduceParams(formals);
   });
@@ -40,12 +40,12 @@ pexprs.Iter.prototype.introduceParams =
   pexprs.Not.prototype.introduceParams =
   pexprs.Lookahead.prototype.introduceParams =
   pexprs.Lex.prototype.introduceParams =
-    function(formals) {
+    function (formals) {
       this.expr = this.expr.introduceParams(formals);
       return this;
     };
 
-pexprs.Apply.prototype.introduceParams = function(formals) {
+pexprs.Apply.prototype.introduceParams = function (formals) {
   const index = formals.indexOf(this.ruleName);
   if (index >= 0) {
     if (this.args.length > 0) {

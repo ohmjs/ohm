@@ -1,4 +1,4 @@
-/* eslint-env node */
+/* global process */
 
 /*
   Note: this file is for internal use within the Ohm monorepo, and is not

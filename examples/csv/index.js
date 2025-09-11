@@ -1,4 +1,4 @@
-/* eslint-env node */
+/* global __dirname */
 
 const assert = require('assert');
 const fs = require('fs');

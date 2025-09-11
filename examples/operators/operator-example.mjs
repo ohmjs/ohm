@@ -101,7 +101,7 @@ const semantics1 = grammar1.createSemantics().addOperation('tree', {
   },
   id(char, moreChars) {
     return new Identifier(this.sourceString);
-  }
+  },
 });
 
 // The second grammar is in the style of a traditional PEG. It does not make use of any
@@ -165,7 +165,7 @@ const semantics2 = grammar2.createSemantics().addOperation('tree', {
   // scenes.
   _terminal() {
     return this.sourceString;
-  }
+  },
 });
 
 // This grammar cannot help us with associativity, so we must define it here.
@@ -227,7 +227,7 @@ const semantics3 = grammar3.createSemantics().addOperation('tree', {
   },
   _terminal() {
     return this.sourceString;
-  }
+  },
 });
 
 // Note: this grammar uses the associativity dictionary and the binaryExpression function
@@ -276,7 +276,7 @@ const semantics4 = grammar4.createSemantics().addOperation('tree', {
   },
   _terminal() {
     return this.sourceString;
-  }
+  },
 });
 
 // We don’t get precedence *or* associativity in this grammar. We defined
@@ -308,5 +308,5 @@ export const fixture = [
   {name: 'left-recursive', grammar: grammar1, semantics: semantics1},
   {name: 'traditional PEG', grammar: grammar2, semantics: semantics2},
   {name: 'parameterized', grammar: grammar3, semantics: semantics3},
-  {name: 'precedence-in-semantics', grammar: grammar4, semantics: semantics4}
+  {name: 'precedence-in-semantics', grammar: grammar4, semantics: semantics4},
 ];

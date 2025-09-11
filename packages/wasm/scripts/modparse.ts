@@ -210,7 +210,7 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
     globalsec,
     funcidxByName: exports,
     codesec: checkNotNull(codesec),
-    startFuncidx
+    startFuncidx,
   };
 }
 

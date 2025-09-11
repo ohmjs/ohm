@@ -59,7 +59,7 @@ function printUsage() {
   const exeName = basename(process.argv[1]);
   // eslint-disable-next-line no-console
   console.log(
-      `usage: ${exeName} [(--grammarName|-g) <name>] [(--output|-o) <file>] <ohm-grammar-file>`,
+    `usage: ${exeName} [(--grammarName|-g) <name>] [(--output|-o) <file>] <ohm-grammar-file>`
   );
 }
 

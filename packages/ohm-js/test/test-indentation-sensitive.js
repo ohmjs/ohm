@@ -68,10 +68,10 @@ test('memoization', t => {
 
 test('basic tracing', t => {
   const g = grammar(
-      `G <: IndentationSensitive {
+    `G <: IndentationSensitive {
         Start = indent "x" dedent
       }`,
-      {IndentationSensitive},
+    {IndentationSensitive}
   );
   const trace = g.trace('  x');
   const start = trace.children[1];
@@ -105,7 +105,7 @@ test('basic tracing', t => {
 // eslint-disable-next-line ava/no-skip-test
 test.skip('#467 - dedent not working', t => {
   const g = grammar(
-      `
+    `
       G <: IndentationSensitive {
         IfExpr = "if" Expr ":" Block
         Block = indent Expr+ dedent
@@ -119,7 +119,7 @@ test.skip('#467 - dedent not working', t => {
         number = digit+
       }
 `,
-      {IndentationSensitive},
+    {IndentationSensitive}
   );
   const input = `
 if True:

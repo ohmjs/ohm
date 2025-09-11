@@ -7,7 +7,7 @@ import * as pexprs from './pexprs-main.js';
 // --------------------------------------------------------------------
 
 pexprs.PExpr.prototype.assertChoicesHaveUniformArity = abstract(
-    'assertChoicesHaveUniformArity',
+  'assertChoicesHaveUniformArity'
 );
 
 pexprs.any.assertChoicesHaveUniformArity =
@@ -17,11 +17,11 @@ pexprs.any.assertChoicesHaveUniformArity =
   pexprs.Param.prototype.assertChoicesHaveUniformArity =
   pexprs.Lex.prototype.assertChoicesHaveUniformArity =
   pexprs.UnicodeChar.prototype.assertChoicesHaveUniformArity =
-    function(ruleName) {
+    function (ruleName) {
       // no-op
     };
 
-pexprs.Alt.prototype.assertChoicesHaveUniformArity = function(ruleName) {
+pexprs.Alt.prototype.assertChoicesHaveUniformArity = function (ruleName) {
   if (this.terms.length === 0) {
     return;
   }
@@ -36,7 +36,7 @@ pexprs.Alt.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   }
 };
 
-pexprs.Extend.prototype.assertChoicesHaveUniformArity = function(ruleName) {
+pexprs.Extend.prototype.assertChoicesHaveUniformArity = function (ruleName) {
   // Extend is a special case of Alt that's guaranteed to have exactly two
   // cases: [extensions, origBody].
   const actualArity = this.terms[0].getArity();
@@ -46,25 +46,25 @@ pexprs.Extend.prototype.assertChoicesHaveUniformArity = function(ruleName) {
   }
 };
 
-pexprs.Seq.prototype.assertChoicesHaveUniformArity = function(ruleName) {
+pexprs.Seq.prototype.assertChoicesHaveUniformArity = function (ruleName) {
   for (let idx = 0; idx < this.factors.length; idx++) {
     this.factors[idx].assertChoicesHaveUniformArity(ruleName);
   }
 };
 
-pexprs.Iter.prototype.assertChoicesHaveUniformArity = function(ruleName) {
+pexprs.Iter.prototype.assertChoicesHaveUniformArity = function (ruleName) {
   this.expr.assertChoicesHaveUniformArity(ruleName);
 };
 
-pexprs.Not.prototype.assertChoicesHaveUniformArity = function(ruleName) {
+pexprs.Not.prototype.assertChoicesHaveUniformArity = function (ruleName) {
   // no-op (not required b/c the nested expr doesn't show up in the CST)
 };
 
-pexprs.Lookahead.prototype.assertChoicesHaveUniformArity = function(ruleName) {
+pexprs.Lookahead.prototype.assertChoicesHaveUniformArity = function (ruleName) {
   this.expr.assertChoicesHaveUniformArity(ruleName);
 };
 
-pexprs.Apply.prototype.assertChoicesHaveUniformArity = function(ruleName) {
+pexprs.Apply.prototype.assertChoicesHaveUniformArity = function (ruleName) {
   // The arities of the parameter expressions is required to be 1 by
   // `assertAllApplicationsAreValid()`.
 };

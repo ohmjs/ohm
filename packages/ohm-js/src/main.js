@@ -35,8 +35,8 @@ export function grammar(source, optNamespace) {
     const secondGrammar = ns[grammarNames[1]];
     const interval = secondGrammar.source;
     throw new Error(
-        util.getLineAndColumnMessage(interval.sourceString, interval.startIdx) +
-        'Found more than one grammar definition -- use ohm.grammars() instead.',
+      util.getLineAndColumnMessage(interval.sourceString, interval.startIdx) +
+        'Found more than one grammar definition -- use ohm.grammars() instead.'
     );
   }
   return ns[grammarNames[0]]; // Return the one and only grammar.
@@ -50,7 +50,7 @@ export function grammars(source, optNamespace) {
       source = source.toString();
     } else {
       throw new TypeError(
-          'Expected string as first argument, got ' + common.unexpectedObjToString(source),
+        'Expected string as first argument, got ' + common.unexpectedObjToString(source)
       );
     }
   }

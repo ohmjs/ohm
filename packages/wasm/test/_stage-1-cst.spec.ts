@@ -11,7 +11,7 @@ import {
   toLiquidHtmlCST,
   toLiquidCST,
   LiquidCST,
-  ConcreteLiquidTagLiquid
+  ConcreteLiquidTagLiquid,
 } from '@shopify/liquid-html-parser/dist/stage-1-cst.js';
 import {VOID_ELEMENTS} from '@shopify/liquid-html-parser';
 
@@ -28,12 +28,12 @@ describe('Unit: Stage 1 (CST)', () => {
     const testCases = [
       {
         expectPath: makeExpectPath('toLiquidHtmlCST(text)'),
-        toCST: toLiquidHtmlCST
+        toCST: toLiquidHtmlCST,
       },
       {
         expectPath: makeExpectPath('toLiquidCST(text)'),
-        toCST: toLiquidCST
-      }
+        toCST: toLiquidCST,
+      },
     ];
 
     let cst: LiquidHtmlCST | LiquidCST;
@@ -56,7 +56,7 @@ describe('Unit: Stage 1 (CST)', () => {
       it('should parse strings', () => {
         [
           {expression: `"string o' string"`, value: `string o' string`, single: false},
-          {expression: `'He said: "hi!"'`, value: `He said: "hi!"`, single: true}
+          {expression: `'He said: "hi!"'`, value: `He said: "hi!"`, single: true},
         ].forEach(({expression, value, single}) => {
           for (const {toCST, expectPath} of testCases) {
             cst = toCST(`{{ ${expression} }}`);
@@ -78,7 +78,7 @@ describe('Unit: Stage 1 (CST)', () => {
           {expression: `1.02`, value: '1.02'},
           {expression: `0`, value: '0'},
           {expression: `-0`, value: '-0'},
-          {expression: `-0.0`, value: '-0.0'}
+          {expression: `-0.0`, value: '-0.0'},
         ].forEach(({expression, value}) => {
           for (const {toCST, expectPath} of testCases) {
             cst = toCST(`{{ ${expression} }}`);
@@ -99,7 +99,7 @@ describe('Unit: Stage 1 (CST)', () => {
           {expression: `null`, value: null},
           {expression: `true`, value: true},
           {expression: `blank`, value: ''},
-          {expression: `empty`, value: ''}
+          {expression: `empty`, value: ''},
         ].forEach(({expression, value}) => {
           for (const {toCST, expectPath} of testCases) {
             cst = toCST(`{{ ${expression} }}`);
@@ -125,7 +125,7 @@ describe('Unit: Stage 1 (CST)', () => {
         const v = (name: string, lookups: (string | number | Lookup)[] = []): Lookup => ({
           type: 'VariableLookup',
           name,
-          lookups
+          lookups,
         });
         [
           {expression: `x`, name: 'x', lookups: []},
@@ -143,7 +143,7 @@ describe('Unit: Stage 1 (CST)', () => {
           {expression: `x[y]`, name: 'x', lookups: [v('y')]},
           {expression: `x[y.z]`, name: 'x', lookups: [v('y', ['z'])]},
           {expression: `true_thing`, name: 'true_thing', lookups: []},
-          {expression: `null_thing`, name: 'null_thing', lookups: []}
+          {expression: `null_thing`, name: 'null_thing', lookups: []},
         ].forEach(({expression, name, lookups}) => {
           for (const {toCST, expectPath} of testCases) {
             cst = toCST(`{{ ${expression} }}`);
@@ -202,18 +202,18 @@ describe('Unit: Stage 1 (CST)', () => {
           {
             expression: `(0..5)`,
             start: {value: '0', type: 'Number'},
-            end: {value: '5', type: 'Number'}
+            end: {value: '5', type: 'Number'},
           },
           {
             expression: `( 0 .. 5 )`,
             start: {value: '0', type: 'Number'},
-            end: {value: '5', type: 'Number'}
+            end: {value: '5', type: 'Number'},
           },
           {
             expression: `(true..false)`,
             start: {value: true, type: 'LiquidLiteral'},
-            end: {value: false, type: 'LiquidLiteral'}
-          }
+            end: {value: false, type: 'LiquidLiteral'},
+          },
         ].forEach(({expression, start, end}) => {
           for (const {toCST, expectPath} of testCases) {
             cst = toCST(`{{ ${expression} }}`);
@@ -243,7 +243,7 @@ describe('Unit: Stage 1 (CST)', () => {
         const namedArg = (name: string, valueType: string) => ({
           type: 'NamedArgument',
           name,
-          valueType
+          valueType,
         });
         [
           {expression: '', filters: []},
@@ -251,24 +251,24 @@ describe('Unit: Stage 1 (CST)', () => {
           {expression: `| filter1 | filter2`, filters: [filter('filter1'), filter('filter2')]},
           {
             expression: `| filter1: 'hi', 'there'`,
-            filters: [filter('filter1', [arg('String', 'hi'), arg('String', 'there')])]
+            filters: [filter('filter1', [arg('String', 'hi'), arg('String', 'there')])],
           },
           {
             expression: `| filter1: key: value, kind: 'string'`,
             filters: [
               filter('filter1', [
                 namedArg('key', 'VariableLookup'),
-                namedArg('kind', 'String')
-              ])
-            ]
+                namedArg('kind', 'String'),
+              ]),
+            ],
           },
           {
             expression: `| f1: 'hi', key: (0..1) | f2: key: value, kind: 'string'`,
             filters: [
               filter('f1', [arg('String', 'hi'), namedArg('key', 'Range')]),
-              filter('f2', [namedArg('key', 'VariableLookup'), namedArg('kind', 'String')])
-            ]
-          }
+              filter('f2', [namedArg('key', 'VariableLookup'), namedArg('kind', 'String')]),
+            ],
+          },
         ].forEach(({expression, filters}) => {
           for (const {toCST, expectPath} of testCases) {
             cst = toCST(`{{ 'hello' ${expression} }}`);
@@ -341,7 +341,7 @@ describe('Unit: Stage 1 (CST)', () => {
             {
               expression: `echo "hi"`,
               type: 'LiquidTag',
-              name: 'echo'
+              name: 'echo',
             },
             {
               expression: `
@@ -350,30 +350,30 @@ describe('Unit: Stage 1 (CST)', () => {
                   got you, eh?
                 endcomment`,
               type: 'LiquidRawTag',
-              name: 'comment'
+              name: 'comment',
             },
             {
               expression: `
                 if cond
               `,
               type: 'LiquidTagOpen',
-              name: 'if'
+              name: 'if',
             },
             {
               expression: `
                 endif
               `,
               type: 'LiquidTagClose',
-              name: 'if'
+              name: 'if',
             },
             {
               expression: `
                 # this is an inline comment
               `,
               type: 'LiquidTag',
-              name: '#'
-            }
-          ]
+              name: '#',
+            },
+          ],
         ].forEach(expressions => {
           for (const {toCST, expectPath} of testCases) {
             cst = toCST(`{% liquid \n${expressions.map(x => x.expression).join('\n')} -%}`);
@@ -400,7 +400,7 @@ describe('Unit: Stage 1 (CST)', () => {
           const commentExpr = [
             'comment',
             commentBodyContainingNestedComment,
-            'endcomment'
+            'endcomment',
           ].join(statementSep);
           const testStr = ['{% liquid', commentExpr, '%}'].join('\n');
           cst = toCST(testStr);
@@ -435,7 +435,7 @@ describe('Unit: Stage 1 (CST)', () => {
       it('should parse the echo tag as variables', () => {
         [
           {expression: `"hi"`, expressionType: 'String', expressionValue: 'hi', filters: []},
-          {expression: `x | f`, expressionType: 'VariableLookup', filters: ['f']}
+          {expression: `x | f`, expressionType: 'VariableLookup', filters: ['f']},
         ].forEach(({expression, expressionType, expressionValue, filters}) => {
           for (const {toCST, expectPath} of testCases) {
             cst = toCST(`{% echo ${expression} -%}`);
@@ -460,14 +460,14 @@ describe('Unit: Stage 1 (CST)', () => {
             name: 'x',
             expressionType: 'String',
             expressionValue: 'hi',
-            filters: []
+            filters: [],
           },
           {
             expression: `z = y | f`,
             name: 'z',
             expressionType: 'VariableLookup',
-            filters: ['f']
-          }
+            filters: ['f'],
+          },
         ].forEach(({expression, name, expressionType, expressionValue, filters}) => {
           for (const {toCST, expectPath} of testCases) {
             cst = toCST(`{% assign ${expression} -%}`);
@@ -491,13 +491,13 @@ describe('Unit: Stage 1 (CST)', () => {
           {
             expression: `a, "string", 10`,
             groupName: null,
-            args: [{type: 'VariableLookup'}, {type: 'String'}, {type: 'Number'}]
+            args: [{type: 'VariableLookup'}, {type: 'String'}, {type: 'Number'}],
           },
           {
             expression: `var: a, "string", 10`,
             groupName: {type: 'VariableLookup'},
-            args: [{type: 'VariableLookup'}, {type: 'String'}, {type: 'Number'}]
-          }
+            args: [{type: 'VariableLookup'}, {type: 'String'}, {type: 'Number'}],
+          },
         ].forEach(({expression, groupName, args}) => {
           for (const {toCST, expectPath} of testCases) {
             cst = toCST(`{% cycle ${expression} -%}`);
@@ -526,62 +526,62 @@ describe('Unit: Stage 1 (CST)', () => {
             snippetType: 'String',
             alias: null,
             renderVariableExpression: null,
-            namedArguments: []
+            namedArguments: [],
           },
           {
             expression: `"snippet" as foo`,
             snippetType: 'String',
             alias: {
-              value: 'foo'
+              value: 'foo',
             },
             renderVariableExpression: null,
-            namedArguments: []
+            namedArguments: [],
           },
           {
             expression: `"snippet" with "string" as foo`,
             snippetType: 'String',
             alias: {
-              value: 'foo'
+              value: 'foo',
             },
             renderVariableExpression: {
               kind: 'with',
               name: {
-                type: 'String'
-              }
+                type: 'String',
+              },
             },
-            namedArguments: []
+            namedArguments: [],
           },
           {
             expression: `"snippet" for products as product`,
             snippetType: 'String',
             alias: {
-              value: 'product'
+              value: 'product',
             },
             renderVariableExpression: {
               kind: 'for',
               name: {
-                type: 'VariableLookup'
-              }
+                type: 'VariableLookup',
+              },
             },
-            namedArguments: []
+            namedArguments: [],
           },
           {
             expression: `variable with "string" as foo, key1: val1, key2: "hi"`,
             snippetType: 'VariableLookup',
             alias: {
-              value: 'foo'
+              value: 'foo',
             },
             renderVariableExpression: {
               kind: 'with',
               name: {
-                type: 'String'
-              }
+                type: 'String',
+              },
             },
             namedArguments: [
               {name: 'key1', valueType: 'VariableLookup'},
-              {name: 'key2', valueType: 'String'}
-            ]
-          }
+              {name: 'key2', valueType: 'String'},
+            ],
+          },
         ].forEach(
           ({expression, snippetType, renderVariableExpression, alias, namedArguments}) => {
             for (const {toCST, expectPath} of testCases) {
@@ -665,7 +665,7 @@ describe('Unit: Stage 1 (CST)', () => {
             {name: 'closest.product', valueType: 'VariableLookup'},
             {name: 'closest.metaobject.test', valueType: 'VariableLookup'},
             {name: 'id', valueType: 'String'},
-            {name: 'type', valueType: 'String'}
+            {name: 'type', valueType: 'String'},
           ];
           namedArguments.forEach(({name, valueType}, i) => {
             expectPath(cst, `0.markup.args.${i}.type`).to.equal('NamedArgument');
@@ -682,7 +682,7 @@ describe('Unit: Stage 1 (CST)', () => {
       it('should parse the form tag open markup as arguments', () => {
         [
           {expression: `product`, args: [{type: 'VariableLookup'}]},
-          {expression: `"product"`, args: [{type: 'String'}]}
+          {expression: `"product"`, args: [{type: 'String'}]},
         ].forEach(({expression, args}) => {
           for (const {toCST, expectPath} of testCases) {
             cst = toCST(`{% form ${expression} -%}`);
@@ -705,28 +705,28 @@ describe('Unit: Stage 1 (CST)', () => {
               variableName: 'product',
               collection: {type: 'VariableLookup'},
               reversed: null,
-              args: []
+              args: [],
             },
             {
               expression: `i in (0..x)`,
               variableName: 'i',
               collection: {type: 'Range'},
               reversed: null,
-              args: []
+              args: [],
             },
             {
               expression: `product in all_products reversed`,
               variableName: 'product',
               collection: {type: 'VariableLookup'},
               reversed: 'reversed',
-              args: []
+              args: [],
             },
             {
               expression: `product in all_products limit: 10`,
               variableName: 'product',
               collection: {type: 'VariableLookup'},
               reversed: null,
-              args: [{type: 'NamedArgument', name: 'limit', value: {type: 'Number'}}]
+              args: [{type: 'NamedArgument', name: 'limit', value: {type: 'Number'}}],
             },
             {
               expression: `product in all_products reversed limit: 10 offset:var`,
@@ -735,9 +735,9 @@ describe('Unit: Stage 1 (CST)', () => {
               reversed: 'reversed',
               args: [
                 {type: 'NamedArgument', name: 'limit', value: {type: 'Number'}},
-                {type: 'NamedArgument', name: 'offset', value: {type: 'VariableLookup'}}
-              ]
-            }
+                {type: 'NamedArgument', name: 'offset', value: {type: 'VariableLookup'}},
+              ],
+            },
           ].forEach(({expression, variableName, collection, reversed, args}) => {
             for (const {toCST, expectPath} of testCases) {
               cst = toCST(`{% ${tagName} ${expression} -%}`);
@@ -762,7 +762,7 @@ describe('Unit: Stage 1 (CST)', () => {
       it('should parse case arguments as a singular liquid expression', () => {
         [
           {expression: `"string"`, type: 'String'},
-          {expression: `var.lookup`, type: 'VariableLookup'}
+          {expression: `var.lookup`, type: 'VariableLookup'},
         ].forEach(({expression, type}) => {
           for (const {toCST, expectPath} of testCases) {
             cst = toCST(`{% case ${expression} -%}`);
@@ -789,12 +789,12 @@ describe('Unit: Stage 1 (CST)', () => {
           {expression: `"string"`, args: [{type: 'String'}]},
           {
             expression: `"string", var.lookup`,
-            args: [{type: 'String'}, {type: 'VariableLookup'}]
+            args: [{type: 'String'}, {type: 'VariableLookup'}],
           },
           {
             expression: `"string" or var.lookup`,
-            args: [{type: 'String'}, {type: 'VariableLookup'}]
-          }
+            args: [{type: 'String'}, {type: 'VariableLookup'}],
+          },
         ].forEach(({expression, args}) => {
           for (const {toCST, expectPath} of testCases) {
             cst = toCST(`{% when ${expression} -%}`);
@@ -813,25 +813,25 @@ describe('Unit: Stage 1 (CST)', () => {
           {
             expression: `collection.products by 50`,
             collection: {type: 'VariableLookup'},
-            pageSize: {type: 'Number'}
+            pageSize: {type: 'Number'},
           },
           {
             expression: `collection.products by setting.value`,
             collection: {type: 'VariableLookup'},
-            pageSize: {type: 'VariableLookup'}
+            pageSize: {type: 'VariableLookup'},
           },
           {
             expression: `collection.products by setting.value window_size: 2`,
             collection: {type: 'VariableLookup'},
             pageSize: {type: 'VariableLookup'},
-            args: [{type: 'Number'}]
+            args: [{type: 'Number'}],
           },
           {
             expression: `collection.products by setting.value, window_size: 2`,
             collection: {type: 'VariableLookup'},
             pageSize: {type: 'VariableLookup'},
-            args: [{type: 'Number'}]
-          }
+            args: [{type: 'Number'}],
+          },
         ].forEach(({expression, collection, pageSize, args}) => {
           for (const {toCST, expectPath} of testCases) {
             cst = toCST(`{% paginate ${expression} -%}`);
@@ -858,14 +858,14 @@ describe('Unit: Stage 1 (CST)', () => {
           [
             {
               expression: 'a',
-              conditions: [{relation: null, conditional: {type: 'VariableLookup'}}]
+              conditions: [{relation: null, conditional: {type: 'VariableLookup'}}],
             },
             {
               expression: 'a and "string"',
               conditions: [
                 {relation: null, conditional: {type: 'VariableLookup'}},
-                {relation: 'and', conditional: {type: 'String'}}
-              ]
+                {relation: 'and', conditional: {type: 'String'}},
+              ],
             },
             {
               expression: 'a and "string" or a<1',
@@ -878,11 +878,11 @@ describe('Unit: Stage 1 (CST)', () => {
                     type: 'Comparison',
                     comparator: '<',
                     left: {type: 'VariableLookup'},
-                    right: {type: 'Number'}
-                  }
-                }
-              ]
-            }
+                    right: {type: 'Number'},
+                  },
+                },
+              ],
+            },
           ].forEach(({expression, conditions}) => {
             for (const {toCST, expectPath} of testCases) {
               cst = toCST(`{% ${tagName} ${expression} -%}`);
@@ -1564,8 +1564,8 @@ describe('Unit: Stage 1 (CST)', () => {
             text: `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN"
              "http://www.w3.org/TR/html4/frameset.dtd">`,
             legacyDoctypeString: `PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN"
-             "http://www.w3.org/TR/html4/frameset.dtd"`
-          }
+             "http://www.w3.org/TR/html4/frameset.dtd"`,
+          },
         ].forEach(({text, legacyDoctypeString}) => {
           cst = toLiquidHtmlCST(text);
           expectPath(cst, '0.type').to.equal('HtmlDoctype');
@@ -1755,12 +1755,12 @@ describe('Unit: Stage 1 (CST)', () => {
           {type: 'AttrDoubleQuoted', name: 'double', quote: '"'},
           {type: 'AttrDoubleQuoted', name: 'double', quote: '"'},
           {type: 'AttrDoubleQuoted', name: 'double', quote: '"'},
-          {type: 'AttrUnquoted', name: 'unquoted', quote: ''}
+          {type: 'AttrUnquoted', name: 'unquoted', quote: ''},
         ].forEach(testConfig => {
           [
             `<div ${testConfig.name}=${testConfig.quote}${testConfig.name}${testConfig.quote}>`,
             `<div ${testConfig.name}=${testConfig.quote}${testConfig.name}${testConfig.quote} >`,
-            `<div\n${testConfig.name}=${testConfig.quote}${testConfig.name}${testConfig.quote}\n>`
+            `<div\n${testConfig.name}=${testConfig.quote}${testConfig.name}${testConfig.quote}\n>`,
           ].forEach(text => {
             cst = toLiquidHtmlCST(text);
             expectPath(cst, '0.attrList.0.type').to.equal(testConfig.type);
@@ -1774,7 +1774,7 @@ describe('Unit: Stage 1 (CST)', () => {
             [
               `<div ${testConfig.name}=${testConfig.quote}https://{{ name }}${testConfig.quote}>`,
               `<div ${testConfig.name}=${testConfig.quote}https://{{ name }}${testConfig.quote} >`,
-              `<div\n${testConfig.name}=${testConfig.quote}https://{{ name }}${testConfig.quote}\n>`
+              `<div\n${testConfig.name}=${testConfig.quote}https://{{ name }}${testConfig.quote}\n>`,
             ].forEach(text => {
               cst = toLiquidHtmlCST(text);
               expectPath(cst, '0.attrList.0.value.1.type').to.eql(
@@ -1783,12 +1783,11 @@ describe('Unit: Stage 1 (CST)', () => {
               );
             });
           }
-
           // `should accept top level liquid nodes that contain ${testConfig.type}`
           [
             `<div {% if A %}${testConfig.name}=${testConfig.quote}https://name${testConfig.quote}{% endif %}>`,
             `<div {% if A %} ${testConfig.name}=${testConfig.quote}https://name${testConfig.quote} {% endif %}>`,
-            `<div\n{% if A %}\n${testConfig.name}=${testConfig.quote}https://name${testConfig.quote}\n{% endif %}>`
+            `<div\n{% if A %}\n${testConfig.name}=${testConfig.quote}https://name${testConfig.quote}\n{% endif %}>`,
           ].forEach(text => {
             cst = toLiquidHtmlCST(text);
             expectPath(cst, '0.attrList.0.type').to.eql('LiquidTagOpen', text);
@@ -1813,16 +1812,16 @@ describe('Unit: Stage 1 (CST)', () => {
         [
           {
             testCase: '<div>  \n hello  world  </div>',
-            expected: 'hello  world'
+            expected: 'hello  world',
           },
           {testCase: '<div>  \n bb  </div>', expected: 'bb'},
           {testCase: '<div>  \n b  </div>', expected: 'b'},
           {
             testCase: '{% if a %}  \n hello  world  {% endif %}',
-            expected: 'hello  world'
+            expected: 'hello  world',
           },
           {testCase: '{% if a %}  \n bb  {% endif %}', expected: 'bb'},
-          {testCase: '{% if a %}  \n b  {% endif %}', expected: 'b'}
+          {testCase: '{% if a %}  \n b  {% endif %}', expected: 'b'},
         ].forEach(({testCase, expected}) => {
           cst = toLiquidHtmlCST(testCase);
           expectPath(cst, '1.type').to.equal('TextNode');

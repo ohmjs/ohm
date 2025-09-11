@@ -8,7 +8,7 @@ const CstNodeType = {
   NONTERMINAL: 0,
   TERMINAL: 1,
   ITER_FLAG: 2,
-  OPTIONAL: 3
+  OPTIONAL: 3,
 };
 
 // Bit flags for Unicode categories, based on the order that they appear in
@@ -20,7 +20,7 @@ const UnicodeCategoryNames = [
   'Ll', // Lowercase_Letter
   'Lt', // Titlecase_Letter
   'Lm', // Modifier_Letter
-  'Lo' // Other_Letter
+  'Lo', // Other_Letter
 ];
 
 const utf8 = new TextDecoder('utf-8');
@@ -44,7 +44,7 @@ export class WasmMatcher {
     env: {
       abort() {
         throw new Error('abort');
-      }
+      },
     },
     // For imports from ohmRuntime.ts.
     ohmRuntime: {
@@ -62,8 +62,8 @@ export class WasmMatcher {
       matchUnicodeChar: (catBitmap: number, pos: number) => {
         const re = regexFromCategoryBitmap(catBitmap);
         return re.test(this._nextCodePoint());
-      }
-    }
+      },
+    },
   };
   _ruleIds = new Map<string, number>();
   _ruleNames: string[] = [];
@@ -132,7 +132,7 @@ export class WasmMatcher {
   ): Promise<WasmMatcher> {
     const {module, instance} = await WebAssembly.instantiate(source, {
       ...this._imports,
-      debug: debugImports
+      debug: debugImports,
     });
     this._instance = instance;
     this._extractRuleIds(module);
@@ -214,7 +214,7 @@ export class CstNode {
     Object.defineProperties(this, {
       _ruleNames: {value: ruleNames},
       _view: {value: dataView},
-      _children: {writable: true}
+      _children: {writable: true},
     });
     this._base = ptr;
     this.startIdx = startIdx;

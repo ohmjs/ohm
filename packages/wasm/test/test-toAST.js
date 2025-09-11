@@ -9,7 +9,7 @@ import {toAST} from 'ohm-js/extras';
 import {scriptRel, wasmMatcherForGrammar} from './_helpers.js';
 
 const arithmetic = ohm.grammar(
-    readFileSync(scriptRel('../../ohm-js/test/data/arithmetic.ohm')),
+  readFileSync(scriptRel('../../ohm-js/test/data/arithmetic.ohm'))
 );
 
 // A version of the arithmetic grammar that contains a few more elements:
@@ -186,7 +186,6 @@ test('toAST basic', async t => {
   t.deepEqual(ast, expected, 'proper AST with explicity reintroduced node');
 });
 
-// eslint-disable-next-line ava/no-skip-test
 test('listOf and friends - #394', async t => {
   // By default, toAST assumes that lexical rules represent indivisible tokens,
   // but that doesn't make sense for listOf, nonemptyListOf, and emptyListOf.
@@ -218,24 +217,24 @@ test('listOf and friends - #394', async t => {
   // // Ensure that it's still be possible to override the default mappings.
 
   t.is(
-      ast('0+1', {
-        nonemptyListOf: (first, sep, rest) => 'XX',
-      }),
-      'XX',
+    ast('0+1', {
+      nonemptyListOf: (first, sep, rest) => 'XX',
+    }),
+    'XX'
   );
 
   t.is(
-      ast('1+2', {
-        nonemptyListOf: 0,
-      }),
-      '1',
+    ast('1+2', {
+      nonemptyListOf: 0,
+    }),
+    '1'
   );
 
   t.is(
-      ast('', {
-        emptyListOf: () => 'nix',
-      }),
-      'nix',
+    ast('', {
+      emptyListOf: () => 'nix',
+    }),
+    'nix'
   );
 });
 
@@ -250,23 +249,23 @@ function arbitraryMapping() {
     // If a number, it's constrained to be less than the rule arity, because
     // the meaning is "put child[i] in this prop".
     const arities = new Map(
-        ruleNames.map(ruleName => [ruleName, arithmetic.rules[ruleName].body.getArity()]),
+      ruleNames.map(ruleName => [ruleName, arithmetic.rules[ruleName].body.getArity()])
     );
     const model = Object.fromEntries(
-        ruleNames.map(ruleName => {
-          const arity = arities.get(ruleName);
-          return [
-            ruleName,
-            fc.dictionary(
-                fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz'),
-                fc.oneof(
-                    fc.nat({max: arity - 1}),
-                    fc.string(),
-                    fc.constant(children => children.map(c => c.ctorName)),
-                ),
-            ),
-          ];
-        }),
+      ruleNames.map(ruleName => {
+        const arity = arities.get(ruleName);
+        return [
+          ruleName,
+          fc.dictionary(
+            fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz'),
+            fc.oneof(
+              fc.nat({max: arity - 1}),
+              fc.string(),
+              fc.constant(children => children.map(c => c.ctorName))
+            )
+          ),
+        ];
+      })
     );
     return fc.record(model);
   });

@@ -18,7 +18,7 @@ const outputPath = inputPath + '_sections.ts';
 
 const buf = fs.readFileSync(inputPath);
 const sections = extractSections(buf, {
-  destImportCountAdjustment: debugFnCount
+  destImportCountAdjustment: debugFnCount,
 });
 
 // We've rewritten every funcidx in the function bodies to account for a

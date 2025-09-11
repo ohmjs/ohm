@@ -68,9 +68,9 @@ function generateRecipe(grammarPath, grammars, writer, isEsm) {
   const outputFilename = `${grammarPath}-bundle.js`;
   const isSingleGrammar = Object.keys(grammars).length === 1;
 
-  let output = isEsm ?
-    "import {makeRecipe} from 'ohm-js';" :
-    "'use strict';const {makeRecipe}=require('ohm-js');";
+  let output = isEsm
+    ? "import {makeRecipe} from 'ohm-js';"
+    : "'use strict';const {makeRecipe}=require('ohm-js');";
 
   // If it's a single-grammar source file, the default export is the grammar.
   // Otherwise, the export is a (possibly empty) object containing the grammars.
@@ -79,9 +79,9 @@ function generateRecipe(grammarPath, grammars, writer, isEsm) {
   }
   for (const [name, grammar] of Object.entries(grammars)) {
     const {superGrammar} = grammar;
-    const superGrammarExpr = superGrammar.isBuiltIn() ?
-      undefined :
-      `result.${superGrammar.name}`;
+    const superGrammarExpr = superGrammar.isBuiltIn()
+      ? undefined
+      : `result.${superGrammar.name}`;
     output += isSingleGrammar ? 'const result=' : `result.${name}=`;
     output += `makeRecipe(${grammar.toRecipe(superGrammarExpr)});`;
   }

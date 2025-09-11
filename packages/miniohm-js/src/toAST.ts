@@ -8,7 +8,7 @@ export function toAstWithMapping(
   const handleEmptyListOf = () => [];
   const handleNonemptyListOf = (first: CstNode, iterSepAndElem: CstNode) => [
     visit(first),
-    ...iterSepAndElem.map((_, elem) => visit(elem))
+    ...iterSepAndElem.map((_, elem) => visit(elem)),
   ];
 
   mapping = {
@@ -18,7 +18,7 @@ export function toAstWithMapping(
     EmptyListOf: handleEmptyListOf,
     nonemptyListOf: handleNonemptyListOf,
     NonemptyListOf: handleNonemptyListOf,
-    ...mapping
+    ...mapping,
   };
 
   function visitTerminal(node: CstNode): string {
@@ -52,7 +52,7 @@ export function toAstWithMapping(
     // named/mapped children or unnamed children ('0', '1', '2', ...)
     const propMap = mapping[ruleName] || children;
     const ans: Record<string, unknown> = {
-      type: ruleName
+      type: ruleName,
     };
     // eslint-disable-next-line guard-for-in
     for (const prop in propMap) {

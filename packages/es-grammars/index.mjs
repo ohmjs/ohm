@@ -1,3 +1,5 @@
+/* global URL */
+
 import {readFileSync} from 'node:fs';
 import * as ohm from 'ohm-js';
 

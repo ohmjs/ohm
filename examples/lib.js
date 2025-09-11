@@ -1,6 +1,6 @@
-/* eslint-env browser */
+/* global document, Node, window */
 
-window.makeElement = function(tagName, ...children) {
+window.makeElement = function (tagName, ...children) {
   const element = document.createElement(tagName);
   for (const child of children) {
     const childEl = typeof child === 'string' ? document.createTextNode(child) : child;
@@ -9,13 +9,13 @@ window.makeElement = function(tagName, ...children) {
   return element;
 };
 
-window.removeChildren = function(element) {
+window.removeChildren = function (element) {
   while (element.firstChild) {
     element.removeChild(element.firstChild);
   }
 };
 
-window.show = function(divId, what) {
+window.show = function (divId, what) {
   if (!(what instanceof Node)) {
     what = document.createTextNode('' + what);
   }
@@ -26,7 +26,7 @@ window.show = function(divId, what) {
   div.appendChild(what);
 };
 
-window.repeat = function(s, n) {
+window.repeat = function (s, n) {
   const arr = [];
   while (n-- > 0) {
     arr.push(s);

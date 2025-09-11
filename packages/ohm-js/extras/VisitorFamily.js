@@ -76,11 +76,11 @@ export class VisitorFamily {
     this._shapes = config.shapes;
     this._getTag = config.getTag;
 
-    this.Adapter = function(thing, family) {
+    this.Adapter = function (thing, family) {
       this._adaptee = thing;
       this._family = family;
     };
-    this.Adapter.prototype.valueOf = function() {
+    this.Adapter.prototype.valueOf = function () {
       throw new Error('heeey!');
     };
     this.operations = {};
@@ -109,15 +109,15 @@ export class VisitorFamily {
       assert(k in this._getChildren, "Unrecognized action name '" + k + "'");
       const action = dict[k];
       assert(
-          typeof action === 'function',
-          "Key '" + k + "': expected function, got " + action,
+        typeof action === 'function',
+        "Key '" + k + "': expected function, got " + action
       );
       if (k in this._arities) {
         const expected = this._arities[k];
         const actual = dict[k].length;
         assert(
-            actual === expected,
-            "Action '" + k + "' has the wrong arity: expected " + expected + ', got ' + actual,
+          actual === expected,
+          "Action '" + k + "' has the wrong arity: expected " + expected + ', got ' + actual
         );
       }
     });
@@ -134,7 +134,7 @@ export class VisitorFamily {
     };
 
     const family = this;
-    this.Adapter.prototype[name] = function(...args) {
+    this.Adapter.prototype[name] = function (...args) {
       const tag = family._getTag(this._adaptee);
       assert(tag in family._getChildren, "getTag returned unrecognized tag '" + tag + "'");
       assert(tag in actions, "No action for '" + tag + "' in operation '" + name + "'");
@@ -149,8 +149,8 @@ export class VisitorFamily {
       const oldArgs = this.args;
       this.args = argsObj;
       const ans = actions[tag].apply(
-          this,
-          family._getChildren[tag](this._adaptee, family._wrap),
+        this,
+        family._getChildren[tag](this._adaptee, family._wrap)
       );
       this.args = oldArgs;
       return ans;

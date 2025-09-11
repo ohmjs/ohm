@@ -29,14 +29,14 @@ export class PosInfo {
     const indexOfFirstInvolvedRule =
       applicationMemoKeyStack.indexOf(headApplication.toMemoKey()) + 1;
     const involvedApplicationMemoKeys = applicationMemoKeyStack.slice(
-        indexOfFirstInvolvedRule,
+      indexOfFirstInvolvedRule
     );
 
-    memoRec.isInvolved = function(applicationMemoKey) {
+    memoRec.isInvolved = function (applicationMemoKey) {
       return involvedApplicationMemoKeys.indexOf(applicationMemoKey) >= 0;
     };
 
-    memoRec.updateInvolvedApplicationMemoKeys = function() {
+    memoRec.updateInvolvedApplicationMemoKeys = function () {
       for (let idx = indexOfFirstInvolvedRule; idx < applicationMemoKeyStack.length; idx++) {
         const applicationMemoKey = applicationMemoKeyStack[idx];
         if (!this.isInvolved(applicationMemoKey)) {
@@ -70,8 +70,8 @@ export class PosInfo {
     this.memo[memoKey] = memoRec;
     this.maxExaminedLength = Math.max(this.maxExaminedLength, memoRec.examinedLength);
     this.maxRightmostFailureOffset = Math.max(
-        this.maxRightmostFailureOffset,
-        memoRec.rightmostFailureOffset,
+      this.maxRightmostFailureOffset,
+      memoRec.rightmostFailureOffset
     );
     return memoRec;
   }
@@ -93,8 +93,8 @@ export class PosInfo {
       } else {
         this.maxExaminedLength = Math.max(this.maxExaminedLength, memoRec.examinedLength);
         this.maxRightmostFailureOffset = Math.max(
-            this.maxRightmostFailureOffset,
-            memoRec.rightmostFailureOffset,
+          this.maxRightmostFailureOffset,
+          memoRec.rightmostFailureOffset
         );
       }
     });

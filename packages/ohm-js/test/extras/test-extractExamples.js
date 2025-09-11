@@ -72,13 +72,13 @@ function getExamples(input) {
 test('example comments - negative examples', t => {
   t.deepEqual(getExamples('//- "blah"\n'), [{example: 'blah', shouldMatch: false}]);
   t.deepEqual(
-      getExamples(`
+    getExamples(`
       //+ "blah"
       //- "wooo"`),
-      [
-        {example: 'blah', shouldMatch: true},
-        {example: 'wooo', shouldMatch: false},
-      ],
+    [
+      {example: 'blah', shouldMatch: true},
+      {example: 'wooo', shouldMatch: false},
+    ]
   );
   //  t.throws(() => getExamples('//-"x"'), null, 'space required after "-"');
   t.deepEqual(getExamples('// - "x"'), [], 'parsed as a normal comment');
@@ -86,39 +86,39 @@ test('example comments - negative examples', t => {
 
 test('example comments - corner cases', t => {
   t.deepEqual(
-      getExamples('//+ "blah"\n\n'),
-      [{example: 'blah', shouldMatch: true}],
-      'extra blank lines before rule',
+    getExamples('//+ "blah"\n\n'),
+    [{example: 'blah', shouldMatch: true}],
+    'extra blank lines before rule'
   );
   t.deepEqual(
-      getExamples(`
+    getExamples(`
       //+ "blah"
       //+    "wooo"`),
-      [
-        {example: 'blah', shouldMatch: true},
-        {example: 'wooo', shouldMatch: true},
-      ],
-      'extra leading space',
+    [
+      {example: 'blah', shouldMatch: true},
+      {example: 'wooo', shouldMatch: true},
+    ],
+    'extra leading space'
   );
   // t.throws(() => {
   //   t.deepEqual(getExamples('//+ '), [], 'no terminals');
   // });
   t.deepEqual(getExamples('//+ "" '), [{example: '', shouldMatch: true}], 'trailing space');
   t.deepEqual(
-      getExamples('//+ ""\n//- ""'),
-      [
-        {example: '', shouldMatch: true},
-        {example: '', shouldMatch: false},
-      ],
-      'contradictory examples',
+    getExamples('//+ ""\n//- ""'),
+    [
+      {example: '', shouldMatch: true},
+      {example: '', shouldMatch: false},
+    ],
+    'contradictory examples'
   );
   t.deepEqual(
-      getExamples('//+ ""\n//+ ""'),
-      [
-        {example: '', shouldMatch: true},
-        {example: '', shouldMatch: true},
-      ],
-      'duplicate examples',
+    getExamples('//+ ""\n//+ ""'),
+    [
+      {example: '', shouldMatch: true},
+      {example: '', shouldMatch: true},
+    ],
+    'duplicate examples'
   );
 });
 

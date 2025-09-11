@@ -1,3 +1,5 @@
+/* global URL */
+
 import {readFileSync} from 'fs';
 import assert from 'node:assert/strict';
 import process from 'node:process';
@@ -21,7 +23,7 @@ const log = {
   },
   debug(msg, ...args) {
     if (loglevel >= 3) console.error(msg, ...args);
-  }
+  },
 };
 /* eslint-enable no-console */
 
@@ -38,7 +40,7 @@ const literalToOhm = {
   ZWNBSP: raw`"\uFEFF"`,
   LS: raw`"\u2028"`,
   PS: raw`"\u2029"`,
-  USP: 'unicodeZs'
+  USP: 'unicodeZs',
 };
 
 function safelyReplace(str, pattern, replacement) {
@@ -148,7 +150,7 @@ semantics.addOperation(
     ) {
       log.debug(`handleProduction: ${nonterminal.sourceString}`, {
         rhs: rhs.sourceString,
-        kind
+        kind,
       });
       // const isLexical = parameterListOpt === undefined;
       const isLexical = kind === 'LEXICAL';
@@ -235,7 +237,7 @@ semantics.addOperation(
           });
         }
         // Sort the alternatives so that "obviously" left-recursive rules come first.
-        const {productions, ruleName} = this.context;
+        const {ruleName} = this.context;
         sentences.sort(([a], [b]) => {
           return (b.isLeftRecursive(ruleName) ? 1 : 0) - (a.isLeftRecursive(ruleName) ? 1 : 0);
         });
@@ -244,9 +246,6 @@ semantics.addOperation(
       },
       rhsSentence(_, termIter) {
         return termIter.children.map(c => c.toOhm()).join(' ');
-      },
-      application_basic(nonterminal) {
-        return nonterminal.toOhm();
       },
       term_opt(application, _) {
         return `${application.toOhm()}?`;
@@ -371,7 +370,7 @@ semantics.addOperation(
           return literalToOhm[name];
         }
         return `"" /* FIXME ${this.sourceString} */`;
-      }
+      },
     };
   })()
 );
@@ -393,7 +392,7 @@ semantics.addOperation('getAdditionalRules', {
       return ruleNames.map(name => `${name} = "${name}" ~identifierPart`);
     }
     return [];
-  }
+  },
 });
 
 // Extracts all of the terminals from the body of one of the reservedWordProductions.
@@ -413,7 +412,7 @@ semantics.addOperation('getReservedWordTerminals()', {
   },
   term_link(_) {
     return '';
-  }
+  },
 });
 
 semantics.addAttribute('simpleArity', {
@@ -423,7 +422,7 @@ semantics.addAttribute('simpleArity', {
       arity += child.sourceString === '[empty]' ? 0 : 1;
     }
     return arity;
-  }
+  },
 });
 
 semantics.addAttribute('allParameters', {
@@ -443,7 +442,7 @@ semantics.addAttribute('allParameters', {
   },
   parameter(_first, _rest) {
     return this.sourceString;
-  }
+  },
 });
 
 semantics.addOperation('isLeftRecursive(containingRuleName)', {
@@ -453,7 +452,7 @@ semantics.addOperation('isLeftRecursive(containingRuleName)', {
       return firstTerm.ruleNameForApplication === this.args.containingRuleName;
     }
     return false;
-  }
+  },
 });
 
 semantics.addAttribute('ruleNameForApplication', {
@@ -489,7 +488,7 @@ semantics.addAttribute('ruleNameForApplication', {
   },
   application_basic(nonterminal) {
     return nonterminal.toOhm();
-  }
+  },
 });
 
 function getOhmArgs(root, ruleName, argumentArr) {
@@ -521,11 +520,11 @@ semantics.addAttribute('productionsByName', {
         return [prod.ruleNameForProduction, prod];
       })
     );
-  }
+  },
 });
 
 // Returns a Set containing all the reserved words defined in the grammar.
-// Note that the words are all double-quoted like an Ohm terminal — e.g., `"class"`.
+// Note that the words are all double-quoted like an Ohm terminal — e.g., `"class"`.
 semantics.addAttribute('reservedWords', {
   Productions(productionIter) {
     const ans = new Set();
@@ -542,7 +541,7 @@ semantics.addAttribute('reservedWords', {
       return new Set(rhs.getReservedWordTerminals().map(t => t.toOhm()));
     }
     return new Set([]);
-  }
+  },
 });
 
 semantics.addAttribute('ruleNameForProduction', {
@@ -551,7 +550,7 @@ semantics.addAttribute('ruleNameForProduction', {
   },
   Production_syntactic(nonterminal, parameterListOpt, _, rhs) {
     return syntacticRuleName(nonterminal.sourceString);
-  }
+  },
 });
 
 semantics.addAttribute('argumentInfo', {
@@ -563,7 +562,7 @@ semantics.addAttribute('argumentInfo', {
   },
   argument_unset(_, param) {
     return {name: param.sourceString, type: 'unset'};
-  }
+  },
 });
 
 addContext(semantics, (setContext, getContext) => ({
@@ -575,7 +574,7 @@ addContext(semantics, (setContext, getContext) => ({
       ruleName: this.ruleNameForProduction,
       isLexicalProduction: true,
       isSyntacticProduction: false,
-      production: this
+      production: this,
     });
   },
   Production_syntactic(nonterminal, parameterListOpt, _, rhs) {
@@ -583,12 +582,12 @@ addContext(semantics, (setContext, getContext) => ({
       ruleName: this.ruleNameForProduction,
       isLexicalProduction: false,
       isSyntacticProduction: true,
-      production: this
+      production: this,
     });
   },
   _default(...children) {
-    children.forEach(c => setContext(c, {})); // fixme - do this inside AddContext
-  }
+    children.forEach(c => setContext(c, {})); // TODO: do this inside AddContext
+  },
 }));
 
 /*
@@ -621,7 +620,6 @@ function addContext(semantics, getActions) {
 
   semantics.addAttribute('context', {_default: defaultHandler});
 }
-
 /*
   Generates an Ohm grammar given an input file containing a grammar from
   one of the ECMAScript specs. See https://github.com/rbuckton/grammarkdown
@@ -633,9 +631,9 @@ function addContext(semantics, getActions) {
       debug: {type: 'boolean'},
       name: {type: 'string'},
       overrides: {type: 'string'},
-      verbose: {type: 'boolean'}
+      verbose: {type: 'boolean'},
     },
-    allowPositionals: true
+    allowPositionals: true,
   });
   if (values.verbose) loglevel = Math.max(loglevel, 2);
   if (values.debug) loglevel = Math.max(loglevel, 3);

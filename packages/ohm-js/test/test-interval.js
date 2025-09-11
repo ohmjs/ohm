@@ -97,10 +97,10 @@ test('brotha from anotha motha', t => {
   const interval1 = new Interval('abc', 0, 3);
   const interval2 = new Interval('xyz', 1, 2);
   t.throws(
-      () => {
-        Interval.coverage(interval1, interval2);
-      },
-      {message: /Interval sources don't match/},
+    () => {
+      Interval.coverage(interval1, interval2);
+    },
+    {message: /Interval sources don't match/}
   );
 });
 
@@ -126,7 +126,7 @@ test('getLineAndColumn', t => {
   t.is(lineInfo.prevLine, 'blah');
   t.is(lineInfo.nextLine, null);
   t.is(
-      lineInfo.toString([7, 8], [9, 10]),
-      ['Line 2, col 1:', '  1 | blah', '> 2 | 3 + 4', '      ^ ~ ~', ''].join('\n'),
+    lineInfo.toString([7, 8], [9, 10]),
+    ['Line 2, col 1:', '  1 | blah', '> 2 | 3 + 4', '      ^ ~ ~', ''].join('\n')
   );
 });

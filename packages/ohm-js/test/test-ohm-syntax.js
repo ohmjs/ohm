@@ -49,7 +49,7 @@ function buildTreeNodeWithUniqueId(g) {
   function makeTree(node) {
     return s(node).tree;
   }
-  makeTree._getNextId = function() {
+  makeTree._getNextId = function () {
     return nextId;
   };
   return makeTree;
@@ -100,18 +100,18 @@ test('string', t => {
   t.is(s(cst).v, 'foo\b\n\r\t\\"\u01bcff\x8f');
 
   t.throws(
-      () => {
-        ohm.grammar('G { r = "\\w" }');
-      },
-      {message: /Expected "\\""/},
-      'unrecognized escape characters are parse errors',
+    () => {
+      ohm.grammar('G { r = "\\w" }');
+    },
+    {message: /Expected "\\""/},
+    'unrecognized escape characters are parse errors'
   );
 });
 
 test('unicode code point escapes', t => {
   assertSucceeds(
-      t,
-      ohm.grammar(String.raw`G { start = "\u{78}\u{78}" }`).match('\u{78}\u{78}'),
+    t,
+    ohm.grammar(String.raw`G { start = "\u{78}\u{78}" }`).match('\u{78}\u{78}')
   );
   assertSucceeds(t, ohm.grammar(String.raw`G { start = "\u{1F920}" }`).match('🤠'));
   assertSucceeds(t, ohm.grammar(String.raw`G { start = "🤠" }`).match('🤠'));
@@ -172,25 +172,25 @@ test('ranges', t => {
   t.is(s(m.match('4', 'charRange')).v, '4');
 
   t.throws(
-      () => {
-        ohm.grammar('M { charRange = "ab".."c" }');
-      },
-      {message: /Expected "}"/},
-      'from-terminal must have length 1',
+    () => {
+      ohm.grammar('M { charRange = "ab".."c" }');
+    },
+    {message: /Expected "}"/},
+    'from-terminal must have length 1'
   );
   t.throws(
-      () => {
-        ohm.grammar('M { charRange = "ab".."cd" }');
-      },
-      {message: /Expected "}"/},
-      'from-terminal must have length 1',
+    () => {
+      ohm.grammar('M { charRange = "ab".."cd" }');
+    },
+    {message: /Expected "}"/},
+    'from-terminal must have length 1'
   );
   t.throws(
-      () => {
-        ohm.grammar('M { charRange = "a".."bc" }');
-      },
-      {message: /Expected "\\""/},
-      'to-terminal must have length 1',
+    () => {
+      ohm.grammar('M { charRange = "a".."bc" }');
+    },
+    {message: /Expected "\\""/},
+    'to-terminal must have length 1'
   );
 });
 
@@ -545,29 +545,29 @@ describe('simple left recursion', test => {
   test('semantic actions', t => {
     const f = m.match('1234', 'number');
     const s = m
-        .createSemantics()
-        .addAttribute('v', {
-          numberRec(n, d) {
-            return n.v * 10 + d.v;
-          },
-          digit(expr) {
-            return expr.v.charCodeAt(0) - '0'.charCodeAt(0);
-          },
-          _terminal() {
-            return this.sourceString;
-          },
-        })
-        .addAttribute('t', {
-          number(expr) {
-            return ['number', expr.t];
-          },
-          numberRec(n, d) {
-            return ['numberRec', n.t, d.t];
-          },
-          _terminal() {
-            return this.sourceString;
-          },
-        });
+      .createSemantics()
+      .addAttribute('v', {
+        numberRec(n, d) {
+          return n.v * 10 + d.v;
+        },
+        digit(expr) {
+          return expr.v.charCodeAt(0) - '0'.charCodeAt(0);
+        },
+        _terminal() {
+          return this.sourceString;
+        },
+      })
+      .addAttribute('t', {
+        number(expr) {
+          return ['number', expr.t];
+        },
+        numberRec(n, d) {
+          return ['numberRec', n.t, d.t];
+        },
+        _terminal() {
+          return this.sourceString;
+        },
+      });
     t.is(s(f).v, 1234);
     t.deepEqual(s(f).t, [
       'number',
@@ -664,55 +664,55 @@ describe('simple left recursion', test => {
     test('semantic actions', t => {
       const f = m.match('1*2+3+4*5');
       const s = m
-          .createSemantics()
-          .addAttribute('t', {
-            addExp(expr) {
-              return ['addExp', expr.t];
-            },
-            addExpRec(x, _, y) {
-              return ['addExpRec', x.t, y.t];
-            },
-            mulExp(expr) {
-              return ['mulExp', expr.t];
-            },
-            mulExpRec(x, _, y) {
-              return ['mulExpRec', x.t, y.t];
-            },
-            _terminal() {
-              return this.sourceString;
-            },
-          })
-          .addAttribute('v', {
-            addExp(expr) {
-              return expr.v;
-            },
-            addExpRec(x, _, y) {
-              return x.v + y.v;
-            },
-            mulExp(expr) {
-              return expr.v;
-            },
-            mulExpRec(x, _, y) {
-              return x.v * y.v;
-            },
-            priExp(expr) {
-              return parseInt(expr.v);
-            },
-            _terminal() {
-              return this.sourceString;
-            },
-          })
-          .addAttribute('p', {
-            addExpRec(x, _, y) {
-              return '(' + x.p + '+' + y.p + ')';
-            },
-            mulExpRec(x, _, y) {
-              return '(' + x.p + '*' + y.p + ')';
-            },
-            _terminal() {
-              return this.sourceString;
-            },
-          });
+        .createSemantics()
+        .addAttribute('t', {
+          addExp(expr) {
+            return ['addExp', expr.t];
+          },
+          addExpRec(x, _, y) {
+            return ['addExpRec', x.t, y.t];
+          },
+          mulExp(expr) {
+            return ['mulExp', expr.t];
+          },
+          mulExpRec(x, _, y) {
+            return ['mulExpRec', x.t, y.t];
+          },
+          _terminal() {
+            return this.sourceString;
+          },
+        })
+        .addAttribute('v', {
+          addExp(expr) {
+            return expr.v;
+          },
+          addExpRec(x, _, y) {
+            return x.v + y.v;
+          },
+          mulExp(expr) {
+            return expr.v;
+          },
+          mulExpRec(x, _, y) {
+            return x.v * y.v;
+          },
+          priExp(expr) {
+            return parseInt(expr.v);
+          },
+          _terminal() {
+            return this.sourceString;
+          },
+        })
+        .addAttribute('p', {
+          addExpRec(x, _, y) {
+            return '(' + x.p + '+' + y.p + ')';
+          },
+          mulExpRec(x, _, y) {
+            return '(' + x.p + '*' + y.p + ')';
+          },
+          _terminal() {
+            return this.sourceString;
+          },
+        });
       t.deepEqual(s(f).t, [
         'addExp',
         [
@@ -889,33 +889,32 @@ describe('simple left recursion', test => {
 describe('inheritance', t => {
   test('no namespace', t => {
     t.throws(
-        () => {
-          ohm.grammar('G2 <: G1 {}');
-        },
-        {message: /Grammar G1 is not declared/},
+      () => {
+        ohm.grammar('G2 <: G1 {}');
+      },
+      {message: /Grammar G1 is not declared/}
     );
   });
 
   test('empty namespace', t => {
     t.throws(
-        () => {
-          ohm.grammar('G2 <: G1 {}', {});
-        },
-        {message: /Grammar G1 is not declared in namespace/},
+      () => {
+        ohm.grammar('G2 <: G1 {}', {});
+      },
+      {message: /Grammar G1 is not declared in namespace/}
     );
   });
 
   test('duplicate definition', t => {
     t.throws(
-        () => {
-          ohm.grammars('G1 { foo = "foo" } G2 <: G1 { foo = "bar" }');
-        },
-        {
-        // eslint-disable-next-line max-len
-          message:
+      () => {
+        ohm.grammars('G1 { foo = "foo" } G2 <: G1 { foo = "bar" }');
+      },
+      {
+        message:
           /Duplicate declaration for rule 'foo' in grammar 'G2' \(originally declared in 'G1'\)/,
-        },
-        'throws if rule is already declared in super-grammar',
+      },
+      'throws if rule is already declared in super-grammar'
     );
   });
 
@@ -924,10 +923,10 @@ describe('inheritance', t => {
 
     test('it checks that rule exists in super-grammar', t => {
       t.throws(
-          () => {
-            ohm.grammar('G3 <: G1 { foo := "foo" }', ns);
-          },
-          {message: /Cannot override rule foo because it is not declared in G1/},
+        () => {
+          ohm.grammar('G3 <: G1 { foo := "foo" }', ns);
+        },
+        {message: /Cannot override rule foo because it is not declared in G1/}
       );
     });
 
@@ -1007,10 +1006,10 @@ describe('inheritance', t => {
 
     test('should check that rule exists in super-grammar', t => {
       t.throws(
-          () => {
-            ohm.grammar('G3 <: G1 { bar += "bar" }', ns);
-          },
-          {message: /Cannot extend rule bar because it is not declared in G1/},
+        () => {
+          ohm.grammar('G3 <: G1 { bar += "bar" }', ns);
+        },
+        {message: /Cannot extend rule bar because it is not declared in G1/}
       );
     });
 
@@ -1026,13 +1025,13 @@ describe('inheritance', t => {
         t.fail('Expected an exception to be thrown');
       } catch (e) {
         t.is(
-            e.message,
-            [
-              'Line 1, col 19:',
-              '> 1 | M2 <: M1 { foo += bar baz }',
-              '                        ^~~~~~~',
-              'Rule foo involves an alternation which has inconsistent arity (expected 1, got 2)',
-            ].join('\n'),
+          e.message,
+          [
+            'Line 1, col 19:',
+            '> 1 | M2 <: M1 { foo += bar baz }',
+            '                        ^~~~~~~',
+            'Rule foo involves an alternation which has inconsistent arity (expected 1, got 2)',
+          ].join('\n')
         );
       }
 
@@ -1043,13 +1042,13 @@ describe('inheritance', t => {
         t.fail('Expected an exception to be thrown');
       } catch (e) {
         t.is(
-            e.message,
-            [
-              'Line 1, col 19:',
-              '> 1 | M4 <: M3 { foo += digit }',
-              '                        ^~~~~',
-              'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)',
-            ].join('\n'),
+          e.message,
+          [
+            'Line 1, col 19:',
+            '> 1 | M4 <: M3 { foo += digit }',
+            '                        ^~~~~',
+            'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)',
+          ].join('\n')
         );
       }
     });
@@ -1092,21 +1091,21 @@ test('override with "..."', t => {
   t.is(g.match('✌️').succeeded(), true, 'it works on parameterized rules');
 
   t.throws(
-      () => ohm.grammar('G { doesNotExist := ... }'),
-      {message: /Cannot override rule doesNotExist/},
-      'it gives the correct error message when overriding non-existent rule',
+    () => ohm.grammar('G { doesNotExist := ... }'),
+    {message: /Cannot override rule doesNotExist/},
+    'it gives the correct error message when overriding non-existent rule'
   );
 
   t.throws(
-      () => ohm.grammar('G { foo = ... }'),
-      {message: /Expected "}"/},
-      "it's not allowed in a rule definition",
+    () => ohm.grammar('G { foo = ... }'),
+    {message: /Expected "}"/},
+    "it's not allowed in a rule definition"
   );
 
   t.throws(
-      () => ohm.grammar('G { letter += ... }'),
-      {message: /Expected "}"/},
-      "it's not allowed when extending",
+    () => ohm.grammar('G { letter += ... }'),
+    {message: /Expected "}"/},
+    "it's not allowed when extending"
   );
 
   t.throws(() => ohm.grammar('G { letter := "@" "#" | ... }'), {
@@ -1114,9 +1113,9 @@ test('override with "..."', t => {
   });
 
   t.throws(
-      () => ohm.grammar('G { letter := ... | "@" | ... }'),
-      {message: /at most once/},
-      "'...' can appear at most once in a rule body",
+    () => ohm.grammar('G { letter := ... | "@" | ... }'),
+    {message: /at most once/},
+    "'...' can appear at most once in a rule body"
   );
 
   /*
@@ -1134,13 +1133,13 @@ describe('bindings', test => {
       ohm.grammar('G { foo = "a" "c" | "b" }');
     } catch (e) {
       t.is(
-          e.message,
-          [
-            'Line 1, col 21:',
-            '> 1 | G { foo = "a" "c" | "b" }',
-            '                          ^~~',
-            'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)',
-          ].join('\n'),
+        e.message,
+        [
+          'Line 1, col 21:',
+          '> 1 | G { foo = "a" "c" | "b" }',
+          '                          ^~~',
+          'Rule foo involves an alternation which has inconsistent arity (expected 2, got 1)',
+        ].join('\n')
       );
     }
   });
@@ -1234,7 +1233,7 @@ test('inline rule declarations', t => {
         return this.sourceString;
       },
     });
-    return function(node) {
+    return function (node) {
       return s(node).v;
     };
   }
@@ -1244,37 +1243,37 @@ test('inline rule declarations', t => {
 
   assertSucceeds(t, Arithmetic.match('1*(2+3)-4/5'), 'expr is recognized');
   t.is(
-      makeEval(Arithmetic)(Arithmetic.match('10*(2+123)-4/5')),
-      1249.2,
-      'semantic action works',
+    makeEval(Arithmetic)(Arithmetic.match('10*(2+123)-4/5')),
+    1249.2,
+    'semantic action works'
   );
 
   const m2 = ohm.grammar(
-      `
+    `
     Good <: Arithmetic {
       addExp := addExp "~" mulExp  -- minus
               | mulExp
       }
     `,
-      ns,
+    ns
   );
   t.is(makeEval(m2)(m2.match('2*3~4')), 2);
 
   t.throws(
-      () => {
-        ohm.grammar('Bad <: Arithmetic { addExp += addExp "~" mulExp  -- minus }', ns);
-      },
-      {
-        message: /rule 'addExp_minus' in grammar 'Bad' \(originally declared in 'Arithmetic'\)/,
-      },
+    () => {
+      ohm.grammar('Bad <: Arithmetic { addExp += addExp "~" mulExp  -- minus }', ns);
+    },
+    {
+      message: /rule 'addExp_minus' in grammar 'Bad' \(originally declared in 'Arithmetic'\)/,
+    }
   );
 
   t.throws(
-      () => {
-        ohm.grammar('Bad { start = "a" ("b" -- bad\n) }');
-      },
-      undefined,
-      'inline rules must be at the top level',
+    () => {
+      ohm.grammar('Bad { start = "a" ("b" -- bad\n) }');
+    },
+    undefined,
+    'inline rules must be at the top level'
   );
 });
 
@@ -1282,13 +1281,13 @@ describe('lexical vs. syntactic rules', test => {
   test("can't call syntactic rule from lexical rule, not not the other way around", t => {
     t.truthy(ohm.grammar('G { foo = bar  bar = "bar" }'), 'lexical calling lexical');
     t.throws(
-        () => {
-          ohm.grammar('G { foo = Bar  Bar = "bar" }');
-        },
-        {
-          message: /Cannot apply syntactic rule Bar from here \(inside a lexical context\)/,
-        },
-        'lexical calling syntactic',
+      () => {
+        ohm.grammar('G { foo = Bar  Bar = "bar" }');
+      },
+      {
+        message: /Cannot apply syntactic rule Bar from here \(inside a lexical context\)/,
+      },
+      'lexical calling syntactic'
     );
     t.truthy(ohm.grammar('G { Foo = bar  bar = "bar" }'), 'syntactic calling lexical');
     t.truthy(ohm.grammar('G { Foo = Bar  Bar = "bar" }'), 'syntactic calling syntactic');
@@ -1336,12 +1335,12 @@ describe('lexical vs. syntactic rules', test => {
     assertFails(t, g.match('x \n  => {}'));
 
     t.throws(
-        () => {
-          ohm.grammar('G { R = #("a" R) | "b" "c" }');
-        },
-        {
-          message: /Cannot apply syntactic rule R from here \(inside a lexical context\)/,
-        },
+      () => {
+        ohm.grammar('G { R = #("a" R) | "b" "c" }');
+      },
+      {
+        message: /Cannot apply syntactic rule R from here \(inside a lexical context\)/,
+      }
     );
   });
 });
@@ -1357,9 +1356,9 @@ test('space skipping semantics', t => {
   assertSucceeds(t, g.match('> a b ', 'Iter'), "iter doesn't consume trailing space");
   assertSucceeds(t, g.match('> a', 'Lookahead'), "lookahead doesn't consume anything");
   assertSucceeds(
-      t,
-      g.match('> a', 'NegLookahead'),
-      "negative lookahead doesn't consume anything",
+    t,
+    g.match('> a', 'NegLookahead'),
+    "negative lookahead doesn't consume anything"
   );
 });
 
@@ -1367,11 +1366,11 @@ test('space skipping semantics', t => {
 test('single-line comment after case name (#282)', t => {
   const {ohmGrammar} = ohm;
   assertSucceeds(
-      t,
-      ohmGrammar.match(`G {
+    t,
+    ohmGrammar.match(`G {
     Start = -- foo // ok
           | "x"
-  }`),
+  }`)
   );
   assertSucceeds(t, ohmGrammar.match('G {Start = -- foo // A comment\n}'));
   assertSucceeds(t, ohmGrammar.match('G {} // This works too'));
@@ -1392,9 +1391,9 @@ describe('bootstrap', test => {
   test('it can produce a grammar that works', t => {
     const g = buildGrammar(ns.Ohm.match(ohmGrammarSource, 'Grammar'), {}, ns.Ohm);
     assertSucceeds(
-        t,
-        g.match(ohmGrammarSource, 'Grammar'),
-        'Ohm grammar can recognize itself',
+      t,
+      g.match(ohmGrammarSource, 'Grammar'),
+      'Ohm grammar can recognize itself'
     );
     const Arithmetic = buildGrammar(g.match(arithmeticGrammarSource, 'Grammar'), {}, g);
     const s = Arithmetic.createSemantics().addAttribute('v', {

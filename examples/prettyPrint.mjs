@@ -1,7 +1,6 @@
-/* eslint-env node */
-
-import fs from 'fs';
-import * as url from 'url';
+import fs from 'node:fs';
+import process from 'node:process';
+import * as url from 'node:url';
 
 import * as ohm from '../packages/ohm-js/index.mjs';
 
@@ -117,7 +116,7 @@ semantics.addOperation('prettyPrint()', {
   },
   oneCharTerminal(open, c, close) {
     return this.sourceString;
-  }
+  },
 });
 
 // Exports
@@ -141,7 +140,7 @@ if (process.argv[1] === modulePath) {
   const source = fs.readFileSync(filename).toString();
   const result = prettyPrint(source, filename);
 
-  /* eslint-disable no-console, no-process-exit */
+  /* eslint-disable no-console */
   if (typeof result === 'string') {
     console.log(result);
   } else {

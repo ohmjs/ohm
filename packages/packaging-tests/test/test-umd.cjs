@@ -3,7 +3,7 @@ const fs = require('fs');
 const {test} = require('uvu');
 const assert = require('uvu/assert');
 
-// eslint-disable-line ava/no-import-test-files
+// eslint-disable-next-line ava/no-import-test-files
 const {checkExports, checkExtrasExports} = require('./test-commonjs.cjs');
 
 const DEV_BUNDLE_CONTENTS = fs.readFileSync('../ohm-js/dist/ohm.js', 'utf-8');
@@ -11,7 +11,7 @@ const MIN_BUNDLE_CONTENTS = fs.readFileSync('../ohm-js/dist/ohm.min.js', 'utf-8'
 
 const EXTRAS_DEV_BUNDLE_CONTENTS = fs.readFileSync('../ohm-js/dist/ohm-extras.js', 'utf-8');
 
-const ecmaVersion = 2018;
+const ecmaVersion = 2020;
 
 function requireFromString(src, filename) {
   const Module = module.constructor;

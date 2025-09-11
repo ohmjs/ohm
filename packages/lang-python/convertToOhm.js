@@ -1,8 +1,8 @@
-/* eslint-env node */
+import assert from 'node:assert';
+import fs from 'node:fs';
+import process from 'node:process';
 
-import assert from 'assert';
 import * as ohm from 'ohm-js';
-import fs from 'fs';
 import {test} from 'uvu';
 
 const hasOwn = (obj, prop) => Object.hasOwnProperty.call(obj, prop);
@@ -76,13 +76,13 @@ const tokens = {
   typeComment: '/* FIXME */',
 };
 const tokenRules = Object.entries(tokens)
-    .map(([name, ruleBody]) => {
-      if (ruleBody) {
-        return `  ${name} = ${ruleBody}`;
-      }
-    })
-    .filter(x => !!x)
-    .join('\n');
+  .map(([name, ruleBody]) => {
+    if (ruleBody) {
+      return `  ${name} = ${ruleBody}`;
+    }
+  })
+  .filter(x => !!x)
+  .join('\n');
 
 const extraRules = String.raw`
   fail = ~any any
@@ -251,10 +251,10 @@ semantics.addOperation('rewrite', {
   },
   Seq(terms) {
     return terms.children
-        .map(c => {
-          return c.rewrite();
-        })
-        .join(' ');
+      .map(c => {
+        return c.rewrite();
+      })
+      .join(' ');
   },
   Term_binding(ident, _type, _, iter) {
     return iter.rewrite();
@@ -336,8 +336,8 @@ let source = fs.readFileSync(process.argv[2], 'utf-8');
 // alternation inside another alt. We can't add case labels there, so we
 // add two dummy args to make the arity of both branches the same.
 source = source.replace(
-    "| single_subscript_attribute_target) ':'",
-    "| single_subscript_attribute_target pass pass) ':'",
+  "| single_subscript_attribute_target) ':'",
+  "| single_subscript_attribute_target pass pass) ':'"
 );
 
 const matchResult = g.match(source);

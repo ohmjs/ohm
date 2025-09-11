@@ -57,8 +57,8 @@ function generateTypesForGrammar(grammar) {
 const getNamespaceExport = ns =>
   `declare const ns: {
 ${Object.keys(ns)
-      .map(name => `  ${name}: ${name}Grammar;\n`)
-      .join('')}};
+  .map(name => `  ${name}: ${name}Grammar;\n`)
+  .join('')}};
 export default ns;
 `;
 

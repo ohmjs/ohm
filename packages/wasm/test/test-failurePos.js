@@ -55,13 +55,13 @@ const validInput = `{% comment %}
 // rightmostFailurePosition is the same as the JS parser reports.
 function arbitraryEdit(input) {
   return fc
-      .tuple(
-          fc.nat({max: input.length - 1}), // Position to edit
-          fc.integer({min: 1, max: 20}), // Number of characters to delete
-      )
-      .map(([pos, numDeleted]) => {
-        return input.slice(0, pos) + input.slice(pos + numDeleted);
-      });
+    .tuple(
+      fc.nat({max: input.length - 1}), // Position to edit
+      fc.integer({min: 1, max: 20}) // Number of characters to delete
+    )
+    .map(([pos, numDeleted]) => {
+      return input.slice(0, pos) + input.slice(pos + numDeleted);
+    });
 }
 
 // A fast-check property that checks that:
@@ -73,8 +73,8 @@ function sameFailurePos(wasmMatcher) {
     wasmMatcher.setInput(input);
     fc.pre(wasmMatcher.match().succeeded());
     assert.equal(
-        ns.LiquidHTML.match(input).getRightmostFailurePosition(),
-        wasmMatcher.getRightmostFailurePosition(),
+      ns.LiquidHTML.match(input).getRightmostFailurePosition(),
+      wasmMatcher.getRightmostFailurePosition()
     );
   });
 }

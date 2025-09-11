@@ -134,9 +134,9 @@ export function getLineAndColumn(str, offset) {
     // Get the next line.
     const nextLineEndOffset = str.indexOf('\n', lineEndOffset + 1);
     nextLine =
-      nextLineEndOffset === -1 ?
-        str.slice(lineEndOffset) :
-        str.slice(lineEndOffset, nextLineEndOffset);
+      nextLineEndOffset === -1
+        ? str.slice(lineEndOffset)
+        : str.slice(lineEndOffset, nextLineEndOffset);
     // Strip leading and trailing EOL char(s).
     nextLine = nextLine.replace(/^\r?\n/, '').replace(/\r$/, '');
   }

@@ -12,8 +12,8 @@ const SPECIAL_ACTION_NAMES = ['_iter', '_terminal', '_nonterminal', '_default'];
 
 function getSortedRuleValues(grammar) {
   return Object.keys(grammar.rules)
-      .sort()
-      .map(name => grammar.rules[name]);
+    .sort()
+    .map(name => grammar.rules[name]);
 }
 
 // Until ES2019, JSON was not a valid subset of JavaScript because U+2028 (line separator)
@@ -34,11 +34,11 @@ export class Grammar {
     if (optDefaultStartRule) {
       if (!(optDefaultStartRule in rules)) {
         throw new Error(
-            "Invalid start rule: '" +
+          "Invalid start rule: '" +
             optDefaultStartRule +
             "' is not a rule in grammar '" +
             name +
-            "'",
+            "'"
         );
       }
       this.defaultStartRule = optDefaultStartRule;
@@ -109,7 +109,6 @@ export class Grammar {
   _checkTopDownActionDict(what, name, actionDict) {
     const problems = [];
 
-    // eslint-disable-next-line guard-for-in
     for (const k in actionDict) {
       const v = actionDict[k];
       const isSpecialAction = SPECIAL_ACTION_NAMES.includes(k);
@@ -139,10 +138,10 @@ export class Grammar {
     if (problems.length > 0) {
       const prettyProblems = problems.map(problem => '- ' + problem);
       const error = new Error(
-          [
-            `Found errors in the action dictionary of the '${name}' ${what}:`,
-            ...prettyProblems,
-          ].join('\n'),
+        [
+          `Found errors in the action dictionary of the '${name}' ${what}:`,
+          ...prettyProblems,
+        ].join('\n')
       );
       error.problems = problems;
       throw error;
@@ -155,9 +154,9 @@ export class Grammar {
     // All special actions have an expected arity of 0, though all but _terminal
     // are expected to use the rest parameter syntax (e.g. `_iter(...children)`).
     // This is considered to have arity 0, i.e. `((...args) => {}).length` is 0.
-    return SPECIAL_ACTION_NAMES.includes(actionName) ?
-      0 :
-      this.rules[actionName].body.getArity();
+    return SPECIAL_ACTION_NAMES.includes(actionName)
+      ? 0
+      : this.rules[actionName].body.getArity();
   }
 
   _inheritsFrom(grammar) {
@@ -248,7 +247,7 @@ export class Grammar {
     sb.append('{');
 
     let first = true;
-    // eslint-disable-next-line guard-for-in
+
     for (const ruleName in this.rules) {
       const {body} = this.rules[ruleName];
       if (first) {
@@ -295,10 +294,10 @@ export class Grammar {
     if (formals.length !== app.args.length) {
       const {source} = this.rules[app.ruleName];
       throw errors.wrongNumberOfParameters(
-          app.ruleName,
-          formals.length,
-          app.args.length,
-          source,
+        app.ruleName,
+        formals.length,
+        app.args.length,
+        source
       );
     }
     return app;
@@ -317,63 +316,63 @@ export class Grammar {
 // `digit`, and is implicitly the super-grammar of any grammar whose super-grammar
 // isn't specified.
 Grammar.ProtoBuiltInRules = new Grammar(
-    'ProtoBuiltInRules', // name
-    undefined, // supergrammar
-    {
-      any: {
-        body: pexprs.any,
-        formals: [],
-        description: 'any character',
-        primitive: true,
-      },
-      end: {
-        body: pexprs.end,
-        formals: [],
-        description: 'end of input',
-        primitive: true,
-      },
-
-      caseInsensitive: {
-        body: new pexprs.CaseInsensitiveTerminal(new pexprs.Param(0)),
-        formals: ['str'],
-        primitive: true,
-      },
-      lower: {
-        body: new pexprs.UnicodeChar('Ll'),
-        formals: [],
-        description: 'a lowercase letter',
-        primitive: true,
-      },
-      upper: {
-        body: new pexprs.UnicodeChar('Lu'),
-        formals: [],
-        description: 'an uppercase letter',
-        primitive: true,
-      },
-      // Union of Lt (titlecase), Lm (modifier), and Lo (other), i.e. any letter not in Ll or Lu.
-      unicodeLtmo: {
-        body: new pexprs.UnicodeChar('Ltmo'),
-        formals: [],
-        description: 'a Unicode character in Lt, Lm, or Lo',
-        primitive: true,
-      },
-
-      // These rules are not truly primitive (they could be written in userland) but are defined
-      // here for bootstrapping purposes.
-      spaces: {
-        body: new pexprs.Star(new pexprs.Apply('space')),
-        formals: [],
-      },
-      space: {
-        body: new pexprs.Range('\x00', ' '),
-        formals: [],
-        description: 'a space',
-      },
+  'ProtoBuiltInRules', // name
+  undefined, // supergrammar
+  {
+    any: {
+      body: pexprs.any,
+      formals: [],
+      description: 'any character',
+      primitive: true,
     },
+    end: {
+      body: pexprs.end,
+      formals: [],
+      description: 'end of input',
+      primitive: true,
+    },
+
+    caseInsensitive: {
+      body: new pexprs.CaseInsensitiveTerminal(new pexprs.Param(0)),
+      formals: ['str'],
+      primitive: true,
+    },
+    lower: {
+      body: new pexprs.UnicodeChar('Ll'),
+      formals: [],
+      description: 'a lowercase letter',
+      primitive: true,
+    },
+    upper: {
+      body: new pexprs.UnicodeChar('Lu'),
+      formals: [],
+      description: 'an uppercase letter',
+      primitive: true,
+    },
+    // Union of Lt (titlecase), Lm (modifier), and Lo (other), i.e. any letter not in Ll or Lu.
+    unicodeLtmo: {
+      body: new pexprs.UnicodeChar('Ltmo'),
+      formals: [],
+      description: 'a Unicode character in Lt, Lm, or Lo',
+      primitive: true,
+    },
+
+    // These rules are not truly primitive (they could be written in userland) but are defined
+    // here for bootstrapping purposes.
+    spaces: {
+      body: new pexprs.Star(new pexprs.Apply('space')),
+      formals: [],
+    },
+    space: {
+      body: new pexprs.Range('\x00', ' '),
+      formals: [],
+      description: 'a space',
+    },
+  }
 );
 
 // This method is called from main.js once Ohm has loaded.
-Grammar.initApplicationParser = function(grammar, builderFn) {
+Grammar.initApplicationParser = function (grammar, builderFn) {
   ohmGrammar = grammar;
   buildGrammar = builderFn;
 };

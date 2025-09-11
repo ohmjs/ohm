@@ -1,4 +1,4 @@
-/* eslint-env node */
+/* global URL */
 
 import test from 'ava';
 

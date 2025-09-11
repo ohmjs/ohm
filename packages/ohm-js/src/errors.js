@@ -48,9 +48,9 @@ export function grammarSyntaxError(matchFailure) {
 // Undeclared grammar
 
 export function undeclaredGrammar(grammarName, namespace, interval) {
-  const message = namespace ?
-    `Grammar ${grammarName} is not declared in namespace '${namespace}'` :
-    'Undeclared grammar ' + grammarName;
+  const message = namespace
+    ? `Grammar ${grammarName} is not declared in namespace '${namespace}'`
+    : 'Undeclared grammar ' + grammarName;
   return createError(message, interval);
 }
 
@@ -70,8 +70,8 @@ export function grammarDoesNotSupportIncrementalParsing(grammar) {
 
 export function undeclaredRule(ruleName, grammarName, optInterval) {
   return createError(
-      'Rule ' + ruleName + ' is not declared in grammar ' + grammarName,
-      optInterval,
+    'Rule ' + ruleName + ' is not declared in grammar ' + grammarName,
+    optInterval
   );
 }
 
@@ -79,8 +79,8 @@ export function undeclaredRule(ruleName, grammarName, optInterval) {
 
 export function cannotOverrideUndeclaredRule(ruleName, grammarName, optSource) {
   return createError(
-      'Cannot override rule ' + ruleName + ' because it is not declared in ' + grammarName,
-      optSource,
+    'Cannot override rule ' + ruleName + ' because it is not declared in ' + grammarName,
+    optSource
   );
 }
 
@@ -88,8 +88,8 @@ export function cannotOverrideUndeclaredRule(ruleName, grammarName, optSource) {
 
 export function cannotExtendUndeclaredRule(ruleName, grammarName, optSource) {
   return createError(
-      'Cannot extend rule ' + ruleName + ' because it is not declared in ' + grammarName,
-      optSource,
+    'Cannot extend rule ' + ruleName + ' because it is not declared in ' + grammarName,
+    optSource
   );
 }
 
@@ -108,14 +108,14 @@ export function duplicateRuleDeclaration(ruleName, grammarName, declGrammarName,
 
 export function wrongNumberOfParameters(ruleName, expected, actual, source) {
   return createError(
-      'Wrong number of parameters for rule ' +
+    'Wrong number of parameters for rule ' +
       ruleName +
       ' (expected ' +
       expected +
       ', got ' +
       actual +
       ')',
-      source,
+    source
   );
 }
 
@@ -123,14 +123,14 @@ export function wrongNumberOfParameters(ruleName, expected, actual, source) {
 
 export function wrongNumberOfArguments(ruleName, expected, actual, expr) {
   return createError(
-      'Wrong number of arguments for rule ' +
+    'Wrong number of arguments for rule ' +
       ruleName +
       ' (expected ' +
       expected +
       ', got ' +
       actual +
       ')',
-      expr,
+    expr
   );
 }
 
@@ -138,8 +138,8 @@ export function wrongNumberOfArguments(ruleName, expected, actual, expr) {
 
 export function duplicateParameterNames(ruleName, duplicates, source) {
   return createError(
-      'Duplicate parameter names in rule ' + ruleName + ': ' + duplicates.join(', '),
-      source,
+    'Duplicate parameter names in rule ' + ruleName + ': ' + duplicates.join(', '),
+    source
   );
 }
 
@@ -147,14 +147,14 @@ export function duplicateParameterNames(ruleName, duplicates, source) {
 
 export function invalidParameter(ruleName, expr) {
   return createError(
-      'Invalid parameter to rule ' +
+    'Invalid parameter to rule ' +
       ruleName +
       ': ' +
       expr +
       ' has arity ' +
       expr.getArity() +
       ', but parameter expressions must have arity 1',
-      expr.source,
+    expr.source
   );
 }
 
@@ -166,8 +166,8 @@ const syntacticVsLexicalNote =
 
 export function applicationOfSyntacticRuleFromLexicalContext(ruleName, applyExpr) {
   return createError(
-      'Cannot apply syntactic rule ' + ruleName + ' from here (inside a lexical context)',
-      applyExpr.source,
+    'Cannot apply syntactic rule ' + ruleName + ' from here (inside a lexical context)',
+    applyExpr.source
   );
 }
 
@@ -176,9 +176,9 @@ export function applicationOfSyntacticRuleFromLexicalContext(ruleName, applyExpr
 export function applySyntacticWithLexicalRuleApplication(applyExpr) {
   const {ruleName} = applyExpr;
   return createError(
-      `applySyntactic is for syntactic rules, but '${ruleName}' is a lexical rule. ` +
+    `applySyntactic is for syntactic rules, but '${ruleName}' is a lexical rule. ` +
       syntacticVsLexicalNote,
-      applyExpr.source,
+    applyExpr.source
   );
 }
 
@@ -186,8 +186,8 @@ export function applySyntacticWithLexicalRuleApplication(applyExpr) {
 
 export function unnecessaryExperimentalApplySyntactic(applyExpr) {
   return createError(
-      'applySyntactic is not required here (in a syntactic context)',
-      applyExpr.source,
+    'applySyntactic is not required here (in a syntactic context)',
+    applyExpr.source
   );
 }
 
@@ -213,8 +213,8 @@ export function invalidCodePoint(applyWrapper) {
   const digitIntervals = applyWrapper.children.slice(1, -1).map(d => d.source);
   const fullInterval = digitIntervals[0].coverageWith(...digitIntervals.slice(1));
   return createError(
-      `U+${fullInterval.contents} is not a valid Unicode code point`,
-      fullInterval,
+    `U+${fullInterval.contents} is not a valid Unicode code point`,
+    fullInterval
   );
 }
 
@@ -232,8 +232,8 @@ export function kleeneExprHasNullableOperand(kleeneExpr, applicationStack) {
     "' (possible infinite loop)";
   if (applicationStack.length > 0) {
     const stackTrace = applicationStack
-        .map(app => new pexprs.Apply(app.ruleName, app.args))
-        .join('\n');
+      .map(app => new pexprs.Apply(app.ruleName, app.args))
+      .join('\n');
     message += '\nApplication stack (most recent application last):\n' + stackTrace;
   }
   return createError(message, kleeneExpr.expr.source);
@@ -243,7 +243,7 @@ export function kleeneExprHasNullableOperand(kleeneExpr, applicationStack) {
 
 export function inconsistentArity(ruleName, expected, actual, expr) {
   return createError(
-      'Rule ' +
+    'Rule ' +
       ruleName +
       ' involves an alternation which has inconsistent arity ' +
       '(expected ' +
@@ -251,7 +251,7 @@ export function inconsistentArity(ruleName, expected, actual, expr) {
       ', got ' +
       actual +
       ')',
-      expr.source,
+    expr.source
   );
 }
 
@@ -265,7 +265,7 @@ export function duplicatePropertyNames(duplicates) {
 
 export function invalidConstructorCall(grammar, ctorName, children) {
   return createError(
-      'Attempt to invoke constructor ' + ctorName + ' with invalid or unexpected arguments',
+    'Attempt to invoke constructor ' + ctorName + ' with invalid or unexpected arguments'
   );
 }
 
@@ -280,12 +280,12 @@ export function multipleErrors(errors) {
 
 export function missingSemanticAction(ctorName, name, type, stack) {
   let stackTrace = stack
-      .slice(0, -1)
-      .map(info => {
-        const ans = '  ' + info[0].name + ' > ' + info[1];
-        return info.length === 3 ? ans + " for '" + info[2] + "'" : ans;
-      })
-      .join('\n');
+    .slice(0, -1)
+    .map(info => {
+      const ans = '  ' + info[0].name + ' > ' + info[1];
+      return info.length === 3 ? ans + " for '" + info[2] + "'" : ans;
+    })
+    .join('\n');
   stackTrace += '\n  ' + name + ' > ' + ctorName;
 
   let moreInfo = '';

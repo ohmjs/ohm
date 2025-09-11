@@ -110,16 +110,16 @@ group('JSON', () => {
   // reused. This takes advantage of JIT tier-up, and approximates usage
   // in a long-running process, e.g. LSP server.
   liquidHtmlMatcher = await wasmMatcherForGrammar(
-      liquid.LiquidHTML,
-      readFileSync(join(__dirname, '../build/liquid-html.wasm')),
+    liquid.LiquidHTML,
+    readFileSync(join(__dirname, '../build/liquid-html.wasm'))
   );
   es5Matcher = await wasmMatcherForGrammar(
-      es5,
-      readFileSync(join(__dirname, '../build/es5.wasm')),
+    es5,
+    readFileSync(join(__dirname, '../build/es5.wasm'))
   );
   jsonMatcher = await wasmMatcherForGrammar(
-      json,
-      readFileSync(join(__dirname, '../build/json.wasm')),
+    json,
+    readFileSync(join(__dirname, '../build/json.wasm'))
   );
 
   await run();

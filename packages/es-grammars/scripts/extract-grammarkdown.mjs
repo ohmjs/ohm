@@ -1,6 +1,8 @@
-import {parseArgs} from 'util';
+import fs from 'node:fs';
+import process from 'node:process';
+import {parseArgs} from 'node:util';
+
 import jsdom from 'jsdom';
-import fs from 'fs';
 const {JSDOM} = jsdom;
 
 const USAGE = `Usage: extract-markdown.mjs <grammar_file>
@@ -11,10 +13,10 @@ Options:
 
 const extractProductions = specText => {
   const dom = new JSDOM(specText, {
-    includeNodeLocations: true
+    includeNodeLocations: true,
   });
 
-  const emuNodes = dom.window.document.querySelectorAll('emu-grammar[type=definition]');
+  let emuNodes = dom.window.document.querySelectorAll('emu-grammar[type=definition]');
 
   // Older versions of the grammars prior to ES2018 didn't use the
   // `type="definition"` attribute on <emu-grammar> elements, so we use
@@ -36,21 +38,21 @@ const main = () => {
     options: {
       help: {
         short: 'h',
-        type: 'boolean'
-      }
-    }
+        type: 'boolean',
+      },
+    },
   };
 
   const args = parseArgs(parseConfig);
 
   if (args.values.help || args.positionals.length < 1) {
-    console.error(USAGE);
+    console.error(USAGE); // eslint-disable-line no-console
     process.exit(!args.values.help);
   }
 
   const spec = fs.readFileSync(args.positionals[0], {encoding: 'utf-8'});
   const grammarText = extractProductions(spec);
-  console.log(grammarText);
+  console.log(grammarText); // eslint-disable-line no-console
 };
 
 main();

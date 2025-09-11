@@ -94,9 +94,9 @@ test('space skipping', t => {
   t.deepEqual(start.children.map(displayString), ['spaces', 'foo']);
   const fooAppl = start.children[1];
   t.deepEqual(
-      fooAppl.children.map(displayString),
-      ['"a" "b"'],
-      'no spaces under lexical rule appl',
+    fooAppl.children.map(displayString),
+    ['"a" "b"'],
+    'no spaces under lexical rule appl'
   );
 });
 
@@ -244,8 +244,8 @@ test('tracing with left recursion', t => {
   t.is(terminatingEntry.isHeadOfLeftRecursion, false);
   t.is(terminatingEntry.pos, id.pos);
   t.true(
-      terminatingEntry.source.length <= id.source.length,
-      'its source interval is not longer',
+    terminatingEntry.source.length <= id.source.length,
+    'its source interval is not longer'
   );
 
   t.is(id.children.length, 1, 'has a single child');
@@ -326,34 +326,34 @@ test('toString', t => {
 
   const exprs = lines.map(l => l.split(/\s+/)[2]);
   t.deepEqual(
-      exprs,
-      [
-        'start',
-        '"a"', // Failed.
-        'letter*',
-        'letter',
-        'lower',
-        'Unicode',
-        'letter',
-        'lower',
-        'Unicode',
-        'letter',
-        'lower',
-        'Unicode', // Failed.
-        'upper',
-        'Unicode', // Failed.
-        'unicodeLtmo',
-        'Unicode', // Failed.
-        'end',
-      ],
-      'expressions',
+    exprs,
+    [
+      'start',
+      '"a"', // Failed.
+      'letter*',
+      'letter',
+      'lower',
+      'Unicode',
+      'letter',
+      'lower',
+      'Unicode',
+      'letter',
+      'lower',
+      'Unicode', // Failed.
+      'upper',
+      'Unicode', // Failed.
+      'unicodeLtmo',
+      'Unicode', // Failed.
+      'end',
+    ],
+    'expressions'
   );
 
   const excerpts = lines.map(l => l.split(/\s+/)[0]);
   t.deepEqual(
-      excerpts,
-      common.repeat('hi', 6).concat(common.repeat('i', 3)).concat(common.repeat('', 8)),
-      'excerpts',
+    excerpts,
+    common.repeat('hi', 6).concat(common.repeat('i', 3)).concat(common.repeat('', 8)),
+    'excerpts'
   );
 
   // Test that newlines are escaped in the trace output.
@@ -456,8 +456,8 @@ test.failing('bindings', t => {
   t.is(alt.bindings[0].source.contents, 'a');
   t.is(alt.bindings[1].source.contents, 'b');
   t.deepEqual(
-      alt.bindings.map(b => b.ctorName),
-      ['_terminal', '_terminal'],
+    alt.bindings.map(b => b.ctorName),
+    ['_terminal', '_terminal']
   );
 
   trace = g.trace('cd');
@@ -467,8 +467,8 @@ test.failing('bindings', t => {
   t.is(alt.bindings[0].source.contents, 'c');
   t.is(alt.bindings[1].source.contents, 'd');
   t.deepEqual(
-      alt.bindings.map(b => b.ctorName),
-      ['_terminal', 'notX'],
+    alt.bindings.map(b => b.ctorName),
+    ['_terminal', 'notX']
   );
 
   const notX = alt.children[1];

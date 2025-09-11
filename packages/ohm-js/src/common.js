@@ -24,14 +24,14 @@ escapeStringFor['\u000b'.charCodeAt(0)] = '\\v';
 
 export function abstract(optMethodName) {
   const methodName = optMethodName || '';
-  return function() {
+  return function () {
     throw new Error(
-        'this method ' +
+      'this method ' +
         methodName +
         ' is abstract! ' +
         '(it has no implementation in class ' +
         this.constructor.name +
-        ')',
+        ')'
     );
   };
 }
@@ -124,11 +124,11 @@ export function StringBuffer() {
   this.strings = [];
 }
 
-StringBuffer.prototype.append = function(str) {
+StringBuffer.prototype.append = function (str) {
   this.strings.push(str);
 };
 
-StringBuffer.prototype.contents = function() {
+StringBuffer.prototype.contents = function () {
   return this.strings.join('');
 };
 
@@ -152,9 +152,9 @@ export function unescapeCodePoint(s) {
       case 'x':
         return escapeUnicode(s.slice(2, 4));
       case 'u':
-        return s.charAt(2) === '{' ?
-          escapeUnicode(s.slice(3, -1)) :
-          escapeUnicode(s.slice(2, 6));
+        return s.charAt(2) === '{'
+          ? escapeUnicode(s.slice(3, -1))
+          : escapeUnicode(s.slice(2, 6));
       default:
         return s.charAt(1);
     }
@@ -180,7 +180,7 @@ export function unexpectedObjToString(obj) {
       typeName = typeof obj;
     }
     return typeName + ': ' + JSON.stringify(String(obj));
-  } catch (e) {
+  } catch {
     return baseToString;
   }
 }

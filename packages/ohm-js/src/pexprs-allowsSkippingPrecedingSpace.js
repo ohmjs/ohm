@@ -20,7 +20,7 @@ pexprs.any.allowsSkippingPrecedingSpace =
   pexprs.Terminal.prototype.allowsSkippingPrecedingSpace =
   pexprs.Range.prototype.allowsSkippingPrecedingSpace =
   pexprs.UnicodeChar.prototype.allowsSkippingPrecedingSpace =
-    function() {
+    function () {
       return true;
     };
 
@@ -34,6 +34,6 @@ pexprs.Alt.prototype.allowsSkippingPrecedingSpace =
   pexprs.Not.prototype.allowsSkippingPrecedingSpace =
   pexprs.Param.prototype.allowsSkippingPrecedingSpace =
   pexprs.Seq.prototype.allowsSkippingPrecedingSpace =
-    function() {
+    function () {
       return false;
     };

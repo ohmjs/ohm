@@ -179,11 +179,11 @@ export class Semantics {
     if (superSemantics) {
       if (!(grammar.equals(this.super.grammar) || grammar._inheritsFrom(this.super.grammar))) {
         throw new Error(
-            "Cannot extend a semantics for grammar '" +
+          "Cannot extend a semantics for grammar '" +
             this.super.grammar.name +
             "' for use with grammar '" +
             grammar.name +
-            "' (not a sub-grammar)",
+            "' (not a sub-grammar)"
         );
       }
       this.operations = Object.create(this.super.operations);
@@ -192,7 +192,7 @@ export class Semantics {
 
       // Assign unique symbols for each of the attributes inherited from the super-semantics so that
       // they are memoized independently.
-      // eslint-disable-next-line guard-for-in
+
       for (const attributeName in this.attributes) {
         Object.defineProperty(this.attributeKeys, attributeName, {
           value: util.uniqueId(attributeName),
@@ -221,11 +221,11 @@ export class Semantics {
   // Throws an exception if one or more of them doesn't.
   checkActionDicts() {
     let name;
-    // eslint-disable-next-line guard-for-in
+
     for (name in this.operations) {
       this.operations[name].checkActionDict(this.grammar);
     }
-    // eslint-disable-next-line guard-for-in
+
     for (name in this.attributes) {
       this.attributes[name].checkActionDict(this.grammar);
     }
@@ -325,9 +325,9 @@ export class Semantics {
     });
 
     const entry =
-      type === 'operation' ?
-        new Operation(name, formals, realActionDict, builtInDefault) :
-        new Attribute(name, realActionDict, builtInDefault);
+      type === 'operation'
+        ? new Operation(name, formals, realActionDict, builtInDefault)
+        : new Attribute(name, realActionDict, builtInDefault);
 
     // The following check is not strictly necessary (it will happen later anyway) but it's better
     // to catch errors early.
@@ -343,7 +343,7 @@ export class Semantics {
       // Check that the caller passed the correct number of arguments.
       if (arguments.length !== thisThing.formals.length) {
         throw new Error(
-            'Invalid number of arguments passed to ' +
+          'Invalid number of arguments passed to ' +
             name +
             ' ' +
             type +
@@ -351,7 +351,7 @@ export class Semantics {
             thisThing.formals.length +
             ', got ' +
             arguments.length +
-            ')',
+            ')'
         );
       }
 
@@ -372,7 +372,7 @@ export class Semantics {
 
     if (type === 'operation') {
       this.Wrapper.prototype[name] = doIt;
-      this.Wrapper.prototype[name].toString = function() {
+      this.Wrapper.prototype[name].toString = function () {
         return '[' + name + ' operation]';
       };
     } else {
@@ -394,13 +394,13 @@ export class Semantics {
 
     if (!(this.super && name in this.super[typePlural])) {
       throw new Error(
-          'Cannot extend ' +
+        'Cannot extend ' +
           type +
           " '" +
           name +
           "': did not inherit an " +
           type +
-          ' with that name',
+          ' with that name'
       );
     }
     if (hasOwnProperty(this[typePlural], name)) {
@@ -417,9 +417,9 @@ export class Semantics {
     });
 
     this[typePlural][name] =
-      type === 'operation' ?
-        new Operation(name, inheritedFormals, newActionDict) :
-        new Attribute(name, newActionDict);
+      type === 'operation'
+        ? new Operation(name, inheritedFormals, newActionDict)
+        : new Attribute(name, newActionDict);
 
     // The following check is not strictly necessary (it will happen later anyway) but it's better
     // to catch errors early.
@@ -432,12 +432,12 @@ export class Semantics {
     }
     if (name in this.operations) {
       throw new Error(
-          'Cannot add ' + type + " '" + name + "': an operation with that name already exists",
+        'Cannot add ' + type + " '" + name + "': an operation with that name already exists"
       );
     }
     if (name in this.attributes) {
       throw new Error(
-          'Cannot add ' + type + " '" + name + "': an attribute with that name already exists",
+        'Cannot add ' + type + " '" + name + "': an attribute with that name already exists"
       );
     }
   }
@@ -463,8 +463,8 @@ function parseSignature(signature, type) {
   }
 
   const r = Semantics.prototypeGrammar.match(
-      signature,
-    type === 'operation' ? 'OperationSignature' : 'AttributeSignature',
+    signature,
+    type === 'operation' ? 'OperationSignature' : 'AttributeSignature'
   );
   if (r.failed()) {
     throw new Error(r.message);
@@ -474,7 +474,7 @@ function parseSignature(signature, type) {
 }
 
 function newDefaultAction(type, name, doIt) {
-  return function(...children) {
+  return function (...children) {
     const thisThing = this._semantics.operations[name] || this._semantics.attributes[name];
     const args = thisThing.formals.map(formal => this.args[formal]);
 
@@ -498,12 +498,12 @@ function newDefaultAction(type, name, doIt) {
 // Semantics instance. When that function is invoked with a CST node as an argument, it returns
 // a wrapper for that node which gives access to the operations and attributes provided by this
 // semantics.
-Semantics.createSemantics = function(grammar, optSuperSemantics) {
+Semantics.createSemantics = function (grammar, optSuperSemantics) {
   const s = new Semantics(
-      grammar,
-    optSuperSemantics !== undefined ?
-      optSuperSemantics :
-      Semantics.BuiltInSemantics._getSemantics(),
+    grammar,
+    optSuperSemantics !== undefined
+      ? optSuperSemantics
+      : Semantics.BuiltInSemantics._getSemantics()
   );
 
   // To enable clients to invoke a semantics like a function, return a function that acts as a proxy
@@ -511,8 +511,8 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
   const proxy = function ASemantics(matchResult) {
     if (!(matchResult instanceof MatchResult)) {
       throw new TypeError(
-          'Semantics expected a MatchResult, but got ' +
-          common.unexpectedObjToString(matchResult),
+        'Semantics expected a MatchResult, but got ' +
+          common.unexpectedObjToString(matchResult)
       );
     }
     if (matchResult.failed()) {
@@ -522,11 +522,11 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
     const cst = matchResult._cst;
     if (cst.grammar !== grammar) {
       throw new Error(
-          "Cannot use a MatchResult from grammar '" +
+        "Cannot use a MatchResult from grammar '" +
           cst.grammar.name +
           "' with a semantics for '" +
           grammar.name +
-          "'",
+          "'"
       );
     }
     const inputStream = new InputStream(matchResult.input);
@@ -534,38 +534,38 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
   };
 
   // Forward public methods from the proxy to the semantics instance.
-  proxy.addOperation = function(signature, actionDict) {
+  proxy.addOperation = function (signature, actionDict) {
     s.addOperationOrAttribute('operation', signature, actionDict);
     return proxy;
   };
-  proxy.extendOperation = function(name, actionDict) {
+  proxy.extendOperation = function (name, actionDict) {
     s.extendOperationOrAttribute('operation', name, actionDict);
     return proxy;
   };
-  proxy.addAttribute = function(name, actionDict) {
+  proxy.addAttribute = function (name, actionDict) {
     s.addOperationOrAttribute('attribute', name, actionDict);
     return proxy;
   };
-  proxy.extendAttribute = function(name, actionDict) {
+  proxy.extendAttribute = function (name, actionDict) {
     s.extendOperationOrAttribute('attribute', name, actionDict);
     return proxy;
   };
-  proxy._getActionDict = function(operationOrAttributeName) {
+  proxy._getActionDict = function (operationOrAttributeName) {
     const action =
       s.operations[operationOrAttributeName] || s.attributes[operationOrAttributeName];
     if (!action) {
       throw new Error(
-          '"' +
+        '"' +
           operationOrAttributeName +
           '" is not a valid operation or attribute ' +
           'name in this semantics for "' +
           grammar.name +
-          '"',
+          '"'
       );
     }
     return action.actionDict;
   };
-  proxy._remove = function(operationOrAttributeName) {
+  proxy._remove = function (operationOrAttributeName) {
     let semantic;
     if (operationOrAttributeName in s.operations) {
       semantic = s.operations[operationOrAttributeName];
@@ -577,16 +577,16 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
     delete s.Wrapper.prototype[operationOrAttributeName];
     return semantic;
   };
-  proxy.getOperationNames = function() {
+  proxy.getOperationNames = function () {
     return Object.keys(s.operations);
   };
-  proxy.getAttributeNames = function() {
+  proxy.getAttributeNames = function () {
     return Object.keys(s.attributes);
   };
-  proxy.getGrammar = function() {
+  proxy.getGrammar = function () {
     return s.grammar;
   };
-  proxy.toRecipe = function(semanticsOnly) {
+  proxy.toRecipe = function (semanticsOnly) {
     return s.toRecipe(semanticsOnly);
   };
 
@@ -594,7 +594,7 @@ Semantics.createSemantics = function(grammar, optSuperSemantics) {
   proxy.toString = s.toString.bind(s);
 
   // Returns the semantics for the proxy.
-  proxy._getSemantics = function() {
+  proxy._getSemantics = function () {
     return s;
   };
 

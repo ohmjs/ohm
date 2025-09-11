@@ -12,7 +12,6 @@ export async function wasmMatcherForGrammar(grammar, modBytes = undefined) {
 
   const m = new WasmMatcher();
 
-  // eslint-disable-next-line no-unused-vars, prefer-const
   let depth = 0;
   let debugImports = {};
   if (DEBUG) {

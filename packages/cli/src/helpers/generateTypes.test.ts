@@ -1,4 +1,4 @@
-/* eslint-env node */
+/* global __dirname, process */
 
 import test from 'ava';
 import fs from 'fs';
@@ -52,7 +52,7 @@ const grammarSources = {
       start += digits
       digits = digit+
     }
-  `
+  `,
 };
 
 const defaultActionsSource = dedent`
@@ -119,7 +119,7 @@ test('incorrect arity', t => {
   t.deepEqual(
     diagnostics.map(d => d.toString()),
     [
-      `Type \'(letters: any, x: any) => any\' is not assignable to type \'(this: NonterminalNode, arg0: NonterminalNode) => number\'.`
+      `Type \'(letters: any, x: any) => any\' is not assignable to type \'(this: NonterminalNode, arg0: NonterminalNode) => number\'.`,
     ]
   );
 });
@@ -173,7 +173,7 @@ test('extendOperation', t => {
   t.deepEqual(
     diagnostics.map(d => d.toString()),
     [
-      `Type \'(letters: any, x: any) => any\' is not assignable to type \'(this: NonterminalNode, arg0: NonterminalNode) => number\'.`
+      `Type \'(letters: any, x: any) => any\' is not assignable to type \'(this: NonterminalNode, arg0: NonterminalNode) => number\'.`,
     ]
   );
 });

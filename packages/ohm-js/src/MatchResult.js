@@ -8,13 +8,13 @@ import {Interval} from './Interval.js';
 
 export class MatchResult {
   constructor(
-      matcher,
-      input,
-      startExpr,
-      cst,
-      cstOffset,
-      rightmostFailurePosition,
-      optRecordedFailures,
+    matcher,
+    input,
+    startExpr,
+    cst,
+    cstOffset,
+    rightmostFailurePosition,
+    optRecordedFailures
   ) {
     this.matcher = matcher;
     this.input = input;
@@ -25,22 +25,20 @@ export class MatchResult {
     this._rightmostFailures = optRecordedFailures;
 
     if (this.failed()) {
-      /* eslint-disable no-invalid-this */
-      common.defineLazyProperty(this, 'message', function() {
+      common.defineLazyProperty(this, 'message', function () {
         const detail = 'Expected ' + this.getExpectedText();
         return (
           util.getLineAndColumnMessage(this.input, this.getRightmostFailurePosition()) + detail
         );
       });
-      common.defineLazyProperty(this, 'shortMessage', function() {
+      common.defineLazyProperty(this, 'shortMessage', function () {
         const detail = 'expected ' + this.getExpectedText();
         const errorInfo = util.getLineAndColumn(
-            this.input,
-            this.getRightmostFailurePosition(),
+          this.input,
+          this.getRightmostFailurePosition()
         );
         return 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ': ' + detail;
       });
-      /* eslint-enable no-invalid-this */
     }
   }
 
@@ -69,9 +67,9 @@ export class MatchResult {
   }
 
   toString() {
-    return this.succeeded() ?
-      '[match succeeded]' :
-      '[match failed at position ' + this.getRightmostFailurePosition() + ']';
+    return this.succeeded()
+      ? '[match succeeded]'
+      : '[match failed at position ' + this.getRightmostFailurePosition() + ']';
   }
 
   // Return a string summarizing the expected contents of the input stream when

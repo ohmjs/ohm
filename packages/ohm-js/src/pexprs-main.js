@@ -189,7 +189,7 @@ export class UnicodeChar extends PExpr {
       this.pattern = UnicodeBinaryProperties[categoryOrProp];
     } else {
       throw new Error(
-          `Invalid Unicode category or property name: ${JSON.stringify(categoryOrProp)}`,
+        `Invalid Unicode category or property name: ${JSON.stringify(categoryOrProp)}`
       );
     }
   }

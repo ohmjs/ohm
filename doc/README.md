@@ -97,7 +97,7 @@ const semantics = g.createSemantics().addOperation('eval', {
   },
   number(chars) {
     return parseInt(this.sourceString, 10);
-  }
+  },
 });
 const match = g.match('1 + (2 - 3) + 4');
 assert.equal(semantics(match).eval(), 4);

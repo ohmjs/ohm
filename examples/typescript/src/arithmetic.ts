@@ -20,7 +20,7 @@ import type {ArithmeticSemantics} from './arithmetic.ohm-bundle.d.ts';
 
 const constants: {[name: string]: number} = {
   pi: Math.PI,
-  e: Math.E
+  e: Math.E,
 };
 
 /*
@@ -75,7 +75,7 @@ semantics.addOperation<number>('eval()', {
    */
   number(_) {
     return parseFloat(this.sourceString);
-  }
+  },
 });
 
 export function evaluate(expr: string): number {

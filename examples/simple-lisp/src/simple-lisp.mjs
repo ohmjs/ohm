@@ -1,8 +1,6 @@
-'use strict';
-
 import * as ohm from 'ohm-js';
 
-export const grammar = ohm.grammar(`
+export const grammar = ohm.grammar(String.raw`
 Lisp {
   Program = Sexp*
 
@@ -26,7 +24,7 @@ Lisp {
   argList = "(" listOf<(arg | argList), " "> ")"
   arg = number | string | symbol
   symbol = (letter | sign | number)+
-  string = "\\\"" (~"\\\"" any)* "\\\""
+  string = "\"" (~"\"" any)* "\""
   sign = "_" | "+" | "-" | "/" | "*" | ">" | "<" | ">=" | "<=" | "=" | "!" | "?" | "~"
   number = digit+
 
@@ -36,7 +34,7 @@ Lisp {
 }
 `);
 
-const isArray = Array.isArray;
+const {isArray} = Array;
 
 const evalLisp = (x, env) => (x && x.eval ? x.eval(env) : x);
 
@@ -305,7 +303,7 @@ semantics.addOperation('toAST', {
 
   string(_1, text, _3) {
     return text.sourceString;
-  }
+  },
 });
 
 export const runLisp = (str, env) => {

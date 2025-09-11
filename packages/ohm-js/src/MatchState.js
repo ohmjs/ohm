@@ -66,8 +66,8 @@ export class MatchState {
     posInfo.exit();
 
     this.rightmostFailurePosition = Math.max(
-        this.rightmostFailurePosition,
-        this._rightmostFailurePositionStack.pop(),
+      this.rightmostFailurePosition,
+      this._rightmostFailurePositionStack.pop()
     );
 
     if (optNode) {
@@ -208,9 +208,9 @@ export class MatchState {
   }
 
   _getRightmostFailureOffset() {
-    return this.rightmostFailurePosition >= 0 ?
-      this.posToOffset(this.rightmostFailurePosition) :
-      -1;
+    return this.rightmostFailurePosition >= 0
+      ? this.posToOffset(this.rightmostFailurePosition)
+      : -1;
   }
 
   // Returns the memoized trace entry for `expr` at `pos`, if one exists, `null` otherwise.
@@ -267,8 +267,8 @@ export class MatchState {
     const memoRecRightmostFailurePosition =
       this.inputStream.pos + memoRec.rightmostFailureOffset;
     this.rightmostFailurePosition = Math.max(
-        this.rightmostFailurePosition,
-        memoRecRightmostFailurePosition,
+      this.rightmostFailurePosition,
+      memoRecRightmostFailurePosition
     );
     if (
       this.recordedFailures &&
@@ -279,8 +279,8 @@ export class MatchState {
     }
 
     this.inputStream.examinedLength = Math.max(
-        this.inputStream.examinedLength,
-        memoRec.examinedLength + origPos,
+      this.inputStream.examinedLength,
+      memoRec.examinedLength + origPos
     );
 
     if (memoRec.value) {
@@ -358,7 +358,7 @@ export class MatchState {
     let rightmostFailures;
     if (this.recordedFailures) {
       rightmostFailures = Object.keys(this.recordedFailures).map(
-          key => this.recordedFailures[key],
+        key => this.recordedFailures[key]
       );
     }
     const cst = this._bindings[0];
@@ -366,13 +366,13 @@ export class MatchState {
       cst.grammar = this.grammar;
     }
     return new MatchResult(
-        this.matcher,
-        this.input,
-        this.startExpr,
-        cst,
-        this._bindingOffsets[0],
-        this.rightmostFailurePosition,
-        rightmostFailures,
+      this.matcher,
+      this.input,
+      this.startExpr,
+      cst,
+      this._bindingOffsets[0],
+      this.rightmostFailurePosition,
+      rightmostFailures
     );
   }
 

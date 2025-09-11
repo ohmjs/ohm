@@ -1,27 +1,27 @@
-/* eslint-env node */
+/* global __dirname, process */
 
 // NOTE: This file must parse as ES5, because the 'ecmascript examples' test below tries to
 // parse the file itself using our ES5 grammar.
 
-/* eslint-disable no-var, prefer-arrow-callback, object-shorthand, ava/prefer-async-await */
+/* eslint-disable prefer-arrow-callback, object-shorthand, ava/prefer-async-await */
 
 // --------------------------------------------------------------------
 // Imports
 // --------------------------------------------------------------------
 
-var test = require('ava');
+const test = require('ava');
 
-var {exec} = require('child_process');
-var fs = require('fs');
-var jsdom = require('jsdom');
-var path = require('path');
-var walkSync = require('walk-sync');
+const {exec} = require('child_process');
+const fs = require('fs');
+const jsdom = require('jsdom');
+const path = require('path');
+const walkSync = require('walk-sync');
 
 // --------------------------------------------------------------------
 // Helpers
 // --------------------------------------------------------------------
 
-var EXAMPLE_ROOT = path.normalize(path.join(__dirname, '../../../examples/'));
+const EXAMPLE_ROOT = path.normalize(path.join(__dirname, '../../../examples/'));
 
 function runExampleAsync(relativePath) {
   return new Promise(function (resolve, reject) {
@@ -34,7 +34,7 @@ function runExampleAsync(relativePath) {
 // implementation of the WHATWG DOM and HTML standards. Some things may behave slightly
 // differently than a real browser environment.
 function runExample(relativePath, cb) {
-  var errors = [];
+  const errors = [];
   jsdom.env({
     file: path.join(EXAMPLE_ROOT, relativePath),
     features: {
@@ -42,7 +42,7 @@ function runExample(relativePath, cb) {
 
       // Block URLs that begin with HTTP. The examples should use only local resources,
       // referenced by relative path.
-      SkipExternalResources: /^http/
+      SkipExternalResources: /^http/,
     },
     created: function (error, window) {
       if (error) {
@@ -71,26 +71,26 @@ function runExample(relativePath, cb) {
       if (window.test) window.test();
       window.close();
       cb(errors);
-    }
+    },
   });
 }
 
 // Executes `pnpm build` if any of the files in src/ are older than the browserified bundle.
 function rebuildIfModified() {
   // Get a sorted list of last-modified times for every file in the 'src' dir.
-  var srcEntries = walkSync.entries(path.join(__dirname, '../src'));
-  var mtimes = srcEntries.map(function (entry) {
+  const srcEntries = walkSync.entries(path.join(__dirname, '../src'));
+  const mtimes = srcEntries.map(function (entry) {
     return entry.mtime;
   });
   mtimes.sort(function (a, b) {
     return a - b;
   });
 
-  var srcDate = new Date(mtimes.pop());
-  var bundleDate = fs.statSync(path.join(__dirname, '../dist/ohm.js')).mtime;
+  const srcDate = new Date(mtimes.pop());
+  const bundleDate = fs.statSync(path.join(__dirname, '../dist/ohm.js')).mtime;
 
   if (bundleDate < srcDate) {
-    var p = exec('pnpm build');
+    const p = exec('pnpm build');
     p.stdout.on('data', function () {
       /* ignore */
     });

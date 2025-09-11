@@ -1,4 +1,4 @@
-/* eslint-env node*/
+/* global URL */
 
 import markscript from 'markscript';
 import * as url from 'url';

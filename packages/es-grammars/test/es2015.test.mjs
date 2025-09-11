@@ -1,3 +1,5 @@
+/* global URL */
+
 import assert from 'node:assert';
 import test from 'node:test';
 
@@ -13,6 +15,7 @@ const es2015 = ohm.grammar(fs.readFileSync(grammarPath, 'utf-8'));
 
 const testdataPath = fileURLToPath(new URL('.', import.meta.url));
 
+// eslint-disable-next-line no-unused-vars -- usage is commented out below
 function esprimaTestMacro(t, sourcePath, shouldSucceed, startRule = 'Script') {
   const input = fs.readFileSync(sourcePath, 'utf-8');
   const result = es2015.match(input);
@@ -38,12 +41,12 @@ const skippedTests = new Set([
 
   // Strict mode: see https://262.ecma-international.org/6.0/#sec-identifiers-static-semantics-early-errors
   // and https://262.ecma-international.org/6.0/#sec-strict-mode-code
-  // In our ES5 grammar, we just always assume strict mode — maybe that's ok here?
+  // In our ES5 grammar, we just always assume strict mode — maybe that's ok here?
   'data/esprima/ES6/lexical-declaration/invalid_forin_const_let.js',
   'data/esprima/ES6/lexical-declaration/invalid_forin_let_let.js',
   'data/esprima/ES6/lexical-declaration/invalid_let_init.js',
   'data/esprima/ES6/lexical-declaration/invalid_let_let.js',
-  'data/esprima/ES6/lexical-declaration/invalid_strict_const_let.js'
+  'data/esprima/ES6/lexical-declaration/invalid_strict_const_let.js',
 ]);
 
 const moduleTests = new Set(['data/esprima/ES6/import-declaration/import-null-as-nil.js']);
@@ -61,6 +64,7 @@ for (const relPath of fastGlob.sync('**/*.js', {cwd: testdataPath})) {
   assert(shouldSucceed || fs.existsSync(failureJSONPath), relPath);
 
   if (skippedTests.has(relPath)) continue;
+  // eslint-disable-next-line no-unused-vars
   const startRule = moduleTests.has(relPath) ? 'Module' : 'Script';
 
   // Uncomment this to actually run the Esprima tests!
@@ -70,11 +74,11 @@ for (const relPath of fastGlob.sync('**/*.js', {cwd: testdataPath})) {
 test('zoo', t => {
   const matchSucceeds = (input, startRule = undefined) => [
     es2015.match(input, startRule).succeeded(),
-    input
+    input,
   ];
   const matchFails = (input, startRule = undefined) => [
     es2015.match(input, startRule).failed(),
-    input
+    input,
   ];
 
   // Fix: rule override for LeftHandSideExpression.
@@ -100,7 +104,8 @@ test('zoo', t => {
 
   assert.ok(...matchSucceeds('foo().map();'));
 
-  // Fix: rule override for AssignmentExpression — moving ConditionalExpression after LeftHandSideExpressions.
+  // Fix: rule override for AssignmentExpression — moving ConditionalExpression after
+  // LeftHandSideExpressions.
   assert.ok(...matchSucceeds('x[y] = 3;'));
 
   // Fix: rule override for UnaryExpression.

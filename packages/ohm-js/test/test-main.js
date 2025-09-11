@@ -16,10 +16,10 @@ test('namespaces', t => {
   const ns2 = ohm.grammars('ccc { foo = "foo" }', ns);
   t.truthy(ns2);
   t.throws(
-      () => {
-        ohm.grammar('ccc { bar = "bar" }', ns2);
-      },
-      {message: 'Grammar ccc is already declared in this namespace'},
+    () => {
+      ohm.grammar('ccc { bar = "bar" }', ns2);
+    },
+    {message: 'Grammar ccc is already declared in this namespace'}
   );
   t.truthy(ns2.G, 'ns2 delegates to ns1');
 
@@ -49,9 +49,9 @@ test('plain JS objects as namespaces', t => {
     enumerable: false,
   });
   t.throws(
-      () => ohm.grammar('G2 <: G {}', ns2),
-      {message: /Grammar G is not declared/},
-      'an own, non-enumerable property is ignored',
+    () => ohm.grammar('G2 <: G {}', ns2),
+    {message: /Grammar G is not declared/},
+    'an own, non-enumerable property is ignored'
   );
 });
 
@@ -64,38 +64,38 @@ test('instantiating grammars from different types of objects', t => {
 
   // Try with some objects where 'toString' won't work.
   t.throws(
-      () => {
-        ohm.grammar({toString: 3});
-      },
-      {message: 'Expected string as first argument, got [object Object]'},
-      'object with invalid toString',
+    () => {
+      ohm.grammar({toString: 3});
+    },
+    {message: 'Expected string as first argument, got [object Object]'},
+    'object with invalid toString'
   );
   t.throws(
-      () => {
-        ohm.grammar(Object.create(null));
-      },
-      {message: 'Expected string as first argument, got [object Object]'},
-      'object with no toString',
+    () => {
+      ohm.grammar(Object.create(null));
+    },
+    {message: 'Expected string as first argument, got [object Object]'},
+    'object with no toString'
   );
 
   t.throws(
-      () => {
-        ohm.grammar([1, 2]);
-      },
-      {message: 'Expected string as first argument, got Array: "1,2"'},
-      'Array with valid toString',
+    () => {
+      ohm.grammar([1, 2]);
+    },
+    {message: 'Expected string as first argument, got Array: "1,2"'},
+    'Array with valid toString'
   );
 
   function Foo() {
-    this.toString = function() {
+    this.toString = function () {
       return 'Foo!';
     };
   }
   t.throws(
-      () => {
-        ohm.grammar(new Foo());
-      },
-      {message: 'Expected string as first argument, got Foo: "Foo!"'},
-      'Custom objects with toString',
+    () => {
+      ohm.grammar(new Foo());
+    },
+    {message: 'Expected string as first argument, got Foo: "Foo!"'},
+    'Custom objects with toString'
   );
 });

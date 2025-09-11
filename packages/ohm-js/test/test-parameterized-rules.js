@@ -1,5 +1,3 @@
-/* eslint-env node */
-
 import test from 'ava';
 import * as ohm from '../index.mjs';
 
@@ -43,14 +41,14 @@ test('require same number of args when applying', t => {
 
 test('require arguments to have arity 1', t => {
   t.throws(
-      () =>
-        ohm.grammar(`
+    () =>
+      ohm.grammar(`
         G {
           Foo<x> = x x\n
           Start = Foo<digit digit>\n
         }
       `),
-      {message: /Invalid parameter to rule Foo/},
+    {message: /Invalid parameter to rule Foo/}
   );
 });
 
@@ -88,18 +86,18 @@ test('start matching from parameterized rule', t => {
     }
   `);
   t.throws(
-      () => {
-        g.match('x');
-      },
-      {message: /Wrong number of parameters for rule App \(expected 1, got 0\)/},
-      'parameterized default start rule does not work',
+    () => {
+      g.match('x');
+    },
+    {message: /Wrong number of parameters for rule App \(expected 1, got 0\)/},
+    'parameterized default start rule does not work'
   );
   t.throws(
-      () => {
-        g.match('y', 'App');
-      },
-      {message: /Wrong number of parameters for rule App \(expected 1, got 0\)/},
-      'parameterized rule does not work as simple rule',
+    () => {
+      g.match('y', 'App');
+    },
+    {message: /Wrong number of parameters for rule App \(expected 1, got 0\)/},
+    'parameterized rule does not work as simple rule'
   );
   t.truthy(g.match('y', 'App<"y">').succeeded(), 'matching with primitive parameter');
   t.truthy(g.match('z', 'App<"z">').succeeded(), 'matching with rule parameter');
@@ -175,18 +173,18 @@ test('complex parameters', t => {
 
 test('duplicate parameter names', t => {
   t.throws(
-      () => ohm.grammar('G { Foo<a, b, a, b> = a }'),
-      {message: /Duplicate parameter names in rule Foo: a, b/},
-      'defining',
+    () => ohm.grammar('G { Foo<a, b, a, b> = a }'),
+    {message: /Duplicate parameter names in rule Foo: a, b/},
+    'defining'
   );
   t.throws(
-      () => ohm.grammar('G { ListOf<a, a> := a }'),
-      {message: /Duplicate parameter names in rule ListOf: a/},
-      'overriding',
+    () => ohm.grammar('G { ListOf<a, a> := a }'),
+    {message: /Duplicate parameter names in rule ListOf: a/},
+    'overriding'
   );
   t.throws(
-      () => ohm.grammar('G { ListOf<a, a> += a }'),
-      {message: /Duplicate parameter names in rule ListOf: a/},
-      'extending',
+    () => ohm.grammar('G { ListOf<a, a> += a }'),
+    {message: /Duplicate parameter names in rule ListOf: a/},
+    'extending'
   );
 });

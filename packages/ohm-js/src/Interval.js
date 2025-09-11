@@ -90,13 +90,13 @@ export class Interval {
       throw errors.intervalSourcesDontMatch();
     }
     assert(
-        this.startIdx >= that.startIdx && this.endIdx <= that.endIdx,
-        'other interval does not cover this one',
+      this.startIdx >= that.startIdx && this.endIdx <= that.endIdx,
+      'other interval does not cover this one'
     );
     return new Interval(
-        this.sourceString,
-        this.startIdx - that.startIdx,
-        this.endIdx - that.startIdx,
+      this.sourceString,
+      this.startIdx - that.startIdx,
+      this.endIdx - that.startIdx
     );
   }
 
@@ -115,7 +115,7 @@ export class Interval {
   }
 }
 
-Interval.coverage = function(firstInterval, ...intervals) {
+Interval.coverage = function (firstInterval, ...intervals) {
   let {startIdx, endIdx} = firstInterval;
   for (const interval of intervals) {
     if (interval.sourceString !== firstInterval.sourceString) {

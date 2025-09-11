@@ -76,11 +76,11 @@ test('basic incremental parsing', t => {
     },
     _iter(...children) {
       return this._node.childOffsets
-          .map((offset, i) => {
-            const c = children[i].reconstructInput(this.args.input.slice(offset));
-            return c;
-          })
-          .join('');
+        .map((offset, i) => {
+          const c = children[i].reconstructInput(this.args.input.slice(offset));
+          return c;
+        })
+        .join('');
     },
     _terminal() {
       return this.sourceString;

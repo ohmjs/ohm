@@ -15,7 +15,7 @@ function parseMarkdownBlocks(str) {
     block =  blank | h3 | h2 | h1 | bullet | code | para | endline
     h3 = "###" rest
     h2 = "##" rest
-    h1 = "#" rest  
+    h1 = "#" rest
     para = line+ //paragraph is just multiple consecutive lines
     bullet = "* " rest (~"*" ~blank rest)*
     code = q rest (~q any)* q //anything between the \`\`\` markers
@@ -41,7 +41,7 @@ function parseMarkdownBlocks(str) {
     para: a => P(a.sourceString),
     blank: (a, b) => ({type: 'BLANK'}),
     bullet: (a, b, c) => LI(b.sourceString + c.sourceString),
-    rest: (a, _) => a.children.map(c => c.blocks()).join('')
+    rest: (a, _) => a.children.map(c => c.blocks()).join(''),
   });
   const match = parser.grammar.match(str);
   return parser.semantics(match).blocks();
@@ -79,8 +79,8 @@ function parseMarkdownContent(block) {
       'link',
       text.children.map(c => c.content()).join(''),
       url.children.map(c => c.content()).join(''),
-      img.children.map(c => c.content()).join('')
-    ]
+      img.children.map(c => c.content()).join(''),
+    ],
   });
   const match = parser.grammar.match(block.content);
   if (match.failed()) {
@@ -91,8 +91,8 @@ function parseMarkdownContent(block) {
   return block;
 }
 
-export function parseMarkdown(raw_markdown) {
-  const blocks = parseMarkdownBlocks(raw_markdown);
+export function parseMarkdown(rawMarkdown) {
+  const blocks = parseMarkdownBlocks(rawMarkdown);
   return blocks.map(block => {
     if (block.type === 'P') return parseMarkdownContent(block);
     if (block.type === 'LI') return parseMarkdownContent(block);

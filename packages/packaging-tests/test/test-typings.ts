@@ -15,7 +15,7 @@ const g: ohm.Grammar = ohm.grammar(`
 const s: ohm.Semantics = g.createSemantics().addOperation('getName', {
   Greeting(interj, comma, name, punc) {
     return name.sourceString;
-  }
+  },
 });
 
 test('basic matching', () => {
@@ -62,7 +62,7 @@ test('extras - getLineAndColumn & getLineAndColumnMessage', () => {
   const offset = 0;
   const ranges = [
     [0, 2],
-    [3, 6]
+    [3, 6],
   ];
   assert.is(
     extras.getLineAndColumn(str, offset).toString(...ranges),
@@ -95,7 +95,7 @@ test('asIteration - #407', () => {
   const s = g.createSemantics().addOperation('x', {
     start(letters) {
       return letters.asIteration().isIteration();
-    }
+    },
   });
   assert.is(s(g.match('abc')).x(), true);
 });
