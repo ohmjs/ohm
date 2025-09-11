@@ -1,14 +1,13 @@
-/* global __dirname */
+import {fixupConfigRules, fixupPluginRules} from '@eslint/compat';
+import {FlatCompat} from '@eslint/eslintrc';
+import js from '@eslint/js';
+import {defineConfig, globalIgnores} from 'eslint/config';
+import ava from 'eslint-plugin-ava';
+import {dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
 
-const {defineConfig, globalIgnores} = require('eslint/config');
-
-const {fixupConfigRules, fixupPluginRules} = require('@eslint/compat');
-
-const camelcaseOhm = require('eslint-plugin-camelcase-ohm');
-const ava = require('eslint-plugin-ava');
-const js = require('@eslint/js');
-
-const {FlatCompat} = require('@eslint/eslintrc');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const compat = new FlatCompat({
   baseDirectory: __dirname,
@@ -16,7 +15,7 @@ const compat = new FlatCompat({
   allConfig: js.configs.all,
 });
 
-module.exports = defineConfig([
+export default defineConfig([
   {
     languageOptions: {
       ecmaVersion: 2020,
@@ -34,7 +33,6 @@ module.exports = defineConfig([
     extends: fixupConfigRules(compat.extends('eslint:recommended', 'plugin:ava/recommended')),
 
     plugins: {
-      'camelcase-ohm': camelcaseOhm,
       ava: fixupPluginRules(ava),
     },
 
@@ -55,6 +53,7 @@ module.exports = defineConfig([
       // Stylistic issues
       // Ohm note: virtually everything under "Stylistic issues" is deprecated
       // and moved to @stylistic/eslint-plugin. Others are listed here.
+      // Since we use prettier, stylistic rules are less important anyways.
       // no-multi-spaces: 'error'
       camelcase: ['error', {properties: 'never'}],
       // 'new-cap': 'error',
@@ -108,8 +107,6 @@ module.exports = defineConfig([
       ],
 
       'require-jsdoc': 'off',
-      // camelcase: 0,
-      'camelcase-ohm/camelcase-ohm': 'error',
       eqeqeq: ['error', 'allow-null'],
 
       'max-len': [
