@@ -1,3 +1,4 @@
+# This should be kept up to date with biome.jsonc.
 **/test/data/*
 *.css
 *.html
