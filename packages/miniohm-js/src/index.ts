@@ -38,8 +38,10 @@ function regexFromCategoryBitmap(bitmap: number): RegExp {
 }
 
 export class WasmMatcher {
-  _instance?: WebAssembly.Instance = undefined;
-  _imports = {
+  name = '';
+
+  private _instance?: WebAssembly.Instance = undefined;
+  private _imports = {
     // System-level AssemblyScript imports.
     env: {
       abort() {
@@ -65,14 +67,63 @@ export class WasmMatcher {
       },
     },
   };
-  _ruleIds = new Map<string, number>();
-  _ruleNames: string[] = [];
-  _input = '';
-  _pos?: number = undefined;
+  private _ruleIds = new Map<string, number>();
+  private _ruleNames: string[] = [];
+  private _input = '';
+  private _pos?: number = undefined;
+
+  /**
+   * Create a new WasmGrammar object.
+   * If `bytes` is specified, the WebAssembly module will be synchronously
+   * compiled and instantiated. Use `instantiate` or `instantiateStreaming`
+   * to instantiate asynchronously.
+   */
+  constructor(bytes?: BufferSource) {
+    if (bytes) {
+      this._init(
+        new WebAssembly.Module(bytes),
+        new WebAssembly.Instance(module, this._imports)
+      );
+    }
+  }
+
+  private _init(module: WebAssembly.Module, instance: WebAssembly.Instance) {
+    this._instance = instance;
+    this._extractRuleIds(module);
+    this.name = this._getGrammarName(module);
+    return this;
+  }
+
+  static async instantiate(source: BufferSource) {
+    return new WasmMatcher()._instantiate(source);
+  }
+
+  static async instantiateStreaming(source: Response | Promise<Response>) {
+    return new WasmMatcher()._instantiateStreaming(source);
+  }
+
+  async _instantiate(source: BufferSource, debugImports: any = {}): Promise<WasmMatcher> {
+    const {module, instance} = await WebAssembly.instantiate(source, {
+      ...this._imports,
+      debug: debugImports,
+    });
+    return this._init(module, instance);
+  }
+
+  async _instantiateStreaming(
+    source: Response | Promise<Response>,
+    debugImports: any = {}
+  ): Promise<WasmMatcher> {
+    const {module, instance} = await WebAssembly.instantiateStreaming(source, {
+      ...this._imports,
+      debug: debugImports,
+    });
+    return this._init(module, instance);
+  }
 
   // Return a JavaScript string containing the next code point from the input
   // buffer, and advance pos past it.
-  _nextCodePoint(): string {
+  private _nextCodePoint(): string {
     const {pos, memory} = (this._instance as any).exports;
     const offset = pos.value;
     const byteArr = new Uint8Array(memory.buffer, INPUT_BUFFER_OFFSET + offset);
@@ -92,11 +143,17 @@ export class WasmMatcher {
     return str;
   }
 
-  _extractRuleIds(module: WebAssembly.Module): void {
+  private _getGrammarName(module: WebAssembly.Module): string {
+    const sections = WebAssembly.Module.customSections(module, 'name');
+    assert(sections.length === 1, `Expected one name section, found ${sections.length}`);
+    const data = new Uint8Array(sections[0]);
+    const decoder = new TextDecoder('utf-8');
+    return decoder.decode(data);
+  }
+
+  private _extractRuleIds(module: WebAssembly.Module): void {
     const sections = WebAssembly.Module.customSections(module, 'ruleNames');
-    if (sections.length === 0) {
-      throw new Error('No ruleNames section found in module');
-    }
+    assert(sections.length === 1, `Expected one ruleNames section, found ${sections.length}`);
 
     const data = new Uint8Array(sections[0]);
     const dataView = new DataView(data.buffer);
@@ -124,23 +181,6 @@ export class WasmMatcher {
       this._ruleIds.set(name, i);
       this._ruleNames.push(name);
     }
-  }
-
-  async _instantiate(
-    source: Uint8Array<ArrayBuffer>,
-    debugImports: any = {}
-  ): Promise<WasmMatcher> {
-    const {module, instance} = await WebAssembly.instantiate(source, {
-      ...this._imports,
-      debug: debugImports,
-    });
-    this._instance = instance;
-    this._extractRuleIds(module);
-    return this;
-  }
-
-  static async fromBytes(source: Uint8Array<ArrayBuffer>): Promise<WasmMatcher> {
-    return new WasmMatcher()._instantiate(source);
   }
 
   getInput(): string {
@@ -185,7 +225,7 @@ export class WasmMatcher {
     return new CstNode(this._ruleNames, new DataView(buffer), addr, 0);
   }
 
-  _fillInputBuffer(offset: number, maxLen: number): number {
+  private _fillInputBuffer(offset: number, maxLen: number): number {
     const encoder = new TextEncoder();
     const {memory} = (this._instance as any).exports;
     const buf = new Uint8Array(memory.buffer, INPUT_BUFFER_OFFSET + offset);

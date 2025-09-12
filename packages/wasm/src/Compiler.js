@@ -1202,6 +1202,7 @@ export class Compiler {
       w.elemsec([w.elem(w.tableidx(0), [instr.i32.const, w.i32(0), instr.end], tableData)]),
       mergeSections(w.SECTION_ID_CODE, prebuilt.codesec, codes),
       w.customsec(this.buildRuleNamesSection(ruleNames)),
+      w.namesec(w.namedata(w.modulenamesubsec(this.grammar.name))),
     ]);
     const bytes = Uint8Array.from(mod.flat(Infinity));
 
