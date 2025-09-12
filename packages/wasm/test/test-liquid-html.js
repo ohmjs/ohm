@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import * as ohm from 'ohm-js';
 import {performance} from 'perf_hooks';
 
-import {matchWithInput, unparse, wasmMatcherForGrammar} from './_helpers.js';
+import {matchWithInput, unparse, toWasmGrammar} from './_helpers.js';
 
 const scriptRel = relPath => new URL(relPath, import.meta.url);
 const grammarSource = fs.readFileSync(scriptRel('data/liquid-html.ohm'), 'utf8');
@@ -19,9 +19,9 @@ test('basic matching (small)', async t => {
     {% assign year = page.started | date: '%Y' %}`;
   t.is(liquid.LiquidHTML.match(input).succeeded(), true);
 
-  const m = await wasmMatcherForGrammar(liquid.LiquidHTML);
-  t.is(matchWithInput(m, input), 1);
-  t.is(unparse(m), input);
+  const g = await toWasmGrammar(liquid.LiquidHTML);
+  t.is(matchWithInput(g, input), 1);
+  t.is(unparse(g), input);
 });
 
 test('swatch.liquid', async t => {
@@ -31,16 +31,16 @@ test('swatch.liquid', async t => {
     class="{% if x == 'x' %}x{% endif %}"
   {% endif %}
 >`;
-  const m = await wasmMatcherForGrammar(liquid.LiquidHTML);
-  t.is(matchWithInput(m, input), 1);
+  const g = await toWasmGrammar(liquid.LiquidHTML);
+  t.is(matchWithInput(g, input), 1);
 });
 
 test('html comment', async t => {
   const input = `{% if x %}
     <!-- x -->
   {% endif %}`;
-  const m = await wasmMatcherForGrammar(liquid.LiquidHTML);
-  t.is(matchWithInput(m, input), 1);
+  const g = await toWasmGrammar(liquid.LiquidHTML);
+  t.is(matchWithInput(g, input), 1);
 });
 
 test('book-review.liquid', async t => {
@@ -49,8 +49,8 @@ test('book-review.liquid', async t => {
   t.is(liquid.LiquidHTML.match(input).succeeded(), true); // Trigger fillInputBuffer
   t.log(`Ohm.js: ${(performance.now() - start).toFixed(2)}ms`);
 
-  const m = await wasmMatcherForGrammar(liquid.LiquidHTML);
+  const g = await toWasmGrammar(liquid.LiquidHTML);
   start = performance.now();
-  t.is(matchWithInput(m, input), 1);
+  t.is(matchWithInput(g, input), 1);
   t.log(`Wasm: ${(performance.now() - start).toFixed(2)}ms`);
 });

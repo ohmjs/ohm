@@ -17,7 +17,7 @@ import process from 'node:process';
 import {fileURLToPath} from 'node:url';
 import * as ohm from 'ohm-js';
 
-import {matchWithInput, unparse, wasmMatcherForGrammar} from '../test/_helpers.js';
+import {matchWithInput, unparse, toWasmGrammar} from '../test/_helpers.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
@@ -51,17 +51,17 @@ const pattern = process.argv[2];
     assert.equal(r.succeeded(), true, `failed: ${path}`);
   }
 
-  const m = await wasmMatcherForGrammar(liquid.LiquidHTML);
+  const g = await toWasmGrammar(liquid.LiquidHTML);
   for (const path of fg.sync(pattern)) {
     if (!parsedPaths.has(path)) continue;
     const input = readFileSync(path, 'utf8');
     const start = performance.now();
-    assert.equal(matchWithInput(m, input), 1, `failed: ${path}`);
+    assert.equal(matchWithInput(g, input), 1, `failed: ${path}`);
     wasmTimes.push(performance.now() - start);
 
     // Trailing/leading spaces are currently dropped, so trim both
     // to after unparsing.
-    assert.equal(input.trim().length, unparse(m).trim().length);
+    assert.equal(input.trim().length, unparse(g).trim().length);
   }
 
   const sum = arr => arr.reduce((a, b) => a + b, 0);

@@ -4,8 +4,8 @@ import {fileURLToPath} from 'node:url';
 import {run, bench, group, summary} from 'mitata';
 import * as ohm from 'ohm-js';
 
-import es5js from '../../../examples/ecmascript/index.js';
-import {wasmMatcherForGrammar} from '../test/_helpers.js';
+import * as es5js from '../../../examples/ecmascript/index.js';
+import {toWasmGrammar} from '../test/_helpers.js';
 import es5 from '../test/data/_es5.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -23,26 +23,14 @@ const inputs = {
 const liquid = ohm.grammars(readFileSync(join(datadir, 'liquid-html.ohm'), 'utf8'));
 const json = ohm.grammar(readFileSync(join(__dirname, '../../lang-json/json.ohm'), 'utf8'));
 
-let liquidHtmlMatcher;
-let es5Matcher;
-let jsonMatcher;
-
-function checkOk(val) {
-  if (!val) {
-    throw new Error('Expected non-zero value');
-  }
-  return val;
-}
-
-function matchWithInput(m, input) {
-  m.setInput(input);
-  return checkOk(m.match());
-}
+let liquidHtmlWasm;
+let es5Wasm;
+let jsonWasm;
 
 group('ES5: html5shiv', () => {
   summary(() => {
     bench('Wasm', () => {
-      matchWithInput(es5Matcher, inputs.html5shiv);
+      es5Wasm.match(inputs.html5shiv);
     });
     bench('JS', () => {
       es5js.grammar.match(inputs.html5shiv);
@@ -53,7 +41,7 @@ group('ES5: html5shiv', () => {
 group('ES5: underscore', () => {
   summary(() => {
     bench('Wasm', () => {
-      matchWithInput(es5Matcher, inputs.underscore);
+      es5Wasm.match(inputs.underscore);
     });
     bench('JS', () => {
       es5js.grammar.match(inputs.underscore);
@@ -64,7 +52,7 @@ group('ES5: underscore', () => {
 group('LiquidHTML: book-review.liquid', () => {
   summary(() => {
     bench('Wasm', () => {
-      matchWithInput(liquidHtmlMatcher, inputs.bookReview);
+      liquidHtmlWasm.match(inputs.bookReview);
     });
     bench('JS', () => {
       liquid.LiquidHTML.match(inputs.bookReview);
@@ -75,7 +63,7 @@ group('LiquidHTML: book-review.liquid', () => {
 group('LiquidHTML: featured-product.liquid', () => {
   summary(() => {
     bench('Wasm', () => {
-      matchWithInput(liquidHtmlMatcher, inputs.featuredProduct);
+      liquidHtmlWasm.match(inputs.featuredProduct);
     });
     bench('JS', () => {
       liquid.LiquidHTML.match(inputs.featuredProduct);
@@ -86,7 +74,7 @@ group('LiquidHTML: featured-product.liquid', () => {
 group('LiquidHTML: footer.liquid', () => {
   summary(() => {
     bench('Wasm', () => {
-      matchWithInput(liquidHtmlMatcher, inputs.footer);
+      liquidHtmlWasm.match(inputs.footer);
     });
     bench('JS', () => {
       liquid.LiquidHTML.match(inputs.footer);
@@ -97,7 +85,7 @@ group('LiquidHTML: footer.liquid', () => {
 group('JSON', () => {
   summary(() => {
     bench('Wasm', () => {
-      matchWithInput(jsonMatcher, inputs.mockJSON);
+      jsonWasm.match(inputs.mockJSON);
     });
     bench('JS', () => {
       json.match(inputs.mockJSON);
@@ -109,18 +97,12 @@ group('JSON', () => {
   // Note: we are deliberately creating one instance of the matcher that's
   // reused. This takes advantage of JIT tier-up, and approximates usage
   // in a long-running process, e.g. LSP server.
-  liquidHtmlMatcher = await wasmMatcherForGrammar(
+  liquidHtmlWasm = await toWasmGrammar(
     liquid.LiquidHTML,
     readFileSync(join(__dirname, '../build/liquid-html.wasm'))
   );
-  es5Matcher = await wasmMatcherForGrammar(
-    es5,
-    readFileSync(join(__dirname, '../build/es5.wasm'))
-  );
-  jsonMatcher = await wasmMatcherForGrammar(
-    json,
-    readFileSync(join(__dirname, '../build/json.wasm'))
-  );
+  es5Wasm = await toWasmGrammar(es5, readFileSync(join(__dirname, '../build/es5.wasm')));
+  jsonWasm = await toWasmGrammar(json, readFileSync(join(__dirname, '../build/json.wasm')));
 
   await run();
 })();

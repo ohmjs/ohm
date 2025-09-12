@@ -1056,7 +1056,7 @@ const rules = {
   directive: seq(app('spaces'), app('stringLiteral'), lexIgnored(app('sc'))),
 };
 
-// The WasmMatcher constructor requires a grammar object, so we create
+// The WasmGrammar constructor requires a Grammar instance, so we create
 // one and manually add the rules in.
 const g = ohm.grammar('ES5 { start = }');
 for (const key of Object.keys(rules)) {

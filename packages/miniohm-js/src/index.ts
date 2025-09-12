@@ -37,7 +37,7 @@ function regexFromCategoryBitmap(bitmap: number): RegExp {
   );
 }
 
-export class WasmMatcher {
+export class WasmGrammar {
   name = '';
 
   private _instance?: WebAssembly.Instance = undefined;
@@ -94,15 +94,17 @@ export class WasmMatcher {
     return this;
   }
 
-  static async instantiate(source: BufferSource) {
-    return new WasmMatcher()._instantiate(source);
+  static async instantiate(source: BufferSource): Promise<WasmGrammar> {
+    return new WasmGrammar()._instantiate(source);
   }
 
-  static async instantiateStreaming(source: Response | Promise<Response>) {
-    return new WasmMatcher()._instantiateStreaming(source);
+  static async instantiateStreaming(
+    source: Response | Promise<Response>
+  ): Promise<WasmGrammar> {
+    return new WasmGrammar()._instantiateStreaming(source);
   }
 
-  async _instantiate(source: BufferSource, debugImports: any = {}): Promise<WasmMatcher> {
+  async _instantiate(source: BufferSource, debugImports: any = {}) {
     const {module, instance} = await WebAssembly.instantiate(source, {
       ...this._imports,
       debug: debugImports,
@@ -113,7 +115,7 @@ export class WasmMatcher {
   async _instantiateStreaming(
     source: Response | Promise<Response>,
     debugImports: any = {}
-  ): Promise<WasmMatcher> {
+  ): Promise<WasmGrammar> {
     const {module, instance} = await WebAssembly.instantiateStreaming(source, {
       ...this._imports,
       debug: debugImports,
@@ -183,23 +185,8 @@ export class WasmMatcher {
     }
   }
 
-  getInput(): string {
-    return this._input;
-  }
-
-  setInput(str: string): WasmMatcher {
-    if (this._input !== str) {
-      // this.replaceInputRange(0, this._input.length, str);
-      this._input = str;
-    }
-    return this;
-  }
-
-  replaceInputRange(startIdx: number, endIdx: number, str: string): void {
-    throw new Error('Not implemented');
-  }
-
-  match(ruleName?: string): MatchResult {
+  match(input: string, ruleName?: string): MatchResult {
+    this._input = input;
     if (process.env.OHM_DEBUG === '1') debugger; // eslint-disable-line no-debugger
     const ruleId = checkNotNull(
       this._ruleIds.get(ruleName || this._ruleNames[0]),
@@ -385,7 +372,10 @@ export function dumpCstNode(node: CstNode, depth = 0): void {
 }
 
 export class MatchResult {
-  matcher: WasmMatcher;
+  // Note: This is different from the JS implementation, which has:
+  //    matcher: Matcher;
+  // …instead.
+  grammar: WasmGrammar;
   input: string;
   startExpr: string;
   _cst: CstNode | null;
@@ -395,14 +385,14 @@ export class MatchResult {
   message?: string;
 
   constructor(
-    matcher: WasmMatcher,
+    matcher: WasmGrammar,
     input: string,
     startExpr: string,
     cst: CstNode | null,
     rightmostFailurePosition: number,
     optRecordedFailures?: any
   ) {
-    this.matcher = matcher;
+    this.grammar = matcher;
     this.input = input;
     this.startExpr = startExpr;
     this._cst = cst;

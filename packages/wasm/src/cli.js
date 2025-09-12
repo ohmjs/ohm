@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import {basename} from 'node:path';
 import {parseArgs} from 'node:util';
 
-import {Compiler} from './index.js';
+import {Compiler} from './Compiler.js';
 
 // Compile an Ohm grammar file (.ohm) to WebAssembly (.wasm).
 function main() {

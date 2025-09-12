@@ -4,14 +4,13 @@ import fc from 'fast-check';
 import {readFileSync} from 'node:fs';
 import * as ohm from 'ohm-js';
 
-import {scriptRel, wasmMatcherForGrammar} from './_helpers.js';
+import {scriptRel, toWasmGrammar} from './_helpers.js';
 
 const grammarSource = readFileSync(scriptRel('data/liquid-html.ohm'), 'utf8');
 const ns = ohm.grammars(grammarSource);
 
-function failurePos(matcher, input) {
-  matcher.setInput(input);
-  const result = matcher.match();
+function failurePos(g, input) {
+  const result = g.match(input);
   assert.equal(result.failed(), true, 'expected match failure');
   return result.getRightmostFailurePosition();
 }
@@ -68,20 +67,19 @@ function arbitraryEdit(input) {
 // - for some randomly-corrupted input, which fails to parse
 // - the rightmostFailurePosition reported by a JS matcher and a Wasm matcher
 //   is the same.
-function sameFailurePos(wasmMatcher) {
+function sameFailurePos(wasmGrammar) {
   return fc.property(arbitraryEdit(validInput), input => {
-    wasmMatcher.setInput(input);
-    fc.pre(wasmMatcher.match().succeeded());
+    fc.pre(wasmGrammar.match(input).succeeded());
     assert.equal(
       ns.LiquidHTML.match(input).getRightmostFailurePosition(),
-      wasmMatcher.getRightmostFailurePosition()
+      wasmGrammar.getRightmostFailurePosition()
     );
   });
 }
 
 test('failure pos (fast-check)', async t => {
-  const m = await wasmMatcherForGrammar(ns.LiquidHTML);
-  const details = fc.check(sameFailurePos(m), {
+  const g = await toWasmGrammar(ns.LiquidHTML);
+  const details = fc.check(sameFailurePos(g), {
     includeErrorInReport: true,
     interruptAfterTimeLimit: 1000,
   });
@@ -95,17 +93,16 @@ test('failure pos: basic 1', async t => {
       Start = number+
       number = digit+
     }`);
-  const jsMatcher = g.matcher();
-  const wasmMatcher = await wasmMatcherForGrammar(g);
+  const wasmGrammar = await toWasmGrammar(g);
 
-  t.is(failurePos(jsMatcher, 'a'), 0);
-  t.is(failurePos(wasmMatcher, 'a'), 0);
+  t.is(failurePos(g, 'a'), 0);
+  t.is(failurePos(wasmGrammar, 'a'), 0);
 
-  t.is(failurePos(jsMatcher, '123a'), 3);
-  t.is(failurePos(wasmMatcher, '123a'), 3);
+  t.is(failurePos(g, '123a'), 3);
+  t.is(failurePos(wasmGrammar, '123a'), 3);
 
-  t.is(failurePos(jsMatcher, '1 99a'), 4);
-  t.is(failurePos(wasmMatcher, '1 99a'), 4);
+  t.is(failurePos(g, '1 99a'), 4);
+  t.is(failurePos(wasmGrammar, '1 99a'), 4);
 });
 
 test('failure pos: basic 2', async t => {
@@ -115,11 +112,10 @@ test('failure pos: basic 2', async t => {
             | number
         number = digit+
       }`);
-  const jsMatcher = g.matcher();
-  const wasmMatcher = await wasmMatcherForGrammar(g);
+  const wasmGrammar = await toWasmGrammar(g);
 
-  t.is(failurePos(jsMatcher, '99 + 66'), 7);
-  t.is(failurePos(wasmMatcher, '99 + 66'), 7);
+  t.is(failurePos(g, '99 + 66'), 7);
+  t.is(failurePos(wasmGrammar, '99 + 66'), 7);
 });
 
 test('failure pos: basic 3', async t => {
@@ -128,9 +124,9 @@ test('failure pos: basic 3', async t => {
       Start = letter letter
       space := "/*" (~"*/" any)* "*/"
     }`);
-  const wasmMatcher = await wasmMatcherForGrammar(g);
+  const wasmGrammar = await toWasmGrammar(g);
 
-  t.is(failurePos(wasmMatcher, '99'), 0);
+  t.is(failurePos(wasmGrammar, '99'), 0);
 });
 
 test('failure pos: lookahead', async t => {
@@ -140,13 +136,12 @@ test('failure pos: lookahead', async t => {
         start = ~(anyTwo "!") "a" "b"
         anyTwo = any any
       }`);
-    const jsMatcher = g.matcher();
-    const wasmMatcher = await wasmMatcherForGrammar(g);
+    const wasmGrammar = await toWasmGrammar(g);
 
     // Original Ohm behaviour is to ignore failures inside the lookahead, so
     // it produces 'Expected "a"' at pos 0.
-    t.is(failurePos(jsMatcher, '99'), 0);
-    t.is(failurePos(wasmMatcher, '99'), 0);
+    t.is(failurePos(g, '99'), 0);
+    t.is(failurePos(wasmGrammar, '99'), 0);
   }
 });
 
@@ -157,13 +152,12 @@ test('failure pos: memoization', async t => {
         start = ~anyTwo anyTwo
         anyTwo = any any
       }`);
-    const jsMatcher = g.matcher();
-    const wasmMatcher = await wasmMatcherForGrammar(g);
+    const wasmGrammar = await toWasmGrammar(g);
 
     // Original Ohm behaviour is to ignore failures inside the lookahead, so
     // it produces 'Expected "a"' at pos 0.
-    t.is(failurePos(jsMatcher, '9'), 1);
-    t.is(failurePos(wasmMatcher, '9'), 1);
+    t.is(failurePos(g, '9'), 1);
+    t.is(failurePos(wasmGrammar, '9'), 1);
   }
 });
 
@@ -173,12 +167,11 @@ test('failure pos: space skipping', async t => {
       Start = digit digit
       space += "/*" (~"*/" any)* "*/" -- comment
     }`);
-  const jsMatcher = g.matcher();
-  const wasmMatcher = await wasmMatcherForGrammar(g);
+  const wasmGrammar = await toWasmGrammar(g);
 
   // Failure inside space skipping should be ignored.
-  t.is(failurePos(jsMatcher, '9 /* bad'), 2);
-  t.is(failurePos(wasmMatcher, '9 /* bad'), 2);
+  t.is(failurePos(g, '9 /* bad'), 2);
+  t.is(failurePos(wasmGrammar, '9 /* bad'), 2);
 });
 
 test('failure pos is always after space skipping', async t => {
@@ -189,31 +182,29 @@ test('failure pos is always after space skipping', async t => {
             | "3." twice<"b">
       twice<x> = x x
     }`);
-  const jsMatcher = g.matcher();
-  const wasmMatcher = await wasmMatcherForGrammar(g);
+  const wasmGrammar = await toWasmGrammar(g);
 
   // Regular terminal
-  t.is(failurePos(jsMatcher, '1. c'), 3);
-  t.is(failurePos(wasmMatcher, '1. c'), 3);
+  t.is(failurePos(g, '1. c'), 3);
+  t.is(failurePos(wasmGrammar, '1. c'), 3);
 
   // Application
-  t.is(failurePos(jsMatcher, '2. 3'), 3);
-  t.is(failurePos(wasmMatcher, '2. 3'), 3);
+  t.is(failurePos(g, '2. 3'), 3);
+  t.is(failurePos(wasmGrammar, '2. 3'), 3);
 
   // Dispatch w/ lifted terminal
-  t.is(failurePos(jsMatcher, '3. c'), 3);
-  t.is(failurePos(wasmMatcher, '3. c'), 3);
+  t.is(failurePos(g, '3. c'), 3);
+  t.is(failurePos(wasmGrammar, '3. c'), 3);
 
   // TODO: Is this right? Should be 5, not 4.
   // https://github.com/ohmjs/ohm/issues/527
-  t.is(failurePos(jsMatcher, '3. b c'), 4);
-  t.is(failurePos(wasmMatcher, '3. b c'), 4);
+  t.is(failurePos(g, '3. b c'), 4);
+  t.is(failurePos(wasmGrammar, '3. b c'), 4);
 });
 
 test('fast-check zoo', async t => {
-  const jsMatcher = ns.LiquidHTML.matcher();
-  const wasmMatcher = await wasmMatcherForGrammar(ns.LiquidHTML);
+  const wasmGrammar = await toWasmGrammar(ns.LiquidHTML);
 
   const input = '< {% if swatch_value %}';
-  t.is(failurePos(wasmMatcher, input), failurePos(jsMatcher, input));
+  t.is(failurePos(wasmGrammar, input), failurePos(ns.LiquidHTML, input));
 });

@@ -6,7 +6,7 @@ import {readFileSync} from 'node:fs';
 import * as ohm from 'ohm-js';
 import {toAST} from 'ohm-js/extras';
 
-import {scriptRel, wasmMatcherForGrammar} from './_helpers.js';
+import {scriptRel, toWasmGrammar} from './_helpers.js';
 
 const arithmetic = ohm.grammar(
   readFileSync(scriptRel('../../ohm-js/test/data/arithmetic.ohm'))
@@ -30,9 +30,8 @@ const arithmetic2 = ohm.grammar(`
 
 // Copied from test/extras/test-toAst.js and modified for the new toAST API.
 test('toAST basic', async t => {
-  const m = await wasmMatcherForGrammar(arithmetic);
-  m.setInput('10 + 20');
-  let matchResult = m.match();
+  const g = await toWasmGrammar(arithmetic);
+  let matchResult = g.match('10 + 20');
   let toAST = toAstWithMapping({
     AddExp_plus: {
       expr1: 0,
@@ -136,8 +135,7 @@ test('toAST basic', async t => {
   };
   t.deepEqual(ast, expected, 'proper AST with computed property');
 
-  m.setInput('10 + 20 - 30');
-  matchResult = m.match();
+  matchResult = g.match('10 + 20 - 30');
   toAST = toAstWithMapping({
     AddExp_plus: 2,
   });
@@ -196,12 +194,11 @@ test('listOf and friends - #394', async t => {
       Exp2 = ListOf<digit, "+">
     }
   `);
-  const m = await wasmMatcherForGrammar(g);
+  const wasmGrammar = await toWasmGrammar(g);
 
   const ast = (input, mapping, ruleName = 'Exp') => {
     const toAst = toAstWithMapping(mapping);
-    m.setInput(input);
-    return toAst(m.match(ruleName));
+    return toAst(wasmGrammar.match(input, ruleName));
   };
   const astSyntactic = (input, mapping) => ast(input, mapping, 'Exp2');
 
@@ -272,10 +269,9 @@ function arbitraryMapping() {
 }
 
 test('arbitrary mappings (fast-check)', async t => {
-  const m = await wasmMatcherForGrammar(arithmetic2);
+  const g = await toWasmGrammar(arithmetic2);
   const input = '(10+ 999)- 1 +222; 2';
-  m.setInput(input);
-  const wasmResult = m.match();
+  const wasmResult = g.match(input);
   const jsResult = arithmetic2.match(input);
   const hasExpectedResult = () => {
     return fc.property(arbitraryMapping(), mapping => {
@@ -294,10 +290,9 @@ test('arbitrary mappings (fast-check)', async t => {
 
 // Failures that fast-check has found, which we don't want to regress on.
 test('fast-check zoo', async t => {
-  const wasmMatcher = await wasmMatcherForGrammar(arithmetic2);
+  const wasmGrammar = await toWasmGrammar(arithmetic2);
   const createAsts = (input, mapping) => {
-    wasmMatcher.setInput(input);
-    const wasmResult = wasmMatcher.match();
+    const wasmResult = wasmGrammar.match(input);
     const wasmAst = toAstWithMapping(mapping)(wasmResult);
     const jsResult = arithmetic2.match(input);
     const jsAst = toAST(jsResult, mapping);

@@ -1,16 +1,16 @@
 /* global process, URL */
 
-import {WasmMatcher} from '@ohm-js/miniohm-js';
+import {WasmGrammar} from '@ohm-js/miniohm-js';
 
 import {Compiler} from '../src/Compiler.js';
 
 const DEBUG = process.env.OHM_DEBUG === '1';
 
-export async function wasmMatcherForGrammar(grammar, modBytes = undefined) {
+export async function toWasmGrammar(grammar, modBytes = undefined) {
   const compiler = new Compiler(grammar);
   const bytes = modBytes ?? compiler.compile();
 
-  const m = new WasmMatcher();
+  const wasmGrammar = new WasmGrammar();
 
   let depth = 0;
   let debugImports = {};
@@ -18,7 +18,7 @@ export async function wasmMatcherForGrammar(grammar, modBytes = undefined) {
     debugImports = compiler.getDebugImports((label, ret) => {
       const result = ret === 0 ? 'FAIL' : 'SUCCESS';
       const indented = s => new Array(depth).join('  ') + s;
-      const pos = m._instance.exports.pos.value;
+      const pos = wasmGrammar._instance.exports.pos.value;
       if (label.startsWith('BEGIN')) depth += 1;
       const tail = label.startsWith('END') ? ` -> ${result}` : '';
       // eslint-disable-next-line no-console
@@ -26,7 +26,7 @@ export async function wasmMatcherForGrammar(grammar, modBytes = undefined) {
       if (label.startsWith('END')) depth -= 1;
     });
   }
-  return m._instantiate(bytes, debugImports);
+  return wasmGrammar._instantiate(bytes, debugImports);
 }
 
 export function unparse(m) {
@@ -47,7 +47,6 @@ export function unparse(m) {
 export const scriptRel = relPath => new URL(relPath, import.meta.url);
 
 // TODO: Consider refactoring this to return true/false.
-export function matchWithInput(m, str) {
-  m.setInput(str);
-  return m.match().succeeded() ? 1 : 0;
+export function matchWithInput(g, str) {
+  return g.match(str).succeeded() ? 1 : 0;
 }
