@@ -18,5 +18,5 @@
     "eslint-plugin-ava": "^15.1.0",
     "typescript": "^5.8.3"
   },
-  "version": "0.0.0"
+  "version": "17.3.0"
 }
