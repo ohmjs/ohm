@@ -8,3 +8,4 @@ packages:
   - 'examples/simple-lisp'
   - 'examples/typescript'
 linkWorkspacePackages: true
+minimumReleaseAge: 1440
