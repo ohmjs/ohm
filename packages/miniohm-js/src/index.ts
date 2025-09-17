@@ -80,10 +80,8 @@ export class WasmGrammar {
    */
   constructor(bytes?: BufferSource) {
     if (bytes) {
-      this._init(
-        new WebAssembly.Module(bytes),
-        new WebAssembly.Instance(module, this._imports)
-      );
+      const mod = new WebAssembly.Module(bytes);
+      this._init(mod, new WebAssembly.Instance(mod, this._imports));
     }
   }
 
