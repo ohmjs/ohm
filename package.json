@@ -4,7 +4,7 @@
   "scripts": {
     "build": "pnpm -r build",
     "ci-test": "bin/ci-test.sh",
-    "format": "biome format --write . && eslint --cache --fix .",
+    "format": "bin/format.sh",
     "lint": "eslint --cache .",
     "test": "pnpm -r test"
   },
