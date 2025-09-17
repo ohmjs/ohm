@@ -2,6 +2,7 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src",
+    "outDir": "dist",
 
     // From the totaltypescript "Building for a Library in a Monorepo"
     // recommendation. See tsconfig.base.json for details.
