@@ -1,6 +1,6 @@
 {
   "name": "@ohm-js/wasm",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Compile Ohm.js grammars to WebAsssembly",
   "main": "dist/index.js",
   "bin": {

@@ -918,7 +918,9 @@ export class Compiler {
         case pexprs.Terminal:
           return ir.terminal(exp.obj);
         case pexprs.UnicodeChar:
-          return ir.unicodeChar(exp.categoryOrProp);
+          // Support older versions of ohm-js (<= 17.2.1).
+          // TODO: Remove this eventually.
+          return ir.unicodeChar(exp.categoryOrProp ?? exp['category']);
         default:
           throw new Error(`not handled: ${exp.constructor.name}`);
       }
