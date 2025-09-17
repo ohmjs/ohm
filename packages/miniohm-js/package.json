@@ -1,6 +1,6 @@
 {
   "name": "@ohm-js/miniohm-js",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Implementation of the miniohm interface, to use Wasm grammar blobs from JavaScript.",
   "keywords": [],
   "homepage": "https://github.com/ohmjs/ohm#readme",
@@ -18,7 +18,6 @@
   "publishConfig": {
     "main": "dist/index.js"
   },
-  "files": ["dist"],
   "scripts": {
     "build": "tsc",
     "check": "tsc --noEmit"
