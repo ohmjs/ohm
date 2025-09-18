@@ -14,72 +14,57 @@ Instantiate the Grammar defined by `source`. If specified, `optNamespace` is an 
 
 Create a new object containing Grammar instances for all of the grammars defined in `source`. As with `ohm.grammar`, if `optNamespace` is specified, it is an object in which references to other grammars should be resolved. Additionally, it will be the prototype of the returned object.
 
-Here is an example of instantiating a Grammar, then another that inherits from the first:
+Here is an example of instantiating a Grammar:
+
+<!-- @markscript
+  // Imports ohm so that we can process the code below.
+  const ohm = require('ohm-js');
+-->
+
 ```
-import * as ohm from 'ohm-js';
-const parentDefinition = String.raw`
-  Arithmetic {
-    Exp
-    = AddExp
-
-    AddExp
-    = AddExp "+" PriExp  -- plus
-    | AddExp "-" PriExp  -- minus
-    | PriExp
-
-    PriExp
-    = "(" Exp ")"  -- paren
-    | "+" PriExp   -- pos
-    | "-" PriExp   -- neg
-    | ident
-    | number
-
-    ident  (an identifier)
-    = letter alnum*
-
-    number  (a number)
-    = digit* "." digit+  -- fract
-    | digit+             -- whole
+const parentDef = String.raw`
+  Parent {
+    start = "parent"
   }
 `;
-const parentGrammar = ohm.grammar(parentDefinition);
+const parentGrammar = ohm.grammar(parentDef);
+```
 
-const childDefinition = String.raw`
-  BetterArithmetic <: Arithmetic {
-    AddExp
-    := AddExp "+" MulExp  -- plus
-    | AddExp "-" MulExp  -- minus
-    | MulExp
+<!-- @markscript
+  // Verify parent grammar.
+  assert.ok(parentGrammar.name == "Parent");
+-->
 
-    MulExp
-    = MulExp "*" ExpExp  -- times
-    | MulExp "/" ExpExp  -- divide
-    | ExpExp
-
-    ExpExp
-    = PriExp "^" ExpExp  -- power
-    | PriExp
+In the next example We instantiate a new grammar, *Child*, that inherits from our *Parent* grammar. We use the `ohm.grammars` method, which returns an object of our grammars:
+```
+const childDef = String.raw`
+  Child <: Parent {
+    start := "child"
   }
 `;
-// Note that we use ohm.grammars, not ohm.grammar.
-const childGrammar = ohm.grammars(childDefinition, {Arithmetic: parentGrammar});
-// combinedGrammars:
-// {
-//  Arithmetic: object,
-//  BetterArithmetic: object
-// }
+const childGrammar = ohm.grammars(childDef, {Parent: parentGrammar});
+console.log(Object.keys(childGrammar));
+// > [ 'Child' ]
 ```
 
-You could also concatenate the grammar definitions:
+<!-- @markscript
+  // Verify that we're actually making the right grammars.
+  assert.ok(childGrammar.Child);
+  assert.deepEqual([ 'Child' ], Object.keys(childGrammar))
+-->
+
+You could also concatenate the grammar definitions, and then instantiate them. This results in an object with both Grammars:
 ```
-const combinedDefinition = parentDefinition.concat(childDefinition);
-const combinedGrammars = ohm.grammars(combinedDefinition);
-// combinedGrammars:
-// {
-//  Arithmetic: object,
-//  BetterArithmetic: object
-// }
+const combinedDef = parentDef.concat(childDef);
+const grammars = ohm.grammars(combinedDef);
+console.log(Object.keys(grammars));
+// > [ 'Parent', 'Child' ]
 ```
+
+<!-- @markscript
+  // Verify that the combined grammar contains both sub grammars.
+  assert.deepEqual([ 'Parent', 'Child' ], Object.keys(grammars))
+-->
 
 ## Grammar objects
 
