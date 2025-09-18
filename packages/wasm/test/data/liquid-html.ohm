@@ -237,7 +237,7 @@ Liquid <: Helpers {
   // because we'd otherwise positively match the following string
   // instead of falling back to the other rule:
   // {{ 'string' | some_filter }}
-  liquidVariable<delim> = liquidExpression<delim> liquidFilter<delim>* space* &delim
+  liquidVariable<delim> = liquidComplexExpression<delim> liquidFilter<delim>* space* &delim
 
   liquidExpression<delim> =
     | liquidString<delim>
@@ -245,6 +245,18 @@ Liquid <: Helpers {
     | liquidLiteral
     | liquidRange<delim>
     | liquidVariableLookup<delim>
+
+  liquidComplexExpression<delim> =
+    | liquidBooleanExpression<delim>
+    | liquidExpression<delim>
+
+  liquidBooleanExpression<delim> = booleanExpressionCondition<delim> listOf<booleanExpressionSubsequentCondition<delim>, conditionSeparator>
+
+  // This might over-capture things since the conditions below can contain any `liquidExpression`s.
+  // We will need to clean this up in CST. If we restrict the conditions to only contain comparisons and
+  // variable lookups, we can't support "truthy" expressions like `{{ some_var and 'this' }}`
+  booleanExpressionSubsequentCondition<delim> = space* logicalOperator space* (comparison<delim> | liquidExpression<delim>) space*
+  booleanExpressionCondition<delim> = comparison<delim> | liquidExpression<delim>
 
   liquidString<delim> = liquidSingleQuotedString<delim> | liquidDoubleQuotedString<delim>
   liquidSingleQuotedString<delim> = "'" anyExceptStar<("'"| delim)> "'"

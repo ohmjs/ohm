@@ -10,16 +10,21 @@ import {matchWithInput, unparse, toWasmGrammar} from './_helpers.js';
 const scriptRel = relPath => new URL(relPath, import.meta.url);
 const grammarSource = fs.readFileSync(scriptRel('data/liquid-html.ohm'), 'utf8');
 
-const liquid = ohm.grammars(grammarSource);
+const grammars = ohm.grammars(grammarSource);
+
+test('basic compilation', async t => {
+  Object.values(grammars).forEach(async g => await toWasmGrammar(g));
+  t.pass();
+});
 
 test('basic matching (small)', async t => {
   const input = `---
     layout: default
     ---
     {% assign year = page.started | date: '%Y' %}`;
-  t.is(liquid.LiquidHTML.match(input).succeeded(), true);
+  t.is(grammars.LiquidHTML.match(input).succeeded(), true);
 
-  const g = await toWasmGrammar(liquid.LiquidHTML);
+  const g = await toWasmGrammar(grammars.LiquidHTML);
   t.is(matchWithInput(g, input), 1);
   t.is(unparse(g), input);
 });
@@ -31,7 +36,7 @@ test('swatch.liquid', async t => {
     class="{% if x == 'x' %}x{% endif %}"
   {% endif %}
 >`;
-  const g = await toWasmGrammar(liquid.LiquidHTML);
+  const g = await toWasmGrammar(grammars.LiquidHTML);
   t.is(matchWithInput(g, input), 1);
 });
 
@@ -39,17 +44,17 @@ test('html comment', async t => {
   const input = `{% if x %}
     <!-- x -->
   {% endif %}`;
-  const g = await toWasmGrammar(liquid.LiquidHTML);
+  const g = await toWasmGrammar(grammars.LiquidHTML);
   t.is(matchWithInput(g, input), 1);
 });
 
 test('book-review.liquid', async t => {
   const input = fs.readFileSync(scriptRel('data/book-review.liquid'), 'utf8');
   let start = performance.now();
-  t.is(liquid.LiquidHTML.match(input).succeeded(), true); // Trigger fillInputBuffer
+  t.is(grammars.LiquidHTML.match(input).succeeded(), true); // Trigger fillInputBuffer
   t.log(`Ohm.js: ${(performance.now() - start).toFixed(2)}ms`);
 
-  const g = await toWasmGrammar(liquid.LiquidHTML);
+  const g = await toWasmGrammar(grammars.LiquidHTML);
   start = performance.now();
   t.is(matchWithInput(g, input), 1);
   t.log(`Wasm: ${(performance.now() - start).toFixed(2)}ms`);

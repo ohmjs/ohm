@@ -847,7 +847,12 @@ export class Compiler {
       Object.hasOwn(grammar.rules, name)
     );
     const rules = ownRuleNames.map(name => [name, lookUpRule(name)]);
-    rules.push(['spaces', lookUpRule('spaces')]); // Ensure 'spaces' is always present.
+
+    // Ensure the certain rules are always included. (The default start rule
+    // might be inherited from the supergrammar, so not there yet.)
+    for (const name of ['spaces', grammar.defaultStartRule]) {
+      rules.push([name, lookUpRule(name)]);
+    }
 
     const liftedTerminals = new IndexedSet();
 
@@ -1045,7 +1050,11 @@ export class Compiler {
 
           // Inline these. TODO: Handle this elsewhere.
           // We need this to avoid having >256 rules in the Liquid grammar.
-          if (['liquidRawTagImpl', 'liquidTagRule'].includes(ruleName)) {
+          if (
+            ['liquidRawTagImpl', 'liquidTagRule', 'anyExceptStar', 'anyExceptPlus'].includes(
+              ruleName
+            )
+          ) {
             return specialize(ir.substituteParams(ruleInfo.body, children));
           }
 
