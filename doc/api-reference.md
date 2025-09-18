@@ -14,6 +14,73 @@ Instantiate the Grammar defined by `source`. If specified, `optNamespace` is an 
 
 Create a new object containing Grammar instances for all of the grammars defined in `source`. As with `ohm.grammar`, if `optNamespace` is specified, it is an object in which references to other grammars should be resolved. Additionally, it will be the prototype of the returned object.
 
+Here is an example of instantiating a Grammar, then another that inherits from the first:
+```
+import * as ohm from 'ohm-js';
+const parentDefinition = String.raw`
+  Arithmetic {
+    Exp
+    = AddExp
+
+    AddExp
+    = AddExp "+" PriExp  -- plus
+    | AddExp "-" PriExp  -- minus
+    | PriExp
+
+    PriExp
+    = "(" Exp ")"  -- paren
+    | "+" PriExp   -- pos
+    | "-" PriExp   -- neg
+    | ident
+    | number
+
+    ident  (an identifier)
+    = letter alnum*
+
+    number  (a number)
+    = digit* "." digit+  -- fract
+    | digit+             -- whole
+  }
+`;
+const parentGrammar = ohm.grammar(parentDefinition);
+
+const childDefinition = String.raw`
+  BetterArithmetic <: Arithmetic {
+    AddExp
+    := AddExp "+" MulExp  -- plus
+    | AddExp "-" MulExp  -- minus
+    | MulExp
+
+    MulExp
+    = MulExp "*" ExpExp  -- times
+    | MulExp "/" ExpExp  -- divide
+    | ExpExp
+
+    ExpExp
+    = PriExp "^" ExpExp  -- power
+    | PriExp
+  }
+`;
+// Note that we use ohm.grammars, not ohm.grammar.
+const childGrammar = ohm.grammars(childDefinition, {Arithmetic: parentGrammar});
+// combinedGrammars:
+// {
+//  Arithmetic: object,
+//  BetterArithmetic: object
+// }
+```
+
+You could also concatenate the grammar definitions:
+```
+const combinedDefinition = parentDefinition.concat(childDefinition);
+const combinedGrammars = ohm.grammars(combinedDefinition);
+// combinedGrammars:
+// {
+//  Arithmetic: object,
+//  BetterArithmetic: object
+// }
+```
+
 ## Grammar objects
 
 A Grammar instance `g` has the following methods:
