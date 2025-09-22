@@ -233,6 +233,7 @@ export class CstNode {
   _base: number;
   startIdx: number;
   leadingSpaces: CstNode | undefined;
+  source: {startIdx: number; endIdx: number};
 
   constructor(ruleNames: string[], dataView: DataView, ptr: number, startIdx: number) {
     // Non-enumerable properties
@@ -244,6 +245,10 @@ export class CstNode {
     this._base = ptr;
     this.startIdx = startIdx;
     this.leadingSpaces = undefined;
+    this.source = {
+      startIdx,
+      endIdx: startIdx + this.count,
+    };
   }
 
   get type(): number {

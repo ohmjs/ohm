@@ -78,7 +78,6 @@ export class AstBuilder {
         ans[prop] = Number(mappedProp);
       } else if (typeof mappedProp === 'function') {
         // computed value
-        // Note that `thisArg` is `null`, which is different than the regular toAST.
         ans[prop] = mappedProp.call(this, children);
       } else if (mappedProp === undefined) {
         const child: CstNode = children[Number(prop)];
@@ -114,17 +113,17 @@ export class AstBuilder {
     }
     if (node.isTerminal()) {
       return this._visitTerminal(node);
-    } else if (node.isIter()) {
-      return this._visitIter(node);
-    } else {
-      assert(node.isNonterminal(), `Unknown node type: ${(node as any)._type}`);
-      this.currNode = node;
-      const ans =
-        typeof this._mapping[node.ctorName] === 'function'
-          ? (this._mapping[node.ctorName] as Function).apply(this, node.children)
-          : this._visitNonterminal(node);
-      this.currNode = undefined;
-      return ans;
     }
+    if (node.isIter()) {
+      return this._visitIter(node);
+    }
+    assert(node.isNonterminal(), `Unknown node type: ${(node as any)._type}`);
+    this.currNode = node;
+    const ans =
+      typeof this._mapping[node.ctorName] === 'function'
+        ? (this._mapping[node.ctorName] as Function).apply(this, node.children)
+        : this._visitNonterminal(node);
+    this.currNode = undefined;
+    return ans;
   }
 }
