@@ -438,3 +438,5 @@ export class MatchResult {
     throw new Error('Not implemented yet: getInterval');
   }
 }
+
+export {AstBuilder} from './AstBuilder.ts';

@@ -1,4 +1,4 @@
-import {toAstWithMapping} from '@ohm-js/miniohm-js/src/toAST.ts';
+import {AstBuilder} from '@ohm-js/miniohm-js';
 import test from 'ava';
 import * as fc from 'fast-check';
 import assert from 'node:assert/strict';
@@ -32,7 +32,7 @@ const arithmetic2 = ohm.grammar(`
 test('toAST basic', async t => {
   const g = await toWasmGrammar(arithmetic);
   let matchResult = g.match('10 + 20');
-  let toAST = toAstWithMapping({
+  let builder = new AstBuilder({
     AddExp_plus: {
       expr1: 0,
       expr2: 2,
@@ -43,16 +43,16 @@ test('toAST basic', async t => {
     expr2: '20',
     type: 'AddExp_plus',
   };
-  t.deepEqual(toAST(matchResult), expected, 'proper AST with mapped properties');
+  t.deepEqual(builder.toAst(matchResult), expected, 'proper AST with mapped properties');
 
-  toAST = toAstWithMapping({
+  builder = new AstBuilder({
     AddExp_plus: {
       expr1: 0,
       op: 1,
       expr2: 2,
     },
   });
-  let ast = toAST(matchResult);
+  let ast = builder.toAst(matchResult);
   expected = {
     expr1: '10',
     op: '+',
@@ -61,38 +61,38 @@ test('toAST basic', async t => {
   };
   t.deepEqual(ast, expected, 'proper AST with explicitly mapped property');
 
-  toAST = toAstWithMapping({
+  builder = new AstBuilder({
     AddExp_plus: {
       0: 0,
     },
   });
-  ast = toAST(matchResult);
+  ast = builder.toAst(matchResult);
   expected = {
     0: '10',
     type: 'AddExp_plus',
   };
   t.deepEqual(ast, expected, 'proper AST with explicitly removed property');
 
-  toAST = toAstWithMapping({
+  builder = new AstBuilder({
     AddExp_plus: {
       0: 0,
       type: undefined,
     },
   });
-  ast = toAST(matchResult);
+  ast = builder.toAst(matchResult);
   expected = {
     0: '10',
   };
   t.deepEqual(ast, expected, 'proper AST with explicitly removed type');
 
-  toAST = toAstWithMapping({
+  builder = new AstBuilder({
     AddExp_plus: {
       expr1: 0,
       op: 'plus',
       expr2: 2,
     },
   });
-  ast = toAST(matchResult);
+  ast = builder.toAst(matchResult);
   expected = {
     expr1: '10',
     op: 'plus',
@@ -101,14 +101,14 @@ test('toAST basic', async t => {
   };
   t.deepEqual(ast, expected, 'proper AST with static property');
 
-  toAST = toAstWithMapping({
+  builder = new AstBuilder({
     AddExp_plus: {
       expr1: Object(0),
       op: 'plus',
       expr2: Object(2),
     },
   });
-  ast = toAST(matchResult);
+  ast = builder.toAst(matchResult);
   expected = {
     expr1: 0,
     op: 'plus',
@@ -117,16 +117,16 @@ test('toAST basic', async t => {
   };
   t.deepEqual(ast, expected, 'proper AST with boxed number property');
 
-  toAST = toAstWithMapping({
+  builder = new AstBuilder({
     AddExp_plus: {
       expr1: 0,
       expr2: 2,
       str(children) {
-        return children.map(c => toAST(c)).join('');
+        return children.map(c => this.toAst(c)).join('');
       },
     },
   });
-  ast = toAST(matchResult);
+  ast = builder.toAst(matchResult);
   expected = {
     expr1: '10',
     expr2: '20',
@@ -136,10 +136,10 @@ test('toAST basic', async t => {
   t.deepEqual(ast, expected, 'proper AST with computed property');
 
   matchResult = g.match('10 + 20 - 30');
-  toAST = toAstWithMapping({
+  builder = new AstBuilder({
     AddExp_plus: 2,
   });
-  ast = toAST(matchResult);
+  ast = builder.toAst(matchResult);
   expected = {
     0: '20', // child 2 of AddExp_plus
     2: '30',
@@ -147,14 +147,14 @@ test('toAST basic', async t => {
   };
   t.deepEqual(ast, expected, 'proper AST with forwarded child node');
 
-  toAST = toAstWithMapping({
+  builder = new AstBuilder({
     AddExp_plus(expr1, _, expr2) {
-      expr1 = toAST(expr1);
-      expr2 = toAST(expr2);
+      expr1 = this.toAst(expr1);
+      expr2 = this.toAst(expr2);
       return 'plus(' + expr1 + ', ' + expr2 + ')';
     },
   });
-  ast = toAST(matchResult);
+  ast = builder.toAst(matchResult);
   expected = {
     0: 'plus(10, 20)', // child 2 of AddExp_plus
     2: '30',
@@ -162,13 +162,13 @@ test('toAST basic', async t => {
   };
   t.deepEqual(ast, expected, 'proper AST with computed node/operation extension');
 
-  toAST = toAstWithMapping({
+  builder = new AstBuilder({
     Exp: {
       type: 'Exp',
       0: 0,
     },
   });
-  ast = toAST(matchResult);
+  ast = builder.toAst(matchResult);
   expected = {
     0: {
       0: {
@@ -197,8 +197,8 @@ test('listOf and friends - #394', async t => {
   const wasmGrammar = await toWasmGrammar(g);
 
   const ast = (input, mapping, ruleName = 'Exp') => {
-    const toAst = toAstWithMapping(mapping);
-    return toAst(wasmGrammar.match(input, ruleName));
+    const builder = new AstBuilder(mapping);
+    return builder.toAst(wasmGrammar.match(input, ruleName));
   };
   const astSyntactic = (input, mapping) => ast(input, mapping, 'Exp2');
 
@@ -275,9 +275,10 @@ test('arbitrary mappings (fast-check)', async t => {
   const jsResult = arithmetic2.match(input);
   const hasExpectedResult = () => {
     return fc.property(arbitraryMapping(), mapping => {
-      const wasmToAst = toAstWithMapping(mapping);
-      const jsToAst = r => toAST(r, mapping);
-      assert.deepEqual(wasmToAst(wasmResult), jsToAst(jsResult));
+      const wasmBuilder = new AstBuilder(mapping);
+      const wasmAst = wasmBuilder.toAst(wasmResult);
+      const jsAst = toAST(jsResult, mapping);
+      assert.deepEqual(wasmAst, jsAst);
     });
   };
   const details = fc.check(hasExpectedResult(), {
@@ -293,7 +294,8 @@ test('fast-check zoo', async t => {
   const wasmGrammar = await toWasmGrammar(arithmetic2);
   const createAsts = (input, mapping) => {
     const wasmResult = wasmGrammar.match(input);
-    const wasmAst = toAstWithMapping(mapping)(wasmResult);
+    const wasmBuilder = new AstBuilder(mapping);
+    const wasmAst = wasmBuilder.toAst(wasmResult);
     const jsResult = arithmetic2.match(input);
     const jsAst = toAST(jsResult, mapping);
     return [wasmAst, jsAst];

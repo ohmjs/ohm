@@ -1,32 +1,37 @@
 import {assert, checkNotNull} from './assert.ts';
 import type {CstNode, MatchResult} from './index.ts';
 
-export function toAstWithMapping(
-  mapping: Record<string, unknown>
-): (nodeOrResult: MatchResult | CstNode) => unknown {
-  const handleListOf = (child: CstNode) => visit(child);
-  const handleEmptyListOf = () => [];
-  const handleNonemptyListOf = (first: CstNode, iterSepAndElem: CstNode) => [
-    visit(first),
-    ...iterSepAndElem.map((_, elem) => visit(elem)),
-  ];
+export type AstMapping = Record<string, unknown>; // TODO: Improve this.
 
-  mapping = {
-    listOf: handleListOf,
-    ListOf: handleListOf,
-    emptyListOf: handleEmptyListOf,
-    EmptyListOf: handleEmptyListOf,
-    nonemptyListOf: handleNonemptyListOf,
-    NonemptyListOf: handleNonemptyListOf,
-    ...mapping,
-  };
+export class AstBuilder {
+  _mapping: AstMapping;
+  currNode?: CstNode;
 
-  function visitTerminal(node: CstNode): string {
+  constructor(mapping: AstMapping) {
+    const handleListOf = (child: CstNode) => this.toAst(child);
+    const handleEmptyListOf = () => [];
+    const handleNonemptyListOf = (first: CstNode, iterSepAndElem: CstNode) => [
+      this.toAst(first),
+      ...iterSepAndElem.map((_, elem) => this.toAst(elem)),
+    ];
+    this._mapping = {
+      listOf: handleListOf,
+      ListOf: handleListOf,
+      emptyListOf: handleEmptyListOf,
+      EmptyListOf: handleEmptyListOf,
+      nonemptyListOf: handleNonemptyListOf,
+      NonemptyListOf: handleNonemptyListOf,
+      ...mapping,
+    };
+  }
+
+  _visitTerminal(node: CstNode): string {
     return node.sourceString;
   }
 
-  function visitNonterminal(node: CstNode): unknown {
+  _visitNonterminal(node: CstNode): unknown {
     const {children, ruleName} = node;
+    const mapping = this._mapping;
 
     // without customization
     if (!Object.hasOwn(mapping, ruleName)) {
@@ -38,14 +43,14 @@ export function toAstWithMapping(
       // singular node (e.g. only surrounded by literals or lookaheads)
       const realChildren = children.filter(c => !c.isTerminal());
       if (realChildren.length === 1) {
-        return visit(realChildren[0]);
+        return this.toAst(realChildren[0]);
       }
 
       // rest: terms with multiple children
     }
     // direct forward
     if (typeof mapping[ruleName] === 'number') {
-      return visit(children[mapping[ruleName]]);
+      return this.toAst(children[mapping[ruleName]]);
     }
     assert(typeof mapping[ruleName] !== 'function', "shouldn't be possible");
 
@@ -60,7 +65,7 @@ export function toAstWithMapping(
         mapping[ruleName] && (mapping[ruleName] as Record<string, unknown>)[prop];
       if (typeof mappedProp === 'number') {
         // direct forward
-        ans[prop] = visit(children[mappedProp]);
+        ans[prop] = this.toAst(children[mappedProp]);
       } else if (
         typeof mappedProp === 'string' ||
         typeof mappedProp === 'boolean' ||
@@ -74,11 +79,11 @@ export function toAstWithMapping(
       } else if (typeof mappedProp === 'function') {
         // computed value
         // Note that `thisArg` is `null`, which is different than the regular toAST.
-        ans[prop] = mappedProp.call(null, children);
+        ans[prop] = mappedProp.call(this, children);
       } else if (mappedProp === undefined) {
         const child: CstNode = children[Number(prop)];
         if (child && !child.isTerminal()) {
-          ans[prop] = visit(child);
+          ans[prop] = this.toAst(child);
         } else {
           // delete predefined 'type' properties, like 'type', if explicitly removed
           delete ans[prop];
@@ -88,19 +93,19 @@ export function toAstWithMapping(
     return ans;
   }
 
-  function visitIter(node: CstNode): unknown {
+  _visitIter(node: CstNode): unknown {
     const {children} = node;
     if (node.isOptional()) {
       if (children.length === 0) {
         return null;
       }
-      return visit(children[0]);
+      return this.toAst(children[0]);
     }
 
-    return children.map(c => visit(c));
+    return children.map(c => this.toAst(c));
   }
 
-  function visit(nodeOrResult: MatchResult | CstNode): unknown {
+  toAst(nodeOrResult: MatchResult | CstNode): unknown {
     let node: CstNode = nodeOrResult as CstNode;
     if (typeof (nodeOrResult as MatchResult).succeeded === 'function') {
       const matchResult = nodeOrResult as MatchResult;
@@ -108,18 +113,18 @@ export function toAstWithMapping(
       node = checkNotNull((matchResult as MatchResult)._cst);
     }
     if (node.isTerminal()) {
-      return visitTerminal(node);
+      return this._visitTerminal(node);
     } else if (node.isIter()) {
-      return visitIter(node);
+      return this._visitIter(node);
     } else {
       assert(node.isNonterminal(), `Unknown node type: ${(node as any)._type}`);
-      return typeof mapping[node.ctorName] === 'function'
-        ? (mapping[node.ctorName] as Function).apply(null, node.children)
-        : visitNonterminal(node);
+      this.currNode = node;
+      const ans =
+        typeof this._mapping[node.ctorName] === 'function'
+          ? (this._mapping[node.ctorName] as Function).apply(this, node.children)
+          : this._visitNonterminal(node);
+      this.currNode = undefined;
+      return ans;
     }
   }
-
-  return visit;
 }
-
-export const toAst = toAstWithMapping({});
