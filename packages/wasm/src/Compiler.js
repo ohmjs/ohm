@@ -689,8 +689,13 @@ export class Compiler {
     this.importDecls = [];
 
     // The rule ID is a 0-based index that's mapped to the name.
-    // It is *not* the same as the function index the rule's eval function.
+    // It is *not* the same as the function index of the rule's eval function.
     this.ruleIdByName = new IndexedSet();
+
+    // For non-memoized rules, we defer assigning IDs until all memoized
+    // rule names have been assigned.
+    this._deferredRuleIds = new Set();
+    this._maxMemoizedRuleId = -1;
 
     // Ensure default start rule has id 0; $term, 1; and spaces, 2.
     this._ensureRuleId(grammar.defaultStartRule);
@@ -718,6 +723,10 @@ export class Compiler {
     const idx = this.ruleIdByName.add(name);
     assert(notMemoized || idx < 256, `too many rules: ${idx}`);
     return idx;
+  }
+
+  _deferRuleId(name) {
+    this._deferredRuleIds.add(name);
   }
 
   inLexicalContext() {
@@ -805,7 +814,7 @@ export class Compiler {
     // (global $~lib/rt/stub/offset (mut i32) (i32.const 0))
     // (global $~lib/native/ASC_RUNTIME i32 (i32.const 0))
     // (global $runtime/ohmRuntime/bindings (mut i32) (i32.const 0))
-    // (global $~lib/memory/__heap_base i32 (i32.const 1179884))
+    // (global $~lib/memory/__heap_base i32 (i32.const 67240236))
     asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('rightmostFailurePos', w.valtype.i32, w.mut.var, () => asm.i32Const(-1));
     asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
@@ -816,7 +825,7 @@ export class Compiler {
     asm.addGlobal('__offset', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('__ASC_RUNTIME', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
     asm.addGlobal('bindings', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('__heap_base', w.valtype.i32, w.mut.var, () => asm.i32Const(67240172));
+    asm.addGlobal('__heap_base', w.valtype.i32, w.mut.var, () => asm.i32Const(67240236));
 
     // Reserve a fixed number of imports for debug labels.
     if (DEBUG) {
@@ -1048,18 +1057,17 @@ export class Compiler {
           const {ruleName, children} = app;
           const ruleInfo = getNotNull(rules, ruleName);
 
-          // Inline these. TODO: Handle this elsewhere.
-          // We need this to avoid having >256 rules in the Liquid grammar.
+          const specializedName = ir.specializedName(app);
+
           if (
             ['liquidRawTagImpl', 'liquidTagRule', 'anyExceptStar', 'anyExceptPlus'].includes(
               ruleName
             )
           ) {
-            return specialize(ir.substituteParams(ruleInfo.body, children));
+            this._deferRuleId(specializedName);
+          } else {
+            this._ensureRuleId(specializedName);
           }
-
-          const specializedName = ir.specializedName(app);
-          this._ensureRuleId(specializedName);
 
           // If not yet seen, recursively visit the body of the specialized
           // rule. Note that this also applies to non-parameterized rules!
@@ -1095,6 +1103,9 @@ export class Compiler {
         },
       });
     specialize(ir.apply(this.grammar.defaultStartRule));
+
+    this._maxMemoizedRuleId = this.ruleIdByName.size;
+    this._deferredRuleIds.forEach(name => this._ensureRuleId(name, {notMemoized: true}));
 
     // Make a special rule for implicit space skipping, with the same body
     // as the real `spaces` rule.
@@ -1490,11 +1501,12 @@ export class Compiler {
     }
 
     const {asm} = this;
-    asm.i32Const(this.ruleId(exp.ruleName));
+    const ruleId = this.ruleId(exp.ruleName);
+    asm.i32Const(ruleId);
 
     // TODO: Should lifted expressions be memoized?
     // TODO: Handle this at grammar parse time, not here.
-    if (exp.ruleName.includes('_')) {
+    if (exp.ruleName.includes('_') || ruleId >= this._maxMemoizedRuleId) {
       asm.callPrebuiltFunc('evalApplyNoMemo0');
     } else {
       asm.callPrebuiltFunc('evalApply0');
