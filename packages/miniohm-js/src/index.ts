@@ -247,7 +247,7 @@ export class CstNode {
     this.leadingSpaces = undefined;
     this.source = {
       startIdx,
-      endIdx: startIdx + this.count,
+      endIdx: startIdx + this.sourceString.length,
     };
   }
 
