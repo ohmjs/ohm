@@ -90,7 +90,7 @@ test('liquidRawTagImpl', async t => {
       t.assert(node.children[0].ruleName === ruleName);
     }
     return node.children[0];
-  }
+  };
 
   let child = onlyChild(iter, 'liquidNode');
   child = onlyChild(child, 'liquidRawTag');
