@@ -205,9 +205,27 @@ export class WasmGrammar {
   }
 
   getCstRoot(): CstNode {
-    const {buffer} = (this._instance as any).exports.memory;
-    const addr = (this._instance as any).exports.getCstRoot();
-    return new CstNode(this._ruleNames, new DataView(buffer), addr, 0);
+    const {exports} = this._instance as any;
+    const {buffer} = exports.memory;
+    const firstNode = new CstNode(
+      this._ruleNames,
+      new DataView(buffer),
+      exports.bindingsAt(0),
+      0
+    );
+    if (firstNode.ctorName !== '$spaces') {
+      return firstNode;
+    }
+    assert(exports.getBindingsLength() > 1);
+    const nextAddr = exports.bindingsAt(1);
+    const root = new CstNode(
+      this._ruleNames,
+      new DataView(buffer),
+      nextAddr,
+      firstNode.matchLength
+    );
+    root.leadingSpaces = firstNode;
+    return root;
   }
 
   private _fillInputBuffer(offset: number, maxLen: number): number {
@@ -276,6 +294,7 @@ export class CstNode {
   }
 
   get ruleName(): string {
+    assert(this.isNonterminal(), 'Not a non-terminal');
     const ruleId = this._view.getInt32(this._base + 8, true) >>> 2;
     return this._ruleNames[ruleId].split('<')[0];
   }

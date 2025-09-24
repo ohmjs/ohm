@@ -121,11 +121,8 @@ function useMemoizedResult(ruleId: i32, result: MemoEntry): ApplyResult {
 }
 
 @inline function maybeSkipSpaces(ruleId: i32): void {
-  // TODO: Find a better way to deal with the bindings here.
   if (IMPLICIT_SPACE_SKIPPING && isRuleSyntactic(ruleId)) {
-    const origNumBindings = bindings.length;
     evalApply0(2);
-    bindings.length = origNumBindings;
   }
 }
 
@@ -298,9 +295,8 @@ export function setBindingsLength(len: i32): void {
   return bindings.length = len;
 }
 
-export function getCstRoot(): usize {
-  // TODO: Figure out how to handle this w.r.t. leading and trailing space.
-  return bindings[0];
+export function bindingsAt(i: i32): usize {
+  return bindings[i];
 }
 
 // TODO: Find a way to call this directly from generated code.

@@ -1186,7 +1186,10 @@ export class Compiler {
     );
     exports.push(w.export_('memory', w.exportdesc.mem(0)));
     exports.push(w.export_('match', w.exportdesc.func(prebuiltFuncidx('match'))));
-    exports.push(w.export_('getCstRoot', w.exportdesc.func(prebuiltFuncidx('getCstRoot'))));
+    exports.push(w.export_('bindingsAt', w.exportdesc.func(prebuiltFuncidx('bindingsAt'))));
+    exports.push(
+      w.export_('getBindingsLength', w.exportdesc.func(prebuiltFuncidx('getBindingsLength')))
+    );
 
     // Process globals.
     for (const [name, {type, mut, initExpr}] of this.asm._globals.entries()) {

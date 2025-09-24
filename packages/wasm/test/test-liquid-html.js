@@ -59,3 +59,41 @@ test('book-review.liquid', async t => {
   t.is(matchWithInput(g, input), 1);
   t.log(`Wasm: ${(performance.now() - start).toFixed(2)}ms`);
 });
+
+test('liquidRawTagImpl', async t => {
+  // Just verifies the shape of the CST for a specific example in the
+  // LiquidHTML grammar. This was an example from Shopify's CST tests
+  // that was failing due to the arity changes in the Wasm implementation.
+  const sourceCode = `
+    {% raw -%}
+      {% if unclosed %}
+        not a problem
+    {%- endraw %}
+  `;
+  const g = await toWasmGrammar(grammars.LiquidHTML);
+  const r = g.match(sourceCode);
+  t.true(r.succeeded());
+  const root = r._cst;
+  t.is(root.ctorName, 'Node');
+  t.is(root.startIdx, 5);
+  t.not(root.leadingSpaces, null);
+  const [opt, iter] = root.children;
+  t.is(opt.startIdx, 5);
+  t.true(opt.isOptional());
+  t.is(opt.sourceString.length, 0);
+  t.true(iter.isIter());
+  t.true(iter.sourceString.startsWith('{% raw -%}'));
+
+  const onlyChild = (node, ruleName = undefined) => {
+    t.assert(node.children.length === 1);
+    if (ruleName) {
+      t.assert(node.children[0].ruleName === ruleName);
+    }
+    return node.children[0];
+  }
+
+  let child = onlyChild(iter, 'liquidNode');
+  child = onlyChild(child, 'liquidRawTag');
+  child = onlyChild(child, 'liquidRawTagImpl');
+  t.is(child.children.length, 19);
+});
