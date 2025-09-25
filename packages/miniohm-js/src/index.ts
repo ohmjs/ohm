@@ -71,6 +71,7 @@ export class WasmGrammar {
   private _ruleNames: string[] = [];
   private _input = '';
   private _pos?: number = undefined;
+  private _attachedMatchResults = new Set<MatchResult>();
 
   /**
    * Create a new WasmGrammar object.
@@ -183,7 +184,19 @@ export class WasmGrammar {
     }
   }
 
-  match(input: string, ruleName?: string): MatchResult {
+  private _detachMatchResult(result: MatchResult) {
+    assert(this._attachedMatchResults.has(result), 'bad detach');
+    this._attachedMatchResults.delete(result);
+    if (this._attachedMatchResults.size === 0) {
+      (this._instance as any).exports.resetHeap();
+    }
+  }
+
+  match<T>(input: string, ruleName?: string): MatchResult {
+    assert(
+      this._attachedMatchResults.size === 0,
+      'Cannot match while there are attached MatchResults'
+    );
     this._input = input;
     if (process.env.OHM_DEBUG === '1') debugger; // eslint-disable-line no-debugger
     const ruleId = checkNotNull(
@@ -191,13 +204,16 @@ export class WasmGrammar {
       `unknown rule: '${ruleName}'`
     );
     const succeeded = (this._instance as any).exports.match(ruleId);
-    return new MatchResult(
+    const result = new MatchResult(
       this,
       this._input,
       ruleName || this._ruleNames[0],
       succeeded ? this.getCstRoot() : null,
       this.getRightmostFailurePosition()
     );
+    result.detach = this._detachMatchResult.bind(this, result);
+    this._attachedMatchResults.add(result);
+    return result;
   }
 
   getMemorySizeBytes(): number {
@@ -427,6 +443,14 @@ export class MatchResult {
     }
   }
 
+  [Symbol.dispose]() {
+    this.detach();
+  }
+
+  detach() {
+    throw new Error('MatchResult is not attached to any grammar');
+  }
+
   succeeded(): boolean {
     return !!this._cst;
   }
@@ -460,6 +484,14 @@ export class MatchResult {
 
   getInterval() {
     throw new Error('Not implemented yet: getInterval');
+  }
+
+  use<T>(cb: (r: MatchResult) => T): T {
+    try {
+      return cb(this);
+    } finally {
+      this.detach();
+    }
   }
 }
 

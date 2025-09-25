@@ -1024,3 +1024,16 @@ test('iter nodes: basic map (opt)', async t => {
   );
   t.throws(() => iter.map(() => {}), {message: /bad arity/});
 });
+
+test('MatchResult.detach()', async t => {
+  const g = await toWasmGrammar(ohm.grammar('G { Start = (letter digit)? }'));
+  const r1 = g.match('');
+  t.assert(r1.succeeded());
+  t.throws(() => g.match(''), {message: /attached MatchResults/});
+  r1.detach();
+  const r2 = g.match('');
+  t.assert(r2.succeeded());
+  t.throws(() => g.match(''), {message: /attached MatchResults/});
+  r2.detach();
+  t.notThrows(() => g.match(''));
+});

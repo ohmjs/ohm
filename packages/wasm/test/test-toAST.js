@@ -135,6 +135,7 @@ test('toAST basic', async t => {
   };
   t.deepEqual(ast, expected, 'proper AST with computed property');
 
+  matchResult.detach();
   matchResult = g.match('10 + 20 - 30');
   builder = new AstBuilder({
     AddExp_plus: 2,
@@ -198,7 +199,7 @@ test('listOf and friends - #394', async t => {
 
   const ast = (input, mapping, ruleName = 'Exp') => {
     const builder = new AstBuilder(mapping);
-    return builder.toAst(wasmGrammar.match(input, ruleName));
+    return wasmGrammar.match(input, ruleName).use(r => builder.toAst(r));
   };
   const astSyntactic = (input, mapping) => ast(input, mapping, 'Exp2');
 

@@ -130,10 +130,13 @@ function resetParsingState(): void {
   pos = 0;
   rightmostFailurePos = -1;
   sp = STACK_START_OFFSET;
-  heap.reset();
-
   bindings = new Array<i32>();
   memory.fill(MEMO_START_OFFSET, 0, MEMO_COL_SIZE_BYTES * MAX_INPUT_LEN_BYTES);
+}
+
+// TODO: Move the logic for doing this into the Wasm module.
+export function resetHeap(): void {
+  heap.reset();
 }
 
 export function match(startRuleId: i32): ApplyResult {

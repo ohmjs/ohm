@@ -30,7 +30,7 @@ let jsonWasm;
 group('ES5: html5shiv', () => {
   summary(() => {
     bench('Wasm', () => {
-      es5Wasm.match(inputs.html5shiv);
+      es5Wasm.match(inputs.html5shiv).detach();
     });
     bench('JS', () => {
       es5js.grammar.match(inputs.html5shiv);
@@ -41,7 +41,7 @@ group('ES5: html5shiv', () => {
 group('ES5: underscore', () => {
   summary(() => {
     bench('Wasm', () => {
-      es5Wasm.match(inputs.underscore);
+      es5Wasm.match(inputs.underscore).detach();
     });
     bench('JS', () => {
       es5js.grammar.match(inputs.underscore);
@@ -52,7 +52,7 @@ group('ES5: underscore', () => {
 group('LiquidHTML: book-review.liquid', () => {
   summary(() => {
     bench('Wasm', () => {
-      liquidHtmlWasm.match(inputs.bookReview);
+      liquidHtmlWasm.match(inputs.bookReview).detach();
     });
     bench('JS', () => {
       liquid.LiquidHTML.match(inputs.bookReview);
@@ -63,7 +63,7 @@ group('LiquidHTML: book-review.liquid', () => {
 group('LiquidHTML: featured-product.liquid', () => {
   summary(() => {
     bench('Wasm', () => {
-      liquidHtmlWasm.match(inputs.featuredProduct);
+      liquidHtmlWasm.match(inputs.featuredProduct).detach();
     });
     bench('JS', () => {
       liquid.LiquidHTML.match(inputs.featuredProduct);
@@ -74,7 +74,7 @@ group('LiquidHTML: featured-product.liquid', () => {
 group('LiquidHTML: footer.liquid', () => {
   summary(() => {
     bench('Wasm', () => {
-      liquidHtmlWasm.match(inputs.footer);
+      liquidHtmlWasm.match(inputs.footer).detach();
     });
     bench('JS', () => {
       liquid.LiquidHTML.match(inputs.footer);
@@ -85,7 +85,7 @@ group('LiquidHTML: footer.liquid', () => {
 group('JSON', () => {
   summary(() => {
     bench('Wasm', () => {
-      jsonWasm.match(inputs.mockJSON);
+      jsonWasm.match(inputs.mockJSON).detach();
     });
     bench('JS', () => {
       json.match(inputs.mockJSON);

@@ -1185,6 +1185,7 @@ export class Compiler {
       w.export_(f.name, w.exportdesc.func(i + exportOffset))
     );
     exports.push(w.export_('memory', w.exportdesc.mem(0)));
+    exports.push(w.export_('resetHeap', w.exportdesc.func(prebuiltFuncidx('resetHeap'))));
     exports.push(w.export_('match', w.exportdesc.func(prebuiltFuncidx('match'))));
     exports.push(w.export_('bindingsAt', w.exportdesc.func(prebuiltFuncidx('bindingsAt'))));
     exports.push(

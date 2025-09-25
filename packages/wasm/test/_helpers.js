@@ -48,5 +48,5 @@ export const scriptRel = relPath => new URL(relPath, import.meta.url);
 
 // TODO: Consider refactoring this to return true/false.
 export function matchWithInput(g, str) {
-  return g.match(str).succeeded() ? 1 : 0;
+  return g.match(str).use(r => (r.succeeded() ? 1 : 0));
 }
