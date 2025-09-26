@@ -104,3 +104,10 @@ test.failing('AttrSingleQuoted', async t => {
   const r = g.match(sourceCode, 'AttrSingleQuoted');
   t.true(r.succeeded());
 });
+
+test.failing('tagMarkup', async t => {
+  const sourceCode = '"example-snippet", id: 2, foo█ ';
+  const g = await toWasmGrammar(grammars.LiquidHTML);
+  const r = g.match(sourceCode, 'AttrSingleQuoted');
+  t.true(r.succeeded());
+});
