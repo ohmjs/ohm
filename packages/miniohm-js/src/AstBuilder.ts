@@ -4,10 +4,13 @@ import type {CstNode, MatchResult} from './index.ts';
 export type AstMapping = Record<string, unknown>; // TODO: Improve this.
 
 export class AstBuilder {
-  _mapping: AstMapping;
   currNode?: CstNode;
 
-  constructor(mapping: AstMapping) {
+  private _mapping: AstMapping;
+  private _depth = -1;
+  private _debug = false;
+
+  constructor(mapping: AstMapping, opts: {debug?: boolean} = {}) {
     const handleListOf = (child: CstNode) => this.toAst(child);
     const handleEmptyListOf = () => [];
     const handleNonemptyListOf = (first: CstNode, iterSepAndElem: CstNode) => [
@@ -23,6 +26,11 @@ export class AstBuilder {
       NonemptyListOf: handleNonemptyListOf,
       ...mapping,
     };
+    this._debug = opts.debug ?? false;
+  }
+
+  private _debugLog(...data: any[]) {
+    if (this._debug) console.log('  '.repeat(this._depth), ...data);
   }
 
   _visitTerminal(node: CstNode): string {
@@ -32,6 +40,12 @@ export class AstBuilder {
   _visitNonterminal(node: CstNode): unknown {
     const {children, ruleName} = node;
     const mapping = this._mapping;
+
+    this._debugLog(`> ${ruleName}`);
+    const dbgReturn = <T>(val: T): T => {
+      this._debugLog(`| ${ruleName} DONE`);
+      return val;
+    };
 
     // without customization
     if (!Object.hasOwn(mapping, ruleName)) {
@@ -43,14 +57,19 @@ export class AstBuilder {
       // singular node (e.g. only surrounded by literals or lookaheads)
       const realChildren = children.filter(c => !c.isTerminal());
       if (realChildren.length === 1) {
-        return this.toAst(realChildren[0]);
+        return dbgReturn(this.toAst(realChildren[0]));
       }
 
       // rest: terms with multiple children
     }
     // direct forward
     if (typeof mapping[ruleName] === 'number') {
-      return this.toAst(children[mapping[ruleName]]);
+      const idx = mapping[ruleName];
+      const child = checkNotNull(
+        children[idx],
+        `Child index ${idx} out of range for rule '${ruleName}'`
+      );
+      return dbgReturn(this.toAst(child));
     }
     assert(typeof mapping[ruleName] !== 'function', "shouldn't be possible");
 
@@ -89,7 +108,7 @@ export class AstBuilder {
         }
       }
     }
-    return ans;
+    return dbgReturn(ans);
   }
 
   _visitIter(node: CstNode): unknown {
@@ -111,19 +130,22 @@ export class AstBuilder {
       assert(matchResult.succeeded(), 'Cannot convert failed match result to AST');
       node = checkNotNull((matchResult as MatchResult)._cst);
     }
+    let ans;
+    this._depth++;
     if (node.isTerminal()) {
-      return this._visitTerminal(node);
+      ans = this._visitTerminal(node);
+    } else if (node.isIter()) {
+      ans = this._visitIter(node);
+    } else {
+      assert(node.isNonterminal(), `Unknown node type: ${(node as any)._type}`);
+      this.currNode = node;
+      ans =
+        typeof this._mapping[node.ctorName] === 'function'
+          ? (this._mapping[node.ctorName] as Function).apply(this, node.children)
+          : this._visitNonterminal(node);
+      this.currNode = undefined;
     }
-    if (node.isIter()) {
-      return this._visitIter(node);
-    }
-    assert(node.isNonterminal(), `Unknown node type: ${(node as any)._type}`);
-    this.currNode = node;
-    const ans =
-      typeof this._mapping[node.ctorName] === 'function'
-        ? (this._mapping[node.ctorName] as Function).apply(this, node.children)
-        : this._visitNonterminal(node);
-    this.currNode = undefined;
+    this._depth--;
     return ans;
   }
 }
