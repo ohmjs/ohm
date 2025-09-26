@@ -97,3 +97,10 @@ test('liquidRawTagImpl', async t => {
   child = onlyChild(child, 'liquidRawTagImpl');
   t.is(child.children.length, 19);
 });
+
+test.failing('AttrSingleQuoted', async t => {
+  const sourceCode = 'single=‘single‘';
+  const g = await toWasmGrammar(grammars.LiquidHTML);
+  const r = g.match(sourceCode, 'AttrSingleQuoted');
+  t.true(r.succeeded());
+});

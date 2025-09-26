@@ -3,6 +3,14 @@ import type {CstNode, MatchResult} from './index.ts';
 
 export type AstMapping = Record<string, unknown>; // TODO: Improve this.
 
+function childAt(children: CstNode[], idx: number, ruleName: string, propName = ''): CstNode {
+  if (idx > children.length) {
+    const path = propName ? `${ruleName}.${propName}` : ruleName;
+    throw new Error(`${path}: Child index ${idx} out of range`);
+  }
+  return children[idx];
+}
+
 export class AstBuilder {
   currNode?: CstNode;
 
@@ -65,11 +73,7 @@ export class AstBuilder {
     // direct forward
     if (typeof mapping[ruleName] === 'number') {
       const idx = mapping[ruleName];
-      const child = checkNotNull(
-        children[idx],
-        `Child index ${idx} out of range for rule '${ruleName}'`
-      );
-      return dbgReturn(this.toAst(child));
+      return dbgReturn(this.toAst(childAt(children, idx, ruleName)));
     }
     assert(typeof mapping[ruleName] !== 'function', "shouldn't be possible");
 
@@ -84,7 +88,7 @@ export class AstBuilder {
         mapping[ruleName] && (mapping[ruleName] as Record<string, unknown>)[prop];
       if (typeof mappedProp === 'number') {
         // direct forward
-        ans[prop] = this.toAst(children[mappedProp]);
+        ans[prop] = this.toAst(childAt(children, mappedProp, ruleName, prop));
       } else if (
         typeof mappedProp === 'string' ||
         typeof mappedProp === 'boolean' ||
