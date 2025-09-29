@@ -9,7 +9,6 @@ declare function matchUnicodeChar(categoryBitmap: i32): bool;
 
 // TODO: Find a way to share these.
 @inline const WASM_PAGE_SIZE: usize = 64 * 1024;
-@inline const MEMO_START_OFFSET: usize = 2 * WASM_PAGE_SIZE;
 @inline const MEMO_COL_SIZE_BYTES: usize = 4 * 256;
 @inline const STACK_START_OFFSET: usize = WASM_PAGE_SIZE;
 @inline const MAX_INPUT_LEN_BYTES: usize = 64 * 1024;
@@ -50,6 +49,7 @@ type RuleEvalResult = i32;
 
 // Shared globals
 let pos: i32 = 0;
+let memoStartOffset: usize = 2 * WASM_PAGE_SIZE;
 
 // The rightmost position at which a leaf (Terminal, etc.) failed to match.
 let rightmostFailurePos: i32 = 0;
@@ -70,11 +70,13 @@ export function dummy(i: i32): void {
 }
 
 @inline function memoTableGet(memoPos: usize, ruleId: i32): MemoEntry {
-  return load<MemoEntry>(memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<MemoEntry>(), MEMO_START_OFFSET);
+  const ptr = memoStartOffset + memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<MemoEntry>();
+  return load<MemoEntry>(ptr);
 }
 
 @inline function memoTableSet(memoPos: usize, ruleId: i32, value: MemoEntry): void {
-  store<MemoEntry>(memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<MemoEntry>(), value, MEMO_START_OFFSET);
+  const ptr = memoStartOffset + memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<MemoEntry>();
+  store<MemoEntry>(ptr, value);
 }
 
 @inline function cstGetCount(ptr: usize): i32 {
@@ -131,7 +133,7 @@ function resetParsingState(): void {
   rightmostFailurePos = -1;
   sp = STACK_START_OFFSET;
   bindings = new Array<i32>();
-  memory.fill(MEMO_START_OFFSET, 0, MEMO_COL_SIZE_BYTES * MAX_INPUT_LEN_BYTES);
+  memory.fill(memoStartOffset, 0, MEMO_COL_SIZE_BYTES * MAX_INPUT_LEN_BYTES);
 }
 
 // TODO: Move the logic for doing this into the Wasm module.

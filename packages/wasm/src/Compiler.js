@@ -807,6 +807,7 @@ export class Compiler {
     asm.addBlocktype([w.valtype.i32], [w.valtype.i32]);
     asm.addBlocktype([], [w.valtype.i32]); // Rule eval
     // (global $runtime/ohmRuntime/pos (mut i32) (i32.const 0))
+    // (global $runtime/ohmRuntime/memoStartOffset (mut i32) (i32.const 0))
     // (global $runtime/ohmRuntime/rightmostFailurePos (mut i32) (i32.const 0))
     // (global $runtime/ohmRuntime/sp (mut i32) (i32.const 0))
     // (global $~lib/shared/runtime/Runtime.Stub i32 (i32.const 0))
@@ -818,6 +819,9 @@ export class Compiler {
     // (global $runtime/ohmRuntime/bindings (mut i32) (i32.const 0))
     // (global $~lib/memory/__heap_base i32 (i32.const 67240236))
     asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('memoStartOffset', w.valtype.i32, w.mut.var, () =>
+      asm.i32Const(2 * WASM_PAGE_SIZE)
+    );
     asm.addGlobal('rightmostFailurePos', w.valtype.i32, w.mut.var, () => asm.i32Const(-1));
     asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('__Runtime.Stub', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
@@ -1830,7 +1834,7 @@ export class Compiler {
 }
 
 // Memory layout:
-// - First page is for the PExpr stack (origPos, etc.), growing downards.
+// - First page is for the PExpr stack (origPos, etc.), growing downwards.
 // - 2nd page is for input buffer (max 64k for now).
 // - Pages 3-18 (incl.) for memo table (4 entries per char, 4 bytes each).
 // - Remainder (>18) is for CST (growing upwards).
@@ -1843,12 +1847,10 @@ Compiler.INPUT_BUFFER_OFFSET = WASM_PAGE_SIZE; // Offset of the input buffer in 
 // - 256 entries per column
 // - 1 column per char
 // - 64k input length.
-Compiler.MEMO_START_OFFSET = 2 * WASM_PAGE_SIZE; // Starting offset of memo records.
 Compiler.CST_START_OFFSET = (1024 + 2) * WASM_PAGE_SIZE; // Starting offset of CST records.
 
 export const ConstantsForTesting = {
   CST_NODE_SIZE_BYTES: checkNotNull(Assembler.CST_NODE_HEADER_SIZE_BYTES),
   CST_START_OFFSET: checkNotNull(Compiler.CST_START_OFFSET),
   MEMO_COL_SIZE_BYTES: checkNotNull(Assembler.MEMO_COL_SIZE_BYTES),
-  MEMO_START_OFFSET: checkNotNull(Compiler.MEMO_START_OFFSET),
 };

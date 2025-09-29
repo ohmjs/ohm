@@ -16,7 +16,8 @@ function checkNotNull(x, msg = 'unexpected null value') {
 
 function memoTableViewForTesting(m) {
   const {buffer} = m._instance.exports.memory;
-  return new DataView(buffer, Constants.MEMO_START_OFFSET);
+  const memoStartOffset = m._instance.exports.memoStartOffset.value;
+  return new DataView(buffer, memoStartOffset);
 }
 
 test('input in memory', async t => {
