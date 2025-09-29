@@ -1,4 +1,4 @@
-/* global process */
+/* global process, TextEncoder */
 
 import * as w from '@wasmgroundup/emit';
 import * as ohm from 'ohm-js';
@@ -22,6 +22,8 @@ const EMIT_GENERALIZED_RULES = false;
 
 const {instr} = w;
 const {pexprs} = ohm;
+
+const utf8 = new TextEncoder('utf-8');
 
 const isNonNull = x => x != null;
 
@@ -1743,13 +1745,14 @@ export class Compiler {
   emitTerminal(exp) {
     const {asm} = this;
     asm.emit(JSON.stringify(exp.value));
+
+    const bytes = utf8.encode(exp.value);
     this.wrapTerminalLike(() => {
       // TODO:
-      // - proper UTF-8!
-      // - handle longer terminals with a loop
+      // - handle longer terminals with a loop?
       // - SIMD
-      for (const c of [...exp.value]) {
-        asm.i32Const(c.charCodeAt(0));
+      for (const c of [...bytes]) {
+        asm.i32Const(c);
         asm.currCharCode();
         asm.emit(instr.i32.ne);
         asm.condBreak(asm.depthOf('failure'));

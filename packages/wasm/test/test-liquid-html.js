@@ -98,16 +98,16 @@ test('liquidRawTagImpl', async t => {
   t.is(child.children.length, 19);
 });
 
-test.failing('AttrSingleQuoted', async t => {
+test('AttrSingleQuoted', async t => {
   const sourceCode = 'single=‘single‘';
   const g = await toWasmGrammar(grammars.LiquidHTML);
   const r = g.match(sourceCode, 'AttrSingleQuoted');
   t.true(r.succeeded());
 });
 
-test.failing('tagMarkup', async t => {
+test('tagMarkup', async t => {
   const sourceCode = '"example-snippet", id: 2, foo█ ';
   const g = await toWasmGrammar(grammars.LiquidHTML);
-  const r = g.match(sourceCode, 'AttrSingleQuoted');
+  const r = g.match(sourceCode, 'tagMarkup');
   t.true(r.succeeded());
 });
