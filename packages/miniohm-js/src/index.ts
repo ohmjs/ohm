@@ -71,7 +71,9 @@ export class WasmGrammar {
   private _ruleNames: string[] = [];
   private _input = '';
   private _pos?: number = undefined;
-  private _attachedMatchResults = new Set<MatchResult>();
+
+  private _resultStack: MatchResult[] = [];
+  private _managedResultCount = 0;
 
   /**
    * Create a new WasmGrammar object.
@@ -91,6 +93,26 @@ export class WasmGrammar {
     this._extractRuleIds(module);
     this.name = this._getGrammarName(module);
     return this;
+  }
+
+  _beginUse(result: MatchResult) {
+    assert(
+      this._resultStack.at(-1) === result,
+      `You can only use() the most recent MatchResult`
+    );
+    result.detach = () => {
+      throw new Error("MatchResult shouldn't be detached inside use()");
+    };
+    this._managedResultCount++;
+  }
+
+  _endUse(result: MatchResult) {
+    const r = this._resultStack.pop();
+    assert(r === result, 'Mismatched _endUse');
+    this._managedResultCount--;
+    if (this._resultStack.length === 0) {
+      (this._instance as any).exports.resetHeap();
+    }
   }
 
   static async instantiate(source: BufferSource): Promise<WasmGrammar> {
@@ -185,17 +207,18 @@ export class WasmGrammar {
   }
 
   private _detachMatchResult(result: MatchResult) {
-    assert(this._attachedMatchResults.has(result), 'bad detach');
-    this._attachedMatchResults.delete(result);
-    if (this._attachedMatchResults.size === 0) {
-      (this._instance as any).exports.resetHeap();
-    }
+    assert(
+      this._resultStack.at(-1) === result,
+      `You can only detach() the most recent MatchResult`
+    );
+    this._beginUse(result);
+    this._endUse(result);
   }
 
   match<T>(input: string, ruleName?: string): MatchResult {
     assert(
-      this._attachedMatchResults.size === 0,
-      'Cannot match while there are attached MatchResults'
+      this._resultStack.length === this._managedResultCount,
+      'Cannot match while there are unmanaged MatchResults'
     );
     this._input = input;
     if (process.env.OHM_DEBUG === '1') debugger; // eslint-disable-line no-debugger
@@ -212,7 +235,7 @@ export class WasmGrammar {
       this.getRightmostFailurePosition()
     );
     result.detach = this._detachMatchResult.bind(this, result);
-    this._attachedMatchResults.add(result);
+    this._resultStack.push(result);
     return result;
   }
 
@@ -488,9 +511,10 @@ export class MatchResult {
 
   use<T>(cb: (r: MatchResult) => T): T {
     try {
+      this.grammar._beginUse(this);
       return cb(this);
     } finally {
-      this.detach();
+      this.grammar._endUse(this);
     }
   }
 }

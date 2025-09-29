@@ -1029,11 +1029,11 @@ test('MatchResult.detach()', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { Start = (letter digit)? }'));
   const r1 = g.match('');
   t.assert(r1.succeeded());
-  t.throws(() => g.match(''), {message: /attached MatchResults/});
+  t.throws(() => g.match(''), {message: /unmanaged MatchResults/});
   r1.detach();
   const r2 = g.match('');
   t.assert(r2.succeeded());
-  t.throws(() => g.match(''), {message: /attached MatchResults/});
+  t.throws(() => g.match(''), {message: /unmanaged MatchResults/});
   r2.detach();
   t.notThrows(() => g.match(''));
 });
