@@ -1,7 +1,6 @@
 import {assert, checkNotNull} from './assert.ts';
 
 const WASM_PAGE_SIZE = 64 * 1024;
-const INPUT_BUFFER_OFFSET = WASM_PAGE_SIZE;
 const CST_NODE_TYPE_MASK = 0b11;
 
 const CstNodeType = {
@@ -146,9 +145,9 @@ export class WasmGrammar {
   // Return a JavaScript string containing the next code point from the input
   // buffer, and advance pos past it.
   private _nextCodePoint(): string {
-    const {pos, memory} = (this._instance as any).exports;
+    const {inputBase, memory, pos} = (this._instance as any).exports;
     const offset = pos.value;
-    const byteArr = new Uint8Array(memory.buffer, INPUT_BUFFER_OFFSET + offset);
+    const byteArr = new Uint8Array(memory.buffer, inputBase.value + offset);
     const firstByte = byteArr[0];
     let len: number;
     if ((firstByte & 0b10000000) === 0) {
@@ -249,6 +248,7 @@ export class WasmGrammar {
       this._ruleNames,
       new DataView(buffer),
       exports.bindingsAt(0),
+      exports.inputBase.value,
       0
     );
     if (firstNode.ctorName !== '$spaces') {
@@ -260,6 +260,7 @@ export class WasmGrammar {
       this._ruleNames,
       new DataView(buffer),
       nextAddr,
+      exports.inputBase.value,
       firstNode.matchLength
     );
     root.leadingSpaces = firstNode;
@@ -268,8 +269,8 @@ export class WasmGrammar {
 
   private _fillInputBuffer(offset: number, maxLen: number): number {
     const encoder = new TextEncoder();
-    const {memory} = (this._instance as any).exports;
-    const buf = new Uint8Array(memory.buffer, INPUT_BUFFER_OFFSET + offset);
+    const {inputBase, memory} = (this._instance as any).exports;
+    const buf = new Uint8Array(memory.buffer, inputBase.value + offset);
     const {read, written} = encoder.encodeInto(this._input, buf);
     assert(written < 64 * 1024, 'Input too long');
     buf[written] = 0xff; // Mark end of input with an invalid UTF-8 character.
@@ -286,11 +287,18 @@ export class CstNode {
   _view!: DataView;
   _children?: CstNode[];
   _base: number;
+  _inputBase: number;
   startIdx: number;
   leadingSpaces: CstNode | undefined;
   source: {startIdx: number; endIdx: number};
 
-  constructor(ruleNames: string[], dataView: DataView, ptr: number, startIdx: number) {
+  constructor(
+    ruleNames: string[],
+    dataView: DataView,
+    ptr: number,
+    inputBase: number,
+    startIdx: number
+  ) {
     // Non-enumerable properties
     Object.defineProperties(this, {
       _ruleNames: {value: ruleNames},
@@ -298,6 +306,7 @@ export class CstNode {
       _children: {writable: true},
     });
     this._base = ptr;
+    this._inputBase = inputBase;
     this.startIdx = startIdx;
     this.leadingSpaces = undefined;
     this.source = {
@@ -367,7 +376,7 @@ export class CstNode {
       const slotOffset = this._base + 16 + i * 4;
       const ptr = this._view.getUint32(slotOffset, true);
       // TODO: Avoid allocating $spaces nodes altogether?
-      const node = new CstNode(this._ruleNames, this._view, ptr, startIdx);
+      const node = new CstNode(this._ruleNames, this._view, ptr, this._inputBase, startIdx);
       if (node.ctorName === '$spaces') {
         assert(!spaces, 'Multiple $spaces nodes found');
         spaces = node;
@@ -387,7 +396,7 @@ export class CstNode {
   get sourceString(): string {
     const bytes = new Uint8Array(
       this._view.buffer,
-      INPUT_BUFFER_OFFSET + this.startIdx,
+      this._inputBase + this.startIdx,
       this.matchLength
     );
     return utf8.decode(bytes);
