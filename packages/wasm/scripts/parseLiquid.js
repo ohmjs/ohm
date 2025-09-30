@@ -28,17 +28,11 @@ const liquid = ohm.grammars(readFileSync(join(datadir, 'liquid-html.ohm'), 'utf8
 const pattern = process.argv[2];
 
 (async function main() {
-  const parsedPaths = new Set();
   const jsTimes = [];
   const wasmTimes = [];
 
   for (const path of fg.sync(pattern)) {
     const input = readFileSync(path, 'utf8');
-    // Wasm matcher currently has a limit of 64kB input size.
-    if (input.length > 64 * 1024) {
-      console.log(`skipping ${path} (too big)`);
-      continue;
-    }
     const start = performance.now();
     const r = liquid.LiquidHTML.match(input);
     const elapsed = performance.now() - start;
@@ -46,14 +40,12 @@ const pattern = process.argv[2];
       console.error(`Failed to parse ${path}: ${r.message}`);
       continue;
     }
-    parsedPaths.add(path);
     jsTimes.push(elapsed);
     assert.equal(r.succeeded(), true, `failed: ${path}`);
   }
 
   const g = await toWasmGrammar(liquid.LiquidHTML);
   for (const path of fg.sync(pattern)) {
-    if (!parsedPaths.has(path)) continue;
     const input = readFileSync(path, 'utf8');
     const start = performance.now();
     assert.equal(matchWithInput(g, input), 1, `failed: ${path}`);
