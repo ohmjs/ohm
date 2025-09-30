@@ -1,6 +1,6 @@
 type ApplyResult = bool;
 
-declare function fillInputBuffer(offset: i32, maxLen: i32): i32;
+declare function fillInputBuffer(ptr: usize, sizeBytes: u32): u32;
 declare function printI32(val: i32): void;
 declare function isRuleSyntactic(ruleId: i32): bool;
 declare function matchUnicodeChar(categoryBitmap: i32): bool;
@@ -134,6 +134,7 @@ function resetParsingState(): void {
   rightmostFailurePos = -1;
   sp = STACK_START_OFFSET;
   bindings = new Array<i32>();
+  // TODO: Remove this, we need to allocate a new memo table each time.
   memory.fill(memoBase, 0, MEMO_COL_SIZE_BYTES * MAX_INPUT_LEN_BYTES);
 }
 
@@ -142,11 +143,23 @@ export function resetHeap(): void {
   heap.reset();
 }
 
-export function match(startRuleId: i32): ApplyResult {
+export function match(startRuleId: i32, inputLenChars: usize): ApplyResult {
   resetParsingState();
 
-  // Get the input and do the match.
-  let inputLen = fillInputBuffer(0, i32(WASM_PAGE_SIZE - 1));
+  // Allocate space for the input buffer, and ask the host to fill it.
+  // The challenge here is that we want UTF-8, and the host might use a diff't
+  // encoding. So we first allocate an _estimated_ amount, assuming a
+  // worst-case scenario where every character is four bytes, and then use
+  // realloc to shrink the allocation down to its actual (final) size.
+  // The memo table will need much more than four bytes per input char, so
+  // there's no harm is overallocating here.
+  const estimatedSizeBytes = inputLenChars * 4;
+  inputBase = heap.alloc(estimatedSizeBytes + 1);
+  const byteLen = fillInputBuffer(inputBase, estimatedSizeBytes);
+  // Mark end of input with an invalid UTF-8 character.
+  store<u8>(inputBase + byteLen, 0xff);
+  // Resize the chunk. (This should never return a new chunk.)
+  assert(heap.realloc(inputBase, byteLen + 1) === inputBase);
 
   maybeSkipSpaces(startRuleId);
   const succeeded = evalApply0(startRuleId) !== 0;
@@ -154,7 +167,7 @@ export function match(startRuleId: i32): ApplyResult {
     maybeSkipSpaces(startRuleId);
     // printI32(heap.alloc(8) - __heap_base); // Print heap usage.
     // TODO: Do we need to update rightmostFailurePos here?
-    return inputLen === pos;
+    return byteLen === pos;
   }
 
   return false;

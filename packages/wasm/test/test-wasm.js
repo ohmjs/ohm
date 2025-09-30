@@ -25,7 +25,8 @@ test('input in memory', async t => {
   const wasmGrammar = await toWasmGrammar(g);
   wasmGrammar.match('ohm'); // Trigger fillInputBuffer
 
-  const view = new DataView(wasmGrammar._instance.exports.memory.buffer, 64 * 1024);
+  const {inputBase, memory} = wasmGrammar._instance.exports;
+  const view = new DataView(memory.buffer, inputBase.value);
   t.is(view.getUint8(0), 'ohm'.charCodeAt(0));
   t.is(view.getUint8(1), 'ohm'.charCodeAt(1));
   t.is(view.getUint8(2), 'ohm'.charCodeAt(2));

@@ -224,7 +224,7 @@ export class WasmGrammar {
       this._ruleIds.get(ruleName || this._ruleNames[0]),
       `unknown rule: '${ruleName}'`
     );
-    const succeeded = (this._instance as any).exports.match(ruleId);
+    const succeeded = (this._instance as any).exports.match(ruleId, input.length);
     const result = new MatchResult(
       this,
       this._input,
@@ -267,13 +267,12 @@ export class WasmGrammar {
     return root;
   }
 
-  private _fillInputBuffer(offset: number, maxLen: number): number {
+  private _fillInputBuffer(ptr: number, length: number): number {
     const encoder = new TextEncoder();
-    const {inputBase, memory} = (this._instance as any).exports;
-    const buf = new Uint8Array(memory.buffer, inputBase.value + offset);
+    const {memory} = (this._instance as any).exports;
+    const buf = new Uint8Array(memory.buffer, ptr, length);
     const {read, written} = encoder.encodeInto(this._input, buf);
-    assert(written < 64 * 1024, 'Input too long');
-    buf[written] = 0xff; // Mark end of input with an invalid UTF-8 character.
+    assert(read === this._input.length, 'Input was not fully read');
     return written;
   }
 
