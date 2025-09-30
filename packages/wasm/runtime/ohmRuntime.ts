@@ -145,7 +145,7 @@ export function match(startRuleId: i32): ApplyResult {
   resetParsingState();
 
   // Get the input and do the match.
-  let inputLen = fillInputBuffer(0, i32(WASM_PAGE_SIZE));
+  let inputLen = fillInputBuffer(0, i32(WASM_PAGE_SIZE - 1));
 
   maybeSkipSpaces(startRuleId);
   const succeeded = evalApply0(startRuleId) !== 0;

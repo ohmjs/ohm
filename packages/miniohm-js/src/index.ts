@@ -44,7 +44,7 @@ export class WasmGrammar {
   private _imports = {
     // System-level AssemblyScript imports.
     env: {
-      abort() {
+      abort(/* message: usize, fileName: usize, line: u32, column: u32 */) {
         throw new Error('abort');
       },
     },
@@ -70,7 +70,6 @@ export class WasmGrammar {
   private _ruleIds = new Map<string, number>();
   private _ruleNames: string[] = [];
   private _input = '';
-  private _pos?: number = undefined;
 
   private _resultStack: MatchResult[] = [];
   private _managedResultCount = 0;
@@ -271,11 +270,10 @@ export class WasmGrammar {
     const encoder = new TextEncoder();
     const {memory} = (this._instance as any).exports;
     const buf = new Uint8Array(memory.buffer, INPUT_BUFFER_OFFSET + offset);
-    const {read, written} = encoder.encodeInto(this._input.substring(this._pos!), buf);
+    const {read, written} = encoder.encodeInto(this._input, buf);
     assert(written < 64 * 1024, 'Input too long');
-    this._pos! += read!;
-    buf[written!] = 0xff; // Mark end of input with an invalid UTF-8 character.
-    return written!;
+    buf[written] = 0xff; // Mark end of input with an invalid UTF-8 character.
+    return written;
   }
 
   getRightmostFailurePosition(): number {
