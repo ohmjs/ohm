@@ -1,6 +1,5 @@
 import {assert, checkNotNull} from './assert.ts';
 
-const WASM_PAGE_SIZE = 64 * 1024;
 const CST_NODE_TYPE_MASK = 0b11;
 
 const CstNodeType = {

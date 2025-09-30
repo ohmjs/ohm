@@ -1844,16 +1844,7 @@ export class Compiler {
 // - Remainder (>18) is for CST (growing upwards).
 Compiler.STACK_START_OFFSET = WASM_PAGE_SIZE; // Starting offset of the stack.
 
-// For now, 1k *pages* for the memo table.
-// That's 1/64 page per char:
-// - 4 bytes per entry
-// - 256 entries per column
-// - 1 column per char
-// - 64k input length.
-Compiler.CST_START_OFFSET = (1024 + 2) * WASM_PAGE_SIZE; // Starting offset of CST records.
-
 export const ConstantsForTesting = {
   CST_NODE_SIZE_BYTES: checkNotNull(Assembler.CST_NODE_HEADER_SIZE_BYTES),
-  CST_START_OFFSET: checkNotNull(Compiler.CST_START_OFFSET),
   MEMO_COL_SIZE_BYTES: checkNotNull(Assembler.MEMO_COL_SIZE_BYTES),
 };

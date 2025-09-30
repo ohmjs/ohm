@@ -7,11 +7,16 @@ declare function matchUnicodeChar(categoryBitmap: i32): bool;
 
 @inline const IMPLICIT_SPACE_SKIPPING = true;
 
-// TODO: Find a way to share these.
+// TODO: Find a way to share these constants with JS?
 @inline const WASM_PAGE_SIZE: usize = 64 * 1024;
-@inline const MEMO_COL_SIZE_BYTES: usize = 4 * 256;
 @inline const STACK_START_OFFSET: usize = WASM_PAGE_SIZE;
 @inline const MAX_INPUT_LEN_BYTES: usize = 64 * 1024;
+
+// We current use 1k (1/64 page) per char for the memo table:
+// - 4 bytes per entry
+// - 256 entries per column
+// - 1 column per char
+@inline const MEMO_COL_SIZE_BYTES: usize = 4 * 256;
 
 // CST nodes
 @inline const CST_NODE_OVERHEAD: usize = 16;
@@ -49,8 +54,8 @@ type RuleEvalResult = i32;
 
 // Shared globals
 let pos: i32 = 0;
-let memoBase: usize = 2 * WASM_PAGE_SIZE;
-let inputBase: usize = WASM_PAGE_SIZE;
+let memoBase: usize = 0;
+let inputBase: usize = 0;
 
 // The rightmost position at which a leaf (Terminal, etc.) failed to match.
 let rightmostFailurePos: i32 = 0;
@@ -134,13 +139,18 @@ function resetParsingState(): void {
   rightmostFailurePos = -1;
   sp = STACK_START_OFFSET;
   bindings = new Array<i32>();
-  // TODO: Remove this, we need to allocate a new memo table each time.
-  memory.fill(memoBase, 0, MEMO_COL_SIZE_BYTES * MAX_INPUT_LEN_BYTES);
 }
 
 // TODO: Move the logic for doing this into the Wasm module.
 export function resetHeap(): void {
   heap.reset();
+}
+
+function initMemoTable(inputLenBytes: usize): usize {
+  const sizeBytes = (inputLenBytes + 1) * MEMO_COL_SIZE_BYTES;
+  const buf = heap.alloc(sizeBytes);
+  memory.fill(buf, 0, sizeBytes);
+  return buf;
 }
 
 export function match(startRuleId: i32, inputLenChars: usize): ApplyResult {
@@ -161,13 +171,15 @@ export function match(startRuleId: i32, inputLenChars: usize): ApplyResult {
   // Resize the chunk. (This should never return a new chunk.)
   assert(heap.realloc(inputBase, byteLen + 1) === inputBase);
 
+  memoBase = initMemoTable(byteLen);
+
   maybeSkipSpaces(startRuleId);
   const succeeded = evalApply0(startRuleId) !== 0;
   if (succeeded) {
     maybeSkipSpaces(startRuleId);
     // printI32(heap.alloc(8) - __heap_base); // Print heap usage.
     // TODO: Do we need to update rightmostFailurePos here?
-    return byteLen === pos;
+    return pos === byteLen;
   }
 
   return false;
