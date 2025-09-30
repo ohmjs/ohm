@@ -470,7 +470,9 @@ class Assembler {
 
   currCharCode() {
     this.globalGet('pos');
-    this.i32Load8u(Compiler.INPUT_BUFFER_OFFSET);
+    this.globalGet('inputBase');
+    this.i32Add();
+    this.i32Load8u();
   }
 
   nextCharCode() {
@@ -807,7 +809,8 @@ export class Compiler {
     asm.addBlocktype([w.valtype.i32], [w.valtype.i32]);
     asm.addBlocktype([], [w.valtype.i32]); // Rule eval
     // (global $runtime/ohmRuntime/pos (mut i32) (i32.const 0))
-    // (global $runtime/ohmRuntime/memoStartOffset (mut i32) (i32.const 0))
+    // (global $runtime/ohmRuntime/memoBase (mut i32) (i32.const 0))
+    // (global $runtime/ohmRuntime/inputBase (mut i32) (i32.const 65536))
     // (global $runtime/ohmRuntime/rightmostFailurePos (mut i32) (i32.const 0))
     // (global $runtime/ohmRuntime/sp (mut i32) (i32.const 0))
     // (global $~lib/shared/runtime/Runtime.Stub i32 (i32.const 0))
@@ -819,9 +822,10 @@ export class Compiler {
     // (global $runtime/ohmRuntime/bindings (mut i32) (i32.const 0))
     // (global $~lib/memory/__heap_base i32 (i32.const 67240236))
     asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('memoStartOffset', w.valtype.i32, w.mut.var, () =>
+    asm.addGlobal('memoBase', w.valtype.i32, w.mut.var, () =>
       asm.i32Const(2 * WASM_PAGE_SIZE)
     );
+    asm.addGlobal('inputBase', w.valtype.i32, w.mut.var, () => asm.i32Const(WASM_PAGE_SIZE));
     asm.addGlobal('rightmostFailurePos', w.valtype.i32, w.mut.var, () => asm.i32Const(-1));
     asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('__Runtime.Stub', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
@@ -1839,7 +1843,6 @@ export class Compiler {
 // - Pages 3-18 (incl.) for memo table (4 entries per char, 4 bytes each).
 // - Remainder (>18) is for CST (growing upwards).
 Compiler.STACK_START_OFFSET = WASM_PAGE_SIZE; // Starting offset of the stack.
-Compiler.INPUT_BUFFER_OFFSET = WASM_PAGE_SIZE; // Offset of the input buffer in memory.
 
 // For now, 1k *pages* for the memo table.
 // That's 1/64 page per char:
