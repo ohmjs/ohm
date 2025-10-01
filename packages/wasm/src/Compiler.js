@@ -1231,7 +1231,7 @@ export class Compiler {
       mergeSections(w.SECTION_ID_IMPORT, prebuilt.importsec, imports),
       mergeSections(w.SECTION_ID_FUNCTION, prebuilt.funcsec, funcs),
       w.tablesec([table]),
-      w.memsec([w.mem(w.memtype(w.limits.min(1024 + 24)))]),
+      w.memsec([w.mem(w.memtype(w.limits.min(1)))]),
       w.globalsec(globals),
       w.exportsec(exports),
       w.startsec(w.start(startFuncidx)),

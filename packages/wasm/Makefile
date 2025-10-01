@@ -42,7 +42,7 @@ force-bundlewasm:
 	touch build/ohmRuntime.wasm
 
 build/ohmRuntime.wasm: runtime/ohmRuntime.ts
-	pnpm asc --runtime stub -o build/ohmRuntime.wasm -t build/ohmRuntime.wat --memoryBase 67239936 runtime/ohmRuntime.ts
+	pnpm asc --runtime stub -o build/ohmRuntime.wasm -t build/ohmRuntime.wat --memoryBase 65536 runtime/ohmRuntime.ts
 
 build/es5.wasm: dist/index.js
 	$(NODE) scripts/es5ToWasm.js build/es5.wasm
