@@ -942,7 +942,7 @@ test('space skipping & lex', async t => {
 const arbitraryStringMatching = regex =>
   fc.string({maxLength: 2, unit: 'binary'}).filter(str => regex.test(str));
 
-test('unicode built-ins: non-ASII (fast-check)', async t => {
+test('unicode built-ins: non-ASCII (fast-check)', async t => {
   const g = ohm.grammar('G { Start = letter letter }');
   const wasmGrammar = await toWasmGrammar(g);
   const hasExpectedResult = wg => {
@@ -1038,4 +1038,33 @@ test('MatchResult.detach()', async t => {
   t.throws(() => g.match(''), {message: /unmanaged MatchResults/});
   r2.detach();
   t.notThrows(() => g.match(''));
+});
+
+test('matching at end', async t => {
+  const g = ohm.grammar(`
+    G {
+      start =
+        | alnum
+        | letter
+        | digit
+        | hexDigit
+        // ListOf
+        // NonemptyListOf
+        // EmptyListOf
+        // listOf
+        // nonemptyListOf
+        // emptyListOf
+        // applySyntactic
+        | any
+        // end
+        // caseInsensitive
+        | lower
+        | upper
+        | unicodeLtmo
+        // spaces
+        | space
+    }
+  `);
+  const wasmGrammar = await toWasmGrammar(g);
+  t.is(matchWithInput(wasmGrammar, ''), 0);
 });

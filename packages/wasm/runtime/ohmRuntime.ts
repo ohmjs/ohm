@@ -171,7 +171,10 @@ export function match(startRuleId: i32, inputLenChars: usize): ApplyResult {
   // Resize the chunk. (This should never return a new chunk.)
   assert(heap.realloc(inputBase, byteLen + 1) === inputBase);
 
-  memoBase = initMemoTable(byteLen);
+  // TODO: Change this to byteLen + 1. The +2 is temporarily required to
+  // avoid out-of-bounds access due to improper Unicode handling at the end.
+  memoBase = initMemoTable(byteLen + 2);
+  // memory.fill(memoBase, 0, 1024 * WASM_PAGE_SIZE);
 
   maybeSkipSpaces(startRuleId);
   const succeeded = evalApply0(startRuleId) !== 0;
@@ -179,6 +182,7 @@ export function match(startRuleId: i32, inputLenChars: usize): ApplyResult {
     maybeSkipSpaces(startRuleId);
     // printI32(heap.alloc(8) - __heap_base); // Print heap usage.
     // TODO: Do we need to update rightmostFailurePos here?
+    assert(pos <= <i32>byteLen);
     return pos === byteLen;
   }
 
