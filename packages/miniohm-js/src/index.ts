@@ -74,6 +74,20 @@ export class WasmGrammar {
         return !!arr;
       },
     },
+    // Include a polyfill for js-string builtins for engines that don't
+    // support that feature (e.g., Safari).
+    'wasm:js-string': {
+      length(str: string): number {
+        return str.length;
+      },
+      charCodeAt(str: string, idx: number): number {
+        // NOTE: `index` is interpreted as a signed 32-bit integer when converted to
+        // a JS value using standard conversions. Reinterpret as unsigned here.
+        idx >>>= 0;
+        assert(idx < str.length, 'string index out of bounds');
+        return str.charCodeAt(idx);
+      },
+    },
   };
   private _ruleIds = new Map<string, number>();
   private _ruleNames: string[] = [];

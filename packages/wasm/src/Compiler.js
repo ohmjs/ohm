@@ -498,6 +498,7 @@ class Assembler {
     this.globalGet('pos');
     this.globalGet('endPos');
     this.emit(instr.i32.lt_u);
+
     this.ifElse(
       w.blocktype.i32,
       () => {
