@@ -104,6 +104,7 @@ export class WasmGrammar {
    */
   constructor(bytes?: BufferSource) {
     if (bytes) {
+      // @ts-expect-error: TS2554: Expected 1 arguments, but got 2.
       const mod = new WebAssembly.Module(bytes, compileOptions);
       this._init(mod, new WebAssembly.Instance(mod, this._imports));
     }
@@ -153,6 +154,7 @@ export class WasmGrammar {
         ...this._imports,
         debug: debugImports,
       },
+      // @ts-expect-error: Expected 1-2 arguments, but got 3.
       compileOptions
     );
     return this._init(module, instance);
@@ -168,6 +170,7 @@ export class WasmGrammar {
         ...this._imports,
         debug: debugImports,
       },
+      // @ts-expect-error: TS2554: Expected 1-2 arguments, but got 3.
       compileOptions
     );
     return this._init(module, instance);
