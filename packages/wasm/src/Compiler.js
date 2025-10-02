@@ -1,4 +1,4 @@
-/* global process, TextEncoder */
+/* global process */
 
 import * as w from '@wasmgroundup/emit';
 import * as ohm from 'ohm-js';
@@ -20,10 +20,28 @@ const IMPLICIT_SPACE_SKIPPING = true;
 // This doesn't seem to make a big performance difference either way.
 const EMIT_GENERALIZED_RULES = false;
 
+// A sentinel value representing "end of input".
+// This could be anything > 0xffff, really.
+const CHAR_CODE_END = 0xffffffff;
+
 const {instr} = w;
 const {pexprs} = ohm;
 
-const utf8 = new TextEncoder('utf-8');
+// Constants for Wasm 3.0 (stuff not in @wasmgroundup/emit).
+const wasm3 = {
+  valtype: {externref: 0x6f},
+  instr: {ref: {null: 0xd0}},
+};
+
+const defaultImports = [
+  // func codePointAt(string: externref, index: i32) -> i32
+  {
+    module: 'wasm:js-string',
+    name: 'charCodeAt',
+    paramTypes: [wasm3.valtype.externref, w.valtype.i32],
+    resultTypes: [w.valtype.i32],
+  },
+];
 
 const isNonNull = x => x != null;
 
@@ -152,7 +170,11 @@ function mergeSections(sectionId, prebuiltSec, els) {
 }
 
 function functypeToString(paramTypes, resultTypes) {
-  const toStr = t => checkNotNull(['f64', 'f32', 'i64', 'i32'][t - w.valtype.f64]);
+  const toStr = t => {
+    return t === wasm3.valtype.externref
+      ? 'externref'
+      : checkNotNull(['f64', 'f32', 'i64', 'i32'][t - w.valtype.f64]);
+  };
   const params = paramTypes.map(toStr).join(',');
   const results = resultTypes.map(toStr).join(',');
   return '[' + params + '][' + results + ']';
@@ -451,6 +473,10 @@ class Assembler {
     assert(this._blockStack.length === startStackHeight);
   }
 
+  refNull(valtype) {
+    this.emit(wasm3.instr.ref.null, valtype);
+  }
+
   // "Macros" -- codegen helpers specific to Ohm.
 
   i32Inc() {
@@ -470,9 +496,19 @@ class Assembler {
 
   currCharCode() {
     this.globalGet('pos');
-    this.globalGet('inputBase');
-    this.i32Add();
-    this.i32Load8u();
+    this.globalGet('endPos');
+    this.emit(instr.i32.lt_u);
+    this.ifElse(
+      w.blocktype.i32,
+      () => {
+        this.globalGet('input');
+        this.globalGet('pos');
+        this.emit(instr.call, w.funcidx(prebuilt.importsec.entryCount));
+      },
+      () => {
+        this.i32Const(CHAR_CODE_END);
+      }
+    );
   }
 
   nextCharCode() {
@@ -690,7 +726,7 @@ export class Compiler {
     this.grammar = grammar;
 
     // For any additional imports outside the prebuilt ones.
-    this.importDecls = [];
+    this.importDecls = [...defaultImports];
 
     // The rule ID is a 0-based index that's mapped to the name.
     // It is *not* the same as the function index of the rule's eval function.
@@ -809,8 +845,9 @@ export class Compiler {
     asm.addBlocktype([w.valtype.i32], [w.valtype.i32]);
     asm.addBlocktype([], [w.valtype.i32]); // Rule eval
     // (global $runtime/ohmRuntime/pos (mut i32) (i32.const 0))
+    // (global $runtime/ohmRuntime/endPos (mut i32) (i32.const 0))
+    // (global $runtime/ohmRuntime/input (mut externref) (ref.null noextern))
     // (global $runtime/ohmRuntime/memoBase (mut i32) (i32.const 0))
-    // (global $runtime/ohmRuntime/inputBase (mut i32) (i32.const 65536))
     // (global $runtime/ohmRuntime/rightmostFailurePos (mut i32) (i32.const 0))
     // (global $runtime/ohmRuntime/sp (mut i32) (i32.const 0))
     // (global $~lib/shared/runtime/Runtime.Stub i32 (i32.const 0))
@@ -820,12 +857,15 @@ export class Compiler {
     // (global $~lib/rt/stub/offset (mut i32) (i32.const 0))
     // (global $~lib/native/ASC_RUNTIME i32 (i32.const 0))
     // (global $runtime/ohmRuntime/bindings (mut i32) (i32.const 0))
-    // (global $~lib/memory/__heap_base i32 (i32.const 67240236))
+    // (global $~lib/memory/__heap_base i32 (i32.const 65900))
     asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('endPos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('input', wasm3.valtype.externref, w.mut.var, () =>
+      asm.refNull(wasm3.valtype.externref)
+    );
     asm.addGlobal('memoBase', w.valtype.i32, w.mut.var, () =>
       asm.i32Const(2 * WASM_PAGE_SIZE)
     );
-    asm.addGlobal('inputBase', w.valtype.i32, w.mut.var, () => asm.i32Const(WASM_PAGE_SIZE));
     asm.addGlobal('rightmostFailurePos', w.valtype.i32, w.mut.var, () => asm.i32Const(-1));
     asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('__Runtime.Stub', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
@@ -835,7 +875,7 @@ export class Compiler {
     asm.addGlobal('__offset', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('__ASC_RUNTIME', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
     asm.addGlobal('bindings', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('__heap_base', w.valtype.i32, w.mut.var, () => asm.i32Const(67240236));
+    asm.addGlobal('__heap_base', w.valtype.i32, w.mut.var, () => asm.i32Const(65900));
 
     // Reserve a fixed number of imports for debug labels.
     if (DEBUG) {
@@ -1173,7 +1213,7 @@ export class Compiler {
 
   buildModule(typeMap, functionDecls) {
     const ruleNames = this.ruleIdByName.values();
-    assert(prebuilt.destImportCount === this.importCount(), 'import count mismatch');
+    assert(this.importCount() === prebuilt.destImportCount, 'import count mismatch');
 
     // Ensure that `ruleNames` is in the correct order.
     ruleNames.forEach((n, i) =>
@@ -1266,8 +1306,9 @@ export class Compiler {
   // guarantee that there are no collisions with other functions.
   // Returns the list of dummy functions that need to be added to the module.
   rewriteDebugLabels(decls) {
-    let nextIdx = 0;
-    const intoFuncidx = i => w.funcidx(prebuilt.importsec.entryCount + i);
+    let nextIdx = defaultImports.length;
+    const intoFuncidx = i =>
+      w.funcidx(prebuilt.importsec.entryCount + defaultImports.length + i);
     const names = new Set();
     for (let i = 0; i < decls.length; i++) {
       const entry = decls[i];
@@ -1469,7 +1510,7 @@ export class Compiler {
   emitAny() {
     const {asm} = this;
     this.wrapTerminalLike(() => {
-      asm.i32Const(0xff);
+      asm.i32Const(CHAR_CODE_END);
       asm.nextCharCode();
       asm.i32Eq();
       asm.condBreak(asm.depthOf('failure'));
@@ -1534,7 +1575,7 @@ export class Compiler {
   emitEnd() {
     const {asm} = this;
     this.wrapTerminalLike(() => {
-      asm.i32Const(0xff);
+      asm.i32Const(CHAR_CODE_END);
       // Careful! We shouldn't move the pos here. Or does it matter?
       asm.currCharCode();
       asm.i32Ne();
@@ -1754,13 +1795,12 @@ export class Compiler {
     const {asm} = this;
     asm.emit(JSON.stringify(exp.value));
 
-    const bytes = utf8.encode(exp.value);
     this.wrapTerminalLike(() => {
       // TODO:
       // - handle longer terminals with a loop?
       // - SIMD
-      for (const c of [...bytes]) {
-        asm.i32Const(c);
+      for (const c of exp.value) {
+        asm.i32Const(c.charCodeAt(0));
         asm.currCharCode();
         asm.emit(instr.i32.ne);
         asm.condBreak(asm.depthOf('failure'));

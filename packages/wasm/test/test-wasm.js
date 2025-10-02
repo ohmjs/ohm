@@ -20,18 +20,6 @@ function memoTableViewForTesting(m) {
   return new DataView(buffer, memoBase);
 }
 
-test('input in memory', async t => {
-  const g = ohm.grammar('G { start = "x" }');
-  const wasmGrammar = await toWasmGrammar(g);
-  wasmGrammar.match('ohm'); // Trigger fillInputBuffer
-
-  const {inputBase, memory} = wasmGrammar._instance.exports;
-  const view = new DataView(memory.buffer, inputBase.value);
-  t.is(view.getUint8(0), 'ohm'.charCodeAt(0));
-  t.is(view.getUint8(1), 'ohm'.charCodeAt(1));
-  t.is(view.getUint8(2), 'ohm'.charCodeAt(2));
-});
-
 test('cst returns', async t => {
   let g = await toWasmGrammar(ohm.grammar('G { start = "a" | "b" }'));
 
@@ -958,6 +946,12 @@ test('unicode built-ins: non-ASCII (fast-check)', async t => {
   t.is(details.failed, false, `${fc.defaultReportMessage(details)}`);
 });
 
+test('fast-check zoo', async t => {
+  const g = ohm.grammar('G { Start = letter letter }');
+  const wasmGrammar = await toWasmGrammar(g);
+  t.true(wasmGrammar.match('㐀𝐀').succeeded());
+});
+
 test('caseInsensitive', async t => {
   // Make sure space is skipped before params in the body of syntactic rule.
   const g = ohm.grammar(`
@@ -973,7 +967,7 @@ test('caseInsensitive', async t => {
   t.is(matchWithInput(wasmGrammar, '.BLAH!'), 1);
 });
 
-test.failing('unicode', async t => {
+test('unicode', async t => {
   const source = 'Nöö';
   const g = await toWasmGrammar(ohm.grammar('G { Start = any* }'));
   t.is(matchWithInput(g, source), 1);
@@ -1067,4 +1061,29 @@ test('matching at end', async t => {
   `);
   const wasmGrammar = await toWasmGrammar(g);
   t.is(matchWithInput(wasmGrammar, ''), 0);
+});
+
+test.failing('any consumes an entire code point', async t => {
+  const g = await toWasmGrammar(ohm.grammar('G { start = any }'));
+  t.assert('😇'.length === 2);
+  t.true(g.match('😇').succeeded());
+});
+
+test.failing('ranges w/ code points > 0xFFFF', async t => {
+  const g = await toWasmGrammar(
+    ohm.grammar(`
+    G {
+      face = "😇".."😈"
+      notFace = ~face any
+    }
+  `)
+  );
+
+  // Every emoji by code point: https://emojipedia.org/emoji/
+  t.false(g.match('😆').succeeded()); // just below
+  t.true(g.match('😇').succeeded());
+  t.true(g.match('😈').succeeded());
+  t.false(g.match('😉').succeeded()); // just above
+
+  t.true(g.match('x', 'notFace').succeeded());
 });

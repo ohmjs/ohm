@@ -13,8 +13,10 @@
 - [x] Separate API for _creating_ the Wasm module from the WasmMatcher interface.
 - [x] Implement a proper CLI.
 - [ ] Fix duplicate CST nodes with EMIT_GENERALIZED_RULES = true
-- [ ] Remove input size limitation
-- [ ] Complete Unicode support
+- [x] Remove input size limitation
+- [x] Extra memo column allocated in match().
+- [ ] Proper Unicode handling for caseInsensitive
+- [ ] Proper Unicode handling for range
 
 Cleanups:
 

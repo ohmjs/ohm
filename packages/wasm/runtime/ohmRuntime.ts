@@ -1,6 +1,8 @@
 type ApplyResult = bool;
 
-declare function fillInputBuffer(ptr: usize, sizeBytes: u32): u32;
+@external("wasm:js-string", "length")
+declare function jsStringLength(s: externref): i32;
+
 declare function printI32(val: i32): void;
 declare function isRuleSyntactic(ruleId: i32): bool;
 declare function matchUnicodeChar(categoryBitmap: i32): bool;
@@ -53,9 +55,10 @@ type RuleEvalResult = i32;
 @inline const RULE_EVAL_SUCCESS_FLAG = 1;
 
 // Shared globals
-let pos: i32 = 0;
+let pos: u32 = 0;
+let endPos: u32 = 0;
+let input: externref = null;
 let memoBase: usize = 0;
-let inputBase: usize = 0;
 
 // The rightmost position at which a leaf (Terminal, etc.) failed to match.
 let rightmostFailurePos: i32 = 0;
@@ -153,28 +156,12 @@ function initMemoTable(inputLenBytes: usize): usize {
   return buf;
 }
 
-export function match(startRuleId: i32, inputLenChars: usize): ApplyResult {
+export function match(inputStr: externref, startRuleId: i32): ApplyResult {
   resetParsingState();
+  input = inputStr;
+  endPos = jsStringLength(input);
 
-  // Allocate space for the input buffer, and ask the host to fill it.
-  // The challenge here is that we want UTF-8, and the host might use a diff't
-  // encoding. So we first allocate an _estimated_ amount, assuming a
-  // worst-case scenario where every character is four bytes, and then use
-  // realloc to shrink the allocation down to its actual (final) size.
-  // The memo table will need much more than four bytes per input char, so
-  // there's no harm is overallocating here.
-  const estimatedSizeBytes = inputLenChars * 4;
-  inputBase = heap.alloc(estimatedSizeBytes + 1);
-  const byteLen = fillInputBuffer(inputBase, estimatedSizeBytes);
-  // Mark end of input with an invalid UTF-8 character.
-  store<u8>(inputBase + byteLen, 0xff);
-  // Resize the chunk. (This should never return a new chunk.)
-  assert(heap.realloc(inputBase, byteLen + 1) === inputBase);
-
-  // TODO: Change this to byteLen + 1. The +2 is temporarily required to
-  // avoid out-of-bounds access due to improper Unicode handling at the end.
-  memoBase = initMemoTable(byteLen + 2);
-  // memory.fill(memoBase, 0, 1024 * WASM_PAGE_SIZE);
+  memoBase = initMemoTable(endPos);
 
   maybeSkipSpaces(startRuleId);
   const succeeded = evalApply0(startRuleId) !== 0;
@@ -182,8 +169,8 @@ export function match(startRuleId: i32, inputLenChars: usize): ApplyResult {
     maybeSkipSpaces(startRuleId);
     // printI32(heap.alloc(8) - __heap_base); // Print heap usage.
     // TODO: Do we need to update rightmostFailurePos here?
-    assert(pos <= <i32>byteLen);
-    return pos === byteLen;
+    assert(pos <= endPos);
+    return pos === endPos;
   }
 
   return false;
@@ -255,8 +242,8 @@ export function evalApply0(ruleId: i32): ApplyResult {
   return true;
 }
 
-export function handleLeftRecursion(origPos: usize, ruleId: i32, origNumBindings: i32, failurePos: i32): ApplyResult {
-  let maxPos: i32;
+export function handleLeftRecursion(origPos: u32, ruleId: i32, origNumBindings: i32, failurePos: i32): ApplyResult {
+  let maxPos: u32;
   let node: usize;
   let succeeded: bool;
   do {

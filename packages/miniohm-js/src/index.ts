@@ -9,6 +9,10 @@ const CstNodeType = {
   OPTIONAL: 3,
 };
 
+const compileOptions = {
+  builtins: ['js-string'],
+};
+
 // Bit flags for Unicode categories, based on the order that they appear in
 // https://www.unicode.org/Public/16.0.0/ucd/extracted/DerivedGeneralCategory.txt
 
@@ -59,9 +63,15 @@ export class WasmGrammar {
         return name[0] === name[0].toUpperCase();
       },
       fillInputBuffer: this._fillInputBuffer.bind(this),
-      matchUnicodeChar: (catBitmap: number, pos: number) => {
+      matchUnicodeChar: (catBitmap: number) => {
+        const {input, pos} = (this._instance as any).exports;
         const re = regexFromCategoryBitmap(catBitmap);
-        return re.test(this._nextCodePoint());
+        re.lastIndex = pos;
+        const arr = re.exec(input.value);
+        if (arr) {
+          pos.value += arr[0].length;
+        }
+        return !!arr;
       },
     },
   };
@@ -80,7 +90,7 @@ export class WasmGrammar {
    */
   constructor(bytes?: BufferSource) {
     if (bytes) {
-      const mod = new WebAssembly.Module(bytes);
+      const mod = new WebAssembly.Module(bytes, compileOptions);
       this._init(mod, new WebAssembly.Instance(mod, this._imports));
     }
   }
@@ -123,10 +133,14 @@ export class WasmGrammar {
   }
 
   async _instantiate(source: BufferSource, debugImports: any = {}) {
-    const {module, instance} = await WebAssembly.instantiate(source, {
-      ...this._imports,
-      debug: debugImports,
-    });
+    const {module, instance} = await WebAssembly.instantiate(
+      source,
+      {
+        ...this._imports,
+        debug: debugImports,
+      },
+      compileOptions
+    );
     return this._init(module, instance);
   }
 
@@ -134,33 +148,15 @@ export class WasmGrammar {
     source: Response | Promise<Response>,
     debugImports: any = {}
   ): Promise<WasmGrammar> {
-    const {module, instance} = await WebAssembly.instantiateStreaming(source, {
-      ...this._imports,
-      debug: debugImports,
-    });
+    const {module, instance} = await WebAssembly.instantiateStreaming(
+      source,
+      {
+        ...this._imports,
+        debug: debugImports,
+      },
+      compileOptions
+    );
     return this._init(module, instance);
-  }
-
-  // Return a JavaScript string containing the next code point from the input
-  // buffer, and advance pos past it.
-  private _nextCodePoint(): string {
-    const {inputBase, memory, pos} = (this._instance as any).exports;
-    const offset = pos.value;
-    const byteArr = new Uint8Array(memory.buffer, inputBase.value + offset);
-    const firstByte = byteArr[0];
-    let len: number;
-    if ((firstByte & 0b10000000) === 0) {
-      len = 1;
-    } else if ((firstByte & 0b11100000) === 0b11000000) {
-      len = 2;
-    } else if ((firstByte & 0b11110000) === 0b11100000) {
-      len = 3;
-    } else {
-      len = 4;
-    }
-    const str = utf8.decode(byteArr.subarray(0, len));
-    pos.value += len;
-    return str;
   }
 
   private _getGrammarName(module: WebAssembly.Module): string {
@@ -223,7 +219,7 @@ export class WasmGrammar {
       this._ruleIds.get(ruleName || this._ruleNames[0]),
       `unknown rule: '${ruleName}'`
     );
-    const succeeded = (this._instance as any).exports.match(ruleId, input.length);
+    const succeeded = (this._instance as any).exports.match(input, ruleId);
     const result = new MatchResult(
       this,
       this._input,
@@ -247,7 +243,7 @@ export class WasmGrammar {
       this._ruleNames,
       new DataView(buffer),
       exports.bindingsAt(0),
-      exports.inputBase.value,
+      exports.input.value,
       0
     );
     if (firstNode.ctorName !== '$spaces') {
@@ -259,7 +255,7 @@ export class WasmGrammar {
       this._ruleNames,
       new DataView(buffer),
       nextAddr,
-      exports.inputBase.value,
+      exports.input.value,
       firstNode.matchLength
     );
     root.leadingSpaces = firstNode;
@@ -285,7 +281,7 @@ export class CstNode {
   _view!: DataView;
   _children?: CstNode[];
   _base: number;
-  _inputBase: number;
+  _input: string;
   startIdx: number;
   leadingSpaces: CstNode | undefined;
   source: {startIdx: number; endIdx: number};
@@ -294,7 +290,7 @@ export class CstNode {
     ruleNames: string[],
     dataView: DataView,
     ptr: number,
-    inputBase: number,
+    input: string,
     startIdx: number
   ) {
     // Non-enumerable properties
@@ -304,7 +300,7 @@ export class CstNode {
       _children: {writable: true},
     });
     this._base = ptr;
-    this._inputBase = inputBase;
+    this._input = input;
     this.startIdx = startIdx;
     this.leadingSpaces = undefined;
     this.source = {
@@ -374,7 +370,7 @@ export class CstNode {
       const slotOffset = this._base + 16 + i * 4;
       const ptr = this._view.getUint32(slotOffset, true);
       // TODO: Avoid allocating $spaces nodes altogether?
-      const node = new CstNode(this._ruleNames, this._view, ptr, this._inputBase, startIdx);
+      const node = new CstNode(this._ruleNames, this._view, ptr, this._input, startIdx);
       if (node.ctorName === '$spaces') {
         assert(!spaces, 'Multiple $spaces nodes found');
         spaces = node;
@@ -392,12 +388,7 @@ export class CstNode {
   }
 
   get sourceString(): string {
-    const bytes = new Uint8Array(
-      this._view.buffer,
-      this._inputBase + this.startIdx,
-      this.matchLength
-    );
-    return utf8.decode(bytes);
+    return this._input.slice(this.startIdx, this.startIdx + this.matchLength);
   }
 
   isSyntactic(ruleName?: string): boolean {

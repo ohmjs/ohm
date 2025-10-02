@@ -56,7 +56,7 @@ test('unparsing', async t => {
   t.is(unparse(g), source);
 });
 
-test.failing('matching at end', async t => {
+test('matching at end', async t => {
   const g = await toWasmGrammar(es5);
   t.false(g.match('', 'letter').use(r => r.succeeded()));
 });
