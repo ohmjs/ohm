@@ -1,5 +1,5 @@
 import {assert, checkNotNull} from './assert.ts';
-import type {CstNode, MatchResult} from './index.ts';
+import type {CstNode, MatchResult} from './miniohm.ts';
 
 export type AstMapping = Record<string, unknown>; // TODO: Improve this.
 

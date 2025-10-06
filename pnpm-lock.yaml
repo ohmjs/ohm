@@ -255,9 +255,6 @@ importers:
         specifier: ^17.1.0
         version: link:../ohm-js
     devDependencies:
-      '@ohm-js/miniohm-js':
-        specifier: workspace:^
-        version: link:../miniohm-js
       '@shopify/liquid-html-parser':
         specifier: github:pdubroy/theme-tools#path:/packages/liquid-html-parser
         version: https://codeload.github.com/pdubroy/theme-tools/tar.gz/ee719500dbcadb725b7615b652f191b5e95caa3f#path:/packages/liquid-html-parser

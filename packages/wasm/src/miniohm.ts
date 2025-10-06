@@ -531,5 +531,3 @@ export class MatchResult {
     }
   }
 }
-
-export {AstBuilder} from './AstBuilder.ts';

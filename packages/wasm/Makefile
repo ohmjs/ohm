@@ -26,7 +26,7 @@ build/%.O3.wasm: build/%.wasm
 	wasm-opt -O3 --enable-bulk-memory-opt -o $@ $<
 
 dist/index.js: build/ohmRuntime.wasm_sections.ts $(SRC_JS_FILES) $(SRC_TS_FILES)
-	pnpm esbuild index.js --bundle --loader:.ts=ts --outfile=dist/index.js --format=esm --platform=node --external:ohm-js
+	pnpm esbuild index.ts --bundle --loader:.ts=ts --outfile=dist/index.js --format=esm --platform=node --external:ohm-js
 
 dist/index.d.ts:
 	cp index.d.ts dist/index.d.ts

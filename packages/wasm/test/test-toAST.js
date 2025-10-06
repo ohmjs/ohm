@@ -1,4 +1,3 @@
-import {AstBuilder} from '@ohm-js/miniohm-js';
 import test from 'ava';
 import * as fc from 'fast-check';
 import assert from 'node:assert/strict';
@@ -7,6 +6,7 @@ import * as ohm from 'ohm-js';
 import {toAST} from 'ohm-js/extras';
 
 import {scriptRel, toWasmGrammar} from './_helpers.js';
+import {AstBuilder} from '../src/AstBuilder.ts';
 
 const arithmetic = ohm.grammar(
   readFileSync(scriptRel('../../ohm-js/test/data/arithmetic.ohm'))
