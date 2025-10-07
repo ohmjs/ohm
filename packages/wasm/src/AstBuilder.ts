@@ -1,7 +1,22 @@
 import {assert, checkNotNull} from './assert.ts';
 import type {CstNode, MatchResult} from './miniohm.ts';
 
-export type AstMapping = Record<string, unknown>; // TODO: Improve this.
+export type AstNodeTemplate = {
+  [property: string]:
+    | number
+    | string
+    | boolean
+    | object
+    | null
+    | ((this: AstBuilder, children: CstNode[]) => any);
+};
+
+export type AstMapping = Record<
+  string,
+  | AstNodeTemplate
+  | number // forward to nth child
+  | ((this: AstBuilder, ...children: CstNode[]) => any) // semantic action
+>;
 
 function childAt(children: CstNode[], idx: number, ruleName: string, propName = ''): CstNode {
   if (idx > children.length) {
