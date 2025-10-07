@@ -2,7 +2,6 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "noEmit": true,
 
     // From the totaltypescript "Building for a Library in a Monorepo"
     // recommendation. See tsconfig.base.json for details.

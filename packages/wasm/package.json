@@ -3,10 +3,15 @@
   "version": "0.5.0",
   "description": "Compile Ohm.js grammars to WebAsssembly",
   "main": "dist/index.js",
-  "bin": {
-    "ohm2wasm": "dist/cli.js"
+  "exports": {
+    ".": "./dist/index.js",
+    "./compat": "./dist/src/compat.js",
+    "./compiler": "./dist/src/Compiler.js"
   },
-  "files": ["dist"],
+  "bin": {
+    "ohm2wasm": "dist/src/cli.js"
+  },
+  "files": ["dist/**/*.js", "dist/**/*.d.ts"],
   "scripts": {
     "build": "make",
     "build-and-test": "make && ava test",

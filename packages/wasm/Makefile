@@ -4,7 +4,7 @@ SRC_JS_FILES := $(wildcard src/*.js)
 SRC_TS_FILES := $(wildcard src/*.ts)
 
 .PHONY: all
-all: dist/index.js dist/index.d.ts dist/cli.js check
+all: dist-js dist/index.d.ts
 
 .PHONY: clean
 clean:
@@ -19,38 +19,31 @@ debug: clean
 	OHM_DEBUG=1 make
 
 .PHONY: bench
-bench: all build/es5.wasm build/json.wasm build/liquid-html.wasm
+bench: all scripts/bench.js build/es5.wasm build/json.wasm build/liquid-html.wasm
 	$(NODE) --expose-gc $(NODE_COMMON_FLAGS) scripts/bench.js
-
-build/%.O3.wasm: build/%.wasm
-	wasm-opt -O3 --enable-bulk-memory-opt -o $@ $<
-
-dist/index.js: build/ohmRuntime.wasm_sections.ts $(SRC_JS_FILES) $(SRC_TS_FILES)
-	pnpm esbuild index.ts --bundle --loader:.ts=ts --outfile=dist/index.js --format=esm --platform=node --external:ohm-js
 
 dist/index.d.ts:
 	cp index.d.ts dist/index.d.ts
 
-dist/cli.js: dist/index.js src/cli.js
-	pnpm esbuild src/cli.js --bundle --loader:.ts=ts --outfile=dist/cli.js --format=esm --platform=node  --external:ohm-js --external:./index.js --banner:js="#!/usr/bin/env node"
+.PHONY: dist-js
+dist-js: build/ohmRuntime.wasm_sections.ts $(SRC_JS_FILES) $(SRC_TS_FILES)
+	pnpm tsc
 
 build/ohmRuntime.wasm_sections.ts: scripts/bundlewasm.ts build/ohmRuntime.wasm
 	$(NODE) scripts/bundlewasm.ts build/ohmRuntime.wasm
 
-.PHONY: force-bundlewasm
-force-bundlewasm:
-	touch build/ohmRuntime.wasm
-
 build/ohmRuntime.wasm: runtime/ohmRuntime.ts
 	pnpm asc --enable reference-types --runtime stub -o build/ohmRuntime.wasm -t build/ohmRuntime.wat --memoryBase 65536 runtime/ohmRuntime.ts
 
-build/es5.wasm: dist/index.js
+# 2025-10-07: The rules below may not work anymore.
+
+build/es5.wasm: src/cli.js test/data/_es5.js
 	$(NODE) scripts/es5ToWasm.js build/es5.wasm
 
-build/json.wasm: dist/index.js
+build/json.wasm: src/cli.js ../lang-json/json.ohm
 	$(NODE) src/cli.js -o build/json.wasm ../lang-json/json.ohm
 
-build/liquid-html.wasm: dist/index.js
+build/liquid-html.wasm: src/cli.js test/data/liquid-html.ohm
 	$(NODE) src/cli.js -g LiquidHTML -o build/liquid-html.wasm test/data/liquid-html.ohm
 
 .PHONY: go-test-es5
