@@ -1,19 +1,19 @@
 {
   "name": "@ohm-js/wasm",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "description": "Compile Ohm.js grammars to WebAsssembly",
   "main": "dist/index.js",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
+      "default": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
     "./compat": {
-      "import": "./dist/src/compat.js",
+      "default": "./dist/src/compat.js",
       "types": "./dist/src/compat.d.ts"
     },
     "./compiler": {
-      "import": "./dist/src/Compiler.js",
+      "default": "./dist/src/Compiler.js",
       "types": "./dist/src/Compiler.d.ts"
     }
   },
