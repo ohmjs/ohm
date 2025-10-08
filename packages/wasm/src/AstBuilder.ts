@@ -1,21 +1,21 @@
 import {assert, checkNotNull} from './assert.ts';
 import type {CstNode, MatchResult} from './miniohm.ts';
 
-export type AstNodeTemplate = {
+export type AstNodeTemplate<T> = {
   [property: string]:
     | number
     | string
     | boolean
     | object
     | null
-    | ((this: AstBuilder, children: CstNode[]) => any);
+    | ((this: AstBuilder, children: CstNode[]) => T);
 };
 
-export type AstMapping = Record<
+export type AstMapping<T> = Record<
   string,
-  | AstNodeTemplate
+  | AstNodeTemplate<T>
   | number // forward to nth child
-  | ((this: AstBuilder, ...children: CstNode[]) => any) // semantic action
+  | ((this: AstBuilder, ...children: CstNode[]) => T) // semantic action
 >;
 
 function childAt(children: CstNode[], idx: number, ruleName: string, propName = ''): CstNode {
@@ -26,16 +26,16 @@ function childAt(children: CstNode[], idx: number, ruleName: string, propName = 
   return children[idx];
 }
 
-export class AstBuilder {
+export class AstBuilder<T = any> {
   currNode?: CstNode;
 
-  private _mapping: AstMapping;
+  private _mapping: AstMapping<T | T[]>;
   private _depth = -1;
   private _debug = false;
 
-  constructor(mapping: AstMapping, opts: {debug?: boolean} = {}) {
+  constructor(mapping: AstMapping<T>, opts: {debug?: boolean} = {}) {
     const handleListOf = (child: CstNode) => this.toAst(child);
-    const handleEmptyListOf = () => [];
+    const handleEmptyListOf = (): T[] => [];
     const handleNonemptyListOf = (first: CstNode, iterSepAndElem: CstNode) => [
       this.toAst(first),
       ...iterSepAndElem.map((_, elem) => this.toAst(elem)),
@@ -130,7 +130,7 @@ export class AstBuilder {
     return dbgReturn(ans);
   }
 
-  _visitIter(node: CstNode): unknown {
+  _visitIter(node: CstNode): T[] | T | null {
     const {children} = node;
     if (node.isOptional()) {
       if (children.length === 0) {
@@ -142,7 +142,7 @@ export class AstBuilder {
     return children.map(c => this.toAst(c));
   }
 
-  toAst(nodeOrResult: MatchResult | CstNode): unknown {
+  toAst(nodeOrResult: MatchResult | CstNode): T {
     let node: CstNode = nodeOrResult as CstNode;
     if (typeof (nodeOrResult as MatchResult).succeeded === 'function') {
       const matchResult = nodeOrResult as MatchResult;
