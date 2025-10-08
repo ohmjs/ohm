@@ -423,6 +423,7 @@ export class CstNode {
     return `CstNode {ctorName: ${ctorName}, sourceString: ${sourceString}, startIdx: ${startIdx} }`;
   }
 
+  // Other possible names: collect, mapChildren, mapUnpack, unpackEach, …
   map<T>(callbackFn: (...args: CstNode[]) => T): T[] {
     const {arity, children} = this;
     assert(callbackFn.length === arity, 'bad arity');
@@ -431,6 +432,16 @@ export class CstNode {
       ans.push(callbackFn(...children.slice(i, i + arity)));
     }
     return ans;
+  }
+
+  unpack<T>(someFn: (...args: CstNode[]) => T, noneFn: () => T): T {
+    assert(this.isOptional(), 'Not an optional');
+    if (this.children.length === 0) return noneFn();
+    assert(
+      someFn.length === this.children.length,
+      `bad arity: expected ${this.children.length}, got ${someFn.length}`
+    );
+    return someFn(...this.children);
   }
 }
 
