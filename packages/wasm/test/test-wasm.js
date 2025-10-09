@@ -982,43 +982,43 @@ test('iter nodes: star w/ 0 matches', async t => {
   t.is(iter.children.length, 0);
 });
 
-test('iter nodes: basic map (star)', async t => {
+test('iter nodes: basic collect (star)', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { Start = (letter digit)* }'));
   t.is(matchWithInput(g, ''), 1, 'empty input matches');
   t.is(matchWithInput(g, 'a1 b2 c 3'), 1);
   t.is(g.getCstRoot().children.length, 1);
   const iter = g.getCstRoot().children[0];
   t.deepEqual(
-    iter.map((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
+    iter.collect((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
     ['1a', '2b', '3c']
   );
-  t.throws(() => iter.map(() => {}), {message: /bad arity/});
+  t.throws(() => iter.collect(() => {}), {message: /bad arity/});
 });
 
-test('iter nodes: basic map (plus)', async t => {
+test('iter nodes: basic collect (plus)', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { Start = (letter digit)+ }'));
   t.is(matchWithInput(g, ''), 0, 'empty input FAILS');
   t.is(matchWithInput(g, 'a1 b2 c 3'), 1);
   t.is(g.getCstRoot().children.length, 1);
   const iter = g.getCstRoot().children[0];
   t.deepEqual(
-    iter.map((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
+    iter.collect((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
     ['1a', '2b', '3c']
   );
-  t.throws(() => iter.map(() => {}), {message: /bad arity/});
+  t.throws(() => iter.collect(() => {}), {message: /bad arity/});
 });
 
-test('iter nodes: basic map (opt)', async t => {
+test('iter nodes: basic collect (opt)', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { Start = (letter digit)? }'));
   t.is(matchWithInput(g, ''), 1, 'empty input matches');
   t.is(matchWithInput(g, 'a1'), 1);
   t.is(g.getCstRoot().children.length, 1);
   const iter = g.getCstRoot().children[0];
   t.deepEqual(
-    iter.map((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
+    iter.collect((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
     ['1a']
   );
-  t.throws(() => iter.map(() => {}), {message: /bad arity/});
+  t.throws(() => iter.collect(() => {}), {message: /bad arity/});
 });
 
 test('MatchResult.detach()', async t => {

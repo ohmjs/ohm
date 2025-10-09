@@ -424,7 +424,7 @@ export class CstNode {
   }
 
   // Other possible names: collect, mapChildren, mapUnpack, unpackEach, …
-  map<T>(callbackFn: (...args: CstNode[]) => T): T[] {
+  collect<T>(callbackFn: (...args: CstNode[]) => T): T[] {
     const {arity, children} = this;
     assert(callbackFn.length === arity, 'bad arity');
     const ans: T[] = [];
@@ -434,14 +434,14 @@ export class CstNode {
     return ans;
   }
 
-  when<T>({some, none}: {some: (...args: CstNode[]) => T; none: () => T}): T {
+  when<T>({Some, None}: {Some: (...args: CstNode[]) => T; None: () => T}): T {
     assert(this.isOptional(), 'Not an optional');
-    if (this.children.length === 0) return none();
+    if (this.children.length === 0) return None();
     assert(
-      some.length === this.children.length,
-      `bad arity: expected ${this.children.length}, got ${some.length}`
+      Some.length === this.children.length,
+      `bad arity: expected ${this.children.length}, got ${Some.length}`
     );
-    return some(...this.children);
+    return Some(...this.children);
   }
 }
 

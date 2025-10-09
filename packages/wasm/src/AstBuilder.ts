@@ -38,7 +38,7 @@ export class AstBuilder<T = any> {
     const handleEmptyListOf = (): T[] => [];
     const handleNonemptyListOf = (first: CstNode, iterSepAndElem: CstNode) => [
       this.toAst(first),
-      ...iterSepAndElem.map((_, elem) => this.toAst(elem)),
+      ...iterSepAndElem.collect((_, elem) => this.toAst(elem)),
     ];
     this._mapping = {
       listOf: handleListOf,
