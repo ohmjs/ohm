@@ -434,14 +434,14 @@ export class CstNode {
     return ans;
   }
 
-  unpack<T>(someFn: (...args: CstNode[]) => T, noneFn: () => T): T {
+  when<T>({some, none}: {some: (...args: CstNode[]) => T; none: () => T}): T {
     assert(this.isOptional(), 'Not an optional');
-    if (this.children.length === 0) return noneFn();
+    if (this.children.length === 0) return none();
     assert(
-      someFn.length === this.children.length,
-      `bad arity: expected ${this.children.length}, got ${someFn.length}`
+      some.length === this.children.length,
+      `bad arity: expected ${this.children.length}, got ${some.length}`
     );
-    return someFn(...this.children);
+    return some(...this.children);
   }
 }
 
