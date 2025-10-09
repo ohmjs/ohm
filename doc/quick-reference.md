@@ -1,3 +1,3 @@
 # Quick reference
 
-![Basic syntax](./images/quick-ref-basic-syntax.png)
+![Basic syntax](https://ohmjs.org/img/docs/quick-ref-basic-syntax.png)

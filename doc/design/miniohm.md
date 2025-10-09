@@ -6,4 +6,4 @@ Eventually, we want the WebAssembly-based matcher to be the core of `ohm-js`. Id
 
 Here's how I'm picturing this:
 
-![Relationship between Ohm and miniohm](../images/ohm-miniohm.png)
+![Relationship between Ohm and miniohm](https://ohmjs.org/img/docs/ohm-miniohm.png)
