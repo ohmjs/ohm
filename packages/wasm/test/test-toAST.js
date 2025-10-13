@@ -259,7 +259,10 @@ function arbitraryMapping() {
             fc.oneof(
               fc.nat({max: arity - 1}),
               fc.string(),
-              fc.constant(children => children.map(c => c.ctorName))
+              fc.constant(children =>
+                // For compatibility with legacy behavior, we map `_opt` to `_iter`.
+                children.map(c => (c.ctorName === '_opt' ? '_iter' : c.ctorName))
+              )
             )
           ),
         ];
@@ -276,8 +279,8 @@ test('arbitrary mappings (fast-check)', async t => {
   const jsResult = arithmetic2.match(input);
   const hasExpectedResult = () => {
     return fc.property(arbitraryMapping(), mapping => {
-      const wasmBuilder = new AstBuilder(mapping);
-      const wasmAst = wasmBuilder.toAst(wasmResult);
+      const builder = new AstBuilder(mapping);
+      const wasmAst = builder.toAst(wasmResult);
       const jsAst = toAST(jsResult, mapping);
       assert.deepEqual(wasmAst, jsAst);
     });
@@ -294,11 +297,9 @@ test('arbitrary mappings (fast-check)', async t => {
 test('fast-check zoo', async t => {
   const wasmGrammar = await toWasmGrammar(arithmetic2);
   const createAsts = (input, mapping) => {
-    const wasmResult = wasmGrammar.match(input);
-    const wasmBuilder = new AstBuilder(mapping);
-    const wasmAst = wasmBuilder.toAst(wasmResult);
-    const jsResult = arithmetic2.match(input);
-    const jsAst = toAST(jsResult, mapping);
+    const builder = new AstBuilder(mapping);
+    const wasmAst = wasmGrammar.match(input).use(r => builder.toAst(r));
+    const jsAst = toAST(arithmetic2.match(input), mapping);
     return [wasmAst, jsAst];
   };
   const [wasmAst, jsAst] = createAsts('(10+ -999)- 1 +222; 2', {

@@ -87,7 +87,7 @@ test('liquidRawTagImpl', async t => {
   const onlyChild = (node, ruleName = undefined) => {
     t.assert(node.children.length === 1);
     if (ruleName) {
-      t.assert(node.children[0].ruleName === ruleName);
+      t.assert(node.children[0].ctorName === ruleName);
     }
     return node.children[0];
   };

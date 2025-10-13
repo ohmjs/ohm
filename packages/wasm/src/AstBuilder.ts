@@ -1,5 +1,12 @@
 import {assert, checkNotNull} from './assert.ts';
-import type {CstNode, MatchResult} from './miniohm.ts';
+import type {
+  CstNode,
+  MatchResult,
+  NonterminalNode,
+  TerminalNode,
+  OptNode,
+  IterNode,
+} from './miniohm.ts';
 
 export type AstNodeTemplate<T> = {
   [property: string]:
@@ -36,10 +43,10 @@ export class AstBuilder<T = any> {
   constructor(mapping: AstMapping<T>, opts: {debug?: boolean} = {}) {
     const handleListOf = (child: CstNode) => this.toAst(child);
     const handleEmptyListOf = (): T[] => [];
-    const handleNonemptyListOf = (first: CstNode, iterSepAndElem: CstNode) => [
-      this.toAst(first),
-      ...iterSepAndElem.collect((_, elem) => this.toAst(elem)),
-    ];
+    const handleNonemptyListOf = (first: CstNode, iterSepAndElem: CstNode) => {
+      assert(iterSepAndElem.isIter(), 'Expected an iteration node');
+      return [this.toAst(first), ...iterSepAndElem.collect((_, elem) => this.toAst(elem))];
+    };
     this._mapping = {
       listOf: handleListOf,
       ListOf: handleListOf,
@@ -56,22 +63,22 @@ export class AstBuilder<T = any> {
     if (this._debug) console.log('  '.repeat(this._depth), ...data);
   }
 
-  _visitTerminal(node: CstNode): string {
+  _visitTerminal(node: TerminalNode): string {
     return node.sourceString;
   }
 
-  _visitNonterminal(node: CstNode): unknown {
-    const {children, ruleName} = node;
+  _visitNonterminal(node: NonterminalNode): unknown {
+    const {children, ctorName} = node;
     const mapping = this._mapping;
 
-    this._debugLog(`> ${ruleName}`);
+    this._debugLog(`> ${ctorName}`);
     const dbgReturn = <T>(val: T): T => {
-      this._debugLog(`| ${ruleName} DONE`);
+      this._debugLog(`| ${ctorName} DONE`);
       return val;
     };
 
     // without customization
-    if (!Object.hasOwn(mapping, ruleName)) {
+    if (!Object.hasOwn(mapping, ctorName)) {
       // lexical rule
       if (node.isLexical()) {
         return node.sourceString;
@@ -86,24 +93,24 @@ export class AstBuilder<T = any> {
       // rest: terms with multiple children
     }
     // direct forward
-    if (typeof mapping[ruleName] === 'number') {
-      const idx = mapping[ruleName];
-      return dbgReturn(this.toAst(childAt(children, idx, ruleName)));
+    if (typeof mapping[ctorName] === 'number') {
+      const idx = mapping[ctorName];
+      return dbgReturn(this.toAst(childAt(children, idx, ctorName)));
     }
-    assert(typeof mapping[ruleName] !== 'function', "shouldn't be possible");
+    assert(typeof mapping[ctorName] !== 'function', "shouldn't be possible");
 
     // named/mapped children or unnamed children ('0', '1', '2', ...)
-    const propMap = mapping[ruleName] || children;
+    const propMap = mapping[ctorName] || children;
     const ans: Record<string, unknown> = {
-      type: ruleName,
+      type: ctorName,
     };
     // eslint-disable-next-line guard-for-in
     for (const prop in propMap) {
       const mappedProp =
-        mapping[ruleName] && (mapping[ruleName] as Record<string, unknown>)[prop];
+        mapping[ctorName] && (mapping[ctorName] as Record<string, unknown>)[prop];
       if (typeof mappedProp === 'number') {
         // direct forward
-        ans[prop] = this.toAst(childAt(children, mappedProp, ruleName, prop));
+        ans[prop] = this.toAst(childAt(children, mappedProp, ctorName, prop));
       } else if (
         typeof mappedProp === 'string' ||
         typeof mappedProp === 'boolean' ||
@@ -131,6 +138,7 @@ export class AstBuilder<T = any> {
   }
 
   _visitIter(node: CstNode): T[] | T | null {
+    assert(node.isIter() || node.isOptional(), 'Expected an iteration node');
     const {children} = node;
     if (node.isOptional()) {
       if (children.length === 0) {
@@ -147,7 +155,7 @@ export class AstBuilder<T = any> {
     if (typeof (nodeOrResult as MatchResult).succeeded === 'function') {
       const matchResult = nodeOrResult as MatchResult;
       assert(matchResult.succeeded(), 'Cannot convert failed match result to AST');
-      node = checkNotNull((matchResult as MatchResult)._cst);
+      node = matchResult.grammar.getCstRoot();
     }
     let ans;
     this._depth++;

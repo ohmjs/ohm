@@ -29,7 +29,7 @@ test('cst returns', async t => {
 
   t.is(root.children.length, 1);
   t.is(root.matchLength, 1);
-  t.is(root.ruleName, 'start');
+  t.is(root.ctorName, 'start');
 
   // "a"
   let term = root.children[0];
@@ -45,7 +45,7 @@ test('cst returns', async t => {
   root = g.getCstRoot();
   t.is(root.children.length, 2);
   t.is(root.matchLength, 2);
-  t.is(root.ruleName, 'start');
+  t.is(root.ctorName, 'start');
 
   // "a"
   const [childA, childB] = root.children;
@@ -56,7 +56,7 @@ test('cst returns', async t => {
   // NonterminalNode for b
   t.is(childB.children.length, 1);
   t.is(childB.matchLength, 1);
-  t.is(childB.ruleName, 'b');
+  t.is(childB.ctorName, 'b');
 
   // TerminalNode for "b"
   term = childB.children[0];
@@ -81,13 +81,13 @@ test('cst with lookahead', async t => {
   const root = g.getCstRoot();
   t.is(root.matchLength, 1);
   t.is(root.children.length, 1);
-  t.is(root.ruleName, 'x');
+  t.is(root.ctorName, 'x');
 
   // any
-  const {matchLength, ruleName, children} = root.children[0];
+  const {matchLength, ctorName, children} = root.children[0];
   t.is(matchLength, 1);
   t.is(children.length, 1);
-  t.is(ruleName, 'any');
+  t.is(ctorName, 'any');
 
   // Terminal
   const term = children[0];
@@ -104,7 +104,7 @@ test('cst for range', async t => {
   const root = g.getCstRoot();
   t.is(root.matchLength, 1);
   t.is(root.children.length, 1);
-  t.is(root.ruleName, 'x');
+  t.is(root.ctorName, 'x');
 
   // Terminal
 
@@ -121,7 +121,7 @@ test('cst for opt', async t => {
   // x
   let root = g.getCstRoot();
   t.is(root.matchLength, 1);
-  t.is(root.ruleName, 'x');
+  t.is(root.ctorName, 'x');
   t.is(root.children.length, 1);
 
   // iter
@@ -139,7 +139,7 @@ test('cst for opt', async t => {
 
   root = g.getCstRoot();
   t.is(root.matchLength, 0);
-  t.is(root.ruleName, 'x');
+  t.is(root.ctorName, 'x');
   t.is(root.children.length, 1);
 
   // iter
@@ -158,7 +158,7 @@ test('cst for plus', async t => {
 
   const root = g.getCstRoot();
   t.is(root.matchLength, 1);
-  t.is(root.ruleName, 'x');
+  t.is(root.ctorName, 'x');
   t.is(root.children.length, 1);
 
   // iter
@@ -187,7 +187,7 @@ test('cst with (small) repetition', async t => {
   const root = g.getCstRoot();
   t.is(root.matchLength, 3);
   t.is(root.children.length, 1);
-  t.is(root.ruleName, 'x');
+  t.is(root.ctorName, 'x');
 
   // iter
 
@@ -542,9 +542,9 @@ test('basic memoization', async t => {
 
   const view = memoTableViewForTesting(wasmGrammar);
 
-  const getMemo = (pos, ruleName) => {
+  const getMemo = (pos, ctorName) => {
     const colOffset = pos * Constants.MEMO_COL_SIZE_BYTES;
-    const ruleId = checkNotNull(wasmGrammar._ruleIds.get(ruleName));
+    const ruleId = checkNotNull(wasmGrammar._ruleIds.get(ctorName));
     return view.getUint32(colOffset + SIZEOF_UINT32 * ruleId, true);
   };
 
@@ -582,9 +582,9 @@ test('more memoization', async t => {
 
   const view = memoTableViewForTesting(wasmGrammar);
 
-  const getMemo = (pos, ruleName) => {
+  const getMemo = (pos, ctorName) => {
     const colOffset = pos * Constants.MEMO_COL_SIZE_BYTES;
-    const ruleId = checkNotNull(wasmGrammar._ruleIds.get(ruleName));
+    const ruleId = checkNotNull(wasmGrammar._ruleIds.get(ctorName));
     return view.getUint32(colOffset + SIZEOF_UINT32 * ruleId, true);
   };
 
@@ -592,21 +592,21 @@ test('more memoization', async t => {
   const root = wasmGrammar.getCstRoot();
   t.is(root.matchLength, 2);
   t.is(root.children.length, 2);
-  t.is(root.ruleName, 'start');
+  t.is(root.ctorName, 'start');
 
   const [child1, child2] = root.children;
 
   // b #1
   t.is(child1.matchLength, 1);
   t.is(child1.children.length, 1);
-  t.is(child1.ruleName, 'b');
+  t.is(child1.ctorName, 'b');
   t.is(child1.children[0].isTerminal(), true);
   t.is(child1.children[0].matchLength, 1);
 
   // b #2
   t.is(child2.matchLength, 1);
   t.is(child2.children.length, 1);
-  t.is(child2.ruleName, 'b');
+  t.is(child2.ctorName, 'b');
   t.is(child2.children[0].isTerminal(), true);
   t.is(child2.children[0].matchLength, 1);
 

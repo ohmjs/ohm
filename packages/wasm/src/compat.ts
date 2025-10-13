@@ -32,3 +32,5 @@ export function grammars(source: string): Record<string, Grammar> {
 
   return ans;
 }
+
+export {AstBuilder} from './AstBuilder.js';

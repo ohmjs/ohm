@@ -7,7 +7,9 @@ const CstNodeType = {
   TERMINAL: 1,
   ITER_FLAG: 2,
   OPTIONAL: 3,
-};
+} as const;
+
+export type CstNodeType = (typeof CstNodeType)[keyof typeof CstNodeType];
 
 const compileOptions = {
   builtins: ['js-string'],
@@ -237,13 +239,12 @@ export class WasmGrammar {
       `unknown rule: '${ruleName}'`
     );
     const succeeded = (this._instance as any).exports.match(input, ruleId);
-    const result = new MatchResult(
-      this,
-      this._input,
-      ruleName || this._ruleNames[0],
-      succeeded ? this.getCstRoot() : null,
-      this.getRightmostFailurePosition()
-    );
+    const ctx = {
+      ruleNames: this._ruleNames,
+      view: new DataView((this._instance as any).exports.memory.buffer),
+      input: (this._instance as any).exports.input.value,
+    };
+    const result = createMatchResult(this, ruleName || this._ruleNames[0], ctx, !!succeeded);
     result.detach = this._detachMatchResult.bind(this, result);
     this._resultStack.push(result);
     return result;
@@ -256,27 +257,21 @@ export class WasmGrammar {
   getCstRoot(): CstNode {
     const {exports} = this._instance as any;
     const {buffer} = exports.memory;
-    const firstNode = new CstNode(
-      this._ruleNames,
-      new DataView(buffer),
-      exports.bindingsAt(0),
-      exports.input.value,
-      0
-    );
+    const ctx = {
+      ruleNames: this._ruleNames,
+      view: new DataView(buffer),
+      input: exports.input.value,
+    };
+    const firstNode = new CstNodeImpl(ctx, exports.bindingsAt(0), 0);
+    assert(firstNode.isNonterminal());
     if (firstNode.ctorName !== '$spaces') {
       return firstNode;
     }
-    assert(exports.getBindingsLength() > 1);
+    assert(exports.getBindingsLength() > 1 && firstNode.ctorName === '$spaces');
     const nextAddr = exports.bindingsAt(1);
-    const root = new CstNode(
-      this._ruleNames,
-      new DataView(buffer),
-      nextAddr,
-      exports.input.value,
-      firstNode.matchLength
-    );
+    const root = new CstNodeImpl(ctx, nextAddr, firstNode.matchLength);
     root.leadingSpaces = firstNode;
-    return root;
+    return root as CstNode;
   }
 
   private _fillInputBuffer(ptr: number, length: number): number {
@@ -293,79 +288,128 @@ export class WasmGrammar {
   }
 }
 
-export class CstNode {
-  _ruleNames!: string[];
-  _view!: DataView;
+export interface MatchContext {
+  ruleNames: string[];
+  view: DataView;
+  input: string;
+}
+
+// TODO: Replace Opt/Iter with Seq.
+export type CstNode = NonterminalNode | TerminalNode | IterNode | OptNode;
+
+export interface CstNodeBase {
+  ctorName: string;
+  source: {startIdx: number; endIdx: number};
+  sourceString: string;
+  matchLength: number;
+  leadingSpaces?: NonterminalNode;
+
+  isNonterminal(): this is NonterminalNode;
+  isTerminal(): this is TerminalNode;
+  isIter(): this is IterNode;
+  isOptional(): this is OptNode;
+}
+
+export interface NonterminalNode extends CstNodeBase {
+  type: typeof CstNodeType.NONTERMINAL;
+  ctorName: string;
+  children: CstNode[];
+
+  isSyntactic(ruleName?: string): boolean;
+  isLexical(ruleName?: string): boolean;
+}
+
+export interface TerminalNode extends CstNodeBase {
+  type: typeof CstNodeType.TERMINAL;
+  ctorName: '_terminal';
+  value: string;
+}
+
+export interface IterNode extends CstNodeBase {
+  type: typeof CstNodeType.ITER_FLAG;
+  ctorName: '_iter';
+  children: CstNode[];
+  collect: <R>(cb: (...args: CstNode[]) => R) => R[];
+}
+
+export interface OptNode extends CstNodeBase {
+  type: typeof CstNodeType.OPTIONAL;
+  ctorName: '_opt';
+  children: CstNode[];
+  unpack: <R>(cb: (...args: CstNode[]) => R) => R;
+}
+
+// E is an _extension_ type. This lets us define a subclass of CstNodeBaseImpl
+// that adds some extra methods, and they will be visible on all nodes in the
+// tree.
+export class CstNodeImpl implements CstNodeBase {
+  _ctx!: MatchContext;
   _children?: CstNode[];
   _base: number;
-  _input: string;
   startIdx: number;
-  leadingSpaces: CstNode | undefined;
+  leadingSpaces?: NonterminalNode = undefined;
   source: {startIdx: number; endIdx: number};
 
-  constructor(
-    ruleNames: string[],
-    dataView: DataView,
-    ptr: number,
-    input: string,
-    startIdx: number
-  ) {
+  constructor(ctx: MatchContext, ptr: number, startIdx: number) {
     // Non-enumerable properties
     Object.defineProperties(this, {
-      _ruleNames: {value: ruleNames},
-      _view: {value: dataView},
+      _ctx: {value: ctx},
       _children: {writable: true},
     });
     this._base = ptr;
-    this._input = input;
     this.startIdx = startIdx;
-    this.leadingSpaces = undefined;
     this.source = {
       startIdx,
       endIdx: startIdx + this.sourceString.length,
     };
   }
 
-  get type(): number {
-    return this._typeAndDetails & CST_NODE_TYPE_MASK;
+  get type(): CstNodeType {
+    return (this._typeAndDetails & CST_NODE_TYPE_MASK) as CstNodeType;
   }
 
-  isNonterminal(): boolean {
+  isNonterminal(): this is NonterminalNode {
     return this.type === CstNodeType.NONTERMINAL;
   }
 
-  isTerminal(): boolean {
+  isTerminal(): this is TerminalNode {
     return this.type === CstNodeType.TERMINAL;
   }
 
-  isIter(): boolean {
+  isIter(): this is IterNode {
     return (this._typeAndDetails & CstNodeType.ITER_FLAG) !== 0;
   }
 
-  isOptional(): boolean {
+  isOptional(): this is OptNode {
     return this.type === CstNodeType.OPTIONAL;
   }
 
   get ctorName(): string {
-    return this.isTerminal() ? '_terminal' : this.isIter() ? '_iter' : this.ruleName;
-  }
-
-  get ruleName(): string {
-    assert(this.isNonterminal(), 'Not a non-terminal');
-    const ruleId = this._view.getInt32(this._base + 8, true) >>> 2;
-    return this._ruleNames[ruleId].split('<')[0];
+    switch (this.type) {
+      case CstNodeType.NONTERMINAL: {
+        const {ruleNames, view} = this._ctx;
+        const ruleId = view.getInt32(this._base + 8, true) >>> 2;
+        return ruleNames[ruleId].split('<')[0];
+      }
+      case CstNodeType.TERMINAL:
+        return '_terminal';
+      case CstNodeType.OPTIONAL:
+        return '_opt';
+      case CstNodeType.ITER_FLAG:
+        return '_iter';
+    }
   }
 
   get count(): number {
-    return this._view.getUint32(this._base, true);
+    return this._ctx.view.getUint32(this._base, true);
   }
 
   get matchLength(): number {
-    return this._view.getUint32(this._base + 4, true);
+    return this._ctx.view.getUint32(this._base + 4, true);
   }
 
   get _typeAndDetails(): number {
-    return this._view.getInt32(this._base + 8, true);
+    return this._ctx.view.getInt32(this._base + 8, true);
   }
 
   get arity(): number {
@@ -381,14 +425,15 @@ export class CstNode {
 
   _computeChildren(): CstNode[] {
     const children: CstNode[] = [];
-    let spaces: CstNode | undefined;
+    const {ruleNames, view, input} = this._ctx;
+    let spaces: NonterminalNode | undefined;
     let {startIdx} = this;
     for (let i = 0; i < this.count; i++) {
       const slotOffset = this._base + 16 + i * 4;
-      const ptr = this._view.getUint32(slotOffset, true);
+      const ptr = view.getUint32(slotOffset, true);
       // TODO: Avoid allocating $spaces nodes altogether?
-      const node = new CstNode(this._ruleNames, this._view, ptr, this._input, startIdx);
-      if (node.ctorName === '$spaces') {
+      const node = new CstNodeImpl(this._ctx, ptr, startIdx);
+      if (node.isNonterminal() && node.ctorName === '$spaces') {
         assert(!spaces, 'Multiple $spaces nodes found');
         spaces = node;
       } else {
@@ -396,7 +441,7 @@ export class CstNode {
           node.leadingSpaces = spaces;
           spaces = undefined;
         }
-        children.push(node);
+        children.push(node as CstNode);
       }
       startIdx += node.matchLength;
     }
@@ -405,20 +450,22 @@ export class CstNode {
   }
 
   get sourceString(): string {
-    return this._input.slice(this.startIdx, this.startIdx + this.matchLength);
+    return this._ctx.input.slice(this.startIdx, this.startIdx + this.matchLength);
   }
 
   isSyntactic(ruleName?: string): boolean {
-    const firstChar = this.ruleName[0];
+    assert(this.isNonterminal(), 'Not a nonterminal');
+    const firstChar = this.ctorName[0];
     return firstChar === firstChar.toUpperCase();
   }
 
   isLexical(ruleName?: string): boolean {
+    assert(this.isNonterminal(), 'Not a nonterminal');
     return !this.isSyntactic(ruleName);
   }
 
   toString(): string {
-    const ctorName = this.isTerminal() ? '_terminal' : this.isIter() ? '_iter' : this.ruleName;
+    const ctorName = this.isTerminal() ? '_terminal' : this.isIter() ? '_iter' : this.ctorName;
     const {sourceString, startIdx} = this;
     return `CstNode {ctorName: ${ctorName}, sourceString: ${sourceString}, startIdx: ${startIdx} }`;
   }
@@ -434,60 +481,42 @@ export class CstNode {
     return ans;
   }
 
-  when<T>({Some, None}: {Some: (...args: CstNode[]) => T; None: () => T}): T {
+  unpack<T>(cb: (...args: CstNode[]) => T): T | undefined {
     assert(this.isOptional(), 'Not an optional');
-    if (this.children.length === 0) return None();
+    if (this.children.length === 0) return undefined;
     assert(
-      Some.length === this.children.length,
-      `bad arity: expected ${this.children.length}, got ${Some.length}`
+      cb.length === this.children.length,
+      `bad arity: expected ${this.children.length}, got ${cb.length}`
     );
-    return Some(...this.children);
+    return cb(...this.children);
   }
 }
 
-export function dumpCstNode(node: CstNode, depth = 0): void {
-  const {_base, children, ctorName, matchLength, startIdx} = node;
-  const indent = Array.from({length: depth}).join('  ');
-  const addr = _base.toString(16);
-  // eslint-disable-next-line no-console
-  console.log(
-    `${indent}${addr} ${ctorName}@${startIdx}, matchLength ${matchLength}, children ${children.length}` // eslint-disable-line max-len
-  );
-  node.children.forEach(c => dumpCstNode(c, depth + 1));
-}
+// export function dumpCstNode(node: CstNode, depth = 0): void {
+//   const {_base, children, ctorName, matchLength, startIdx} = node;
+//   const indent = Array.from({length: depth}).join('  ');
+//   const addr = _base.toString(16);
+//   // eslint-disable-next-line no-console
+//   console.log(
+//     `${indent}${addr} ${ctorName}@${startIdx}, matchLength ${matchLength}, children ${children.length}` // eslint-disable-line max-len
+//   );
+//   node.children.forEach(c => dumpCstNode(c, depth + 1));
+// }
 
 export class MatchResult {
   // Note: This is different from the JS implementation, which has:
   //    matcher: Matcher;
   // …instead.
   grammar: WasmGrammar;
-  input: string;
   startExpr: string;
-  _cst: CstNode | null;
-  _rightmostFailurePosition: number;
-  _rightmostFailures: any;
-  shortMessage?: string;
-  message?: string;
+  _ctx: MatchContext;
+  _succeeded: boolean;
 
-  constructor(
-    matcher: WasmGrammar,
-    input: string,
-    startExpr: string,
-    cst: CstNode | null,
-    rightmostFailurePosition: number,
-    optRecordedFailures?: any
-  ) {
-    this.grammar = matcher;
-    this.input = input;
+  constructor(grammar: WasmGrammar, startExpr: string, ctx: MatchContext, succeeded: boolean) {
+    this.grammar = grammar;
     this.startExpr = startExpr;
-    this._cst = cst;
-    this._rightmostFailurePosition = rightmostFailurePosition;
-    this._rightmostFailures = optRecordedFailures;
-
-    // TODO: Define these as lazy properties, like in the JS implementation.
-    if (this.failed()) {
-      this.shortMessage = this.message = `Match failed at pos ${rightmostFailurePosition}`;
-    }
+    this._ctx = ctx;
+    this._succeeded = succeeded;
   }
 
   [Symbol.dispose]() {
@@ -498,39 +527,18 @@ export class MatchResult {
     throw new Error('MatchResult is not attached to any grammar');
   }
 
-  succeeded(): boolean {
-    return !!this._cst;
+  succeeded(): this is SucceededMatchResult {
+    return this._succeeded;
   }
 
-  failed(): boolean {
-    return !this.succeeded();
-  }
-
-  getRightmostFailurePosition(): number {
-    return this._rightmostFailurePosition;
-  }
-
-  getRightmostFailures(): any {
-    throw new Error('Not implemented yet: getRightmostFailures');
+  failed(): this is FailedMatchResult {
+    return !this._succeeded;
   }
 
   toString(): string {
-    return this.succeeded()
-      ? '[match succeeded]'
-      : '[match failed at position ' + this.getRightmostFailurePosition() + ']';
-  }
-
-  // Return a string summarizing the expected contents of the input stream when
-  // the match failure occurred.
-  getExpectedText(): string {
-    if (this.succeeded()) {
-      throw new Error('cannot get expected text of a successful MatchResult');
-    }
-    throw new Error('Not implemented yet: getExpectedText');
-  }
-
-  getInterval() {
-    throw new Error('Not implemented yet: getInterval');
+    return this.failed()
+      ? '[match failed at position ' + this.getRightmostFailurePosition() + ']'
+      : '[match succeeded]';
   }
 
   use<T>(cb: (r: MatchResult) => T): T {
@@ -540,5 +548,75 @@ export class MatchResult {
     } finally {
       this.grammar._endUse(this);
     }
+  }
+}
+
+function createMatchResult(
+  grammar: WasmGrammar,
+  startExpr: string,
+  ctx: MatchContext,
+  succeeded: boolean
+) {
+  return succeeded
+    ? new SucceededMatchResult(grammar, startExpr, ctx, succeeded)
+    : new FailedMatchResult(
+        grammar,
+        startExpr,
+        ctx,
+        succeeded,
+        grammar.getRightmostFailurePosition()
+      );
+}
+
+class SucceededMatchResult extends MatchResult {
+  _cst: CstNode;
+
+  constructor(grammar: WasmGrammar, startExpr: string, ctx: MatchContext, succeeded: boolean) {
+    super(grammar, startExpr, ctx, succeeded);
+    this._cst = grammar.getCstRoot();
+  }
+}
+
+class FailedMatchResult extends MatchResult {
+  constructor(
+    grammar: WasmGrammar,
+    startExpr: string,
+    ctx: MatchContext,
+    succeeded: boolean,
+    rightmostFailurePosition: number,
+    optRecordedFailures?: any
+  ) {
+    super(grammar, startExpr, ctx, succeeded);
+    this._rightmostFailurePosition = rightmostFailurePosition;
+    this._rightmostFailures = optRecordedFailures;
+
+    // TODO: Define these as lazy properties, like in the JS implementation.
+    if (this.failed()) {
+      this.shortMessage = this.message = `Match failed at pos ${rightmostFailurePosition}`;
+    }
+  }
+
+  _rightmostFailurePosition: number;
+  _rightmostFailures: any;
+  shortMessage?: string;
+  message?: string;
+
+  getRightmostFailurePosition(): number {
+    return this._rightmostFailurePosition;
+  }
+
+  getRightmostFailures(): any {
+    throw new Error('Not implemented yet: getRightmostFailures');
+  }
+
+  // Return a string summarizing the expected contents of the input stream when
+  // the match failure occurred.
+  getExpectedText(): string {
+    assert(!this._succeeded, 'cannot get expected text of a successful MatchResult');
+    throw new Error('Not implemented yet: getExpectedText');
+  }
+
+  getInterval() {
+    throw new Error('Not implemented yet: getInterval');
   }
 }
