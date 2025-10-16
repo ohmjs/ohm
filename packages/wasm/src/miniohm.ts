@@ -1,14 +1,27 @@
 import {assert, checkNotNull} from './assert.ts';
 
-const CST_NODE_TYPE_MASK = 0b11;
+const MATCH_RECORD_TYPE_MASK = 0b11;
 
-const CstNodeType = {
+// A MatchRecord is the representation of a CstNode in Wasm linear memory.
+const MatchRecordType = {
   NONTERMINAL: 0,
   TERMINAL: 1,
   ITER_FLAG: 2,
   OPTIONAL: 3,
 } as const;
 
+// A _CST node_ is the user-facing representation, built from a match record.
+export const CstNodeType = {
+  NONTERMINAL: 0,
+  TERMINAL: 1,
+  LIST: 2,
+  OPT: 3,
+  SEQ: 4,
+} as const;
+
+// Define types with the same name as the values above. This gives us roughly the
+// same functionality as a TypeScript enum, but works with erasableSyntaxOnly.
+type MatchRecordType = (typeof MatchRecordType)[keyof typeof MatchRecordType];
 export type CstNodeType = (typeof CstNodeType)[keyof typeof CstNodeType];
 
 const compileOptions = {
@@ -294,26 +307,28 @@ export interface MatchContext {
   input: string;
 }
 
-// TODO: Replace Opt/Iter with Seq.
-export type CstNode = NonterminalNode | TerminalNode | IterNode | OptNode;
+export type CstNode = NonterminalNode | TerminalNode | ListNode | OptNode | SeqNode;
+export type CstNodeChildren = readonly CstNode[];
 
 export interface CstNodeBase {
   ctorName: string;
   source: {startIdx: number; endIdx: number};
   sourceString: string;
   matchLength: number;
-  leadingSpaces?: NonterminalNode;
 
   isNonterminal(): this is NonterminalNode;
   isTerminal(): this is TerminalNode;
-  isIter(): this is IterNode;
   isOptional(): this is OptNode;
+  isSeq(): this is SeqNode;
+  isList(): this is ListNode;
 }
 
-export interface NonterminalNode extends CstNodeBase {
+export interface NonterminalNode<TChildren extends CstNodeChildren = CstNodeChildren>
+  extends CstNodeBase {
   type: typeof CstNodeType.NONTERMINAL;
   ctorName: string;
-  children: CstNode[];
+  leadingSpaces?: NonterminalNode;
+  children: TChildren;
 
   isSyntactic(ruleName?: string): boolean;
   isLexical(ruleName?: string): boolean;
@@ -322,29 +337,46 @@ export interface NonterminalNode extends CstNodeBase {
 export interface TerminalNode extends CstNodeBase {
   type: typeof CstNodeType.TERMINAL;
   ctorName: '_terminal';
+  leadingSpaces?: NonterminalNode;
   value: string;
 }
 
-export interface IterNode extends CstNodeBase {
-  type: typeof CstNodeType.ITER_FLAG;
-  ctorName: '_iter';
-  children: CstNode[];
-  collect: <R>(cb: (...args: CstNode[]) => R) => R[];
+export interface ListNode<TNode extends CstNode = CstNode> extends CstNodeBase {
+  type: typeof CstNodeType.LIST;
+  ctorName: '_list';
+  children: readonly TNode[];
+  collect: <R>(cb: (...children: CstNode[]) => R) => R[];
 }
 
-export interface OptNode extends CstNodeBase {
-  type: typeof CstNodeType.OPTIONAL;
+export interface OptNode<TChild extends CstNode = CstNode> extends CstNodeBase {
+  type: typeof CstNodeType.OPT;
   ctorName: '_opt';
-  children: CstNode[];
-  unpack: <R>(cb: (...args: CstNode[]) => R) => R;
+  children: [] | [TChild];
+
+  // If the child is a SeqNode, the `consume` callback receives its unpacked children.
+  // Otherwise, it receives the child node itself.
+  ifPresent<R>(
+    consume: TChild extends SeqNode<infer T> ? (...children: T) => R : (child: TChild) => R,
+    orElse?: () => R
+  ): R;
+  ifPresent<R>(
+    consume: TChild extends SeqNode<infer T> ? (...children: T) => R : (child: TChild) => R
+  ): R | undefined;
+  isPresent(): boolean;
+  isEmpty(): boolean;
 }
 
-// E is an _extension_ type. This lets us define a subclass of CstNodeBaseImpl
-// that adds some extra methods, and they will be visible on all nodes in the
-// tree.
+export interface SeqNode<TChildren extends CstNodeChildren = CstNodeChildren>
+  extends CstNodeBase {
+  type: typeof CstNodeType.SEQ;
+  ctorName: '_seq';
+  children: TChildren;
+  unpack: <R>(cb: (...children: TChildren) => R) => R;
+}
+
 export class CstNodeImpl implements CstNodeBase {
   _ctx!: MatchContext;
-  _children?: CstNode[];
+  _children?: CstNodeChildren = undefined;
   _base: number;
   startIdx: number;
   leadingSpaces?: NonterminalNode = undefined;
@@ -365,7 +397,20 @@ export class CstNodeImpl implements CstNodeBase {
   }
 
   get type(): CstNodeType {
-    return (this._typeAndDetails & CST_NODE_TYPE_MASK) as CstNodeType;
+    switch (this._typeAndDetails & MATCH_RECORD_TYPE_MASK) {
+      case MatchRecordType.NONTERMINAL:
+        return CstNodeType.NONTERMINAL;
+      case MatchRecordType.TERMINAL:
+        return CstNodeType.TERMINAL;
+      case MatchRecordType.ITER_FLAG:
+        return CstNodeType.LIST;
+      default:
+        throw new Error('unreachable');
+    }
+  }
+
+  private get matchRecordType(): MatchRecordType {
+    return (this._typeAndDetails & MATCH_RECORD_TYPE_MASK) as MatchRecordType;
   }
 
   isNonterminal(): this is NonterminalNode {
@@ -376,12 +421,16 @@ export class CstNodeImpl implements CstNodeBase {
     return this.type === CstNodeType.TERMINAL;
   }
 
-  isIter(): this is IterNode {
-    return (this._typeAndDetails & CstNodeType.ITER_FLAG) !== 0;
+  isList(): this is ListNode {
+    return this.type === CstNodeType.LIST;
   }
 
   isOptional(): this is OptNode {
-    return this.type === CstNodeType.OPTIONAL;
+    return this.type === CstNodeType.OPT;
+  }
+
+  isSeq(): this is SeqNode {
+    return this.type === CstNodeType.SEQ;
   }
 
   get ctorName(): string {
@@ -393,10 +442,12 @@ export class CstNodeImpl implements CstNodeBase {
       }
       case CstNodeType.TERMINAL:
         return '_terminal';
-      case CstNodeType.OPTIONAL:
+      case CstNodeType.LIST:
+        return '_list';
+      case CstNodeType.OPT:
         return '_opt';
-      case CstNodeType.ITER_FLAG:
-        return '_iter';
+      case CstNodeType.SEQ:
+        return '_seq';
     }
   }
 
@@ -416,15 +467,41 @@ export class CstNodeImpl implements CstNodeBase {
     return this._typeAndDetails >>> 2;
   }
 
-  get children(): CstNode[] {
+  get children(): CstNodeChildren {
     if (!this._children) {
-      this._children = this._computeChildren();
+      this._children = this._computeChildren().map((n): CstNode => {
+        const {matchRecordType} = n;
+        if (matchRecordType === MatchRecordType.OPTIONAL) {
+          const child: CstNode | undefined =
+            n.children.length <= 1
+              ? n.children[0]
+              : new SeqNodeImpl(n.children, n.source, n.sourceString);
+          return new OptNodeImpl(child, n.source, n.sourceString);
+        } else if (matchRecordType === MatchRecordType.ITER_FLAG) {
+          if (n.arity <= 1) {
+            return new ListNodeImpl(n.children, n.source, n.sourceString);
+          }
+          const arr: CstNode[] = [];
+          let startIdx = n.startIdx;
+          for (let i = 0; i < n.children.length; i += n.arity) {
+            // FIXME: We don't need any of this nonsense if we actually build the SeqNodes at parse time.
+            const seqChildren = n.children.slice(i, i + n.arity);
+            const endIdx = checkNotNull(seqChildren.at(-1)).source.endIdx;
+            const sourceString = n._ctx.input.slice(startIdx, endIdx);
+            arr.push(new SeqNodeImpl(seqChildren, {startIdx, endIdx}, sourceString));
+            startIdx = endIdx;
+          }
+          assert(startIdx === n.source.endIdx);
+          return new ListNodeImpl(arr, n.source, n.sourceString);
+        }
+        return n as CstNode; // FIXME
+      });
     }
     return this._children;
   }
 
-  _computeChildren(): CstNode[] {
-    const children: CstNode[] = [];
+  _computeChildren(): CstNodeImpl[] {
+    const children: CstNodeImpl[] = [];
     const {ruleNames, view, input} = this._ctx;
     let spaces: NonterminalNode | undefined;
     let {startIdx} = this;
@@ -433,15 +510,18 @@ export class CstNodeImpl implements CstNodeBase {
       const ptr = view.getUint32(slotOffset, true);
       // TODO: Avoid allocating $spaces nodes altogether?
       const node = new CstNodeImpl(this._ctx, ptr, startIdx);
-      if (node.isNonterminal() && node.ctorName === '$spaces') {
+      if (
+        node.matchRecordType === MatchRecordType.NONTERMINAL &&
+        node.ctorName === '$spaces'
+      ) {
         assert(!spaces, 'Multiple $spaces nodes found');
-        spaces = node;
+        spaces = node as NonterminalNode; // FIXME
       } else {
         if (spaces) {
           node.leadingSpaces = spaces;
           spaces = undefined;
         }
-        children.push(node as CstNode);
+        children.push(node);
       }
       startIdx += node.matchLength;
     }
@@ -465,30 +545,160 @@ export class CstNodeImpl implements CstNodeBase {
   }
 
   toString(): string {
-    const ctorName = this.isTerminal() ? '_terminal' : this.isIter() ? '_iter' : this.ctorName;
+    const ctorName = this.isTerminal() ? '_terminal' : this.isSeq() ? '_iter' : this.ctorName;
     const {sourceString, startIdx} = this;
     return `CstNode {ctorName: ${ctorName}, sourceString: ${sourceString}, startIdx: ${startIdx} }`;
   }
+}
 
-  // Other possible names: collect, mapChildren, mapUnpack, unpackEach, …
-  collect<T>(callbackFn: (...args: CstNode[]) => T): T[] {
-    const {arity, children} = this;
-    assert(callbackFn.length === arity, 'bad arity');
-    const ans: T[] = [];
-    for (let i = 0; i < children.length; i += arity) {
-      ans.push(callbackFn(...children.slice(i, i + arity)));
-    }
-    return ans;
+export class SeqNodeImpl<TChildren extends CstNodeChildren = CstNodeChildren>
+  implements SeqNode<TChildren>
+{
+  type = CstNodeType.SEQ;
+  ctorName = '_seq' as const;
+  children: TChildren;
+  source: {startIdx: number; endIdx: number};
+  sourceString: string;
+
+  get matchLength(): number {
+    return this.sourceString.length;
   }
 
-  unpack<T>(cb: (...args: CstNode[]) => T): T | undefined {
-    assert(this.isOptional(), 'Not an optional');
-    if (this.children.length === 0) return undefined;
+  constructor(
+    children: TChildren,
+    source: {startIdx: number; endIdx: number},
+    sourceString: string
+  ) {
+    this.children = children;
+    this.source = source;
+    this.sourceString = sourceString;
+  }
+
+  isNonterminal(): this is NonterminalNode {
+    return false;
+  }
+  isTerminal(): this is TerminalNode {
+    return false;
+  }
+  isOptional(): this is OptNode {
+    return false;
+  }
+  isSeq(): this is SeqNode {
+    return true;
+  }
+  isList(): this is ListNode {
+    return false;
+  }
+
+  unpack<R>(cb: (...args: TChildren) => R): R {
     assert(
       cb.length === this.children.length,
       `bad arity: expected ${this.children.length}, got ${cb.length}`
     );
-    return cb(...this.children);
+    return cb.call(null, ...this.children); // FIXME
+  }
+}
+
+export class ListNodeImpl<TNode extends CstNode = CstNode> implements ListNode<TNode> {
+  type = CstNodeType.LIST;
+  ctorName = '_list' as const;
+  children: readonly TNode[];
+  source: {startIdx: number; endIdx: number};
+  sourceString: string;
+
+  get matchLength(): number {
+    return this.sourceString.length;
+  }
+
+  constructor(
+    children: readonly TNode[],
+    source: {startIdx: number; endIdx: number},
+    sourceString: string
+  ) {
+    this.children = children;
+    this.source = source;
+    this.sourceString = sourceString;
+  }
+
+  isNonterminal(): this is NonterminalNode {
+    return false;
+  }
+  isTerminal(): this is TerminalNode {
+    return false;
+  }
+  isList(): this is ListNode {
+    return true;
+  }
+  isOptional(): this is OptNode {
+    return false;
+  }
+  isSeq(): this is SeqNode {
+    return false;
+  }
+
+  collect<R>(cb: (...args: CstNode[]) => R): R[] {
+    return this.children.map(c => {
+      return c?.isSeq() ? c.unpack(cb) : cb(c);
+    });
+  }
+}
+
+export class OptNodeImpl<TNode extends CstNode = CstNode> implements OptNode<TNode> {
+  type = CstNodeType.OPT;
+  ctorName = '_opt' as const;
+  children: [] | [TNode];
+  source: {startIdx: number; endIdx: number};
+  sourceString: string;
+
+  get matchLength(): number {
+    return this.sourceString.length;
+  }
+
+  constructor(
+    child: TNode | undefined,
+    source: {startIdx: number; endIdx: number},
+    sourceString: string
+  ) {
+    this.children = child ? [child] : [];
+    this.source = source;
+    this.sourceString = sourceString;
+  }
+
+  isNonterminal(): this is NonterminalNode {
+    return false;
+  }
+  isTerminal(): this is TerminalNode {
+    return false;
+  }
+  isList(): this is ListNode {
+    return false;
+  }
+  isOptional(): this is OptNode {
+    return true;
+  }
+  isSeq(): this is SeqNode {
+    return false;
+  }
+
+  ifPresent<R>(
+    consume: TNode extends SeqNode<infer T> ? (...children: T) => R : (child: TNode) => R,
+    orElse?: () => R
+  ): R | undefined {
+    const child = this.children[0];
+    if (child) {
+      return child.isSeq()
+        ? child.unpack(consume as (...children: any[]) => R)
+        : (consume as (child: TNode) => R)(child);
+    }
+    if (orElse) return orElse();
+  }
+
+  isPresent(): boolean {
+    return this.children.length > 0;
+  }
+
+  isEmpty(): boolean {
+    return this.children.length === 0;
   }
 }
 

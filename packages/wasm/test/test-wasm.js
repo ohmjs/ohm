@@ -124,13 +124,20 @@ test('cst for opt', async t => {
   t.is(root.ctorName, 'x');
   t.is(root.children.length, 1);
 
-  // iter
-  let iter = root.children[0];
-  t.is(iter.matchLength, 1);
-  t.true(iter.isIter());
-  t.is(iter.children.length, 1);
-  t.is(iter.children[0].isTerminal(), true);
-  t.is(iter.children[0].matchLength, 1);
+  // opt
+  let opt = root.children[0];
+  t.true(opt.isOptional());
+
+  opt.ifPresent(
+    term => {
+      t.is(term.matchLength, 1);
+      t.is(term.isTerminal(), true);
+      t.is(term.matchLength, 1);
+    },
+    () => {
+      throw new Error('Expected opt to be present');
+    }
+  );
 
   g = await toWasmGrammar(ohm.grammar('G {x = "a"?}'));
   t.is(matchWithInput(g, ''), 1);
@@ -142,12 +149,11 @@ test('cst for opt', async t => {
   t.is(root.ctorName, 'x');
   t.is(root.children.length, 1);
 
-  // iter
+  // opt
 
-  iter = root.children[0];
-  t.is(iter.matchLength, 0);
-  t.true(iter.isIter());
-  t.is(iter.children.length, 0);
+  opt = root.children[0];
+  t.true(opt.isOptional());
+  t.true(opt.isEmpty());
 });
 
 test('cst for plus', async t => {
@@ -161,15 +167,14 @@ test('cst for plus', async t => {
   t.is(root.ctorName, 'x');
   t.is(root.children.length, 1);
 
-  // iter
+  // list
 
-  const iter = root.children[0];
-  t.is(iter.matchLength, 1);
-  t.true(iter.isIter());
-  t.is(iter.children.length, 1);
+  const list = root.children[0];
+  t.true(list.isList());
+  t.is(list.children.length, 1);
 
-  t.is(iter.children[0].isTerminal(), true);
-  t.is(iter.children[0].matchLength, 1);
+  t.is(list.children[0].isTerminal(), true);
+  t.is(list.children[0].matchLength, 1);
 });
 
 test('cst with (small) repetition', async t => {
@@ -189,15 +194,14 @@ test('cst with (small) repetition', async t => {
   t.is(root.children.length, 1);
   t.is(root.ctorName, 'x');
 
-  // iter
+  // list
 
-  const iter = root.children[0];
-  t.is(iter.matchLength, 3);
-  t.is(iter.children.length, 3);
-  t.true(iter.isIter());
+  const list = root.children[0];
+  t.true(list.isList());
+  t.is(list.children.length, 3);
 
   // Terminal children
-  const [childA, childB, childC] = iter.children;
+  const [childA, childB, childC] = list.children;
   t.is(childA.isTerminal(), true);
   t.is(childA.matchLength, 1);
   t.is(childB.isTerminal(), true);
@@ -222,13 +226,12 @@ test('cst with repetition and lookahead', async t => {
   t.is(root.children.length, 1);
   t.true(root.isNonterminal());
 
-  // iter
-  const iter = root.children[0];
-  t.is(iter.matchLength, 3);
-  t.is(iter.children.length, 3);
-  t.true(iter.isIter());
+  // list
+  const list = root.children[0];
+  t.true(list.isList());
+  t.is(list.children.length, 3);
 
-  const [childA, childB, childC] = iter.children;
+  const [childA, childB, childC] = list.children;
   t.is(childA.matchLength, 1);
   t.is(childA.children.length, 1);
   t.true(childA.isNonterminal());
@@ -865,13 +868,14 @@ test('basic space skipping', async t => {
   t.is(matchWithInput(wasmGrammar, '> 0 a 1 b'), 1);
   t.is(matchWithInput(wasmGrammar, ' > 0 a 1 b '), 1);
 
-  const [term, iter] = wasmGrammar.getCstRoot().children;
+  const [term, list] = wasmGrammar.getCstRoot().children;
   t.is(term.matchLength, 1);
-  t.is(iter.matchLength, 8);
+  t.true(list.isList());
+  t.is(list.children.length, 2);
 
   t.deepEqual(
-    iter.children.map(c => c.matchLength),
-    [1, 1, 1, 1]
+    list.children.map(seq => seq.matchLength),
+    [4, 4]
   );
 });
 
@@ -978,47 +982,51 @@ test('iter nodes: star w/ 0 matches', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { Start = (letter digit)* }'));
   t.is(matchWithInput(g, ''), 1, 'empty input matches');
   t.is(g.getCstRoot().children.length, 1);
-  const iter = g.getCstRoot().children[0];
-  t.is(iter.children.length, 0);
+  const list = g.getCstRoot().children[0];
+  t.true(list.isList());
+  t.is(list.children.length, 0);
 });
 
-test('iter nodes: basic collect (star)', async t => {
+test('iter nodes: basic unpack (star)', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { Start = (letter digit)* }'));
   t.is(matchWithInput(g, ''), 1, 'empty input matches');
   t.is(matchWithInput(g, 'a1 b2 c 3'), 1);
   t.is(g.getCstRoot().children.length, 1);
-  const iter = g.getCstRoot().children[0];
+  const list = g.getCstRoot().children[0];
+  t.true(list.isList());
   t.deepEqual(
-    iter.collect((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
+    list.collect((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
     ['1a', '2b', '3c']
   );
-  t.throws(() => iter.collect(() => {}), {message: /bad arity/});
+  t.throws(() => list.collect(() => {}), {message: /bad arity/});
 });
 
-test('iter nodes: basic collect (plus)', async t => {
+test('iter nodes: basic unpack (plus)', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { Start = (letter digit)+ }'));
   t.is(matchWithInput(g, ''), 0, 'empty input FAILS');
   t.is(matchWithInput(g, 'a1 b2 c 3'), 1);
   t.is(g.getCstRoot().children.length, 1);
-  const iter = g.getCstRoot().children[0];
+  const list = g.getCstRoot().children[0];
+  t.true(list.isList());
   t.deepEqual(
-    iter.collect((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
+    list.collect((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
     ['1a', '2b', '3c']
   );
-  t.throws(() => iter.collect(() => {}), {message: /bad arity/});
+  t.throws(() => list.collect(() => {}), {message: /bad arity/});
 });
 
-test('iter nodes: basic collect (opt)', async t => {
+test('iter nodes: basic unpack (opt)', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { Start = (letter digit)? }'));
   t.is(matchWithInput(g, ''), 1, 'empty input matches');
   t.is(matchWithInput(g, 'a1'), 1);
   t.is(g.getCstRoot().children.length, 1);
-  const iter = g.getCstRoot().children[0];
-  t.deepEqual(
-    iter.collect((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
-    ['1a']
+  const opt = g.getCstRoot().children[0];
+  t.true(opt.isOptional());
+  t.is(
+    opt.ifPresent((letter, digit) => `${digit.sourceString}${letter.sourceString}`),
+    '1a'
   );
-  t.throws(() => iter.collect(() => {}), {message: /bad arity/});
+  t.throws(() => opt.ifPresent(() => {}), {message: /bad arity/});
 });
 
 test('MatchResult.detach()', async t => {

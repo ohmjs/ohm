@@ -1,51 +1,56 @@
 import {assert, checkNotNull} from './assert.ts';
 import type {
   CstNode,
+  CstNodeChildren,
   MatchResult,
   NonterminalNode,
   TerminalNode,
-  OptNode,
-  IterNode,
+  ListNode,
 } from './miniohm.ts';
 
-export type AstNodeTemplate<T> = {
+export type AstNodeTemplate<R> = {
   [property: string]:
     | number
     | string
     | boolean
     | object
     | null
-    | ((this: AstBuilder, children: CstNode[]) => T);
+    | ((this: AstBuilder, children: CstNodeChildren) => R);
 };
 
-export type AstMapping<T> = Record<
+export type AstMapping<R> = Record<
   string,
-  | AstNodeTemplate<T>
+  | AstNodeTemplate<R>
   | number // forward to nth child
-  | ((this: AstBuilder, ...children: CstNode[]) => T) // semantic action
+  | ((this: AstBuilder, ...children: CstNodeChildren) => R) // semantic action
 >;
 
-function childAt(children: CstNode[], idx: number, ruleName: string, propName = ''): CstNode {
+function childAt(
+  children: CstNodeChildren,
+  idx: number,
+  ruleName: string,
+  propName = ''
+): CstNode {
   if (idx > children.length) {
     const path = propName ? `${ruleName}.${propName}` : ruleName;
     throw new Error(`${path}: Child index ${idx} out of range`);
   }
-  return children[idx];
+  return checkNotNull(children[idx]);
 }
 
-export class AstBuilder<T = any> {
+export class AstBuilder<TNode = any> {
   currNode?: CstNode;
 
-  private _mapping: AstMapping<T | T[]>;
+  private _mapping: AstMapping<TNode | TNode[]>;
   private _depth = -1;
   private _debug = false;
 
-  constructor(mapping: AstMapping<T>, opts: {debug?: boolean} = {}) {
+  constructor(mapping: AstMapping<TNode>, opts: {debug?: boolean} = {}) {
     const handleListOf = (child: CstNode) => this.toAst(child);
-    const handleEmptyListOf = (): T[] => [];
-    const handleNonemptyListOf = (first: CstNode, iterSepAndElem: CstNode) => {
-      assert(iterSepAndElem.isIter(), 'Expected an iteration node');
-      return [this.toAst(first), ...iterSepAndElem.collect((_, elem) => this.toAst(elem))];
+    const handleEmptyListOf = (): TNode[] => [];
+    const handleNonemptyListOf = (first: CstNode, sepAndElemList: CstNode) => {
+      assert(!!sepAndElemList?.isList(), 'Expected a ListNode');
+      return [this.toAst(first), ...sepAndElemList.collect((_, elem) => this.toAst(elem))];
     };
     this._mapping = {
       listOf: handleListOf,
@@ -125,7 +130,7 @@ export class AstBuilder<T = any> {
         // computed value
         ans[prop] = mappedProp.call(this, children);
       } else if (mappedProp === undefined) {
-        const child: CstNode = children[Number(prop)];
+        const child = children[Number(prop)];
         if (child && !child.isTerminal()) {
           ans[prop] = this.toAst(child);
         } else {
@@ -137,20 +142,7 @@ export class AstBuilder<T = any> {
     return dbgReturn(ans);
   }
 
-  _visitIter(node: CstNode): T[] | T | null {
-    assert(node.isIter() || node.isOptional(), 'Expected an iteration node');
-    const {children} = node;
-    if (node.isOptional()) {
-      if (children.length === 0) {
-        return null;
-      }
-      return this.toAst(children[0]);
-    }
-
-    return children.map(c => this.toAst(c));
-  }
-
-  toAst(nodeOrResult: MatchResult | CstNode): T {
+  toAst(nodeOrResult: MatchResult | CstNode): TNode {
     let node: CstNode = nodeOrResult as CstNode;
     if (typeof (nodeOrResult as MatchResult).succeeded === 'function') {
       const matchResult = nodeOrResult as MatchResult;
@@ -161,10 +153,15 @@ export class AstBuilder<T = any> {
     this._depth++;
     if (node.isTerminal()) {
       ans = this._visitTerminal(node);
-    } else if (node.isIter()) {
-      ans = this._visitIter(node);
+    } else if (node.isOptional()) {
+      ans = node.ifPresent(
+        (child: CstNode) => this.toAst(child),
+        () => null
+      );
+    } else if (node.isList() || node.isSeq()) {
+      ans = node.children.map(c => this.toAst(c));
     } else {
-      assert(node.isNonterminal(), `Unknown node type: ${(node as any)._type}`);
+      assert(node.isNonterminal(), `Unknown node type: ${(node as any).type}`);
       this.currNode = node;
       ans =
         typeof this._mapping[node.ctorName] === 'function'
