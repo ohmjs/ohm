@@ -31,6 +31,7 @@ export async function toWasmGrammar(grammar, modBytes = undefined) {
 export function unparse(m) {
   let ans = '';
   function walk(node) {
+    if (node == null) return;
     if (node.leadingSpaces) {
       ans += node.leadingSpaces.sourceString;
     }
