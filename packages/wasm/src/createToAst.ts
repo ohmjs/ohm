@@ -15,14 +15,14 @@ export type AstNodeTemplate<R> = {
     | boolean
     | object
     | null
-    | ((this: AstBuilder, children: CstNodeChildren) => R);
+    | ((children: CstNodeChildren) => R);
 };
 
 export type AstMapping<R> = Record<
   string,
   | AstNodeTemplate<R>
   | number // forward to nth child
-  | ((this: AstBuilder, ...children: CstNodeChildren) => R) // semantic action
+  | ((...children: CstNodeChildren) => R) // semantic action-style
 >;
 
 function childAt(
@@ -36,6 +36,14 @@ function childAt(
     throw new Error(`${path}: Child index ${idx} out of range`);
   }
   return checkNotNull(children[idx]);
+}
+
+export function createToAst<TNode = any>(
+  mapping: AstMapping<TNode>,
+  opts: {debug?: boolean} = {}
+): (nodeOrResult: MatchResult | CstNode) => TNode {
+  const builder = new AstBuilder<TNode>(mapping, opts);
+  return (nodeOrResult: MatchResult | CstNode) => builder.toAst(nodeOrResult);
 }
 
 export class AstBuilder<TNode = any> {

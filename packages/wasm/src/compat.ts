@@ -1,5 +1,5 @@
 import {grammars as grammarsJs, grammar as grammarJs} from 'ohm-js';
-import type {Grammar as GrammarJs, Namespace} from 'ohm-js';
+import type {Grammar as GrammarJs} from 'ohm-js';
 
 import {Compiler} from './Compiler.js';
 import {WasmGrammar} from './miniohm.ts';
@@ -33,4 +33,4 @@ export function grammars(source: string): Record<string, Grammar> {
   return ans;
 }
 
-export {AstBuilder} from './AstBuilder.js';
+export {createToAst} from './createToAst.ts';
