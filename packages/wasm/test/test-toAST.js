@@ -143,8 +143,8 @@ test('toAST basic', async t => {
 
   toAst = createToAst({
     AddExp_plus(expr1, _, expr2) {
-      expr1 = this.toAst(expr1);
-      expr2 = this.toAst(expr2);
+      expr1 = toAst(expr1);
+      expr2 = toAst(expr2);
       return 'plus(' + expr1 + ', ' + expr2 + ')';
     },
   });
@@ -310,4 +310,19 @@ test('fast-check zoo', async t => {
     sign: {},
   });
   t.deepEqual(jsAst, wasmAst);
+});
+
+test('this param is current node', async t => {
+  const g = await toWasmGrammar(arithmetic);
+  const matchResult = g.match('10 + 20');
+  const toAst = createToAst({
+    AddExp_plus(l, _, r) {
+      return this.ctorName;
+    },
+    AddExp(child, ...rest) {
+      t.assert(rest.length === 0);
+      return `${this.ctorName}(${toAst(child)})`;
+    },
+  });
+  t.is(toAst(matchResult), 'AddExp(AddExp_plus)');
 });

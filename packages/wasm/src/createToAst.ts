@@ -14,7 +14,7 @@ export type AstNodeTemplate<R> = {
     | boolean
     | object
     | null
-    | ((children: CstNodeChildren) => R);
+    | ((this: CstNode, children: CstNodeChildren) => R);
 };
 
 export type AstMapping<R> = Record<
@@ -135,7 +135,7 @@ export class AstBuilder<TNode = any> {
         ans[prop] = Number(mappedProp);
       } else if (typeof mappedProp === 'function') {
         // computed value
-        ans[prop] = mappedProp.call(this, children);
+        ans[prop] = mappedProp.call(this.currNode!, children);
       } else if (mappedProp === undefined) {
         const child = children[Number(prop)];
         if (child && !child.isTerminal()) {
@@ -172,7 +172,7 @@ export class AstBuilder<TNode = any> {
       this.currNode = node;
       ans =
         typeof this._mapping[node.ctorName] === 'function'
-          ? (this._mapping[node.ctorName] as Function).apply(this, node.children)
+          ? (this._mapping[node.ctorName] as Function).apply(this.currNode!, node.children)
           : this._visitNonterminal(node);
       this.currNode = undefined;
     }
