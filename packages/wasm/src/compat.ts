@@ -34,3 +34,4 @@ export function grammars(source: string): Record<string, Grammar> {
 }
 
 export {createToAst} from './createToAst.ts';
+export type {AstMapping, AstNodeTemplate} from './createToAst.ts';
