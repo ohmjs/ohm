@@ -757,7 +757,7 @@ export class MatchResult {
       : '[match succeeded]';
   }
 
-  use<T>(cb: (r: MatchResult) => T): T {
+  use<T>(cb: (r: this) => T): T {
     try {
       this.grammar._beginUse(this);
       return cb(this);
