@@ -77,11 +77,12 @@ test('liquidRawTagImpl', async t => {
   t.is(root.ctorName, 'Node');
   t.is(root.startIdx, 5);
   t.not(root.leadingSpaces, null);
-  const [opt, list] = root.children;
-  t.is(opt, null);
-  t.true(list.isList());
-  const sourceString = list.collect(x => x.sourceString).join('');
-  t.true(sourceString.startsWith('{% raw -%}'));
+  const [opt, iter] = root.children;
+  t.is(opt.startIdx, 5);
+  t.true(opt.isOptional());
+  t.is(opt.sourceString.length, 0);
+  t.true(iter.isIter());
+  t.true(iter.sourceString.startsWith('{% raw -%}'));
 
   const onlyChild = (node, ruleName = undefined) => {
     t.assert(node.children.length === 1);
@@ -91,7 +92,7 @@ test('liquidRawTagImpl', async t => {
     return node.children[0];
   };
 
-  let child = onlyChild(list, 'liquidNode');
+  let child = onlyChild(iter, 'liquidNode');
   child = onlyChild(child, 'liquidRawTag');
   child = onlyChild(child, 'liquidRawTagImpl');
   t.is(child.children.length, 19);

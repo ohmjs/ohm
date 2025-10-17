@@ -259,16 +259,9 @@ function arbitraryMapping() {
             fc.oneof(
               fc.nat({max: arity - 1}),
               fc.string(),
-              // A "node handler" that returns an array of each child's `ctorName`.
-              // This needs to work for both the old and the new CST formats. For compatibility
-              // with legacy behavior, we map optionals and `_list` to `_iter`. But, note that
-              // in the new CST if an optional is _present_, we don't know that it's optional.
               fc.constant(children =>
-                children.map((c, i) => {
-                  if (c === null) return '_iter';
-                  if (typeof c.isList === 'function' && c.isList()) return '_iter';
-                  return c.ctorName;
-                })
+                // For compatibility with legacy behavior, we map `_opt` to `_iter`.
+                children.map(c => (c.ctorName === '_opt' ? '_iter' : c.ctorName))
               )
             )
           ),

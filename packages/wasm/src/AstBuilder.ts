@@ -1,61 +1,51 @@
 import {assert, checkNotNull} from './assert.ts';
 import type {
   CstNode,
-  CstNodeChildren,
   MatchResult,
   NonterminalNode,
   TerminalNode,
-  ListNode,
+  OptNode,
+  IterNode,
 } from './miniohm.ts';
 
-type IsNullable<T> = null extends T ? T : never;
-
-export type AstNodeTemplate<R> = {
+export type AstNodeTemplate<T> = {
   [property: string]:
     | number
     | string
     | boolean
     | object
     | null
-    | ((this: AstBuilder, children: CstNodeChildren) => R);
+    | ((this: AstBuilder, children: CstNode[]) => T);
 };
 
-export type AstMapping<R> = Record<
+export type AstMapping<T> = Record<
   string,
-  | AstNodeTemplate<R>
+  | AstNodeTemplate<T>
   | number // forward to nth child
-  | ((this: AstBuilder, ...children: CstNodeChildren) => R) // semantic action
+  | ((this: AstBuilder, ...children: CstNode[]) => T) // semantic action
 >;
 
-function childAt(
-  children: CstNodeChildren,
-  idx: number,
-  ruleName: string,
-  propName = ''
-): CstNode | null {
+function childAt(children: CstNode[], idx: number, ruleName: string, propName = ''): CstNode {
   if (idx > children.length) {
     const path = propName ? `${ruleName}.${propName}` : ruleName;
     throw new Error(`${path}: Child index ${idx} out of range`);
   }
-  const ans = children[idx];
-  assert(ans !== undefined);
-  return ans;
+  return children[idx];
 }
 
-export class AstBuilder<TNode extends IsNullable<any> = null | any> {
+export class AstBuilder<T = any> {
   currNode?: CstNode;
 
-  private _mapping: AstMapping<TNode | TNode[]>;
+  private _mapping: AstMapping<T | T[]>;
   private _depth = -1;
   private _debug = false;
 
-  constructor(mapping: AstMapping<TNode>, opts: {debug?: boolean} = {}) {
-    const handleListOf = (child: CstNode | null) =>
-      checkNotNull(this.toAst(checkNotNull(child)));
-    const handleEmptyListOf = (): TNode[] => [];
-    const handleNonemptyListOf = (first: CstNode | null, sepAndElemList: CstNode | null) => {
-      assert(!!sepAndElemList?.isList(), 'Expected a ListNode');
-      return [this.toAst(first), ...sepAndElemList.collect((_, elem) => this.toAst(elem))];
+  constructor(mapping: AstMapping<T>, opts: {debug?: boolean} = {}) {
+    const handleListOf = (child: CstNode) => this.toAst(child);
+    const handleEmptyListOf = (): T[] => [];
+    const handleNonemptyListOf = (first: CstNode, iterSepAndElem: CstNode) => {
+      assert(iterSepAndElem.isIter(), 'Expected an iteration node');
+      return [this.toAst(first), ...iterSepAndElem.collect((_, elem) => this.toAst(elem))];
     };
     this._mapping = {
       listOf: handleListOf,
@@ -95,9 +85,9 @@ export class AstBuilder<TNode extends IsNullable<any> = null | any> {
       }
 
       // singular node (e.g. only surrounded by literals or lookaheads)
-      const realChildren = children.filter(c => c !== null && !c.isTerminal());
+      const realChildren = children.filter(c => !c.isTerminal());
       if (realChildren.length === 1) {
-        return dbgReturn(this.toAst(checkNotNull(realChildren[0])));
+        return dbgReturn(this.toAst(realChildren[0]));
       }
 
       // rest: terms with multiple children
@@ -135,7 +125,7 @@ export class AstBuilder<TNode extends IsNullable<any> = null | any> {
         // computed value
         ans[prop] = mappedProp.call(this, children);
       } else if (mappedProp === undefined) {
-        const child = children[Number(prop)];
+        const child: CstNode = children[Number(prop)];
         if (child && !child.isTerminal()) {
           ans[prop] = this.toAst(child);
         } else {
@@ -147,9 +137,21 @@ export class AstBuilder<TNode extends IsNullable<any> = null | any> {
     return dbgReturn(ans);
   }
 
-  toAst(nodeOrResult: MatchResult | CstNode | null): TNode {
+  _visitIter(node: CstNode): T[] | T | null {
+    assert(node.isIter() || node.isOptional(), 'Expected an iteration node');
+    const {children} = node;
+    if (node.isOptional()) {
+      if (children.length === 0) {
+        return null;
+      }
+      return this.toAst(children[0]);
+    }
+
+    return children.map(c => this.toAst(c));
+  }
+
+  toAst(nodeOrResult: MatchResult | CstNode): T {
     let node: CstNode = nodeOrResult as CstNode;
-    if (node === null) return null;
     if (typeof (nodeOrResult as MatchResult).succeeded === 'function') {
       const matchResult = nodeOrResult as MatchResult;
       assert(matchResult.succeeded(), 'Cannot convert failed match result to AST');
@@ -159,10 +161,10 @@ export class AstBuilder<TNode extends IsNullable<any> = null | any> {
     this._depth++;
     if (node.isTerminal()) {
       ans = this._visitTerminal(node);
-    } else if (node.isList() || node.isSeq()) {
-      ans = node.children.map(c => this.toAst(c));
+    } else if (node.isIter()) {
+      ans = this._visitIter(node);
     } else {
-      assert(node.isNonterminal(), `Unknown node type: ${(node as any).type}`);
+      assert(node.isNonterminal(), `Unknown node type: ${(node as any)._type}`);
       this.currNode = node;
       ans =
         typeof this._mapping[node.ctorName] === 'function'
