@@ -5,7 +5,6 @@ import type {
   MatchResult,
   NonterminalNode,
   TerminalNode,
-  ListNode,
 } from './miniohm.ts';
 
 export type AstNodeTemplate<R> = {
@@ -22,7 +21,7 @@ export type AstMapping<R> = Record<
   string,
   | AstNodeTemplate<R>
   | number // forward to nth child
-  | ((...children: CstNodeChildren) => R) // semantic action-style
+  | ((this: CstNode, ...children: CstNodeChildren) => R) // semantic action-style
 >;
 
 function childAt(
