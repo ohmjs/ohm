@@ -24,6 +24,8 @@ export const CstNodeType = {
 type MatchRecordType = (typeof MatchRecordType)[keyof typeof MatchRecordType];
 export type CstNodeType = (typeof CstNodeType)[keyof typeof CstNodeType];
 
+const EMPTY_CHILDREN: ReadonlyArray<CstNode> = Object.freeze([]);
+
 const compileOptions = {
   builtins: ['js-string'],
 };
@@ -338,6 +340,7 @@ export interface TerminalNode extends CstNodeBase {
   type: typeof CstNodeType.TERMINAL;
   ctorName: '_terminal';
   leadingSpaces?: NonterminalNode;
+  children: readonly [];
   value: string;
 }
 
@@ -394,6 +397,9 @@ export class CstNodeImpl implements CstNodeBase {
       startIdx,
       endIdx: startIdx + this.sourceString.length,
     };
+    if (this.matchRecordType === MatchRecordType.TERMINAL || this.count === 0) {
+      this._children = EMPTY_CHILDREN;
+    }
   }
 
   get type(): CstNodeType {
