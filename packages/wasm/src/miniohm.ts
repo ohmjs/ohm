@@ -303,7 +303,7 @@ export class WasmGrammar {
   }
 }
 
-export interface MatchContext {
+interface MatchContext {
   ruleNames: string[];
   view: DataView;
   input: string;
@@ -772,7 +772,7 @@ function createMatchResult(
   startExpr: string,
   ctx: MatchContext,
   succeeded: boolean
-) {
+): MatchResult {
   return succeeded
     ? new SucceededMatchResult(grammar, startExpr, ctx, succeeded)
     : new FailedMatchResult(
@@ -784,7 +784,7 @@ function createMatchResult(
       );
 }
 
-class SucceededMatchResult extends MatchResult {
+export class SucceededMatchResult extends MatchResult {
   _cst: CstNode;
 
   constructor(grammar: WasmGrammar, startExpr: string, ctx: MatchContext, succeeded: boolean) {
@@ -793,7 +793,7 @@ class SucceededMatchResult extends MatchResult {
   }
 }
 
-class FailedMatchResult extends MatchResult {
+export class FailedMatchResult extends MatchResult {
   constructor(
     grammar: WasmGrammar,
     startExpr: string,
@@ -807,15 +807,13 @@ class FailedMatchResult extends MatchResult {
     this._rightmostFailures = optRecordedFailures;
 
     // TODO: Define these as lazy properties, like in the JS implementation.
-    if (this.failed()) {
-      this.shortMessage = this.message = `Match failed at pos ${rightmostFailurePosition}`;
-    }
+    this.shortMessage = this.message = `Match failed at pos ${rightmostFailurePosition}`;
   }
 
   _rightmostFailurePosition: number;
   _rightmostFailures: any;
-  shortMessage?: string;
-  message?: string;
+  shortMessage: string;
+  message: string;
 
   getRightmostFailurePosition(): number {
     return this._rightmostFailurePosition;
