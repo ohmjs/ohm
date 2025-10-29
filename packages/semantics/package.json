@@ -1,0 +1,39 @@
+{
+  "name": "@ohm-js/semantics",
+  "version": "18.0.0-alpha.0",
+  "description": "v18 semantics",
+  "keywords": [
+    "parser",
+    "parsing",
+    "ohm",
+    "ohm-js",
+    "semantics"
+  ],
+  "homepage": "https://github.com/ohmjs/ohm#readme",
+  "bugs": {
+    "url": "https://github.com/ohmjs/ohm/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ohmjs/ohm.git"
+  },
+  "license": "MIT",
+  "author": "Patrick Dubroy <pdubroy@gmail.com>",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "ava"
+  },
+  "devDependencies": {
+    "@ohm-js/wasm": "workspace:^",
+    "ava": "^6.0.0"
+  },
+  "peerDependencies": {
+    "@ohm-js/wasm": "workspace:^"
+  },
+  "ava": {
+    "extensions": {
+      "ts": "module"
+    }
+  }
+}
