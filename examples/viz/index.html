@@ -117,7 +117,7 @@ function add(/* tagName, child1, child2, ... */) {
 var s = ohm.ohmGrammar.createSemantics();
 
 s.addOperation('viz', {
-  Grammar: function(n, s, _l, rs, _r) {
+  Grammar(n, s, _l, rs, _r) {
     enter('grammar');
       add('name', n.viz());
       s.children.map(c => c.viz());
@@ -127,128 +127,128 @@ s.addOperation('viz', {
     leave();
   },
 
-  SuperGrammar: function(_, n) {
+  SuperGrammar(_, n) {
     enter('super');
       add('name', n.viz());
     leave();
   },
 
-  Rule: function(expr) {
+  Rule(expr) {
     enter('rule');
       expr.viz();
     leave();
   },
-  Rule_define: function(n, fs, d, _, b) {
+  Rule_define(n, fs, d, _, b) {
     add('name', n.viz());
     d.children.map(c => c.viz());
     enter('ruleDefineBody');
       b.viz();
     leave();
   },
-  Rule_override: function(n, fs, _, b) {
+  Rule_override(n, fs, _, b) {
     add('name', n.viz());
     enter('ruleOverrideBody');
       b.viz();
     leave();
   },
-  Rule_extend: function(n, fs, _, b) {
+  Rule_extend(n, fs, _, b) {
     add('name', n.viz());
     enter('ruleExtendBody');
       b.viz();
     leave();
   },
-  RuleBody: function(_, terms) {
+  RuleBody(_, terms) {
     enter('alt');
       terms.vizChoice();
     leave();
   },
 
-  ruleDescr: function(_l, t, _r) {
+  ruleDescr(_l, t, _r) {
     add('description', t.viz());
   },
-  ruleDescrText: function(_) {
+  ruleDescrText(_) {
     return this.sourceString;
   },
-  Alt: function(xs) {
+  Alt(xs) {
     enter('alt');
       xs.vizChoice();
     leave();
   },
-  TopLevelTerm_inline: function(x, n) {
+  TopLevelTerm_inline(x, n) {
     x.viz();
     n.viz();
   },
-  caseName: function(_d, _s1, n, _s2, _t) {
+  caseName(_d, _s1, n, _s2, _t) {
     add('caseName', n.viz());
   },
-  Seq: function(expr) {
+  Seq(expr) {
     enter('seq');
       expr.children.map(c => c.viz());
     leave();
   },
-  Iter: function(expr) {
+  Iter(expr) {
     expr.viz();
   },
-  Iter_star: function(x, _) {
+  Iter_star(x, _) {
     enter('star');
       x.viz();
     leave();
   },
-  Iter_plus: function(x, _) {
+  Iter_plus(x, _) {
     enter('plus');
       x.viz();
     leave();
   },
-  Iter_opt: function(x, _) {
+  Iter_opt(x, _) {
     enter('opt');
       x.viz();
     leave();
   },
-  Pred: function(expr) {
+  Pred(expr) {
     expr.viz();
   },
-  Pred_not: function(_, x) {
+  Pred_not(_, x) {
     enter('not');
       x.viz();
     leave();
   },
-  Pred_lookahead: function(_, x) {
+  Pred_lookahead(_, x) {
     enter('lookahead');
       x.viz();
     leave();
   },
-  Base: function(expr) {
+  Base(expr) {
     expr.viz();
   },
-  Base_application: function(rule, ps) {
+  Base_application(rule, ps) {
     add('app', rule.viz());
   },
-  Base_terminal: function(expr) {
+  Base_terminal(expr) {
     expr.viz();
   },
-  Base_paren: function(_l, x, _r) {
+  Base_paren(_l, x, _r) {
     enter('paren');
       x.viz();
     leave();
   },
-  ident: function(n) {
+  ident(n) {
     return n.viz();
   },
-  name: function(_first, _rest) {
+  name(_first, _rest) {
     return this.sourceString;
   },
-  terminal: function(_lq, cs, _rq) {
+  terminal(_lq, cs, _rq) {
     add('terminal', escape(eval(this.sourceString)));
   }
 });
 
 s.addOperation('vizChoice', {
-  _nonterminal: function(...children) {
+  _nonterminal(...children) {
     enter('choice');
       this.viz();
     leave();
   },
-  NonemptyListOf: function(x, _, xs) {
+  NonemptyListOf(x, _, xs) {
     enter('choice');
       x.viz();
     leave();

@@ -11,21 +11,21 @@ function parseMarkdownBlocks(str) {
   const parser = {};
   parser.grammar = ohm.grammar(`
     MarkdownOuter {
-    doc = block+
-    block =  blank | h3 | h2 | h1 | bullet | code | para | endline
-    h3 = "###" rest
-    h2 = "##" rest
-    h1 = "#" rest
-    para = line+ //paragraph is just multiple consecutive lines
-    bullet = "* " rest (~"*" ~blank rest)*
-    code = q rest (~q any)* q //anything between the \`\`\` markers
-    q = "\`\`\`"   // start and end code blocks
-    nl = "\\n"   // new line
-    sp = " "
-    blank = sp* nl  // blank line has only newline
-    endline = (~nl any)+ end
-    line = (~nl any)+ nl  // line has at least one letter
-    rest = (~nl any)* nl  // everything to the end of the line
+      doc = block+
+      block =  blank | h3 | h2 | h1 | bullet | code | para | endline
+      h3 = "###" rest
+      h2 = "##" rest
+      h1 = "#" rest
+      para = line+ //paragraph is just multiple consecutive lines
+      bullet = "* " rest (~"*" ~blank rest)*
+      code = q rest (~q any)* q //anything between the \`\`\` markers
+      q = "\`\`\`"   // start and end code blocks
+      nl = "\\n"   // new line
+      sp = " "
+      blank = sp* nl  // blank line has only newline
+      endline = (~nl any)+ end
+      line = (~nl any)+ nl  // line has at least one letter
+      rest = (~nl any)* nl  // everything to the end of the line
     }
   `);
   parser.semantics = parser.grammar.createSemantics();
