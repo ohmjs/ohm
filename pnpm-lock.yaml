@@ -245,10 +245,11 @@ importers:
         version: 4.10.0(webpack@5.99.7)
 
   packages/semantics:
-    devDependencies:
+    dependencies:
       '@ohm-js/wasm':
         specifier: workspace:^
         version: link:../wasm
+    devDependencies:
       ava:
         specifier: ^6.0.0
         version: 6.2.0(rollup@4.43.0)
