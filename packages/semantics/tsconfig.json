@@ -1,0 +1,18 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+
+    // From the totaltypescript "Building for a Library in a Monorepo"
+    // recommendation. See tsconfig.base.json for details.
+    "declaration": true,
+    "composite": true,
+    "sourceMap": true,
+    "declarationMap": true,
+
+    // Overrides of tsconfig.base.json
+    "lib": ["ES2022"]
+    // [end overrides]
+  },
+  "include": ["src/**/*", "build/ohmRuntime.wasm_sections.ts", "index.ts"]
+}

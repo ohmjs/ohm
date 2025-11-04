@@ -244,6 +244,18 @@ importers:
         specifier: ^4.10.0
         version: 4.10.0(webpack@5.99.7)
 
+  packages/semantics:
+    devDependencies:
+      '@ohm-js/wasm':
+        specifier: workspace:^
+        version: link:../wasm
+      ava:
+        specifier: ^6.0.0
+        version: 6.2.0(rollup@4.43.0)
+      ohm-js:
+        specifier: workspace:^
+        version: link:../ohm-js
+
   packages/wasm:
     dependencies:
       '@wasmgroundup/emit':

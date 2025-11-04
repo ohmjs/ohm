@@ -2,13 +2,7 @@
   "name": "@ohm-js/semantics",
   "version": "18.0.0-alpha.0",
   "description": "v18 semantics",
-  "keywords": [
-    "parser",
-    "parsing",
-    "ohm",
-    "ohm-js",
-    "semantics"
-  ],
+  "keywords": ["parser", "parsing", "ohm", "ohm-js", "semantics"],
   "homepage": "https://github.com/ohmjs/ohm#readme",
   "bugs": {
     "url": "https://github.com/ohmjs/ohm/issues"
@@ -22,6 +16,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
+    "build": "tsc",
     "test": "ava"
   },
   "devDependencies": {
@@ -32,8 +27,6 @@
     "@ohm-js/wasm": "workspace:^"
   },
   "ava": {
-    "extensions": {
-      "ts": "module"
-    }
+    "extensions": ["ts"]
   }
 }

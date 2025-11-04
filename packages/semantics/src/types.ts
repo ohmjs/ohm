@@ -1,4 +1,4 @@
-import {
+import type {
   CstNode,
   CstNodeChildren,
   ListNode,
@@ -61,6 +61,8 @@ export interface BaseActionDict<R> {
 /**
  * An ActionDict is a dictionary of Actions indexed by rule names.
  */
-export type ActionDict<T> = BaseActionDict<T> & {
-  [index: string]: Action<T> | undefined;
+export type ActionDict<R> = BaseActionDict<R> & {
+  [index: string]: Action<R>;
 };
+
+export type Operation<R> = (node: CstNode) => R;

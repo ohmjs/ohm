@@ -1,40 +1,71 @@
-import type { CstNode, CstNodeChildren,TerminalNode} from '@ohm-js/wasm';
+import type {
+  CstNode,
+  CstNodeChildren,
+  NonterminalNode,
+  SucceededMatchResult,
+  TerminalNode,
+} from '@ohm-js/wasm';
 import type {ActionDict, VisitorCtx} from './types.ts';
 
-function newDefaultAction(type, name: string, doIt) {
-  return function (ctx: VisitorCtx, ...children: CstNodeChildren) {
-    const { thisNode } = ctx;
-    if ((thisNode.isTerminal() || thisNode.isNonterminal()) && children.length === 1) {
-      // This CST node corresponds to a non-terminal in the grammar (e.g., AddExpr). The fact that
-      // we got here means that this action dictionary doesn't have an action for this particular
-      // non-terminal or a generic `_nonterminal` action.
-      // As a convenience, if this node only has one child, we just return the result of applying
-      // this operation / attribute to the child node.
-      return doIt.apply(null, ctx, children[0]);
-    } else {
-      // Otherwise, we throw an exception to let the programmer know that we don't know what
-      // to do with this node.
-      // throw errors.missingSemanticAction(this.ctorName, name, type, globalActionStack);
-      throw new Error(`missing semantic action: '${name}'`);
-    }
-  };
-}
-
+const globalActionStack: ([string, string] | [string, string, string])[] = [];
 
 export function createOperation<R, T extends ActionDict<R>>(
   name: string,
-  actionDict: ActionDict<T>
+  actionDict: T
 ): (node: CstNode) => R {
-  return node => {
+  const doIt = (node: CstNode) => {
     const ctx: VisitorCtx = {
-      thisNode: node
+      thisNode: node,
     };
-    let action = actionDict[node.ctorName];
-    if (!action) {
-      switch (node.ctorName) {
-        case '_terminal': action = action['_terminal'] ?? defaultTerminalAction;
+
+    // Ported from Operation.execute in ohm-js/src/Semantics.js
+    try {
+      // Look for a semantic action whose name matches the node's constructor name, which is either
+      // the name of a rule in the grammar, or '_terminal' (for a terminal node), or '_iter' (for an
+      // iteration node).
+      const {ctorName} = node;
+      const action = actionDict[ctorName];
+      if (action) {
+        globalActionStack.push([name, ctorName]);
+        return action.apply(null, [ctx, ...node.children]);
       }
+
+      // The action dictionary does not contain a semantic action for this specific type of node.
+      // If this is a nonterminal node and the programmer has provided a `_nonterminal` semantic
+      // action, we invoke it:
+      if (node.isNonterminal()) {
+        const nonterminalAction = actionDict._nonterminal;
+        if (nonterminalAction) {
+          globalActionStack.push([name, '_nonterminal', ctorName]);
+          return nonterminalAction.apply(null, [
+            ctx as VisitorCtx<NonterminalNode>,
+            ...node.children,
+          ]);
+        }
+      }
+
+      // Note: here we diverge from the original version in Operation.execute slightly.
+      // It builds a new dictionary _default is always present — if the user doesn't
+      // specify _default, there is a system-provided one (via `newDefaultAction`).
+      // We simply the logic from the system-provided one here.
+
+      // Invoke the '_default' semantic action (if it exists).
+      const defaultAction = actionDict._default;
+      if (defaultAction) {
+        globalActionStack.push([name, '_default', ctorName]);
+        return defaultAction.apply(null, [ctx, ...node.children]);
+      }
+
+      // Inlined logic from newDefaultAction in Semantics.js.
+      if (node.isNonterminal() && node.children.length === 1) {
+        globalActionStack.push([name, 'default action', ctorName]);
+        return doIt(node.children[0]);
+      }
+      throw new Error(`missing semantic action: ${name}`);
+      // End inlined logic
+    } finally {
+      globalActionStack.pop();
     }
-    return action.apply(null,
   };
+  return doIt;
 }
