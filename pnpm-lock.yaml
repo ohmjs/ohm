@@ -252,9 +252,6 @@ importers:
       ava:
         specifier: ^6.0.0
         version: 6.2.0(rollup@4.43.0)
-      ohm-js:
-        specifier: workspace:^
-        version: link:../ohm-js
 
   packages/wasm:
     dependencies:
