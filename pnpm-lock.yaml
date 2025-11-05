@@ -246,10 +246,13 @@ importers:
 
   packages/semantics:
     dependencies:
+      ohm-js:
+        specifier: workspace:^
+        version: link:../ohm-js
+    devDependencies:
       '@ohm-js/wasm':
         specifier: workspace:^
         version: link:../wasm
-    devDependencies:
       ava:
         specifier: ^6.0.0
         version: 6.2.0(rollup@4.43.0)

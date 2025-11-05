@@ -3,6 +3,14 @@ import type {ActionDict, VisitorCtx} from './types.ts';
 
 const globalActionStack: [string, string, string][] = [];
 
+const getActionStackTrace = () =>
+  globalActionStack
+    .map(
+      ([opName, actionName, ctorName], i) =>
+        `\n  ${opName} > ${actionName}${actionName !== ctorName ? ` for '${ctorName}'` : ''}`
+    )
+    .join('\n');
+
 export function createOperation<R, T extends ActionDict<R>>(
   name: string,
   actionDict: T
@@ -55,7 +63,7 @@ export function createOperation<R, T extends ActionDict<R>>(
         globalActionStack.push([name, 'default action', ctorName]);
         return doIt(node.children[0]);
       }
-      throw new Error(`missing semantic action: ${name}`);
+      throw new Error(`missing semantic action: ${ctorName}` + getActionStackTrace());
       // End inlined logic
     } finally {
       globalActionStack.pop();

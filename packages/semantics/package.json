@@ -20,10 +20,20 @@
     "test": "ava"
   },
   "devDependencies": {
+    "@ohm-js/wasm": "workspace:^",
     "ava": "^6.0.0"
   },
-  "dependencies": {
-    "@ohm-js/wasm": "workspace:^"
+  "peerDependencies": {
+    "@ohm-js/wasm": "workspace:^",
+    "ohm-js": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "@ohm-js/wasm": {
+      "optional": true
+    },
+    "ohm-js": {
+      "optional": true
+    }
   },
   "ava": {
     "extensions": ["ts"]
