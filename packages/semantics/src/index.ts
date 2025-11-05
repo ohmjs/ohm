@@ -1,13 +1,7 @@
-import type {
-  CstNode,
-  CstNodeChildren,
-  NonterminalNode,
-  SucceededMatchResult,
-  TerminalNode,
-} from '@ohm-js/wasm';
+import type {CstNode, NonterminalNode} from '@ohm-js/wasm';
 import type {ActionDict, VisitorCtx} from './types.ts';
 
-const globalActionStack: ([string, string] | [string, string, string])[] = [];
+const globalActionStack: [string, string, string][] = [];
 
 export function createOperation<R, T extends ActionDict<R>>(
   name: string,
@@ -26,7 +20,7 @@ export function createOperation<R, T extends ActionDict<R>>(
       const {ctorName} = node;
       const action = actionDict[ctorName];
       if (action) {
-        globalActionStack.push([name, ctorName]);
+        globalActionStack.push([name, ctorName, ctorName]);
         return action.apply(null, [ctx, ...node.children]);
       }
 
