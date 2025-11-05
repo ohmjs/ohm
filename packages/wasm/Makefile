@@ -8,7 +8,7 @@ all: dist-js dist/index.d.ts
 
 .PHONY: clean
 clean:
-	rm -f dist/* build/*
+	rm -rf dist/* build/*
 
 .PHONY: check
 check:
