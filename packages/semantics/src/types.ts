@@ -26,18 +26,18 @@ export type Action<
  * This is a "pure" type that only contains keys for built-in rules.
  */
 export interface BaseActionDict<R> {
-  _root?: (ctx: VisitorCtx<SeqNode>, start: NonterminalNode, end: TerminalNode) => R;
+  _root?: (ctx: VisitorCtx<CstNode>, start: CstNode, end: CstNode) => R;
 
   // _iter?: (this: IterationNode, ...children: Node[]) => T;
-  _nonterminal?: (ctx: VisitorCtx<NonterminalNode>, ...children: CstNodeChildren) => R;
-  _terminal?: (ctx: VisitorCtx<TerminalNode>) => R;
+  _nonterminal?: (ctx: VisitorCtx<CstNode>, ...children: CstNodeChildren) => R;
+  _terminal?: (ctx: VisitorCtx<CstNode>) => R;
 
   // Built-in rules
 
-  alnum?: (ctx: VisitorCtx<NonterminalNode>, arg0: NonterminalNode) => R;
-  letter?: (ctx: VisitorCtx<NonterminalNode>, arg0: NonterminalNode) => R;
-  digit?: (ctx: VisitorCtx<NonterminalNode>, arg0: TerminalNode) => R;
-  hexDigit?: (ctx: VisitorCtx<NonterminalNode>, arg0: NonterminalNode | TerminalNode) => R;
+  alnum?: (ctx: VisitorCtx<CstNode>, arg0: CstNode) => R;
+  letter?: (ctx: VisitorCtx<CstNode>, arg0: CstNode) => R;
+  digit?: (ctx: VisitorCtx<CstNode>, arg0: CstNode) => R;
+  hexDigit?: (ctx: VisitorCtx<CstNode>, arg0: CstNode) => R;
   // TODO: Make these use ListNodes?
   // ListOf?: (ctx: VisitorCtx<NonterminalNode>, arg0: NonterminalNode) => T;
   // NonemptyListOf?: (
