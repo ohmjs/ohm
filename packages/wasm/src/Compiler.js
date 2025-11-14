@@ -1307,9 +1307,11 @@ export class Compiler {
   // guarantee that there are no collisions with other functions.
   // Returns the list of dummy functions that need to be added to the module.
   rewriteDebugLabels(decls) {
+    // Careful: this.importDecls *doesn't* include the prebuilt imports (we know how many there
+    // are, but it's otherwise treated as an opaque blog). But it *does* include `defaultImports`,
+    // so we account for those in nextIdx, and for the prebuilt imports in `intoFuncidx`.
     let nextIdx = defaultImports.length;
-    const intoFuncidx = i =>
-      w.funcidx(prebuilt.importsec.entryCount + defaultImports.length + i);
+    const intoFuncidx = i => w.funcidx(prebuilt.importsec.entryCount + i);
     const names = new Set();
     for (let i = 0; i < decls.length; i++) {
       const entry = decls[i];
