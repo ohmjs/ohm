@@ -150,6 +150,56 @@ Return the index in the input stream at which the match failed.
 
 Return an array of Failure objects describing the failures the occurred at the rightmost failure position.
 
+#### How Failure Messages are Constructed
+
+When a match fails, Ohm constructs an error message by performing a two-phase matching process:
+
+**Phase 1: Find the rightmost failure position**
+
+During the initial match attempt, Ohm tracks the _rightmost failure position_ — the position in the input where the parser made the most progress before failing. This position is maintained in `MatchState.rightmostFailurePosition`:
+
+- Every time a parsing expression fails (e.g., a terminal doesn't match, a range check fails), `processFailure()` is called, which updates `rightmostFailurePosition` to be the maximum of its current value and the failure position.
+- When entering and exiting rule applications, the rightmost failure position is managed using a stack (`_rightmostFailurePositionStack`), allowing nested rules to track their own failures independently while propagating the overall rightmost position upward.
+- After matching completes (successfully or not), the `MatchResult` object records this rightmost failure position via `getRightmostFailurePosition()`.
+
+**Phase 2: Collect detailed failures at the rightmost position**
+
+If the match failed and the user accesses `message`, `shortMessage`, or calls `getRightmostFailures()`, Ohm performs a _second_ match with failure recording enabled:
+
+1. The matcher is re-run with `positionToRecordFailures` set to the rightmost failure position found in Phase 1.
+2. During this second pass, whenever a parsing expression fails at exactly `positionToRecordFailures`, the failure is recorded in `MatchState.recordedFailures` (a dictionary keyed by failure description).
+3. These recorded failures are also stored in the memoization table alongside successful match results.
+
+**The Role of the Memoization Table**
+
+Ohm uses a memoization table (also called a "memo table" or "packrat parsing table") to avoid re-parsing the same input at the same position. Each entry in the table is indexed by position and rule, and stores:
+
+- The match result (success/failure)
+- The matched length
+- The examined length (how far ahead the parser looked)
+- **`rightmostFailureOffset`**: The offset from the current position to the rightmost failure that occurred during this rule application
+- **`failuresAtRightmostPosition`**: A snapshot of all the specific failures that occurred at the rightmost failure position during this rule application
+
+**Why store failures in the memo table?**
+
+When a memoized result is reused (in `useMemoizedResult()`), Ohm needs to:
+
+1. Update the current `rightmostFailurePosition` based on the memoized `rightmostFailureOffset`
+2. If recording failures and the memoized rightmost position matches `positionToRecordFailures`, merge the memoized failures into the current `recordedFailures`
+
+This is critical for correctness in the second phase: without storing failures in the memo table, the second match pass would miss failures that occurred in memoized rule applications, leading to incomplete error messages.
+
+**Example:**
+
+Consider the grammar `G { start = "a" "b" | "a" "c" }` with input `"ad"`:
+
+- Phase 1: Parser tries `"a" "b"`, succeeds on `"a"`, fails on `"b"` at position 1. Then tries `"a" "c"`, succeeds on `"a"` (reused from memo), fails on `"c"` at position 1. Rightmost failure position is 1.
+- Phase 2: Re-run with `positionToRecordFailures = 1`. Both `"b"` and `"c"` fail at position 1, so both are recorded. The error message will say: `Expected "b" or "c"`.
+
+**Fluffy Failures:**
+
+Some failures are marked as "fluffy" (e.g., implicit whitespace from syntactic rules). These are filtered out when constructing the final error message to make it more useful for end users.
+
 <h2 id="semantics">Semantics, Operations, and Attributes</h2>
 
 An Operation represents a function that can be applied to a successful match result. Like a [Visitor](http://en.wikipedia.org/wiki/Visitor_pattern), an operation is evaluated by recursively walking the parse tree, and at each node, invoking the matching semantic action from its _action dictionary_.
