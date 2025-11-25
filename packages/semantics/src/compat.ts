@@ -1,4 +1,12 @@
-import type {CstNode, NonterminalNode, CstNodeBase, TerminalNode, ListNode, OptNode, SeqNode} from '@ohm-js/wasm';
+import type {
+  CstNode,
+  NonterminalNode,
+  CstNodeBase,
+  TerminalNode,
+  ListNode,
+  OptNode,
+  SeqNode,
+} from '@ohm-js/wasm';
 import {CstNodeType} from '@ohm-js/wasm';
 
 import * as legacy from 'ohm-js';
@@ -34,7 +42,7 @@ class AdaptedCstNode implements CstNodeBase {
   get source() {
     return {
       startIdx: this.#startIdx,
-      endIdx: this.#startIdx + this.matchLength
+      endIdx: this.#startIdx + this.matchLength,
     };
   }
 
@@ -49,13 +57,14 @@ class AdaptedCstNode implements CstNodeBase {
   get children(): CstNode[] {
     if (this.#cachedChildren !== undefined) return this.#cachedChildren;
     if (this.type === CstNodeType.TERMINAL) {
-      return this.#cachedChildren = [];
+      return (this.#cachedChildren = []);
     }
     const {children, childOffsets} = this.#node;
-    const adaptedChildren = children.map((child: any, i: number) =>
-      new AdaptedCstNode(this.#grammar, child, this.#startIdx + childOffsets[i])
+    const adaptedChildren = children.map(
+      (child: any, i: number) =>
+        new AdaptedCstNode(this.#grammar, child, this.#startIdx + childOffsets[i])
     );
-    return this.#cachedChildren = adaptedChildren;
+    return (this.#cachedChildren = adaptedChildren);
   }
 
   isNonterminal(): this is NonterminalNode {
@@ -102,10 +111,7 @@ class AdaptedCstNode implements CstNodeBase {
   }
 
   // OptNode
-  ifPresent<R>(
-    consume: any,
-    orElse?: () => R
-  ): R | undefined {
+  ifPresent<R>(consume: any, orElse?: () => R): R | undefined {
     if (!this.isOptional()) throw new Error('Not an optional node');
     if (this.children.length === 0) {
       return orElse ? orElse() : undefined;
