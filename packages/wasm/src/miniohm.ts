@@ -56,6 +56,42 @@ function regexFromCategoryBitmap(bitmap: number): RegExp {
   );
 }
 
+function parseStringTable(module: WebAssembly.Module, sectionName: string): string[] {
+  const sections = WebAssembly.Module.customSections(module, sectionName);
+  assert(
+    sections.length === 1,
+    `Expected one ${sectionName} section, found ${sections.length}`
+  );
+
+  const data = new Uint8Array(sections[0]);
+  const dataView = new DataView(data.buffer);
+  let offset = 0;
+
+  const parseU32 = (): number => {
+    // Quick 'n dirty ULeb128 parsing, assuming no more than 2 bytes.
+    const b1 = dataView.getUint8(offset++);
+    let value = b1 & 0x7f;
+    if (b1 & 0x80) {
+      const b2 = dataView.getUint8(offset++);
+      assert((b2 & 0x80) === 0, 'Expected max two bytes');
+      value |= (b2 & 0x7f) << 7;
+    }
+    return value;
+  };
+
+  const decoder = new TextDecoder('utf-8');
+  const numEntries = parseU32();
+  const ans: string[] = [];
+  for (let i = 0; i < numEntries; i++) {
+    const stringLen = parseU32();
+    const bytes = data.slice(offset, offset + stringLen);
+    offset += stringLen;
+    const name = decoder.decode(bytes);
+    ans.push(name);
+  }
+  return ans;
+}
+
 export class WasmGrammar {
   name = '';
 
@@ -110,6 +146,8 @@ export class WasmGrammar {
   private _ruleNames: string[] = [];
   private _input = '';
 
+  public _failureDescriptions: string[] = []; // Should be treated as package private
+
   private _resultStack: MatchResult[] = [];
   private _managedResultCount = 0;
 
@@ -129,7 +167,7 @@ export class WasmGrammar {
 
   private _init(module: WebAssembly.Module, instance: WebAssembly.Instance) {
     this._instance = instance;
-    this._extractRuleIds(module);
+    this._extractStrings(module);
     this.name = this._getGrammarName(module);
     return this;
   }
@@ -201,35 +239,15 @@ export class WasmGrammar {
     return decoder.decode(data);
   }
 
-  private _extractRuleIds(module: WebAssembly.Module): void {
-    const sections = WebAssembly.Module.customSections(module, 'ruleNames');
-    assert(sections.length === 1, `Expected one ruleNames section, found ${sections.length}`);
-
-    const data = new Uint8Array(sections[0]);
-    const dataView = new DataView(data.buffer);
-    let offset = 0;
-
-    const parseU32 = (): number => {
-      // Quick 'n dirty ULeb128 parsing, assuming no more than 2 bytes.
-      const b1 = dataView.getUint8(offset++);
-      let value = b1 & 0x7f;
-      if (b1 & 0x80) {
-        const b2 = dataView.getUint8(offset++);
-        assert((b2 & 0x80) === 0, 'Expected max two bytes');
-        value |= (b2 & 0x7f) << 7;
-      }
-      return value;
-    };
-
-    const decoder = new TextDecoder('utf-8');
-    const numEntries = parseU32();
-    for (let i = 0; i < numEntries; i++) {
-      const stringLen = parseU32();
-      const bytes = data.slice(offset, offset + stringLen);
-      offset += stringLen;
-      const name = decoder.decode(bytes);
-      this._ruleIds.set(name, i);
-      this._ruleNames.push(name);
+  private _extractStrings(module: WebAssembly.Module): void {
+    assert(this._ruleNames.length === 0);
+    assert(this._ruleIds.size === 0);
+    for (const ruleName of parseStringTable(module, 'ruleNames')) {
+      this._ruleIds.set(ruleName, this._ruleIds.size);
+      this._ruleNames.push(ruleName);
+    }
+    for (const str of parseStringTable(module, 'failureDescriptions')) {
+      this._failureDescriptions.push(str);
     }
   }
 
@@ -263,6 +281,17 @@ export class WasmGrammar {
     result.detach = this._detachMatchResult.bind(this, result);
     this._resultStack.push(result);
     return result;
+  }
+
+  recordFailures() {
+    const {exports} = this._instance as any;
+    exports.recordFailures(this._ruleNames[0]);
+    const ans: number[] = [];
+    console.log(exports.getRecordedFailuresLength());
+    for (let i = 0; i < exports.getRecordedFailuresLength(); i++) {
+      ans.push(exports.recordedFailuresAt(i));
+    }
+    return ans;
   }
 
   getMemorySizeBytes(): number {
@@ -807,13 +836,12 @@ export class FailedMatchResult extends MatchResult {
     this._rightmostFailures = optRecordedFailures;
 
     // TODO: Define these as lazy properties, like in the JS implementation.
-    this.shortMessage = this.message = `Match failed at pos ${rightmostFailurePosition}`;
+    // this.shortMessage = this.message = `Match failed at pos ${rightmostFailurePosition}`;
   }
 
   _rightmostFailurePosition: number;
   _rightmostFailures: any;
-  shortMessage: string;
-  message: string;
+  // message: string;
 
   getRightmostFailurePosition(): number {
     return this._rightmostFailurePosition;
@@ -832,5 +860,12 @@ export class FailedMatchResult extends MatchResult {
 
   getInterval() {
     throw new Error('Not implemented yet: getInterval');
+  }
+
+  get shortMessage(): string {
+    for (const failureId of this.grammar.recordFailures()) {
+      console.log(this.grammar._failureDescriptions[failureId]);
+    }
+    return '';
   }
 }

@@ -22,6 +22,18 @@ export type Expr =
   | Terminal
   | UnicodeChar;
 
+// A FailableExpr is one that can contribute to the failure message.
+// Note: A Param cannot directly fail (only its concrete substitution can).
+export type FailableExpr =
+  | Any
+  | Apply
+  | CaseInsensitive
+  | End
+  | LiftedTerminal
+  | Range
+  | Terminal
+  | UnicodeChar;
+
 export interface Alt {
   type: 'Alt';
   children: Expr[];
@@ -45,12 +57,18 @@ type ApplyLike = Extract<Expr, {type: 'Apply' | 'LiftedTerminal' | 'Param'}>;
 export interface Apply {
   type: 'Apply';
   ruleName: string;
+  descriptionId?: number;
   children: ApplyLike[];
 }
 
-export const apply = (ruleName: string, children: ApplyLike[] = []): Apply => ({
+export const apply = (
+  ruleName: string,
+  descriptionId?: number,
+  children: ApplyLike[] = []
+): Apply => ({
   type: 'Apply',
   ruleName,
+  descriptionId,
   children,
 });
 
@@ -180,7 +198,7 @@ export interface Terminal {
   value: string;
 }
 
-export const terminal = (value: string, caseInsensitive = false): Terminal => ({
+export const terminal = (value: string): Terminal => ({
   type: 'Terminal',
   value,
 });
@@ -200,11 +218,13 @@ export const unicodeChar = (categoryOrProp: string): UnicodeChar => ({
 export interface LiftedTerminal {
   type: 'LiftedTerminal';
   terminalId: number;
+  failureId: number;
 }
 
-export const liftedTerminal = (terminalId: number): LiftedTerminal => ({
+export const liftedTerminal = (terminalId: number, failureId: number): LiftedTerminal => ({
   type: 'LiftedTerminal',
   terminalId,
+  failureId,
 });
 
 // Helpers
@@ -279,6 +299,7 @@ export function substituteParams<T extends Expr>(
       if (exp.children.length === 0) return exp;
       return apply(
         exp.ruleName,
+        exp.descriptionId,
         exp.children.map((c): ApplyLike => {
           const ans = substituteParams(c, actuals);
           return checkApplyLike(ans);

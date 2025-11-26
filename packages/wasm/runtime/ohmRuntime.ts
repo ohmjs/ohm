@@ -63,8 +63,14 @@ let memoBase: usize = 0;
 // The rightmost position at which a leaf (Terminal, etc.) failed to match.
 let rightmostFailurePos: i32 = 0;
 
+// Known as `positionToRecordFailures` in the JS code.
+// When this is >= 0, we are building up an error message for a previous
+// parse, where that was rightmostFailurePos.
+let errorMessagePos: i32 = -1;
+
 let sp: usize = 0;
 let bindings: Array<i32> = new Array<i32>();
+let recordedFailures: Array<i32> = new Array<i32>();
 
 export function dummy(i: i32): void {
   printI32(i);
@@ -174,6 +180,37 @@ export function match(inputStr: externref, startRuleId: i32): ApplyResult {
   }
 
   return false;
+}
+
+export function recordFailures(startRuleId: i32): void {
+  errorMessagePos = rightmostFailurePos;
+
+  // resetParsingState
+  pos = 0;
+  rightmostFailurePos = -1;
+  sp = STACK_START_OFFSET;
+  bindings = new Array<i32>();
+
+  recordedFailures = new Array<i32>();
+
+  // match
+  // input = inputStr;
+  // endPos = jsStringLength(input);
+
+  // memoBase = initMemoTable(endPos);
+
+  maybeSkipSpaces(startRuleId);
+  const succeeded = evalApplyNoMemo0(startRuleId) !== 0;
+  if (succeeded) {
+    maybeSkipSpaces(startRuleId);
+    // printI32(heap.alloc(8) - __heap_base); // Print heap usage.
+    // TODO: Do we need to update rightmostFailurePos here?
+    assert(pos <= endPos);
+    // return pos === endPos;
+  }
+
+  // return false;
+  // FIXME: Need to handle a special case here, where `end` is expected but not found.
 }
 
 @inline function evalRuleBody(ruleId: i32): RuleEvalResult {
@@ -324,4 +361,16 @@ export function bindingsAt(i: i32): usize {
 // TODO: Find a way to call this directly from generated code.
 export function doMatchUnicodeChar(categoryBitmap: i32): bool {
   return matchUnicodeChar(categoryBitmap)
+}
+
+export function recordFailure(id: i32): void {
+  recordedFailures.push(id);
+}
+
+export function getRecordedFailuresLength(): i32 {
+  return recordedFailures.length;
+}
+
+export function recordedFailuresAt(i: i32): i32 {
+  return recordedFailures[i];
 }
