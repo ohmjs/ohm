@@ -1,4 +1,4 @@
-import type {Grammar, LineAndColumnInfo, MatchResult, Semantics} from '../index.d.ts';
+import type {Grammar, LineAndColumnInfo, MatchResult, Node, Semantics} from '../index.d.ts';
 
 export function toAST(matchResult: MatchResult, mapping?: {}): {};
 export function semanticsForToAST(g: Grammar): Semantics;
@@ -34,3 +34,9 @@ interface Example {
  * `//- "shouldn't match"`. The examples text is a JSON string.
  */
 export function extractExamples(grammarsDef: string): [Example];
+
+/*
+  Given an array of nodes, return a new array where (a) all iter nodes are replaced by
+  their children, and (b) nodes appear in the correct source order.
+ */
+export function recoverIterOrder(nodes: Node[]): Node[];
