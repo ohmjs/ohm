@@ -1,5 +1,5 @@
 import test from 'ava';
-import {recoverIterOrder} from '../../extras/recoverIterOrder.js';
+import {recoverSourceOrder} from '../../extras/recoverSourceOrder.js';
 import * as ohm from '../../index.mjs';
 
 const g = ohm.grammar(String.raw`
@@ -15,11 +15,11 @@ const g = ohm.grammar(String.raw`
   }
 `);
 
-test('visitInOrder', t => {
+test('recoverNodeOrder', t => {
   const semantics = g.createSemantics().addOperation('fix()', {
     start: child => child.fix(),
     _default(...children) {
-      return recoverIterOrder(children)
+      return recoverSourceOrder(children)
         .map(c => `${c.ctorName}[${c.source.startIdx}..${c.source.endIdx}]`)
         .join(' ');
     },

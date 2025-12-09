@@ -729,7 +729,6 @@ export class Compiler {
     // It is *not* the same as the function index of the rule's eval function.
     this.ruleIdByName = new StringTable();
 
-
     // For non-memoized rules, we defer assigning IDs until all memoized
     // rule names have been assigned.
     this._deferredRuleIds = new Set();
