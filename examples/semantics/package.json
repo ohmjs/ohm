@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "ohm-js": "^17.0.0"
+  },
+  "scripts": {
+    "test": "node lineAndCol.js"
+  }
+}

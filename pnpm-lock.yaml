@@ -33,6 +33,12 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
 
+  examples/attributes:
+    dependencies:
+      ohm-js:
+        specifier: ^17.0.0
+        version: link:../../packages/ohm-js
+
   examples/ecmascript:
     devDependencies:
       ava:

@@ -21,7 +21,7 @@ const isIterSibling = (refNode, n) => {
   );
 };
 
-export function recoverIterOrder(nodes, depth = 0) {
+export function recoverSourceOrder(nodes, depth = 0) {
   const ans = [];
   for (let i = 0; i < nodes.length; i++) {
     const n = nodes[i];
@@ -42,7 +42,7 @@ export function recoverIterOrder(nodes, depth = 0) {
     for (let row = 0; row < numRows; row++) {
       cousins.push(...siblings.map(sib => sib.children[row]));
     }
-    ans.push(...recoverIterOrder(cousins, depth + 1));
+    ans.push(...recoverSourceOrder(cousins, depth + 1));
   }
   return ans;
 }
