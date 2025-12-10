@@ -10,7 +10,7 @@
   - We *could* mistake `a? b?` for (a b)?`, if neither of them comsume any input.
     However, for the purposes of this module, those two cases are equivalent
     anyways, since we only care about finding the correct order of the non-iter
-    nodes.
+    nodes, and both interpretations yield the same order.
  */
 const isIterSibling = (refNode, n) => {
   return (

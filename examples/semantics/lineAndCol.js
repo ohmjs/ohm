@@ -83,14 +83,18 @@ semantics.addOperation('findNodeAt(loc, baseLoc)', {
     assert(children.length > 0, 'Node has no children!');
     assert(compareLocations(baseLoc, loc) <= 0, 'Already passed the searched-for location!');
 
-    // A tricky aspect is that due to the way Ohm represents repetitions,
+    // One thing to watch out for: due to the way Ohm represents repetitions,
     // a post-order traversal of the tree doesn't necessarily visit nodes
     // in the order they appear in the input. For example, an expression
     // like `(a b)*` produces two iter nodes: one with all the a's, and
     // another with the b's. This is useful in some scenarios, but it makes
     // tree search impossible.
-    // `recoverSourceOrder` fixes this by replacing iter nodes with their
-    // children, and reordering them to restore the original input order.
+    // This is *only* a problem if the grammar has repetition expressions
+    // with arity >1. E.g., `a*` is not problematic, but `(a b)*` is.
+    // Even though it's not strictly required for this grammar, we use
+    // `recoverSourceOrder` here, which fixes the issue by replacing iter
+    // nodes with their children, and reordering them to restore the original
+    // input order.
     const descendants = recoverSourceOrder(this.children);
 
     // Base case: this node is *at* the searched-for position.
