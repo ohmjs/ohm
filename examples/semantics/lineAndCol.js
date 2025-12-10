@@ -4,21 +4,6 @@ import * as ohm from 'ohm-js';
 import {recoverSourceOrder} from 'ohm-js/extras';
 
 /*
-  A simple grammar containing only lexical rules, i.e. rules whose name begins
-  with a lowercase letter. They need to be _lexical_ rules, because otherwise
-  Ohm's implicit space skipping wouldn't let us easily see the newlines.
- */
-const g = ohm.grammar(String.raw`
-  Listy {
-      start = expr spaces
-      expr = spaces (list | num | nil)
-      list = spaces "[" expr* spaces "]"
-      num = digit+
-      nil = "nil"
-  }
-`);
-
-/*
   Our goal will be to compute line and column information for all of the nodes
   in the tree, and do it in a way that's friendly to incremental evaluation.
 
@@ -40,11 +25,28 @@ const g = ohm.grammar(String.raw`
   Another (fancier) term for what we're doing here is "monoid-cached tree".
  */
 
-// A monoid requires an identity element, and an associative binary operator.
-// This is our identity (neutral) element…
+/*
+   A simple grammar containing only lexical rules, i.e. rules whose name begins
+   with a lowercase letter. They need to be _lexical_ rules, because otherwise
+   Ohm's implicit space skipping wouldn't let us easily see the newlines.
+  */
+const g = ohm.grammar(String.raw`
+   Listy {
+       start = expr spaces
+       expr = spaces (list | num | nil)
+       list = spaces "[" expr* spaces "]"
+       num = digit+
+       nil = "nil"
+   }
+ `);
+
+// In abstract algebra, a _monoid_ is a set (or a data type) that has
+// (a) a "combine" operation that's associative, i.e. (a + b) + c = a + (b + c)
+// (b) an identity or neutral element.
+// This is our identity element…
 const LOC_IDENTITY = {line: 0, col: 0};
 
-// …and this is our binary operator.
+// …and this is our "combine" operator.
 function sumLocations(a, b) {
   return {
     line: a.line + b.line,
