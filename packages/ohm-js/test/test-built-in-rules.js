@@ -173,3 +173,31 @@ test('applySyntactic with lookahead', t => {
     {message: /expected a syntactic rule application/}
   );
 });
+
+test('unicode rules with characters outside the Basic Multilingual Plane', t => {
+  const gUpper = ohm.grammar('G { start = upper }');
+  const gLower = ohm.grammar('G { start = lower }');
+  const gLetter = ohm.grammar('G { start = letter }');
+
+  // Regular ASCII
+  t.is(gUpper.match('A').succeeded(), true, 'ASCII uppercase A matches upper');
+  t.is(gLower.match('a').succeeded(), true, 'ASCII lowercase a matches lower');
+  t.is(gLetter.match('A').succeeded(), true, 'ASCII uppercase A matches letter');
+  t.is(gLetter.match('a').succeeded(), true, 'ASCII lowercase a matches letter');
+
+  // Mathematical Alphanumeric Symbols (Plane 1 - beyond BMP)
+  // U+1D538 MATHEMATICAL DOUBLE-STRUCK CAPITAL A (looks like 𝔸)
+  // U+1D552 MATHEMATICAL DOUBLE-STRUCK SMALL A (looks like 𝕒)
+  t.is(
+    gUpper.match('𝔸').succeeded(),
+    true,
+    'Mathematical uppercase 𝔸 (U+1D538) matches upper'
+  );
+  t.is(
+    gLower.match('𝕒').succeeded(),
+    true,
+    'Mathematical lowercase 𝕒 (U+1D552) matches lower'
+  );
+  t.is(gLetter.match('𝔸').succeeded(), true, 'Mathematical uppercase 𝔸 matches letter');
+  t.is(gLetter.match('𝕒').succeeded(), true, 'Mathematical lowercase 𝕒 matches letter');
+});

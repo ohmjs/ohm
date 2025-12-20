@@ -1,6 +1,7 @@
 import {Interval} from './Interval.js';
 
 const MAX_CHAR_CODE = 0xffff;
+export const MAX_CODE_POINT = 0x10ffff;
 
 export class InputStream {
   constructor(source) {
