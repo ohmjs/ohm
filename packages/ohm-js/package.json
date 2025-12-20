@@ -38,7 +38,14 @@
       "./dist/ohm-extras.cjs"
     ]
   },
-  "files": ["src", "dist", "extras", "index.mjs", "index.d.ts", "!**/*.old"],
+  "files": [
+    "src",
+    "dist",
+    "extras",
+    "index.mjs",
+    "index.d.ts",
+    "!**/*.old"
+  ],
   "types": "index.d.ts",
   "scripts": {
     "prebootstrap": "bash scripts/prebootstrap",
@@ -93,6 +100,7 @@
     "James Meng <35415298+jamesmengo@users.noreply.github.com>",
     "Julien Gonzalez <hello@spinjs.com>",
     "Justin Chase <justin.m.chase@gmail.com>",
+    "Karl Weber <me@kow.fm>",
     "Leslie Ying <acetophore@users.noreply.github.com>",
     "Luca Guzzon <luca.guzzon@gmail.com>",
     "Mike Niebling <(none)>",
@@ -139,7 +147,9 @@
   },
   "ava": {
     "watchMode": {
-      "ignoreChanges": ["version.js"]
+      "ignoreChanges": [
+        "version.js"
+      ]
     }
   }
 }
