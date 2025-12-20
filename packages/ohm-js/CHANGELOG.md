@@ -1,5 +1,17 @@
 # Changelog
 
+## v17.3.0 - Dec 20, 2025
+
+### New features:
+
+- [d957ac78] typings: #494 - Typescript MatchResult object incomplete
+- [e1b82259] typings: add FailedMatchResult / SucceededMatchResult
+- [891b6d84] feat: Put Interval source string in a non-enumerable property
+
+### Fixes
+
+- [4df25915] fix #539: `letter` does not match double-struck capital A
+
 ## v17.2.1 - July 28, 2025
 
 ### New features:
