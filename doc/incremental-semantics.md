@@ -10,7 +10,7 @@ TODO
 
 ## Defining an attribute
 
-The first step for building an incremental processing pipeline is to define an attribute. In Ohm, an _attribute_ is like an operation, but (a) it takes no arguments, and (b) it is memoized. The attribute's value for a given will be recalculated whenever the edit may have affected that node. For nodes that are not affected by an edit, the attribute value is cached.
+The first step for building an incremental processing pipeline is to define an attribute. In Ohm, an _attribute_ is like an operation, but (a) it takes no arguments, and (b) it is memoized. The attribute's value for a given node will be recalculated whenever the edit may have affected that node. For nodes that are not affected by an edit, the attribute value is cached.
 
 So, the simplest kind of incremental processing pipeline you can build consists of a single attribute. For example, for an arithmetic grammar, you might define a `value` attribute for evaluating arithmetic expressions:
 
@@ -101,6 +101,6 @@ When an attribute value depends on the value of a sibling, you can:
 - Define an operation to compute the value, potentially taking one or more arguments with context information.
 - Define an attribute which caches the value of invoking the operation on all the node's children.
 
-This is an extremely useful pattern that can describe many problems in text processing. For example, Ohm internally uses a version of this when calculating the absolute offset of nodes in the parse tree. Each node caches the relative offsets of all its children, so after an edit that affects _k_ nodes, the offsets can be updated in O(k) time.
+This is an extremely useful pattern that can apply to many problems in text processing. For example, Ohm internally uses a version of this when calculating the absolute offset of nodes in the parse tree. Each node caches the relative offsets of all its children, so after an edit that affects _k_ nodes, the offsets can be updated in O(k) time.
 
 See [Zed Decoded: Rope & SumTree](https://zed.dev/blog/zed-decoded-rope-sumtree) for a discussion of how this same pattern is used in text editors.
