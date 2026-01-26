@@ -401,7 +401,3 @@ test('wrongNumberOfArguments includes the interval', t => {
     {message}
   );
 });
-
-test.only('descriptions', t => {
-  t.pass();
-});

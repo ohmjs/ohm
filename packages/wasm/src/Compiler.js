@@ -641,6 +641,41 @@ class Assembler {
     });
   }
 
+  // For rules with descriptions: push a stack frame and save pos + rightmostFailurePos.
+  // Must be called at the start of the rule evaluation function.
+  pushDescriptionFrame() {
+    this.pushStackFrame(() => {
+      this.savePos();
+      this.saveGlobalFailurePos();
+    });
+  }
+
+  // For rules with descriptions: handle failure by swallowing internal failures
+  // and recording the description at the start position, then pop the frame.
+  // Must be called after evaluating the rule body.
+  handleDescriptionFailure(descriptionId) {
+    this.localGet('ret');
+    this.ifFalse(w.blocktype.empty, () => {
+      // Restore rightmostFailurePos (swallow internal failures)
+      this.restoreGlobalFailurePos();
+
+      // Update rightmostFailurePos to max(old, startPos)
+      this.i32Max(
+        () => this.globalGet('rightmostFailurePos'),
+        () => this.getSavedPos()
+      );
+      this.globalSet('rightmostFailurePos');
+
+      // Set local failurePos to startPos
+      this.getSavedPos();
+      this.localSet('failurePos');
+
+      // Record the description at startPos
+      this.maybeRecordFailure(() => this.getSavedPos(), descriptionId);
+    });
+    this.popStackFrame();
+  }
+
   // Increment the current input position by 1.
   // [i32, i32] -> [i32]
   incPos() {
@@ -1102,6 +1137,11 @@ export class Compiler {
 
     const restoreFailurePos = name === this._applySpacesImplicit.ruleName;
 
+    const descriptionId = ruleInfo.description
+      ? this._failureDescriptions.add(ruleInfo.description)
+      : -1;
+    const hasDescription = descriptionId >= 0;
+
     this.beginLexContext(!ruleInfo.isSyntactic);
     asm.addFunction(`$${name}`, paramTypes, [w.valtype.i32], () => {
       asm.addLocal('ret', w.valtype.i32);
@@ -1112,6 +1152,8 @@ export class Compiler {
       asm.globalGet('rightmostFailurePos');
       asm.localSet('failurePos');
 
+      if (hasDescription) asm.pushDescriptionFrame();
+
       // TODO: Find a simpler way to do this.
       if (restoreFailurePos) {
         asm.addLocal('origFailurePos', w.valtype.i32);
@@ -1121,6 +1163,9 @@ export class Compiler {
 
       asm.emit(`BEGIN eval:${name}`);
       this.emitPExpr(ruleInfo.body);
+
+      // Handle rules with descriptions - must come BEFORE restoreFailurePos
+      if (hasDescription) asm.handleDescriptionFailure(descriptionId);
 
       if (restoreFailurePos) {
         asm.localGet('origFailurePos');

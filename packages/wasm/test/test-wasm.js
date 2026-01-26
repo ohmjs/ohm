@@ -1113,7 +1113,7 @@ test('shortMessage (basic)', async t => {
   t.true(msg.includes('"two"'));
 });
 
-test.skip('shortMessage (descriptions)', async t => {
+test('shortMessage (descriptions)', async t => {
   const g = await toWasmGrammar(
     ohm.grammar(`
     G {
@@ -1125,6 +1125,5 @@ test.skip('shortMessage (descriptions)', async t => {
   t.false(result.succeeded());
   const msg = result.shortMessage;
   t.false(msg.includes('"one"'));
-  t.true(msg.includes('a start'))
-  // t.true(msg.includes('"eine Drei"'));
+  t.true(msg.includes('a start'));
 });
