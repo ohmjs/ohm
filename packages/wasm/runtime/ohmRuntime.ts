@@ -63,12 +63,14 @@ let memoBase: usize = 0;
 // The rightmost position at which a leaf (Terminal, etc.) failed to match.
 let rightmostFailurePos: i32 = 0;
 
+// Known as `positionToRecordFailures` in the JS code.
+// When this is >= 0, we are building up an error message for a previous
+// parse, where that was rightmostFailurePos.
+let errorMessagePos: i32 = -1;
+
 let sp: usize = 0;
 let bindings: Array<i32> = new Array<i32>();
-
-export function dummy(i: i32): void {
-  printI32(i);
-}
+let recordedFailures: Array<i32> = new Array<i32>();
 
 @inline function max<T>(a: T, b: T): T {
   return a > b ? a : b;
@@ -86,6 +88,14 @@ export function dummy(i: i32): void {
 @inline function memoTableSet(memoPos: usize, ruleId: i32, value: MemoEntry): void {
   const ptr = memoBase + memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<MemoEntry>();
   store<MemoEntry>(ptr, value);
+}
+
+@inline function memoGetFailurePos(entry: MemoEntry): i32 {
+  if (entry & MEMO_FAILURE_FLAG) {
+    return entry >> 1;
+  }
+  assert(entry >= 0);
+  return cstGetFailurePos(<usize>entry);
 }
 
 @inline function cstGetCount(ptr: usize): i32 {
@@ -156,11 +166,8 @@ function initMemoTable(inputLenBytes: usize): usize {
   return buf;
 }
 
-export function match(inputStr: externref, startRuleId: i32): ApplyResult {
-  resetParsingState();
-  input = inputStr;
+function doMatch(startRuleId: i32): ApplyResult {
   endPos = jsStringLength(input);
-
   memoBase = initMemoTable(endPos);
 
   maybeSkipSpaces(startRuleId);
@@ -174,6 +181,21 @@ export function match(inputStr: externref, startRuleId: i32): ApplyResult {
   }
 
   return false;
+}
+
+export function match(inputStr: externref, startRuleId: i32): ApplyResult {
+  resetParsingState();
+  errorMessagePos = -1;  // Fresh match: no failure recording
+  input = inputStr;
+  return doMatch(startRuleId);
+}
+
+export function recordFailures(startRuleId: i32): void {
+  const savedFailurePos = rightmostFailurePos;  // Save before reset
+  resetParsingState();  // Reset parsing state (but not errorMessagePos)
+  errorMessagePos = savedFailurePos;  // Set errorMessagePos to failure pos
+  recordedFailures = new Array<i32>();
+  doMatch(startRuleId);  // Re-match with errorMessagePos set
 }
 
 @inline function evalRuleBody(ruleId: i32): RuleEvalResult {
@@ -215,9 +237,16 @@ export function evalApplyNoMemo0(ruleId: i32): ApplyResult {
   return false;
 }
 
+// When we are recording failures (errorMessagePos >= 0), and the rightmost
+// failure position of `entry` matches `errorMessagePos`.
+@inline function isInvolvedInError(entry: MemoEntry): bool {
+  // TODO: Do we need to check that errorMessagePos >= 0?
+  return errorMessagePos >= 0 && memoGetFailurePos(entry) === errorMessagePos;
+}
+
 export function evalApply0(ruleId: i32): ApplyResult {
   const memo = memoTableGet(pos, ruleId);
-  if (memo !== 0) {
+  if (memo !== 0 && !isInvolvedInError(memo)) {
     return useMemoizedResult(ruleId, memo);
   }
   const origPos = pos;
@@ -324,4 +353,20 @@ export function bindingsAt(i: i32): usize {
 // TODO: Find a way to call this directly from generated code.
 export function doMatchUnicodeChar(categoryBitmap: i32): bool {
   return matchUnicodeChar(categoryBitmap)
+}
+
+export function recordFailure(id: i32): void {
+  recordedFailures.push(id);
+}
+
+export function getRecordedFailuresLength(): i32 {
+  return recordedFailures.length;
+}
+
+export function setRecordedFailuresLength(len: i32): void {
+  recordedFailures.length = len;
+}
+
+export function recordedFailuresAt(i: i32): i32 {
+  return recordedFailures[i];
 }

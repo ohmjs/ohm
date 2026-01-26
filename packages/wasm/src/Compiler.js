@@ -92,17 +92,17 @@ function isSyntacticRule(ruleName) {
 
 const asciiChars = Array.from({length: 128}).map((_, i) => String.fromCharCode(i));
 
-class IndexedSet {
+class StringTable {
   constructor() {
     this._map = new Map();
   }
 
-  add(item) {
-    if (this._map.has(item)) {
-      return this._map.get(item);
+  add(str) {
+    if (this._map.has(str)) {
+      return this._map.get(str);
     }
     const idx = this._map.size;
-    this._map.set(checkNotNull(item), idx);
+    this._map.set(checkNotNull(str), idx);
     return idx;
   }
 
@@ -119,10 +119,6 @@ class IndexedSet {
   }
 
   keys() {
-    return [...this._map.keys()];
-  }
-
-  values() {
     return [...this._map.keys()];
   }
 
@@ -522,9 +518,9 @@ class Assembler {
     this.localSet('ret');
   }
 
-  pushStackFrame(saveThunk) {
+  pushStackFrame(saveThunk, size = Assembler.STACK_FRAME_SIZE_BYTES) {
     this.globalGet('sp');
-    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
+    this.i32Const(size);
     this.i32Sub();
     this.globalSet('sp');
     if (saveThunk) {
@@ -535,8 +531,8 @@ class Assembler {
     }
   }
 
-  popStackFrame() {
-    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
+  popStackFrame(size = Assembler.STACK_FRAME_SIZE_BYTES) {
+    this.i32Const(size);
     this.globalGet('sp');
     this.i32Add();
     this.globalSet('sp');
@@ -628,6 +624,81 @@ class Assembler {
     this.localSet('failurePos');
   }
 
+  maybeRecordFailure(origPosThunk, failureId) {
+    this.globalGet('errorMessagePos');
+    this.i32Const(0);
+    this.emit(instr.i32.ge_s);
+    this.if(w.blocktype.empty, () => {
+      this.globalGet('errorMessagePos');
+      origPosThunk();
+      this.i32Eq();
+      this.if(w.blocktype.empty, () => {
+        this.emit('failure#' + failureId);
+        if (failureId === undefined) throw new Error('bad failureId');
+        this.i32Const(failureId);
+        this.callPrebuiltFunc('recordFailure');
+      });
+    });
+  }
+
+  // For rules with descriptions: push a 12-byte stack frame and save:
+  // - offset 0: pos (startPos)
+  // - offset 4: rightmostFailurePos
+  // - offset 8: recordedFailures.length
+  // Must be called at the start of the rule evaluation function.
+  pushDescriptionFrame() {
+    this.pushStackFrame(() => {
+      this.savePos(); // offset 0
+      this.saveGlobalFailurePos(); // offset 4
+
+      // Save recordedFailures.length at offset 8
+      this.globalGet('sp');
+      this.callPrebuiltFunc('getRecordedFailuresLength');
+      this.i32Store(8);
+    }, Assembler.DESCRIPTION_FRAME_SIZE_BYTES);
+  }
+
+  // For rules with descriptions: handle failure by swallowing internal failures
+  // and recording the description at the start position, then pop the frame.
+  // Must be called after evaluating the rule body.
+  handleDescriptionFailure(descriptionId) {
+    this.localGet('ret');
+    this.ifFalse(w.blocktype.empty, () => {
+      // Restore rightmostFailurePos (swallow internal failures for error position calculation)
+      this.restoreGlobalFailurePos();
+
+      // Restore recordedFailures length if the description is at errorMessagePos.
+      // This swallows internal failures (including inner descriptions).
+      // If the description is NOT at errorMessagePos, keep internal failures
+      // (they might be at errorMessagePos and thus relevant for the error message).
+      this.globalGet('errorMessagePos');
+      this.getSavedPos(); // startPos
+      this.i32Eq(); // errorMessagePos == startPos?
+      this.if(w.blocktype.empty, () => {
+        // Description is at errorMessagePos - swallow internal failures
+        // Load saved recordedFailures.length from stack offset 8
+        this.globalGet('sp');
+        this.i32Load(8);
+        this.callPrebuiltFunc('setRecordedFailuresLength');
+      });
+
+      // Update rightmostFailurePos to max(old, startPos)
+      this.i32Max(
+        () => this.globalGet('rightmostFailurePos'),
+        () => this.getSavedPos()
+      );
+      this.globalSet('rightmostFailurePos');
+
+      // Set local failurePos to startPos
+      this.getSavedPos();
+      this.localSet('failurePos');
+
+      // Record the description at startPos
+      this.maybeRecordFailure(() => this.getSavedPos(), descriptionId);
+    });
+    this.popStackFrame(Assembler.DESCRIPTION_FRAME_SIZE_BYTES);
+  }
+
   // Increment the current input position by 1.
   // [i32, i32] -> [i32]
   incPos() {
@@ -706,6 +777,7 @@ Assembler.CST_NODE_HEADER_SIZE_BYTES = 8;
 Assembler.MEMO_COL_SIZE_BYTES = 4 * 256;
 
 Assembler.STACK_FRAME_SIZE_BYTES = 8;
+Assembler.DESCRIPTION_FRAME_SIZE_BYTES = 12;
 
 export class Compiler {
   constructor(grammar) {
@@ -731,7 +803,8 @@ export class Compiler {
 
     // The rule ID is a 0-based index that's mapped to the name.
     // It is *not* the same as the function index of the rule's eval function.
-    this.ruleIdByName = new IndexedSet();
+    this.ruleIdByName = new StringTable();
+    this._failureDescriptions = new StringTable();
 
     // For non-memoized rules, we defer assigning IDs until all memoized
     // rule names have been assigned.
@@ -748,7 +821,23 @@ export class Compiler {
 
     // Keeps track of whether we're in a lexical or syntactic context.
     this._lexContextStack = [];
-    this._applySpacesImplicit = ir.apply('$spaces');
+    this._applySpacesImplicit = ir.apply('$spaces', -1);
+  }
+
+  getOrAddFailure(str) {
+    return this._failureDescriptions.add(str);
+  }
+
+  toFailure(exp) {
+    switch (exp.type) {
+      case 'Range':
+        return this.getOrAddFailure(`${JSON.stringify(exp.lo)}..${JSON.stringify(exp.lo)}`);
+      case 'Terminal':
+        return this.getOrAddFailure(JSON.stringify(exp.value));
+      default:
+        return -1;
+      // throw new Error(`Not implemented: toFailure for ${exp.type}`);
+    }
   }
 
   importCount() {
@@ -850,6 +939,7 @@ export class Compiler {
     // (global $runtime/ohmRuntime/input (mut externref) (ref.null noextern))
     // (global $runtime/ohmRuntime/memoBase (mut i32) (i32.const 0))
     // (global $runtime/ohmRuntime/rightmostFailurePos (mut i32) (i32.const 0))
+    // (global $runtime/ohmRuntime/errorMessagePos (mut i32) (i32.const -1))
     // (global $runtime/ohmRuntime/sp (mut i32) (i32.const 0))
     // (global $~lib/shared/runtime/Runtime.Stub i32 (i32.const 0))
     // (global $~lib/shared/runtime/Runtime.Minimal i32 (i32.const 1))
@@ -858,6 +948,7 @@ export class Compiler {
     // (global $~lib/rt/stub/offset (mut i32) (i32.const 0))
     // (global $~lib/native/ASC_RUNTIME i32 (i32.const 0))
     // (global $runtime/ohmRuntime/bindings (mut i32) (i32.const 0))
+    // (global $runtime/ohmRuntime/recordedFailures (mut i32) (i32.const 0))
     // (global $~lib/memory/__heap_base i32 (i32.const 65900))
     asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('endPos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
@@ -868,6 +959,7 @@ export class Compiler {
       asm.i32Const(2 * WASM_PAGE_SIZE)
     );
     asm.addGlobal('rightmostFailurePos', w.valtype.i32, w.mut.var, () => asm.i32Const(-1));
+    asm.addGlobal('errorMessagePos', w.valtype.i32, w.mut.var, () => asm.i32Const(-1));
     asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('__Runtime.Stub', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
     asm.addGlobal('__Runtime.Minimal', w.valtype.i32, w.mut.const, () => asm.i32Const(1));
@@ -876,6 +968,7 @@ export class Compiler {
     asm.addGlobal('__offset', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('__ASC_RUNTIME', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
     asm.addGlobal('bindings', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('recordedFailures', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('__heap_base', w.valtype.i32, w.mut.var, () => asm.i32Const(65900));
 
     // Reserve a fixed number of imports for debug labels.
@@ -914,12 +1007,13 @@ export class Compiler {
       rules.push([name, lookUpRule(name)]);
     }
 
-    const liftedTerminals = new IndexedSet();
+    const liftedTerminals = new StringTable();
 
     const liftTerminal = ({obj}) => {
       const id = liftedTerminals.add(obj);
       assert(id >= 0 && id < 0xffff, 'too many terminals!');
-      return ir.liftedTerminal(id);
+      const failureId = this.getOrAddFailure(JSON.stringify(obj));
+      return ir.liftedTerminal(id, failureId);
     };
 
     // If `exp` is not an Apply or Param, lift it into its own rule and return
@@ -938,7 +1032,10 @@ export class Compiler {
         return ir.param(p.index);
       });
       rules.push([name, info]);
-      return ir.apply(name, args);
+
+      // We don't care about the failure description here, because the original expression
+      // will still be applied inside the body of the new rule.
+      return ir.apply(name, -1, args);
     };
     const simplify = (exp, isSyntactic) => {
       if (exp instanceof pexprs.Alt) {
@@ -957,8 +1054,12 @@ export class Compiler {
             return ir.caseInsensitive(exp.args[0].obj);
           }
           rules.push([exp.ruleName, ruleInfo]);
+          const descId = ruleInfo.description
+            ? this._failureDescriptions.add(ruleInfo.description)
+            : -1;
           return ir.apply(
             exp.ruleName,
+            descId,
             exp.args.map(arg => simplifyArg(arg, isSyntactic))
           );
         }
@@ -1018,12 +1119,12 @@ export class Compiler {
       asm.addLocal('failurePos', w.valtype.i32);
       asm.i32Const(-1);
       asm.localSet('failurePos');
-      const values = this.liftedTerminals.values();
+      const keys = this.liftedTerminals.keys();
       asm.switch(
         w.blocktype.empty,
         () => asm.localGet('__arg0'),
-        values.length,
-        i => this.emitTerminal(ir.terminal(values[i])),
+        keys.length,
+        i => this.emitTerminal(ir.terminal(keys[i])),
         () => asm.emit(instr.unreachable)
       );
       // Note: unlike a regular rule evaluation, this function just returns
@@ -1059,6 +1160,11 @@ export class Compiler {
 
     const restoreFailurePos = name === this._applySpacesImplicit.ruleName;
 
+    const descriptionId = ruleInfo.description
+      ? this._failureDescriptions.add(ruleInfo.description)
+      : -1;
+    const hasDescription = descriptionId >= 0;
+
     this.beginLexContext(!ruleInfo.isSyntactic);
     asm.addFunction(`$${name}`, paramTypes, [w.valtype.i32], () => {
       asm.addLocal('ret', w.valtype.i32);
@@ -1069,6 +1175,10 @@ export class Compiler {
       asm.globalGet('rightmostFailurePos');
       asm.localSet('failurePos');
 
+      if (hasDescription) {
+        asm.pushDescriptionFrame();
+      }
+
       // TODO: Find a simpler way to do this.
       if (restoreFailurePos) {
         asm.addLocal('origFailurePos', w.valtype.i32);
@@ -1078,6 +1188,9 @@ export class Compiler {
 
       asm.emit(`BEGIN eval:${name}`);
       this.emitPExpr(ruleInfo.body);
+
+      // Handle rules with descriptions - must come BEFORE restoreFailurePos
+      if (hasDescription) asm.handleDescriptionFailure(descriptionId);
 
       if (restoreFailurePos) {
         asm.localGet('origFailurePos');
@@ -1146,14 +1259,14 @@ export class Compiler {
             newRules.set(specializedName, {...ruleInfo, body, formals: []});
           }
           // Replace with an application of the specialized rule.
-          return ir.apply(specializedName);
+          return ir.apply(specializedName, exp.descriptionId);
         },
         CaseInsensitive: exp => {
           hasCaseInsensitiveTerminals = true;
           return exp;
         },
       });
-    specialize(ir.apply(this.grammar.defaultStartRule));
+    specialize(ir.apply(this.grammar.defaultStartRule, -1));
 
     this._maxMemoizedRuleId = this.ruleIdByName.size;
     this._deferredRuleIds.forEach(name => this._ensureRuleId(name, {notMemoized: true}));
@@ -1212,8 +1325,13 @@ export class Compiler {
     return w.custom(w.name('ruleNames'), w.vec(ruleNames.map((n, i) => w.name(n))));
   }
 
+  buildStringTable(sectionName, tableOrArr) {
+    const keys = Array.isArray(tableOrArr) ? tableOrArr : tableOrArr.keys();
+    return w.custom(w.name(sectionName), w.vec(keys.map(n => w.name(n))));
+  }
+
   buildModule(typeMap, functionDecls) {
-    const ruleNames = this.ruleIdByName.values();
+    const ruleNames = this.ruleIdByName.keys();
     assert(this.importCount() === prebuilt.destImportCount, 'import count mismatch');
 
     // Ensure that `ruleNames` is in the correct order.
@@ -1236,12 +1354,19 @@ export class Compiler {
       w.export_(f.name, w.exportdesc.func(i + exportOffset))
     );
     exports.push(w.export_('memory', w.exportdesc.mem(0)));
-    exports.push(w.export_('resetHeap', w.exportdesc.func(prebuiltFuncidx('resetHeap'))));
-    exports.push(w.export_('match', w.exportdesc.func(prebuiltFuncidx('match'))));
-    exports.push(w.export_('bindingsAt', w.exportdesc.func(prebuiltFuncidx('bindingsAt'))));
-    exports.push(
-      w.export_('getBindingsLength', w.exportdesc.func(prebuiltFuncidx('getBindingsLength')))
-    );
+
+    // Re-export some prebuilt functions.
+    [
+      'bindingsAt',
+      'getBindingsLength',
+      'getRecordedFailuresLength',
+      'match',
+      'recordedFailuresAt',
+      'recordFailures',
+      'resetHeap',
+    ].forEach(name => {
+      exports.push(w.export_(name, w.exportdesc.func(prebuiltFuncidx(name))));
+    });
 
     // Process globals.
     for (const [name, {type, mut, initExpr}] of this.asm._globals.entries()) {
@@ -1278,7 +1403,8 @@ export class Compiler {
       w.startsec(w.start(startFuncidx)),
       w.elemsec([w.elem(w.tableidx(0), [instr.i32.const, w.i32(0), instr.end], tableData)]),
       mergeSections(w.SECTION_ID_CODE, prebuilt.codesec, codes),
-      w.customsec(this.buildRuleNamesSection(ruleNames)),
+      w.customsec(this.buildStringTable('ruleNames', ruleNames)),
+      w.customsec(this.buildStringTable('failureDescriptions', this._failureDescriptions)),
       w.namesec(w.namedata(w.modulenamesubsec(this.grammar.name))),
     ]);
     const bytes = Uint8Array.from(mod.flat(Infinity));
@@ -1376,7 +1502,7 @@ export class Compiler {
       if (newExp.type === 'Apply') {
         // If the application has arguments, we need to dispatch to the
         // correct specialized version of the rule.
-        newExp = ir.apply(ir.specializedName(newExp));
+        newExp = ir.apply(ir.specializedName(newExp), -1);
       }
       this.emitPExpr(newExp);
     };
@@ -1440,7 +1566,7 @@ export class Compiler {
             this.emitAlt(exp);
             break;
           case 'Any':
-            this.emitAny();
+            this.emitAny(exp);
             break;
           case 'CaseInsensitive':
             this.emitCaseInsensitive(exp);
@@ -1449,7 +1575,7 @@ export class Compiler {
             this.emitDispatch(exp);
             break;
           case 'End':
-            this.emitEnd();
+            this.emitEnd(exp);
             break;
           case 'Lex':
             this.emitLex(exp);
@@ -1510,14 +1636,15 @@ export class Compiler {
     });
   }
 
-  emitAny() {
+  emitAny(exp) {
     const {asm} = this;
+    const failureId = this.toFailure(exp);
     this.wrapTerminalLike(() => {
       asm.i32Const(CHAR_CODE_END);
       asm.nextCharCode();
       asm.i32Eq();
       asm.condBreak(asm.depthOf('failure'));
-    });
+    }, failureId);
   }
 
   emitApplyTerm({terminalId}) {
@@ -1575,15 +1702,16 @@ export class Compiler {
     asm.localSet('ret');
   }
 
-  emitEnd() {
+  emitEnd(exp) {
     const {asm} = this;
+    const failureId = this.toFailure(exp);
     this.wrapTerminalLike(() => {
       asm.i32Const(CHAR_CODE_END);
       // Careful! We shouldn't move the pos here. Or does it matter?
       asm.currCharCode();
       asm.i32Ne();
       asm.condBreak(asm.depthOf('failure'));
-    });
+    }, failureId);
   }
 
   emitFail() {
@@ -1658,6 +1786,7 @@ export class Compiler {
 
     // TODO: Do we disallow 0xff in the range?
     const {asm} = this;
+    const failureId = this.toFailure(exp);
     this.wrapTerminalLike(() => {
       asm.nextCharCode();
 
@@ -1671,7 +1800,7 @@ export class Compiler {
       asm.i32Const(lo);
       asm.emit(instr.i32.lt_u);
       asm.condBreak(asm.depthOf('failure'));
-    });
+    }, failureId);
   }
 
   emitSeq({children}) {
@@ -1727,7 +1856,7 @@ export class Compiler {
     asm.localSet('ret');
   }
 
-  wrapTerminalLike(thunk) {
+  wrapTerminalLike(thunk, failureId) {
     const {asm} = this;
     this.maybeEmitSpaceSkipping();
 
@@ -1750,21 +1879,26 @@ export class Compiler {
           },
           'failure'
         );
-        asm.updateLocalFailurePos(() => asm.localGet('postSpacesPos'));
+        // Use actual failing position (pos) for rightmost failure tracking,
+        // not the terminal's start position (postSpacesPos).
+        asm.updateLocalFailurePos(() => asm.globalGet('pos'));
+        asm.maybeRecordFailure(() => asm.globalGet('pos'), failureId);
         asm.setRet(0);
       },
       '_done'
     );
   }
 
-  emitCaseInsensitive({value}) {
+  emitCaseInsensitive(exp) {
     const {asm} = this;
+    const {value} = exp;
     assert(
       [...value].every(c => c <= '\x7f'),
       'not supported: case-insensitive Unicode'
     );
 
     const str = value.toLowerCase();
+    const failureId = this.toFailure(exp);
     asm.emit(JSON.stringify(`caseInsensitive:${value}`));
     this.wrapTerminalLike(() => {
       // TODO:
@@ -1783,7 +1917,7 @@ export class Compiler {
         asm.condBreak(asm.depthOf('failure'));
         asm.incPos();
       }
-    });
+    }, failureId);
 
     // Case-insensitive terminals are inlined, but should appear in the CST
     // as if they are actual applications.
@@ -1798,6 +1932,7 @@ export class Compiler {
     const {asm} = this;
     asm.emit(JSON.stringify(exp.value));
 
+    const failureId = this.toFailure(exp);
     this.wrapTerminalLike(() => {
       // TODO:
       // - handle longer terminals with a loop?
@@ -1809,7 +1944,7 @@ export class Compiler {
         asm.condBreak(asm.depthOf('failure'));
         asm.incPos();
       }
-    });
+    }, failureId);
   }
 
   emitUnicodeChar(exp) {
@@ -1831,6 +1966,7 @@ export class Compiler {
         return w.labelidx(asm.depthOf('failure'));
       });
 
+    const failureId = this.toFailure(exp);
     this.wrapTerminalLike(() => {
       asm.block(
         w.blocktype.empty,
@@ -1876,7 +2012,7 @@ export class Compiler {
         },
         'slowSuccess'
       );
-    });
+    }, failureId);
   }
 }
 
