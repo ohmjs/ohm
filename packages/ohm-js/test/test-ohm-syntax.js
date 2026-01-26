@@ -119,7 +119,7 @@ test('unicode code point escapes', t => {
 
   // More than 6 hex digits is just a parse error. (We'd like to make this nicer.)
   t.throws(() => ohm.grammar(String.raw`G { start = "\u{0000000} }`), {
-    message: /Expected "\\"" or not "\\\\"/,
+    message: /Expected "\\"", not "\\\\", or an escape sequence/,
   });
 
   t.throws(() => ohm.grammar('G { start = "\\u{FFFFFF}" }'), {
