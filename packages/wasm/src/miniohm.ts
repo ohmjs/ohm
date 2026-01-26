@@ -863,9 +863,12 @@ export class FailedMatchResult extends MatchResult {
   }
 
   get shortMessage(): string {
-    for (const failureId of this.grammar.recordFailures()) {
-      console.log(this.grammar._failureDescriptions[failureId]);
-    }
-    return '';
+    return (
+      'Expected ' +
+      this.grammar
+        .recordFailures()
+        .map(id => this.grammar._failureDescriptions[id])
+        .join(', ')
+    );
   }
 }

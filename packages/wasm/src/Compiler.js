@@ -629,7 +629,7 @@ class Assembler {
     this.i32Const(0);
     this.emit(instr.i32.ge_s);
     this.if(w.blocktype.empty, () => {
-      this.localGet('failurePos');
+      this.globalGet('errorMessagePos');
       origPosThunk();
       this.i32Eq();
       this.if(w.blocktype.empty, () => {

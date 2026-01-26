@@ -1096,12 +1096,35 @@ test.failing('ranges w/ code points > 0xFFFF', async t => {
   t.true(g.match('x', 'notFace').succeeded());
 });
 
-// eslint-disable-next-line ava/no-skip-test
-test.skip('shortMessage', async t => {
-  const g = await toWasmGrammar(ohm.grammar('G { start = "one" | "two" }'));
-  const result = g.match('three');
+test('shortMessage (basic)', async t => {
+  const g = await toWasmGrammar(
+    ohm.grammar(`
+    G {
+      start = "one" | two | three
+      two = "two"
+      three (eine Drei) = "three"
+    }
+  `)
+  );
+  const result = g.match('four');
   t.false(result.succeeded());
   const msg = result.shortMessage;
-  t.true(msg.includes('"two"'));
   t.true(msg.includes('"one"'));
+  t.true(msg.includes('"two"'));
+});
+
+test.skip('shortMessage (descriptions)', async t => {
+  const g = await toWasmGrammar(
+    ohm.grammar(`
+    G {
+      start (a start) = "x" "one"
+    }
+  `)
+  );
+  const result = g.match('xx');
+  t.false(result.succeeded());
+  const msg = result.shortMessage;
+  t.false(msg.includes('"one"'));
+  t.true(msg.includes('a start'))
+  // t.true(msg.includes('"eine Drei"'));
 });

@@ -72,10 +72,6 @@ let sp: usize = 0;
 let bindings: Array<i32> = new Array<i32>();
 let recordedFailures: Array<i32> = new Array<i32>();
 
-export function dummy(i: i32): void {
-  printI32(i);
-}
-
 @inline function max<T>(a: T, b: T): T {
   return a > b ? a : b;
 }
@@ -92,6 +88,14 @@ export function dummy(i: i32): void {
 @inline function memoTableSet(memoPos: usize, ruleId: i32, value: MemoEntry): void {
   const ptr = memoBase + memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<MemoEntry>();
   store<MemoEntry>(ptr, value);
+}
+
+@inline function memoGetFailurePos(entry: MemoEntry): i32 {
+  if (entry & MEMO_FAILURE_FLAG) {
+    return entry >> 1;
+  }
+  assert(entry >= 0);
+  return cstGetFailurePos(<usize>entry);
 }
 
 @inline function cstGetCount(ptr: usize): i32 {
@@ -146,6 +150,7 @@ function useMemoizedResult(ruleId: i32, result: MemoEntry): ApplyResult {
 function resetParsingState(): void {
   pos = 0;
   rightmostFailurePos = -1;
+  errorMessagePos = -1;
   sp = STACK_START_OFFSET;
   bindings = new Array<i32>();
 }
@@ -184,33 +189,8 @@ export function match(inputStr: externref, startRuleId: i32): ApplyResult {
 
 export function recordFailures(startRuleId: i32): void {
   errorMessagePos = rightmostFailurePos;
-
-  // resetParsingState
-  pos = 0;
-  rightmostFailurePos = -1;
-  sp = STACK_START_OFFSET;
-  bindings = new Array<i32>();
-
   recordedFailures = new Array<i32>();
-
-  // match
-  // input = inputStr;
-  // endPos = jsStringLength(input);
-
-  // memoBase = initMemoTable(endPos);
-
-  maybeSkipSpaces(startRuleId);
-  const succeeded = evalApplyNoMemo0(startRuleId) !== 0;
-  if (succeeded) {
-    maybeSkipSpaces(startRuleId);
-    // printI32(heap.alloc(8) - __heap_base); // Print heap usage.
-    // TODO: Do we need to update rightmostFailurePos here?
-    assert(pos <= endPos);
-    // return pos === endPos;
-  }
-
-  // return false;
-  // FIXME: Need to handle a special case here, where `end` is expected but not found.
+  match(input, startRuleId);
 }
 
 @inline function evalRuleBody(ruleId: i32): RuleEvalResult {
@@ -252,9 +232,16 @@ export function evalApplyNoMemo0(ruleId: i32): ApplyResult {
   return false;
 }
 
+// When we are recording failures (errorMessagePos >= 0), and the rightmost
+// failure position of `entry` matches `errorMessagePos`.
+@inline function isInvolvedInError(entry: MemoEntry): bool {
+  // TODO: Do we need to check that errorMessagePos >= 0?
+  return errorMessagePos >= 0 && memoGetFailurePos(entry) === errorMessagePos;
+}
+
 export function evalApply0(ruleId: i32): ApplyResult {
   const memo = memoTableGet(pos, ruleId);
-  if (memo !== 0) {
+  if (memo !== 0 && !isInvolvedInError(memo)) {
     return useMemoizedResult(ruleId, memo);
   }
   const origPos = pos;
