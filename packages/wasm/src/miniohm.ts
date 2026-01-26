@@ -287,7 +287,6 @@ export class WasmGrammar {
     const {exports} = this._instance as any;
     exports.recordFailures(this._ruleNames[0]);
     const ans: number[] = [];
-    console.log(exports.getRecordedFailuresLength());
     for (let i = 0; i < exports.getRecordedFailuresLength(); i++) {
       ans.push(exports.recordedFailuresAt(i));
     }

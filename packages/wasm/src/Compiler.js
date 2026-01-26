@@ -518,9 +518,9 @@ class Assembler {
     this.localSet('ret');
   }
 
-  pushStackFrame(saveThunk) {
+  pushStackFrame(saveThunk, size = Assembler.STACK_FRAME_SIZE_BYTES) {
     this.globalGet('sp');
-    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
+    this.i32Const(size);
     this.i32Sub();
     this.globalSet('sp');
     if (saveThunk) {
@@ -531,8 +531,8 @@ class Assembler {
     }
   }
 
-  popStackFrame() {
-    this.i32Const(Assembler.STACK_FRAME_SIZE_BYTES);
+  popStackFrame(size = Assembler.STACK_FRAME_SIZE_BYTES) {
+    this.i32Const(size);
     this.globalGet('sp');
     this.i32Add();
     this.globalSet('sp');
@@ -641,13 +641,21 @@ class Assembler {
     });
   }
 
-  // For rules with descriptions: push a stack frame and save pos + rightmostFailurePos.
+  // For rules with descriptions: push a 12-byte stack frame and save:
+  // - offset 0: pos (startPos)
+  // - offset 4: rightmostFailurePos
+  // - offset 8: recordedFailures.length
   // Must be called at the start of the rule evaluation function.
   pushDescriptionFrame() {
     this.pushStackFrame(() => {
-      this.savePos();
-      this.saveGlobalFailurePos();
-    });
+      this.savePos(); // offset 0
+      this.saveGlobalFailurePos(); // offset 4
+
+      // Save recordedFailures.length at offset 8
+      this.globalGet('sp');
+      this.callPrebuiltFunc('getRecordedFailuresLength');
+      this.i32Store(8);
+    }, Assembler.DESCRIPTION_FRAME_SIZE_BYTES);
   }
 
   // For rules with descriptions: handle failure by swallowing internal failures
@@ -656,8 +664,23 @@ class Assembler {
   handleDescriptionFailure(descriptionId) {
     this.localGet('ret');
     this.ifFalse(w.blocktype.empty, () => {
-      // Restore rightmostFailurePos (swallow internal failures)
+      // Restore rightmostFailurePos (swallow internal failures for error position calculation)
       this.restoreGlobalFailurePos();
+
+      // Restore recordedFailures length if the description is at errorMessagePos.
+      // This swallows internal failures (including inner descriptions).
+      // If the description is NOT at errorMessagePos, keep internal failures
+      // (they might be at errorMessagePos and thus relevant for the error message).
+      this.globalGet('errorMessagePos');
+      this.getSavedPos(); // startPos
+      this.i32Eq(); // errorMessagePos == startPos?
+      this.if(w.blocktype.empty, () => {
+        // Description is at errorMessagePos - swallow internal failures
+        // Load saved recordedFailures.length from stack offset 8
+        this.globalGet('sp');
+        this.i32Load(8);
+        this.callPrebuiltFunc('setRecordedFailuresLength');
+      });
 
       // Update rightmostFailurePos to max(old, startPos)
       this.i32Max(
@@ -673,7 +696,7 @@ class Assembler {
       // Record the description at startPos
       this.maybeRecordFailure(() => this.getSavedPos(), descriptionId);
     });
-    this.popStackFrame();
+    this.popStackFrame(Assembler.DESCRIPTION_FRAME_SIZE_BYTES);
   }
 
   // Increment the current input position by 1.
@@ -754,6 +777,7 @@ Assembler.CST_NODE_HEADER_SIZE_BYTES = 8;
 Assembler.MEMO_COL_SIZE_BYTES = 4 * 256;
 
 Assembler.STACK_FRAME_SIZE_BYTES = 8;
+Assembler.DESCRIPTION_FRAME_SIZE_BYTES = 12;
 
 export class Compiler {
   constructor(grammar) {
@@ -1152,7 +1176,9 @@ export class Compiler {
       asm.globalGet('rightmostFailurePos');
       asm.localSet('failurePos');
 
-      if (hasDescription) asm.pushDescriptionFrame();
+      if (hasDescription) {
+        asm.pushDescriptionFrame();
+      }
 
       // TODO: Find a simpler way to do this.
       if (restoreFailurePos) {
@@ -1848,8 +1874,10 @@ export class Compiler {
           },
           'failure'
         );
-        asm.updateLocalFailurePos(() => asm.localGet('postSpacesPos'));
-        asm.maybeRecordFailure(() => asm.localGet('postSpacesPos'), failureId);
+        // Use actual failing position (pos) for rightmost failure tracking,
+        // not the terminal's start position (postSpacesPos).
+        asm.updateLocalFailurePos(() => asm.globalGet('pos'));
+        asm.maybeRecordFailure(() => asm.globalGet('pos'), failureId);
         asm.setRet(0);
       },
       '_done'

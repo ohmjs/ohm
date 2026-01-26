@@ -155,7 +155,7 @@ test('many expressions with nullable operands', t => {
             24 |   NonemptyListOf<elem, sep>
           > 25 |     = elem (sep elem)*
                              ^~~~~~~~
-            26 |
+            26 | 
           Nullable expression ("" "a"?) is not allowed inside '*' (possible infinite loop)
           Application stack (most recent application last):
           Start
@@ -238,7 +238,7 @@ test('failures are memoized', t => {
     e.message,
     dedent`
         Line 1, col 1:
-        > 1 |
+        > 1 | 
               ^
         Expected "a" or "b"
       `

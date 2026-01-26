@@ -150,7 +150,6 @@ function useMemoizedResult(ruleId: i32, result: MemoEntry): ApplyResult {
 function resetParsingState(): void {
   pos = 0;
   rightmostFailurePos = -1;
-  errorMessagePos = -1;
   sp = STACK_START_OFFSET;
   bindings = new Array<i32>();
 }
@@ -167,11 +166,8 @@ function initMemoTable(inputLenBytes: usize): usize {
   return buf;
 }
 
-export function match(inputStr: externref, startRuleId: i32): ApplyResult {
-  resetParsingState();
-  input = inputStr;
+function doMatch(startRuleId: i32): ApplyResult {
   endPos = jsStringLength(input);
-
   memoBase = initMemoTable(endPos);
 
   maybeSkipSpaces(startRuleId);
@@ -187,10 +183,19 @@ export function match(inputStr: externref, startRuleId: i32): ApplyResult {
   return false;
 }
 
+export function match(inputStr: externref, startRuleId: i32): ApplyResult {
+  resetParsingState();
+  errorMessagePos = -1;  // Fresh match: no failure recording
+  input = inputStr;
+  return doMatch(startRuleId);
+}
+
 export function recordFailures(startRuleId: i32): void {
-  errorMessagePos = rightmostFailurePos;
+  const savedFailurePos = rightmostFailurePos;  // Save before reset
+  resetParsingState();  // Reset parsing state (but not errorMessagePos)
+  errorMessagePos = savedFailurePos;  // Set errorMessagePos to failure pos
   recordedFailures = new Array<i32>();
-  match(input, startRuleId);
+  doMatch(startRuleId);  // Re-match with errorMessagePos set
 }
 
 @inline function evalRuleBody(ruleId: i32): RuleEvalResult {
@@ -356,6 +361,10 @@ export function recordFailure(id: i32): void {
 
 export function getRecordedFailuresLength(): i32 {
   return recordedFailures.length;
+}
+
+export function setRecordedFailuresLength(len: i32): void {
+  recordedFailures.length = len;
 }
 
 export function recordedFailuresAt(i: i32): i32 {

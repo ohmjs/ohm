@@ -1127,3 +1127,106 @@ test('shortMessage (descriptions)', async t => {
   t.false(msg.includes('"one"'));
   t.true(msg.includes('a start'));
 });
+
+test('shortMessage (descriptions): multiple described rules in choice', async t => {
+  const g = await toWasmGrammar(
+    ohm.grammar(`
+    G {
+      start = foo | bar
+      foo (a foo) = "foo"
+      bar (a bar) = "bar"
+    }
+  `)
+  );
+  const result = g.match('baz');
+  t.false(result.succeeded());
+  const msg = result.shortMessage;
+  // Both descriptions should appear since both failed at position 0
+  t.true(msg.includes('a foo'));
+  t.true(msg.includes('a bar'));
+});
+
+test('shortMessage (descriptions): nested described rules', async t => {
+  const g = await toWasmGrammar(
+    ohm.grammar(`
+    G {
+      start (a start) = inner
+      inner (an inner) = "x" "y"
+    }
+  `)
+  );
+  const result = g.match('xz');
+  t.false(result.succeeded());
+  const msg = result.shortMessage;
+  // The outer description should swallow the inner one
+  t.true(msg.includes('a start'));
+  t.false(msg.includes('an inner'));
+});
+
+test('shortMessage (descriptions): description on successful prefix', async t => {
+  const g = await toWasmGrammar(
+    ohm.grammar(`
+    G {
+      start = foo "end"
+      foo (a foo) = "foo"
+    }
+  `)
+  );
+  const result = g.match('foox');
+  t.false(result.succeeded());
+  const msg = result.shortMessage;
+  // foo succeeded, so its description shouldn't appear
+  t.false(msg.includes('a foo'));
+  t.true(msg.includes('"end"'));
+});
+
+test('shortMessage (descriptions): description with repetition', async t => {
+  const g = await toWasmGrammar(
+    ohm.grammar(`
+    G {
+      start = item+ "end"
+      item (an item) = "x"
+    }
+  `)
+  );
+  const result = g.match('xxxy');
+  t.false(result.succeeded());
+  const msg = result.shortMessage;
+  // After matching some items, we fail - should see "end" expected
+  t.true(msg.includes('"end"'));
+});
+
+test('shortMessage (descriptions): lexical rule with description', async t => {
+  const g = await toWasmGrammar(
+    ohm.grammar(`
+    G {
+      Start = num
+      num (a number) = digit+
+    }
+  `)
+  );
+  const result = g.match('abc');
+  t.false(result.succeeded());
+  const msg = result.shortMessage;
+  t.true(msg.includes('a number'));
+  t.false(msg.includes('digit'));
+});
+
+test('shortMessage (descriptions): rightmost failure wins', async t => {
+  const g = await toWasmGrammar(
+    ohm.grammar(`
+    G {
+      start = foo | "abc"
+      foo (a foo) = "ab" "x"
+    }
+  `)
+  );
+  const result = g.match('abd');
+  t.false(result.succeeded());
+  const msg = result.shortMessage;
+  // "ab" matched, then "x" failed at position 2
+  // "abc" failed at position 2 (the 'c')
+  // So we should see failures at position 2, not "a foo" at position 0
+  t.false(msg.includes('a foo'));
+  t.true(msg.includes('"x"') || msg.includes('"c"'));
+});
