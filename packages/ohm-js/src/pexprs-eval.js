@@ -3,6 +3,7 @@ import * as common from './common.js';
 import * as errors from './errors.js';
 import {IterationNode, NonterminalNode, TerminalNode} from './nodes.js';
 import * as pexprs from './pexprs-main.js';
+import {MAX_CODE_POINT} from './InputStream.js';
 
 // --------------------------------------------------------------------
 // Operations
@@ -390,12 +391,14 @@ pexprs.Apply.prototype.growSeedResult = function (body, state, origPos, lrMemoRe
 pexprs.UnicodeChar.prototype.eval = function (state) {
   const {inputStream} = state;
   const origPos = inputStream.pos;
-  const ch = inputStream.next();
-  if (ch && this.pattern.test(ch)) {
-    state.pushBinding(new TerminalNode(ch.length), origPos);
-    return true;
-  } else {
-    state.processFailure(origPos, this);
-    return false;
+  const cp = inputStream.nextCodePoint();
+  if (cp !== undefined && cp <= MAX_CODE_POINT) {
+    const ch = String.fromCodePoint(cp);
+    if (this.pattern.test(ch)) {
+      state.pushBinding(new TerminalNode(ch.length), origPos);
+      return true;
+    }
   }
+  state.processFailure(origPos, this);
+  return false;
 };

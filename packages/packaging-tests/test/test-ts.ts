@@ -20,7 +20,7 @@ test('Main exports (TS)', async () => {
 test('Extras exports (TS)', async () => {
   //  assert.equal(typeof extras.VisitorFamily, 'function');
   assert.equal(typeof extras.toAST, 'function');
-  assert.ok(Object.keys(extras).length === 6);
+  assert.ok(Object.keys(extras).length === 7);
 
   const ex: {grammar: string; rule: string; example: string; shouldMatch: boolean} =
     extras.extractExamples('G{//+ ""\n}')[0];

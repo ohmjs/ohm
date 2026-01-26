@@ -92,17 +92,17 @@ function isSyntacticRule(ruleName) {
 
 const asciiChars = Array.from({length: 128}).map((_, i) => String.fromCharCode(i));
 
-class StringTable {
+class IndexedSet {
   constructor() {
     this._map = new Map();
   }
 
-  add(str) {
-    if (this._map.has(str)) {
-      return this._map.get(str);
+  add(item) {
+    if (this._map.has(item)) {
+      return this._map.get(item);
     }
     const idx = this._map.size;
-    this._map.set(checkNotNull(str), idx);
+    this._map.set(checkNotNull(item), idx);
     return idx;
   }
 
@@ -119,6 +119,10 @@ class StringTable {
   }
 
   keys() {
+    return [...this._map.keys()];
+  }
+
+  values() {
     return [...this._map.keys()];
   }
 
@@ -804,7 +808,6 @@ export class Compiler {
     // The rule ID is a 0-based index that's mapped to the name.
     // It is *not* the same as the function index of the rule's eval function.
     this.ruleIdByName = new StringTable();
-
     this._failureDescriptions = new StringTable();
 
     // For non-memoized rules, we defer assigning IDs until all memoized
@@ -1008,7 +1011,7 @@ export class Compiler {
       rules.push([name, lookUpRule(name)]);
     }
 
-    const liftedTerminals = new StringTable();
+    const liftedTerminals = new IndexedSet();
 
     const liftTerminal = ({obj}) => {
       const id = liftedTerminals.add(obj);
@@ -1319,14 +1322,15 @@ export class Compiler {
     }
   }
 
-  // Encodes a string table as a custom section of `vec(name)`.
-  buildStringTable(sectionName, tableOrArr) {
-    const keys = Array.isArray(tableOrArr) ? tableOrArr : tableOrArr.keys();
-    return w.custom(w.name(sectionName), w.vec(keys.map(n => w.name(n))));
+  buildRuleNamesSection(ruleNames) {
+    // A custom section that allows the clients to look up rule IDs by name.
+    // They're simply encoded as a vec(name), and the client can turn this
+    // into a list/array and use the ruleId as the index.
+    return w.custom(w.name('ruleNames'), w.vec(ruleNames.map((n, i) => w.name(n))));
   }
 
   buildModule(typeMap, functionDecls) {
-    const ruleNames = this.ruleIdByName.keys();
+    const ruleNames = this.ruleIdByName.values();
     assert(this.importCount() === prebuilt.destImportCount, 'import count mismatch');
 
     // Ensure that `ruleNames` is in the correct order.
