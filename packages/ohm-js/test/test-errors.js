@@ -401,3 +401,33 @@ test('wrongNumberOfArguments includes the interval', t => {
     {message}
   );
 });
+
+// When a described rule partially matches, getRightmostFailures should return
+// the description failure. The bug was that memoRec.rightmostFailureOffset wasn't
+// updated after processFailure for described rules, causing hasNecessaryInfo to
+// incorrectly consider the memo valid.
+test('getRightmostFailures with described rule that partially matches', t => {
+  const g = ohm.grammar(`G {
+    foo (a foo) = "x" "y"
+  }`);
+
+  // At position 0
+  const r1 = g.match('x', 'foo');
+  t.is(r1.getRightmostFailurePosition(), 0);
+  t.deepEqual(
+    r1.getRightmostFailures().map(f => f.toString()),
+    ['a foo']
+  );
+
+  // At position 5 (via a wrapper rule)
+  const g2 = ohm.grammar(`G {
+    start = "abcde" foo
+    foo (a foo) = "x" "y"
+  }`);
+  const r2 = g2.match('abcdex', 'start');
+  t.is(r2.getRightmostFailurePosition(), 5);
+  t.deepEqual(
+    r2.getRightmostFailures().map(f => f.toString()),
+    ['a foo']
+  );
+});

@@ -303,6 +303,7 @@ pexprs.Apply.prototype.reallyEval = function (state) {
     }
     if (memoRec) {
       memoRec.failuresAtRightmostPosition = state.cloneRecordedFailures();
+      memoRec.rightmostFailureOffset = state._getRightmostFailureOffset();
     }
   }
 
