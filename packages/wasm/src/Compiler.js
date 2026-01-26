@@ -92,17 +92,17 @@ function isSyntacticRule(ruleName) {
 
 const asciiChars = Array.from({length: 128}).map((_, i) => String.fromCharCode(i));
 
-class IndexedSet {
+class StringTable {
   constructor() {
     this._map = new Map();
   }
 
-  add(item) {
-    if (this._map.has(item)) {
-      return this._map.get(item);
+  add(str) {
+    if (this._map.has(str)) {
+      return this._map.get(str);
     }
     const idx = this._map.size;
-    this._map.set(checkNotNull(item), idx);
+    this._map.set(checkNotNull(str), idx);
     return idx;
   }
 
@@ -119,10 +119,6 @@ class IndexedSet {
   }
 
   keys() {
-    return [...this._map.keys()];
-  }
-
-  values() {
     return [...this._map.keys()];
   }
 
@@ -1011,7 +1007,7 @@ export class Compiler {
       rules.push([name, lookUpRule(name)]);
     }
 
-    const liftedTerminals = new IndexedSet();
+    const liftedTerminals = new StringTable();
 
     const liftTerminal = ({obj}) => {
       const id = liftedTerminals.add(obj);
@@ -1329,8 +1325,13 @@ export class Compiler {
     return w.custom(w.name('ruleNames'), w.vec(ruleNames.map((n, i) => w.name(n))));
   }
 
+  buildStringTable(sectionName, tableOrArr) {
+    const keys = Array.isArray(tableOrArr) ? tableOrArr : tableOrArr.keys();
+    return w.custom(w.name(sectionName), w.vec(keys.map(n => w.name(n))));
+  }
+
   buildModule(typeMap, functionDecls) {
-    const ruleNames = this.ruleIdByName.values();
+    const ruleNames = this.ruleIdByName.keys();
     assert(this.importCount() === prebuilt.destImportCount, 'import count mismatch');
 
     // Ensure that `ruleNames` is in the correct order.
