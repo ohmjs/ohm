@@ -174,10 +174,21 @@ function doMatch(startRuleId: i32): ApplyResult {
   const succeeded = evalApply0(startRuleId) !== 0;
   if (succeeded) {
     maybeSkipSpaces(startRuleId);
-    // printI32(heap.alloc(8) - __heap_base); // Print heap usage.
-    // TODO: Do we need to update rightmostFailurePos here?
     assert(pos <= endPos);
-    return pos === endPos;
+    if (pos === endPos) {
+      return true;
+    }
+    // Implicit end check failed: there's trailing input.
+    // Use max() to preserve earlier rightmost failures (e.g., from backtracking).
+    // Note: "end of input" is always failure ID 0 (see Compiler.js).
+    rightmostFailurePos = max(rightmostFailurePos, <i32>pos);
+    if (errorMessagePos === <i32>pos) {
+      // Clear any existing failures at this position (they would be from
+      // repetitions that succeeded, which Ohm.js marks as "fluffy").
+      recordedFailures.length = 0;
+      recordFailure(0);
+    }
+    return false;
   }
 
   return false;

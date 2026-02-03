@@ -806,6 +806,10 @@ export class Compiler {
     this.ruleIdByName = new StringTable();
     this._failureDescriptions = new StringTable();
 
+    // Ensure "end of input" is always at index 0, so the runtime can use it
+    // for the implicit end check.
+    this._endOfInputFailureId = this._failureDescriptions.add('end of input');
+
     // For non-memoized rules, we defer assigning IDs until all memoized
     // rule names have been assigned.
     this._deferredRuleIds = new Set();
@@ -831,9 +835,11 @@ export class Compiler {
   toFailure(exp) {
     switch (exp.type) {
       case 'Range':
-        return this.getOrAddFailure(`${JSON.stringify(exp.lo)}..${JSON.stringify(exp.lo)}`);
+        return this.getOrAddFailure(`${JSON.stringify(exp.lo)}..${JSON.stringify(exp.hi)}`);
       case 'Terminal':
         return this.getOrAddFailure(JSON.stringify(exp.value));
+      case 'End':
+        return this.getOrAddFailure('end of input');
       default:
         return -1;
       // throw new Error(`Not implemented: toFailure for ${exp.type}`);
@@ -1806,7 +1812,8 @@ export class Compiler {
     const {asm} = this;
     const failureId = this.toFailure(exp);
     this.wrapTerminalLike(() => {
-      asm.nextCharCode();
+      // Use currCharCode (not nextCharCode) so failure position is correct.
+      asm.currCharCode();
 
       // if (c > hi) return 0;
       asm.dup();
@@ -1818,6 +1825,9 @@ export class Compiler {
       asm.i32Const(lo);
       asm.emit(instr.i32.lt_u);
       asm.condBreak(asm.depthOf('failure'));
+
+      // Success - increment position.
+      asm.incPos();
     }, failureId);
   }
 
@@ -1897,10 +1907,10 @@ export class Compiler {
           },
           'failure'
         );
-        // Use actual failing position (pos) for rightmost failure tracking,
-        // not the terminal's start position (postSpacesPos).
-        asm.updateLocalFailurePos(() => asm.globalGet('pos'));
-        asm.maybeRecordFailure(() => asm.globalGet('pos'), failureId);
+        // Use the terminal's start position (postSpacesPos) for failure tracking,
+        // not the actual failing position (pos). This matches Ohm.js behavior.
+        asm.updateLocalFailurePos(() => asm.localGet('postSpacesPos'));
+        asm.maybeRecordFailure(() => asm.localGet('postSpacesPos'), failureId);
         asm.setRet(0);
       },
       '_done'
