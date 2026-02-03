@@ -757,6 +757,16 @@ class Assembler {
     return this._blockStack.length - i - 1;
   }
 
+  maybeMarkFailuresAsFluffy() {
+    // Only mark if we're in error recording mode (errorMessagePos >= 0)
+    this.globalGet('errorMessagePos');
+    this.i32Const(0);
+    this.emit(instr.i32.ge_s);
+    this.if(w.blocktype.empty, () => {
+      this.callPrebuiltFunc('makeFluffy');
+    });
+  }
+
   ruleEvalReturn() {
     // Convert the value in `ret` to a single bit in position 0.
     this.localGet('ret');
@@ -975,7 +985,8 @@ export class Compiler {
     asm.addGlobal('__ASC_RUNTIME', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
     asm.addGlobal('bindings', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('recordedFailures', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('__heap_base', w.valtype.i32, w.mut.var, () => asm.i32Const(65900));
+    asm.addGlobal('fluffyFailureIds', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('__heap_base', w.valtype.i32, w.mut.var, () => asm.i32Const(65948));
 
     // Reserve a fixed number of imports for debug labels.
     if (DEBUG) {
@@ -1366,6 +1377,7 @@ export class Compiler {
       'bindingsAt',
       'getBindingsLength',
       'getRecordedFailuresLength',
+      'isFluffy',
       'match',
       'recordedFailuresAt',
       'recordFailures',
@@ -1757,6 +1769,12 @@ export class Compiler {
     this.emitPExpr(child);
     asm.restoreBindingsLength();
     asm.restorePos();
+
+    // When lookahead succeeds, mark failures as fluffy
+    asm.localGet('ret');
+    asm.if(w.blocktype.empty, () => {
+      asm.maybeMarkFailuresAsFluffy();
+    });
   }
 
   emitNot({child}) {
@@ -1780,6 +1798,20 @@ export class Compiler {
     asm.popStackFrame(); // Pop inner frame.
     asm.restoreBindingsLength();
     asm.restorePos();
+
+    asm.localGet('ret');
+    asm.ifElse(
+      w.blocktype.empty,
+      () => {
+        // When not succeeds (child failed), mark failures as fluffy
+        asm.maybeMarkFailuresAsFluffy();
+      },
+      () => {
+        // When not fails (child succeeded), update failurePos to origPos.
+        // This is equivalent to Ohm.js's processFailure(origPos, this).
+        asm.updateLocalFailurePos(() => asm.getSavedPos());
+      }
+    );
   }
 
   emitOpt({child}) {
@@ -1791,6 +1823,7 @@ export class Compiler {
       asm.restoreBindingsLength();
     });
     asm.newIterNodeWithSavedPosAndBindings(ir.outArity(child), true);
+    asm.maybeMarkFailuresAsFluffy(); // Opt always succeeds, so mark failures as fluffy
     asm.localSet('ret');
   }
 
@@ -1881,6 +1914,7 @@ export class Compiler {
     asm.restoreBindingsLength();
     asm.popStackFrame();
     asm.newIterNodeWithSavedPosAndBindings(ir.outArity(child));
+    asm.maybeMarkFailuresAsFluffy(); // Star always succeeds, so mark failures as fluffy
     asm.localSet('ret');
   }
 

@@ -285,12 +285,16 @@ export class WasmGrammar {
 
   recordFailures() {
     const {exports} = this._instance as any;
-    exports.recordFailures(this._ruleNames[0]);
+    exports.recordFailures(this._ruleIds.get(this._ruleNames[0]));
     const ans: number[] = [];
     for (let i = 0; i < exports.getRecordedFailuresLength(); i++) {
-      ans.push(exports.recordedFailuresAt(i));
+      if (!exports.isFluffy(i)) {
+        // Filter out fluffy failures
+        ans.push(exports.recordedFailuresAt(i));
+      }
     }
-    return ans;
+    // Deduplicate
+    return [...new Set(ans)];
   }
 
   getMemorySizeBytes(): number {

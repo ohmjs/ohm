@@ -71,6 +71,7 @@ let errorMessagePos: i32 = -1;
 let sp: usize = 0;
 let bindings: Array<i32> = new Array<i32>();
 let recordedFailures: Array<i32> = new Array<i32>();
+let fluffyFailureIds: Set<i32> = new Set<i32>();
 
 @inline function max<T>(a: T, b: T): T {
   return a > b ? a : b;
@@ -206,6 +207,7 @@ export function recordFailures(startRuleId: i32): void {
   resetParsingState();  // Reset parsing state (but not errorMessagePos)
   errorMessagePos = savedFailurePos;  // Set errorMessagePos to failure pos
   recordedFailures = new Array<i32>();
+  fluffyFailureIds.clear();  // Reset fluffy tracking
   doMatch(startRuleId);  // Re-match with errorMessagePos set
 }
 
@@ -368,6 +370,17 @@ export function doMatchUnicodeChar(categoryBitmap: i32): bool {
 
 export function recordFailure(id: i32): void {
   recordedFailures.push(id);
+  fluffyFailureIds.delete(id);  // Clear fluffy status
+}
+
+export function makeFluffy(): void {
+  for (let i = 0; i < recordedFailures.length; i++) {
+    fluffyFailureIds.add(recordedFailures[i]);
+  }
+}
+
+export function isFluffy(idx: i32): bool {
+  return fluffyFailureIds.has(recordedFailures[idx]);
 }
 
 export function getRecordedFailuresLength(): i32 {
