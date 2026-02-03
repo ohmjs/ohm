@@ -1251,9 +1251,9 @@ const errorMessageGrammars = [
   'G { start = "a"+ }',
   'G { start = digit+ }',
   'G { start = "a".."z" }',
-  'G { start = foo | bar\n  foo = "foo"\n  bar = "bar" }',
+  'G { start = foo | bar\n  foo = "abc"\n  bar = "123" }',
   'G { start = foo\n  foo (a foo) = "x" "y" }',
-  'G { start = foo | bar\n  foo (a foo) = "foo"\n  bar (a bar) = "bar" }',
+  'G { start = foo | bar\n  foo (a foo) = "abc"\n  bar (a bar) = "xy" }',
   'G { start = letter+ }',
   'G { start = any end }',
   'G { start = "a"* "b" }',
@@ -1264,12 +1264,18 @@ const errorMessageGrammars = [
 ];
 
 test('fast-check: error messages match JS impl', async t => {
+  // Bias input generation toward characters used in the test grammars.
+  const inputArb = fc.oneof(
+    fc.array(fc.constantFrom(...'abc123xy'), {maxLength: 10}).map(arr => arr.join('')),
+    fc.string({maxLength: 10})
+  );
+
   for (const source of errorMessageGrammars) {
     const ohmG = ohm.grammar(source);
     const wasmG = await toWasmGrammar(ohmG);
 
     const result = fc.check(
-      fc.property(fc.string({maxLength: 10}), input => {
+      fc.property(inputArb, input => {
         const ohmResult = ohmG.match(input);
         return wasmG.match(input).use(wasmResult => {
           assert.equal(
