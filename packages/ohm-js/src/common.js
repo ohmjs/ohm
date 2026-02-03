@@ -201,7 +201,7 @@ export function getDuplicates(array) {
   const duplicates = new Set();
   for (let idx = 0; idx < array.length; idx++) {
     const x = array[idx];
-    if (array.lastIndexOf(x) !== idx && duplicates.has(x) < 0) {
+    if (array.lastIndexOf(x) !== idx && !duplicates.has(x)) {
       duplicates.add(x);
     }
   }

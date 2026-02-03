@@ -39,7 +39,7 @@ class Wrapper {
 
   _forgetMemoizedResultFor(attributeName) {
     // Remove the memoized attribute from the cstNode and all its children.
-    this._node[this._semantics.attributeKeys[attributeName]] = undefined;
+    delete this._node[this._semantics.attributeKeys[attributeName]];
     this.children.forEach(child => {
       child._forgetMemoizedResultFor(attributeName);
     });
