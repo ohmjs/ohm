@@ -1259,8 +1259,9 @@ const errorMessageGrammars = [
   'G { start = "a"* "b" }',
   'G { start = "a"? "b" }',
   'G { start = &"a" any }',
-  // Note: '~"x" any' requires recording "not X" failures, which is a
-  // separate feature from fluffy failure handling.
+  'G { start = &("x" | "a") "b" }', // Lookahead succeeds, internal failures are fluffy
+  // Note: '~"x" "y"' would test fluffy failures for Not, but that requires
+  // recording "not X" failures, which is a separate unimplemented feature.
 ];
 
 test('fast-check: error messages match JS impl', async t => {
