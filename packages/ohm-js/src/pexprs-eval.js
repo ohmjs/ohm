@@ -222,7 +222,7 @@ pexprs.Apply.prototype.eval = function (state) {
     if (state.hasNecessaryInfo(memoRec)) {
       return state.useMemoizedResult(state.inputStream.pos, memoRec);
     }
-    delete posInfo.memo[memoKey];
+    posInfo.memo[memoKey] = undefined;
   }
   return app.reallyEval(state);
 };
