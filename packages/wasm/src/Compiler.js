@@ -1640,10 +1640,28 @@ export class Compiler {
     const {asm} = this;
     const failureId = this.toFailure(exp);
     this.wrapTerminalLike(() => {
+      // Get current char code and save it for later surrogate check
+      asm.currCharCode();
+      asm.localTee('tmp');
+      asm.incPos();
+
+      // Check if at end of input
       asm.i32Const(CHAR_CODE_END);
-      asm.nextCharCode();
       asm.i32Eq();
       asm.condBreak(asm.depthOf('failure'));
+
+      // Check if char code is a high surrogate (0xD800-0xDBFF).
+      // If so, skip the low surrogate by incrementing position again.
+      asm.localGet('tmp');
+      asm.i32Const(0xd800);
+      asm.emit(instr.i32.ge_u);
+      asm.localGet('tmp');
+      asm.i32Const(0xdbff);
+      asm.emit(instr.i32.le_u);
+      asm.emit(instr.i32.and);
+      asm.if(w.blocktype.empty, () => {
+        asm.incPos();
+      });
     }, failureId);
   }
 

@@ -1071,7 +1071,7 @@ test('matching at end', async t => {
   t.is(matchWithInput(wasmGrammar, ''), 0);
 });
 
-test.failing('any consumes an entire code point', async t => {
+test('any consumes an entire code point', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { start = any }'));
   t.assert('😇'.length === 2);
   t.true(g.match('😇').succeeded());
