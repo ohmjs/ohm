@@ -1256,11 +1256,6 @@ const errorMessageGrammars = [
   'G { start = foo | bar\n  foo (a foo) = "foo"\n  bar (a bar) = "bar" }',
   'G { start = letter+ }',
   'G { start = any end }',
-];
-
-// Grammars where the Wasm version doesn't filter "fluffy" failures the way
-// Ohm.js does.
-const errorMessageGrammarsKnownFailing = [
   'G { start = "a"* "b" }',
   'G { start = "a"? "b" }',
   'G { start = &"a" any }',
@@ -1270,43 +1265,6 @@ const errorMessageGrammarsKnownFailing = [
 
 test('fast-check: error messages match JS impl', async t => {
   for (const source of errorMessageGrammars) {
-    const ohmG = ohm.grammar(source);
-    const wasmG = await toWasmGrammar(ohmG);
-
-    const result = fc.check(
-      fc.property(fc.string({maxLength: 10}), input => {
-        const ohmResult = ohmG.match(input);
-        return wasmG.match(input).use(wasmResult => {
-          assert.equal(
-            ohmResult.succeeded(),
-            wasmResult.succeeded(),
-            'success/failure mismatch'
-          );
-          if (ohmResult.succeeded()) return true;
-
-          assert.equal(
-            ohmResult.getRightmostFailurePosition(),
-            wasmResult.getRightmostFailurePosition(),
-            'failure position mismatch'
-          );
-
-          const ohmExpected = getExpectedSet(ohmResult);
-          const wasmExpected = getWasmExpectedSet(wasmG);
-          assert(
-            setsEqual(ohmExpected, wasmExpected),
-            `expected tokens mismatch: ohm=${[...ohmExpected]}, wasm=${[...wasmExpected]}`
-          );
-          return true;
-        });
-      }),
-      {numRuns: 100, includeErrorInReport: true}
-    );
-    t.false(result.failed, `${source}\n${fc.defaultReportMessage(result)}`);
-  }
-});
-
-test('fast-check: error messages (fluffy failures)', async t => {
-  for (const source of errorMessageGrammarsKnownFailing) {
     const ohmG = ohm.grammar(source);
     const wasmG = await toWasmGrammar(ohmG);
 
