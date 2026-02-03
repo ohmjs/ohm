@@ -219,8 +219,8 @@ export function copyWithoutDuplicates(array) {
 }
 
 export function isSyntactic(ruleName) {
-  const firstChar = ruleName[0];
-  return firstChar === firstChar.toUpperCase();
+  const code = ruleName.charCodeAt(0);
+  return code >= 65 && code <= 90;
 }
 
 export function isLexical(ruleName) {
