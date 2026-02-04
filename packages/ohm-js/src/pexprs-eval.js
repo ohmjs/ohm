@@ -133,12 +133,15 @@ pexprs.Iter.prototype.eval = function (state) {
     }
     prevPos = inputStream.pos;
     numMatches++;
-    const row = state._bindings.splice(state._bindings.length - arity, arity);
-    const rowOffsets = state._bindingOffsets.splice(
-      state._bindingOffsets.length - arity,
-      arity
-    );
-    for (idx = 0; idx < row.length; idx++) {
+    // Avoid using `splice` which allocates an array; use repeated `pop` which is faster
+    // in hot loops and preserves insertion order by filling from the end.
+    const row = new Array(arity);
+    const rowOffsets = new Array(arity);
+    for (let j = arity - 1; j >= 0; j--) {
+      row[j] = state._bindings.pop();
+      rowOffsets[j] = state._bindingOffsets.pop();
+    }
+    for (idx = 0; idx < arity; idx++) {
       cols[idx].push(row[idx]);
       colOffsets[idx].push(rowOffsets[idx]);
     }
@@ -336,8 +339,13 @@ pexprs.Apply.prototype.evalOnce = function (expr, state) {
 
   if (state.eval(expr)) {
     const arity = expr.getArity();
-    const bindings = state._bindings.splice(state._bindings.length - arity, arity);
-    const offsets = state._bindingOffsets.splice(state._bindingOffsets.length - arity, arity);
+    // Avoid Array.prototype.splice allocation in hot path; use pop into preallocated arrays
+    const bindings = new Array(arity);
+    const offsets = new Array(arity);
+    for (let j = arity - 1; j >= 0; j--) {
+      bindings[j] = state._bindings.pop();
+      offsets[j] = state._bindingOffsets.pop();
+    }
     const matchLength = inputStream.pos - origPos;
     return new NonterminalNode(this.ruleName, bindings, offsets, matchLength);
   } else {
