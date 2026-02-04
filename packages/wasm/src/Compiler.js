@@ -624,7 +624,7 @@ class Assembler {
     this.localSet('failurePos');
   }
 
-  maybeRecordFailure(origPosThunk, failureId) {
+  maybeRecordFailure(origPosThunk, failureId, isNot = false) {
     this.globalGet('errorMessagePos');
     this.i32Const(0);
     this.emit(instr.i32.ge_s);
@@ -635,7 +635,9 @@ class Assembler {
       this.if(w.blocktype.empty, () => {
         this.emit('failure#' + failureId);
         if (failureId === undefined) throw new Error('bad failureId');
-        this.i32Const(failureId);
+        // When isNot is true, set the high bit to indicate a negated failure.
+        const idToRecord = isNot ? failureId | 0x80000000 : failureId;
+        this.i32Const(idToRecord);
         this.callPrebuiltFunc('recordFailure');
       });
     });
@@ -844,15 +846,25 @@ export class Compiler {
 
   toFailure(exp) {
     switch (exp.type) {
+      case 'Any':
+        return this.getOrAddFailure('any character');
       case 'Range':
         return this.getOrAddFailure(`${JSON.stringify(exp.lo)}..${JSON.stringify(exp.hi)}`);
       case 'Terminal':
         return this.getOrAddFailure(JSON.stringify(exp.value));
       case 'End':
         return this.getOrAddFailure('end of input');
+      case 'Apply':
+        // Use the rule's description if it has one.
+        if (exp.descriptionId != null && exp.descriptionId >= 0) {
+          return exp.descriptionId;
+        }
+        // Fallback for built-in rules without descriptions.
+        if (exp.ruleName === 'end') return this.getOrAddFailure('end of input');
+        if (exp.ruleName === 'any') return this.getOrAddFailure('any character');
+        return -1;
       default:
         return -1;
-      // throw new Error(`Not implemented: toFailure for ${exp.type}`);
     }
   }
 
@@ -1276,7 +1288,7 @@ export class Compiler {
             newRules.set(specializedName, {...ruleInfo, body, formals: []});
           }
           // Replace with an application of the specialized rule.
-          return ir.apply(specializedName, exp.descriptionId);
+          return ir.apply(specializedName, app.descriptionId);
         },
         CaseInsensitive: exp => {
           hasCaseInsensitiveTerminals = true;
@@ -1779,6 +1791,7 @@ export class Compiler {
 
   emitNot({child}) {
     const {asm} = this;
+    const failureId = this.toFailure(child);
 
     // Push an inner stack frame with the failure positions.
     asm.pushStackFrame(() => {
@@ -1809,7 +1822,13 @@ export class Compiler {
       () => {
         // When not fails (child succeeded), update failurePos to origPos.
         // This is equivalent to Ohm.js's processFailure(origPos, this).
-        asm.updateLocalFailurePos(() => asm.getSavedPos());
+        // Note: pos has already been restored by restorePos() above.
+        asm.updateLocalFailurePos(() => asm.globalGet('pos'));
+        asm.updateGlobalFailurePos();
+
+        if (failureId >= 0) {
+          asm.maybeRecordFailure(() => asm.globalGet('pos'), failureId, true);
+        }
       }
     );
   }

@@ -297,6 +297,13 @@ export class WasmGrammar {
     return [...new Set(ans)];
   }
 
+  getFailureDescription(id: number): string {
+    const isNot = (id & 0x80000000) !== 0;
+    const realId = id & 0x7fffffff;
+    const desc = this._failureDescriptions[realId];
+    return isNot ? 'not ' + desc : desc;
+  }
+
   getMemorySizeBytes(): number {
     return (this._instance as any).exports.memory.buffer.byteLength;
   }
@@ -866,12 +873,9 @@ export class FailedMatchResult extends MatchResult {
   }
 
   get shortMessage(): string {
-    return (
-      'Expected ' +
-      this.grammar
-        .recordFailures()
-        .map(id => this.grammar._failureDescriptions[id])
-        .join(', ')
-    );
+    const descriptions = this.grammar
+      .recordFailures()
+      .map(id => this.grammar.getFailureDescription(id));
+    return 'Expected ' + descriptions.join(', ');
   }
 }

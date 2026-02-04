@@ -1260,8 +1260,6 @@ const errorMessageGrammars = [
   'G { start = "a"? "b" }',
   'G { start = &"a" any }',
   'G { start = &("x" | "a") "b" }', // Lookahead succeeds, internal failures are fluffy
-  // Note: '~"x" "y"' would test fluffy failures for Not, but that requires
-  // recording "not X" failures, which is a separate unimplemented feature.
 ];
 
 test('fast-check: error messages match JS impl', async t => {
@@ -1304,5 +1302,44 @@ test('fast-check: error messages match JS impl', async t => {
       {numRuns: 100, includeErrorInReport: true}
     );
     t.false(result.failed, `${source}\n${fc.defaultReportMessage(result)}`);
+  }
+});
+
+// Test failure descriptions for each expression type, both positive and negated.
+test('failure descriptions match JS impl', async t => {
+  // Each test case: [grammar source, input, description]
+  // Positive (non-negated) cases:
+  const testCases = [
+    ['G { start = "x" }', '0', 'Terminal'],
+    ['G { start = "a".."z" }', '0', 'Range'],
+    ['G { start = end }', 'x', 'End'],
+    ['G { start = any }', '', 'any'],
+    ['G { start = digit }', 'x', 'digit'],
+    // Negated cases:
+    ['G { start = ~"x" "y" }', 'x', '~Terminal'],
+    ['G { start = ~("a".."z") "0" }', 'a', '~Range'],
+    ['G { start = ~end any }', '', '~End'],
+    ['G { start = ~any "x" }', 'a', '~any'],
+    ['G { start = ~digit letter }', '5', '~digit'],
+  ];
+
+  for (const [source, input, desc] of testCases) {
+    const ohmG = ohm.grammar(source);
+    const wasmG = await toWasmGrammar(ohmG);
+
+    const ohmResult = ohmG.match(input);
+    const ohmExpected = getExpectedSet(ohmResult);
+
+    wasmG.match(input).use(wasmResult => {
+      t.false(wasmResult.succeeded(), `${desc}: expected failure`);
+      // Extract failures from shortMessage (format: "Expected X, Y, Z")
+      const wasmExpected = new Set(
+        wasmResult.shortMessage.replace('Expected ', '').split(', ')
+      );
+      t.true(
+        setsEqual(ohmExpected, wasmExpected),
+        `${desc}: expected ${[...ohmExpected]}, got ${[...wasmExpected]}`
+      );
+    });
   }
 });
