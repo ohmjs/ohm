@@ -1,14 +1,4 @@
-import type {MatchResult, Grammar, Semantics} from '../index.d.ts';
-
-interface LineAndColumnInfo {
-  offset: number;
-  lineNumber: number;
-  colNum: number;
-  line: string;
-  prevLine: string;
-  nextLine: string;
-  toString(...ranges: number[][]): string;
-}
+import type {Grammar, LineAndColumnInfo, MatchResult, Semantics} from '../index.d.ts';
 
 export function toAST(matchResult: MatchResult, mapping?: {}): {};
 export function semanticsForToAST(g: Grammar): Semantics;
