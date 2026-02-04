@@ -1232,13 +1232,9 @@ test('shortMessage (descriptions): rightmost failure wins', async t => {
   t.true(msg.includes('"abc"'));
 });
 
-function getExpectedSet(ohmResult) {
-  const failures = ohmResult.getRightmostFailures() || [];
+function getExpectedSet(result) {
+  const failures = result.getRightmostFailures() || [];
   return new Set(failures.filter(f => !f.isFluffy()).map(f => f.toString()));
-}
-
-function getWasmExpectedSet(wasmGrammar) {
-  return new Set(wasmGrammar.recordFailures().map(id => wasmGrammar._failureDescriptions[id]));
 }
 
 function setsEqual(a, b) {
@@ -1291,7 +1287,7 @@ test('fast-check: error messages match JS impl', async t => {
           );
 
           const ohmExpected = getExpectedSet(ohmResult);
-          const wasmExpected = getWasmExpectedSet(wasmG);
+          const wasmExpected = getExpectedSet(wasmResult);
           assert(
             setsEqual(ohmExpected, wasmExpected),
             `expected tokens mismatch: ohm=${[...ohmExpected]}, wasm=${[...wasmExpected]}`
@@ -1332,14 +1328,71 @@ test('failure descriptions match JS impl', async t => {
 
     wasmG.match(input).use(wasmResult => {
       t.false(wasmResult.succeeded(), `${desc}: expected failure`);
-      // Extract failures from shortMessage (format: "Expected X, Y, Z")
-      const wasmExpected = new Set(
-        wasmResult.shortMessage.replace('Expected ', '').split(', ')
-      );
+      const wasmExpected = getExpectedSet(wasmResult);
       t.true(
         setsEqual(ohmExpected, wasmExpected),
         `${desc}: expected ${[...ohmExpected]}, got ${[...wasmExpected]}`
       );
     });
+  }
+});
+
+// Test for FailedMatchResult methods: getExpectedText, message, getInterval.
+test('fast-check: FailedMatchResult methods match JS impl', async t => {
+  const inputArb = fc.oneof(
+    fc.array(fc.constantFrom(...'abc123xy'), {maxLength: 10}).map(arr => arr.join('')),
+    fc.string({maxLength: 10})
+  );
+
+  for (const source of errorMessageGrammars) {
+    const ohmG = ohm.grammar(source);
+    const wasmG = await toWasmGrammar(ohmG);
+
+    const result = fc.check(
+      fc.property(inputArb, input => {
+        const ohmResult = ohmG.match(input);
+        if (ohmResult.succeeded()) return true;
+
+        return wasmG.match(input).use(wasmResult => {
+          assert(wasmResult.failed(), 'expected wasm match to fail');
+
+          const ohmExpectedSet = getExpectedSet(ohmResult);
+          const wasmExpectedSet = getExpectedSet(wasmResult);
+
+          // Verify the sets match
+          assert(
+            setsEqual(ohmExpectedSet, wasmExpectedSet),
+            `mismatch: ohm=${[...ohmExpectedSet]}, wasm=${[...wasmExpectedSet]}`
+          );
+
+          // Test getExpectedText() - verify it contains all expected items
+          const expectedText = wasmResult.getExpectedText();
+          for (const item of wasmExpectedSet) {
+            assert(expectedText.includes(item), `getExpectedText missing: ${item}`);
+          }
+
+          // Test message property - check format and content
+          assert(wasmResult.message.includes('Line '), 'message should include Line info');
+          assert(wasmResult.message.includes('Expected '), 'message should include Expected');
+          for (const item of wasmExpectedSet) {
+            assert(wasmResult.message.includes(item), `message missing: ${item}`);
+          }
+
+          // Test getInterval()
+          const ohmInterval = ohmResult.getInterval();
+          const wasmInterval = wasmResult.getInterval();
+          assert.equal(
+            ohmInterval.startIdx,
+            wasmInterval.startIdx,
+            'interval startIdx mismatch'
+          );
+          assert.equal(ohmInterval.endIdx, wasmInterval.endIdx, 'interval endIdx mismatch');
+
+          return true;
+        });
+      }),
+      {numRuns: 100, includeErrorInReport: true}
+    );
+    t.false(result.failed, `${source}\n${fc.defaultReportMessage(result)}`);
   }
 });

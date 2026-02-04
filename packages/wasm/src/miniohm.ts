@@ -1,4 +1,5 @@
 import {assert, checkNotNull} from './assert.ts';
+import {getLineAndColumn, getLineAndColumnMessage} from '../../ohm-js/src/util.js';
 
 const MATCH_RECORD_TYPE_MASK = 0b11;
 
@@ -43,6 +44,45 @@ const UnicodeCategoryNames = [
 ];
 
 const utf8 = new TextDecoder('utf-8');
+
+// Minimal implementation of Interval (for FailedMatchResult)
+export class Interval {
+  startIdx: number;
+  endIdx: number;
+  private _sourceString: string;
+
+  constructor(sourceString: string, startIdx: number, endIdx: number) {
+    this._sourceString = sourceString;
+    this.startIdx = startIdx;
+    this.endIdx = endIdx;
+  }
+
+  get sourceString(): string {
+    return this._sourceString;
+  }
+
+  get contents(): string {
+    return this._sourceString.slice(this.startIdx, this.endIdx);
+  }
+}
+
+export class Failure {
+  private _description: string;
+  private _fluffy: boolean;
+
+  constructor(description: string, fluffy: boolean) {
+    this._description = description;
+    this._fluffy = fluffy;
+  }
+
+  isFluffy(): boolean {
+    return this._fluffy;
+  }
+
+  toString(): string {
+    return this._description;
+  }
+}
 
 function regexFromCategoryBitmap(bitmap: number): RegExp {
   const cats: string[] = [];
@@ -774,6 +814,10 @@ export class MatchResult {
     this._succeeded = succeeded;
   }
 
+  get input(): string {
+    return (this.grammar as any)._input;
+  }
+
   [Symbol.dispose]() {
     this.detach();
   }
@@ -838,44 +882,94 @@ export class FailedMatchResult extends MatchResult {
     startExpr: string,
     ctx: MatchContext,
     succeeded: boolean,
-    rightmostFailurePosition: number,
-    optRecordedFailures?: any
+    rightmostFailurePosition: number
   ) {
     super(grammar, startExpr, ctx, succeeded);
     this._rightmostFailurePosition = rightmostFailurePosition;
-    this._rightmostFailures = optRecordedFailures;
-
-    // TODO: Define these as lazy properties, like in the JS implementation.
-    // this.shortMessage = this.message = `Match failed at pos ${rightmostFailurePosition}`;
   }
 
   _rightmostFailurePosition: number;
-  _rightmostFailures: any;
-  // message: string;
+  private _rightmostFailures: Failure[] | null = null;
+  private _failureDescriptions: string[] | null = null;
 
   getRightmostFailurePosition(): number {
     return this._rightmostFailurePosition;
   }
 
-  getRightmostFailures(): any {
-    throw new Error('Not implemented yet: getRightmostFailures');
+  getRightmostFailures(): Failure[] {
+    if (this._rightmostFailures === null) {
+      const {exports} = (this.grammar as any)._instance;
+      const ruleIds = (this.grammar as any)._ruleIds;
+      const ruleNames = (this.grammar as any)._ruleNames;
+      exports.recordFailures(ruleIds.get(ruleNames[0]));
+
+      // Use a Map to deduplicate by description while preserving fluffy status.
+      // A failure is only fluffy if ALL occurrences are fluffy.
+      const failureMap = new Map<string, boolean>();
+      for (let i = 0; i < exports.getRecordedFailuresLength(); i++) {
+        const id = exports.recordedFailuresAt(i);
+        const desc = this.grammar.getFailureDescription(id);
+        const fluffy = exports.isFluffy(i);
+        if (failureMap.has(desc)) {
+          // Only keep fluffy=true if both are fluffy
+          failureMap.set(desc, failureMap.get(desc)! && fluffy);
+        } else {
+          failureMap.set(desc, fluffy);
+        }
+      }
+
+      this._rightmostFailures = Array.from(failureMap.entries()).map(
+        ([desc, fluffy]) => new Failure(desc, fluffy)
+      );
+    }
+    return this._rightmostFailures;
+  }
+
+  // Get the non-fluffy failure descriptions.
+  private _getFailureDescriptions(): string[] {
+    if (this._failureDescriptions === null) {
+      this._failureDescriptions = this.getRightmostFailures()
+        .filter(f => !f.isFluffy())
+        .map(f => f.toString());
+    }
+    return this._failureDescriptions;
   }
 
   // Return a string summarizing the expected contents of the input stream when
   // the match failure occurred.
   getExpectedText(): string {
     assert(!this._succeeded, 'cannot get expected text of a successful MatchResult');
-    throw new Error('Not implemented yet: getExpectedText');
+    const descriptions = this._getFailureDescriptions();
+    switch (descriptions.length) {
+      case 0:
+        return '';
+      case 1:
+        return descriptions[0];
+      case 2:
+        return descriptions[0] + ' or ' + descriptions[1];
+      default:
+        // For 3+ items: "a, b, or c"
+        return (
+          descriptions.slice(0, -1).join(', ') +
+          ', or ' +
+          descriptions[descriptions.length - 1]
+        );
+    }
   }
 
-  getInterval() {
-    throw new Error('Not implemented yet: getInterval');
+  getInterval(): Interval {
+    const pos = this.getRightmostFailurePosition();
+    return new Interval(this.input, pos, pos);
+  }
+
+  get message(): string {
+    const detail = 'Expected ' + this.getExpectedText();
+    return getLineAndColumnMessage(this.input, this.getRightmostFailurePosition()) + detail;
   }
 
   get shortMessage(): string {
-    const descriptions = this.grammar
-      .recordFailures()
-      .map(id => this.grammar.getFailureDescription(id));
-    return 'Expected ' + descriptions.join(', ');
+    const detail = 'expected ' + this.getExpectedText();
+    const errorInfo = getLineAndColumn(this.input, this.getRightmostFailurePosition());
+    return 'Line ' + errorInfo.lineNum + ', col ' + errorInfo.colNum + ': ' + detail;
   }
 }
