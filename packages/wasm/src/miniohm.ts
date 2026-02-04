@@ -1,5 +1,5 @@
 import {assert, checkNotNull} from './assert.ts';
-import {getLineAndColumn, getLineAndColumnMessage} from '../../ohm-js/src/util.js';
+import {getLineAndColumn, getLineAndColumnMessage} from 'ohm-js/extras';
 
 const MATCH_RECORD_TYPE_MASK = 0b11;
 
