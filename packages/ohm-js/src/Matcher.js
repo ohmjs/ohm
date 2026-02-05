@@ -29,6 +29,14 @@ export class Matcher {
   replaceInputRange(startIdx, endIdx, str) {
     const prevInput = this._input;
     const memoTable = this._memoTable;
+
+    // Grammar.match() creates a fresh Matcher and calls replaceInputRange(0, 0, input).
+    // In that scenario, there is nothing to preserve or invalidate, so avoid extra work.
+    if (startIdx === 0 && endIdx === 0 && prevInput.length === 0 && memoTable.length === 0) {
+      this._input = '' + str;
+      memoTable.length = str.length;
+      return this;
+    }
     if (
       startIdx < 0 ||
       startIdx > prevInput.length ||
@@ -46,13 +54,32 @@ export class Matcher {
     }
 
     // update memo table (similar to the above)
-    const restOfMemoTable = memoTable.slice(endIdx);
-    memoTable.length = startIdx;
-    for (let idx = 0; idx < str.length; idx++) {
-      memoTable.push(undefined);
+    const oldLen = memoTable.length;
+    const deleteCount = endIdx - startIdx;
+    const insertCount = str.length;
+    const delta = insertCount - deleteCount;
+    const newLen = oldLen + delta;
+
+    // Move the tail segment to its new location.
+    if (oldLen > endIdx) {
+      if (delta > 0) {
+        // Grow first to make room, then shift the tail right.
+        memoTable.length = newLen;
+        memoTable.copyWithin(startIdx + insertCount, endIdx, oldLen);
+      } else if (delta < 0) {
+        // Shift the tail left first, then shrink (shrinking first would drop tail entries).
+        memoTable.copyWithin(startIdx + insertCount, endIdx, oldLen);
+        memoTable.length = newLen;
+      } else {
+        memoTable.copyWithin(startIdx + insertCount, endIdx, oldLen);
+      }
+    } else if (delta !== 0) {
+      memoTable.length = newLen;
     }
-    for (const posInfo of restOfMemoTable) {
-      memoTable.push(posInfo);
+
+    // Clear the inserted range.
+    if (insertCount > 0) {
+      memoTable.fill(undefined, startIdx, startIdx + insertCount);
     }
 
     // Invalidate memoRecs
