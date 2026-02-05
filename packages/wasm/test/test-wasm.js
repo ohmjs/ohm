@@ -1396,3 +1396,38 @@ test('fast-check: FailedMatchResult methods match JS impl', async t => {
     t.false(result.failed, `${source}\n${fc.defaultReportMessage(result)}`);
   }
 });
+
+test('accessing .message after detach throws an error', async t => {
+  const ohmGrammar = ohm.grammar('G { start = "a" "b" "c" }');
+  const wasmGrammar = await toWasmGrammar(ohmGrammar);
+
+  const input = 'ab'; // Missing "c"
+
+  const wasmResult = wasmGrammar.match(input);
+  wasmResult.detach();
+
+  t.true(wasmResult.failed(), 'wasm match should fail');
+
+  // Accessing .message after detach should throw
+  t.throws(
+    () => wasmResult.message,
+    {message: /Cannot access.*after MatchResult has been detached/}
+  );
+});
+
+test('accessing .message inside use() works correctly', async t => {
+  const ohmGrammar = ohm.grammar('G { start = "a" "b" "c" }');
+  const wasmGrammar = await toWasmGrammar(ohmGrammar);
+
+  const input = 'ab'; // Missing "c"
+
+  const ohmResult = ohmGrammar.match(input);
+  const wasmResult = wasmGrammar.match(input);
+
+  wasmResult.use(() => {
+    t.true(ohmResult.failed(), 'ohm-js match should fail');
+    t.true(wasmResult.failed(), 'wasm match should fail');
+
+    t.is(wasmResult.message, ohmResult.message, 'error messages should be identical');
+  });
+});

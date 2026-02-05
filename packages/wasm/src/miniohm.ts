@@ -298,6 +298,7 @@ export class WasmGrammar {
     );
     this._beginUse(result);
     this._endUse(result);
+    result._attached = false;
   }
 
   match<T>(input: string, ruleName?: string): MatchResult {
@@ -806,6 +807,7 @@ export class MatchResult {
   startExpr: string;
   _ctx: MatchContext;
   _succeeded: boolean;
+  _attached = true;
 
   constructor(grammar: WasmGrammar, startExpr: string, ctx: MatchContext, succeeded: boolean) {
     this.grammar = grammar;
@@ -877,6 +879,10 @@ export class SucceededMatchResult extends MatchResult {
 }
 
 export class FailedMatchResult extends MatchResult {
+  _rightmostFailurePosition: number;
+  private _rightmostFailures: Failure[] | null = null;
+  private _failureDescriptions: string[] | null = null;
+
   constructor(
     grammar: WasmGrammar,
     startExpr: string,
@@ -888,9 +894,14 @@ export class FailedMatchResult extends MatchResult {
     this._rightmostFailurePosition = rightmostFailurePosition;
   }
 
-  _rightmostFailurePosition: number;
-  private _rightmostFailures: Failure[] | null = null;
-  private _failureDescriptions: string[] | null = null;
+  private _assertAttached(property: string) {
+    if (!this._attached) {
+      throw new Error(
+        `Cannot access '${property}' after MatchResult has been detached. ` +
+          `Access failure information before calling detach(), or use result.use().`
+      );
+    }
+  }
 
   getRightmostFailurePosition(): number {
     return this._rightmostFailurePosition;
@@ -898,6 +909,7 @@ export class FailedMatchResult extends MatchResult {
 
   getRightmostFailures(): Failure[] {
     if (this._rightmostFailures === null) {
+      this._assertAttached('getRightmostFailures()');
       const {exports} = (this.grammar as any)._instance;
       const ruleIds = (this.grammar as any)._ruleIds;
       const ruleNames = (this.grammar as any)._ruleNames;
