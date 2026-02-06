@@ -12,9 +12,9 @@ export function isLexical(ruleName: any): boolean;
 export function padLeft(str: any, len: any, optChar: any): any;
 export function StringBuffer(): void;
 export class StringBuffer {
-    strings: any[];
-    append(str: any): void;
-    contents(): string;
+  strings: any[];
+  append(str: any): void;
+  contents(): string;
 }
 export function unescapeCodePoint(s: any): any;
 export function unexpectedObjToString(obj: any): string;
