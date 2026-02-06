@@ -1015,7 +1015,7 @@ export class Compiler {
 
     // Reserve a fixed number of imports for debug labels.
     if (DEBUG) {
-      for (let i = 0; i < 5000; i++) {
+      for (let i = 0; i < 10000; i++) {
         this.importDecls.push({
           module: 'debug',
           name: `debug${i}`,
@@ -1830,13 +1830,20 @@ export class Compiler {
   emitNot({child}) {
     const {asm} = this;
     const failureId = this.toFailure(child);
+    const NOT_FRAME_SIZE = 12;
 
-    // Push an inner stack frame with the failure positions.
-    asm.pushFluffySavePoint();
+    // Save failurePos, globalFailurePos, AND recordedFailures.length
+    // directly onto the stack frame. We use setRecordedFailuresLength
+    // to directly truncate after the child evaluation. This matches
+    // JS's pushFailuresInfo/popFailuresInfo for Not expressions.
     asm.pushStackFrame(() => {
-      asm.saveFailurePos();
-      asm.saveGlobalFailurePos();
-    });
+      asm.saveFailurePos(); // offset 0
+      asm.saveGlobalFailurePos(); // offset 4
+      // Save recordedFailures.length at offset 8
+      asm.globalGet('sp');
+      asm.callPrebuiltFunc('getRecordedFailuresLength');
+      asm.i32Store(8);
+    }, NOT_FRAME_SIZE);
     this.emitPExpr(child);
 
     // Invert the result.
@@ -1847,30 +1854,34 @@ export class Compiler {
     // Restore all global and local state.
     asm.restoreGlobalFailurePos();
     asm.restoreFailurePos();
-    asm.popStackFrame(); // Pop inner frame.
+
+    // Discard all child failures by restoring recordedFailures.length
+    // from the stack frame (offset 8). Only during the recording pass.
+    asm.globalGet('errorMessagePos');
+    asm.i32Const(0);
+    asm.emit(instr.i32.ge_s);
+    asm.if(w.blocktype.empty, () => {
+      asm.globalGet('sp');
+      asm.i32Load(8);
+      asm.callPrebuiltFunc('setRecordedFailuresLength');
+    });
+
+    asm.popStackFrame(NOT_FRAME_SIZE);
     asm.restoreBindingsLength();
     asm.restorePos();
 
     asm.localGet('ret');
-    asm.ifElse(
-      w.blocktype.empty,
-      () => {
-        // When not succeeds (child failed), mark inner failures as fluffy (scoped).
-        asm.maybeMarkFluffyFromSavePoint();
-      },
-      () => {
-        asm.callPrebuiltFunc('dropFluffySavePoint');
-        // When not fails (child succeeded), update failurePos to origPos.
-        // This is equivalent to Ohm.js's processFailure(origPos, this).
-        // Note: pos has already been restored by restorePos() above.
-        asm.updateLocalFailurePos(() => asm.globalGet('pos'));
-        asm.updateGlobalFailurePos();
+    asm.ifFalse(w.blocktype.empty, () => {
+      // When not fails (child succeeded), update failurePos to origPos.
+      // This is equivalent to Ohm.js's processFailure(origPos, this).
+      // Note: pos has already been restored by restorePos() above.
+      asm.updateLocalFailurePos(() => asm.globalGet('pos'));
+      asm.updateGlobalFailurePos();
 
-        if (failureId >= 0) {
-          asm.maybeRecordFailure(() => asm.globalGet('pos'), failureId, true);
-        }
+      if (failureId >= 0) {
+        asm.maybeRecordFailure(() => asm.globalGet('pos'), failureId, true);
       }
-    );
+    });
   }
 
   emitOpt({child}) {

@@ -918,7 +918,8 @@ export class FailedMatchResult extends MatchResult {
       // Use a Map to deduplicate by description while preserving fluffy status.
       // A failure is only fluffy if ALL occurrences are fluffy.
       const failureMap = new Map<string, boolean>();
-      for (let i = 0; i < exports.getRecordedFailuresLength(); i++) {
+      const len = exports.getRecordedFailuresLength();
+      for (let i = 0; i < len; i++) {
         const id = exports.recordedFailuresAt(i);
         const desc = this.grammar.getFailureDescription(id);
         const fluffy = exports.isFluffy(i);

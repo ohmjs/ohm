@@ -419,3 +419,11 @@ export function dropFluffySavePoint(): void {
   if (fluffySaveStack.length === 0) return;
   fluffySaveStack.pop();
 }
+
+export function discardFailuresFromSavePoint(): void {
+  if (errorMessagePos < 0) return;
+  if (fluffySaveStack.length === 0) return;
+  const savedLen = fluffySaveStack.pop();
+  recordedFailures.length = savedLen;
+  fluffyFlags.length = savedLen;
+}

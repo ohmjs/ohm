@@ -111,6 +111,25 @@ test('tagMarkup', async t => {
   t.true(r.succeeded());
 });
 
+test('Not discards child failures', async t => {
+  // Grammar where Not's child failures should be completely discarded
+  const simpleG = ohm.grammar('G { start = (~space any)+ ">" }');
+  const wg = await toWasmGrammar(simpleG);
+
+  // 'abc!' fails because no '>' at end. Inside the star, ~space tries space
+  // which fails and records "a space" — but Not should discard it.
+  const r1 = wg.match('abc!');
+  const jsR1 = simpleG.match('abc!');
+  t.is(r1.getExpectedText(), jsR1.getExpectedText());
+
+  // Test with alternation inside Not (like the real grammar)
+  const altG = ohm.grammar('G { start = (~(space | "\'" | "{{") any)+ ">" }');
+  const wg2 = await toWasmGrammar(altG);
+  const r2 = wg2.match('abc!');
+  const jsR2 = altG.match('abc!');
+  t.is(r2.getExpectedText(), jsR2.getExpectedText());
+});
+
 test('failure message', async t => {
   const g = await toWasmGrammar(grammars.LiquidHTML);
   const getExpectedText = input => {

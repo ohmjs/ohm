@@ -6,7 +6,7 @@ import * as w from '@wasmgroundup/emit';
 
 import {extractSections} from './modparse.ts';
 
-const debugFnCount = process.env.OHM_DEBUG === '1' ? 5000 : 0;
+const debugFnCount = process.env.OHM_DEBUG === '1' ? 10000 : 0;
 const defaultImportCount = 1; // Must match the size of `defaultImports` in Compiler.js
 const importAdjust = debugFnCount + defaultImportCount;
 
