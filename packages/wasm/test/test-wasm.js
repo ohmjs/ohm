@@ -1409,10 +1409,9 @@ test('accessing .message after detach throws an error', async t => {
   t.true(wasmResult.failed(), 'wasm match should fail');
 
   // Accessing .message after detach should throw
-  t.throws(
-    () => wasmResult.message,
-    {message: /Cannot access.*after MatchResult has been detached/}
-  );
+  t.throws(() => wasmResult.message, {
+    message: /Cannot access.*after MatchResult has been detached/,
+  });
 });
 
 test('accessing .message inside use() works correctly', async t => {

@@ -71,7 +71,7 @@ let errorMessagePos: i32 = -1;
 let sp: usize = 0;
 let bindings: Array<i32> = new Array<i32>();
 let recordedFailures: Array<i32> = new Array<i32>();
-let fluffyFailureIds: Set<i32> = new Set<i32>();
+let fluffyFlags: Array<bool> = new Array<bool>();
 
 @inline function max<T>(a: T, b: T): T {
   return a > b ? a : b;
@@ -187,6 +187,7 @@ function doMatch(startRuleId: i32): ApplyResult {
       // Clear any existing failures at this position (they would be from
       // repetitions that succeeded, which Ohm.js marks as "fluffy").
       recordedFailures.length = 0;
+      fluffyFlags.length = 0;
       recordFailure(0);
     }
     return false;
@@ -207,7 +208,8 @@ export function recordFailures(startRuleId: i32): void {
   resetParsingState();  // Reset parsing state (but not errorMessagePos)
   errorMessagePos = savedFailurePos;  // Set errorMessagePos to failure pos
   recordedFailures = new Array<i32>();
-  fluffyFailureIds.clear();  // Reset fluffy tracking
+  fluffyFlags = new Array<bool>();
+  fluffySaveStack = new Array<i32>();
   doMatch(startRuleId);  // Re-match with errorMessagePos set
 }
 
@@ -370,17 +372,17 @@ export function doMatchUnicodeChar(categoryBitmap: i32): bool {
 
 export function recordFailure(id: i32): void {
   recordedFailures.push(id);
-  fluffyFailureIds.delete(id);  // Clear fluffy status
+  fluffyFlags.push(false);
 }
 
-export function makeFluffy(): void {
-  for (let i = 0; i < recordedFailures.length; i++) {
-    fluffyFailureIds.add(recordedFailures[i]);
+export function makeFluffyFrom(startIdx: i32): void {
+  for (let i = startIdx; i < fluffyFlags.length; i++) {
+    fluffyFlags[i] = true;
   }
 }
 
 export function isFluffy(idx: i32): bool {
-  return fluffyFailureIds.has(recordedFailures[idx]);
+  return fluffyFlags[idx];
 }
 
 export function getRecordedFailuresLength(): i32 {
@@ -389,8 +391,31 @@ export function getRecordedFailuresLength(): i32 {
 
 export function setRecordedFailuresLength(len: i32): void {
   recordedFailures.length = len;
+  fluffyFlags.length = len;
 }
 
 export function recordedFailuresAt(i: i32): i32 {
   return recordedFailures[i];
+}
+
+let fluffySaveStack: Array<i32> = new Array<i32>();
+
+export function pushFluffySavePoint(): void {
+  if (errorMessagePos < 0) return;
+  fluffySaveStack.push(recordedFailures.length);
+}
+
+export function markFluffyFromSavePoint(): void {
+  if (errorMessagePos < 0) return;
+  if (fluffySaveStack.length === 0) return;
+  const startIdx = fluffySaveStack.pop();
+  for (let i = startIdx; i < fluffyFlags.length; i++) {
+    fluffyFlags[i] = true;
+  }
+}
+
+export function dropFluffySavePoint(): void {
+  if (errorMessagePos < 0) return;
+  if (fluffySaveStack.length === 0) return;
+  fluffySaveStack.pop();
 }

@@ -759,14 +759,26 @@ class Assembler {
     return this._blockStack.length - i - 1;
   }
 
-  maybeMarkFailuresAsFluffy() {
-    // Only mark if we're in error recording mode (errorMessagePos >= 0)
+  // Emit scoped fluffy marking: save the failure count, and after success
+  // at the recording position, mark only the new failures as fluffy.
+  // This mirrors ohm-js's MatchState.eval_ scoped failure recording.
+  pushFluffySavePoint() {
+    this.callPrebuiltFunc('pushFluffySavePoint');
+  }
+
+  maybeMarkFluffyFromSavePoint() {
     this.globalGet('errorMessagePos');
-    this.i32Const(0);
-    this.emit(instr.i32.ge_s);
-    this.if(w.blocktype.empty, () => {
-      this.callPrebuiltFunc('makeFluffy');
-    });
+    this.globalGet('pos');
+    this.i32Eq();
+    this.if(
+      w.blocktype.empty,
+      () => {
+        this.callPrebuiltFunc('markFluffyFromSavePoint');
+      },
+      () => {
+        this.callPrebuiltFunc('dropFluffySavePoint');
+      }
+    );
   }
 
   ruleEvalReturn() {
@@ -997,7 +1009,8 @@ export class Compiler {
     asm.addGlobal('__ASC_RUNTIME', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
     asm.addGlobal('bindings', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('recordedFailures', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('fluffyFailureIds', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('fluffyFlags', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('fluffySaveStack', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('__heap_base', w.valtype.i32, w.mut.var, () => asm.i32Const(65948));
 
     // Reserve a fixed number of imports for debug labels.
@@ -1204,6 +1217,10 @@ export class Compiler {
       asm.globalGet('rightmostFailurePos');
       asm.localSet('failurePos');
 
+      // Save the failure count so we can scope fluffy marking to failures
+      // recorded during this rule's evaluation only.
+      asm.pushFluffySavePoint();
+
       if (hasDescription) {
         asm.pushDescriptionFrame();
       }
@@ -1217,6 +1234,20 @@ export class Compiler {
 
       asm.emit(`BEGIN eval:${name}`);
       this.emitPExpr(ruleInfo.body);
+
+      // When a rule body succeeds and pos matches errorMessagePos, mark
+      // failures recorded DURING this rule eval as fluffy. This mirrors
+      // ohm-js's MatchState.eval_, which uses scoped failure recording.
+      asm.localGet('ret');
+      asm.if(
+        w.blocktype.empty,
+        () => {
+          asm.maybeMarkFluffyFromSavePoint();
+        },
+        () => {
+          asm.callPrebuiltFunc('dropFluffySavePoint');
+        }
+      );
 
       // Handle rules with descriptions - must come BEFORE restoreFailurePos
       if (hasDescription) asm.handleDescriptionFailure(descriptionId);
@@ -1778,15 +1809,22 @@ export class Compiler {
     const {asm} = this;
 
     // TODO: Should positive lookahead record a CST?
+    asm.pushFluffySavePoint();
     this.emitPExpr(child);
     asm.restoreBindingsLength();
     asm.restorePos();
 
-    // When lookahead succeeds, mark failures as fluffy
+    // When lookahead succeeds, mark inner failures as fluffy (scoped).
     asm.localGet('ret');
-    asm.if(w.blocktype.empty, () => {
-      asm.maybeMarkFailuresAsFluffy();
-    });
+    asm.if(
+      w.blocktype.empty,
+      () => {
+        asm.maybeMarkFluffyFromSavePoint();
+      },
+      () => {
+        asm.callPrebuiltFunc('dropFluffySavePoint');
+      }
+    );
   }
 
   emitNot({child}) {
@@ -1794,6 +1832,7 @@ export class Compiler {
     const failureId = this.toFailure(child);
 
     // Push an inner stack frame with the failure positions.
+    asm.pushFluffySavePoint();
     asm.pushStackFrame(() => {
       asm.saveFailurePos();
       asm.saveGlobalFailurePos();
@@ -1816,10 +1855,11 @@ export class Compiler {
     asm.ifElse(
       w.blocktype.empty,
       () => {
-        // When not succeeds (child failed), mark failures as fluffy
-        asm.maybeMarkFailuresAsFluffy();
+        // When not succeeds (child failed), mark inner failures as fluffy (scoped).
+        asm.maybeMarkFluffyFromSavePoint();
       },
       () => {
+        asm.callPrebuiltFunc('dropFluffySavePoint');
         // When not fails (child succeeded), update failurePos to origPos.
         // This is equivalent to Ohm.js's processFailure(origPos, this).
         // Note: pos has already been restored by restorePos() above.
@@ -1835,6 +1875,7 @@ export class Compiler {
 
   emitOpt({child}) {
     const {asm} = this;
+    asm.pushFluffySavePoint();
     this.emitPExpr(child);
     asm.localGet('ret');
     asm.ifFalse(w.blocktype.empty, () => {
@@ -1842,7 +1883,8 @@ export class Compiler {
       asm.restoreBindingsLength();
     });
     asm.newIterNodeWithSavedPosAndBindings(ir.outArity(child), true);
-    asm.maybeMarkFailuresAsFluffy(); // Opt always succeeds, so mark failures as fluffy
+    // Opt always succeeds, so mark inner failures as fluffy (scoped).
+    asm.maybeMarkFluffyFromSavePoint();
     asm.localSet('ret');
   }
 
@@ -1911,6 +1953,7 @@ export class Compiler {
   emitStar({child}, {reuseStackFrame} = {}) {
     const {asm} = this;
 
+    asm.pushFluffySavePoint();
     // We push another stack frame because we need to save and restore
     // the position just before the last (failed) expression.
     asm.pushStackFrame();
@@ -1933,7 +1976,8 @@ export class Compiler {
     asm.restoreBindingsLength();
     asm.popStackFrame();
     asm.newIterNodeWithSavedPosAndBindings(ir.outArity(child));
-    asm.maybeMarkFailuresAsFluffy(); // Star always succeeds, so mark failures as fluffy
+    // Star always succeeds, so mark inner failures as fluffy (scoped).
+    asm.maybeMarkFluffyFromSavePoint();
     asm.localSet('ret');
   }
 

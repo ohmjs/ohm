@@ -110,3 +110,30 @@ test('tagMarkup', async t => {
   const r = g.match(sourceCode, 'tagMarkup');
   t.true(r.succeeded());
 });
+
+test('failure message', async t => {
+  const g = await toWasmGrammar(grammars.LiquidHTML);
+  const getExpectedText = input => {
+    const r = g.match(input);
+    const text = r.getExpectedText();
+    r.detach();
+    return text;
+  };
+
+  t.is(getExpectedText('{%if cond }}'), '"%}"');
+
+  t.is(getExpectedText('{% if cond }}'), '"%}"');
+  t.is(getExpectedText('< a href = "abc" "></a>'), '"script", "style", or "svg"');
+
+  t.is(
+    getExpectedText('<a href="abc" {%></a>'),
+    [
+      '"doc", "comment", "raw", "javascript", "schema", "stylesheet",',
+      '"style", "end", "case", "capture", "form", "for", "tablerow",',
+      '"if", "paginate", "unless", "ifchanged", "assign", "break",',
+      '"continue", "cycle", "content_for", "decrement", "echo", "else",',
+      '"elsif", "include", "increment", "layout", "liquid", "render",',
+      '"section", "sections", "when", a letter, or "#"',
+    ].join(' ')
+  );
+});
