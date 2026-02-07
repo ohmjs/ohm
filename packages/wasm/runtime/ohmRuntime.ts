@@ -367,9 +367,7 @@ export function doMatchUnicodeChar(categoryBitmap: i32): bool {
   return matchUnicodeChar(categoryBitmap)
 }
 
-// Recorded failures pack the fluffy flag in bit 30.
-// Bit 31 is reserved for the negation flag (set by the compiler).
-@inline const FLUFFY_BIT: i32 = 0x40000000;
+@inline const FLUFFY_BIT: i32 = 0x80000000;
 
 export function recordFailure(id: i32): void {
   recordedFailures.push(id);

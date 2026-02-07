@@ -339,10 +339,7 @@ export class WasmGrammar {
   }
 
   getFailureDescription(id: number): string {
-    const isNot = (id & 0x80000000) !== 0;
-    const realId = id & 0x7fffffff;
-    const desc = this._failureDescriptions[realId];
-    return isNot ? 'not ' + desc : desc;
+    return this._failureDescriptions[id];
   }
 
   getMemorySizeBytes(): number {

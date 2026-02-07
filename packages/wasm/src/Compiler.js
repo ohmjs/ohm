@@ -630,7 +630,7 @@ class Assembler {
     this.localSet('failurePos');
   }
 
-  maybeRecordFailure(origPosThunk, failureId, isNot = false) {
+  maybeRecordFailure(origPosThunk, failureId) {
     this.globalGet('errorMessagePos');
     this.i32Const(0);
     this.emit(instr.i32.ge_s);
@@ -641,9 +641,7 @@ class Assembler {
       this.if(w.blocktype.empty, () => {
         this.emit('failure#' + failureId);
         if (failureId === undefined) throw new Error('bad failureId');
-        // When isNot is true, set the high bit to indicate a negated failure.
-        const idToRecord = isNot ? failureId | 0x80000000 : failureId;
-        this.i32Const(idToRecord);
+        this.i32Const(failureId);
         this.callPrebuiltFunc('recordFailure');
       });
     });
@@ -1867,9 +1865,10 @@ export class Compiler {
     );
   }
 
-  emitNot({child}) {
+  emitNot(exp) {
+    const {child} = exp;
     const {asm} = this;
-    const failureId = this.toFailure(child);
+    const failureId = this.toFailure(exp);
     const NOT_FRAME_SIZE = 12;
 
     // Save failurePos, globalFailurePos, AND recordedFailures.length
@@ -1919,7 +1918,7 @@ export class Compiler {
       asm.updateGlobalFailurePos();
 
       if (failureId >= 0) {
-        asm.maybeRecordFailure(() => asm.globalGet('pos'), failureId, true);
+        asm.maybeRecordFailure(() => asm.globalGet('pos'), failureId);
       }
     });
   }
