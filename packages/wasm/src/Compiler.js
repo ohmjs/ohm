@@ -765,26 +765,22 @@ class Assembler {
     return this._blockStack.length - i - 1;
   }
 
-  // Emit scoped fluffy marking: save the failure count, and after success
-  // at the recording position, mark only the new failures as fluffy.
-  // This mirrors ohm-js's MatchState.eval_ scoped failure recording.
   pushFluffySavePoint() {
     this.callPrebuiltFunc('pushFluffySavePoint');
   }
 
-  maybeMarkFluffyFromSavePoint() {
+  popFluffySavePoint(shouldMark) {
+    this.i32Const(shouldMark ? 1 : 0);
+    this.callPrebuiltFunc('popFluffySavePoint');
+  }
+
+  // Pop the fluffy save point, marking failures as fluffy only when
+  // pos matches errorMessagePos. This mirrors ohm-js's scoped failure recording.
+  popFluffySavePointIfAtErrorPos() {
     this.globalGet('errorMessagePos');
     this.globalGet('pos');
     this.i32Eq();
-    this.if(
-      w.blocktype.empty,
-      () => {
-        this.callPrebuiltFunc('markFluffyFromSavePoint');
-      },
-      () => {
-        this.callPrebuiltFunc('dropFluffySavePoint');
-      }
-    );
+    this.callPrebuiltFunc('popFluffySavePoint');
   }
 
   ruleEvalReturn() {
@@ -1054,7 +1050,6 @@ export class Compiler {
     asm.addGlobal('__ASC_RUNTIME', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
     asm.addGlobal('bindings', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('recordedFailures', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('fluffyFlags', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('fluffySaveStack', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('__heap_base', w.valtype.i32, w.mut.var, () => asm.i32Const(65948));
 
@@ -1287,10 +1282,10 @@ export class Compiler {
       asm.if(
         w.blocktype.empty,
         () => {
-          asm.maybeMarkFluffyFromSavePoint();
+          asm.popFluffySavePointIfAtErrorPos();
         },
         () => {
-          asm.callPrebuiltFunc('dropFluffySavePoint');
+          asm.popFluffySavePoint(false);
         }
       );
 
@@ -1864,10 +1859,10 @@ export class Compiler {
     asm.if(
       w.blocktype.empty,
       () => {
-        asm.maybeMarkFluffyFromSavePoint();
+        asm.popFluffySavePointIfAtErrorPos();
       },
       () => {
-        asm.callPrebuiltFunc('dropFluffySavePoint');
+        asm.popFluffySavePoint(false);
       }
     );
   }
@@ -1940,7 +1935,7 @@ export class Compiler {
     });
     asm.newIterNodeWithSavedPosAndBindings(ir.outArity(child), true);
     // Opt always succeeds, so mark inner failures as fluffy (scoped).
-    asm.maybeMarkFluffyFromSavePoint();
+    asm.popFluffySavePointIfAtErrorPos();
     asm.localSet('ret');
   }
 
@@ -2033,7 +2028,7 @@ export class Compiler {
     asm.popStackFrame();
     asm.newIterNodeWithSavedPosAndBindings(ir.outArity(child));
     // Star always succeeds, so mark inner failures as fluffy (scoped).
-    asm.maybeMarkFluffyFromSavePoint();
+    asm.popFluffySavePointIfAtErrorPos();
     asm.localSet('ret');
   }
 

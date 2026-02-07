@@ -71,7 +71,6 @@ let errorMessagePos: i32 = -1;
 let sp: usize = 0;
 let bindings: Array<i32> = new Array<i32>();
 let recordedFailures: Array<i32> = new Array<i32>();
-let fluffyFlags: Array<bool> = new Array<bool>();
 
 @inline function max<T>(a: T, b: T): T {
   return a > b ? a : b;
@@ -187,7 +186,6 @@ function doMatch(startRuleId: i32): ApplyResult {
       // Clear any existing failures at this position (they would be from
       // repetitions that succeeded, which Ohm.js marks as "fluffy").
       recordedFailures.length = 0;
-      fluffyFlags.length = 0;
       recordFailure(0);
     }
     return false;
@@ -208,7 +206,6 @@ export function recordFailures(startRuleId: i32): void {
   resetParsingState();  // Reset parsing state (but not errorMessagePos)
   errorMessagePos = savedFailurePos;  // Set errorMessagePos to failure pos
   recordedFailures = new Array<i32>();
-  fluffyFlags = new Array<bool>();
   fluffySaveStack = new Array<i32>();
   doMatch(startRuleId);  // Re-match with errorMessagePos set
 }
@@ -370,19 +367,16 @@ export function doMatchUnicodeChar(categoryBitmap: i32): bool {
   return matchUnicodeChar(categoryBitmap)
 }
 
+// Recorded failures pack the fluffy flag in bit 30.
+// Bit 31 is reserved for the negation flag (set by the compiler).
+@inline const FLUFFY_BIT: i32 = 0x40000000;
+
 export function recordFailure(id: i32): void {
   recordedFailures.push(id);
-  fluffyFlags.push(false);
-}
-
-export function makeFluffyFrom(startIdx: i32): void {
-  for (let i = startIdx; i < fluffyFlags.length; i++) {
-    fluffyFlags[i] = true;
-  }
 }
 
 export function isFluffy(idx: i32): bool {
-  return fluffyFlags[idx];
+  return (recordedFailures[idx] & FLUFFY_BIT) != 0;
 }
 
 export function getRecordedFailuresLength(): i32 {
@@ -391,11 +385,10 @@ export function getRecordedFailuresLength(): i32 {
 
 export function setRecordedFailuresLength(len: i32): void {
   recordedFailures.length = len;
-  fluffyFlags.length = len;
 }
 
 export function recordedFailuresAt(i: i32): i32 {
-  return recordedFailures[i];
+  return recordedFailures[i] & ~FLUFFY_BIT;
 }
 
 let fluffySaveStack: Array<i32> = new Array<i32>();
@@ -405,25 +398,13 @@ export function pushFluffySavePoint(): void {
   fluffySaveStack.push(recordedFailures.length);
 }
 
-export function markFluffyFromSavePoint(): void {
+export function popFluffySavePoint(shouldMark: bool): void {
   if (errorMessagePos < 0) return;
   if (fluffySaveStack.length === 0) return;
   const startIdx = fluffySaveStack.pop();
-  for (let i = startIdx; i < fluffyFlags.length; i++) {
-    fluffyFlags[i] = true;
+  if (shouldMark) {
+    for (let i = startIdx; i < recordedFailures.length; i++) {
+      recordedFailures[i] |= FLUFFY_BIT;
+    }
   }
-}
-
-export function dropFluffySavePoint(): void {
-  if (errorMessagePos < 0) return;
-  if (fluffySaveStack.length === 0) return;
-  fluffySaveStack.pop();
-}
-
-export function discardFailuresFromSavePoint(): void {
-  if (errorMessagePos < 0) return;
-  if (fluffySaveStack.length === 0) return;
-  const savedLen = fluffySaveStack.pop();
-  recordedFailures.length = savedLen;
-  fluffyFlags.length = savedLen;
 }
