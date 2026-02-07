@@ -1317,6 +1317,10 @@ test('failure descriptions match JS impl', async t => {
     ['G { start = ~end any }', '', '~End'],
     ['G { start = ~any "x" }', 'a', '~any'],
     ['G { start = ~digit letter }', '5', '~digit'],
+    // Negated compound (Alt inside Not):
+    ['G { start = ~(space | "\'") any }', ' ', '~Alt(Apply,Terminal)'],
+    ['G { start = ~(space | "\'" | "{{") any }', ' ', '~Alt(Apply,Terminal,Terminal)'],
+    ['G { start = ~("a".."z" | "0".."9") "!" }', 'a', '~Alt(Range,Range)'],
   ];
 
   for (const [source, input, desc] of testCases) {

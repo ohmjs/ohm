@@ -95,6 +95,7 @@ const asciiChars = Array.from({length: 128}).map((_, i) => String.fromCharCode(i
 class StringTable {
   constructor() {
     this._map = new Map();
+    this._strs = [];
   }
 
   add(str) {
@@ -103,7 +104,12 @@ class StringTable {
     }
     const idx = this._map.size;
     this._map.set(checkNotNull(str), idx);
+    this._strs.push(str);
     return idx;
+  }
+
+  getStr(idx) {
+    return this._strs[idx];
   }
 
   getIndex(item) {
@@ -856,28 +862,67 @@ export class Compiler {
     return this._failureDescriptions.add(str);
   }
 
-  toFailure(exp) {
+  // Returns a failure description string for the given expression, or null
+  // if a description can't be generated. For compound expressions (Alt, Seq,
+  // Not, Iter, etc.), this recursively composes descriptions from children —
+  // matching the behavior of ohm-js's pexprs-toFailure.js.
+  toFailureDescription(exp) {
     switch (exp.type) {
       case 'Any':
-        return this.getOrAddFailure('any character');
+        return 'any character';
       case 'Range':
-        return this.getOrAddFailure(`${JSON.stringify(exp.lo)}..${JSON.stringify(exp.hi)}`);
+        return `${JSON.stringify(exp.lo)}..${JSON.stringify(exp.hi)}`;
       case 'Terminal':
-        return this.getOrAddFailure(JSON.stringify(exp.value));
+        return JSON.stringify(exp.value);
       case 'End':
-        return this.getOrAddFailure('end of input');
+        return 'end of input';
       case 'Apply':
-        // Use the rule's description if it has one.
         if (exp.descriptionId != null && exp.descriptionId >= 0) {
-          return exp.descriptionId;
+          return this._failureDescriptions.getStr(exp.descriptionId);
         }
-        // Fallback for built-in rules without descriptions.
-        if (exp.ruleName === 'end') return this.getOrAddFailure('end of input');
-        if (exp.ruleName === 'any') return this.getOrAddFailure('any character');
-        return -1;
+        if (exp.ruleName === 'end') return 'end of input';
+        if (exp.ruleName === 'any') return 'any character';
+        return null;
+      case 'Alt': {
+        const strs = exp.children.map(c => this.toFailureDescription(c));
+        if (strs.some(s => s == null)) return null;
+        return '(' + strs.join(' or ') + ')';
+      }
+      case 'Seq': {
+        const strs = exp.children.map(c => this.toFailureDescription(c));
+        if (strs.some(s => s == null)) return null;
+        return '(' + strs.join(' ') + ')';
+      }
+      case 'Not':
+        if (exp.child.type === 'Any') return 'nothing';
+        return this._prefixNot(this.toFailureDescription(exp.child));
+      case 'Lookahead':
+      case 'Lex':
+        return this.toFailureDescription(exp.child);
+      case 'Opt':
+      case 'Star':
+      case 'Plus': {
+        const childStr = this.toFailureDescription(exp.child);
+        if (childStr == null) return null;
+        const op = exp.type === 'Opt' ? '?' : exp.type === 'Star' ? '*' : '+';
+        return '(' + childStr + op + ')';
+      }
+      case 'UnicodeChar':
+        return 'a Unicode [' + exp.categoryOrProp + '] character';
+      case 'CaseInsensitive':
+        return JSON.stringify(exp.value);
       default:
-        return -1;
+        return null;
     }
+  }
+
+  _prefixNot(str) {
+    return str != null ? 'not ' + str : null;
+  }
+
+  toFailure(exp) {
+    const str = this.toFailureDescription(exp);
+    return str != null ? this.getOrAddFailure(str) : -1;
   }
 
   importCount() {
