@@ -130,6 +130,14 @@ test('Not discards child failures', async t => {
   t.is(r2.getExpectedText(), jsR2.getExpectedText());
 });
 
+// Compare sorted descriptions — the content must match, but the wasm compiler's
+// grammar transformations may produce a different ordering than the JS interpreter.
+const sortDescriptions = text =>
+  text
+    .split(/, (?:or )?|(?:^| )or /)
+    .sort()
+    .join(', ');
+
 test('failure message', async t => {
   const g = await toWasmGrammar(grammars.LiquidHTML);
   const getExpectedText = input => {
@@ -143,6 +151,14 @@ test('failure message', async t => {
 
   t.is(getExpectedText('{% if cond }}'), '"%}"');
   t.is(getExpectedText('< a href = "abc" "></a>'), '"script", "style", or "svg"');
+
+  const input = `
+    <a href="abc" "></a>
+  `;
+  t.is(
+    sortDescriptions(getExpectedText(input)),
+    sortDescriptions(grammars.LiquidHTML.match(input).getExpectedText())
+  );
 
   t.is(
     getExpectedText('<a href="abc" {%></a>'),

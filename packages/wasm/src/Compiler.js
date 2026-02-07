@@ -870,13 +870,20 @@ export class Compiler {
         return JSON.stringify(exp.value);
       case 'End':
         return 'end of input';
-      case 'Apply':
+      case 'Apply': {
         if (exp.descriptionId != null && exp.descriptionId >= 0) {
           return this._failureDescriptions.getStr(exp.descriptionId);
         }
         if (exp.ruleName === 'end') return 'end of input';
         if (exp.ruleName === 'any') return 'any character';
-        return null;
+        // For lifted rules, expand their body to get a meaningful description.
+        if (exp.ruleName.startsWith('$lifted')) {
+          const ruleInfo = this.rules.get(exp.ruleName);
+          if (ruleInfo) return this.toFailureDescription(ruleInfo.body);
+        }
+        const article = /^[aeiouAEIOU]/.test(exp.ruleName) ? 'an' : 'a';
+        return article + ' ' + exp.ruleName;
+      }
       case 'Alt': {
         const strs = exp.children.map(c => this.toFailureDescription(c));
         if (strs.some(s => s == null)) return null;
