@@ -307,7 +307,7 @@ export class WasmGrammar {
       'Cannot match while there are unmanaged MatchResults'
     );
     this._input = input;
-    if (process.env.OHM_DEBUG === '1') debugger; // eslint-disable-line no-debugger
+    if (typeof process !== 'undefined' && process.env.OHM_DEBUG === '1') debugger; // eslint-disable-line no-debugger
     const ruleId = checkNotNull(
       this._ruleIds.get(ruleName || this._ruleNames[0]),
       `unknown rule: '${ruleName}'`

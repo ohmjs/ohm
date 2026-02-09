@@ -1,5 +1,3 @@
-/* global process */
-
 import * as w from '@wasmgroundup/emit';
 import * as ohm from 'ohm-js';
 // import wabt from 'wabt';
@@ -9,7 +7,7 @@ import * as prebuilt from '../build/ohmRuntime.wasm_sections.ts';
 
 const WASM_PAGE_SIZE = 64 * 1024;
 
-const DEBUG = process.env.OHM_DEBUG === '1';
+const DEBUG = typeof process !== 'undefined' && process.env.OHM_DEBUG === '1';
 const FAST_SAVE_BINDINGS = true;
 const FAST_RESTORE_BINDINGS = true;
 
