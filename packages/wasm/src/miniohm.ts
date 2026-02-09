@@ -873,6 +873,10 @@ export class SucceededMatchResult extends MatchResult {
     super(grammar, startExpr, ctx, succeeded);
     this._cst = grammar.getCstRoot();
   }
+
+  getCstRoot(): CstNode {
+    return this._cst;
+  }
 }
 
 export class FailedMatchResult extends MatchResult {

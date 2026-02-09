@@ -36,7 +36,10 @@
         "types": "./extras/index.d.ts"
       },
       "./dist/ohm-extras.cjs"
-    ]
+    ],
+    "./v18": {
+      "import": "./src/v18.js"
+    }
   },
   "files": ["src", "dist", "extras", "index.mjs", "index.d.ts", "!**/*.old"],
   "types": "index.d.ts",

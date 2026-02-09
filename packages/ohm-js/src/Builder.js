@@ -7,9 +7,10 @@ import * as pexprs from './pexprs.js';
 // --------------------------------------------------------------------
 
 export class Builder {
-  constructor() {
+  constructor(options) {
     this.currentDecl = null;
     this.currentRuleName = null;
+    this.options = options || {};
   }
 
   newGrammar(name) {
@@ -128,6 +129,10 @@ export class Builder {
   lookahead(expr) {
     if (!(expr instanceof pexprs.PExpr)) {
       expr = this.fromRecipe(expr);
+    }
+    // For v18 compatibility, where we don't want a binding for lookahead.
+    if (this.options.eliminateLookaheads) {
+      return new pexprs.Not(new pexprs.Not(expr));
     }
     return new pexprs.Lookahead(expr);
   }

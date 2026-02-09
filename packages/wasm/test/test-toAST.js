@@ -4,18 +4,18 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as ohm from 'ohm-js';
 import {toAST} from 'ohm-js/extras';
+import {grammar as v18Grammar} from 'ohm-js/v18';
 
 import {scriptRel, toWasmGrammar} from './_helpers.js';
 import {createToAst} from '../src/createToAst.ts';
 
-const arithmetic = ohm.grammar(
-  readFileSync(scriptRel('../../ohm-js/test/data/arithmetic.ohm'))
-);
+const arithmeticSrc = readFileSync(scriptRel('../../ohm-js/test/data/arithmetic.ohm'));
+const arithmetic = v18Grammar(arithmeticSrc.toString());
 
 // A version of the arithmetic grammar that contains a few more elements:
 // - an optional
 // - a use of ListOf
-const arithmetic2 = ohm.grammar(`
+const arithmetic2Src = `
   Arithmetic {
     Exp = ListOf<AddExp, ";">
     AddExp = AddExp "+" PriExp  -- plus
@@ -26,7 +26,8 @@ const arithmetic2 = ohm.grammar(`
     number = sign? digit+
     sign = "-" | "+"
   }
-`);
+`;
+const arithmetic2 = v18Grammar(arithmetic2Src);
 
 // Copied from test/extras/test-toAst.js and modified for the new toAST API.
 test('toAST basic', async t => {

@@ -4,6 +4,7 @@ import type {
   CstNodeChildren,
   MatchResult,
   NonterminalNode,
+  SucceededMatchResult,
   TerminalNode,
 } from './miniohm.ts';
 
@@ -154,7 +155,7 @@ export class AstBuilder<TNode = any> {
     if (typeof (nodeOrResult as MatchResult).succeeded === 'function') {
       const matchResult = nodeOrResult as MatchResult;
       assert(matchResult.succeeded(), 'Cannot convert failed match result to AST');
-      node = matchResult.grammar.getCstRoot();
+      node = (matchResult as SucceededMatchResult).getCstRoot();
     }
     let ans;
     this._depth++;
