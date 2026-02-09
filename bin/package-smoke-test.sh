@@ -13,10 +13,10 @@ cd "$TEMP_DIR"
 
 npm init -y > /dev/null
 
-npm install ohm-js @ohm-js/wasm --silent
+npm install ohm-js @ohm-js/wasm webpack webpack-cli --silent
 
 cat > test-ohm-js.mjs << 'EOF'
-import assert from 'node:assert';
+const assert = (cond, msg) => { if (!cond) throw new Error(msg || 'assertion failed'); };
 import * as ohm from 'ohm-js';
 
 const grammar = ohm.grammar(String.raw`
@@ -32,7 +32,7 @@ console.log('ohm-js: OK');
 EOF
 
 cat > test-wasm.mjs << 'EOF'
-import assert from 'node:assert';
+const assert = (cond, msg) => { if (!cond) throw new Error(msg || 'assertion failed'); };
 import {grammar, createToAst} from '@ohm-js/wasm/compat';
 
 const g = grammar(String.raw`
@@ -49,9 +49,17 @@ assert(match.succeeded());
 
 const toAst = createToAst({AddExp_plus: {left: 0, right: 2}});
 const ast = toAst(match);
-assert.deepStrictEqual(ast, {type: 'AddExp_plus', left: '1', right: '2'});
+assert(ast.type === 'AddExp_plus' && ast.left === '1' && ast.right === '2');
 console.log('@ohm-js/wasm: OK');
 EOF
 
 node test-ohm-js.mjs
 node test-wasm.mjs
+
+# Webpack bundling tests
+
+npx webpack --entry ./test-ohm-js.mjs -o dist/ohm-js --mode production 2>&1
+node dist/ohm-js/main.js
+
+npx webpack --entry ./test-wasm.mjs -o dist/wasm --mode production 2>&1
+node dist/wasm/main.js
