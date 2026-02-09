@@ -168,6 +168,12 @@ export default defineConfig([
     'packages/wasm/runtime/**/*',
   ]),
   {
+    files: ['packages/wasm/test/**'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+    },
+  },
+  {
     files: ['examples/nl-datalog-syntax/**'],
     rules: {
       'no-unused-vars': 'off',

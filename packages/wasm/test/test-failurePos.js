@@ -2,21 +2,18 @@ import test from 'ava';
 import assert from 'node:assert/strict';
 import fc from 'fast-check';
 import {readFileSync} from 'node:fs';
-import * as ohm from 'ohm-js';
+import {grammars, grammar} from 'ohm-js/v18';
 
 import {scriptRel, toWasmGrammar} from './_helpers.js';
 
 const grammarSource = readFileSync(scriptRel('data/liquid-html.ohm'), 'utf8');
-const ns = ohm.grammars(grammarSource);
+const ns = grammars(grammarSource);
 
 function failurePos(g, input) {
-  const result = g.match(input);
-  assert.equal(result.failed(), true, 'expected match failure');
-  const pos = result.getRightmostFailurePosition();
-  if (typeof result.detach === 'function') {
-    result.detach();
-  }
-  return pos;
+  return g.match(input).use(r => {
+    assert.equal(r.failed(), true, 'expected match failure');
+    return r.getRightmostFailurePosition();
+  });
 }
 
 /* eslint-disable max-len */
@@ -92,7 +89,7 @@ test('failure pos (fast-check)', async t => {
 });
 
 test('failure pos: basic 1', async t => {
-  const g = ohm.grammar(`
+  const g = grammar(`
     G {
       Start = number+
       number = digit+
@@ -110,7 +107,7 @@ test('failure pos: basic 1', async t => {
 });
 
 test('failure pos: basic 2', async t => {
-  const g = ohm.grammar(`
+  const g = grammar(`
       G {
         Exp = number "+" number ";" -- plus
             | number
@@ -123,7 +120,7 @@ test('failure pos: basic 2', async t => {
 });
 
 test('failure pos: basic 3', async t => {
-  const g = ohm.grammar(`
+  const g = grammar(`
     G {
       Start = letter letter
       space := "/*" (~"*/" any)* "*/"
@@ -135,7 +132,7 @@ test('failure pos: basic 3', async t => {
 
 test('failure pos: lookahead', async t => {
   {
-    const g = ohm.grammar(`
+    const g = grammar(`
       G {
         start = ~(anyTwo "!") "a" "b"
         anyTwo = any any
@@ -151,7 +148,7 @@ test('failure pos: lookahead', async t => {
 
 test('failure pos: memoization', async t => {
   {
-    const g = ohm.grammar(`
+    const g = grammar(`
       G {
         start = ~anyTwo anyTwo
         anyTwo = any any
@@ -166,7 +163,7 @@ test('failure pos: memoization', async t => {
 });
 
 test('failure pos: space skipping', async t => {
-  const g = ohm.grammar(`
+  const g = grammar(`
     G {
       Start = digit digit
       space += "/*" (~"*/" any)* "*/" -- comment
@@ -179,7 +176,7 @@ test('failure pos: space skipping', async t => {
 });
 
 test('failure pos is always after space skipping', async t => {
-  const g = ohm.grammar(`
+  const g = grammar(`
     G {
       Start = "1." "b"
             | "2." letter

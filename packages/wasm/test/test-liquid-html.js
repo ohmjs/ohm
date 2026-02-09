@@ -118,16 +118,18 @@ test('Not discards child failures', async t => {
 
   // 'abc!' fails because no '>' at end. Inside the star, ~space tries space
   // which fails and records "a space" — but Not should discard it.
-  const r1 = wg.match('abc!');
-  const jsR1 = simpleG.match('abc!');
-  t.is(r1.getExpectedText(), jsR1.getExpectedText());
+  wg.match('abc!').use(r1 => {
+    const jsR1 = simpleG.match('abc!');
+    t.is(r1.getExpectedText(), jsR1.getExpectedText());
+  });
 
   // Test with alternation inside Not (like the real grammar)
   const altG = ohm.grammar('G { start = (~(space | "\'" | "{{") any)+ ">" }');
   const wg2 = await toWasmGrammar(altG);
-  const r2 = wg2.match('abc!');
-  const jsR2 = altG.match('abc!');
-  t.is(r2.getExpectedText(), jsR2.getExpectedText());
+  wg2.match('abc!').use(r2 => {
+    const jsR2 = altG.match('abc!');
+    t.is(r2.getExpectedText(), jsR2.getExpectedText());
+  });
 });
 
 // Compare sorted descriptions — the content must match, but the wasm compiler's
@@ -140,12 +142,7 @@ const sortDescriptions = text =>
 
 test('failure message', async t => {
   const g = await toWasmGrammar(grammars.LiquidHTML);
-  const getExpectedText = input => {
-    const r = g.match(input);
-    const text = r.getExpectedText();
-    r.detach();
-    return text;
-  };
+  const getExpectedText = input => g.match(input).use(r => r.getExpectedText());
 
   t.is(getExpectedText('{%if cond }}'), '"%}"');
 

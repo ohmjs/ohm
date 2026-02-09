@@ -152,9 +152,9 @@ export class AstBuilder<TNode = any> {
 
   toAst(nodeOrResult: MatchResult | CstNode): TNode {
     let node: CstNode = nodeOrResult as CstNode;
-    if (typeof (nodeOrResult as MatchResult).succeeded === 'function') {
+    if (typeof (nodeOrResult as MatchResult)._succeeded === 'boolean') {
       const matchResult = nodeOrResult as MatchResult;
-      assert(matchResult.succeeded(), 'Cannot convert failed match result to AST');
+      assert(matchResult._succeeded, 'Cannot convert failed match result to AST');
       node = (matchResult as SucceededMatchResult).getCstRoot();
     }
     let ans;

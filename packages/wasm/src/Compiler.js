@@ -7,6 +7,7 @@ import * as prebuilt from '../build/ohmRuntime.wasm_sections.ts';
 
 const WASM_PAGE_SIZE = 64 * 1024;
 
+// eslint-disable-next-line no-undef
 const DEBUG = typeof process !== 'undefined' && process.env.OHM_DEBUG === '1';
 const FAST_SAVE_BINDINGS = true;
 const FAST_RESTORE_BINDINGS = true;

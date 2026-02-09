@@ -1132,17 +1132,56 @@ test('unicode', async t => {
   t.is(unparse(g), source);
 });
 
-test('MatchResult.detach()', async t => {
+test('unmanaged MatchResult throws', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { Start = (letter digit)? }'));
-  const r1 = g.match('');
-  t.assert(r1.succeeded());
-  t.throws(() => g.match(''), {message: /unmanaged MatchResults/});
-  r1.detach();
-  const r2 = g.match('');
-  t.assert(r2.succeeded());
-  t.throws(() => g.match(''), {message: /unmanaged MatchResults/});
-  r2.detach();
-  t.notThrows(() => g.match(''));
+
+  // succeeded()/failed() work without .use() for a single match.
+  const r = g.match('');
+  t.true(r.succeeded());
+
+  // Calling match() without managing the previous result throws.
+  t.throws(() => g.match(''), {message: /unmanaged/});
+
+  // Cleaning up with use() works.
+  r.use(() => {});
+
+  // After cleanup, a new match works fine.
+  t.notThrows(() => g.match('').use(() => {}));
+});
+
+test('nested matching with `using`', async t => {
+  const g = await toWasmGrammar(ohm.grammar('G { Start = letter+ | digit+ }'));
+
+  {
+    using outer = g.match('abc');
+    t.assert(outer.succeeded());
+    const outerCst = outer.getCstRoot();
+
+    {
+      using inner = g.match('1234');
+      t.assert(inner.succeeded());
+      t.is(inner.getCstRoot().sourceString, '1234');
+    }
+
+    // Outer CST is still valid after inner is disposed.
+    t.is(outerCst.sourceString, 'abc');
+    t.is(outerCst.children[0].children.length, 3);
+  }
+});
+
+test('nested matching with use()', async t => {
+  const g = await toWasmGrammar(ohm.grammar('G { Start = letter+ | digit+ }'));
+
+  g.match('abc').use(outer => {
+    const outerCst = outer.getCstRoot();
+    g.match('1234').use(inner => {
+      t.is(inner.getCstRoot().sourceString, '1234');
+      // Both CSTs valid simultaneously.
+      t.is(outerCst.sourceString, 'abc');
+    });
+    // Outer CST still valid after inner use() ends.
+    t.is(outerCst.sourceString, 'abc');
+  });
 });
 
 test('matching at end', async t => {
@@ -1504,20 +1543,21 @@ test('fast-check: FailedMatchResult methods match JS impl', async t => {
   }
 });
 
-test('accessing .message after detach throws an error', async t => {
+test('accessing .message on disposed MatchResult throws', async t => {
   const ohmGrammar = ohm.grammar('G { start = "a" "b" "c" }');
   const wasmGrammar = await toWasmGrammar(ohmGrammar);
 
   const input = 'ab'; // Missing "c"
 
-  const wasmResult = wasmGrammar.match(input);
-  wasmResult.detach();
+  let savedResult;
+  wasmGrammar.match(input).use(r => {
+    t.true(r.failed(), 'wasm match should fail');
+    savedResult = r;
+  });
 
-  t.true(wasmResult.failed(), 'wasm match should fail');
-
-  // Accessing .message after detach should throw
-  t.throws(() => wasmResult.message, {
-    message: /Cannot access.*after MatchResult has been detached/,
+  // Accessing .message after dispose should throw
+  t.throws(() => savedResult.message, {
+    message: /Cannot access.*after MatchResult has been disposed/,
   });
 });
 

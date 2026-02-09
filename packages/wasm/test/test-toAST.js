@@ -130,7 +130,7 @@ test('toAST basic', async t => {
   };
   t.deepEqual(toAst(matchResult), expected, 'proper AST with computed property');
 
-  matchResult.detach();
+  matchResult.dispose();
   matchResult = g.match('10 + 20 - 30');
   toAst = createToAst({
     AddExp_plus: 2,

@@ -189,7 +189,6 @@ export class WasmGrammar {
   public _failureDescriptions: string[] = []; // Should be treated as package private
 
   private _resultStack: MatchResult[] = [];
-  private _managedResultCount = 0;
 
   /**
    * Create a new WasmGrammar object.
@@ -212,24 +211,20 @@ export class WasmGrammar {
     return this;
   }
 
-  _beginUse(result: MatchResult) {
-    assert(
-      this._resultStack.at(-1) === result,
-      `You can only use() the most recent MatchResult`
-    );
-    result.detach = () => {
-      throw new Error("MatchResult shouldn't be detached inside use()");
-    };
-    this._managedResultCount++;
+  _manage(result: MatchResult) {
+    result._managed = true;
   }
 
-  _endUse(result: MatchResult) {
-    const r = this._resultStack.pop();
-    assert(r === result, 'Mismatched _endUse');
-    this._managedResultCount--;
+  _dispose(result: MatchResult) {
+    assert(
+      this._resultStack.at(-1) === result,
+      `You can only dispose() the most recent MatchResult`
+    );
+    this._resultStack.pop();
     if (this._resultStack.length === 0) {
       (this._instance as any).exports.resetHeap();
     }
+    result._attached = false;
   }
 
   static async instantiate(source: BufferSource): Promise<WasmGrammar> {
@@ -291,20 +286,11 @@ export class WasmGrammar {
     }
   }
 
-  private _detachMatchResult(result: MatchResult) {
-    assert(
-      this._resultStack.at(-1) === result,
-      `You can only detach() the most recent MatchResult`
-    );
-    this._beginUse(result);
-    this._endUse(result);
-    result._attached = false;
-  }
-
   match<T>(input: string, ruleName?: string): MatchResult {
     assert(
-      this._resultStack.length === this._managedResultCount,
-      'Cannot match while there are unmanaged MatchResults'
+      this._resultStack.every(r => r._managed),
+      'Cannot match while there are unmanaged MatchResults. ' +
+        'Use `using` or `.use()` to manage the MatchResult lifecycle.'
     );
     this._input = input;
     if (typeof process !== 'undefined' && process.env.OHM_DEBUG === '1') debugger; // eslint-disable-line no-debugger
@@ -319,7 +305,7 @@ export class WasmGrammar {
       input: (this._instance as any).exports.input.value,
     };
     const result = createMatchResult(this, ruleName || this._ruleNames[0], ctx, !!succeeded);
-    result.detach = this._detachMatchResult.bind(this, result);
+    result.dispose = this._dispose.bind(this, result);
     this._resultStack.push(result);
     return result;
   }
@@ -805,6 +791,7 @@ export class MatchResult {
   _ctx: MatchContext;
   _succeeded: boolean;
   _attached = true;
+  _managed = false;
 
   constructor(grammar: WasmGrammar, startExpr: string, ctx: MatchContext, succeeded: boolean) {
     this.grammar = grammar;
@@ -817,11 +804,14 @@ export class MatchResult {
     return (this.grammar as any)._input;
   }
 
-  [Symbol.dispose]() {
-    this.detach();
+  // `using` accesses [Symbol.dispose] at declaration time to get the
+  // disposal method. We use this as the signal that the result is managed.
+  get [Symbol.dispose](): () => void {
+    this.grammar._manage(this);
+    return () => this.dispose();
   }
 
-  detach() {
+  dispose() {
     throw new Error('MatchResult is not attached to any grammar');
   }
 
@@ -840,11 +830,11 @@ export class MatchResult {
   }
 
   use<T>(cb: (r: this) => T): T {
+    this.grammar._manage(this);
     try {
-      this.grammar._beginUse(this);
       return cb(this);
     } finally {
-      this.grammar._endUse(this);
+      this.dispose();
     }
   }
 }
@@ -898,8 +888,8 @@ export class FailedMatchResult extends MatchResult {
   private _assertAttached(property: string) {
     if (!this._attached) {
       throw new Error(
-        `Cannot access '${property}' after MatchResult has been detached. ` +
-          `Access failure information before calling detach(), or use result.use().`
+        `Cannot access '${property}' after MatchResult has been disposed. ` +
+          `Access failure information before calling dispose(), or use result.use().`
       );
     }
   }
