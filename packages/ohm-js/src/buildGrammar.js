@@ -19,8 +19,8 @@ function namespaceHas(ns, name) {
 // `tree`, which is the concrete syntax tree of a user-written grammar.
 // The grammar will be assigned into `namespace` under the name of the grammar
 // as specified in the source.
-export function buildGrammar(match, namespace, optOhmGrammarForTesting) {
-  const builder = new Builder();
+export function buildGrammar(match, namespace, optOhmGrammarForTesting, options) {
+  const builder = new Builder(options);
   let decl;
   let currentRuleName;
   let currentRuleFormals;

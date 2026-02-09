@@ -16,16 +16,16 @@ const isBuffer = obj =>
   typeof obj.constructor.isBuffer === 'function' &&
   obj.constructor.isBuffer(obj);
 
-function compileAndLoad(source, namespace) {
+function compileAndLoad(source, namespace, buildOptions) {
   const m = ohmGrammar.match(source, 'Grammars');
   if (m.failed()) {
     throw errors.grammarSyntaxError(m);
   }
-  return buildGrammar(m, namespace);
+  return buildGrammar(m, namespace, undefined, buildOptions);
 }
 
-export function grammar(source, optNamespace) {
-  const ns = grammars(source, optNamespace);
+export function _grammar(source, optNamespace, buildOptions) {
+  const ns = _grammars(source, optNamespace, buildOptions);
 
   // Ensure that the source contained no more than one grammar definition.
   const grammarNames = Object.keys(ns);
@@ -42,7 +42,7 @@ export function grammar(source, optNamespace) {
   return ns[grammarNames[0]]; // Return the one and only grammar.
 }
 
-export function grammars(source, optNamespace) {
+export function _grammars(source, optNamespace, buildOptions) {
   const ns = Object.create(optNamespace || {});
   if (typeof source !== 'string') {
     // For convenience, detect Node.js Buffer objects and automatically call toString().
@@ -54,8 +54,16 @@ export function grammars(source, optNamespace) {
       );
     }
   }
-  compileAndLoad(source, ns);
+  compileAndLoad(source, ns, buildOptions);
   return ns;
+}
+
+export function grammar(source, optNamespace) {
+  return _grammar(source, optNamespace);
+}
+
+export function grammars(source, optNamespace) {
+  return _grammars(source, optNamespace);
 }
 
 // This is used by ohm-editor to instantiate grammars after incremental
