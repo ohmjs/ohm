@@ -1149,25 +1149,12 @@ test('unmanaged MatchResult throws', async t => {
   t.notThrows(() => g.match('').use(() => {}));
 });
 
-test('nested matching with `using`', async t => {
-  const g = await toWasmGrammar(ohm.grammar('G { Start = letter+ | digit+ }'));
-
-  {
-    using outer = g.match('abc');
-    t.assert(outer.succeeded());
-    const outerCst = outer.getCstRoot();
-
-    {
-      using inner = g.match('1234');
-      t.assert(inner.succeeded());
-      t.is(inner.getCstRoot().sourceString, '1234');
-    }
-
-    // Outer CST is still valid after inner is disposed.
-    t.is(outerCst.sourceString, 'abc');
-    t.is(outerCst.children[0].children.length, 3);
-  }
-});
+// The `using` syntax requires Node >= 24 (V8 >= 13).
+// eslint-disable-next-line no-undef
+const nodeMajor = Number(process.versions.node.split('.')[0]);
+if (nodeMajor >= 24) {
+  await import('./_test-v24.js');
+}
 
 test('nested matching with use()', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { Start = letter+ | digit+ }'));
