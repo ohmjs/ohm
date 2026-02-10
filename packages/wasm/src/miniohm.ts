@@ -395,8 +395,8 @@ export interface NonterminalNode<TChildren extends CstNodeChildren = CstNodeChil
   leadingSpaces?: NonterminalNode;
   children: TChildren;
 
-  isSyntactic(ruleName?: string): boolean;
-  isLexical(ruleName?: string): boolean;
+  isSyntactic(): boolean;
+  isLexical(): boolean;
 }
 
 export interface TerminalNode extends CstNodeBase {
@@ -602,15 +602,15 @@ export class CstNodeImpl implements CstNodeBase {
     return this._ctx.input.slice(this.startIdx, this.startIdx + this.matchLength);
   }
 
-  isSyntactic(ruleName?: string): boolean {
+  isSyntactic(): boolean {
     assert(this.isNonterminal(), 'Not a nonterminal');
     const firstChar = this.ctorName[0];
     return firstChar === firstChar.toUpperCase();
   }
 
-  isLexical(ruleName?: string): boolean {
+  isLexical(): boolean {
     assert(this.isNonterminal(), 'Not a nonterminal');
-    return !this.isSyntactic(ruleName);
+    return !this.isSyntactic();
   }
 
   toString(): string {
@@ -620,27 +620,18 @@ export class CstNodeImpl implements CstNodeBase {
   }
 }
 
-export class SeqNodeImpl<TChildren extends CstNodeChildren = CstNodeChildren>
-  implements SeqNode<TChildren>
-{
-  type = CstNodeType.SEQ;
-  ctorName = '_seq' as const;
-  children: TChildren;
+abstract class WrapperNode implements CstNodeBase {
+  abstract ctorName: string;
   source: {startIdx: number; endIdx: number};
   sourceString: string;
 
-  get matchLength(): number {
-    return this.sourceString.length;
-  }
-
-  constructor(
-    children: TChildren,
-    source: {startIdx: number; endIdx: number},
-    sourceString: string
-  ) {
-    this.children = children;
+  constructor(source: {startIdx: number; endIdx: number}, sourceString: string) {
     this.source = source;
     this.sourceString = sourceString;
+  }
+
+  get matchLength(): number {
+    return this.sourceString.length;
   }
 
   isNonterminal(): this is NonterminalNode {
@@ -653,10 +644,32 @@ export class SeqNodeImpl<TChildren extends CstNodeChildren = CstNodeChildren>
     return false;
   }
   isSeq(): this is SeqNode {
-    return true;
+    return false;
   }
   isList(): this is ListNode {
     return false;
+  }
+}
+
+export class SeqNodeImpl<TChildren extends CstNodeChildren = CstNodeChildren>
+  extends WrapperNode
+  implements SeqNode<TChildren>
+{
+  type = CstNodeType.SEQ;
+  ctorName = '_seq' as const;
+  children: TChildren;
+
+  constructor(
+    children: TChildren,
+    source: {startIdx: number; endIdx: number},
+    sourceString: string
+  ) {
+    super(source, sourceString);
+    this.children = children;
+  }
+
+  override isSeq(): this is SeqNode {
+    return true;
   }
 
   unpack<R>(cb: (...args: TChildren) => R): R {
@@ -668,41 +681,25 @@ export class SeqNodeImpl<TChildren extends CstNodeChildren = CstNodeChildren>
   }
 }
 
-export class ListNodeImpl<TNode extends CstNode = CstNode> implements ListNode<TNode> {
+export class ListNodeImpl<TNode extends CstNode = CstNode>
+  extends WrapperNode
+  implements ListNode<TNode>
+{
   type = CstNodeType.LIST;
   ctorName = '_list' as const;
   children: readonly TNode[];
-  source: {startIdx: number; endIdx: number};
-  sourceString: string;
-
-  get matchLength(): number {
-    return this.sourceString.length;
-  }
 
   constructor(
     children: readonly TNode[],
     source: {startIdx: number; endIdx: number},
     sourceString: string
   ) {
+    super(source, sourceString);
     this.children = children;
-    this.source = source;
-    this.sourceString = sourceString;
   }
 
-  isNonterminal(): this is NonterminalNode {
-    return false;
-  }
-  isTerminal(): this is TerminalNode {
-    return false;
-  }
-  isList(): this is ListNode {
+  override isList(): this is ListNode {
     return true;
-  }
-  isOptional(): this is OptNode {
-    return false;
-  }
-  isSeq(): this is SeqNode {
-    return false;
   }
 
   collect<R>(cb: (...args: CstNode[]) => R): R[] {
@@ -712,41 +709,25 @@ export class ListNodeImpl<TNode extends CstNode = CstNode> implements ListNode<T
   }
 }
 
-export class OptNodeImpl<TNode extends CstNode = CstNode> implements OptNode<TNode> {
+export class OptNodeImpl<TNode extends CstNode = CstNode>
+  extends WrapperNode
+  implements OptNode<TNode>
+{
   type = CstNodeType.OPT;
   ctorName = '_opt' as const;
   children: [] | [TNode];
-  source: {startIdx: number; endIdx: number};
-  sourceString: string;
-
-  get matchLength(): number {
-    return this.sourceString.length;
-  }
 
   constructor(
     child: TNode | undefined,
     source: {startIdx: number; endIdx: number},
     sourceString: string
   ) {
+    super(source, sourceString);
     this.children = child ? [child] : [];
-    this.source = source;
-    this.sourceString = sourceString;
   }
 
-  isNonterminal(): this is NonterminalNode {
-    return false;
-  }
-  isTerminal(): this is TerminalNode {
-    return false;
-  }
-  isList(): this is ListNode {
-    return false;
-  }
-  isOptional(): this is OptNode {
+  override isOptional(): this is OptNode {
     return true;
-  }
-  isSeq(): this is SeqNode {
-    return false;
   }
 
   ifPresent<R>(
@@ -770,17 +751,6 @@ export class OptNodeImpl<TNode extends CstNode = CstNode> implements OptNode<TNo
     return this.children.length === 0;
   }
 }
-
-// export function dumpCstNode(node: CstNode, depth = 0): void {
-//   const {_base, children, ctorName, matchLength, startIdx} = node;
-//   const indent = Array.from({length: depth}).join('  ');
-//   const addr = _base.toString(16);
-//   // eslint-disable-next-line no-console
-//   console.log(
-//     `${indent}${addr} ${ctorName}@${startIdx}, matchLength ${matchLength}, children ${children.length}` // eslint-disable-line max-len
-//   );
-//   node.children.forEach(c => dumpCstNode(c, depth + 1));
-// }
 
 export class MatchResult {
   // Note: This is different from the JS implementation, which has:
