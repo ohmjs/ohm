@@ -6,32 +6,11 @@
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {createInterface} from 'node:readline/promises';
 import {basename, resolve} from 'node:path';
-import {Client, BlueskyStrategy, MastodonStrategy} from '@humanwhocodes/crosspost';
+import {Client, BlueskyStrategy, DiscordWebhookStrategy, MastodonStrategy} from '@humanwhocodes/crosspost';
 import * as p from '@clack/prompts';
 import {parse, stringify} from 'yaml';
 
-const args = process.argv.slice(2);
-
-if (args.includes('--help') || args.includes('-h')) {
-  console.log(`Usage: crosspost.mjs [command] [dir]
-
-Commands:
-  post   Post all unpublished entries (default)
-  add    Interactive TUI for managing posts
-
-Dir defaults to ./.crosspost`);
-  process.exit(0);
-}
-let command = 'post';
-let dir = '.crosspost';
-
-if (args.length > 0 && ['post', 'add'].includes(args[0])) {
-  command = args[0];
-  if (args[1]) dir = args[1];
-} else if (args.length > 0) {
-  dir = args[0];
-}
-
+const dir = process.argv[2] || '.crosspost';
 const baseDir = resolve(dir);
 const postsPath = resolve(baseDir, 'posts.yaml');
 
@@ -53,7 +32,7 @@ async function runPost() {
   const posts = loadPosts();
   if (posts.length === 0) {
     console.log('No posts found.');
-    process.exit(0);
+    return;
   }
 
   const allStrategies = [];
@@ -64,6 +43,14 @@ async function runPost() {
         identifier: process.env.BLUESKY_IDENTIFIER,
         password: process.env.BLUESKY_PASSWORD,
         host: process.env.BLUESKY_HOST || 'bsky.social',
+      })
+    );
+  }
+
+  if (process.env.DISCORD_WEBHOOK_URL) {
+    allStrategies.push(
+      new DiscordWebhookStrategy({
+        webhookUrl: process.env.DISCORD_WEBHOOK_URL,
       })
     );
   }
@@ -79,7 +66,7 @@ async function runPost() {
 
   if (allStrategies.length === 0) {
     console.error('No services configured. Set env vars for Bluesky and/or Mastodon.');
-    process.exit(1);
+    return;
   }
 
   const serviceIds = allStrategies.map(s => s.id);
@@ -92,7 +79,7 @@ async function runPost() {
   const pending = posts.filter(needsPosting);
   if (pending.length === 0) {
     console.log('Nothing to post.');
-    process.exit(0);
+    return;
   }
 
   let modified = false;
@@ -163,19 +150,21 @@ async function readMultiline(prompt) {
     input: process.stdin,
     output: process.stdout,
   });
-  console.log(`${prompt} (Ctrl-D to finish)`);
+  console.log(`${prompt} (two empty lines to finish)`);
   const lines = [];
-  try {
-    while (true) {
-      const line = await rl.question('  │  ');
-      lines.push(line);
+  let consecutiveEmpty = 0;
+  while (true) {
+    const line = await rl.question('  │  ');
+    if (line === '') {
+      consecutiveEmpty++;
+      if (consecutiveEmpty >= 2) break;
+    } else {
+      consecutiveEmpty = 0;
     }
-  } catch {
-    // Ctrl-D closes the interface, causing question() to reject
-  } finally {
-    rl.close();
+    lines.push(line);
   }
-  return lines.join('\n');
+  rl.close();
+  return lines.join('\n').trim();
 }
 
 function unescapePath(str) {
@@ -349,6 +338,7 @@ async function runAdd() {
         {value: 'list', label: 'List all posts'},
         {value: 'edit', label: 'Edit a draft'},
         {value: 'delete', label: 'Delete a draft'},
+        {value: 'post', label: 'Post all drafts'},
         {value: 'quit', label: 'Quit'},
       ],
     });
@@ -362,13 +352,10 @@ async function runAdd() {
     else if (action === 'list') await listPosts(posts);
     else if (action === 'edit') await editPost(posts);
     else if (action === 'delete') await deletePost(posts);
+    else if (action === 'post') await runPost();
   }
 }
 
 // --- main ---
 
-if (command === 'add') {
-  runAdd();
-} else {
-  runPost();
-}
+runAdd();
