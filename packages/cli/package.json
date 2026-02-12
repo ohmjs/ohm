@@ -25,7 +25,7 @@
   "devDependencies": {
     "@types/require-from-string": "^1.2.1",
     "ava": "^6.0.0",
-    "ohm-js": "^17.0.0",
+    "ohm-js": "workspace:^",
     "require-from-string": "^2.0.2",
     "ts-dedent": "^2.2.0",
     "ts-morph": "^26.0.0"

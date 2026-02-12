@@ -7,7 +7,7 @@ import {toAST} from 'ohm-js/extras';
 import {grammar as v18Grammar} from 'ohm-js/v18';
 
 import {scriptRel, toWasmGrammar} from './_helpers.js';
-import {createToAst} from '../src/createToAst.ts';
+import {createToAst} from '@ohm-js/runtime/compat';
 
 const arithmeticSrc = readFileSync(scriptRel('../../ohm-js/test/data/arithmetic.ohm'));
 const arithmetic = v18Grammar(arithmeticSrc.toString());

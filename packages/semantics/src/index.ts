@@ -1,4 +1,4 @@
-import type {CstNode, NonterminalNode} from '@ohm-js/wasm';
+import type {CstNode, NonterminalNode} from '@ohm-js/compiler';
 import type {ActionDict, VisitorCtx} from './types.ts';
 
 const globalActionStack: [string, string, string][] = [];

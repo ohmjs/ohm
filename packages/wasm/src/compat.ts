@@ -2,7 +2,7 @@ import {grammars as grammarsJs, grammar as grammarJs} from 'ohm-js';
 import type {Grammar as GrammarJs} from 'ohm-js';
 
 import {Compiler} from './Compiler.js';
-import {WasmGrammar} from './miniohm.ts';
+import {WasmGrammar} from '@ohm-js/runtime';
 
 export interface Grammar extends WasmGrammar {
   rules: GrammarJs['rules'];
@@ -32,6 +32,3 @@ export function grammars(source: string): Record<string, Grammar> {
 
   return ans;
 }
-
-export {createToAst} from './createToAst.ts';
-export type {AstMapping, AstNodeTemplate} from './createToAst.ts';

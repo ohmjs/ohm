@@ -1,15 +1,13 @@
 /* global URL */
 
-import * as ohm from '@ohm-js/wasm/compat';
-import type {CstNode, ListNode, SucceededMatchResult, TerminalNode} from '@ohm-js/wasm';
+import * as ohm from '@ohm-js/compiler/compat';
+import type {CstNode, ListNode, SucceededMatchResult, TerminalNode} from '@ohm-js/compiler';
 import test from 'ava';
 import {readFileSync} from 'node:fs';
 import * as ohmJs from 'ohm-js';
 
 import type {Operation, VisitorCtx} from './types.ts';
 import {createOperation} from './index.ts';
-import {adaptCstFromMatchResult} from './compat.ts';
-import {reverse} from 'node:dns/promises';
 
 const scriptRel = (relPath: string) => new URL(relPath, import.meta.url);
 const g = ohm.grammar(readFileSync(scriptRel('../../ohm-js/test/arithmetic.ohm'), 'utf8'));

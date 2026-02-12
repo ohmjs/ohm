@@ -1,2 +1,2 @@
 export {Compiler} from './src/Compiler.js';
-export * from './src/miniohm.ts';
+export * from '@ohm-js/runtime';

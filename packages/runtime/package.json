@@ -1,0 +1,31 @@
+{
+  "name": "@ohm-js/runtime",
+  "version": "18.0.0-alpha.0",
+  "description": "Ohm runtime — CST nodes, WasmGrammar, and MatchResult",
+  "keywords": ["parser", "parsing", "ohm", "ohm-js", "runtime"],
+  "homepage": "https://github.com/ohmjs/ohm#readme",
+  "bugs": {
+    "url": "https://github.com/ohmjs/ohm/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ohmjs/ohm.git"
+  },
+  "license": "MIT",
+  "author": "Patrick Dubroy <pdubroy@gmail.com>",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./compat": {
+      "default": "./dist/src/createToAst.js",
+      "types": "./dist/src/createToAst.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc"
+  }
+}

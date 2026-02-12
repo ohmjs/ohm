@@ -1,7 +1,7 @@
 /* global process, URL */
 
 import {Compiler} from '../src/Compiler.js';
-import {WasmGrammar} from '../src/miniohm.ts';
+import {WasmGrammar} from '@ohm-js/runtime';
 
 const DEBUG = process.env.OHM_DEBUG === '1';
 

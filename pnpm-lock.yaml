@@ -33,12 +33,6 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
 
-  examples/attributes:
-    dependencies:
-      ohm-js:
-        specifier: ^17.0.0
-        version: link:../../packages/ohm-js
-
   examples/ecmascript:
     devDependencies:
       ava:
@@ -46,13 +40,13 @@ importers:
         version: 6.2.0(rollup@4.43.0)
       ohm-js:
         specifier: ^17.0.0
-        version: link:../../packages/ohm-js
+        version: 17.2.1
 
   examples/indentation-sensitive:
     dependencies:
       ohm-js:
         specifier: ^17.0.0
-        version: link:../../packages/ohm-js
+        version: 17.2.1
     devDependencies:
       uvu:
         specifier: ^0.5.6
@@ -62,7 +56,7 @@ importers:
     dependencies:
       ohm-js:
         specifier: ^17.0.0
-        version: link:../../packages/ohm-js
+        version: 17.2.1
     devDependencies:
       ava:
         specifier: ^6.0.0
@@ -72,7 +66,7 @@ importers:
     dependencies:
       ohm-js:
         specifier: ^17.0.0
-        version: link:../../packages/ohm-js
+        version: 17.2.1
     devDependencies:
       ava:
         specifier: ^6.0.0
@@ -85,7 +79,7 @@ importers:
     dependencies:
       ohm-js:
         specifier: ^17.0.0
-        version: link:../../packages/ohm-js
+        version: 17.2.1
     devDependencies:
       ava:
         specifier: ^6.0.0
@@ -95,7 +89,7 @@ importers:
     dependencies:
       ohm-js:
         specifier: ^17.0.0
-        version: link:../../packages/ohm-js
+        version: 17.2.1
     devDependencies:
       '@ohm-js/cli':
         specifier: ^2.0.0
@@ -132,7 +126,7 @@ importers:
         specifier: ^6.0.0
         version: 6.2.0(rollup@4.43.0)
       ohm-js:
-        specifier: ^17.0.0
+        specifier: workspace:^
         version: link:../ohm-js
       require-from-string:
         specifier: ^2.0.2
@@ -148,7 +142,7 @@ importers:
     dependencies:
       ohm-js:
         specifier: ^17.1.0
-        version: link:../ohm-js
+        version: 17.2.1
     devDependencies:
       fast-glob:
         specifier: ^3.2.7
@@ -250,13 +244,15 @@ importers:
         specifier: ^4.10.0
         version: 4.10.0(webpack@5.99.7)
 
+  packages/runtime: {}
+
   packages/semantics:
     dependencies:
       ohm-js:
         specifier: workspace:^
         version: link:../ohm-js
     devDependencies:
-      '@ohm-js/wasm':
+      '@ohm-js/compiler':
         specifier: workspace:^
         version: link:../wasm
       ava:
@@ -265,11 +261,14 @@ importers:
 
   packages/wasm:
     dependencies:
+      '@ohm-js/runtime':
+        specifier: workspace:^
+        version: link:../runtime
       '@wasmgroundup/emit':
         specifier: ^1.0.2
         version: 1.0.2
       ohm-js:
-        specifier: ^17.1.0
+        specifier: workspace:^
         version: link:../ohm-js
     devDependencies:
       '@shopify/liquid-html-parser':

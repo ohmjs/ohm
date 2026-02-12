@@ -1,6 +1,6 @@
 # Ohm v18.0 Alpha
 
-## @ohm-js/wasm/compat
+## @ohm-js/compiler/compat
 
 A submodule with some helpers to make it easier to upgrade to v18.
 
@@ -12,13 +12,15 @@ In v18, it's recommended to compile your grammars to a Wasm blob at build time, 
 
 `grammar()` and `grammars()` provide the same API as Ohm v17, compiling your grammar and instantiating it in a single step.
 
+## @ohm-js/runtime/compat
+
 ### `createToAst`
 
 In v17, the `ohm-js/extras` submodule provides [toAST](https://ohmjs.org/docs/extras#toastmatchresult-mapping), a helper for producing abstract syntax trees (ASTs). However, we now recommend avoiding the `toAST` helper and instead writing your own `toAST` operation directly, and `toAST` has been removed entirely in v18.
 
 For existing users of `toAST` who would like to upgrade to v18, we provide `createToAst`:
 
-Old (v17): 
+Old (v17):
 
 ```js
 import {toAST} from "@ohm-js/extras";
@@ -34,7 +36,7 @@ const ast = toAST(match, {
 New (v18):
 
 ```js
-import {createToAst from "@ohm-js/wasm/compat";
+import {createToAst} from "@ohm-js/runtime/compat";
 
 const toAST = createToAst({
   Equation: {content: 0},

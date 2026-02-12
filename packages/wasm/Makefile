@@ -22,12 +22,14 @@ debug: clean
 bench: all scripts/bench.js build/es5.wasm build/json.wasm build/liquid-html.wasm
 	$(NODE) --expose-gc $(NODE_COMMON_FLAGS) scripts/bench.js
 
-dist/index.d.ts:
-	cp index.d.ts dist/index.d.ts
-
 .PHONY: dist-js
 dist-js: build/ohmRuntime.wasm_sections.ts $(SRC_JS_FILES) $(SRC_TS_FILES)
 	pnpm tsc
+	pnpm esbuild src/Compiler.js \
+		--bundle --format=esm --outdir=dist/src \
+		--platform=node \
+		--external:ohm-js --external:@ohm-js/runtime
+	cp src/cli.js dist/src/cli.js
 
 build/ohmRuntime.wasm_sections.ts: scripts/bundlewasm.ts build/ohmRuntime.wasm
 	$(NODE) scripts/bundlewasm.ts build/ohmRuntime.wasm

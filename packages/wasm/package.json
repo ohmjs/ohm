@@ -1,20 +1,16 @@
 {
-  "name": "@ohm-js/wasm",
+  "name": "@ohm-js/compiler",
   "version": "0.7.5",
   "description": "Compile Ohm.js grammars to WebAsssembly",
   "main": "dist/index.js",
   "exports": {
     ".": {
-      "default": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./compat": {
-      "default": "./dist/src/compat.js",
-      "types": "./dist/src/compat.d.ts"
-    },
-    "./compiler": {
-      "default": "./dist/src/Compiler.js",
-      "types": "./dist/src/Compiler.d.ts"
+      "types": "./dist/src/compat.d.ts",
+      "default": "./dist/src/compat.js"
     }
   },
   "bin": {
@@ -43,10 +39,9 @@
     "mitata": "^1.0.34",
     "wabt": "1.0.37-nightly.20250428"
   },
-  "peerDependencies": {
-    "ohm-js": "^17.1.0"
-  },
   "dependencies": {
-    "@wasmgroundup/emit": "^1.0.2"
+    "@ohm-js/runtime": "workspace:^",
+    "@wasmgroundup/emit": "^1.0.2",
+    "ohm-js": "workspace:^"
   }
 }
