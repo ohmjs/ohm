@@ -1,14 +1,52 @@
 #!/usr/bin/env node
 
 /* eslint-disable no-console */
-/* global process */
+/* global AbortSignal, fetch, process */
 
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {createInterface} from 'node:readline/promises';
 import {basename, resolve} from 'node:path';
-import {Client, BlueskyStrategy, DiscordWebhookStrategy, MastodonStrategy} from '@humanwhocodes/crosspost';
+import {
+  Client,
+  BlueskyStrategy,
+  DiscordWebhookStrategy,
+  MastodonStrategy,
+} from '@humanwhocodes/crosspost';
 import * as p from '@clack/prompts';
 import {parse, stringify} from 'yaml';
+
+const URL_RE = /https?:\/\/[^\s<>)"']+/g;
+
+function extractUrls(message) {
+  return [...new Set(message.match(URL_RE) ?? [])];
+}
+
+async function fetchOgData(url) {
+  const res = await fetch(url, {
+    headers: {'User-Agent': 'crosspost-bot/1.0'},
+    redirect: 'follow',
+    signal: AbortSignal.timeout(10000),
+  });
+  const html = await res.text();
+
+  const og = name => {
+    const m =
+      html.match(
+        new RegExp(`<meta[^>]+property=["']og:${name}["'][^>]+content=["']([^"']+)["']`, 'i')
+      ) ??
+      html.match(
+        new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:${name}["']`, 'i')
+      );
+    return m?.[1] ?? null;
+  };
+
+  return {
+    uri: url,
+    title: og('title') ?? '',
+    description: og('description') ?? '',
+    thumb_url: og('image') ?? null,
+  };
+}
 
 const dir = process.argv[2] || '.crosspost';
 const baseDir = resolve(dir);
@@ -102,6 +140,24 @@ async function runPost() {
             alt: post.image_alt ?? basename(post.image),
           },
         ];
+      } else if (post.card) {
+        const {card} = post;
+        const cardPreview = {
+          uri: card.uri,
+          title: card.title,
+          description: card.description,
+        };
+        if (card.thumb_url) {
+          try {
+            const thumbRes = await fetch(card.thumb_url, {
+              signal: AbortSignal.timeout(10000),
+            });
+            cardPreview.thumb = new Uint8Array(await thumbRes.arrayBuffer());
+          } catch (err) {
+            console.error(`  Warning: could not fetch thumbnail: ${err.message}`);
+          }
+        }
+        opts.cardPreview = cardPreview;
       }
       const results = await client.post(post.message, opts);
       if (!post.posted) post.posted = {};
@@ -142,6 +198,7 @@ function truncate(str, len = 60) {
 function postLabel(post) {
   let label = truncate(post.message);
   if (post.image) label += ' 📎';
+  if (post.card) label += ' 🔗';
   return label;
 }
 
@@ -204,6 +261,39 @@ async function promptImage() {
   return {image, image_alt: imageAlt || basename(image)};
 }
 
+async function promptCard(message) {
+  const urls = extractUrls(message);
+  if (urls.length === 0) return null;
+
+  const options = [
+    {value: 'none', label: 'None'},
+    ...urls.map(u => ({value: u, label: truncate(u, 70)})),
+  ];
+  const chosen = await p.select({
+    message: 'Generate an embed card for which link?',
+    options,
+  });
+  if (p.isCancel(chosen) || chosen === 'none') return null;
+
+  const s = p.spinner();
+  s.start(`Fetching Open Graph data from ${chosen}`);
+  try {
+    const card = await fetchOgData(chosen);
+    s.stop(`Card: ${card.title || '(no title)'}`);
+    if (!card.title && !card.description) {
+      p.log.warn('No Open Graph metadata found for this URL.');
+      return null;
+    }
+    const thumbLine = card.thumb_url ? `\n🖼  ${card.thumb_url}` : '';
+    p.note(`${card.title}\n${card.description}${thumbLine}`, 'Embed card');
+    return card;
+  } catch (err) {
+    s.stop('Failed to fetch');
+    p.log.warn(`Could not fetch card data: ${err.message}`);
+    return null;
+  }
+}
+
 async function addPost(posts) {
   const message = await readMultiline(p.log.step('Compose your post') ?? '');
   if (!message) {
@@ -212,10 +302,11 @@ async function addPost(posts) {
   }
 
   const imageInfo = await promptImage();
+  const card = !imageInfo ? await promptCard(message) : null;
 
-  const preview = imageInfo
-    ? `${message}\n\n📎 ${imageInfo.image} (${imageInfo.image_alt})`
-    : message;
+  let preview = message;
+  if (imageInfo) preview += `\n\n📎 ${imageInfo.image} (${imageInfo.image_alt})`;
+  if (card) preview += `\n\n🔗 ${card.title}`;
   p.note(preview, 'Preview');
 
   const ok = await p.confirm({message: 'Add this post?'});
@@ -228,6 +319,9 @@ async function addPost(posts) {
   if (imageInfo) {
     entry.image = imageInfo.image;
     entry.image_alt = imageInfo.image_alt;
+  }
+  if (card) {
+    entry.card = card;
   }
   posts.push(entry);
   savePosts(posts);
@@ -276,10 +370,11 @@ async function editPost(posts) {
   }
 
   const imageInfo = await promptImage();
+  const card = !imageInfo ? await promptCard(message) : null;
 
-  const preview = imageInfo
-    ? `${message}\n\n📎 ${imageInfo.image} (${imageInfo.image_alt})`
-    : message;
+  let preview = message;
+  if (imageInfo) preview += `\n\n📎 ${imageInfo.image} (${imageInfo.image_alt})`;
+  if (card) preview += `\n\n🔗 ${card.title}`;
   p.note(preview, 'Preview');
   const ok = await p.confirm({message: 'Save changes?'});
   if (p.isCancel(ok) || !ok) return;
@@ -288,6 +383,9 @@ async function editPost(posts) {
   if (imageInfo) {
     posts[idx].image = imageInfo.image;
     posts[idx].image_alt = imageInfo.image_alt;
+  }
+  if (card) {
+    posts[idx].card = card;
   }
   savePosts(posts);
   p.log.success('Post updated.');
