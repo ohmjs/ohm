@@ -1,5 +1,16 @@
 # Changelog
 
+## v17.4.0 - Feb 12, 2026
+
+### New features:
+
+- [77ad9240] feat: Add `recoverSourceOrder` to extras
+
+### Fixes
+
+- [c3042301] fix: bug with errors from partial failures in described rules
+- [4d602134] fix(extras types): incorrect type for `getLineAndColumn`
+
 ## v17.3.0 - Dec 20, 2025
 
 ### New features:
