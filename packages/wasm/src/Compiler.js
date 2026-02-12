@@ -729,14 +729,14 @@ export class Compiler {
     // For any additional imports outside the prebuilt ones.
     this.importDecls = [...defaultImports];
 
-      // The rule ID is a 0-based index that's mapped to the name.
-      // It is *not* the same as the function index of the rule's eval function.
-      this.ruleIdByName = new IndexedSet();
+    // The rule ID is a 0-based index that's mapped to the name.
+    // It is *not* the same as the function index of the rule's eval function.
+    this.ruleIdByName = new IndexedSet();
 
-      // For non-memoized rules, we defer assigning IDs until all memoized
-      // rule names have been assigned.
-      this._deferredRuleIds = new Set();
-      this._maxMemoizedRuleId = -1;
+    // For non-memoized rules, we defer assigning IDs until all memoized
+    // rule names have been assigned.
+    this._deferredRuleIds = new Set();
+    this._maxMemoizedRuleId = -1;
 
     // Ensure default start rule has id 0; $term, 1; and spaces, 2.
     this._ensureRuleId(grammar.defaultStartRule);
