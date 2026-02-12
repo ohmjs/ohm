@@ -161,10 +161,10 @@ async function runPost() {
       }
       const results = await client.post(post.message, opts);
       if (!post.posted) post.posted = {};
-      for (const result of results) {
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
         if (result.ok) {
-          const id = result.name.toLowerCase();
-          post.posted[id] = {url: result.url ?? null};
+          post.posted[strategies[i].id] = {url: result.url ?? null};
           console.log(`  ✓ ${result.name}: ${result.url ?? '(no url)'}`);
         } else {
           console.error(`  ✗ ${result.name}: ${result.reason.message}`);
