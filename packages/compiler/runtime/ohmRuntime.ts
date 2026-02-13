@@ -1,3 +1,46 @@
+/*
+ * Block-sparse memo table
+ * =======================
+ *
+ * The rule ID space is divided into fixed-size blocks of 16 entries.
+ * The index is a 2D array: index[pos][blockIdx] -> block pointer,
+ * where numMemoBlocks = ceil(numMemoizedRules / 16).
+ * numMemoizedRules is determined at compile time and stored in a
+ * custom Wasm section ('memoizedRuleCount'); the runtime reads it
+ * at instantiation and calls setNumMemoizedRules().
+ * The index is allocated upfront; blocks are allocated on first write.
+ *
+ *   Index: a flat array of block pointers, indexed by
+ *   (pos * numMemoBlocks + blockIdx):
+ *
+ *   pos 0                        pos 1
+ *   ┌────────┬────────┬─── ···  ┌────────┬────────┬─── ···
+ *   │ blk 0  │ blk 1  │         │ blk 0  │ blk 1  │
+ *   └───┬────┴───┬────┴─── ···  └────────┴────────┴─── ···
+ *       │        │
+ *       ▼        ▼
+ *   ┌────────┐ ┌────────┐
+ *   │ 16     │ │ 16     │           ← MemoEntry values (i32)
+ *   │ entries│ │ entries│
+ *   └────────┘ └────────┘
+ *   (64 bytes)  (0 = not yet allocated)
+ *
+ *
+ * CST node layout (16-byte header + children)
+ * ============================================
+ *
+ *   Offset  Field
+ *   ------  ----------------------------------
+ *     0     count: i32         (number of children)
+ *     4     matchLength: i32   (chars consumed)
+ *     8     typeAndDetails: i32
+ *               bits [1:0] = node type
+ *                 0=nonterminal, 1=terminal, 2=iteration, 3=optional
+ *               bits [31:2] = ruleId (nonterminal) or arity (iter)
+ *    12     failurePos: i32
+ *    16+    children: i32[]    (pointers to child nodes)
+ */
+
 type ApplyResult = bool;
 
 @external("wasm:js-string", "length")
@@ -14,11 +57,12 @@ declare function matchUnicodeChar(categoryBitmap: i32): bool;
 @inline const STACK_START_OFFSET: usize = WASM_PAGE_SIZE;
 @inline const MAX_INPUT_LEN_BYTES: usize = 64 * 1024;
 
-// We current use 1k (1/64 page) per char for the memo table:
-// - 4 bytes per entry
-// - 256 entries per column
-// - 1 column per char
-@inline const MEMO_COL_SIZE_BYTES: usize = 4 * 256;
+// Block-sparse memo table constants.
+// The rule ID space is partitioned into fixed-size blocks.
+// Each block is allocated lazily on first write.
+@inline const MEMO_BLOCK_ENTRIES: i32 = 16;
+@inline const MEMO_BLOCK_SHIFT: i32 = 4; // log2(MEMO_BLOCK_ENTRIES)
+@inline const MEMO_BLOCK_SIZE_BYTES: usize = <usize>MEMO_BLOCK_ENTRIES * sizeof<MemoEntry>();
 
 // CST nodes
 @inline const CST_NODE_OVERHEAD: usize = 16;
@@ -58,7 +102,10 @@ type RuleEvalResult = i32;
 let pos: u32 = 0;
 let endPos: u32 = 0;
 let input: externref = null;
-let memoBase: usize = 0;
+
+// Block-sparse memo table state.
+let numMemoBlocks: i32 = 0;    // ceil(numMemoizedRules / MEMO_BLOCK_ENTRIES)
+let memoIndexBase: usize = 0;  // base of the index table (block pointers)
 
 // The rightmost position at which a leaf (Terminal, etc.) failed to match.
 let rightmostFailurePos: i32 = 0;
@@ -80,14 +127,28 @@ let recordedFailures: Array<i32> = new Array<i32>();
   return (failurePos << 1) | MEMO_FAILURE_FLAG;
 }
 
+@inline function memoIndexPtr(memoPos: usize, ruleId: i32): usize {
+  const blockIdx = ruleId >> MEMO_BLOCK_SHIFT;
+  return memoIndexBase + (memoPos * numMemoBlocks + blockIdx) * sizeof<u32>();
+}
+
 @inline function memoTableGet(memoPos: usize, ruleId: i32): MemoEntry {
-  const ptr = memoBase + memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<MemoEntry>();
-  return load<MemoEntry>(ptr);
+  const blockPtr = load<u32>(memoIndexPtr(memoPos, ruleId));
+  if (blockPtr === 0) return EMPTY;
+  const offset = (ruleId & (MEMO_BLOCK_ENTRIES - 1)) * sizeof<MemoEntry>();
+  return load<MemoEntry>(<usize>blockPtr + offset);
 }
 
 @inline function memoTableSet(memoPos: usize, ruleId: i32, value: MemoEntry): void {
-  const ptr = memoBase + memoPos * MEMO_COL_SIZE_BYTES + ruleId * sizeof<MemoEntry>();
-  store<MemoEntry>(ptr, value);
+  const idxPtr = memoIndexPtr(memoPos, ruleId);
+  let blockPtr = load<u32>(idxPtr);
+  if (blockPtr === 0) {
+    blockPtr = <u32>heap.alloc(MEMO_BLOCK_SIZE_BYTES);
+    memory.fill(blockPtr, 0, MEMO_BLOCK_SIZE_BYTES);
+    store<u32>(idxPtr, blockPtr);
+  }
+  const offset = (ruleId & (MEMO_BLOCK_ENTRIES - 1)) * sizeof<MemoEntry>();
+  store<MemoEntry>(<usize>blockPtr + offset, value);
 }
 
 @inline function memoGetFailurePos(entry: MemoEntry): i32 {
@@ -159,16 +220,19 @@ export function resetHeap(): void {
   heap.reset();
 }
 
-function initMemoTable(inputLenBytes: usize): usize {
-  const sizeBytes = (inputLenBytes + 1) * MEMO_COL_SIZE_BYTES;
-  const buf = heap.alloc(sizeBytes);
-  memory.fill(buf, 0, sizeBytes);
-  return buf;
+export function setNumMemoizedRules(n: i32): void {
+  numMemoBlocks = (n + MEMO_BLOCK_ENTRIES - 1) / MEMO_BLOCK_ENTRIES;
+}
+
+function initMemoTable(inputLenBytes: usize): void {
+  const indexSizeBytes = (inputLenBytes + 1) * numMemoBlocks * sizeof<u32>();
+  memoIndexBase = heap.alloc(indexSizeBytes);
+  memory.fill(memoIndexBase, 0, indexSizeBytes);
 }
 
 function doMatch(startRuleId: i32): ApplyResult {
   endPos = jsStringLength(input);
-  memoBase = initMemoTable(endPos);
+  initMemoTable(endPos);
 
   maybeSkipSpaces(startRuleId);
   const succeeded = evalApply0(startRuleId) !== 0;

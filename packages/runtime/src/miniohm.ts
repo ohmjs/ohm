@@ -207,8 +207,17 @@ export class WasmGrammar {
   private _init(module: WebAssembly.Module, instance: WebAssembly.Instance) {
     this._instance = instance;
     this._extractStrings(module);
+    this._initMemoConfig(module);
     this.name = this._getGrammarName(module);
     return this;
+  }
+
+  private _initMemoConfig(module: WebAssembly.Module) {
+    const sections = WebAssembly.Module.customSections(module, 'memoizedRuleCount');
+    assert(sections.length === 1, 'Expected one memoizedRuleCount section');
+    const view = new DataView(sections[0]);
+    const count = view.getUint32(0, true); // little-endian
+    (this._instance as any).exports.setNumMemoizedRules(count);
   }
 
   _manage(result: MatchResult) {

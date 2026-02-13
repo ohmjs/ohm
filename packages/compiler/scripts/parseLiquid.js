@@ -17,7 +17,7 @@ import process from 'node:process';
 import {fileURLToPath} from 'node:url';
 import * as ohm from 'ohm-js';
 
-import {matchWithInput, unparse, toWasmGrammar} from '../test/_helpers.js';
+import {unparse, toWasmGrammar} from '../test/_helpers.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
@@ -31,11 +31,16 @@ const pattern = process.argv[2];
   const jsTimes = [];
   const wasmTimes = [];
 
+  if (globalThis.gc) globalThis.gc();
+  const jsHeapBefore = process.memoryUsage().heapUsed;
+  let peakJsHeap = 0;
+
   for (const path of fg.sync(pattern)) {
     const input = readFileSync(path, 'utf8');
     const start = performance.now();
     const r = liquid.LiquidHTML.match(input);
     const elapsed = performance.now() - start;
+    peakJsHeap = Math.max(peakJsHeap, process.memoryUsage().heapUsed - jsHeapBefore);
     if (!r.succeeded()) {
       console.error(`Failed to parse ${path}: ${r.message}`);
       continue;
@@ -45,10 +50,22 @@ const pattern = process.argv[2];
   }
 
   const g = await toWasmGrammar(liquid.LiquidHTML);
+  const {exports} = g._instance;
+  let peakHeapBytes = 0;
+  let peakWasmMemoryBytes = 0;
+
   for (const path of fg.sync(pattern)) {
     const input = readFileSync(path, 'utf8');
     const start = performance.now();
-    assert.equal(matchWithInput(g, input), 1, `failed: ${path}`);
+    const succeeded = g.match(input).use(r => {
+      // Capture memory stats before dispose() resets the heap.
+      const heapUsed = exports.__offset.value - exports.__heap_base.value;
+      const wasmMemory = exports.memory.buffer.byteLength;
+      peakHeapBytes = Math.max(peakHeapBytes, heapUsed);
+      peakWasmMemoryBytes = Math.max(peakWasmMemoryBytes, wasmMemory);
+      return r.succeeded() ? 1 : 0;
+    });
+    assert.equal(succeeded, 1, `failed: ${path}`);
     wasmTimes.push(performance.now() - start);
 
     // Trailing/leading spaces are currently dropped, so trim both
@@ -57,9 +74,16 @@ const pattern = process.argv[2];
   }
 
   const sum = arr => arr.reduce((a, b) => a + b, 0);
+  const fmt = bytes => {
+    if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  };
   const jsTotal = sum(jsTimes);
   const wasmTotal = sum(wasmTimes);
   console.log(`JS total: ${jsTotal.toFixed(0)}ms`);
-  console.log(`Wasm avg: ${wasmTotal.toFixed(0)}ms`);
+  console.log(`Wasm total: ${wasmTotal.toFixed(0)}ms`);
   console.log(`Speedup:  ${(jsTotal / wasmTotal).toFixed(2)}x`);
+  console.log(`Peak JS heap delta: ${fmt(peakJsHeap)}`);
+  console.log(`Peak Wasm heap usage: ${fmt(peakHeapBytes)}`);
+  console.log(`Peak Wasm linear memory: ${fmt(peakWasmMemoryBytes)}`);
 })();
