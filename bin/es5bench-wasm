@@ -1,0 +1,6 @@
+#!/bin/bash
+
+ROOT=$(git rev-parse --show-toplevel)
+cd $(mktemp -d)
+curl --silent https://unpkg.com/ohm-js@15.3.0/dist/ohm.js -o ohm-es5.js
+node --disable-warning=ExperimentalWarning --expose-gc "$ROOT/packages/compiler/scripts/es5bench-wasm.js" "ohm-es5.js"

@@ -6,7 +6,6 @@ import * as ohm from 'ohm-js';
 
 import * as es5js from '../../../examples/ecmascript/index.js';
 import {toWasmGrammar} from '../test/_helpers.js';
-import es5 from '../test/data/_es5.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
@@ -101,7 +100,10 @@ group('JSON', () => {
     liquid.LiquidHTML,
     readFileSync(join(__dirname, '../build/liquid-html.wasm'))
   );
-  es5Wasm = await toWasmGrammar(es5, readFileSync(join(__dirname, '../build/es5.wasm')));
+  es5Wasm = await toWasmGrammar(
+    es5js.grammar,
+    readFileSync(join(__dirname, '../build/es5.wasm'))
+  );
   jsonWasm = await toWasmGrammar(json, readFileSync(join(__dirname, '../build/json.wasm')));
 
   await run();
