@@ -49,13 +49,13 @@ importers:
         version: 6.2.0(rollup@4.43.0)
       ohm-js:
         specifier: ^17.0.0
-        version: 17.2.1
+        version: link:../../packages/ohm-js
 
   examples/indentation-sensitive:
     dependencies:
       ohm-js:
         specifier: ^17.0.0
-        version: 17.2.1
+        version: link:../../packages/ohm-js
     devDependencies:
       uvu:
         specifier: ^0.5.6
@@ -65,7 +65,7 @@ importers:
     dependencies:
       ohm-js:
         specifier: ^17.0.0
-        version: 17.2.1
+        version: link:../../packages/ohm-js
     devDependencies:
       ava:
         specifier: ^6.0.0
@@ -75,7 +75,7 @@ importers:
     dependencies:
       ohm-js:
         specifier: ^17.0.0
-        version: 17.2.1
+        version: link:../../packages/ohm-js
     devDependencies:
       ava:
         specifier: ^6.0.0
@@ -88,7 +88,7 @@ importers:
     dependencies:
       ohm-js:
         specifier: ^17.0.0
-        version: 17.2.1
+        version: link:../../packages/ohm-js
     devDependencies:
       ava:
         specifier: ^6.0.0
@@ -98,7 +98,7 @@ importers:
     dependencies:
       ohm-js:
         specifier: ^17.0.0
-        version: 17.2.1
+        version: link:../../packages/ohm-js
     devDependencies:
       '@ohm-js/cli':
         specifier: ^2.0.0
@@ -151,7 +151,7 @@ importers:
     dependencies:
       '@ohm-js/runtime':
         specifier: workspace:^
-        version: link:../runtime
+        version: link:../runtime/dist-publish
       '@wasmgroundup/emit':
         specifier: ^1.0.2
         version: 1.0.2
@@ -186,12 +186,13 @@ importers:
       wabt:
         specifier: 1.0.37-nightly.20250428
         version: 1.0.37-nightly.20250428
+    publishDirectory: dist-publish
 
   packages/es-grammars:
     dependencies:
       ohm-js:
         specifier: ^17.1.0
-        version: 17.2.1
+        version: link:../ohm-js
     devDependencies:
       fast-glob:
         specifier: ^3.2.7
@@ -293,7 +294,8 @@ importers:
         specifier: ^4.10.0
         version: 4.10.0(webpack@5.99.7)
 
-  packages/runtime: {}
+  packages/runtime:
+    publishDirectory: dist-publish
 
   packages/semantics:
     dependencies:
@@ -303,7 +305,7 @@ importers:
     devDependencies:
       '@ohm-js/compiler':
         specifier: workspace:^
-        version: link:../compiler
+        version: link:../compiler/dist-publish
       ava:
         specifier: ^6.0.0
         version: 6.2.0(rollup@4.43.0)
@@ -1757,7 +1759,7 @@ packages:
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
-    deprecated: Glob versions prior to v9 are no longer supported
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   globals@14.0.0:
     resolution: {integrity: sha512-oahGvuMGQlPw/ivIYBjVSrWAfWLBeku5tpPE2fOPLi+WHffIWbuh2tCjhyQhTBPMf5E9jDEH4FOmTYgYwbKwtQ==}
@@ -2629,6 +2631,7 @@ packages:
   tar@7.4.3:
     resolution: {integrity: sha512-5S7Va8hKfV7W5U6g3aYxXmlPoZVAwUMy9AOKyF2fVuZa2UD3qZjg578OrLRt8PcNN1PleVaL/5/yYATNL0ICUw==}
     engines: {node: '>=18'}
+    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   temp-dir@3.0.0:
     resolution: {integrity: sha512-nHc6S/bwIilKHNRgK/3jlhDoIHcp45YgyiwcAk46Tr0LfEqGBVpmiAyuiuxeVE44m3mXnEeVhaipLOEWmH+Njw==}
@@ -2875,6 +2878,7 @@ packages:
 
   whatwg-encoding@1.0.5:
     resolution: {integrity: sha512-b5lim54JOPN9HtzvK9HFXvBma/rnfFeqsic0hSpjtDbVxR3dJKLc+KB4V6GgiGOvl7CY/KNh8rxSo9DKQrnUEw==}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 
   whatwg-url@4.8.0:
     resolution: {integrity: sha512-nUvUPuenPFtPfy/X+dAYh/TfRbTBlnXTM5iIfLseJFkkQewmpG9pGR6i87E9qL+lZaJzv+99kkQWoGOtLfkZQQ==}

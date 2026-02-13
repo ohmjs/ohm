@@ -16,11 +16,18 @@
   "bin": {
     "ohm2wasm": "dist/src/cli.js"
   },
-  "files": ["dist/**/*.js", "dist/**/*.d.ts"],
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts"
+  ],
+  "publishConfig": {
+    "directory": "dist-publish",
+    "access": "public"
+  },
   "scripts": {
     "build": "make",
     "build-and-test": "make && ava test",
-    "prepack": "make",
+    "prepack": "make && node scripts/prepare-publish.mjs",
     "test": "ava test"
   },
   "type": "module",

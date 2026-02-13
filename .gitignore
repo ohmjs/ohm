@@ -1,5 +1,6 @@
 packages/cli/src/helpers/generateTypes.test.js
 dist/
+dist-publish/
 
 # ohm-js/dist has prebuilt recipes that are committed to the repo.
 !packages/ohm-js/dist/
