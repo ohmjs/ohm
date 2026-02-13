@@ -2,9 +2,9 @@
  * Block-sparse memo table
  * =======================
  *
- * The rule ID space is divided into fixed-size blocks of 64 entries.
+ * The rule ID space is divided into fixed-size blocks of 16 entries.
  * The index is a 2D array: index[pos][blockIdx] -> block pointer,
- * where numMemoBlocks = ceil(numMemoizedRules / 64).
+ * where numMemoBlocks = ceil(numMemoizedRules / 16).
  * numMemoizedRules is determined at compile time and stored in a
  * custom Wasm section ('memoizedRuleCount'); the runtime reads it
  * at instantiation and calls setNumMemoizedRules().
@@ -20,10 +20,10 @@
  *       │        │
  *       ▼        ▼
  *   ┌────────┐ ┌────────┐
- *   │ 64     │ │ 64     │           ← MemoEntry values (i32)
+ *   │ 16     │ │ 16     │           ← MemoEntry values (i32)
  *   │ entries│ │ entries│
  *   └────────┘ └────────┘
- *   (256 bytes) (0 = not yet allocated)
+ *   (64 bytes)  (0 = not yet allocated)
  *
  *
  * CST node layout (16-byte header + children)
