@@ -8,7 +8,7 @@ Provides:
 
 ### `grammar()` and `grammars()`
 
-In v18, it's recommended to compile your grammars to a Wasm blob at build time, and to use `WasmGrammar.instantiate` (or `instantiateStreaming`) to load the compiled grammar.
+In v18, it's recommended to compile your grammars to a Wasm blob at build time, and to use `Grammar.instantiate` (or `instantiateStreaming`) to load the compiled grammar.
 
 `grammar()` and `grammars()` provide the same API as Ohm v17, compiling your grammar and instantiating it in a single step.
 

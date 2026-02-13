@@ -2,13 +2,13 @@ import {grammars as grammarsJs, grammar as grammarJs} from 'ohm-js';
 import type {Grammar as GrammarJs} from 'ohm-js';
 
 import {Compiler} from './Compiler.js';
-import {WasmGrammar} from '@ohm-js/runtime';
+import {Grammar as BaseGrammar} from '@ohm-js/runtime';
 
-export interface Grammar extends WasmGrammar {
+export interface Grammar extends BaseGrammar {
   rules: GrammarJs['rules'];
 }
 
-class CompatGrammar extends WasmGrammar implements Grammar {
+class CompatGrammar extends BaseGrammar implements Grammar {
   rules: GrammarJs['rules'];
 
   constructor(wasmModule: Uint8Array<ArrayBuffer>, rules: GrammarJs['rules']) {

@@ -1,7 +1,7 @@
 /* global process, URL */
 
 import {Compiler} from '../src/Compiler.js';
-import {WasmGrammar} from '@ohm-js/runtime';
+import {Grammar} from '@ohm-js/runtime';
 
 const DEBUG = process.env.OHM_DEBUG === '1';
 
@@ -9,7 +9,7 @@ export async function toWasmGrammar(grammar, modBytes = undefined) {
   const compiler = new Compiler(grammar);
   const bytes = modBytes ?? compiler.compile();
 
-  const wasmGrammar = new WasmGrammar();
+  const wasmGrammar = new Grammar();
 
   let depth = 0;
   let debugImports = {};

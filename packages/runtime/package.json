@@ -1,7 +1,7 @@
 {
   "name": "@ohm-js/runtime",
   "version": "18.0.0-alpha.1",
-  "description": "Ohm runtime — CST nodes, WasmGrammar, and MatchResult",
+  "description": "Ohm runtime — CST nodes, Grammar, and MatchResult",
   "keywords": ["parser", "parsing", "ohm", "ohm-js", "runtime"],
   "homepage": "https://github.com/ohmjs/ohm#readme",
   "bugs": {

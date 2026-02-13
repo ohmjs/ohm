@@ -6,7 +6,7 @@ import process from 'node:process';
 
 import {grammar} from '../../../examples/ecmascript/index.js';
 import {Compiler} from '../src/Compiler.js';
-import {WasmGrammar} from '@ohm-js/runtime';
+import {Grammar} from '@ohm-js/runtime';
 
 const filename = process.argv[2];
 if (!filename) {
@@ -29,7 +29,7 @@ const fmt = n => {
   console.error(`Compile: ${elapsed.toFixed(0)}ms`);
 
   // Instantiate the Wasm module.
-  const wasmGrammar = new WasmGrammar();
+  const wasmGrammar = new Grammar();
   await wasmGrammar._instantiate(bytes, {});
 
   // JS matching.
