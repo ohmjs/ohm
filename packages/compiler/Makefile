@@ -39,7 +39,7 @@ build/ohmRuntime.wasm: runtime/ohmRuntime.ts
 
 # 2025-10-07: The rules below may not work anymore.
 
-build/es5.wasm: src/cli.js test/data/_es5.js
+build/es5.wasm: src/cli.js
 	$(NODE) scripts/es5ToWasm.js build/es5.wasm
 
 build/json.wasm: src/cli.js ../lang-json/json.ohm
