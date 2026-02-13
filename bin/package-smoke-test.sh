@@ -13,7 +13,7 @@ cd "$TEMP_DIR"
 
 npm init -y > /dev/null
 
-npm install ohm-js @ohm-js/compiler @ohm-js/runtime webpack webpack-cli --silent
+npm install ohm-js@18 @ohm-js/compiler webpack webpack-cli --silent
 
 cat > test-ohm-js.mjs << 'EOF'
 const assert = (cond, msg) => { if (!cond) throw new Error(msg || 'assertion failed'); };
@@ -34,7 +34,7 @@ EOF
 cat > test-wasm.mjs << 'EOF'
 const assert = (cond, msg) => { if (!cond) throw new Error(msg || 'assertion failed'); };
 import {grammar} from '@ohm-js/compiler/compat';
-import {createToAst} from '@ohm-js/runtime/compat';
+import {createToAst} from 'ohm-js/compat';
 
 const g = grammar(String.raw`
   Arithmetic {
