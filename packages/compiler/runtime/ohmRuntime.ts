@@ -60,7 +60,8 @@ declare function matchUnicodeChar(categoryBitmap: i32): bool;
 // Block-sparse memo table constants.
 // The rule ID space is partitioned into fixed-size blocks.
 // Each block is allocated lazily on first write.
-@inline const MEMO_BLOCK_ENTRIES: i32 = 64;
+@inline const MEMO_BLOCK_ENTRIES: i32 = 16;
+@inline const MEMO_BLOCK_SHIFT: i32 = 4; // log2(MEMO_BLOCK_ENTRIES)
 @inline const MEMO_BLOCK_SIZE_BYTES: usize = <usize>MEMO_BLOCK_ENTRIES * sizeof<MemoEntry>();
 
 // CST nodes
@@ -127,7 +128,7 @@ let recordedFailures: Array<i32> = new Array<i32>();
 }
 
 @inline function memoIndexPtr(memoPos: usize, ruleId: i32): usize {
-  const blockIdx = ruleId >> 6; // ruleId / 64
+  const blockIdx = ruleId >> MEMO_BLOCK_SHIFT;
   return memoIndexBase + (memoPos * numMemoBlocks + blockIdx) * sizeof<u32>();
 }
 
