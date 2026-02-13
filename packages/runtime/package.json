@@ -37,6 +37,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "prepack": "node scripts/prepare-publish.mjs"
+    "prepack": "node scripts/prepare-publish.mjs",
+    "publish:alpha": "pnpm publish --tag alpha --no-git-checks"
   }
 }

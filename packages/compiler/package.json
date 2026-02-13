@@ -28,6 +28,7 @@
     "build": "make",
     "build-and-test": "make && ava test",
     "prepack": "make && node scripts/prepare-publish.mjs",
+    "publish:alpha": "pnpm publish --tag alpha --no-git-checks",
     "test": "ava test"
   },
   "type": "module",
