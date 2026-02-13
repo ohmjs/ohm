@@ -100,7 +100,10 @@ group('JSON', () => {
     liquid.LiquidHTML,
     readFileSync(join(__dirname, '../build/liquid-html.wasm'))
   );
-  es5Wasm = await toWasmGrammar(es5js.grammar, readFileSync(join(__dirname, '../build/es5.wasm')));
+  es5Wasm = await toWasmGrammar(
+    es5js.grammar,
+    readFileSync(join(__dirname, '../build/es5.wasm'))
+  );
   jsonWasm = await toWasmGrammar(json, readFileSync(join(__dirname, '../build/json.wasm')));
 
   await run();

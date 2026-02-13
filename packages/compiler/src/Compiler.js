@@ -933,7 +933,6 @@ export class Compiler {
     return idx;
   }
 
-
   inLexicalContext() {
     return checkNotNull(this._lexContextStack.at(-1));
   }

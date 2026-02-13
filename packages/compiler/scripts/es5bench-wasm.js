@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+
 import {readFileSync} from 'node:fs';
 import {performance} from 'node:perf_hooks';
 import process from 'node:process';
@@ -19,32 +21,34 @@ const fmt = n => {
   return `${(n / 1024).toFixed(0)}KB`;
 };
 
-// Compile the grammar to Wasm.
-let start = performance.now();
-const bytes = new Compiler(grammar).compile();
-const elapsed = performance.now() - start;
-console.error(`Compile: ${elapsed.toFixed(0)}ms`);
+(async () => {
+  // Compile the grammar to Wasm.
+  let start = performance.now();
+  const bytes = new Compiler(grammar).compile();
+  const elapsed = performance.now() - start;
+  console.error(`Compile: ${elapsed.toFixed(0)}ms`);
 
-// Instantiate the Wasm module.
-const wasmGrammar = new WasmGrammar();
-await wasmGrammar._instantiate(bytes, {});
+  // Instantiate the Wasm module.
+  const wasmGrammar = new WasmGrammar();
+  await wasmGrammar._instantiate(bytes, {});
 
-// JS matching.
-globalThis.gc?.();
-const jsHeapBefore = process.memoryUsage().heapUsed;
-start = performance.now();
-grammar.match(source);
-const jsTime = performance.now() - start;
-const jsHeapAfter = process.memoryUsage().heapUsed;
-const jsMem = jsHeapAfter - jsHeapBefore;
-console.error(`Match (JS):   ${jsTime.toFixed(0)}ms, ${fmt(jsMem)}`);
+  // JS matching.
+  globalThis.gc?.();
+  const jsHeapBefore = process.memoryUsage().heapUsed;
+  start = performance.now();
+  grammar.match(source);
+  const jsTime = performance.now() - start;
+  const jsHeapAfter = process.memoryUsage().heapUsed;
+  const jsMem = jsHeapAfter - jsHeapBefore;
+  console.error(`Match (JS):   ${jsTime.toFixed(0)}ms, ${fmt(jsMem)}`);
 
-// Wasm matching.
-globalThis.gc?.();
-start = performance.now();
-wasmGrammar.match(source).dispose();
-const wasmTime = performance.now() - start;
-const wasmMem = wasmGrammar.getMemorySizeBytes();
-console.error(`Match (Wasm): ${wasmTime.toFixed(0)}ms, ${fmt(wasmMem)}`);
+  // Wasm matching.
+  globalThis.gc?.();
+  start = performance.now();
+  wasmGrammar.match(source).dispose();
+  const wasmTime = performance.now() - start;
+  const wasmMem = wasmGrammar.getMemorySizeBytes();
+  console.error(`Match (Wasm): ${wasmTime.toFixed(0)}ms, ${fmt(wasmMem)}`);
 
-console.error(`Speedup: ${(jsTime / wasmTime).toFixed(1)}x`);
+  console.error(`Speedup: ${(jsTime / wasmTime).toFixed(1)}x`);
+})();
