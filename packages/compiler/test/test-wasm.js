@@ -4,7 +4,7 @@ import * as fc from 'fast-check';
 import * as ohm from 'ohm-js';
 import {performance} from 'perf_hooks';
 
-import {Compiler, ConstantsForTesting as Constants} from '../src/Compiler.js';
+import {Compiler} from '../src/Compiler.js';
 import {matchWithInput, unparse, toWasmGrammar} from './_helpers.js';
 
 const SIZEOF_UINT32 = 4;
@@ -14,10 +14,19 @@ function checkNotNull(x, msg = 'unexpected null value') {
   return x;
 }
 
-function memoTableViewForTesting(m) {
+const MEMO_BLOCK_ENTRIES = 64;
+
+function getMemoEntry(m, pos, ruleId) {
   const {buffer} = m._instance.exports.memory;
-  const memoBase = m._instance.exports.memoBase.value;
-  return new DataView(buffer, memoBase);
+  const view = new DataView(buffer);
+  const memoIndexBase = m._instance.exports.memoIndexBase.value;
+  const numMemoBlocks = m._instance.exports.numMemoBlocks.value;
+  const blockIdx = ruleId >>> 6; // ruleId / 64
+  const idxPtr = memoIndexBase + (pos * numMemoBlocks + blockIdx) * SIZEOF_UINT32;
+  const blockPtr = view.getUint32(idxPtr, true);
+  if (blockPtr === 0) return 0; // EMPTY
+  const offset = (ruleId & (MEMO_BLOCK_ENTRIES - 1)) * SIZEOF_UINT32;
+  return view.getUint32(blockPtr + offset, true);
 }
 
 test('cst returns', async t => {
@@ -697,12 +706,9 @@ test('basic memoization', async t => {
   const wasmGrammar = await toWasmGrammar(g);
   t.is(matchWithInput(wasmGrammar, 'ab'), 1);
 
-  const view = memoTableViewForTesting(wasmGrammar);
-
   const getMemo = (pos, ctorName) => {
-    const colOffset = pos * Constants.MEMO_COL_SIZE_BYTES;
     const ruleId = checkNotNull(wasmGrammar._ruleIds.get(ctorName));
-    return view.getUint32(colOffset + SIZEOF_UINT32 * ruleId, true);
+    return getMemoEntry(wasmGrammar, pos, ruleId);
   };
 
   const root = wasmGrammar.getCstRoot();
@@ -737,12 +743,9 @@ test('more memoization', async t => {
   const wasmGrammar = await toWasmGrammar(g);
   t.is(matchWithInput(wasmGrammar, 'bb'), 1);
 
-  const view = memoTableViewForTesting(wasmGrammar);
-
   const getMemo = (pos, ctorName) => {
-    const colOffset = pos * Constants.MEMO_COL_SIZE_BYTES;
     const ruleId = checkNotNull(wasmGrammar._ruleIds.get(ctorName));
-    return view.getUint32(colOffset + SIZEOF_UINT32 * ruleId, true);
+    return getMemoEntry(wasmGrammar, pos, ruleId);
   };
 
   // start

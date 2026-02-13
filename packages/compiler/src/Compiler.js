@@ -796,9 +796,6 @@ Assembler.ALIGN_1_BYTE = 0;
 Assembler.ALIGN_4_BYTES = 2;
 Assembler.CST_NODE_HEADER_SIZE_BYTES = 8;
 
-// A "memo column" holds the info for one input position, i.e. one char.
-Assembler.MEMO_COL_SIZE_BYTES = 4 * 256;
-
 Assembler.STACK_FRAME_SIZE_BYTES = 8;
 Assembler.DESCRIPTION_FRAME_SIZE_BYTES = 12;
 
@@ -936,7 +933,6 @@ export class Compiler {
   // This should be the only place where we assign rule IDs!
   _ensureRuleId(name, {notMemoized} = {}) {
     const idx = this.ruleIdByName.add(name);
-    assert(notMemoized || idx < 256, `too many rules: ${idx}`);
     return idx;
   }
 
@@ -1022,7 +1018,8 @@ export class Compiler {
     // (global $runtime/ohmRuntime/pos (mut i32) (i32.const 0))
     // (global $runtime/ohmRuntime/endPos (mut i32) (i32.const 0))
     // (global $runtime/ohmRuntime/input (mut externref) (ref.null noextern))
-    // (global $runtime/ohmRuntime/memoBase (mut i32) (i32.const 0))
+    // (global $runtime/ohmRuntime/numMemoBlocks (mut i32) (i32.const 0))
+    // (global $runtime/ohmRuntime/memoIndexBase (mut i32) (i32.const 0))
     // (global $runtime/ohmRuntime/rightmostFailurePos (mut i32) (i32.const 0))
     // (global $runtime/ohmRuntime/errorMessagePos (mut i32) (i32.const -1))
     // (global $runtime/ohmRuntime/sp (mut i32) (i32.const 0))
@@ -1040,9 +1037,8 @@ export class Compiler {
     asm.addGlobal('input', wasm3.valtype.externref, w.mut.var, () =>
       asm.refNull(wasm3.valtype.externref)
     );
-    asm.addGlobal('memoBase', w.valtype.i32, w.mut.var, () =>
-      asm.i32Const(2 * WASM_PAGE_SIZE)
-    );
+    asm.addGlobal('numMemoBlocks', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
+    asm.addGlobal('memoIndexBase', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
     asm.addGlobal('rightmostFailurePos', w.valtype.i32, w.mut.var, () => asm.i32Const(-1));
     asm.addGlobal('errorMessagePos', w.valtype.i32, w.mut.var, () => asm.i32Const(-1));
     asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
@@ -1429,6 +1425,15 @@ export class Compiler {
     return w.custom(w.name('ruleNames'), w.vec(ruleNames.map((n, i) => w.name(n))));
   }
 
+  buildMemoizedRuleCountSection() {
+    const buf = [];
+    buf.push(this._maxMemoizedRuleId & 0xff);
+    buf.push((this._maxMemoizedRuleId >> 8) & 0xff);
+    buf.push((this._maxMemoizedRuleId >> 16) & 0xff);
+    buf.push((this._maxMemoizedRuleId >> 24) & 0xff);
+    return w.custom(w.name('memoizedRuleCount'), buf);
+  }
+
   buildStringTable(sectionName, tableOrArr) {
     const keys = Array.isArray(tableOrArr) ? tableOrArr : tableOrArr.keys();
     return w.custom(w.name(sectionName), w.vec(keys.map(n => w.name(n))));
@@ -1469,6 +1474,7 @@ export class Compiler {
       'recordedFailuresAt',
       'recordFailures',
       'resetHeap',
+      'setNumMemoizedRules',
     ].forEach(name => {
       exports.push(w.export_(name, w.exportdesc.func(prebuiltFuncidx(name))));
     });
@@ -1510,6 +1516,7 @@ export class Compiler {
       mergeSections(w.SECTION_ID_CODE, prebuilt.codesec, codes),
       w.customsec(this.buildStringTable('ruleNames', ruleNames)),
       w.customsec(this.buildStringTable('failureDescriptions', this._failureDescriptions)),
+      w.customsec(this.buildMemoizedRuleCountSection()),
       w.namesec(w.namedata(w.modulenamesubsec(this.grammar.name))),
     ]);
     const bytes = Uint8Array.from(mod.flat(Infinity));
@@ -2200,11 +2207,5 @@ export class Compiler {
 // Memory layout:
 // - First page is for the PExpr stack (origPos, etc.), growing downwards.
 // - 2nd page is for input buffer (max 64k for now).
-// - Pages 3-18 (incl.) for memo table (4 entries per char, 4 bytes each).
-// - Remainder (>18) is for CST (growing upwards).
+// - Remainder is for heap (memo table index + blocks, CST nodes).
 Compiler.STACK_START_OFFSET = WASM_PAGE_SIZE; // Starting offset of the stack.
-
-export const ConstantsForTesting = {
-  CST_NODE_SIZE_BYTES: checkNotNull(Assembler.CST_NODE_HEADER_SIZE_BYTES),
-  MEMO_COL_SIZE_BYTES: checkNotNull(Assembler.MEMO_COL_SIZE_BYTES),
-};
