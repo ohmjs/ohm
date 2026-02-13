@@ -16,19 +16,15 @@
   "bin": {
     "ohm2wasm": "dist/src/cli.js"
   },
-  "files": [
-    "dist/**/*.js",
-    "dist/**/*.d.ts"
-  ],
+  "files": ["dist/**/*.js", "dist/**/*.d.ts"],
   "publishConfig": {
-    "directory": "dist-publish",
     "access": "public"
   },
   "scripts": {
     "build": "make",
     "build-and-test": "make && ava test",
-    "prepack": "make && node scripts/prepare-publish.mjs",
-    "publish:alpha": "pnpm publish --tag alpha --no-git-checks",
+    "prepack": "make && node ../../bin/prepare-publish.mjs .",
+    "publish:alpha": "pnpm publish dist-publish --tag alpha --no-git-checks",
     "test": "ava test"
   },
   "type": "module",

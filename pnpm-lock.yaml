@@ -151,7 +151,7 @@ importers:
     dependencies:
       '@ohm-js/runtime':
         specifier: workspace:^
-        version: link:../runtime/dist-publish
+        version: link:../runtime
       '@wasmgroundup/emit':
         specifier: ^1.0.2
         version: 1.0.2
@@ -186,7 +186,6 @@ importers:
       wabt:
         specifier: 1.0.37-nightly.20250428
         version: 1.0.37-nightly.20250428
-    publishDirectory: dist-publish
 
   packages/es-grammars:
     dependencies:
@@ -294,8 +293,7 @@ importers:
         specifier: ^4.10.0
         version: 4.10.0(webpack@5.99.7)
 
-  packages/runtime:
-    publishDirectory: dist-publish
+  packages/runtime: {}
 
   packages/semantics:
     dependencies:
@@ -305,7 +303,7 @@ importers:
     devDependencies:
       '@ohm-js/compiler':
         specifier: workspace:^
-        version: link:../compiler/dist-publish
+        version: link:../compiler
       ava:
         specifier: ^6.0.0
         version: 6.2.0(rollup@4.43.0)

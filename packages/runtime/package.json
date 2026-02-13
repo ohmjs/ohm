@@ -2,13 +2,7 @@
   "name": "@ohm-js/runtime",
   "version": "18.0.0-alpha.2",
   "description": "Ohm runtime — CST nodes, Grammar, and MatchResult",
-  "keywords": [
-    "parser",
-    "parsing",
-    "ohm",
-    "ohm-js",
-    "runtime"
-  ],
+  "keywords": ["parser", "parsing", "ohm", "ohm-js", "runtime"],
   "homepage": "https://github.com/ohmjs/ohm#readme",
   "bugs": {
     "url": "https://github.com/ohmjs/ohm/issues"
@@ -32,12 +26,11 @@
     }
   },
   "publishConfig": {
-    "directory": "dist-publish",
     "access": "public"
   },
   "scripts": {
     "build": "tsc",
-    "prepack": "node scripts/prepare-publish.mjs",
-    "publish:alpha": "pnpm publish --tag alpha --no-git-checks"
+    "prepack": "node ../../bin/prepare-publish.mjs .",
+    "publish:alpha": "pnpm publish dist-publish --tag alpha --no-git-checks"
   }
 }
