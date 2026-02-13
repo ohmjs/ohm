@@ -1,3 +1,46 @@
+/*
+ * Block-sparse memo table
+ * =======================
+ *
+ * The rule ID space is divided into fixed-size blocks of 64 entries.
+ * The index is a 2D array: index[pos][blockIdx] -> block pointer,
+ * where numMemoBlocks = ceil(numMemoizedRules / 64).
+ * numMemoizedRules is determined at compile time and stored in a
+ * custom Wasm section ('memoizedRuleCount'); the runtime reads it
+ * at instantiation and calls setNumMemoizedRules().
+ * The index is allocated upfront; blocks are allocated on first write.
+ *
+ *   Index: a flat array of block pointers, indexed by
+ *   (pos * numMemoBlocks + blockIdx):
+ *
+ *   pos 0                        pos 1
+ *   ┌────────┬────────┬─── ···  ┌────────┬────────┬─── ···
+ *   │ blk 0  │ blk 1  │         │ blk 0  │ blk 1  │
+ *   └───┬────┴───┬────┴─── ···  └────────┴────────┴─── ···
+ *       │        │
+ *       ▼        ▼
+ *   ┌────────┐ ┌────────┐
+ *   │ 64     │ │ 64     │           ← MemoEntry values (i32)
+ *   │ entries│ │ entries│
+ *   └────────┘ └────────┘
+ *   (256 bytes) (0 = not yet allocated)
+ *
+ *
+ * CST node layout (16-byte header + children)
+ * ============================================
+ *
+ *   Offset  Field
+ *   ------  ----------------------------------
+ *     0     count: i32         (number of children)
+ *     4     matchLength: i32   (chars consumed)
+ *     8     typeAndDetails: i32
+ *               bits [1:0] = node type
+ *                 0=nonterminal, 1=terminal, 2=iteration, 3=optional
+ *               bits [31:2] = ruleId (nonterminal) or arity (iter)
+ *    12     failurePos: i32
+ *    16+    children: i32[]    (pointers to child nodes)
+ */
+
 type ApplyResult = bool;
 
 @external("wasm:js-string", "length")
