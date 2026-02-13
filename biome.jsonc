@@ -26,7 +26,7 @@
       "!**/testdata",
       "!**/third_party",
       "!**/visualizer",
-      "!packages/wasm/runtime/**"
+      "!packages/compiler/runtime/**"
     ]
   },
   "linter": { "enabled": false },

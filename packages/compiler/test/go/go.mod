@@ -1,4 +1,4 @@
-module github.com/ohmjs/ohm/packages/wasm/test/go
+module github.com/ohmjs/ohm/packages/compiler/test/go
 
 go 1.20
 

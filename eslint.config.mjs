@@ -164,11 +164,11 @@ export default defineConfig([
     '**/ava-ts.config.js',
     'visualizer/assets/**/*',
     'packages/cli/src/helpers/generateTypes.test.js',
-    'packages/wasm/build/**/*',
-    'packages/wasm/runtime/**/*',
+    'packages/compiler/build/**/*',
+    'packages/compiler/runtime/**/*',
   ]),
   {
-    files: ['packages/wasm/test/**'],
+    files: ['packages/compiler/test/**'],
     languageOptions: {
       ecmaVersion: 'latest',
     },

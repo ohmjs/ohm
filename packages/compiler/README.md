@@ -1,4 +1,4 @@
-# @ohm-js/wasm
+# @ohm-js/compiler
 
 Compile Ohm.js grammars to WebAsssembly, so they can be used from other languages.
 
@@ -24,7 +24,7 @@ This will write a Wasm grammar blob to ./my-grammar.wasm.
 
 ```
 import * as ohm from 'ohm-js';
-import {Compiler} from '@ohm-js/wasm';
+import {Compiler} from '@ohm-js/compiler';
 
 // Instantiate your own grammar…
 const g = ohm.grammar('MyGrammar { start = "blah" }');
@@ -62,7 +62,7 @@ pnpm install
 
 #### Testing etc.
 
-From packages/wasm dir:
+From packages/compiler dir:
 
 ```
 pnpm test # Run all tests

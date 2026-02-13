@@ -8,4 +8,4 @@ pnpm-lock.yaml
 testdata
 third_party
 visualizer
-packages/wasm/runtime/**
+packages/compiler/runtime/**
