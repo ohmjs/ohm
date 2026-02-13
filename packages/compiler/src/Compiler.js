@@ -830,9 +830,6 @@ export class Compiler {
     // for the implicit end check.
     this._endOfInputFailureId = this._failureDescriptions.add('end of input');
 
-    // For non-memoized rules, we defer assigning IDs until all memoized
-    // rule names have been assigned.
-    this._deferredRuleIds = new Set();
     this._maxMemoizedRuleId = -1;
 
     // Ensure default start rule has id 0; $term, 1; and spaces, 2.
@@ -931,14 +928,11 @@ export class Compiler {
   }
 
   // This should be the only place where we assign rule IDs!
-  _ensureRuleId(name, {notMemoized} = {}) {
+  _ensureRuleId(name) {
     const idx = this.ruleIdByName.add(name);
     return idx;
   }
 
-  _deferRuleId(name) {
-    this._deferredRuleIds.add(name);
-  }
 
   inLexicalContext() {
     return checkNotNull(this._lexContextStack.at(-1));
@@ -1323,15 +1317,7 @@ export class Compiler {
 
           const specializedName = ir.specializedName(app);
 
-          if (
-            ['liquidRawTagImpl', 'liquidTagRule', 'anyExceptStar', 'anyExceptPlus'].includes(
-              ruleName
-            )
-          ) {
-            this._deferRuleId(specializedName);
-          } else {
-            this._ensureRuleId(specializedName);
-          }
+          this._ensureRuleId(specializedName);
 
           // If not yet seen, recursively visit the body of the specialized
           // rule. Note that this also applies to non-parameterized rules!
@@ -1369,8 +1355,6 @@ export class Compiler {
     specialize(ir.apply(this.grammar.defaultStartRule, -1));
 
     this._maxMemoizedRuleId = this.ruleIdByName.size;
-    this._deferredRuleIds.forEach(name => this._ensureRuleId(name, {notMemoized: true}));
-
     // Make a special rule for implicit space skipping, with the same body
     // as the real `spaces` rule.
     const spacesInfo = getNotNull(rules, 'spaces');
@@ -1384,7 +1368,7 @@ export class Compiler {
     // to assign a rule ID and ensure that the rule eval function exists.
     if (hasCaseInsensitiveTerminals) {
       assert(!newRules.has('caseInsensitive'));
-      this._ensureRuleId('caseInsensitive', {notMemoized: true});
+      this._ensureRuleId('caseInsensitive');
       newRules.set('caseInsensitive', {
         name: 'caseInsensitive',
         body: ir.seq([ir.not(ir.end()), ir.end()]), // ~end end
@@ -1406,7 +1390,7 @@ export class Compiler {
       // All non-parameterized & specialized rules have been discovered and
       // assigned IDs; any rule IDs assigned here won't be memoized.
       for (const [name, patterns] of patternsByRule.entries()) {
-        this._ensureRuleId(name, {notMemoized: true});
+        this._ensureRuleId(name);
         const ruleInfo = getNotNull(rules, name);
         const patternsArr = [...patterns.values()];
         newRules.set(name, {
