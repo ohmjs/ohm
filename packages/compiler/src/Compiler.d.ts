@@ -1,4 +1,4 @@
-import type {Grammar} from 'ohm-js';
+import type {Grammar} from 'ohm-js-legacy';
 
 export class Compiler {
   grammar: Grammar;

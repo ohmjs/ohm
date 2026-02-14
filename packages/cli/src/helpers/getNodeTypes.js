@@ -1,4 +1,4 @@
-import * as ohm from 'ohm-js';
+import * as ohm from 'ohm-js-legacy';
 
 const {pexprs} = ohm;
 

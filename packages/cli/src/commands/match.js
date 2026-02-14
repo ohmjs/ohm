@@ -1,6 +1,6 @@
 import assert from 'assert';
 import fs from 'fs';
-import * as ohm from 'ohm-js';
+import * as ohm from 'ohm-js-legacy';
 import path from 'path';
 
 function match(inputPath, opts) {

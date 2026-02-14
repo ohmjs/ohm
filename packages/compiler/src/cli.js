@@ -1,6 +1,6 @@
 /* global process */
 
-import * as ohm from 'ohm-js';
+import * as ohm from 'ohm-js-legacy';
 import fs from 'node:fs';
 import {basename} from 'node:path';
 import {parseArgs} from 'node:util';

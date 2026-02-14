@@ -1,5 +1,5 @@
 import * as w from '@wasmgroundup/emit';
-import * as ohm from 'ohm-js';
+import * as ohm from 'ohm-js-legacy';
 // import wabt from 'wabt';
 
 import * as ir from './ir.ts';

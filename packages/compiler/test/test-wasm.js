@@ -1,7 +1,7 @@
 import test from 'ava';
 import assert from 'node:assert/strict';
 import * as fc from 'fast-check';
-import * as ohm from 'ohm-js';
+import * as ohm from 'ohm-js-legacy';
 import {performance} from 'perf_hooks';
 
 import {Compiler} from '../src/Compiler.js';

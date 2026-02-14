@@ -1,5 +1,5 @@
 {
-  "name": "@ohm-js/runtime",
+  "name": "ohm-js",
   "version": "18.0.0-alpha.2",
   "description": "Ohm runtime — CST nodes, Grammar, and MatchResult",
   "keywords": ["parser", "parsing", "ohm", "ohm-js", "runtime"],
@@ -30,7 +30,6 @@
   },
   "scripts": {
     "build": "tsc",
-    "prepack": "node ../../bin/prepare-publish.mjs .",
-    "publish:alpha": "pnpm publish dist-publish --tag alpha --no-git-checks"
+    "publish:alpha": "pnpm publish --tag alpha --no-git-checks"
   }
 }
