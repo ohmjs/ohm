@@ -152,9 +152,6 @@ importers:
 
   packages/compiler:
     dependencies:
-      '@wasmgroundup/emit':
-        specifier: ^1.0.2
-        version: 1.0.2
       ohm-js:
         specifier: workspace:^
         version: link:../runtime
@@ -165,6 +162,9 @@ importers:
       '@thi.ng/leb128':
         specifier: ^3.1.48
         version: 3.1.48
+      '@wasmgroundup/emit':
+        specifier: ^1.0.2
+        version: 1.0.2
       assemblyscript:
         specifier: ^0.27.36
         version: 0.27.36

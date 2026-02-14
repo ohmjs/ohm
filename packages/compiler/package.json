@@ -34,6 +34,7 @@
   "devDependencies": {
     "@shopify/liquid-html-parser": "github:pdubroy/theme-tools#path:/packages/liquid-html-parser",
     "@thi.ng/leb128": "^3.1.48",
+    "@wasmgroundup/emit": "^1.0.2",
     "assemblyscript": "^0.27.36",
     "ava": "^6.2.0",
     "esbuild": "^0.25.5",
@@ -43,8 +44,7 @@
     "ohm-js-legacy": "workspace:^",
     "wabt": "1.0.37-nightly.20250428"
   },
-  "dependencies": {
-    "@wasmgroundup/emit": "^1.0.2",
+  "peerDependencies": {
     "ohm-js": "workspace:^"
   }
 }
