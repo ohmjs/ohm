@@ -38,7 +38,8 @@
       "./dist/ohm-extras.cjs"
     ],
     "./v18": {
-      "import": "./src/v18.js"
+      "import": "./src/v18.js",
+      "require": "./dist/ohm-v18.cjs"
     }
   },
   "files": [
