@@ -2,7 +2,7 @@ import test from 'ava';
 import assert from 'node:assert/strict';
 import fc from 'fast-check';
 import {readFileSync} from 'node:fs';
-import {grammars, grammar} from 'ohm-js/v18';
+import {grammars, grammar} from 'ohm-js-legacy/v18';
 
 import {scriptRel, toWasmGrammar} from './_helpers.js';
 

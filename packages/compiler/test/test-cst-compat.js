@@ -7,8 +7,8 @@
 
 import test from 'ava';
 import {readFileSync} from 'node:fs';
-import * as ohm from 'ohm-js';
-import {grammar as v18Grammar, grammars as v18Grammars} from 'ohm-js/v18';
+import * as ohm from 'ohm-js-legacy';
+import {grammar as v18Grammar, grammars as v18Grammars} from 'ohm-js-legacy/v18';
 
 import {matchWithInput, scriptRel, toWasmGrammar} from './_helpers.js';
 

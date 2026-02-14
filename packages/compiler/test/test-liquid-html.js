@@ -2,7 +2,7 @@
 
 import test from 'ava';
 import fs from 'node:fs';
-import * as ohm from 'ohm-js';
+import * as ohm from 'ohm-js-legacy';
 import {performance} from 'perf_hooks';
 
 import {matchWithInput, unparse, toWasmGrammar} from './_helpers.js';

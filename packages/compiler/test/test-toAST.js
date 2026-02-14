@@ -2,12 +2,12 @@ import test from 'ava';
 import * as fc from 'fast-check';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import * as ohm from 'ohm-js';
-import {toAST} from 'ohm-js/extras';
-import {grammar as v18Grammar} from 'ohm-js/v18';
+import * as ohm from 'ohm-js-legacy';
+import {toAST} from 'ohm-js-legacy/extras';
+import {grammar as v18Grammar} from 'ohm-js-legacy/v18';
 
 import {scriptRel, toWasmGrammar} from './_helpers.js';
-import {createToAst} from '@ohm-js/runtime/compat';
+import {createToAst} from 'ohm-js/compat';
 
 const arithmeticSrc = readFileSync(scriptRel('../../ohm-js/test/data/arithmetic.ohm'));
 const arithmetic = v18Grammar(arithmeticSrc.toString());

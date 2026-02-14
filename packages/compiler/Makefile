@@ -25,11 +25,10 @@ bench: all scripts/bench.js build/es5.wasm build/json.wasm build/liquid-html.was
 .PHONY: dist-js
 dist-js: build/ohmRuntime.wasm_sections.ts $(SRC_JS_FILES) $(SRC_TS_FILES)
 	pnpm tsc
-	pnpm esbuild src/Compiler.js \
+	pnpm esbuild src/Compiler.js src/compat.ts src/cli.js \
 		--bundle --format=esm --outdir=dist/src \
 		--platform=node \
-		--external:ohm-js --external:@ohm-js/runtime
-	cp src/cli.js dist/src/cli.js
+		--external:ohm-js
 
 build/ohmRuntime.wasm_sections.ts: scripts/bundlewasm.ts build/ohmRuntime.wasm
 	$(NODE) scripts/bundlewasm.ts build/ohmRuntime.wasm

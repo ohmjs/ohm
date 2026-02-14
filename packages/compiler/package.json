@@ -23,8 +23,7 @@
   "scripts": {
     "build": "make",
     "build-and-test": "make && ava test",
-    "prepack": "make && node ../../bin/prepare-publish.mjs .",
-    "publish:alpha": "pnpm publish dist-publish --tag alpha --no-git-checks",
+    "publish:alpha": "pnpm publish --tag alpha --no-git-checks",
     "test": "ava test"
   },
   "type": "module",
@@ -41,10 +40,10 @@
     "fast-check": "^4.2.0",
     "fast-glob": "^3.3.3",
     "mitata": "^1.0.34",
+    "ohm-js-legacy": "workspace:^",
     "wabt": "1.0.37-nightly.20250428"
   },
   "dependencies": {
-    "@ohm-js/runtime": "workspace:^",
     "@wasmgroundup/emit": "^1.0.2",
     "ohm-js": "workspace:^"
   }

@@ -1,6 +1,6 @@
 // eslint-disable-next-line ava/no-ignored-test-files -- dynamically imported from test-wasm.js
 import test from 'ava';
-import * as ohm from 'ohm-js';
+import * as ohm from 'ohm-js-legacy';
 
 import {toWasmGrammar} from './_helpers.js';
 
