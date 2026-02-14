@@ -41,7 +41,14 @@
       "import": "./src/v18.js"
     }
   },
-  "files": ["src", "dist", "extras", "index.mjs", "index.d.ts", "!**/*.old"],
+  "files": [
+    "src",
+    "dist",
+    "extras",
+    "index.mjs",
+    "index.d.ts",
+    "!**/*.old"
+  ],
   "types": "index.d.ts",
   "scripts": {
     "prebootstrap": "bash scripts/prebootstrap",
@@ -143,7 +150,9 @@
   },
   "ava": {
     "watchMode": {
-      "ignoreChanges": ["version.js"]
+      "ignoreChanges": [
+        "version.js"
+      ]
     }
   }
 }
