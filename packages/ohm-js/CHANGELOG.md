@@ -1,5 +1,15 @@
 # Changelog
 
+## v17.5.0 - Feb 14, 2026
+
+### New features:
+
+- [4401f84a] feat: New forwards-compatible `ohm-js/v18` submodule
+
+### Fixes
+
+- [a19e69da] fix: `types` ordering in package.json exports
+
 ## v17.4.0 - Feb 12, 2026
 
 ### New features:
