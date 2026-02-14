@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Create a GitHub release for the current version of ohm-js.
+
+set -e
+
+VERSION=$(node -p "require('./package.json').version")
+TAG="v${VERSION}"
+TITLE="Ohm v${VERSION}"
+
+# Extract changelog entries for this version (between its heading and the next ## heading).
+CHANGELOG=$(sed -n "/^## v${VERSION}/,/^## /{/^## v${VERSION}/d;/^## /d;p;}" CHANGELOG.md)
+
+# Trim leading/trailing blank lines.
+CHANGELOG=$(echo "$CHANGELOG" | sed '/./,$!d' | sed -e :a -e '/^$/{$d;N;ba' -e '}')
+
+BODY="[![NPM](https://img.shields.io/npm/v/ohm-js.svg)](https://www.npmjs.com/package/ohm-js/v/${VERSION})
+**Browser bundles:** [ohm.js](https://unpkg.com/ohm-js@${VERSION}/dist/ohm.js) • [ohm.min.js](https://unpkg.com/ohm-js@${VERSION}/dist/ohm.min.js)
+
+${CHANGELOG}"
+
+if [ "$1" = "--dry-run" ]; then
+  echo "Tag: ${TAG}"
+  echo "Title: ${TITLE}"
+  echo ""
+  echo "--- Body ---"
+  echo "$BODY"
+  exit 0
+fi
+
+gh release create "$TAG" --title "$TITLE" --notes "$BODY"
