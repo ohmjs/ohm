@@ -1,6 +1,6 @@
 {
   "name": "@ohm-js/compiler",
-  "version": "18.0.0-beta.0",
+  "version": "18.0.0-beta.1",
   "description": "Compile Ohm.js grammars to WebAsssembly",
   "main": "dist/index.js",
   "exports": {
@@ -24,7 +24,7 @@
     "build": "make",
     "postbuild": "publint",
     "build-and-test": "make && ava test",
-    "publish:alpha": "pnpm publish --tag alpha --no-git-checks",
+    "publish:beta": "pnpm publish --tag beta --no-git-checks",
     "test": "ava test"
   },
   "type": "module",
