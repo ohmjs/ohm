@@ -1,6 +1,6 @@
 {
   "name": "@ohm-js/compiler",
-  "version": "18.0.0-alpha.2",
+  "version": "18.0.0-alpha.3",
   "description": "Compile Ohm.js grammars to WebAsssembly",
   "main": "dist/index.js",
   "exports": {
