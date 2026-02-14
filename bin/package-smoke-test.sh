@@ -13,21 +13,21 @@ cd "$TEMP_DIR"
 
 npm init -y > /dev/null
 
-npm install ohm-js@18 @ohm-js/compiler webpack webpack-cli --silent
+npm install ohm-js@beta @ohm-js/compiler@beta webpack webpack-cli --silent
 
 cat > test-ohm-js.mjs << 'EOF'
 const assert = (cond, msg) => { if (!cond) throw new Error(msg || 'assertion failed'); };
-import * as ohm from 'ohm-js';
+import {grammar} from '@ohm-js/compiler/compat';
 
-const grammar = ohm.grammar(String.raw`
+const g = grammar(String.raw`
   Arithmetic {
     Expr = number "+" number
     number = digit+
   }
 `);
 
-assert(grammar.match('42+17').succeeded());
-assert(grammar.match('hello').failed());
+g.match('42+17').use(r => assert(r.succeeded()));
+g.match('hello').use(r => assert(r.failed()));
 console.log('ohm-js: OK');
 EOF
 
@@ -54,8 +54,18 @@ assert(ast.type === 'AddExp_plus' && ast.left === '1' && ast.right === '2');
 console.log('@ohm-js/compiler: OK');
 EOF
 
+cat > test-compiler-main.mjs << 'EOF'
+const assert = (cond, msg) => { if (!cond) throw new Error(msg || 'assertion failed'); };
+import {Compiler, Grammar} from '@ohm-js/compiler';
+
+assert(typeof Compiler === 'function', 'Compiler should be exported');
+assert(typeof Grammar === 'function', 'Grammar (re-exported from ohm-js) should be exported');
+console.log('@ohm-js/compiler (main): OK');
+EOF
+
 node test-ohm-js.mjs
 node test-wasm.mjs
+node test-compiler-main.mjs
 
 # Webpack bundling tests
 
@@ -64,3 +74,6 @@ node dist/ohm-js/main.js
 
 npx webpack --entry ./test-wasm.mjs -o dist/wasm --mode production 2>&1
 node dist/wasm/main.js
+
+npx webpack --entry ./test-compiler-main.mjs -o dist/compiler-main --mode production 2>&1
+node dist/compiler-main/main.js
