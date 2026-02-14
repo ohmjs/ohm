@@ -308,9 +308,20 @@ export class WasmGrammar {
       `unknown rule: '${ruleName}'`
     );
     const succeeded = (this._instance as any).exports.match(input, ruleId);
+    const buffer = (this._instance as any).exports.memory.buffer;
+
+    // If the Wasm match triggered memory.grow() (e.g. for the memo table or
+    // CST nodes), the old ArrayBuffer is detached. Refresh the DataView in
+    // all existing match contexts so that their CstNodes can still read data.
+    for (const r of this._resultStack) {
+      if (r._ctx.view.buffer !== buffer) {
+        r._ctx.view = new DataView(buffer);
+      }
+    }
+
     const ctx = {
       ruleNames: this._ruleNames,
-      view: new DataView((this._instance as any).exports.memory.buffer),
+      view: new DataView(buffer),
       input: (this._instance as any).exports.input.value,
     };
     const result = createMatchResult(this, ruleName || this._ruleNames[0], ctx, !!succeeded);
