@@ -23,17 +23,17 @@
   "exports": {
     ".": [
       {
+        "types": "./index.d.ts",
         "import": "./index.mjs",
-        "require": "./dist/ohm.cjs",
-        "types": "./index.d.ts"
+        "require": "./dist/ohm.cjs"
       },
       "./dist/ohm.cjs"
     ],
     "./extras": [
       {
+        "types": "./extras/index.d.ts",
         "import": "./extras/index.mjs",
-        "require": "./dist/ohm-extras.cjs",
-        "types": "./extras/index.d.ts"
+        "require": "./dist/ohm-extras.cjs"
       },
       "./dist/ohm-extras.cjs"
     ],
