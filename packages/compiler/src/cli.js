@@ -1,11 +1,10 @@
 /* global process */
 
-import * as ohm from 'ohm-js-legacy';
 import fs from 'node:fs';
 import {basename} from 'node:path';
 import {parseArgs} from 'node:util';
 
-import {Compiler} from './Compiler.js';
+import {Compiler, grammars} from './Compiler.js';
 
 // Compile an Ohm grammar file (.ohm) to WebAssembly (.wasm).
 function main() {
@@ -32,7 +31,7 @@ function main() {
   }
 
   const filename = args.positionals[0];
-  const ns = ohm.grammars(fs.readFileSync(filename, 'utf8'));
+  const ns = grammars(fs.readFileSync(filename, 'utf8'));
 
   // By default, use the last grammar in the file.
   let g = Object.values(ns).at(-1);

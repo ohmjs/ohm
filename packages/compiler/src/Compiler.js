@@ -799,6 +799,8 @@ Assembler.CST_NODE_HEADER_SIZE_BYTES = 8;
 Assembler.STACK_FRAME_SIZE_BYTES = 8;
 Assembler.DESCRIPTION_FRAME_SIZE_BYTES = 12;
 
+export {grammars} from 'ohm-js-legacy';
+
 export class Compiler {
   constructor(grammar) {
     assert(grammar && 'superGrammar' in grammar, 'Not a valid grammar: ' + grammar);

@@ -1,7 +1,6 @@
-import {grammars as grammarsJs, grammar as grammarJs} from 'ohm-js-legacy';
 import type {Grammar as GrammarJs} from 'ohm-js-legacy';
 
-import {Compiler} from './Compiler.js';
+import {Compiler, grammars as grammarsJs} from './Compiler.js';
 import {Grammar as BaseGrammar} from 'ohm-js';
 
 export interface Grammar extends BaseGrammar {
