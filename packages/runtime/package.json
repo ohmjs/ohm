@@ -17,14 +17,21 @@
   "main": "dist/index.js",
   "exports": {
     ".": {
-      "default": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./compat": {
-      "default": "./dist/src/createToAst.js",
-      "types": "./dist/src/createToAst.d.ts"
+      "types": "./dist/src/createToAst.d.ts",
+      "default": "./dist/src/createToAst.js"
     }
   },
+  "files": [
+    "dist/index.*",
+    "dist/src/assert.*",
+    "dist/src/createToAst.*",
+    "dist/src/extras.*",
+    "dist/src/miniohm.*"
+  ],
   "publishConfig": {
     "access": "public"
   },

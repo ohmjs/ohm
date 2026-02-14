@@ -20,9 +20,7 @@
     "dist/index.*",
     "dist/src/Compiler.*",
     "dist/src/compat.*",
-    "dist/src/cli.*",
-    "src/",
-    "index.ts"
+    "dist/src/cli.*"
   ],
   "publishConfig": {
     "access": "public"

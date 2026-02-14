@@ -8,7 +8,6 @@
     "declaration": true,
     "composite": true,
     "sourceMap": true,
-    "declarationMap": true,
 
     // Overrides of tsconfig.base.json
     "allowJs": true,

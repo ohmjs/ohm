@@ -5,7 +5,6 @@
     "declaration": true,
     "composite": true,
     "sourceMap": true,
-    "declarationMap": true,
     "lib": ["ES2022", "DOM"]
   },
   "include": ["src/**/*", "index.ts"]
