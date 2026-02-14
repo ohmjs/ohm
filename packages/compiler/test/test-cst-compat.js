@@ -56,7 +56,7 @@ test.failing('compat: arithmetic', async t => {
 
   for (const input of ['1', '10 + 20', '1+276*(3+4)', '(10+ 999)- 1 +222']) {
     matchWithInput(wasmG, input);
-    const wasmShape = serializeCst(wasmG.getCstRoot());
+    const wasmShape = serializeCst(wasmG._getCstRoot());
     const v18Shape = serializeCst(v18G.match(input).getCstRoot());
     t.deepEqual(v18Shape, wasmShape);
   }
@@ -75,7 +75,7 @@ test.failing('compat: liquid-html', async t => {
   ];
   for (const input of inputs) {
     matchWithInput(wasmG, input);
-    const wasmShape = serializeCst(wasmG.getCstRoot());
+    const wasmShape = serializeCst(wasmG._getCstRoot());
     const v18Shape = serializeCst(v18G.match(input).getCstRoot());
     t.deepEqual(v18Shape, wasmShape);
   }

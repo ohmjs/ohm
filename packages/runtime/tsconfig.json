@@ -3,6 +3,7 @@
   "compilerOptions": {
     "outDir": "dist",
     "declaration": true,
+    "stripInternal": true,
     "composite": true,
     "sourceMap": true,
     "lib": ["ES2022", "DOM"]

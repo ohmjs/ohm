@@ -319,7 +319,7 @@ export class WasmGrammar {
       }
     }
 
-    const ctx = {
+    const ctx: MatchContext = {
       ruleNames: this._ruleNames,
       view: new DataView(buffer),
       input: (this._instance as any).exports.input.value,
@@ -352,12 +352,12 @@ export class WasmGrammar {
     return (this._instance as any).exports.memory.buffer.byteLength;
   }
 
-  getCstRoot(): CstNode {
+  /** @internal */
+  _getCstRoot(ctx?: MatchContext): CstNode {
     const {exports} = this._instance as any;
-    const {buffer} = exports.memory;
-    const ctx = {
+    ctx ??= {
       ruleNames: this._ruleNames,
-      view: new DataView(buffer),
+      view: new DataView(exports.memory.buffer),
       input: exports.input.value,
     };
     const firstNode = new CstNodeImpl(ctx, exports.bindingsAt(0), 0);
@@ -851,7 +851,7 @@ export class SucceededMatchResult extends MatchResult {
 
   constructor(grammar: WasmGrammar, startExpr: string, ctx: MatchContext, succeeded: boolean) {
     super(grammar, startExpr, ctx, succeeded);
-    this._cst = grammar.getCstRoot();
+    this._cst = grammar._getCstRoot(ctx);
   }
 
   getCstRoot(): CstNode {

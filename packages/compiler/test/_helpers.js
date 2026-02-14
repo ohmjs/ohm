@@ -39,7 +39,7 @@ export function unparse(m) {
     }
     node.children.forEach(c => walk(c));
   }
-  walk(m.getCstRoot());
+  walk(m._getCstRoot());
   return ans;
 }
 

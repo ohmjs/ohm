@@ -34,7 +34,7 @@ test('cst returns', async t => {
 
   // start
   t.is(matchWithInput(g, 'a'), 1);
-  let root = g.getCstRoot();
+  let root = g._getCstRoot();
 
   t.is(root.children.length, 1);
   t.is(root.matchLength, 1);
@@ -51,7 +51,7 @@ test('cst returns', async t => {
 
   // start
   t.is(matchWithInput(g, 'ab'), 1);
-  root = g.getCstRoot();
+  root = g._getCstRoot();
   t.is(root.children.length, 2);
   t.is(root.matchLength, 2);
   t.is(root.ctorName, 'start');
@@ -78,7 +78,7 @@ test('cst returns', async t => {
 test('cst: nonterminal type predicates', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { start = "a" | "b" }'));
   t.is(matchWithInput(g, 'a'), 1);
-  const root = g.getCstRoot();
+  const root = g._getCstRoot();
 
   t.true(root.isNonterminal());
   t.false(root.isTerminal());
@@ -90,7 +90,7 @@ test('cst: nonterminal type predicates', async t => {
 test('cst: terminal sourceString', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { start = "hello" }'));
   t.is(matchWithInput(g, 'hello'), 1);
-  const root = g.getCstRoot();
+  const root = g._getCstRoot();
   t.is(root.sourceString, 'hello');
   t.is(root.matchLength, 5);
   t.true(root.children[0].isTerminal());
@@ -100,7 +100,7 @@ test('cst: terminal sourceString', async t => {
 test('cst: isSyntactic and isLexical', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { Start = inner  inner = "x" }'));
   t.is(matchWithInput(g, 'x'), 1);
-  const root = g.getCstRoot();
+  const root = g._getCstRoot();
   t.true(root.isSyntactic());
   t.false(root.isLexical());
 
@@ -113,7 +113,7 @@ test('cst: isSyntactic and isLexical', async t => {
 test('cst: source intervals', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { start = "ab" "cd" }'));
   t.is(matchWithInput(g, 'abcd'), 1);
-  const root = g.getCstRoot();
+  const root = g._getCstRoot();
   t.is(root.source.startIdx, 0);
   t.is(root.source.endIdx, 4);
 
@@ -138,7 +138,7 @@ test('cst with lookahead', async t => {
   //     - "a"
 
   // x
-  const root = g.getCstRoot();
+  const root = g._getCstRoot();
   t.is(root.matchLength, 1);
   t.is(root.children.length, 1);
   t.is(root.ctorName, 'x');
@@ -161,7 +161,7 @@ test('cst for range', async t => {
   t.is(matchWithInput(g, 'b'), 1);
 
   // x
-  const root = g.getCstRoot();
+  const root = g._getCstRoot();
   t.is(root.matchLength, 1);
   t.is(root.children.length, 1);
   t.is(root.ctorName, 'x');
@@ -179,7 +179,7 @@ test('cst for opt', async t => {
   t.is(matchWithInput(g, 'a'), 1);
 
   // x
-  let root = g.getCstRoot();
+  let root = g._getCstRoot();
   t.is(root.matchLength, 1);
   t.is(root.ctorName, 'x');
   t.is(root.children.length, 1);
@@ -210,7 +210,7 @@ test('cst for opt', async t => {
 
   // x
 
-  root = g.getCstRoot();
+  root = g._getCstRoot();
   t.is(root.matchLength, 0);
   t.is(root.ctorName, 'x');
   t.is(root.children.length, 1);
@@ -227,7 +227,7 @@ test('cst for opt', async t => {
 test('cst: opt ifPresent with value', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { start = "x"? }'));
   t.is(matchWithInput(g, 'x'), 1);
-  const opt = g.getCstRoot().children[0];
+  const opt = g._getCstRoot().children[0];
   t.is(
     opt.ifPresent(child => child.sourceString + '!'),
     'x!'
@@ -237,7 +237,7 @@ test('cst: opt ifPresent with value', async t => {
 test('cst: opt ifPresent when absent with orElse', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { start = "x"? }'));
   t.is(matchWithInput(g, ''), 1);
-  const opt = g.getCstRoot().children[0];
+  const opt = g._getCstRoot().children[0];
   const val = opt.ifPresent(
     child => child.sourceString,
     () => 'default'
@@ -248,7 +248,7 @@ test('cst: opt ifPresent when absent with orElse', async t => {
 test('cst: opt ifPresent when absent without orElse', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { start = "x"? }'));
   t.is(matchWithInput(g, ''), 1);
-  const opt = g.getCstRoot().children[0];
+  const opt = g._getCstRoot().children[0];
   t.is(
     opt.ifPresent(child => child.sourceString),
     undefined
@@ -261,7 +261,7 @@ test('cst for plus', async t => {
 
   // x
 
-  const root = g.getCstRoot();
+  const root = g._getCstRoot();
   t.is(root.matchLength, 1);
   t.is(root.ctorName, 'x');
   t.is(root.children.length, 1);
@@ -288,7 +288,7 @@ test('cst with (small) repetition', async t => {
 
   // start
 
-  const root = g.getCstRoot();
+  const root = g._getCstRoot();
   t.is(root.matchLength, 3);
   t.is(root.children.length, 1);
   t.is(root.ctorName, 'x');
@@ -311,7 +311,7 @@ test('cst with (small) repetition', async t => {
 test('cst: star with no matches', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { start = "x"* }'));
   t.is(matchWithInput(g, ''), 1);
-  const list = g.getCstRoot().children[0];
+  const list = g._getCstRoot().children[0];
   t.true(list.isList());
   t.is(list.children.length, 0);
 });
@@ -319,7 +319,7 @@ test('cst: star with no matches', async t => {
 test('cst: ListNode.collect()', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { start = letter* }'));
   t.is(matchWithInput(g, 'abc'), 1);
-  const list = g.getCstRoot().children[0];
+  const list = g._getCstRoot().children[0];
   t.deepEqual(
     list.collect(child => child.sourceString),
     ['a', 'b', 'c']
@@ -337,7 +337,7 @@ test('cst with repetition and lookahead', async t => {
   t.is(matchWithInput(g, input), 1);
 
   // x
-  const root = g.getCstRoot();
+  const root = g._getCstRoot();
   t.is(root.matchLength, 3);
   t.is(root.children.length, 1);
   t.true(root.isNonterminal());
@@ -373,7 +373,7 @@ test('cst with repetition and lookahead', async t => {
 test('cst: multi-column star', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { start = (letter digit)* }'));
   t.is(matchWithInput(g, 'a1b2'), 1);
-  const list = g.getCstRoot().children[0];
+  const list = g._getCstRoot().children[0];
   t.true(list.isList());
   t.is(list.children.length, 2);
 
@@ -393,7 +393,7 @@ test('cst: multi-column star', async t => {
 test('cst: multi-column opt present', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { start = (letter digit)? }'));
   t.is(matchWithInput(g, 'a1'), 1);
-  const opt = g.getCstRoot().children[0];
+  const opt = g._getCstRoot().children[0];
   t.true(opt.isOptional());
   t.true(opt.isPresent());
 
@@ -412,7 +412,7 @@ test('cst: multi-column opt present', async t => {
 test('cst: multi-column opt absent', async t => {
   const g = await toWasmGrammar(ohm.grammar('G { start = (letter digit)? }'));
   t.is(matchWithInput(g, ''), 1);
-  const opt = g.getCstRoot().children[0];
+  const opt = g._getCstRoot().children[0];
   t.true(opt.isOptional());
   t.true(opt.isEmpty());
 });
@@ -711,7 +711,7 @@ test('basic memoization', async t => {
     return getMemoEntry(wasmGrammar, pos, ruleId);
   };
 
-  const root = wasmGrammar.getCstRoot();
+  const root = wasmGrammar._getCstRoot();
 
   // start
   t.is(root.matchLength, 2);
@@ -749,7 +749,7 @@ test('more memoization', async t => {
   };
 
   // start
-  const root = wasmGrammar.getCstRoot();
+  const root = wasmGrammar._getCstRoot();
   t.is(root.matchLength, 2);
   t.is(root.children.length, 2);
   t.is(root.ctorName, 'start');
@@ -1025,7 +1025,7 @@ test('basic space skipping', async t => {
   t.is(matchWithInput(wasmGrammar, '> 0 a 1 b'), 1);
   t.is(matchWithInput(wasmGrammar, ' > 0 a 1 b '), 1);
 
-  const [term, list] = wasmGrammar.getCstRoot().children;
+  const [term, list] = wasmGrammar._getCstRoot().children;
   t.is(term.matchLength, 1);
   t.true(list.isList());
   t.is(list.children.length, 2);
