@@ -18,7 +18,7 @@ function checkExtrasExports(extras) {
   assert.equal(typeof extras.toAST, 'function');
   assert.equal(typeof extras.extractExamples, 'function');
   assert.not('default' in exports, 'there should be no default export');
-  assert.ok(Object.keys(extras).length === 6);
+  assert.ok(Object.keys(extras).length === 7);
 }
 
 test('Core CommonJS exports', async () => {
