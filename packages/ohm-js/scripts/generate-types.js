@@ -1,5 +1,5 @@
 import {readFile, writeFile} from 'node:fs/promises';
-import * as ohm from 'ohm-js';
+import * as ohm from '../index.mjs';
 import prettier from 'prettier';
 import {fileURLToPath, URL} from 'url';
 

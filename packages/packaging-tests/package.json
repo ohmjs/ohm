@@ -15,7 +15,7 @@
   "devDependencies": {
     "@ohm-js/cli": "^2.0.0",
     "acorn": "^8.8.1",
-    "ohm-js": "^17.0.0",
+    "ohm-js": "workspace:ohm-js-legacy@*",
     "uvu": "^0.5.6",
     "vite": "^7.1.5",
     "watchlist": "^0.3.1",

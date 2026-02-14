@@ -1,6 +1,6 @@
 import fastGlob from 'fast-glob';
 import fs from 'fs';
-import * as ohm from 'ohm-js';
+import * as ohm from 'ohm-js-legacy';
 import path from 'path';
 
 import {generateTypes} from '../../helpers/generateTypes.js';
