@@ -37,6 +37,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "postbuild": "publint",
     "publish:alpha": "pnpm publish --tag alpha --no-git-checks"
   }
 }

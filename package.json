@@ -10,15 +10,16 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
+    "@clack/prompts": "^1.0.0",
     "@eslint/compat": "^1.3.2",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.35.0",
+    "@humanwhocodes/crosspost": "^1.0.3",
     "@types/node": "^20.19.13",
     "eslint": "^9.35.0",
     "eslint-plugin-ava": "^15.1.0",
+    "publint": "^0.3.17",
     "typescript": "^5.8.3",
-    "@clack/prompts": "^1.0.0",
-    "@humanwhocodes/crosspost": "^1.0.3",
     "yaml": "^2.8.2"
   },
   "version": "0.0.0"
