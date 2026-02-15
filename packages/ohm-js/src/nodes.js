@@ -151,6 +151,43 @@ export class NonterminalNode extends Node {
   }
 }
 
+// Lists (row-based iteration: container for repetitions and optionals).
+// In the v17 engine, ListNode is used for both; the isOptional flag distinguishes them.
+// In v18, optionals get their own OptNode — see v18.js, which also patches isList()
+// onto the prototype.
+
+export class ListNode extends Node {
+  constructor(children, childOffsets, matchLength, isOptional) {
+    super(matchLength);
+    this.children = children;
+    this.childOffsets = childOffsets;
+    this.optional = isOptional;
+  }
+
+  get ctorName() {
+    return '_list';
+  }
+
+  isOptional() {
+    return this.optional;
+  }
+}
+
+// Seqs (row-based iteration: a single row grouping multiple bindings).
+// Used for v18 compatibility — see v18.js, which patches isSeq() onto the prototype.
+
+export class SeqNode extends Node {
+  constructor(children, childOffsets, matchLength) {
+    super(matchLength);
+    this.children = children;
+    this.childOffsets = childOffsets;
+  }
+
+  get ctorName() {
+    return '_seq';
+  }
+}
+
 // Iterations
 
 export class IterationNode extends Node {

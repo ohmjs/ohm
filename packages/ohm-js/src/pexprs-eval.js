@@ -1,7 +1,7 @@
 import {Trace} from './Trace.js';
 import * as common from './common.js';
 import * as errors from './errors.js';
-import {IterationNode, NonterminalNode, TerminalNode} from './nodes.js';
+import {IterationNode, ListNode, NonterminalNode, SeqNode, TerminalNode} from './nodes.js';
 import * as pexprs from './pexprs-main.js';
 import {MAX_CODE_POINT} from './InputStream.js';
 
@@ -114,6 +114,12 @@ pexprs.Seq.prototype.eval = function (state) {
 };
 
 pexprs.Iter.prototype.eval = function (state) {
+  if (state._rowBasedIteration) {
+    return this.evalRowBased(state);
+  }
+
+  // Column-based iteration (original v17 behavior): produces one IterationNode
+  // per column (i.e., per binding in the iterated expression).
   const {inputStream} = state;
   const origPos = inputStream.pos;
   const arity = this.getArity();
@@ -164,6 +170,63 @@ pexprs.Iter.prototype.eval = function (state) {
     );
     state._bindingOffsets.push(offset);
   }
+  return true;
+};
+
+// Row-based iteration: produces a single ListNode whose children are
+// SeqNodes (for arity > 1) or plain nodes (for arity === 1).
+pexprs.Iter.prototype.evalRowBased = function (state) {
+  const {inputStream} = state;
+  const origPos = inputStream.pos;
+  const isOptional = this instanceof pexprs.Opt;
+
+  const rows = [];
+  const rowOffsets = [];
+  let arity = -1;
+  let numMatches = 0;
+  let prevPos = origPos;
+
+  while (numMatches < this.maxNumMatches) {
+    const origLen = state._bindings.length;
+    if (!state.eval(this.expr)) break;
+    if (inputStream.pos === prevPos) {
+      throw errors.kleeneExprHasNullableOperand(this, state._applicationStack);
+    }
+    prevPos = inputStream.pos;
+    numMatches++;
+
+    if (arity === -1) arity = state._bindings.length - origLen;
+    const children = state._bindings.splice(origLen, arity);
+    const childOffsets = state._bindingOffsets.splice(origLen, arity);
+
+    if (arity > 1) {
+      const rowStart = childOffsets[0];
+      const lastChild = children[arity - 1];
+      const rowEnd = childOffsets[arity - 1] + lastChild.matchLength;
+      const relOffsets = childOffsets.map(o => o - rowStart);
+      rows.push(new SeqNode(children, relOffsets, rowEnd - rowStart));
+      rowOffsets.push(rowStart);
+    } else if (arity === 1) {
+      rows.push(children[0]);
+      rowOffsets.push(childOffsets[0]);
+    }
+  }
+  if (arity === -1) arity = this.expr.getArity();
+  if (numMatches < this.minNumMatches) {
+    return false;
+  }
+
+  if (arity === 0) return true;
+
+  const offset = numMatches > 0 ? rowOffsets[0] : state.posToOffset(origPos);
+  let matchLength = 0;
+  if (numMatches > 0) {
+    const lastRow = rows[rows.length - 1];
+    matchLength = rowOffsets[rows.length - 1] + lastRow.matchLength - offset;
+  }
+
+  state._bindings.push(new ListNode(rows, rowOffsets, matchLength, isOptional));
+  state._bindingOffsets.push(offset);
   return true;
 };
 
@@ -333,11 +396,12 @@ pexprs.Apply.prototype.reallyEval = function (state) {
 pexprs.Apply.prototype.evalOnce = function (expr, state) {
   const {inputStream} = state;
   const origPos = inputStream.pos;
+  const origLen = state._bindings.length;
 
   if (state.eval(expr)) {
-    const arity = expr.getArity();
-    const bindings = state._bindings.splice(state._bindings.length - arity, arity);
-    const offsets = state._bindingOffsets.splice(state._bindingOffsets.length - arity, arity);
+    const arity = state._bindings.length - origLen;
+    const bindings = state._bindings.splice(origLen, arity);
+    const offsets = state._bindingOffsets.splice(origLen, arity);
     const matchLength = inputStream.pos - origPos;
     return new NonterminalNode(this.ruleName, bindings, offsets, matchLength);
   } else {

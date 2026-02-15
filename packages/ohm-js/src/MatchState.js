@@ -29,6 +29,7 @@ export class MatchState {
 
     this.userData = undefined;
     this.doNotMemoize = false;
+    this._rowBasedIteration = false;
 
     this._bindings = [];
     this._bindingOffsets = [];

@@ -16,91 +16,30 @@
 import * as common from './common.js';
 import {_grammar, _grammars} from './main.js';
 import {MatchResult} from './MatchResult.js';
-import {Node} from './nodes.js';
-import * as pexprs from './pexprs-main.js';
+import {ListNode as V17ListNode, Node, SeqNode as V17SeqNode} from './nodes.js';
 
 const buildOptions = {eliminateLookaheads: true};
 
+function enableRowBased(g) {
+  const prev = g._matchStateInitializer;
+  g._matchStateInitializer = state => {
+    if (prev) prev(state);
+    state._rowBasedIteration = true;
+  };
+}
+
 export function grammar(source, optNamespace) {
   const g = _grammar(source, optNamespace, buildOptions);
-  assertV18ArityConsistency(g);
+  enableRowBased(g);
   return g;
 }
 
 export function grammars(source, optNamespace) {
-  const gs = _grammars(source, optNamespace, buildOptions);
-  for (const g of Object.values(gs)) {
-    assertV18ArityConsistency(g);
+  const ns = _grammars(source, optNamespace, buildOptions);
+  for (const name of Object.keys(ns)) {
+    enableRowBased(ns[name]);
   }
-  return gs;
-}
-
-// ===== v18 arity validation =====
-
-/**
- * Compute the v18 CST arity for a PExpr. The key differences from v17's
- * getArity() are: (1) Iter always returns 1 (it produces a single
- * ListNode/OptNode in v18), and (2) Lookahead returns 0 (lookaheads are
- * eliminated from the CST via the eliminateLookaheads build option).
- */
-function getArityV18(pexpr) {
-  if (pexpr instanceof pexprs.Seq) {
-    return pexpr.factors.reduce((sum, f) => sum + getArityV18(f), 0);
-  }
-  if (pexpr instanceof pexprs.Alt) {
-    // Consistency checked separately; return first term's arity.
-    return getArityV18(pexpr.terms[0]);
-  }
-  if (pexpr instanceof pexprs.Iter) {
-    return 1;
-  }
-  if (pexpr instanceof pexprs.Not) {
-    return 0;
-  }
-  if (pexpr instanceof pexprs.Lookahead) {
-    return 0;
-  }
-  if (pexpr instanceof pexprs.Lex) {
-    return getArityV18(pexpr.expr);
-  }
-  // Leaf nodes: any, end, Terminal, Range, Param, Apply, UnicodeChar
-  return 1;
-}
-
-/**
- * Check that all Alt alternatives in the grammar have consistent v18 arity.
- */
-function assertV18ArityConsistency(grammar) {
-  for (const ruleName of Object.keys(grammar.rules)) {
-    checkAltConsistency(grammar.rules[ruleName].body, ruleName);
-  }
-}
-
-function checkAltConsistency(pexpr, ruleName) {
-  if (pexpr instanceof pexprs.Alt) {
-    const arities = pexpr.terms.map(t => getArityV18(t));
-    for (let i = 1; i < arities.length; i++) {
-      if (arities[i] !== arities[0]) {
-        throw new Error(
-          `v18 arity mismatch in rule '${ruleName}': ` +
-            `alternative 1 has arity ${arities[0]}, ` +
-            `alternative ${i + 1} has arity ${arities[i]}`
-        );
-      }
-    }
-    for (const term of pexpr.terms) {
-      checkAltConsistency(term, ruleName);
-    }
-  } else if (pexpr instanceof pexprs.Seq) {
-    for (const factor of pexpr.factors) {
-      checkAltConsistency(factor, ruleName);
-    }
-  } else if (pexpr instanceof pexprs.Iter) {
-    checkAltConsistency(pexpr.expr, ruleName);
-  } else if (pexpr instanceof pexprs.Lookahead || pexpr instanceof pexprs.Lex) {
-    checkAltConsistency(pexpr.expr, ruleName);
-  }
-  // Leaves (Terminal, Apply, etc.): no-op
+  return ns;
 }
 
 // ===== v18 CST node base and types =====
@@ -232,87 +171,6 @@ class NonterminalAdapter extends V18Node {
   }
 }
 
-// ===== Grammar-aware slot resolution =====
-
-/**
- * Returns an array of slot descriptors for a PExpr, describing how its
- * bindings map to CST children. Each descriptor is {kind, count}:
- *   - 'value': a normal child (count always 1)
- *   - 'iter': an iteration group of `count` consecutive _iter children
- *   - 'skip': `count` children to skip (e.g. from Lookahead)
- * Returns null for Alt/Extend/Splice (needs resolveSlots for disambiguation).
- */
-function getSlots(pexpr) {
-  if (pexpr instanceof pexprs.Seq) {
-    const slots = [];
-    for (const factor of pexpr.factors) {
-      const sub = getSlots(factor);
-      if (sub === null) return null;
-      slots.push(...sub);
-    }
-    return slots;
-  }
-  if (pexpr instanceof pexprs.Lex) {
-    return getSlots(pexpr.expr);
-  }
-  if (pexpr instanceof pexprs.Not) {
-    return []; // arity 0, no children
-  }
-  if (pexpr instanceof pexprs.Lookahead) {
-    const arity = pexpr.expr.getArity();
-    return [{kind: 'skip', count: arity}];
-  }
-  if (pexpr instanceof pexprs.Iter) {
-    return [{kind: 'iter', count: pexpr.expr.getArity()}];
-  }
-  if (pexpr instanceof pexprs.Alt) {
-    return null; // needs resolveSlots
-  }
-  // Leaf nodes: Terminal, Apply, any, end, Range, UnicodeChar, Param
-  return [{kind: 'value', count: 1}];
-}
-
-/**
- * For Alt (including Extend, Splice), try each term's slots and return the
- * first one consistent with the actual CST children. Recurses into nested
- * Alts (e.g. from Extend/Splice) so that every alternative is reachable.
- */
-function resolveSlots(pexpr, childEntries) {
-  if (pexpr instanceof pexprs.Alt) {
-    for (const term of pexpr.terms) {
-      const slots = resolveSlots(term, childEntries);
-      if (slots !== null && slotsMatchEntries(slots, childEntries)) {
-        return slots;
-      }
-    }
-    return null;
-  }
-  return getSlots(pexpr);
-}
-
-/**
- * Check whether a list of slot descriptors is consistent with the actual
- * CST child entries — i.e. that 'iter' slots land on _iter children,
- * 'value' slots land on non-_iter children, and total counts match.
- */
-function slotsMatchEntries(slots, entries) {
-  let ei = 0;
-  for (const slot of slots) {
-    if (slot.kind === 'skip') {
-      ei += slot.count;
-    } else if (slot.kind === 'iter') {
-      for (let k = 0; k < slot.count; k++, ei++) {
-        if (ei >= entries.length || !entries[ei].node.isIteration()) return false;
-      }
-    } else {
-      // 'value'
-      if (ei >= entries.length || entries[ei].node.isIteration()) return false;
-      ei++;
-    }
-  }
-  return ei === entries.length;
-}
-
 // ===== Direct CST transform =====
 
 /**
@@ -331,15 +189,24 @@ export function getCstRoot(matchResult) {
   const {input} = matchResult;
   const root = matchResult._cst;
   const rootStart = matchResult._cstOffset;
-  const grammar = matchResult.matcher.grammar;
-  return adaptNode(root, rootStart, rootStart, input, grammar);
+  return adaptNode(root, rootStart, rootStart, input);
 }
 
-function adaptNode(node, absStart, baseStart, input, grammar) {
+function adaptNode(node, absStart, baseStart, input) {
   const absEnd = absStart + node.matchLength;
 
   if (node.isTerminal()) {
     return new TerminalAdapter(absStart, absEnd, input);
+  }
+
+  // v17 ListNode (row-based iteration) → v18 ListNode or OptNode
+  if (node.isList()) {
+    return adaptV17List(node, absStart, baseStart, input);
+  }
+
+  // v17 SeqNode (row-based iteration) → v18 SeqNode
+  if (node.isSeq()) {
+    return adaptV17Seq(node, absStart, baseStart, input);
   }
 
   // For nonterminals, childOffsets are relative to their own start (absStart).
@@ -360,30 +227,14 @@ function adaptNode(node, absStart, baseStart, input, grammar) {
     });
   }
 
-  const rule = grammar.rules[node.ctorName];
-  const slots = resolveSlots(rule.body, childEntries);
-  return adaptWithSlots(node, childEntries, slots, absStart, absEnd, input, grammar);
-}
-
-/**
- * Adapt a nonterminal node using grammar-aware slot descriptors.
- */
-function adaptWithSlots(node, childEntries, slots, absStart, absEnd, input, grammar) {
+  // Group iteration siblings and adapt
   const adapted = [];
-  let ei = 0;
-  for (const slot of slots) {
-    if (slot.kind === 'skip') {
-      ei += slot.count;
-    } else if (slot.kind === 'iter') {
-      const siblings = [];
-      for (let k = 0; k < slot.count; k++, ei++) {
-        siblings.push(childEntries[ei]);
-      }
-      adapted.push(wrapIterGroup(siblings, input, grammar));
+  for (const group of groupIterEntries(childEntries)) {
+    if (group.kind === 'node') {
+      const e = group.entry;
+      adapted.push(adaptNode(e.node, e.absStart, e.baseStart, input));
     } else {
-      // 'value'
-      const e = childEntries[ei++];
-      adapted.push(adaptNode(e.node, e.absStart, e.baseStart, input, grammar));
+      adapted.push(wrapIterGroup(group.entries, input));
     }
   }
 
@@ -398,9 +249,90 @@ function adaptWithSlots(node, childEntries, slots, absStart, absEnd, input, gram
 }
 
 /**
+ * Adapt a v17 ListNode (produced by row-based iteration) into a v18
+ * ListNode or OptNode. ListNode childOffsets are relative to baseStart
+ * (the enclosing nonterminal's absolute start).
+ */
+function adaptV17List(node, absStart, baseStart, input) {
+  const absEnd = absStart + node.matchLength;
+  const source = {startIdx: absStart, endIdx: absEnd};
+  const sourceStr = input.slice(absStart, absEnd);
+
+  const adaptedChildren = [];
+  for (let i = 0; i < node.children.length; i++) {
+    const child = node.children[i];
+    const childAbsStart = baseStart + node.childOffsets[i];
+    const childBaseStart = child.isNonterminal() ? childAbsStart : baseStart;
+    adaptedChildren.push(adaptNode(child, childAbsStart, childBaseStart, input));
+  }
+
+  if (node.isOptional()) {
+    if (adaptedChildren.length === 0) {
+      return new OptNode(undefined, source, sourceStr);
+    }
+    return new OptNode(adaptedChildren[0], source, sourceStr);
+  }
+  return new ListNode(adaptedChildren, source, sourceStr);
+}
+
+/**
+ * Adapt a v17 SeqNode (produced by row-based iteration) into a v18
+ * SeqNode. SeqNode childOffsets are self-relative (relative to absStart).
+ */
+function adaptV17Seq(node, absStart, baseStart, input) {
+  const absEnd = absStart + node.matchLength;
+  const source = {startIdx: absStart, endIdx: absEnd};
+  const sourceStr = input.slice(absStart, absEnd);
+
+  const adaptedChildren = [];
+  for (let i = 0; i < node.children.length; i++) {
+    const child = node.children[i];
+    const childAbsStart = absStart + node.childOffsets[i];
+    // For nonterminals, their childOffsets are self-relative; for everything
+    // else, thread through the enclosing nonterminal's base.
+    const childBaseStart = child.isNonterminal() ? childAbsStart : baseStart;
+    adaptedChildren.push(adaptNode(child, childAbsStart, childBaseStart, input));
+  }
+
+  return new SeqNode(adaptedChildren, source, sourceStr);
+}
+
+/**
+ * Group consecutive iteration node entries that are siblings
+ * (same source interval and same child count).
+ */
+function groupIterEntries(entries) {
+  const groups = [];
+  for (let i = 0; i < entries.length; i++) {
+    const e = entries[i];
+    if (!e.node.isIteration()) {
+      groups.push({kind: 'node', entry: e});
+      continue;
+    }
+    const siblings = [e];
+    for (let j = i + 1; j < entries.length; j++) {
+      const other = entries[j];
+      if (
+        other.node.isIteration() &&
+        other.absStart === e.absStart &&
+        other.absEnd === e.absEnd &&
+        other.node.children.length === e.node.children.length
+      ) {
+        siblings.push(other);
+        i = j;
+      } else {
+        break;
+      }
+    }
+    groups.push({kind: 'iter', entries: siblings});
+  }
+  return groups;
+}
+
+/**
  * Wrap a group of iteration sibling entries into ListNode/OptNode/SeqNode.
  */
-function wrapIterGroup(siblingEntries, input, grammar) {
+function wrapIterGroup(siblingEntries, input) {
   const ref = siblingEntries[0];
   const source = {startIdx: ref.absStart, endIdx: ref.absEnd};
   const sourceStr = input.slice(ref.absStart, ref.absEnd);
@@ -411,9 +343,9 @@ function wrapIterGroup(siblingEntries, input, grammar) {
     }
     const child =
       siblingEntries.length === 1
-        ? adaptIterChild(ref, 0, input, grammar)
+        ? adaptIterChild(ref, 0, input)
         : new SeqNode(
-            siblingEntries.map(sib => adaptIterChild(sib, 0, input, grammar)),
+            siblingEntries.map(sib => adaptIterChild(sib, 0, input)),
             source,
             sourceStr
           );
@@ -425,7 +357,7 @@ function wrapIterGroup(siblingEntries, input, grammar) {
   if (siblingEntries.length === 1) {
     const children = [];
     for (let i = 0; i < numRows; i++) {
-      children.push(adaptIterChild(ref, i, input, grammar));
+      children.push(adaptIterChild(ref, i, input));
     }
     return new ListNode(children, source, sourceStr);
   }
@@ -433,7 +365,7 @@ function wrapIterGroup(siblingEntries, input, grammar) {
   // Multi-column: transpose columns to rows of SeqNodes
   const rows = [];
   for (let row = 0; row < numRows; row++) {
-    const seqChildren = siblingEntries.map(sib => adaptIterChild(sib, row, input, grammar));
+    const seqChildren = siblingEntries.map(sib => adaptIterChild(sib, row, input));
     const rowStart = seqChildren[0].source.startIdx;
     const rowEnd = seqChildren[seqChildren.length - 1].source.endIdx;
     const rowSource = {startIdx: rowStart, endIdx: rowEnd};
@@ -445,13 +377,13 @@ function wrapIterGroup(siblingEntries, input, grammar) {
 /**
  * Adapt a single child of an iteration node entry.
  */
-function adaptIterChild(iterEntry, childIdx, input, grammar) {
+function adaptIterChild(iterEntry, childIdx, input) {
   const iterNode = iterEntry.node;
   const base = iterEntry.baseStart;
   const child = iterNode.children[childIdx];
   const childAbsStart = base + iterNode.childOffsets[childIdx];
   const childBaseStart = child.isNonterminal() ? childAbsStart : base;
-  return adaptNode(child, childAbsStart, childBaseStart, input, grammar);
+  return adaptNode(child, childAbsStart, childBaseStart, input);
 }
 
 // ===== Prototype patching =====
@@ -474,3 +406,5 @@ patchProto(MatchResult.prototype, 'detach', () => {});
 // Node (v17 CST base class)
 patchProto(Node.prototype, 'isList', () => false);
 patchProto(Node.prototype, 'isSeq', () => false);
+V17ListNode.prototype.isList = () => true;
+V17SeqNode.prototype.isSeq = () => true;
