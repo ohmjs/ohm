@@ -1,8 +1,8 @@
 {
-  "name": "ohm-js",
-  "version": "18.0.0-beta.3",
-  "description": "Ohm runtime — CST nodes, Grammar, and MatchResult",
-  "keywords": ["parser", "parsing", "ohm", "ohm-js", "runtime"],
+  "name": "@ohm-js/to-ast-compat",
+  "version": "18.0.0-beta.1",
+  "description": "Compatibility helper for migrating from ohm-js v17 toAST to v18",
+  "keywords": ["parser", "parsing", "ohm", "ohm-js", "ast"],
   "homepage": "https://github.com/ohmjs/ohm#readme",
   "bugs": {
     "url": "https://github.com/ohmjs/ohm/issues"
@@ -28,5 +28,8 @@
   "scripts": {
     "build": "tsdown",
     "publish:beta": "pnpm publish --tag beta --no-git-checks"
+  },
+  "peerDependencies": {
+    "ohm-js": ">= 17.5.0 || >= 18.0.0-0"
   }
 }

@@ -12,7 +12,7 @@ In v18, it's recommended to compile your grammars to a Wasm blob at build time, 
 
 `grammar()` and `grammars()` provide the same API as Ohm v17, compiling your grammar and instantiating it in a single step.
 
-## @ohm-js/runtime/compat
+## @ohm-js/to-ast-compat
 
 ### `createToAst`
 
@@ -36,7 +36,7 @@ const ast = toAST(match, {
 New (v18):
 
 ```js
-import {createToAst} from "@ohm-js/runtime/compat";
+import {createToAst} from "@ohm-js/to-ast-compat";
 
 const toAST = createToAst({
   Equation: {content: 0},

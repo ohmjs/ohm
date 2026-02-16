@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "allowJs": false,
+    "declaration": true,
+    "isolatedDeclarations": true,
+    "stripInternal": true,
+    "sourceMap": true,
+    "lib": ["ES2022", "DOM"]
+  },
+  "include": ["src/**/*", "index.ts"]
+}

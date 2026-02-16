@@ -6,7 +6,7 @@ import type {
   NonterminalNode,
   SucceededMatchResult,
   TerminalNode,
-} from './miniohm.ts';
+} from 'ohm-js';
 
 export type AstNodeTemplate<R> = {
   [property: string]:

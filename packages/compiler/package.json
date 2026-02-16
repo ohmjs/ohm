@@ -41,6 +41,7 @@
     "fast-glob": "^3.3.3",
     "mitata": "^1.0.34",
     "ohm-js-legacy": "workspace:^",
+    "@ohm-js/to-ast-compat": "workspace:^",
     "wabt": "1.0.37-nightly.20250428"
   },
   "peerDependencies": {

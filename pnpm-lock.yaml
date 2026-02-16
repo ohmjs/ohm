@@ -165,6 +165,9 @@ importers:
         specifier: workspace:^
         version: link:../runtime
     devDependencies:
+      '@ohm-js/to-ast-compat':
+        specifier: workspace:^
+        version: link:../to-ast-compat
       '@shopify/liquid-html-parser':
         specifier: github:pdubroy/theme-tools#path:/packages/liquid-html-parser
         version: https://codeload.github.com/pdubroy/theme-tools/tar.gz/8f52361778f2836cd971f8b2d55885461cf4ac0e#path:/packages/liquid-html-parser
@@ -316,6 +319,12 @@ importers:
       ava:
         specifier: ^6.0.0
         version: 6.2.0(rollup@4.43.0)
+
+  packages/to-ast-compat:
+    dependencies:
+      ohm-js:
+        specifier: '>= 17.5.0 || >= 18.0.0-0'
+        version: link:../runtime
 
 packages:
 
