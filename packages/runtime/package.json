@@ -36,7 +36,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsdown",
     "postbuild": "publint",
     "publish:beta": "pnpm publish --tag beta --no-git-checks"
   }

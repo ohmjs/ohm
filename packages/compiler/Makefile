@@ -4,7 +4,7 @@ SRC_JS_FILES := $(wildcard src/*.js)
 SRC_TS_FILES := $(wildcard src/*.ts)
 
 .PHONY: all
-all: dist-js dist/index.d.ts
+all: dist-js
 
 .PHONY: clean
 clean:
@@ -24,12 +24,7 @@ bench: all scripts/bench.js build/es5.wasm build/json.wasm build/liquid-html.was
 
 .PHONY: dist-js
 dist-js: build/ohmRuntime.wasm_sections.ts $(SRC_JS_FILES) $(SRC_TS_FILES)
-	pnpm tsc
-	pnpm esbuild src/Compiler.js \
-		--bundle --format=esm --outdir=dist/src \
-		--platform=node \
-		--external:ohm-js \
-		--sourcemap
+	pnpm tsdown
 
 build/ohmRuntime.wasm_sections.ts: scripts/bundlewasm.ts build/ohmRuntime.wasm
 	$(NODE) scripts/bundlewasm.ts build/ohmRuntime.wasm

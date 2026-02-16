@@ -19,6 +19,7 @@
     "eslint": "^9.35.0",
     "eslint-plugin-ava": "^15.1.0",
     "publint": "^0.3.17",
+    "tsdown": "^0.20.3",
     "typescript": "^5.8.3",
     "yaml": "^2.8.2"
   },
