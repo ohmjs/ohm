@@ -42,7 +42,7 @@ test('it basically works', t => {
     },
   });
   if (r.succeeded()) {
-    t.is(evalIt(r._cst), 7);
+    t.is(evalIt(r.getCstRoot()), 7);
   } else {
     t.fail('parse failed');
   }
@@ -97,7 +97,7 @@ test('it handles v17 CSTs', t => {
   const r = g.match('abcbc!!');
   if (r.succeeded()) {
     // t.is(reversed(adaptCstFromMatchResult(r)), '!!cbcba');
-    t.is(reversed(r._cst), '!!cbcba');
+    t.is(reversed(r.getCstRoot()), '!!cbcba');
     // t.pass();
   } else {
     t.fail('parse failed');

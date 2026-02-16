@@ -132,7 +132,7 @@ function parseStringTable(module: WebAssembly.Module, sectionName: string): stri
   return ans;
 }
 
-export class WasmGrammar {
+export class Grammar {
   name = '';
 
   private _instance?: WebAssembly.Instance = undefined;
@@ -191,7 +191,7 @@ export class WasmGrammar {
   private _resultStack: MatchResult[] = [];
 
   /**
-   * Create a new WasmGrammar object.
+   * Create a new Grammar object.
    * If `bytes` is specified, the WebAssembly module will be synchronously
    * compiled and instantiated. Use `instantiate` or `instantiateStreaming`
    * to instantiate asynchronously.
@@ -236,14 +236,12 @@ export class WasmGrammar {
     result._attached = false;
   }
 
-  static async instantiate(source: BufferSource): Promise<WasmGrammar> {
-    return new WasmGrammar()._instantiate(source);
+  static async instantiate(source: BufferSource): Promise<Grammar> {
+    return new Grammar()._instantiate(source);
   }
 
-  static async instantiateStreaming(
-    source: Response | Promise<Response>
-  ): Promise<WasmGrammar> {
-    return new WasmGrammar()._instantiateStreaming(source);
+  static async instantiateStreaming(source: Response | Promise<Response>): Promise<Grammar> {
+    return new Grammar()._instantiateStreaming(source);
   }
 
   async _instantiate(source: BufferSource, debugImports: any = {}) {
@@ -262,7 +260,7 @@ export class WasmGrammar {
   async _instantiateStreaming(
     source: Response | Promise<Response>,
     debugImports: any = {}
-  ): Promise<WasmGrammar> {
+  ): Promise<Grammar> {
     const {module, instance} = await WebAssembly.instantiateStreaming(
       source,
       {
@@ -772,18 +770,18 @@ export class OptNodeImpl<TNode extends CstNode = CstNode>
   }
 }
 
-export class MatchResult {
+export abstract class MatchResult {
   // Note: This is different from the JS implementation, which has:
   //    matcher: Matcher;
   // …instead.
-  grammar: WasmGrammar;
+  grammar: Grammar;
   startExpr: string;
   _ctx: MatchContext;
   _succeeded: boolean;
   _attached = true;
   _managed = false;
 
-  constructor(grammar: WasmGrammar, startExpr: string, ctx: MatchContext, succeeded: boolean) {
+  constructor(grammar: Grammar, startExpr: string, ctx: MatchContext, succeeded: boolean) {
     this.grammar = grammar;
     this.startExpr = startExpr;
     this._ctx = ctx;
@@ -830,7 +828,7 @@ export class MatchResult {
 }
 
 function createMatchResult(
-  grammar: WasmGrammar,
+  grammar: Grammar,
   startExpr: string,
   ctx: MatchContext,
   succeeded: boolean
@@ -849,7 +847,7 @@ function createMatchResult(
 export class SucceededMatchResult extends MatchResult {
   _cst: CstNode;
 
-  constructor(grammar: WasmGrammar, startExpr: string, ctx: MatchContext, succeeded: boolean) {
+  constructor(grammar: Grammar, startExpr: string, ctx: MatchContext, succeeded: boolean) {
     super(grammar, startExpr, ctx, succeeded);
     this._cst = grammar._getCstRoot(ctx);
   }
@@ -865,7 +863,7 @@ export class FailedMatchResult extends MatchResult {
   private _failureDescriptions: string[] | null = null;
 
   constructor(
-    grammar: WasmGrammar,
+    grammar: Grammar,
     startExpr: string,
     ctx: MatchContext,
     succeeded: boolean,
