@@ -220,11 +220,11 @@ export class Grammar {
     (this._instance as any).exports.setNumMemoizedRules(count);
   }
 
-  _manage(result: MatchResult) {
+  _manage(result: MatchResult): void {
     result._managed = true;
   }
 
-  _dispose(result: MatchResult) {
+  _dispose(result: MatchResult): void {
     assert(
       this._resultStack.at(-1) === result,
       `You can only dispose() the most recent MatchResult`
@@ -244,7 +244,7 @@ export class Grammar {
     return new Grammar()._instantiateStreaming(source);
   }
 
-  async _instantiate(source: BufferSource, debugImports: any = {}) {
+  async _instantiate(source: BufferSource, debugImports: any = {}): Promise<Grammar> {
     const {module, instance} = await WebAssembly.instantiate(
       source,
       {
@@ -328,7 +328,7 @@ export class Grammar {
     return result;
   }
 
-  recordFailures() {
+  recordFailures(): number[] {
     const {exports} = this._instance as any;
     exports.recordFailures(this._ruleIds.get(this._ruleNames[0]));
     const ans: number[] = [];
@@ -673,7 +673,7 @@ export class SeqNodeImpl<TChildren extends CstNodeChildren = CstNodeChildren>
   extends WrapperNode
   implements SeqNode<TChildren>
 {
-  type = CstNodeType.SEQ;
+  type: typeof CstNodeType.SEQ = CstNodeType.SEQ;
   ctorName = '_seq' as const;
   children: TChildren;
 
@@ -703,7 +703,7 @@ export class ListNodeImpl<TNode extends CstNode = CstNode>
   extends WrapperNode
   implements ListNode<TNode>
 {
-  type = CstNodeType.LIST;
+  type: typeof CstNodeType.LIST = CstNodeType.LIST;
   ctorName = '_list' as const;
   children: readonly TNode[];
 
@@ -731,7 +731,7 @@ export class OptNodeImpl<TNode extends CstNode = CstNode>
   extends WrapperNode
   implements OptNode<TNode>
 {
-  type = CstNodeType.OPT;
+  type: typeof CstNodeType.OPT = CstNodeType.OPT;
   ctorName = '_opt' as const;
   children: [] | [TNode];
 
@@ -799,7 +799,7 @@ export abstract class MatchResult {
     return () => this.dispose();
   }
 
-  dispose() {
+  dispose(): void {
     throw new Error('MatchResult is not attached to any grammar');
   }
 
