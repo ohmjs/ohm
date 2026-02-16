@@ -11,6 +11,7 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   external: ['ohm-js'],
+  inlineOnly: false,
   publint: true,
   attw: {profile: 'esm-only'},
 });
