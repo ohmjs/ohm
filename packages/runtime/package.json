@@ -21,8 +21,8 @@
       "default": "./dist/index.js"
     },
     "./compat": {
-      "types": "./dist/src/createToAst.d.ts",
-      "default": "./dist/src/createToAst.js"
+      "types": "./dist/compat.d.ts",
+      "default": "./dist/compat.js"
     }
   },
   "files": ["dist"],
@@ -31,7 +31,6 @@
   },
   "scripts": {
     "build": "tsdown",
-    "postbuild": "publint && attw --pack --profile esm-only",
     "publish:beta": "pnpm publish --tag beta --no-git-checks"
   }
 }

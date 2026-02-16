@@ -22,7 +22,6 @@
   },
   "scripts": {
     "build": "make",
-    "postbuild": "publint && attw --pack --profile esm-only",
     "build-and-test": "make && ava test",
     "publish:beta": "pnpm publish --tag beta --no-git-checks",
     "test": "ava test"
