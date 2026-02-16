@@ -49,6 +49,7 @@ const utf8 = new TextDecoder('utf-8');
 export class Interval {
   startIdx: number;
   endIdx: number;
+  /** @internal */
   private _sourceString: string;
 
   constructor(sourceString: string, startIdx: number, endIdx: number) {
@@ -67,7 +68,9 @@ export class Interval {
 }
 
 export class Failure {
+  /** @internal */
   private _description: string;
+  /** @internal */
   private _fluffy: boolean;
 
   constructor(description: string, fluffy: boolean) {
@@ -135,7 +138,9 @@ function parseStringTable(module: WebAssembly.Module, sectionName: string): stri
 export class Grammar {
   name = '';
 
+  /** @internal */
   private _instance?: WebAssembly.Instance = undefined;
+  /** @internal */
   private _imports = {
     // System-level AssemblyScript imports.
     env: {
@@ -182,12 +187,17 @@ export class Grammar {
       },
     },
   };
+  /** @internal */
   private _ruleIds = new Map<string, number>();
+  /** @internal */
   private _ruleNames: string[] = [];
+  /** @internal */
   private _input = '';
 
-  public _failureDescriptions: string[] = []; // Should be treated as package private
+  /** @internal */
+  public _failureDescriptions: string[] = [];
 
+  /** @internal */
   private _resultStack: MatchResult[] = [];
 
   /**
@@ -204,6 +214,7 @@ export class Grammar {
     }
   }
 
+  /** @internal */
   private _init(module: WebAssembly.Module, instance: WebAssembly.Instance) {
     this._instance = instance;
     this._extractStrings(module);
@@ -212,6 +223,7 @@ export class Grammar {
     return this;
   }
 
+  /** @internal */
   private _initMemoConfig(module: WebAssembly.Module) {
     const sections = WebAssembly.Module.customSections(module, 'memoizedRuleCount');
     assert(sections.length === 1, 'Expected one memoizedRuleCount section');
@@ -220,10 +232,12 @@ export class Grammar {
     (this._instance as any).exports.setNumMemoizedRules(count);
   }
 
+  /** @internal */
   _manage(result: MatchResult): void {
     result._managed = true;
   }
 
+  /** @internal */
   _dispose(result: MatchResult): void {
     assert(
       this._resultStack.at(-1) === result,
@@ -244,6 +258,7 @@ export class Grammar {
     return new Grammar()._instantiateStreaming(source);
   }
 
+  /** @internal */
   async _instantiate(source: BufferSource, debugImports: any = {}): Promise<Grammar> {
     const {module, instance} = await WebAssembly.instantiate(
       source,
@@ -257,6 +272,7 @@ export class Grammar {
     return this._init(module, instance);
   }
 
+  /** @internal */
   async _instantiateStreaming(
     source: Response | Promise<Response>,
     debugImports: any = {}
@@ -273,6 +289,7 @@ export class Grammar {
     return this._init(module, instance);
   }
 
+  /** @internal */
   private _getGrammarName(module: WebAssembly.Module): string {
     const sections = WebAssembly.Module.customSections(module, 'name');
     assert(sections.length === 1, `Expected one name section, found ${sections.length}`);
@@ -281,6 +298,7 @@ export class Grammar {
     return decoder.decode(data);
   }
 
+  /** @internal */
   private _extractStrings(module: WebAssembly.Module): void {
     assert(this._ruleNames.length === 0);
     assert(this._ruleIds.size === 0);
@@ -328,6 +346,7 @@ export class Grammar {
     return result;
   }
 
+  /** @internal */
   recordFailures(): number[] {
     const {exports} = this._instance as any;
     exports.recordFailures(this._ruleIds.get(this._ruleNames[0]));
@@ -370,6 +389,7 @@ export class Grammar {
     return root as CstNode;
   }
 
+  /** @internal */
   private _fillInputBuffer(ptr: number, length: number): number {
     const encoder = new TextEncoder();
     const {memory} = (this._instance as any).exports;
@@ -458,7 +478,7 @@ export interface SeqNode<TChildren extends CstNodeChildren = CstNodeChildren>
   unpack: <R>(cb: (...children: TChildren) => R) => R;
 }
 
-export class CstNodeImpl implements CstNodeBase {
+class CstNodeImpl implements CstNodeBase {
   _ctx!: MatchContext;
   _children?: CstNodeChildren = undefined;
   _base: number;
@@ -669,7 +689,7 @@ abstract class WrapperNode implements CstNodeBase {
   }
 }
 
-export class SeqNodeImpl<TChildren extends CstNodeChildren = CstNodeChildren>
+class SeqNodeImpl<TChildren extends CstNodeChildren = CstNodeChildren>
   extends WrapperNode
   implements SeqNode<TChildren>
 {
@@ -699,7 +719,7 @@ export class SeqNodeImpl<TChildren extends CstNodeChildren = CstNodeChildren>
   }
 }
 
-export class ListNodeImpl<TNode extends CstNode = CstNode>
+class ListNodeImpl<TNode extends CstNode = CstNode>
   extends WrapperNode
   implements ListNode<TNode>
 {
@@ -727,7 +747,7 @@ export class ListNodeImpl<TNode extends CstNode = CstNode>
   }
 }
 
-export class OptNodeImpl<TNode extends CstNode = CstNode>
+class OptNodeImpl<TNode extends CstNode = CstNode>
   extends WrapperNode
   implements OptNode<TNode>
 {
@@ -776,12 +796,22 @@ export abstract class MatchResult {
   // …instead.
   grammar: Grammar;
   startExpr: string;
+  /** @internal */
   _ctx: MatchContext;
+  /** @internal */
   _succeeded: boolean;
+  /** @internal */
   _attached = true;
+  /** @internal */
   _managed = false;
 
-  constructor(grammar: Grammar, startExpr: string, ctx: MatchContext, succeeded: boolean) {
+  /** @internal */
+  protected constructor(
+    grammar: Grammar,
+    startExpr: string,
+    ctx: MatchContext,
+    succeeded: boolean
+  ) {
     this.grammar = grammar;
     this.startExpr = startExpr;
     this._ctx = ctx;
@@ -845,9 +875,16 @@ function createMatchResult(
 }
 
 export class SucceededMatchResult extends MatchResult {
+  /** @internal */
   _cst: CstNode;
 
-  constructor(grammar: Grammar, startExpr: string, ctx: MatchContext, succeeded: boolean) {
+  /** @internal */
+  protected constructor(
+    grammar: Grammar,
+    startExpr: string,
+    ctx: MatchContext,
+    succeeded: boolean
+  ) {
     super(grammar, startExpr, ctx, succeeded);
     this._cst = grammar._getCstRoot(ctx);
   }
@@ -858,11 +895,15 @@ export class SucceededMatchResult extends MatchResult {
 }
 
 export class FailedMatchResult extends MatchResult {
+  /** @internal */
   _rightmostFailurePosition: number;
+  /** @internal */
   private _rightmostFailures: Failure[] | null = null;
+  /** @internal */
   private _failureDescriptions: string[] | null = null;
 
-  constructor(
+  /** @internal */
+  protected constructor(
     grammar: Grammar,
     startExpr: string,
     ctx: MatchContext,
@@ -873,6 +914,7 @@ export class FailedMatchResult extends MatchResult {
     this._rightmostFailurePosition = rightmostFailurePosition;
   }
 
+  /** @internal */
   private _assertAttached(property: string) {
     if (!this._attached) {
       throw new Error(
@@ -918,6 +960,7 @@ export class FailedMatchResult extends MatchResult {
   }
 
   // Get the non-fluffy failure descriptions.
+  /** @internal */
   private _getFailureDescriptions(): string[] {
     if (this._failureDescriptions === null) {
       this._failureDescriptions = this.getRightmostFailures()
