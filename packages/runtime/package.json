@@ -25,19 +25,13 @@
       "default": "./dist/src/createToAst.js"
     }
   },
-  "files": [
-    "dist/index.*",
-    "dist/src/assert.*",
-    "dist/src/createToAst.*",
-    "dist/src/extras.*",
-    "dist/src/miniohm.*"
-  ],
+  "files": ["dist"],
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "build": "tsdown",
-    "postbuild": "publint",
+    "postbuild": "publint && attw --pack --profile esm-only",
     "publish:beta": "pnpm publish --tag beta --no-git-checks"
   }
 }

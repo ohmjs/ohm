@@ -16,13 +16,13 @@
   "bin": {
     "ohm2wasm": "dist/src/cli.js"
   },
-  "files": ["dist/index.*", "dist/src/Compiler.*", "dist/src/compat.*", "dist/src/cli.*"],
+  "files": ["dist"],
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "build": "make",
-    "postbuild": "publint",
+    "postbuild": "publint && attw --pack --profile esm-only",
     "build-and-test": "make && ava test",
     "publish:beta": "pnpm publish --tag beta --no-git-checks",
     "test": "ava test"
