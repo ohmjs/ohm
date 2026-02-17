@@ -1,8 +1,13 @@
 # @ohm-js/compiler
 
-Compile Ohm.js grammars to WebAsssembly, so they can be used from other languages.
+Compile Ohm.js grammars to WebAssembly.
 
-To use the grammar, use the appropriate _miniohm_ package for your language.
+This package is typically a **dev dependency** — use it to compile `.ohm` grammars to `.wasm` at build time. At runtime, use [`ohm-js`](https://www.npmjs.com/package/ohm-js) to load and use the compiled grammars.
+
+```bash
+npm install --save-dev @ohm-js/compiler
+npm install ohm-js
+```
 
 **NOTE:** This package is experimental; the API is not yet stable.
 
@@ -22,18 +27,52 @@ This will write a Wasm grammar blob to ./my-grammar.wasm.
 
 ### API
 
-```
-import * as ohm from 'ohm-js';
-import {Compiler} from '@ohm-js/compiler';
-
-// Instantiate your own grammar…
-const g = ohm.grammar('MyGrammar { start = "blah" }');
+```js
+import {compile} from '@ohm-js/compiler';
 
 // compile() returns the Wasm grammar blob as a Uint8Array.
-const bytes = new Compiler(g).compile();
+const bytes = compile('MyGrammar { start = "blah" }');
 ```
 
-Differences:
+If the source contains multiple grammars, you can specify which one to compile:
+
+```js
+const bytes = compile(source, {grammarName: 'MyGrammar'});
+```
+
+…or compile all grammars at once:
+
+```js
+import {compileGrammars} from '@ohm-js/compiler';
+
+// Returns a Record<string, Uint8Array>.
+const bytesByName = compileGrammars(source);
+```
+
+#### Compat mode
+
+For compatibility with existing v17 codebases, `@ohm-js/compiler/compat` provides
+`grammar()` and `grammars()` functions that parse, compile, and instantiate in one step:
+
+```js
+import {grammar} from '@ohm-js/compiler/compat';
+
+const g = grammar('MyGrammar { start = "blah" }');
+const result = g.match('blah');
+console.log(result.succeeded()); // true
+```
+
+Note: this compiles the grammar to Wasm on every call. For production use,
+it's recommended to compile to `.wasm` ahead of time and load with the `ohm-js` runtime:
+
+```js
+import {Grammar} from 'ohm-js';
+
+const g = await Grammar.instantiate(fs.readFileSync('my-grammar.wasm'));
+const result = g.match('blah');
+```
+
+#### Differences from v17
 
 **Arity**
 - Iter and Opt nodes are no longer flattened.
