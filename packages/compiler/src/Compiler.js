@@ -162,6 +162,7 @@ function collectParams(exp, seen = new Set()) {
 }
 
 const prebuiltFuncidx = nm => checkNotNull(prebuilt.funcidxByName[nm]);
+const prebuiltGlobalidx = nm => checkNotNull(prebuilt.globalidxByName[nm]);
 
 // Produce a section combining `els` with the corresponding prebuilt section.
 // This only does a naive merge; no type or function indices are rewritten.
@@ -223,8 +224,6 @@ class TypeMap {
  */
 class Assembler {
   constructor(typeMap) {
-    this._globals = new Map();
-
     this._functionDecls = [];
 
     // Keep track of loops/blocks to make it easier (and safer) to generate
@@ -252,22 +251,6 @@ class Assembler {
     return w.i32(idx);
   }
 
-  doEmit(thunk) {
-    const oldCode = this._code;
-    this._code = [];
-    thunk();
-    const body = [...this._code, instr.end];
-    this._code = oldCode;
-    return body;
-  }
-
-  addGlobal(name, type, mut, initThunk) {
-    assert(!this._globals.has(name), `Global '${name}' already exists`);
-    const idx = this._globals.size;
-    const initExpr = this.doEmit(initThunk);
-    this._globals.set(name, {idx, type, mut, initExpr});
-    return idx;
-  }
 
   addLocal(name, type) {
     assert(!this._locals.has(name), `Local '${name}' already exists`);
@@ -297,8 +280,7 @@ class Assembler {
   // Pure codegen helpers (used to generate the function bodies).
 
   globalidx(name) {
-    const {idx} = checkNotNull(this._globals.get(name), `Unknown global: ${name}`);
-    return idx;
+    return prebuiltGlobalidx(name);
   }
 
   localidx(name) {
@@ -1010,43 +992,6 @@ export class Compiler {
     asm.addBlocktype([w.valtype.i32], []);
     asm.addBlocktype([w.valtype.i32], [w.valtype.i32]);
     asm.addBlocktype([], [w.valtype.i32]); // Rule eval
-    // (global $runtime/ohmRuntime/pos (mut i32) (i32.const 0))
-    // (global $runtime/ohmRuntime/endPos (mut i32) (i32.const 0))
-    // (global $runtime/ohmRuntime/input (mut externref) (ref.null noextern))
-    // (global $runtime/ohmRuntime/numMemoBlocks (mut i32) (i32.const 0))
-    // (global $runtime/ohmRuntime/memoIndexBase (mut i32) (i32.const 0))
-    // (global $runtime/ohmRuntime/rightmostFailurePos (mut i32) (i32.const 0))
-    // (global $runtime/ohmRuntime/errorMessagePos (mut i32) (i32.const -1))
-    // (global $runtime/ohmRuntime/sp (mut i32) (i32.const 0))
-    // (global $~lib/shared/runtime/Runtime.Stub i32 (i32.const 0))
-    // (global $~lib/shared/runtime/Runtime.Minimal i32 (i32.const 1))
-    // (global $~lib/shared/runtime/Runtime.Incremental i32 (i32.const 2))
-    // (global $~lib/rt/stub/startOffset (mut i32) (i32.const 0))
-    // (global $~lib/rt/stub/offset (mut i32) (i32.const 0))
-    // (global $~lib/native/ASC_RUNTIME i32 (i32.const 0))
-    // (global $runtime/ohmRuntime/bindings (mut i32) (i32.const 0))
-    // (global $runtime/ohmRuntime/recordedFailures (mut i32) (i32.const 0))
-    // (global $~lib/memory/__heap_base i32 (i32.const 65900))
-    asm.addGlobal('pos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('endPos', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('input', wasm3.valtype.externref, w.mut.var, () =>
-      asm.refNull(wasm3.valtype.externref)
-    );
-    asm.addGlobal('numMemoBlocks', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('memoIndexBase', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('rightmostFailurePos', w.valtype.i32, w.mut.var, () => asm.i32Const(-1));
-    asm.addGlobal('errorMessagePos', w.valtype.i32, w.mut.var, () => asm.i32Const(-1));
-    asm.addGlobal('sp', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('__Runtime.Stub', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
-    asm.addGlobal('__Runtime.Minimal', w.valtype.i32, w.mut.const, () => asm.i32Const(1));
-    asm.addGlobal('__Runtime.Incremental', w.valtype.i32, w.mut.const, () => asm.i32Const(2));
-    asm.addGlobal('__startOffset', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('__offset', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('__ASC_RUNTIME', w.valtype.i32, w.mut.const, () => asm.i32Const(0));
-    asm.addGlobal('bindings', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('recordedFailures', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('fluffySaveStack', w.valtype.i32, w.mut.var, () => asm.i32Const(0));
-    asm.addGlobal('__heap_base', w.valtype.i32, w.mut.var, () => asm.i32Const(65948));
 
     // Reserve a fixed number of imports for debug labels.
     if (DEBUG) {
@@ -1436,7 +1381,6 @@ export class Compiler {
     typeMap.addDecls(this.importDecls);
     typeMap.addDecls(functionDecls);
 
-    const globals = [];
     const imports = this.importDecls.map((f, i) =>
       w.import_(f.module, f.name, w.importdesc.func(typeMap.getIdxForDecl(f)))
     );
@@ -1464,13 +1408,10 @@ export class Compiler {
       exports.push(w.export_(name, w.exportdesc.func(prebuiltFuncidx(name))));
     });
 
-    // Process globals.
-    for (const [name, {type, mut, initExpr}] of this.asm._globals.entries()) {
-      globals.push(w.global(w.globaltype(type, mut), initExpr));
-
-      // Export all of the globals so they get a name for debugging.
-      // TODO: Handle this instead via the name section.
-      exports.push(w.export_(name, [0x03, this.asm.globalidx(name)]));
+    // Export prebuilt globals so they get a name for debugging.
+    // TODO: Handle this instead via the name section.
+    for (const [name, idx] of Object.entries(prebuilt.globalidxByName)) {
+      exports.push(w.export_(name, [0x03, idx]));
     }
     // The module will have a table containing references to all of the rule eval functions.
     // The table declaration goes in the table section; the data in the element section.
@@ -1487,14 +1428,13 @@ export class Compiler {
     assert(indexOfStart !== -1, 'No start function found');
     const startFuncidx = this.importCount() + prebuilt.funcsec.entryCount + indexOfStart;
 
-    // Note: globals are *not* merged; they are assumed to be shared.
     const mod = w.module([
       mergeSections(w.SECTION_ID_TYPE, prebuilt.typesec, typeMap.getTypes()),
       mergeSections(w.SECTION_ID_IMPORT, prebuilt.importsec, imports),
       mergeSections(w.SECTION_ID_FUNCTION, prebuilt.funcsec, funcs),
       w.tablesec([table]),
       w.memsec([w.mem(w.memtype(w.limits.min(1)))]),
-      w.globalsec(globals),
+      mergeSections(w.SECTION_ID_GLOBAL, prebuilt.globalsec, []),
       w.exportsec(exports),
       w.startsec(w.start(startFuncidx)),
       w.elemsec([w.elem(w.tableidx(0), [instr.i32.const, w.i32(0), instr.end], tableData)]),

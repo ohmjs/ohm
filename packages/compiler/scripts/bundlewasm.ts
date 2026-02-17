@@ -28,25 +28,17 @@ const sections = extractSections(buf, {
 // to enable a run-time check that the final module is compatible.
 const destImportCount = importAdjust + sections.importsec.entryCount;
 
-let output = `function decodeBase64(str: string) {
-  const bytes = atob(str)
-  const result: number[] = []
-  for (let i = 0; i < bytes.length; i++) {
-    result[i] = bytes.charCodeAt(i)
-  }
-  return result
-}
+let output = `const decodeBase64 = (str: string) => Array.from(atob(str), c => c.charCodeAt(0));
 
 export const destImportCount = ${destImportCount};
 export const startFuncidx = ${sections.startFuncidx};
 `;
 
 output += `export const funcidxByName = ${JSON.stringify(sections.funcidxByName)};\n`;
+output += `export const globalidxByName = ${JSON.stringify(sections.globalidxByName)};\n`;
 
-for (const [name, payload] of Object.entries(sections)) {
-  if (name === 'funcidxByName' || name === 'startFuncidx') {
-    continue; // Skip this section as it's already handled above
-  }
+const {funcidxByName, globalidxByName, startFuncidx, ...sectionEntries} = sections;
+for (const [name, payload] of Object.entries(sectionEntries)) {
   const {entryCount, contents} = payload;
   const base64Contents = Buffer.from(contents).toString('base64');
   output += `export const ${name} = {

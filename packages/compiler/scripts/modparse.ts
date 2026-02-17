@@ -3,6 +3,8 @@ import * as w from '@wasmgroundup/emit';
 
 import assert from 'node:assert';
 
+const textDecoder = new TextDecoder();
+
 // For sanity checking, assume that the number of locals is never
 // above a certain number. (We can raise this if necessary.)
 const MAX_LOCALS = 64;
@@ -91,23 +93,24 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
     pos += size;
   }
 
-  // Parse the export section, and return a map of {funcName: newIdx}.
-  // `adjustment` is the difference between the number of dest imports
-  // and source imports.
-  function parseExportSection(expectedId: number, adjustment): ExportSection {
+  // Parse the export section. Returns {funcs, globals} maps of {name: idx}.
+  // `funcidxAdjustment` adjusts function indices to account for the dest
+  // module having more imports than the source module.
+  function parseExportSection(expectedId: number, funcidxAdjustment: number) {
     const id = bytes[pos++];
     assert(id === expectedId, `expected section with id ${expectedId}, got ${id}`);
     const size = parseU32();
     const startPos = pos;
     const count = parseU32();
-    const exports: ExportSection = {};
+    const funcs: ExportSection = {};
+    const globals: ExportSection = {};
 
     for (let i = 0; i < count; i++) {
       // Parse name (length-prefixed UTF-8 string)
       const nameLen = parseU32();
       const nameBytes = bytes.slice(pos, pos + nameLen);
       pos += nameLen;
-      const name = new TextDecoder().decode(nameBytes);
+      const name = textDecoder.decode(nameBytes);
 
       // Parse kind (single byte)
       const kind = bytes[pos++];
@@ -115,9 +118,12 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
       // Parse index
       const index = parseU32();
 
-      // Only collect functions (kind 0x00)
       if (kind === 0x00) {
-        exports[name] = index + adjustment;
+        // Function export: adjust index for dest import count.
+        funcs[name] = index + funcidxAdjustment;
+      } else if (kind === 0x03) {
+        // Global export: index is unchanged (globals aren't rewritten).
+        globals[name] = index;
       }
     }
 
@@ -125,7 +131,7 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
       pos - startPos === size,
       `Export section parsing mismatch: expected ${size} bytes, parsed ${pos - startPos}`
     );
-    return exports;
+    return {funcs, globals};
   }
 
   // Parse the start section, which contains a single function index.
@@ -153,11 +159,44 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
     return {entryCount, contents};
   }
 
+  // Parse the 'name' custom section and extract global names (subsection id 7).
+  // Returns a map of {name: globalIdx}.
+  function parseNameSectionGlobals(sectionSize: number): ExportSection {
+    const sectionEnd = pos + sectionSize;
+    const result: ExportSection = {};
+    while (pos < sectionEnd) {
+      const subId = bytes[pos++];
+      const subSize = parseU32();
+      const subEnd = pos + subSize;
+      if (subId === 7) { // Global names subsection
+        const count = parseU32();
+        for (let i = 0; i < count; i++) {
+          const idx = parseU32();
+          const nameLen = parseU32();
+          const nameBytes = bytes.slice(pos, pos + nameLen);
+          pos += nameLen;
+          const fullName = textDecoder.decode(nameBytes);
+          // Convert AS internal paths to short names:
+          //   "runtime/ohmRuntime/pos" → "pos"
+          //   "~lib/rt/stub/offset" → "__offset"
+          const baseName = fullName.split('/').pop()!;
+          const name = fullName.startsWith('~') && !baseName.startsWith('__')
+            ? `__${baseName}`
+            : baseName;
+          result[name] = idx;
+        }
+      }
+      pos = subEnd;
+    }
+    return result;
+  }
+
   let typesec: VecContents | undefined;
   let importsec: VecContents = {entryCount: 0, contents: new Uint8Array()};
   let funcsec: VecContents | undefined;
   let globalsec: VecContents = {entryCount: 0, contents: new Uint8Array()};
-  let exports: ExportSection | undefined;
+  let exports: {funcs: ExportSection; globals: ExportSection} | undefined;
+  let nameGlobals: ExportSection = {};
   let codesec: VecContents | undefined;
   let startFuncidx: number | undefined;
 
@@ -202,16 +241,33 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
         srcImportCount,
         destImportCount
       );
+    } else if (id === 0) {
+      // Custom section — check if it's the 'name' section.
+      pos++; // consume section id
+      const sectionSize = parseU32();
+      const sectionEnd = pos + sectionSize;
+      const nameLen = parseU32();
+      const sectionName = textDecoder.decode(bytes.slice(pos, pos + nameLen));
+      pos += nameLen;
+      if (sectionName === 'name') {
+        nameGlobals = parseNameSectionGlobals(sectionEnd - pos);
+      }
+      pos = sectionEnd;
     } else {
       skipSection();
     }
   }
+
+  // Build globalidxByName: export names (clean) take precedence over name section names.
+  const globalidxByName: ExportSection = {...nameGlobals, ...exports?.globals};
+
   return {
     typesec: checkNotNull(typesec),
     importsec,
     funcsec: checkNotNull(funcsec),
     globalsec,
-    funcidxByName: exports,
+    funcidxByName: exports?.funcs,
+    globalidxByName,
     codesec: checkNotNull(codesec),
     startFuncidx,
   };

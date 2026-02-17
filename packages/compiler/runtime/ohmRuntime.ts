@@ -99,25 +99,25 @@ type RuleEvalResult = i32;
 @inline const RULE_EVAL_SUCCESS_FLAG = 1;
 
 // Shared globals
-let pos: u32 = 0;
-let endPos: u32 = 0;
-let input: externref = null;
+export let pos: u32 = 0;
+export let endPos: u32 = 0;
+export let input: externref = null;
 
 // Block-sparse memo table state.
-let numMemoBlocks: i32 = 0;    // ceil(numMemoizedRules / MEMO_BLOCK_ENTRIES)
-let memoIndexBase: usize = 0;  // base of the index table (block pointers)
+export let numMemoBlocks: i32 = 0;    // ceil(numMemoizedRules / MEMO_BLOCK_ENTRIES)
+export let memoIndexBase: usize = 0;  // base of the index table (block pointers)
 
 // The rightmost position at which a leaf (Terminal, etc.) failed to match.
-let rightmostFailurePos: i32 = 0;
+export let rightmostFailurePos: i32 = 0;
 
 // Known as `positionToRecordFailures` in the JS code.
 // When this is >= 0, we are building up an error message for a previous
 // parse, where that was rightmostFailurePos.
-let errorMessagePos: i32 = -1;
+export let errorMessagePos: i32 = -1;
 
-let sp: usize = 0;
-let bindings: Array<i32> = new Array<i32>();
-let recordedFailures: Array<i32> = new Array<i32>();
+export let sp: usize = 0;
+export let bindings: Array<i32> = new Array<i32>();
+export let recordedFailures: Array<i32> = new Array<i32>();
 
 @inline function max<T>(a: T, b: T): T {
   return a > b ? a : b;
@@ -453,7 +453,7 @@ export function recordedFailuresAt(i: i32): i32 {
   return recordedFailures[i] & ~FLUFFY_BIT;
 }
 
-let fluffySaveStack: Array<i32> = new Array<i32>();
+export let fluffySaveStack: Array<i32> = new Array<i32>();
 
 export function pushFluffySavePoint(): void {
   if (errorMessagePos < 0) return;

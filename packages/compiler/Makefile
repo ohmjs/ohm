@@ -30,7 +30,7 @@ build/ohmRuntime.wasm_sections.ts: scripts/bundlewasm.ts build/ohmRuntime.wasm
 	$(NODE) scripts/bundlewasm.ts build/ohmRuntime.wasm
 
 build/ohmRuntime.wasm: runtime/ohmRuntime.ts
-	pnpm asc --enable reference-types --runtime stub -o build/ohmRuntime.wasm -t build/ohmRuntime.wat --memoryBase 65536 runtime/ohmRuntime.ts
+	pnpm asc --enable reference-types --runtime stub --debug -o build/ohmRuntime.wasm -t build/ohmRuntime.wat --memoryBase 65536 runtime/ohmRuntime.ts
 
 # 2025-10-07: The rules below may not work anymore.
 
