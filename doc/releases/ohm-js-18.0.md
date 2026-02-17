@@ -1,4 +1,4 @@
-# Ohm v18.0 Alpha — Migration Guide
+# Ohm v18.0 Beta — Migration Guide
 
 Ohm v18 compiles grammars to WebAssembly. The runtime is smaller and faster, but the API has changed significantly. This guide covers everything you need to migrate from v17.
 
