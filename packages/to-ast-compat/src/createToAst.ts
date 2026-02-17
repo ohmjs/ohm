@@ -8,21 +8,23 @@ import type {
   TerminalNode,
 } from 'ohm-js';
 
-export type AstNodeTemplate<R> = {
+export type ToAstResult<TNode> = TNode | string | null | ToAstResult<TNode>[];
+
+export type AstNodeTemplate<TNode> = {
   [property: string]:
     | number
     | string
     | boolean
-    | object
+    | Number
     | null
-    | ((this: CstNode, children: CstNodeChildren) => R);
+    | ((this: CstNode, children: CstNode[]) => unknown);
 };
 
-export type AstMapping<R> = Record<
+export type AstMapping<TNode> = Record<
   string,
-  | AstNodeTemplate<R>
+  | AstNodeTemplate<TNode>
   | number // forward to nth child
-  | ((this: CstNode, ...children: CstNodeChildren) => R) // semantic action-style
+  | ((this: CstNode, ...children: CstNode[]) => ToAstResult<TNode>) // semantic action-style
 >;
 
 function childAt(
