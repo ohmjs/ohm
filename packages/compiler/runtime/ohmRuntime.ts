@@ -65,7 +65,7 @@ declare function matchUnicodeChar(categoryBitmap: i32): bool;
 @inline const MEMO_BLOCK_SIZE_BYTES: usize = <usize>MEMO_BLOCK_ENTRIES * sizeof<MemoEntry>();
 
 // CST nodes
-@inline const CST_NODE_OVERHEAD: usize = 16;
+@inline const CST_NODE_OVERHEAD: i32 = 16;
 
 // Node type is given by the two least sigificant bits.
 // Note that an optional is also an iteration node, so
@@ -156,35 +156,35 @@ export let recordedFailures: Array<i32> = new Array<i32>();
     return entry >> 1;
   }
   assert(entry >= 0);
-  return cstGetFailurePos(<usize>entry);
+  return cstGetFailurePos(entry);
 }
 
-@inline function cstGetCount(ptr: usize): i32 {
-  return load<i32>(ptr, 0);
+@inline function cstGetCount(ptr: i32): i32 {
+  return load<i32>(<usize>ptr, 0);
 }
 
-@inline function cstSetCount(ptr: usize, count: i32): void {
-  store<i32>(ptr, count, 0);
+@inline function cstSetCount(ptr: i32, count: i32): void {
+  store<i32>(<usize>ptr, count, 0);
 }
 
-@inline function cstGetMatchLength(ptr: usize): i32 {
-  return load<i32>(ptr, 4);
+@inline function cstGetMatchLength(ptr: i32): i32 {
+  return load<i32>(<usize>ptr, 4);
 }
 
-@inline function cstSetMatchLength(ptr: usize, len: i32): void {
-  store<i32>(ptr, len, 4);
+@inline function cstSetMatchLength(ptr: i32, len: i32): void {
+  store<i32>(<usize>ptr, len, 4);
 }
 
-@inline function cstSetTypeAndDetails(ptr: usize, val: i32): void {
-  store<i32>(ptr, val, 8);
+@inline function cstSetTypeAndDetails(ptr: i32, val: i32): void {
+  store<i32>(<usize>ptr, val, 8);
 }
 
-@inline function cstGetFailurePos(ptr: usize): i32 {
-  return load<i32>(ptr, 12);
+@inline function cstGetFailurePos(ptr: i32): i32 {
+  return load<i32>(<usize>ptr, 12);
 }
 
-@inline function cstSetFailurePos(ptr: usize, pos: i32): void {
-  store<i32>(ptr, pos, 12);
+@inline function cstSetFailurePos(ptr: i32, pos: i32): void {
+  store<i32>(<usize>ptr, pos, 12);
 }
 
 function useMemoizedResult(ruleId: i32, result: MemoEntry): ApplyResult {
@@ -343,20 +343,20 @@ export function evalApply0(ruleId: i32): ApplyResult {
   }
   // No left recursion — memoize and return.
   const node = newNonterminalNode(origPos, pos, ruleId, origNumBindings, failurePos);
-  memoTableSet(origPos, ruleId, <MemoEntry>node);
+  memoTableSet(origPos, ruleId, node);
   return true;
 }
 
 export function handleLeftRecursion(origPos: u32, ruleId: i32, origNumBindings: i32, failurePos: i32): ApplyResult {
   let maxPos: u32;
-  let node: usize;
+  let node: i32;
   let succeeded: bool;
   do {
     // The current result is the best one -- record it.
     maxPos = pos;
     rightmostFailurePos = max(rightmostFailurePos, failurePos);
     node = newNonterminalNode(origPos, pos, ruleId, origNumBindings, failurePos);
-    memoTableSet(origPos, ruleId, <MemoEntry>node);
+    memoTableSet(origPos, ruleId, node);
 
     // Reset and try to improve on the current best.
     pos = origPos;
@@ -369,43 +369,43 @@ export function handleLeftRecursion(origPos: u32, ruleId: i32, origNumBindings: 
   pos = maxPos;
 
   bindings.length = origNumBindings + 1;
-  bindings[origNumBindings] = node;
+  bindings[origNumBindings] = <i32>node;
   return succeeded;
 }
 
-export function newTerminalNode(startIdx: i32, endIdx: i32): usize {
-  const ptr = heap.alloc(CST_NODE_OVERHEAD);
+export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
+  const ptr: i32 = <i32>heap.alloc(<usize>CST_NODE_OVERHEAD);
   cstSetCount(ptr, 0);
   cstSetMatchLength(ptr, endIdx - startIdx);
   cstSetTypeAndDetails(ptr, NODE_TYPE_TERMINAL);
   cstSetFailurePos(ptr, 0);
-  bindings.push(ptr);
+  bindings.push(<i32>ptr);
   return ptr;
 }
 
 // Create an internal (non-leaf) node (IterationNode or NonterminalNode).
-@inline function newNonLeafNode(startIdx: i32, endIdx: i32, typeAndDetails: i32, origNumBindings: i32, failurePos: i32): usize {
+@inline function newNonLeafNode(startIdx: i32, endIdx: i32, typeAndDetails: i32, origNumBindings: i32, failurePos: i32): i32 {
   const bindingsLen = bindings.length;
   const numChildren = bindingsLen - origNumBindings;
-  const ptr = heap.alloc(CST_NODE_OVERHEAD + numChildren * 4);
+  const ptr: i32 = <i32>heap.alloc(<usize>(CST_NODE_OVERHEAD + numChildren * 4));
   cstSetCount(ptr, numChildren);
   cstSetMatchLength(ptr, endIdx - startIdx);
   cstSetTypeAndDetails(ptr, typeAndDetails);
   cstSetFailurePos(ptr, failurePos);
   for (let i = 0; i < numChildren; i++) {
-    store<i32>(ptr + CST_NODE_OVERHEAD + i * 4, bindings[bindingsLen - numChildren + i]);
+    store<i32>(<usize>(ptr + CST_NODE_OVERHEAD + i * 4), bindings[bindingsLen - numChildren + i]);
   }
   bindings.length = origNumBindings;
-  bindings.push(ptr);
+  bindings.push(<i32>ptr);
   return ptr;
 }
 
-export function newNonterminalNode(startIdx: i32, endIdx: i32, ruleId: i32, origNumBindings: i32, failurePos: i32): usize {
+export function newNonterminalNode(startIdx: i32, endIdx: i32, ruleId: i32, origNumBindings: i32, failurePos: i32): i32 {
   const typeAndDetails = (ruleId << 2) | NODE_TYPE_NONTERMINAL;
   return newNonLeafNode(startIdx, endIdx, typeAndDetails, origNumBindings, failurePos);
 }
 
-export function newIterationNode(startIdx: i32, endIdx: i32, origNumBindings: i32, arity: i32, isOpt: bool): usize {
+export function newIterationNode(startIdx: i32, endIdx: i32, origNumBindings: i32, arity: i32, isOpt: bool): i32 {
   if (isOpt) {
     const typeAndDetails = (arity << 2) | NODE_TYPE_OPTIONAL;
     return newNonLeafNode(startIdx, endIdx, typeAndDetails, origNumBindings, -1);
@@ -422,7 +422,7 @@ export function setBindingsLength(len: i32): void {
   return bindings.length = len;
 }
 
-export function bindingsAt(i: i32): usize {
+export function bindingsAt(i: i32): i32 {
   return bindings[i];
 }
 
