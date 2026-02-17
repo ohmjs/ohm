@@ -24,8 +24,12 @@ const datadir = join(__dirname, '../test/data');
 
 const liquid = ohm.grammars(readFileSync(join(datadir, 'liquid-html.ohm'), 'utf8'));
 
+// An option that makes it easy to run this script in CI.
+// https://matklad.github.io/2024/03/22/basic-things.html
+const smallSize = process.argv[2] === '--small-size';
+
 // Get pattern from command line arguments
-const pattern = process.argv[2];
+const pattern = process.argv[smallSize ? 3 : 2];
 
 (async function main() {
   const jsTimes = [];
@@ -47,6 +51,7 @@ const pattern = process.argv[2];
     }
     jsTimes.push(elapsed);
     assert.equal(r.succeeded(), true, `failed: ${path}`);
+    if (smallSize) break;
   }
 
   const g = await toWasmGrammar(liquid.LiquidHTML);
@@ -71,6 +76,7 @@ const pattern = process.argv[2];
     // Trailing/leading spaces are currently dropped, so trim both
     // to after unparsing.
     assert.equal(input.trim().length, unparse(g).trim().length);
+    if (smallSize) break;
   }
 
   const sum = arr => arr.reduce((a, b) => a + b, 0);
