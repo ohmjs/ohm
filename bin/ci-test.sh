@@ -10,4 +10,4 @@ else
   FILTER=""
 fi
 
-pnpm $FILTER -r build && pnpm api-report && pnpm lint && pnpm $FILTER -r test
+pnpm $FILTER -r build && pnpm $FILTER -r --if-present api-report && pnpm lint && pnpm $FILTER -r test
