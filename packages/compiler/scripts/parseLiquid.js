@@ -15,7 +15,7 @@ import {join, dirname} from 'node:path';
 import {performance} from 'node:perf_hooks';
 import process from 'node:process';
 import {fileURLToPath} from 'node:url';
-import * as ohm from 'ohm-js';
+import * as ohm from 'ohm-js-legacy';
 
 import {unparse, toWasmGrammar} from '../test/_helpers.js';
 
