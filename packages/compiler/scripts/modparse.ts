@@ -168,7 +168,8 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
       const subId = bytes[pos++];
       const subSize = parseU32();
       const subEnd = pos + subSize;
-      if (subId === 7) { // Global names subsection
+      if (subId === 7) {
+        // Global names subsection
         const count = parseU32();
         for (let i = 0; i < count; i++) {
           const idx = parseU32();
@@ -180,9 +181,10 @@ export function extractSections(bytes: Uint8Array, opts: ExtractOptions = {}) {
           //   "runtime/ohmRuntime/pos" → "pos"
           //   "~lib/rt/stub/offset" → "__offset"
           const baseName = fullName.split('/').pop()!;
-          const name = fullName.startsWith('~') && !baseName.startsWith('__')
-            ? `__${baseName}`
-            : baseName;
+          const name =
+            fullName.startsWith('~') && !baseName.startsWith('__')
+              ? `__${baseName}`
+              : baseName;
           result[name] = idx;
         }
       }

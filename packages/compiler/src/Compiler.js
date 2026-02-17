@@ -251,7 +251,6 @@ class Assembler {
     return w.i32(idx);
   }
 
-
   addLocal(name, type) {
     assert(!this._locals.has(name), `Local '${name}' already exists`);
     assert(type === w.valtype.i32, `invalid local type: ${type}`);
