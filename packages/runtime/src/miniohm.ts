@@ -44,6 +44,7 @@ const UnicodeCategoryNames = [
 ];
 
 const utf8 = new TextDecoder('utf-8');
+const utf16le = new TextDecoder('utf-16le');
 
 // Minimal implementation of Interval (for FailedMatchResult)
 export class Interval {
@@ -122,14 +123,13 @@ function parseStringTable(module: WebAssembly.Module, sectionName: string): stri
     return value;
   };
 
-  const decoder = new TextDecoder('utf-8');
   const numEntries = parseU32();
   const ans: string[] = [];
   for (let i = 0; i < numEntries; i++) {
     const stringLen = parseU32();
     const bytes = data.slice(offset, offset + stringLen);
     offset += stringLen;
-    const name = decoder.decode(bytes);
+    const name = utf8.decode(bytes);
     ans.push(name);
   }
   return ans;
@@ -144,8 +144,10 @@ export class Grammar {
   private _imports = {
     // System-level AssemblyScript imports.
     env: {
-      abort(/* message: usize, fileName: usize, line: u32, column: u32 */) {
-        throw new Error('abort');
+      abort: (msgPtr: number, filePtr: number, line: number, column: number) => {
+        const msg = this._readASString(msgPtr);
+        const file = this._readASString(filePtr);
+        throw new Error(`Wasm abort: ${msg} at ${file}:${line}:${column}`);
       },
     },
     // For imports from ohmRuntime.ts.
@@ -323,8 +325,7 @@ export class Grammar {
     const sections = WebAssembly.Module.customSections(module, 'name');
     assert(sections.length === 1, `Expected one name section, found ${sections.length}`);
     const data = new Uint8Array(sections[0]);
-    const decoder = new TextDecoder('utf-8');
-    return decoder.decode(data);
+    return utf8.decode(data);
   }
 
   /** @internal */
@@ -399,6 +400,19 @@ export class Grammar {
 
   getMemorySizeBytes(): number {
     return (this._instance as any).exports.memory.buffer.byteLength;
+  }
+
+  /** @internal Read an AssemblyScript string from Wasm linear memory. */
+  private _readASString(ptr: number): string {
+    if (!ptr || !this._instance) return '(unknown)';
+    try {
+      const buffer = (this._instance as any).exports.memory.buffer;
+      // AS managed object layout: rtSize (byte length) is at ptr - 4.
+      const byteLen = new DataView(buffer).getUint32(ptr - 4, true);
+      return utf16le.decode(new Uint8Array(buffer, ptr, byteLen));
+    } catch {
+      return `(ptr=${ptr})`;
+    }
   }
 
   /** @internal */
