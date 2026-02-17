@@ -1,6 +1,6 @@
 {
   "name": "@ohm-js/compiler",
-  "version": "18.0.0-beta.6",
+  "version": "18.0.0-beta.7",
   "description": "Compile Ohm.js grammars to WebAsssembly",
   "main": "dist/index.js",
   "exports": {
@@ -16,7 +16,9 @@
   "bin": {
     "ohm2wasm": "dist/src/cli.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public"
   },
