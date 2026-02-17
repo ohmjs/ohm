@@ -1,20 +1,50 @@
-# Ohm v18.0 Alpha
+# Ohm v18.0 Alpha — Migration Guide
 
-## @ohm-js/compiler/compat
+Ohm v18 compiles grammars to WebAssembly. The runtime is smaller and faster, but the API has changed significantly. This guide covers everything you need to migrate from v17.
 
-A submodule with some helpers to make it easier to upgrade to v18.
+## Installation
 
-Provides:
+```bash
+npm install ohm-js                      # Runtime (production dependency)
+npm install --save-dev @ohm-js/compiler # Compiler (dev dependency)
+```
 
-### `grammar()` and `grammars()`
+## Compiling grammars
 
-In v18, it's recommended to compile your grammars to a Wasm blob at build time, and to use `Grammar.instantiate` (or `instantiateStreaming`) to load the compiled grammar.
+In v17, grammars were parsed at runtime. In v18, the recommendation is to compile them to `.wasm` at build time.
 
-`grammar()` and `grammars()` provide the same API as Ohm v17, compiling your grammar and instantiating it in a single step.
+### Command line
+
+```bash
+npx ohm2wasm my-grammar.ohm   # writes my-grammar.wasm
+```
+
+### Programmatic
+
+```js
+import {compile, compileGrammars} from '@ohm-js/compiler';
+
+const bytes = compile('MyGrammar { start = "hello" }');
+
+// Multiple grammars:
+const bytesByName = compileGrammars(source); // Record<string, Uint8Array>
+```
+
+## Loading and using grammars
+
+```js
+import {Grammar} from 'ohm-js';
+import fs from 'node:fs';
+
+const g = await Grammar.instantiate(fs.readFileSync('my-grammar.wasm'));
+
+// Or from a fetch response:
+const g = await Grammar.instantiateStreaming(fetch('my-grammar.wasm'));
+```
 
 ## MatchResult lifecycle
 
-In v18, grammars are compiled to WebAssembly, and parse results (memo tables, CST nodes) live in Wasm linear memory. Unlike v17, where results were managed by the JavaScript garbage collector, v18 `MatchResult`s must be explicitly disposed to free this memory.
+Parse results live in Wasm linear memory and must be explicitly disposed.
 
 ### `using` (recommended)
 
@@ -28,6 +58,8 @@ if (result.succeeded()) {
 
 ### `.use()` callback
 
+In environments that don't support the `using` keyword, the `use()` callback should be used:
+
 ```js
 g.match(input).use(result => {
   if (result.succeeded()) {
@@ -38,24 +70,122 @@ g.match(input).use(result => {
 
 ### Notes
 
-- Each `dispose()` frees only the memory for that particular match. If you have nested or stacked matches, earlier results remain valid.
 - Results must be disposed in LIFO order (most recent first).
 - Forgetting to dispose a result will prevent subsequent `match()` calls from succeeding.
 
-## @ohm-js/to-ast-compat
+## CST nodes
 
-### `createToAst`
+In v17, you access CST nodes through Semantics wrappers. In v18, `MatchResult` gives you the CST directly — there is no Semantics layer (not yet, at least).
 
-In v17, the `ohm-js/extras` submodule provides [toAST](https://ohmjs.org/docs/extras#toastmatchresult-mapping), a helper for producing abstract syntax trees (ASTs). However, we now recommend avoiding the `toAST` helper and instead writing your own `toAST` operation directly, and `toAST` has been removed entirely in v18.
+```js
+using result = g.match(input);
+if (result.succeeded()) {
+  const cst = result.getCstRoot(); // NonterminalNode
+  console.log(cst.ctorName);       // rule name
+  console.log(cst.sourceString);   // matched text
+  console.log(cst.children);       // child nodes
+}
+```
 
-For existing users of `toAST` who would like to upgrade to v18, we provide `createToAst`:
+### Node types
+
+All nodes share: `ctorName`, `sourceString`, `source` (with `startIdx`/`endIdx`), `children`.
+
+| Type | `ctorName` | Description |
+|------|-----------|-------------|
+| `NonterminalNode` | rule name | Has `.isSyntactic()`, `.isLexical()`, `.leadingSpaces` |
+| `TerminalNode` | `"_terminal"` | Has `.value` |
+| `ListNode` | `"_list"` | From `*` or `+`. Has `.collect(cb)` |
+| `OptNode` | `"_opt"` | From `?`. Has `.ifPresent(cb, orElse?)`, `.isPresent()`, `.isEmpty()` |
+| `SeqNode` | `"_seq"` | Grouped sequence. Has `.unpack(cb)` |
+
+Type guards: `node.isNonterminal()`, `node.isTerminal()`, `node.isList()`, `node.isOptional()`, `node.isSeq()`.
+
+### Arity changes
+
+- Iter (`*`/`+`) and Opt (`?`) nodes are **no longer flattened**. In v17, `a b c*` would give a semantic action 4 arguments (a, b, c_1, c_2, ...); in v18, you get 3 children, where the third is a `ListNode`.
+- Positive lookahead (`&e`) **does not bind a node**.
+
+### Working with ListNode
+
+```js
+// .collect() maps over items, unpacking SeqNode children as arguments:
+const items = listNode.collect((name, sep, value) => {
+  return {name: name.sourceString, value: value.sourceString};
+});
+```
+
+### Working with OptNode
+
+```js
+// .ifPresent() calls the callback if the option matched, with SeqNode unpacking:
+const val = optNode.ifPresent(
+  child => child.sourceString,
+  () => 'default'
+);
+```
+
+### Working with SeqNode
+
+```js
+// .unpack() spreads children as callback arguments:
+seqNode.unpack((left, op, right) => {
+  // ...
+});
+```
+
+## Error handling
+
+```js
+using result = g.match(input);
+if (result.failed()) {
+  console.log(result.message);      // Full message with line/col and input excerpt
+  console.log(result.shortMessage); // "Line 1, col 5: expected ..."
+  console.log(result.getExpectedText());          // "letter or digit"
+  console.log(result.getRightmostFailurePosition()); // number
+  console.log(result.getRightmostFailures());     // Failure[]
+}
+```
+
+## Removed APIs
+
+The following v17 APIs do not exist in v18 (yet):
+
+- **Semantics** — `createSemantics()`, `addOperation()`, `addAttribute()`, `extendSemantics()`. Traverse the CST directly instead.
+- **Matcher** — `grammar.matcher()` and incremental parsing.
+- **Tracing** — `grammar.trace()`.
+- **Extras** — `ohm-js/extras` (including `toAST`). See `@ohm-js/to-ast-compat` below.
+- **Recipes** — `makeRecipe()`.
+- **PExprs** — The `pexprs` export.
+- **Grammar introspection** — `grammar.rules` (available via compat layer).
+
+## Compat helpers
+
+### `@ohm-js/compiler/compat`
+
+For incremental migration, `grammar()` and `grammars()` parse, compile, and instantiate in one step — matching the v17 API:
+
+```js
+import {grammar} from '@ohm-js/compiler/compat';
+
+const g = grammar('MyGrammar { start = "hello" }');
+using result = g.match('hello');
+```
+
+This compiles on every call. For production, compile to `.wasm` ahead of time.
+
+### `@ohm-js/to-ast-compat`
+
+Replaces `toAST` from `ohm-js/extras`.
+
+```bash
+npm install @ohm-js/to-ast-compat
+```
 
 Old (v17):
 
 ```js
-import {toAST} from "@ohm-js/extras";
-
-// …
+import {toAST} from 'ohm-js/extras';
 
 const ast = toAST(match, {
   Equation: {content: 0},
@@ -66,19 +196,19 @@ const ast = toAST(match, {
 New (v18):
 
 ```js
-import {createToAst} from "@ohm-js/to-ast-compat";
+import {createToAst} from '@ohm-js/to-ast-compat';
 
 const toAST = createToAst({
   Equation: {content: 0},
   AddExpr: {type: 'Expression', expr1: 0, op: 1, expr2: 2},
 });
 
-// …
-
-const ast = toAST(match);
+// Later:
+const ast = toAST(matchResult); // accepts MatchResult or CstNode
 ```
 
-#### Differences
+#### Differences from v17's `toAST`
 
-- With `createToAst`, when you provide a function in the mapping object, the arguments (and `this`) have type `CSTNode`. Conceptually, this is similar to the `Node` type in Ohm v17, but the interface is slightly different.
-- In v17, you can call `toAST` recursively via `someNode.toAST(this.args.mapping)`. In v18, the result of `createToAST` is a function that includes the mapping, so you can just call it directly, passing the appropriate node: `toAST(someNode)`.
+- Mapping functions receive `CstNode` args (similar to v17's `Node`, but slightly different interface).
+- Recursive calls: use `toAST(someNode)` instead of `someNode.toAST(this.args.mapping)`.
+- The `AstBuilder` class is also exported for advanced use — it has a `currNode` property and a `toAst()` method.

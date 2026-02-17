@@ -11,10 +11,6 @@ npm install ohm-js
 
 **NOTE:** This package is experimental; the API is not yet stable.
 
-## Prerequisites
-
-This package requires Node 24.
-
 ## Usage (compiling to Wasm)
 
 ### Command line
@@ -90,7 +86,7 @@ const result = g.match('blah');
 #### Prerequisites
 
 - pnpm
-- Node >= 24
+- Node >= 20
 - Make
 
 #### Setup
