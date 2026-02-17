@@ -1551,6 +1551,24 @@ test('accessing .message on disposed MatchResult throws', async t => {
   });
 });
 
+test('accessing CST node after dispose throws', async t => {
+  const ohmGrammar = ohm.grammar('G { start = "a" "b" "c" }');
+  const wasmGrammar = await toWasmGrammar(ohmGrammar);
+
+  let savedCst;
+  wasmGrammar.match('abc').use(r => {
+    t.true(r.succeeded(), 'match should succeed');
+    savedCst = r.getCstRoot();
+    // Accessing CST inside use() should work fine.
+    t.is(savedCst.sourceString, 'abc');
+  });
+
+  // Accessing CST node properties after dispose should throw a RangeError,
+  // because the DataView has been replaced with a zero-length one.
+  t.throws(() => savedCst.children, {instanceOf: RangeError});
+  t.throws(() => savedCst.matchLength, {instanceOf: RangeError});
+});
+
 test('accessing .message inside use() works correctly', async t => {
   const ohmGrammar = ohm.grammar('G { start = "a" "b" "c" }');
   const wasmGrammar = await toWasmGrammar(ohmGrammar);

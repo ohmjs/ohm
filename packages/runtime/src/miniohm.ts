@@ -248,6 +248,7 @@ export class Grammar {
       (this._instance as any).exports.resetHeap();
     }
     result._attached = false;
+    result._ctx.view = new DataView(new ArrayBuffer(0));
   }
 
   static async instantiate(source: BufferSource): Promise<Grammar> {
