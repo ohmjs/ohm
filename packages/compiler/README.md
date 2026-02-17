@@ -72,6 +72,8 @@ const g = await Grammar.instantiate(fs.readFileSync('my-grammar.wasm'));
 const result = g.match('blah');
 ```
 
+**Important:** `MatchResult`s must be explicitly disposed to free Wasm memory — use `using` or `.use()`. See [MatchResult lifecycle](../../doc/releases/ohm-js-18.0.md#matchresult-lifecycle) for details.
+
 #### Differences from v17
 
 **Arity**

@@ -12,6 +12,36 @@ In v18, it's recommended to compile your grammars to a Wasm blob at build time, 
 
 `grammar()` and `grammars()` provide the same API as Ohm v17, compiling your grammar and instantiating it in a single step.
 
+## MatchResult lifecycle
+
+In v18, grammars are compiled to WebAssembly, and parse results (memo tables, CST nodes) live in Wasm linear memory. Unlike v17, where results were managed by the JavaScript garbage collector, v18 `MatchResult`s must be explicitly disposed to free this memory.
+
+### `using` (recommended)
+
+```js
+using result = g.match(input);
+if (result.succeeded()) {
+  // ... use result ...
+}
+// Memory is automatically freed when `result` goes out of scope.
+```
+
+### `.use()` callback
+
+```js
+g.match(input).use(result => {
+  if (result.succeeded()) {
+    // ... use result ...
+  }
+});
+```
+
+### Notes
+
+- Each `dispose()` frees only the memory for that particular match. If you have nested or stacked matches, earlier results remain valid.
+- Results must be disposed in LIFO order (most recent first).
+- Forgetting to dispose a result will prevent subsequent `match()` calls from succeeding.
+
 ## @ohm-js/to-ast-compat
 
 ### `createToAst`

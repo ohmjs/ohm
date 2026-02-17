@@ -197,6 +197,33 @@ export class Grammar {
   /** @internal */
   public _failureDescriptions: string[] = [];
 
+  /*
+   * Wasm heap memory management
+   * ===========================
+   *
+   * The Wasm module uses a bump-pointer allocator (AssemblyScript's "stub"
+   * runtime). Each match() call allocates a memo table and CST nodes on
+   * the Wasm heap. There is no way to free individual allocations — you
+   * can only reset the bump pointer.
+   *
+   * To allow incremental freeing, we exploit two facts:
+   *
+   *   1. MatchResult disposal is LIFO — you must dispose the most recent
+   *      result first (enforced by an assert in _dispose).
+   *
+   *   2. Allocations for match N are always contiguous and sit above
+   *      match N-1's allocations on the heap.
+   *
+   * Before each match, we snapshot the bump pointer (`exports.__offset`)
+   * as a "watermark" and store it on the MatchResult. On dispose, we
+   * reset the bump pointer to that watermark, freeing exactly that
+   * match's allocations while keeping earlier results intact.
+   *
+   * When the last result is disposed, its watermark equals the initial
+   * heap offset, so the entire heap is reclaimed — equivalent to the
+   * old resetHeap() approach, but without the all-or-nothing limitation.
+   */
+
   /** @internal */
   private _resultStack: MatchResult[] = [];
 
@@ -244,9 +271,10 @@ export class Grammar {
       `You can only dispose() the most recent MatchResult`
     );
     this._resultStack.pop();
-    if (this._resultStack.length === 0) {
-      (this._instance as any).exports.resetHeap();
-    }
+    // Reset the bump-pointer allocator to the watermark recorded before this
+    // match. Because disposal is LIFO, this frees exactly this match's
+    // allocations (memo table + CST nodes) while keeping earlier ones intact.
+    (this._instance as any).exports.__offset.value = result._heapWatermark;
     result._attached = false;
     result._ctx.view = new DataView(new ArrayBuffer(0));
   }
@@ -320,12 +348,14 @@ export class Grammar {
     );
     this._input = input;
     if (typeof process !== 'undefined' && process.env.OHM_DEBUG === '1') debugger; // eslint-disable-line no-debugger
+    const exports = (this._instance as any).exports;
     const ruleId = checkNotNull(
       this._ruleIds.get(ruleName || this._ruleNames[0]),
       `unknown rule: '${ruleName}'`
     );
-    const succeeded = (this._instance as any).exports.match(input, ruleId);
-    const buffer = (this._instance as any).exports.memory.buffer;
+    const heapWatermark = exports.__offset.value;
+    const succeeded = exports.match(input, ruleId);
+    const buffer = exports.memory.buffer;
 
     // If the Wasm match triggered memory.grow() (e.g. for the memo table or
     // CST nodes), the old ArrayBuffer is detached. Refresh the DataView in
@@ -339,9 +369,10 @@ export class Grammar {
     const ctx: MatchContext = {
       ruleNames: this._ruleNames,
       view: new DataView(buffer),
-      input: (this._instance as any).exports.input.value,
+      input: exports.input.value,
     };
     const result = createMatchResult(this, ruleName || this._ruleNames[0], ctx, !!succeeded);
+    result._heapWatermark = heapWatermark;
     result.dispose = this._dispose.bind(this, result);
     this._resultStack.push(result);
     return result;
@@ -805,6 +836,8 @@ export abstract class MatchResult {
   _attached = true;
   /** @internal */
   _managed = false;
+  /** @internal */
+  _heapWatermark = 0;
 
   /** @internal */
   protected constructor(
