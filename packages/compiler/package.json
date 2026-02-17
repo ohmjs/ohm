@@ -21,6 +21,7 @@
     "access": "public"
   },
   "scripts": {
+    "api-report": "api-extractor run",
     "build": "make",
     "build-and-test": "make && ava test",
     "publish:beta": "pnpm publish --tag beta --no-git-checks",

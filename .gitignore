@@ -22,3 +22,6 @@ yarn-error.log
 
 .eslintcache
 *.tsbuildinfo
+
+# api-extractor temp files
+temp/

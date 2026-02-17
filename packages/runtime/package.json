@@ -26,6 +26,7 @@
     "access": "public"
   },
   "scripts": {
+    "api-report": "api-extractor run",
     "build": "tsdown",
     "publish:beta": "pnpm publish --tag beta --no-git-checks"
   }
