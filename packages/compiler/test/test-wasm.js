@@ -1585,3 +1585,46 @@ test('accessing .message inside use() works correctly', async t => {
     t.is(wasmResult.message, ohmResult.message, 'error messages should be identical');
   });
 });
+
+// --- Ohm meta-grammar ---
+
+test('compile and use the Ohm meta-grammar', async t => {
+  const wasmGrammar = await toWasmGrammar(ohm.ohmGrammar);
+
+  // Should parse valid grammars
+  const inputs = [
+    'G { start = "hello" }',
+    'G { start = "a" | "b" | "c" }',
+    'G { start = letter+ }',
+    'G { x = "a".."z" }',
+    'G { start = ListOf<letter, ","> }',
+    'G <: Base { start = "x" }',
+    'G { start = "a" -- first\n| "b" -- second\n}',
+    'G <: Base { start := "new" }',
+    'G <: Base { start += "extra" }',
+    'G { start (a start rule) = "x" }',
+    'G { /* comment */ start = "x" // line comment\n}',
+    'G { start = "hello\\nworld" }',
+    'G { start = "\\u0041" }',
+    'G { x = "\\u{1F600}" }',
+    'G { start = &"a" letter }',
+    'G { start = ~"a" letter }',
+    'G { Start = #(letter+) }',
+    'A { x = "a" }\nB <: A { y = "b" }',
+    '', // empty input — zero grammars
+  ];
+
+  for (const input of inputs) {
+    t.is(matchWithInput(wasmGrammar, input), 1, JSON.stringify(input));
+  }
+
+  // Should reject invalid grammars
+  const badInputs = [
+    'G { start "hello" }',
+    'G { start = "hello"',
+  ];
+
+  for (const input of badInputs) {
+    t.is(matchWithInput(wasmGrammar, input), 0, `should fail: ${JSON.stringify(input)}`);
+  }
+});
