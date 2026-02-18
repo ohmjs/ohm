@@ -1,2 +1,2 @@
 export {compile, compileGrammars} from './src/api.js';
-export * from 'ohm-js';
+export type {CompileOptions} from './src/api.js';

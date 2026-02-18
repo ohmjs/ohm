@@ -4,16 +4,17 @@
 
 ```ts
 
-// Warning: (ae-forgotten-export) The symbol "CompileOptions" needs to be exported by the entry point index.d.ts
-//
 // @public (undocumented)
 export function compile(source: string, opts?: CompileOptions): Uint8Array;
 
 // @public (undocumented)
 export function compileGrammars(source: string): Record<string, Uint8Array>;
 
-
-export * from "ohm-js";
+// @public (undocumented)
+export interface CompileOptions {
+    // (undocumented)
+    grammarName?: string;
+}
 
 // (No @packageDocumentation comment for this package)
 

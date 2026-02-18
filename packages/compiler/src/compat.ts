@@ -1,16 +1,21 @@
-import type {Grammar as GrammarJs} from 'ohm-js-legacy';
-
-import {Compiler, grammars as grammarsJs} from './Compiler.js';
+import {Compiler} from './Compiler.js';
+import {grammars as grammarsJs} from './parseGrammars.ts';
 import {Grammar as BaseGrammar} from 'ohm-js';
 
+// Matches the v17 Grammar.rules shape. Defined inline to avoid pulling
+// ohm-js-legacy types into the public .d.ts.
+type Rules = {
+  [ruleName: string]: {body: any; formals: string[]; description: string; source: any};
+};
+
 export interface Grammar extends BaseGrammar {
-  rules: GrammarJs['rules'];
+  rules: Rules;
 }
 
 class CompatGrammar extends BaseGrammar implements Grammar {
-  rules: GrammarJs['rules'];
+  rules: Rules;
 
-  constructor(wasmModule: Uint8Array<ArrayBuffer>, rules: GrammarJs['rules']) {
+  constructor(wasmModule: Uint8Array<ArrayBuffer>, rules: Rules) {
     super(wasmModule);
     this.rules = rules;
   }
@@ -18,7 +23,8 @@ class CompatGrammar extends BaseGrammar implements Grammar {
 
 // TODO: Support a namespace parameter.
 export function grammar(source: string): Grammar {
-  return Object.values(grammars(source))[0];
+  const values = Object.values(grammars(source));
+  return values[values.length - 1];
 }
 
 // TODO: Support a namespace parameter.

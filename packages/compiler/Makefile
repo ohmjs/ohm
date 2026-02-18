@@ -26,6 +26,13 @@ bench: all scripts/bench.js build/es5.wasm build/json.wasm build/liquid-html.was
 dist-js: build/ohmRuntime.wasm_sections.ts $(SRC_JS_FILES) $(SRC_TS_FILES)
 	pnpm tsdown
 
+# Bootstrap: regenerate the WASM meta-grammar from the Ohm grammar source.
+# This is a manual step; the output (src/ohm-grammar-wasm.ts) is checked in.
+.PHONY: bootstrap-meta-grammar
+bootstrap-meta-grammar: dist-js ../ohm-js/src/ohm-grammar.ohm scripts/bundleGrammarWasm.ts
+	$(NODE) dist/src/cli.js -o build/ohm-grammar.wasm ../ohm-js/src/ohm-grammar.ohm
+	$(NODE) scripts/bundleGrammarWasm.ts build/ohm-grammar.wasm src/ohm-grammar-wasm.ts
+
 build/ohmRuntime.wasm_sections.ts: scripts/bundlewasm.ts build/ohmRuntime.wasm
 	$(NODE) scripts/bundlewasm.ts build/ohmRuntime.wasm
 

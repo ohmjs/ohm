@@ -5,7 +5,7 @@ import type {
   NonterminalNode,
   SeqNode,
   TerminalNode,
-} from '@ohm-js/compiler';
+} from 'ohm-js';
 
 export interface VisitorCtx<TNode extends CstNode = CstNode> {
   thisNode: TNode;

@@ -1615,14 +1615,11 @@ test('compile and use the Ohm meta-grammar', async t => {
   ];
 
   for (const input of inputs) {
-    t.is(matchWithInput(wasmGrammar, input), 1, JSON.stringify(input));
+    t.is(matchWithInput(wasmGrammar, input), 1, `should pass: ${JSON.stringify(input)}`);
   }
 
   // Should reject invalid grammars
-  const badInputs = [
-    'G { start "hello" }',
-    'G { start = "hello"',
-  ];
+  const badInputs = ['G { start "hello" }', 'G { start = "hello"'];
 
   for (const input of badInputs) {
     t.is(matchWithInput(wasmGrammar, input), 0, `should fail: ${JSON.stringify(input)}`);
