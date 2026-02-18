@@ -11,6 +11,8 @@ import {Interval} from 'ohm-js-legacy/src/Interval.js';
 
 const {pexprs} = ohm;
 
+const superSplicePlaceholder = Object.create(pexprs.PExpr.prototype);
+
 // Unescape a code point from an Ohm escape sequence string.
 // Replicates common.unescapeCodePoint from ohm-js-legacy.
 function unescapeCodePoint(s: string): string {
@@ -202,7 +204,28 @@ export function buildGrammars(
       case 'OverrideRuleBody': {
         // OverrideRuleBody = "|"? NonemptyListOf<OverrideTopLevelTerm, "|">
         const [, terms] = node.children;
-        return makeAlt(listOfElements(terms).map(t => visit(t))).withSource(interval(node));
+        const args = listOfElements(terms).map(t => visit(t));
+
+        // Check if the super-splice operator (`...`) appears in the terms.
+        const expansionPos = args.indexOf(superSplicePlaceholder);
+        if (expansionPos >= 0) {
+          const beforeTerms = args.slice(0, expansionPos);
+          const afterTerms = args.slice(expansionPos + 1);
+
+          // Ensure it appears no more than once.
+          afterTerms.forEach(t => {
+            if (t === superSplicePlaceholder) throw errors.multipleSuperSplices(t);
+          });
+
+          return new pexprs.Splice(
+            decl.superGrammar,
+            currentRuleName,
+            beforeTerms,
+            afterTerms
+          ).withSource(interval(node));
+        } else {
+          return makeAlt(args).withSource(interval(node));
+        }
       }
 
       case 'Alt': {
@@ -228,7 +251,7 @@ export function buildGrammars(
         return new pexprs.Apply(inlineRuleName, params).withSource(body.source);
       }
       case 'OverrideTopLevelTerm_superSplice':
-        throw new Error('Super splice (...) is not supported');
+        return superSplicePlaceholder;
 
       case 'Seq': {
         const [expr] = node.children;
@@ -316,7 +339,22 @@ export function buildGrammars(
       return child.sourceString;
     }
     // escapeChar
-    return unescapeCodePoint(child.sourceString);
+    try {
+      return unescapeCodePoint(child.sourceString);
+    } catch (err) {
+      if (err instanceof RangeError && err.message.startsWith('Invalid code point ')) {
+        // escapeChar_unicodeCodePoint = "\u{" hexDigit+ "}"
+        // Point the error at just the hex digits.
+        const hexStart = child.source.startIdx + 3; // skip \u{
+        const hexEnd = child.source.endIdx - 1; // skip }
+        const hex = sourceString.slice(hexStart, hexEnd);
+        throw errors.createError(
+          `U+${hex} is not a valid Unicode code point`,
+          new Interval(sourceString, hexStart, hexEnd)
+        );
+      }
+      throw err;
+    }
   }
 
   function visitRuleDescr(node: CstNode): string {
