@@ -693,6 +693,42 @@ class Assembler {
     this.globalSet('pos');
   }
 
+  // Pushes i32 (0 or 1) indicating whether `tmp` is a high surrogate.
+  tmpIsHighSurrogate() {
+    this.localGet('tmp');
+    this.i32Const(0xd800);
+    this.emit(instr.i32.ge_u);
+    this.localGet('tmp');
+    this.i32Const(0xdbff);
+    this.emit(instr.i32.le_u);
+    this.emit(instr.i32.and);
+  }
+
+  // If `tmp` is a high surrogate, increment pos to skip the low surrogate.
+  maybeSkipLowSurrogate() {
+    this.tmpIsHighSurrogate();
+    this.if(w.blocktype.empty, () => {
+      this.incPos();
+    });
+  }
+
+  // Assumes `tmp` holds a high surrogate and pos points at the low surrogate.
+  // Pushes the decoded code point (i32) onto the stack.
+  decodeSurrogatePair() {
+    // cp = (tmp - 0xD800) << 10 + (lowSurr - 0xDC00) + 0x10000
+    this.localGet('tmp');
+    this.i32Const(0xd800);
+    this.emit(instr.i32.sub);
+    this.i32Const(10);
+    this.emit(instr.i32.shl);
+    this.currCharCode();
+    this.i32Const(0xdc00);
+    this.emit(instr.i32.sub);
+    this.emit(instr.i32.add);
+    this.i32Const(0x10000);
+    this.emit(instr.i32.add);
+  }
+
   callPrebuiltFunc(name) {
     this.emit(instr.call, w.funcidx(prebuiltFuncidx(name)));
   }
@@ -1672,46 +1708,8 @@ export class Compiler {
     });
   }
 
-  // Pushes i32 (0 or 1) indicating whether `tmp` is a high surrogate.
-  tmpIsHighSurrogate() {
-    const {asm} = this;
-    asm.localGet('tmp');
-    asm.i32Const(0xd800);
-    asm.emit(instr.i32.ge_u);
-    asm.localGet('tmp');
-    asm.i32Const(0xdbff);
-    asm.emit(instr.i32.le_u);
-    asm.emit(instr.i32.and);
-  }
-
-  // If `tmp` is a high surrogate, increment pos to skip the low surrogate.
-  maybeSkipLowSurrogate() {
-    this.tmpIsHighSurrogate();
-    this.asm.if(w.blocktype.empty, () => {
-      this.asm.incPos();
-    });
-  }
-
-  // Assumes `tmp` holds a high surrogate and pos points at the low surrogate.
-  // Pushes the decoded code point (i32) onto the stack.
-  decodeSurrogatePair() {
-    const {asm} = this;
-    // cp = (tmp - 0xD800) << 10 + (lowSurr - 0xDC00) + 0x10000
-    asm.localGet('tmp');
-    asm.i32Const(0xd800);
-    asm.emit(instr.i32.sub);
-    asm.i32Const(10);
-    asm.emit(instr.i32.shl);
-    asm.currCharCode();
-    asm.i32Const(0xdc00);
-    asm.emit(instr.i32.sub);
-    asm.emit(instr.i32.add);
-    asm.i32Const(0x10000);
-    asm.emit(instr.i32.add);
-  }
-
   // Matches a single code point (BMP or supplementary) and checks it against
-  // [lo, hi]. Assumes `tmp` local is available. Used by emitRange when hi > 0xFFFF.
+  // [lo, hi]. Used by emitRange when hi > 0xFFFF.
   matchCodePointRange(lo, hi, failureId) {
     const {asm} = this;
     this.wrapTerminalLike(() => {
@@ -1723,12 +1721,12 @@ export class Compiler {
       asm.i32Eq();
       asm.condBreak(asm.depthOf('failure'));
 
-      this.tmpIsHighSurrogate();
+      asm.tmpIsHighSurrogate();
       asm.ifElse(
         w.blocktype.i32,
         () => {
           // Surrogate: decode full code point and check range.
-          this.decodeSurrogatePair();
+          asm.decodeSurrogatePair();
           // (cp - lo) <= (hi - lo) is a single unsigned range check.
           asm.i32Const(lo);
           asm.emit(instr.i32.sub);
@@ -1750,7 +1748,7 @@ export class Compiler {
       asm.emit(instr.i32.eqz);
       asm.condBreak(asm.depthOf('failure'));
 
-      this.maybeSkipLowSurrogate();
+      asm.maybeSkipLowSurrogate();
     }, failureId);
   }
 
@@ -1766,7 +1764,7 @@ export class Compiler {
       asm.i32Eq();
       asm.condBreak(asm.depthOf('failure'));
 
-      this.maybeSkipLowSurrogate();
+      asm.maybeSkipLowSurrogate();
     }, failureId);
   }
 
