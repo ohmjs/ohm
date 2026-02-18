@@ -49,10 +49,8 @@ function listOfElements(node: CstNode): CstNode[] {
       return [];
     case 'NonemptyListOf':
     case 'nonemptyListOf': {
-      // NonemptyListOf<elem, sep> = elem (sep elem)*
       const first = node.children[0];
-      const restList = node.children[1]; // ListNode for (sep elem)*
-      // Each child of restList is a SeqNode with [sep, elem].
+      const restList = node.children[1]; // (sep elem)*
       const rest = restList.children.map(seqNode => seqNode.children[1]);
       return [first, ...rest];
     }
@@ -64,9 +62,15 @@ function listOfElements(node: CstNode): CstNode[] {
   }
 }
 
+function namespaceHas(ns: Record<string, any>, name: string): boolean {
+  for (const prop in ns) {
+    if (prop === name) return true;
+  }
+  return false;
+}
+
 function makeAlt(terms: any[]): any {
   if (terms.length === 1) return terms[0];
-  // Flatten nested Alts (like v17's builder.alt).
   const flattened: any[] = [];
   for (const t of terms) {
     if (t instanceof pexprs.Alt) {
@@ -81,7 +85,6 @@ function makeAlt(terms: any[]): any {
 function makeSeq(factors: any[]): any {
   if (factors.length === 0) return new pexprs.Seq([]);
   if (factors.length === 1) return factors[0];
-  // Flatten nested Seqs.
   const flattened: any[] = [];
   for (const f of factors) {
     if (f instanceof pexprs.Seq) {
@@ -93,12 +96,14 @@ function makeSeq(factors: any[]): any {
   return flattened.length === 1 ? flattened[0] : new pexprs.Seq(flattened);
 }
 
+// Returns an array of Grammar instances for the given CST root node.
+// Each grammar will be assigned into `namespace` under its declared name.
 export function buildGrammars(
   rootNode: CstNode,
   namespace: Record<string, any>,
   sourceString: string
 ): any[] {
-  let currentDecl: any;
+  let decl: any;
   let currentRuleName: string;
   let currentRuleFormals: string[];
   let overriding = false;
@@ -108,135 +113,178 @@ export function buildGrammars(
     return new Interval(sourceString, node.source.startIdx, node.source.endIdx);
   }
 
+  // A visitor that produces Grammar instances from the CST.
   function visit(node: CstNode): any {
     switch (node.ctorName) {
-      case 'Grammars': {
-        // Grammars = Grammar*
-        // children[0] is the ListNode for Grammar*
-        return node.children[0].children.map((child: CstNode) => visit(child));
-      }
+      case 'Grammars':
+        return node.children[0].children.map((c: CstNode) => visit(c));
+
       case 'Grammar': {
         // Grammar = ident SuperGrammar? "{" Rule* "}"
         const grammarName = node.children[0].sourceString;
-        const superGrammarOpt = node.children[1]; // OptNode
-        const rulesList = node.children[3]; // ListNode
-
-        currentDecl = new GrammarDecl(grammarName);
-
-        if (superGrammarOpt.children.length > 0) {
-          visit(superGrammarOpt.children[0]); // SuperGrammar
+        decl = new GrammarDecl(grammarName);
+        if (node.children[1].children.length > 0) {
+          visit(node.children[1].children[0]); // SuperGrammar
         }
-        for (const ruleNode of rulesList.children) {
-          visit(ruleNode);
-        }
-
-        const g = currentDecl.build();
+        node.children[3].children.map((c: CstNode) => visit(c));
+        const g = decl.build();
         g.source = interval(node).trimmed();
-        if (namespace[grammarName]) {
+        if (namespaceHas(namespace, grammarName)) {
           throw errors.duplicateGrammarDeclaration(g, namespace);
         }
         namespace[grammarName] = g;
         return g;
       }
+
       case 'SuperGrammar': {
         // SuperGrammar = "<:" ident
-        const superNameNode = node.children[1];
-        const superName = superNameNode.sourceString;
-        if (superName === 'null') {
-          currentDecl.withSuperGrammar(null);
+        const superGrammarName = node.children[1].sourceString;
+        if (superGrammarName === 'null') {
+          decl.withSuperGrammar(null);
         } else {
-          if (!namespace[superName]) {
-            throw errors.undeclaredGrammar(superName, namespace, interval(superNameNode));
+          if (!namespaceHas(namespace, superGrammarName)) {
+            throw errors.undeclaredGrammar(
+              superGrammarName,
+              namespace,
+              interval(node.children[1])
+            );
           }
-          currentDecl.withSuperGrammar(namespace[superName]);
+          decl.withSuperGrammar(namespace[superGrammarName]);
         }
         return;
       }
+
       case 'Rule_define': {
-        // ident Formals? ruleDescr? "=" RuleBody
-        const name = node.children[0].sourceString;
-        currentRuleName = name;
-
-        const formalsOpt = node.children[1];
+        // Rule_define = ident Formals? ruleDescr? "=" RuleBody
+        currentRuleName = node.children[0].sourceString;
         currentRuleFormals =
-          formalsOpt.children.length > 0 ? visitFormals(formalsOpt.children[0]) : [];
-
-        // Set default start rule if not yet set.
+          node.children[1].children.length > 0
+            ? visitFormals(node.children[1].children[0])
+            : [];
+        // If there is no default start rule yet, set it now. This must be done before visiting
+        // the body, because it might contain an inline rule definition.
         if (
-          !currentDecl.defaultStartRule &&
-          currentDecl.ensureSuperGrammar() !== Grammar.ProtoBuiltInRules
+          !decl.defaultStartRule &&
+          decl.ensureSuperGrammar() !== Grammar.ProtoBuiltInRules
         ) {
-          currentDecl.withDefaultStartRule(name);
+          decl.withDefaultStartRule(currentRuleName);
         }
-
-        const body = visit(node.children[4]); // RuleBody
-
-        const descrOpt = node.children[2];
+        const body = visit(node.children[4]);
         const description =
-          descrOpt.children.length > 0 ? visitRuleDescr(descrOpt.children[0]) : undefined;
-
+          node.children[2].children.length > 0
+            ? visitRuleDescr(node.children[2].children[0])
+            : undefined;
         const source = interval(node).trimmed();
-        currentDecl.define(name, currentRuleFormals, body, description, source);
-        return;
+        return decl.define(currentRuleName, currentRuleFormals, body, description, source);
       }
       case 'Rule_override': {
-        // ident Formals? ":=" OverrideRuleBody
-        const name = node.children[0].sourceString;
-        currentRuleName = name;
-
-        const formalsOpt = node.children[1];
+        // Rule_override = ident Formals? ":=" OverrideRuleBody
+        currentRuleName = node.children[0].sourceString;
         currentRuleFormals =
-          formalsOpt.children.length > 0 ? visitFormals(formalsOpt.children[0]) : [];
+          node.children[1].children.length > 0
+            ? visitFormals(node.children[1].children[0])
+            : [];
 
         const source = interval(node).trimmed();
-        currentDecl.ensureSuperGrammarRuleForOverriding(name, source);
+        decl.ensureSuperGrammarRuleForOverriding(currentRuleName, source);
 
         overriding = true;
         const body = visit(node.children[3]);
         overriding = false;
-
-        currentDecl.override(name, currentRuleFormals, body, null, source);
-        return;
+        return decl.override(currentRuleName, currentRuleFormals, body, null, source);
       }
       case 'Rule_extend': {
-        // ident Formals? "+=" RuleBody
-        const name = node.children[0].sourceString;
-        currentRuleName = name;
-
-        const formalsOpt = node.children[1];
+        // Rule_extend = ident Formals? "+=" RuleBody
+        currentRuleName = node.children[0].sourceString;
         currentRuleFormals =
-          formalsOpt.children.length > 0 ? visitFormals(formalsOpt.children[0]) : [];
-
+          node.children[1].children.length > 0
+            ? visitFormals(node.children[1].children[0])
+            : [];
         const body = visit(node.children[3]);
         const source = interval(node).trimmed();
-        currentDecl.extend(name, currentRuleFormals, body, null, source);
-        return;
+        return decl.extend(currentRuleName, currentRuleFormals, body, null, source);
       }
-      case 'RuleBody':
-      case 'OverrideRuleBody': {
-        // "|"? NonemptyListOf<TopLevelTerm/OverrideTopLevelTerm, "|">
+
+      case 'RuleBody': {
+        // RuleBody = "|"? NonemptyListOf<TopLevelTerm, "|">
         const terms = listOfElements(node.children[1]).map(t => visit(t));
         return makeAlt(terms).withSource(interval(node));
       }
+      case 'OverrideRuleBody': {
+        // OverrideRuleBody = "|"? NonemptyListOf<OverrideTopLevelTerm, "|">
+        const terms = listOfElements(node.children[1]).map(t => visit(t));
+        return makeAlt(terms).withSource(interval(node));
+      }
+
+      case 'Formals':
+        return visitFormals(node);
+
+      case 'Params':
+        return visitParams(node);
+
+      case 'Alt': {
+        const terms = listOfElements(node.children[0]).map(s => visit(s));
+        return makeAlt(terms).withSource(interval(node));
+      }
+
       case 'TopLevelTerm_inline': {
-        // Seq caseName
+        // TopLevelTerm_inline = Seq caseName
+        const inlineRuleName = currentRuleName + '_' + visitCaseName(node.children[1]);
         const body = visit(node.children[0]);
-        const caseName = visitCaseName(node.children[1]);
-        const inlineRuleName = currentRuleName + '_' + caseName;
         const source = interval(node).trimmed();
-
-        const isNewRule = !(
-          currentDecl.superGrammar && currentDecl.superGrammar.rules[inlineRuleName]
+        const isNewRuleDeclaration = !(
+          decl.superGrammar && decl.superGrammar.rules[inlineRuleName]
         );
-        if (overriding && !isNewRule) {
-          currentDecl.override(inlineRuleName, currentRuleFormals, body, null, source);
+        if (overriding && !isNewRuleDeclaration) {
+          decl.override(inlineRuleName, currentRuleFormals, body, null, source);
         } else {
-          currentDecl.define(inlineRuleName, currentRuleFormals, body, null, source);
+          decl.define(inlineRuleName, currentRuleFormals, body, null, source);
         }
-
         const params = currentRuleFormals.map(formal => new pexprs.Apply(formal));
         return new pexprs.Apply(inlineRuleName, params).withSource(body.source);
       }
+      case 'OverrideTopLevelTerm_superSplice':
+        throw new Error('Super splice (...) is not supported');
+
+      case 'Seq': {
+        const factors = node.children[0].children.map((c: CstNode) => visit(c));
+        return makeSeq(factors).withSource(interval(node));
+      }
+
+      case 'Iter_star':
+        return new pexprs.Star(visit(node.children[0])).withSource(interval(node));
+      case 'Iter_plus':
+        return new pexprs.Plus(visit(node.children[0])).withSource(interval(node));
+      case 'Iter_opt':
+        return new pexprs.Opt(visit(node.children[0])).withSource(interval(node));
+
+      case 'Pred_not':
+        return new pexprs.Not(visit(node.children[1])).withSource(interval(node));
+      case 'Pred_lookahead':
+        return new pexprs.Lookahead(visit(node.children[1])).withSource(interval(node));
+
+      case 'Lex_lex':
+        return new pexprs.Lex(visit(node.children[1])).withSource(interval(node));
+
+      case 'Base_application': {
+        const ruleName = node.children[0].sourceString;
+        const params =
+          node.children[1].children.length > 0
+            ? visitParams(node.children[1].children[0])
+            : [];
+        return new pexprs.Apply(ruleName, params).withSource(interval(node));
+      }
+      case 'Base_range':
+        return new pexprs.Range(
+          visitOneCharTerminal(node.children[0]),
+          visitOneCharTerminal(node.children[2])
+        ).withSource(interval(node));
+      case 'Base_terminal':
+        return new pexprs.Terminal(visitTerminal(node.children[0])).withSource(interval(node));
+      case 'Base_paren':
+        return visit(node.children[1]);
+
+      // Passthrough cases (implicit in the JS version via Semantics defaults).
       case 'Rule':
       case 'TopLevelTerm':
       case 'OverrideTopLevelTerm':
@@ -244,56 +292,8 @@ export function buildGrammars(
       case 'Pred':
       case 'Lex':
       case 'Base':
-        // Passthrough: single child.
         return visit(node.children[0]);
-      case 'OverrideTopLevelTerm_superSplice':
-        throw new Error('Super splice (...) is not supported');
-      case 'Formals':
-        return visitFormals(node);
-      case 'Params':
-        return visitParams(node);
-      case 'Alt': {
-        // NonemptyListOf<Seq, "|">
-        const terms = listOfElements(node.children[0]).map(s => visit(s));
-        return makeAlt(terms).withSource(interval(node));
-      }
-      case 'Seq': {
-        // Iter*
-        const iterList = node.children[0]; // ListNode
-        const factors = iterList.children.map((iter: CstNode) => visit(iter));
-        return makeSeq(factors).withSource(interval(node));
-      }
-      case 'Iter_star':
-        return new pexprs.Star(visit(node.children[0])).withSource(interval(node));
-      case 'Iter_plus':
-        return new pexprs.Plus(visit(node.children[0])).withSource(interval(node));
-      case 'Iter_opt':
-        return new pexprs.Opt(visit(node.children[0])).withSource(interval(node));
-      case 'Pred_not':
-        return new pexprs.Not(visit(node.children[1])).withSource(interval(node));
-      case 'Pred_lookahead':
-        return new pexprs.Lookahead(visit(node.children[1])).withSource(interval(node));
-      case 'Lex_lex':
-        return new pexprs.Lex(visit(node.children[1])).withSource(interval(node));
-      case 'Base_application': {
-        // ident Params? ~(ruleDescr? "=" | ":=" | "+=")
-        // The Not produces 0 bindings, so children: [ident, Params?]
-        const ruleName = node.children[0].sourceString;
-        const paramsOpt = node.children[1]; // OptNode
-        const params = paramsOpt.children.length > 0 ? visitParams(paramsOpt.children[0]) : [];
-        return new pexprs.Apply(ruleName, params).withSource(interval(node));
-      }
-      case 'Base_range': {
-        // oneCharTerminal ".." oneCharTerminal
-        const from = visitOneCharTerminal(node.children[0]);
-        const to = visitOneCharTerminal(node.children[2]);
-        return new pexprs.Range(from, to).withSource(interval(node));
-      }
-      case 'Base_terminal':
-        return new pexprs.Terminal(visitTerminal(node.children[0])).withSource(interval(node));
-      case 'Base_paren':
-        // "(" Alt ")"
-        return visit(node.children[1]);
+
       default:
         throw new Error(`buildGrammar: unhandled ctorName: ${node.ctorName}`);
     }
@@ -311,8 +311,7 @@ export function buildGrammars(
 
   function visitTerminal(node: CstNode): string {
     // terminal = "\"" terminalChar* "\""
-    const charList = node.children[1]; // ListNode
-    return charList.children.map(c => visitTerminalChar(c)).join('');
+    return node.children[1].children.map(c => visitTerminalChar(c)).join('');
   }
 
   function visitOneCharTerminal(node: CstNode): string {
@@ -322,13 +321,11 @@ export function buildGrammars(
 
   function visitTerminalChar(node: CstNode): string {
     // terminalChar = escapeChar | ~"\\" ~"\"" ~"\n" "\u{0}".."\u{10FFFF}"
-    // In both cases, there is 1 child.
     const child = node.children[0];
     if (child.isTerminal()) {
-      // Regular character (from the Range match).
       return child.sourceString;
     }
-    // escapeChar node — use its sourceString and unescape.
+    // escapeChar
     return unescapeCodePoint(child.sourceString);
   }
 
@@ -339,8 +336,6 @@ export function buildGrammars(
 
   function visitCaseName(node: CstNode): string {
     // caseName = "--" (~"\n" space)* name (~"\n" space)* ("\n" | &"}")
-    // Bindings: "--", ListNode, name, ListNode, [possibly "\n"]
-    // We only need the name at index 2.
     return node.children[2].sourceString;
   }
 
