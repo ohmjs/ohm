@@ -156,7 +156,7 @@ export function buildGrammars(
         // Rule_define = ident Formals? ruleDescr? "=" RuleBody
         const [n, fs, d, , b] = node.children;
         currentRuleName = n.sourceString;
-        currentRuleFormals = fs.children.length > 0 ? visitFormals(fs.children[0]) : [];
+        currentRuleFormals = visitFormals(fs);
         // If there is no default start rule yet, set it now. This must be done before visiting
         // the body, because it might contain an inline rule definition.
         if (
@@ -174,7 +174,7 @@ export function buildGrammars(
         // Rule_override = ident Formals? ":=" OverrideRuleBody
         const [n, fs, , b] = node.children;
         currentRuleName = n.sourceString;
-        currentRuleFormals = fs.children.length > 0 ? visitFormals(fs.children[0]) : [];
+        currentRuleFormals = visitFormals(fs);
 
         const source = interval(node).trimmed();
         decl.ensureSuperGrammarRuleForOverriding(currentRuleName, source);
@@ -188,7 +188,7 @@ export function buildGrammars(
         // Rule_extend = ident Formals? "+=" RuleBody
         const [n, fs, , b] = node.children;
         currentRuleName = n.sourceString;
-        currentRuleFormals = fs.children.length > 0 ? visitFormals(fs.children[0]) : [];
+        currentRuleFormals = visitFormals(fs);
         const body = visit(b);
         const source = interval(node).trimmed();
         return decl.extend(currentRuleName, currentRuleFormals, body, null, source);
@@ -204,12 +204,6 @@ export function buildGrammars(
         const [, terms] = node.children;
         return makeAlt(listOfElements(terms).map(t => visit(t))).withSource(interval(node));
       }
-
-      case 'Formals':
-        return visitFormals(node);
-
-      case 'Params':
-        return visitParams(node);
 
       case 'Alt': {
         const [seqs] = node.children;
@@ -258,8 +252,7 @@ export function buildGrammars(
 
       case 'Base_application': {
         const [rule, ps] = node.children;
-        const params = ps.children.length > 0 ? visitParams(ps.children[0]) : [];
-        return new pexprs.Apply(rule.sourceString, params).withSource(interval(node));
+        return new pexprs.Apply(rule.sourceString, visitParams(ps)).withSource(interval(node));
       }
       case 'Base_range': {
         const [from, , to] = node.children;
@@ -292,14 +285,18 @@ export function buildGrammars(
     }
   }
 
-  function visitFormals(node: CstNode): string[] {
+  // Accept the OptNode for Formals? and extract ident names.
+  function visitFormals(fs: CstNode): string[] {
+    if (fs.children.length === 0) return [];
     // Formals = "<" ListOf<ident, ","> ">"
-    return listOfElements(node.children[1]).map(n => n.sourceString);
+    return listOfElements(fs.children[0].children[1]).map(n => n.sourceString);
   }
 
-  function visitParams(node: CstNode): any[] {
+  // Accept the OptNode for Params? and visit each Seq.
+  function visitParams(ps: CstNode): any[] {
+    if (ps.children.length === 0) return [];
     // Params = "<" ListOf<Seq, ","> ">"
-    return listOfElements(node.children[1]).map(s => visit(s));
+    return listOfElements(ps.children[0].children[1]).map(s => visit(s));
   }
 
   function visitTerminal(node: CstNode): string {
