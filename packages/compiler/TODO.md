@@ -2,9 +2,10 @@
 
 - [x] Include a map of rule name to ruleId in the module.
 - [x] Implicit space skipping
-- [ ] Error handling
+- [x] Error handling (FailedMatchResult, failure positions, error messages all working)
 - [x] NonterminalNodes should keep track of the rule
-- [ ] When iteration contains a sequence, the children are flattened into the iter node.
+- [x] When iteration contains a sequence, the children are flattened into the iter node.
+  (SeqNodes are reconstructed in JS at access time; works correctly.)
 - [x] Basic parameterized rules
 - [x] Parameterized rules with >3 params
 - [x] Parameters that aren't terminals
@@ -15,8 +16,8 @@
 - [ ] Fix duplicate CST nodes with EMIT_GENERALIZED_RULES = true
 - [x] Remove input size limitation
 - [x] Extra memo column allocated in match().
-- [ ] Proper Unicode handling for caseInsensitive
-- [ ] Proper Unicode handling for range
+- [x] Proper Unicode handling for caseInsensitive (non-ASCII uses host callout)
+- [x] Proper Unicode handling for range (fixed in #556)
 
 Cleanups:
 
@@ -28,11 +29,14 @@ Cleanups:
 
 Optimizations:
 
+- [ ] Build SeqNodes at parse time in Wasm (avoid JS-side reconstruction)
 - [ ] Avoid unnecessary dispatch in generalized rules
 - [ ] Avoid duplicate lifted rules.
 - [ ] Compressed (32-bit) header for Nonterminal nodes in common case
 - [ ] Compressed (inline 32-bit) repr for Terminal nodes
 - [ ] Proper preallocated nodes (incl. failurePos) for common cases
+- [ ] Avoid allocating $spaces CST nodes (currently allocated in Wasm, filtered in JS)
+- [ ] Precompute isRuleSyntactic and encode in the Wasm module
 - Space skipping:
   - [ ] Evaluate skipping memoization
   - [ ] Avoid building CST nodes? Or preallocate for small numbers?

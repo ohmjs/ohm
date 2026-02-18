@@ -6,7 +6,7 @@ import process from 'node:process';
 
 import {grammar} from '../../../examples/ecmascript/index.js';
 import {Compiler} from '../src/Compiler.js';
-import {Grammar} from '@ohm-js/runtime';
+import {Grammar} from 'ohm-js';
 
 const filename = process.argv[2];
 if (!filename) {
