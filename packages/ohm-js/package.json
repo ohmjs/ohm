@@ -42,7 +42,9 @@
       "import": "./src/v18.js"
     },
     "./src/Grammar.js": "./src/Grammar.js",
-    "./src/GrammarDecl.js": "./src/GrammarDecl.js"
+    "./src/GrammarDecl.js": "./src/GrammarDecl.js",
+    "./src/Interval.js": "./src/Interval.js",
+    "./src/errors.js": "./src/errors.js"
   },
   "files": ["src", "dist", "extras", "index.mjs", "index.d.ts", "!**/*.old"],
   "types": "index.d.ts",
