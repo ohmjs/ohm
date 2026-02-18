@@ -429,7 +429,7 @@ export function toString(exp: Expr): string {
     case 'Param':
       return `$${exp.index}`;
     case 'Range':
-      return `${JSON.stringify(exp.lo)}..${JSON.stringify(exp.hi)}`;
+      return `${JSON.stringify(String.fromCodePoint(exp.lo))}..${JSON.stringify(String.fromCodePoint(exp.hi))}`;
     case 'Terminal':
       return JSON.stringify(exp.value);
     case 'UnicodeChar':

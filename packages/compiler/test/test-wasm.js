@@ -1209,23 +1209,23 @@ test('any consumes an entire code point', async t => {
   t.true(g.match('😇').succeeded());
 });
 
-test.failing('ranges w/ code points > 0xFFFF', async t => {
+test('ranges w/ code points > 0xFFFF', async t => {
   const g = await toWasmGrammar(
     ohm.grammar(`
     G {
-      face = "😇".."😈"
-      notFace = ~face any
+      start = "😇".."😈"
     }
   `)
   );
 
   // Every emoji by code point: https://emojipedia.org/emoji/
-  t.false(g.match('😆').succeeded()); // just below
-  t.true(g.match('😇').succeeded());
-  t.true(g.match('😈').succeeded());
-  t.false(g.match('😉').succeeded()); // just above
+  t.is(matchWithInput(g, '😆'), 0); // just below
+  t.is(matchWithInput(g, '😇'), 1);
+  t.is(matchWithInput(g, '😈'), 1);
+  t.is(matchWithInput(g, '😉'), 0); // just above
 
-  t.true(g.match('x', 'notFace').succeeded());
+  // BMP chars should not match a supplementary-only range.
+  t.is(matchWithInput(g, 'x'), 0);
 });
 
 test('shortMessage (basic)', async t => {
