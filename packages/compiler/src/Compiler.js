@@ -810,7 +810,7 @@ Assembler.CST_NODE_HEADER_SIZE_BYTES = 8;
 Assembler.STACK_FRAME_SIZE_BYTES = 8;
 Assembler.DESCRIPTION_FRAME_SIZE_BYTES = 12;
 
-export {grammars} from 'ohm-js-legacy';
+export {grammar, grammars} from './parseGrammars.ts';
 
 export class Compiler {
   constructor(grammar) {
