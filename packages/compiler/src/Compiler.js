@@ -836,11 +836,11 @@ export class Compiler {
     // The rule ID is a 0-based index that's mapped to the name.
     // It is *not* the same as the function index of the rule's eval function.
     this.ruleIdByName = new StringTable();
-    this._failureDescriptions = new StringTable();
+    this._strings = new StringTable();
 
     // Ensure "end of input" is always at index 0, so the runtime can use it
     // for the implicit end check.
-    this._endOfInputFailureId = this._failureDescriptions.add('end of input');
+    this._endOfInputFailureId = this._strings.add('end of input');
 
     this._maxMemoizedRuleId = -1;
 
@@ -858,7 +858,7 @@ export class Compiler {
   }
 
   getOrAddFailure(str) {
-    return this._failureDescriptions.add(str);
+    return this._strings.add(str);
   }
 
   // Returns a failure description string for the given expression, or null
@@ -877,7 +877,7 @@ export class Compiler {
         return 'end of input';
       case 'Apply': {
         if (exp.descriptionId != null && exp.descriptionId >= 0) {
-          return this._failureDescriptions.getStr(exp.descriptionId);
+          return this._strings.getStr(exp.descriptionId);
         }
         if (exp.ruleName === 'end') return 'end of input';
         if (exp.ruleName === 'any') return 'any character';
@@ -1104,9 +1104,7 @@ export class Compiler {
             return ir.caseInsensitive(exp.args[0].obj);
           }
           rules.push([exp.ruleName, ruleInfo]);
-          const descId = ruleInfo.description
-            ? this._failureDescriptions.add(ruleInfo.description)
-            : -1;
+          const descId = ruleInfo.description ? this._strings.add(ruleInfo.description) : -1;
           return ir.apply(
             exp.ruleName,
             descId,
@@ -1210,9 +1208,7 @@ export class Compiler {
 
     const restoreFailurePos = name === this._applySpacesImplicit.ruleName;
 
-    const descriptionId = ruleInfo.description
-      ? this._failureDescriptions.add(ruleInfo.description)
-      : -1;
+    const descriptionId = ruleInfo.description ? this._strings.add(ruleInfo.description) : -1;
     const hasDescription = descriptionId >= 0;
 
     this.beginLexContext(!ruleInfo.isSyntactic);
@@ -1468,7 +1464,7 @@ export class Compiler {
       w.elemsec([w.elem(w.tableidx(0), [instr.i32.const, w.i32(0), instr.end], tableData)]),
       mergeSections(w.SECTION_ID_CODE, prebuilt.codesec, codes),
       w.customsec(this.buildStringTable('ruleNames', ruleNames)),
-      w.customsec(this.buildStringTable('failureDescriptions', this._failureDescriptions)),
+      w.customsec(this.buildStringTable('strings', this._strings)),
       w.customsec(this.buildMemoizedRuleCountSection()),
       w.namesec(w.namedata(w.modulenamesubsec(this.grammar.name))),
     ]);
@@ -2068,32 +2064,38 @@ export class Compiler {
   emitCaseInsensitive(exp) {
     const {asm} = this;
     const {value} = exp;
-    assert(
-      [...value].every(c => c <= '\x7f'),
-      'not supported: case-insensitive Unicode'
-    );
+    const isAllAscii = [...value].every(c => c <= '\x7f');
 
-    const str = value.toLowerCase();
     const failureId = this.toFailure(exp);
     asm.emit(JSON.stringify(`caseInsensitive:${value}`));
-    this.wrapTerminalLike(() => {
-      // TODO:
-      // - proper UTF-8!
-      // - handle longer terminals with a loop
-      // - SIMD
-      for (const c of [...str]) {
-        asm.i32Const(c.charCodeAt(0));
-        asm.currCharCode();
-        if (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')) {
-          // Cute trick: the diff between upper and lower case is bit 5.
-          asm.i32Const(0x20);
-          asm.emit(instr.i32.or);
+
+    if (isAllAscii) {
+      const str = value.toLowerCase();
+      this.wrapTerminalLike(() => {
+        for (const c of [...str]) {
+          asm.i32Const(c.charCodeAt(0));
+          asm.currCharCode();
+          if (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')) {
+            // Cute trick: the diff between upper and lower case is bit 5.
+            asm.i32Const(0x20);
+            asm.emit(instr.i32.or);
+          }
+          asm.emit(instr.i32.ne);
+          asm.condBreak(asm.depthOf('failure'));
+          asm.incPos();
         }
-        asm.emit(instr.i32.ne);
+      }, failureId);
+    } else {
+      // Unicode path: whole-string host callout
+      const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const strIdx = this._strings.add(escaped);
+      this.wrapTerminalLike(() => {
+        asm.i32Const(strIdx);
+        asm.callPrebuiltFunc('doMatchCaseInsensitive');
+        asm.emit(instr.i32.eqz);
         asm.condBreak(asm.depthOf('failure'));
-        asm.incPos();
-      }
-    }, failureId);
+      }, failureId);
+    }
 
     // Case-insensitive terminals are inlined, but should appear in the CST
     // as if they are actual applications.

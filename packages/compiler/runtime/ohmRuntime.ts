@@ -49,6 +49,7 @@ declare function jsStringLength(s: externref): i32;
 declare function printI32(val: i32): void;
 declare function isRuleSyntactic(ruleId: i32): bool;
 declare function matchUnicodeChar(categoryBitmap: i32): bool;
+declare function matchCaseInsensitive(stringIdx: i32): bool;
 
 @inline const IMPLICIT_SPACE_SKIPPING = true;
 
@@ -429,6 +430,10 @@ export function bindingsAt(i: i32): i32 {
 // TODO: Find a way to call this directly from generated code.
 export function doMatchUnicodeChar(categoryBitmap: i32): bool {
   return matchUnicodeChar(categoryBitmap)
+}
+
+export function doMatchCaseInsensitive(stringIdx: i32): bool {
+  return matchCaseInsensitive(stringIdx);
 }
 
 @inline const FLUFFY_BIT: i32 = 0x80000000;
