@@ -2068,32 +2068,38 @@ export class Compiler {
   emitCaseInsensitive(exp) {
     const {asm} = this;
     const {value} = exp;
-    assert(
-      [...value].every(c => c <= '\x7f'),
-      'not supported: case-insensitive Unicode'
-    );
+    const isAllAscii = [...value].every(c => c <= '\x7f');
 
-    const str = value.toLowerCase();
     const failureId = this.toFailure(exp);
     asm.emit(JSON.stringify(`caseInsensitive:${value}`));
-    this.wrapTerminalLike(() => {
-      // TODO:
-      // - proper UTF-8!
-      // - handle longer terminals with a loop
-      // - SIMD
-      for (const c of [...str]) {
-        asm.i32Const(c.charCodeAt(0));
-        asm.currCharCode();
-        if (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')) {
-          // Cute trick: the diff between upper and lower case is bit 5.
-          asm.i32Const(0x20);
-          asm.emit(instr.i32.or);
+
+    if (isAllAscii) {
+      const str = value.toLowerCase();
+      this.wrapTerminalLike(() => {
+        for (const c of [...str]) {
+          asm.i32Const(c.charCodeAt(0));
+          asm.currCharCode();
+          if (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')) {
+            // Cute trick: the diff between upper and lower case is bit 5.
+            asm.i32Const(0x20);
+            asm.emit(instr.i32.or);
+          }
+          asm.emit(instr.i32.ne);
+          asm.condBreak(asm.depthOf('failure'));
+          asm.incPos();
         }
-        asm.emit(instr.i32.ne);
+      }, failureId);
+    } else {
+      // Unicode path: whole-string host callout
+      const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const strIdx = this._failureDescriptions.add(escaped);
+      this.wrapTerminalLike(() => {
+        asm.i32Const(strIdx);
+        asm.callPrebuiltFunc('doMatchCaseInsensitive');
+        asm.emit(instr.i32.eqz);
         asm.condBreak(asm.depthOf('failure'));
-        asm.incPos();
-      }
-    }, failureId);
+      }, failureId);
+    }
 
     // Case-insensitive terminals are inlined, but should appear in the CST
     // as if they are actual applications.

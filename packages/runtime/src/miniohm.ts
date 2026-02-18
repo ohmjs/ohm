@@ -173,6 +173,23 @@ export class Grammar {
         }
         return !!arr;
       },
+      matchCaseInsensitive: (() => {
+        const cache: RegExp[] = [];
+        return (stringIdx: number) => {
+          const {input, pos} = (this._instance as any).exports;
+          let re = cache[stringIdx];
+          if (!re) {
+            // The pattern is pre-escaped at compile time.
+            re = cache[stringIdx] = new RegExp(this._failureDescriptions[stringIdx], 'iy');
+          }
+          re.lastIndex = pos.value;
+          const arr = re.exec(input.value);
+          if (arr) {
+            pos.value += arr[0].length;
+          }
+          return !!arr;
+        };
+      })(),
     },
     // Include a polyfill for js-string builtins for engines that don't
     // support that feature (e.g., Safari).
