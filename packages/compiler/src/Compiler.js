@@ -1104,9 +1104,7 @@ export class Compiler {
             return ir.caseInsensitive(exp.args[0].obj);
           }
           rules.push([exp.ruleName, ruleInfo]);
-          const descId = ruleInfo.description
-            ? this._strings.add(ruleInfo.description)
-            : -1;
+          const descId = ruleInfo.description ? this._strings.add(ruleInfo.description) : -1;
           return ir.apply(
             exp.ruleName,
             descId,
@@ -1210,9 +1208,7 @@ export class Compiler {
 
     const restoreFailurePos = name === this._applySpacesImplicit.ruleName;
 
-    const descriptionId = ruleInfo.description
-      ? this._strings.add(ruleInfo.description)
-      : -1;
+    const descriptionId = ruleInfo.description ? this._strings.add(ruleInfo.description) : -1;
     const hasDescription = descriptionId >= 0;
 
     this.beginLexContext(!ruleInfo.isSyntactic);
