@@ -4,7 +4,9 @@ import {Grammar as BaseGrammar} from 'ohm-js';
 
 // Matches the v17 Grammar.rules shape. Defined inline to avoid pulling
 // ohm-js-legacy types into the public .d.ts.
-type Rules = {[ruleName: string]: {body: any; formals: string[]; description: string; source: any}};
+type Rules = {
+  [ruleName: string]: {body: any; formals: string[]; description: string; source: any};
+};
 
 export interface Grammar extends BaseGrammar {
   rules: Rules;
