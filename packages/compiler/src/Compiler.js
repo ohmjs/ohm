@@ -1727,6 +1727,10 @@ export class Compiler {
         () => {
           // Surrogate: decode full code point and check range.
           asm.decodeSurrogatePair();
+          // Advance past the low surrogate now that we've read it.
+          // (Safe even if the range check fails — the parent expression
+          // restores pos on failure.)
+          asm.incPos();
           // (cp - lo) <= (hi - lo) is a single unsigned range check.
           asm.i32Const(lo);
           asm.emit(instr.i32.sub);
@@ -1747,8 +1751,6 @@ export class Compiler {
 
       asm.emit(instr.i32.eqz);
       asm.condBreak(asm.depthOf('failure'));
-
-      asm.maybeSkipLowSurrogate();
     }, failureId);
   }
 
