@@ -2,13 +2,7 @@
   "name": "@ohm-js/to-ast-compat",
   "version": "18.0.0-beta.7",
   "description": "Compatibility helper for migrating from ohm-js v17 toAST to v18",
-  "keywords": [
-    "parser",
-    "parsing",
-    "ohm",
-    "ohm-js",
-    "ast"
-  ],
+  "keywords": ["parser", "parsing", "ohm", "ohm-js", "ast"],
   "homepage": "https://github.com/ohmjs/ohm#readme",
   "bugs": {
     "url": "https://github.com/ohmjs/ohm/issues"
@@ -27,9 +21,7 @@
       "default": "./dist/index.js"
     }
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "publishConfig": {
     "access": "public"
   },

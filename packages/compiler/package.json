@@ -16,9 +16,7 @@
   "bin": {
     "ohm2wasm": "dist/src/cli.js"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "publishConfig": {
     "access": "public"
   },
