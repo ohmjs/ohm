@@ -9,7 +9,7 @@ import {Grammar} from 'ohm-js-legacy/src/Grammar.js';
 
 import BuiltInRules from './built-in-rules.ts';
 import {buildGrammars} from './buildGrammar.ts';
-import ohmGrammarWasmBytes from './ohm-grammar-wasm.ts';
+import ohmGrammarWasmBytes from '../build/ohm-grammar-wasm.ts';
 
 // Initialize the WASM meta-grammar synchronously at module load time.
 const wasmMetaGrammar = new WasmGrammar(ohmGrammarWasmBytes);
