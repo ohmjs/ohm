@@ -704,16 +704,9 @@ class Assembler {
     this.emit(instr.i32.and);
   }
 
-  // If `tmp` is a high surrogate, increment pos to skip the low surrogate.
-  maybeSkipLowSurrogate() {
-    this.tmpIsHighSurrogate();
-    this.if(w.blocktype.empty, () => {
-      this.incPos();
-    });
-  }
-
   // Assumes `tmp` holds a high surrogate and pos points at the low surrogate.
-  // Pushes the decoded code point (i32) onto the stack.
+  // Reads the low surrogate, advances past it, and pushes the decoded code
+  // point (i32) onto the stack.
   decodeSurrogatePair() {
     // cp = (tmp - 0xD800) << 10 + (lowSurr - 0xDC00) + 0x10000
     this.localGet('tmp');
@@ -722,6 +715,7 @@ class Assembler {
     this.i32Const(10);
     this.emit(instr.i32.shl);
     this.currCharCode();
+    this.incPos();
     this.i32Const(0xdc00);
     this.emit(instr.i32.sub);
     this.emit(instr.i32.add);
@@ -1727,10 +1721,6 @@ export class Compiler {
         () => {
           // Surrogate: decode full code point and check range.
           asm.decodeSurrogatePair();
-          // Advance past the low surrogate now that we've read it.
-          // (Safe even if the range check fails — the parent expression
-          // restores pos on failure.)
-          asm.incPos();
           // (cp - lo) <= (hi - lo) is a single unsigned range check.
           asm.i32Const(lo);
           asm.emit(instr.i32.sub);
@@ -1766,7 +1756,11 @@ export class Compiler {
       asm.i32Eq();
       asm.condBreak(asm.depthOf('failure'));
 
-      asm.maybeSkipLowSurrogate();
+      // If tmp is a high surrogate, skip the low surrogate.
+      asm.tmpIsHighSurrogate();
+      asm.if(w.blocktype.empty, () => {
+        asm.incPos();
+      });
     }, failureId);
   }
 
