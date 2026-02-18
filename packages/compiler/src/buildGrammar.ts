@@ -121,12 +121,13 @@ export function buildGrammars(
 
       case 'Grammar': {
         // Grammar = ident SuperGrammar? "{" Rule* "}"
-        const grammarName = node.children[0].sourceString;
+        const [id, s, _open, rules] = node.children;
+        const grammarName = id.sourceString;
         decl = new GrammarDecl(grammarName);
-        if (node.children[1].children.length > 0) {
-          visit(node.children[1].children[0]); // SuperGrammar
+        if (s.children.length > 0) {
+          visit(s.children[0]);
         }
-        node.children[3].children.map((c: CstNode) => visit(c));
+        rules.children.map((c: CstNode) => visit(c));
         const g = decl.build();
         g.source = interval(node).trimmed();
         if (namespaceHas(namespace, grammarName)) {
@@ -138,16 +139,13 @@ export function buildGrammars(
 
       case 'SuperGrammar': {
         // SuperGrammar = "<:" ident
-        const superGrammarName = node.children[1].sourceString;
+        const [, n] = node.children;
+        const superGrammarName = n.sourceString;
         if (superGrammarName === 'null') {
           decl.withSuperGrammar(null);
         } else {
           if (!namespaceHas(namespace, superGrammarName)) {
-            throw errors.undeclaredGrammar(
-              superGrammarName,
-              namespace,
-              interval(node.children[1])
-            );
+            throw errors.undeclaredGrammar(superGrammarName, namespace, interval(n));
           }
           decl.withSuperGrammar(namespace[superGrammarName]);
         }
@@ -156,11 +154,9 @@ export function buildGrammars(
 
       case 'Rule_define': {
         // Rule_define = ident Formals? ruleDescr? "=" RuleBody
-        currentRuleName = node.children[0].sourceString;
-        currentRuleFormals =
-          node.children[1].children.length > 0
-            ? visitFormals(node.children[1].children[0])
-            : [];
+        const [n, fs, d, , b] = node.children;
+        currentRuleName = n.sourceString;
+        currentRuleFormals = fs.children.length > 0 ? visitFormals(fs.children[0]) : [];
         // If there is no default start rule yet, set it now. This must be done before visiting
         // the body, because it might contain an inline rule definition.
         if (
@@ -169,51 +165,44 @@ export function buildGrammars(
         ) {
           decl.withDefaultStartRule(currentRuleName);
         }
-        const body = visit(node.children[4]);
-        const description =
-          node.children[2].children.length > 0
-            ? visitRuleDescr(node.children[2].children[0])
-            : undefined;
+        const body = visit(b);
+        const description = d.children.length > 0 ? visitRuleDescr(d.children[0]) : undefined;
         const source = interval(node).trimmed();
         return decl.define(currentRuleName, currentRuleFormals, body, description, source);
       }
       case 'Rule_override': {
         // Rule_override = ident Formals? ":=" OverrideRuleBody
-        currentRuleName = node.children[0].sourceString;
-        currentRuleFormals =
-          node.children[1].children.length > 0
-            ? visitFormals(node.children[1].children[0])
-            : [];
+        const [n, fs, , b] = node.children;
+        currentRuleName = n.sourceString;
+        currentRuleFormals = fs.children.length > 0 ? visitFormals(fs.children[0]) : [];
 
         const source = interval(node).trimmed();
         decl.ensureSuperGrammarRuleForOverriding(currentRuleName, source);
 
         overriding = true;
-        const body = visit(node.children[3]);
+        const body = visit(b);
         overriding = false;
         return decl.override(currentRuleName, currentRuleFormals, body, null, source);
       }
       case 'Rule_extend': {
         // Rule_extend = ident Formals? "+=" RuleBody
-        currentRuleName = node.children[0].sourceString;
-        currentRuleFormals =
-          node.children[1].children.length > 0
-            ? visitFormals(node.children[1].children[0])
-            : [];
-        const body = visit(node.children[3]);
+        const [n, fs, , b] = node.children;
+        currentRuleName = n.sourceString;
+        currentRuleFormals = fs.children.length > 0 ? visitFormals(fs.children[0]) : [];
+        const body = visit(b);
         const source = interval(node).trimmed();
         return decl.extend(currentRuleName, currentRuleFormals, body, null, source);
       }
 
       case 'RuleBody': {
         // RuleBody = "|"? NonemptyListOf<TopLevelTerm, "|">
-        const terms = listOfElements(node.children[1]).map(t => visit(t));
-        return makeAlt(terms).withSource(interval(node));
+        const [, terms] = node.children;
+        return makeAlt(listOfElements(terms).map(t => visit(t))).withSource(interval(node));
       }
       case 'OverrideRuleBody': {
         // OverrideRuleBody = "|"? NonemptyListOf<OverrideTopLevelTerm, "|">
-        const terms = listOfElements(node.children[1]).map(t => visit(t));
-        return makeAlt(terms).withSource(interval(node));
+        const [, terms] = node.children;
+        return makeAlt(listOfElements(terms).map(t => visit(t))).withSource(interval(node));
       }
 
       case 'Formals':
@@ -223,14 +212,15 @@ export function buildGrammars(
         return visitParams(node);
 
       case 'Alt': {
-        const terms = listOfElements(node.children[0]).map(s => visit(s));
-        return makeAlt(terms).withSource(interval(node));
+        const [seqs] = node.children;
+        return makeAlt(listOfElements(seqs).map(s => visit(s))).withSource(interval(node));
       }
 
       case 'TopLevelTerm_inline': {
         // TopLevelTerm_inline = Seq caseName
-        const inlineRuleName = currentRuleName + '_' + visitCaseName(node.children[1]);
-        const body = visit(node.children[0]);
+        const [b, n] = node.children;
+        const inlineRuleName = currentRuleName + '_' + visitCaseName(n);
+        const body = visit(b);
         const source = interval(node).trimmed();
         const isNewRuleDeclaration = !(
           decl.superGrammar && decl.superGrammar.rules[inlineRuleName]
@@ -247,8 +237,8 @@ export function buildGrammars(
         throw new Error('Super splice (...) is not supported');
 
       case 'Seq': {
-        const factors = node.children[0].children.map((c: CstNode) => visit(c));
-        return makeSeq(factors).withSource(interval(node));
+        const [expr] = node.children;
+        return makeSeq(expr.children.map((c: CstNode) => visit(c))).withSource(interval(node));
       }
 
       case 'Iter_star':
@@ -267,22 +257,25 @@ export function buildGrammars(
         return new pexprs.Lex(visit(node.children[1])).withSource(interval(node));
 
       case 'Base_application': {
-        const ruleName = node.children[0].sourceString;
-        const params =
-          node.children[1].children.length > 0
-            ? visitParams(node.children[1].children[0])
-            : [];
-        return new pexprs.Apply(ruleName, params).withSource(interval(node));
+        const [rule, ps] = node.children;
+        const params = ps.children.length > 0 ? visitParams(ps.children[0]) : [];
+        return new pexprs.Apply(rule.sourceString, params).withSource(interval(node));
       }
-      case 'Base_range':
+      case 'Base_range': {
+        const [from, , to] = node.children;
         return new pexprs.Range(
-          visitOneCharTerminal(node.children[0]),
-          visitOneCharTerminal(node.children[2])
+          visitOneCharTerminal(from),
+          visitOneCharTerminal(to)
         ).withSource(interval(node));
-      case 'Base_terminal':
-        return new pexprs.Terminal(visitTerminal(node.children[0])).withSource(interval(node));
-      case 'Base_paren':
-        return visit(node.children[1]);
+      }
+      case 'Base_terminal': {
+        const [expr] = node.children;
+        return new pexprs.Terminal(visitTerminal(expr)).withSource(interval(node));
+      }
+      case 'Base_paren': {
+        const [, x] = node.children;
+        return visit(x);
+      }
 
       // Passthrough cases (implicit in the JS version via Semantics defaults).
       case 'Rule':
