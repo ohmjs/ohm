@@ -1756,11 +1756,11 @@ export class Compiler {
       asm.i32Eq();
       asm.condBreak(asm.depthOf('failure'));
 
-      // If tmp is a high surrogate, skip the low surrogate.
+      // Skip the low surrogate if tmp is a high surrogate (0 or 1).
       asm.tmpIsHighSurrogate();
-      asm.if(w.blocktype.empty, () => {
-        asm.incPos();
-      });
+      asm.globalGet('pos');
+      asm.emit(instr.i32.add);
+      asm.globalSet('pos');
     }, failureId);
   }
 
