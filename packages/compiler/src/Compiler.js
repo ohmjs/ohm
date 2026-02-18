@@ -841,7 +841,7 @@ export class Compiler {
       case 'Any':
         return 'any character';
       case 'Range':
-        return `${JSON.stringify(String.fromCodePoint(exp.lo))}..${JSON.stringify(String.fromCodePoint(exp.hi))}`;
+        return [exp.lo, exp.hi].map(cp => JSON.stringify(String.fromCodePoint(cp))).join('..');
       case 'Terminal':
         return JSON.stringify(exp.value);
       case 'End':
