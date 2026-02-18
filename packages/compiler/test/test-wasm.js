@@ -1130,7 +1130,7 @@ test('caseInsensitive', async t => {
 
 test('caseInsensitive: Unicode', async t => {
   // Accented Latin characters
-  const g1 = ohm.grammar(`G { start = caseInsensitive<"café"> }`);
+  const g1 = ohm.grammar('G { start = caseInsensitive<"café"> }');
   const wg1 = await toWasmGrammar(g1);
   t.is(matchWithInput(wg1, 'café'), 1);
   t.is(matchWithInput(wg1, 'CAFÉ'), 1);
@@ -1138,7 +1138,7 @@ test('caseInsensitive: Unicode', async t => {
   t.is(matchWithInput(wg1, 'caff'), 0);
 
   // Cyrillic
-  const g2 = ohm.grammar(`G { start = caseInsensitive<"Привет"> }`);
+  const g2 = ohm.grammar('G { start = caseInsensitive<"Привет"> }');
   const wg2 = await toWasmGrammar(g2);
   t.is(matchWithInput(wg2, 'Привет'), 1);
   t.is(matchWithInput(wg2, 'привет'), 1);
@@ -1146,7 +1146,7 @@ test('caseInsensitive: Unicode', async t => {
   t.is(matchWithInput(wg2, 'Привеx'), 0);
 
   // Mixed ASCII + non-ASCII
-  const g3 = ohm.grammar(`G { start = caseInsensitive<"naïve"> }`);
+  const g3 = ohm.grammar('G { start = caseInsensitive<"naïve"> }');
   const wg3 = await toWasmGrammar(g3);
   t.is(matchWithInput(wg3, 'naïve'), 1);
   t.is(matchWithInput(wg3, 'NAÏVE'), 1);

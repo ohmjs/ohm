@@ -180,7 +180,7 @@ export class Grammar {
           let re = cache[stringIdx];
           if (!re) {
             // The pattern is pre-escaped at compile time.
-            re = cache[stringIdx] = new RegExp(this._failureDescriptions[stringIdx], 'iy');
+            re = cache[stringIdx] = new RegExp(this._strings[stringIdx], 'iy');
           }
           re.lastIndex = pos.value;
           const arr = re.exec(input.value);
@@ -214,7 +214,7 @@ export class Grammar {
   private _input = '';
 
   /** @internal */
-  public _failureDescriptions: string[] = [];
+  public _strings: string[] = [];
 
   /*
    * Wasm heap memory management
@@ -353,8 +353,8 @@ export class Grammar {
       this._ruleIds.set(ruleName, this._ruleIds.size);
       this._ruleNames.push(ruleName);
     }
-    for (const str of parseStringTable(module, 'failureDescriptions')) {
-      this._failureDescriptions.push(str);
+    for (const str of parseStringTable(module, 'strings')) {
+      this._strings.push(str);
     }
   }
 
@@ -412,7 +412,7 @@ export class Grammar {
   }
 
   getFailureDescription(id: number): string {
-    return this._failureDescriptions[id];
+    return this._strings[id];
   }
 
   getMemorySizeBytes(): number {

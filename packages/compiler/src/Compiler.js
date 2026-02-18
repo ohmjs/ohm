@@ -836,11 +836,11 @@ export class Compiler {
     // The rule ID is a 0-based index that's mapped to the name.
     // It is *not* the same as the function index of the rule's eval function.
     this.ruleIdByName = new StringTable();
-    this._failureDescriptions = new StringTable();
+    this._strings = new StringTable();
 
     // Ensure "end of input" is always at index 0, so the runtime can use it
     // for the implicit end check.
-    this._endOfInputFailureId = this._failureDescriptions.add('end of input');
+    this._endOfInputFailureId = this._strings.add('end of input');
 
     this._maxMemoizedRuleId = -1;
 
@@ -858,7 +858,7 @@ export class Compiler {
   }
 
   getOrAddFailure(str) {
-    return this._failureDescriptions.add(str);
+    return this._strings.add(str);
   }
 
   // Returns a failure description string for the given expression, or null
@@ -877,7 +877,7 @@ export class Compiler {
         return 'end of input';
       case 'Apply': {
         if (exp.descriptionId != null && exp.descriptionId >= 0) {
-          return this._failureDescriptions.getStr(exp.descriptionId);
+          return this._strings.getStr(exp.descriptionId);
         }
         if (exp.ruleName === 'end') return 'end of input';
         if (exp.ruleName === 'any') return 'any character';
@@ -1105,7 +1105,7 @@ export class Compiler {
           }
           rules.push([exp.ruleName, ruleInfo]);
           const descId = ruleInfo.description
-            ? this._failureDescriptions.add(ruleInfo.description)
+            ? this._strings.add(ruleInfo.description)
             : -1;
           return ir.apply(
             exp.ruleName,
@@ -1211,7 +1211,7 @@ export class Compiler {
     const restoreFailurePos = name === this._applySpacesImplicit.ruleName;
 
     const descriptionId = ruleInfo.description
-      ? this._failureDescriptions.add(ruleInfo.description)
+      ? this._strings.add(ruleInfo.description)
       : -1;
     const hasDescription = descriptionId >= 0;
 
@@ -1468,7 +1468,7 @@ export class Compiler {
       w.elemsec([w.elem(w.tableidx(0), [instr.i32.const, w.i32(0), instr.end], tableData)]),
       mergeSections(w.SECTION_ID_CODE, prebuilt.codesec, codes),
       w.customsec(this.buildStringTable('ruleNames', ruleNames)),
-      w.customsec(this.buildStringTable('failureDescriptions', this._failureDescriptions)),
+      w.customsec(this.buildStringTable('strings', this._strings)),
       w.customsec(this.buildMemoizedRuleCountSection()),
       w.namesec(w.namedata(w.modulenamesubsec(this.grammar.name))),
     ]);
@@ -2092,7 +2092,7 @@ export class Compiler {
     } else {
       // Unicode path: whole-string host callout
       const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const strIdx = this._failureDescriptions.add(escaped);
+      const strIdx = this._strings.add(escaped);
       this.wrapTerminalLike(() => {
         asm.i32Const(strIdx);
         asm.callPrebuiltFunc('doMatchCaseInsensitive');
