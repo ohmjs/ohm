@@ -3,13 +3,11 @@
 
 import type {CstNode} from 'ohm-js';
 
-import * as ohm from 'ohm-js-legacy';
 import * as errors from 'ohm-js-legacy/src/errors.js';
+import * as pexprs from 'ohm-js-legacy/src/pexprs-build.js';
 import {Grammar} from 'ohm-js-legacy/src/Grammar.js';
 import {GrammarDecl} from 'ohm-js-legacy/src/GrammarDecl.js';
 import {Interval} from 'ohm-js-legacy/src/Interval.js';
-
-const {pexprs} = ohm;
 
 const superSplicePlaceholder = Object.create(pexprs.PExpr.prototype);
 

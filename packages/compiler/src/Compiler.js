@@ -1,9 +1,11 @@
 import * as w from '@wasmgroundup/emit';
-import * as ohm from 'ohm-js-legacy';
+import * as pexprs from 'ohm-js-legacy/src/pexprs-build.js';
+import {Grammar} from 'ohm-js-legacy/src/Grammar.js';
 // import wabt from 'wabt';
 
 import * as ir from './ir.ts';
 import * as prebuilt from '../build/ohmRuntime.wasm_sections.ts';
+import {grammar as parseGrammar} from './parseGrammars.ts';
 
 const WASM_PAGE_SIZE = 64 * 1024;
 
@@ -24,7 +26,6 @@ const EMIT_GENERALIZED_RULES = false;
 const CHAR_CODE_END = 0xffffffff;
 
 const {instr} = w;
-const {pexprs} = ohm;
 
 // Constants for Wasm 3.0 (stuff not in @wasmgroundup/emit).
 const wasm3 = {
@@ -810,8 +811,6 @@ Assembler.CST_NODE_HEADER_SIZE_BYTES = 8;
 Assembler.STACK_FRAME_SIZE_BYTES = 8;
 Assembler.DESCRIPTION_FRAME_SIZE_BYTES = 12;
 
-export {grammar, grammars} from './parseGrammars.ts';
-
 export class Compiler {
   constructor(grammar) {
     assert(grammar && 'superGrammar' in grammar, 'Not a valid grammar: ' + grammar);
@@ -819,14 +818,14 @@ export class Compiler {
     // Detect the so-called "dual package hazard". Since we use the identity
     // of the pexpr constructors when compiling the grammar, it gets confusing
     // if there are multiple copies of Ohm.
-    if (!(grammar instanceof ohm.ohmGrammar.constructor)) {
+    if (!(grammar instanceof Grammar)) {
       // If we have the source, recover by instantiating the grammar anew.
       // Fail otherwise.
       assert(
         !!grammar.source,
         'Grammar smells fishy. Do you have multiple instances of ohm-js?'
       );
-      grammar = ohm.grammar(grammar.source.contents);
+      grammar = parseGrammar(grammar.source.contents);
     }
 
     this.grammar = grammar;

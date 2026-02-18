@@ -1,6 +1,7 @@
-import {Compiler, grammars as parseGrammars} from './Compiler.js';
+import {Compiler} from './Compiler.js';
+import {grammars as parseGrammars} from './parseGrammars.ts';
 
-interface CompileOptions {
+export interface CompileOptions {
   grammarName?: string;
 }
 

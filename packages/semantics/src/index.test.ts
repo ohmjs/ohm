@@ -1,7 +1,7 @@
 /* global URL */
 
 import * as ohm from '@ohm-js/compiler/compat';
-import type {CstNode, ListNode, SucceededMatchResult, TerminalNode} from '@ohm-js/compiler';
+import type {CstNode, ListNode, SucceededMatchResult, TerminalNode} from 'ohm-js';
 import test from 'ava';
 import {readFileSync} from 'node:fs';
 import * as ohmJs from 'ohm-js';

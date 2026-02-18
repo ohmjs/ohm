@@ -5,11 +5,20 @@
 import {Grammar as WasmGrammar} from 'ohm-js';
 import type {CstNode} from 'ohm-js';
 
+import {Grammar} from 'ohm-js-legacy/src/Grammar.js';
+
+import BuiltInRules from './built-in-rules.ts';
 import {buildGrammars} from './buildGrammar.ts';
 import ohmGrammarWasmBytes from './ohm-grammar-wasm.ts';
 
 // Initialize the WASM meta-grammar synchronously at module load time.
 const wasmMetaGrammar = new WasmGrammar(ohmGrammarWasmBytes);
+
+// Ensure Grammar.BuiltInRules is initialized (may already be set if
+// ohm-js-legacy's main entry was imported elsewhere).
+if (!Grammar.BuiltInRules) {
+  Grammar.BuiltInRules = BuiltInRules;
+}
 
 export function grammar(source: string): any {
   const ns = grammars(source);

@@ -12,8 +12,11 @@ const buf = fs.readFileSync(inputPath);
 const base64 = Buffer.from(buf).toString('base64');
 
 const output = `// Auto-generated — do not edit.
-const base64 = ${JSON.stringify(base64)};
-const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+const base64 =
+  ${JSON.stringify(base64)};
+const binary = atob(base64);
+const bytes = new Uint8Array(binary.length);
+for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
 export default bytes;
 `;
 

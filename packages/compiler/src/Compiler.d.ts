@@ -1,7 +1,5 @@
 import type {Grammar} from 'ohm-js-legacy';
 
-export {grammar, grammars} from './parseGrammars.ts';
-
 export class Compiler {
   grammar: Grammar;
 
