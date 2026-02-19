@@ -5,9 +5,8 @@
  * The rule ID space is divided into fixed-size blocks of 16 entries.
  * The index is a 2D array: index[pos][blockIdx] -> block pointer,
  * where numMemoBlocks = ceil(numMemoizedRules / 16).
- * numMemoizedRules is determined at compile time and stored in a
- * custom Wasm section ('memoizedRuleCount'); the runtime reads it
- * at instantiation and calls setNumMemoizedRules().
+ * numMemoizedRules is determined at compile time and set by the
+ * Wasm start function at instantiation.
  * The index is allocated upfront; blocks are allocated on first write.
  *
  *   Index: a flat array of block pointers, indexed by
@@ -238,16 +237,11 @@ export function resetHeap(): void {
 }
 
 let numMemoizedRules: i32 = 0;
+export let numRules: i32 = 0;
 
 export function setNumMemoizedRules(n: i32): void {
   numMemoizedRules = n;
   numMemoBlocks = (n + MEMO_BLOCK_ENTRIES - 1) / MEMO_BLOCK_ENTRIES;
-}
-
-let numRules: i32 = 0;
-
-export function setNumRules(n: i32): void {
-  numRules = n;
 }
 
 function initMemoTable(inputLenBytes: usize): void {

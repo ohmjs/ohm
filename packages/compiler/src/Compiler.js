@@ -1444,15 +1444,6 @@ export class Compiler {
     return w.custom(w.name('ruleNames'), w.vec(ruleNames.map((n, i) => w.name(n))));
   }
 
-  buildMemoizedRuleCountSection() {
-    const buf = [];
-    buf.push(this._maxMemoizedRuleId & 0xff);
-    buf.push((this._maxMemoizedRuleId >> 8) & 0xff);
-    buf.push((this._maxMemoizedRuleId >> 16) & 0xff);
-    buf.push((this._maxMemoizedRuleId >> 24) & 0xff);
-    return w.custom(w.name('memoizedRuleCount'), buf);
-  }
-
   buildStringTable(sectionName, tableOrArr) {
     const keys = Array.isArray(tableOrArr) ? tableOrArr : tableOrArr.keys();
     return w.custom(w.name(sectionName), w.vec(keys.map(n => w.name(n))));
@@ -1492,8 +1483,6 @@ export class Compiler {
       'recordedFailuresAt',
       'recordFailures',
       'resetHeap',
-      'setNumMemoizedRules',
-      'setNumRules',
     ].forEach(name => {
       exports.push(w.export_(name, w.exportdesc.func(prebuiltFuncidx(name))));
     });
@@ -1531,7 +1520,6 @@ export class Compiler {
       mergeSections(w.SECTION_ID_CODE, prebuilt.codesec, codes),
       w.customsec(this.buildStringTable('ruleNames', ruleNames)),
       w.customsec(this.buildStringTable('strings', this._strings)),
-      w.customsec(this.buildMemoizedRuleCountSection()),
       w.namesec(w.namedata(w.modulenamesubsec(this.grammar.name))),
     ]);
     const bytes = Uint8Array.from(mod.flat(Infinity));
@@ -1615,6 +1603,11 @@ export class Compiler {
       }
     }
     asm.addFunction('start', [], [], () => {
+      asm.i32Const(this.ruleIdByName.size);
+      asm.globalSet('numRules');
+      // setNumMemoizedRules also computes numMemoBlocks.
+      asm.i32Const(this._maxMemoizedRuleId);
+      asm.callPrebuiltFunc('setNumMemoizedRules');
       asm.emit(instr.call, w.funcidx(prebuilt.startFuncidx));
     });
     ruleDecls.push(asm._functionDecls.at(-1));
