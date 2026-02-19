@@ -50,6 +50,9 @@ declare function isRuleSyntactic(ruleId: i32): bool;
 declare function matchUnicodeChar(categoryBitmap: i32): bool;
 declare function matchCaseInsensitive(stringIdx: i32): bool;
 
+@external("ohmRuntime", "fillInputBuffer")
+declare function fillInputBuffer(dest: i32, len: i32): i32;
+
 @inline const IMPLICIT_SPACE_SKIPPING = true;
 
 // TODO: Find a way to share these constants with JS?
@@ -118,6 +121,7 @@ let preallocEmptyIterBase: i32 = 0;
 export let pos: u32 = 0;
 export let endPos: u32 = 0;
 export let input: externref = null;
+export let inputBuf: usize = 0;
 
 // Block-sparse memo table state.
 export let numMemoBlocks: i32 = 0;    // ceil(numMemoizedRules / MEMO_BLOCK_ENTRIES)
@@ -274,6 +278,8 @@ function initPreallocatedNodes(): void {
 
 function doMatch(startRuleId: i32): ApplyResult {
   endPos = jsStringLength(input);
+  inputBuf = heap.alloc(<usize>endPos << 1);  // 2 bytes per UTF-16 code unit
+  fillInputBuffer(<i32>inputBuf, endPos);
   initMemoTable(endPos);
   initPreallocatedNodes();
 

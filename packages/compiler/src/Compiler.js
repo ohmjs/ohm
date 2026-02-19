@@ -40,16 +40,6 @@ const wasm3 = {
   instr: {ref: {null: 0xd0}},
 };
 
-const defaultImports = [
-  // func codePointAt(string: externref, index: i32) -> i32
-  {
-    module: 'wasm:js-string',
-    name: 'charCodeAt',
-    paramTypes: [wasm3.valtype.externref, w.valtype.i32],
-    resultTypes: [w.valtype.i32],
-  },
-];
-
 const isNonNull = x => x != null;
 
 function assert(cond, msg) {
@@ -368,6 +358,10 @@ class Assembler {
     this.emit(instr.i32.load8_u, w.memarg(Assembler.ALIGN_1_BYTE, offset));
   }
 
+  i32Load16u(offset = 0) {
+    this.emit(instr.i32.load16_u, w.memarg(Assembler.ALIGN_2_BYTES, offset));
+  }
+
   i32Mul() {
     this.emit(instr.i32.mul);
   }
@@ -492,9 +486,12 @@ class Assembler {
     this.ifElse(
       w.blocktype.i32,
       () => {
-        this.globalGet('input');
+        this.globalGet('inputBuf');
         this.globalGet('pos');
-        this.emit(instr.call, w.funcidx(prebuilt.importsec.entryCount));
+        this.i32Const(1);
+        this.emit(instr.i32.shl); // pos * 2
+        this.i32Add(); // inputBuf + pos * 2
+        this.i32Load16u(); // load UTF-16 code unit
       },
       () => {
         this.i32Const(CHAR_CODE_END);
@@ -835,6 +832,7 @@ class Assembler {
   }
 }
 Assembler.ALIGN_1_BYTE = 0;
+Assembler.ALIGN_2_BYTES = 1;
 Assembler.ALIGN_4_BYTES = 2;
 Assembler.CST_NODE_HEADER_SIZE_BYTES = 8;
 
@@ -860,8 +858,7 @@ export class Compiler {
 
     this.grammar = grammar;
 
-    // For any additional imports outside the prebuilt ones.
-    this.importDecls = [...defaultImports];
+    this.importDecls = [];
 
     // The rule ID is a 0-based index that's mapped to the name.
     // It is *not* the same as the function index of the rule's eval function.
@@ -1549,9 +1546,9 @@ export class Compiler {
   // Returns the list of dummy functions that need to be added to the module.
   rewriteDebugLabels(decls) {
     // Careful: this.importDecls *doesn't* include the prebuilt imports (we know how many there
-    // are, but it's otherwise treated as an opaque blog). But it *does* include `defaultImports`,
-    // so we account for those in nextIdx, and for the prebuilt imports in `intoFuncidx`.
-    let nextIdx = defaultImports.length;
+    // are, but it's otherwise treated as an opaque blob). But it *does* include any non-debug
+    // imports, so we account for those in nextIdx, and for the prebuilt imports in `intoFuncidx`.
+    let nextIdx = 0;
     const intoFuncidx = i => w.funcidx(prebuilt.importsec.entryCount + i);
     const names = new Set();
     for (let i = 0; i < decls.length; i++) {
