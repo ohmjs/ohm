@@ -1852,7 +1852,7 @@ export class Compiler {
 
     const {asm} = this;
 
-    const isInlineRule = this.rules.get(exp.ruleName)?.isInlineRule;
+    const isInlineRule = this.rules.get(exp.ruleName)?._isInlineRule;
     if (this._singleUseRules.has(exp.ruleName) && (INLINE_SINGLE_USE_RULES || isInlineRule)) {
       this.emitInlinedApply(exp);
       return;
