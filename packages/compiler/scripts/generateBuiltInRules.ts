@@ -48,11 +48,11 @@ lines.push('// Auto-generated from built-in-rules.ohm — do not edit.');
 lines.push('// Regenerate with: node scripts/generateBuiltInRules.ts');
 lines.push('');
 lines.push("import * as pexprs from 'ohm-js-legacy/src/pexprs-build.js';");
-lines.push("import {Grammar} from 'ohm-js-legacy/src/Grammar.js';");
+lines.push("import {Grammar as ParsedGrammar} from 'ohm-js-legacy/src/Grammar.js';");
 lines.push("import {GrammarDecl} from 'ohm-js-legacy/src/GrammarDecl.js';");
 lines.push('');
 lines.push("const decl = new GrammarDecl('BuiltInRules');");
-lines.push('decl.withSuperGrammar(Grammar.ProtoBuiltInRules);');
+lines.push('decl.withSuperGrammar(ParsedGrammar.ProtoBuiltInRules);');
 lines.push('');
 
 const protoRules = g.superGrammar.rules;

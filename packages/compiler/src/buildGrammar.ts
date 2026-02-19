@@ -1,11 +1,11 @@
 // CST visitor: takes a WASM CST root node (from matching the Ohm meta-grammar)
-// and produces v17 Grammar objects using v17's GrammarDecl for validation.
+// and produces ParsedGrammar objects using GrammarDecl for validation.
 
 import type {CstNode} from 'ohm-js';
 
 import * as errors from 'ohm-js-legacy/src/errors.js';
 import * as pexprs from 'ohm-js-legacy/src/pexprs-build.js';
-import {Grammar} from 'ohm-js-legacy/src/Grammar.js';
+import {Grammar as ParsedGrammar} from 'ohm-js-legacy/src/Grammar.js';
 import {GrammarDecl} from 'ohm-js-legacy/src/GrammarDecl.js';
 import {Interval} from 'ohm-js-legacy/src/Interval.js';
 
@@ -96,7 +96,7 @@ function makeSeq(factors: any[]): any {
   return flattened.length === 1 ? flattened[0] : new pexprs.Seq(flattened);
 }
 
-// Returns an array of Grammar instances for the given CST root node.
+// Returns an array of ParsedGrammar instances for the given CST root node.
 // Each grammar will be assigned into `namespace` under its declared name.
 export function buildGrammars(
   rootNode: CstNode,
@@ -113,7 +113,7 @@ export function buildGrammars(
     return new Interval(sourceString, node.source.startIdx, node.source.endIdx);
   }
 
-  // A visitor that produces Grammar instances from the CST.
+  // A visitor that produces ParsedGrammar instances from the CST.
   function visit(node: CstNode): any {
     switch (node.ctorName) {
       case 'Grammars':
@@ -161,7 +161,7 @@ export function buildGrammars(
         // the body, because it might contain an inline rule definition.
         if (
           !decl.defaultStartRule &&
-          decl.ensureSuperGrammar() !== Grammar.ProtoBuiltInRules
+          decl.ensureSuperGrammar() !== ParsedGrammar.ProtoBuiltInRules
         ) {
           decl.withDefaultStartRule(currentRuleName);
         }

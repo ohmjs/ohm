@@ -1,6 +1,6 @@
 import * as w from '@wasmgroundup/emit';
 import * as pexprs from 'ohm-js-legacy/src/pexprs-build.js';
-import {Grammar} from 'ohm-js-legacy/src/Grammar.js';
+import {Grammar as ParsedGrammar} from 'ohm-js-legacy/src/Grammar.js';
 // import wabt from 'wabt';
 
 import * as ir from './ir.ts';
@@ -848,7 +848,7 @@ export class Compiler {
     // Detect the so-called "dual package hazard". Since we use the identity
     // of the pexpr constructors when compiling the grammar, it gets confusing
     // if there are multiple copies of Ohm.
-    if (!(grammar instanceof Grammar)) {
+    if (!(grammar instanceof ParsedGrammar)) {
       // If we have the source, recover by instantiating the grammar anew.
       // Fail otherwise.
       assert(
