@@ -40,8 +40,6 @@ const wasm3 = {
   instr: {ref: {null: 0xd0}},
 };
 
-const defaultImports = [];
-
 const isNonNull = x => x != null;
 
 function assert(cond, msg) {
@@ -860,8 +858,7 @@ export class Compiler {
 
     this.grammar = grammar;
 
-    // For any additional imports outside the prebuilt ones.
-    this.importDecls = [...defaultImports];
+    this.importDecls = [];
 
     // The rule ID is a 0-based index that's mapped to the name.
     // It is *not* the same as the function index of the rule's eval function.
@@ -1549,9 +1546,9 @@ export class Compiler {
   // Returns the list of dummy functions that need to be added to the module.
   rewriteDebugLabels(decls) {
     // Careful: this.importDecls *doesn't* include the prebuilt imports (we know how many there
-    // are, but it's otherwise treated as an opaque blog). But it *does* include `defaultImports`,
-    // so we account for those in nextIdx, and for the prebuilt imports in `intoFuncidx`.
-    let nextIdx = defaultImports.length;
+    // are, but it's otherwise treated as an opaque blob). But it *does* include any non-debug
+    // imports, so we account for those in nextIdx, and for the prebuilt imports in `intoFuncidx`.
+    let nextIdx = 0;
     const intoFuncidx = i => w.funcidx(prebuilt.importsec.entryCount + i);
     const names = new Set();
     for (let i = 0; i < decls.length; i++) {
