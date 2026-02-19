@@ -2,11 +2,11 @@
 // Regenerate with: node scripts/generateBuiltInRules.ts
 
 import * as pexprs from 'ohm-js-legacy/src/pexprs-build.js';
-import {Grammar} from 'ohm-js-legacy/src/Grammar.js';
+import {Grammar as ParsedGrammar} from 'ohm-js-legacy/src/Grammar.js';
 import {GrammarDecl} from 'ohm-js-legacy/src/GrammarDecl.js';
 
 const decl = new GrammarDecl('BuiltInRules');
-decl.withSuperGrammar(Grammar.ProtoBuiltInRules);
+decl.withSuperGrammar(ParsedGrammar.ProtoBuiltInRules);
 
 decl.define(
   'alnum',

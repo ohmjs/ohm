@@ -141,6 +141,7 @@ export function buildGrammar(match, namespace, optOhmGrammarForTesting, options)
       } else {
         decl.define(inlineRuleName, currentRuleFormals, body, null, source);
       }
+      decl.rules[inlineRuleName]._isInlineRule = true;
       const params = currentRuleFormals.map(formal => builder.app(formal));
       return builder.app(inlineRuleName, params).withSource(body.source);
     },
