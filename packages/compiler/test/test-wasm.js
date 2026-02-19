@@ -946,6 +946,19 @@ test('arithmetic', async t => {
   t.is(matchWithInput(wasmGrammar, '1'), 1);
 });
 
+test('overriding a built-in rule', async t => {
+  const g = ohm.grammar(`
+    G {
+      start = digit+
+      digit += "x"
+    }`);
+  const wasmGrammar = await toWasmGrammar(g);
+  t.is(matchWithInput(wasmGrammar, '123'), 1);
+  t.is(matchWithInput(wasmGrammar, 'x'), 1);
+  t.is(matchWithInput(wasmGrammar, '1x2'), 1);
+  t.is(matchWithInput(wasmGrammar, 'abc'), 0);
+});
+
 test('specialized rule names', t => {
   const g = ohm.grammar(`
     G {
