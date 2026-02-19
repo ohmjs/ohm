@@ -444,12 +444,12 @@ export class Grammar {
 
   /** @internal */
   private _fillInputBuffer(ptr: number, length: number): number {
-    const encoder = new TextEncoder();
     const {memory} = (this._instance as any).exports;
-    const buf = new Uint8Array(memory.buffer, ptr, length);
-    const {read, written} = encoder.encodeInto(this._input, buf);
-    assert(read === this._input.length, 'Input was not fully read');
-    return written;
+    const buf = new Uint16Array(memory.buffer, ptr, length);
+    for (let i = 0; i < length; i++) {
+      buf[i] = this._input.charCodeAt(i);
+    }
+    return length;
   }
 
   getRightmostFailurePosition(): number {

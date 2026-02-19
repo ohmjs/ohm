@@ -40,15 +40,7 @@ const wasm3 = {
   instr: {ref: {null: 0xd0}},
 };
 
-const defaultImports = [
-  // func codePointAt(string: externref, index: i32) -> i32
-  {
-    module: 'wasm:js-string',
-    name: 'charCodeAt',
-    paramTypes: [wasm3.valtype.externref, w.valtype.i32],
-    resultTypes: [w.valtype.i32],
-  },
-];
+const defaultImports = [];
 
 const isNonNull = x => x != null;
 
@@ -368,6 +360,10 @@ class Assembler {
     this.emit(instr.i32.load8_u, w.memarg(Assembler.ALIGN_1_BYTE, offset));
   }
 
+  i32Load16u(offset = 0) {
+    this.emit(instr.i32.load16_u, w.memarg(Assembler.ALIGN_2_BYTES, offset));
+  }
+
   i32Mul() {
     this.emit(instr.i32.mul);
   }
@@ -492,9 +488,12 @@ class Assembler {
     this.ifElse(
       w.blocktype.i32,
       () => {
-        this.globalGet('input');
+        this.globalGet('inputBuf');
         this.globalGet('pos');
-        this.emit(instr.call, w.funcidx(prebuilt.importsec.entryCount));
+        this.i32Const(1);
+        this.emit(instr.i32.shl); // pos * 2
+        this.i32Add(); // inputBuf + pos * 2
+        this.i32Load16u(); // load UTF-16 code unit
       },
       () => {
         this.i32Const(CHAR_CODE_END);
@@ -835,6 +834,7 @@ class Assembler {
   }
 }
 Assembler.ALIGN_1_BYTE = 0;
+Assembler.ALIGN_2_BYTES = 1;
 Assembler.ALIGN_4_BYTES = 2;
 Assembler.CST_NODE_HEADER_SIZE_BYTES = 8;
 
