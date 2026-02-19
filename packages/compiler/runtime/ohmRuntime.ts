@@ -99,9 +99,10 @@ type RuleEvalResult = i32;
 
 @inline const RULE_EVAL_SUCCESS_FLAG = 1;
 
-// Preallocated terminal node for matchLength=1 (the common case for
-// single-character matches: digit, letter, any (ASCII), etc.).
-let preallocTerminal1: i32 = 0;
+// Preallocated terminal nodes for matchLength 0..8.
+// Indexed by matchLength; each entry is CST_NODE_OVERHEAD bytes.
+@inline const MAX_PREALLOC_TERMINAL_LEN: i32 = 8;
+let preallocTerminalBase: i32 = 0;
 
 // Base pointer for preallocated nonterminal table (bump-heap allocated).
 // Each entry is NODE_WITH_1_CHILD bytes, indexed by ruleId.
@@ -247,11 +248,15 @@ function initMemoTable(inputLenBytes: usize): void {
 }
 
 function initPreallocatedNodes(): void {
-  preallocTerminal1 = <i32>heap.alloc(<usize>CST_NODE_OVERHEAD);
-  cstSetCount(preallocTerminal1, 0);
-  cstSetMatchLength(preallocTerminal1, 1);
-  cstSetTypeAndDetails(preallocTerminal1, NODE_TYPE_TERMINAL);
-  cstSetFailurePos(preallocTerminal1, 0);
+  const termCount = MAX_PREALLOC_TERMINAL_LEN + 1;
+  preallocTerminalBase = <i32>heap.alloc(<usize>(termCount * CST_NODE_OVERHEAD));
+  for (let i: i32 = 0; i <= MAX_PREALLOC_TERMINAL_LEN; i++) {
+    const ptr = preallocTerminalBase + i * CST_NODE_OVERHEAD;
+    cstSetCount(ptr, 0);
+    cstSetMatchLength(ptr, i);
+    cstSetTypeAndDetails(ptr, NODE_TYPE_TERMINAL);
+    cstSetFailurePos(ptr, 0);
+  }
 
   // Allocate nonterminal table — lazily initialized on first use per ruleId.
   const maxRules: i32 = 512;
@@ -366,7 +371,7 @@ export function evalApplyPrealloc(ruleId: i32): ApplyResult {
         cstSetMatchLength(ptr, 1);
         cstSetTypeAndDetails(ptr, (ruleId << 2) | NODE_TYPE_NONTERMINAL);
         cstSetFailurePos(ptr, 0);
-        store<i32>(<usize>(ptr + CST_NODE_OVERHEAD), preallocTerminal1);
+        store<i32>(<usize>(ptr + CST_NODE_OVERHEAD), preallocTerminalBase + CST_NODE_OVERHEAD);
       }
       bindings[origNumBindings] = ptr;
       return true;
@@ -439,13 +444,15 @@ export function handleLeftRecursion(origPos: u32, ruleId: i32, origNumBindings: 
 }
 
 export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
-  if (endIdx - startIdx === 1) {
-    bindings.push(preallocTerminal1);
-    return preallocTerminal1;
+  const matchLen = endIdx - startIdx;
+  if (matchLen <= MAX_PREALLOC_TERMINAL_LEN) {
+    const ptr = preallocTerminalBase + matchLen * CST_NODE_OVERHEAD;
+    bindings.push(ptr);
+    return ptr;
   }
   const ptr: i32 = <i32>heap.alloc(<usize>CST_NODE_OVERHEAD);
   cstSetCount(ptr, 0);
-  cstSetMatchLength(ptr, endIdx - startIdx);
+  cstSetMatchLength(ptr, matchLen);
   cstSetTypeAndDetails(ptr, NODE_TYPE_TERMINAL);
   cstSetFailurePos(ptr, 0);
   bindings.push(<i32>ptr);
