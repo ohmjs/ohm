@@ -733,8 +733,9 @@ test('basic memoization', async t => {
   t.true(childB.children[0].isTerminal());
   t.is(childB.children[0].matchLength, 1);
 
-  // Expect memo for `b` at position 1, and `start` at position 0.
-  t.is(getMemo(1, 'b'), childB._base);
+  // `b` is applied only once, so it's not memoized.
+  t.is(getMemo(1, 'b'), 0);
+  // `start` is the start rule, so it's always memoized.
   t.is(getMemo(0, 'start'), root._base);
 });
 
