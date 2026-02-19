@@ -21,6 +21,13 @@ const IMPLICIT_SPACE_SKIPPING = true;
 // This doesn't seem to make a big performance difference either way.
 const EMIT_GENERALIZED_RULES = false;
 
+// When true, emit rule bodies directly at the call site for all single-use
+// rules (not just inline rules like AddExpr_plus). However, this means that
+// such rules can't be used as start rules via match(), unless we *also* emit
+// the body normally, which blows up code size. Hence, this is disabled for
+// now.
+const INLINE_SINGLE_USE_RULES = false;
+
 // A sentinel value representing "end of input".
 // This could be anything > 0xffff, really.
 const CHAR_CODE_END = 0xffffffff;
@@ -737,6 +744,17 @@ class Assembler {
     this.callPrebuiltFunc('newIterationNode');
   }
 
+  // Wrap the bindings accumulated since the last pushStackFrame() in a
+  // nonterminal node. Uses the saved pos/numBindings from the stack frame.
+  newNonterminalNodeFromStackFrame(ruleId) {
+    this.getSavedPos();
+    this.globalGet('pos');
+    this.i32Const(ruleId);
+    this.getSavedNumBindings();
+    this.i32Const(-1);
+    this.callPrebuiltFunc('newNonterminalNode');
+  }
+
   newCaseInsensitiveNode(ruleId) {
     this.getSavedPos();
     this.globalGet('pos');
@@ -790,6 +808,18 @@ class Assembler {
     this.globalGet('pos');
     this.i32Eq();
     this.callPrebuiltFunc('popFluffySavePoint');
+  }
+
+  // Pop the fluffy save point based on whether `ret` indicates success.
+  // On success, mark failures as fluffy if pos is at errorMessagePos;
+  // on failure, discard without marking.
+  popFluffySavePointOnResult() {
+    this.localGet('ret');
+    this.if(
+      w.blocktype.empty,
+      () => this.popFluffySavePointIfAtErrorPos(),
+      () => this.popFluffySavePoint(false)
+    );
   }
 
   ruleEvalReturn() {
@@ -1239,19 +1269,7 @@ export class Compiler {
       asm.emit(`BEGIN eval:${name}`);
       this.emitPExpr(ruleInfo.body);
 
-      // When a rule body succeeds and pos matches errorMessagePos, mark
-      // failures recorded DURING this rule eval as fluffy. This mirrors
-      // ohm-js's MatchState.eval_, which uses scoped failure recording.
-      asm.localGet('ret');
-      asm.if(
-        w.blocktype.empty,
-        () => {
-          asm.popFluffySavePointIfAtErrorPos();
-        },
-        () => {
-          asm.popFluffySavePoint(false);
-        }
-      );
+      asm.popFluffySavePointOnResult();
 
       // Handle rules with descriptions - must come BEFORE restoreFailurePos
       if (hasDescription) asm.handleDescriptionFailure(descriptionId);
@@ -1278,6 +1296,7 @@ export class Compiler {
     const {rules} = this;
     const patternsByRule = new Map();
     let hasCaseInsensitiveTerminals = false;
+    const refCounts = new Map();
 
     const specialize = exp =>
       ir.rewrite(exp, {
@@ -1314,6 +1333,9 @@ export class Compiler {
             }
             newRules.set(specializedName, {...ruleInfo, body, formals: []});
           }
+          // Count references for single-use rule detection.
+          refCounts.set(specializedName, (refCounts.get(specializedName) || 0) + 1);
+
           // Replace with an application of the specialized rule.
           return ir.apply(specializedName, app.descriptionId);
         },
@@ -1324,7 +1346,6 @@ export class Compiler {
       });
     specialize(ir.apply(this.grammar.defaultStartRule, -1));
 
-    this._maxMemoizedRuleId = this.ruleIdByName.size;
     // Make a special rule for implicit space skipping, with the same body
     // as the real `spaces` rule.
     const spacesInfo = getNotNull(rules, 'spaces');
@@ -1370,6 +1391,30 @@ export class Compiler {
         });
       }
     }
+
+    // Determine single-use rules: applied exactly once, not the start rule,
+    // and no description. (Rules like $spaces, $term, and caseInsensitive
+    // are never referenced via Apply in rule bodies, so they won't appear
+    // in refCounts and don't need explicit exclusion.)
+    this._singleUseRules = new Set();
+    for (const [name, count] of refCounts) {
+      const ruleInfo = newRules.get(name);
+      if (count === 1 && name !== this.grammar.defaultStartRule && !ruleInfo?.description) {
+        this._singleUseRules.add(name);
+      }
+    }
+
+    // Reassign rule IDs: memoized rules get low IDs, everything else
+    // gets high IDs. This shrinks the memo table index.
+    const shouldMemoize = name =>
+      !this._singleUseRules.has(name) && name !== 'caseInsensitive';
+    const allNames = this.ruleIdByName.keys();
+    this.ruleIdByName = new StringTable();
+    for (const name of allNames) {
+      if (shouldMemoize(name)) this.ruleIdByName.add(name);
+    }
+    this._maxMemoizedRuleId = this.ruleIdByName.size;
+    for (const name of allNames) this.ruleIdByName.add(name);
   }
 
   buildRuleNamesSection(ruleNames) {
@@ -1530,16 +1575,24 @@ export class Compiler {
   }
 
   functionDecls() {
+    const {asm} = this;
     const ruleDecls = [];
     for (const name of this.ruleIdByName.keys()) {
-      if (name === '$term') {
+      if (this.rules.get(name)?._isInlineRule && this._singleUseRules.has(name)) {
+        // Inline rules (e.g. AddExpr_plus) are always inlined in the generated
+        // code. Emit a stub that returns failure (0) in case they're called
+        // directly via match().
+        asm.addFunction(`$${name}`, [], [w.valtype.i32], () => {
+          asm.i32Const(0);
+        });
+        ruleDecls.push(asm._functionDecls.at(-1));
+      } else if (name === '$term') {
         ruleDecls.push(this.compileTerminalRule(name));
       } else {
         assert(!name.startsWith('$term'));
         ruleDecls.push(this.compileRule(name));
       }
     }
-    const {asm} = this;
     asm.addFunction('start', [], [], () => {
       asm.emit(instr.call, w.funcidx(prebuilt.startFuncidx));
     });
@@ -1798,12 +1851,17 @@ export class Compiler {
     }
 
     const {asm} = this;
+
+    const isInlineRule = this.rules.get(exp.ruleName)?._isInlineRule;
+    if (this._singleUseRules.has(exp.ruleName) && (INLINE_SINGLE_USE_RULES || isInlineRule)) {
+      this.emitInlinedApply(exp);
+      return;
+    }
+
     const ruleId = this.ruleId(exp.ruleName);
     asm.i32Const(ruleId);
 
-    // TODO: Should lifted expressions be memoized?
-    // TODO: Handle this at grammar parse time, not here.
-    if (exp.ruleName.includes('_') || ruleId >= this._maxMemoizedRuleId) {
+    if (ruleId >= this._maxMemoizedRuleId) {
       asm.callPrebuiltFunc('evalApplyNoMemo0');
     } else {
       asm.callPrebuiltFunc('evalApply0');
@@ -1812,6 +1870,29 @@ export class Compiler {
     // need to update the local failure position.
     asm.updateLocalFailurePos(() => asm.globalGet('rightmostFailurePos'));
     asm.localSet('ret');
+  }
+
+  emitInlinedApply(exp) {
+    const {asm} = this;
+    const ruleId = this.ruleId(exp.ruleName);
+    const ruleInfo = getNotNull(this.rules, exp.ruleName);
+
+    asm.pushStackFrame();
+    this._lexContextStack.push(!ruleInfo.isSyntactic);
+    asm.pushFluffySavePoint();
+    this.emitPExpr(ruleInfo.body);
+    asm.popFluffySavePointOnResult();
+    this._lexContextStack.pop();
+
+    // On success, wrap the body's bindings in a nonterminal node.
+    asm.localGet('ret');
+    asm.if(w.blocktype.empty, () => {
+      asm.newNonterminalNodeFromStackFrame(ruleId);
+      asm.localSet('ret');
+    });
+
+    asm.popStackFrame();
+    asm.updateLocalFailurePos(() => asm.globalGet('rightmostFailurePos'));
   }
 
   emitEnd(exp) {

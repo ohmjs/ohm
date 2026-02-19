@@ -245,6 +245,7 @@ export function buildGrammars(
         } else {
           decl.define(inlineRuleName, currentRuleFormals, body, null, source);
         }
+        decl.rules[inlineRuleName]._isInlineRule = true;
         const params = currentRuleFormals.map(formal => new pexprs.Apply(formal));
         return new pexprs.Apply(inlineRuleName, params).withSource(body.source);
       }
