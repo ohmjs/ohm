@@ -271,11 +271,13 @@ export class Grammar {
 
   /** @internal */
   private _initMemoConfig(module: WebAssembly.Module) {
+    const exports = (this._instance as any).exports;
     const sections = WebAssembly.Module.customSections(module, 'memoizedRuleCount');
     assert(sections.length === 1, 'Expected one memoizedRuleCount section');
     const view = new DataView(sections[0]);
     const count = view.getUint32(0, true); // little-endian
-    (this._instance as any).exports.setNumMemoizedRules(count);
+    exports.setNumMemoizedRules(count);
+    exports.setNumRules(this._ruleNames.length);
   }
 
   /** @internal */

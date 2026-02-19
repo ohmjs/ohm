@@ -1493,6 +1493,7 @@ export class Compiler {
       'recordFailures',
       'resetHeap',
       'setNumMemoizedRules',
+      'setNumRules',
     ].forEach(name => {
       exports.push(w.export_(name, w.exportdesc.func(prebuiltFuncidx(name))));
     });

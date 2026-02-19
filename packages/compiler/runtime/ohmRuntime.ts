@@ -237,8 +237,17 @@ export function resetHeap(): void {
   heap.reset();
 }
 
+let numMemoizedRules: i32 = 0;
+
 export function setNumMemoizedRules(n: i32): void {
+  numMemoizedRules = n;
   numMemoBlocks = (n + MEMO_BLOCK_ENTRIES - 1) / MEMO_BLOCK_ENTRIES;
+}
+
+let numRules: i32 = 0;
+
+export function setNumRules(n: i32): void {
+  numRules = n;
 }
 
 function initMemoTable(inputLenBytes: usize): void {
@@ -259,9 +268,10 @@ function initPreallocatedNodes(): void {
   }
 
   // Allocate nonterminal table — lazily initialized on first use per ruleId.
-  const maxRules: i32 = 512;
-  preallocNtBase = <i32>heap.alloc(<usize>(maxRules * NODE_WITH_1_CHILD));
-  memory.fill(<usize>preallocNtBase, 0, <usize>(maxRules * NODE_WITH_1_CHILD));
+  // Only non-memoized rules use prealloc, and they have ruleId >= numMemoizedRules.
+  const preallocCount = numRules - numMemoizedRules;
+  preallocNtBase = <i32>heap.alloc(<usize>(preallocCount * NODE_WITH_1_CHILD));
+  memory.fill(<usize>preallocNtBase, 0, <usize>(preallocCount * NODE_WITH_1_CHILD));
 
   // Allocate empty iteration table — lazily initialized on first use.
   preallocEmptyIterBase = <i32>heap.alloc(<usize>(MAX_PREALLOC_ITER * CST_NODE_OVERHEAD));
@@ -364,7 +374,7 @@ export function evalApplyPrealloc(ruleId: i32): ApplyResult {
     if (pos - origPos === 1) {
       // Fast path: single code unit match.
       // These rules always produce exactly one child binding on success.
-      const ptr: i32 = preallocNtBase + ruleId * NODE_WITH_1_CHILD;
+      const ptr: i32 = preallocNtBase + (ruleId - numMemoizedRules) * NODE_WITH_1_CHILD;
       if (cstGetCount(ptr) === 0) {
         // Lazy init: first use of this ruleId in this match.
         cstSetCount(ptr, 1);
