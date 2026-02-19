@@ -1404,10 +1404,30 @@ export class Compiler {
       }
     }
 
+    // Rules whose body is a simple character matcher (Range, UnicodeChar, Any).
+    // These are too cheap to benefit from memoization, and their CST nodes can
+    // be preallocated since the structure is always the same (1 terminal child,
+    // matchLength=1 in the common case). We check the actual body (not names)
+    // so user overrides (e.g. `digit := ...`) are handled correctly.
+    const isSimpleCharMatcher = body => {
+      const t = body?.type;
+      return t === 'Range' || t === 'UnicodeChar' || t === 'Any';
+    };
+    this._preallocRules = new Set();
+    for (const [name, ruleInfo] of newRules) {
+      // Exclude the start rule — the runtime calls evalApply0(startRuleId)
+      // in doMatch, which requires the rule to be memoized.
+      if (isSimpleCharMatcher(ruleInfo.body) && name !== this.grammar.defaultStartRule) {
+        this._preallocRules.add(name);
+      }
+    }
+
     // Reassign rule IDs: memoized rules get low IDs, everything else
     // gets high IDs. This shrinks the memo table index.
     const shouldMemoize = name =>
-      !this._singleUseRules.has(name) && name !== 'caseInsensitive';
+      !this._singleUseRules.has(name) &&
+      !this._preallocRules.has(name) &&
+      name !== 'caseInsensitive';
     const allNames = this.ruleIdByName.keys();
     this.ruleIdByName = new StringTable();
     for (const name of allNames) {
@@ -1861,7 +1881,9 @@ export class Compiler {
     const ruleId = this.ruleId(exp.ruleName);
     asm.i32Const(ruleId);
 
-    if (ruleId >= this._maxMemoizedRuleId) {
+    if (this._preallocRules.has(exp.ruleName)) {
+      asm.callPrebuiltFunc('evalApplyPrealloc');
+    } else if (ruleId >= this._maxMemoizedRuleId) {
       asm.callPrebuiltFunc('evalApplyNoMemo0');
     } else {
       asm.callPrebuiltFunc('evalApply0');

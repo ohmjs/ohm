@@ -99,6 +99,21 @@ type RuleEvalResult = i32;
 
 @inline const RULE_EVAL_SUCCESS_FLAG = 1;
 
+// Preallocated terminal node for matchLength=1 (the common case for
+// single-character matches: digit, letter, any (ASCII), etc.).
+let preallocTerminal1: i32 = 0;
+
+// Base pointer for preallocated nonterminal table (bump-heap allocated).
+// Each entry is NODE_WITH_1_CHILD bytes, indexed by ruleId.
+// count=0 in an entry means "not yet initialized".
+@inline const NODE_WITH_1_CHILD: i32 = CST_NODE_OVERHEAD + 4; // 20 bytes
+let preallocNtBase: i32 = 0;
+
+// Preallocated empty iteration nodes (count=0, matchLength=0, failurePos=-1).
+// Indexed by typeAndDetails value. Covers arities 1-8 for both iter and opt.
+@inline const MAX_PREALLOC_ITER: i32 = 36; // (8 << 2) | 3 + 1
+let preallocEmptyIterBase: i32 = 0;
+
 // Shared globals
 export let pos: u32 = 0;
 export let endPos: u32 = 0;
@@ -231,9 +246,27 @@ function initMemoTable(inputLenBytes: usize): void {
   memory.fill(memoIndexBase, 0, indexSizeBytes);
 }
 
+function initPreallocatedNodes(): void {
+  preallocTerminal1 = <i32>heap.alloc(<usize>CST_NODE_OVERHEAD);
+  cstSetCount(preallocTerminal1, 0);
+  cstSetMatchLength(preallocTerminal1, 1);
+  cstSetTypeAndDetails(preallocTerminal1, NODE_TYPE_TERMINAL);
+  cstSetFailurePos(preallocTerminal1, 0);
+
+  // Allocate nonterminal table — lazily initialized on first use per ruleId.
+  const maxRules: i32 = 512;
+  preallocNtBase = <i32>heap.alloc(<usize>(maxRules * NODE_WITH_1_CHILD));
+  memory.fill(<usize>preallocNtBase, 0, <usize>(maxRules * NODE_WITH_1_CHILD));
+
+  // Allocate empty iteration table — lazily initialized on first use.
+  preallocEmptyIterBase = <i32>heap.alloc(<usize>(MAX_PREALLOC_ITER * CST_NODE_OVERHEAD));
+  memory.fill(<usize>preallocEmptyIterBase, 0, <usize>(MAX_PREALLOC_ITER * CST_NODE_OVERHEAD));
+}
+
 function doMatch(startRuleId: i32): ApplyResult {
   endPos = jsStringLength(input);
   initMemoTable(endPos);
+  initPreallocatedNodes();
 
   maybeSkipSpaces(startRuleId);
   const succeeded = evalApply0(startRuleId) !== 0;
@@ -314,6 +347,37 @@ export function evalApplyNoMemo0(ruleId: i32): ApplyResult {
   return false;
 }
 
+// Evaluates a trivial (non-memoized) rule that matches a single code point.
+// On success, reuses a preallocated nonterminal node instead of allocating.
+// Falls back to dynamic allocation if matchLength != 1 (e.g. surrogate pair).
+export function evalApplyPrealloc(ruleId: i32): ApplyResult {
+  const origPos = pos;
+  const origNumBindings = bindings.length;
+  const result = evalRuleBody(ruleId);
+  const failurePos = maybeUpdateRightmostFailurePos(result);
+  if (result & RULE_EVAL_SUCCESS_FLAG) {
+    if (pos - origPos === 1) {
+      // Fast path: single code unit match.
+      // These rules always produce exactly one child binding on success.
+      const ptr: i32 = preallocNtBase + ruleId * NODE_WITH_1_CHILD;
+      if (cstGetCount(ptr) === 0) {
+        // Lazy init: first use of this ruleId in this match.
+        cstSetCount(ptr, 1);
+        cstSetMatchLength(ptr, 1);
+        cstSetTypeAndDetails(ptr, (ruleId << 2) | NODE_TYPE_NONTERMINAL);
+        cstSetFailurePos(ptr, 0);
+        store<i32>(<usize>(ptr + CST_NODE_OVERHEAD), preallocTerminal1);
+      }
+      bindings[origNumBindings] = ptr;
+      return true;
+    }
+    // Slow path: non-BMP character (surrogate pair, matchLength=2).
+    newNonterminalNode(origPos, pos, ruleId, origNumBindings, failurePos);
+    return true;
+  }
+  return false;
+}
+
 // When we are recording failures (errorMessagePos >= 0), and the rightmost
 // failure position of `entry` matches `errorMessagePos`.
 @inline function isInvolvedInError(entry: MemoEntry): bool {
@@ -375,6 +439,10 @@ export function handleLeftRecursion(origPos: u32, ruleId: i32, origNumBindings: 
 }
 
 export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
+  if (endIdx - startIdx === 1) {
+    bindings.push(preallocTerminal1);
+    return preallocTerminal1;
+  }
   const ptr: i32 = <i32>heap.alloc(<usize>CST_NODE_OVERHEAD);
   cstSetCount(ptr, 0);
   cstSetMatchLength(ptr, endIdx - startIdx);
@@ -407,11 +475,25 @@ export function newNonterminalNode(startIdx: i32, endIdx: i32, ruleId: i32, orig
 }
 
 export function newIterationNode(startIdx: i32, endIdx: i32, origNumBindings: i32, arity: i32, isOpt: bool): i32 {
-  if (isOpt) {
-    const typeAndDetails = (arity << 2) | NODE_TYPE_OPTIONAL;
-    return newNonLeafNode(startIdx, endIdx, typeAndDetails, origNumBindings, -1);
+  const typeAndDetails = isOpt
+    ? (arity << 2) | NODE_TYPE_OPTIONAL
+    : (arity << 2) | NODE_TYPE_ITER_FLAG;
+
+  // Fast path: empty iteration (no children, matchLength=0).
+  // Reuse a preallocated node since the structure is always identical.
+  if (endIdx === startIdx && bindings.length === origNumBindings && typeAndDetails < MAX_PREALLOC_ITER) {
+    const ptr: i32 = preallocEmptyIterBase + typeAndDetails * CST_NODE_OVERHEAD;
+    if (cstGetMatchLength(ptr) === 0 && cstGetFailurePos(ptr) === 0) {
+      // Lazy init on first use.
+      cstSetCount(ptr, 0);
+      // matchLength already 0 from memory.fill
+      cstSetTypeAndDetails(ptr, typeAndDetails);
+      cstSetFailurePos(ptr, -1);
+    }
+    bindings.push(ptr);
+    return ptr;
   }
-  const typeAndDetails = (arity << 2) | NODE_TYPE_ITER_FLAG;
+
   return newNonLeafNode(startIdx, endIdx, typeAndDetails, origNumBindings, -1);
 }
 
