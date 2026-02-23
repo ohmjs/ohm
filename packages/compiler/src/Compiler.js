@@ -955,7 +955,7 @@ export class Compiler {
   normalize() {
     assert(!this.rules, 'already normalized');
     this.lowerToIR();
-    this.specializeApplications();
+    this.monomorphize();
   }
 
   compile() {
@@ -1027,8 +1027,11 @@ export class Compiler {
             exp.args.map(arg => lower(arg, isSyntactic))
           );
         }
-        case pexprs.Lex:
-          return ir.lex(lower(exp.expr, true));
+        case pexprs.Lex: {
+          // Lex is a no-op in a lexical context, so just drop it.
+          const child = lower(exp.expr, false);
+          return isSyntactic ? ir.lex(child) : child;
+        }
         case pexprs.Lookahead:
           return ir.lookahead(lower(exp.expr, isSyntactic));
         case pexprs.Not:
@@ -1048,9 +1051,7 @@ export class Compiler {
         case pexprs.Terminal:
           return ir.terminal(exp.obj);
         case pexprs.UnicodeChar:
-          // Support older versions of ohm-js (<= 17.2.1).
-          // TODO: Remove this eventually.
-          return ir.unicodeChar(exp.categoryOrProp ?? exp['category']);
+          return ir.unicodeChar(exp.categoryOrProp);
         default:
           throw new Error(`not handled: ${exp.constructor.name}`);
       }
@@ -1150,7 +1151,7 @@ export class Compiler {
   // parsing expressions. For all parameterized rules, create a specialized
   // version of that rule for every possible set of actual parameters.
   // At the end, there are no more applications with arguments.
-  specializeApplications() {
+  monomorphize() {
     const newRules = new Map();
     const {rules} = this;
     const patternsByRule = new Map();
@@ -1507,13 +1508,12 @@ export class Compiler {
     );
   }
 
-  // Contract: emitPExpr always means we're going deeper in the PExpr tree.
   emitPExpr(exp, {preHook, postHook} = {}) {
     const {asm} = this;
 
     const allowFastApply = !preHook && !postHook;
 
-    // Note that after specializeApplications, there are two classes of rule:
+    // Note that after monomorphize, there are two classes of rule:
     // - specialized rules, which contain no Params, and only have
     //   applications without args
     // - generalized rules, which may contain Params and apps w/ args.
@@ -1545,52 +1545,23 @@ export class Compiler {
       () => {
         if (preHook) preHook();
 
+        // biome-ignore format: keep switch dense
         switch (exp.type) {
-          case 'Alt':
-            this.emitAlt(exp);
-            break;
-          case 'Any':
-            this.emitAny(exp);
-            break;
-          case 'CaseInsensitive':
-            this.emitCaseInsensitive(exp);
-            break;
-          case 'Dispatch':
-            this.emitDispatch(exp);
-            break;
-          case 'End':
-            this.emitEnd(exp);
-            break;
-          case 'Lex':
-            this.emitLex(exp);
-            break;
-          case 'Lookahead':
-            this.emitLookahead(exp);
-            break;
-          case 'Not':
-            this.emitNot(exp);
-            break;
-          case 'Seq':
-            this.emitSeq(exp);
-            break;
-          case 'Star':
-            this.emitStar(exp);
-            break;
-          case 'Opt':
-            this.emitOpt(exp);
-            break;
-          case 'Range':
-            this.emitRange(exp);
-            break;
-          case 'Plus':
-            this.emitPlus(exp);
-            break;
-          case 'Terminal':
-            this.emitTerminal(exp);
-            break;
-          case 'UnicodeChar':
-            this.emitUnicodeChar(exp);
-            break;
+          case 'Alt': this.emitAlt(exp); break;
+          case 'Any': this.emitAny(exp); break;
+          case 'CaseInsensitive': this.emitCaseInsensitive(exp); break;
+          case 'Dispatch': this.emitDispatch(exp);  break;
+          case 'End': this.emitEnd(exp); break;
+          case 'Lex': this.emitLex(exp); break;
+          case 'Lookahead': this.emitLookahead(exp); break;
+          case 'Not': this.emitNot(exp); break;
+          case 'Seq': this.emitSeq(exp); break;
+          case 'Star': this.emitStar(exp); break;
+          case 'Opt': this.emitOpt(exp); break;
+          case 'Range': this.emitRange(exp); break;
+          case 'Plus': this.emitPlus(exp); break;
+          case 'Terminal': this.emitTerminal(exp); break;
+          case 'UnicodeChar': this.emitUnicodeChar(exp); break;
           case 'Param':
           // Fall through (Params should not exist at codegen time).
           default:

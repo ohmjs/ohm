@@ -977,7 +977,8 @@ test('specialized rule names', t => {
     }`);
 
   const compiler = new Compiler(g);
-  compiler.normalize();
+  compiler.lowerToIR();
+  compiler.monomorphize();
 
   const noGeneralizedRulesList = [
     '$spaces',
@@ -1050,7 +1051,7 @@ test('basic space skipping', async t => {
   );
 });
 
-test('space skipping w/ terminal params', async t => {
+test('space skipping w/ lifted terminals', async t => {
   // It shouldn't matter that the terminal (as arg) appears in a syntactic
   // context; only the point of use.
   const g = ohm.grammar(`
@@ -1099,6 +1100,23 @@ test('space skipping & lex', async t => {
     const wasmGrammar = await toWasmGrammar(g);
     t.is(matchWithInput(wasmGrammar, '> 9'), 1, "neg lookahead doesn't consume anything");
   }
+});
+
+test('lex (#) syntax', async t => {
+  // Lex prevents space skipping inside, even in a syntactic rule.
+  const g = await toWasmGrammar(ohm.grammar('G { Start = #(letter+) }'));
+  t.is(matchWithInput(g, 'abc'), 1);
+  t.is(matchWithInput(g, 'a b c'), 0, 'spaces not allowed inside lex');
+
+  // Lex with a sequence
+  const g2 = await toWasmGrammar(ohm.grammar('G { Start = #(letter digit) }'));
+  t.is(matchWithInput(g2, 'a1'), 1);
+  t.is(matchWithInput(g2, 'a 1'), 0, 'spaces not allowed inside lex sequence');
+
+  // Lex with a terminal
+  const g3 = await toWasmGrammar(ohm.grammar('G { Start = #("abc") }'));
+  t.is(matchWithInput(g3, 'abc'), 1);
+  t.is(matchWithInput(g3, 'a b c'), 0);
 });
 
 // Because fast-check's `stringMatching` doesn't support unicode regexes.
