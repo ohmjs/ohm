@@ -29,7 +29,7 @@ if (!existsSync(wasmTsPath)) {
 
 // Dynamic imports — the stub must be in place before modules are loaded.
 const ohm = await import('ohm-js-legacy');
-const {Compiler} = await import('../src/Compiler.js');
+const {Compiler} = await import('../src/Compiler.ts');
 
 // Parse the Ohm meta-grammar using ohm-js-legacy (pure JS, no WASM needed).
 const source = readFileSync(ohmGrammarPath, 'utf8');
