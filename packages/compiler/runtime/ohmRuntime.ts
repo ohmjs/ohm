@@ -224,7 +224,7 @@ function useMemoizedResult(ruleId: i32, result: MemoEntry): ApplyResult {
 
 @inline function maybeSkipSpaces(ruleId: i32): void {
   if (IMPLICIT_SPACE_SKIPPING && isRuleSyntactic(ruleId)) {
-    evalApply0(2);
+    evalApply0(1); // Must match the $spaces rule ID from Compiler.js constructor.
   }
 }
 

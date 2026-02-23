@@ -981,16 +981,16 @@ test('specialized rule names', t => {
 
   const noGeneralizedRulesList = [
     '$spaces',
-    'commaSep<exclaimed<$term$0>>',
-    'emptyListOf<exclaimed<$term$0>,$term$1>',
-    'exclaimed<$term$0>',
+    'commaSep<exclaimed<"hello">>',
+    'emptyListOf<exclaimed<"hello">,",">',
+    'exclaimed<"hello">',
     'exclaimed<hello2>',
     'exclaimed<hello>',
     'flip<exclaimed<hello2>,hello>',
     'hello',
     'hello2',
-    'listOf<exclaimed<$term$0>,$term$1>',
-    'nonemptyListOf<exclaimed<$term$0>,$term$1>',
+    'listOf<exclaimed<"hello">,",">',
+    'nonemptyListOf<exclaimed<"hello">,",">',
     'one',
     'space',
     'start',
@@ -1050,7 +1050,7 @@ test('basic space skipping', async t => {
   );
 });
 
-test('space skipping w/ lifted terminals', async t => {
+test('space skipping w/ terminal params', async t => {
   // It shouldn't matter that the terminal (as arg) appears in a syntactic
   // context; only the point of use.
   const g = ohm.grammar(`

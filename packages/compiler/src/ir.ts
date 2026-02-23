@@ -10,7 +10,6 @@ export type Expr =
   | Dispatch
   | End
   | Lex
-  | LiftedTerminal
   | Lookahead
   | Opt
   | Not
@@ -29,7 +28,6 @@ export type FailableExpr =
   | Apply
   | CaseInsensitive
   | End
-  | LiftedTerminal
   | Range
   | Terminal
   | UnicodeChar;
@@ -52,19 +50,17 @@ export interface Any {
 
 export const any = (): Any => ({type: 'Any'});
 
-type ApplyLike = Extract<Expr, {type: 'Apply' | 'LiftedTerminal' | 'Param'}>;
-
 export interface Apply {
   type: 'Apply';
   ruleName: string;
   descriptionId?: number;
-  children: ApplyLike[];
+  children: Expr[];
 }
 
 export const apply = (
   ruleName: string,
   descriptionId?: number,
-  children: ApplyLike[] = []
+  children: Expr[] = []
 ): Apply => ({
   type: 'Apply',
   ruleName,
@@ -213,20 +209,6 @@ export const unicodeChar = (categoryOrProp: string): UnicodeChar => ({
   categoryOrProp,
 });
 
-// Types that are specific to the IR
-
-export interface LiftedTerminal {
-  type: 'LiftedTerminal';
-  terminalId: number;
-  failureId: number;
-}
-
-export const liftedTerminal = (terminalId: number, failureId: number): LiftedTerminal => ({
-  type: 'LiftedTerminal',
-  terminalId,
-  failureId,
-});
-
 // Helpers
 // -------
 
@@ -237,10 +219,6 @@ function unreachable(x: never, msg: string): never {
 function checkNotNull<T>(x: T, msg = 'unexpected null value'): NonNullable<T> {
   if (x == null) throw new Error(msg);
   return x;
-}
-
-function checkApplyLike(exp: Expr): ApplyLike {
-  return checkExprType(exp, 'Apply', 'LiftedTerminal', 'Param');
 }
 
 function checkExprType<T extends Expr['type']>(
@@ -277,7 +255,6 @@ export function collectParams(exp: Expr, seen = new Set<number>()): Param[] {
     case 'ApplyGeneralized':
     case 'CaseInsensitive':
     case 'End':
-    case 'LiftedTerminal':
     case 'Range':
     case 'Terminal':
     case 'UnicodeChar':
@@ -287,7 +264,6 @@ export function collectParams(exp: Expr, seen = new Set<number>()): Param[] {
   }
 }
 
-// TODO: Maybe make the types tighter here, to avoid the use checkApplyLike.
 export function substituteParams<T extends Expr>(
   exp: T,
   actuals: Exclude<Expr, Param>[]
@@ -300,10 +276,7 @@ export function substituteParams<T extends Expr>(
       return apply(
         exp.ruleName,
         exp.descriptionId,
-        exp.children.map((c): ApplyLike => {
-          const ans = substituteParams(c, actuals);
-          return checkApplyLike(ans);
-        })
+        exp.children.map(c => substituteParams(c, actuals))
       );
     case 'Dispatch': {
       const newChild = substituteParams(exp.child, actuals);
@@ -335,7 +308,6 @@ export function substituteParams<T extends Expr>(
     case 'ApplyGeneralized':
     case 'CaseInsensitive':
     case 'End':
-    case 'LiftedTerminal':
     case 'Range':
     case 'Terminal':
     case 'UnicodeChar':
@@ -345,14 +317,14 @@ export function substituteParams<T extends Expr>(
   }
 }
 
-export function specializedName(app: Apply | LiftedTerminal): string {
-  if (app.type === 'LiftedTerminal') {
-    return `$term$${app.terminalId}`;
-  }
+export function specializedName(app: Apply): string {
   const argsNames = app.children
     .map(c => {
       if (c.type === 'Param') throw new Error(`unexpected Param`);
-      return specializedName(c);
+      if (c.type === 'Apply') {
+        return specializedName(c);
+      }
+      return toString(c);
     })
     .join(',');
   return app.ruleName + (argsNames.length > 0 ? `<${argsNames}>` : '');
@@ -380,7 +352,6 @@ export function rewrite(exp: Expr, actions: RewriteActions): Expr {
     case 'ApplyGeneralized':
     case 'CaseInsensitive':
     case 'End':
-    case 'LiftedTerminal':
     case 'Param':
     case 'Range':
     case 'Terminal':
@@ -424,8 +395,6 @@ export function toString(exp: Expr): string {
       return `$caseInsensitive<${JSON.stringify(exp.value)}>`;
     case 'End':
       return '$end';
-    case 'LiftedTerminal':
-      return `$term$${exp.terminalId}`;
     case 'Param':
       return `$${exp.index}`;
     case 'Range':
@@ -469,7 +438,6 @@ export function outArity(exp: Expr): number {
     case 'ApplyGeneralized':
     case 'CaseInsensitive':
     case 'End':
-    case 'LiftedTerminal':
     case 'Param':
     case 'Range':
     case 'Terminal':

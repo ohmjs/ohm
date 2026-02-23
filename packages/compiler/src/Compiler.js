@@ -40,8 +40,6 @@ const wasm3 = {
   instr: {ref: {null: 0xd0}},
 };
 
-const isNonNull = x => x != null;
-
 function assert(cond, msg) {
   if (!cond) {
     throw new Error(msg ?? 'assertion failed');
@@ -64,10 +62,6 @@ function setdefault(map, key, makeDefaultVal) {
 }
 
 const getNotNull = (map, k) => checkNotNull(map.get(k), `not found: '${k}'`);
-
-// Return true if the given expression is an Apply or a Param.
-// (When compiling to Wasm, we implement both with a call.)
-const isApplyLike = exp => exp instanceof pexprs.Apply || exp instanceof pexprs.Param;
 
 function uniqueName(names, str) {
   let name = str;
@@ -127,35 +121,6 @@ class StringTable {
 
   [Symbol.iterator]() {
     return this._map[Symbol.iterator]();
-  }
-}
-
-function collectParams(exp, seen = new Set()) {
-  switch (exp.constructor) {
-    case pexprs.Param:
-      if (!seen.has(exp.index)) {
-        seen.add(exp.index);
-        return [exp];
-      }
-      return [];
-    case pexprs.Alt:
-      return exp.terms.flatMap(e => collectParams(e, seen));
-    case pexprs.Apply:
-      return exp.args.flatMap(e => collectParams(e, seen));
-    case pexprs.Lookahead:
-    case pexprs.Not:
-    case pexprs.Opt:
-    case pexprs.Plus:
-    case pexprs.Seq:
-      return exp.factors.flatMap(e => collectParams(e, seen));
-    case pexprs.Star:
-      return collectParams(exp.expr, seen);
-    case pexprs.Range:
-    case pexprs.Terminal:
-    case pexprs.UnicodeChar:
-      return [];
-    default:
-      throw new Error(`not handled: ${exp.constructor.name}`);
   }
 }
 
@@ -871,13 +836,11 @@ export class Compiler {
 
     this._maxMemoizedRuleId = -1;
 
-    // Ensure default start rule has id 0; $term, 1; and spaces, 2.
+    // Ensure default start rule has id 0; and $spaces, 1.
     this._ensureRuleId(grammar.defaultStartRule);
-    this._ensureRuleId('$term');
     this._ensureRuleId('$spaces');
 
     this.rules = undefined;
-    this._nextLiftedId = 0;
 
     // Keeps track of whether we're in a lexical or syntactic context.
     this._lexContextStack = [];
@@ -908,11 +871,6 @@ export class Compiler {
         }
         if (exp.ruleName === 'end') return 'end of input';
         if (exp.ruleName === 'any') return 'any character';
-        // For lifted rules, expand their body to get a meaningful description.
-        if (exp.ruleName.startsWith('$lifted')) {
-          const ruleInfo = this.rules.get(exp.ruleName);
-          if (ruleInfo) return this.toFailureDescription(ruleInfo.body);
-        }
         const article = /^[aeiouAEIOU]/.test(exp.ruleName) ? 'an' : 'a';
         return article + ' ' + exp.ruleName;
       }
@@ -976,45 +934,6 @@ export class Compiler {
     return checkNotNull(this._lexContextStack.at(-1));
   }
 
-  liftPExpr(exp, isSyntactic) {
-    assert(!(exp instanceof pexprs.Terminal));
-
-    // Note: the same expression might appear in more than one place, and
-    // when lifting, we could in theory avoid creating a duplicate function.
-    // But, we have to be careful where Params are involved: `"a" | blah`
-    // could mean something different depending on context.
-
-    const name = `$lifted${this._nextLiftedId++}`;
-
-    // Replace "free variables" (Params from the outer scope) with Params
-    // for the lifted, to-be-defined rule.
-
-    const freeVars = collectParams(exp);
-
-    let body = exp;
-    let formals = [];
-    const maxIndex = freeVars.reduce((acc, param) => Math.max(acc, param.index), -1);
-
-    if (freeVars.length > 0) {
-      // `substituteParams` usually takes an array of _actual params_,
-      // [arg0, arg1, ...]. We use it instead to replace Params from the
-      // original scope with ones for the new scope. Since the lifted pexpr
-      // might only reference a subset of the params, the array can be holey.
-      // E.g., in `doc<a, b, c> = a tail<(b|c)>`, when we lift `b|c`.
-      const newParams = new Array(maxIndex + 1);
-      freeVars.forEach((p, i) => {
-        newParams[p.index] = new pexprs.Param(i);
-      });
-      body = exp.substituteParams(newParams);
-
-      // We make up some names for the parameters; they don't currently matter.
-      formals = newParams.filter(isNonNull).map(p => `__${p.index}`);
-    }
-    const actuals = freeVars.filter(isNonNull);
-    const ruleInfo = {body, formals, isSyntactic, source: exp.source};
-    return [name, ruleInfo, actuals];
-  }
-
   // Return a funcidx corresponding to the eval function for the given rule.
   ruleEvalFuncIdx(name) {
     const offset = this.importCount() + prebuilt.funcsec.entryCount;
@@ -1035,7 +954,7 @@ export class Compiler {
 
   normalize() {
     assert(!this.rules, 'already normalized');
-    this.simplifyApplications();
+    this.lowerToIR();
     this.specializeApplications();
   }
 
@@ -1064,7 +983,7 @@ export class Compiler {
     return this.buildModule(typeMap, functionDecls);
   }
 
-  simplifyApplications() {
+  lowerToIR() {
     const {grammar} = this;
 
     const lookUpRule = name => ({
@@ -1084,39 +1003,9 @@ export class Compiler {
       rules.push([name, lookUpRule(name)]);
     }
 
-    const liftedTerminals = new StringTable();
-
-    const liftTerminal = ({obj}) => {
-      const id = liftedTerminals.add(obj);
-      assert(id >= 0 && id < 0xffff, 'too many terminals!');
-      const failureId = this.getOrAddFailure(JSON.stringify(obj));
-      return ir.liftedTerminal(id, failureId);
-    };
-
-    // If `exp` is not an Apply or Param, lift it into its own rule and return
-    // a new application of that rule.
-    const simplifyArg = (exp, isSyntactic) => {
-      if (isApplyLike(exp)) {
-        return simplify(exp, isSyntactic);
-      }
-      if (exp instanceof pexprs.Terminal) {
-        return liftTerminal(exp);
-      }
-
-      const [name, info, env] = this.liftPExpr(exp, isSyntactic);
-      const args = env.map(p => {
-        assert(p instanceof pexprs.Param, 'Expected Param');
-        return ir.param(p.index);
-      });
-      rules.push([name, info]);
-
-      // We don't care about the failure description here, because the original expression
-      // will still be applied inside the body of the new rule.
-      return ir.apply(name, -1, args);
-    };
-    const simplify = (exp, isSyntactic) => {
+    const lower = (exp, isSyntactic) => {
       if (exp instanceof pexprs.Alt) {
-        return ir.alt(exp.terms.map(e => simplify(e, isSyntactic)));
+        return ir.alt(exp.terms.map(e => lower(e, isSyntactic)));
       }
       if (exp === pexprs.any) return ir.any();
       if (exp === pexprs.end) return ir.end();
@@ -1135,23 +1024,23 @@ export class Compiler {
           return ir.apply(
             exp.ruleName,
             descId,
-            exp.args.map(arg => simplifyArg(arg, isSyntactic))
+            exp.args.map(arg => lower(arg, isSyntactic))
           );
         }
         case pexprs.Lex:
-          return ir.lex(simplify(exp.expr, true));
+          return ir.lex(lower(exp.expr, true));
         case pexprs.Lookahead:
-          return ir.lookahead(simplify(exp.expr, isSyntactic));
+          return ir.lookahead(lower(exp.expr, isSyntactic));
         case pexprs.Not:
-          return ir.not(simplify(exp.expr, isSyntactic));
+          return ir.not(lower(exp.expr, isSyntactic));
         case pexprs.Opt:
-          return ir.opt(simplify(exp.expr, isSyntactic));
+          return ir.opt(lower(exp.expr, isSyntactic));
         case pexprs.Plus:
-          return ir.plus(simplify(exp.expr, isSyntactic));
+          return ir.plus(lower(exp.expr, isSyntactic));
         case pexprs.Seq:
-          return ir.seq(exp.factors.map(e => simplify(e, isSyntactic)));
+          return ir.seq(exp.factors.map(e => lower(e, isSyntactic)));
         case pexprs.Star:
-          return ir.star(simplify(exp.expr, isSyntactic));
+          return ir.star(lower(exp.expr, isSyntactic));
         case pexprs.Param:
           return ir.param(exp.index);
         case pexprs.Range:
@@ -1176,38 +1065,11 @@ export class Compiler {
       if (!newRules.has(name)) {
         newRules.set(name, {
           ...info,
-          body: simplify(info.body, info.isSyntactic),
+          body: lower(info.body, info.isSyntactic),
         });
       }
     }
     this.rules = newRules;
-    this.liftedTerminals = liftedTerminals;
-  }
-
-  compileTerminalRule(name) {
-    const {asm} = this;
-    this.beginLexContext(true);
-    asm.addFunction(`$${name}`, [w.valtype.i32], [w.valtype.i32], () => {
-      asm.addLocal('ret', w.valtype.i32);
-      asm.addLocal('tmp', w.valtype.i32);
-      asm.addLocal('postSpacesPos', w.valtype.i32);
-      asm.addLocal('failurePos', w.valtype.i32);
-      asm.i32Const(-1);
-      asm.localSet('failurePos');
-      const keys = this.liftedTerminals.keys();
-      asm.switch(
-        w.blocktype.empty,
-        () => asm.localGet('__arg0'),
-        keys.length,
-        i => this.emitTerminal(ir.terminal(keys[i])),
-        () => asm.emit(instr.unreachable)
-      );
-      // Note: unlike a regular rule evaluation, this function just returns
-      // the raw result of PExpr evaluation.
-      asm.localGet('ret');
-    });
-    this.endLexContext();
-    return this.asm._functionDecls.at(-1);
   }
 
   beginLexContext(initialVal) {
@@ -1390,7 +1252,7 @@ export class Compiler {
     }
 
     // Determine single-use rules: applied exactly once, not the start rule,
-    // and no description. (Rules like $spaces, $term, and caseInsensitive
+    // and no description. (Rules like $spaces and caseInsensitive
     // are never referenced via Apply in rule bodies, so they won't appear
     // in refCounts and don't need explicit exclusion.)
     this._singleUseRules = new Set();
@@ -1592,10 +1454,7 @@ export class Compiler {
           asm.i32Const(0);
         });
         ruleDecls.push(asm._functionDecls.at(-1));
-      } else if (name === '$term') {
-        ruleDecls.push(this.compileTerminalRule(name));
       } else {
-        assert(!name.startsWith('$term'));
         ruleDecls.push(this.compileRule(name));
       }
     }
@@ -1704,9 +1563,6 @@ export class Compiler {
             break;
           case 'Lex':
             this.emitLex(exp);
-            break;
-          case 'LiftedTerminal':
-            this.emitApplyTerm(exp);
             break;
           case 'Lookahead':
             this.emitLookahead(exp);
@@ -1823,27 +1679,6 @@ export class Compiler {
     }, failureId);
   }
 
-  emitApplyTerm({terminalId}) {
-    const {asm} = this;
-
-    this.maybeEmitSpaceSkipping();
-
-    // Save the original position.
-    asm.globalGet('pos');
-    asm.localSet('tmp');
-
-    // Call the terminal rule, and use its result as ours.
-    asm.i32Const(terminalId);
-    asm.emit(instr.call, this.ruleEvalFuncIdx('$term'));
-    asm.localTee('ret');
-
-    // Update the failure position if necessary.
-    asm.ifFalse(w.blocktype.empty, () => {
-      asm.updateLocalFailurePos(() => asm.localGet('tmp'));
-    });
-  }
-
-  // Emit an application of the generalized version of a parameterized rule.
   // Need to know which case we're applying!
   emitApplyGeneralized(exp) {
     const {asm} = this;
