@@ -844,16 +844,16 @@ class Assembler {
 }
 interface RuleInfo {
   body: Expr;
+  name?: string;
   isSyntactic?: boolean;
-  formals?: any[];
+  formals?: string[];
   description?: string;
   patterns?: Expr[][];
   _isInlineRule?: boolean;
-  [key: string]: any;
 }
 
 export class Compiler {
-  grammar: any;
+  grammar: ParsedGrammar;
   importDecls: FuncDecl[];
   ruleIdByName: StringTable;
   rules: Map<string, RuleInfo> | undefined;
@@ -1005,8 +1005,10 @@ export class Compiler {
   }
 
   // Return an object implementing all of the debug imports.
-  getDebugImports(log: (name: string, arg: any) => void): Record<string, (arg: any) => void> {
-    const ans: Record<string, (arg: any) => void> = {};
+  getDebugImports(
+    log: (name: string, arg: number) => void
+  ): Record<string, (arg: number) => void> {
+    const ans: Record<string, (arg: number) => void> = {};
     for (const decl of this.importDecls.filter(d => d.module === 'debug')) {
       const {name} = decl;
       ans[name] = arg => {
@@ -1067,6 +1069,7 @@ export class Compiler {
       rules.push([name, lookUpRule(name)]);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- PExpr subclass properties aren't visible on the base type
     const lower = (exp: any, isSyntactic: boolean): Expr => {
       if (exp instanceof pexprs.Alt) {
         return ir.alt(exp.terms.map((e: any) => lower(e, isSyntactic)));
