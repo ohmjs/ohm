@@ -1,26 +1,25 @@
 #!/usr/bin/env node
-/* global process */
 
 import fs from 'node:fs';
 import {basename} from 'node:path';
 import {parseArgs} from 'node:util';
 
-import {Compiler} from './Compiler.js';
+import {Compiler} from './Compiler.ts';
 import {grammars} from './parseGrammars.ts';
 
 // Compile an Ohm grammar file (.ohm) to WebAssembly (.wasm).
-function main() {
+function main(): void {
   const argsConfig = {
     options: {
-      grammarName: {short: 'g', type: 'string'},
-      output: {short: 'o', type: 'string'},
+      grammarName: {short: 'g' as const, type: 'string' as const},
+      output: {short: 'o' as const, type: 'string' as const},
     },
-    allowPositionals: true,
+    allowPositionals: true as const,
   };
-  let args;
+  let args: ReturnType<typeof parseArgs<typeof argsConfig>>;
   try {
     args = parseArgs(argsConfig);
-  } catch (e) {
+  } catch (e: any) {
     // eslint-disable-next-line no-console
     console.error(e.message);
     printUsage();
@@ -56,7 +55,7 @@ function main() {
 }
 
 // Print usage information
-function printUsage() {
+function printUsage(): void {
   const exeName = basename(process.argv[1]);
   // eslint-disable-next-line no-console
   console.log(

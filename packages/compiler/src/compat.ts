@@ -1,4 +1,4 @@
-import {Compiler} from './Compiler.js';
+import {Compiler} from './Compiler.ts';
 import {grammars as grammarsJs} from './parseGrammars.ts';
 import {Grammar as BaseGrammar} from 'ohm-js';
 

@@ -5,7 +5,7 @@ import {performance} from 'node:perf_hooks';
 import process from 'node:process';
 
 import {grammar} from '../../../examples/ecmascript/index.js';
-import {Compiler} from '../src/Compiler.js';
+import {Compiler} from '../src/Compiler.ts';
 import {Grammar} from 'ohm-js';
 
 const filename = process.argv[2];

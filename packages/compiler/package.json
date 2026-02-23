@@ -33,16 +33,16 @@
   "license": "MIT",
   "packageManager": "pnpm@10.10.0",
   "devDependencies": {
+    "@ohm-js/to-ast-compat": "workspace:^",
     "@shopify/liquid-html-parser": "github:pdubroy/theme-tools#path:/packages/liquid-html-parser",
     "@thi.ng/leb128": "^3.1.48",
-    "@wasmgroundup/emit": "^1.0.2",
+    "@wasmgroundup/emit": "^2.1.0",
     "assemblyscript": "^0.27.36",
     "ava": "^6.2.0",
     "fast-check": "^4.2.0",
     "fast-glob": "^3.3.3",
     "mitata": "^1.0.34",
     "ohm-js-legacy": "workspace:^",
-    "@ohm-js/to-ast-compat": "workspace:^",
     "wabt": "1.0.37-nightly.20250428"
   },
   "peerDependencies": {

@@ -1,6 +1,6 @@
 /* global process, URL */
 
-import {Compiler} from '../src/Compiler.js';
+import {Compiler} from '../src/Compiler.ts';
 import {Grammar} from 'ohm-js';
 
 const DEBUG = process.env.OHM_DEBUG === '1';

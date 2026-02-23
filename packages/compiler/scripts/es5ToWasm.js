@@ -2,7 +2,7 @@ import {writeFileSync} from 'node:fs';
 import process from 'node:process';
 
 import {grammar as es5} from '../../../examples/ecmascript/index.js';
-import {Compiler} from '../src/Compiler.js';
+import {Compiler} from '../src/Compiler.ts';
 
 const outFilename = process.argv[2];
 

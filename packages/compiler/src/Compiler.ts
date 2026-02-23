@@ -4,7 +4,9 @@ import {Grammar as ParsedGrammar} from 'ohm-js-legacy/src/Grammar.js';
 // import wabt from 'wabt';
 
 import * as ir from './ir.ts';
+import type {Expr} from './ir.ts';
 import * as prebuilt from '../build/ohmRuntime.wasm_sections.ts';
+import {assert, checkNotNull} from './assert.ts';
 import {grammar as parseGrammar} from './parseGrammars.ts';
 
 const WASM_PAGE_SIZE = 64 * 1024;
@@ -40,30 +42,20 @@ const wasm3 = {
   instr: {ref: {null: 0xd0}},
 };
 
-function assert(cond, msg) {
-  if (!cond) {
-    throw new Error(msg ?? 'assertion failed');
-  }
-}
-
-function checkNotNull(x, msg = 'unexpected null value') {
-  assert(x != null, msg);
-  return x;
-}
-
-function checkNoUndefined(arr) {
+function checkNoUndefined(arr: readonly unknown[]): readonly unknown[] {
   assert(arr.indexOf(undefined) === -1, `found undefined @ ${arr.indexOf(undefined)}`);
   return arr;
 }
 
-function setdefault(map, key, makeDefaultVal) {
+function setdefault<K, V>(map: Map<K, V>, key: K, makeDefaultVal: () => V): V {
   if (!map.has(key)) map.set(key, makeDefaultVal());
-  return map.get(key);
+  return map.get(key)!;
 }
 
-const getNotNull = (map, k) => checkNotNull(map.get(k), `not found: '${k}'`);
+const getNotNull = <V>(map: Map<string, V>, k: string): V =>
+  checkNotNull(map.get(k), `not found: '${k}'`);
 
-function uniqueName(names, str) {
+function uniqueName(names: Set<string>, str: string): string {
   let name = str;
   outer: if (names.has(str)) {
     for (let i = 0; i < 1000; i++) {
@@ -76,7 +68,7 @@ function uniqueName(names, str) {
   return name;
 }
 
-function isSyntacticRule(ruleName) {
+function isSyntacticRule(ruleName: string): boolean {
   assert(ruleName[0] !== '$', ruleName);
   return ruleName[0] === ruleName[0].toUpperCase();
 }
@@ -84,14 +76,17 @@ function isSyntacticRule(ruleName) {
 const asciiChars = Array.from({length: 128}).map((_, i) => String.fromCharCode(i));
 
 class StringTable {
+  _map: Map<string, number>;
+  _strs: string[];
+
   constructor() {
     this._map = new Map();
     this._strs = [];
   }
 
-  add(str) {
+  add(str: string): number {
     if (this._map.has(str)) {
-      return this._map.get(str);
+      return this._map.get(str)!;
     }
     const idx = this._map.size;
     this._map.set(checkNotNull(str), idx);
@@ -99,23 +94,23 @@ class StringTable {
     return idx;
   }
 
-  getStr(idx) {
+  getStr(idx: number): string {
     return this._strs[idx];
   }
 
-  getIndex(item) {
+  getIndex(item: string): number | undefined {
     return this._map.get(item);
   }
 
-  has(item) {
+  has(item: string): boolean {
     return this._map.has(item);
   }
 
-  get size() {
+  get size(): number {
     return this._map.size;
   }
 
-  keys() {
+  keys(): string[] {
     return [...this._map.keys()];
   }
 
@@ -124,59 +119,80 @@ class StringTable {
   }
 }
 
-const prebuiltFuncidx = nm => checkNotNull(prebuilt.funcidxByName[nm]);
-const prebuiltGlobalidx = nm => checkNotNull(prebuilt.globalidxByName[nm]);
+const prebuiltFuncidx = (nm: string): number =>
+  checkNotNull((prebuilt.funcidxByName as Record<string, number>)[nm]);
+const prebuiltGlobalidx = (nm: string): number =>
+  checkNotNull((prebuilt.globalidxByName as Record<string, number>)[nm]);
 
 // Produce a section combining `els` with the corresponding prebuilt section.
 // This only does a naive merge; no type or function indices are rewritten.
-function mergeSections(sectionId, prebuiltSec, els) {
+function mergeSections(
+  sectionId: SectionId,
+  prebuiltSec: {entryCount: number; contents: Fragment},
+  els: Fragment[]
+): Fragment {
   const count = prebuiltSec.entryCount + els.length;
   return w.section(sectionId, [w.u32(count), prebuiltSec.contents, els]);
 }
 
-function functypeToString(paramTypes, resultTypes) {
-  const toStr = t => {
-    return t === wasm3.valtype.externref
+function functypeToString(
+  paramTypes: readonly valtype[],
+  resultTypes: readonly valtype[]
+): string {
+  const toStr = (t: valtype): string => {
+    return (t as number) === wasm3.valtype.externref
       ? 'externref'
-      : checkNotNull(['f64', 'f32', 'i64', 'i32'][t - w.valtype.f64]);
+      : checkNotNull(['f64', 'f32', 'i64', 'i32'][(t as number) - (w.valtype.f64 as number)]);
   };
   const params = paramTypes.map(toStr).join(',');
   const results = resultTypes.map(toStr).join(',');
   return '[' + params + '][' + results + ']';
 }
 
+interface FuncDecl {
+  name: string;
+  module?: string;
+  paramTypes: valtype[];
+  resultTypes: valtype[];
+  locals?: Fragment[];
+  body?: (number | Fragment | string)[];
+}
+
 class TypeMap {
+  _map: Map<string, [number, Fragment]>;
+  _startIdx: number;
+
   constructor(startIdx = 0) {
     this._map = new Map();
     this._startIdx = startIdx;
   }
 
-  add(paramTypes, resultTypes) {
+  add(paramTypes: readonly valtype[], resultTypes: readonly valtype[]): number {
     const key = functypeToString(paramTypes, resultTypes);
     if (this._map.has(key)) {
-      return this._map.get(key)[0];
+      return this._map.get(key)![0];
     }
     const idx = this._startIdx + this._map.size;
     this._map.set(key, [idx, w.functype(paramTypes, resultTypes)]);
     return idx;
   }
 
-  addDecls(decls) {
+  addDecls(decls: FuncDecl[]): void {
     for (const {paramTypes, resultTypes} of decls) {
       this.add(paramTypes, resultTypes);
     }
   }
 
-  getIdx(paramTypes, resultTypes) {
+  getIdx(paramTypes: readonly valtype[], resultTypes: readonly valtype[]): number {
     const key = functypeToString(paramTypes, resultTypes);
     return checkNotNull(this._map.get(key))[0];
   }
 
-  getIdxForDecl(decl) {
+  getIdxForDecl(decl: FuncDecl): number {
     return this.getIdx(decl.paramTypes, decl.resultTypes);
   }
 
-  getTypes() {
+  getTypes(): Fragment[] {
     return [...this._map.values()].map(([_, t]) => t);
   }
 }
@@ -186,7 +202,20 @@ class TypeMap {
   constructing a module.
  */
 class Assembler {
-  constructor(typeMap) {
+  _functionDecls: FuncDecl[];
+  _blockStack: string[];
+  _code: (number | Fragment | string)[];
+  _locals: Map<string, number> | undefined;
+  _typeMap: TypeMap;
+
+  static ALIGN_1_BYTE = 0;
+  static ALIGN_2_BYTES = 1;
+  static ALIGN_4_BYTES = 2;
+  static CST_NODE_HEADER_SIZE_BYTES = 8;
+  static STACK_FRAME_SIZE_BYTES = 8;
+  static DESCRIPTION_FRAME_SIZE_BYTES = 12;
+
+  constructor(typeMap: TypeMap) {
     this._functionDecls = [];
 
     // Keep track of loops/blocks to make it easier (and safer) to generate
@@ -200,11 +229,11 @@ class Assembler {
     this._typeMap = typeMap;
   }
 
-  addBlocktype(paramTypes, resultTypes) {
+  addBlocktype(paramTypes: readonly valtype[], resultTypes: readonly valtype[]): void {
     this._typeMap.add(paramTypes, resultTypes);
   }
 
-  blocktype(paramTypes, resultTypes) {
+  blocktype(paramTypes: readonly valtype[], resultTypes: readonly valtype[]): Fragment {
     const idx = this._typeMap.getIdx(paramTypes, resultTypes);
     assert(idx !== -1, `Unknown blocktype: '${functypeToString(paramTypes, resultTypes)}'`);
 
@@ -214,7 +243,8 @@ class Assembler {
     return w.i32(idx);
   }
 
-  addLocal(name, type) {
+  addLocal(name: string, type: valtype): number {
+    assert(this._locals != null);
     assert(!this._locals.has(name), `Local '${name}' already exists`);
     assert(type === w.valtype.i32, `invalid local type: ${type}`);
     const idx = this._locals.size;
@@ -222,7 +252,12 @@ class Assembler {
     return idx;
   }
 
-  addFunction(name, paramTypes, resultTypes, bodyFn) {
+  addFunction(
+    name: string,
+    paramTypes: valtype[],
+    resultTypes: valtype[],
+    bodyFn: (asm: Assembler) => void
+  ): void {
     this._locals = new Map();
     paramTypes.forEach((t, i) => {
       this.addLocal(`__arg${i}`, t);
@@ -241,19 +276,21 @@ class Assembler {
 
   // Pure codegen helpers (used to generate the function bodies).
 
-  globalidx(name) {
+  globalidx(name: string): number {
     return prebuiltGlobalidx(name);
   }
 
-  localidx(name) {
-    return checkNotNull(this._locals.get(name), `Unknown local: ${name}`);
+  localidx(name: string): number {
+    return checkNotNull(this._locals?.get(name), `Unknown local: ${name}`);
   }
 
-  emit(...bytes) {
-    this._code.push(...checkNoUndefined(bytes.flat(Infinity)));
+  emit(...bytes: (number | Fragment | string)[]): void {
+    const flat = (bytes as unknown[]).flat(Infinity) as (number | Fragment | string)[];
+    checkNoUndefined(flat);
+    this._code.push(...flat);
   }
 
-  block(bt, bodyThunk, label = '') {
+  block(bt: number | Fragment, bodyThunk: () => void, label = ''): void {
     this._blockOnly(bt, label);
     bodyThunk();
     this._endBlock();
@@ -262,19 +299,19 @@ class Assembler {
   // Prefer to use `block`, but for some cases it's more convenient to emit
   // the block and the end separately.
   // Note: `label` (if specified) is not unique (e.g., 'pexprEnd').
-  _blockOnly(bt, label) {
+  _blockOnly(bt: number | Fragment, label?: string): void {
     this.emit(instr.block, bt);
     this._blockStack.push(label ? `block:${label}` : 'block');
   }
 
   // This should always be paired with `blockOnly`.
-  _endBlock() {
-    const what = this._blockStack.pop().split(':')[0];
+  _endBlock(): void {
+    const what = this._blockStack.pop()!.split(':')[0];
     assert(what === 'block', 'Invalid endBlock');
     this.emit(instr.end);
   }
 
-  loop(bt, bodyThunk) {
+  loop(bt: number | Fragment, bodyThunk: () => void): void {
     this.emit(instr.loop, bt);
     this._blockStack.push('loop');
     bodyThunk();
@@ -282,11 +319,11 @@ class Assembler {
     this.emit(instr.end);
   }
 
-  if(bt, bodyThunk) {
+  if(bt: number | Fragment, bodyThunk: () => void): void {
     this.ifElse(bt, bodyThunk);
   }
 
-  ifElse(bt, thenThunk, elseThunk = undefined) {
+  ifElse(bt: number | Fragment, thenThunk: () => void, elseThunk?: () => void): void {
     this.emit(instr.if, bt);
     this._blockStack.push('if');
     thenThunk();
@@ -298,108 +335,114 @@ class Assembler {
     this.emit(instr.end);
   }
 
-  ifFalse(bt, bodyThunk) {
+  ifFalse(bt: number | Fragment, bodyThunk: () => void): void {
     this.emit(instr.i32.eqz);
     this.if(bt, bodyThunk);
   }
 
-  br(depth) {
+  br(depth: number): void {
     this.emit(instr.br, w.labelidx(depth));
   }
 
-  i32Add() {
+  i32Add(): void {
     this.emit(instr.i32.add);
   }
 
-  i32Const(value) {
+  i32Const(value: number): void {
     this.emit(instr.i32.const, w.i32(value));
   }
 
-  i32Load(offset = 0) {
+  i32Load(offset = 0): void {
     this.emit(instr.i32.load, w.memarg(Assembler.ALIGN_4_BYTES, offset));
   }
 
-  i32Load8u(offset = 0) {
+  i32Load8u(offset = 0): void {
     this.emit(instr.i32.load8_u, w.memarg(Assembler.ALIGN_1_BYTE, offset));
   }
 
-  i32Load16u(offset = 0) {
+  i32Load16u(offset = 0): void {
     this.emit(instr.i32.load16_u, w.memarg(Assembler.ALIGN_2_BYTES, offset));
   }
 
-  i32Mul() {
+  i32Mul(): void {
     this.emit(instr.i32.mul);
   }
 
-  i32Eq() {
+  i32Eq(): void {
     this.emit(instr.i32.eq);
   }
 
-  i32Ne() {
+  i32Ne(): void {
     this.emit(instr.i32.ne);
   }
 
   // Store [addr:i32, val:i32] -> []
-  i32Store(offset = 0) {
+  i32Store(offset = 0): void {
     this.emit(instr.i32.store, w.memarg(Assembler.ALIGN_4_BYTES, offset));
   }
 
-  i32Sub() {
+  i32Sub(): void {
     this.emit(instr.i32.sub);
   }
 
-  globalGet(name) {
+  globalGet(name: string): void {
     this.emit(instr.global.get, this.globalidx(name));
   }
 
-  globalSet(name) {
+  globalSet(name: string): void {
     this.emit(instr.global.set, this.globalidx(name));
   }
 
-  localGet(name) {
+  localGet(name: string): void {
     this.emit(instr.local.get, this.localidx(name));
   }
 
-  localSet(name) {
+  localSet(name: string): void {
     this.emit(instr.local.set, this.localidx(name));
   }
 
-  localTee(name) {
+  localTee(name: string): void {
     this.emit(instr.local.tee, this.localidx(name));
   }
 
-  break(depth) {
-    const what = this._blockStack.at(-(depth + 1)).split(':')[0];
+  break(depth: number): void {
+    const what = this._blockStack.at(-(depth + 1))!.split(':')[0];
     assert(what === 'block' || what === 'if', 'Invalid break');
     this.emit(instr.br, w.labelidx(depth));
   }
 
   // Conditional break -- emits a `br_if` for the given depth.
-  condBreak(depth) {
-    const what = this._blockStack.at(-(depth + 1)).split(':')[0];
+  condBreak(depth: number): void {
+    const what = this._blockStack.at(-(depth + 1))!.split(':')[0];
     assert(what === 'block' || what === 'if', 'Invalid condBreak');
     this.emit(instr.br_if, w.labelidx(depth));
   }
 
-  continue(depth) {
-    const what = this._blockStack.at(-(depth + 1)).split(':')[0];
+  continue(depth: number): void {
+    const what = this._blockStack.at(-(depth + 1))!.split(':')[0];
     assert(what === 'loop', 'Invalid continue');
     this.emit(instr.br, w.labelidx(depth));
   }
 
-  brTable(labels, defaultLabelidx) {
+  brTable(labels: labelidx[], defaultLabelidx: labelidx): void {
     this.emit(instr.br_table, w.vec(labels), defaultLabelidx);
   }
 
-  return() {
+  return(): void {
     this.emit(instr.return);
   }
 
   // Emit a dense jump table (switch-like) using br_table.
-  switch(bt, discrimThunk, numCases, caseCb, defaultThunk) {
+  switch(
+    bt: number | Fragment,
+    discrimThunk: () => void,
+    numCases: number,
+    caseCb: (i: number, depth: number) => void,
+    defaultThunk: () => void
+  ): void {
     const startStackHeight = this._blockStack.length;
 
-    const labels = [];
+    const labels: labelidx[] = [];
 
     // Emit one block per case…
     for (let i = 0; i < numCases; i++) {
@@ -422,28 +465,28 @@ class Assembler {
     assert(this._blockStack.length === startStackHeight);
   }
 
-  refNull(valtype) {
-    this.emit(wasm3.instr.ref.null, valtype);
+  refNull(vt: number): void {
+    this.emit(wasm3.instr.ref.null, vt);
   }
 
   // "Macros" -- codegen helpers specific to Ohm.
 
-  i32Inc() {
+  i32Inc(): void {
     this.i32Const(1);
     this.i32Add();
   }
 
-  i32Dec() {
+  i32Dec(): void {
     this.i32Const(1);
     this.i32Sub();
   }
 
-  dup() {
+  dup(): void {
     this.localTee('tmp');
     this.localGet('tmp');
   }
 
-  currCharCode() {
+  currCharCode(): void {
     this.globalGet('pos');
     this.globalGet('endPos');
     this.emit(instr.i32.lt_u);
@@ -464,17 +507,20 @@ class Assembler {
     );
   }
 
-  nextCharCode() {
+  nextCharCode(): void {
     this.currCharCode();
     this.incPos();
   }
 
-  setRet(val) {
+  setRet(val: number): void {
     this.i32Const(val);
     this.localSet('ret');
   }
 
-  pushStackFrame(saveThunk, size = Assembler.STACK_FRAME_SIZE_BYTES) {
+  pushStackFrame(
+    saveThunk?: (() => void) | null,
+    size = Assembler.STACK_FRAME_SIZE_BYTES
+  ): void {
     this.globalGet('sp');
     this.i32Const(size);
     this.i32Sub();
@@ -487,7 +533,7 @@ class Assembler {
     }
   }
 
-  popStackFrame(size = Assembler.STACK_FRAME_SIZE_BYTES) {
+  popStackFrame(size = Assembler.STACK_FRAME_SIZE_BYTES): void {
     this.i32Const(size);
     this.globalGet('sp');
     this.i32Add();
@@ -495,7 +541,7 @@ class Assembler {
   }
 
   // Save the current input position.
-  savePos() {
+  savePos(): void {
     // stack[sp] = pos
     this.globalGet('sp');
     this.globalGet('pos');
@@ -503,17 +549,17 @@ class Assembler {
   }
 
   // Load the saved input position onto the stack.
-  getSavedPos() {
+  getSavedPos(): void {
     this.globalGet('sp');
     this.i32Load();
   }
 
-  restorePos() {
+  restorePos(): void {
     this.getSavedPos();
     this.globalSet('pos');
   }
 
-  saveNumBindings() {
+  saveNumBindings(): void {
     this.globalGet('sp');
     if (FAST_SAVE_BINDINGS) {
       this.globalGet('bindings');
@@ -524,12 +570,12 @@ class Assembler {
     this.i32Store(4);
   }
 
-  getSavedNumBindings() {
+  getSavedNumBindings(): void {
     this.globalGet('sp');
     this.i32Load(4);
   }
 
-  restoreBindingsLength() {
+  restoreBindingsLength(): void {
     if (FAST_RESTORE_BINDINGS) {
       // It's safe to directly set the length as long as it's shrinking.
       this.globalGet('bindings');
@@ -541,31 +587,31 @@ class Assembler {
     }
   }
 
-  saveFailurePos() {
+  saveFailurePos(): void {
     this.globalGet('sp');
     this.localGet('failurePos');
     this.i32Store();
   }
 
-  restoreFailurePos() {
+  restoreFailurePos(): void {
     this.globalGet('sp');
     this.i32Load();
     this.localSet('failurePos');
   }
 
-  saveGlobalFailurePos() {
+  saveGlobalFailurePos(): void {
     this.globalGet('sp');
     this.globalGet('rightmostFailurePos');
     this.i32Store(4);
   }
 
-  restoreGlobalFailurePos() {
+  restoreGlobalFailurePos(): void {
     this.globalGet('sp');
     this.i32Load(4);
     this.globalSet('rightmostFailurePos');
   }
 
-  updateGlobalFailurePos() {
+  updateGlobalFailurePos(): void {
     // rightmostFailurePos = max(rightmostFailurePos, failurePos)
     this.i32Max(
       () => this.globalGet('rightmostFailurePos'),
@@ -574,13 +620,13 @@ class Assembler {
     this.globalSet('rightmostFailurePos');
   }
 
-  updateLocalFailurePos(origPosThunk) {
+  updateLocalFailurePos(origPosThunk: () => void): void {
     // failurePos = max(failurePos, origPos)
     this.i32Max(() => this.localGet('failurePos'), origPosThunk);
     this.localSet('failurePos');
   }
 
-  maybeRecordFailure(origPosThunk, failureId) {
+  maybeRecordFailure(origPosThunk: () => void, failureId: number): void {
     this.globalGet('errorMessagePos');
     this.i32Const(0);
     this.emit(instr.i32.ge_s);
@@ -602,7 +648,7 @@ class Assembler {
   // - offset 4: rightmostFailurePos
   // - offset 8: recordedFailures.length
   // Must be called at the start of the rule evaluation function.
-  pushDescriptionFrame() {
+  pushDescriptionFrame(): void {
     this.pushStackFrame(() => {
       this.savePos(); // offset 0
       this.saveGlobalFailurePos(); // offset 4
@@ -617,7 +663,7 @@ class Assembler {
   // For rules with descriptions: handle failure by swallowing internal failures
   // and recording the description at the start position, then pop the frame.
   // Must be called after evaluating the rule body.
-  handleDescriptionFailure(descriptionId) {
+  handleDescriptionFailure(descriptionId: number): void {
     this.localGet('ret');
     this.ifFalse(w.blocktype.empty, () => {
       // Restore rightmostFailurePos (swallow internal failures for error position calculation)
@@ -657,14 +703,14 @@ class Assembler {
 
   // Increment the current input position by 1.
   // [i32, i32] -> [i32]
-  incPos() {
+  incPos(): void {
     this.globalGet('pos');
     this.i32Inc();
     this.globalSet('pos');
   }
 
   // Pushes i32 (0 or 1) indicating whether `tmp` is a high surrogate.
-  tmpIsHighSurrogate() {
+  tmpIsHighSurrogate(): void {
     this.localGet('tmp');
     this.i32Const(0xd800);
     this.emit(instr.i32.ge_u);
@@ -677,7 +723,7 @@ class Assembler {
   // Assumes `tmp` holds a high surrogate and pos points at the low surrogate.
   // Reads the low surrogate, advances past it, and pushes the decoded code
   // point (i32) onto the stack.
-  decodeSurrogatePair() {
+  decodeSurrogatePair(): void {
     // cp = (tmp - 0xD800) << 10 + (lowSurr - 0xDC00) + 0x10000
     this.localGet('tmp');
     this.i32Const(0xd800);
@@ -693,11 +739,11 @@ class Assembler {
     this.emit(instr.i32.add);
   }
 
-  callPrebuiltFunc(name) {
+  callPrebuiltFunc(name: string): void {
     this.emit(instr.call, w.funcidx(prebuiltFuncidx(name)));
   }
 
-  newIterNodeWithSavedPosAndBindings(arity, isOpt = false) {
+  newIterNodeWithSavedPosAndBindings(arity: number, isOpt = false): void {
     this.getSavedPos();
     this.globalGet('pos');
     this.getSavedNumBindings();
@@ -708,7 +754,7 @@ class Assembler {
 
   // Wrap the bindings accumulated since the last pushStackFrame() in a
   // nonterminal node. Uses the saved pos/numBindings from the stack frame.
-  newNonterminalNodeFromStackFrame(ruleId) {
+  newNonterminalNodeFromStackFrame(ruleId: number): void {
     this.getSavedPos();
     this.globalGet('pos');
     this.i32Const(ruleId);
@@ -717,7 +763,7 @@ class Assembler {
     this.callPrebuiltFunc('newNonterminalNode');
   }
 
-  newCaseInsensitiveNode(ruleId) {
+  newCaseInsensitiveNode(ruleId: number): void {
     this.getSavedPos();
     this.globalGet('pos');
     this.i32Const(ruleId);
@@ -733,13 +779,13 @@ class Assembler {
   }
 
   // [startIdx: i32] -> [ptr: i32]
-  newTerminalNode() {
+  newTerminalNode(): void {
     this.localGet('postSpacesPos');
     this.globalGet('pos');
     this.callPrebuiltFunc('newTerminalNode');
   }
 
-  i32Max(aThunk, bThunk) {
+  i32Max(aThunk: () => void, bThunk: () => void): void {
     aThunk();
     bThunk();
     aThunk();
@@ -748,24 +794,24 @@ class Assembler {
   }
 
   // Return the depth of the block with the given label.
-  depthOf(label) {
+  depthOf(label: string): number {
     const i = this._blockStack.findLastIndex(what => what === `block:${label}`);
     assert(i !== -1, `Unknown label: ${label}`);
     return this._blockStack.length - i - 1;
   }
 
-  pushFluffySavePoint() {
+  pushFluffySavePoint(): void {
     this.callPrebuiltFunc('pushFluffySavePoint');
   }
 
-  popFluffySavePoint(shouldMark) {
+  popFluffySavePoint(shouldMark: boolean): void {
     this.i32Const(shouldMark ? 1 : 0);
     this.callPrebuiltFunc('popFluffySavePoint');
   }
 
   // Pop the fluffy save point, marking failures as fluffy only when
   // pos matches errorMessagePos. This mirrors ohm-js's scoped failure recording.
-  popFluffySavePointIfAtErrorPos() {
+  popFluffySavePointIfAtErrorPos(): void {
     this.globalGet('errorMessagePos');
     this.globalGet('pos');
     this.i32Eq();
@@ -775,16 +821,16 @@ class Assembler {
   // Pop the fluffy save point based on whether `ret` indicates success.
   // On success, mark failures as fluffy if pos is at errorMessagePos;
   // on failure, discard without marking.
-  popFluffySavePointOnResult() {
+  popFluffySavePointOnResult(): void {
     this.localGet('ret');
-    this.if(
+    this.ifElse(
       w.blocktype.empty,
       () => this.popFluffySavePointIfAtErrorPos(),
       () => this.popFluffySavePoint(false)
     );
   }
 
-  ruleEvalReturn() {
+  ruleEvalReturn(): void {
     // Convert the value in `ret` to a single bit in position 0.
     this.localGet('ret');
     this.emit(instr.i32.eqz, instr.i32.eqz);
@@ -796,16 +842,34 @@ class Assembler {
     this.emit(instr.i32.or);
   }
 }
-Assembler.ALIGN_1_BYTE = 0;
-Assembler.ALIGN_2_BYTES = 1;
-Assembler.ALIGN_4_BYTES = 2;
-Assembler.CST_NODE_HEADER_SIZE_BYTES = 8;
-
-Assembler.STACK_FRAME_SIZE_BYTES = 8;
-Assembler.DESCRIPTION_FRAME_SIZE_BYTES = 12;
+interface RuleInfo {
+  body: Expr;
+  isSyntactic?: boolean;
+  formals?: any[];
+  description?: string;
+  patterns?: Expr[][];
+  _isInlineRule?: boolean;
+  [key: string]: any;
+}
 
 export class Compiler {
-  constructor(grammar) {
+  grammar: any;
+  importDecls: FuncDecl[];
+  ruleIdByName: StringTable;
+  rules: Map<string, RuleInfo> | undefined;
+  typeMap!: TypeMap;
+  asm!: Assembler;
+  _strings: StringTable;
+  _endOfInputFailureId: number;
+  _maxMemoizedRuleId: number;
+  _lexContextStack: boolean[];
+  _applySpacesImplicit: ir.Apply;
+  _singleUseRules!: Set<string>;
+  _preallocRules!: Set<string>;
+
+  static STACK_START_OFFSET: number;
+
+  constructor(grammar: any) {
     assert(grammar && 'superGrammar' in grammar, 'Not a valid grammar: ' + grammar);
 
     // Detect the so-called "dual package hazard". Since we use the identity
@@ -847,7 +911,7 @@ export class Compiler {
     this._applySpacesImplicit = ir.apply('$spaces', -1);
   }
 
-  getOrAddFailure(str) {
+  getOrAddFailure(str: string): number {
     return this._strings.add(str);
   }
 
@@ -855,7 +919,7 @@ export class Compiler {
   // if a description can't be generated. For compound expressions (Alt, Seq,
   // Not, Iter, etc.), this recursively composes descriptions from children —
   // matching the behavior of ohm-js's pexprs-toFailure.js.
-  toFailureDescription(exp) {
+  toFailureDescription(exp: Expr): string | null {
     switch (exp.type) {
       case 'Any':
         return 'any character';
@@ -907,42 +971,42 @@ export class Compiler {
     }
   }
 
-  _prefixNot(str) {
+  _prefixNot(str: string | null): string | null {
     return str != null ? 'not ' + str : null;
   }
 
-  toFailure(exp) {
+  toFailure(exp: Expr): number {
     const str = this.toFailureDescription(exp);
     return str != null ? this.getOrAddFailure(str) : -1;
   }
 
-  importCount() {
+  importCount(): number {
     return prebuilt.importsec.entryCount + this.importDecls.length;
   }
 
-  ruleId(name) {
+  ruleId(name: string): number {
     return checkNotNull(this.ruleIdByName.getIndex(name), `Unknown rule: ${name}`);
   }
 
   // This should be the only place where we assign rule IDs!
-  _ensureRuleId(name) {
+  _ensureRuleId(name: string): number {
     const idx = this.ruleIdByName.add(name);
     return idx;
   }
 
-  inLexicalContext() {
+  inLexicalContext(): boolean {
     return checkNotNull(this._lexContextStack.at(-1));
   }
 
   // Return a funcidx corresponding to the eval function for the given rule.
-  ruleEvalFuncIdx(name) {
+  ruleEvalFuncIdx(name: string): funcidx {
     const offset = this.importCount() + prebuilt.funcsec.entryCount;
     return w.funcidx(this.ruleId(name) + offset);
   }
 
   // Return an object implementing all of the debug imports.
-  getDebugImports(log) {
-    const ans = {};
+  getDebugImports(log: (name: string, arg: any) => void): Record<string, (arg: any) => void> {
+    const ans: Record<string, (arg: any) => void> = {};
     for (const decl of this.importDecls.filter(d => d.module === 'debug')) {
       const {name} = decl;
       ans[name] = arg => {
@@ -952,13 +1016,13 @@ export class Compiler {
     return ans;
   }
 
-  normalize() {
+  normalize(): void {
     assert(!this.rules, 'already normalized');
     this.lowerToIR();
     this.monomorphize();
   }
 
-  compile() {
+  compile(): Uint8Array {
     this.normalize();
 
     const typeMap = (this.typeMap = new TypeMap(prebuilt.typesec.entryCount));
@@ -983,10 +1047,10 @@ export class Compiler {
     return this.buildModule(typeMap, functionDecls);
   }
 
-  lowerToIR() {
+  lowerToIR(): void {
     const {grammar} = this;
 
-    const lookUpRule = name => ({
+    const lookUpRule = (name: string) => ({
       ...checkNotNull(grammar.rules[name]),
       isSyntactic: isSyntacticRule(name),
     });
@@ -1003,9 +1067,9 @@ export class Compiler {
       rules.push([name, lookUpRule(name)]);
     }
 
-    const lower = (exp, isSyntactic) => {
+    const lower = (exp: any, isSyntactic: boolean): Expr => {
       if (exp instanceof pexprs.Alt) {
-        return ir.alt(exp.terms.map(e => lower(e, isSyntactic)));
+        return ir.alt(exp.terms.map((e: any) => lower(e, isSyntactic)));
       }
       if (exp === pexprs.any) return ir.any();
       if (exp === pexprs.end) return ir.end();
@@ -1024,7 +1088,7 @@ export class Compiler {
           return ir.apply(
             exp.ruleName,
             descId,
-            exp.args.map(arg => lower(arg, isSyntactic))
+            exp.args.map((arg: any) => lower(arg, isSyntactic))
           );
         }
         case pexprs.Lex: {
@@ -1041,7 +1105,7 @@ export class Compiler {
         case pexprs.Plus:
           return ir.plus(lower(exp.expr, isSyntactic));
         case pexprs.Seq:
-          return ir.seq(exp.factors.map(e => lower(e, isSyntactic)));
+          return ir.seq(exp.factors.map((e: any) => lower(e, isSyntactic)));
         case pexprs.Star:
           return ir.star(lower(exp.expr, isSyntactic));
         case pexprs.Param:
@@ -1073,20 +1137,20 @@ export class Compiler {
     this.rules = newRules;
   }
 
-  beginLexContext(initialVal) {
+  beginLexContext(initialVal: boolean): void {
     assert(this._lexContextStack.length === 0);
     this._lexContextStack.push(initialVal);
   }
 
-  endLexContext() {
+  endLexContext(): void {
     this._lexContextStack.pop();
     assert(this._lexContextStack.length === 0);
   }
 
-  compileRule(name) {
+  compileRule(name: string): FuncDecl {
     const {asm} = this;
-    const ruleInfo = getNotNull(this.rules, name);
-    let paramTypes = [];
+    const ruleInfo = getNotNull(this.rules!, name);
+    let paramTypes: valtype[] = [];
     if (ruleInfo.patterns) {
       paramTypes = [w.valtype.i32];
     }
@@ -1144,21 +1208,21 @@ export class Compiler {
       asm.emit(`END eval:${name}`);
     });
     this.endLexContext();
-    return this.asm._functionDecls.at(-1);
+    return checkNotNull(this.asm._functionDecls.at(-1));
   }
 
   // Beginning with the default start rule, recursively visit all reachable
   // parsing expressions. For all parameterized rules, create a specialized
   // version of that rule for every possible set of actual parameters.
   // At the end, there are no more applications with arguments.
-  monomorphize() {
-    const newRules = new Map();
-    const {rules} = this;
-    const patternsByRule = new Map();
+  monomorphize(): void {
+    const newRules = new Map<string, RuleInfo>();
+    const rules = this.rules!;
+    const patternsByRule = new Map<string, Map<string, Expr[]>>();
     let hasCaseInsensitiveTerminals = false;
     const refCounts = new Map();
 
-    const specialize = exp =>
+    const specialize = (exp: Expr): Expr =>
       ir.rewrite(exp, {
         Apply: app => {
           const {ruleName, children} = app;
@@ -1171,11 +1235,13 @@ export class Compiler {
           // If not yet seen, recursively visit the body of the specialized
           // rule. Note that this also applies to non-parameterized rules!
           if (!newRules.has(specializedName)) {
-            newRules.set(specializedName, {}); // Prevent infinite recursion.
+            newRules.set(specializedName, {} as RuleInfo); // Prevent infinite recursion.
 
             // Visit the body with the parameter substituted, to ensure we
             // discover all possible applications that can occur at runtime.
-            let body = specialize(ir.substituteParams(ruleInfo.body, children));
+            let body = specialize(
+              ir.substituteParams(ruleInfo.body, children as Exclude<Expr, ir.Param>[])
+            );
 
             // If there are any args, replace the body with an application of
             // the generalized rule.
@@ -1231,7 +1297,7 @@ export class Compiler {
     this.rules = newRules;
 
     if (EMIT_GENERALIZED_RULES) {
-      const insertDispatches = (exp, patterns) =>
+      const insertDispatches = (exp: Expr, patterns: Expr[][]) =>
         ir.rewrite(exp, {
           Apply: app => (app.children.length === 0 ? app : ir.dispatch(app, patterns)),
           Param: p => ir.dispatch(p, patterns),
@@ -1269,7 +1335,7 @@ export class Compiler {
     // be preallocated since the structure is always the same (1 terminal child,
     // matchLength=1 in the common case). We check the actual body (not names)
     // so user overrides (e.g. `digit := ...`) are handled correctly.
-    const isSimpleCharMatcher = body => {
+    const isSimpleCharMatcher = (body: Expr | undefined) => {
       const t = body?.type;
       return t === 'Range' || t === 'UnicodeChar' || t === 'Any';
     };
@@ -1284,7 +1350,7 @@ export class Compiler {
 
     // Reassign rule IDs: memoized rules get low IDs, everything else
     // gets high IDs. This shrinks the memo table index.
-    const shouldMemoize = name =>
+    const shouldMemoize = (name: string) =>
       !this._singleUseRules.has(name) &&
       !this._preallocRules.has(name) &&
       name !== 'caseInsensitive';
@@ -1297,19 +1363,19 @@ export class Compiler {
     for (const name of allNames) this.ruleIdByName.add(name);
   }
 
-  buildRuleNamesSection(ruleNames) {
+  buildRuleNamesSection(ruleNames: string[]): Fragment {
     // A custom section that allows the clients to look up rule IDs by name.
     // They're simply encoded as a vec(name), and the client can turn this
     // into a list/array and use the ruleId as the index.
     return w.custom(w.name('ruleNames'), w.vec(ruleNames.map((n, i) => w.name(n))));
   }
 
-  buildStringTable(sectionName, tableOrArr) {
+  buildStringTable(sectionName: string, tableOrArr: string[] | StringTable): Fragment {
     const keys = Array.isArray(tableOrArr) ? tableOrArr : tableOrArr.keys();
     return w.custom(w.name(sectionName), w.vec(keys.map(n => w.name(n))));
   }
 
-  buildModule(typeMap, functionDecls) {
+  buildModule(typeMap: TypeMap, functionDecls: FuncDecl[]): Uint8Array {
     const ruleNames = this.ruleIdByName.keys();
     assert(this.importCount() === prebuilt.destImportCount, 'import count mismatch');
 
@@ -1322,16 +1388,16 @@ export class Compiler {
     typeMap.addDecls(functionDecls);
 
     const imports = this.importDecls.map((f, i) =>
-      w.import_(f.module, f.name, w.importdesc.func(typeMap.getIdxForDecl(f)))
+      w.import_(f.module!, f.name, w.importdesc.func(w.typeidx(typeMap.getIdxForDecl(f))))
     );
-    const funcs = functionDecls.map((f, i) => w.typeidx(typeMap.getIdxForDecl(f)));
-    const codes = functionDecls.map(f => w.code(w.func(f.locals, f.body)));
+    const funcs = functionDecls.map(f => w.typeidx(typeMap.getIdxForDecl(f)));
+    const codes = functionDecls.map(f => w.code(w.func(f.locals!, f.body as Fragment)));
 
     const exportOffset = this.importCount() + prebuilt.funcsec.entryCount;
     const exports = functionDecls.map((f, i) =>
-      w.export_(f.name, w.exportdesc.func(i + exportOffset))
+      w.export_(f.name, w.exportdesc.func(w.funcidx(i + exportOffset)))
     );
-    exports.push(w.export_('memory', w.exportdesc.mem(0)));
+    exports.push(w.export_('memory', w.exportdesc.mem(w.memidx(0))));
 
     // Re-export some prebuilt functions.
     [
@@ -1344,7 +1410,7 @@ export class Compiler {
       'recordFailures',
       'resetHeap',
     ].forEach(name => {
-      exports.push(w.export_(name, w.exportdesc.func(prebuiltFuncidx(name))));
+      exports.push(w.export_(name, w.exportdesc.func(w.funcidx(prebuiltFuncidx(name)))));
     });
 
     // Export prebuilt globals so they get a name for debugging.
@@ -1380,9 +1446,14 @@ export class Compiler {
       mergeSections(w.SECTION_ID_CODE, prebuilt.codesec, codes),
       w.customsec(this.buildStringTable('ruleNames', ruleNames)),
       w.customsec(this.buildStringTable('strings', this._strings)),
-      w.namesec(w.namedata(w.modulenamesubsec(this.grammar.name))),
+      // Only the module name subsection is needed.
+      w.namesec(
+        (w.namedata as (...args: Fragment[]) => Fragment)(
+          w.modulenamesubsec(this.grammar.name)
+        )
+      ),
     ]);
-    const bytes = Uint8Array.from(mod.flat(Infinity));
+    const bytes = Uint8Array.from((mod as unknown[]).flat(Infinity) as number[]);
 
     // (async () => {
     //   const {readWasm} = await wabt();
@@ -1407,17 +1478,17 @@ export class Compiler {
   // Ensures that there are no duplicate dummy function names, but does not
   // guarantee that there are no collisions with other functions.
   // Returns the list of dummy functions that need to be added to the module.
-  rewriteDebugLabels(decls) {
+  rewriteDebugLabels(decls: FuncDecl[]): void {
     // Careful: this.importDecls *doesn't* include the prebuilt imports (we know how many there
     // are, but it's otherwise treated as an opaque blob). But it *does* include any non-debug
     // imports, so we account for those in nextIdx, and for the prebuilt imports in `intoFuncidx`.
     let nextIdx = 0;
-    const intoFuncidx = i => w.funcidx(prebuilt.importsec.entryCount + i);
-    const names = new Set();
+    const intoFuncidx = (i: number): funcidx => w.funcidx(prebuilt.importsec.entryCount + i);
+    const names = new Set<string>();
     for (let i = 0; i < decls.length; i++) {
       const entry = decls[i];
-      entry.body = entry.body.flatMap(x => {
-        if (typeof x !== 'string') return x;
+      entry.body = entry.body!.flatMap((x): (number | Fragment)[] => {
+        if (typeof x !== 'string') return [x];
 
         // If debugging is disabled, just drop the string altogether.
         if (!DEBUG) return [];
@@ -1428,33 +1499,32 @@ export class Compiler {
         assert(decl.module === 'debug');
         decl.name = uniqueName(names, x);
 
-        let pushArg = [];
         if (x.startsWith('END')) {
           decl.paramTypes = [w.valtype.i32];
           // We want to pass 'ret', but to figure out its index, we need to
           // account for the number of parameters.
           const retIdx = entry.paramTypes.length;
-          pushArg = [instr.local.get, w.localidx(retIdx)];
+          return [instr.local.get, w.localidx(retIdx), instr.call, intoFuncidx(idx)];
         }
 
         // …and replace the string with a call to that function.
-        return [...pushArg, instr.call, intoFuncidx(idx)].flat(Infinity);
+        return [instr.call, intoFuncidx(idx)];
       });
     }
   }
 
-  functionDecls() {
+  functionDecls(): FuncDecl[] {
     const {asm} = this;
-    const ruleDecls = [];
+    const ruleDecls: FuncDecl[] = [];
     for (const name of this.ruleIdByName.keys()) {
-      if (this.rules.get(name)?._isInlineRule && this._singleUseRules.has(name)) {
+      if (this.rules!.get(name)?._isInlineRule && this._singleUseRules.has(name)) {
         // Inline rules (e.g. AddExpr_plus) are always inlined in the generated
         // code. Emit a stub that returns failure (0) in case they're called
         // directly via match().
         asm.addFunction(`$${name}`, [], [w.valtype.i32], () => {
           asm.i32Const(0);
         });
-        ruleDecls.push(asm._functionDecls.at(-1));
+        ruleDecls.push(checkNotNull(asm._functionDecls.at(-1)));
       } else {
         ruleDecls.push(this.compileRule(name));
       }
@@ -1467,7 +1537,7 @@ export class Compiler {
       asm.callPrebuiltFunc('setNumMemoizedRules');
       asm.emit(instr.call, w.funcidx(prebuilt.startFuncidx));
     });
-    ruleDecls.push(asm._functionDecls.at(-1));
+    ruleDecls.push(checkNotNull(asm._functionDecls.at(-1)));
     return ruleDecls;
   }
 
@@ -1477,13 +1547,13 @@ export class Compiler {
   // rule; they take an i32 `caseIdx` argument that selects the behaviour.
   // Then, for any Param -- or Apply that involves a Param -- we dynamically
   // dispatch to the correct specialized version of the rule.
-  emitDispatch({child: exp, patterns}) {
+  emitDispatch({child: exp, patterns}: ir.Dispatch): void {
     const {asm} = this;
 
-    const handleCase = i => {
+    const handleCase = (i: number) => {
       // Substitute the params to get the concrete expression that
       // needs to be inserted here.
-      let newExp = ir.substituteParams(exp, patterns[i]);
+      let newExp = ir.substituteParams(exp, patterns[i] as Exclude<Expr, ir.Param>[]);
       if (newExp.type === 'Apply') {
         // If the application has arguments, we need to dispatch to the
         // correct specialized version of the rule.
@@ -1508,7 +1578,10 @@ export class Compiler {
     );
   }
 
-  emitPExpr(exp, {preHook, postHook} = {}) {
+  emitPExpr(
+    exp: Expr,
+    {preHook, postHook}: {preHook?: () => void; postHook?: () => void} = {}
+  ): void {
     const {asm} = this;
 
     const allowFastApply = !preHook && !postHook;
@@ -1545,23 +1618,52 @@ export class Compiler {
       () => {
         if (preHook) preHook();
 
-        // biome-ignore format: keep switch dense
         switch (exp.type) {
-          case 'Alt': this.emitAlt(exp); break;
-          case 'Any': this.emitAny(exp); break;
-          case 'CaseInsensitive': this.emitCaseInsensitive(exp); break;
-          case 'Dispatch': this.emitDispatch(exp);  break;
-          case 'End': this.emitEnd(exp); break;
-          case 'Lex': this.emitLex(exp); break;
-          case 'Lookahead': this.emitLookahead(exp); break;
-          case 'Not': this.emitNot(exp); break;
-          case 'Seq': this.emitSeq(exp); break;
-          case 'Star': this.emitStar(exp); break;
-          case 'Opt': this.emitOpt(exp); break;
-          case 'Range': this.emitRange(exp); break;
-          case 'Plus': this.emitPlus(exp); break;
-          case 'Terminal': this.emitTerminal(exp); break;
-          case 'UnicodeChar': this.emitUnicodeChar(exp); break;
+          case 'Alt':
+            this.emitAlt(exp);
+            break;
+          case 'Any':
+            this.emitAny(exp);
+            break;
+          case 'CaseInsensitive':
+            this.emitCaseInsensitive(exp);
+            break;
+          case 'Dispatch':
+            this.emitDispatch(exp);
+            break;
+          case 'End':
+            this.emitEnd(exp);
+            break;
+          case 'Lex':
+            this.emitLex(exp);
+            break;
+          case 'Lookahead':
+            this.emitLookahead(exp);
+            break;
+          case 'Not':
+            this.emitNot(exp);
+            break;
+          case 'Seq':
+            this.emitSeq(exp);
+            break;
+          case 'Star':
+            this.emitStar(exp);
+            break;
+          case 'Opt':
+            this.emitOpt(exp);
+            break;
+          case 'Range':
+            this.emitRange(exp);
+            break;
+          case 'Plus':
+            this.emitPlus(exp);
+            break;
+          case 'Terminal':
+            this.emitTerminal(exp);
+            break;
+          case 'UnicodeChar':
+            this.emitUnicodeChar(exp);
+            break;
           case 'Param':
           // Fall through (Params should not exist at codegen time).
           default:
@@ -1575,7 +1677,7 @@ export class Compiler {
     asm.emit(`END ${debugLabel}`);
   }
 
-  emitAlt(exp) {
+  emitAlt(exp: ir.Alt): void {
     const {asm} = this;
     asm.block(w.blocktype.empty, () => {
       for (const term of exp.children) {
@@ -1590,7 +1692,7 @@ export class Compiler {
 
   // Matches a single code point (BMP or supplementary) and checks it against
   // [lo, hi]. Used by emitRange when hi > 0xFFFF.
-  matchCodePointRange(lo, hi, failureId) {
+  matchCodePointRange(lo: number, hi: number, failureId: number): void {
     const {asm} = this;
     this.wrapTerminalLike(() => {
       asm.currCharCode();
@@ -1630,7 +1732,7 @@ export class Compiler {
     }, failureId);
   }
 
-  emitAny(exp) {
+  emitAny(exp: ir.Any): void {
     const {asm} = this;
     const failureId = this.toFailure(exp);
     this.wrapTerminalLike(() => {
@@ -1651,7 +1753,7 @@ export class Compiler {
   }
 
   // Need to know which case we're applying!
-  emitApplyGeneralized(exp) {
+  emitApplyGeneralized(exp: ir.ApplyGeneralized): void {
     const {asm} = this;
     asm.i32Const(this.ruleId(exp.ruleName));
     asm.i32Const(exp.caseIdx);
@@ -1659,7 +1761,7 @@ export class Compiler {
     asm.localSet('ret');
   }
 
-  emitApply(exp) {
+  emitApply(exp: ir.Apply): void {
     assert(exp.children.length === 0);
 
     // Avoid infinite recursion.
@@ -1669,7 +1771,7 @@ export class Compiler {
 
     const {asm} = this;
 
-    const isInlineRule = this.rules.get(exp.ruleName)?._isInlineRule;
+    const isInlineRule = this.rules!.get(exp.ruleName)?._isInlineRule;
     if (this._singleUseRules.has(exp.ruleName) && (INLINE_SINGLE_USE_RULES || isInlineRule)) {
       this.emitInlinedApply(exp);
       return;
@@ -1691,10 +1793,10 @@ export class Compiler {
     asm.localSet('ret');
   }
 
-  emitInlinedApply(exp) {
+  emitInlinedApply(exp: ir.Apply): void {
     const {asm} = this;
     const ruleId = this.ruleId(exp.ruleName);
-    const ruleInfo = getNotNull(this.rules, exp.ruleName);
+    const ruleInfo = getNotNull(this.rules!, exp.ruleName);
 
     asm.pushStackFrame();
     this._lexContextStack.push(!ruleInfo.isSyntactic);
@@ -1714,7 +1816,7 @@ export class Compiler {
     asm.updateLocalFailurePos(() => asm.globalGet('rightmostFailurePos'));
   }
 
-  emitEnd(exp) {
+  emitEnd(exp: ir.End): void {
     const {asm} = this;
     const failureId = this.toFailure(exp);
     this.wrapTerminalLike(() => {
@@ -1726,19 +1828,19 @@ export class Compiler {
     }, failureId);
   }
 
-  emitFail() {
+  emitFail(): void {
     const {asm} = this;
     asm.i32Const(0);
     asm.localSet('ret');
   }
 
-  emitLex({child}) {
+  emitLex({child}: ir.Lex): void {
     this._lexContextStack.push(true);
     this.emitPExpr(child);
     this._lexContextStack.pop();
   }
 
-  emitLookahead({child}) {
+  emitLookahead({child}: ir.Lookahead): void {
     const {asm} = this;
 
     // TODO: Should positive lookahead record a CST?
@@ -1749,7 +1851,7 @@ export class Compiler {
 
     // When lookahead succeeds, mark inner failures as fluffy (scoped).
     asm.localGet('ret');
-    asm.if(
+    asm.ifElse(
       w.blocktype.empty,
       () => {
         asm.popFluffySavePointIfAtErrorPos();
@@ -1760,7 +1862,7 @@ export class Compiler {
     );
   }
 
-  emitNot(exp) {
+  emitNot(exp: ir.Not): void {
     const {child} = exp;
     const {asm} = this;
     const failureId = this.toFailure(exp);
@@ -1818,7 +1920,7 @@ export class Compiler {
     });
   }
 
-  emitOpt({child}) {
+  emitOpt({child}: ir.Opt): void {
     const {asm} = this;
     asm.pushFluffySavePoint();
     this.emitPExpr(child);
@@ -1833,7 +1935,7 @@ export class Compiler {
     asm.localSet('ret');
   }
 
-  emitPlus(plusExp) {
+  emitPlus(plusExp: ir.Plus): void {
     const {asm} = this;
     this.emitPExpr(plusExp.child);
     asm.localGet('ret');
@@ -1842,7 +1944,7 @@ export class Compiler {
     });
   }
 
-  emitRange(exp) {
+  emitRange(exp: ir.Range): void {
     const {lo, hi} = exp;
     const {asm} = this;
     const failureId = this.toFailure(exp);
@@ -1872,7 +1974,7 @@ export class Compiler {
     }
   }
 
-  emitSeq({children}) {
+  emitSeq({children}: ir.Seq): void {
     const {asm} = this;
 
     // An empty sequence always succeeds.
@@ -1889,7 +1991,7 @@ export class Compiler {
     }
   }
 
-  maybeEmitSpaceSkipping() {
+  maybeEmitSpaceSkipping(): void {
     if (IMPLICIT_SPACE_SKIPPING && !this.inLexicalContext()) {
       this.asm.emit('BEGIN space skipping');
       this.emitApply(this._applySpacesImplicit);
@@ -1897,7 +1999,10 @@ export class Compiler {
     }
   }
 
-  emitStar({child}, {reuseStackFrame} = {}) {
+  emitStar(
+    {child}: ir.Star | ir.Plus,
+    {reuseStackFrame}: {reuseStackFrame?: boolean} = {}
+  ): void {
     const {asm} = this;
 
     asm.pushFluffySavePoint();
@@ -1928,7 +2033,7 @@ export class Compiler {
     asm.localSet('ret');
   }
 
-  wrapTerminalLike(thunk, failureId) {
+  wrapTerminalLike(thunk: () => void, failureId: number): void {
     const {asm} = this;
     this.maybeEmitSpaceSkipping();
 
@@ -1961,7 +2066,7 @@ export class Compiler {
     );
   }
 
-  emitCaseInsensitive(exp) {
+  emitCaseInsensitive(exp: ir.CaseInsensitive): void {
     const {asm} = this;
     const {value} = exp;
     const isAllAscii = [...value].every(c => c <= '\x7f');
@@ -2006,7 +2111,7 @@ export class Compiler {
     });
   }
 
-  emitTerminal(exp) {
+  emitTerminal(exp: ir.Terminal): void {
     const {asm} = this;
     asm.emit(JSON.stringify(exp.value));
 
@@ -2025,7 +2130,7 @@ export class Compiler {
     }, failureId);
   }
 
-  emitUnicodeChar(exp) {
+  emitUnicodeChar(exp: ir.UnicodeChar): void {
     const {asm} = this;
 
     // TODO: Add support for more categories, by calling out to the host.

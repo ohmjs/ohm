@@ -1,6 +1,5 @@
 NODE = node --disable-warning=ExperimentalWarning
 
-SRC_JS_FILES := $(wildcard src/*.js)
 SRC_TS_FILES := $(wildcard src/*.ts)
 
 .PHONY: all
@@ -23,7 +22,7 @@ bench: all scripts/bench.js build/es5.wasm build/json.wasm build/liquid-html.was
 	$(NODE) --expose-gc $(NODE_COMMON_FLAGS) scripts/bench.js
 
 .PHONY: dist-js
-dist-js: build/ohmRuntime.wasm_sections.ts build/ohm-grammar-wasm.ts $(SRC_JS_FILES) $(SRC_TS_FILES)
+dist-js: build/ohmRuntime.wasm_sections.ts build/ohm-grammar-wasm.ts $(SRC_TS_FILES)
 	pnpm tsdown
 
 # WASM meta-grammar, bootstrapped using ohm-js-legacy for parsing.
@@ -38,14 +37,14 @@ build/ohmRuntime.wasm: runtime/ohmRuntime.ts
 
 # 2025-10-07: The rules below may not work anymore.
 
-build/es5.wasm: src/cli.js
+build/es5.wasm: src/cli.ts
 	$(NODE) scripts/es5ToWasm.js build/es5.wasm
 
-build/json.wasm: src/cli.js ../lang-json/json.ohm
-	$(NODE) src/cli.js -o build/json.wasm ../lang-json/json.ohm
+build/json.wasm: src/cli.ts ../lang-json/json.ohm
+	$(NODE) src/cli.ts -o build/json.wasm ../lang-json/json.ohm
 
-build/liquid-html.wasm: src/cli.js test/data/liquid-html.ohm
-	$(NODE) src/cli.js -g LiquidHTML -o build/liquid-html.wasm test/data/liquid-html.ohm
+build/liquid-html.wasm: src/cli.ts test/data/liquid-html.ohm
+	$(NODE) src/cli.ts -g LiquidHTML -o build/liquid-html.wasm test/data/liquid-html.ohm
 
 .PHONY: go-test-es5
 go-test-es5: test/go/testmain build/es5.wasm

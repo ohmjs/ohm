@@ -4,7 +4,7 @@ import * as fc from 'fast-check';
 import * as ohm from 'ohm-js-legacy';
 import {performance} from 'perf_hooks';
 
-import {Compiler} from '../src/Compiler.js';
+import {Compiler} from '../src/Compiler.ts';
 import {matchWithInput, unparse, toWasmGrammar} from './_helpers.js';
 
 const SIZEOF_UINT32 = 4;

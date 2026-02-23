@@ -13,7 +13,7 @@
     "allowJs": true,
 
     // "DOM" for WebAssembly, see https://github.com/evanw/esbuild/issues/2388#issuecomment-1183836728
-    "lib": ["ES2022", "DOM"]
+    "lib": ["ES2023", "DOM"]
     // [end overrides]
   },
   "include": ["src/**/*", "build/ohmRuntime.wasm_sections.ts", "index.ts"]

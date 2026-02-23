@@ -173,13 +173,13 @@ importers:
         version: link:../to-ast-compat
       '@shopify/liquid-html-parser':
         specifier: github:pdubroy/theme-tools#path:/packages/liquid-html-parser
-        version: https://codeload.github.com/pdubroy/theme-tools/tar.gz/8f52361778f2836cd971f8b2d55885461cf4ac0e#path:/packages/liquid-html-parser
+        version: https://codeload.github.com/pdubroy/theme-tools/tar.gz/4b759c2b9f3de0e193df7f9b2cc547d5f9973e4b#path:/packages/liquid-html-parser
       '@thi.ng/leb128':
         specifier: ^3.1.48
         version: 3.1.48
       '@wasmgroundup/emit':
-        specifier: ^1.0.2
-        version: 1.0.2
+        specifier: ^2.1.0
+        version: 2.1.0
       assemblyscript:
         specifier: ^0.27.36
         version: 0.27.36
@@ -1011,9 +1011,9 @@ packages:
   '@rushstack/ts-command-line@5.2.0':
     resolution: {integrity: sha512-lYxCX0nDdkDtCkVpvF0m25ymf66SaMWuppbD6b7MdkIzvGXKBXNIVZlwBH/C0YfkanrupnICWf2n4z3AKSfaHw==}
 
-  '@shopify/liquid-html-parser@https://codeload.github.com/pdubroy/theme-tools/tar.gz/8f52361778f2836cd971f8b2d55885461cf4ac0e#path:/packages/liquid-html-parser':
-    resolution: {path: /packages/liquid-html-parser, tarball: https://codeload.github.com/pdubroy/theme-tools/tar.gz/8f52361778f2836cd971f8b2d55885461cf4ac0e}
-    version: 2.9.0
+  '@shopify/liquid-html-parser@https://codeload.github.com/pdubroy/theme-tools/tar.gz/4b759c2b9f3de0e193df7f9b2cc547d5f9973e4b#path:/packages/liquid-html-parser':
+    resolution: {path: /packages/liquid-html-parser, tarball: https://codeload.github.com/pdubroy/theme-tools/tar.gz/4b759c2b9f3de0e193df7f9b2cc547d5f9973e4b}
+    version: 2.9.1
 
   '@sindresorhus/merge-streams@2.3.0':
     resolution: {integrity: sha512-LtoMMhxAlorcGhmFYI+LhPgbPZCkgP6ra1YL604EeF6U98pLlQ3iWIGMdWSC+vWmPBWBNgmDBAhnAobLROJmwg==}
@@ -1137,8 +1137,8 @@ packages:
     engines: {node: '>=16'}
     hasBin: true
 
-  '@wasmgroundup/emit@1.0.2':
-    resolution: {integrity: sha512-9FupNg9RUOQIBe2zNp0DY78Rb03xeElaL9NQB4haz+JDOF+0Bq4tNSuB/vwG4DFTKSffBKFCa85YdVZaf5vQPw==}
+  '@wasmgroundup/emit@2.1.0':
+    resolution: {integrity: sha512-T5BRnEHcNwdykAYQAefjC5kijVTvZ3Tq6sro+E8WBIAFuSBlwrY8ZJjkHHE6tPujEGWYq7KbKxaF+fKBKbjH5Q==}
 
   '@webassemblyjs/ast@1.14.1':
     resolution: {integrity: sha512-nuBEDgQfm1ccRp/8bCQrx1frohyufl4JlbMMZ4P1wpeOfDhF6FQkxZJ1b/e+PLwr6X1Nhw6OLme5usuBWYBvuQ==}
@@ -3998,7 +3998,7 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@shopify/liquid-html-parser@https://codeload.github.com/pdubroy/theme-tools/tar.gz/8f52361778f2836cd971f8b2d55885461cf4ac0e#path:/packages/liquid-html-parser':
+  '@shopify/liquid-html-parser@https://codeload.github.com/pdubroy/theme-tools/tar.gz/4b759c2b9f3de0e193df7f9b2cc547d5f9973e4b#path:/packages/liquid-html-parser':
     dependencies:
       line-column: 1.0.2
       ohm-js: 17.2.1
@@ -4177,7 +4177,7 @@ snapshots:
       - rollup
       - supports-color
 
-  '@wasmgroundup/emit@1.0.2': {}
+  '@wasmgroundup/emit@2.1.0': {}
 
   '@webassemblyjs/ast@1.14.1':
     dependencies:
