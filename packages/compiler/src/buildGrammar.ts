@@ -9,6 +9,8 @@ import {Grammar as ParsedGrammar} from 'ohm-js-legacy/src/Grammar.js';
 import {GrammarDecl} from 'ohm-js-legacy/src/GrammarDecl.js';
 import {Interval} from 'ohm-js-legacy/src/Interval.js';
 
+import {checkNotNull} from './assert.ts';
+
 const superSplicePlaceholder = Object.create(pexprs.PExpr.prototype);
 
 // Unescape a code point from an Ohm escape sequence string.
@@ -125,7 +127,7 @@ export function buildGrammars(
         const grammarName = id.sourceString;
         decl = new GrammarDecl(grammarName);
         if (s.children.length > 0) {
-          visit(s.children[0]);
+          visit(s.children[0]!);
         }
         rules.children.map((c: CstNode) => visit(c));
         const g = decl.build();
@@ -166,7 +168,7 @@ export function buildGrammars(
           decl.withDefaultStartRule(currentRuleName);
         }
         const body = visit(b);
-        const description = d.children.length > 0 ? visitRuleDescr(d.children[0]) : undefined;
+        const description = d.children.length > 0 ? visitRuleDescr(d.children[0]!) : undefined;
         const source = interval(node).trimmed();
         return decl.define(currentRuleName, currentRuleFormals, body, description, source);
       }
@@ -311,14 +313,14 @@ export function buildGrammars(
   function visitFormals(fs: CstNode): string[] {
     if (fs.children.length === 0) return [];
     // Formals = "<" ListOf<ident, ","> ">"
-    return listOfElements(fs.children[0].children[1]).map(n => n.sourceString);
+    return listOfElements(checkNotNull(fs.children[0]!.children[1])).map(n => n.sourceString);
   }
 
   // Accept the OptNode for Params? and visit each Seq.
   function visitParams(ps: CstNode): any[] {
     if (ps.children.length === 0) return [];
     // Params = "<" ListOf<Seq, ","> ">"
-    return listOfElements(ps.children[0].children[1]).map(s => visit(s));
+    return listOfElements(checkNotNull(ps.children[0]!.children[1])).map(s => visit(s));
   }
 
   function visitTerminal(node: CstNode): string {
@@ -333,7 +335,7 @@ export function buildGrammars(
 
   function visitTerminalChar(node: CstNode): string {
     // terminalChar = escapeChar | ~"\\" ~"\"" ~"\n" "\u{0}".."\u{10FFFF}"
-    const child = node.children[0];
+    const child = checkNotNull(node.children[0]);
     if (child.isTerminal()) {
       return child.sourceString;
     }

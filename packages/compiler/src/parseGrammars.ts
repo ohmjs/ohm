@@ -24,8 +24,8 @@ function getMetaGrammar(): Grammar {
 
 // Ensure ParsedGrammar.BuiltInRules is initialized (may already be set if
 // ohm-js-legacy's main entry was imported elsewhere).
-if (!ParsedGrammar.BuiltInRules) {
-  ParsedGrammar.BuiltInRules = BuiltInRules;
+if (!(ParsedGrammar as any).BuiltInRules) {
+  (ParsedGrammar as any).BuiltInRules = BuiltInRules;
 }
 
 export function grammar(source: string): any {

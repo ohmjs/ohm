@@ -127,19 +127,19 @@ const prebuiltGlobalidx = (nm: string): number =>
 // Produce a section combining `els` with the corresponding prebuilt section.
 // This only does a naive merge; no type or function indices are rewritten.
 function mergeSections(
-  sectionId: SectionId,
-  prebuiltSec: {entryCount: number; contents: Fragment},
-  els: Fragment[]
-): Fragment {
+  sectionId: w.SectionId,
+  prebuiltSec: {entryCount: number; contents: w.Fragment},
+  els: w.Fragment[]
+): w.Fragment {
   const count = prebuiltSec.entryCount + els.length;
   return w.section(sectionId, [w.u32(count), prebuiltSec.contents, els]);
 }
 
 function functypeToString(
-  paramTypes: readonly valtype[],
-  resultTypes: readonly valtype[]
+  paramTypes: readonly w.valtype[],
+  resultTypes: readonly w.valtype[]
 ): string {
-  const toStr = (t: valtype): string => {
+  const toStr = (t: w.valtype): string => {
     return (t as number) === wasm3.valtype.externref
       ? 'externref'
       : checkNotNull(['f64', 'f32', 'i64', 'i32'][(t as number) - (w.valtype.f64 as number)]);
@@ -152,14 +152,14 @@ function functypeToString(
 interface FuncDecl {
   name: string;
   module?: string;
-  paramTypes: valtype[];
-  resultTypes: valtype[];
-  locals?: Fragment[];
-  body?: (number | Fragment | string)[];
+  paramTypes: w.valtype[];
+  resultTypes: w.valtype[];
+  locals?: w.Fragment[];
+  body?: (number | w.Fragment | string)[];
 }
 
 class TypeMap {
-  _map: Map<string, [number, Fragment]>;
+  _map: Map<string, [number, w.Fragment]>;
   _startIdx: number;
 
   constructor(startIdx = 0) {
@@ -167,7 +167,7 @@ class TypeMap {
     this._startIdx = startIdx;
   }
 
-  add(paramTypes: readonly valtype[], resultTypes: readonly valtype[]): number {
+  add(paramTypes: readonly w.valtype[], resultTypes: readonly w.valtype[]): number {
     const key = functypeToString(paramTypes, resultTypes);
     if (this._map.has(key)) {
       return this._map.get(key)![0];
@@ -183,7 +183,7 @@ class TypeMap {
     }
   }
 
-  getIdx(paramTypes: readonly valtype[], resultTypes: readonly valtype[]): number {
+  getIdx(paramTypes: readonly w.valtype[], resultTypes: readonly w.valtype[]): number {
     const key = functypeToString(paramTypes, resultTypes);
     return checkNotNull(this._map.get(key))[0];
   }
@@ -192,7 +192,7 @@ class TypeMap {
     return this.getIdx(decl.paramTypes, decl.resultTypes);
   }
 
-  getTypes(): Fragment[] {
+  getTypes(): w.Fragment[] {
     return [...this._map.values()].map(([_, t]) => t);
   }
 }
@@ -204,7 +204,7 @@ class TypeMap {
 class Assembler {
   _functionDecls: FuncDecl[];
   _blockStack: string[];
-  _code: (number | Fragment | string)[];
+  _code: (number | w.Fragment | string)[];
   _locals: Map<string, number> | undefined;
   _typeMap: TypeMap;
 
@@ -229,11 +229,11 @@ class Assembler {
     this._typeMap = typeMap;
   }
 
-  addBlocktype(paramTypes: readonly valtype[], resultTypes: readonly valtype[]): void {
+  addBlocktype(paramTypes: readonly w.valtype[], resultTypes: readonly w.valtype[]): void {
     this._typeMap.add(paramTypes, resultTypes);
   }
 
-  blocktype(paramTypes: readonly valtype[], resultTypes: readonly valtype[]): Fragment {
+  blocktype(paramTypes: readonly w.valtype[], resultTypes: readonly w.valtype[]): w.Fragment {
     const idx = this._typeMap.getIdx(paramTypes, resultTypes);
     assert(idx !== -1, `Unknown blocktype: '${functypeToString(paramTypes, resultTypes)}'`);
 
@@ -243,7 +243,7 @@ class Assembler {
     return w.i32(idx);
   }
 
-  addLocal(name: string, type: valtype): number {
+  addLocal(name: string, type: w.valtype): number {
     assert(this._locals != null);
     assert(!this._locals.has(name), `Local '${name}' already exists`);
     assert(type === w.valtype.i32, `invalid local type: ${type}`);
@@ -254,8 +254,8 @@ class Assembler {
 
   addFunction(
     name: string,
-    paramTypes: valtype[],
-    resultTypes: valtype[],
+    paramTypes: w.valtype[],
+    resultTypes: w.valtype[],
     bodyFn: (asm: Assembler) => void
   ): void {
     this._locals = new Map();
@@ -284,13 +284,13 @@ class Assembler {
     return checkNotNull(this._locals?.get(name), `Unknown local: ${name}`);
   }
 
-  emit(...bytes: (number | Fragment | string)[]): void {
-    const flat = (bytes as unknown[]).flat(Infinity) as (number | Fragment | string)[];
+  emit(...bytes: (number | w.Fragment | string)[]): void {
+    const flat = (bytes as unknown[]).flat(Infinity) as (number | w.Fragment | string)[];
     checkNoUndefined(flat);
     this._code.push(...flat);
   }
 
-  block(bt: number | Fragment, bodyThunk: () => void, label = ''): void {
+  block(bt: number | w.Fragment, bodyThunk: () => void, label = ''): void {
     this._blockOnly(bt, label);
     bodyThunk();
     this._endBlock();
@@ -299,7 +299,7 @@ class Assembler {
   // Prefer to use `block`, but for some cases it's more convenient to emit
   // the block and the end separately.
   // Note: `label` (if specified) is not unique (e.g., 'pexprEnd').
-  _blockOnly(bt: number | Fragment, label?: string): void {
+  _blockOnly(bt: number | w.Fragment, label?: string): void {
     this.emit(instr.block, bt);
     this._blockStack.push(label ? `block:${label}` : 'block');
   }
@@ -311,7 +311,7 @@ class Assembler {
     this.emit(instr.end);
   }
 
-  loop(bt: number | Fragment, bodyThunk: () => void): void {
+  loop(bt: number | w.Fragment, bodyThunk: () => void): void {
     this.emit(instr.loop, bt);
     this._blockStack.push('loop');
     bodyThunk();
@@ -319,11 +319,11 @@ class Assembler {
     this.emit(instr.end);
   }
 
-  if(bt: number | Fragment, bodyThunk: () => void): void {
+  if(bt: number | w.Fragment, bodyThunk: () => void): void {
     this.ifElse(bt, bodyThunk);
   }
 
-  ifElse(bt: number | Fragment, thenThunk: () => void, elseThunk?: () => void): void {
+  ifElse(bt: number | w.Fragment, thenThunk: () => void, elseThunk?: () => void): void {
     this.emit(instr.if, bt);
     this._blockStack.push('if');
     thenThunk();
@@ -335,7 +335,7 @@ class Assembler {
     this.emit(instr.end);
   }
 
-  ifFalse(bt: number | Fragment, bodyThunk: () => void): void {
+  ifFalse(bt: number | w.Fragment, bodyThunk: () => void): void {
     this.emit(instr.i32.eqz);
     this.if(bt, bodyThunk);
   }
@@ -424,7 +424,7 @@ class Assembler {
     this.emit(instr.br, w.labelidx(depth));
   }
 
-  brTable(labels: labelidx[], defaultLabelidx: labelidx): void {
+  brTable(labels: w.labelidx[], defaultLabelidx: w.labelidx): void {
     this.emit(instr.br_table, w.vec(labels), defaultLabelidx);
   }
 
@@ -434,7 +434,7 @@ class Assembler {
 
   // Emit a dense jump table (switch-like) using br_table.
   switch(
-    bt: number | Fragment,
+    bt: number | w.Fragment,
     discrimThunk: () => void,
     numCases: number,
     caseCb: (i: number, depth: number) => void,
@@ -442,7 +442,7 @@ class Assembler {
   ): void {
     const startStackHeight = this._blockStack.length;
 
-    const labels: labelidx[] = [];
+    const labels: w.labelidx[] = [];
 
     // Emit one block per case…
     for (let i = 0; i < numCases; i++) {
@@ -999,7 +999,7 @@ export class Compiler {
   }
 
   // Return a funcidx corresponding to the eval function for the given rule.
-  ruleEvalFuncIdx(name: string): funcidx {
+  ruleEvalFuncIdx(name: string): w.funcidx {
     const offset = this.importCount() + prebuilt.funcsec.entryCount;
     return w.funcidx(this.ruleId(name) + offset);
   }
@@ -1153,7 +1153,7 @@ export class Compiler {
   compileRule(name: string): FuncDecl {
     const {asm} = this;
     const ruleInfo = getNotNull(this.rules!, name);
-    let paramTypes: valtype[] = [];
+    let paramTypes: w.valtype[] = [];
     if (ruleInfo.patterns) {
       paramTypes = [w.valtype.i32];
     }
@@ -1394,7 +1394,7 @@ export class Compiler {
       w.import_(f.module!, f.name, w.importdesc.func(w.typeidx(typeMap.getIdxForDecl(f))))
     );
     const funcs = functionDecls.map(f => w.typeidx(typeMap.getIdxForDecl(f)));
-    const codes = functionDecls.map(f => w.code(w.func(f.locals!, f.body as Fragment)));
+    const codes = functionDecls.map(f => w.code(w.func(f.locals!, f.body as w.Fragment)));
 
     const exportOffset = this.importCount() + prebuilt.funcsec.entryCount;
     const exports = functionDecls.map((f, i) =>
@@ -1451,7 +1451,7 @@ export class Compiler {
       w.customsec(this.buildStringTable('strings', this._strings)),
       // Only the module name subsection is needed.
       w.namesec(
-        (w.namedata as (...args: Fragment[]) => Fragment)(
+        (w.namedata as (...args: w.Fragment[]) => w.Fragment)(
           w.modulenamesubsec(this.grammar.name)
         )
       ),
@@ -1486,11 +1486,11 @@ export class Compiler {
     // are, but it's otherwise treated as an opaque blob). But it *does* include any non-debug
     // imports, so we account for those in nextIdx, and for the prebuilt imports in `intoFuncidx`.
     let nextIdx = 0;
-    const intoFuncidx = (i: number): funcidx => w.funcidx(prebuilt.importsec.entryCount + i);
+    const intoFuncidx = (i: number): w.funcidx => w.funcidx(prebuilt.importsec.entryCount + i);
     const names = new Set<string>();
     for (let i = 0; i < decls.length; i++) {
       const entry = decls[i];
-      entry.body = entry.body!.flatMap((x): (number | Fragment)[] => {
+      entry.body = entry.body!.flatMap((x): (number | w.Fragment)[] => {
         if (typeof x !== 'string') return [x];
 
         // If debugging is disabled, just drop the string altogether.

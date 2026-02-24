@@ -3,7 +3,7 @@ NODE = node --disable-warning=ExperimentalWarning
 SRC_TS_FILES := $(wildcard src/*.ts)
 
 .PHONY: all
-all: dist-js
+all: dist-js check
 
 .PHONY: clean
 clean:

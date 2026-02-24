@@ -58,7 +58,6 @@ declare function fillInputBuffer(dest: i32, len: i32): i32;
 // TODO: Find a way to share these constants with JS?
 @inline const WASM_PAGE_SIZE: usize = 64 * 1024;
 @inline const STACK_START_OFFSET: usize = WASM_PAGE_SIZE;
-@inline const MAX_INPUT_LEN_BYTES: usize = 64 * 1024;
 
 // Block-sparse memo table constants.
 // The rule ID space is partitioned into fixed-size blocks.
