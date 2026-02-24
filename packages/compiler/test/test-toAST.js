@@ -191,7 +191,7 @@ test('listOf and friends - #394', async t => {
       Exp2 = ListOf<digit, "+">
     }
   `);
-  const wasmGrammar = await toWasmGrammar(g);
+  const wasmGrammar = await toWasmGrammar(g, {startRules: ['Exp2']});
 
   const ast = (input, mapping, ruleName = 'Exp') => {
     const toAst = createToAst(mapping);

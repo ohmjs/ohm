@@ -24,11 +24,12 @@ const IMPLICIT_SPACE_SKIPPING = true;
 const EMIT_GENERALIZED_RULES = false;
 
 // When true, emit rule bodies directly at the call site for all single-use
-// rules (not just inline rules like AddExpr_plus). However, this means that
-// such rules can't be used as start rules via match(), unless we *also* emit
-// the body normally, which blows up code size. Hence, this is disabled for
-// now.
-const INLINE_SINGLE_USE_RULES = false;
+// rules (not just inline rules like AddExpr_plus). This provides a speedup
+// on both es5bench and parseLiquid. Inlined rules get a stub (returns 0)
+// instead of a full compiled function, since they can't be used as start
+// rules via match(). Use the `startRules` compiler option to whitelist
+// additional entry points that need full compiled functions.
+const INLINE_SINGLE_USE_RULES = true;
 
 // A sentinel value representing "end of input".
 // This could be anything > 0xffff, really.
@@ -36,6 +37,7 @@ const CHAR_CODE_END = 0xffffffff;
 
 interface CompilerInternalOptions {
   preallocNodes?: boolean;
+  startRules?: string[];
 }
 
 const {instr} = w;
@@ -767,21 +769,6 @@ class Assembler {
     this.callPrebuiltFunc('newNonterminalNode');
   }
 
-  newCaseInsensitiveNode(ruleId: number): void {
-    this.getSavedPos();
-    this.globalGet('pos');
-    this.i32Const(ruleId);
-
-    // Ensure we get exactly one binding.
-    this.globalGet('bindings');
-    this.i32Load(12); // Array<i32>.length_
-    this.i32Const(1);
-    this.i32Sub();
-
-    this.i32Const(-1); // By def'n, it cannot have contributed to failurePos.
-    this.callPrebuiltFunc('newNonterminalNode');
-  }
-
   // [startIdx: i32] -> [ptr: i32]
   newTerminalNode(): void {
     this.localGet('postSpacesPos');
@@ -1025,14 +1012,19 @@ export class Compiler {
     return ans;
   }
 
-  normalize(): void {
+  transform(): void {
     assert(!this.rules, 'already normalized');
     this.lowerToIR();
     this.specializeRules();
+
+    this._preallocRules = this.findPreallocRules();
+    this._singleUseRules = this.findSingleUseRules();
+
+    this.assignRuleIds();
   }
 
   compile(): Uint8Array {
-    this.normalize();
+    this.transform();
 
     const typeMap = (this.typeMap = new TypeMap(prebuilt.typesec.entryCount));
     const asm = (this.asm = new Assembler(typeMap));
@@ -1305,22 +1297,6 @@ export class Compiler {
         });
       }
     }
-
-    // TODO: Pull this out.
-    this._preallocRules = this._options.preallocNodes ? this.findPreallocRules() : new Set();
-
-    // Determine single-use rules: applied exactly once, not the start rule,
-    // and no description. (Rules like $spaces and caseInsensitive
-    // are never referenced via Apply in rule bodies, so they won't appear
-    // in refCounts and don't need explicit exclusion.)
-    this._singleUseRules = new Set();
-    for (const [name, count] of refCounts) {
-      const ruleInfo = newRules.get(name);
-      if (count === 1 && name !== this.grammar.defaultStartRule && !ruleInfo?.description) {
-        this._singleUseRules.add(name);
-      }
-    }
-    this.assignRuleIds();
   }
 
   // Return a list of rules whose CST node can be preallocated because they always have the
@@ -1331,12 +1307,44 @@ export class Compiler {
       if (exp.type === 'Terminal') return exp.value.length === 1;
     };
     const ans = new Set<string>();
-    for (const [name, {body}] of this.rules!) {
-      if (matchesSingleCodepoint(body) && name !== this.grammar.defaultStartRule) {
-        ans.add(name);
+    if (this._options.preallocNodes !== false) {
+      for (const [name, {body}] of this.rules!) {
+        if (matchesSingleCodepoint(body) && name !== this.grammar.defaultStartRule) {
+          ans.add(name);
+        }
       }
     }
     return ans;
+  }
+
+  findSingleUseRules(): Set<string> {
+    const rules = checkNotNull(this.rules);
+    const counts = new Map<string, number>();
+
+    for (const [name, ruleInfo] of rules.entries()) {
+      ir.visit(ruleInfo.body, {
+        Apply(app) {
+          counts.set(app.ruleName, (counts.get(app.ruleName) ?? 0) + 1);
+        },
+      });
+    }
+    const singleUseRules = new Set<string>();
+    counts.forEach((count, name) => {
+      if (count === 1 && !getNotNull(rules, name).description) singleUseRules.add(name);
+    });
+    singleUseRules.delete(this.grammar.defaultStartRule);
+    if (this._options.startRules) {
+      for (const name of this._options.startRules) {
+        singleUseRules.delete(name);
+      }
+    }
+    return singleUseRules;
+  }
+
+  shouldInlineRule(name: string): boolean {
+    if (!this._singleUseRules.has(name)) return false;
+    const isInlineRule = this.rules!.get(name)?._isInlineRule;
+    return INLINE_SINGLE_USE_RULES || !!isInlineRule;
   }
 
   assignRuleIds() {
@@ -1511,10 +1519,10 @@ export class Compiler {
     const {asm} = this;
     const ruleDecls: FuncDecl[] = [];
     for (const name of this.ruleIdByName.keys()) {
-      if (this.rules!.get(name)?._isInlineRule && this._singleUseRules.has(name)) {
-        // Inline rules (e.g. AddExpr_plus) are always inlined in the generated
-        // code. Emit a stub that returns failure (0) in case they're called
-        // directly via match().
+      if (this.shouldInlineRule(name)) {
+        // Inlined rules have their body emitted at the call site. Emit a stub
+        // (returns failure) for the standalone function, since it won't be
+        // called directly via match().
         asm.addFunction(`$${name}`, [], [w.valtype.i32], () => {
           asm.i32Const(0);
         });
@@ -1765,8 +1773,7 @@ export class Compiler {
 
     const {asm} = this;
 
-    const isInlineRule = this.rules!.get(exp.ruleName)?._isInlineRule;
-    if (this._singleUseRules.has(exp.ruleName) && (INLINE_SINGLE_USE_RULES || isInlineRule)) {
+    if (this.shouldInlineRule(exp.ruleName)) {
       this.emitInlinedApply(exp);
       return;
     }
@@ -1787,6 +1794,9 @@ export class Compiler {
     asm.localSet('ret');
   }
 
+  // Emit the body of a rule directly at the call site, rather than generating
+  // a `call` to the rule's eval function. Used for single-use rules (e.g.,
+  // inline rules like AddExpr_plus) to avoid the overhead of a function call.
   emitInlinedApply(exp: ir.Apply): void {
     const {asm} = this;
     const ruleId = this.ruleId(exp.ruleName);

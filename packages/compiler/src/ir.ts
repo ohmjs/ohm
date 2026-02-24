@@ -379,6 +379,46 @@ export function rewrite(exp: Expr, actions: RewriteActions): Expr {
   }
 }
 
+export type VisitActions = {
+  [K in ExprType]?: (exp: Extract<Expr, {type: K}>) => void;
+};
+
+export function visit(exp: Expr, actions: VisitActions): void {
+  const action = actions[exp.type];
+  if (action) {
+    action(exp as any);
+    return;
+  }
+
+  switch (exp.type) {
+    case 'Alt':
+    case 'Seq':
+      exp.children.forEach((e: Expr) => visit(e, actions));
+      break;
+    case 'Any':
+    case 'Apply':
+    case 'ApplyGeneralized':
+    case 'CaseInsensitive':
+    case 'End':
+    case 'Param':
+    case 'Range':
+    case 'Terminal':
+    case 'UnicodeChar':
+      break;
+    case 'Dispatch':
+    case 'Lex':
+    case 'Lookahead':
+    case 'Not':
+    case 'Opt':
+    case 'Plus':
+    case 'Star':
+      visit(exp.child, actions);
+      break;
+    default:
+      unreachable(exp, `not handled: ${exp}`);
+  }
+}
+
 export function toString(exp: Expr): string {
   switch (exp.type) {
     case 'Alt':
