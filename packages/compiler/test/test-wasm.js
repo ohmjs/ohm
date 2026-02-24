@@ -741,7 +741,7 @@ test('basic memoization', async t => {
 
 test('more memoization', async t => {
   const g = ohm.grammar('G { start = b "a" | b b\nb = "b" }');
-  const wasmGrammar = await toWasmGrammar(g);
+  const wasmGrammar = await toWasmGrammar(g, {preallocNodes: false});
   t.is(matchWithInput(wasmGrammar, 'bb'), 1);
 
   const getMemo = (pos, ctorName) => {
@@ -978,7 +978,7 @@ test('specialized rule names', t => {
 
   const compiler = new Compiler(g);
   compiler.lowerToIR();
-  compiler.monomorphize();
+  compiler.specializeRules();
 
   const noGeneralizedRulesList = [
     '$spaces',

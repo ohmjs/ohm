@@ -125,13 +125,11 @@ export const lex = (child: Expr): Lex => ({
 export interface Lookahead {
   type: 'Lookahead';
   child: Expr;
-  outArity: number;
 }
 
 export const lookahead = (child: Expr): Lookahead => ({
   type: 'Lookahead',
   child,
-  outArity: outArity(child),
 });
 
 export interface Opt {
@@ -290,11 +288,15 @@ export function substituteParams<T extends Expr>(
         outArity: exp.outArity,
       };
     case 'Lex':
-    case 'Lookahead':
       return {
         type: exp.type,
         child: substituteParams(exp.child, actuals),
         outArity: exp.outArity,
+      };
+    case 'Lookahead':
+      return {
+        type: exp.type,
+        child: substituteParams(exp.child, actuals),
       };
     case 'Not':
     case 'Opt':
@@ -431,7 +433,6 @@ export function outArity(exp: Expr): number {
     case 'Alt':
     case 'Seq':
     case 'Lex':
-    case 'Lookahead':
       return exp.outArity;
     case 'Any':
     case 'Apply':
@@ -444,6 +445,7 @@ export function outArity(exp: Expr): number {
     case 'UnicodeChar':
     case 'Dispatch':
       return 1;
+    case 'Lookahead':
     case 'Not':
       return 0;
     case 'Opt':

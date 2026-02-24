@@ -3,6 +3,7 @@ import {grammars as parseGrammars} from './parseGrammars.ts';
 
 export interface CompileOptions {
   grammarName?: string;
+  preallocNodes?: boolean;
 }
 
 export function compile(source: string, opts?: CompileOptions): Uint8Array {
@@ -20,7 +21,7 @@ export function compile(source: string, opts?: CompileOptions): Uint8Array {
         `Grammar '${opts.grammarName}' not found. Available: ${names.join(', ')}`
       );
     }
-    return new Compiler(g).compile();
+    return new Compiler(g, {preallocNodes: opts?.preallocNodes}).compile();
   }
 
   if (names.length > 1) {
@@ -30,13 +31,16 @@ export function compile(source: string, opts?: CompileOptions): Uint8Array {
     );
   }
 
-  return new Compiler(ns[names[0]]).compile();
+  return new Compiler(ns[names[0]], {preallocNodes: opts?.preallocNodes}).compile();
 }
 
-export function compileGrammars(source: string): Record<string, Uint8Array> {
+export function compileGrammars(
+  source: string,
+  opts?: CompileOptions
+): Record<string, Uint8Array> {
   const result: Record<string, Uint8Array> = {};
   for (const [name, g] of Object.entries(parseGrammars(source))) {
-    result[name] = new Compiler(g).compile();
+    result[name] = new Compiler(g, {preallocNodes: opts?.preallocNodes}).compile();
   }
   return result;
 }

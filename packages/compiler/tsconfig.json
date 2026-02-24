@@ -16,5 +16,10 @@
     "lib": ["ES2023", "DOM"]
     // [end overrides]
   },
-  "include": ["src/**/*", "build/ohmRuntime.wasm_sections.ts", "build/ohm-grammar-wasm.ts", "index.ts"]
+  "include": [
+    "src/**/*",
+    "build/ohmRuntime.wasm_sections.ts",
+    "build/ohm-grammar-wasm.ts",
+    "index.ts"
+  ]
 }

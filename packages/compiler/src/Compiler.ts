@@ -34,6 +34,10 @@ const INLINE_SINGLE_USE_RULES = false;
 // This could be anything > 0xffff, really.
 const CHAR_CODE_END = 0xffffffff;
 
+interface CompilerInternalOptions {
+  preallocNodes?: boolean;
+}
+
 const {instr} = w;
 
 // Constants for Wasm 3.0 (stuff not in @wasmgroundup/emit).
@@ -869,7 +873,9 @@ export class Compiler {
 
   static STACK_START_OFFSET: number;
 
-  constructor(grammar: any) {
+  _options: CompilerInternalOptions;
+
+  constructor(grammar: any, options?: CompilerInternalOptions) {
     assert(grammar && 'superGrammar' in grammar, 'Not a valid grammar: ' + grammar);
 
     // Detect the so-called "dual package hazard". Since we use the identity
@@ -885,6 +891,7 @@ export class Compiler {
       grammar = parseGrammar(grammar.source.contents);
     }
 
+    this._options = {preallocNodes: true, ...options};
     this.grammar = grammar;
 
     this.importDecls = [];
@@ -1021,7 +1028,7 @@ export class Compiler {
   normalize(): void {
     assert(!this.rules, 'already normalized');
     this.lowerToIR();
-    this.monomorphize();
+    this.specializeRules();
   }
 
   compile(): Uint8Array {
@@ -1218,11 +1225,10 @@ export class Compiler {
   // parsing expressions. For all parameterized rules, create a specialized
   // version of that rule for every possible set of actual parameters.
   // At the end, there are no more applications with arguments.
-  monomorphize(): void {
+  specializeRules(): void {
     const newRules = new Map<string, RuleInfo>();
     const rules = this.rules!;
     const patternsByRule = new Map<string, Map<string, Expr[]>>();
-    let hasCaseInsensitiveTerminals = false;
     const refCounts = new Map();
 
     const specialize = (exp: Expr): Expr =>
@@ -1232,8 +1238,6 @@ export class Compiler {
           const ruleInfo = getNotNull(rules, ruleName);
 
           const specializedName = ir.specializedName(app);
-
-          this._ensureRuleId(specializedName);
 
           // If not yet seen, recursively visit the body of the specialized
           // rule. Note that this also applies to non-parameterized rules!
@@ -1268,10 +1272,6 @@ export class Compiler {
           // Replace with an application of the specialized rule.
           return ir.apply(specializedName, app.descriptionId);
         },
-        CaseInsensitive: exp => {
-          hasCaseInsensitiveTerminals = true;
-          return exp;
-        },
       });
     specialize(ir.apply(this.grammar.defaultStartRule, -1));
 
@@ -1282,20 +1282,6 @@ export class Compiler {
       ...spacesInfo,
       body: specialize(spacesInfo.body),
     });
-
-    // We inline applications of caseInsensitive, but they still produce a
-    // nonterminal node as if they weren't inlined. Because of that, we need
-    // to assign a rule ID and ensure that the rule eval function exists.
-    if (hasCaseInsensitiveTerminals) {
-      assert(!newRules.has('caseInsensitive'));
-      this._ensureRuleId('caseInsensitive');
-      newRules.set('caseInsensitive', {
-        name: 'caseInsensitive',
-        body: ir.seq([ir.not(ir.end()), ir.end()]), // ~end end
-        formals: [],
-        description: '',
-      });
-    }
 
     this.rules = newRules;
 
@@ -1310,7 +1296,6 @@ export class Compiler {
       // All non-parameterized & specialized rules have been discovered and
       // assigned IDs; any rule IDs assigned here won't be memoized.
       for (const [name, patterns] of patternsByRule.entries()) {
-        this._ensureRuleId(name);
         const ruleInfo = getNotNull(rules, name);
         const patternsArr = [...patterns.values()];
         newRules.set(name, {
@@ -1320,6 +1305,9 @@ export class Compiler {
         });
       }
     }
+
+    // TODO: Pull this out.
+    this._preallocRules = this._options.preallocNodes ? this.findPreallocRules() : new Set();
 
     // Determine single-use rules: applied exactly once, not the start rule,
     // and no description. (Rules like $spaces and caseInsensitive
@@ -1332,48 +1320,63 @@ export class Compiler {
         this._singleUseRules.add(name);
       }
     }
+    this.assignRuleIds();
+  }
 
-    // Rules whose body is a simple character matcher (Range, UnicodeChar, Any).
-    // These are too cheap to benefit from memoization, and their CST nodes can
-    // be preallocated since the structure is always the same (1 terminal child,
-    // matchLength=1 in the common case). We check the actual body (not names)
-    // so user overrides (e.g. `digit := ...`) are handled correctly.
-    const isSimpleCharMatcher = (body: Expr | undefined) => {
-      const t = body?.type;
-      return t === 'Range' || t === 'UnicodeChar' || t === 'Any';
-    };
-    this._preallocRules = new Set();
-    for (const [name, ruleInfo] of newRules) {
-      // Exclude the start rule — the runtime calls evalApply0(startRuleId)
-      // in doMatch, which requires the rule to be memoized.
-      if (isSimpleCharMatcher(ruleInfo.body) && name !== this.grammar.defaultStartRule) {
-        this._preallocRules.add(name);
+  // Rules whose CST node can be preallocated because they always have the same structure
+  // (e.g. a single terminal child, or rules that are simply an alias of such a rule).
+  findPreallocRules(): Set<string> {
+    const isSimpleCharMatcher = (exp: Expr) =>
+      ['Any', 'UnicodeChar', 'Range', 'Terminal'].includes(exp.type);
+    const ans = new Set<string>();
+    for (const [name, {body}] of this.rules!) {
+      // For now, only preallocate rules with a single binding, and for terminals,
+      // only those that match a single character. NOTE: this also checked in the
+      // fast path / slow path in ohmRuntime.ts.
+      if (ir.outArity(body) === 1) {
+        let candidate = body;
+        if (body.type === 'Seq') {
+          candidate = checkNotNull(body.children.filter(c => ir.outArity(c) === 1)[0]);
+        }
+        if (
+          isSimpleCharMatcher(candidate) &&
+          name !== this.grammar.defaultStartRule &&
+          (candidate.type !== 'Terminal' || candidate.value.length === 1)
+        ) {
+          ans.add(name);
+        }
       }
     }
+    console.log('_preallocRules:', ans);
+    return ans;
+  }
 
+  assignRuleIds() {
     // Reassign rule IDs: memoized rules get low IDs, everything else
     // gets high IDs. This shrinks the memo table index.
     const shouldMemoize = (name: string) =>
-      !this._singleUseRules.has(name) &&
-      !this._preallocRules.has(name) &&
-      name !== 'caseInsensitive';
-    const allNames = this.ruleIdByName.keys();
-    this.ruleIdByName = new StringTable();
-    for (const name of allNames) {
-      if (shouldMemoize(name)) this.ruleIdByName.add(name);
+      !this._singleUseRules.has(name) && !this._preallocRules.has(name);
+
+    for (const name of checkNotNull(this.rules).keys()) {
+      if (shouldMemoize(name)) this._ensureRuleId(name);
     }
     this._maxMemoizedRuleId = this.ruleIdByName.size;
-    for (const name of allNames) this.ruleIdByName.add(name);
+    this._preallocRules.forEach(name => {
+      this._ensureRuleId(name);
+    });
+    this._singleUseRules.forEach(name => {
+      this._ensureRuleId(name);
+    });
   }
 
-  buildRuleNamesSection(ruleNames: string[]): Fragment {
+  buildRuleNamesSection(ruleNames: string[]): w.Fragment {
     // A custom section that allows the clients to look up rule IDs by name.
     // They're simply encoded as a vec(name), and the client can turn this
     // into a list/array and use the ruleId as the index.
     return w.custom(w.name('ruleNames'), w.vec(ruleNames.map((n, i) => w.name(n))));
   }
 
-  buildStringTable(sectionName: string, tableOrArr: string[] | StringTable): Fragment {
+  buildStringTable(sectionName: string, tableOrArr: string[] | StringTable): w.Fragment {
     const keys = Array.isArray(tableOrArr) ? tableOrArr : tableOrArr.keys();
     return w.custom(w.name(sectionName), w.vec(keys.map(n => w.name(n))));
   }
@@ -1589,7 +1592,7 @@ export class Compiler {
 
     const allowFastApply = !preHook && !postHook;
 
-    // Note that after monomorphize, there are two classes of rule:
+    // Note that after specializeRules, there are two classes of rule:
     // - specialized rules, which contain no Params, and only have
     //   applications without args
     // - generalized rules, which may contain Params and apps w/ args.
@@ -2104,14 +2107,6 @@ export class Compiler {
         asm.condBreak(asm.depthOf('failure'));
       }, failureId);
     }
-
-    // Case-insensitive terminals are inlined, but should appear in the CST
-    // as if they are actual applications.
-    asm.localGet('ret');
-    asm.if(w.blocktype.empty, () => {
-      asm.newCaseInsensitiveNode(this.ruleId('caseInsensitive'));
-      asm.localSet('ret');
-    });
   }
 
   emitTerminal(exp: ir.Terminal): void {

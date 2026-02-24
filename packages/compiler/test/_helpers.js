@@ -5,8 +5,8 @@ import {Grammar} from 'ohm-js';
 
 const DEBUG = process.env.OHM_DEBUG === '1';
 
-export async function toWasmGrammar(grammar, modBytes = undefined) {
-  const compiler = new Compiler(grammar);
+export async function toWasmGrammar(grammar, {modBytes, ...compilerOpts} = {}) {
+  const compiler = new Compiler(grammar, compilerOpts);
   const bytes = modBytes ?? compiler.compile();
 
   const wasmGrammar = new Grammar();
