@@ -1323,31 +1323,19 @@ export class Compiler {
     this.assignRuleIds();
   }
 
-  // Rules whose CST node can be preallocated because they always have the same structure
-  // (e.g. a single terminal child, or rules that are simply an alias of such a rule).
+  // Return a list of rules whose CST node can be preallocated because they always have the
+  // same structure: a single terminal child. These rules are *not* memoized.
   findPreallocRules(): Set<string> {
-    const isSimpleCharMatcher = (exp: Expr) =>
-      ['Any', 'UnicodeChar', 'Range', 'Terminal'].includes(exp.type);
+    const matchesSingleCodepoint = (exp: Expr) => {
+      if (['Any', 'UnicodeChar', 'Range'].includes(exp.type)) return true;
+      if (exp.type === 'Terminal') return exp.value.length === 1;
+    };
     const ans = new Set<string>();
     for (const [name, {body}] of this.rules!) {
-      // For now, only preallocate rules with a single binding, and for terminals,
-      // only those that match a single character. NOTE: this also checked in the
-      // fast path / slow path in ohmRuntime.ts.
-      if (ir.outArity(body) === 1) {
-        let candidate = body;
-        if (body.type === 'Seq') {
-          candidate = checkNotNull(body.children.filter(c => ir.outArity(c) === 1)[0]);
-        }
-        if (
-          isSimpleCharMatcher(candidate) &&
-          name !== this.grammar.defaultStartRule &&
-          (candidate.type !== 'Terminal' || candidate.value.length === 1)
-        ) {
-          ans.add(name);
-        }
+      if (matchesSingleCodepoint(body) && name !== this.grammar.defaultStartRule) {
+        ans.add(name);
       }
     }
-    console.log('_preallocRules:', ans);
     return ans;
   }
 
