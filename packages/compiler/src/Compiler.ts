@@ -948,6 +948,11 @@ export class Compiler {
       case 'Lookahead':
       case 'Lex':
         return this.toFailureDescription(exp.child);
+      case 'GuardedIter': {
+        const childStr = this.toFailureDescription(exp.child);
+        if (childStr == null) return null;
+        return '(' + childStr + (exp.isPlus ? '+' : '*') + ')';
+      }
       case 'Opt':
       case 'Star':
       case 'Plus': {
@@ -1016,6 +1021,7 @@ export class Compiler {
     assert(!this.rules, 'already normalized');
     this.lowerToIR();
     this.specializeRules();
+    ir.optimize(this.rules!);
 
     this._preallocRules = this.findPreallocRules();
     this._singleUseRules = this.findSingleUseRules();
@@ -1636,6 +1642,9 @@ export class Compiler {
           case 'End':
             this.emitEnd(exp);
             break;
+          case 'GuardedIter':
+            this.emitGuardedIter(exp);
+            break;
           case 'Lex':
             this.emitLex(exp);
             break;
@@ -2003,15 +2012,14 @@ export class Compiler {
     }
   }
 
-  emitStar(
-    {child}: ir.Star | ir.Plus,
-    {reuseStackFrame}: {reuseStackFrame?: boolean} = {}
-  ): void {
+  // Shared loop skeleton for Star (and the Star part of Plus).
+  // The callback `emitLoopBody` is responsible for emitting everything
+  // inside the loop after savePos/saveNumBindings — including the
+  // break-on-failure and continue logic.
+  private emitStarLoop(child: Expr, emitLoopBody: () => void): void {
     const {asm} = this;
 
     asm.pushFluffySavePoint();
-    // We push another stack frame because we need to save and restore
-    // the position just before the last (failed) expression.
     asm.pushStackFrame();
     asm.block(
       w.blocktype.empty,
@@ -2019,11 +2027,7 @@ export class Compiler {
         asm.loop(w.blocktype.empty, () => {
           asm.savePos();
           asm.saveNumBindings();
-          this.emitPExpr(child);
-          asm.localGet('ret');
-          asm.emit(instr.i32.eqz);
-          asm.condBreak(asm.depthOf('done'));
-          asm.continue(0);
+          emitLoopBody();
         });
       },
       'done'
@@ -2035,6 +2039,99 @@ export class Compiler {
     // Star always succeeds, so mark inner failures as fluffy (scoped).
     asm.popFluffySavePointIfAtErrorPos();
     asm.localSet('ret');
+  }
+
+  // Inline the effect of matching `any` without the wrapTerminalLike overhead.
+  // Assumes `tmp` already holds the current char code (and is not CHAR_CODE_END).
+  // Sets postSpacesPos, advances pos, handles surrogates, creates a terminal node.
+  private emitAnyInline(): void {
+    const {asm} = this;
+    asm.globalGet('pos');
+    asm.localSet('postSpacesPos');
+    asm.incPos();
+
+    // Skip the low surrogate if tmp is a high surrogate.
+    asm.tmpIsHighSurrogate();
+    asm.globalGet('pos');
+    asm.emit(instr.i32.add);
+    asm.globalSet('pos');
+
+    asm.newTerminalNode();
+    asm.localSet('ret'); // consume the return value
+  }
+
+  emitGuardedIter(exp: ir.GuardedIter): void {
+    const {asm} = this;
+    const {child, guardChars} = exp;
+
+    // child is always Seq([Not(delim), Any]). Extract `delim`.
+    assert(child.type === 'Seq' && child.children[0].type === 'Not');
+    const delim = child.children[0].child;
+
+    // For Plus, emit the child once before entering the star loop.
+    if (exp.isPlus) {
+      this.emitPExpr(child);
+      asm.localGet('ret');
+      asm.emit(instr.i32.eqz);
+      asm.condBreak(asm.depthOf('pexprEnd'));
+    }
+
+    this.emitStarLoop(child, () => {
+      // Load current char code into tmp.
+      asm.currCharCode();
+      asm.localSet('tmp');
+
+      // If at end of input, break.
+      asm.localGet('tmp');
+      asm.i32Const(CHAR_CODE_END);
+      asm.i32Eq();
+      asm.condBreak(asm.depthOf('done'));
+
+      asm.block(
+        w.blocktype.empty,
+        () => {
+          // For each guard char, check if tmp matches — if so, check the delimiter.
+          for (const c of guardChars) {
+            asm.localGet('tmp');
+            asm.i32Const(c);
+            asm.i32Eq();
+            asm.condBreak(asm.depthOf('checkDelimiter'));
+          }
+
+          // FAST PATH: char doesn't match any delimiter first-char.
+          this.emitAnyInline();
+          asm.continue(1); // continue the loop
+        },
+        'checkDelimiter'
+      );
+
+      // Guard char matched — try to match the delimiter.
+      // Not discards all internal failures, so we just need to check
+      // whether `delim` matches and branch on the result.
+      // emitPExpr pushes/pops its own stack frame, so after it returns,
+      // sp points back to the star loop's frame — we can restore directly.
+      this.emitPExpr(delim);
+      asm.restorePos();
+      asm.restoreBindingsLength();
+
+      // If `delim` matched, the delimiter was found — stop iterating.
+      asm.localGet('ret');
+      asm.condBreak(asm.depthOf('done'));
+
+      // `delim` didn't match — consume one char and continue.
+      this.emitAnyInline();
+      asm.continue(0);
+    });
+  }
+
+  emitStar({child}: ir.Star | ir.Plus): void {
+    this.emitStarLoop(child, () => {
+      this.emitPExpr(child);
+      this.asm.localGet('ret');
+      this.asm.emit(instr.i32.eqz);
+      this.asm.condBreak(this.asm.depthOf('done'));
+      this.asm.continue(0);
+    });
   }
 
   wrapTerminalLike(thunk: () => void, failureId: number): void {

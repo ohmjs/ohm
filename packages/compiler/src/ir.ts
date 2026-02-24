@@ -9,6 +9,7 @@ export type Expr =
   | CaseInsensitive
   | Dispatch
   | End
+  | GuardedIter
   | Lex
   | Lookahead
   | Opt
@@ -108,6 +109,28 @@ export interface End {
 }
 
 export const end = (): End => ({type: 'End'});
+
+// An optimized iteration over `(~delim any)` patterns. The `guardChars` are
+// the possible first characters of `delim`; on each iteration, if the current
+// char doesn't match any guard char, we skip the full Not evaluation (fast path).
+// `guardChars` is kept sorted for deterministic codegen.
+export interface GuardedIter {
+  type: 'GuardedIter';
+  child: Expr; // Always Seq([Not(delim), Any]).
+  guardChars: number[];
+  isPlus: boolean;
+}
+
+export const guardedIter = (
+  child: Expr,
+  guardChars: number[],
+  isPlus: boolean
+): GuardedIter => ({
+  type: 'GuardedIter',
+  child,
+  guardChars,
+  isPlus,
+});
 
 export interface Lex {
   type: 'Lex';
@@ -242,6 +265,7 @@ export function collectParams(exp: Expr, seen = new Set<number>()): Param[] {
     case 'Seq':
       return exp.children.flatMap(c => collectParams(c, seen));
     case 'Dispatch':
+    case 'GuardedIter':
     case 'Lex':
     case 'Lookahead':
     case 'Not':
@@ -298,6 +322,8 @@ export function substituteParams<T extends Expr>(
         type: exp.type,
         child: substituteParams(exp.child, actuals),
       };
+    case 'GuardedIter':
+      return guardedIter(substituteParams(exp.child, actuals), exp.guardChars, exp.isPlus);
     case 'Not':
     case 'Opt':
     case 'Plus':
@@ -362,6 +388,8 @@ export function rewrite(exp: Expr, actions: RewriteActions): Expr {
     case 'Dispatch':
       // We don't use the constructor here, to avoid type checking issues.
       return {type: exp.type, child: rewrite(exp.child, actions), patterns: exp.patterns};
+    case 'GuardedIter':
+      return guardedIter(rewrite(exp.child, actions), exp.guardChars, exp.isPlus);
     case 'Lex':
       return lex(rewrite(exp.child, actions));
     case 'Lookahead':
@@ -406,6 +434,7 @@ export function visit(exp: Expr, actions: VisitActions): void {
     case 'UnicodeChar':
       break;
     case 'Dispatch':
+    case 'GuardedIter':
     case 'Lex':
     case 'Lookahead':
     case 'Not':
@@ -447,6 +476,8 @@ export function toString(exp: Expr): string {
       return `$unicodeChar<${JSON.stringify(exp.categoryOrProp)}>`;
     case 'Dispatch':
       return `$dispatch`; // TODO: Improve this.
+    case 'GuardedIter':
+      return `${toString(exp.child)}${exp.isPlus ? '+' : '*'}[guarded]`;
     case 'Lex':
       return `#${toString(exp.child)}`;
     case 'Lookahead':
@@ -488,11 +519,158 @@ export function outArity(exp: Expr): number {
     case 'Lookahead':
     case 'Not':
       return 0;
+    case 'GuardedIter':
     case 'Opt':
     case 'Plus':
     case 'Star':
       return 1;
     default:
       unreachable(exp, `not handled: ${exp}`);
+  }
+}
+
+// Returns true if `expr` is `Any` or `Apply("any")` — in the grammar,
+// `any` is typically lowered as an Apply to the built-in rule, not as
+// the `Any` IR node.
+export function isAnyExpr(expr: Expr): boolean {
+  return expr.type === 'Any' || (expr.type === 'Apply' && expr.ruleName === 'any');
+}
+
+// Computes the set of possible first UTF-16 code units that an expression
+// can match. Returns null if the set is too broad (e.g. Any, Range).
+export function computeFirstChars(
+  expr: Expr,
+  rules: Map<string, {body: Expr}>,
+  cache: Map<string, Set<number> | null> = new Map(),
+  visiting: Set<string> = new Set(),
+  limit: number = MAX_GUARD_CHARS
+): Set<number> | null {
+  switch (expr.type) {
+    case 'Terminal':
+      if (expr.value.length === 0) return null;
+      return new Set([expr.value.charCodeAt(0)]);
+    case 'Alt': {
+      const result = new Set<number>();
+      for (const child of expr.children) {
+        const childChars = computeFirstChars(child, rules, cache, visiting, limit);
+        if (childChars == null) return null;
+        for (const c of childChars) result.add(c);
+        if (result.size > limit) return null;
+      }
+      return result;
+    }
+    case 'Seq':
+      return expr.children.length > 0
+        ? computeFirstChars(expr.children[0], rules, cache, visiting, limit)
+        : null;
+    case 'Apply': {
+      if (visiting.has(expr.ruleName)) return null;
+      if (cache.has(expr.ruleName)) return cache.get(expr.ruleName)!;
+      const ruleInfo = rules.get(expr.ruleName);
+      if (!ruleInfo) return null;
+      visiting.add(expr.ruleName);
+      const result = computeFirstChars(ruleInfo.body, rules, cache, visiting, limit);
+      visiting.delete(expr.ruleName);
+      cache.set(expr.ruleName, result);
+      return result;
+    }
+    case 'Lex':
+    case 'Plus':
+      return computeFirstChars(expr.child, rules, cache, visiting, limit);
+    default:
+      return null;
+  }
+}
+
+const MAX_GUARD_CHARS = 8;
+
+// Detect `(~delim any)` and return the set of first characters of `delim`,
+// or null if the pattern doesn't match or the set is too large.
+function getNotAnyGuardChars(
+  child: Expr,
+  rules: Map<string, {body: Expr}>,
+  cache: Map<string, Set<number> | null>
+): number[] | null {
+  if (child.type !== 'Seq') return null;
+  const {children} = child;
+  if (children.length !== 2) return null;
+  if (children[0].type !== 'Not') return null;
+  if (!isAnyExpr(children[1])) return null;
+  const firstChars = computeFirstChars(children[0].child, rules, cache);
+  if (firstChars == null || firstChars.size === 0 || firstChars.size > MAX_GUARD_CHARS)
+    return null;
+  return [...firstChars].sort((a, b) => a - b);
+}
+
+// Rewrite Star/Plus nodes whose child is `(~delim any)` into GuardedIter,
+// where the guard optimization applies. Only in lexical context (no space skipping).
+function lowerGuardedIters(
+  expr: Expr,
+  isLexical: boolean,
+  rules: Map<string, {body: Expr}>,
+  cache: Map<string, Set<number> | null>
+): Expr {
+  const recur = (e: Expr, lex: boolean) => lowerGuardedIters(e, lex, rules, cache);
+  switch (expr.type) {
+    case 'Star':
+    case 'Plus': {
+      const child = recur(expr.child, isLexical);
+      if (isLexical) {
+        const guardChars = getNotAnyGuardChars(child, rules, cache);
+        if (guardChars) return guardedIter(child, guardChars, expr.type === 'Plus');
+      }
+      return {...expr, child};
+    }
+    case 'Lex':
+      return lex(recur(expr.child, true));
+    case 'Alt':
+      return alt(expr.children.map(c => recur(c, isLexical)));
+    case 'Seq':
+      return seq(expr.children.map(c => recur(c, isLexical)));
+    case 'Apply':
+      if (expr.children.length === 0) return expr;
+      return apply(
+        expr.ruleName,
+        expr.descriptionId,
+        expr.children.map(c => recur(c, isLexical))
+      );
+    case 'Dispatch':
+      // Note: patterns are not rewritten here. In practice, Dispatch nodes only
+      // appear when EMIT_GENERALIZED_RULES is true (currently disabled), so this
+      // is not a real gap. If generalized rules are re-enabled, patterns should
+      // be rewritten too.
+      return {type: expr.type, child: recur(expr.child, isLexical), patterns: expr.patterns};
+    case 'GuardedIter':
+      return guardedIter(recur(expr.child, isLexical), expr.guardChars, expr.isPlus);
+    case 'Lookahead':
+      return lookahead(recur(expr.child, isLexical));
+    case 'Not':
+      return not(recur(expr.child, isLexical));
+    case 'Opt':
+      return opt(recur(expr.child, isLexical));
+    case 'Any':
+    case 'ApplyGeneralized':
+    case 'CaseInsensitive':
+    case 'End':
+    case 'Param':
+    case 'Range':
+    case 'Terminal':
+    case 'UnicodeChar':
+      return expr;
+    default:
+      unreachable(expr, `not handled: ${expr}`);
+  }
+}
+
+// Run optimization passes over all rules, rewriting the IR.
+export function optimize(rules: Map<string, {body: Expr; isSyntactic?: boolean}>): void {
+  const firstCharCache = new Map<string, Set<number> | null>();
+  for (const [name, ruleInfo] of rules) {
+    ruleInfo.body = lowerGuardedIters(
+      ruleInfo.body,
+      !ruleInfo.isSyntactic,
+      rules,
+      firstCharCache
+    );
   }
 }
