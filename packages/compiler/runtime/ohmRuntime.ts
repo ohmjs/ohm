@@ -364,7 +364,9 @@ export function evalApplyNoMemo0(ruleId: i32): ApplyResult {
 // Evaluates a trivial (non-memoized) rule that matches a single code point.
 // On success, reuses a preallocated nonterminal node instead of allocating.
 // Falls back to dynamic allocation if matchLength != 1 (e.g. surrogate pair).
-export function evalApplyPrealloc(ruleId: i32): ApplyResult {
+// innerPreallocIdx: -1 for direct rules (child = terminal), >= 0 for transitive
+// rules (child = inner preallocated nonterminal at that index).
+export function evalApplyPrealloc(ruleId: i32, innerPreallocIdx: i32): ApplyResult {
   const origPos = pos;
   const origNumBindings = bindings.length;
   const result = evalRuleBody(ruleId);
@@ -380,7 +382,10 @@ export function evalApplyPrealloc(ruleId: i32): ApplyResult {
         cstSetMatchLength(ptr, 1);
         cstSetTypeAndDetails(ptr, (ruleId << 2) | NODE_TYPE_NONTERMINAL);
         cstSetFailurePos(ptr, 0);
-        store<i32>(<usize>(ptr + CST_NODE_OVERHEAD), preallocTerminalBase + CST_NODE_OVERHEAD);
+        const childPtr = innerPreallocIdx < 0
+          ? preallocTerminalBase + CST_NODE_OVERHEAD
+          : preallocNtBase + innerPreallocIdx * NODE_WITH_1_CHILD;
+        store<i32>(<usize>(ptr + CST_NODE_OVERHEAD), childPtr);
       }
       bindings[origNumBindings] = ptr;
       return true;

@@ -1683,3 +1683,78 @@ test('compile and use the Ohm meta-grammar', async t => {
     t.is(matchWithInput(wasmGrammar, input), 0, `should fail: ${JSON.stringify(input)}`);
   }
 });
+
+// --- Transitive prealloc tests ---
+
+test('transitive prealloc: simple delegation', async t => {
+  const g = ohm.grammar('G { start = myDigit myDigit\nmyDigit = digit }');
+  const wasmGrammar = await toWasmGrammar(g);
+  t.is(matchWithInput(wasmGrammar, '42'), 1);
+
+  const root = wasmGrammar._getCstRoot();
+  t.is(root.ctorName, 'start');
+  t.is(root.children.length, 2);
+
+  const [d1, d2] = root.children;
+  t.is(d1.ctorName, 'myDigit');
+  t.is(d1.matchLength, 1);
+  t.is(d1.children.length, 1);
+  t.is(d1.children[0].ctorName, 'digit');
+
+  t.is(d2.ctorName, 'myDigit');
+  t.is(d2.matchLength, 1);
+  t.is(d2.children.length, 1);
+  t.is(d2.children[0].ctorName, 'digit');
+});
+
+test('transitive prealloc: chained delegation', async t => {
+  const g = ohm.grammar('G { start = a a\na = b\nb = digit }');
+  const wasmGrammar = await toWasmGrammar(g);
+  t.is(matchWithInput(wasmGrammar, '73'), 1);
+
+  const root = wasmGrammar._getCstRoot();
+  t.is(root.children.length, 2);
+
+  const [c1] = root.children;
+  t.is(c1.ctorName, 'a');
+  t.is(c1.matchLength, 1);
+  t.is(c1.children.length, 1);
+  t.is(c1.children[0].ctorName, 'b');
+  t.is(c1.children[0].matchLength, 1);
+  t.is(c1.children[0].children[0].ctorName, 'digit');
+});
+
+test('transitive prealloc: surrogate pair fallback', async t => {
+  // When a transitive prealloc rule matches a surrogate pair (matchLength=2),
+  // it should fall back to dynamic allocation.
+  const g = ohm.grammar('G { start = myAny\nmyAny = any }');
+  const wasmGrammar = await toWasmGrammar(g);
+
+  // BMP character — should use prealloc
+  t.is(matchWithInput(wasmGrammar, 'a'), 1);
+  const root1 = wasmGrammar._getCstRoot();
+  t.is(root1.ctorName, 'start');
+  t.is(root1.children[0].ctorName, 'myAny');
+  t.is(root1.children[0].matchLength, 1);
+
+  // Non-BMP character (surrogate pair) — should fall back to dynamic alloc
+  t.is(matchWithInput(wasmGrammar, '\u{1F600}'), 1);
+  const root2 = wasmGrammar._getCstRoot();
+  t.is(root2.ctorName, 'start');
+  t.is(root2.children[0].ctorName, 'myAny');
+  t.is(root2.children[0].matchLength, 2);
+});
+
+test('transitive prealloc: interaction with single-use inlining', async t => {
+  // When the inner rule is inlined (single-use), transitive prealloc should
+  // NOT apply. The rule should still work correctly via dynamic allocation.
+  const g = ohm.grammar('G { start = wrapper\nwrapper = inner\ninner = digit }');
+  const wasmGrammar = await toWasmGrammar(g);
+  t.is(matchWithInput(wasmGrammar, '5'), 1);
+
+  const root = wasmGrammar._getCstRoot();
+  t.is(root.ctorName, 'start');
+  t.is(root.children[0].ctorName, 'wrapper');
+  t.is(root.children[0].children[0].ctorName, 'inner');
+  t.is(root.children[0].children[0].children[0].ctorName, 'digit');
+});

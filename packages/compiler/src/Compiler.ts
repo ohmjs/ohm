@@ -856,7 +856,9 @@ export class Compiler {
   _lexContextStack: boolean[];
   _applySpacesImplicit: ir.Apply;
   _singleUseRules!: Set<string>;
-  _preallocRules!: Set<string>;
+  // Maps preallocatable rule names to the inner child rule name. Direct rules
+  // (body matches a single codepoint) use '$term' as a sentinel.
+  _preallocRules!: Map<string, string>;
 
   static STACK_START_OFFSET: number;
 
@@ -1024,8 +1026,8 @@ export class Compiler {
     this.specializeRules();
     ir.optimize(this.rules!);
 
-    this._preallocRules = this.findPreallocRules();
     this._singleUseRules = this.findSingleUseRules();
+    this._preallocRules = this.findPreallocRules();
 
     this.assignRuleIds();
   }
@@ -1306,18 +1308,45 @@ export class Compiler {
     }
   }
 
-  // Return a list of rules whose CST node can be preallocated because they always have the
-  // same structure: a single terminal child. These rules are *not* memoized.
-  findPreallocRules(): Set<string> {
+  // Returns a map of preallocatable rule names to their inner child rule name.
+  // Direct rules (body matches a single codepoint) use '$term' as a sentinel;
+  // transitive rules (body delegates to another preallocatable rule) map to
+  // the inner rule name.
+  findPreallocRules(): Map<string, string> {
     const matchesSingleCodepoint = (exp: Expr) => {
       if (['Any', 'UnicodeChar', 'Range'].includes(exp.type)) return true;
       if (exp.type === 'Terminal') return exp.value.length === 1;
     };
-    const ans = new Set<string>();
-    if (this._options.preallocNodes !== false) {
+    const ans = new Map<string, string>();
+    if (this._options.preallocNodes === false) return ans;
+
+    const excludedRules = new Set<string>([this.grammar.defaultStartRule]);
+    if (this._options.startRules) {
+      for (const name of this._options.startRules) excludedRules.add(name);
+    }
+
+    // Phase 1: find direct prealloc rules (body is Range/UnicodeChar/Any/single-char Terminal).
+    for (const [name, {body}] of this.rules!) {
+      if (matchesSingleCodepoint(body) && !excludedRules.has(name)) {
+        ans.set(name, '$term');
+      }
+    }
+
+    // Phase 2: fixed-point transitive closure.
+    // A rule is transitively preallocatable if its body is Apply(innerRule)
+    // where innerRule is preallocatable and won't be inlined.
+    let changed = true;
+    while (changed) {
+      changed = false;
       for (const [name, {body}] of this.rules!) {
-        if (matchesSingleCodepoint(body) && name !== this.grammar.defaultStartRule) {
-          ans.add(name);
+        if (ans.has(name) || excludedRules.has(name)) continue;
+        if (this.shouldInlineRule(name)) continue;
+        if (body.type === 'Apply' && body.children.length === 0) {
+          const innerName = body.ruleName;
+          if (ans.has(innerName) && !this.shouldInlineRule(innerName)) {
+            ans.set(name, innerName);
+            changed = true;
+          }
         }
       }
     }
@@ -1364,7 +1393,7 @@ export class Compiler {
       if (shouldMemoize(name)) this._ensureRuleId(name);
     }
     this._maxMemoizedRuleId = this.ruleIdByName.size;
-    this._preallocRules.forEach(name => {
+    this._preallocRules.forEach((_inner, name) => {
       this._ensureRuleId(name);
     });
     this._singleUseRules.forEach(name => {
@@ -1794,7 +1823,11 @@ export class Compiler {
     const ruleId = this.ruleId(exp.ruleName);
     asm.i32Const(ruleId);
 
-    if (this._preallocRules.has(exp.ruleName)) {
+    const preallocInner = this._preallocRules.get(exp.ruleName);
+    if (preallocInner !== undefined) {
+      const innerPreallocIdx =
+        preallocInner !== '$term' ? this.ruleId(preallocInner) - this._maxMemoizedRuleId : -1;
+      asm.i32Const(innerPreallocIdx);
       asm.callPrebuiltFunc('evalApplyPrealloc');
     } else if (ruleId >= this._maxMemoizedRuleId) {
       asm.callPrebuiltFunc('evalApplyNoMemo0');
@@ -2067,7 +2100,9 @@ export class Compiler {
   // TODO: Emit a tight loop with inline range check and compact iter node,
   // similar to emitGuardedIter. Currently delegates to standard Star/Plus codegen.
   emitRangeIter(exp: ir.RangeIter): void {
-    const wrapped = {type: exp.isPlus ? 'Plus' : 'Star', child: exp.child} as ir.Plus | ir.Star;
+    const wrapped = {type: exp.isPlus ? 'Plus' : 'Star', child: exp.child} as
+      | ir.Plus
+      | ir.Star;
     if (exp.isPlus) {
       this.emitPlus(wrapped as ir.Plus);
     } else {
