@@ -17,6 +17,7 @@ export type Expr =
   | Param
   | Plus
   | Range
+  | RangeIter
   | Seq
   | Star
   | Terminal
@@ -191,6 +192,20 @@ export interface Range {
 
 export const range = (lo: number, hi: number): Range => ({type: 'Range', lo, hi});
 
+// An optimized iteration over a Range pattern (e.g. "0".."9"* or "0".."9"+).
+// Only applies in lexical context (no space skipping).
+export interface RangeIter {
+  type: 'RangeIter';
+  child: Range;
+  isPlus: boolean;
+}
+
+export const rangeIter = (child: Range, isPlus: boolean): RangeIter => ({
+  type: 'RangeIter',
+  child,
+  isPlus,
+});
+
 export interface Seq {
   type: 'Seq';
   children: Expr[];
@@ -271,6 +286,7 @@ export function collectParams(exp: Expr, seen = new Set<number>()): Param[] {
     case 'Not':
     case 'Opt':
     case 'Plus':
+    case 'RangeIter':
     case 'Star':
       return collectParams(exp.child, seen);
     case 'Any':
@@ -324,6 +340,8 @@ export function substituteParams<T extends Expr>(
       };
     case 'GuardedIter':
       return guardedIter(substituteParams(exp.child, actuals), exp.guardChars, exp.isPlus);
+    case 'RangeIter':
+      return rangeIter(substituteParams(exp.child, actuals) as Range, exp.isPlus);
     case 'Not':
     case 'Opt':
     case 'Plus':
@@ -390,6 +408,8 @@ export function rewrite(exp: Expr, actions: RewriteActions): Expr {
       return {type: exp.type, child: rewrite(exp.child, actions), patterns: exp.patterns};
     case 'GuardedIter':
       return guardedIter(rewrite(exp.child, actions), exp.guardChars, exp.isPlus);
+    case 'RangeIter':
+      return rangeIter(rewrite(exp.child, actions) as Range, exp.isPlus);
     case 'Lex':
       return lex(rewrite(exp.child, actions));
     case 'Lookahead':
@@ -440,6 +460,7 @@ export function visit(exp: Expr, actions: VisitActions): void {
     case 'Not':
     case 'Opt':
     case 'Plus':
+    case 'RangeIter':
     case 'Star':
       visit(exp.child, actions);
       break;
@@ -478,6 +499,8 @@ export function toString(exp: Expr): string {
       return `$dispatch`; // TODO: Improve this.
     case 'GuardedIter':
       return `${toString(exp.child)}${exp.isPlus ? '+' : '*'}[guarded]`;
+    case 'RangeIter':
+      return `${toString(exp.child)}${exp.isPlus ? '+' : '*'}[rangeIter]`;
     case 'Lex':
       return `#${toString(exp.child)}`;
     case 'Lookahead':
@@ -522,6 +545,7 @@ export function outArity(exp: Expr): number {
     case 'GuardedIter':
     case 'Opt':
     case 'Plus':
+    case 'RangeIter':
     case 'Star':
       return 1;
     default:
@@ -618,6 +642,9 @@ function lowerGuardedIters(
       if (isLexical) {
         const guardChars = getNotAnyGuardChars(child, rules, cache);
         if (guardChars) return guardedIter(child, guardChars, expr.type === 'Plus');
+        if (child.type === 'Range') {
+          return rangeIter(child, expr.type === 'Plus');
+        }
       }
       return {...expr, child};
     }
@@ -642,6 +669,8 @@ function lowerGuardedIters(
       return {type: expr.type, child: recur(expr.child, isLexical), patterns: expr.patterns};
     case 'GuardedIter':
       return guardedIter(recur(expr.child, isLexical), expr.guardChars, expr.isPlus);
+    case 'RangeIter':
+      return rangeIter(recur(expr.child, isLexical) as Range, expr.isPlus);
     case 'Lookahead':
       return lookahead(recur(expr.child, isLexical));
     case 'Not':

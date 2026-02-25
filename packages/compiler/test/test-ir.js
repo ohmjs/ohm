@@ -180,6 +180,54 @@ test('optimize: delimiter via rule application', t => {
   t.deepEqual(result.guardChars, [120, 121]); // 'x', 'y'
 });
 
+// --- optimize (RangeIter lowering) ---
+
+test('optimize: "0".."9"* becomes RangeIter', t => {
+  const body = ir.star(ir.range(48, 57)); // "0".."9"
+  const rules = new Map([['r', {body}]]);
+  ir.optimize(rules);
+  const result = rules.get('r').body;
+  t.is(result.type, 'RangeIter');
+  t.is(result.child.lo, 48);
+  t.is(result.child.hi, 57);
+  t.false(result.isPlus);
+});
+
+test('optimize: "0".."9"+ becomes RangeIter with isPlus', t => {
+  const body = ir.plus(ir.range(48, 57));
+  const rules = new Map([['r', {body}]]);
+  ir.optimize(rules);
+  const result = rules.get('r').body;
+  t.is(result.type, 'RangeIter');
+  t.true(result.isPlus);
+});
+
+test('optimize: non-BMP range becomes RangeIter', t => {
+  const body = ir.star(ir.range(0x10000, 0x10ffff));
+  const rules = new Map([['r', {body}]]);
+  ir.optimize(rules);
+  const result = rules.get('r').body;
+  t.is(result.type, 'RangeIter');
+  t.is(result.child.lo, 0x10000);
+  t.is(result.child.hi, 0x10ffff);
+});
+
+test('optimize: syntactic rules do not get RangeIter', t => {
+  const body = ir.star(ir.range(48, 57));
+  const rules = new Map([['R', {body, isSyntactic: true}]]);
+  ir.optimize(rules);
+  t.is(rules.get('R').body.type, 'Star');
+});
+
+test('optimize: Lex inside syntactic rule enables RangeIter', t => {
+  const inner = ir.star(ir.range(48, 57));
+  const body = ir.lex(inner);
+  const rules = new Map([['R', {body, isSyntactic: true}]]);
+  ir.optimize(rules);
+  const lexChild = rules.get('R').body.child;
+  t.is(lexChild.type, 'RangeIter');
+});
+
 test('optimize: shared cache across rules', t => {
   // Two rules referencing the same delimiter — cache should be shared.
   const delimBody = ir.terminal('$');

@@ -948,7 +948,8 @@ export class Compiler {
       case 'Lookahead':
       case 'Lex':
         return this.toFailureDescription(exp.child);
-      case 'GuardedIter': {
+      case 'GuardedIter':
+      case 'RangeIter': {
         const childStr = this.toFailureDescription(exp.child);
         if (childStr == null) return null;
         return '(' + childStr + (exp.isPlus ? '+' : '*') + ')';
@@ -1645,6 +1646,9 @@ export class Compiler {
           case 'GuardedIter':
             this.emitGuardedIter(exp);
             break;
+          case 'RangeIter':
+            this.emitRangeIter(exp);
+            break;
           case 'Lex':
             this.emitLex(exp);
             break;
@@ -2058,6 +2062,17 @@ export class Compiler {
 
     asm.newTerminalNode();
     asm.localSet('ret'); // consume the return value
+  }
+
+  // TODO: Emit a tight loop with inline range check and compact iter node,
+  // similar to emitGuardedIter. Currently delegates to standard Star/Plus codegen.
+  emitRangeIter(exp: ir.RangeIter): void {
+    const wrapped = {type: exp.isPlus ? 'Plus' : 'Star', child: exp.child} as ir.Plus | ir.Star;
+    if (exp.isPlus) {
+      this.emitPlus(wrapped as ir.Plus);
+    } else {
+      this.emitStar(wrapped);
+    }
   }
 
   emitGuardedIter(exp: ir.GuardedIter): void {
