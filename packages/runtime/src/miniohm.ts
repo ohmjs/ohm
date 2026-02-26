@@ -27,10 +27,6 @@ export type CstNodeType = (typeof CstNodeType)[keyof typeof CstNodeType];
 
 const EMPTY_CHILDREN: ReadonlyArray<CstNode> = Object.freeze([]);
 
-const compileOptions = {
-  builtins: ['js-string'],
-};
-
 // Bit flags for Unicode categories, based on the order that they appear in
 // https://www.unicode.org/Public/16.0.0/ucd/extracted/DerivedGeneralCategory.txt
 
@@ -158,10 +154,10 @@ export class Grammar {
       },
       fillInputBuffer: this._fillInputBuffer.bind(this),
       matchUnicodeChar: (catBitmap: number) => {
-        const {input, pos} = (this._instance as any).exports;
+        const {pos} = (this._instance as any).exports;
         const re = regexFromCategoryBitmap(catBitmap);
         re.lastIndex = pos;
-        const arr = re.exec(input.value);
+        const arr = re.exec(this._input);
         if (arr) {
           pos.value += arr[0].length;
         }
@@ -170,34 +166,20 @@ export class Grammar {
       matchCaseInsensitive: (() => {
         const cache: RegExp[] = [];
         return (stringIdx: number) => {
-          const {input, pos} = (this._instance as any).exports;
+          const {pos} = (this._instance as any).exports;
           let re = cache[stringIdx];
           if (!re) {
             // The pattern is pre-escaped at compile time.
             re = cache[stringIdx] = new RegExp(this._strings[stringIdx], 'iy');
           }
           re.lastIndex = pos.value;
-          const arr = re.exec(input.value);
+          const arr = re.exec(this._input);
           if (arr) {
             pos.value += arr[0].length;
           }
           return !!arr;
         };
       })(),
-    },
-    // Include a polyfill for js-string builtins for engines that don't
-    // support that feature (e.g., Safari).
-    'wasm:js-string': {
-      length(str: string): number {
-        return str.length;
-      },
-      charCodeAt(str: string, idx: number): number {
-        // NOTE: `index` is interpreted as a signed 32-bit integer when converted to
-        // a JS value using standard conversions. Reinterpret as unsigned here.
-        idx >>>= 0;
-        assert(idx < str.length, 'string index out of bounds');
-        return str.charCodeAt(idx);
-      },
     },
   };
   /** @internal */
@@ -248,8 +230,7 @@ export class Grammar {
    */
   constructor(bytes?: BufferSource) {
     if (bytes) {
-      // @ts-expect-error: TS2554: Expected 1 arguments, but got 2.
-      const mod = new WebAssembly.Module(bytes, compileOptions);
+      const mod = new WebAssembly.Module(bytes);
       this._init(mod, new WebAssembly.Instance(mod, this._imports));
     }
   }
@@ -292,15 +273,10 @@ export class Grammar {
 
   /** @internal */
   async _instantiate(source: BufferSource, debugImports: any = {}): Promise<Grammar> {
-    const {module, instance} = await WebAssembly.instantiate(
-      source,
-      {
-        ...this._imports,
-        debug: debugImports,
-      },
-      // @ts-expect-error: Expected 1-2 arguments, but got 3.
-      compileOptions
-    );
+    const {module, instance} = await WebAssembly.instantiate(source, {
+      ...this._imports,
+      debug: debugImports,
+    });
     return this._init(module, instance);
   }
 
@@ -309,15 +285,10 @@ export class Grammar {
     source: Response | Promise<Response>,
     debugImports: any = {}
   ): Promise<Grammar> {
-    const {module, instance} = await WebAssembly.instantiateStreaming(
-      source,
-      {
-        ...this._imports,
-        debug: debugImports,
-      },
-      // @ts-expect-error: TS2554: Expected 1-2 arguments, but got 3.
-      compileOptions
-    );
+    const {module, instance} = await WebAssembly.instantiateStreaming(source, {
+      ...this._imports,
+      debug: debugImports,
+    });
     return this._init(module, instance);
   }
 
@@ -356,7 +327,7 @@ export class Grammar {
       `unknown rule: '${ruleName}'`
     );
     const heapWatermark = exports.__offset.value;
-    const succeeded = exports.match(input, ruleId);
+    const succeeded = exports.match(input.length, ruleId);
     const buffer = exports.memory.buffer;
 
     // If the Wasm match triggered memory.grow() (e.g. for the memo table or
@@ -371,7 +342,7 @@ export class Grammar {
     const ctx: MatchContext = {
       ruleNames: this._ruleNames,
       view: new DataView(buffer),
-      input: exports.input.value,
+      input,
     };
     const result = createMatchResult(this, ruleName || this._ruleNames[0], ctx, !!succeeded);
     result._heapWatermark = heapWatermark;
@@ -383,7 +354,7 @@ export class Grammar {
   /** @internal */
   recordFailures(): number[] {
     const {exports} = this._instance as any;
-    exports.recordFailures(this._ruleIds.get(this._ruleNames[0]));
+    exports.recordFailures(this._input.length, this._ruleIds.get(this._ruleNames[0]));
     const ans: number[] = [];
     for (let i = 0; i < exports.getRecordedFailuresLength(); i++) {
       if (!exports.isFluffy(i)) {
@@ -422,7 +393,7 @@ export class Grammar {
     ctx ??= {
       ruleNames: this._ruleNames,
       view: new DataView(exports.memory.buffer),
-      input: exports.input.value,
+      input: this._input,
     };
     const firstNode = new CstNodeImpl(ctx, exports.bindingsAt(0), 0);
     assert(firstNode.isNonterminal());
@@ -983,7 +954,8 @@ export class FailedMatchResult extends MatchResult {
       const {exports} = (this.grammar as any)._instance;
       const ruleIds = (this.grammar as any)._ruleIds;
       const ruleNames = (this.grammar as any)._ruleNames;
-      exports.recordFailures(ruleIds.get(ruleNames[0]));
+      const inputLength = (this.grammar as any)._input.length;
+      exports.recordFailures(inputLength, ruleIds.get(ruleNames[0]));
 
       // Use a Map to deduplicate by description while preserving fluffy status.
       // A failure is only fluffy if ALL occurrences are fluffy.

@@ -42,12 +42,6 @@ interface CompilerInternalOptions {
 
 const {instr} = w;
 
-// Constants for Wasm 3.0 (stuff not in @wasmgroundup/emit).
-const wasm3 = {
-  valtype: {externref: 0x6f},
-  instr: {ref: {null: 0xd0}},
-};
-
 function checkNoUndefined(arr: readonly unknown[]): readonly unknown[] {
   assert(arr.indexOf(undefined) === -1, `found undefined @ ${arr.indexOf(undefined)}`);
   return arr;
@@ -150,9 +144,9 @@ function functypeToString(
   resultTypes: readonly w.valtype[]
 ): string {
   const toStr = (t: w.valtype): string => {
-    return (t as number) === wasm3.valtype.externref
-      ? 'externref'
-      : checkNotNull(['f64', 'f32', 'i64', 'i32'][(t as number) - (w.valtype.f64 as number)]);
+    return checkNotNull(
+      ['f64', 'f32', 'i64', 'i32'][(t as number) - (w.valtype.f64 as number)]
+    );
   };
   const params = paramTypes.map(toStr).join(',');
   const results = resultTypes.map(toStr).join(',');
@@ -473,10 +467,6 @@ class Assembler {
       this._endBlock();
     }
     assert(this._blockStack.length === startStackHeight);
-  }
-
-  refNull(vt: number): void {
-    this.emit(wasm3.instr.ref.null, vt);
   }
 
   // "Macros" -- codegen helpers specific to Ohm.

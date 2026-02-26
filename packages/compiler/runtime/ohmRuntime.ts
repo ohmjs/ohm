@@ -42,9 +42,6 @@
 
 type ApplyResult = bool;
 
-@external("wasm:js-string", "length")
-declare function jsStringLength(s: externref): i32;
-
 declare function printI32(val: i32): void;
 declare function matchUnicodeChar(categoryBitmap: i32): bool;
 declare function matchCaseInsensitive(stringIdx: i32): bool;
@@ -118,7 +115,6 @@ let preallocEmptyIterBase: i32 = 0;
 // Shared globals
 export let pos: u32 = 0;
 export let endPos: u32 = 0;
-export let input: externref = null;
 export let inputBuf: usize = 0;
 
 // Block-sparse memo table state.
@@ -280,8 +276,8 @@ function initPreallocatedNodes(): void {
   memory.fill(<usize>preallocEmptyIterBase, 0, <usize>(MAX_PREALLOC_ITER * CST_NODE_OVERHEAD));
 }
 
-function doMatch(startRuleId: i32): ApplyResult {
-  endPos = jsStringLength(input);
+function doMatch(inputLength: i32, startRuleId: i32): ApplyResult {
+  endPos = inputLength;
   inputBuf = heap.alloc(<usize>endPos << 1);  // 2 bytes per UTF-16 code unit
   fillInputBuffer(<i32>inputBuf, endPos);
   initMemoTable(endPos);
@@ -311,20 +307,19 @@ function doMatch(startRuleId: i32): ApplyResult {
   return false;
 }
 
-export function match(inputStr: externref, startRuleId: i32): ApplyResult {
+export function match(inputLength: i32, startRuleId: i32): ApplyResult {
   resetParsingState();
   errorMessagePos = -1;  // Fresh match: no failure recording
-  input = inputStr;
-  return doMatch(startRuleId);
+  return doMatch(inputLength, startRuleId);
 }
 
-export function recordFailures(startRuleId: i32): void {
+export function recordFailures(inputLength: i32, startRuleId: i32): void {
   const savedFailurePos = rightmostFailurePos;  // Save before reset
   resetParsingState();  // Reset parsing state (but not errorMessagePos)
   errorMessagePos = savedFailurePos;  // Set errorMessagePos to failure pos
   recordedFailures = new Array<i32>();
   fluffySaveStack = new Array<i32>();
-  doMatch(startRuleId);  // Re-match with errorMessagePos set
+  doMatch(inputLength, startRuleId);  // Re-match with errorMessagePos set
 }
 
 @inline function evalRuleBody(ruleId: i32): RuleEvalResult {
