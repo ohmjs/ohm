@@ -36,7 +36,7 @@ Optimizations:
 - [ ] Compressed (inline 32-bit) repr for Terminal nodes
 - [ ] Proper preallocated nodes (incl. failurePos) for common cases
 - [ ] Avoid allocating $spaces CST nodes (currently allocated in Wasm, filtered in JS)
-- [ ] Precompute isRuleSyntactic and encode in the Wasm module
+- [x] Precompute isRuleSyntactic and encode in the Wasm module
 - Space skipping:
   - [ ] Evaluate skipping memoization
   - [ ] Avoid building CST nodes? Or preallocate for small numbers?

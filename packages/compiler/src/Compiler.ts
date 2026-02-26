@@ -76,7 +76,11 @@ function uniqueName(names: Set<string>, str: string): string {
 
 function isSyntacticRule(ruleName: string): boolean {
   assert(ruleName[0] !== '$', ruleName);
-  return ruleName[0] === ruleName[0].toUpperCase();
+  // Slightly different behaviour compared to Ohm v17:
+  // Find first letter, check if it is uppercase.
+  const firstLetter = ruleName.match(/\p{L}/u)?.[0];
+  if (!firstLetter) return false;
+  return /\p{Lu}/u.test(firstLetter);
 }
 
 const asciiChars = Array.from({length: 128}).map((_, i) => String.fromCharCode(i));
@@ -1456,15 +1460,22 @@ export class Compiler {
     for (const [name, idx] of Object.entries(prebuilt.globalidxByName)) {
       exports.push(w.export_(name, [0x03, idx]));
     }
-    // The module will have a table containing references to all of the rule eval functions.
-    // The table declaration goes in the table section; the data in the element section.
-    // Note that the rule ID can be used directly as the table index.
+    // The module will have a table containing references to all of the rule eval functions,
+    // plus a compiler-generated $isRuleSyntactic dispatch function at the end.
+    // The rule ID can be used directly as the table index; $isRuleSyntactic is at index numRules.
     const numRules = this.ruleIdByName.size;
+    const tableSize = numRules + 1; // +1 for $isRuleSyntactic
     const table = w.table(
-      w.tabletype(w.elemtype.funcref, w.limits.minmax(numRules, numRules))
+      w.tabletype(w.elemtype.funcref, w.limits.minmax(tableSize, tableSize))
     );
     const tableData = ruleNames.map(name => this.ruleEvalFuncIdx(name));
-    assert(numRules === tableData.length, 'Invalid rule count');
+    // Add $isRuleSyntactic as the last table entry.
+    const isRuleSyntacticIdx = functionDecls.findIndex(f => f.name === '$isRuleSyntactic');
+    assert(isRuleSyntacticIdx !== -1, 'No $isRuleSyntactic function found');
+    tableData.push(
+      w.funcidx(this.importCount() + prebuilt.funcsec.entryCount + isRuleSyntacticIdx)
+    );
+    assert(tableSize === tableData.length, 'Invalid table size');
 
     // Determine the index of the start function.
     const indexOfStart = functionDecls.findIndex(f => f.name === 'start');
@@ -1576,6 +1587,35 @@ export class Compiler {
       asm.emit(instr.call, w.funcidx(prebuilt.startFuncidx));
     });
     ruleDecls.push(checkNotNull(asm._functionDecls.at(-1)));
+
+    // Generate a dispatch function for isRuleSyntactic. The runtime calls
+    // this via call_indirect at table index numRules. Returns 1 for
+    // syntactic rules, 0 for lexical rules.
+    asm.addFunction('$isRuleSyntactic', [w.valtype.i32], [w.valtype.i32], () => {
+      asm.block(
+        w.blocktype.empty,
+        () => {
+          asm.block(
+            w.blocktype.empty,
+            () => {
+              asm.localGet('__arg0');
+              const brLabels = this.ruleIdByName.keys().map(name => {
+                const isSyntactic = name[0] === name[0].toUpperCase();
+                return w.labelidx(asm.depthOf(isSyntactic ? 'syntactic' : 'lexical'));
+              });
+              asm.brTable(brLabels, w.labelidx(asm.depthOf('lexical')));
+            },
+            'syntactic'
+          );
+          asm.i32Const(1);
+          asm.return();
+        },
+        'lexical'
+      );
+      asm.i32Const(0);
+    });
+    ruleDecls.push(checkNotNull(asm._functionDecls.at(-1)));
+
     return ruleDecls;
   }
 

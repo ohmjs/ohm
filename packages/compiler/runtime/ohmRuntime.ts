@@ -46,7 +46,6 @@ type ApplyResult = bool;
 declare function jsStringLength(s: externref): i32;
 
 declare function printI32(val: i32): void;
-declare function isRuleSyntactic(ruleId: i32): bool;
 declare function matchUnicodeChar(categoryBitmap: i32): bool;
 declare function matchCaseInsensitive(stringIdx: i32): bool;
 
@@ -225,6 +224,12 @@ function useMemoizedResult(ruleId: i32, result: MemoEntry): ApplyResult {
   if (IMPLICIT_SPACE_SKIPPING && isRuleSyntactic(ruleId)) {
     evalApply0(1); // Must match the $spaces rule ID from Compiler.js constructor.
   }
+}
+
+// The last entry in the function table is a compiler-generated dispatch
+// function that returns 1 for syntactic rules, 0 for lexical rules.
+@inline function isRuleSyntactic(ruleId: i32): bool {
+  return call_indirect<i32>(numRules, ruleId) !== 0;
 }
 
 function resetParsingState(): void {

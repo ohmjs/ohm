@@ -156,12 +156,6 @@ export class Grammar {
         // eslint-disable-next-line no-console
         console.log(val);
       },
-      isRuleSyntactic: (ruleId: number) => {
-        // TODO: Precompute this for all rules, and encode it in the module?
-        const name = this._ruleNames[ruleId];
-        assert(!!name);
-        return name[0] === name[0].toUpperCase();
-      },
       fillInputBuffer: this._fillInputBuffer.bind(this),
       matchUnicodeChar: (catBitmap: number) => {
         const {input, pos} = (this._instance as any).exports;
