@@ -1486,11 +1486,7 @@ export class Compiler {
       w.customsec(this.buildStringTable('ruleNames', ruleNames)),
       w.customsec(this.buildStringTable('strings', this._strings)),
       // Only the module name subsection is needed.
-      w.namesec(
-        (w.namedata as (...args: w.Fragment[]) => w.Fragment)(
-          w.modulenamesubsec(this.grammar.name)
-        )
-      ),
+      w.namesec(w.modulenamesubsec(this.grammar.name)),
     ]);
     const bytes = Uint8Array.from((mod as unknown[]).flat(Infinity) as number[]);
 

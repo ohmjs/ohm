@@ -1,164 +1,191 @@
 package main
 
 import (
-	"fmt"
+	"unicode/utf16"
 	"unsafe"
 
 	"github.com/tetratelabs/wazero/api"
 )
 
-// Code for walking a CST by hand, by accessing the raw memory.
-// Ultimately, we will want a higher-level API for this, but for now,
-// this is useful for testing/debugging.
-
+// CstNodeType constants matching the ohm-js CstNodeType enum.
 const (
-	// Node type constants
-	NodeTypeNonterminal = 0
-	NodeTypeTerminal    = -1
-	NodeTypeIter        = -2
-
-	// CST node structure size constants
-	cstNodeHeaderSize = 12 // 3 uint32 fields (count, matchLen, type)
-	uint32Size        = 4
+	CstNodeTypeNonterminal = 0
+	CstNodeTypeTerminal    = 1
+	CstNodeTypeList        = 2
+	CstNodeTypeOpt         = 3
 )
 
-// CstNode represents a node in the Concrete Syntax Tree
+const (
+	matchRecordTypeMask = 3
+	cstNodeHeaderSize   = 16
+	slotSize            = 4
+)
+
+// cstContext holds shared state for all CstNodes from a single match result.
+type cstContext struct {
+	ruleNames  []string
+	memory     api.Memory
+	inputUTF16 []uint16
+}
+
+// CstNode represents a node in the concrete syntax tree.
+// Its API mirrors the ohm-js CstNode interface.
 type CstNode struct {
-	ruleNames []string
-	memory    api.Memory
-	base      uint32
+	ctx      *cstContext
+	base     uint32
+	startIdx int // position in the input (UTF-16 code units)
 }
 
-// NewCstNode creates a new CstNode with the given parameters
-func NewCstNode(ruleNames []string, memory api.Memory, offset uint32) *CstNode {
-	return &CstNode{
-		ruleNames: ruleNames,
-		memory:    memory,
-		base:      offset,
-	}
+func newCstNode(ctx *cstContext, base uint32, startIdx int) *CstNode {
+	return &CstNode{ctx: ctx, base: base, startIdx: startIdx}
 }
 
-// IsNonterminal returns true if this node represents a nonterminal
-func (n *CstNode) IsNonterminal() bool {
-	return n.Type() >= 0
-}
+// --- internal field accessors ---
 
-// IsTerminal returns true if this node represents a terminal
-func (n *CstNode) IsTerminal() bool {
-	return n.Type() == NodeTypeTerminal
-}
-
-// IsIter returns true if this node represents an iteration
-func (n *CstNode) IsIter() bool {
-	return n.Type() == NodeTypeIter
-}
-
-// RuleName returns the name of the rule that created this node
-func (n *CstNode) RuleName() (string, error) {
-	data, ok := n.memory.Read(n.base+8, 4)
+func (n *CstNode) typeAndDetails() int32 {
+	data, ok := n.ctx.memory.Read(n.base+8, 4)
 	if !ok {
-		return "", fmt.Errorf("failed to read rule ID at address %d", n.base+8)
+		return 0
 	}
-
-	id := readInt32(data, 0)
-	if id < 0 {
-		return "", nil
-	}
-
-	if len(n.ruleNames) == 0 {
-		return fmt.Sprintf("rule_%d", id), nil
-	}
-
-	if int(id) >= len(n.ruleNames) {
-		return fmt.Sprintf("rule_%d", id), nil
-	}
-
-	if n.ruleNames[id] == "" {
-		return fmt.Sprintf("rule_%d", id), nil
-	}
-
-	return n.ruleNames[id], nil
+	return readInt32(data, 0)
 }
 
-// count returns the number of child nodes
-func (n *CstNode) count() (uint32, error) {
-	data, ok := n.memory.Read(n.base, 4)
+func (n *CstNode) matchRecordType() int32 {
+	return n.typeAndDetails() & matchRecordTypeMask
+}
+
+func (n *CstNode) ruleID() int32 {
+	return n.typeAndDetails() >> 2
+}
+
+func (n *CstNode) count() uint32 {
+	data, ok := n.ctx.memory.Read(n.base, 4)
 	if !ok {
-		return 0, fmt.Errorf("failed to read count at address %d", n.base)
+		return 0
 	}
-	return readUint32(data, 0), nil
+	return readUint32(data, 0)
 }
 
-// MatchLength returns the length of the matched text
-func (n *CstNode) MatchLength() (uint32, error) {
-	data, ok := n.memory.Read(n.base+4, 4)
-	if !ok {
-		return 0, fmt.Errorf("failed to read match length at address %d", n.base+4)
+// --- public API (matches the ohm-js CstNode interface) ---
+
+// Type returns the CstNodeType for this node.
+func (n *CstNode) Type() int {
+	switch n.matchRecordType() {
+	case 0:
+		return CstNodeTypeNonterminal
+	case 1:
+		return CstNodeTypeTerminal
+	case 2:
+		return CstNodeTypeList
+	case 3:
+		return CstNodeTypeOpt
+	default:
+		return -1
 	}
-	return readUint32(data, 0), nil
 }
 
-// Type returns the type of this node (0 for nonterminal, -1 for terminal, -2 for iter)
-func (n *CstNode) Type() int32 {
-	data, ok := n.memory.Read(n.base+8, 4)
-	if !ok {
-		return 0 // Return nonterminal as default in case of error
-	}
-
-	t := readInt32(data, 0)
-	if t < 0 {
-		return t
-	}
-	return NodeTypeNonterminal
-}
-
-// Children returns a slice of child nodes
-func (n *CstNode) Children() ([]*CstNode, error) {
-	count, err := n.count()
-	if err != nil {
-		return nil, err
-	}
-
-	if count == 0 {
-		return []*CstNode{}, nil
-	}
-
-	children := make([]*CstNode, count)
-
-	for i := uint32(0); i < count; i++ {
-		slotOffset := n.base + cstNodeHeaderSize + i*uint32Size
-		data, ok := n.memory.Read(slotOffset, 4)
-		if !ok {
-			return nil, fmt.Errorf("failed to read child pointer at address %d", slotOffset)
+// CtorName returns the constructor name for this node.
+// For nonterminals this is the rule name; for other types it is
+// "_terminal", "_list", or "_opt".
+func (n *CstNode) CtorName() string {
+	switch n.Type() {
+	case CstNodeTypeNonterminal:
+		id := n.ruleID()
+		if int(id) < len(n.ctx.ruleNames) {
+			return n.ctx.ruleNames[id]
 		}
-
-		childOffset := readUint32(data, 0)
-		children[i] = NewCstNode(n.ruleNames, n.memory, childOffset)
+		return ""
+	case CstNodeTypeTerminal:
+		return "_terminal"
+	case CstNodeTypeList:
+		return "_list"
+	case CstNodeTypeOpt:
+		return "_opt"
+	default:
+		return ""
 	}
-
-	return children, nil
 }
 
-// Helper functions for reading values from memory
+// MatchLength returns the number of UTF-16 code units consumed by this node.
+func (n *CstNode) MatchLength() int {
+	data, ok := n.ctx.memory.Read(n.base+4, 4)
+	if !ok {
+		return 0
+	}
+	return int(readUint32(data, 0))
+}
+
+// Source returns the start and end indices (UTF-16 code units) in the input.
+func (n *CstNode) Source() (startIdx, endIdx int) {
+	return n.startIdx, n.startIdx + n.MatchLength()
+}
+
+// SourceString returns the portion of the input matched by this node.
+func (n *CstNode) SourceString() string {
+	start := n.startIdx
+	end := start + n.MatchLength()
+	if end > len(n.ctx.inputUTF16) {
+		end = len(n.ctx.inputUTF16)
+	}
+	if start >= end {
+		return ""
+	}
+	return string(utf16.Decode(n.ctx.inputUTF16[start:end]))
+}
+
+// Value returns the matched text.
+func (n *CstNode) Value() string {
+	return n.SourceString()
+}
+
+func (n *CstNode) IsNonterminal() bool { return n.Type() == CstNodeTypeNonterminal }
+func (n *CstNode) IsTerminal() bool    { return n.Type() == CstNodeTypeTerminal }
+func (n *CstNode) IsList() bool        { return n.Type() == CstNodeTypeList }
+func (n *CstNode) IsOptional() bool    { return n.Type() == CstNodeTypeOpt }
+
+// IsSyntactic returns true if this is a nonterminal whose rule name starts
+// with an uppercase letter.
+func (n *CstNode) IsSyntactic() bool {
+	if !n.IsNonterminal() {
+		return false
+	}
+	name := n.CtorName()
+	return len(name) > 0 && name[0] >= 'A' && name[0] <= 'Z'
+}
+
+// IsLexical returns true if this is a nonterminal whose rule name starts
+// with a lowercase letter.
+func (n *CstNode) IsLexical() bool {
+	return n.IsNonterminal() && !n.IsSyntactic()
+}
+
+// Children returns the child nodes, with startIdx properly tracked.
+func (n *CstNode) Children() []*CstNode {
+	count := n.count()
+	if count == 0 {
+		return nil
+	}
+	children := make([]*CstNode, count)
+	startIdx := n.startIdx
+	for i := uint32(0); i < count; i++ {
+		slotOffset := n.base + cstNodeHeaderSize + i*slotSize
+		data, ok := n.ctx.memory.Read(slotOffset, 4)
+		if !ok {
+			return children[:i]
+		}
+		childBase := readUint32(data, 0)
+		child := newCstNode(n.ctx, childBase, startIdx)
+		children[i] = child
+		startIdx += child.MatchLength()
+	}
+	return children
+}
+
+// Helper functions for reading little-endian values from memory.
 func readUint32(data []byte, offset uint32) uint32 {
 	return *(*uint32)(unsafe.Pointer(&data[offset]))
 }
 
 func readInt32(data []byte, offset uint32) int32 {
 	return *(*int32)(unsafe.Pointer(&data[offset]))
-}
-
-// GetCstRoot returns the root node of the CST from the WasmMatcher
-func GetCstRoot(matcher *WasmMatcher, ruleNames []string) (*CstNode, error) {
-	rootAddr, err := matcher.GetCstRoot()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get CST root: %v", err)
-	}
-
-	memory := matcher.GetModule().Memory()
-	if memory == nil {
-		return nil, fmt.Errorf("WebAssembly module has no memory")
-	}
-
-	return NewCstNode(ruleNames, memory, rootAddr), nil
 }

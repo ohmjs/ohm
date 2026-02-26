@@ -1,67 +1,29 @@
-# Ohm-WASM Go Integration
+# Ohm Go runtime
 
-This directory contains a Go implementation for running Ohm grammars compiled to WebAssembly. It provides a simple API to load grammar modules, match input against them, and access the resulting concrete syntax trees.
+A Go implementation of the `Grammar` and `MatchResult` classes from the [ohm-js](https://www.npmjs.com/package/ohm-js) package, for use with Ohm grammars compiled to WebAssembly.
 
-## Overview
-
-The implementation consists of two main components:
-
-1. **matcher.go**: A Go implementation of the JavaScript `WasmMatcher` class from the Ohm `wasm` package
-2. **testmain.go**: A command-line program that demonstrates how to use the WasmMatcher
-
-## WasmMatcher
-
-The `WasmMatcher` class provides a high-level API for working with Ohm grammars compiled to WebAssembly:
+## Usage
 
 ```go
-// Create a new matcher
-matcher := NewWasmMatcher(ctx)
+// Instantiate a grammar from compiled Wasm bytes
+wasmBytes, _ := os.ReadFile("path/to/grammar.wasm")
+g, err := NewGrammar(ctx, wasmBytes)
+defer g.Close()
 
-// Load a grammar module
-err := matcher.LoadModule("path/to/grammar.wasm")
+// Match input against the grammar (optional second arg is start rule)
+result, err := g.Match("var x = 1;")
+defer result.Close()
 
-// Set input text
-matcher.SetInput("text to match")
-
-// Match against the grammar
-success, err := matcher.Match()
-
-// Match against a specific rule
-success, err := matcher.MatchRule("specificRule")
-
-// Access the concrete syntax tree
-cstRoot, err := matcher.GetCstRoot()
+if result.Succeeded() {
+    cstRoot, err := result.GetCstRoot()
+    // ...walk the tree
+}
 ```
 
-## Command-Line Usage
+## Build and Test
 
-You can use the command-line program to test Ohm grammars:
+From the compiler package directory (`packages/compiler`):
 
-```
-# Test the simple add function (automatically detected)
-./testmain -wasm ../data/_add.wasm
-
-# Match input against a grammar
-./testmain -wasm path/to/grammar.wasm -input "text to match"
-
-# Specify a start rule
-./testmain -wasm path/to/grammar.wasm -input "text to match" -rule "StartRule"
-```
-
-### Example with ES5 Grammar
-
-```
-./testmain -wasm ../data/_es5.wasm -input "var x = 3;"
-```
-
-## Build Instructions
-
-Use the Makefile in the parent directory to build and test:
-
-```
-# Build the testmain program
-make test/go/testmain
-
-# Run the test with the ES5 grammar
-make go-test-es5
+```bash
+make go-test-es5    # build es5.wasm and run Go tests
 ```
