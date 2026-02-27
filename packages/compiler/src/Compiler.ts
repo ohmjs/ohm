@@ -77,7 +77,6 @@ function isSyntacticRule(ruleName: string): boolean {
   return /\p{Lu}/u.test(firstLetter);
 }
 
-
 class StringTable {
   _map: Map<string, number>;
   _strs: string[];
