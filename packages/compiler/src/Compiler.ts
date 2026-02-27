@@ -77,7 +77,6 @@ function isSyntacticRule(ruleName: string): boolean {
   return /\p{Lu}/u.test(firstLetter);
 }
 
-const asciiChars = Array.from({length: 128}).map((_, i) => String.fromCharCode(i));
 
 class StringTable {
   _map: Map<string, number>;
@@ -2305,19 +2304,6 @@ export class Compiler {
     // TODO: Add support for more categories, by calling out to the host.
     assert(['Ll', 'Lu', 'Ltmo'].includes(exp.categoryOrProp));
 
-    const makeLabels = () =>
-      asciiChars.map(c => {
-        const isLowercase = 'a' <= c && c <= 'z';
-        const isUppercase = 'A' <= c && c <= 'Z';
-        if (
-          (exp.categoryOrProp === 'Lu' && isUppercase) ||
-          (exp.categoryOrProp === 'Ll' && isLowercase)
-        ) {
-          return w.labelidx(asm.depthOf('fastSuccess'));
-        }
-        return w.labelidx(asm.depthOf('failure'));
-      });
-
     const failureId = this.toFailure(exp);
     this.wrapTerminalLike(() => {
       asm.block(
@@ -2326,18 +2312,33 @@ export class Compiler {
           asm.block(
             w.blocktype.empty,
             () => {
-              // Fast path: a jump table for ASCII characters.
-              asm.block(
-                w.blocktype.empty,
-                () => {
-                  asm.currCharCode();
-                  asm.brTable(makeLabels(), w.labelidx(asm.depthOf('default')));
-                },
-                'default'
-              );
-              // Fall through: not an ASCII character.
+              // Fast path: range checks for ASCII characters.
+              if (exp.categoryOrProp === 'Lu') {
+                // (c - 'A') <= ('Z' - 'A'), unsigned
+                asm.currCharCode();
+                asm.i32Const(0x41); // 'A'
+                asm.emit(instr.i32.sub);
+                asm.i32Const(0x5a - 0x41); // 'Z' - 'A'
+                asm.emit(instr.i32.le_u);
+                asm.condBreak(asm.depthOf('fastSuccess'));
+              } else if (exp.categoryOrProp === 'Ll') {
+                // (c - 'a') <= ('z' - 'a'), unsigned
+                asm.currCharCode();
+                asm.i32Const(0x61); // 'a'
+                asm.emit(instr.i32.sub);
+                asm.i32Const(0x7a - 0x61); // 'z' - 'a'
+                asm.emit(instr.i32.le_u);
+                asm.condBreak(asm.depthOf('fastSuccess'));
+              }
+              // No ASCII chars are Ltmo, so skip the range check.
 
-              // Push the arg: a bitmap indicating the categories.
+              // If ASCII, it's definitely not a match.
+              asm.currCharCode();
+              asm.i32Const(128);
+              asm.emit(instr.i32.lt_u);
+              asm.condBreak(asm.depthOf('failure'));
+
+              // Slow path: non-ASCII character, call out to host.
               switch (exp.categoryOrProp) {
                 case 'Lu':
                   asm.i32Const(1 << 1);
