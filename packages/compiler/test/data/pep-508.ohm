@@ -1,0 +1,101 @@
+PEP508 {
+    // Grammar adapted from https://peps.python.org/pep-0508/#complete-grammar
+    // (naming retained, just reordered and camelCased)
+    File = ListOf<Line, "\n">
+    Line = Req? comment?
+    Req = UrlReq | NameReq | RequirementsReq | ConstraintsReq
+
+    NameReq = Name Extras? VersionSpec QuotedMarker?
+    UrlReq  = Name Extras? UrlSpec (space QuotedMarker)?
+    Extras  = "[" ListOf<identifier, ","> "]"
+    Name    = identifier
+    identifier    = alnum identifierEnd*
+    identifierEnd = alnum -- single
+                  | (("-" | "_" | "." )* alnum) -- multi
+
+    // Requirements based on other requirements files (not in PEP 508, but supported by pip)
+    RequirementsReq = "-r" filePath
+    ConstraintsReq  = "-c" filePath
+    filePath        = (~("\n" | "#") any)+
+
+    UrlSpec      = "@" uriReference
+    uriReference = uri | relativeRef
+    uri          = scheme ":" hierPart? ("?" query )? ("#" fragment)?
+    hierPart     = ("//" authority pathAbempty) -- abempty
+                 | pathAbsolute -- absolute
+                 | pathRootless -- rootless
+    absoluteUri  = scheme ":" hierPart? ("?" query )?
+    relativeRef  = relativePart? ("?" query )? ("#" fragment )?
+    relativePart = "//" authority pathAbempty -- abempty
+                 | pathAbsolute -- absolute
+                 | pathNoscheme -- noscheme
+    scheme       = letter (alnum | "+" | "-" | ".")*
+    authority    = (userinfo "@" )? host (":" port )?
+    userinfo     = (unreserved | pctEncoded | subDelims | ":")*
+    host         = ipLiteral | ipv4Address | regName
+    port         = digit*
+    ipLiteral    = "[" (ipv6Address | ipvFuture) "]"
+    ipvFuture    = "v" hexdig+ "." (unreserved | subDelims | ":")+
+    ipv6Address  = (hexdig | ":" | ".")+ // dumbed down a lot, mostly due to lack of quantifier support in Ohm
+    ipv4Address  = decOctet "." decOctet "." decOctet "." decOctet
+    nz           = ~"0" digit
+    decOctet     = digit -- zeroToNine
+                 | nz digit -- tenToNinetyNine
+                 | "1" digit digit -- oneHundredToOneNinetyNine
+                 | "2" ("0" | "1" | "2" | "3" | "4") digit -- twoHundredToTwoFortyNine
+                 | "25" ("0" | "1" | "2" | "3" | "4" | "5") -- twoFiftyToTwoFiftyFive
+    regName      = (unreserved | pctEncoded | subDelims)*
+    path         = pathAbempty // begins with "/" or is empty
+                 | pathAbsolute // begins with "/" but not "//"
+                 | pathNoscheme // begins with a non-colon segment
+                 | pathRootless // begins with a segment
+    pathAbempty  = ("/" segment)*
+    pathAbsolute = "/" (segmentNz ("/" segment)* )?
+    pathNoscheme = segmentNzNc ("/" segment)*
+    pathRootless = segmentNz ("/" segment)*
+    segment      = pchar*
+    segmentNz    = pchar+
+    segmentNzNc  = (unreserved | pctEncoded | subDelims | "@")+ // non-zero-length segment without any colon ":"
+    pchar        = unreserved | pctEncoded | subDelims | ":" | "@"
+    query        = (pchar | "/" | "?")*
+    fragment     = (pchar | "/" | "?")*
+    pctEncoded   = "%" hexdig
+    unreserved   = alnum | "-" | "." | "_" | "~"
+    reserved     = genDelims | subDelims
+    genDelims    = ":" | "/" | "?" | "#" | "(" | ")?" | "@"
+    subDelims    = "!" | "$" | "&" | "'" | "(" | ")" | "*" | "+" | "," | ";" | "="
+    hexdig       = digit | "a" | "A" | "b" | "B" | "c" | "C" | "d" | "D" | "e" | "E" | "f" | "F"
+
+    // Environment markers
+    QuotedMarker  = ";" Marker
+    Marker        = MarkerOr
+    MarkerOr      = MarkerAnd "or" MarkerAnd -- node
+                  | MarkerAnd -- leaf
+    MarkerAnd     = MarkerExpr "and" MarkerExpr -- node
+                  | MarkerExpr -- leaf
+    MarkerExpr    = MarkerVar markerOp MarkerVar -- leaf
+                  | "(" Marker ")" -- node
+    MarkerVar     = envVar | pythonStr
+    markerOp      = versionCmp -- versionCmp
+                  | "in" -- in
+                  | ("not" space+ "in") -- notIn
+    pythonStr     = "'" (pythonStrChar | "\"")* "'"
+                  | "\"" (pythonStrChar | "'")* "\""
+    pythonStrChar = space | alnum | "(" | ")" | "." | "{" | "}" | "-" | "_" | "*" | "#" | ":" | ";" | "," | "/" | "?"
+                  | "[" | "]" | "!" | "~" | "`" | "@" | "$" | "%" | "^" | "&" | "=" | "+" | "|" | "<" | ">"
+    envVar        = "python_version" | "python_full_version" | "os_name" | "sys_platform" | "platform_release"
+                  | "platform_system" | "platform_version" | "platform_machine" | "platform_python_implementation"
+                  | "implementation_name" | "implementation_version" | "extra" // ONLY when defined by a containing layer
+
+    // Version specifiers, defined in PEP 440 (https://peps.python.org/pep-0440/)
+    VersionSpec   = "(" VersionMany ")" -- parenthesized
+                  | VersionMany -- direct
+    VersionMany   = ListOf<VersionOne, ",">
+    VersionOne    = versionCmp version
+    versionCmp    = "<=" | "<" | "!=" | "==" | ">=" | ">" | "~=" | "==="
+    version       = (alnum | "-" | "_" | "." | "*" | "+" | "!" )+
+
+    comment = "#" (~"\n" any)*
+
+    space := " " | "\t" // Overriding Ohm's definition of whitespace to kick out newlines and other Unicode whitespace
+}
