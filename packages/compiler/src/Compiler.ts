@@ -1412,9 +1412,7 @@ export class Compiler {
         moduleNameSubsec,
         w.funcnamesubsec(
           w.namemap(
-            functionDecls.map((f, i) =>
-              w.nameassoc(w.funcidx(i + compilerFuncOffset), f.name)
-            )
+            functionDecls.map((f, i) => w.nameassoc(w.funcidx(i + compilerFuncOffset), f.name))
           )
         ),
         [] // no local name subsection
@@ -1694,80 +1692,85 @@ export class Compiler {
       return;
     }
 
+    const skipStackFrame =
+      ir.isLeaf(exp) || exp.type === 'Seq' || exp.type === 'Lex' || exp.type === 'Dispatch';
+    // Types that use condBreak(depthOf('pexprEnd')) for early exit:
+    const needsPExprEnd =
+      exp.type === 'Alt' || exp.type === 'Seq' || exp.type === 'GuardedIter';
+
     const debugLabel = ir.toString(exp);
     asm.emit(`BEGIN ${debugLabel}`);
-    asm.pushStackFrame();
+    if (!skipStackFrame) asm.pushStackFrame();
 
-    // Wrap the body in a block, which is useful for two reasons:
-    // - it allows early returns.
-    // - it makes sure that the generated code doesn't have stack effects.
-    asm.block(
-      w.blocktype.empty,
-      () => {
-        if (preHook) preHook();
+    const emitBody = () => {
+      if (preHook) preHook();
 
-        switch (exp.type) {
-          case 'Alt':
-            this.emitAlt(exp);
-            break;
-          case 'Any':
-            this.emitAny(exp);
-            break;
-          case 'CaseInsensitive':
-            this.emitCaseInsensitive(exp);
-            break;
-          case 'Dispatch':
-            this.emitDispatch(exp);
-            break;
-          case 'End':
-            this.emitEnd(exp);
-            break;
-          case 'GuardedIter':
-            this.emitGuardedIter(exp);
-            break;
-          case 'RangeIter':
-            this.emitRangeIter(exp);
-            break;
-          case 'Lex':
-            this.emitLex(exp);
-            break;
-          case 'Lookahead':
-            this.emitLookahead(exp);
-            break;
-          case 'Not':
-            this.emitNot(exp);
-            break;
-          case 'Seq':
-            this.emitSeq(exp);
-            break;
-          case 'Star':
-            this.emitStar(exp);
-            break;
-          case 'Opt':
-            this.emitOpt(exp);
-            break;
-          case 'Range':
-            this.emitRange(exp);
-            break;
-          case 'Plus':
-            this.emitPlus(exp);
-            break;
-          case 'Terminal':
-            this.emitTerminal(exp);
-            break;
-          case 'UnicodeChar':
-            this.emitUnicodeChar(exp);
-            break;
-          case 'Param':
-          // Fall through (Params should not exist at codegen time).
-          default:
-            throw new Error(`not handled: ${exp.type}`);
-        }
-      },
-      'pexprEnd'
-    );
+      switch (exp.type) {
+        case 'Alt':
+          this.emitAlt(exp);
+          break;
+        case 'Any':
+          this.emitAny(exp);
+          break;
+        case 'CaseInsensitive':
+          this.emitCaseInsensitive(exp);
+          break;
+        case 'Dispatch':
+          this.emitDispatch(exp);
+          break;
+        case 'End':
+          this.emitEnd(exp);
+          break;
+        case 'GuardedIter':
+          this.emitGuardedIter(exp);
+          break;
+        case 'RangeIter':
+          this.emitRangeIter(exp);
+          break;
+        case 'Lex':
+          this.emitLex(exp);
+          break;
+        case 'Lookahead':
+          this.emitLookahead(exp);
+          break;
+        case 'Not':
+          this.emitNot(exp);
+          break;
+        case 'Seq':
+          this.emitSeq(exp);
+          break;
+        case 'Star':
+          this.emitStar(exp);
+          break;
+        case 'Opt':
+          this.emitOpt(exp);
+          break;
+        case 'Range':
+          this.emitRange(exp);
+          break;
+        case 'Plus':
+          this.emitPlus(exp);
+          break;
+        case 'Terminal':
+          this.emitTerminal(exp);
+          break;
+        case 'UnicodeChar':
+          this.emitUnicodeChar(exp);
+          break;
+        case 'Param':
+        // Fall through (Params should not exist at codegen time).
+        default:
+          throw new Error(`not handled: ${exp.type}`);
+      }
+    };
+
+    if (needsPExprEnd) {
+      asm.block(w.blocktype.empty, emitBody, 'pexprEnd');
+    } else {
+      emitBody();
+    }
     if (postHook) postHook();
-    asm.popStackFrame();
+    if (!skipStackFrame) asm.popStackFrame();
     asm.emit(`END ${debugLabel}`);
   }
 

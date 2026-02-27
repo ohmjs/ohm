@@ -553,6 +553,21 @@ export function outArity(exp: Expr): number {
   }
 }
 
+// Returns true if the expression is a leaf node (matched by wrapTerminalLike).
+export function isLeaf(expr: Expr): boolean {
+  switch (expr.type) {
+    case 'Any':
+    case 'Terminal':
+    case 'Range':
+    case 'End':
+    case 'UnicodeChar':
+    case 'CaseInsensitive':
+      return true;
+    default:
+      return false;
+  }
+}
+
 // Returns true if `expr` is `Any` or `Apply("any")` — in the grammar,
 // `any` is typically lowered as an Apply to the built-in rule, not as
 // the `Any` IR node.
