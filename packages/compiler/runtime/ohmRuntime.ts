@@ -36,7 +36,7 @@
  *               bits [1:0] = node type
  *                 0=nonterminal, 1=terminal, 2=iteration, 3=optional
  *               bits [31:2] = ruleId (nonterminal) or arity (iter)
- *    12     failurePos: i32
+ *    12     failureOffset: i32  (relative to startIdx)
  *    16+    children: i32[]    (pointers to child nodes)
  */
 
@@ -79,15 +79,13 @@ type MemoEntry = i32;
 @inline const EMPTY: MemoEntry = 0;
 
 // Low bit: failure flag.
-// Rest: failurePos (signed int, 31 bits).
+// Rest: failureOffset (signed int, 31 bits).
 @inline const MEMO_FAILURE_FLAG: MemoEntry = 0x1;
 
-// Not: left recursion bombs never include failurePos.
-// We need to be careful that a true failure w/ failurePos can't produce
-// the same value. Because failurePos >= -1, we can use -2 and -3.
-// TODO: Use failureOffset (unsigned) instead? That's what we do in JS.
-@inline const UNUSED_LR_BOMB: MemoEntry = (-2 << 1) | MEMO_FAILURE_FLAG;
-@inline const USED_LR_BOMB: MemoEntry = (-3 << 1) | MEMO_FAILURE_FLAG
+// Left recursion bombs. These use extreme negative values that can't
+// collide with valid (failureOffset << 1) | 1 entries.
+@inline const UNUSED_LR_BOMB: MemoEntry = <i32>0x80000001;
+@inline const USED_LR_BOMB: MemoEntry = <i32>0x80000003;
 
 // The result of a raw rule evaluation function.
 // Low bit: RULE_EVAL_SUCCESS_FLAG
@@ -107,7 +105,7 @@ let preallocTerminalBase: i32 = 0;
 @inline const NODE_WITH_1_CHILD: i32 = CST_NODE_OVERHEAD + 4; // 20 bytes
 let preallocNtBase: i32 = 0;
 
-// Preallocated empty iteration nodes (count=0, matchLength=0, failurePos=-1).
+// Preallocated empty iteration nodes (count=0, matchLength=0, failureOffset=-1).
 // Indexed by typeAndDetails value. Covers arities 1-8 for both iter and opt.
 @inline const MAX_PREALLOC_ITER: i32 = 36; // (8 << 2) | 3 + 1
 let preallocEmptyIterBase: i32 = 0;
@@ -137,8 +135,8 @@ export let recordedFailures: Array<i32> = new Array<i32>();
   return a > b ? a : b;
 }
 
-@inline function memoEntryForFailure(failurePos: i32): MemoEntry {
-  return (failurePos << 1) | MEMO_FAILURE_FLAG;
+@inline function memoEntryForFailure(failureOffset: i32): MemoEntry {
+  return (failureOffset << 1) | MEMO_FAILURE_FLAG;
 }
 
 @inline function memoIndexPtr(memoPos: usize, ruleId: i32): usize {
@@ -165,12 +163,12 @@ export let recordedFailures: Array<i32> = new Array<i32>();
   store<MemoEntry>(<usize>blockPtr + offset, value);
 }
 
-@inline function memoGetFailurePos(entry: MemoEntry): i32 {
+@inline function memoGetFailureOffset(entry: MemoEntry): i32 {
   if (entry & MEMO_FAILURE_FLAG) {
     return entry >> 1;
   }
   assert(entry >= 0);
-  return cstGetFailurePos(entry);
+  return cstGetFailureOffset(entry);
 }
 
 @inline function cstGetCount(ptr: i32): i32 {
@@ -193,12 +191,12 @@ export let recordedFailures: Array<i32> = new Array<i32>();
   store<i32>(<usize>ptr, val, 8);
 }
 
-@inline function cstGetFailurePos(ptr: i32): i32 {
+@inline function cstGetFailureOffset(ptr: i32): i32 {
   return load<i32>(<usize>ptr, 12);
 }
 
-@inline function cstSetFailurePos(ptr: i32, pos: i32): void {
-  store<i32>(<usize>ptr, pos, 12);
+@inline function cstSetFailureOffset(ptr: i32, offset: i32): void {
+  store<i32>(<usize>ptr, offset, 12);
 }
 
 function useMemoizedResult(ruleId: i32, result: MemoEntry): ApplyResult {
@@ -206,12 +204,13 @@ function useMemoizedResult(ruleId: i32, result: MemoEntry): ApplyResult {
     if (result === UNUSED_LR_BOMB) {
       memoTableSet(pos, ruleId, USED_LR_BOMB);
     } else {
-      rightmostFailurePos = max(rightmostFailurePos, result >> 1);
+      rightmostFailurePos = max(rightmostFailurePos, <i32>pos + (result >> 1));
     }
     return false;
   }
+  // Read failureOffset before advancing pos, since pos is the node's startIdx.
+  rightmostFailurePos = max(rightmostFailurePos, <i32>pos + cstGetFailureOffset(result));
   pos += cstGetMatchLength(result);
-  rightmostFailurePos = max(rightmostFailurePos, cstGetFailurePos(result));
   bindings.push(result);
   return true;
 }
@@ -262,7 +261,7 @@ function initPreallocatedNodes(): void {
     cstSetCount(ptr, 0);
     cstSetMatchLength(ptr, i);
     cstSetTypeAndDetails(ptr, NODE_TYPE_TERMINAL);
-    cstSetFailurePos(ptr, 0);
+    cstSetFailureOffset(ptr, 0);
   }
 
   // Allocate nonterminal table — lazily initialized on first use per ruleId.
@@ -343,7 +342,8 @@ export function evalApplyGeneralized(ruleId: i32, caseIdx: i32): ApplyResult {
   const result = call_indirect<RuleEvalResult>(ruleId, caseIdx)
   const failurePos = maybeUpdateRightmostFailurePos(result);
   if (result & RULE_EVAL_SUCCESS_FLAG) {
-    newNonterminalNode(origPos, pos, ruleId, origNumBindings, failurePos);
+    const failureOffset = failurePos - <i32>origPos;
+    newNonterminalNode(origPos, pos, ruleId, origNumBindings, failureOffset);
     return true;
   }
   return false;
@@ -355,7 +355,8 @@ export function evalApplyNoMemo0(ruleId: i32): ApplyResult {
   let result = evalRuleBody(ruleId);
   const failurePos = maybeUpdateRightmostFailurePos(result);
   if (result & RULE_EVAL_SUCCESS_FLAG) {
-    newNonterminalNode(origPos, pos, ruleId, origNumBindings, failurePos);
+    const failureOffset = failurePos - <i32>origPos;
+    newNonterminalNode(origPos, pos, ruleId, origNumBindings, failureOffset);
     return true;
   }
   return false;
@@ -381,7 +382,7 @@ export function evalApplyPrealloc(ruleId: i32, innerPreallocIdx: i32): ApplyResu
         cstSetCount(ptr, 1);
         cstSetMatchLength(ptr, 1);
         cstSetTypeAndDetails(ptr, (ruleId << 2) | NODE_TYPE_NONTERMINAL);
-        cstSetFailurePos(ptr, 0);
+        cstSetFailureOffset(ptr, 0);
         const childPtr = innerPreallocIdx < 0
           ? preallocTerminalBase + CST_NODE_OVERHEAD
           : preallocNtBase + innerPreallocIdx * NODE_WITH_1_CHILD;
@@ -391,7 +392,8 @@ export function evalApplyPrealloc(ruleId: i32, innerPreallocIdx: i32): ApplyResu
       return true;
     }
     // Slow path: non-BMP character (surrogate pair, matchLength=2).
-    newNonterminalNode(origPos, pos, ruleId, origNumBindings, failurePos);
+    const failureOffset = failurePos - <i32>origPos;
+    newNonterminalNode(origPos, pos, ruleId, origNumBindings, failureOffset);
     return true;
   }
   return false;
@@ -399,14 +401,14 @@ export function evalApplyPrealloc(ruleId: i32, innerPreallocIdx: i32): ApplyResu
 
 // When we are recording failures (errorMessagePos >= 0), and the rightmost
 // failure position of `entry` matches `errorMessagePos`.
-@inline function isInvolvedInError(entry: MemoEntry): bool {
+@inline function isInvolvedInError(entry: MemoEntry, memoPos: u32): bool {
   // TODO: Do we need to check that errorMessagePos >= 0?
-  return errorMessagePos >= 0 && memoGetFailurePos(entry) === errorMessagePos;
+  return errorMessagePos >= 0 && <i32>memoPos + memoGetFailureOffset(entry) === errorMessagePos;
 }
 
 export function evalApply0(ruleId: i32): ApplyResult {
   const memo = memoTableGet(pos, ruleId);
-  if (memo !== 0 && !isInvolvedInError(memo)) {
+  if (memo !== 0 && !isInvolvedInError(memo, pos)) {
     return useMemoizedResult(ruleId, memo);
   }
   const origPos = pos;
@@ -415,10 +417,11 @@ export function evalApply0(ruleId: i32): ApplyResult {
 
   const result = evalRuleBody(ruleId);
   const failurePos = maybeUpdateRightmostFailurePos(result);
+  const failureOffset = failurePos - <i32>origPos;
 
   // Straight failure — record a clean failure in the memo table.
   if ((result & RULE_EVAL_SUCCESS_FLAG) == 0) {
-    memoTableSet(origPos, ruleId, memoEntryForFailure(failurePos));
+    memoTableSet(origPos, ruleId, memoEntryForFailure(failureOffset));
     return false;
   }
 
@@ -426,7 +429,7 @@ export function evalApply0(ruleId: i32): ApplyResult {
     return handleLeftRecursion(origPos, ruleId, origNumBindings, failurePos);
   }
   // No left recursion — memoize and return.
-  const node = newNonterminalNode(origPos, pos, ruleId, origNumBindings, failurePos);
+  const node = newNonterminalNode(origPos, pos, ruleId, origNumBindings, failureOffset);
   memoTableSet(origPos, ruleId, node);
   return true;
 }
@@ -439,7 +442,8 @@ export function handleLeftRecursion(origPos: u32, ruleId: i32, origNumBindings: 
     // The current result is the best one -- record it.
     maxPos = pos;
     rightmostFailurePos = max(rightmostFailurePos, failurePos);
-    node = newNonterminalNode(origPos, pos, ruleId, origNumBindings, failurePos);
+    const failureOffset = failurePos - <i32>origPos;
+    node = newNonterminalNode(origPos, pos, ruleId, origNumBindings, failureOffset);
     memoTableSet(origPos, ruleId, node);
 
     // Reset and try to improve on the current best.
@@ -468,20 +472,20 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
   cstSetCount(ptr, 0);
   cstSetMatchLength(ptr, matchLen);
   cstSetTypeAndDetails(ptr, NODE_TYPE_TERMINAL);
-  cstSetFailurePos(ptr, 0);
+  cstSetFailureOffset(ptr, 0);
   bindings.push(<i32>ptr);
   return ptr;
 }
 
 // Create an internal (non-leaf) node (IterationNode or NonterminalNode).
-@inline function newNonLeafNode(startIdx: i32, endIdx: i32, typeAndDetails: i32, origNumBindings: i32, failurePos: i32): i32 {
+@inline function newNonLeafNode(startIdx: i32, endIdx: i32, typeAndDetails: i32, origNumBindings: i32, failureOffset: i32): i32 {
   const bindingsLen = bindings.length;
   const numChildren = bindingsLen - origNumBindings;
   const ptr: i32 = <i32>heap.alloc(<usize>(CST_NODE_OVERHEAD + numChildren * 4));
   cstSetCount(ptr, numChildren);
   cstSetMatchLength(ptr, endIdx - startIdx);
   cstSetTypeAndDetails(ptr, typeAndDetails);
-  cstSetFailurePos(ptr, failurePos);
+  cstSetFailureOffset(ptr, failureOffset);
   for (let i = 0; i < numChildren; i++) {
     store<i32>(<usize>(ptr + CST_NODE_OVERHEAD + i * 4), bindings[bindingsLen - numChildren + i]);
   }
@@ -490,9 +494,9 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
   return ptr;
 }
 
-export function newNonterminalNode(startIdx: i32, endIdx: i32, ruleId: i32, origNumBindings: i32, failurePos: i32): i32 {
+export function newNonterminalNode(startIdx: i32, endIdx: i32, ruleId: i32, origNumBindings: i32, failureOffset: i32): i32 {
   const typeAndDetails = (ruleId << 2) | NODE_TYPE_NONTERMINAL;
-  return newNonLeafNode(startIdx, endIdx, typeAndDetails, origNumBindings, failurePos);
+  return newNonLeafNode(startIdx, endIdx, typeAndDetails, origNumBindings, failureOffset);
 }
 
 export function newIterationNode(startIdx: i32, endIdx: i32, origNumBindings: i32, arity: i32, isOpt: bool): i32 {
@@ -504,12 +508,12 @@ export function newIterationNode(startIdx: i32, endIdx: i32, origNumBindings: i3
   // Reuse a preallocated node since the structure is always identical.
   if (endIdx === startIdx && bindings.length === origNumBindings && typeAndDetails < MAX_PREALLOC_ITER) {
     const ptr: i32 = preallocEmptyIterBase + typeAndDetails * CST_NODE_OVERHEAD;
-    if (cstGetMatchLength(ptr) === 0 && cstGetFailurePos(ptr) === 0) {
+    if (cstGetMatchLength(ptr) === 0 && cstGetFailureOffset(ptr) === 0) {
       // Lazy init on first use.
       cstSetCount(ptr, 0);
       // matchLength already 0 from memory.fill
       cstSetTypeAndDetails(ptr, typeAndDetails);
-      cstSetFailurePos(ptr, -1);
+      cstSetFailureOffset(ptr, -1);
     }
     bindings.push(ptr);
     return ptr;
