@@ -11,6 +11,7 @@ import {grammars} from './parseGrammars.ts';
 function main(): void {
   const argsConfig = {
     options: {
+      debug: {short: 'd' as const, type: 'boolean' as const},
       grammarName: {short: 'g' as const, type: 'string' as const},
       output: {short: 'o' as const, type: 'string' as const},
     },
@@ -47,7 +48,7 @@ function main(): void {
     g = ns[grammarName];
   }
 
-  const bytes = new Compiler(g).compile();
+  const bytes = new Compiler(g, {debug: args.values.debug}).compile();
   const outFilename = args.values.output ?? filename.replace('.ohm', '.wasm');
   fs.writeFileSync(outFilename, bytes);
   // eslint-disable-next-line no-console
@@ -59,7 +60,7 @@ function printUsage(): void {
   const exeName = basename(process.argv[1]);
   // eslint-disable-next-line no-console
   console.log(
-    `usage: ${exeName} [(--grammarName|-g) <name>] [(--output|-o) <file>] <ohm-grammar-file>`
+    `usage: ${exeName} [(--debug|-d)] [(--grammarName|-g) <name>] [(--output|-o) <file>] <ohm-grammar-file>`
   );
 }
 

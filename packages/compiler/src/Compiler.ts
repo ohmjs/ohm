@@ -35,9 +35,11 @@ const INLINE_SINGLE_USE_RULES = true;
 // This could be anything > 0xffff, really.
 const CHAR_CODE_END = 0xffffffff;
 
-interface CompilerInternalOptions {
+import type {CompileOptions} from './api.ts';
+
+interface CompilerInternalOptions extends CompileOptions {
   preallocNodes?: boolean;
-  startRules?: string[];
+  startRules?: string[]; // TODO: Should probably be public (in CompileOptions).
 }
 
 const {instr} = w;
@@ -1400,6 +1402,26 @@ export class Compiler {
     return w.custom(w.name('ruleNames'), w.vec(ruleNames.map((n, i) => w.name(n))));
   }
 
+  buildNameSec(functionDecls: FuncDecl[], compilerFuncOffset: number): w.Fragment {
+    const moduleNameSubsec = w.modulenamesubsec(this.grammar.name);
+    if (!this._options.debug) {
+      return w.namesec(moduleNameSubsec);
+    }
+    return w.namesec(
+      w.namedata(
+        moduleNameSubsec,
+        w.funcnamesubsec(
+          w.namemap(
+            functionDecls.map((f, i) =>
+              w.nameassoc(w.funcidx(i + compilerFuncOffset), f.name)
+            )
+          )
+        ),
+        [] // no local name subsection
+      )
+    );
+  }
+
   buildStringTable(sectionName: string, tableOrArr: string[] | StringTable): w.Fragment {
     const keys = Array.isArray(tableOrArr) ? tableOrArr : tableOrArr.keys();
     return w.custom(w.name(sectionName), w.vec(keys.map(n => w.name(n))));
@@ -1423,13 +1445,15 @@ export class Compiler {
     const funcs = functionDecls.map(f => w.typeidx(typeMap.getIdxForDecl(f)));
     const codes = functionDecls.map(f => w.code(w.func(f.locals!, f.body as w.Fragment)));
 
-    const exportOffset = this.importCount() + prebuilt.funcsec.entryCount;
-    const exports = functionDecls.map((f, i) =>
-      w.export_(f.name, w.exportdesc.func(w.funcidx(i + exportOffset)))
-    );
+    // The funcidx offset for compiler-generated functions (after imports + prebuilt).
+    const compilerFuncOffset = this.importCount() + prebuilt.funcsec.entryCount;
+
+    // Rule eval functions are invoked via call_indirect (the table), so they
+    // don't need to be exported. Only export memory and the prebuilt functions/globals.
+    const exports: w.Fragment[] = [];
     exports.push(w.export_('memory', w.exportdesc.mem(w.memidx(0))));
 
-    // Re-export some prebuilt functions.
+    // Re-export prebuilt functions used by the Ohm runtime.
     [
       'bindingsAt',
       'getBindingsLength',
@@ -1438,15 +1462,20 @@ export class Compiler {
       'match',
       'recordedFailuresAt',
       'recordFailures',
-      'resetHeap',
     ].forEach(name => {
       exports.push(w.export_(name, w.exportdesc.func(w.funcidx(prebuiltFuncidx(name)))));
     });
 
-    // Export prebuilt globals so they get a name for debugging.
-    // TODO: Handle this instead via the name section.
-    for (const [name, idx] of Object.entries(prebuilt.globalidxByName)) {
-      exports.push(w.export_(name, [0x03, idx]));
+    // Export prebuilt globals used by the runtime (miniohm.ts) and internal tools.
+    for (const name of [
+      '__heap_base',
+      '__offset',
+      'memoIndexBase',
+      'numMemoBlocks',
+      'pos',
+      'rightmostFailurePos',
+    ] as const) {
+      exports.push(w.export_(name, [0x03, prebuilt.globalidxByName[name]]));
     }
     // The module will have a table containing references to all of the rule eval functions,
     // plus a compiler-generated $isRuleSyntactic dispatch function at the end.
@@ -1460,15 +1489,13 @@ export class Compiler {
     // Add $isRuleSyntactic as the last table entry.
     const isRuleSyntacticIdx = functionDecls.findIndex(f => f.name === '$isRuleSyntactic');
     assert(isRuleSyntacticIdx !== -1, 'No $isRuleSyntactic function found');
-    tableData.push(
-      w.funcidx(this.importCount() + prebuilt.funcsec.entryCount + isRuleSyntacticIdx)
-    );
+    tableData.push(w.funcidx(compilerFuncOffset + isRuleSyntacticIdx));
     assert(tableSize === tableData.length, 'Invalid table size');
 
     // Determine the index of the start function.
     const indexOfStart = functionDecls.findIndex(f => f.name === 'start');
     assert(indexOfStart !== -1, 'No start function found');
-    const startFuncidx = this.importCount() + prebuilt.funcsec.entryCount + indexOfStart;
+    const startFuncidx = compilerFuncOffset + indexOfStart;
 
     const mod = w.module([
       mergeSections(w.SECTION_ID_TYPE, prebuilt.typesec, typeMap.getTypes()),
@@ -1483,8 +1510,7 @@ export class Compiler {
       mergeSections(w.SECTION_ID_CODE, prebuilt.codesec, codes),
       w.customsec(this.buildStringTable('ruleNames', ruleNames)),
       w.customsec(this.buildStringTable('strings', this._strings)),
-      // Only the module name subsection is needed.
-      w.namesec(w.modulenamesubsec(this.grammar.name)),
+      this.buildNameSec(functionDecls, compilerFuncOffset),
     ]);
     const bytes = Uint8Array.from((mod as unknown[]).flat(Infinity) as number[]);
 

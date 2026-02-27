@@ -1,7 +1,11 @@
 import {Compiler} from './Compiler.ts';
 import {grammars as parseGrammars} from './parseGrammars.ts';
 
-export function compile(source: string): Uint8Array {
+export interface CompileOptions {
+  debug?: boolean;
+}
+
+export function compile(source: string, options?: CompileOptions): Uint8Array {
   const ns = parseGrammars(source);
   const names = Object.keys(ns).sort();
 
@@ -16,13 +20,16 @@ export function compile(source: string): Uint8Array {
     );
   }
 
-  return new Compiler(ns[names[0]]).compile();
+  return new Compiler(ns[names[0]], options).compile();
 }
 
-export function compileGrammars(source: string): Record<string, Uint8Array> {
+export function compileGrammars(
+  source: string,
+  options?: CompileOptions
+): Record<string, Uint8Array> {
   const result: Record<string, Uint8Array> = {};
   for (const [name, g] of Object.entries(parseGrammars(source))) {
-    result[name] = new Compiler(g).compile();
+    result[name] = new Compiler(g, options).compile();
   }
   return result;
 }
