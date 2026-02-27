@@ -5,10 +5,16 @@
 ```ts
 
 // @public (undocumented)
-export function compile(source: string): Uint8Array;
+export function compile(source: string, options?: CompileOptions): Uint8Array;
 
 // @public (undocumented)
-export function compileGrammars(source: string): Record<string, Uint8Array>;
+export function compileGrammars(source: string, options?: CompileOptions): Record<string, Uint8Array>;
+
+// @public (undocumented)
+export interface CompileOptions {
+    // (undocumented)
+    debug?: boolean;
+}
 
 // (No @packageDocumentation comment for this package)
 
