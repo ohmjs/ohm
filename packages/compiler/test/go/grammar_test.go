@@ -26,10 +26,50 @@ func unparseNode(node *CstNode, result *strings.Builder) {
 	}
 }
 
+func BenchmarkES5Match(b *testing.B) {
+	ctx := context.Background()
+
+	wasmPath := os.Getenv("OHM_WASM")
+	if wasmPath == "" {
+		wasmPath = "../../build/es5.wasm"
+	}
+	wasmBytes, err := os.ReadFile(wasmPath)
+	if err != nil {
+		b.Fatalf("reading wasm file: %v", err)
+	}
+
+	g, err := NewGrammar(ctx, wasmBytes)
+	if err != nil {
+		b.Fatalf("instantiating grammar: %v", err)
+	}
+	defer g.Close()
+
+	input, err := os.ReadFile("../data/_underscore-1.8.3.js")
+	if err != nil {
+		b.Fatalf("reading input file: %v", err)
+	}
+	inputStr := string(input)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		result, err := g.Match(inputStr)
+		if err != nil {
+			b.Fatalf("matching: %v", err)
+		}
+		if !result.Succeeded() {
+			b.Fatal("match failed")
+		}
+		result.Close()
+	}
+}
+
 func TestES5Match(t *testing.T) {
 	ctx := context.Background()
 
-	wasmBytes, err := os.ReadFile("../../build/es5.wasm")
+	wasmPath := os.Getenv("OHM_WASM")
+	if wasmPath == "" {
+		wasmPath = "../../build/es5.wasm"
+	}
+	wasmBytes, err := os.ReadFile(wasmPath)
 	if err != nil {
 		t.Fatalf("reading wasm file: %v", err)
 	}

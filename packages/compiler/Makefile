@@ -47,3 +47,7 @@ build/liquid-html.wasm: src/cli.ts test/data/liquid-html.ohm
 .PHONY: go-test-es5
 go-test-es5: build/es5.wasm
 	cd test/go && go test -v
+
+.PHONY: go-bench-es5
+go-bench-es5: build/es5.wasm
+	cd test/go && go test -bench=BenchmarkES5Match -benchmem -count=5
