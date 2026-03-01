@@ -53,7 +53,6 @@ declare function fillInputBuffer(dest: i32, len: i32): i32;
 
 // TODO: Find a way to share these constants with JS?
 @inline const WASM_PAGE_SIZE: usize = 64 * 1024;
-@inline const STACK_START_OFFSET: usize = WASM_PAGE_SIZE;
 
 // Block-sparse memo table constants.
 // The rule ID space is partitioned into fixed-size blocks.
@@ -127,7 +126,6 @@ export let rightmostFailurePos: i32 = 0;
 // parse, where that was rightmostFailurePos.
 export let errorMessagePos: i32 = -1;
 
-export let sp: usize = 0;
 export let bindings: Array<i32> = new Array<i32>();
 export let recordedFailures: Array<i32> = new Array<i32>();
 
@@ -230,7 +228,6 @@ function useMemoizedResult(ruleId: i32, result: MemoEntry): ApplyResult {
 function resetParsingState(): void {
   pos = 0;
   rightmostFailurePos = -1;
-  sp = STACK_START_OFFSET;
   bindings = new Array<i32>();
 }
 

@@ -33,7 +33,7 @@ build/ohmRuntime.wasm_sections.ts: scripts/bundlewasm.ts build/ohmRuntime.wasm
 	$(NODE) scripts/bundlewasm.ts build/ohmRuntime.wasm
 
 build/ohmRuntime.wasm: runtime/ohmRuntime.ts
-	pnpm asc --runtime stub --debug -o build/ohmRuntime.wasm -t build/ohmRuntime.wat --memoryBase 65536 runtime/ohmRuntime.ts
+	pnpm asc --runtime stub --debug -o build/ohmRuntime.wasm -t build/ohmRuntime.wat runtime/ohmRuntime.ts
 
 build/es5.wasm: src/cli.ts ../../examples/ecmascript/src/es5.ohm
 	$(NODE) src/cli.ts -o build/es5.wasm ../../examples/ecmascript/src/es5.ohm

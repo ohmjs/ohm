@@ -9,8 +9,6 @@ import * as prebuilt from '../build/ohmRuntime.wasm_sections.ts';
 import {assert, checkNotNull} from './assert.ts';
 import {grammar as parseGrammar} from './parseGrammars.ts';
 
-const WASM_PAGE_SIZE = 64 * 1024;
-
 // eslint-disable-next-line no-undef
 const DEBUG = typeof process !== 'undefined' && process.env.OHM_DEBUG === '1';
 const FAST_SAVE_BINDINGS = true;
@@ -211,13 +209,12 @@ class Assembler {
   _code: (number | w.Fragment | string)[];
   _locals: Map<string, number> | undefined;
   _typeMap: TypeMap;
+  _frameDepth: number;
 
   static ALIGN_1_BYTE = 0;
   static ALIGN_2_BYTES = 1;
   static ALIGN_4_BYTES = 2;
   static CST_NODE_HEADER_SIZE_BYTES = 8;
-  static STACK_FRAME_SIZE_BYTES = 8;
-  static DESCRIPTION_FRAME_SIZE_BYTES = 12;
 
   constructor(typeMap: TypeMap) {
     this._functionDecls = [];
@@ -229,6 +226,7 @@ class Assembler {
     // State for the current function being generated.
     this._code = [];
     this._locals = undefined;
+    this._frameDepth = 0;
 
     this._typeMap = typeMap;
   }
@@ -256,6 +254,16 @@ class Assembler {
     return idx;
   }
 
+  // Like addLocal, but does nothing if the local already exists.
+  // Used by enterFrame/enterDescriptionFrame/enterNotFrame because sibling frames at
+  // the same depth share locals (e.g., two Alt alternatives both push
+  // at the same depth).
+  ensureLocal(name: string, type: w.valtype): void {
+    if (!this._locals!.has(name)) {
+      this.addLocal(name, type);
+    }
+  }
+
   addFunction(
     name: string,
     paramTypes: w.valtype[],
@@ -263,10 +271,12 @@ class Assembler {
     bodyFn: (asm: Assembler) => void
   ): void {
     this._locals = new Map();
+    this._frameDepth = 0;
     paramTypes.forEach((t, i) => {
       this.addLocal(`__arg${i}`, t);
     });
     bodyFn(this);
+    assert(this._frameDepth === 0, `Unbalanced frames in ${name}: depth=${this._frameDepth}`);
     this._functionDecls.push({
       name,
       paramTypes,
@@ -517,41 +527,32 @@ class Assembler {
     this.localSet('ret');
   }
 
-  pushStackFrame(
-    saveThunk?: (() => void) | null,
-    size = Assembler.STACK_FRAME_SIZE_BYTES
-  ): void {
-    this.globalGet('sp');
-    this.i32Const(size);
-    this.i32Sub();
-    this.globalSet('sp');
-    if (saveThunk) {
-      saveThunk();
-    } else {
-      this.savePos();
-      this.saveNumBindings();
-    }
+  // Allocate depth-indexed locals for pos and bindings length, save both,
+  // and increment the frame depth.
+  enterFrame(): void {
+    const d = this._frameDepth;
+    this.ensureLocal(`origPos_${d}`, w.valtype.i32);
+    this.ensureLocal(`origBindingsLen_${d}`, w.valtype.i32);
+    this._frameDepth++;
+    this.savePos();
+    this.saveNumBindings();
   }
 
-  popStackFrame(size = Assembler.STACK_FRAME_SIZE_BYTES): void {
-    this.i32Const(size);
-    this.globalGet('sp');
-    this.i32Add();
-    this.globalSet('sp');
+  // Decrement the frame depth. No wasm instructions emitted.
+  exitFrame(): void {
+    assert(this._frameDepth > 0, 'exitFrame with no matching enterFrame');
+    this._frameDepth--;
   }
 
-  // Save the current input position.
+  // Save the current input position to the current frame's local.
   savePos(): void {
-    // stack[sp] = pos
-    this.globalGet('sp');
     this.globalGet('pos');
-    this.i32Store();
+    this.localSet(`origPos_${this._frameDepth - 1}`);
   }
 
   // Load the saved input position onto the stack.
   getSavedPos(): void {
-    this.globalGet('sp');
-    this.i32Load();
+    this.localGet(`origPos_${this._frameDepth - 1}`);
   }
 
   restorePos(): void {
@@ -560,19 +561,17 @@ class Assembler {
   }
 
   saveNumBindings(): void {
-    this.globalGet('sp');
     if (FAST_SAVE_BINDINGS) {
       this.globalGet('bindings');
       this.i32Load(12); // Array<i32>.length_
     } else {
       this.callPrebuiltFunc('getBindingsLength');
     }
-    this.i32Store(4);
+    this.localSet(`origBindingsLen_${this._frameDepth - 1}`);
   }
 
   getSavedNumBindings(): void {
-    this.globalGet('sp');
-    this.i32Load(4);
+    this.localGet(`origBindingsLen_${this._frameDepth - 1}`);
   }
 
   restoreBindingsLength(): void {
@@ -588,27 +587,32 @@ class Assembler {
   }
 
   saveFailurePos(): void {
-    this.globalGet('sp');
     this.localGet('failurePos');
-    this.i32Store();
+    this.localSet(`origFailurePos_${this._frameDepth - 1}`);
   }
 
   restoreFailurePos(): void {
-    this.globalGet('sp');
-    this.i32Load();
+    this.localGet(`origFailurePos_${this._frameDepth - 1}`);
     this.localSet('failurePos');
   }
 
   saveGlobalFailurePos(): void {
-    this.globalGet('sp');
     this.globalGet('rightmostFailurePos');
-    this.i32Store(4);
+    this.localSet(`origGlobalFailurePos_${this._frameDepth - 1}`);
   }
 
   restoreGlobalFailurePos(): void {
-    this.globalGet('sp');
-    this.i32Load(4);
+    this.localGet(`origGlobalFailurePos_${this._frameDepth - 1}`);
     this.globalSet('rightmostFailurePos');
+  }
+
+  saveRecordedFailuresLen(): void {
+    this.callPrebuiltFunc('getRecordedFailuresLength');
+    this.localSet(`origRecordedFailuresLen_${this._frameDepth - 1}`);
+  }
+
+  getSavedRecordedFailuresLen(): void {
+    this.localGet(`origRecordedFailuresLen_${this._frameDepth - 1}`);
   }
 
   updateGlobalFailurePos(): void {
@@ -643,21 +647,31 @@ class Assembler {
     });
   }
 
-  // For rules with descriptions: push a 12-byte stack frame and save:
-  // - offset 0: pos (startPos)
-  // - offset 4: rightmostFailurePos
-  // - offset 8: recordedFailures.length
-  // Must be called at the start of the rule evaluation function.
-  pushDescriptionFrame(): void {
-    this.pushStackFrame(() => {
-      this.savePos(); // offset 0
-      this.saveGlobalFailurePos(); // offset 4
+  // For rules with descriptions: allocate locals for pos, globalFailurePos,
+  // and recordedFailures.length. Must be called at the start of the rule
+  // evaluation function.
+  enterDescriptionFrame(): void {
+    const d = this._frameDepth;
+    this.ensureLocal(`origPos_${d}`, w.valtype.i32);
+    this.ensureLocal(`origGlobalFailurePos_${d}`, w.valtype.i32);
+    this.ensureLocal(`origRecordedFailuresLen_${d}`, w.valtype.i32);
+    this._frameDepth++;
+    this.savePos();
+    this.saveGlobalFailurePos();
+    this.saveRecordedFailuresLen();
+  }
 
-      // Save recordedFailures.length at offset 8
-      this.globalGet('sp');
-      this.callPrebuiltFunc('getRecordedFailuresLength');
-      this.i32Store(8);
-    }, Assembler.DESCRIPTION_FRAME_SIZE_BYTES);
+  // For Not expressions: allocate locals for failurePos, globalFailurePos,
+  // and recordedFailures.length, then save all three.
+  enterNotFrame(): void {
+    const d = this._frameDepth;
+    this.ensureLocal(`origFailurePos_${d}`, w.valtype.i32);
+    this.ensureLocal(`origGlobalFailurePos_${d}`, w.valtype.i32);
+    this.ensureLocal(`origRecordedFailuresLen_${d}`, w.valtype.i32);
+    this._frameDepth++;
+    this.saveFailurePos();
+    this.saveGlobalFailurePos();
+    this.saveRecordedFailuresLen();
   }
 
   // For rules with descriptions: handle failure by swallowing internal failures
@@ -678,9 +692,7 @@ class Assembler {
       this.i32Eq(); // errorMessagePos == startPos?
       this.if(w.blocktype.empty, () => {
         // Description is at errorMessagePos - swallow internal failures
-        // Load saved recordedFailures.length from stack offset 8
-        this.globalGet('sp');
-        this.i32Load(8);
+        this.getSavedRecordedFailuresLen();
         this.callPrebuiltFunc('setRecordedFailuresLength');
       });
 
@@ -698,7 +710,7 @@ class Assembler {
       // Record the description at startPos
       this.maybeRecordFailure(() => this.getSavedPos(), descriptionId);
     });
-    this.popStackFrame(Assembler.DESCRIPTION_FRAME_SIZE_BYTES);
+    this.exitFrame();
   }
 
   // Increment the current input position by 1.
@@ -752,9 +764,9 @@ class Assembler {
     this.callPrebuiltFunc('newIterationNode');
   }
 
-  // Wrap the bindings accumulated since the last pushStackFrame() in a
-  // nonterminal node. Uses the saved pos/numBindings from the stack frame.
-  newNonterminalNodeFromStackFrame(ruleId: number): void {
+  // Wrap the bindings accumulated since the last enterFrame() in a
+  // nonterminal node. Uses the saved pos/numBindings from the current frame.
+  newNonterminalNodeFromFrame(ruleId: number): void {
     this.getSavedPos();
     this.globalGet('pos');
     this.i32Const(ruleId);
@@ -853,8 +865,6 @@ export class Compiler {
   // Maps preallocatable rule names to the inner child rule name. Direct rules
   // (body matches a single codepoint) use '$term' as a sentinel.
   _preallocRules!: Map<string, string>;
-
-  static STACK_START_OFFSET: number;
 
   _options: CompilerInternalOptions;
 
@@ -1185,7 +1195,7 @@ export class Compiler {
       asm.pushFluffySavePoint();
 
       if (hasDescription) {
-        asm.pushDescriptionFrame();
+        asm.enterDescriptionFrame();
       }
 
       // TODO: Find a simpler way to do this.
@@ -1692,7 +1702,7 @@ export class Compiler {
       return;
     }
 
-    const skipStackFrame =
+    const skipFrame =
       ir.isLeaf(exp) || exp.type === 'Seq' || exp.type === 'Lex' || exp.type === 'Dispatch';
     // Types that use condBreak(depthOf('pexprEnd')) for early exit:
     const needsPExprEnd =
@@ -1700,7 +1710,7 @@ export class Compiler {
 
     const debugLabel = ir.toString(exp);
     asm.emit(`BEGIN ${debugLabel}`);
-    if (!skipStackFrame) asm.pushStackFrame();
+    if (!skipFrame) asm.enterFrame();
 
     const emitBody = () => {
       if (preHook) preHook();
@@ -1770,7 +1780,7 @@ export class Compiler {
       emitBody();
     }
     if (postHook) postHook();
-    if (!skipStackFrame) asm.popStackFrame();
+    if (!skipFrame) asm.exitFrame();
     asm.emit(`END ${debugLabel}`);
   }
 
@@ -1901,7 +1911,7 @@ export class Compiler {
     const ruleId = this.ruleId(exp.ruleName);
     const ruleInfo = getNotNull(this.rules!, exp.ruleName);
 
-    asm.pushStackFrame();
+    asm.enterFrame();
     this._lexContextStack.push(!ruleInfo.isSyntactic);
     asm.pushFluffySavePoint();
     this.emitPExpr(ruleInfo.body);
@@ -1911,11 +1921,11 @@ export class Compiler {
     // On success, wrap the body's bindings in a nonterminal node.
     asm.localGet('ret');
     asm.if(w.blocktype.empty, () => {
-      asm.newNonterminalNodeFromStackFrame(ruleId);
+      asm.newNonterminalNodeFromFrame(ruleId);
       asm.localSet('ret');
     });
 
-    asm.popStackFrame();
+    asm.exitFrame();
     asm.updateLocalFailurePos(() => asm.globalGet('rightmostFailurePos'));
   }
 
@@ -1969,20 +1979,13 @@ export class Compiler {
     const {child} = exp;
     const {asm} = this;
     const failureId = this.toFailure(exp);
-    const NOT_FRAME_SIZE = 12;
 
-    // Save failurePos, globalFailurePos, AND recordedFailures.length
-    // directly onto the stack frame. We use setRecordedFailuresLength
-    // to directly truncate after the child evaluation. This matches
-    // JS's pushFailuresInfo/popFailuresInfo for Not expressions.
-    asm.pushStackFrame(() => {
-      asm.saveFailurePos(); // offset 0
-      asm.saveGlobalFailurePos(); // offset 4
-      // Save recordedFailures.length at offset 8
-      asm.globalGet('sp');
-      asm.callPrebuiltFunc('getRecordedFailuresLength');
-      asm.i32Store(8);
-    }, NOT_FRAME_SIZE);
+    // Save failurePos, globalFailurePos, and recordedFailures.length.
+    // We use setRecordedFailuresLength to directly truncate after the
+    // child evaluation. This matches JS's pushFailuresInfo/popFailuresInfo
+    // for Not expressions.
+    asm.enterNotFrame();
+
     this.emitPExpr(child);
 
     // Invert the result.
@@ -1990,22 +1993,23 @@ export class Compiler {
     asm.emit(instr.i32.eqz);
     asm.localSet('ret');
 
-    // Restore all global and local state.
+    // Restore all global and local state from the Not frame.
     asm.restoreGlobalFailurePos();
     asm.restoreFailurePos();
 
-    // Discard all child failures by restoring recordedFailures.length
-    // from the stack frame (offset 8). Only during the recording pass.
+    // Discard all child failures by restoring recordedFailures.length.
+    // Only during the recording pass.
     asm.globalGet('errorMessagePos');
     asm.i32Const(0);
     asm.emit(instr.i32.ge_s);
     asm.if(w.blocktype.empty, () => {
-      asm.globalGet('sp');
-      asm.i32Load(8);
+      asm.getSavedRecordedFailuresLen();
       asm.callPrebuiltFunc('setRecordedFailuresLength');
     });
 
-    asm.popStackFrame(NOT_FRAME_SIZE);
+    // Exit the Not frame; restoreBindingsLength/restorePos now read
+    // from the outer frame.
+    asm.exitFrame();
     asm.restoreBindingsLength();
     asm.restorePos();
 
@@ -2110,7 +2114,7 @@ export class Compiler {
     const {asm} = this;
 
     asm.pushFluffySavePoint();
-    asm.pushStackFrame();
+    asm.enterFrame();
     asm.block(
       w.blocktype.empty,
       () => {
@@ -2124,7 +2128,7 @@ export class Compiler {
     );
     asm.restorePos();
     asm.restoreBindingsLength();
-    asm.popStackFrame();
+    asm.exitFrame();
     asm.newIterNodeWithSavedPosAndBindings(ir.outArity(child));
     // Star always succeeds, so mark inner failures as fluffy (scoped).
     asm.popFluffySavePointIfAtErrorPos();
@@ -2211,8 +2215,9 @@ export class Compiler {
       // Guard char matched — try to match the delimiter.
       // Not discards all internal failures, so we just need to check
       // whether `delim` matches and branch on the result.
-      // emitPExpr pushes/pops its own stack frame, so after it returns,
-      // sp points back to the star loop's frame — we can restore directly.
+      // emitPExpr enters/exits its own frame, so after it returns,
+      // the frame depth is back to the star loop's frame — we can
+      // restore directly.
       this.emitPExpr(delim);
       asm.restorePos();
       asm.restoreBindingsLength();
@@ -2398,7 +2403,5 @@ export class Compiler {
 }
 
 // Memory layout:
-// - First page is for the PExpr stack (origPos, etc.), growing downwards.
-// - 2nd page is for input buffer (max 64k for now).
-// - Remainder is for heap (memo table index + blocks, CST nodes).
-Compiler.STACK_START_OFFSET = WASM_PAGE_SIZE; // Starting offset of the stack.
+// - All memory is heap-allocated (memo table index + blocks, CST nodes,
+//   input buffer). Backtracking state uses wasm locals, not memory.
