@@ -255,9 +255,8 @@ class Assembler {
   }
 
   // Like addLocal, but does nothing if the local already exists.
-  // Used by enterFrame/enterNotFrame because sibling frames at the same
-  // depth share locals (e.g., two Alt alternatives both push at the same
-  // depth).
+  // Sibling frames at the same depth share locals (e.g., two Alt
+  // alternatives both push at the same depth).
   ensureLocal(name: string, type: w.valtype): void {
     if (!this._locals!.has(name)) {
       this.addLocal(name, type);
@@ -527,32 +526,39 @@ class Assembler {
     this.localSet('ret');
   }
 
-  // Allocate depth-indexed locals for pos and bindings length, save both,
-  // and increment the frame depth.
-  enterFrame(): void {
-    const d = this._frameDepth;
-    this.ensureLocal(`origPos_${d}`, w.valtype.i32);
-    this.ensureLocal(`origBindingsLen_${d}`, w.valtype.i32);
+  // Increment compile-time frame depth. No wasm emitted.
+  pushDepth(): void {
     this._frameDepth++;
-    this.savePos();
-    this.saveNumBindings();
   }
 
-  // Decrement the frame depth. No wasm instructions emitted.
-  exitFrame(): void {
-    assert(this._frameDepth > 0, 'exitFrame with no matching enterFrame');
+  // Decrement compile-time frame depth. No wasm emitted.
+  popDepth(): void {
+    assert(this._frameDepth > 0, 'popDepth with no matching pushDepth');
     this._frameDepth--;
+  }
+
+  // Return a depth-indexed local name for the current frame.
+  private depthLocal(prefix: string): string {
+    return `${prefix}_${this._frameDepth - 1}`;
+  }
+
+  // Like depthLocal, but also ensures the local is declared.
+  // Use this in save methods; get/restore methods should use depthLocal.
+  private ensureDepthLocal(prefix: string): string {
+    const name = this.depthLocal(prefix);
+    this.ensureLocal(name, w.valtype.i32);
+    return name;
   }
 
   // Save the current input position to the current frame's local.
   savePos(): void {
     this.globalGet('pos');
-    this.localSet(`origPos_${this._frameDepth - 1}`);
+    this.localSet(this.ensureDepthLocal('origPos'));
   }
 
   // Load the saved input position onto the stack.
   getSavedPos(): void {
-    this.localGet(`origPos_${this._frameDepth - 1}`);
+    this.localGet(this.depthLocal('origPos'));
   }
 
   restorePos(): void {
@@ -567,11 +573,11 @@ class Assembler {
     } else {
       this.callPrebuiltFunc('getBindingsLength');
     }
-    this.localSet(`origBindingsLen_${this._frameDepth - 1}`);
+    this.localSet(this.ensureDepthLocal('origBindingsLen'));
   }
 
   getSavedNumBindings(): void {
-    this.localGet(`origBindingsLen_${this._frameDepth - 1}`);
+    this.localGet(this.depthLocal('origBindingsLen'));
   }
 
   restoreBindingsLength(): void {
@@ -588,31 +594,31 @@ class Assembler {
 
   saveFailurePos(): void {
     this.localGet('failurePos');
-    this.localSet(`origFailurePos_${this._frameDepth - 1}`);
+    this.localSet(this.ensureDepthLocal('origFailurePos'));
   }
 
   restoreFailurePos(): void {
-    this.localGet(`origFailurePos_${this._frameDepth - 1}`);
+    this.localGet(this.depthLocal('origFailurePos'));
     this.localSet('failurePos');
   }
 
   saveGlobalFailurePos(): void {
     this.globalGet('rightmostFailurePos');
-    this.localSet(`origGlobalFailurePos_${this._frameDepth - 1}`);
+    this.localSet(this.ensureDepthLocal('origGlobalFailurePos'));
   }
 
   restoreGlobalFailurePos(): void {
-    this.localGet(`origGlobalFailurePos_${this._frameDepth - 1}`);
+    this.localGet(this.depthLocal('origGlobalFailurePos'));
     this.globalSet('rightmostFailurePos');
   }
 
   saveRecordedFailuresLen(): void {
     this.callPrebuiltFunc('getRecordedFailuresLength');
-    this.localSet(`origRecordedFailuresLen_${this._frameDepth - 1}`);
+    this.localSet(this.ensureDepthLocal('origRecordedFailuresLen'));
   }
 
   getSavedRecordedFailuresLen(): void {
-    this.localGet(`origRecordedFailuresLen_${this._frameDepth - 1}`);
+    this.localGet(this.depthLocal('origRecordedFailuresLen'));
   }
 
   updateGlobalFailurePos(): void {
@@ -645,20 +651,6 @@ class Assembler {
         this.callPrebuiltFunc('recordFailure');
       });
     });
-  }
-
-
-  // For Not expressions: allocate locals for failurePos, globalFailurePos,
-  // and recordedFailures.length, then save all three.
-  enterNotFrame(): void {
-    const d = this._frameDepth;
-    this.ensureLocal(`origFailurePos_${d}`, w.valtype.i32);
-    this.ensureLocal(`origGlobalFailurePos_${d}`, w.valtype.i32);
-    this.ensureLocal(`origRecordedFailuresLen_${d}`, w.valtype.i32);
-    this._frameDepth++;
-    this.saveFailurePos();
-    this.saveGlobalFailurePos();
-    this.saveRecordedFailuresLen();
   }
 
   // For rules with descriptions: handle failure by swallowing internal failures
@@ -751,7 +743,7 @@ class Assembler {
     this.callPrebuiltFunc('newIterationNode');
   }
 
-  // Wrap the bindings accumulated since the last enterFrame() in a
+  // Wrap the bindings accumulated since the last pushDepth() in a
   // nonterminal node. Uses the saved pos/numBindings from the current frame.
   newNonterminalNodeFromFrame(ruleId: number): void {
     this.getSavedPos();
@@ -1669,13 +1661,8 @@ export class Compiler {
     );
   }
 
-  emitPExpr(
-    exp: Expr,
-    {preHook, postHook}: {preHook?: () => void; postHook?: () => void} = {}
-  ): void {
+  emitPExpr(exp: Expr): void {
     const {asm} = this;
-
-    const allowFastApply = !preHook && !postHook;
 
     // Note that after specializeRules, there are two classes of rule:
     // - specialized rules, which contain no Params, and only have
@@ -1683,33 +1670,29 @@ export class Compiler {
     // - generalized rules, which may contain Params and apps w/ args.
     assert(!(exp.type === 'Apply' && exp.children.length > 0));
 
-    if (exp.type === 'Apply' && allowFastApply) {
+    if (exp.type === 'Apply') {
       asm.emit(`BEGIN apply:${exp.ruleName}`);
       this.emitApply(exp);
       asm.emit(`END apply:${exp.ruleName}`);
       return;
     }
     if (exp.type === 'ApplyGeneralized') {
-      assert(EMIT_GENERALIZED_RULES && allowFastApply);
+      assert(EMIT_GENERALIZED_RULES);
       asm.emit(`BEGIN applyGeneralized:${exp.ruleName}`);
       this.emitApplyGeneralized(exp);
       asm.emit(`END applyGeneralized:${exp.ruleName}`);
       return;
     }
 
-    const skipFrame =
-      ir.isLeaf(exp) || exp.type === 'Seq' || exp.type === 'Lex' || exp.type === 'Dispatch';
     // Types that use condBreak(depthOf('pexprEnd')) for early exit:
     const needsPExprEnd =
       exp.type === 'Alt' || exp.type === 'Seq' || exp.type === 'GuardedIter';
 
     const debugLabel = ir.toString(exp);
     asm.emit(`BEGIN ${debugLabel}`);
-    if (!skipFrame) asm.enterFrame();
+    asm.pushDepth();
 
     const emitBody = () => {
-      if (preHook) preHook();
-
       switch (exp.type) {
         case 'Alt':
           this.emitAlt(exp);
@@ -1774,13 +1757,14 @@ export class Compiler {
     } else {
       emitBody();
     }
-    if (postHook) postHook();
-    if (!skipFrame) asm.exitFrame();
+    asm.popDepth();
     asm.emit(`END ${debugLabel}`);
   }
 
   emitAlt(exp: ir.Alt): void {
     const {asm} = this;
+    asm.savePos();
+    asm.saveNumBindings();
     asm.block(w.blocktype.empty, () => {
       for (const term of exp.children) {
         this.emitPExpr(term);
@@ -1906,7 +1890,9 @@ export class Compiler {
     const ruleId = this.ruleId(exp.ruleName);
     const ruleInfo = getNotNull(this.rules!, exp.ruleName);
 
-    asm.enterFrame();
+    asm.pushDepth();
+    asm.savePos();
+    asm.saveNumBindings();
     this._lexContextStack.push(!ruleInfo.isSyntactic);
     asm.pushFluffySavePoint();
     this.emitPExpr(ruleInfo.body);
@@ -1920,7 +1906,7 @@ export class Compiler {
       asm.localSet('ret');
     });
 
-    asm.exitFrame();
+    asm.popDepth();
     asm.updateLocalFailurePos(() => asm.globalGet('rightmostFailurePos'));
   }
 
@@ -1950,6 +1936,8 @@ export class Compiler {
 
   emitLookahead({child}: ir.Lookahead): void {
     const {asm} = this;
+    asm.savePos();
+    asm.saveNumBindings();
 
     // TODO: Should positive lookahead record a CST?
     asm.pushFluffySavePoint();
@@ -1975,11 +1963,17 @@ export class Compiler {
     const {asm} = this;
     const failureId = this.toFailure(exp);
 
+    asm.savePos();
+    asm.saveNumBindings();
+
     // Save failurePos, globalFailurePos, and recordedFailures.length.
     // We use setRecordedFailuresLength to directly truncate after the
     // child evaluation. This matches JS's pushFailuresInfo/popFailuresInfo
     // for Not expressions.
-    asm.enterNotFrame();
+    asm.pushDepth();
+    asm.saveFailurePos();
+    asm.saveGlobalFailurePos();
+    asm.saveRecordedFailuresLen();
 
     this.emitPExpr(child);
 
@@ -2002,9 +1996,9 @@ export class Compiler {
       asm.callPrebuiltFunc('setRecordedFailuresLength');
     });
 
-    // Exit the Not frame; restoreBindingsLength/restorePos now read
+    // Pop the Not frame; restoreBindingsLength/restorePos now read
     // from the outer frame.
-    asm.exitFrame();
+    asm.popDepth();
     asm.restoreBindingsLength();
     asm.restorePos();
 
@@ -2022,27 +2016,38 @@ export class Compiler {
     });
   }
 
-  emitOpt({child}: ir.Opt): void {
+  emitOpt(exp: ir.Opt): void {
     const {asm} = this;
+    asm.savePos();
+    asm.saveNumBindings();
     asm.pushFluffySavePoint();
-    this.emitPExpr(child);
+    this.emitPExpr(exp.child);
     asm.localGet('ret');
     asm.ifFalse(w.blocktype.empty, () => {
       asm.restorePos();
       asm.restoreBindingsLength();
     });
-    asm.newIterNodeWithSavedPosAndBindings(ir.outArity(child), true);
+    asm.newIterNodeWithSavedPosAndBindings(ir.outArity(exp.child), true);
     // Opt always succeeds, so mark inner failures as fluffy (scoped).
     asm.popFluffySavePointIfAtErrorPos();
     asm.localSet('ret');
   }
 
   emitPlus(plusExp: ir.Plus): void {
+    const {child} = plusExp;
     const {asm} = this;
-    this.emitPExpr(plusExp.child);
+    asm.savePos();
+    asm.saveNumBindings();
+    this.emitPExpr(child);
     asm.localGet('ret');
     asm.if(w.blocktype.empty, () => {
-      this.emitStar(plusExp);
+      this.emitStarLoop(child, () => {
+        this.emitPExpr(child);
+        asm.localGet('ret');
+        asm.emit(instr.i32.eqz);
+        asm.condBreak(asm.depthOf('done'));
+        asm.continue(0);
+      });
     });
   }
 
@@ -2109,7 +2114,7 @@ export class Compiler {
     const {asm} = this;
 
     asm.pushFluffySavePoint();
-    asm.enterFrame();
+    asm.pushDepth();
     asm.block(
       w.blocktype.empty,
       () => {
@@ -2123,7 +2128,7 @@ export class Compiler {
     );
     asm.restorePos();
     asm.restoreBindingsLength();
-    asm.exitFrame();
+    asm.popDepth();
     asm.newIterNodeWithSavedPosAndBindings(ir.outArity(child));
     // Star always succeeds, so mark inner failures as fluffy (scoped).
     asm.popFluffySavePointIfAtErrorPos();
@@ -2152,18 +2157,17 @@ export class Compiler {
   // TODO: Emit a tight loop with inline range check and compact iter node,
   // similar to emitGuardedIter. Currently delegates to standard Star/Plus codegen.
   emitRangeIter(exp: ir.RangeIter): void {
-    const wrapped = {type: exp.isPlus ? 'Plus' : 'Star', child: exp.child} as
-      | ir.Plus
-      | ir.Star;
     if (exp.isPlus) {
-      this.emitPlus(wrapped as ir.Plus);
+      this.emitPlus({type: 'Plus', child: exp.child} as ir.Plus);
     } else {
-      this.emitStar(wrapped);
+      this.emitStar({type: 'Star', child: exp.child} as ir.Star);
     }
   }
 
   emitGuardedIter(exp: ir.GuardedIter): void {
     const {asm} = this;
+    asm.savePos();
+    asm.saveNumBindings();
     const {child, guardChars} = exp;
 
     // child is always Seq([Not(delim), Any]). Extract `delim`.
@@ -2178,8 +2182,8 @@ export class Compiler {
       asm.condBreak(asm.depthOf('pexprEnd'));
     }
 
+    // GuardedIter child is never failure-safe (it contains Not+Any).
     this.emitStarLoop(child, () => {
-      // Load current char code into tmp.
       asm.currCharCode();
       asm.localSet('tmp');
 
@@ -2210,9 +2214,9 @@ export class Compiler {
       // Guard char matched — try to match the delimiter.
       // Not discards all internal failures, so we just need to check
       // whether `delim` matches and branch on the result.
-      // emitPExpr enters/exits its own frame, so after it returns,
-      // the frame depth is back to the star loop's frame — we can
-      // restore directly.
+      // The delim's emit method enters/exits its own frame, so after
+      // it returns, the frame depth is back to the star loop's frame
+      // — we can restore directly.
       this.emitPExpr(delim);
       asm.restorePos();
       asm.restoreBindingsLength();
@@ -2227,7 +2231,11 @@ export class Compiler {
     });
   }
 
-  emitStar({child}: ir.Star | ir.Plus): void {
+  emitStar(exp: ir.Star): void {
+    const {asm} = this;
+    const {child} = exp;
+    asm.savePos();
+    asm.saveNumBindings();
     this.emitStarLoop(child, () => {
       this.emitPExpr(child);
       this.asm.localGet('ret');
