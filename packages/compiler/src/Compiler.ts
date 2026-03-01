@@ -255,9 +255,9 @@ class Assembler {
   }
 
   // Like addLocal, but does nothing if the local already exists.
-  // Used by enterFrame/enterDescriptionFrame/enterNotFrame because sibling frames at
-  // the same depth share locals (e.g., two Alt alternatives both push
-  // at the same depth).
+  // Used by enterFrame/enterNotFrame because sibling frames at the same
+  // depth share locals (e.g., two Alt alternatives both push at the same
+  // depth).
   ensureLocal(name: string, type: w.valtype): void {
     if (!this._locals!.has(name)) {
       this.addLocal(name, type);
@@ -647,19 +647,6 @@ class Assembler {
     });
   }
 
-  // For rules with descriptions: allocate locals for pos, globalFailurePos,
-  // and recordedFailures.length. Must be called at the start of the rule
-  // evaluation function.
-  enterDescriptionFrame(): void {
-    const d = this._frameDepth;
-    this.ensureLocal(`origPos_${d}`, w.valtype.i32);
-    this.ensureLocal(`origGlobalFailurePos_${d}`, w.valtype.i32);
-    this.ensureLocal(`origRecordedFailuresLen_${d}`, w.valtype.i32);
-    this._frameDepth++;
-    this.savePos();
-    this.saveGlobalFailurePos();
-    this.saveRecordedFailuresLen();
-  }
 
   // For Not expressions: allocate locals for failurePos, globalFailurePos,
   // and recordedFailures.length, then save all three.
@@ -675,42 +662,42 @@ class Assembler {
   }
 
   // For rules with descriptions: handle failure by swallowing internal failures
-  // and recording the description at the start position, then pop the frame.
+  // and recording the description at the start position.
   // Must be called after evaluating the rule body.
   handleDescriptionFailure(descriptionId: number): void {
     this.localGet('ret');
     this.ifFalse(w.blocktype.empty, () => {
       // Restore rightmostFailurePos (swallow internal failures for error position calculation)
-      this.restoreGlobalFailurePos();
+      this.localGet('descGlobalFailurePos');
+      this.globalSet('rightmostFailurePos');
 
       // Restore recordedFailures length if the description is at errorMessagePos.
       // This swallows internal failures (including inner descriptions).
       // If the description is NOT at errorMessagePos, keep internal failures
       // (they might be at errorMessagePos and thus relevant for the error message).
       this.globalGet('errorMessagePos');
-      this.getSavedPos(); // startPos
+      this.localGet('descStartPos');
       this.i32Eq(); // errorMessagePos == startPos?
       this.if(w.blocktype.empty, () => {
         // Description is at errorMessagePos - swallow internal failures
-        this.getSavedRecordedFailuresLen();
+        this.localGet('descRecordedFailuresLen');
         this.callPrebuiltFunc('setRecordedFailuresLength');
       });
 
       // Update rightmostFailurePos to max(old, startPos)
       this.i32Max(
         () => this.globalGet('rightmostFailurePos'),
-        () => this.getSavedPos()
+        () => this.localGet('descStartPos')
       );
       this.globalSet('rightmostFailurePos');
 
       // Set local failurePos to startPos
-      this.getSavedPos();
+      this.localGet('descStartPos');
       this.localSet('failurePos');
 
       // Record the description at startPos
-      this.maybeRecordFailure(() => this.getSavedPos(), descriptionId);
+      this.maybeRecordFailure(() => this.localGet('descStartPos'), descriptionId);
     });
-    this.exitFrame();
   }
 
   // Increment the current input position by 1.
@@ -1195,7 +1182,15 @@ export class Compiler {
       asm.pushFluffySavePoint();
 
       if (hasDescription) {
-        asm.enterDescriptionFrame();
+        asm.addLocal('descStartPos', w.valtype.i32);
+        asm.addLocal('descGlobalFailurePos', w.valtype.i32);
+        asm.addLocal('descRecordedFailuresLen', w.valtype.i32);
+        asm.globalGet('pos');
+        asm.localSet('descStartPos');
+        asm.globalGet('rightmostFailurePos');
+        asm.localSet('descGlobalFailurePos');
+        asm.callPrebuiltFunc('getRecordedFailuresLength');
+        asm.localSet('descRecordedFailuresLen');
       }
 
       // TODO: Find a simpler way to do this.
