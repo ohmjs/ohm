@@ -568,6 +568,96 @@ export function isLeaf(expr: Expr): boolean {
   }
 }
 
+// Computes the set of all expressions in the tree that are "failure-safe":
+// when they fail, pos and bindings are guaranteed unchanged. Callers of
+// failure-safe expressions don't need to save/restore for backtracking.
+//
+// This does NOT account for implicit space skipping in syntactic context.
+// Space skipping can advance pos before the expression is evaluated, so the
+// caller must handle that separately.
+export function computeFailureSafe(
+  rules: Map<string, {body: Expr}>
+): Set<Expr> {
+  const result = new Set<Expr>();
+  const visiting = new Set<string>();
+
+  function check(exp: Expr): boolean {
+    switch (exp.type) {
+      case 'End':
+      case 'UnicodeChar':
+        return true;
+      case 'Range':
+        // BMP ranges check before advancing pos. Supplementary ranges
+        // advance pos (past high surrogate) before the range check.
+        return exp.hi <= 0xffff;
+      case 'Terminal':
+        // Single-char terminals check before advancing. Multi-char terminals
+        // may advance partway through before a later char fails.
+        return exp.value.length <= 1;
+      case 'CaseInsensitive':
+        return exp.value.length <= 1;
+      case 'Not':
+      case 'Lookahead':
+        // These always save/restore pos and bindings internally.
+        return true;
+      case 'Apply': {
+        const ruleInfo = rules.get(exp.ruleName);
+        if (!ruleInfo || visiting.has(exp.ruleName)) return false;
+        visiting.add(exp.ruleName);
+        const safe = check(ruleInfo.body);
+        visiting.delete(exp.ruleName);
+        return safe;
+      }
+      case 'Alt':
+        return exp.children.every(check);
+      case 'Lex':
+        return check(exp.child);
+      case 'Plus':
+        // Plus fails only when the first iteration fails.
+        return check(exp.child);
+      case 'Any':
+      case 'ApplyGeneralized':
+      case 'Dispatch':
+      case 'GuardedIter':
+      case 'RangeIter':
+      case 'Opt':
+      case 'Seq':
+      case 'Star':
+      case 'Param':
+        return false;
+      default:
+        unreachable(exp, `not handled: ${exp}`);
+    }
+  }
+
+  // Walk every expression in every rule body.
+  function markAll(exp: Expr): void {
+    if (check(exp)) result.add(exp);
+    switch (exp.type) {
+      case 'Alt':
+      case 'Seq':
+        exp.children.forEach(markAll);
+        break;
+      case 'Dispatch':
+      case 'GuardedIter':
+      case 'Lex':
+      case 'Lookahead':
+      case 'Not':
+      case 'Opt':
+      case 'Plus':
+      case 'RangeIter':
+      case 'Star':
+        markAll(exp.child);
+        break;
+    }
+  }
+  for (const {body} of rules.values()) {
+    markAll(body);
+  }
+
+  return result;
+}
+
 // Returns true if `expr` is `Any` or `Apply("any")` — in the grammar,
 // `any` is typically lowered as an Apply to the built-in rule, not as
 // the `Any` IR node.

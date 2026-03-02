@@ -17,6 +17,7 @@ import process from 'node:process';
 import {fileURLToPath} from 'node:url';
 import * as ohm from 'ohm-js-legacy';
 
+import {Compiler} from '../src/Compiler.ts';
 import {unparse, toWasmGrammar} from '../test/_helpers.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -54,7 +55,8 @@ const pattern = process.argv[smallSize ? 3 : 2];
     if (smallSize) break;
   }
 
-  const g = await toWasmGrammar(liquid.LiquidHTML);
+  const modBytes = new Compiler(liquid.LiquidHTML).compile();
+  const g = await toWasmGrammar(liquid.LiquidHTML, {modBytes});
   const {exports} = g._instance;
   let peakHeapBytes = 0;
   let peakWasmMemoryBytes = 0;
@@ -92,4 +94,5 @@ const pattern = process.argv[smallSize ? 3 : 2];
   console.log(`Peak JS heap delta: ${fmt(peakJsHeap)}`);
   console.log(`Peak Wasm heap usage: ${fmt(peakHeapBytes)}`);
   console.log(`Peak Wasm linear memory: ${fmt(peakWasmMemoryBytes)}`);
+  console.log(`Compiled grammar size: ${fmt(modBytes.length)}`);
 })();

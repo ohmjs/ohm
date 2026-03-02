@@ -106,6 +106,12 @@ interface SavedBacktrackPoint {
   readonly bindings: SavedValue<'bindings'>;
 }
 
+/** A no-op backtrack point whose save/restore emit no code. */
+const noopBacktrackPoint: SavedBacktrackPoint = {
+  pos: {get() {}, restore() {}} as unknown as SavedValue<'pos'>,
+  bindings: {get() {}, restore() {}} as unknown as SavedValue<'bindings'>,
+};
+
 class StringTable {
   _map: Map<string, number>;
   _strs: string[];
@@ -586,6 +592,10 @@ class Assembler {
     return {pos: this.savePos(), bindings: this.saveNumBindings()};
   }
 
+  maybeSaveBacktrackPoint(save: boolean): SavedBacktrackPoint {
+    return save ? this.saveBacktrackPoint() : noopBacktrackPoint;
+  }
+
   // Save the current input position to the current frame's local.
   savePos(): SavedValue<'pos'> {
     this.globalGet('pos');
@@ -872,6 +882,7 @@ export class Compiler {
   // Maps preallocatable rule names to the inner child rule name. Direct rules
   // (body matches a single codepoint) use '$term' as a sentinel.
   _preallocRules!: Map<string, string>;
+  _failureSafe!: Set<Expr>;
 
   _options: CompilerInternalOptions;
 
@@ -1039,6 +1050,7 @@ export class Compiler {
 
     this._singleUseRules = this.findSingleUseRules();
     this._preallocRules = this.findPreallocRules();
+    this._failureSafe = ir.computeFailureSafe(this.rules!);
 
     this.assignRuleIds();
   }
@@ -1791,7 +1803,13 @@ export class Compiler {
 
   emitAlt(exp: ir.Alt): void {
     const {asm} = this;
-    const saved = asm.saveBacktrackPoint();
+    // In lexical context (no implicit space skipping), failure-safe children
+    // guarantee that pos and bindings are unchanged on failure, so we can
+    // skip the save/restore overhead.
+    const needsSave =
+      !this.inLexicalContext() ||
+      !exp.children.every(c => this._failureSafe.has(c));
+    const saved = asm.maybeSaveBacktrackPoint(needsSave);
     asm.block(w.blocktype.empty, () => {
       for (const term of exp.children) {
         this.emitPExpr(term);
@@ -2138,6 +2156,12 @@ export class Compiler {
     emitLoopBody: (loop: SavedBacktrackPoint) => void
   ): void {
     const {asm} = this;
+    // When the child is failure-safe, a failed iteration leaves pos and
+    // bindings unchanged, so we can skip the per-iteration save and the
+    // post-loop restore.
+    const needsInnerSave =
+      !this.inLexicalContext() || !this._failureSafe.has(child);
+
     let loop: SavedBacktrackPoint;
 
     asm.pushFluffySavePoint();
@@ -2146,7 +2170,7 @@ export class Compiler {
       w.blocktype.empty,
       () => {
         asm.loop(w.blocktype.empty, () => {
-          loop = asm.saveBacktrackPoint();
+          loop = asm.maybeSaveBacktrackPoint(needsInnerSave);
           emitLoopBody(loop);
         });
       },
