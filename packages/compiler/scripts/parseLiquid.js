@@ -9,13 +9,12 @@
 
 /* eslint-disable no-console */
 import fg from 'fast-glob';
-import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {join, dirname} from 'node:path';
-import {performance} from 'node:perf_hooks';
 import process from 'node:process';
 import {fileURLToPath} from 'node:url';
 import * as ohm from 'ohm-js-legacy';
+import {Bench} from 'tinybench';
 
 import {Compiler} from '../src/Compiler.ts';
 import {unparse, toWasmGrammar} from '../test/_helpers.js';
@@ -33,66 +32,111 @@ const smallSize = process.argv[2] === '--small-size';
 const pattern = process.argv[smallSize ? 3 : 2];
 
 (async function main() {
-  const jsTimes = [];
-  const wasmTimes = [];
-
-  if (globalThis.gc) globalThis.gc();
-  const jsHeapBefore = process.memoryUsage().heapUsed;
-  let peakJsHeap = 0;
-
+  // Pre-read all files.
+  const files = [];
   for (const path of fg.sync(pattern)) {
     const input = readFileSync(path, 'utf8');
-    const start = performance.now();
-    const r = liquid.LiquidHTML.match(input);
-    const elapsed = performance.now() - start;
-    peakJsHeap = Math.max(peakJsHeap, process.memoryUsage().heapUsed - jsHeapBefore);
-    if (!r.succeeded()) {
-      console.error(`Failed to parse ${path}: ${r.message}`);
-      continue;
-    }
-    jsTimes.push(elapsed);
-    assert.equal(r.succeeded(), true, `failed: ${path}`);
+    files.push({path, input});
     if (smallSize) break;
   }
 
+  const bench = new Bench({
+    iterations: 3,
+    time: 0,
+    warmup: false,
+    throws: true,
+  });
+
+  const opts = {
+    afterEach() {
+      process.stderr.write('.');
+    },
+  };
+
+  // Walk v17 CST, collecting terminal text.
+  function unparseV17(matchResult, input) {
+    let ans = '';
+    function walk(node, pos) {
+      if (node.isTerminal()) {
+        ans += input.slice(pos, pos + node.matchLength);
+        return;
+      }
+      for (let i = 0; i < node.children.length; i++) {
+        walk(node.children[i], pos + node.childOffsets[i]);
+      }
+    }
+    walk(matchResult._cst, matchResult._cstOffset);
+    return ans;
+  }
+
+  // Compile to Wasm.
+  const compileStart = bench.now();
   const modBytes = new Compiler(liquid.LiquidHTML).compile();
+  const compileTime = bench.now() - compileStart;
   const g = await toWasmGrammar(liquid.LiquidHTML, {modBytes});
   const {exports} = g._instance;
-  let peakHeapBytes = 0;
+  let peakWasmHeapBytes = 0;
   let peakWasmMemoryBytes = 0;
 
-  for (const path of fg.sync(pattern)) {
-    const input = readFileSync(path, 'utf8');
-    const start = performance.now();
-    const succeeded = g.match(input).use(r => {
-      // Capture memory stats before dispose() resets the heap.
-      const heapUsed = exports.__offset.value - exports.__heap_base.value;
-      const wasmMemory = exports.memory.buffer.byteLength;
-      peakHeapBytes = Math.max(peakHeapBytes, heapUsed);
-      peakWasmMemoryBytes = Math.max(peakWasmMemoryBytes, wasmMemory);
-      return r.succeeded() ? 1 : 0;
-    });
-    assert.equal(succeeded, 1, `failed: ${path}`);
-    wasmTimes.push(performance.now() - start);
+  bench.add(
+    'JS parse',
+    () => {
+      let overriddenDuration = 0;
+      for (const {input} of files) {
+        const start = bench.now();
+        const r = liquid.LiquidHTML.match(input);
+        overriddenDuration += bench.now() - start;
+        unparseV17(r, input);
+      }
+      return {overriddenDuration};
+    },
+    opts
+  );
 
-    // Trailing/leading spaces are currently dropped, so trim both
-    // to after unparsing.
-    assert.equal(input.trim().length, unparse(g).trim().length);
-    if (smallSize) break;
-  }
+  bench.add(
+    'Wasm parse',
+    () => {
+      let overriddenDuration = 0;
+      for (const {input} of files) {
+        const start = bench.now();
+        const m = g.match(input);
+        overriddenDuration += bench.now() - start;
+        m.use(() => {
+          // Capture memory stats before dispose() resets the heap.
+          peakWasmHeapBytes = Math.max(
+            peakWasmHeapBytes,
+            exports.__offset.value - exports.__heap_base.value
+          );
+          peakWasmMemoryBytes = Math.max(
+            peakWasmMemoryBytes,
+            exports.memory.buffer.byteLength
+          );
+          return unparse(g);
+        });
+      }
+      return {overriddenDuration};
+    },
+    opts
+  );
 
-  const sum = arr => arr.reduce((a, b) => a + b, 0);
+  await bench.run();
+  process.stderr.write('\n');
+
   const fmt = bytes => {
     if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
     return `${(bytes / 1024).toFixed(1)} KB`;
   };
-  const jsTotal = sum(jsTimes);
-  const wasmTotal = sum(wasmTimes);
-  console.log(`JS total: ${jsTotal.toFixed(0)}ms`);
-  console.log(`Wasm total: ${wasmTotal.toFixed(0)}ms`);
-  console.log(`Speedup:  ${(jsTotal / wasmTotal).toFixed(2)}x`);
-  console.log(`Peak JS heap delta: ${fmt(peakJsHeap)}`);
-  console.log(`Peak Wasm heap usage: ${fmt(peakHeapBytes)}`);
-  console.log(`Peak Wasm linear memory: ${fmt(peakWasmMemoryBytes)}`);
+
+  for (const task of bench.tasks) {
+    const {mean, sd, samplesCount} = task.result.latency;
+    console.log(`${task.name}: ${mean.toFixed(0)}ms ± ${sd.toFixed(0)}ms (n=${samplesCount})`);
+  }
+
+  const jsParse = bench.tasks[0].result.latency.mean;
+  const wasmParse = bench.tasks[1].result.latency.mean;
+  console.log(`Parse speedup: ${(jsParse / wasmParse).toFixed(2)}x`);
+  console.log(`Compile: ${compileTime.toFixed(0)}ms`);
   console.log(`Compiled grammar size: ${fmt(modBytes.length)}`);
+  console.log(`Peak Wasm heap usage: ${fmt(peakWasmHeapBytes)}`);
+  console.log(`Peak Wasm linear memory: ${fmt(peakWasmMemoryBytes)}`);
 })();

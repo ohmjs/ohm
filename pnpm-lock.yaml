@@ -198,6 +198,9 @@ importers:
       ohm-js-legacy:
         specifier: workspace:^
         version: link:../ohm-js
+      tinybench:
+        specifier: ^6.0.0
+        version: 6.0.0
       wabt:
         specifier: 1.0.37-nightly.20250428
         version: 1.0.37-nightly.20250428
@@ -3039,6 +3042,10 @@ packages:
   time-zone@1.0.0:
     resolution: {integrity: sha512-TIsDdtKo6+XrPtiTm1ssmMngN1sAhyKnTO2kunQWqNPWIVvCm15Wmw4SWInwTVgJ5u/Tr04+8Ei9TNcw4x4ONA==}
     engines: {node: '>=4'}
+
+  tinybench@6.0.0:
+    resolution: {integrity: sha512-BWlWpVbbZXaYjRV0twGLNQO00Zj4HA/sjLOQP2IvzQqGwRGp+2kh7UU3ijyJ3ywFRogYDRbiHDMrUOfaMnN56g==}
+    engines: {node: '>=20.0.0'}
 
   tinyexec@1.0.2:
     resolution: {integrity: sha512-W/KYk+NFhkmsYpuHq5JykngiOCnxeVL8v8dFnqxSD8qEEdRfXk1SDM6JzNqcERbcGYj9tMrDQBYV9cjgnunFIg==}
@@ -6095,6 +6102,8 @@ snapshots:
       source-map-support: 0.5.21
 
   time-zone@1.0.0: {}
+
+  tinybench@6.0.0: {}
 
   tinyexec@1.0.2: {}
 

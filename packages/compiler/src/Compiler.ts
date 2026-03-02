@@ -1807,8 +1807,7 @@ export class Compiler {
     // guarantee that pos and bindings are unchanged on failure, so we can
     // skip the save/restore overhead.
     const needsSave =
-      !this.inLexicalContext() ||
-      !exp.children.every(c => this._failureSafe.has(c));
+      !this.inLexicalContext() || !exp.children.every(c => this._failureSafe.has(c));
     const saved = asm.maybeSaveBacktrackPoint(needsSave);
     asm.block(w.blocktype.empty, () => {
       for (const term of exp.children) {
@@ -2159,8 +2158,7 @@ export class Compiler {
     // When the child is failure-safe, a failed iteration leaves pos and
     // bindings unchanged, so we can skip the per-iteration save and the
     // post-loop restore.
-    const needsInnerSave =
-      !this.inLexicalContext() || !this._failureSafe.has(child);
+    const needsInnerSave = !this.inLexicalContext() || !this._failureSafe.has(child);
 
     let loop: SavedBacktrackPoint;
 

@@ -575,9 +575,7 @@ export function isLeaf(expr: Expr): boolean {
 // This does NOT account for implicit space skipping in syntactic context.
 // Space skipping can advance pos before the expression is evaluated, so the
 // caller must handle that separately.
-export function computeFailureSafe(
-  rules: Map<string, {body: Expr}>
-): Set<Expr> {
+export function computeFailureSafe(rules: Map<string, {body: Expr}>): Set<Expr> {
   const result = new Set<Expr>();
   const visiting = new Set<string>();
 
