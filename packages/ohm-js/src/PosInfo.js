@@ -89,7 +89,7 @@ export class PosInfo {
     Object.keys(memo).forEach(k => {
       const memoRec = memo[k];
       if (pos + memoRec.examinedLength > invalidatedIdx) {
-        delete memo[k];
+        memo[k] = undefined;
       } else {
         this.maxExaminedLength = Math.max(this.maxExaminedLength, memoRec.examinedLength);
         this.maxRightmostFailureOffset = Math.max(
