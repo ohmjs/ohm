@@ -792,11 +792,20 @@ class Assembler {
     this.callPrebuiltFunc('newNonterminalNode');
   }
 
-  // [startIdx: i32] -> [ptr: i32]
+  // Compute a tagged terminal integer: (matchLength << 1) | 1
+  // and push it to bindings. [] -> [tagged: i32]
   newTerminalNode(): void {
-    this.localGet('postSpacesPos');
+    // matchLength = pos - postSpacesPos
     this.globalGet('pos');
-    this.callPrebuiltFunc('newTerminalNode');
+    this.localGet('postSpacesPos');
+    this.emit(instr.i32.sub);
+    // (matchLength << 1) | 1
+    this.i32Const(1);
+    this.emit(instr.i32.shl);
+    this.i32Const(1);
+    this.emit(instr.i32.or);
+    // Push to bindings
+    this.callPrebuiltFunc('pushBinding');
   }
 
   i32Max(aThunk: () => void, bThunk: () => void): void {

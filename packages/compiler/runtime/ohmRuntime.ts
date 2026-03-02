@@ -34,10 +34,14 @@
  *     4     matchLength: i32   (chars consumed)
  *     8     typeAndDetails: i32
  *               bits [1:0] = node type
- *                 0=nonterminal, 1=terminal, 2=iteration, 3=optional
+ *                 0=nonterminal, 2=iteration, 3=optional
  *               bits [31:2] = ruleId (nonterminal) or arity (iter)
  *    12     failureOffset: i32  (relative to startIdx)
- *    16+    children: i32[]    (pointers to child nodes)
+ *    16+    children: i32[]    (pointers to child nodes, or tagged terminals)
+ *
+ * Terminal nodes are NOT stored as CST nodes. Instead, they are tagged
+ * 31-bit integers: (matchLength << 1) | 1. Bit 0 distinguishes them
+ * from heap pointers (which are always word-aligned, so bit 0 = 0).
  */
 
 type ApplyResult = bool;
@@ -64,11 +68,11 @@ declare function fillInputBuffer(dest: i32, len: i32): i32;
 // CST nodes
 @inline const CST_NODE_OVERHEAD: i32 = 16;
 
-// Node type is given by the two least sigificant bits.
-// Note that an optional is also an iteration node, so
-// bit 1 should be treated as a flag.
+// Node type is given by the two least significant bits of typeAndDetails.
+// 0=nonterminal, 2=iteration, 3=optional. (Terminal nodes are not CST nodes;
+// they are tagged integers — see taggedTerminal().)
+// Note that an optional is also an iteration node, so bit 1 is treated as a flag.
 @inline const NODE_TYPE_NONTERMINAL: i32 = 0;
-@inline const NODE_TYPE_TERMINAL: i32 = 1;
 @inline const NODE_TYPE_ITER_FLAG: i32 = 2;
 @inline const NODE_TYPE_OPTIONAL: i32 = 3;
 
@@ -93,10 +97,19 @@ type RuleEvalResult = i32;
 
 @inline const RULE_EVAL_SUCCESS_FLAG = 1;
 
-// Preallocated terminal nodes for matchLength 0..8.
-// Indexed by matchLength; each entry is CST_NODE_OVERHEAD bytes.
-@inline const MAX_PREALLOC_TERMINAL_LEN: i32 = 8;
-let preallocTerminalBase: i32 = 0;
+// Tagged terminal encoding: (matchLength << 1) | 1.
+// Bit 0 = 1 distinguishes terminals from heap pointers (which are always aligned).
+@inline function taggedTerminal(matchLength: i32): i32 {
+  return (matchLength << 1) | 1;
+}
+
+@inline function isTaggedTerminal(val: i32): bool {
+  return (val & 1) !== 0;
+}
+
+@inline function taggedTerminalMatchLength(val: i32): i32 {
+  return val >>> 1;
+}
 
 // Base pointer for preallocated nonterminal table (bump-heap allocated).
 // Each entry is NODE_WITH_1_CHILD bytes, indexed by ruleId.
@@ -251,16 +264,6 @@ function initMemoTable(inputLenBytes: usize): void {
 }
 
 function initPreallocatedNodes(): void {
-  const termCount = MAX_PREALLOC_TERMINAL_LEN + 1;
-  preallocTerminalBase = <i32>heap.alloc(<usize>(termCount * CST_NODE_OVERHEAD));
-  for (let i: i32 = 0; i <= MAX_PREALLOC_TERMINAL_LEN; i++) {
-    const ptr = preallocTerminalBase + i * CST_NODE_OVERHEAD;
-    cstSetCount(ptr, 0);
-    cstSetMatchLength(ptr, i);
-    cstSetTypeAndDetails(ptr, NODE_TYPE_TERMINAL);
-    cstSetFailureOffset(ptr, 0);
-  }
-
   // Allocate nonterminal table — lazily initialized on first use per ruleId.
   // Only non-memoized rules use prealloc, and they have ruleId >= numMemoizedRules.
   const preallocCount = numRules - numMemoizedRules;
@@ -362,8 +365,8 @@ export function evalApplyNoMemo0(ruleId: i32): ApplyResult {
 // Evaluates a trivial (non-memoized) rule that matches a single code point.
 // On success, reuses a preallocated nonterminal node instead of allocating.
 // Falls back to dynamic allocation if matchLength != 1 (e.g. surrogate pair).
-// innerPreallocIdx: -1 for direct rules (child = terminal), >= 0 for transitive
-// rules (child = inner preallocated nonterminal at that index).
+// innerPreallocIdx: -1 for direct rules (child = tagged terminal), >= 0 for
+// transitive rules (child = inner preallocated nonterminal at that index).
 export function evalApplyPrealloc(ruleId: i32, innerPreallocIdx: i32): ApplyResult {
   const origPos = pos;
   const origNumBindings = bindings.length;
@@ -381,7 +384,7 @@ export function evalApplyPrealloc(ruleId: i32, innerPreallocIdx: i32): ApplyResu
         cstSetTypeAndDetails(ptr, (ruleId << 2) | NODE_TYPE_NONTERMINAL);
         cstSetFailureOffset(ptr, 0);
         const childPtr = innerPreallocIdx < 0
-          ? preallocTerminalBase + CST_NODE_OVERHEAD
+          ? taggedTerminal(1)
           : preallocNtBase + innerPreallocIdx * NODE_WITH_1_CHILD;
         store<i32>(<usize>(ptr + CST_NODE_OVERHEAD), childPtr);
       }
@@ -459,19 +462,14 @@ export function handleLeftRecursion(origPos: u32, ruleId: i32, origNumBindings: 
 }
 
 export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
-  const matchLen = endIdx - startIdx;
-  if (matchLen <= MAX_PREALLOC_TERMINAL_LEN) {
-    const ptr = preallocTerminalBase + matchLen * CST_NODE_OVERHEAD;
-    bindings.push(ptr);
-    return ptr;
-  }
-  const ptr: i32 = <i32>heap.alloc(<usize>CST_NODE_OVERHEAD);
-  cstSetCount(ptr, 0);
-  cstSetMatchLength(ptr, matchLen);
-  cstSetTypeAndDetails(ptr, NODE_TYPE_TERMINAL);
-  cstSetFailureOffset(ptr, 0);
-  bindings.push(<i32>ptr);
-  return ptr;
+  const tagged = taggedTerminal(endIdx - startIdx);
+  bindings.push(tagged);
+  return tagged;
+}
+
+export function pushBinding(val: i32): i32 {
+  bindings.push(val);
+  return val;
 }
 
 // Create an internal (non-leaf) node (IterationNode or NonterminalNode).
