@@ -77,6 +77,35 @@ function isSyntacticRule(ruleName: string): boolean {
   return /\p{Lu}/u.test(firstLetter);
 }
 
+class SavedValue<K extends string> {
+  readonly kind: K;
+  private _asm: Assembler;
+  private _local: string;
+  private _restoreFn: () => void;
+
+  constructor(kind: K, asm: Assembler, local: string, restoreFn: () => void) {
+    this.kind = kind;
+    this._asm = asm;
+    this._local = local;
+    this._restoreFn = restoreFn;
+  }
+
+  /** Push the saved value onto the wasm stack. */
+  get(): void {
+    this._asm.localGet(this._local);
+  }
+
+  /** Restore the value back to where it was saved from. */
+  restore(): void {
+    this._restoreFn();
+  }
+}
+
+interface SavedBacktrackPoint {
+  readonly pos: SavedValue<'pos'>;
+  readonly bindings: SavedValue<'bindings'>;
+}
+
 class StringTable {
   _map: Map<string, number>;
   _strs: string[];
@@ -210,6 +239,7 @@ class Assembler {
   _locals: Map<string, number> | undefined;
   _typeMap: TypeMap;
   _frameDepth: number;
+  _savedAtDepthStack: Set<string>[];
 
   static ALIGN_1_BYTE = 0;
   static ALIGN_2_BYTES = 1;
@@ -227,6 +257,7 @@ class Assembler {
     this._code = [];
     this._locals = undefined;
     this._frameDepth = 0;
+    this._savedAtDepthStack = [];
 
     this._typeMap = typeMap;
   }
@@ -529,96 +560,93 @@ class Assembler {
   // Increment compile-time frame depth. No wasm emitted.
   pushDepth(): void {
     this._frameDepth++;
+    this._savedAtDepthStack.push(new Set());
   }
 
   // Decrement compile-time frame depth. No wasm emitted.
   popDepth(): void {
     assert(this._frameDepth > 0, 'popDepth with no matching pushDepth');
     this._frameDepth--;
+    this._savedAtDepthStack.pop();
   }
 
-  // Return a depth-indexed local name for the current frame.
-  private depthLocal(prefix: string): string {
-    return `${prefix}_${this._frameDepth - 1}`;
-  }
-
-  // Like depthLocal, but also ensures the local is declared.
-  // Use this in save methods; get/restore methods should use depthLocal.
+  // Return a depth-indexed local name for the current frame, ensure it's
+  // declared, and assert that the same prefix isn't saved twice at the same depth.
   private ensureDepthLocal(prefix: string): string {
-    const name = this.depthLocal(prefix);
+    const name = `${prefix}_${this._frameDepth - 1}`;
+    const set = this._savedAtDepthStack[this._savedAtDepthStack.length - 1];
+    assert(set != null, `save outside of a frame: ${prefix}`);
+    assert(!set.has(prefix), `double save of '${prefix}' at depth ${this._frameDepth}`);
+    set.add(prefix);
     this.ensureLocal(name, w.valtype.i32);
     return name;
   }
 
+  saveBacktrackPoint(): SavedBacktrackPoint {
+    return {pos: this.savePos(), bindings: this.saveNumBindings()};
+  }
+
   // Save the current input position to the current frame's local.
-  savePos(): void {
+  savePos(): SavedValue<'pos'> {
     this.globalGet('pos');
-    this.localSet(this.ensureDepthLocal('origPos'));
+    const name = this.ensureDepthLocal('origPos');
+    this.localSet(name);
+    return new SavedValue('pos', this, name, () => {
+      this.localGet(name);
+      this.globalSet('pos');
+    });
   }
 
-  // Load the saved input position onto the stack.
-  getSavedPos(): void {
-    this.localGet(this.depthLocal('origPos'));
-  }
-
-  restorePos(): void {
-    this.getSavedPos();
-    this.globalSet('pos');
-  }
-
-  saveNumBindings(): void {
+  saveNumBindings(): SavedValue<'bindings'> {
     if (FAST_SAVE_BINDINGS) {
       this.globalGet('bindings');
       this.i32Load(12); // Array<i32>.length_
     } else {
       this.callPrebuiltFunc('getBindingsLength');
     }
-    this.localSet(this.ensureDepthLocal('origBindingsLen'));
+    const name = this.ensureDepthLocal('origBindingsLen');
+    this.localSet(name);
+    return new SavedValue('bindings', this, name, () => {
+      if (FAST_RESTORE_BINDINGS) {
+        // It's safe to directly set the length as long as it's shrinking.
+        this.globalGet('bindings');
+        this.localGet(name);
+        this.i32Store(12); // Array<i32>.length_
+      } else {
+        this.localGet(name);
+        this.callPrebuiltFunc('setBindingsLength');
+      }
+    });
   }
 
-  getSavedNumBindings(): void {
-    this.localGet(this.depthLocal('origBindingsLen'));
-  }
-
-  restoreBindingsLength(): void {
-    if (FAST_RESTORE_BINDINGS) {
-      // It's safe to directly set the length as long as it's shrinking.
-      this.globalGet('bindings');
-      this.getSavedNumBindings();
-      this.i32Store(12); // Array<i32>.length_
-    } else {
-      this.getSavedNumBindings();
-      this.callPrebuiltFunc('setBindingsLength');
-    }
-  }
-
-  saveFailurePos(): void {
+  saveFailurePos(): SavedValue<'failurePos'> {
     this.localGet('failurePos');
-    this.localSet(this.ensureDepthLocal('origFailurePos'));
+    const name = this.ensureDepthLocal('origFailurePos');
+    this.localSet(name);
+    return new SavedValue('failurePos', this, name, () => {
+      this.localGet(name);
+      this.localSet('failurePos');
+    });
   }
 
-  restoreFailurePos(): void {
-    this.localGet(this.depthLocal('origFailurePos'));
-    this.localSet('failurePos');
-  }
-
-  saveGlobalFailurePos(): void {
+  saveGlobalFailurePos(): SavedValue<'globalFailurePos'> {
     this.globalGet('rightmostFailurePos');
-    this.localSet(this.ensureDepthLocal('origGlobalFailurePos'));
+    const name = this.ensureDepthLocal('origGlobalFailurePos');
+    this.localSet(name);
+    return new SavedValue('globalFailurePos', this, name, () => {
+      this.localGet(name);
+      this.globalSet('rightmostFailurePos');
+    });
   }
 
-  restoreGlobalFailurePos(): void {
-    this.localGet(this.depthLocal('origGlobalFailurePos'));
-    this.globalSet('rightmostFailurePos');
-  }
-
-  saveRecordedFailuresLen(): void {
+  saveRecordedFailuresLen(): SavedValue<'recordedFailuresLen'> {
     this.callPrebuiltFunc('getRecordedFailuresLength');
-    this.localSet(this.ensureDepthLocal('origRecordedFailuresLen'));
-  }
-
-  getSavedRecordedFailuresLen(): void {
-    this.localGet(this.depthLocal('origRecordedFailuresLen'));
+    const name = this.ensureDepthLocal('origRecordedFailuresLen');
+    this.localSet(name);
+    return new SavedValue('recordedFailuresLen', this, name, () => {
+      this.localGet(name);
+      this.callPrebuiltFunc('setRecordedFailuresLength');
+    });
   }
 
   updateGlobalFailurePos(): void {
@@ -734,22 +762,22 @@ class Assembler {
     this.emit(instr.call, w.funcidx(prebuiltFuncidx(name)));
   }
 
-  newIterNodeWithSavedPosAndBindings(arity: number, isOpt = false): void {
-    this.getSavedPos();
+  newIterNode(saved: SavedBacktrackPoint, arity: number, isOpt = false): void {
+    saved.pos.get();
     this.globalGet('pos');
-    this.getSavedNumBindings();
+    saved.bindings.get();
     this.i32Const(arity);
     this.i32Const(isOpt ? 1 : 0);
     this.callPrebuiltFunc('newIterationNode');
   }
 
   // Wrap the bindings accumulated since the last pushDepth() in a
-  // nonterminal node. Uses the saved pos/numBindings from the current frame.
-  newNonterminalNodeFromFrame(ruleId: number): void {
-    this.getSavedPos();
+  // nonterminal node.
+  newNonterminalNode(saved: SavedBacktrackPoint, ruleId: number): void {
+    saved.pos.get();
     this.globalGet('pos');
     this.i32Const(ruleId);
-    this.getSavedNumBindings();
+    saved.bindings.get();
     this.i32Const(-1);
     this.callPrebuiltFunc('newNonterminalNode');
   }
@@ -1763,15 +1791,14 @@ export class Compiler {
 
   emitAlt(exp: ir.Alt): void {
     const {asm} = this;
-    asm.savePos();
-    asm.saveNumBindings();
+    const saved = asm.saveBacktrackPoint();
     asm.block(w.blocktype.empty, () => {
       for (const term of exp.children) {
         this.emitPExpr(term);
         asm.localGet('ret');
         asm.condBreak(asm.depthOf('pexprEnd'));
-        asm.restorePos();
-        asm.restoreBindingsLength();
+        saved.pos.restore();
+        saved.bindings.restore();
       }
     });
   }
@@ -1891,8 +1918,7 @@ export class Compiler {
     const ruleInfo = getNotNull(this.rules!, exp.ruleName);
 
     asm.pushDepth();
-    asm.savePos();
-    asm.saveNumBindings();
+    const saved = asm.saveBacktrackPoint();
     this._lexContextStack.push(!ruleInfo.isSyntactic);
     asm.pushFluffySavePoint();
     this.emitPExpr(ruleInfo.body);
@@ -1902,7 +1928,7 @@ export class Compiler {
     // On success, wrap the body's bindings in a nonterminal node.
     asm.localGet('ret');
     asm.if(w.blocktype.empty, () => {
-      asm.newNonterminalNodeFromFrame(ruleId);
+      asm.newNonterminalNode(saved, ruleId);
       asm.localSet('ret');
     });
 
@@ -1936,14 +1962,13 @@ export class Compiler {
 
   emitLookahead({child}: ir.Lookahead): void {
     const {asm} = this;
-    asm.savePos();
-    asm.saveNumBindings();
+    const saved = asm.saveBacktrackPoint();
 
     // TODO: Should positive lookahead record a CST?
     asm.pushFluffySavePoint();
     this.emitPExpr(child);
-    asm.restoreBindingsLength();
-    asm.restorePos();
+    saved.bindings.restore();
+    saved.pos.restore();
 
     // When lookahead succeeds, mark inner failures as fluffy (scoped).
     asm.localGet('ret');
@@ -1963,17 +1988,16 @@ export class Compiler {
     const {asm} = this;
     const failureId = this.toFailure(exp);
 
-    asm.savePos();
-    asm.saveNumBindings();
+    const saved = asm.saveBacktrackPoint();
 
     // Save failurePos, globalFailurePos, and recordedFailures.length.
     // We use setRecordedFailuresLength to directly truncate after the
     // child evaluation. This matches JS's pushFailuresInfo/popFailuresInfo
     // for Not expressions.
     asm.pushDepth();
-    asm.saveFailurePos();
-    asm.saveGlobalFailurePos();
-    asm.saveRecordedFailuresLen();
+    const savedFailurePos = asm.saveFailurePos();
+    const savedGlobalFailurePos = asm.saveGlobalFailurePos();
+    const savedRecordedFailuresLen = asm.saveRecordedFailuresLen();
 
     this.emitPExpr(child);
 
@@ -1983,8 +2007,8 @@ export class Compiler {
     asm.localSet('ret');
 
     // Restore all global and local state from the Not frame.
-    asm.restoreGlobalFailurePos();
-    asm.restoreFailurePos();
+    savedGlobalFailurePos.restore();
+    savedFailurePos.restore();
 
     // Discard all child failures by restoring recordedFailures.length.
     // Only during the recording pass.
@@ -1992,15 +2016,13 @@ export class Compiler {
     asm.i32Const(0);
     asm.emit(instr.i32.ge_s);
     asm.if(w.blocktype.empty, () => {
-      asm.getSavedRecordedFailuresLen();
-      asm.callPrebuiltFunc('setRecordedFailuresLength');
+      savedRecordedFailuresLen.restore();
     });
 
-    // Pop the Not frame; restoreBindingsLength/restorePos now read
-    // from the outer frame.
+    // Pop the Not frame.
     asm.popDepth();
-    asm.restoreBindingsLength();
-    asm.restorePos();
+    saved.bindings.restore();
+    saved.pos.restore();
 
     asm.localGet('ret');
     asm.ifFalse(w.blocktype.empty, () => {
@@ -2018,16 +2040,15 @@ export class Compiler {
 
   emitOpt(exp: ir.Opt): void {
     const {asm} = this;
-    asm.savePos();
-    asm.saveNumBindings();
+    const saved = asm.saveBacktrackPoint();
     asm.pushFluffySavePoint();
     this.emitPExpr(exp.child);
     asm.localGet('ret');
     asm.ifFalse(w.blocktype.empty, () => {
-      asm.restorePos();
-      asm.restoreBindingsLength();
+      saved.pos.restore();
+      saved.bindings.restore();
     });
-    asm.newIterNodeWithSavedPosAndBindings(ir.outArity(exp.child), true);
+    asm.newIterNode(saved, ir.outArity(exp.child), true);
     // Opt always succeeds, so mark inner failures as fluffy (scoped).
     asm.popFluffySavePointIfAtErrorPos();
     asm.localSet('ret');
@@ -2036,12 +2057,11 @@ export class Compiler {
   emitPlus(plusExp: ir.Plus): void {
     const {child} = plusExp;
     const {asm} = this;
-    asm.savePos();
-    asm.saveNumBindings();
+    const saved = asm.saveBacktrackPoint();
     this.emitPExpr(child);
     asm.localGet('ret');
     asm.if(w.blocktype.empty, () => {
-      this.emitStarLoop(child, () => {
+      this.emitStarLoop(child, saved, () => {
         this.emitPExpr(child);
         asm.localGet('ret');
         asm.emit(instr.i32.eqz);
@@ -2107,11 +2127,18 @@ export class Compiler {
   }
 
   // Shared loop skeleton for Star (and the Star part of Plus).
+  // `outer` is the backtrack point from before the iteration started.
   // The callback `emitLoopBody` is responsible for emitting everything
   // inside the loop after savePos/saveNumBindings — including the
-  // break-on-failure and continue logic.
-  private emitStarLoop(child: Expr, emitLoopBody: () => void): void {
+  // break-on-failure and continue logic. It receives the loop's saved
+  // backtrack point for use inside the loop body.
+  private emitStarLoop(
+    child: Expr,
+    outer: SavedBacktrackPoint,
+    emitLoopBody: (loop: SavedBacktrackPoint) => void
+  ): void {
     const {asm} = this;
+    let loop: SavedBacktrackPoint;
 
     asm.pushFluffySavePoint();
     asm.pushDepth();
@@ -2119,17 +2146,16 @@ export class Compiler {
       w.blocktype.empty,
       () => {
         asm.loop(w.blocktype.empty, () => {
-          asm.savePos();
-          asm.saveNumBindings();
-          emitLoopBody();
+          loop = asm.saveBacktrackPoint();
+          emitLoopBody(loop);
         });
       },
       'done'
     );
-    asm.restorePos();
-    asm.restoreBindingsLength();
+    loop!.pos.restore();
+    loop!.bindings.restore();
     asm.popDepth();
-    asm.newIterNodeWithSavedPosAndBindings(ir.outArity(child));
+    asm.newIterNode(outer, ir.outArity(child));
     // Star always succeeds, so mark inner failures as fluffy (scoped).
     asm.popFluffySavePointIfAtErrorPos();
     asm.localSet('ret');
@@ -2166,8 +2192,7 @@ export class Compiler {
 
   emitGuardedIter(exp: ir.GuardedIter): void {
     const {asm} = this;
-    asm.savePos();
-    asm.saveNumBindings();
+    const saved = asm.saveBacktrackPoint();
     const {child, guardChars} = exp;
 
     // child is always Seq([Not(delim), Any]). Extract `delim`.
@@ -2183,7 +2208,7 @@ export class Compiler {
     }
 
     // GuardedIter child is never failure-safe (it contains Not+Any).
-    this.emitStarLoop(child, () => {
+    this.emitStarLoop(child, saved, loop => {
       asm.currCharCode();
       asm.localSet('tmp');
 
@@ -2218,8 +2243,8 @@ export class Compiler {
       // it returns, the frame depth is back to the star loop's frame
       // — we can restore directly.
       this.emitPExpr(delim);
-      asm.restorePos();
-      asm.restoreBindingsLength();
+      loop.pos.restore();
+      loop.bindings.restore();
 
       // If `delim` matched, the delimiter was found — stop iterating.
       asm.localGet('ret');
@@ -2234,14 +2259,13 @@ export class Compiler {
   emitStar(exp: ir.Star): void {
     const {asm} = this;
     const {child} = exp;
-    asm.savePos();
-    asm.saveNumBindings();
-    this.emitStarLoop(child, () => {
+    const saved = asm.saveBacktrackPoint();
+    this.emitStarLoop(child, saved, () => {
       this.emitPExpr(child);
-      this.asm.localGet('ret');
-      this.asm.emit(instr.i32.eqz);
-      this.asm.condBreak(this.asm.depthOf('done'));
-      this.asm.continue(0);
+      asm.localGet('ret');
+      asm.emit(instr.i32.eqz);
+      asm.condBreak(asm.depthOf('done'));
+      asm.continue(0);
     });
   }
 
