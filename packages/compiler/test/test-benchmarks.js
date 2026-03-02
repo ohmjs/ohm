@@ -8,5 +8,5 @@ test('benchmark smoke tests', async t => {
   const {stdout} = await execPromise(
     "node scripts/parseLiquid.js --small-size 'test/data/*.liquid'"
   );
-  t.is(stdout.slice(0, 9), 'JS total:');
+  t.is(stdout.slice(0, 9), 'JS parse:');
 });
