@@ -353,7 +353,10 @@ export function tokenize(rawInput: string): {tokens: Token[]; input: string} {
   const CHUNK = 8192;
   let input = '';
   for (let i = 0; i < outPos; i += CHUNK) {
-    input += String.fromCharCode.apply(null, out.subarray(i, Math.min(i + CHUNK, outPos)) as any);
+    input += String.fromCharCode.apply(
+      null,
+      out.subarray(i, Math.min(i + CHUNK, outPos)) as any
+    );
   }
 
   return {tokens, input};
@@ -368,7 +371,11 @@ export function tokenize(rawInput: string): {tokens: Token[]; input: string} {
 export function createMatcher(grammar: Grammar): (rawInput: string) => MatchResult {
   return function matchPython(rawInput: string): MatchResult {
     const {tokens, input} = tokenize(rawInput);
-    (grammar as any)._beforeParse = (exports: any, _input: string, ruleIds: Map<string, number>) => {
+    (grammar as any)._beforeParse = (
+      exports: any,
+      _input: string,
+      ruleIds: Map<string, number>
+    ) => {
       for (const {type, start, end} of tokens) {
         const ruleId = ruleIds.get(type);
         if (ruleId !== undefined) {
