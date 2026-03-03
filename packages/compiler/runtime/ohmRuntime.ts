@@ -275,13 +275,17 @@ function initPreallocatedNodes(): void {
   memory.fill(<usize>preallocEmptyIterBase, 0, <usize>(MAX_PREALLOC_ITER * CST_NODE_OVERHEAD));
 }
 
-function doMatch(inputLength: i32, startRuleId: i32): ApplyResult {
+export function matchSetup(inputLength: i32): void {
+  resetParsingState();
+  errorMessagePos = -1;
   endPos = inputLength;
   inputBuf = heap.alloc(<usize>endPos << 1);  // 2 bytes per UTF-16 code unit
   fillInputBuffer(<i32>inputBuf, endPos);
   initMemoTable(endPos);
   initPreallocatedNodes();
+}
 
+export function matchEval(startRuleId: i32): ApplyResult {
   maybeSkipSpaces(startRuleId);
   const succeeded = evalApply0(startRuleId) !== 0;
   if (succeeded) {
@@ -302,44 +306,12 @@ function doMatch(inputLength: i32, startRuleId: i32): ApplyResult {
     }
     return false;
   }
-
   return false;
 }
 
 export function match(inputLength: i32, startRuleId: i32): ApplyResult {
-  resetParsingState();
-  errorMessagePos = -1;  // Fresh match: no failure recording
-  return doMatch(inputLength, startRuleId);
-}
-
-// Split match into setup + eval so that JS can inject memo entries between them.
-export function matchSetup(inputLength: i32): void {
-  resetParsingState();
-  errorMessagePos = -1;
-  endPos = inputLength;
-  inputBuf = heap.alloc(<usize>endPos << 1);
-  fillInputBuffer(<i32>inputBuf, endPos);
-  initMemoTable(endPos);
-  initPreallocatedNodes();
-}
-
-export function matchEval(startRuleId: i32): ApplyResult {
-  maybeSkipSpaces(startRuleId);
-  const succeeded = evalApply0(startRuleId) !== 0;
-  if (succeeded) {
-    maybeSkipSpaces(startRuleId);
-    assert(pos <= endPos);
-    if (pos === endPos) {
-      return true;
-    }
-    rightmostFailurePos = max(rightmostFailurePos, <i32>pos);
-    if (errorMessagePos === <i32>pos) {
-      recordedFailures.length = 0;
-      recordFailure(0);
-    }
-    return false;
-  }
-  return false;
+  matchSetup(inputLength);
+  return matchEval(startRuleId);
 }
 
 // Pre-fill a memo entry: a nonterminal node wrapping a single tagged terminal.
@@ -355,11 +327,11 @@ export function memoizeToken(memoPos: i32, matchLength: i32, ruleId: i32): void 
 
 export function recordFailures(inputLength: i32, startRuleId: i32): void {
   const savedFailurePos = rightmostFailurePos;  // Save before reset
-  resetParsingState();  // Reset parsing state (but not errorMessagePos)
-  errorMessagePos = savedFailurePos;  // Set errorMessagePos to failure pos
+  matchSetup(inputLength);
+  errorMessagePos = savedFailurePos;  // Override: record failures at this pos
   recordedFailures = new Array<i32>();
   fluffySaveStack = new Array<i32>();
-  doMatch(inputLength, startRuleId);  // Re-match with errorMessagePos set
+  matchEval(startRuleId);  // Re-match with errorMessagePos set
 }
 
 @inline function evalRuleBody(ruleId: i32): RuleEvalResult {
