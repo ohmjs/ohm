@@ -10,9 +10,15 @@ import {grammar} from '../../../examples/ecmascript/index.js';
 import {Compiler} from '../src/Compiler.ts';
 import {Grammar} from 'ohm-js';
 
-const filename = process.argv[2];
+// Parse flags and positional args.
+const flags = new Set(process.argv.slice(2).filter(a => a.startsWith('--')));
+const positionalArgs = process.argv.slice(2).filter(a => !a.startsWith('--'));
+
+const filename = positionalArgs[0];
 if (!filename) {
-  console.error('Usage: es5bench-wasm.js <file>');
+  console.error(
+    'Usage: es5bench-wasm.js [--with-acorn] [--with-esprima] [--with-babel] <file>'
+  );
   process.exit(1);
 }
 
@@ -62,6 +68,42 @@ const fmt = n => {
     opts
   );
 
+  if (flags.has('--with-acorn')) {
+    // pnpm install acorn
+    const acorn = await import('acorn');
+    bench.add(
+      'Acorn parse',
+      () => {
+        acorn.parse(source, {ecmaVersion: 5, sourceType: 'script'});
+      },
+      opts
+    );
+  }
+
+  if (flags.has('--with-esprima')) {
+    // pnpm install esprima
+    const esprima = await import('esprima');
+    bench.add(
+      'Esprima parse',
+      () => {
+        esprima.parseScript(source);
+      },
+      opts
+    );
+  }
+
+  if (flags.has('--with-babel')) {
+    // pnpm install @babel/parser
+    const babel = await import('@babel/parser');
+    bench.add(
+      'Babel parse',
+      () => {
+        babel.parse(source, {sourceType: 'script'});
+      },
+      opts
+    );
+  }
+
   await bench.run();
   process.stderr.write('\n');
 
@@ -72,9 +114,12 @@ const fmt = n => {
     );
   }
 
-  const jsMean = bench.tasks[0].result.latency.mean;
   const wasmMean = bench.tasks[1].result.latency.mean;
-  console.error(`Speedup: ${(jsMean / wasmMean).toFixed(1)}x`);
+  for (const task of bench.tasks) {
+    if (task.name === 'Wasm match') continue;
+    const ratio = task.result.latency.mean / wasmMean;
+    console.error(`Wasm vs ${task.name}: ${ratio.toFixed(1)}x`);
+  }
 
   const wasmMem = wasmGrammar.getMemorySizeBytes();
   console.error(`Wasm memory: ${fmt(wasmMem)}`);
