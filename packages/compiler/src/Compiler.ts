@@ -1495,6 +1495,9 @@ export class Compiler {
       'getRecordedFailuresLength',
       'isFluffy',
       'match',
+      'matchSetup',
+      'matchEval',
+      'memoizeToken',
       'recordedFailuresAt',
       'recordFailures',
     ].forEach(name => {

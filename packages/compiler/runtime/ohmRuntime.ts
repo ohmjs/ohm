@@ -312,6 +312,47 @@ export function match(inputLength: i32, startRuleId: i32): ApplyResult {
   return doMatch(inputLength, startRuleId);
 }
 
+// Split match into setup + eval so that JS can inject memo entries between them.
+export function matchSetup(inputLength: i32): void {
+  resetParsingState();
+  errorMessagePos = -1;
+  endPos = inputLength;
+  inputBuf = heap.alloc(<usize>endPos << 1);
+  fillInputBuffer(<i32>inputBuf, endPos);
+  initMemoTable(endPos);
+  initPreallocatedNodes();
+}
+
+export function matchEval(startRuleId: i32): ApplyResult {
+  maybeSkipSpaces(startRuleId);
+  const succeeded = evalApply0(startRuleId) !== 0;
+  if (succeeded) {
+    maybeSkipSpaces(startRuleId);
+    assert(pos <= endPos);
+    if (pos === endPos) {
+      return true;
+    }
+    rightmostFailurePos = max(rightmostFailurePos, <i32>pos);
+    if (errorMessagePos === <i32>pos) {
+      recordedFailures.length = 0;
+      recordFailure(0);
+    }
+    return false;
+  }
+  return false;
+}
+
+// Pre-fill a memo entry: a nonterminal node wrapping a single tagged terminal.
+export function memoizeToken(memoPos: i32, matchLength: i32, ruleId: i32): void {
+  const ptr = <i32>heap.alloc(<usize>(CST_NODE_OVERHEAD + 4));
+  cstSetCount(ptr, 1);
+  cstSetMatchLength(ptr, matchLength);
+  cstSetTypeAndDetails(ptr, (ruleId << 2) | NODE_TYPE_NONTERMINAL);
+  cstSetFailureOffset(ptr, 0);
+  store<i32>(<usize>(ptr + CST_NODE_OVERHEAD), taggedTerminal(matchLength));
+  memoTableSet(<usize>memoPos, ruleId, ptr);
+}
+
 export function recordFailures(inputLength: i32, startRuleId: i32): void {
   const savedFailurePos = rightmostFailurePos;  // Save before reset
   resetParsingState();  // Reset parsing state (but not errorMessagePos)
