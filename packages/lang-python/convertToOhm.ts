@@ -1,9 +1,10 @@
 import assert from 'node:assert';
 
 import {grammar} from '@ohm-js/compiler/compat';
+import type {Operation} from '@ohm-js/semantics/src/types.ts';
 import {createOperation} from '@ohm-js/semantics/src/index.ts';
 
-const hasOwn = (obj, prop) => Object.hasOwnProperty.call(obj, prop);
+const hasOwn = (obj: object, prop: string) => Object.hasOwnProperty.call(obj, prop);
 
 const g = grammar(String.raw`
   PythonPEG {
@@ -62,7 +63,7 @@ const g = grammar(String.raw`
   }
 `);
 
-const tokens = {
+const tokens: Record<string, string> = {
   indent: 'fail',
   dedent: 'fail',
   name: 'fail',
@@ -99,7 +100,7 @@ const extraRules = String.raw`
   space := " " | "\t"
 `;
 
-function toCamelCase(str) {
+function toCamelCase(str: string): string {
   if (str === '_') {
     return '_';
   }
@@ -107,7 +108,7 @@ function toCamelCase(str) {
   return [first, ...rest.map(s => s[0].toUpperCase() + s.slice(1))].join('');
 }
 
-function toPascalCase(str) {
+function toPascalCase(str: string): string {
   if (str === '_') {
     return '_';
   }
@@ -118,17 +119,17 @@ function toPascalCase(str) {
 }
 
 // Helper to extract elements from a NonemptyListOf node (stripping separators).
-function getListElements(nonemptyListOfNode) {
+function getListElements(nonemptyListOfNode: any): any[] {
   const [first, rest] = nonemptyListOfNode.children;
-  const restElements = rest.collect((_sep, elem) => elem);
+  const restElements = rest.collect((_sep: any, elem: any) => elem);
   return [first, ...restElements];
 }
 
 // An operation that guesses at the arity an expression will have once it's
 // translated to Ohm.
-const simpleArity = createOperation('simpleArity', {
+const simpleArity: Operation<number> = createOperation('simpleArity', {
   Seq(ctx, termList) {
-    return termList.children.reduce((acc, c) => acc + simpleArity(c), 0);
+    return termList.children.reduce((acc: number, c) => acc + simpleArity(c), 0);
   },
   Term_binding(ctx, _ident, _type, _, iter) {
     return simpleArity(iter);
@@ -168,7 +169,7 @@ const simpleArity = createOperation('simpleArity', {
   },
 });
 
-const rewrite = createOperation('rewrite', {
+const rewrite: Operation<string> = createOperation('rewrite', {
   Grammar(ctx, ruleList) {
     // Collect names defined by tokens and extraRules so we can skip
     // converted PEG rules that would create duplicates.
@@ -203,11 +204,7 @@ const rewrite = createOperation('rewrite', {
     return choices.join(' | ');
   },
   Seq(ctx, terms) {
-    return terms.children
-      .map(c => {
-        return rewrite(c);
-      })
-      .join(' ');
+    return terms.children.map(c => rewrite(c)).join(' ');
   },
   Term_binding(ctx, ident, _type, _, iter) {
     return rewrite(iter);
@@ -268,7 +265,7 @@ const rewrite = createOperation('rewrite', {
   },
 });
 
-export function convertToOhm(rawSource) {
+export function convertToOhm(rawSource: string): string {
   let source = rawSource;
 
   // Strip @trailer section (C code between triple-quoted strings).
@@ -288,8 +285,8 @@ export function convertToOhm(rawSource) {
 
   const matchResult = g.match(source);
   return matchResult.use(r => {
-    if (r.failed()) {
-      throw new Error(r.message);
+    if (!r.succeeded()) {
+      throw new Error(String(r));
     }
     return rewrite(r.getCstRoot());
   });

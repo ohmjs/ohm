@@ -5,6 +5,14 @@
 // - Replacing insignificant newlines (inside brackets) with spaces
 // - NAME, NUMBER, STRING, NEWLINE tokens
 
+import type {Grammar, MatchResult} from 'ohm-js';
+
+export interface Token {
+  type: string;
+  start: number;
+  end: number;
+}
+
 // --- Token patterns ---
 // NAME: identifiers and keywords
 const NAME_RE = /[a-zA-Z_]\w*/y;
@@ -38,7 +46,7 @@ const CH_CBRACE = 0x7d;
 const CH_INDENT = 0xfdd0;
 const CH_DEDENT = 0xfdd1;
 
-function isStringPrefixCode(ch) {
+function isStringPrefixCode(ch: number): boolean {
   // r, R, u, U, b, B, f, F, t, T
   return (
     ch === 0x72 ||
@@ -54,11 +62,11 @@ function isStringPrefixCode(ch) {
   );
 }
 
-function isOpenBracket(ch) {
+function isOpenBracket(ch: number): boolean {
   return ch === CH_OPAREN || ch === CH_OBRACK || ch === CH_OBRACE;
 }
 
-function isCloseBracket(ch) {
+function isCloseBracket(ch: number): boolean {
   return ch === CH_CPAREN || ch === CH_CBRACK || ch === CH_CBRACE;
 }
 
@@ -66,7 +74,7 @@ function isCloseBracket(ch) {
  * Check if position starts a string prefix (r, b, u, f, t, etc.)
  * followed by a quote character.
  */
-function isStringPrefixStart(input, pos) {
+function isStringPrefixStart(input: string, pos: number): boolean {
   const ch = input.charCodeAt(pos);
   if (!isStringPrefixCode(ch)) return false;
 
@@ -83,7 +91,7 @@ function isStringPrefixStart(input, pos) {
  * Scan a string literal starting at `pos`. Returns the end position.
  * Handles single/double quotes, triple quotes, and string prefixes.
  */
-function scanString(input, pos) {
+function scanString(input: string, pos: number): number {
   let i = pos;
 
   // Skip prefix chars (r, b, u, f, t, etc.)
@@ -144,8 +152,8 @@ function scanString(input, pos) {
  *
  * Token types: 'name', 'number', 'string', 'newline', 'indent', 'dedent'
  */
-export function tokenize(rawInput) {
-  const tokens = [];
+export function tokenize(rawInput: string): {tokens: Token[]; input: string} {
+  const tokens: Token[] = [];
   const len = rawInput.length;
 
   // Count newlines for buffer sizing (sentinels can add at most ~2*newlineCount chars).
@@ -345,7 +353,7 @@ export function tokenize(rawInput) {
   const CHUNK = 8192;
   let input = '';
   for (let i = 0; i < outPos; i += CHUNK) {
-    input += String.fromCharCode.apply(null, out.subarray(i, Math.min(i + CHUNK, outPos)));
+    input += String.fromCharCode.apply(null, out.subarray(i, Math.min(i + CHUNK, outPos)) as any);
   }
 
   return {tokens, input};
@@ -354,13 +362,13 @@ export function tokenize(rawInput) {
 /**
  * Create a match function that tokenizes input and pre-fills the memo table.
  *
- * @param {Grammar} grammar - An Ohm grammar compiled with @ohm-js/compiler/compat
- * @returns {function(string): MatchResult} A function that tokenizes and matches Python source
+ * @param grammar - An Ohm grammar compiled with @ohm-js/compiler/compat
+ * @returns A function that tokenizes and matches Python source
  */
-export function createMatcher(grammar) {
-  return function matchPython(rawInput) {
+export function createMatcher(grammar: Grammar): (rawInput: string) => MatchResult {
+  return function matchPython(rawInput: string): MatchResult {
     const {tokens, input} = tokenize(rawInput);
-    grammar._beforeParse = (exports, _input, ruleIds) => {
+    (grammar as any)._beforeParse = (exports: any, _input: string, ruleIds: Map<string, number>) => {
       for (const {type, start, end} of tokens) {
         const ruleId = ruleIds.get(type);
         if (ruleId !== undefined) {

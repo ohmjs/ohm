@@ -4,14 +4,15 @@
   "private": true,
   "description": "WIP: a Python3 grammar for Ohm",
   "type": "module",
-  "main": "convertToOhm.js",
+  "main": "convertToOhm.ts",
   "scripts": {
-    "build": "node scripts/build.js",
-    "test": "node --test test/test-python.js"
+    "build": "node scripts/build.ts",
+    "test": "node --test test/test-python.ts"
   },
   "dependencies": {
     "@ohm-js/compiler": "workspace:*",
-    "@ohm-js/semantics": "workspace:*"
+    "@ohm-js/semantics": "workspace:*",
+    "ohm-js": "workspace:*"
   },
   "devDependencies": {
     "tinybench": "^6.0.0"

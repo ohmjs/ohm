@@ -6,10 +6,10 @@ import {fileURLToPath} from 'node:url';
 
 import {grammar} from '@ohm-js/compiler/compat';
 
-import {createMatcher} from '../tokenizer.js';
+import {createMatcher} from '../tokenizer.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const resolve = relPath => path.join(__dirname, relPath);
+const resolve = (relPath: string) => path.join(__dirname, relPath);
 
 const ohmSource = fs.readFileSync(resolve('../python3.ohm'), 'utf-8');
 const python = grammar(ohmSource);
