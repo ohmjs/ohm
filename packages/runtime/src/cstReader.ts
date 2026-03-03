@@ -37,9 +37,9 @@ export function unpackStartIdx(handle: number): number {
  * accept either a raw handle or a handle with startIdx.
  *
  * forEachChild(handle, fn) iterates visible children. The callback receives
- * (childHandle, leadingSpaces, offset, index), where offset is relative to
- * the parent's start position. In packed mode, child handles include startIdx;
- * in raw mode, compute childStartIdx as parentStartIdx + offset.
+ * (childHandle, leadingSpaces, pos, index). In raw mode, pos is the child's
+ * offset from the parent's start; in packed mode, pos is the child's absolute
+ * startIdx.
  *
  * $spaces children are filtered out; when present, the $spaces handle is
  * passed as `leadingSpaces` to the next non-$spaces child (NO_NODE / -1
@@ -189,17 +189,15 @@ export class CstReader {
    * child is found, its handle is passed as `leadingSpaces` to the next
    * non-$spaces child (NO_NODE / -1 otherwise).
    *
-   * The callback receives (childHandle, leadingSpaces, offset, index), where
-   * offset is the child's offset (in UTF-16 code units) from the parent's
-   * start position.
-   *
-   * In packed mode (packStartIdx), child handles include startIdx.
-   * In raw mode, child handles are raw Wasm pointers; compute the child's
-   * absolute startIdx as parentStartIdx + offset.
+   * The callback receives (childHandle, leadingSpaces, pos, index). The
+   * meaning of `pos` depends on the mode:
+   *   - Raw mode: offset from the parent's start position. Compute the
+   *     child's absolute startIdx as parentStartIdx + pos.
+   *   - Packed mode: the child's absolute startIdx.
    */
   forEachChild(
     handle: number,
-    fn: (child: number, leadingSpaces: number, offset: number, index: number) => void
+    fn: (child: number, leadingSpaces: number, pos: number, index: number) => void
   ): void {
     if (this._packed) {
       this._forEachChildPacked(handle, fn);
@@ -243,13 +241,12 @@ export class CstReader {
 
   private _forEachChildPacked(
     handle: number,
-    fn: (child: number, leadingSpaces: number, offset: number, index: number) => void
+    fn: (child: number, leadingSpaces: number, pos: number, index: number) => void
   ): void {
     const raw = handle & MASK;
     if (isTaggedTerminal(raw)) return;
     const count = this._ctx.view.getUint32(raw, true);
     let childStart = (handle - raw) / SHIFT;
-    let offset = 0;
     let pendingSpaces = NO_NODE;
     let visibleIndex = 0;
     for (let i = 0; i < count; i++) {
@@ -266,15 +263,13 @@ export class CstReader {
         const ruleId = this._ctx.view.getInt32(rawChild + 8, true) >>> 2;
         if (ruleId === this._spacesRuleId) {
           pendingSpaces = childHandle;
-          offset += len;
           childStart += len;
           continue;
         }
       }
-      fn(childHandle, pendingSpaces, offset, visibleIndex);
+      fn(childHandle, pendingSpaces, childStart, visibleIndex);
       pendingSpaces = NO_NODE;
       visibleIndex++;
-      offset += len;
       childStart += len;
     }
   }
