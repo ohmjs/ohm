@@ -1,11 +1,4 @@
-import type {
-  CstNode,
-  CstNodeChildren,
-  ListNode,
-  NonterminalNode,
-  SeqNode,
-  TerminalNode,
-} from 'ohm-js';
+import type {CstNode, CstNodeChildren, NonterminalNode} from 'ohm-js';
 
 export interface VisitorCtx<TNode extends CstNode = CstNode> {
   thisNode: TNode;
@@ -26,11 +19,10 @@ export type Action<
  * This is a "pure" type that only contains keys for built-in rules.
  */
 export interface BaseActionDict<R> {
-  _root?: (ctx: VisitorCtx<CstNode>, start: CstNode, end: CstNode) => R;
-
   // _iter?: (this: IterationNode, ...children: Node[]) => T;
-  _nonterminal?: (ctx: VisitorCtx<CstNode>, ...children: CstNodeChildren) => R;
+  _nonterminal?: (ctx: VisitorCtx<NonterminalNode>, ...children: CstNodeChildren) => R;
   _terminal?: (ctx: VisitorCtx<CstNode>) => R;
+  _default?: (ctx: VisitorCtx<CstNode>, ...children: CstNodeChildren) => R;
 
   // Built-in rules
 

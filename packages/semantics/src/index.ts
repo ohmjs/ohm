@@ -1,5 +1,5 @@
 import type {CstNode, NonterminalNode} from 'ohm-js';
-import type {ActionDict, VisitorCtx} from './types.ts';
+import type {ActionDict, Operation, VisitorCtx} from './types.ts';
 
 const globalActionStack: [string, string, string][] = [];
 
@@ -9,12 +9,12 @@ const getActionStackTrace = () =>
       ([opName, actionName, ctorName], i) =>
         `\n  ${opName} > ${actionName}${actionName !== ctorName ? ` for '${ctorName}'` : ''}`
     )
-    .join('\n');
+    .join(''); // Each entry already starts with \n, so no separator needed.
 
 export function createOperation<R, T extends ActionDict<R>>(
   name: string,
   actionDict: T
-): (node: CstNode) => R {
+): Operation<R> {
   const doIt = (node: CstNode) => {
     const ctx: VisitorCtx = {
       thisNode: node,
@@ -49,7 +49,7 @@ export function createOperation<R, T extends ActionDict<R>>(
       // Note: here we diverge from the original version in Operation.execute slightly.
       // It builds a new dictionary _default is always present — if the user doesn't
       // specify _default, there is a system-provided one (via `newDefaultAction`).
-      // We simply the logic from the system-provided one here.
+      // We simplify the logic from the system-provided one here.
 
       // Invoke the '_default' semantic action (if it exists).
       const defaultAction = actionDict._default;
