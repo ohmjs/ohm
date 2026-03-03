@@ -18,18 +18,25 @@ import {Bench} from 'tinybench';
 
 import {Compiler} from '../src/Compiler.ts';
 import {unparse, toWasmGrammar} from '../test/_helpers.js';
+import {createReader, MatchRecordType} from '../../runtime/src/cstReader.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
 
 const liquid = ohm.grammars(readFileSync(join(datadir, 'liquid-html.ohm'), 'utf8'));
 
+// Parse flags and positional args.
+const flags = new Set(process.argv.slice(2).filter(a => a.startsWith('--')));
+const positionalArgs = process.argv.slice(2).filter(a => !a.startsWith('--'));
+
 // An option that makes it easy to run this script in CI.
 // https://matklad.github.io/2024/03/22/basic-things.html
-const smallSize = process.argv[2] === '--small-size';
+const smallSize = flags.has('--small-size');
+const includeUnparse = flags.has('--include-unparse');
+const useCstReader = flags.has('--cst-reader');
 
 // Get pattern from command line arguments
-const pattern = process.argv[smallSize ? 3 : 2];
+const pattern = positionalArgs[0];
 
 (async function main() {
   // Pre-read all files.
@@ -79,28 +86,51 @@ const pattern = process.argv[smallSize ? 3 : 2];
   let peakWasmMemoryBytes = 0;
 
   bench.add(
-    'JS parse',
+    includeUnparse ? 'JS parse+unparse' : 'JS parse',
     () => {
       let overriddenDuration = 0;
       for (const {input} of files) {
         const start = bench.now();
         const r = liquid.LiquidHTML.match(input);
-        overriddenDuration += bench.now() - start;
+        if (!includeUnparse) overriddenDuration += bench.now() - start;
         unparseV17(r, input);
+        if (includeUnparse) overriddenDuration += bench.now() - start;
       }
       return {overriddenDuration};
     },
     opts
   );
 
+  // Walk CST using CstReader, collecting terminal text.
+  function unparseCstReader(matchResult) {
+    const reader = createReader(matchResult);
+    const inp = reader.input;
+    let ans = '';
+    function walk(handle, startIdx) {
+      if (reader.recordType(handle) === MatchRecordType.TERMINAL) {
+        ans += inp.slice(startIdx, startIdx + reader.matchLength(handle));
+        return;
+      }
+      reader.forEachChild(handle, startIdx, (childHandle, childStartIdx) => {
+        walk(childHandle, childStartIdx);
+      });
+    }
+    if (reader.rootLeadingSpacesHandle !== -1) {
+      walk(reader.rootLeadingSpacesHandle, 0);
+    }
+    walk(reader.rootHandle, reader.rootStartIdx);
+    return ans;
+  }
+
+  const wasmLabel = includeUnparse ? 'Wasm parse+unparse' : 'Wasm parse';
   bench.add(
-    'Wasm parse',
+    useCstReader ? `${wasmLabel} (CstReader)` : wasmLabel,
     () => {
       let overriddenDuration = 0;
       for (const {input} of files) {
         const start = bench.now();
         const m = g.match(input);
-        overriddenDuration += bench.now() - start;
+        if (!includeUnparse) overriddenDuration += bench.now() - start;
         m.use(() => {
           // Capture memory stats before dispose() resets the heap.
           peakWasmHeapBytes = Math.max(
@@ -111,8 +141,9 @@ const pattern = process.argv[smallSize ? 3 : 2];
             peakWasmMemoryBytes,
             exports.memory.buffer.byteLength
           );
-          return unparse(g);
+          return useCstReader ? unparseCstReader(m) : unparse(g);
         });
+        if (includeUnparse) overriddenDuration += bench.now() - start;
       }
       return {overriddenDuration};
     },
@@ -134,7 +165,7 @@ const pattern = process.argv[smallSize ? 3 : 2];
 
   const jsParse = bench.tasks[0].result.latency.mean;
   const wasmParse = bench.tasks[1].result.latency.mean;
-  console.log(`Parse speedup: ${(jsParse / wasmParse).toFixed(2)}x`);
+  console.log(`Speedup: ${(jsParse / wasmParse).toFixed(2)}x`);
   console.log(`Compile: ${compileTime.toFixed(0)}ms`);
   console.log(`Compiled grammar size: ${fmt(modBytes.length)}`);
   console.log(`Peak Wasm heap usage: ${fmt(peakWasmHeapBytes)}`);
