@@ -353,10 +353,7 @@ export function tokenize(rawInput: string): {tokens: Token[]; input: string} {
   const CHUNK = 8192;
   let input = '';
   for (let i = 0; i < outPos; i += CHUNK) {
-    input += String.fromCharCode.apply(
-      null,
-      out.subarray(i, Math.min(i + CHUNK, outPos)) as any
-    );
+    input += String.fromCharCode(...out.subarray(i, Math.min(i + CHUNK, outPos)));
   }
 
   return {tokens, input};
