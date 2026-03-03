@@ -5,9 +5,6 @@
 // - Replacing insignificant newlines (inside brackets) with spaces
 // - NAME, NUMBER, STRING, NEWLINE tokens
 
-const INDENT_SENTINEL = '\uFDD0';
-const DEDENT_SENTINEL = '\uFDD1';
-
 // --- Token patterns ---
 // NAME: identifiers and keywords
 const NAME_RE = /[a-zA-Z_]\w*/y;
@@ -24,169 +21,40 @@ const exp = String.raw`\d(?:_?\d)*[eE][+-]?\d(?:_?\d)*[jJ]?`;
 const int = String.raw`\d(?:_?\d)*[jJ]?`;
 const NUMBER_RE = new RegExp([hex, oct, bin, flt, exp, int].join('|'), 'y');
 
-// Bracket characters that suppress newlines
-const OPEN_BRACKETS = new Set(['(', '[', '{']);
-const CLOSE_BRACKETS = new Set([')', ']', '}']);
+// Char codes for readability
+const CH_TAB = 0x09;
+const CH_NL = 0x0a;
+const CH_SPACE = 0x20;
+const CH_HASH = 0x23;
+const CH_QUOTE1 = 0x27; // '
+const CH_QUOTE2 = 0x22; // "
+const CH_OPAREN = 0x28;
+const CH_CPAREN = 0x29;
+const CH_OBRACK = 0x5b;
+const CH_CBRACK = 0x5d;
+const CH_BACKSLASH = 0x5c;
+const CH_OBRACE = 0x7b;
+const CH_CBRACE = 0x7d;
+const CH_INDENT = 0xfdd0;
+const CH_DEDENT = 0xfdd1;
 
-/**
- * Tokenize Python source code.
- *
- * Returns:
- *   tokens: Array of {type, start, end} in the modified input
- *   input:  Modified input string (with sentinels, insignificant newlines replaced)
- *
- * Token types: 'name', 'number', 'string', 'newline', 'indent', 'dedent'
- */
-export function tokenize(rawInput) {
-  const tokens = [];
-  let input = rawInput;
+function isStringPrefixCode(ch) {
+  // r, R, u, U, b, B, f, F, t, T
+  return (
+    ch === 0x72 || ch === 0x52 ||
+    ch === 0x75 || ch === 0x55 ||
+    ch === 0x62 || ch === 0x42 ||
+    ch === 0x66 || ch === 0x46 ||
+    ch === 0x74 || ch === 0x54
+  );
+}
 
-  // --- Phase 1: Handle line continuations ---
-  // Replace backslash-newline with two spaces (preserving positions).
-  input = input.replace(/\\\n/g, '  ');
+function isOpenBracket(ch) {
+  return ch === CH_OPAREN || ch === CH_OBRACK || ch === CH_OBRACE;
+}
 
-  // --- Phase 2: Replace insignificant newlines ---
-  // Newlines inside brackets are insignificant.
-  let bracketDepth = 0;
-  const chars = [...input];
-  for (let i = 0; i < chars.length; i++) {
-    const ch = chars[i];
-    if (OPEN_BRACKETS.has(ch)) {
-      bracketDepth++;
-    } else if (CLOSE_BRACKETS.has(ch)) {
-      bracketDepth = Math.max(0, bracketDepth - 1);
-    } else if (ch === '\n' && bracketDepth > 0) {
-      chars[i] = ' ';
-    } else if (ch === '#') {
-      // Skip to end of line (comments don't affect brackets).
-      // But we need to handle newlines in comments inside brackets.
-      while (i + 1 < chars.length && chars[i + 1] !== '\n') {
-        i++;
-      }
-    } else if (ch === "'" || ch === '"') {
-      // Skip string contents — brackets inside strings don't count.
-      i = skipStringBody(chars, i);
-    } else if ('rRuUbBfFtT'.includes(ch)) {
-      // Check for prefixed strings like r"...", b'...', etc.
-      const next = chars[i + 1];
-      if (next === "'" || next === '"') {
-        i = skipStringBody(chars, i + 1);
-      } else if (next && 'rRuUbBfFtT'.includes(next)) {
-        const afterNext = chars[i + 2];
-        if (afterNext === "'" || afterNext === '"') {
-          i = skipStringBody(chars, i + 2);
-        }
-      }
-    }
-  }
-  input = chars.join('');
-
-  // --- Phase 3: Insert INDENT/DEDENT sentinels ---
-  input = insertIndentSentinels(input);
-
-  // --- Phase 4: Scan tokens ---
-  // Track whether the current line has meaningful content (for blank line detection).
-  // Python's tokenizer only emits NEWLINE for logical lines, not blank lines.
-  let lineHasContent = false;
-  let pos = 0;
-  while (pos < input.length) {
-    const ch = input[pos];
-
-    // Skip horizontal whitespace.
-    if (ch === ' ' || ch === '\t') {
-      pos++;
-      continue;
-    }
-
-    // Skip comments (comment-only lines are treated like blank lines).
-    if (ch === '#') {
-      while (pos < input.length && input[pos] !== '\n') {
-        pos++;
-      }
-      continue;
-    }
-
-    // INDENT sentinel
-    if (ch === INDENT_SENTINEL) {
-      tokens.push({type: 'indent', start: pos, end: pos + 1});
-      pos++;
-      continue;
-    }
-
-    // DEDENT sentinel
-    if (ch === DEDENT_SENTINEL) {
-      tokens.push({type: 'dedent', start: pos, end: pos + 1});
-      pos++;
-      continue;
-    }
-
-    // NEWLINE — only emit for logical lines (lines with content), not blank lines.
-    if (ch === '\n') {
-      if (lineHasContent) {
-        tokens.push({type: 'newline', start: pos, end: pos + 1});
-      }
-      lineHasContent = false;
-      pos++;
-      continue;
-    }
-
-    // From here on, any token or character counts as line content.
-    lineHasContent = true;
-
-    // STRING (check before NAME because of string prefixes like r"..." or b"...")
-    if (ch === "'" || ch === '"' || isStringPrefixStart(input, pos)) {
-      const end = scanString(input, pos);
-      if (end > pos) {
-        tokens.push({type: 'string', start: pos, end});
-        pos = end;
-        continue;
-      }
-    }
-
-    // NUMBER
-    NUMBER_RE.lastIndex = pos;
-    const numMatch = NUMBER_RE.exec(input);
-    if (numMatch && numMatch.index === pos) {
-      tokens.push({type: 'number', start: pos, end: pos + numMatch[0].length});
-      pos += numMatch[0].length;
-      continue;
-    }
-
-    // NAME (identifiers and keywords)
-    NAME_RE.lastIndex = pos;
-    const nameMatch = NAME_RE.exec(input);
-    if (nameMatch && nameMatch.index === pos) {
-      tokens.push({type: 'name', start: pos, end: pos + nameMatch[0].length});
-      pos += nameMatch[0].length;
-      continue;
-    }
-
-    // Any other character (operators, punctuation) — skip.
-    // These are matched directly by the grammar's terminal rules.
-    pos++;
-  }
-
-  // --- Phase 5: Replace comments and non-tokenized newlines with spaces ---
-  // Comments are handled here so the grammar doesn't need to deal with them.
-  // Non-tokenized \n chars (blank lines, comment-only lines) are also replaced.
-  const newlinePositions = new Set(tokens.filter(t => t.type === 'newline').map(t => t.start));
-  const finalChars = [...input];
-  for (let i = 0; i < finalChars.length; i++) {
-    if (finalChars[i] === '#') {
-      // Replace comment text with spaces (up to but not including \n).
-      while (i < finalChars.length && finalChars[i] !== '\n') {
-        finalChars[i] = ' ';
-        i++;
-      }
-      // Now i points to \n (or end) — fall through to newline check below.
-    }
-    if (finalChars[i] === '\n' && !newlinePositions.has(i)) {
-      finalChars[i] = ' ';
-    }
-  }
-  input = finalChars.join('');
-
-  return {tokens, input};
+function isCloseBracket(ch) {
+  return ch === CH_CPAREN || ch === CH_CBRACK || ch === CH_CBRACE;
 }
 
 /**
@@ -194,15 +62,14 @@ export function tokenize(rawInput) {
  * followed by a quote character.
  */
 function isStringPrefixStart(input, pos) {
-  const ch = input[pos].toLowerCase();
-  if (!'rbuft'.includes(ch)) return false;
+  const ch = input.charCodeAt(pos);
+  if (!isStringPrefixCode(ch)) return false;
 
-  // Check for 1-2 prefix chars followed by a quote.
-  const next = input[pos + 1];
-  if (next === "'" || next === '"') return true;
-  if (next && 'rbuft'.includes(next.toLowerCase())) {
-    const afterNext = input[pos + 2];
-    return afterNext === "'" || afterNext === '"';
+  const next = input.charCodeAt(pos + 1);
+  if (next === CH_QUOTE1 || next === CH_QUOTE2) return true;
+  if (isStringPrefixCode(next)) {
+    const afterNext = input.charCodeAt(pos + 2);
+    return afterNext === CH_QUOTE1 || afterNext === CH_QUOTE2;
   }
   return false;
 }
@@ -215,35 +82,43 @@ function scanString(input, pos) {
   let i = pos;
 
   // Skip prefix chars (r, b, u, f, t, etc.)
-  while (i < input.length && /[rRuUbBfFtT]/y.test(input[i])) {
+  while (i < input.length && isStringPrefixCode(input.charCodeAt(i))) {
     i++;
   }
 
   if (i >= input.length) return pos; // No quote found.
 
-  const quote = input[i];
-  if (quote !== "'" && quote !== '"') return pos; // Not a string.
+  const quoteCode = input.charCodeAt(i);
+  if (quoteCode !== CH_QUOTE1 && quoteCode !== CH_QUOTE2) return pos;
 
   // Check for triple quote.
-  const triple = input.slice(i, i + 3) === quote.repeat(3);
-  const delimiter = triple ? quote.repeat(3) : quote;
-  i += delimiter.length;
+  const triple =
+    i + 2 < input.length &&
+    input.charCodeAt(i + 1) === quoteCode &&
+    input.charCodeAt(i + 2) === quoteCode;
+  i += triple ? 3 : 1;
 
   // Scan until closing delimiter.
   while (i < input.length) {
-    if (input[i] === '\\') {
+    const ch = input.charCodeAt(i);
+    if (ch === CH_BACKSLASH) {
       i += 2; // Skip escaped character.
       continue;
     }
     if (triple) {
-      if (input.slice(i, i + 3) === delimiter) {
+      if (
+        ch === quoteCode &&
+        i + 2 < input.length &&
+        input.charCodeAt(i + 1) === quoteCode &&
+        input.charCodeAt(i + 2) === quoteCode
+      ) {
         return i + 3;
       }
     } else {
-      if (input[i] === quote) {
+      if (ch === quoteCode) {
         return i + 1;
       }
-      if (input[i] === '\n') {
+      if (ch === CH_NL) {
         // Unterminated single-line string.
         return i;
       }
@@ -256,104 +131,219 @@ function scanString(input, pos) {
 }
 
 /**
- * Skip over a string body in the character array (for bracket depth tracking).
- * `pos` points to the opening quote character.
- * Returns the index of the last character of the string.
+ * Tokenize Python source code in a single pass.
+ *
+ * Returns:
+ *   tokens: Array of {type, start, end} in the modified input
+ *   input:  Modified input string (with sentinels, insignificant newlines replaced)
+ *
+ * Token types: 'name', 'number', 'string', 'newline', 'indent', 'dedent'
  */
-function skipStringBody(chars, pos) {
-  let i = pos;
+export function tokenize(rawInput) {
+  const tokens = [];
+  const len = rawInput.length;
 
-  const quote = chars[i];
-  const triple = i + 2 < chars.length && chars[i + 1] === quote && chars[i + 2] === quote;
-  const delimLen = triple ? 3 : 1;
-  i += delimLen;
-
-  while (i < chars.length) {
-    if (chars[i] === '\\') {
-      i += 2;
-      continue;
-    }
-    if (triple) {
-      if (
-        chars[i] === quote &&
-        i + 2 < chars.length &&
-        chars[i + 1] === quote &&
-        chars[i + 2] === quote
-      ) {
-        return i + 2;
-      }
-    } else {
-      if (chars[i] === quote) {
-        return i;
-      }
-      if (chars[i] === '\n') {
-        return i - 1; // Unterminated.
-      }
-    }
-    i++;
+  // Count newlines for buffer sizing (sentinels can add at most ~2*newlineCount chars).
+  let nlCount = 0;
+  for (let i = 0; i < len; i++) {
+    if (rawInput.charCodeAt(i) === CH_NL) nlCount++;
   }
-  return i - 1;
-}
+  const out = new Uint16Array(len + 2 * nlCount + 1);
+  let outPos = 0;
 
-/**
- * Insert INDENT/DEDENT sentinel characters into the input.
- * Uses Python's indentation algorithm: track a stack of indentation levels.
- */
-function insertIndentSentinels(input) {
-  const lines = input.split('\n');
+  // State
+  let bracketDepth = 0;
   const indentStack = [0];
-  const result = [];
+  let lineHasContent = false;
+  let atLineStart = true;
+  let indent = 0;
+  let lineWSStart = 0; // raw input position where current line's whitespace starts
 
-  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-    const line = lines[lineIdx];
+  let pos = 0;
+  while (pos < len) {
+    const ch = rawInput.charCodeAt(pos);
 
-    // Determine indentation of this line.
-    let indent = 0;
-    while (indent < line.length && (line[indent] === ' ' || line[indent] === '\t')) {
-      if (line[indent] === '\t') {
+    // === Handle line start: measure indentation ===
+    if (atLineStart) {
+      if (ch === CH_SPACE) {
+        indent++;
+        pos++;
+        continue;
+      }
+      if (ch === CH_TAB) {
         // Tab stops at every 8 columns (CPython behavior).
         indent = (Math.floor(indent / 8) + 1) * 8;
-      } else {
-        indent++;
+        pos++;
+        continue;
       }
+      // Line continuation in leading whitespace (rare)
+      if (ch === CH_BACKSLASH && pos + 1 < len && rawInput.charCodeAt(pos + 1) === CH_NL) {
+        indent += 2;
+        pos += 2;
+        continue;
+      }
+
+      // First non-whitespace character — decide on sentinels.
+      atLineStart = false;
+
+      // Only emit INDENT/DEDENT for lines with actual content (not blank/comment-only).
+      if (ch !== CH_NL && ch !== CH_HASH) {
+        const currentIndent = indentStack[indentStack.length - 1];
+        if (indent > currentIndent) {
+          indentStack.push(indent);
+          tokens.push({type: 'indent', start: outPos, end: outPos + 1});
+          out[outPos++] = CH_INDENT;
+        } else if (indent < currentIndent) {
+          while (indentStack.length > 1 && indentStack[indentStack.length - 1] > indent) {
+            indentStack.pop();
+            tokens.push({type: 'dedent', start: outPos, end: outPos + 1});
+            out[outPos++] = CH_DEDENT;
+          }
+        }
+      }
+
+      // Write deferred whitespace (replacing line continuations with spaces).
+      for (let j = lineWSStart; j < pos; j++) {
+        if (
+          rawInput.charCodeAt(j) === CH_BACKSLASH &&
+          j + 1 < pos &&
+          rawInput.charCodeAt(j + 1) === CH_NL
+        ) {
+          out[outPos++] = CH_SPACE;
+          out[outPos++] = CH_SPACE;
+          j++; // skip the \n too
+        } else {
+          out[outPos++] = rawInput.charCodeAt(j);
+        }
+      }
+
+      // Fall through to handle the current character (ch).
     }
 
-    // Blank lines and comment-only lines don't affect indentation.
-    if (indent >= line.length || line[indent] === '#') {
-      result.push(line);
+    // === Line continuation ===
+    if (ch === CH_BACKSLASH && pos + 1 < len && rawInput.charCodeAt(pos + 1) === CH_NL) {
+      out[outPos++] = CH_SPACE;
+      out[outPos++] = CH_SPACE;
+      pos += 2;
       continue;
     }
 
-    const currentIndent = indentStack[indentStack.length - 1];
-
-    if (indent > currentIndent) {
-      // INDENT
-      indentStack.push(indent);
-      result.push(INDENT_SENTINEL + line);
-    } else if (indent < currentIndent) {
-      // DEDENT(s)
-      let dedents = '';
-      while (indentStack.length > 1 && indentStack[indentStack.length - 1] > indent) {
-        indentStack.pop();
-        dedents += DEDENT_SENTINEL;
+    // === Newline ===
+    if (ch === CH_NL) {
+      if (bracketDepth > 0) {
+        // Inside brackets: insignificant newline.
+        out[outPos++] = CH_SPACE;
+        pos++;
+        continue;
       }
-      result.push(dedents + line);
-    } else {
-      result.push(line);
+      if (lineHasContent) {
+        tokens.push({type: 'newline', start: outPos, end: outPos + 1});
+        out[outPos++] = CH_NL;
+      } else {
+        // Blank or comment-only line.
+        out[outPos++] = CH_SPACE;
+      }
+      lineHasContent = false;
+      atLineStart = true;
+      indent = 0;
+      lineWSStart = pos + 1;
+      pos++;
+      continue;
     }
+
+    // === Horizontal whitespace ===
+    if (ch === CH_SPACE || ch === CH_TAB) {
+      out[outPos++] = ch;
+      pos++;
+      continue;
+    }
+
+    // === Comment — replace with spaces ===
+    if (ch === CH_HASH) {
+      while (pos < len && rawInput.charCodeAt(pos) !== CH_NL) {
+        out[outPos++] = CH_SPACE;
+        pos++;
+      }
+      continue;
+    }
+
+    // === From here on, any token or character counts as line content ===
+    lineHasContent = true;
+
+    // === Brackets ===
+    if (isOpenBracket(ch)) {
+      bracketDepth++;
+      out[outPos++] = ch;
+      pos++;
+      continue;
+    }
+    if (isCloseBracket(ch)) {
+      bracketDepth = Math.max(0, bracketDepth - 1);
+      out[outPos++] = ch;
+      pos++;
+      continue;
+    }
+
+    // === String ===
+    if (ch === CH_QUOTE1 || ch === CH_QUOTE2 || isStringPrefixStart(rawInput, pos)) {
+      const end = scanString(rawInput, pos);
+      if (end > pos) {
+        const slen = end - pos;
+        tokens.push({type: 'string', start: outPos, end: outPos + slen});
+        for (let j = pos; j < end; j++) {
+          out[outPos++] = rawInput.charCodeAt(j);
+        }
+        pos = end;
+        continue;
+      }
+    }
+
+    // === Number ===
+    NUMBER_RE.lastIndex = pos;
+    const numMatch = NUMBER_RE.exec(rawInput);
+    if (numMatch && numMatch.index === pos) {
+      const mlen = numMatch[0].length;
+      tokens.push({type: 'number', start: outPos, end: outPos + mlen});
+      for (let j = pos; j < pos + mlen; j++) {
+        out[outPos++] = rawInput.charCodeAt(j);
+      }
+      pos += mlen;
+      continue;
+    }
+
+    // === Name ===
+    NAME_RE.lastIndex = pos;
+    const nameMatch = NAME_RE.exec(rawInput);
+    if (nameMatch && nameMatch.index === pos) {
+      const mlen = nameMatch[0].length;
+      tokens.push({type: 'name', start: outPos, end: outPos + mlen});
+      for (let j = pos; j < pos + mlen; j++) {
+        out[outPos++] = rawInput.charCodeAt(j);
+      }
+      pos += mlen;
+      continue;
+    }
+
+    // === Any other character (operators, punctuation) ===
+    out[outPos++] = ch;
+    pos++;
   }
 
-  // Emit remaining DEDENTs at EOF.
-  let finalDedents = '';
+  // === Final DEDENTs at EOF ===
   while (indentStack.length > 1) {
     indentStack.pop();
-    finalDedents += DEDENT_SENTINEL;
-  }
-  if (finalDedents) {
-    result[result.length - 1] += finalDedents;
+    tokens.push({type: 'dedent', start: outPos, end: outPos + 1});
+    out[outPos++] = CH_DEDENT;
   }
 
-  return result.join('\n');
+  // Convert Uint16Array to string (chunked to avoid max args limit).
+  const CHUNK = 8192;
+  let input = '';
+  for (let i = 0; i < outPos; i += CHUNK) {
+    input += String.fromCharCode.apply(null, out.subarray(i, Math.min(i + CHUNK, outPos)));
+  }
+
+  return {tokens, input};
 }
 
 /**
