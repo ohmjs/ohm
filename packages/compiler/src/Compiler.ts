@@ -792,7 +792,7 @@ class Assembler {
     this.callPrebuiltFunc('newNonterminalNode');
   }
 
-  // [startIdx: i32] -> [ptr: i32]
+  // [startIdx: i32] -> [tagged: i32]
   newTerminalNode(): void {
     this.localGet('postSpacesPos');
     this.globalGet('pos');

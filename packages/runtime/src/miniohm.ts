@@ -595,6 +595,9 @@ class CstNodeImpl implements CstNodeBase {
   get children(): CstNodeChildren {
     if (!this._children) {
       this._children = this._computeChildren().map((n): CstNode => {
+        if (n instanceof TaggedTerminalNode) {
+          return n as CstNode;
+        }
         const {matchRecordType} = n;
         if (matchRecordType === MatchRecordType.OPTIONAL) {
           const child: CstNode | undefined =
@@ -625,14 +628,26 @@ class CstNodeImpl implements CstNodeBase {
     return this._children;
   }
 
-  _computeChildren(): CstNodeImpl[] {
-    const children: CstNodeImpl[] = [];
-    const {ruleNames, view, input} = this._ctx;
+  _computeChildren(): (CstNodeImpl | TaggedTerminalNode)[] {
+    const children: (CstNodeImpl | TaggedTerminalNode)[] = [];
     let spaces: NonterminalNode | undefined;
     let {startIdx} = this;
     for (let i = 0; i < this.count; i++) {
       const slotOffset = this._base + 16 + i * 4;
-      const ptr = view.getUint32(slotOffset, true);
+      const ptr = this._ctx.view.getUint32(slotOffset, true);
+
+      // Tagged terminal: (matchLength << 1) | 1
+      if (ptr & 1) {
+        const node = new TaggedTerminalNode(this._ctx, ptr, startIdx);
+        if (spaces) {
+          node.leadingSpaces = spaces;
+          spaces = undefined;
+        }
+        children.push(node);
+        startIdx += node.matchLength;
+        continue;
+      }
+
       // TODO: Avoid allocating $spaces nodes altogether?
       const node = new CstNodeImpl(this._ctx, ptr, startIdx);
       if (
@@ -673,6 +688,51 @@ class CstNodeImpl implements CstNodeBase {
     const ctorName = this.isTerminal() ? '_terminal' : this.isSeq() ? '_iter' : this.ctorName;
     const {sourceString, startIdx} = this;
     return `CstNode {ctorName: ${ctorName}, sourceString: ${sourceString}, startIdx: ${startIdx} }`;
+  }
+}
+
+// A terminal node decoded from a tagged integer (matchLength << 1 | 1),
+// rather than read from WASM linear memory.
+class TaggedTerminalNode implements CstNodeBase {
+  readonly type = CstNodeType.TERMINAL;
+  readonly ctorName = '_terminal';
+  readonly matchLength: number;
+  readonly startIdx: number;
+  readonly source: {startIdx: number; endIdx: number};
+  readonly sourceString: string;
+  readonly children: readonly [] = EMPTY_CHILDREN as readonly [];
+  leadingSpaces?: NonterminalNode = undefined;
+
+  constructor(ctx: MatchContext, tagged: number, startIdx: number) {
+    this.matchLength = tagged >>> 1;
+    this.startIdx = startIdx;
+    const endIdx = startIdx + this.matchLength;
+    this.source = {startIdx, endIdx};
+    this.sourceString = ctx.input.slice(startIdx, endIdx);
+  }
+
+  get value(): string {
+    return this.sourceString;
+  }
+
+  isNonterminal(): this is NonterminalNode {
+    return false;
+  }
+  isTerminal(): this is TerminalNode {
+    return true;
+  }
+  isList(): this is ListNode {
+    return false;
+  }
+  isOptional(): this is OptNode {
+    return false;
+  }
+  isSeq(): this is SeqNode {
+    return false;
+  }
+
+  toString(): string {
+    return `CstNode {ctorName: _terminal, sourceString: ${this.sourceString}, startIdx: ${this.startIdx} }`;
   }
 }
 
