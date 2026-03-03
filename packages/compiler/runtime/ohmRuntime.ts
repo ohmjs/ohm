@@ -467,11 +467,6 @@ export function newTerminalNode(startIdx: i32, endIdx: i32): i32 {
   return tagged;
 }
 
-export function pushBinding(val: i32): i32 {
-  bindings.push(val);
-  return val;
-}
-
 // Create an internal (non-leaf) node (IterationNode or NonterminalNode).
 @inline function newNonLeafNode(startIdx: i32, endIdx: i32, typeAndDetails: i32, origNumBindings: i32, failureOffset: i32): i32 {
   const bindingsLen = bindings.length;
