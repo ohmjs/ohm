@@ -217,7 +217,18 @@ importers:
 
   packages/labrat: {}
 
-  packages/lang-json: {}
+  packages/lang-json:
+    dependencies:
+      '@ohm-js/compiler':
+        specifier: workspace:*
+        version: link:../compiler
+      ohm-js:
+        specifier: workspace:*
+        version: link:../runtime
+    devDependencies:
+      tinybench:
+        specifier: ^6.0.0
+        version: 6.0.0
 
   packages/lang-python:
     dependencies:
