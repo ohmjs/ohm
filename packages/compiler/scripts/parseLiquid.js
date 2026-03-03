@@ -18,7 +18,7 @@ import {Bench} from 'tinybench';
 
 import {Compiler} from '../src/Compiler.ts';
 import {unparse, toWasmGrammar} from '../test/_helpers.js';
-import {createReader, MatchRecordType} from '../../runtime/src/cstReader.ts';
+import {createReader, NO_NODE} from '../../runtime/src/cstReader.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
@@ -34,6 +34,7 @@ const positionalArgs = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const smallSize = flags.has('--small-size');
 const includeUnparse = flags.has('--include-unparse');
 const useCstReader = flags.has('--cst-reader');
+const useCstReaderPacked = flags.has('--cst-reader-packed');
 
 // Get pattern from command line arguments
 const pattern = positionalArgs[0];
@@ -101,18 +102,18 @@ const pattern = positionalArgs[0];
     opts
   );
 
-  // Walk CST using CstReader, collecting terminal text.
-  function unparseCstReader(matchResult) {
+  // Walk CST using CstReader (raw handles), collecting terminal text.
+  function unparseCstReaderRaw(matchResult) {
     const reader = createReader(matchResult);
     const inp = reader.input;
     let ans = '';
     function walk(handle, startIdx) {
-      if (reader.recordType(handle) === MatchRecordType.TERMINAL) {
+      if (reader.isTerminal(handle)) {
         ans += inp.slice(startIdx, startIdx + reader.matchLength(handle));
         return;
       }
-      reader.forEachChild(handle, startIdx, (childHandle, childStartIdx) => {
-        walk(childHandle, childStartIdx);
+      reader.forEachChild(handle, (child, _leadingSpaces, offset) => {
+        walk(child, startIdx + offset);
       });
     }
     if (reader.rootLeadingSpacesHandle !== -1) {
@@ -122,9 +123,33 @@ const pattern = positionalArgs[0];
     return ans;
   }
 
+  // Walk CST using CstReader (handles with startIdx), collecting terminal text.
+  function unparseCstReaderPacked(matchResult) {
+    const reader = createReader(matchResult, {packStartIdx: true});
+    let ans = '';
+    function walk(handle) {
+      if (reader.isTerminal(handle)) {
+        ans += reader.sourceString(handle);
+        return;
+      }
+      reader.forEachChild(handle, (child, _leadingSpaces) => {
+        walk(child);
+      });
+    }
+    if (reader.rootLeadingSpaces !== NO_NODE) {
+      walk(reader.rootLeadingSpaces);
+    }
+    walk(reader.root);
+    return ans;
+  }
+
   const wasmLabel = includeUnparse ? 'Wasm parse+unparse' : 'Wasm parse';
   bench.add(
-    useCstReader ? `${wasmLabel} (CstReader)` : wasmLabel,
+    useCstReaderPacked
+      ? `${wasmLabel} (CstReader packed)`
+      : useCstReader
+        ? `${wasmLabel} (CstReader)`
+        : wasmLabel,
     () => {
       let overriddenDuration = 0;
       for (const {input} of files) {
@@ -141,7 +166,11 @@ const pattern = positionalArgs[0];
             peakWasmMemoryBytes,
             exports.memory.buffer.byteLength
           );
-          return useCstReader ? unparseCstReader(m) : unparse(g);
+          return useCstReaderPacked
+            ? unparseCstReaderPacked(m)
+            : useCstReader
+              ? unparseCstReaderRaw(m)
+              : unparse(g);
         });
         if (includeUnparse) overriddenDuration += bench.now() - start;
       }
