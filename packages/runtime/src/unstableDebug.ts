@@ -47,7 +47,9 @@ export interface MatchStats {
 }
 
 // Walk a tree of match records, collecting stats. Uses a visited set to
-// avoid double-counting shared nodes (e.g. preallocated pool entries).
+// avoid double-counting shared nodes (e.g. preallocated nonterminals).
+// Tagged terminals are counted in countByType but not in count/sumBytes
+// since they are inline values, not heap-allocated match records.
 function walkRecordTree(
   view: DataView,
   ruleNames: string[],
@@ -63,7 +65,10 @@ function walkRecordTree(
 
   const stack: number[] = [];
   for (const ptr of rootPtrs) {
-    if (!visited.has(ptr)) {
+    if (ptr & 1) {
+      // Tagged terminal: (matchLength << 1) | 1. Not a heap object.
+      stats.countByType.terminal++;
+    } else if (!visited.has(ptr)) {
       visited.add(ptr);
       stack.push(ptr);
     }
@@ -89,9 +94,6 @@ function walkRecordTree(
         stats.countByRule[ruleName] = (stats.countByRule[ruleName] ?? 0) + 1;
         break;
       }
-      case 1:
-        stats.countByType.terminal++;
-        break;
       case 2:
         stats.countByType.iter++;
         break;
@@ -102,7 +104,10 @@ function walkRecordTree(
 
     for (let i = count - 1; i >= 0; i--) {
       const childPtr = view.getUint32(ptr + 16 + i * 4, true);
-      if (!visited.has(childPtr)) {
+      if (childPtr & 1) {
+        // Tagged terminal: not a heap object.
+        stats.countByType.terminal++;
+      } else if (!visited.has(childPtr)) {
         visited.add(childPtr);
         stack.push(childPtr);
       }

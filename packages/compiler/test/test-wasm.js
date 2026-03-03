@@ -44,7 +44,6 @@ test('cst returns', async t => {
   let term = root.children[0];
   t.is(term.children.length, 0);
   t.is(term.matchLength, 1);
-  t.is(term._typeAndDetails, 1);
   t.true(term.isTerminal());
 
   g = await toWasmGrammar(ohm.grammar('G { start = "a" b\nb = "b" }'));
