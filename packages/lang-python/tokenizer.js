@@ -41,11 +41,16 @@ const CH_DEDENT = 0xfdd1;
 function isStringPrefixCode(ch) {
   // r, R, u, U, b, B, f, F, t, T
   return (
-    ch === 0x72 || ch === 0x52 ||
-    ch === 0x75 || ch === 0x55 ||
-    ch === 0x62 || ch === 0x42 ||
-    ch === 0x66 || ch === 0x46 ||
-    ch === 0x74 || ch === 0x54
+    ch === 0x72 ||
+    ch === 0x52 ||
+    ch === 0x75 ||
+    ch === 0x55 ||
+    ch === 0x62 ||
+    ch === 0x42 ||
+    ch === 0x66 ||
+    ch === 0x46 ||
+    ch === 0x74 ||
+    ch === 0x54
   );
 }
 

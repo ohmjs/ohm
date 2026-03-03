@@ -52,6 +52,21 @@ bench.add(
   opts
 );
 
+// Sanity check: unparse the CST and verify it matches the tokenized input.
+{
+  const r = matchPython(input);
+  r.use(r => {
+    const cst = r.getCstRoot();
+    const {input: tokenizedInput} = tokenize(input);
+    const fullSource = (cst.leadingSpaces?.sourceString ?? '') + cst.sourceString;
+    if (fullSource !== tokenizedInput) {
+      console.error('UNPARSE MISMATCH!');
+      process.exit(1);
+    }
+    console.error('Unparse check passed.');
+  });
+}
+
 (async () => {
   await bench.run();
   process.stderr.write('\n');
