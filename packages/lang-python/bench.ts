@@ -8,8 +8,9 @@ import {fileURLToPath} from 'node:url';
 
 import {Bench} from 'tinybench';
 import {grammar} from '@ohm-js/compiler/compat';
+import type {NonterminalNode} from 'ohm-js';
 
-import {createMatcher, tokenize} from './tokenizer.js';
+import {createMatcher, tokenize} from './tokenizer.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -56,9 +57,11 @@ bench.add(
 {
   const r = matchPython(input);
   r.use(r => {
+    if (!r.succeeded()) throw new Error('Match failed');
     const cst = r.getCstRoot();
     const {input: tokenizedInput} = tokenize(input);
-    const fullSource = (cst.leadingSpaces?.sourceString ?? '') + cst.sourceString;
+    const root = cst as NonterminalNode;
+    const fullSource = (root.leadingSpaces?.sourceString ?? '') + root.sourceString;
     if (fullSource !== tokenizedInput) {
       console.error('UNPARSE MISMATCH!');
       process.exit(1);
@@ -119,6 +122,8 @@ print(json.dumps(results))
   );
 
   for (const task of bench.tasks) {
+    const {state} = task.result;
+    if (state !== 'completed') continue;
     const {mean, sd, samplesCount} = task.result.latency;
     console.error(
       `${task.name}: ${mean.toFixed(1)}ms ± ${sd.toFixed(1)}ms` + ` (n=${samplesCount})`

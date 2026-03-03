@@ -227,6 +227,9 @@ importers:
       '@ohm-js/semantics':
         specifier: workspace:*
         version: link:../semantics
+      ohm-js:
+        specifier: workspace:*
+        version: link:../runtime
     devDependencies:
       tinybench:
         specifier: ^6.0.0

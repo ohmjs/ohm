@@ -20,7 +20,7 @@ export type Action<
  */
 export interface BaseActionDict<R> {
   // _iter?: (this: IterationNode, ...children: Node[]) => T;
-  _nonterminal?: (ctx: VisitorCtx<NonterminalNode>, ...children: CstNodeChildren) => R;
+  _nonterminal?: (ctx: VisitorCtx<CstNode>, ...children: CstNodeChildren) => R;
   _terminal?: (ctx: VisitorCtx<CstNode>) => R;
   _default?: (ctx: VisitorCtx<CstNode>, ...children: CstNodeChildren) => R;
 
