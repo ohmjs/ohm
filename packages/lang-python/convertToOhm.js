@@ -1,13 +1,11 @@
 import assert from 'node:assert';
-import fs from 'node:fs';
-import process from 'node:process';
 
-import * as ohm from 'ohm-js';
-import {test} from 'uvu';
+import {grammar} from '@ohm-js/compiler/compat';
+import {createOperation} from '@ohm-js/semantics/src/index.ts';
 
 const hasOwn = (obj, prop) => Object.hasOwnProperty.call(obj, prop);
 
-const g = ohm.grammar(String.raw`
+const g = grammar(String.raw`
   PythonPEG {
     Grammar = Rule*
 
@@ -50,7 +48,7 @@ const g = ohm.grammar(String.raw`
 
     word = anythingBut<space>+
 
-    ident = lower+
+    ident = (lower | "_")+
     token = (upper | "_")+
     ruleName = (lower | "_")+
     type = "[" anythingBut<"]">+ "]"
@@ -65,15 +63,20 @@ const g = ohm.grammar(String.raw`
 `);
 
 const tokens = {
-  async: '"async" ~identifierPart',
-  await: '"await" ~identifierPart',
-  dedent: undefined,
-  indent: undefined,
-  name: '~reservedWord identifierName',
-  newline: '"\\n"',
-  number: 'octalIntegerLiteral | hexIntegerLiteral | decimalLiteral',
-  string: undefined,
-  typeComment: '/* FIXME */',
+  indent: 'fail',
+  dedent: 'fail',
+  name: 'fail',
+  newline: 'fail',
+  number: 'fail',
+  string: 'fail',
+  typeComment: 'fail',
+  fstringStart: 'fail',
+  fstringMiddle: 'fail',
+  fstringEnd: 'fail',
+  tstringStart: 'fail',
+  tstringMiddle: 'fail',
+  tstringEnd: 'fail',
+  softKeyword: 'fail',
 };
 const tokenRules = Object.entries(tokens)
   .map(([name, ruleBody]) => {
@@ -86,236 +89,15 @@ const tokenRules = Object.entries(tokens)
 
 const extraRules = String.raw`
   fail = ~any any
-  pass = /* empty */
+  Pass = /* empty */
   invalid<name> = fail
   cut_FIXME = /* empty */
   require_FIXME<exp> = exp
 
-  // ----- Identifiers etc. -----
-
-  identifierName (an identifier) = identifierStart identifierPart*
-
-  // TODO: Correct these to use xidStart and xidContinue.
-  identifierStart = letter | "_"
-  identifierPart = identifierStart | digit
-
-  reservedWord (a reserved word) = async | await
-
-  // ----- Numbers -----
-
-  octalIntegerLiteral = "0o" octalDigit+ | "0O" octalDigit+
-  octalDigit = "0".."7"
-
-  hexIntegerLiteral = "0x" hexDigit+ | "0X" hexDigit+
-  // hexDigit defined in Ohm's built-in rules (otherwise: hexDigit = "0".."9" | "a".."f" | "A".."F")
-
-  binaryIntegerLiteral = "0b" binaryDigit+ | "0B" binaryDigit+
-  binaryDigit = "0" | "1"
-
-  decimalLiteral = decimalIntegerLiteral "." decimalDigit* exponentPart -- bothParts
-                 |                       "." decimalDigit+ exponentPart -- decimalsOnly
-                 | decimalIntegerLiteral                   exponentPart -- integerOnly
-  decimalIntegerLiteral = nonZeroDigit decimalDigit*  -- nonZero
-                        | "0"                         -- zero
-  decimalDigit = "0".."9"
-  nonZeroDigit = "1".."9"
-
-  // TODO: Also old-style octals, imaginary numbers, etc.
-
-  exponentPart = exponentIndicator signedInteger -- present
-               |                                 -- absent
-  exponentIndicator = "e" | "E"
-  signedInteger = "+" decimalDigit* -- positive
-                | "-" decimalDigit* -- negative
-                |     decimalDigit+ -- noSign
-
-  // ----- Strings -----
-
-  string = "\"" doubleStringCharacter* "\""
-         | "'" singleStringCharacter* "'"
-  doubleStringCharacter
-    = ~("\"" | "\\" | lineTerminator) any -- nonEscaped
-    | "\\" escapeSequence                 -- escaped
-    | lineContinuation                    -- lineContinuation
-  singleStringCharacter
-    = ~("'" | "\\" | lineTerminator) any -- nonEscaped
-    | "\\" escapeSequence                -- escaped
-    | lineContinuation                   -- lineContinuation
-  lineContinuation = "\\" lineTerminatorSequence
-  escapeSequence = hexEscapeSequence
-                 | octalEscapeSequence
-                 | characterEscapeSequence  // Must come last.
-  characterEscapeSequence = singleEscapeCharacter
-                          | nonEscapeCharacter
-  singleEscapeCharacter = "'" | "\"" | "\\" | "b" | "f" | "n" | "r" | "t" | "v"
-  nonEscapeCharacter = ~(escapeCharacter | lineTerminator) any
-  escapeCharacter = singleEscapeCharacter | decimalDigit | "x" | "u"
-  octalEscapeSequence = zeroToThree octalDigit octalDigit    -- whole
-                      | fourToSeven octalDigit               -- eightTimesfourToSeven
-                      | zeroToThree octalDigit ~decimalDigit -- eightTimesZeroToThree
-                      | octalDigit ~decimalDigit             -- octal
-  hexEscapeSequence = "x" hexDigit hexDigit
-  zeroToThree = "0".."3"
-  fourToSeven = "4".."7"
-  lineTerminator = "\n" | "\r" | "\u2028" | "\u2029"
-  lineTerminatorSequence = "\n" | "\r" ~"\n" | "\u2028" | "\u2029" | "\r\n"
+  // Only horizontal whitespace is skipped between tokens.
+  // Comments are handled by the tokenizer (replaced with spaces).
+  space := " " | "\t"
 `;
-
-const semantics = g.createSemantics();
-
-// An attribute that guesses at the arity an expression will have once it's
-// translated to Ohm.
-semantics.addAttribute('simpleArity', {
-  Seq(termIter) {
-    return termIter.children.reduce((acc, c) => acc + c.simpleArity, 0);
-  },
-  Term_binding(_ident, _type, _, iter) {
-    return iter.simpleArity;
-  },
-  Term_cut(_) {
-    return 1;
-  },
-  Term(child) {
-    return child.simpleArity;
-  },
-  Iter_star(pred, _) {
-    return pred.simpleArity;
-  },
-  Iter_plus(pred, _) {
-    return pred.simpleArity;
-  },
-  Iter_opt(pred, _) {
-    return pred.simpleArity;
-  },
-  Iter(child) {
-    return child.simpleArity;
-  },
-  Pred_not(_, base) {
-    return 0;
-  },
-  Pred_immediateFailure(_, base) {
-    return 1;
-  },
-  Pred_lookahead(_, base) {
-    return 1;
-  },
-  Pred(child) {
-    return child.simpleArity;
-  },
-  _nonterminal(...children) {
-    return 1;
-  },
-});
-
-semantics.addOperation('rewrite', {
-  Grammar(rules) {
-    const lines = [
-      'Python3 <: IndentationSensitive {',
-      ...rules.children.map(c => `\n${c.rewrite()}`),
-      tokenRules,
-      extraRules,
-      '}',
-    ];
-    return lines.filter(l => l !== null).join('\n');
-  },
-  Rule(ruleDeclStart, _, alt) {
-    return `  ${ruleDeclStart.rewrite()} = ${alt.rewrite()}`;
-  },
-  RuleDeclStart(ruleName, _type, _memo, _) {
-    return toCamelCase(ruleName.sourceString);
-  },
-  // Line_ruleDefn(ruleName, _type, _memo, _, ruleBody) {
-  //   const newBody = ruleBody.asIteration().children.map(c => c.rewrite()).join(' |');
-  //   return `\n${toCamelCase(ruleName.sourceString)} = ${newBody}`;
-  // },
-  // Line_ruleBegin(ruleName, _type, _memo, _) {
-  //   return `\n${toCamelCase(ruleName.sourceString)} =`;
-  // },
-  // Line_ruleContinuation(_, seq) {
-  //   return `  ${seq.rewrite()}`;
-  // },
-  // Line_empty(_) {
-  //   return null;
-  // },
-  Alt(listOfSeqs) {
-    const {children} = listOfSeqs.asIteration();
-    const arities = new Set(children.map(c => c.simpleArity));
-    const choices = children.map(c => c.rewrite());
-    if (choices[0] === 'assignmentExpression') {
-      console.log(arities, choices[1]); // eslint-disable-line no-console
-    }
-    if (arities.size > 1) {
-      return choices.map((str, i) => str + `  -- alt${i + 1}`).join('\n    | ');
-    }
-    return choices.join(' | ');
-  },
-  Seq(terms) {
-    return terms.children
-      .map(c => {
-        return c.rewrite();
-      })
-      .join(' ');
-  },
-  Term_binding(ident, _type, _, iter) {
-    return iter.rewrite();
-  },
-  Term_cut(_) {
-    return 'cut_FIXME';
-  },
-  Iter_star(pred, _) {
-    return `${pred.rewrite()}*`;
-  },
-  Iter_plus(pred, _) {
-    return `${pred.rewrite()}+`;
-  },
-  Iter_opt(pred, _) {
-    return `${pred.rewrite()}?`;
-  },
-  Pred_not(_, base) {
-    return `~${base.rewrite()}`;
-  },
-  Pred_immediateFailure(_, base) {
-    return `require_FIXME<${base.rewrite()}>`;
-  },
-  Pred_lookahead(_, base) {
-    return `&${base.rewrite()}`;
-  },
-  Base_application(ruleName) {
-    const name = ruleName.sourceString;
-    // TODO: handle invalid_ rules in a better way
-
-    if (name.startsWith('invalid_')) {
-      return `invalid<"${name.slice(8)}">`;
-    }
-    return toCamelCase(name);
-  },
-  Base_paren(_open, alt, _close) {
-    return `(${alt.rewrite()})`;
-  },
-  Base_opt(_open, alt, _close) {
-    return `(${alt.rewrite()})?`;
-  },
-  Base_list(terminal, _, iter) {
-    return `nonemptyListOf<${iter.rewrite()}, ${terminal.rewrite()}>`;
-  },
-  word(_) {
-    return this.sourceString;
-  },
-  token(_) {
-    const name = toCamelCase(this.sourceString.toLowerCase());
-    if (name === 'endmarker') {
-      return 'end';
-    }
-    assert(hasOwn(tokens, name), `Unknown token '${name}'`);
-    return name;
-  },
-  terminal_keyword(_open, chars, _close) {
-    return `"${chars.sourceString}"`;
-  },
-  terminal_softKeyword(_open, chars, _close) {
-    return `"${chars.sourceString}"`;
-  },
-});
 
 function toCamelCase(str) {
   if (str === '_') {
@@ -325,32 +107,190 @@ function toCamelCase(str) {
   return [first, ...rest.map(s => s[0].toUpperCase() + s.slice(1))].join('');
 }
 
-// const source = `func_type_comment[Token*]:
-// | NEWLINE t=TYPE_COMMENT &(NEWLINE INDENT) { t }  # Must be followed by indented block
-// | invalid_double_type_comments
-// | TYPE_COMMENT
-// `;
-let source = fs.readFileSync(process.argv[2], 'utf-8');
-
-// Hack: there is one part of the grammar where there is a parenthesized
-// alternation inside another alt. We can't add case labels there, so we
-// add two dummy args to make the arity of both branches the same.
-source = source.replace(
-  "| single_subscript_attribute_target) ':'",
-  "| single_subscript_attribute_target pass pass) ':'"
-);
-
-const matchResult = g.match(source);
-if (matchResult.failed()) {
-  throw new Error(matchResult.message);
+function toPascalCase(str) {
+  if (str === '_') {
+    return '_';
+  }
+  return str
+    .split('_')
+    .map(s => s[0].toUpperCase() + s.slice(1))
+    .join('');
 }
 
-test('basics', () => {
-  const output = semantics(matchResult).rewrite();
-  fs.writeFileSync('output.txt', output);
-  ohm.grammar(output, {
-    IndentationSensitive: ohm.ExperimentalIndentationSensitive,
-  });
+// Helper to extract elements from a NonemptyListOf node (stripping separators).
+function getListElements(nonemptyListOfNode) {
+  const [first, rest] = nonemptyListOfNode.children;
+  const restElements = rest.collect((_sep, elem) => elem);
+  return [first, ...restElements];
+}
+
+// An operation that guesses at the arity an expression will have once it's
+// translated to Ohm.
+const simpleArity = createOperation('simpleArity', {
+  Seq(ctx, termList) {
+    return termList.children.reduce((acc, c) => acc + simpleArity(c), 0);
+  },
+  Term_binding(ctx, _ident, _type, _, iter) {
+    return simpleArity(iter);
+  },
+  Term_cut(ctx, _) {
+    return 1;
+  },
+  Term(ctx, child) {
+    return simpleArity(child);
+  },
+  Iter_star(ctx, pred, _) {
+    return simpleArity(pred);
+  },
+  Iter_plus(ctx, pred, _) {
+    return simpleArity(pred);
+  },
+  Iter_opt(ctx, pred, _) {
+    return simpleArity(pred);
+  },
+  Iter(ctx, child) {
+    return simpleArity(child);
+  },
+  Pred_not(ctx, _, base) {
+    return 0;
+  },
+  Pred_immediateFailure(ctx, _, base) {
+    return 1;
+  },
+  Pred_lookahead(ctx, _, base) {
+    return 1;
+  },
+  Pred(ctx, child) {
+    return simpleArity(child);
+  },
+  _nonterminal(ctx, ...children) {
+    return 1;
+  },
 });
 
-test.run();
+const rewrite = createOperation('rewrite', {
+  Grammar(ctx, ruleList) {
+    // Collect names defined by tokens and extraRules so we can skip
+    // converted PEG rules that would create duplicates.
+    const reservedNames = new Set(Object.keys(tokens));
+    for (const m of extraRules.matchAll(/^\s*(\w+)\s*(?:\(.*?\))?\s*[:=]/gm)) {
+      reservedNames.add(m[1]);
+    }
+
+    const rules = ruleList.children
+      .map(c => rewrite(c))
+      .filter(r => {
+        // Skip rules whose name collides with a token or extraRules definition.
+        const m = r.match(/^\s*(\w+)\s*=/);
+        return !(m && reservedNames.has(m[1]));
+      });
+    const lines = ['Python3 {', ...rules.map(r => `\n${r}`), tokenRules, extraRules, '}'];
+    return lines.filter(l => l !== null).join('\n');
+  },
+  Rule(ctx, ruleDeclStart, _, alt) {
+    return `  ${rewrite(ruleDeclStart)} = ${rewrite(alt)}`;
+  },
+  RuleDeclStart(ctx, ruleName, _type, _memo, _) {
+    return toPascalCase(ruleName.sourceString);
+  },
+  Alt(ctx, listOfSeqs) {
+    const children = getListElements(listOfSeqs);
+    const arities = new Set(children.map(c => simpleArity(c)));
+    const choices = children.map(c => rewrite(c));
+    if (arities.size > 1) {
+      return choices.map((str, i) => str + `  -- alt${i + 1}`).join('\n    | ');
+    }
+    return choices.join(' | ');
+  },
+  Seq(ctx, terms) {
+    return terms.children
+      .map(c => {
+        return rewrite(c);
+      })
+      .join(' ');
+  },
+  Term_binding(ctx, ident, _type, _, iter) {
+    return rewrite(iter);
+  },
+  Term_cut(ctx, _) {
+    return 'cut_FIXME';
+  },
+  Iter_star(ctx, pred, _) {
+    return `${rewrite(pred)}*`;
+  },
+  Iter_plus(ctx, pred, _) {
+    return `${rewrite(pred)}+`;
+  },
+  Iter_opt(ctx, pred, _) {
+    return `${rewrite(pred)}?`;
+  },
+  Pred_not(ctx, _, base) {
+    return `~${rewrite(base)}`;
+  },
+  Pred_immediateFailure(ctx, _, base) {
+    return `require_FIXME<${rewrite(base)}>`;
+  },
+  Pred_lookahead(ctx, _, base) {
+    return `&${rewrite(base)}`;
+  },
+  Base_application(ctx, ruleName) {
+    const name = ruleName.sourceString;
+    if (name.startsWith('invalid_')) {
+      return `invalid<"${name.slice(8)}">`;
+    }
+    return toPascalCase(name);
+  },
+  Base_paren(ctx, _open, alt, _close) {
+    return `(${rewrite(alt)})`;
+  },
+  Base_opt(ctx, _open, alt, _close) {
+    return `(${rewrite(alt)})?`;
+  },
+  Base_list(ctx, terminal, _, iter) {
+    return `nonemptyListOf<${rewrite(iter)}, ${rewrite(terminal)}>`;
+  },
+  word(ctx, _) {
+    return ctx.thisNode.sourceString;
+  },
+  token(ctx, _) {
+    const name = toCamelCase(ctx.thisNode.sourceString.toLowerCase());
+    if (name === 'endmarker') {
+      return 'end';
+    }
+    assert(hasOwn(tokens, name), `Unknown token '${name}'`);
+    return name;
+  },
+  terminal_keyword(ctx, _open, chars, _close) {
+    return `"${chars.sourceString}"`;
+  },
+  terminal_softKeyword(ctx, _open, chars, _close) {
+    return `"${chars.sourceString}"`;
+  },
+});
+
+export function convertToOhm(rawSource) {
+  let source = rawSource;
+
+  // Strip @trailer section (C code between triple-quoted strings).
+  source = source.replace(/@trailer\s*'''[\s\S]*?'''\s*/, '');
+
+  // Strip invalid rules section — these are only for CPython's error recovery
+  // and their C action blocks contain unbalanced braces in string literals.
+  source = source.replace(/# =+ START OF INVALID RULES[\s\S]*$/, '');
+
+  // Hack: there is one part of the grammar where there is a parenthesized
+  // alternation inside another alt. We can't add case labels there, so we
+  // add two dummy args to make the arity of both branches the same.
+  source = source.replace(
+    "| single_subscript_attribute_target) ':'",
+    "| single_subscript_attribute_target pass pass) ':'"
+  );
+
+  const matchResult = g.match(source);
+  return matchResult.use(r => {
+    if (r.failed()) {
+      throw new Error(r.message);
+    }
+    return rewrite(r.getCstRoot());
+  });
+}

@@ -1,8 +1,4 @@
-import {
-  isTaggedTerminal,
-  MATCH_RECORD_TYPE_MASK,
-  MatchRecordType,
-} from './miniohm.ts';
+import {isTaggedTerminal, MATCH_RECORD_TYPE_MASK, MatchRecordType} from './miniohm.ts';
 
 import type {MatchContext, SucceededMatchResult} from './miniohm.ts';
 

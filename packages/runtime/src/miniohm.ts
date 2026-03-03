@@ -198,6 +198,9 @@ export class Grammar {
   /** @internal */
   public _strings: string[] = [];
 
+  /** @internal */
+  _beforeParse?: (exports: any, input: string, ruleIds: Map<string, number>) => void;
+
   /*
    * Wasm heap memory management
    * ===========================
@@ -333,7 +336,14 @@ export class Grammar {
       `unknown rule: '${ruleName}'`
     );
     const heapWatermark = exports.__offset.value;
-    const succeeded = exports.match(input.length, ruleId);
+    let succeeded: boolean;
+    if (this._beforeParse) {
+      exports.matchSetup(input.length);
+      this._beforeParse(exports, input, this._ruleIds);
+      succeeded = !!exports.matchEval(ruleId);
+    } else {
+      succeeded = !!exports.match(input.length, ruleId);
+    }
     const buffer = exports.memory.buffer;
 
     // If the Wasm match triggered memory.grow() (e.g. for the memo table or

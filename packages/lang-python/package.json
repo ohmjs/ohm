@@ -6,7 +6,15 @@
   "type": "module",
   "main": "convertToOhm.js",
   "scripts": {
-    "test": "echo \"Whoops: no tests yet for lang-python!\""
+    "build": "node scripts/build.js",
+    "test": "node --test test/test-python.js"
+  },
+  "dependencies": {
+    "@ohm-js/compiler": "workspace:*",
+    "@ohm-js/semantics": "workspace:*"
+  },
+  "devDependencies": {
+    "tinybench": "^6.0.0"
   },
   "author": "Patrick Dubroy <pdubroy@gmail.com>",
   "license": "MIT"
