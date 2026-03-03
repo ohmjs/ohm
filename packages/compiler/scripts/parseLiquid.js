@@ -18,7 +18,7 @@ import {Bench} from 'tinybench';
 
 import {Compiler} from '../src/Compiler.ts';
 import {unparse, toWasmGrammar} from '../test/_helpers.js';
-import {createReader, MatchRecordType, NO_NODE} from '../../runtime/src/cstReader.ts';
+import {createReader, NO_NODE} from '../../runtime/src/cstReader.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
@@ -108,7 +108,7 @@ const pattern = positionalArgs[0];
     const inp = reader.input;
     let ans = '';
     function walk(handle, startIdx) {
-      if (reader.recordType(handle) === MatchRecordType.TERMINAL) {
+      if (reader.isTerminal(handle)) {
         ans += inp.slice(startIdx, startIdx + reader.matchLength(handle));
         return;
       }
@@ -128,7 +128,7 @@ const pattern = positionalArgs[0];
     const reader = createReader(matchResult, {packStartIdx: true});
     let ans = '';
     function walk(handle) {
-      if (reader.recordType(handle) === MatchRecordType.TERMINAL) {
+      if (reader.isTerminal(handle)) {
         ans += reader.sourceString(handle);
         return;
       }
@@ -145,7 +145,11 @@ const pattern = positionalArgs[0];
 
   const wasmLabel = includeUnparse ? 'Wasm parse+unparse' : 'Wasm parse';
   bench.add(
-    useCstReaderPacked ? `${wasmLabel} (CstReader packed)` : useCstReader ? `${wasmLabel} (CstReader)` : wasmLabel,
+    useCstReaderPacked
+      ? `${wasmLabel} (CstReader packed)`
+      : useCstReader
+        ? `${wasmLabel} (CstReader)`
+        : wasmLabel,
     () => {
       let overriddenDuration = 0;
       for (const {input} of files) {
@@ -162,7 +166,11 @@ const pattern = positionalArgs[0];
             peakWasmMemoryBytes,
             exports.memory.buffer.byteLength
           );
-          return useCstReaderPacked ? unparseCstReaderPacked(m) : useCstReader ? unparseCstReaderRaw(m) : unparse(g);
+          return useCstReaderPacked
+            ? unparseCstReaderPacked(m)
+            : useCstReader
+              ? unparseCstReaderRaw(m)
+              : unparse(g);
         });
         if (includeUnparse) overriddenDuration += bench.now() - start;
       }

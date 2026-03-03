@@ -1,16 +1,10 @@
-import {
-  isTaggedTerminal,
-  MATCH_RECORD_TYPE_MASK,
-  MatchRecordType,
-} from './miniohm.ts';
+import {isTaggedTerminal, MATCH_RECORD_TYPE_MASK, MatchRecordType} from './miniohm.ts';
 
 import type {MatchContext, SucceededMatchResult} from './miniohm.ts';
 
-export {MatchRecordType};
-
 const HANDLE_BITS = 27;
 const SHIFT = 2 ** HANDLE_BITS; // 134217728
-const MASK = SHIFT - 1;         // 0x7FFFFFF
+const MASK = SHIFT - 1; // 0x7FFFFFF
 
 /** Sentinel value indicating no node (e.g. no leading spaces). */
 export const NO_NODE = -1;
@@ -19,7 +13,7 @@ export const NO_NODE = -1;
  * Pack a raw CST handle and startIdx into a single Number handle.
  * Uses 53 of the available integer-precision bits in an IEEE 754 double
  * (27 bits for the pointer, 26 bits for startIdx). Accessor methods
- * (recordType, matchLength, etc.) transparently accept either a raw handle
+ * (isTerminal, matchLength, etc.) transparently accept either a raw handle
  * or a handle with startIdx — they extract the low 27 bits via `& MASK`,
  * which is an identity operation for raw handles (< 2^27).
  */
@@ -39,7 +33,7 @@ export function unpackStartIdx(handle: number): number {
 /**
  * Zero-allocation access to the CST stored in Wasm linear memory.
  *
- * Accessor methods (recordType, matchLength, childCount, ctorName, details)
+ * Accessor methods (isTerminal, matchLength, childCount, ctorName, details)
  * accept either a raw handle or a handle with startIdx.
  *
  * forEachChild supports two calling conventions:
@@ -63,26 +57,24 @@ export class CstReader {
   readonly rootLeadingSpaces: number;
 
   /** Raw handle for the root node (without startIdx). */
-  get rootHandle(): number { return this.root & MASK; }
+  get rootHandle(): number {
+    return this.root & MASK;
+  }
   /** startIdx for the root node. */
-  get rootStartIdx(): number { return unpackStartIdx(this.root); }
+  get rootStartIdx(): number {
+    return unpackStartIdx(this.root);
+  }
   /** Raw handle for leading $spaces, or -1 if none. */
   get rootLeadingSpacesHandle(): number {
     return this.rootLeadingSpaces === NO_NODE ? -1 : this.rootLeadingSpaces & MASK;
   }
 
   /** @internal */
-  constructor(
-    ctx: MatchContext,
-    root: number,
-    rootLeadingSpaces: number
-  ) {
+  constructor(ctx: MatchContext, root: number, rootLeadingSpaces: number) {
     this._ctx = ctx;
     this.root = root;
     this.rootLeadingSpaces = rootLeadingSpaces;
-    this._spacesRuleId = ctx.ruleNames.findIndex(
-      n => n.split('<')[0] === '$spaces'
-    );
+    this._spacesRuleId = ctx.ruleNames.findIndex(n => n.split('<')[0] === '$spaces');
   }
 
   /** Extract the startIdx from a handle. */
@@ -90,12 +82,40 @@ export class CstReader {
     return unpackStartIdx(handle);
   }
 
-  /** The raw match record type (NONTERMINAL, TERMINAL, ITER_FLAG, or OPTIONAL). */
-  recordType(handle: number): MatchRecordType {
+  isTerminal(handle: number): boolean {
     handle = handle & MASK;
-    if (isTaggedTerminal(handle)) return MatchRecordType.TERMINAL;
-    return (this._ctx.view.getInt32(handle + 8, true) &
-      MATCH_RECORD_TYPE_MASK) as MatchRecordType;
+    if (isTaggedTerminal(handle)) return true;
+    return (
+      ((this._ctx.view.getInt32(handle + 8, true) &
+        MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.TERMINAL
+    );
+  }
+
+  isNonterminal(handle: number): boolean {
+    handle = handle & MASK;
+    if (isTaggedTerminal(handle)) return false;
+    return (
+      ((this._ctx.view.getInt32(handle + 8, true) &
+        MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.NONTERMINAL
+    );
+  }
+
+  isList(handle: number): boolean {
+    handle = handle & MASK;
+    if (isTaggedTerminal(handle)) return false;
+    return (
+      ((this._ctx.view.getInt32(handle + 8, true) &
+        MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.ITER_FLAG
+    );
+  }
+
+  isOptional(handle: number): boolean {
+    handle = handle & MASK;
+    if (isTaggedTerminal(handle)) return false;
+    return (
+      ((this._ctx.view.getInt32(handle + 8, true) &
+        MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.OPTIONAL
+    );
   }
 
   /** Number of raw children stored in this match record. */
@@ -114,7 +134,7 @@ export class CstReader {
 
   /**
    * Constructor name. For nonterminals, the rule name (without parameterization).
-   * For other types: '_terminal', '_iter', '_opt'.
+   * For other types: '_terminal', '_list', '_opt'.
    */
   ctorName(handle: number): string {
     handle = handle & MASK;
@@ -126,7 +146,7 @@ export class CstReader {
       return this._ctx.ruleNames[ruleId].split('<')[0];
     }
     if (type === MatchRecordType.TERMINAL) return '_terminal';
-    if (type === MatchRecordType.ITER_FLAG) return '_iter';
+    if (type === MatchRecordType.ITER_FLAG) return '_list';
     return '_opt';
   }
 
@@ -173,9 +193,7 @@ export class CstReader {
    */
   forEachChild(
     handle: number,
-    startIdxOrFn:
-      | number
-      | ((child: number, leadingSpaces: number, index: number) => void),
+    startIdxOrFn: number | ((child: number, leadingSpaces: number, index: number) => void),
     maybeFn?: (
       childHandle: number,
       leadingSpaces: number,
@@ -212,8 +230,7 @@ export class CstReader {
       if (
         !isTaggedTerminal(child) &&
         ((this._ctx.view.getInt32(child + 8, true) &
-          MATCH_RECORD_TYPE_MASK) as MatchRecordType) ===
-          MatchRecordType.NONTERMINAL
+          MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.NONTERMINAL
       ) {
         const ruleId = this._ctx.view.getInt32(child + 8, true) >>> 2;
         if (ruleId === this._spacesRuleId) {
@@ -249,8 +266,7 @@ export class CstReader {
       if (
         !isTaggedTerminal(rawChild) &&
         ((this._ctx.view.getInt32(rawChild + 8, true) &
-          MATCH_RECORD_TYPE_MASK) as MatchRecordType) ===
-          MatchRecordType.NONTERMINAL
+          MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.NONTERMINAL
       ) {
         const ruleId = this._ctx.view.getInt32(rawChild + 8, true) >>> 2;
         if (ruleId === this._spacesRuleId) {
@@ -298,19 +314,14 @@ export function createReader(
 
   const firstPtr = exports.bindingsAt(0);
   const firstTypeAndDetails = ctx.view.getInt32(firstPtr + 8, true);
-  const firstType = (firstTypeAndDetails &
-    MATCH_RECORD_TYPE_MASK) as MatchRecordType;
+  const firstType = (firstTypeAndDetails & MATCH_RECORD_TYPE_MASK) as MatchRecordType;
   const firstRuleId = firstTypeAndDetails >>> 2;
   const firstName = ctx.ruleNames[firstRuleId]?.split('<')[0];
 
   const p = doPack ? pack : (h: number, _s: number) => h;
   if (firstType === MatchRecordType.NONTERMINAL && firstName === '$spaces') {
     const spacesMatchLength = ctx.view.getUint32(firstPtr + 4, true);
-    return new CstReader(
-      ctx,
-      p(exports.bindingsAt(1), spacesMatchLength),
-      p(firstPtr, 0)
-    );
+    return new CstReader(ctx, p(exports.bindingsAt(1), spacesMatchLength), p(firstPtr, 0));
   }
   return new CstReader(ctx, p(firstPtr, 0), NO_NODE);
 }
