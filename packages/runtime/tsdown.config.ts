@@ -4,6 +4,7 @@ export default defineConfig({
   entry: {
     index: 'index.ts',
     'src/unstableDebug': 'src/unstableDebug.ts',
+    'src/cstReader': 'src/cstReader.ts',
   },
   format: 'esm',
   fixedExtension: false,

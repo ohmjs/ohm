@@ -23,6 +23,10 @@
     "./unstableDebug": {
       "types": "./dist/src/unstableDebug.d.ts",
       "default": "./dist/src/unstableDebug.js"
+    },
+    "./cstReader": {
+      "types": "./dist/src/cstReader.d.ts",
+      "default": "./dist/src/cstReader.js"
     }
   },
   "files": ["dist"],

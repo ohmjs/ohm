@@ -1,15 +1,22 @@
 import {assert, checkNotNull} from './assert.ts';
 import {getLineAndColumn, getLineAndColumnMessage} from './extras.ts';
 
-const MATCH_RECORD_TYPE_MASK = 0b11;
+export const MATCH_RECORD_TYPE_MASK = 0b11;
+
+// Tagged terminal: (matchLength << 1) | 1. Bit 0 distinguishes from real pointers.
+export function isTaggedTerminal(handle: number): boolean {
+  return (handle & 1) !== 0;
+}
 
 // A MatchRecord is the representation of a CstNode in Wasm linear memory.
-const MatchRecordType = {
+export const MatchRecordType = {
   NONTERMINAL: 0,
   TERMINAL: 1,
   ITER_FLAG: 2,
   OPTIONAL: 3,
 } as const;
+
+export type MatchRecordType = (typeof MatchRecordType)[keyof typeof MatchRecordType];
 
 // A _CST node_ is the user-facing representation, built from a match record.
 export const CstNodeType = {
@@ -22,7 +29,6 @@ export const CstNodeType = {
 
 // Define types with the same name as the values above. This gives us roughly the
 // same functionality as a TypeScript enum, but works with erasableSyntaxOnly.
-type MatchRecordType = (typeof MatchRecordType)[keyof typeof MatchRecordType];
 export type CstNodeType = (typeof CstNodeType)[keyof typeof CstNodeType];
 
 const EMPTY_CHILDREN: ReadonlyArray<CstNode> = Object.freeze([]);
@@ -422,7 +428,7 @@ export class Grammar {
   }
 }
 
-interface MatchContext {
+export interface MatchContext {
   ruleNames: string[];
   view: DataView;
   input: string;
@@ -577,14 +583,17 @@ class CstNodeImpl implements CstNodeBase {
   }
 
   get count(): number {
+    if (isTaggedTerminal(this._base)) return 0;
     return this._ctx.view.getUint32(this._base, true);
   }
 
   get matchLength(): number {
+    if (isTaggedTerminal(this._base)) return this._base >>> 1;
     return this._ctx.view.getUint32(this._base + 4, true);
   }
 
   get _typeAndDetails(): number {
+    if (isTaggedTerminal(this._base)) return MatchRecordType.TERMINAL;
     return this._ctx.view.getInt32(this._base + 8, true);
   }
 
@@ -636,8 +645,7 @@ class CstNodeImpl implements CstNodeBase {
       const slotOffset = this._base + 16 + i * 4;
       const ptr = this._ctx.view.getUint32(slotOffset, true);
 
-      // Tagged terminal: (matchLength << 1) | 1
-      if (ptr & 1) {
+      if (isTaggedTerminal(ptr)) {
         const node = new TaggedTerminalNode(this._ctx, ptr, startIdx);
         if (spaces) {
           node.leadingSpaces = spaces;
