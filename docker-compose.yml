@@ -1,0 +1,11 @@
+services:
+
+  ohm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/local
+    entrypoint: [""]
+    command: ["sh", "-c", "sleep infinity"]
+    # command: ["-o", "ohm-grammar.wasm", "packages/ohm-js/src/ohm-grammar.ohm"]
