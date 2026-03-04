@@ -877,7 +877,6 @@ export class Compiler {
   _endOfInputFailureId: number;
   _maxMemoizedRuleId: number;
   _lexContextStack: boolean[];
-  _applySpacesImplicit: ir.Apply;
   _singleUseRules!: Set<string>;
   // Maps preallocatable rule names to the inner child rule name. Direct rules
   // (body matches a single codepoint) use '$term' as a sentinel.
@@ -926,7 +925,6 @@ export class Compiler {
 
     // Keeps track of whether we're in a lexical or syntactic context.
     this._lexContextStack = [];
-    this._applySpacesImplicit = ir.apply('$spaces', -1);
   }
 
   getOrAddFailure(str: string): number {
@@ -1194,7 +1192,7 @@ export class Compiler {
     // }
     // };
 
-    const restoreFailurePos = name === this._applySpacesImplicit.ruleName;
+    const restoreFailurePos = name === '$spaces';
 
     const descriptionId = ruleInfo.description ? this._strings.add(ruleInfo.description) : -1;
     const hasDescription = descriptionId >= 0;
@@ -1493,6 +1491,7 @@ export class Compiler {
       'bindingsAt',
       'getBindingsLength',
       'getRecordedFailuresLength',
+      'getSpacesLenAt',
       'isFluffy',
       'match',
       'matchSetup',
@@ -1897,10 +1896,7 @@ export class Compiler {
   emitApply(exp: ir.Apply): void {
     assert(exp.children.length === 0);
 
-    // Avoid infinite recursion.
-    if (exp !== this._applySpacesImplicit) {
-      this.maybeEmitSpaceSkipping();
-    }
+    this.maybeEmitSpaceSkipping();
 
     const {asm} = this;
 
@@ -2140,9 +2136,7 @@ export class Compiler {
 
   maybeEmitSpaceSkipping(): void {
     if (IMPLICIT_SPACE_SKIPPING && !this.inLexicalContext()) {
-      this.asm.emit('BEGIN space skipping');
-      this.emitApply(this._applySpacesImplicit);
-      this.asm.emit('END space skipping');
+      this.asm.callPrebuiltFunc('evalSpacesImplicit');
     }
   }
 

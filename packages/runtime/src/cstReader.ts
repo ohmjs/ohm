@@ -37,26 +37,19 @@ export function unpackStartIdx(handle: number): number {
  * accept either a raw handle or a handle with startIdx.
  *
  * forEachChild(handle, fn) iterates visible children. The callback receives
- * (childHandle, leadingSpaces, pos, index). In raw mode, pos is the child's
- * offset from the parent's start; in packed mode, pos is the child's absolute
- * startIdx.
- *
- * $spaces children are filtered out; when present, the $spaces handle is
- * passed as `leadingSpaces` to the next non-$spaces child (NO_NODE / -1
- * otherwise).
+ * (childHandle, spacesLen, pos, index). spacesLen is the number of implicitly-
+ * skipped space characters before this child (0 if none).
  */
 export class CstReader {
   /** @internal */
   private _ctx: MatchContext;
-  /** @internal — precomputed ruleId for $spaces, or -1 if not found. */
-  private _spacesRuleId: number;
   /** @internal — whether handles have startIdx packed in. */
   private _packed: boolean;
 
   /** Handle for the root node (with startIdx packed in if packStartIdx was set). */
   readonly root: number;
-  /** Handle for leading $spaces before the root, or NO_NODE if none. */
-  readonly rootLeadingSpaces: number;
+  /** Length of leading spaces before the root, or 0 if none. */
+  readonly rootLeadingSpacesLen: number;
 
   /** Raw handle for the root node (without startIdx). */
   get rootHandle(): number {
@@ -66,18 +59,13 @@ export class CstReader {
   get rootStartIdx(): number {
     return unpackStartIdx(this.root);
   }
-  /** Raw handle for leading $spaces, or -1 if none. */
-  get rootLeadingSpacesHandle(): number {
-    return this.rootLeadingSpaces === NO_NODE ? -1 : this.rootLeadingSpaces & MASK;
-  }
 
   /** @internal */
-  constructor(ctx: MatchContext, root: number, rootLeadingSpaces: number, packed: boolean) {
+  constructor(ctx: MatchContext, root: number, rootLeadingSpacesLen: number, packed: boolean) {
     this._ctx = ctx;
     this.root = root;
-    this.rootLeadingSpaces = rootLeadingSpaces;
+    this.rootLeadingSpacesLen = rootLeadingSpacesLen;
     this._packed = packed;
-    this._spacesRuleId = ctx.ruleNames.findIndex(n => n.split('<')[0] === '$spaces');
   }
 
   /** Extract the startIdx from a handle. */
@@ -185,91 +173,78 @@ export class CstReader {
   }
 
   /**
-   * Iterate over visible children (filtering out $spaces). When a $spaces
-   * child is found, its handle is passed as `leadingSpaces` to the next
-   * non-$spaces child (NO_NODE / -1 otherwise).
+   * Iterate over children. The callback receives (childHandle, spacesLen,
+   * pos, index). spacesLen is the number of implicitly-skipped space
+   * characters before this child (0 if none).
    *
-   * The callback receives (childHandle, leadingSpaces, pos, index). The
-   * meaning of `pos` depends on the mode:
-   *   - Raw mode: offset from the parent's start position. Compute the
-   *     child's absolute startIdx as parentStartIdx + pos.
-   *   - Packed mode: the child's absolute startIdx.
+   * The meaning of `pos` depends on the mode:
+   *   - Raw mode: offset from the parent's start position.
+   *     `parentStartIdx` is the parent's absolute position, needed to
+   *     query the memo table for spaces lengths.
+   *   - Packed mode: the child's absolute startIdx (parentStartIdx is
+   *     ignored since startIdx is embedded in the handle).
    */
   forEachChild(
     handle: number,
-    fn: (child: number, leadingSpaces: number, pos: number, index: number) => void
+    fn: (child: number, spacesLen: number, pos: number, index: number) => void,
+    parentStartIdx = 0
   ): void {
     if (this._packed) {
       this._forEachChildPacked(handle, fn);
     } else {
-      this._forEachChildRaw(handle, fn);
+      this._forEachChildRaw(handle, parentStartIdx, fn);
     }
+  }
+
+  /** Check whether a raw child handle has parent-level space skipping. */
+  private _hasParentSpaces(rawChild: number): boolean {
+    if (isTaggedTerminal(rawChild)) return true;
+    const type = (this._ctx.view.getInt32(rawChild + 8, true) &
+      MATCH_RECORD_TYPE_MASK) as MatchRecordType;
+    return type === MatchRecordType.NONTERMINAL || type === MatchRecordType.TERMINAL;
   }
 
   private _forEachChildRaw(
     handle: number,
-    fn: (child: number, leadingSpaces: number, offset: number, index: number) => void
+    parentStartIdx: number,
+    fn: (child: number, spacesLen: number, offset: number, index: number) => void
   ): void {
     if (isTaggedTerminal(handle)) return;
     const count = this._ctx.view.getUint32(handle, true);
+    const {getSpacesLenAt} = this._ctx;
     let offset = 0;
-    let pendingSpaces = -1;
-    let visibleIndex = 0;
     for (let i = 0; i < count; i++) {
       const child = this._ctx.view.getUint32(handle + 16 + i * 4, true);
+      const spacesLen = (getSpacesLenAt && this._hasParentSpaces(child))
+        ? getSpacesLenAt(parentStartIdx + offset) : 0;
+      offset += spacesLen;
       const len = isTaggedTerminal(child)
         ? child >>> 1
         : this._ctx.view.getUint32(child + 4, true);
-      if (
-        !isTaggedTerminal(child) &&
-        ((this._ctx.view.getInt32(child + 8, true) &
-          MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.NONTERMINAL
-      ) {
-        const ruleId = this._ctx.view.getInt32(child + 8, true) >>> 2;
-        if (ruleId === this._spacesRuleId) {
-          pendingSpaces = child;
-          offset += len;
-          continue;
-        }
-      }
-      fn(child, pendingSpaces, offset, visibleIndex);
-      pendingSpaces = -1;
-      visibleIndex++;
+      fn(child, spacesLen, offset, i);
       offset += len;
     }
   }
 
   private _forEachChildPacked(
     handle: number,
-    fn: (child: number, leadingSpaces: number, pos: number, index: number) => void
+    fn: (child: number, spacesLen: number, pos: number, index: number) => void
   ): void {
     const raw = handle & MASK;
     if (isTaggedTerminal(raw)) return;
     const count = this._ctx.view.getUint32(raw, true);
     let childStart = (handle - raw) / SHIFT;
-    let pendingSpaces = NO_NODE;
-    let visibleIndex = 0;
+    const {getSpacesLenAt} = this._ctx;
     for (let i = 0; i < count; i++) {
       const rawChild = this._ctx.view.getUint32(raw + 16 + i * 4, true);
+      const spacesLen = (getSpacesLenAt && this._hasParentSpaces(rawChild))
+        ? getSpacesLenAt(childStart) : 0;
+      childStart += spacesLen;
       const childHandle = childStart * SHIFT + rawChild;
       const len = isTaggedTerminal(rawChild)
         ? rawChild >>> 1
         : this._ctx.view.getUint32(rawChild + 4, true);
-      if (
-        !isTaggedTerminal(rawChild) &&
-        ((this._ctx.view.getInt32(rawChild + 8, true) &
-          MATCH_RECORD_TYPE_MASK) as MatchRecordType) === MatchRecordType.NONTERMINAL
-      ) {
-        const ruleId = this._ctx.view.getInt32(rawChild + 8, true) >>> 2;
-        if (ruleId === this._spacesRuleId) {
-          pendingSpaces = childHandle;
-          childStart += len;
-          continue;
-        }
-      }
-      fn(childHandle, pendingSpaces, childStart, visibleIndex);
-      pendingSpaces = NO_NODE;
-      visibleIndex++;
+      fn(childHandle, spacesLen, childStart, i);
       childStart += len;
     }
   }
@@ -303,21 +278,8 @@ export function createReader(
     }
   }
 
-  const firstPtr = exports.bindingsAt(0);
-  const firstTypeAndDetails = ctx.view.getInt32(firstPtr + 8, true);
-  const firstType = (firstTypeAndDetails & MATCH_RECORD_TYPE_MASK) as MatchRecordType;
-  const firstRuleId = firstTypeAndDetails >>> 2;
-  const firstName = ctx.ruleNames[firstRuleId]?.split('<')[0];
-
+  const spacesLen = exports.getSpacesLenAt(0);
+  const rootPtr = exports.bindingsAt(0);
   const p = doPack ? pack : (h: number, _s: number) => h;
-  if (firstType === MatchRecordType.NONTERMINAL && firstName === '$spaces') {
-    const spacesMatchLength = ctx.view.getUint32(firstPtr + 4, true);
-    return new CstReader(
-      ctx,
-      p(exports.bindingsAt(1), spacesMatchLength),
-      p(firstPtr, 0),
-      doPack
-    );
-  }
-  return new CstReader(ctx, p(firstPtr, 0), NO_NODE, doPack);
+  return new CstReader(ctx, p(rootPtr, spacesLen), spacesLen, doPack);
 }

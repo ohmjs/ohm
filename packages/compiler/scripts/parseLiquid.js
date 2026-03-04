@@ -18,7 +18,7 @@ import {Bench} from 'tinybench';
 
 import {Compiler} from '../src/Compiler.ts';
 import {unparse, toWasmGrammar} from '../test/_helpers.js';
-import {createReader, NO_NODE} from '../../runtime/src/cstReader.ts';
+import {createReader} from '../../runtime/src/cstReader.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const datadir = join(__dirname, '../test/data');
@@ -112,12 +112,9 @@ const pattern = positionalArgs[0];
         ans += inp.slice(startIdx, startIdx + reader.matchLength(handle));
         return;
       }
-      reader.forEachChild(handle, (child, _leadingSpaces, offset) => {
+      reader.forEachChild(handle, (child, _spacesLen, offset) => {
         walk(child, startIdx + offset);
-      });
-    }
-    if (reader.rootLeadingSpacesHandle !== -1) {
-      walk(reader.rootLeadingSpacesHandle, 0);
+      }, startIdx);
     }
     walk(reader.rootHandle, reader.rootStartIdx);
     return ans;
@@ -132,12 +129,9 @@ const pattern = positionalArgs[0];
         ans += reader.sourceString(handle);
         return;
       }
-      reader.forEachChild(handle, (child, _leadingSpaces) => {
+      reader.forEachChild(handle, (child, _spacesLen) => {
         walk(child);
       });
-    }
-    if (reader.rootLeadingSpaces !== NO_NODE) {
-      walk(reader.rootLeadingSpaces);
     }
     walk(reader.root);
     return ans;

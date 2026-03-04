@@ -359,6 +359,7 @@ export class Grammar {
       ruleNames: this._ruleNames,
       view: new DataView(buffer),
       input,
+      getSpacesLenAt: exports.getSpacesLenAt,
     };
     const result = createMatchResult(this, ruleName || this._ruleNames[0], ctx, !!succeeded);
     result._heapWatermark = heapWatermark;
@@ -410,17 +411,11 @@ export class Grammar {
       ruleNames: this._ruleNames,
       view: new DataView(exports.memory.buffer),
       input: this._input,
+      getSpacesLenAt: exports.getSpacesLenAt,
     };
-    const firstNode = new CstNodeImpl(ctx, exports.bindingsAt(0), 0);
-    assert(firstNode.isNonterminal());
-    if (firstNode.ctorName !== '$spaces') {
-      return firstNode;
-    }
-    assert(exports.getBindingsLength() > 1 && firstNode.ctorName === '$spaces');
-    const nextAddr = exports.bindingsAt(1);
-    const root = new CstNodeImpl(ctx, nextAddr, firstNode.matchLength);
-    root.leadingSpaces = firstNode;
-    return root as CstNode;
+    const spacesLen = exports.getSpacesLenAt(0);
+    const rootAddr = exports.bindingsAt(0);
+    return new CstNodeImpl(ctx, rootAddr, spacesLen) as CstNode;
   }
 
   /** @internal */
@@ -442,6 +437,7 @@ export interface MatchContext {
   ruleNames: string[];
   view: DataView;
   input: string;
+  getSpacesLenAt?: (pos: number) => number;
 }
 
 export type CstNode = NonterminalNode | TerminalNode | ListNode | OptNode | SeqNode;
@@ -649,41 +645,34 @@ class CstNodeImpl implements CstNodeBase {
 
   _computeChildren(): (CstNodeImpl | TaggedTerminalNode)[] {
     const children: (CstNodeImpl | TaggedTerminalNode)[] = [];
-    let spaces: NonterminalNode | undefined;
     let {startIdx} = this;
+    const {getSpacesLenAt} = this._ctx;
     for (let i = 0; i < this.count; i++) {
       const slotOffset = this._base + 16 + i * 4;
       const ptr = this._ctx.view.getUint32(slotOffset, true);
 
       if (isTaggedTerminal(ptr)) {
+        // Tagged terminals always have parent-level space skipping.
+        if (getSpacesLenAt) startIdx += getSpacesLenAt(startIdx);
         const node = new TaggedTerminalNode(this._ctx, ptr, startIdx);
-        if (spaces) {
-          node.leadingSpaces = spaces;
-          spaces = undefined;
-        }
         children.push(node);
         startIdx += node.matchLength;
         continue;
       }
 
-      // TODO: Avoid allocating $spaces nodes altogether?
-      const node = new CstNodeImpl(this._ctx, ptr, startIdx);
-      if (
-        node.matchRecordType === MatchRecordType.NONTERMINAL &&
-        node.ctorName === '$spaces'
-      ) {
-        assert(!spaces, 'Multiple $spaces nodes found');
-        spaces = node as NonterminalNode; // FIXME
-      } else {
-        if (spaces) {
-          node.leadingSpaces = spaces;
-          spaces = undefined;
-        }
-        children.push(node);
+      // Only query spaces for terminals and nonterminals — not for
+      // iteration (ITER_FLAG) or optional nodes, which handle space
+      // skipping internally.
+      const type = (this._ctx.view.getInt32(ptr + 8, true) &
+        MATCH_RECORD_TYPE_MASK) as MatchRecordType;
+      if (getSpacesLenAt && (type === MatchRecordType.NONTERMINAL || type === MatchRecordType.TERMINAL)) {
+        startIdx += getSpacesLenAt(startIdx);
       }
+
+      const node = new CstNodeImpl(this._ctx, ptr, startIdx);
+      children.push(node);
       startIdx += node.matchLength;
     }
-    assert(spaces === undefined, 'Unclaimed $spaces!');
     return children;
   }
 

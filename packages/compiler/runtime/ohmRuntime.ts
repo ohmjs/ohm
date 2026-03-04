@@ -90,6 +90,11 @@ type MemoEntry = i32;
 @inline const UNUSED_LR_BOMB: MemoEntry = <i32>0x80000001;
 @inline const USED_LR_BOMB: MemoEntry = <i32>0x80000003;
 
+// Sentinel for $spaces memo entries. Instead of allocating a CST node,
+// we store (matchLength << 2) | MEMO_SPACES_SENTINEL.
+// bits [1:0] = 0b10 distinguishes from: pointers (aligned, 0b00), failures (0b_1).
+@inline const MEMO_SPACES_SENTINEL: MemoEntry = 2;
+
 // The result of a raw rule evaluation function.
 // Low bit: RULE_EVAL_SUCCESS_FLAG
 // Rest: failurePos (signed int, 31 bits).
@@ -228,8 +233,32 @@ function useMemoizedResult(ruleId: i32, result: MemoEntry): ApplyResult {
 
 @inline function maybeSkipSpaces(ruleId: i32): void {
   if (IMPLICIT_SPACE_SKIPPING && isRuleSyntactic(ruleId)) {
-    evalApply0(1); // Must match the $spaces rule ID from Compiler.js constructor.
+    evalSpacesImplicit();
   }
+}
+
+// Evaluate $spaces without allocating a CST node or pushing a binding.
+// Stores a sentinel in the memo table encoding just the match length.
+export function evalSpacesImplicit(): void {
+  const memo = memoTableGet(pos, 1);
+  if (memo !== EMPTY) {
+    // Memo hit — sentinel from previous evaluation at this position.
+    pos += <u32>(memo >>> 2);
+    return;
+  }
+  const origPos = pos;
+  const origNumBindings = bindings.length;
+  evalRuleBody(1); // evaluate $spaces body (space*)
+  const matchLen = <i32>pos - <i32>origPos;
+  bindings.length = origNumBindings; // discard child bindings
+  memoTableSet(origPos, 1, (matchLen << 2) | MEMO_SPACES_SENTINEL);
+}
+
+// Look up spaces match length at a given position (for consumer use).
+export function getSpacesLenAt(memoPos: i32): i32 {
+  const entry = memoTableGet(<usize>memoPos, 1);
+  if ((entry & 3) === MEMO_SPACES_SENTINEL) return entry >>> 2;
+  return 0;
 }
 
 // The last entry in the function table is a compiler-generated dispatch
