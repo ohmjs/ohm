@@ -2,6 +2,12 @@ NODE = node --disable-warning=ExperimentalWarning
 
 SRC_TS_FILES := $(wildcard src/*.ts)
 
+# If ohm-grammar-wasm.ts is just a stub (from a failed bootstrap), remove it
+# so that Make's dependency logic will trigger a rebuild.
+$(if $(wildcard build/ohm-grammar-wasm.ts),\
+  $(if $(shell [ $$(wc -c < build/ohm-grammar-wasm.ts) -lt 100 ] && echo stale),\
+    $(shell rm -f build/ohm-grammar-wasm.ts)))
+
 .PHONY: all
 all: dist-js check
 

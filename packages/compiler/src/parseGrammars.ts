@@ -17,6 +17,9 @@ import ohmGrammarWasmBytes from '../build/ohm-grammar-wasm.ts';
 let metaGrammar: Grammar;
 function getMetaGrammar(): Grammar {
   if (!metaGrammar) {
+    if (!ohmGrammarWasmBytes || ohmGrammarWasmBytes.byteLength === 0) {
+      throw new Error('No Ohm metagrammar found.');
+    }
     metaGrammar = new Grammar(ohmGrammarWasmBytes);
   }
   return metaGrammar;
