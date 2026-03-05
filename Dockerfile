@@ -1,6 +1,8 @@
+# To build the 'build' image us 'docker compose -f docker-compose.dev.yml build'
+# run using 'docker run -v $(pwd):/local -it --rm ohm-dev:latest shell'
+# The build image is around 1.6 GB, incomparison to the dist image which is 664 MB
+# The build image is useful for debugging docker build issues.
 FROM node:24 AS build
-
-# RUN wget -qO- https://get.pnpm.io/install.sh | ENV="$HOME/.shrc" SHELL="$(which sh)" sh -
 
 RUN npm install -g pnpm@latest-10
 
@@ -15,7 +17,6 @@ COPY . /ohm
 RUN pwd
 # filtering out lang-python as it is not building
 RUN \
-  # --mount=type=cache,target=/workspace/node_modules \
   pnpm install \
     --frozen-lockfile \
     --offline \
@@ -59,13 +60,6 @@ RUN cd /ohm/packages/cli && pnpm install \
   --frozen-lockfile \
   --offline
 
-# RUN pnpm \
-#   --filter=compiler \
-#   --legacy \
-#   --prod \
-#   deploy /packages/compiler
-
-
 # to track down file which can be deleted
 #
 # apt-get update
@@ -73,10 +67,11 @@ RUN cd /ohm/packages/cli && pnpm install \
 # ncdu /
 #
 # or
+#
 # alias dive="docker run -ti --rm  -v /var/run/docker.sock:/var/run/docker.sock docker.io/wagoodman/dive"
 # dive ohm:latest
 
-#
+# # turns out to no save space, hard link ???
 # RUN rm -rf /root/.local/share/pnpm/store
 
 COPY ./packages/docker/entrypoint.sh entrypoint.sh
