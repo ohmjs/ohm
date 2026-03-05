@@ -1986,4 +1986,3 @@ test('chunkedBindings: false', async t => {
     wasmGrammar.match('hello;').use(r => t.true(r.succeeded()));
   }
 });
-
