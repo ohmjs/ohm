@@ -2,41 +2,45 @@
 
 The `ohm:latest` image provides the Ohm compiler CLI in a self-contained environment — no local Node.js or pnpm installation required.
 
+## Commands overview
+
+| Command           | Description |
+|-------------------|-------------|
+| `compile`         | Compile an `.ohm` grammar file to a `.wasm` module |
+| `generateBundles` | Generate grammar bundles (currently not working) |
+| `shell`           | Open a bash shell inside the container |
+| `help`            | Print usage information |
+
+Your current directory is mounted at `/local` inside the container, so relative paths to grammar files work as expected.
+
+---
+
 ## 1. Running
 
 Pull and run the image directly from Docker Hub:
 
 ```sh
-docker run --rm -v `pwd`:/local ohm:latest compile my-grammar.ohm
+docker run --rm -v $(pwd):/local ohm:latest compile my-grammar.ohm
 ```
-
-Your current directory is mounted at `/local` inside the container, so relative paths to grammar files work as expected.
-
-### Available commands
-
-| Command           | Description |
-|-------------------|-------------|
-| `compile`         | Compile an `.ohm` grammar file to a `.wasm` module |
-| `shell`           | Open a bash shell inside the container (useful for debugging) |
 
 ### `compile` usage
 
 ```sh
-docker run --rm -v `pwd`:/local ohm:latest compile [options] <grammar-file>
+docker run --rm -v $(pwd):/local ohm:latest compile [options] <grammar-file>
 ```
 
 Options:
 
-| Flag                        | Description |
-|-----------------------------|-------------|
-| `--debug` / `-d`            | Enable debug output |
+| Flag                          | Description |
+|-------------------------------|-------------|
+| `--debug` / `-d`              | Enable debug output |
 | `--grammarName` / `-g <name>` | Override the grammar name |
-| `--output` / `-o <file>`    | Write output to `<file>` instead of stdout |
+| `--output` / `-o <file>`      | Write output to `<file>` instead of `<grammar-file>.wasm` |
 
 **Example** — compile `arithmetic.ohm` and write the result to `arithmetic.wasm`:
 
 ```sh
-docker run --rm -v `pwd`:/local ohm:latest compile -o arithmetic.wasm arithmetic.ohm
+docker run --rm -v $(pwd):/local ohm:latest compile -o arithmetic.wasm arithmetic.ohm
 ```
 
 ### Getting help
@@ -58,6 +62,8 @@ docker compose build
 ```
 
 This builds the `ohm:latest` image using the `dist` stage of the multi-stage `Dockerfile`, which produces a slim image containing only the compiled packages and their production dependencies.
+
+The `ohm:latest` image is 664 MB and is 99% space efficient (per `wagoodman/dive`).
 
 ---
 
@@ -81,7 +87,6 @@ docker run -v $(pwd):/local -it --rm ohm-dev:latest shell
 docker run -v ${PWD}:/local -it --rm ohm-dev:latest shell
 ```
 
-The `-v $(pwd):/local` mount, makes your current directory available at `/local` inside the container. The `shell` command drops you into a bash session where you can inspect the build artifacts under `/ohm/` or run CLI commands directly.
+The `-v $(pwd):/local` mount makes your current directory available at `/local` inside the container. The `shell` command drops you into a bash session where you can inspect the built artifacts under `/ohm/` or run CLI commands directly.
 
-The `ohm:latest` image is 664 MB, and according to `wagoodman/dive` it is 99% space efficient.
-In comparison the `ohm-dev:latest` images is 1.62 GB and is 97% efficient with only 64 MB potentially wasted space.
+The `ohm-dev:latest` images is 1.62 GB and is 97% efficient with only 64 MB potentially wasted space.
