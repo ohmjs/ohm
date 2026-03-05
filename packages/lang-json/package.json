@@ -5,13 +5,14 @@
   "description": "A JSON grammar for Ohm",
   "type": "module",
   "scripts": {
-    "test": "node --test test/test-json.ts && node bench.ts --small-size"
+    "test": "node --test 'test/*.ts' && node bench.ts --small-size"
   },
   "dependencies": {
     "@ohm-js/compiler": "workspace:*",
     "ohm-js": "workspace:*"
   },
   "devDependencies": {
+    "fast-check": "^4.2.0",
     "tinybench": "^6.0.0"
   },
   "license": "MIT"

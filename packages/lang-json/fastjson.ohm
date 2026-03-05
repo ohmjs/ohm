@@ -1,0 +1,26 @@
+FastJSON {
+  Value =
+    stringLiteral
+    | Object
+    | Array
+    | number
+    | "true"
+    | "false"
+    | "null"
+
+  Object =
+    "{" (stringLiteral ":" Value ("," stringLiteral ":" Value)*)? "}"
+
+  Array =
+    "[" (Value ("," Value)*)? "]"
+
+  stringLiteral =
+    "\"" ("#".."[" | "]".."\uffff" | " ".."!" | "\\\""  | "\\\\" | "\\/" | "\\b" | "\\f" | "\\n" | "\\r" | "\\t" | unicodeEscape | "\u0000".."\u001f")* "\""
+
+  unicodeEscape = "\\u" hexDigit hexDigit hexDigit hexDigit
+
+  number =
+    "-"? ("0" | nat) ("." digit+)? (("e" | "E") ("+" | "-")? digit+)?
+
+  nat = "1".."9" digit*
+}

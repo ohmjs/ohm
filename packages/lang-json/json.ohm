@@ -21,8 +21,6 @@
   IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 JSON {
-  Start = Value
-
   Value =
     Object
     | Array
