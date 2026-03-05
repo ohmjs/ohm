@@ -77,7 +77,6 @@ test('liquidRawTagImpl', async t => {
   const root = r._cst;
   t.is(root.ctorName, 'Node');
   t.is(root.startIdx, 5);
-  t.not(root.leadingSpaces, null);
   const [opt, list] = root.children;
   t.true(opt.isEmpty());
   t.true(list.isList());

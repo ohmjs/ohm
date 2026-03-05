@@ -137,7 +137,6 @@ export function getMatchStats(result: SucceededMatchResult): MatchStats {
   // --- 1. Walk CST tree from root ---
   const cstVisited = new Set<number>();
   const cstRoots: number[] = [];
-  if (root.leadingSpaces) cstRoots.push(root.leadingSpaces._base);
   cstRoots.push(root._base);
   const cstStats = walkRecordTree(view, ruleNames, cstRoots, cstVisited);
 

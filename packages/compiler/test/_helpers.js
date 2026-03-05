@@ -28,18 +28,24 @@ export async function toWasmGrammar(grammar, {modBytes, ...compilerOpts} = {}) {
   return wasmGrammar._instantiate(bytes, debugImports);
 }
 
-export function unparse(m) {
+export function unparse(g) {
+  const root = g._getCstRoot();
+  const input = g._input;
   let ans = '';
+  let pos = 0;
   function walk(node) {
-    if (node.leadingSpaces) {
-      ans += node.leadingSpaces.sourceString;
+    // Emit any gap (spaces) between our current position and this node's start.
+    if (node.startIdx > pos) {
+      ans += input.slice(pos, node.startIdx);
+      pos = node.startIdx;
     }
     if (node.isTerminal()) {
       ans += node.sourceString;
+      pos = node.source.endIdx;
     }
     node.children.forEach(c => walk(c));
   }
-  walk(m._getCstRoot());
+  walk(root);
   return ans;
 }
 
