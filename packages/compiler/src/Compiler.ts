@@ -11,8 +11,9 @@ import {grammar as parseGrammar} from './parseGrammars.ts';
 
 // eslint-disable-next-line no-undef
 const DEBUG = typeof process !== 'undefined' && process.env.OHM_DEBUG === '1';
-const FAST_SAVE_BINDINGS = true;
-const FAST_RESTORE_BINDINGS = true;
+// Must match BINDINGS_CHUNK_CAPACITY in ohmRuntime.ts.
+const BINDINGS_CHUNK_CAPACITY = 128;
+const BINDINGS_CHUNK_HEADER = 8;
 
 const IMPLICIT_SPACE_SKIPPING = true;
 
@@ -101,15 +102,21 @@ class SavedValue<K extends string> {
   }
 }
 
+interface SavedBindingsState {
+  getChunk(): void;
+  getIdx(): void;
+  restore(): void;
+}
+
 interface SavedBacktrackPoint {
   readonly pos: SavedValue<'pos'>;
-  readonly bindings: SavedValue<'bindings'>;
+  readonly bindings: SavedBindingsState;
 }
 
 /** A no-op backtrack point whose save/restore emit no code. */
 const noopBacktrackPoint: SavedBacktrackPoint = {
   pos: {get() {}, restore() {}} as unknown as SavedValue<'pos'>,
-  bindings: {get() {}, restore() {}} as unknown as SavedValue<'bindings'>,
+  bindings: {getChunk() {}, getIdx() {}, restore() {}},
 };
 
 class StringTable {
@@ -607,26 +614,25 @@ class Assembler {
     });
   }
 
-  saveNumBindings(): SavedValue<'bindings'> {
-    if (FAST_SAVE_BINDINGS) {
-      this.globalGet('bindings');
-      this.i32Load(12); // Array<i32>.length_
-    } else {
-      this.callPrebuiltFunc('getBindingsLength');
-    }
-    const name = this.ensureDepthLocal('origBindingsLen');
-    this.localSet(name);
-    return new SavedValue('bindings', this, name, () => {
-      if (FAST_RESTORE_BINDINGS) {
-        // It's safe to directly set the length as long as it's shrinking.
-        this.globalGet('bindings');
-        this.localGet(name);
-        this.i32Store(12); // Array<i32>.length_
-      } else {
-        this.localGet(name);
-        this.callPrebuiltFunc('setBindingsLength');
-      }
-    });
+  saveNumBindings(): SavedBindingsState {
+    this.globalGet('bindingsChunk');
+    const chunkLocal = this.ensureDepthLocal('origBindingsChunk');
+    this.localSet(chunkLocal);
+
+    this.globalGet('bindingsIdx');
+    const idxLocal = this.ensureDepthLocal('origBindingsIdx');
+    this.localSet(idxLocal);
+
+    return {
+      getChunk: () => this.localGet(chunkLocal),
+      getIdx: () => this.localGet(idxLocal),
+      restore: () => {
+        this.localGet(chunkLocal);
+        this.globalSet('bindingsChunk');
+        this.localGet(idxLocal);
+        this.globalSet('bindingsIdx');
+      },
+    };
   }
 
   saveFailurePos(): SavedValue<'failurePos'> {
@@ -775,7 +781,8 @@ class Assembler {
   newIterNode(saved: SavedBacktrackPoint, arity: number, isOpt = false): void {
     saved.pos.get();
     this.globalGet('pos');
-    saved.bindings.get();
+    saved.bindings.getChunk();
+    saved.bindings.getIdx();
     this.i32Const(arity);
     this.i32Const(isOpt ? 1 : 0);
     this.callPrebuiltFunc('newIterationNode');
@@ -787,16 +794,64 @@ class Assembler {
     saved.pos.get();
     this.globalGet('pos');
     this.i32Const(ruleId);
-    saved.bindings.get();
+    saved.bindings.getChunk();
+    saved.bindings.getIdx();
     this.i32Const(-1);
     this.callPrebuiltFunc('newNonterminalNode');
   }
 
-  // [startIdx: i32] -> [tagged: i32]
-  newTerminalNode(): void {
-    this.localGet('postSpacesPos');
+  // Specialized 1-child nonterminal: replaces the single child binding in-place.
+  newNonterminalNodeInPlace(savedPos: SavedValue<'pos'>, ruleId: number): void {
+    savedPos.get();
     this.globalGet('pos');
-    this.callPrebuiltFunc('newTerminalNode');
+    this.i32Const(ruleId);
+    this.i32Const(-1);
+    this.callPrebuiltFunc('newNonterminalNodeInPlace');
+  }
+
+  // [startIdx: i32] -> [tagged: i32]
+  // Inlined fast path: store into current chunk without calling AssemblyScript.
+  // Only calls bindingsAdvanceChunk() if the chunk is full.
+  newTerminalNode(): void {
+    // Compute address: bindingsChunk + (bindingsIdx << 2)
+    this.globalGet('bindingsChunk');
+    this.globalGet('bindingsIdx');
+    this.i32Const(2);
+    this.emit(instr.i32.shl);
+    this.emit(instr.i32.add);
+
+    // Compute tagged = ((pos - postSpacesPos) << 1) | 1
+    this.globalGet('pos');
+    this.localGet('postSpacesPos');
+    this.emit(instr.i32.sub);
+    this.i32Const(1);
+    this.emit(instr.i32.shl);
+    this.i32Const(1);
+    this.emit(instr.i32.or);
+
+    // Save tagged for return value
+    this.ensureLocal('tmp_tagged', w.valtype.i32);
+    this.localTee('tmp_tagged');
+
+    // Store: stack is [addr, value] — store at addr + CHUNK_HEADER
+    this.i32Store(BINDINGS_CHUNK_HEADER);
+
+    // Increment bindingsIdx
+    this.globalGet('bindingsIdx');
+    this.i32Const(1);
+    this.emit(instr.i32.add);
+    this.globalSet('bindingsIdx');
+
+    // Check if chunk is full
+    this.globalGet('bindingsIdx');
+    this.i32Const(BINDINGS_CHUNK_CAPACITY);
+    this.emit(instr.i32.eq);
+    this.if(w.blocktype.empty, () => {
+      this.callPrebuiltFunc('bindingsAdvanceChunk');
+    });
+
+    // Return tagged value
+    this.localGet('tmp_tagged');
   }
 
   i32Max(aThunk: () => void, bThunk: () => void): void {
@@ -1916,7 +1971,12 @@ export class Compiler {
       asm.i32Const(innerPreallocIdx);
       asm.callPrebuiltFunc('evalApplyPrealloc');
     } else if (ruleId >= this._maxMemoizedRuleId) {
-      asm.callPrebuiltFunc('evalApplyNoMemo0');
+      const ruleInfo = getNotNull(this.rules!, exp.ruleName);
+      if (ir.outArity(ruleInfo.body) === 1) {
+        asm.callPrebuiltFunc('evalApplyNoMemo1');
+      } else {
+        asm.callPrebuiltFunc('evalApplyNoMemo0');
+      }
     } else {
       asm.callPrebuiltFunc('evalApply0');
     }
@@ -1933,9 +1993,15 @@ export class Compiler {
     const {asm} = this;
     const ruleId = this.ruleId(exp.ruleName);
     const ruleInfo = getNotNull(this.rules!, exp.ruleName);
+    const singleChild = ir.outArity(ruleInfo.body) === 1;
 
     asm.pushDepth();
-    const saved = asm.saveBacktrackPoint();
+    // For single-child rules, skip saving bindings state — the child
+    // binding will be replaced in-place by newNonterminalNodeInPlace.
+    const savedPos = asm.savePos();
+    const saved = singleChild
+      ? {pos: savedPos, bindings: noopBacktrackPoint.bindings}
+      : {pos: savedPos, bindings: asm.saveNumBindings()};
     this._lexContextStack.push(!ruleInfo.isSyntactic);
     asm.pushFluffySavePoint();
     this.emitPExpr(ruleInfo.body);
@@ -1945,7 +2011,11 @@ export class Compiler {
     // On success, wrap the body's bindings in a nonterminal node.
     asm.localGet('ret');
     asm.if(w.blocktype.empty, () => {
-      asm.newNonterminalNode(saved, ruleId);
+      if (singleChild) {
+        asm.newNonterminalNodeInPlace(savedPos, ruleId);
+      } else {
+        asm.newNonterminalNode(saved, ruleId);
+      }
       asm.localSet('ret');
     });
 
